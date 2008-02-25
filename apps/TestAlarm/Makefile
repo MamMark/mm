@@ -1,0 +1,2 @@
+COMPONENT=TestAlarmAppC
+include $(MAKERULES)
