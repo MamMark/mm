@@ -5,7 +5,7 @@ module mm3C {
 
   uses {
     interface HplMM3Adc as HW;
-    interface mm3Regime as Regime;
+    interface Regime;
 
     interface StdControl as BattSense;
     interface StdControl as TempSense;

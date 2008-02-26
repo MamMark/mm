@@ -1,10 +1,8 @@
-/* -*- mode:c; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
+/*
  * mm3Collect.h - data collector (record managment) interface
  * between data collection and mass storage.
  * Copyright 2008, Eric B. Decker
  * Mam-Mark Project
- *
  */
 
 #ifndef __COLLECTOR_H__

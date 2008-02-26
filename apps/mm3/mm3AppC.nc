@@ -10,20 +10,18 @@ implementation
   components HplMM3AdcC;
   mm3C.HW-> HplMM3AdcC.HplMM3Adc;
 
-  components mm3RegimeC;
-  mm3C.Regime -> mm3RegimeC;
+  components RegimeC;
+  mm3C.Regime -> RegimeC;
 
-  components mm3BattC, mm3TempC, mm3SalC, mm3AccelC, mm3PTempC,
-    mm3PressC, mm3SpeedC, mm3MagC;
-  mm3C.BattSense  -> mm3BattC;
-  mm3C.TempSense  -> mm3TempC;
-  mm3C.SalSense   -> mm3SalC;
-  mm3C.AccelSense -> mm3AccelC;
-  mm3C.PTempSense -> mm3PTempC;
-  mm3C.PressSense -> mm3PressC;
-  mm3C.SpeedSense -> mm3SpeedC;
-  mm3C.MagSense   -> mm3MagC;
-
+  components BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
+  mm3C.BattSense  -> BattC;
+  mm3C.TempSense  -> TempC;
+  mm3C.SalSense   -> SalC;
+  mm3C.AccelSense -> AccelC;
+  mm3C.PTempSense -> PTempC;
+  mm3C.PressSense -> PressC;
+  mm3C.SpeedSense -> SpeedC;
+  mm3C.MagSense   -> MagC;
 
   components LedsC;
   mm3C.Leds -> LedsC;

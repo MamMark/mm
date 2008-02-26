@@ -1,5 +1,3 @@
-//
-
 /**
  * @author Eric B. Decker
  * @version 

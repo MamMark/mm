@@ -10,7 +10,7 @@
  *  @author: Eric B. Decker
  */
 
-interface mm3Regime {
+interface Regime {
 
   command uint8_t getCurRegime();
 

@@ -1,5 +1,4 @@
-/* -*- mode:c; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
+/*
  * mm3CollectP.nc - data collector (record managment) interface
  * between data collection and mass storage.
  * Copyright 2008, Eric B. Decker
@@ -7,11 +6,11 @@
  *
  */
 
-#include "mm3Collect.h"
+#include "Collect.h"
 
-module mm3CollectP {
+module CollectP {
   provides {
-    interface mm3Collect as DC;
+    interface Collect;
     interface Init;
   }
 }
@@ -68,7 +67,7 @@ implementation {
 #endif
 
 
-  command void DC.collect(uint8_t *data, uint16_t dlen) {
+  command void Collect.collect(uint8_t *data, uint16_t dlen) {
     uint16_t num_copied, i;
 
     /*

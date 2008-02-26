@@ -1,6 +1,5 @@
-/* -*- mode:c; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 /* 
- * mm3RegimeP.nc: implementation for regime control
+ * RegimeP.nc: implementation for regime control
  * Copyright 2008 Eric B. Decker
  * All rights reserved.
  */
@@ -13,8 +12,8 @@
 
 #include "sensors.h"
 
-module mm3RegimeP {
-  provides interface mm3Regime;
+module RegimeP {
+  provides interface Regime;
   provides interface Init;
 }
 implementation {
@@ -52,12 +51,12 @@ implementation {
   }
 
 
-  command uint8_t mm3Regime.getCurRegime() {
+  command uint8_t Regime.getCurRegime() {
     return sns_regime;
   }
 
 
-  command uint32_t mm3Regime.sensorPeriod(uint8_t sns_id) {
+  command uint32_t Regime.sensorPeriod(uint8_t sns_id) {
     if (sns_regime >= SNS_MAX_REGIME)
       return 0UL;
     if (sns_id >= SENSOR_SENTINEL)
@@ -65,13 +64,13 @@ implementation {
     return sns_period_table[sns_regime][sns_id];
   }
 
-  command error_t mm3Regime.setRegime(uint8_t regime) {
+  command error_t Regime.setRegime(uint8_t regime) {
     if (sns_regime >= SNS_MAX_REGIME)
       return FAIL;
     sns_regime = regime;
-    signal mm3Regime.regimeChange();
+    signal Regime.regimeChange();
     return SUCCESS;
   }
 
-  default event void mm3Regime.regimeChange() {};
+  default event void Regime.regimeChange() {};
 }

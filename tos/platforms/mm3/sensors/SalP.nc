@@ -1,19 +1,18 @@
-/* -*- mode:c; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 /* 
- * mm3PTempP.nc: implementation for pressure temperature
+ * SalP.nc: implementation for salinity
  * Copyright 2008 Eric B. Decker
  * All rights reserved.
  */
 
 
 /**
- *  Pressure temperature Sensor Driver
+ *  Salinity Sensor Driver
  *  @author: Eric B. Decker
  */
 
 #include "sensors.h"
 
-module mm3PTempP {
+module SalP {
   provides {
     interface StdControl;
     interface Init;
@@ -21,44 +20,45 @@ module mm3PTempP {
   }
 
   uses {
-    interface mm3Regime as RegimeCtrl;
+    interface Regime as RegimeCtrl;
     interface Timer<TMilli> as PeriodTimer;
-    interface mm3Adc as Adc;
+    interface Adc;
+    interface HplMM3Adc as HW;
   }
 }
 implementation {
   uint32_t period;
-  uint8_t  ptemp_state;
+  uint8_t  sal_state;
   uint32_t err_overruns;
 
 
   command error_t Init.init() {
-    ptemp_state = SNS_STATE_OFF;
+    sal_state = SNS_STATE_OFF;
     err_overruns = 0;
     return SUCCESS;
   }
 
 
   command error_t StdControl.start() {
-    period = call RegimeCtrl.sensorPeriod(SNS_ID_PTEMP);
+    period = call RegimeCtrl.sensorPeriod(SNS_ID_SAL);
     if (period) {
       call PeriodTimer.startPeriodic(period);
-      ptemp_state = SNS_STATE_PERIOD_WAIT;
+      sal_state = SNS_STATE_PERIOD_WAIT;
     } else
-      ptemp_state = SNS_STATE_OFF;
+      sal_state = SNS_STATE_OFF;
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
     call PeriodTimer.stop();
-    if (ptemp_state == SNS_STATE_PERIOD_WAIT)
-      ptemp_state = SNS_STATE_OFF;
+    if (sal_state == SNS_STATE_PERIOD_WAIT)
+      sal_state = SNS_STATE_OFF;
   }
 
 
   event void PeriodTimer.fired() {
-    if (ptemp_state != SNS_STATE_PERIOD_WAIT) {
+    if (sal_state != SNS_STATE_PERIOD_WAIT) {
       err_overruns++;
       /*
        * bitch, shouldn't be here.  Of course it could be
@@ -67,7 +67,7 @@ implementation {
       call StdControl.start();
       return;
     }
-    ptemp_state = SNS_STATE_ADC_WAIT;
+    sal_state = SNS_STATE_ADC_WAIT;
     call Adc.request();
   }
 
@@ -76,7 +76,8 @@ implementation {
     uint16_t data;
 
     data = call Adc.readAdc();
-    ptemp_state = SNS_STATE_PERIOD_WAIT;
+    call HW.toggleSal();
+    sal_state = SNS_STATE_PERIOD_WAIT;
     call Adc.release();
   }
 
@@ -84,11 +85,11 @@ implementation {
   event void RegimeCtrl.regimeChange() {
     uint32_t new_period;
 
-    new_period = call RegimeCtrl.sensorPeriod(SNS_ID_PTEMP);
+    new_period = call RegimeCtrl.sensorPeriod(SNS_ID_SAL);
     if (new_period == 0) {
       call PeriodTimer.stop();
-      if (ptemp_state == SNS_STATE_PERIOD_WAIT)
-	ptemp_state = SNS_STATE_OFF;
+      if (sal_state == SNS_STATE_PERIOD_WAIT)
+	sal_state = SNS_STATE_OFF;
     } else if (new_period != period) {
       period = new_period;
       call PeriodTimer.stop();
@@ -98,15 +99,15 @@ implementation {
   }
 
 
-  const mm3_sensor_config_t ptemp_config =
-    { .sns_id = SNS_ID_PTEMP,
-      .mux  = SMUX_PRESS_TEMP,
+  const mm3_sensor_config_t sal_config =
+    { .sns_id = SNS_ID_SAL,
+      .mux  = SMUX_SALINITY,
       .gmux = 0,
       .t_powerup = 5
     };
 
 
     async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
-      return &ptemp_config;
+      return &sal_config;
     }
 }

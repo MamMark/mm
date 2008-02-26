@@ -5,12 +5,12 @@
 
 //#include "hardware.h"
 
-configuration mm3PwrC {
-  provides interface mm3Pwr[uint8_t client_id];
+configuration PwrC {
+  provides interface Pwr[uint8_t client_id];
 }
 
 implementation {
-  components mm3PwrP;
+  components PwrP;
 
-  mm3Pwr = mm3PwrP;
+  Pwr = PwrP;
 }

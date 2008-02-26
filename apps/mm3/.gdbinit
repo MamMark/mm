@@ -17,7 +17,7 @@ end
 
 define sa
 printf "resQ:  %02x%02x\n", RoundRobinResourceQueueC$0$resQ[1], RoundRobinResourceQueueC$0$resQ[0]
-printf "adc: state: %02x, req: %02x, owner: %02x\n", mm3AdcP$adc_state, mm3AdcP$req_client, mm3AdcP$adc_owner
+printf "adc: state: %02x, req: %02x, owner: %02x\n", AdcP$adc_state, AdcP$req_client, AdcP$adc_owner
 end
 
 disp/i $pc
@@ -31,5 +31,5 @@ b VirtualizeTimerC.nc:81
 
 # b sig_TIMERA0_VECTOR
 # b sig_TIMERA1_VECTOR
-#b sig_TIMERB0_VECTOR
-#b sig_TIMERB1_VECTOR
+# b sig_TIMERB0_VECTOR
+# b sig_TIMERB1_VECTOR

@@ -1,5 +1,4 @@
-/* -*- mode:c; indent-tabs-mode:nil; c-basic-offset: 2 -*-
- *
+/*
  * Copyright (c) 2008, Eric B. Decker
  * All rights reserved.
  *
@@ -8,7 +7,7 @@
  * All rights reserved.
  */
 
-interface mm3Adc {
+interface Adc {
   /**
    * Request access to the mm3 shared Adc resource. You must call release()
    * when you are done with it.

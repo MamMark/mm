@@ -1,0 +1,25 @@
+/* -*- mode:c; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * Copyright (c) 2008, Eric B. Decker
+ * All rights reserved.
+ */
+
+#include "sensors.h"
+
+configuration AccelC {
+  provides interface StdControl;
+}
+implementation {
+  components MainC, AccelP;
+  MainC.SoftwareInit -> AccelP;
+  StdControl = AccelP;
+
+  components RegimeC, new TimerMilliC() as PeriodTimer;
+  AccelP.RegimeCtrl -> RegimeC.Regime;
+  AccelP.PeriodTimer -> PeriodTimer;
+
+  components AdcC;
+  AccelP.Adc -> AdcC.Adc[SNS_ID_ACCEL];
+
+  components AdcP;
+  AccelP.AdcConfigure <- AdcP.Config[SNS_ID_ACCEL];
+}

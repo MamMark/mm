@@ -6,21 +6,21 @@
 //#include "hardware.h"
 //#include "sensors.h"
 
-configuration mm3AdcC {
-  provides interface mm3Adc[uint8_t client_id];
+configuration AdcC {
+  provides interface Adc[uint8_t client_id];
 }
 
 implementation {
-  components mm3AdcP, MainC;
-  mm3Adc = mm3AdcP;
-  MainC.SoftwareInit -> mm3AdcP;
+  components AdcP, MainC;
+  Adc = AdcP;
+  MainC.SoftwareInit -> AdcP;
 
   components HplMM3AdcC;
-  mm3AdcP.HW -> HplMM3AdcC;
+  AdcP.HW -> HplMM3AdcC;
 
   components new RoundRobinResourceQueueC(SENSOR_SENTINEL) as RR;
-  mm3AdcP.Queue -> RR;
+  AdcP.Queue -> RR;
 
   components new TimerMilliC() as PT;
-  mm3AdcP.PowerTimer -> PT;
+  AdcP.PowerTimer -> PT;
 }

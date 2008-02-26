@@ -1,5 +1,5 @@
 
-interface mm3Pwr {
+interface Pwr {
   /**
    * Request access to a shared pwr resource. You must call release()
    * when you are done with it.

@@ -1,7 +1,7 @@
 #include "hardware.h"
 
-module mm3PwrP {
-  provides interface mm3Pwr as PwrClient[uint8_t client_id];
+module PwrP {
+  provides interface Pwr as PwrClient[uint8_t client_id];
 }
 
 implementation {

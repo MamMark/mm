@@ -1,5 +1,4 @@
-/* -*- mode:c; indent-tabs-mode:nil; c-basic-offset: 2 -*-
- *
+/*
  * Copyright (c) 2008, Eric B. Decker
  * All rights reserved.
  *
@@ -12,9 +11,9 @@
 #include "sensors.h"
 
 
-module mm3AdcP {
+module AdcP {
   provides {
-    interface mm3Adc as AdcClient[uint8_t client_id];
+    interface Adc as AdcClient[uint8_t client_id];
     interface Init;
   }
   uses {

@@ -1,19 +1,19 @@
-/* -*- mode:c; indent-tabs-mode: nil; c-basic-offset: 2 -*-
-/* 
- * mm3SalP.nc: implementation for salinity
+/*
+ * BattP.nc: implementation for Battery Monitor
  * Copyright 2008 Eric B. Decker
  * All rights reserved.
  */
 
 
 /**
- *  Salinity Sensor Driver
+ *  Battery Monitor Sensor Driver
  *  @author: Eric B. Decker
  */
 
 #include "sensors.h"
+#include "sd_blocks.h"
 
-module mm3SalP {
+module BattP {
   provides {
     interface StdControl;
     interface Init;
@@ -21,45 +21,45 @@ module mm3SalP {
   }
 
   uses {
-    interface mm3Regime as RegimeCtrl;
+    interface Regime as RegimeCtrl;
     interface Timer<TMilli> as PeriodTimer;
-    interface mm3Adc as Adc;
-    interface HplMM3Adc as HW;
+    interface Adc;
+    interface Collect;
   }
 }
 implementation {
   uint32_t period;
-  uint8_t  sal_state;
+  uint8_t  batt_state;
   uint32_t err_overruns;
 
 
   command error_t Init.init() {
-    sal_state = SNS_STATE_OFF;
+    batt_state = SNS_STATE_OFF;
     err_overruns = 0;
     return SUCCESS;
   }
 
 
   command error_t StdControl.start() {
-    period = call RegimeCtrl.sensorPeriod(SNS_ID_SAL);
+    period = call RegimeCtrl.sensorPeriod(SNS_ID_BATT);
     if (period) {
       call PeriodTimer.startPeriodic(period);
-      sal_state = SNS_STATE_PERIOD_WAIT;
+      batt_state = SNS_STATE_PERIOD_WAIT;
     } else
-      sal_state = SNS_STATE_OFF;
+      batt_state = SNS_STATE_OFF;
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
     call PeriodTimer.stop();
-    if (sal_state == SNS_STATE_PERIOD_WAIT)
-      sal_state = SNS_STATE_OFF;
+    if (batt_state == SNS_STATE_PERIOD_WAIT)
+      batt_state = SNS_STATE_OFF;
   }
 
 
   event void PeriodTimer.fired() {
-    if (sal_state != SNS_STATE_PERIOD_WAIT) {
+    if (batt_state != SNS_STATE_PERIOD_WAIT) {
       err_overruns++;
       /*
        * bitch, shouldn't be here.  Of course it could be
@@ -68,29 +68,41 @@ implementation {
       call StdControl.start();
       return;
     }
-    sal_state = SNS_STATE_ADC_WAIT;
+    batt_state = SNS_STATE_ADC_WAIT;
     call Adc.request();
   }
 
 
   event void Adc.granted() {
     uint16_t data;
+    dt_sensor_data_nt batt_data;
+    uint8_t *bp;
 
     data = call Adc.readAdc();
-    call HW.toggleSal();
-    sal_state = SNS_STATE_PERIOD_WAIT;
+    batt_state = SNS_STATE_PERIOD_WAIT;
     call Adc.release();
+    batt_data.len = BATT_BLOCK_SIZE;
+    batt_data.dtype = DT_SENSOR_DATA;
+    batt_data.id = SNS_ID_BATT;
+    batt_data.sched_epoch = 0;
+    batt_data.sched_mis = 0;
+    batt_data.stamp_epoch = 0;
+    batt_data.stamp_mis = 0;
+    batt_data.data[0] = data;
+    bp = (uint8_t *)(&batt_data);
+    call Collect.collect((uint8_t *)(&batt_data), BATT_BLOCK_SIZE);
+    call Collect.collect(bp, BATT_BLOCK_SIZE);
   }
 
 
   event void RegimeCtrl.regimeChange() {
     uint32_t new_period;
 
-    new_period = call RegimeCtrl.sensorPeriod(SNS_ID_SAL);
+    new_period = call RegimeCtrl.sensorPeriod(SNS_ID_BATT);
     if (new_period == 0) {
       call PeriodTimer.stop();
-      if (sal_state == SNS_STATE_PERIOD_WAIT)
-	sal_state = SNS_STATE_OFF;
+      if (batt_state == SNS_STATE_PERIOD_WAIT)
+	batt_state = SNS_STATE_OFF;
     } else if (new_period != period) {
       period = new_period;
       call PeriodTimer.stop();
@@ -100,15 +112,15 @@ implementation {
   }
 
 
-  const mm3_sensor_config_t sal_config =
-    { .sns_id = SNS_ID_SAL,
-      .mux  = SMUX_SALINITY,
+  const mm3_sensor_config_t batt_config =
+    { .sns_id = SNS_ID_BATT,
+      .mux  = SMUX_BATT,
       .gmux = 0,
       .t_powerup = 5
     };
 
 
     async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
-      return &sal_config;
+      return &batt_config;
     }
 }
