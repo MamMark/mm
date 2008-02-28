@@ -31,13 +31,13 @@ implementation {
 
   event void Boot.booted() {
     call BattSense.start();
-    call TempSense.start();
-    call SalSense.start();
+//    call TempSense.start();
+//    call SalSense.start();
     call AccelSense.start();
-    call PTempSense.start();
-    call PressSense.start();
-    call SpeedSense.start();
-    call MagSense.start();
+//    call PTempSense.start();
+//    call PressSense.start();
+//    call SpeedSense.start();
+//    call MagSense.start();
 
 //    call Regime.setRegime(3);
     call Leds.led0Off();

@@ -67,11 +67,11 @@ implementation {
       return;
     }
     temp_state = SNS_STATE_ADC_WAIT;
-    call Adc.request();
+    call Adc.reqConfigure();
   }
 
 
-  event void Adc.granted() {
+  event void Adc.configured() {
     uint16_t data;
 
     data = call Adc.readAdc();
@@ -100,12 +100,12 @@ implementation {
   const mm3_sensor_config_t temp_config =
     { .sns_id = SNS_ID_TEMP,
       .mux  = SMUX_TEMP,
+      .t_settle = 164,          /* ~ 5mS */
       .gmux = 0,
-      .t_powerup = 5
     };
 
 
-    async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
-      return &temp_config;
-    }
+  async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
+    return &temp_config;
+  }
 }

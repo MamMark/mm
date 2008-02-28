@@ -139,8 +139,8 @@ typedef nx_struct {
     nx_uint32_t sched_mis;
     nx_uint8_t  stamp_epoch;
     nx_uint32_t stamp_mis;
-    nx_uint16_t data[0];	/* still 16 bit aligned */
-} PACKED dt_sensor_data_nt;
+    nx_uint16_t data[0];
+} dt_sensor_data_nt;
 
 #define DT_HDR_SIZE_SENSOR_DATA 16
 
@@ -155,22 +155,22 @@ typedef nx_struct {
 #define BATT_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + BATT_PAYLOAD_SIZE)
 
 #define TEMP_PAYLOAD_SIZE 2
-#define TEMP_BLOCK_SIZE (sizeof(dt_sensor_data_pt) + TEMP_PAYLOAD_SIZE)
+#define TEMP_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + TEMP_PAYLOAD_SIZE)
 
 #define SAL_PAYLOAD_SIZE 4
-#define SAL_BLOCK_SIZE (sizeof(dt_sensor_data_pt) + SAL_PAYLOAD_SIZE)
+#define SAL_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + SAL_PAYLOAD_SIZE)
 
 #define ACCEL_PAYLOAD_SIZE 6
-#define ACCEL_BLOCK_SIZE (sizeof(dt_sensor_data_pt) + ACCEL_PAYLOAD_SIZE)
+#define ACCEL_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + ACCEL_PAYLOAD_SIZE)
 
 #define PRESS_PAYLOAD_SIZE 4
-#define PRESS_BLOCK_SIZE (sizeof(dt_sensor_data_pt) + PRESS_PAYLOAD_SIZE)
+#define PRESS_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + PRESS_PAYLOAD_SIZE)
 
 #define SPEED_PAYLOAD_SIZE 4
-#define SPEED_BLOCK_SIZE (sizeof(dt_sensor_data_pt) + SPEED_PAYLOAD_SIZE)
+#define SPEED_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + SPEED_PAYLOAD_SIZE)
 
 #define MAG_PAYLOAD_SIZE 6
-#define MAG_BLOCK_SIZE (sizeof(dt_sensor_data_pt) + MAG_PAYLOAD_SIZE)
+#define MAG_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + MAG_PAYLOAD_SIZE)
 
 
 typedef struct {

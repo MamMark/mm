@@ -58,30 +58,33 @@ typedef uint16_t sensor_data_t;
  * mm3_sensor_config_t is used to pass information from the
  * adc client to the adc subsystem about how to configure
  * the adc h/w for the sensor read being requested.
+ *
+ * sensor type is determined by its id.  >= SNS_DIFF_START
+ * the sensor is differential.
+ *
+ * mux:		smux value or dmux value dependent on sensor type
+ * t_settle:	settling time for sensor.  If 1st time powered up
+ *		is power up time.  Can also be smux switching time.
+ *
+ *		settling times are in 32KHz jiffies.  1 jiffy = ~30.5 uS.
+ * gmux:	gmux value for differential sensor.
  */
 
 typedef struct {
   uint8_t	sns_id;
   uint8_t	mux;
+  uint16_t	t_settle;
   uint8_t	gmux;
-  uint8_t	fill;
-  uint16_t	t_powerup;
 } mm3_sensor_config_t;
 
 
 /*
- * Various power up times.  All times in uSecs.
- * for the time being use millisecs
+ * Various power up times.  All times in 32KHz jiffies.
  */
-#ifdef notdef
-#define VREF_POWERUP_DELAY	1000
-#define VDIFF_POWERUP_DELAY	2000
-#define VDIFF_SWING_DELAY	1000
-#endif
 
-#define VREF_POWERUP_DELAY	1
-#define VDIFF_POWERUP_DELAY	2
-#define VDIFF_SWING_DELAY	1
+#define VREF_POWERUP_DELAY	33
+#define VDIFF_POWERUP_DELAY	66
+#define VDIFF_SWING_DELAY	33
 #define VDIFF_SWING_GAIN	GMUX_x2
 #define VDIFF_SWING_DMUX	DMUX_PRESS
 
@@ -145,61 +148,6 @@ enum {
   // last entry
   SENSOR_SENTINEL	= 9
 };
-
-
-#ifdef notdef
-const mm3_sensor_config_t sensor_configs[] = {
-  /* NONE */
-  { .sns_id = SNS_ID_NONE,
-    .mux_1 = 0, .mux_2 = 0, .mux_3 = 0,
-    .gmux = 0,  .t_powerup = 0 },
-
-  /* BATTERY */
-  { .sns_id = SNS_ID_BATT,
-    .mux_1 = SMUX_BATT, .mux_2 = 0, .mux_3 = 0,
-    .gmux = 0,  .t_powerup = 1 },
-
-  /* TEMP */
-  { .sns_id = SNS_ID_TEMP,
-    .mux_1 = SMUX_TEMP, .mux_2 = 0, .mux_3 = 0,
-    .gmux = 0,  .t_powerup = 5 },
-
-  /* SALINITY */
-  { .sns_id = SNS_ID_SALINITY,
-    .mux_1 = SMUX_SALINITY, .mux_2 = 0, .mux_3 = 0,
-    .gmux = 0,  .t_powerup = 1 },
-
-  /* ACCEL */
-  { .sns_id = SNS_ID_ACCEL,
-    .mux_1 = SMUX_ACCEL_X, .mux_2 = SMUX_ACCEL_Y, .mux_3 = SMUX_ACCEL_Z,
-    .gmux = 0,  .t_powerup = 1 },
-
-  /* PTEMP */
-  { .sns_id = SNS_ID_PTEMP,
-    .mux_1 = SMUX_PRESS_TEMP, .mux_2 = 0, .mux_3 = 0,
-    .gmux = 0,  .t_powerup = 5 },
-
-  /* PRESSURE */
-  { .sns_id = SNS_ID_PRESS,
-    .mux_1 = DMUX_PRESS, .mux_2 = 0, .mux_3 = 0,
-    .gmux = GMUX_x400,  .t_powerup = 1 },
-
-  /* SPEED */
-  { .sns_id = SNS_ID_SPEED,
-    .mux_1 = DMUX_SPEED_1, .mux_2 = DMUX_SPEED_2, .mux_3 = 0,
-    .gmux = GMUX_x400,  .t_powerup = 1 },
-
-  /* MAG */
-  { .sns_id = SNS_ID_MAG,
-    .mux_1 = DMUX_MAG_XY_A, .mux_2 = DMUX_MAG_XY_B, .mux_3 = DMUX_MAG_Z_A,
-    .gmux = GMUX_x400,  .t_powerup = 1 },
-
-  /* SENSOR_SENTINEL */
-  { .sns_id = SNS_ID_NONE,
-    .mux_1 = 0, .mux_2 = 0, .mux_3 = 0,
-    .gmux = 0,  .t_powerup = 0 },
-};
-#endif
 
 
 /* Test for GCC bug (bitfield access) - only version 3.2.3 is known to be stable */

@@ -1,10 +1,6 @@
 /*
  * Copyright (c) 2008, Eric B. Decker
  * All rights reserved.
- *
- * Based loosely on ArbiterP.nc (Kevin Klues & Phil Levis)
- * Copyright (c) 2004, Technische Universitat Berlin
- * All rights reserved.
  */
 
 #include "hardware.h"
@@ -20,7 +16,7 @@ module AdcP {
     interface AdcConfigure<const mm3_sensor_config_t*> as Config[uint8_t client_id];
     interface ResourceQueue as Queue;
     interface HplMM3Adc as HW;
-    interface Timer<TMilli> as PowerTimer;
+    interface Alarm<T32khz, uint16_t> as PowerAlarm;
   }
 }
 
@@ -50,14 +46,18 @@ implementation {
   uint8_t adc_state;
   uint8_t vref_state;
   uint8_t vdiff_state;
+  const mm3_sensor_config_t *m_config;
+  uint16_t value;
 
   command error_t Init.init() {
+    value = 0;
     adc_owner  = SNS_ID_NONE;
     req_client = SNS_ID_NONE;
     adc_state  = ADC_IDLE;
     vref_state = VREF_OFF;
     vdiff_state = VDIFF_OFF;
-    call PowerTimer.stop();	/* if still running make sure off */
+    m_config = NULL;
+    call PowerAlarm.stop();	/* if still running make sure off */
     call HW.power_vref(VREF_TURN_OFF);
     call HW.power_vdiff(VDIFF_TURN_OFF);
     return SUCCESS;
@@ -90,13 +90,13 @@ implementation {
    * while we were waiting for the task to run.
    */
   task void adcPower_Up_Down() {
-    uint32_t delay;
+    uint16_t delay;
     const mm3_sensor_config_t *config;
 
     if (adc_state != ADC_POWERING_DOWN &&
         adc_state != ADC_GRANTING) {
       /*
-       * not what we expected.  bitch
+       * not what we expected.  bitch.  Shouldn't be here.
        */
     }
 
@@ -108,8 +108,10 @@ implementation {
         vref_state = VREF_OFF;
         vdiff_state = VDIFF_OFF;
         call HW.power_vref(VREF_TURN_OFF);
-        call HW.power_vdiff(VDIFF_TURN_OFF);
-        adc_state = ADC_IDLE;
+        call HW.power_vdiff(VDIFF_TURN_OFF); 
+	adc_state = ADC_IDLE;
+	adc_owner = SNS_ID_NONE;
+	m_config = NULL;
         return;
       } else {
         /*
@@ -133,7 +135,7 @@ implementation {
 
       adc_owner = req_client;
       adc_state = ADC_POWER_WAIT;
-      config = call Config.getConfiguration[adc_owner]();
+      m_config = config = call Config.getConfiguration[adc_owner]();
 
       /*
        * Vref and Vdiff power state should either
@@ -161,33 +163,32 @@ implementation {
          */
       } while(0);
 
-      /*
-       * If the sensor is a differential then make
-       * sure Vdiff is on as well.  We could be
-       * powering the sensor up or just swinging it
-       * from a previous setting.  Different timing
-       * could be used.
-       */
       if (adc_owner < SNS_DIFF_START) {
         /*
          * single ended.  Set smux to appropriate
-         * value.  Turn Vdiff off if appropriate.
+         * value.  Always turn Vdiff off.
          *
          * Need to get sensor power up delay.  Pick
          * the longest of the potentially three values
          * and delay for that amount of time.
-         *
-         * sensor delay for diff sensors is handled
-         * in PowerTimer code after swing.
-         *
-         * Do we need uSec granularity?  Probably.
          */
         call HW.set_smux(config->mux);
-        if (config->t_powerup > delay)
-          delay = config->t_powerup;
+        call HW.power_vdiff(VDIFF_TURN_OFF);
+	vdiff_state = VDIFF_OFF;
+        if (config->t_settle > delay)
+          delay = config->t_settle;
       } else {
         /*
          * Differential.  Must power up or swing the amps
+         *
+	 * If the sensor is a differential then make
+	 * sure Vdiff is on as well.  We could be
+	 * powering the sensor up or just swinging it
+	 * from a previous setting.  Different timing
+	 * could be used.
+	 *
+         * sensor delay for diff sensors is handled
+         * in PowerAlarm code after swing.
          */
         do {
           if (vdiff_state == VDIFF_OFF) {
@@ -224,7 +225,7 @@ implementation {
       }
 
       call HW.power_up_sensor(adc_owner, 0);
-      call PowerTimer.startOneShot(delay);
+      call PowerAlarm.start(delay);
       return;
     }
 
@@ -242,12 +243,11 @@ implementation {
    * we have to switch to the actual gain and dmux
    * setting and let the whole thing settle.
    */
-  event void PowerTimer.fired() {
+  task void PowerAlarm_task() {
     const mm3_sensor_config_t *config;
 
     if (vref_state == VREF_POWER_WAIT)
       vref_state = VREF_ON;
-
     if (vdiff_state == VDIFF_SETTLING)
       vdiff_state = VDIFF_ON;
     if (vdiff_state == VDIFF_POWER_SWING ||
@@ -257,19 +257,32 @@ implementation {
        * the actual sensor path and allow the diff system to
        * settle.  Smux has already been set to SMUX_DMUX earlier.
        */
-      config = call Config.getConfiguration[adc_owner]();
+      config = m_config;
       call HW.set_dmux(config->mux);
       call HW.set_gmux(config->gmux);
       vdiff_state = VDIFF_SETTLING;
-      call PowerTimer.startOneShot(config->t_powerup);
+      call PowerAlarm.start(config->t_settle);
       return;
     }
     adc_state = ADC_BUSY;
-    signal AdcClient.granted[adc_owner]();
+    signal AdcClient.configured[adc_owner]();
   }
 
 
-  command error_t AdcClient.request[uint8_t client_id]() {
+  async event void PowerAlarm.fired() {
+    post PowerAlarm_task();
+  }
+
+
+  /*
+   * reqConfigure
+   *
+   * This is the only mechanism for a sensor driver to request
+   * access to the ADC.  It arbitrates access and when granted
+   * sets up the requested configuration.  This configuration is
+   * obtained by an upcall via Adc.Configure.
+   */
+  command error_t AdcClient.reqConfigure[uint8_t client_id]() {
     error_t rtn;
 
     atomic {
@@ -288,44 +301,73 @@ implementation {
     return SUCCESS;
   }
 
+
+  command void AdcClient.reconfigure[uint8_t client_id](const mm3_sensor_config_t *config) {
+    uint16_t delay;
+
+    if (adc_owner != client_id || adc_state != ADC_BUSY) {
+      /*
+       * bitch.  shouldn't be calling
+       */
+      return;
+    }
+    m_config = config;
+    delay = 0;
+    if (client_id < SNS_DIFF_START)
+      call HW.set_smux(config->mux);
+    else {
+      if (vdiff_state == VDIFF_ON) {
+	vdiff_state = VDIFF_SWING;
+	delay = VDIFF_SWING_DELAY;
+      } else {
+	vdiff_state = VDIFF_POWER_SWING;
+	delay = VDIFF_POWERUP_DELAY;
+      }
+      call HW.power_vdiff(VDIFF_TURN_ON);
+      call HW.set_smux(SMUX_DIFF);
+      call HW.set_dmux(VDIFF_SWING_DMUX);
+      call HW.set_gmux(VDIFF_SWING_GAIN);
+    }
+    if (config->t_settle > delay)
+      delay = config->t_settle;
+    call HW.power_up_sensor(adc_owner, 0);
+    call PowerAlarm.start(delay);
+    return;
+  }
+
+
   command error_t AdcClient.release[uint8_t client_id]() {
     /*
      * if not the owner, its something weird.  bitch
      */
-    if (adc_owner != client_id) {
+    if (adc_owner != client_id || adc_state != ADC_BUSY) {
       /*
        * bitch bitch bitch
        */
+      return FAIL;
     }
 
     call HW.power_down_sensor(client_id, 0);
-    atomic {
-      if (adc_state == ADC_BUSY && adc_owner == client_id) {
-        adc_owner = SNS_ID_NONE;
-	if (call Queue.isEmpty())
-	  adc_state = ADC_POWERING_DOWN;
-        else {
-          req_client = call Queue.dequeue();
-          adc_state = ADC_GRANTING;
-        }
-        post adcPower_Up_Down();
-	return SUCCESS;
-      }
+    adc_owner = SNS_ID_NONE;
+    if (call Queue.isEmpty())
+      adc_state = ADC_POWERING_DOWN;
+    else {
+      req_client = call Queue.dequeue();
+      adc_state = ADC_GRANTING;
     }
-    return FAIL;
+    post adcPower_Up_Down();
+    return SUCCESS;
   }
 
-//  command bool AdcClient.isOwner[uint8_t client_id]() {
-//    return FALSE;
-//  }
 
   command uint16_t AdcClient.readAdc[uint8_t client_id]() {
-    return 0;
+    return ++value;
   }
 
-  default event void AdcClient.granted[uint8_t id]() {}
 
-  const mm3_sensor_config_t defaultConfig = {SNS_ID_NONE, 0, 0, 0, 0};
+  default event void AdcClient.configured[uint8_t id]() {}
+
+  const mm3_sensor_config_t defaultConfig = {SNS_ID_NONE, 0, 0, 0};
   default async command const mm3_sensor_config_t *
     Config.getConfiguration[uint8_t id]() { 
       return &defaultConfig;

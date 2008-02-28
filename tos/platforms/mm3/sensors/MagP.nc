@@ -68,11 +68,11 @@ implementation {
       return;
     }
     mag_state = SNS_STATE_ADC_WAIT;
-    call Adc.request();
+    call Adc.reqConfigure();
   }
 
 
-  event void Adc.granted() {
+  event void Adc.configured() {
     uint16_t data;
 
     data = call Adc.readAdc();
@@ -98,15 +98,31 @@ implementation {
   }
 
 
-  const mm3_sensor_config_t mag_config =
+  const mm3_sensor_config_t mag_config_XY_A =
     { .sns_id = SNS_ID_MAG,
       .mux  = DMUX_MAG_XY_A,
+      .t_settle = 164,          /* ~ 5mS */
       .gmux = GMUX_x400,
-      .t_powerup = 5
     };
 
 
-    async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
-      return &mag_config;
-    }
+  const mm3_sensor_config_t mag_config_XY_B =
+    { .sns_id = SNS_ID_MAG,
+      .mux  = DMUX_MAG_XY_B,
+      .t_settle = 4,            /* ~ 120 uS */
+      .gmux = GMUX_x400,
+    };
+
+
+  const mm3_sensor_config_t mag_config_Z =
+    { .sns_id = SNS_ID_MAG,
+      .mux  = DMUX_MAG_Z_A,
+      .t_settle = 4,            /* ~ 120 uS */
+      .gmux = GMUX_x400,
+    };
+
+
+  async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
+    return &mag_config_XY_A;
+  }
 }

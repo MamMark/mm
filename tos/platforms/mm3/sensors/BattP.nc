@@ -69,14 +69,13 @@ implementation {
       return;
     }
     batt_state = SNS_STATE_ADC_WAIT;
-    call Adc.request();
+    call Adc.reqConfigure();
   }
 
 
-  event void Adc.granted() {
+  event void Adc.configured() {
     uint16_t data;
     dt_sensor_data_nt batt_data;
-    uint8_t *bp;
 
     data = call Adc.readAdc();
     batt_state = SNS_STATE_PERIOD_WAIT;
@@ -89,9 +88,7 @@ implementation {
     batt_data.stamp_epoch = 0;
     batt_data.stamp_mis = 0;
     batt_data.data[0] = data;
-    bp = (uint8_t *)(&batt_data);
     call Collect.collect((uint8_t *)(&batt_data), BATT_BLOCK_SIZE);
-    call Collect.collect(bp, BATT_BLOCK_SIZE);
   }
 
 
@@ -115,12 +112,11 @@ implementation {
   const mm3_sensor_config_t batt_config =
     { .sns_id = SNS_ID_BATT,
       .mux  = SMUX_BATT,
+      .t_settle = 164,           /* ~ 5mS */
       .gmux = 0,
-      .t_powerup = 5
     };
 
-
-    async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
-      return &batt_config;
-    }
+  async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
+    return &batt_config;
+  }
 }

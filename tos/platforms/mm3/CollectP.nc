@@ -18,6 +18,7 @@ module CollectP {
 implementation {
   dc_control_t dcc;
   uint8_t buf[512];
+  uint16_t num_calls;
 
   uint8_t *ms_get_buffer() {
     return buf;
@@ -32,6 +33,7 @@ implementation {
     dcc.remaining = 0;
     dcc.seq = 0;
     dcc.majik_b = DC_MAJIK_B;
+    num_calls = 0;
     return SUCCESS;
   }
 
@@ -70,11 +72,14 @@ implementation {
   command void Collect.collect(uint8_t *data, uint16_t dlen) {
     uint16_t num_copied, i;
 
+    return;
     /*
      * data length should also be 1st two bytes.
      * followed by dtype.  Minimum length is 3.
+     * network order is big endian.
      */
-    num_copied = (data[1] << 8) + data[0];
+    num_calls++;
+    num_copied = (data[0] << 8) + data[1];
 
 #ifdef notdef
     if (num_copied != dlen || data[2] >= DT_MAX || dlen < 3)

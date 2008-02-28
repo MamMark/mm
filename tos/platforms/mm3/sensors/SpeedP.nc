@@ -67,11 +67,11 @@ implementation {
       return;
     }
     speed_state = SNS_STATE_ADC_WAIT;
-    call Adc.request();
+    call Adc.reqConfigure();
   }
 
 
-  event void Adc.granted() {
+  event void Adc.configured() {
     uint16_t data;
 
     data = call Adc.readAdc();
@@ -97,15 +97,23 @@ implementation {
   }
 
 
-  const mm3_sensor_config_t speed_config =
+  const mm3_sensor_config_t speed_config_1 =
     { .sns_id = SNS_ID_SPEED,
       .mux  = DMUX_SPEED_1,
+      .t_settle = 164,          /* ~ 5mS */
       .gmux = GMUX_x400,
-      .t_powerup = 5
     };
 
 
-    async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
-      return &speed_config;
-    }
+  const mm3_sensor_config_t speed_config_2 =
+    { .sns_id = SNS_ID_SPEED,
+      .mux  = DMUX_SPEED_2,
+      .t_settle = 4,		/* ~ 120 uS */
+      .gmux = GMUX_x400,
+    };
+
+
+  async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
+    return &speed_config_1;
+  }
 }

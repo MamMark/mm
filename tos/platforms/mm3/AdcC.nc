@@ -21,6 +21,6 @@ implementation {
   components new RoundRobinResourceQueueC(SENSOR_SENTINEL) as RR;
   AdcP.Queue -> RR;
 
-  components new TimerMilliC() as PT;
-  AdcP.PowerTimer -> PT;
+  components new Alarm32khzC() as PA;
+  AdcP.PowerAlarm -> PA;
 }

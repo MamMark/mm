@@ -22,4 +22,7 @@ implementation {
 
   components AdcP;
   AccelP.AdcConfigure <- AdcP.Config[SNS_ID_ACCEL];
+
+  components CollectC;
+  AccelP.Collect -> CollectC;
 }
