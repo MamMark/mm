@@ -37,7 +37,7 @@ implementation {
 	  1000UL,   1000UL,	1000UL },
 
 
-    {     0UL,	    1000UL,	0UL,	    0UL,    0UL,    0UL,	/* 3 - batt only */
+    {     0UL,	    1000UL,	0UL,	    0UL,    1000UL,    0UL,	/* 3 - batt and accel only */
 	  0UL,	    0UL,	0UL    },
 
     {     0UL,      1000UL,	1001UL,	    1002UL, 1003UL, 1004UL,	/* 4 - testing */
@@ -46,7 +46,7 @@ implementation {
 
 
   command error_t Init.init() {
-    sns_regime = 4;
+    sns_regime = 3;
     return SUCCESS;
   }
 

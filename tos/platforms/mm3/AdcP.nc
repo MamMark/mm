@@ -16,7 +16,11 @@ module AdcP {
     interface AdcConfigure<const mm3_sensor_config_t*> as Config[uint8_t client_id];
     interface ResourceQueue as Queue;
     interface HplMM3Adc as HW;
+#ifdef USE_TIMERS
+    interface Timer<TMilli> as PowerTimer;
+#else
     interface Alarm<T32khz, uint16_t> as PowerAlarm;
+#endif
   }
 }
 
@@ -57,7 +61,11 @@ implementation {
     vref_state = VREF_OFF;
     vdiff_state = VDIFF_OFF;
     m_config = NULL;
+#ifdef USE_TIMERS
+    call PowerTimer.stop();	/* if still running make sure off */
+#else
     call PowerAlarm.stop();	/* if still running make sure off */
+#endif
     call HW.power_vref(VREF_TURN_OFF);
     call HW.power_vdiff(VDIFF_TURN_OFF);
     return SUCCESS;
@@ -225,7 +233,11 @@ implementation {
       }
 
       call HW.power_up_sensor(adc_owner, 0);
+#ifdef USE_TIMERS
+      call PowerTimer.startOneShot(delay);
+#else
       call PowerAlarm.start(delay);
+#endif
       return;
     }
 
@@ -257,11 +269,16 @@ implementation {
        * the actual sensor path and allow the diff system to
        * settle.  Smux has already been set to SMUX_DMUX earlier.
        */
-      config = m_config;
+//      config = m_config;
+      m_config = config = call Config.getConfiguration[adc_owner]();
       call HW.set_dmux(config->mux);
       call HW.set_gmux(config->gmux);
       vdiff_state = VDIFF_SETTLING;
+#ifdef USE_TIMERS
+      call PowerTimer.startOneShot(config->t_settle);
+#else
       call PowerAlarm.start(config->t_settle);
+#endif
       return;
     }
     adc_state = ADC_BUSY;
@@ -269,7 +286,11 @@ implementation {
   }
 
 
+#ifdef USE_TIMERS
+  event void PowerTimer.fired() {
+#else
   async event void PowerAlarm.fired() {
+#endif
     post PowerAlarm_task();
   }
 
@@ -311,7 +332,8 @@ implementation {
        */
       return;
     }
-    m_config = config;
+    m_config = config = call Config.getConfiguration[adc_owner]();
+//    m_config = config;
     delay = 0;
     if (client_id < SNS_DIFF_START)
       call HW.set_smux(config->mux);
@@ -331,7 +353,11 @@ implementation {
     if (config->t_settle > delay)
       delay = config->t_settle;
     call HW.power_up_sensor(adc_owner, 0);
+#ifdef USE_TIMERS
+    call PowerTimer.startOneShot(delay);
+#else
     call PowerAlarm.start(delay);
+#endif
     return;
   }
 

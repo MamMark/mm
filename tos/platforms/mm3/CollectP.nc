@@ -72,7 +72,6 @@ implementation {
   command void Collect.collect(uint8_t *data, uint16_t dlen) {
     uint16_t num_copied, i;
 
-    return;
     /*
      * data length should also be 1st two bytes.
      * followed by dtype.  Minimum length is 3.

@@ -62,6 +62,7 @@ implementation {
 
 
   command void HW.set_dmux(uint8_t val) {
+    return;
     mmP5out.u8_inhibit = 1;
     mmP5out.u12_inhibit = 1;
     mmP5out.d_mux = (val & 3);
@@ -78,6 +79,7 @@ implementation {
 
 
   command void HW.set_smux(uint8_t val) {
+    return;
     mmP5out.s_mux = val;
   }
 
@@ -88,6 +90,7 @@ implementation {
 
 
   command void HW.set_gmux(uint8_t val) {
+    return;
     mmP6out.g_mux = (val & 3);
   }
 

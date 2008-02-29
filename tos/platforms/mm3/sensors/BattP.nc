@@ -25,6 +25,7 @@ module BattP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface Collect;
+    interface Leds;
   }
 }
 implementation {
@@ -68,6 +69,7 @@ implementation {
       call StdControl.start();
       return;
     }
+    call Leds.led0Toggle();
     batt_state = SNS_STATE_ADC_WAIT;
     call Adc.reqConfigure();
   }
@@ -112,7 +114,8 @@ implementation {
   const mm3_sensor_config_t batt_config =
     { .sns_id = SNS_ID_BATT,
       .mux  = SMUX_BATT,
-      .t_settle = 164,           /* ~ 5mS */
+//      .t_settle = 1640,           /* ~ 5mS */
+      .t_settle = 5,           /* ~ 5mS */
       .gmux = 0,
     };
 

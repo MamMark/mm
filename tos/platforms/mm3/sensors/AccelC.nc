@@ -25,4 +25,7 @@ implementation {
 
   components CollectC;
   AccelP.Collect -> CollectC;
+
+  components LedsC;
+  AccelP.Leds -> LedsC;
 }

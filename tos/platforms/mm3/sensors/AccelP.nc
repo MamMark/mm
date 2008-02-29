@@ -34,6 +34,7 @@ module AccelP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface Collect;
+    interface Leds;
   }
 }
 implementation {
@@ -77,6 +78,7 @@ implementation {
       call StdControl.start();
       return;
     }
+    call Leds.led1Toggle();
     accel_state = SNS_STATE_ADC_WAIT;
     call Adc.reqConfigure();
   }
@@ -155,7 +157,8 @@ implementation {
   const mm3_sensor_config_t accel_config_X =
     { .sns_id = SNS_ID_ACCEL,
       .mux  = SMUX_ACCEL_X,
-      .t_settle = 164,          /* ~ 5mS */
+//      .t_settle = 164,          /* ~ 5mS */
+      .t_settle = 4,          /* ~ 5mS */
       .gmux = 0,
     };
 

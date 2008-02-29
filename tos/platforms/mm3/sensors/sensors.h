@@ -82,9 +82,9 @@ typedef struct {
  * Various power up times.  All times in 32KHz jiffies.
  */
 
-#define VREF_POWERUP_DELAY	33
-#define VDIFF_POWERUP_DELAY	66
-#define VDIFF_SWING_DELAY	33
+#define VREF_POWERUP_DELAY	330
+#define VDIFF_POWERUP_DELAY	660
+#define VDIFF_SWING_DELAY	330
 #define VDIFF_SWING_GAIN	GMUX_x2
 #define VDIFF_SWING_DMUX	DMUX_PRESS
 

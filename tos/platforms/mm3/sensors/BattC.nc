@@ -25,4 +25,7 @@ implementation {
 
   components CollectC;
   BattP.Collect -> CollectC;
+
+  components LedsC;
+  BattP.Leds -> LedsC;
 }
