@@ -6,88 +6,8 @@
 #ifndef SENSORS_H
 #define SENSORS_H
 
-
-enum {
-    DMUX_MAG_XY_B	= 0,
-    DMUX_MAG_Z_A	= 1,
-    DMUX_MAG_XY_A	= 2,
-    DMUX_SPEED_1	= 4,
-    DMUX_SPEED_2	= 5,
-    DMUX_PRESS		= 6
-};
-
-
-enum {
-    SMUX_ACCEL_Y	= 0,
-    SMUX_ACCEL_X	= 1,
-    SMUX_SALINITY	= 2,
-    SMUX_PRESS_TEMP	= 3,
-    SMUX_TEMP		= 4,
-    SMUX_DIFF		= 5,
-    SMUX_ACCEL_Z	= 6,
-    SMUX_BATT		= 7
-};
-
-
-enum {
-    GMUX_x2		= 0,
-    GMUX_x20		= 1,
-    GMUX_x200		= 2,
-    GMUX_x400		= 3
-};
-
-
-/*
- * Sensor States (used to observe changes)
- */
-enum {
-    SNS_STATE_OFF		= 0,
-    SNS_STATE_PERIOD_WAIT	= 1,
-    SNS_STATE_ADC_WAIT		= 2,
-    SNS_STATE_PART_2_WAIT	= 3,
-    SNS_STATE_PART_3_WAIT	= 4,
-};
-
 typedef uint8_t  sensor_id_t;
 typedef uint16_t sensor_data_t;
-
-
-#define SNS_MAX_REGIME		5
-
-/*
- * mm3_sensor_config_t is used to pass information from the
- * adc client to the adc subsystem about how to configure
- * the adc h/w for the sensor read being requested.
- *
- * sensor type is determined by its id.  >= SNS_DIFF_START
- * the sensor is differential.
- *
- * mux:		smux value or dmux value dependent on sensor type
- * t_settle:	settling time for sensor.  If 1st time powered up
- *		is power up time.  Can also be smux switching time.
- *
- *		settling times are in 32KHz jiffies.  1 jiffy = ~30.5 uS.
- * gmux:	gmux value for differential sensor.
- */
-
-typedef struct {
-  uint8_t	sns_id;
-  uint8_t	mux;
-  uint16_t	t_settle;
-  uint8_t	gmux;
-} mm3_sensor_config_t;
-
-
-/*
- * Various power up times.  All times in 32KHz jiffies.
- */
-
-#define VREF_POWERUP_DELAY	330
-#define VDIFF_POWERUP_DELAY	660
-#define VDIFF_SWING_DELAY	330
-#define VDIFF_SWING_GAIN	GMUX_x2
-#define VDIFF_SWING_DMUX	DMUX_PRESS
-
 
 /* MM3 Sensors
 
@@ -110,55 +30,91 @@ typedef struct {
    Singleton sensors include Battery and Temp.
 
    Sequenced sensors include Salinity (2 x 16), Accel (3 x 16),
-   Pressure (2 x 16, pressure and pressure temp), Speed (2 x 16),
+   Pressure (2 x 16, pressure and pressure temp), Velocity (2 x 16),
    and Magnatometer (3 x 16).
 */
 
 enum {
   SNS_ID_NONE		= 0,
-  SNS_ID_BATT		= 1,
-  SNS_ID_TEMP		= 2,
-  SNS_ID_SAL		= 3,
-
-  /* accel_x, _y, and _z */
-  SNS_ID_ACCEL		= 4,
-  SNS_ID_PTEMP		= 5,
+  SNS_ID_BATT		= 1,	// Battery Sensor
+  SNS_ID_TEMP		= 2,	// Temperature Sensor
+  SNS_ID_SAL		= 3,	// Salinity sensor (one, two)
+  SNS_ID_ACCEL		= 4,	// Accelerometer (x,y,z)
+  SNS_ID_PTEMP		= 5,	// Temperature sensor
 
   /* Starting with Press, the remaining
      sensors are differential sensors
   */
-
+  SNS_ID_PRESS		= 6,	// Pressure (temp, pressure)
+  SNS_ID_SPEED		= 7,	// Velocity (x,y)
+  SNS_ID_MAG		= 8,    // Magnetometer (x,y,z)
+};
 #define SNS_DIFF_START		6
+#define SNS_MAX_ID			8
+#define MM3_NUM_SENSORS		9
 
-  /* press temp and pressure */
-  SNS_ID_PRESS		= 6,
-
-  /* speed_1 and speed_2 */
-  SNS_ID_SPEED		= 7,
-
-  /* mag_xy_a, xy_b, z_a */
-  SNS_ID_MAG		= 8,
-#define SNS_PART_MAG_Z		1
-
-#define SNS_ID_FIRST		1
-#define SNS_ID_LAST		8
-
-#define SNS_REG_ID_LIMIT	9
-
-  // last entry
-  SENSOR_SENTINEL	= 9
+/*
+ * Mux setings to read from sensors
+ */
+enum {
+  DMUX_MAG_XY_B		= 0,
+  DMUX_MAG_Z_A		= 1,
+  DMUX_MAG_XY_A		= 2,
+  DMUX_SPEED_1		= 4,
+  DMUX_SPEED_2		= 5,
+  DMUX_PRESS		= 6
+};
+enum {
+  SMUX_ACCEL_Y		= 0,
+  SMUX_ACCEL_X		= 1,
+  SMUX_SALINITY		= 2,
+  SMUX_PRESS_TEMP	= 3,
+  SMUX_TEMP			= 4,
+  SMUX_DIFF			= 5,
+  SMUX_ACCEL_Z		= 6,
+  SMUX_BATT			= 7
+};
+enum {
+  GMUX_x2			= 0,
+  GMUX_x20			= 1,
+  GMUX_x200			= 2,
+  GMUX_x400			= 3
 };
 
+/*
+ * Various power up times.  All times in 32KHz jiffies.
+ */
 
-/* Test for GCC bug (bitfield access) - only version 3.2.3 is known to be stable */
-// TODO: check whether this is still relevant...
-#define GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__ * 10 + __GNUC_PATCHLEVEL__)
-#if GCC_VERSION == 332
-#error "The msp430-gcc version (3.3.2) contains a bug which results in false accessing \
-of bitfields in structs and makes MSP430ADC12M.nc fail ! Use version 3.2.3 instead."
-#elif GCC_VERSION != 323
-#warning "This version of msp430-gcc might contain a bug which results in false accessing \
-of bitfields in structs. Use version 3.2.3 instead."
-#endif  
+#define VREF_POWERUP_DELAY	330
+#define VDIFF_POWERUP_DELAY	660
+#define VDIFF_SWING_DELAY	330
+#define VDIFF_SWING_GAIN	GMUX_x2
+#define VDIFF_SWING_DMUX	DMUX_PRESS
+
+/*
+ * mm3_sensor_config_t is used to pass information from the
+ * adc client to the adc subsystem about how to configure
+ * the adc h/w for the sensor read being requested.
+ *
+ * sensor type is determined by its id.  >= SNS_DIFF_START
+ * the sensor is differential.
+ *
+ * mux:		smux value or dmux value dependent on sensor type
+ * t_settle:	settling time for sensor.  If 1st time powered up
+ *		is power up time.  Can also be smux switching time.
+ *
+ *		settling times are in 32KHz jiffies.  1 jiffy = ~30.5 uS.
+ * gmux:	gmux value for differential sensor.
+ */
+
+typedef struct {
+  uint8_t	sns_id;			// Sensor ID
+  uint8_t	mux;			// Smux or Dmux value
+  uint16_t	t_settle;		// Setting time for configuration to complete
+  uint8_t	gmux;			// gmux value if differential sensor (i.e. sns_id >= 6)
+} mm3_sensor_config_t;
+
+#include "accel.h"
+#include "sd_blocks.h"
 
 #endif

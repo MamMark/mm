@@ -19,6 +19,7 @@ implementation {
 
   components AdcC;
   AccelP.Adc -> AdcC.Adc[SNS_ID_ACCEL];
+  AdcC.SensorPowerControl[SNS_ID_ACCEL] -> AccelP;
 
   components AdcP;
   AccelP.AdcConfigure <- AdcP.Config[SNS_ID_ACCEL];

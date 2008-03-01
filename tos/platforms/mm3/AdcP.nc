@@ -14,6 +14,7 @@ module AdcP {
   }
   uses {
     interface AdcConfigure<const mm3_sensor_config_t*> as Config[uint8_t client_id];
+    interface StdControl as SensorPowerControl[uint8_t id];
     interface ResourceQueue as Queue;
     interface HplMM3Adc as HW;
 #ifdef USE_TIMERS
@@ -61,11 +62,6 @@ implementation {
     vref_state = VREF_OFF;
     vdiff_state = VDIFF_OFF;
     m_config = NULL;
-#ifdef USE_TIMERS
-    call PowerTimer.stop();	/* if still running make sure off */
-#else
-    call PowerAlarm.stop();	/* if still running make sure off */
-#endif
     call HW.power_vref(VREF_TURN_OFF);
     call HW.power_vdiff(VDIFF_TURN_OFF);
     return SUCCESS;
@@ -135,7 +131,7 @@ implementation {
     }
 
     if (adc_state == ADC_GRANTING) {
-      if (!req_client || req_client >= SENSOR_SENTINEL) {
+      if (!req_client || req_client >= MM3_NUM_SENSORS) {
         /*
          * bad, bad sensor.  bitch
          */
@@ -232,7 +228,7 @@ implementation {
         call HW.set_gmux(VDIFF_SWING_GAIN);
       }
 
-      call HW.power_up_sensor(adc_owner, 0);
+      call SensorPowerControl.start[adc_owner]();
 #ifdef USE_TIMERS
       call PowerTimer.startOneShot(delay);
 #else
@@ -352,7 +348,7 @@ implementation {
     }
     if (config->t_settle > delay)
       delay = config->t_settle;
-    call HW.power_up_sensor(adc_owner, 0);
+    call SensorPowerControl.start[adc_owner]();
 #ifdef USE_TIMERS
     call PowerTimer.startOneShot(delay);
 #else
@@ -373,7 +369,7 @@ implementation {
       return FAIL;
     }
 
-    call HW.power_down_sensor(client_id, 0);
+    call SensorPowerControl.stop[client_id]();
     adc_owner = SNS_ID_NONE;
     if (call Queue.isEmpty())
       adc_state = ADC_POWERING_DOWN;
@@ -398,4 +394,6 @@ implementation {
     Config.getConfiguration[uint8_t id]() { 
       return &defaultConfig;
   }
+  default command error_t SensorPowerControl.start[uint8_t id]() { return SUCCESS; }
+  default command error_t SensorPowerControl.stop[uint8_t id]() { return SUCCESS; }
 }

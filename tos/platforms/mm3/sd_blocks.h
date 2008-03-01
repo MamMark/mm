@@ -139,7 +139,7 @@ typedef nx_struct {
     nx_uint32_t sched_mis;
     nx_uint8_t  stamp_epoch;
     nx_uint32_t stamp_mis;
-    nx_uint16_t data[0];
+    nx_uint16_t data[3];
 } dt_sensor_data_nt;
 
 #define DT_HDR_SIZE_SENSOR_DATA 16

@@ -24,7 +24,7 @@
  *
  * @author Eric B. Decker
  */
-
+ 
 interface HplMM3Adc {
 
   /*
@@ -40,18 +40,6 @@ interface HplMM3Adc {
   command bool isVrefPowered();
   command bool isVdiffPowered();
   command void toggleSal();
-
-  /*
-   * Power up a sensor
-   * @param sensor to power up
-   */
-  command void power_up_sensor(uint8_t sensor, uint8_t part);
-
-  /*
-   * Power down a sensor
-   * @param sensor to power down
-   */
-  command void power_down_sensor(uint8_t sensor, uint8_t part);
 
   /*
    * Returns the current Diff Mux control value

@@ -11,12 +11,8 @@
  */
 
 interface Regime {
-
   command uint8_t getCurRegime();
-
   command uint32_t sensorPeriod(uint8_t sns_id);
-
   command error_t setRegime(uint8_t regime);
-
   event void regimeChange();
 }

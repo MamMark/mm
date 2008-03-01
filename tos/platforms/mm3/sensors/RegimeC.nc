@@ -3,11 +3,12 @@
  * All rights reserved.
  */
 
+#include "regime.h"
+
 configuration RegimeC {
   provides interface Regime;
 }
 implementation {
-  components MainC, RegimeP;
-  MainC.SoftwareInit -> RegimeP;
+  components RegimeP;
   Regime = RegimeP;
 }

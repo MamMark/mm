@@ -45,12 +45,6 @@ implementation {
   command void HW.toggleSal() {
   }
 
-  command void HW.power_up_sensor(uint8_t sensor, uint8_t part) {
-  }
-
-  command void HW.power_down_sensor(uint8_t sensor, uint8_t part) {
-  }
-
   command uint8_t HW.get_dmux() {
     uint8_t temp;
 
