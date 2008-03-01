@@ -46,7 +46,7 @@ implementation {
 
   command error_t Init.init() {
     period = 0;
-    accel_state = ACCEL_STATE_IDLE;
+    accel_state = ACCEL_STATE_OFF;
     err_overruns = 0;
     return SUCCESS;
   }
@@ -75,55 +75,59 @@ implementation {
     call Adc.reqConfigure();
   }
 
+
   event void Adc.configured() {
-    dt_sensor_data_nt accel_data;  
+    uint8_t accel_data[ACCEL_BLOCK_SIZE];
+    dt_sensor_data_nt *adp;
   
     switch(accel_state) {
-    case ACCEL_STATE_READ_X:
-	  data[0] = call Adc.readAdc();
-	  accel_state = ACCEL_STATE_READ_Y;
-	  call Adc.reconfigure(&accel_config_Y);
-	  return;
+      case ACCEL_STATE_READ_X:
+	data[0] = call Adc.readAdc();
+	accel_state = ACCEL_STATE_READ_Y;
+	call Adc.reconfigure(&accel_config_Y);
+	return;
 
-    case ACCEL_STATE_READ_Y:
-	  data[1] = call Adc.readAdc();
-	  accel_state = ACCEL_STATE_READ_Z;
-	  call Adc.reconfigure(&accel_config_Z);
-	  return;
+      case ACCEL_STATE_READ_Y:
+	data[1] = call Adc.readAdc();
+	accel_state = ACCEL_STATE_READ_Z;
+	call Adc.reconfigure(&accel_config_Z);
+	return;
 
-    case ACCEL_STATE_READ_Z:
-	  data[2] = call Adc.readAdc();
-	  accel_state = ACCEL_STATE_IDLE;
-	  call Adc.release();
-	  break;
+      case ACCEL_STATE_READ_Z:
+	data[2] = call Adc.readAdc();
+	accel_state = ACCEL_STATE_IDLE;
+	call Adc.release();
+	break;
 
-    default:
-	  return;
+      default:
+	return;
     }
-    
-    accel_data.len = ACCEL_BLOCK_SIZE;
-    accel_data.dtype = DT_SENSOR_DATA;
-    accel_data.id = SNS_ID_ACCEL;
-    accel_data.sched_epoch = 0;
-    accel_data.sched_mis = 0;
-    accel_data.stamp_epoch = 0;
-    accel_data.stamp_mis = 0;
-    accel_data.data[0] = data[0];
-    accel_data.data[1] = data[1];
-    accel_data.data[2] = data[2];
-    call Collect.collect((uint8_t *)(&accel_data), ACCEL_BLOCK_SIZE);
+
+    adp = (dt_sensor_data_nt *) accel_data;
+    adp->len = ACCEL_BLOCK_SIZE;
+    adp->dtype = DT_SENSOR_DATA;
+    adp->id = SNS_ID_ACCEL;
+    adp->sched_epoch = 0;
+    adp->sched_mis = 0;
+    adp->stamp_epoch = 0;
+    adp->stamp_mis = 0;
+    adp->data[0] = data[0];
+    adp->data[1] = data[1];
+    adp->data[2] = data[2];
+    call Collect.collect(accel_data, ACCEL_BLOCK_SIZE);
   }
 
   event void RegimeCtrl.regimeChange() {
     uint32_t new_period;
 
     call PeriodTimer.stop();
+    if (call Adc.isOwner())
+      call Adc.release();
     new_period = call RegimeCtrl.sensorPeriod(SNS_ID_ACCEL);
-    if (new_period == 0) {
-      accel_state = ACCEL_STATE_IDLE;
-	  call Adc.release();
-    } 
+    if (new_period == 0)
+      accel_state = ACCEL_STATE_OFF;
     else if (new_period != period) {
+      accel_state = ACCEL_STATE_IDLE;
       period = new_period;
       call PeriodTimer.startPeriodic(period);
     }

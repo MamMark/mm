@@ -63,13 +63,20 @@ enum {
  * DT_HDR_SIZE_<stuff> defines how large any header is
  * prior to variable length data.  It is used for redundancy
  * checks.
+ *
+ * Many of the data blocks defined below use data[0].  This
+ * indicates that data is variable in length.  When using
+ * these structures the correct size must be allocated (usually
+ * on the stack since we don't use malloc) and then the structure
+ * is cast to a dt_<type>_nt pointer.  <something>_BLOCK_SIZE is
+ * used to say how much data the whole structure needs to take.
  */
 
 typedef nx_struct {
     nx_uint16_t len;
     nx_uint8_t  dtype;
     nx_uint8_t  fill;
-} dt_ignore_pt;
+} dt_ignore_nt;
 
 #define DT_HDR_SIZE_IGNORE 4
 
@@ -79,7 +86,7 @@ typedef nx_struct {
     nx_uint8_t  dtype;
     nx_uint8_t  fill;
     nx_uint8_t  data[0];
-} dt_config_pt;
+} dt_config_nt;
 
 #define DT_HDR_SIZE_CONFIG 4
 
@@ -91,7 +98,7 @@ typedef nx_struct {
     nx_uint8_t  stamp_epoch;
     nx_uint32_t stamp_mis;
     nx_uint32_t sync_majik;
-} PACKED dt_sync_pt;
+} PACKED dt_sync_nt;
 
 #define DT_HDR_SIZE_SYNC 14
 #define SYNC_MAJIK		0xdedf00ef
@@ -111,7 +118,7 @@ typedef nx_struct {
     nx_uint32_t gps_tow;		/* little endian, single float */
     nx_uint16_t gps_week;		/* little endian, uint16_t */
     nx_uint32_t gps_offset;		/* little endian, single float */
-} PACKED dt_gps_time_pt;
+} PACKED dt_gps_time_nt;
 
 #define DT_HDR_SIZE_GPS_TIME 20
 
@@ -126,7 +133,7 @@ typedef nx_struct {
     nx_uint32_t stamp_mis;
     nx_uint32_t gps_lat;		/* little endian, single float */
     nx_uint32_t gps_long;		/* little endian, single float */
-} PACKED dt_gps_pos_pt;
+} PACKED dt_gps_pos_nt;
 
 #define DT_HDR_SIZE_GPS_POS 18
 
@@ -139,16 +146,18 @@ typedef nx_struct {
     nx_uint32_t sched_mis;
     nx_uint8_t  stamp_epoch;
     nx_uint32_t stamp_mis;
-    nx_uint16_t data[3];
+    nx_uint16_t data[0];
 } dt_sensor_data_nt;
 
 #define DT_HDR_SIZE_SENSOR_DATA 16
 
 
 /*
- * Payload_size is how many bytes needed in addition to the dt_nx_uint16_t
- * struct.   Block_Size is total bytes used by the dt_sensor_data header
- * and any payload.  Payloads use 2 bytes per datam (16 bit values).
+ * Payload_size is how many bytes are needed in addition to the
+ * dt_sensor_data_nt struct.   Block_Size is total bytes used by
+ * the dt_sensor_data_nt header and any payload.  Payloads use 2
+ * bytes per datam (16 bit values).  <sensor>_BLOCK_SIZE is what
+ * needs to allocated.
  */
 
 #define BATT_PAYLOAD_SIZE 2
@@ -185,14 +194,14 @@ typedef struct {
     nx_uint8_t       mask_id;
     nx_uint8_t	     fill_a;
     nx_uint16_t      data[0];
-} dt_sensor_set_pt;
+} dt_sensor_set_nt;
 
 
 typedef struct {
     nx_uint16_t	     len;
     nx_uint8_t	     dtype;
     nx_uint8_t	     data[0];
-} dt_test_pt;
+} dt_test_nt;
 
 
 typedef struct {
@@ -206,7 +215,7 @@ typedef struct {
     nx_uint16_t	     year;
     nx_uint16_t	     cal_string_len;
     nx_uint8_t	     data[0];
-} PACKED dt_cal_string_pt;
+} PACKED dt_cal_string_nt;
 
 
 typedef struct {
@@ -215,7 +224,7 @@ typedef struct {
     nx_uint8_t  stamp_epoch;
     nx_uint32_t stamp_mis;
     nx_uint8_t	data[0];
-} PACKED dt_gps_raw_pt;
+} PACKED dt_gps_raw_nt;
 
 #define DT_HDR_SIZE_GPS_RAW 10
 
@@ -226,7 +235,7 @@ typedef struct {
     nx_uint8_t	major;
     nx_uint8_t	minor;
     nx_uint8_t	tweak;
-} PACKED dt_version_pt;
+} PACKED dt_version_nt;
 
 #define DT_HDR_SIZE_VERSION 6
 

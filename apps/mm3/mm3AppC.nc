@@ -14,7 +14,11 @@ implementation {
   
   components LedsC;
   mm3C.Leds -> LedsC;
-  
-  //Just by including this component it will start when regimeChange() is signaled
-  components AccelC;  
+
+  /*
+   * Include sensor components.  No need to wire.  They will
+   * start when regimeChange() is signalled.
+   */
+  //  components BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
+  components AccelC;
 }

@@ -12,10 +12,11 @@
  * Sensor States (used to observe changes)
  */
 enum {
-    ACCEL_STATE_IDLE		= 0,
-    ACCEL_STATE_READ_X		= 1,
-    ACCEL_STATE_READ_Y		= 2,
-    ACCEL_STATE_READ_Z		= 3,
+    ACCEL_STATE_OFF		= 0,
+    ACCEL_STATE_IDLE		= 1,
+    ACCEL_STATE_READ_X		= 2,
+    ACCEL_STATE_READ_Y		= 3,
+    ACCEL_STATE_READ_Z		= 4,
 };
 
 /*

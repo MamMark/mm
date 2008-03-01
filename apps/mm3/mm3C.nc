@@ -18,11 +18,19 @@ implementation {
   command error_t Init.init() {
     return SUCCESS;
   }
+
+
   event void Boot.booted() {
-    call Regime.setRegime(4);
+    /*
+     * set the initial regime.  This will also
+     * signal all the sensors and start them off.
+     */
+    call Regime.setRegime(3);
     call Leds.led0Off();
     call Leds.led1Off();
     call Leds.led2Off();
   }
+
+
   event void Regime.regimeChange() {}
 }

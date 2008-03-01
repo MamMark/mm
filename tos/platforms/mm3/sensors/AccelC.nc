@@ -1,4 +1,4 @@
-/* -*- mode:c; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+/*
  * Copyright (c) 2008, Eric B. Decker
  * All rights reserved.
  */
@@ -8,6 +8,7 @@
 configuration AccelC {
   provides interface StdControl;
 }
+
 implementation {
   components MainC, AccelP;
   MainC.SoftwareInit -> AccelP;

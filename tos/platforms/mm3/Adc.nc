@@ -130,6 +130,14 @@ interface Adc {
 
 
   /**
+   * isOwner
+   *
+   * returns true if the client is the current owner of the ADC.
+   */
+  command bool isOwner();
+
+
+  /**
    * readAdc
    *
    * obtain data directly from the ADC.  Starts a conversion

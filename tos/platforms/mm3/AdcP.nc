@@ -361,6 +361,9 @@ implementation {
   command error_t AdcClient.release[uint8_t client_id]() {
     /*
      * if not the owner, its something weird.  bitch
+     * could be a regime change so don't what to do anything
+     * to weird.  But the clients really should check before
+     * releasing.
      */
     if (adc_owner != client_id || adc_state != ADC_BUSY) {
       /*
@@ -379,6 +382,11 @@ implementation {
     }
     post adcPower_Up_Down();
     return SUCCESS;
+  }
+
+
+  command bool AdcClient.isOwner[uint8_t client_id]() {
+    return (adc_owner == client_id);
   }
 
 
