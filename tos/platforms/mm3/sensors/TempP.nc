@@ -11,6 +11,7 @@
  */
 
 #include "sensors.h"
+#include "temp.h"
 
 module TempP {
   provides {
@@ -23,8 +24,10 @@ module TempP {
     interface Regime as RegimeCtrl;
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
+    interface Collect;
   }
 }
+
 implementation {
   uint32_t period;
   uint8_t  temp_state;
@@ -32,78 +35,73 @@ implementation {
 
 
   command error_t Init.init() {
-    temp_state = SNS_STATE_OFF;
+    period = 0;
+    temp_state = TEMP_STATE_OFF;
     err_overruns = 0;
     return SUCCESS;
   }
 
 
   command error_t StdControl.start() {
-    period = call RegimeCtrl.sensorPeriod(SNS_ID_TEMP);
-    if (period) {
-      call PeriodTimer.startPeriodic(period);
-      temp_state = SNS_STATE_PERIOD_WAIT;
-    } else
-      temp_state = SNS_STATE_OFF;
+    /* power up temp */
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
-    call PeriodTimer.stop();
-    if (temp_state == SNS_STATE_PERIOD_WAIT)
-      temp_state = SNS_STATE_OFF;
+    /* power down temp */
+    return SUCCESS;
   }
 
 
   event void PeriodTimer.fired() {
-    if (temp_state != SNS_STATE_PERIOD_WAIT) {
+    if (temp_state != TEMP_STATE_IDLE) {
       err_overruns++;
       /*
        * bitch, shouldn't be here.  Of course it could be
        * because something took way too long.
        */
-      call StdControl.start();
       return;
     }
-    temp_state = SNS_STATE_ADC_WAIT;
+    temp_state = TEMP_STATE_READ;
     call Adc.reqConfigure();
   }
 
 
   event void Adc.configured() {
-    uint16_t data;
+    uint8_t temp_data[TEMP_BLOCK_SIZE];
+    dt_sensor_data_nt *tdp;
 
-    data = call Adc.readAdc();
-    temp_state = SNS_STATE_PERIOD_WAIT;
+    tdp = (dt_sensor_data_nt *) temp_data;
+    tdp->data[0] = call Adc.readAdc();
+    temp_state = TEMP_STATE_IDLE;
     call Adc.release();
+    tdp->len = TEMP_BLOCK_SIZE;
+    tdp->dtype = DT_SENSOR_DATA;
+    tdp->id = SNS_ID_TEMP;
+    tdp->sched_epoch = 0;
+    tdp->sched_mis = 0;
+    tdp->stamp_epoch = 0;
+    tdp->stamp_mis = 0;
+    call Collect.collect(temp_data, TEMP_BLOCK_SIZE);
   }
 
 
   event void RegimeCtrl.regimeChange() {
     uint32_t new_period;
 
+    call PeriodTimer.stop();
+    if (call Adc.isOwner())
+      call Adc.release();
     new_period = call RegimeCtrl.sensorPeriod(SNS_ID_TEMP);
-    if (new_period == 0) {
-      call PeriodTimer.stop();
-      if (temp_state == SNS_STATE_PERIOD_WAIT)
-	temp_state = SNS_STATE_OFF;
-    } else if (new_period != period) {
+    if (new_period == 0)
+      temp_state = TEMP_STATE_OFF;
+    else if (new_period != period) {
+      temp_state = TEMP_STATE_IDLE;
       period = new_period;
-      call PeriodTimer.stop();
       call PeriodTimer.startPeriodic(period);
-      /* leave state alone */
     }
   }
-
-
-  const mm3_sensor_config_t temp_config =
-    { .sns_id = SNS_ID_TEMP,
-      .mux  = SMUX_TEMP,
-      .t_settle = 164,          /* ~ 5mS */
-      .gmux = 0,
-    };
-
 
   async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
     return &temp_config;

@@ -26,22 +26,22 @@ enum {
  * Y and Z.  Settling times are set to be a simple
  * smux change.
  */
-const mm3_sensor_config_t accel_config_X =
-{ .sns_id = SNS_ID_ACCEL,
+const mm3_sensor_config_t accel_config_X = {
+  .sns_id = SNS_ID_ACCEL,
   .mux  = SMUX_ACCEL_X,
   .t_settle = 164,          /* ~ 5mS */
   .gmux = 0,
 };
 
-const mm3_sensor_config_t accel_config_Y =
-{ .sns_id = SNS_ID_ACCEL,
+const mm3_sensor_config_t accel_config_Y = {
+  .sns_id = SNS_ID_ACCEL,
   .mux  = SMUX_ACCEL_Y,
   .t_settle = 4,            /* ~ 120 uS */
   .gmux = 0,
 };
 
-const mm3_sensor_config_t accel_config_Z =
-{ .sns_id = SNS_ID_ACCEL,
+const mm3_sensor_config_t accel_config_Z = {
+  .sns_id = SNS_ID_ACCEL,
   .mux  = SMUX_ACCEL_Z,
   .t_settle = 4,            /* ~ 120 uS */
   .gmux = 0,

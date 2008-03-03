@@ -11,6 +11,7 @@
  */
 
 #include "sensors.h"
+#include "sal.h"
 
 module SalP {
   provides {
@@ -23,91 +24,103 @@ module SalP {
     interface Regime as RegimeCtrl;
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
+    interface Collect;
     interface HplMM3Adc as HW;
   }
 }
+
 implementation {
   uint32_t period;
   uint8_t  sal_state;
   uint32_t err_overruns;
 
+  uint16_t data[2];
 
   command error_t Init.init() {
-    sal_state = SNS_STATE_OFF;
+    period = 0;
+    sal_state = SAL_STATE_OFF;
     err_overruns = 0;
     return SUCCESS;
   }
 
-
   command error_t StdControl.start() {
-    period = call RegimeCtrl.sensorPeriod(SNS_ID_SAL);
-    if (period) {
-      call PeriodTimer.startPeriodic(period);
-      sal_state = SNS_STATE_PERIOD_WAIT;
-    } else
-      sal_state = SNS_STATE_OFF;
+    /* power up Sal */
     return SUCCESS;
   }
 
-
   command error_t StdControl.stop() {
-    call PeriodTimer.stop();
-    if (sal_state == SNS_STATE_PERIOD_WAIT)
-      sal_state = SNS_STATE_OFF;
+    /* power down Sal */
+    return SUCCESS;
   }
 
-
   event void PeriodTimer.fired() {
-    if (sal_state != SNS_STATE_PERIOD_WAIT) {
+    if (sal_state != SAL_STATE_IDLE) {
       err_overruns++;
       /*
        * bitch, shouldn't be here.  Of course it could be
        * because something took way too long.
        */
-      call StdControl.start();
       return;
     }
-    sal_state = SNS_STATE_ADC_WAIT;
+    sal_state = SAL_STATE_READ_1;
     call Adc.reqConfigure();
   }
 
 
   event void Adc.configured() {
-    uint16_t data;
+    uint8_t sal_data[SAL_BLOCK_SIZE];
+    dt_sensor_data_nt *sdp;
 
-    data = call Adc.readAdc();
-    call HW.toggleSal();
-    sal_state = SNS_STATE_PERIOD_WAIT;
-    call Adc.release();
+    switch(sal_state) {
+      case SAL_STATE_READ_1:
+	data[0] = call Adc.readAdc();
+	call HW.toggleSal();
+	sal_state = SAL_STATE_READ_2;
+	call Adc.reconfigure(&sal_config_2);
+	return;
+
+      case SAL_STATE_READ_2:
+	data[1] = call Adc.readAdc();
+	sal_state = SAL_STATE_IDLE;
+	call Adc.release();
+	break;
+
+      default:
+	return;
+    }
+
+    sdp = (dt_sensor_data_nt *) sal_data;
+    sdp->len = SAL_BLOCK_SIZE;
+    sdp->dtype = DT_SENSOR_DATA;
+    sdp->id = SNS_ID_SAL;
+    sdp->sched_epoch = 0;
+    sdp->sched_mis = 0;
+    sdp->stamp_epoch = 0;
+    sdp->stamp_mis = 0;
+    sdp->data[0] = data[0];
+    sdp->data[1] = data[1];
+    call Collect.collect(sal_data, SAL_BLOCK_SIZE);
   }
 
 
   event void RegimeCtrl.regimeChange() {
     uint32_t new_period;
 
+    call PeriodTimer.stop();
+    if (call Adc.isOwner())
+      call Adc.release();
     new_period = call RegimeCtrl.sensorPeriod(SNS_ID_SAL);
-    if (new_period == 0) {
-      call PeriodTimer.stop();
-      if (sal_state == SNS_STATE_PERIOD_WAIT)
-	sal_state = SNS_STATE_OFF;
-    } else if (new_period != period) {
+    if (new_period == 0)
+      sal_state = SAL_STATE_OFF;
+    else if (new_period != period) {
+      sal_state = SAL_STATE_IDLE;
       period = new_period;
-      call PeriodTimer.stop();
       call PeriodTimer.startPeriodic(period);
-      /* leave state alone */
     }
   }
 
 
-  const mm3_sensor_config_t sal_config =
-    { .sns_id = SNS_ID_SAL,
-      .mux  = SMUX_SALINITY,
-      .t_settle = 164,          /* ~ 5mS */
-      .gmux = 0,
-    };
-
-
   async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
-    return &sal_config;
+    return &sal_config_1;
   }
 }

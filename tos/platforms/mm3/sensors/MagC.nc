@@ -8,6 +8,7 @@
 configuration MagC {
   provides interface StdControl;
 }
+
 implementation {
   components MainC, MagP;
   MainC.SoftwareInit -> MagP;
@@ -19,7 +20,14 @@ implementation {
 
   components AdcC;
   MagP.Adc -> AdcC.Adc[SNS_ID_MAG];
+  AdcC.SensorPowerControl[SNS_ID_MAG] -> MagP;
 
   components AdcP;
   MagP.AdcConfigure <- AdcP.Config[SNS_ID_MAG];
+
+  components CollectC;
+  MagP.Collect -> CollectC;
+
+  components LedsC;
+  MagP.Leds -> LedsC;
 }

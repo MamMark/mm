@@ -30,11 +30,13 @@ implementation {
   }
 
   command error_t Regime.setRegime(uint8_t regime) {
-    if (sns_regime > SNS_MAX_REGIME)
+    if (regime > SNS_MAX_REGIME)
       return FAIL;
     sns_regime = regime;
     signal Regime.regimeChange();
     return SUCCESS;
   }
+
+
   default event void Regime.regimeChange() {};
 }

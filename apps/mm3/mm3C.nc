@@ -3,6 +3,8 @@
  * All rights reserved.
  */
 
+#include "regime.h"
+
 module mm3C {
   provides {
     interface Init;
@@ -25,7 +27,7 @@ implementation {
      * set the initial regime.  This will also
      * signal all the sensors and start them off.
      */
-    call Regime.setRegime(3);
+    call Regime.setRegime(SNS_DEFAULT_REGIME);
     call Leds.led0Off();
     call Leds.led1Off();
     call Leds.led2Off();

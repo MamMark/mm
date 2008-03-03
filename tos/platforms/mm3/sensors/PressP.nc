@@ -11,6 +11,7 @@
  */
 
 #include "sensors.h"
+#include "press.h"
 
 module PressP {
   provides {
@@ -23,6 +24,7 @@ module PressP {
     interface Regime as RegimeCtrl;
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
+    interface Collect;
   }
 }
 implementation {
@@ -32,76 +34,72 @@ implementation {
 
 
   command error_t Init.init() {
-    press_state = SNS_STATE_OFF;
+    period = 0;
+    press_state = PRESS_STATE_OFF;
     err_overruns = 0;
     return SUCCESS;
   }
 
 
   command error_t StdControl.start() {
-    period = call RegimeCtrl.sensorPeriod(SNS_ID_PRESS);
-    if (period) {
-      call PeriodTimer.startPeriodic(period);
-      press_state = SNS_STATE_PERIOD_WAIT;
-    } else
-      press_state = SNS_STATE_OFF;
+    /* power up Press */
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
-    call PeriodTimer.stop();
-    if (press_state == SNS_STATE_PERIOD_WAIT)
-      press_state = SNS_STATE_OFF;
+    /* power down Press */
+    return SUCCESS;
   }
 
 
   event void PeriodTimer.fired() {
-    if (press_state != SNS_STATE_PERIOD_WAIT) {
+    if (press_state != PRESS_STATE_IDLE) {
       err_overruns++;
       /*
        * bitch, shouldn't be here.  Of course it could be because something took way too long.
        */
-      call StdControl.start();
       return;
     }
-    press_state = SNS_STATE_ADC_WAIT;
+    press_state = PRESS_STATE_READ;
     call Adc.reqConfigure();
   }
 
 
   event void Adc.configured() {
-    uint16_t data;
+    uint8_t press_data[PRESS_BLOCK_SIZE];
+    dt_sensor_data_nt *pdp;
 
-    data = call Adc.readAdc();
-    press_state = SNS_STATE_PERIOD_WAIT;
+    pdp = (dt_sensor_data_nt *) press_data;
+    pdp->data[0] = call Adc.readAdc();
+    press_state = PRESS_STATE_IDLE;
     call Adc.release();
+    pdp->len = PRESS_BLOCK_SIZE;
+    pdp->dtype = DT_SENSOR_DATA;
+    pdp->id = SNS_ID_PRESS;
+    pdp->sched_epoch = 0;
+    pdp->sched_mis = 0;
+    pdp->stamp_epoch = 0;
+    pdp->stamp_mis = 0;
+    call Collect.collect(press_data, PRESS_BLOCK_SIZE);
   }
 
 
   event void RegimeCtrl.regimeChange() {
     uint32_t new_period;
 
+    call PeriodTimer.stop();
+    if (call Adc.isOwner())
+      call Adc.release();
     new_period = call RegimeCtrl.sensorPeriod(SNS_ID_PRESS);
-    if (new_period == 0) {
-      call PeriodTimer.stop();
-      if (press_state == SNS_STATE_PERIOD_WAIT)
-	press_state = SNS_STATE_OFF;
-    } else if (new_period != period) {
+    if (new_period == 0)
+      press_state = PRESS_STATE_OFF;
+    else if (new_period != period) {
+      press_state = PRESS_STATE_IDLE;
       period = new_period;
-      call PeriodTimer.stop();
       call PeriodTimer.startPeriodic(period);
-      /* leave state alone */
     }
   }
-
-
-  const mm3_sensor_config_t press_config =
-    { .sns_id = SNS_ID_PRESS,
-      .mux  = DMUX_PRESS,
-      .t_settle = 164,		/* ~ 5mS */
-      .gmux = GMUX_x400,
-    };
 
 
   async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {

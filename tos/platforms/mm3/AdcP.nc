@@ -17,11 +17,7 @@ module AdcP {
     interface StdControl as SensorPowerControl[uint8_t id];
     interface ResourceQueue as Queue;
     interface HplMM3Adc as HW;
-#ifdef USE_TIMERS
-    interface Timer<TMilli> as PowerTimer;
-#else
     interface Alarm<T32khz, uint16_t> as PowerAlarm;
-#endif
   }
 }
 
@@ -229,11 +225,7 @@ implementation {
       }
 
       call SensorPowerControl.start[adc_owner]();
-#ifdef USE_TIMERS
-      call PowerTimer.startOneShot(delay);
-#else
       call PowerAlarm.start(delay);
-#endif
       return;
     }
 
@@ -265,16 +257,11 @@ implementation {
        * the actual sensor path and allow the diff system to
        * settle.  Smux has already been set to SMUX_DMUX earlier.
        */
-//      config = m_config;
-      m_config = config = call Config.getConfiguration[adc_owner]();
+      config = m_config;
       call HW.set_dmux(config->mux);
       call HW.set_gmux(config->gmux);
       vdiff_state = VDIFF_SETTLING;
-#ifdef USE_TIMERS
-      call PowerTimer.startOneShot(config->t_settle);
-#else
       call PowerAlarm.start(config->t_settle);
-#endif
       return;
     }
     adc_state = ADC_BUSY;
@@ -282,11 +269,7 @@ implementation {
   }
 
 
-#ifdef USE_TIMERS
-  event void PowerTimer.fired() {
-#else
   async event void PowerAlarm.fired() {
-#endif
     post PowerAlarm_task();
   }
 
@@ -328,8 +311,7 @@ implementation {
        */
       return;
     }
-    m_config = config = call Config.getConfiguration[adc_owner]();
-//    m_config = config;
+    m_config = config;
     delay = 0;
     if (client_id < SNS_DIFF_START)
       call HW.set_smux(config->mux);
@@ -349,11 +331,7 @@ implementation {
     if (config->t_settle > delay)
       delay = config->t_settle;
     call SensorPowerControl.start[adc_owner]();
-#ifdef USE_TIMERS
-    call PowerTimer.startOneShot(delay);
-#else
     call PowerAlarm.start(delay);
-#endif
     return;
   }
 
@@ -362,7 +340,7 @@ implementation {
     /*
      * if not the owner, its something weird.  bitch
      * could be a regime change so don't what to do anything
-     * to weird.  But the clients really should check before
+     * too weird.  But the clients really should check before
      * releasing.
      */
     if (adc_owner != client_id || adc_state != ADC_BUSY) {
@@ -398,10 +376,12 @@ implementation {
   default event void AdcClient.configured[uint8_t id]() {}
 
   const mm3_sensor_config_t defaultConfig = {SNS_ID_NONE, 0, 0, 0};
-  default async command const mm3_sensor_config_t *
-    Config.getConfiguration[uint8_t id]() { 
+
+  default async command const mm3_sensor_config_t *Config.getConfiguration[uint8_t id]() { 
       return &defaultConfig;
   }
+
   default command error_t SensorPowerControl.start[uint8_t id]() { return SUCCESS; }
+
   default command error_t SensorPowerControl.stop[uint8_t id]() { return SUCCESS; }
 }

@@ -8,6 +8,7 @@
 configuration SpeedC {
   provides interface StdControl;
 }
+
 implementation {
   components MainC, SpeedP;
   MainC.SoftwareInit -> SpeedP;
@@ -22,4 +23,7 @@ implementation {
 
   components AdcP;
   SpeedP.AdcConfigure <- AdcP.Config[SNS_ID_SPEED];
+
+  components CollectC;
+  SpeedP.Collect -> CollectC;
 }

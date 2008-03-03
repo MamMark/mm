@@ -22,4 +22,7 @@ implementation {
 
   components AdcP;
   PressP.AdcConfigure <- AdcP.Config[SNS_ID_PRESS];
+
+  components CollectC;
+  PressP.Collect -> CollectC;
 }

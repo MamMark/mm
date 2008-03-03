@@ -128,7 +128,6 @@ typedef nx_struct {
 typedef nx_struct {
     nx_uint16_t len;
     nx_uint8_t  dtype;
-    nx_uint8_t  fill;
     nx_uint8_t  stamp_epoch;
     nx_uint32_t stamp_mis;
     nx_uint32_t gps_lat;		/* little endian, single float */
@@ -172,7 +171,10 @@ typedef nx_struct {
 #define ACCEL_PAYLOAD_SIZE 6
 #define ACCEL_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + ACCEL_PAYLOAD_SIZE)
 
-#define PRESS_PAYLOAD_SIZE 4
+#define PTEMP_PAYLOAD_SIZE 2
+#define PTEMP_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + PTEMP_PAYLOAD_SIZE)
+
+#define PRESS_PAYLOAD_SIZE 2
 #define PRESS_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + PRESS_PAYLOAD_SIZE)
 
 #define SPEED_PAYLOAD_SIZE 4
@@ -185,14 +187,12 @@ typedef nx_struct {
 typedef struct {
     nx_uint16_t	     len;
     nx_uint8_t	     dtype;
-    nx_uint8_t	     fill;
     nx_uint8_t       sched_epoch;
     nx_uint32_t      sched_mis;
     nx_uint8_t       stamp_epoch;
     nx_uint32_t      stamp_mis;
     nx_uint16_t      mask;
     nx_uint8_t       mask_id;
-    nx_uint8_t	     fill_a;
     nx_uint16_t      data[0];
 } dt_sensor_set_nt;
 

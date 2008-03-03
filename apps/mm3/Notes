@@ -1,0 +1,3 @@
+1) Why does Msp430AlamC$Init$Init get called twice?  Once for Timers
+   and once for msp430Alarms?
+

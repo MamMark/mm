@@ -8,6 +8,7 @@
 configuration SalC {
   provides interface StdControl;
 }
+
 implementation {
   components MainC, SalP;
   MainC.SoftwareInit -> SalP;
@@ -22,6 +23,9 @@ implementation {
 
   components AdcP;
   SalP.AdcConfigure <- AdcP.Config[SNS_ID_SAL];
+
+  components CollectC;
+  SalP.Collect -> CollectC;
 
   components HplMM3AdcC;
   SalP.HW -> HplMM3AdcC;

@@ -21,6 +21,7 @@
  */
 
 #include "sensors.h"
+#include "accel.h"
 
 module AccelP {
   provides {
@@ -37,6 +38,7 @@ module AccelP {
     interface Leds;
   }
 }
+
 implementation {
   uint32_t period;
   uint8_t  accel_state;
@@ -52,12 +54,12 @@ implementation {
   }
 
   command error_t StdControl.start() {
-    //Put actual code for performing power control in here (i.e. which pins to toggle)
+    /* power up Accel */
     return SUCCESS;
   }
 
   command error_t StdControl.stop() {
-    //Put actual code for performing power control in here (i.e. which pins to toggle)
+    /* power down Accel */
     return SUCCESS;
   }
 
@@ -79,7 +81,7 @@ implementation {
   event void Adc.configured() {
     uint8_t accel_data[ACCEL_BLOCK_SIZE];
     dt_sensor_data_nt *adp;
-  
+
     switch(accel_state) {
       case ACCEL_STATE_READ_X:
 	data[0] = call Adc.readAdc();
@@ -117,6 +119,7 @@ implementation {
     call Collect.collect(accel_data, ACCEL_BLOCK_SIZE);
   }
 
+
   event void RegimeCtrl.regimeChange() {
     uint32_t new_period;
 
@@ -132,6 +135,7 @@ implementation {
       call PeriodTimer.startPeriodic(period);
     }
   }
+
 
   async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
     return &accel_config_X;

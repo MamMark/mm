@@ -8,6 +8,7 @@
 configuration BattC {
   provides interface StdControl;
 }
+
 implementation {
   components MainC, BattP;
   MainC.SoftwareInit -> BattP;
@@ -19,6 +20,7 @@ implementation {
 
   components AdcC;
   BattP.Adc -> AdcC.Adc[SNS_ID_BATT];
+  AdcC.SensorPowerControl[SNS_ID_BATT] -> BattP;
 
   components AdcP;
   BattP.AdcConfigure <- AdcP.Config[SNS_ID_BATT];

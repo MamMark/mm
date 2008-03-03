@@ -19,6 +19,5 @@ implementation {
    * Include sensor components.  No need to wire.  They will
    * start when regimeChange() is signalled.
    */
-  //  components BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
-  components AccelC;
+  components BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
 }

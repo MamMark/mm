@@ -85,9 +85,9 @@ enum {
  * Various power up times.  All times in 32KHz jiffies.
  */
 
-#define VREF_POWERUP_DELAY	330
-#define VDIFF_POWERUP_DELAY	660
-#define VDIFF_SWING_DELAY	330
+#define VREF_POWERUP_DELAY	33
+#define VDIFF_POWERUP_DELAY	66
+#define VDIFF_SWING_DELAY	33
 #define VDIFF_SWING_GAIN	GMUX_x2
 #define VDIFF_SWING_DMUX	DMUX_PRESS
 
@@ -114,7 +114,6 @@ typedef struct {
   uint8_t	gmux;			// gmux value if differential sensor (i.e. sns_id >= 6)
 } mm3_sensor_config_t;
 
-#include "accel.h"
 #include "sd_blocks.h"
 
 #endif

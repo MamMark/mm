@@ -22,4 +22,7 @@ implementation {
 
   components AdcP;
   PTempP.AdcConfigure <- AdcP.Config[SNS_ID_PTEMP];
+
+  components CollectC;
+  PTempP.Collect -> CollectC;
 }
