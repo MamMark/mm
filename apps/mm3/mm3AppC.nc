@@ -5,9 +5,9 @@
 
 configuration mm3AppC {}
 implementation {
-  components MainC, mm3C;
-  MainC.SoftwareInit -> mm3C;
-  mm3C -> MainC.Boot;
+  components SystemBootC, mm3C;
+  SystemBootC.SoftwareInit -> mm3C;
+  mm3C -> SystemBootC.Boot;
   
   components RegimeC;
   mm3C.Regime -> RegimeC;
