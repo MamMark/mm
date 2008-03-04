@@ -149,19 +149,20 @@ implementation {
       /*
        * All sensors need Vref unless it is already on.
        */
-      do {
-        if (vref_state == VREF_ON)
+      switch(vref_state) {
+	default:
+	  /* bitch bitch bitch
+	   * fall through
+	   */
+	case VREF_ON:
           break;
-        if (vref_state == VREF_OFF) {
+
+	case VREF_OFF:
           call HW.power_vref(VREF_TURN_ON);
           vref_state = VREF_POWER_WAIT;
           delay = VREF_POWERUP_DELAY;
           break;
-        }
-        /*
-         * bad state.  bitch
-         */
-      } while(0);
+      }
 
       if (adc_owner < SNS_DIFF_START) {
         /*
@@ -190,8 +191,13 @@ implementation {
          * sensor delay for diff sensors is handled
          * in PowerAlarm code after swing.
          */
-        do {
-          if (vdiff_state == VDIFF_OFF) {
+	switch(vdiff_state) {
+	  default:
+	    /*
+	     * bad state.  bitch bitch bitch
+	     * then fall through
+	     */
+	  case VDIFF_OFF:
             /*
              * If powering up, use a different delay.
              * VDIFF_POWER_SWING and VDIFF_SWING could
@@ -202,8 +208,8 @@ implementation {
             if (VDIFF_POWERUP_DELAY > delay)
               delay = VDIFF_POWERUP_DELAY;
             break;
-          }
-          if (vdiff_state == VDIFF_ON) {
+
+	  case VDIFF_ON:
             /*
              * already on.  Swing the diff system back to
              * midline.  Use different delay for the
@@ -213,11 +219,7 @@ implementation {
             if (VDIFF_SWING_DELAY > delay)
               delay = VDIFF_SWING_DELAY;
             break;
-          }
-          /*
-           * bad state.  bitch
-           */
-        } while(0);
+	}
         call HW.power_vdiff(VDIFF_TURN_ON);
         call HW.set_smux(SMUX_DIFF);
         call HW.set_dmux(VDIFF_SWING_DMUX);
@@ -250,7 +252,7 @@ implementation {
       vref_state = VREF_ON;
     if (vdiff_state == VDIFF_SETTLING)
       vdiff_state = VDIFF_ON;
-    if (vdiff_state == VDIFF_POWER_SWING ||
+    else if (vdiff_state == VDIFF_POWER_SWING ||
         vdiff_state == VDIFF_SWING) {
       /*
        * swinging finished.  set to correct dmux and gain for
@@ -287,12 +289,31 @@ implementation {
 
     atomic {
       if (adc_state == ADC_IDLE) {
+	if (call Queue.isEmpty() == FALSE) {
+	  /*
+	   * Queue should be empty when ADC is IDLE
+	   * bitch bitch bitch
+	   */
+	}
+	/*
+	 * since we know the queue is empty.  The enqueue
+	 * can never fail.
+	 *
+	 * We enqueue the client first.  Then immediately pull it back
+	 * off.  We insist on running everything through the queue to
+	 * make sure the round robin order is honored.  This effects what
+	 * order following enqueues get pulled.  Basically, it updates last.
+	 */
+	call Queue.enqueue(client_id);
+	req_client = call Queue.dequeue();
 	adc_state = ADC_GRANTING;
 	req_client = client_id;
       } else {
         rtn = call Queue.enqueue(client_id);
         if (rtn != SUCCESS) {
-          /* check for ebusy.  shouldn't happen */
+          /* check for ebusy.  shouldn't happen
+	   * bitch bitch bitch
+	   */
         }
 	return rtn;
       }

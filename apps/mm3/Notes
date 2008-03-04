@@ -1,3 +1,9 @@
 1) Why does Msp430AlamC$Init$Init get called twice?  Once for Timers
    and once for msp430Alarms?
 
+2) On Vdiff power up with a Vdiff sensor.  Where should the power up of the
+   sensor show up?
+
+   Argues for sensor timing scheduling.  To get the optimum (minimum waiting
+   time).  Currently probably waits too long.  Serializes vdiff swing and
+   sensor power up (if first piece).  If vdiff already on.

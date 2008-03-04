@@ -64,6 +64,7 @@ enum {
   DMUX_SPEED_2		= 5,
   DMUX_PRESS		= 6
 };
+
 enum {
   SMUX_ACCEL_Y		= 0,
   SMUX_ACCEL_X		= 1,
@@ -74,6 +75,7 @@ enum {
   SMUX_ACCEL_Z		= 6,
   SMUX_BATT			= 7
 };
+
 enum {
   GMUX_x2			= 0,
   GMUX_x20			= 1,
