@@ -3,15 +3,11 @@
  * @author Eric B. Decker
  */
 
-//#include "hardware.h"
-//#include "sensors.h"
-
 configuration CollectC {
   provides interface Collect;
 }
 
 implementation {
-  components CollectP, MainC;
-  Collect = CollectP;
-  MainC.SoftwareInit -> CollectP;
+  components SerialCollectC;
+  Collect = SerialCollectC;
 }

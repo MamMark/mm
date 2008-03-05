@@ -24,6 +24,83 @@ implementation {
     return buf;
   }
 
+  command error_t Init.init() {
+    dcc.majik_a = DC_MAJIK_A;
+    dcc.cur_buf = NULL;
+    dcc.cur_ptr = NULL;
+    dcc.remaining = 0;
+    dcc.chksum  = 0;
+    dcc.seq = 0;
+    dcc.majik_b = DC_MAJIK_B;
+    return SUCCESS;
+  }
+
+  command void Collect.collect(uint8_t *data, uint16_t dlen) {
+    uint16_t num_copied, i;
+
+    /*
+     * data length should also be 1st two bytes.
+     * followed by dtype.  Minimum length is 3.
+     * network order is big endian.
+     */
+    num_copied = (data[0] << 8) + data[1];
+
+    while (dlen > 0) {
+      if (dcc.cur_buf == NULL) {
+        /*
+         * nobody home, try to go get one.
+         */
+        dcc.cur_ptr = dcc.cur_buf = ms_get_buffer();
+        dcc.remaining = DC_BLK_SIZE;
+        dcc.chksum = 0;
+      }
+      num_copied = ((dlen < dcc.remaining) ? dlen : dcc.remaining);
+      for (i = 0; i < num_copied; i++) {
+        dcc.chksum += *data;
+        *dcc.cur_ptr = *data;
+        dcc.cur_ptr++;
+        data++;
+      }
+      dlen -= num_copied;
+      dcc.remaining -= num_copied;
+      if (dcc.remaining == 0) {
+        dcc.chksum += (dcc.seq & 0xff);
+        dcc.chksum += (dcc.seq >> 8);
+        (*(uint16_t *) dcc.cur_ptr) = dcc.seq++;
+        dcc.cur_ptr += 2;
+        (*(uint16_t *) dcc.cur_ptr) = dcc.chksum;
+        dcc.cur_buf = NULL;
+        dcc.cur_ptr = NULL;
+      }
+    }
+  }
+}
+
+/*
+ * mm3CollectP.nc - data collector (record managment) interface
+ * between data collection and mass storage.
+ * Copyright 2008, Eric B. Decker
+ * Mam-Mark Project
+ *
+ */
+/*
+#include "Collect.h"
+
+module CollectP {
+  provides {
+    interface Collect;
+    interface Init;
+  }
+}
+
+implementation {
+  dc_control_t dcc;
+  uint8_t buf[512];
+  uint16_t num_calls;
+
+  uint8_t *ms_get_buffer() {
+    return buf;
+  }
 
   command error_t Init.init() {
     dcc.majik_a = DC_MAJIK_A;
@@ -77,7 +154,7 @@ implementation {
      * followed by dtype.  Minimum length is 3.
      * network order is big endian.
      */
-    num_calls++;
+/*    num_calls++;
     num_copied = (data[0] << 8) + data[1];
 
 #ifdef notdef
@@ -94,7 +171,7 @@ implementation {
         /*
          * nobody home, try to go get one.
          */
-        dcc.cur_ptr = dcc.cur_buf = ms_get_buffer();
+/*        dcc.cur_ptr = dcc.cur_buf = ms_get_buffer();
         dcc.remaining = DC_BLK_SIZE;
         dcc.chksum = 0;
       }
@@ -142,3 +219,4 @@ implementation {
 
 #endif
 }
+*/
