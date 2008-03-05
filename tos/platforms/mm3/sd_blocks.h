@@ -67,7 +67,7 @@ enum {
  * used to say how much data the whole structure needs to take.
  */
 
-typedef nx_struct {
+typedef nx_struct dt_ignore {
     nx_uint16_t len;
     nx_uint8_t  dtype;
 } dt_ignore_nt;
@@ -75,7 +75,7 @@ typedef nx_struct {
 #define DT_HDR_SIZE_IGNORE sizeof(dt_ignore_nt)
 
 
-typedef nx_struct {
+typedef nx_struct dt_config{
     nx_uint16_t len;
     nx_uint8_t  dtype;
     nx_uint8_t  data[0];
@@ -84,7 +84,7 @@ typedef nx_struct {
 #define DT_HDR_SIZE_CONFIG sizeof(dt_config_nt)
 
 /* At reboot and every XX minutes send sync packet to SDRAM */
-typedef nx_struct {
+typedef nx_struct dt_sync {
     nx_uint16_t len;
     nx_uint8_t  dtype;
     nx_uint8_t  stamp_epoch;
@@ -96,7 +96,7 @@ typedef nx_struct {
 #define SYNC_MAJIK          0xdedf00ef
 #define SYNC_RESTART_MAJIK	0xdaffd00f
 
-typedef nx_struct {
+typedef nx_struct dt_gps_time {
     nx_uint16_t len;
     nx_uint8_t  dtype;
     nx_uint8_t  stamp_epoch;
@@ -111,7 +111,7 @@ typedef nx_struct {
 
 //typedef uint32_t gps_latlong_t;		/* actually a single precision float */
 
-typedef nx_struct {
+typedef nx_struct dt_gps_pos {
     nx_uint16_t len;
     nx_uint8_t  dtype;
     nx_uint8_t  stamp_epoch;
@@ -123,7 +123,7 @@ typedef nx_struct {
 #define DT_HDR_SIZE_GPS_POS sizeof(dt_gps_pos_nt)
 
 
-typedef nx_struct {
+typedef nx_struct dt_sensor_data {
     nx_uint16_t len;
     nx_uint8_t  dtype;
     nx_uint8_t  id;
@@ -170,7 +170,7 @@ typedef nx_struct {
 #define MAG_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + MAG_PAYLOAD_SIZE)
 
 
-typedef struct {
+typedef nx_struct dt_sensor_set {
     nx_uint16_t	     len;
     nx_uint8_t	     dtype;
     nx_uint8_t       sched_epoch;
@@ -183,14 +183,14 @@ typedef struct {
 } dt_sensor_set_nt;
 
 
-typedef struct {
+typedef nx_struct dt_test {
     nx_uint16_t	     len;
     nx_uint8_t	     dtype;
     nx_uint8_t	     data[0];
 } dt_test_nt;
 
 
-typedef struct {
+typedef nx_struct dt_cal_string {
     nx_uint16_t	     len;
     nx_uint8_t	     dtype;
     nx_uint8_t	     sec;
@@ -204,7 +204,7 @@ typedef struct {
 } dt_cal_string_nt;
 
 
-typedef struct {
+typedef nx_struct dt_gps_raw {
     nx_uint16_t	len;
     nx_uint8_t	dtype;
     nx_uint8_t  stamp_epoch;
@@ -214,7 +214,7 @@ typedef struct {
 
 #define DT_HDR_SIZE_GPS_RAW sizeof(dt_gps_raw_nt)
 
-typedef struct {
+typedef nx_struct dt_version{
     nx_uint16_t	len;
     nx_uint8_t	dtype;
     nx_uint8_t	major;

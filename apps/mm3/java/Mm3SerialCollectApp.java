@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Stanford University.
+ * Copyright (c) 2007 Stanford University.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,20 +31,36 @@
 
 /**
  * @author Kevin Klues <klueska@cs.stanford.edu>
- * @date March 3rd, 2008
+ * @date July 24, 2007
  */
 
-#ifndef COLLECT_MSG_H
-#define COLLECT_MSG_H
+import net.tinyos.message.*;
+import net.tinyos.util.*;
+import java.io.*;
+/**
+*/
 
-#include "message.h"
+public class Mm3SerialCollectApp implements MessageListener {
+  MoteIF mote;
 
-typedef nx_struct collect_msg {
-  nx_uint8_t buffer[TOSH_DATA_LENGTH];
-} collect_msg_t;
+  /* Main entry point */
+  void run() {
+    mote = new MoteIF(PrintStreamMessenger.err);
+    mote.registerListener(new CollectMsg(), this);
+  }
 
-enum {
-  AM_COLLECT_MSG = 0x90,
-};
+  synchronized public void messageReceived(int dest_addr, Message msg) {
+    if (msg instanceof CollectMsg) {
+      //DtIgnoreMsg ignoreMsg = new DtIgnoreMsg(msg, 0);
+      //System.out.print(ignoreMsg.toString());
+      
+      DtSensorDataMsg sensorDataMsg = new DtSensorDataMsg(msg, 0);
+      System.out.print(sensorDataMsg.toString());
+    }
+  }
 
-#endif
+  public static void main(String[] args) {
+    Mm3SerialCollectApp me = new Mm3SerialCollectApp();
+    me.run();
+  }
+}
