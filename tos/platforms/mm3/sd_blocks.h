@@ -17,22 +17,17 @@
 #ifndef __SD_BLOCKS_H__
 #define __SD_BLOCKS_H__
 
-//#include "sensor_config.h"
-
-//#define PACKED __attribute__((__packed__))
-#define PACKED
-
 enum {
-    DT_IGNORE		= 0,
-    DT_CONFIG		= 1,
-    DT_SYNC		= 2,
+    DT_IGNORE       = 0,
+    DT_CONFIG       = 1,
+    DT_SYNC         = 2,
     DT_SYNC_RESTART	= 3,
     DT_PANIC		= 4,
     DT_GPS_TIME		= 5,
     DT_GPS_POS		= 6,
     DT_SENSOR_DATA	= 7,
     DT_SENSOR_SET	= 8,
-    DT_TEST		= 9,
+    DT_TEST		    = 9,
     DT_CAL_STRING	= 10,
 
     /*
@@ -75,52 +70,43 @@ enum {
 typedef nx_struct {
     nx_uint16_t len;
     nx_uint8_t  dtype;
-    nx_uint8_t  fill;
 } dt_ignore_nt;
 
-#define DT_HDR_SIZE_IGNORE 4
+#define DT_HDR_SIZE_IGNORE sizeof(dt_ignore_nt)
 
 
 typedef nx_struct {
     nx_uint16_t len;
     nx_uint8_t  dtype;
-    nx_uint8_t  fill;
     nx_uint8_t  data[0];
 } dt_config_nt;
 
-#define DT_HDR_SIZE_CONFIG 4
+#define DT_HDR_SIZE_CONFIG sizeof(dt_config_nt)
 
-
+/* At reboot and every XX minutes send sync packet to SDRAM */
 typedef nx_struct {
     nx_uint16_t len;
     nx_uint8_t  dtype;
-    nx_uint8_t  fill;
     nx_uint8_t  stamp_epoch;
     nx_uint32_t stamp_mis;
     nx_uint32_t sync_majik;
-} PACKED dt_sync_nt;
+} dt_sync_nt;
 
-#define DT_HDR_SIZE_SYNC 14
-#define SYNC_MAJIK		0xdedf00ef
+#define DT_HDR_SIZE_SYNC sizeof(dt_sync_nt)
+#define SYNC_MAJIK          0xdedf00ef
 #define SYNC_RESTART_MAJIK	0xdaffd00f
-
-
-//typedef uint32_t gps_time_t;		/* actually a single float */
-//typedef uint16_t gps_week_t;		/* actually int16 */
-//typedef uint32_t gps_offset_t;
 
 typedef nx_struct {
     nx_uint16_t len;
     nx_uint8_t  dtype;
-    nx_uint8_t  fill;
     nx_uint8_t  stamp_epoch;
     nx_uint32_t stamp_mis;
     nx_uint32_t gps_tow;		/* little endian, single float */
     nx_uint16_t gps_week;		/* little endian, uint16_t */
     nx_uint32_t gps_offset;		/* little endian, single float */
-} PACKED dt_gps_time_nt;
+} dt_gps_time_nt;
 
-#define DT_HDR_SIZE_GPS_TIME 20
+#define DT_HDR_SIZE_GPS_TIME sizeof(dt_gps_time_nt)
 
 
 //typedef uint32_t gps_latlong_t;		/* actually a single precision float */
@@ -132,7 +118,7 @@ typedef nx_struct {
     nx_uint32_t stamp_mis;
     nx_uint32_t gps_lat;		/* little endian, single float */
     nx_uint32_t gps_long;		/* little endian, single float */
-} PACKED dt_gps_pos_nt;
+} dt_gps_pos_nt;
 
 #define DT_HDR_SIZE_GPS_POS 18
 
@@ -215,7 +201,7 @@ typedef struct {
     nx_uint16_t	     year;
     nx_uint16_t	     cal_string_len;
     nx_uint8_t	     data[0];
-} PACKED dt_cal_string_nt;
+} dt_cal_string_nt;
 
 
 typedef struct {
@@ -224,7 +210,7 @@ typedef struct {
     nx_uint8_t  stamp_epoch;
     nx_uint32_t stamp_mis;
     nx_uint8_t	data[0];
-} PACKED dt_gps_raw_nt;
+} dt_gps_raw_nt;
 
 #define DT_HDR_SIZE_GPS_RAW 10
 
@@ -235,7 +221,7 @@ typedef struct {
     nx_uint8_t	major;
     nx_uint8_t	minor;
     nx_uint8_t	tweak;
-} PACKED dt_version_nt;
+} dt_version_nt;
 
 #define DT_HDR_SIZE_VERSION 6
 
