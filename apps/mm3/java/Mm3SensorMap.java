@@ -37,35 +37,11 @@
 import net.tinyos.message.*;
 import net.tinyos.util.*;
 import java.io.*;
-/**
-*/
 
-public class Mm3SerialCollectApp implements MessageListener {
-  MoteIF mote;
-
-  /* Main entry point */
-  void run() {
-    mote = new MoteIF(PrintStreamMessenger.err);
-    mote.registerListener(new CollectMsg(), this);
+public class Mm3SensorMap {
+  public static String get_name(short sensor_id) {
+    return new String();
   }
-  
-  void printSensorData(CollectMsg msg, int offset, int len) {
-    for(int i=offset; i<len; i++)
-      System.out.println("  [data["+(i-offset)+"]=0x"+ Integer.toHexString(msg.getElement_buffer(i))+"]");
-  }
-
-  synchronized public void messageReceived(int dest_addr, Message msg) {
-    if (msg instanceof CollectMsg) {
-      //DtIgnoreMsg ignoreMsg = new DtIgnoreMsg(msg, 0);
-      //System.out.print(ignoreMsg.toString());
-      DtSensorDataMsg sensorDataMsg = new DtSensorDataMsg(msg, 0);
-      System.out.print(sensorDataMsg.toString());
-      printSensorData((CollectMsg)msg, sensorDataMsg.offset_data(0), sensorDataMsg.get_len());
-    }
-  }
-
-  public static void main(String[] args) {
-    Mm3SerialCollectApp me = new Mm3SerialCollectApp();
-    me.run();
+  public static void print_data(CollectMsg msg, short sensor_id) {
   }
 }

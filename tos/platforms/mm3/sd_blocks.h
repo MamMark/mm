@@ -18,26 +18,26 @@
 #define __SD_BLOCKS_H__
 
 enum {
-    DT_IGNORE       = 0,
-    DT_CONFIG       = 1,
-    DT_SYNC         = 2,
-    DT_SYNC_RESTART	= 3,
-    DT_PANIC		= 4,
-    DT_GPS_TIME		= 5,
-    DT_GPS_POS		= 6,
-    DT_SENSOR_DATA	= 7,
-    DT_SENSOR_SET	= 8,
-    DT_TEST		    = 9,
-    DT_CAL_STRING	= 10,
+  DT_IGNORE       = 0,
+  DT_CONFIG       = 1,
+  DT_SYNC         = 2,
+  DT_SYNC_RESTART = 3,
+  DT_PANIC        = 4,
+  DT_GPS_TIME     = 5,
+  DT_GPS_POS      = 6,
+  DT_SENSOR_DATA  = 7,
+  DT_SENSOR_SET   = 8,
+  DT_TEST         = 9,
+  DT_CAL_STRING   = 10,
 
-    /*
-     * GPS_RAW is used to encapsulate data as
-     * received from the GPS.  It is used for
-     * debugging the GPS
-     */   
-    DT_GPS_RAW		= 11,
-    DT_VERSION		= 12,
-    DT_MAX		= 13,
+  /*
+   * GPS_RAW is used to encapsulate data as
+   * received from the GPS.  It is used for
+   * debugging the GPS
+   */   
+  DT_GPS_RAW      = 11,
+  DT_VERSION      = 12,
+  DT_MAX          = 13,
 };
 
 
@@ -68,107 +68,57 @@ enum {
  */
 
 typedef nx_struct dt_ignore {
-    nx_uint16_t len;
-    nx_uint8_t  dtype;
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
 } dt_ignore_nt;
 
-#define DT_HDR_SIZE_IGNORE sizeof(dt_ignore_nt)
-
-
 typedef nx_struct dt_config{
-    nx_uint16_t len;
-    nx_uint8_t  dtype;
-    nx_uint8_t  data[0];
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
+  nx_uint8_t  data[0];
 } dt_config_nt;
-
-#define DT_HDR_SIZE_CONFIG sizeof(dt_config_nt)
 
 /* At reboot and every XX minutes send sync packet to SDRAM */
 typedef nx_struct dt_sync {
-    nx_uint16_t len;
-    nx_uint8_t  dtype;
-    nx_uint8_t  stamp_epoch;
-    nx_uint32_t stamp_mis;
-    nx_uint32_t sync_majik;
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
+  nx_uint8_t  stamp_epoch;
+  nx_uint32_t stamp_mis;
+  nx_uint32_t sync_majik;
 } dt_sync_nt;
 
-#define DT_HDR_SIZE_SYNC sizeof(dt_sync_nt)
 #define SYNC_MAJIK          0xdedf00ef
 #define SYNC_RESTART_MAJIK	0xdaffd00f
 
 typedef nx_struct dt_gps_time {
-    nx_uint16_t len;
-    nx_uint8_t  dtype;
-    nx_uint8_t  stamp_epoch;
-    nx_uint32_t stamp_mis;
-    nx_uint32_t gps_tow;		/* little endian, single float */
-    nx_uint16_t gps_week;		/* little endian, uint16_t */
-    nx_uint32_t gps_offset;		/* little endian, single float */
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
+  nx_uint8_t  stamp_epoch;
+  nx_uint32_t stamp_mis;
+  nx_uint32_t gps_tow;		/* little endian, single float */
+  nx_uint16_t gps_week;		/* little endian, uint16_t */
+  nx_uint32_t gps_offset;		/* little endian, single float */
 } dt_gps_time_nt;
 
-#define DT_HDR_SIZE_GPS_TIME sizeof(dt_gps_time_nt)
-
-
-//typedef uint32_t gps_latlong_t;		/* actually a single precision float */
-
 typedef nx_struct dt_gps_pos {
-    nx_uint16_t len;
-    nx_uint8_t  dtype;
-    nx_uint8_t  stamp_epoch;
-    nx_uint32_t stamp_mis;
-    nx_uint32_t gps_lat;		/* little endian, single float */
-    nx_uint32_t gps_long;		/* little endian, single float */
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
+  nx_uint8_t  stamp_epoch;
+  nx_uint32_t stamp_mis;
+  nx_uint32_t gps_lat;		/* little endian, single float */
+  nx_uint32_t gps_long;		/* little endian, single float */
 } dt_gps_pos_nt;
 
-#define DT_HDR_SIZE_GPS_POS sizeof(dt_gps_pos_nt)
-
-
 typedef nx_struct dt_sensor_data {
-    nx_uint16_t len;
-    nx_uint8_t  dtype;
-    nx_uint8_t  id;
-    nx_uint8_t  sched_epoch;
-    nx_uint32_t sched_mis;
-    nx_uint8_t  stamp_epoch;
-    nx_uint32_t stamp_mis;
-    nx_uint16_t data[0];
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
+  nx_uint8_t  id;
+  nx_uint8_t  sched_epoch;
+  nx_uint32_t sched_mis;
+  nx_uint8_t  stamp_epoch;
+  nx_uint32_t stamp_mis;
+  nx_uint16_t data[0];
 } dt_sensor_data_nt;
-
-#define DT_HDR_SIZE_SENSOR_DATA sizeof(dt_sensor_data_nt);
-
-
-/*
- * Payload_size is how many bytes are needed in addition to the
- * dt_sensor_data_nt struct.   Block_Size is total bytes used by
- * the dt_sensor_data_nt header and any payload.  Payloads use 2
- * bytes per datam (16 bit values).  <sensor>_BLOCK_SIZE is what
- * needs to allocated.
- */
-
-#define BATT_PAYLOAD_SIZE 2
-#define BATT_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + BATT_PAYLOAD_SIZE)
-
-#define TEMP_PAYLOAD_SIZE 2
-#define TEMP_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + TEMP_PAYLOAD_SIZE)
-
-#define SAL_PAYLOAD_SIZE 4
-#define SAL_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + SAL_PAYLOAD_SIZE)
-
-#define ACCEL_PAYLOAD_SIZE 6
-#define ACCEL_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + ACCEL_PAYLOAD_SIZE)
-
-#define PTEMP_PAYLOAD_SIZE 2
-#define PTEMP_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + PTEMP_PAYLOAD_SIZE)
-
-#define PRESS_PAYLOAD_SIZE 2
-#define PRESS_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + PRESS_PAYLOAD_SIZE)
-
-#define SPEED_PAYLOAD_SIZE 4
-#define SPEED_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + SPEED_PAYLOAD_SIZE)
-
-#define MAG_PAYLOAD_SIZE 6
-#define MAG_BLOCK_SIZE (sizeof(dt_sensor_data_nt) + MAG_PAYLOAD_SIZE)
-
 
 typedef nx_struct dt_sensor_set {
     nx_uint16_t	     len;
@@ -181,14 +131,6 @@ typedef nx_struct dt_sensor_set {
     nx_uint8_t       mask_id;
     nx_uint16_t      data[0];
 } dt_sensor_set_nt;
-
-
-typedef nx_struct dt_test {
-    nx_uint16_t	     len;
-    nx_uint8_t	     dtype;
-    nx_uint8_t	     data[0];
-} dt_test_nt;
-
 
 typedef nx_struct dt_cal_string {
     nx_uint16_t	     len;
@@ -203,7 +145,6 @@ typedef nx_struct dt_cal_string {
     nx_uint8_t	     data[0];
 } dt_cal_string_nt;
 
-
 typedef nx_struct dt_gps_raw {
     nx_uint16_t	len;
     nx_uint8_t	dtype;
@@ -211,8 +152,6 @@ typedef nx_struct dt_gps_raw {
     nx_uint32_t stamp_mis;
     nx_uint8_t	data[0];
 } dt_gps_raw_nt;
-
-#define DT_HDR_SIZE_GPS_RAW sizeof(dt_gps_raw_nt)
 
 typedef nx_struct dt_version{
     nx_uint16_t	len;
@@ -222,7 +161,59 @@ typedef nx_struct dt_version{
     nx_uint8_t	tweak;
 } dt_version_nt;
 
-#define DT_HDR_SIZE_VERSION sizeof(dt_version_nt)
+typedef nx_struct dt_test {
+  nx_uint16_t   len;
+  nx_uint8_t    dtype;
+  nx_uint8_t    data[0];
+} dt_test_nt;
 
+enum {
+  DT_HDR_SIZE_IGNORE        = sizeof(dt_ignore_nt),
+  DT_HDR_SIZE_CONFIG        = sizeof(dt_config_nt),
+  DT_HDR_SIZE_SYNC          = sizeof(dt_sync_nt),
+  DT_HDR_SIZE_GPS_TIME      = sizeof(dt_gps_time_nt),
+  DT_HDR_SIZE_GPS_POS       = sizeof(dt_gps_pos_nt),
+  DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_nt),
+  DT_HDR_SIZE_SENSOR_SET    = sizeof(dt_sensor_set_nt),
+  DT_HDR_SIZE_CAL_STRING    = sizeof(dt_cal_string_nt),
+  DT_HDR_SIZE_GPS_RAW       = sizeof(dt_gps_raw_nt),
+  DT_HDR_SIZE_VERSION       = sizeof(dt_version_nt),
+  DT_HDR_SIZE_TEST          = sizeof(dt_test_nt),
+};
+
+
+/*
+ * Payload_size is how many bytes are needed in addition to the
+ * dt_sensor_data_nt struct.   Block_Size is total bytes used by
+ * the dt_sensor_data_nt header and any payload.  Payloads use 2
+ * bytes per datam (16 bit values).  <sensor>_BLOCK_SIZE is what
+ * needs to allocated.
+ */
+ 
+enum {
+  BATT_PAYLOAD_SIZE   = 2,
+  BATT_BLOCK_SIZE     = (DT_HDR_SIZE_SENSOR_DATA + BATT_PAYLOAD_SIZE),
+
+  TEMP_PAYLOAD_SIZE   = 2,
+  TEMP_BLOCK_SIZE     = (DT_HDR_SIZE_SENSOR_DATA + TEMP_PAYLOAD_SIZE),
+
+  SAL_PAYLOAD_SIZE    = 4,
+  SAL_BLOCK_SIZE      = (DT_HDR_SIZE_SENSOR_DATA + SAL_PAYLOAD_SIZE),
+
+  ACCEL_PAYLOAD_SIZE  = 6,
+  ACCEL_BLOCK_SIZE    = (DT_HDR_SIZE_SENSOR_DATA + ACCEL_PAYLOAD_SIZE),
+
+  PTEMP_PAYLOAD_SIZE  = 2,
+  PTEMP_BLOCK_SIZE    = (DT_HDR_SIZE_SENSOR_DATA + PTEMP_PAYLOAD_SIZE),
+
+  PRESS_PAYLOAD_SIZE  = 2,
+  PRESS_BLOCK_SIZE    = (DT_HDR_SIZE_SENSOR_DATA + PRESS_PAYLOAD_SIZE),
+
+  SPEED_PAYLOAD_SIZE  = 4,
+  SPEED_BLOCK_SIZE    = (DT_HDR_SIZE_SENSOR_DATA + SPEED_PAYLOAD_SIZE),
+
+  MAG_PAYLOAD_SIZE    = 6,
+  MAG_BLOCK_SIZE      = (DT_HDR_SIZE_SENSOR_DATA + MAG_PAYLOAD_SIZE),
+};
 
 #endif  /* __SD_BLOCKS_H__ */
