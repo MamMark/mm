@@ -72,14 +72,14 @@ typedef nx_struct dt_ignore {
   nx_uint8_t  dtype;
 } dt_ignore_nt;
 
-typedef nx_struct dt_config{
+typedef nx_struct dt_config {
   nx_uint16_t len;
   nx_uint8_t  dtype;
   nx_uint8_t  data[0];
 } dt_config_nt;
 
 /* At reboot and every XX minutes send sync packet to SDRAM */
-typedef nx_struct {
+typedef nx_struct dt_sync {
   nx_uint16_t len;
   nx_uint8_t  dtype;
   nx_uint32_t stamp_mis;
@@ -89,7 +89,7 @@ typedef nx_struct {
 #define SYNC_MAJIK		0xdedf00ef
 #define SYNC_RESTART_MAJIK	0xdaffd00f
 
-typedef nx_struct {
+typedef nx_struct dt_gps_time {
   nx_uint16_t len;
   nx_uint8_t  dtype;
   nx_uint32_t stamp_mis;
@@ -98,7 +98,7 @@ typedef nx_struct {
   nx_uint32_t gps_offset;	/* little endian, single float */
 } dt_gps_time_nt;
 
-typedef nx_struct {
+typedef nx_struct dt_gps_pos {
   nx_uint16_t len;
   nx_uint8_t  dtype;
   nx_uint32_t stamp_mis;
@@ -106,7 +106,7 @@ typedef nx_struct {
   nx_uint32_t gps_long;		/* little endian, single float */
 } dt_gps_pos_nt;
 
-typedef nx_struct {
+typedef nx_struct dt_sensor_data {
   nx_uint16_t len;
   nx_uint8_t  dtype;
   nx_uint8_t  id;
