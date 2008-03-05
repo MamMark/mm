@@ -93,7 +93,7 @@ implementation {
   
   int putchar(uint8_t c) {
     atomic {
-      if(state == S_STARTED && ((next_byte-buffer) < SERIAL_COLLECT_BUFFER_SIZE)) {
+      if(((next_byte-buffer) < SERIAL_COLLECT_BUFFER_SIZE)) {
         *(next_byte++) = c;
         return 0;
       }
