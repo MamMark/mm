@@ -120,7 +120,7 @@ typedef nx_struct {
     nx_uint32_t gps_long;		/* little endian, single float */
 } dt_gps_pos_nt;
 
-#define DT_HDR_SIZE_GPS_POS 18
+#define DT_HDR_SIZE_GPS_POS sizeof(dt_gps_pos_nt)
 
 
 typedef nx_struct {
@@ -134,7 +134,7 @@ typedef nx_struct {
     nx_uint16_t data[0];
 } dt_sensor_data_nt;
 
-#define DT_HDR_SIZE_SENSOR_DATA 16
+#define DT_HDR_SIZE_SENSOR_DATA sizeof(dt_sensor_data_nt);
 
 
 /*
@@ -212,8 +212,7 @@ typedef struct {
     nx_uint8_t	data[0];
 } dt_gps_raw_nt;
 
-#define DT_HDR_SIZE_GPS_RAW 10
-
+#define DT_HDR_SIZE_GPS_RAW sizeof(dt_gps_raw_nt)
 
 typedef struct {
     nx_uint16_t	len;
@@ -223,7 +222,7 @@ typedef struct {
     nx_uint8_t	tweak;
 } dt_version_nt;
 
-#define DT_HDR_SIZE_VERSION 6
+#define DT_HDR_SIZE_VERSION sizeof(dt_version_nt)
 
 
 #endif  /* __SD_BLOCKS_H__ */
