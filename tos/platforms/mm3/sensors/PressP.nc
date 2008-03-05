@@ -77,9 +77,7 @@ implementation {
     pdp->len = PRESS_BLOCK_SIZE;
     pdp->dtype = DT_SENSOR_DATA;
     pdp->id = SNS_ID_PRESS;
-    pdp->sched_epoch = 0;
     pdp->sched_mis = 0;
-    pdp->stamp_epoch = 0;
     pdp->stamp_mis = 0;
     call Collect.collect(press_data, PRESS_BLOCK_SIZE);
   }

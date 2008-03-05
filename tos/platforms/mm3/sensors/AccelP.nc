@@ -109,9 +109,7 @@ implementation {
     adp->len = ACCEL_BLOCK_SIZE;
     adp->dtype = DT_SENSOR_DATA;
     adp->id = SNS_ID_ACCEL;
-    adp->sched_epoch = 0;
     adp->sched_mis = 0;
-    adp->stamp_epoch = 0;
     adp->stamp_mis = 0;
     adp->data[0] = data[0];
     adp->data[1] = data[1];

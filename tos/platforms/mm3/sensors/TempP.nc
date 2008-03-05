@@ -79,9 +79,7 @@ implementation {
     tdp->len = TEMP_BLOCK_SIZE;
     tdp->dtype = DT_SENSOR_DATA;
     tdp->id = SNS_ID_TEMP;
-    tdp->sched_epoch = 0;
     tdp->sched_mis = 0;
-    tdp->stamp_epoch = 0;
     tdp->stamp_mis = 0;
     call Collect.collect(temp_data, TEMP_BLOCK_SIZE);
   }

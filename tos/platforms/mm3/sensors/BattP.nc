@@ -81,9 +81,7 @@ implementation {
     bdp->len = BATT_BLOCK_SIZE;
     bdp->dtype = DT_SENSOR_DATA;
     bdp->id = SNS_ID_BATT;
-    bdp->sched_epoch = 0;
     bdp->sched_mis = 0;
-    bdp->stamp_epoch = 0;
     bdp->stamp_mis = 0;
     call Collect.collect(batt_data, BATT_BLOCK_SIZE);
   }

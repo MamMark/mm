@@ -78,9 +78,7 @@ implementation {
     pdp->len = PTEMP_BLOCK_SIZE;
     pdp->dtype = DT_SENSOR_DATA;
     pdp->id = SNS_ID_PTEMP;
-    pdp->sched_epoch = 0;
     pdp->sched_mis = 0;
-    pdp->stamp_epoch = 0;
     pdp->stamp_mis = 0;
     call Collect.collect(ptemp_data, PTEMP_BLOCK_SIZE);
   }

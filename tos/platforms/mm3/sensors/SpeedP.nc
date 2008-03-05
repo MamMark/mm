@@ -91,9 +91,7 @@ implementation {
     sdp->len = SPEED_BLOCK_SIZE;
     sdp->dtype = DT_SENSOR_DATA;
     sdp->id = SNS_ID_SPEED;
-    sdp->sched_epoch = 0;
     sdp->sched_mis = 0;
-    sdp->stamp_epoch = 0;
     sdp->stamp_mis = 0;
     sdp->data[0] = data[0];
     sdp->data[1] = data[1];

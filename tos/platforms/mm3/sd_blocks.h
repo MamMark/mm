@@ -18,31 +18,31 @@
 #define __SD_BLOCKS_H__
 
 enum {
-  DT_IGNORE       = 0,
-  DT_CONFIG       = 1,
-  DT_SYNC         = 2,
-  DT_SYNC_RESTART = 3,
-  DT_PANIC        = 4,
-  DT_GPS_TIME     = 5,
-  DT_GPS_POS      = 6,
-  DT_SENSOR_DATA  = 7,
-  DT_SENSOR_SET   = 8,
-  DT_TEST         = 9,
-  DT_CAL_STRING   = 10,
+  DT_IGNORE		= 0,
+  DT_CONFIG		= 1,
+  DT_SYNC		= 2,
+  DT_SYNC_RESTART	= 3,
+  DT_PANIC		= 4,
+  DT_GPS_TIME		= 5,
+  DT_GPS_POS		= 6,
+  DT_SENSOR_DATA	= 7,
+  DT_SENSOR_SET		= 8,
+  DT_TEST		= 9,
+  DT_CAL_STRING		= 10,
 
   /*
    * GPS_RAW is used to encapsulate data as
    * received from the GPS.  It is used for
    * debugging the GPS
    */   
-  DT_GPS_RAW      = 11,
-  DT_VERSION      = 12,
-  DT_MAX          = 13,
+  DT_GPS_RAW		= 11,
+  DT_VERSION		= 12,
+  DT_MAX		= 13,
 };
 
 
 /*
- * All records (data blocks) start with a little endian
+ * All records (data blocks) start with a big (?) endian
  * 2 byte length.  Then the data type field follows
  * defining the rest of the structure.  Length is the
  * total size of the data block including header and
@@ -79,86 +79,78 @@ typedef nx_struct dt_config{
 } dt_config_nt;
 
 /* At reboot and every XX minutes send sync packet to SDRAM */
-typedef nx_struct dt_sync {
+typedef nx_struct {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint8_t  stamp_epoch;
   nx_uint32_t stamp_mis;
   nx_uint32_t sync_majik;
 } dt_sync_nt;
 
-#define SYNC_MAJIK          0xdedf00ef
+#define SYNC_MAJIK		0xdedf00ef
 #define SYNC_RESTART_MAJIK	0xdaffd00f
 
-typedef nx_struct dt_gps_time {
+typedef nx_struct {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint8_t  stamp_epoch;
   nx_uint32_t stamp_mis;
   nx_uint32_t gps_tow;		/* little endian, single float */
   nx_uint16_t gps_week;		/* little endian, uint16_t */
-  nx_uint32_t gps_offset;		/* little endian, single float */
+  nx_uint32_t gps_offset;	/* little endian, single float */
 } dt_gps_time_nt;
 
-typedef nx_struct dt_gps_pos {
+typedef nx_struct {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint8_t  stamp_epoch;
   nx_uint32_t stamp_mis;
   nx_uint32_t gps_lat;		/* little endian, single float */
   nx_uint32_t gps_long;		/* little endian, single float */
 } dt_gps_pos_nt;
 
-typedef nx_struct dt_sensor_data {
+typedef nx_struct {
   nx_uint16_t len;
   nx_uint8_t  dtype;
   nx_uint8_t  id;
-  nx_uint8_t  sched_epoch;
   nx_uint32_t sched_mis;
-  nx_uint8_t  stamp_epoch;
   nx_uint32_t stamp_mis;
   nx_uint16_t data[0];
 } dt_sensor_data_nt;
 
 typedef nx_struct dt_sensor_set {
-    nx_uint16_t	     len;
-    nx_uint8_t	     dtype;
-    nx_uint8_t       sched_epoch;
-    nx_uint32_t      sched_mis;
-    nx_uint8_t       stamp_epoch;
-    nx_uint32_t      stamp_mis;
-    nx_uint16_t      mask;
-    nx_uint8_t       mask_id;
-    nx_uint16_t      data[0];
+  nx_uint16_t      len;
+  nx_uint8_t       dtype;
+  nx_uint32_t      sched_mis;
+  nx_uint32_t      stamp_mis;
+  nx_uint16_t      mask;
+  nx_uint8_t       mask_id;
+  nx_uint16_t      data[0];
 } dt_sensor_set_nt;
 
 typedef nx_struct dt_cal_string {
-    nx_uint16_t	     len;
-    nx_uint8_t	     dtype;
-    nx_uint8_t	     sec;
-    nx_uint8_t	     min;
-    nx_uint8_t	     hrs;
-    nx_uint8_t	     day;
-    nx_uint8_t	     month;
-    nx_uint16_t	     year;
-    nx_uint16_t	     cal_string_len;
-    nx_uint8_t	     data[0];
+  nx_uint16_t	     len;
+  nx_uint8_t	     dtype;
+  nx_uint8_t	     sec;
+  nx_uint8_t	     min;
+  nx_uint8_t	     hrs;
+  nx_uint8_t	     day;
+  nx_uint8_t	     month;
+  nx_uint16_t	     year;
+  nx_uint16_t	     cal_string_len;
+  nx_uint8_t	     data[0];
 } dt_cal_string_nt;
 
 typedef nx_struct dt_gps_raw {
-    nx_uint16_t	len;
-    nx_uint8_t	dtype;
-    nx_uint8_t  stamp_epoch;
-    nx_uint32_t stamp_mis;
-    nx_uint8_t	data[0];
+  nx_uint16_t	len;
+  nx_uint8_t	dtype;
+  nx_uint32_t   stamp_mis;
+  nx_uint8_t	data[0];
 } dt_gps_raw_nt;
 
 typedef nx_struct dt_version{
-    nx_uint16_t	len;
-    nx_uint8_t	dtype;
-    nx_uint8_t	major;
-    nx_uint8_t	minor;
-    nx_uint8_t	tweak;
+  nx_uint16_t	len;
+  nx_uint8_t	dtype;
+  nx_uint8_t	major;
+  nx_uint8_t	minor;
+  nx_uint8_t	tweak;
 } dt_version_nt;
 
 typedef nx_struct dt_test {

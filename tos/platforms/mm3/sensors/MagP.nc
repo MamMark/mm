@@ -102,9 +102,7 @@ implementation {
     mdp->len = MAG_BLOCK_SIZE;
     mdp->dtype = DT_SENSOR_DATA;
     mdp->id = SNS_ID_MAG;
-    mdp->sched_epoch = 0;
     mdp->sched_mis = 0;
-    mdp->stamp_epoch = 0;
     mdp->stamp_mis = 0;
     mdp->data[0] = data[0];
     mdp->data[1] = data[1];
