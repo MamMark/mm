@@ -26,6 +26,7 @@ module MagP {
     interface Adc;
     interface Collect;
     interface Leds;
+    interface HplMM3Adc as HW;
   }
 }
 
@@ -45,13 +46,13 @@ implementation {
 
 
   command error_t StdControl.start() {
-    /* power Mag up */
+    call HW.power_mag(TRUE);
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
-    /* power Mag down */
+    call HW.power_mag(FALSE);
     return SUCCESS;
   }
 

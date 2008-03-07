@@ -26,4 +26,7 @@ implementation {
 
   components CollectC;
   SpeedP.Collect -> CollectC;
+
+  components HplMM3AdcC;
+  SpeedP.HW -> HplMM3AdcC;
 }

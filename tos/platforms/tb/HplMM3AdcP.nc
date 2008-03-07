@@ -46,66 +46,53 @@ implementation {
   }
 
   command uint8_t HW.get_dmux() {
-    uint8_t temp;
-
-    temp = mmP5out.d_mux;
-    if (mmP5out.u8_inhibit)
-      temp |= 0x4;
-    return(temp);
+    return 0;
   }
 
 
   command void HW.set_dmux(uint8_t val) {
-    return;
-    mmP5out.u8_inhibit = 1;
-    mmP5out.u12_inhibit = 1;
-    mmP5out.d_mux = (val & 3);
-    if (val & 0x4)
-      mmP5out.u12_inhibit = 0;
-    else
-      mmP5out.u8_inhibit = 0;
   }
 
 
   command uint8_t HW.get_smux() {
-    return(mmP5out.s_mux);
+    return 0;
   }
 
 
   command void HW.set_smux(uint8_t val) {
-    return;
-    mmP5out.s_mux = val;
   }
 
 
   command uint8_t HW.get_gmux() {
-    return(mmP6out.g_mux);
+    return 0;
   }
 
 
   command void HW.set_gmux(uint8_t val) {
-    return;
-    mmP6out.g_mux = (val & 3);
   }
 
 
-#ifdef notdef
-  command void HplAdc12.startConversion(){ 
-    ADC12CTL0 |= ADC12ON; 
-    ADC12CTL0 |= (ADC12SC + ENC); 
+  command void HW.power_batt(bool up) {
   }
-  
-  command void HplAdc12.stopConversion(){ 
-    ADC12CTL0 &= ~(ADC12SC + ENC); 
-    ADC12CTL0 &= ~(ADC12ON); 
+
+  command void HW.power_temp(bool up) {
   }
-  
-  command void HplAdc12.enableConversion(){ 
-    ADC12CTL0 |= ENC; 
+
+  command void HW.power_sal(bool up) {
   }
-    
-  command bool HplMM3Adc.isBusy() {
-    return FALSE;
+
+  command void HW.power_accel(bool up) {
   }
-#endif
+
+  command void HW.power_ptemp(bool up) {
+  }
+
+  command void HW.power_press(bool up) {
+  }
+
+  command void HW.power_speed(bool up) {
+  }
+
+  command void HW.power_mag(bool up) {
+  }
 }

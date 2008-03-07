@@ -26,6 +26,7 @@ module BattP {
     interface Adc;
     interface Collect;
     interface Leds;
+    interface HplMM3Adc as HW;
   }
 }
 
@@ -44,13 +45,13 @@ implementation {
 
 
   command error_t StdControl.start() {
-    /* power up batt */
+    call HW.power_batt(TRUE);
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
-    /* power down batt */
+    call HW.power_batt(FALSE);
     return SUCCESS;
   }
 

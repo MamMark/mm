@@ -28,6 +28,9 @@ implementation {
   components CollectC;
   MagP.Collect -> CollectC;
 
+  components HplMM3AdcC;
+  MagP.HW -> HplMM3AdcC;
+
   components LedsC;
   MagP.Leds -> LedsC;
 }

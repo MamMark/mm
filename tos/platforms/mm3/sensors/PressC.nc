@@ -25,4 +25,7 @@ implementation {
 
   components CollectC;
   PressP.Collect -> CollectC;
+
+  components HplMM3AdcC;
+  PressP.HW -> HplMM3AdcC;
 }

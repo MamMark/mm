@@ -28,6 +28,9 @@ implementation {
   components CollectC;
   AccelP.Collect -> CollectC;
 
+  components HplMM3AdcC;
+  AccelP.HW -> HplMM3AdcC;
+
   components LedsC;
   AccelP.Leds -> LedsC;
 }

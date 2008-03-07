@@ -36,6 +36,7 @@ module AccelP {
     interface Adc;
     interface Collect;
     interface Leds;
+    interface HplMM3Adc as HW;
   }
 }
 
@@ -54,12 +55,12 @@ implementation {
   }
 
   command error_t StdControl.start() {
-    /* power up Accel */
+    call HW.power_accel(TRUE);
     return SUCCESS;
   }
 
   command error_t StdControl.stop() {
-    /* power down Accel */
+    call HW.power_accel(FALSE);
     return SUCCESS;
   }
 

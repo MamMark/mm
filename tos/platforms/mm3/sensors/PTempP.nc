@@ -25,6 +25,7 @@ module PTempP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface Collect;
+    interface HplMM3Adc as HW;
   }
 }
 
@@ -42,13 +43,13 @@ implementation {
   }
 
   command error_t StdControl.start() {
-    /* ptemp power up */
+    call HW.power_ptemp(TRUE);
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
-    /* ptemp power down */
+    call HW.power_ptemp(FALSE);
     return SUCCESS;
   }
 

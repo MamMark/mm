@@ -76,4 +76,13 @@ interface HplMM3Adc {
    * @param gain mux control value
    */
   command void    set_gmux(uint8_t val);
+
+  command void power_batt(bool up);
+  command void power_temp(bool up);
+  command void power_sal(bool up);
+  command void power_accel(bool up);
+  command void power_ptemp(bool up);
+  command void power_press(bool up);
+  command void power_speed(bool up);
+  command void power_mag(bool up);
 }

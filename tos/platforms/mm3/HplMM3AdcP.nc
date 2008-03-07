@@ -84,28 +84,31 @@ implementation {
 
 
   command void HW.set_gmux(uint8_t val) {
-    return;
     mmP6out.g_mux = (val & 3);
   }
 
 
-#ifdef notdef
-  command void HplAdc12.startConversion(){ 
-    ADC12CTL0 |= ADC12ON; 
-    ADC12CTL0 |= (ADC12SC + ENC); 
+  command void HW.power_batt(bool up) {
   }
-  
-  command void HplAdc12.stopConversion(){ 
-    ADC12CTL0 &= ~(ADC12SC + ENC); 
-    ADC12CTL0 &= ~(ADC12ON); 
+
+  command void HW.power_temp(bool up) {
   }
-  
-  command void HplAdc12.enableConversion(){ 
-    ADC12CTL0 |= ENC; 
+
+  command void HW.power_sal(bool up) {
   }
-    
-  command bool HplMM3Adc.isBusy() {
-    return FALSE;
+
+  command void HW.power_accel(bool up) {
   }
-#endif
+
+  command void HW.power_ptemp(bool up) {
+  }
+
+  command void HW.power_press(bool up) {
+  }
+
+  command void HW.power_speed(bool up) {
+  }
+
+  command void HW.power_mag(bool up) {
+  }
 }

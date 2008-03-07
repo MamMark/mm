@@ -25,4 +25,7 @@ implementation {
 
   components CollectC;
   PTempP.Collect -> CollectC;
+
+  components HplMM3AdcC;
+  PTempP.HW -> HplMM3AdcC;
 }

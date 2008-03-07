@@ -25,8 +25,10 @@ module PressP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface Collect;
+    interface HplMM3Adc as HW;
   }
 }
+
 implementation {
   uint32_t period;
   uint8_t  press_state;
@@ -42,13 +44,13 @@ implementation {
 
 
   command error_t StdControl.start() {
-    /* power up Press */
+    call HW.power_press(TRUE);
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
-    /* power down Press */
+    call HW.power_press(FALSE);
     return SUCCESS;
   }
 

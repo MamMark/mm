@@ -28,6 +28,9 @@ implementation {
   components CollectC;
   BattP.Collect -> CollectC;
 
+  components HplMM3AdcC;
+  BattP.HW -> HplMM3AdcC;
+
   components LedsC;
   BattP.Leds -> LedsC;
 }

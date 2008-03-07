@@ -2,6 +2,11 @@
 #define _H_hardware_h
 
 /*
+ * This is the do nothing layer for use on the TelosB.  It makes the
+ * h/w interface layer do nothing.
+ */
+
+/*
  * Port definitions:
  *
  * what do these damn codes mean?  (<dir><usage><default val>: Is0 <input><spi><0, zero>)
@@ -49,45 +54,14 @@
 
 #include "msp430hardware.h"
 
-#ifdef notdef
-// LEDs
-TOSH_ASSIGN_PIN(GREEN_LED, 6, 4);
-TOSH_ASSIGN_PIN(YELLOW_LED, 6, 6);
-#endif
-
-/* currently same as telosb so we can use the mote */
+/*
+ * Use the led pins as defined on the telosb
+ */
 TOSH_ASSIGN_PIN(RED_LED,    5, 4);
 TOSH_ASSIGN_PIN(GREEN_LED,  5, 5);
 TOSH_ASSIGN_PIN(YELLOW_LED, 5, 6);
 
-/*
- * MUX Control
- *
- * Dmux controls which differential sensor is connected to
- * the differential amps.  The inhibits are involved.
- *
- * Gmux controls the gain the differential amps use.
- *
- * Smux controls which single ended sensor is selected.
- * also can select the output of the differential system.
- */
-
-  static volatile struct {
-    uint8_t d_mux		: 2;
-    uint8_t u8_inhibit		: 1;
-    uint8_t u12_inhibit		: 1;
-    uint8_t s_mux		: 3;
-    uint8_t mag_deguass2	: 1;
-  } mmP5out asm("0x0031");
-    
-  static volatile struct {
-    uint8_t g_mux		: 2;
-    uint8_t unused		: 1;
-    uint8_t unused_1		: 1;
-    uint8_t unused_2		: 3;
-    uint8_t unused_3		: 1;
-  } mmP6out asm("0x0035");
-    
+#ifdef notdef
 /* telosb mote pins for messing around */
 TOSH_ASSIGN_PIN(DMUX_A0, 5, 0);
 TOSH_ASSIGN_PIN(DMUX_A1, 5, 1);
@@ -100,6 +74,7 @@ TOSH_ASSIGN_PIN(SMUX_A2, 5, 6);
 
 TOSH_ASSIGN_PIN(GMUX_A0, 6, 0);
 TOSH_ASSIGN_PIN(GMUX_A1, 6, 1);
+#endif
 
 #ifdef notdef
 TOSH_ASSIGN_PIN(DMUX_A0, 1, 0);
@@ -141,6 +116,7 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
  * We also include other ADC control signals
  */
 
+#ifdef notdef
 TOSH_ASSIGN_PIN(ADC_SOMI, 3, 2);
 TOSH_ASSIGN_PIN(ADC_CLK,  3, 3);
 TOSH_ASSIGN_PIN(ADC_MOSI, 3, 5);
@@ -161,6 +137,7 @@ TOSH_ASSIGN_PIN(SD_DI,  5, 1);
 TOSH_ASSIGN_PIN(SD_DO,  5, 2);
 TOSH_ASSIGN_PIN(SD_CLK, 5, 3);
 TOSH_ASSIGN_PIN(SD_CSN, 5, 4);
+#endif
 
 /*
  * Power Control
@@ -171,6 +148,7 @@ TOSH_ASSIGN_PIN(SD_CSN, 5, 4);
 #define VDIFF_TURN_ON  TRUE
 #define VDIFF_TURN_OFF FALSE
 
+#ifdef notdef
 TOSH_ASSIGN_PIN(VREF_PWR, 4, 3);
 TOSH_ASSIGN_PIN(VDIFF_PWR, 4, 2);
 
@@ -186,18 +164,22 @@ TOSH_ASSIGN_PIN(TEMP_PWR, 3, 4);
 TOSH_ASSIGN_PIN(RF_BEEPER_PWR, 5, 5);
 TOSH_ASSIGN_PIN(MAG_XY_PWR, 6, 6);
 TOSH_ASSIGN_PIN(MAG_Z_PWR, 6, 7);
+#endif
 
 
 /*
  * Misc other control signals
  */
 
+#ifdef notdef
 TOSH_ASSIGN_PIN(MAG_DEGAUSS_1, 1, 2);
 TOSH_ASSIGN_PIN(MAG_DEGAUSS_2, 1, 4);
 TOSH_ASSIGN_PIN(SOLAR_CHG, 4, 4);
 TOSH_ASSIGN_PIN(EXTCHG_BATTCHK, 4, 5);
 TOSH_ASSIGN_PIN(SER_SEL_A0, 5, 6);
 TOSH_ASSIGN_PIN(SER_SEL_A1, 5, 7);
+#endif
+
 
 // need to undef atomic inside header files or nesC ignores the directive
 #undef atomic
@@ -324,6 +306,7 @@ void TOSH_MM3_B_PIN_STATE(void) {
     TOSH_MAKE_GREEN_LED_OUTPUT();
     TOSH_MAKE_YELLOW_LED_OUTPUT();
 
+#ifdef notdef
     TOSH_MAKE_DMUX_A0_OUTPUT();
     TOSH_MAKE_DMUX_A1_OUTPUT();
     TOSH_MAKE_U8_INHIBIT_OUTPUT();
@@ -335,6 +318,7 @@ void TOSH_MM3_B_PIN_STATE(void) {
 
     TOSH_MAKE_GMUX_A0_OUTPUT();
     TOSH_MAKE_GMUX_A1_OUTPUT();
+#endif
   }
 }
 

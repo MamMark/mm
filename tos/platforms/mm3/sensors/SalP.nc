@@ -44,12 +44,12 @@ implementation {
   }
 
   command error_t StdControl.start() {
-    /* power up Sal */
+    call HW.power_sal(TRUE);
     return SUCCESS;
   }
 
   command error_t StdControl.stop() {
-    /* power down Sal */
+    call HW.power_sal(FALSE);
     return SUCCESS;
   }
 
