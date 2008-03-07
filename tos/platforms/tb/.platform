@@ -4,7 +4,6 @@
 # by ncc.
 #
 # $Id: $
-#  %P
 #  %T/chips/cc2420/alarm
 #  %T/chips/cc2420/control
 #  %T/chips/cc2420/csma
@@ -23,7 +22,9 @@
 
 push( @includes, qw(
 
-  %P/sensors
+  %P
+  %P/../mm3
+  %P/../mm3/sensors
   %P/../../chips/msp430/timer
   %T/chips/cc2420
   %T/chips/msp430
