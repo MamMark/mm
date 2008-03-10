@@ -39,13 +39,11 @@ configuration SerialBootC {
   uses interface Boot;
 }
 implementation {
-  components MainC;
   components SerialBootP;
   components SerialActiveMessageC;
   
   SerialBoot = SerialBootP.SerialBoot;
   Boot = SerialBootP.MainBoot;
-  SerialBootP.MainBoot -> MainC;
   SerialBootP.SerialAMControl -> SerialActiveMessageC;
 }
 
