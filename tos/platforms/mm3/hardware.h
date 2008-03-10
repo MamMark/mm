@@ -2,6 +2,11 @@
 #define _H_hardware_h
 
 /*
+ * This is the do nothing layer for use on the TelosB.  It makes the
+ * h/w interface layer do nothing.  The MM3 code doesn't use any of the
+ * telos pins so everything is a null layer.
+ */
+/*
  * Port definitions:
  *
  * what do these damn codes mean?  (<dir><usage><default val>: Is0 <input><spi><0, zero>)
