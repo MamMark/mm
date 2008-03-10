@@ -44,12 +44,12 @@ implementation {
   }
 
   command error_t StdControl.start() {
-    call HW.power_speed(TRUE);
+    call HW.speed_on();
     return SUCCESS;
   }
 
   command error_t StdControl.stop() {
-    call HW.power_speed(FALSE);
+    call HW.speed_off();
     return SUCCESS;
   }
 
@@ -92,8 +92,8 @@ implementation {
     sdp->len = SPEED_BLOCK_SIZE;
     sdp->dtype = DT_SENSOR_DATA;
     sdp->id = SNS_ID_SPEED;
-    sdp->sched_mis = 0;
-    sdp->stamp_mis = 0;
+    sdp->sched_mis = (call PeriodTimer.gett0() - call PeriodTimer.getdt());
+    sdp->stamp_mis = call PeriodTimer.getNow();
     sdp->data[0] = data[0];
     sdp->data[1] = data[1];
     call Collect.collect(speed_data, SPEED_BLOCK_SIZE);

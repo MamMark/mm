@@ -44,13 +44,13 @@ implementation {
 
 
   command error_t StdControl.start() {
-    call HW.power_temp(TRUE);
+    call HW.temp_on();
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
-    call HW.power_temp(FALSE);
+    call HW.temp_off();
     return SUCCESS;
   }
 
@@ -80,8 +80,8 @@ implementation {
     tdp->len = TEMP_BLOCK_SIZE;
     tdp->dtype = DT_SENSOR_DATA;
     tdp->id = SNS_ID_TEMP;
-    tdp->sched_mis = 0;
-    tdp->stamp_mis = 0;
+    tdp->sched_mis = (call PeriodTimer.gett0() - call PeriodTimer.getdt());
+    tdp->stamp_mis = call PeriodTimer.getNow();
     call Collect.collect(temp_data, TEMP_BLOCK_SIZE);
   }
 

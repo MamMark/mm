@@ -45,13 +45,13 @@ implementation {
 
 
   command error_t StdControl.start() {
-    call HW.power_batt(TRUE);
+    call HW.batt_on();
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
-    call HW.power_batt(FALSE);
+    call HW.batt_off();
     return SUCCESS;
   }
 
@@ -82,8 +82,8 @@ implementation {
     bdp->len = BATT_BLOCK_SIZE;
     bdp->dtype = DT_SENSOR_DATA;
     bdp->id = SNS_ID_BATT;
-    bdp->sched_mis = 0;
-    bdp->stamp_mis = 0;
+    bdp->sched_mis = (call PeriodTimer.gett0() - call PeriodTimer.getdt());
+    bdp->stamp_mis = call PeriodTimer.getNow();
     call Collect.collect(batt_data, BATT_BLOCK_SIZE);
   }
 

@@ -14,10 +14,10 @@
  *	    cc: fifop, fifo, sfd, vren, rstn (these aren't assigned, where to put them)
  *	  (cc2420 power down?)
  *
- *	put adc and cc2420 on same bus?  what about sd?
+ *      gps goes to single rx line and power up/down
+ *	cc2420 (spi1), sd (spi1), and serial direct connect (uart1) on same usart.
  *
  *	gps pwr?
- *	serial select?   (one bit for switch between comm and gps)
  *
  * port 1.0	O	d_mux_a0		port 4.0	O	gain_mux_a0
  *       .1	O	d_mux_a1		      .1	O	gain_mux_a1
@@ -26,7 +26,7 @@
  *       .4	O	mag_deguass_2		      .4	O	solar_chg
  *       .5	O	press_res_pwr		      .5	O	extchg_battchk
  *       .6	O	salinity_pwr		      .6	O	gps_pwr	off
- *       .7	O	press_pwr		      .7	O	cc2420_vref
+ *       .7	O	press_pwr		      .7	O	cc2420_vref (rf232_pwr off)
  *
  * port 2.0	O	U8_inhibit		port 5.0	O	sd_pwr
  *       .1	O	accel_wake		      .1	Os1	sd_di (simo1, spi1)
@@ -49,71 +49,130 @@
 
 #include "msp430hardware.h"
 
-#ifdef notdef
-// LEDs
-TOSH_ASSIGN_PIN(GREEN_LED, 6, 4);
-TOSH_ASSIGN_PIN(YELLOW_LED, 6, 6);
-#endif
-
-/* currently same as telosb so we can use the mote */
-TOSH_ASSIGN_PIN(RED_LED,    5, 4);
-TOSH_ASSIGN_PIN(GREEN_LED,  5, 5);
-TOSH_ASSIGN_PIN(YELLOW_LED, 5, 6);
-
 /*
  * MUX Control
  *
  * Dmux controls which differential sensor is connected to
  * the differential amps.  The inhibits are involved.
+ * (Dmux is P1.0-1)
  *
  * Gmux controls the gain the differential amps use.
+ * (Gmux is P4.0-1)
  *
  * Smux controls which single ended sensor is selected.
  * also can select the output of the differential system.
+ * (Smux is P2.4-5 and P3.1)
+ *
+ *
+ * USART Pins
+ *
+ * usart 0 is dedicated to the ADC in SPI mode.  3.2-3, 5-6.
+ * 2.7 is an input coming from the ADC that indicates the conversion
+ * is complete.  But the msp isn't fast enough to make use of it.
+ *
+ * usart 1 is shared between the sd (spi), radio (spi), and direct connect
+ * (uart).  The radio is mutually exclusive with direct connect.
+ *
+ * Serial direct connect p3.6-7.  On prototype 1 it goes through an external
+ * multiplexor that must be set up to enable direct connect serial.
+ *
+ * TOSH_ASSIGN_PIN(SD_PWR, 5, 0);
+ * TOSH_ASSIGN_PIN(SD_DI,  5, 1);
+ * TOSH_ASSIGN_PIN(SD_DO,  5, 2);
+ * TOSH_ASSIGN_PIN(SD_CLK, 5, 3);
+ * TOSH_ASSIGN_PIN(SD_CSN, 5, 4);
  */
 
   static volatile struct {
-    uint8_t d_mux		: 2;
-    uint8_t u8_inhibit		: 1;
-    uint8_t u12_inhibit		: 1;
-    uint8_t s_mux		: 3;
+    uint8_t dmux		: 2;
+    uint8_t mag_deguass1	: 1;
+    uint8_t speed_off		: 1;
     uint8_t mag_deguass2	: 1;
-  } mmP5out asm("0x0031");
-    
+    uint8_t press_res_off	: 1;
+    uint8_t salinity_off	: 1;
+    uint8_t press_off		: 1;
+  } mmP1out asm("0x0021");
+
   static volatile struct {
-    uint8_t g_mux		: 2;
-    uint8_t unused		: 1;
-    uint8_t unused_1		: 1;
-    uint8_t unused_2		: 3;
-    uint8_t unused_3		: 1;
+    uint8_t filler		: 7;
+    uint8_t adc_cnv_busy	: 1;
+  } mmP2in asm("0x0028");
+
+  static volatile struct {
+    uint8_t u8_inhibit		: 1;
+    uint8_t accel_wake		: 1;
+    uint8_t salinity_pol_sw	: 1;
+    uint8_t u12_inhibit		: 1;
+    uint8_t smux_low2		: 2;
+    uint8_t adc_cnv		: 1;
+    uint8_t			: 1;
+  } mmP2out asm("0x0029");
+
+  static volatile struct {
+    uint8_t			: 1;
+    uint8_t smux_a2		: 1;
+    uint8_t adc_somi		: 1;	/* input */
+    uint8_t adc_sck		: 1;
+    uint8_t tmp_on		: 1;
+    uint8_t adc_sdi		: 1;
+    uint8_t utxd1		: 1;
+    uint8_t urxd1_o		: 1;
+  } mmP3out asm("0x0019");
+
+/*
+ * Power Control
+ */
+
+#define VREF_TURN_ON   TRUE
+#define VREF_TURN_OFF  FALSE
+#define VDIFF_TURN_ON  TRUE
+#define VDIFF_TURN_OFF FALSE
+
+  static volatile struct {
+    uint8_t gmux		: 2;
+    uint8_t vdiff_off		: 1;
+    uint8_t vref_off		: 1;
+    uint8_t solar_chg_on	: 1;
+    uint8_t extchg_battchk	: 1;
+    uint8_t gps_off		: 1;
+    uint8_t rf232_off		: 1;
+  } mmP4out asm("0x001d");
+
+  static volatile struct {
+    uint8_t sd_pwr_off		: 1;
+    uint8_t sd_mosi		: 1;
+    uint8_t sd_miso		: 1;
+    uint8_t sd_sck		: 1;
+    uint8_t sd_csn		: 1;	/* chip select low true (deselect) */
+    uint8_t rf_beep_off		: 1;
+    uint8_t ser_sel		: 2;
+  } mmP5out asm("0x0031");
+
+  enum {
+    SER_SEL_CRADLE =	0,
+    SER_SEL_GPS    =	1,
+    SER_SEL_RF232  =	2,
+    SER_SEL_NONE   =	3,
+  };
+
+
+// LEDs
+TOSH_ASSIGN_PIN(GREEN_LED, 6, 4);
+TOSH_ASSIGN_PIN(YELLOW_LED, 6, 6);
+
+
+  static volatile struct {
+    uint8_t			: 1;
+    uint8_t rf232_cmd		: 1;
+    uint8_t rf232_cts_o		: 1;
+    uint8_t tell		: 1;
+    uint8_t led_g		: 1;
+    uint8_t mag_xy_off		: 1;
+    uint8_t led_y		: 1;
+    uint8_t mag_z_off		: 1;
   } mmP6out asm("0x0035");
-    
-/* telosb mote pins for messing around */
-TOSH_ASSIGN_PIN(DMUX_A0, 5, 0);
-TOSH_ASSIGN_PIN(DMUX_A1, 5, 1);
-TOSH_ASSIGN_PIN(U8_INHIBIT, 5, 2);
-TOSH_ASSIGN_PIN(U12_INHIBIT, 5, 3);
 
-TOSH_ASSIGN_PIN(SMUX_A0, 5, 4);
-TOSH_ASSIGN_PIN(SMUX_A1, 5, 5);
-TOSH_ASSIGN_PIN(SMUX_A2, 5, 6);
 
-TOSH_ASSIGN_PIN(GMUX_A0, 6, 0);
-TOSH_ASSIGN_PIN(GMUX_A1, 6, 1);
-
-#ifdef notdef
-TOSH_ASSIGN_PIN(DMUX_A0, 1, 0);
-TOSH_ASSIGN_PIN(DMUX_A1, 1, 1);
-TOSH_ASSIGN_PIN(U8_INHIBIT, 2, 0);
-TOSH_ASSIGN_PIN(U12_INHIBIT, 2, 3);
-
-TOSH_ASSIGN_PIN(SMUX_A0, 2, 4);
-TOSH_ASSIGN_PIN(SMUX_A1, 2, 5);
-TOSH_ASSIGN_PIN(SMUX_A2, 3, 1);
-
-TOSH_ASSIGN_PIN(GMUX_A0, 4, 0);
-TOSH_ASSIGN_PIN(GMUX_A1, 4, 1);
-#endif
 
 #ifdef notdef
 // CC2420 RADIO #defines
@@ -134,70 +193,6 @@ TOSH_ASSIGN_PIN(CC_VREN, 4, 5);
 TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
 #endif
 
-/*
- * USART Pins
- *
- * The ADC (external) is connected to USART0
- * We also include other ADC control signals
- */
-
-TOSH_ASSIGN_PIN(ADC_SOMI, 3, 2);
-TOSH_ASSIGN_PIN(ADC_CLK,  3, 3);
-TOSH_ASSIGN_PIN(ADC_MOSI, 3, 5);
-TOSH_ASSIGN_PIN(ADC_CNV,  2, 6);
-TOSH_ASSIGN_PIN(ADC_SOMI_TA0, 2, 7);
-
-/*
- * USART1, serial uart
- */
-TOSH_ASSIGN_PIN(UTXD1, 3, 6);
-TOSH_ASSIGN_PIN(URXD1, 3, 7);
-
-/*
- * USART1, SPI mode used for the SD
- */
-TOSH_ASSIGN_PIN(SD_PWR, 5, 0);
-TOSH_ASSIGN_PIN(SD_DI,  5, 1);
-TOSH_ASSIGN_PIN(SD_DO,  5, 2);
-TOSH_ASSIGN_PIN(SD_CLK, 5, 3);
-TOSH_ASSIGN_PIN(SD_CSN, 5, 4);
-
-/*
- * Power Control
- */
-
-#define VREF_TURN_ON   TRUE
-#define VREF_TURN_OFF  FALSE
-#define VDIFF_TURN_ON  TRUE
-#define VDIFF_TURN_OFF FALSE
-
-TOSH_ASSIGN_PIN(VREF_PWR, 4, 3);
-TOSH_ASSIGN_PIN(VDIFF_PWR, 4, 2);
-
-TOSH_ASSIGN_PIN(SPEED_PWR, 1, 3);
-TOSH_ASSIGN_PIN(PRESS_RES_PWR, 1, 5);
-TOSH_ASSIGN_PIN(PRESS_PWR, 1, 7);
-TOSH_ASSIGN_PIN(ACCEL_WAKE, 2, 1);
-
-TOSH_ASSIGN_PIN(SALINITY_PWR, 1, 6);
-TOSH_ASSIGN_PIN(SALINITY_POLARITY, 2, 2);
-
-TOSH_ASSIGN_PIN(TEMP_PWR, 3, 4);
-TOSH_ASSIGN_PIN(RF_BEEPER_PWR, 5, 5);
-TOSH_ASSIGN_PIN(MAG_XY_PWR, 6, 6);
-TOSH_ASSIGN_PIN(MAG_Z_PWR, 6, 7);
-
-
-/*
- * Misc other control signals
- */
-
-TOSH_ASSIGN_PIN(MAG_DEGAUSS_1, 1, 2);
-TOSH_ASSIGN_PIN(MAG_DEGAUSS_2, 1, 4);
-TOSH_ASSIGN_PIN(SOLAR_CHG, 4, 4);
-TOSH_ASSIGN_PIN(EXTCHG_BATTCHK, 4, 5);
-TOSH_ASSIGN_PIN(SER_SEL_A0, 5, 6);
-TOSH_ASSIGN_PIN(SER_SEL_A1, 5, 7);
 
 // need to undef atomic inside header files or nesC ignores the directive
 #undef atomic
@@ -276,7 +271,6 @@ TOSH_ASSIGN_PIN(SER_SEL_A1, 5, 7);
 #define P6_BASE_VAL	0xf0
 
 
-#ifdef notdef
 void TOSH_MM3_INITIAL_PIN_STATE(void) {
   atomic {
     SVSCTL = 0;			/* for now, disable SVS */
@@ -308,33 +302,6 @@ void TOSH_MM3_INITIAL_PIN_STATE(void) {
     P6SEL = 0;
     P6DIR = P6_BASE_DIR;
     P6OUT = P6_BASE_VAL;
-  }
-}
-#endif
-
-void TOSH_MM3_B_PIN_STATE(void) {
-  atomic {
-    SVSCTL = 0;			/* for now, disable SVS */
-    U0CTL = SWRST;		/* hold USART0 in reset */
-    U1CTL = SWRST;		/* and  USART1 as well  */
-    ME1 = 0;
-    ME2 = 0;
-
-    TOSH_MAKE_RED_LED_OUTPUT();
-    TOSH_MAKE_GREEN_LED_OUTPUT();
-    TOSH_MAKE_YELLOW_LED_OUTPUT();
-
-    TOSH_MAKE_DMUX_A0_OUTPUT();
-    TOSH_MAKE_DMUX_A1_OUTPUT();
-    TOSH_MAKE_U8_INHIBIT_OUTPUT();
-    TOSH_MAKE_U12_INHIBIT_OUTPUT();
-
-    TOSH_MAKE_SMUX_A0_OUTPUT();
-    TOSH_MAKE_SMUX_A1_OUTPUT();
-    TOSH_MAKE_SMUX_A2_OUTPUT();
-
-    TOSH_MAKE_GMUX_A0_OUTPUT();
-    TOSH_MAKE_GMUX_A1_OUTPUT();
   }
 }
 

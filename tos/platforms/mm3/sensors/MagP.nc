@@ -46,13 +46,13 @@ implementation {
 
 
   command error_t StdControl.start() {
-    call HW.power_mag(TRUE);
+    call HW.mag_on();
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
-    call HW.power_mag(FALSE);
+    call HW.mag_off();
     return SUCCESS;
   }
 
@@ -103,8 +103,8 @@ implementation {
     mdp->len = MAG_BLOCK_SIZE;
     mdp->dtype = DT_SENSOR_DATA;
     mdp->id = SNS_ID_MAG;
-    mdp->sched_mis = 0;
-    mdp->stamp_mis = 0;
+    mdp->sched_mis = (call PeriodTimer.gett0() - call PeriodTimer.getdt());
+    mdp->stamp_mis = call PeriodTimer.getNow();
     mdp->data[0] = data[0];
     mdp->data[1] = data[1];
     mdp->data[2] = data[2];

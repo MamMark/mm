@@ -26,63 +26,33 @@
  */
  
 interface HplMM3Adc {
-
-  /*
-   * power_vref: power up or down main sensor power
-   * power_vdiff: power up or down the differential system.
-   * isVrefPowered: true if Vref is up
-   * isVdiffPowered: true if Vdiff is up.  Does not account
-   *   for any timing.  It just returns whether or not the
-   *   bit controlling Vref/Vdiff power is set.
-   */
-  command void power_vref(bool up);
-  command void power_vdiff(bool up);
-  command bool isVrefPowered();
-  command bool isVdiffPowered();
-  command void toggleSal();
-
-  /*
-   * Returns the current Diff Mux control value
-   * @return dmux control value
-   */
+  command void	  vref_on();
+  command void	  vref_off();
+  command void	  vdiff_on();
+  command void	  vdiff_off();
+  command bool	  isVrefPowered();
+  command bool	  isVdiffPowered();
+  command void	  toggleSal();
   command uint8_t get_dmux();
-
-  /*
-   * Set dmux control value
-   * @param dmux control value
-   */
-  command void    set_dmux(uint8_t);
-
-  /*
-   * Returns the current SMux control value
-   * @return smux control value
-   */
+  command void	  set_dmux(uint8_t val);
   command uint8_t get_smux();
-
-  /*
-   * Set smux control value
-   * @param smux control value
-   */
-  command void    set_smux(uint8_t val);
-
-  /*
-   * Returns the current diff gain Mux control value
-   * @return gmux control value
-   */
+  command void	  set_smux(uint8_t val);
   command uint8_t get_gmux();
-
-  /*
-   * Set gmux control value
-   * @param gain mux control value
-   */
-  command void    set_gmux(uint8_t val);
-
-  command void power_batt(bool up);
-  command void power_temp(bool up);
-  command void power_sal(bool up);
-  command void power_accel(bool up);
-  command void power_ptemp(bool up);
-  command void power_press(bool up);
-  command void power_speed(bool up);
-  command void power_mag(bool up);
+  command void	  set_gmux(uint8_t val);
+  command void	  batt_on();
+  command void	  batt_off();
+  command void	  temp_on();
+  command void	  temp_off();
+  command void	  sal_on();
+  command void	  sal_off();
+  command void	  accel_on();
+  command void	  accel_off();
+  command void	  ptemp_on();
+  command void	  ptemp_off();
+  command void	  press_on();
+  command void	  press_off();
+  command void	  speed_on();
+  command void	  speed_off();
+  command void	  mag_on();
+  command void	  mag_off();
 }

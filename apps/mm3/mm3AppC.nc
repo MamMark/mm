@@ -20,4 +20,7 @@ implementation {
    * start when regimeChange() is signalled.
    */
   components BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
+
+  components HplMM3AdcC;
+  mm3C.HW -> HplMM3AdcC;
 }

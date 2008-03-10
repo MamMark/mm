@@ -44,12 +44,12 @@ implementation {
   }
 
   command error_t StdControl.start() {
-    call HW.power_sal(TRUE);
+    call HW.sal_on();
     return SUCCESS;
   }
 
   command error_t StdControl.stop() {
-    call HW.power_sal(FALSE);
+    call HW.sal_off();
     return SUCCESS;
   }
 
@@ -93,8 +93,8 @@ implementation {
     sdp->len = SAL_BLOCK_SIZE;
     sdp->dtype = DT_SENSOR_DATA;
     sdp->id = SNS_ID_SAL;
-    sdp->sched_mis = 0;
-    sdp->stamp_mis = 0;
+    sdp->sched_mis = (call PeriodTimer.gett0() - call PeriodTimer.getdt());
+    sdp->stamp_mis = call PeriodTimer.getNow();
     sdp->data[0] = data[0];
     sdp->data[1] = data[1];
     call Collect.collect(sal_data, SAL_BLOCK_SIZE);

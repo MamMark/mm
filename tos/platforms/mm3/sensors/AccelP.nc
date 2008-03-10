@@ -55,12 +55,12 @@ implementation {
   }
 
   command error_t StdControl.start() {
-    call HW.power_accel(TRUE);
+    call HW.accel_on();
     return SUCCESS;
   }
 
   command error_t StdControl.stop() {
-    call HW.power_accel(FALSE);
+    call HW.accel_off();
     return SUCCESS;
   }
 
@@ -110,8 +110,8 @@ implementation {
     adp->len = ACCEL_BLOCK_SIZE;
     adp->dtype = DT_SENSOR_DATA;
     adp->id = SNS_ID_ACCEL;
-    adp->sched_mis = 0;
-    adp->stamp_mis = 0;
+    adp->sched_mis = (call PeriodTimer.gett0() - call PeriodTimer.getdt());
+    adp->stamp_mis = call PeriodTimer.getNow();
     adp->data[0] = data[0];
     adp->data[1] = data[1];
     adp->data[2] = data[2];

@@ -13,6 +13,7 @@ module mm3C {
     interface Regime;
     interface Leds;
     interface Boot;
+    interface HplMM3Adc as HW;
   }
 }
 
@@ -31,6 +32,30 @@ implementation {
     call Leds.led0Off();
     call Leds.led1Off();
     call Leds.led2Off();
+
+    call HW.set_dmux(5);
+    call HW.set_dmux(0);
+    call HW.set_smux(5);
+    call HW.set_smux(2);
+    call HW.set_smux(0);
+    call HW.set_gmux(2);
+    call HW.set_gmux(0);
+    call HW.batt_on();
+    call HW.batt_off();
+    call HW.temp_on();
+    call HW.temp_off();
+    call HW.sal_on();
+    call HW.sal_off();
+    call HW.accel_on();
+    call HW.accel_off();
+    call HW.ptemp_on();
+    call HW.ptemp_off();
+    call HW.press_on();
+    call HW.press_off();
+    call HW.speed_on();
+    call HW.speed_off();
+    call HW.mag_on();
+    call HW.mag_off();
   }
 
 

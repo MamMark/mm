@@ -58,8 +58,8 @@ implementation {
     vref_state = VREF_OFF;
     vdiff_state = VDIFF_OFF;
     m_config = NULL;
-    call HW.power_vref(VREF_TURN_OFF);
-    call HW.power_vdiff(VDIFF_TURN_OFF);
+    call HW.vref_off();
+    call HW.vdiff_off();
     return SUCCESS;
   }
 
@@ -107,8 +107,8 @@ implementation {
          */
         vref_state = VREF_OFF;
         vdiff_state = VDIFF_OFF;
-        call HW.power_vref(VREF_TURN_OFF);
-        call HW.power_vdiff(VDIFF_TURN_OFF); 
+        call HW.vref_off();
+        call HW.vdiff_off(); 
 	adc_state = ADC_IDLE;
 	adc_owner = SNS_ID_NONE;
 	m_config = NULL;
@@ -158,7 +158,7 @@ implementation {
           break;
 
 	case VREF_OFF:
-          call HW.power_vref(VREF_TURN_ON);
+          call HW.vref_on();
           vref_state = VREF_POWER_WAIT;
           delay = VREF_POWERUP_DELAY;
           break;
@@ -174,7 +174,7 @@ implementation {
          * and delay for that amount of time.
          */
         call HW.set_smux(config->mux);
-        call HW.power_vdiff(VDIFF_TURN_OFF);
+        call HW.vdiff_off();
 	vdiff_state = VDIFF_OFF;
         if (config->t_settle > delay)
           delay = config->t_settle;
@@ -220,7 +220,7 @@ implementation {
               delay = VDIFF_SWING_DELAY;
             break;
 	}
-        call HW.power_vdiff(VDIFF_TURN_ON);
+        call HW.vdiff_on();
         call HW.set_smux(SMUX_DIFF);
         call HW.set_dmux(VDIFF_SWING_DMUX);
         call HW.set_gmux(VDIFF_SWING_GAIN);
@@ -344,7 +344,7 @@ implementation {
 	vdiff_state = VDIFF_POWER_SWING;
 	delay = VDIFF_POWERUP_DELAY;
       }
-      call HW.power_vdiff(VDIFF_TURN_ON);
+      call HW.vdiff_on();
       call HW.set_smux(SMUX_DIFF);
       call HW.set_dmux(VDIFF_SWING_DMUX);
       call HW.set_gmux(VDIFF_SWING_GAIN);

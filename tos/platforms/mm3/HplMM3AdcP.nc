@@ -30,85 +30,147 @@ module HplMM3AdcP {
 }
 
 implementation {
-  command void HW.power_vref(bool up) {
+  command void HW.vref_on() {
+    mmP4out.vref_off = 0;
   }
 
-  command void HW.power_vdiff(bool up) {
+  command void HW.vref_off() {
+    mmP4out.vref_off = 1;
+  }
+
+  command void HW.vdiff_on() {
+    mmP4out.vdiff_off = 0;
+  }
+
+  command void HW.vdiff_off() {
+    mmP4out.vdiff_off = 1;
   }
 
   command bool HW.isVrefPowered() {
+    return (mmP4out.vref_off == 0);
   }
 
   command bool HW.isVdiffPowered() {
+    return (mmP4out.vdiff_off == 0);
   }
 
   command void HW.toggleSal() {
+    mmP2out.salinity_pol_sw ^= 1;
   }
+
 
   command uint8_t HW.get_dmux() {
     uint8_t temp;
 
-    temp = mmP5out.d_mux;
-    if (mmP5out.u8_inhibit)
+    temp = mmP1out.dmux;
+    if (mmP2out.u8_inhibit)
       temp |= 0x4;
     return(temp);
   }
 
 
   command void HW.set_dmux(uint8_t val) {
-    return;
-    mmP5out.u8_inhibit = 1;
-    mmP5out.u12_inhibit = 1;
-    mmP5out.d_mux = (val & 3);
+    mmP2out.u8_inhibit = 1;
+    mmP2out.u12_inhibit = 1;
+    mmP1out.dmux = (val & 3);
     if (val & 0x4)
-      mmP5out.u12_inhibit = 0;
+      mmP2out.u12_inhibit = 0;
     else
-      mmP5out.u8_inhibit = 0;
+      mmP2out.u8_inhibit = 0;
   }
 
 
   command uint8_t HW.get_smux() {
-    return(mmP5out.s_mux);
+    uint8_t temp;
+
+    temp = mmP2out.smux_low2;
+    if (mmP3out.smux_a2)
+      temp |= 4;
+    return(temp);
   }
 
 
   command void HW.set_smux(uint8_t val) {
-    return;
-    mmP5out.s_mux = val;
+    mmP2out.smux_low2 = (val & 3);
+    mmP3out.smux_a2   = ((val & 4) == 4);
   }
 
 
   command uint8_t HW.get_gmux() {
-    return(mmP6out.g_mux);
+    return(mmP4out.gmux);
   }
 
 
   command void HW.set_gmux(uint8_t val) {
-    mmP6out.g_mux = (val & 3);
+    mmP4out.gmux = (val & 3);
   }
 
 
-  command void HW.power_batt(bool up) {
+  command void HW.batt_on() {
+    mmP4out.extchg_battchk = 1;
   }
 
-  command void HW.power_temp(bool up) {
+  command void HW.batt_off() {
+    mmP4out.extchg_battchk = 0;
   }
 
-  command void HW.power_sal(bool up) {
+  command void HW.temp_on() {
+    mmP3out.tmp_on = 1;
   }
 
-  command void HW.power_accel(bool up) {
+  command void HW.temp_off() {
+    mmP3out.tmp_on = 0;
   }
 
-  command void HW.power_ptemp(bool up) {
+  command void HW.sal_on() {
+    mmP1out.salinity_off = 0;
   }
 
-  command void HW.power_press(bool up) {
+  command void HW.sal_off() {
+    mmP1out.salinity_off = 1;
   }
 
-  command void HW.power_speed(bool up) {
+  command void HW.accel_on() {
+    mmP2out.accel_wake = 1;
   }
 
-  command void HW.power_mag(bool up) {
+  command void HW.accel_off() {
+    mmP2out.accel_wake = 0;
+  }
+
+  command void HW.ptemp_on() {
+    mmP1out.press_off = 1;
+    mmP1out.press_res_off= 0;
+  }
+
+  command void HW.ptemp_off() {
+    mmP1out.press_res_off = 1;
+  }
+
+  command void HW.press_on() {
+    mmP1out.press_res_off= 1;
+    mmP1out.press_off = 0;
+  }
+
+  command void HW.press_off() {
+    mmP1out.press_off = 1;
+  }
+
+  command void HW.speed_on() {
+    mmP1out.speed_off = 0;
+  }
+
+  command void HW.speed_off() {
+    mmP1out.speed_off = 1;
+  }
+
+  command void HW.mag_on() {
+    mmP6out.mag_xy_off = 0;
+    mmP6out.mag_z_off  = 0;
+  }
+
+  command void HW.mag_off() {
+    mmP6out.mag_xy_off = 1;
+    mmP6out.mag_z_off  = 1;
   }
 }
