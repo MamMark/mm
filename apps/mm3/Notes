@@ -8,12 +8,6 @@
    time).  Currently probably waits too long.  Serializes vdiff swing and
    sensor power up (if first piece).  If vdiff already on.
 
-3) How to structure sharing files between telosb and mm3?  Can't seem to
-   get telosb to build with own platform files.  Even when mm3 files copied
-   over.
-
-4) Dealing with not having 3 leds.
-
 5) Why does MainBoot.booted get called twice?
    SerialAMControl.start()
 

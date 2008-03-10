@@ -33,7 +33,7 @@
  *       .6	O	salinity_pwr		      .6	O	gps_pwr	off
  *       .7	O	press_pwr		      .7	O	cc2420_vref (rf232_pwr off)
  *
- * port 2.0	O	U8_inhibit		port 5.0	O	sd_pwr
+ * port 2.0	O	U8_inhibit		port 5.0	O	sd_pwr_off (1 = off)
  *       .1	O	accel_wake		      .1	Os1	sd_di (simo1, spi1)
  *       .2	O	salinity_polarity	      .2	Is1	sd_do (somi1, spi1)
  *       .3	O	u12_inhibit		      .3	Os1	sd_clk (uclk1, spi1)
@@ -269,7 +269,8 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
  * correct states.
  */
 #define P5_BASE_DIR	0xe1
-#define P5_BASE_VAL	0xf1
+//#define P5_BASE_VAL	0xf1
+#define P5_BASE_VAL	0x31
 
 /* mag pwr off, rf232 bits outputs/0 */
 #define P6_BASE_DIR	0xff
