@@ -37,41 +37,35 @@
 import net.tinyos.message.*;
 import net.tinyos.util.*;
 import java.io.*;
-import java.util.Hashtable;
-/**
-*/
+import java.util.Formatter;
 
-public class Mm3SerialCollectApp implements MessageListener {
-  MoteIF mote;
-  Hashtable Sensors = new Hashtable();
+public class Mm3Sensor {
+  short sensor_id;
+  FileOutputStream fileStream;
+  PrintStream printStream;
 
-  /* Main entry point */
-  void run() {
-
-    mote = new MoteIF(PrintStreamMessenger.err);
-    mote.registerListener(new CollectMsg(), this);
-
-    Sensors.put(SensorConstants.SNS_ID_TEMP,  new Mm3Sensor(SensorConstants.SNS_ID_TEMP));
-    Sensors.put(SensorConstants.SNS_ID_BATT,  new Mm3Sensor(SensorConstants.SNS_ID_BATT));
-    Sensors.put(SensorConstants.SNS_ID_PTEMP, new Mm3Sensor(SensorConstants.SNS_ID_PTEMP));
-    Sensors.put(SensorConstants.SNS_ID_MAG,   new Mm3Sensor(SensorConstants.SNS_ID_MAG));
-    Sensors.put(SensorConstants.SNS_ID_SAL,   new Mm3Sensor(SensorConstants.SNS_ID_SAL));
-    Sensors.put(SensorConstants.SNS_ID_ACCEL, new Mm3Sensor(SensorConstants.SNS_ID_ACCEL));
-    Sensors.put(SensorConstants.SNS_ID_SPEED, new Mm3Sensor(SensorConstants.SNS_ID_SPEED));
-    Sensors.put(SensorConstants.SNS_ID_PRESS, new Mm3Sensor(SensorConstants.SNS_ID_PRESS));
-
-  }
-
-  synchronized public void messageReceived(int dest_addr, Message msg) {
-    if (msg instanceof CollectMsg) {
-      DtSensorDataMsg sensorDataMsg = new DtSensorDataMsg(msg, 0);
-      System.out.println(sensorDataMsg.get_id());
-      ((Mm3Sensor)(Sensors.get((byte)sensorDataMsg.get_id()))).print((CollectMsg)msg); 
+  public Mm3Sensor(short sensor_id) {
+    try {
+      this.sensor_id = sensor_id;
+      //The true/false flag means append or create new
+      fileStream = new FileOutputStream("Sensor-" + sensor_id + ".dat", false);
+      printStream = new PrintStream(fileStream);
+    }
+    catch (Exception e) {
+      System.out.println(e);
+      System.out.println("Error during initialization.....");
     }
   }
 
-  public static void main(String[] args) {
-    Mm3SerialCollectApp me = new Mm3SerialCollectApp();
-    me.run();
+  void printSensorData(CollectMsg msg, int offset, int len) {
+    for(int i=offset; i<len; i++)
+      printStream.println("  [data["+(i-offset)+"]=0x"+ Integer.toHexString(msg.getElement_buffer(i))+"]");
+  }
+        
+  public void print(CollectMsg msg) {
+      DtSensorDataMsg sensorDataMsg = new DtSensorDataMsg(msg, 0);
+
+      printStream.print(sensorDataMsg.toString());
+      printSensorData((CollectMsg)msg, sensorDataMsg.offset_data(0), sensorDataMsg.get_len());
   }
 }
