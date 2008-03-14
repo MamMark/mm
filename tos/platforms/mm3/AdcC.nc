@@ -21,4 +21,7 @@ implementation {
 
   components new Alarm32khzC() as PA;
   AdcP.PowerAlarm -> PA;
+
+  components BusyWaitMicroC;
+  AdcP.BusyWait -> BusyWaitMicroC;
 }

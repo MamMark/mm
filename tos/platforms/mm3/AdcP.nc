@@ -1,11 +1,55 @@
 /*
  * Copyright (c) 2008, Eric B. Decker
  * All rights reserved.
+ *
+ * adc7685.h - Analog/Digital converter interface
+ *
+ * Analog Devices AD7685.
+ *
+ * The ADC interface consists of 5 pins.
+ *
+ * P/I    = port function, input.
+ * P/O    = port function, output.
+ * SPI0/O = assigned to SPI0 as an output.
+ * SPI0/I = SPI0 input.
+ *
+ * P2.6    CNV	(P/O).  Convert.  low to high starts the conversion
+ *			Also other functions (see the data sheet).
+ *
+ * P2.7    CNV_complete  (P/I) (same as SOMI0) normally high (when SDO is high-Z)
+ *			but goes low when a conversion completes (.7 to 3.2 us)
+ *
+ * P3.2    SOMI0	(SPI0/I) output from the ADC to the SPI module.  data clocks on
+ *			falling edge of SCK.
+ *
+ * P3.3    SCK	(P/O and SPI0/O) clock to the ADC.  Initially configured as P/O so the
+ *			start bit can be clocked out.  Then switched to SPI0/O
+ *			and the SPI runs the rest of the data (16 bits).
+ *
+ * P3.5    SDI	(P/O, set to 1) set high and left there.  Controls ADC mode (selected on
+ *			rising edge of CNV.
+ *
+ * we assume sole control of SPI0 and USART0.  Dedicated to the
+ * ADC so no need to arbritrate.
+ *
  */
 
 #include "hardware.h"
 #include "sensors.h"
 
+//#define FAKE_ADC
+#define ADC_DIV 12
+
+/*
+ * ADC_SPI_MAX_WAIT is the number of microsecs that the
+ * readAdc code will wait looking for bytes that should
+ * be coming from the ADC.  We dont want to lock up and
+ * stop things from working.
+ *
+ * Initially we panic.  But this will be replaced by making
+ * the code recover.
+ */
+#define ADC_SPI_MAX_WAIT 2
 
 module AdcP {
   provides {
@@ -18,6 +62,7 @@ module AdcP {
     interface ResourceQueue as Queue;
     interface HplMM3Adc as HW;
     interface Alarm<T32khz, uint16_t> as PowerAlarm;
+    interface BusyWait<TMicro, uint16_t>;
   }
 }
 
@@ -50,6 +95,73 @@ implementation {
   const mm3_sensor_config_t *m_config;
   uint16_t value;
 
+
+  void debug_break()  __attribute__ ((noinline)) {
+    nop();
+  }
+
+  void panic(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) __attribute__ ((noinline))  {
+    debug_break();
+  }
+
+
+  /*
+   * Adc Initilization.  (See above for pin definitions).
+   *
+   * Put the ADC into the initial state.  The ADC subsystem should
+   * always been in this state prior to a conversion.
+   *
+   * According to the data sheet, if conversion data isn't available then
+   * SDO will be in high-Z.  CNV_cmplt should be a 1.  but we only look
+   * at it after we start a conversion.  If interrupts are being used
+   * they should not be enabled until after a conversion is started.
+   * CNV_cmplt should then be a 1 and the interrupt is generated when
+   * CNV_cmplt goes low.
+   *
+   * But this cpu is too slow to use this mode.
+   *
+   * o CNV low.
+   *
+   * o ADC_SDI (as seen at the ADC) high.  This stays high and isn't changed.
+   *
+   * o ADC_SCK low.  Also ADC_SCK is initially assigned to the port rather
+   *   than the SPI module.  After a conversion is completed, the first
+   *   thing we want to do is clock out the start bit.  Then we hand
+   *   ADC_SCK back over to the SPI and let it do its thing.
+   *
+   * o SOMI0 (SDO) is assigned to the SPI.
+   *
+   * o The SPI0 module is initialized and left running, it is idle.
+   */
+
+  void init_adc_hw() {
+    U0CTL = CHAR | SYNC | MM | SWRST;
+    ME1 = 0;				/* turn off US0 module enables */
+    IE1 &= ~(URXIE0 | UTXIE0);		/* no interrupts */
+
+    /*
+     * set ADC_CNV to 1.  Dir and FuncSel are set once by platform init
+     * ADC_CNV_BUSY input.  Set by platform init
+     * ADC_SDO, ADC_CLK assigned dir and sel by platform init.
+     */
+    ADC_CNV = 0;
+
+    /*
+     * Set USART0 up as SPI0
+     *
+     * Normal clock phase, normally low clock, 3 pin SPI mode,
+     * clock from SMCLK.
+     */
+    U0TCTL = SSEL1 + SSEL0 + STC; /* smclk, 3 pin SPI */
+    U0RCTL = 0;			  /* clear rx errors */
+    U0BR1  = 0;
+    U0BR0  = ADC_DIV;
+    U0MCTL = 0;			  /* no modulation, spi */
+    ME1 |= USPIE0;
+    U0CTL &= ~SWRST;		  /* and bring it out of reset */
+  }
+
+
   command error_t Init.init() {
     value = 0;
     adc_owner  = SNS_ID_NONE;
@@ -60,6 +172,7 @@ implementation {
     m_config = NULL;
     call HW.vref_off();
     call HW.vdiff_off();
+    init_adc_hw();
     return SUCCESS;
   }
 
@@ -95,9 +208,7 @@ implementation {
 
     if (adc_state != ADC_POWERING_DOWN &&
         adc_state != ADC_GRANTING) {
-      /*
-       * not what we expected.  bitch.  Shouldn't be here.
-       */
+      panic(PANIC_ADC, 1, adc_state, 0, 0, 0);
     }
 
     if (adc_state == ADC_POWERING_DOWN) {
@@ -128,9 +239,7 @@ implementation {
 
     if (adc_state == ADC_GRANTING) {
       if (!req_client || req_client >= MM3_NUM_SENSORS) {
-        /*
-         * bad, bad sensor.  bitch
-         */
+	panic(PANIC_ADC, 2, req_client, 0, 0, 0);
       }
 
       adc_owner = req_client;
@@ -151,7 +260,9 @@ implementation {
        */
       switch(vref_state) {
 	default:
-	  /* bitch bitch bitch
+	  panic(PANIC_ADC, 3, vref_state, 0, 0, 0);
+	  vref_state = VREF_ON;
+	  /*
 	   * fall through
 	   */
 	case VREF_ON:
@@ -294,7 +405,9 @@ implementation {
 	   * Queue should be empty when ADC is IDLE
 	   * bitch bitch bitch
 	   */
+	  panic(PANIC_ADC, 4, adc_state, 0, 0, 0);
 	}
+
 	/*
 	 * since we know the queue is empty.  The enqueue
 	 * can never fail.
@@ -314,6 +427,7 @@ implementation {
           /* check for ebusy.  shouldn't happen
 	   * bitch bitch bitch
 	   */
+	  panic(PANIC_ADC, 5, rtn, 0, 0, 0);
         }
 	return rtn;
       }
@@ -330,6 +444,7 @@ implementation {
       /*
        * bitch.  shouldn't be calling
        */
+      panic(PANIC_ADC, 6, adc_owner, client_id, adc_state, 0);
       return;
     }
     m_config = config;
@@ -368,6 +483,7 @@ implementation {
       /*
        * bitch bitch bitch
        */
+      panic(PANIC_ADC, 7, adc_owner, client_id, adc_state, 0);
       return FAIL;
     }
 
@@ -389,10 +505,97 @@ implementation {
   }
 
 
+  /*
+   * readAdc
+   *
+   * put the external ADC through its paces.  Reads via Usart0 (SPI0).
+   *
+   */
+ 
   command uint16_t AdcClient.readAdc[uint8_t client_id]() {
-    return ++value;
-  }
+    bool need_first;
+    uint16_t result;
+    uint16_t t0;
 
+#ifdef FAKE_ADC
+    return ++value;
+#endif
+    result = 0;
+    if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) || 
+	((U0TCTL & TXEPT) == 0)) {
+      /*
+       * no space in transmitter (huh?)
+       * receiver not empty
+       * transmitter should be completely empty
+       *
+       * bitch bitch bitch
+       */
+      panic(PANIC_ADC, 8, IFG1, U0TCTL, 0, 0);
+    }
+
+    ADC_CNV = 1;
+    TELL = 1;
+    uwait(2);
+    TELL = 0;
+    ADC_CNV = 0;
+
+    /*
+     * go get the data via the SPI.  Send to receive
+     */
+
+    U0TXBUF = 0x1a;		/* data doesn't matter */
+
+    /*
+     * UTXIFG0 should immediately go high again since the SPI
+     * should immediately accept both bytes.
+     *
+     * First byte may or may not already be there.
+     * Probably simpler to put a delay in.  But then
+     * there may be the problem of the receiver overrunning.
+     */
+    need_first = TRUE;
+    if (IFG1 & URXIFG0) {
+      result = ((uint16_t) U0RXBUF) << 8;
+      need_first = FALSE;
+    }
+
+    t0 = TAR;
+    while (!(IFG1 & UTXIFG0)) {
+      if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
+	panic(PANIC_ADC, 9, 1, 0, 0, 0);
+      }
+    }
+
+    U0TXBUF = 0x25;		/* send next to get next */
+    if (need_first) {
+      t0 = TAR;
+      while (!(IFG1 & URXIFG0)) {
+	if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
+	  panic(PANIC_ADC, 9, 2, 0, 0, 0);
+	}
+      }
+      result = ((uint16_t) U0RXBUF) << 8;
+    }
+
+    t0 = TAR;
+    while (!(IFG1 & URXIFG0)) {
+      if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
+	panic(PANIC_ADC, 9, 3, 0, 0, 0);
+      }
+    }
+
+    result |= ((uint16_t) U0RXBUF);
+
+    /*
+     * Transmitter and Recevier should both be empty
+     */
+    if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) ||
+	((U0TCTL & TXEPT) == 0)) {
+      panic(PANIC_ADC, 10, IFG1, U0TCTL, 0, 0);
+    }
+
+    return(result);
+  }
 
   default event void AdcClient.configured[uint8_t id]() {}
 

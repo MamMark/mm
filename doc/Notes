@@ -1,0 +1,25 @@
+Installation of Tools.
+Configuring Linux Kernel for ti usb fet
+Other Misc. things.
+
+1) udev configuration
+   see ~/tinyos/Downloads/36-MSP430-FET.rules
+
+Loading:
+
+modprobe ti_usb_3410_5052 vendor_3410=0x1234,0x1234 product_3410=0x1111,0x2222
+
+    Alternatively, you could add this line to /etc/modules.conf
+
+       add options ti_usb_3410_5052 vendor_3410=0x1234,0x1234 product_3410=0x1111,0x2222
+
+including the echo 2 > /sys/bus/usb/.../bConfigurationValue step, by
+adding this udev rule:
+
+[andyw@ermintrude ~]$ cat /etc/udev/rules.d/msp-fet430uif.rules
+SUBSYSTEM=="usb_device" ACTION=="add" SYSFS{product}=="MSP-FET430UIF JTAG Tool"
+  SYSFS{bNumConfigurations}=="2"
+  SYSFS{bConfigurationValue}=="1"
+  RUN+="/bin/sh -c 'echo 2 > /sys%p/device/bConfigurationValue'", MODE="0666"
+[andyw@ermintrude ~]$ 
+
