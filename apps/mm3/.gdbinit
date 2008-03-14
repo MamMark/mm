@@ -7,6 +7,7 @@ b RealMainP.nc:82
 b SchedulerBasicP.nc:151
 b SchedulerBasicP.nc:148
 b VirtualizeTimerC.nc:81
+dis
 
 # b sig_TIMERA0_VECTOR
 # b sig_TIMERA1_VECTOR
