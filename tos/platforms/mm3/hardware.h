@@ -131,21 +131,6 @@ TOSH_ASSIGN_PIN(ADCxSDO, 3, 2);
 TOSH_ASSIGN_PIN(ADCxCLK, 3, 3);
 TOSH_ASSIGN_PIN(ADCxSDI, 3, 5);
 
-
-/*
- * Power Control
- */
-
-/*
- * fix this.  get rid of the boolean go to static
- * calls
- */
-
-#define VREF_TURN_ON   TRUE
-#define VREF_TURN_OFF  FALSE
-#define VDIFF_TURN_ON  TRUE
-#define VDIFF_TURN_OFF FALSE
-
   static volatile struct {
     uint8_t gmux		: 2;
     uint8_t vdiff_off		: 1;
@@ -312,10 +297,11 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
 #define P6_BASE_VAL	0xf0
 
 
-inline void uwait(uint16_t u) { 
+inline void uwait(uint16_t u) {
   uint16_t t0 = TAR;
   while((TAR - t0) <= u);
-} 
+}
+
 
 void TOSH_MM3_INITIAL_PIN_STATE(void) {
   atomic {

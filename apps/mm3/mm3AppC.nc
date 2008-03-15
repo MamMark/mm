@@ -23,4 +23,7 @@ implementation {
 
   components HplMM3AdcC;
   mm3C.HW -> HplMM3AdcC;
+
+  components AdcC;
+  mm3C.Adc -> AdcC.Adc[SNS_ID_NONE];
 }

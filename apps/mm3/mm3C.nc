@@ -5,6 +5,9 @@
 
 #include "regime.h"
 
+#define NUM_RES 16
+uint16_t res[NUM_RES];
+
 module mm3C {
   provides {
     interface Init;
@@ -14,6 +17,8 @@ module mm3C {
     interface Leds;
     interface Boot;
     interface HplMM3Adc as HW;
+
+    interface Adc;
   }
 }
 
@@ -28,35 +33,27 @@ implementation {
      * set the initial regime.  This will also
      * signal all the sensors and start them off.
      */
-    call Regime.setRegime(SNS_DEFAULT_REGIME);
+    call Regime.setRegime(0);
+
     call Leds.led0Off();
     call Leds.led1Off();
     call Leds.led2Off();
 
-    call HW.set_dmux(5);
-    call HW.set_dmux(0);
-    call HW.set_smux(5);
-    call HW.set_smux(2);
-    call HW.set_smux(0);
-    call HW.set_gmux(2);
-    call HW.set_gmux(0);
-    call HW.batt_on();
-    call HW.batt_off();
-    call HW.temp_on();
-    call HW.temp_off();
-    call HW.sal_on();
-    call HW.sal_off();
+    call HW.vdiff_on();
+    call HW.vref_on();
     call HW.accel_on();
-    call HW.accel_off();
-    call HW.ptemp_on();
-    call HW.ptemp_off();
-    call HW.press_on();
-    call HW.press_off();
-    call HW.speed_on();
-    call HW.speed_off();
-    call HW.mag_on();
-    call HW.mag_off();
+    call HW.set_smux(SMUX_ACCEL_X);
+    uwait(1000);
+    while(1) {
+      uint16_t i;
+
+      for (i = 0; i < NUM_RES; i++)
+	res[i] = call Adc.readAdc();
+      nop();
+    }
   }
+
+  event void Adc.configured() {}
 
 
   event void Regime.regimeChange() {}

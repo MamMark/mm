@@ -38,7 +38,7 @@
 #include "sensors.h"
 
 //#define FAKE_ADC
-#define ADC_DIV 12
+#define ADC_DIV 4
 
 /*
  * ADC_SPI_MAX_WAIT is the number of microsecs that the
@@ -49,7 +49,10 @@
  * Initially we panic.  But this will be replaced by making
  * the code recover.
  */
-#define ADC_SPI_MAX_WAIT 2
+#define ADC_SPI_MAX_WAIT 100
+
+  volatile uint16_t num_reads;
+  int8_t ifg1[5];
 
 module AdcP {
   provides {
@@ -511,15 +514,15 @@ implementation {
    * put the external ADC through its paces.  Reads via Usart0 (SPI0).
    *
    */
- 
+
   command uint16_t AdcClient.readAdc[uint8_t client_id]() {
-    bool need_first;
     uint16_t result;
     uint16_t t0;
 
 #ifdef FAKE_ADC
     return ++value;
 #endif
+    ifg1[0] = IFG1;
     result = 0;
     if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) || 
 	((U0TCTL & TXEPT) == 0)) {
@@ -535,60 +538,49 @@ implementation {
 
     ADC_CNV = 1;
     TELL = 1;
-    uwait(2);
+    for (result = 0; result < 3; result++) {
+      nop();
+    }
     TELL = 0;
     ADC_CNV = 0;
 
     /*
      * go get the data via the SPI.  Send to receive
+     * send first byte to receive 1st byte.
      */
 
     U0TXBUF = 0x1a;		/* data doesn't matter */
-
-    /*
-     * UTXIFG0 should immediately go high again since the SPI
-     * should immediately accept both bytes.
-     *
-     * First byte may or may not already be there.
-     * Probably simpler to put a delay in.  But then
-     * there may be the problem of the receiver overrunning.
-     */
-    need_first = TRUE;
-    if (IFG1 & URXIFG0) {
-      result = ((uint16_t) U0RXBUF) << 8;
-      need_first = FALSE;
-    }
-
-    t0 = TAR;
-    while (!(IFG1 & UTXIFG0)) {
-      if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
-	panic(PANIC_ADC, 9, 1, 0, 0, 0);
-      }
-    }
-
-    U0TXBUF = 0x25;		/* send next to get next */
-    if (need_first) {
-      t0 = TAR;
-      while (!(IFG1 & URXIFG0)) {
-	if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
-	  panic(PANIC_ADC, 9, 2, 0, 0, 0);
-	}
-      }
-      result = ((uint16_t) U0RXBUF) << 8;
-    }
-
+    ifg1[1] = IFG1;
     t0 = TAR;
     while (!(IFG1 & URXIFG0)) {
       if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
-	panic(PANIC_ADC, 9, 3, 0, 0, 0);
+	panic(PANIC_ADC, 9, 1, IFG1, 0, 0);
       }
     }
+    result = ((uint16_t) U0RXBUF) << 8;
 
+    ifg1[2] = IFG1;
+    if (!(IFG1 & UTXIFG0)) {
+      panic(PANIC_ADC, 9, 2, IFG1, 0, 0);
+    }
+
+    /*
+     * send 2nd and wait for the rx to come back
+     */
+    U0TXBUF = 0x25;		/* send next to get next */
+    t0 = TAR;
+    while (!(IFG1 & URXIFG0)) {
+      if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
+	panic(PANIC_ADC, 9, 3, IFG1, 0, 0);
+      }
+    }
     result |= ((uint16_t) U0RXBUF);
 
     /*
      * Transmitter and Recevier should both be empty
      */
+    ifg1[3] = IFG1;
+    ifg1[4] = U0TCTL;
     if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) ||
 	((U0TCTL & TXEPT) == 0)) {
       panic(PANIC_ADC, 10, IFG1, U0TCTL, 0, 0);
