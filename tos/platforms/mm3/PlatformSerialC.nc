@@ -13,9 +13,8 @@ implementation {
   UartStream = UartC;  
   UartByte = UartC;
   
-  components Mm3SerialP;
-  StdControl = Mm3SerialP;
-  Mm3SerialP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
-  Mm3SerialP.Resource -> UartC.Resource;
-  
+  components mm3SerialP;
+  StdControl = mm3SerialP;
+  mm3SerialP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
+  mm3SerialP.Resource -> UartC.Resource;
 }

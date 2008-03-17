@@ -22,7 +22,7 @@ const uint32_t sns_period_table[MM3_NUM_REGIMES][MM3_NUM_SENSORS] = {
   {  0UL,    1000UL,    1000UL,    1000UL,    1000UL,    1000UL,    1000UL,    1000UL,    1000UL  }, /* 2 - all sensors once/sec */
   {  0UL,    1000UL,    0UL,       0UL,       1000UL,    0UL,       0UL,       0UL,       0UL     }, /* 3 - batt and accel only */
   {  0UL,    0UL,       0UL,       0UL,       1000UL,    0UL,       0UL,       0UL,       0UL     }, /* 4 - accel only */
-  {  0UL,    0UL,	0UL,	   1UL,	      0UL,       0UL,       0UL,       0UL,       0UL  },    /* 5 - testing */
+  {  0UL,    1000UL,	0UL,	   0UL,	      0UL,       0UL,       0UL,       0UL,       0UL  },    /* 5 - testing */
 };
 
 #endif

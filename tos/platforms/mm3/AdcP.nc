@@ -38,6 +38,10 @@
 #include "sensors.h"
 
 //#define FAKE_ADC
+
+/*
+ * Fix me.  This can go down to 2.  check it out later.
+ */
 #define ADC_DIV 4
 
 /*
@@ -138,12 +142,22 @@ implementation {
    */
 
   void init_adc_hw() {
+    /*
+     * Set USART0 as follows:
+     *
+     * no I2C
+     * CHAR:   8 bit data
+     * no loopback (LISTEN = 0)
+     * SYNC:   spi mode (synchronous)
+     * MM:     master (spi is master)
+     * SWRST:  hold in reset.
+     */
     U0CTL = CHAR | SYNC | MM | SWRST;
     ME1 = 0;				/* turn off US0 module enables */
     IE1 &= ~(URXIE0 | UTXIE0);		/* no interrupts */
 
     /*
-     * set ADC_CNV to 1.  Dir and FuncSel are set once by platform init
+     * set ADC_CNV to 0.  Dir and FuncSel are set once by platform init
      * ADC_CNV_BUSY input.  Set by platform init
      * ADC_SDO, ADC_CLK assigned dir and sel by platform init.
      */
