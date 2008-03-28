@@ -79,7 +79,7 @@ implementation {
     pdp->len = PTEMP_BLOCK_SIZE;
     pdp->dtype = DT_SENSOR_DATA;
     pdp->id = SNS_ID_PTEMP;
-    pdp->sched_mis = (call PeriodTimer.gett0() - call PeriodTimer.getdt());
+    pdp->sched_mis = call PeriodTimer.gett0();
     pdp->stamp_mis = call PeriodTimer.getNow();
     call Collect.collect(ptemp_data, PTEMP_BLOCK_SIZE);
   }

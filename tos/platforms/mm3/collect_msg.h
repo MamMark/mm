@@ -44,7 +44,7 @@ typedef nx_struct collect_msg {
 } collect_msg_t;
 
 enum {
-  AM_COLLECT_MSG = 0x90,
+  AM_COLLECT_MSG = 0x21,
 };
 
 #endif

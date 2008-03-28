@@ -7,7 +7,7 @@
  */
 
 #include "Collect.h"
-#include "collect_msg.h"
+#include "mm3_data_msg.h"
 
 module SerialCollectP {
   provides {
@@ -30,7 +30,7 @@ implementation {
     S_FLUSHING,
   };
   
-  message_t collectMsg;
+  message_t mm3DataMsg;
   nx_uint8_t buffer[SERIAL_COLLECT_BUFFER_SIZE];
   uint8_t state = S_STOPPED;
   norace nx_uint8_t* next_byte;
@@ -60,16 +60,16 @@ implementation {
   }
   
   task void retrySend() {
-    if(call SerialSend.send(AM_BROADCAST_ADDR, &collectMsg, sizeof(collect_msg_t)) != SUCCESS)
+    if(call SerialSend.send(AM_BROADCAST_ADDR, &mm3DataMsg, sizeof(mm3_data_msg_t)) != SUCCESS)
       post retrySend();
   }
   
   void sendNext() {
-    collect_msg_t* m = (collect_msg_t*)call SerialPacket.getPayload(&collectMsg, sizeof(collect_msg_t));
-    length_to_send = (bytes_left_to_flush < sizeof(collect_msg_t)) ? bytes_left_to_flush : sizeof(collect_msg_t);
-    memset(m->buffer, 0, sizeof(collect_msg_t));
+    mm3_data_msg_t* m = (mm3_data_msg_t*)call SerialPacket.getPayload(&mm3DataMsg, sizeof(mm3_data_msg_t));
+    length_to_send = (bytes_left_to_flush < sizeof(mm3_data_msg_t)) ? bytes_left_to_flush : sizeof(mm3_data_msg_t);
+    memset(m->buffer, 0, sizeof(mm3_data_msg_t));
     memcpy(m->buffer, (nx_uint8_t*)next_byte, length_to_send);
-    if(call SerialSend.send(AM_BROADCAST_ADDR, &collectMsg, sizeof(collect_msg_t)) != SUCCESS)
+    if(call SerialSend.send(AM_BROADCAST_ADDR, &mm3DataMsg, sizeof(mm3_data_msg_t)) != SUCCESS)
       post retrySend();  
     else {
       bytes_left_to_flush -= length_to_send;

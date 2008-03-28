@@ -17,6 +17,28 @@
 #ifndef __SD_BLOCKS_H__
 #define __SD_BLOCKS_H__
 
+/*
+ * keep mig happy.  Each tag SD block can be transmitted in an encapsulated
+ * mote packet.  The AM type can be AM_MM3_CONTROL, DATA, or DEBUG.
+ */
+enum {
+  AM_MM3_CONTROL	= 0x20,
+  AM_MM3_DATA		= 0x21,
+  AM_MM3_DEBUG		= 0x22,
+  AM_DT_IGNORE		= 0x21,
+  AM_DT_CONFIG		= 0x21,
+  AM_DT_SYNC		= 0x21,
+  AM_DT_PANIC		= 0x21,
+  AM_DT_GPS_TIME	= 0x21,
+  AM_DT_GPS_POS		= 0x21,
+  AM_DT_SENSOR_SET	= 0x21,
+  AM_DT_TEST		= 0x21,
+  AM_DT_CAL_STRING	= 0x21,
+  AM_DT_GPS_RAW		= 0x21,
+  AM_DT_VERSION		= 0x21,
+  AM_DT_SENSOR_DATA	= 0x21,
+};
+
 enum {
   DT_IGNORE		= 0,
   DT_CONFIG		= 1,
@@ -78,7 +100,7 @@ typedef nx_struct dt_config {
   nx_uint8_t  data[0];
 } dt_config_nt;
 
-/* At reboot and every XX minutes send sync packet to SDRAM */
+/* At reboot and every XX minutes send sync packet to SD */
 typedef nx_struct dt_sync {
   nx_uint16_t len;
   nx_uint8_t  dtype;
@@ -86,8 +108,20 @@ typedef nx_struct dt_sync {
   nx_uint32_t sync_majik;
 } dt_sync_nt;
 
-#define SYNC_MAJIK		0xdedf00ef
-#define SYNC_RESTART_MAJIK	0xdaffd00f
+#define SYNC_MAJIK 0xdedf00ef
+#define SYNC_RESTART_MAJIK 0xdaffd00f
+
+typedef nx_struct dt_panic {
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
+  nx_uint32_t stamp_mis;
+  nx_uint8_t  pcode;
+  nx_uint8_t  where;
+  nx_uint16_t arg0;
+  nx_uint16_t arg1;
+  nx_uint16_t arg2;
+  nx_uint16_t arg3;
+} dt_panic_nt;
 
 typedef nx_struct dt_gps_time {
   nx_uint16_t len;

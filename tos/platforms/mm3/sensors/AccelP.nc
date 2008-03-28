@@ -82,22 +82,31 @@ implementation {
   event void Adc.configured() {
     uint8_t accel_data[ACCEL_BLOCK_SIZE];
     dt_sensor_data_nt *adp;
+    uint32_t temp;
+    uint16_t i;
 
+    temp = 0;
     switch(accel_state) {
       case ACCEL_STATE_READ_X:
-	data[0] = call Adc.readAdc();
+	for (i = 0; i < ACCEL_SAMPLES; i++)
+	  temp += call Adc.readAdc();
+	data[0] = temp/ACCEL_SAMPLES;
 	accel_state = ACCEL_STATE_READ_Y;
 	call Adc.reconfigure(&accel_config_Y);
 	return;
 
       case ACCEL_STATE_READ_Y:
-	data[1] = call Adc.readAdc();
+	for (i = 0; i < ACCEL_SAMPLES; i++)
+	  temp += call Adc.readAdc();
+	data[1] = temp/ACCEL_SAMPLES;
 	accel_state = ACCEL_STATE_READ_Z;
 	call Adc.reconfigure(&accel_config_Z);
 	return;
 
       case ACCEL_STATE_READ_Z:
-	data[2] = call Adc.readAdc();
+	for (i = 0; i < ACCEL_SAMPLES; i++)
+	  temp += call Adc.readAdc();
+	data[2] = temp/ACCEL_SAMPLES;
 	accel_state = ACCEL_STATE_IDLE;
 	call Adc.release();
 	break;
@@ -110,7 +119,7 @@ implementation {
     adp->len = ACCEL_BLOCK_SIZE;
     adp->dtype = DT_SENSOR_DATA;
     adp->id = SNS_ID_ACCEL;
-    adp->sched_mis = (call PeriodTimer.gett0() - call PeriodTimer.getdt());
+    adp->sched_mis = call PeriodTimer.gett0();
     adp->stamp_mis = call PeriodTimer.getNow();
     adp->data[0] = data[0];
     adp->data[1] = data[1];

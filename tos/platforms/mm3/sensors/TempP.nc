@@ -80,7 +80,7 @@ implementation {
     tdp->len = TEMP_BLOCK_SIZE;
     tdp->dtype = DT_SENSOR_DATA;
     tdp->id = SNS_ID_TEMP;
-    tdp->sched_mis = (call PeriodTimer.gett0() - call PeriodTimer.getdt());
+    tdp->sched_mis = call PeriodTimer.gett0();
     tdp->stamp_mis = call PeriodTimer.getNow();
     call Collect.collect(temp_data, TEMP_BLOCK_SIZE);
   }

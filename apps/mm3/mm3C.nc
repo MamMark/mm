@@ -10,6 +10,8 @@
 uint16_t res[NUM_RES];
 #endif
 
+noinit uint8_t use_regime;
+
 module mm3C {
   provides {
     interface Init;
@@ -35,7 +37,10 @@ implementation {
      * set the initial regime.  This will also
      * signal all the sensors and start them off.
      */
-    call Regime.setRegime(5);
+//    call Regime.setRegime(SNS_DEFAULT_REGIME);
+    if (use_regime > SNS_MAX_REGIME)
+      use_regime = SNS_DEFAULT_REGIME;
+    call Regime.setRegime(use_regime);
 
     call Leds.led0Off();
     call Leds.led1Off();

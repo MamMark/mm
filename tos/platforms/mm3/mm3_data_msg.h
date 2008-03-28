@@ -33,20 +33,18 @@
  * @author Kevin Klues <klueska@cs.stanford.edu>
  * @date March 3rd, 2008
  */
- 
-#include "mm3_data_msg.h"
-configuration SerialCollectC {
-  provides interface Collect;
-}
 
-implementation {
-  components SerialCollectP, MainC;
-  Collect = SerialCollectP;
-  MainC.SoftwareInit -> SerialCollectP;
-  
-  components new SerialAMSenderC(AM_MM3_DATA_MSG);
-  components SerialActiveMessageC;
-  SerialCollectP.SerialSend -> SerialAMSenderC;
-  SerialCollectP.SerialPacket -> SerialActiveMessageC;
-  SerialCollectP.SerialAMPacket -> SerialActiveMessageC;
-}
+#ifndef MM3_DATA_MSG_H
+#define MM3_DATA_MSG_H
+
+#include "message.h"
+
+typedef nx_struct mm3_data_msg {
+  nx_uint8_t buffer[TOSH_DATA_LENGTH];
+} mm3_data_msg_t;
+
+enum {
+  AM_MM3_DATA_MSG = 0x21,
+};
+
+#endif

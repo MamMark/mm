@@ -19,6 +19,8 @@ enum {
     ACCEL_STATE_READ_Z		= 4,
 };
 
+#define ACCEL_SAMPLES 10
+
 /*
  * Accel is one device with 3 parts.  First X is used
  * and its settling time is used to power the device up

@@ -45,14 +45,14 @@ enum {
   /* Starting with Press, the remaining
      sensors are differential sensors
   */
+  SNS_DIFF_START	= 6,
   SNS_ID_PRESS		= 6,	// Pressure (temp, pressure)
   SNS_ID_SPEED		= 7,	// Velocity (x,y)
   SNS_ID_MAG		= 8,    // Magnetometer (x,y,z)
+  SNS_MAX_ID		= 8,
+  MM3_NUM_SENSORS	= 9,	// includes none
 };
 
-#define SNS_DIFF_START		6
-#define SNS_MAX_ID		8
-#define MM3_NUM_SENSORS		9
 
 /*
  * Mux setings to read from sensors

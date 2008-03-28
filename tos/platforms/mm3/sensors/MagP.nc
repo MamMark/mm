@@ -103,7 +103,7 @@ implementation {
     mdp->len = MAG_BLOCK_SIZE;
     mdp->dtype = DT_SENSOR_DATA;
     mdp->id = SNS_ID_MAG;
-    mdp->sched_mis = (call PeriodTimer.gett0() - call PeriodTimer.getdt());
+    mdp->sched_mis = call PeriodTimer.gett0();
     mdp->stamp_mis = call PeriodTimer.getNow();
     mdp->data[0] = data[0];
     mdp->data[1] = data[1];

@@ -1,5 +1,31 @@
 #include "hardware.h"
 
+#define STUFF_SIZE 256
+
+noinit struct {
+  uint8_t dcoctl;
+  uint8_t bcsctl1;
+  uint8_t bcsctl2;
+} stuff[STUFF_SIZE];
+
+noinit bool clear_stuff;
+noinit uint16_t nxt;
+
+void set_stuff() {
+  if (clear_stuff) {
+    memset(stuff, 0, sizeof(stuff));
+    clear_stuff = 0;
+    nxt = 0;
+  }
+  if (nxt >= STUFF_SIZE)
+    nxt = 0;
+  stuff[nxt].dcoctl = DCOCTL;
+  stuff[nxt].bcsctl1 = BCSCTL1;
+  stuff[nxt].bcsctl2 = BCSCTL2;
+  nxt++;
+}
+      
+
 module PlatformP{
   provides {
     interface Init;
@@ -12,9 +38,43 @@ module PlatformP{
 }
 
 implementation {
+
+#define PWR_UP_CYCLES_32KHZ 128
+
+  void wait_for_32K() {
+    uint16_t t1, t2;
+
+    TACTL = TACLR;
+    TAIV = 0;
+    TBCTL = TBCLR;
+    TBIV = 0;
+    TACTL = TASSEL1 | MC1; // source SMCLK, continuous mode, everything else 0
+    TBCTL = TBSSEL0 | MC1;
+    BCSCTL1 = XT2OFF | RSEL2;
+    BCSCTL2 = 0;
+    TBCCTL0 = 0;
+
+    while (1) {
+      t1 = TBR;
+      t2 = TBR;
+      if (t1 == t2 && t2 >= PWR_UP_CYCLES_32KHZ)
+	break;
+    }
+  }
+
   command error_t Init.init() {
     TOSH_MM3_INITIAL_PIN_STATE();
+
+    /*
+     * It takes a long time for the 32KHz Xtal to come up.
+     * Go look to see when we start getting 32KHz ticks.
+     * Wait for 10.
+     */
+    wait_for_32K();
+
+    set_stuff();
     call Msp430ClockInit.init();
+    set_stuff();
 
     /*
      * I know there is some way to mess with changing the default

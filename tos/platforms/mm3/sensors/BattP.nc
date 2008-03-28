@@ -82,7 +82,7 @@ implementation {
     bdp->len = BATT_BLOCK_SIZE;
     bdp->dtype = DT_SENSOR_DATA;
     bdp->id = SNS_ID_BATT;
-    bdp->sched_mis = (call PeriodTimer.gett0() - call PeriodTimer.getdt());
+    bdp->sched_mis = call PeriodTimer.gett0();
     bdp->stamp_mis = call PeriodTimer.getNow();
     call Collect.collect(batt_data, BATT_BLOCK_SIZE);
   }
