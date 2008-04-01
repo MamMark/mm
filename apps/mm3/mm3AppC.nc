@@ -26,4 +26,7 @@ implementation {
 
   components AdcC;
   mm3C.Adc -> AdcC.Adc[SNS_ID_NONE];
+
+  components PanicC;
+  mm3C.Panic -> PanicC;
 }

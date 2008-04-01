@@ -176,3 +176,20 @@ dep:
 	mv tmp_make Makefile
 
 ### Dependencies
+DtCalStringMsg.o: DtCalStringMsg.c DtCalStringMsg.h
+DtConfigMsg.o: DtConfigMsg.c DtConfigMsg.h
+DtGpsPosMsg.o: DtGpsPosMsg.c DtGpsPosMsg.h
+DtGpsRawMsg.o: DtGpsRawMsg.c DtGpsRawMsg.h
+DtGpsTimeMsg.o: DtGpsTimeMsg.c DtGpsTimeMsg.h
+DtIgnoreMsg.o: DtIgnoreMsg.c DtIgnoreMsg.h
+DtPanicMsg.o: DtPanicMsg.c DtPanicMsg.h
+DtSensorDataMsg.o: DtSensorDataMsg.c DtSensorDataMsg.h
+DtSensorSetMsg.o: DtSensorSetMsg.c DtSensorSetMsg.h
+DtSyncMsg.o: DtSyncMsg.c DtSyncMsg.h
+DtTestMsg.o: DtTestMsg.c DtTestMsg.h
+DtVersionMsg.o: DtVersionMsg.c DtVersionMsg.h
+mm3DataMsg.o: mm3DataMsg.c mm3DataMsg.h
+mm3dump.o: mm3dump.c serialpacket.h serialprotocol.h mm3DataMsg.h \
+  SensorConstants.h SDConstants.h DtIgnoreMsg.h DtSyncMsg.h DtPanicMsg.h \
+  DtSensorDataMsg.h DtVersionMsg.h
+serialpacket.o: serialpacket.c serialpacket.h

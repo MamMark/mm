@@ -4,6 +4,7 @@
  */
 
 #include "regime.h"
+#include "panic.h"
 
 #ifdef notdef
 #define NUM_RES 16
@@ -20,6 +21,7 @@ module mm3C {
     interface Regime;
     interface Leds;
     interface Boot;
+    interface Panic;
 
     interface HplMM3Adc as HW;
     interface Adc;
@@ -28,6 +30,7 @@ module mm3C {
 
 implementation {
   command error_t Init.init() {
+//    call Panic.brk();
     return SUCCESS;
   }
 
@@ -62,7 +65,9 @@ implementation {
 #endif
   }
 
-  event void Adc.configured() {}
+  event void Adc.configured() {
+    call Panic.panic(PANIC_MISC, 1, 0, 0, 0, 0);
+  }
 
-  event void Regime.regimeChange() {}
+  event void Regime.regimeChange() {} // do nothing.  that's okay.
 }

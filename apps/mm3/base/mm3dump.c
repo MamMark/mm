@@ -262,10 +262,10 @@ process_sync(tmsg_t *msg) {
   stamp = dt_sync_stamp_mis_get(msg);
   majik = dt_sync_sync_majik_get(msg);
   if (verbose) {
-    printf("SYNC: %c %d %08x\n",
+    printf("SYNC: %c %d (%x) %08x\n",
 	   ((majik == SYNC_MAJIK) ? 'S' :
 	    ((majik == SYNC_RESTART_MAJIK) ? 'R' : '?')),
-	   stamp, majik);
+	   stamp, stamp, majik);
   }
   if (write_data) {
     for (i = 0; i < MM3_NUM_SENSORS; i++) {
@@ -395,12 +395,15 @@ process_sensor_data(tmsg_t *msg) {
   sched = dt_sensor_data_sched_mis_get(msg);
   stamp = dt_sensor_data_stamp_mis_get(msg);
   if (verbose) {
-    printf("SNS: %-6s (%d) %08u (%04x/%04x) ",
+    printf("SNS: %-6s (%d) %8u (%04x/%04x)",
 	   snsid2str(sns_id), sns_id, sched, sched, stamp);
     if (sns_id < MM3_NUM_SENSORS) {
       for (i = 0; i < (sns_payload_len[sns_id]/2); i++)
-	printf("%d (%04x) ", dt_sensor_data_data_get(msg, i), dt_sensor_data_data_get(msg, i));
-      printf("\n");
+	printf(" %5d", dt_sensor_data_data_get(msg, i));
+      printf("  [ ");
+      for (i = 0; i < (sns_payload_len[sns_id]/2); i++)
+	printf("%04x ", dt_sensor_data_data_get(msg, i));
+      printf("]\n");
     } else
       printf("(unk) %04x\n", dt_sensor_data_data_get(msg, 0));
   }
