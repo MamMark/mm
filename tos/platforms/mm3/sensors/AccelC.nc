@@ -33,4 +33,10 @@ implementation {
 
   components LedsC;
   AccelP.Leds -> LedsC;
+
+  components PanicC;
+  AccelP.Panic -> PanicC;
+
+  components mm3ControlC;
+  AccelP.mm3Control -> mm3ControlC;
 }

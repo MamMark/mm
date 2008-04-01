@@ -18,7 +18,6 @@ module CollectP {
 implementation {
   dc_control_t dcc;
   uint8_t buf[512];
-  uint16_t num_calls;
 
   uint8_t *ms_get_buffer() {
     return buf;
@@ -76,6 +75,7 @@ implementation {
   }
 }
 
+#ifdef notdef
 /*
  * mm3CollectP.nc - data collector (record managment) interface
  * between data collection and mass storage.
@@ -83,7 +83,7 @@ implementation {
  * Mam-Mark Project
  *
  */
-/*
+
 #include "Collect.h"
 
 module CollectP {
@@ -96,7 +96,6 @@ module CollectP {
 implementation {
   dc_control_t dcc;
   uint8_t buf[512];
-  uint16_t num_calls;
 
   uint8_t *ms_get_buffer() {
     return buf;
@@ -106,11 +105,10 @@ implementation {
     dcc.majik_a = DC_MAJIK_A;
     dcc.cur_buf = NULL;
     dcc.cur_ptr = NULL;
-    dcc.chksum  = 0;
     dcc.remaining = 0;
+    dcc.chksum  = 0;
     dcc.seq = 0;
     dcc.majik_b = DC_MAJIK_B;
-    num_calls = 0;
     return SUCCESS;
   }
 
@@ -154,7 +152,6 @@ implementation {
      * followed by dtype.  Minimum length is 3.
      * network order is big endian.
      */
-/*    num_calls++;
     num_copied = (data[0] << 8) + data[1];
 
 #ifdef notdef
@@ -171,7 +168,7 @@ implementation {
         /*
          * nobody home, try to go get one.
          */
-/*        dcc.cur_ptr = dcc.cur_buf = ms_get_buffer();
+        dcc.cur_ptr = dcc.cur_buf = ms_get_buffer();
         dcc.remaining = DC_BLK_SIZE;
         dcc.chksum = 0;
       }
@@ -219,4 +216,5 @@ implementation {
 
 #endif
 }
-*/
+
+#endif

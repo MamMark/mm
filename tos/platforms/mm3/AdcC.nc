@@ -7,6 +7,7 @@ configuration AdcC {
   provides interface Adc[uint8_t client_id];
   uses interface StdControl as SensorPowerControl[uint8_t id];
 }
+
 implementation {
   components AdcP, MainC;
   Adc = AdcP;
@@ -24,4 +25,7 @@ implementation {
 
   components BusyWaitMicroC;
   AdcP.BusyWait -> BusyWaitMicroC;
+
+  components PanicC;
+  AdcP.Panic -> PanicC;
 }

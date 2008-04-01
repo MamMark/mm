@@ -8,6 +8,7 @@
 configuration TempC {
   provides interface StdControl;
 }
+
 implementation {
   components MainC, TempP;
   MainC.SoftwareInit -> TempP;
@@ -19,6 +20,7 @@ implementation {
 
   components AdcC;
   TempP.Adc -> AdcC.Adc[SNS_ID_TEMP];
+  AdcC.SensorPowerControl[SNS_ID_TEMP] -> TempP;
 
   components AdcP;
   TempP.AdcConfigure <- AdcP.Config[SNS_ID_TEMP];

@@ -19,6 +19,7 @@ implementation {
 
   components AdcC;
   PTempP.Adc -> AdcC.Adc[SNS_ID_PTEMP];
+  AdcC.SensorPowerControl[SNS_ID_PTEMP] -> PTempP;
 
   components AdcP;
   PTempP.AdcConfigure <- AdcP.Config[SNS_ID_PTEMP];

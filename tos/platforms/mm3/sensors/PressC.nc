@@ -19,6 +19,7 @@ implementation {
 
   components AdcC;
   PressP.Adc -> AdcC.Adc[SNS_ID_PRESS];
+  AdcC.SensorPowerControl[SNS_ID_PRESS] -> PressP;
 
   components AdcP;
   PressP.AdcConfigure <- AdcP.Config[SNS_ID_PRESS];

@@ -20,6 +20,7 @@ implementation {
 
   components AdcC;
   SpeedP.Adc -> AdcC.Adc[SNS_ID_SPEED];
+  AdcC.SensorPowerControl[SNS_ID_SPEED] -> SpeedP;
 
   components AdcP;
   SpeedP.AdcConfigure <- AdcP.Config[SNS_ID_SPEED];

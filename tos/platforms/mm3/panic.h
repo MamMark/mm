@@ -8,6 +8,7 @@
 #define __PANIC_H__
 
 #define PANIC_ADC	1
+#define PANIC_MISC	2
 
 #ifdef notdef
 #define PANIC_KERN	1

@@ -17,7 +17,7 @@
  * ADC subsystem.  The accel driver after being granted
  * reads the X data, switches to Y (smux change), and delays
  * to allow settling time for the smux switch.  This is
- * repeated for the Z access.
+ * repeated for the Z axis.
  */
 
 #include "sensors.h"
@@ -37,6 +37,8 @@ module AccelP {
     interface Collect;
     interface Leds;
     interface HplMM3Adc as HW;
+    interface Panic;
+    interface mm3Control;
   }
 }
 
@@ -115,6 +117,7 @@ implementation {
 	return;
     }
 
+//    adp = call mm3Comm.getmsgbuf(ACCEL_BLOCK_SIZE);
     adp = (dt_sensor_data_nt *) accel_data;
     adp->len = ACCEL_BLOCK_SIZE;
     adp->dtype = DT_SENSOR_DATA;
@@ -124,6 +127,9 @@ implementation {
     adp->data[0] = data[0];
     adp->data[1] = data[1];
     adp->data[2] = data[2];
+    if (call mm3Control.eavesdrop(SNS_ID_ACCEL)) {
+//      call Panic.brk();
+    }
     call Collect.collect(accel_data, ACCEL_BLOCK_SIZE);
   }
 

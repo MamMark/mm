@@ -20,6 +20,7 @@ implementation {
 
   components AdcC;
   SalP.Adc -> AdcC.Adc[SNS_ID_SAL];
+  AdcC.SensorPowerControl[SNS_ID_SAL] -> SalP;
 
   components AdcP;
   SalP.AdcConfigure <- AdcP.Config[SNS_ID_SAL];

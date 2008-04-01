@@ -37,6 +37,7 @@
 #include "hardware.h"
 #include "sensors.h"
 
+
 //#define FAKE_ADC
 
 /*
@@ -70,6 +71,7 @@ module AdcP {
     interface HplMM3Adc as HW;
     interface Alarm<T32khz, uint16_t> as PowerAlarm;
     interface BusyWait<TMicro, uint16_t>;
+    interface Panic;
   }
 }
 
@@ -101,15 +103,6 @@ implementation {
   uint8_t vdiff_state;
   const mm3_sensor_config_t *m_config;
   uint16_t value;
-
-
-  void debug_break()  __attribute__ ((noinline)) {
-    nop();
-  }
-
-  void panic(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) __attribute__ ((noinline))  {
-    debug_break();
-  }
 
 
   /*
@@ -225,7 +218,7 @@ implementation {
 
     if (adc_state != ADC_POWERING_DOWN &&
         adc_state != ADC_GRANTING) {
-      panic(PANIC_ADC, 1, adc_state, 0, 0, 0);
+      call Panic.panic(PANIC_ADC, 1, adc_state, 0, 0, 0);
     }
 
     if (adc_state == ADC_POWERING_DOWN) {
@@ -256,7 +249,7 @@ implementation {
 
     if (adc_state == ADC_GRANTING) {
       if (!req_client || req_client >= MM3_NUM_SENSORS) {
-	panic(PANIC_ADC, 2, req_client, 0, 0, 0);
+	call Panic.panic(PANIC_ADC, 2, req_client, 0, 0, 0);
       }
 
       adc_owner = req_client;
@@ -277,7 +270,7 @@ implementation {
        */
       switch(vref_state) {
 	default:
-	  panic(PANIC_ADC, 3, vref_state, 0, 0, 0);
+	  call Panic.panic(PANIC_ADC, 3, vref_state, 0, 0, 0);
 	  vref_state = VREF_ON;
 	  /*
 	   * fall through
@@ -422,7 +415,7 @@ implementation {
 	   * Queue should be empty when ADC is IDLE
 	   * bitch bitch bitch
 	   */
-	  panic(PANIC_ADC, 4, adc_state, 0, 0, 0);
+	  call Panic.panic(PANIC_ADC, 4, adc_state, 0, 0, 0);
 	}
 
 	/*
@@ -444,7 +437,7 @@ implementation {
           /* check for ebusy.  shouldn't happen
 	   * bitch bitch bitch
 	   */
-	  panic(PANIC_ADC, 5, rtn, 0, 0, 0);
+	  call Panic.panic(PANIC_ADC, 5, rtn, 0, 0, 0);
         }
 	return rtn;
       }
@@ -461,7 +454,7 @@ implementation {
       /*
        * bitch.  shouldn't be calling
        */
-      panic(PANIC_ADC, 6, adc_owner, client_id, adc_state, 0);
+      call Panic.panic(PANIC_ADC, 6, adc_owner, client_id, adc_state, 0);
       return;
     }
     m_config = config;
@@ -500,7 +493,7 @@ implementation {
       /*
        * bitch bitch bitch
        */
-      panic(PANIC_ADC, 7, adc_owner, client_id, adc_state, 0);
+      call Panic.panic(PANIC_ADC, 7, adc_owner, client_id, adc_state, 0);
       return FAIL;
     }
 
@@ -547,7 +540,7 @@ implementation {
        *
        * bitch bitch bitch
        */
-      panic(PANIC_ADC, 8, IFG1, U0TCTL, 0, 0);
+      call Panic.panic(PANIC_ADC, 8, IFG1, U0TCTL, 0, 0);
     }
 
     ADC_CNV = 1;
@@ -568,14 +561,14 @@ implementation {
     t0 = TAR;
     while (!(IFG1 & URXIFG0)) {
       if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
-	panic(PANIC_ADC, 9, 1, IFG1, 0, 0);
+	call Panic.panic(PANIC_ADC, 9, 1, IFG1, 0, 0);
       }
     }
     result = ((uint16_t) U0RXBUF) << 8;
 
     ifg1[2] = IFG1;
     if (!(IFG1 & UTXIFG0)) {
-      panic(PANIC_ADC, 9, 2, IFG1, 0, 0);
+      call Panic.panic(PANIC_ADC, 9, 2, IFG1, 0, 0);
     }
 
     /*
@@ -585,7 +578,7 @@ implementation {
     t0 = TAR;
     while (!(IFG1 & URXIFG0)) {
       if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
-	panic(PANIC_ADC, 9, 3, IFG1, 0, 0);
+	call Panic.panic(PANIC_ADC, 9, 3, IFG1, 0, 0);
       }
     }
     result |= ((uint16_t) U0RXBUF);
@@ -597,13 +590,13 @@ implementation {
     ifg1[4] = U0TCTL;
     if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) ||
 	((U0TCTL & TXEPT) == 0)) {
-      panic(PANIC_ADC, 10, IFG1, U0TCTL, 0, 0);
+      call Panic.panic(PANIC_ADC, 10, IFG1, U0TCTL, 0, 0);
     }
 
     return(result);
   }
 
-  default event void AdcClient.configured[uint8_t id]() {}
+  default event void AdcClient.configured[uint8_t id]() {} // fix me.  add call to panic
 
   const mm3_sensor_config_t defaultConfig = {SNS_ID_NONE, 0, 0, 0};
 
@@ -611,7 +604,7 @@ implementation {
       return &defaultConfig;
   }
 
-  default command error_t SensorPowerControl.start[uint8_t id]() { return SUCCESS; }
+  default command error_t SensorPowerControl.start[uint8_t id]() { return SUCCESS; } // fix me.  panic
 
-  default command error_t SensorPowerControl.stop[uint8_t id]() { return SUCCESS; }
+  default command error_t SensorPowerControl.stop[uint8_t id]() { return SUCCESS; } //  fix me.  panic
 }
