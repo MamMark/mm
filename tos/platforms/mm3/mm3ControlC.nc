@@ -4,7 +4,7 @@
  */
 
 configuration mm3ControlC {
-  provides interface mm3Control;
+  provides interface mm3Control[uint8_t sns_id];
 }
 
 implementation {

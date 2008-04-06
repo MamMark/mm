@@ -4,5 +4,5 @@
  */
 
 interface mm3Control {
-  command bool eavesdrop(uint8_t sns_id);
+  command bool eavesdrop();
 }

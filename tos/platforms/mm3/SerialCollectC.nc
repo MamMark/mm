@@ -49,4 +49,7 @@ implementation {
   SerialCollectP.SerialSend -> SerialAMSenderC;
   SerialCollectP.SerialPacket -> SerialActiveMessageC;
   SerialCollectP.SerialAMPacket -> SerialActiveMessageC;
+
+  components PanicC;
+  SerialCollectP.Panic -> PanicC;
 }

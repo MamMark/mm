@@ -18,6 +18,7 @@ module SerialCollectP {
     interface AMSend as SerialSend;
     interface Packet as SerialPacket;
     interface AMPacket as SerialAMPacket;
+    interface Panic;
   }
 }
 
@@ -25,16 +26,16 @@ implementation {
   #define SERIAL_COLLECT_BUFFER_SIZE	512
 
   enum {
-    S_STARTED,
-    S_STOPPED,
-    S_FLUSHING,
+    S_STARTED	= 1,
+    S_STOPPED	= 2,
+    S_FLUSHING	= 3,
   };
   
   message_t mm3DataMsg;
   nx_uint8_t buffer[SERIAL_COLLECT_BUFFER_SIZE];
   uint8_t state = S_STOPPED;
   norace nx_uint8_t* next_byte;
-  uint32_t bytes_left_to_flush;
+  uint8_t bytes_left_to_flush;
   uint8_t length_to_send;  
   
   int putchar(uint8_t c);
@@ -56,7 +57,8 @@ implementation {
     for(i = 0; i < dlen; i++) {
       putchar(data[i]);
     }
-    flush();
+    if (flush())
+      call Panic.panic(PANIC_COMM, 1, 0, 0, 0, 0);
   }
   
   task void retrySend() {
@@ -69,7 +71,7 @@ implementation {
     length_to_send = (bytes_left_to_flush < sizeof(mm3_data_msg_t)) ? bytes_left_to_flush : sizeof(mm3_data_msg_t);
     memset(m->buffer, 0, sizeof(mm3_data_msg_t));
     memcpy(m->buffer, (nx_uint8_t*)next_byte, length_to_send);
-    if(call SerialSend.send(AM_BROADCAST_ADDR, &mm3DataMsg, sizeof(mm3_data_msg_t)) != SUCCESS)
+    if(call SerialSend.send(AM_BROADCAST_ADDR, &mm3DataMsg, length_to_send) != SUCCESS)
       post retrySend();  
     else {
       bytes_left_to_flush -= length_to_send;

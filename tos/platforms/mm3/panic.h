@@ -9,6 +9,8 @@
 
 #define PANIC_ADC	1
 #define PANIC_MISC	2
+#define PANIC_COMM	3
+#define PANIC_SD	4
 
 #ifdef notdef
 #define PANIC_KERN	1

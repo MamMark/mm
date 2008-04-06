@@ -38,5 +38,8 @@ implementation {
   AccelP.Panic -> PanicC;
 
   components mm3ControlC;
-  AccelP.mm3Control -> mm3ControlC;
+  AccelP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_ACCEL];
+
+  components mm3CommDataC;
+  AccelP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_ACCEL];
 }

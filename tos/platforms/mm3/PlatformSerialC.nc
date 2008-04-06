@@ -1,14 +1,11 @@
 
 configuration PlatformSerialC {
-  
   provides interface StdControl;
   provides interface UartStream;
   provides interface UartByte;
-  
 }
 
 implementation {
-  
   components new Msp430Uart1C() as UartC;
   UartStream = UartC;  
   UartByte = UartC;
@@ -17,4 +14,7 @@ implementation {
   StdControl = mm3SerialP;
   mm3SerialP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
   mm3SerialP.Resource -> UartC.Resource;
+
+  components PanicC;
+  mm3SerialP.Panic -> PanicC;
 }

@@ -6,6 +6,13 @@
 configuration mm3AppC {}
 implementation {
   components SystemBootC, mm3C;
+
+/*
+ * What is the purpose of the following
+ * Why call mm3C.Init from SystemBootC?
+ * Rather than MainC.SoftwareInit?
+ */
+
   SystemBootC.SoftwareInit -> mm3C;
   mm3C -> SystemBootC.Boot;
   

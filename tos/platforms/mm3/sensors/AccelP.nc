@@ -39,6 +39,7 @@ module AccelP {
     interface HplMM3Adc as HW;
     interface Panic;
     interface mm3Control;
+    interface mm3CommData;
   }
 }
 
@@ -46,6 +47,8 @@ implementation {
   uint32_t period;
   uint8_t  accel_state;
   uint32_t err_overruns;
+  uint32_t err_eaves_drops;
+  bool     eaves_busy;
   
   uint16_t data[3];
 
@@ -53,6 +56,7 @@ implementation {
     period = 0;
     accel_state = ACCEL_STATE_OFF;
     err_overruns = 0;
+    err_eaves_drops = 0;
     return SUCCESS;
   }
 
@@ -117,7 +121,6 @@ implementation {
 	return;
     }
 
-//    adp = call mm3Comm.getmsgbuf(ACCEL_BLOCK_SIZE);
     adp = (dt_sensor_data_nt *) accel_data;
     adp->len = ACCEL_BLOCK_SIZE;
     adp->dtype = DT_SENSOR_DATA;
@@ -127,12 +130,22 @@ implementation {
     adp->data[0] = data[0];
     adp->data[1] = data[1];
     adp->data[2] = data[2];
-    if (call mm3Control.eavesdrop(SNS_ID_ACCEL)) {
-//      call Panic.brk();
+    if (call mm3Control.eavesdrop()) {
+      if (eaves_busy)
+	err_eaves_drops++;
+      else {
+	if (call mm3CommData.send_data(adp, ACCEL_BLOCK_SIZE))
+	  err_eaves_drops++;
+	else
+	  eaves_busy = TRUE;
+      }
     }
     call Collect.collect(accel_data, ACCEL_BLOCK_SIZE);
   }
 
+  event void mm3CommData.send_data_done(error_t rtn) {
+    eaves_busy = FALSE;
+  }
 
   event void RegimeCtrl.regimeChange() {
     uint32_t new_period;

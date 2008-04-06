@@ -30,26 +30,31 @@
  */
 
 /**
+ * Changed from SerialBoot to Phase1Boot
+ * @author Eric B. Decker <cire831@gmail.com>
  * @author Kevin Klues <klueska@cs.stanford.edu>
- * @date March 3rd, 2008
+ * @date April 6th, 2008
  */
-
-configuration SystemBootC {
+ 
+module Phase1BootP {
   provides {
-    interface Boot;
+    interface Boot as Phase1Boot;
   }
   uses {
-    interface Init as SoftwareInit;
+    interface Boot as MainBoot;
+    interface SplitControl as mm3CommSerCtl;
   }
 }
 implementation {
-  components MainC;
-  components Phase1BootC;
-  
-  SoftwareInit = MainC.SoftwareInit;
-  
-  Phase1BootC.Boot -> MainC;
-  //Daisy chain others between these if you like...
-  Boot = Phase1BootC;
+  event void MainBoot.booted() {
+    call mm3CommSerCtl.start();
+  }
+
+  event void mm3CommSerCtl.startDone(error_t error) {
+    signal Phase1Boot.booted();
+  }
+
+  event void mm3CommSerCtl.stopDone(error_t error) {
+  }
 }
 

@@ -2,9 +2,14 @@
 #define DC_SPEED_9600
 
 module mm3SerialP {
-  provides interface StdControl;
-  provides interface Msp430UartConfigure;
-  uses interface Resource;
+  provides {
+    interface StdControl;
+    interface Msp430UartConfigure;
+  }
+  uses {
+    interface Resource;
+    interface Panic;
+  }
 }
 implementation {
   
@@ -42,7 +47,12 @@ enum {
   };
 
   command error_t StdControl.start(){
-    return call Resource.immediateRequest();
+    error_t rtn;
+
+    rtn = call Resource.immediateRequest();
+    if (rtn != SUCCESS)
+      call Panic.brk();
+    return rtn;
   }
 
   command error_t StdControl.stop(){

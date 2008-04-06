@@ -13,8 +13,10 @@ module PanicP {
 implementation {
 
   void debug_break()  __attribute__ ((noinline)) {
-    nop();
-    call Panic.panic(0,0,0,0,0,0);
+    atomic {
+      nop();
+      call Panic.panic(0,0,0,0,0,0);
+    }
   }
 
   command void Panic.warn(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
@@ -22,9 +24,11 @@ implementation {
   }
 
   command void Panic.panic(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
-    if (pcode == 0)
-      return;
-    debug_break();
+    atomic {
+      if (pcode == 0)
+	return;
+      debug_break();
+    }
   }
 
   command void Panic.brk() {

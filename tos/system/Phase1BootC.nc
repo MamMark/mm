@@ -30,26 +30,22 @@
  */
 
 /**
+ * Changed from SerialBoot to Phase1Boot
+ * @author Eric B. Decker <cire831@gmail.com>
  * @author Kevin Klues <klueska@cs.stanford.edu>
- * @date March 3rd, 2008
+ * @date April 6th, 2008
  */
 
-configuration SystemBootC {
-  provides {
-    interface Boot;
-  }
-  uses {
-    interface Init as SoftwareInit;
-  }
+configuration Phase1BootC {
+  provides interface Boot as Phase1Boot;
+  uses interface Boot;
 }
 implementation {
-  components MainC;
-  components Phase1BootC;
+  components Phase1BootP;
+  components mm3CommC;
   
-  SoftwareInit = MainC.SoftwareInit;
-  
-  Phase1BootC.Boot -> MainC;
-  //Daisy chain others between these if you like...
-  Boot = Phase1BootC;
+  Phase1Boot = Phase1BootP.Phase1Boot;
+  Boot = Phase1BootP.MainBoot;
+  Phase1BootP.mm3CommSerCtl -> mm3CommC;
 }
 
