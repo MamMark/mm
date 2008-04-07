@@ -83,6 +83,21 @@ implementation {
   }
 
 
+  event void SerialAMControl.startDone(error_t error) {
+    if (error == SUCCESS) {
+      comm_state = COMM_STATE_SERIAL;
+      signal mm3CommSerCtl.startDone(error);
+    } else {
+      call Panic.brk();
+      comm_state = COMM_STATE_SERIAL_INIT;
+      call SerialAMControl.start();
+    }
+  }
+
+  event void SerialAMControl.stopDone(error_t error) {
+  }
+
+
   command error_t Send.send(message_t* msg, uint8_t len) {
     switch (comm_state) {
       case COMM_STATE_OFF:
@@ -234,20 +249,6 @@ implementation {
 
   command void* Packet.getPayload(message_t* msg, uint8_t len) {
     return call SerialPacket.getPayload(msg, len);
-  }
-
-
-  event void SerialAMControl.startDone(error_t error) {
-    if (error == SUCCESS)
-      comm_state = COMM_STATE_SERIAL;
-    else {
-      call Panic.brk();
-      comm_state = COMM_STATE_SERIAL_INIT;
-      call SerialAMControl.start();
-    }
-  }
-
-  event void SerialAMControl.stopDone(error_t error) {
   }
 
 

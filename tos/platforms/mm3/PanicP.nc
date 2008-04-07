@@ -3,6 +3,20 @@
  * All rights reserved.
  */
 
+noinit uint16_t save_sr;
+noinit bool save_sr_free;
+noinit uint8_t _p, _w;
+noinit uint16_t _a0, _a1, _a2, _a3;
+
+#define MAYBE_SAVE_SR_AND_DINT	do {	\
+    if (save_sr_free) {			\
+      save_sr = READ_SR;		\
+      save_sr_free = FALSE;		\
+    }					\
+    dint();				\
+} while (0);
+
+
 module PanicP {
   provides {
     interface Panic;
@@ -13,10 +27,9 @@ module PanicP {
 implementation {
 
   void debug_break()  __attribute__ ((noinline)) {
-    atomic {
-      nop();
-      call Panic.panic(0,0,0,0,0,0);
-    }
+    MAYBE_SAVE_SR_AND_DINT;
+    nop();
+    call Panic.panic(0,0,0,0,0,0);
   }
 
   command void Panic.warn(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
@@ -24,11 +37,11 @@ implementation {
   }
 
   command void Panic.panic(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
-    atomic {
-      if (pcode == 0)
-	return;
-      debug_break();
-    }
+    _p = pcode; _w = where; _a0 = arg0; _a1 = arg1; _a2 = arg2; _a3 = arg3;
+    MAYBE_SAVE_SR_AND_DINT;
+    if (pcode == 0)
+      return;
+    debug_break();
   }
 
   command void Panic.brk() {
@@ -36,6 +49,8 @@ implementation {
   }
     
   command error_t Init.init() {
+    save_sr_free = TRUE;
+    save_sr = 0xffff;
     return SUCCESS;
   }
 }

@@ -8,6 +8,8 @@ configuration CollectC {
 }
 
 implementation {
-  components SerialCollectC;
-  Collect = SerialCollectC;
+//  components SerialCollectC;
+//  Collect = SerialCollectC;
+  components CollectP;
+  Collect = CollectP;
 }

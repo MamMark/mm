@@ -9,16 +9,18 @@ b SchedulerBasicP.nc:148
 b VirtualizeTimerC.nc:81
 dis
 
-b PanicP.nc:28
+b PanicP.nc:42
 comm
-printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",pcode, where, arg0, arg1, arg2, arg3
+printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
 end
 
-b SerialCollectP.nc:60
+#b SerialCollectP.nc:60
+b CollectP.nc:45
 comm
 printf "collect: len: %d (0x%02x), type: %d  id: %d\n",dlen,dlen,data[2],data[3]
 end
 dis
+b AccelP.nc:137
 ena 6 7
 
 # b sig_TIMERA0_VECTOR

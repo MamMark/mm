@@ -41,11 +41,11 @@ configuration Phase1BootC {
   uses interface Boot;
 }
 implementation {
-  components Phase1BootP;
-  components mm3CommC;
+  components Phase1BootP, mm3CommC;
   
   Phase1Boot = Phase1BootP.Phase1Boot;
   Boot = Phase1BootP.MainBoot;
+//  Phase1BootP.MainBoot -> MainC;
   Phase1BootP.mm3CommSerCtl -> mm3CommC;
 }
 
