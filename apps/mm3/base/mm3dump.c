@@ -30,7 +30,7 @@
 
 //#define FAKE_PAK
 
-#define VERSION "mm3dump: v0.3 07 Apr 2008\n"
+#define VERSION "mm3dump: v0.4 07 Apr 2008\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -150,7 +150,7 @@ write_preamble(FILE *fp, uint8_t sns_id) {
     fprintf(fp, "1 value\n");
   else
     fprintf(fp, "%d values\n", sns_payload_len[sns_id]/2);
-  fprintf(fp, "%% col 1, time in msec from last restart\n");
+  fprintf(fp, "%% col 1, time stamp (not sched) in msec from last restart\n");
   fprintf(fp, "%% col 2");
   switch(sns_id) {
     case SNS_ID_BATT:  fprintf(fp, " batt voltage\n"); break;
@@ -409,7 +409,7 @@ process_sensor_data(tmsg_t *msg) {
   }
   if (sns_id > 0 && sns_id < MM3_NUM_SENSORS) {
     if (write_data) {
-      fprintf(fp[sns_id], "%-8u ", sched);
+      fprintf(fp[sns_id], "%-8u ", stamp);
       for (i = 0; i < (sns_payload_len[sns_id]/2); i++)
 	fprintf(fp[sns_id], "%5d ", dt_sensor_data_data_get(msg, i));
       fprintf(fp[sns_id], "\n");
