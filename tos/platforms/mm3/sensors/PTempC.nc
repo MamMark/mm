@@ -29,4 +29,10 @@ implementation {
 
   components HplMM3AdcC;
   PTempP.HW -> HplMM3AdcC;
+
+  components mm3ControlC;
+  PTempP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_PTEMP];
+
+  components mm3CommDataC;
+  PTempP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_PTEMP];
 }

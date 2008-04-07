@@ -48,14 +48,17 @@ implementation {
     DATA_OUT_CLIENTS = MM3_NUM_SENSORS,
   };
 
+  /*
+   * originally inUse and cancelling were bit masks to conserve RAM
+   * space.  But the code generated is rather unwieldly so we went
+   * with the simplier in code generation vs. slightly more costly
+   * in ram space solution.  ie.  boolean arrays.
+   */
   message_t  dataOutBufs[DATA_OUT_CLIENTS];
   message_t  *dataOut[DATA_OUT_CLIENTS];
   bool       inUse[DATA_OUT_CLIENTS];
   bool       cancelling[DATA_OUT_CLIENTS];
   uint8_t    outCur;
-
-  uint8_t cancelMask[DATA_OUT_CLIENTS/8 + 1];
-
 
   /*
    * Accepts a buffer formatted as a data block (see sd_blocks.h) and sends

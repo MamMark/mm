@@ -31,6 +31,9 @@ implementation {
   components HplMM3AdcC;
   MagP.HW -> HplMM3AdcC;
 
-  components LedsC;
-  MagP.Leds -> LedsC;
+  components mm3ControlC;
+  MagP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_MAG];
+
+  components mm3CommDataC;
+  MagP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_MAG];
 }

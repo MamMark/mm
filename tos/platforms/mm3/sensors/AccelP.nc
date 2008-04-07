@@ -35,9 +35,7 @@ module AccelP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface Collect;
-    interface Leds;
     interface HplMM3Adc as HW;
-    interface Panic;
     interface mm3Control;
     interface mm3CommData;
   }
@@ -79,7 +77,6 @@ implementation {
        */
       return;
     }
-    call Leds.led1Toggle();
     accel_state = ACCEL_STATE_READ_X;
     call Adc.reqConfigure();
   }
@@ -143,9 +140,11 @@ implementation {
     call Collect.collect(accel_data, ACCEL_BLOCK_SIZE);
   }
 
+
   event void mm3CommData.send_data_done(error_t rtn) {
     eaves_busy = FALSE;
   }
+
 
   event void RegimeCtrl.regimeChange() {
     uint32_t new_period;

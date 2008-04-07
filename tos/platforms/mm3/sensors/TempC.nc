@@ -30,4 +30,10 @@ implementation {
 
   components HplMM3AdcC;
   TempP.HW -> HplMM3AdcC;
+
+  components mm3ControlC;
+  TempP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_TEMP];
+
+  components mm3CommDataC;
+  TempP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_TEMP];
 }

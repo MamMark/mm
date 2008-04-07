@@ -26,6 +26,8 @@ module PTempP {
     interface Adc;
     interface Collect;
     interface HplMM3Adc as HW;
+    interface mm3Control;
+    interface mm3CommData;
   }
 }
 
@@ -33,6 +35,8 @@ implementation {
   uint32_t period;
   uint8_t  ptemp_state;
   uint32_t err_overruns;
+  uint32_t err_eaves_drops;
+  bool     eaves_busy;
 
 
   command error_t Init.init() {
@@ -81,9 +85,23 @@ implementation {
     pdp->id = SNS_ID_PTEMP;
     pdp->sched_mis = call PeriodTimer.gett0();
     pdp->stamp_mis = call PeriodTimer.getNow();
+    if (call mm3Control.eavesdrop()) {
+      if (eaves_busy)
+	err_eaves_drops++;
+      else {
+	if (call mm3CommData.send_data(pdp, PTEMP_BLOCK_SIZE))
+	  err_eaves_drops++;
+	else
+	  eaves_busy = TRUE;
+      }
+    }
     call Collect.collect(ptemp_data, PTEMP_BLOCK_SIZE);
   }
 
+
+  event void mm3CommData.send_data_done(error_t rtn) {
+    eaves_busy = FALSE;
+  }
 
   event void RegimeCtrl.regimeChange() {
     uint32_t new_period;

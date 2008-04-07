@@ -30,4 +30,10 @@ implementation {
 
   components HplMM3AdcC;
   SpeedP.HW -> HplMM3AdcC;
+
+  components mm3ControlC;
+  SpeedP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_SPEED];
+
+  components mm3CommDataC;
+  SpeedP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_SPEED];
 }

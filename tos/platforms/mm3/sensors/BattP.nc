@@ -25,8 +25,9 @@ module BattP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface Collect;
-    interface Leds;
     interface HplMM3Adc as HW;
+    interface mm3Control;
+    interface mm3CommData;
   }
 }
 
@@ -34,6 +35,8 @@ implementation {
   uint32_t period;
   uint8_t  batt_state;
   uint32_t err_overruns;
+  uint32_t err_eaves_drops;
+  bool     eaves_busy;
 
 
   command error_t Init.init() {
@@ -65,7 +68,6 @@ implementation {
        */
       return;
     }
-    call Leds.led0Toggle();
     batt_state = BATT_STATE_READ;
     call Adc.reqConfigure();
   }
@@ -84,7 +86,22 @@ implementation {
     bdp->id = SNS_ID_BATT;
     bdp->sched_mis = call PeriodTimer.gett0();
     bdp->stamp_mis = call PeriodTimer.getNow();
+    if (call mm3Control.eavesdrop()) {
+      if (eaves_busy)
+	err_eaves_drops++;
+      else {
+	if (call mm3CommData.send_data(bdp, BATT_BLOCK_SIZE))
+	  err_eaves_drops++;
+	else
+	  eaves_busy = TRUE;
+      }
+    }
     call Collect.collect(batt_data, BATT_BLOCK_SIZE);
+  }
+
+
+  event void mm3CommData.send_data_done(error_t rtn) {
+    eaves_busy = FALSE;
   }
 
 

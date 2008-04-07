@@ -19,9 +19,16 @@ b CollectP.nc:45
 comm
 printf "collect: len: %d (0x%02x), type: %d  id: %d\n",dlen,dlen,data[2],data[3]
 end
-dis
-b AccelP.nc:137
-ena 6 7
+
+b mm3CommDataP.nc:80
+comm
+printf "Data: sns: %d\n", client_id
+end
+
+b mm3CommDataP.nc:163
+comm
+printf "inUse[%d] cleared\n",last
+end
 
 # b sig_TIMERA0_VECTOR
 # b sig_TIMERA1_VECTOR

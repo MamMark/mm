@@ -31,6 +31,9 @@ implementation {
   components HplMM3AdcC;
   BattP.HW -> HplMM3AdcC;
 
-  components LedsC;
-  BattP.Leds -> LedsC;
+  components mm3ControlC;
+  BattP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_BATT];
+
+  components mm3CommDataC;
+  BattP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_BATT];
 }

@@ -25,8 +25,9 @@ module MagP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface Collect;
-    interface Leds;
     interface HplMM3Adc as HW;
+    interface mm3Control;
+    interface mm3CommData;
   }
 }
 
@@ -34,6 +35,8 @@ implementation {
   uint32_t period;
   uint8_t  mag_state;
   uint32_t err_overruns;
+  uint32_t err_eaves_drops;
+  bool     eaves_busy;
 
   uint16_t data[3];
 
@@ -66,7 +69,6 @@ implementation {
        */
       return;
     }
-    call Leds.led2Toggle();
     mag_state = MAG_STATE_READ_XY_A;
     call Adc.reqConfigure();
   }
@@ -108,9 +110,23 @@ implementation {
     mdp->data[0] = data[0];
     mdp->data[1] = data[1];
     mdp->data[2] = data[2];
+    if (call mm3Control.eavesdrop()) {
+      if (eaves_busy)
+	err_eaves_drops++;
+      else {
+	if (call mm3CommData.send_data(mdp, MAG_BLOCK_SIZE))
+	  err_eaves_drops++;
+	else
+	  eaves_busy = TRUE;
+      }
+    }
     call Collect.collect(mag_data, MAG_BLOCK_SIZE);
   }
 
+
+  event void mm3CommData.send_data_done(error_t rtn) {
+    eaves_busy = FALSE;
+  }
 
   event void RegimeCtrl.regimeChange() {
     uint32_t new_period;

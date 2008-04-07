@@ -31,12 +31,6 @@ implementation {
   components HplMM3AdcC;
   AccelP.HW -> HplMM3AdcC;
 
-  components LedsC;
-  AccelP.Leds -> LedsC;
-
-  components PanicC;
-  AccelP.Panic -> PanicC;
-
   components mm3ControlC;
   AccelP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_ACCEL];
 
