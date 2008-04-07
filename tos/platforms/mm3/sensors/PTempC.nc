@@ -35,4 +35,7 @@ implementation {
 
   components mm3CommDataC;
   PTempP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_PTEMP];
+
+  components PanicC;
+  PTempP.Panic -> PanicC;
 }

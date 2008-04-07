@@ -1,5 +1,5 @@
 
-#define DC_SPEED_9600
+//#define DC_SPEED_9600
 
 module mm3SerialP {
   provides {

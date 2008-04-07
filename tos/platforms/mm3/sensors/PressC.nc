@@ -35,4 +35,7 @@ implementation {
 
   components mm3CommDataC;
   PressP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_PRESS];
+
+  components PanicC;
+  PressP.Panic -> PanicC;
 }

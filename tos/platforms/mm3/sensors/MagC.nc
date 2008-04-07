@@ -36,4 +36,7 @@ implementation {
 
   components mm3CommDataC;
   MagP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_MAG];
+
+  components PanicC;
+  MagP.Panic -> PanicC;
 }

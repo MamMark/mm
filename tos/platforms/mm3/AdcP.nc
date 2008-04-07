@@ -433,12 +433,17 @@ implementation {
 	req_client = client_id;
       } else {
         rtn = call Queue.enqueue(client_id);
-        if (rtn != SUCCESS) {
-          /* check for ebusy.  shouldn't happen
-	   * bitch bitch bitch
+	if (rtn == SUCCESS) {
+	  /*
+	   * success is cool.  ebusy says we are already in the queue.
+	   * Shouldn't happen.  So only success should get through.
 	   */
-	  call Panic.panic(PANIC_ADC, 5, rtn, 0, 0, 0);
-        }
+	  return rtn;
+	}
+	/*
+	 * weird error. * bitch bitch bitch
+	 */
+	call Panic.warn(PANIC_ADC, 5, rtn, 0, 0, 0);
 	return rtn;
       }
     }

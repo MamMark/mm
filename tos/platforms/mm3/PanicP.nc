@@ -33,7 +33,7 @@ implementation {
   }
 
   command void Panic.warn(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
-    debug_break();
+    call Panic.panic(pcode, where, arg0, arg1, arg2, arg3);
   }
 
   command void Panic.panic(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {

@@ -28,6 +28,7 @@ module PTempP {
     interface HplMM3Adc as HW;
     interface mm3Control;
     interface mm3CommData;
+    interface Panic;
   }
 }
 
@@ -64,6 +65,7 @@ implementation {
        * bitch, shouldn't be here.  Of course it could be
        * because something took way too long.
        */
+//      call Panic.brk();
       return;
     }
     ptemp_state = PTEMP_STATE_READ;

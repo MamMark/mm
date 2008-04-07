@@ -36,4 +36,7 @@ implementation {
 
   components mm3CommDataC;
   SpeedP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_SPEED];
+
+  components PanicC;
+  SpeedP.Panic -> PanicC;
 }

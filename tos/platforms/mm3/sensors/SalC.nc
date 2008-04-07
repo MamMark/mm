@@ -36,4 +36,7 @@ implementation {
 
   components mm3CommDataC;
   SalP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_SAL];
+
+  components PanicC;
+  SalP.Panic -> PanicC;
 }

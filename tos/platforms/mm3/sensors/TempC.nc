@@ -36,4 +36,7 @@ implementation {
 
   components mm3CommDataC;
   TempP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_TEMP];
+
+  components PanicC;
+  TempP.Panic -> PanicC;
 }

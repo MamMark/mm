@@ -30,7 +30,7 @@
 
 //#define FAKE_PAK
 
-#define VERSION "mm3dump: v0.2 25 Mar 2008\n"
+#define VERSION "mm3dump: v0.3 07 Apr 2008\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -395,8 +395,8 @@ process_sensor_data(tmsg_t *msg) {
   sched = dt_sensor_data_sched_mis_get(msg);
   stamp = dt_sensor_data_stamp_mis_get(msg);
   if (verbose) {
-    printf("SNS: %-6s (%d) %8u (%04x/%04x)",
-	   snsid2str(sns_id), sns_id, sched, sched, stamp);
+    printf("SNS: %-6s (%d) %8u (%04x/%04x, %3d)",
+	   snsid2str(sns_id), sns_id, sched, sched, stamp, stamp-sched);
     if (sns_id < MM3_NUM_SENSORS) {
       for (i = 0; i < (sns_payload_len[sns_id]/2); i++)
 	printf(" %5d", dt_sensor_data_data_get(msg, i));
