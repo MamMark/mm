@@ -46,6 +46,7 @@ implementation {
     mmP4out.vdiff_off = 1;
   }
 
+#ifdef notdef
   command bool HW.isVrefPowered() {
     return (mmP4out.vref_off == 0);
   }
@@ -53,6 +54,7 @@ implementation {
   command bool HW.isVdiffPowered() {
     return (mmP4out.vdiff_off == 0);
   }
+#endif
 
   command void HW.toggleSal() {
     mmP2out.salinity_pol_sw ^= 1;
@@ -94,17 +96,14 @@ implementation {
     mmP2out.smux_low2 = (val & 3);
     mmP3out.smux_a2   = ((val & 4) == 4);
   }
-
-
+  
   command uint8_t HW.get_gmux() {
     return(mmP4out.gmux);
   }
 
-
   command void HW.set_gmux(uint8_t val) {
     mmP4out.gmux = (val & 3);
   }
-
 
   command void HW.batt_on() {
     mmP4out.extchg_battchk = 1;
@@ -172,5 +171,61 @@ implementation {
   command void HW.mag_off() {
     mmP6out.mag_xy_off = 1;
     mmP6out.mag_z_off  = 1;
+  }
+
+  command bool HW.isSDPowered() {
+    return (mmP5out.sd_pwr_off == 0);
+  }
+
+  /*
+   * see HW.sd_off for problems.
+   *
+   * assumes pin state as follows:
+   *
+   *   p5.0 sd_pwr_off	1pO
+   *   p5.1 sd_mosi	1pI
+   *   p5.2 sd_miso	1pI
+   *   p5.3 sd_sck	1pI
+   *   p5.4 sd_deselect 1pI
+   *
+   *   power up
+   *   sd_csn  1pO (holds csn high, deselected)
+   *   set pins to Module (mosi, miso, and sck)
+   */
+
+  command void HW.sd_on() {
+    if (!call HW.isSDPowered()) { // if not powered, bring it up
+      mmP5out.sd_csn = 1;	// make sure deselected.
+      SET_SD_PINS_SPI;		// switch pins over
+      mmP5out.sd_pwr_off = 0;	// turn on.
+    }
+  }
+
+  /*
+   * turn sd_off and switch pins back to input so we don't power the
+   * chip prior to powering it off.
+   *
+   * FIX ME: If the cc2420 spi radio is on the same bus won't this be
+   * a problem?  Because these pins will remain on the Module (assigned
+   * to the SPI and wiggling but the SD will be powered off and could be
+   * powered up and tortured.
+   *
+   * One possibility is anytime either of the chips is powered up both
+   * have to be powered up.  Or could move the radio to the different spi bus.
+   */
+  command void HW.sd_off() {
+    if (call HW.isSDPowered()) {
+      mmP5out.sd_csn = 1;	// tri-state by deselecting
+      SET_SD_PINS_INPUT;	// all data pins to input
+      mmP5out.sd_pwr_off = 1;	// kill power
+    }
+  }
+
+  command void HW.gps_on() {
+    mmP4out.gps_off = 0;
+  }
+
+  command void HW.gps_off() {
+    mmP4out.gps_off = 1;
   }
 }

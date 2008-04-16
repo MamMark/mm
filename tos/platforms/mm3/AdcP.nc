@@ -70,7 +70,6 @@ module AdcP {
     interface ResourceQueue as Queue;
     interface HplMM3Adc as HW;
     interface Alarm<T32khz, uint16_t> as PowerAlarm;
-    interface BusyWait<TMicro, uint16_t>;
     interface Panic;
   }
 }

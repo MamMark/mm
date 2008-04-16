@@ -41,7 +41,7 @@ implementation {
 
 #define PWR_UP_CYCLES_32KHZ 128
 
-  void wait_for_32K() {
+  void wait_for_32K() __attribute__ ((noinline)) {
     uint16_t t1, t2;
 
     TACTL = TACLR;
@@ -62,7 +62,7 @@ implementation {
     }
   }
 
-  command error_t Init.init() {
+  command error_t Init.init() __attribute__ ((noinline)) {
     TOSH_MM3_INITIAL_PIN_STATE();
 
     /*

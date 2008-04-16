@@ -31,10 +31,10 @@
  *       .7	O	press_off		      .7	O	cc2420_vref (rf232_pwr off)
  *
  * port 2.0	O	U8_inhibit		port 5.0	O	sd_pwr_off (1 = off)
- *       .1	O	accel_wake		      .1	1sO	sd_di (simo1, spi1)
- *       .2	O	salinity_polarity	      .2	1sI	sd_do (somi1, spi1)
- *       .3	O	u12_inhibit		      .3	1sO	sd_clk (uclk1, spi1)
- *       .4	O	s_mux_a0		      .4	O	sd_csn (cs low true)
+ *       .1	O	accel_wake		      .1	1sO	sd_di (simo1, spi1)  (1pI, sd off)
+ *       .2	O	salinity_polarity	      .2	1sI	sd_do (somi1, spi1)  (1pI, sd off)
+ *       .3	O	u12_inhibit		      .3	1sO	sd_clk (uclk1, spi1) (1pI, sd off)
+ *       .4	O	s_mux_a0		      .4	O	sd_csn (cs low true) (1pI, sd off)
  *       .5	O	s_mux_a1		      .5	O	rf_beeper_off
  *       .6	O	adc_cnv			      .6	O	ser_sel_a0  (gps_in)
  *       .7	I	adc_somi_ta0 (cnv_busy)	      .7	O	ser_sel_a1  (cc2420_reset)
@@ -151,10 +151,30 @@ TOSH_ASSIGN_PIN(ADCxSDI, 3, 5);
     uint8_t ser_sel		: 2;
   } mmP5out asm("0x0031");
 
+
+#define SD_CSN mmP5out.sd_csn
+
 TOSH_ASSIGN_PIN(SD_SDI, 5, 1);
 TOSH_ASSIGN_PIN(SD_SDO, 5, 2);
 TOSH_ASSIGN_PIN(SD_CLK, 5, 3);
 TOSH_ASSIGN_PIN(SD_CSN, 5, 4);
+
+/*
+ * SET_SD_PINS_SPI will set the SPI1/SD control pins to the following:
+ *
+ * 5.4 CSN switch to port Output (value assumed to be 1 for deselected)
+ * 5.1-3 SDI, SDO, CLK set to SPI Module.
+ */
+#define SET_SD_PINS_SPI   do { P5SEL |= 0x0e; P5DIR |= 0x10; } while (0)
+
+/*
+ * SET_SD_PINS_INPUT will set the SPI1/SD control pins to be input so
+ * we don't power the SD chip when powered off.
+ *
+ * 5.4 CSN switch to port Input (value assumed to be 1).
+ * 5.1-3 SDI, SDO, CLK set to Port Input.
+ */
+#define SET_SD_PINS_INPUT do { P5SEL ~= 0x0e; P5DIR ~= 0x10; } while (0)
 
 
   enum {
@@ -290,7 +310,7 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
  * chip via the pin).
  */
 #define P5_BASE_DIR	0xe1
-#define P5_BASE_VAL	0x31
+#define P5_BASE_VAL	0x3f
 
 /* mag pwr off */
 #define P6_BASE_DIR	0xff

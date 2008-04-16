@@ -18,6 +18,7 @@
 #define PANIC_MISC	2
 #define PANIC_COMM	3
 #define PANIC_SD	4
+#define PANIC_SS	5
 
 #ifdef notdef
 #define PANIC_KERN	1
