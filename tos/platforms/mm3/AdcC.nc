@@ -23,8 +23,10 @@ implementation {
   components new Alarm32khzC() as PA;
   AdcP.PowerAlarm -> PA;
 
+#ifdef notdef
   components BusyWaitMicroC;
   AdcP.BusyWait -> BusyWaitMicroC;
+#endif
 
   components PanicC;
   AdcP.Panic -> PanicC;

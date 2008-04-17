@@ -151,15 +151,12 @@ TOSH_ASSIGN_PIN(ADCxSDI, 3, 5);
     uint8_t ser_sel		: 2;
   } mmP5out asm("0x0031");
 
-
-//Either give this a different name or add below as SD_CSNx as
-//you did for other PIN assignments
 #define SD_CSN mmP5out.sd_csn
 
-//TOSH_ASSIGN_PIN(SD_SDI, 5, 1);
-//TOSH_ASSIGN_PIN(SD_SDO, 5, 2);
-//TOSH_ASSIGN_PIN(SD_CLK, 5, 3);
-//TOSH_ASSIGN_PIN(SD_CSN, 5, 4);
+TOSH_ASSIGN_PIN(SD_SDI, 5, 1);
+TOSH_ASSIGN_PIN(SD_SDO, 5, 2);
+TOSH_ASSIGN_PIN(SD_CLK, 5, 3);
+TOSH_ASSIGN_PIN(SD_CSNx, 5, 4);
 
 /*
  * SET_SD_PINS_SPI will set the SPI1/SD control pins to the following:
@@ -176,9 +173,7 @@ TOSH_ASSIGN_PIN(ADCxSDI, 3, 5);
  * 5.4 CSN switch to port Input (value assumed to be 1).
  * 5.1-3 SDI, SDO, CLK set to Port Input.
  */
- //this needs to be changed to soemthing else: ~= ??? this is not valid c code
-#define SET_SD_PINS_INPUT //do { P5SEL ~= 0x0e; P5DIR ~= 0x10; } while (0)
-
+#define SET_SD_PINS_INPUT do { P5SEL &= ~0x0e; P5DIR &= ~0x10; } while (0)
 
   enum {
     SER_SEL_CRADLE =	0,
