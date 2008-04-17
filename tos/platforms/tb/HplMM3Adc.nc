@@ -28,31 +28,44 @@
 interface HplMM3Adc {
   command void	  vref_on();
   command void	  vref_off();
+  
   command void	  vdiff_on();
   command void	  vdiff_off();
+  
   command bool	  isVrefPowered();
   command bool	  isVdiffPowered();
-  command void	  toggleSal();
+    
   command uint8_t get_dmux();
   command void	  set_dmux(uint8_t val);
+  
   command uint8_t get_smux();
   command void	  set_smux(uint8_t val);
+  
   command uint8_t get_gmux();
   command void	  set_gmux(uint8_t val);
+  
   command void	  batt_on();
   command void	  batt_off();
+  
   command void	  temp_on();
   command void	  temp_off();
+  
   command void	  sal_on();
-  command void	  sal_off();
+  command void	  sal_off();  
+  command void	  toggleSal();
+  
   command void	  accel_on();
   command void	  accel_off();
+  
   command void	  ptemp_on();
   command void	  ptemp_off();
+  
   command void	  press_on();
   command void	  press_off();
+  
   command void	  speed_on();
   command void	  speed_off();
+  
   command void	  mag_on();
   command void	  mag_off();
 }
