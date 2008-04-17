@@ -1,0 +1,2 @@
+COMPONENT=TestSDBootAppC
+include $(MAKERULES)
