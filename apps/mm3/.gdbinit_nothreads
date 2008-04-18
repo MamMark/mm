@@ -1,4 +1,6 @@
 
+#no threads
+
 disp/i $pc
 x/i $pc
 
