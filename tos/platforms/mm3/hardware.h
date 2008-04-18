@@ -2,6 +2,33 @@
 #define _H_hardware_h
 
 #include "panic.h"
+#include "msp430hardware.h"
+
+//#define USE_SD
+
+/*
+ * for some reason the standard msp430 include files don't define
+ * U1IFG but do define U0IFG.
+ */
+
+#define U1IFG IFG2
+
+/*
+ * DMA control defines.  Makes things more readable.
+ */
+
+#define DMA_DT_SINGLE DMADT_0
+#define DMA_SB_DB     DMASBDB
+#define DMA_EN        DMAEN
+#define DMA_DST_NC    DMADSTINCR_0
+#define DMA_DST_INC   DMADSTINCR_3
+#define DMA_SRC_NC    DMASRCINCR_0
+#define DMA_SRC_INC   DMASRCINCR_3
+
+#define DMA1_TSEL_U1RX (9<<4)	/* DMA chn 1, URXIFG1 */
+#define DMA0_TSEL_U1RX (9<<0)	/* DMA chn 0, URXIFG1 */
+#define DMA0_TSEL_U1TX (10<<0)	/* DMA chn 0, UTXIFG1 */
+
 
 /*
  * Port definitions:
@@ -49,8 +76,6 @@
  *       .6	1uO	ser_txd (uart1)		      .6	O	led_y
  *       .7	0uI	ser_rxd (uart1)		      .7	O	mag_z_off
  */
-
-#include "msp430hardware.h"
 
 /*
  * MUX Control

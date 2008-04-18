@@ -34,6 +34,11 @@ implementation {
   components AdcC;
   mm3C.Adc -> AdcC.Adc[SNS_ID_NONE];
 
+#ifdef USE_SD
+  components SDC;
+  mm3C.SD -> SDC;
+#endif
+
   components PanicC;
   mm3C.Panic -> PanicC;
 }

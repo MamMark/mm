@@ -5,13 +5,19 @@
  * All rights reserved.
  */
 
+#include <msp430usart.h>
+#include <msp430hardware.h>
 #include "sd.h"
 
 module SDP {
-  provides interface SD;
+  provides {
+    interface SD;
+    interface Init;
+  }
   uses {
     interface HplMsp430Usart as Usart;
     interface SpiByte;
+    interface Panic;
   }
 }
 
@@ -23,17 +29,18 @@ implementation {
   noinit uint16_t     sd_wr_timeout;
   noinit uint16_t     sd_reset_timeout;
   noinit uint16_t     sd_busy_timeout;
-  noinit bool_t       sd_busyflag;
+  noinit bool         sd_busyflag;
   noinit uint16_t     sd_reset_idles;
 
+  void sd_wait_notbusy();
 
-  void sd_chk_clean(void) {
+  void sd_chk_clean() {
     uint8_t tmp;
 
 #ifdef SD_PARANOID
     if (U1RCTL & OE) {
       call Panic.panic(PANIC_SD, 1, U1RCTL, 0, 0, 0);
-      call Usart.setUrctl(call Usart.getUrctl() & ~OE);
+      URCTL &= ~OE;
     }
     if (call Usart.isRxIntrPending()) {
       tmp = call Usart.rx();
@@ -45,6 +52,7 @@ implementation {
     if (call Usart.isRxIntrPending())
       tmp = call Usart.rx();
 #endif
+  }
 
 
   void sd_packarg(sd_cmd_blk_t *cmd, uint32_t value) {
@@ -68,7 +76,7 @@ implementation {
 
     i=0;
     do {
-      tmp = SpiByte.write(0);
+      tmp = call SpiByte.write(0);
       i++;
     } while((tmp > 127) && (i < SD_CMD_TIMEOUT));
 
@@ -80,7 +88,7 @@ implementation {
       return(1);
     }
 
-    tmp = SpiByte.write(0);		/* finish the command */
+    tmp = call SpiByte.write(0);		/* finish the command */
     if (tmp != 0xff) {
       call Panic.brk();
       call Panic.panic(PANIC_SD, 12, tmp, 0, 0, 0);
@@ -147,7 +155,7 @@ implementation {
     /* Wait for a response.  */
     i=0;
     do {
-      tmp = SpiByte.write(0);
+      tmp = call SpiByte.write(0);
       i++;
     } while ((tmp & 0x80) && (i < SD_CMD_TIMEOUT));
 
@@ -165,10 +173,10 @@ implementation {
     /* get rest of response if needed */
     i = 1;
     while (i < rsp_len)
-      cmd->rsp[i++] = SpiByte.write(0);
+      cmd->rsp[i++] = call SpiByte.write(0);
 
     cmd->stage = 3;
-    tmp = SpiByte.write(0);
+    tmp = call SpiByte.write(0);
     if (tmp != 0xff) {
       call Panic.panic(PANIC_SD, 17, tmp, 0, 0, 0);
     }
@@ -184,7 +192,7 @@ implementation {
       i = 0;
       do {
 	i++;
-	tmp = SpiByte.write(0);
+	tmp = call SpiByte.write(0);
       } while (tmp != 0xFF);
       sd_r1b_timeout = i;
       //	cmd->stage_count = i;
@@ -255,7 +263,7 @@ implementation {
     uint16_t i;
     sd_cmd_inst_t *ent;
 
-    us1_set_spi_speed(SD_RESET_SPEED);
+    call Usart.setUbr(SPI_400K_DIV);
     sd_packarg(&sd_cmd, 0);
 
     /* Clock out at least 74 bits of idles (0xFF).  This allows
@@ -333,7 +341,7 @@ implementation {
     }
 
     /* If we got this far, initialization was OK. */
-    us1_set_spi_speed(SD_SPI_SPEED);
+    call Usart.setUbr(SPI_2M_DIV);
     return SUCCESS;
   }
 
@@ -343,7 +351,7 @@ implementation {
    *    does not use dma and waits for the data.
    */
 
-  int sd_read_direct(sd_cmd_blk_t *cmd, uint16_t data_len, uint8_t *data) {
+  error_t sd_read_data_direct(sd_cmd_blk_t *cmd, uint16_t data_len, uint8_t *data) {
     uint16_t i;
     uint8_t  tmp;
 
@@ -365,7 +373,7 @@ implementation {
     /* Wait for the token */
     i=0;
     do {
-      tmp = SpiByte.write(0);
+      tmp = call SpiByte.write(0);
       i++;
     } while ((tmp == 0xFF) && i < SD_READ_TIMEOUT);
     sd_rd_timeout = i;
@@ -382,11 +390,11 @@ implementation {
     }
 
     for (i = 0; i < data_len; i++)
-      data[i] = SpiByte.write(0);
+      data[i] = call SpiByte.write(0);
 
     /* Ignore the CRC */
-    SpiByte.write(0);
-    SpiByte.write(0);
+    call SpiByte.write(0);
+    call SpiByte.write(0);
 
     SD_CSN = 1;
     /* Send some extra clocks so the card can finish */
@@ -450,10 +458,9 @@ implementation {
     /* Wait for the token */
     i=0;
     do {
-      tmp = SpiByte.write(0);
+      tmp = call SpiByte.write(0);
       i++;
     } while ((tmp == 0xFF) && i < SD_READ_TIMEOUT);
-    sd_cmd_inst[sd_cmd_inst_idx].aux_rsp = tmp;
     sd_rd_timeout = i;
 
     if ((tmp & MSK_TOK_DATAERROR) == 0 || i >= SD_READ_TIMEOUT) {
@@ -487,9 +494,9 @@ implementation {
 
     DMACTL0 = 0;
 
-    crc = SpiByte.write(0);
+    crc = call SpiByte.write(0);
     crc = crc << 8;
-    crc |= SpiByte.write(0);
+    crc |= call SpiByte.write(0);
 
     /* Deassert CS */
     SD_CSN = 1;
@@ -516,15 +523,16 @@ implementation {
   }
 
 
-  /* sd_read_block: read a 512 byte block from the SD
+  /* SD.read_direct: read a 512 byte block from the SD
 
-  input:  cmd		pointer to cmd block
-  blockaddr	block to read.  (max 23 bits)
-  data		pointer to data buffer
-  output: rtn		0 call successful, err otherwise
+  input:  blockaddr     block to read.  (max 23 bits)
+          data          pointer to data buffer
+  output: rtn           0 call successful, err otherwise
   */
 
   command error_t SD.read_direct(uint32_t blockaddr, void *data) {
+    sd_cmd_blk_t *cmd;
+
     cmd = &sd_cmd;
     /* Adjust the block address to a byte address */
     blockaddr <<= SD_BLOCKSIZE_NBITS;
@@ -600,8 +608,7 @@ implementation {
 
     /* The write command needs an additional 8 clock cycles before
      * the block write is started. */
-    tmp = SpiByte.write(0);
-    sd_cmd_inst[sd_cmd_inst_idx].aux_rsp = tmp;
+    tmp = call SpiByte.write(0);
     if (tmp != 0xff)
       call Panic.panic(PANIC_SD, 32, tmp, 0, 0, 0);
 
@@ -628,19 +635,23 @@ implementation {
 #endif
 
 
-  error_t sd_finish_write(void) {
+  error_t sd_finish_write() {
     uint16_t i;
     uint8_t  tmp;
-    mm_time_t   t, to, t2;
 
+#ifdef notdef
+    /*
+     * This needs to get changed for the thread.  need a timeout sequence.
+     */
     /*
      * We give up to 10 mis for things to settle down.
      *
      * need to convert this timing stuff into using a Timer.
-     *
+     */
+    mm_time_t   t, to, t2;
     time_get_cur(&to);
     add_times(&to, &sd_small_timeout);
-    */
+#endif
 
     /*
      * The DMA only kicks out via the transmit path.  Simultaneously
@@ -650,16 +661,21 @@ implementation {
      * to empty.  Then we should have seen the last char received and
      * we can successfully clean out both data avail and the overrun.
      */
-    while (!U1_TX_EMPTY) {
+    while (call Usart.isTxEmpty() == 0) {
+#ifdef not
+      /*
+       * Need a timeout
+       */
       time_get_cur(&t);
       if (time_leq(&to, &t))
 	call Panic.panic(PANIC_SD, 41, 0, 0, 0, 0);
+#endif
     }
 
     tmp = U1IFG;
     tmp = U1RXBUF;		/* clean out OE and data avail */
 
-    if (!U1_TX_EMPTY || U1_RX_RDY)
+    if ((call Usart.isTxEmpty() == 0) || U1_RX_RDY)
       call Panic.panic(PANIC_SD, 33, 0, 0, 0, 0);
 
     call SpiByte.write(0);			/* crc ignored */
@@ -670,7 +686,7 @@ implementation {
      */
     i=0;
     do {
-      tmp = SpiByte.write(0);
+      tmp = call SpiByte.write(0);
       i++;
       time_get_cur(&t);
     } while ((tmp == 0xFF) && time_leq(&t, &to));
@@ -686,7 +702,7 @@ implementation {
     t2 = to;
     add_times(&to, &sd_busy_max);
     i = 0;
-    while ((tmp = SpiByte.write(0)) != 0xFF) {
+    while ((tmp = call SpiByte.write(0)) != 0xFF) {
       i++;
       time_get_cur(&t);
       if (time_leq(&to, &t))
@@ -750,13 +766,13 @@ implementation {
     results of an sd_read_block() call right away.
   */
 
-  void sd_wait_notbusy(void) {
+  void sd_wait_notbusy() {
     uint16_t i;
 
     /* Check for the busy flag (set on a write block) */
     if (sd_busyflag) {
       i = 0;
-      while (SpiByte.write(0) != 0xFF)
+      while (call SpiByte.write(0) != 0xFF)
 	i++;
       sd_busyflag = FALSE;
       sd_busy_timeout = i;

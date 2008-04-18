@@ -6,6 +6,8 @@
 #include "regime.h"
 #include "panic.h"
 
+#include "stream_storage.h"
+
 #ifdef notdef
 #define NUM_RES 16
 uint16_t res[NUM_RES];
@@ -25,10 +27,16 @@ module mm3C {
 
     interface HplMM3Adc as HW;
     interface Adc;
+
+#ifdef USE_SD
+    interface SD;
+#endif
   }
 }
 
 implementation {
+  uint8_t dbuf[SS_BLOCK_SIZE + 2];
+
   command error_t Init.init() {
 //    call Panic.brk();
     return SUCCESS;
@@ -63,7 +71,13 @@ implementation {
       nop();
     }
 #endif
+//    call SD.reset();
   }
+
+#ifdef USE_SD
+  event void SD.readDone(uint32_t blk, void *buf) {}
+  event void SD.writeDone(uint32_t blk, void *buf) {}
+#endif
 
   event void Adc.configured() {
     call Panic.panic(PANIC_MISC, 1, 0, 0, 0, 0);
