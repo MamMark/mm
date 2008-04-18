@@ -23,6 +23,7 @@
 
 push( @includes, qw(
 
+  %P/misc
   %P/sensors
   %P/../../chips/msp430/timer
   %T/chips/cc2420
