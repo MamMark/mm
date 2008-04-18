@@ -151,7 +151,6 @@ implementation {
 
     /*
      * set ADC_CNV to 0.  Dir and FuncSel are set once by platform init
-     * ADC_CNV_BUSY input.  Set by platform init
      * ADC_SDO, ADC_CLK assigned dir and sel by platform init.
      */
     ADC_CNV = 0;

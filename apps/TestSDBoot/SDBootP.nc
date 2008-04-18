@@ -52,7 +52,7 @@ implementation {
   //Do thread related SD stuff here....
   event void Thread.run(void* arg) {
     uint32_t i;
-    for(i = 0; i<500000UL; i++)
+    for(i = 0; i < 5000UL; i++)
       call Leds.led0Toggle();
       
     //Singal booted when done.

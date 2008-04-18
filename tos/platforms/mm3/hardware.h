@@ -36,8 +36,8 @@
  *       .3	O	u12_inhibit		      .3	1sO	sd_clk (uclk1, spi1) (1pI, sd off)
  *       .4	O	s_mux_a0		      .4	O	sd_csn (cs low true) (1pI, sd off)
  *       .5	O	s_mux_a1		      .5	O	rf_beeper_off
- *       .6	O	adc_cnv			      .6	O	ser_sel_a0  (gps_in)
- *       .7	I	adc_somi_ta0 (cnv_busy)	      .7	O	ser_sel_a1  (cc2420_reset)
+ *       .6	O	adc_cnv			      .6	O	ser_sel_a0
+ *       .7	I	gps_rx			      .7	O	ser_sel_a1  (cc2420_reset)
  *
  * port 3.0	O	cc2420_csn		port 6.0	O	cc2420_fifop
  *       .1	O	s_mux_a2		      .1	O	cc2420_sfd
@@ -82,7 +82,7 @@
  */
 
   static volatile struct {
-    uint8_t dmux		    : 2;
+    uint8_t dmux	    : 2;
     uint8_t mag_deguass1    : 1;
     uint8_t speed_off       : 1;
     uint8_t mag_deguass2    : 1;
@@ -92,8 +92,8 @@
   } mmP1out asm("0x0021");
 
   static volatile struct {
-    uint8_t filler		: 7;
-    uint8_t adc_cnv_busy	: 1;
+    uint8_t filler	    : 7;
+    uint8_t gps_rx	    : 1;
   } mmP2in asm("0x0028");
 
   static volatile struct {
@@ -107,10 +107,10 @@
   } mmP2out asm("0x0029");
 
 #define ADC_CNV mmP2out.adc_cnv
-#define ADC_CNV_BUSY mmP2in.adc_cnv_busy
+#define GPS_RX  mmP2in.gps_rx
 
 TOSH_ASSIGN_PIN(ADCxCNV, 2, 6);
-TOSH_ASSIGN_PIN(ADCxCNVxBUSY, 2, 7);
+TOSH_ASSIGN_PIN(GSP_RXx, 2, 7);
 
   static volatile struct {
     uint8_t			: 1;
@@ -153,10 +153,10 @@ TOSH_ASSIGN_PIN(ADCxSDI, 3, 5);
 
 #define SD_CSN mmP5out.sd_csn
 
-TOSH_ASSIGN_PIN(SD_SDI, 5, 1);
-TOSH_ASSIGN_PIN(SD_SDO, 5, 2);
-TOSH_ASSIGN_PIN(SD_CLK, 5, 3);
-TOSH_ASSIGN_PIN(SD_CSNx, 5, 4);
+TOSH_ASSIGN_PIN(SDxSDI, 5, 1);
+TOSH_ASSIGN_PIN(SDxSDO, 5, 2);
+TOSH_ASSIGN_PIN(SDxCLK, 5, 3);
+TOSH_ASSIGN_PIN(SDxCSN, 5, 4);
 
 /*
  * SET_SD_PINS_SPI will set the SPI1/SD control pins to the following:
@@ -177,16 +177,16 @@ TOSH_ASSIGN_PIN(SD_CSNx, 5, 4);
 
   enum {
     SER_SEL_CRADLE =	0,
-    SER_SEL_GPS    =	1,
-    SER_SEL_RF232  =	2,
+    SER_SEL_GPS    =	1,	/* temp so we can see it via the uart */
+//    SER_SEL_RF232  =	2,	/* shouldnt be used */
     SER_SEL_NONE   =	3,
   };
 
 
   static volatile struct {
     uint8_t			: 1;
-    uint8_t rf232_cmd		: 1;
-    uint8_t rf232_cts_o		: 1;
+    uint8_t			: 1;
+    uint8_t			: 1;
     uint8_t tell		: 1;
     uint8_t led_g		: 1;
     uint8_t mag_xy_off		: 1;
@@ -279,7 +279,7 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
 
 /*
  * s_mux = 0, accel sleeping, u8/12 inhibit
- * adc_cnv=0pO, adc_cnv_busy input.
+ * adc_cnv=0pO, gps_rx input.
  */
 #define P2_BASE_DIR	0x7f
 #define P2_BASE_VAL	0x09
@@ -291,10 +291,11 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
  * ADC_SDO and ADC_CLK are assigned to SPI0
  */
 #define P3_BASE_DIR	0x7b
-//#define P3_BASE_VAL	0x60
-/* while playing with the gps make sure that 3.6 TxD is a 0
-   for when the gps is powered off, there are problems with
-   the serial mux.  This will go away with the next h/w rev. */
+
+/* gps is being moved to its own pin.  meaning a s/w uart
+   driven initially by interrupt (start bit interrupts us)
+   and then timed with t2 timers for the sample rate.
+*/
 #define P3_BASE_VAL	0x60
 #define P3_BASE_SEL	0x0c
 
