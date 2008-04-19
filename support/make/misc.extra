@@ -1,0 +1,6 @@
+
+PFLAGS += -I$(MAMMARK_DIR)/tos/platforms/mm3/dummy
+PFLAGS += -I$(MAMMARK_DIR)/tos/platforms/mm3/misc
+PFLAGS += -I$(MAMMARK_DIR)/tos/platforms/mm3/sensors
+PFLAGS += -I$(MAMMARK_DIR)/tos/system
+PFLAGS += -I$(MAMMARK_DIR)/tos/chips/msp430/timer
