@@ -511,9 +511,11 @@ implementation {
   }
 
 
-  uint16_t sd_read_status(sd_cmd_blk_t *cmd) {
+  uint16_t sd_read_status() {
+    sd_cmd_blk_t *cmd;
     uint16_t i;
 
+    cmd = &sd_cmd;
     cmd->cmd     = SD_SEND_STATUS;
     cmd->rsp_len = SD_SEND_STATUS_R;
     if (sd_send_command(cmd))
@@ -580,9 +582,11 @@ implementation {
    */
 
 
-  int sd_start_write(sd_cmd_blk_t *cmd, uint32_t blockaddr, uint8_t *data) {
+  int sd_start_write(uint32_t blockaddr, uint8_t *data) {
     uint8_t  tmp;
+    sd_cmd_blk_t *cmd;
 
+    cmd = &sd_cmd;
     sd_compute_crc(data);
     /* Adjust the block address to a linear address */
     blockaddr <<= SD_BLOCKSIZE_NBITS;
@@ -594,13 +598,13 @@ implementation {
     cmd->rsp_len = SD_WRITE_BLOCK_R;
     if (sd_send_command(cmd)) {
       call Panic.panic(PANIC_SD, 30, 0, 0, 0, 0);
-      return(SD_CMD_FAIL);
+      return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
       call Panic.panic(PANIC_SD, 31, 0, 0, 0, 0);
-      return(SD_BAD_RESPONSE);
+      return FAIL;
     }
 
     /* Re-assert CS to continue the transfer */
@@ -622,7 +626,7 @@ implementation {
 
     /* Send start block token to start the transfer */
     U1TXBUF = SD_TOK_WRITE_STARTBLOCK;
-    return(SD_OK);
+    return SUCCESS;
   }
 
 
@@ -675,12 +679,13 @@ implementation {
     tmp = U1IFG;
     tmp = U1RXBUF;		/* clean out OE and data avail */
 
-    if ((call Usart.isTxEmpty() == 0) || U1_RX_RDY)
+    if ((call Usart.isTxEmpty() == 0) || call Usart.isRxIntrPending())
       call Panic.panic(PANIC_SD, 33, 0, 0, 0, 0);
 
     call SpiByte.write(0);			/* crc ignored */
     call SpiByte.write(0);
 
+#ifdef notdef
     /*
      * SD should tell us if it accepted the data block
      */
@@ -690,26 +695,29 @@ implementation {
       i++;
       time_get_cur(&t);
     } while ((tmp == 0xFF) && time_leq(&t, &to));
-    sd_cmd_inst[sd_cmd_inst_idx].aux_rsp = tmp;
+#endif
+    i=0;
+    do {
+      tmp = call SpiByte.write(0);
+      i++;
+    } while (tmp == 0xFF);
+
     if ((tmp & 0x0F) != 0x05) {
       i = sd_read_status(NULL);
       call Panic.panic(PANIC_SD, 34, tmp, i, 0, 0);
-      return(SD_WRITE_ERR);
+      return FAIL;
     }
 
     /* wait for the card to go unbusy */
-    time_get_cur(&to);
-    t2 = to;
-    add_times(&to, &sd_busy_max);
     i = 0;
     while ((tmp = call SpiByte.write(0)) != 0xFF) {
       i++;
-      time_get_cur(&t);
+#ifdef notdef
       if (time_leq(&to, &t))
 	call Panic.panic(PANIC_SD, 42, 0, 0, 0, 0);
+#endif
     }
     sd_busy_timeout = i;
-    time_get_cur(&t);
 
     /* Deassert CS */
     SD_CSN = 1;
@@ -720,7 +728,7 @@ implementation {
      */
     sd_delay(2);
 
-    i = sd_read_status(NULL);
+    i = sd_read_status();
     if (i)
       call Panic.panic(PANIC_SD, 128, i, 0, 0, 0);
     return SUCCESS;
