@@ -25,12 +25,12 @@ interface SD {
    *   <li>EBUSY if a request is already being processed.
    */
   command error_t read(uint32_t blk, void *buf);
-  event void  readDone(uint32_t blk, void *buf);
-  command error_t read_direct(uint32_t blk, void *buf);
+  event   void    readDone(uint32_t blk, void *buf);
+  command error_t read_nodma(uint32_t blk, void *buf);
 
   command error_t write(uint32_t blk, void *buf);
-  event void  writeDone(uint32_t blk, void *buf);
-  command error_t write_direct(uint32_t blk, void *buf);
+  event   void    writeDone(uint32_t blk, void *buf);
+  command error_t write_nodma(uint32_t blk, void *buf);
 
   command error_t reset();
 }

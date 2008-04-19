@@ -35,8 +35,9 @@ implementation {
   mm3C.Adc -> AdcC.Adc[SNS_ID_NONE];
 
 #ifdef USE_SD
-  components SDC;
+  components SDC, HplMsp430Usart1C as UsartC;
   mm3C.SD -> SDC;
+  mm3C.Usart -> UsartC;
 #endif
 
   components PanicC;

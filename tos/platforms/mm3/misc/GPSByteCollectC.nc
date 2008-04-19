@@ -37,7 +37,7 @@ implementation {
   components MainC;
   components GPSByteCollectP;
   
-  MainC.SoftwareInit -> GPSByteCollectP;
+//  MainC.SoftwareInit -> GPSByteCollectP;
 
   components new Msp430GpioC() as GPSBitC;
   components HplMsp430GeneralIOC as GeneralIOC;

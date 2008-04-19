@@ -16,7 +16,6 @@ module SDP {
   }
   uses {
     interface HplMsp430Usart as Usart;
-    interface SpiByte;
     interface Panic;
   }
 }
@@ -55,28 +54,44 @@ implementation {
   }
 
 
-  void sd_packarg(sd_cmd_blk_t *cmd, uint32_t value) {
-    cmd->arg[0] = (uint8_t) (value >> 24);
-    cmd->arg[1] = (uint8_t) (value >> 16);
-    cmd->arg[2] = (uint8_t) (value >> 8);
-    cmd->arg[3] = (uint8_t) (value);
+  void sd_packarg(uint32_t value) {
+    sd_cmd_blk_t *cmd;
+
+//    cmd = &sd_cmd;
+    sd_cmd.arg[0] = (uint8_t) (value >> 24);
+    sd_cmd.arg[1] = (uint8_t) (value >> 16);
+    sd_cmd.arg[2] = (uint8_t) (value >> 8);
+    sd_cmd.arg[3] = (uint8_t) (value);
   }
 
 
-  int sd_send_cmd55(sd_cmd_blk_t *cmd) {
+  uint8_t spi_byte_write(uint8_t tx) {
+    uint8_t byte;
+
+    call Usart.tx( tx );
+    while( !call Usart.isRxIntrPending() );
+    call Usart.clrRxIntr();
+    byte = call Usart.rx();
+    return byte;
+  }
+
+
+  int sd_send_cmd55() {
     uint16_t i;
     uint8_t  tmp;
+    sd_cmd_blk_t *cmd;
 
-    call SpiByte.write(SD_APP_CMD | 0x40);		/* CMD55 */
-    call SpiByte.write(0);
-    call SpiByte.write(0);
-    call SpiByte.write(0);
-    call SpiByte.write(0);
-    call SpiByte.write(0xff);				/* crc, don't care */
+    cmd = &sd_cmd;
+    spi_byte_write(SD_APP_CMD | 0x40);		/* CMD55 */
+    spi_byte_write(0);
+    spi_byte_write(0);
+    spi_byte_write(0);
+    spi_byte_write(0);
+    spi_byte_write(0xff);				/* crc, don't care */
 
     i=0;
     do {
-      tmp = call SpiByte.write(0);
+      tmp = spi_byte_write(0);
       i++;
     } while((tmp > 127) && (i < SD_CMD_TIMEOUT));
 
@@ -88,7 +103,7 @@ implementation {
       return(1);
     }
 
-    tmp = call SpiByte.write(0);		/* finish the command */
+    tmp = spi_byte_write(0);		/* finish the command */
     if (tmp != 0xff) {
       call Panic.brk();
       call Panic.panic(PANIC_SD, 12, tmp, 0, 0, 0);
@@ -111,11 +126,13 @@ implementation {
    * stage 4: R1B busy wait.
    */
 
-  int sd_send_command(sd_cmd_blk_t *cmd) {
+  int sd_send_command() {
     uint16_t i;
     uint16_t rsp_len;
     uint8_t  tmp;
+    sd_cmd_blk_t *cmd;
 
+    cmd = &sd_cmd;
     rsp_len = cmd->rsp_len & RSP_LEN_MASK;
     if (rsp_len != 1 && rsp_len != 2 && rsp_len != 5) {
       call Panic.panic(PANIC_SD, 14, rsp_len, 0, 0, 0);
@@ -128,7 +145,7 @@ implementation {
     SD_CSN = 0;
     cmd->stage = 1;
     if (cmd->cmd & ACMD_FLAG) {
-      tmp = sd_send_cmd55(cmd);
+      tmp = sd_send_cmd55();
       if (tmp) {
 	/* failed, how odd */
 	SD_CSN = 1;
@@ -139,10 +156,10 @@ implementation {
       cmd->rsp55 = 0x55;
 
     cmd->stage = 2;
-    call SpiByte.write((cmd->cmd & 0x3F) | 0x40);
+    spi_byte_write((cmd->cmd & 0x3F) | 0x40);
     i = 0;
     do
-      call SpiByte.write(cmd->arg[i++]);
+      spi_byte_write(cmd->arg[i++]);
     while (i < 4);
 
     /* This is the CRC. It only matters what we put here for the first
@@ -150,12 +167,12 @@ implementation {
        enable CRC checking which we don't because it is a royal pain
        in the ass.
     */
-    call SpiByte.write(0x95);
+    spi_byte_write(0x95);
 
     /* Wait for a response.  */
     i=0;
     do {
-      tmp = call SpiByte.write(0);
+      tmp = spi_byte_write(0);
       i++;
     } while ((tmp & 0x80) && (i < SD_CMD_TIMEOUT));
 
@@ -173,10 +190,10 @@ implementation {
     /* get rest of response if needed */
     i = 1;
     while (i < rsp_len)
-      cmd->rsp[i++] = call SpiByte.write(0);
+      cmd->rsp[i++] = spi_byte_write(0);
 
     cmd->stage = 3;
-    tmp = call SpiByte.write(0);
+    tmp = spi_byte_write(0);
     if (tmp != 0xff) {
       call Panic.panic(PANIC_SD, 17, tmp, 0, 0, 0);
     }
@@ -192,11 +209,11 @@ implementation {
       i = 0;
       do {
 	i++;
-	tmp = call SpiByte.write(0);
+	tmp = spi_byte_write(0);
       } while (tmp != 0xFF);
       sd_r1b_timeout = i;
       //	cmd->stage_count = i;
-      call SpiByte.write(0xFF);
+      spi_byte_write(0xFF);
     }
     cmd->stage = 0;
     SD_CSN = 1;
@@ -210,7 +227,7 @@ implementation {
     uint16_t i;
 
     for(i = 0; i < number; i++)
-      call SpiByte.write(0xFF);
+      spi_byte_write(0xFF);
   }
 
 
@@ -233,6 +250,7 @@ implementation {
     sd_reset_timeout = 0xf0f0;
     sd_busy_timeout = 0xf0f0;
     sd_busyflag = FALSE;
+    return SUCCESS;
   }
 
 
@@ -243,11 +261,14 @@ implementation {
   non-zero, error return from send_command
   */
 
-  int sd_set_blocklen(sd_cmd_blk_t *cmd, uint32_t length) {
-    sd_packarg(cmd, length);
+  int sd_set_blocklen(uint32_t length) {
+    sd_cmd_blk_t *cmd;
+
+    cmd = &sd_cmd;
+    sd_packarg(length);
     cmd->cmd     = SD_SET_BLOCKLEN;
     cmd->rsp_len = SD_SET_BLOCKLEN_R;
-    return(sd_send_command(cmd));
+    return(sd_send_command());
   }
 
 
@@ -261,10 +282,11 @@ implementation {
 
   command error_t SD.reset() {
     uint16_t i;
-    sd_cmd_inst_t *ent;
+    sd_cmd_blk_t *cmd;
 
+    cmd = &sd_cmd;
     call Usart.setUbr(SPI_400K_DIV);
-    sd_packarg(&sd_cmd, 0);
+    sd_packarg(0);
 
     /* Clock out at least 74 bits of idles (0xFF).  This allows
        the SD card to complete its power up prior to talking to
@@ -294,9 +316,9 @@ implementation {
     sd_delay(SD_RESET_IDLES);
 
     /* Put the card in the idle state, non-zero return -> error */
-    sd_cmd.cmd     = SD_FORCE_IDLE;
-    sd_cmd.rsp_len = SD_FORCE_IDLE_R;
-    if (sd_send_command(&sd_cmd)) {
+    cmd->cmd     = SD_FORCE_IDLE;
+    cmd->rsp_len = SD_FORCE_IDLE_R;
+    if (sd_send_command()) {
       call Panic.panic(PANIC_SD, 19, 0, 0, 0, 0);
       return FAIL;
     }
@@ -306,36 +328,34 @@ implementation {
     i = 0;
     do {
       i++;
-      sd_cmd.cmd     = SD_GO_OP;
-      sd_cmd.rsp_len = SD_GO_OP_R;
-      if (sd_send_command(&sd_cmd)) {
+      cmd->cmd     = SD_GO_OP;
+      cmd->rsp_len = SD_GO_OP_R;
+      if (sd_send_command()) {
 	call Panic.panic(PANIC_SD, 20, 0, 0, 0, 0);
 	return FAIL;
       }
-      //    } while ((sd_cmd.rsp[0] & MSK_IDLE) == MSK_IDLE && i < SD_IDLE_WAIT_MAX);
-    } while ((sd_cmd.rsp[0] & MSK_IDLE) == MSK_IDLE);
+//    } while ((cmd->rsp[0] & MSK_IDLE) == MSK_IDLE && i < SD_IDLE_WAIT_MAX);
+    } while ((cmd->rsp[0] & MSK_IDLE) == MSK_IDLE);
     sd_reset_timeout = i;
-
 
     //    if (i >= SD_IDLE_WAIT_MAX)		/* did we bail? */
     //	return(SD_INIT_TIMEOUT);
 
-    sd_cmd.cmd     = SD_SEND_OCR;
-    sd_cmd.rsp_len = SD_SEND_OCR_R;
-    if (sd_send_command(&sd_cmd)) {
+    cmd->cmd     = SD_SEND_OCR;
+    cmd->rsp_len = SD_SEND_OCR_R;
+    if (sd_send_command()) {
       call Panic.panic(PANIC_SD, 21, 0, 0, 0, 0);
       return FAIL;
     }
 
-
     /* At a very minimum, we must allow 3.3V. */
-    if ((sd_cmd.rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
-      call Panic.panic(PANIC_SD, 21, sd_cmd.rsp[2], 0, 0, 0);
+    if ((cmd->rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
+      call Panic.panic(PANIC_SD, 21, cmd->rsp[2], 0, 0, 0);
       return FAIL;
     }
 
     /* Set the block length */
-    if (sd_set_blocklen(&sd_cmd, SD_BLOCKSIZE)) {
+    if (sd_set_blocklen(SD_BLOCKSIZE)) {
       call Panic.panic(PANIC_SD, 22, 0, 0, 0, 0);
       return FAIL;
     }
@@ -351,12 +371,14 @@ implementation {
    *    does not use dma and waits for the data.
    */
 
-  error_t sd_read_data_direct(sd_cmd_blk_t *cmd, uint16_t data_len, uint8_t *data) {
+  error_t sd_read_data_direct(uint16_t data_len, uint8_t *data) {
     uint16_t i;
     uint8_t  tmp;
+    sd_cmd_blk_t *cmd;
 
+    cmd = &sd_cmd;
     sd_wait_notbusy();
-    if (sd_send_command(cmd)) {
+    if (sd_send_command()) {
       call Panic.panic(PANIC_SD, 24, 0, 0, 0, 0);
       return FAIL;
     }
@@ -373,7 +395,7 @@ implementation {
     /* Wait for the token */
     i=0;
     do {
-      tmp = call SpiByte.write(0);
+      tmp = spi_byte_write(0);
       i++;
     } while ((tmp == 0xFF) && i < SD_READ_TIMEOUT);
     sd_rd_timeout = i;
@@ -383,18 +405,18 @@ implementation {
        * Clock out a byte before returning, let SD finish
        * what is this based on?
        */
-      call SpiByte.write(0xFF);
+      spi_byte_write(0xFF);
 
       /* The card returned an error, or timed out. */
       return FAIL;
     }
 
     for (i = 0; i < data_len; i++)
-      data[i] = call SpiByte.write(0);
+      data[i] = spi_byte_write(0);
 
     /* Ignore the CRC */
-    call SpiByte.write(0);
-    call SpiByte.write(0);
+    spi_byte_write(0);
+    spi_byte_write(0);
 
     SD_CSN = 1;
     /* Send some extra clocks so the card can finish */
@@ -437,13 +459,13 @@ implementation {
    * sd_read_data_dma: read data from the SD after sending a command
    */
 
-  int sd_read_data_dma(sd_cmd_blk_t *cmd, uint16_t data_len, uint8_t *data) {
+  int sd_read_data_dma(uint16_t data_len, uint8_t *data) {
     uint16_t i, crc;
     uint8_t  tmp, idle_byte;
-
-    if (cmd == NULL)
-      cmd = &sd_cmd;
-    if (sd_send_command(cmd))
+    sd_cmd_blk_t *cmd;
+    
+    cmd = &sd_cmd;
+    if (sd_send_command())
       return FAIL;
 
     /* Check for an error, like a misaligned read */
@@ -458,14 +480,14 @@ implementation {
     /* Wait for the token */
     i=0;
     do {
-      tmp = call SpiByte.write(0);
+      tmp = spi_byte_write(0);
       i++;
     } while ((tmp == 0xFF) && i < SD_READ_TIMEOUT);
     sd_rd_timeout = i;
 
     if ((tmp & MSK_TOK_DATAERROR) == 0 || i >= SD_READ_TIMEOUT) {
       /* Clock out a byte before returning, let SD finish */
-      call SpiByte.write(0xFF);
+      spi_byte_write(0xFF);
 
       /* The card returned an error, or timed out. */
       return FAIL;
@@ -494,9 +516,9 @@ implementation {
 
     DMACTL0 = 0;
 
-    crc = call SpiByte.write(0);
+    crc = spi_byte_write(0);
     crc = crc << 8;
-    crc |= call SpiByte.write(0);
+    crc |= spi_byte_write(0);
 
     /* Deassert CS */
     SD_CSN = 1;
@@ -518,21 +540,33 @@ implementation {
     cmd = &sd_cmd;
     cmd->cmd     = SD_SEND_STATUS;
     cmd->rsp_len = SD_SEND_STATUS_R;
-    if (sd_send_command(cmd))
+    if (sd_send_command())
       return(0xffff);
     i = (cmd->rsp[0] << 8) | cmd->rsp[1];
     return(i);
   }
 
 
-  /* SD.read_direct: read a 512 byte block from the SD
+  command error_t SD.read(uint32_t blockaddr, void *data) {
+    return FAIL;
+  }
 
-  input:  blockaddr     block to read.  (max 23 bits)
-          data          pointer to data buffer
-  output: rtn           0 call successful, err otherwise
-  */
+  command error_t SD.write(uint32_t blockaddr, void *data) {
+    return FAIL;
+  }
 
-  command error_t SD.read_direct(uint32_t blockaddr, void *data) {
+  command error_t SD.write_nodma(uint32_t blockaddr, void *data) {
+    return FAIL;
+  }
+
+  /* SD.read_nodma: read a 512 byte block from the SD
+   *
+   * input:  blockaddr     block to read.  (max 23 bits)
+   *         data          pointer to data buffer
+   * output: rtn           0 call successful, err otherwise
+   */
+
+  command error_t SD.read_nodma(uint32_t blockaddr, void *data) {
     sd_cmd_blk_t *cmd;
 
     cmd = &sd_cmd;
@@ -540,12 +574,12 @@ implementation {
     blockaddr <<= SD_BLOCKSIZE_NBITS;
 
     /* Pack the address */
-    sd_packarg(cmd, blockaddr);
+    sd_packarg(blockaddr);
 
     /* Need to add size checking, 0 = success */
     cmd->cmd     = SD_READ_BLOCK;
     cmd->rsp_len = SD_READ_BLOCK_R;
-    return(sd_read_data_direct(cmd, SD_BLOCKSIZE, data));
+    return(sd_read_data_direct(SD_BLOCKSIZE, data));
   }
 
 
@@ -559,19 +593,20 @@ implementation {
    * the blocklen back to 512.  Otherwise things get weird.  (timeouts)
    */
 
-  int sd_read8(sd_cmd_blk_t *cmd, uint32_t blockaddr, uint8_t *data) {
-    if (cmd == NULL)
-      cmd = &sd_cmd;
+  int sd_read8(uint32_t blockaddr, uint8_t *data) {
+    sd_cmd_blk_t *cmd;
+
+    cmd = &sd_cmd;
     /* Adjust the block address to a linear address */
     blockaddr <<= SD_BLOCKSIZE_NBITS;
 
     /* Pack the address */
-    sd_packarg(cmd, blockaddr);
+    sd_packarg(blockaddr);
 
     /* Need to add size checking, 0 = success */
     cmd->cmd     = SD_READ_BLOCK;
     cmd->rsp_len = SD_READ_BLOCK_R;
-    return(sd_read_data_direct(cmd, 8, data));
+    return(sd_read_data_direct(8, data));
   }
 
 
@@ -592,11 +627,11 @@ implementation {
     blockaddr <<= SD_BLOCKSIZE_NBITS;
 
     /* Pack the address */
-    sd_packarg(cmd, blockaddr);
+    sd_packarg(blockaddr);
 
     cmd->cmd     = SD_WRITE_BLOCK;
     cmd->rsp_len = SD_WRITE_BLOCK_R;
-    if (sd_send_command(cmd)) {
+    if (sd_send_command()) {
       call Panic.panic(PANIC_SD, 30, 0, 0, 0, 0);
       return FAIL;
     }
@@ -612,7 +647,7 @@ implementation {
 
     /* The write command needs an additional 8 clock cycles before
      * the block write is started. */
-    tmp = call SpiByte.write(0);
+    tmp = spi_byte_write(0);
     if (tmp != 0xff)
       call Panic.panic(PANIC_SD, 32, tmp, 0, 0, 0);
 
@@ -682,8 +717,8 @@ implementation {
     if ((call Usart.isTxEmpty() == 0) || call Usart.isRxIntrPending())
       call Panic.panic(PANIC_SD, 33, 0, 0, 0, 0);
 
-    call SpiByte.write(0);			/* crc ignored */
-    call SpiByte.write(0);
+    spi_byte_write(0);			/* crc ignored */
+    spi_byte_write(0);
 
 #ifdef notdef
     /*
@@ -691,26 +726,26 @@ implementation {
      */
     i=0;
     do {
-      tmp = call SpiByte.write(0);
+      tmp = spi_byte_write(0);
       i++;
       time_get_cur(&t);
     } while ((tmp == 0xFF) && time_leq(&t, &to));
 #endif
     i=0;
     do {
-      tmp = call SpiByte.write(0);
+      tmp = spi_byte_write(0);
       i++;
     } while (tmp == 0xFF);
 
     if ((tmp & 0x0F) != 0x05) {
-      i = sd_read_status(NULL);
+      i = sd_read_status();
       call Panic.panic(PANIC_SD, 34, tmp, i, 0, 0);
       return FAIL;
     }
 
     /* wait for the card to go unbusy */
     i = 0;
-    while ((tmp = call SpiByte.write(0)) != 0xFF) {
+    while ((tmp = spi_byte_write(0)) != 0xFF) {
       i++;
 #ifdef notdef
       if (time_leq(&to, &t))
@@ -735,12 +770,12 @@ implementation {
   }
 
 
-  sd_rtn sd_write_block(sd_cmd_blk_t *cmd, uint32_t blockaddr, uint8_t *data) {
-    sd_rtn  rtn;
+  error_t sd_write_block(uint32_t blockaddr, uint8_t *data) {
+    error_t rtn;
 
-    rtn = sd_start_write(cmd, blockaddr, data);
-    if (rtn != SD_OK)
-      return(rtn);
+    rtn = sd_start_write(blockaddr, data);
+    if (rtn != SUCCESS)
+      return rtn;
 
     /*
      * sd_start_write uses dma0 to sling the data out.
@@ -780,7 +815,7 @@ implementation {
     /* Check for the busy flag (set on a write block) */
     if (sd_busyflag) {
       i = 0;
-      while (call SpiByte.write(0) != 0xFF)
+      while (spi_byte_write(0) != 0xFF)
 	i++;
       sd_busyflag = FALSE;
       sd_busy_timeout = i;
@@ -800,11 +835,10 @@ implementation {
    * erase a contiguous number of blocks
    */
 
-  sd_rtn
-    sd_erase(sd_cmd_blk_t *cmd, uint32_t blk_start, uint32_t blk_end) {
+  error_t sd_erase(uint32_t blk_start, uint32_t blk_end) {
+    sd_cmd_blk_t *cmd;
 
-    if (cmd == NULL)
-      cmd = &sd_cmd;
+    cmd = &sd_cmd;
     /*
      * convert blocks into byte addresses.
      */
@@ -814,47 +848,47 @@ implementation {
     /*
      * send the start and then the end
      */
-    sd_packarg(cmd, blk_start);
+    sd_packarg(blk_start);
     cmd->cmd     = SD_SET_ERASE_START;
     cmd->rsp_len = SD_SET_ERASE_START_R;
-    if (sd_send_command(cmd)) {
+    if (sd_send_command()) {
       call Panic.panic(PANIC_SD, 35, 0, 0, 0, 0);
-      return(SD_INTERNAL);
+      return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
       call Panic.panic(PANIC_SD, 36, cmd->rsp[0], 0, 0, 0);
-      return(SD_INTERNAL);
+      return FAIL;
     }
 
-    sd_packarg(cmd, blk_end);
+    sd_packarg(blk_end);
     cmd->cmd     = SD_SET_ERASE_END;
     cmd->rsp_len = SD_SET_ERASE_END_R;
-    if (sd_send_command(cmd)) {
+    if (sd_send_command()) {
       call Panic.panic(PANIC_SD, 37, 0, 0, 0, 0);
-      return(SD_INTERNAL);
+      return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
       call Panic.panic(PANIC_SD, 38, cmd->rsp[0], 0, 0, 0);
-      return(SD_INTERNAL);
+      return FAIL;
     }
 
     cmd->cmd     = SD_ERASE;
     cmd->rsp_len = SD_ERASE_R;
-    if (sd_send_command(cmd)) {
+    if (sd_send_command()) {
       call Panic.panic(PANIC_SD, 39, 0, 0, 0, 0);
-      return(SD_INTERNAL);
+      return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
       call Panic.panic(PANIC_SD, 40, cmd->rsp[0], 0, 0, 0);
-      return(SD_INTERNAL);
+      return FAIL;
     }
-    return(SD_OK);
+    return SUCCESS;
   }
 #endif
 

@@ -35,7 +35,7 @@
 
 module GPSByteCollectP {
   provides {
-    interface Init;
+    interface StdControl as GPSControl;
   }
   uses {
     interface GpioInterrupt;
@@ -44,9 +44,12 @@ module GPSByteCollectP {
 }
 
 implementation {
-  command error_t Init.init() {
+  command error_t GPSControl.start() {
     call GpioInterrupt.enableFallingEdge();
     return SUCCESS;
+  }
+
+  command error_t GPSControl.stop() {
   }
 
   async event void GpioInterrupt.fired() {

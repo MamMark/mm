@@ -29,6 +29,7 @@ module mm3C {
     interface Adc;
 
 #ifdef USE_SD
+    interface HplMsp430Usart as Usart;
     interface SD;
 #endif
   }
@@ -36,6 +37,21 @@ module mm3C {
 
 implementation {
   uint8_t dbuf[SS_BLOCK_SIZE + 2];
+
+#ifdef USE_SD
+  msp430_spi_union_config_t config = {
+    {
+      ubr : 0x0002,
+      ssel : 0x02,
+      clen : 1,
+      listen : 0,
+      mm : 1,
+      ckph : 1,
+      ckpl : 0,
+      stc : 1
+    }
+  };
+#endif
 
   command error_t Init.init() {
 //    call Panic.brk();
@@ -71,7 +87,12 @@ implementation {
       nop();
     }
 #endif
-//    call SD.reset();
+
+#ifdef USE_SD
+    call HW.sd_on();
+    call Usart.setModeSpi(&config);
+    call SD.reset();
+#endif
   }
 
 #ifdef USE_SD
