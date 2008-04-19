@@ -24,61 +24,61 @@ GEN=mm3DataMsg.h mm3DataMsg.c \
     serialpacket.c serialpacket.h serialprotocol.h
 
 SERIAL_H = $(TOSDIR)/lib/serial/Serial.h
-MM3_PLATFORM_DIR=../../../tos/platforms/mm3
+MM3_PLATFORM_DIR=$(MAMMARK_DIR)/tos/platforms/mm3
 
 all: $(PROGRAMS)
 
-mm3DataMsg.h: $(MM3_PLATFORM_DIR)/mm3_data_msg.h
+mm3DataMsg.h: $(MM3_PLATFORM_DIR)/misc/mm3_data_msg.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/mm3_data_msg.h mm3_data_msg -o mm3DataMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/mm3_data_msg.h mm3_data_msg -o mm3DataMsg.h
 
-DtIgnoreMsg.c DtIgnoreMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtIgnoreMsg.c DtIgnoreMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_ignore -o DtIgnoreMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_ignore -o DtIgnoreMsg.h
 
-DtConfigMsg.c DtConfigMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtConfigMsg.c DtConfigMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_config -o DtConfigMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_config -o DtConfigMsg.h
 
-DtSyncMsg.c DtSyncMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtSyncMsg.c DtSyncMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_sync -o DtSyncMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_sync -o DtSyncMsg.h
 
-DtPanicMsg.c DtPanicMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtPanicMsg.c DtPanicMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_panic -o DtPanicMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_panic -o DtPanicMsg.h
 
-DtGpsTimeMsg.c DtGpsTimeMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtGpsTimeMsg.c DtGpsTimeMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_gps_time -o DtGpsTimeMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_gps_time -o DtGpsTimeMsg.h
 
-DtGpsPosMsg.c DtGpsPosMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtGpsPosMsg.c DtGpsPosMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_gps_pos -o DtGpsPosMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_gps_pos -o DtGpsPosMsg.h
 
-DtSensorDataMsg.c DtSensorDataMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtSensorDataMsg.c DtSensorDataMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_sensor_data -o DtSensorDataMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_sensor_data -o DtSensorDataMsg.h
 
-DtSensorSetMsg.c DtSensorSetMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtSensorSetMsg.c DtSensorSetMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_sensor_set -o DtSensorSetMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_sensor_set -o DtSensorSetMsg.h
 
-DtTestMsg.c DtTestMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtTestMsg.c DtTestMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_test -o DtTestMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_test -o DtTestMsg.h
 
-DtCalStringMsg.c DtCalStringMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtCalStringMsg.c DtCalStringMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_cal_string -o DtCalStringMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_cal_string -o DtCalStringMsg.h
 
-DtGpsRawMsg.c DtGpsRawMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtGpsRawMsg.c DtGpsRawMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_gps_raw -o DtGpsRawMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_gps_raw -o DtGpsRawMsg.h
 
-DtVersionMsg.c DtVersionMsg.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+DtVersionMsg.c DtVersionMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h dt_version -o DtVersionMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_version -o DtVersionMsg.h
 
 SensorConstants.h: $(MM3_PLATFORM_DIR)/sensors/sensors.h
 	ncg -I$(MM3_PLATFORM_DIR) -I$(MM3_PLATFORM_DIR)/sensors/ -target=mm3 \
@@ -95,9 +95,9 @@ SensorConstants.h: $(MM3_PLATFORM_DIR)/sensors/sensors.h
 	MM3_NUM_SENSORS		  \
 	-o $@
 
-SDConstants.h: $(MM3_PLATFORM_DIR)/sd_blocks.h
+SDConstants.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	ncg -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/sd_blocks.h \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h \
 	DT_IGNORE                 \
 	DT_CONFIG		  \
 	DT_SYNC			  \
