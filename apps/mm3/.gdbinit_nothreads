@@ -27,9 +27,9 @@ printf "Data: sns: %d\n", client_id
 end
 dis 7-8
 
-b GPSByteCollectP.nc:89
-b GPSByteCollectP.nc:109
-b GPSByteCollectP.nc:134
+#b GPSByteCollectP.nc:89
+#b GPSByteCollectP.nc:109
+#b GPSByteCollectP.nc:134
 
 #b mm3CommDataP.nc:163
 #comm

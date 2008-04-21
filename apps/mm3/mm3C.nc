@@ -33,7 +33,7 @@ module mm3C {
     interface SD;
 #endif
 
-    interface StdControl as GPSControl;
+//    interface StdControl as GPSControl;
   }
 }
 
@@ -67,7 +67,7 @@ implementation {
      * signal all the sensors and start them off.
      */
 //    call Regime.setRegime(SNS_DEFAULT_REGIME);
-    if (use_regime > SNS_MAX_REGIME)
+    if (use_regime == 0 || use_regime > SNS_MAX_REGIME)
       use_regime = SNS_DEFAULT_REGIME;
     call Regime.setRegime(use_regime);
 
@@ -90,9 +90,12 @@ implementation {
     }
 #endif
 
+#ifdef notdef
     call GPSControl.start();
     uwait(1000);
     call GPSControl.stop();
+#endif
+
 #ifdef USE_SD
     call HW.sd_on();
     call Usart.setModeSpi(&config);
