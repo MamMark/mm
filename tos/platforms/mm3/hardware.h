@@ -358,10 +358,14 @@ void TOSH_MM3_INITIAL_PIN_STATE(void) {
     P1SEL = 0;			/* all ports port function */
     P1DIR = P1_BASE_DIR;
     P1OUT = P1_BASE_VAL;
+    P1IES = 0;
+    P1IFG = 0;
 
     P2SEL = 0;
     P2DIR = P2_BASE_DIR;
     P2OUT = P2_BASE_VAL;
+    P2IES = 0;
+    P2IFG = 0;
 
     P3SEL = P3_BASE_SEL;
     P3DIR = P3_BASE_DIR;

@@ -31,13 +31,17 @@
  
 /**
  * @author Kevin Klues (klueska@cs.stanford.edu)
+ * @author Eric B. Decker (cire831@gmail.com)
  */
-configuration GPSByteCollectC {}
+
+configuration GPSByteCollectC {
+  provides interface StdControl as GPSControl;
+}
+
 implementation {
-  components MainC;
-  components GPSByteCollectP;
-  
-//  MainC.SoftwareInit -> GPSByteCollectP;
+  components MainC, GPSByteCollectP;
+  MainC.SoftwareInit -> GPSByteCollectP;
+  GPSControl = GPSByteCollectP;
 
   components new Msp430GpioC() as GPSBitC;
   components HplMsp430GeneralIOC as GeneralIOC;
@@ -48,4 +52,13 @@ implementation {
   components HplMsp430InterruptC as InterruptC;
   InterruptGPSBitC.HplInterrupt -> InterruptC.Port27;
   GPSByteCollectP.GpioInterrupt -> InterruptGPSBitC;
+
+  components HplMM3AdcC;
+  GPSByteCollectP.HW -> HplMM3AdcC;
+
+  components PanicC;
+  GPSByteCollectP.Panic -> PanicC;
+
+  components new TimerMilliC() as BitTimer;
+  GPSByteCollectP.BitTimer -> BitTimer;
 }

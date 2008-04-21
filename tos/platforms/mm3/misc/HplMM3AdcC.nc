@@ -4,6 +4,5 @@ configuration HplMM3AdcC {
 
 implementation {
   components HplMM3AdcP;
-
   HplMM3Adc = HplMM3AdcP;
 }

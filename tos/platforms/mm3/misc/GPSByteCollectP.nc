@@ -30,32 +30,152 @@
  */
  
 /**
+ * wiring by Kevin
  * @author Kevin Klues (klueska@cs.stanford.edu)
+ *
+ * code by Eric and Carl.
+ * @author Eric B. Decker (cire831@gmail.com)
+ * @author Carl W. Davis (carl@freeemf.org)
  */
+
+#include "panic.h"
+#include "gps.h"
+
+uint8_t Xtemp[32];
 
 module GPSByteCollectP {
   provides {
+    interface Init;
     interface StdControl as GPSControl;
   }
   uses {
     interface GpioInterrupt;
     interface GeneralIO;
+    interface HplMM3Adc as HW;
+    interface Panic;
+    interface Timer<TMilli> as BitTimer;
   }
 }
 
 implementation {
+  enum {
+    GPSB_OFF       = 1,
+    GPSB_DELAY     = 2,
+    GPSB_START_BIT = 3,
+    GPSB_DATA      = 4,
+    GPSB_STOP      = 5,
+  };
+
+  noinit uint8_t state;
+  noinit uint8_t bit;
+  noinit uint8_t build_byte;
+
+
+  command error_t Init.init() {
+    bit = 0;
+    state = GPSB_OFF;
+    return SUCCESS;
+  }
+
   command error_t GPSControl.start() {
+    call HW.gps_on();
+    state = GPSB_DELAY;
+
+    /*
+     * Start a delay timer.  When it goes off then enable the interrupt.
+     */
     call GpioInterrupt.enableFallingEdge();
+    build_byte = 0;
     return SUCCESS;
   }
 
   command error_t GPSControl.stop() {
+    call GpioInterrupt.disable();
+    call HW.gps_off();
+    state = GPSB_OFF;
+    return SUCCESS;
+  }
+
+  event void BitTimer.fired() {
+    uint8_t new_bit;
+    
+    /*
+     * As bits are coming in, the high order bit in build_byte will be set
+     * if the input pin is set.  Build_byte is shifted right after each bit.
+     * after 7 shifts the first bit which was in the high order will be in
+     * the low order.
+     */
+
+    new_bit = call GeneralIO.get();
+    if (bit > 7) {
+      /*
+       * doing stop bit.  check and finish up
+       * hand byte built to next layer.
+       *
+       * re-enable the interrupt
+       */
+      call GpioInterrupt.enableFallingEdge();
+//    signal GPSByte.byte_avail(build_byte);
+      state = GPSB_START_BIT;
+      if (new_bit == 0)
+	call Panic.warn(PANIC_MISC, 2, new_bit, 0, 0, 0);
+      return;
+    }
+    build_byte >>= 1;
+    if (new_bit)
+      build_byte |= 0x80;
+    bit++;
+    call BitTimer.startOneShot(GPS_1_BITTIME);
   }
 
   async event void GpioInterrupt.fired() {
+    uint8_t *bp;
+
     call GpioInterrupt.disable();
-    //do stuff
-    //call GeneralIO.get(); etc.
-    call GpioInterrupt.enableFallingEdge();
+
+    call BitTimer.startOneShot(GPS_15_BITTIME);
+    state = GPSB_DATA;
+    bit = 0;
+    return;
+
+
+    bp = Xtemp;
+    *(bp++) = call GeneralIO.get();
+    while (call GeneralIO.get()) {
+      nop();
+    }
+    *(bp++) = call GeneralIO.get();
+    uwait(109);
+    *(bp++) = call GeneralIO.get();
+    uwait(105);
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    *(bp++) = call GeneralIO.get();
+    nop();
   }
 }

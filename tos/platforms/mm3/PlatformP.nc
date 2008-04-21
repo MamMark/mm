@@ -106,17 +106,22 @@ implementation {
     // .DCOR = 0; select internal resistor for DCO
     BCSCTL2 = 0;
 
-    TAR = 0;
-
     // TACTL
     // .TACLGRP = 0; each TACL group latched independently
     // .CNTL = 0; 16-bit counter
     // .TASSEL = 2; source SMCLK = DCO
     // .ID = 2; input divisor of 4 (DCO/4)
-    // .MC = 0; initially disabled
+    // .MC = 2; continuously running
     // .TACLR = 0; reset timer A
     // .TAIE = 1; enable timer A interrupts
-    TACTL = TASSEL1 | ID1 | TAIE;
+
+    /*
+     * FIX ME.  Does this make it so low power mode doesn't
+     * do its thing?  Also how often do we want to resyncronize
+     * the clock (DCO).
+     */
+    TACTL = TASSEL1 | ID1 | MC1 | TAIE;
+    TAR = 0;
 
     call LedsInit.init();
     return SUCCESS;

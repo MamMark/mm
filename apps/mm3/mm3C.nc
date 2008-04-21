@@ -32,6 +32,8 @@ module mm3C {
     interface HplMsp430Usart as Usart;
     interface SD;
 #endif
+
+    interface StdControl as GPSControl;
   }
 }
 
@@ -88,6 +90,9 @@ implementation {
     }
 #endif
 
+    call GPSControl.start();
+    uwait(1000);
+    call GPSControl.stop();
 #ifdef USE_SD
     call HW.sd_on();
     call Usart.setModeSpi(&config);

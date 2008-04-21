@@ -40,6 +40,9 @@ implementation {
   mm3C.Usart -> UsartC;
 #endif
 
+  components GPSByteCollectC;
+  mm3C.GPSControl -> GPSByteCollectC.GPSControl;
+
   components PanicC;
   mm3C.Panic -> PanicC;
 }

@@ -58,7 +58,7 @@ implementation {
       putchar(data[i]);
     }
     if (flush())
-      call Panic.panic(PANIC_COMM, 1, 0, 0, 0, 0);
+      call Panic.panic(PANIC_COMM, 2, 0, 0, 0, 0);
   }
   
   task void retrySend() {

@@ -180,7 +180,7 @@ implementation {
 
     err = call SD.read_blk(blk_id, buf);
     if (err) {
-      call Panic.panic(PANIC_SS, 7, err, 0, 0, 0);
+      call Panic.panic(PANIC_SS, 1, err, 0, 0, 0);
       return FAIL;
     }
     return err;
@@ -193,14 +193,14 @@ implementation {
     call HW.sd_pwr_on();
     err = call SD.reset();
     if (err) {
-      call Panic.panic(PANIC_SS, 1, err, 0, 0, 0);
+      call Panic.panic(PANIC_SS, 2, err, 0, 0, 0);
       return err;
     }
 
     dp = ss_handles[0].buf;
     err = call SD.read_blk(0, dp);
     if (err) {
-      call Panic.panic(PANIC_SS, 1, err, 0, 0, 0);
+      call Panic.panic(PANIC_SS, 3, err, 0, 0, 0);
       return err;
     }
 
@@ -212,7 +212,7 @@ implementation {
 #endif
 
     if (check_dblk_loc(dbl)) {
-      call Panic.panic(PANIC_SS, 2, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SS, 4, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -225,7 +225,7 @@ implementation {
 
     err = SD.read_blk(ssc.dblk_start, dp);
     if (err) {
-      call Panic.panic(PANIC_SS, 2, err, 0, 0, 0);
+      call Panic.panic(PANIC_SS, 5, err, 0, 0, 0);
       return err;
     }
     if (blk_empty(dp)) {
@@ -267,7 +267,7 @@ implementation {
       return SUCCESS;
     }
 
-    call Panic.panic(PANIC_SS, 3, 0, 0, 0, 0);
+    call Panic.panic(PANIC_SS, 6, 0, 0, 0, 0);
     return FAIL;
   }
 
@@ -279,13 +279,13 @@ implementation {
 	ssc.majik_b != SSC_MAJIK_B ||
 	ss_handles[ssc.alloc_index].buf_state < SS_BUF_STATE_FREE ||
 	ss_handles[ssc.alloc_index].buf_state >= SS_BUF_STATE_MAX) {
-      call Panic.panic(PANIC_SS, 4, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SS, 7, 0, 0, 0, 0);
       return NULL;
     }
 
     if (ss_handles[ssc.alloc_index].buf_state == SS_BUF_STATE_FREE) {
       if (ss_handles[ssc.alloc_index].majik != SS_BUF_MAJIK) {
-	call Panic.panic(PANIC_SS, 5, 0, 0, 0, 0);
+	call Panic.panic(PANIC_SS, 8, 0, 0, 0, 0);
 	return NULL;
       }
       ss_handles[ssc.alloc_index].buf_state = SS_BUF_STATE_ALLOC;
@@ -295,7 +295,7 @@ implementation {
 	ssc.alloc_index = 0;
       return sshp;
     }
-    call Panic.panic(PANIC_SS, 6, 0, 0, 0, 0);
+    call Panic.panic(PANIC_SS, 9, 0, 0, 0, 0);
     return NULL;
   }
 
@@ -395,7 +395,7 @@ ss_machine(msg_event_t *msg) {
 		  return;
 
 	      if (us1_select(US1_NONE, FALSE))
-		  call Panic.panic(PANIC_SS, 36, 0, 0, 0, 0);
+		  call Panic.panic(PANIC_SS, 18, 0, 0, 0, 0);
 
 	      /*
 	       * tell other subsystems that they had the h/w yanked away.
@@ -411,20 +411,18 @@ ss_machine(msg_event_t *msg) {
 	       * kludged to force return to a particular serial device.
 	       */
 	      us1_sd_pwr_on();
-//	      if (us1_select(US1_SD, FALSE))
 	      if (us1_select(US1_SD, TRUE))
-		  call Panic.panic(PANIC_SS, 39, 0, 0, 0, 0);
+		  call Panic.panic(PANIC_SS, 19, 0, 0, 0, 0);
 
 	      /*
 	       * do we need to try multiple times?
 	       */
 	      err = sd_reset();
 	      if (err)
-		  call Panic.panic(PANIC_SS, 18, err, 0, 0, 0);
+		  call Panic.panic(PANIC_SS, 20, err, 0, 0, 0);
 	  } else {
-//	      if (us1_select(US1_SD, FALSE))
 	      if (us1_select(US1_SD, TRUE))
-		  call Panic.panic(PANIC_SS, 37, 0, 0, 0, 0);
+		  call Panic.panic(PANIC_SS, 21, 0, 0, 0, 0);
 	  }
 
 
@@ -434,19 +432,19 @@ ss_machine(msg_event_t *msg) {
 	   */
 	  ss_handle = &ss_handles[ssc.out_index];
 	  if (ss_handle->buf_state != SS_BUF_STATE_FULL)
-	      call Panic.panic(PANIC_SS, 40, ss_handle->buf_state, 0, 0, 0);
+	      call Panic.panic(PANIC_SS, 22, ss_handle->buf_state, 0, 0, 0);
 
 	  time_get_cur(&t);
 	  add_times(&t, &ss_write_timeout_delay);
 	  mtd.which = SS_TIME_WRITE_TIMEOUT;
 	  if (ss_wto_handle != TIMER_HANDLE_FREE)
-	      call Panic.panic(PANIC_SS, 33, ss_wto_handle, 0, 0, 0);
+	      call Panic.panic(PANIC_SS, 23, ss_wto_handle, 0, 0, 0);
 	  ss_wto_handle = timer_set(&t, ss_write_timeout, &mtd);
 	  ss_handle->buf_state = SS_BUF_STATE_WRITING;
 	  err =
 	      sd_start_write(NULL, ssc.dblk_nxt, ss_handle->buf);
 	  if (err)
-	      call Panic.panic(PANIC_SS, 19, err, 0, 0, 0);
+	      call Panic.panic(PANIC_SS, 24, err, 0, 0, 0);
 	  ssc.ss_state = SS_STATE_XFER;
 	  DMA0CTL_bit.DMAIE = 1;
 	  return;
@@ -475,11 +473,11 @@ ss_machine(msg_event_t *msg) {
 	       */
 	      ss_handle = (ss_handle_t *) (buf - SS_HANDLE_OFFSET);
 	      if (ss_handle->majik != SS_BUF_MAJIK)
-		  call Panic.panic(PANIC_SS, 20, ss_handle->majik, 0, 0, 0);
+		  call Panic.panic(PANIC_SS, 25, ss_handle->majik, 0, 0, 0);
 	      if (ss_handle->buf_state != SS_BUF_STATE_ALLOC)
-		  call Panic.panic(PANIC_SS, 21, ss_handle->buf_state, 0, 0, 0);
+		  call Panic.panic(PANIC_SS, 26, ss_handle->buf_state, 0, 0, 0);
 	      if (&ss_handles[ssc.in_index] != ss_handle)
-		  call Panic.panic(PANIC_SS, 22, (uint16_t) ss_handle, 0, 0, 0);
+		  call Panic.panic(PANIC_SS, 27, (uint16_t) ss_handle, 0, 0, 0);
 
 	      /*
 	       * Switch to Full, bump the next expected and
@@ -507,7 +505,7 @@ ss_machine(msg_event_t *msg) {
 	      err =
 		  sd_finish_write();
 	      if (err)
-		  call Panic.panic(PANIC_SS, 23, err, 0, 0, 0);
+		  call Panic.panic(PANIC_SS, 28, err, 0, 0, 0);
 
 	      /*
 	       * Write has finished A-OK.  Free the buffer and
@@ -518,7 +516,7 @@ ss_machine(msg_event_t *msg) {
 	       * OFF state.
 	       */
 	      if (ss_handles[ssc.out_index].buf_state != SS_BUF_STATE_WRITING)
-		  call Panic.panic(PANIC_SS, 32, ss_handles[ssc.out_index].buf_state, 0, 0, 0);
+		  call Panic.panic(PANIC_SS, 29, ss_handles[ssc.out_index].buf_state, 0, 0, 0);
 	      ss_handles[ssc.out_index].buf_state = SS_BUF_STATE_FREE;
 	      ssc.num_full--;
 	      ssc.out_index++;
@@ -526,7 +524,7 @@ ss_machine(msg_event_t *msg) {
 		  ssc.out_index = 0;
 	      ssc.dblk_nxt++;
 	      if (ssc.dblk_nxt >= ssc.dblk_end)
-		  call Panic.panic(PANIC_SS, 35, err, 0, 0, 0);
+		  call Panic.panic(PANIC_SS, 30, err, 0, 0, 0);
 
 	      /*
 	       * See if the next buffer needs to be written.
@@ -536,13 +534,13 @@ ss_machine(msg_event_t *msg) {
 		  add_times(&t, &ss_write_timeout_delay);
 		  mtd.which = SS_TIME_WRITE_TIMEOUT;
 		  if (ss_wto_handle != TIMER_HANDLE_FREE)
-		      call Panic.panic(PANIC_SS, 34, ss_wto_handle, 0, 0, 0);
+		      call Panic.panic(PANIC_SS, 31, ss_wto_handle, 0, 0, 0);
 		  ss_wto_handle = timer_set(&t, ss_write_timeout, &mtd);
 		  ss_handles[ssc.out_index].buf_state = SS_BUF_STATE_WRITING;
 		  err =
 		      sd_start_write(NULL, ssc.dblk_nxt, ss_handles[ssc.out_index].buf);
 		  if (err)
-		      call Panic.panic(PANIC_SS, 19, err, 0, 0, 0);
+		      call Panic.panic(PANIC_SS, 32, err, 0, 0, 0);
 		  DMA0CTL_bit.DMAIE = 1;
 		  return;
 	      }
@@ -553,25 +551,25 @@ ss_machine(msg_event_t *msg) {
 	       */
 	      ssc.ss_state = SS_STATE_IDLE;
 	      if (us1_select(US1_NONE, FALSE))
-		  call Panic.panic(PANIC_SS, 38, 0, 0, 0, 0);
+		  call Panic.panic(PANIC_SS, 33, 0, 0, 0, 0);
 	      return;
 	      
 	  } else if (msg->msg_id == msg_ss_Timer_Expiry) {
 	      /*
 	       * shouldn't ever time out.  For now just panic.
 	       */
-	      call Panic.panic(PANIC_SS, 24, msg->msg_id, 0, 0, 0);
+	      call Panic.panic(PANIC_SS, 34, msg->msg_id, 0, 0, 0);
 
 	  } else {
 	      /*
 	       * something odd is going on
 	       */
-	      call Panic.panic(PANIC_SS, 25, msg->msg_id, 0, 0, 0);
+	      call Panic.panic(PANIC_SS, 35, msg->msg_id, 0, 0, 0);
 	  }
 	  break;
 
       default:
-	  call Panic.panic(PANIC_SS, 27, msg->msg_id, 0, 0, 0);
+	  call Panic.panic(PANIC_SS, 36, msg->msg_id, 0, 0, 0);
     }
 }
 
@@ -589,15 +587,15 @@ __interrupt void SS_DMA_Complete_Int(void) {
      * that goes out via ss_machine.
      */
     if (DMA0CTL_bit.DMAIFG == 0)
-	call Panic.panic(PANIC_SS, 28, 0, 0, 0, 0);
+	call Panic.panic(PANIC_SS, 37, 0, 0, 0, 0);
     if (us1_sel != US1_SD)
-	call Panic.panic(PANIC_SS, 29, 0, 0, 0, 0);
+	call Panic.panic(PANIC_SS, 38, 0, 0, 0, 0);
     DMA0CTL_bit.DMAIFG = 0;
     DMA0CTL_bit.DMAIE = 0;
     if (ssc.out_index >= SS_NUM_BUFS ||
 	  (ss_handles[ssc.out_index].buf_state != SS_BUF_STATE_WRITING) ||
 	  (ss_wto_handle >= N_TIMERS))
-	call Panic.panic(PANIC_SS, 30, 0, 0, 0, 0);
+	call Panic.panic(PANIC_SS, 39, 0, 0, 0, 0);
     mm_timer_delete(ss_wto_handle, ss_write_timeout);
     ss_wto_handle = TIMER_HANDLE_FREE;
     sched_enqueue(TASK_MS, msg_ss_DMA_Complete, MSG_ADDR_MS, (msg_param_t) (&ss_handles[ssc.out_index]));
