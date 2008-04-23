@@ -42,19 +42,22 @@ module Phase1BootP {
   }
   uses {
     interface Boot as MainBoot;
-    interface SplitControl as mm3CommSerCtl;
+    interface mm3Comm;
+    interface Leds;
   }
 }
 implementation {
   event void MainBoot.booted() {
-    call mm3CommSerCtl.start();
+    call mm3Comm.useSerial();
+    //call mm3Comm.useRadio();
   }
 
-  event void mm3CommSerCtl.startDone(error_t error) {
+  event void mm3Comm.serialOn() {
     signal Phase1Boot.booted();
   }
-
-  event void mm3CommSerCtl.stopDone(error_t error) {
+  event void mm3Comm.radioOn() {
+    //signal Phase1Boot.booted();
   }
+  event void mm3Comm.commOff() {}
 }
 

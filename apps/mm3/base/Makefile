@@ -4,8 +4,8 @@
 PROGRAMS= mm3dump
 
 CC=gcc
-CFLAGS += -g -O0 -Wall -I/usr/local/include
-LIBS += -lmote
+CFLAGS += -g -O0 -Wall -I/stow/include
+LIBS += /stow/lib/libmote.a
 
 GEN=mm3DataMsg.h mm3DataMsg.c \
     DtIgnoreMsg.h DtIgnoreMsg.c \

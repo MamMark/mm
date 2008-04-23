@@ -34,7 +34,10 @@
  */
 
 interface mm3Comm {
-  event void useRadio();
-  event void useSerial();
-  event void useNone();
+  command error_t useSerial();
+  event void serialOn();
+  command error_t useRadio();
+  event void radioOn();
+  command error_t useNone();
+  event void commOff();
 }

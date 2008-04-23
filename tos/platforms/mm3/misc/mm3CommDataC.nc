@@ -8,9 +8,8 @@ configuration mm3CommDataC {
 }
 
 implementation {
-  components mm3CommDataP, MainC;
+  components mm3CommDataP;
   mm3CommData = mm3CommDataP;
-  MainC.SoftwareInit -> mm3CommDataP;
 
   components PanicC;
   mm3CommDataP.Panic -> PanicC;
@@ -19,4 +18,7 @@ implementation {
   mm3CommDataP.Send     -> mm3CommC;
   mm3CommDataP.Packet   -> mm3CommC;
   mm3CommDataP.AMPacket -> mm3CommC;
+  
+  components LedsC;
+  mm3CommDataP.Leds -> LedsC;
 }

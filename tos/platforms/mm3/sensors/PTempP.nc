@@ -89,12 +89,12 @@ implementation {
     pdp->stamp_mis = call PeriodTimer.getNow();
     if (call mm3Control.eavesdrop()) {
       if (eaves_busy)
-	err_eaves_drops++;
+	    err_eaves_drops++;
       else {
-	if (call mm3CommData.send_data(pdp, PTEMP_BLOCK_SIZE))
-	  err_eaves_drops++;
-	else
-	  eaves_busy = TRUE;
+	    if (call mm3CommData.send_data(pdp, PTEMP_BLOCK_SIZE))
+	      err_eaves_drops++;
+	    else
+	      eaves_busy = TRUE;
       }
     }
     call Collect.collect(ptemp_data, PTEMP_BLOCK_SIZE);

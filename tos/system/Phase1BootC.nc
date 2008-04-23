@@ -45,7 +45,9 @@ implementation {
   
   Phase1Boot = Phase1BootP.Phase1Boot;
   Boot = Phase1BootP.MainBoot;
-//  Phase1BootP.MainBoot -> MainC;
-  Phase1BootP.mm3CommSerCtl -> mm3CommC;
+  Phase1BootP.mm3Comm -> mm3CommC;
+  
+  components LedsC;
+  Phase1BootP.Leds -> LedsC;
 }
 
