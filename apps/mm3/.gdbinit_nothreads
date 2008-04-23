@@ -16,16 +16,20 @@ comm
 printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
 end
 
-b CollectP.nc:45
-comm
-printf "collect: len: %d (0x%02x), type: %d  id: %d\n",dlen,dlen,data[2],data[3]
-end
+#b CollectP.nc:45
+#comm
+#printf "collect: len: %d (0x%02x), type: %d  id: %d\n",dlen,dlen,data[2],data[3]
+#end
 
-b mm3CommDataP.nc:80
-comm
-printf "Data: sns: %d\n", client_id
-end
-dis 7-8
+#b mm3CommDataP.nc:80
+#comm
+#printf "Data: sns: %d\n", client_id
+#end
+#dis 7-8
+
+b mm3C.nc:136
+b SDP.nc:229
+b SDP.nc:390
 
 #b GPSByteCollectP.nc:89
 #b GPSByteCollectP.nc:109

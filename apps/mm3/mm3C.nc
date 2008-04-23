@@ -15,6 +15,14 @@ uint16_t res[NUM_RES];
 
 uint8_t use_regime = 2;
 
+#ifdef notdef
+#define SSIZE 1024
+uint8_t sbuf[SSIZE];
+uint32_t start_t0;
+uint32_t end_time;
+uint32_t diff;
+#endif
+
 module mm3C {
   provides {
     interface Init;
@@ -30,10 +38,11 @@ module mm3C {
 
 #ifdef USE_SD
     interface HplMsp430Usart as Usart;
-    interface SD;
+    interface StreamStorage as SS;
 #endif
 
 //    interface StdControl as GPSControl;
+    interface LocalTime<TMilli>;
   }
 }
 
@@ -62,6 +71,31 @@ implementation {
 
 
   event void Boot.booted() {
+#ifdef notdef
+    uint16_t i;
+    bool timing;
+
+    IE2 = 0;
+    timing = 1;
+    mmP5out.ser_sel = SER_SEL_GPS;
+    start_t0 = call LocalTime.get();
+    call HW.gps_on();
+//    uwait(1000);
+    for (i = 0; i < SSIZE; i++) {
+      while ((IFG2 & URXIFG1) == 0) ;
+      sbuf[i] = U1RXBUF;
+      if (timing) {
+	timing = 0;
+	end_time = call LocalTime.get();
+	diff = end_time - start_t0;
+      }
+    }
+    call HW.gps_off();
+    mmP5out.ser_sel = SER_SEL_CRADLE;
+    i = U1RXBUF;
+    nop();
+#endif
+
     /*
      * set the initial regime.  This will also
      * signal all the sensors and start them off.
@@ -100,12 +134,11 @@ implementation {
     call HW.sd_on();
     call Usart.setModeSpi(&config);
     call SD.reset();
+    call SD.read_nodma(0, dbuf);
 #endif
   }
 
 #ifdef USE_SD
-  event void SD.readDone(uint32_t blk, void *buf) {}
-  event void SD.writeDone(uint32_t blk, void *buf) {}
 #endif
 
   event void Adc.configured() {

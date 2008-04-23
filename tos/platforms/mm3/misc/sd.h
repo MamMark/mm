@@ -8,8 +8,6 @@
 #ifndef __SD_H__
 #define __SD_H__
 
-#define SD_PARANOID
-
 /*
  * when reseting the SD we don't want to be any faster
  * then 400KHz.  We divide by 11 to be on the safe side.
@@ -312,8 +310,8 @@ typedef struct {
 /* Number of tries to wait for the card to go idle during initialization */
 #define SD_IDLE_WAIT_MAX 512
 
-/* Hardcoded timeout for commands. 8 words, or 64 clocks. Do 10 words instead */
-#define SD_CMD_TIMEOUT 999
+/* Hardcoded timeout for commands. */
+#define SD_CMD_TIMEOUT 1024
 
 /******************************** Basic command set **************************/
 

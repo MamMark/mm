@@ -53,10 +53,13 @@ module StreamStorageP {
     interface SplitControl as SSControl;
     interface StreamStorage as SS;
   }
+  uses {
+    interface Panic;
+    interface SD;
+  }
 }
   
 implementation {
-
   noinit ss_handle_t ss_handles[SS_NUM_BUFS];
   noinit ss_control_t ssc;
 
@@ -97,8 +100,7 @@ implementation {
    * it is zeroed.  So we look for all data being zero.
    */
 
-  int
-  blk_empty(uint8_t *buf) {
+  int blk_empty(uint8_t *buf) {
     uint16_t i;
     uint16_t *ptr;
 
@@ -106,7 +108,7 @@ implementation {
     for (i = 0; i < SD_BLOCKSIZE/2; i++)
       if (ptr[i])
 	return(0);
-    //    return(1);
+//    return(1);
     return(0);
   }
 
@@ -128,8 +130,7 @@ implementation {
    *		3  bad value in dblk
    */
 
-  uint16_t
-  check_dblk_loc(dblk_loc_t *dbl) {
+  uint16_t check_dblk_loc(dblk_loc_t *dbl) {
     uint16_t *p;
     uint16_t sum, i;
 
@@ -152,8 +153,7 @@ implementation {
     return(0);
   }
 
-  error_t
-  read_blk(uint32_t blk_id, void *buf) {
+  error_t read_blk(uint32_t blk_id, void *buf) {
     error_t err;
     uint8_t *dp;
 
@@ -174,8 +174,7 @@ implementation {
     return((ss_rtn) err);
   }
 
-  error_t
-  read_blk_fail(uint32_t blk_id, void *buf) {
+  error_t read_blk_fail(uint32_t blk_id, void *buf) {
     ss_rtn err;
 
     err = call SD.read_blk(blk_id, buf);
@@ -301,6 +300,7 @@ implementation {
 
   command uint8_t *handle_to_buf(ss_handle_t *handle) {
   }
+
 
 void
 ss_machine(msg_event_t *msg) {

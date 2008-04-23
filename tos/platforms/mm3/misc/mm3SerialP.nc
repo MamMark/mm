@@ -1,4 +1,5 @@
 
+//#define DC_SPEED 4800
 #define DC_SPEED 115200
 
 module mm3SerialP {

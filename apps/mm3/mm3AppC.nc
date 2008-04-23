@@ -45,4 +45,7 @@ implementation {
 
   components PanicC;
   mm3C.Panic -> PanicC;
+
+  components LocalTimeMilliC;
+  mm3C.LocalTime -> LocalTimeMilliC;
 }

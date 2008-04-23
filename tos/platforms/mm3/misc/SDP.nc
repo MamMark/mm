@@ -7,7 +7,11 @@
 
 #include <msp430usart.h>
 #include <msp430hardware.h>
+#include "hardware.h"
 #include "sd.h"
+
+#define SD_PUT_GET_TO 1024
+#define SD_PARANOID
 
 module SDP {
   provides {
@@ -37,42 +41,87 @@ implementation {
     uint8_t tmp;
 
 #ifdef SD_PARANOID
-    if (U1RCTL & OE) {
-      call Panic.panic(PANIC_SD, 1, U1RCTL, 0, 0, 0);
+    if (!(U1_TX_EMPTY)) {
+      call Panic.panic(PANIC_SD, 1, 0, 0, 0, 0);
+      /*
+       * how to clean out the transmitter?  It could be
+       * hung.  Which would be weird.
+       */
+    }
+    if (U1_OVERRUN) {
+      call Panic.panic(PANIC_SD, 2, U1RCTL, 0, 0, 0);
       URCTL &= ~OE;
     }
-    if (call Usart.isRxIntrPending()) {
-      tmp = call Usart.rx();
-      call Panic.panic(PANIC_SD, 2, tmp, 0, 0, 0);
+    if (U1_RX_RDY) {
+      tmp = U1RXBUF;
+      call Panic.panic(PANIC_SD, 3, tmp, 0, 0, 0);
     }
 #else
-    if (U1RCTL & OE)
+    if (U1_OVERRUN)
       U1RCTL &= ~OE;
-    if (call Usart.isRxIntrPending())
-      tmp = call Usart.rx();
+    if (U1_RX_RDY)
+      tmp = U1RXBUF;
 #endif
+  }
+
+  uint8_t spi_byte_write(uint8_t tx) {
+    if (!U1_TX_EMPTY)
+      call Panic.panic(PANIC_SD, 4, 0, 0, 0, 0);
+    U1TXBUF = tx;
+    while (!U1_RX_RDY) ;
+    U1_CLR_RX;
+    return U1RXBUF;
+  }
+
+
+  void sd_put(uint8_t tx_data) {
+    uint16_t i;
+
+    sd_chk_clean();
+    U1TXBUF = tx_data;
+
+    i = SD_PUT_GET_TO;
+    while ( !(U1_RX_RDY) && i > 0)
+      i--;
+    if (i == 0)				/* rx timeout */
+      call Panic.panic(PANIC_SD, 5, 0, 0, 0, 0);
+    if (U1_OVERRUN)
+      call Panic.panic(PANIC_SD, 6, 0, 0, 0, 0);
+
+    /* clean out RX buf and the IFG. */
+    U1_CLR_RX;
+    tx_data = U1RXBUF;
+  }
+
+
+  uint8_t sd_get() {
+    uint16_t i;
+
+    sd_chk_clean();
+    U1TXBUF = 0xff;
+
+    i = SD_PUT_GET_TO;
+    while ( !U1_RX_RDY && i > 0)
+      i--;
+
+    if (i == 0)				/* rx timeout */
+      call Panic.panic(PANIC_SD, 7, 0, 0, 0, 0);
+
+    if (U1_OVERRUN)
+      call Panic.panic(PANIC_SD, 8, 0, 0, 0, 0);
+    U1_CLR_RX;
+    return(U1RXBUF);
   }
 
 
   void sd_packarg(uint32_t value) {
     sd_cmd_blk_t *cmd;
 
-//    cmd = &sd_cmd;
-    sd_cmd.arg[0] = (uint8_t) (value >> 24);
-    sd_cmd.arg[1] = (uint8_t) (value >> 16);
-    sd_cmd.arg[2] = (uint8_t) (value >> 8);
-    sd_cmd.arg[3] = (uint8_t) (value);
-  }
-
-
-  uint8_t spi_byte_write(uint8_t tx) {
-    uint8_t byte;
-
-    call Usart.tx( tx );
-    while( !call Usart.isRxIntrPending() );
-    call Usart.clrRxIntr();
-    byte = call Usart.rx();
-    return byte;
+    cmd = &sd_cmd;
+    cmd->arg[0] = (uint8_t) (value >> 24);
+    cmd->arg[1] = (uint8_t) (value >> 16);
+    cmd->arg[2] = (uint8_t) (value >> 8);
+    cmd->arg[3] = (uint8_t) (value);
   }
 
 
@@ -82,16 +131,16 @@ implementation {
     sd_cmd_blk_t *cmd;
 
     cmd = &sd_cmd;
-    spi_byte_write(SD_APP_CMD | 0x40);		/* CMD55 */
-    spi_byte_write(0);
-    spi_byte_write(0);
-    spi_byte_write(0);
-    spi_byte_write(0);
-    spi_byte_write(0xff);				/* crc, don't care */
+    sd_put(SD_APP_CMD | 0x40);		/* CMD55 */
+    sd_put(0);
+    sd_put(0);
+    sd_put(0);
+    sd_put(0);
+    sd_put(0xff);				/* crc, don't care */
 
     i=0;
     do {
-      tmp = spi_byte_write(0);
+      tmp = sd_get();
       i++;
     } while((tmp > 127) && (i < SD_CMD_TIMEOUT));
 
@@ -99,16 +148,14 @@ implementation {
     cmd->stage_count = i;
 
     if (i >= SD_CMD_TIMEOUT) {
-      call Panic.brk();
-      return(1);
+      call Panic.panic(PANIC_SD, 9, i, 0, 0, 0);
+      return FAIL;
     }
 
-    tmp = spi_byte_write(0);		/* finish the command */
-    if (tmp != 0xff) {
-      call Panic.brk();
-      call Panic.panic(PANIC_SD, 12, tmp, 0, 0, 0);
-    }
-    return(0);
+    tmp = sd_get();		/* finish the command */
+    if (tmp != 0xff)
+      call Panic.panic(PANIC_SD, 10, tmp, 0, 0, 0);
+    return SUCCESS;
   }
 
 
@@ -135,12 +182,11 @@ implementation {
     cmd = &sd_cmd;
     rsp_len = cmd->rsp_len & RSP_LEN_MASK;
     if (rsp_len != 1 && rsp_len != 2 && rsp_len != 5) {
-      call Panic.panic(PANIC_SD, 14, rsp_len, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 11, rsp_len, 0, 0, 0);
       return FAIL;
     }
     if (SD_CSN == 0)		// already selected
-      call Panic.warn(PANIC_SD, 15, 0, 0, 0, 0);
-    sd_chk_clean();
+      call Panic.warn(PANIC_SD, 12, 0, 0, 0, 0);
 
     SD_CSN = 0;
     cmd->stage = 1;
@@ -149,17 +195,17 @@ implementation {
       if (tmp) {
 	/* failed, how odd */
 	SD_CSN = 1;
-	call Panic.panic(PANIC_SD, 16, tmp, 0, 0, 0);
+	call Panic.panic(PANIC_SD, 13, tmp, 0, 0, 0);
 	return FAIL;
       }
     } else
       cmd->rsp55 = 0x55;
 
     cmd->stage = 2;
-    spi_byte_write((cmd->cmd & 0x3F) | 0x40);
+    sd_put((cmd->cmd & 0x3F) | 0x40);
     i = 0;
     do
-      spi_byte_write(cmd->arg[i++]);
+      sd_put(cmd->arg[i++]);
     while (i < 4);
 
     /* This is the CRC. It only matters what we put here for the first
@@ -167,12 +213,12 @@ implementation {
        enable CRC checking which we don't because it is a royal pain
        in the ass.
     */
-    spi_byte_write(0x95);
+    sd_put(0x95);
 
     /* Wait for a response.  */
     i=0;
     do {
-      tmp = spi_byte_write(0);
+      tmp = sd_get();
       i++;
     } while ((tmp & 0x80) && (i < SD_CMD_TIMEOUT));
 
@@ -182,7 +228,7 @@ implementation {
     /* Just bail if we never got a response */
     if (i >= SD_CMD_TIMEOUT) {
       /* stage 2 bail, timeout */
-      call Panic.brk();
+      call Panic.panic(PANIC_SD, 14, tmp, 0, 0, 0);
       SD_CSN = 1;
       return FAIL;
     }
@@ -190,12 +236,12 @@ implementation {
     /* get rest of response if needed */
     i = 1;
     while (i < rsp_len)
-      cmd->rsp[i++] = spi_byte_write(0);
+      cmd->rsp[i++] = sd_get();
 
     cmd->stage = 3;
-    tmp = spi_byte_write(0);
+    tmp = sd_get();
     if (tmp != 0xff) {
-      call Panic.panic(PANIC_SD, 17, tmp, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 15, tmp, 0, 0, 0);
     }
 
     /* If the response is a "busy" type (R1B), then there's some
@@ -209,15 +255,15 @@ implementation {
       i = 0;
       do {
 	i++;
-	tmp = spi_byte_write(0);
+	tmp = sd_get();
       } while (tmp != 0xFF);
       sd_r1b_timeout = i;
-      //	cmd->stage_count = i;
-      spi_byte_write(0xFF);
+//	cmd->stage_count = i;
+      sd_put(0xff);
     }
     cmd->stage = 0;
     SD_CSN = 1;
-    return(0);
+    return SUCCESS;
   }
 
 
@@ -227,7 +273,7 @@ implementation {
     uint16_t i;
 
     for(i = 0; i < number; i++)
-      spi_byte_write(0xFF);
+      sd_put(0xff);
   }
 
 
@@ -319,7 +365,7 @@ implementation {
     cmd->cmd     = SD_FORCE_IDLE;
     cmd->rsp_len = SD_FORCE_IDLE_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 19, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 16, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -331,7 +377,7 @@ implementation {
       cmd->cmd     = SD_GO_OP;
       cmd->rsp_len = SD_GO_OP_R;
       if (sd_send_command()) {
-	call Panic.panic(PANIC_SD, 20, 0, 0, 0, 0);
+	call Panic.panic(PANIC_SD, 17, 0, 0, 0, 0);
 	return FAIL;
       }
 //    } while ((cmd->rsp[0] & MSK_IDLE) == MSK_IDLE && i < SD_IDLE_WAIT_MAX);
@@ -344,19 +390,19 @@ implementation {
     cmd->cmd     = SD_SEND_OCR;
     cmd->rsp_len = SD_SEND_OCR_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 21, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 18, 0, 0, 0, 0);
       return FAIL;
     }
 
     /* At a very minimum, we must allow 3.3V. */
     if ((cmd->rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
-      call Panic.panic(PANIC_SD, 21, cmd->rsp[2], 0, 0, 0);
+      call Panic.panic(PANIC_SD, 19, cmd->rsp[2], 0, 0, 0);
       return FAIL;
     }
 
     /* Set the block length */
     if (sd_set_blocklen(SD_BLOCKSIZE)) {
-      call Panic.panic(PANIC_SD, 22, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 20, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -379,13 +425,13 @@ implementation {
     cmd = &sd_cmd;
     sd_wait_notbusy();
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 24, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 21, 0, 0, 0, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 25, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 22, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -395,7 +441,7 @@ implementation {
     /* Wait for the token */
     i=0;
     do {
-      tmp = spi_byte_write(0);
+      tmp = sd_get();
       i++;
     } while ((tmp == 0xFF) && i < SD_READ_TIMEOUT);
     sd_rd_timeout = i;
@@ -405,18 +451,18 @@ implementation {
        * Clock out a byte before returning, let SD finish
        * what is this based on?
        */
-      spi_byte_write(0xFF);
+      sd_put(0xff);
 
       /* The card returned an error, or timed out. */
       return FAIL;
     }
 
     for (i = 0; i < data_len; i++)
-      data[i] = spi_byte_write(0);
+      data[i] = sd_get();
 
     /* Ignore the CRC */
-    spi_byte_write(0);
-    spi_byte_write(0);
+    sd_get();
+    sd_get();
 
     SD_CSN = 1;
     /* Send some extra clocks so the card can finish */
@@ -470,7 +516,7 @@ implementation {
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 26, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 23, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -480,14 +526,14 @@ implementation {
     /* Wait for the token */
     i=0;
     do {
-      tmp = spi_byte_write(0);
+      tmp = sd_get();
       i++;
     } while ((tmp == 0xFF) && i < SD_READ_TIMEOUT);
     sd_rd_timeout = i;
 
     if ((tmp & MSK_TOK_DATAERROR) == 0 || i >= SD_READ_TIMEOUT) {
       /* Clock out a byte before returning, let SD finish */
-      spi_byte_write(0xFF);
+      sd_get();
 
       /* The card returned an error, or timed out. */
       return FAIL;
@@ -516,16 +562,16 @@ implementation {
 
     DMACTL0 = 0;
 
-    crc = spi_byte_write(0);
+    crc = sd_get();
     crc = crc << 8;
-    crc |= spi_byte_write(0);
+    crc |= sd_get();
 
     /* Deassert CS */
     SD_CSN = 1;
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
     if (sd_check_crc(data, data_len, crc)) {
-      call Panic.panic(PANIC_SD, 27, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 24, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -616,7 +662,6 @@ implementation {
    * Clears DMA Int Enable.
    */
 
-
   int sd_start_write(uint32_t blockaddr, uint8_t *data) {
     uint8_t  tmp;
     sd_cmd_blk_t *cmd;
@@ -632,13 +677,13 @@ implementation {
     cmd->cmd     = SD_WRITE_BLOCK;
     cmd->rsp_len = SD_WRITE_BLOCK_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 30, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 25, 0, 0, 0, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 31, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 26, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -647,9 +692,9 @@ implementation {
 
     /* The write command needs an additional 8 clock cycles before
      * the block write is started. */
-    tmp = spi_byte_write(0);
+    tmp = sd_get();
     if (tmp != 0xff)
-      call Panic.panic(PANIC_SD, 32, tmp, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 27, tmp, 0, 0, 0);
 
     U1IFG = ~(URXIFG1 | UTXIFG1);
     DMA0SA = (uint16_t) data;
@@ -700,25 +745,26 @@ implementation {
      * to empty.  Then we should have seen the last char received and
      * we can successfully clean out both data avail and the overrun.
      */
-    while (call Usart.isTxEmpty() == 0) {
+    while (!(U1_TX_EMPTY)) {
 #ifdef not
       /*
        * Need a timeout
        */
       time_get_cur(&t);
       if (time_leq(&to, &t))
-	call Panic.panic(PANIC_SD, 41, 0, 0, 0, 0);
+	call Panic.panic(PANIC_SD, 28, 0, 0, 0, 0);
 #endif
     }
 
     tmp = U1IFG;
+    U1_CLR_RX;
     tmp = U1RXBUF;		/* clean out OE and data avail */
 
-    if ((call Usart.isTxEmpty() == 0) || call Usart.isRxIntrPending())
-      call Panic.panic(PANIC_SD, 33, 0, 0, 0, 0);
+    if (!(U1_TX_EMPTY) || U1_RX_RDY)
+      call Panic.panic(PANIC_SD, 29, 0, 0, 0, 0);
 
-    spi_byte_write(0);			/* crc ignored */
-    spi_byte_write(0);
+    sd_put(0xff);		/* crc ignored */
+    sd_put(0xff);
 
 #ifdef notdef
     /*
@@ -726,30 +772,31 @@ implementation {
      */
     i=0;
     do {
-      tmp = spi_byte_write(0);
+      tmp = sd_get();
       i++;
       time_get_cur(&t);
     } while ((tmp == 0xFF) && time_leq(&t, &to));
 #endif
+
     i=0;
     do {
-      tmp = spi_byte_write(0);
+      tmp = sd_get();
       i++;
     } while (tmp == 0xFF);
 
     if ((tmp & 0x0F) != 0x05) {
       i = sd_read_status();
-      call Panic.panic(PANIC_SD, 34, tmp, i, 0, 0);
+      call Panic.panic(PANIC_SD, 30, tmp, i, 0, 0);
       return FAIL;
     }
 
     /* wait for the card to go unbusy */
     i = 0;
-    while ((tmp = spi_byte_write(0)) != 0xFF) {
+    while ((tmp = sd_get()) != 0xff) {
       i++;
 #ifdef notdef
       if (time_leq(&to, &t))
-	call Panic.panic(PANIC_SD, 42, 0, 0, 0, 0);
+	call Panic.panic(PANIC_SD, 31, 0, 0, 0, 0);
 #endif
     }
     sd_busy_timeout = i;
@@ -765,7 +812,7 @@ implementation {
 
     i = sd_read_status();
     if (i)
-      call Panic.panic(PANIC_SD, 128, i, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 32, i, 0, 0, 0);
     return SUCCESS;
   }
 
@@ -791,7 +838,7 @@ implementation {
      * check the result.
      */
     rtn = sd_finish_write();
-    return(rtn);
+    return rtn;
   }
 
 
@@ -815,7 +862,7 @@ implementation {
     /* Check for the busy flag (set on a write block) */
     if (sd_busyflag) {
       i = 0;
-      while (spi_byte_write(0) != 0xFF)
+      while (sd_get() != 0xff)
 	i++;
       sd_busyflag = FALSE;
       sd_busy_timeout = i;
@@ -852,6 +899,20 @@ implementation {
     cmd->cmd     = SD_SET_ERASE_START;
     cmd->rsp_len = SD_SET_ERASE_START_R;
     if (sd_send_command()) {
+      call Panic.panic(PANIC_SD, 33, 0, 0, 0, 0);
+      return FAIL;
+    }
+
+    /* Check for an error, like a misaligned write */
+    if (cmd->rsp[0] != 0) {
+      call Panic.panic(PANIC_SD, 34, cmd->rsp[0], 0, 0, 0);
+      return FAIL;
+    }
+
+    sd_packarg(blk_end);
+    cmd->cmd     = SD_SET_ERASE_END;
+    cmd->rsp_len = SD_SET_ERASE_END_R;
+    if (sd_send_command()) {
       call Panic.panic(PANIC_SD, 35, 0, 0, 0, 0);
       return FAIL;
     }
@@ -862,9 +923,8 @@ implementation {
       return FAIL;
     }
 
-    sd_packarg(blk_end);
-    cmd->cmd     = SD_SET_ERASE_END;
-    cmd->rsp_len = SD_SET_ERASE_END_R;
+    cmd->cmd     = SD_ERASE;
+    cmd->rsp_len = SD_ERASE_R;
     if (sd_send_command()) {
       call Panic.panic(PANIC_SD, 37, 0, 0, 0, 0);
       return FAIL;
@@ -873,19 +933,6 @@ implementation {
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
       call Panic.panic(PANIC_SD, 38, cmd->rsp[0], 0, 0, 0);
-      return FAIL;
-    }
-
-    cmd->cmd     = SD_ERASE;
-    cmd->rsp_len = SD_ERASE_R;
-    if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 39, 0, 0, 0, 0);
-      return FAIL;
-    }
-
-    /* Check for an error, like a misaligned write */
-    if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 40, cmd->rsp[0], 0, 0, 0);
       return FAIL;
     }
     return SUCCESS;
