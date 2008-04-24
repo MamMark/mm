@@ -7,10 +7,6 @@ module mm3SerialP {
     interface StdControl;
     interface Msp430UartConfigure;
   }
-  uses {
-    interface Resource;
-    interface Panic;
-  }
 }
 implementation {
   
@@ -57,20 +53,12 @@ enum {
   };
 
   command error_t StdControl.start(){
-    error_t rtn;
-
-    rtn = call Resource.immediateRequest();
-    if (rtn != SUCCESS)
-      call Panic.brk();
-    return rtn;
-  }
-
-  command error_t StdControl.stop(){
-    call Resource.release();
     return SUCCESS;
   }
 
-  event void Resource.granted(){}
+  command error_t StdControl.stop(){
+    return SUCCESS;
+  }
 
   async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
     return &mm3_direct_serial_config;

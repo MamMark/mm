@@ -170,7 +170,6 @@ implementation {
     }
   }
 
-
   command error_t Send.cancel[uint8_t id](message_t* msg) {
     switch (comm_state) {
       case COMM_STATE_OFF:
@@ -185,8 +184,8 @@ implementation {
       default:
 	    call Panic.brk();
 	    return FAIL;
-    }  }
-
+    }  
+  }
 
   event void SerialSend.sendDone[uint8_t id](message_t* msg, error_t error) {
     signal Send.sendDone[id](msg, error);
