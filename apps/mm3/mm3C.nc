@@ -105,9 +105,9 @@ implementation {
       use_regime = SNS_DEFAULT_REGIME;
     call Regime.setRegime(use_regime);
 
-    call Leds.led0Off();
-    call Leds.led1Off();
-    call Leds.led2Off();
+//    call Leds.led0Off();
+//    call Leds.led1Off();
+//    call Leds.led2Off();
 
 #ifdef notdef
     call HW.vdiff_on();

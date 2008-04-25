@@ -28,30 +28,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-/**
- * @author Kevin Klues <klueska@cs.stanford.edu>
- * @date March 3rd, 2008
+ 
+/*
+ * Author: Kevin Klues (klueska@cs.stanford.edu)
+ *
  */
 
-configuration SystemBootC {
+
+configuration SDBootC {
   provides {
-    interface Boot;
+    interface Boot as SDBoot;
   }
   uses {
-    interface Init as SoftwareInit;
+    interface Boot;
   }
 }
 implementation {
-  components MainC;
-  components Phase1BootC;
-  components SDBootC;
+  components new BlockingBootC();
+  components SDBootP;
   
-  SoftwareInit = MainC.SoftwareInit;
+  Boot = SDBootP.MainBoot;
+  BlockingBootC -> SDBootP.BlockingBoot;
+  SDBoot = BlockingBootC;
   
-  Phase1BootC.Boot -> MainC;
-  SDBootC.Boot -> Phase1BootC;
-  //Daisy chain others between these if you like...
-  Boot = SDBootC;
+  components new ThreadC(200);
+  SDBootP.Thread -> ThreadC;
+  
+  components LedsC;
+  SDBootP.Leds -> LedsC;
 }
 

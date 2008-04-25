@@ -12,9 +12,6 @@ configuration mm3SerialCommC {
     interface Packet;
     interface SplitControl;
   }
-  uses {
-    interface Resource;
-  }
 }
 
 implementation {
@@ -23,7 +20,6 @@ implementation {
   components new AMQueueImplP(MM3_NUM_SENSORS), SerialActiveMessageC;
 
   Send = mm3SerialCommP;
-  Resource = mm3SerialCommP;
   AMPacket = SerialAMSenderC;
   Packet = SerialAMSenderC;
   SplitControl = SerialActiveMessageC;
@@ -32,6 +28,9 @@ implementation {
   AMQueueImplP.AMSend[AM_MM3_DATA] -> SerialAMSenderC;
   AMQueueImplP.Packet -> SerialAMSenderC;
   AMQueueImplP.AMPacket -> SerialAMSenderC;
+  
+  components new NoArbiterC();
+  mm3SerialCommP.Resource -> NoArbiterC.Resource;
   
   components LedsC;
   mm3SerialCommP.Leds -> LedsC;

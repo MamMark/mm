@@ -25,6 +25,7 @@ module mm3SerialCommP {
   uses {
     interface Resource;
     interface Send as SubSend[uint8_t client_id];
+    interface Leds;
   }
 }
 
@@ -36,26 +37,33 @@ implementation {
 
   command error_t Send.send[uint8_t id](message_t *msg, uint8_t len) {
     if(busy == FALSE) {
-      busy = TRUE;
-      call Resource.request();
-      my_msg = msg;
-      my_len = len;
-      my_id = id;
+      if(call Resource.request() == SUCCESS) {
+        busy = TRUE;
+        my_msg = msg;
+        my_len = len;
+        my_id = id;
+        return SUCCESS;
+      }
     }
-    else return EBUSY;
+    return EBUSY;
   }
   event void Resource.granted() {
     error_t e;
-    if( (e = call SubSend.send[my_id](my_msg, my_len)) != SUCCESS )
+    if( (e = call SubSend.send[my_id](my_msg, my_len)) != SUCCESS ) {
+      busy = FALSE;
       signal Send.sendDone[my_id](my_msg, e);
+    }
   }
 
   event void SubSend.sendDone[uint8_t id](message_t* msg, error_t err) {
+    busy = FALSE;
     signal Send.sendDone[id](msg, err);
   }
   
   command error_t Send.cancel[uint8_t id](message_t* msg) {
-    return call SubSend.cancel[id](msg);
+    error_t e = call SubSend.cancel[id](msg);
+    if(e == SUCCESS) busy = FALSE;
+    return e;
   }
 
   command uint8_t Send.maxPayloadLength[uint8_t id]() {

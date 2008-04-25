@@ -28,30 +28,35 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-/**
- * @author Kevin Klues <klueska@cs.stanford.edu>
- * @date March 3rd, 2008
+ 
+/*
+ * Author: Kevin Klues (klueska@cs.stanford.edu)
+ *
  */
 
-configuration SystemBootC {
+module SDBootP {
   provides {
-    interface Boot;
+    interface Boot as BlockingBoot;
   }
   uses {
-    interface Init as SoftwareInit;
+    interface Boot as MainBoot;
+    interface Thread;
+    interface Leds;
   }
 }
 implementation {
-  components MainC;
-  components Phase1BootC;
-  components SDBootC;
+  event void MainBoot.booted() {
+    call Thread.start(NULL);
+  }
   
-  SoftwareInit = MainC.SoftwareInit;
-  
-  Phase1BootC.Boot -> MainC;
-  SDBootC.Boot -> Phase1BootC;
-  //Daisy chain others between these if you like...
-  Boot = SDBootC;
+  //Do thread related SD stuff here....
+  event void Thread.run(void* arg) {
+    uint32_t i;
+    for(i = 0; i < 5000UL; i++)
+      call Leds.led0Toggle();
+      
+    //Singal booted when done.
+    signal BlockingBoot.booted();
+  }
 }
 
