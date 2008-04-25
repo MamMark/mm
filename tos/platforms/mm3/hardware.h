@@ -4,7 +4,8 @@
 #include "panic.h"
 #include "msp430hardware.h"
 
-//#define USE_SD
+//#define TEST_GPS
+//#define TEST_SS
 
 /*
  * for some reason the standard msp430 include files don't define

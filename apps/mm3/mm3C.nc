@@ -13,9 +13,10 @@
 uint16_t res[NUM_RES];
 #endif
 
-uint8_t use_regime = 2;
+//noinit uint8_t use_regime;
+uint8_t use_regime = 15;
 
-#ifdef notdef
+#ifdef TEST_GPS
 #define SSIZE 1024
 uint8_t sbuf[SSIZE];
 uint32_t start_t0;
@@ -36,20 +37,23 @@ module mm3C {
     interface HplMM3Adc as HW;
     interface Adc;
 
-#ifdef USE_SD
+#ifdef TEST_SS
     interface HplMsp430Usart as Usart;
     interface StreamStorage as SS;
+    interface StdControl as SSControl;
+    interface SD;
 #endif
 
-//    interface StdControl as GPSControl;
+#ifdef TEST_GPS
+    interface StdControl as GPSControl;
     interface LocalTime<TMilli>;
+#endif
   }
 }
 
 implementation {
-  uint8_t dbuf[SS_BLOCK_SIZE + 2];
 
-#ifdef USE_SD
+#ifdef TEST_SS
   msp430_spi_union_config_t config = {
     {
       ubr : 0x0002,
@@ -71,7 +75,7 @@ implementation {
 
 
   event void Boot.booted() {
-#ifdef notdef
+#ifdef TEST_GPS
     uint16_t i;
     bool timing;
 
@@ -130,15 +134,16 @@ implementation {
     call GPSControl.stop();
 #endif
 
-#ifdef USE_SD
+#ifdef TEST_SS
     call HW.sd_on();
     call Usart.setModeSpi(&config);
-    call SD.reset();
-    call SD.read_nodma(0, dbuf);
+    call SSControl.start();
 #endif
   }
 
-#ifdef USE_SD
+#ifdef TEST_SS
+  event   void    SD.readDone(uint32_t blk, void *buf) {}
+  event   void    SD.writeDone(uint32_t blk, void *buf) {}
 #endif
 
   event void Adc.configured() {

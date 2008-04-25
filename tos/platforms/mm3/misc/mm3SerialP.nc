@@ -1,6 +1,9 @@
 
-//#define DC_SPEED 4800
-#define DC_SPEED 115200
+#ifdef TEST_GPS
+#define DC_SPEED 4800
+#else
+#define DC_SPEED 57600
+#endif
 
 module mm3SerialP {
   provides {
@@ -16,6 +19,9 @@ enum {
   UBR_4MHZ_115200=0x0024, UMCTL_4MHZ_115200=0x4a, // from http://www.daycounter.com/Calculators/MSP430-Uart-Calculator.phtml
 //UBR_4MHZ_115200=0x0024, UMCTL_4MHZ_115200=0x29, // from http://mspgcc.sourceforge.net/baudrate.html
 
+  UBR_4MHZ_57600=0x0048, UMCTL_4MHZ_57600=0xfb, // from http://www.daycounter.com/Calculators/MSP430-Uart-Calculator.phtml
+//UBR_4MHZ_57600=0x0048, UMCTL_4MHZ_57600=0x7b, // from http://mspgcc.sourceforge.net/baudrate.html
+
   UBR_4MHZ_9600=0x01b4, UMCTL_4MHZ_9600=0xdf, // from http://www.daycounter.com/Calculators/MSP430-Uart-Calculator.phtml
 //UBR_4MHZ_9600=0x01b4, UMCTL_4MHZ_9600=0xdf, // from http://mspgcc.sourceforge.net/baudrate.html
 
@@ -27,6 +33,9 @@ enum {
 #if (DC_SPEED == 115200)
        ubr:   UBR_4MHZ_115200,
        umctl: UMCTL_4MHZ_115200,
+#elif (DC_SPEED == 57600)
+       ubr:   UBR_4MHZ_57600,
+       umctl: UMCTL_4MHZ_57600,
 #elif (DC_SPEED == 9600)
        ubr:   UBR_4MHZ_9600,
        umctl: UMCTL_4MHZ_9600,

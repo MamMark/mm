@@ -7,8 +7,6 @@
  * @author Eric Decker
  */
 
-#include "stream_storage.h"
-
 interface StreamStorage {
   /*
    * StreamStorage provides an interface to sector orientated 512 byte
@@ -17,9 +15,12 @@ interface StreamStorage {
    */
 
   /**
-   * Initiate a write operation on the device.  If SUCCESS is returned, the
-   * the caller assumes that the StreamStorage system will write the block
-   * out to the underlying stream device.
+   * Flush a Stream handle.  This will cause the stream subsystem to write
+   * the accumulated underlying buffer to the mass storage device.  The handle
+   * is then returned to the free pool.
+   *
+   * If SUCCESS is returned, the StreamStorage subsystem has accepted responsibility
+   * for the buffer and will write it to mass storage.  The the caller assumes this.
    *
    * @param handle address of a ss_handle (stream storage handle).
    * @return 
@@ -27,7 +28,7 @@ interface StreamStorage {
    *   <li>EINVAL if the parameters are invalid
    *   <li>EBUSY if a request is already being processed.
    */
-  command error_t write_handle(ss_handle_t *handle);
+  command error_t flush_handle(ss_handle_t *handle);
 
   /**
    * Convert a stream handle to its underlying buffer.

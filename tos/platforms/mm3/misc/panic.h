@@ -24,7 +24,6 @@
 #define PANIC_KERN	1
 #define PANIC_FX	2
 #define PANIC_US1	3
-#define PANIC_SD	4
 #define PANIC_MS	5
 #define PANIC_SNS	6
 #define PANIC_PWR	7

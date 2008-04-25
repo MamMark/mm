@@ -34,10 +34,13 @@ implementation {
   components AdcC;
   mm3C.Adc -> AdcC.Adc[SNS_ID_NONE];
 
-#ifdef USE_SD
+#ifdef TEST_SS
   components SDC, HplMsp430Usart1C as UsartC;
   mm3C.SD -> SDC;
   mm3C.Usart -> UsartC;
+
+  components StreamStorageC;
+  mm3C.SSControl -> StreamStorageC;
 #endif
 
 //  components GPSByteCollectC;
@@ -46,6 +49,8 @@ implementation {
   components PanicC;
   mm3C.Panic -> PanicC;
 
+#ifdef TEST_GPS
   components LocalTimeMilliC;
   mm3C.LocalTime -> LocalTimeMilliC;
+#endif
 }

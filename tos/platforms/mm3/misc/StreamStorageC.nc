@@ -6,7 +6,8 @@
 configuration StreamStorageC {
   provides {
     interface StreamStorage as SS;
-    interface SplitControl as SSControl;
+    interface StdControl as SSControl;
+  }
 }
 
 implementation {
@@ -15,9 +16,12 @@ implementation {
   SSControl = StreamStorageP;
   MainC.SoftwareInit -> StreamStorageP;
 
+  components SDC;
+  StreamStorageP.SD -> SDC;
+
   components PanicC;
   StreamStorageP.Panic -> PanicC;
 
-  components HplMsp430Usart1C as UsartC;
-  StreamStorageP.Usart -> UsartC;
+  components HplMM3AdcC;
+  StreamStorageP.HW -> HplMM3AdcC;
 }

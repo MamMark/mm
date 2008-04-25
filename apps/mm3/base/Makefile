@@ -1,11 +1,13 @@
 # Copyright 2008, Eric B. Decker
 # Mam-Mark Project
 
+STOW_DIR=/stow
+
 PROGRAMS= mm3dump
 
 CC=gcc
-CFLAGS += -g -O0 -Wall -I/stow/include
-LIBS += /stow/lib/libmote.a
+CFLAGS += -g -O0 -Wall -I$(STOW_DIR)/include
+LIBS += $(STOW_DIR)/lib/libmote.a
 
 GEN=mm3DataMsg.h mm3DataMsg.c \
     DtIgnoreMsg.h DtIgnoreMsg.c \

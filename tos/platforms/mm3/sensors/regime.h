@@ -9,7 +9,7 @@
 #include "sensors.h"
 
 #define SNS_DEFAULT_REGIME		2
-#define SNS_MAX_REGIME			14
+#define SNS_MAX_REGIME			15
 #define MM3_NUM_REGIMES			(SNS_MAX_REGIME + 1)
   
 /*
@@ -31,7 +31,8 @@ const uint32_t sns_period_table[MM3_NUM_REGIMES][MM3_NUM_SENSORS] = {
   {  0UL,    0UL,       0UL,       0UL,       0UL,       0UL,       0UL,         0UL,      500UL    }, /* 11 */
   {  0UL,    50UL,	50UL,	   50UL,      50UL,      50UL,      50UL,       50UL,       50UL    }, /* 12 - testing */
   {  0UL,   100UL,     100UL,	  100UL,     100UL,     100UL,     100UL,      100UL,      100UL    }, /* 13 - testing */
-  {  0UL,   100UL,     100UL,	  100UL,      50UL,     100UL,     100UL,      100UL,       50UL    }, /* 14 - testing */
+  {  0UL, 10000UL,    1000UL,	    0UL,      50UL,       0UL,       0UL,       50UL,       50UL    }, /* 14 - testing */
+  {  0UL,    0UL,       0UL,       0UL,       50UL,       0UL,       0UL,        0UL,       0UL     }, /* 15 */
 };
 
 #endif

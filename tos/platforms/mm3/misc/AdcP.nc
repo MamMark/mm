@@ -38,8 +38,6 @@
 #include "sensors.h"
 
 
-//#define FAKE_ADC
-
 /*
  * Fix me.  This can go down to 2.  check it out later.
  */
@@ -102,7 +100,6 @@ implementation {
   uint8_t vref_state;
   uint8_t vdiff_state;
   const mm3_sensor_config_t *m_config;
-  uint16_t value;
 
 
   /*
@@ -172,7 +169,6 @@ implementation {
 
 
   command error_t Init.init() {
-    value = 0;
     adc_owner  = SNS_ID_NONE;
     req_client = SNS_ID_NONE;
     adc_state  = ADC_IDLE;
@@ -530,9 +526,6 @@ implementation {
     uint16_t result;
     uint16_t t0;
 
-#ifdef FAKE_ADC
-    return ++value;
-#endif
     ifg1[0] = IFG1;
     result = 0;
     if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) || 

@@ -47,6 +47,7 @@ implementation {
     }
     return EBUSY;
   }
+
   event void Resource.granted() {
     error_t e;
     if( (e = call SubSend.send[my_id](my_msg, my_len)) != SUCCESS ) {
@@ -76,6 +77,7 @@ implementation {
 
   default event void Send.sendDone[uint8_t id](message_t* msg, error_t err) {
   }
+
   default command error_t SubSend.send[uint8_t id](message_t *msg, uint8_t len) {
     return FAIL;
   }

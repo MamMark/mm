@@ -64,16 +64,6 @@ implementation {
 #endif
   }
 
-  uint8_t spi_byte_write(uint8_t tx) {
-    if (!U1_TX_EMPTY)
-      call Panic.panic(PANIC_SD, 4, 0, 0, 0, 0);
-    U1TXBUF = tx;
-    while (!U1_RX_RDY) ;
-    U1_CLR_RX;
-    return U1RXBUF;
-  }
-
-
   void sd_put(uint8_t tx_data) {
     uint16_t i;
 
@@ -84,9 +74,9 @@ implementation {
     while ( !(U1_RX_RDY) && i > 0)
       i--;
     if (i == 0)				/* rx timeout */
-      call Panic.panic(PANIC_SD, 5, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 4, 0, 0, 0, 0);
     if (U1_OVERRUN)
-      call Panic.panic(PANIC_SD, 6, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 5, 0, 0, 0, 0);
 
     /* clean out RX buf and the IFG. */
     U1_CLR_RX;
@@ -105,10 +95,10 @@ implementation {
       i--;
 
     if (i == 0)				/* rx timeout */
-      call Panic.panic(PANIC_SD, 7, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 6, 0, 0, 0, 0);
 
     if (U1_OVERRUN)
-      call Panic.panic(PANIC_SD, 8, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 7, 0, 0, 0, 0);
     U1_CLR_RX;
     return(U1RXBUF);
   }
@@ -148,13 +138,13 @@ implementation {
     cmd->stage_count = i;
 
     if (i >= SD_CMD_TIMEOUT) {
-      call Panic.panic(PANIC_SD, 9, i, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 8, i, 0, 0, 0);
       return FAIL;
     }
 
     tmp = sd_get();		/* finish the command */
     if (tmp != 0xff)
-      call Panic.panic(PANIC_SD, 10, tmp, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 9, tmp, 0, 0, 0);
     return SUCCESS;
   }
 
@@ -182,7 +172,7 @@ implementation {
     cmd = &sd_cmd;
     rsp_len = cmd->rsp_len & RSP_LEN_MASK;
     if (rsp_len != 1 && rsp_len != 2 && rsp_len != 5) {
-      call Panic.panic(PANIC_SD, 11, rsp_len, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 10, rsp_len, 0, 0, 0);
       return FAIL;
     }
     if (SD_CSN == 0)		// already selected
@@ -195,7 +185,7 @@ implementation {
       if (tmp) {
 	/* failed, how odd */
 	SD_CSN = 1;
-	call Panic.panic(PANIC_SD, 13, tmp, 0, 0, 0);
+	call Panic.panic(PANIC_SD, 11, tmp, 0, 0, 0);
 	return FAIL;
       }
     } else
@@ -228,7 +218,7 @@ implementation {
     /* Just bail if we never got a response */
     if (i >= SD_CMD_TIMEOUT) {
       /* stage 2 bail, timeout */
-      call Panic.panic(PANIC_SD, 14, tmp, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 12, tmp, 0, 0, 0);
       SD_CSN = 1;
       return FAIL;
     }
@@ -241,7 +231,7 @@ implementation {
     cmd->stage = 3;
     tmp = sd_get();
     if (tmp != 0xff) {
-      call Panic.panic(PANIC_SD, 15, tmp, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 13, tmp, 0, 0, 0);
     }
 
     /* If the response is a "busy" type (R1B), then there's some
@@ -365,7 +355,7 @@ implementation {
     cmd->cmd     = SD_FORCE_IDLE;
     cmd->rsp_len = SD_FORCE_IDLE_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 16, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 14, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -377,7 +367,7 @@ implementation {
       cmd->cmd     = SD_GO_OP;
       cmd->rsp_len = SD_GO_OP_R;
       if (sd_send_command()) {
-	call Panic.panic(PANIC_SD, 17, 0, 0, 0, 0);
+	call Panic.panic(PANIC_SD, 15, 0, 0, 0, 0);
 	return FAIL;
       }
 //    } while ((cmd->rsp[0] & MSK_IDLE) == MSK_IDLE && i < SD_IDLE_WAIT_MAX);
@@ -390,19 +380,19 @@ implementation {
     cmd->cmd     = SD_SEND_OCR;
     cmd->rsp_len = SD_SEND_OCR_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 18, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 16, 0, 0, 0, 0);
       return FAIL;
     }
 
     /* At a very minimum, we must allow 3.3V. */
     if ((cmd->rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
-      call Panic.panic(PANIC_SD, 19, cmd->rsp[2], 0, 0, 0);
+      call Panic.panic(PANIC_SD, 17, cmd->rsp[2], 0, 0, 0);
       return FAIL;
     }
 
     /* Set the block length */
     if (sd_set_blocklen(SD_BLOCKSIZE)) {
-      call Panic.panic(PANIC_SD, 20, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 18, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -425,13 +415,13 @@ implementation {
     cmd = &sd_cmd;
     sd_wait_notbusy();
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 21, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 19, 0, 0, 0, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 22, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 20, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -494,8 +484,7 @@ implementation {
    * o: none
    */
 
-  void
-    sd_compute_crc(uint8_t *data) {
+  void sd_compute_crc(uint8_t *data) {
     //    data[512] = 0;
     //    data[513] = 0;
   }
@@ -505,7 +494,7 @@ implementation {
    * sd_read_data_dma: read data from the SD after sending a command
    */
 
-  int sd_read_data_dma(uint16_t data_len, uint8_t *data) {
+  error_t sd_read_data_dma(uint16_t data_len, uint8_t *data) {
     uint16_t i, crc;
     uint8_t  tmp, idle_byte;
     sd_cmd_blk_t *cmd;
@@ -516,7 +505,7 @@ implementation {
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 23, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 21, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -571,10 +560,9 @@ implementation {
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
     if (sd_check_crc(data, data_len, crc)) {
-      call Panic.panic(PANIC_SD, 24, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 22, 0, 0, 0, 0);
       return FAIL;
     }
-
     return SUCCESS;
   }
 
@@ -601,19 +589,22 @@ implementation {
     return FAIL;
   }
 
-  command error_t SD.write_nodma(uint32_t blockaddr, void *data) {
+  command error_t SD.write_direct(uint32_t blockaddr, void *data) {
     return FAIL;
   }
 
-  /* SD.read_nodma: read a 512 byte block from the SD
+  /*
+   * SD.read_direct: read a 512 byte block from the SD
    *
    * input:  blockaddr     block to read.  (max 23 bits)
    *         data          pointer to data buffer
    * output: rtn           0 call successful, err otherwise
    */
 
-  command error_t SD.read_nodma(uint32_t blockaddr, void *data) {
+  command error_t SD.read_direct(uint32_t blockaddr, void *data) {
     sd_cmd_blk_t *cmd;
+    error_t err;
+    uint8_t *d;
 
     cmd = &sd_cmd;
     /* Adjust the block address to a byte address */
@@ -625,7 +616,25 @@ implementation {
     /* Need to add size checking, 0 = success */
     cmd->cmd     = SD_READ_BLOCK;
     cmd->rsp_len = SD_READ_BLOCK_R;
-    return(sd_read_data_direct(SD_BLOCKSIZE, data));
+    err = sd_read_data_direct(SD_BLOCKSIZE, data);
+    if (err) {
+      call Panic.panic(PANIC_SD, 23, err, 0, 0, 0);
+      return(err);
+    }
+
+    /*
+     * sometimes.  not sure of the conditions.  When using dma
+     * the first byte will show up as 0xfe (something having
+     * to do with the cmd response).  Check for this and if seen
+     * flag it and re-read the buffer.  We don't keep trying so it
+     * had better work.
+     */
+    d = data;
+    if (*d == 0xfe) {
+      call Panic.panic(PANIC_SD, 24, *d, 0, 0, 0);
+      err = sd_read_data_direct(SD_BLOCKSIZE, data);
+    }
+    return err;
   }
 
 
@@ -639,7 +648,7 @@ implementation {
    * the blocklen back to 512.  Otherwise things get weird.  (timeouts)
    */
 
-  int sd_read8(uint32_t blockaddr, uint8_t *data) {
+  error_t sd_read8(uint32_t blockaddr, uint8_t *data) {
     sd_cmd_blk_t *cmd;
 
     cmd = &sd_cmd;
@@ -662,7 +671,7 @@ implementation {
    * Clears DMA Int Enable.
    */
 
-  int sd_start_write(uint32_t blockaddr, uint8_t *data) {
+  error_t sd_start_write(uint32_t blockaddr, uint8_t *data) {
     uint8_t  tmp;
     sd_cmd_blk_t *cmd;
 
@@ -817,7 +826,7 @@ implementation {
   }
 
 
-  error_t sd_write_block(uint32_t blockaddr, uint8_t *data) {
+  error_t sd_write_direct(uint32_t blockaddr, uint8_t *data) {
     error_t rtn;
 
     rtn = sd_start_write(blockaddr, data);
@@ -843,18 +852,20 @@ implementation {
 
 
   /*
-    sd_wait_notbusy: make sure card isn't busy
-
-    synchronously waits until any pending block transfers
-    are finished.
-
-    Note that sd_read_block() and sd_write_block() already call this
-    function internally before attempting a new transfer, so there are
-    only two times when a user would need to use this function.
-    1) When the processor will be shutting down. All pending
-    writes should be finished first.   And 2) When the user needs the
-    results of an sd_read_block() call right away.
-  */
+   * sd_wait_notbusy: make sure card isn't busy
+   *
+   * synchronously waits until any pending block transfers
+   * are finished.
+   *
+   * Note that sd_read_block() and sd_write_block() already call this
+   * function internally before attempting a new transfer, so there are
+   * only two times when a user would need to use this function.
+   *
+   * 1) When the processor will be shutting down. All pending
+   *    writes should be finished first.
+   * 2) When the user needs the results of an sd_read_block() call right away.
+   *
+   */
 
   void sd_wait_notbusy() {
     uint16_t i;
