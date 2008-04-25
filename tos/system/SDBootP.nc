@@ -55,8 +55,11 @@ implementation {
     for(i = 0; i < 5000UL; i++)
       call Leds.led0Toggle();
       
-    //Singal booted when done.
+    //Signal booted when done.
     signal BlockingBoot.booted();
+    while (1) {
+      nop();
+    }
   }
 }
 
