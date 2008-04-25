@@ -34,6 +34,11 @@ implementation {
   uint8_t my_len;
   uint8_t my_id;
   error_t busy = FALSE;
+  
+  void release() {
+    busy = FALSE;
+    call Resource.release();
+  }
 
   command error_t Send.send[uint8_t id](message_t *msg, uint8_t len) {
     if(busy == FALSE) {
@@ -51,19 +56,19 @@ implementation {
   event void Resource.granted() {
     error_t e;
     if( (e = call SubSend.send[my_id](my_msg, my_len)) != SUCCESS ) {
-      busy = FALSE;
+      release();
       signal Send.sendDone[my_id](my_msg, e);
     }
   }
 
   event void SubSend.sendDone[uint8_t id](message_t* msg, error_t err) {
-    busy = FALSE;
+    release();
     signal Send.sendDone[id](msg, err);
   }
   
   command error_t Send.cancel[uint8_t id](message_t* msg) {
     error_t e = call SubSend.cancel[id](msg);
-    if(e == SUCCESS) busy = FALSE;
+    if(e == SUCCESS) release();
     return e;
   }
 
