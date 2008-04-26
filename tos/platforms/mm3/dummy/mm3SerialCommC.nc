@@ -19,13 +19,13 @@ implementation {
   components new SerialAMSenderC(AM_MM3_DATA);
   components new AMQueueImplP(MM3_NUM_SENSORS), SerialActiveMessageC;
 
-  Send = mm3SerialCommP;
+  Send = AMQueueImplP;
   AMPacket = SerialAMSenderC;
   Packet = SerialAMSenderC;
   SplitControl = SerialActiveMessageC;
   
-  mm3SerialCommP.SubSend -> AMQueueImplP;
-  AMQueueImplP.AMSend[AM_MM3_DATA] -> SerialAMSenderC;
+  mm3SerialCommP.SubAMSend[AM_MM3_DATA] -> SerialAMSenderC;
+  AMQueueImplP.AMSend -> mm3SerialCommP.AMSend;
   AMQueueImplP.Packet -> SerialAMSenderC;
   AMQueueImplP.AMPacket -> SerialAMSenderC;
   
