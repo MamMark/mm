@@ -579,17 +579,8 @@ implementation {
     i = (cmd->rsp[0] << 8) | cmd->rsp[1];
     return(i);
   }
-
-
-  command error_t SD.read(uint32_t blockaddr, void *data) {
-    return FAIL;
-  }
-
+  
   command error_t SD.write(uint32_t blockaddr, void *data) {
-    return FAIL;
-  }
-
-  command error_t SD.write_direct(uint32_t blockaddr, void *data) {
     return FAIL;
   }
 
@@ -601,7 +592,7 @@ implementation {
    * output: rtn           0 call successful, err otherwise
    */
 
-  command error_t SD.read_direct(uint32_t blockaddr, void *data) {
+  command error_t SD.read(uint32_t blockaddr, void *data) {
     sd_cmd_blk_t *cmd;
     error_t err;
     uint8_t *d;

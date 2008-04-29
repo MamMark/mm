@@ -24,4 +24,9 @@ implementation {
 
   components HplMM3AdcC;
   StreamStorageP.HW -> HplMM3AdcC;
+  
+  components new Msp430Spi1C() as SpiC;
+  components new BlockingResourceC();
+  BlockingResourceC.Resource -> SpiC;
+  StreamStorageP.BlockingResource -> BlockingResourceC;
 }

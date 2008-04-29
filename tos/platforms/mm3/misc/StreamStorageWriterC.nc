@@ -33,31 +33,26 @@
  * Author: Kevin Klues (klueska@cs.stanford.edu)
  *
  */
+ 
+#include "stream_storage.h"
 
-
-configuration SDBootC {
-  provides {
-    interface Boot as SDBoot;
-  }
-  uses {
-    interface Boot;
-  }
-}
+configuration StreamStorageWriterC {}
 implementation {
-  components new BlockingBootC();
-  components SDBootP;
-  
-  Boot = SDBootP.MainBoot;
-  BlockingBootC -> SDBootP.BlockingBoot;
-  SDBoot = BlockingBootC;
-  
+  components MainC;
   components StreamStorageC;
-  SDBootP.SSControl -> StreamStorageC;
+  components StreamStorageWriterP;
   
-  components new ThreadC(200);
-  SDBootP.Thread -> ThreadC;
+  MainC.SoftwareInit -> StreamStorageWriterP;
+  StreamStorageWriterP.StreamStorage -> StreamStorageC;
   
-  components LedsC;
-  SDBootP.Leds -> LedsC;
+  //Not sure of the stack size needed here
+  //If things seems to break make it bigger...
+  components new ThreadC(300); 
+  StreamStorageWriterP.Thread -> ThreadC;
+  
+  components new QueueC(ss_handle_t*, SS_NUM_BUFS);
+  StreamStorageWriterP.Queue -> QueueC;
+    
+  components SemaphoreC;
+  StreamStorageWriterP.Semaphore -> SemaphoreC;
 }
-

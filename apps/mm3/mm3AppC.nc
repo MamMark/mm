@@ -27,7 +27,12 @@ implementation {
    * start when regimeChange() is signalled.
    */
   components BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
-
+  
+  /*
+   * Include Threaded implementation of the SD Stream Storage Writer
+   */
+  components StreamStorageWriterC;
+  
   components HplMM3AdcC;
   mm3C.HW -> HplMM3AdcC;
 
@@ -35,12 +40,8 @@ implementation {
   mm3C.Adc -> AdcC.Adc[SNS_ID_NONE];
 
 #ifdef TEST_SS
-  components SDC, HplMsp430Usart1C as UsartC;
-  mm3C.SD -> SDC;
+  components HplMsp430Usart1C as UsartC;
   mm3C.Usart -> UsartC;
-
-  components StreamStorageC;
-  mm3C.SSControl -> StreamStorageC;
 #endif
 
 //  components GPSByteCollectC;

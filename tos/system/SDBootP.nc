@@ -39,6 +39,7 @@ module SDBootP {
     interface Boot as BlockingBoot;
   }
   uses {
+    interface StdControl as SSControl;
     interface Boot as MainBoot;
     interface Thread;
     interface Leds;
@@ -52,14 +53,11 @@ implementation {
   //Do thread related SD stuff here....
   event void Thread.run(void* arg) {
     uint32_t i;
-    for(i = 0; i < 5000UL; i++)
+    for(i = 0; i < 50000UL; i++)
       call Leds.led0Toggle();
       
     //Signal booted when done.
     signal BlockingBoot.booted();
-    while (1) {
-      nop();
-    }
   }
 }
 

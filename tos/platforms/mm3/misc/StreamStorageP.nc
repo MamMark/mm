@@ -54,6 +54,7 @@ module StreamStorageP {
     interface StreamStorage as SS;
   }
   uses {
+    interface BlockingResource;
     interface Panic;
     interface SD;
     interface HplMM3Adc as HW;
@@ -156,7 +157,7 @@ implementation {
   error_t ss_read_blk_fail(uint32_t blk, uint8_t *buf) {
     error_t err;
 
-    err = call SD.read_direct(blk, buf);
+    err = call SD.read(blk, buf);
     if (err) {
       call Panic.panic(PANIC_SS, 13, err, 0, 0, 0);
       return err;
@@ -323,12 +324,8 @@ implementation {
     ssc.in_index++;
     if (ssc.in_index >= SS_NUM_BUFS)
       ssc.in_index = 0;
+    return SUCCESS;
   }
-
-
-  event   void    SD.readDone(uint32_t blk, void *buf) {}
-  event   void    SD.writeDone(uint32_t blk, void *buf) {}
-
 
 #ifdef notdef
   void ss_machine(msg_event_t *msg) {

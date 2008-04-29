@@ -7,6 +7,8 @@
  * @author Eric Decker
  */
 
+#include "stream_storage.h"
+
 interface StreamStorage {
   /*
    * StreamStorage provides an interface to sector orientated 512 byte
@@ -48,4 +50,11 @@ interface StreamStorage {
    *   <li>handle if buffer available.  Buffer marked allocated.
    */
   command ss_handle_t* get_free_handle();
+
+  /**
+   * signalled when an underlying buffer is ready to be flushed.
+   *
+   * @param handle address of the ss_handle ready to be flushed.
+   */  
+  event void buffer_ready(ss_handle_t *handle);
 }

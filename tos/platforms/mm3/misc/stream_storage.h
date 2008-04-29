@@ -10,6 +10,8 @@
 #ifndef _STREAM_STORAGE_H
 #define _STREAM_STORAGE_H
 
+#include "sd.h"
+
 /* needs to agree with SECTOR_SIZE and SD_BLOCKSIZE
    yeah it is stupid and ugly
 

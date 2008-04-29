@@ -33,31 +33,39 @@
  * Author: Kevin Klues (klueska@cs.stanford.edu)
  *
  */
-
-
-configuration SDBootC {
+ 
+module StreamStorageWriterP {
   provides {
-    interface Boot as SDBoot;
+    interface Init;
   }
   uses {
-    interface Boot;
+    interface Queue<ss_handle_t*>;
+    interface Thread;
+    interface StreamStorage;
+    interface Semaphore;
   }
 }
-implementation {
-  components new BlockingBootC();
-  components SDBootP;
-  
-  Boot = SDBootP.MainBoot;
-  BlockingBootC -> SDBootP.BlockingBoot;
-  SDBoot = BlockingBootC;
-  
-  components StreamStorageC;
-  SDBootP.SSControl -> StreamStorageC;
-  
-  components new ThreadC(200);
-  SDBootP.Thread -> ThreadC;
-  
-  components LedsC;
-  SDBootP.Leds -> LedsC;
-}
 
+implementation {
+  semaphore_t sem;
+  
+  command error_t Init.init() {
+    call Semaphore.reset(&sem, 0);
+    call Thread.start(NULL);
+    return SUCCESS;
+  }
+  
+  event void Thread.run(void* arg) {
+    ss_handle_t* current_handle;
+    for(;;) {
+      call Semaphore.acquire(&sem);
+      current_handle = call Queue.dequeue();
+      call StreamStorage.flush_handle(current_handle);
+    }
+  }
+  
+  event void StreamStorage.buffer_ready(ss_handle_t *handle) {
+    call Queue.enqueue(handle);
+    call Semaphore.release(&sem);
+  }
+}

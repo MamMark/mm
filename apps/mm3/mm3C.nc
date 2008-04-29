@@ -14,7 +14,7 @@ uint16_t res[NUM_RES];
 #endif
 
 //noinit uint8_t use_regime;
-uint8_t use_regime = 15;
+uint8_t use_regime = 2;
 
 #ifdef TEST_GPS
 #define SSIZE 1024
@@ -39,9 +39,6 @@ module mm3C {
 
 #ifdef TEST_SS
     interface HplMsp430Usart as Usart;
-    interface StreamStorage as SS;
-    interface StdControl as SSControl;
-    interface SD;
 #endif
 
 #ifdef TEST_GPS
@@ -137,14 +134,8 @@ implementation {
 #ifdef TEST_SS
     call HW.sd_on();
     call Usart.setModeSpi(&config);
-    call SSControl.start();
 #endif
   }
-
-#ifdef TEST_SS
-  event   void    SD.readDone(uint32_t blk, void *buf) {}
-  event   void    SD.writeDone(uint32_t blk, void *buf) {}
-#endif
 
   event void Adc.configured() {
     call Panic.panic(PANIC_MISC, 1, 0, 0, 0, 0);

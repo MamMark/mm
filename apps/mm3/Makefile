@@ -1,4 +1,5 @@
 #COMPONENT=SharedResourceDemoAppC
 COMPONENT=mm3AppC
+PFLAGS += -DTEST_SS
 
 include $(MAKERULES)
