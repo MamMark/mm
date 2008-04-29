@@ -52,9 +52,7 @@ implementation {
   
   //Do thread related SD stuff here....
   event void Thread.run(void* arg) {
-    uint32_t i;
-    for(i = 0; i < 50000UL; i++)
-      call Leds.led0Toggle();
+    call SSControl.start();
       
     //Signal booted when done.
     signal BlockingBoot.booted();
