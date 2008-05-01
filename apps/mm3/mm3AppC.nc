@@ -53,5 +53,9 @@ implementation {
 #ifdef TEST_GPS
   components LocalTimeMilliC;
   mm3C.LocalTime -> LocalTimeMilliC;
+
+  components mm3SerialP, HplMsp430Usart1C;
+  mm3C.SerialConfig -> mm3SerialP;
+  mm3SerialP.Usart -> HplMsp430Usart1C;
 #endif
 }

@@ -4,9 +4,6 @@
 #include "panic.h"
 #include "msp430hardware.h"
 
-//#define TEST_GPS
-//#define TEST_SS
-
 /*
  * for some reason the standard msp430 include files don't define
  * U1IFG but do define U0IFG.
@@ -35,9 +32,9 @@
 #define DMA_SRC_NC    DMASRCINCR_0
 #define DMA_SRC_INC   DMASRCINCR_3
 
-#define DMA1_TSEL_U1RX (9<<4)	/* DMA chn 1, URXIFG1 */
 #define DMA0_TSEL_U1RX (9<<0)	/* DMA chn 0, URXIFG1 */
 #define DMA0_TSEL_U1TX (10<<0)	/* DMA chn 0, UTXIFG1 */
+#define DMA1_TSEL_U1RX (9<<4)	/* DMA chn 1, URXIFG1 */
 
 
 /*
@@ -53,34 +50,32 @@
  *	    cc: fifop, fifo, sfd, vren, rstn (these aren't assigned, where to put them)
  *	  (cc2420 power down?)
  *
- *      gps goes to single rx line and power up/down
- *	cc2420 (spi1), sd (spi1), and serial direct connect (uart1) on same usart.
- *
- *	gps pwr?
+ *      gps is wired to a mux and then to uart1.  And power up/down
+ *	cc2420 (spi1), sd (spi1), gps, and serial direct connect (uart1) on same usart.
  *
  * port 1.0	O	d_mux_a0		port 4.0	O	gain_mux_a0
  *       .1	O	d_mux_a1		      .1	O	gain_mux_a1
  *       .2	O	mag_degauss_1		      .2	O	vdiff_off
- *       .3	O	speed_off		      .3	O	vref_off
+ *       .3	I (0pO)	gps_rx  		      .3	O	vref_off
  *       .4	O	mag_deguass_2		      .4	O	solar_chg_on
  *       .5	O	press_res_off		      .5	O	extchg_battchk
  *       .6	O	salinity_off		      .6	O	gps_off
- *       .7	O	press_off		      .7	O	cc2420_vref (rf232_pwr off)
+ *       .7	O	press_off		      .7	O	led_g (rf232_pwr off)
  *
  * port 2.0	O	U8_inhibit		port 5.0	O	sd_pwr_off (1 = off)
- *       .1	O	accel_wake		      .1	1sO	sd_di (simo1, spi1)  (1pI, sd off)
- *       .2	O	salinity_polarity	      .2	1sI	sd_do (somi1, spi1)  (1pI, sd off)
- *       .3	O	u12_inhibit		      .3	1sO	sd_clk (uclk1, spi1) (1pI, sd off)
- *       .4	O	s_mux_a0		      .4	O	sd_csn (cs low true) (1pI, sd off)
+ *       .1	O	accel_wake		      .1	0sO	sd_di (simo1, spi1)  (0pO, sd off)
+ *       .2	O	salinity_polarity	      .2	0sI	sd_do (somi1, spi1)  (0pO, sd off)
+ *       .3	O	u12_inhibit		      .3	0sO	sd_clk (uclk1, spi1) (0pO, sd off)
+ *       .4	O	s_mux_a0		      .4	O	sd_csn (cs low true) (0pO, sd off)
  *       .5	O	s_mux_a1		      .5	O	rf_beeper_off
  *       .6	O	adc_cnv			      .6	O	ser_sel_a0
- *       .7	I	gps_rx			      .7	O	ser_sel_a1  (cc2420_reset)
+ *       .7	I	adc_da0			      .7	O	ser_sel_a1  (cc2420_reset)
  *
  * port 3.0	O	cc2420_csn		port 6.0	O	cc2420_fifop
  *       .1	O	s_mux_a2		      .1	O	cc2420_sfd
  *       .2	0sI	adc_somi (spi0)		      .2	I	cc2420_fifo
  *       .3	0sO	adc_clk (uclk0, spi0)	      .3	O	telltale (cc2420_cca)
- *       .4	O	tmp_on			      .4	O	led_g
+ *       .4	OpO	tmp_on			      .4	O	speed_off
  *       .5	1pO	adc_sdi (not part of spi)     .5	O	mag_xy_off
  *			  (mode control in, adc)
  *       .6	1uO	ser_txd (uart1)		      .6	O	led_y
@@ -108,28 +103,50 @@
  * 2.7 is an input coming from the ADC that indicates the conversion
  * is complete.
  *
- * usart 1 is shared between the sd (spi), radio (spi), and direct connect
- * (uart).  The radio is mutually exclusive with direct connect.
+ * usart 1 is shared between the sd (spi), radio (spi), gps, and direct connect
+ * (gps and direct connect use the uart).  The radio is mutually exclusive with
+ * direct connect.
  *
- * Serial direct connect p3.6-7.  On prototype 1 it goes through an external
- * multiplexor that must be set up to enable direct connect serial.  This
- * will go away on the next h/w rev.
+ * uart1 is used to communicate with the direct connect cradle or with the gps.
+ * The gps also connects to p1.3 which allows an interrupt to be generated when
+ * the gps starts to send data.  This pin can also be used in conjunction with
+ * Timer A to implement a s/w uart.  Which port is connected is determined by
+ * the settings on a h/w multiplexor.
  */
+
+  static volatile struct {
+    uint8_t not_used        : 3;
+    uint8_t gps_rx_in       : 1;
+    uint8_t not_used_1      : 4;
+  } mmP1in asm("0x0020");
+
+#define GPS_RX  mmP1in.gps_rx_in
+TOSH_ASSIGN_PIN(GSP_RXx, 1, 3);
+
+/*
+ * SET_GPS_RX_IN will set the direction of the gps_rx pin to input.  When the
+ * gps is on this is where it should be.
+ */
+
+#define SET_GPS_RX_IN do { P1DIR &= ~0x08; } while (0)
+
+/*
+ * SET_GPS_RX_OUT_0 will set the direction of gps_rx to output.
+ * it is already assumed that the value output will be 0 from
+ * initilization.
+ */
+#define SET_GPS_RX_OUT_0 do { P1DIR |= 0x08; } while (0)
+
 
   static volatile struct {
     uint8_t dmux	    : 2;
     uint8_t mag_deguass1    : 1;
-    uint8_t speed_off       : 1;
+    uint8_t gps_rx_out      : 1;
     uint8_t mag_deguass2    : 1;
     uint8_t press_res_off   : 1;
     uint8_t salinity_off    : 1;
     uint8_t press_off       : 1;
   } mmP1out asm("0x0021");
-
-  static volatile struct {
-    uint8_t filler	    : 7;
-    uint8_t gps_rx	    : 1;
-  } mmP2in asm("0x0028");
 
   static volatile struct {
     uint8_t u8_inhibit		: 1;
@@ -142,10 +159,8 @@
   } mmP2out asm("0x0029");
 
 #define ADC_CNV mmP2out.adc_cnv
-#define GPS_RX  mmP2in.gps_rx
 
 TOSH_ASSIGN_PIN(ADCxCNV, 2, 6);
-TOSH_ASSIGN_PIN(GSP_RXx, 2, 7);
 
   static volatile struct {
     uint8_t			: 1;
@@ -187,6 +202,8 @@ TOSH_ASSIGN_PIN(ADCxSDI, 3, 5);
   } mmP5out asm("0x0031");
 
 #define SD_CSN mmP5out.sd_csn
+#define SD_PWR_ON  (mmP5out.sd_pwr_off = 0)
+#define SD_PWR_OFF (mmP5out.sd_pwr_off = 1)
 
 TOSH_ASSIGN_PIN(SDxSDI, 5, 1);
 TOSH_ASSIGN_PIN(SDxSDO, 5, 2);
@@ -194,21 +211,21 @@ TOSH_ASSIGN_PIN(SDxCLK, 5, 3);
 TOSH_ASSIGN_PIN(SDxCSN, 5, 4);
 
 /*
- * SET_SD_PINS_SPI will set the SPI1/SD control pins to the following:
- *
- * 5.4 CSN switch to port Output (value assumed to be 1 for deselected)
- * 5.1-3 SDI, SDO, CLK set to SPI Module.
+ * SD_PINS_OUT_0 will set SPI1/SD data pins to output 0.  (no longer
+ * connected to the SPI module.  The values of these pins is assumed to be 0.
+ * Direction of the pins is assumed to be output.  So the only thing that
+ * needs to happen is changing from ModuleFunc to PortFunc.
  */
-#define SET_SD_PINS_SPI   do { P5SEL |= 0x0e; P5DIR |= 0x10; } while (0)
+
+#define SD_PINS_OUT_0 do { P5SEL &= ~0x0e; } while (0)
 
 /*
- * SET_SD_PINS_INPUT will set the SPI1/SD control pins to be input so
- * we don't power the SD chip when powered off.
+ * SD_PINS_SPI will connect the 3 data lines on the SD to the SPI.
  *
- * 5.4 CSN switch to port Input (value assumed to be 1).
- * 5.1-3 SDI, SDO, CLK set to Port Input.
+ * 5.4 CSN left alone (already assumed to be properly set)
+ * 5.1-3 SDI, SDO, CLK set to SPI Module.
  */
-#define SET_SD_PINS_INPUT do { P5SEL &= ~0x0e; P5DIR &= ~0x10; } while (0)
+#define SD_PINS_SPI   do { P5SEL |= 0x0e; } while (0)
 
   enum {
     SER_SEL_CRADLE =	0,
@@ -223,7 +240,7 @@ TOSH_ASSIGN_PIN(SDxCSN, 5, 4);
     uint8_t			: 1;
     uint8_t			: 1;
     uint8_t tell		: 1;
-    uint8_t led_g		: 1;
+    uint8_t speed_off		: 1;
     uint8_t mag_xy_off		: 1;
     uint8_t led_y		: 1;
     uint8_t mag_z_off		: 1;
@@ -301,16 +318,16 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
  * at power up.
  *
  * Direction: 0 for input, 1 for output.
- * Selects:   0 for port function, 1 for module function.
+ * Selects:   0 for port, 1 for module function.
  */
 
 
 /*
  * d_mux = 0 (inhibits will be high, u8/u12_inhibit)
- * all pwr bits high (off), degauss = 0
+ * all pwr bits high (off), gps_rx_out 0 (gps off), degauss = 0
  */
 #define P1_BASE_DIR	0xff
-#define P1_BASE_VAL	0xe8
+#define P1_BASE_VAL	0xe0
 
 /*
  * s_mux = 0, accel sleeping, u8/12 inhibit
@@ -334,17 +351,17 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
 #define P3_BASE_VAL	0x60
 #define P3_BASE_SEL	0x0c
 
-/* gps/rf232 off, no batt chk, no solar, vref/vdiff off, g_mux 0 */
+/* gps off, no batt chk, no solar, vref/vdiff off, g_mux 0 */
 #define P4_BASE_DIR	0xff
 #define P4_BASE_VAL	0xcc
 
 /*
- * ser_sel 0 (direct connect), beeper off, sd bits xpI, sd pwr off 1pI
- * (when powered off we dont want to be output to avoid powering the
- * chip via the pin).
+ * ser_sel 0 (direct connect), beeper off, sd bits 0pO, sd pwr off 1pO
+ * (when powered off we dont want to power the chip via any of its other
+ * pins).  So set any pins connected to the SD to output 0.
  */
-#define P5_BASE_DIR	0xe1
-#define P5_BASE_VAL	0x3f
+#define P5_BASE_DIR	0xff
+#define P5_BASE_VAL	0x21
 
 /* mag pwr off */
 #define P6_BASE_DIR	0xff

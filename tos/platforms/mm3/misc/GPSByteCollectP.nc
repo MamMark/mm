@@ -49,8 +49,8 @@ module GPSByteCollectP {
     interface StdControl as GPSControl;
   }
   uses {
-    interface GpioInterrupt;
-    interface GeneralIO;
+    interface GpioInterrupt as gpsRxInt;
+    interface GeneralIO as gpsRx;
     interface HplMM3Adc as HW;
     interface Panic;
     interface Timer<TMilli> as BitTimer;
@@ -84,13 +84,13 @@ implementation {
     /*
      * Start a delay timer.  When it goes off then enable the interrupt.
      */
-    call GpioInterrupt.enableFallingEdge();
+    call gpsRxInt.enableFallingEdge();
     build_byte = 0;
     return SUCCESS;
   }
 
   command error_t GPSControl.stop() {
-    call GpioInterrupt.disable();
+    call gpsRxInt.disable();
     call HW.gps_off();
     state = GPSB_OFF;
     return SUCCESS;
@@ -106,7 +106,7 @@ implementation {
      * the low order.
      */
 
-    new_bit = call GeneralIO.get();
+    new_bit = call gpsRx.get();
     if (bit > 7) {
       /*
        * doing stop bit.  check and finish up
@@ -114,7 +114,7 @@ implementation {
        *
        * re-enable the interrupt
        */
-      call GpioInterrupt.enableFallingEdge();
+      call gpsRxInt.enableFallingEdge();
 //    signal GPSByte.byte_avail(build_byte);
       state = GPSB_START_BIT;
       if (new_bit == 0)
@@ -128,10 +128,10 @@ implementation {
     call BitTimer.startOneShot(GPS_1_BITTIME);
   }
 
-  async event void GpioInterrupt.fired() {
+  async event void gpsRxInt.fired() {
     uint8_t *bp;
 
-    call GpioInterrupt.disable();
+    call gpsRxInt.disable();
 
     call BitTimer.startOneShot(GPS_15_BITTIME);
     state = GPSB_DATA;
@@ -140,42 +140,42 @@ implementation {
 
 
     bp = Xtemp;
-    *(bp++) = call GeneralIO.get();
-    while (call GeneralIO.get()) {
+    *(bp++) = call gpsRx.get();
+    while (call gpsRx.get()) {
       nop();
     }
-    *(bp++) = call GeneralIO.get();
+    *(bp++) = call gpsRx.get();
     uwait(109);
-    *(bp++) = call GeneralIO.get();
+    *(bp++) = call gpsRx.get();
     uwait(105);
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
-    *(bp++) = call GeneralIO.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
+    *(bp++) = call gpsRx.get();
     nop();
   }
 }

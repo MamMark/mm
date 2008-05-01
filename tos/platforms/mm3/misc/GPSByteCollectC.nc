@@ -45,13 +45,13 @@ implementation {
 
   components new Msp430GpioC() as GPSBitC;
   components HplMsp430GeneralIOC as GeneralIOC;
-  GPSBitC -> GeneralIOC.Port27;
-  GPSByteCollectP.GeneralIO -> GPSBitC;
+  GPSBitC -> GeneralIOC.Port13;
+  GPSByteCollectP.gpsRx -> GPSBitC;
 
   components new Msp430InterruptC() as InterruptGPSBitC;
   components HplMsp430InterruptC as InterruptC;
-  InterruptGPSBitC.HplInterrupt -> InterruptC.Port27;
-  GPSByteCollectP.GpioInterrupt -> InterruptGPSBitC;
+  InterruptGPSBitC.HplInterrupt -> InterruptC.Port13;
+  GPSByteCollectP.gspRxInt -> InterruptGPSBitC;
 
   components HplMM3AdcC;
   GPSByteCollectP.HW -> HplMM3AdcC;

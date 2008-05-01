@@ -9,6 +9,11 @@ module mm3SerialP {
   provides {
     interface StdControl;
     interface Msp430UartConfigure;
+
+    interface ResourceConfigure;
+  }
+  uses {
+    interface HplMsp430Usart as Usart;
   }
 }
 implementation {
@@ -71,6 +76,13 @@ enum {
 
   async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
     return &mm3_direct_serial_config;
+  }
+
+  async command void ResourceConfigure.configure() {
+    call Usart.setModeUart(&mm3_direct_serial_config);
+  }
+
+  async command void ResourceConfigure.unconfigure() {
   }
   
 }

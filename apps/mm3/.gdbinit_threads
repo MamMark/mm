@@ -14,13 +14,14 @@ b SchedulerBasicP.nc:137
 b SchedulerBasicP.nc:134
 
 #mcu sleep
-b TinyThreadSchedulerP.nc:114
+b TinyThreadSchedulerP.nc:92
 
 #thread dispatch
 b TinyThreadSchedulerP.nc:78
 
 #b VirtualizeTimerC.nc:81
-#dis
+
+dis
 
 b PanicP.nc:42
 comm

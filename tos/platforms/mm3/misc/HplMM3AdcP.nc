@@ -156,11 +156,11 @@ implementation {
   }
 
   command void HW.speed_on() {
-    mmP1out.speed_off = 0;
+    mmP6out.speed_off = 0;
   }
 
   command void HW.speed_off() {
-    mmP1out.speed_off = 1;
+    mmP6out.speed_off = 1;
   }
 
   command void HW.mag_on() {
@@ -183,49 +183,49 @@ implementation {
    * assumes pin state as follows:
    *
    *   p5.0 sd_pwr_off	1pO
-   *   p5.1 sd_mosi	1pI
-   *   p5.2 sd_miso	1pI
-   *   p5.3 sd_sck	1pI
-   *   p5.4 sd_deselect 1pI
+   *   p5.1 sd_mosi	0pO
+   *   p5.2 sd_miso	0pO
+   *   p5.3 sd_sck	0pO
+   *   p5.4 sd_csn      0pO
    *
-   *   power up
-   *   sd_csn  1pO (holds csn high, deselected)
+   *   sd_csn  1pO (holds csn high, deselected) (starts to power).
    *   set pins to Module (mosi, miso, and sck)
+   *   power up
    */
 
   command void HW.sd_on() {
     if (!call HW.isSDPowered()) { // if not powered, bring it up
-      mmP5out.sd_csn = 1;	// make sure deselected.
-      SET_SD_PINS_SPI;		// switch pins over
-      mmP5out.sd_pwr_off = 0;	// turn on.
+      SD_CSN = 1;		// make sure tristated
+      SD_PINS_SPI;		// switch pins over
+      SD_PWR_ON;		// turn on.
     }
   }
 
   /*
-   * turn sd_off and switch pins back to input so we don't power the
+   * turn sd_off and switch pins back to port (0pO) so we don't power the
    * chip prior to powering it off.
    *
    * FIX ME: If the cc2420 spi radio is on the same bus won't this be
    * a problem?  Because these pins will remain on the Module (assigned
    * to the SPI and wiggling but the SD will be powered off and could be
    * powered up and tortured.
-   *
-   * One possibility is anytime either of the chips is powered up both
-   * have to be powered up.  Or could move the radio to the different spi bus.
    */
   command void HW.sd_off() {
     if (call HW.isSDPowered()) {
-      mmP5out.sd_csn = 1;	// tri-state by deselecting
-      SET_SD_PINS_INPUT;	// all data pins to input
-      mmP5out.sd_pwr_off = 1;	// kill power
+      SD_CSN = 1;		// tri-state by deselecting
+      SD_PWR_OFF;		// kill power
+      SD_CSN = 0;		// don't power through CSN
+      SD_PINS_OUT_0;		// all data pins output 0
     }
   }
 
   command void HW.gps_on() {
+    SET_GPS_RX_IN;		// switch back to input.
     mmP4out.gps_off = 0;
   }
 
   command void HW.gps_off() {
     mmP4out.gps_off = 1;
+    SET_GPS_RX_OUT_0;		// set gps_rx pin to output 0 to not pwr
   }
 }

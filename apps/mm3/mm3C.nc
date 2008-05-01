@@ -36,6 +36,7 @@ module mm3C {
 
     interface HplMM3Adc as HW;
     interface Adc;
+    interface ResourceConfigure as SerialConfig;
 
 #ifdef TEST_SS
     interface HplMsp430Usart as Usart;
@@ -76,6 +77,7 @@ implementation {
     uint16_t i;
     bool timing;
 
+    call SerialConfig.configure();
     IE2 = 0;
     timing = 1;
     mmP5out.ser_sel = SER_SEL_GPS;

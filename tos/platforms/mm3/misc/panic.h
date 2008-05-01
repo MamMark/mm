@@ -14,14 +14,14 @@
 #ifndef __PANIC_H__
 #define __PANIC_H__
 
-#define PANIC_ADC	1
-#define PANIC_MISC	2
-#define PANIC_COMM	3
-#define PANIC_SD	4
-#define PANIC_SS	5
+#define PANIC_KERN	1
+#define PANIC_ADC	2
+#define PANIC_MISC	3
+#define PANIC_COMM	4
+#define PANIC_SD	5
+#define PANIC_SS	6
 
 #ifdef notdef
-#define PANIC_KERN	1
 #define PANIC_FX	2
 #define PANIC_US1	3
 #define PANIC_MS	5

@@ -45,14 +45,14 @@ configuration SystemBootC {
 implementation {
   components MainC;
   components Phase1BootC;
-  components SDBootC;
+//  components SDBootC;
   
   SoftwareInit = MainC.SoftwareInit;
   
   Phase1BootC.Boot -> MainC;
-  SDBootC.Boot -> Phase1BootC;
+//  SDBootC.Boot -> Phase1BootC;
   //Daisy chain others between these if you like...
-//  Boot = Phase1BootC;
-  Boot = SDBootC;
+  Boot = Phase1BootC;
+//  Boot = SDBootC;
 }
 
