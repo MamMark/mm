@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Eric B. Decker
+ * Copyright (c) 2008 Stanford University.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,75 +30,23 @@
  */
  
 /**
- * @author Eric B. Decker (cire831@gmail.com)
+ * @author Kevin Klues (klueska@cs.stanford.edu)
+ *
  */
 
-#include "panic.h"
-#include "gps.h"
-
-uint8_t go_sirf_bin[] = {
-  '$', 'P', 'S', 'R', 'F',	// header
-  '1', '0', '0', ',',		// set serial port MID
-  '0', ',',			// protocol SIRF binary
-  '9', '6', '0', '0', ',',	// baud rate
-  '8', ',',			// 8 data bits
-  '1', ',',			// 1 stop bit
-  '0',				// no parity
-  '*', '0', '0', '\r', '\n'	// terminator
-};
-
-module GPSP {
-  provides {
-    interface Init;
-    interface StdControl as GPSControl;
-    interface Msp430UartConfigure;
-  }
-  uses {
-    interface Resource;
-    interface Panic;
-    interface Timer<TMilli> as GpsTimer;
-    interface HplMM3Adc as HW;
-  }
+configuration GPSC {
+  provides interface StdControl as GPSControl;
 }
-
 implementation {
-
-  /* add NMEA checksum to a possibly  *-terminated sentence */
-  void nmea_add_checksum(uint8_t *sentence) {
-    uint8_t sum = 0;
-    uint8_t c, *p = sentence;
-
-    if (*p == '$') {
-      p++;
-      while ( ((c = *p) != '*') && (c != '\0')) {
-	sum ^= c;
-	p++;
-      }
-      *p++ = '*';
-      (void)snprintf(p, 5, "%02X\r\n", (unsigned int)sum);
-    }
-  }
-
-  command error_t Init.init() {
-    return SUCCESS;
-  }
-
-  command error_t GPSControl.start() {
-    call HW.gps_on();
-    return SUCCESS;
-  }
-
-  command error_t GPSControl.stop() {
-    return SUCCESS;
-  }
-
-  event void GpsTimer.fired() {
-  }
+  components MainC;
+  components GPSP;
   
-  event void Resource.granted() {
-  }
+  MainC.SoftwareInit -> GPSP;
+  GPSControl = GPSP;
   
-  async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
-    return NULL;
-  }
+  components new Msp430Uart1C() as UartC;
+  //GPSP.UartStream -> UartC;  
+  //GPSP.UartByte -> UartC;
+  GPSP.Resource -> UartC;
+  GPSP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
 }

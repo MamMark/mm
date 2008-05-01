@@ -8,6 +8,8 @@
 #ifndef __GPS_H__
 #define __GPS_H__
 
+#include <stdio.h>
+
 #define GPS_SPEED 4800
 
 /*
