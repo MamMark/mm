@@ -20,15 +20,11 @@
 #define PANIC_COMM	4
 #define PANIC_SD	5
 #define PANIC_SS	6
+#define PANIC_GPS	7
 
 #ifdef notdef
-#define PANIC_FX	2
-#define PANIC_US1	3
-#define PANIC_MS	5
 #define PANIC_SNS	6
 #define PANIC_PWR	7
-#define PANIC_MSG	8
-#define PANIC_TIMER	9
 #endif
 
 #endif /* __PANIC_H__ */

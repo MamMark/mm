@@ -46,7 +46,7 @@ uint8_t Xtemp[32];
 module GPSByteCollectP {
   provides {
     interface Init;
-    interface StdControl as GPSControl;
+    interface StdControl as GPSByteControl;
   }
   uses {
     interface GpioInterrupt as gpsRxInt;
@@ -77,7 +77,7 @@ implementation {
     return SUCCESS;
   }
 
-  command error_t GPSControl.start() {
+  command error_t GPSByteControl.start() {
     call HW.gps_on();
     state = GPSB_DELAY;
 
@@ -89,7 +89,7 @@ implementation {
     return SUCCESS;
   }
 
-  command error_t GPSControl.stop() {
+  command error_t GPSByteControl.stop() {
     call gpsRxInt.disable();
     call HW.gps_off();
     state = GPSB_OFF;

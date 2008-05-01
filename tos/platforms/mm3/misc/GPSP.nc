@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Stanford University.
+ * Copyright (c) 2008 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,35 +30,66 @@
  */
  
 /**
- * @author Kevin Klues (klueska@cs.stanford.edu)
  * @author Eric B. Decker (cire831@gmail.com)
  */
 
-configuration GPSByteCollectC {
-  provides interface StdControl as GPSByteControl;
+#include "panic.h"
+#include "gps.h"
+
+uint8_t go_sirf_bin[] = {
+  '$', 'P', 'S', 'R', 'F',	// header
+  '1', '0', '0', ',',		// set serial port MID
+  '0', ',',			// protocol SIRF binary
+  '9', '6', '0', '0', ',',	// baud rate
+  '8', ',',			// 8 data bits
+  '1', ',',			// 1 stop bit
+  '0',				// no parity
+  '*', '0', '0', '\r', '\n'	// terminator
+}
+
+module GPSP {
+  provides {
+    interface Init;
+    interface StdControl as GPSControl;
+  }
+  uses {
+    interface Panic;
+    interface Timer<TMilli> as GpsTimer;
+    interface HplMM3Adc as HW;
+  }
 }
 
 implementation {
-  components MainC, GPSByteCollectP;
-  MainC.SoftwareInit -> GPSByteCollectP;
-  GPSByteControl = GPSByteCollectP;
 
-  components new Msp430GpioC() as GPSBitC;
-  components HplMsp430GeneralIOC as GeneralIOC;
-  GPSBitC -> GeneralIOC.Port13;
-  GPSByteCollectP.gpsRx -> GPSBitC;
+  /* add NMEA checksum to a possibly  *-terminated sentence */
+  void nmea_add_checksum(uint8_t *sentence) {
+    uint8_t sum = 0;
+    uint8_t c, *p = sentence;
 
-  components new Msp430InterruptC() as InterruptGPSBitC;
-  components HplMsp430InterruptC as InterruptC;
-  InterruptGPSBitC.HplInterrupt -> InterruptC.Port13;
-  GPSByteCollectP.gspRxInt -> InterruptGPSBitC;
+    if (*p == '$') {
+      p++;
+      while ( ((c = *p) != '*') && (c != '\0')) {
+	sum ^= c;
+	p++;
+      }
+      *p++ = '*';
+      (void)snprintf(p, 5, "%02X\r\n", (unsigned int)sum);
+    }
+  }
 
-  components HplMM3AdcC;
-  GPSByteCollectP.HW -> HplMM3AdcC;
+  command error_t Init.init() {
+    return SUCCESS;
+  }
 
-  components PanicC;
-  GPSByteCollectP.Panic -> PanicC;
+  command error_t GPSControl.start() {
+    call HW.gps_on();
+    return SUCCESS;
+  }
 
-  components new TimerMilliC() as BitTimer;
-  GPSByteCollectP.BitTimer -> BitTimer;
+  command error_t GPSControl.stop() {
+    return SUCCESS;
+  }
+
+  event void GpsTimer.fired() {
+  }
 }
