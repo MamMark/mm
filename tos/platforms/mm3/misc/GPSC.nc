@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008 Stanford University.
+ * Copyright (c) 2008 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,23 +31,39 @@
  */
  
 /**
+ * wiring by Kevin, code by Eric
  * @author Kevin Klues (klueska@cs.stanford.edu)
- *
+ * @author Eric B. Decker (cire831@gmail.com)
  */
+
+#ifdef notdef
+  components mm3SerialP, HplMsp430Usart1C;
+  mm3C.SerialConfig -> mm3SerialP;
+  mm3SerialP.Usart -> HplMsp430Usart1C;
+#endif
+
 
 configuration GPSC {
   provides interface StdControl as GPSControl;
 }
+
 implementation {
-  components MainC;
-  components GPSP;
-  
+  components MainC, GPSP;
   MainC.SoftwareInit -> GPSP;
   GPSControl = GPSP;
   
+  components HplMM3AdcC;
+  GPSP.HW -> HplMM3AdcC;
+
+  components LocalTimeMilliC;
+  GPSP.LocalTime -> LocalTimeMilliC;
+
   components new Msp430Uart1C() as UartC;
   //GPSP.UartStream -> UartC;  
   //GPSP.UartByte -> UartC;
-  GPSP.Resource -> UartC;
+  GPSP.UARTResource -> UartC;
   GPSP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
+
+  components HplMsp430Usart1C;
+  GPSP.Usart -> HplMsp430Usart1C;
 }

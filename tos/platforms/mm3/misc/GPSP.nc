@@ -36,6 +36,7 @@
 #include "panic.h"
 #include "gps.h"
 
+
 uint8_t go_sirf_bin[] = {
   '$', 'P', 'S', 'R', 'F',	// header
   '1', '0', '0', ',',		// set serial port MID
@@ -44,8 +45,17 @@ uint8_t go_sirf_bin[] = {
   '8', ',',			// 8 data bits
   '1', ',',			// 1 stop bit
   '0',				// no parity
-  '*', '0', '0', '\r', '\n'	// terminator
+  '*', '0', '0',		// checksum
+  '\r', '\n', 0			// terminator
 };
+
+#define SSIZE 1024
+
+uint8_t sbuf[SSIZE];
+uint32_t start_t0;
+uint32_t end_time;
+uint32_t diff;
+
 
 module GPSP {
   provides {
@@ -54,14 +64,23 @@ module GPSP {
     interface Msp430UartConfigure;
   }
   uses {
-    interface Resource;
+    interface Resource as UARTResource;
     interface Panic;
     interface Timer<TMilli> as GpsTimer;
     interface HplMM3Adc as HW;
+    interface ResourceConfigure as SerialConfig;
+    interface LocalTime<TMilli>;
+
+    interface HplMsp430Usart as Usart;
   }
 }
 
 implementation {
+  enum {
+    GPS_UNINITILIZED = 1,
+  };
+
+  uint8_t gps_state;
 
   /* add NMEA checksum to a possibly  *-terminated sentence */
   void nmea_add_checksum(uint8_t *sentence) {
@@ -80,12 +99,12 @@ implementation {
   }
 
   command error_t Init.init() {
+    gps_state = GPS_UNINITILIZED;
     return SUCCESS;
   }
 
   command error_t GPSControl.start() {
-    call HW.gps_on();
-    return SUCCESS;
+    return call UARTResource.request();
   }
 
   command error_t GPSControl.stop() {
@@ -95,10 +114,75 @@ implementation {
   event void GpsTimer.fired() {
   }
   
-  event void Resource.granted() {
+  event void UARTResource.granted() {
+    uint16_t i;
+    bool timing;
+
+    call Usart.disableIntr();	// for now we don't want them
+    nmea_add_checksum(go_sirf_bin);
+    IE2 = 0;
+    timing = 1;
+    mmP5out.ser_sel = SER_SEL_GPS;
+    start_t0 = call LocalTime.get();
+    call HW.gps_on();
+//    uwait(1000);
+    for (i = 0; i < SSIZE; i++) {
+      while ((IFG2 & URXIFG1) == 0) ;
+      sbuf[i] = U1RXBUF;
+      if (timing) {
+	timing = 0;
+	end_time = call LocalTime.get();
+	diff = end_time - start_t0;
+      }
+    }
+    call HW.gps_off();
+    mmP5out.ser_sel = SER_SEL_CRADLE;
+    i = U1RXBUF;
+    nop();
   }
   
+  msp430_uart_union_config_t gps_4800_serial_config = {
+    {
+       ubr:   UBR_4MHZ_4800,
+       umctl: UMCTL_4MHZ_4800,
+       ssel: 0x02,		// smclk selected (DCO, 4MHz)
+       pena: 0,			// no parity
+       pev: 0,			// no parity
+       spb: 0,			// one stop bit
+       clen: 1,			// 8 bit data
+       listen: 0,		// no loopback
+       mm: 0,			// idle-line
+       ckpl: 0,			// non-inverted clock
+       urxse: 0,		// start edge off
+       urxeie: 1,		// error interrupt enabled
+       urxwie: 0,		// rx wake up disabled
+       utxe : 1,		// tx interrupt enabled
+       urxe : 1			// rx interrupt enabled
+    }
+  };
+
+  msp430_uart_union_config_t gps_9600_serial_config = {
+    {
+       ubr:   UBR_4MHZ_9600,
+       umctl: UMCTL_4MHZ_9600,
+       ssel: 0x02,		// smclk selected (DCO, 4MHz)
+       pena: 0,			// no parity
+       pev: 0,			// no parity
+       spb: 0,			// one stop bit
+       clen: 1,			// 8 bit data
+       listen: 0,		// no loopback
+       mm: 0,			// idle-line
+       ckpl: 0,			// non-inverted clock
+       urxse: 0,		// start edge off
+       urxeie: 1,		// error interrupt enabled
+       urxwie: 0,		// rx wake up disabled
+       utxe : 1,		// tx interrupt enabled
+       urxe : 1			// rx interrupt enabled
+    }
+  };
+
+
   async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
-    return NULL;
+    return &gps_4800_serial_config;
   }
 }

@@ -16,14 +16,6 @@ uint16_t res[NUM_RES];
 //noinit uint8_t use_regime;
 uint8_t use_regime = 2;
 
-#ifdef TEST_GPS
-#define SSIZE 1024
-uint8_t sbuf[SSIZE];
-uint32_t start_t0;
-uint32_t end_time;
-uint32_t diff;
-#endif
-
 module mm3C {
   provides {
     interface Init;
@@ -36,7 +28,6 @@ module mm3C {
 
     interface HplMM3Adc as HW;
     interface Adc;
-    interface ResourceConfigure as SerialConfig;
 
 #ifdef TEST_SS
     interface HplMsp430Usart as Usart;
@@ -44,7 +35,6 @@ module mm3C {
 
 #ifdef TEST_GPS
     interface StdControl as GPSControl;
-    interface LocalTime<TMilli>;
 #endif
   }
 }
@@ -74,29 +64,7 @@ implementation {
 
   event void Boot.booted() {
 #ifdef TEST_GPS
-    uint16_t i;
-    bool timing;
-
-    call SerialConfig.configure();
-    IE2 = 0;
-    timing = 1;
-    mmP5out.ser_sel = SER_SEL_GPS;
-    start_t0 = call LocalTime.get();
-    call HW.gps_on();
-//    uwait(1000);
-    for (i = 0; i < SSIZE; i++) {
-      while ((IFG2 & URXIFG1) == 0) ;
-      sbuf[i] = U1RXBUF;
-      if (timing) {
-	timing = 0;
-	end_time = call LocalTime.get();
-	diff = end_time - start_t0;
-      }
-    }
-    call HW.gps_off();
-    mmP5out.ser_sel = SER_SEL_CRADLE;
-    i = U1RXBUF;
-    nop();
+    call GPSControl.start();
 #endif
 
     /*
@@ -125,12 +93,6 @@ implementation {
 	res[i] = call Adc.readAdc();
       nop();
     }
-#endif
-
-#ifdef notdef
-    call GPSControl.start();
-    uwait(1000);
-    call GPSControl.stop();
 #endif
 
 #ifdef TEST_SS

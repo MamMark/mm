@@ -2,6 +2,9 @@
  * GPS defines
  *
  * @author Eric B. Decker (cire831@gmail.com)
+ *
+ * Currently set up for the ET-312 module using the Sirf-III
+ * chipset.
  */
 
 
@@ -37,5 +40,13 @@
 #else
 #error "GPS_SPEED not defined"
 #endif
+
+/*
+ * empirically determined to be about 300 mis or so
+ * when NMEA is the protocol.  Don't current know
+ * if we are already in binary mode.
+ */
+
+#define GPS_PWR_ON_DELAY 500
 
 #endif /* __GPS_H__ */
