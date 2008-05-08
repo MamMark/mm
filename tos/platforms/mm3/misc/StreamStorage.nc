@@ -17,44 +17,44 @@ interface StreamStorage {
    */
 
   /**
-   * Flush a Stream handle.  This will cause the stream subsystem to write
-   * the accumulated underlying buffer to the mass storage device.  The handle
+   * Flush a Stream bufhandle.  This will cause the stream subsystem to write
+   * the accumulated underlying buffer to the mass storage device.  The bufhandle
    * is then returned to the free pool.
    *
    * If SUCCESS is returned, the StreamStorage subsystem has accepted responsibility
    * for the buffer and will write it to mass storage.  The the caller assumes this.
    *
-   * @param handle address of a ss_handle (stream storage handle).
+   * @param bufhandle address of a ss_bufhandle (stream storage bufhandle).
    * @return 
    *   <li>SUCCESS if the request was accepted, 
    *   <li>EINVAL if the parameters are invalid
    *   <li>EBUSY if a request is already being processed.
    */
-  command error_t flush_handle(ss_handle_t *handle);
+  command error_t flush_buf_handle(ss_buf_handle_t *buf_handle);
 
   /**
-   * Convert a stream handle to its underlying buffer.
+   * Convert a stream buf_handle to its underlying buffer.
    *
-   * @param handle address of a ss_handle (stream storage handle).
+   * @param buf_handle address of a ss_buf_handle (stream storage buf_handle).
    * @return 
-   *   <li>NULL   if bad handle or buffer not allocated.
-   *   <li>buffer if good handle.
+   *   <li>NULL   if bad buf_handle or buffer not allocated.
+   *   <li>buffer if good buf_handle.
    */
-  command uint8_t *handle_to_buf(ss_handle_t *handle);
+  command uint8_t *buf_handle_to_buf(ss_buf_handle_t *buf_handle);
 
   /**
    * request a new buffer from the Stream Storage system.
    *
    * @return 
    *   <li>NULL   if no buffer available.
-   *   <li>handle if buffer available.  Buffer marked allocated.
+   *   <li>buf_handle if buffer available.  Buffer marked allocated.
    */
-  command ss_handle_t* get_free_handle();
+  command ss_buf_handle_t* get_free_buf_handle();
 
   /**
    * signalled when an underlying buffer is ready to be flushed.
    *
-   * @param handle address of the ss_handle ready to be flushed.
+   * @param buf_handle address of the ss_buf_handle ready to be flushed.
    */  
-  event void buffer_ready(ss_handle_t *handle);
+  event void buffer_ready(ss_buf_handle_t *buf_handle);
 }

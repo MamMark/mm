@@ -62,7 +62,7 @@ module StreamStorageP {
 }
   
 implementation {
-  noinit ss_handle_t ss_handles[SS_NUM_BUFS];
+  noinit ss_buf_handle_t ss_handles[SS_NUM_BUFS];
   noinit ss_control_t ssc;
 
   command error_t Init.init() {
@@ -256,8 +256,8 @@ implementation {
   }
 
 
-  command ss_handle_t* SS.get_free_handle() {
-    ss_handle_t *sshp;
+  command ss_buf_handle_t* SS.get_free_buf_handle() {
+    ss_buf_handle_t *sshp;
 
     if (ssc.alloc_index >= SS_NUM_BUFS || ssc.majik_a != SSC_MAJIK_A ||
 	ssc.majik_b != SSC_MAJIK_B ||
@@ -283,7 +283,7 @@ implementation {
     return NULL;
   }
 
-  command uint8_t *SS.handle_to_buf(ss_handle_t *handle) {
+  command uint8_t *SS.buf_handle_to_buf(ss_buf_handle_t *handle) {
     if (!handle || handle->majik != SS_BUF_MAJIK ||
 	handle->buf_state != SS_BUF_STATE_ALLOC) {
       call Panic.panic(PANIC_SS, 18, 0, 0, 0, 0);
@@ -293,7 +293,7 @@ implementation {
   }
 
 
-  command error_t SS.flush_handle(ss_handle_t *handle) {
+  command error_t SS.flush_buf_handle(ss_buf_handle_t *handle) {
     if (!handle || handle->majik != SS_BUF_MAJIK ||
 	handle->buf_state != SS_BUF_STATE_ALLOC) {
       call Panic.panic(PANIC_SS, 19, (uint16_t) handle, handle->buf_state, 0, 0);
@@ -330,7 +330,7 @@ implementation {
 #ifdef notdef
   void ss_machine(msg_event_t *msg) {
     uint8_t     *buf;
-    ss_handle_t	*ss_handle;
+    ss_buf_handle_t	*ss_handle;
     ss_timer_data_t mtd;
     mm_time_t       t;
     sd_rtn	 err;
@@ -351,7 +351,7 @@ implementation {
 	 * be allocated as well as the next one we expect.
 	 * Next one expected is ssc.in_index.
 	 */
-	ss_handle = (ss_handle_t *) (buf - SS_HANDLE_OFFSET);
+	ss_handle = (ss_buf_handle_t *) (buf - SS_HANDLE_OFFSET);
 	if (ss_handle->majik != SS_BUF_MAJIK)
 	  call Panic.panic(PANIC_SS, 22, ss_handle->majik, 0, 0, 0);
 	if (ss_handle->buf_state != SS_BUF_STATE_ALLOC)
@@ -485,7 +485,7 @@ implementation {
 	   * being passed in needed to be the next one expected
 	   * (in_index)).
 	   */
-	  ss_handle = (ss_handle_t *) (buf - SS_HANDLE_OFFSET);
+	  ss_handle = (ss_buf_handle_t *) (buf - SS_HANDLE_OFFSET);
 	  if (ss_handle->majik != SS_BUF_MAJIK)
 	    call Panic.panic(PANIC_SS, 33, ss_handle->majik, 0, 0, 0);
 	  if (ss_handle->buf_state != SS_BUF_STATE_ALLOC)

@@ -36,23 +36,40 @@
  
 #include "stream_storage.h"
 
-configuration StreamStorageWriterC {}
+configuration StreamStorageWriterC {
+  provides interface Boot as SSWBoot;
+  uses interface Boot;
+}
+
 implementation {
-  components MainC;
-  components StreamStorageC;
-  components StreamStorageWriterP;
   
-  MainC.SoftwareInit -> StreamStorageWriterP;
-  StreamStorageWriterP.StreamStorage -> StreamStorageC;
-  
-  //Not sure of the stack size needed here
-  //If things seems to break make it bigger...
+//  components MainC;
+//  MainC.SoftwareInit -> StreamStorageWriterP;
+
+  components StreamStorageWriterP as SSW_P, StreamStorageC;
+  SSW_P.StreamStorage -> StreamStorageC;
+  SSW_P.SSControl -> StreamStorageC;
+
+  Boot = SSW_P.Boot;
+  SSWBoot = BlockingBootC;
+
+  components new BlockingBootC();
+  BlockingBootC -> SSW_P.BlockingBoot;
+
+  /*
+   * Not sure of the stack size needed here
+   * If things seems to break make it bigger...
+   *
+   * We need to implement stack guards
+   * This will also give us an idea of how deep the stacks have been
+   */
+
   components new ThreadC(300); 
-  StreamStorageWriterP.Thread -> ThreadC;
+  SSW_P.Thread -> ThreadC;
   
-  components new QueueC(ss_handle_t*, SS_NUM_BUFS);
-  StreamStorageWriterP.Queue -> QueueC;
+  components new QueueC(ss_buf_handle_t*, SS_NUM_BUFS);
+  SSW_P.Queue -> QueueC;
     
   components SemaphoreC;
-  StreamStorageWriterP.Semaphore -> SemaphoreC;
+  SSW_P.Semaphore -> SemaphoreC;
 }
