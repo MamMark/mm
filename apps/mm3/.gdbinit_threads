@@ -28,6 +28,22 @@ comm
 printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
 end
 
+b mm3CommP.nc:157
+comm
+p id
+end
+
+b ArbiterP.nc:78
+b ArbiterP.nc:110
+
+#b GPSP.nc:160
+
+#b GPSP.nc:154
+#b GPSP.nc:166
+#b GPSP.nc:172
+#b GPSP.nc:197
+#b HplMM3AdcP.nc:224
+
 #b CollectP.nc:45
 #comm
 #printf "collect: len: %d (0x%02x), type: %d  id: %d\n",dlen,dlen,data[2],data[3]

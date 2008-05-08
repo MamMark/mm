@@ -32,27 +32,39 @@
 /**
  * @author Kevin Klues <klueska@cs.stanford.edu>
  * @date March 3rd, 2008
+ *
+ * @author Eric B. Decker <cire831@gmail.com>
+ * @date May 5th, 2008
+ *
+ * Sequence the bootup.  Components that should fire up when the
+ * system is booted should wire to SystemBootC.Boot.
+ *
+ * Initial Debug:
+ *
+ * 1) Bring up the serial or radio stack first so we can watch
+ *    what is happening via the Debug port.
+ *
+ * 2) Bring up the SD
+ *
+ * 3) Bring up the GPS.
+ *
+ * We'll figure other stuff out later.
  */
 
 configuration SystemBootC {
-  provides {
-    interface Boot;
-  }
-  uses {
-    interface Init as SoftwareInit;
-  }
+  provides interface Boot;
+  uses interface Init as SoftwareInit;
 }
+
 implementation {
   components MainC;
-  components Phase1BootC;
-//  components SDBootC;
+  components Phase1BootC, Phase3BootC;
+  components SDBootC;
   
   SoftwareInit = MainC.SoftwareInit;
   
   Phase1BootC.Boot -> MainC;
-//  SDBootC.Boot -> Phase1BootC;
-  //Daisy chain others between these if you like...
-  Boot = Phase1BootC;
-//  Boot = SDBootC;
+  SDBootC.Boot -> Phase1BootC;
+  Phase3BootC.Boot -> SDBootC;
+  Boot = Phase3BootC;
 }
-

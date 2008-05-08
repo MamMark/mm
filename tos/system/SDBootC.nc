@@ -31,23 +31,20 @@
  
 /*
  * Author: Kevin Klues (klueska@cs.stanford.edu)
- *
+ * Author: Eric B. Decker (cire831@gmail.com)
  */
 
 
 configuration SDBootC {
-  provides {
-    interface Boot as SDBoot;
-  }
-  uses {
-    interface Boot;
-  }
+  provides interface Boot as SDBoot;
+  uses interface Boot;
 }
+
 implementation {
   components new BlockingBootC();
   components SDBootP;
   
-  Boot = SDBootP.MainBoot;
+  Boot = SDBootP.Boot;
   BlockingBootC -> SDBootP.BlockingBoot;
   SDBoot = BlockingBootC;
   
@@ -56,8 +53,4 @@ implementation {
   
   components new ThreadC(200);
   SDBootP.Thread -> ThreadC;
-  
-  components LedsC;
-  SDBootP.Leds -> LedsC;
 }
-

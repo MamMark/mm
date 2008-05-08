@@ -37,25 +37,43 @@
 #include "gps.h"
 
 
+//  '5', '7', '6', '0', '0', ',',	// baud rate
+//  '*', '3', '7',		// checksum
+
 uint8_t go_sirf_bin[] = {
   '$', 'P', 'S', 'R', 'F',	// header
   '1', '0', '0', ',',		// set serial port MID
   '0', ',',			// protocol SIRF binary
-  '9', '6', '0', '0', ',',	// baud rate
+  '4', '8', '0', '0', ',',	// baud rate
   '8', ',',			// 8 data bits
   '1', ',',			// 1 stop bit
   '0',				// no parity
-  '*', '0', '0',		// checksum
+  '*', '0', 'F',		// checksum
   '\r', '\n', 0			// terminator
 };
 
-#define SSIZE 1024
+#define OFF_TIME 100
+#define ON_TIME 5
+
+#define SSIZE 2048
 
 uint8_t sbuf[SSIZE];
-uint32_t start_t0;
-uint32_t end_time;
-uint32_t diff;
+norace uint16_t s_idx;
+norace uint32_t t_t0;
+norace uint32_t t_first_char;
+norace uint32_t t_send_done;
+norace uint32_t t_first_binary;
+uint32_t diff_first_char;;
+uint32_t diff_first_binary;;
+norace uint8_t t_state;
 
+
+enum {
+  TS_0 = 0,
+  TS_FIRST_CHAR = 1,
+  TS_NEXT_CHAR = 2,
+  TS_FIRST_BINARY = 3,
+};
 
 module GPSP {
   provides {
@@ -68,8 +86,8 @@ module GPSP {
     interface Panic;
     interface Timer<TMilli> as GpsTimer;
     interface HplMM3Adc as HW;
-    interface ResourceConfigure as SerialConfig;
     interface LocalTime<TMilli>;
+    interface UartStream;
 
     interface HplMsp430Usart as Usart;
   }
@@ -77,11 +95,17 @@ module GPSP {
 
 implementation {
   enum {
-    GPS_UNINITILIZED = 1,
+    GPS_FAIL = 1,
+    GPS_OFF,
+    GPS_TRY_4800,
+    GPS_TRY_57600,
+    GPS_UNINITILIZED,
+    GPS_RXTX,
   };
 
-  uint8_t gps_state;
+  norace uint8_t gps_state;
 
+#ifdef notdef
   /* add NMEA checksum to a possibly  *-terminated sentence */
   void nmea_add_checksum(uint8_t *sentence) {
     uint8_t sum = 0;
@@ -94,16 +118,37 @@ implementation {
 	p++;
       }
       *p++ = '*';
-      (void)snprintf(p, 5, "%02X\r\n", (unsigned int)sum);
+      c = sum >> 4;
+      if (c > 9)
+	*p++ = c + 0x40;
+      else
+	*p++ = c + 0x30;
+      c = sum & 0x0f;
+      if (c > 9)
+	*p++ = c + 0x37;
+      else
+	*p++ = c + 0x30;
+      *p++ = '\r';
+      *p++ = '\n';
     }
   }
+#endif
 
   command error_t Init.init() {
-    gps_state = GPS_UNINITILIZED;
     return SUCCESS;
   }
 
   command error_t GPSControl.start() {
+#ifdef LOOP_GPS_PWR
+    call HW.gps_off();
+    t_state = 0;
+    call GpsTimer.startOneShot(OFF_TIME);
+    return SUCCESS;
+#endif
+    memset(sbuf, 0, sizeof(sbuf));
+    gps_state = GPS_OFF;
+    s_idx = 0;
+    t_state = TS_0;
     return call UARTResource.request();
   }
 
@@ -112,35 +157,71 @@ implementation {
   }
 
   event void GpsTimer.fired() {
+    nop();
+#ifdef LOOP_GPS_PWR
+    if (t_state) {
+      t_state = 0;
+      call HW.gps_off();
+      call GpsTimer.startOneShot(OFF_TIME);
+      return;
+    }
+    t_state = 1;
+    call HW.gps_on();
+    call GpsTimer.startOneShot(ON_TIME);
+    return;
+#else
+    call HW.gps_off();
+    gps_state = GPS_OFF;
+    call UARTResource.release();
+#endif    
   }
   
   event void UARTResource.granted() {
-    uint16_t i;
-    bool timing;
-
-    call Usart.disableIntr();	// for now we don't want them
-    nmea_add_checksum(go_sirf_bin);
-    IE2 = 0;
-    timing = 1;
-    mmP5out.ser_sel = SER_SEL_GPS;
-    start_t0 = call LocalTime.get();
+    t_state = TS_FIRST_CHAR;
+    t_t0 = call LocalTime.get();
     call HW.gps_on();
-//    uwait(1000);
-    for (i = 0; i < SSIZE; i++) {
-      while ((IFG2 & URXIFG1) == 0) ;
-      sbuf[i] = U1RXBUF;
-      if (timing) {
-	timing = 0;
-	end_time = call LocalTime.get();
-	diff = end_time - start_t0;
-      }
-    }
-    call HW.gps_off();
-    mmP5out.ser_sel = SER_SEL_CRADLE;
-    i = U1RXBUF;
-    nop();
+    gps_state = GPS_RXTX;
+    call GpsTimer.startOneShot(10000);
   }
   
+  async event void UartStream.sendDone( uint8_t* buf, uint16_t len, error_t error ) {
+    t_send_done = call LocalTime.get();
+    t_state = TS_FIRST_BINARY;
+  }
+
+  async event void UartStream.receivedByte( uint8_t byte ) {
+    if (gps_state != GPS_RXTX) {
+      nop();
+      t_state++;
+      t_state--;
+      return;
+    }
+    switch(t_state) {
+      case TS_0:
+      default:
+	break;
+      case TS_FIRST_CHAR:
+	t_first_char = call LocalTime.get();
+	diff_first_char = t_first_char - t_t0;
+	call UartStream.send(go_sirf_bin, sizeof(go_sirf_bin));
+	t_state = TS_NEXT_CHAR;
+	break;
+      case TS_FIRST_BINARY:
+	t_first_binary = call LocalTime.get();
+	diff_first_binary = t_first_binary - t_first_char;
+	t_state = TS_0;
+	break;
+    }
+    if (s_idx >= SSIZE)
+      return;
+    sbuf[s_idx++] = byte;
+    if (s_idx >= 1024)
+      nop();
+  }
+
+  async event void UartStream.receiveDone( uint8_t* buf, uint16_t len, error_t error ) {
+  }
+
   msp430_uart_union_config_t gps_4800_serial_config = {
     {
        ubr:   UBR_4MHZ_4800,
@@ -161,10 +242,10 @@ implementation {
     }
   };
 
-  msp430_uart_union_config_t gps_9600_serial_config = {
+  msp430_uart_union_config_t gps_57600_serial_config = {
     {
-       ubr:   UBR_4MHZ_9600,
-       umctl: UMCTL_4MHZ_9600,
+       ubr:   UBR_4MHZ_57600,
+       umctl: UMCTL_4MHZ_57600,
        ssel: 0x02,		// smclk selected (DCO, 4MHz)
        pena: 0,			// no parity
        pev: 0,			// no parity
@@ -183,6 +264,12 @@ implementation {
 
 
   async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
+    /*
+     * this is called from within the usart configurator so will have
+     * the desired effect.
+     */
+//    mmP5out.ser_sel = SER_SEL_GPS;
+    mmP5out.ser_sel = SER_SEL_CRADLE;
     return &gps_4800_serial_config;
   }
 }

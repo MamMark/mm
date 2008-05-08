@@ -191,7 +191,7 @@ TOSH_ASSIGN_PIN(ADCxSDI, 3, 5);
     uint8_t rf232_off		: 1;
   } mmP4out asm("0x001d");
 
-  static volatile struct {
+norace  static volatile struct {
     uint8_t sd_pwr_off		: 1;
     uint8_t sd_sdi		: 1;
     uint8_t sd_sdo		: 1;

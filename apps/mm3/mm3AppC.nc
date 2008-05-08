@@ -12,9 +12,6 @@ implementation {
   components RegimeC;
   mm3C.Regime -> RegimeC;
   
-  components LedsC;
-  mm3C.Leds -> LedsC;
-
   /*
    * Include Threaded implementation of the SD Stream Storage Writer
    */

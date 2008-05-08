@@ -14,8 +14,10 @@ implementation {
   
   msp430_uart_union_config_t mm3_direct_serial_config = {
     {
-       ubr:   UBR_4MHZ_57600,
-       umctl: UMCTL_4MHZ_57600,
+//       ubr:   UBR_4MHZ_57600,
+//       umctl: UMCTL_4MHZ_57600,
+      ubr:   UBR_4MHZ_115200,
+      umctl: UMCTL_4MHZ_115200,
        ssel: 0x02,		// smclk selected (DCO, 4MHz)
        pena: 0,			// no parity
        pev: 0,			// no parity
@@ -41,6 +43,7 @@ implementation {
   }
 
   async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
+    mmP5out.ser_sel = SER_SEL_CRADLE;
     return &mm3_direct_serial_config;
   }
 }

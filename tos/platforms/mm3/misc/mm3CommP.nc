@@ -58,7 +58,7 @@ module mm3CommP {
 implementation {
 
   enum {
-    COMM_STATE_OFF	       = 1,
+    COMM_STATE_OFF         = 1,
     COMM_STATE_SERIAL_INIT = 2,
     COMM_STATE_SERIAL	   = 3,
     COMM_STATE_RADIO_INIT  = 4,

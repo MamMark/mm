@@ -28,31 +28,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-/*
- * Author: Kevin Klues (klueska@cs.stanford.edu)
- *
+
+/**
+ * @author Eric B. Decker <cire831@gmail.com>
+ * @author Kevin Klues <klueska@cs.stanford.edu>
+ * @date April 6th, 2008
  */
-
-module SDBootP {
-  provides interface Boot as BlockingBoot;
+ 
+module Phase3BootP {
+  provides {
+    interface Boot as Phase3Boot;
+  }
   uses {
-    interface StdControl as SSControl;
     interface Boot;
-    interface Thread;
-    interface Leds;
   }
 }
-
 implementation {
-  event void Boot.booted() {
-    call Thread.start(NULL);
+  task void Boot3() {
+//    signal Phase3Boot.booted();
+    nop();
   }
-  
-  //Do thread related SD stuff here....
-  event void Thread.run(void* arg) {
-    call SSControl.start();
-    signal BlockingBoot.booted();
+    
+  event void Boot.booted() {
+    post Boot3();
   }
 }
-

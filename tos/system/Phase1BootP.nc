@@ -41,13 +41,12 @@ module Phase1BootP {
     interface Boot as Phase1Boot;
   }
   uses {
-    interface Boot as MainBoot;
+    interface Boot;
     interface mm3Comm;
-    interface Leds;
   }
 }
 implementation {
-  event void MainBoot.booted() {
+  event void Boot.booted() {
     call mm3Comm.useSerial();
     //call mm3Comm.useRadio();
   }
@@ -55,9 +54,11 @@ implementation {
   event void mm3Comm.serialOn() {
     signal Phase1Boot.booted();
   }
+
   event void mm3Comm.radioOn() {
     //signal Phase1Boot.booted();
   }
+
   event void mm3Comm.commOff() {}
 }
 
