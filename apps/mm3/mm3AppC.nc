@@ -37,11 +37,11 @@ implementation {
   mm3C.Usart -> UsartC;
 #endif
 
-//  components GPSByteCollectC;
-//  mm3C.GPSControl -> GPSByteCollectC.GPSControl;
+  components GPSByteCollectC;
+  mm3C.GPSControl -> GPSByteCollectC.GPSByteControl;
 
 #ifdef TEST_GPS
-  components GPSC;
-  mm3C.GPSControl -> GPSC;
+//  components GPSC;
+//  mm3C.GPSControl -> GPSC;
 #endif
 }

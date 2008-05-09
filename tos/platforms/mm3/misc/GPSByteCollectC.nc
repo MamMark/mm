@@ -44,22 +44,14 @@ implementation {
   MainC.SoftwareInit -> GPSByteCollectP;
   GPSByteControl = GPSByteCollectP;
 
-  components new Msp430GpioC() as GPSBitC;
-  components HplMsp430GeneralIOC as GeneralIOC;
-  GPSBitC -> GeneralIOC.Port13;
-  GPSByteCollectP.gpsRx -> GPSBitC;
-
-  components new Msp430InterruptC() as InterruptGPSBitC;
-  components HplMsp430InterruptC as InterruptC;
-  InterruptGPSBitC.HplInterrupt -> InterruptC.Port13;
-  GPSByteCollectP.gspRxInt -> InterruptGPSBitC;
-
   components HplMM3AdcC;
   GPSByteCollectP.HW -> HplMM3AdcC;
 
   components PanicC;
   GPSByteCollectP.Panic -> PanicC;
 
-  components new TimerMilliC() as BitTimer;
-  GPSByteCollectP.BitTimer -> BitTimer;
+  components Msp430TimerC;
+  GPSByteCollectP.Msp430TimerControl -> Msp430TimerC.ControlA2;
+  GPSByteCollectP.Msp430Capture-> Msp430TimerC.CaptureA2;
+  GPSByteCollectP.Msp430Compare -> Msp430TimerC.CompareA2;
 }

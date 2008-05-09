@@ -42,23 +42,115 @@
 #include "panic.h"
 #include "gps.h"
 
-uint8_t Xtemp[32];
-
 module GPSByteCollectP {
   provides {
     interface Init;
     interface StdControl as GPSByteControl;
   }
   uses {
-    interface GpioInterrupt as gpsRxInt;
-    interface GeneralIO as gpsRx;
+    interface Msp430TimerControl;
+    interface Msp430Capture;
+    interface Msp430Compare;
     interface HplMM3Adc as HW;
     interface Panic;
-    interface Timer<TMilli> as BitTimer;
   }
 }
 
 implementation {
+  enum {
+    GPSB_OFF       = 1,
+    GPSB_WAKEUP    = 2,
+    GPSB_ON        = 3,
+  };
+
+  noinit uint8_t state;
+  noinit uint8_t num_bits;
+  noinit uint8_t build_byte;
+
+  command error_t Init.init() {
+    num_bits = 0;
+    state = GPSB_OFF;
+    return SUCCESS;
+  }
+  
+  bool isSetSCCI() {
+    //Bit 10 is the bit we want to check 0000 0000 0100 0000
+    return ( TACCTL2 & SCCI ); 
+  }
+
+  command error_t GPSByteControl.start() {
+    call HW.gps_on();
+    state = GPSB_WAKEUP;
+
+    /*
+     * Start a delay timer.  When it goes off then do the following.
+     */
+    state = GPSB_ON;   
+    atomic num_bits = 0;
+    atomic build_byte = 0;
+    
+    //Set CCR into capture mode, FALSE = falling edge
+    call Msp430TimerControl.setControlAsCapture(FALSE);
+    call Msp430TimerControl.enableEvents();
+    return SUCCESS;
+  }
+
+  command error_t GPSByteControl.stop() {
+    call Msp430TimerControl.disableEvents();
+    call HW.gps_off();
+    state = GPSB_OFF;
+    return SUCCESS;
+  }
+  
+  async event void Msp430Capture.captured(uint16_t time) {
+
+    //Switch to compare mode
+    call Msp430TimerControl.setControlAsCompare();
+    
+    // The time at which this event occured is preserved in the 
+    // CCR register so just add 1.5 bit times to that value
+    call Msp430Compare.setEventFromPrev(GPS_4800_15_BITTIME);
+  }
+  
+  async event void Msp430Compare.fired() {
+    if(num_bits < 8) {
+      num_bits++;
+      build_byte <<= 1;
+      if( isSetSCCI() ) build_byte += 1;
+      call Msp430Compare.setEventFromPrev(GPS_4800_1_BITTIME);
+    }
+    else {
+      if( !isSetSCCI() ) call Panic.brk();
+      num_bits = 0;
+      call Msp430TimerControl.setControlAsCapture(FALSE);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if FALSE
   enum {
     GPSB_OFF       = 1,
     GPSB_DELAY     = 2,
@@ -179,4 +271,4 @@ implementation {
     *(bp++) = call gpsRx.get();
     nop();
   }
-}
+#endif
