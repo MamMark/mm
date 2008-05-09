@@ -220,7 +220,7 @@ implementation {
   }
 
   command void HW.gps_on() {
-    SET_GPS_RX_IN;		// switch back to input.
+    SET_GPS_RX_IN_MOD;		// switch back to input, and give to timer module.
     mmP4out.gps_off = 0;
   }
 

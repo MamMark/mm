@@ -42,7 +42,7 @@
  *
  * what do these damn codes mean?  (<dir><usage><default val>: Is0 <input><spi><0, zero>)
  * another nomenclature used is <value><function><direction>, 0pO (0 (zero), port, Output),
- *    xpI (don't care, port, Input).
+ *    xpI (don't care, port, Input), mI (module input).
  *
  * Need:
  *	red, green, yellow leds
@@ -56,7 +56,7 @@
  * port 1.0	O	d_mux_a0		port 4.0	O	gain_mux_a0
  *       .1	O	d_mux_a1		      .1	O	gain_mux_a1
  *       .2	O	mag_degauss_1		      .2	O	vdiff_off
- *       .3	I (0pO)	gps_rx  		      .3	O	vref_off
+ *       .3    mI(0pO)	gps_rx  		      .3	O	vref_off
  *       .4	O	mag_deguass_2		      .4	O	solar_chg_on
  *       .5	O	press_res_off		      .5	O	extchg_battchk
  *       .6	O	salinity_off		      .6	O	gps_off
@@ -128,14 +128,14 @@ TOSH_ASSIGN_PIN(GSP_RXx, 1, 3);
  * gps is on this is where it should be.
  */
 
-#define SET_GPS_RX_IN do { P1DIR &= ~0x08; } while (0)
+#define SET_GPS_RX_IN_MOD do { P1SEL |= 0x08; P1DIR &= ~0x08; } while (0)
 
 /*
- * SET_GPS_RX_OUT_0 will set the direction of gps_rx to output.
- * it is already assumed that the value output will be 0 from
- * initilization.
+ * SET_GPS_RX_OUT_0 will set the direction of gps_rx to output.  And take
+ * back control from the timer module.  it is already assumed that the value
+ * output will be 0 from initilization.
  */
-#define SET_GPS_RX_OUT_0 do { P1DIR |= 0x08; } while (0)
+#define SET_GPS_RX_OUT_0 do { P1SEL &= ~0x08; P1DIR |= 0x08; } while (0)
 
 
   static volatile struct {

@@ -1,5 +1,8 @@
 Things to talk to Kevin about:
 
+-1) wiring in a different msp430ClockInit rather then the override
+    in PlatformP.nc.
+
 0) wiring in dma for sd
 
 1) Details of Mutex and Condvars
@@ -16,6 +19,10 @@ Things to talk to Kevin about:
 
 5) GPS.  custom interrupt for s/w uart.
 
+6) At some point review timer A usage.  Where should it get powered
+   up and where get powered down.
+
+   When should it get resync'd to Aclk?
 
 Installation of Tools.
 Configuring Linux Kernel for ti usb fet
