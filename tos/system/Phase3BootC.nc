@@ -41,7 +41,7 @@ configuration Phase3BootC {
 }
 
 implementation {
-  components Phase3BootP, mm3CommC;
+  components Phase3BootP;
   
   Phase3Boot = Phase3BootP.Phase3Boot;
   Boot = Phase3BootP;

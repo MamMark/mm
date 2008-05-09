@@ -59,12 +59,12 @@ configuration SystemBootC {
 implementation {
   components MainC;
   components Phase1BootC, Phase3BootC;
-  components StreamStorageWriterC as SSW;
+  components StreamStorageC as SS;
   
   SoftwareInit = MainC.SoftwareInit;
   
   Phase1BootC.Boot -> MainC;
-  SSW.Boot -> Phase1BootC;
-  Phase3BootC.Boot -> SSW;
+  SS.Boot -> Phase1BootC;
+  Phase3BootC.Boot -> SS;
   Boot = Phase3BootC;
 }

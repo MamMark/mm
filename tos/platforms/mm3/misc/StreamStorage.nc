@@ -17,22 +17,6 @@ interface StreamStorage {
    */
 
   /**
-   * Flush a Stream bufhandle.  This will cause the stream subsystem to write
-   * the accumulated underlying buffer to the mass storage device.  The bufhandle
-   * is then returned to the free pool.
-   *
-   * If SUCCESS is returned, the StreamStorage subsystem has accepted responsibility
-   * for the buffer and will write it to mass storage.  The the caller assumes this.
-   *
-   * @param bufhandle address of a ss_bufhandle (stream storage bufhandle).
-   * @return 
-   *   <li>SUCCESS if the request was accepted, 
-   *   <li>EINVAL if the parameters are invalid
-   *   <li>EBUSY if a request is already being processed.
-   */
-  command error_t flush_buf_handle(ss_buf_handle_t *buf_handle);
-
-  /**
    * Convert a stream buf_handle to its underlying buffer.
    *
    * @param buf_handle address of a ss_buf_handle (stream storage buf_handle).
@@ -52,9 +36,11 @@ interface StreamStorage {
   command ss_buf_handle_t* get_free_buf_handle();
 
   /**
-   * signalled when an underlying buffer is ready to be flushed.
+   * call when the buffer objectified by buf_handle has been
+   * filled and should be flushed.  The handle is then returned to the
+   * free pool.  Do not use after calling buffer_full.
    *
    * @param buf_handle address of the ss_buf_handle ready to be flushed.
    */  
-  event void buffer_ready(ss_buf_handle_t *buf_handle);
+  command void buffer_full(ss_buf_handle_t *buf_handle);
 }

@@ -48,7 +48,7 @@
  *    the buffer transitions to ALLOC.
  *
  * 3) The data collector fills the buffer and hands it off to
- *    StreamStorage via the command StreamStorage.write_buf.
+ *    StreamStorage via the command StreamStorage.buffer_full
  *
  * 4) When the DMA engine is actively writing the buffer it is
  *    marked BUSY.

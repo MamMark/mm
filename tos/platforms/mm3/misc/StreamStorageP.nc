@@ -16,16 +16,33 @@
  * of the resultant data on Winbloz machines (which unfortunately
  * need to be supported for post processing data).
  *
- * Anyway.  StreamStorage provides a simple handle based write
- * interface.  StreamStorage provides a pool of buffers and
- * manages when the buffers get written to the SD.
+ * StreamStorage provides a write interface that will write sequenctial
+ * blocks of the storage device.  One 512 byte block at a time. There
+ * are no provisions for a file system or for access currently.
  *
- * Copyright 2008 Eric B. Decker
+ * StreamStorage provides a pool of buffers to its users and manages
+ * when those buffers get written to the SD.
+ *
+ * Copyright 2008 (c) Eric B. Decker
  * Mam-Mark Project
+ * All rights reserved.
  *
  * Based on ms_sd.c - Stream Storage Interface - SD direct interface
  * Copyright 2006-2007, Eric B. Decker
  * Mam-Mark Project
+ *
+ * Overview:
+ *
+ * This is a threaded tinyos 2 implementation.  The main thread is responsible
+ * for managing SD state, turning it on, seeing buffers that need work etc.
+ *
+ * When it has work, it turns on the SD (which takes some time), performs the
+ * work.  When there is no more work, it will power down the SD.
+ *
+ * Currently, the only work it has is to write buffers to the SD.  On boot up
+ * it will turn the SD on and search the data area (obtained from the data block
+ * locator in the MBR) for the first zero block which is assumed to be the first
+ * erased block.  New blocks handed to it will be written starting at the sector.
  */
 
 #include "stream_storage.h"
@@ -50,24 +67,30 @@
 module StreamStorageP {
   provides {
     interface Init;
-    interface StdControl as SSControl;
     interface StreamStorage as SS;
+    interface Boot as BlockingBoot;
   }
   uses {
-    interface BlockingResource;
-    interface Panic;
+    interface Boot;
+    interface Queue<ss_buf_handle_t*>;
+    interface Thread;
     interface SD;
     interface HplMM3Adc as HW;
+    interface Semaphore;
+    interface BlockingResource as SPIResource;
+    interface Panic;
   }
 }
   
 implementation {
-  noinit ss_buf_handle_t ss_handles[SS_NUM_BUFS];
-  noinit ss_control_t ssc;
+  ss_buf_handle_t ss_handles[SS_NUM_BUFS];
+  ss_control_t ssc;
+  semaphore_t sem;
 
   command error_t Init.init() {
     uint16_t i;
 
+    call Semaphore.reset(&sem, 0);
     ssc.majik_a  = SSC_MAJIK_A;
 
     ssc.ss_state = SS_STATE_UNINITILIZED;
@@ -89,6 +112,30 @@ implementation {
       ss_handles[i].buf_state = SS_BUF_STATE_FREE;
     }
     return SUCCESS;
+  }
+
+
+  event void Boot.booted() {
+    call Semaphore.reset(&sem, 0);
+    call Thread.start(NULL);
+  }
+  
+
+  /*
+   * called from the client to indicate that it has
+   * filled the buffer.
+   *
+   * This is callable from anywhere and will wake the SS
+   * thread up to get something done on the SD.
+   */
+  command void SS.buffer_full(ss_buf_handle_t *handle) {
+    call Queue.enqueue(handle);
+    call Semaphore.release(&sem);
+  }
+
+
+  void ss_panic(uint8_t where, uint16_t err) {
+    call Panic.panic(PANIC_SS, where, err, 0, 0, 0);
   }
 
 
@@ -154,19 +201,19 @@ implementation {
   }
 
 
-  error_t ss_read_blk_fail(uint32_t blk, uint8_t *buf) {
+  error_t read_blk_fail(uint32_t blk, uint8_t *buf) {
     error_t err;
 
     err = call SD.read(blk, buf);
     if (err) {
-      call Panic.panic(PANIC_SS, 13, err, 0, 0, 0);
+      ss_panic(13, err);
       return err;
     }
     return err;
   }
 
 
-  command error_t SSControl.start() {
+  error_t ss_boot() {
     error_t err;
     uint8_t *dp;
     dblk_loc_t *dbl;
@@ -176,12 +223,12 @@ implementation {
     call HW.sd_on();
     err = call SD.reset();
     if (err) {
-      call Panic.panic(PANIC_SS, 10, err, 0, 0, 0);
+      ss_panic(10, err);
       return err;
     }
 
     dp = ss_handles[0].buf;
-    if ((err = ss_read_blk_fail(0, dp)))
+    if ((err = read_blk_fail(0, dp)))
       return err;
 
     dbl = (void *) ((uint8_t *) dp + DBLK_LOC_OFFSET);
@@ -192,7 +239,7 @@ implementation {
 #endif
 
     if (check_dblk_loc(dbl)) {
-      call Panic.panic(PANIC_SS, 12, 0, 0, 0, 0);
+      ss_panic(12, -1);
       return FAIL;
     }
 
@@ -203,7 +250,7 @@ implementation {
     ssc.dblk_start   = CF_LE_32(dbl->dblk_start);
     ssc.dblk_end     = CF_LE_32(dbl->dblk_end);
 
-    if ((err = ss_read_blk_fail(ssc.dblk_start, dp)))
+    if ((err = read_blk_fail(ssc.dblk_start, dp)))
       return err;
 
     if (blk_empty(dp)) {
@@ -219,7 +266,7 @@ implementation {
       blk = (upper - lower)/2 + lower;
       if (blk == lower)
 	blk = lower = upper;
-      if ((err = ss_read_blk_fail(blk, dp)))
+      if ((err = read_blk_fail(blk, dp)))
 	return err;
       if (blk_empty(dp)) {
 	upper = blk;
@@ -246,13 +293,8 @@ implementation {
       return SUCCESS;
     }
 
-    call Panic.panic(PANIC_SS, 14, 0, 0, 0, 0);
+    ss_panic(14, -1);
     return FAIL;
-  }
-
-
-  command error_t SSControl.stop() {
-    return SUCCESS;
   }
 
 
@@ -263,13 +305,13 @@ implementation {
 	ssc.majik_b != SSC_MAJIK_B ||
 	ss_handles[ssc.alloc_index].buf_state < SS_BUF_STATE_FREE ||
 	ss_handles[ssc.alloc_index].buf_state >= SS_BUF_STATE_MAX) {
-      call Panic.panic(PANIC_SS, 15, 0, 0, 0, 0);
+      ss_panic(15, -1);
       return NULL;
     }
 
     if (ss_handles[ssc.alloc_index].buf_state == SS_BUF_STATE_FREE) {
       if (ss_handles[ssc.alloc_index].majik != SS_BUF_MAJIK) {
-	call Panic.panic(PANIC_SS, 16, 0, 0, 0, 0);
+	ss_panic(16, -1);
 	return NULL;
       }
       ss_handles[ssc.alloc_index].buf_state = SS_BUF_STATE_ALLOC;
@@ -279,21 +321,22 @@ implementation {
 	ssc.alloc_index = 0;
       return sshp;
     }
-    call Panic.panic(PANIC_SS, 17, 0, 0, 0, 0);
+    ss_panic(17, -1);
     return NULL;
   }
+
 
   command uint8_t *SS.buf_handle_to_buf(ss_buf_handle_t *handle) {
     if (!handle || handle->majik != SS_BUF_MAJIK ||
 	handle->buf_state != SS_BUF_STATE_ALLOC) {
-      call Panic.panic(PANIC_SS, 18, 0, 0, 0, 0);
+      ss_panic(18, -1);
       return NULL;
     }
     return handle->buf;
   }
 
 
-  command error_t SS.flush_buf_handle(ss_buf_handle_t *handle) {
+  error_t flush_buf_handle(ss_buf_handle_t *handle) {
     if (!handle || handle->majik != SS_BUF_MAJIK ||
 	handle->buf_state != SS_BUF_STATE_ALLOC) {
       call Panic.panic(PANIC_SS, 19, (uint16_t) handle, handle->buf_state, 0, 0);
@@ -304,8 +347,9 @@ implementation {
      * handles should be flushed in strict order.  So the next one
      * in should be where in_index points.
      */
-    if (&ss_handles[ssc.in_index] != handle)
-      call Panic.panic(PANIC_SS, 20, (uint16_t) handle, 0, 0, 0);
+    if (&ss_handles[ssc.in_index] != handle) {
+      ss_panic(20, (uint16_t) handle);
+    }
 
     /*
      * check main control structure to make sure it hasn't been
@@ -314,8 +358,9 @@ implementation {
     if (ssc.majik_a != SSC_MAJIK_A || ssc.majik_b != SSC_MAJIK_B)
       call Panic.panic(PANIC_SS, 21, ssc.majik_a, ssc.majik_b, 0, 0);
 
-    if (ssc.ss_state < SS_STATE_OFF || ssc.ss_state >= SS_STATE_MAX)
-      call Panic.panic(PANIC_SS, 22, ssc.ss_state, 0, 0, 0);
+    if (ssc.ss_state < SS_STATE_OFF || ssc.ss_state >= SS_STATE_MAX) {
+      ss_panic(22, ssc.ss_state);
+    }
 
     handle->buf_state = SS_BUF_STATE_FULL;
     ssc.num_full++;
@@ -327,6 +372,29 @@ implementation {
     return SUCCESS;
   }
 
+
+  event void Thread.run(void* arg) {
+    ss_buf_handle_t* current_handle;
+    error_t err;
+
+    /*
+     * First start up and read in control blocks.
+     * Then signal we have booted.
+     */
+    if ((err = ss_boot())) {
+      ss_panic(23, err);
+    }
+    signal BlockingBoot.booted();
+
+    for(;;) {
+      call Semaphore.acquire(&sem);
+      current_handle = call Queue.dequeue();
+      if ((err = flush_buf_handle(current_handle))) {
+	ss_panic(24, err);
+      }
+    }
+  }
+  
 #ifdef notdef
   void ss_machine(msg_event_t *msg) {
     uint8_t     *buf;

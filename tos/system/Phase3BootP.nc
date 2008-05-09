@@ -36,20 +36,12 @@
  */
  
 module Phase3BootP {
-  provides {
-    interface Boot as Phase3Boot;
-  }
-  uses {
-    interface Boot;
-  }
+  provides interface Boot as Phase3Boot;
+  uses interface Boot;
 }
+
 implementation {
-  task void Boot3() {
-//    signal Phase3Boot.booted();
-    nop();
-  }
-    
   event void Boot.booted() {
-    post Boot3();
+    signal Phase3Boot.booted();
   }
 }

@@ -13,9 +13,9 @@ implementation {
   mm3C.Regime -> RegimeC;
   
   /*
-   * Include Threaded implementation of the SD Stream Storage Writer
+   * Include Threaded implementation of SD Stream Storage
    */
-  components StreamStorageWriterC;
+//  components StreamStorageC;
   
   components HplMM3AdcC;
   mm3C.HW -> HplMM3AdcC;
