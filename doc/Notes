@@ -1,5 +1,7 @@
 Things to talk to Kevin about:
 
+0) wiring in dma for sd
+
 1) Details of Mutex and Condvars
 
 2) How to wire in a different configurator.  Need to do this because
@@ -8,7 +10,11 @@ Things to talk to Kevin about:
    Note currently the default configurator and the defaultowner
    configurator do things to the SPI io pins which get in our way.
 
-3) 
+3) Default owner of comm.  So listening works....  LPL?  serial etc.
+
+4) Basic  command structure.
+
+5) GPS.  custom interrupt for s/w uart.
 
 
 Installation of Tools.

@@ -1,5 +1,5 @@
 
-#include "serial.h"
+#include "serial_speed.h"
 
 module mm3SerialP {
   provides {
