@@ -77,7 +77,7 @@ module StreamStorageP {
     interface SD;
     interface HplMM3Adc as HW;
     interface Semaphore;
-    interface BlockingResource as SPIResource;
+    interface BlockingResource as BlockingSPIResource;
     interface Panic;
   }
 }
@@ -116,7 +116,6 @@ implementation {
 
 
   event void Boot.booted() {
-    call Semaphore.reset(&sem, 0);
     call Thread.start(NULL);
   }
   
@@ -378,13 +377,21 @@ implementation {
     error_t err;
 
     /*
+     * call the system to arbritrate and configure the SPI
+     * we use the default configuration for now which matches
+     * what we need.
+     */
+    call BlockingSPIResource.request();
+    signal BlockingBoot.booted();
+    call BlockingSPIResource.release();
+
+    /*
      * First start up and read in control blocks.
      * Then signal we have booted.
      */
     if ((err = ss_boot())) {
       ss_panic(23, err);
     }
-    signal BlockingBoot.booted();
 
     for(;;) {
       call Semaphore.acquire(&sem);

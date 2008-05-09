@@ -4,7 +4,7 @@
  * @date 5/8/2008
  *
  * Configuration wiring for StreamStorage.  See StreamStorageP for
- * more details.
+ * more details on what StreamStorage does.
  *
  * Threaded TinyOS 2 implementation.
  */
@@ -47,6 +47,12 @@ implementation {
   components SemaphoreC;
   SSP.Semaphore -> SemaphoreC;
 
+  
+  components new Msp430Spi1C() as SpiC;
+  components new BlockingResourceC();
+  BlockingResourceC.Resource -> SpiC;
+  SSP.BlockingSPIResource -> BlockingResourceC;
+
   components SDC;
   SSP.SD -> SDC;
 
@@ -55,9 +61,4 @@ implementation {
 
   components HplMM3AdcC;
   SSP.HW -> HplMM3AdcC;
-  
-  components new Msp430Spi1C() as SpiC;
-  components new BlockingResourceC();
-  BlockingResourceC.Resource -> SpiC;
-  SSP.SPIResource -> BlockingResourceC;
 }
