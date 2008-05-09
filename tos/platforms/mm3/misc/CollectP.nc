@@ -13,18 +13,15 @@ module CollectP {
     interface Collect;
     interface Init;
   }
+  uses interface StreamStorage as SS;
 }
 
 implementation {
   dc_control_t dcc;
-  uint8_t buf[512];
-
-  uint8_t *ms_get_buffer() {
-    return buf;
-  }
 
   command error_t Init.init() {
     dcc.majik_a = DC_MAJIK_A;
+    dcc.handle = NULL;
     dcc.cur_buf = NULL;
     dcc.cur_ptr = NULL;
     dcc.remaining = 0;
@@ -48,8 +45,11 @@ implementation {
       if (dcc.cur_buf == NULL) {
         /*
          * nobody home, try to go get one.
+	 *
+	 * get_free_buf_handle either works or panics.
          */
-        dcc.cur_ptr = dcc.cur_buf = ms_get_buffer();
+	dcc.handle = call SS.get_free_buf_handle();
+        dcc.cur_ptr = dcc.cur_buf = call SS.buf_handle_to_buf(dcc.handle);
         dcc.remaining = DC_BLK_SIZE;
         dcc.chksum = 0;
       }
@@ -68,6 +68,8 @@ implementation {
         (*(uint16_t *) dcc.cur_ptr) = dcc.seq++;
         dcc.cur_ptr += 2;
         (*(uint16_t *) dcc.cur_ptr) = dcc.chksum;
+	call SS.buffer_full(dcc.handle);
+	dcc.handle = NULL;
         dcc.cur_buf = NULL;
         dcc.cur_ptr = NULL;
       }

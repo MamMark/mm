@@ -8,8 +8,9 @@ configuration CollectC {
 }
 
 implementation {
-//  components SerialCollectC;
-//  Collect = SerialCollectC;
   components CollectP;
   Collect = CollectP;
+
+  components StreamStorageC;
+  CollectP.SS -> StreamStorageC;
 }

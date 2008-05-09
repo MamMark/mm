@@ -72,7 +72,6 @@ module StreamStorageP {
   }
   uses {
     interface Boot;
-    interface Queue<ss_buf_handle_t*>;
     interface Thread;
     interface SD;
     interface HplMM3Adc as HW;
@@ -84,6 +83,7 @@ module StreamStorageP {
   
 implementation {
   ss_buf_handle_t ss_handles[SS_NUM_BUFS];
+  ss_buf_handle_t *ssh_ptrs[SS_NUM_BUFS]; // avoid math
   ss_control_t ssc;
   semaphore_t sem;
 
@@ -110,6 +110,7 @@ implementation {
     for (i = 0; i < SS_NUM_BUFS; i++) {
       ss_handles[i].majik     = SS_BUF_MAJIK;
       ss_handles[i].buf_state = SS_BUF_STATE_FREE;
+      ssh_ptrs[i] = &ss_handles[i];
     }
     return SUCCESS;
   }
@@ -120,21 +121,52 @@ implementation {
   }
   
 
+  void ss_panic(uint8_t where, uint16_t err) {
+    call Panic.panic(PANIC_SS, where, err, 0, 0, 0);
+  }
+
+
   /*
    * called from the client to indicate that it has
    * filled the buffer.
    *
    * This is callable from anywhere and will wake the SS
    * thread up to get something done on the SD.
+   *
+   * Note that the buffers get allocated and handed back
+   * in strict order so all we have to do is hit the
+   * semaphore.  But to be paranoid we use the queue and
+   * check it.
+   *
+   * Actually we could do the checks here and then kick
+   * the semaphore.  The thread just runs down the
+   * buffers in order.
    */
+
   command void SS.buffer_full(ss_buf_handle_t *handle) {
-    call Queue.enqueue(handle);
+    ss_buf_handle_t *sshp;
+
+    /*
+     * handles should be flushed in strict order.  So the next one
+     * in should be where in_index points.
+     */
+    sshp = ssh_ptrs[ssc.in_index];
+    if (&ss_handles[ssc.in_index] != handle ||
+	&ss_handles[ssc.in_index] != ssh_ptrs[ssc.in_index]) {
+      call Panic.panic(PANIC_SS, 99, (uint16_t) handle, (uint16_t) ssh_ptrs[ssc.in_index], 0, 0);
+    }
+	
+    if (ssc.majik_a != SSC_MAJIK_A ||
+	ssc.majik_b != SSC_MAJIK_B ||
+	sshp->buf_state < SS_BUF_STATE_FREE ||
+	sshp->buf_state >= SS_BUF_STATE_MAX) {
+      call Panic.panic(PANIC_SS, 100, ssc.majik_a, ssc.majik_b, sshp->buf_state, 0);
+    }
+
+    ssc.in_index++;
+    if (ssc.in_index >= SS_NUM_BUFS)
+      ssc.in_index = 0;
     call Semaphore.release(&sem);
-  }
-
-
-  void ss_panic(uint8_t where, uint16_t err) {
-    call Panic.panic(PANIC_SS, where, err, 0, 0, 0);
   }
 
 
@@ -300,21 +332,21 @@ implementation {
   command ss_buf_handle_t* SS.get_free_buf_handle() {
     ss_buf_handle_t *sshp;
 
+    sshp = ssh_ptrs[ssc.alloc_index];
     if (ssc.alloc_index >= SS_NUM_BUFS || ssc.majik_a != SSC_MAJIK_A ||
 	ssc.majik_b != SSC_MAJIK_B ||
-	ss_handles[ssc.alloc_index].buf_state < SS_BUF_STATE_FREE ||
-	ss_handles[ssc.alloc_index].buf_state >= SS_BUF_STATE_MAX) {
+	sshp->buf_state < SS_BUF_STATE_FREE ||
+	sshp->buf_state >= SS_BUF_STATE_MAX) {
       ss_panic(15, -1);
       return NULL;
     }
 
-    if (ss_handles[ssc.alloc_index].buf_state == SS_BUF_STATE_FREE) {
-      if (ss_handles[ssc.alloc_index].majik != SS_BUF_MAJIK) {
+    if (sshp->buf_state == SS_BUF_STATE_FREE) {
+      if (sshp->majik != SS_BUF_MAJIK) {
 	ss_panic(16, -1);
 	return NULL;
       }
-      ss_handles[ssc.alloc_index].buf_state = SS_BUF_STATE_ALLOC;
-      sshp = &ss_handles[ssc.alloc_index];
+      sshp->buf_state = SS_BUF_STATE_ALLOC;
       ssc.alloc_index++;
       if (ssc.alloc_index >= SS_NUM_BUFS)
 	ssc.alloc_index = 0;
@@ -335,19 +367,18 @@ implementation {
   }
 
 
+  /*
+   * handle's buffer should get sent out.  If the machine
+   * hasn't started writing fire up.
+   *
+   * paranoid checking has already been done.
+   */
+
   error_t flush_buf_handle(ss_buf_handle_t *handle) {
     if (!handle || handle->majik != SS_BUF_MAJIK ||
 	handle->buf_state != SS_BUF_STATE_ALLOC) {
       call Panic.panic(PANIC_SS, 19, (uint16_t) handle, handle->buf_state, 0, 0);
       return FAIL;
-    }
-
-    /*
-     * handles should be flushed in strict order.  So the next one
-     * in should be where in_index points.
-     */
-    if (&ss_handles[ssc.in_index] != handle) {
-      ss_panic(20, (uint16_t) handle);
     }
 
     /*
@@ -365,9 +396,6 @@ implementation {
     ssc.num_full++;
     if (ssc.num_full > ssc.max_full)
       ssc.max_full = ssc.num_full;
-    ssc.in_index++;
-    if (ssc.in_index >= SS_NUM_BUFS)
-      ssc.in_index = 0;
     return SUCCESS;
   }
 
@@ -382,8 +410,6 @@ implementation {
      * what we need.
      */
     call BlockingSPIResource.request();
-    signal BlockingBoot.booted();
-    call BlockingSPIResource.release();
 
     /*
      * First start up and read in control blocks.
@@ -393,9 +419,12 @@ implementation {
       ss_panic(23, err);
     }
 
+    call BlockingSPIResource.release();
+    signal BlockingBoot.booted();
+
     for(;;) {
       call Semaphore.acquire(&sem);
-      current_handle = call Queue.dequeue();
+      current_handle = ssh_ptrs[ssc.in_index];
       if ((err = flush_buf_handle(current_handle))) {
 	ss_panic(24, err);
       }

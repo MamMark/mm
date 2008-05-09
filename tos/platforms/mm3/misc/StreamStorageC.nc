@@ -41,9 +41,6 @@ implementation {
   components new ThreadC(300); 
   SSP.Thread -> ThreadC;
   
-  components new QueueC(ss_buf_handle_t*, SS_NUM_BUFS);
-  SSP.Queue -> QueueC;
-    
   components SemaphoreC;
   SSP.Semaphore -> SemaphoreC;
 

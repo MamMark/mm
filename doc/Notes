@@ -1,3 +1,16 @@
+Things to talk to Kevin about:
+
+1) Details of Mutex and Condvars
+
+2) How to wire in a different configurator.  Need to do this because
+   we phutz with input/output pins because of the power issue.
+
+   Note currently the default configurator and the defaultowner
+   configurator do things to the SPI io pins which get in our way.
+
+3) 
+
+
 Installation of Tools.
 Configuring Linux Kernel for ti usb fet
 Other Misc. things.

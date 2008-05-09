@@ -8,6 +8,8 @@
 #ifndef __COLLECTOR_H__
 #define __COLLECTOR_H__
 
+#include "stream_storage.h"
+
 /*
  * DC_BLK_SIZE is 4 less then the block size of mass storage.
  * last 2 bytes is a running checksum (sum the block to 0).
@@ -25,6 +27,7 @@
 
 typedef struct {
   uint16_t majik_a;
+  ss_buf_handle_t *handle;
   uint8_t *cur_buf;
   uint8_t *cur_ptr;
   uint16_t remaining;
