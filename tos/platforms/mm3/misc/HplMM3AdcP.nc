@@ -30,6 +30,8 @@ module HplMM3AdcP {
 }
 
 implementation {
+  MSP430REG_NORACE(P5SEL);
+
   command void HW.vref_on() {
     mmP4out.vref_off = 0;
   }
@@ -173,7 +175,7 @@ implementation {
     mmP6out.mag_z_off  = 1;
   }
 
-  command bool HW.isSDPowered() {
+  async command bool HW.isSDPowered() {
     return (mmP5out.sd_pwr_off == 0);
   }
 
@@ -193,7 +195,7 @@ implementation {
    *   power up
    */
 
-  command void HW.sd_on() {
+  async command void HW.sd_on() {
     if (!call HW.isSDPowered()) { // if not powered, bring it up
       SD_CSN = 1;		// make sure tristated
       SD_PINS_SPI;		// switch pins over
@@ -210,7 +212,7 @@ implementation {
    * to the SPI and wiggling but the SD will be powered off and could be
    * powered up and tortured.
    */
-  command void HW.sd_off() {
+  async command void HW.sd_off() {
     if (call HW.isSDPowered()) {
       SD_CSN = 1;		// tri-state by deselecting
       SD_PWR_OFF;		// kill power

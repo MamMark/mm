@@ -44,11 +44,12 @@ implementation {
   components SemaphoreC;
   SSP.Semaphore -> SemaphoreC;
 
-  
-  components new Msp430Spi1C() as SpiC;
+  components new mm3Spi1C() as SpiC;
   components new BlockingResourceC();
   BlockingResourceC.Resource -> SpiC;
   SSP.BlockingSPIResource -> BlockingResourceC;
+  SSP.ResourceConfigure <- SpiC;
+  SSP.SpiResourceConfigure -> SpiC;
 
   components SDC;
   SSP.SD -> SDC;

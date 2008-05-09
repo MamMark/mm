@@ -15,5 +15,6 @@ implementation
   components PlatformP, Msp430ClockC;
 
   Init = PlatformP;
-  PlatformP.Msp430ClockInit -> Msp430ClockC.Init;
+  PlatformP.ClockInit -> Msp430ClockC.Init;
+  PlatformP.Msp430ClockInit -> Msp430ClockC;
 }

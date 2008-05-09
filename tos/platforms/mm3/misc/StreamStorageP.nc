@@ -69,6 +69,7 @@ module StreamStorageP {
     interface Init;
     interface StreamStorage as SS;
     interface Boot as BlockingBoot;
+    interface ResourceConfigure;
   }
   uses {
     interface Boot;
@@ -77,6 +78,7 @@ module StreamStorageP {
     interface HplMM3Adc as HW;
     interface Semaphore;
     interface BlockingResource as BlockingSPIResource;
+    interface ResourceConfigure as SpiResourceConfigure;
     interface Panic;
   }
 }
@@ -251,7 +253,6 @@ implementation {
     uint32_t   lower, blk, upper;
     bool empty;
 
-    call HW.sd_on();
     err = call SD.reset();
     if (err) {
       ss_panic(10, err);
@@ -314,8 +315,6 @@ implementation {
       ss_test();
     }
 #endif
-
-    call HW.sd_off();
 
     /* for now force to always hit the start. */
     empty = 1; blk = ssc.dblk_start;
@@ -397,6 +396,18 @@ implementation {
     if (ssc.num_full > ssc.max_full)
       ssc.max_full = ssc.num_full;
     return SUCCESS;
+  }
+
+
+  async command void ResourceConfigure.configure() {
+    call SpiResourceConfigure.configure();
+    call HW.sd_on();
+  }
+
+
+  async command void ResourceConfigure.unconfigure() {
+    call HW.sd_off();
+    call SpiResourceConfigure.unconfigure();
   }
 
 

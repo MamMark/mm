@@ -18,7 +18,6 @@
 #  %T/chips/cc2420/transmit
 #  %T/chips/cc2420/unique
 #  %T/chips/msp430/adc12
-#  %T/chips/msp430/dma
 #  %T/chips/msp430/sensors
 
 push( @includes, qw(
@@ -31,6 +30,7 @@ push( @includes, qw(
   %T/chips/msp430/pins
   %T/chips/msp430/timer
   %T/chips/msp430/usart
+  %T/chips/msp430/dma
   %T/lib/timer
   %T/lib/serial
   %T/lib/power

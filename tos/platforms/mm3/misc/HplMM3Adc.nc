@@ -57,9 +57,9 @@ interface HplMM3Adc {
   command void	  speed_off();
   command void	  mag_on();
   command void	  mag_off();
-  command bool	  isSDPowered();
-  command void	  sd_on();
-  command void	  sd_off();
+  async command bool isSDPowered();
+  async command void sd_on();
+  async command void sd_off();
   command void	  gps_on();
   command void	  gps_off();
 }

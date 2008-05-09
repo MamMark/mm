@@ -1,28 +1,27 @@
 Things to talk to Kevin about:
 
--1) wiring in a different msp430ClockInit rather then the override
-    in PlatformP.nc.
-
-0) wiring in dma for sd
-
 1) Details of Mutex and Condvars
-
-2) How to wire in a different configurator.  Need to do this because
-   we phutz with input/output pins because of the power issue.
-
-   Note currently the default configurator and the defaultowner
-   configurator do things to the SPI io pins which get in our way.
 
 3) Default owner of comm.  So listening works....  LPL?  serial etc.
 
 4) Basic  command structure.
 
-5) GPS.  custom interrupt for s/w uart.
-
 6) At some point review timer A usage.  Where should it get powered
    up and where get powered down.
 
    When should it get resync'd to Aclk?
+
+
+*-1) wiring in a different msp430ClockInit rather then the override
+    in PlatformP.nc.
+*0) wiring in dma for sd
+*2) How to wire in a different configurator.  Need to do this because
+   we phutz with input/output pins because of the power issue.
+
+   Note currently the default configurator and the defaultowner
+   configurator do things to the SPI io pins which get in our way.
+*5) GPS.  custom interrupt for s/w uart.
+
 
 Installation of Tools.
 Configuring Linux Kernel for ti usb fet

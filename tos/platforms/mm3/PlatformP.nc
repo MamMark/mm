@@ -32,8 +32,9 @@ module PlatformP{
     interface GeneralIO as Led2;
   }
   uses {
-    interface Init as Msp430ClockInit;
+    interface Init as ClockInit;
     interface Init as LedsInit;
+    interface Msp430ClockInit;
   }
 }
 
@@ -62,50 +63,32 @@ implementation {
     }
   }
 
-  command error_t Init.init() __attribute__ ((noinline)) {
-    TOSH_MM3_INITIAL_PIN_STATE();
+  /*
+   * I know there is some way to mess with changing the default
+   * commands in Msp430ClockInit but not sure how to do it.
+   * So for now just do it by forcing it.
+   *
+   * Originally SMCLK was set as DCO/4 and Timer A was run
+   * as SMCLK/1.  The problem is the SPI is clocked off
+   * SMCLK and its minimum divisor is /2 which gives us DCO/8.
+   * We want to run the SPI as fast as possible.  SPI0 is the
+   * ADC and SPI1 is the radio and SD card.  Both need to run
+   * as fast as possible.
+   *
+   * So after initilizing using the original code we wack
+   * BCSCTL2 to make SMCLK be DCO and TACTL to change its
+   * divisor to /4 to maintain 1uS ticks.
+   *
+   * This effects the serial usart (uart1) used for direct
+   * connect.  So the UBR register values must be modified for
+   * that as well.  See mm3SerialP.nc.
+   */
 
-    /*
-     * It takes a long time for the 32KHz Xtal to come up.
-     * Go look to see when we start getting 32KHz ticks.
-     * Wait for 10.
-     */
-    wait_for_32K();
-
-    set_stuff();
-    call Msp430ClockInit.init();
-    set_stuff();
-
-    /*
-     * I know there is some way to mess with changing the default
-     * commands in Msp430ClockInit but not sure how to do it.
-     * So for now just do it by forcing it.
-     *
-     * Originally SMCLK was set as DCO/4 and Timer A was run
-     * as SMCLK/1.  The problem is the SPI is clocked off
-     * SMCLK and its minimum divisor is /2 which gives us DCO/8.
-     * We want to run the SPI as fast as possible.  SPI0 is the
-     * ADC and SPI1 is the radio and SD card.  Both need to run
-     * as fast as possible.
-     *
-     * So after initilizing using the original code we wack
-     * BCSCTL2 to make SMCLK be DCO and TACTL to change its
-     * divisor to /4 to maintain 1uS ticks.
-     *
-     * This effects the serial usart (uart1) used for direct
-     * connect.  So the UBR register values must be modified for
-     * that as well.  See mm3SerialP.nc.
-     */
-
-    // BCSCTL2
-    // .SELM = 0; select DCOCLK as source for MCLK
-    // .DIVM = 0; set the divisor of MCLK to 1
-    // .SELS = 0; select DCOCLK as source for SCLK
-    // .DIVS = 0; set the divisor of SCLK to 1
-    //            was formerly 2 (/4)
-    // .DCOR = 0; select internal resistor for DCO
-    BCSCTL2 = 0;
-
+  event void Msp430ClockInit.setupDcoCalibrate() {
+    call Msp430ClockInit.defaultSetupDcoCalibrate();
+  }
+  
+  event void Msp430ClockInit.initTimerA() {
     // TACTL
     // .TACLGRP = 0; each TACL group latched independently
     // .CNTL = 0; 16-bit counter
@@ -120,9 +103,48 @@ implementation {
      * do its thing?  Also how often do we want to resyncronize
      * the clock (DCO).
      */
-    TACTL = TASSEL1 | ID1 | MC1 | TAIE;
     TAR = 0;
+    TACTL = TASSEL1 | ID1 | MC1 | TAIE;
+  }
 
+  event void Msp430ClockInit.initTimerB() {
+    call Msp430ClockInit.defaultInitTimerB();
+  }
+
+  event void Msp430ClockInit.initClocks() {
+    // BCSCTL1
+    // .XT2OFF = 1; disable the external oscillator for SCLK and MCLK
+    // .XTS = 0; set low frequency mode for LXFT1
+    // .DIVA = 0; set the divisor on ACLK to 1
+    // .RSEL, do not modify
+    BCSCTL1 = XT2OFF | (BCSCTL1 & (RSEL2|RSEL1|RSEL0));
+
+    // BCSCTL2
+    // .SELM = 0; select DCOCLK as source for MCLK
+    // .DIVM = 0; set the divisor of MCLK to 1
+    // .SELS = 0; select DCOCLK as source for SCLK
+    // .DIVS = 0; set the divisor of SCLK to 1
+    //            was formerly 2 (/4)
+    // .DCOR = 0; select internal resistor for DCO
+    BCSCTL2 = 0;
+
+    // IE1.OFIE = 0; no interrupt for oscillator fault
+    CLR_FLAG( IE1, OFIE );
+  }
+
+    command error_t Init.init() __attribute__ ((noinline)) {
+    TOSH_MM3_INITIAL_PIN_STATE();
+
+    /*
+     * It takes a long time for the 32KHz Xtal to come up.
+     * Go look to see when we start getting 32KHz ticks.
+     * Wait for 10.
+     */
+    wait_for_32K();
+
+    set_stuff();
+    call ClockInit.init();
+    set_stuff();
     call LedsInit.init();
     return SUCCESS;
   }
