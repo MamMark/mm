@@ -41,6 +41,22 @@
 #error "GPS_SPEED not defined"
 #endif
 
+#define GPS_RX  mmP1in.gps_rx_in
+
+/*
+ * SET_GPS_RX_IN will set the direction of the gps_rx pin to input.  When the
+ * gps is on this is where it should be.
+ */
+
+#define SET_GPS_RX_IN_MOD do { P1SEL |= 0x08; P1DIR &= ~0x08; } while (0)
+
+/*
+ * SET_GPS_RX_OUT_0 will set the direction of gps_rx to output.  And take
+ * back control from the timer module.  it is already assumed that the value
+ * output will be 0 from initilization.
+ */
+#define SET_GPS_RX_OUT_0 do { P1SEL &= ~0x08; P1DIR |= 0x08; } while (0)
+
 /*
  * empirically determined to be about 300 mis or so
  * when NMEA is the protocol.  Don't current know

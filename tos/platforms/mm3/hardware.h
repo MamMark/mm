@@ -2,6 +2,7 @@
 #define _H_hardware_h
 
 #include "msp430hardware.h"
+#include "mm3PortRegs.h"
 
 /*
  * Port definitions:
@@ -80,64 +81,11 @@
  * the settings on a h/w multiplexor.
  */
 
-  static volatile struct {
-    uint8_t not_used        : 3;
-    uint8_t gps_rx_in       : 1;
-    uint8_t not_used_1      : 4;
-  } mmP1in asm("0x0020");
-
-#define GPS_RX  mmP1in.gps_rx_in
 TOSH_ASSIGN_PIN(GSP_RXx, 1, 3);
-
-/*
- * SET_GPS_RX_IN will set the direction of the gps_rx pin to input.  When the
- * gps is on this is where it should be.
- */
-
-#define SET_GPS_RX_IN_MOD do { P1SEL |= 0x08; P1DIR &= ~0x08; } while (0)
-
-/*
- * SET_GPS_RX_OUT_0 will set the direction of gps_rx to output.  And take
- * back control from the timer module.  it is already assumed that the value
- * output will be 0 from initilization.
- */
-#define SET_GPS_RX_OUT_0 do { P1SEL &= ~0x08; P1DIR |= 0x08; } while (0)
-
-
-  static volatile struct {
-    uint8_t dmux	    : 2;
-    uint8_t mag_deguass1    : 1;
-    uint8_t gps_rx_out      : 1;
-    uint8_t mag_deguass2    : 1;
-    uint8_t press_res_off   : 1;
-    uint8_t salinity_off    : 1;
-    uint8_t press_off       : 1;
-  } mmP1out asm("0x0021");
-
-  static volatile struct {
-    uint8_t u8_inhibit		: 1;
-    uint8_t accel_wake		: 1;
-    uint8_t salinity_pol_sw	: 1;
-    uint8_t u12_inhibit		: 1;
-    uint8_t smux_low2		: 2;
-    uint8_t adc_cnv		: 1;
-    uint8_t			: 1;
-  } mmP2out asm("0x0029");
 
 #define ADC_CNV mmP2out.adc_cnv
 
 TOSH_ASSIGN_PIN(ADCxCNV, 2, 6);
-
-  static volatile struct {
-    uint8_t			: 1;
-    uint8_t smux_a2		: 1;
-    uint8_t adc_sdo		: 1;	/* input */
-    uint8_t adc_clk		: 1;
-    uint8_t tmp_on		: 1;
-    uint8_t adc_sdi		: 1;
-    uint8_t utxd1		: 1;
-    uint8_t urxd1_o		: 1;
-  } mmP3out asm("0x0019");
 
 #define ADC_SDO mmP3out.adc_sdo
 #define ADC_CLK mmP3out.adc_clk
@@ -147,51 +95,10 @@ TOSH_ASSIGN_PIN(ADCxSDO, 3, 2);
 TOSH_ASSIGN_PIN(ADCxCLK, 3, 3);
 TOSH_ASSIGN_PIN(ADCxSDI, 3, 5);
 
-  static volatile struct {
-    uint8_t gmux		: 2;
-    uint8_t vdiff_off		: 1;
-    uint8_t vref_off		: 1;
-    uint8_t solar_chg_on	: 1;
-    uint8_t extchg_battchk	: 1;
-    uint8_t gps_off		: 1;
-    uint8_t rf232_off		: 1;
-  } mmP4out asm("0x001d");
-
-norace  static volatile struct {
-    uint8_t sd_pwr_off		: 1;
-    uint8_t sd_sdi		: 1;
-    uint8_t sd_sdo		: 1;
-    uint8_t sd_clk		: 1;
-    uint8_t sd_csn		: 1;	/* chip select low true (deselect) */
-    uint8_t rf_beep_off		: 1;
-    uint8_t ser_sel		: 2;
-  } mmP5out asm("0x0031");
-
-#define SD_CSN mmP5out.sd_csn
-#define SD_PWR_ON  (mmP5out.sd_pwr_off = 0)
-#define SD_PWR_OFF (mmP5out.sd_pwr_off = 1)
-
 TOSH_ASSIGN_PIN(SDxSDI, 5, 1);
 TOSH_ASSIGN_PIN(SDxSDO, 5, 2);
 TOSH_ASSIGN_PIN(SDxCLK, 5, 3);
 TOSH_ASSIGN_PIN(SDxCSN, 5, 4);
-
-/*
- * SD_PINS_OUT_0 will set SPI1/SD data pins to output 0.  (no longer
- * connected to the SPI module.  The values of these pins is assumed to be 0.
- * Direction of the pins is assumed to be output.  So the only thing that
- * needs to happen is changing from ModuleFunc to PortFunc.
- */
-
-#define SD_PINS_OUT_0 do { P5SEL &= ~0x0e; } while (0)
-
-/*
- * SD_PINS_SPI will connect the 3 data lines on the SD to the SPI.
- *
- * 5.4 CSN left alone (already assumed to be properly set)
- * 5.1-3 SDI, SDO, CLK set to SPI Module.
- */
-#define SD_PINS_SPI   do { P5SEL |= 0x0e; } while (0)
 
   enum {
     SER_SEL_CRADLE =	0,
@@ -199,18 +106,6 @@ TOSH_ASSIGN_PIN(SDxCSN, 5, 4);
 //    SER_SEL_RF232  =	2,	/* shouldnt be used */
     SER_SEL_NONE   =	3,
   };
-
-
-  static volatile struct {
-    uint8_t			: 1;
-    uint8_t			: 1;
-    uint8_t			: 1;
-    uint8_t tell		: 1;
-    uint8_t speed_off		: 1;
-    uint8_t mag_xy_off		: 1;
-    uint8_t led_y		: 1;
-    uint8_t mag_z_off		: 1;
-  } mmP6out asm("0x0035");
 
 #define TELL mmP6out.tell
 TOSH_ASSIGN_PIN(TELLx, 6, 3);

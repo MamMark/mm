@@ -24,6 +24,27 @@
 #define U1_TX_EMPTY (U1TCTL & TXEPT)
 #define U1_CLR_RX   (IFG2 &= ~URXIFG1)
 
+#define SD_CSN mmP5out.sd_csn
+#define SD_PWR_ON  (mmP5out.sd_pwr_off = 0)
+#define SD_PWR_OFF (mmP5out.sd_pwr_off = 1)
+
+/*
+ * SD_PINS_OUT_0 will set SPI1/SD data pins to output 0.  (no longer
+ * connected to the SPI module.  The values of these pins is assumed to be 0.
+ * Direction of the pins is assumed to be output.  So the only thing that
+ * needs to happen is changing from ModuleFunc to PortFunc.
+ */
+
+#define SD_PINS_OUT_0 do { P5SEL &= ~0x0e; } while (0)
+
+/*
+ * SD_PINS_SPI will connect the 3 data lines on the SD to the SPI.
+ *
+ * 5.4 CSN left alone (already assumed to be properly set)
+ * 5.1-3 SDI, SDO, CLK set to SPI Module.
+ */
+#define SD_PINS_SPI   do { P5SEL |= 0x0e; } while (0)
+
 /*
  * DMA control defines.  Makes things more readable.
  */

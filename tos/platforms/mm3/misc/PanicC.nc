@@ -1,7 +1,7 @@
 /**
  * Copyright @ 2008 Eric B. Decker
  * @author Eric B. Decker
- */
+*/
 
 #include "panic.h"
 

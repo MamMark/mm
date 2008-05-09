@@ -24,6 +24,7 @@
 
 #include "hardware.h"
 #include "sensors.h"
+#include "gps.h"
 
 module HplMM3AdcP {
   provides interface HplMM3Adc as HW;
