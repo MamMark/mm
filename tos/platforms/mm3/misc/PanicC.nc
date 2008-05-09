@@ -3,6 +3,8 @@
  * @author Eric B. Decker
  */
 
+#include "panic.h"
+
 configuration PanicC {
   provides interface Panic;
 }
