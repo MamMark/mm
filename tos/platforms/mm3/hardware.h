@@ -1,3 +1,11 @@
+/**
+ *
+ * Copyright 2008 (c) Eric B. Decker
+ * All rights reserved.
+ *
+ * @author Eric B. Decker
+ */
+
 #ifndef _H_hardware_h
 #define _H_hardware_h
 

@@ -1,3 +1,10 @@
+/**
+ *
+ * Copyright 2008 (c) Eric B. Decker
+ * All rights reserved.
+ *
+ * @author Eric B. Decker
+ */
 
 configuration PlatformSerialC {
   provides interface StdControl;

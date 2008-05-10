@@ -1,3 +1,11 @@
+/**
+ *
+ * Copyright 2008 (c) Eric B. Decker
+ * All rights reserved.
+ *
+ * @author Eric B. Decker
+ */
+
 #include "hardware.h"
 
 configuration PlatformLedsC {

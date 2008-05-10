@@ -1,6 +1,9 @@
 /**
+ *
+ * Copyright 2008 (c) Eric B. Decker
+ * All rights reserved.
+ *
  * @author Eric B. Decker
- * @version 
  */
 
 #include "hardware.h"

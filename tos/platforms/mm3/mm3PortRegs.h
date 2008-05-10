@@ -1,3 +1,11 @@
+/**
+ *
+ * Copyright 2008 (c) Kevin Klues
+ * All rights reserved.
+ *
+ * @author Kevin Klues
+ */
+
 #ifndef _H_MM3_PORT_REGS_H
 #define _H_MM3_PORT_REGS_H
 
