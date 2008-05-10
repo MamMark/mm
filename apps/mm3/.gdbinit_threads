@@ -14,7 +14,7 @@ b SchedulerBasicP.nc:137
 b SchedulerBasicP.nc:134
 
 #mcu sleep
-b TinyThreadSchedulerP.nc:92
+b TinyThreadSchedulerP.nc:96
 
 #thread dispatch
 b TinyThreadSchedulerP.nc:78
