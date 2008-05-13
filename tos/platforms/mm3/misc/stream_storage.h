@@ -83,7 +83,7 @@ typedef struct {
 typedef enum {
   SS_STATE_CRASHED	= 0xe0,	/* something went wrong with stream storage.  hard fail */
   SS_STATE_UNINITILIZED,	/* dblk locator not found */
-  SS_STATE_OFF = 0xe0,		/* power is off to the SS device */
+  SS_STATE_OFF,			/* power is off to the SS device */
   SS_STATE_POWERING_UP,		/* in process of turning on */
   SS_STATE_XFER,		/* writing data out to the SS device, dma */
   SS_STATE_IDLE,		/* powered up but idle */

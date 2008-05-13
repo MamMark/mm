@@ -1,5 +1,9 @@
 Things to talk to Kevin about:
 
+0) In StreamStorageP, in ResourceConfigure.configure is async and
+   needs atomic ss_state = SS_STATE_IDLE;  while async ResourceConfigure.unconfigure
+   doesn't need the atomic?  what gives?
+
 1) Details of Mutex and Condvars
 
 3) Default owner of comm.  So listening works....  LPL?  serial etc.

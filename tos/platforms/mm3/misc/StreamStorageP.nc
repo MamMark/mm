@@ -85,17 +85,36 @@ module StreamStorageP {
   
 implementation {
   ss_buf_handle_t ss_handles[SS_NUM_BUFS];
-  ss_buf_handle_t *ssh_ptrs[SS_NUM_BUFS]; // avoid math
+  ss_buf_handle_t * const ssh_ptrs[SS_NUM_BUFS] = {
+    &ss_handles[0],
+    &ss_handles[1],
+    &ss_handles[2],
+    &ss_handles[3]
+  };
+
+#if SS_NUM_BUFS != 4
+#warning "SS_NUM_BUFS is other than 4"
+#endif
+
+  /*
+   * Stream Storage control state
+   * (see stream_storage.h for documentation)
+   *
+   * ss_state pulled out to deal with asyncronous state setting.
+   */
+
+  ss_state_t ss_state;		// current state of machine (2 bytes)
   ss_control_t ssc;
+
   semaphore_t sem;
 
   command error_t Init.init() {
     uint16_t i;
 
     call Semaphore.reset(&sem, 0);
-    ssc.majik_a  = SSC_MAJIK_A;
+    ssc.majik_a     = SSC_MAJIK_A;
 
-    ssc.ss_state = SS_STATE_UNINITILIZED;
+    ss_state        = SS_STATE_UNINITILIZED;
     ssc.alloc_index = 0;
     ssc.in_index    = 0;
     ssc.out_index   = 0;
@@ -103,16 +122,15 @@ implementation {
     ssc.max_full    = 0;
 
     ssc.panic_start = ssc.panic_end = 0;
-    ssc.config_start = ssc.config_end = 0;
-    ssc.dblk_start = ssc.dblk_end = 0;
-    ssc.dblk_nxt = 0;
+    ssc.config_start= ssc.config_end = 0;
+    ssc.dblk_start  = ssc.dblk_end = 0;
+    ssc.dblk_nxt    = 0;
 
-    ssc.majik_b = SSC_MAJIK_B;
+    ssc.majik_b     = SSC_MAJIK_B;
 
     for (i = 0; i < SS_NUM_BUFS; i++) {
       ss_handles[i].majik     = SS_BUF_MAJIK;
       ss_handles[i].buf_state = SS_BUF_STATE_FREE;
-      ssh_ptrs[i] = &ss_handles[i];
     }
     return SUCCESS;
   }
@@ -128,7 +146,8 @@ implementation {
   }
 
 
-  /*
+  /* StreamStorage.buffer_full()
+   *
    * called from the client to indicate that it has
    * filled the buffer.
    *
@@ -147,17 +166,20 @@ implementation {
 
   command void SS.buffer_full(ss_buf_handle_t *handle) {
     ss_buf_handle_t *sshp;
+    uint8_t in_index;
 
     /*
      * handles should be flushed in strict order.  So the next one
      * in should be where in_index points.
      */
-    sshp = ssh_ptrs[ssc.in_index];
-    if (&ss_handles[ssc.in_index] != handle ||
-	&ss_handles[ssc.in_index] != ssh_ptrs[ssc.in_index]) {
-      call Panic.panic(PANIC_SS, 99, (uint16_t) handle, (uint16_t) ssh_ptrs[ssc.in_index], 0, 0);
+    in_index = ssc.in_index;
+    sshp = ssh_ptrs[in_index];
+    if (sshp != handle || &ss_handles[in_index] != sshp ||
+	handle->majik != SS_BUF_MAJIK ||
+	handle->buf_state != SS_BUF_STATE_ALLOC) {
+      call Panic.panic(PANIC_SS, 99, (uint16_t) handle, handle->majik, handle->buf_state, (uint16_t) sshp);
     }
-	
+
     if (ssc.majik_a != SSC_MAJIK_A ||
 	ssc.majik_b != SSC_MAJIK_B ||
 	sshp->buf_state < SS_BUF_STATE_FREE ||
@@ -165,6 +187,10 @@ implementation {
       call Panic.panic(PANIC_SS, 100, ssc.majik_a, ssc.majik_b, sshp->buf_state, 0);
     }
 
+    handle->buf_state = SS_BUF_STATE_FULL;
+    ssc.num_full++;
+    if (ssc.num_full > ssc.max_full)
+      ssc.max_full = ssc.num_full;
     ssc.in_index++;
     if (ssc.in_index >= SS_NUM_BUFS)
       ssc.in_index = 0;
@@ -332,7 +358,8 @@ implementation {
     ss_buf_handle_t *sshp;
 
     sshp = ssh_ptrs[ssc.alloc_index];
-    if (ssc.alloc_index >= SS_NUM_BUFS || ssc.majik_a != SSC_MAJIK_A ||
+    if (ssc.alloc_index >= SS_NUM_BUFS ||
+	ssc.majik_a != SSC_MAJIK_A ||
 	ssc.majik_b != SSC_MAJIK_B ||
 	sshp->buf_state < SS_BUF_STATE_FREE ||
 	sshp->buf_state >= SS_BUF_STATE_MAX) {
@@ -374,6 +401,8 @@ implementation {
    */
 
   error_t flush_buf_handle(ss_buf_handle_t *handle) {
+    ss_state_t cur_state;
+
     if (!handle || handle->majik != SS_BUF_MAJIK ||
 	handle->buf_state != SS_BUF_STATE_ALLOC) {
       call Panic.panic(PANIC_SS, 19, (uint16_t) handle, handle->buf_state, 0, 0);
@@ -384,11 +413,12 @@ implementation {
      * check main control structure to make sure it hasn't been
      * corrupted.
      */
+    atomic cur_state = ss_state;
     if (ssc.majik_a != SSC_MAJIK_A || ssc.majik_b != SSC_MAJIK_B)
       call Panic.panic(PANIC_SS, 21, ssc.majik_a, ssc.majik_b, 0, 0);
 
-    if (ssc.ss_state < SS_STATE_OFF || ssc.ss_state >= SS_STATE_MAX) {
-      ss_panic(22, ssc.ss_state);
+    if (cur_state < SS_STATE_OFF || cur_state >= SS_STATE_MAX) {
+      ss_panic(22, cur_state);
     }
 
     handle->buf_state = SS_BUF_STATE_FULL;
@@ -400,20 +430,52 @@ implementation {
 
 
   async command void ResourceConfigure.configure() {
-    call SpiResourceConfigure.configure();
-    call HW.sd_on();
+    ss_state_t cur_state;
+
+    atomic cur_state = ss_state;
+    switch(cur_state) {
+      default:
+      case SS_STATE_CRASHED:
+      case SS_STATE_POWERING_UP:
+      case SS_STATE_XFER:
+	ss_panic(25, cur_state);
+	break;
+
+      case SS_STATE_UNINITILIZED:
+      case SS_STATE_OFF:;
+      case SS_STATE_IDLE:
+	if (cur_state != SS_STATE_IDLE)
+	  call HW.sd_on();
+	atomic ss_state = SS_STATE_IDLE;
+	call SpiResourceConfigure.configure();
+    }
   }
 
 
   async command void ResourceConfigure.unconfigure() {
-    call HW.sd_off();
-    call SpiResourceConfigure.unconfigure();
+    switch(ss_state) {
+      default:
+      case SS_STATE_CRASHED:
+      case SS_STATE_UNINITILIZED:
+      case SS_STATE_OFF:
+      case SS_STATE_POWERING_UP:
+	ss_panic(23, ss_state);
+	break;
+
+      case SS_STATE_IDLE:
+	call HW.sd_off();	// and then unconfigure
+	ss_state = SS_STATE_OFF;
+      case SS_STATE_XFER:
+	call SpiResourceConfigure.unconfigure();
+	break;
+    }
   }
 
 
   event void Thread.run(void* arg) {
     ss_buf_handle_t* current_handle;
     error_t err;
+    ss_state_t cur_state;
 
     /*
      * call the system to arbritrate and configure the SPI
@@ -430,12 +492,24 @@ implementation {
       ss_panic(23, err);
     }
 
+    atomic ss_state = SS_STATE_IDLE;
     call BlockingSPIResource.release();
     signal BlockingBoot.booted();
 
     for(;;) {
       call Semaphore.acquire(&sem);
       current_handle = ssh_ptrs[ssc.in_index];
+      atomic cur_state = ss_state;
+      switch(cur_state) {
+	default:
+	case SS_STATE_CRASHED: break;
+	case SS_STATE_UNINITILIZED: break;
+	case SS_STATE_OFF: break;
+	case SS_STATE_POWERING_UP: break;
+	case SS_STATE_XFER: break;
+	case SS_STATE_IDLE: break;
+	case SS_STATE_MAX: break;
+      }
       if ((err = flush_buf_handle(current_handle))) {
 	ss_panic(24, err);
       }
@@ -450,7 +524,7 @@ implementation {
     mm_time_t       t;
     sd_rtn	 err;
 
-    switch(ssc.ss_state) {
+    switch(ss_state) {
       case SS_STATE_OFF:
       case SS_STATE_IDLE:
 	/*
@@ -531,7 +605,7 @@ implementation {
 	   */
 	}
 
-	if (ssc.ss_state == SS_STATE_OFF) {
+	if (ss_state == SS_STATE_OFF) {
 	  /*
 	   * turn the power on and point the h/w at the SD card.
 	   *
@@ -574,7 +648,7 @@ implementation {
 	  sd_start_write(NULL, ssc.dblk_nxt, ss_handle->buf);
 	if (err)
 	  call Panic.panic(PANIC_SS, 32, err, 0, 0, 0);
-	ssc.ss_state = SS_STATE_XFER;
+	ss_state = SS_STATE_XFER;
 	DMA0CTL_bit.DMAIE = 1;
 	return;
 	      
@@ -678,7 +752,7 @@ implementation {
 	   * Not Full.  For now just go idle.  and dump the h/w so
 	   * a different subsystem can get it.
 	   */
-	  ssc.ss_state = SS_STATE_IDLE;
+	  ss_state = SS_STATE_IDLE;
 	  if (us1_select(US1_NONE, FALSE))
 	    call Panic.panic(PANIC_SS, 41, 0, 0, 0, 0);
 	  return;
