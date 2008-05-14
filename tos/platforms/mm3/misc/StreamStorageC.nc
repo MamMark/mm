@@ -20,14 +20,14 @@ configuration StreamStorageC {
 }
 
 implementation {
-  components StreamStorageP as SSP, MainC;
-  SS = SSP;
-  MainC.SoftwareInit -> SSP;
+  components StreamStorageP as SS_P, MainC;
+  SS = SS_P;
+  MainC.SoftwareInit -> SS_P;
 
   components new BlockingBootC();
-  BlockingBootC -> SSP.BlockingBoot;
+  BlockingBootC -> SS_P.BlockingBoot;
 
-  Boot = SSP.Boot;
+  Boot = SS_P.Boot;
   SSBoot = BlockingBootC;
 
   /*
@@ -39,27 +39,27 @@ implementation {
    */
 
   components new ThreadC(300);
-  SSP.SSThread -> ThreadC;
+  SS_P.SSThread -> ThreadC;
   
   components SemaphoreC;
-  SSP.Semaphore -> SemaphoreC;
+  SS_P.Semaphore -> SemaphoreC;
 
   components new mm3Spi1C() as SpiC;
   components new BlockingResourceC();
   BlockingResourceC.Resource -> SpiC;
-  SSP.BlockingSPIResource -> BlockingResourceC;
-  SSP.ResourceConfigure <- SpiC;
-  SSP.SpiResourceConfigure -> SpiC;
+  SS_P.BlockingSPIResource -> BlockingResourceC;
+  SS_P.ResourceConfigure <- SpiC;
+  SS_P.SpiResourceConfigure -> SpiC;
 
   components SDC;
-  SSP.SD -> SDC;
+  SS_P.SD -> SDC;
 
   components PanicC;
-  SSP.Panic -> PanicC;
+  SS_P.Panic -> PanicC;
 
   components HplMM3AdcC;
-  SSP.HW -> HplMM3AdcC;
+  SS_P.HW -> HplMM3AdcC;
 
   components LocalTimeMilliC;
-  SSP.LocalTime -> LocalTimeMilliC;
+  SS_P.LocalTime -> LocalTimeMilliC;
 }
