@@ -14,7 +14,7 @@ uint16_t res[NUM_RES];
 #endif
 
 //noinit uint8_t use_regime;
-uint8_t use_regime = 7;
+uint8_t use_regime = 1;
 
 module mm3C {
   provides {

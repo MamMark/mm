@@ -81,10 +81,8 @@ typedef struct {
 
 
 typedef enum {
-  SS_STATE_CRASHED	= 0xe0,	/* something went wrong with stream storage.  hard fail */
-  SS_STATE_UNINITILIZED,	/* dblk locator not found */
+  SS_STATE_CRASHED	= 0x10,	/* something went wrong with stream storage.  hard fail */
   SS_STATE_OFF,			/* power is off to the SS device */
-  SS_STATE_POWERING_UP,		/* in process of turning on */
   SS_STATE_XFER,		/* writing data out to the SS device, dma */
   SS_STATE_IDLE,		/* powered up but idle */
   SS_STATE_MAX
@@ -119,7 +117,6 @@ typedef enum {
 typedef struct {
     uint16_t   majik_a;		/* practice safe computing */
 
-    ss_state_t ss_state;	/* current state of machine */
     uint8_t    out_index;	/* buffer going out via dma to the sd card */
     uint8_t    in_index;	/* next buffer that should come back from the collector */
     uint8_t    alloc_index;	/* next buffer to be allocated. */

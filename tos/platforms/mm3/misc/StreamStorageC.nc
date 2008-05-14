@@ -38,8 +38,8 @@ implementation {
    * This will also give us an idea of how deep the stacks have been
    */
 
-  components new ThreadC(300); 
-  SSP.Thread -> ThreadC;
+  components new ThreadC(300);
+  SSP.SSThread -> ThreadC;
   
   components SemaphoreC;
   SSP.Semaphore -> SemaphoreC;
@@ -59,4 +59,7 @@ implementation {
 
   components HplMM3AdcC;
   SSP.HW -> HplMM3AdcC;
+
+  components LocalTimeMilliC;
+  SSP.LocalTime -> LocalTimeMilliC;
 }

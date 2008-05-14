@@ -1,5 +1,11 @@
 Things to talk to Kevin about:
 
+-1) Need to work on syncronization between Task level and Thread level
+    How to avoid a race condition when task signals a buffer is ready
+    (buf_state goes full) and the thread spinning and looking for
+    work.  Corner case when the thread sees no more work just as the
+    task signals.
+
 0) In StreamStorageP, in ResourceConfigure.configure is async and
    needs atomic ss_state = SS_STATE_IDLE;  while async ResourceConfigure.unconfigure
    doesn't need the atomic?  what gives?

@@ -581,12 +581,9 @@ implementation {
     return(i);
   }
   
-  command error_t SD.write(uint32_t blockaddr, void *data) {
-    return FAIL;
-  }
 
   /*
-   * SD.read_direct: read a 512 byte block from the SD
+   * SD.read: read a 512 byte block from the SD
    *
    * input:  blockaddr     block to read.  (max 23 bits)
    *         data          pointer to data buffer
@@ -875,6 +872,11 @@ implementation {
     SD_CSN = 1;
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
+  }
+
+
+  command error_t SD.write(uint32_t blockaddr, void *data) {
+    return sd_write_direct(blockaddr, data);
   }
 
 
