@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2008 Stanford University.
- * Copyright (c) 2008 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,65 +27,36 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Based on BlockingAMSenderImpl and BlockingResource by Kevin Klues
+ */
+
+/**
+ * @author Kevin Klues <klueska@cs.stanford.edu>
  */
  
-/**
- * @author Kevin Klues (klueska@cs.stanford.edu)
- * @author Eric B. Decker (cire831@gmail.com)
- */
-
-generic module BlockingSpiPacketP() {
-  provides interface BlockingSpiPacket;
-  uses {
-    interface SystemCall;
-    interface SpiPacket;
+generic configuration mm3BlockingSpi1C() {
+  provides {
+    interface BlockingResource;
+    interface BlockingSpiByte;
+    interface BlockingSpiPacket;
+    interface ResourceConfigure as SpiResourceConfigure;
   }
+  uses interface ResourceConfigure;
 }
-
 implementation {
-
-  typedef struct params {
-    uint8_t *txBuf;
-    uint8_t *rxBuf;
-    uint16_t len;
-    error_t  error;
-  } params_t;
+  components new BlockingResourceC();
+  components new BlockingSpiP();
   
-  syscall_t* send_call;		// gets initialized to zero on boot
-
-  void sendTask(syscall_t* s) {
-    params_t* p = s->params;
-    p->error = call SpiPacket.send(p->txBuf, p->rxBuf, p->len);
-    if (p->error != SUCCESS)
-      call SystemCall.finish(s);
-  }
+  BlockingResource = BlockingResourceC;
+  BlockingSpiByte = BlockingSpiP;
+  BlockingSpiPacket = BlockingSpiP;
+  SpiResourceConfigure = mm3Spi1C;
+  ResourceConfigure = mm3Spi1C;
   
-  command error_t BlockingSpiPacket.send(uint8_t *txBuf, uint8_t *rxBuf, uint16_t len) {
-    syscall_t s;
-    params_t p;
-
-    if (send_call)
-      return EBUSY;
-
-    send_call = &s;
-    
-    p.txBuf = txBuf;
-    p.rxBuf = rxBuf;
-    p.len   = len;
-    
-    call SystemCall.start(&sendTask, &s, INVALID_ID, &p);
-
-      send_call = NULL;
-      return p.error;
-  }
-
-  async event void SpiPacket.sendDone(uint8_t* txBuf, uint8_t* rxBuf, uint16_t len, error_t error) {
-    params_t* p;
-
-    p = send_call->params;
-    p->error = error;
-    call SystemCall.finish(send_call);
-  }
+  components new mm3Spi1C();
+  BlockingResourceC.Resource -> mm3Spi1C;
+  BlockingSpiP.SpiByte -> mm3Spi1C;
+  BlockingSpiP.SpiPacket -> mm3Spi1C;
+  
+  components SystemCallC;
+  BlockingSpiP.SystemCall -> SystemCallC;
 }

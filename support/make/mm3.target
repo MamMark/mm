@@ -6,6 +6,7 @@ PLATFORM ?= mm3
 #MSP_MCU = msp430x1611
 PFLAGS += -I$(MAMMARK_DIR)/tos/platforms/mm3
 PFLAGS += -I$(MAMMARK_DIR)/tos/system
+PFLAGS += -I$(MAMMARK_DIR)/tos/interfaces
 
 # Disable MSP430 hardware multiply because it makes MSPGCC die
 PFLAGS += -mdisable-hwmul

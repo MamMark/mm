@@ -10,7 +10,7 @@
  * @author Eric B. Decker
  */
 
-interface SpiPacket {
+interface BlockingSpiPacket {
 
   /**
    * Send a message over the SPI bus.
