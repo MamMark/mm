@@ -15,6 +15,9 @@ implementation {
   components PanicC;
   SDP.Panic -> PanicC;
 
+  components StreamStorageC;
+  SDP.BlockingSpiPacket -> StreamStorageC;
+
   components HplMsp430Usart1C as UsartC;
   SDP.Usart -> UsartC;
 }

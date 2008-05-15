@@ -3,6 +3,10 @@
  *
  * Copyright (c) 2008, Eric B. Decker
  * All rights reserved.
+ *
+ * T2 implementation.  This implementation uses
+ * blocking calls and should only be called from
+ * a threaded implementation.
  */
 
 #include <msp430usart.h>
@@ -22,6 +26,7 @@ module SDP {
   uses {
     interface HplMsp430Usart as Usart;
     interface Panic;
+    interface BlockingSpiPacket;
   }
 }
 
@@ -412,6 +417,7 @@ implementation {
     uint16_t i;
     uint8_t  tmp;
     sd_cmd_blk_t *cmd;
+    error_t err;
 
     cmd = &sd_cmd;
     sd_wait_notbusy();
@@ -448,8 +454,15 @@ implementation {
       return FAIL;
     }
 
+    err = call BlockingSpiPacket.send(NULL, data, SD_BLOCKSIZE);
+
+    /*
+     * what to do if it fails?
+     */
+#ifdef notdef
     for (i = 0; i < data_len; i++)
       data[i] = sd_get();
+#endif
 
     /* Ignore the CRC */
     sd_get();
@@ -459,7 +472,7 @@ implementation {
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
 
-    return SUCCESS;
+    return err;
   }
 
 

@@ -15,6 +15,7 @@ configuration StreamStorageC {
   provides {
     interface Boot as SSBoot;
     interface StreamStorage as SS;
+    interface BlockingSpiPacket;
   }
   uses interface Boot;
 }
@@ -44,12 +45,13 @@ implementation {
   components SemaphoreC;
   SS_P.Semaphore -> SemaphoreC;
 
-  components new mm3Spi1C() as SpiC;
-  components new BlockingResourceC();
-  BlockingResourceC.Resource -> SpiC;
-  SS_P.BlockingSPIResource -> BlockingResourceC;
+  components new mm3BlockingSpi1C() as SpiC;
+//  components new BlockingResourceC();
+//  BlockingResourceC.Resource -> SpiC;
+  SS_P.BlockingSPIResource -> SpiC;
   SS_P.ResourceConfigure <- SpiC;
   SS_P.SpiResourceConfigure -> SpiC;
+  BlockingSpiPacket = SpiC;
 
   components SDC;
   SS_P.SD -> SDC;

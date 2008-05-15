@@ -82,7 +82,11 @@ implementation {
     if (send_call)
       return EBUSY;
 
-    send_call = &s;
+    /*
+     * FIX ME.  The compiler complains if the atomic is missing (non-atomic write)
+     * why doesn't it complain about the read?
+     */
+    atomic send_call = &s;
     
     p.txBuf = txBuf;
     p.rxBuf = rxBuf;
@@ -90,7 +94,7 @@ implementation {
     
     call SystemCall.start(&sendTask, &s, INVALID_ID, &p);
 
-    send_call = NULL;
+    atomic send_call = NULL;
     return p.error;
   }
   
