@@ -42,6 +42,7 @@ generic configuration mm3BlockingSpi1C() {
   }
   uses interface ResourceConfigure;
 }
+
 implementation {
   components new BlockingResourceC();
   components new BlockingSpiP();

@@ -28,9 +28,7 @@
 #include "DtSensorDataMsg.h"
 #include "DtVersionMsg.h"
 
-//#define FAKE_PAK
-
-#define VERSION "mm3dump: v0.4 07 Apr 2008\n"
+#define VERSION "mm3dump: v0.5 13 May 2008\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -40,9 +38,11 @@ static void usage(char *name) {
   fprintf(stderr, VERSION);
   fprintf(stderr, "usage: %s [-Dv] --serial  <serial device>  <baud rate>\n", name);
   fprintf(stderr, "       %s [-Dv] --sf  <host>  <port>\n", name);
+  fprintf(stderr, "       %s [-Dv] [-f][--file] <input file>\n", name);
   fprintf(stderr, "  -D   increment debugging level\n");
   fprintf(stderr, "  -v   verbose mode (increment)\n");
   fprintf(stderr, "  -d   write data files for each sensor\n");
+  fprintf(stderr, "  -f   take input from <input file>\n");
   exit(2);
 }
 
@@ -426,7 +426,7 @@ process_version(tmsg_t *msg) {
   major = dt_version_major_get(msg);
   minor = dt_version_minor_get(msg);
   tweak = dt_version_tweak_get(msg);
-  printf("Version: major: %02x minor: %02x tweak: %02x ",
+  printf("Tag s/w version: %d.%d.%d\n",
             major, minor, tweak);
   if (write_data)
     for (i = 1; i < MM3_NUM_SENSORS; i++)
@@ -487,21 +487,12 @@ process_mm3_data(tmsg_t *msg) {
 }
 
 
-#ifdef FAKE_PAK
-uint8_t fake[36] = {
-  0x00, 0xff, 0xff, 0x00, 0x00, 0x1c, 0x00, 0x21, 0x00, 0x0e,
-  0x07, 0x01, 0x00, 0x1f, 0x43, 0xe9, 0x00, 0x1f, 0x43, 0xef,
-  0xa7, 0x7f, 0x12, 0x34, 0x56, 0x78, 0x9a, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-#endif
-
-
 /* options descriptor */
 static struct option longopts[] = {
-  { "sf",	no_argument,	NULL, 1 },
-  { "serial",	no_argument,	NULL, 2 },
-  { NULL,	0,		NULL, 0 }
+  { "sf",	no_argument,	   NULL, 1 },
+  { "serial",	no_argument,	   NULL, 2 },
+  { "file",	required_argument, NULL, 'f' },
+  { NULL,	0,		   NULL, 0 }
 };
 
 serial_source   serial_src;
@@ -512,7 +503,7 @@ main(int argc, char **argv) {
   uint8_t *packet;
   char *prog_name;
   int len;
-  int c, use_serial, bail;
+  int c, use_serial, use_file, bail;
   tmsg_t *msg;
   uint16_t dest, src;
   uint8_t group;
@@ -521,9 +512,10 @@ main(int argc, char **argv) {
   serial_src = NULL;
   sf_src = 0;
   use_serial = 1;
+  use_file = 0;
   bail = 0;
   prog_name = basename(argv[0]);
-  while ((c = getopt_long(argc, argv, "Ddv", longopts, NULL)) != EOF) {
+  while ((c = getopt_long(argc, argv, "Ddvf:", longopts, NULL)) != EOF) {
     switch (c) {
       case 1:
 	bail = 1;
@@ -532,6 +524,11 @@ main(int argc, char **argv) {
       case 2:
 	bail = 1;
 	use_serial = 1;
+	break;
+      case 'f':
+	bail = 1;
+	use_file = 1;
+	fprintf(stderr, "file: %s\n", optarg);
 	break;
       case 'd':
 	write_data = 1;
@@ -582,15 +579,10 @@ main(int argc, char **argv) {
     }
   }
   while(1) {
-#ifdef FAKE_PAK
-    packet = fake;
-    len = 0x1e;
-#else
     if (use_serial)
       packet = read_serial_packet(serial_src, &len);
     else
       packet = read_sf_packet(sf_src, &len);
-#endif
     if (!packet)
       exit(0);
     if (debug) {
@@ -627,8 +619,6 @@ main(int argc, char **argv) {
 	break;
     }
     free_tmsg(msg);
-#ifndef FAKE_PAK
     free((void *)packet);
-#endif
   }
 }

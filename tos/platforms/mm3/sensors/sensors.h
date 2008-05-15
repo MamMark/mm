@@ -35,7 +35,7 @@ typedef uint16_t sensor_data_t;
 */
 
 enum {
-  SNS_ID_NONE		= 0,
+  SNS_ID_NONE		= 0,	// used for other data stream stuff
   SNS_ID_BATT		= 1,	// Battery Sensor
   SNS_ID_TEMP		= 2,	// Temperature Sensor
   SNS_ID_SAL		= 3,	// Salinity sensor (one, two)

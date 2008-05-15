@@ -12,19 +12,20 @@ implementation {
   components RegimeC;
   mm3C.Regime -> RegimeC;
   
-  /*
-   * Include Threaded implementation of SD Stream Storage
-   */
-//  components StreamStorageC;
-  
   components HplMM3AdcC;
   mm3C.HW -> HplMM3AdcC;
 
-  components AdcC;
-  mm3C.Adc -> AdcC.Adc[SNS_ID_NONE];
-
   components PanicC;
   mm3C.Panic -> PanicC;
+
+  components new TimerMilliC() as SyncTimerC;
+  mm3C.SyncTimer -> SyncTimerC;
+
+  components mm3CommDataC;
+  mm3C.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_NONE];
+
+  components CollectC;
+  mm3C.Collect -> CollectC;
 
   /*
    * Include sensor components.  No need to wire.  They will
@@ -32,11 +33,6 @@ implementation {
    */
   components BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
   
-#ifdef TEST_SS
-  components HplMsp430Usart1C as UsartC;
-  mm3C.Usart -> UsartC;
-#endif
-
 #ifdef TEST_GPS
 //  components GPSByteCollectC;
 //  mm3C.GPSControl -> GPSByteCollectC.GPSByteControl;
@@ -44,4 +40,10 @@ implementation {
   components GPSC;
   mm3C.GPSControl -> GPSC;
 #endif
+
+#ifdef notdef
+  components AdcC;
+  mm3C.Adc -> AdcC.Adc[SNS_ID_NONE];
+#endif
+
 }

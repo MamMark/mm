@@ -69,7 +69,6 @@ module AdcP {
     interface HplMM3Adc as HW;
     interface Alarm<T32khz, uint16_t> as PowerAlarm;
     interface Panic;
-    interface BusyWait<TMicro,uint16_t>;
   }
 }
 

@@ -1,5 +1,3 @@
-// $Id: SpiByte.nc,v 1.4 2006/12/12 18:23:15 vlahan Exp $
-
 /*                                                                      tab:2
  * "Copyright (c) 2000-2005 The Regents of the University  of California.
  * All rights reserved.
@@ -24,11 +22,11 @@
  * @author Jonathan Hui
  * @author Joe Polastre
  */
-interface BlockingSpiByte
-{
+interface BlockingSpiByte {
+
   /**
    * @param tx Byte to transmit
-   * @param rx Received byte is stored here.
+   * @return byte received
    */
   async command uint8_t write( uint8_t tx );
 }

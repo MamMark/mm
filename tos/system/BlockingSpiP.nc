@@ -97,6 +97,7 @@ implementation {
   task void spiPacketDone() {
     call SystemCall.finish(send_call);
   }
+
   async event void SpiPacket.sendDone(uint8_t* txBuf, uint8_t* rxBuf, uint16_t len, error_t error) {
     packet_params_t* p;
 

@@ -36,13 +36,20 @@ implementation {
 
   /*
    * Accepts a buffer formatted as a data block (see sd_blocks.h) and sends
-   * it out the DATA port.
+   * it out the DATA port.   Build a pointer to data_msg[client_id] to avoid math
    */
   command error_t mm3CommData.send_data[uint8_t client_id](void *buf, uint8_t len) {
-    memcpy(call Packet.getPayload(&(data_msg[client_id]), len), buf, len);
-    call AMPacket.setType(&(data_msg[client_id]), AM_MM3_DATA);
-    call AMPacket.setDestination(&(data_msg[client_id]), AM_BROADCAST_ADDR);
-    return call Send.send[client_id](&(data_msg[client_id]), len);
+    uint8_t *bp;
+    message_t *dm;
+
+    dm = &data_msg[client_id];
+    bp = call Packet.getPayload(dm, len);
+    if (!bp)
+      return FAIL;
+    memcpy(bp, buf, len);
+    call AMPacket.setType(dm, AM_MM3_DATA);
+    call AMPacket.setDestination(dm, AM_BROADCAST_ADDR);
+    return call Send.send[client_id](dm, len);
   }
 
   event void Send.sendDone[uint8_t client_id](message_t* msg, error_t err) {

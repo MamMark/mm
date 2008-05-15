@@ -6,7 +6,10 @@
 #include "regime.h"
 #include "panic.h"
 
-#include "stream_storage.h"
+/*
+ * 1 min * 60 sec/min * 1024 ticks/sec  (binary millisecs, mis)
+ */
+#define SYNC_PERIOD (1UL * 60 * 1024)
 
 #ifdef notdef
 #define NUM_RES 16
@@ -17,21 +20,18 @@ uint16_t res[NUM_RES];
 uint8_t use_regime = 1;
 
 module mm3C {
-  provides {
-    interface Init;
-  }
+  provides interface Init;
   uses {
     interface Regime;
     interface Leds;
     interface Boot;
     interface Panic;
+    interface Timer<TMilli> as SyncTimer;
+    interface Collect;
+    interface mm3CommData;
 
     interface HplMM3Adc as HW;
     interface Adc;
-
-#ifdef TEST_SS
-    interface HplMsp430Usart as Usart;
-#endif
 
 #ifdef TEST_GPS
     interface StdControl as GPSControl;
@@ -41,31 +41,56 @@ module mm3C {
 
 implementation {
 
-#ifdef TEST_SS
-  msp430_spi_union_config_t config = {
-    {
-      ubr : 0x0002,
-      ssel : 0x02,
-      clen : 1,
-      listen : 0,
-      mm : 1,
-      ckph : 1,
-      ckpl : 0,
-      stc : 1
-    }
-  };
-#endif
-
   command error_t Init.init() {
 //    call Panic.brk();
     return SUCCESS;
   }
 
+  void write_version_record(uint8_t major, uint8_t minor, uint8_t tweak) {
+    uint8_t vdata[DT_HDR_SIZE_VERSION];
+    dt_version_nt *vp;
+
+    vp = (dt_version_nt *) &vdata;
+    vp->len = DT_HDR_SIZE_VERSION;
+    vp->dtype = DT_VERSION;
+    vp->major = major;
+    vp->minor = minor;
+    vp->tweak = tweak;
+    call mm3CommData.send_data(vdata, DT_HDR_SIZE_VERSION);
+    call Collect.collect(vdata, DT_HDR_SIZE_VERSION);
+  }
+
+
+  void write_sync_record(bool sync) {
+    uint8_t sync_data[DT_HDR_SIZE_SYNC];
+    dt_sync_nt *sdp;
+
+    sdp = (dt_sync_nt *) &sync_data;
+    sdp->len = DT_HDR_SIZE_SYNC;
+    sdp->dtype = DT_SYNC;
+    sdp->stamp_mis = call SyncTimer.getNow();
+    if (sync)
+      sdp->sync_majik = SYNC_MAJIK;
+    else
+      sdp->sync_majik = SYNC_RESTART_MAJIK;
+    call mm3CommData.send_data(sync_data, DT_HDR_SIZE_SYNC);
+    call Collect.collect(sync_data, DT_HDR_SIZE_SYNC);
+  }
+
 
   event void Boot.booted() {
+
 #ifdef TEST_GPS
     call GPSControl.start();
 #endif
+
+    call SyncTimer.startPeriodic(SYNC_PERIOD);
+
+    /*
+     * Tell folks what we are running.
+     */
+//    write_version_record(1, 1, 0);
+    write_sync_record(FALSE);
 
     /*
      * set the initial regime.  This will also
@@ -95,11 +120,13 @@ implementation {
     }
 #endif
 
-#ifdef TEST_SS
-    call HW.sd_on();
-    call Usart.setModeSpi(&config);
-#endif
   }
+
+  event void SyncTimer.fired() {
+    write_sync_record(TRUE);
+  }
+
+  event void mm3CommData.send_data_done(error_t rtn) { }
 
   event void Adc.configured() {
     call Panic.panic(PANIC_MISC, 1, 0, 0, 0, 0);
