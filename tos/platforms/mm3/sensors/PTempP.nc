@@ -84,7 +84,7 @@ implementation {
 
     pdp->len = PTEMP_BLOCK_SIZE;
     pdp->dtype = DT_SENSOR_DATA;
-    pdp->id = SNS_ID_PTEMP;
+    pdp->sns_id = SNS_ID_PTEMP;
     pdp->sched_mis = call PeriodTimer.gett0();
     pdp->stamp_mis = call PeriodTimer.getNow();
     if (call mm3Control.eavesdrop()) {

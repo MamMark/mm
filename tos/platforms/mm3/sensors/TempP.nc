@@ -85,7 +85,7 @@ implementation {
     call Adc.release();
     tdp->len = TEMP_BLOCK_SIZE;
     tdp->dtype = DT_SENSOR_DATA;
-    tdp->id = SNS_ID_TEMP;
+    tdp->sns_id = SNS_ID_TEMP;
     tdp->sched_mis = call PeriodTimer.gett0();
     tdp->stamp_mis = call PeriodTimer.getNow();
     if (call mm3Control.eavesdrop()) {

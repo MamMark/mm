@@ -123,7 +123,7 @@ implementation {
     adp = (dt_sensor_data_nt *) accel_data;
     adp->len = ACCEL_BLOCK_SIZE;
     adp->dtype = DT_SENSOR_DATA;
-    adp->id = SNS_ID_ACCEL;
+    adp->sns_id = SNS_ID_ACCEL;
     adp->sched_mis = call PeriodTimer.gett0();
     adp->stamp_mis = call PeriodTimer.getNow();
     adp->data[0] = data[0];

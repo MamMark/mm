@@ -97,7 +97,7 @@ implementation {
     sdp = (dt_sensor_data_nt *) speed_data;
     sdp->len = SPEED_BLOCK_SIZE;
     sdp->dtype = DT_SENSOR_DATA;
-    sdp->id = SNS_ID_SPEED;
+    sdp->sns_id = SNS_ID_SPEED;
     sdp->sched_mis = call PeriodTimer.gett0();
     sdp->stamp_mis = call PeriodTimer.getNow();
     sdp->data[0] = data[0];

@@ -85,7 +85,7 @@ implementation {
     call Adc.release();
     bdp->len = BATT_BLOCK_SIZE;
     bdp->dtype = DT_SENSOR_DATA;
-    bdp->id = SNS_ID_BATT;
+    bdp->sns_id = SNS_ID_BATT;
     bdp->sched_mis = call PeriodTimer.gett0();
     bdp->stamp_mis = call PeriodTimer.getNow();
     if (call mm3Control.eavesdrop()) {

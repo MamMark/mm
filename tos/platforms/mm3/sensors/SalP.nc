@@ -98,7 +98,7 @@ implementation {
     sdp = (dt_sensor_data_nt *) sal_data;
     sdp->len = SAL_BLOCK_SIZE;
     sdp->dtype = DT_SENSOR_DATA;
-    sdp->id = SNS_ID_SAL;
+    sdp->sns_id = SNS_ID_SAL;
     sdp->sched_mis = call PeriodTimer.gett0();
     sdp->stamp_mis = call PeriodTimer.getNow();
     sdp->data[0] = data[0];

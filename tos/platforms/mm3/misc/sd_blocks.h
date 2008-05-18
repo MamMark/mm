@@ -108,8 +108,10 @@ typedef nx_struct dt_sync {
   nx_uint32_t sync_majik;
 } dt_sync_nt;
 
+
 #define SYNC_MAJIK 0xdedf00ef
 #define SYNC_RESTART_MAJIK 0xdaffd00f
+
 
 typedef nx_struct dt_panic {
   nx_uint16_t len;
@@ -143,7 +145,7 @@ typedef nx_struct dt_gps_pos {
 typedef nx_struct dt_sensor_data {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint8_t  id;
+  nx_uint8_t  sns_id;
   nx_uint32_t sched_mis;
   nx_uint32_t stamp_mis;
   nx_uint16_t data[0];
@@ -197,6 +199,7 @@ enum {
   DT_HDR_SIZE_IGNORE        = sizeof(dt_ignore_nt),
   DT_HDR_SIZE_CONFIG        = sizeof(dt_config_nt),
   DT_HDR_SIZE_SYNC          = sizeof(dt_sync_nt),
+  DT_HDR_SIZE_PANIC          = sizeof(dt_panic_nt),
   DT_HDR_SIZE_GPS_TIME      = sizeof(dt_gps_time_nt),
   DT_HDR_SIZE_GPS_POS       = sizeof(dt_gps_pos_nt),
   DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_nt),

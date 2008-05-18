@@ -78,7 +78,7 @@ module StreamStorageP {
     interface SD;
     interface HplMM3Adc as HW;
     interface Semaphore;
-    interface BlockingResource as BlockingSPIResource;
+    interface BlockingResource as BlockingSpiResource;
     interface ResourceConfigure as SpiResourceConfigure;
     interface Panic;
     interface LocalTime<TMilli>;
@@ -453,7 +453,7 @@ implementation {
      * we use the default configuration for now which matches
      * what we need.
      */
-    call BlockingSPIResource.request();
+    call BlockingSpiResource.request();
 
     /*
      * First start up and read in control blocks.
@@ -468,7 +468,7 @@ implementation {
      * and set out current state to OFF.
      */
     atomic ss_state = SS_STATE_IDLE;
-    call BlockingSPIResource.release();
+    call BlockingSpiResource.release();
     signal BlockingBoot.booted();
 
     for(;;) {
@@ -499,7 +499,7 @@ implementation {
       if (cur_state != SS_STATE_OFF)
 	ss_panic(15, cur_state);
 
-      call BlockingSPIResource.request(); // this will also turn on the hardware when granted.
+      call BlockingSpiResource.request(); // this will also turn on the hardware when granted.
       err = call SD.reset();		  // about 100ms
       if (err) {
 	ss_panic(16, err);
@@ -541,7 +541,7 @@ implementation {
        * For now we just go idle and release
        */
       atomic ss_state = SS_STATE_IDLE;
-      call BlockingSPIResource.release(); // will shutdown the hardware
+      call BlockingSpiResource.release(); // will shutdown the hardware
     }
   }
   

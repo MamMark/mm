@@ -113,10 +113,12 @@ SDConstants.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	DT_CAL_STRING		  \
 	DT_GPS_RAW		  \
 	DT_VERSION		  \
+	DT_MAX			  \
 				  \
 	DT_HDR_SIZE_IGNORE        \
 	DT_HDR_SIZE_CONFIG        \
 	DT_HDR_SIZE_SYNC          \
+	DT_HDR_SIZE_PANIC         \
 	DT_HDR_SIZE_GPS_TIME      \
 	DT_HDR_SIZE_GPS_POS       \
 	DT_HDR_SIZE_SENSOR_DATA   \
@@ -157,7 +159,7 @@ mm3dump.o: mm3dump.c mm3DataMsg.h DtIgnoreMsg.h DtConfigMsg.h DtSyncMsg.h DtPani
 	DtGpsPosMsg.h DtSensorDataMsg.h DtSensorSetMsg.h DtTestMsg.h DtCalStringMsg.h DtGpsRawMsg.h DtVersionMsg.h \
 	SensorConstants.h SDConstants.h serialpacket.h serialprotocol.h
 
-mm3dump: mm3dump.o mm3DataMsg.o DtIgnoreMsg.o DtConfigMsg.o DtSyncMsg.o DtPanicMsg.o DtGpsTimeMsg.o \
+mm3dump: mm3dump.o filesource.o mm3DataMsg.o DtIgnoreMsg.o DtConfigMsg.o DtSyncMsg.o DtPanicMsg.o DtGpsTimeMsg.o \
 	DtGpsPosMsg.o DtSensorDataMsg.o DtSensorDataMsg.o DtSensorSetMsg.o DtTestMsg.o DtCalStringMsg.o \
 	DtGpsRawMsg.o DtVersionMsg.o serialpacket.o
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
@@ -190,8 +192,10 @@ DtSensorSetMsg.o: DtSensorSetMsg.c DtSensorSetMsg.h
 DtSyncMsg.o: DtSyncMsg.c DtSyncMsg.h
 DtTestMsg.o: DtTestMsg.c DtTestMsg.h
 DtVersionMsg.o: DtVersionMsg.c DtVersionMsg.h
+filesource.o: filesource.c filesource.h serialprotocol.h serialpacket.h \
+  DtSensorDataMsg.h mm3DataMsg.h SDConstants.h SensorConstants.h
 mm3DataMsg.o: mm3DataMsg.c mm3DataMsg.h
-mm3dump.o: mm3dump.c serialpacket.h serialprotocol.h mm3DataMsg.h \
-  SensorConstants.h SDConstants.h DtIgnoreMsg.h DtSyncMsg.h DtPanicMsg.h \
-  DtSensorDataMsg.h DtVersionMsg.h
+mm3dump.o: mm3dump.c filesource.h serialpacket.h serialprotocol.h \
+  mm3DataMsg.h SensorConstants.h SDConstants.h DtIgnoreMsg.h DtSyncMsg.h \
+  DtPanicMsg.h DtSensorDataMsg.h DtVersionMsg.h
 serialpacket.o: serialpacket.c serialpacket.h

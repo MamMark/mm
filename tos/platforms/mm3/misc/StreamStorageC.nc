@@ -48,7 +48,7 @@ implementation {
   components new mm3BlockingSpi1C() as SpiC;
 //  components new BlockingResourceC();
 //  BlockingResourceC.Resource -> SpiC;
-  SS_P.BlockingSPIResource -> SpiC;
+  SS_P.BlockingSpiResource -> SpiC;
   SS_P.ResourceConfigure <- SpiC;
   SS_P.SpiResourceConfigure -> SpiC;
   BlockingSpiPacket = SpiC;

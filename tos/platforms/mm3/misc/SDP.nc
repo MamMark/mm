@@ -454,7 +454,7 @@ implementation {
       return FAIL;
     }
 
-    err = call BlockingSpiPacket.send(NULL, data, SD_BLOCKSIZE);
+    err = call BlockingSpiPacket.send(NULL, data, data_len);
 
     /*
      * what to do if it fails?
