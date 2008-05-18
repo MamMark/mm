@@ -13,4 +13,7 @@ implementation {
 
   components StreamStorageC;
   CollectP.SS -> StreamStorageC;
+
+  components PanicC;
+  CollectP.Panic -> PanicC;
 }
