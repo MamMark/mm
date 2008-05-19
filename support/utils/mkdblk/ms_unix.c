@@ -22,6 +22,7 @@
 
 #include "ms.h"
 #include "ms_util.h"
+#include "dblk_loc.h"
 
 static int fd = -1;
 
@@ -100,7 +101,7 @@ ms_init(char *device_name) {
     if (empty)
 	msc.dblk_nxt = blk;
     if (verbose) {
-	fprintf(stderr, "dblk_loc:  panic:  s: %lx  e: %lx  cfg s: %lx  e: %lx,  dblk s: %lx  e: %lx,  nxt: %lx\n",
+	fprintf(stderr, "dblk_loc:  panic:  s: 0x%lx  e: 0x%lx  cfg s: 0x%lx  e: 0x%lx,  dblk s: 0x%lx  e: 0x%lx,  nxt: 0x%lx\n",
 		msc.panic_start, msc.panic_end, msc.config_start, msc.config_end,
 		msc.dblk_start, msc.dblk_end, msc.dblk_nxt);
 	if (msc.dblk_nxt == 0)
@@ -204,8 +205,6 @@ ms_write_blk(uint32_t blk_id, void *buf) {
 }
 
 
-#ifdef INC_DSP_ERR
-
 char *
 ms_dsp_err(ms_rtn err) {
     switch (err) {
@@ -218,5 +217,3 @@ ms_dsp_err(ms_rtn err) {
     }
     return("unknown");
 }
-
-#endif		/* INC_DSP_ERR */

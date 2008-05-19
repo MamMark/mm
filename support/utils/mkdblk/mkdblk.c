@@ -17,7 +17,7 @@
 #include "ms.h"
 
 
-#define VERSION "mkdblk: (mam_mark) v1.6 10 July 2007\n"
+#define VERSION "mkdblk: (mam_mark, T2) v2.0 18 May 2008\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -46,7 +46,7 @@ display_info(void) {
     u32_t rds;
     
     if (msc.dblk_start)
-	fprintf(stderr, "Dblk loc:  p: %lx %lx  c: %lx  %lx    d: %lx  %lx  (nxt) %lx\n",
+	fprintf(stderr, "Dblk loc:  p: 0x%lx 0x%lx  c: 0x%lx  0x%lx    d: 0x%lx  0x%lx  (nxt) 0x%lx\n",
 		msc.panic_start, msc.panic_end, msc.config_start, msc.config_end,
 		msc.dblk_start, msc.dblk_end, msc.dblk_nxt);
     else
@@ -54,21 +54,21 @@ display_info(void) {
     de = f32_get_de("PANIC001", "   ", &rds);
     if (de) {
 	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
-	fprintf(stderr, "PANIC001:  start  %lx  size: %ld (%lx)\n",
+	fprintf(stderr, "PANIC001:  start  0x%04lx  size: %10ld (0x%lx)\n",
 		fx_clu2sec(rds), CF_LE_32(de->size), CF_LE_32(de->size));
     } else
 	fprintf(stderr, "PANIC001: not found\n");
     de = f32_get_de("CNFG0001", "   ", &rds);
     if (de) {
 	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
-	fprintf(stderr, "CNFG0001:  start  %lx  size: %ld (%lx)\n",
+	fprintf(stderr, "CNFG0001:  start  0x%04lx  size: %10ld (0x%lx)\n",
 		fx_clu2sec(rds), CF_LE_32(de->size), CF_LE_32(de->size));
     } else
 	fprintf(stderr, "CNFG001: not found\n");
     de = f32_get_de("DBLK0001", "   ", &rds);
     if (de) {
 	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
-	fprintf(stderr, "DBLK0001:  start  %lx  size: %ld (%lx)\n",
+	fprintf(stderr, "DBLK0001:  start  0x%04lx  size: %10ld (0x%lx)\n",
 		fx_clu2sec(rds), CF_LE_32(de->size), CF_LE_32(de->size));
     } else
 	fprintf(stderr, "DBLK001: not found\n");
@@ -112,17 +112,17 @@ int main(int argc, char **argv) {
     fx_hard_init();
     err = ms_init(argv[optind]);
     if (err) {
-	fprintf(stderr, "ms_init: %s (%x)\n", ms_dsp_err(err), err);
+	fprintf(stderr, "ms_init: %s (0x%x)\n", ms_dsp_err(err), err);
 	exit(1);
     }
     err = fx_set_buf(buf);
     if (err) {
-	fprintf(stderr, "fx_set_buf: %s (%x)\n", fx_dsp_err(err), err);
+	fprintf(stderr, "fx_set_buf: %s (0x%x)\n", fx_dsp_err(err), err);
 	exit(1);
     }
     err = fx_init();
     if (err) {
-	fprintf(stderr, "fx_init: %s (%x)\n", fx_dsp_err(err), err);
+	fprintf(stderr, "fx_init: %s (0x%x)\n", fx_dsp_err(err), err);
 	exit(1);
     }
     if (list) {
@@ -131,22 +131,22 @@ int main(int argc, char **argv) {
     }
     err = fx_create_contig("PANIC001", "   ", panic_size, &pstart, &pend);
     if (err) {
-	fprintf(stderr, "fx_create_contig: panic: %s (%x)\n", fx_dsp_err(err), err);
+	fprintf(stderr, "fx_create_contig: panic: %s (0x%x)\n", fx_dsp_err(err), err);
 	exit(1);
     }
     err = fx_create_contig("CNFG0001", "   ", config_size, &cstart, &cend);
     if (err) {
-	fprintf(stderr, "fx_create_contig: cnfg: %s (%x)\n", fx_dsp_err(err), err);
+	fprintf(stderr, "fx_create_contig: cnfg: %s (0x%x)\n", fx_dsp_err(err), err);
 	exit(1);
     }
     err = fx_create_contig("DBLK0001", "   ", dblk_size, &dstart, &dend);
     if (err) {
-	fprintf(stderr, "fx_create_contig: dblk: %s (%x)\n", fx_dsp_err(err), err);
+	fprintf(stderr, "fx_create_contig: dblk: %s (0x%x)\n", fx_dsp_err(err), err);
 	exit(1);
     }
     err = fx_write_locator(pstart, pend, cstart, cend, dstart, dend);
     if (err) {
-	fprintf(stderr, "fx_write_locator: %s (%x)\n", fx_dsp_err(err), err);
+	fprintf(stderr, "fx_write_locator: %s (0x%x)\n", fx_dsp_err(err), err);
 	exit(1);
     }
 
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
 
     err = fx_set_buf(NULL);
     if (err) {
-	fprintf(stderr, "fx_set_buf: %s (%x)\n", fx_dsp_err(err), err);
+	fprintf(stderr, "fx_set_buf: %s (0x%x)\n", fx_dsp_err(err), err);
 	exit(1);
     }
     return(0);

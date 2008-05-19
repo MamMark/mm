@@ -108,6 +108,7 @@
 #include "fatxfc.h"
 #include "ms.h"
 #include "util.h"
+#include "dblk_loc.h"
 
 
 extern int debug;
@@ -865,8 +866,6 @@ fx_write_locator(u32_t pstart, u32_t pend, u32_t cstart, u32_t cend, u32_t dstar
 }
 
 
-#ifdef INC_DSP_ERR
-
 char *
 fx_dsp_err(fx_rtn err) {
     switch(err) {
@@ -883,8 +882,6 @@ fx_dsp_err(fx_rtn err) {
     }
     return("unknown");
 }
-
-#endif /* INC_DSP_ERR */
 
 
 #ifdef FX_DEBUG

@@ -7,7 +7,7 @@ F_DIR   = ../fat
 SOURCE  = mkdblk.c ms_unix.c ms_util.c util.c $(F_DIR)/fatxfc.c
 OBJECTS = mkdblk.o fatxfc.o ms_unix.o ms_util.o util.o
 
-CFLAGS += -g -Wall -O0 -I../include -I../fat -I. -DINC_DSP_ERR
+CFLAGS += -g -Wall -O0 -I../include -I../fat -I.
 VPATH = $(F_DIR)
 
 all: mkdblk

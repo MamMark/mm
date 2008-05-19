@@ -153,24 +153,6 @@ typedef struct {
  * that the dblk area of the flash has been initially erased.
  */
  
-#define TAG_DBLK_SIG 0xdeedbeaf
-#define DBLK_LOC_OFFSET 0x01a8
-
-typedef struct {
-    u32_t sig;
-    u32_t panic_start;
-    u32_t panic_end;
-    u32_t config_start;
-    u32_t config_end;
-    u32_t dblk_start;
-    u32_t dblk_end;
-    u16_t dblk_chksum;
-} dblk_loc_t;
-
-#define DBLK_LOC_SIZE 30
-#define DBLK_LOC_SIZE_SHORTS 15
-
-
 /*
  * Mass Storage Timer data
  *
@@ -216,8 +198,6 @@ extern ms_rtn ms_read8(uint32_t blk_id, void *buf);
 extern int    ms_set_blocklen(uint32_t length);
 extern ms_rtn ms_write_blk(uint32_t blk_id, void *buf);
 
-#ifdef INC_DSP_ERR
 extern char * ms_dsp_err(ms_rtn err);
-#endif
 
 #endif /* _MS_H */

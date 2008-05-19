@@ -28,8 +28,8 @@ msu_blk_empty(uint8_t *buf) {
     for (i = 0; i < MS_BLOCK_SIZE/2; i++)
 	if (ptr[i])
 	    return(0);
-//    return(1);
-    return(0);
+    return(1);
+//    return(0);
 }
 
 
