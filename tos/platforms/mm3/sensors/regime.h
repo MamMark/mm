@@ -8,6 +8,7 @@
 
 #include "sensors.h"
 
+#define SNS_ALL_OFF_REGIME		0
 #define SNS_DEFAULT_REGIME		1
 #define SNS_MAX_REGIME			15
 #define MM3_NUM_REGIMES			(SNS_MAX_REGIME + 1)

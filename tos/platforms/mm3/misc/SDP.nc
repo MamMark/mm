@@ -105,7 +105,11 @@ implementation {
 
     if (U1_OVERRUN)
       call Panic.panic(PANIC_SD, 7, 0, 0, 0, 0);
-    U1_CLR_RX;
+/*
+ * do not explicitly clear the rx interrupt.  reading u1rxbuf will
+ * clear it automatically.
+ */
+//  U1_CLR_RX;
     return(U1RXBUF);
   }
 
@@ -454,12 +458,13 @@ implementation {
       return FAIL;
     }
 
+#ifdef USE_SPI_PACKET
     err = call BlockingSpiPacket.send(NULL, data, data_len);
-
     /*
      * what to do if it fails?
      */
-#ifdef notdef
+#else
+    err = SUCCESS;
     for (i = 0; i < data_len; i++)
       data[i] = sd_get();
 #endif

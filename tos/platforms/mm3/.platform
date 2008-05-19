@@ -25,6 +25,7 @@ push( @includes, qw(
   %P/misc
   %P/sensors
   %P/../../chips/msp430/timer
+  %P/../../../support/utils/include
   %T/chips/cc2420
   %T/chips/msp430
   %T/chips/msp430/pins

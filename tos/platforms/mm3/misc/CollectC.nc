@@ -8,7 +8,8 @@ configuration CollectC {
 }
 
 implementation {
-  components CollectP;
+  components MainC, CollectP;
+  MainC.SoftwareInit -> CollectP;
   Collect = CollectP;
 
   components StreamStorageC;

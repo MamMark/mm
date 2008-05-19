@@ -144,21 +144,4 @@ typedef struct {
  * that the dblk area of the flash has been initially erased.
  */
  
-#define TAG_DBLK_SIG 0xdeedbeaf
-#define DBLK_LOC_OFFSET 0x01a8
-
-typedef struct {
-    uint32_t sig;
-    uint32_t panic_start;
-    uint32_t panic_end;
-    uint32_t config_start;
-    uint32_t config_end;
-    uint32_t dblk_start;
-    uint32_t dblk_end;
-    uint16_t dblk_chksum;
-} dblk_loc_t;
-
-#define DBLK_LOC_SIZE 30
-#define DBLK_LOC_SIZE_SHORTS 15
-
 #endif /* _STREAM_STORAGE_H */

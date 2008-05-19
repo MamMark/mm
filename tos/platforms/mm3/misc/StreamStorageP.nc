@@ -46,6 +46,7 @@
  */
 
 #include "stream_storage.h"
+#include "dblk_loc.h"
 
 /*
  * These macros are used to ConvertFrom_LittleEndian to the native
@@ -69,6 +70,7 @@ module StreamStorageP {
   provides {
     interface Init;
     interface StreamStorage as SS;
+    interface StreamStorageFull as SSF;
     interface Boot as BlockingBoot;
     interface ResourceConfigure;
   }
@@ -315,8 +317,10 @@ implementation {
     ssc.dblk_start   = CF_LE_32(dbl->dblk_start);
     ssc.dblk_end     = CF_LE_32(dbl->dblk_end);
 
-    if ((err = read_blk_fail(ssc.dblk_start, dp)))
+    if ((err = read_blk_fail(ssc.dblk_start, dp))) {
+      ss_panic(0x60, -1);
       return err;
+    }
 
     if (blk_empty(dp)) {
       ssc.dblk_nxt = ssc.dblk_start;
@@ -465,7 +469,7 @@ implementation {
 
     /*
      * releasing when IDLE will power the device down.
-     * and set out current state to OFF.
+     * and set our current state to OFF.
      */
     atomic ss_state = SS_STATE_IDLE;
     call BlockingSpiResource.release();
@@ -491,19 +495,25 @@ implementation {
 	continue;
 
       /*
-       * should be OFF or if implemented in OFF_WAIT (which implements
-       * a delay prior to shutting the hardware off.  But if we are in OFF_WAIT
-       * we won't be here but rather later down in this processing loop.
+       * Only power up and obtain the SPI bus if the stream isn't full
        */
-      atomic cur_state = ss_state;
-      if (cur_state != SS_STATE_OFF)
-	ss_panic(15, cur_state);
 
-      call BlockingSpiResource.request(); // this will also turn on the hardware when granted.
-      err = call SD.reset();		  // about 100ms
-      if (err) {
-	ss_panic(16, err);
-	continue;
+      if (ssc.dblk_nxt != 0) {
+	/*
+	 * should be OFF or if implemented in OFF_WAIT (which implements
+	 * a delay prior to shutting the hardware off.  But if we are in OFF_WAIT
+	 * we won't be here but rather later down in this processing loop.
+	 */
+	atomic cur_state = ss_state;
+	if (cur_state != SS_STATE_OFF)
+	  ss_panic(15, cur_state);
+
+	call BlockingSpiResource.request(); // this will also turn on the hardware when granted.
+	err = call SD.reset();		  // about 100ms
+	if (err) {
+	  ss_panic(16, err);
+	  continue;
+	}
       }
 
       for (;;) {
@@ -513,35 +523,56 @@ implementation {
 	if (cur_handle->buf_state != SS_BUF_STATE_FULL)
 	  break;
 
-	/*
-	 * the write needs a time out of some kind.
-	 * The write runs to completion.
-	 *
-	 * Observed 5ms write time unerased block.
-	 */
-	cur_handle->buf_state = SS_BUF_STATE_WRITING;
-	atomic ss_state = SS_STATE_XFER;
-	w_t0 = call LocalTime.get();
-	err = call SD.write(ssc.dblk_nxt, cur_handle->buf);
-	if (err)
-	  ss_panic(17, err);
-	w_diff = call LocalTime.get() - w_t0;
+	if (ssc.dblk_nxt != 0) {
+	  /*
+	   * If dblk_nxt is 0 then the dblk stream is full and we
+	   * shouldn't do anymore writes.
+	   *
+	   * the write needs a time out of some kind.
+	   * The write runs to completion.
+	   *
+	   * Observed 5ms write time unerased block.
+	   */
+	  cur_handle->buf_state = SS_BUF_STATE_WRITING;
+	  atomic ss_state = SS_STATE_XFER;
+	  w_t0 = call LocalTime.get();
+	  err = call SD.write(ssc.dblk_nxt, cur_handle->buf);
+	  if (err)
+	    ss_panic(17, err);
+	  w_diff = call LocalTime.get() - w_t0;
+	}
 
 	cur_handle->buf_state = SS_BUF_STATE_FREE;
 	ssc.out_index++;
 	if (ssc.out_index >= SS_NUM_BUFS)
 	  ssc.out_index = 0;
 	ssc.num_full--;
-	ssc.dblk_nxt++;
+	if (ssc.dblk_nxt != 0) {
+	  if (ssc.dblk_nxt >= ssc.dblk_end) {
+	    /*
+	     * We also might want to check for next to last and
+	     * write a record indicating this via Collect.
+	     */
+	    signal SSF.dblk_stream_full();
+	    ssc.dblk_nxt = 0;
+	    atomic ss_state = SS_STATE_IDLE;
+	    call BlockingSpiResource.release(); // will shutdown the hardware
+	  } else
+	    ssc.dblk_nxt++;
+	}
 	cur_handle = ssh_ptrs[ssc.out_index];
       }
 
-      /*
-       * This is where to implement OFF_WAIT
-       * For now we just go idle and release
-       */
-      atomic ss_state = SS_STATE_IDLE;
-      call BlockingSpiResource.release(); // will shutdown the hardware
+      if (ssc.dblk_nxt != 0) {
+	/*
+	 * Only have to release if the stream is active
+	 *
+	 * This is where to implement OFF_WAIT
+	 * For now we just go idle and release
+	 */
+	atomic ss_state = SS_STATE_IDLE;
+	call BlockingSpiResource.release(); // will shutdown the hardware
+      }
     }
   }
   
