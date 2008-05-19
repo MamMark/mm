@@ -30,7 +30,7 @@
 #include "DtSensorDataMsg.h"
 #include "DtVersionMsg.h"
 
-#define VERSION "mm3dump: v0.6 15 May 2008\n"
+#define VERSION "mm3dump: v0.7 185 May 2008\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -461,8 +461,7 @@ process_version(tmsg_t *msg) {
   major = dt_version_major_get(msg);
   minor = dt_version_minor_get(msg);
   tweak = dt_version_tweak_get(msg);
-  printf("Tag s/w version: %d.%d.%d\n",
-            major, minor, tweak);
+  printf("VER: %d.%d.%d\n", major, minor, tweak);
   if (write_data)
     for (i = 1; i < MM3_NUM_SENSORS; i++)
       fprintf(fp[i], "%% Tag Version: %d.%d.%d\n", major, minor, tweak);

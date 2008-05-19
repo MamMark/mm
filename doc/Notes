@@ -60,3 +60,10 @@ SUBSYSTEM=="usb_device" ACTION=="add" SYSFS{product}=="MSP-FET430UIF JTAG Tool"
   RUN+="/bin/sh -c 'echo 2 > /sys%p/device/bConfigurationValue'", MODE="0666"
 [andyw@ermintrude ~]$ 
 
+
+
+- Creating Dblk locator on the SD
+
+  To format: mkdosfs -F 32 -I -n"TagTest" -v /dev/sda
+
+  To create Dblk Locator: ./mkdblk -vvDD /dev/sda
