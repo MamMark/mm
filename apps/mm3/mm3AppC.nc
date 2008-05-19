@@ -27,6 +27,9 @@ implementation {
   components CollectC;
   mm3C.Collect -> CollectC;
 
+  components StreamStorageC;
+  mm3C.StreamStorageFull -> StreamStorageC;
+
   /*
    * Include sensor components.  No need to wire.  They will
    * start when regimeChange() is signalled.

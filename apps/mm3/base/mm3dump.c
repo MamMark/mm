@@ -561,7 +561,7 @@ main(int argc, char **argv) {
   input_src = INPUT_SERIAL;
   bail = 0;
   prog_name = basename(argv[0]);
-  while ((c = getopt_long(argc, argv, "Ddvf:", longopts, NULL)) != EOF) {
+  while ((c = getopt_long(argc, argv, "Ddvf", longopts, NULL)) != EOF) {
     switch (c) {
       case 1:
 	bail = 1;

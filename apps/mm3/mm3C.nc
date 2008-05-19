@@ -29,6 +29,7 @@ module mm3C {
     interface Timer<TMilli> as SyncTimer;
     interface Collect;
     interface mm3CommData;
+    interface StreamStorageFull;
 
     interface HplMM3Adc as HW;
     interface Adc;
@@ -89,7 +90,7 @@ implementation {
     /*
      * Tell folks what we are running.
      */
-//    write_version_record(1, 1, 0);
+    write_version_record(1, 1, 0);
     write_sync_record(FALSE);
 
     /*
@@ -127,6 +128,10 @@ implementation {
   }
 
   event void mm3CommData.send_data_done(error_t rtn) { }
+
+  event void StreamStorageFull.dblk_stream_full () {
+    call Regime.setRegime(SNS_ALL_OFF_REGIME);
+  }
 
   event void Adc.configured() {
     call Panic.panic(PANIC_MISC, 1, 0, 0, 0, 0);
