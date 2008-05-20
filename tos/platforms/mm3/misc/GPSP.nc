@@ -177,7 +177,8 @@ implementation {
   }
   
   event void UARTResource.granted() {
-    t_state = TS_FIRST_CHAR;
+    t_state = TS_0;
+//    t_state = TS_FIRST_CHAR;
     t_t0 = call LocalTime.get();
     call HW.gps_on();
     gps_state = GPS_RXTX;
@@ -268,8 +269,8 @@ implementation {
      * this is called from within the usart configurator so will have
      * the desired effect.
      */
-//    mmP5out.ser_sel = SER_SEL_GPS;
-    mmP5out.ser_sel = SER_SEL_CRADLE;
+    mmP5out.ser_sel = SER_SEL_GPS;
+//    mmP5out.ser_sel = SER_SEL_CRADLE;
     return &gps_4800_serial_config;
   }
 }

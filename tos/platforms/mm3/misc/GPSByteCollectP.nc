@@ -42,15 +42,25 @@
 #include "panic.h"
 #include "gps.h"
 
+uint32_t gps_t0;
+uint32_t gps_t1;
+
+struct {
+  uint16_t t1, t2, scci, cci;
+} times[10];
+
 module GPSByteCollectP {
   provides {
     interface Init;
     interface StdControl as GPSByteControl;
+    interface GPSByte;
   }
   uses {
     interface Msp430TimerControl;
     interface Msp430Capture;
     interface Msp430Compare;
+    interface Timer<TMilli> as GPSByteTimer;
+    interface LocalTime<TMilli>;
     interface HplMM3Adc as HW;
     interface Panic;
   }
@@ -68,31 +78,78 @@ implementation {
   noinit uint8_t build_byte;
 
   command error_t Init.init() {
+
+    /*
+     * Note: no need to turn the gps off.  PlatformInit does this when it
+     * sets the default port pin settings.
+     */
     num_bits = 0;
     state = GPSB_OFF;
+    memset(times, 0, sizeof(times));
     return SUCCESS;
   }
-  
+
+  /*
+   * check to see if the gps_rx bit is set from the last capture time.
+   * SCCI is the synchronous captured bit.  Bit 10 (0x400)
+   */
+
   bool isSetSCCI() {
-    //Bit 10 is the bit we want to check 0000 0000 0100 0000
-    return ( TACCTL2 & SCCI ); 
+    if (TACCTL2 & SCCI)
+      return 1;
+    else
+      return 0;
+    return ( (TACCTL2 & SCCI) == SCCI ); 
+  }
+
+  bool isSetCOV() {
+    /*
+     * Bit 2 indicates that a capture overflow occurred.
+     * Somehow we missed the the actual start and we saw another
+     * falling edge.  Not sure how to recover.  Probably turn
+     * the thing off and restart.
+     *
+     * This should happen through a signal.
+     */
+    return ( TACCTL2 & COV ); 
   }
 
   command error_t GPSByteControl.start() {
-    call HW.gps_on();
-    state = GPSB_WAKEUP;
 
     /*
-     * Start a delay timer.  When it goes off then do the following.
+     * this needs to get reworked.  The main gps module controls
+     * arbitration and when power should come up etc.  This module
+     * should get called by main gps and then enables the interrupt
+     * and such.
+     *
+     * But for now we are just trying things out to figure out how
+     * it works.
      */
-    state = GPSB_ON;   
-    atomic num_bits = 0;
-    atomic build_byte = 0;
-    
-    //Set CCR into capture mode, FALSE = falling edge
-    call Msp430TimerControl.setControlAsCapture(FALSE);
-    call Msp430TimerControl.enableEvents();
+    call HW.gps_on();
+    call GPSByteTimer.startOneShot(GPS_PWR_ON_DELAY);
+    gps_t0 = call LocalTime.get();
+    state = GPSB_WAKEUP;
     return SUCCESS;
+  }
+
+  event void GPSByteTimer.fired() {
+    state = GPSB_ON;   
+    atomic {
+      num_bits = 0;
+      build_byte = 0;
+    }
+    
+    /*
+     * CM_2, 10 (2) falling,  01 (1) rising
+     * CCIS_0 CCIxA (00)
+     * SCS (synchronous)
+     * CAP
+     * CCIE (interrupt enabled)
+     *
+     *    call Msp430TimerControl.setControlAsCapture(FALSE);
+     *    call Msp430TimerControl.enableEvents();
+     */
+    call Msp430TimerControl.setControlRaw(CM_2 | CCIS_0 | SCS | CAP | CCIE);
   }
 
   command error_t GPSByteControl.stop() {
@@ -103,27 +160,66 @@ implementation {
   }
   
   async event void Msp430Capture.captured(uint16_t time) {
+    times[9].t1 = TACCR2;
+    times[9].t2 = TAR;
+    times[9].scci = TACCTL2 & SCCI;
+    times[9].cci = TACCTL2 & CCI;
+    gps_t1 = call LocalTime.get();
 
-    //Switch to compare mode
-    call Msp430TimerControl.setControlAsCompare();
-    
-    // The time at which this event occured is preserved in the 
-    // CCR register so just add 1.5 bit times to that value
+    /*
+     * Note: setControlAsCompare makes assumptions about what
+     * to stuff in particular fields.  Like the CCIS field.  (we
+     * want CCIxA).
+     *
+     * We use setRaw to explicitly set what we need.  Make sure
+     * we are staring at CCIxA.
+     *
+     * Switch to compare mode.  (setControlAsCompare disables CCIE)
+     *
+     *    call Msp430TimerControl.setControlAsCompare();
+     *    call Msp430TimerControl.enableEvents();
+     */
+
+    call Msp430TimerControl.setControlRaw(CM_0 | CCIS_0 | SCS | CCIE);
+
+    /*
+     * The time at which this event occured is preserved in the 
+     * CCR register so just add 1.5 bit times to that value
+     *
+     * We need to be careful here.  If interrupts have been disabled
+     * for awhile then we could be behind the timer and won't interrupt
+     * until TAR wraps.  Causing strange results.  Might want to check
+     * for this.  But then what do we do?  Restart the gps?
+     */
     call Msp430Compare.setEventFromPrev(GPS_4800_15_BITTIME);
   }
   
   async event void Msp430Compare.fired() {
+    times[num_bits].t1 = TACCR2;
+    times[num_bits].t2 = TAR;
+    times[num_bits].scci = TACCTL2 & SCCI;
+    times[num_bits].cci = TACCTL2 & CCI;
     if(num_bits < 8) {
+      if (times[num_bits].scci) {
+	if (!isSetSCCI())
+	  nop();
+      }
       num_bits++;
       build_byte >>= 1;
-      if( isSetSCCI() )
+      if( TACCTL2 & SCCI )
 	build_byte |= 0x80;
       call Msp430Compare.setEventFromPrev(GPS_4800_1_BITTIME);
     } else {
-      if( !isSetSCCI() )
-	call Panic.brk();
+//      if( !(TACCTL2 & SCCI) )
+//	call Panic.brk();
       num_bits = 0;
-      call Msp430TimerControl.setControlAsCapture(FALSE);
+      signal GPSByte.byte_avail(build_byte);
+      build_byte = 0;
+
+      /*
+       * Go back to looking for a start bit.  Capture mode.
+       */
+      call Msp430TimerControl.setControlRaw(CM_2 | CCIS_0 | SCS | CAP | CCIE);
     }
   }
 }

@@ -36,13 +36,17 @@
  */
 
 configuration GPSByteCollectC {
-  provides interface StdControl as GPSByteControl;
+  provides {
+    interface StdControl as GPSByteControl;
+    interface GPSByte;
+  }
 }
 
 implementation {
   components MainC, GPSByteCollectP;
   MainC.SoftwareInit -> GPSByteCollectP;
   GPSByteControl = GPSByteCollectP;
+  GPSByte = GPSByteCollectP;
 
   components HplMM3AdcC;
   GPSByteCollectP.HW -> HplMM3AdcC;
@@ -54,4 +58,8 @@ implementation {
   GPSByteCollectP.Msp430TimerControl -> Msp430TimerC.ControlA2;
   GPSByteCollectP.Msp430Capture-> Msp430TimerC.CaptureA2;
   GPSByteCollectP.Msp430Compare -> Msp430TimerC.CompareA2;
+
+  components new TimerMilliC(), LocalTimeMilliC;
+  GPSByteCollectP.GPSByteTimer -> TimerMilliC;
+  GPSByteCollectP.LocalTime -> LocalTimeMilliC;
 }

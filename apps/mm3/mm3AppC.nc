@@ -37,11 +37,13 @@ implementation {
   components BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
   
 #ifdef TEST_GPS
-//  components GPSByteCollectC;
-//  mm3C.GPSControl -> GPSByteCollectC.GPSByteControl;
-
   components GPSC;
   mm3C.GPSControl -> GPSC;
+#endif
+#ifdef TEST_GPS_BYTE
+  components GPSByteCollectC;
+  mm3C.GPSByteControl -> GPSByteCollectC;
+  mm3C.GPSByte -> GPSByteCollectC;
 #endif
 
 #ifdef notdef

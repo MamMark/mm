@@ -18,6 +18,8 @@ uint16_t res[NUM_RES];
 
 //noinit uint8_t use_regime;
 uint8_t use_regime = 1;
+noinit uint16_t gps_nxt;
+uint8_t buff[2048];
 
 module mm3C {
   provides interface Init;
@@ -36,6 +38,10 @@ module mm3C {
 
 #ifdef TEST_GPS
     interface StdControl as GPSControl;
+#endif
+#ifdef TEST_GPS_BYTE
+    interface StdControl as GPSByteControl;
+    interface GPSByte;
 #endif
   }
 }
@@ -84,6 +90,10 @@ implementation {
 #ifdef TEST_GPS
     call GPSControl.start();
 #endif
+#ifdef TEST_GPS_BYTE
+    atomic gps_nxt = 0;
+    call GPSByteControl.start();
+#endif
 
     call SyncTimer.startPeriodic(SYNC_PERIOD);
 
@@ -125,6 +135,12 @@ implementation {
 
   event void SyncTimer.fired() {
     write_sync_record(TRUE);
+  }
+
+  async event void GPSByte.byte_avail(uint8_t byte) {
+    buff[gps_nxt++] = byte;
+    if (gps_nxt >= 512)
+      nop();
   }
 
   event void mm3CommData.send_data_done(error_t rtn) { }

@@ -59,10 +59,13 @@
 
 /*
  * empirically determined to be about 300 mis or so
- * when NMEA is the protocol.  Don't current know
+ * when NMEA is the protocol.  Don't currently know
  * if we are already in binary mode.
+ *
+ * how long in binary milliseconds to wait from the time we
+ * power the gps up until we start looking for the first character.
  */
 
-#define GPS_PWR_ON_DELAY 500
+#define GPS_PWR_ON_DELAY 200
 
 #endif /* __GPS_H__ */

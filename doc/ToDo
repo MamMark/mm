@@ -3,6 +3,8 @@ In no particular order:
 1) Look at Power
 
 2) SD to DMA (use DMA, need DMA interrupt vector)
+2.1) figure out SpiPacket  problem, non-dma
+2.2) figure out SpiPacket (dma) not getting completion interrupt.
 
 3) SD kernel for when things go wrong.  Panic write to SD.
 
