@@ -1,0 +1,43 @@
+In no particular order:
+
+1) Look at Power
+
+2) SD to DMA (use DMA, need DMA interrupt vector)
+
+3) SD kernel for when things go wrong.  Panic write to SD.
+
+4) ADC timing
+
+5) GPS SirfIII binary mode.
+
+6) GPS SirfIII different baud rate
+
+7) GPS p1.3 s/w uart.
+
+8) Different failure modes.
+   . basic fall back. how many times to retry the SD before giving up.
+   . basic comm mode.  Nothing else running?
+
+9) check GPS power off, SD power off, tri-state stuff?
+
+10) Investigate GPS power up.  What state does it come up in?  How to
+    put into binary mode.  How to change baud rate.
+
+11) check out s/w uart interrupt.
+    check out timer assisted s/w/ uart.
+
+12) Verify milli timer behaviour far into the future.  How do wraps work?
+
+13) watchdog design.  How to detect when things stop?  Sensing.  If sensing is
+    supposed to happen who watches.  Regime Control knows what is supposed to
+    run.  It can wake up every now and then and check to see if the sensors
+    have done their thing during the interval.
+
+14) Timeouts on SD behaviour.
+
+15) With a scope verify
+    a) DCO timing
+    b) TMilli
+    c) T32KHz
+    d) TMicro
+
