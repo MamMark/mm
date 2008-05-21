@@ -1,4 +1,6 @@
 /*
+ * DEPRECATED.  Do not use.
+ *
  * Copyright (c) 2008 Stanford University.
  * Copyright (c) 2008 Eric B. Decker
  * All rights reserved.
@@ -28,6 +30,8 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * DEPRECATED!
  */
  
 /**
@@ -94,13 +98,16 @@ implementation {
    * SCCI is the synchronous captured bit.  Bit 10 (0x400)
    */
 
-  bool isSetSCCI() {
+  int isSetSCCI() {
+    return (TACCTL2 & SCCI);
+  }
+
+#ifdef notdef
     if (TACCTL2 & SCCI)
       return 1;
     else
       return 0;
-    return ( (TACCTL2 & SCCI) == SCCI ); 
-  }
+#endif
 
   bool isSetCOV() {
     /*
