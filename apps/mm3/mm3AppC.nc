@@ -40,11 +40,6 @@ implementation {
   components GPSC;
   mm3C.GPSControl -> GPSC;
 #endif
-#ifdef TEST_GPS_BYTE
-  components GPSByteCollectC;
-  mm3C.GPSByteControl -> GPSByteCollectC;
-  mm3C.GPSByte -> GPSByteCollectC;
-#endif
 
 #ifdef notdef
   components AdcC;

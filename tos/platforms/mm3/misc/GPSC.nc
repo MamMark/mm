@@ -36,13 +36,6 @@
  * @author Eric B. Decker (cire831@gmail.com)
  */
 
-#ifdef notdef
-  components mm3SerialP, HplMsp430Usart1C;
-  mm3C.SerialConfig -> mm3SerialP;
-  mm3SerialP.Usart -> HplMsp430Usart1C;
-#endif
-
-
 configuration GPSC {
   provides interface StdControl as GPSControl;
 }

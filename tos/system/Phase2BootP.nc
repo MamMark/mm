@@ -44,11 +44,7 @@ module Phase2BootP {
   }
 }
 implementation {
-  task void Boot2() {
-    signal Phase2Boot.booted();
-  }
-
   event void Boot.booted() {
-    post Boot2();
+    signal Phase2Boot.booted();
   }
 }

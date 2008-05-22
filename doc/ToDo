@@ -1,5 +1,7 @@
 In no particular order:
 
+0) look at SpiPacket at 2MHz not working vs. 500KHz.  look at email t2-devel folder.
+
 1) Look at Power
 
 2) SD to DMA (use DMA, need DMA interrupt vector)
