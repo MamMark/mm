@@ -14,16 +14,21 @@ configuration mm3SerialCommC {
   }
   uses {
     interface Resource;
+    interface ResourceRequested;
   }
 }
 
 implementation {
+  components MainC;
   components mm3SerialCommP;
   components new SerialAMSenderC(AM_MM3_DATA);
   components new AMQueueImplP(MM3_NUM_SENSORS), SerialActiveMessageC;
+  
+  MainC.SoftwareInit -> mm3SerialCommP;
 
   Send = AMQueueImplP;
   Resource = mm3SerialCommP;
+  ResourceRequested = mm3SerialCommP;
   AMPacket = SerialAMSenderC;
   Packet = SerialAMSenderC;
   SplitControl = SerialActiveMessageC;

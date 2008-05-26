@@ -29,6 +29,9 @@ implementation {
 
   components StreamStorageC;
   mm3C.StreamStorageFull -> StreamStorageC;
+  
+  components LedsC;
+  mm3C.Leds -> LedsC;
 
   /*
    * Include sensor components.  No need to wire.  They will

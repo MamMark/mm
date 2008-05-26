@@ -23,4 +23,5 @@ implementation {
   
   components mm3SerialCommC;
   mm3SerialCommC.Resource -> UartC.Resource;
+  mm3SerialCommC.ResourceRequested -> UartC.ResourceRequested;
 }

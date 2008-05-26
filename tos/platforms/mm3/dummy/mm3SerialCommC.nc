@@ -15,9 +15,12 @@ configuration mm3SerialCommC {
 }
 
 implementation {
+  components MainC;
   components mm3SerialCommP;
   components new SerialAMSenderC(AM_MM3_DATA);
   components new AMQueueImplP(MM3_NUM_SENSORS), SerialActiveMessageC;
+  
+  MainC.SoftwareInit -> mm3SerialCommP;
 
   Send = AMQueueImplP;
   AMPacket = SerialAMSenderC;
