@@ -75,9 +75,11 @@ implementation {
   
   void requested() {
     if(!busy) {
-      call Resource.release();
-      call Resource.request();
-    } 
+      if(call Resource.isOwner() == TRUE) {
+        call Resource.release();
+        call Resource.request();
+      } 
+    }
   }
   
   async event void ResourceRequested.requested() {
