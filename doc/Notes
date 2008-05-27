@@ -14,6 +14,8 @@ Things to talk to Kevin about:
 
 1) Details of Mutex and Condvars
 
+1.5) default commands?  How are they used?  see mm3ControlP.nc
+
 2) get Kevin to how me how to mess with stow
 
 3) Default owner of comm.  So listening works....  LPL?  serial etc.

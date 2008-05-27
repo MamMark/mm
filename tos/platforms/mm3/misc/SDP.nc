@@ -432,7 +432,7 @@ implementation {
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 20, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 20, cmd->cmd, cmd->rsp[0], 0, 0);
       return FAIL;
     }
 

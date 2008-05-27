@@ -14,12 +14,17 @@ b SchedulerBasicP.nc:137
 b SchedulerBasicP.nc:134
 
 #mcu sleep
-b TinyThreadSchedulerP.nc:96
+b TinyThreadSchedulerP.nc:94
 
 #thread dispatch
-b TinyThreadSchedulerP.nc:78
+b TinyThreadSchedulerP.nc:77
 
 #b VirtualizeTimerC.nc:81
+
+# Arbiter request and release
+
+#b ArbiterP.nc:77
+#b ArbiterP.nc:110
 
 dis
 
@@ -33,15 +38,11 @@ end
 #p id
 #end
 
-#b ArbiterP.nc:78
-#b ArbiterP.nc:110
+b GPSP.nc:255
+b GPSP.nc:264
+b GPSP.nc:281
+b GPSP.nc:283
 
-#b GPSP.nc:160
-
-#b GPSP.nc:154
-#b GPSP.nc:166
-#b GPSP.nc:172
-#b GPSP.nc:197
 #b HplMM3AdcP.nc:224
 
 #b CollectP.nc:45
@@ -59,10 +60,6 @@ end
 #b SDP.nc:229
 #b SDP.nc:390
 
-#b GPSByteCollectP.nc:89
-#b GPSByteCollectP.nc:109
-#b GPSByteCollectP.nc:134
-
 #b mm3CommDataP.nc:163
 #comm
 #printf "inUse[%d] cleared\n",last
@@ -72,10 +69,6 @@ end
 # b sig_TIMERA1_VECTOR
 # b sig_TIMERB0_VECTOR
 # b sig_TIMERB1_VECTOR
-
-#set remoteaddresssize 0d64
-#set remotetimeout 0d999999
-#target remote localhost:2000
 
 # b AdcP.nc:219
 # comm

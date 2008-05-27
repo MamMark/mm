@@ -514,6 +514,7 @@ implementation {
 	  ss_panic(16, err);
 	  continue;
 	}
+	atomic ss_state = SS_STATE_IDLE;
       }
 
       for (;;) {

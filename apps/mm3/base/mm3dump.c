@@ -30,7 +30,7 @@
 #include "DtSensorDataMsg.h"
 #include "DtVersionMsg.h"
 
-#define VERSION "mm3dump: v0.7 185 May 2008\n"
+#define VERSION "mm3dump: v0.7 18 May 2008\n"
 
 int debug	= 0,
     verbose	= 0,

@@ -28,52 +28,113 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+/*
+ * Start up strategy...
+ *
+ * The ET-312 sirfIII module has a battery pin and pwr.  The sirf chip will
+ * maintain its last configuration settings as long as the battery input has
+ * a reasonable amount of juice.  The pwr pin is brought up when we need
+ * to have the GPS do its thing.
+ *
+ * If the tag runs out of power, the battery pin will no longer be supplied
+ * and the GPS will revert to NMEA-4800-8N1.
+ *
+ * It takes approximately 300ms for the GPS to power up and start sending
+ * data.  We want to set the GPS to SirfBinary at 115200.  We also set
+ * various MID so it minimizes how much the chip talks.  We request specific
+ * MIDs that give us the navigation information that we want.
+ *
+ * But if power has been maintained, the GPS will still be communicating in
+ * sirfBinary at 115200.  So first we listen at 115200.  If we see framing
+ * or other errors we switch to 4800 and switch over using the NMEA change
+ * protocol message.
+ *
+ * The GPS bootstrap is performed once on system bring up.  Its purpose is
+ * to perform the following steps:
+ *
+ * 1) Arbritrate for the UART (will also arbritrate for the underlying USART)
+ * 2) Power the GPS up and set the UART for 115200.
+ * 3) Listen for a packet (how long?)
+ * 4) Send binary initializations, set up long report rates for MIDS, etc.
+ *    We use explicit requests to get the information we want.
+ *
+ * 5) If we get overruns, framing errors, etc. then switch to 4800.
+ * 6) repower to reset?
+ * 7) wait for a NMEA 4800 packet.  how long?
+ * 8) if we get a valid packet, send the switch to sirfBinary 115200
+ * 9) wait for binary packet (goto 3).
+ *
+ * at 4800 NMEA, first char must be '$' (0x24, 36)
+ * at 115200 binary, first char must be 0xa0 (sop is 0xa0a2)
+ *
+ * How long...
+ *
+ * gps @ 4800, uart 115200 time to first char...  when do overruns and rx errors occur.
+ *	no characters received.  no errors.  got power on timeout.
+ *
+ * gps @ 115200, 115200, TTFC:  start up message length: 129 (time 107 mis), binary
+ *	first_char = 160 (0xa0), char_count = 129, t_request = 386, t_pwr_on = 387,
+ *	t_first_char = 701 (314 mis), t_last_char = 808, t_end_of_startup = 887 (timeout of 500 from power on)
+ *	TTS: (nmea_go_sirf_bin, 26 bytes)  3 mis
+ *
+ * gps @ 4800, 4800: TTFC:  start up message length: 263 chars, 625 mis, 1053 from power on
+ *	first_char = 36 '$', char_count = 263, t_request = 432, t_pwr_on = 433,
+ *	t_first_char = 861 (428 mis), t_end_of_startup = 1486 (delta 625, from pwr_on 1053 mis)
+ *	TTS: (nmea_go_sirf_bin, 26 bytes) 58 mis
+ *
+ * gps @ 115200, uart 4800:
+ *	no characters received.  no errors.  get power on timeout.
+ *
+ * --------------------------------------------------------
+ *
+ * 
+ */
  
 /**
  * @author Eric B. Decker (cire831@gmail.com)
  */
 
+#define GPS_SPEED 115200
+
 #include "panic.h"
 #include "gps.h"
 
 
-//  '5', '7', '6', '0', '0', ',',	// baud rate
-//  '*', '3', '7',		// checksum
-
-uint8_t go_sirf_bin[] = {
-  '$', 'P', 'S', 'R', 'F',	// header
-  '1', '0', '0', ',',		// set serial port MID
-  '0', ',',			// protocol SIRF binary
-  '4', '8', '0', '0', ',',	// baud rate
-  '8', ',',			// 8 data bits
-  '1', ',',			// 1 stop bit
-  '0',				// no parity
-  '*', '0', 'F',		// checksum
-  '\r', '\n', 0			// terminator
+uint8_t nmea_go_sirf_bin[] = {
+  '$', 'P', 'S', 'R', 'F',		// header
+  '1', '0', '0', ',',			// set serial port MID
+  '0', ',',				// protocol 0 SirfBinary 1 - NEMA
+  '1', '1', '5', '2', '0', '0', ',',	// baud rate
+  '8', ',',				// 8 data bits
+  '1', ',',				// 1 stop bit
+  '0',					// no parity
+  '*', '0', '4',			// checksum
+  '\r', '\n'				// terminator
 };
-
-#define OFF_TIME 100
-#define ON_TIME 5
 
 #define SSIZE 2048
 
 uint8_t sbuf[SSIZE];
 norace uint16_t s_idx;
-norace uint32_t t_t0;
-norace uint32_t t_first_char;
-norace uint32_t t_send_done;
-norace uint32_t t_first_binary;
-uint32_t diff_first_char;;
-uint32_t diff_first_binary;;
-norace uint8_t t_state;
+uint32_t t_send_start, t_send_done;
+uint32_t t_diff;;
+uint8_t rctl;
 
+struct {
+  uint8_t  do_send;
+  uint8_t  first_err_rctl;
+  uint8_t  first_char;
+  uint16_t char_count;
+  uint16_t first_err_count;
+  uint32_t t_request;
+  uint32_t t_pwr_on;
+  uint32_t t_first_char;
+  uint32_t t_last_char;
+  uint32_t t_first_err;
+  uint32_t t_end_of_startup;
+} gpsp_inst;
 
-enum {
-  TS_0 = 0,
-  TS_FIRST_CHAR = 1,
-  TS_NEXT_CHAR = 2,
-  TS_FIRST_BINARY = 3,
-};
 
 module GPSP {
   provides {
@@ -85,8 +146,8 @@ module GPSP {
     interface Resource as UARTResource;
     interface Panic;
     interface Timer<TMilli> as GpsTimer;
-    interface HplMM3Adc as HW;
     interface LocalTime<TMilli>;
+    interface HplMM3Adc as HW;
     interface UartStream;
 
     interface HplMsp430Usart as Usart;
@@ -97,15 +158,16 @@ implementation {
   enum {
     GPS_FAIL = 1,
     GPS_OFF,
-    GPS_TRY_4800,
-    GPS_TRY_57600,
-    GPS_UNINITILIZED,
-    GPS_RXTX,
+    GPS_REQUESTED,
+    GPS_PWR_ON_WAIT,
+    GPS_RECONFIG,
+    GPS_BOOT,
+    GPS_ON,
   };
 
   norace uint8_t gps_state;
 
-#ifdef notdef
+  //#ifdef notdef
   /* add NMEA checksum to a possibly  *-terminated sentence */
   void nmea_add_checksum(uint8_t *sentence) {
     uint8_t sum = 0;
@@ -132,23 +194,34 @@ implementation {
       *p++ = '\n';
     }
   }
-#endif
+  //#endif
 
   command error_t Init.init() {
+    gps_state = GPS_OFF;
     return SUCCESS;
   }
 
+  /*
+   * Fire up the GPS.  We first request.  During the granting process
+   * the GPS will be configured along with the USART used to talk to it.
+   * During this process interrupts will be enabled and we should be
+   * prepared to handle them even though we haven't gotten the grant back
+   * yet (the arbiter configures then grants (which makes good sense)).
+   *
+   * Prior to seeing the grant the gps driver state (gps_state) will be
+   * set to requesting.  After grant we take some time during which we
+   * ignore the gps (takes about 300ms to power up).  gps_state is set
+   * to GPS_PWR_WAIT.  After the delay, we run through the reset of GPS
+   * power up.
+   */
   command error_t GPSControl.start() {
-#ifdef LOOP_GPS_PWR
-    call HW.gps_off();
-    t_state = 0;
-    call GpsTimer.startOneShot(OFF_TIME);
-    return SUCCESS;
-#endif
+    nmea_add_checksum(nmea_go_sirf_bin);
     memset(sbuf, 0, sizeof(sbuf));
-    gps_state = GPS_OFF;
     s_idx = 0;
-    t_state = TS_0;
+    gps_state = GPS_REQUESTED;
+    gpsp_inst.char_count = 0;
+    gpsp_inst.first_err_count = 0;
+    gpsp_inst.t_request = call LocalTime.get();
     return call UARTResource.request();
   }
 
@@ -156,74 +229,69 @@ implementation {
     return SUCCESS;
   }
 
-  event void GpsTimer.fired() {
-    nop();
-#ifdef LOOP_GPS_PWR
-    if (t_state) {
-      t_state = 0;
-      call HW.gps_off();
-      call GpsTimer.startOneShot(OFF_TIME);
+
+  /*
+   * UARTResource.granted
+   *
+   * Called when the arbiter gives us control of the UART (also the underlying USART)
+   * It will have already called the configurator which turns on the gps and sets the
+   * serial mux to the gps.
+   *
+   * We start a timer (T_GPS_PWR_ON_TIME_OUT) during which time we are looking for the
+   * first char transmitted from the GPS.  If we time out, assume wrong baud rate.  If
+   * we don't receive what we are expecting (binary start 0xa0a2) then assume wrong baud
+   * rate.
+   */
+  event void UARTResource.granted() {
+    if (gps_state != GPS_REQUESTED) {
+      call UARTResource.release();
       return;
     }
-    t_state = 1;
-    call HW.gps_on();
-    call GpsTimer.startOneShot(ON_TIME);
-    return;
-#else
-    call HW.gps_off();
-    gps_state = GPS_OFF;
-    call UARTResource.release();
-#endif    
+    gps_state = GPS_PWR_ON_WAIT;
+    call GpsTimer.startOneShot(T_GPS_PWR_ON_TIME_OUT);
   }
   
-  event void UARTResource.granted() {
-    t_state = TS_0;
-//    t_state = TS_FIRST_CHAR;
-    t_t0 = call LocalTime.get();
-    call HW.gps_on();
-    gps_state = GPS_RXTX;
-    call GpsTimer.startOneShot(10000);
+  event void GpsTimer.fired() {
+    if (!gpsp_inst.t_end_of_startup) {
+      gpsp_inst.t_end_of_startup = call LocalTime.get();
+    }
+    call GpsTimer.startOneShot(5000);
+    if (gpsp_inst.do_send) {
+      t_send_start = call LocalTime.get();
+      call UartStream.send(nmea_go_sirf_bin, sizeof(nmea_go_sirf_bin));
+    }
   }
   
   async event void UartStream.sendDone( uint8_t* buf, uint16_t len, error_t error ) {
     t_send_done = call LocalTime.get();
-    t_state = TS_FIRST_BINARY;
+    nop();
   }
 
   async event void UartStream.receivedByte( uint8_t byte ) {
-    if (gps_state != GPS_RXTX) {
+    rctl = U1RCTL;
+    if (gpsp_inst.char_count == 0) {
+      gpsp_inst.t_first_char = call LocalTime.get();
+      gpsp_inst.first_char = byte;
       nop();
-      t_state++;
-      t_state--;
-      return;
     }
-    switch(t_state) {
-      case TS_0:
-      default:
-	break;
-      case TS_FIRST_CHAR:
-	t_first_char = call LocalTime.get();
-	diff_first_char = t_first_char - t_t0;
-	call UartStream.send(go_sirf_bin, sizeof(go_sirf_bin));
-	t_state = TS_NEXT_CHAR;
-	break;
-      case TS_FIRST_BINARY:
-	t_first_binary = call LocalTime.get();
-	diff_first_binary = t_first_binary - t_first_char;
-	t_state = TS_0;
-	break;
+    if ((rctl & RXERR) && !gpsp_inst.first_err_rctl) {
+      gpsp_inst.first_err_rctl = rctl;
+      gpsp_inst.first_err_count = gpsp_inst.char_count;
+      gpsp_inst.t_first_err = call LocalTime.get();
     }
-    if (s_idx >= SSIZE)
-      return;
+    gpsp_inst.char_count++;
+    gpsp_inst.t_last_char = call LocalTime.get();
     sbuf[s_idx++] = byte;
-    if (s_idx >= 1024)
+    if (s_idx == 1024)
       nop();
+    if (s_idx >= SSIZE)
+      s_idx = 0;
   }
 
   async event void UartStream.receiveDone( uint8_t* buf, uint16_t len, error_t error ) {
   }
 
-  msp430_uart_union_config_t gps_4800_serial_config = {
+  const msp430_uart_union_config_t gps_4800_serial_config = {
     {
        ubr:   UBR_4MHZ_4800,
        umctl: UMCTL_4MHZ_4800,
@@ -243,10 +311,10 @@ implementation {
     }
   };
 
-  msp430_uart_union_config_t gps_57600_serial_config = {
+  const msp430_uart_union_config_t gps_115200_serial_config = {
     {
-       ubr:   UBR_4MHZ_57600,
-       umctl: UMCTL_4MHZ_57600,
+       ubr:   UBR_4MHZ_115200,
+       umctl: UMCTL_4MHZ_115200,
        ssel: 0x02,		// smclk selected (DCO, 4MHz)
        pena: 0,			// no parity
        pev: 0,			// no parity
@@ -264,13 +332,16 @@ implementation {
   };
 
 
+  /*
+   * Called from witin the Usart configurator.
+   *
+   * We default to 115200 assuming that the gps most likely will have been powered
+   * and properly configured after initial boot.
+   */
   async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
-    /*
-     * this is called from within the usart configurator so will have
-     * the desired effect.
-     */
     mmP5out.ser_sel = SER_SEL_GPS;
-//    mmP5out.ser_sel = SER_SEL_CRADLE;
-    return &gps_4800_serial_config;
+    call HW.gps_on();
+    gpsp_inst.t_pwr_on = call LocalTime.get();
+    return (msp430_uart_union_config_t*) &gps_115200_serial_config;
   }
 }

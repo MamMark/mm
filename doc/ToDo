@@ -1,5 +1,14 @@
 In no particular order:
 
+5) GPS SirfIII binary mode.
+
+6) GPS SirfIII different baud rate
+
+7) interrupts being turned off when gps releases and requests and something
+   else needs it.  (SD?)
+
+------------------------------------------------------------------------
+
 0) look at SpiPacket at 2MHz not working vs. 500KHz.  look at email t2-devel folder.
 
 1) Look at Power
@@ -10,13 +19,7 @@ In no particular order:
 
 3) SD kernel for when things go wrong.  Panic write to SD.
 
-4) ADC timing
-
-5) GPS SirfIII binary mode.
-
-6) GPS SirfIII different baud rate
-
-7) GPS p1.3 s/w uart.
+4) ADC timing  verify.
 
 8) Different failure modes.
    . basic fall back. how many times to retry the SD before giving up.
@@ -45,3 +48,4 @@ In no particular order:
     c) T32KHz
     d) TMicro
 
+*7) GPS p1.3 s/w uart. (abandoned)
