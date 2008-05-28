@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2008 Stanford University.
  * Copyright (c) 2008 Eric B. Decker
+ * Copyright (c) 2008 Stanford University.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +31,27 @@
  */
  
 /**
+ * @author Eric B. Decker (cire831@gmail.com)
+ * @date May 27, 2008
+ *
  * wiring by Kevin, code by Eric
  * @author Kevin Klues (klueska@cs.stanford.edu)
- * @author Eric B. Decker (cire831@gmail.com)
  */
 
 configuration GPSC {
-  provides interface StdControl as GPSControl;
+  provides {
+    interface StdControl as GpsControl;
+    interface Boot as GpsBoot;
+  }
+  uses interface Boot;
 }
 
 implementation {
   components MainC, GPSP;
   MainC.SoftwareInit -> GPSP;
-  GPSControl = GPSP;
+  GpsControl = GPSP;
+  GpsBoot = GPSP;
+  Boot = GPSP.Boot;
   
   components HplMM3AdcC;
   GPSP.HW -> HplMM3AdcC;

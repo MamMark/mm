@@ -553,6 +553,9 @@ implementation {
 	    /*
 	     * We also might want to check for next to last and
 	     * write a record indicating this via Collect.
+	     *
+	     * NOTE: the SSF.dblk_stream_full signal executes on
+	     * the thread stack.  Just be aware.
 	     */
 	    signal SSF.dblk_stream_full();
 	    ssc.dblk_nxt = 0;

@@ -37,18 +37,15 @@
  * @date May 5th, 2008
  *
  * Sequence the bootup.  Components that should fire up when the
- * system is booted should wire to SystemBootC.Boot.
- *
- * Initial Debug:
+ * system is completely booted should wire to SystemBootC.Boot.
  *
  * 1) Bring up the serial or radio stack first so we can watch
- *    what is happening via the Debug port.
- *
+ *    what is happening via the Debug port.  (for debug)
  * 2) Bring up the SD
- *
  * 3) Bring up the GPS.
  *
- * We'll figure other stuff out later.
+ * Note Serial/Radio, StreamStorage, and GPS all use the same
+ * hardware path.  So we serialize them.
  */
 
 configuration SystemBootC {
@@ -58,13 +55,14 @@ configuration SystemBootC {
 
 implementation {
   components MainC;
-  components Phase1BootC, Phase3BootC;
-  components StreamStorageC as SS;
-  
   SoftwareInit = MainC.SoftwareInit;
+
+  components Phase1BootC;
+  components StreamStorageC as SS;
+  components GPSC;  
   
-  Phase1BootC.Boot -> MainC;
-  SS.Boot -> Phase1BootC;
-  Phase3BootC.Boot -> SS;
-  Boot = Phase3BootC;
+  Phase1BootC.Boot -> MainC;	// bring up serial/radio
+  SS.Boot -> Phase1BootC;	// bring up StreamStorage
+  GPSC.Boot -> SS;		// bring up GPS.
+  Boot = GPSC;			// bring up everyone else
 }

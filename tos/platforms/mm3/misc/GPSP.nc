@@ -29,68 +29,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Start up strategy...
- *
- * The ET-312 sirfIII module has a battery pin and pwr.  The sirf chip will
- * maintain its last configuration settings as long as the battery input has
- * a reasonable amount of juice.  The pwr pin is brought up when we need
- * to have the GPS do its thing.
- *
- * If the tag runs out of power, the battery pin will no longer be supplied
- * and the GPS will revert to NMEA-4800-8N1.
- *
- * It takes approximately 300ms for the GPS to power up and start sending
- * data.  We want to set the GPS to SirfBinary at 115200.  We also set
- * various MID so it minimizes how much the chip talks.  We request specific
- * MIDs that give us the navigation information that we want.
- *
- * But if power has been maintained, the GPS will still be communicating in
- * sirfBinary at 115200.  So first we listen at 115200.  If we see framing
- * or other errors we switch to 4800 and switch over using the NMEA change
- * protocol message.
- *
- * The GPS bootstrap is performed once on system bring up.  Its purpose is
- * to perform the following steps:
- *
- * 1) Arbritrate for the UART (will also arbritrate for the underlying USART)
- * 2) Power the GPS up and set the UART for 115200.
- * 3) Listen for a packet (how long?)
- * 4) Send binary initializations, set up long report rates for MIDS, etc.
- *    We use explicit requests to get the information we want.
- *
- * 5) If we get overruns, framing errors, etc. then switch to 4800.
- * 6) repower to reset?
- * 7) wait for a NMEA 4800 packet.  how long?
- * 8) if we get a valid packet, send the switch to sirfBinary 115200
- * 9) wait for binary packet (goto 3).
- *
- * at 4800 NMEA, first char must be '$' (0x24, 36)
- * at 115200 binary, first char must be 0xa0 (sop is 0xa0a2)
- *
- * How long...
- *
- * gps @ 4800, uart 115200 time to first char...  when do overruns and rx errors occur.
- *	no characters received.  no errors.  got power on timeout.
- *
- * gps @ 115200, 115200, TTFC:  start up message length: 129 (time 107 mis), binary
- *	first_char = 160 (0xa0), char_count = 129, t_request = 386, t_pwr_on = 387,
- *	t_first_char = 701 (314 mis), t_last_char = 808, t_end_of_startup = 887 (timeout of 500 from power on)
- *	TTS: (nmea_go_sirf_bin, 26 bytes)  3 mis
- *
- * gps @ 4800, 4800: TTFC:  start up message length: 263 chars, 625 mis, 1053 from power on
- *	first_char = 36 '$', char_count = 263, t_request = 432, t_pwr_on = 433,
- *	t_first_char = 861 (428 mis), t_end_of_startup = 1486 (delta 625, from pwr_on 1053 mis)
- *	TTS: (nmea_go_sirf_bin, 26 bytes) 58 mis
- *
- * gps @ 115200, uart 4800:
- *	no characters received.  no errors.  get power on timeout.
- *
- * --------------------------------------------------------
- *
- * 
- */
- 
 /**
  * @author Eric B. Decker (cire831@gmail.com)
  */
@@ -139,16 +77,18 @@ struct {
 module GPSP {
   provides {
     interface Init;
-    interface StdControl as GPSControl;
+    interface StdControl as GpsControl;
     interface Msp430UartConfigure;
+    interface Boot as GpsBoot;
   }
   uses {
+    interface Boot;
     interface Resource as UARTResource;
-    interface Panic;
     interface Timer<TMilli> as GpsTimer;
     interface LocalTime<TMilli>;
     interface HplMM3Adc as HW;
     interface UartStream;
+    interface Panic;
 
     interface HplMsp430Usart as Usart;
   }
@@ -158,10 +98,10 @@ implementation {
   enum {
     GPS_FAIL = 1,
     GPS_OFF,
-    GPS_REQUESTED,
     GPS_PWR_ON_WAIT,
     GPS_RECONFIG,
     GPS_BOOT,
+    GPS_REQUESTED,
     GPS_ON,
   };
 
@@ -198,7 +138,80 @@ implementation {
 
   command error_t Init.init() {
     gps_state = GPS_OFF;
+    nmea_add_checksum(nmea_go_sirf_bin);
+    memset(sbuf, 0, sizeof(sbuf));
+    s_idx = 0;
     return SUCCESS;
+  }
+
+  /*
+   * Boot up the GPS.
+   *
+   * Previous components have completed boot, now it is GPS's turn.
+   *
+   * Start up strategy...
+   *
+   * The ET-312 sirfIII module has a battery pin and pwr.  The sirf chip will
+   * maintain its last configuration settings as long as the battery input has
+   * a reasonable amount of juice.  The pwr pin is brought up when we need
+   * to have the GPS do its thing.  When powered the GPS first spews for awhile
+   * with development information.  Then it settles down into issuing periodic
+   * navigation results.
+   *
+   * If the tag runs out of power, the battery pin will no longer be supplied
+   * and the GPS will revert to NMEA-4800-8N1.
+   *
+   * It takes approximately 300ms for the GPS to power up and start sending
+   * data.  We want to set the GPS to SirfBinary at 115200.  We also set
+   * various MID so it minimizes how much the chip talks.  We request specific
+   * MIDs that give us the navigation information that we want.
+   *
+   * But if power has been maintained, the GPS will still be communicating in
+   * sirfBinary at 115200.  So first we listen at 115200.  If we see framing
+   * or other errors we switch to 4800 and switch over using the NMEA change
+   * protocol message.
+   *
+   * The GPS bootstrap is performed once on system bring up.  Its purpose is
+   * to perform the following steps:
+   *
+   * 1) Arbritrate for the UART (will also arbritrate for the underlying USART)
+   * 2) Power the GPS up and set the UART for 115200.
+   * 3) Listen for a packet (how long?)
+   * 4) Send binary initializations, set up long report rates for MIDS, etc.
+   *    We use explicit requests to get the information we want.
+   *
+   * 5) If we get overruns, framing errors, etc. then switch to 4800.
+   * 6) repower to reset?
+   * 7) wait for a NMEA 4800 packet.  how long?
+   * 8) if we get a valid packet, send the switch to sirfBinary 115200
+   * 9) wait for binary packet (goto 3).
+   *
+   * at 4800 NMEA, first char must be '$' (0x24, 36)
+   * at 115200 binary, first char must be 0xa0 (sop is 0xa0a2)
+   *
+   * How long...
+   *
+   * gps @ 4800, uart 115200 time to first char...  when do overruns and rx errors occur.
+   *	no characters received.  no errors.  got power on timeout.
+   *
+   * gps @ 115200, 115200, TTFC:  start up message length: 129 (time 107 mis), binary
+   *	first_char = 160 (0xa0), char_count = 129, t_request = 386, t_pwr_on = 387,
+   *	t_first_char = 701 (314 mis), t_last_char = 808, t_end_of_startup = 887 (timeout of 500 from power on)
+   *	TTS: (nmea_go_sirf_bin, 26 bytes)  3 mis
+   *
+   * gps @ 4800, 4800: TTFC:  start up message length: 263 chars, 625 mis, 1053 from power on
+   *	first_char = 36 '$', char_count = 263, t_request = 432, t_pwr_on = 433,
+   *	t_first_char = 861 (428 mis), t_end_of_startup = 1486 (delta 625, from pwr_on 1053 mis)
+   *	TTS: (nmea_go_sirf_bin, 26 bytes) 58 mis
+   *
+   * gps @ 115200, uart 4800:
+   *	no characters received.  no errors.  get power on timeout.
+   *
+   * --------------------------------------------------------
+   */
+
+  event void Boot.booted() {
+    signal GpsBoot.booted();
   }
 
   /*
@@ -214,10 +227,7 @@ implementation {
    * to GPS_PWR_WAIT.  After the delay, we run through the reset of GPS
    * power up.
    */
-  command error_t GPSControl.start() {
-    nmea_add_checksum(nmea_go_sirf_bin);
-    memset(sbuf, 0, sizeof(sbuf));
-    s_idx = 0;
+  command error_t GpsControl.start() {
     gps_state = GPS_REQUESTED;
     gpsp_inst.char_count = 0;
     gpsp_inst.first_err_count = 0;
@@ -225,7 +235,7 @@ implementation {
     return call UARTResource.request();
   }
 
-  command error_t GPSControl.stop() {
+  command error_t GpsControl.stop() {
     return SUCCESS;
   }
 
@@ -291,25 +301,10 @@ implementation {
   async event void UartStream.receiveDone( uint8_t* buf, uint16_t len, error_t error ) {
   }
 
-  const msp430_uart_union_config_t gps_4800_serial_config = {
-    {
-       ubr:   UBR_4MHZ_4800,
-       umctl: UMCTL_4MHZ_4800,
-       ssel: 0x02,		// smclk selected (DCO, 4MHz)
-       pena: 0,			// no parity
-       pev: 0,			// no parity
-       spb: 0,			// one stop bit
-       clen: 1,			// 8 bit data
-       listen: 0,		// no loopback
-       mm: 0,			// idle-line
-       ckpl: 0,			// non-inverted clock
-       urxse: 0,		// start edge off
-       urxeie: 1,		// error interrupt enabled
-       urxwie: 0,		// rx wake up disabled
-       utxe : 1,		// tx interrupt enabled
-       urxe : 1			// rx interrupt enabled
-    }
-  };
+
+//       ubr:   UBR_4MHZ_4800,
+//       umctl: UMCTL_4MHZ_4800,
+
 
   const msp430_uart_union_config_t gps_115200_serial_config = {
     {

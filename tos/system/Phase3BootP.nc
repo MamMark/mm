@@ -31,8 +31,10 @@
 
 /**
  * @author Eric B. Decker <cire831@gmail.com>
+ * @date May 27, 2008
+ *
+ * Original structure/wiring
  * @author Kevin Klues <klueska@cs.stanford.edu>
- * @date April 6th, 2008
  */
  
 module Phase3BootP {
