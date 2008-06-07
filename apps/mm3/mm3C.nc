@@ -37,7 +37,7 @@ module mm3C {
     interface Adc;
 
 #ifdef TEST_GPS
-    interface StdControl as GPSControl;
+    interface SplitControl as GPSControl;
 #endif
   }
 }
@@ -81,11 +81,21 @@ implementation {
   }
 
 
+#ifdef TEST_GPS
+  event void GPSControl.startDone(error_t error) {
+  }
+
+  event void GPSControl.stopDone(error_t error) {
+  }
+#endif
+
+
   event void Boot.booted() {
 
 #ifdef TEST_GPS
     call GPSControl.start();
-//    return;
+    call GPSControl.stop();
+    return;
 #endif
 
     call SyncTimer.startPeriodic(SYNC_PERIOD);

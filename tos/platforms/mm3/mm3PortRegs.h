@@ -40,7 +40,7 @@
     uint8_t urxd1_o		: 1;
   } mmP3out asm("0x0019");
 
-  static volatile struct {
+norace static volatile struct {
     uint8_t gmux		: 2;
     uint8_t vdiff_off		: 1;
     uint8_t vref_off		: 1;
@@ -50,7 +50,7 @@
     uint8_t rf232_off		: 1;
   } mmP4out asm("0x001d");
 
-norace  static volatile struct {
+norace static volatile struct {
     uint8_t sd_pwr_off		: 1;
     uint8_t sd_sdi		: 1;
     uint8_t sd_sdo		: 1;

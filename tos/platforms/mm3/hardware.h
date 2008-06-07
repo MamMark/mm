@@ -31,7 +31,7 @@
  * port 1.0	O	d_mux_a0		port 4.0	O	gain_mux_a0
  *       .1	O	d_mux_a1		      .1	O	gain_mux_a1
  *       .2	O	mag_degauss_1		      .2	O	vdiff_off
- *       .3    mI(0pO)	gps_rx  		      .3	O	vref_off
+ *       .3     O		  		      .3	O	vref_off
  *       .4	O	mag_deguass_2		      .4	O	solar_chg_on
  *       .5	O	press_res_off		      .5	O	extchg_battchk
  *       .6	O	salinity_off		      .6	O	gps_off
@@ -111,7 +111,7 @@ TOSH_ASSIGN_PIN(SDxCSN, 5, 4);
   enum {
     SER_SEL_CRADLE =	0,
     SER_SEL_GPS    =	1,	/* temp so we can see it via the uart */
-//    SER_SEL_RF232  =	2,	/* shouldnt be used */
+    SER_SEL_UNUSED  =	2,
     SER_SEL_NONE   =	3,
   };
 
@@ -193,7 +193,7 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
 
 /*
  * d_mux = 0 (inhibits will be high, u8/u12_inhibit)
- * all pwr bits high (off), gps_rx_out 0 (gps off), degauss = 0
+ * all pwr bits high (off), degauss = 0
  */
 #define P1_BASE_DIR	0xff
 #define P1_BASE_VAL	0xe0
@@ -212,11 +212,6 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
  * ADC_SDO and ADC_CLK are assigned to SPI0
  */
 #define P3_BASE_DIR	0x7b
-
-/* gps is being moved to its own pin.  meaning a s/w uart
-   driven initially by interrupt (start bit interrupts us)
-   and then timed with t2 timers for the sample rate.
-*/
 #define P3_BASE_VAL	0x60
 #define P3_BASE_SEL	0x0c
 

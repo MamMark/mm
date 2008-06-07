@@ -331,7 +331,7 @@ implementation {
     sd_cmd_blk_t *cmd;
 
     cmd = &sd_cmd;
-    call Usart.setUbr(SPI_400K_DIV);
+    call Usart.setBaud(SPI_400K_DIV, 0);
     sd_packarg(0);
 
     /* Clock out at least 74 bits of idles (0xFF).  This allows
@@ -407,7 +407,7 @@ implementation {
     }
 
     /* If we got this far, initialization was OK. */
-    call Usart.setUbr(SPI_2M_DIV);
+    call Usart.setBaud(SPI_2M_DIV, 0);
     return SUCCESS;
   }
 

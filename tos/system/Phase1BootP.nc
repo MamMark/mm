@@ -47,8 +47,11 @@ module Phase1BootP {
 }
 implementation {
   event void Boot.booted() {
-    call mm3Comm.useSerial();
-    //call mm3Comm.useRadio();
+    signal Phase1Boot.booted();
+
+//    call mm3Comm.useSerial();
+
+//    call mm3Comm.useRadio();
   }
 
   event void mm3Comm.serialOn() {

@@ -101,7 +101,9 @@ implementation {
 
 #else
 
-  command error_t Init.init() { }
+  command error_t Init.init() {
+    return SUCCESS;
+  }
 
   command error_t AMSend.send[uint8_t id](am_addr_t addr, message_t *msg, uint8_t len) {
     if(busy == FALSE) {

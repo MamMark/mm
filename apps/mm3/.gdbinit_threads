@@ -5,16 +5,17 @@ disp/i $pc
 x/i $pc
 
 b TinyOSMainP.nc:83
-b TinyOSMainP.nc:90
+#b TinyOSMainP.nc:90
+b *TinyOSMainP$TinyOSBoot$booted+0d64
 
 #task scheduler
 b SchedulerBasicP.nc:137
 
 #thread scheduler
-b SchedulerBasicP.nc:134
+#b SchedulerBasicP.nc:134
 
 #mcu sleep
-b TinyThreadSchedulerP.nc:94
+#b TinyThreadSchedulerP.nc:94
 
 #thread dispatch
 b TinyThreadSchedulerP.nc:77
@@ -38,10 +39,11 @@ end
 #p id
 #end
 
-b GPSP.nc:255
-b GPSP.nc:264
-b GPSP.nc:281
-b GPSP.nc:283
+#b GPSP.nc:487
+#b GPSP.nc:519
+#b GPSP.nc:559
+#b GPSP.nc:626
+#b GPSP.nc:670
 
 #b HplMM3AdcP.nc:224
 

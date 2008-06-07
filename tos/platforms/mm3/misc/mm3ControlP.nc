@@ -29,6 +29,7 @@ implementation {
 
     for (i = 0; i < MM3_NUM_SENSORS; i++)
       eaves[i] = TRUE;
+//      eaves[i] = FALSE;
     return SUCCESS;
   }
 

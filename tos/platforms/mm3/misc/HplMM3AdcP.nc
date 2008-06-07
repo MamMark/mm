@@ -223,13 +223,11 @@ implementation {
     }
   }
 
-  command void HW.gps_on() {
-    SET_GPS_RX_IN_MOD;		// switch back to input, and give to timer module.
+  async command void HW.gps_on() {
     mmP4out.gps_off = 0;
   }
 
-  command void HW.gps_off() {
+  async command void HW.gps_off() {
     mmP4out.gps_off = 1;
-    SET_GPS_RX_OUT_0;		// set gps_rx pin to output 0 to not pwr
   }
 }

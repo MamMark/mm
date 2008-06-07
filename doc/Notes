@@ -28,6 +28,13 @@ Things to talk to Kevin about:
    When should it get resync'd to Aclk?
 
 
+byte times:
+
+115200 bits/sec    10bits  *  secs/115200 = 8.681e-5  ~87us
+57600  bits/sec    10bits  *  secs/57600  = 1.736e-4  ~174us
+
+
+
 *-1) wiring in a different msp430ClockInit rather then the override
     in PlatformP.nc.
 *0) wiring in dma for sd

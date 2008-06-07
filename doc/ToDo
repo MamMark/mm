@@ -1,4 +1,12 @@
+- at 115200, SiRFBin with recv_only turned on we see the stream no problem.
+- at 115200, SiRFBin, recv_only == 0, we seem to lose some of the bytes.
+- try 57600.
+
 In no particular order:
+
+- check 115200 for losing characters.
+
+- if we switch to 57600 does it lose?
 
 5) GPS SirfIII binary mode.
 
@@ -7,14 +15,22 @@ In no particular order:
 7) interrupts being turned off when gps releases and requests and something
    else needs it.  (SD?)
 
+7a) try uwaiting for the gps bounce.  how long do we need to tweak
+    the gps to get the power on reset.
+
+7b) Do we need to power bounce at all?  Can't we just get the data stream
+    to switch over?  Should be able to and it has shorter duration (but we
+    only do this on boot and then only if 115200 doesn't work).
+
 ------------------------------------------------------------------------
 
 0) look at SpiPacket at 2MHz not working vs. 500KHz.  look at email t2-devel folder.
+   non-dma.  (email from Jan Hauer)
 
 1) Look at Power
 
 2) SD to DMA (use DMA, need DMA interrupt vector)
-2.1) figure out SpiPacket  problem, non-dma
+2.1) figure out SpiPacket  problem, non-dma  (see 0 above)
 2.2) figure out SpiPacket (dma) not getting completion interrupt.
 
 3) SD kernel for when things go wrong.  Panic write to SD.
@@ -25,13 +41,8 @@ In no particular order:
    . basic fall back. how many times to retry the SD before giving up.
    . basic comm mode.  Nothing else running?
 
-9) check GPS power off, SD power off, tri-state stuff?
-
-10) Investigate GPS power up.  What state does it come up in?  How to
-    put into binary mode.  How to change baud rate.
-
-11) check out s/w uart interrupt.
-    check out timer assisted s/w/ uart.
+9) check GPS power off, SD power off, tri-state stuff?  Are the pins valid.
+   not worth doing on current prototype.  need to do once we turn.
 
 12) Verify milli timer behaviour far into the future.  How do wraps work?
 
@@ -48,4 +59,12 @@ In no particular order:
     c) T32KHz
     d) TMicro
 
+16) GPS own configure/unconfigure.
+
+------------------------------------------------------------------------
+
 *7) GPS p1.3 s/w uart. (abandoned)
+*10) Investigate GPS power up.  What state does it come up in?  How to
+    put into binary mode.  How to change baud rate.
+*11) check out s/w uart interrupt.  (didn't pan out.  too much interrupt overhead)
+    check out timer assisted s/w/ uart.

@@ -40,7 +40,7 @@
 
 configuration GPSC {
   provides {
-    interface StdControl as GpsControl;
+    interface SplitControl as GpsControl;
     interface Boot as GpsBoot;
   }
   uses interface Boot;
@@ -70,4 +70,7 @@ implementation {
 
   components HplMsp430Usart1C;
   GPSP.Usart -> HplMsp430Usart1C;
+
+  components PanicC;
+  GPSP.Panic -> PanicC;
 }
