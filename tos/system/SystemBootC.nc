@@ -59,10 +59,14 @@ implementation {
 
   components Phase1BootC;
   components StreamStorageC as SS;
-  components GPSC;  
-  
+  components GPSC;
+
   Phase1BootC.Boot -> MainC;	// bring up serial/radio
   SS.Boot -> Phase1BootC;	// bring up StreamStorage
+#ifdef TEST_GPS
   GPSC.Boot -> SS;		// bring up GPS.
   Boot = GPSC;			// bring up everyone else
+#else
+  Boot = SS;
+#endif
 }

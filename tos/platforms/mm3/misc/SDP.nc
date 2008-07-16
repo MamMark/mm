@@ -32,14 +32,14 @@ module SDP {
 
 implementation {
 
-  noinit sd_cmd_blk_t sd_cmd;
-  noinit uint16_t     sd_r1b_timeout;
-  noinit uint16_t     sd_rd_timeout;
-  noinit uint16_t     sd_wr_timeout;
-  noinit uint16_t     sd_reset_timeout;
-  noinit uint16_t     sd_busy_timeout;
-  noinit bool         sd_busyflag;
-  noinit uint16_t     sd_reset_idles;
+  sd_cmd_blk_t sd_cmd;
+  uint16_t     sd_r1b_timeout;
+  uint16_t     sd_rd_timeout;
+  uint16_t     sd_wr_timeout;
+  uint16_t     sd_reset_timeout;
+  uint16_t     sd_busy_timeout;
+  bool         sd_busyflag;
+  uint16_t     sd_reset_idles;
 
   void sd_wait_notbusy();
 
@@ -318,6 +318,18 @@ implementation {
   }
 
 
+  const msp430_spi_union_config_t sd_400K_config = { {
+    ubr    : SPI_400K_DIV,
+    ssel   : 0x02,
+    clen   : 1,
+    listen : 0,
+    mm     : 1,
+    ckph   : 1,
+    ckpl   : 0,
+    stc    : 1
+  } };
+
+
   /* Reset the SD card.
      ret:	    0,	card initilized
      non-zero, error return
@@ -331,7 +343,7 @@ implementation {
     sd_cmd_blk_t *cmd;
 
     cmd = &sd_cmd;
-    call Usart.setBaud(SPI_400K_DIV, 0);
+    call Usart.setModeSpi((msp430_spi_union_config_t *)&sd_400K_config);
     sd_packarg(0);
 
     /* Clock out at least 74 bits of idles (0xFF).  This allows
@@ -407,7 +419,7 @@ implementation {
     }
 
     /* If we got this far, initialization was OK. */
-    call Usart.setBaud(SPI_2M_DIV, 0);
+    call Usart.setModeSpi(&msp430_spi_default_config);
     return SUCCESS;
   }
 

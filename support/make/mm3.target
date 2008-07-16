@@ -3,6 +3,10 @@
 
 PLATFORM ?= mm3
 
+# THREADS_MSP430_DIR comes from main tree support/make/threads.extra
+# mm3 is based on the msp430 so we use that threads variant.
+CFLAGS += -I$(THREADS_MSP430_DIR)
+
 #MSP_MCU = msp430x1611
 PFLAGS += -I$(MAMMARK_DIR)/tos/platforms/mm3
 PFLAGS += -I$(MAMMARK_DIR)/tos/system

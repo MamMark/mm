@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2008 Eric B. Decker
  * Copyright (c) 2008 Stanford University.
  * All rights reserved.
  *
@@ -47,9 +48,11 @@ module Phase1BootP {
 }
 implementation {
   event void Boot.booted() {
+#ifdef TEST_NO_COMM
     signal Phase1Boot.booted();
-
-//    call mm3Comm.useSerial();
+#else
+    call mm3Comm.useSerial();
+#endif
 
 //    call mm3Comm.useRadio();
   }
@@ -59,7 +62,7 @@ implementation {
   }
 
   event void mm3Comm.radioOn() {
-    //signal Phase1Boot.booted();
+//    signal Phase1Boot.booted();
   }
 
   event void mm3Comm.commOff() {}

@@ -3,10 +3,10 @@
  * All rights reserved.
  */
 
-norace noinit uint16_t save_sr;
-norace noinit bool save_sr_free;
-norace noinit uint8_t _p, _w;
-norace noinit uint16_t _a0, _a1, _a2, _a3;
+norace uint16_t save_sr;
+norace bool save_sr_free;
+norace uint8_t _p, _w;
+norace uint16_t _a0, _a1, _a2, _a3;
 
 #define MAYBE_SAVE_SR_AND_DINT	do {	\
     if (save_sr_free) {			\

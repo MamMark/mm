@@ -20,39 +20,45 @@
 #define NMEA_START       '$'
 
 /*
- * FIRST_CHAR_TIME_OUT
+ * BOOT_UP_DELAY, PWR_UP_DELAY
  *
- * empirically determined to be about 400 mis or so when NMEA is the
- * protocol.
+ * When the gps is first turned on it takes about 300 mis before it
+ * starts to talk.  And then it sends out debugging data.  So we first
+ * power up and then wait with interrupts off until we know that the
+ * gps is talking.  By having interrupts off and the cpu sleeping we
+ * can leave the cpu asleep until the gps comes up.
  *
- * Maximum time we will wait to see the first char.  If we don't see
- * anything within this time then we time out and assume that the
- * baud rate is wrong.
+ * Later we can modify this time to leave the cpu asleep until the odds
+ * are good the gps have reacquired.  (PWR_UP_DELAY).
  *
- * Should be longer than the time to first char sent after power up.
- */
-
-#define T_GPS_FIRST_CHAR_TIME_OUT 500
-
-/*
- * T_CHAR_DELAY
  *
- * T_CHAR_DELAY is the character delay to wait between receiving characters.
- * If the timer goes off then it says that the GPS has sent all of the bytes
- * it is going to send in one burst.  We use this to detect the end of the
- * start up messages the GPS kicks out on power up.
+ * HUNT_TIME_OUT
  *
- * It is set assuming 4800 baud which will give us the longer byte time.
+ * When first booting we don't know if the GPS has reverted to NMEA-4800-8N1
+ * or if we are still at 115200 and SiRFbin.  So when we boot we power
+ * up the gps, wait some time, and then hunt for the start sequence.  If
+ * found then we are at 115200.  Otherwise we have to reconfigure for 4800.
+ *
+ * The hunt window starts when we turn power on to the gps.  When it expires
+ * we decide that we aren't communicating and send cool hand luke to the
+ * prison farm (either fail or try to reconfigure to 4800).
+ *
+ * All times unless otherwise noted are in mis.
  *
  * byte times:
  *
  * 115200 bits/sec    10bits  *  secs/115200 = 8.681e-5  ~87us
  * 57600  bits/sec    10bits  *  secs/57600  = 1.736e-4  ~174us
- *
- * So 32 ms should be way more than enough.  Is there a problem with 10?
-
  */
 
-#define T_CHAR_DELAY 32
+#define DT_GPS_PWR_BOUNCE 5
+#define DT_GPS_HUNT_WINDOW 500
+#define DT_GPS_SEND_WINDOW 500
+#define DT_GPS_SEND_TIME_OUT 20
+
+#define DT_GPS_HUNT_TIME_OUT  500
+
+#define DT_GPS_BOOT_UP_DELAY  350
+#define DT_GPS_PWR_UP_DELAY  1000
 
 #endif /* __GPS_H__ */

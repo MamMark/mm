@@ -1,6 +1,13 @@
 - at 115200, SiRFBin with recv_only turned on we see the stream no problem.
 - at 115200, SiRFBin, recv_only == 0, we seem to lose some of the bytes.
+  (check path length, this seems to have to do with setting timers which
+  makes the path length too long.  We have since rewritten to avoid messing
+  with timers at interrupt level (that was a bad thing anyway.  This needs
+  to be tested.)
 - try 57600.
+
+1) Debug timed start up structure for GPS boot.
+2) 
 
 In no particular order:
 
@@ -23,9 +30,6 @@ In no particular order:
     only do this on boot and then only if 115200 doesn't work).
 
 ------------------------------------------------------------------------
-
-0) look at SpiPacket at 2MHz not working vs. 500KHz.  look at email t2-devel folder.
-   non-dma.  (email from Jan Hauer)
 
 1) Look at Power
 
@@ -63,6 +67,9 @@ In no particular order:
 
 ------------------------------------------------------------------------
 
+*0) look at SpiPacket at 2MHz not working vs. 500KHz.  look at email t2-devel folder.
+   non-dma.  (email from Jan Hauer)  Done.  But Jan's fix doesn't keep the h/w
+   busy (I think).  Solution,..  punt use dma.
 *7) GPS p1.3 s/w uart. (abandoned)
 *10) Investigate GPS power up.  What state does it come up in?  How to
     put into binary mode.  How to change baud rate.

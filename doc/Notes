@@ -16,7 +16,7 @@ Things to talk to Kevin about:
 
 1.5) default commands?  How are they used?  see mm3ControlP.nc
 
-2) get Kevin to how me how to mess with stow
+2) get Kevin to show me how to mess with stow
 
 3) Default owner of comm.  So listening works....  LPL?  serial etc.
 
@@ -26,6 +26,23 @@ Things to talk to Kevin about:
    up and where get powered down.
 
    When should it get resync'd to Aclk?
+
+8) Comment on loss of Overrun and other possible interrupts because
+   of how the interrupt handler works.
+
+9) Capture Control (Msp430TimerCapComP) doesn't work.  see DOESNT_WORK define.
+
+Syncing rules:
+
+0) run cvs upd to get list of files changed, modified, and patched.
+   save to a file for later reference.
+
+1) run cvs diff to a file.  (cvs on t2 tree)
+
+2) note which files have been changed.  Will have to look at changes
+   from the tree vs. changes I've made.
+
+3) check changes from external trees that have been brought in.
 
 
 byte times:
@@ -44,15 +61,22 @@ byte times:
    Note currently the default configurator and the defaultowner
    configurator do things to the SPI io pins which get in our way.
 *5) GPS.  custom interrupt for s/w uart.
+*7) How to get rid of TOSMalloc (t2 2.1)
 
 
-Installation of Tools.
+*** Installation of Tools.
 Configuring Linux Kernel for ti usb fet
 Other Misc. things.
 
 1) udev configuration
-   see ~/tinyos/Downloads/36-MSP430-FET.rules
+   see ~/mm_t2/Updates/Downloads/36-MSP430-FET.rules
 
+0) usb connection for TI USB FET
+   *** (not needed?) a) add to /etc/modules.conf  (*** where is modules.conf? ***)
+   *** (not needed?) 
+   *** (not needed?) 	add options ti_usb_3410_5052 vendor_3410=0x1234,0x1234 product_3410=0x1111,0x2222
+
+#ifdef notdef
 Loading:
 
 modprobe ti_usb_3410_5052 vendor_3410=0x1234,0x1234 product_3410=0x1111,0x2222
@@ -60,6 +84,9 @@ modprobe ti_usb_3410_5052 vendor_3410=0x1234,0x1234 product_3410=0x1111,0x2222
     Alternatively, you could add this line to /etc/modules.conf
 
        add options ti_usb_3410_5052 vendor_3410=0x1234,0x1234 product_3410=0x1111,0x2222
+
+#endif
+
 
 including the echo 2 > /sys/bus/usb/.../bConfigurationValue step, by
 adding this udev rule:
@@ -70,6 +97,463 @@ SUBSYSTEM=="usb_device" ACTION=="add" SYSFS{product}=="MSP-FET430UIF JTAG Tool"
   SYSFS{bConfigurationValue}=="1"
   RUN+="/bin/sh -c 'echo 2 > /sys%p/device/bConfigurationValue'", MODE="0666"
 [andyw@ermintrude ~]$ 
+
+
+
+
+
+2) Installation on a bare machine.
+   o Operating System Install.   Ubuntu/Xbuntu (last done Xbuntu Tos 2.0.2 7.04 Xbuntu based)
+   o On Ubuntu/Xbuntu (8.04) the serial driver is bonkers.  (see http://sourceforge.net/mailarchive/forum.php?thread_name=1212629999.7188.3.camel%40jim-laptop&forum_name=mspgcc-users)
+     http://www.embeddedintelligence.com/mspfet_driver.zip
+
+   o Install msp430-gdbproxy and msp430-jtag.  Special because proprietary code (built independently).
+
+     oo gdbproxy: http://www.soft-switch.org/downloads/mspgcc/
+
+
+     
+Re: usb jtag debugging
+Click to flag this post
+
+by Friedrich Lobenstock-2 Jan 29, 2008; 07:04pm :: Rate this Message: - Use ratings to moderate (?)
+
+Reply | Reply to Author | Print | View Threaded | Show Only this Message
+Eric Decker wrote on 30/01/08 01:25 MET:
+>
+> 1) what msp430-gdbproxy do I need to debug using a USB JTAG FET?
+
+http://www.soft-switch.org/downloads/mspgcc/
+
+> 2) on the usb bus how does the USB JTAG FET show up?  (ie lsusb)
+
+I guess you are asking this because you don't "see" the device showing up.
+You might need to set some UDEV rules, see:
+<http://people.ee.ethz.ch/~npreyss/msp430/>
+<ftp://ftp.fl.priv.at/pub/msp430/ez430/ez430-on-SuSE-10.2.txt>
+
+The EZ430 is identical to the USB JTAG FET when it comes to drive
+initialization.
+
+> 3) Is any one using the Olimex usb jtag dongle with mspgcc for the msp430?
+>
+> 4) what is the command string fed to msp430-gdbproxy when using the ti
+>    usb jtag fet?
+
+see
+<http://article.gmane.org/gmane.comp.hardware.texas-instruments.msp430.gcc.user/6766>
+
+-- 
+MfG / Regards
+Friedrich Lobenstock
+
+
+
+	  
+usb jtag pod with msp430-gdbproxy
+Click to flag this post
+
+by cire Jan 21, 2008; 02:56pm :: Rate this Message: - Use ratings to moderate (?)
+
+Reply | Reply to Author | Print | View Threaded | Show Only this Message
+Does msp430-gdbproxy support the usb jtag pod?
+
+thanks,
+
+eric
+
+
+-------------------------------------------------------------------------
+This SF.net email is sponsored by: Microsoft
+Defy all challenges. Microsoft(R) Visual Studio 2008.
+http://clk.atdmt.com/MRT/go/vse0120000070mrt/direct/01/
+_______________________________________________
+Mspgcc-users mailing list
+Mspgcc-users@...
+https://lists.sourceforge.net/lists/listinfo/mspgcc-users
+
+	
+Re: usb jtag pod with msp430-gdbproxy
+Click to flag this post
+
+by Friedrich Lobenstock-2 Jan 21, 2008; 03:03pm :: Rate this Message: - Use ratings to moderate (?)
+
+Reply | Reply to Author | Print | View Threaded | Show Only this Message
+Eric Decker wrote on 21/01/08 23:56 MET:
+> Does msp430-gdbproxy support the usb jtag pod?
+
+Yes, but on the first run you have to update the firmware of the usb jtag
+pod, then you can run it normally.
+
+# msp430-gdbproxy msp430 --update-usb-fet /dev/ttyUSB0
+
+Remote proxy for GDB, v0.7.1, Copyright (C) 1999 Quality Quorum Inc.
+MSP430 adaption Copyright (C) 2002 Chris Liechti and Steve Underwood
+
+GDBproxy comes with ABSOLUTELY NO WARRANTY; for details
+use `--warranty' option. This is Open Source software. You are
+welcome to redistribute it under certain conditions. Use the
+'--copying' option for details.
+
+notice:    msp430: TI USB FET update requested
+notice:    msp430: Initializing bootloader...
+notice:    msp430: Erasing interrupt vectors...
+notice:    msp430: Erasing firmware...
+notice:    msp430: Programming new firmware...
+notice:    msp430: 0% programmed.
+notice:    msp430: 0% programmed.
+[...]
+notice:    msp430: 98% programmed.
+notice:    msp430: 99% programmed.
+notice:    msp430: 0% programmed.
+notice:    msp430: 6% programmed.
+notice:    msp430: 13% programmed.
+notice:    msp430: 20% programmed.
+notice:    msp430: 27% programmed.
+notice:    msp430: 34% programmed.
+notice:    msp430: 41% programmed.
+notice:    msp430: 48% programmed.
+notice:    msp430: 54% programmed.
+notice:    msp430: 61% programmed.
+notice:    msp430: 68% programmed.
+notice:    msp430: 75% programmed.
+notice:    msp430: 82% programmed.
+notice:    msp430: 89% programmed.
+notice:    msp430: 96% programmed.
+notice:    msp430: 96% programmed.
+notice:    msp430: 0% programmed.
+notice:    msp430: Finishing...
+notice:    msp430: Update Complete.
+debug: MSP430_Initialize()
+debug: MSP430_Configure()
+debug: MSP430_VCC(3000)
+debug: MSP430_Identify()
+info:      msp430: Target device is a 'MSP430F12x2/F11x2' (type 17)
+debug: MSP430_Configure()
+notice:    msp430-gdbproxy: waiting on TCP port 2000
+
+
+After the reprogramming just start it like that:
+
+# msp430-gdbproxy msp430 /dev/ttyUSB0
+
+Remote proxy for GDB, v0.7.1, Copyright (C) 1999 Quality Quorum Inc.
+MSP430 adaption Copyright (C) 2002 Chris Liechti and Steve Underwood
+
+GDBproxy comes with ABSOLUTELY NO WARRANTY; for details
+use `--warranty' option. This is Open Source software. You are
+welcome to redistribute it under certain conditions. Use the
+'--copying' option for details.
+
+debug: MSP430_Initialize()
+debug: MSP430_Configure()
+debug: MSP430_VCC(3000)
+debug: MSP430_Identify()
+info:      msp430: Target device is a 'MSP430F12x2/F11x2' (type 17)
+debug: MSP430_Configure()
+notice:    msp430-gdbproxy: waiting on TCP port 2000
+
+
+-- 
+MfG / Regards
+Friedrich Lobenstock
+
+-------------------------------------------------------------------------
+This SF.net email is sponsored by: Microsoft
+Defy all challenges. Microsoft(R) Visual Studio 2008.
+http://clk.atdmt.com/MRT/go/vse0120000070mrt/direct/01/
+_______________________________________________
+Mspgcc-users mailing list
+Mspgcc-users@...
+https://lists.sourceforge.net/lists/listinfo/mspgcc-users
+
+
+
+problem with mspgcc lib from msp430-jtag
+by cire Nov 04, 2007; 10:38pm :: Rate this Message: - Use ratings to moderate (?)
+
+I recently downloaded the tinyos 2.x XubunTOS live CD and installed it.  Which
+uses the mspgcc tool chain.  I got jtag from the stanford repository.  (msp430tools-jtag-lib-tinyos)
+and (msp430tools-python-tools-tinyos).
+
+It installed okay and I built Blink (one of the tinyOS demo programs).  So far
+the only problem I've run into is when I try to run "msp430-jtag".  I get the
+following error:
+
+cire-laptop (45): msp430-jtag
+Traceback (most recent call last):
+  File "/opt/msp430/bin/msp430-jtag", line 16, in <module>
+    from msp430 import memory, jtag
+  File "/opt/msp430/lib/python2.3/site-packages/msp430/jtag.py", line 58, in <module>
+    MSP430mspgcc = ctypes.cdll.MSP430mspgcc
+  File "ctypes/__init__.py", line 415, in __getattr__
+  File "ctypes/__init__.py", line 340, in __init__
+OSError: MSP430mspgcc: cannot open shared object file: No such file or directory
+cire-laptop (46):
+
+The question is how does python find libraries?  In particular how does the line
+"MSP430mspgcc = ctypes.cdll.MSP430mspgcc" into a shared object (library).
+
+I've looked for any files in the /opt hierarchy and found the following:
+
+/opt/msp430/lib/libMSP430mspgcc.a
+/opt/msp430/lib/libMSP430mspgcc.so
+
+I've set LD_LIBRARY_PATH to include /opt/msp430/lib and have run ldconfig.
+But it still can't find the library.
+
+
+	
+Re: problem with mspgcc lib from msp430-jtag
+Click to flag this post
+
+by Chris Liechti Nov 08, 2007; 12:58pm :: Rate this Message: - Use ratings to moderate (?)
+
+Reply | Reply to Author | Print | View Threaded | Show Only this Message
+Eric Decker schrieb:
+> I recently downloaded the tinyos 2.x XubunTOS live CD and installed it.  
+> ... got jtag from the stanford repository. (msp430tools-jtag-lib-tinyos)
+> ... following error:
+> OSError: MSP430mspgcc: cannot open shared object file: No such file or
+> directory
+
+the part of the implementation that you posted indicated that they are
+using older source code.
+
+> The question is how does python find libraries?  In particular how does
+> the line
+> "MSP430mspgcc = ctypes.cdll.MSP430mspgcc" into a shared object (library).
+
+i had problems with this. later versions of jtag.py use the envirionment
+variable LIBMSPGCC_PATH to locate the object
+
+
+	 
+ti usb jtag problem.
+by cire Mar 12, 2008; 02:09pm :: Rate this Message: - Use ratings to moderate (?)
+
+I just got a TI USB Jtag (msp-fet430uif) debugging interface to replace an old parallel port
+one.  The kernel is finding it but no /dev/ttyUSB* device file is being created.
+
+Any thoughts?  Anyone know what error -5 coming from the device driver means
+(ti_usb_3410_5052: probe of 1-1:1.0 failed with error -5).
+
+Below is relavant info:
+
+
+thanks..
+
+eric
+
+Linux cire-laptop 2.6.20-16-generic #2 SMP Sun Sep 23 19:50:39 UTC 2007 i686 GNU/Linux
+
+It is the xbuntu distribution of tinyos 2.x
+
+
+
+
+usb 1-1: new full speed USB device using uhci_hcd and address 2
+usb 1-1: configuration #1 chosen from 1 choice
+usbcore: registered new interface driver usbserial
+drivers/usb/serial/usb-serial.c: USB Serial support registered for generic
+usbcore: registered new interface driver usbserial_generic
+drivers/usb/serial/usb-serial.c: USB Serial Driver core
+drivers/usb/serial/usb-serial.c: USB Serial support registered for TI USB 3410 1 port adapter
+drivers/usb/serial/usb-serial.c: USB Serial support registered for TI USB 5052 2 port adapter
+ti_usb_3410_5052 1-1:1.0: TI USB 3410 1 port adapter converter detected
+usb 1-1: reset full speed USB device using uhci_hcd and address 2
+usb 1-1: device firmware changed
+usb 1-1: USB disconnect, address 2
+ti_usb_3410_5052: probe of 1-1:1.0 failed with error -5
+usb 1-1: new full speed USB device using uhci_hcd and address 3
+usb 1-1: configuration #1 chosen from 2 choices
+ti_usb_3410_5052 1-1:1.0: TI USB 3410 1 port adapter converter detected
+ti_usb_3410_5052: probe of 1-1:1.0 failed with error -5
+usbcore: registered new interface driver ti_usb_3410_5052
+drivers/usb/serial/ti_usb_3410_5052.c: TI USB 3410/5052 Serial Driver v0.9
+
+
+
+-------------------------------------------------------------------------
+This SF.net email is sponsored by: Microsoft
+Defy all challenges. Microsoft(R) Visual Studio 2008.
+http://clk.atdmt.com/MRT/go/vse0120000070mrt/direct/01/
+_______________________________________________
+Mspgcc-users mailing list
+Mspgcc-users@...
+https://lists.sourceforge.net/lists/listinfo/mspgcc-users
+
+	
+by Mark Rages Mar 12, 2008; 02:22pm :: Rate this Message: - Use ratings to moderate (?)
+On Wed, Mar 12, 2008 at 4:09 PM, Eric Decker <cire831@...> wrote:
+
+> Hello,
+>
+> I just got a TI USB Jtag (msp-fet430uif) debugging interface to replace an
+> old parallel port
+> one.  The kernel is finding it but no /dev/ttyUSB* device file is being
+> created.
+>
+> Any thoughts?  Anyone know what error -5 coming from the device driver means
+>  (ti_usb_3410_5052: probe of 1-1:1.0 failed with error -5).
+>
+... [show rest of quote]
+
+Did you install the udev rule in /etc/udev/rules.d?
+
+by the way, I added this to the udev rule:
+
+# Use the tty subsystem to get a stable name for the FET
+  SUBSYSTEM=="tty" ACTION=="add"\
+  SYSFS{product}=="MSP-FET430UIF JTAG Tool" \
+  SYMLINK+="ttyTIUSB"
+
+then a symlink is automatically created at /dev/ttyTIUSB.  I have a
+lot of USB->serial adapters and it seems like the FET tool never gets
+the same device file name.  This way, I can put "/dev/ttyTIUSB" in my
+Makefile and never have to worry about it.
+
+Regards,
+Mark
+markrages@gmail
+-- 
+Mark Rages, Engineer
+Midwest Telecine LLC
+markrages@...
+
+-------------------------------------------------------------------------
+This SF.net email is sponsored by: Microsoft
+Defy all challenges. Microsoft(R) Visual Studio 2008.
+http://clk.atdmt.com/MRT/go/vse0120000070mrt/direct/01/
+_______________________________________________
+Mspgcc-users mailing list
+Mspgcc-users@...
+https://lists.sourceforge.net/lists/listinfo/mspgcc-users
+
+	
+Re: ti usb jtag problem.
+Click to flag this post
+
+by Grant Edwards Mar 12, 2008; 03:09pm :: Rate this Message: - Use ratings to moderate (?)
+
+Reply | Reply to Author | Print | View Threaded | Show Only this Message
+On 2008-03-12, Mark Rages <markrages@...> wrote:
+
+> On Wed, Mar 12, 2008 at 4:09 PM, Eric Decker <cire831@...> wrote:
+>> Hello,
+>>
+>> I just got a TI USB Jtag (msp-fet430uif) debugging interface to replace an
+>> old parallel port
+>> one.  The kernel is finding it but no /dev/ttyUSB* device file is being
+>> created.
+>>
+>> Any thoughts?  Anyone know what error -5 coming from the
+>> device driver means (ti_usb_3410_5052: probe of 1-1:1.0 failed
+>> with error -5).
+... [show rest of quote]
+
+> Did you install the udev rule in /etc/udev/rules.d?
+
+Yup, I'm pretty sure that's the problem.  Searching the list
+for udev will probably turn up the relevent threads.
+
+http://search.gmane.org/?query=udev+rules&group=gmane.comp.hardware.texas-instruments.msp430.gcc.user
+
+> by the way, I added this to the udev rule:
+>
+> # Use the tty subsystem to get a stable name for the FET
+>   SUBSYSTEM=="tty" ACTION=="add"\
+>   SYSFS{product}=="MSP-FET430UIF JTAG Tool" \
+>   SYMLINK+="ttyTIUSB"
+>
+> then a symlink is automatically created at /dev/ttyTIUSB.  I have a
+> lot of USB->serial adapters and it seems like the FET tool never gets
+> the same device file name.  This way, I can put "/dev/ttyTIUSB" in my
+> Makefile and never have to worry about it.
+... [show rest of quote]
+
+That's an excellent tip, though I recently ended up with two
+USB-serial based widgets both based on the same chip (IIRC, the
+pl2303), and the flippin' vendors didn't bother to modify any
+of the default values, so they both show up as generic PL2303
+serial ports and there's no way for udev to tell them apart. :/
+
+
+ 
+https://projects.nesl.ucla.edu/public/sos-2x/doc/tutorial/installation.txt
+
+Re: [Mspgcc-users] MSP-FET430UIF on linux
+From: Stephen Glow <sglow@em...> - 2008-06-05 11:20
+Hi Jim;
+
+I tackled getting this working in Ubuntu 8.04 a couple weeks ago. I
+found at that time that the driver that ships with the Ubuntu kernel has
+a problem with the TI FET device. At that time I put together a small
+.zip file with a working driver (taken from the vanilla kernel on
+kernel.org) which does work. I posted it to my web site here:
+http://www.embeddedintelligence.com/mspfet_driver.zip
+
+Since that time I've seen a message posted to this list indicating that
+a kernel update on Ubuntu may have already fixed this problem. I
+haven't played with the device since then, so I can't personally confirm
+this.
+
+Even if the driver that came with your kernel does work, you will still
+need a udev rule to select the proper configuration. Until this happens
+you won't get the needed /dev/ttyUSB0 device file. As a test, you can
+manually perform the same action that this rule does to see if the
+driver that you are currently using supports the device.
+
+First, unplug the device and plug it back in. Then, use the dmesg
+command to find the location of the device's directory that was created
+under the /sys file system. What you are looking for is a file called
+'bConfigurationValue' under the directory of the proper device in the
+/sys directory tree. I don't have my emulator handy to check this, but
+I think it should be something like:
+/sys/bus/usb/devices/something/bConfigurationValue
+
+Once you find this file, enter the following command (using the correct
+file name of course):
+
+sudo echo 2 > /sys/bus/usb/devices/something/bConfigurationValue
+
+If the driver you have loaded supports this device, then the
+/dev/ttyUSB0 file will be magically created when you enter this.
+
+A udev rule which handles this detail is included in the .zip I
+referenced above. Even if you don't need the driver included in the
+.zip, you may find this handy.
+
+Rgds,
+Steve
+
+jim bingham wrote:
+> OK, I know this must have been covered a billion times so far. How does
+> one get this working with linux. I'm running Ubuntu 8.04. I recognize
+> that the TI FET is plugged in, but do not get it assigned
+> to /dev/ttyUSB0... or the like.
+>
+> Is there a simple set of tests to validate that one has this set up
+> correctly?
+>
+> jim
+>
+>
+> -------------------------------------------------------------------------
+> Check out the new SourceForge.net Marketplace.
+> It's the best place to buy or sell services for
+> just about anything Open Source.
+> http://sourceforge.net/services/buy/index.php
+> _______________________________________________
+> Mspgcc-users mailing list
+> Mspgcc-users@li...
+> https://lists.sourceforge.net/lists/listinfo/mspgcc-users
+>
+
+
+     oo jtag: 
+
+
 
 
 

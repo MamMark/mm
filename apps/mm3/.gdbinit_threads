@@ -3,6 +3,7 @@
 
 disp/i $pc
 x/i $pc
+set pri ele 0
 
 b TinyOSMainP.nc:83
 #b TinyOSMainP.nc:90
@@ -18,7 +19,7 @@ b SchedulerBasicP.nc:137
 #b TinyThreadSchedulerP.nc:94
 
 #thread dispatch
-b TinyThreadSchedulerP.nc:77
+b TinyThreadSchedulerP.nc:76
 
 #b VirtualizeTimerC.nc:81
 
@@ -39,13 +40,24 @@ end
 #p id
 #end
 
-#b GPSP.nc:487
-#b GPSP.nc:519
-#b GPSP.nc:559
-#b GPSP.nc:626
-#b GPSP.nc:670
+# break at finish collect 1024 chrs (BRK_1024)
+b GPSP.nc:765
 
-#b HplMM3AdcP.nc:224
+# next break point needs to be 7
+# break chr avail to gpsc state machine
+b GPSP.nc:770
+comm
+p GPSP$gpsc_state
+p GPSP$gpsm_state
+end
+
+# BRK_GPS_TIMER
+b GPSP.nc:604
+comm
+p GPSP$gpsc_state
+end
+# BRK_SEND_DONE
+b GPSP.nc:868
 
 #b CollectP.nc:45
 #comm

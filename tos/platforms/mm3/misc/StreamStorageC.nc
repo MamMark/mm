@@ -41,7 +41,7 @@ implementation {
    * This will also give us an idea of how deep the stacks have been
    */
 
-  components new ThreadC(300);
+  components new ThreadC(0x100);
   SS_P.SSThread -> ThreadC;
   
   components SemaphoreC;
