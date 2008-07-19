@@ -1,0 +1,165 @@
+How to set up the development environment for MamMark.
+
+Assumptions: These notes are written assuming Ubuntu 8.04.  Previously
+development was done on 7.04 but these notes are written explicitly for
+8.04.
+
+1) Install the OS, Ubuntu (Xubuntu uses less resources) on the box.
+
+2) check out the MamMark source tree.   (The directory checked out into lets call
+   <mm_t2_base>.  I use mm_t2.
+
+   a) Current hosting site is zoo.cse.ucsc.edu.  <repo_site>
+   b) cd <mm_t2_base>.
+   c) svn co svn://<repo_site>/mammark_tinyos2/t2_mm3
+
+   This will create the source tree as <mm_t2_base>/t2_mm3.
+
+3) Check out the current TinyOS 2.x tree.   We use the head of the T2 development
+   tree which is a little dangerous so pay attention to what comes in with an update.
+
+   a) cd <mm_t2_base>
+   b) mkdir t2 (I use t2_<date_stamp> and then ln -s t2_<date_stamp> t2_cur)
+   c) cd t2
+   d) cvs -z3 -d:pserver:anonymous@tinyos.cvs.sourceforge.net:/cvsroot/tinyos co -P tinyos-2.x
+
+4) Additonal OS conf is included in the directory <mm_t2_base>/t2_mm3/Tools_Download.
+
+5) Initial Ubuntu 8.04 has a version of the ti_usb_3410_5052 driver (used to
+   talk to the MSP430 jtag pod) that is slightly modified from the standard
+   linux kernel available at kernel.org.  The standard version of the kernel
+   does work so we will install that instead.
+
+   a) Expand t2_mm3/Tools_Download/mspfet_driver.zip.
+   b) mspfet_driver/readme.txt has more information.
+   c) make
+   d) temporarily install the new driver.
+
+      a) execute the file mspfet_driver/reload
+
+      b) check /var/log/messages for the following when the pod is plugged in.
+
+/build/buildd/linux-2.6.24/drivers/usb/serial/usb-serial.c: USB Serial support registered for TI USB 3410 1 port adapter
+/build/buildd/linux-2.6.24/drivers/usb/serial/usb-serial.c: USB Serial support registered for TI USB 5052 2 port adapter
+usbcore: registered new interface driver ti_usb_3410_5052
+/home/cire/Desktop/mspfet_driver/ti_usb_3410_5052.c: TI USB 3410/5052 Serial Driver v0.9
+usb 1-2: new full speed USB device using ohci_hcd and address 2
+usb 1-2: configuration #1 chosen from 1 choice
+ti_usb_3410_5052 1-2:1.0: TI USB 3410 1 port adapter converter detected
+usb 1-2: reset full speed USB device using ohci_hcd and address 2
+usb 1-2: device firmware changed
+ti_usb_3410_5052: probe of 1-2:1.0 failed with error -5
+usb 1-2: USB disconnect, address 2
+usb 1-2: new full speed USB device using ohci_hcd and address 3
+usb 1-2: configuration #1 chosen from 2 choices
+ti_usb_3410_5052 1-2:1.0: TI USB 3410 1 port adapter converter detected
+ti_usb_3410_5052: probe of 1-2:1.0 failed with error -5
+ti_usb_3410_5052 1-2:2.0: TI USB 3410 1 port adapter converter detected
+usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
+usb 1-2: USB disconnect, address 3
+ti_usb_3410_5052_1 ttyUSB0: TI USB 3410 1 port adapter converter now disconnected from ttyUSB0
+ti_usb_3410_5052 1-2:2.0: device disconnected
+usb 1-2: new full speed USB device using ohci_hcd and address 4
+usb 1-2: configuration #1 chosen from 1 choice
+ti_usb_3410_5052 1-2:1.0: TI USB 3410 1 port adapter converter detected
+usb 1-2: reset full speed USB device using ohci_hcd and address 4
+usb 1-2: device firmware changed
+ti_usb_3410_5052: probe of 1-2:1.0 failed with error -5
+usb 1-2: USB disconnect, address 4
+usb 1-2: new full speed USB device using ohci_hcd and address 5
+usb 1-2: configuration #1 chosen from 2 choices
+ti_usb_3410_5052 1-2:1.0: TI USB 3410 1 port adapter converter detected
+ti_usb_3410_5052: probe of 1-2:1.0 failed with error -5
+ti_usb_3410_5052 1-2:2.0: TI USB 3410 1 port adapter converter detected
+usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
+
+      b) plug the pod in and lsusb should also look something like the following:
+
+	 m-tag (19): lsusb
+	 Bus 003 Device 001: ID 0000:0000  
+	 Bus 002 Device 001: ID 0000:0000  
+	 Bus 001 Device 005: ID 0451:f430 Texas Instruments, Inc. MSP-FET430UIF JTAG Tool
+	 Bus 001 Device 001: ID 0000:0000  
+	 m-tag (20):
+
+
+   d) make a back up of the originally installed driver
+      (/lib/modules/<kernel version>/kernel/drivers/usb/serial/ti_usb_3410_5052.ko)
+      (preferably in the same directory) and permanently install the rebuilt driver.
+
+      ie:
+      cd /lib/modules/2.6.24-19-generic/kernel/drivers/usb/serial
+      cp ti_usb_3410_5052.ko ti_usb_3410_5052.ko_old
+      cp <mm_t2_base>/t2_mm3/Tools_Download/mspfet_driver/ti_usb_3410_5052.ko .
+
+6) We also want to install a udev rule that will correctly enable configuration 2
+   of the jtag pod (this makes it work). We also modify the permission rule so that
+   group user can access the jtag pod.
+
+   a) Install the 40-ti-usb-3410-5052.rules into /etc/udev/rules.d.
+
+      cp 40-ti-usb-3410-5052.rules /etc/udev/rules.d
+      mkdir -p /etc/udev/scripts
+      cp msp430_init /etc/udev/scripts
+   
+   b) make the following change in /etc/udev/rules.d/40-permissions.rules
+
+   change:
+
+       SUBSYSTEM=="tty",			GROUP="dialout"
+
+   to:
+
+       SUBSYSTEM=="tty",			GROUP="users", MODE="0660"
+
+
+7) Install the gdbproxy files:
+
+   a) Make sure that /opt/msp430 exists.  If it doesn't execute
+
+      mkdir -p /opt/msp430
+
+   b) cd /opt/msp430
+      tar xf <mm_t2_base>/t2_mm3/Tools_Download/gdbproxy.tar
+
+8) Make sure that PATH includes /opt/msp430/bin and
+   LD_LIBRARY_PATH includes /opt/msp430/lib.
+
+   export PATH="$PATH:$MSP430TOOLS/bin:$TOS_THREADS_DIR/tools"
+   export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$MSP430TOOLS/lib:/usr/local/lib"
+
+
+LD_LIBRARY_PATH
+PATH
+
+TOSROOT
+TOSDIR
+MAKERULES
+CLASSPATH
+TOSMAKE_PATH
+
+MOTECOM="serial@/dev/ttyS0:telosb"
+MAMMARK_DIR="/home/cire/mm_t2/t2_mm3"
+TOSMAKE_PATH="$TOSMAKE_PATH $MAMMARK_DIR/support/make"
+
+MSP430TOOLS="/opt/msp430"
+TOSROOT=~/mm_t2/t2_cur/tinyos-2.x
+TOSDIR=$TOSROOT/tos
+
+PATH="$PATH:$MSP430TOOLS/bin"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$MSP430TOOLS/lib:/usr/local/lib"
+export LD_LIBRARY_PATH
+
+MAN_PATH="$MAN_PATH:$MSP430TOOLS/man"
+
+MAKERULES=$TOSROOT/support/make/Makerules
+CLASSPATH=.:$TOSROOT/support/sdk/java/tinyos.jar
+
+PYTHONPATH=$TOSROOT/support/sdk/python:$PYTHONPATH
+PYTHONPATH=$MSP430TOOLS/lib:$MSP430TOOLS/bin:$PYTHONPATH
+PYTHONPATH=$MSP430TOOLS/lib/python2.3/site-packages:$PYTHONPATH
+
+LIBMSPGCC_PATH=$MSP430TOOLS/lib
+
+export MAKERULES TOSDIR TOSROOT CLASSPATH PYTHONPATH LD_LIBRARY_PATH
+export LIBMSPGCC MOTECOM MAMMARK_DIR TOSMAKE_PATH
