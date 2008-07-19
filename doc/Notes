@@ -110,7 +110,10 @@ SUBSYSTEM=="usb_device" ACTION=="add" SYSFS{product}=="MSP-FET430UIF JTAG Tool"
    o Install msp430-gdbproxy and msp430-jtag.  Special because proprietary code (built independently).
 
      oo gdbproxy: http://www.soft-switch.org/downloads/mspgcc/
+     oo on cire-tag, /opt/msp430....  package msp430tools-gdb-tinyos  but the tinyos repos at stanford doesn't seem to have it.
+     oo copies from soft-switch.  install by hand bin/msp430-gdbproxy, lib/libHIL.so, lib/libMSP430.so into /opt/msp430.
 
+     oo msp430-jtag requires python.   See mspgcc.
 
      
 Re: usb jtag debugging
