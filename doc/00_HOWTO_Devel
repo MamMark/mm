@@ -16,7 +16,7 @@ development was done on 7.04 but these notes are written explicitly for
    This will create the source tree as <mm_t2_base>/t2_mm3.
 
    Various configuration files used to construct a full build environment are located
-   in <mm_t2_base>/t2_mm3/Additional_Bits
+   in <mm_t2_base>/t2_mm3/Added_Bits.
 
 3) Check out the current TinyOS 2.x tree.   We use the head of the T2 development
    tree which is a little dangerous so pay attention to what comes in with an update.
@@ -26,14 +26,17 @@ development was done on 7.04 but these notes are written explicitly for
    c) cd t2
    d) cvs -z3 -d:pserver:anonymous@tinyos.cvs.sourceforge.net:/cvsroot/tinyos co -P tinyos-2.x
 
-4) Additonal OS conf is included in the directory <mm_t2_base>/t2_mm3/Tools_Download.
+   e) Apply mm3 specific patches to the main T2 core...
+
+      .) cd <mm_t2_base>/t2_cur/tinyos-2.x
+      .) patch -p0 < ../../t2_mm3/Added_Bits/t2_<data stamp>.patch
 
 5) Initial Ubuntu 8.04 has a version of the ti_usb_3410_5052 driver (used to
    talk to the MSP430 jtag pod) that is slightly modified from the standard
    linux kernel available at kernel.org.  The standard version of the kernel
    does work so we will install that instead.
 
-   a) Expand t2_mm3/Tools_Download/mspfet_driver.zip.  (This will create the directory
+   a) Expand t2_mm3/Added_Bits/mspfet_driver.zip.  (This will create the directory
       mspfet_driver).
    b) mspfet_driver/readme.txt has more information.  Read them.  It is good.
    c) make
@@ -79,7 +82,7 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
       ie:
       cd /lib/modules/2.6.24-19-generic/kernel/drivers/usb/serial
       cp ti_usb_3410_5052.ko ti_usb_3410_5052.ko_old
-      cp <mm_t2_base>/t2_mm3/Tools_Download/mspfet_driver/ti_usb_3410_5052.ko .
+      cp <mm_t2_base>/t2_mm3/Added_Bits/mspfet_driver/ti_usb_3410_5052.ko .
 
 6) We also want to install a udev rule that will correctly enable configuration 2
    of the jtag pod (this makes it work). We also modify the permission rule so that
@@ -133,7 +136,7 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
       mkdir -p /opt/msp430
 
    b) cd /opt/msp430
-      tar xf <mm_t2_base>/t2_mm3/Tools_Download/gdbproxy.tar
+      tar xf <mm_t2_base>/t2_mm3/Added_Bits/gdbproxy.tar
 
 9) Make sure that PATH includes /opt/msp430/bin and
    LD_LIBRARY_PATH includes /opt/msp430/lib.
