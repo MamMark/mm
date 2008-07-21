@@ -4,16 +4,19 @@ Assumptions: These notes are written assuming Ubuntu 8.04.  Previously
 development was done on 7.04 but these notes are written explicitly for
 8.04.
 
-1) Install the OS, Ubuntu (Xubuntu uses less resources) on the box.
+1) Install the OS, Ubuntu (Xubuntu uses less resources) on the box.  Recommended is
+   Xubuntu 8.04(LTS).
 
-2) check out the MamMark source tree.   (The directory checked out into lets call
-   <mm_t2_base>.  I use mm_t2.
+2) check out the MamMark source tree.   (denote top level as <mm_t2_base>)
 
    a) Current hosting site is zoo.cse.ucsc.edu.  <repo_site>
    b) cd <mm_t2_base>.
    c) svn co svn://<repo_site>/mammark_tinyos2/t2_mm3
 
    This will create the source tree as <mm_t2_base>/t2_mm3.
+
+   Various configuration files used to construct a full build environment are located
+   in <mm_t2_base>/t2_mm3/Additional_Bits
 
 3) Check out the current TinyOS 2.x tree.   We use the head of the T2 development
    tree which is a little dangerous so pay attention to what comes in with an update.
