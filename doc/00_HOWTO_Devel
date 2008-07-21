@@ -33,8 +33,8 @@ development was done on 7.04 but these notes are written explicitly for
 
 5) Initial Ubuntu 8.04 has a version of the ti_usb_3410_5052 driver (used to
    talk to the MSP430 jtag pod) that is slightly modified from the standard
-   linux kernel available at kernel.org.  The standard version of the kernel
-   does work so we will install that instead.
+   linux kernel available at kernel.org.  The standard kernel's version of the
+   ti serial driver works so we will just reintall that.
 
    a) Expand t2_mm3/Added_Bits/mspfet_driver.zip.  (This will create the directory
       mspfet_driver).
@@ -75,14 +75,21 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
 	 m-tag (20):
 
 
-   d) make a back up of the originally installed driver
+   d) Make our new version of the ti serial driver permanent.
+      1st make a back up of the originally installed driver
       (/lib/modules/<kernel version>/kernel/drivers/usb/serial/ti_usb_3410_5052.ko)
-      (preferably in the same directory) and permanently install the rebuilt driver.
 
       ie:
+      modprobe -r ti_usb_3410_5052
       cd /lib/modules/2.6.24-19-generic/kernel/drivers/usb/serial
       cp ti_usb_3410_5052.ko ti_usb_3410_5052.ko_old
       cp <mm_t2_base>/t2_mm3/Added_Bits/mspfet_driver/ti_usb_3410_5052.ko .
+      modprobe ti_usb_3410_5052
+
+
+   NOTE: It is possible for the correct driver to get replaced if the system is
+   updated.  This occurs when any kernel packages are updated.  When this occurs
+   the permanent copy must be done again.
 
 6) We also want to install a udev rule that will correctly enable configuration 2
    of the jtag pod (this makes it work). We also modify the permission rule so that
