@@ -4,10 +4,14 @@ Assumptions: These notes are written assuming Ubuntu 8.04.  Previously
 development was done on 7.04 but these notes are written explicitly for
 8.04.
 
-1) Install the OS, Ubuntu (Xubuntu uses less resources) on the box.  Recommended is
+1) [OS Install]
+
+   Install the OS, Ubuntu (Xubuntu uses less resources) on the box.  Recommended is
    Xubuntu 8.04(LTS).
 
-2) check out the MamMark source tree.   (denote top level as <mm_t2_base>)
+2) [MamMark tree checkout]
+
+   check out the MamMark source tree.   (denote top level as <mm_t2_base>)
 
    a) Current hosting site is zoo.cse.ucsc.edu.  <repo_site>
    b) cd <mm_t2_base>.
@@ -18,7 +22,9 @@ development was done on 7.04 but these notes are written explicitly for
    Various configuration files used to construct a full build environment are located
    in <mm_t2_base>/t2_mm3/Added_Bits.
 
-3) Check out the current TinyOS 2.x tree.   We use the head of the T2 development
+3) [TinyOS 2.x tree checkout]
+
+   Check out the current TinyOS 2.x tree.   We use the head of the T2 development
    tree which is a little dangerous so pay attention to what comes in with an update.
 
    a) cd <mm_t2_base>
@@ -31,7 +37,9 @@ development was done on 7.04 but these notes are written explicitly for
       .) cd <mm_t2_base>/t2_cur/tinyos-2.x
       .) patch -p0 < ../../t2_mm3/Added_Bits/t2_<data stamp>.patch
 
-5) Initial Ubuntu 8.04 has a version of the ti_usb_3410_5052 driver (used to
+5) [TI USB Jtag driver fix]
+
+   Initial Ubuntu 8.04 has a version of the ti_usb_3410_5052 driver (used to
    talk to the MSP430 jtag pod) that is slightly modified from the standard
    linux kernel available at kernel.org.  The standard kernel's version of the
    ti serial driver works so we will just reintall that.
@@ -91,7 +99,9 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
    updated.  This occurs when any kernel packages are updated.  When this occurs
    the permanent copy must be done again.
 
-6) We also want to install a udev rule that will correctly enable configuration 2
+6) [USB Jtag, /dev/ttyUSBn config 2, permissions fix]
+
+   We also want to install a udev rule that will correctly enable configuration 2
    of the jtag pod (this makes it work). We also modify the permission rule so that
    group user can access the jtag pod.  Files exist in the msp430fet_driver directory.
 
@@ -112,7 +122,9 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
        SUBSYSTEM=="tty",			GROUP="users", MODE="0660"
 
 
-7) Install the tinyos toolset.  We use the msp430 tool chain.  Debian packages are
+7) [Install TinyOS toolset (msp430)]
+
+   Install the tinyos toolset.  We use the msp430 tool chain.  Debian packages are
    available from Stanford.
 
    Modify the repository source to include:
@@ -136,7 +148,9 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
 	   tinyos-optional (but doesn't work)
 	   
 
-8) Install the gdbproxy files:
+8) [Install msp430 gdbproxy for USB Jtag]
+
+   Install the gdbproxy files:
 
    a) Make sure that /opt/msp430 exists.  If it doesn't execute
 
@@ -145,44 +159,54 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
    b) cd /opt/msp430
       tar xf <mm_t2_base>/t2_mm3/Added_Bits/gdbproxy.tar
 
-9) Make sure that PATH includes /opt/msp430/bin and
-   LD_LIBRARY_PATH includes /opt/msp430/lib.
+9) [Modify PATH and LD_LIBRARY_PATH]
 
-   export PATH="$PATH:$MSP430TOOLS/bin:$TOS_THREADS_DIR/tools"
-   export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$MSP430TOOLS/lib:/usr/local/lib"
+   Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430 and
+   /usr/msp430 as appropriate.
 
+   M1="/opt/msp430"
+   M2="/usr/msp430"
+   export PATH="$PATH:$M1/bin:$M2/bin"
+   export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$M1/lib:$M2/lib:/usr/local/lib"
 
-LD_LIBRARY_PATH
-PATH
+10) [Set up build environment settings]
 
-TOSROOT
-TOSDIR
-MAKERULES
-CLASSPATH
-TOSMAKE_PATH
+    The following environment variables must be set to build.
 
-MOTECOM="serial@/dev/ttyS0:telosb"
-MAMMARK_DIR="/home/cire/mm_t2/t2_mm3"
-TOSMAKE_PATH="$TOSMAKE_PATH $MAMMARK_DIR/support/make"
+    TOSROOT
+    TOSDIR
+    MAKERULES
+    CLASSPATH
+    TOSMAKE_PATH
 
-MSP430TOOLS="/opt/msp430"
-TOSROOT=~/mm_t2/t2_cur/tinyos-2.x
-TOSDIR=$TOSROOT/tos
+    for example:  note: <mm_t2_base> := ~/mm_t2
 
-PATH="$PATH:$MSP430TOOLS/bin"
-LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$MSP430TOOLS/lib:/usr/local/lib"
-export LD_LIBRARY_PATH
+	#!/bin/sh
 
-MAN_PATH="$MAN_PATH:$MSP430TOOLS/man"
+	MOTECOM="serial@/dev/ttyS0:telosb"
 
-MAKERULES=$TOSROOT/support/make/Makerules
-CLASSPATH=.:$TOSROOT/support/sdk/java/tinyos.jar
+	TOSROOT=~/mm_t2/t2_cur/tinyos-2.x
+	TOSDIR=$TOSROOT/tos
 
-PYTHONPATH=$TOSROOT/support/sdk/python:$PYTHONPATH
-PYTHONPATH=$MSP430TOOLS/lib:$MSP430TOOLS/bin:$PYTHONPATH
-PYTHONPATH=$MSP430TOOLS/lib/python2.3/site-packages:$PYTHONPATH
+	MAMMARK_DIR="/home/cire/mm_t2/t2_mm3"
+	TOSMAKE_PATH="$TOSMAKE_PATH $MAMMARK_DIR/support/make"
 
-LIBMSPGCC_PATH=$MSP430TOOLS/lib
+	M1="/opt/msp430"
+	M2="/usr/msp430"
+	PATH="$PATH:$M1/bin:$M2/bin"
+	LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$M1/lib:$M2/lib:/usr/local/lib"
 
-export MAKERULES TOSDIR TOSROOT CLASSPATH PYTHONPATH LD_LIBRARY_PATH
-export LIBMSPGCC MOTECOM MAMMARK_DIR TOSMAKE_PATH
+	MAN_PATH="$MAN_PATH:$M1/man:$M2/man"
+
+	MAKERULES=$TOSROOT/support/make/Makerules
+	CLASSPATH=.:$TOSROOT/support/sdk/java/tinyos.jar
+
+	PYTHONPATH=$TOSROOT/support/sdk/python:$PYTHONPATH
+	PYTHONPATH=$M1/lib:$M1/bin:$M2/lib:$M2/bin:$PYTHONPATH
+	PYTHONPATH=$M1/lib/python2.3/site-packages:$PYTHONPATH
+	PYTHONPATH=$M2/lib/python2.3/site-packages:$PYTHONPATH
+
+	#LIBMSPGCC_PATH=$M1/lib:$M2/lib
+
+	export MAKERULES TOSDIR TOSROOT CLASSPATH PYTHONPATH LD_LIBRARY_PATH
+	export LIBMSPGCC MOTECOM MAMMARK_DIR TOSMAKE_PATH
