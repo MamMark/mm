@@ -148,6 +148,17 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
 	   tinyos-optional (but doesn't work)
 	   
 
+8) [Build the msp430 tools not included in the tinyos toolset.]
+
+   *** These need to be put into a hardy debian package ***
+
+   Build the following tools:
+
+   msp430-gdb
+   msp430-jtag
+
+   a) get source from cvs repository
+
 8) [Install msp430 gdbproxy for USB Jtag]
 
    Install the gdbproxy files:
