@@ -122,6 +122,9 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
        SUBSYSTEM=="tty",			GROUP="users", MODE="0660"
 
 
+   Make sure that any users that will be using the device are in group "users".
+
+
 7) [Install TinyOS toolset (msp430)]
 
    Install the tinyos toolset.  We use the msp430 tool chain.  Debian packages are
