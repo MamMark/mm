@@ -7,7 +7,7 @@ development was done on 7.04 but these notes are written explicitly for
 1) [OS Install]
 
    Install the OS, Ubuntu (Xubuntu uses less resources) on the box.  Recommended is
-   Xubuntu 8.04(LTS).
+   Xubuntu 8.04 (LTS).
 
 2) [MamMark tree checkout]
 
@@ -148,30 +148,22 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
 	   tinyos-base
 	   tinyos-required
 	   tinyos-tools
-	   tinyos-optional (but doesn't work)
+	   tinyos-optional (but doesn't work) (for gdb and msp430-jtag)
 	   
 
-8) [Build the msp430 tools not included in the tinyos toolset.]
+8) [Install gdb and msp430-jtag from temporary location]
 
-   *** These need to be put into a hardy debian package ***
+   *** These need to be put into a hardy debian package, they will be ***
+   *** included in the tinyos-optional (msp430 flavor)                ***
 
-   Build the following tools:
+   a) cd <mm_t2_base>.  (remember to be enabled, sudo)
+   b) cd t2_mm3/Added_Bits/tools
+   c) make install
 
-   msp430-gdb
-   msp430-jtag
+   This should install into /opt/msp430/bin gdb.430 (the msp430-gdb debugger),
+   msp430-jtag and some other tools.  Appropriate libraries are installed into
+   /opt/msp430/lib.
 
-   a) get source from cvs repository
-
-8) [Install msp430 gdbproxy for USB Jtag]
-
-   Install the gdbproxy files:
-
-   a) Make sure that /opt/msp430 exists.  If it doesn't execute
-
-      mkdir -p /opt/msp430
-
-   b) cd /opt/msp430
-      tar xf <mm_t2_base>/t2_mm3/Added_Bits/gdbproxy.tar
 
 9) [Modify PATH and LD_LIBRARY_PATH]
 

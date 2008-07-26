@@ -78,7 +78,7 @@ noinit uint8_t sc;
 uint8_t sirf_go_nmea[] = {
   0xa0, 0xa2,			// start seq
   0x00, 0x18,			// len 24 (0x18)
-  0x81,				// set nmea
+  129,				// set nmea
   2,			        // mode, 0 enable nmea debug, 1 disable, 2 don't change.
   1, 1,				// GGA 1 sec period, checksum
   0, 1,				// GLL
@@ -90,7 +90,7 @@ uint8_t sirf_go_nmea[] = {
   0, 0,				// Unused
   0, 1,				// ZDA
   0, 0,				// Unused
-  0x12, 0xc0,			// Baud rate (4800)
+  0x12, 0xc0,			// Baud rate (4800) (big endian)
   0x01, 0x65,			// checksum
   0xb0, 0xb3			// end seq
 };
@@ -98,19 +98,19 @@ uint8_t sirf_go_nmea[] = {
 uint8_t sirf_send_sw_ver[] = {
   0xa0, 0xa2,			// start seq
   0x00, 0x02,			// len 2
-  0x84,				// send sw ver
+  132,				// send sw ver
   0x00,				// unused
   0x00, 0x84,			// checksum
   0xb0, 0xb3			// end seq
 };
 
-uint8_t sirf_poll_29[] = {
+uint8_t sirf_poll_41[] = {
   0xa0, 0xa2,			// start sequence
   0x00, 0x08,			// length
-  0xa6,				// set message rate
-  0x01,				// send now
-  0x29,				// mid to be set
-  0x00,				// update rate (turn off)
+  166,				// set message rate
+  1,				// send now
+  41,				// mid to be set
+  0,				// update rate (turn off)
   0, 0, 0, 0,			// pad
   0x00, 0xd0,			// checksum
   0xb0, 0xb3			// end seq
@@ -119,18 +119,18 @@ uint8_t sirf_poll_29[] = {
 uint8_t sirf_combined[] = {
   0xa0, 0xa2,			// start sequence
   0x00, 0x08,			// length
-  0xa6,				// set message rate
+  166,				// set message rate
   0,				// no poll
-  0x29,				// mid to be set
+  41,				// mid to be set
   0,				// update rate (turn off)
   0, 0, 0, 0,			// pad
   0x00, 0xef,			// checksum
   0xb0, 0xb3,			// end seq
   0xa0, 0xa2,			// start sequence
   0x00, 0x08,			// length
-  0xa6,				// set message rate
+  166,				// set message rate
   0,				// no poll
-  0x02,				// mid to be set
+  2,				// mid to be set
   0,				// update rate (off)
   0, 0, 0, 0,			// pad
   0x00, 0xa9,			// checksum
@@ -217,41 +217,70 @@ typedef enum {
   /*
    * Boot up states.  When first booted these are the states we move through.
    *
-   * Boot up windows are defined from when the gps is turned on (gps_window_start)
+   * Boot up windows are defined from when the gps is turned on (t_gps_pwr_on)
    *
    * BOOT_REQUESTED		uart_grant	BOOT_START_DELAY
    *                                          (uart interrupts disabled)
-   *						(timer <- gps_window_start + boot_up_delay)
+   *						(timer <- t_gps_pwr_on + boot_up_delay)
    *
    * [START_DELAY is used to have the gps powered up but the cpu is not taking any interrupts from
    * it.  This allows the CPU to be sleeping while the gps is doing its power up thing.  It takes about
    * 300ms before it starts sending bytes.]
    *
    * BOOT_START_DELAY		timer fired	BOOT_HUNTING
-   *                                          (timer <- gps_window_start + hunt_window)
-   *                                          (uart interrupts enabled)
-   *                          rx byte         (panic, interrupts should be off)
+   *                                          	(timer <- t_gps_pwr_on + hunt_window)
+   *					      	(uart interrupts enabled)
+   *				rx byte         (panic, interrupts should be off)
    *
    * [When in the BOOT_HUNTING state, we are looking for the start sequence.  If we see back to
    * back start chars (SIRF_BIN_START, SIRF_BIN_START_2) then we complete the HUNTING state
    * and assume that we are communicating.]
    *
-   * BOOT_HUNTING             timer fired	time out, reconfig sequence
-   *                          rx byte		process start sequence bytes (if 2nd byte BOOT_EOS_WAIT,
-   *                                          set a window?)
+   * BOOT_HUNT_1		timer fired	time out, reconfig sequence
+   * 				rx start chr	BOOT_HUNT_2
+   * BOOT_HUNT_2		timer fired	time out, reconfig sequence
+   * 				rx 2nd start	BOOT_EOS_WAIT.
    *
-   * BOOT_EOS_WAIT
+   * normally we figure if we saw the start sequence then that is good enough.  So we would turn
+   * the sucker off and signal booted.  Extra states are provided for messing around.
+   *
+   * [BOOT_EOS_WAIT: wait for the start up window to close.  When the gps first powers up
+   * it takes 300ms before starting to send chars (that is when we get out of HUNT), this is the
+   * gps start up stream being transmitted.  If we try to send commands to the gps during this time
+   * it will be ignored.  So we define a window that must close before we send anything.  BOOT_EOS_WAIT
+   * denotes this state.  At the end of BOOT_EOS_WAIT when futzing we can send a command to the gps
+   * to see what happens (sc tells what command to send).  BOOT_FINI_WAIT then waits some amount of
+   * time (to collect characters) before shutting down and signalling booted.
+   *
+   * Approach...  look for start sequence and call it a day if seen.
+   * If we see the start sequence, then just turn the thing off and signal
+   * booted.   BOOT_EOS_WAIT is for screwing around.  possibly sending
+   * a command.  At the end of what ever we are messing around with then
+   * signal booted.
+   *
+   * turn on, wait 
+   *
+   *    BOOT_REQUESTED			wait for grant
+   *	BOOT_START_DELAY		pwr on, ints off
+   *	BOOT_HUNT_1			ints on, looking for first char.
+   *	BOOT_HUNT_2			looking for second.
+   *	BOOT_EOS_WAIT			first char seen, wait till okay to send.  (used for send command)
+   *    BOOT_FINI_WAIT			just collect for a while then signal booted.
    */
 
   GPSC_BOOT_REQUESTED,
   GPSC_BOOT_START_DELAY,		// turn on delay, gps power on, ints off
-  GPSC_BOOT_HUNTING,			// ints on,  look for start up sequence.  (must find within DT_GPS_HUNT_WINDOW)
+  GPSC_BOOT_HUNT_1,			// ints on,  find start up sequence.  (window: DT_GPS_HUNT_WINDOW)
+  GPSC_BOOT_HUNT_2,			// ints on,  look for second start
   GPSC_BOOT_EOS_WAIT,			// waiting for end of start window so we can send.
+  GPSC_BOOT_FINI_WAIT,			// waiting to see 1st packet.
+
   GPSC_RECONFIG_4800_PWR_DOWN,		// power down
   GPSC_RECONFIG_4800_START_DELAY,	// gps power on, ints off
-  GPSC_RECONFIG_4800_HUNTING,
+  GPSC_RECONFIG_4800_HUNTING,		// looking for '$', nmea start
   GPSC_RECONFIG_4800_EOS_WAIT,		// waiting for end of start
   GPSC_RECONFIG_4800_SENDING,		// waiting for send of go_sirf_bin to complete
+  GPSC_RECONFIG_HUNT,			// 
   GPSC_RECONFIG_OP_PWR_DOWN,		// switch to operational serial, power is down
 
   /*
@@ -259,10 +288,11 @@ typedef enum {
    */
   GPSC_REQUESTED,			// waiting for usart
   GPSC_START_DELAY,			// power on, cpu sleeping
-  GPSC_START_WAIT,			// waiting for first start sequence
+  GPSC_HUNTING,				// waiting for first start sequence
   GPSC_EOS_WAIT,			// waiting for end of start window.
   GPSC_ON,				// been there done that.
 } gpsc_state_t;
+
 
 /*
  * GPS Message level states.  Where in the message is the state machine
@@ -326,12 +356,13 @@ module GPSP {
   }
 }
 
+
 implementation {
 
   norace gpsc_state_t gpsc_state;
   norace gpsm_state_t gpsm_state;
   norace uint16_t     gpsm_length;
-  norace uint32_t     gps_window_start;
+  norace uint32_t     t_gps_pwr_on;
 
 
   void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
@@ -415,7 +446,7 @@ implementation {
 
       case GPSC_BOOT_EOS_WAIT:
       case GPSC_RECONFIG_4800_EOS_WAIT:
-	call GpsTimer.startOneShotAt(gps_window_start, DT_GPS_SEND_WAIT);
+	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_SEND_WAIT);
 	return;
 
       case GPSC_RECONFIG_4800_PWR_DOWN:
@@ -444,7 +475,7 @@ implementation {
     gpsm_state = GPSM_START;
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
     gpsm_length = 0;
-    gps_window_start = 0;
+    t_gps_pwr_on = 0;
     memset(sbuf, 0, sizeof(sbuf));
     memset(srctl, 0, sizeof(srctl));
     s_idx = 0;
@@ -535,11 +566,16 @@ implementation {
    * Start GPS.
    *
    * This is what is normally used to fire the GPS up for readings.
+   * Assumes the gps has its comm settings properly setup.  SirfBin-57600
    *
    * Some thoughts...
    *
-   * 1) We turn the critter on, assuming we've gone through the boot
-   *    up sequence which makes sure we can hear sirfbin at the op serial rate.
+   * 1) Turn the gps on.  start timer for pwr up interrupts off window.  The device
+   *    won't start talking for about 300ms or so (note tinyos timers are in mis
+   *    units).   We also want to give the gps enough time to recapture.
+   *
+   * 2) Throw
+   *    
    * 2) can we immediately throw commands requesting the navigation data we want?
    * 3) can we send commands back to back?
    * 4) is it reliable?
@@ -645,12 +681,12 @@ implementation {
 
       case GPSC_BOOT_REQUESTED:
 	gpsc_change_state(GPSC_BOOT_START_DELAY, GPSW_GRANT);
-	call GpsTimer.startOneShotAt(gps_window_start, DT_GPS_BOOT_UP_DELAY);
+	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_BOOT_UP_DELAY);
 	break;
 
       case GPSC_REQUESTED:
 	gpsc_change_state(GPSC_START_DELAY, GPSW_GRANT);
-	call GpsTimer.startOneShotAt(gps_window_start, DT_GPS_PWR_UP_DELAY);
+	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
 	break;
     }
     return;
@@ -677,12 +713,13 @@ implementation {
 	return;
 
       case GPSC_BOOT_START_DELAY:
-	gpsc_change_state(GPSC_BOOT_HUNTING, GPSW_TIMER);
-	call GpsTimer.startOneShotAt(gps_window_start, DT_GPS_HUNT_WINDOW);
+	gpsc_change_state(GPSC_BOOT_HUNT_1, GPSW_TIMER);
+	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_HUNT_WINDOW);
 	call Usart.enableIntr();
 	return;
 
-      case GPSC_BOOT_HUNTING:
+      case GPSC_BOOT_HUNT_1:
+      case GPSC_BOOT_HUNT_2:
 	/*
 	 * Oops.  Time out while hunting assume that the gps is misconfigured.
 	 *
@@ -768,14 +805,14 @@ implementation {
 	 */
 	gpsc_change_state(GPSC_RECONFIG_4800_START_DELAY, GPSW_TIMER);
 	call HW.gps_on();
-	gps_window_start = call LocalTime.get();
-	call GpsTimer.startOneShotAt(gps_window_start, DT_GPS_BOOT_UP_DELAY);
+	t_gps_pwr_on = call LocalTime.get();
+	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_BOOT_UP_DELAY);
 	call Usart.setModeUart((msp430_uart_union_config_t *) &gps_4800_serial_config);
 	return;
 
       case GPSC_RECONFIG_4800_START_DELAY:
 	gpsc_change_state(GPSC_RECONFIG_4800_HUNTING, GPSW_TIMER);
-	call GpsTimer.startOneShotAt(gps_window_start, DT_GPS_HUNT_WINDOW);
+	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_HUNT_WINDOW);
 	call Usart.enableIntr();
 	return;
 
@@ -796,7 +833,7 @@ implementation {
 	gpsc_change_state(GPSC_ON, GPSW_TIMER);
 	call GpsTimer.stop();
 	call HW.gps_on();
-	gps_window_start = call LocalTime.get();
+	t_gps_pwr_on = call LocalTime.get();
 //	call GpsTimer.startOneShot(T_GPS_FIRST_CHAR_TIME_OUT);
 //	call Usart.setModeUart((msp430_uart_union_config_t *) &GPS_DEFAULT_SERIAL_CONFIG);
 	call Usart.enableIntr();
@@ -829,7 +866,7 @@ implementation {
     if (s_idx >= SSIZE)
       s_idx = 0;
 
-    if (gpsc_state == GPSC_ON) { // BRK_CHR
+    if (gpsc_state == GPSC_ON) { // BRK_GOT_CHR
       /*
        * Run the normal message collection state machine
        */
@@ -848,37 +885,31 @@ implementation {
 	 */
 	break;
 
-      case GPSC_BOOT_HUNTING:
-	/*
-	 * Looking for the start up sequence @ OP RATE, assuming SiRF binary.
-	 */
-	if (gpsm_state == GPSM_START) {
-	  if (byte == SIRF_BIN_START)
-	    gpsm_state = GPSM_START_2;		// all good, looking for 2nd byte of start sequence
-	  return;
-	}
+      case GPSC_BOOT_HUNT_1:
+     	if (byte == SIRF_BIN_START)
+	  gpsc_change_state(GPSC_BOOT_EOS_WAIT, GPSW_RXBYTE);
+	return;
 
-	if (gpsm_state == GPSM_START_2) {
-	  if (byte == SIRF_BIN_START_2) {
-	    gpsm_state = GPSM_START;
-	    gpsc_change_state(GPSC_BOOT_EOS_WAIT, GPSW_RXBYTE);
-	    post gps_config_task();
-	    return;
-	  } else if (byte == SIRF_BIN_START) {
-	    /*
-	     * stay in start 2 looking for 2nd start sequence
-	     */
-	    return;
-	  } else {
+      case GPSC_BOOT_HUNT_2:
+	if (byte == SIRF_BIN_START_2) {
+	  gpsc_change_state(GPSC_BOOT_EOS_WAIT, GPSW_RXBYTE);
+	  post gps_config_task();
+	  return;
+	} else if (byte == SIRF_BIN_START) {
+	  /*
+	   * looking for 2nd but got 1st, stay looking for second
+	   */
+	  return;
+	} else {
 	    /*
 	     * Hunting for start sequence.  Saw the first one but the second didn't
 	     * check out.  So look for the 1st char again.  Need to find the sequence
 	     * before the timer goes off.
 	     */
-	    gpsm_state = GPSM_START;
-	    return;
-	  }
+	  gpsc_change_state(GPSC_BOOT_HUNT_1, GPSW_RXBYTE);
+	  return;
 	}
+
 	/*
 	 * Anything else is wacked.
 	 */
@@ -929,21 +960,14 @@ implementation {
     t_send_done = call LocalTime.get();
     switch(gpsc_state) {	// BRK_SEND_DONE
       case GPSC_RECONFIG_4800_SENDING:
-	gpsc_change_state(GPSC_ON, GPSW_SEND_DONE);
+	gpsc_change_state(GPSC_RECONFIG_HUNT, GPSW_SEND_DONE);
 	post gps_config_task();
-	nop();
 	/*
 	 * wait till all bytes have gone out.
 	 */
 	while (!call Usart.isTxEmpty()) ;
 	call Usart.setModeUart((msp430_uart_union_config_t *) &GPS_OP_SERIAL_CONFIG);
 	call Usart.enableIntr();
-#ifdef notdef
-	call Usart.disableIntr();
-	gpsc_change_state(GPSC_RECONFIG_OP_PWR_DOWN, GPSW_SEND_DONE);
-	call HW.gps_off();
-	call GpsTimer.startOneShot(T_CHAR_DELAY);
-#endif
 	return;
 
       case GPSC_BOOT_EOS_WAIT:
@@ -989,8 +1013,8 @@ implementation {
   async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
     mmP5out.ser_sel = SER_SEL_GPS;
     call HW.gps_on();
-    gps_window_start = call LocalTime.get();
-    gpsp_inst.t_pwr_on = gps_window_start;
+    t_gps_pwr_on = call LocalTime.get();
+    gpsp_inst.t_pwr_on = t_gps_pwr_on;
     return (msp430_uart_union_config_t*) &GPS_OP_SERIAL_CONFIG;
   }
 }

@@ -44,7 +44,7 @@ end
 b GPSP.nc:827
 
 # next break point needs to be 7
-# break chr avail to gpsc state machine (BRK_CHR)
+# break chr avail to gpsc state machine (BRK_GOT_CHR)
 b GPSP.nc:832
 comm
 p GPSP$gpsc_state
