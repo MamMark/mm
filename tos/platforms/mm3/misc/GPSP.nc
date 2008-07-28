@@ -274,6 +274,7 @@ typedef enum {
   GPSC_BOOT_HUNT_2,			// ints on,  look for second start
   GPSC_BOOT_EOS_WAIT,			// waiting for end of start window so we can send.
   GPSC_BOOT_FINI_WAIT,			// waiting to see 1st packet.
+  GPSC_BOOT_FINISH,			// waiting to see 1st packet.
 
   GPSC_RECONFIG_4800_PWR_DOWN,		// power down
   GPSC_RECONFIG_4800_START_DELAY,	// gps power on, ints off
@@ -756,14 +757,15 @@ implementation {
       case GPSC_BOOT_EOS_WAIT:
 	/*
 	 * Being in this state says we saw the start char sequence.
-	 * For now send the command indicated by "sc".
+	 * For now send the command indicated by "sc".  This is a hack
+	 * for now to allow observing what the gps does.
 	 */
 	gpsp_inst.t_eos = call LocalTime.get();
 	switch (sc) {
 	  default:
 	  case 0:
-	    gpsc_change_state(GPSC_ON, GPSW_TIMER);
-	    call GpsTimer.stop();
+	    gpsc_change_state(GPSC_BOOT_FINI_WAIT, GPSW_TIMER);
+	    call GpsTimer.startOneShot(DT_GPS_FINI_WAIT);
 	    return;
 	  case 1:
 	    t_send_start = call LocalTime.get();
@@ -887,7 +889,7 @@ implementation {
 
       case GPSC_BOOT_HUNT_1:
      	if (byte == SIRF_BIN_START)
-	  gpsc_change_state(GPSC_BOOT_EOS_WAIT, GPSW_RXBYTE);
+	  gpsc_change_state(GPSC_BOOT_HUNT_2, GPSW_RXBYTE);
 	return;
 
       case GPSC_BOOT_HUNT_2:
