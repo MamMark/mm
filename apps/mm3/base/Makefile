@@ -128,6 +128,8 @@ SDConstants.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	DT_HDR_SIZE_VERSION       \
 	DT_HDR_SIZE_TEST          \
 	                          \
+	DT_GPS_RAW_SIRF3          \
+	                          \
 	BATT_PAYLOAD_SIZE         \
 	BATT_BLOCK_SIZE           \
 	TEMP_PAYLOAD_SIZE         \
