@@ -35,16 +35,25 @@
 /*
  * BOOT_UP_DELAY, PWR_UP_DELAY
  *
- * When the gps is first turned on it takes about 300 mis before it
- * starts to talk.  And then it sends out debugging data.  So we first
- * power up and then wait with interrupts off until we know that the
- * gps is talking.  By having interrupts off and the cpu sleeping we
- * can leave the cpu asleep until the gps comes up.
+ * When the gps is turned on it takes about 300 mis before it starts
+ * to transmit.  And when it does it first spits out some debugging
+ * information.
  *
- * Later we can modify this time to leave the cpu asleep until the odds
- * are good the gps has reacquired.  (PWR_UP_DELAY).
+ * When we boot we look at the first bytes to see if we are communicating
+ * correctly (we know what baud we are at) and initially we want to
+ * collect these bytes and put them into the SD for analysis.
  *
+ * Later we can futz with the BOOT_UP_DELAY parameter to ignore things
+ * if we wish.
  *
+ * When turning on for a reading (not boot) then we use PWR_UP_DELAY
+ * to delay us until odds are good the gps has reacquired.
+ */
+
+#define DT_GPS_BOOT_UP_DELAY  100
+#define DT_GPS_PWR_UP_DELAY  1024
+
+/*
  * HUNT_TIME_OUT
  *
  * When first booting we don't know if the GPS has reverted to NMEA-4800-8N1
@@ -55,7 +64,14 @@
  * The hunt window starts when we turn power on to the gps.  When it expires
  * we decide that we aren't communicating and send cool hand luke to the
  * prison farm (either fail or try to reconfigure to 4800).
- *
+ */
+
+#define DT_GPS_HUNT_WINDOW        700
+#define DT_GPS_HUNT_TIME_OUT      500
+
+#define DT_GPS_4800_HUNT_TIME_OUT 2048
+
+/*
  * All times unless otherwise noted are in mis.
  *
  * byte times:
@@ -71,21 +87,23 @@
  * Duh!  Nmea_go_sirf_bin is transmitted at 4800 baud so 0x1b bytes takes
  * 54 ms.  Dumb ass.
  *
- * DT_GPS_SEND_WAIT is how long to wait from the start of the window before
+ * DT_GPS_EOS_WAIT is how long to wait from the start of the window before
  * we guess it is okay to start sending commands.  If we start to send right
  * after we first start receiving bytes from the gps then the commands don't
  * work.  So we wait a while before sending commands.
  */
 
-#define DT_GPS_PWR_BOUNCE 5
-#define DT_GPS_HUNT_WINDOW 600
-#define DT_GPS_SEND_WAIT 500
-#define DT_GPS_SEND_TIME_OUT 100
-#define DT_GPS_FINI_WAIT 500
+#define MAX_GPS_BOOT_TRYS       3
 
-#define DT_GPS_HUNT_TIME_OUT  500
+#define DT_GPS_PWR_BOUNCE       5
+#define DT_GPS_EOS_WAIT       500
+#define DT_GPS_SEND_TIME_OUT  256
+#define DT_GPS_FINI_WAIT      500
 
-#define DT_GPS_BOOT_UP_DELAY  350
-#define DT_GPS_PWR_UP_DELAY  1000
+/*
+ * MAX_REQUEST_TO: time out if a request isn't satisfied with
+ * this amount of time.
+ */
+#define DT_GPS_MAX_REQUEST_TO 10000
 
 #endif /* __GPS_H__ */

@@ -53,9 +53,7 @@ enum {
   DT_CAL_STRING		= 10,
 
   /*
-   * GPS_RAW is used to encapsulate data as
-   * received from the GPS.  It is used for
-   * debugging the GPS
+   * GPS_RAW is used to encapsulate data as received from the GPS.
    */   
   DT_GPS_RAW		= 11,
   DT_VERSION		= 12,
@@ -177,9 +175,30 @@ typedef nx_struct dt_cal_string {
 typedef nx_struct dt_gps_raw {
   nx_uint16_t	len;
   nx_uint8_t	dtype;
+  nx_uint8_t	chip;
   nx_uint32_t   stamp_mis;
   nx_uint8_t	data[0];
 } dt_gps_raw_nt;
+
+/*
+ * definitions of chip value for raw.  Determines
+ * what rest of packet looks like.
+ *
+ * Biggest packet we handle is MID 41 Geodetic data with a
+ * payload of 91 bytes.  The way the allocation works out is as
+ * follows:
+ *
+ * DT overhead:	len, dtype, chip, stamp: 8 bytes
+ * SirfBin overhead: start, len, chksum, stop: 8 bytes
+ * max data: 91 bytes
+ *
+ * total: 107 bytes.  we round up to 128.
+ */
+
+enum {
+  DT_GPS_RAW_SIRF3 = 1,
+};
+
 
 typedef nx_struct dt_version{
   nx_uint16_t	len;

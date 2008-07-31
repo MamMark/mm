@@ -40,12 +40,12 @@ end
 #p id
 #end
 
-# break at finish collect 1024 chrs (BRK_1024)
-b GPSP.nc:882
+# break at finish collect 1024 chrs (BRK_WRAP)
+b GPSP.nc:771
+dis 6
 
-# next break point needs to be 7
 # break chr avail to gpsc state machine (BRK_GOT_CHR)
-b GPSP.nc:887
+b GPSP.nc:774
 comm
 p GPSP$gpsc_state
 p GPSP$gpsm_state
@@ -53,14 +53,17 @@ end
 dis 7
 
 # BRK_GPS_TIMER
-b GPSP.nc:714
+b GPSP.nc:609
 comm
 p GPSP$gpsc_state
 end
 dis 8
 
 # BRK_SEND_DONE
-b GPSP.nc:971
+b GPSP.nc:858
+
+# BRK_FINISH
+b GPSP.nc:368
 
 #b CollectP.nc:45
 #comm
