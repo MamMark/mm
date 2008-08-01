@@ -44,16 +44,17 @@
 noinit uint8_t gps_speed;		// will default to 0, 57600 (1 is 4800, 2 is 115200 (if compiled in))
 noinit uint8_t ro;
 noinit uint16_t recv_count;
-noinit uint8_t sc;
+noinit uint8_t gc;
 
 /*
- * sc (send_cmd)
- *	1: switch to nmea (assumes sirf_bin)
- *	2: send sw ver
- *	3: mid 41 off, no poll   (combined 1st half, 16)
- *	4: mid  2 off, no poll   (combined 2nd half, [16], 16)
- *	5: mid 41 off, with poll (sirf_poll_29)
- *	6: combined.  mid 41 off no poll, mid 2 off no poll
+ * gc (gps_cmd)
+ *      0: send sw ver (basic part of boot commands)
+ *	1: mid 41 off, no poll   (combined 1st half, 16)
+ *	2: mid  2 off, no poll   (combined 2nd half, [16], 16)
+ *	3: mid 41 off, with poll (sirf_poll_29)
+ *	4: combined.  mid 41 off no poll, mid 2 off no poll
+ *
+ *	9: switch to nmea (assumes currently sirf_bin)
  */
 
 #endif		// TEST_GPS_FUTZ
@@ -194,6 +195,7 @@ typedef enum {
   GPSC_HUNTING,				// waiting for first start sequence
   GPSC_EOS_WAIT,			// waiting for end of start window.
   GPSC_ON,
+  GPSC_BACK_TO_NMEA,
 } gpsc_state_t;
 
 
@@ -233,7 +235,7 @@ typedef struct {
 } gps_event_t;
 
 
-#define GPS_MAX_EVENTS 16
+#define GPS_MAX_EVENTS 32
 
 gps_event_t g_evs[GPS_MAX_EVENTS];
 uint8_t g_nev;			// next gps event
@@ -351,8 +353,13 @@ implementation {
 	gps_panic(1, cur_gps_state);
 	return;
 
+	/*
+	 * we could use a shorter time here but 2 seconds isn't that long
+	 * And this will only timeout if the gps is set to 4800 baud.  That
+	 * 
+	 */
       case GPSC_BOOT_HUNT_1:
-	call GpsTimer.startOneShot(DT_GPS_HUNT_TIME_OUT);
+	call GpsTimer.startOneShot(DT_GPS_HUNT_LIMIT);
 	return;
 
       case GPSC_BOOT_EOS_WAIT:
@@ -365,7 +372,8 @@ implementation {
 	return;
 
       case GPSC_BOOT_FINISH:
-	call GpsControl.stop();		// BRK_FINISH
+	call GpsControl.stop();
+	nop();				// BRK_FINISH
 	signal GpsBoot.booted();
 	return;
 
@@ -624,7 +632,7 @@ implementation {
 
       case GPSC_BOOT_START_DELAY:
 	gpsc_change_state(GPSC_BOOT_HUNT_1, GPSW_TIMER);
-	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_HUNT_WINDOW);
+	call GpsTimer.startOneShot(DT_GPS_HUNT_LIMIT);
 	call Usart.enableIntr();
 	return;
 
@@ -675,40 +683,39 @@ implementation {
 	/*
 	 * Being in this state says we saw the start char sequence and enough
 	 * time has gone by to allow us to send commands and not have them ignored.
-	 * Send the command indicated by "sc" and then collect for a while.
+	 * Start sending boot commands from the list.  sendDone handles sending
+	 * the next.  The receiver code handles collecting any responses.  When the
+	 * last command is sent go into FINI_WAIT to finish collecting responses.
 	 */
-	switch (sc) {
+	switch(gc) {
 	  default:
 	  case 0:
-	    gpsc_change_state(GPSC_BOOT_FINI_WAIT, GPSW_TIMER);
-	    call GpsTimer.startOneShot(DT_GPS_FINI_WAIT);
-	    return;
-	  case 1:
-	    if ((err = call UartStream.send(sirf_go_nmea, sizeof(sirf_go_nmea))))
-	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, sc, 0);
-	    break;
-	  case 2:
 	    gpsc_change_state(GPSC_BOOT_SENDING, GPSW_TIMER);
 	    call GpsTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
 	    if ((err = call UartStream.send(sirf_send_sw_ver, sizeof(sirf_send_sw_ver))))
-	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, sc, 0);
-	    break;
-	  case 3:		// 1st half, combined, len 16
+	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, gc, 0);
+	    return;
+	  case 1:		// 1st half, combined, len 16
 	    if ((err = call UartStream.send(sirf_combined, 16)))
-	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, sc, 0);
-	    break;
-	  case 4:		// 2nd half, &combined[16], len 16
+	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, gc, 0);
+	    return;
+	  case 2:		// 2nd half, &combined[16], len 16
 	    if ((err = call UartStream.send(&sirf_combined[16], 16)))
-	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, sc, 0);
-	    break;
-	  case 5:
+	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, gc, 0);
+	    return;
+	  case 3:
 	    if ((err = call UartStream.send(sirf_poll_41, sizeof(sirf_poll_41))))
-	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, sc, 0);
-	    break;
-	  case 6:
+	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, gc, 0);
+	    return;
+	  case 4:
 	    if ((err = call UartStream.send(sirf_combined, sizeof(sirf_combined))))
-	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, sc, 0);
-	    break;
+	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, gc, 0);
+	    return;
+	  case 9:
+	    if ((err = call UartStream.send(sirf_go_nmea, sizeof(sirf_go_nmea))))
+	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, gc, 0);
+	    gpsc_change_state(GPSC_BACK_TO_NMEA, GPSW_TIMER);
+	    return;
 	}
 	return;
 
@@ -736,7 +743,7 @@ implementation {
 
       case GPSC_RECONFIG_4800_START_DELAY:
 	gpsc_change_state(GPSC_RECONFIG_4800_HUNTING, GPSW_TIMER);
-	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_4800_HUNT_WINDOW);
+	call GpsTimer.startOneShot(DT_GPS_HUNT_LIMIT);
 	call Usart.enableIntr();
 	return;
 
@@ -870,32 +877,23 @@ implementation {
 
       case GPSC_BOOT_EOS_WAIT:
       case GPSC_BOOT_SENDING:
-	switch(sc) {
-	  default:
-	  case 0:
-	  case 2:
-	  case 3:
-	  case 4:
-	  case 5:
-	  case 6:
-	    /*
-	     * async context so need to kick to the config_task
-	     */
-	    gpsc_change_state(GPSC_BOOT_FINI_WAIT, GPSW_SEND_DONE);
-	    post gps_config_task();
-	    break;
-	  case 1:
-	    gpsc_change_state(GPSC_ON, GPSW_SEND_DONE);
-	    post gps_config_task();
-	    while (!call Usart.isTxEmpty()) ;
-	    call Usart.setModeUart((msp430_uart_union_config_t *) &gps_4800_serial_config);
-	    call Usart.enableIntr();
-	    break;
-	}
+	/*
+	 * async context so need to kick to the config_task
+	 */
+	gpsc_change_state(GPSC_BOOT_FINI_WAIT, GPSW_SEND_DONE);
+	post gps_config_task();
+	break;
+
+      case GPSC_BACK_TO_NMEA:
+	gpsc_change_state(GPSC_BOOT_FINI_WAIT, GPSW_SEND_DONE);
+	post gps_config_task();
+	while (!call Usart.isTxEmpty()) ;
+	call Usart.setModeUart((msp430_uart_union_config_t *) &gps_4800_serial_config);
+	call Usart.enableIntr();
 	break;
 
       default:
-	call Panic.panic(PANIC_GPS, 98, gpsc_state, sc, 0, 0);
+	call Panic.panic(PANIC_GPS, 98, gpsc_state, gc, 0, 0);
 	break;
     }
     return;

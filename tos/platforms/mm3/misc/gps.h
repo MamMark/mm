@@ -54,22 +54,20 @@
 #define DT_GPS_PWR_UP_DELAY  1024
 
 /*
- * HUNT_TIME_OUT
+ * HUNT_LIMIT
  *
  * When first booting we don't know if the GPS has reverted to NMEA-4800-8N1
  * or if we are still at 115200 and SiRFbin.  So when we boot we power
  * up the gps, wait some time, and then hunt for the start sequence.  If
  * found then we are at 115200.  Otherwise we have to reconfigure for 4800.
  *
- * The hunt window starts when we turn power on to the gps.  When it expires
- * we decide that we aren't communicating and send cool hand luke to the
- * prison farm (either fail or try to reconfigure to 4800).
+ * HUNT_LIMIT places an upper bound on how long we wait before giving up on
+ * the hunt.  We don't want to hunt for ever.    The time needs to be long
+ * enough so that when the gps is at 4800 and we are switching over from 57600
+ * there is a good chance that we will see the new 4800 stream.
  */
 
-#define DT_GPS_HUNT_WINDOW        700
-#define DT_GPS_HUNT_TIME_OUT      500
-
-#define DT_GPS_4800_HUNT_TIME_OUT 2048
+#define DT_GPS_HUNT_LIMIT 2048
 
 /*
  * All times unless otherwise noted are in mis.
