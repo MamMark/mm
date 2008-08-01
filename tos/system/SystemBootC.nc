@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2008 Eric B. Decker
  * Copyright (c) 2008 Stanford University.
  * All rights reserved.
  *
@@ -41,8 +42,8 @@
  *
  * 1) Bring up the serial or radio stack first so we can watch
  *    what is happening via the Debug port.  (for debug)
- * 2) Bring up the SD
- * 3) Bring up the GPS.
+ * 2) Bring up the SD/StreamStorage
+ * 3) Bring up the GPS.  (GPS assumes SS is up)
  *
  * Note Serial/Radio, StreamStorage, and GPS all use the same
  * hardware path.  So we serialize them.
@@ -61,12 +62,8 @@ implementation {
   components StreamStorageC as SS;
   components GPSC;
 
-  Phase1BootC.Boot -> MainC;	// bring up serial/radio
-  SS.Boot -> Phase1BootC;	// bring up StreamStorage
-#ifdef TEST_GPS
-  GPSC.Boot -> SS;		// bring up GPS.
+  Phase1BootC.Boot -> MainC;	// Main kicks Phase1 (serial/radio)
+  SS.Boot -> Phase1BootC;	//    which kicks StreamStorage
+  GPSC.Boot -> SS;		//        and then GPS.
   Boot = GPSC;			// bring up everyone else
-#else
-  Boot = SS;
-#endif
 }

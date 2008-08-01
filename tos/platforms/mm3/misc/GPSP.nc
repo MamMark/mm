@@ -48,7 +48,7 @@ noinit uint8_t gc;
 
 /*
  * gc (gps_cmd)
- *      0: send sw ver (basic part of boot commands)
+ *      0: bootup commands (send sw ver, clock status)
  *	1: mid 41 off, no poll   (combined 1st half, 16)
  *	2: mid  2 off, no poll   (combined 2nd half, [16], 16)
  *	3: mid 41 off, with poll (sirf_poll_29)

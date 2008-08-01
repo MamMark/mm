@@ -25,14 +25,21 @@ uint8_t nmea_go_sirf_bin[] = {
 };
 
 
-uint8_t sirf_send_sw_ver[] = {
+uint8_t sirf_send_sw_ver_clock[] = {
   0xa0, 0xa2,			// start seq
   0x00, 0x02,			// len 2
   132,				// send sw ver
   0x00,				// unused
   0x00, 0x84,			// checksum
+  0xb0, 0xb3,			// end seq
+  0xa0, 0xa2,			// start seq
+  0x00, 0x02,			// len 2
+  144,				// send sw ver
+  0x00,				// unused
+  0x00, 0x90,			// checksum
   0xb0, 0xb3			// end seq
 };
+
 
 uint8_t sirf_poll_41[] = {
   0xa0, 0xa2,			// start sequence
@@ -68,6 +75,7 @@ uint8_t sirf_go_nmea[] = {
   0x01, 0x65,			// checksum
   0xb0, 0xb3			// end seq
 };
+
 
 uint8_t sirf_combined[] = {
   0xa0, 0xa2,			// start sequence
