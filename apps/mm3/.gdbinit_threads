@@ -41,11 +41,11 @@ end
 #end
 
 # break at finish collect 1024 chrs (BRK_WRAP)
-b GPSP.nc:778
+b GPSP.nc:783
 dis 6
 
 # break chr avail to gpsc state machine (BRK_GOT_CHR)
-b GPSP.nc:781
+b GPSP.nc:786
 comm
 p GPSP$gpsc_state
 p GPSP$gpsm_state
@@ -53,17 +53,23 @@ end
 dis 7
 
 # BRK_GPS_TIMER
-b GPSP.nc:617
+b GPSP.nc:622
 comm
 p GPSP$gpsc_state
 end
 dis 8
 
 # BRK_SEND_DONE
-b GPSP.nc:865
+b GPSP.nc:870
 
 # BRK_FINISH
-b GPSP.nc:376
+b GPSP.nc:378
+
+b CradleP.nc:68
+b CradleP.nc:74
+b CradleP.nc:80
+b CradleP.nc:97
+b CradleP.nc:104
 
 #b CollectP.nc:45
 #comm

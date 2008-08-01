@@ -57,6 +57,8 @@ noinit uint8_t gc;
  *	9: switch to nmea (assumes currently sirf_bin)
  */
 
+#define MAX_GC 9
+
 #endif		// TEST_GPS_FUTZ
 
 #define GPS_EAVES_SIZE 2048
@@ -385,9 +387,11 @@ implementation {
 
   command error_t Init.init() {
     if (ro > 1)
-      ro = 1;
+      ro = 0;
     if (gps_speed > 1)
       gps_speed = 0;
+    if (gc > MAX_GC)
+      gc = 0;
     nmea_add_checksum(nmea_go_sirf_bin);
     sirf_bin_add_checksum(sirf_go_nmea);
     sirf_bin_add_checksum(sirf_send_sw_ver_clock);

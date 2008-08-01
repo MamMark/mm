@@ -37,7 +37,7 @@ implementation {
    * Include sensor components.  No need to wire.  They will
    * start when regimeChange() is signalled.
    */
-  components BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
+  components CradleC, BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
   
 #ifdef TEST_GPS
   components GPSC;

@@ -48,7 +48,6 @@ implementation {
 
 
   command error_t Init.init() {
-    period = 0;
     cradle_state = CRADLE_STATE_OFF;
     err_overruns = 0;
     docked = FALSE;
@@ -66,11 +65,13 @@ implementation {
      *
      * So we don't need to do anything when starting and stopping.
      */
+    nop();
     return SUCCESS;
   }
 
 
   command error_t StdControl.stop() {
+    nop();
     return SUCCESS;
   }
 
@@ -100,8 +101,6 @@ implementation {
 
 
   event void RegimeCtrl.regimeChange() {
-    uint32_t new_period;
-
     call PeriodTimer.stop();
     if (call Adc.isOwner())
       call Adc.release();

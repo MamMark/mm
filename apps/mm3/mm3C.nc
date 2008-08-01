@@ -95,7 +95,7 @@ implementation {
 #ifdef TEST_GPS
     call GPSControl.start();
     call GPSControl.stop();
-    return;
+    //    return;
 #endif
 
     call SyncTimer.startPeriodic(SYNC_PERIOD);

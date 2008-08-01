@@ -12,7 +12,7 @@
  * Once a minute
  */
 
-#define CRADLE_PERIOD (1024*60*1)
+#define CRADLE_PERIOD (1024UL*60*1)
 
 /*
  * Sensor States (used to observe changes)

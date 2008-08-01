@@ -28,9 +28,6 @@ implementation {
   components HplMM3AdcC;
   CradleP.HW -> HplMM3AdcC;
 
-  components mm3ControlC;
-  CradleP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_CRADLE];
-
   components PanicC;
   CradleP.Panic -> PanicC;
 }
