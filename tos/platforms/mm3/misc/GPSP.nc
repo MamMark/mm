@@ -390,7 +390,8 @@ implementation {
       gps_speed = 0;
     nmea_add_checksum(nmea_go_sirf_bin);
     sirf_bin_add_checksum(sirf_go_nmea);
-    sirf_bin_add_checksum(sirf_send_sw_ver);
+    sirf_bin_add_checksum(sirf_send_sw_ver_clock);
+    sirf_bin_add_checksum(&sirf_send_sw_ver_clock[10]);
     sirf_bin_add_checksum(sirf_poll_41);
     sirf_bin_add_checksum(sirf_combined);
     sirf_bin_add_checksum(&sirf_combined[16]);
@@ -692,7 +693,7 @@ implementation {
 	  case 0:
 	    gpsc_change_state(GPSC_BOOT_SENDING, GPSW_TIMER);
 	    call GpsTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
-	    if ((err = call UartStream.send(sirf_send_sw_ver, sizeof(sirf_send_sw_ver))))
+	    if ((err = call UartStream.send(sirf_send_sw_ver_clock, sizeof(sirf_send_sw_ver_clock))))
 	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, gc, 0);
 	    return;
 	  case 1:		// 1st half, combined, len 16
