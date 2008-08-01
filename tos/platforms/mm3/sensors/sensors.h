@@ -36,21 +36,23 @@ typedef uint16_t sensor_data_t;
 
 enum {
   SNS_ID_NONE		= 0,	// used for other data stream stuff
-  SNS_ID_BATT		= 1,	// Battery Sensor
-  SNS_ID_TEMP		= 2,	// Temperature Sensor
-  SNS_ID_SAL		= 3,	// Salinity sensor (one, two)
-  SNS_ID_ACCEL		= 4,	// Accelerometer (x,y,z)
-  SNS_ID_PTEMP		= 5,	// Temperature sensor
+  SNS_ID_CRADLE		= 1,	// detect cradle (batt but batt off)
+  SNS_ID_BATT		= 2,	// Battery Sensor
+  SNS_ID_TEMP		= 3,	// Temperature Sensor
+  SNS_ID_SAL		= 4,	// Salinity sensor (one, two)
+  SNS_ID_ACCEL		= 5,	// Accelerometer (x,y,z)
+  SNS_ID_PTEMP		= 6,	// Temperature sensor
 
   /* Starting with Press, the remaining
      sensors are differential sensors
   */
-  SNS_DIFF_START	= 6,
-  SNS_ID_PRESS		= 6,	// Pressure (temp, pressure)
-  SNS_ID_SPEED		= 7,	// Velocity (x,y)
-  SNS_ID_MAG		= 8,    // Magnetometer (x,y,z)
-  SNS_MAX_ID		= 8,
-  MM3_NUM_SENSORS	= 9,	// includes none
+  SNS_DIFF_START	= 7,
+  SNS_ID_PRESS		= 7,	// Pressure (temp, pressure)
+  SNS_ID_SPEED		= 8,	// Velocity (x,y)
+  SNS_ID_MAG		= 9,    // Magnetometer (x,y,z)
+
+  SNS_MAX_ID		= 9,
+  MM3_NUM_SENSORS	= 10,	// includes none
 };
 
 
