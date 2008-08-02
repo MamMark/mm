@@ -239,7 +239,7 @@ module GPSP {
   uses {
     interface Boot;
     interface Resource as UARTResource;
-    interface Timer<TMilli> as GpsTimer;
+    interface Timer<TMilli> as GPSTimer;
     interface LocalTime<TMilli>;
     interface HplMM3Adc as HW;
     interface UartStream;
@@ -344,16 +344,16 @@ implementation {
 	 * 
 	 */
       case GPSC_BOOT_HUNT_1:
-	call GpsTimer.startOneShot(DT_GPS_HUNT_LIMIT);
+	call GPSTimer.startOneShot(DT_GPS_HUNT_LIMIT);
 	return;
 
       case GPSC_BOOT_EOS_WAIT:
       case GPSC_RECONFIG_4800_EOS_WAIT:
-	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_EOS_WAIT);
+	call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_EOS_WAIT);
 	return;
 
       case GPSC_BOOT_FINI_WAIT:
-	call GpsTimer.startOneShot(DT_GPS_FINI_WAIT);
+	call GPSTimer.startOneShot(DT_GPS_FINI_WAIT);
 	return;
 
       case GPSC_BOOT_FINISH:
@@ -363,7 +363,7 @@ implementation {
 	return;
 
       case GPSC_ON:
-	call GpsTimer.stop();
+	call GPSTimer.stop();
 	return;
     }
   }
@@ -467,12 +467,13 @@ implementation {
     if (call UARTResource.isOwner())
       call UARTResource.release();
     gpsc_change_state(GPSC_BOOT_REQUESTED, GPSW_NONE);
+    call GPSMsgControl.start();
 
     /*
      * The request when granted will turn on the GPS.
      * Start a timer to catch the grant never being issued.
      */
-    call GpsTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
+    call GPSTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
     call UARTResource.request();
   }
 
@@ -514,9 +515,8 @@ implementation {
   command error_t GPSControl.start() {
     if (gpsc_state != GPSC_OFF)
       return FAIL;
-
-    call GPSMsgControl.start();
     gpsc_change_state(GPSC_REQUESTED, GPSW_NONE);
+    call GPSMsgControl.start();
     return call UARTResource.request();
   }
 
@@ -532,12 +532,13 @@ implementation {
   command error_t GPSControl.stop() {
     call Usart.disableIntr();
     call HW.gps_off();
-    call GpsTimer.stop();
+    call GPSTimer.stop();
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
     if (call UARTResource.isOwner()) {
       call UARTResource.release();
       mmP5out.ser_sel = SER_SEL_NONE;
     }
+    call GPSMsgControl.stop();
     return SUCCESS;
   }
 
@@ -554,7 +555,7 @@ implementation {
     call Usart.disableIntr();
     if (ro == 1 && gpsc_state != GPSC_OFF) {
       gpsc_change_state(GPSC_ON, GPSW_GRANT);
-      call GpsTimer.stop();
+      call GPSTimer.stop();
       switch (gps_speed) {
 	default:
 	case 0:
@@ -583,26 +584,26 @@ implementation {
 	 * turned the gps back on so we want to turn it off again.
 	 */
 	call HW.gps_off();
-	call GpsTimer.stop();
+	call GPSTimer.stop();
 	mmP5out.ser_sel = SER_SEL_NONE;
 	call UARTResource.release();
 	return;
 
       case GPSC_BOOT_REQUESTED:
 	gpsc_change_state(GPSC_BOOT_START_DELAY, GPSW_GRANT);
-	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_BOOT_UP_DELAY);
+	call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_BOOT_UP_DELAY);
 	break;
 
       case GPSC_REQUESTED:
 	gpsc_change_state(GPSC_START_DELAY, GPSW_GRANT);
-	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
+	call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
 	break;
     }
     return;
   }
   
 
-  event void GpsTimer.fired() {
+  event void GPSTimer.fired() {
     error_t err;
 
     switch (gpsc_state) {	// BRK_GPS_TIMER
@@ -623,7 +624,7 @@ implementation {
 
       case GPSC_BOOT_START_DELAY:
 	gpsc_change_state(GPSC_BOOT_HUNT_1, GPSW_TIMER);
-	call GpsTimer.startOneShot(DT_GPS_HUNT_LIMIT);
+	call GPSTimer.startOneShot(DT_GPS_HUNT_LIMIT);
 	call Usart.enableIntr();
 	return;
 
@@ -642,9 +643,9 @@ implementation {
 
 	/*
 	 * There is a race condition where we've timed out, the timer will
-	 * fire and eventually at task level GpsTimer.fired will be invoked.  If the rx
+	 * fire and eventually at task level GPSTimer.fired will be invoked.  If the rx
 	 * interrupt (2nd start byte) occurs early enough it will cause gps_config_task
-	 * to run prior to GpsTimer.fired.  (Either task ordering (if GpsTimer and config
+	 * to run prior to GPSTimer.fired.  (Either task ordering (if GPSTimer and config
 	 * task "coincident" relative to the task level) or config_task gets posted and
 	 * it runs prior to the gps timer going off)
 	 *
@@ -664,7 +665,7 @@ implementation {
 	if (gpsc_boot_trys) {
 	  gpsc_boot_trys--;
 	  gpsc_change_state(GPSC_RECONFIG_4800_PWR_DOWN, GPSW_TIMER);
-	  call GpsTimer.startOneShot(DT_GPS_PWR_BOUNCE);
+	  call GPSTimer.startOneShot(DT_GPS_PWR_BOUNCE);
 	  return;
 	}
 	gps_panic(2, gpsc_state);
@@ -682,7 +683,7 @@ implementation {
 	  default:
 	  case 0:
 	    gpsc_change_state(GPSC_BOOT_SENDING, GPSW_TIMER);
-	    call GpsTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
+	    call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
 	    if ((err = call UartStream.send(sirf_send_sw_ver_clock, sizeof(sirf_send_sw_ver_clock))))
 	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, gc, 0);
 	    return;
@@ -728,19 +729,19 @@ implementation {
 	gpsc_change_state(GPSC_RECONFIG_4800_START_DELAY, GPSW_TIMER);
 	call HW.gps_on();
 	t_gps_pwr_on = call LocalTime.get();
-	call GpsTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_BOOT_UP_DELAY);
+	call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_BOOT_UP_DELAY);
 	call Usart.setModeUart((msp430_uart_union_config_t *) &gps_4800_serial_config);
 	return;
 
       case GPSC_RECONFIG_4800_START_DELAY:
 	gpsc_change_state(GPSC_RECONFIG_4800_HUNTING, GPSW_TIMER);
-	call GpsTimer.startOneShot(DT_GPS_HUNT_LIMIT);
+	call GPSTimer.startOneShot(DT_GPS_HUNT_LIMIT);
 	call Usart.enableIntr();
 	return;
 
       case GPSC_RECONFIG_4800_EOS_WAIT:
 	gpsc_change_state(GPSC_RECONFIG_4800_SENDING, GPSW_TIMER);
-	call GpsTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
+	call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
 	if ((err = call UartStream.send(nmea_go_sirf_bin, sizeof(nmea_go_sirf_bin))))
 	  call Panic.panic(PANIC_GPS, 91, err, gpsc_state, 0, 0);
 	return;
@@ -766,10 +767,10 @@ implementation {
       g_idx = 0;
 
     if (g_idx == 0) {
-      nop();			 // BRK_WRAP
+      nop();				// BRK_WRAP
     }
 
-    call GPSByte.byte_avail(byte);
+    call GPSByte.byte_avail(byte);	// BRK_GOT_CHR
 
     switch (gpsc_state) {
       case GPSC_OFF:

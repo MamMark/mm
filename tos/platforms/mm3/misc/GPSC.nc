@@ -63,12 +63,12 @@ implementation {
   components LocalTimeMilliC;
   GPSP.LocalTime -> LocalTimeMilliC;
 
-  components new TimerMilliC() as GpsTimer;
-  GPSP.GpsTimer -> GpsTimer;
+  components new TimerMilliC() as GPSTimer;
+  GPSP.GPSTimer -> GPSTimer;
 
   components new Msp430Uart1C() as UartC;
   GPSP.UartStream -> UartC;  
-  //GPSP.UartByte -> UartC;
+//GPSP.UartByte -> UartC;
   GPSP.UARTResource -> UartC;
   GPSP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
 
