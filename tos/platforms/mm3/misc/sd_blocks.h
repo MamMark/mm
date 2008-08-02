@@ -196,7 +196,9 @@ typedef nx_struct dt_gps_raw {
  */
 
 enum {
+  DT_GPS_HDR_OFFSET = sizeof(dt_gps_raw_nt),
   DT_GPS_RAW_SIRF3 = 1,
+  GPS_BUF_SIZE = 128,
 };
 
 

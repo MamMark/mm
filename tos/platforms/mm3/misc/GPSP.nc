@@ -267,12 +267,21 @@ module GPSP {
 
 implementation {
 
-  norace gpsc_state_t gpsc_state;
-  norace gpsm_state_t gpsm_state;
-  norace uint16_t     gpsm_length;
-  norace uint16_t     gpsm_cur_len;
+  norace gpsc_state_t gpsc_state;	/* low level collector state */
   norace uint32_t     t_gps_pwr_on;
-  norace uint8_t      gps_boot_trys;
+  norace uint8_t      gpsc_boot_trys;
+
+  norace gpsm_state_t gpsm_state;	/* message collection state */
+  norace uint16_t     gpsm_length;	/* length of payload */
+  norace uint16_t     gpsm_cur;	        /* where we are in the payload */
+  norace uint16_t     gpsm_cur_chksum;	/* running chksum of payload */
+
+#define GPS_OVR_SIZE 16
+
+  uint8_t gps_msg[GPS_BUF_SIZE];
+  uint8_t *gpsm_ptr;
+  uint8_t gps_overflow[GPS_OVR_SIZE];
+  bool on_overflow;
 
 
   void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
@@ -399,16 +408,27 @@ implementation {
     sirf_bin_add_checksum(sirf_poll_41);
     sirf_bin_add_checksum(sirf_combined);
     sirf_bin_add_checksum(&sirf_combined[16]);
+
+    /*
+     * initilize the gps event trace buffer
+     * initilize eavesdrop memory
+     */
     memset(g_evs, 0, sizeof(g_evs));
     g_nev = 0;
-    gpsm_state = GPSM_START;
-    gpsc_change_state(GPSC_OFF, GPSW_NONE);
-    gpsm_length = 0;
-    gpsm_cur_len = 0;
-    t_gps_pwr_on = 0;
-    gps_boot_trys = MAX_GPS_BOOT_TRYS;
     memset(gbuf, 0, sizeof(gbuf));
     g_idx = 0;
+
+    gpsc_change_state(GPSC_OFF, GPSW_NONE);
+    t_gps_pwr_on = 0;
+    gpsc_boot_trys = MAX_GPS_BOOT_TRYS;
+
+    gpsm_state = GPSM_START;
+    gpsm_length = 0;
+    gpsm_cur = 0;
+    gpsm_cur_chksum = 0;
+    memset(gps_msg, 0, sizeof(gps_msg));
+    gpsm_ptr = gps_msg;
+    on_overflow = FALSE;
     return SUCCESS;
   }
 
@@ -675,13 +695,13 @@ implementation {
 	 */
 
 	call HW.gps_off();
-	if (gps_boot_trys) {
-	  gps_boot_trys--;
+	if (gpsc_boot_trys) {
+	  gpsc_boot_trys--;
 	  gpsc_change_state(GPSC_RECONFIG_4800_PWR_DOWN, GPSW_TIMER);
 	  call GpsTimer.startOneShot(DT_GPS_PWR_BOUNCE);
 	  return;
 	}
-	gps_panic(2, gpsm_state);
+	gps_panic(2, gpsc_state);
 	return;
 
       case GPSC_BOOT_EOS_WAIT:
@@ -783,12 +803,7 @@ implementation {
       nop();			 // BRK_WRAP
     }
 
-    if (gpsc_state == GPSC_ON) { // BRK_GOT_CHR
-      /*
-       * Run the normal message collection state machine
-       */
-      return;
-    }
+    //    gpsm_collect_byte(byte);
 
     switch (gpsc_state) {
       case GPSC_OFF:
