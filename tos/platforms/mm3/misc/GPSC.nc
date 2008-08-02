@@ -40,8 +40,8 @@
 
 configuration GPSC {
   provides {
-    interface SplitControl as GpsControl;
-    interface Boot as GpsBoot;
+    interface StdControl as GPSControl;
+    interface Boot as GPSBoot;
   }
   uses interface Boot;
 }
@@ -49,10 +49,14 @@ configuration GPSC {
 implementation {
   components MainC, GPSP;
   MainC.SoftwareInit -> GPSP;
-  GpsControl = GPSP;
-  GpsBoot = GPSP;
+  GPSControl = GPSP;
+  GPSBoot = GPSP;
   Boot = GPSP.Boot;
-  
+
+  components GPSMsgC;
+  GPSP.GPSByte -> GPSMsgC;
+  GPSP.GPSMsgControl -> GPSMsgC;
+
   components HplMM3AdcC;
   GPSP.HW -> HplMM3AdcC;
 

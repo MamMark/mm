@@ -37,7 +37,7 @@ module mm3C {
     interface Adc;
 
 #ifdef TEST_GPS
-    interface SplitControl as GPSControl;
+    interface StdControl as GPSControl;
 #endif
   }
 }
@@ -79,15 +79,6 @@ implementation {
     call mm3CommData.send_data(sync_data, DT_HDR_SIZE_SYNC);
     call Collect.collect(sync_data, DT_HDR_SIZE_SYNC);
   }
-
-
-#ifdef TEST_GPS
-  event void GPSControl.startDone(error_t error) {
-  }
-
-  event void GPSControl.stopDone(error_t error) {
-  }
-#endif
 
 
   event void Boot.booted() {

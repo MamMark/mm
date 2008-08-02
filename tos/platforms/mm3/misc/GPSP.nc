@@ -201,22 +201,6 @@ typedef enum {
 } gpsc_state_t;
 
 
-/*
- * GPS Message level states.  Where in the message is the state machine
- */
-typedef enum {
-  GPSM_START = 1,
-  GPSM_START_2,
-  GPSM_LEN,
-  GPSM_LEN_2,
-  GPSM_PAYLOAD,
-  GPSM_CHK,
-  GPSM_CHK_2,
-  GPSM_END,
-  GPSM_END_2,
-} gpsm_state_t;
-
-
 typedef enum {
   GPSW_NONE = 0,
   GPSW_GRANT = 1,
@@ -248,9 +232,9 @@ uint8_t g_nev;			// next gps event
 module GPSP {
   provides {
     interface Init;
-    interface SplitControl as GpsControl;
+    interface StdControl as GPSControl;
     interface Msp430UartConfigure;
-    interface Boot as GpsBoot;
+    interface Boot as GPSBoot;
   }
   uses {
     interface Boot;
@@ -261,6 +245,8 @@ module GPSP {
     interface UartStream;
     interface Panic;
     interface HplMsp430Usart as Usart;
+    interface GPSByte;
+    interface StdControl as GPSMsgControl;
   }
 }
 
@@ -270,18 +256,6 @@ implementation {
   norace gpsc_state_t gpsc_state;	/* low level collector state */
   norace uint32_t     t_gps_pwr_on;
   norace uint8_t      gpsc_boot_trys;
-
-  norace gpsm_state_t gpsm_state;	/* message collection state */
-  norace uint16_t     gpsm_length;	/* length of payload */
-  norace uint16_t     gpsm_cur;	        /* where we are in the payload */
-  norace uint16_t     gpsm_cur_chksum;	/* running chksum of payload */
-
-#define GPS_OVR_SIZE 16
-
-  uint8_t gps_msg[GPS_BUF_SIZE];
-  uint8_t *gpsm_ptr;
-  uint8_t gps_overflow[GPS_OVR_SIZE];
-  bool on_overflow;
 
 
   void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
@@ -383,9 +357,9 @@ implementation {
 	return;
 
       case GPSC_BOOT_FINISH:
-	call GpsControl.stop();
+	call GPSControl.stop();
 	nop();				// BRK_FINISH
-	signal GpsBoot.booted();
+	signal GPSBoot.booted();
 	return;
 
       case GPSC_ON:
@@ -421,14 +395,6 @@ implementation {
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
     t_gps_pwr_on = 0;
     gpsc_boot_trys = MAX_GPS_BOOT_TRYS;
-
-    gpsm_state = GPSM_START;
-    gpsm_length = 0;
-    gpsm_cur = 0;
-    gpsm_cur_chksum = 0;
-    memset(gps_msg, 0, sizeof(gps_msg));
-    gpsm_ptr = gps_msg;
-    on_overflow = FALSE;
     return SUCCESS;
   }
 
@@ -545,11 +511,11 @@ implementation {
    * configures then grants.
    */
 
-  command error_t GpsControl.start() {
+  command error_t GPSControl.start() {
     if (gpsc_state != GPSC_OFF)
       return FAIL;
 
-    gpsm_state = GPSM_START;
+    call GPSMsgControl.start();
     gpsc_change_state(GPSC_REQUESTED, GPSW_NONE);
     return call UARTResource.request();
   }
@@ -563,7 +529,7 @@ implementation {
    * not to worry.  When the grant occurs, our state being OFF will
    * cause an immediate release.
    */
-  command error_t GpsControl.stop() {
+  command error_t GPSControl.stop() {
     call Usart.disableIntr();
     call HW.gps_off();
     call GpsTimer.stop();
@@ -803,7 +769,7 @@ implementation {
       nop();			 // BRK_WRAP
     }
 
-    //    gpsm_collect_byte(byte);
+    call GPSByte.byte_avail(byte);
 
     switch (gpsc_state) {
       case GPSC_OFF:
