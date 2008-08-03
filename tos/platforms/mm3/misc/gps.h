@@ -25,11 +25,6 @@
  */
 #define GPS_SPEED 57600
 
-#define SIRF_BIN_START   0xa0
-#define SIRF_BIN_START_2 0xa2
-#define SIRF_BIN_END     0xb0
-#define SIRF_BIN_END_2   0xb3
-
 #define NMEA_START       '$'
 
 /*

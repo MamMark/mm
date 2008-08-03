@@ -282,7 +282,7 @@ implementation {
     call Panic.panic(PANIC_GPS, where, p, 0, 0, 0);
   }
 
-  //#ifdef notdef
+//#ifdef notdef
   /* add NMEA checksum to a possibly  *-terminated sentence */
   void nmea_add_checksum(uint8_t *sentence) {
     uint8_t sum = 0;
@@ -309,7 +309,7 @@ implementation {
       *p++ = '\n';
     }
   }
-  //#endif
+//#endif
 
   void sirf_bin_add_checksum(uint8_t *buf) {
     uint8_t *bp;
@@ -375,13 +375,6 @@ implementation {
       gps_speed = 0;
     if (gc > MAX_GC)
       gc = 0;
-    nmea_add_checksum(nmea_go_sirf_bin);
-    sirf_bin_add_checksum(sirf_go_nmea);
-    sirf_bin_add_checksum(sirf_send_sw_ver_clock);
-    sirf_bin_add_checksum(&sirf_send_sw_ver_clock[10]);
-    sirf_bin_add_checksum(sirf_poll_41);
-    sirf_bin_add_checksum(sirf_combined);
-    sirf_bin_add_checksum(&sirf_combined[16]);
 
     /*
      * initilize the gps event trace buffer
@@ -684,7 +677,7 @@ implementation {
 	  case 0:
 	    gpsc_change_state(GPSC_BOOT_SENDING, GPSW_TIMER);
 	    call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
-	    if ((err = call UartStream.send(sirf_send_sw_ver_clock, sizeof(sirf_send_sw_ver_clock))))
+	    if ((err = call UartStream.send(sirf_send_boot, sizeof(sirf_send_boot))))
 	      call Panic.panic(PANIC_GPS, 90, err, gpsc_state, gc, 0);
 	    return;
 	  case 1:		// 1st half, combined, len 16

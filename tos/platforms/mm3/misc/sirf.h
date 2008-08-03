@@ -3,9 +3,34 @@
  * All rights reserved.
  *
  * Misc defines and constants for the sirf chipset.
- *
- * nmea_add_checksum and sirf_bin_add_checksum from gpsd/sirfmon.c 2.37
  */
+
+#ifndef __SIRF_H__
+#define __SIRF_H__
+
+#define SIRF_BIN_START   0xa0
+#define SIRF_BIN_START_2 0xa2
+#define SIRF_BIN_END     0xb0
+#define SIRF_BIN_END_2   0xb3
+
+/*
+ * BUF_SIZE is biggest packet (MID 41, 91 bytes),
+ *   SirfBin overhead (start, len, chksum, end) 8 bytes
+ *   DT overhead (8 bytes).   107 rounded up to 128.
+ *
+ * GPS_OVR_SIZE: size of overflow buffer.  Space for bytes coming
+ *   in on interrupts while we are processing the previous msg.
+ *
+ * GPS_START_OFFSET: offset into the msg buffer where the incoming bytes
+ *   should be put.  Skips over DT overhead.
+ *
+ * GPS_OVERHEAD: space in msg buffer for overhead bytes.
+ */
+
+#define GPS_BUF_SIZE	128
+#define GPS_OVR_SIZE	16
+#define GPS_START_OFFSET 8
+#define GPS_OVERHEAD	16
 
 /*
  * nmea_go_sirf_bin: tell the gps in nmea mode to go into sirf binary.
@@ -25,19 +50,38 @@ uint8_t nmea_go_sirf_bin[] = {
 };
 
 
-uint8_t sirf_send_sw_ver_clock[] = {
-  0xa0, 0xa2,			// start seq
-  0x00, 0x02,			// len 2
+/*
+ * Boot up sequence commands:
+ *
+ * 1) Send SW ver
+ * 2) poll clock status
+ * 3) poll MID 41, Geodetic data
+ */
+
+uint8_t sirf_send_boot[] = {
+  0xa0, 0xa2,
+  0x00, 0x02,
   132,				// send sw ver
-  0x00,				// unused
-  0x00, 0x84,			// checksum
-  0xb0, 0xb3,			// end seq
-  0xa0, 0xa2,			// start seq
-  0x00, 0x02,			// len 2
-  144,				// send sw ver
-  0x00,				// unused
-  0x00, 0x90,			// checksum
-  0xb0, 0xb3			// end seq
+  0x00,
+  0x00, 0x84,
+  0xb0, 0xb3,
+
+  0xa0, 0xa2,
+  0x00, 0x02,
+  144,				// poll clock status
+  0x00,
+  0x00, 0x90,
+  0xb0, 0xb3,
+
+  0xa0, 0xa2,
+  0x00, 0x08,
+  166,				// set message rate
+  1,				// send now
+  41,				// mid to be set
+  1,				// update rate (turn off)
+  0, 0, 0, 0,
+  0x00, 0xd1,
+  0xb0, 0xb3
 };
 
 
@@ -47,9 +91,9 @@ uint8_t sirf_poll_41[] = {
   166,				// set message rate
   1,				// send now
   41,				// mid to be set
-  0,				// update rate (turn off)
+  1,				// update rate (turn off)
   0, 0, 0, 0,			// pad
-  0x00, 0xd0,			// checksum
+  0x00, 0xd1,			// checksum
   0xb0, 0xb3			// end seq
 };
 
@@ -87,6 +131,7 @@ uint8_t sirf_combined[] = {
   0, 0, 0, 0,			// pad
   0x00, 0xef,			// checksum
   0xb0, 0xb3,			// end seq
+
   0xa0, 0xa2,			// start sequence
   0x00, 0x08,			// length
   166,				// set message rate
@@ -99,3 +144,5 @@ uint8_t sirf_combined[] = {
 };
 
 #endif
+
+#endif	/* __SIRF_H__ */

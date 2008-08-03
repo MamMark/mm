@@ -16,9 +16,13 @@ configuration GPSMsgC {
 }
 
 implementation {
-  components GPSMsgP;
+  components MainC, GPSMsgP;
+  MainC.SoftwareInit -> GPSMsgP;
   GPSByte = GPSMsgP;
   GPSMsgControl = GPSMsgP;
+
+  components PanicC;
+  GPSMsgP.Panic -> PanicC;
 
 #ifdef notdef
   components LocalTimeMilliC;
@@ -26,8 +30,5 @@ implementation {
 
   components new TimerMilliC() as GpsTimer;
   GPSMsgP.GpsTimer -> GpsTimer;
-
-  components PanicC;
-  GPSMsgP.Panic -> PanicC;
 #endif
 }
