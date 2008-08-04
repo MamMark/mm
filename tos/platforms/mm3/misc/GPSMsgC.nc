@@ -24,10 +24,13 @@ implementation {
   components PanicC;
   GPSMsgP.Panic -> PanicC;
 
-#ifdef notdef
+  components CollectC;
+  GPSMsgP.Collect -> CollectC;
+
   components LocalTimeMilliC;
   GPSMsgP.LocalTime -> LocalTimeMilliC;
 
+#ifdef notdef
   components new TimerMilliC() as GpsTimer;
   GPSMsgP.GpsTimer -> GpsTimer;
 #endif

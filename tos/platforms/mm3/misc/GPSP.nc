@@ -599,7 +599,7 @@ implementation {
   event void GPSTimer.fired() {
     error_t err;
 
-    switch (gpsc_state) {	// BRK_GPS_TIMER
+    switch (gpsc_state) {
       default:
       case GPSC_FAIL:
       case GPSC_OFF:
@@ -759,13 +759,10 @@ implementation {
     if (g_idx >= GPS_EAVES_SIZE)
       g_idx = 0;
 
-    if (g_idx == 0) {
-      nop();				// BRK_WRAP
-    }
-
-    call GPSByte.byte_avail(byte);	// BRK_GOT_CHR
+    call GPSByte.byte_avail(byte);
 
     switch (gpsc_state) {
+      case GPSC_ON:
       case GPSC_OFF:
 	/*
 	 * We can be in the OFF state but still got an interrupt.  There is a small window
@@ -833,7 +830,6 @@ implementation {
       case GPSC_RECONFIG_4800_START_DELAY:
       case GPSC_START_DELAY:
       case GPSC_EOS_WAIT:
-      case GPSC_ON:
 	call Panic.panic(PANIC_GPS, 99, gpsc_state, byte, 0, 0);
 	nop();			// less confusing.
 	return;
@@ -842,7 +838,7 @@ implementation {
 
 
   async event void UartStream.sendDone( uint8_t* buf, uint16_t len, error_t error ) {
-    switch(gpsc_state) {	// BRK_SEND_DONE
+    switch(gpsc_state) {
       case GPSC_RECONFIG_4800_SENDING:
 	gpsc_change_state(GPSC_BOOT_HUNT_1, GPSW_SEND_DONE);
 	post gps_config_task();

@@ -5,6 +5,19 @@ disp/i $pc
 x/i $pc
 set pri ele 0
 
+# gps msg data display
+define gmd
+printf "gpsm_state: "
+print GPSMsgP$gpsm_state
+printf "left: %d, gpsm_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$gpsm_left, GPSMsgP$gpsm_length, GPSMsgP$gpsm_cur_chksum
+printf "gpsm_nxt:  0x%02x  on_overflow: %d\n", GPSMsgP$gpsm_nxt, GPSMsgP$on_overflow
+printf "\nbuffer:\n"
+x/32xb GPSMsgP$gpsm_msg
+printf "overflow:\n"
+x/16xb GPSMsgP$gpsm_overflow
+printf "\nerrors: ovrfull: %d  ovrmax: %d  too_big: %d  chk fail: %d  proto fail: %d\n", GPSMsgP$gpsm_overflow_full, GPSMsgP$gpsm_overflow_max, GPSMsgP$gpsm_too_big, GPSMsgP$gpsm_chksum_fail, GPSMsgP$gpsm_proto_fail
+end
+
 b TinyOSMainP.nc:83
 #b TinyOSMainP.nc:90
 b *TinyOSMainP$TinyOSBoot$booted+0d64
@@ -40,31 +53,18 @@ end
 #p id
 #end
 
-# break at finish collect 1024 chrs (BRK_WRAP)
-b GPSP.nc:763
-dis 6
+# BRK_GPS_OVR
+b GPSMsgP.nc:113
 
 # break chr avail to gpsc state machine (BRK_GOT_CHR)
-b GPSP.nc:766
-comm
-p GPSP$gpsc_state
-p GPSP$gpsm_state
-end
-dis 7
+b GPSMsgP.nc:141
+b GPSMsgP.nc:94
 
-# BRK_GPS_TIMER
-b GPSP.nc:602
-comm
-p GPSP$gpsc_state
-end
-dis 8
-
-# BRK_SEND_DONE
-b GPSP.nc:845
-dis 9
 
 # BRK_FINISH
 b GPSP.nc:361
+
+
 
 #b CollectP.nc:45
 #comm

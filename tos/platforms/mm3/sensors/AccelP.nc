@@ -1,4 +1,4 @@
-/* 
+/*
  * AccelP.nc: implementation for accelerometer
  * Copyright 2008 Eric B. Decker
  * All rights reserved.
