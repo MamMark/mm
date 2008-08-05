@@ -64,6 +64,10 @@ implementation {
 
   Phase1BootC.Boot -> MainC;	// Main kicks Phase1 (serial/radio)
   SS.Boot -> Phase1BootC;	//    which kicks StreamStorage
+#ifdef TEST_GPS
   GPSC.Boot -> SS;		//        and then GPS.
   Boot = GPSC;			// bring up everyone else
+#else
+  Boot = SS;
+#endif
 }
