@@ -216,3 +216,34 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
 
 	export MAKERULES TOSDIR TOSROOT CLASSPATH PYTHONPATH LD_LIBRARY_PATH
 	export LIBMSPGCC MOTECOM MAMMARK_DIR TOSMAKE_PATH
+
+11) Build SerialForwarder and libmote library.
+
+    a) install stow if you don't have it.
+
+       On debian based systems:
+
+       sudo apt-get install stow
+
+
+    b) Build the serial forwarder and associated library (also includes direct serial access)
+
+      cd $TOSROOT/support/sdk/c/sf
+      ./bootstrap
+      ./configure --prefix=/usr/local/stow/sf_c
+      make
+
+      sudo -s
+      make install
+
+      ("sudo make install" for some reason doesn't pick up the value of $TOSROOT properly so
+      the make install doesn't work write unless you are root first)
+
+      This will install bin/{sf, sflisten, sfsend, seriallisten, serialsend}, include/{message.h,
+      serialsource.h, sfsource.h}, and lib/libmote.a.  These will be installed into /usr/local/stow/sf_c.
+
+
+   c) Install into /usr/local/{bin,include,lib} using stow.
+
+      cd /usr/local/stow
+      stow sf_c
