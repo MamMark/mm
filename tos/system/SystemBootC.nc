@@ -60,7 +60,9 @@ implementation {
 
   components Phase1BootC;
   components StreamStorageC as SS;
+#ifdef TEST_GPS
   components GPSC;
+#endif
 
   Phase1BootC.Boot -> MainC;	// Main kicks Phase1 (serial/radio)
   SS.Boot -> Phase1BootC;	//    which kicks StreamStorage
