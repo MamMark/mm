@@ -5,4 +5,5 @@
 
 interface GPSByte {
   async command void byte_avail(uint8_t byte);
+  command void reset();
 }

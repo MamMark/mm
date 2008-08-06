@@ -194,8 +194,9 @@ typedef enum {
    */
   GPSC_REQUESTED,			// waiting for usart
   GPSC_START_DELAY,			// power on, cpu sleeping
-  GPSC_HUNTING,				// waiting for first start sequence
-  GPSC_EOS_WAIT,			// waiting for end of start window.
+  GPSC_SENDING,				// sending commands we want to force
+  GPSC_HUNT_1,				// Can we see them?
+  GPSC_HUNT_2,				// 
   GPSC_ON,
   GPSC_BACK_TO_NMEA,
 } gpsc_state_t;
@@ -362,8 +363,15 @@ implementation {
 	signal GPSBoot.booted();
 	return;
 
+      case GPSC_HUNT_1:
+	call GPSTimer.startOneShot(DT_GPS_HUNT_LIMIT);
+	return;
+
       case GPSC_ON:
-	call GPSTimer.stop();
+	call UARTResource.release();
+	call GPSByte.reset();
+	call UARTResource.request();
+	call GPSTimer.startOneShot(DT_LISTEN_TIME);
 	return;
     }
   }
@@ -591,6 +599,10 @@ implementation {
 	gpsc_change_state(GPSC_START_DELAY, GPSW_GRANT);
 	call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
 	break;
+
+      case GPSC_ON:
+	call GPSTimer.startOneShot(DT_LISTEN_TIME);
+	break;
     }
     return;
   }
@@ -608,9 +620,7 @@ implementation {
       case GPSC_RECONFIG_4800_HUNTING:		// timed out.  no start char
       case GPSC_RECONFIG_4800_SENDING:	// timed out send.
       case GPSC_REQUESTED:
-      case GPSC_START_DELAY:
-      case GPSC_EOS_WAIT:
-      case GPSC_ON:				// forgot to kill the timer
+      case GPSC_SENDING:
 	call Panic.panic(PANIC_GPS, 2, gpsc_state, 0, 0, 0);
 	nop();
 	return;
@@ -738,6 +748,20 @@ implementation {
 	if ((err = call UartStream.send(nmea_go_sirf_bin, sizeof(nmea_go_sirf_bin))))
 	  call Panic.panic(PANIC_GPS, 91, err, gpsc_state, 0, 0);
 	return;
+
+      case GPSC_START_DELAY:
+	gpsc_change_state(GPSC_SENDING, GPSW_TIMER);
+	call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
+	call Usart.enableIntr();
+	if ((err = call UartStream.send(sirf_poll_41, sizeof(sirf_poll_41))))
+	  call Panic.panic(PANIC_GPS, 91, err, gpsc_state, 0, 0);
+	return;
+
+      case GPSC_ON:				// forgot to kill the timer
+	call UARTResource.release();
+	call GPSByte.reset();
+	call UARTResource.request();
+	return;
     }
   }
   
@@ -783,6 +807,7 @@ implementation {
       case GPSC_BOOT_FINISH:
       case GPSC_RECONFIG_4800_EOS_WAIT:
       case GPSC_RECONFIG_4800_SENDING:
+      case GPSC_SENDING:
 	return;					// ignore (collect above)
 
       case GPSC_BOOT_HUNT_1:
@@ -823,13 +848,38 @@ implementation {
 	}
 	return;
 
+      case GPSC_HUNT_1:
+     	if (byte == SIRF_BIN_START)
+	  gpsc_change_state(GPSC_HUNT_2, GPSW_RXBYTE);
+	return;
+
+      case GPSC_HUNT_2:
+	if (byte == SIRF_BIN_START_2) {
+	  gpsc_change_state(GPSC_ON, GPSW_RXBYTE);
+	  post gps_config_task();
+	  return;
+	} else if (byte == SIRF_BIN_START) {
+	  /*
+	   * looking for 2nd but got 1st, stay looking for second
+	   */
+	  return;
+	} else {
+	    /*
+	     * Hunting for start sequence.  Saw the first one but the second didn't
+	     * check out.  So look for the 1st char again.  Need to find the sequence
+	     * before the timer goes off.
+	     */
+	  gpsc_change_state(GPSC_HUNT_1, GPSW_RXBYTE);
+	  return;
+	}
+	return;
+
       default:
       case GPSC_FAIL:
       case GPSC_BOOT_START_DELAY:		// interrupts shouldn't be on.  why are we here?
       case GPSC_RECONFIG_4800_PWR_DOWN:
       case GPSC_RECONFIG_4800_START_DELAY:
       case GPSC_START_DELAY:
-      case GPSC_EOS_WAIT:
 	call Panic.panic(PANIC_GPS, 99, gpsc_state, byte, 0, 0);
 	nop();			// less confusing.
 	return;
@@ -860,6 +910,11 @@ implementation {
 	post gps_config_task();
 	break;
 
+      case GPSC_SENDING:
+	gpsc_change_state(GPSC_HUNT_1, GPSW_SEND_DONE);
+	post gps_config_task();
+	break;
+	
       case GPSC_BACK_TO_NMEA:
 	gpsc_change_state(GPSC_BOOT_FINI_WAIT, GPSW_SEND_DONE);
 	post gps_config_task();

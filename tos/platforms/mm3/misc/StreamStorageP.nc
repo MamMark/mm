@@ -134,6 +134,7 @@ implementation {
     for (i = 0; i < SS_NUM_BUFS; i++) {
       ss_handles[i].majik     = SS_BUF_MAJIK;
       ss_handles[i].buf_state = SS_BUF_STATE_FREE;
+      ss_handles[i].stamp = 0;
     }
     return SUCCESS;
   }
@@ -194,6 +195,7 @@ implementation {
      * Strictly speaking this doesn't need to be atomic.  But buf_state
      * is what controls the SSThread handling outgoing write buffers.
      */
+    handle->stamp = call LocalTime.get();
     atomic {
       handle->buf_state = SS_BUF_STATE_FULL;
       ssc.num_full++;
@@ -383,6 +385,7 @@ implementation {
 	ss_panic(9, -1);
 	return NULL;
       }
+      sshp->stamp = call LocalTime.get();
       sshp->buf_state = SS_BUF_STATE_ALLOC;
       ssc.alloc_index++;
       if (ssc.alloc_index >= SS_NUM_BUFS)
@@ -491,8 +494,16 @@ implementation {
       if (cur_handle->buf_state != SS_BUF_STATE_FULL)
 	continue;
 
+      /*
+       * When running a simple sensor regime (all 1 sec, mag/accel 51mis) and writing out
+       * all packets to the serial port, gathering 3 causes a panic.  There isn't enough
+       * time for Stream Storage to gain  control.
+       */
+
+#ifdef notdef
       if (ssc.num_full < 3)	// for now gather three up and ship out together
 	continue;
+#endif
 
       /*
        * Only power up and obtain the SPI bus if the stream isn't full
@@ -534,6 +545,7 @@ implementation {
 	   *
 	   * Observed 5ms write time unerased block.
 	   */
+	  cur_handle->stamp = call LocalTime.get();
 	  cur_handle->buf_state = SS_BUF_STATE_WRITING;
 	  atomic ss_state = SS_STATE_XFER;
 	  w_t0 = call LocalTime.get();
@@ -543,6 +555,7 @@ implementation {
 	  w_diff = call LocalTime.get() - w_t0;
 	}
 
+	cur_handle->stamp = call LocalTime.get();
 	cur_handle->buf_state = SS_BUF_STATE_FREE;
 	ssc.out_index++;
 	if (ssc.out_index >= SS_NUM_BUFS)

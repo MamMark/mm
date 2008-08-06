@@ -119,7 +119,6 @@ implementation {
   command error_t GPSMsgControl.start() {
     atomic {
       gpsm_state = GPSM_START;
-      memset(gpsm_msg, 0, sizeof(gpsm_msg));
       on_overflow = FALSE;
       return SUCCESS;
     }
@@ -138,8 +137,14 @@ implementation {
     gpsm_too_big = 0;
     gpsm_chksum_fail = 0;
     gpsm_proto_fail = 0;
+    memset(gpsm_msg, 0, sizeof(gpsm_msg));
     call GPSMsgControl.start();
     return SUCCESS;
+  }
+
+
+  command void GPSByte.reset() {
+    call GPSMsgControl.start();
   }
 
 

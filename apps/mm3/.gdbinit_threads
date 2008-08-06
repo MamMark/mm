@@ -48,21 +48,11 @@ comm
 printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
 end
 
-#b mm3CommP.nc:157
-#comm
-#p id
-#end
-
-# BRK_GPS_OVR
-b GPSMsgP.nc:113
-
 # break chr avail to gpsc state machine (BRK_GOT_CHR)
-b GPSMsgP.nc:141
-b GPSMsgP.nc:94
-
+#b GPSMsgP.nc:155
 
 # BRK_FINISH
-b GPSP.nc:361
+b GPSP.nc:362
 
 
 

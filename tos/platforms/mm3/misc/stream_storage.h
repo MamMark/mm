@@ -76,6 +76,7 @@ typedef enum {
 typedef struct {
     uint16_t majik;
     ss_buf_state_t buf_state;
+    uint32_t stamp;
     uint8_t  buf[SS_BLOCK_SIZE + 2]; /* include room for CRC */
 } ss_buf_handle_t;
 

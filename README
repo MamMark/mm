@@ -1,0 +1,6 @@
+This is the MamMark 3 tinyos 2 tree.  MamMark is a marine mammal tracker
+for marine research (not limited to marine environments).  The core os
+is based on TinyOS 2.
+
+See doc/00_HOWTO_Devel for installing a complete development environment.
+Other notes:  doc/Notes and apps/mm3/Notes.

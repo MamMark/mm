@@ -85,7 +85,7 @@ implementation {
 
 #ifdef TEST_GPS
     call GPSControl.start();
-    call GPSControl.stop();
+    //    call GPSControl.stop();
     //    return;
 #endif
 

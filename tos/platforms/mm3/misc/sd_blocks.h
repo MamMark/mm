@@ -218,7 +218,7 @@ enum {
   DT_HDR_SIZE_IGNORE        = sizeof(dt_ignore_nt),
   DT_HDR_SIZE_CONFIG        = sizeof(dt_config_nt),
   DT_HDR_SIZE_SYNC          = sizeof(dt_sync_nt),
-  DT_HDR_SIZE_PANIC          = sizeof(dt_panic_nt),
+  DT_HDR_SIZE_PANIC         = sizeof(dt_panic_nt),
   DT_HDR_SIZE_GPS_TIME      = sizeof(dt_gps_time_nt),
   DT_HDR_SIZE_GPS_POS       = sizeof(dt_gps_pos_nt),
   DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_nt),

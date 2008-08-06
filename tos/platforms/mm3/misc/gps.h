@@ -42,11 +42,16 @@
  * if we wish.
  *
  * When turning on for a reading (not boot) then we use PWR_UP_DELAY
- * to delay us until odds are good the gps has reacquired.
+ * to delay us until odds are good the gps has reacquired.  The side
+ * effect of waiting a longer time is we don't have to go through
+ * the EOS dance before sending something.  Instead we wait for the pwr up
+ * delay time and then send immediately.  Then we look for the start
+ * sequence.
+ * 
  */
 
 #define DT_GPS_BOOT_UP_DELAY  100
-#define DT_GPS_PWR_UP_DELAY  1024
+#define DT_GPS_PWR_UP_DELAY  2048
 
 /*
  * HUNT_LIMIT
@@ -62,7 +67,7 @@
  * there is a good chance that we will see the new 4800 stream.
  */
 
-#define DT_GPS_HUNT_LIMIT 2048
+#define DT_GPS_HUNT_LIMIT (4 * 1024UL)
 
 /*
  * All times unless otherwise noted are in mis.
@@ -92,6 +97,8 @@
 #define DT_GPS_EOS_WAIT       500
 #define DT_GPS_SEND_TIME_OUT  256
 #define DT_GPS_FINI_WAIT      500
+
+#define DT_LISTEN_TIME	(10 * 1024UL)
 
 /*
  * MAX_REQUEST_TO: time out if a request isn't satisfied with
