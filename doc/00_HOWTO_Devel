@@ -256,7 +256,13 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
        cd $TOSROOT/support/sdk/java/
        make tinyos.jar
 
-    c) To watch raw bytes coming from the serial port
+    c) Install TOSComm JNI support if needed.  Did java bitch about not finding TOSComm JNI support?
+
+       assuming tinyos-tools is installed run:
+
+       tos-install-jni
+
+    d) To watch raw bytes coming from the serial port
 
        Make sure CLASSPATH includes $TOSROOT/support/sdk/java/tinyos.jar, ie:
 
