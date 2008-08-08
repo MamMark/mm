@@ -3,7 +3,11 @@
  * All rights reserved.
  */
 
-interface GPSByte {
-  async command void byte_avail(uint8_t byte);
+interface GPSMsg {
   command void reset();
+
+  async command void byteAvail(uint8_t byte);
+
+  async event void msgBoundary();
+  async command bool atMsgBoundary();
 }
