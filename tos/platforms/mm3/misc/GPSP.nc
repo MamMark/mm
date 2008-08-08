@@ -518,6 +518,7 @@ implementation {
       return FAIL;
     gpsc_change_state(GPSC_REQUESTED, GPSW_NONE);
     call GPSMsgControl.start();
+    call GPSTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
     return call UARTResource.request();
   }
 
@@ -761,6 +762,7 @@ implementation {
 	call UARTResource.release();
 	call GPSByte.reset();
 	call UARTResource.request();
+//	call GPSTimer.startOneShot(DT_LISTEN_TIME);
 	return;
     }
   }

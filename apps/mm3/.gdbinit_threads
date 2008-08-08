@@ -7,6 +7,8 @@ set pri ele 0
 
 # gps msg data display
 define gmd
+printf "gpsc_state: "
+print GPSP$gpsc_state
 printf "gpsm_state: "
 print GPSMsgP$gpsm_state
 printf "left: %d, gpsm_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$gpsm_left, GPSMsgP$gpsm_length, GPSMsgP$gpsm_cur_chksum

@@ -98,7 +98,7 @@
 #define DT_GPS_SEND_TIME_OUT  256
 #define DT_GPS_FINI_WAIT      500
 
-#define DT_LISTEN_TIME	(10 * 1024UL)
+#define DT_LISTEN_TIME	(3 * 1024UL)
 
 /*
  * MAX_REQUEST_TO: time out if a request isn't satisfied with

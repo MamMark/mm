@@ -5,6 +5,8 @@
 
 #include "sensors.h"
 
+#define EAVES FALSE
+
 module mm3ControlP {
   provides {
     interface mm3Control[uint8_t sns_id];
@@ -28,8 +30,7 @@ implementation {
     uint8_t i;
 
     for (i = 0; i < MM3_NUM_SENSORS; i++)
-      eaves[i] = TRUE;
-//      eaves[i] = FALSE;
+      eaves[i] = EAVES;
     return SUCCESS;
   }
 

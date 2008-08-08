@@ -16,10 +16,13 @@
 uint16_t res[NUM_RES];
 #endif
 
-//noinit uint8_t use_regime;
-uint8_t use_regime = 1;
-noinit uint16_t gps_nxt;
-uint8_t buff[2048];
+noinit uint8_t use_regime;
+noinit bool start_gps;
+noinit bool stop_gps;
+
+//uint8_t use_regime;
+//noinit uint16_t gps_nxt;
+//uint8_t buff[2048];
 
 module mm3C {
   provides interface Init;
@@ -84,8 +87,14 @@ implementation {
   event void Boot.booted() {
 
 #ifdef TEST_GPS
-    call GPSControl.start();
-    //    call GPSControl.stop();
+    if (start_gps != 0 && start_gps != 1)
+      start_gps = 0;
+    if (stop_gps != 0 && stop_gps != 1)
+      stop_gps = 0;
+    if (start_gps)
+      call GPSControl.start();
+    if (stop_gps)
+      call GPSControl.stop();
     //    return;
 #endif
 

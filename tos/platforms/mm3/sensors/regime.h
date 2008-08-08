@@ -33,7 +33,7 @@ const uint32_t sns_period_table[MM3_NUM_REGIMES][MM3_NUM_SENSORS] = {
   {  0UL,    0UL,      51UL,	  51UL,	     51UL,      51UL,      51UL,      51UL,      51UL,      51UL    }, /* 12 - all sensors 20 Hz */
   {  0UL,    0UL,      102UL,     102UL,     102UL,     102UL,     102UL,     102UL,     102UL,     102UL   }, /* 13 - all sensors 10 Hz */
   {  0UL,    0UL,      10240UL,   1024UL,    0UL,       51UL,      0UL,       0UL,       51UL,      51UL    }, /* 14 - testing */
-  {  0UL,    0UL,      0UL,       0UL,       0UL,       51UL,      0UL,       0UL,       0UL,       0UL     }, /* 15 */
+  {  0UL,    0UL,      0UL,       0UL,       0UL,       204UL,     0UL,       0UL,       0UL,       204UL   }, /* 15 */
 };
 
 #endif
