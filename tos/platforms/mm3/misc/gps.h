@@ -51,7 +51,7 @@
  */
 
 #define DT_GPS_BOOT_UP_DELAY  100
-#define DT_GPS_PWR_UP_DELAY  2048
+#define DT_GPS_PWR_UP_DELAY   500
 
 /*
  * HUNT_LIMIT
@@ -95,7 +95,7 @@
 
 #define DT_GPS_PWR_BOUNCE       5
 #define DT_GPS_EOS_WAIT       500
-#define DT_GPS_SEND_TIME_OUT  256
+#define DT_GPS_SEND_TIME_OUT  512
 #define DT_GPS_FINI_WAIT      500
 
 #define DT_LISTEN_TIME	(3 * 1024UL)

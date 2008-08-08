@@ -65,7 +65,7 @@ implementation {
    * gpsm_length is listed as norace.  The main state machine cycles and
    * references gpsm_length.  When a message is completed, on_overflow is set
    * which locks out the state machine and prevents gpsm_length from getting
-   * change out from underneath us.
+   * changed out from underneath us.
    */
 
   gpsm_state_t    gpsm_state;		// message collection state
@@ -111,6 +111,7 @@ implementation {
       on_overflow = FALSE;
       for (i = 0; i < max; i++)
 	call GPSByte.byte_avail(gpsm_overflow[i]); // BRK_GPS_OVR
+      gpsm_overflow[0] = 0;
     }
     nop();
   }
@@ -120,6 +121,7 @@ implementation {
     atomic {
       gpsm_state = GPSM_START;
       on_overflow = FALSE;
+      gpsm_overflow[0] = 0;
       return SUCCESS;
     }
   }
@@ -157,6 +159,7 @@ implementation {
 	 * full, throw them all away.
 	 */
 	gpsm_nxt = 0;
+	gpsm_overflow[0] = 0;
 	gpsm_overflow_full++;
 	return;
       }

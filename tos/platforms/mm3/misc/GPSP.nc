@@ -191,13 +191,33 @@ typedef enum {
 
   /*
    * Normal sequencing.   GPS is assumed to be configured for SirfBin@op speed
+   *
+   * There is a trade off that effects how this is put together.
+   *
+   * On one hand, if we request and obtain the GPS prior to powering
+   * the GPS will hold the h/w for a longer period of time (all of the
+   * power up and any communication it needs).  This creates problems
+   * for the other devices on the h/w, namely the SD and comm.
+   *
+   * Another approach is to power the GPS up and then request at the end of
+   * the power window.  The downside is if another module has the h/w, then
+   * the GPS will stay powered longer then needed.  We can protect against
+   * a hog by use of a timer.
+   *
+   * One still wants to be careful because we need to wait enough time to get out
+   * of the start up window before sending the poll command.  Otherwise the gps
+   * ignores our commands.
+   *
+   * For the time being we use method 1 and request then power.  This way we
+   * can watch the start up stream.   
    */
   GPSC_REQUESTED,			// waiting for usart
-  GPSC_START_DELAY,			// power on, cpu sleeping
+  GPSC_START_DELAY,			// power on, delay before sending
   GPSC_SENDING,				// sending commands we want to force
   GPSC_HUNT_1,				// Can we see them?
-  GPSC_HUNT_2,				// 
+  GPSC_HUNT_2,
   GPSC_ON,
+  GPSC_ON_REQUESTED,			// released and then requested.
   GPSC_BACK_TO_NMEA,
 } gpsc_state_t;
 
@@ -368,9 +388,6 @@ implementation {
 	return;
 
       case GPSC_ON:
-	call UARTResource.release();
-	call GPSByte.reset();
-	call UARTResource.request();
 	call GPSTimer.startOneShot(DT_LISTEN_TIME);
 	return;
     }
@@ -537,7 +554,8 @@ implementation {
     call GPSTimer.stop();
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
     if (call UARTResource.isOwner()) {
-      call UARTResource.release();
+      if (call UARTResource.release() != SUCCESS)
+	gps_panic(3, 0);
       mmP5out.ser_sel = SER_SEL_NONE;
     }
     call GPSMsgControl.stop();
@@ -599,10 +617,13 @@ implementation {
       case GPSC_REQUESTED:
 	gpsc_change_state(GPSC_START_DELAY, GPSW_GRANT);
 	call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
+	call Usart.enableIntr();
 	break;
 
-      case GPSC_ON:
+      case GPSC_ON_REQUESTED:
+	gpsc_change_state(GPSC_ON, GPSW_GRANT);
 	call GPSTimer.startOneShot(DT_LISTEN_TIME);
+	call Usart.enableIntr();
 	break;
     }
     return;
@@ -619,9 +640,12 @@ implementation {
       case GPSC_BOOT_REQUESTED:			// very strange.  (timed out)
       case GPSC_BOOT_SENDING:			// timed out.
       case GPSC_RECONFIG_4800_HUNTING:		// timed out.  no start char
-      case GPSC_RECONFIG_4800_SENDING:	// timed out send.
-      case GPSC_REQUESTED:
-      case GPSC_SENDING:
+      case GPSC_RECONFIG_4800_SENDING:		// timed out send.
+      case GPSC_REQUESTED:			// request took too long
+      case GPSC_SENDING:			// send took too long
+      case GPSC_HUNT_1:				// didn't see start sequence within window.
+      case GPSC_HUNT_2:				// didn't see start sequence within window.
+      case GPSC_ON_REQUESTED:			// request hung?
 	call Panic.panic(PANIC_GPS, 2, gpsc_state, 0, 0, 0);
 	nop();
 	return;
@@ -753,16 +777,16 @@ implementation {
       case GPSC_START_DELAY:
 	gpsc_change_state(GPSC_SENDING, GPSW_TIMER);
 	call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
-	call Usart.enableIntr();
 	if ((err = call UartStream.send(sirf_poll_41, sizeof(sirf_poll_41))))
 	  call Panic.panic(PANIC_GPS, 91, err, gpsc_state, 0, 0);
 	return;
 
-      case GPSC_ON:				// forgot to kill the timer
+      case GPSC_ON:				// listen timer went off.
+	gpsc_change_state(GPSC_ON_REQUESTED, GPSW_TIMER);
 	call UARTResource.release();
 	call GPSByte.reset();
+	call GPSTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
 	call UARTResource.request();
-//	call GPSTimer.startOneShot(DT_LISTEN_TIME);
 	return;
     }
   }
@@ -772,10 +796,10 @@ implementation {
    * NOTE on overruns and other rx errors.  The driver in
    * $TOSROOT/lib/tosthreads/chips/msp430/HplMsp430Usart1P.nc or
    * $TOSROOT/tos/chips/msp430/usart/HplMsp430Usart1P.nc
-   *
    * first reads U1RXBUF before signalling the interrupt.  This
    * clears out any errors that might be in U1RCTL.  We just
-   * ignore for now.
+   * ignore for now.  In other words without modification errors
+   * are not seen at upper layers.
    */
   async event void UartStream.receivedByte( uint8_t byte ) {
     /*
@@ -809,6 +833,7 @@ implementation {
       case GPSC_BOOT_FINISH:
       case GPSC_RECONFIG_4800_EOS_WAIT:
       case GPSC_RECONFIG_4800_SENDING:
+      case GPSC_START_DELAY:
       case GPSC_SENDING:
 	return;					// ignore (collect above)
 
@@ -881,7 +906,7 @@ implementation {
       case GPSC_BOOT_START_DELAY:		// interrupts shouldn't be on.  why are we here?
       case GPSC_RECONFIG_4800_PWR_DOWN:
       case GPSC_RECONFIG_4800_START_DELAY:
-      case GPSC_START_DELAY:
+      case GPSC_ON_REQUESTED:
 	call Panic.panic(PANIC_GPS, 99, gpsc_state, byte, 0, 0);
 	nop();			// less confusing.
 	return;

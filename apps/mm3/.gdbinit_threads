@@ -20,20 +20,23 @@ x/16xb GPSMsgP$gpsm_overflow
 printf "\nerrors: ovrfull: %d  ovrmax: %d  too_big: %d  chk fail: %d  proto fail: %d\n", GPSMsgP$gpsm_overflow_full, GPSMsgP$gpsm_overflow_max, GPSMsgP$gpsm_too_big, GPSMsgP$gpsm_chksum_fail, GPSMsgP$gpsm_proto_fail
 end
 
+# 1
 b TinyOSMainP.nc:83
+
+# 2
 #b TinyOSMainP.nc:90
 b *TinyOSMainP$TinyOSBoot$booted+0d64
 
-#task scheduler
+# 3 task scheduler
 b SchedulerBasicP.nc:137
 
-#thread scheduler
+# thread scheduler
 #b SchedulerBasicP.nc:134
 
 #mcu sleep
 #b TinyThreadSchedulerP.nc:94
 
-#thread dispatch
+# 4 thread dispatch
 b TinyThreadSchedulerP.nc:76
 
 #b VirtualizeTimerC.nc:81
@@ -45,18 +48,27 @@ b TinyThreadSchedulerP.nc:76
 
 dis
 
+# 5
 b PanicP.nc:42
 comm
 printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
 end
 
-# break chr avail to gpsc state machine (BRK_GOT_CHR)
-#b GPSMsgP.nc:155
+# 6 BRK_FINISH
+b GPSP.nc:382
+comm
+ena 7 8
+end
 
-# BRK_FINISH
-b GPSP.nc:362
+# 7
+b *GPSP$GPSTimer$fired+0d570
 
+# 8
+b GPSMsgP.nc:97
+dis 7-8
 
+# 9
+b *GPSP$GPSTimer$fired+0d580
 
 #b CollectP.nc:45
 #comm

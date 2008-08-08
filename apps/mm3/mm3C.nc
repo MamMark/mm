@@ -17,10 +17,8 @@ uint16_t res[NUM_RES];
 #endif
 
 noinit uint8_t use_regime;
-noinit bool start_gps;
-noinit bool stop_gps;
-
 //uint8_t use_regime;
+
 //noinit uint16_t gps_nxt;
 //uint8_t buff[2048];
 
@@ -87,14 +85,8 @@ implementation {
   event void Boot.booted() {
 
 #ifdef TEST_GPS
-    if (start_gps != 0 && start_gps != 1)
-      start_gps = 0;
-    if (stop_gps != 0 && stop_gps != 1)
-      stop_gps = 0;
-    if (start_gps)
-      call GPSControl.start();
-    if (stop_gps)
-      call GPSControl.stop();
+    call GPSControl.start();
+    // call GPSControl.stop();
     //    return;
 #endif
 
@@ -111,7 +103,7 @@ implementation {
      * signal all the sensors and start them off.
      */
 //    call Regime.setRegime(SNS_DEFAULT_REGIME);
-    if (use_regime == 0 || use_regime > SNS_MAX_REGIME)
+    if (use_regime > SNS_MAX_REGIME)
       use_regime = SNS_DEFAULT_REGIME;
     call Regime.setRegime(use_regime);
 
