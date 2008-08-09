@@ -31,10 +31,6 @@ end
 #b SDP.nc:229
 #b SDP.nc:390
 
-#b GPSByteCollectP.nc:89
-#b GPSByteCollectP.nc:109
-#b GPSByteCollectP.nc:134
-
 #b mm3CommDataP.nc:163
 #comm
 #printf "inUse[%d] cleared\n",last

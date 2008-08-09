@@ -39,14 +39,8 @@ b SchedulerBasicP.nc:137
 # 4 thread dispatch
 b TinyThreadSchedulerP.nc:76
 
-#b VirtualizeTimerC.nc:81
-
-# Arbiter request and release
-
-#b ArbiterP.nc:77
-#b ArbiterP.nc:110
-
 dis
+
 
 # 5
 b PanicP.nc:42
@@ -55,20 +49,32 @@ printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
 end
 
 # 6 BRK_FINISH
-b GPSP.nc:382
-comm
-ena 7 8
-end
+b GPSP.nc:386
 
 # 7
-b *GPSP$GPSTimer$fired+0d570
+b *ArbiterP$0$Resource$request+0d8
+comm
+printf "request: %d\n", id
+end
 
 # 8
-b GPSMsgP.nc:97
-dis 7-8
+b *ArbiterP$0$Resource$release+0d12
+comm
+printf "release: %d\n", id
+end
 
 # 9
-b *GPSP$GPSTimer$fired+0d580
+b GPSP.nc:973
+
+# 10
+b GPSP.nc:997
+
+
+#b VirtualizeTimerC.nc:81
+
+# Arbiter request and release
+#b ArbiterP.nc:77
+#b ArbiterP.nc:110
 
 #b CollectP.nc:45
 #comm

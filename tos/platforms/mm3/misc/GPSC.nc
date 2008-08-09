@@ -54,7 +54,7 @@ implementation {
   Boot = GPSP.Boot;
 
   components GPSMsgC;
-  GPSP.GPSByte -> GPSMsgC;
+  GPSP.GPSMsg -> GPSMsgC;
   GPSP.GPSMsgControl -> GPSMsgC;
 
   components HplMM3AdcC;
@@ -70,6 +70,7 @@ implementation {
   GPSP.UartStream -> UartC;  
 //GPSP.UartByte -> UartC;
   GPSP.UARTResource -> UartC;
+  GPSP.UARTResourceRequested -> UartC;
   GPSP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
 
   components HplMsp430Usart1C;

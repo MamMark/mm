@@ -10,7 +10,7 @@
 
 configuration GPSMsgC {
   provides {
-    interface GPSByte;
+    interface GPSMsg;
     interface StdControl as GPSMsgControl;
   }
 }
@@ -18,7 +18,7 @@ configuration GPSMsgC {
 implementation {
   components MainC, GPSMsgP;
   MainC.SoftwareInit -> GPSMsgP;
-  GPSByte = GPSMsgP;
+  GPSMsg = GPSMsgP;
   GPSMsgControl = GPSMsgP;
 
   components PanicC;

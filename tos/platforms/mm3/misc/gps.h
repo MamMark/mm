@@ -98,7 +98,12 @@
 #define DT_GPS_SEND_TIME_OUT  512
 #define DT_GPS_FINI_WAIT      500
 
-#define DT_LISTEN_TIME	(3 * 1024UL)
+/*
+ * Max time the gps will hold onto the resource.  This prevents a lock up
+ * if we lose in the middle of a msg.  Needs to be small enough so that
+ * we don't hold off the other users of the h/w too long.
+ */
+#define DT_GPS_MAX_HOLD	(1024UL + 512)
 
 /*
  * MAX_REQUEST_TO: time out if a request isn't satisfied with

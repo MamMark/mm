@@ -50,7 +50,7 @@ module GPSMsgP {
   provides {
     interface Init;
     interface StdControl as GPSMsgControl;
-    interface GPSByte;
+    interface GPSMsg;
   }
   uses {
     interface Collect;
@@ -102,7 +102,7 @@ implementation {
     call Collect.collect(gpsm_msg, gdp->len);
     atomic {
       /*
-       * note: gpsm_nxt gets reset on first call to GPSByte.byte_avail()
+       * note: gpsm_nxt gets reset on first call to GPSMsg.byte_avail()
        * The only way to be here is if gps_msg_task has been posted which
        * means that on_overflow is true.  We simply need to look at gpsm_nxt
        * which will be > 0 if we have something that needs to be drained.
@@ -110,7 +110,7 @@ implementation {
       max = gpsm_nxt;
       on_overflow = FALSE;
       for (i = 0; i < max; i++)
-	call GPSByte.byte_avail(gpsm_overflow[i]); // BRK_GPS_OVR
+	call GPSMsg.byteAvail(gpsm_overflow[i]); // BRK_GPS_OVR
       gpsm_overflow[0] = 0;
     }
     nop();
@@ -145,12 +145,18 @@ implementation {
   }
 
 
-  command void GPSByte.reset() {
+  command void GPSMsg.reset() {
     call GPSMsgControl.start();
   }
 
 
-  async command void GPSByte.byte_avail(uint8_t byte) {
+  inline void gpsm_restart() {
+    gpsm_state = GPSM_START;
+    signal GPSMsg.msgBoundary();
+  }
+
+
+  async command void GPSMsg.byteAvail(uint8_t byte) {
     uint16_t chksum;
 
     if (on_overflow) {		// BRK_GOT_CHR
@@ -182,7 +188,7 @@ implementation {
 	if (byte == SIRF_BIN_START)		// got start again.  stay
 	  return;
 	if (byte != SIRF_BIN_START_2) {		// not what we want.  restart
-	  gpsm_state = GPSM_START;
+	  gpsm_restart();
 	  return;
 	}
 	gpsm_msg[gpsm_nxt++] = byte;
@@ -203,7 +209,7 @@ implementation {
 	gpsm_cur_chksum = 0;
 	if (gpsm_length >= (GPS_BUF_SIZE - GPS_OVERHEAD)) {
 	  gpsm_too_big++;
-	  gpsm_state = GPSM_START;
+	  gpsm_restart();
 	  return;
 	}
 	return;
@@ -226,7 +232,7 @@ implementation {
 	chksum = gpsm_msg[gpsm_nxt - 2] << 8 | byte;
 	if (chksum != gpsm_cur_chksum) {
 	  gpsm_chksum_fail++;
-	  gpsm_state = GPSM_START;
+	  gpsm_restart();
 	  return;
 	}
 	gpsm_state = GPSM_END;
@@ -236,7 +242,7 @@ implementation {
 	gpsm_msg[gpsm_nxt++] = byte;
 	if (byte != SIRF_BIN_END) {
 	  gpsm_proto_fail++;
-	  gpsm_state = GPSM_START;
+	  gpsm_restart();
 	  return;
 	}
 	gpsm_state = GPSM_END_2;
@@ -246,12 +252,12 @@ implementation {
 	gpsm_msg[gpsm_nxt++] = byte;
 	if (byte != SIRF_BIN_END_2) {
 	  gpsm_proto_fail++;
-	  gpsm_state = GPSM_START;
+	  gpsm_restart();
 	  return;
 	}
 	on_overflow = TRUE;
 	gpsm_nxt = 0;
-	gpsm_state = GPSM_START;
+	gpsm_restart();
 	post gps_msg_task();
 	return;
 
@@ -259,5 +265,10 @@ implementation {
 	call Panic.panic(PANIC_GPS, 100, gpsm_state, 0, 0, 0);
 	return;
     }
+  }
+
+
+  async command bool GPSMsg.atMsgBoundary() {
+    atomic return (gpsm_state == GPSM_START);
   }
 }
