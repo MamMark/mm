@@ -9,6 +9,8 @@ set pri ele 0
 define gmd
 printf "gpsc_state: "
 print GPSP$gpsc_state
+printf "gpsc_prev_state: "
+print GPSP$gpsc_prev_state
 printf "gpsm_state: "
 print GPSMsgP$gpsm_state
 printf "left: %d, gpsm_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$gpsm_left, GPSMsgP$gpsm_length, GPSMsgP$gpsm_cur_chksum
@@ -49,10 +51,10 @@ printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
 end
 
 # 6 BRK_FINISH
-b GPSP.nc:386
+b GPSP.nc:385
 
 # 7
-b *ArbiterP$0$Resource$request+0d8
+b *ArbiterP$0$Resource$request+0d12
 comm
 printf "request: %d\n", id
 end
@@ -64,11 +66,15 @@ printf "release: %d\n", id
 end
 
 # 9
-b GPSP.nc:973
+b GPSP.nc:999
 
 # 10
-b GPSP.nc:997
+b GPSP.nc:1022
 
+dis 7-10
+
+# 11
+b *GPSP$gps_config_task$runTask+0d358
 
 #b VirtualizeTimerC.nc:81
 

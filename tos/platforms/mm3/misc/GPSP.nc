@@ -216,8 +216,7 @@ typedef enum {
   GPSC_HUNT_1,				// Can we see them?
   GPSC_HUNT_2,
   GPSC_ON,
-  GPSC_ON_RELEASING,			// need to give the h/w to someone else
-  GPSC_ON_REQUESTED,			// released and then requested.
+  GPSC_RELEASING,			// release and re-request, prev_state valid
   GPSC_BACK_TO_NMEA,
 } gpsc_state_t;
 
@@ -230,6 +229,7 @@ typedef enum {
   GPSW_CONFIG_TASK = 4,
   GPSW_SEND_DONE = 5,
   GPSW_MSG_BOUNDARY = 6,
+  GPSW_RESOURCE_REQUESTED = 7,
 } gps_where_t;
 
 
@@ -276,11 +276,10 @@ module GPSP {
 
 implementation {
 
-  norace gpsc_state_t gpsc_state;	/* low level collector state */
+  norace gpsc_state_t gpsc_state;	// low level collector state
+  norace gpsc_state_t gpsc_prev_state;  // releasing, previous state
   norace uint32_t     t_gps_pwr_on;
   norace uint8_t      gpsc_boot_trys;
-
-  bool gpsc_release_pending;
 
 
   void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
@@ -392,11 +391,17 @@ implementation {
 	return;
 
       case GPSC_ON:
+#ifdef notdef
 	call GPSTimer.startOneShot(DT_GPS_MAX_HOLD);
+#endif
 	return;
 
-      case GPSC_ON_RELEASING:
-	gpsc_change_state(GPSC_ON_REQUESTED, GPSW_MSG_BOUNDARY);
+      case GPSC_RELEASING:
+	/*
+	 * note: anytime we change state to GPSC_RELEASING, uart interrupts will be
+	 * turned off.  Because we are releasing to some other user and will be deconfiguring.
+	 * We don't want anymore events occuring that might try to change what we are doing.
+	 */
 	call UARTResource.release();
 	call GPSMsg.reset();
 	call GPSTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
@@ -632,9 +637,27 @@ implementation {
 	call Usart.enableIntr();
 	break;
 
-      case GPSC_ON_REQUESTED:
-	gpsc_change_state(GPSC_ON, GPSW_GRANT);
-	call GPSTimer.startOneShot(DT_GPS_MAX_HOLD);
+      case GPSC_RELEASING:
+	gpsc_change_state(gpsc_prev_state, GPSW_GRANT);
+	switch(gpsc_prev_state) {
+	  default:
+	    call Panic.panic(PANIC_GPS, 4, gpsc_state, 0, 0, 0);
+	    break;
+	  case GPSC_START_DELAY:
+	    call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
+	    break;
+	  case GPSC_SENDING:
+	    call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
+	    break;
+	  case GPSC_HUNT_1:
+	    call GPSTimer.startOneShot(DT_GPS_HUNT_LIMIT);
+	    break;
+	  case GPSC_ON:
+#ifdef notdef
+	    call GPSTimer.startOneShot(DT_GPS_MAX_HOLD);
+#endif
+	    break;
+	}
 	call Usart.enableIntr();
 	break;
     }
@@ -657,7 +680,7 @@ implementation {
       case GPSC_SENDING:			// send took too long
       case GPSC_HUNT_1:				// didn't see start sequence within window.
       case GPSC_HUNT_2:				// didn't see start sequence within window.
-      case GPSC_ON_REQUESTED:			// request hung?
+      case GPSC_RELEASING:			// request hung?
 	call Panic.panic(PANIC_GPS, 2, gpsc_state, 0, 0, 0);
 	nop();
 	return;
@@ -793,12 +816,14 @@ implementation {
 	  call Panic.panic(PANIC_GPS, 91, err, gpsc_state, 0, 0);
 	return;
 
+#ifdef notdef
       case GPSC_ON:				// max hold went off.
-      case GPSC_ON_RELEASING:			// or a race condition
 	call Usart.disableIntr();
-	gpsc_change_state(GPSC_ON_RELEASING, GPSW_TIMER);	
+	gpsc_prev_state = gpsc_state;
+	gpsc_change_state(GPSC_RELEASING, GPSW_TIMER);	
 	post gps_config_task();
 	return;
+#endif
     }
   }
   
@@ -846,6 +871,7 @@ implementation {
       case GPSC_RECONFIG_4800_SENDING:
       case GPSC_START_DELAY:
       case GPSC_SENDING:
+      case GPSC_RELEASING:
 	return;					// ignore (collect above)
 
       case GPSC_BOOT_HUNT_1:
@@ -917,7 +943,6 @@ implementation {
       case GPSC_BOOT_START_DELAY:		// interrupts shouldn't be on.  why are we here?
       case GPSC_RECONFIG_4800_PWR_DOWN:
       case GPSC_RECONFIG_4800_START_DELAY:
-      case GPSC_ON_REQUESTED:
 	call Panic.panic(PANIC_GPS, 99, gpsc_state, byte, 0, 0);
 	nop();			// less confusing.
 	return;
@@ -970,40 +995,40 @@ implementation {
 
 
   async event void GPSMsg.msgBoundary() {
-    if (gpsc_state != GPSC_ON)
-      return;
-
     atomic {
-      if (gpsc_release_pending) {
+      if (gpsc_state == GPSC_RELEASING)
+	return;
+      if (call UARTResource.othersWaiting()) {
 	/*
 	 * don't let any more bytes come in until we release.
 	 */
 	call Usart.disableIntr();
-	gpsc_change_state(GPSC_ON_RELEASING, GPSW_MSG_BOUNDARY);
+	gpsc_prev_state = gpsc_state;
+	gpsc_change_state(GPSC_RELEASING, GPSW_MSG_BOUNDARY);
 	post gps_config_task();
-	gpsc_release_pending = FALSE;
 	return;
       }
+      /*
+       * no release needed.  just restart the max hold timer
+       */
+      if (gpsc_state == GPSC_ON)
+	post gps_config_task();
     }
-
-    /*
-     * no release pending.  just restart the max hold timer
-     */
-    post gps_config_task();
   }
 
 
   async event void UARTResourceRequested.requested() {
-    if (gpsc_state != GPSC_ON)
-      return;
-
-    if (call GPSMsg.atMsgBoundary()) {
-      call Usart.disableIntr();
-      gpsc_change_state(GPSC_ON_RELEASING, GPSW_MSG_BOUNDARY);
-      post gps_config_task();
-      return;
+    atomic {
+      if (gpsc_state == GPSC_RELEASING)
+	return;
+      if (call GPSMsg.atMsgBoundary()) {
+	call Usart.disableIntr();
+	gpsc_prev_state = gpsc_state;
+	gpsc_change_state(GPSC_RELEASING, GPSW_RESOURCE_REQUESTED);
+	post gps_config_task();
+	return;
+      }
     }
-    atomic gpsc_release_pending = TRUE;
   }
 
   

@@ -500,10 +500,8 @@ implementation {
        * time for Stream Storage to gain  control.
        */
 
-#ifdef notdef
       if (ssc.num_full < 3)	// for now gather three up and ship out together
 	continue;
-#endif
 
       /*
        * Only power up and obtain the SPI bus if the stream isn't full
