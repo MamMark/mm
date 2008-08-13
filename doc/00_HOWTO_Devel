@@ -9,6 +9,9 @@ development was done on 7.04 but these notes are written explicitly for
    Install the OS, Ubuntu (Xubuntu uses less resources) on the box.  Recommended is
    Xubuntu 8.04 (LTS).
 
+   install the following:
+       subversion cvs build-essentials stow automake autoconf autobook libtool
+
 2) [MamMark tree checkout]
 
    check out the MamMark source tree.   (denote top level as <mm_t2_base>)
