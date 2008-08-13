@@ -1,0 +1,22 @@
+
+Failure Recovery
+
+How do we want the machine to degrade if there are failures?
+
+- If Collect/StreamStorage/SD fails what to do?
+- Could keep status of each subsystem and only allow the subsystem to work if the subsystem is up.
+
+- What we want...  If something goes wrong we want to note it in some fashion so we can see it.
+
+1st tier: log into SD.  Panic.warn
+  (assume collect, Stream, and SD are all up)  If they aren't more is wrong than what we are
+  warning about so we have other things to worry about.
+
+2nd tier: log via comm.  But how does this work if we aren't communicating.  Try and if
+   not connected than it gets dropped.
+
+3rd tier: Panic code writes image into panic area (ram gets written to SD).  Need panic
+manager to control where the image gets written.
+
+
+Need versioning.  So if we look at a ram image we can correlate it to a code version.
