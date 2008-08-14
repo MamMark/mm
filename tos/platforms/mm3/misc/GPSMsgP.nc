@@ -262,7 +262,7 @@ implementation {
 	return;
 
       default:
-	call Panic.panic(PANIC_GPS, 100, gpsm_state, 0, 0, 0);
+	call Panic.panic(PANIC_GPS, 1, gpsm_state, 0, 0, 0);
 	return;
     }
   }

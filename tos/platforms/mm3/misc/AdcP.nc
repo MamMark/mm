@@ -536,7 +536,7 @@ implementation {
        *
        * bitch bitch bitch
        */
-      call Panic.panic(PANIC_ADC, 8, IFG1, U0TCTL, 0, 0);
+      call Panic.warn(PANIC_ADC, 8, IFG1, U0TCTL, 0, 0);
     }
 
     ADC_CNV = 1;
@@ -557,14 +557,14 @@ implementation {
     t0 = TAR;
     while (!(IFG1 & URXIFG0)) {
       if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
-	call Panic.panic(PANIC_ADC, 9, 1, IFG1, 0, 0);
+	call Panic.warn(PANIC_ADC, 9, 1, IFG1, 0, 0);
       }
     }
     result = ((uint16_t) U0RXBUF) << 8;
 
     ifg1[2] = IFG1;
     if (!(IFG1 & UTXIFG0)) {
-      call Panic.panic(PANIC_ADC, 9, 2, IFG1, 0, 0);
+      call Panic.warn(PANIC_ADC, 9, 2, IFG1, 0, 0);
     }
 
     /*
@@ -574,7 +574,7 @@ implementation {
     t0 = TAR;
     while (!(IFG1 & URXIFG0)) {
       if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
-	call Panic.panic(PANIC_ADC, 9, 3, IFG1, 0, 0);
+	call Panic.warn(PANIC_ADC, 9, 3, IFG1, 0, 0);
       }
     }
     result |= ((uint16_t) U0RXBUF);
@@ -586,7 +586,7 @@ implementation {
     ifg1[4] = U0TCTL;
     if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) ||
 	((U0TCTL & TXEPT) == 0)) {
-      call Panic.panic(PANIC_ADC, 10, IFG1, U0TCTL, 0, 0);
+      call Panic.warn(PANIC_ADC, 10, IFG1, U0TCTL, 0, 0);
     }
 
     return(result);
