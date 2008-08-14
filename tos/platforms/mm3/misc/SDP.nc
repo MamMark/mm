@@ -186,7 +186,7 @@ implementation {
       return FAIL;
     }
     if (SD_CSN == 0)		// already selected
-      call Panic.warn(PANIC_SD, 12, 0, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 11, 0, 0, 0, 0);
 
     SD_CSN = 0;
     cmd->stage = 1;
@@ -195,7 +195,7 @@ implementation {
       if (tmp) {
 	/* failed, how odd */
 	SD_CSN = 1;
-	call Panic.panic(PANIC_SD, 11, tmp, 0, 0, 0);
+	call Panic.panic(PANIC_SD, 12, tmp, 0, 0, 0);
 	return FAIL;
       }
     } else
@@ -228,7 +228,7 @@ implementation {
     /* Just bail if we never got a response */
     if (i >= SD_CMD_TIMEOUT) {
       /* stage 2 bail, timeout */
-      call Panic.panic(PANIC_SD, 12, tmp, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 13, tmp, 0, 0, 0);
       SD_CSN = 1;
       return FAIL;
     }
@@ -241,7 +241,7 @@ implementation {
     cmd->stage = 3;
     tmp = sd_get();
     if (tmp != 0xff) {
-      call Panic.panic(PANIC_SD, 13, tmp, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 14, tmp, 0, 0, 0);
     }
 
     /* If the response is a "busy" type (R1B), then there's some
@@ -377,7 +377,7 @@ implementation {
     cmd->cmd     = SD_FORCE_IDLE;
     cmd->rsp_len = SD_FORCE_IDLE_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 14, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 15, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -389,7 +389,7 @@ implementation {
       cmd->cmd     = SD_GO_OP;
       cmd->rsp_len = SD_GO_OP_R;
       if (sd_send_command()) {
-	call Panic.panic(PANIC_SD, 15, 0, 0, 0, 0);
+	call Panic.panic(PANIC_SD, 16, 0, 0, 0, 0);
 	return FAIL;
       }
 //    } while ((cmd->rsp[0] & MSK_IDLE) == MSK_IDLE && i < SD_IDLE_WAIT_MAX);
@@ -402,19 +402,19 @@ implementation {
     cmd->cmd     = SD_SEND_OCR;
     cmd->rsp_len = SD_SEND_OCR_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 16, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 17, 0, 0, 0, 0);
       return FAIL;
     }
 
     /* At a very minimum, we must allow 3.3V. */
     if ((cmd->rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
-      call Panic.panic(PANIC_SD, 17, cmd->rsp[2], 0, 0, 0);
+      call Panic.panic(PANIC_SD, 18, cmd->rsp[2], 0, 0, 0);
       return FAIL;
     }
 
     /* Set the block length */
     if (sd_set_blocklen(SD_BLOCKSIZE)) {
-      call Panic.panic(PANIC_SD, 18, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 19, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -438,13 +438,13 @@ implementation {
     cmd = &sd_cmd;
     sd_wait_notbusy();
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 19, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 20, 0, 0, 0, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 20, cmd->cmd, cmd->rsp[0], 0, 0);
+      call Panic.panic(PANIC_SD, 21, cmd->cmd, cmd->rsp[0], 0, 0);
       return FAIL;
     }
 
@@ -536,7 +536,7 @@ implementation {
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 21, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 22, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -591,7 +591,7 @@ implementation {
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
     if (sd_check_crc(data, data_len, crc)) {
-      call Panic.panic(PANIC_SD, 22, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 23, 0, 0, 0, 0);
       return FAIL;
     }
     return SUCCESS;
@@ -637,7 +637,7 @@ implementation {
     cmd->rsp_len = SD_READ_BLOCK_R;
     err = sd_read_data_direct(SD_BLOCKSIZE, data);
     if (err) {
-      call Panic.panic(PANIC_SD, 23, err, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 24, err, 0, 0, 0);
       return(err);
     }
 
@@ -650,7 +650,7 @@ implementation {
      */
     d = data;
     if (*d == 0xfe) {
-      call Panic.panic(PANIC_SD, 24, *d, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 25, *d, 0, 0, 0);
       err = sd_read_data_direct(SD_BLOCKSIZE, data);
     }
     return err;
@@ -705,13 +705,13 @@ implementation {
     cmd->cmd     = SD_WRITE_BLOCK;
     cmd->rsp_len = SD_WRITE_BLOCK_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 25, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 26, 0, 0, 0, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 26, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 27, 0, 0, 0, 0);
       return FAIL;
     }
 
@@ -722,7 +722,7 @@ implementation {
      * the block write is started. */
     tmp = sd_get();
     if (tmp != 0xff)
-      call Panic.panic(PANIC_SD, 27, tmp, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 28, tmp, 0, 0, 0);
 
     U1IFG = ~(URXIFG1 | UTXIFG1);
     DMA0SA = (uint16_t) data;
@@ -780,7 +780,7 @@ implementation {
        */
       time_get_cur(&t);
       if (time_leq(&to, &t))
-	call Panic.panic(PANIC_SD, 28, 0, 0, 0, 0);
+	call Panic.panic(PANIC_SD, 29, 0, 0, 0, 0);
 #endif
     }
 
@@ -789,7 +789,7 @@ implementation {
     tmp = U1RXBUF;		/* clean out OE and data avail */
 
     if (!(U1_TX_EMPTY) || U1_RX_RDY)
-      call Panic.panic(PANIC_SD, 29, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 30, 0, 0, 0, 0);
 
     sd_put(0xff);		/* crc ignored */
     sd_put(0xff);
@@ -814,7 +814,7 @@ implementation {
 
     if ((tmp & 0x0F) != 0x05) {
       i = sd_read_status();
-      call Panic.panic(PANIC_SD, 30, tmp, i, 0, 0);
+      call Panic.panic(PANIC_SD, 31, tmp, i, 0, 0);
       return FAIL;
     }
 
@@ -824,7 +824,7 @@ implementation {
       i++;
 #ifdef notdef
       if (time_leq(&to, &t))
-	call Panic.panic(PANIC_SD, 31, 0, 0, 0, 0);
+	call Panic.panic(PANIC_SD, 32, 0, 0, 0, 0);
 #endif
     }
     sd_busy_timeout = i;
@@ -840,7 +840,7 @@ implementation {
 
     i = sd_read_status();
     if (i)
-      call Panic.panic(PANIC_SD, 32, i, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 33, i, 0, 0, 0);
     return SUCCESS;
   }
 
@@ -934,13 +934,13 @@ implementation {
     cmd->cmd     = SD_SET_ERASE_START;
     cmd->rsp_len = SD_SET_ERASE_START_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 33, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 34, 0, 0, 0, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 34, cmd->rsp[0], 0, 0, 0);
+      call Panic.panic(PANIC_SD, 35, cmd->rsp[0], 0, 0, 0);
       return FAIL;
     }
 
@@ -948,26 +948,26 @@ implementation {
     cmd->cmd     = SD_SET_ERASE_END;
     cmd->rsp_len = SD_SET_ERASE_END_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 35, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 36, 0, 0, 0, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 36, cmd->rsp[0], 0, 0, 0);
+      call Panic.panic(PANIC_SD, 37, cmd->rsp[0], 0, 0, 0);
       return FAIL;
     }
 
     cmd->cmd     = SD_ERASE;
     cmd->rsp_len = SD_ERASE_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 37, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 38, 0, 0, 0, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 38, cmd->rsp[0], 0, 0, 0);
+      call Panic.panic(PANIC_SD, 39, cmd->rsp[0], 0, 0, 0);
       return FAIL;
     }
     return SUCCESS;

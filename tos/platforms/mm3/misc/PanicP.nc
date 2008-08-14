@@ -22,6 +22,9 @@ module PanicP {
     interface Panic;
     interface Init;
   }
+  uses {
+    interface Collect;
+  }
 }
 
 implementation {
@@ -33,6 +36,7 @@ implementation {
   }
 
   async command void Panic.warn(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
+    pcode |= PANIC_WARN_FLAG;
     call Panic.panic(pcode, where, arg0, arg1, arg2, arg3);
   }
 
@@ -42,6 +46,10 @@ implementation {
     if (pcode == 0)
       return;
     debug_break();
+  }
+
+  async command void Panic.reboot(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
+    call Panic.panic(pcode, where, arg0, arg1, arg2, arg3);
   }
 
   async command void Panic.brk() {

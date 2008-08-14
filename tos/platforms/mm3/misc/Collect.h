@@ -36,10 +36,6 @@ typedef struct {
   uint16_t majik_b;
 } dc_control_t;
 
-/*
- * rigo's and angelique b'day
- */
-
 #define DC_MAJIK_A 0x1008
 #define DC_MAJIK_B 0x0403
 

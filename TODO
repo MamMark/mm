@@ -1,6 +1,9 @@
 
 Failure Recovery
 
+If we detect memory corruption,  PANIC and REBOOT.
+
+
 How do we want the machine to degrade if there are failures?
 
 - If Collect/StreamStorage/SD fails what to do?

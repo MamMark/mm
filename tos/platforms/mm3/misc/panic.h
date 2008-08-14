@@ -14,6 +14,8 @@
 #ifndef __PANIC_H__
 #define __PANIC_H__
 
+#define PANIC_WARN_FLAG 0x80
+
 #define PANIC_KERN	1
 #define PANIC_ADC	2
 #define PANIC_MISC	3
