@@ -37,6 +37,7 @@ module CradleP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface HplMM3Adc as HW;
+    interface mm3CommData;
     interface Panic;
   }
 }
@@ -45,12 +46,14 @@ implementation {
   uint8_t  cradle_state;
   uint32_t err_overruns;
   bool     docked;
+  bool     comm_idle;
 
 
   command error_t Init.init() {
     cradle_state = CRADLE_STATE_OFF;
     err_overruns = 0;
     docked = FALSE;
+    comm_idle = TRUE;
     return SUCCESS;
   }
 
@@ -92,11 +95,26 @@ implementation {
 
 
   event void Adc.configured() {
-    uint16_t data;
+    uint8_t cradle_data[BATT_BLOCK_SIZE];
+    dt_sensor_data_nt *cdp;
 
-    data = call Adc.readAdc();
+    cdp = (dt_sensor_data_nt *) cradle_data;
+    cdp->data[0] = call Adc.readAdc();
     cradle_state = CRADLE_STATE_IDLE;
     call Adc.release();
+    cdp->len = BATT_BLOCK_SIZE;
+    cdp->dtype = DT_SENSOR_DATA;
+    cdp->sns_id = SNS_ID_CRADLE;
+    cdp->sched_mis = call PeriodTimer.gett0();
+    cdp->stamp_mis = call PeriodTimer.getNow();
+    if (comm_idle)
+      if (call mm3CommData.send_data(cdp, BATT_BLOCK_SIZE) == SUCCESS)
+	comm_idle = FALSE;
+  }
+
+
+  event void mm3CommData.send_data_done(error_t rtn) {
+    comm_idle = TRUE;
   }
 
 

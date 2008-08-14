@@ -71,12 +71,12 @@ implementation {
 
     sdp = (dt_sync_nt *) &sync_data;
     sdp->len = DT_HDR_SIZE_SYNC;
-    sdp->dtype = DT_SYNC;
-    sdp->stamp_mis = call SyncTimer.getNow();
     if (sync)
-      sdp->sync_majik = SYNC_MAJIK;
+      sdp->dtype = DT_SYNC;
     else
-      sdp->sync_majik = SYNC_RESTART_MAJIK;
+      sdp->dtype = DT_SYNC_RESTART;
+    sdp->stamp_mis = call SyncTimer.getNow();
+    sdp->sync_majik = SYNC_MAJIK;
     call mm3CommData.send_data(sync_data, DT_HDR_SIZE_SYNC);
     call Collect.collect(sync_data, DT_HDR_SIZE_SYNC);
   }

@@ -28,6 +28,9 @@ implementation {
   components HplMM3AdcC;
   CradleP.HW -> HplMM3AdcC;
 
+  components mm3CommDataC;
+  CradleP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_CRADLE];
+
   components PanicC;
   CradleP.Panic -> PanicC;
 }

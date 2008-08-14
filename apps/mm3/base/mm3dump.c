@@ -30,7 +30,7 @@
 #include "DtSensorDataMsg.h"
 #include "DtVersionMsg.h"
 
-#define VERSION "mm3dump: v0.7 18 May 2008\n"
+#define VERSION "mm3dump: v0.8 14 Aug 2008\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -76,6 +76,7 @@ void stderr_msg(serial_source_msg problem) {
 
 uint8_t sns_payload_len[MM3_NUM_SENSORS] = {
   0,				/* not used */
+  BATT_PAYLOAD_SIZE,		/* cradle, looks like batt */
   BATT_PAYLOAD_SIZE,		/* batt */
   TEMP_PAYLOAD_SIZE,		/* temp */
   SAL_PAYLOAD_SIZE,		/* salinity */
@@ -116,6 +117,8 @@ dtype2str(uint8_t id) {
 char *
 snsid2str(uint8_t id) {
   switch(id) {
+    case SNS_ID_CRADLE:
+      return("DOCK");
     case SNS_ID_BATT:
       return("BATT");
     case SNS_ID_TEMP:
@@ -146,6 +149,8 @@ snsid2str(uint8_t id) {
 
 void
 write_preamble(FILE *fp, uint8_t sns_id) {
+  if (sns_id == SNS_ID_CRADLE)
+    return;
   fprintf(fp, "%% %s", VERSION);
   fprintf(fp, "%% sensor %d, %s, ", sns_id, snsid2str(sns_id));
   if (sns_payload_len[sns_id] == 2)
@@ -205,6 +210,8 @@ open_files(char *prefix) {
 		  1900 + local.tm_year, 1 + local.tm_mon, local.tm_mday,
 		  local.tm_hour, local.tm_min);
   for (i = 1; i < MM3_NUM_SENSORS; i++) {
+    if (i == SNS_ID_CRADLE)
+      continue;
     name[len] = 0;
     sns = snsid2str(i);
     len2 = strlen(sns);
@@ -269,7 +276,6 @@ process_config(tmsg_t *msg) {
  * it.  They aren't likely to change so we #define them.
  */
 #define SYNC_MAJIK 0xdedf00ef
-#define SYNC_RESTART_MAJIK 0xdaffd00f
 
 void
 process_sync(tmsg_t *msg) {
@@ -285,25 +291,19 @@ process_sync(tmsg_t *msg) {
   dtype = dt_sync_dtype_get(msg);
   stamp = dt_sync_stamp_mis_get(msg);
   majik = dt_sync_sync_majik_get(msg);
-  switch (majik) {
-    case SYNC_MAJIK:
+  switch (dtype) {
+    case DT_SYNC:
       c = 'S';
       s = "sync";
       break;
 
-    case SYNC_RESTART_MAJIK:
+    case DT_SYNC_RESTART:
       c = 'R';
       s = "restart";
       break;
-
-    default:
-      c = '?';
-      s = "unknown";
-      break;
   }
-  if (verbose) {
-    printf("SYNC: %c %d (%x) %08x (%s)\n",
-	   c, stamp, stamp, majik, s);
+  if (verbose || dtype == DT_SYNC_RESTART) {
+    printf("SYNC: %c %d (%x) %08x (%s)\n", c, stamp, stamp, majik, s);
   }
   if (write_data) {
     for (i = 0; i < MM3_NUM_SENSORS; i++) {

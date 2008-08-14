@@ -28,6 +28,7 @@ enum {
   AM_DT_IGNORE		= 0x21,
   AM_DT_CONFIG		= 0x21,
   AM_DT_SYNC		= 0x21,
+  AM_DT_SYNC_RESTART	= 0x21,
   AM_DT_PANIC		= 0x21,
   AM_DT_GPS_TIME	= 0x21,
   AM_DT_GPS_POS		= 0x21,
@@ -98,7 +99,23 @@ typedef nx_struct dt_config {
   nx_uint8_t  data[0];
 } dt_config_nt;
 
-/* At reboot and every XX minutes send sync packet to SD */
+/*
+ * SYNCing:
+ *
+ * Data written to the SD card is a byte stream of typed data records.
+ * If we lose a byte or somehow get out order (lost sector etc) then
+ * we be screwed.  Unless there is some mechanism for resyncing.  The
+ * SYNC/SYNC_RESTART data block contains a 32 bit majik number that we
+ * search for if we get out of sync.  This lets us sync back up to the
+ * data stream.
+ *
+ * The same majik number is written in both data block types so we only
+ * have to search for one value when resyncing.  On reboot the dtype
+ * is set to SYNC_RESTART indicating the reboot.  Every N minutes
+ * a sync record is written to minimize how much data is lost if we
+ * need to do a resync.
+ */
+
 typedef nx_struct dt_sync {
   nx_uint16_t len;
   nx_uint8_t  dtype;
@@ -108,7 +125,6 @@ typedef nx_struct dt_sync {
 
 
 #define SYNC_MAJIK 0xdedf00ef
-#define SYNC_RESTART_MAJIK 0xdaffd00f
 
 
 typedef nx_struct dt_panic {

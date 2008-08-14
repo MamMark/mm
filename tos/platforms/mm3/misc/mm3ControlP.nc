@@ -5,7 +5,7 @@
 
 #include "sensors.h"
 
-#define EAVES FALSE
+#define EAVES TRUE
 
 module mm3ControlP {
   provides {

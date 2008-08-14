@@ -86,6 +86,7 @@ SensorConstants.h: $(MM3_PLATFORM_DIR)/sensors/sensors.h
 	ncg -I$(MM3_PLATFORM_DIR) -I$(MM3_PLATFORM_DIR)/sensors/ -target=mm3 \
 	c $(MM3_PLATFORM_DIR)/sensors/sensors.h \
 	SNS_ID_NONE               \
+	SNS_ID_CRADLE             \
 	SNS_ID_BATT               \
 	SNS_ID_TEMP               \
 	SNS_ID_SAL                \

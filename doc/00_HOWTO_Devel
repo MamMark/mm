@@ -222,14 +222,7 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
 
 11) Build SerialForwarder and libmote library.
 
-    a) install stow if you don't have it.
-
-       On debian based systems:
-
-       sudo apt-get install stow
-
-
-    b) Build the serial forwarder and associated library (also includes direct serial access)
+    Build the serial forwarder and associated library (also includes direct serial access)
 
       cd $TOSROOT/support/sdk/c/sf
       ./bootstrap
