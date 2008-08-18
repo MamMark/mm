@@ -16,8 +16,8 @@
 uint16_t res[NUM_RES];
 #endif
 
-noinit uint8_t use_regime;
-//uint8_t use_regime;
+//noinit uint8_t use_regime;
+uint8_t use_regime = 4;
 
 //noinit uint16_t gps_nxt;
 //uint8_t buff[2048];
