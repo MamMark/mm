@@ -36,7 +36,9 @@
  * @author Kevin Klues <klueska@cs.stanford.edu>
  * @date April 6th, 2008
  */
- 
+
+noinit uint8_t wait;
+
 module Phase1BootP {
   provides {
     interface Boot as Phase1Boot;
@@ -48,6 +50,11 @@ module Phase1BootP {
 }
 implementation {
   event void Boot.booted() {
+    if (wait > 1)
+      wait = 1;
+    while (wait) {
+      nop();
+    }
 #ifdef TEST_NO_COMM
     signal Phase1Boot.booted();
 #else

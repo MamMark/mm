@@ -910,14 +910,15 @@ implementation {
   }
 
 
-#ifdef notdef
+#ifdef ENABLE_ERASE
+
   /*
    * sd_erase
    *
    * erase a contiguous number of blocks
    */
 
-  error_t sd_erase(uint32_t blk_start, uint32_t blk_end) {
+  command error_t SD.erase(uint32_t blk_start, uint32_t blk_end) {
     sd_cmd_blk_t *cmd;
 
     cmd = &sd_cmd;
@@ -972,6 +973,7 @@ implementation {
     }
     return SUCCESS;
   }
+
 #endif
 
 }

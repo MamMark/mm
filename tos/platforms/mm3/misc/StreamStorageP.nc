@@ -66,6 +66,12 @@
 
 uint32_t w_t0, w_diff;
 
+#ifdef ENABLE_ERASE
+bool     do_erase;
+uint32_t erase_start;
+uint32_t erase_end;
+#endif
+
 module StreamStorageP {
   provides {
     interface Init;
@@ -225,8 +231,7 @@ implementation {
     for (i = 0; i < SD_BLOCKSIZE/2; i++)
       if (ptr[i])
 	return(0);
-//    return(1);
-    return(0);
+    return(1);
   }
 
 
@@ -319,6 +324,14 @@ implementation {
     ssc.dblk_start   = CF_LE_32(dbl->dblk_start);
     ssc.dblk_end     = CF_LE_32(dbl->dblk_end);
 
+#ifdef ENABLE_ERASE
+    if (do_erase) {
+      erase_start = ssc.dblk_start;
+      erase_end   = ssc.dblk_end;
+      nop();
+      call SD.erase(erase_start, erase_end);
+    }
+#endif
     if ((err = read_blk_fail(ssc.dblk_start, dp))) {
       ss_panic(16, -1);
       return err;

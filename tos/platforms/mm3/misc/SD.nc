@@ -26,4 +26,7 @@ interface SD {
   command error_t read(uint32_t blk, void *buf);
   command error_t write(uint32_t blk, void *buf);
   command error_t reset();
+#ifdef ENABLE_ERASE
+  command error_t erase(uint32_t blk_start, uint32_t blk_end);
+#endif
 }
