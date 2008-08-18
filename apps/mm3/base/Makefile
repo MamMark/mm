@@ -1,7 +1,7 @@
 # Copyright 2008, Eric B. Decker
 # Mam-Mark Project
 
-STOW_DIR=/usr/local
+STOW_DIR=/opt
 
 PROGRAMS= mm3dump
 

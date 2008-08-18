@@ -1,25 +1,59 @@
 /*
- * CradleP.nc: Are we plugged into the cradle
+ * CradleP.nc: Handle docking functions
  * Copyright 2008 Eric B. Decker
  * All rights reserved.
- */
-
-
-/**
- *  Cradle Monitor Sensor Driver
- *  @author: Eric B. Decker
  *
- * Detecting being plugged into the cradle uses the battery sensor hardware so
- * we are forced to go through the ADC/sensor system.
+ * Cradle Monitor Sensor Driver
+ * @author: Eric B. Decker
  *
- * It is just like the battery sensor with the following differences:
+ * Detect and handle docking (in the cradle).
  *
- * 1) Cradle sensing doesn't turn on the battery fet.  If a voltage is present
- *    (adc is used to read) then we are in the cradle.
+ * When docked we want to do:
  *
- * 2) The cradle sensor always runs.  It doesn't pay attention to the entry in
- *    regime control.  We can change this and make use of the entry to tailor
- *    how often the cradle connect is looked at.
+ * 1) switch comm functions from radio based to serial based.
+ * 2) Charge the battery
+ * 3) Detect when we undock.
+ *
+ * Docking detection uses the battery sense circuit.  If we are docked
+ * a voltage is applied on one of the external pins (used to charge the
+ * battery too).  If we have the battery sense circuit turned off and run
+ * a bettery sense cycle we can tell if we are docked or not.  If voltage
+ * is present (over a certain threshold, 30000 counts (actually sees 45000+
+ * vs. below like 0)) then we are docked.  Otherwise undocked.
+ *
+ * Dock detection utilizes battery sensing and so needs to arbritrate for
+ * the ADC subsystem.  As such it makes sense to piggy back on battery
+ * sensing.  However, battery sensing is under regime control and dock
+ * sensing happens all the time when at the surface (or other set of parameters
+ * that say docking is possible).  When the battery is cycling, check at
+ * surface (dock_check) and piggy back another reading for the dock.  If the
+ * battery isn't being sampled (regime says no), then run independently.
+ *
+ * When docked:
+ *
+ * 1) Will be charging the battery...   But this means that the Batt FET
+ *    will be on.  Any batt measurement will read the current battery voltage
+ *    and not give us an indication of being docked.
+ *
+ * 2) Should check periodically for docked status by turning off the
+ *    Batt FET and doing a batt sense.
+ *
+ * When docked, other than the dock check is there a reason to be reading
+ * the battery?
+ *
+ * How to piggie back...
+ *
+ * If batt is being sensed with period T_b....  Do we want dock sensing
+ * to be some multiple of this?
+ *
+ * Could run seperate timers for dock and battery (current implementation
+ * does this).  But then how to meld?  When one goes off it can check
+ * to see how close the other is.  If within the turn on time of
+ * the sensor would make sense to proceed.
+ *
+ * How often to write battery voltage?
+ * How often to sense battery?  Want somekind of early warning of
+ * loss of battery power so we can go into conserve mode.
  */
 
 #include "sensors.h"
@@ -30,6 +64,7 @@ module CradleP {
     interface StdControl;
     interface Init;
     interface AdcConfigure<const mm3_sensor_config_t*>;
+    interface SenseVal;
   }
 
   uses {
@@ -82,11 +117,6 @@ implementation {
   event void PeriodTimer.fired() {
     if (cradle_state != CRADLE_STATE_IDLE) {
       err_overruns++;
-      /*
-       * bitch, shouldn't be here.  Of course it could be
-       * because something took way too long.
-       */
-//      call Panic.brk();
       return;
     }
     cradle_state = CRADLE_STATE_READ;
@@ -107,6 +137,7 @@ implementation {
     cdp->sns_id = SNS_ID_CRADLE;
     cdp->sched_mis = call PeriodTimer.gett0();
     cdp->stamp_mis = call PeriodTimer.getNow();
+    signal SenseVal.valAvail(cdp->data[0], cdp->stamp_mis);
     if (comm_idle)
       if (call mm3CommData.send_data(cdp, BATT_BLOCK_SIZE) == SUCCESS)
 	comm_idle = FALSE;

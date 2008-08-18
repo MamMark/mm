@@ -14,6 +14,7 @@ module mm3ControlP {
   }
   uses {
     interface Panic;
+    interface SenseVal[uint8_t sns_id];
   }
 }
 
@@ -34,9 +35,15 @@ implementation {
     return SUCCESS;
   }
 
+  event void SenseVal.valAvail[uint8_t sns_id](uint16_t data, uint32_t stamp) {
+    nop();
+  }
+
+#ifdef notdef
   /*
    * default commands aren't needed.  Right?  ask kevin   How are default commands
    * used?
    */
-//  default command bool mm3Control.eavesdrop[uint8_t sns_id]() { return SUCCESS; }
+  default command bool mm3Control.eavesdrop[uint8_t sns_id]() { return SUCCESS; }
+#endif
 }

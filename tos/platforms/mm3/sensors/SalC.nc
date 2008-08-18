@@ -33,6 +33,7 @@ implementation {
 
   components mm3ControlC;
   SalP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_SAL];
+  SalP.SenseVal <- mm3ControlC.SenseVal[SNS_ID_SAL];
 
   components mm3CommDataC;
   SalP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_SAL];

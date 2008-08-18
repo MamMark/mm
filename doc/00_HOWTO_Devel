@@ -226,7 +226,7 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
 
       cd $TOSROOT/support/sdk/c/sf
       ./bootstrap
-      ./configure --prefix=/usr/local/stow/sf_c
+      ./configure --prefix=/opt/stow/sf_c
       make
 
       sudo -s
@@ -236,12 +236,12 @@ usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
       the make install doesn't work write unless you are root first)
 
       This will install bin/{sf, sflisten, sfsend, seriallisten, serialsend}, include/{message.h,
-      serialsource.h, sfsource.h}, and lib/libmote.a.  These will be installed into /usr/local/stow/sf_c.
+      serialsource.h, sfsource.h}, and lib/libmote.a.  These will be installed into /opt/stow/sf_c.
 
 
-   c) Install into /usr/local/{bin,include,lib} using stow.
+   c) Install into /opt/{bin,include,lib} using stow.
 
-      cd /usr/local/stow
+      cd /opt/stow
       stow sf_c
 
 12) Using the serialforwarder/seriallistener
