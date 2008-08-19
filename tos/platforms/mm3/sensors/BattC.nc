@@ -37,6 +37,9 @@ implementation {
   components mm3CommDataC;
   BattP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_BATT];
 
+  components CradleC;
+  BattP.Docked -> CradleC;
+
   components PanicC;
   BattP.Panic -> PanicC;
 }

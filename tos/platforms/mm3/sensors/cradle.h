@@ -15,6 +15,14 @@
 //#define CRADLE_PERIOD (1024UL*60*1)
 #define CRADLE_PERIOD (1024UL)
 
+#define CRADLE_THRESHOLD (40000UL)
+
+/*
+ * There is the first value, then counts is needed for a total
+ * of counts+1.  If we are sampling at 1024 mis then 5 secs.
+ */
+#define CRADLE_DEBOUNCE_COUNTS 4
+
 /*
  * Sensor States (used to observe changes)
  */

@@ -29,6 +29,7 @@ module BattP {
     interface mm3Control;
     interface mm3CommData;
     interface Panic;
+    interface Docked;
   }
 }
 
@@ -54,7 +55,18 @@ implementation {
   }
 
 
+  /*
+   * Done checking the battery.  If we are docked, leave the
+   * battery on so we continue to charge it.  batt_on happened
+   * on the start.
+   */
   command error_t StdControl.stop() {
+    /*
+     * For the time being we attach the battery to the ext charge
+     * pin to fake it.  So for the time being don't turn the Batt
+     * FET on just to be safe.
+     */
+//    if (call Docked.isDocked() == FALSE)
     call HW.batt_off();
     return SUCCESS;
   }
@@ -63,11 +75,6 @@ implementation {
   event void PeriodTimer.fired() {
     if (batt_state != BATT_STATE_IDLE) {
       err_overruns++;
-      /*
-       * bitch, shouldn't be here.  Of course it could be
-       * because something took way too long.
-       */
-//      call Panic.brk();
       return;
     }
     batt_state = BATT_STATE_READ;
@@ -123,6 +130,8 @@ implementation {
     }
   }
 
+  event void Docked.docked() {}
+  event void Docked.undocked() {}
 
   async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
     return &batt_config;
