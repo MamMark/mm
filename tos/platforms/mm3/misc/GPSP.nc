@@ -41,9 +41,9 @@
 
 #ifdef TEST_GPS_FUTZ
 
-noinit uint8_t gps_speed;		// will default to 0, 57600 (1 is 4800, 2 is 115200 (if compiled in))
-noinit uint8_t ro;
-noinit uint8_t gc;
+uint8_t gps_speed;		// will default to 0, 57600 (1 is 4800, 2 is 115200 (if compiled in))
+uint8_t ro;
+uint8_t gc;
 
 /*
  * gc (gps_cmd)

@@ -79,9 +79,29 @@ uint8_t sirf_send_boot[] = {
   166,				// set message rate
   1,				// send now
   41,				// mid to be set
-  1,				// update rate (turn off)
+  1,				// update rate
   0, 0, 0, 0,
   0x00, 0xd1,
+  0xb0, 0xb3,
+
+  0xa0, 0xa2,
+  0x00, 0x08,
+  166,				// set message rate
+  1,				// send now
+  14,				// almanac data
+  1,				// update rate
+  0, 0, 0, 0,
+  0x00, 0xb6,
+  0xb0, 0xb3,
+
+  0xa0, 0xa2,
+  0x00, 0x08,
+  166,				// set message rate
+  1,				// send now
+  4,				// Tracker Data Out
+  10,				// update rate
+  0, 0, 0, 0,
+  0x00, 0xb5,
   0xb0, 0xb3
 };
 
