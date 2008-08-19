@@ -67,7 +67,11 @@
 uint32_t w_t0, w_diff;
 
 #ifdef ENABLE_ERASE
+#ifdef ALWAYS_ERASE
+bool     do_erase = 1;
+#else
 bool     do_erase;
+#endif
 uint32_t erase_start;
 uint32_t erase_end;
 #endif
