@@ -85,28 +85,15 @@ uint8_t sirf_send_boot[] = {
   0xb0, 0xb3,
 
   0xa0, 0xa2,
-  0x00, 0x08,
-  166,				// set message rate
-  1,				// send now
-  14,				// almanac data
-  1,				// update rate
-  0, 0, 0, 0,
-  0x00, 0xb6,
-  0xb0, 0xb3,
-
-  0xa0, 0xa2,
-  0x00, 0x08,
-  166,				// set message rate
-  1,				// send now
-  4,				// Tracker Data Out
-  10,				// update rate
-  0, 0, 0, 0,
-  0x00, 0xb5,
+  0x00, 0x02,
+  146,				// poll almanac
+  0,
+  0x00, 0x92,
   0xb0, 0xb3
 };
 
 
-uint8_t sirf_poll_41[] = {
+uint8_t sirf_poll[] = {
   0xa0, 0xa2,			// start sequence
   0x00, 0x08,			// length
   166,				// set message rate
@@ -115,7 +102,24 @@ uint8_t sirf_poll_41[] = {
   1,				// update rate (turn off)
   0, 0, 0, 0,			// pad
   0x00, 0xd1,			// checksum
-  0xb0, 0xb3			// end seq
+  0xb0, 0xb3,			// end seq
+
+  0xa0, 0xa2,
+  0x00, 0x08,
+  166,				// set message rate
+  1,				// send now
+  4,				// Tracker Data Out
+  1,				// update rate
+  0, 0, 0, 0,
+  0x00, 0xac,
+  0xb0, 0xb3,
+
+  0xa0, 0xa2,
+  0x00, 0x02,
+  146,				// poll almanac
+  0,
+  0x00, 0x92,
+  0xb0, 0xb3
 };
 
 

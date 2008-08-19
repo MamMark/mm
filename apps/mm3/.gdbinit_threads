@@ -51,7 +51,7 @@ printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
 end
 
 # 6 BRK_FINISH
-b GPSP.nc:385
+b GPSP.nc:386
 
 # 7
 b *ArbiterP$0$Resource$request+0d12
@@ -66,15 +66,21 @@ printf "release: %d\n", id
 end
 
 # 9
-b GPSP.nc:999
+b GPSP.nc:1005
 
 # 10
-b GPSP.nc:1022
+b GPSP.nc:1033
 
 dis 7-10
 
-# 11
-b *GPSP$gps_config_task$runTask+0d358
+# 11 g_idx wrap
+b *GPSP$UartStream$receivedByte+0d28
+
+# 12 g_nev wrap
+b *GPSP$gpsc_change_state+0d34
+
+# 13 GPSC_RELEASING
+#b *GPSP$gps_config_task$runTask+0d358
 
 #b VirtualizeTimerC.nc:81
 

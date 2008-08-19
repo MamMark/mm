@@ -365,9 +365,10 @@ implementation {
 	/*
 	 * we could use a shorter time here but 2 seconds isn't that long
 	 * And this will only timeout if the gps is set to 4800 baud.  That
-	 * 
+	 * seems reasonable.
 	 */
       case GPSC_BOOT_HUNT_1:
+      case GPSC_BOOT_HUNT_2:
 	call GPSTimer.startOneShot(DT_GPS_HUNT_LIMIT);
 	return;
 
@@ -387,10 +388,12 @@ implementation {
 	return;
 
       case GPSC_HUNT_1:
+      case GPSC_HUNT_2:
 	call GPSTimer.startOneShot(DT_GPS_HUNT_LIMIT);
 	return;
 
       case GPSC_ON:
+	call GPSTimer.stop();
 #ifdef notdef
 	call GPSTimer.startOneShot(DT_GPS_MAX_HOLD);
 #endif
@@ -759,7 +762,7 @@ implementation {
 	      call Panic.panic(PANIC_GPS, 10, err, gpsc_state, gc, 0);
 	    return;
 	  case 3:
-	    if ((err = call UartStream.send(sirf_poll_41, sizeof(sirf_poll_41))))
+	    if ((err = call UartStream.send(sirf_poll, sizeof(sirf_poll))))
 	      call Panic.panic(PANIC_GPS, 11, err, gpsc_state, gc, 0);
 	    return;
 	  case 4:
@@ -812,7 +815,7 @@ implementation {
       case GPSC_START_DELAY:
 	gpsc_change_state(GPSC_SENDING, GPSW_TIMER);
 	call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
-	if ((err = call UartStream.send(sirf_poll_41, sizeof(sirf_poll_41))))
+	if ((err = call UartStream.send(sirf_poll, sizeof(sirf_poll))))
 	  call Panic.panic(PANIC_GPS, 15, err, gpsc_state, 0, 0);
 	return;
 
@@ -996,6 +999,11 @@ implementation {
 
   async event void GPSMsg.msgBoundary() {
     atomic {
+      /*
+       * ignore if we are booting
+       */
+      if (gpsc_state >= GPSC_BOOT_REQUESTED && gpsc_state < GPSC_REQUESTED)
+	return;
       if (gpsc_state == GPSC_RELEASING)
 	return;
       if (call UARTResource.othersWaiting()) {
@@ -1019,6 +1027,11 @@ implementation {
 
   async event void UARTResourceRequested.requested() {
     atomic {
+      /*
+       * ignore if we are booting
+       */
+      if (gpsc_state >= GPSC_BOOT_REQUESTED && gpsc_state < GPSC_REQUESTED)
+	return;
       if (gpsc_state == GPSC_RELEASING)
 	return;
       if (call GPSMsg.atMsgBoundary()) {
