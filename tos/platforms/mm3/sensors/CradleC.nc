@@ -29,6 +29,9 @@ implementation {
   components AdcP;
   CradleP.AdcConfigure <- AdcP.Config[SNS_ID_CRADLE];
 
+  components CollectC;
+  CradleP.Collect -> CollectC;
+
   components HplMM3AdcC;
   CradleP.HW -> HplMM3AdcC;
 

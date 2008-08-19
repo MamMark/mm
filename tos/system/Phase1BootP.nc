@@ -37,7 +37,7 @@
  * @date April 6th, 2008
  */
 
-noinit uint8_t wait;
+uint8_t wait;
 
 module Phase1BootP {
   provides {

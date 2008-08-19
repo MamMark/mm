@@ -80,6 +80,7 @@ module CradleP {
     interface Regime as RegimeCtrl;
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
+    interface Collect;
     interface HplMM3Adc as HW;
     interface mm3CommData;
     interface Panic;
@@ -172,6 +173,7 @@ implementation {
     if (comm_idle)
       if (call mm3CommData.send_data(cdp, BATT_BLOCK_SIZE) == SUCCESS)
 	comm_idle = FALSE;
+    call Collect.collect(cradle_data, BATT_BLOCK_SIZE);
 
     /*
      * See if we should change dock state.  On the transition generate
