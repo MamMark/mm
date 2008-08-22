@@ -97,7 +97,7 @@ implementation {
     gdp = (dt_gps_raw_nt *) gpsm_msg;
     gdp->len = DT_HDR_SIZE_GPS_RAW + SIRF_OVERHEAD + gpsm_length;
     gdp->dtype = DT_GPS_RAW;
-    gdp->chip  = DT_GPS_RAW_SIRF3;
+    gdp->chip  = CHIP_GPS_SIRF3;
     gdp->stamp_mis = call LocalTime.get();
     call Collect.collect(gpsm_msg, gdp->len);
     atomic {

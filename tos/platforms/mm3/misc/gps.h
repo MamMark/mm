@@ -13,7 +13,6 @@
 #define __GPS_H__
 
 #define GPS_LOG_EVENTS
-#define TEST_GPS_FUTZ
 
 /*
  * Define the speed we want to run the gps at.

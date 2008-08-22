@@ -85,11 +85,33 @@ uint8_t sirf_send_boot[] = {
   0xb0, 0xb3,
 
   0xa0, 0xa2,
+  0x00, 0x08,
+  166,				// set message rate
+  0,				// send now
+  2,				// mid 2, nav data
+  0,				// update rate, off
+  0, 0, 0, 0,
+  0x00, 0xa8,
+  0xb0, 0xb3,
+
+  0xa0, 0xa2,
+  0x00, 0x08,
+  166,				// set message rate
+  0,				// send now
+  27,				// dgps status
+  0,				// update rate, off
+  0, 0, 0, 0,
+  0x00, 0xc1,
+  0xb0, 0xb3,
+
+#ifdef notdef
+  0xa0, 0xa2,
   0x00, 0x02,
   146,				// poll almanac
   0,
   0x00, 0x92,
   0xb0, 0xb3
+#endif
 };
 
 
@@ -142,29 +164,6 @@ uint8_t sirf_go_nmea[] = {
   0, 0,				// Unused
   0x12, 0xc0,			// Baud rate (4800) (big endian)
   0x01, 0x65,			// checksum
-  0xb0, 0xb3			// end seq
-};
-
-
-uint8_t sirf_combined[] = {
-  0xa0, 0xa2,			// start sequence
-  0x00, 0x08,			// length
-  166,				// set message rate
-  0,				// no poll
-  41,				// mid to be set
-  0,				// update rate (turn off)
-  0, 0, 0, 0,			// pad
-  0x00, 0xef,			// checksum
-  0xb0, 0xb3,			// end seq
-
-  0xa0, 0xa2,			// start sequence
-  0x00, 0x08,			// length
-  166,				// set message rate
-  0,				// no poll
-  2,				// mid to be set
-  0,				// update rate (off)
-  0, 0, 0, 0,			// pad
-  0x00, 0xa9,			// checksum
   0xb0, 0xb3			// end seq
 };
 

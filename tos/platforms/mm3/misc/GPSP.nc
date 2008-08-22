@@ -38,33 +38,16 @@
 #include "gps.h"
 #include "sirf.h"
 
-
-#ifdef TEST_GPS_FUTZ
-
+#ifdef notdef
 uint8_t gps_speed;		// will default to 0, 57600 (1 is 4800, 2 is 115200 (if compiled in))
 uint8_t ro;
 uint8_t gc;
-
-/*
- * gc (gps_cmd)
- *      0: bootup commands (send sw ver, clock status)
- *	1: mid 41 off, no poll   (combined 1st half, 16)
- *	2: mid  2 off, no poll   (combined 2nd half, [16], 16)
- *	3: mid 41 off, with poll (sirf_poll_29)
- *	4: combined.  mid 41 off no poll, mid 2 off no poll
- *
- *	9: switch to nmea (assumes currently sirf_bin)
- */
-
-#define MAX_GC 9
-
-#endif		// TEST_GPS_FUTZ
+#endif
 
 #define GPS_EAVES_SIZE 2048
 
 uint8_t gbuf[GPS_EAVES_SIZE];
-norace uint16_t g_idx;
-
+uint16_t g_idx;
 
 #if GPS_SPEED==4800
 #define GPS_OP_SERIAL_CONFIG gps_4800_serial_config
@@ -306,7 +289,7 @@ implementation {
     call Panic.panic(PANIC_GPS, where, p, 0, 0, 0);
   }
 
-//#ifdef notdef
+#ifdef notdef
   /* add NMEA checksum to a possibly  *-terminated sentence */
   void nmea_add_checksum(uint8_t *sentence) {
     uint8_t sum = 0;
@@ -333,7 +316,6 @@ implementation {
       *p++ = '\n';
     }
   }
-//#endif
 
   void sirf_bin_add_checksum(uint8_t *buf) {
     uint8_t *bp;
@@ -347,6 +329,8 @@ implementation {
     bp[n] = (sum >> 8) & 0x7f;
     bp[n+1] = (sum & 0xff);
   }
+
+#endif
 
 
   /*
@@ -394,9 +378,6 @@ implementation {
 
       case GPSC_ON:
 	call GPSTimer.stop();
-#ifdef notdef
-	call GPSTimer.startOneShot(DT_GPS_MAX_HOLD);
-#endif
 	return;
 
       case GPSC_RELEASING:
@@ -414,13 +395,6 @@ implementation {
   }
 
   command error_t Init.init() {
-    if (ro > 1)
-      ro = 0;
-    if (gps_speed > 1)
-      gps_speed = 0;
-    if (gc > MAX_GC)
-      gc = 0;
-
     /*
      * initilize the gps event trace buffer
      * initilize eavesdrop memory
@@ -533,15 +507,6 @@ implementation {
    * 3) can we send commands back to back?
    * 4) is it reliable?
    * 5) would it be better to sequence?
-   * 6) do we want nav data as meters or geodetic?  (mid 2 or mid 41)
-   * 7) what is the byte order?  sirf is big endian.  the msp430 is little endian.
-   * 8) On boot we may want to actually run a simplified state machine for the
-   *    NMEA.  It would be more robust.  See if we can get away with what we've
-   *    got.  (That is looking for just the first char seen as the indicator of
-   *    goodness).
-   *
-   * 9) Wait for a while and then send a command.  What does the GPS do?  Then
-   *    back it up and see when is the earliest we can send it.
    *
    * During the granting process the GPS will be configured along with
    * the USART used to talk to it.  During this process interrupts
@@ -593,6 +558,8 @@ implementation {
 
   event void UARTResource.granted() {
     call Usart.disableIntr();
+
+#ifdef notdef
     if (ro == 1 && gpsc_state != GPSC_OFF) {
       gpsc_change_state(GPSC_ON, GPSW_GRANT);
       call GPSTimer.stop();
@@ -608,6 +575,7 @@ implementation {
 	  return;
       }
     }
+#endif
 
     switch (gpsc_state) {
       default:
@@ -656,9 +624,7 @@ implementation {
 	    call GPSTimer.startOneShot(DT_GPS_HUNT_LIMIT);
 	    break;
 	  case GPSC_ON:
-#ifdef notdef
-	    call GPSTimer.startOneShot(DT_GPS_MAX_HOLD);
-#endif
+	    call GPSTimer.stop();
 	    break;
 	}
 	call Usart.enableIntr();
@@ -745,36 +711,10 @@ implementation {
 	 * the next.  The receiver code handles collecting any responses.  When the
 	 * last command is sent go into FINI_WAIT to finish collecting responses.
 	 */
-	switch(gc) {
-	  default:
-	  case 0:
-	    gpsc_change_state(GPSC_BOOT_SENDING, GPSW_TIMER);
-	    call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
-	    if ((err = call UartStream.send(sirf_send_boot, sizeof(sirf_send_boot))))
-	      call Panic.panic(PANIC_GPS, 8, err, gpsc_state, gc, 0);
-	    return;
-	  case 1:		// 1st half, combined, len 16
-	    if ((err = call UartStream.send(sirf_combined, 16)))
-	      call Panic.panic(PANIC_GPS, 9, err, gpsc_state, gc, 0);
-	    return;
-	  case 2:		// 2nd half, &combined[16], len 16
-	    if ((err = call UartStream.send(&sirf_combined[16], 16)))
-	      call Panic.panic(PANIC_GPS, 10, err, gpsc_state, gc, 0);
-	    return;
-	  case 3:
-	    if ((err = call UartStream.send(sirf_poll, sizeof(sirf_poll))))
-	      call Panic.panic(PANIC_GPS, 11, err, gpsc_state, gc, 0);
-	    return;
-	  case 4:
-	    if ((err = call UartStream.send(sirf_combined, sizeof(sirf_combined))))
-	      call Panic.panic(PANIC_GPS, 12, err, gpsc_state, gc, 0);
-	    return;
-	  case 9:
-	    if ((err = call UartStream.send(sirf_go_nmea, sizeof(sirf_go_nmea))))
-	      call Panic.panic(PANIC_GPS, 13, err, gpsc_state, gc, 0);
-	    gpsc_change_state(GPSC_BACK_TO_NMEA, GPSW_TIMER);
-	    return;
-	}
+	gpsc_change_state(GPSC_BOOT_SENDING, GPSW_TIMER);
+	call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
+	if ((err = call UartStream.send(sirf_send_boot, sizeof(sirf_send_boot))))
+	  call Panic.panic(PANIC_GPS, 8, err, gpsc_state, 0, 0);
 	return;
 
 	/*
@@ -818,15 +758,6 @@ implementation {
 	if ((err = call UartStream.send(sirf_poll, sizeof(sirf_poll))))
 	  call Panic.panic(PANIC_GPS, 15, err, gpsc_state, 0, 0);
 	return;
-
-#ifdef notdef
-      case GPSC_ON:				// max hold went off.
-	call Usart.disableIntr();
-	gpsc_prev_state = gpsc_state;
-	gpsc_change_state(GPSC_RELEASING, GPSW_TIMER);	
-	post gps_config_task();
-	return;
-#endif
     }
   }
   
@@ -990,7 +921,7 @@ implementation {
 	break;
 
       default:
-	call Panic.panic(PANIC_GPS, 17, gpsc_state, gc, 0, 0);
+	call Panic.panic(PANIC_GPS, 17, gpsc_state, 0, 0, 0);
 	break;
     }
     return;
@@ -1008,7 +939,7 @@ implementation {
 	return;
       if (call UARTResource.othersWaiting()) {
 	/*
-	 * don't let any more bytes come in until we release.
+	 * don't let any more bytes come in, we are releasing.
 	 */
 	call Usart.disableIntr();
 	gpsc_prev_state = gpsc_state;
@@ -1017,10 +948,8 @@ implementation {
 	return;
       }
       /*
-       * no release needed.  just restart the max hold timer
+       * no release needed.
        */
-      if (gpsc_state == GPSC_ON)
-	post gps_config_task();
     }
   }
 

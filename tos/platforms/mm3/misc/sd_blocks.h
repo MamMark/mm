@@ -139,21 +139,49 @@ typedef nx_struct dt_panic {
   nx_uint16_t arg3;
 } dt_panic_nt;
 
+/*
+ * Currently defined for SIRF chipset.  chip_type 1
+ */
+
+enum {
+  CHIP_GPS_SIRF3 = 1,
+};
+
+
+/*
+ * For Sirf3, chip_type DT_GPS_SIRF3
+ */
 typedef nx_struct dt_gps_time {
   nx_uint16_t len;
   nx_uint8_t  dtype;
   nx_uint32_t stamp_mis;
-  nx_uint32_t gps_tow;		/* little endian, single float */
-  nx_uint16_t gps_week;		/* little endian, uint16_t */
-  nx_uint32_t gps_offset;	/* little endian, single float */
+  nx_uint8_t  chip_type;
+  nx_uint8_t  num_svs;
+  nx_uint16_t utc_year;
+  nx_uint8_t  utc_month;
+  nx_uint8_t  utc_day;
+  nx_uint8_t  utc_hour;
+  nx_uint8_t  utc_min;
+  nx_uint16_t utc_millsec;
+  nx_uint32_t clock_bias;		/* m x 10^2 */
+  nx_uint32_t clock_drift;		/* m/s x 10^2 */
 } dt_gps_time_nt;
 
+
+/*
+ * For Sirf3, chip_type DT_GPS_SIRF3
+ */
 typedef nx_struct dt_gps_pos {
   nx_uint16_t len;
   nx_uint8_t  dtype;
   nx_uint32_t stamp_mis;
-  nx_uint32_t gps_lat;		/* little endian, single float */
-  nx_uint32_t gps_long;		/* little endian, single float */
+  nx_uint8_t  chip_type;
+  nx_uint16_t nav_type;
+  nx_uint32_t sats_seen;		/* bit mask, sats in solution */
+  nx_uint32_t gps_lat;			/* + North, x 10^7 degrees */
+  nx_uint32_t gps_long;			/* + East,  x 10^7 degrees */
+  nx_uint8_t  num_svs;			/* number of sv in solution */
+  nx_uint8_t  hdop;			/* err *5 */
 } dt_gps_pos_nt;
 
 typedef nx_struct dt_sensor_data {
@@ -188,6 +216,9 @@ typedef nx_struct dt_cal_string {
   nx_uint8_t	     data[0];
 } dt_cal_string_nt;
 
+/*
+ * see above for chip definition.
+ */
 typedef nx_struct dt_gps_raw {
   nx_uint16_t	len;
   nx_uint8_t	dtype;
@@ -197,23 +228,14 @@ typedef nx_struct dt_gps_raw {
 } dt_gps_raw_nt;
 
 /*
- * definitions of chip value for raw.  Determines
- * what rest of packet looks like.
- *
- * Biggest packet we handle is MID 41 Geodetic data with a
- * payload of 91 bytes.  The way the allocation works out is as
- * follows:
+ * The way the allocation works out is as follows:
  *
  * DT overhead:	len, dtype, chip, stamp: 8 bytes
  * SirfBin overhead: start, len, chksum, stop: 8 bytes
- * max data: 91 bytes
+ * max data: 91 bytes (from MID 41, Geodetic)
  *
  * total: 107 bytes.  we round up to 128.
  */
-
-enum {
-  DT_GPS_RAW_SIRF3 = 1,
-};
 
 
 typedef nx_struct dt_version{

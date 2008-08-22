@@ -129,7 +129,7 @@ SDConstants.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	DT_HDR_SIZE_VERSION       \
 	DT_HDR_SIZE_TEST          \
 	                          \
-	DT_GPS_RAW_SIRF3          \
+	CHIP_GPS_SIRF3            \
 	                          \
 	BATT_PAYLOAD_SIZE         \
 	BATT_BLOCK_SIZE           \
@@ -183,22 +183,27 @@ dep:
 	mv tmp_make Makefile
 
 ### Dependencies
-DtCalStringMsg.o: DtCalStringMsg.c DtCalStringMsg.h
-DtConfigMsg.o: DtConfigMsg.c DtConfigMsg.h
-DtGpsPosMsg.o: DtGpsPosMsg.c DtGpsPosMsg.h
-DtGpsRawMsg.o: DtGpsRawMsg.c DtGpsRawMsg.h
-DtGpsTimeMsg.o: DtGpsTimeMsg.c DtGpsTimeMsg.h
-DtIgnoreMsg.o: DtIgnoreMsg.c DtIgnoreMsg.h
-DtPanicMsg.o: DtPanicMsg.c DtPanicMsg.h
-DtSensorDataMsg.o: DtSensorDataMsg.c DtSensorDataMsg.h
-DtSensorSetMsg.o: DtSensorSetMsg.c DtSensorSetMsg.h
-DtSyncMsg.o: DtSyncMsg.c DtSyncMsg.h
-DtTestMsg.o: DtTestMsg.c DtTestMsg.h
-DtVersionMsg.o: DtVersionMsg.c DtVersionMsg.h
-filesource.o: filesource.c filesource.h serialprotocol.h serialpacket.h \
-  DtSensorDataMsg.h mm3DataMsg.h SDConstants.h SensorConstants.h
-mm3DataMsg.o: mm3DataMsg.c mm3DataMsg.h
-mm3dump.o: mm3dump.c filesource.h serialpacket.h serialprotocol.h \
+DtCalStringMsg.o: DtCalStringMsg.c /opt/include/message.h \
+  DtCalStringMsg.h
+DtConfigMsg.o: DtConfigMsg.c /opt/include/message.h DtConfigMsg.h
+DtGpsPosMsg.o: DtGpsPosMsg.c /opt/include/message.h DtGpsPosMsg.h
+DtGpsRawMsg.o: DtGpsRawMsg.c /opt/include/message.h DtGpsRawMsg.h
+DtGpsTimeMsg.o: DtGpsTimeMsg.c /opt/include/message.h DtGpsTimeMsg.h
+DtIgnoreMsg.o: DtIgnoreMsg.c /opt/include/message.h DtIgnoreMsg.h
+DtPanicMsg.o: DtPanicMsg.c /opt/include/message.h DtPanicMsg.h
+DtSensorDataMsg.o: DtSensorDataMsg.c /opt/include/message.h \
+  DtSensorDataMsg.h
+DtSensorSetMsg.o: DtSensorSetMsg.c /opt/include/message.h \
+  DtSensorSetMsg.h
+DtSyncMsg.o: DtSyncMsg.c /opt/include/message.h DtSyncMsg.h
+DtTestMsg.o: DtTestMsg.c /opt/include/message.h DtTestMsg.h
+DtVersionMsg.o: DtVersionMsg.c /opt/include/message.h DtVersionMsg.h
+filesource.o: filesource.c /opt/include/message.h filesource.h \
+  serialprotocol.h serialpacket.h DtSensorDataMsg.h mm3DataMsg.h \
+  SDConstants.h SensorConstants.h
+mm3DataMsg.o: mm3DataMsg.c /opt/include/message.h mm3DataMsg.h
+mm3dump.o: mm3dump.c /opt/include/serialsource.h /opt/include/sfsource.h \
+  /opt/include/message.h filesource.h serialpacket.h serialprotocol.h \
   mm3DataMsg.h SensorConstants.h SDConstants.h DtIgnoreMsg.h DtSyncMsg.h \
   DtPanicMsg.h DtSensorDataMsg.h DtVersionMsg.h
-serialpacket.o: serialpacket.c serialpacket.h
+serialpacket.o: serialpacket.c /opt/include/message.h serialpacket.h
