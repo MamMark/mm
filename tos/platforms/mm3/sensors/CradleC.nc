@@ -35,11 +35,6 @@ implementation {
   components HplMM3AdcC;
   CradleP.HW -> HplMM3AdcC;
 
-#ifdef notdef
-  components mm3ControlC;
-  CradleP.SenseVal <- mm3ControlC.SenseVal[SNS_ID_CRADLE];
-#endif
-
   components mm3CommDataC;
   CradleP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_CRADLE];
 

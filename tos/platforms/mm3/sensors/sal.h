@@ -8,7 +8,7 @@
 
 #include "sensors.h"
 
-#define SURFACE_THRESHOLD 65000
+#define SURFACE_THRESHOLD 65000UL
 #define SAL_OFF_SAMPLE_RATE 1024UL
 
 /*

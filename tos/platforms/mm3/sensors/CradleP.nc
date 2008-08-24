@@ -186,8 +186,8 @@ implementation {
       }
     } else {
       if (cdp->data[0] >= CRADLE_THRESHOLD) {
-	docked = FALSE;
-	signal Docked.undocked();
+	docked = TRUE;
+	signal Docked.docked();
       }
     }
   }

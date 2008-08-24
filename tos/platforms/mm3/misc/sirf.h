@@ -169,4 +169,54 @@ uint8_t sirf_go_nmea[] = {
 
 #endif
 
+/*
+ * The only packet we are really interested in is the Geodetic.  I has
+ * both the time and position information.  Too bad it is so large.
+ */
+
+typedef nx_struct gps_geodetic {
+  nx_uint8_t  start;
+  nx_uint8_t  start_2;
+  nx_uint16_t len;
+  nx_uint8_t  mid;
+  nx_uint16_t nav_valid;
+  nx_uint16_t nav_type;
+  nx_uint16_t ex_week;
+  nx_uint32_t tow;			/* seconds x 1e3 */
+  nx_uint16_t utc_year;
+  nx_uint8_t  utc_month;
+  nx_uint8_t  utc_day;
+  nx_uint8_t  utc_hour;
+  nx_uint8_t  utc_min;
+  nx_uint16_t utc_sec;			/* x 1e3 (millisecs) */
+  nx_uint32_t sat_mask;
+  nx_uint32_t lat;			/* +N, 1e7 degrees */
+  nx_uint32_t lon;			/* +E, 1e7 degrees */
+  nx_uint32_t alt_ellipsoid;
+  nx_uint32_t alt_msl;
+  nx_uint8_t  map_datum;
+  nx_uint16_t sog;
+  nx_uint16_t cog;
+  nx_uint16_t mag_var;
+  nx_uint16_t climb;
+  nx_uint16_t heading_rate;
+  nx_uint32_t ehpe;			/* estimated horz pos err, 1e2 */
+  nx_uint32_t evpe;			/* vert, 1e2 */
+  nx_uint32_t ete;			/* est. time error, 1e2 */
+  nx_uint16_t ehve;			/* est horz vel err, 1e2 */
+  nx_uint32_t clock_bias;
+  nx_uint32_t clock_bias_err;
+  nx_uint32_t clock_drift;
+  nx_uint32_t clock_drift_err;
+  nx_uint32_t distance;
+  nx_uint16_t distance_err;
+  nx_uint16_t heading_err;
+  nx_uint8_t  num_svs;
+  nx_uint8_t  hdop;			/* hdop x 5 */
+  nx_uint8_t  additional_mode;
+  nx_uint16_t checksum;
+  nx_uint8_t  end;
+  nx_uint8_t  end_2;
+} gps_geodetic_nt;  
+
 #endif	/* __SIRF_H__ */
