@@ -54,7 +54,7 @@ implementation {
 
 #ifdef FAKE_SURFACE
   event void SurfaceTimer.fired() {
-    
+    fake_surfaced ^= 1;
   }
 #endif
 

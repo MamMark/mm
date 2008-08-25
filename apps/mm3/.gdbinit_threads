@@ -11,15 +11,15 @@ printf "gpsc_state: "
 print GPSP$gpsc_state
 printf "gpsc_prev_state: "
 print GPSP$gpsc_prev_state
-printf "gpsm_state: "
-print GPSMsgP$gpsm_state
-printf "left: %d, gpsm_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$gpsm_left, GPSMsgP$gpsm_length, GPSMsgP$gpsm_cur_chksum
-printf "gpsm_nxt:  0x%02x  on_overflow: %d\n", GPSMsgP$gpsm_nxt, GPSMsgP$on_overflow
+printf "collect_state: "
+print GPSMsgP$collect_state
+printf "left: %d, collect_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$collect_left, GPSMsgP$collect_length, GPSMsgP$collect_cur_chksum
+printf "collect_nxt:  0x%02x  on_overflow: %d\n", GPSMsgP$collect_nxt, GPSMsgP$on_overflow
 printf "\nbuffer:\n"
-x/32xb GPSMsgP$gpsm_msg
+x/32xb GPSMsgP$collect_msg
 printf "overflow:\n"
-x/16xb GPSMsgP$gpsm_overflow
-printf "\nerrors: ovrfull: %d  ovrmax: %d  too_big: %d  chk fail: %d  proto fail: %d\n", GPSMsgP$gpsm_overflow_full, GPSMsgP$gpsm_overflow_max, GPSMsgP$gpsm_too_big, GPSMsgP$gpsm_chksum_fail, GPSMsgP$gpsm_proto_fail
+x/16xb GPSMsgP$collect_overflow
+printf "\nerrors: ovrfull: %d  ovrmax: %d  too_big: %d  chk fail: %d  proto fail: %d\n", GPSMsgP$collect_overflow_full, GPSMsgP$collect_overflow_max, GPSMsgP$collect_too_big, GPSMsgP$collect_chksum_fail, GPSMsgP$collect_proto_fail
 end
 
 # 1
@@ -51,62 +51,40 @@ printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
 end
 
 # 6 BRK_FINISH
-b GPSP.nc:386
+b GPSP.nc:391
+
+# 7 sal senseval
+b SalP.nc:135
+
+# 8 fake surfaced toggle
+b mm3ControlP.nc:57
 
 # 7
-b *ArbiterP$0$Resource$request+0d12
-comm
-printf "request: %d\n", id
-end
+#b *ArbiterP$0$Resource$request+0d12
+#comm
+#printf "request: %d\n", id
+#end
 
 # 8
-b *ArbiterP$0$Resource$release+0d12
-comm
-printf "release: %d\n", id
-end
+#b *ArbiterP$0$Resource$release+0d12
+#comm
+#printf "release: %d\n", id
+#end
 
 # 9
-b GPSP.nc:1005
+#b GPSP.nc:951
 
 # 10
-b GPSP.nc:1033
+#b GPSP.nc:977
 
-dis 7-10
+#dis 7-10
 
 # 11 g_idx wrap
-b *GPSP$UartStream$receivedByte+0d28
+#b *GPSP$UartStream$receivedByte+0d28
 
 # 12 g_nev wrap
-b *GPSP$gpsc_change_state+0d34
+#b *GPSP$gpsc_change_state+0d34
 
-# 13 GPSC_RELEASING
-#b *GPSP$gps_config_task$runTask+0d358
-
-#b VirtualizeTimerC.nc:81
-
-# Arbiter request and release
-#b ArbiterP.nc:77
-#b ArbiterP.nc:110
-
-#b CollectP.nc:45
-#comm
-#printf "collect: len: %d (0x%02x), type: %d  id: %d\n",dlen,dlen,data[2],data[3]
-#end
-
-#b mm3CommDataP.nc:80
-#comm
-#printf "Data: sns: %d\n", client_id
-#end
-#dis 7-8
-
-#b mm3C.nc:136
-#b SDP.nc:229
-#b SDP.nc:390
-
-#b mm3CommDataP.nc:163
-#comm
-#printf "inUse[%d] cleared\n",last
-#end
 
 # b sig_TIMERA0_VECTOR
 # b sig_TIMERA1_VECTOR
