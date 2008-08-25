@@ -29,6 +29,10 @@
 #include "DtPanicMsg.h"
 #include "DtSensorDataMsg.h"
 #include "DtVersionMsg.h"
+#include "DtGpsTimeMsg.h"
+#include "DtGpsPosMsg.h"
+#include "DtGpsRawMsg.h"
+#include "ParseSirf.h"
 
 #define VERSION "mm3dump: v0.8 14 Aug 2008\n"
 
@@ -95,14 +99,14 @@ dtype2str(uint8_t id) {
     case DT_CONFIG:	return("config");
     case DT_SYNC:	return("sync");
     case DT_SYNC_RESTART:return("sync_restart");
-    case DT_PANIC:	return("panic");
+    case DT_PANIC:	return("panic"); 
+    case DT_GPS_RAW:    return("gps_raw");
     case DT_GPS_TIME:	return("gps_time");
     case DT_GPS_POS:	return("gps_pos");
     case DT_SENSOR_DATA:return("sensor_data");
     case DT_SENSOR_SET:	return("sensor_set");
     case DT_TEST:	return("test");
     case DT_CAL_STRING:	return("cal_string");
-    case DT_GPS_RAW:	return("gps_raw");
     case DT_VERSION:	return("version");
     default:		return("unk");
   }
@@ -233,22 +237,6 @@ open_files(char *prefix) {
   free(name);
 }
 
-void
-hexprint(uint8_t *ptr, int len) {
-  int i;
-
-  for (i = 0; i < len; i++) {
-    if ((i % 16) == 0) {
-      if (i == 0)
-	fprintf(stderr, "\n*** ");
-      else
-	fprintf(stderr, "\n    ");
-    }
-    fprintf(stderr, "%02x ", ptr[i]);
-  }
-  fprintf(stderr, "\n");
-}
-
 
 void
 process_ignore(tmsg_t *msg) {
@@ -334,83 +322,183 @@ process_panic(tmsg_t *msg) {
 	 stamp_mis, pcode, where, arg0, arg1, arg2, arg3);
 }
 
-#ifdef notdef
-void
-process_gps_time(dt_gps_time_pt *gps_time_p) {
-    mm_time_t stamp;
-    uint32_t tow;
-    float *fp;
 
-    get_packed_time(&stamp, &gps_time_p->stamp);
-    if(gps_time_p->dtype == DT_GPS_TIME) {
-	tow = CF_LE_32(gps_time_p->gps_tow);
-	fp = (float *)(&tow);
-        fprintf(stderr, "GPS TIME:  tow: %6.0f, week: %4d(from jan 5, 1980)(%u.%lu.%u)\n",
-		*fp, CF_LE_16(gps_time_p->gps_week),
-		gps_time_p->stamp.epoch, gps_time_p->stamp.mis, gps_time_p->stamp.ticks);
+void
+process_gps_time(tmsg_t *msg) {
+  uint32_t stamp_mis;
+  uint8_t  chip_type;
+  uint8_t  num_svs;
+  uint16_t utc_year;
+  uint8_t  utc_month;
+  uint8_t  utc_day;
+  uint8_t  utc_hour;
+  uint8_t  utc_min;
+  double utc_millsec;           /* s x 1000 */
+  double clock_bias;		/* m x 10^2 */
+  double clock_drift;		/* m/s x 10^2 */
+
+
+  stamp_mis = dt_gps_time_stamp_mis_get(msg);
+  chip_type = dt_gps_time_chip_type_get(msg);
+  num_svs = dt_gps_time_num_svs_get(msg);
+  utc_year = dt_gps_time_utc_year_get(msg);
+  utc_month = dt_gps_time_utc_month_get(msg);
+  utc_day = dt_gps_time_utc_day_get(msg);
+  utc_hour = dt_gps_time_utc_hour_get(msg);
+  utc_min = dt_gps_time_utc_min_get(msg);
+  utc_millsec = ((double)dt_gps_time_utc_millsec_get(msg))/1000;
+  clock_bias =  ((double)dt_gps_time_clock_bias_get(msg))/100;
+  clock_drift = ((double)dt_gps_time_clock_drift_get(msg))/100;
+
+  fprintf(stderr, "\nGPS POSITION:\n");
+  fprintf(stderr, "Chip: %d Stamp: 0x%04x\n", chip_type, stamp_mis);
+  fprintf(stderr, "Satellites: %d\n", num_svs);
+  fprintf(stderr, "%d/%d/%d %d:%d:%f\n", utc_month, utc_day, utc_year, utc_hour, utc_min, utc_millsec);
+  fprintf(stderr, "Clock bias: %f Clock drift: %f\n", clock_bias, clock_drift);
+
+
+}
+
+
+void
+process_gps_pos(tmsg_t *msg) {
+  uint32_t stamp_mis;
+  uint8_t  chip_type;
+  uint16_t nav_type;
+  uint32_t sats_seen;		/* bit mask, sats in solution */
+  double gps_lat;		/* + North, x 10^7 degrees */
+  double gps_long;		/* + East,  x 10^7 degrees */
+  uint8_t  num_svs;		/* number of sv in solution */
+  float hdop;		        /* err *5 m x 4 */
+  int i;
+
+  stamp_mis = dt_gps_pos_stamp_mis_get(msg);
+  chip_type = dt_gps_pos_chip_type_get(msg);
+  num_svs = dt_gps_pos_num_svs_get(msg);
+  nav_type = dt_gps_pos_nav_type_get(msg);
+  sats_seen = dt_gps_pos_sats_seen_get(msg);
+  gps_lat = ((double)dt_gps_pos_gps_lat_get(msg))/10000000;
+  gps_long = ((double)dt_gps_pos_gps_long_get(msg))/10000000;
+  num_svs = dt_gps_pos_num_svs_get(msg);
+  hdop = ((float)dt_gps_pos_hdop_get(msg))/5;
+
+
+  fprintf(stderr, "\nGPS POSITION:\n");
+  fprintf(stderr, "Chip: %d Stamp: 0x%04x\n", chip_type, stamp_mis);
+  
+  fprintf(stderr,"Nav type: ");
+  
+  switch(nav_type & 0x0007) {
+    case(0x0):
+      fprintf(stderr,"No fix. "); break;
+    case(0x1):
+      fprintf(stderr,"1 sat soln. "); break;
+    case(0x2):
+      fprintf(stderr,"2 sat soln. "); break;
+    case(0x3):
+      fprintf(stderr,"3 sat soln. "); break;
+    case(0x4):
+      fprintf(stderr,">3 sat soln. "); break;
+    case(0x5):
+      fprintf(stderr,"2-D least sqr sln. "); break;
+    case(0x6):
+      fprintf(stderr,"3-d least sqr sln. "); break;
+    case(0x7):
+      fprintf(stderr,"DR soln. "); break;
+  }
+  
+    if(nav_type & 0x0008)
+      fprintf(stderr,"Trickle pwr. ");
+  
+    switch(nav_type & 0x0030) {
+      case(0x0):
+        fprintf(stderr,"No alt hold. "); break;
+      case(0x1):
+        fprintf(stderr,"Hold alt from KF. "); break;
+      case(0x2):
+        fprintf(stderr,"Hold alt from user. "); break;
+      case(0x3):
+        fprintf(stderr,"Always hold user alt. "); break;
     }
+
+    if(nav_type & 0x0040)
+      fprintf(stderr,"DOP exceeds limits. ");
+
+    if(nav_type & 0x0080)
+      fprintf(stderr,"DGPS correction applied. ");
+
+    if(nav_type & 0x0100)
+      fprintf(stderr,"Sensor DR. ");
+    else if (nav_type & 0x0007)
+      fprintf(stderr,"Velocity DR. ");
     else
-        fprintf(stderr, "*** unknown gps time block\n");
+      fprintf(stderr,"DR error. ");
+
+    if(nav_type & 0x0200)
+      fprintf(stderr,">4 sat soln. ");
+  
+    if(nav_type & 0x0400)
+      fprintf(stderr,"Velocity DR timeout. ");
+    if(nav_type & 0x0800)
+      fprintf(stderr,"Fix edited by MI. ");
+    if(nav_type & 0x1000)
+      fprintf(stderr,"Invalid velocity. ");
+    if(nav_type & 0x2000)
+      fprintf(stderr,"Alt. hold disabled. ");
+
+    switch(nav_type & 0xC000) {
+      case(0x0):
+        fprintf(stderr,"GPS nav only. "); break;
+      case(0x1):
+        fprintf(stderr,"DR calibration from GPS. "); break;
+      case(0x2):
+        fprintf(stderr,"DR sensor error. "); break;
+      case(0x3):
+        fprintf(stderr,"DRin test.. "); break;
+    }
+
+  fprintf(stderr,"\n");
+
+
+  fprintf(stderr, "%d Sats in soln.: ", num_svs);
+  for(i=1; i<32; i++) {
+    if(sats_seen & 0x00000001)
+      fprintf(stderr, "%d ", i);
+    sats_seen = sats_seen >> 1;
+  }
+  fprintf(stderr, "\n");
+
+  fprintf(stderr, "Lat: %.7f Lon: %.7f Error: %.2f\n", gps_lat, gps_long, hdop);
+
+
+
+
 }
+
 
 
 void
-process_gps_pos(dt_gps_pos_pt *gps_pos_p) {
-    mm_time_t stamp;
-    uint32_t lat;
-    uint32_t longitude;
-    float *fplat;
-    float *fplong;
-    char nflag;
-    char eflag;
+process_gps_raw(tmsg_t *msg) {
+  uint32_t stamp;
+  uint8_t dtype, chip;
+  uint16_t len;
 
-    get_packed_time(&stamp, &gps_pos_p->stamp);
-    if(gps_pos_p->dtype == DT_GPS_POS ) {
-        lat = CF_LE_32(gps_pos_p->gps_lat);
-        fplat = (float *)(&lat);
-        if(fplat > 0) {
-            *fplat = *fplat * 57.2957795;
-            nflag = 'N';
-        }
-        else {
-            *fplat = *fplat * -1.0 * 57.2957795;
-            nflag = 'S';
-        }
-        longitude = CF_LE_32(gps_pos_p->gps_long);
-        fplong = (float *)(&longitude);
-        if(fplong < 0) {
-            *fplong = *fplong * 57.2957795;
-            eflag = 'E';
-        }
-        else {
-            *fplong = *fplong * -1.0 * 57.2957795;
-            eflag = 'W';
-        }
-	fprintf(stderr, "GPS LOC: lat: %6.10f %c, long: %6.10f %c (%u.%lu.%u)\n", 
-		*fplat, nflag, *fplong, eflag,
-                gps_pos_p->stamp.epoch, gps_pos_p->stamp.mis, gps_pos_p->stamp.ticks); 
-    }
-    else
-       	fprintf(stderr, "*** unknown gps pos block\n");
+
+  len = dt_gps_raw_len_get(msg);  
+  dtype = dt_gps_raw_dtype_get(msg);
+  chip = dt_gps_raw_chip_get(msg);
+  stamp = dt_gps_raw_stamp_mis_get(msg);
+
+  if(dtype == DT_GPS_RAW) {
+    printf("GPS RAW DATA: ");
+    printf("CHIP: %d STAMP: %04x\n", chip, stamp);
+    parseSirf(msg);
+  }
+  else {
+    printf("Unknown Data Block\n");
+  }
 }
 
-
-void
-process_gps_raw(dt_gps_raw_pt *gps_raw_p) {
-    uint16_t i;
-
-    if(gps_raw_p->dtype == DT_GPS_RAW) {
-        fprintf(stderr, "GPS RAW: ");
-        for (i = 0; i < (gps_raw_p->len - DT_HDR_SIZE_GPS_RAW); i++) {
-            fprintf(stderr, "%02x ", gps_raw_p->data[i]);  
-        }
-        fprintf(stderr, "\n");
-    }
-    else {
-        fprintf(stderr, "Unknown Data Block\n");
-    }
-}
-#endif
 
 
 void
@@ -483,7 +571,7 @@ process_mm3_data(tmsg_t *msg) {
   len = dt_ignore_len_get(msg);
   dtype = dt_ignore_dtype_get(msg);
   if (debug)
-    fprintf(stderr, "    len: %0d (%02x)  dtype: %0d (%02x) %s\n", len, len, dtype, dtype, dtype2str(dtype));
+    fprintf(stderr, "    len: %0d (0x%02x)  dtype: %0d (0x%02x) %s\n", len, len, dtype, dtype, dtype2str(dtype));
   switch (dtype) {
     case DT_IGNORE:
       process_ignore(msg);
@@ -499,8 +587,10 @@ process_mm3_data(tmsg_t *msg) {
       process_panic(msg);
       break;
     case DT_GPS_TIME:
+      process_gps_time(msg);
       break;
     case DT_GPS_POS:
+      process_gps_pos(msg);
       break;
     case DT_SENSOR_DATA:
       process_sensor_data(msg);
@@ -512,6 +602,7 @@ process_mm3_data(tmsg_t *msg) {
     case DT_CAL_STRING:
       break;
     case DT_GPS_RAW:
+      process_gps_raw(msg);
       break;
     case DT_VERSION:
       process_version(msg);

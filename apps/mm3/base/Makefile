@@ -21,6 +21,16 @@ GEN=mm3DataMsg.h mm3DataMsg.c \
     DtTestMsg.h DtTestMsg.c \
     DtCalStringMsg.h DtCalStringMsg.c \
     DtGpsRawMsg.h DtGpsRawMsg.c \
+    GpsNavDataMsg.h GpsNavDataMsg.c \
+    GpsGeodeticDataMsg.h GpsGeodeticDataMsg.c \
+    GpsTrackerDataMsg.h GpsTrackerDataMsg.c \
+    GpsSoftVersMsg.h GpsSoftVersMsg.c \
+    GpsClockStatusMsg.h GpsClockStatusMsg.c \
+    GpsErrorMsg.h GpsErrorMsg.c \
+    GpsAlmanacStatus.h GpsAlmanacStatus.c\
+    GpsPpsMsg.h GpsPpsMsg.c \
+    GpsDevDataMsg.h GpsDevDataMsg.c \
+    GpsUnk.h GpsUnk.c \
     DtVersionMsg.h DtVersionMsg.c \
     SDConstants.h SensorConstants.h \
     serialpacket.c serialpacket.h serialprotocol.h
@@ -77,6 +87,47 @@ DtCalStringMsg.c DtCalStringMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 DtGpsRawMsg.c DtGpsRawMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
 	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_gps_raw -o DtGpsRawMsg.h
+
+GpsNavDataMsg.c GpsNavDataMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_nav_data -o GpsNavDataMsg.h
+
+GpsTrackerDataMsg.c GpsTrackerDataMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_tracker_data -o GpsTrackerDataMsg.h
+
+GpsGeodeticDataMsg.c GpsGeodeticDataMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_geod_data -o GpsGeodeticDataMsg.h
+
+GpsDevDataMsg.c GpsDevDataMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_dev_data -o GpsDevDataMsg.h
+
+GpsSoftVersMsg.c GpsSoftVersMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_soft_version_data -o GpsSoftVersMsg.h
+
+GpsClockStatusMsg.c GpsClockStatusMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_clock_status_data -o GpsClockStatusMsg.h
+
+GpsErrorMsg.c GpsErrorMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_error_data -o GpsErrorMsg.h
+
+GpsAlmanacStatusMsg.c GpsAlmanacStatusMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_almanac_status_data -o GpsAlmanacStatusMsg.h
+
+GpsPpsMsg.c GpsPpsMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_pps_data -o GpsPpsMsg.h
+
+GpsUnkMsg.c GpsUnkMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_unk -o GpsUnkMsg.h
+
 
 DtVersionMsg.c DtVersionMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
@@ -160,11 +211,17 @@ serialprotocol.h: $(SERIAL_H)
 
 mm3dump.o: mm3dump.c mm3DataMsg.h DtIgnoreMsg.h DtConfigMsg.h DtSyncMsg.h DtPanicMsg.h DtGpsTimeMsg.h \
 	DtGpsPosMsg.h DtSensorDataMsg.h DtSensorSetMsg.h DtTestMsg.h DtCalStringMsg.h DtGpsRawMsg.h DtVersionMsg.h \
+	GpsNavDataMsg.h GpsTrackerDataMsg.h GpsSoftVersMsg.h GpsErrorMsg.h GpsGeodeticDataMsg.h GpsPpsMsg.h \
+	GpsClockStatusMsg.h  GpsAlmanacStatusMsg.h GpsDevDataMsg.h GpsUnkMsg.h \
+	ParseSirf.h \
 	SensorConstants.h SDConstants.h serialpacket.h serialprotocol.h
 
 mm3dump: mm3dump.o filesource.o mm3DataMsg.o DtIgnoreMsg.o DtConfigMsg.o DtSyncMsg.o DtPanicMsg.o DtGpsTimeMsg.o \
 	DtGpsPosMsg.o DtSensorDataMsg.o DtSensorDataMsg.o DtSensorSetMsg.o DtTestMsg.o DtCalStringMsg.o \
-	DtGpsRawMsg.o DtVersionMsg.o serialpacket.o
+	DtGpsRawMsg.o DtVersionMsg.o serialpacket.o \
+	ParseSirf.o GpsNavDataMsg.o GpsTrackerDataMsg.o GpsSoftVersMsg.o GpsErrorMsg.o GpsGeodeticDataMsg.o \
+	GpsClockStatusMsg.o GpsAlmanacStatusMsg.o GpsPpsMsg.o GpsDevDataMsg.o GpsUnkMsg.o \
+	
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
 TAGS:
@@ -198,6 +255,27 @@ DtSensorSetMsg.o: DtSensorSetMsg.c /opt/include/message.h \
 DtSyncMsg.o: DtSyncMsg.c /opt/include/message.h DtSyncMsg.h
 DtTestMsg.o: DtTestMsg.c /opt/include/message.h DtTestMsg.h
 DtVersionMsg.o: DtVersionMsg.c /opt/include/message.h DtVersionMsg.h
+GpsAlmanacStatusMsg.o: GpsAlmanacStatusMsg.c /opt/include/message.h \
+  GpsAlmanacStatusMsg.h
+GpsClockStatusMsg.o: GpsClockStatusMsg.c /opt/include/message.h \
+  GpsClockStatusMsg.h
+GpsDevDataMsg.o: GpsDevDataMsg.c /opt/include/message.h GpsDevDataMsg.h
+GpsErrorMsg.o: GpsErrorMsg.c /opt/include/message.h GpsErrorMsg.h
+GpsGeodeticDataMsg.o: GpsGeodeticDataMsg.c /opt/include/message.h \
+  GpsGeodeticDataMsg.h
+GpsNavDataMsg.o: GpsNavDataMsg.c /opt/include/message.h GpsNavDataMsg.h
+GpsPpsMsg.o: GpsPpsMsg.c /opt/include/message.h GpsPpsMsg.h
+GpsSoftVersMsg.o: GpsSoftVersMsg.c /opt/include/message.h \
+  GpsSoftVersMsg.h
+GpsTrackerDataMsg.o: GpsTrackerDataMsg.c /opt/include/message.h \
+  GpsTrackerDataMsg.h
+GpsUnkMsg.o: GpsUnkMsg.c /opt/include/message.h GpsUnkMsg.h
+ParseSirf.o: ParseSirf.c /opt/include/serialsource.h \
+  /opt/include/sfsource.h /opt/include/message.h filesource.h \
+  serialpacket.h serialprotocol.h SDConstants.h DtGpsRawMsg.h ParseSirf.h \
+  GpsNavDataMsg.h GpsTrackerDataMsg.h GpsGeodeticDataMsg.h \
+  GpsDevDataMsg.h GpsSoftVersMsg.h GpsClockStatusMsg.h GpsPpsMsg.h \
+  GpsAlmanacStatusMsg.h GpsErrorMsg.h GpsUnkMsg.h
 filesource.o: filesource.c /opt/include/message.h filesource.h \
   serialprotocol.h serialpacket.h DtSensorDataMsg.h mm3DataMsg.h \
   SDConstants.h SensorConstants.h
@@ -205,5 +283,5 @@ mm3DataMsg.o: mm3DataMsg.c /opt/include/message.h mm3DataMsg.h
 mm3dump.o: mm3dump.c /opt/include/serialsource.h /opt/include/sfsource.h \
   /opt/include/message.h filesource.h serialpacket.h serialprotocol.h \
   mm3DataMsg.h SensorConstants.h SDConstants.h DtIgnoreMsg.h DtSyncMsg.h \
-  DtPanicMsg.h DtSensorDataMsg.h DtVersionMsg.h
+  DtPanicMsg.h DtSensorDataMsg.h DtVersionMsg.h DtGpsRawMsg.h ParseSirf.h
 serialpacket.o: serialpacket.c /opt/include/message.h serialpacket.h

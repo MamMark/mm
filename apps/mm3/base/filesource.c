@@ -329,11 +329,10 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
       break;
 #endif
 
-#ifdef notdef
     case DT_GPS_RAW:
-      /* FIX put in length check*/
+      rtn = GS_OK;
       break;
-#endif
+
     case DT_VERSION:
       if (cur_dblk_len == DT_HDR_SIZE_VERSION)
 	rtn = GS_OK;
