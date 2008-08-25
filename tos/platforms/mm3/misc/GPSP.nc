@@ -237,7 +237,7 @@ uint8_t g_nev;			// next gps event
 module GPSP {
   provides {
     interface Init;
-    interface StdControl as GPSControl;
+    interface SplitControl as GPSControl;
     interface Msp430UartConfigure;
     interface Boot as GPSBoot;
   }
@@ -333,6 +333,27 @@ implementation {
 #endif
 
 
+  void control_start() {
+  }
+
+
+  /*
+   * shut down gps,  this is the guts of gpscontrol.stop without
+   * the stopDone call back.
+   */
+  void control_stop() {
+    call Usart.disableIntr();
+    call HW.gps_off();
+    call GPSTimer.stop();
+    gpsc_change_state(GPSC_OFF, GPSW_NONE);
+    if (call UARTResource.isOwner()) {
+      if (call UARTResource.release() != SUCCESS)
+	gps_panic(3, 0);
+      mmP5out.ser_sel = SER_SEL_NONE;
+    }
+    call GPSMsgControl.stop();
+  }
+
   /*
    * gps_config_task: Handle messing with the timer on behalf of gps reconfigurations.
    */
@@ -366,7 +387,7 @@ implementation {
 	return;
 
       case GPSC_BOOT_FINISH:
-	call GPSControl.stop();
+	control_stop();
 	nop();				// BRK_FINISH
 	signal GPSBoot.booted();
 	return;
@@ -378,6 +399,7 @@ implementation {
 
       case GPSC_ON:
 	call GPSTimer.stop();
+	signal GPSControl.startDone(SUCCESS);
 	return;
 
       case GPSC_RELEASING:
@@ -495,14 +517,14 @@ implementation {
    * This is what is normally used to fire the GPS up for readings.
    * Assumes the gps has its comm settings properly setup.  SirfBin-57600
    *
+   * This is the low level state machine.  It expects to power up the gps
+   * and for it to behave in a reasonable manner as observed during prototyping.
+   *
    * Some thoughts...
    *
    * 1) Turn the gps on.  start timer for pwr up interrupts off window.  The device
    *    won't start talking for about 300ms or so (note tinyos timers are in mis
    *    units).   We also want to give the gps enough time to recapture.
-   *
-   * 2) Throw
-   *    
    * 2) can we immediately throw commands requesting the navigation data we want?
    * 3) can we send commands back to back?
    * 4) is it reliable?
@@ -512,7 +534,8 @@ implementation {
    * the USART used to talk to it.  During this process interrupts
    * will be enabled and we should be prepared to handle them even
    * though we haven't gotten the grant back yet (the arbiter
-   * configures then grants.
+   * configures then grants).  We explicitly handle turning interrupts
+   * for the UART/USART/GPS to control when we want to see them or not.
    */
 
   command error_t GPSControl.start() {
@@ -534,16 +557,8 @@ implementation {
    * cause an immediate release.
    */
   command error_t GPSControl.stop() {
-    call Usart.disableIntr();
-    call HW.gps_off();
-    call GPSTimer.stop();
-    gpsc_change_state(GPSC_OFF, GPSW_NONE);
-    if (call UARTResource.isOwner()) {
-      if (call UARTResource.release() != SUCCESS)
-	gps_panic(3, 0);
-      mmP5out.ser_sel = SER_SEL_NONE;
-    }
-    call GPSMsgControl.stop();
+    control_stop();
+    signal GPSControl.stopDone(SUCCESS);
     return SUCCESS;
   }
 

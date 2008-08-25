@@ -8,6 +8,10 @@
 
 #define EAVES TRUE
 
+#ifdef FAKE_SURFACE
+#define SURFACE_PERIOD (60*1024UL)
+#endif
+
 module mm3ControlP {
   provides {
     interface mm3Control[uint8_t sns_id];
@@ -17,12 +21,19 @@ module mm3ControlP {
   uses {
     interface Panic;
     interface SenseVal[uint8_t sns_id];
+#ifdef FAKE_SURFACE
+    interface Timer<TMilli> as SurfaceTimer;
+#endif
   }
 }
 
 implementation {
   bool eaves[MM3_NUM_SENSORS];
   bool m_surfaced;
+
+#ifdef FAKE_SURFACE
+  bool fake_surfaced;
+#endif
 
   command bool mm3Control.eavesdrop[uint8_t sns_id]() {
     if (sns_id < MM3_NUM_SENSORS)
@@ -35,24 +46,44 @@ implementation {
 
     for (i = 0; i < MM3_NUM_SENSORS; i++)
       eaves[i] = EAVES;
+#ifdef FAKE_SURFACE
+    call SurfaceTimer.startPeriodic(SURFACE_PERIOD);
+#endif
     return SUCCESS;
   }
 
+#ifdef FAKE_SURFACE
+  event void SurfaceTimer.fired() {
+    
+  }
+#endif
+
   event void SenseVal.valAvail[uint8_t sns_id](uint16_t data, uint32_t stamp) {
-    if (sns_id == SNS_ID_SAL) {
-      if (m_surfaced) {
-	if (data < SURFACE_THRESHOLD) {
-	  m_surfaced = FALSE;
-//	  signal Surface.submerged();
+#ifdef FAKE_SURFACE
+    if (fake_surfaced)
+      data = 65010UL;
+    else
+      data = 400UL;
+#endif
+    switch (sns_id) {
+      default:
+	return;
+
+      case SNS_ID_SAL:
+	if (m_surfaced) {
+	  if (data < SURFACE_THRESHOLD) {
+	    m_surfaced = FALSE;
+	    signal Surface.submerged();
+	  }
+	} else {
+	  if (data >= SURFACE_THRESHOLD) {
+	    m_surfaced = TRUE;
+	    signal Surface.surfaced();
+	  }
 	}
-      } else {
-	if (data >= SURFACE_THRESHOLD) {
-	  m_surfaced = TRUE;
-//	  signal Surface.surfaced();
-	}
-      }
     }
   }
+
 
 #ifdef notdef
   /*

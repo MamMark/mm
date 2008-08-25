@@ -22,4 +22,9 @@ implementation {
 
   components PanicC;
   mm3ControlP.Panic -> PanicC;
+
+#ifdef FAKE_SURFACE
+  components new TimerMilliC() as SurfaceTimer;
+  mm3ControlP.SurfaceTimer -> SurfaceTimer;
+#endif
 }

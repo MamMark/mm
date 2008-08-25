@@ -31,19 +31,19 @@
 #include "sirf.h"
 
 /*
- * GPS Message level states.  Where in the message is the state machine
+ * GPS Message Collector level states.  Where in the message is the state machine
  */
 typedef enum {
-  GPSM_START = 1,
-  GPSM_START_2,
-  GPSM_LEN,
-  GPSM_LEN_2,
-  GPSM_PAYLOAD,
-  GPSM_CHK,
-  GPSM_CHK_2,
-  GPSM_END,
-  GPSM_END_2,
-} gpsm_state_t;
+  COLLECT_START = 1,
+  COLLECT_START_2,
+  COLLECT_LEN,
+  COLLECT_LEN_2,
+  COLLECT_PAYLOAD,
+  COLLECT_CHK,
+  COLLECT_CHK_2,
+  COLLECT_END,
+  COLLECT_END_2,
+} collect_state_t;
 
 
 module GPSMsgP {
@@ -56,62 +56,86 @@ module GPSMsgP {
     interface Collect;
     interface Panic;
     interface LocalTime<TMilli>;
+    interface SplitControl as GPSControl;
+    interface Surface;
   }
 }
 
 implementation {
 
   /*
-   * gpsm_length is listed as norace.  The main state machine cycles and
-   * references gpsm_length.  When a message is completed, on_overflow is set
-   * which locks out the state machine and prevents gpsm_length from getting
+   * collect_length is listed as norace.  The main state machine cycles and
+   * references collect_length.  When a message is completed, on_overflow is set
+   * which locks out the state machine and prevents collect_length from getting
    * changed out from underneath us.
    */
 
-  gpsm_state_t    gpsm_state;		// message collection state
-  norace uint16_t gpsm_length;		// length of payload
-  uint16_t        gpsm_cur_chksum;	// running chksum of payload
+  collect_state_t collect_state;		// message collection state
+  norace uint16_t collect_length;		// length of payload
+  uint16_t        collect_cur_chksum;	// running chksum of payload
 
 #define GPS_OVR_SIZE 16
 
-  uint8_t  gpsm_msg[GPS_BUF_SIZE];
-  uint8_t  gpsm_overflow[GPS_OVR_SIZE];
-  uint8_t  gpsm_nxt;		        // where we are in the buffer
-  uint8_t  gpsm_left;			// working copy
+  uint8_t  collect_msg[GPS_BUF_SIZE];
+  uint8_t  collect_overflow[GPS_OVR_SIZE];
+  uint8_t  collect_nxt;		        // where we are in the buffer
+  uint8_t  collect_left;			// working copy
   bool     on_overflow;
 
   /*
    * Error counters
    */
-  uint16_t gpsm_overflow_full;
-  uint8_t  gpsm_overflow_max;
-  uint16_t gpsm_too_big;
-  uint16_t gpsm_chksum_fail;
-  uint16_t gpsm_proto_fail;
+  uint16_t collect_overflow_full;
+  uint8_t  collect_overflow_max;
+  uint16_t collect_too_big;
+  uint16_t collect_chksum_fail;
+  uint16_t collect_proto_fail;
+
+
+  task void gps_msg_control_task() {
+    call GPSControl.start();
+  }
+
+  event void GPSControl.startDone(error_t err) {
+    nop();
+  }
+
+  event void GPSControl.stopDone(error_t err) {
+    nop();
+  }
+
+
+  event void Surface.surfaced() {
+    nop();
+  }
+
+  event void Surface.submerged() {
+    nop();
+  }
 
 
   task void gps_msg_task() {
     dt_gps_raw_nt *gdp;
     uint8_t i, max;
 
-    gdp = (dt_gps_raw_nt *) gpsm_msg;
-    gdp->len = DT_HDR_SIZE_GPS_RAW + SIRF_OVERHEAD + gpsm_length;
+    gdp = (dt_gps_raw_nt *) collect_msg;
+    gdp->len = DT_HDR_SIZE_GPS_RAW + SIRF_OVERHEAD + collect_length;
     gdp->dtype = DT_GPS_RAW;
     gdp->chip  = CHIP_GPS_SIRF3;
     gdp->stamp_mis = call LocalTime.get();
-    call Collect.collect(gpsm_msg, gdp->len);
+    call Collect.collect(collect_msg, gdp->len);
     atomic {
       /*
-       * note: gpsm_nxt gets reset on first call to GPSMsg.byte_avail()
+       * note: collect_nxt gets reset on first call to GPSMsg.byte_avail()
        * The only way to be here is if gps_msg_task has been posted which
-       * means that on_overflow is true.  We simply need to look at gpsm_nxt
+       * means that on_overflow is true.  We simply need to look at collect_nxt
        * which will be > 0 if we have something that needs to be drained.
        */
-      max = gpsm_nxt;
+      max = collect_nxt;
       on_overflow = FALSE;
       for (i = 0; i < max; i++)
-	call GPSMsg.byteAvail(gpsm_overflow[i]); // BRK_GPS_OVR
-      gpsm_overflow[0] = 0;
+	call GPSMsg.byteAvail(collect_overflow[i]); // BRK_GPS_OVR
+      collect_overflow[0] = 0;
     }
     nop();
   }
@@ -119,9 +143,9 @@ implementation {
 
   command error_t GPSMsgControl.start() {
     atomic {
-      gpsm_state = GPSM_START;
+      collect_state = COLLECT_START;
       on_overflow = FALSE;
-      gpsm_overflow[0] = 0;
+      collect_overflow[0] = 0;
       return SUCCESS;
     }
   }
@@ -134,12 +158,12 @@ implementation {
 
 
   command error_t Init.init() {
-    gpsm_overflow_full = 0;
-    gpsm_overflow_max  = 0;
-    gpsm_too_big = 0;
-    gpsm_chksum_fail = 0;
-    gpsm_proto_fail = 0;
-    memset(gpsm_msg, 0, sizeof(gpsm_msg));
+    collect_overflow_full = 0;
+    collect_overflow_max  = 0;
+    collect_too_big = 0;
+    collect_chksum_fail = 0;
+    collect_proto_fail = 0;
+    memset(collect_msg, 0, sizeof(collect_msg));
     call GPSMsgControl.start();
     return SUCCESS;
   }
@@ -150,8 +174,8 @@ implementation {
   }
 
 
-  inline void gpsm_restart() {
-    gpsm_state = GPSM_START;
+  inline void collect_restart() {
+    collect_state = COLLECT_START;
     signal GPSMsg.msgBoundary();
   }
 
@@ -160,115 +184,115 @@ implementation {
     uint16_t chksum;
 
     if (on_overflow) {		// BRK_GOT_CHR
-      if (gpsm_nxt >= GPS_OVR_SIZE) {
+      if (collect_nxt >= GPS_OVR_SIZE) {
 	/*
 	 * full, throw them all away.
 	 */
-	gpsm_nxt = 0;
-	gpsm_overflow[0] = 0;
-	gpsm_overflow_full++;
+	collect_nxt = 0;
+	collect_overflow[0] = 0;
+	collect_overflow_full++;
 	return;
       }
-      gpsm_overflow[gpsm_nxt++] = byte;
-      if (gpsm_nxt > gpsm_overflow_max)
-	gpsm_overflow_max = gpsm_nxt;
+      collect_overflow[collect_nxt++] = byte;
+      if (collect_nxt > collect_overflow_max)
+	collect_overflow_max = collect_nxt;
       return;
     }
 
-    switch(gpsm_state) {
-      case GPSM_START:
+    switch(collect_state) {
+      case COLLECT_START:
 	if (byte != SIRF_BIN_START)
 	  return;
-	gpsm_nxt = GPS_START_OFFSET;
-	gpsm_msg[gpsm_nxt++] = byte;
-	gpsm_state = GPSM_START_2;
+	collect_nxt = GPS_START_OFFSET;
+	collect_msg[collect_nxt++] = byte;
+	collect_state = COLLECT_START_2;
 	return;
 
-      case GPSM_START_2:
+      case COLLECT_START_2:
 	if (byte == SIRF_BIN_START)		// got start again.  stay
 	  return;
 	if (byte != SIRF_BIN_START_2) {		// not what we want.  restart
-	  gpsm_restart();
+	  collect_restart();
 	  return;
 	}
-	gpsm_msg[gpsm_nxt++] = byte;
-	gpsm_state = GPSM_LEN;
+	collect_msg[collect_nxt++] = byte;
+	collect_state = COLLECT_LEN;
 	return;
 
-      case GPSM_LEN:
-	gpsm_length = byte << 8;		// data fields are big endian
-	gpsm_msg[gpsm_nxt++] = byte;
-	gpsm_state = GPSM_LEN_2;
+      case COLLECT_LEN:
+	collect_length = byte << 8;		// data fields are big endian
+	collect_msg[collect_nxt++] = byte;
+	collect_state = COLLECT_LEN_2;
 	return;
 
-      case GPSM_LEN_2:
-	gpsm_length |= byte;
-	gpsm_left = byte;
-	gpsm_msg[gpsm_nxt++] = byte;
-	gpsm_state = GPSM_PAYLOAD;
-	gpsm_cur_chksum = 0;
-	if (gpsm_length >= (GPS_BUF_SIZE - GPS_OVERHEAD)) {
-	  gpsm_too_big++;
-	  gpsm_restart();
+      case COLLECT_LEN_2:
+	collect_length |= byte;
+	collect_left = byte;
+	collect_msg[collect_nxt++] = byte;
+	collect_state = COLLECT_PAYLOAD;
+	collect_cur_chksum = 0;
+	if (collect_length >= (GPS_BUF_SIZE - GPS_OVERHEAD)) {
+	  collect_too_big++;
+	  collect_restart();
 	  return;
 	}
 	return;
 
-      case GPSM_PAYLOAD:
-	gpsm_msg[gpsm_nxt++] = byte;
-	gpsm_cur_chksum += byte;
-	gpsm_left--;
-	if (gpsm_left == 0)
-	  gpsm_state = GPSM_CHK;
+      case COLLECT_PAYLOAD:
+	collect_msg[collect_nxt++] = byte;
+	collect_cur_chksum += byte;
+	collect_left--;
+	if (collect_left == 0)
+	  collect_state = COLLECT_CHK;
 	return;
 
-      case GPSM_CHK:
-	gpsm_msg[gpsm_nxt++] = byte;
-	gpsm_state = GPSM_CHK_2;
+      case COLLECT_CHK:
+	collect_msg[collect_nxt++] = byte;
+	collect_state = COLLECT_CHK_2;
 	return;
 
-      case GPSM_CHK_2:
-	gpsm_msg[gpsm_nxt++] = byte;
-	chksum = gpsm_msg[gpsm_nxt - 2] << 8 | byte;
-	if (chksum != gpsm_cur_chksum) {
-	  gpsm_chksum_fail++;
-	  gpsm_restart();
+      case COLLECT_CHK_2:
+	collect_msg[collect_nxt++] = byte;
+	chksum = collect_msg[collect_nxt - 2] << 8 | byte;
+	if (chksum != collect_cur_chksum) {
+	  collect_chksum_fail++;
+	  collect_restart();
 	  return;
 	}
-	gpsm_state = GPSM_END;
+	collect_state = COLLECT_END;
 	return;
 
-      case GPSM_END:
-	gpsm_msg[gpsm_nxt++] = byte;
+      case COLLECT_END:
+	collect_msg[collect_nxt++] = byte;
 	if (byte != SIRF_BIN_END) {
-	  gpsm_proto_fail++;
-	  gpsm_restart();
+	  collect_proto_fail++;
+	  collect_restart();
 	  return;
 	}
-	gpsm_state = GPSM_END_2;
+	collect_state = COLLECT_END_2;
 	return;
 
-      case GPSM_END_2:
-	gpsm_msg[gpsm_nxt++] = byte;
+      case COLLECT_END_2:
+	collect_msg[collect_nxt++] = byte;
 	if (byte != SIRF_BIN_END_2) {
-	  gpsm_proto_fail++;
-	  gpsm_restart();
+	  collect_proto_fail++;
+	  collect_restart();
 	  return;
 	}
 	on_overflow = TRUE;
-	gpsm_nxt = 0;
-	gpsm_restart();
+	collect_nxt = 0;
+	collect_restart();
 	post gps_msg_task();
 	return;
 
       default:
-	call Panic.panic(PANIC_GPS, 1, gpsm_state, 0, 0, 0);
+	call Panic.panic(PANIC_GPS, 1, collect_state, 0, 0, 0);
 	return;
     }
   }
 
 
   async command bool GPSMsg.atMsgBoundary() {
-    atomic return (gpsm_state == GPSM_START);
+    atomic return (collect_state == COLLECT_START);
   }
 }

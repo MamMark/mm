@@ -40,7 +40,7 @@
 
 configuration GPSC {
   provides {
-    interface StdControl as GPSControl;
+    interface SplitControl as GPSControl;
     interface Boot as GPSBoot;
   }
   uses interface Boot;
