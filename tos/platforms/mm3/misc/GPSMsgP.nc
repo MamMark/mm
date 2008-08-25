@@ -29,9 +29,11 @@
 #include "panic.h"
 #include "sd_blocks.h"
 #include "sirf.h"
+#include "gps_msg.h"
 
 /*
- * GPS Message Collector level states.  Where in the message is the state machine
+ * GPS Message Collector states.  Where in the message is the state machine.  Used
+ * when collecting messages.
  */
 typedef enum {
   COLLECT_START = 1,
@@ -46,6 +48,19 @@ typedef enum {
 } collect_state_t;
 
 
+/*
+ * GPS Message States.
+ */
+
+typedef enum {
+  GPSM_DOWN = 1,
+  GPSM_STARTING,
+  GPSM_FAST,
+  GPSM_LONG,
+  GPSM_STOPPING,
+} gpsm_state_t;
+
+
 module GPSMsgP {
   provides {
     interface Init;
@@ -56,6 +71,7 @@ module GPSMsgP {
     interface Collect;
     interface Panic;
     interface LocalTime<TMilli>;
+    interface Timer<TMilli> as MsgTimer;
     interface SplitControl as GPSControl;
     interface Surface;
   }
@@ -64,9 +80,9 @@ module GPSMsgP {
 implementation {
 
   /*
-   * collect_length is listed as norace.  The main state machine cycles and
-   * references collect_length.  When a message is completed, on_overflow is set
-   * which locks out the state machine and prevents collect_length from getting
+   * The collection state machine cycles and references collect_length.
+   * When a message is completed, on_overflow is set which locks out
+   * the state machine and prevents collect_length from getting
    * changed out from underneath us.
    */
 
@@ -92,25 +108,74 @@ implementation {
   uint16_t collect_proto_fail;
 
 
+  gpsm_state_t gpsm_state;
+
+#ifdef notdef
   task void gps_msg_control_task() {
-    call GPSControl.start();
+    switch (gpsm_state) {
+      default:
+	call Panic.panic(PANIC_GPS, 128, gpsm_state, 0, 0, 0);
+	gpsm_state = GPSM_DOWN;
+	return;
+
+      case GPSM_STARTING:
+	call GPSControl.start();
+	return;
+
+      case GPSM_STOPPING:
+	call GPSControl.stop();
+	return;
+    }
   }
+#endif
+
 
   event void GPSControl.startDone(error_t err) {
-    nop();
+    gpsm_state = GPSM_FAST;
+    call MsgTimer.startOneShot(GPS_MSG_FAST_WINDOW);
   }
 
   event void GPSControl.stopDone(error_t err) {
-    nop();
+    gpsm_state = GPSM_DOWN;
   }
 
 
+  /*
+   * A surface event has occured.  Note that we are edge
+   * triggered.  For the event to have happened we need to
+   * have been submerged.
+   */
   event void Surface.surfaced() {
-    nop();
+    if (gpsm_state != GPSM_DOWN) {
+      call Panic.panic(PANIC_GPS, 129, gpsm_state, 0, 0, 0);
+      return;
+    }
+    gpsm_state = GPSM_STARTING;
+    call GPSControl.start();
   }
 
   event void Surface.submerged() {
-    nop();
+    gpsm_state = GPSM_STOPPING;
+    call GPSControl.stop();
+  }
+
+
+  event void MsgTimer.fired() {
+    switch (gpsm_state) {
+      default:
+	call Panic.panic(PANIC_GPS, 130, gpsm_state, 0, 0, 0);
+	return;
+
+      case GPSM_FAST:
+	gpsm_state = GPSM_LONG;
+	call MsgTimer.startOneShot(GPS_MSG_LONG_WINDOW);
+	return;
+
+      case GPSM_LONG:
+	gpsm_state = GPSM_STOPPING;
+	call GPSControl.stop();
+	return;
+    }
   }
 
 

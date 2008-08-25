@@ -30,14 +30,12 @@ implementation {
   components LocalTimeMilliC;
   GPSMsgP.LocalTime -> LocalTimeMilliC;
 
+  components new TimerMilliC() as MsgTimer;
+  GPSMsgP.MsgTimer -> MsgTimer;
+
   components GPSC;
   GPSMsgP.GPSControl -> GPSC;
 
   components mm3ControlC;
   GPSMsgP.Surface -> mm3ControlC;
-
-#ifdef notdef
-  components new TimerMilliC() as GpsTimer;
-  GPSMsgP.GpsTimer -> GpsTimer;
-#endif
 }
