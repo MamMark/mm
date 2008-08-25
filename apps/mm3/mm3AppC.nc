@@ -39,11 +39,6 @@ implementation {
    */
   components CradleC, BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
   
-#ifdef TEST_GPS
-  components GPSC;
-  mm3C.GPSControl -> GPSC;
-#endif
-
 #ifdef notdef
   components AdcC;
   mm3C.Adc -> AdcC.Adc[SNS_ID_NONE];

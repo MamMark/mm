@@ -36,17 +36,12 @@ module mm3C {
 
     interface HplMM3Adc as HW;
     interface Adc;
-
-#ifdef TEST_GPS
-    interface SplitControl as GPSControl;
-#endif
   }
 }
 
 implementation {
 
   command error_t Init.init() {
-//    call Panic.brk();
     return SUCCESS;
   }
 
@@ -81,18 +76,7 @@ implementation {
     call Collect.collect(sync_data, DT_HDR_SIZE_SYNC);
   }
 
-#ifdef TEST_GPS
-  event void GPSControl.startDone(error_t err) {}
-  event void GPSControl.stopDone(error_t err) {}
-#endif
-
   event void Boot.booted() {
-
-#ifdef TEST_GPS
-    call GPSControl.start();
-    // call GPSControl.stop();
-    //    return;
-#endif
 
     call SyncTimer.startPeriodic(SYNC_PERIOD);
 

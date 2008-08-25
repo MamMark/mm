@@ -54,6 +54,8 @@ implementation {
 
 #ifdef FAKE_SURFACE
   event void SurfaceTimer.fired() {
+    if (fake_surfaced > 1)
+      fake_surfaced = 1;
     fake_surfaced ^= 1;
   }
 #endif
@@ -73,11 +75,13 @@ implementation {
 	if (m_surfaced) {
 	  if (data < SURFACE_THRESHOLD) {
 	    m_surfaced = FALSE;
+	    call Panic.brk();
 	    signal Surface.submerged();
 	  }
 	} else {
 	  if (data >= SURFACE_THRESHOLD) {
 	    m_surfaced = TRUE;
+	    call Panic.brk();
 	    signal Surface.surfaced();
 	  }
 	}

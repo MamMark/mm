@@ -53,7 +53,7 @@ typedef enum {
  */
 
 typedef enum {
-  GPSM_DOWN = 1,
+  GPSM_DOWN = 0,
   GPSM_STARTING,
   GPSM_FAST,
   GPSM_LONG,

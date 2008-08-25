@@ -11,7 +11,7 @@ printf "gpsc_state: "
 print GPSP$gpsc_state
 printf "gpsc_prev_state: "
 print GPSP$gpsc_prev_state
-printf "collect_state: "
+printf "msg_collect_state: "
 print GPSMsgP$collect_state
 printf "left: %d, collect_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$collect_left, GPSMsgP$collect_length, GPSMsgP$collect_cur_chksum
 printf "collect_nxt:  0x%02x  on_overflow: %d\n", GPSMsgP$collect_nxt, GPSMsgP$on_overflow
@@ -54,10 +54,12 @@ end
 b GPSP.nc:391
 
 # 7 sal senseval
-b SalP.nc:135
+#b *SalP$Adc$configured+0d228
 
 # 8 fake surfaced toggle
 b mm3ControlP.nc:57
+
+b mm3ControlP.nc:63
 
 # 7
 #b *ArbiterP$0$Resource$request+0d12
@@ -71,18 +73,18 @@ b mm3ControlP.nc:57
 #printf "release: %d\n", id
 #end
 
-# 9
+# x msgBoundary
 #b GPSP.nc:951
 
-# 10
+# x requested
 #b GPSP.nc:977
 
 #dis 7-10
 
-# 11 g_idx wrap
-#b *GPSP$UartStream$receivedByte+0d28
+# 9 g_idx wrap
+b *GPSP$UartStream$receivedByte+0d28
 
-# 12 g_nev wrap
+# 10 g_nev wrap
 #b *GPSP$gpsc_change_state+0d34
 
 
