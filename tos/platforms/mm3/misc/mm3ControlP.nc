@@ -9,7 +9,8 @@
 #define EAVES TRUE
 
 #ifdef FAKE_SURFACE
-#define SURFACE_PERIOD (60*1024UL)
+#define SURFACE_TIME   (60*1024UL)
+#define SUBMERGED_TIME (10*1024UL)
 #endif
 
 module mm3ControlP {
@@ -47,7 +48,7 @@ implementation {
     for (i = 0; i < MM3_NUM_SENSORS; i++)
       eaves[i] = EAVES;
 #ifdef FAKE_SURFACE
-    call SurfaceTimer.startPeriodic(SURFACE_PERIOD);
+    call SurfaceTimer.startOneShot(SUBMERGED_TIME);
 #endif
     return SUCCESS;
   }
@@ -57,6 +58,10 @@ implementation {
     if (fake_surfaced > 1)
       fake_surfaced = 1;
     fake_surfaced ^= 1;
+    if (fake_surfaced)
+      call SurfaceTimer.startOneShot(SURFACE_TIME);
+    else
+      call SurfaceTimer.startOneShot(SUBMERGED_TIME);
   }
 #endif
 

@@ -15,6 +15,8 @@ printf "msg_collect_state: "
 print GPSMsgP$collect_state
 printf "left: %d, collect_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$collect_left, GPSMsgP$collect_length, GPSMsgP$collect_cur_chksum
 printf "collect_nxt:  0x%02x  on_overflow: %d\n", GPSMsgP$collect_nxt, GPSMsgP$on_overflow
+printf "Msg State: "
+print GPSMsgP$gpsm_state
 printf "\nbuffer:\n"
 x/32xb GPSMsgP$collect_msg
 printf "overflow:\n"
@@ -57,9 +59,10 @@ b GPSP.nc:391
 #b *SalP$Adc$configured+0d228
 
 # 8 fake surfaced toggle
-b mm3ControlP.nc:57
+b mm3ControlP.nc:58
 
-b mm3ControlP.nc:63
+# 9 process_geodetic got over determined
+b GPSMsgP.nc:204
 
 # 7
 #b *ArbiterP$0$Resource$request+0d12
@@ -82,7 +85,7 @@ b mm3ControlP.nc:63
 #dis 7-10
 
 # 9 g_idx wrap
-b *GPSP$UartStream$receivedByte+0d28
+#b *GPSP$UartStream$receivedByte+0d28
 
 # 10 g_nev wrap
 #b *GPSP$gpsc_change_state+0d34

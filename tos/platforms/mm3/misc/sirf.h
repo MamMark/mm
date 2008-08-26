@@ -33,6 +33,9 @@
 #define SIRF_OVERHEAD       8
 #define GPS_OVERHEAD	   16
 
+#define MID_GEODETIC	   41
+#define GEODETIC_LEN	   91
+
 /*
  * nmea_go_sirf_bin: tell the gps in nmea mode to go into sirf binary.
  * checksum for 115200 is 04, 57600 is 37

@@ -55,8 +55,8 @@ typedef enum {
 typedef enum {
   GPSM_DOWN = 0,
   GPSM_STARTING,
-  GPSM_FAST,
-  GPSM_LONG,
+  GPSM_SHORT,				/* looking for hot fix */
+  GPSM_LONG,				/* loading almanac */
   GPSM_STOPPING,
 } gpsm_state_t;
 
@@ -131,8 +131,8 @@ implementation {
 
 
   event void GPSControl.startDone(error_t err) {
-    gpsm_state = GPSM_FAST;
-    call MsgTimer.startOneShot(GPS_MSG_FAST_WINDOW);
+    gpsm_state = GPSM_SHORT;
+    call MsgTimer.startOneShot(GPS_MSG_SHORT_WINDOW);
   }
 
   event void GPSControl.stopDone(error_t err) {
@@ -146,6 +146,9 @@ implementation {
    * have been submerged.
    */
   event void Surface.surfaced() {
+    /*
+     * Add check for bouncing.  Check time.  less than a second bitch
+     */
     if (gpsm_state != GPSM_DOWN) {
       call Panic.panic(PANIC_GPS, 129, gpsm_state, 0, 0, 0);
       return;
@@ -155,6 +158,9 @@ implementation {
   }
 
   event void Surface.submerged() {
+    /*
+     * see surfaced for a check we may want ot look at
+     */
     gpsm_state = GPSM_STOPPING;
     call GPSControl.stop();
   }
@@ -166,7 +172,7 @@ implementation {
 	call Panic.panic(PANIC_GPS, 130, gpsm_state, 0, 0, 0);
 	return;
 
-      case GPSM_FAST:
+      case GPSM_SHORT:
 	gpsm_state = GPSM_LONG;
 	call MsgTimer.startOneShot(GPS_MSG_LONG_WINDOW);
 	return;
@@ -179,16 +185,61 @@ implementation {
   }
 
 
+  /*
+   * Process a Geodetic packet from the Sirf3.
+   */
+  void process_geodetic(gps_geodetic_nt *geop) {
+    /*
+     * Extract time and position data out
+     */
+
+    /*
+     * Check for state change information
+     */
+    if (geop->nav_valid == 0) {
+      /*
+       * overdetermined.  For now if we are in the SHORT window
+       * then power down because we got the fix.
+       */
+      if (gpsm_state == GPSM_SHORT) {
+	gpsm_state = GPSM_STOPPING;
+	call GPSControl.stop();
+	return;
+      }
+    }
+  }
+
+
   task void gps_msg_task() {
     dt_gps_raw_nt *gdp;
     uint8_t i, max;
+    gps_geodetic_nt *geop;
 
+    /*
+     * collect raw message for debugging.  Eventually this will go away
+     * or be put on a conditional.
+     */
     gdp = (dt_gps_raw_nt *) collect_msg;
     gdp->len = DT_HDR_SIZE_GPS_RAW + SIRF_OVERHEAD + collect_length;
     gdp->dtype = DT_GPS_RAW;
     gdp->chip  = CHIP_GPS_SIRF3;
     gdp->stamp_mis = call LocalTime.get();
     call Collect.collect(collect_msg, gdp->len);
+
+    /*
+     * Look at message and see if is a geodetic.  If so process it
+     */
+    geop = (gps_geodetic_nt *) (&collect_msg[GPS_START_OFFSET]);
+    if (geop->start != SIRF_BIN_START || geop->start_2 != SIRF_BIN_START_2) {
+      call Panic.panic(PANIC_GPS, 131, geop->start, geop->start_2, 0, 0);
+    }
+    if (geop->len == GEODETIC_LEN && geop->mid == MID_GEODETIC)
+      process_geodetic(geop);
+
+    /*
+     * Done processing, so collect any other bytes that have come in and are
+     * stored in the overflow area.
+     */
     atomic {
       /*
        * note: collect_nxt gets reset on first call to GPSMsg.byte_avail()
@@ -351,7 +402,7 @@ implementation {
 	return;
 
       default:
-	call Panic.panic(PANIC_GPS, 1, collect_state, 0, 0, 0);
+	call Panic.panic(PANIC_GPS, 192, collect_state, 0, 0, 0);
 	return;
     }
   }

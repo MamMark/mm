@@ -177,10 +177,11 @@ typedef nx_struct dt_gps_pos {
   nx_uint32_t stamp_mis;
   nx_uint8_t  chip_type;
   nx_uint16_t nav_type;
+  nx_uint8_t  num_svs;			/* number of sv in solution */
   nx_uint32_t sats_seen;		/* bit mask, sats in solution */
   nx_uint32_t gps_lat;			/* + North, x 10^7 degrees */
   nx_uint32_t gps_long;			/* + East,  x 10^7 degrees */
-  nx_uint8_t  num_svs;			/* number of sv in solution */
+  nx_uint32_t ehpe;			/* estimated horz pos err, 1e2 */
   nx_uint8_t  hdop;			/* err *5 */
 } dt_gps_pos_nt;
 
