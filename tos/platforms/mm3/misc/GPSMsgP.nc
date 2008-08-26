@@ -90,8 +90,6 @@ implementation {
   norace uint16_t collect_length;		// length of payload
   uint16_t        collect_cur_chksum;	// running chksum of payload
 
-#define GPS_OVR_SIZE 16
-
   uint8_t  collect_msg[GPS_BUF_SIZE];
   uint8_t  collect_overflow[GPS_OVR_SIZE];
   uint8_t  collect_nxt;		        // where we are in the buffer
@@ -106,7 +104,8 @@ implementation {
   uint16_t collect_too_big;
   uint16_t collect_chksum_fail;
   uint16_t collect_proto_fail;
-
+  uint32_t last_surfaced;
+  uint32_t last_submerged;
 
   gpsm_state_t gpsm_state;
 
@@ -146,9 +145,12 @@ implementation {
    * have been submerged.
    */
   event void Surface.surfaced() {
-    /*
-     * Add check for bouncing.  Check time.  less than a second bitch
-     */
+    uint32_t t;
+
+    t = call LocalTime.get();
+    if (last_surfaced && (t - last_surfaced ) < 1024)
+      call Panic.panic(PANIC_GPS, 132, 0, 0, 0, 0);
+    last_surfaced = t;
     if (gpsm_state != GPSM_DOWN) {
       call Panic.panic(PANIC_GPS, 129, gpsm_state, 0, 0, 0);
       return;
@@ -158,9 +160,12 @@ implementation {
   }
 
   event void Surface.submerged() {
-    /*
-     * see surfaced for a check we may want ot look at
-     */
+    uint32_t t;
+
+    t = call LocalTime.get();
+    if (last_submerged && (t - last_surfaced ) < 1024)
+      call Panic.panic(PANIC_GPS, 133, 0, 0, 0, 0);
+    last_submerged = t;
     gpsm_state = GPSM_STOPPING;
     call GPSControl.stop();
   }

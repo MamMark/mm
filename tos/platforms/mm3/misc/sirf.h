@@ -28,7 +28,7 @@
  */
 
 #define GPS_BUF_SIZE	  128
-#define GPS_OVR_SIZE	   16
+#define GPS_OVR_SIZE	   32
 #define GPS_START_OFFSET    8
 #define SIRF_OVERHEAD       8
 #define GPS_OVERHEAD	   16
