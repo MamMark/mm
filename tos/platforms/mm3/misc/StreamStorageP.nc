@@ -86,11 +86,13 @@ module StreamStorageP {
   }
   uses {
     interface Boot;
-    interface Thread as SSThread;;
+    interface Thread as SSWriter;
+    interface Thread as SSReader;
     interface SD;
     interface HplMM3Adc as HW;
     interface Semaphore;
-    interface BlockingResource as BlockingSpiResource;
+    interface BlockingResource as BlockingWriteResource;
+    interface BlockingResource as BlockingReadResource;
     interface ResourceConfigure as SpiResourceConfigure;
     interface Panic;
     interface LocalTime<TMilli>;
@@ -151,7 +153,8 @@ implementation {
 
 
   event void Boot.booted() {
-    call SSThread.start(NULL);
+    call SSWriter.start(NULL);
+    call SSReader.start(NULL);
   }
   
 
@@ -203,7 +206,7 @@ implementation {
 
     /*
      * Strictly speaking this doesn't need to be atomic.  But buf_state
-     * is what controls the SSThread handling outgoing write buffers.
+     * is what controls the SSWriter handling outgoing write buffers.
      */
     handle->stamp = call LocalTime.get();
     atomic {
@@ -467,7 +470,7 @@ implementation {
   }
 
 
-  event void SSThread.run(void* arg) {
+  event void SSWriter.run(void* arg) {
     ss_buf_handle_t* cur_handle;
     error_t err;
     ss_state_t cur_state;
@@ -477,7 +480,7 @@ implementation {
      * we use the default configuration for now which matches
      * what we need.
      */
-    call BlockingSpiResource.request();
+    call BlockingWriteResource.request();
 
     /*
      * First start up and read in control blocks.
@@ -492,7 +495,7 @@ implementation {
      * and set our current state to OFF.
      */
     atomic ss_state = SS_STATE_IDLE;
-    call BlockingSpiResource.release();
+    call BlockingWriteResource.release();
     signal BlockingBoot.booted();
 
     for(;;) {
@@ -534,7 +537,7 @@ implementation {
 	if (cur_state != SS_STATE_OFF)
 	  ss_panic(25, cur_state);
 
-	call BlockingSpiResource.request(); // this will also turn on the hardware when granted.
+	call BlockingWriteResource.request(); // this will also turn on the hardware when granted.
 	err = call SD.reset();		  // about 100ms
 	if (err) {
 	  ss_panic(26, err);
@@ -588,7 +591,7 @@ implementation {
 	    signal SSF.dblk_stream_full();
 	    ssc.dblk_nxt = 0;
 	    atomic ss_state = SS_STATE_IDLE;
-	    call BlockingSpiResource.release(); // will shutdown the hardware
+	    call BlockingWriteResource.release(); // will shutdown the hardware
 	  } else
 	    ssc.dblk_nxt++;
 	}
@@ -603,11 +606,14 @@ implementation {
 	 * For now we just go idle and release
 	 */
 	atomic ss_state = SS_STATE_IDLE;
-	call BlockingSpiResource.release(); // will shutdown the hardware
+	call BlockingWriteResource.release(); // will shutdown the hardware
       }
     }
   }
   
+  event void SSReader.run(void* arg) {
+  }
+
 #ifdef notdef
   void ss_machine(msg_event_t *msg) {
     uint8_t     *buf;

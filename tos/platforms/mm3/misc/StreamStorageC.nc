@@ -41,29 +41,27 @@ implementation {
    * This will also give us an idea of how deep the stacks have been
    */
 
-  components new ThreadC(0x100);
-  SS_P.SSThread -> ThreadC;
+  components new ThreadC(256) as SSWriter, new ThreadC(256) as SSReader;
+  SS_P.SSWriter -> SSWriter;
+  SS_P.SSReader -> SSReader;
   
   components SemaphoreC;
   SS_P.Semaphore -> SemaphoreC;
 
-  components new mm3BlockingSpi1C() as SpiC;
+  components new mm3BlockingSpi1C() as SpiWrite;
+  components new mm3BlockingSpi1C() as SpiRead;
+  SS_P.BlockingWriteResource -> SpiWrite;
+  SS_P.BlockingReadResource -> SpiRead;
+  SS_P.ResourceConfigure <- SpiWrite;
+  SS_P.SpiResourceConfigure -> SpiWrite;
+  BlockingSpiPacket = SpiWrite;
+
 //  components new BlockingResourceC();
 //  BlockingResourceC.Resource -> SpiC;
-  SS_P.BlockingSpiResource -> SpiC;
-  SS_P.ResourceConfigure <- SpiC;
-  SS_P.SpiResourceConfigure -> SpiC;
-  BlockingSpiPacket = SpiC;
 
-  components SDC;
+  components SDC, PanicC, HplMM3AdcC, LocalTimeMilliC;
   SS_P.SD -> SDC;
-
-  components PanicC;
   SS_P.Panic -> PanicC;
-
-  components HplMM3AdcC;
   SS_P.HW -> HplMM3AdcC;
-
-  components LocalTimeMilliC;
   SS_P.LocalTime -> LocalTimeMilliC;
 }
