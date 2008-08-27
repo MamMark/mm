@@ -3,6 +3,9 @@
  * All rights reserved.
  */
 
+#include "panic.h"
+#include "sd_blocks.h"
+
 norace uint16_t save_sr;
 norace bool save_sr_free;
 norace uint8_t _p, _w;
