@@ -13,4 +13,8 @@ implementation {
   components PanicP, MainC;
   Panic = PanicP;
   MainC.SoftwareInit -> PanicP;
+
+  components LocalTimeMilliC, CollectC;
+  PanicP.LocalTime -> LocalTimeMilliC;
+  PanicP.Collect -> CollectC;
 }

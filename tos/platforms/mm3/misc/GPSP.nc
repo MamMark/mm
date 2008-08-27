@@ -348,7 +348,7 @@ implementation {
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
     if (call UARTResource.isOwner()) {
       if (call UARTResource.release() != SUCCESS)
-	gps_panic(3, 0);
+	gps_panic(1, 0);
       mmP5out.ser_sel = SER_SEL_NONE;
     }
     call GPSMsgControl.stop();
@@ -594,7 +594,7 @@ implementation {
 
     switch (gpsc_state) {
       default:
-	call Panic.panic(PANIC_GPS, 4, gpsc_state, 0, 0, 0);
+	call Panic.panic(PANIC_GPS, 3, gpsc_state, 0, 0, 0);
 	nop();
 	return;
 
@@ -627,7 +627,7 @@ implementation {
 	gpsc_change_state(gpsc_prev_state, GPSW_GRANT);
 	switch(gpsc_prev_state) {
 	  default:
-	    call Panic.panic(PANIC_GPS, 5, gpsc_state, 0, 0, 0);
+	    call Panic.panic(PANIC_GPS, 4, gpsc_state, 0, 0, 0);
 	    break;
 	  case GPSC_START_DELAY:
 	    call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
@@ -656,15 +656,19 @@ implementation {
       default:
       case GPSC_FAIL:
       case GPSC_OFF:
-      case GPSC_BOOT_REQUESTED:			// very strange.  (timed out)
       case GPSC_BOOT_SENDING:			// timed out.
       case GPSC_RECONFIG_4800_HUNTING:		// timed out.  no start char
       case GPSC_RECONFIG_4800_SENDING:		// timed out send.
-      case GPSC_REQUESTED:			// request took too long
       case GPSC_SENDING:			// send took too long
       case GPSC_HUNT_1:				// didn't see start sequence within window.
       case GPSC_HUNT_2:				// didn't see start sequence within window.
       case GPSC_RELEASING:			// request hung?
+	call Panic.panic(PANIC_GPS, 5, gpsc_state, 0, 0, 0);
+	nop();
+	return;
+
+      case GPSC_BOOT_REQUESTED:			// very strange.  (timed out)
+      case GPSC_REQUESTED:			// request took too long
 	call Panic.panic(PANIC_GPS, 6, gpsc_state, 0, 0, 0);
 	nop();
 	return;
@@ -764,14 +768,14 @@ implementation {
 	gpsc_change_state(GPSC_RECONFIG_4800_SENDING, GPSW_TIMER);
 	call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
 	if ((err = call UartStream.send(nmea_go_sirf_bin, sizeof(nmea_go_sirf_bin))))
-	  call Panic.panic(PANIC_GPS, 14, err, gpsc_state, 0, 0);
+	  call Panic.panic(PANIC_GPS, 9, err, gpsc_state, 0, 0);
 	return;
 
       case GPSC_START_DELAY:
 	gpsc_change_state(GPSC_SENDING, GPSW_TIMER);
 	call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
 	if ((err = call UartStream.send(sirf_poll, sizeof(sirf_poll))))
-	  call Panic.panic(PANIC_GPS, 15, err, gpsc_state, 0, 0);
+	  call Panic.panic(PANIC_GPS, 10, err, gpsc_state, 0, 0);
 	return;
     }
   }
@@ -892,7 +896,7 @@ implementation {
       case GPSC_BOOT_START_DELAY:		// interrupts shouldn't be on.  why are we here?
       case GPSC_RECONFIG_4800_PWR_DOWN:
       case GPSC_RECONFIG_4800_START_DELAY:
-	call Panic.panic(PANIC_GPS, 16, gpsc_state, byte, 0, 0);
+	call Panic.panic(PANIC_GPS, 11, gpsc_state, byte, 0, 0);
 	nop();			// less confusing.
 	return;
     }
@@ -936,7 +940,7 @@ implementation {
 	break;
 
       default:
-	call Panic.panic(PANIC_GPS, 17, gpsc_state, 0, 0, 0);
+	call Panic.panic(PANIC_GPS, 12, gpsc_state, 0, 0, 0);
 	break;
     }
     return;

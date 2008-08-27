@@ -612,6 +612,15 @@ implementation {
   }
   
   event void SSReader.run(void* arg) {
+    for(;;) {
+      call SSReader.sleep(1024);
+      continue;
+
+      call BlockingReadResource.request();
+      call SSReader.sleep(1024);
+      call BlockingReadResource.release();
+      call SSReader.sleep(1024);
+    }
   }
 
 #ifdef notdef

@@ -149,10 +149,10 @@ implementation {
 
     t = call LocalTime.get();
     if (last_surfaced && (t - last_surfaced ) < 1024)
-      call Panic.panic(PANIC_GPS, 132, 0, 0, 0, 0);
+      call Panic.panic(PANIC_GPS, 129, 0, 0, 0, 0);
     last_surfaced = t;
     if (gpsm_state != GPSM_DOWN) {
-      call Panic.panic(PANIC_GPS, 129, gpsm_state, 0, 0, 0);
+      call Panic.panic(PANIC_GPS, 130, gpsm_state, 0, 0, 0);
       return;
     }
     gpsm_state = GPSM_STARTING;
@@ -164,7 +164,7 @@ implementation {
 
     t = call LocalTime.get();
     if (last_submerged && (t - last_surfaced ) < 1024)
-      call Panic.panic(PANIC_GPS, 133, 0, 0, 0, 0);
+      call Panic.panic(PANIC_GPS, 131, 0, 0, 0, 0);
     last_submerged = t;
     gpsm_state = GPSM_STOPPING;
     call GPSControl.stop();
@@ -174,7 +174,7 @@ implementation {
   event void MsgTimer.fired() {
     switch (gpsm_state) {
       default:
-	call Panic.panic(PANIC_GPS, 130, gpsm_state, 0, 0, 0);
+	call Panic.panic(PANIC_GPS, 132, gpsm_state, 0, 0, 0);
 	return;
 
       case GPSM_SHORT:
@@ -236,7 +236,7 @@ implementation {
      */
     geop = (gps_geodetic_nt *) (&collect_msg[GPS_START_OFFSET]);
     if (geop->start != SIRF_BIN_START || geop->start_2 != SIRF_BIN_START_2) {
-      call Panic.panic(PANIC_GPS, 131, geop->start, geop->start_2, 0, 0);
+      call Panic.panic(PANIC_GPS, 133, geop->start, geop->start_2, 0, 0);
     }
     if (geop->len == GEODETIC_LEN && geop->mid == MID_GEODETIC)
       process_geodetic(geop);
@@ -407,7 +407,7 @@ implementation {
 	return;
 
       default:
-	call Panic.panic(PANIC_GPS, 192, collect_state, 0, 0, 0);
+	call Panic.panic(PANIC_GPS, 134, collect_state, 0, 0, 0);
 	return;
     }
   }

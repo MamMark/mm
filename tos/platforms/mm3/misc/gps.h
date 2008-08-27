@@ -108,6 +108,6 @@
  * MAX_REQUEST_TO: time out if a request isn't satisfied with
  * this amount of time.
  */
-#define DT_GPS_MAX_REQUEST_TO 10000
+#define DT_GPS_MAX_REQUEST_TO 10240
 
 #endif /* __GPS_H__ */

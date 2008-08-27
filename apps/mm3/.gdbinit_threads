@@ -46,23 +46,32 @@ b TinyThreadSchedulerP.nc:76
 dis
 
 
-# 5
-b PanicP.nc:46
+# 5 debug_break
+b PanicP.nc:42
+
+# 6 panic
+b PanicP.nc:54
 comm
 printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
 end
 
-# 6 BRK_FINISH
+# 7 BRK_FINISH
 b GPSP.nc:391
 
-# 7 sal senseval
+# 8 sal senseval
 #b *SalP$Adc$configured+0d228
 
-# 8 fake surfaced toggle
+# 9 fake surfaced toggle
 b mm3ControlP.nc:58
 
-# 9 process_geodetic got over determined
-b GPSMsgP.nc:204
+# 10 process_geodetic got over determined
+b GPSMsgP.nc:209
+
+#11
+b StreamStorageP.nc:498
+
+#12
+b StreamStorageP.nc:617
 
 # 7
 #b *ArbiterP$0$Resource$request+0d12
