@@ -41,7 +41,7 @@ implementation {
    * This will also give us an idea of how deep the stacks have been
    */
 
-  components new ThreadC(256) as SSWriter, new ThreadC(256) as SSReader;
+  components new ThreadC(512) as SSWriter, new ThreadC(512) as SSReader;
   SS_P.SSWriter -> SSWriter;
   SS_P.SSReader -> SSReader;
   
@@ -64,4 +64,7 @@ implementation {
   SS_P.Panic -> PanicC;
   SS_P.HW -> HplMM3AdcC;
   SS_P.LocalTime -> LocalTimeMilliC;
+
+  components TraceC;
+  SS_P.Trace -> TraceC;
 }

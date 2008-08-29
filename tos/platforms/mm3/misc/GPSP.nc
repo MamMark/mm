@@ -253,6 +253,7 @@ module GPSP {
     interface HplMsp430Usart as Usart;
     interface GPSMsg;
     interface StdControl as GPSMsgControl;
+    interface Trace;
   }
 }
 
@@ -508,7 +509,11 @@ implementation {
      * Start a timer to catch the grant never being issued.
      */
     call GPSTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
+    call Trace.trace(T_GPS, 0x20, 0);
+    call Panic.brk(0x20);
     call UARTResource.request();
+    call Trace.trace(T_GPS, 0x21, 0);
+    call Panic.brk(0x21);
   }
 
   /*

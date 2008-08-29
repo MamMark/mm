@@ -57,6 +57,6 @@ implementation {
   }
 
   default event void mm3CommData.send_data_done[uint8_t client_id](error_t rtn) {
-    call Panic.brk();
+    call Panic.brk(0);
   }
 }

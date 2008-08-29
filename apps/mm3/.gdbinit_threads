@@ -5,25 +5,6 @@ disp/i $pc
 x/i $pc
 set pri ele 0
 
-# gps msg data display
-define gmd
-printf "gpsc_state: "
-print GPSP$gpsc_state
-printf "gpsc_prev_state: "
-print GPSP$gpsc_prev_state
-printf "msg_collect_state: "
-print GPSMsgP$collect_state
-printf "left: %d, collect_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$collect_left, GPSMsgP$collect_length, GPSMsgP$collect_cur_chksum
-printf "collect_nxt:  0x%02x  on_overflow: %d\n", GPSMsgP$collect_nxt, GPSMsgP$on_overflow
-printf "Msg State: "
-print GPSMsgP$gpsm_state
-printf "\nbuffer:\n"
-x/32xb GPSMsgP$collect_msg
-printf "overflow:\n"
-x/16xb GPSMsgP$collect_overflow
-printf "\nerrors: ovrfull: %d  ovrmax: %d  too_big: %d  chk fail: %d  proto fail: %d\n", GPSMsgP$collect_overflow_full, GPSMsgP$collect_overflow_max, GPSMsgP$collect_too_big, GPSMsgP$collect_chksum_fail, GPSMsgP$collect_proto_fail
-end
-
 # 1
 b TinyOSMainP.nc:83
 
@@ -34,12 +15,6 @@ b *TinyOSMainP$TinyOSBoot$booted+0d64
 # 3 task scheduler
 b SchedulerBasicP.nc:137
 
-# thread scheduler
-#b SchedulerBasicP.nc:134
-
-#mcu sleep
-#b TinyThreadSchedulerP.nc:94
-
 # 4 thread dispatch
 b TinyThreadSchedulerP.nc:76
 
@@ -47,43 +22,34 @@ dis
 
 
 # 5 debug_break
-b PanicP.nc:42
+b PanicP.nc:46
 
 # 6 panic
-b PanicP.nc:54
+b PanicP.nc:58
 comm
 printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
 end
 
 # 7 BRK_FINISH
-b GPSP.nc:391
+b GPSP.nc:392
 
-# 8 sal senseval
-#b *SalP$Adc$configured+0d228
+# 8 fake surfaced toggle
+# b mm3ControlP.nc:58
 
-# 9 fake surfaced toggle
-b mm3ControlP.nc:58
-
-# 10 process_geodetic got over determined
-b GPSMsgP.nc:209
-
-#11
-b StreamStorageP.nc:498
-
-#12
-b StreamStorageP.nc:617
-
-# 7
-#b *ArbiterP$0$Resource$request+0d12
-#comm
-#printf "request: %d\n", id
-#end
+# 9 process_geodetic got over determined
+# b GPSMsgP.nc:209
 
 # 8
-#b *ArbiterP$0$Resource$release+0d12
-#comm
-#printf "release: %d\n", id
-#end
+b *ArbiterP$0$Resource$request+0d22
+comm
+printf "request: %d\n", id
+end
+
+# 9
+b *ArbiterP$0$Resource$release+0d24
+comm
+printf "release: %d\n", id
+end
 
 # x msgBoundary
 #b GPSP.nc:951
@@ -125,3 +91,29 @@ b StreamStorageP.nc:617
 # comm
 # printf "release: %d %d\n",AdcP$adc_owner,client_id
 # end
+
+# display trace buffer
+define trace
+printf "trace buffer:  nxt: %d\n", trace_nxt
+print trace_buf
+end
+
+# gps msg data display
+define gmd
+printf "gpsc_state: "
+print GPSP$gpsc_state
+printf "gpsc_prev_state: "
+print GPSP$gpsc_prev_state
+printf "msg_collect_state: "
+print GPSMsgP$collect_state
+printf "left: %d, collect_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$collect_left, GPSMsgP$collect_length, GPSMsgP$collect_cur_chksum
+printf "collect_nxt:  0x%02x  on_overflow: %d\n", GPSMsgP$collect_nxt, GPSMsgP$on_overflow
+printf "Msg State: "
+print GPSMsgP$gpsm_state
+printf "\nbuffer:\n"
+x/32xb GPSMsgP$collect_msg
+printf "overflow:\n"
+x/16xb GPSMsgP$collect_overflow
+printf "\nerrors: ovrfull: %d  ovrmax: %d  too_big: %d  chk fail: %d  proto fail: %d\n", GPSMsgP$collect_overflow_full, GPSMsgP$collect_overflow_max, GPSMsgP$collect_too_big, GPSMsgP$collect_chksum_fail, GPSMsgP$collect_proto_fail
+end
+

@@ -9,7 +9,7 @@
 norace uint16_t save_sr;
 norace bool save_sr_free;
 norace uint8_t _p, _w;
-norace uint16_t _a0, _a1, _a2, _a3;
+norace uint16_t _a0, _a1, _a2, _a3, _arg;
 
 #define MAYBE_SAVE_SR_AND_DINT	do {	\
     if (save_sr_free) {			\
@@ -40,8 +40,9 @@ implementation {
     p_blk_busy = FALSE;
   }
 
-  void debug_break()  __attribute__ ((noinline)) {
-    MAYBE_SAVE_SR_AND_DINT;
+  void debug_break(uint16_t arg)  __attribute__ ((noinline)) {
+//    MAYBE_SAVE_SR_AND_DINT;
+    _arg = arg;
     nop();
   }
 
@@ -78,8 +79,8 @@ implementation {
     call Panic.panic(pcode, where, arg0, arg1, arg2, arg3);
   }
 
-  async command void Panic.brk() {
-    debug_break();
+  async command void Panic.brk(uint16_t arg) {
+    debug_break(arg);
   }
     
   command error_t Init.init() {

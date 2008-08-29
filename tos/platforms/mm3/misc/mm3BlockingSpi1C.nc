@@ -31,6 +31,7 @@
 
 /**
  * @author Kevin Klues <klueska@cs.stanford.edu>
+ * @author Eric B. Decker <cire831@gmail.com>
  */
  
 generic configuration mm3BlockingSpi1C() {
@@ -47,16 +48,17 @@ implementation {
   components new BlockingResourceC();
   components new BlockingSpiP();
   
-  BlockingResource = BlockingResourceC;
-  BlockingSpiByte = BlockingSpiP;
+  BlockingResource  = BlockingResourceC;
+  BlockingSpiByte   = BlockingSpiP;
   BlockingSpiPacket = BlockingSpiP;
-  SpiResourceConfigure = mm3Spi1C;
-  ResourceConfigure = mm3Spi1C;
   
-  components new mm3Spi1C();
-  BlockingResourceC.Resource -> mm3Spi1C;
-  BlockingSpiP.SpiByte -> mm3Spi1C;
-  BlockingSpiP.SpiPacket -> mm3Spi1C;
+  components new mm3Spi1C() as SPI_1;
+//  components new Msp430Spi1C() as SPI_1;
+  SpiResourceConfigure = SPI_1;
+  ResourceConfigure = SPI_1;
+  BlockingResourceC.Resource -> SPI_1;
+  BlockingSpiP.SpiByte -> SPI_1;
+  BlockingSpiP.SpiPacket -> SPI_1;
   
   components SystemCallC;
   BlockingSpiP.SystemCall -> SystemCallC;

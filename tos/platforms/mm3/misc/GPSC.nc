@@ -78,4 +78,7 @@ implementation {
 
   components PanicC;
   GPSP.Panic -> PanicC;
+
+  components TraceC;
+  GPSP.Trace -> TraceC;
 }

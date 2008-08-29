@@ -96,6 +96,7 @@ module StreamStorageP {
     interface ResourceConfigure as SpiResourceConfigure;
     interface Panic;
     interface LocalTime<TMilli>;
+    interface Trace;
   }
 }
   
@@ -480,7 +481,11 @@ implementation {
      * we use the default configuration for now which matches
      * what we need.
      */
+    call Trace.trace(T_SSW, 1, 0);
+    call Panic.brk(1);
     call BlockingWriteResource.request();
+    call Trace.trace(T_SSW, 2, 0);
+    call Panic.brk(2);
 
     /*
      * First start up and read in control blocks.
@@ -495,8 +500,14 @@ implementation {
      * and set our current state to OFF.
      */
     atomic ss_state = SS_STATE_IDLE;
+    call Trace.trace(T_SSW, 3, 0);
+    call Panic.brk(3);
     call BlockingWriteResource.release();
+    call Trace.trace(T_SSW, 4, 0);
+    call Panic.brk(4);
     signal BlockingBoot.booted();
+    call Trace.trace(T_SSW, 5, 0);
+    call Panic.brk(5);
 
     for(;;) {
       call Semaphore.acquire(&sem);
@@ -613,13 +624,23 @@ implementation {
   
   event void SSReader.run(void* arg) {
     for(;;) {
-      call SSReader.sleep(1024);
-      continue;
+      //      call SSReader.sleep(1024);
+      //      continue;
 
+      call Trace.trace(T_SSR, 0x10, 0);
+      call Panic.brk(0x10);
       call BlockingReadResource.request();
+      call Trace.trace(T_SSR, 0x11, 0);
+      call Panic.brk(0x11);
       call SSReader.sleep(1024);
+      call Trace.trace(T_SSR, 0x12, 0);
+      call Panic.brk(0x12);
       call BlockingReadResource.release();
+      call Trace.trace(T_SSR, 0x13, 0);
+      call Panic.brk(0x13);
       call SSReader.sleep(1024);
+      call Trace.trace(T_SSR, 0x14, 0);
+      call Panic.brk(0x14);
     }
   }
 
