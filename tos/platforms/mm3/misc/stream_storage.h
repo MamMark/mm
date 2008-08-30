@@ -14,13 +14,9 @@
 
 /* needs to agree with SECTOR_SIZE and SD_BLOCKSIZE
    yeah it is stupid and ugly
-
-   SS_CRITICAL_BUFS is the number of full buffers that
-   will force the SS system to take the usart h/w.
 */
 #define SS_BLOCK_SIZE 512
-#define SS_NUM_BUFS   4
-#define SS_CRITICAL_BUFS 3
+#define SSW_NUM_BUFS   4
 
 
 /*
@@ -62,32 +58,42 @@
  */
 
 typedef enum {
-    SS_BUF_STATE_FREE = 0x1561,
-    SS_BUF_STATE_ALLOC,
-    SS_BUF_STATE_FULL,
-    SS_BUF_STATE_WRITING,
-    SS_BUF_STATE_DONE,
-    SS_BUF_STATE_MAX
-} ss_buf_state_t;
+    SSW_BUF_STATE_FREE = 0x1561,
+    SSW_BUF_STATE_ALLOC,
+    SSW_BUF_STATE_FULL,
+    SSW_BUF_STATE_WRITING,
+    SSW_BUF_STATE_DONE,
+    SSW_BUF_STATE_MAX
+} ssw_buf_state_t;
 
 
-#define SS_BUF_MAJIK 0xeaf0
+#define SSW_BUF_MAJIK 0xeaf0
 
 typedef struct {
     uint16_t majik;
-    ss_buf_state_t buf_state;
+    ssw_buf_state_t buf_state;
     uint32_t stamp;
     uint8_t  buf[SS_BLOCK_SIZE + 2]; /* include room for CRC */
-} ss_buf_handle_t;
+} ssw_buf_handle_t;
 
 
 typedef enum {
-  SS_STATE_CRASHED	= 0x10,	/* something went wrong with stream storage.  hard fail */
-  SS_STATE_OFF,			/* power is off to the SS device */
-  SS_STATE_XFER,		/* writing data out to the SS device, dma */
-  SS_STATE_IDLE,		/* powered up but idle */
-  SS_STATE_MAX
-} ss_state_t;
+  SSW_STATE_CRASHED	= 0x10,	/* something went wrong with stream storage.  hard fail */
+  SSW_STATE_OFF,		/* power is off to the SS device */
+  SSW_STATE_XFER,		/* writing data out to the SS device, dma */
+  SSW_STATE_IDLE,		/* powered up but idle */
+  SSW_STATE_MAX
+} ssw_state_t;
+
+
+/* can these be combined? */
+
+typedef enum {
+  SSR_STATE_CRASHED	= 0x20,
+  SSR_STATE_OFF,
+  SSR_STATE_XFER,
+  SSR_STATE_IDLE,
+} ssr_state_t;
 
 
 /*
@@ -97,7 +103,7 @@ typedef enum {
  * the data collector.  The data collector gets and sends back buffers
  * completely sequentially.
  *
- * ss_state:	indicates what the main controller is doing, powering up,
+ * ssw_state:	indicates what the main controller is doing, powering up,
  *		writing via dma, etc.
  * out_index:	Buffer being written out via dma to the stream storage device.
  * in_index:	Next buffer that should be coming back from the collector.

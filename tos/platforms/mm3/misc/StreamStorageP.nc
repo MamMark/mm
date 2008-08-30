@@ -101,16 +101,16 @@ module StreamStorageP {
 }
   
 implementation {
-  ss_buf_handle_t ss_handles[SS_NUM_BUFS];
-  ss_buf_handle_t * const ssh_ptrs[SS_NUM_BUFS] = {
-    &ss_handles[0],
-    &ss_handles[1],
-    &ss_handles[2],
-    &ss_handles[3]
+  ssw_buf_handle_t ssw_handles[SSW_NUM_BUFS];
+  ssw_buf_handle_t * const ssh_ptrs[SSW_NUM_BUFS] = {
+    &ssw_handles[0],
+    &ssw_handles[1],
+    &ssw_handles[2],
+    &ssw_handles[3]
   };
 
-#if SS_NUM_BUFS != 4
-#warning "SS_NUM_BUFS is other than 4"
+#if SSW_NUM_BUFS != 4
+#warning "SSW_NUM_BUFS is other than 4"
 #endif
 
   /*
@@ -120,16 +120,29 @@ implementation {
    * ss_state pulled out to deal with asyncronous state setting.
    */
 
-  ss_state_t ss_state;		// current state of machine (2 bytes)
+  ssw_state_t ssw_state;	// current state of machine (2 bytes)
   ss_control_t ssc;
 
-  semaphore_t sem;
+  semaphore_t write_sem;
+
+
+  /*
+   * Globals for the Stream Read interface
+   */
+
+  semaphore_t read_sem;
+  uint32_t m_rblock;
+  uint8_t *m_rbuf;
+  ssr_state_t ssr_state;
+
 
   command error_t Init.init() {
     uint16_t i;
 
-    call Semaphore.reset(&sem, 0);
-    ss_state        = SS_STATE_OFF;
+    call Semaphore.reset(&write_sem, 0);
+    call Semaphore.reset(&read_sem, 0);
+    ssw_state        = SSW_STATE_OFF;
+    ssr_state	     = SSR_STATE_OFF;
 
     ssc.majik_a     = SSC_MAJIK_A;
     ssc.alloc_index = 0;
@@ -144,10 +157,10 @@ implementation {
     ssc.dblk_nxt    = 0;
     ssc.majik_b     = SSC_MAJIK_B;
 
-    for (i = 0; i < SS_NUM_BUFS; i++) {
-      ss_handles[i].majik     = SS_BUF_MAJIK;
-      ss_handles[i].buf_state = SS_BUF_STATE_FREE;
-      ss_handles[i].stamp = 0;
+    for (i = 0; i < SSW_NUM_BUFS; i++) {
+      ssw_handles[i].majik     = SSW_BUF_MAJIK;
+      ssw_handles[i].buf_state = SSW_BUF_STATE_FREE;
+      ssw_handles[i].stamp = 0;
     }
     return SUCCESS;
   }
@@ -182,8 +195,8 @@ implementation {
    * buffers in order.
    */
 
-  command void SS.buffer_full(ss_buf_handle_t *handle) {
-    ss_buf_handle_t *sshp;
+  command void SS.buffer_full(ssw_buf_handle_t *handle) {
+    ssw_buf_handle_t *sshp;
     uint8_t in_index;
 
     /*
@@ -192,13 +205,13 @@ implementation {
      */
     in_index = ssc.in_index;
     sshp = ssh_ptrs[in_index];
-    if (&ss_handles[in_index] != sshp) // shouldn't ever happen,  uses math
+    if (&ssw_handles[in_index] != sshp) // shouldn't ever happen,  uses math
       ss_panic(10, (uint16_t) sshp);
 
     /* the next check also catches the null pointer */
     if (sshp != handle ||
-	handle->majik != SS_BUF_MAJIK ||
-	handle->buf_state != SS_BUF_STATE_ALLOC) {
+	handle->majik != SSW_BUF_MAJIK ||
+	handle->buf_state != SSW_BUF_STATE_ALLOC) {
       call Panic.panic(PANIC_SS, 11, (uint16_t) handle, handle->majik, handle->buf_state, (uint16_t) sshp);
     }
 
@@ -211,15 +224,15 @@ implementation {
      */
     handle->stamp = call LocalTime.get();
     atomic {
-      handle->buf_state = SS_BUF_STATE_FULL;
+      handle->buf_state = SSW_BUF_STATE_FULL;
       ssc.num_full++;
       if (ssc.num_full > ssc.max_full)
 	ssc.max_full = ssc.num_full;
     }
     ssc.in_index++;
-    if (ssc.in_index >= SS_NUM_BUFS)
+    if (ssc.in_index >= SSW_NUM_BUFS)
       ssc.in_index = 0;
-    call Semaphore.release(&sem);
+    call Semaphore.release(&write_sem);
   }
 
 
@@ -240,6 +253,11 @@ implementation {
       if (ptr[i])
 	return(0);
     return(1);
+  }
+
+
+  command bool SS.buffer_empty(uint8_t *buf) {
+    return blk_empty(buf) == 1;
   }
 
 
@@ -309,7 +327,7 @@ implementation {
       return err;
     }
 
-    dp = ss_handles[0].buf;
+    dp = ssw_handles[0].buf;
     if ((err = read_blk_fail(0, dp)))
       return err;
 
@@ -388,28 +406,28 @@ implementation {
   }
 
 
-  command ss_buf_handle_t* SS.get_free_buf_handle() {
-    ss_buf_handle_t *sshp;
+  command ssw_buf_handle_t* SS.get_free_buf_handle() {
+    ssw_buf_handle_t *sshp;
 
     sshp = ssh_ptrs[ssc.alloc_index];
-    if (ssc.alloc_index >= SS_NUM_BUFS ||
+    if (ssc.alloc_index >= SSW_NUM_BUFS ||
 	ssc.majik_a != SSC_MAJIK_A ||
 	ssc.majik_b != SSC_MAJIK_B ||
-	sshp->buf_state < SS_BUF_STATE_FREE ||
-	sshp->buf_state >= SS_BUF_STATE_MAX) {
+	sshp->buf_state < SSW_BUF_STATE_FREE ||
+	sshp->buf_state >= SSW_BUF_STATE_MAX) {
       ss_panic(18, -1);
       return NULL;
     }
 
-    if (sshp->buf_state == SS_BUF_STATE_FREE) {
-      if (sshp->majik != SS_BUF_MAJIK) {
+    if (sshp->buf_state == SSW_BUF_STATE_FREE) {
+      if (sshp->majik != SSW_BUF_MAJIK) {
 	ss_panic(19, -1);
 	return NULL;
       }
       sshp->stamp = call LocalTime.get();
-      sshp->buf_state = SS_BUF_STATE_ALLOC;
+      sshp->buf_state = SSW_BUF_STATE_ALLOC;
       ssc.alloc_index++;
-      if (ssc.alloc_index >= SS_NUM_BUFS)
+      if (ssc.alloc_index >= SSW_NUM_BUFS)
 	ssc.alloc_index = 0;
       return sshp;
     }
@@ -418,9 +436,9 @@ implementation {
   }
 
 
-  command uint8_t *SS.buf_handle_to_buf(ss_buf_handle_t *handle) {
-    if (!handle || handle->majik != SS_BUF_MAJIK ||
-	handle->buf_state != SS_BUF_STATE_ALLOC) {
+  command uint8_t *SS.buf_handle_to_buf(ssw_buf_handle_t *handle) {
+    if (!handle || handle->majik != SSW_BUF_MAJIK ||
+	handle->buf_state != SSW_BUF_STATE_ALLOC) {
       ss_panic(21, -1);
       return NULL;
     }
@@ -429,31 +447,31 @@ implementation {
 
 
   async command void ResourceConfigure.configure() {
-    ss_state_t cur_state;
+    ssw_state_t cur_state;
 
-    atomic cur_state = ss_state;
+    atomic cur_state = ssw_state;
     switch(cur_state) {
       default:
-      case SS_STATE_CRASHED:
-      case SS_STATE_XFER:
+      case SSW_STATE_CRASHED:
+      case SSW_STATE_XFER:
 	ss_panic(22, cur_state);
 	break;
 
-      case SS_STATE_OFF:
+      case SSW_STATE_OFF:
 	  call HW.sd_on();
-	  atomic ss_state = SS_STATE_IDLE;
-      case SS_STATE_IDLE:
+	  atomic ssw_state = SSW_STATE_IDLE;
+      case SSW_STATE_IDLE:
 	call SpiResourceConfigure.configure();
     }
   }
 
 
   async command void ResourceConfigure.unconfigure() {
-    switch(ss_state) {
+    switch(ssw_state) {
       default:
-      case SS_STATE_CRASHED:
-      case SS_STATE_OFF:
-	ss_panic(23, ss_state);
+      case SSW_STATE_CRASHED:
+      case SSW_STATE_OFF:
+	ss_panic(23, ssw_state);
 	break;
 
 	/* If IDLE turn the device off and then deconfigure.
@@ -461,10 +479,10 @@ implementation {
 	 * transfer can complete.  Upon conclusion we will
 	 * have to reacquire the bus to finish.
 	 */
-      case SS_STATE_IDLE:
+      case SSW_STATE_IDLE:
 	call HW.sd_off();	// and then unconfigure
-	ss_state = SS_STATE_OFF;
-      case SS_STATE_XFER:
+	ssw_state = SSW_STATE_OFF;
+      case SSW_STATE_XFER:
 	call SpiResourceConfigure.unconfigure();
 	break;
     }
@@ -472,17 +490,17 @@ implementation {
 
 
   event void SSWriter.run(void* arg) {
-    ss_buf_handle_t* cur_handle;
+    ssw_buf_handle_t* cur_handle;
     error_t err;
-    ss_state_t cur_state;
+    ssw_state_t cur_state;
 
     /*
      * call the system to arbritrate and configure the SPI
      * we use the default configuration for now which matches
      * what we need.
      */
+    
     call Trace.trace(T_SSW, 1, 0);
-    call Panic.brk(1);
     call BlockingWriteResource.request();
     call Trace.trace(T_SSW, 2, 0);
     call Panic.brk(2);
@@ -499,18 +517,16 @@ implementation {
      * releasing when IDLE will power the device down.
      * and set our current state to OFF.
      */
-    atomic ss_state = SS_STATE_IDLE;
+    atomic ssw_state = SSW_STATE_IDLE;
     call Trace.trace(T_SSW, 3, 0);
-    call Panic.brk(3);
     call BlockingWriteResource.release();
     call Trace.trace(T_SSW, 4, 0);
-    call Panic.brk(4);
     signal BlockingBoot.booted();
     call Trace.trace(T_SSW, 5, 0);
     call Panic.brk(5);
 
     for(;;) {
-      call Semaphore.acquire(&sem);
+      call Semaphore.acquire(&write_sem);
 
       /*
        * if the next out buffer indicates it isn't full then we are seeing
@@ -522,7 +538,7 @@ implementation {
        * the task level.
        */
       cur_handle = ssh_ptrs[ssc.out_index];
-      if (cur_handle->buf_state != SS_BUF_STATE_FULL)
+      if (cur_handle->buf_state != SSW_BUF_STATE_FULL)
 	continue;
 
       /*
@@ -544,8 +560,8 @@ implementation {
 	 * a delay prior to shutting the hardware off.  But if we are in OFF_WAIT
 	 * we won't be here but rather later down in this processing loop.
 	 */
-	atomic cur_state = ss_state;
-	if (cur_state != SS_STATE_OFF)
+	atomic cur_state = ssw_state;
+	if (cur_state != SSW_STATE_OFF)
 	  ss_panic(25, cur_state);
 
 	call BlockingWriteResource.request(); // this will also turn on the hardware when granted.
@@ -554,14 +570,14 @@ implementation {
 	  ss_panic(26, err);
 	  continue;
 	}
-	atomic ss_state = SS_STATE_IDLE;
+	atomic ssw_state = SSW_STATE_IDLE;
       }
 
       for (;;) {
 	/*
 	 * current buffer needs to be full if we have work to do
 	 */
-	if (cur_handle->buf_state != SS_BUF_STATE_FULL)
+	if (cur_handle->buf_state != SSW_BUF_STATE_FULL)
 	  break;
 
 	if (ssc.dblk_nxt != 0) {
@@ -575,8 +591,8 @@ implementation {
 	   * Observed 5ms write time unerased block.
 	   */
 	  cur_handle->stamp = call LocalTime.get();
-	  cur_handle->buf_state = SS_BUF_STATE_WRITING;
-	  atomic ss_state = SS_STATE_XFER;
+	  cur_handle->buf_state = SSW_BUF_STATE_WRITING;
+	  atomic ssw_state = SSW_STATE_XFER;
 	  w_t0 = call LocalTime.get();
 	  err = call SD.write(ssc.dblk_nxt, cur_handle->buf);
 	  if (err)
@@ -585,9 +601,9 @@ implementation {
 	}
 
 	cur_handle->stamp = call LocalTime.get();
-	cur_handle->buf_state = SS_BUF_STATE_FREE;
+	cur_handle->buf_state = SSW_BUF_STATE_FREE;
 	ssc.out_index++;
-	if (ssc.out_index >= SS_NUM_BUFS)
+	if (ssc.out_index >= SSW_NUM_BUFS)
 	  ssc.out_index = 0;
 	ssc.num_full--;
 	if (ssc.dblk_nxt != 0) {
@@ -601,7 +617,7 @@ implementation {
 	     */
 	    signal SSF.dblk_stream_full();
 	    ssc.dblk_nxt = 0;
-	    atomic ss_state = SS_STATE_IDLE;
+	    atomic ssw_state = SSW_STATE_IDLE;
 	    call BlockingWriteResource.release(); // will shutdown the hardware
 	  } else
 	    ssc.dblk_nxt++;
@@ -616,7 +632,7 @@ implementation {
 	 * This is where to implement OFF_WAIT
 	 * For now we just go idle and release
 	 */
-	atomic ss_state = SS_STATE_IDLE;
+	atomic ssw_state = SSW_STATE_IDLE;
 	call BlockingWriteResource.release(); // will shutdown the hardware
       }
     }
@@ -624,37 +640,33 @@ implementation {
   
   event void SSReader.run(void* arg) {
     for(;;) {
-      //      call SSReader.sleep(1024);
-      //      continue;
-
       call Trace.trace(T_SSR, 0x10, 0);
-      call Panic.brk(0x10);
       call BlockingReadResource.request();
       call Trace.trace(T_SSR, 0x11, 0);
-      call Panic.brk(0x11);
       call SSReader.sleep(1024);
       call Trace.trace(T_SSR, 0x12, 0);
-      call Panic.brk(0x12);
       call BlockingReadResource.release();
       call Trace.trace(T_SSR, 0x13, 0);
-      call Panic.brk(0x13);
       call SSReader.sleep(1024);
       call Trace.trace(T_SSR, 0x14, 0);
       call Panic.brk(0x14);
+
+      call Semaphore.acquire(&read_sem);
+
     }
   }
 
 #ifdef notdef
   void ss_machine(msg_event_t *msg) {
     uint8_t     *buf;
-    ss_buf_handle_t	*ss_handle;
+    ssw_buf_handle_t	*ss_handle;
     ss_timer_data_t mtd;
     mm_time_t       t;
     sd_rtn	 err;
 
-    switch(ss_state) {
-      case SS_STATE_OFF:
-      case SS_STATE_IDLE:
+    switch(ssw_state) {
+      case SSW_STATE_OFF:
+      case SSW_STATE_IDLE:
 	/*
 	 * Only expected message is Buffer_Full.  Others
 	 * are weird.
@@ -668,13 +680,13 @@ implementation {
 	 * be allocated as well as the next one we expect.
 	 * Next one expected is ssc.in_index.
 	 */
-	ss_handle = (ss_buf_handle_t *) (buf - SS_HANDLE_OFFSET);
-	if (ss_handle->majik != SS_BUF_MAJIK)
+	ss_handle = (ssw_buf_handle_t *) (buf - SS_HANDLE_OFFSET);
+	if (ss_handle->majik != SSW_BUF_MAJIK)
 	  panic();
-	if (ss_handle->buf_state != SS_BUF_STATE_ALLOC)
+	if (ss_handle->buf_state != SSW_BUF_STATE_ALLOC)
 	  panic();
 
-	if (&ss_handles[ssc.in_index] != ss_handle)
+	if (&ssw_handles[ssc.in_index] != ss_handle)
 	  panic();
 
 #ifdef notdef
@@ -692,12 +704,12 @@ implementation {
 	  panic();
 #endif
 
-	ss_handle->buf_state = SS_BUF_STATE_FULL;
+	ss_handle->buf_state = SSW_BUF_STATE_FULL;
 	ssc.num_full++;
 	if (ssc.num_full > ssc.max_full)
 	  ssc.max_full = ssc.num_full;
 	ssc.in_index++;
-	if (ssc.in_index >= SS_NUM_BUFS)
+	if (ssc.in_index >= SSW_NUM_BUFS)
 	  ssc.in_index = 0;
 
 	/*
@@ -733,7 +745,7 @@ implementation {
 	   */
 	}
 
-	if (ss_state == SS_STATE_OFF) {
+	if (ssw_state == SSW_STATE_OFF) {
 	  /*
 	   * turn the power on and point the h/w at the SD card.
 	   *
@@ -761,8 +773,8 @@ implementation {
 	 * we may be backed up.  Use the next one that should
 	 * go out.
 	 */
-	ss_handle = &ss_handles[ssc.out_index];
-	if (ss_handle->buf_state != SS_BUF_STATE_FULL)
+	ss_handle = &ssw_handles[ssc.out_index];
+	if (ss_handle->buf_state != SSW_BUF_STATE_FULL)
 	  panic();
 
 	time_get_cur(&t);
@@ -771,16 +783,16 @@ implementation {
 	if (ss_wto_handle != TIMER_HANDLE_FREE)
 	  panic();
 	ss_wto_handle = timer_set(&t, ss_write_timeout, &mtd);
-	ss_handle->buf_state = SS_BUF_STATE_WRITING;
+	ss_handle->buf_state = SSW_BUF_STATE_WRITING;
 	err =
 	  sd_start_write(NULL, ssc.dblk_nxt, ss_handle->buf);
 	if (err)
 	  panic();
-	ss_state = SS_STATE_XFER;
+	ssw_state = SSW_STATE_XFER;
 	DMA0CTL_bit.DMAIE = 1;
 	return;
 	      
-      case SS_STATE_XFER:
+      case SSW_STATE_XFER:
 	/*
 	 * We are in the process of sending a buffer out.
 	 *
@@ -802,24 +814,24 @@ implementation {
 	   * being passed in needed to be the next one expected
 	   * (in_index)).
 	   */
-	  ss_handle = (ss_buf_handle_t *) (buf - SS_HANDLE_OFFSET);
-	  if (ss_handle->majik != SS_BUF_MAJIK)
+	  ss_handle = (ssw_buf_handle_t *) (buf - SS_HANDLE_OFFSET);
+	  if (ss_handle->majik != SSW_BUF_MAJIK)
 	    panic();
-	  if (ss_handle->buf_state != SS_BUF_STATE_ALLOC)
+	  if (ss_handle->buf_state != SSW_BUF_STATE_ALLOC)
 	    panic();
-	  if (&ss_handles[ssc.in_index] != ss_handle)
+	  if (&ssw_handles[ssc.in_index] != ss_handle)
 	    panic();
 
 	  /*
 	   * Switch to Full, bump the next expected and
 	   * that's all she wrote.
 	   */
-	  ss_handle->buf_state = SS_BUF_STATE_FULL;
+	  ss_handle->buf_state = SSW_BUF_STATE_FULL;
 	  ssc.num_full++;
 	  if (ssc.num_full > ssc.max_full)
 	    ssc.max_full = ssc.num_full;
 	  ssc.in_index++;
-	  if (ssc.in_index >= SS_NUM_BUFS)
+	  if (ssc.in_index >= SSW_NUM_BUFS)
 	    ssc.in_index = 0;
 	  return;
 	}
@@ -846,12 +858,12 @@ implementation {
 	   * If nothing else to do, power down and return to
 	   * OFF state.
 	   */
-	  if (ss_handles[ssc.out_index].buf_state != SS_BUF_STATE_WRITING)
+	  if (ssw_handles[ssc.out_index].buf_state != SSW_BUF_STATE_WRITING)
 	    panic();
-	  ss_handles[ssc.out_index].buf_state = SS_BUF_STATE_FREE;
+	  ssw_handles[ssc.out_index].buf_state = SSW_BUF_STATE_FREE;
 	  ssc.num_full--;
 	  ssc.out_index++;
-	  if (ssc.out_index >= SS_NUM_BUFS)
+	  if (ssc.out_index >= SSW_NUM_BUFS)
 	    ssc.out_index = 0;
 	  ssc.dblk_nxt++;
 	  if (ssc.dblk_nxt >= ssc.dblk_end)
@@ -860,16 +872,16 @@ implementation {
 	  /*
 	   * See if the next buffer needs to be written.
 	   */
-	  if (ss_handles[ssc.out_index].buf_state == SS_BUF_STATE_FULL) {
+	  if (ssw_handles[ssc.out_index].buf_state == SSW_BUF_STATE_FULL) {
 	    time_get_cur(&t);
 	    add_times(&t, &ss_write_timeout_delay);
 	    mtd.which = SS_TIME_WRITE_TIMEOUT;
 	    if (ss_wto_handle != TIMER_HANDLE_FREE)
 	      panic();
 	    ss_wto_handle = timer_set(&t, ss_write_timeout, &mtd);
-	    ss_handles[ssc.out_index].buf_state = SS_BUF_STATE_WRITING;
+	    ssw_handles[ssc.out_index].buf_state = SSW_BUF_STATE_WRITING;
 	    err =
-	      sd_start_write(NULL, ssc.dblk_nxt, ss_handles[ssc.out_index].buf);
+	      sd_start_write(NULL, ssc.dblk_nxt, ssw_handles[ssc.out_index].buf);
 	    if (err)
 	      panic();
 	    DMA0CTL_bit.DMAIE = 1;
@@ -880,7 +892,7 @@ implementation {
 	   * Not Full.  For now just go idle.  and dump the h/w so
 	   * a different subsystem can get it.
 	   */
-	  ss_state = SS_STATE_IDLE;
+	  ssw_state = SSW_STATE_IDLE;
 	  if (us1_select(US1_NONE, FALSE))
 	    panic();
 	  return;
@@ -922,13 +934,13 @@ implementation {
       panic();
     DMA0CTL_bit.DMAIFG = 0;
     DMA0CTL_bit.DMAIE = 0;
-    if (ssc.out_index >= SS_NUM_BUFS ||
-	(ss_handles[ssc.out_index].buf_state != SS_BUF_STATE_WRITING) ||
+    if (ssc.out_index >= SSW_NUM_BUFS ||
+	(ssw_handles[ssc.out_index].buf_state != SSW_BUF_STATE_WRITING) ||
 	(ss_wto_handle >= N_TIMERS))
       panic();
     mm_timer_delete(ss_wto_handle, ss_write_timeout);
     ss_wto_handle = TIMER_HANDLE_FREE;
-    sched_enqueue(TASK_MS, msg_ss_DMA_Complete, MSG_ADDR_MS, (msg_param_t) (&ss_handles[ssc.out_index]));
+    sched_enqueue(TASK_MS, msg_ss_DMA_Complete, MSG_ADDR_MS, (msg_param_t) (&ssw_handles[ssc.out_index]));
     __low_power_mode_off_on_exit();
   }
 

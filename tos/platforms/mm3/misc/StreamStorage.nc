@@ -24,7 +24,7 @@ interface StreamStorage {
    *   <li>NULL   if bad buf_handle or buffer not allocated.
    *   <li>buffer if good buf_handle.
    */
-  command uint8_t *buf_handle_to_buf(ss_buf_handle_t *buf_handle);
+  command uint8_t *buf_handle_to_buf(ssw_buf_handle_t *buf_handle);
 
   /**
    * request a new buffer from the Stream Storage system.
@@ -33,7 +33,7 @@ interface StreamStorage {
    *   <li>NULL   if no buffer available.
    *   <li>buf_handle if buffer available.  Buffer marked allocated.
    */
-  command ss_buf_handle_t* get_free_buf_handle();
+  command ssw_buf_handle_t* get_free_buf_handle();
 
   /**
    * call when the buffer objectified by buf_handle has been
@@ -42,5 +42,17 @@ interface StreamStorage {
    *
    * @param buf_handle address of the ss_buf_handle ready to be flushed.
    */  
-  command void buffer_full(ss_buf_handle_t *buf_handle);
+  command void buffer_full(ssw_buf_handle_t *buf_handle);
+
+  /**
+   * check a buffer (assumed to be 512 bytes) according to whatever
+   * streamstorage does to look for an empty buffer.
+   *
+   * @param buf buffer to check for empty.
+   *
+   * @return
+   *    <li> FALSE	buffer not empty
+   *    <li> TRUE	buffer empty
+   */
+  command bool buffer_empty(uint8_t *buf);
 }
