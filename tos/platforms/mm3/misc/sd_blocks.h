@@ -230,13 +230,171 @@ typedef nx_struct dt_gps_raw {
 
 /*
  * The way the allocation works out is as follows:
- *
  * DT overhead:	len, dtype, chip, stamp: 8 bytes
  * SirfBin overhead: start, len, chksum, stop: 8 bytes
  * max data: 91 bytes (from MID 41, Geodetic)
  *
  * total: 107 bytes.  we round up to 128.
  */
+
+
+
+/*
+ * Not data types. Sub fields of raw
+ * gps data. Defining them to use tos
+ * tools. They are sirf output messages.
+ */
+
+
+typedef nx_struct gps_nav_data {
+  nx_uint8_t   start1;
+  nx_uint8_t   start2;
+  nx_uint16_t  len;
+  nx_uint8_t   id;
+  nx_int32_t   xpos;
+  nx_int32_t   ypos;
+  nx_int32_t   zpos;
+  nx_int16_t   xvel;
+  nx_int16_t   yvel;
+  nx_int16_t   zvel;
+  nx_uint8_t   mode1;
+  nx_uint8_t   hdop;
+  nx_uint8_t   mode2;
+  nx_uint16_t  week;
+  nx_uint32_t  tow;
+  nx_uint8_t   sats;
+  nx_uint8_t   data[0];
+} gps_nav_data_nt;
+
+typedef nx_struct gps_tracker_data {
+  nx_uint8_t   start1;
+  nx_uint8_t   start2;
+  nx_uint16_t  len;
+  nx_uint8_t   id;
+  nx_uint16_t  week;
+  nx_uint32_t  tow;
+  nx_uint8_t   chans;
+  nx_uint8_t   data[0];
+} gps_tracker_data_nt;
+
+typedef nx_struct gps_soft_version_data {
+  nx_uint8_t   start1;
+  nx_uint8_t   start2;
+  nx_uint16_t  len;
+  nx_uint8_t   id;
+  nx_uint8_t   data[0];
+} gps_soft_version_data_nt;
+
+typedef nx_struct gps_clock_status_data {
+  nx_uint8_t   start1;
+  nx_uint8_t   start2;
+  nx_uint16_t  len;
+  nx_uint8_t   id;
+  nx_uint16_t  week;
+  nx_uint32_t  tow;
+  nx_uint8_t   sats;
+  nx_uint32_t  drift;
+  nx_uint32_t  bias;
+  nx_uint32_t  gpstime; 
+} gps_clock_status_data_nt;
+
+typedef nx_struct gps_error_data {
+  nx_uint8_t   start1;
+  nx_uint8_t   start2;
+  nx_uint16_t  len;
+  nx_uint8_t   id;
+  nx_uint16_t  submsg;
+  nx_uint16_t  count;
+  nx_uint8_t   data[0];
+} gps_error_data_nt;
+
+typedef nx_struct gps_almanac_status_data {
+  nx_uint8_t   start1;
+  nx_uint8_t   start2;
+  nx_uint16_t  len;
+  nx_uint8_t   id;
+  nx_uint8_t   satid;
+  nx_uint16_t  weekstatus;
+  nx_uint8_t  data[0];
+} gps_almanac_status_data_nt;
+
+
+typedef nx_struct gps_geod_data {
+  nx_uint8_t   start1;
+  nx_uint8_t   start2;
+  nx_uint16_t  len;
+  nx_uint8_t   id;
+  nx_uint16_t  navvalid;
+  nx_uint16_t  navtype;
+  nx_uint16_t  week;
+  nx_uint32_t  tow;
+  nx_uint16_t  year;
+  nx_uint8_t   mo;
+  nx_uint8_t   day;
+  nx_uint8_t   hr;
+  nx_uint8_t   min;
+  nx_uint16_t  sec;
+  nx_uint32_t  sats;
+  nx_int32_t   lat;
+  nx_int32_t   lon;
+  nx_int32_t   elipalt;
+  nx_int32_t   mslalt;
+  nx_uint8_t   mapdatum;
+  nx_uint16_t  sog;
+  nx_uint16_t  cog;
+  nx_uint16_t  magvar;
+  nx_int16_t   climb;
+  nx_int16_t   headrate;
+  nx_uint32_t  ehpe;
+  nx_uint32_t  evpe;
+  nx_uint32_t  ete;
+  nx_uint16_t  ehve;
+  nx_int32_t   clockbias;
+  nx_int32_t   clockbiaserr;
+  nx_int32_t   clockdrift;
+  nx_int32_t   clockdrifterr;
+  nx_uint32_t  dist;
+  nx_uint16_t  disterr;
+  nx_uint16_t  headerr;
+  nx_uint8_t   satsfix;
+  nx_uint8_t   hdop;
+  nx_uint8_t   mode; 
+} gps_geod_data_nt;
+
+typedef nx_struct gps_pps_data {
+  nx_uint8_t   start1;
+  nx_uint8_t   start2;
+  nx_uint16_t  len;
+  nx_uint8_t   id;
+  nx_uint8_t   hr;
+  nx_uint8_t   min;
+  nx_uint8_t   sec;
+  nx_uint8_t   day;
+  nx_uint8_t   mo;
+  nx_uint16_t  year;
+  nx_uint16_t  utcintoff;
+  nx_uint32_t  utcfracoff;
+  nx_uint8_t   status;
+  nx_uint32_t  reserved;
+} gps_pps_data_nt;
+
+typedef nx_struct gps_dev_data {
+  nx_uint8_t   start1;
+  nx_uint8_t   start2;
+  nx_uint16_t  len;
+  nx_uint8_t   id;
+  nx_uint8_t   data[0];
+} gps_dev_data_nt;
+
+
+
+typedef nx_struct gps_unk {
+  nx_uint8_t   start1;
+  nx_uint8_t   start2;
+  nx_uint16_t  len;
+  nx_uint8_t   id;
+  nx_uint8_t   data[0];
+} gps_unk_nt;
 
 
 typedef nx_struct dt_version{
