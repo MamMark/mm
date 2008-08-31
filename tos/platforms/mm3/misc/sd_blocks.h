@@ -432,7 +432,8 @@ enum {
  * dt_sensor_data_nt struct.   Block_Size is total bytes used by
  * the dt_sensor_data_nt header and any payload.  Payloads use 2
  * bytes per datam (16 bit values).  <sensor>_BLOCK_SIZE is what
- * needs to allocated.
+ * needs to allocated. Note thet GPS position and time have no
+ * payload. All fields ares specified.
  */
  
 enum {
@@ -459,6 +460,12 @@ enum {
 
   MAG_PAYLOAD_SIZE    = 6,
   MAG_BLOCK_SIZE      = (DT_HDR_SIZE_SENSOR_DATA + MAG_PAYLOAD_SIZE),
+
+  GPS_TIME_PAYLOAD_SIZE   = 0,
+  GPS_TIME_BLOCK_SIZE     = (DT_HDR_SIZE_GPS_TIME + GPS_TIME_PAYLOAD_SIZE),
+
+  GPS_POS_PAYLOAD_SIZE    = 0,
+  GPS_POS_BLOCK_SIZE      = (DT_HDR_SIZE_GPS_TIME + GPS_POS_PAYLOAD_SIZE),
 };
 
 #endif  /* __SD_BLOCKS_H__ */

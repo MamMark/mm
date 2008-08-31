@@ -198,6 +198,39 @@ implementation {
      * Extract time and position data out
      */
 
+    uint8_t gps_time_block[GPS_TIME_BLOCK_SIZE];
+    uint8_t gps_pos_block[GPS_POS_BLOCK_SIZE];
+    dt_gps_time_nt *timep;
+    dt_gps_pos_nt *posp;
+    timep = (dt_gps_time_nt*)gps_time_block;
+    posp = (dt_gps_pos_nt*)gps_pos_block;
+
+    timep->len = GPS_TIME_BLOCK_SIZE;
+    timep->dtype = DT_GPS_TIME;
+    timep->stamp_mis = call LocalTime.get();
+    timep->chip_type = CHIP_GPS_SIRF3;
+    timep->num_svs = geop->num_svs;
+    timep->utc_year = geop->utc_year;
+    timep->utc_month = geop->utc_month;
+    timep->utc_day = geop->utc_day;
+    timep->utc_hour = geop->utc_hour;
+    timep->utc_min = geop->utc_min;
+    timep->utc_millsec = geop->utc_sec;
+    timep->clock_bias = geop->clock_bias;
+    timep->clock_drift = geop->clock_drift;
+  
+    posp->len = GPS_POS_BLOCK_SIZE;
+    posp->dtype = DT_GPS_POS;
+    posp->stamp_mis = timep->stamp_mis;
+    posp->chip_type = CHIP_GPS_SIRF3;
+    posp->nav_type = geop->nav_type;
+    posp->num_svs = geop->num_svs;
+    posp->sats_seen = geop->sat_mask;
+    posp->gps_lat = geop->lat;
+    posp->gps_long = geop->lon;
+    posp->ehpe = geop->ehpe;
+    posp->hdop = geop->hdop;
+
     /*
      * Check for state change information
      */
@@ -207,6 +240,9 @@ implementation {
        * then power down because we got the fix.
        */
       if (gpsm_state == GPSM_SHORT) {
+	call Collect.collect(gps_time_block, GPS_TIME_BLOCK_SIZE);
+        call Collect.collect(gps_pos_block, GPS_POS_BLOCK_SIZE);
+
 	gpsm_state = GPSM_STOPPING;
 	call GPSControl.stop();
 	return;
