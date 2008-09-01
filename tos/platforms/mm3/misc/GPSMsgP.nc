@@ -202,6 +202,7 @@ implementation {
     uint8_t gps_pos_block[GPS_POS_BLOCK_SIZE];
     dt_gps_time_nt *timep;
     dt_gps_pos_nt *posp;
+
     timep = (dt_gps_time_nt*)gps_time_block;
     posp = (dt_gps_pos_nt*)gps_pos_block;
 
@@ -235,14 +236,15 @@ implementation {
      * Check for state change information
      */
     if (geop->nav_valid == 0) {
+
+      call Collect.collect(gps_time_block, GPS_TIME_BLOCK_SIZE);
+      call Collect.collect(gps_pos_block, GPS_POS_BLOCK_SIZE);
+
       /*
        * overdetermined.  For now if we are in the SHORT window
        * then power down because we got the fix.
        */
       if (gpsm_state == GPSM_SHORT) {
-	call Collect.collect(gps_time_block, GPS_TIME_BLOCK_SIZE);
-        call Collect.collect(gps_pos_block, GPS_POS_BLOCK_SIZE);
-
 	gpsm_state = GPSM_STOPPING;
 	call GPSControl.stop();
 	return;

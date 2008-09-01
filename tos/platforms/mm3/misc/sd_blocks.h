@@ -32,12 +32,14 @@ enum {
   AM_DT_PANIC		= 0x21,
   AM_DT_GPS_TIME	= 0x21,
   AM_DT_GPS_POS		= 0x21,
+  AM_DT_SENSOR_DATA	= 0x21,
   AM_DT_SENSOR_SET	= 0x21,
   AM_DT_TEST		= 0x21,
   AM_DT_CAL_STRING	= 0x21,
   AM_DT_GPS_RAW		= 0x21,
   AM_DT_VERSION		= 0x21,
-  AM_DT_SENSOR_DATA	= 0x21,
+  AM_DT_STATUS		= 0x21,
+  AM_DT_DEBUG		= 0x21,
 };
 
 enum {
@@ -58,7 +60,9 @@ enum {
    */   
   DT_GPS_RAW		= 11,
   DT_VERSION		= 12,
-  DT_MAX		= 13,
+  DT_STATUS	        = 13,
+  DT_DEBUG		= 14,
+  DT_MAX		= 15,
 };
 
 
@@ -124,8 +128,8 @@ typedef nx_struct dt_sync {
 } dt_sync_nt;
 
 
-#define SYNC_MAJIK 0xdedf00ef
 
+#define SYNC_MAJIK 0xdedf00ef
 
 typedef nx_struct dt_panic {
   nx_uint16_t len;

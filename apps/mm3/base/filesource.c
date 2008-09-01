@@ -106,7 +106,7 @@ get_sector(int fd, uint8_t *dbuff) {
     if (verbose | debug)
       fprintf(stderr, "*** Sector sequence error: wanted %d (%04x), got %d (%04x)\n",
 	      cur_seq, cur_seq, sector_seq, sector_seq);
-    return(GS_SEQ_FAIL);
+//    return(GS_SEQ_FAIL);
   }
 
   for(i = 0; i < SECTOR_SIZE - 2; i++)  
@@ -119,6 +119,7 @@ get_sector(int fd, uint8_t *dbuff) {
   if (verbose | debug)
     fprintf(stderr, "*** checksum failed on sector: %d got %04x wanted %04x\n",
 	    cur_seq, chksum, running_sum);
+  return(GS_OK);
   return(GS_CHKSUM_FAIL);
 }
 

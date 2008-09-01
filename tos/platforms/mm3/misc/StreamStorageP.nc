@@ -370,7 +370,7 @@ implementation {
 
     lower = ssc.dblk_start;
     upper = ssc.dblk_end;
-    empty = 0;
+    empty = 0; blk = 0;
 
     while (lower < upper) {
       blk = (upper - lower)/2 + lower;
@@ -395,7 +395,8 @@ implementation {
 #endif
 
     /* for now force to always hit the start. */
-    empty = 1; blk = ssc.dblk_start;
+//    empty = 1; blk = ssc.dblk_start;
+
     if (empty) {
       ssc.dblk_nxt = blk;
       return SUCCESS;
@@ -500,10 +501,7 @@ implementation {
      * what we need.
      */
     
-    call Trace.trace(T_SSW, 1, 0);
     call BlockingWriteResource.request();
-    call Trace.trace(T_SSW, 2, 0);
-    call Panic.brk(2);
 
     /*
      * First start up and read in control blocks.
@@ -518,12 +516,8 @@ implementation {
      * and set our current state to OFF.
      */
     atomic ssw_state = SSW_STATE_IDLE;
-    call Trace.trace(T_SSW, 3, 0);
     call BlockingWriteResource.release();
-    call Trace.trace(T_SSW, 4, 0);
     signal BlockingBoot.booted();
-    call Trace.trace(T_SSW, 5, 0);
-    call Panic.brk(5);
 
     for(;;) {
       call Semaphore.acquire(&write_sem);
@@ -640,18 +634,12 @@ implementation {
   
   event void SSReader.run(void* arg) {
     for(;;) {
-      call Trace.trace(T_SSR, 0x10, 0);
-      call BlockingReadResource.request();
-      call Trace.trace(T_SSR, 0x11, 0);
-      call SSReader.sleep(1024);
-      call Trace.trace(T_SSR, 0x12, 0);
-      call BlockingReadResource.release();
-      call Trace.trace(T_SSR, 0x13, 0);
-      call SSReader.sleep(1024);
-      call Trace.trace(T_SSR, 0x14, 0);
-      call Panic.brk(0x14);
-
       call Semaphore.acquire(&read_sem);
+
+      call BlockingReadResource.request();
+      call SSReader.sleep(1024);
+      call BlockingReadResource.release();
+      call SSReader.sleep(1024);
 
     }
   }

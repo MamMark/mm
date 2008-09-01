@@ -40,16 +40,16 @@ b GPSP.nc:392
 # b GPSMsgP.nc:209
 
 # 8
-b *ArbiterP$0$Resource$request+0d22
-comm
-printf "request: %d\n", id
-end
+#b *ArbiterP$0$Resource$request+0d22
+#comm
+#printf "request: %d\n", id
+#end
 
 # 9
-b *ArbiterP$0$Resource$release+0d24
-comm
-printf "release: %d\n", id
-end
+#b *ArbiterP$0$Resource$release+0d26
+#comm
+#printf "release: %d\n", id
+#end
 
 # x msgBoundary
 #b GPSP.nc:951

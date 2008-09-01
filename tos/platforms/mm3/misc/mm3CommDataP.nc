@@ -37,6 +37,8 @@ implementation {
   /*
    * Accepts a buffer formatted as a data block (see sd_blocks.h) and sends
    * it out the DATA port.   Build a pointer to data_msg[client_id] to avoid math
+   *
+   * This should always cause the send_data_done.
    */
   command error_t mm3CommData.send_data[uint8_t client_id](void *buf, uint8_t len) {
     uint8_t *bp;

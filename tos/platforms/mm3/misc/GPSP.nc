@@ -510,10 +510,8 @@ implementation {
      */
     call GPSTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
     call Trace.trace(T_GPS, 0x20, 0);
-    call Panic.brk(0x20);
     call UARTResource.request();
     call Trace.trace(T_GPS, 0x21, 0);
-    call Panic.brk(0x21);
   }
 
   /*

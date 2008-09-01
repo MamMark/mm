@@ -80,13 +80,15 @@ implementation {
 	if (m_surfaced) {
 	  if (data < SURFACE_THRESHOLD) {
 	    m_surfaced = FALSE;
-	    call Panic.brk(0);
+//	    call Panic.brk(0x1024);
+	    nop();
 	    signal Surface.submerged();
 	  }
 	} else {
 	  if (data >= SURFACE_THRESHOLD) {
 	    m_surfaced = TRUE;
-	    call Panic.brk(0);
+//	    call Panic.brk(0x1025);
+	    nop();
 	    signal Surface.surfaced();
 	  }
 	}
