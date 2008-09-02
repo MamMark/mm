@@ -41,77 +41,74 @@ parseSirf(tmsg_t *msg) {
   reset_tmsg(msg, ((uint8_t *)tmsg_data(msg)) +  dt_gps_raw_data_offset(0),\
 	     dt_gps_raw_len_get(msg) - DT_HDR_SIZE_GPS_RAW);
 
-  if (gps_nav_data_start1_get(msg) != 0xa0) {
-    fprintf(stderr,"Bad start seq\n");
+  if (gps_unk_start1_get(msg) != 0xa0) {
+    fprintf(stderr, "parseSirf: bad start seq\n");
     return;
   }
 
-  if (gps_nav_data_start2_get(msg) != 0xa2) {
-    fprintf(stderr,"Bad start seq\n");
+  if (gps_unk_start2_get(msg) != 0xa2) {
+    fprintf(stderr, "parseSirf: bad start seq\n");
     return;
   }
 
-  msg_ID = gps_nav_data_id_get(msg);
+  msg_ID = gps_unk_id_get(msg);
 
   switch(msg_ID) {
-    case 2://Nav data
+    case 2:			// Nav data
       parseNavData(msg);
       break;
-    case 4://Tracker Data
+    case 4:			// Tracker Data
       parseTrackerData(msg);
       break;
-    case 5://Raw Tracker Data
+    case 5:			// Raw Tracker Data
       parseRawTracker(msg);
       break; 
-    case 6://Software Vers.
+    case 6:			// Software Vers.
       parseSoftVers(msg);
       break;
-    case 7://Clock status
+    case 7:			//Clock status
       parseClockStat(msg);
       break;
-    case 9://CPU throughput
+    case 9:			//CPU throughput
       knownMsg(msg_ID);
       break;
-    case 10://Error
+    case 10:			//Error
       parseErrorID(msg);
       break;
-    case 11://Command Ack.
+    case 11:			//Command Ack.
       parseCommAck(msg);
       break;
-    case 12://Command Nack.
+    case 12:			//Command Nack.
       parseCommNack(msg);
       break;
-    case 13://Visibile List
+    case 13:			//Visible List
       parseVisList(msg);
       break;
-    case 14://Almanac Data
+    case 14:			//Almanac Data
       parseAlmData(msg);
       break;
-    case 18://OkToSend
+    case 18:			//OkToSend
       parseOkToSend(msg);
       break;
-    case 27://DGPS Status
+    case 27:			//DGPS Status
       knownMsg(msg_ID);
       break;
-    case 28://Nav. Lib. Measurement Data
+    case 28:			//Nav. Lib. Measurement Data
       parseNavLibMeas(msg);
       break;
-    case 41://Geodetic Nav. Data
+    case 41:			//Geodetic Nav. Data
       parseGeodeticData(msg);
       break;
-    case 52://1 PPS Time
+    case 52:			//1 PPS Time
       parsePps(msg);
       break; 
-    case 255://Development Data
+    case 255:			//Development Data
       parseDevData(msg);
       break;
     default:
       parseUnkMsg(msg);      
       break;
   }
-  
-  fprintf(stderr, "\n");
-
 }
 
 
@@ -145,14 +142,13 @@ parseNavData(tmsg_t *msg) {
 
   sats = gps_nav_data_sats_get(msg);
 
-  fprintf(stderr,"SIRF NAV DATA:\n");
-
-  fprintf(stderr,"x: %d y: %d z: %d xvel: %f yvel: %f zvel: %f\n",\
-	 xpos, ypos, zpos, xvel, yvel, zvel);
-  fprintf(stderr,"week: %d TOW: %.2f sats: %d HDOP: %d\n",\
+  fprintf(stderr, "sirf nav data: ");
+  fprintf(stderr, "x,y,z: %d,%d,%d  vel: %f,%f,%f\n",
+	  xpos, ypos, zpos, xvel, yvel, zvel);
+  fprintf(stderr, "  week: %d TOW: %.2f sats: %d HDOP: %d\n",
 	 week, tow, sats, hdop);
 
-  fprintf(stderr,"MODE1: ");
+  fprintf(stderr,"  mode-1: ");
 
   switch(mode1 & 0x07) {
     case(0):
@@ -184,12 +180,9 @@ parseNavData(tmsg_t *msg) {
       break;
   }
 
-  if (!(mode1 & 0x08)) {
+  if (!(mode1 & 0x08))
       fprintf(stderr,"Full powr pos. ");
-  }
-  else {
-      fprintf(stderr,"Trickle powr pos. ");
-  }
+  else fprintf(stderr,"Trickle powr pos. ");
 
   switch(mode1 & 0x30) {
     case(0):
@@ -209,75 +202,56 @@ parseNavData(tmsg_t *msg) {
       break;
   }
 
-  if (!(mode1 & 0x40)) {
-      fprintf(stderr,"DOP mask not exceeded. ");
+  if (!(mode1 & 0x40))
+    fprintf(stderr,"DOP mask not exceeded. ");
+  else fprintf(stderr,"DOP mask exceeded. ");
+
+  if (!(mode1 & 0x80))
+    fprintf(stderr,"No diff corrections.\n");
+  else fprintf(stderr,"Diff corrections applied.\n");
+
+  fprintf(stderr,"  mode-2: ");
+
+  if(mode2 & 0x01)
+    fprintf(stderr,"DR in use. ");
+  else if ((mode1 & 0x07) == 7)
+    fprintf(stderr,"Vel DR. ");
+  else fprintf(stderr,"DR error. ");
+
+  if(mode2 & 0x02)
+    fprintf(stderr, "Soln validated.  ");
+  else fprintf(stderr, "Soln not validated.  ");
+
+  if(mode2 & 0x04)
+    fprintf(stderr, "Vel DR timeout. ");
+
+  if(mode2 & 0x08)
+    fprintf(stderr, "Soln edited by UI. ");
+
+  if(mode2 & 0x10)
+    fprintf(stderr, "Vel invalid. ");
+
+  if(mode2  & 0x20)
+    fprintf(stderr, "Alt hold enabled. ");
+  else fprintf(stderr, "Alt hold disabled - 3D fix only. ");
+
+  switch(mode2 & 0xC0) {
+    case(0):
+      fprintf(stderr,"GPS-only nav.\n");
+      break;
+    case(1):
+      fprintf(stderr,"DR in calibration.\n");
+      break;
+    case(2):
+      fprintf(stderr,"DR sensor errors.\n");
+      break;
+    case(3):
+      fprintf(stderr,"DR in test mode.\n ");
+      break;
+    default:
+      fprintf(stderr,"Bad DR error status.\n");
+      break;
   }
-  else {
-      fprintf(stderr,"DOP mask exceeded. ");
-  }
-
-  if (!(mode1 & 0x80)) {
-      fprintf(stderr,"No diff corrections.\n");
-  }
-  else {
-      fprintf(stderr,"Diff corrections applied.\n");
-  }
-
-    fprintf(stderr,"MODE2: ");
-
-    if(mode2 & 0x01) {
-      fprintf(stderr,"DR in use. ");
-    }
-    else if ((mode1 & 0x07) == 7) { 
-      fprintf(stderr,"Vel DR. ");
-    }
-    else {
-      fprintf(stderr,"DR error. ");
-    }
-
-    if(mode2 & 0x02) {
-      fprintf(stderr,"Soln validated.\n");
-    }
-    else {
-      fprintf(stderr,"Soln not validated.\n");
-    }
-
-    if(mode2 & 0x04) {
-      fprintf(stderr,"Vel DR timeout. ");
-    }
-
-    if(mode2 & 0x08) {
-      fprintf(stderr,"Soln edited by UI. ");
-    }
-
-    if(mode2 & 0x10) {
-      fprintf(stderr,"Vel invalid. ");
-    }
-
-    if(mode2  & 0x20) {
-      fprintf(stderr,"Alt hold enabled. ");
-    }
-    else {
-      fprintf(stderr,"Alt hold disabled - 3D fix only. ");
-    }
-
-    switch(mode2 & 0xC0) {
-      case(0):
-        fprintf(stderr,"GPS-only nav.\n");
-        break;
-      case(1):
-        fprintf(stderr,"DR in calibration.\n");
-        break;
-      case(2):
-        fprintf(stderr,"DR sensor errors.\n");
-        break;
-      case(3):
-        fprintf(stderr,"DR in test mode.\n ");
-        break;
-      default:
-        fprintf(stderr,"Bad DR error status.\n");
-        break;
-    }
 }
 
 
@@ -298,10 +272,9 @@ parseTrackerData(tmsg_t *msg) {
   tow = ((double)gps_tracker_data_tow_get(msg))/100;
   chans = gps_tracker_data_chans_get(msg);
   
-  fprintf(stderr,"SIRF TRACKER DATA:\n");
+  fprintf(stderr,"sirf tracker data: ");
   fprintf(stderr,"Week: %d TOW: %.2f Channels: %d\n", week, tow, chans);
-
-  fprintf(stderr,"SatID  Azim   Elev   State  C/No\n");
+  fprintf(stderr,"  SatID  Azim   Elev   State  C/No\n");
   for(i = 0; i < 180; i += 15){
     svid = gps_tracker_data_data_get(msg, i+0);
     azm = gps_tracker_data_data_get(msg, i+1)*1.5;
@@ -311,30 +284,31 @@ parseTrackerData(tmsg_t *msg) {
       c_no += gps_tracker_data_data_get(msg, j);
     }
     c_no = c_no/chans;
-    fprintf(stderr, "%-7d %-7f %-7f 0x%-5x %f", svid, azm, elv, state, c_no);
+    fprintf(stderr, "  %-7d %-7f %-7f 0x%-5x %f", svid, azm, elv, state, c_no);
   }
   fprintf(stderr, "\n");
-
 }
 
 
 void
 parseRawTracker(tmsg_t *msg) {
-  fprintf(stderr,"SIRF RAW TRACKER: NOT PARSED\n");
+  fprintf(stderr, "sirf raw tracker: not parsed\n");
 }
 
 void
 parseSoftVers(tmsg_t *msg) {
   uint16_t len;
   int i;
+  char c;
 
-  fprintf(stderr,"SIRF SOFTWARE VERSION:\n");
-
-  len = gps_soft_version_data_len_get(msg);
-  len--; //len includes msg id - just want text data
-
-  for(i = 0; i < len; i++) {
-    fprintf(stderr, "%c", gps_soft_version_data_data_get(msg, i));
+  fprintf(stderr, "sirf s/w version: ");
+  len = gps_soft_version_data_len_get(msg) - 1;
+  for (i = 0; i < len; i++) {
+    c = gps_soft_version_data_data_get(msg,i);
+    if (isprint(c))
+      fprintf(stderr, "%c", c);
+    else
+      fprintf(stderr, "(%02x)", c);
   }
   fprintf(stderr, "\n");
 }
@@ -355,10 +329,8 @@ parseClockStat(tmsg_t *msg) {
   bias = gps_clock_status_data_bias_get(msg);
   gpstime = ((double)gps_clock_status_data_gpstime_get(msg))/1000;
 
-  fprintf(stderr,"SIRF CLOCK STATUS:\n");
-  fprintf(stderr,"Week #: %d TOW: %f Sats used: %d\n", week, tow, sats);
-  fprintf(stderr,"Drift(Hz): %d Bias(ns): %d\n", drift, bias);
-  fprintf(stderr,"Est GPS TOW: %f\n", gpstime); 
+  fprintf(stderr, "sirf clock status: week: %d  TOW: %f  Sats: %d\n", week, tow, sats);
+  fprintf(stderr, "  Drift(Hz): %d  Bias(ns): %d   est. GPS TOW: %f\n", drift, bias, gpstime);
 }
 
 void
@@ -366,25 +338,28 @@ parseErrorID(tmsg_t *msg) {
   uint16_t submsg;
 
   submsg =  gps_error_data_submsg_get(msg);
-
-  fprintf(stderr,"***SIRF ERROR:\n");
-  fprintf(stderr,"***Error ID: 0x%x", submsg);
-
+  fprintf(stderr,"*** sirf error: error ID: 0x%04x\n", submsg);
 }
 
 void
 parseCommAck(tmsg_t *msg) {
-  fprintf(stderr,"SIRF COMMAND ACK:\n");
+  uint8_t b;
+
+  b = gps_unk_data_get(msg, 0);
+  fprintf(stderr,"sirf cmd ack %d (0x%02x)\n", b, b);
 }
 
 void
 parseCommNack(tmsg_t *msg) {
-  fprintf(stderr,"SIRF COMMAND NACK:\n");
+  uint8_t b;
+
+  b = gps_unk_data_get(msg, 0);
+  fprintf(stderr,"sirf cmd nack %d (0x%02x)\n", b, b);
 }
 
 void
 parseVisList(tmsg_t *msg) {
-  fprintf(stderr,"SIRF VISIBLE SATELLITE LIST: NOT PARSED\n");
+  fprintf(stderr,"sirf visible sat list: not parsed\n");
 }
 
 void
@@ -399,22 +374,19 @@ parseAlmData(tmsg_t *msg) {
   week = 0xFFC0 & weekstatus;
   status = 0x003F & weekstatus;
 
-  fprintf(stderr,"SIRF ALMANAC DATA:\n");
-  fprintf(stderr,"Sat ID: %d Week: %d Status: ", satid, week);
-  if(status) 
-    fprintf(stderr, "GOOD\n");
-  else
-    fprintf(stderr, "BAD\n");
+  fprintf(stderr,"sirf almanac data\n");
+  fprintf(stderr,"Sat: %d, Week: %d Status: %s\n", satid, week,
+	  (status ? "good" : "bad"));
 }
 
 void
 parseOkToSend(tmsg_t *msg) {
-  fprintf(stderr,"SIRF OK TO SEND:\n");
+  fprintf(stderr, "sirf ok to send: 0x%02x\n", gps_unk_data_get(msg, 0));
 }
 
 void
 parseNavLibMeas(tmsg_t *msg) {
-  fprintf(stderr,"SIRF NAVIGATION LIBRARY MEASUREMENT: NOT PARSED\n");
+  fprintf(stderr, "sirf navlib measurement: not parsed\n");
 }
 
 
@@ -430,22 +402,22 @@ parseGeodeticData(tmsg_t *msg) {
   uint8_t  day;
   uint8_t  hr;
   uint8_t  min;
-  float    sec; //div by 1000
+  float    sec;		//div by 1000
   uint32_t sats;
-  double   lat; //div by 10e7
-  double   lon; //div by 10e7
-  double   elipalt; //div by 100
-  double   mslalt;; //div by 100
+  double   lat;		//div by 10e7
+  double   lon;		//div by 10e7
+  double   elipalt;	//div by 100
+  double   mslalt;	//div by 100
   uint8_t  mapdatum;
-  float    sog; //div by 100
-  float    cog; //div by 100
-  float    climb; //div by 100
-  double   ehpe; //div by 100
-  double   evpe; //div by 100
-  double   clockbias; //div by 100
-  double   clockdrift; //div by 100
+  float    sog;		//div by 100
+  float    cog;		//div by 100
+  float    climb;	//div by 100
+  double   ehpe;	//div by 100
+  double   evpe;	//div by 100
+  double   clockbias;	//div by 100
+  double   clockdrift;	//div by 100
   uint8_t  satsfix;
-  float    hdop; //div by 5
+  float    hdop;	//div by 5
 
   navvalid = gps_geod_data_navvalid_get(msg);
   navtype = gps_geod_data_navtype_get(msg);
@@ -473,126 +445,114 @@ parseGeodeticData(tmsg_t *msg) {
   satsfix = gps_geod_data_satsfix_get(msg);
   hdop = ((float)gps_geod_data_hdop_get(msg))/5;
 
-  fprintf(stderr,"SIRF GEODETIC DATA:\n");
-
-  if(navvalid == 0x0000) {
-    fprintf(stderr,"Valid navigation.\n");
-  }
+  fprintf(stderr, "sirf geodetic data: val: 0x%04x  type: 0x%04x\n", navvalid, navtype);
+  if(navvalid == 0x0000)
+    fprintf(stderr, "  Over determined solution.\n");
   else {
-    fprintf(stderr,"Sub-optimal navigation");
-        fprintf(stderr,": ");
-        if(navvalid & 0x0001)
-          fprintf(stderr,"Soln < 5 sats. ");
-        if(navvalid & 0x0008)
-          fprintf(stderr,"Invalid DR data. ");
-        if(navvalid & 0x0010)
-          fprintf(stderr,"Invalid DR calibration. ");
-        if(navvalid & 0x0020)
-          fprintf(stderr,"No DR GPS-based calibration. ");
-        if(navvalid & 0x0040)
-          fprintf(stderr,"Invalid DR position. ");
-        if(navvalid & 0x0080)
-	  fprintf(stderr,"Invalid heading. ");
-	if(navvalid & 0x8000)
-	  fprintf(stderr,"No tracker data. ");
-	if(navvalid & 0x7F06)
-	  fprintf(stderr,"Unkown reason. ");
+    fprintf(stderr, "  Sub-optimal navigation: ");
+    if(navvalid & 0x0001)
+      fprintf(stderr, "Soln < 5 sats. ");
+    if(navvalid & 0x0008)
+      fprintf(stderr, "Invalid DR data. ");
+    if(navvalid & 0x0010)
+      fprintf(stderr, "Invalid DR calibration. ");
+    if(navvalid & 0x0020)
+      fprintf(stderr, "No DR GPS-based calibration. ");
+    if(navvalid & 0x0040)
+      fprintf(stderr, "Invalid DR position. ");
+    if(navvalid & 0x0080)
+      fprintf(stderr, "Invalid heading. ");
+    if(navvalid & 0x8000)
+      fprintf(stderr, "No tracker data. ");
+    if(navvalid & 0x7F06)
+      fprintf(stderr, "Unknown reason. ");
     fprintf(stderr,"\n");
   }
 
-  fprintf(stderr,"Nav type: ");
-  
+  fprintf(stderr, "  Nav type: ");
   switch(navtype & 0x0007) {
     case(0x0):
-      fprintf(stderr,"No fix. "); break;
+      fprintf(stderr, "No fix. "); break;
     case(0x1):
-      fprintf(stderr,"1 sat soln. "); break;
+      fprintf(stderr, "1 sat soln. "); break;
     case(0x2):
-      fprintf(stderr,"2 sat soln. "); break;
+      fprintf(stderr, "2 sat soln. "); break;
     case(0x3):
-      fprintf(stderr,"3 sat soln. "); break;
+      fprintf(stderr, "3 sat soln. "); break;
     case(0x4):
-      fprintf(stderr,">3 sat soln. "); break;
+      fprintf(stderr, ">3 sat soln. "); break;
     case(0x5):
-      fprintf(stderr,"2-D least sqr sln. "); break;
+      fprintf(stderr, "2-D least sqr sln. "); break;
     case(0x6):
-      fprintf(stderr,"3-d least sqr sln. "); break;
+      fprintf(stderr, "3-d least sqr sln. "); break;
     case(0x7):
-      fprintf(stderr,"DR soln. "); break;
+      fprintf(stderr, "DR soln. "); break;
   }
-  
-    if(navtype & 0x0008)
-      fprintf(stderr,"Trickle pwr. ");
-  
-    switch(navtype & 0x0030) {
-      case(0x0):
-        fprintf(stderr,"No alt hold. "); break;
-      case(0x1):
-        fprintf(stderr,"Hold alt from KF. "); break;
-      case(0x2):
-        fprintf(stderr,"Hold alt from user. "); break;
-      case(0x3):
-        fprintf(stderr,"Always hold user alt. "); break;
-    }
 
-    if(navtype & 0x0040)
-      fprintf(stderr,"DOP exceeds limits. ");
+  if(navtype & 0x0008)
+    fprintf(stderr, "Trickle pwr. ");
+  switch(navtype & 0x0030) {
+    case(0x0):
+      fprintf(stderr, "No alt hold. ");
+      break;
+    case(0x1):
+      fprintf(stderr, "Hold alt from KF. ");
+      break;
+    case(0x2):
+      fprintf(stderr, "Hold alt from user. ");
+      break;
+    case(0x3):
+      fprintf(stderr, "Always hold user alt. ");
+      break;
+  }
 
-    if(navtype & 0x0080)
-      fprintf(stderr,"DGPS correction applied. ");
+  if(navtype & 0x0040)
+    fprintf(stderr, "DOP exceeds limits. ");
+  if(navtype & 0x0080)
+    fprintf(stderr, "DGPS correction applied. ");
+  if(navtype & 0x0100)
+    fprintf(stderr, "Sensor DR. ");
+  else if (navtype & 0x0007)
+    fprintf(stderr, "Velocity DR. ");
+  else
+    fprintf(stderr, "DR error. ");
+  if(navtype & 0x0200)
+    fprintf(stderr, ">4 sat soln. ");
+  if(navtype & 0x0400)
+    fprintf(stderr, "Velocity DR timeout. ");
+  if(navtype & 0x0800)
+    fprintf(stderr, "Fix edited by MI. ");
+  if(navtype & 0x1000)
+    fprintf(stderr, "Invalid velocity. ");
+  if(navtype & 0x2000)
+    fprintf(stderr, "Alt. hold disabled. ");
 
-    if(navtype & 0x0100)
-      fprintf(stderr,"Sensor DR. ");
-    else if (navtype & 0x0007)
-      fprintf(stderr,"Velocity DR. ");
-    else
-      fprintf(stderr,"DR error. ");
-
-    if(navtype & 0x0200)
-      fprintf(stderr,">4 sat soln. ");
-  
-    if(navtype & 0x0400)
-      fprintf(stderr,"Velocity DR timeout. ");
-    if(navtype & 0x0800)
-      fprintf(stderr,"Fix edited by MI. ");
-    if(navtype & 0x1000)
-      fprintf(stderr,"Invalid velocity. ");
-    if(navtype & 0x2000)
-      fprintf(stderr,"Alt. hold disabled. ");
-
-    switch(navtype & 0xC000) {
-      case(0x0):
-        fprintf(stderr,"GPS nav only. "); break;
-      case(0x1):
-        fprintf(stderr,"DR calibration from GPS. "); break;
-      case(0x2):
-        fprintf(stderr,"DR sensor error. "); break;
-      case(0x3):
-        fprintf(stderr,"DRin test.. "); break;
-    }
-
+  switch(navtype & 0xC000) {
+    case(0x0):
+      fprintf(stderr, "GPS nav only. "); break;
+    case(0x1):
+      fprintf(stderr, "DR calibration from GPS. "); break;
+    case(0x2):
+      fprintf(stderr, "DR sensor error. "); break;
+    case(0x3):
+      fprintf(stderr, "DRin test.. "); break;
+  }
   fprintf(stderr,"\n");
 
-  fprintf(stderr,"GPS time - Ex week: %d TOW: %.3f\n", week, tow);
-  fprintf(stderr,"UTC: %d/%d/%d %d:%d:%.3f\n", mo, day, year, hr, min, sec);
+  fprintf(stderr, "  time: GPS xweek: %d TOW: %.3f  ", week, tow);
+  fprintf(stderr, "UTC: %d/%d/%d %d:%d:%.3f\n", mo, day, year, hr, min, sec);
 
-  fprintf(stderr, "%d Sats in soln.: ", satsfix);
+  fprintf(stderr, "  %d Sats in soln.: ", satsfix);
   for(i=1; i<32; i++) {
     if(sats & 0x00000001)
       fprintf(stderr, "%d ", i);
     sats = sats >> 1;
   }
   fprintf(stderr, "\n");
-
-  fprintf(stderr, "Lat: %.7f Lon: %.7f Alt: %.2f\n", lat, lon, mslalt);
-  
-    fprintf(stderr, "Map dataum: %d\n", mapdatum);
-
-  fprintf(stderr, "SOG: %.2f COG: %.2f Climb: %.2f\n", sog, cog, climb);
-
-  fprintf(stderr, "HDOP: %.1f Horz Err(m): %.2f Vert Err(m): %.2f Clock bias(m): %.2f Clock drift(m/s): %.2f\n",\
+  fprintf(stderr, "  Lat: %.7f  Lon: %.7f  Alt: %.2f  Datum: %d\n", lat, lon, mslalt, mapdatum);
+  fprintf(stderr, "  SOG: %.2f COG: %.2f Climb: %.2f\n", sog, cog, climb);
+  fprintf(stderr, "  HDOP: %.1f Horz Err(m): %.2f Vert Err(m): %.2f Clock bias(m): %.2f Clock drift(m/s): %.2f\n",
 	  hdop, ehpe, evpe, clockbias, clockdrift);
-
 }
 
 
@@ -614,23 +574,12 @@ parsePps(tmsg_t *msg) {
   sec = gps_pps_data_sec_get(msg);
   status = gps_pps_data_status_get(msg);
 
-  fprintf(stderr,"SIRF 1 PPS TIME:\n");
-  fprintf(stderr,"Date/time: %d/%d/%d %d:%d:%d\n", mo, day, year, hr, min, sec);
-
-    if(status & 0x01)
-      fprintf(stderr, "Valid time. ");
-    else
-      fprintf(stderr, "Invalid time. ");
-
-    if(status & 0x02)
-      fprintf(stderr, "UTC time. ");
-    else
-      fprintf(stderr, "GPS time. ");
-
-    if(status & 0x04)
-      fprintf(stderr, "UTC to GPS conversion current.\n");
-    else
-      fprintf(stderr, "UTC to GPS conversion stale.\n");
+  fprintf(stderr, "sirf 1 pps time\n");
+  fprintf(stderr, "Date/time: %d/%d/%d %d:%d:%d  ", mo, day, year, hr, min, sec);
+  fprintf(stderr, "time %svalid, %s, %s\n",
+	  (status & 1) ? "" : "in",
+	  (status & 2) ? "UTC" : "GPS",
+	  (status & 4) ? "current" : "stale");
 }
 
 
@@ -638,12 +587,17 @@ void
 parseDevData(tmsg_t *msg) {
   int i;
   uint16_t len;
+  char c;
 
-  len = gps_dev_data_len_get(msg);
-  fprintf(stderr,"SIRF DEVELOPMENT DATA:\n");
   if(verbose) {
-    for(i=0; i<len; i++) {
-      fprintf(stderr, "%c", gps_dev_data_data_get(msg, i));
+    len = gps_dev_data_len_get(msg) - 1;
+    fprintf(stderr, "sirf dev data: ");
+    for (i = 0; i < len; i++) {
+      c = gps_dev_data_data_get(msg, i);
+      if (isprint(c))
+	fprintf(stderr, "%c", c);
+      else
+	fprintf(stderr, "(%02x)", c);
     }
     fprintf(stderr, "\n");
   }
@@ -651,16 +605,18 @@ parseDevData(tmsg_t *msg) {
 
 void
 knownMsg(int id) {
-    fprintf(stderr,"SIRF MESSAGE: ");
-      switch(id) {
-        case 9:
-	  fprintf(stderr,"CPU THROUGHPUT ");
-	  break;
-        case 27:
-	  fprintf(stderr,"DGPS STATUS ");
-	  break;
-      }
-    fprintf(stderr,"NOT PARSED\n");
+  if (verbose) {
+    fprintf(stderr,"sirf msg: 0x%02x", id);
+    switch(id) {
+      case 9:
+	fprintf(stderr, "cpu throughput ");
+	break;
+      case 27:
+	fprintf(stderr, "dgps status");
+	break;
+    }
+    fprintf(stderr,"not parsed\n");
+  }
 }
 
 
@@ -672,8 +628,8 @@ parseUnkMsg(tmsg_t *msg) {
   len = gps_unk_len_get(msg);
   msgid = gps_unk_id_get(msg);
 
-  fprintf(stderr, "***SIRF UNKNOWN MESSAGE ID: %d Length: %d\n", msgid, len);
-  if(verbose)
+  fprintf(stderr, "*** sirf unknown msg: %d (0x%02x) len: %d\n", msgid, msgid, len);
+  if (debug > 1)
     hexprint(tmsg_data(msg), len);
 }
 

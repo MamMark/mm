@@ -69,9 +69,12 @@ implementation {
   }
 
 
+  /*
+   * Always write the sync record first.
+   */
   event void Boot.booted() {
     boot_state = SYNC_BOOT_1;
-    write_version_record(1, 1, 0);
+    write_sync_record(FALSE);
   }
 
 
@@ -81,7 +84,7 @@ implementation {
 	break;
       case SYNC_BOOT_1:
 	boot_state = SYNC_BOOT_2;
-	write_sync_record(FALSE);
+	write_version_record(1, 1, 0);
 	break;
 
       case SYNC_BOOT_2:

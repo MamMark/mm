@@ -34,7 +34,7 @@
 #include "DtGpsRawMsg.h"
 #include "ParseSirf.h"
 
-#define VERSION "mm3dump: v0.8 14 Aug 2008\n"
+#define VERSION "mm3dump: v0.9 1 Sep 2008\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -46,6 +46,7 @@ static void usage(char *name) {
   fprintf(stderr, "       %s [-Dv] --sf  <host>  <port>\n", name);
   fprintf(stderr, "       %s [-Dv] [-f][--file] <input file>\n", name);
   fprintf(stderr, "  -D   increment debugging level\n");
+  fprintf(stderr, "         1 - basic debugging, 2 - dump packet data\n");
   fprintf(stderr, "  -v   verbose mode (increment)\n");
   fprintf(stderr, "  -d   write data files for each sensor\n");
   fprintf(stderr, "  -f   take input from <input file>\n");
@@ -80,7 +81,7 @@ void stderr_msg(serial_source_msg problem) {
 
 uint8_t sns_payload_len[MM3_NUM_SENSORS] = {
   0,				/* not used */
-  BATT_PAYLOAD_SIZE,		/* cradle, looks like batt */
+  BATT_PAYLOAD_SIZE,		/* dock, looks like batt */
   BATT_PAYLOAD_SIZE,		/* batt */
   TEMP_PAYLOAD_SIZE,		/* temp */
   SAL_PAYLOAD_SIZE,		/* salinity */
@@ -255,15 +256,6 @@ process_config(tmsg_t *msg) {
     printf("config\n");
 }
 
-
-/*
- * Make sure this matches the defines in sd_block.h
- * we don't share header files but rather rely on ncg
- * to extract enums but if we make these enums they
- * are too big and generate an ISO C90 warning.  Screw
- * it.  They aren't likely to change so we #define them.
- */
-#define SYNC_MAJIK 0xdedf00ef
 
 void
 process_sync(tmsg_t *msg) {
@@ -489,16 +481,11 @@ process_gps_raw(tmsg_t *msg) {
   chip = dt_gps_raw_chip_get(msg);
   stamp = dt_gps_raw_stamp_mis_get(msg);
 
-  if(dtype == DT_GPS_RAW) {
-    printf("GPS RAW DATA: ");
-    printf("CHIP: %d STAMP: %04x\n", chip, stamp);
+  if (verbose) {
+    fprintf(stderr, "GPS RAW (%d): t: %d (0x%04x) ", chip, stamp, stamp);
     parseSirf(msg);
   }
-  else {
-    printf("Unknown Data Block\n");
-  }
 }
-
 
 
 void
@@ -570,8 +557,10 @@ process_mm3_data(tmsg_t *msg) {
 
   len = dt_ignore_len_get(msg);
   dtype = dt_ignore_dtype_get(msg);
+#ifdef notdef
   if (debug)
     fprintf(stderr, "    len: %0d (0x%02x)  dtype: %0d (0x%02x) %s\n", len, len, dtype, dtype, dtype2str(dtype));
+#endif
   switch (dtype) {
     case DT_IGNORE:
       process_ignore(msg);
@@ -755,10 +744,6 @@ main(int argc, char **argv) {
     }
     if (!packet)
       exit(0);
-    if (debug) {
-      fprintf(stderr, "encapsulated pak: ");
-      hexprint(packet, len);
-    }
     if (len < 1 + SPACKET_SIZE ||
 	packet[0] != SERIAL_TOS_SERIAL_ACTIVE_MESSAGE_ID) {
       fprintf(stderr, "*** non-AM packet (type %d, len %d (%0x)): ",
@@ -766,6 +751,8 @@ main(int argc, char **argv) {
       hexprint(packet, len);
       continue;
     }
+    if (debug > 1)
+      hexprint(packet, len);
     msg = new_tmsg(packet + 1, len - 1);
     if (!msg) {
       fprintf(stderr, "*** new_tmsg failed (null)\n");
@@ -776,10 +763,6 @@ main(int argc, char **argv) {
     len  = spacket_header_length_get(msg);
     group= spacket_header_group_get(msg);
     stype= spacket_header_type_get(msg);
-    if (debug) {
-      fprintf(stderr, "*** dest %04x, src %04x, len %02x, group %02x, type %02x\n",
-	     dest, src, len, group, stype);
-    }
     reset_tmsg(msg, ((uint8_t *)tmsg_data(msg)) + SPACKET_SIZE, tmsg_length(msg) - spacket_data_offset(0));
     switch(stype) {
       case MM3_DATA_MSG_AM_TYPE:

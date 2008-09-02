@@ -37,6 +37,16 @@ enum {
   AM_DT_TEST		= 0x21,
   AM_DT_CAL_STRING	= 0x21,
   AM_DT_GPS_RAW		= 0x21,
+  AM_GPS_NAV_DATA	= 0x21,
+  AM_GPS_TRACKER_DATA	= 0x21,
+  AM_GPS_SOFT_VERSION_DATA= 0x21,
+  AM_GPS_ERROR_DATA	= 0x21,
+  AM_GPS_GEOD_DATA	= 0x21,
+  AM_GPS_PPS_DATA	= 0x21,
+  AM_GPS_CLOCK_STATUS_DATA= 0x21,
+  AM_GPS_ALMANAC_STATUS_DATA= 0x21,
+  AM_GPS_DEV_DATA	= 0x21,
+  AM_GPS_UNK		= 0x21,
   AM_DT_VERSION		= 0x21,
   AM_DT_STATUS		= 0x21,
   AM_DT_DEBUG		= 0x21,
@@ -249,7 +259,6 @@ typedef nx_struct dt_gps_raw {
  * tools. They are sirf output messages.
  */
 
-
 typedef nx_struct gps_nav_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -382,6 +391,7 @@ typedef nx_struct gps_pps_data {
   nx_uint32_t  reserved;
 } gps_pps_data_nt;
 
+
 typedef nx_struct gps_dev_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -389,7 +399,6 @@ typedef nx_struct gps_dev_data {
   nx_uint8_t   id;
   nx_uint8_t   data[0];
 } gps_dev_data_nt;
-
 
 
 typedef nx_struct gps_unk {

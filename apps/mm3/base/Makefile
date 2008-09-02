@@ -6,7 +6,7 @@ STOW_DIR=/opt
 PROGRAMS= mm3dump
 
 CC=gcc
-CFLAGS += -g -O0 -Wall -I$(STOW_DIR)/include
+CFLAGS += -g -O0 -Wall -I$(STOW_DIR)/include -I../../../support/utils/include
 LIBS += $(STOW_DIR)/lib/libmote.a
 
 GEN=mm3DataMsg.h mm3DataMsg.c \
@@ -27,10 +27,10 @@ GEN=mm3DataMsg.h mm3DataMsg.c \
     GpsSoftVersMsg.h GpsSoftVersMsg.c \
     GpsClockStatusMsg.h GpsClockStatusMsg.c \
     GpsErrorMsg.h GpsErrorMsg.c \
-    GpsAlmanacStatus.h GpsAlmanacStatus.c\
+    GpsAlmanacStatusMsg.h GpsAlmanacStatusMsg.c\
     GpsPpsMsg.h GpsPpsMsg.c \
     GpsDevDataMsg.h GpsDevDataMsg.c \
-    GpsUnk.h GpsUnk.c \
+    GpsUnkMsg.h GpsUnkMsg.c \
     DtVersionMsg.h DtVersionMsg.c \
     SDConstants.h SensorConstants.h \
     serialpacket.c serialpacket.h serialprotocol.h
@@ -276,12 +276,14 @@ ParseSirf.o: ParseSirf.c /opt/include/serialsource.h \
   GpsNavDataMsg.h GpsTrackerDataMsg.h GpsGeodeticDataMsg.h \
   GpsDevDataMsg.h GpsSoftVersMsg.h GpsClockStatusMsg.h GpsPpsMsg.h \
   GpsAlmanacStatusMsg.h GpsErrorMsg.h GpsUnkMsg.h
-filesource.o: filesource.c /opt/include/message.h filesource.h \
+filesource.o: filesource.c /opt/include/message.h \
+  ../../../support/utils/include/mm_byteswap.h filesource.h \
   serialprotocol.h serialpacket.h DtSensorDataMsg.h mm3DataMsg.h \
-  SDConstants.h SensorConstants.h
+  SDConstants.h SensorConstants.h mm3dump.h
 mm3DataMsg.o: mm3DataMsg.c /opt/include/message.h mm3DataMsg.h
 mm3dump.o: mm3dump.c /opt/include/serialsource.h /opt/include/sfsource.h \
   /opt/include/message.h filesource.h serialpacket.h serialprotocol.h \
   mm3DataMsg.h SensorConstants.h SDConstants.h DtIgnoreMsg.h DtSyncMsg.h \
-  DtPanicMsg.h DtSensorDataMsg.h DtVersionMsg.h DtGpsRawMsg.h ParseSirf.h
+  DtPanicMsg.h DtSensorDataMsg.h DtVersionMsg.h DtGpsTimeMsg.h \
+  DtGpsPosMsg.h DtGpsRawMsg.h ParseSirf.h
 serialpacket.o: serialpacket.c /opt/include/message.h serialpacket.h

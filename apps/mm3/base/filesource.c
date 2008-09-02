@@ -12,9 +12,11 @@
 #include "serialprotocol.h"
 #include "serialpacket.h"
 #include "DtSensorDataMsg.h"
+#include "DtSyncMsg.h"
 #include "mm3DataMsg.h"
 #include "SDConstants.h"
 #include "SensorConstants.h"
+#include "mm3dump.h"
 
 #define SECTOR_SIZE 512
 #define SEQ_OFF     508
@@ -31,6 +33,7 @@ typedef enum {
   GS_CHKSUM_FAIL,
   GS_SEQ_FAIL,
   GS_BAD_DBLK,
+  GS_RESYNC,
 } gs_rtn_t;
 
 
@@ -64,72 +67,7 @@ extern uint8_t sns_payload_len[MM3_NUM_SENSORS];
  * Persistent Data:
  *    cur_seq:	The sequence number of the current sector read.  ie.
  *		the last sector read.
- */
-
-static uint16_t cur_seq = (uint16_t) -1;		//current sequence number.
-
-gs_rtn_t
-get_sector(int fd, uint8_t *dbuff) {
-  uint16_t i;
-  uint16_t chksum;
-  uint16_t running_sum;
-  ssize_t  num_read;
-  uint16_t sector_seq;
-
-  running_sum = 0;                  //summation of first 510 bytes for chksum verification
-  num_read = read(fd, dbuff, SECTOR_SIZE);
-  if (num_read == -1) {
-    perror("*** read failed: ");
-    exit(1);
-  }
-  if (num_read == 0) {
-    if (verbose)
-      fprintf(stderr, "*** eof\n");
-    return(GS_EOF);
-  }
-  if (num_read != SECTOR_SIZE) {
-    /*
-     * This is weird.  We must read full sectors.
-     * ABORT.
-     */
-    fprintf(stderr, "*** Bad sector read, wanted %d, got %ld\n",
-	    SECTOR_SIZE, (long) num_read);
-    exit(1);
-  }
-
-  /*
-   * We've read 512 bytes (a sector).  Check the sequence number
-   */
-  cur_seq++;			/* bump to next */
-  sector_seq = dbuff[SEQ_OFF] + (dbuff[SEQ_OFF + 1] << 8);
-  if (cur_seq != sector_seq) {
-    if (verbose | debug)
-      fprintf(stderr, "*** Sector sequence error: wanted %d (%04x), got %d (%04x)\n",
-	      cur_seq, cur_seq, sector_seq, sector_seq);
-//    return(GS_SEQ_FAIL);
-  }
-
-  for(i = 0; i < SECTOR_SIZE - 2; i++)  
-    running_sum += dbuff[i]; 
-
-  chksum = dbuff[CHKSUM_OFF] + (dbuff[CHKSUM_OFF + 1] << 8);
-  if (chksum == running_sum)
-    return(GS_OK);
-
-  if (verbose | debug)
-    fprintf(stderr, "*** checksum failed on sector: %d got %04x wanted %04x\n",
-	    cur_seq, chksum, running_sum);
-  return(GS_OK);
-  return(GS_CHKSUM_FAIL);
-}
-
-
-/*
- * get_next_sector_byte
  *
- * return the next byte in a data stream.
- *
- * Persistent Data:
  *    sector_data: data buffer that holds current sector data as returned
  *		by get_sector.
  *
@@ -144,26 +82,193 @@ static uint8_t sector_data[SECTOR_SIZE]; //holds current sector being parsed
 static uint8_t *cur_sector_ptr;		 //ptr to curr byte in sect
 static uint16_t remaining_bytes = 0;	 //number of bytes available to get_next_sect_byte
 
+static uint16_t cur_seq = (uint16_t) -1;		//current sequence number.
+
+int
+blk_empty(uint8_t *buf) {
+  uint16_t i;
+  uint16_t *ptr;
+
+  ptr = (void *) buf;
+  for (i = 0; i < SECTOR_SIZE/2; i++)
+    if (ptr[i])
+      return(0);
+  return(1);
+}
+
+
+gs_rtn_t
+get_sector(int fd, uint8_t *dbuff) {
+  uint16_t i;
+  uint16_t chksum;
+  uint16_t running_sum;
+  ssize_t  num_read;
+  uint16_t sector_seq;
+
+  running_sum = 0;
+  num_read = read(fd, dbuff, SECTOR_SIZE);
+  if (num_read == -1) {
+    perror("*** read failed: ");
+    exit(1);
+  }
+  if (num_read == 0) {
+    fprintf(stderr, "*** eof\n");
+    exit(1);
+  }
+  if (num_read != SECTOR_SIZE) {
+    /*
+     * This is weird.  We must read full sectors.
+     * ABORT.
+     */
+    fprintf(stderr, "*** Bad sector read, wanted %d, got %ld\n",
+	    SECTOR_SIZE, (long) num_read);
+    exit(1);
+  }
+
+  /*
+   * We've read 512 bytes (a sector).  First check the checksum.
+   * Checksum includes the sequence number so check first.
+   */
+
+  for (i = 0; i < SECTOR_SIZE - 2; i++)
+    running_sum += dbuff[i];
+
+  chksum = dbuff[CHKSUM_OFF] + (dbuff[CHKSUM_OFF + 1] << 8);
+  if (chksum != running_sum) {
+    fprintf(stderr, "*** checksum failure: sector %d (0x%0x), got 0x%04x wanted 0x%04x\n",
+	    cur_seq, cur_seq, chksum, running_sum);
+    return GS_CHKSUM_FAIL;
+  }
+
+  /*
+   * We've read 512 bytes (a sector).  Check the sequence number
+   */
+  cur_seq++;			/* bump to next */
+  sector_seq = dbuff[SEQ_OFF] + (dbuff[SEQ_OFF + 1] << 8);
+  if (cur_seq != sector_seq) {
+    fprintf(stderr, "*** Sector sequence error: wanted %d (%04x), got %d (%04x)\n",
+	    cur_seq, cur_seq, sector_seq, sector_seq);
+    return GS_SEQ_FAIL;
+  }
+
+  cur_sector_ptr  = dbuff;
+  remaining_bytes = SECTOR_SIZE - OVERHEAD;
+  return GS_OK;
+}
+
+
+#define RESYNC_USE_CUR    0
+#define RESYNC_IGNORE_CUR 1
+
+/*
+ * Search the input stream for the majik sync stamp.
+ *
+ * If found, reset the persistent data so it will return that data block
+ * next.
+ *
+ * We don't handle the  case where the sync data is split across a sector
+ * boundary.  This means that the entire SYNC dblock must fit in the sector
+ * including the dblock header.
+ *
+ * Sync dblock:
+ *    2 len
+ *    1 dtype
+ *    4 stamp
+ *    4 sync_majik
+ *
+ * To avoid problems with alignment and endianess we use the message library.
+ */
+ 
+void
+resync(int fd, int ignore_cur, uint8_t *dbuff) {
+  tmsg_t *msg;
+  gs_rtn_t rtn;
+  int bad_blks;
+
+  msg = new_tmsg(dbuff, DT_SYNC_SIZE);
+  if (!msg) {
+    fprintf(stderr, "*** new_tmsg failed (null)\n");
+    exit(2);
+  }
+  if (ignore_cur == RESYNC_USE_CUR)
+    cur_seq = 0;
+  else
+    cur_seq = (uint16_t) -1;
+  cur_sector_ptr  = dbuff;
+  remaining_bytes = SECTOR_SIZE - OVERHEAD;
+  bad_blks = 0;
+  for (;;) {
+    if (ignore_cur == RESYNC_USE_CUR) {
+      if ((dt_sync_sync_majik_get(msg) == SYNC_MAJIK) &&
+	  (dt_sync_len_get(msg) == DT_SYNC_SIZE) &&
+	  (dt_sync_dtype_get(msg) == DT_SYNC ||
+	   dt_sync_dtype_get(msg) == DT_SYNC_RESTART)) {
+	free_tmsg(msg);
+	return;
+      }
+      cur_sector_ptr++;
+      remaining_bytes--;
+      reset_tmsg(msg, ((uint8_t *)tmsg_data(msg)) + 1, DT_SYNC_SIZE);
+      if (remaining_bytes >= DT_SYNC_SIZE)
+	continue;
+    }
+
+    /*
+     * exhausted current buffer (or am ignoring it) go get next
+     */
+    ignore_cur = RESYNC_USE_CUR;
+    rtn = get_sector(fd, dbuff);
+    reset_tmsg(msg, dbuff, DT_SYNC_SIZE);
+    if (rtn == GS_OK)
+      continue;
+    if (rtn == GS_SEQ_FAIL) {
+      /*
+       * sequence fail is okay.  Note that the checksum check
+       * passed so the seq number is probably okay.
+       */
+      cur_seq = dbuff[SEQ_OFF] + (dbuff[SEQ_OFF + 1] << 8);
+      continue;
+    }
+    /*
+     * anything else counts towards bad blocks.  Too many and we bail
+     */
+    bad_blks++;
+    if (bad_blks > 4) {
+      fprintf(stderr, "*** resync failed.  aborting\n");
+      exit(1);
+    }
+    ignore_cur = RESYNC_IGNORE_CUR;
+    continue;
+  }
+}
+
+
+/*
+ * get_next_sector_byte
+ *
+ * return the next byte in a data stream.
+ */
+
 gs_rtn_t
 get_next_sector_byte(int fd, uint8_t *bytep) {
   gs_rtn_t rtn;
 
+  rtn = GS_OK;
   if (remaining_bytes == 0) {
     rtn = get_sector(fd, sector_data);
-    if (rtn)
-      return(rtn);
-
-    /*
-     * OK return is 0.  So we know at this point we got
-     * a good sector.  Reset our persistent data.
-     */
-    cur_sector_ptr = sector_data;
-    remaining_bytes = SECTOR_SIZE - OVERHEAD;
+    if (rtn == GS_SEQ_FAIL) {
+      resync(fd, RESYNC_USE_CUR, sector_data);
+      rtn = GS_RESYNC;
+    } else if (rtn == GS_CHKSUM_FAIL) {
+      resync(fd, RESYNC_IGNORE_CUR, sector_data);
+      rtn = GS_RESYNC;
+    } else if (rtn)
+      return rtn;
   }
 
   *bytep = *cur_sector_ptr++;
   remaining_bytes--;
-  return(GS_OK);
+  return(rtn);
 }
 
 
@@ -243,8 +348,10 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
   dptr[2] = hdr[2];
 
   for (i = 3; i < cur_dblk_len; i++) {
-    if ((rtn = get_next_sector_byte(fd, &dptr[i])))
+    if ((rtn = get_next_sector_byte(fd, &dptr[i]))) {
+      free_tmsg(msg);
       return rtn;
+    }
   }
 
   /*
@@ -262,6 +369,7 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
 #ifdef notdef
     case DT_CONFIG:
       /* FIX: check length */
+      free_tmsg(msg);
       return(GS_OK);
 #endif
 
