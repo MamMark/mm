@@ -74,6 +74,7 @@ module GPSMsgP {
     interface Timer<TMilli> as MsgTimer;
     interface SplitControl as GPSControl;
     interface Surface;
+    interface LogEvent;
   }
 }
 
@@ -149,7 +150,7 @@ implementation {
 
     t = call LocalTime.get();
     if (last_surfaced && (t - last_surfaced ) < 1024)
-      call Panic.panic(PANIC_GPS, 129, 0, 0, 0, 0);
+      call Panic.warn(PANIC_GPS, 129, 0, 0, 0, 0);
     last_surfaced = t;
     if (gpsm_state != GPSM_DOWN) {
       call Panic.panic(PANIC_GPS, 130, gpsm_state, 0, 0, 0);
@@ -237,6 +238,7 @@ implementation {
      */
     if (geop->nav_valid == 0) {
 
+      call LogEvent.logEvent(DT_EVENT_GPS_ACQUIRED);
       call Collect.collect(gps_time_block, GPS_TIME_BLOCK_SIZE);
       call Collect.collect(gps_pos_block, GPS_POS_BLOCK_SIZE);
 
@@ -245,6 +247,7 @@ implementation {
        * then power down because we got the fix.
        */
       if (gpsm_state == GPSM_SHORT) {
+	call LogEvent.logEvent(DT_EVENT_GPS_FAST);
 	gpsm_state = GPSM_STOPPING;
 	call GPSControl.stop();
 	return;

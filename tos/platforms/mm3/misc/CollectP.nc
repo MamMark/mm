@@ -13,10 +13,12 @@ module CollectP {
   provides {
     interface Collect;
     interface Init;
+    interface LogEvent;
   }
   uses {
     interface StreamStorage as SS;
     interface Panic;
+    interface LocalTime<TMilli>;
   }
 }
 
@@ -85,5 +87,18 @@ implementation {
         dcc.cur_ptr = NULL;
       }
     }
+  }
+
+
+  command void LogEvent.logEvent(uint8_t ev) {
+    uint8_t event_data[DT_HDR_SIZE_EVENT];
+    dt_event_nt *ep;
+
+    ep = (dt_event_nt *) event_data;
+    ep->len = DT_HDR_SIZE_EVENT;
+    ep->dtype = DT_EVENT;
+    ep->stamp_mis = call LocalTime.get();
+    ep->ev = ev;
+    call Collect.collect(event_data, DT_HDR_SIZE_EVENT);
   }
 }

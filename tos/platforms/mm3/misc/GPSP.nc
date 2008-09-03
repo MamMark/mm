@@ -254,6 +254,7 @@ module GPSP {
     interface GPSMsg;
     interface StdControl as GPSMsgControl;
     interface Trace;
+    interface LogEvent;
   }
 }
 
@@ -334,10 +335,6 @@ implementation {
 #endif
 
 
-  void control_start() {
-  }
-
-
   /*
    * shut down gps,  this is the guts of gpscontrol.stop without
    * the stopDone call back.
@@ -346,6 +343,7 @@ implementation {
     call Usart.disableIntr();
     call HW.gps_off();
     call GPSTimer.stop();
+    call LogEvent.logEvent(DT_EVENT_GPS_OFF);
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
     if (call UARTResource.isOwner()) {
       if (call UARTResource.release() != SUCCESS)
@@ -498,6 +496,7 @@ implementation {
      * First make sure the gps is down.  When booting make sure to power cycle
      * assumes init then booted.
      */
+    call LogEvent.logEvent(DT_EVENT_GPS_BOOT);
     call HW.gps_off();
     if (call UARTResource.isOwner())
       call UARTResource.release();
@@ -544,6 +543,7 @@ implementation {
   command error_t GPSControl.start() {
     if (gpsc_state != GPSC_OFF)
       return FAIL;
+    call LogEvent.logEvent(DT_EVENT_GPS_START);
     gpsc_change_state(GPSC_REQUESTED, GPSW_NONE);
     call GPSMsgControl.start();
     call GPSTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
@@ -720,6 +720,7 @@ implementation {
 	  gpsc_boot_trys--;
 	  gpsc_change_state(GPSC_RECONFIG_4800_PWR_DOWN, GPSW_TIMER);
 	  call GPSTimer.startOneShot(DT_GPS_PWR_BOUNCE);
+	  call LogEvent.logEvent(DT_EVENT_GPS_CONFIG);
 	  return;
 	}
 	gps_panic(7, gpsc_state);

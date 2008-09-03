@@ -84,6 +84,7 @@ module CradleP {
     interface HplMM3Adc as HW;
     interface mm3CommData;
     interface Panic;
+    interface LogEvent;
   }
 }
 
@@ -182,11 +183,13 @@ implementation {
     if (docked) {
       if (cdp->data[0] < CRADLE_THRESHOLD) {
 	docked = FALSE;
+	call LogEvent.logEvent(DT_EVENT_UNDOCKED);
 	signal Docked.undocked();
       }
     } else {
       if (cdp->data[0] >= CRADLE_THRESHOLD) {
 	docked = TRUE;
+	call LogEvent.logEvent(DT_EVENT_DOCKED);
 	signal Docked.docked();
       }
     }

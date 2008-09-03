@@ -11,7 +11,7 @@
  *
  * x86 (under Linux and gcc):
  *
- * MAC OS (OS X, gcc):
+ * MAC OS (OS X, gcc): mactels ae little endian while powermacs are big.
  */
 
 #ifndef __SD_BLOCKS_H__
@@ -35,7 +35,7 @@ enum {
   AM_DT_SENSOR_DATA	= 0x21,
   AM_DT_SENSOR_SET	= 0x21,
   AM_DT_TEST		= 0x21,
-  AM_DT_CAL_STRING	= 0x21,
+  AM_DT_NOTE		= 0x21,
   AM_DT_GPS_RAW		= 0x21,
   AM_GPS_NAV_DATA	= 0x21,
   AM_GPS_TRACKER_DATA	= 0x21,
@@ -66,32 +66,30 @@ enum {
   DT_SENSOR_DATA	= 7,
   DT_SENSOR_SET		= 8,
   DT_TEST		= 9,
-  DT_CAL_STRING		= 10,
+  DT_NOTE		= 10,
 
   /*
    * GPS_RAW is used to encapsulate data as received from the GPS.
    */   
   DT_GPS_RAW		= 11,
   DT_VERSION		= 12,
-  DT_STATUS	        = 13,
+  DT_EVENT	        = 13,
   DT_DEBUG		= 14,
   DT_MAX		= 15,
 };
 
 
 /*
- * All records (data blocks) start with a big (?) endian
+ * All record multibyte fields are stored in network order
+ * which is big endian.
+ *
+ * All records (data blocks) start with a big endian
  * 2 byte length.  Then the data type field follows
  * defining the rest of the structure.  Length is the
  * total size of the data block including header and
  * any following data.  This is to provide additional
  * redundancy and allows for skipping records if needed.
  * You still have to get lucky.
- *
- * NOTE: For cross compiler compatibility dtype has to be
- * defined as a uint8_t rather than a enum of dtype_t.  GCC
- * makes enums 4 bytes long while IAR makes them what ever
- * size is large enough.
  *
  * DT_HDR_SIZE_<stuff> defines how large any header is
  * prior to variable length data.  It is used for redundancy
@@ -220,7 +218,21 @@ typedef nx_struct dt_sensor_set {
   nx_uint16_t      data[0];
 } dt_sensor_set_nt;
 
-typedef nx_struct dt_cal_string {
+typedef nx_struct dt_test {
+  nx_uint16_t   len;
+  nx_uint8_t    dtype;
+  nx_uint8_t    data[0];
+} dt_test_nt;
+
+/*
+ * Note
+ * arbritrary ascii string sent from the base station with a time stamp.
+ * one use is when calibrating the device.  Can also be used to add notes
+ * about conditions the tag is being placed in.
+ *
+ * Note itself is a NULL terminated string.
+ */
+typedef nx_struct dt_note {
   nx_uint16_t	     len;
   nx_uint8_t	     dtype;
   nx_uint8_t	     sec;
@@ -229,9 +241,9 @@ typedef nx_struct dt_cal_string {
   nx_uint8_t	     day;
   nx_uint8_t	     month;
   nx_uint16_t	     year;
-  nx_uint16_t	     cal_string_len;
+  nx_uint16_t	     note_len;
   nx_uint8_t	     data[0];
-} dt_cal_string_nt;
+} dt_note_nt;
 
 /*
  * see above for chip definition.
@@ -412,7 +424,7 @@ typedef nx_struct gps_unk {
 } gps_unk_nt;
 
 
-typedef nx_struct dt_version{
+typedef nx_struct dt_version {
   nx_uint16_t	len;
   nx_uint8_t	dtype;
   nx_uint8_t	major;
@@ -420,11 +432,35 @@ typedef nx_struct dt_version{
   nx_uint8_t	tweak;
 } dt_version_nt;
 
-typedef nx_struct dt_test {
-  nx_uint16_t   len;
-  nx_uint8_t    dtype;
-  nx_uint8_t    data[0];
-} dt_test_nt;
+
+enum {
+  DT_EVENT_SURFACED = 1,
+  DT_EVENT_SUBMERGED,
+  DT_EVENT_DOCKED,
+  DT_EVENT_UNDOCKED,
+  DT_EVENT_GPS_BOOT,
+  DT_EVENT_GPS_CONFIG,
+  DT_EVENT_GPS_START,
+  DT_EVENT_GPS_OFF,
+  DT_EVENT_GPS_FAST,
+  DT_EVENT_GPS_ACQUIRED,
+};
+
+
+typedef nx_struct dt_event {
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
+  nx_uint32_t stamp_mis;
+  nx_uint8_t  ev;
+} dt_event_nt;
+
+
+typedef nx_struct dt_debug {
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
+  nx_uint32_t stamp_mis;
+} dt_debug_nt;
+
 
 enum {
   DT_HDR_SIZE_IGNORE        = sizeof(dt_ignore_nt),
@@ -435,10 +471,12 @@ enum {
   DT_HDR_SIZE_GPS_POS       = sizeof(dt_gps_pos_nt),
   DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_nt),
   DT_HDR_SIZE_SENSOR_SET    = sizeof(dt_sensor_set_nt),
-  DT_HDR_SIZE_CAL_STRING    = sizeof(dt_cal_string_nt),
+  DT_HDR_SIZE_TEST          = sizeof(dt_test_nt),
+  DT_HDR_SIZE_NOTE	    = sizeof(dt_note_nt),
   DT_HDR_SIZE_GPS_RAW       = sizeof(dt_gps_raw_nt),
   DT_HDR_SIZE_VERSION       = sizeof(dt_version_nt),
-  DT_HDR_SIZE_TEST          = sizeof(dt_test_nt),
+  DT_HDR_SIZE_EVENT	    = sizeof(dt_event_nt),
+  DT_HDR_SIZE_DEBUG	    = sizeof(dt_debug_nt),
 };
 
 

@@ -110,7 +110,7 @@ dtype2str(uint8_t id) {
     case DT_SENSOR_DATA:return("sensor_data");
     case DT_SENSOR_SET:	return("sensor_set");
     case DT_TEST:	return("test");
-    case DT_CAL_STRING:	return("cal_string");
+    case DT_NOTE:	return("note");
     case DT_VERSION:	return("version");
     default:		return("unk");
   }
@@ -563,7 +563,7 @@ process_mm3_data(tmsg_t *msg) {
       break;
     case DT_TEST:
       break;
-    case DT_CAL_STRING:
+    case DT_NOTE:
       break;
     case DT_GPS_RAW:
       process_gps_raw(msg);

@@ -26,6 +26,7 @@ implementation {
 
   components CollectC;
   GPSMsgP.Collect -> CollectC;
+  GPSMsgP.LogEvent -> CollectC;
 
   components LocalTimeMilliC;
   GPSMsgP.LocalTime -> LocalTimeMilliC;

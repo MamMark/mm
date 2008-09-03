@@ -31,6 +31,7 @@ implementation {
 
   components CollectC;
   CradleP.Collect -> CollectC;
+  CradleP.LogEvent -> CollectC;
 
   components HplMM3AdcC;
   CradleP.HW -> HplMM3AdcC;

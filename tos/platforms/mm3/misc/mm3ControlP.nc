@@ -22,6 +22,7 @@ module mm3ControlP {
   uses {
     interface Panic;
     interface SenseVal[uint8_t sns_id];
+    interface LogEvent;
 #ifdef FAKE_SURFACE
     interface Timer<TMilli> as SurfaceTimer;
 #endif
@@ -82,6 +83,7 @@ implementation {
 	    m_surfaced = FALSE;
 //	    call Panic.brk(0x1024);
 	    nop();
+	    call LogEvent.logEvent(DT_EVENT_SUBMERGED);
 	    signal Surface.submerged();
 	  }
 	} else {
@@ -89,6 +91,7 @@ implementation {
 	    m_surfaced = TRUE;
 //	    call Panic.brk(0x1025);
 	    nop();
+	    call LogEvent.logEvent(DT_EVENT_SURFACED);
 	    signal Surface.surfaced();
 	  }
 	}

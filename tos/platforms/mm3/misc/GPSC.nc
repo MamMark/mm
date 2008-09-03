@@ -81,4 +81,7 @@ implementation {
 
   components TraceC;
   GPSP.Trace -> TraceC;
+
+  components CollectC;
+  GPSP.LogEvent -> CollectC;
 }
