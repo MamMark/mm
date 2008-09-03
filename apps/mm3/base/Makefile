@@ -278,10 +278,9 @@ ParseSirf.o: ParseSirf.c /opt/include/serialsource.h \
   GpsNavDataMsg.h GpsTrackerDataMsg.h GpsGeodeticDataMsg.h \
   GpsDevDataMsg.h GpsSoftVersMsg.h GpsClockStatusMsg.h GpsPpsMsg.h \
   GpsAlmanacStatusMsg.h GpsErrorMsg.h GpsUnkMsg.h
-filesource.o: filesource.c /opt/include/message.h \
-  ../../../support/utils/include/mm_byteswap.h filesource.h \
-  serialprotocol.h serialpacket.h DtSensorDataMsg.h mm3DataMsg.h \
-  SDConstants.h SensorConstants.h mm3dump.h
+filesource.o: filesource.c /opt/include/message.h filesource.h \
+  serialprotocol.h serialpacket.h DtSensorDataMsg.h DtSyncMsg.h \
+  mm3DataMsg.h SDConstants.h SensorConstants.h mm3dump.h
 mm3DataMsg.o: mm3DataMsg.c /opt/include/message.h mm3DataMsg.h
 mm3dump.o: mm3dump.c /opt/include/serialsource.h /opt/include/sfsource.h \
   /opt/include/message.h filesource.h serialpacket.h serialprotocol.h \
