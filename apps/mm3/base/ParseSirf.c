@@ -145,60 +145,58 @@ parseNavData(tmsg_t *msg) {
   fprintf(stderr, "sirf nav data: ");
   fprintf(stderr, "x,y,z: %d,%d,%d  vel: %f,%f,%f\n",
 	  xpos, ypos, zpos, xvel, yvel, zvel);
-  fprintf(stderr, "  week: %d TOW: %.2f sats: %d HDOP: %d\n",
+  fprintf(stderr, "  week: %d  TOW: %.2f  nSats: %d  HDOP: %d\n",
 	 week, tow, sats, hdop);
-
   fprintf(stderr,"  mode-1: ");
-
   switch(mode1 & 0x07) {
     case(0):
-      fprintf(stderr,"No nav soln. ");
+      fprintf(stderr,"No nav soln.  ");
       break;
     case(1):
-      fprintf(stderr,"1 sat soln. ");
+      fprintf(stderr,"1 sat soln.  ");
       break;
     case(2):
-      fprintf(stderr,"2 sat soln. ");
+      fprintf(stderr,"2 sat soln.  ");
       break;
     case(3):
-      fprintf(stderr,"3 sat soln. ");
+      fprintf(stderr,"3 sat soln.  ");
       break;
     case(4):
-      fprintf(stderr,">3 sat soln. ");
+      fprintf(stderr,">3 sat soln.  ");
       break;
     case(5):
-      fprintf(stderr,"2-D soln. ");
+      fprintf(stderr,"2-D soln.  ");
       break;
     case(6):
-      fprintf(stderr,"3-D soln. ");
+      fprintf(stderr,"3-D soln.  ");
       break;  
     case(7):
-      fprintf(stderr,"Dead-reck. soln. ");
+      fprintf(stderr,"DR soln.  ");
       break;
     default:
-      fprintf(stderr,"Bad PMODE. ");
+      fprintf(stderr,"Bad PMODE.  ");
       break;
   }
 
   if (!(mode1 & 0x08))
-      fprintf(stderr,"Full powr pos. ");
-  else fprintf(stderr,"Trickle powr pos. ");
+      fprintf(stderr,"Full powr pos.  ");
+  else fprintf(stderr,"Trickle powr pos.  ");
 
   switch(mode1 & 0x30) {
     case(0):
-      fprintf(stderr,"No alt hold. ");
+      fprintf(stderr,"No alt hold.  ");
       break;
-    case(1):
-      fprintf(stderr,"Hold alt from KF. ");
+    case(0x10):
+      fprintf(stderr,"KF alt hold.  ");
       break;
-    case(2):
-      fprintf(stderr,"Alt from user input. ");
+    case(0x20):
+      fprintf(stderr,"Alt from user input.  ");
       break;
-    case(3):
-      fprintf(stderr,"Always hold alt. ");
+    case(0x30):
+      fprintf(stderr,"Always hold alt.  ");
       break;
     default:
-      fprintf(stderr,"Bad ALTMODE. ");
+      fprintf(stderr,"Bad ALTMODE.  ");
       break;
   }
 
@@ -239,13 +237,13 @@ parseNavData(tmsg_t *msg) {
     case(0):
       fprintf(stderr,"GPS-only nav.\n");
       break;
-    case(1):
+    case(0x40):
       fprintf(stderr,"DR in calibration.\n");
       break;
-    case(2):
+    case(0x80):
       fprintf(stderr,"DR sensor errors.\n");
       break;
-    case(3):
+    case(0xC0):
       fprintf(stderr,"DR in test mode.\n ");
       break;
     default:
@@ -447,7 +445,7 @@ parseGeodeticData(tmsg_t *msg) {
 
   fprintf(stderr, "sirf geodetic data: val: 0x%04x  type: 0x%04x\n", navvalid, navtype);
   if(navvalid == 0x0000)
-    fprintf(stderr, "  Over determined solution.\n");
+    fprintf(stderr, "  Over determined.\n");
   else {
     fprintf(stderr, "  Sub-optimal navigation: ");
     if(navvalid & 0x0001)
@@ -491,17 +489,17 @@ parseGeodeticData(tmsg_t *msg) {
 
   if(navtype & 0x0008)
     fprintf(stderr, "Trickle pwr. ");
-  switch(navtype & 0x0030) {
+  switch(navtype & 0x30) {
     case(0x0):
       fprintf(stderr, "No alt hold. ");
       break;
-    case(0x1):
+    case(0x10):
       fprintf(stderr, "Hold alt from KF. ");
       break;
-    case(0x2):
+    case(0x20):
       fprintf(stderr, "Hold alt from user. ");
       break;
-    case(0x3):
+    case(0x30):
       fprintf(stderr, "Always hold user alt. ");
       break;
   }
@@ -530,16 +528,16 @@ parseGeodeticData(tmsg_t *msg) {
   switch(navtype & 0xC000) {
     case(0x0):
       fprintf(stderr, "GPS nav only. "); break;
-    case(0x1):
+    case(0x4000):
       fprintf(stderr, "DR calibration from GPS. "); break;
-    case(0x2):
+    case(0x8000):
       fprintf(stderr, "DR sensor error. "); break;
-    case(0x3):
+    case(0xC000):
       fprintf(stderr, "DRin test.. "); break;
   }
   fprintf(stderr,"\n");
 
-  fprintf(stderr, "  time: GPS xweek: %d TOW: %.3f  ", week, tow);
+  fprintf(stderr, "  GPS xWk: %d  TOW: %.3f  ", week, tow);
   fprintf(stderr, "UTC: %d/%d/%d %d:%d:%.3f\n", mo, day, year, hr, min, sec);
 
   fprintf(stderr, "  %d Sats in soln.: ", satsfix);
@@ -549,9 +547,9 @@ parseGeodeticData(tmsg_t *msg) {
     sats = sats >> 1;
   }
   fprintf(stderr, "\n");
-  fprintf(stderr, "  Lat: %.7f  Lon: %.7f  Alt: %.2f  Datum: %d\n", lat, lon, mslalt, mapdatum);
-  fprintf(stderr, "  SOG: %.2f COG: %.2f Climb: %.2f\n", sog, cog, climb);
-  fprintf(stderr, "  HDOP: %.1f Horz Err(m): %.2f Vert Err(m): %.2f Clock bias(m): %.2f Clock drift(m/s): %.2f\n",
+  fprintf(stderr, "  Lat: %.7f   Lon: %.7f   Alt: %.2f  Datum: %d\n", lat, lon, mslalt, mapdatum);
+  fprintf(stderr, "  SOG: %.2f   COG: %.2f   Climb: %.2f\n", sog, cog, climb);
+  fprintf(stderr, "  HDOP: %.1f   Horz Err(m): %.2f   Vert Err(m): %.2f   Clock bias(m): %.2f   Clock drift(m/s): %.2f\n",
 	  hdop, ehpe, evpe, clockbias, clockdrift);
 }
 

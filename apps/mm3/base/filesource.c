@@ -81,8 +81,8 @@ extern uint8_t sns_payload_len[MM3_NUM_SENSORS];
 static uint8_t sector_data[SECTOR_SIZE]; //holds current sector being parsed
 static uint8_t *cur_sector_ptr;		 //ptr to curr byte in sect
 static uint16_t remaining_bytes = 0;	 //number of bytes available to get_next_sect_byte
-
 static uint16_t cur_seq = (uint16_t) -1;		//current sequence number.
+static uint16_t num_empty;
 
 int
 blk_empty(uint8_t *buf) {
@@ -124,6 +124,15 @@ get_sector(int fd, uint8_t *dbuff) {
 	    SECTOR_SIZE, (long) num_read);
     exit(1);
   }
+
+  if (blk_empty(dbuff)) {
+    num_empty++;
+    if (num_empty > 4) {
+      fprintf(stderr, "**** > 4 empty contiguous blocks read, aborting\n");
+      exit(1);
+    }
+  } else
+    num_empty = 0;
 
   /*
    * We've read 512 bytes (a sector).  First check the checksum.
@@ -184,19 +193,26 @@ resync(int fd, int ignore_cur, uint8_t *dbuff) {
   tmsg_t *msg;
   gs_rtn_t rtn;
   int bad_blks;
+  uint skipped;
 
+  fprintf(stderr, "*** RESYNC: last expected sector: %d (0x%04x)\n", cur_seq, cur_seq);
   msg = new_tmsg(dbuff, DT_SYNC_SIZE);
   if (!msg) {
     fprintf(stderr, "*** new_tmsg failed (null)\n");
     exit(2);
   }
-  if (ignore_cur == RESYNC_USE_CUR)
-    cur_seq = 0;
-  else
+  if (ignore_cur == RESYNC_USE_CUR) {
+    /*
+     * resyncing but using current buffer.  reasonable to assume that
+     * the sector number buried in the buffer is reasonable to use.
+     */
+    cur_seq = dbuff[SEQ_OFF] + (dbuff[SEQ_OFF + 1] << 8);
+  } else
     cur_seq = (uint16_t) -1;
   cur_sector_ptr  = dbuff;
   remaining_bytes = SECTOR_SIZE - OVERHEAD;
   bad_blks = 0;
+  skipped = 0;
   for (;;) {
     if (ignore_cur == RESYNC_USE_CUR) {
       if ((dt_sync_sync_majik_get(msg) == SYNC_MAJIK) &&
@@ -204,13 +220,16 @@ resync(int fd, int ignore_cur, uint8_t *dbuff) {
 	  (dt_sync_dtype_get(msg) == DT_SYNC ||
 	   dt_sync_dtype_get(msg) == DT_SYNC_RESTART)) {
 	free_tmsg(msg);
+	fprintf(stderr, "*** RESYNC: skipped %u bytes, new cur_seq: %d (0x%04x)\n", skipped, cur_seq, cur_seq);
 	return;
       }
       cur_sector_ptr++;
       remaining_bytes--;
+      skipped++;
       reset_tmsg(msg, ((uint8_t *)tmsg_data(msg)) + 1, DT_SYNC_SIZE);
       if (remaining_bytes >= DT_SYNC_SIZE)
 	continue;
+      skipped += remaining_bytes;
     }
 
     /*
@@ -253,22 +272,21 @@ gs_rtn_t
 get_next_sector_byte(int fd, uint8_t *bytep) {
   gs_rtn_t rtn;
 
-  rtn = GS_OK;
   if (remaining_bytes == 0) {
     rtn = get_sector(fd, sector_data);
     if (rtn == GS_SEQ_FAIL) {
       resync(fd, RESYNC_USE_CUR, sector_data);
-      rtn = GS_RESYNC;
+      return GS_RESYNC;
     } else if (rtn == GS_CHKSUM_FAIL) {
       resync(fd, RESYNC_IGNORE_CUR, sector_data);
-      rtn = GS_RESYNC;
+      return GS_RESYNC;
     } else if (rtn)
       return rtn;
   }
 
   *bytep = *cur_sector_ptr++;
   remaining_bytes--;
-  return(rtn);
+  return(GS_OK);
 }
 
 
@@ -295,7 +313,7 @@ get_next_sector_byte(int fd, uint8_t *bytep) {
 
 gs_rtn_t
 get_next_dblk(int fd, uint8_t *bp, int *len) {
-  int l;
+  int l, restart;
   uint16_t i;
   gs_rtn_t rtn;
   tmsg_t *msg;
@@ -304,54 +322,78 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
   uint8_t hdr[3], *dptr;
 
   *len = 0;
+  restart = 0;
 
-  /*
-   * get first two bytes.  This should be the length.
-   * big endian order.
-   *
-   * EOF is okay at the first byte.  Otherwise funny.
-   */
-  if ((rtn = get_next_sector_byte(fd, &hdr[0])))
-    return rtn;
-
-  if ((rtn = get_next_sector_byte(fd, &hdr[1])))
-    return rtn;
-
-  cur_dblk_len = (hdr[0] << 8) + hdr[1];
-
-  if ((rtn = get_next_sector_byte(fd, &hdr[2])))
-    return rtn;
-
-  cur_dtype = hdr[2];
-
-  if(cur_dtype >= DT_MAX || cur_dblk_len < 3) {
-    fprintf(stderr, "*** bad dblk header: type %d, len %d (on dblk fetch, no data)\n",
-	    cur_dtype, cur_dblk_len);
-    return(GS_BAD_DBLK);
-  }
-
-  l = cur_dblk_len + 1 + SPACKET_SIZE;
-  bp[0] = SERIAL_TOS_SERIAL_ACTIVE_MESSAGE_ID;
-  msg = new_tmsg(bp + 1, l - 1);
-  if (!msg) {
-    fprintf(stderr, "*** new_tmsg failed (null)\n");
-    exit(2);
-  }
-  spacket_header_dest_set(msg, 0xffff);
-  spacket_header_src_set(msg, 0);
-  spacket_header_length_set(msg, l);
-  spacket_header_group_set(msg, 0);
-  spacket_header_type_set(msg, MM3_DATA_MSG_AM_TYPE);
-  dptr = (bp + 1) + spacket_data_offset(0);
-  dptr[0] = hdr[0];
-  dptr[1] = hdr[1];
-  dptr[2] = hdr[2];
-
-  for (i = 3; i < cur_dblk_len; i++) {
-    if ((rtn = get_next_sector_byte(fd, &dptr[i]))) {
-      free_tmsg(msg);
+  for (;;) {
+    /*
+     * get first two bytes.  This should be the length.
+     * big endian order.
+     *
+     * EOF is okay at the first byte.  Otherwise funny.
+     *
+     * If at anytime we get a GS_RESYNC indication we need to
+     * restart at the beginning of collecting the dblock.
+     */
+    if ((rtn = get_next_sector_byte(fd, &hdr[0]))) {
+      if (rtn == GS_RESYNC)
+	continue;
       return rtn;
     }
+
+    if ((rtn = get_next_sector_byte(fd, &hdr[1]))) {
+      if (rtn == GS_RESYNC)
+	continue;
+      return rtn;
+    }
+
+    cur_dblk_len = (hdr[0] << 8) + hdr[1];
+
+    if ((rtn = get_next_sector_byte(fd, &hdr[2]))) {
+      if (rtn == GS_RESYNC)
+	continue;
+      return rtn;
+    }
+
+    cur_dtype = hdr[2];
+
+    if(cur_dtype >= DT_MAX || cur_dblk_len < 3) {
+      fprintf(stderr, "*** bad dblk header: type %d, len %d (on dblk fetch, no data)\n",
+	      cur_dtype, cur_dblk_len);
+      return(GS_BAD_DBLK);
+    }
+
+    l = cur_dblk_len + 1 + SPACKET_SIZE;
+    bp[0] = SERIAL_TOS_SERIAL_ACTIVE_MESSAGE_ID;
+    msg = new_tmsg(bp + 1, l - 1);
+    if (!msg) {
+      fprintf(stderr, "*** new_tmsg failed (null)\n");
+      exit(2);
+    }
+    spacket_header_dest_set(msg, 0xffff);
+    spacket_header_src_set(msg, 0);
+    spacket_header_length_set(msg, l);
+    spacket_header_group_set(msg, 0);
+    spacket_header_type_set(msg, MM3_DATA_MSG_AM_TYPE);
+    dptr = (bp + 1) + spacket_data_offset(0);
+    dptr[0] = hdr[0];
+    dptr[1] = hdr[1];
+    dptr[2] = hdr[2];
+
+    for (i = 3; i < cur_dblk_len; i++) {
+      if ((rtn = get_next_sector_byte(fd, &dptr[i]))) {
+	free_tmsg(msg);
+	if (rtn == GS_RESYNC) {
+	  restart = 1;
+	  break;
+	}
+	return rtn;
+      }
+    }
+    if (restart) {
+      restart = 0;
+      continue;
+    }
+    break;
   }
 
   /*
@@ -388,21 +430,23 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
 	rtn = GS_OK;
       break;
 
-#ifdef notdef
     case DT_GPS_TIME:
-      gps_time_p = (dt_gps_time_pt *) b;
-         
-      if(cur_dblk_len == DT_HDR_SIZE_GPS_TIME)
-	rtn = GS_OK;
-      fprintf(stderr, "*** DT_GPS_TIME: bad total length: %d (should be %d)\n",
-	      cur_dblk_len, DT_HDR_SIZE_GPS_TIME);
+      if (cur_dblk_len != GPS_TIME_BLOCK_SIZE) {
+	fprintf(stderr, "*** DT_GPS_TIME: bad total length: %d (should be %d)\n",
+		cur_dblk_len, DT_HDR_SIZE_GPS_TIME);
+	break;
+      }
+      rtn = GS_OK;
       break;
 
     case DT_GPS_POS:
-      if(cur_dblk_len == DT_HDR_SIZE_GPS_POS)
-	rtn = GS_OK;
+      if(cur_dblk_len != GPS_POS_BLOCK_SIZE) {
+	fprintf(stderr, "*** DT_GPS_POS: bad total length: %d (should be %d)\n",
+		cur_dblk_len, DT_HDR_SIZE_GPS_POS);
+	break;
+      }
+      rtn = GS_OK;
       break;
-#endif
 
     case DT_SENSOR_DATA:
       sns_id = dt_sensor_data_sns_id_get(msg);
@@ -452,9 +496,10 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
       fprintf(stderr, "*** dblk bad dtype: %d\n", cur_dtype);
       break;
   }
+
   free_tmsg(msg);
   if (rtn != GS_OK) {
-    fprintf(stderr, "*** bad dblk (error %d): ", rtn);
+    fprintf(stderr, "*** bad dblk %d (error %d): ", cur_dtype, rtn);
     hexprint(dptr, cur_dblk_len);
   }
   return rtn;

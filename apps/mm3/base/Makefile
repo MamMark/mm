@@ -198,6 +198,8 @@ SDConstants.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	SPEED_BLOCK_SIZE          \
 	MAG_PAYLOAD_SIZE          \
 	MAG_BLOCK_SIZE            \
+	GPS_TIME_BLOCK_SIZE	  \
+	GPS_POS_BLOCK_SIZE	  \
 	-o $@
 
 serialpacket.c serialpacket.h: $(SERIAL_H)

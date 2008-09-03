@@ -4,6 +4,9 @@
  *
  * Copyright 2008 Eric B. Decker
  * Mam-Mark Project
+ *
+ * @author Eric B. Decker
+ * @author Matthew R.
  */
 
 #include <stdio.h>
@@ -310,8 +313,8 @@ process_panic(tmsg_t *msg) {
   arg1      = dt_panic_arg1_get(msg);
   arg2      = dt_panic_arg2_get(msg);
   arg3      = dt_panic_arg3_get(msg);
-  printf("*** PANIC:  %u pcode: %02x  where: %02x  %04x %04x %04x %04x\n",
-	 stamp_mis, pcode, where, arg0, arg1, arg2, arg3);
+  printf("*** PANIC:  %u (0x%04x) pcode: %02x  where: %02x  %04x %04x %04x %04x\n",
+	 stamp_mis, stamp_mis, pcode, where, arg0, arg1, arg2, arg3);
 }
 
 
@@ -329,7 +332,6 @@ process_gps_time(tmsg_t *msg) {
   double clock_bias;		/* m x 10^2 */
   double clock_drift;		/* m/s x 10^2 */
 
-
   stamp_mis = dt_gps_time_stamp_mis_get(msg);
   chip_type = dt_gps_time_chip_type_get(msg);
   num_svs = dt_gps_time_num_svs_get(msg);
@@ -342,13 +344,9 @@ process_gps_time(tmsg_t *msg) {
   clock_bias =  ((double)dt_gps_time_clock_bias_get(msg))/100;
   clock_drift = ((double)dt_gps_time_clock_drift_get(msg))/100;
 
-  fprintf(stderr, "\nGPS POSITION:\n");
-  fprintf(stderr, "Chip: %d Stamp: 0x%04x\n", chip_type, stamp_mis);
-  fprintf(stderr, "Satellites: %d\n", num_svs);
-  fprintf(stderr, "%d/%d/%d %d:%d:%f\n", utc_month, utc_day, utc_year, utc_hour, utc_min, utc_millsec);
-  fprintf(stderr, "Clock bias: %f Clock drift: %f\n", clock_bias, clock_drift);
-
-
+  fprintf(stderr, "GPS TIME[%d] %d (0x%04x): nsats: %d  ", chip_type, stamp_mis, stamp_mis, num_svs);
+  fprintf(stderr, "%2d/%02d/%04d %2d:%02d:%f\n", utc_month, utc_day, utc_year, utc_hour, utc_min, utc_millsec);
+  fprintf(stderr, "  Clock bias: %f  drift: %f\n", clock_bias, clock_drift);
 }
 
 
@@ -374,12 +372,8 @@ process_gps_pos(tmsg_t *msg) {
   num_svs = dt_gps_pos_num_svs_get(msg);
   hdop = ((float)dt_gps_pos_hdop_get(msg))/5;
 
-
-  fprintf(stderr, "\nGPS POSITION:\n");
-  fprintf(stderr, "Chip: %d Stamp: 0x%04x\n", chip_type, stamp_mis);
-  
-  fprintf(stderr,"Nav type: ");
-  
+  fprintf(stderr, "GPS POS[%d] %d (0x%04x): nsats %d\n", chip_type, stamp_mis, stamp_mis, num_svs);
+  fprintf(stderr,"  Nav type (0x%04x): ", nav_type);
   switch(nav_type & 0x0007) {
     case(0x0):
       fprintf(stderr,"No fix. "); break;
@@ -398,75 +392,56 @@ process_gps_pos(tmsg_t *msg) {
     case(0x7):
       fprintf(stderr,"DR soln. "); break;
   }
-  
-    if(nav_type & 0x0008)
-      fprintf(stderr,"Trickle pwr. ");
-  
-    switch(nav_type & 0x0030) {
-      case(0x0):
-        fprintf(stderr,"No alt hold. "); break;
-      case(0x1):
-        fprintf(stderr,"Hold alt from KF. "); break;
-      case(0x2):
-        fprintf(stderr,"Hold alt from user. "); break;
-      case(0x3):
-        fprintf(stderr,"Always hold user alt. "); break;
-    }
-
-    if(nav_type & 0x0040)
-      fprintf(stderr,"DOP exceeds limits. ");
-
-    if(nav_type & 0x0080)
-      fprintf(stderr,"DGPS correction applied. ");
-
-    if(nav_type & 0x0100)
-      fprintf(stderr,"Sensor DR. ");
-    else if (nav_type & 0x0007)
-      fprintf(stderr,"Velocity DR. ");
-    else
-      fprintf(stderr,"DR error. ");
-
-    if(nav_type & 0x0200)
-      fprintf(stderr,">4 sat soln. ");
-  
-    if(nav_type & 0x0400)
-      fprintf(stderr,"Velocity DR timeout. ");
-    if(nav_type & 0x0800)
-      fprintf(stderr,"Fix edited by MI. ");
-    if(nav_type & 0x1000)
-      fprintf(stderr,"Invalid velocity. ");
-    if(nav_type & 0x2000)
-      fprintf(stderr,"Alt. hold disabled. ");
-
-    switch(nav_type & 0xC000) {
-      case(0x0):
-        fprintf(stderr,"GPS nav only. "); break;
-      case(0x1):
-        fprintf(stderr,"DR calibration from GPS. "); break;
-      case(0x2):
-        fprintf(stderr,"DR sensor error. "); break;
-      case(0x3):
-        fprintf(stderr,"DRin test.. "); break;
-    }
-
-  fprintf(stderr,"\n");
-
-
-  fprintf(stderr, "%d Sats in soln.: ", num_svs);
+  if(nav_type & 0x0008)
+    fprintf(stderr,"Trickle pwr. ");
+  switch(nav_type & 0x0030) {
+    case(0x0):
+      fprintf(stderr,"No alt hold. "); break;
+    case(0x10):
+      fprintf(stderr,"Hold alt from KF. "); break;
+    case(0x20):
+      fprintf(stderr,"Hold alt from user. "); break;
+    case(0x30):
+      fprintf(stderr,"Always hold user alt. "); break;
+  }
+  if(nav_type & 0x0040)
+    fprintf(stderr,"DOP exceeds limits. ");
+  if(nav_type & 0x0080)
+    fprintf(stderr,"DGPS correction applied. ");
+  if(nav_type & 0x0100)
+    fprintf(stderr,"Sensor DR. ");
+  else if (nav_type & 0x0007)
+    fprintf(stderr,"Velocity DR. ");
+  else
+    fprintf(stderr,"DR error. ");
+  if(nav_type & 0x0200)
+    fprintf(stderr,">4 sat soln. ");
+  if(nav_type & 0x0400)
+    fprintf(stderr,"Velocity DR timeout. ");
+  if(nav_type & 0x0800)
+    fprintf(stderr,"Fix edited by MI. ");
+  if(nav_type & 0x1000)
+    fprintf(stderr,"Invalid velocity. ");
+  if(nav_type & 0x2000)
+    fprintf(stderr,"Alt. hold disabled. ");
+  switch(nav_type & 0xC000) {
+    case(0x0):
+      fprintf(stderr,"GPS nav only. "); break;
+    case(0x4000):
+      fprintf(stderr,"DR calibration from GPS. "); break;
+    case(0x8000):
+      fprintf(stderr,"DR sensor error. "); break;
+    case(0xC000):
+      fprintf(stderr,"DRin test.. "); break;
+  }
+  fprintf(stderr, "\n  %d Sats in soln.: ", num_svs);
   for(i=1; i<32; i++) {
-    if(sats_seen & 0x00000001)
+    if (sats_seen & 0x00000001)
       fprintf(stderr, "%d ", i);
     sats_seen = sats_seen >> 1;
   }
-  fprintf(stderr, "\n");
-
-  fprintf(stderr, "Lat: %.7f Lon: %.7f Error: %.2f\n", gps_lat, gps_long, hdop);
-
-
-
-
+  fprintf(stderr, "\n  Lat: %.7f  Lon: %.7f  Error: %.2f\n", gps_lat, gps_long, hdop);
 }
-
 
 
 void

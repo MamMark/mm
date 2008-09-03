@@ -39,12 +39,15 @@ enum {
   AM_DT_GPS_RAW		= 0x21,
   AM_GPS_NAV_DATA	= 0x21,
   AM_GPS_TRACKER_DATA	= 0x21,
-  AM_GPS_SOFT_VERSION_DATA= 0x21,
+  AM_GPS_SOFT_VERSION_DATA
+			= 0x21,
   AM_GPS_ERROR_DATA	= 0x21,
   AM_GPS_GEOD_DATA	= 0x21,
   AM_GPS_PPS_DATA	= 0x21,
-  AM_GPS_CLOCK_STATUS_DATA= 0x21,
-  AM_GPS_ALMANAC_STATUS_DATA= 0x21,
+  AM_GPS_CLOCK_STATUS_DATA
+			= 0x21,
+  AM_GPS_ALMANAC_STATUS_DATA
+			= 0x21,
   AM_GPS_DEV_DATA	= 0x21,
   AM_GPS_UNK		= 0x21,
   AM_DT_VERSION		= 0x21,
@@ -130,6 +133,8 @@ typedef nx_struct dt_config {
  * need to do a resync.
  */
 
+#define SYNC_MAJIK 0xdedf00ef
+
 typedef nx_struct dt_sync {
   nx_uint16_t len;
   nx_uint8_t  dtype;
@@ -137,9 +142,6 @@ typedef nx_struct dt_sync {
   nx_uint32_t sync_majik;
 } dt_sync_nt;
 
-
-
-#define SYNC_MAJIK 0xdedf00ef
 
 typedef nx_struct dt_panic {
   nx_uint16_t len;
@@ -163,7 +165,7 @@ enum {
 
 
 /*
- * For Sirf3, chip_type DT_GPS_SIRF3
+ * For Sirf3, chip_type CHIP_GPS_SIRF3
  */
 typedef nx_struct dt_gps_time {
   nx_uint16_t len;
@@ -183,7 +185,7 @@ typedef nx_struct dt_gps_time {
 
 
 /*
- * For Sirf3, chip_type DT_GPS_SIRF3
+ * For Sirf3, chip_type CHIP_GPS_SIRF3
  */
 typedef nx_struct dt_gps_pos {
   nx_uint16_t len;
