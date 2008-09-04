@@ -604,16 +604,16 @@ parseDevData(tmsg_t *msg) {
 void
 knownMsg(int id) {
   if (verbose) {
-    fprintf(stderr,"sirf msg: 0x%02x", id);
+    fprintf(stderr,"sirf msg: (0x%02x) ", id);
     switch(id) {
       case 9:
 	fprintf(stderr, "cpu throughput ");
 	break;
       case 27:
-	fprintf(stderr, "dgps status");
+	fprintf(stderr, "dgps status ");
 	break;
     }
-    fprintf(stderr,"not parsed\n");
+    fprintf(stderr,"(not parsed)\n");
   }
 }
 

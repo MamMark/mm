@@ -83,6 +83,7 @@ static uint8_t *cur_sector_ptr;		 //ptr to curr byte in sect
 static uint16_t remaining_bytes = 0;	 //number of bytes available to get_next_sect_byte
 static uint16_t cur_seq = (uint16_t) -1;		//current sequence number.
 static uint16_t num_empty;
+static uint32_t abs_sec;
 
 int
 blk_empty(uint8_t *buf) {
@@ -106,6 +107,7 @@ get_sector(int fd, uint8_t *dbuff) {
   uint16_t sector_seq;
 
   running_sum = 0;
+  abs_sec++;
   num_read = read(fd, dbuff, SECTOR_SIZE);
   if (num_read == -1) {
     perror("*** read failed: ");
@@ -129,6 +131,7 @@ get_sector(int fd, uint8_t *dbuff) {
     num_empty++;
     if (num_empty > 4) {
       fprintf(stderr, "**** > 4 empty contiguous blocks read, aborting\n");
+      fprintf(stderr, "     abs sectors: %d\n", abs_sec);
       exit(1);
     }
   } else
@@ -477,7 +480,7 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
       break;
 
 #ifdef notdef
-    case DT_CAL_STRING:
+    case DT_NOTE:
       /* FIX check length? */
       break;
 #endif
@@ -488,6 +491,11 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
 
     case DT_VERSION:
       if (cur_dblk_len == DT_HDR_SIZE_VERSION)
+	rtn = GS_OK;
+      break;
+
+    case DT_EVENT:
+      if (cur_dblk_len == DT_HDR_SIZE_EVENT)
 	rtn = GS_OK;
       break;
 

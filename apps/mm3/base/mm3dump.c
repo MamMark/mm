@@ -32,6 +32,7 @@
 #include "DtPanicMsg.h"
 #include "DtSensorDataMsg.h"
 #include "DtVersionMsg.h"
+#include "DtEventMsg.h"
 #include "DtGpsTimeMsg.h"
 #include "DtGpsPosMsg.h"
 #include "DtGpsRawMsg.h"
@@ -41,15 +42,17 @@
 
 int debug	= 0,
     verbose	= 0,
+    force_events= 0,
     write_data  = 0;
 
 static void usage(char *name) {
   fprintf(stderr, VERSION);
-  fprintf(stderr, "usage: %s [-Dv] --serial  <serial device>  <baud rate>\n", name);
-  fprintf(stderr, "       %s [-Dv] --sf  <host>  <port>\n", name);
-  fprintf(stderr, "       %s [-Dv] [-f][--file] <input file>\n", name);
+  fprintf(stderr, "usage: %s [-Dev] --serial  <serial device>  <baud rate>\n", name);
+  fprintf(stderr, "       %s [-Dev] --sf  <host>  <port>\n", name);
+  fprintf(stderr, "       %s [-Dev] [-f][--file] <input file>\n", name);
   fprintf(stderr, "  -D   increment debugging level\n");
   fprintf(stderr, "         1 - basic debugging, 2 - dump packet data\n");
+  fprintf(stderr, "  -e   show event logging\n");
   fprintf(stderr, "  -v   verbose mode (increment)\n");
   fprintf(stderr, "  -d   write data files for each sensor\n");
   fprintf(stderr, "  -f   take input from <input file>\n");
@@ -112,6 +115,8 @@ dtype2str(uint8_t id) {
     case DT_TEST:	return("test");
     case DT_NOTE:	return("note");
     case DT_VERSION:	return("version");
+    case DT_EVENT:	return("event");
+    case DT_DEBUG:	return("debug");
     default:		return("unk");
   }
 }
@@ -344,9 +349,11 @@ process_gps_time(tmsg_t *msg) {
   clock_bias =  ((double)dt_gps_time_clock_bias_get(msg))/100;
   clock_drift = ((double)dt_gps_time_clock_drift_get(msg))/100;
 
-  fprintf(stderr, "GPS TIME[%d] %d (0x%04x): nsats: %d  ", chip_type, stamp_mis, stamp_mis, num_svs);
-  fprintf(stderr, "%2d/%02d/%04d %2d:%02d:%f\n", utc_month, utc_day, utc_year, utc_hour, utc_min, utc_millsec);
-  fprintf(stderr, "  Clock bias: %f  drift: %f\n", clock_bias, clock_drift);
+  if (verbose) {
+    fprintf(stderr, "GPS TIME[%d] %d (0x%04x): nsats: %d  ", chip_type, stamp_mis, stamp_mis, num_svs);
+    fprintf(stderr, "%2d/%02d/%04d %2d:%02d:%f\n", utc_month, utc_day, utc_year, utc_hour, utc_min, utc_millsec);
+    fprintf(stderr, "  Clock bias: %f  drift: %f\n", clock_bias, clock_drift);
+  }
 }
 
 
@@ -372,75 +379,77 @@ process_gps_pos(tmsg_t *msg) {
   num_svs = dt_gps_pos_num_svs_get(msg);
   hdop = ((float)dt_gps_pos_hdop_get(msg))/5;
 
-  fprintf(stderr, "GPS POS[%d] %d (0x%04x): nsats %d\n", chip_type, stamp_mis, stamp_mis, num_svs);
-  fprintf(stderr,"  Nav type (0x%04x): ", nav_type);
-  switch(nav_type & 0x0007) {
-    case(0x0):
-      fprintf(stderr,"No fix. "); break;
-    case(0x1):
-      fprintf(stderr,"1 sat soln. "); break;
-    case(0x2):
-      fprintf(stderr,"2 sat soln. "); break;
-    case(0x3):
-      fprintf(stderr,"3 sat soln. "); break;
-    case(0x4):
-      fprintf(stderr,">3 sat soln. "); break;
-    case(0x5):
-      fprintf(stderr,"2-D least sqr sln. "); break;
-    case(0x6):
-      fprintf(stderr,"3-d least sqr sln. "); break;
-    case(0x7):
-      fprintf(stderr,"DR soln. "); break;
+  if (verbose) {
+    fprintf(stderr, "GPS POS[%d] %d (0x%04x): nsats %d\n", chip_type, stamp_mis, stamp_mis, num_svs);
+    fprintf(stderr,"  Nav type (0x%04x): ", nav_type);
+    switch(nav_type & 0x0007) {
+      case(0x0):
+	fprintf(stderr,"No fix. "); break;
+      case(0x1):
+	fprintf(stderr,"1 sat soln. "); break;
+      case(0x2):
+	fprintf(stderr,"2 sat soln. "); break;
+      case(0x3):
+	fprintf(stderr,"3 sat soln. "); break;
+      case(0x4):
+	fprintf(stderr,">3 sat soln. "); break;
+      case(0x5):
+	fprintf(stderr,"2-D least sqr sln. "); break;
+      case(0x6):
+	fprintf(stderr,"3-d least sqr sln. "); break;
+      case(0x7):
+	fprintf(stderr,"DR soln. "); break;
+    }
+    if(nav_type & 0x0008)
+      fprintf(stderr,"Trickle pwr. ");
+    switch(nav_type & 0x0030) {
+      case(0x0):
+	fprintf(stderr,"No alt hold. "); break;
+      case(0x10):
+	fprintf(stderr,"Hold alt from KF. "); break;
+      case(0x20):
+	fprintf(stderr,"Hold alt from user. "); break;
+      case(0x30):
+	fprintf(stderr,"Always hold user alt. "); break;
+    }
+    if(nav_type & 0x0040)
+      fprintf(stderr,"DOP exceeds limits. ");
+    if(nav_type & 0x0080)
+      fprintf(stderr,"DGPS correction applied. ");
+    if(nav_type & 0x0100)
+      fprintf(stderr,"Sensor DR. ");
+    else if (nav_type & 0x0007)
+      fprintf(stderr,"Velocity DR. ");
+    else
+      fprintf(stderr,"DR error. ");
+    if(nav_type & 0x0200)
+      fprintf(stderr,">4 sat soln. ");
+    if(nav_type & 0x0400)
+      fprintf(stderr,"Velocity DR timeout. ");
+    if(nav_type & 0x0800)
+      fprintf(stderr,"Fix edited by MI. ");
+    if(nav_type & 0x1000)
+      fprintf(stderr,"Invalid velocity. ");
+    if(nav_type & 0x2000)
+      fprintf(stderr,"Alt. hold disabled. ");
+    switch(nav_type & 0xC000) {
+      case(0x0):
+	fprintf(stderr,"GPS nav only. "); break;
+      case(0x4000):
+	fprintf(stderr,"DR calibration from GPS. "); break;
+      case(0x8000):
+	fprintf(stderr,"DR sensor error. "); break;
+      case(0xC000):
+	fprintf(stderr,"DRin test.. "); break;
+    }
+    fprintf(stderr, "\n  %d Sats in soln.: ", num_svs);
+    for(i=1; i<32; i++) {
+      if (sats_seen & 0x00000001)
+	fprintf(stderr, "%d ", i);
+      sats_seen = sats_seen >> 1;
+    }
+    fprintf(stderr, "\n  Lat: %.7f  Lon: %.7f  Error: %.2f\n", gps_lat, gps_long, hdop);
   }
-  if(nav_type & 0x0008)
-    fprintf(stderr,"Trickle pwr. ");
-  switch(nav_type & 0x0030) {
-    case(0x0):
-      fprintf(stderr,"No alt hold. "); break;
-    case(0x10):
-      fprintf(stderr,"Hold alt from KF. "); break;
-    case(0x20):
-      fprintf(stderr,"Hold alt from user. "); break;
-    case(0x30):
-      fprintf(stderr,"Always hold user alt. "); break;
-  }
-  if(nav_type & 0x0040)
-    fprintf(stderr,"DOP exceeds limits. ");
-  if(nav_type & 0x0080)
-    fprintf(stderr,"DGPS correction applied. ");
-  if(nav_type & 0x0100)
-    fprintf(stderr,"Sensor DR. ");
-  else if (nav_type & 0x0007)
-    fprintf(stderr,"Velocity DR. ");
-  else
-    fprintf(stderr,"DR error. ");
-  if(nav_type & 0x0200)
-    fprintf(stderr,">4 sat soln. ");
-  if(nav_type & 0x0400)
-    fprintf(stderr,"Velocity DR timeout. ");
-  if(nav_type & 0x0800)
-    fprintf(stderr,"Fix edited by MI. ");
-  if(nav_type & 0x1000)
-    fprintf(stderr,"Invalid velocity. ");
-  if(nav_type & 0x2000)
-    fprintf(stderr,"Alt. hold disabled. ");
-  switch(nav_type & 0xC000) {
-    case(0x0):
-      fprintf(stderr,"GPS nav only. "); break;
-    case(0x4000):
-      fprintf(stderr,"DR calibration from GPS. "); break;
-    case(0x8000):
-      fprintf(stderr,"DR sensor error. "); break;
-    case(0xC000):
-      fprintf(stderr,"DRin test.. "); break;
-  }
-  fprintf(stderr, "\n  %d Sats in soln.: ", num_svs);
-  for(i=1; i<32; i++) {
-    if (sats_seen & 0x00000001)
-      fprintf(stderr, "%d ", i);
-    sats_seen = sats_seen >> 1;
-  }
-  fprintf(stderr, "\n  Lat: %.7f  Lon: %.7f  Error: %.2f\n", gps_lat, gps_long, hdop);
 }
 
 
@@ -518,6 +527,48 @@ process_version(tmsg_t *msg) {
 }
 
 
+char *
+event2str(uint8_t ev) {
+  switch(ev) {
+    case DT_EVENT_SURFACED:
+      return "surfaced";
+    case DT_EVENT_SUBMERGED:
+      return "submerged";
+    case DT_EVENT_DOCKED:
+      return "docked";
+    case DT_EVENT_UNDOCKED:
+      return "undocked";
+    case DT_EVENT_GPS_BOOT:
+      return "gps_boot";
+    case DT_EVENT_GPS_CONFIG:
+      return "gps_config";
+    case DT_EVENT_GPS_START:
+      return "gps_start";
+    case DT_EVENT_GPS_OFF:
+      return "gps_off";
+    case DT_EVENT_GPS_FAST:
+      return "gps_fast";
+    case DT_EVENT_GPS_ACQUIRED:
+      return "gps_acquired";
+    default:
+      return "unk";
+  }
+}
+
+
+void
+process_event(tmsg_t *msg) {
+  uint32_t stamp;
+  uint8_t  ev;
+
+  stamp = dt_event_stamp_mis_get(msg);
+  ev = dt_event_ev_get(msg);
+  if (verbose || force_events) {
+    fprintf(stderr, "EVENT: %8u %-6s (%d)\n", stamp, event2str(ev), ev);
+  }
+}
+
+
 void
 process_unk_dblk(tmsg_t *msg) {
     fprintf(stderr, "*** unknown dblk: ");
@@ -571,6 +622,9 @@ process_mm3_data(tmsg_t *msg) {
     case DT_VERSION:
       process_version(msg);
       break;
+    case DT_EVENT:
+      process_event(msg);
+      break;
     default:
       process_unk_dblk(msg);
       break;
@@ -615,7 +669,7 @@ main(int argc, char **argv) {
   input_src = INPUT_SERIAL;
   bail = 0;
   prog_name = basename(argv[0]);
-  while ((c = getopt_long(argc, argv, "Ddvf", longopts, NULL)) != EOF) {
+  while ((c = getopt_long(argc, argv, "Ddevf", longopts, NULL)) != EOF) {
     switch (c) {
       case 1:
 	bail = 1;
@@ -634,6 +688,9 @@ main(int argc, char **argv) {
 	break;
       case 'D':
 	debug++;
+	break;
+      case 'e':
+	force_events++;
 	break;
       case 'v':
 	verbose++;

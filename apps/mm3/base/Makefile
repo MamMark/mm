@@ -32,6 +32,7 @@ GEN=mm3DataMsg.h mm3DataMsg.c \
     GpsDevDataMsg.h GpsDevDataMsg.c \
     GpsUnkMsg.h GpsUnkMsg.c \
     DtVersionMsg.h DtVersionMsg.c \
+    DtEventMsg.h DtEventMsg.c \
     SDConstants.h SensorConstants.h \
     serialpacket.c serialpacket.h serialprotocol.h
 
@@ -133,6 +134,10 @@ DtVersionMsg.c DtVersionMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
 	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_version -o DtVersionMsg.h
 
+DtEventMsg.c DtEventMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h dt_event -o DtEventMsg.h
+
 SensorConstants.h: $(MM3_PLATFORM_DIR)/sensors/sensors.h
 	ncg -I$(MM3_PLATFORM_DIR) -I$(MM3_PLATFORM_DIR)/sensors/ -target=mm3 \
 	c $(MM3_PLATFORM_DIR)/sensors/sensors.h \
@@ -168,6 +173,17 @@ SDConstants.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	DT_EVENT		  \
 	DT_DEBUG		  \
 	DT_MAX			  \
+				  \
+	DT_EVENT_SURFACED	  \
+	DT_EVENT_SUBMERGED	  \
+	DT_EVENT_DOCKED		  \
+	DT_EVENT_UNDOCKED	  \
+	DT_EVENT_GPS_BOOT	  \
+	DT_EVENT_GPS_CONFIG	  \
+	DT_EVENT_GPS_START	  \
+	DT_EVENT_GPS_OFF	  \
+	DT_EVENT_GPS_FAST	  \
+	DT_EVENT_GPS_ACQUIRED	  \
 				  \
 	DT_HDR_SIZE_IGNORE        \
 	DT_HDR_SIZE_CONFIG        \
@@ -217,6 +233,7 @@ serialprotocol.h: $(SERIAL_H)
 
 mm3dump.o: mm3dump.c mm3DataMsg.h DtIgnoreMsg.h DtConfigMsg.h DtSyncMsg.h DtPanicMsg.h DtGpsTimeMsg.h \
 	DtGpsPosMsg.h DtSensorDataMsg.h DtSensorSetMsg.h DtTestMsg.h DtNoteMsg.h DtGpsRawMsg.h DtVersionMsg.h \
+	DtEventMsg.h \
 	GpsNavDataMsg.h GpsTrackerDataMsg.h GpsSoftVersMsg.h GpsErrorMsg.h GpsGeodeticDataMsg.h GpsPpsMsg.h \
 	GpsClockStatusMsg.h  GpsAlmanacStatusMsg.h GpsDevDataMsg.h GpsUnkMsg.h \
 	ParseSirf.h \
@@ -224,10 +241,10 @@ mm3dump.o: mm3dump.c mm3DataMsg.h DtIgnoreMsg.h DtConfigMsg.h DtSyncMsg.h DtPani
 
 mm3dump: mm3dump.o filesource.o mm3DataMsg.o DtIgnoreMsg.o DtConfigMsg.o DtSyncMsg.o DtPanicMsg.o DtGpsTimeMsg.o \
 	DtGpsPosMsg.o DtSensorDataMsg.o DtSensorDataMsg.o DtSensorSetMsg.o DtTestMsg.o DtNoteMsg.o \
-	DtGpsRawMsg.o DtVersionMsg.o serialpacket.o \
+	DtGpsRawMsg.o DtVersionMsg.o DtEventMsg.o serialpacket.o \
 	ParseSirf.o GpsNavDataMsg.o GpsTrackerDataMsg.o GpsSoftVersMsg.o GpsErrorMsg.o GpsGeodeticDataMsg.o \
 	GpsClockStatusMsg.o GpsAlmanacStatusMsg.o GpsPpsMsg.o GpsDevDataMsg.o GpsUnkMsg.o \
-	
+
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
 TAGS:
@@ -247,6 +264,7 @@ dep:
 
 ### Dependencies
 DtConfigMsg.o: DtConfigMsg.c /opt/include/message.h DtConfigMsg.h
+DtEventMsg.o: DtEventMsg.c /opt/include/message.h DtEventMsg.h
 DtGpsPosMsg.o: DtGpsPosMsg.c /opt/include/message.h DtGpsPosMsg.h
 DtGpsRawMsg.o: DtGpsRawMsg.c /opt/include/message.h DtGpsRawMsg.h
 DtGpsTimeMsg.o: DtGpsTimeMsg.c /opt/include/message.h DtGpsTimeMsg.h
@@ -288,6 +306,6 @@ mm3DataMsg.o: mm3DataMsg.c /opt/include/message.h mm3DataMsg.h
 mm3dump.o: mm3dump.c /opt/include/serialsource.h /opt/include/sfsource.h \
   /opt/include/message.h filesource.h serialpacket.h serialprotocol.h \
   mm3DataMsg.h SensorConstants.h SDConstants.h DtIgnoreMsg.h DtSyncMsg.h \
-  DtPanicMsg.h DtSensorDataMsg.h DtVersionMsg.h DtGpsTimeMsg.h \
-  DtGpsPosMsg.h DtGpsRawMsg.h ParseSirf.h
+  DtPanicMsg.h DtSensorDataMsg.h DtVersionMsg.h DtEventMsg.h \
+  DtGpsTimeMsg.h DtGpsPosMsg.h DtGpsRawMsg.h ParseSirf.h
 serialpacket.o: serialpacket.c /opt/include/message.h serialpacket.h
