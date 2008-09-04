@@ -22,12 +22,12 @@ dis
 
 
 # 5 debug_break
-b PanicP.nc:46
+b PanicP.nc:49
 
 # 6 panic
-b PanicP.nc:58
+b PanicP.nc:61
 comm
-printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
+printf "pcode: %d (0x%0x)  where: %d  %04x %04x %04x %04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
 
 # 7 BRK_FINISH
@@ -117,3 +117,10 @@ x/16xb GPSMsgP$collect_overflow
 printf "\nerrors: ovrfull: %d  ovrmax: %d  too_big: %d  chk fail: %d  proto fail: %d\n", GPSMsgP$collect_overflow_full, GPSMsgP$collect_overflow_max, GPSMsgP$collect_too_big, GPSMsgP$collect_chksum_fail, GPSMsgP$collect_proto_fail
 end
 
+define erase
+ena 2
+mon reset
+c
+set do_erase=1
+p do_erase
+end

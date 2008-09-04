@@ -555,8 +555,10 @@ implementation {
 	 * we won't be here but rather later down in this processing loop.
 	 */
 	atomic cur_state = ssw_state;
-	if (cur_state != SSW_STATE_OFF)
-	  ss_panic(25, cur_state);
+	if (cur_state != SSW_STATE_OFF) {
+	  call Panic.warn(PANIC_SS_RECOV, 25, cur_state, 0, 0, 0);
+	  atomic cur_state = ssw_state = SSW_STATE_OFF;
+	}
 
 	call BlockingWriteResource.request(); // this will also turn on the hardware when granted.
 	err = call SD.reset();		  // about 100ms

@@ -18,6 +18,11 @@
 #include "SensorConstants.h"
 #include "mm3dump.h"
 
+/*
+ * Number of empty sectors that will cause the dump to stop.
+ */
+#define MAX_EMPTY   10
+
 #define SECTOR_SIZE 512
 #define SEQ_OFF     508
 #define CHKSUM_OFF  510
@@ -129,8 +134,8 @@ get_sector(int fd, uint8_t *dbuff) {
 
   if (blk_empty(dbuff)) {
     num_empty++;
-    if (num_empty > 4) {
-      fprintf(stderr, "**** > 4 empty contiguous blocks read, aborting\n");
+    if (num_empty > MAX_EMPTY) {
+      fprintf(stderr, "**** > %d empty contiguous blocks read, aborting\n", MAX_EMPTY);
       fprintf(stderr, "     abs sectors: %d\n", abs_sec);
       exit(1);
     }

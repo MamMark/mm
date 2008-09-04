@@ -22,7 +22,8 @@
 #define PANIC_COMM	4
 #define PANIC_SD	5
 #define PANIC_SS	6
-#define PANIC_GPS	7
+#define PANIC_SS_RECOV	7
+#define PANIC_GPS	8
 
 #ifdef notdef
 #define PANIC_SNS	6

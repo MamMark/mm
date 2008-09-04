@@ -53,7 +53,7 @@ typedef enum {
  */
 
 typedef enum {
-  GPSM_DOWN = 0,
+  GPSM_DOWN = 0x10,
   GPSM_STARTING,
   GPSM_SHORT,				/* looking for hot fix */
   GPSM_LONG,				/* loading almanac */
@@ -116,6 +116,7 @@ implementation {
       default:
 	call Panic.panic(PANIC_GPS, 128, gpsm_state, 0, 0, 0);
 	gpsm_state = GPSM_DOWN;
+	call MsgTimer.stop();
 	return;
 
       case GPSM_STARTING:
@@ -123,6 +124,7 @@ implementation {
 	return;
 
       case GPSM_STOPPING:
+	call MsgTimer.stop();
 	call GPSControl.stop();
 	return;
     }
@@ -168,6 +170,7 @@ implementation {
       call Panic.panic(PANIC_GPS, 131, 0, 0, 0, 0);
     last_submerged = t;
     gpsm_state = GPSM_STOPPING;
+    call MsgTimer.stop();
     call GPSControl.stop();
   }
 

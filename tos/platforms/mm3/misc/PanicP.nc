@@ -11,6 +11,7 @@ norace bool save_sr_free;
 norace uint8_t _p, _w;
 norace uint16_t _a0, _a1, _a2, _a3, _arg;
 
+#ifdef PANIC_DINT
 #define MAYBE_SAVE_SR_AND_DINT	do {	\
     if (save_sr_free) {			\
       save_sr = READ_SR;		\
@@ -18,7 +19,9 @@ norace uint16_t _a0, _a1, _a2, _a3, _arg;
     }					\
     dint();				\
 } while (0);
-
+#else
+#define MAYBE_SAVE_SR_AND_DINT	do {} while (0)
+#endif
 
 module PanicP {
   provides {
