@@ -51,7 +51,7 @@ enum {
   AM_GPS_DEV_DATA	= 0x21,
   AM_GPS_UNK		= 0x21,
   AM_DT_VERSION		= 0x21,
-  AM_DT_STATUS		= 0x21,
+  AM_DT_EVENT		= 0x21,
   AM_DT_DEBUG		= 0x21,
 };
 
