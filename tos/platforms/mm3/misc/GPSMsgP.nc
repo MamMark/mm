@@ -132,6 +132,12 @@ implementation {
 #endif
 
 
+  command error_t Init.init() {
+    gpsm_state = GPSM_DOWN;
+    return SUCCESS;
+  }
+
+
   event void GPSControl.startDone(error_t err) {
     gpsm_state = GPSM_SHORT;
     call MsgTimer.startOneShot(GPS_MSG_SHORT_WINDOW);
@@ -155,8 +161,8 @@ implementation {
       call Panic.warn(PANIC_GPS, 129, 0, 0, 0, 0);
     last_surfaced = t;
     if (gpsm_state != GPSM_DOWN) {
-      call Panic.panic(PANIC_GPS, 130, gpsm_state, 0, 0, 0);
-      return;
+      call Panic.warn(PANIC_GPS, 130, gpsm_state, 0, 0, 0);
+      gpsm_state = GPSM_DOWN;
     }
     gpsm_state = GPSM_STARTING;
     call GPSControl.start();

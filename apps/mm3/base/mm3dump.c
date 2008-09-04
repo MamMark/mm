@@ -318,8 +318,8 @@ process_panic(tmsg_t *msg) {
   arg1      = dt_panic_arg1_get(msg);
   arg2      = dt_panic_arg2_get(msg);
   arg3      = dt_panic_arg3_get(msg);
-  printf("*** PANIC:  %u (0x%04x) pcode: %02x  where: %02x  %04x %04x %04x %04x\n",
-	 stamp_mis, stamp_mis, pcode, where, arg0, arg1, arg2, arg3);
+  printf("*** PANIC:  %u (0x%04x) pcode: %d (0x%0x)  where: %d (0x%02x)  0x%04x 0x%04x 0x%04x 0x%04x\n",
+	 stamp_mis, stamp_mis, pcode, pcode, where, where, arg0, arg1, arg2, arg3);
 }
 
 
