@@ -123,4 +123,6 @@ mon reset
 c
 set do_erase=1
 p do_erase
+c
+c
 end
