@@ -351,7 +351,7 @@ process_gps_time(tmsg_t *msg) {
 
   if (verbose) {
     fprintf(stderr, "GPS TIME[%d] %d (0x%04x): nsats: %d  ", chip_type, stamp_mis, stamp_mis, num_svs);
-    fprintf(stderr, "%2d/%02d/%04d %2d:%02d:%f\n", utc_month, utc_day, utc_year, utc_hour, utc_min, utc_millsec);
+    fprintf(stderr, "%2d/%02d/%04d %2d:%02d:%02.3f\n", utc_month, utc_day, utc_year, utc_hour, utc_min, utc_millsec);
     fprintf(stderr, "  Clock bias: %f  drift: %f\n", clock_bias, clock_drift);
   }
 }
