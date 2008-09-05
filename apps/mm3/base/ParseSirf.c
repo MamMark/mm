@@ -538,7 +538,7 @@ parseGeodeticData(tmsg_t *msg) {
   fprintf(stderr,"\n");
 
   fprintf(stderr, "  GPS xWk: %d  TOW: %.3f  ", week, tow);
-  fprintf(stderr, "UTC: %2dd/%02d/%04d %2d:%02d:%02.3f\n", mo, day, year, hr, min, sec);
+  fprintf(stderr, "UTC: %2d/%02d/%04d %2d:%02d:%06.3f\n", mo, day, year, hr, min, sec);
 
   fprintf(stderr, "  %d Sats in soln.: ", satsfix);
   for(i=1; i<32; i++) {
