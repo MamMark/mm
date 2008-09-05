@@ -132,12 +132,6 @@ implementation {
 #endif
 
 
-  command error_t Init.init() {
-    gpsm_state = GPSM_DOWN;
-    return SUCCESS;
-  }
-
-
   event void GPSControl.startDone(error_t err) {
     gpsm_state = GPSM_SHORT;
     call MsgTimer.startOneShot(GPS_MSG_SHORT_WINDOW);
@@ -329,6 +323,7 @@ implementation {
 
 
   command error_t Init.init() {
+    gpsm_state = GPSM_DOWN;
     collect_overflow_full = 0;
     collect_overflow_max  = 0;
     collect_too_big = 0;
