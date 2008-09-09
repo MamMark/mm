@@ -96,6 +96,8 @@ implementation {
   uint8_t  collect_nxt;		        // where we are in the buffer
   uint8_t  collect_left;			// working copy
   bool     on_overflow;
+  bool     got_fix;
+  uint32_t gps_on_time;
 
   /*
    * Error counters
@@ -114,7 +116,7 @@ implementation {
   task void gps_msg_control_task() {
     switch (gpsm_state) {
       default:
-	call Panic.panic(PANIC_GPS, 128, gpsm_state, 0, 0, 0);
+	call Panic.warn(PANIC_GPS, 128, gpsm_state, 0, 0, 0);
 	gpsm_state = GPSM_DOWN;
 	call MsgTimer.stop();
 	return;
@@ -134,6 +136,7 @@ implementation {
 
   event void GPSControl.startDone(error_t err) {
     gpsm_state = GPSM_SHORT;
+    gps_on_time = call LocalTime.get();
     call MsgTimer.startOneShot(GPS_MSG_SHORT_WINDOW);
   }
 
@@ -156,8 +159,10 @@ implementation {
     last_surfaced = t;
     if (gpsm_state != GPSM_DOWN) {
       call Panic.warn(PANIC_GPS, 130, gpsm_state, 0, 0, 0);
+      call MsgTimer.stop();
       gpsm_state = GPSM_DOWN;
     }
+    got_fix = FALSE;
     gpsm_state = GPSM_STARTING;
     call GPSControl.start();
   }
@@ -167,7 +172,7 @@ implementation {
 
     t = call LocalTime.get();
     if (last_submerged && (t - last_surfaced ) < 1024)
-      call Panic.panic(PANIC_GPS, 131, 0, 0, 0, 0);
+      call Panic.warn(PANIC_GPS, 131, 0, 0, 0, 0);
     last_submerged = t;
     gpsm_state = GPSM_STOPPING;
     call MsgTimer.stop();
@@ -178,7 +183,13 @@ implementation {
   event void MsgTimer.fired() {
     switch (gpsm_state) {
       default:
-	call Panic.panic(PANIC_GPS, 132, gpsm_state, 0, 0, 0);
+	call Panic.warn(PANIC_GPS, 132, gpsm_state, 0, 0, 0);
+	gpsm_state = GPSM_DOWN;
+	call MsgTimer.stop();
+	return;
+
+      case GPSM_DOWN:
+	call Panic.warn(PANIC_GPS, 133, gpsm_state, 0, 0, 0);
 	return;
 
       case GPSM_SHORT:
@@ -197,7 +208,7 @@ implementation {
   /*
    * Process a Geodetic packet from the Sirf3.
    */
-  void process_geodetic(gps_geodetic_nt *geop) {
+  void process_geodetic(gps_geodetic_nt *gp) {
     /*
      * Extract time and position data out
      */
@@ -206,6 +217,7 @@ implementation {
     uint8_t gps_pos_block[GPS_POS_BLOCK_SIZE];
     dt_gps_time_nt *timep;
     dt_gps_pos_nt *posp;
+    uint32_t t;
 
     timep = (dt_gps_time_nt*)gps_time_block;
     posp = (dt_gps_pos_nt*)gps_pos_block;
@@ -214,34 +226,39 @@ implementation {
     timep->dtype = DT_GPS_TIME;
     timep->stamp_mis = call LocalTime.get();
     timep->chip_type = CHIP_GPS_SIRF3;
-    timep->num_svs = geop->num_svs;
-    timep->utc_year = geop->utc_year;
-    timep->utc_month = geop->utc_month;
-    timep->utc_day = geop->utc_day;
-    timep->utc_hour = geop->utc_hour;
-    timep->utc_min = geop->utc_min;
-    timep->utc_millsec = geop->utc_sec;
-    timep->clock_bias = geop->clock_bias;
-    timep->clock_drift = geop->clock_drift;
+    timep->num_svs = gp->num_svs;
+    timep->utc_year = gp->utc_year;
+    timep->utc_month = gp->utc_month;
+    timep->utc_day = gp->utc_day;
+    timep->utc_hour = gp->utc_hour;
+    timep->utc_min = gp->utc_min;
+    timep->utc_millsec = gp->utc_sec;
+    timep->clock_bias = gp->clock_bias;
+    timep->clock_drift = gp->clock_drift;
   
     posp->len = GPS_POS_BLOCK_SIZE;
     posp->dtype = DT_GPS_POS;
     posp->stamp_mis = timep->stamp_mis;
     posp->chip_type = CHIP_GPS_SIRF3;
-    posp->nav_type = geop->nav_type;
-    posp->num_svs = geop->num_svs;
-    posp->sats_seen = geop->sat_mask;
-    posp->gps_lat = geop->lat;
-    posp->gps_long = geop->lon;
-    posp->ehpe = geop->ehpe;
-    posp->hdop = geop->hdop;
+    posp->nav_type = gp->nav_type;
+    posp->num_svs = gp->num_svs;
+    posp->sats_seen = gp->sat_mask;
+    posp->gps_lat = gp->lat;
+    posp->gps_long = gp->lon;
+    posp->ehpe = gp->ehpe;
+    posp->hdop = gp->hdop;
 
     /*
      * Check for state change information
      */
-    if (geop->nav_valid == 0) {
+    if (gp->nav_valid == 0) {
 
-      call LogEvent.logEvent(DT_EVENT_GPS_ACQUIRED);
+      if (!got_fix) {
+	got_fix = TRUE;
+	t = call LocalTime.get();
+	t = t - gps_on_time;
+	call LogEvent.logEvent(DT_EVENT_GPS_FIRST, ( t > 0xffff ? 0xffff : t));
+      }
       call Collect.collect(gps_time_block, GPS_TIME_BLOCK_SIZE);
       call Collect.collect(gps_pos_block, GPS_POS_BLOCK_SIZE);
 
@@ -250,7 +267,7 @@ implementation {
        * then power down because we got the fix.
        */
       if (gpsm_state == GPSM_SHORT) {
-	call LogEvent.logEvent(DT_EVENT_GPS_FAST);
+	call LogEvent.logEvent(DT_EVENT_GPS_FAST,0);
 	gpsm_state = GPSM_STOPPING;
 	call GPSControl.stop();
 	return;
@@ -262,7 +279,7 @@ implementation {
   task void gps_msg_task() {
     dt_gps_raw_nt *gdp;
     uint8_t i, max;
-    gps_geodetic_nt *geop;
+    gps_geodetic_nt *gp;
 
     /*
      * collect raw message for debugging.  Eventually this will go away
@@ -278,12 +295,16 @@ implementation {
     /*
      * Look at message and see if is a geodetic.  If so process it
      */
-    geop = (gps_geodetic_nt *) (&collect_msg[GPS_START_OFFSET]);
-    if (geop->start != SIRF_BIN_START || geop->start_2 != SIRF_BIN_START_2) {
-      call Panic.panic(PANIC_GPS, 133, geop->start, geop->start_2, 0, 0);
+    gp = (gps_geodetic_nt *) (&collect_msg[GPS_START_OFFSET]);
+    if (gp->start1 != SIRF_BIN_START || gp->start2 != SIRF_BIN_START_2) {
+      call Panic.warn(PANIC_GPS, 134, gp->start1, gp->start2, 0, 0);
     }
-    if (geop->len == GEODETIC_LEN && geop->mid == MID_GEODETIC)
-      process_geodetic(geop);
+    if (gp->len == GEODETIC_LEN && gp->id == MID_GEODETIC)
+      process_geodetic(gp);
+
+    gdp->len = 0;			/* debug cookies */
+    gdp->data[0] = 0;
+    gdp->data[1] = 0;
 
     /*
      * Done processing, so collect any other bytes that have come in and are
@@ -324,6 +345,7 @@ implementation {
 
   command error_t Init.init() {
     gpsm_state = GPSM_DOWN;
+    got_fix = FALSE;
     collect_overflow_full = 0;
     collect_overflow_max  = 0;
     collect_too_big = 0;
@@ -452,7 +474,8 @@ implementation {
 	return;
 
       default:
-	call Panic.panic(PANIC_GPS, 134, collect_state, 0, 0, 0);
+	call Panic.warn(PANIC_GPS, 135, collect_state, 0, 0, 0);
+	collect_restart();
 	return;
     }
   }

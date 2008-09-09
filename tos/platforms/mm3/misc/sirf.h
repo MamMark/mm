@@ -177,6 +177,7 @@ uint8_t sirf_go_nmea[] = {
  * both the time and position information.  Too bad it is so large.
  */
 
+#ifdef notdef
 typedef nx_struct gps_geodetic {
   nx_uint8_t  start;
   nx_uint8_t  start_2;
@@ -220,6 +221,8 @@ typedef nx_struct gps_geodetic {
   nx_uint16_t checksum;
   nx_uint8_t  end;
   nx_uint8_t  end_2;
-} gps_geodetic_nt;  
+} gps_geodetic_nt;
+
+#endif
 
 #endif	/* __SIRF_H__ */

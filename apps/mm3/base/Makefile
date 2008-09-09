@@ -99,7 +99,7 @@ GpsTrackerDataMsg.c GpsTrackerDataMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 
 GpsGeodeticDataMsg.c GpsGeodeticDataMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
-	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_geod_data -o GpsGeodeticDataMsg.h
+	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_geodetic -o GpsGeodeticDataMsg.h
 
 GpsDevDataMsg.c GpsDevDataMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
@@ -181,9 +181,11 @@ SDConstants.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	DT_EVENT_GPS_BOOT	  \
 	DT_EVENT_GPS_CONFIG	  \
 	DT_EVENT_GPS_START	  \
+	DT_EVENT_GPS_GRANT	  \
+	DT_EVENT_GPS_RELEASE	  \
 	DT_EVENT_GPS_OFF	  \
 	DT_EVENT_GPS_FAST	  \
-	DT_EVENT_GPS_ACQUIRED	  \
+	DT_EVENT_GPS_FIRST	  \
 				  \
 	DT_HDR_SIZE_IGNORE        \
 	DT_HDR_SIZE_CONFIG        \

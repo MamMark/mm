@@ -42,7 +42,7 @@ enum {
   AM_GPS_SOFT_VERSION_DATA
 			= 0x21,
   AM_GPS_ERROR_DATA	= 0x21,
-  AM_GPS_GEOD_DATA	= 0x21,
+  AM_GPS_GEODETIC	= 0x21,
   AM_GPS_PPS_DATA	= 0x21,
   AM_GPS_CLOCK_STATUS_DATA
 			= 0x21,
@@ -193,8 +193,8 @@ typedef nx_struct dt_gps_pos {
   nx_uint16_t nav_type;
   nx_uint8_t  num_svs;			/* number of sv in solution */
   nx_uint32_t sats_seen;		/* bit mask, sats in solution */
-  nx_uint32_t gps_lat;			/* + North, x 10^7 degrees */
-  nx_uint32_t gps_long;			/* + East,  x 10^7 degrees */
+  nx_int32_t  gps_lat;			/* + North, x 10^7 degrees */
+  nx_int32_t  gps_long;			/* + East,  x 10^7 degrees */
   nx_uint32_t ehpe;			/* estimated horz pos err, 1e2 */
   nx_uint8_t  hdop;			/* err *5 */
 } dt_gps_pos_nt;
@@ -346,47 +346,47 @@ typedef nx_struct gps_almanac_status_data {
 } gps_almanac_status_data_nt;
 
 
-typedef nx_struct gps_geod_data {
+typedef nx_struct gps_geodetic {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
   nx_uint16_t  len;
   nx_uint8_t   id;
-  nx_uint16_t  navvalid;
-  nx_uint16_t  navtype;
+  nx_uint16_t  nav_valid;
+  nx_uint16_t  nav_type;
   nx_uint16_t  week;
-  nx_uint32_t  tow;
-  nx_uint16_t  year;
-  nx_uint8_t   mo;
-  nx_uint8_t   day;
-  nx_uint8_t   hr;
-  nx_uint8_t   min;
-  nx_uint16_t  sec;
-  nx_uint32_t  sats;
+  nx_uint32_t  tow;			/* seconds x 1e3 */
+  nx_uint16_t  utc_year;
+  nx_uint8_t   utc_month;
+  nx_uint8_t   utc_day;
+  nx_uint8_t   utc_hour;
+  nx_uint8_t   utc_min;
+  nx_uint16_t  utc_sec;			/* x 1e3 (millisecs) */
+  nx_uint32_t  sat_mask;
   nx_int32_t   lat;
   nx_int32_t   lon;
-  nx_int32_t   elipalt;
-  nx_int32_t   mslalt;
-  nx_uint8_t   mapdatum;
+  nx_int32_t   alt_elipsoid;
+  nx_int32_t   alt_msl;
+  nx_uint8_t   map_datum;
   nx_uint16_t  sog;
   nx_uint16_t  cog;
-  nx_uint16_t  magvar;
+  nx_uint16_t  mag_var;
   nx_int16_t   climb;
-  nx_int16_t   headrate;
+  nx_int16_t   heading_rate;
   nx_uint32_t  ehpe;
   nx_uint32_t  evpe;
   nx_uint32_t  ete;
   nx_uint16_t  ehve;
-  nx_int32_t   clockbias;
-  nx_int32_t   clockbiaserr;
-  nx_int32_t   clockdrift;
-  nx_int32_t   clockdrifterr;
-  nx_uint32_t  dist;
-  nx_uint16_t  disterr;
-  nx_uint16_t  headerr;
-  nx_uint8_t   satsfix;
+  nx_int32_t   clock_bias;
+  nx_int32_t   clock_bias_err;
+  nx_int32_t   clock_drift;
+  nx_int32_t   clock_drift_err;
+  nx_uint32_t  distance;
+  nx_uint16_t  distance_err;
+  nx_uint16_t  head_err;
+  nx_uint8_t   num_svs;
   nx_uint8_t   hdop;
-  nx_uint8_t   mode; 
-} gps_geod_data_nt;
+  nx_uint8_t   mode;
+} gps_geodetic_nt;
 
 typedef nx_struct gps_pps_data {
   nx_uint8_t   start1;
@@ -441,9 +441,11 @@ enum {
   DT_EVENT_GPS_BOOT,
   DT_EVENT_GPS_CONFIG,
   DT_EVENT_GPS_START,
+  DT_EVENT_GPS_GRANT,
+  DT_EVENT_GPS_RELEASE,
   DT_EVENT_GPS_OFF,
   DT_EVENT_GPS_FAST,
-  DT_EVENT_GPS_ACQUIRED,
+  DT_EVENT_GPS_FIRST,
 };
 
 
@@ -452,6 +454,7 @@ typedef nx_struct dt_event {
   nx_uint8_t  dtype;
   nx_uint32_t stamp_mis;
   nx_uint8_t  ev;
+  nx_uint16_t arg;
 } dt_event_nt;
 
 

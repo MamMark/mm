@@ -9,7 +9,13 @@
 #define EAVES TRUE
 
 #ifdef FAKE_SURFACE
-#define SURFACE_TIME   (15*60*1024UL)
+/*
+ * Surface: 15 mins  (temp 60 secs)
+ * Submerge: 10 secs
+ */
+
+//#define SURFACE_TIME   (15*60*1024UL)
+#define SURFACE_TIME   (1*60*1024UL)
 #define SUBMERGED_TIME (10*1024UL)
 #endif
 
@@ -83,7 +89,7 @@ implementation {
 	    m_surfaced = FALSE;
 //	    call Panic.brk(0x1024);
 	    nop();
-	    call LogEvent.logEvent(DT_EVENT_SUBMERGED);
+	    call LogEvent.logEvent(DT_EVENT_SUBMERGED,0);
 	    signal Surface.submerged();
 	  }
 	} else {
@@ -91,7 +97,7 @@ implementation {
 	    m_surfaced = TRUE;
 //	    call Panic.brk(0x1025);
 	    nop();
-	    call LogEvent.logEvent(DT_EVENT_SURFACED);
+	    call LogEvent.logEvent(DT_EVENT_SURFACED, 0);
 	    signal Surface.surfaced();
 	  }
 	}

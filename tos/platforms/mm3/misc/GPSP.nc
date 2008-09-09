@@ -341,9 +341,11 @@ implementation {
    */
   void control_stop() {
     call Usart.disableIntr();
+#ifndef GPS_LEAVE_UP
     call HW.gps_off();
+#endif
     call GPSTimer.stop();
-    call LogEvent.logEvent(DT_EVENT_GPS_OFF);
+    call LogEvent.logEvent(DT_EVENT_GPS_OFF, 0);
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
     if (call UARTResource.isOwner()) {
       if (call UARTResource.release() != SUCCESS)
@@ -407,6 +409,7 @@ implementation {
 	 * turned off.  Because we are releasing to some other user and will be deconfiguring.
 	 * We don't want anymore events occuring that might try to change what we are doing.
 	 */
+	call LogEvent.logEvent(DT_EVENT_GPS_RELEASE, 0);
 	call UARTResource.release();
 	call GPSMsg.reset();
 	call GPSTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
@@ -496,7 +499,7 @@ implementation {
      * First make sure the gps is down.  When booting make sure to power cycle
      * assumes init then booted.
      */
-    call LogEvent.logEvent(DT_EVENT_GPS_BOOT);
+    call LogEvent.logEvent(DT_EVENT_GPS_BOOT,0);
     call HW.gps_off();
     if (call UARTResource.isOwner())
       call UARTResource.release();
@@ -543,7 +546,7 @@ implementation {
   command error_t GPSControl.start() {
     if (gpsc_state != GPSC_OFF)
       return FAIL;
-    call LogEvent.logEvent(DT_EVENT_GPS_START);
+    call LogEvent.logEvent(DT_EVENT_GPS_START,0);
     gpsc_change_state(GPSC_REQUESTED, GPSW_NONE);
     call GPSMsgControl.start();
     call GPSTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
@@ -576,6 +579,7 @@ implementation {
 
   event void UARTResource.granted() {
     call Usart.disableIntr();
+      call LogEvent.logEvent(DT_EVENT_GPS_GRANT, gpsc_state);
 
 #ifdef notdef
     if (ro == 1 && gpsc_state != GPSC_OFF) {
@@ -609,7 +613,9 @@ implementation {
 	 * Prior to the grant being issued the configure will have
 	 * turned the gps back on so we want to turn it off again.
 	 */
+#ifndef GPS_LEAVE_UP
 	call HW.gps_off();
+#endif
 	call GPSTimer.stop();
 	mmP5out.ser_sel = SER_SEL_NONE;
 	call UARTResource.release();
@@ -720,7 +726,7 @@ implementation {
 	  gpsc_boot_trys--;
 	  gpsc_change_state(GPSC_RECONFIG_4800_PWR_DOWN, GPSW_TIMER);
 	  call GPSTimer.startOneShot(DT_GPS_PWR_BOUNCE);
-	  call LogEvent.logEvent(DT_EVENT_GPS_CONFIG);
+	  call LogEvent.logEvent(DT_EVENT_GPS_CONFIG,0);
 	  return;
 	}
 	gps_panic(7, gpsc_state);

@@ -544,12 +544,16 @@ event2str(uint8_t ev) {
       return "gps_config";
     case DT_EVENT_GPS_START:
       return "gps_start";
+    case DT_EVENT_GPS_GRANT:
+      return "gps_grant";
+    case DT_EVENT_GPS_RELEASE:
+      return "gps_release";
     case DT_EVENT_GPS_OFF:
       return "gps_off";
     case DT_EVENT_GPS_FAST:
       return "gps_fast";
-    case DT_EVENT_GPS_ACQUIRED:
-      return "gps_acquired";
+    case DT_EVENT_GPS_FIRST:
+      return "gps_first";
     default:
       return "unk";
   }
@@ -560,11 +564,13 @@ void
 process_event(tmsg_t *msg) {
   uint32_t stamp;
   uint8_t  ev;
+  uint16_t arg;
 
   stamp = dt_event_stamp_mis_get(msg);
   ev = dt_event_ev_get(msg);
+  arg = dt_event_arg_get(msg);
   if (verbose || force_events) {
-    fprintf(stderr, "EVENT: %8u %-6s (%d)\n", stamp, event2str(ev), ev);
+    fprintf(stderr, "EVENT: %8u %-6s (%d) arg: %d (0x%04x)\n", stamp, event2str(ev), ev, arg, arg);
   }
 }
 

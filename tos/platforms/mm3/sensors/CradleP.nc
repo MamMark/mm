@@ -183,13 +183,13 @@ implementation {
     if (docked) {
       if (cdp->data[0] < CRADLE_THRESHOLD) {
 	docked = FALSE;
-	call LogEvent.logEvent(DT_EVENT_UNDOCKED);
+	call LogEvent.logEvent(DT_EVENT_UNDOCKED,0);
 	signal Docked.undocked();
       }
     } else {
       if (cdp->data[0] >= CRADLE_THRESHOLD) {
 	docked = TRUE;
-	call LogEvent.logEvent(DT_EVENT_DOCKED);
+	call LogEvent.logEvent(DT_EVENT_DOCKED,0);
 	signal Docked.docked();
       }
     }

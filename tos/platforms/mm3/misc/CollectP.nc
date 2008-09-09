@@ -90,7 +90,7 @@ implementation {
   }
 
 
-  command void LogEvent.logEvent(uint8_t ev) {
+  command void LogEvent.logEvent(uint8_t ev, uint16_t arg) {
     uint8_t event_data[DT_HDR_SIZE_EVENT];
     dt_event_nt *ep;
 
@@ -99,6 +99,7 @@ implementation {
     ep->dtype = DT_EVENT;
     ep->stamp_mis = call LocalTime.get();
     ep->ev = ev;
+    ep->arg = arg;
     call Collect.collect(event_data, DT_HDR_SIZE_EVENT);
   }
 }

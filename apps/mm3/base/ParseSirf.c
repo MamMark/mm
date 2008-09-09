@@ -401,7 +401,7 @@ parseGeodeticData(tmsg_t *msg) {
   uint8_t  hr;
   uint8_t  min;
   float    sec;		//div by 1000
-  uint32_t sats;
+  uint32_t sat_mask;
   double   lat;		//div by 10e7
   double   lon;		//div by 10e7
   double   elipalt;	//div by 100
@@ -414,34 +414,34 @@ parseGeodeticData(tmsg_t *msg) {
   double   evpe;	//div by 100
   double   clockbias;	//div by 100
   double   clockdrift;	//div by 100
-  uint8_t  satsfix;
+  uint8_t  nsats;
   float    hdop;	//div by 5
 
-  navvalid = gps_geod_data_navvalid_get(msg);
-  navtype = gps_geod_data_navtype_get(msg);
-  week = gps_geod_data_week_get(msg);
-  tow = ((double)gps_geod_data_tow_get(msg))/1000;
-  year = gps_geod_data_year_get(msg);
-  mo = gps_geod_data_mo_get(msg);
-  day = gps_geod_data_day_get(msg);
-  hr = gps_geod_data_hr_get(msg);
-  min = gps_geod_data_min_get(msg);
-  sec = ((double)gps_geod_data_sec_get(msg))/1000;
-  sats = gps_geod_data_sats_get(msg);
-  lat = ((double)gps_geod_data_lat_get(msg))/10000000;
-  lon = ((double)gps_geod_data_lon_get(msg))/10000000;
-  elipalt = ((double)gps_geod_data_elipalt_get(msg))/100;
-  mslalt = ((double)gps_geod_data_mslalt_get(msg))/100;
-  mapdatum = gps_geod_data_mapdatum_get(msg);
-  sog = ((float)gps_geod_data_sog_get(msg))/100;
-  cog = ((float)gps_geod_data_cog_get(msg))/100;
-  climb = ((float)gps_geod_data_climb_get(msg))/100;
-  ehpe = ((double)gps_geod_data_ehpe_get(msg))/100;
-  evpe = ((double)gps_geod_data_evpe_get(msg))/100;
-  clockbias = ((double)gps_geod_data_clockbias_get(msg))/100;
-  clockdrift = ((double)gps_geod_data_clockdrift_get(msg))/100;
-  satsfix = gps_geod_data_satsfix_get(msg);
-  hdop = ((float)gps_geod_data_hdop_get(msg))/5;
+  navvalid = gps_geodetic_nav_valid_get(msg);
+  navtype = gps_geodetic_nav_type_get(msg);
+  week = gps_geodetic_week_get(msg);
+  tow = ((double)gps_geodetic_tow_get(msg))/1000;
+  year = gps_geodetic_utc_year_get(msg);
+  mo = gps_geodetic_utc_month_get(msg);
+  day = gps_geodetic_utc_day_get(msg);
+  hr = gps_geodetic_utc_hour_get(msg);
+  min = gps_geodetic_utc_min_get(msg);
+  sec = ((double)gps_geodetic_utc_sec_get(msg))/1000;
+  sat_mask = gps_geodetic_sat_mask_get(msg);
+  lat = ((double)gps_geodetic_lat_get(msg))/10000000;
+  lon = ((double)gps_geodetic_lon_get(msg))/10000000;
+  elipalt = ((double)gps_geodetic_alt_elipsoid_get(msg))/100;
+  mslalt = ((double)gps_geodetic_alt_msl_get(msg))/100;
+  mapdatum = gps_geodetic_map_datum_get(msg);
+  sog = ((float)gps_geodetic_sog_get(msg))/100;
+  cog = ((float)gps_geodetic_cog_get(msg))/100;
+  climb = ((float)gps_geodetic_climb_get(msg))/100;
+  ehpe = ((double)gps_geodetic_ehpe_get(msg))/100;
+  evpe = ((double)gps_geodetic_evpe_get(msg))/100;
+  clockbias = ((double)gps_geodetic_clock_bias_get(msg))/100;
+  clockdrift = ((double)gps_geodetic_clock_drift_get(msg))/100;
+  nsats = gps_geodetic_num_svs_get(msg);
+  hdop = ((float)gps_geodetic_hdop_get(msg))/5;
 
   fprintf(stderr, "sirf geodetic data: val: 0x%04x  type: 0x%04x\n", navvalid, navtype);
   if(navvalid == 0x0000)
@@ -540,11 +540,11 @@ parseGeodeticData(tmsg_t *msg) {
   fprintf(stderr, "  GPS xWk: %d  TOW: %.3f  ", week, tow);
   fprintf(stderr, "UTC: %2d/%02d/%04d %2d:%02d:%06.3f\n", mo, day, year, hr, min, sec);
 
-  fprintf(stderr, "  %d Sats in soln.: ", satsfix);
+  fprintf(stderr, "  %d Sats in soln.: ", nsats);
   for(i=1; i<32; i++) {
-    if(sats & 0x00000001)
+    if(sat_mask & 0x00000001)
       fprintf(stderr, "%d ", i);
-    sats = sats >> 1;
+    sat_mask = sat_mask >> 1;
   }
   fprintf(stderr, "\n");
   fprintf(stderr, "  Lat: %.7f   Lon: %.7f   Alt: %.2f  Datum: %d\n", lat, lon, mslalt, mapdatum);
