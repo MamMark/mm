@@ -26,7 +26,7 @@ void parseAlmData(tmsg_t *msg);
 
 void parseOkToSend(tmsg_t *msg);
 
-void parseNavLibMeas(tmsg_t *msg);
+void parseNavLibDataMeas(tmsg_t *msg);
 
 void parseGeodeticData(tmsg_t *msg);
 

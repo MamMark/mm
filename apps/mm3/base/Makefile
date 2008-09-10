@@ -23,6 +23,7 @@ GEN=mm3DataMsg.h mm3DataMsg.c \
     DtGpsRawMsg.h DtGpsRawMsg.c \
     GpsNavDataMsg.h GpsNavDataMsg.c \
     GpsGeodeticDataMsg.h GpsGeodeticDataMsg.c \
+    GpsNavLibDataMsg.h GpsNavLibDataMsg.c\
     GpsTrackerDataMsg.h GpsTrackerDataMsg.c \
     GpsSoftVersMsg.h GpsSoftVersMsg.c \
     GpsClockStatusMsg.h GpsClockStatusMsg.c \
@@ -97,6 +98,10 @@ GpsTrackerDataMsg.c GpsTrackerDataMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
 	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_tracker_data -o GpsTrackerDataMsg.h
 
+GpsNavLibDataMsg.c GpsNavLibDataMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
+	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
+        c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_nav_lib_data -o GpsNavLibDataMsg.h
+
 GpsGeodeticDataMsg.c GpsGeodeticDataMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
 	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_geodetic -o GpsGeodeticDataMsg.h
@@ -128,7 +133,6 @@ GpsPpsMsg.c GpsPpsMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 GpsUnkMsg.c GpsUnkMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
 	c $(MM3_PLATFORM_DIR)/misc/sd_blocks.h gps_unk -o GpsUnkMsg.h
-
 
 DtVersionMsg.c DtVersionMsg.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	mig -I$(MM3_PLATFORM_DIR) -target=mm3 \
@@ -237,13 +241,13 @@ mm3dump.o: mm3dump.c mm3DataMsg.h DtIgnoreMsg.h DtConfigMsg.h DtSyncMsg.h DtPani
 	DtGpsPosMsg.h DtSensorDataMsg.h DtSensorSetMsg.h DtTestMsg.h DtNoteMsg.h DtGpsRawMsg.h DtVersionMsg.h \
 	DtEventMsg.h \
 	GpsNavDataMsg.h GpsTrackerDataMsg.h GpsSoftVersMsg.h GpsErrorMsg.h GpsGeodeticDataMsg.h GpsPpsMsg.h \
-	GpsClockStatusMsg.h  GpsAlmanacStatusMsg.h GpsDevDataMsg.h GpsUnkMsg.h \
+	GpsClockStatusMsg.h GpsNavLibDataMsg.h GpsAlmanacStatusMsg.h GpsDevDataMsg.h GpsUnkMsg.h \
 	ParseSirf.h \
 	SensorConstants.h SDConstants.h serialpacket.h serialprotocol.h
 
 mm3dump: mm3dump.o filesource.o mm3DataMsg.o DtIgnoreMsg.o DtConfigMsg.o DtSyncMsg.o DtPanicMsg.o DtGpsTimeMsg.o \
 	DtGpsPosMsg.o DtSensorDataMsg.o DtSensorDataMsg.o DtSensorSetMsg.o DtTestMsg.o DtNoteMsg.o \
-	DtGpsRawMsg.o DtVersionMsg.o DtEventMsg.o serialpacket.o \
+	DtGpsRawMsg.o DtVersionMsg.o GpsNavLibDataMsg.o DtEventMsg.o serialpacket.o \
 	ParseSirf.o GpsNavDataMsg.o GpsTrackerDataMsg.o GpsSoftVersMsg.o GpsErrorMsg.o GpsGeodeticDataMsg.o \
 	GpsClockStatusMsg.o GpsAlmanacStatusMsg.o GpsPpsMsg.o GpsDevDataMsg.o GpsUnkMsg.o \
 
@@ -265,6 +269,8 @@ dep:
 	mv tmp_make Makefile
 
 ### Dependencies
+DtCalStringMsg.o: DtCalStringMsg.c /opt/include/message.h \
+  DtCalStringMsg.h
 DtConfigMsg.o: DtConfigMsg.c /opt/include/message.h DtConfigMsg.h
 DtEventMsg.o: DtEventMsg.c /opt/include/message.h DtEventMsg.h
 DtGpsPosMsg.o: DtGpsPosMsg.c /opt/include/message.h DtGpsPosMsg.h
@@ -289,6 +295,8 @@ GpsErrorMsg.o: GpsErrorMsg.c /opt/include/message.h GpsErrorMsg.h
 GpsGeodeticDataMsg.o: GpsGeodeticDataMsg.c /opt/include/message.h \
   GpsGeodeticDataMsg.h
 GpsNavDataMsg.o: GpsNavDataMsg.c /opt/include/message.h GpsNavDataMsg.h
+GpsNavLibDataMsg.o: GpsNavLibDataMsg.c /opt/include/message.h \
+  GpsNavLibDataMsg.h
 GpsPpsMsg.o: GpsPpsMsg.c /opt/include/message.h GpsPpsMsg.h
 GpsSoftVersMsg.o: GpsSoftVersMsg.c /opt/include/message.h \
   GpsSoftVersMsg.h
@@ -300,7 +308,7 @@ ParseSirf.o: ParseSirf.c /opt/include/serialsource.h \
   serialpacket.h serialprotocol.h SDConstants.h DtGpsRawMsg.h ParseSirf.h \
   GpsNavDataMsg.h GpsTrackerDataMsg.h GpsGeodeticDataMsg.h \
   GpsDevDataMsg.h GpsSoftVersMsg.h GpsClockStatusMsg.h GpsPpsMsg.h \
-  GpsAlmanacStatusMsg.h GpsErrorMsg.h GpsUnkMsg.h
+  GpsAlmanacStatusMsg.h GpsErrorMsg.h GpsUnkMsg.h GpsNavLibDataMsg.h
 filesource.o: filesource.c /opt/include/message.h filesource.h \
   serialprotocol.h serialpacket.h DtSensorDataMsg.h DtSyncMsg.h \
   mm3DataMsg.h SDConstants.h SensorConstants.h mm3dump.h

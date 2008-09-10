@@ -27,6 +27,7 @@
 #include "GpsAlmanacStatusMsg.h"
 #include "GpsErrorMsg.h"
 #include "GpsUnkMsg.h"
+#include "GpsNavLibDataMsg.h"
 
 //From mm3dump.c
 extern int debug,
@@ -94,7 +95,7 @@ parseSirf(tmsg_t *msg) {
       knownMsg(msg_ID);
       break;
     case 28:			//Nav. Lib. Measurement Data
-      parseNavLibMeas(msg);
+      parseNavLibDataMeas(msg);
       break;
     case 41:			//Geodetic Nav. Data
       parseGeodeticData(msg);
@@ -383,8 +384,66 @@ parseOkToSend(tmsg_t *msg) {
 }
 
 void
-parseNavLibMeas(tmsg_t *msg) {
-  fprintf(stderr, "sirf navlib measurement: not parsed\n");
+parseNavLibDataMeas(tmsg_t *msg) {
+  uint8_t   chan;
+  uint8_t   sat_id;
+  uint8_t   sync_flags;
+  uint16_t  time_in_track;
+  double    mean_c_no = 0;
+
+  chan = gps_nav_lib_data_chan_get(msg);
+  sat_id = gps_nav_lib_data_sat_id_get(msg);
+  sync_flags = gps_nav_lib_data_sync_flags_get(msg);
+  time_in_track = gps_nav_lib_data_time_in_track_get(msg);
+
+  mean_c_no += gps_nav_lib_data_c_no_1_get(msg);
+  mean_c_no += gps_nav_lib_data_c_no_2_get(msg);
+  mean_c_no += gps_nav_lib_data_c_no_3_get(msg);
+  mean_c_no += gps_nav_lib_data_c_no_4_get(msg);
+  mean_c_no += gps_nav_lib_data_c_no_5_get(msg);
+  mean_c_no += gps_nav_lib_data_c_no_6_get(msg);
+  mean_c_no += gps_nav_lib_data_c_no_7_get(msg);
+  mean_c_no += gps_nav_lib_data_c_no_8_get(msg);
+  mean_c_no += gps_nav_lib_data_c_no_9_get(msg);
+  mean_c_no += gps_nav_lib_data_c_no_10_get(msg);
+  mean_c_no = mean_c_no/10;
+
+  fprintf(stderr, "sirf nav lib data measurements\n");
+  fprintf(stderr, "Sat ID: %d Mean C/No: %f\n", sat_id, mean_c_no); 
+  fprintf(stderr, "Channel: %d Time-in-track(ms): %d\n", chan, time_in_track);
+
+  fprintf(stderr, "Integration Time(ms): ");
+  if(sync_flags & 0x01) {
+    fprintf(stderr, "10");
+  }else{
+    fprintf(stderr, "2");
+  }
+
+  fprintf(stderr, "  Synch State: ");
+  switch(sync_flags & 0x06) {
+    case(0x00):
+      fprintf(stderr, "Not alligned."); break;
+    case(0x02):
+      fprintf(stderr, "Consistent code epoch align."); break;
+    case(0x04):
+      fprintf(stderr, "Consistent data bit align."); break;
+    case(0x06):
+      fprintf(stderr, "No millisecond errors"); break;
+  }
+  fprintf(stderr, "\n");
+
+  fprintf(stderr, "Autocorrelation detection: ");
+  switch(sync_flags & 0x18) {
+    case(0x00):
+      fprintf(stderr, "Verified not an autocorrelation."); break;
+    case(0x08):
+      fprintf(stderr, "Testing."); break;
+    case(0x10):
+      fprintf(stderr, "Strong signal, autocorr detect not run."); break;
+    case(0x18):
+      fprintf(stderr, "Not used."); break;
+  }
+  fprintf(stderr, "\n");
 }
 
 
