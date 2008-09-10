@@ -346,6 +346,37 @@ typedef nx_struct gps_almanac_status_data {
 } gps_almanac_status_data_nt;
 
 
+typedef nx_struct gps_nav_lib_data {
+  nx_uint8_t   start1;
+  nx_uint8_t   start2;
+  nx_uint16_t  len;
+  nx_uint8_t   id;
+  nx_uint8_t   chan;
+  nx_uint32_t  time_tag;
+  nx_uint8_t   sat_id;
+  nx_uint64_t  soft_time;
+  nx_uint64_t  psdo_range;
+  nx_uint32_t  car_freq;
+  nx_uint64_t  car_phase;
+  nx_uint16_t  time_in_track;
+  nx_uint8_t   sync_flags;
+  nx_uint8_t   c_no_1;
+  nx_uint8_t   c_no_2;
+  nx_uint8_t   c_no_3;
+  nx_uint8_t   c_no_4;
+  nx_uint8_t   c_no_5;
+  nx_uint8_t   c_no_6;
+  nx_uint8_t   c_no_7;
+  nx_uint8_t   c_no_8;
+  nx_uint8_t   c_no_9;
+  nx_uint8_t   c_no_10;
+  nx_uint16_t  delta_range_intv;
+  nx_uint16_t  mean_delta_time_range;
+  nx_uint16_t  extrap_time;
+  nx_uint8_t   phase_err_cnt;
+  nx_uint8_t   low_pow_cnt;
+} gps_nav_lib_data_nt;
+
 typedef nx_struct gps_geodetic {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
