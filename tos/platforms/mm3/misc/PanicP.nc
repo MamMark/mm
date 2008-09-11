@@ -35,12 +35,24 @@ module PanicP {
 }
 
 implementation {
-  norace dt_panic_nt p_blk;
-  norace bool p_blk_busy;
+  norace struct p_blk_struct {
+    bool busy;
+    dt_panic_nt blk;
+  } p_blk[P_BLK_SIZE];
+
+  norace uint16_t missed_panics;
 
   task void panic_task() {
-    call Collect.collect((uint8_t *) &p_blk, sizeof(dt_panic_nt));
-    p_blk_busy = FALSE;
+    int i;
+
+    atomic {
+      for (i = 0; i < P_BLK_SIZE; i++) {
+	if (p_blk[i].busy) {
+	  call Collect.collect((uint8_t *) &p_blk[i].blk, sizeof(dt_panic_nt));
+	  p_blk[i].busy = FALSE;
+	}
+      }
+    }
   }
 
   void debug_break(uint16_t arg)  __attribute__ ((noinline)) {
@@ -55,6 +67,7 @@ implementation {
   }
 
   async command void Panic.panic(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
+    struct p_blk_struct *p;
 
     _p = pcode; _w = where; _a0 = arg0; _a1 = arg1; _a2 = arg2; _a3 = arg3;
     MAYBE_SAVE_SR_AND_DINT;
@@ -63,18 +76,25 @@ implementation {
     if (pcode == PANIC_SD || pcode == PANIC_SS)
       return;
 
-    if (p_blk_busy)
+    if (!p_blk[0].busy)
+      p = &p_blk[0];
+    else if (!p_blk[1].busy)
+      p = &p_blk[0];
+    else {
+      missed_panics++;
       return;
-    p_blk_busy = TRUE;
-    p_blk.len = sizeof(dt_panic_nt);
-    p_blk.dtype = DT_PANIC;
-    p_blk.stamp_mis = call LocalTime.get();
-    p_blk.pcode = pcode;
-    p_blk.where = where;
-    p_blk.arg0 = arg0;
-    p_blk.arg1 = arg1;
-    p_blk.arg2 = arg2;
-    p_blk.arg3 = arg3;
+    }
+
+    p->busy = TRUE;
+    p->blk.len = sizeof(dt_panic_nt);
+    p->blk.dtype = DT_PANIC;
+    p->blk.stamp_mis = call LocalTime.get();
+    p->blk.pcode = pcode;
+    p->blk.where = where;
+    p->blk.arg0 = arg0;
+    p->blk.arg1 = arg1;
+    p->blk.arg2 = arg2;
+    p->blk.arg3 = arg3;
     post panic_task();
   }
 

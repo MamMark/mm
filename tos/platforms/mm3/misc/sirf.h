@@ -65,31 +65,43 @@ uint8_t nmea_go_sirf_bin[] = {
 uint8_t sirf_send_boot[] = {
   0xa0, 0xa2,
   0x00, 0x02,
-  132,				// send sw ver
+  132,				// send sw ver (0x84)
   0x00,
   0x00, 0x84,
   0xb0, 0xb3,
 
   0xa0, 0xa2,
   0x00, 0x02,
-  144,				// poll clock status
+  144,				// poll clock status (0x90)
   0x00,
   0x00, 0x90,
   0xb0, 0xb3,
 
-  0xa0, 0xa2,
+#ifdef  GET_NAVDATA
+  0xa0, 0xa2,			// see if we can turn 28 (NavData Measurement Data) on
   0x00, 0x08,
-  166,				// set message rate
+  166,				// set message rate (0xa6)
+  0,				// send now not
+  28,				// mid to be set (0x1c)
+  1,				// update rate
+  0, 0, 0, 0,
+  0x00, 0xc3,
+  0xb0, 0xb3,
+#endif
+
+  0xa0, 0xa2,			// force poll of mid 41
+  0x00, 0x08,
+  166,				// set message rate (0xa6)
   1,				// send now
-  41,				// mid to be set
+  41,				// mid to be set (0x29)
   1,				// update rate
   0, 0, 0, 0,
   0x00, 0xd1,
   0xb0, 0xb3,
 
-  0xa0, 0xa2,
+  0xa0, 0xa2,			// turn 2 off (doesn't work)
   0x00, 0x08,
-  166,				// set message rate
+  166,				// set message rate (0xa6)
   0,				// send now
   2,				// mid 2, nav data
   0,				// update rate, off
@@ -97,11 +109,11 @@ uint8_t sirf_send_boot[] = {
   0x00, 0xa8,
   0xb0, 0xb3,
 
-  0xa0, 0xa2,
+  0xa0, 0xa2,			// turn 27 off (doesn't work)
   0x00, 0x08,
-  166,				// set message rate
+  166,				// set message rate (0xa6)
   0,				// send now
-  27,				// dgps status
+  27,				// dgps status (0x1b)
   0,				// update rate, off
   0, 0, 0, 0,
   0x00, 0xc1,
@@ -110,7 +122,7 @@ uint8_t sirf_send_boot[] = {
 #ifdef notdef
   0xa0, 0xa2,
   0x00, 0x02,
-  146,				// poll almanac
+  146,				// poll almanac (0x92)
   0,
   0x00, 0x92,
   0xb0, 0xb3
@@ -121,17 +133,17 @@ uint8_t sirf_send_boot[] = {
 uint8_t sirf_poll[] = {
   0xa0, 0xa2,			// start sequence
   0x00, 0x08,			// length
-  166,				// set message rate
+  166,				// set message rate (0xa6)
   1,				// send now
-  41,				// mid to be set
+  41,				// mid to be set (0x29)
   1,				// update rate (turn off)
   0, 0, 0, 0,			// pad
   0x00, 0xd1,			// checksum
   0xb0, 0xb3,			// end seq
 
-  0xa0, 0xa2,
+  0xa0, 0xa2,			// force poll of 4 (tracker data)
   0x00, 0x08,
-  166,				// set message rate
+  166,				// set message rate (0xa6)
   1,				// send now
   4,				// Tracker Data Out
   1,				// update rate
@@ -141,7 +153,7 @@ uint8_t sirf_poll[] = {
 
   0xa0, 0xa2,
   0x00, 0x02,
-  146,				// poll almanac
+  146,				// poll almanac (0x92)
   0,
   0x00, 0x92,
   0xb0, 0xb3
@@ -169,59 +181,6 @@ uint8_t sirf_go_nmea[] = {
   0x01, 0x65,			// checksum
   0xb0, 0xb3			// end seq
 };
-
-#endif
-
-/*
- * The only packet we are really interested in is the Geodetic.  I has
- * both the time and position information.  Too bad it is so large.
- */
-
-#ifdef notdef
-typedef nx_struct gps_geodetic {
-  nx_uint8_t  start;
-  nx_uint8_t  start_2;
-  nx_uint16_t len;
-  nx_uint8_t  mid;
-  nx_uint16_t nav_valid;
-  nx_uint16_t nav_type;
-  nx_uint16_t ex_week;
-  nx_uint32_t tow;			/* seconds x 1e3 */
-  nx_uint16_t utc_year;
-  nx_uint8_t  utc_month;
-  nx_uint8_t  utc_day;
-  nx_uint8_t  utc_hour;
-  nx_uint8_t  utc_min;
-  nx_uint16_t utc_sec;			/* x 1e3 (millisecs) */
-  nx_uint32_t sat_mask;
-  nx_uint32_t lat;			/* +N, 1e7 degrees */
-  nx_uint32_t lon;			/* +E, 1e7 degrees */
-  nx_uint32_t alt_ellipsoid;
-  nx_uint32_t alt_msl;
-  nx_uint8_t  map_datum;
-  nx_uint16_t sog;
-  nx_uint16_t cog;
-  nx_uint16_t mag_var;
-  nx_uint16_t climb;
-  nx_uint16_t heading_rate;
-  nx_uint32_t ehpe;			/* estimated horz pos err, 1e2 */
-  nx_uint32_t evpe;			/* vert, 1e2 */
-  nx_uint32_t ete;			/* est. time error, 1e2 */
-  nx_uint16_t ehve;			/* est horz vel err, 1e2 */
-  nx_uint32_t clock_bias;
-  nx_uint32_t clock_bias_err;
-  nx_uint32_t clock_drift;
-  nx_uint32_t clock_drift_err;
-  nx_uint32_t distance;
-  nx_uint16_t distance_err;
-  nx_uint16_t heading_err;
-  nx_uint8_t  num_svs;
-  nx_uint8_t  hdop;			/* hdop x 5 */
-  nx_uint8_t  additional_mode;
-  nx_uint16_t checksum;
-  nx_uint8_t  end;
-  nx_uint8_t  end_2;
-} gps_geodetic_nt;
 
 #endif
 

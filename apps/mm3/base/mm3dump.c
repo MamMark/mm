@@ -38,7 +38,7 @@
 #include "DtGpsRawMsg.h"
 #include "ParseSirf.h"
 
-#define VERSION "mm3dump: v0.9 1 Sep 2008\n"
+#define VERSION "mm3dump: v0.9.0  (10 Sep 2008)\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -318,7 +318,8 @@ process_panic(tmsg_t *msg) {
   arg1      = dt_panic_arg1_get(msg);
   arg2      = dt_panic_arg2_get(msg);
   arg3      = dt_panic_arg3_get(msg);
-  printf("*** PANIC:  %u (0x%04x) pcode: %d (0x%0x)  where: %d (0x%02x)  0x%04x 0x%04x 0x%04x 0x%04x\n",
+  printf("*** %s:  %u (0x%04x) pcode: %d (0x%0x)  where: %d (0x%02x)  0x%04x 0x%04x 0x%04x 0x%04x\n",
+	 ((pcode & 0x80) ? "pWARN" : "PANIC"),
 	 stamp_mis, stamp_mis, pcode, pcode, where, where, arg0, arg1, arg2, arg3);
 }
 
@@ -554,6 +555,8 @@ event2str(uint8_t ev) {
       return "gps_fast";
     case DT_EVENT_GPS_FIRST:
       return "gps_first";
+    case DT_EVENT_GPS_SATS:
+      return "gps_sats";
     default:
       return "unk";
   }

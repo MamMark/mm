@@ -342,7 +342,8 @@ implementation {
   void control_stop() {
     call Usart.disableIntr();
 #ifndef GPS_LEAVE_UP
-    call HW.gps_off();
+    if (gpsc_state != GPSC_BOOT_FINISH)
+      call HW.gps_off();
 #endif
     call GPSTimer.stop();
     call LogEvent.logEvent(DT_EVENT_GPS_OFF, 0);
@@ -579,7 +580,7 @@ implementation {
 
   event void UARTResource.granted() {
     call Usart.disableIntr();
-      call LogEvent.logEvent(DT_EVENT_GPS_GRANT, gpsc_state);
+    call LogEvent.logEvent(DT_EVENT_GPS_GRANT, gpsc_state);
 
 #ifdef notdef
     if (ro == 1 && gpsc_state != GPSC_OFF) {

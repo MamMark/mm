@@ -39,4 +39,7 @@ implementation {
 
   components mm3ControlC;
   GPSMsgP.Surface -> mm3ControlC;
+
+  components mm3CommDataC;
+  GPSMsgP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_NONE];
 }

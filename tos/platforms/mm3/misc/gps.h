@@ -13,7 +13,12 @@
 #define __GPS_H__
 
 #define GPS_LOG_EVENTS
-#define GPS_LEAVE_UP
+
+#define NO_SHORT
+//#define SHORT_COUNT 40
+//#define GPS_LEAVE_UP
+//#define STAY_UP
+#define GET_NAVDATA
 
 /*
  * Define the speed we want to run the gps at.

@@ -29,6 +29,7 @@
 #include "panic.h"
 #include "sd_blocks.h"
 #include "sirf.h"
+#include "gps.h"
 #include "gps_msg.h"
 
 /*
@@ -75,6 +76,7 @@ module GPSMsgP {
     interface SplitControl as GPSControl;
     interface Surface;
     interface LogEvent;
+    interface mm3CommData;
   }
 }
 
@@ -99,6 +101,10 @@ implementation {
   bool     got_fix;
   uint32_t gps_on_time;
 
+#ifdef SHORT_COUNT
+  uint8_t  short_count;
+#endif
+
   /*
    * Error counters
    */
@@ -112,6 +118,15 @@ implementation {
 
   gpsm_state_t gpsm_state;
 
+  void gpscontrol_startdone() {
+#ifdef SHORT_COUNT
+    short_count = SHORT_COUNT + 1;
+#endif
+    gpsm_state = GPSM_SHORT;
+    gps_on_time = call LocalTime.get();
+    call MsgTimer.startOneShot(GPS_MSG_SHORT_WINDOW);
+  }
+
 #ifdef notdef
   task void gps_msg_control_task() {
     switch (gpsm_state) {
@@ -122,7 +137,10 @@ implementation {
 	return;
 
       case GPSM_STARTING:
-	call GPSControl.start();
+	if (call GPSControl.start()) {
+	  /* non-zero says already up */
+	  gpscontrol_startdone();
+	}
 	return;
 
       case GPSM_STOPPING:
@@ -135,9 +153,7 @@ implementation {
 
 
   event void GPSControl.startDone(error_t err) {
-    gpsm_state = GPSM_SHORT;
-    gps_on_time = call LocalTime.get();
-    call MsgTimer.startOneShot(GPS_MSG_SHORT_WINDOW);
+    gpscontrol_startdone();
   }
 
   event void GPSControl.stopDone(error_t err) {
@@ -157,14 +173,20 @@ implementation {
     if (last_surfaced && (t - last_surfaced ) < 1024)
       call Panic.warn(PANIC_GPS, 129, 0, 0, 0, 0);
     last_surfaced = t;
+#ifdef STAY_UP
+#else
     if (gpsm_state != GPSM_DOWN) {
       call Panic.warn(PANIC_GPS, 130, gpsm_state, 0, 0, 0);
       call MsgTimer.stop();
       gpsm_state = GPSM_DOWN;
     }
+#endif
     got_fix = FALSE;
     gpsm_state = GPSM_STARTING;
-    call GPSControl.start();
+    if (call GPSControl.start()) {
+      /* non-zero says already up */
+      gpscontrol_startdone();
+    }
   }
 
   event void Surface.submerged() {
@@ -174,9 +196,12 @@ implementation {
     if (last_submerged && (t - last_surfaced ) < 1024)
       call Panic.warn(PANIC_GPS, 131, 0, 0, 0, 0);
     last_submerged = t;
+#ifdef STAY_UP
+#else
     gpsm_state = GPSM_STOPPING;
     call MsgTimer.stop();
     call GPSControl.stop();
+#endif
   }
 
 
@@ -198,8 +223,11 @@ implementation {
 	return;
 
       case GPSM_LONG:
+#ifdef STAY_UP
+#else
 	gpsm_state = GPSM_STOPPING;
 	call GPSControl.stop();
+#endif
 	return;
     }
   }
@@ -209,6 +237,9 @@ implementation {
    * Process a Geodetic packet from the Sirf3.
    */
   void process_geodetic(gps_geodetic_nt *gp) {
+    uint8_t event_data[DT_HDR_SIZE_EVENT];
+    dt_event_nt *edp;
+
     /*
      * Extract time and position data out
      */
@@ -217,7 +248,7 @@ implementation {
     uint8_t gps_pos_block[GPS_POS_BLOCK_SIZE];
     dt_gps_time_nt *timep;
     dt_gps_pos_nt *posp;
-    uint32_t t;
+    uint32_t t, t1;
 
     timep = (dt_gps_time_nt*)gps_time_block;
     posp = (dt_gps_pos_nt*)gps_pos_block;
@@ -251,12 +282,25 @@ implementation {
     /*
      * Check for state change information
      */
-    if (gp->nav_valid == 0) {
+    edp = (dt_event_nt *) &event_data;
+    edp->len = DT_HDR_SIZE_EVENT;
+    edp->dtype = DT_EVENT;
+    edp->stamp_mis = call LocalTime.get();
+    edp->ev = DT_EVENT_GPS_SATS;
+    edp->arg = gp->num_svs;
+    call mm3CommData.send_data(event_data, DT_HDR_SIZE_EVENT);
+    call LogEvent.logEvent(DT_EVENT_GPS_SATS, gp->num_svs);
 
+    if (gp->nav_valid == 0) {
       if (!got_fix) {
 	got_fix = TRUE;
-	t = call LocalTime.get();
-	t = t - gps_on_time;
+	t1 = call LocalTime.get();
+	t = t1 - gps_on_time;
+	if (t > 0xffff) {
+	  nop();
+	  call Panic.warn(PANIC_GPS, 0xff, (gps_on_time >> 16), (gps_on_time & 0xffff), (t >> 16), (t & 0xffff));
+	  call Panic.warn(PANIC_GPS, 0xfe, (t1 >> 16), (t1 & 0xffff), 0, 0);
+	}
 	call LogEvent.logEvent(DT_EVENT_GPS_FIRST, ( t > 0xffff ? 0xffff : t));
       }
       call Collect.collect(gps_time_block, GPS_TIME_BLOCK_SIZE);
@@ -268,8 +312,22 @@ implementation {
        */
       if (gpsm_state == GPSM_SHORT) {
 	call LogEvent.logEvent(DT_EVENT_GPS_FAST,0);
+#ifdef NO_SHORT
+#else
+
+#ifdef STAY_UP
+#else
+
+#ifdef SHORT_COUNT
+	if (--short_count > 0)
+	  return;
+#endif
 	gpsm_state = GPSM_STOPPING;
+	call MsgTimer.stop();
 	call GPSControl.stop();
+#endif
+
+#endif
 	return;
       }
     }
@@ -338,7 +396,6 @@ implementation {
 
 
   command error_t GPSMsgControl.stop() {
-    nop();
     return SUCCESS;
   }
 
@@ -484,4 +541,6 @@ implementation {
   async command bool GPSMsg.atMsgBoundary() {
     atomic return (collect_state == COLLECT_START);
   }
+
+  event void mm3CommData.send_data_done(error_t err) {}
 }

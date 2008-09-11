@@ -22,16 +22,16 @@ dis
 
 
 # 5 debug_break
-b PanicP.nc:49
+b PanicP.nc:61
 
 # 6 panic
-b PanicP.nc:61
+b PanicP.nc:74
 comm
 printf "pcode: %d (0x%0x)  where: %d  %04x %04x %04x %04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
 
 # 7 BRK_FINISH
-b GPSP.nc:392
+b GPSP.nc:393
 
 # 8 fake surfaced toggle
 # b mm3ControlP.nc:58
