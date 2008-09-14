@@ -31,7 +31,7 @@ printf "pcode: %d (0x%0x)  where: %d  %04x %04x %04x %04x\n",_p,_p, _w, _a0, _a1
 end
 
 # 7 BRK_FINISH
-b GPSP.nc:393
+b GPSP.nc:392
 
 # 8 fake surfaced toggle
 # b mm3ControlP.nc:58

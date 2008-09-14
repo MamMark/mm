@@ -342,8 +342,7 @@ implementation {
   void control_stop() {
     call Usart.disableIntr();
 #ifndef GPS_LEAVE_UP
-    if (gpsc_state != GPSC_BOOT_FINISH)
-      call HW.gps_off();
+    call HW.gps_off();
 #endif
     call GPSTimer.stop();
     call LogEvent.logEvent(DT_EVENT_GPS_OFF, 0);

@@ -733,6 +733,8 @@ main(int argc, char **argv) {
   if (verbose) {
     fprintf(stderr, VERSION);
     fprintf(stderr, "arg1: %s  arg2: %s\n", argv[0], argv[1]);
+  } else {
+    fprintf(stderr, "*** (non-verbose) no data will be displayed\n");
   }
 
   if (write_data)

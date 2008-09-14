@@ -14,11 +14,10 @@
 
 #define GPS_LOG_EVENTS
 
-#define NO_SHORT
+//#define NO_SHORT
 //#define SHORT_COUNT 40
 //#define GPS_LEAVE_UP
 //#define STAY_UP
-#define GET_NAVDATA
 
 /*
  * Define the speed we want to run the gps at.
@@ -101,7 +100,9 @@
 #define DT_GPS_PWR_BOUNCE       5
 #define DT_GPS_EOS_WAIT       500
 #define DT_GPS_SEND_TIME_OUT  512
-#define DT_GPS_FINI_WAIT      500
+
+//#define DT_GPS_FINI_WAIT      500
+#define DT_GPS_FINI_WAIT      2048
 
 /*
  * Max time the gps will hold onto the resource.  This prevents a lock up

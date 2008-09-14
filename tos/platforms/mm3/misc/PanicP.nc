@@ -79,7 +79,7 @@ implementation {
     if (!p_blk[0].busy)
       p = &p_blk[0];
     else if (!p_blk[1].busy)
-      p = &p_blk[0];
+      p = &p_blk[1];
     else {
       missed_panics++;
       return;
