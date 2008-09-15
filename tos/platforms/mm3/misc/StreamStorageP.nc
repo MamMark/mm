@@ -134,6 +134,7 @@ implementation {
   uint32_t m_rblock;
   uint8_t *m_rbuf;
   ssr_state_t ssr_state;
+  ssr_req_t ssr_reqs[SSR_NUM_REQS];
 
 
   command error_t Init.init() {
@@ -633,7 +634,26 @@ implementation {
       }
     }
   }
-  
+
+
+  /*****************************************************************************
+   *
+   * READING
+   *
+   */
+
+  command error_t SS.read_block(uint32_t blk, uint8_t *buf) {
+    return SUCCESS;
+  }
+
+  command uint32_t SS.area_start(uint8_t which) {
+    return 0;
+  }
+
+  command uint32_t SS.area_end(uint8_t which) {
+    return 0;
+  }
+
   event void SSReader.run(void* arg) {
     for(;;) {
       call Semaphore.acquire(&read_sem);

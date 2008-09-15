@@ -102,4 +102,6 @@ implementation {
     ep->arg = arg;
     call Collect.collect(event_data, DT_HDR_SIZE_EVENT);
   }
+
+  event void SS.read_block_done(uint32_t blk, uint8_t *buf, error_t err) { }
 }

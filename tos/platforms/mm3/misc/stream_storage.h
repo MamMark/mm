@@ -17,6 +17,7 @@
 */
 #define SS_BLOCK_SIZE 512
 #define SSW_NUM_BUFS   4
+#define SSR_NUM_REQS   4
 
 
 /*
@@ -96,6 +97,15 @@ typedef enum {
 } ssr_state_t;
 
 
+typedef struct {
+  uint16_t majik;
+  uint8_t  req_state;
+  uint32_t stamp;
+  uint32_t blk;
+  uint8_t *buf;
+} ssr_req_t;
+
+
 /*
  * Stream Storage Control Structure
  *
@@ -151,4 +161,20 @@ typedef struct {
  * that the dblk area of the flash has been initially erased.
  */
  
+
+/*
+ * StreamStorage also has an interface that allows reading
+ * of raw blocks.  Raw because it is simple.  Yes this is a
+ * wart that goes around the StreamStorage abstraction, but
+ * StreamStorage is what knows about where things (panic, config,
+ * data areas).  So it is a compromise to sit on top of Stream
+ * Storage.
+ */
+
+enum {
+  SS_AREA_PANIC  = 0,
+  SS_AREA_CONFIG = 1,
+  SS_AREA_DATA   = 2,
+};
+
 #endif /* _STREAM_STORAGE_H */
