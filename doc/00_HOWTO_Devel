@@ -38,7 +38,8 @@ development was done on 7.04 but these notes are written explicitly for
    e) Apply mm3 specific patches to the main T2 core...
 
       .) cd <mm_t2_base>/t2_cur/tinyos-2.x
-      .) patch -p0 < ../../t2_mm3/Added_Bits/t2_<data stamp>.patch
+      .) for i in ../../t2_mm3/Added_Bits/*.patch; do \
+             patch -p0 < $i; done
 
 5) [TI USB Jtag driver fix]
 
