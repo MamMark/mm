@@ -22,11 +22,13 @@
 
 /*
  * Stream Storage Buffer States
+ * used for both Reader and Writer interfaces
  *
  * Free:	available to be assigned.  empty.
  * Alloc:	allocated.  owned by the collector.
  * Full:	full.  waiting to be written.
- * Busy:	being written by the dma engine
+ * Writing:	being written by the dma engine
+ * Reading:	being read by the dma engine.
  *
  * Buffer sequencing is critical to the data stream remaining
  * consistant.  Data is composed of a single typed stream being
@@ -37,9 +39,12 @@
  * order and expected to be handed back in the same order as
  * used.
  *
+ * Reading is done on a per block basis and doesn't have the
+ * strict sequencing criteria.  Requests are processed in order.
+ *
  * A buffer cycle is as follows:
  *
- * 1) Initially a buffer is marked FREE.
+ * 1) Initially a buffer or request is marked FREE.
  *
  * 2) The data collector requests the buffer via get_buffer and
  *    the buffer transitions to ALLOC.
@@ -56,54 +61,57 @@
  *    happen in the SD driver).
  *
  * 7) Upon successful completion, the buffer is marked FREE.
+ *
+ *
+ * Read cycle.
+ *
+ * 1) Initially all read request blocks are marked FREE
+ *
+ * 2) The caller will request a particular block and provide a buffer
+ *    for the data.
+ *
+ * 3) The request will be placed in the next free read request block.
+ *    and the reader semaphore will be kicked to wake up the reader.
  */
 
 typedef enum {
-    SSW_BUF_STATE_FREE = 0x1561,
-    SSW_BUF_STATE_ALLOC,
-    SSW_BUF_STATE_FULL,
-    SSW_BUF_STATE_WRITING,
-    SSW_BUF_STATE_DONE,
-    SSW_BUF_STATE_MAX
-} ssw_buf_state_t;
+    SS_REQ_STATE_FREE = 0x1561,
+    SS_REQ_STATE_ALLOC,
+    SS_REQ_STATE_FULL,
+    SS_REQ_STATE_WRITING,
+    SS_REQ_STATE_READING,
+    SS_REQ_STATE_DONE,
+    SS_REQ_STATE_MAX
+} ss_req_state_t;
 
 
-#define SSW_BUF_MAJIK 0xeaf0
+#define SS_REQ_MAJIK 0xeaf0
 
 typedef struct {
     uint16_t majik;
-    ssw_buf_state_t buf_state;
+    ss_req_state_t req_state;
     uint32_t stamp;
     uint8_t  buf[SS_BLOCK_SIZE + 2]; /* include room for CRC */
-} ssw_buf_handle_t;
-
-
-typedef enum {
-  SSW_STATE_CRASHED	= 0x10,	/* something went wrong with stream storage.  hard fail */
-  SSW_STATE_OFF,		/* power is off to the SS device */
-  SSW_STATE_XFER,		/* writing data out to the SS device, dma */
-  SSW_STATE_IDLE,		/* powered up but idle */
-  SSW_STATE_MAX
-} ssw_state_t;
-
-
-/* can these be combined? */
-
-typedef enum {
-  SSR_STATE_CRASHED	= 0x20,
-  SSR_STATE_OFF,
-  SSR_STATE_XFER,
-  SSR_STATE_IDLE,
-} ssr_state_t;
+} ss_wr_req_t;
 
 
 typedef struct {
   uint16_t majik;
-  uint8_t  req_state;
+  ss_req_state_t  req_state;
   uint32_t stamp;
   uint32_t blk;
   uint8_t *buf;
-} ssr_req_t;
+} ss_rd_req_t;
+
+
+typedef enum {
+  SS_STATE_CRASHED	= 0x10,	/* something went wrong with stream storage.  hard fail */
+  SS_STATE_OFF,			/* power is off to the SS device */
+  SS_STATE_XFER_R,		/* reading data from the SD */
+  SS_STATE_XFER_W,		/* writing data out to the SS device, dma */
+  SS_STATE_IDLE,		/* powered up but idle */
+  SS_STATE_MAX
+} ss_state_t;
 
 
 /*
@@ -113,13 +121,16 @@ typedef struct {
  * the data collector.  The data collector gets and sends back buffers
  * completely sequentially.
  *
- * ssw_state:	indicates what the main controller is doing, powering up,
+ * ss_state:	indicates what the main controller is doing, powering up,
  *		writing via dma, etc.
- * out_index:	Buffer being written out via dma to the stream storage device.
- * in_index:	Next buffer that should be coming back from the collector.
- * alloc_index: Next buffer to be given out.
- * num_full:	number of full buffers including the one being written.
- * max_full:	maximum number of full buffers ever
+ * ssw_out:	Buffer being written out via dma to the stream storage device.
+ * ssw_in:	Next buffer that should be coming back from the collector.
+ * ssw_alloc:   Next buffer to be given out.
+ * ssw_num_full:number of full buffers including the one being written.
+ * ssw_max_full:maximum number of full buffers ever
+ *
+ * ssr_in:	request that will be used next
+ * ssr_out:	request being processed
  *
  * panic_start: where to write panic information when all hell breaks loose
  * panic_end:   end of panic block.
@@ -134,11 +145,14 @@ typedef struct {
 typedef struct {
     uint16_t   majik_a;		/* practice safe computing */
 
-    uint8_t    out_index;	/* buffer going out via dma to the sd card */
-    uint8_t    in_index;	/* next buffer that should come back from the collector */
-    uint8_t    alloc_index;	/* next buffer to be allocated. */
-    uint8_t    num_full;	/* number of full buffers including active */
-    uint8_t    max_full;	/* maximum that ever went, max */
+    uint8_t    ssw_out;		/* buffer going out via dma to the sd card */
+    uint8_t    ssw_in;		/* next buffer that should come back from the collector */
+    uint8_t    ssw_alloc;	/* next buffer to be allocated. */
+    uint8_t    ssw_num_full;	/* number of full buffers including active */
+    uint8_t    ssw_max_full;	/* maximum that ever went, max */
+
+    uint8_t    ssr_in;		/* next request to use */
+    uint8_t    ssr_out;		/* next request to process */
 
     uint32_t panic_start;	/* where to write panic information */
     uint32_t panic_end;
