@@ -1,0 +1,51 @@
+
+TEPs, TinyOS Enhancement Proposals, document modifications to the core TinyOS structure and code.
+
+TEP 1 describes the different kinds of TEPs and their roles. TEPs 1-100 are BCP (Best Current Practice) TEPs, while TEPS 101+ are Informational, Documentary, or Experimental.
+
+Currently, many TEPs are Drafts: comments and feedback to the authors or the associated working group is welcome. 
+
+The following TEPs are Documentary and BCP: they deal with TinyOS, its protocols, and its programming interfaces:
+
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep1.html TEP1]: TEP Structure and Key Words
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep2.html TEP2]: Hardware Abstraction Architecture
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep3.html TEP3]: Coding Standards
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep4.html TEP4]: Active Message ID Allocation for Network Protocols and Applications
+
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep101.html TEP101]: Analog-to-Digital Converters (ADCs)
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep102.html TEP102]: Timers
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep103.html TEP103]: Permanent Data Storage (Flash)
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep105.html TEP105]: Low Power Listening
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep106.html TEP106]: Schedulers and Tasks
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep107.html TEP107]: TinyOS 2.x Boot Sequence
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep108.html TEP108]: Resource Arbitration
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep109.html TEP109]: Sensors and Sensor Boards
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep110.html TEP110]: Virtualization
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep111.html TEP111]: message_t
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep112.html TEP112]: Microcontroller Power Management
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep113.html TEP113]: Serial Communication
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep114.html TEP114]: SIDs: Source and Sink Independent Drivers
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep115.html TEP115]: Power Management of Non-Virtualized Devices
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep116.html TEP116]: Packet Protocols
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep117.html TEP117]: Low-Level I/O
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep118.html TEP118]: Dissemination of Small Values
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep119.html TEP119]: Collection
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep123.html TEP123]: The Collection Tree Protocol (CTP)
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep124.html TEP124]: Link Estimation Exchange Protocol (LEEP)
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep125.html TEP125]: TinyOS 802.15.4 Frames
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep126.html TEP126]: CC2420 Radio Stack
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep127.html TEP127]: Packet Link Layer
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep128.html TEP128]: Platform Independent Non-Volatile Storage Abstractions
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep129.html TEP129]: Basic Platform Independent Non-Volatile Storage Layers
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep130.html TEP130]: Testbeds - Setup and Interfaces
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep131.html TEP131]: Creating a New Platform for TinyOS 2.x
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep132.html TEP132]: Packet timestamping
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep133.html TEP133]: Packet-level time synchronization
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep134.html TEP134]: The TOSThreads Thread Library
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep135.html TEP135]: Active Message ID Allocation in TinyOS 2.1
+
+In addition, there are several TEPs which deal with issues besides TinyOS code, such as the structure of the TinyOS Alliance and design considerations:
+
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep120.html TEP120]: TinyOS Alliance Structure
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep121.html TEP121]: Towards TinyOS for 8051
+* [http://www.tinyos.net/tinyos-2.1.0/doc/html/tep122.html TEP122]: IEEE EUI-64 Unique Node Identifier
