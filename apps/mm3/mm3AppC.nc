@@ -24,6 +24,8 @@ implementation {
 
   components StreamStorageC;
   mm3C.StreamStorageFull -> StreamStorageC;
+
+  mm3C.SS -> StreamStorageC;
   
   /*
    * Include sensor components.  No need to wire.  They will

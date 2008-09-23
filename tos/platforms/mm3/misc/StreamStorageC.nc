@@ -67,4 +67,7 @@ implementation {
 
   components TraceC;
   SS_P.Trace -> TraceC;
+
+  components SystemCallC;
+  SS_P.SystemCall -> SystemCallC;
 }

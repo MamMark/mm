@@ -104,10 +104,19 @@ module StreamStorageP {
     interface Panic;
     interface LocalTime<TMilli>;
     interface Trace;
+    interface SystemCall;
   }
 }
   
 implementation {
+
+  typedef struct {
+    uint32_t blk;
+    uint8_t *buf;
+    error_t  err;
+  } read_block_t;
+  
+
   ss_wr_req_t ssw_handles[SSW_NUM_BUFS];
   ss_wr_req_t * const ssh_ptrs[SSW_NUM_BUFS] = {
     &ssw_handles[0],
@@ -575,18 +584,20 @@ implementation {
 	 * we won't be here but rather later down in this processing loop.
 	 */
 	atomic cur_state = ss_state;
-	if (cur_state != SS_STATE_OFF) {
+	if (cur_state != SS_STATE_OFF && cur_state != SS_STATE_IDLE) {
 	  call Panic.warn(PANIC_SS_RECOV, 25, cur_state, 0, 0, 0);
 	  atomic cur_state = ss_state = SS_STATE_OFF;
 	}
 
 	call BlockingWriteResource.request(); // this will also turn on the hardware when granted.
-	err = call SD.reset();		  // about 100ms
-	if (err) {
-	  ss_panic(26, err);
-	  continue;
+	if (cur_state == SS_STATE_OFF) {
+	  err = call SD.reset();		  // about 100ms
+	  if (err) {
+	    ss_panic(26, err);
+	    continue;
+	  }
+	  atomic ss_state = SS_STATE_IDLE;
 	}
-	atomic ss_state = SS_STATE_IDLE;
       }
 
       for (;;) {
@@ -662,6 +673,33 @@ implementation {
    */
 
   command error_t SS.read_block(uint32_t blk, uint8_t *buf) {
+    ss_rd_req_t *rdp;
+    uint8_t in_index;
+
+    /*
+     * handles should be flushed in strict order.  So the next one
+     * in should be where in_index points.
+     */
+    in_index = ssc.ssr_in;
+    rdp = &ssr_reqs[in_index];
+
+    /* the next check also catches the null pointer */
+    if (!buf || rdp->majik != SS_REQ_MAJIK ||
+	rdp->req_state != SS_REQ_STATE_FREE) {
+      call Panic.panic(PANIC_SS, 81, (uint16_t) rdp, rdp->majik, rdp->req_state, (uint16_t) buf);
+    }
+
+    if (ssc.majik_a != SSC_MAJIK_A || ssc.majik_b != SSC_MAJIK_B)
+      call Panic.panic(PANIC_SS, 82, ssc.majik_a, ssc.majik_b, 0, 0);
+
+    rdp->stamp = call LocalTime.get();
+    rdp->blk = blk;
+    rdp->buf = buf;
+    atomic rdp->req_state = SS_REQ_STATE_READ_REQ;
+    ssc.ssr_in++;
+    if (ssc.ssr_in >= SSW_NUM_BUFS)
+      ssc.ssr_in = 0;
+    call Semaphore.release(&read_sem);
     return SUCCESS;
   }
 
@@ -673,15 +711,40 @@ implementation {
     return 0;
   }
 
+  
+  void signalTask(syscall_t* s) {
+    read_block_t* r = s->params;
+    signal SS.read_block_done(r->blk, r->buf, r->err);
+    call SystemCall.finish(s);
+  }
+  
+
+  void signalClient(uint32_t blk, uint8_t *buf, error_t err) {
+    syscall_t s;
+    read_block_t r;
+
+    r.blk = blk;
+    r.buf = buf;
+    r.err = err;
+    call SystemCall.start(&signalTask, &s, INVALID_ID, &r);
+  }
+  
+
   event void SSReader.run(void* arg) {
     for(;;) {
       call Semaphore.acquire(&read_sem);
 
       call BlockingReadResource.request();
-      call SSReader.sleep(1024);
-      call BlockingReadResource.release();
-      call SSReader.sleep(1024);
 
+      /*
+       * Actually do the read.
+       */
+
+      /*
+       * Assuming success, tell the client that we finished.
+       */
+      signalClient(0, 0, 0);
+      call BlockingReadResource.release();
     }
   }
 
