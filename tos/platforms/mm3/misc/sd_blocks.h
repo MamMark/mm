@@ -20,39 +20,44 @@
 /*
  * keep mig happy.  Each tag SD block can be transmitted in an encapsulated
  * mote packet.  The AM type can be AM_MM3_CONTROL, DATA, or DEBUG.
+ *
+ * Place the AM code into the unreserved block.  Formerly we were 0x2x,
+ * move this to 0xAx.
  */
 enum {
-  AM_MM3_CONTROL	= 0x20,
-  AM_MM3_DATA		= 0x21,
-  AM_MM3_DEBUG		= 0x22,
-  AM_DT_IGNORE		= 0x21,
-  AM_DT_CONFIG		= 0x21,
-  AM_DT_SYNC		= 0x21,
-  AM_DT_SYNC_RESTART	= 0x21,
-  AM_DT_PANIC		= 0x21,
-  AM_DT_GPS_TIME	= 0x21,
-  AM_DT_GPS_POS		= 0x21,
-  AM_DT_SENSOR_DATA	= 0x21,
-  AM_DT_SENSOR_SET	= 0x21,
-  AM_DT_TEST		= 0x21,
-  AM_DT_NOTE		= 0x21,
-  AM_DT_GPS_RAW		= 0x21,
-  AM_GPS_NAV_DATA	= 0x21,
-  AM_GPS_TRACKER_DATA	= 0x21,
+  AM_MM3_CONTROL	= 0xA0,
+  AM_MM3_DATA		= 0xA1,
+  AM_MM3_DEBUG		= 0xA2,
+
+  AM_DT_IGNORE		= 0xA1,
+  AM_DT_CONFIG		= 0xA1,
+  AM_DT_SYNC		= 0xA1,
+  AM_DT_SYNC_RESTART	= 0xA1,
+  AM_DT_PANIC		= 0xA1,
+  AM_DT_GPS_TIME	= 0xA1,
+  AM_DT_GPS_POS		= 0xA1,
+  AM_DT_SENSOR_DATA	= 0xA1,
+  AM_DT_SENSOR_SET	= 0xA1,
+  AM_DT_TEST		= 0xA1,
+  AM_DT_NOTE		= 0xA1,
+  AM_DT_GPS_RAW		= 0xA1,
+  AM_GPS_NAV_DATA	= 0xA1,
+  AM_GPS_TRACKER_DATA	= 0xA1,
   AM_GPS_SOFT_VERSION_DATA
-			= 0x21,
-  AM_GPS_ERROR_DATA	= 0x21,
-  AM_GPS_GEODETIC	= 0x21,
-  AM_GPS_PPS_DATA	= 0x21,
+			= 0xA1,
+  AM_GPS_ERROR_DATA	= 0xA1,
+  AM_GPS_GEODETIC	= 0xA1,
+  AM_GPS_PPS_DATA	= 0xA1,
   AM_GPS_CLOCK_STATUS_DATA
-			= 0x21,
+			= 0xA1,
   AM_GPS_ALMANAC_STATUS_DATA
-			= 0x21,
-  AM_GPS_DEV_DATA	= 0x21,
-  AM_GPS_UNK		= 0x21,
-  AM_DT_VERSION		= 0x21,
-  AM_DT_EVENT		= 0x21,
-  AM_DT_DEBUG		= 0x21,
+			= 0xA1,
+  AM_GPS_NAV_LIB_DATA   = 0xA1,
+  AM_GPS_DEV_DATA	= 0xA1,
+  AM_GPS_UNK		= 0xA1,
+  AM_DT_VERSION		= 0xA1,
+  AM_DT_EVENT		= 0xA1,
+  AM_DT_DEBUG		= 0xA1,
 };
 
 enum {

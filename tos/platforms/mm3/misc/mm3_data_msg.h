@@ -43,8 +43,11 @@ typedef nx_struct mm3_data_msg {
   nx_uint8_t buffer[TOSH_DATA_LENGTH];
 } mm3_data_msg_t;
 
+/*
+ * Not actually used.  Only here to make "mig" happy.
+ */
 enum {
-  AM_MM3_DATA_MSG = 0x21,
+  AM_MM3_DATA_MSG = 0xA1,
 };
 
 #endif

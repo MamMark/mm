@@ -43,8 +43,4 @@ typedef nx_struct collect_msg {
   nx_uint8_t buffer[TOSH_DATA_LENGTH];
 } collect_msg_t;
 
-enum {
-  AM_COLLECT_MSG = 0x21,
-};
-
 #endif
