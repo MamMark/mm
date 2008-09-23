@@ -91,7 +91,9 @@ implementation {
 //	    call Panic.brk(0x1024);
 	    nop();
 	    call LogEvent.logEvent(DT_EVENT_SUBMERGED,0);
+#ifdef TEST_GPS
 	    signal Surface.submerged();
+#endif
 	  }
 	} else {
 	  if (data >= SURFACE_THRESHOLD) {
@@ -99,7 +101,9 @@ implementation {
 //	    call Panic.brk(0x1025);
 	    nop();
 	    call LogEvent.logEvent(DT_EVENT_SURFACED, 0);
+#ifdef TEST_GPS
 	    signal Surface.surfaced();
+#endif
 	  }
 	}
     }
