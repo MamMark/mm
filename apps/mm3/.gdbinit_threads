@@ -1,6 +1,10 @@
 
 #threads
 
+set remoteaddresssize 0d64
+set remotetimeout 0d999999
+target remote localhost:2000
+
 disp/i $pc
 x/i $pc
 set pri ele 0
@@ -31,7 +35,7 @@ printf "pcode: %d (0x%0x)  where: %d  %04x %04x %04x %04x\n",_p,_p, _w, _a0, _a1
 end
 
 # 7 BRK_FINISH
-b GPSP.nc:392
+#b GPSP.nc:392
 
 # 8 fake surfaced toggle
 # b mm3ControlP.nc:58
@@ -124,4 +128,217 @@ c
 set do_erase=1
 printf "do_erase: %d\n", do_erase
 dis 2
+end
+
+#display timers
+define dt
+printf "TA: tar: %04x  ccr0: %04x  1: %04x  2: %04x\n",\
+    *((uint16_t *)170),*((uint16_t *)172),*((uint16_t *)174),*((uint16_t *)176)
+printf "    ctl: %04x cctl0: %04x  1: %04x  2: %04x\n\n",\
+    *((uint16_t *)160),*((uint16_t *)162),*((uint16_t *)164),*((uint16_t *)166)
+
+printf "TB: tbr: %04x  ccr0: %04x  1: %04x  2: %04x  ",\
+    *((uint16_t *)190),*((uint16_t *)192),*((uint16_t *)194),*((uint16_t *)196)
+printf "3: %04x  4: %04x  5: %04x  6: %04x\n",\
+    *((uint16_t *)198),*((uint16_t *)19a),*((uint16_t *)19c),*((uint16_t *)19e)
+
+printf "    ctl: %04x cctl0: %04x  1: %04x  2: %04x  ",\
+    *((uint16_t *)180),*((uint16_t *)182),*((uint16_t *)184),*((uint16_t *)186)
+printf "3: %04x  4: %04x  5: %04x  6: %04x\n\n",\
+    *((uint16_t *)188),*((uint16_t *)18a),*((uint16_t *)18c),*((uint16_t *)18e)
+end
+document dt
+Display msp430 timer hardware
+end
+
+define timers
+printf "Timer Block 0:\n  n       trip        t0        dt  shot  run\n"
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0, VirtualizeTimerC$0$m_timers[0].t0 + VirtualizeTimerC$0$m_timers[0].dt, VirtualizeTimerC$0$m_timers[0].t0, \
+	VirtualizeTimerC$0$m_timers[0].dt, VirtualizeTimerC$0$m_timers[0].isoneshot, VirtualizeTimerC$0$m_timers[0].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 1, VirtualizeTimerC$0$m_timers[1].t0 + VirtualizeTimerC$0$m_timers[1].dt, VirtualizeTimerC$0$m_timers[1].t0, \
+	VirtualizeTimerC$0$m_timers[1].dt, VirtualizeTimerC$0$m_timers[1].isoneshot, VirtualizeTimerC$0$m_timers[1].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 2, VirtualizeTimerC$0$m_timers[2].t0 + VirtualizeTimerC$0$m_timers[2].dt, VirtualizeTimerC$0$m_timers[2].t0, \
+	VirtualizeTimerC$0$m_timers[2].dt, VirtualizeTimerC$0$m_timers[2].isoneshot, VirtualizeTimerC$0$m_timers[2].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 3, VirtualizeTimerC$0$m_timers[3].t0 + VirtualizeTimerC$0$m_timers[3].dt, VirtualizeTimerC$0$m_timers[3].t0, \
+	VirtualizeTimerC$0$m_timers[3].dt, VirtualizeTimerC$0$m_timers[3].isoneshot, VirtualizeTimerC$0$m_timers[3].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 4, VirtualizeTimerC$0$m_timers[4].t0 + VirtualizeTimerC$0$m_timers[4].dt, VirtualizeTimerC$0$m_timers[4].t0, \
+	VirtualizeTimerC$0$m_timers[4].dt, VirtualizeTimerC$0$m_timers[4].isoneshot, VirtualizeTimerC$0$m_timers[4].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 5, VirtualizeTimerC$0$m_timers[5].t0 + VirtualizeTimerC$0$m_timers[5].dt, VirtualizeTimerC$0$m_timers[5].t0, \
+	VirtualizeTimerC$0$m_timers[5].dt, VirtualizeTimerC$0$m_timers[5].isoneshot, VirtualizeTimerC$0$m_timers[5].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 6, VirtualizeTimerC$0$m_timers[6].t0 + VirtualizeTimerC$0$m_timers[6].dt, VirtualizeTimerC$0$m_timers[6].t0, \
+	VirtualizeTimerC$0$m_timers[6].dt, VirtualizeTimerC$0$m_timers[6].isoneshot, VirtualizeTimerC$0$m_timers[6].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 7, VirtualizeTimerC$0$m_timers[7].t0 + VirtualizeTimerC$0$m_timers[7].dt, VirtualizeTimerC$0$m_timers[7].t0, \
+	VirtualizeTimerC$0$m_timers[7].dt, VirtualizeTimerC$0$m_timers[7].isoneshot, VirtualizeTimerC$0$m_timers[7].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 8, VirtualizeTimerC$0$m_timers[8].t0 + VirtualizeTimerC$0$m_timers[8].dt, VirtualizeTimerC$0$m_timers[8].t0, \
+	VirtualizeTimerC$0$m_timers[8].dt, VirtualizeTimerC$0$m_timers[8].isoneshot, VirtualizeTimerC$0$m_timers[8].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 9, VirtualizeTimerC$0$m_timers[9].t0 + VirtualizeTimerC$0$m_timers[9].dt, VirtualizeTimerC$0$m_timers[9].t0, \
+	VirtualizeTimerC$0$m_timers[9].dt, VirtualizeTimerC$0$m_timers[9].isoneshot, VirtualizeTimerC$0$m_timers[9].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d10, VirtualizeTimerC$0$m_timers[0d10].t0 + VirtualizeTimerC$0$m_timers[0d10].dt, VirtualizeTimerC$0$m_timers[0d10].t0, \
+	VirtualizeTimerC$0$m_timers[0d10].dt, VirtualizeTimerC$0$m_timers[0d10].isoneshot, VirtualizeTimerC$0$m_timers[0d10].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d11, VirtualizeTimerC$0$m_timers[0d11].t0 + VirtualizeTimerC$0$m_timers[0d11].dt, VirtualizeTimerC$0$m_timers[0d11].t0, \
+	VirtualizeTimerC$0$m_timers[0d11].dt, VirtualizeTimerC$0$m_timers[0d11].isoneshot, VirtualizeTimerC$0$m_timers[0d11].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d12, VirtualizeTimerC$0$m_timers[0d12].t0 + VirtualizeTimerC$0$m_timers[0d12].dt, VirtualizeTimerC$0$m_timers[0d12].t0, \
+	VirtualizeTimerC$0$m_timers[0d12].dt, VirtualizeTimerC$0$m_timers[0d12].isoneshot, VirtualizeTimerC$0$m_timers[0d12].isrunning
+end
+document timers
+display virtualized timers block 0
+end
+
+#display usart
+define us
+printf "US0: ctl: %02x  tctl: %02x  rctl: %02x  mctl: %02x  br: %02x%02x  rx: %02x  tx: %02x\n",\
+    (*(uint8_t *)0x70), (*(uint8_t *)0x71), (*(uint8_t *)0x72), (*(uint8_t *)0x73),\
+    (*(uint8_t *)0x75), (*(uint8_t *)0x74), (*(uint8_t *)0x76), (*(uint8_t *)0x77)
+printf "US1: ctl: %02x  tctl: %02x  rctl: %02x  mctl: %02x  br: %02x%02x  rx: %02x  tx: %02x\n",\
+    (*(uint8_t *)0x78), (*(uint8_t *)0x79), (*(uint8_t *)0x7a), (*(uint8_t *)0x7b),\
+    (*(uint8_t *)0x7d), (*(uint8_t *)0x7c), (*(uint8_t *)0x7e), (*(uint8_t *)0x7f)
+end
+document us
+display msp430 usart hardware
+end
+
+define sfr
+printf "ie1: %02x  ie2: %02x  ifg1: %02x  ifg2: %02x  me1: %02x  me2: %02x\n",\
+    (*(uint8_t *)0x00), (*(uint8_t *)0x01), (*(uint8_t *)0x02), (*(uint8_t *)0x03),\
+    (*(uint8_t *)0x04), (*(uint8_t *)0x05)
+end
+document sfr
+display msp430 special function registers (interrupt enable, interrupt flags)
+end
+
+define dc
+printf "dcoctl:  %02x\n",(*(uint8_t *)0x56)
+printf "bcsctl1: %02x\n",(*(uint8_t *)0x57)
+printf "bcsctl2: %02x\n",(*(uint8_t *)0x58)
+end
+document dc
+display msp430 dco/clock system hardware
+end
+
+define dp2
+printf "p2 in: %02x, out: %02x, dir: %02x, ifg: %02x, ies: %02x, ie: %02x, sel: %02x\n",\
+    (*(uint8_t *)0x28), (*(uint8_t *)0x29), (*(uint8_t *)0x2a), (*(uint8_t *)0x2b),\
+    (*(uint8_t *)0x2c), (*(uint8_t *)0x2d), (*(uint8_t *)0x2e)
+end
+document dp2
+display port 2
+end
+
+#show adc arbritration queue
+define sa
+printf "resQ:  %02x%02x\n", RoundRobinResourceQueueC$0$resQ[1], RoundRobinResourceQueueC$0$resQ[0]
+printf "adc: state: %02x, req: %02x, owner: %02x\n", AdcP$adc_state, AdcP$req_client, AdcP$adc_owner
+end
+document sa
+show adc arbritration queue
+end
+
+define rq
+printf "rq: %02x%02x  last: %d\n",RoundRobinResourceQueueC$0$resQ[1],RoundRobinResourceQueueC$0$resQ[0],RoundRobinResourceQueueC$0$last
+end
+document rq
+RoundRobin Resource Queue (ADC arbiter)
+end
+
+define ss
+printf "SS: state: \n"
+print StreamStorageP$ss_state
+printf "  control struct: "
+print StreamStorageP$ssc
+printf "    alloc: %02x  in: %02x  out: %02x\n", StreamStorageP$ssc.ssw_alloc, StreamStorageP$ssc.ssw_in, StreamStorageP$ssc.ssw_out
+printf "  buffers: %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[0]->majik, StreamStorageP$ssh_ptrs[0]->stamp
+print StreamStorageP$ssh_ptrs[0]->req_state
+printf "           %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[1]->majik, StreamStorageP$ssh_ptrs[1]->stamp
+print StreamStorageP$ssh_ptrs[1]->req_state
+printf "           %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[2]->majik, StreamStorageP$ssh_ptrs[2]->stamp
+print StreamStorageP$ssh_ptrs[2]->req_state
+printf "           %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[3]->majik, StreamStorageP$ssh_ptrs[3]->stamp
+print StreamStorageP$ssh_ptrs[3]->req_state
+printf "     read:  in: %02x  out: %02x\n", StreamStorageP$ssc.ssr_in, StreamStorageP$ssc.ssr_out
+printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP$ssr_reqs[0].majik, StreamStorageP$ssr_reqs[0].stamp,\
+    StreamStorageP$ssr_reqs[0].blk, StreamStorageP$ssr_reqs[0].buf
+print StreamStorageP$ssr_reqs[0]->req_state
+printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP$ssr_reqs[1].majik, StreamStorageP$ssr_reqs[1].stamp,\
+    StreamStorageP$ssr_reqs[1].blk, StreamStorageP$ssr_reqs[1].buf
+print StreamStorageP$ssr_reqs[1]->req_state
+printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP$ssr_reqs[2].majik, StreamStorageP$ssr_reqs[2].stamp,\
+    StreamStorageP$ssr_reqs[2].blk, StreamStorageP$ssr_reqs[2].buf
+print StreamStorageP$ssr_reqs[2]->req_state
+printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP$ssr_reqs[3].majik, StreamStorageP$ssr_reqs[3].stamp,\
+    StreamStorageP$ssr_reqs[3].blk, StreamStorageP$ssr_reqs[3].buf
+print StreamStorageP$ssr_reqs[3]->req_state
+end
+document ss
+StreamStorage state
+end
+
+
+define ports
+printf " in  p1: %02x %02x %02x  p4: %02x %02x %02x\n", \
+    (*(uint8_t *)0x20), (*(uint8_t *)0x28), (*(uint8_t *)0x18), \
+    (*(uint8_t *)0x1c), (*(uint8_t *)0x30), (*(uint8_t *)0x34)
+printf "out  p1: %02x %02x %02x  p4: %02x %02x %02x\n", \
+    (*(uint8_t *)0x21), (*(uint8_t *)0x29), (*(uint8_t *)0x19), \
+    (*(uint8_t *)0x1d), (*(uint8_t *)0x31), (*(uint8_t *)0x35)
+printf "ifg  p1: %02x %02x\n", \
+    (*(uint8_t *)0x23), (*(uint8_t *)0x2b)
+printf "ies  p1: %02x %02x\n\n", \
+    (*(uint8_t *)0x24), (*(uint8_t *)0x2c)
+printf "dir: p1: %02x %02x %02x  p4: %02x %02x %02x\n", \
+    (*(uint8_t *)0x22), (*(uint8_t *)0x2a), (*(uint8_t *)0x1a), \
+    (*(uint8_t *)0x1e), (*(uint8_t *)0x32), (*(uint8_t *)0x36)
+printf "sel: p1: %02x %02x %02x  p4: %02x %02x %02x\n", \
+    (*(uint8_t *)0x26), (*(uint8_t *)0x2e), (*(uint8_t *)0x1b), \
+    (*(uint8_t *)0x1f), (*(uint8_t *)0x33), (*(uint8_t *)0x37)
+end
+document ports
+display h/w ports
+end
+
+define sd
+printf "sd:  pwr: %d  csn: %d  p5: %02x  dir: %02x  sel: %02x  rx: %02x  tx: %02x\n",\
+    (((*(uint8_t *)0x31) & 1) ? 0 : 1), (((*(uint8_t *)0x31) & 0x10) ? 1 : 0),\
+    (*(uint8_t *)0x31), (*(uint8_t *)0x32), (*(uint8_t *)0x33), (*(uint8_t *)0x7e), (*(uint8_t *)0x7f)
+p/x SDP$sd_cmd
+end
+document sd
+display SD state
+end
+
+define th
+printf "current_thread: %04x\n",TinyThreadSchedulerP$current_thread
+print *TinyThreadSchedulerP$current_thread
+printf "\ntos_thread: %04x\n",TinyThreadSchedulerP$tos_thread
+print *TinyThreadSchedulerP$tos_thread
+end
+document th
+display thread state
+end
+
+define tq
+printf "taskq: head: %d  tail %d\n", (uint8_t) SchedulerBasicP$m_head, (uint8_t) SchedulerBasicP$m_tail
+x/25bu SchedulerBasicP$m_next
+end
+document tq
+display task queue
+end
+
+define usq
+printf "ArbiterP$0: resId: %d, reqResId: %d,  state: %d\n", ArbiterP$0$resId, ArbiterP$0$reqResId, ArbiterP$0$state
+printf "usartQ (FcfsResourceQueueC$0): head: %d  tail %d\n", FcfsResourceQueueC$0$qHead, FcfsResourceQueueC$0$qTail
+x/4ub FcfsResourceQueueC$0$resQ
+end
+document usq
+display usart arbritration queue
+end
+
+define nx
+fini
+ni 3
+si 2
+end
+
+define noint
+printf "cur sr: %02x\n", $r2
+set $r2=0
 end
