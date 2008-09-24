@@ -588,13 +588,14 @@ implementation {
 	 * a delay prior to shutting the hardware off.  But if we are in OFF_WAIT
 	 * we won't be here but rather later down in this processing loop.
 	 */
+	call BlockingWriteResource.request(); // this will also turn on the hardware when granted.
+
 	atomic cur_state = ss_state;
 	if (cur_state != SS_STATE_OFF && cur_state != SS_STATE_IDLE) {
 	  call Panic.warn(PANIC_SS_RECOV, 25, cur_state, 0, 0, 0);
 	  atomic cur_state = ss_state = SS_STATE_OFF;
 	}
 
-	call BlockingWriteResource.request(); // this will also turn on the hardware when granted.
 	if (cur_state == SS_STATE_OFF) {
 	  err = call SD.reset();		  // about 100ms
 	  if (err) {
@@ -765,7 +766,8 @@ implementation {
       //Get the current req handle
       cur_handle = &ssr_reqs[ssc.ssr_out];
       //If we are not in the epxected possible states, panic
-      if (cur_handle->req_state != SS_REQ_STATE_READ_REQ || cur_handle->req_state != SS_REQ_STATE_FREE)
+      if (cur_handle->req_state != SS_REQ_STATE_READ_REQ &&
+	  cur_handle->req_state != SS_REQ_STATE_FREE)
 	ss_panic(28, -1);
 
       cur_handle->stamp = call LocalTime.get();
