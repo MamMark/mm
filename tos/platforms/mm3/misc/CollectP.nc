@@ -16,7 +16,7 @@ module CollectP {
     interface LogEvent;
   }
   uses {
-    interface StreamStorage as SS;
+    interface StreamStorageWrite as SSW;
     interface Panic;
     interface LocalTime<TMilli>;
   }
@@ -61,8 +61,8 @@ implementation {
 	 *
 	 * get_free_buf_handle either works or panics.
          */
-	dcc.handle = call SS.get_free_buf_handle();
-        dcc.cur_ptr = dcc.cur_buf = call SS.buf_handle_to_buf(dcc.handle);
+	dcc.handle = call SSW.get_free_buf_handle();
+        dcc.cur_ptr = dcc.cur_buf = call SSW.buf_handle_to_buf(dcc.handle);
         dcc.remaining = DC_BLK_SIZE;
         dcc.chksum = 0;
       }
@@ -81,7 +81,7 @@ implementation {
         (*(uint16_t *) dcc.cur_ptr) = dcc.seq++;
         dcc.cur_ptr += 2;
         (*(uint16_t *) dcc.cur_ptr) = dcc.chksum;
-	call SS.buffer_full(dcc.handle);
+	call SSW.buffer_full(dcc.handle);
 	dcc.handle = NULL;
         dcc.cur_buf = NULL;
         dcc.cur_ptr = NULL;
@@ -102,6 +102,4 @@ implementation {
     ep->arg = arg;
     call Collect.collect(event_data, DT_HDR_SIZE_EVENT);
   }
-
-  event void SS.read_block_done(uint32_t blk, uint8_t *buf, error_t err) { }
 }

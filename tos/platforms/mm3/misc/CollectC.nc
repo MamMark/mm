@@ -17,7 +17,7 @@ implementation {
   LogEvent = CollectP;
 
   components StreamStorageC;
-  CollectP.SS -> StreamStorageC;
+  CollectP.SSW -> StreamStorageC;
 
   components PanicC;
   CollectP.Panic -> PanicC;

@@ -86,8 +86,9 @@ uint32_t erase_end;
 module StreamStorageP {
   provides {
     interface Init;
-    interface StreamStorage as SS;
-    interface StreamStorageFull as SSF;
+    interface StreamStorageWrite as SSW;
+    interface StreamStorageRead  as SSR[uint8_t client_id];
+    interface StreamStorageFull  as SSF;
     interface Boot as BlockingBoot;
     interface ResourceConfigure;
   }
@@ -111,6 +112,7 @@ module StreamStorageP {
 implementation {
 
   typedef struct {
+    uint8_t  cid;			/* client id */
     uint32_t blk;
     uint8_t *buf;
     error_t  err;
@@ -221,7 +223,7 @@ implementation {
    * buffers in order.
    */
 
-  command void SS.buffer_full(ss_wr_req_t *handle) {
+  command void SSW.buffer_full(ss_wr_req_t *handle) {
     ss_wr_req_t *sshp;
     uint8_t in_index;
 
@@ -282,7 +284,7 @@ implementation {
   }
 
 
-  command bool SS.buffer_empty(uint8_t *buf) {
+  command bool SSW.buffer_empty(uint8_t *buf) {
     return blk_empty(buf) == 1;
   }
 
@@ -433,7 +435,7 @@ implementation {
   }
 
 
-  command ss_wr_req_t* SS.get_free_buf_handle() {
+  command ss_wr_req_t* SSW.get_free_buf_handle() {
     ss_wr_req_t *sshp;
 
     sshp = ssh_ptrs[ssc.ssw_alloc];
@@ -463,7 +465,7 @@ implementation {
   }
 
 
-  command uint8_t *SS.buf_handle_to_buf(ss_wr_req_t *handle) {
+  command uint8_t *SSW.buf_handle_to_buf(ss_wr_req_t *handle) {
     if (!handle || handle->majik != SS_REQ_MAJIK ||
 	handle->req_state != SS_REQ_STATE_ALLOC) {
       ss_panic(21, -1);
@@ -669,15 +671,29 @@ implementation {
   }
 
 
+  command uint32_t SSW.area_start(uint8_t which) {
+    return 0;
+  }
+
+  command uint32_t SSW.area_end(uint8_t which) {
+    return 0;
+  }
+
+  
   /*****************************************************************************
    *
    * READING
    *
    */
 
-  command error_t SS.read_block(uint32_t blk, uint8_t *buf) {
+  command error_t SSR.read_block[uint8_t client_id](uint32_t blk, uint8_t *buf) {
     ss_rd_req_t *rdp;
     uint8_t in_index;
+
+    if (client_id > SSR_CLIENT_MAX) {
+      call Panic.panic(PANIC_SS, 80, client_id, 0, 0, 0);
+      return FAIL;
+    }
 
     /*
      * handles should be flushed in strict order.  So the next one
@@ -696,6 +712,7 @@ implementation {
       call Panic.panic(PANIC_SS, 82, ssc.majik_a, ssc.majik_b, 0, 0);
 
     rdp->stamp = call LocalTime.get();
+    rdp->cid = client_id;
     rdp->blk = blk;
     rdp->buf = buf;
     atomic rdp->req_state = SS_REQ_STATE_READ_REQ;
@@ -706,32 +723,32 @@ implementation {
     return SUCCESS;
   }
 
-  command uint32_t SS.area_start(uint8_t which) {
-    return 0;
-  }
-
-  command uint32_t SS.area_end(uint8_t which) {
-    return 0;
-  }
-
-  
   void signalTask(syscall_t* s) {
     read_block_t* r = s->params;
-    signal SS.read_block_done(r->blk, r->buf, r->err);
+
+    if (r->cid > SSR_CLIENT_MAX) {
+      call Panic.panic(PANIC_SS, 83, r->cid, 0, 0, 0);
+      return;
+    }
+    signal SSR.read_block_done[r->cid](r->blk, r->buf, r->err);
     call SystemCall.finish(s);
   }
   
 
-  void signalClient(uint32_t blk, uint8_t *buf, error_t err) {
+  inline void signalClient(uint8_t cid, uint32_t blk, uint8_t *buf, error_t err) {
     syscall_t s;
     read_block_t r;
 
+    r.cid = cid;
     r.blk = blk;
     r.buf = buf;
     r.err = err;
     call SystemCall.start(&signalTask, &s, INVALID_ID, &r);
   }
   
+
+  default event void SSR.read_block_done[uint8_t client_id](uint32_t blk, uint8_t *buf, error_t err) {}
+
 
   event void SSReader.run(void* arg) {
     ss_rd_req_t* cur_handle;
@@ -767,7 +784,7 @@ implementation {
       /*
        * Assuming success, tell the client that we finished.
        */
-      signalClient(0, 0, 0);
+      signalClient(0, 0, 0, 0);
       call BlockingReadResource.release();
     }
   }

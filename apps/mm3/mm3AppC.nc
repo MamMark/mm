@@ -3,6 +3,8 @@
  * All rights reserved.
  */
 
+#include "stream_storage.h"
+
 configuration mm3AppC {}
 implementation {
   components SystemBootC, mm3C;
@@ -25,7 +27,7 @@ implementation {
   components StreamStorageC;
   mm3C.StreamStorageFull -> StreamStorageC;
 
-  mm3C.SS -> StreamStorageC;
+  mm3C.SSR -> StreamStorageC.SSR[SSR_CLIENT_TEST];
   
   /*
    * Include sensor components.  No need to wire.  They will

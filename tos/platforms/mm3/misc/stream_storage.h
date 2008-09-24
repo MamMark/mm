@@ -50,7 +50,7 @@
  *    the buffer transitions to ALLOC.
  *
  * 3) The data collector fills the buffer and hands it off to
- *    StreamStorage via the command StreamStorage.buffer_full
+ *    StreamStorage via the command StreamStorageWrite.buffer_full
  *
  * 4) When the DMA engine is actively writing the buffer it is
  *    marked BUSY.
@@ -102,6 +102,7 @@ typedef struct {
   uint32_t stamp;
   uint32_t blk;
   uint8_t *buf;
+  uint8_t  cid;				/* client id */
 } ss_rd_req_t;
 
 
@@ -190,6 +191,16 @@ enum {
   SS_AREA_PANIC  = 0,
   SS_AREA_CONFIG = 1,
   SS_AREA_DATA   = 2,
+};
+
+
+/*
+ * client numbers for SSReader
+ */
+enum {
+  SSR_CLIENT_TEST = 0,
+  SSR_CLIENT_DUMP = 1,
+  SSR_CLIENT_MAX  = 1,
 };
 
 #endif /* _STREAM_STORAGE_H */

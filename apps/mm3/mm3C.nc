@@ -25,7 +25,7 @@ module mm3C {
 
     interface Adc;
 
-    interface StreamStorage as SS;
+    interface StreamStorageRead as SSR;
 #ifdef notdef
     interface HplMM3Adc as HW;
 #endif
@@ -37,7 +37,7 @@ implementation {
 
   event void Boot.booted() {
 
-    call SS.read_block(0, temp_buf);
+    call SSR.read_block(0, temp_buf);
 
     /*
      * set the initial regime.  This will also
@@ -69,8 +69,9 @@ implementation {
 
   }
 
-  event void SS.read_block_done(uint32_t blk, uint8_t *buf, error_t err) {
-    nop();
+  event void SSR.read_block_done(uint32_t blk, uint8_t *buf, error_t err) {
+    use_regime++;
+    use_regime--;
   }
 
   event void StreamStorageFull.dblk_stream_full () {

@@ -14,8 +14,9 @@
 configuration StreamStorageC {
   provides {
     interface Boot as SSBoot;
-    interface StreamStorage as SS;
-    interface StreamStorageFull as SSF;
+    interface StreamStorageWrite as SSW;
+    interface StreamStorageRead  as SSR[uint8_t client_id];
+    interface StreamStorageFull  as SSF;
     interface BlockingSpiPacket;
   }
   uses interface Boot;
@@ -23,7 +24,8 @@ configuration StreamStorageC {
 
 implementation {
   components StreamStorageP as SS_P, MainC;
-  SS = SS_P;
+  SSW = SS_P;
+  SSR = SS_P;
   SSF = SS_P;
   MainC.SoftwareInit -> SS_P;
 

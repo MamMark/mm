@@ -9,7 +9,7 @@
 
 #include "stream_storage.h"
 
-interface StreamStorage {
+interface StreamStorageWrite {
   /*
    * StreamStorage provides an interface to sector orientated 512 byte
    * stream storage devices.  Data is accessed as blocks of 512 bytes.
@@ -55,13 +55,6 @@ interface StreamStorage {
    *    <li> TRUE	buffer empty
    */
   command bool buffer_empty(uint8_t *buf);
-
-  /**
-   *
-   *
-   */
-  command error_t read_block(uint32_t blk, uint8_t *buf);
-  event void read_block_done(uint32_t blk, uint8_t *buf, error_t err);
 
   command uint32_t area_start(uint8_t which);
   command uint32_t area_end(uint8_t which);
