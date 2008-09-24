@@ -168,6 +168,9 @@ implementation {
     ssc.ssw_num_full= 0;
     ssc.ssw_max_full= 0;
 
+    ssc.ssr_in      = 0;
+    ssc.ssr_out     = 0;
+
     ssc.panic_start = ssc.panic_end = 0;
     ssc.config_start= ssc.config_end = 0;
     ssc.dblk_start  = ssc.dblk_end = 0;
@@ -731,6 +734,9 @@ implementation {
   
 
   event void SSReader.run(void* arg) {
+    ss_rd_req_t* cur_handle;
+    error_t err;
+
     for(;;) {
       call Semaphore.acquire(&read_sem);
 
@@ -739,7 +745,25 @@ implementation {
       /*
        * Actually do the read.
        */
+      //Get the current req handle
+      cur_handle = &ssr_reqs[ssc.ssr_out];
+      //If we are not in the epxected possible states, panic
+      if (cur_handle->req_state != SS_REQ_STATE_READ_REQ || cur_handle->req_state != SS_REQ_STATE_FREE)
+	ss_panic(28, -1);
 
+      cur_handle->stamp = call LocalTime.get();
+      cur_handle->req_state = SS_REQ_STATE_READING;
+      atomic ss_state = SS_STATE_XFER_R;
+      err = call SD.read(cur_handle->blk, cur_handle->buf);
+      if (err)
+	ss_panic(29, err);
+ 
+      cur_handle->stamp = call LocalTime.get();
+      cur_handle->req_state = SS_REQ_STATE_FREE;
+      ssc.ssr_out++;
+      if (ssc.ssw_out >= SSW_NUM_BUFS)
+	ssc.ssr_out = 0;
+      atomic ss_state = SS_STATE_IDLE;
       /*
        * Assuming success, tell the client that we finished.
        */
