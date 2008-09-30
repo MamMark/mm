@@ -123,7 +123,6 @@ TOSH_ASSIGN_PIN(GREEN_LED, 6, 4);
 TOSH_ASSIGN_PIN(YELLOW_LED, 6, 6);
 
 
-#ifdef notdef
 // CC2420 RADIO #defines
 TOSH_ASSIGN_PIN(RADIO_CSN, 4, 2);
 TOSH_ASSIGN_PIN(RADIO_VREF, 4, 5);
@@ -140,7 +139,6 @@ TOSH_ASSIGN_PIN(CC_FIFO, 1, 3);
 TOSH_ASSIGN_PIN(CC_SFD, 4, 1);
 TOSH_ASSIGN_PIN(CC_VREN, 4, 5);
 TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
-#endif
 
 
 // need to undef atomic inside header files or nesC ignores the directive

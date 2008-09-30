@@ -673,11 +673,21 @@ implementation {
 
 
   command uint32_t SSW.area_start(uint8_t which) {
-    return 0;
+    switch (which) {
+      default:			return 0;
+      case SS_AREA_PANIC:	return ssc.panic_start;
+      case SS_AREA_CONFIG:	return ssc.config_start;
+      case SS_AREA_DATA:	return ssc.dblk_start;
+    }
   }
 
   command uint32_t SSW.area_end(uint8_t which) {
-    return 0;
+    switch (which) {
+      default:	return 0;
+      case SS_AREA_PANIC:	return ssc.panic_end;
+      case SS_AREA_CONFIG:	return ssc.config_end;
+      case SS_AREA_DATA:	return ssc.dblk_end;
+    }
   }
 
   

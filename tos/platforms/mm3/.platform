@@ -5,18 +5,6 @@
 #
 # $Id: $
 #  %P
-#  %T/chips/cc2420/alarm
-#  %T/chips/cc2420/control
-#  %T/chips/cc2420/csma
-#  %T/chips/cc2420/interfaces
-#  %T/chips/cc2420/link
-#  %T/chips/cc2420/lowpan
-#  %T/chips/cc2420/lpl
-#  %T/chips/cc2420/packet
-#  %T/chips/cc2420/receive
-#  %T/chips/cc2420/spi
-#  %T/chips/cc2420/transmit
-#  %T/chips/cc2420/unique
 #  %T/chips/msp430/adc12
 #  %T/chips/msp430/sensors
 
@@ -26,7 +14,22 @@ push( @includes, qw(
   %P/sensors
   %P/../../chips/msp430/timer
   %P/../../../support/utils/include
+  %T/platforms/telsob
+  %T/platforms/telsoa
+  %T/platforms/telsoa/chips/cc2420
   %T/chips/cc2420
+  %T/chips/cc2420/alarm
+  %T/chips/cc2420/control
+  %T/chips/cc2420/csma
+  %T/chips/cc2420/interfaces
+  %T/chips/cc2420/link
+  %T/chips/cc2420/lowpan
+  %T/chips/cc2420/lpl
+  %T/chips/cc2420/packet
+  %T/chips/cc2420/receive
+  %T/chips/cc2420/spi
+  %T/chips/cc2420/transmit
+  %T/chips/cc2420/unique
   %T/chips/msp430
   %T/chips/msp430/pins
   %T/chips/msp430/timer

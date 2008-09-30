@@ -263,9 +263,9 @@ implementation {
   command void AMPacket.setDestination(message_t* amsg, am_addr_t addr) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialAMPacket.setDestination(amsg, addr);
+	    call SerialAMPacket.setDestination(amsg, addr);
       case COMM_STATE_RADIO:
-	    return call RadioAMPacket.setDestination(amsg, addr);
+	    call RadioAMPacket.setDestination(amsg, addr);
       default:
 	    call Panic.brk(0);
 	    return;
@@ -315,9 +315,9 @@ implementation {
   command void AMPacket.setType(message_t* amsg, am_id_t t) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialAMPacket.setType(amsg, t);
+	    call SerialAMPacket.setType(amsg, t);
       case COMM_STATE_RADIO:
-	    return call RadioAMPacket.setType(amsg, t);
+	    call RadioAMPacket.setType(amsg, t);
       default:
 	    call Panic.brk(0);
 	    return;
