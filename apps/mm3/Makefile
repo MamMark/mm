@@ -6,6 +6,7 @@
 # ENABLE_ERASE: compile in erase code for the SD, controlled by var do_erase
 # ALWAYS_ERASE: force do_erase to 1 forcing erasing every boot.
 # FAKE_SURFACE: pretend to surface and submerge every minute.
+# CC2420_STACK: use actual CC2420 stack for radio (otherwise null stack)
 #
 COMPONENT=mm3AppC
 #PFLAGS += -DUSE_SPI_PACKET -DENABLE_SPI1_DMA
@@ -13,6 +14,7 @@ COMPONENT=mm3AppC
 #PFLAGS += -DTEST_GPS -DENABLE_ERASE -DALWAYS_ERASE
 #PFLAGS += -DTEST_GPS -DENABLE_ERASE
 #PFLAGS += -DTEST_GPS -DENABLE_ERASE -DFAKE_SURFACE -DTRACE
+#PFLAGS +=            -DENABLE_ERASE -DFAKE_SURFACE -DTRACE -DCC2420_STACK
 PFLAGS  +=            -DENABLE_ERASE -DFAKE_SURFACE -DTRACE
 
 include $(MAKERULES)

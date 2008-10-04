@@ -12,6 +12,51 @@
  * Dummy implementation to support the null platform.
  */
 
+#ifdef CC2420_STACK
+/*
+ * From t2_cur/tinyos-2.x/tos/lib/tosthreads/platforms/telosa/ActiveMessageC.nc
+ */
+
+#include "Timer.h"
+
+configuration ActiveMessageC {
+  provides {
+    interface SplitControl;
+
+    interface AMSend[am_id_t id];
+    interface Receive[am_id_t id];
+    interface Receive as ReceiveDefault[am_id_t id];
+    interface Receive as Snoop[am_id_t id];
+    interface Receive as SnoopDefault[am_id_t id];
+
+    interface Packet;
+    interface AMPacket;
+    interface PacketAcknowledgements;
+    interface PacketTimeStamp<T32khz, uint32_t> as PacketTimeStamp32khz;
+    interface PacketTimeStamp<TMilli, uint32_t> as PacketTimeStampMilli;
+  }
+}
+implementation {
+  components CC2420ActiveMessageC as AM;
+
+  SplitControl = AM;
+  
+  AMSend       = AM;
+  Receive      = AM.Receive;
+  ReceiveDefault = AM.ReceiveDefault;
+  Snoop        = AM.Snoop;
+  SnoopDefault = AM.SnoopDefault;
+  Packet       = AM;
+  AMPacket     = AM;
+  PacketAcknowledgements = AM;
+
+  components CC2420PacketC;
+  PacketTimeStamp32khz = CC2420PacketC;
+  PacketTimeStampMilli = CC2420PacketC;
+}
+
+#else
+
 module ActiveMessageC {
   provides {
     interface SplitControl;
@@ -25,8 +70,8 @@ module ActiveMessageC {
     interface PacketAcknowledgements as Acks;
   }
 }
-implementation {
 
+implementation {
 
   command error_t SplitControl.start() {
     return SUCCESS;
@@ -120,3 +165,5 @@ implementation {
     return FALSE;
   }
 }
+
+#endif

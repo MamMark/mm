@@ -3,10 +3,6 @@
 # @includes instead of -I's to @opts, otherwise the %T won't be processed
 # by ncc.
 #
-# $Id: $
-#  %P
-#  %T/chips/msp430/adc12
-#  %T/chips/msp430/sensors
 
 push( @includes, qw(
 
@@ -14,8 +10,6 @@ push( @includes, qw(
   %P/sensors
   %P/../../chips/msp430/timer
   %P/../../../support/utils/include
-#  %T/platforms/telosb
-#  %T/platforms/telosa
   %T/platforms/telosa/chips/cc2420
   %T/chips/cc2420
   %T/chips/cc2420/alarm
