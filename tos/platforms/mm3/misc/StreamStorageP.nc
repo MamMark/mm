@@ -196,7 +196,9 @@ implementation {
 
   event void Boot.booted() {
     call SSWriter.start(NULL);
+#ifdef TEST_READER
     call SSReader.start(NULL);
+#endif
   }
   
 
