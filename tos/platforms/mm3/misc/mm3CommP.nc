@@ -32,11 +32,21 @@
 #include "Serial.h"
 #include "sensors.h"
 
+typedef enum {
+  COMM_STATE_OFF         = 1,
+  COMM_STATE_SERIAL_INIT = 2,
+  COMM_STATE_SERIAL      = 3,
+  COMM_STATE_RADIO_INIT  = 4,
+  COMM_STATE_RADIO       = 5,
+} comm_state_t;
+
+
 module mm3CommP {
   provides {
     interface Init;
     interface mm3Comm;
     interface Send[uint8_t id];
+    interface Receive[uint8_t id];
     interface AMPacket;
     interface Packet;
   }
@@ -45,11 +55,13 @@ module mm3CommP {
   
     interface SplitControl as SerialAMControl;
     interface Send         as SerialSend[uint8_t id];
+    interface Receive      as SerialReceive[uint8_t id];
     interface Packet	   as SerialPacket;
     interface AMPacket	   as SerialAMPacket;
     
     interface SplitControl as RadioAMControl;
     interface Send         as RadioSend[uint8_t id];
+    interface Receive      as RadioReceive[uint8_t id];
     interface Packet	   as RadioPacket;
     interface AMPacket	   as RadioAMPacket;
   }
@@ -57,15 +69,8 @@ module mm3CommP {
 
 implementation {
 
-  enum {
-    COMM_STATE_OFF         = 1,
-    COMM_STATE_SERIAL_INIT = 2,
-    COMM_STATE_SERIAL	   = 3,
-    COMM_STATE_RADIO_INIT  = 4,
-    COMM_STATE_RADIO	   = 5,
-  };
-  uint8_t comm_state;
-  
+  comm_state_t comm_state;
+
   command error_t Init.init() {
     comm_state = COMM_STATE_OFF;
     return SUCCESS;
@@ -73,21 +78,21 @@ implementation {
 
   //********************* Use SERIAL *******************************//
   command error_t mm3Comm.useSerial() {
-    if(comm_state == COMM_STATE_SERIAL)
+    if (comm_state == COMM_STATE_SERIAL)
       return EALREADY;
-    if(comm_state == COMM_STATE_OFF || comm_state == COMM_STATE_RADIO) {
+    if (comm_state == COMM_STATE_OFF || comm_state == COMM_STATE_RADIO) {
       comm_state = COMM_STATE_SERIAL_INIT;
       call SerialAMControl.start();
       return SUCCESS;
     } 
     return EBUSY;
   }
+
   event void SerialAMControl.startDone(error_t error) {
-    if(error == SUCCESS) {
+    if (error == SUCCESS) {
       comm_state = COMM_STATE_SERIAL; 
       signal mm3Comm.serialOn();
-    }
-    else {
+    } else {
       call Panic.brk(0);
       call SerialAMControl.start();
     }
@@ -104,12 +109,12 @@ implementation {
     } 
     return EBUSY;
   }
+
   event void RadioAMControl.startDone(error_t error) {
     if(error == SUCCESS) {
       comm_state = COMM_STATE_RADIO; 
       signal mm3Comm.radioOn();
-    }
-    else {
+    } else {
       call Panic.brk(0);
       call RadioAMControl.start();
     }
@@ -128,62 +133,71 @@ implementation {
       comm_state = COMM_STATE_RADIO_INIT;
       call RadioAMControl.stop();
       return SUCCESS;
-    } 
-    else return EBUSY;
+    } else
+      return EBUSY;
   }
+
   event void SerialAMControl.stopDone(error_t error) {
     if(error == SUCCESS) {
       comm_state = COMM_STATE_OFF; 
       signal mm3Comm.commOff();
-    }
-    else {
+    } else {
       call Panic.brk(0);
       call SerialAMControl.stop();
     }
   }
+
   event void RadioAMControl.stopDone(error_t error) {
     if(error == SUCCESS) {
       comm_state = COMM_STATE_OFF; 
       signal mm3Comm.commOff();
-    }
-    else {
+    } else {
       call Panic.brk(0);
       call RadioAMControl.stop();
     }
+  }
+
+  //********************* Receiving *******************************//
+  event message_t* SerialReceive.receive[uint8_t id](message_t* msg, void* payload, uint8_t len) {
+    return signal Receive.receive[id](msg, payload, len);
+  }
+
+  event message_t* RadioReceive.receive[uint8_t id](message_t* msg, void* payload, uint8_t len) {
+    return signal Receive.receive[id](msg, payload, len);
   }
 
   //********************* Sending *******************************//
   command error_t Send.send[uint8_t id](message_t* msg, uint8_t len) {
     switch (comm_state) {
       case COMM_STATE_OFF:
-	    return EOFF;  
+	return EOFF;  
       case COMM_STATE_SERIAL_INIT:
       case COMM_STATE_RADIO_INIT:
-	    return EBUSY;
+	return EBUSY;
       case COMM_STATE_SERIAL:
-	    return call SerialSend.send[id](msg, len);
+	return call SerialSend.send[id](msg, len);
       case COMM_STATE_RADIO:
-	    return call RadioSend.send[id](msg, len);
+	return call RadioSend.send[id](msg, len);
       default:
-	    call Panic.brk(0);
-	    return FAIL;
+	call Panic.brk(0);
+	return FAIL;
     }
   }
 
   command error_t Send.cancel[uint8_t id](message_t* msg) {
     switch (comm_state) {
       case COMM_STATE_OFF:
-	    return EOFF;  
+	return EOFF;  
       case COMM_STATE_SERIAL_INIT:
       case COMM_STATE_RADIO_INIT:
-	    return EBUSY;
+	return EBUSY;
       case COMM_STATE_SERIAL:
-	    return call SerialSend.cancel[id](msg);
+	return call SerialSend.cancel[id](msg);
       case COMM_STATE_RADIO:
-	    return call RadioSend.cancel[id](msg);
+	return call RadioSend.cancel[id](msg);
       default:
-	    call Panic.brk(0);
-	    return FAIL;
+	call Panic.brk(0);
+	return FAIL;
     }  
   }
 
@@ -198,12 +212,12 @@ implementation {
   command uint8_t Send.maxPayloadLength[uint8_t id]() {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialSend.maxPayloadLength[id]();
+	return call SerialSend.maxPayloadLength[id]();
       case COMM_STATE_RADIO:
-	    return call RadioSend.maxPayloadLength[id]();
+	return call RadioSend.maxPayloadLength[id]();
       default:
-	    call Panic.brk(0);
-	    return -1;
+	call Panic.brk(0);
+	return -1;
     }
   }
 
@@ -211,12 +225,12 @@ implementation {
   command void* Send.getPayload[uint8_t id](message_t* msg, uint8_t len) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialSend.getPayload[id](msg, len);
+	return call SerialSend.getPayload[id](msg, len);
       case COMM_STATE_RADIO:
-	    return call RadioSend.getPayload[id](msg, len);
+	return call RadioSend.getPayload[id](msg, len);
       default:
-	    call Panic.brk(0);
-	    return NULL;
+	call Panic.brk(0);
+	return NULL;
     }
   }
 
@@ -224,12 +238,12 @@ implementation {
   command am_addr_t AMPacket.address() {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialAMPacket.address();
+	return call SerialAMPacket.address();
       case COMM_STATE_RADIO:
-	    return call RadioAMPacket.address();
+	return call RadioAMPacket.address();
       default:
-	    call Panic.brk(0);
-	    return -1;
+	call Panic.brk(0);
+	return -1;
     }  
   }
 
@@ -237,12 +251,12 @@ implementation {
   command am_addr_t AMPacket.destination(message_t* amsg) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialAMPacket.destination(amsg);
+	return call SerialAMPacket.destination(amsg);
       case COMM_STATE_RADIO:
-	    return call RadioAMPacket.destination(amsg);
+	return call RadioAMPacket.destination(amsg);
       default:
-	    call Panic.brk(0);
-	    return -1;
+	call Panic.brk(0);
+	return -1;
     }    
   }
 
@@ -250,12 +264,12 @@ implementation {
   command am_addr_t AMPacket.source(message_t* amsg) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialAMPacket.source(amsg);
+	return call SerialAMPacket.source(amsg);
       case COMM_STATE_RADIO:
-	    return call RadioAMPacket.source(amsg);
+	return call RadioAMPacket.source(amsg);
       default:
-	    call Panic.brk(0);
-	    return -1;
+	call Panic.brk(0);
+	return -1;
     }    
   }
 
@@ -263,12 +277,14 @@ implementation {
   command void AMPacket.setDestination(message_t* amsg, am_addr_t addr) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    call SerialAMPacket.setDestination(amsg, addr);
+	call SerialAMPacket.setDestination(amsg, addr);
+	return;
       case COMM_STATE_RADIO:
-	    call RadioAMPacket.setDestination(amsg, addr);
+	call RadioAMPacket.setDestination(amsg, addr);
+	return;
       default:
-	    call Panic.brk(0);
-	    return;
+	call Panic.brk(0);
+	return;
     }   
   }
 
@@ -276,12 +292,14 @@ implementation {
   command void AMPacket.setSource(message_t* amsg, am_addr_t addr) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialAMPacket.setSource(amsg, addr);
+	call SerialAMPacket.setSource(amsg, addr);
+	return;
       case COMM_STATE_RADIO:
-	    return call RadioAMPacket.setSource(amsg, addr);
+	call RadioAMPacket.setSource(amsg, addr);
+	return;
       default:
-	    call Panic.brk(0);
-	    return;
+	call Panic.brk(0);
+	return;
     }   
   }
 
@@ -289,12 +307,12 @@ implementation {
   command bool AMPacket.isForMe(message_t* amsg) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialAMPacket.isForMe(amsg);
+	return call SerialAMPacket.isForMe(amsg);
       case COMM_STATE_RADIO:
-	    return call RadioAMPacket.isForMe(amsg);
+	return call RadioAMPacket.isForMe(amsg);
       default:
-	    call Panic.brk(0);
-	    return FALSE;
+	call Panic.brk(0);
+	return FALSE;
     } 
   }
 
@@ -302,12 +320,12 @@ implementation {
   command am_id_t AMPacket.type(message_t* amsg) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialAMPacket.type(amsg);
+	return call SerialAMPacket.type(amsg);
       case COMM_STATE_RADIO:
-	    return call RadioAMPacket.type(amsg);
+	return call RadioAMPacket.type(amsg);
       default:
-	    call Panic.brk(0);
-	    return -1;
+	call Panic.brk(0);
+	return -1;
     }  
   }
 
@@ -315,12 +333,14 @@ implementation {
   command void AMPacket.setType(message_t* amsg, am_id_t t) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    call SerialAMPacket.setType(amsg, t);
+	call SerialAMPacket.setType(amsg, t);
+	return;
       case COMM_STATE_RADIO:
-	    call RadioAMPacket.setType(amsg, t);
+	call RadioAMPacket.setType(amsg, t);
+	return;
       default:
-	    call Panic.brk(0);
-	    return;
+	call Panic.brk(0);
+	return;
     } 
   }
 
@@ -328,12 +348,12 @@ implementation {
   command am_group_t AMPacket.group(message_t* amsg) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialAMPacket.group(amsg);
+	return call SerialAMPacket.group(amsg);
       case COMM_STATE_RADIO:
-	    return call RadioAMPacket.group(amsg);
+	return call RadioAMPacket.group(amsg);
       default:
-	    call Panic.brk(0);
-	    return -1;
+	call Panic.brk(0);
+	return -1;
     } 
   }
 
@@ -341,87 +361,93 @@ implementation {
   command void AMPacket.setGroup(message_t* amsg, am_group_t grp) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialAMPacket.setGroup(amsg, grp);
-	  case COMM_STATE_RADIO:
-	    return call RadioAMPacket.setGroup(amsg, grp);
+	call SerialAMPacket.setGroup(amsg, grp);
+	return;
+      case COMM_STATE_RADIO:
+	call RadioAMPacket.setGroup(amsg, grp);
+	return;
       default:
-	    call Panic.brk(0);
-	    return;
+	call Panic.brk(0);
+	return;
     } 
   }
 
 
   command am_group_t AMPacket.localGroup() {
-      switch (comm_state) {
+    switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialAMPacket.localGroup();
-	  case COMM_STATE_RADIO:
-	    return call RadioAMPacket.localGroup();
+	return call SerialAMPacket.localGroup();
+      case COMM_STATE_RADIO:
+	return call RadioAMPacket.localGroup();
       default:
-	    call Panic.brk(0);
-	    return -1;
+	call Panic.brk(0);
+	return -1;
     }
   }
 
 
   command void Packet.clear(message_t* msg) {
-      switch (comm_state) {
+    switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialPacket.clear(msg);
-	  case COMM_STATE_RADIO:
-	    return call RadioPacket.clear(msg);
+	call SerialPacket.clear(msg);
+	return;
+      case COMM_STATE_RADIO:
+	call RadioPacket.clear(msg);
+	return;
       default:
-	    call Panic.brk(0);
-	    return;
+	call Panic.brk(0);
+	return;
     }
   }
 
 
   command uint8_t Packet.payloadLength(message_t* msg) {
-      switch (comm_state) {
+    switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialPacket.payloadLength(msg);
-	  case COMM_STATE_RADIO:
-	    return call RadioPacket.payloadLength(msg);
+	return call SerialPacket.payloadLength(msg);
+      case COMM_STATE_RADIO:
+	return call RadioPacket.payloadLength(msg);
       default:
-	    call Panic.brk(0);
-	    return -1;
+	call Panic.brk(0);
+	return -1;
     }  
   }
 
   command void Packet.setPayloadLength(message_t* msg, uint8_t len) {
-      switch (comm_state) {
+    switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialPacket.setPayloadLength(msg, len);
-	  case COMM_STATE_RADIO:
-	    return call RadioPacket.setPayloadLength(msg, len);
+	call SerialPacket.setPayloadLength(msg, len);
+	return;
+      case COMM_STATE_RADIO:
+	call RadioPacket.setPayloadLength(msg, len);
+	return;
       default:
-	    call Panic.brk(0);
-	    return;
+	call Panic.brk(0);
+	return;
     }  
   }
 
   command uint8_t Packet.maxPayloadLength() {
-      switch (comm_state) {
+    switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialPacket.maxPayloadLength();
-	  case COMM_STATE_RADIO:
-	    return call RadioPacket.maxPayloadLength();
+	return call SerialPacket.maxPayloadLength();
+      case COMM_STATE_RADIO:
+	return call RadioPacket.maxPayloadLength();
       default:
-	    call Panic.brk(0);
-	    return -1;
+	call Panic.brk(0);
+	return -1;
     }  
   }
 
   command void* Packet.getPayload(message_t* msg, uint8_t len) {
-      switch (comm_state) {
+    switch (comm_state) {
       case COMM_STATE_SERIAL:
-	    return call SerialPacket.getPayload(msg, len);
-	  case COMM_STATE_RADIO:
-	    return call RadioPacket.getPayload(msg, len);
+	return call SerialPacket.getPayload(msg, len);
+      case COMM_STATE_RADIO:
+	return call RadioPacket.getPayload(msg, len);
       default:
-	    call Panic.brk(0);
-	    return NULL;
+	call Panic.brk(0);
+	return NULL;
     }  
   }
 }
