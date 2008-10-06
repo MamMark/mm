@@ -109,6 +109,7 @@ typedef struct {
 typedef enum {
   SS_STATE_CRASHED	= 0x10,	/* something went wrong with stream storage.  hard fail */
   SS_STATE_OFF,			/* power is off to the SS device */
+  SS_STATE_PWR_UP,		/* powering up, needs reset */
   SS_STATE_XFER_R,		/* reading data from the SD */
   SS_STATE_XFER_W,		/* writing data out to the SS device, dma */
   SS_STATE_IDLE,		/* powered up but idle */

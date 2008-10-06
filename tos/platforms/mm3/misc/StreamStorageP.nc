@@ -484,14 +484,15 @@ implementation {
     switch(cur_state) {
       default:
       case SS_STATE_CRASHED:
+      case SS_STATE_PWR_UP:
       case SS_STATE_XFER_R:
       case SS_STATE_XFER_W:
 	ss_panic(22, cur_state);
 	break;
 
       case SS_STATE_OFF:
-	  call HW.sd_on();
-	  atomic ss_state = SS_STATE_IDLE;
+	call HW.sd_on();
+	atomic ss_state = SS_STATE_PWR_UP;
       case SS_STATE_IDLE:
 	call SpiResourceConfigure.configure();
     }
@@ -503,6 +504,7 @@ implementation {
       default:
       case SS_STATE_CRASHED:
       case SS_STATE_OFF:
+      case SS_STATE_PWR_UP:
       case SS_STATE_XFER_R:
 	ss_panic(23, ss_state);
 	break;
@@ -593,12 +595,12 @@ implementation {
 	call BlockingWriteResource.request(); // this will also turn on the hardware when granted.
 
 	atomic cur_state = ss_state;
-	if (cur_state != SS_STATE_OFF && cur_state != SS_STATE_IDLE) {
+	if (cur_state != SS_STATE_PWR_UP && cur_state != SS_STATE_IDLE) {
 	  call Panic.warn(PANIC_SS_RECOV, 25, cur_state, 0, 0, 0);
-	  atomic cur_state = ss_state = SS_STATE_OFF;
+	  atomic cur_state = ss_state = SS_STATE_PWR_UP;
 	}
 
-	if (cur_state == SS_STATE_OFF) {
+	if (cur_state == SS_STATE_PWR_UP) {
 	  err = call SD.reset();		  // about 100ms
 	  if (err) {
 	    ss_panic(26, err);
