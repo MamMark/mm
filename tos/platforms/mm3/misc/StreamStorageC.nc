@@ -55,6 +55,7 @@ implementation {
   SS_P.BlockingWriteResource -> SpiWrite;
   SS_P.BlockingReadResource -> SpiRead;
   SS_P.ResourceConfigure <- SpiWrite;
+  SS_P.ResourceConfigure <- SpiRead;
   SS_P.SpiResourceConfigure -> SpiWrite;
   BlockingSpiPacket = SpiWrite;
 

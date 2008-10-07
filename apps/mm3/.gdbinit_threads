@@ -1,8 +1,16 @@
+set print pretty off
+set print ele 0
+set inp 0d16
+set out 0d16
+set print address on
+set print elements 50
+set verbose
 
 #threads
 
 set remoteaddresssize 0d64
 set remotetimeout 0d999999
+
 target remote localhost:2000
 
 disp/i $pc
@@ -33,6 +41,13 @@ b PanicP.nc:74
 comm
 printf "pcode: %d (0x%0x)  where: %d  %04x %04x %04x %04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
+
+
+# 7 SSWrite
+b StreamStorageP.nc:628
+
+# 8 SSRead
+b StreamStorageP.nc:798
 
 # 7 BRK_FINISH
 #b GPSP.nc:392

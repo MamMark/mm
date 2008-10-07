@@ -528,10 +528,42 @@ implementation {
   }
 
 
+  /*
+   * Reset_Maybe
+   *
+   * We try to keep the SD powered in some cases.  If the SD is fresh up
+   * from a power on then a reset is needed.  If it is in IDLE the reset
+   * can be skipped.
+   *
+   * returns TRUE if aborted,  FALSE otherwise.
+   */
+
+  bool
+  ss_reset_maybe() {
+    ss_state_t cur_state;
+    error_t err;
+
+    atomic cur_state = ss_state;
+    if (cur_state != SS_STATE_PWR_UP && cur_state != SS_STATE_IDLE) {
+      call Panic.warn(PANIC_SS_RECOV, 25, cur_state, 0, 0, 0);
+      atomic cur_state = ss_state = SS_STATE_PWR_UP;
+    }
+
+    if(cur_state == SS_STATE_PWR_UP) {
+      err = call SD.reset();
+      if (err) {
+	ss_panic(26, err);
+	return TRUE;
+      }
+      atomic ss_state = SS_STATE_IDLE;
+    }
+    return FALSE;
+  }
+
+
   event void SSWriter.run(void* arg) {
     ss_wr_req_t* cur_handle;
     error_t err;
-    ss_state_t cur_state;
 
     /*
      * call the system to arbritrate and configure the SPI
@@ -593,21 +625,8 @@ implementation {
 	 * we won't be here but rather later down in this processing loop.
 	 */
 	call BlockingWriteResource.request(); // this will also turn on the hardware when granted.
-
-	atomic cur_state = ss_state;
-	if (cur_state != SS_STATE_PWR_UP && cur_state != SS_STATE_IDLE) {
-	  call Panic.warn(PANIC_SS_RECOV, 25, cur_state, 0, 0, 0);
-	  atomic cur_state = ss_state = SS_STATE_PWR_UP;
-	}
-
-	if (cur_state == SS_STATE_PWR_UP) {
-	  err = call SD.reset();		  // about 100ms
-	  if (err) {
-	    ss_panic(26, err);
-	    continue;
-	  }
-	  atomic ss_state = SS_STATE_IDLE;
-	}
+	if (ss_reset_maybe())
+	  continue;			/* failed, keep looking for work */
       }
 
       for (;;) {
@@ -772,38 +791,53 @@ implementation {
     for(;;) {
       call Semaphore.acquire(&read_sem);
 
-      call BlockingReadResource.request();
-
-      /*
-       * Actually do the read.
-       */
       //Get the current req handle
       cur_handle = &ssr_reqs[ssc.ssr_out];
-      //If we are not in the epxected possible states, panic
-      if (cur_handle->req_state != SS_REQ_STATE_READ_REQ &&
-	  cur_handle->req_state != SS_REQ_STATE_FREE)
-	ss_panic(28, -1);
 
-      cur_handle->stamp = call LocalTime.get();
-      cur_handle->req_state = SS_REQ_STATE_READING;
+      call BlockingReadResource.request();
+      if (ss_reset_maybe()) {
+	/*
+	 * Actually, fix this so it errors out the client
+	 */
+	continue;			/* if failed keep looking for work. */
+      }
+
       atomic ss_state = SS_STATE_XFER_R;
-      err = call SD.read(cur_handle->blk, cur_handle->buf);
-      if (err)
-	ss_panic(29, err);
+      for(;;) {
+
+	/*
+	 * Actually do the read.
+	 */
+	if (cur_handle->req_state == SS_REQ_STATE_FREE)
+	  break;
+
+	//If we are not in the epxected possible states, panic
+	if (cur_handle->req_state != SS_REQ_STATE_READ_REQ)
+	  ss_panic(30, -1);
+
+	cur_handle->stamp = call LocalTime.get();
+	cur_handle->req_state = SS_REQ_STATE_READING;
+	err = call SD.read(cur_handle->blk, cur_handle->buf);
+	if (err)
+	  ss_panic(31, err);
  
-      cur_handle->stamp = call LocalTime.get();
-      cur_handle->req_state = SS_REQ_STATE_FREE;
-      ssc.ssr_out++;
-      if (ssc.ssw_out >= SSW_NUM_BUFS)
-	ssc.ssr_out = 0;
+	cur_handle->stamp = call LocalTime.get();
+	cur_handle->req_state = SS_REQ_STATE_FREE;
+
+	signalClient(cur_handle->cid, cur_handle->blk, cur_handle->buf, SUCCESS);
+
+	ssc.ssr_out++;
+	if (ssc.ssr_out >= SSR_NUM_REQS)
+	  ssc.ssr_out = 0;
+	cur_handle = &ssr_reqs[ssc.ssr_out];
+      }
+
       atomic ss_state = SS_STATE_IDLE;
-      /*
-       * Assuming success, tell the client that we finished.
-       */
-      signalClient(0, 0, 0, 0);
-      call BlockingReadResource.release();
+      call BlockingReadResource.release();    //Shouldn't this be on the outside of this for-loop?
+      //We have that 'continue' statement outisde of this for-loop
     }
   }
+
 
 #ifdef notdef
   void ss_machine(msg_event_t *msg) {
