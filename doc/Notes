@@ -1,5 +1,25 @@
 Things to talk to Kevin about:
 
+- what does ACK_LOW_POWER_LISTENING do?  I've searched the code and it doesn't
+  seem to do anything.
+
+- We use the dco to clock the uart to get a decent baud rate.  When not using
+  the gps or the serial port we want to shut down using dco to clock smclk.  Then
+  when the mcu goes to sleep it can go to a lower power state.
+
+  How to do this?  Default power manager?  Default owner?
+
+- How to arbitrate the serial/radio when receiving...  default owner.  
+3) Default owner of comm.  So listening works....  LPL?  serial etc.
+   DefaultOwner doesn't work for our situation because it is static,
+   while who controls comm is dynamic, sometimes none, serial, or radio.
+   Who owns by default?
+
+- Note that release/request doesn't work for core owner.  Because of grant sequence.
+  Owner sees requested (but the request hasn't been queued yet), the release/request
+  then just requeues and the original owner gets the resource again.  In other words
+  the requested event gets lost.
+
 -2) Time out for SD code.  How to?
 
 -1) Need to work on syncronization between Task level and Thread level
@@ -15,10 +35,6 @@ Things to talk to Kevin about:
 1) Details of Mutex and Condvars
 
 1.5) default commands?  How are they used?  see mm3ControlP.nc
-
-2) get Kevin to show me how to mess with stow
-
-3) Default owner of comm.  So listening works....  LPL?  serial etc.
 
 4) Basic  command structure.
 
