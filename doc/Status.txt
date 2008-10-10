@@ -1,0 +1,117 @@
+MamMark 3, Status as of 10/10/2008
+
+Goal: Have a minimal system that can be put into water, run, then have
+its data dumped for analysis.
+
+1) GPS works but has problems when powering up, intermittently loses
+   satellites.
+
+   A test module with just the GPS chip has been been built.  Doesn't
+   have an antenna nor the power bounce circuit needed to test powerup
+   behaviour.
+
+   Antenna stuff needs to be evaluated.  Need a Mactel based mac so we
+   can run sirfmon (the program that lets us look at what the sirf chip
+   is doing).
+
+
+   Needed:
+
+   a) antenna on the sirf evaluation board.
+   b) power bounce circuit on the sirf evaluation board.
+
+   We have a working copy of the sirfmon tool on Eric's laptop.  We need
+   another one so brent has a copy for his use and for antenna evaluation.
+   We can work around not having a 2nd copy if needed.
+
+   c) MacTel (Mac Book etc)  (brent says he has one that needs to be
+      put together).
+   d) Repartition and install Xubuntu 8.04 and install sirfmon with
+      mods and install FTDI drivers for USB dongle.  Eric knows how
+      to do all this.
+
+2) Data Retrieval
+
+   The current thinking for data retrieval is when the encapslated tag
+   is docked a special program will run on the tag that will read the SD
+   and dump the blocks out the serial port.
+
+   Note: We can alternatively, break the encapsulation, pull the SD card
+   and read it directly on a Mac or Linux box.  All the tools for examining
+   data on the card have already been written.
+
+   The following pieces are needed to make this work:
+
+   1) SSReader.  A module that takes requests for particular blocks and
+   accesses the SD in a way that is compatible with the existing system.
+   This works.
+
+   2) Mechanisms that determine when the tag has been docked and signals
+   appropriately.  This has been done and tested.
+
+   3) A program that runs when docked that takes over the system and reads
+   the SD (using the Reader) and sends the data out the serial port.
+
+   4) Code that lets us write data from the SD (512 bytes at a time) out
+   the serial port.
+   
+
+Needed:
+   a) Matt is currently working on the program that does the actual dumping.
+
+   b) Eric is looking at how to get the serial system to handle large packets
+   so we can write the results out.
+
+   c) Eric is looking encapsulation points in the serial packet system that
+   will allow us to identify the data coming out of the tag.
+
+
+3) Need prototype with sensor suite populated.
+
+   GPS - has power up problem
+   Offload - being worked on
+   Depth (pressure)
+   mag
+   accel
+   temp
+   sal
+
+   What is the minimum set for what problem we are looking at?  What
+   problems are we initially addressing?
+
+   Need to make a stab at calibrating.
+   
+
+4) Control Module
+
+   Eventually we want to be able to send commands and retrieve data from the
+   tag.  This entails having a command module listening to received packets
+   when the serial or radio are enabled.
+
+   Currently, T2 is built assuming that there maybe a static module that is
+   the default owner (the module that ownership is returned to after other
+   modules have finished with a resource).  The Tag however is dynamic and
+   it depends on system state.
+
+   This is being researched.
+
+
+5) Resource Arbritration
+
+   Currently, TinyOS 2 implments resource contention and arbritration which work
+   pretty well.  However there are some problems when presented with the complicated
+   set up that the Tag presents.
+
+   I am working with Phil Levis at Stanford and Kevin Klues at Berkeley to resolve
+   these issues.
+
+6) Power analysis
+
+   Currently, the DCO supplies SMCLK which is used for baud rate on the UART.  When
+   comm is shutdown this isn't disconnecte and prevents the cpu from going into a
+   lower power down mode.
+
+   Other analysis of power down behaviour is needed to:
+
+   a) see where we are
+   b) determine what else needs to be changed to minimize power
