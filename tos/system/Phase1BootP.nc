@@ -60,8 +60,8 @@ implementation {
 #else
     call mm3Comm.useSerial();
 #endif
-
 //    call mm3Comm.useRadio();
+
   }
 
   event void mm3Comm.serialOn() {

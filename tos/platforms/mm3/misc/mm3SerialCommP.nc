@@ -18,8 +18,6 @@
 #include "AM.h"
 #include "sensors.h"
 
-//#define SERIAL_DEFAULT_OWNER
-
 module mm3SerialCommP {
   provides {
     interface Init;

@@ -28,7 +28,7 @@ b *TinyOSMainP$TinyOSBoot$booted+0d64
 b SchedulerBasicP.nc:137
 
 # 4 thread dispatch
-b TinyThreadSchedulerP.nc:76
+b TinyThreadSchedulerP.nc:89
 
 dis
 
@@ -261,13 +261,13 @@ print StreamStorageP$ss_state
 printf "  control struct: "
 print StreamStorageP$ssc
 printf "    alloc: %02x  in: %02x  out: %02x\n", StreamStorageP$ssc.ssw_alloc, StreamStorageP$ssc.ssw_in, StreamStorageP$ssc.ssw_out
-printf "  buffers: %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[0]->majik, StreamStorageP$ssh_ptrs[0]->stamp
+printf "  buffers: [%04x] %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[0]->buf, StreamStorageP$ssh_ptrs[0]->majik, StreamStorageP$ssh_ptrs[0]->stamp
 print StreamStorageP$ssh_ptrs[0]->req_state
-printf "           %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[1]->majik, StreamStorageP$ssh_ptrs[1]->stamp
+printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[1]->buf, StreamStorageP$ssh_ptrs[1]->majik, StreamStorageP$ssh_ptrs[1]->stamp
 print StreamStorageP$ssh_ptrs[1]->req_state
-printf "           %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[2]->majik, StreamStorageP$ssh_ptrs[2]->stamp
+printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[2]->buf, StreamStorageP$ssh_ptrs[2]->majik, StreamStorageP$ssh_ptrs[2]->stamp
 print StreamStorageP$ssh_ptrs[2]->req_state
-printf "           %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[3]->majik, StreamStorageP$ssh_ptrs[3]->stamp
+printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[3]->buf, StreamStorageP$ssh_ptrs[3]->majik, StreamStorageP$ssh_ptrs[3]->stamp
 print StreamStorageP$ssh_ptrs[3]->req_state
 printf "     read:  in: %02x  out: %02x\n", StreamStorageP$ssc.ssr_in, StreamStorageP$ssc.ssr_out
 printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP$ssr_reqs[0].majik, StreamStorageP$ssr_reqs[0].stamp,\
@@ -321,7 +321,7 @@ display SD state
 end
 
 define th
-printf "current_thread: %04x\n",TinyThreadSchedulerP$current_thread
+printf "current_thread: %04x  num_runnable: %d\n",TinyThreadSchedulerP$current_thread,TinyThreadSchedulerP$num_runnable_threads
 print *TinyThreadSchedulerP$current_thread
 printf "\ntos_thread: %04x\n",TinyThreadSchedulerP$tos_thread
 print *TinyThreadSchedulerP$tos_thread
