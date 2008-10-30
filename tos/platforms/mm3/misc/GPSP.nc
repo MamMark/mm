@@ -500,6 +500,8 @@ implementation {
      * assumes init then booted.
      */
     call LogEvent.logEvent(DT_EVENT_GPS_BOOT,0);
+    if (mmP5out.ser_sel == SER_SEL_GPS)
+      mmP5out.ser_sel = SER_SEL_NONE;
     call HW.gps_off();
     if (call UARTResource.isOwner())
       call UARTResource.release();
@@ -760,9 +762,15 @@ implementation {
 	 * Doing a reconfig (see start_reconfig for sequence).
 	 * gps was powered down.  Bring it back up and look for the
 	 * start up sequence.  Should be NMEA@4800
+	 *
+	 * Earlier we called gps_off which will set the mux back to NONE.
+	 * So when we come back we turn on and then connect the mux.  Note
+	 * that we should still have ownership as far as the Arbiter is
+	 * concerned.
 	 */
 	gpsc_change_state(GPSC_RECONFIG_4800_START_DELAY, GPSW_TIMER);
 	call HW.gps_on();
+	mmP5out.ser_sel = SER_SEL_GPS;
 	t_gps_pwr_on = call LocalTime.get();
 	call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_BOOT_UP_DELAY);
 	call Usart.setModeUart((msp430_uart_union_config_t *) &gps_4800_serial_config);
@@ -782,11 +790,17 @@ implementation {
 	return;
 
       case GPSC_START_DELAY:
+#ifdef GPS_NO_SEND_START
+	gpsc_change_state(GPSC_HUNT_1, GPSW_SEND_DONE);
+	post gps_config_task();
+	return;
+#else
 	gpsc_change_state(GPSC_SENDING, GPSW_TIMER);
 	call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
 	if ((err = call UartStream.send(sirf_poll, sizeof(sirf_poll))))
 	  call Panic.panic(PANIC_GPS, 10, err, gpsc_state, 0, 0);
 	return;
+#endif
     }
   }
   
@@ -1018,8 +1032,8 @@ implementation {
    * changed it is done using an explicit call to the configurator.
    */
   async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
-    mmP5out.ser_sel = SER_SEL_GPS;
     call HW.gps_on();
+    mmP5out.ser_sel = SER_SEL_GPS;
     t_gps_pwr_on = call LocalTime.get();
     return (msp430_uart_union_config_t*) &GPS_OP_SERIAL_CONFIG;
   }

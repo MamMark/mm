@@ -228,6 +228,8 @@ implementation {
   }
 
   async command void HW.gps_off() {
+    if (mmP5out.ser_sel == SER_SEL_GPS)
+      mmP5out.ser_sel = SER_SEL_NONE;
     mmP4out.gps_off = 1;
   }
 }
