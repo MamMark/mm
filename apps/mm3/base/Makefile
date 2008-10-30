@@ -190,7 +190,9 @@ SDConstants.h: $(MM3_PLATFORM_DIR)/misc/sd_blocks.h
 	DT_EVENT_GPS_OFF	  \
 	DT_EVENT_GPS_FAST	  \
 	DT_EVENT_GPS_FIRST	  \
-	DT_EVENT_GPS_SATS	  \
+	DT_EVENT_GPS_SATS_2	  \
+	DT_EVENT_GPS_SATS_7	  \
+	DT_EVENT_GPS_SATS_29	  \
 				  \
 	DT_HDR_SIZE_IGNORE        \
 	DT_HDR_SIZE_CONFIG        \

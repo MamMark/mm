@@ -234,11 +234,49 @@ implementation {
 
 
   /*
-   * Process a Geodetic packet from the Sirf3.
+   * Process a nav data packet from the Sirf3.  MID 2
    */
-  void process_geodetic(gps_geodetic_nt *gp) {
+  void process_navdata(gps_nav_data_nt *np) {
     uint8_t event_data[DT_HDR_SIZE_EVENT];
     dt_event_nt *edp;
+
+    edp = (dt_event_nt *) &event_data;
+    edp->len = DT_HDR_SIZE_EVENT;
+    edp->dtype = DT_EVENT;
+    edp->stamp_mis = call LocalTime.get();
+    edp->ev = DT_EVENT_GPS_SATS_2;
+    edp->arg = np->sats;
+    call mm3CommData.send_data(event_data, DT_HDR_SIZE_EVENT);
+    call LogEvent.logEvent(DT_EVENT_GPS_SATS_2, np->sats);
+  }
+
+
+  /*
+   * Process a clock status data packet from the Sirf3.  MID 7
+   */
+  void process_clockstatus(gps_clock_status_data_nt *cp) {
+    uint8_t event_data[DT_HDR_SIZE_EVENT];
+    dt_event_nt *edp;
+
+    edp = (dt_event_nt *) &event_data;
+    edp->len = DT_HDR_SIZE_EVENT;
+    edp->dtype = DT_EVENT;
+    edp->stamp_mis = call LocalTime.get();
+    edp->ev = DT_EVENT_GPS_SATS_7;
+    edp->arg = cp->sats;
+    call mm3CommData.send_data(event_data, DT_HDR_SIZE_EVENT);
+    call LogEvent.logEvent(DT_EVENT_GPS_SATS_7, cp->sats);
+  }
+
+
+  /*
+   * Process a Geodetic packet from the Sirf3.   MID 29
+   */
+  void process_geodetic(gps_geodetic_nt *gp) {
+#ifdef GPS_COMM_EMIT_29
+    uint8_t event_data[DT_HDR_SIZE_EVENT];
+    dt_event_nt *edp;
+#endif
 
     /*
      * Extract time and position data out
@@ -282,14 +320,16 @@ implementation {
     /*
      * Check for state change information
      */
+#ifdef GPS_COMM_EMIT_29
     edp = (dt_event_nt *) &event_data;
     edp->len = DT_HDR_SIZE_EVENT;
     edp->dtype = DT_EVENT;
     edp->stamp_mis = call LocalTime.get();
-    edp->ev = DT_EVENT_GPS_SATS;
+    edp->ev = DT_EVENT_GPS_SATS_29;
     edp->arg = gp->num_svs;
     call mm3CommData.send_data(event_data, DT_HDR_SIZE_EVENT);
-    call LogEvent.logEvent(DT_EVENT_GPS_SATS, gp->num_svs);
+#endif
+    call LogEvent.logEvent(DT_EVENT_GPS_SATS_29, gp->num_svs);
 
     if (gp->nav_valid == 0) {
       if (!got_fix) {
@@ -351,7 +391,7 @@ implementation {
     call Collect.collect(collect_msg, gdp->len);
 
     /*
-     * Look at message and see if is a geodetic.  If so process it
+     * Look at message and see if it is a geodetic.  If so process it
      */
     gp = (gps_geodetic_nt *) (&collect_msg[GPS_START_OFFSET]);
     if (gp->start1 != SIRF_BIN_START || gp->start2 != SIRF_BIN_START_2) {
@@ -359,6 +399,11 @@ implementation {
     }
     if (gp->len == GEODETIC_LEN && gp->id == MID_GEODETIC)
       process_geodetic(gp);
+
+    else if (gp->len == NAVDATA_LEN && gp->id == MID_NAVDATA)
+      process_navdata((void *) gp);
+    else if (gp->len == CLOCKSTATUS_LEN && gp->id == MID_CLOCKSTATUS)
+      process_clockstatus((void *) gp);
 
     gdp->len = 0;			/* debug cookies */
     gdp->data[0] = 0;

@@ -2,6 +2,13 @@
 # USE_SPI_PACKET
 # ENABLE_SPI1_DMA
 # TEST_GPS
+#   GPS_LEAVE_UP
+#   NO_SHORT
+#   SHORT_COUNT
+#   STAY_UP
+#
+# GPS_LOG_EVENTS
+#
 # TEST_NO_COMM
 # ENABLE_ERASE: compile in erase code for the SD, controlled by var do_erase
 # ALWAYS_ERASE: force do_erase to 1 forcing erasing every boot.
@@ -24,6 +31,7 @@ PFLAGS += -DENABLE_ERASE -DFAKE_SURFACE
 
 # PFLAGS += -DTEST_READER
 PFLAGS += -DTEST_GPS
+PFLAGS += -DNO_SHORT
 
 #PFLAGS += -DTOSTHREADS_TIMER_OPTIMIZATION
 

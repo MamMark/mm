@@ -555,8 +555,12 @@ event2str(uint8_t ev) {
       return "gps_fast";
     case DT_EVENT_GPS_FIRST:
       return "gps_first";
-    case DT_EVENT_GPS_SATS:
-      return "gps_sats";
+    case DT_EVENT_GPS_SATS_2:
+      return "gps_sats(2)";
+    case DT_EVENT_GPS_SATS_7:
+      return "gps_sats(7)";
+    case DT_EVENT_GPS_SATS_29:
+      return "gps_sats(29)";
     default:
       return "unk";
   }
@@ -573,7 +577,7 @@ process_event(tmsg_t *msg) {
   ev = dt_event_ev_get(msg);
   arg = dt_event_arg_get(msg);
   if (verbose || force_events) {
-    fprintf(stderr, "EVENT: %8u %-6s (%d) arg: %d (0x%04x)\n", stamp, event2str(ev), ev, arg, arg);
+    fprintf(stderr, "EVENT: %8u %-12s (%d) arg: %d (0x%04x)\n", stamp, event2str(ev), ev, arg, arg);
   }
 }
 

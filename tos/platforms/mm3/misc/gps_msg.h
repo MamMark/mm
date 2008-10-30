@@ -20,10 +20,10 @@
  * on.  It will stay on for LONG_WINDOW or until we submerge.  Submerging
  * over rides all.
  *
- * short window, 15 secs.
+ * short window, 20 secs.
  * Long window,  15 mins (15 mins * 60 sec/min * 1024 tics/sec)
  */
-#define GPS_MSG_SHORT_WINDOW (15*1024UL)
+#define GPS_MSG_SHORT_WINDOW (20*1024UL)
 #define GPS_MSG_LONG_WINDOW (15*60*1024UL)
 
 #endif /* __GPS_MSG_H__ */

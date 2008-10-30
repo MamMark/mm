@@ -33,6 +33,10 @@
 #define SIRF_OVERHEAD       8
 #define GPS_OVERHEAD	   16
 
+#define MID_NAVDATA	   2
+#define NAVDATA_LEN	   41
+#define MID_CLOCKSTATUS	   7
+#define CLOCKSTATUS_LEN	   20
 #define MID_GEODETIC	   41
 #define GEODETIC_LEN	   91
 
