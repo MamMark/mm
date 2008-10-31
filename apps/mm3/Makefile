@@ -1,11 +1,14 @@
 #
 # USE_SPI_PACKET
 # ENABLE_SPI1_DMA
-# TEST_GPS
-#   GPS_LEAVE_UP
-#   NO_SHORT
-#   SHORT_COUNT
-#   STAY_UP
+# GPS_TEST
+#   GPS_LEAVE_UP	don't turn power off to GPS
+#   GPS_NO_SHORT	don't do quick fix (always stay up for long window)
+#   GPS_SHORT_COUNT	if don't short how many over-determined fixes to see before saying got short
+#   GPS_STAY_UP		don't turn gps off after good fix
+#   GPS_FAST_POLL	enable fast poll (which sends data to the gps to elicit a 29 geodetic packet)
+#   GPS_COMM_EMIT_29	generate gps_sat(29) event message via comm link.
+#   GPS_COMM_EMIT_NAV_CLOCK generate gps_sat(2,7) event message via comm link.
 #
 # GPS_LOG_EVENTS
 #
@@ -23,18 +26,21 @@
 
 COMPONENT=mm3AppC
 PFLAGS += -DENABLE_ERASE -DFAKE_SURFACE 
+
 #PFLAGS += -DTRACE_RESOURCE
 #PFLAGS += -DTRACE_THREAD
 #PFLAGS += -DSERIAL_DEFAULT_OWNER
 #PFLAGS += -DCC2420_STACK
 #PFLAGS += -DLOW_POWER_LISTENING -DACK_LOW_POWER_LISTENING
 
-# PFLAGS += -DTEST_READER
-PFLAGS += -DTEST_GPS
+#PFLAGS += -DTEST_READER
+
+PFLAGS += -DGPS_TEST
 #PFLAGS += -DGPS_LEAVE_UP
-#PFLAGS += -DSTAY_UP 
-PFLAGS += -DNO_SHORT
-PFLAGS += -DNO_SEND_START
+#PFLAGS += -DGPS_STAY_UP 
+PFLAGS += -DGPS_NO_SHORT
+PFLAGS += -DGPS_COMM_EMIT_29
+#PFLAGS += -DGPS_COMM_EMIT_NAV_CLOCK
 
 #PFLAGS += -DTOSTHREADS_TIMER_OPTIMIZATION
 

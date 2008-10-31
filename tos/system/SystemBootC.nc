@@ -62,14 +62,14 @@ implementation {
   components Phase1BootC;
   components StreamStorageC as SS;
   components mm3SyncC;
-#ifdef TEST_GPS
+#ifdef GPS_TEST
   components GPSC;
 #endif
 
   Phase1BootC.Boot -> MainC;	// Main kicks Phase1 (serial/radio)
   SS.Boot -> Phase1BootC;	//    which kicks StreamStorage
   mm3SyncC.Boot -> SS;		//        then write initial status
-#ifdef TEST_GPS
+#ifdef GPS_TEST
   GPSC.Boot -> mm3SyncC;	//            and then GPS.
   Boot = GPSC;			// bring up everyone else
 #else

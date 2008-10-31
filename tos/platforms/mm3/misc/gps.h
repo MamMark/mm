@@ -14,10 +14,10 @@
 
 #define GPS_LOG_EVENTS
 
-//#define NO_SHORT
-//#define SHORT_COUNT 40
+//#define GPS_NO_SHORT
+//#define GPS_SHORT_COUNT 40
 //#define GPS_LEAVE_UP
-//#define STAY_UP
+//#define GPS_STAY_UP
 
 /*
  * Define the speed we want to run the gps at.
@@ -56,6 +56,8 @@
 
 #define DT_GPS_BOOT_UP_DELAY  100
 #define DT_GPS_PWR_UP_DELAY   500
+
+//#define DT_GPS_PWR_UP_DELAY   200
 
 /*
  * HUNT_LIMIT

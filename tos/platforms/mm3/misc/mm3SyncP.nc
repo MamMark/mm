@@ -3,6 +3,10 @@
  * All rights reserved.
  */
 
+#include "verMajor.h"
+#include "verMinor.h"
+#include "verTweak.h"
+
 /*
  * 1 min * 60 sec/min * 1024 ticks/sec  (binary millisecs, mis)
  */
@@ -84,7 +88,7 @@ implementation {
 	break;
       case SYNC_BOOT_1:
 	boot_state = SYNC_BOOT_2;
-	write_version_record(1, 1, 0);
+	write_version_record(MAJOR, MINOR, TWEAK);
 	break;
 
       case SYNC_BOOT_2:

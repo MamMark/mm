@@ -145,7 +145,7 @@ uint8_t sirf_poll[] = {
 };
 
 
-#ifdef TEST_GPS_FUTZ
+#ifdef GPS_TEST_FUTZ
 
 uint8_t sirf_go_nmea[] = {
   0xa0, 0xa2,			// start seq

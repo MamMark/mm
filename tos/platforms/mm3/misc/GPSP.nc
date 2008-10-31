@@ -790,15 +790,15 @@ implementation {
 	return;
 
       case GPSC_START_DELAY:
-#ifdef GPS_NO_SEND_START
-	gpsc_change_state(GPSC_HUNT_1, GPSW_SEND_DONE);
-	post gps_config_task();
-	return;
-#else
+#ifdef GPS_FAST_POLL
 	gpsc_change_state(GPSC_SENDING, GPSW_TIMER);
 	call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
 	if ((err = call UartStream.send(sirf_poll, sizeof(sirf_poll))))
 	  call Panic.panic(PANIC_GPS, 10, err, gpsc_state, 0, 0);
+	return;
+#else
+	gpsc_change_state(GPSC_HUNT_1, GPSW_SEND_DONE);
+	post gps_config_task();
 	return;
 #endif
     }

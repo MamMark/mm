@@ -15,8 +15,8 @@
  */
 
 //#define SURFACE_TIME   (15*60*1024UL)
-//#define SURFACE_TIME   (1*60*1024UL)
-#define SURFACE_TIME   (1*30*1024UL)
+#define SURFACE_TIME   (1*60*1024UL)
+//#define SURFACE_TIME   (1*30*1024UL)
 //#define SUBMERGED_TIME (10*1024UL)
 #define SUBMERGED_TIME (15*1024UL)
 #endif
@@ -92,7 +92,7 @@ implementation {
 //	    call Panic.brk(0x1024);
 	    nop();
 	    call LogEvent.logEvent(DT_EVENT_SUBMERGED,0);
-#ifdef TEST_GPS
+#ifdef GPS_TEST
 	    signal Surface.submerged();
 #endif
 	  }
@@ -102,7 +102,7 @@ implementation {
 //	    call Panic.brk(0x1025);
 	    nop();
 	    call LogEvent.logEvent(DT_EVENT_SURFACED, 0);
-#ifdef TEST_GPS
+#ifdef GPS_TEST
 	    signal Surface.surfaced();
 #endif
 	  }

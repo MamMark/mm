@@ -101,7 +101,7 @@ implementation {
   bool     got_fix;
   uint32_t gps_on_time;
 
-#ifdef SHORT_COUNT
+#ifdef GPS_SHORT_COUNT
   uint8_t  short_count;
 #endif
 
@@ -119,8 +119,8 @@ implementation {
   gpsm_state_t gpsm_state;
 
   void gpscontrol_startdone() {
-#ifdef SHORT_COUNT
-    short_count = SHORT_COUNT + 1;
+#ifdef GPS_SHORT_COUNT
+    short_count = GPS_SHORT_COUNT + 1;
 #endif
     gpsm_state = GPSM_SHORT;
     gps_on_time = call LocalTime.get();
@@ -173,7 +173,7 @@ implementation {
     if (last_surfaced && (t - last_surfaced ) < 1024)
       call Panic.warn(PANIC_GPS, 129, 0, 0, 0, 0);
     last_surfaced = t;
-#ifdef STAY_UP
+#ifdef GPS_STAY_UP
 #else
     if (gpsm_state != GPSM_DOWN) {
       call Panic.warn(PANIC_GPS, 130, gpsm_state, 0, 0, 0);
@@ -196,7 +196,7 @@ implementation {
     if (last_submerged && (t - last_surfaced ) < 1024)
       call Panic.warn(PANIC_GPS, 131, 0, 0, 0, 0);
     last_submerged = t;
-#ifdef STAY_UP
+#ifdef GPS_STAY_UP
 #else
     gpsm_state = GPSM_STOPPING;
     call MsgTimer.stop();
@@ -223,7 +223,7 @@ implementation {
 	return;
 
       case GPSM_LONG:
-#ifdef STAY_UP
+#ifdef GPS_STAY_UP
 #else
 	gpsm_state = GPSM_STOPPING;
 	call GPSControl.stop();
@@ -237,6 +237,8 @@ implementation {
    * Process a nav data packet from the Sirf3.  MID 2
    */
   void process_navdata(gps_nav_data_nt *np) {
+
+#ifdef GPS_COMM_EMIT_NAV_CLOCK
     uint8_t event_data[DT_HDR_SIZE_EVENT];
     dt_event_nt *edp;
 
@@ -247,6 +249,7 @@ implementation {
     edp->ev = DT_EVENT_GPS_SATS_2;
     edp->arg = np->sats;
     call mm3CommData.send_data(event_data, DT_HDR_SIZE_EVENT);
+#endif
     call LogEvent.logEvent(DT_EVENT_GPS_SATS_2, np->sats);
   }
 
@@ -255,6 +258,8 @@ implementation {
    * Process a clock status data packet from the Sirf3.  MID 7
    */
   void process_clockstatus(gps_clock_status_data_nt *cp) {
+
+#ifdef GPS_COMM_EMIT_NAV_CLOCK
     uint8_t event_data[DT_HDR_SIZE_EVENT];
     dt_event_nt *edp;
 
@@ -265,6 +270,7 @@ implementation {
     edp->ev = DT_EVENT_GPS_SATS_7;
     edp->arg = cp->sats;
     call mm3CommData.send_data(event_data, DT_HDR_SIZE_EVENT);
+#endif
     call LogEvent.logEvent(DT_EVENT_GPS_SATS_7, cp->sats);
   }
 
@@ -352,13 +358,13 @@ implementation {
        */
       if (gpsm_state == GPSM_SHORT) {
 	call LogEvent.logEvent(DT_EVENT_GPS_FAST,0);
-#ifdef NO_SHORT
+#ifdef GPS_NO_SHORT
 #else
 
-#ifdef STAY_UP
+#ifdef GPS_STAY_UP
 #else
 
-#ifdef SHORT_COUNT
+#ifdef GPS_SHORT_COUNT
 	if (--short_count > 0)
 	  return;
 #endif
