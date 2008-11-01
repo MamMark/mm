@@ -32,40 +32,28 @@
 #define NMEA_START       '$'
 
 /*
- * BOOT_UP_DELAY, PWR_UP_DELAY
+ * PWR_UP_DELAY
  *
  * When the gps is turned on it takes about 300 mis before it starts
  * to transmit.  And when it does it first spits out some debugging
  * information.
  *
- * When we boot we look at the first bytes to see if we are communicating
+ * When booting we want to get some information from the gps but have
+ * to wait because sending early gets ignored.
+ *
+ * When starting we look at the first bytes to see if we are communicating
  * correctly (we know what baud we are at) and initially we want to
  * collect these bytes and put them into the SD for analysis.
  *
- * Later we can futz with the BOOT_UP_DELAY parameter to ignore things
- * if we wish.
- *
- * When turning on for a reading (not boot) then we use PWR_UP_DELAY
- * to delay us until odds are good the gps has reacquired.  The side
- * effect of waiting a longer time is we don't have to go through
- * the EOS dance before sending something.  Instead we wait for the pwr up
- * delay time and then send immediately.  Then we look for the start
- * sequence.
- * 
+ * After the pwr_up_delay, we hunt for the start up sequence.  If we time
+ * out we will try to reconfigure from nmea-4800 baud to sirfbin-57600.
  */
 
-#define DT_GPS_BOOT_UP_DELAY  100
-#define DT_GPS_PWR_UP_DELAY   500
+#define DT_GPS_PWR_UP_DELAY   100
 
-//#define DT_GPS_PWR_UP_DELAY   200
 
 /*
  * HUNT_LIMIT
- *
- * When first booting we don't know if the GPS has reverted to NMEA-4800-8N1
- * or if we are still at 115200 and SiRFbin.  So when we boot we power
- * up the gps, wait some time, and then hunt for the start sequence.  If
- * found then we are at 115200.  Otherwise we have to reconfigure for 4800.
  *
  * HUNT_LIMIT places an upper bound on how long we wait before giving up on
  * the hunt.  We don't want to hunt for ever.    The time needs to be long
@@ -97,7 +85,7 @@
  * work.  So we wait a while before sending commands.
  */
 
-#define MAX_GPS_BOOT_TRYS       3
+#define MAX_GPS_RECONFIG_TRYS   5
 
 #define DT_GPS_PWR_BOUNCE       5
 #define DT_GPS_EOS_WAIT       500

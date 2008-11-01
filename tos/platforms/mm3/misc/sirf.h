@@ -81,39 +81,6 @@ uint8_t sirf_send_boot[] = {
   0x00, 0x90,
   0xb0, 0xb3,
 
-  0xa0, 0xa2,			// force poll of mid 41
-  0x00, 0x08,
-  166,				// set message rate (0xa6)
-  1,				// send now
-  41,				// mid to be set (0x29)
-  1,				// update rate
-  0, 0, 0, 0,
-  0x00, 0xd1,
-  0xb0, 0xb3,
-
-  0xa0, 0xa2,			// turn 2 off (doesn't work)
-  0x00, 0x08,
-  166,				// set message rate (0xa6)
-  0,				// send now
-  2,				// mid 2, nav data
-  0,				// update rate, off
-  0, 0, 0, 0,
-  0x00, 0xa8,
-  0xb0, 0xb3,
-
-  0xa0, 0xa2,			// turn 27 off (doesn't work)
-  0x00, 0x08,
-  166,				// set message rate (0xa6)
-  0,				// send now
-  27,				// dgps status (0x1b)
-  0,				// update rate, off
-  0, 0, 0, 0,
-  0x00, 0xc1,
-  0xb0, 0xb3,
-};
-
-
-uint8_t sirf_poll[] = {
   0xa0, 0xa2,			// force poll of 4 (tracker data)
   0x00, 0x08,
   166,				// set message rate (0xa6)
@@ -123,25 +90,6 @@ uint8_t sirf_poll[] = {
   0, 0, 0, 0,
   0x00, 0xac,
   0xb0, 0xb3,
-
-  0xa0, 0xa2,			// start sequence
-  0x00, 0x08,			// length
-  166,				// set message rate (0xa6)
-  1,				// send now
-  41,				// mid to be set (0x29)
-  1,				// update rate (turn off)
-  0, 0, 0, 0,			// pad
-  0x00, 0xd1,			// checksum
-  0xb0, 0xb3,			// end seq
-
-#ifdef notdef
-  0xa0, 0xa2,
-  0x00, 0x02,
-  146,				// poll almanac (0x92)
-  0,
-  0x00, 0x92,
-  0xb0, 0xb3
-#endif
 };
 
 

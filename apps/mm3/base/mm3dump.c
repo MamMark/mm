@@ -541,8 +541,8 @@ event2str(uint8_t ev) {
       return "undocked";
     case DT_EVENT_GPS_BOOT:
       return "gps_boot";
-    case DT_EVENT_GPS_CONFIG:
-      return "gps_config";
+    case DT_EVENT_GPS_RECONFIG:
+      return "gps_reconfig";
     case DT_EVENT_GPS_START:
       return "gps_start";
     case DT_EVENT_GPS_GRANT:
