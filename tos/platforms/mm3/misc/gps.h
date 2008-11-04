@@ -49,7 +49,8 @@
  * out we will try to reconfigure from nmea-4800 baud to sirfbin-57600.
  */
 
-#define DT_GPS_PWR_UP_DELAY   100
+//#define DT_GPS_PWR_UP_DELAY   100
+#define DT_GPS_PWR_UP_DELAY   512
 
 
 /*
@@ -88,10 +89,10 @@
 #define MAX_GPS_RECONFIG_TRYS   5
 
 #define DT_GPS_PWR_BOUNCE       5
-#define DT_GPS_EOS_WAIT       500
+#define DT_GPS_EOS_WAIT       512
 #define DT_GPS_SEND_TIME_OUT  512
 
-//#define DT_GPS_FINI_WAIT      500
+//#define DT_GPS_FINI_WAIT      512
 #define DT_GPS_FINI_WAIT      2048
 
 /*

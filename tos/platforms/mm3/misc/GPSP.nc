@@ -195,10 +195,9 @@ typedef enum {
   GPSW_TIMER =			2,
   GPSW_RXBYTE =			3,
   GPSW_CONFIG_TASK =		4,
-  GPSW_START =			5,
-  GPSW_SEND_DONE =		6,
-  GPSW_MSG_BOUNDARY =		7,
-  GPSW_RESOURCE_REQUESTED =	8,
+  GPSW_SEND_DONE =		5,
+  GPSW_MSG_BOUNDARY =		6,
+  GPSW_RESOURCE_REQUESTED =	7,
 } gps_where_t;
 
 
@@ -218,6 +217,9 @@ gps_event_t g_evs[GPS_MAX_EVENTS];
 uint8_t g_nev;			// next gps event
 
 #endif		// GPS_LOG_EVENTS
+
+
+norace gpsc_state_t gpsc_state;	// low level collector state
 
 
 module GPSP {
@@ -247,7 +249,6 @@ module GPSP {
 
 implementation {
 
-  norace gpsc_state_t gpsc_state;	// low level collector state
   norace gpsc_state_t gpsc_prev_state;  // releasing, previous state
   norace uint32_t     t_gps_pwr_on;
   norace uint8_t      gpsc_reconfig_trys;
@@ -352,6 +353,10 @@ implementation {
     switch (cur_gps_state) {
       default:
 	gps_panic(2, cur_gps_state);
+	return;
+
+      case GPSC_OFF:
+	call GPSTimer.stop();
 	return;
 
       case GPSC_RECONFIG_4800_EOS_WAIT:
@@ -716,8 +721,13 @@ implementation {
 	return;
 
       case GPSC_START_DELAY:
-	gpsc_change_state(GPSC_HUNT_1, GPSW_START);
+	gpsc_change_state(GPSC_HUNT_1, GPSW_TIMER);
 	post gps_config_task();
+
+	/*
+	 * kludge to try and get MID 4 sent back  Doesn't seem to work.
+	 */
+	call UartStream.send(sirf_send_start, sizeof(sirf_send_start));
 	return;
 
       case GPSC_HUNT_1:
@@ -828,7 +838,7 @@ implementation {
 	    return;
 	  } else {
 	    /*
-	     * special sequence, wait for EOS window then send.
+	     * special sequence, wait for EOS window, then send to request info.
 	     */
 	    gpsc_change_state(GPSC_EOS_WAIT, GPSW_RXBYTE);
 	    post gps_config_task();
@@ -893,6 +903,9 @@ implementation {
 	 */
 	gpsc_change_state(GPSC_FINI_WAIT, GPSW_SEND_DONE);
 	post gps_config_task();
+	break;
+
+      case GPSC_HUNT_1:			/* for the sirf_send_start send */
 	break;
 
       case GPSC_BACK_TO_NMEA:

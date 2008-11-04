@@ -43,6 +43,18 @@ printf "pcode: %d (0x%0x)  where: %d  %04x %04x %04x %04x\n",_p,_p, _w, _a0, _a1
 end
 
 
+# 7 Msg Collect too big
+b GPSMsgP.nc:552
+
+# 8 Msg checksum fail
+b GPSMsgP.nc:575
+
+# 9 finish
+b GPSP.nc:375
+
+# 10 fini wait -> finish
+b GPSP.nc:682
+
 # 7 SSWrite
 #b StreamStorageP.nc:628
 
@@ -120,7 +132,7 @@ end
 # gps msg data display
 define gmd
 printf "gpsc_state: "
-print GPSP$gpsc_state
+print gpsc_state
 printf "gpsc_prev_state: "
 print GPSP$gpsc_prev_state
 printf "msg_collect_state: "
@@ -128,7 +140,7 @@ print GPSMsgP$collect_state
 printf "left: %d, collect_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$collect_left, GPSMsgP$collect_length, GPSMsgP$collect_cur_chksum
 printf "collect_nxt:  0x%02x  on_overflow: %d\n", GPSMsgP$collect_nxt, GPSMsgP$on_overflow
 printf "Msg State: "
-print GPSMsgP$gpsm_state
+print gpsm_state
 printf "\nbuffer:\n"
 x/32xb GPSMsgP$collect_msg
 printf "overflow:\n"

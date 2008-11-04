@@ -561,8 +561,49 @@ event2str(uint8_t ev) {
       return "gps_sats(7)";
     case DT_EVENT_GPS_SATS_29:
       return "gps_sats(29)";
+    case DT_EVENT_GPSCM_STATE:
+      return "gps c/m state";
     default:
       return "unk";
+  }
+}
+
+
+char *
+cState2str(uint8_t state) {
+  switch(state) {
+    case 1:	return "fail";
+    case 2:	return "off";
+    case 3:	return "reconfig_4800_pwr_down";
+    case 4:	return "reconfig_4800_start_delay";
+    case 5:	return "reconfig_4800_hunting";
+    case 6:	return "reconfig_4800_eos_wait";
+    case 7:	return "reconfig_4800_sending";
+    case 8:	return "eos_wait";
+    case 9:	return "sending";
+    case 10:	return "fini_wait";
+    case 11:	return "finish";
+    case 12:	return "requested";
+    case 13:	return "start_delay";
+    case 14:	return "hunt_1";
+    case 15:	return "hunt_2";
+    case 16:	return "on";
+    case 17:	return "releasing";
+    case 18:	return "back_to_nmea";
+    default:	return "unk";
+  }
+}
+
+
+char *
+mState2str(uint8_t state) {
+  switch(state) {
+    case 16:	return "down";
+    case 17:	return "starting";
+    case 18:	return "short";
+    case 19:	return "long";
+    case 20:	return "stopping";
+    default:	return "unk";
   }
 }
 
@@ -578,6 +619,10 @@ process_event(tmsg_t *msg) {
   arg = dt_event_arg_get(msg);
   if (verbose || force_events) {
     fprintf(stderr, "EVENT: %8u %-12s (%d) arg: %d (0x%04x)\n", stamp, event2str(ev), ev, arg, arg);
+    if (ev == DT_EVENT_GPSCM_STATE) {
+      fprintf(stderr, "       collect state: %s (%d),  msg state: %s (%d)\n", cState2str(arg >> 8), (arg >> 8),
+	      mState2str(arg & 0xff), arg & 0xff);
+    }
   }
 }
 

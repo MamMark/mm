@@ -62,6 +62,9 @@ typedef enum {
 } gpsm_state_t;
 
 
+gpsm_state_t gpsm_state;
+
+
 module GPSMsgP {
   provides {
     interface Init;
@@ -115,8 +118,6 @@ implementation {
   uint16_t collect_proto_fail;
   uint32_t last_surfaced;
   uint32_t last_submerged;
-
-  gpsm_state_t gpsm_state;
 
   void gpscontrol_startdone() {
 #ifdef GPS_SHORT_COUNT
@@ -238,7 +239,7 @@ implementation {
    */
   void process_navdata(gps_nav_data_nt *np) {
 
-#ifdef GPS_COMM_EMIT_NAV_CLOCK
+#ifdef GPS_COMM_EMIT_2
     uint8_t event_data[DT_HDR_SIZE_EVENT];
     dt_event_nt *edp;
 
@@ -250,7 +251,12 @@ implementation {
     edp->arg = np->sats;
     call mm3CommData.send_data(event_data, DT_HDR_SIZE_EVENT);
 #endif
+
+    if (np->len != NAVDATA_LEN)
+      return;
+
     call LogEvent.logEvent(DT_EVENT_GPS_SATS_2, np->sats);
+    call LogEvent.logEvent(DT_EVENT_GPSCM_STATE, (gpsc_state << 8) | gpsm_state);
   }
 
 
@@ -259,7 +265,7 @@ implementation {
    */
   void process_clockstatus(gps_clock_status_data_nt *cp) {
 
-#ifdef GPS_COMM_EMIT_NAV_CLOCK
+#ifdef GPS_COMM_EMIT_7
     uint8_t event_data[DT_HDR_SIZE_EVENT];
     dt_event_nt *edp;
 
@@ -271,7 +277,12 @@ implementation {
     edp->arg = cp->sats;
     call mm3CommData.send_data(event_data, DT_HDR_SIZE_EVENT);
 #endif
+
+    if (cp->len != CLOCKSTATUS_LEN)
+      return;
+
     call LogEvent.logEvent(DT_EVENT_GPS_SATS_7, cp->sats);
+    call LogEvent.logEvent(DT_EVENT_GPSCM_STATE, (gpsc_state << 8) | gpsm_state);
   }
 
 
@@ -293,6 +304,9 @@ implementation {
     dt_gps_time_nt *timep;
     dt_gps_pos_nt *posp;
     uint32_t t, t1;
+
+    if (gp->len != GEODETIC_LEN)
+      return;
 
     timep = (dt_gps_time_nt*)gps_time_block;
     posp = (dt_gps_pos_nt*)gps_pos_block;
@@ -336,6 +350,7 @@ implementation {
     call mm3CommData.send_data(event_data, DT_HDR_SIZE_EVENT);
 #endif
     call LogEvent.logEvent(DT_EVENT_GPS_SATS_29, gp->num_svs);
+    call LogEvent.logEvent(DT_EVENT_GPSCM_STATE, (gpsc_state << 8) | gpsm_state);
 
     if (gp->nav_valid == 0) {
       if (!got_fix) {
@@ -403,13 +418,19 @@ implementation {
     if (gp->start1 != SIRF_BIN_START || gp->start2 != SIRF_BIN_START_2) {
       call Panic.warn(PANIC_GPS, 134, gp->start1, gp->start2, 0, 0);
     }
-    if (gp->len == GEODETIC_LEN && gp->id == MID_GEODETIC)
-      process_geodetic(gp);
-
-    else if (gp->len == NAVDATA_LEN && gp->id == MID_NAVDATA)
-      process_navdata((void *) gp);
-    else if (gp->len == CLOCKSTATUS_LEN && gp->id == MID_CLOCKSTATUS)
-      process_clockstatus((void *) gp);
+    switch (gp->id) {
+      case MID_GEODETIC:
+	process_geodetic(gp);
+	break;
+      case MID_NAVDATA:
+	process_navdata((void *) gp);
+	break;
+      case MID_CLOCKSTATUS:
+	process_clockstatus((void *) gp);
+	break;
+      default:
+	break;
+    }
 
     gdp->len = 0;			/* debug cookies */
     gdp->data[0] = 0;

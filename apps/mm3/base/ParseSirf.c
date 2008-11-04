@@ -270,10 +270,10 @@ parseTrackerData(tmsg_t *msg) {
   week = gps_tracker_data_week_get(msg);
   tow = ((double)gps_tracker_data_tow_get(msg))/100;
   chans = gps_tracker_data_chans_get(msg);
-  
+
   fprintf(stderr,"sirf tracker data: ");
   fprintf(stderr,"Week: %d TOW: %.2f Channels: %d\n", week, tow, chans);
-  fprintf(stderr,"  SatID  Azim   Elev   State  C/No\n");
+  fprintf(stderr," Sat     Azim     Elev        State    C/No\n");
   for(i = 0; i < 180; i += 15){
     svid = gps_tracker_data_data_get(msg, i+0);
     azm = gps_tracker_data_data_get(msg, i+1)*1.5;
@@ -283,7 +283,7 @@ parseTrackerData(tmsg_t *msg) {
       c_no += gps_tracker_data_data_get(msg, j);
     }
     c_no = c_no/chans;
-    fprintf(stderr, "  %-7d %-7f %-7f 0x%-5x %f", svid, azm, elv, state, c_no);
+    fprintf(stderr, "  %2d  %-7f  %-7f    0x%05x  %f\n", svid, azm, elv, state, c_no);
   }
   fprintf(stderr, "\n");
 }
@@ -293,6 +293,7 @@ void
 parseRawTracker(tmsg_t *msg) {
   fprintf(stderr, "sirf raw tracker: not parsed\n");
 }
+
 
 void
 parseSoftVers(tmsg_t *msg) {

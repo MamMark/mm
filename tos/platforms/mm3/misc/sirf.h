@@ -14,9 +14,9 @@
 #define SIRF_BIN_END_2   0xb3
 
 /*
- * BUF_SIZE is biggest packet (MID 41, 91 bytes),
+ * BUF_SIZE is biggest packet (MID 41, 188 bytes observed),
  *   SirfBin overhead (start, len, chksum, end) 8 bytes
- *   DT overhead (8 bytes).   107 rounded up to 128.
+ *   DT overhead (8 bytes).   204 rounded up to 256.
  *
  * GPS_OVR_SIZE: size of overflow buffer.  Space for bytes coming
  *   in on interrupts while we are processing the previous msg.
@@ -27,7 +27,7 @@
  * GPS_OVERHEAD: space in msg buffer for overhead bytes.
  */
 
-#define GPS_BUF_SIZE	  128
+#define GPS_BUF_SIZE	  256
 #define GPS_OVR_SIZE	   32
 #define GPS_START_OFFSET    8
 #define SIRF_OVERHEAD       8
@@ -63,7 +63,7 @@ uint8_t nmea_go_sirf_bin[] = {
  *
  * 1) Send SW ver
  * 2) poll clock status
- * 3) poll MID 41, Geodetic data
+ * 3) turn on MID 4 tracker data
  */
 
 uint8_t sirf_send_boot[] = {
@@ -81,14 +81,33 @@ uint8_t sirf_send_boot[] = {
   0x00, 0x90,
   0xb0, 0xb3,
 
-  0xa0, 0xa2,			// force poll of 4 (tracker data)
+  0xa0, 0xa2,			// turn on 4 (tracker data)
   0x00, 0x08,
   166,				// set message rate (0xa6)
-  1,				// send now
+  0,				// send now
   4,				// Tracker Data Out
   1,				// update rate
   0, 0, 0, 0,
-  0x00, 0xac,
+  0x00, 0xab,
+  0xb0, 0xb3,
+};
+
+
+/*
+ * Message to send when turn on.
+ *
+ * 1) turn on MID 4 tracker data
+ */
+
+uint8_t sirf_send_start[] = {
+  0xa0, 0xa2,			// turn on 4 (tracker data)
+  0x00, 0x08,
+  166,				// set message rate (0xa6)
+  0,				// send now
+  4,				// Tracker Data Out
+  1,				// update rate
+  0, 0, 0, 0,
+  0x00, 0xab,
   0xb0, 0xb3,
 };
 

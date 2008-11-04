@@ -6,7 +6,8 @@
 #include "sensors.h"
 #include "sal.h"
 
-#define EAVES TRUE
+//#define EAVES TRUE
+#define EAVES FALSE
 
 #ifdef FAKE_SURFACE
 /*
@@ -15,10 +16,10 @@
  */
 
 //#define SURFACE_TIME   (15*60*1024UL)
-#define SURFACE_TIME   (1*60*1024UL)
+#define SURFACE_TIME   (2*60*1024UL)
 //#define SURFACE_TIME   (1*30*1024UL)
 //#define SUBMERGED_TIME (10*1024UL)
-#define SUBMERGED_TIME (15*1024UL)
+#define SUBMERGED_TIME (30*1024UL)
 #endif
 
 module mm3ControlP {

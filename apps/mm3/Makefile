@@ -7,8 +7,9 @@
 #   GPS_SHORT_COUNT	if don't short how many over-determined fixes to see before saying got short
 #   GPS_STAY_UP		don't turn gps off after good fix
 #   GPS_FAST_POLL	enable fast poll (which sends data to the gps to elicit a 29 geodetic packet)
+#   GPS_COMM_EMIT_2	generate gps_sat(2) (nav data) event message via comm link.
+#   GPS_COMM_EMIT_7	generate gps_sat(7) (clock) event message via comm link.
 #   GPS_COMM_EMIT_29	generate gps_sat(29) event message via comm link.
-#   GPS_COMM_EMIT_NAV_CLOCK generate gps_sat(2,7) event message via comm link.
 #
 # GPS_LOG_EVENTS
 #
@@ -39,8 +40,8 @@ PFLAGS += -DGPS_TEST
 #PFLAGS += -DGPS_LEAVE_UP
 #PFLAGS += -DGPS_STAY_UP 
 #PFLAGS += -DGPS_NO_SHORT
+#PFLAGS += -DGPS_COMM_EMIT_2 -DGPS_COMM_EMIT_7
 PFLAGS += -DGPS_COMM_EMIT_29
-#PFLAGS += -DGPS_COMM_EMIT_NAV_CLOCK
 
 #PFLAGS += -DTOSTHREADS_TIMER_OPTIMIZATION
 
