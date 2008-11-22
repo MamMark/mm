@@ -48,7 +48,7 @@ Modify the repository list using Applications->System->Software_Sources to inclu
 Install the following packages:
 
            avr-binutils-tinyos
-	   avrdude-tinyos
+           avrdude-tinyos
            avr-gcc-tinyos
            avr-libc-tinyos
            avr-tinyos
