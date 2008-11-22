@@ -40,12 +40,19 @@ This will pull the current T2 CVS source tree starting at /home/joe/t2_cur/tinyo
 We want the tinyos toolset for the msp430 (telosb) and the avr (micaz, mica2).
 Debian packages are available from Stanford.
 
-Modify the repository source to include:
+Modify the repository list using Applications->System->Software_Sources to include:
 
    	  http://tinyos.stanford.edu/tinyos/dists/ubuntu/ hardy main
 
+
 Install the following packages:
 
+           avr-binutils-tinyos
+	   avrdude-tinyos
+           avr-gcc-tinyos
+           avr-libc-tinyos
+           avr-tinyos
+           avr-tinyos-base
            deputy-tinyos
            msp430-binutils-tinyos
            msp430-gcc-tinyos
