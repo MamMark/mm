@@ -21,8 +21,8 @@ set pri ele 0
 b TinyOSMainP.nc:83
 
 # 2
-#b TinyOSMainP.nc:90
-b *TinyOSMainP$TinyOSBoot$booted+0d64
+b TinyOSMainP.nc:90
+#b *TinyOSMainP$TinyOSBoot$booted+0d64
 
 # 3 task scheduler
 b SchedulerBasicP.nc:137
@@ -42,7 +42,6 @@ comm
 printf "pcode: %d (0x%0x)  where: %d  %04x %04x %04x %04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
 
-
 # 7 Msg Collect too big
 b GPSMsgP.nc:552
 
@@ -54,6 +53,13 @@ b GPSP.nc:375
 
 # 10 fini wait -> finish
 b GPSP.nc:682
+
+dis 7-10
+
+# 11 12
+#b mm3SerialCommP.nc:52
+#b mm3SerialCommP.nc:84
+
 
 # 7 SSWrite
 #b StreamStorageP.nc:628

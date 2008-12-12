@@ -821,6 +821,7 @@ implementation {
       case GPSC_SENDING:
       case GPSC_FINI_WAIT:
       case GPSC_FINISH:
+      case GPSC_REQUESTED:		/* small interrupt window between configure and grant, ignore */
       case GPSC_START_DELAY:
       case GPSC_RELEASING:
 	return;					// ignore (collected above)
