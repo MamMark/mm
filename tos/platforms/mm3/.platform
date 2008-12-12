@@ -9,6 +9,7 @@ push( @includes, qw(
   %P/misc
   %P/sensors
   %P/../../chips/msp430/timer
+  %P/../../chips/msp430/usart
   %P/../../../support/utils/include
   %T/platforms/telosa/chips/cc2420
   %T/chips/cc2420
