@@ -48,6 +48,8 @@ configuration Msp430UsartShare1P {
 implementation {
 
   components new Msp430UsartShareP() as UsartShareP;
+  components HplMsp430Usart1C as UsartC;
+
   Interrupts = UsartShareP;
   UsartShareP.RawInterrupts -> UsartC;
 
@@ -58,9 +60,13 @@ implementation {
   ArbiterInfo = ArbiterC;
   UsartShareP.ArbiterInfo -> ArbiterC;
 
-  components new AsyncStdControlPowerManagerC() as PowerManagerC;
-  PowerManagerC.ResourceDefaultOwner -> ArbiterC;
+  components mm3CommC;
+  mm3CommC.ResourceDefaultOwner -> ArbiterC;
+  mm3CommC.AsyncStdControl -> UsartC;
+
+//  components new AsyncStdControlPowerManagerC() as PowerManagerC;
+//  PowerManagerC.ResourceDefaultOwner -> ArbiterC;
 	
-  components HplMsp430Usart1C as UsartC;
-  PowerManagerC.AsyncStdControl -> UsartC;
+//  components HplMsp430Usart1C as UsartC;
+//  PowerManagerC.AsyncStdControl -> UsartC;
 }

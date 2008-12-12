@@ -37,6 +37,7 @@ typedef enum {
   COMM_STATE_SERIAL_REQUEST,
   COMM_STATE_SERIAL_INIT,
   COMM_STATE_SERIAL,
+  COMM_STATE_SERIAL_RELEASED,
   COMM_STATE_RADIO_REQUEST,
   COMM_STATE_RADIO_INIT,
   COMM_STATE_RADIO,
@@ -66,6 +67,9 @@ module mm3CommP {
     interface Receive      as RadioReceive[uint8_t id];
     interface Packet	   as RadioPacket;
     interface AMPacket	   as RadioAMPacket;
+
+    interface ResourceDefaultOwner;
+    interface AsyncStdControl;
   }
 }
 
@@ -452,4 +456,19 @@ implementation {
 	return NULL;
     }  
   }
+
+  async event void ResourceDefaultOwner.requested() {
+    call AsyncStdControl.start();
+    call ResourceDefaultOwner.release(); 
+  }
+
+  async event void ResourceDefaultOwner.immediateRequested() {
+    call AsyncStdControl.start();
+    call ResourceDefaultOwner.release();
+  } 
+
+  async event void ResourceDefaultOwner.granted() {
+    call AsyncStdControl.stop();
+  }
+
 }

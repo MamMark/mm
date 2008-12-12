@@ -12,6 +12,10 @@ configuration mm3CommC {
     interface AMPacket;
     interface Packet;
   }
+  uses {
+    interface AsyncStdControl;
+    interface ResourceDefaultOwner;
+  }
 }
 
 implementation {
@@ -24,6 +28,9 @@ implementation {
   Send = mm3CommP;
   AMPacket = mm3CommP;
   Packet = mm3CommP;
+
+  mm3CommP.AsyncStdControl = AsyncStdControl;
+  mm3CommP.ResourceDefaultOwner = ResourceDefaultOwner;
   
   components mm3SerialCommC;
   mm3CommP.SerialSend -> mm3SerialCommC;
