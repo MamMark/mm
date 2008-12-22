@@ -6,8 +6,8 @@
 #include "sensors.h"
 #include "sal.h"
 
-//#define EAVES TRUE
-#define EAVES FALSE
+#define EAVES TRUE
+//#define EAVES FALSE
 
 #ifdef FAKE_SURFACE
 /*

@@ -83,6 +83,7 @@ implementation {
   }
 
   //********************* Use SERIAL *******************************//
+
   command error_t mm3Comm.useSerial() {
     if (comm_state == COMM_STATE_SERIAL)
       return EALREADY;
@@ -105,6 +106,7 @@ implementation {
   }
   
   //********************* Use RADIO *******************************//
+
   command error_t mm3Comm.useRadio() {
     if(comm_state == COMM_STATE_RADIO)
       return EALREADY;
@@ -127,6 +129,7 @@ implementation {
   }
   
   //********************* Use NONE *******************************//
+
   command error_t mm3Comm.useNone() {
     if(comm_state == COMM_STATE_OFF)
       return EALREADY;
@@ -164,6 +167,7 @@ implementation {
   }
 
   //********************* Receiving *******************************//
+
   event message_t* SerialReceive.receive[uint8_t id](message_t* msg, void* payload, uint8_t len) {
     return signal Receive.receive[id](msg, payload, len);
   }
@@ -173,6 +177,7 @@ implementation {
   }
 
   //********************* Sending *******************************//
+
   command error_t Send.send[uint8_t id](message_t* msg, uint8_t len) {
     switch (comm_state) {
       case COMM_STATE_OFF:
@@ -456,6 +461,8 @@ implementation {
 	return NULL;
     }  
   }
+
+  /* ************* Default Ownership Control ****************** */
 
   async event void ResourceDefaultOwner.requested() {
     call AsyncStdControl.start();
