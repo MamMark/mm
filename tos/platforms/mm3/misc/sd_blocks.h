@@ -231,21 +231,22 @@ typedef nx_struct dt_test {
 
 /*
  * Note
+ *
  * arbritrary ascii string sent from the base station with a time stamp.
  * one use is when calibrating the device.  Can also be used to add notes
  * about conditions the tag is being placed in.
  *
- * Note itself is a NULL terminated string.
+ * Note (data in the structure) itself is a NULL terminated string.
  */
 typedef nx_struct dt_note {
   nx_uint16_t	     len;
   nx_uint8_t	     dtype;
-  nx_uint8_t	     sec;
-  nx_uint8_t	     min;
-  nx_uint8_t	     hrs;
-  nx_uint8_t	     day;
-  nx_uint8_t	     month;
   nx_uint16_t	     year;
+  nx_uint8_t	     month;
+  nx_uint8_t	     day;
+  nx_uint8_t	     hrs;
+  nx_uint8_t	     min;
+  nx_uint8_t	     sec;
   nx_uint16_t	     note_len;
   nx_uint8_t	     data[0];
 } dt_note_nt;
