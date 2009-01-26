@@ -65,7 +65,7 @@ typedef nx_struct mm3_cmd_note {
   nx_uint8_t	     sec;
   nx_uint16_t	     note_len;
   nx_uint8_t	     data[0];
-}
+} mm3_cmd_note_t;
 
 /*
  * Not actually used.  Only here to make "mig" happy.
