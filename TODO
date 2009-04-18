@@ -1,3 +1,40 @@
+. fix Arbiter bug (fcfs) so it correctly cycles.
+. make sure that BlockingAMReceiverImple still works.  What was the bug?
+
+
+CmdHandler:
+
+1) Write simple base side for sending/receiving commands.
+2) Command processors.  Which ones first?
+
+
+Duty Analysis:
+
+. Verification of results.
+. adaptation to profiling?
+  a) Power profiling (Sensor Power System, MCU)
+  b) Code profiling
+
+
+1) Port John's code.
+2) Sample run.
+3) Flesh out effort.
+
+
+Current Code:
+
+. Turn on DMA for SD
+
+
+Serial Restructure:
+
+1) Understand panics
+2) Diagram usage of SerialDemux, SerialClientUart{Byte, Stream},
+   SerialDefOwnerClient, SerialDemuxResource, SerialDemuxDefaultOwner,
+   MuxControl
+3) Flesh out changes to serial stack.
+
+
 
 Failure Recovery
 
@@ -23,3 +60,8 @@ manager to control where the image gets written.
 
 
 Need versioning.  So if we look at a ram image we can correlate it to a code version.
+
+
+
+
+done . remove othersWaiting

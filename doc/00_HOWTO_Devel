@@ -10,7 +10,7 @@ development was done on 7.04 but these notes are written explicitly for
    Xubuntu 8.04 (LTS).
 
    install the following:
-       subversion cvs build-essentials stow automake autoconf autobook libtool
+       subversion cvs build-essential stow automake autoconf autobook libtool libc6-dev
 
 2) [MamMark tree checkout]
 
@@ -37,9 +37,12 @@ development was done on 7.04 but these notes are written explicitly for
 
    e) Apply mm3 specific patches to the main T2 core...
 
+      The patch file is <mm_t2_base>/t2_mm3/Added_Bits/t2_<date>.patch.  Where <date> is the
+      date corresponding to when the t2 base tree was originally patched.  It may not apply
+      cleanly.
+
       .) cd <mm_t2_base>/t2_cur/tinyos-2.x
-      .) for i in ../../t2_mm3/Added_Bits/*.patch; do \
-             patch -p0 < $i; done
+      .) patch -p0 < ../../t2_mm3/Added_Bits/t2_<date>.patch
 
 5) [TI USB Jtag driver fix]
 
