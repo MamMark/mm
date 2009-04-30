@@ -28,6 +28,8 @@ Current Code:
 
 Serial Restructure:
 
+. What happens if USART (arb0) is requested while arb1 is cycling.
+
 1) Understand panics
 2) Diagram usage of SerialDemux, SerialClientUart{Byte, Stream},
    SerialDefOwnerClient, SerialDemuxResource, SerialDemuxDefaultOwner,

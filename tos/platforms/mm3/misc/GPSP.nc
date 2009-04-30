@@ -32,6 +32,20 @@
 /**
  * @author Eric B. Decker (cire831@gmail.com)
  * @date 28 May 2008
+ *
+ * Reworked to use the SerialDemux multiplexed ResourceDefaultOwner
+ * interface.  Instead of arbritrating for the UART1 resource we
+ * arbritrate for the priviledge of being the DefaultOwner and use the
+ * interface when no one else wants it.
+ *
+ * The logic should remain about the same.  However, note that the
+ * DefaultOwner.grant won't have caused the h/w to be configured so
+ * we have to do it by hand.
+ *
+ * Interaction strategy:
+ *
+ * While booting the GPS ignore other requests and camp on the h/w.
+ * Once booted
  */
 
 #include "panic.h"
@@ -101,14 +115,15 @@ typedef enum {
 
   /*
    * When the GPS is turned on , we first assume that it is running at
-   * 57600-SirfBin.  We 
+   * 57600-SirfBin.
    *
    * Boot up windows are defined from when the gps is turned on (t_gps_pwr_on)
    *
    * [START_DELAY is used to have the gps powered up but the cpu is not taking any interrupts from
    * it.  This allows the CPU to be sleeping while the gps is doing its power up thing.  It takes about
    * 300ms before it starts sending bytes.  This allows things to settle down before we start looking
-   * for the first byte.]
+   * for the first byte.  The thinking behind this is to allow the GPS to actually get its fix so when
+   * we start looking for gps messages we will see that it has locked.]
    *
    * START_DELAY		timer fired	HUNTING
    *                                          	(timer <- t_gps_pwr_on + hunt_window)
@@ -162,7 +177,7 @@ typedef enum {
    *
    * On one hand, if we request and obtain the GPS prior to powering
    * the GPS will hold the h/w for a longer period of time (all of the
-   * power up and any communication it needs).  This creates problems
+   * power up and any communication it needs).  This might create problems
    * for the other devices on the h/w, namely the SD and comm.
    *
    * Another approach is to power the GPS up and then request at the end of
@@ -178,14 +193,14 @@ typedef enum {
    * can watch the start up stream.   
    */
 
-  GPSC_REQUESTED,			// waiting for usart
+  GPSC_REQUESTED,			// waiting for usart ownership
   GPSC_START_DELAY,			// power on
   GPSC_HUNT_1,				// Can we see them?
   GPSC_HUNT_2,
   GPSC_ON,
   GPSC_RELEASING,			// release and re-request, prev_state valid
+  GPSC_RELEASED,			// released, waiting for grant, prev_state valid.
   GPSC_BACK_TO_NMEA,
-
 } gpsc_state_t;
 
 
@@ -225,14 +240,11 @@ norace gpsc_state_t gpsc_state;	// low level collector state
 module GPSP {
   provides {
     interface Init;
-    interface SplitControl as GPSControl;
-    interface Msp430UartConfigure;
+    interface StdControl as GPSControl;
     interface Boot as GPSBoot;
   }
   uses {
     interface Boot;
-    interface Resource as UARTResource;
-    interface ResourceRequested as UARTResourceRequested;
     interface Timer<TMilli> as GPSTimer;
     interface LocalTime<TMilli>;
     interface HplMM3Adc as HW;
@@ -243,6 +255,10 @@ module GPSP {
     interface StdControl as GPSMsgControl;
     interface Trace;
     interface LogEvent;
+
+    interface Resource                as SerialDemuxResource;
+    interface ResourceDefaultOwner    as SerialDefOwner;
+    interface ResourceDefaultOwnerMux as MuxControl;
   }
 }
 
@@ -253,6 +269,8 @@ implementation {
   norace uint32_t     t_gps_pwr_on;
   norace uint8_t      gpsc_reconfig_trys;
   norace bool	      gpsc_operational;	// if 0 then booting, do special stuff
+         uint8_t      gpsc_request_defers;
+  norace bool	      othersWaiting;
 
   void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
 
@@ -272,6 +290,10 @@ implementation {
 
     gpsc_state = next_state;
 
+  }
+
+  void gps_warn(uint8_t where, uint16_t p) {
+    call Panic.warn(PANIC_GPS, where, p, 0, 0, 0);
   }
 
   void gps_panic(uint8_t where, uint16_t p) {
@@ -323,24 +345,32 @@ implementation {
 
 
   /*
-   * shut down gps,  this is the guts of gpscontrol.stop without
-   * the stopDone call back.
+   * shut down gps.
    */
   void control_stop() {
-    call Usart.disableIntr();
+    if (gpsc_state == GPSC_OFF) {
+      gps_warn(15, gpsc_state);
+      return;
+    }
+    if (call SerialDefOwner.isOwner())
+      call Usart.disableIntr();
+
 #ifndef GPS_LEAVE_UP
     call HW.gps_off();
 #endif
+
     call GPSTimer.stop();
     call LogEvent.logEvent(DT_EVENT_GPS_OFF, 0);
-    gpsc_change_state(GPSC_OFF, GPSW_NONE);
-    if (call UARTResource.isOwner()) {
-      if (call UARTResource.release() != SUCCESS)
-	gps_panic(1, 0);
-      mmP5out.ser_sel = SER_SEL_NONE;
-    }
     call GPSMsgControl.stop();
+    gpsc_change_state(GPSC_OFF, GPSW_NONE);
+    if (call SerialDemuxResource.isOwner()) {
+      if (call SerialDefOwner.isOwner())
+	call SerialDefOwner.release();
+      call SerialDemuxResource.release();
+    }
   }
+
+  void gps_granted();
 
   /*
    * gps_config_task: Handle messing with the timer on behalf of gps reconfigurations.
@@ -352,11 +382,12 @@ implementation {
     gpsc_change_state(cur_gps_state, GPSW_CONFIG_TASK);
     switch (cur_gps_state) {
       default:
-	gps_panic(2, cur_gps_state);
+	gps_panic(1, cur_gps_state);
 	return;
 
       case GPSC_OFF:
 	call GPSTimer.stop();
+	gps_warn(2, 0);
 	return;
 
       case GPSC_RECONFIG_4800_EOS_WAIT:
@@ -373,9 +404,27 @@ implementation {
 
       case GPSC_FINISH:
 	gpsc_operational = 1;
-	control_stop();
 	nop();				// BRK_FINISH
+	control_stop();
 	signal GPSBoot.booted();
+	return;
+
+      case GPSC_RELEASED:
+      case GPSC_REQUESTED:
+	/*
+	 * There is a race condition that exists between we seeing the SerialDefOwner.granted
+	 * signal (where we "post gps_config_task" and getting here.  Another user (transient)
+	 * may have requested the resource.  So we need to really make sure we own the resource
+	 * before granting.
+	 *
+	 * If someone else has gotten in then we assume we will get the resource back when
+	 * they are done via a SerialDefOwner.granted signal.
+	 */
+	if (call SerialDefOwner.isOwner()) {
+	  call Trace.trace(T_GPS_DEF_GRANT, 1, 0);
+	  gps_granted();
+	} else
+	  call Trace.trace(T_GPS_DEF_DEFERRED, 1, 0);
 	return;
 
       case GPSC_HUNT_1:
@@ -385,7 +434,6 @@ implementation {
 
       case GPSC_ON:
 	call GPSTimer.stop();
-	signal GPSControl.startDone(SUCCESS);
 	return;
 
       case GPSC_RELEASING:
@@ -393,12 +441,16 @@ implementation {
 	 * note: anytime we change state to GPSC_RELEASING, uart interrupts will be
 	 * turned off.  Because we are releasing to some other user and will be deconfiguring.
 	 * We don't want anymore events occuring that might try to change what we are doing.
+	 *
+	 * Since we are using the UART as a DefaultOwner all we need to do is Release, when
+	 * the higher priority device releases (and if there are no other higher priority
+	 * users) we will get the grant back.  We don't need to re-request.
 	 */
 	call LogEvent.logEvent(DT_EVENT_GPS_RELEASE, 0);
-	call UARTResource.release();
 	call GPSMsg.reset();
-	call GPSTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
-	call UARTResource.request();
+	call GPSTimer.startOneShot(DT_GPS_MAX_GRANT_TO);
+	gpsc_change_state(GPSC_RELEASED, GPSW_CONFIG_TASK);
+	call SerialDefOwner.release();
 	return;
     }
   }
@@ -416,6 +468,7 @@ implementation {
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
     t_gps_pwr_on = 0;
     gpsc_reconfig_trys = MAX_GPS_RECONFIG_TRYS;
+    gpsc_request_defers = MAX_GPS_DEFERS;
     gpsc_operational = 0;
     return SUCCESS;
   }
@@ -495,8 +548,7 @@ implementation {
     if (mmP5out.ser_sel == SER_SEL_GPS)
       mmP5out.ser_sel = SER_SEL_NONE;
     call HW.gps_off();
-    if (call UARTResource.isOwner())
-      call UARTResource.release();
+    gpsc_change_state(GPSC_OFF, GPSW_NONE);
     gpsc_operational = 0;
     call GPSControl.start();
   }
@@ -521,26 +573,42 @@ implementation {
    * 4) is it reliable?
    * 5) would it be better to sequence?
    *
-   * During the granting process the GPS will be configured along with
-   * the USART used to talk to it.  During this process interrupts
-   * will be enabled and we should be prepared to handle them even
-   * though we haven't gotten the grant back yet (the arbiter
-   * configures then grants).  We explicitly handle turning interrupts
-   * for the UART/USART/GPS to control when we want to see them or not.
+   * The GPS driver is a default owner of the serial h/w.  We must first arbitrate
+   * for the default ownership (SerialDemuxResource).  When granted, the gps
+   * driver will become the default owner when other users of the USART h/w don't
+   * want the h/w.  This allows the gps driver to listen when it owns the h/w.
+   * The GPS driver will hold on to the h/w while it is receiving a message and
+   * will only release at a message boundary.
+   *
+   * When the driver determines that it truely owns the h/w, it must handle
+   * configuring the h/w when the driver knows that it has gained control.
+   *
+   * There are some corner cases that need to be handling during transitions.
+   * When releasing the SerialDemuxResource, the gps driver still needs
+   * to handle SerialDefOwner.granted events until the new def owner has
+   * caused the mux control to switch to it.
    */
 
   command error_t GPSControl.start() {
     error_t err;
 
-    if (gpsc_state != GPSC_OFF)
+    if (gpsc_state != GPSC_OFF) {
+      gps_warn(3, gpsc_state);
       return FAIL;
+    }
+    if (call SerialDemuxResource.isOwner())
+      call SerialDemuxResource.release();
     call LogEvent.logEvent(DT_EVENT_GPS_START,0);
     gpsc_change_state(GPSC_REQUESTED, GPSW_NONE);
     call GPSMsgControl.start();
-    call GPSTimer.startOneShot(DT_GPS_MAX_REQUEST_TO);
+    call GPSTimer.startOneShot(DT_GPS_MAX_GRANT_TO);
     call Trace.trace(T_GPS, 0x20, 0);
-    err = call UARTResource.request();
+    err = call SerialDemuxResource.request();
     call Trace.trace(T_GPS, 0x21, 0);
+    if (err) {
+      control_stop();
+      gps_panic(4, err);
+    }
     return err;
   }
 
@@ -556,22 +624,21 @@ implementation {
    */
   command error_t GPSControl.stop() {
     control_stop();
-    signal GPSControl.stopDone(SUCCESS);
     return SUCCESS;
   }
 
 
   /*
-   * UARTResource.granted
-   *
-   * Called when the arbiter gives us control of the UART (also the underlying USART)
-   * It will have already called the configurator which turns the gps on, sets the
-   * serial mux to gps, and sets the uart baud to the default.
+   * This routine is called anytime the GPS is granted the actual h/w.
+   * This can occur when the GPS is the default owner (owns the SerialDemuxResource)
+   * and a higher priority device releases.  Or if the GPS has asked for
+   * the resource, it is granted, and no one owns the underlying resource.
    */
-
-  event void UARTResource.granted() {
-    call Usart.disableIntr();
+  void gps_granted() {
+    othersWaiting = FALSE;
     call LogEvent.logEvent(DT_EVENT_GPS_GRANT, gpsc_state);
+    mmP5out.ser_sel = SER_SEL_GPS;
+    call Usart.setModeUart((msp430_uart_union_config_t *) &GPS_OP_SERIAL_CONFIG);
 
 #ifdef notdef
     if (ro == 1 && gpsc_state != GPSC_OFF) {
@@ -593,7 +660,7 @@ implementation {
 
     switch (gpsc_state) {
       default:
-	call Panic.panic(PANIC_GPS, 3, gpsc_state, 0, 0, 0);
+	gps_panic(5, gpsc_state);
 	nop();
 	return;
 
@@ -602,15 +669,14 @@ implementation {
 	 * We are off which means someone called stop after a request
 	 * was issued but the grant hadn't happened yet.  Since we got
 	 * the grant, that means there was an outstanding request.
-	 * Prior to the grant being issued the configure will have
-	 * turned the gps back on so we want to turn it off again.
 	 */
+	gps_warn(16, 0);		/* do we ever see this? */
 #ifndef GPS_LEAVE_UP
 	call HW.gps_off();
 #endif
 	call GPSTimer.stop();
 	mmP5out.ser_sel = SER_SEL_NONE;
-	call UARTResource.release();
+	call SerialDemuxResource.release();
 	return;
 
       case GPSC_REQUESTED:
@@ -619,14 +685,15 @@ implementation {
 	call Usart.enableIntr();
 	break;
 
-      case GPSC_RELEASING:
+      case GPSC_RELEASED:
 	gpsc_change_state(gpsc_prev_state, GPSW_GRANT);
 	switch(gpsc_prev_state) {
 	  default:
-	    call Panic.panic(PANIC_GPS, 4, gpsc_state, 0, 0, 0);
+	    gps_panic(6, gpsc_state);
 	    break;
 	  case GPSC_START_DELAY:
-	    call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
+	    /* leave the timer alone */
+	    //call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
 	    break;
 	  case GPSC_SENDING:
 	    call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
@@ -645,6 +712,42 @@ implementation {
   }
   
 
+  /*
+   * SerialDemuxResource.granted
+   *
+   * event signalled when we have gained default control of the UART.  This only
+   * occurs when we are first turning the GPS on.  When the GPS is started the
+   * SerialDemuxResource is requested.  When granted it signifies that the GPS
+   * now owns the UART by default.
+   *
+   * That doesn't mean the GPS owns the device.  A higher priority client
+   * may actually own it.  So we need to check.
+   */
+
+  event void SerialDemuxResource.granted() {
+    call MuxControl.set_mux(SERIAL_OWNER_GPS);
+    call HW.gps_on();
+    t_gps_pwr_on = call LocalTime.get();
+    gpsc_prev_state = gpsc_state;
+    if (call SerialDefOwner.isOwner()) {
+      call Trace.trace(T_GPS_DEF_GRANT, 2, 0);
+      gps_granted();
+    } else
+      call Trace.trace(T_GPS_DEF_DEFERRED, 2, 0);
+  }
+
+  /*
+   * No one else is using the h/w and we own the default owner
+   *
+   * state should either be REQUESTED or RELEASED
+   */
+
+  async event void SerialDefOwner.granted() {
+    if (gpsc_state != GPSC_REQUESTED && gpsc_state != GPSC_RELEASED)
+      gps_panic(7, gpsc_state);
+    post gps_config_task();
+  }
+
   event void GPSTimer.fired() {
     error_t err;
 
@@ -656,7 +759,7 @@ implementation {
       case GPSC_RECONFIG_4800_SENDING:		// timed out send.
       case GPSC_SENDING:			// send took too long
       case GPSC_RELEASING:			// request hung?
-	call Panic.panic(PANIC_GPS, 5, gpsc_state, 0, 0, 0);
+	gps_panic(8, gpsc_state);
 	nop();
 	return;
 
@@ -671,7 +774,7 @@ implementation {
 	gpsc_change_state(GPSC_SENDING, GPSW_TIMER);
 	call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
 	if ((err = call UartStream.send(sirf_send_boot, sizeof(sirf_send_boot))))
-	  call Panic.panic(PANIC_GPS, 8, err, gpsc_state, 0, 0);
+	  call Panic.panic(PANIC_GPS, 9, err, gpsc_state, 0, 0);
 	return;
 
 	/*
@@ -712,11 +815,11 @@ implementation {
 	gpsc_change_state(GPSC_RECONFIG_4800_SENDING, GPSW_TIMER);
 	call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
 	if ((err = call UartStream.send(nmea_go_sirf_bin, sizeof(nmea_go_sirf_bin))))
-	  call Panic.panic(PANIC_GPS, 9, err, gpsc_state, 0, 0);
+	  call Panic.panic(PANIC_GPS, 10, err, gpsc_state, 0, 0);
 	return;
 
       case GPSC_REQUESTED:			// request took too long
-	call Panic.panic(PANIC_GPS, 6, gpsc_state, 0, 0, 0);
+	gps_panic(11, gpsc_state);
 	nop();
 	return;
 
@@ -774,7 +877,7 @@ implementation {
 	  call LogEvent.logEvent(DT_EVENT_GPS_RECONFIG, gpsc_reconfig_trys);
 	  return;
 	}
-	gps_panic(7, gpsc_state);
+	gps_panic(12, gpsc_state);
 	return;
     }
   }
@@ -801,15 +904,6 @@ implementation {
 
     switch (gpsc_state) {
       case GPSC_ON:
-      case GPSC_OFF:
-	/*
-	 * We can be in the OFF state but still got an interrupt.  There is a small window
-	 * if we have requested and not been granted and a STOP is issued.  The STOP will
-	 * set state to OFF and turn things off.  But the request is still outstanding and
-	 * when granted the UART configurator will turn the GPS on with interrupts enabled.
-	 * Once the grant is issued, the gps is shut down.  But during this time it is
-	 * possible to take an interrupt.  Just ignore it.
-	 */
 	return;
 
       /*
@@ -821,10 +915,10 @@ implementation {
       case GPSC_SENDING:
       case GPSC_FINI_WAIT:
       case GPSC_FINISH:
-      case GPSC_REQUESTED:		/* small interrupt window between configure and grant, ignore */
+      case GPSC_REQUESTED:			/* small interrupt window between configure and grant, ignore */
       case GPSC_START_DELAY:
       case GPSC_RELEASING:
-	return;					// ignore (collected above)
+	return;					/* ignore (collected above) */
 
       case GPSC_HUNT_1:
      	if (byte == SIRF_BIN_START)
@@ -874,10 +968,11 @@ implementation {
 	return;
 
       default:
+      case GPSC_OFF:
       case GPSC_FAIL:
       case GPSC_RECONFIG_4800_PWR_DOWN:
       case GPSC_RECONFIG_4800_START_DELAY:
-	call Panic.panic(PANIC_GPS, 11, gpsc_state, byte, 0, 0);
+	call Panic.panic(PANIC_GPS, 13, gpsc_state, byte, 0, 0);
 	nop();			// less confusing.
 	return;
     }
@@ -918,78 +1013,100 @@ implementation {
 	break;
 
       default:
-	call Panic.panic(PANIC_GPS, 12, gpsc_state, 0, 0, 0);
+	gps_panic(14, gpsc_state);
 	break;
     }
     return;
   }
 
 
+  /*
+   * ignoreRelease
+   *
+   * Check current gps state and determine if we should ignore any requested release.
+   *
+   * Keep others out if:
+   *     In the bootstrap (GPSC_OFF < state < GPSC_REQUESTED)
+   *     In initial turn on: (state is START_DELAY, HUNT1, HUNT2).
+   *
+   * Release if:
+   *     OFF
+   *	 REQUESTED
+   *	 ON
+   *
+   * Illegal states checked and panic if appropriate.
+   */
+
+  bool ignoreRelease() {
+    if (gpsc_state >= GPSC_OFF && gpsc_state < GPSC_REQUESTED)
+      return TRUE;
+    if (gpsc_state >= GPSC_START_DELAY && gpsc_state <= GPSC_HUNT_2)
+      return TRUE;
+    if (gpsc_state == GPSC_REQUESTED || gpsc_state == GPSC_ON)
+      return FALSE;
+    gps_panic(17, gpsc_state);
+    return TRUE;
+  }
+
+
+  /*
+   * GPS Message layer is signalling that we have arrived at a message
+   * boundary.  Check to see if the h/w has been requested.
+   */
   async event void GPSMsg.msgBoundary() {
     atomic {
+      if (ignoreRelease())
+	return;
+      if (othersWaiting == FALSE)
+	return;
+
       /*
-       * ignore if reconfiguring.  Or in the initial non-operational boot
-       * up state.
+       * don't let any more bytes come in, we are releasing.
        */
-      if (gpsc_state > GPSC_OFF && gpsc_state < GPSC_REQUESTED)
-	return;
-      if (gpsc_state == GPSC_RELEASING)
-	return;
-      if (call UARTResource.othersWaiting()) {
-	/*
-	 * don't let any more bytes come in, we are releasing.
-	 */
-	call Usart.disableIntr();
-	gpsc_prev_state = gpsc_state;
-	gpsc_change_state(GPSC_RELEASING, GPSW_MSG_BOUNDARY);
-	post gps_config_task();
-	return;
-      }
-      /*
-       * no release needed.
-       */
+      call Usart.disableIntr();
+      gpsc_prev_state = gpsc_state;
+      gpsc_change_state(GPSC_RELEASING, GPSW_MSG_BOUNDARY);
+      post gps_config_task();
     }
   }
 
 
-  async event void UARTResourceRequested.requested() {
+  async event void SerialDefOwner.requested() {
     atomic {
       /*
-       * ignore if we are booting
+       * If we are off, then we don't own the resource but the
+       * mux hasn't been switched yet (race condition).  Simply
+       * release so the higher priority device gets ownership.
        */
-      if (gpsc_state > GPSC_OFF && gpsc_state < GPSC_REQUESTED)
+      if (gpsc_state == GPSC_OFF) {
+	call SerialDefOwner.release();
 	return;
-      if (gpsc_state == GPSC_RELEASING)
-	return;
+      }
+
+      /*
+       * remember that the event occurred.
+       */
+      othersWaiting = TRUE;
+
+      if (gpsc_state == GPSC_REQUESTED) {
+	if (--gpsc_request_defers == 0) {
+	  gpsc_request_defers = MAX_GPS_DEFERS;
+	  return;
+	}
+      } else {
+	if (ignoreRelease())
+	  return;
+      }
+
       if (call GPSMsg.atMsgBoundary()) {
 	call Usart.disableIntr();
 	gpsc_prev_state = gpsc_state;
 	gpsc_change_state(GPSC_RELEASING, GPSW_RESOURCE_REQUESTED);
 	post gps_config_task();
-	return;
       }
     }
   }
 
-  
-  async event void UARTResourceRequested.immediateRequested() {
-  }
-
-
-  async event void UartStream.receiveDone( uint8_t* buf, uint16_t len, error_t error ) {
-  }
-
-
-  /*
-   * Called from within the Usart configurator.
-   *
-   * We configure to the DEFAULT OP serial on grant.  If the baud needs to be
-   * changed it is done using an explicit call to the configurator.
-   */
-  async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
-    call HW.gps_on();
-    mmP5out.ser_sel = SER_SEL_GPS;
-    t_gps_pwr_on = call LocalTime.get();
-    return (msp430_uart_union_config_t*) &GPS_OP_SERIAL_CONFIG;
-  }
+  async event void UartStream.receiveDone( uint8_t* buf, uint16_t len, error_t error ) { }
+  async event void SerialDefOwner.immediateRequested() { } 
 }

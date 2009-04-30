@@ -8,6 +8,8 @@
 
 #include "hardware.h"
 
+#ifdef notdef
+
 #define STUFF_SIZE 256
 
 noinit struct {
@@ -32,6 +34,7 @@ void set_stuff() {
   stuff[nxt].bcsctl2 = BCSCTL2;
   nxt++;
 }
+#endif
       
 
 module PlatformP{
@@ -150,9 +153,9 @@ implementation {
      */
     wait_for_32K();
 
-    set_stuff();
+//    set_stuff();
     call ClockInit.init();
-    set_stuff();
+//    set_stuff();
     call LedsInit.init();
     return SUCCESS;
   }

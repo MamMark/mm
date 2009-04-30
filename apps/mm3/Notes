@@ -11,4 +11,4 @@
 5) Why does MainBoot.booted get called twice?
    SerialAMControl.start()
 
-   doesn't hurt anything (posts startDoneTask twice)
+   doesn't hurt anything (posts startDoneTask twice, which executes one)

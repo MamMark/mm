@@ -10,7 +10,7 @@ module testGPSP {
   uses {
     interface Boot;
     interface Panic;
-    interface SplitControl as GPSControl;
+    interface StdControl as GPSControl;
     interface StreamStorageFull;
     interface mm3CommData;
   }
@@ -21,12 +21,6 @@ implementation {
   command error_t Init.init() {
 //    call Panic.brk();
     return SUCCESS;
-  }
-
-  event void GPSControl.startDone(error_t error) {
-  }
-
-  event void GPSControl.stopDone(error_t error) {
   }
 
   event void mm3CommData.send_data_done(error_t rtn) { }

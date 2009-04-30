@@ -1,10 +1,3 @@
-set print pretty off
-set print ele 0
-set inp 0d16
-set out 0d16
-set print address on
-set print elements 50
-set verbose
 
 #threads
 
@@ -18,10 +11,10 @@ x/i $pc
 set pri ele 0
 
 # 1
-b TinyOSMainP.nc:83
+b TinyOSMainP.nc:89
 
 # 2
-b TinyOSMainP.nc:90
+b TinyOSMainP.nc:96
 #b *TinyOSMainP$TinyOSBoot$booted+0d64
 
 # 3 task scheduler
@@ -43,18 +36,27 @@ printf "pcode: %d (0x%0x)  where: %d  %04x %04x %04x %04x\n",_p,_p, _w, _a0, _a1
 end
 
 # 7 Msg Collect too big
-b GPSMsgP.nc:552
+b GPSMsgP.nc:538
 
 # 8 Msg checksum fail
-b GPSMsgP.nc:575
+b GPSMsgP.nc:561
 
 # 9 finish
-b GPSP.nc:375
+b GPSP.nc:407
 
-# 10 fini wait -> finish
-b GPSP.nc:682
+dis 7-9
 
-dis 7-10
+#b *ArbiterP$0$Resource$request
+#b *ArbiterP$0$Resource$release
+#b *ArbiterP$1$Resource$request
+#b *ArbiterP$1$Resource$release
+#dis 10-13
+
+b GPSP.nc:606
+b *GPSP$SerialDefOwner$granted
+b GPSP.nc:1081
+b mm3ControlP.nc:107
+b GPSP.nc:1058
 
 # 11 12
 #b mm3SerialCommP.nc:52
@@ -360,6 +362,15 @@ define usq
 printf "ArbiterP$0: resId: %d, reqResId: %d,  state: %d\n", ArbiterP$0$resId, ArbiterP$0$reqResId, ArbiterP$0$state
 printf "usartQ (FcfsResourceQueueC$0): head: %d  tail %d\n", FcfsResourceQueueC$0$qHead, FcfsResourceQueueC$0$qTail
 x/4ub FcfsResourceQueueC$0$resQ
+end
+document usq
+display usart arbritration queue
+end
+
+define sdq
+printf "ArbiterP$1: resId: %d, reqResId: %d,  state: %d\n", ArbiterP$1$resId, ArbiterP$1$reqResId, ArbiterP$1$state
+printf "serialDemuxQ (FcfsResourceQueueC$1): head: %d  tail %d\n", FcfsResourceQueueC$1$qHead, FcfsResourceQueueC$1$qTail
+x/4ub FcfsResourceQueueC$1$resQ
 end
 document usq
 display usart arbritration queue

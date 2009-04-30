@@ -44,10 +44,10 @@ implementation {
     uint8_t *bp;
     message_t *dm;
 
-    dm = &data_msg[client_id];
+    dm = &data_msg[client_id];		/* FIX ME, umulqihi3 */
     bp = call Packet.getPayload(dm, len);
     if (!bp)
-      return FAIL;
+      return FAIL;			/* change into PANIC.warn */
     memcpy(bp, buf, len);
     call AMPacket.setType(dm, AM_MM3_DATA);
     call AMPacket.setDestination(dm, AM_BROADCAST_ADDR);

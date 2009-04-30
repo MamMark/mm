@@ -67,9 +67,6 @@ module mm3CommP {
     interface Receive      as RadioReceive[uint8_t id];
     interface Packet	   as RadioPacket;
     interface AMPacket	   as RadioAMPacket;
-
-    interface ResourceDefaultOwner;
-    interface AsyncStdControl;
   }
 }
 
@@ -461,21 +458,4 @@ implementation {
 	return NULL;
     }  
   }
-
-  /* ************* Default Ownership Control ****************** */
-
-  async event void ResourceDefaultOwner.requested() {
-    call AsyncStdControl.start();
-    call ResourceDefaultOwner.release(); 
-  }
-
-  async event void ResourceDefaultOwner.immediateRequested() {
-    call AsyncStdControl.start();
-    call ResourceDefaultOwner.release();
-  } 
-
-  async event void ResourceDefaultOwner.granted() {
-    call AsyncStdControl.stop();
-  }
-
 }

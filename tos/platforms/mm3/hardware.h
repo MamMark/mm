@@ -218,12 +218,12 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
 #define P4_BASE_VAL	0xcc
 
 /*
- * ser_sel 0 (direct connect), beeper off, sd bits 0pO, sd pwr off 1pO
+ * ser_sel 3 (none), beeper off, sd bits 0pO, sd pwr off 1pO
  * (when powered off we dont want to power the chip via any of its other
  * pins).  So set any pins connected to the SD to output 0.
  */
 #define P5_BASE_DIR	0xff
-#define P5_BASE_VAL	0x21
+#define P5_BASE_VAL	0xe1
 
 /* mag pwr off */
 #define P6_BASE_DIR	0xff

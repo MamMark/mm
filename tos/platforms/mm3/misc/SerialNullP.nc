@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2008 Eric B. Decker
- * Copyright (c) 2008 Stanford University.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,65 +28,68 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
 /**
  * @author Eric B. Decker (cire831@gmail.com)
- * @date May 27, 2008
- *
- * wiring by Kevin, code by Eric
- * @author Kevin Klues (klueska@cs.stanford.edu)
+ * @date 28 May 2008
  */
 
-#include "serial_demux.h"
+module SerialNullP {
+  provides interface Init;
+  uses {
+    interface ResourceDefaultOwner as SerialDefOwner;
+    interface AsyncStdControl;
 
-configuration GPSC {
-  provides {
-    interface StdControl as GPSControl;
-    interface Boot as GPSBoot;
+    interface ResourceDefaultOwner as MuxDefOwner;
+    interface ResourceDefaultOwnerMux as MuxControl;
   }
-  uses interface Boot;
 }
 
 implementation {
-  components MainC, GPSP;
-  MainC.SoftwareInit -> GPSP;
-  GPSControl = GPSP;
-  GPSBoot = GPSP;
-  Boot = GPSP.Boot;
 
-  components GPSMsgC;
-  GPSP.GPSMsg -> GPSMsgC;
-  GPSP.GPSMsgControl -> GPSMsgC;
+  void serial_shutdown() {
+    mmP5out.ser_sel = SER_SEL_NONE;
+    call AsyncStdControl.stop();
+  }
 
-  components HplMM3AdcC;
-  GPSP.HW -> HplMM3AdcC;
+  void serial_turnon() {
+    call AsyncStdControl.start();
+  }
 
-  components LocalTimeMilliC;
-  GPSP.LocalTime -> LocalTimeMilliC;
+  /*
+   * When we first start out the SerialDemuxResource is owned by its
+   * DefaultOwner (MuxDefOwner).  The h/w state should be off.
+   */
+  command error_t Init.init() {
+    serial_shutdown();
+    return SUCCESS;
+  }
 
-  components new TimerMilliC() as GPSTimer;
-  GPSP.GPSTimer -> GPSTimer;
+  async event void MuxDefOwner.granted() {
+    call MuxControl.set_mux(SERIAL_OWNER_NULL);
+    if (call SerialDefOwner.isOwner())
+      serial_shutdown();
+  }
 
-  components HplMsp430Usart1C;
-  GPSP.Usart -> HplMsp430Usart1C;
+  async event void MuxDefOwner.requested() {
+    call MuxDefOwner.release();
+  }
 
-  components PanicC;
-  GPSP.Panic -> PanicC;
+  async event void MuxDefOwner.immediateRequested() {
+    call MuxDefOwner.release();
+  }
 
-  components TraceC;
-  GPSP.Trace -> TraceC;
+  async event void SerialDefOwner.requested() {
+    serial_turnon();
+    call SerialDefOwner.release(); 
+  }
 
-  components CollectC;
-  GPSP.LogEvent -> CollectC;
+  async event void SerialDefOwner.immediateRequested() {
+    call AsyncStdControl.start();
+    call SerialDefOwner.release();
+  } 
 
-  components SerialDemuxC;
-  GPSP.SerialDefOwner      -> SerialDemuxC.SerialDefOwnerClient[SERIAL_OWNER_GPS];
-  GPSP.SerialDemuxResource -> SerialDemuxC.SerialDemuxResource[SERIAL_OWNER_GPS];
-  GPSP.UartStream          -> SerialDemuxC.SerialClientUartStream[SERIAL_OWNER_GPS];
-  GPSP.MuxControl          -> SerialDemuxC;
-
-//  components new Msp430Uart1C() as UartC;
-//  GPSP.UartStream -> UartC;  
-//  GPSP.UartByte -> UartC;
-
+  async event void SerialDefOwner.granted() {
+    serial_shutdown();
+  }
 }

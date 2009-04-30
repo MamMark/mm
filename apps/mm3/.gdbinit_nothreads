@@ -1,6 +1,11 @@
 
 #no threads
 
+set remoteaddresssize 0d64
+set remotetimeout 0d999999
+
+target remote localhost:2000
+
 disp/i $pc
 x/i $pc
 

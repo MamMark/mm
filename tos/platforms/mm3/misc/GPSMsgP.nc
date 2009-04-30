@@ -76,7 +76,7 @@ module GPSMsgP {
     interface Panic;
     interface LocalTime<TMilli>;
     interface Timer<TMilli> as MsgTimer;
-    interface SplitControl as GPSControl;
+    interface StdControl as GPSControl;
     interface Surface;
     interface LogEvent;
     interface mm3CommData;
@@ -119,13 +119,20 @@ implementation {
   uint32_t last_surfaced;
   uint32_t last_submerged;
 
-  void gpscontrol_startdone() {
+  void gpscontrol_started() {
 #ifdef GPS_SHORT_COUNT
     short_count = GPS_SHORT_COUNT + 1;
 #endif
     gpsm_state = GPSM_SHORT;
     gps_on_time = call LocalTime.get();
     call MsgTimer.startOneShot(GPS_MSG_SHORT_WINDOW);
+    call GPSControl.start();
+  }
+
+  void gpscontrol_stopped() {
+    gpsm_state = GPSM_DOWN;
+    call MsgTimer.stop();
+    call GPSControl.stop();
   }
 
 #ifdef notdef
@@ -133,33 +140,19 @@ implementation {
     switch (gpsm_state) {
       default:
 	call Panic.warn(PANIC_GPS, 128, gpsm_state, 0, 0, 0);
-	gpsm_state = GPSM_DOWN;
-	call MsgTimer.stop();
+	gpscontrol_stopped();
 	return;
 
       case GPSM_STARTING:
-	if (call GPSControl.start()) {
-	  /* non-zero says already up */
-	  gpscontrol_startdone();
-	}
+	gpscontrol_started();
 	return;
 
       case GPSM_STOPPING:
-	call MsgTimer.stop();
-	call GPSControl.stop();
+	gpscontrol_stopped();
 	return;
     }
   }
 #endif
-
-
-  event void GPSControl.startDone(error_t err) {
-    gpscontrol_startdone();
-  }
-
-  event void GPSControl.stopDone(error_t err) {
-    gpsm_state = GPSM_DOWN;
-  }
 
 
   /*
@@ -178,16 +171,12 @@ implementation {
 #else
     if (gpsm_state != GPSM_DOWN) {
       call Panic.warn(PANIC_GPS, 130, gpsm_state, 0, 0, 0);
-      call MsgTimer.stop();
-      gpsm_state = GPSM_DOWN;
+      gpscontrol_stopped();
     }
 #endif
     got_fix = FALSE;
     gpsm_state = GPSM_STARTING;
-    if (call GPSControl.start()) {
-      /* non-zero says already up */
-      gpscontrol_startdone();
-    }
+    gpscontrol_started();
   }
 
   event void Surface.submerged() {
@@ -200,8 +189,7 @@ implementation {
 #ifdef GPS_STAY_UP
 #else
     gpsm_state = GPSM_STOPPING;
-    call MsgTimer.stop();
-    call GPSControl.stop();
+    gpscontrol_stopped();
 #endif
   }
 
@@ -210,12 +198,12 @@ implementation {
     switch (gpsm_state) {
       default:
 	call Panic.warn(PANIC_GPS, 132, gpsm_state, 0, 0, 0);
-	gpsm_state = GPSM_DOWN;
-	call MsgTimer.stop();
+	gpscontrol_stopped();
 	return;
 
       case GPSM_DOWN:
 	call Panic.warn(PANIC_GPS, 133, gpsm_state, 0, 0, 0);
+	gpscontrol_stopped();
 	return;
 
       case GPSM_SHORT:
@@ -226,8 +214,7 @@ implementation {
       case GPSM_LONG:
 #ifdef GPS_STAY_UP
 #else
-	gpsm_state = GPSM_STOPPING;
-	call GPSControl.stop();
+	gpscontrol_stopped();
 #endif
 	return;
     }
@@ -384,8 +371,7 @@ implementation {
 	  return;
 #endif
 	gpsm_state = GPSM_STOPPING;
-	call MsgTimer.stop();
-	call GPSControl.stop();
+	gpscontrol_stopped();
 #endif
 
 #endif

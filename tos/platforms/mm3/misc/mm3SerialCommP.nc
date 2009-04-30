@@ -18,6 +18,8 @@
 #include "AM.h"
 #include "sensors.h"
 
+uint16_t mm3Serial_busy;
+
 module mm3SerialCommP {
   provides {
     interface Init;
@@ -114,6 +116,7 @@ implementation {
         return SUCCESS;
       }
     }
+    mm3Serial_busy++;
     return EBUSY;
   }
 
