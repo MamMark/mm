@@ -41,22 +41,29 @@ b GPSMsgP.nc:538
 # 8 Msg checksum fail
 b GPSMsgP.nc:561
 
+#  9 finish      479
+# 10 signal surface mm3ControlP.nc:107
+# 11 start       645
+# 12 SerialDefOwner.requested 1099
+# 13 SerialDefOwner.granted    762
+# 14 msgBoundary 1076
+# 15 SerialDemuxResource.granted 747
+
 # 9 finish
-b GPSP.nc:407
-
-dis 7-9
-
-#b *ArbiterP$0$Resource$request
-#b *ArbiterP$0$Resource$release
-#b *ArbiterP$1$Resource$request
-#b *ArbiterP$1$Resource$release
-#dis 10-13
-
-b GPSP.nc:606
-b *GPSP$SerialDefOwner$granted
-b GPSP.nc:1081
+b GPSP.nc:479
 b mm3ControlP.nc:107
-b GPSP.nc:1058
+b GPSP.nc:645
+b GPSP.nc:1099
+b *GPSP$SerialDefOwner$granted
+b GPSP.nc:1076
+b GPSP.nc:747
+
+dis 7-15
+ena 10
+comm 10
+ena 11-14
+dis 10
+end
 
 # 11 12
 #b mm3SerialCommP.nc:52
@@ -141,8 +148,8 @@ end
 define gmd
 printf "gpsc_state: "
 print gpsc_state
-printf "gpsc_prev_state: "
-print GPSP$gpsc_prev_state
+printf "gpsc_release_state: "
+print gpsc_release_state
 printf "msg_collect_state: "
 print GPSMsgP$collect_state
 printf "left: %d, collect_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$collect_left, GPSMsgP$collect_length, GPSMsgP$collect_cur_chksum

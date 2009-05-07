@@ -25,6 +25,8 @@ typedef enum {
 
   T_GPS_DEF_GRANT = 11,
   T_GPS_DEF_DEFERRED = 12,
+  T_GPS_RELEASING = 13,
+  T_GPS_RELEASED = 14,
 
   /*
    * For debugging Arbiter 1

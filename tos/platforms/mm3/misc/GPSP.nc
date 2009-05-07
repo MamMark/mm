@@ -198,11 +198,21 @@ typedef enum {
   GPSC_HUNT_1,				// Can we see them?
   GPSC_HUNT_2,
   GPSC_ON,
-  GPSC_RELEASING,			// release and re-request, prev_state valid
-  GPSC_RELEASED,			// released, waiting for grant, prev_state valid.
   GPSC_BACK_TO_NMEA,
+
+  /*
+   * kludge for debugging release states
+   */
+  RS_OWNED		= 32,
+  RS_RELEASING		= 33,
+  RS_RELEASED		= 34,
 } gpsc_state_t;
 
+typedef enum {
+  GPSC_RS_OWNED		= 32,		// we think we own it.
+  GPSC_RS_RELEASING	= 33,		// pending release
+  GPSC_RS_RELEASED	= 34,		// released, waiting for grant
+} gpsc_release_state_t;
 
 typedef enum {
   GPSW_NONE =			0,
@@ -213,6 +223,11 @@ typedef enum {
   GPSW_SEND_DONE =		5,
   GPSW_MSG_BOUNDARY =		6,
   GPSW_RESOURCE_REQUESTED =	7,
+  GPSW_OWNER_TASK =		8,
+  GPSW_START =			9,
+  GPSW_STOP =			10,
+  GPSW_DEF_RESOURCE_GRANT =	11,
+  GPSW_DEF_REQUESTED =		12,
 } gps_where_t;
 
 
@@ -234,7 +249,8 @@ uint8_t g_nev;			// next gps event
 #endif		// GPS_LOG_EVENTS
 
 
-norace gpsc_state_t gpsc_state;	// low level collector state
+norace gpsc_state_t	    gpsc_state;			// low level collector state
+norace gpsc_release_state_t gpsc_release_state;		// owned or released?
 
 
 module GPSP {
@@ -265,15 +281,13 @@ module GPSP {
 
 implementation {
 
-  norace gpsc_state_t gpsc_prev_state;  // releasing, previous state
   norace uint32_t     t_gps_pwr_on;
   norace uint8_t      gpsc_reconfig_trys;
-  norace bool	      gpsc_operational;	// if 0 then booting, do special stuff
+  norace bool	      gpsc_operational;		// if 0 then booting, do special stuff
          uint8_t      gpsc_request_defers;
   norace bool	      othersWaiting;
 
-  void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
-
+  void gpsc_log_state(gpsc_state_t next_state, gps_where_t where) {
 #ifdef GPS_LOG_EVENTS
     uint8_t idx;
 
@@ -287,9 +301,16 @@ implementation {
       g_evs[idx].g_idx = g_idx;
     }
 #endif
+  }
 
+  void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
+    gpsc_log_state(next_state, where);
     gpsc_state = next_state;
+  }
 
+  void gpsc_change_release_state(gpsc_release_state_t next_state, gps_where_t where) {
+    gpsc_log_state(next_state, where);
+    gpsc_release_state = next_state;
   }
 
   void gps_warn(uint8_t where, uint16_t p) {
@@ -362,7 +383,9 @@ implementation {
     call GPSTimer.stop();
     call LogEvent.logEvent(DT_EVENT_GPS_OFF, 0);
     call GPSMsgControl.stop();
-    gpsc_change_state(GPSC_OFF, GPSW_NONE);
+    gpsc_change_state(GPSC_OFF, GPSW_STOP);
+    gpsc_change_release_state(GPSC_RS_RELEASED, GPSW_STOP);
+    othersWaiting = FALSE;
     if (call SerialDemuxResource.isOwner()) {
       if (call SerialDefOwner.isOwner())
 	call SerialDefOwner.release();
@@ -371,6 +394,55 @@ implementation {
   }
 
   void gps_granted();
+
+  /*
+   * gps_owner_task: handle changing ownership
+   */
+  task void gps_owner_task() {
+    gpsc_release_state_t cur_release_state;
+
+    atomic cur_release_state = gpsc_release_state;
+    switch (cur_release_state) {
+      default:
+      case GPSC_RS_OWNED:
+	gps_panic(18, cur_release_state);	/* why did the task get posted? */
+	return;					/* nothing to do */
+
+      case GPSC_RS_RELEASED:
+	/*
+	 * There is a race condition that exists between we seeing the SerialDefOwner.granted
+	 * signal (where we "post gps_owner_task" and getting here.  Another user (transient)
+	 * may have requested the resource.  So we need to really make sure we own the resource
+	 * before granting.
+	 *
+	 * If someone else has gotten in then we assume we will get the resource back when
+	 * they are done via a SerialDefOwner.granted signal.
+	 */
+	if (call SerialDefOwner.isOwner()) {
+	  gpsc_change_release_state(GPSC_RS_OWNED, GPSW_OWNER_TASK);
+	  call Trace.trace(T_GPS_DEF_GRANT, 1, 0);
+	  gps_granted();
+	} else
+	  call Trace.trace(T_GPS_DEF_DEFERRED, 1, 0);
+	return;
+
+      case GPSC_RS_RELEASING:
+	/*
+	 * note: anytime we are going to release the h/w, the first thing that is done is
+	 * disable UART interrupts.  This will prevent new character events from occuring.
+	 *
+	 * When the requesting user is finished, we will get a DefOwner.grant.
+	 */
+	gpsc_change_release_state(GPSC_RS_RELEASED, GPSW_OWNER_TASK);
+	call LogEvent.logEvent(DT_EVENT_GPS_RELEASE, 0);
+	call GPSMsg.reset();
+	call GPSTimer.startOneShot(DT_GPS_MAX_GRANT_TO);
+	call Trace.trace(T_GPS_RELEASED, gpsc_state, gpsc_release_state);
+	call SerialDefOwner.release();
+	return;
+    }
+  }
+
 
   /*
    * gps_config_task: Handle messing with the timer on behalf of gps reconfigurations.
@@ -409,24 +481,6 @@ implementation {
 	signal GPSBoot.booted();
 	return;
 
-      case GPSC_RELEASED:
-      case GPSC_REQUESTED:
-	/*
-	 * There is a race condition that exists between we seeing the SerialDefOwner.granted
-	 * signal (where we "post gps_config_task" and getting here.  Another user (transient)
-	 * may have requested the resource.  So we need to really make sure we own the resource
-	 * before granting.
-	 *
-	 * If someone else has gotten in then we assume we will get the resource back when
-	 * they are done via a SerialDefOwner.granted signal.
-	 */
-	if (call SerialDefOwner.isOwner()) {
-	  call Trace.trace(T_GPS_DEF_GRANT, 1, 0);
-	  gps_granted();
-	} else
-	  call Trace.trace(T_GPS_DEF_DEFERRED, 1, 0);
-	return;
-
       case GPSC_HUNT_1:
       case GPSC_HUNT_2:
 	call GPSTimer.startOneShot(DT_GPS_HUNT_LIMIT);
@@ -434,23 +488,6 @@ implementation {
 
       case GPSC_ON:
 	call GPSTimer.stop();
-	return;
-
-      case GPSC_RELEASING:
-	/*
-	 * note: anytime we change state to GPSC_RELEASING, uart interrupts will be
-	 * turned off.  Because we are releasing to some other user and will be deconfiguring.
-	 * We don't want anymore events occuring that might try to change what we are doing.
-	 *
-	 * Since we are using the UART as a DefaultOwner all we need to do is Release, when
-	 * the higher priority device releases (and if there are no other higher priority
-	 * users) we will get the grant back.  We don't need to re-request.
-	 */
-	call LogEvent.logEvent(DT_EVENT_GPS_RELEASE, 0);
-	call GPSMsg.reset();
-	call GPSTimer.startOneShot(DT_GPS_MAX_GRANT_TO);
-	gpsc_change_state(GPSC_RELEASED, GPSW_CONFIG_TASK);
-	call SerialDefOwner.release();
 	return;
     }
   }
@@ -466,6 +503,7 @@ implementation {
     g_idx = 0;
 
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
+    gpsc_change_release_state(GPSC_RS_RELEASED, GPSW_NONE);
     t_gps_pwr_on = 0;
     gpsc_reconfig_trys = MAX_GPS_RECONFIG_TRYS;
     gpsc_request_defers = MAX_GPS_DEFERS;
@@ -599,7 +637,8 @@ implementation {
     if (call SerialDemuxResource.isOwner())
       call SerialDemuxResource.release();
     call LogEvent.logEvent(DT_EVENT_GPS_START,0);
-    gpsc_change_state(GPSC_REQUESTED, GPSW_NONE);
+    gpsc_change_release_state(GPSC_RS_RELEASED, GPSW_START);
+    gpsc_change_state(GPSC_REQUESTED, GPSW_START);
     call GPSMsgControl.start();
     call GPSTimer.startOneShot(DT_GPS_MAX_GRANT_TO);
     call Trace.trace(T_GPS, 0x20, 0);
@@ -684,29 +723,6 @@ implementation {
 	call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
 	call Usart.enableIntr();
 	break;
-
-      case GPSC_RELEASED:
-	gpsc_change_state(gpsc_prev_state, GPSW_GRANT);
-	switch(gpsc_prev_state) {
-	  default:
-	    gps_panic(6, gpsc_state);
-	    break;
-	  case GPSC_START_DELAY:
-	    /* leave the timer alone */
-	    //call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
-	    break;
-	  case GPSC_SENDING:
-	    call GPSTimer.startOneShot(DT_GPS_SEND_TIME_OUT);
-	    break;
-	  case GPSC_HUNT_1:
-	    call GPSTimer.startOneShot(DT_GPS_HUNT_LIMIT);
-	    break;
-	  case GPSC_ON:
-	    call GPSTimer.stop();
-	    break;
-	}
-	call Usart.enableIntr();
-	break;
     }
     return;
   }
@@ -728,8 +744,8 @@ implementation {
     call MuxControl.set_mux(SERIAL_OWNER_GPS);
     call HW.gps_on();
     t_gps_pwr_on = call LocalTime.get();
-    gpsc_prev_state = gpsc_state;
     if (call SerialDefOwner.isOwner()) {
+      gpsc_change_release_state(GPSC_RS_OWNED, GPSW_DEF_RESOURCE_GRANT);
       call Trace.trace(T_GPS_DEF_GRANT, 2, 0);
       gps_granted();
     } else
@@ -743,9 +759,9 @@ implementation {
    */
 
   async event void SerialDefOwner.granted() {
-    if (gpsc_state != GPSC_REQUESTED && gpsc_state != GPSC_RELEASED)
+    if (gpsc_release_state != GPSC_RS_RELEASED)
       gps_panic(7, gpsc_state);
-    post gps_config_task();
+    post gps_owner_task();
   }
 
   event void GPSTimer.fired() {
@@ -758,7 +774,6 @@ implementation {
       case GPSC_RECONFIG_4800_HUNTING:		// timed out.  no start char
       case GPSC_RECONFIG_4800_SENDING:		// timed out send.
       case GPSC_SENDING:			// send took too long
-      case GPSC_RELEASING:			// request hung?
 	gps_panic(8, gpsc_state);
 	nop();
 	return;
@@ -917,7 +932,6 @@ implementation {
       case GPSC_FINISH:
       case GPSC_REQUESTED:			/* small interrupt window between configure and grant, ignore */
       case GPSC_START_DELAY:
-      case GPSC_RELEASING:
 	return;					/* ignore (collected above) */
 
       case GPSC_HUNT_1:
@@ -1026,11 +1040,11 @@ implementation {
    * Check current gps state and determine if we should ignore any requested release.
    *
    * Keep others out if:
-   *     In the bootstrap (GPSC_OFF < state < GPSC_REQUESTED)
+   *     In the bootstrap (GPSC_OFF <= state < GPSC_REQUESTED)
    *     In initial turn on: (state is START_DELAY, HUNT1, HUNT2).
+   *     RELEASING (do to timing and things happening coincident)
    *
    * Release if:
-   *     OFF
    *	 REQUESTED
    *	 ON
    *
@@ -1038,12 +1052,16 @@ implementation {
    */
 
   bool ignoreRelease() {
-    if (gpsc_state >= GPSC_OFF && gpsc_state < GPSC_REQUESTED)
-      return TRUE;
-    if (gpsc_state >= GPSC_START_DELAY && gpsc_state <= GPSC_HUNT_2)
-      return TRUE;
     if (gpsc_state == GPSC_REQUESTED || gpsc_state == GPSC_ON)
       return FALSE;
+
+    /* Boot up states, ignore */
+    if (gpsc_state >= GPSC_OFF && gpsc_state < GPSC_REQUESTED)
+      return TRUE;
+
+    /* START_DELAY, HUNT_1, HUNT_2 -> TRUE (ignoreRelease) */
+    if (gpsc_state > GPSC_REQUESTED && gpsc_state < GPSC_ON)
+      return TRUE;
     gps_panic(17, gpsc_state);
     return TRUE;
   }
@@ -1064,9 +1082,9 @@ implementation {
        * don't let any more bytes come in, we are releasing.
        */
       call Usart.disableIntr();
-      gpsc_prev_state = gpsc_state;
-      gpsc_change_state(GPSC_RELEASING, GPSW_MSG_BOUNDARY);
-      post gps_config_task();
+      gpsc_change_release_state(GPSC_RS_RELEASING, GPSW_MSG_BOUNDARY);
+      call Trace.trace(T_GPS_RELEASING, 1, 0);
+      post gps_owner_task();
     }
   }
 
@@ -1092,6 +1110,8 @@ implementation {
 	if (--gpsc_request_defers == 0) {
 	  gpsc_request_defers = MAX_GPS_DEFERS;
 	  return;
+	} else {
+	  call Trace.trace(T_GPS_DEF_DEFERRED, 3, gpsc_request_defers);
 	}
       } else {
 	if (ignoreRelease())
@@ -1100,9 +1120,9 @@ implementation {
 
       if (call GPSMsg.atMsgBoundary()) {
 	call Usart.disableIntr();
-	gpsc_prev_state = gpsc_state;
-	gpsc_change_state(GPSC_RELEASING, GPSW_RESOURCE_REQUESTED);
-	post gps_config_task();
+	gpsc_change_release_state(GPSC_RS_RELEASING, GPSW_DEF_REQUESTED);
+	call Trace.trace(T_GPS_RELEASING, 2, 0);
+	post gps_owner_task();
       }
     }
   }
