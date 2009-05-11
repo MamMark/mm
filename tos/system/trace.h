@@ -12,28 +12,31 @@
 #define TRACE_SIZE 64
 
 typedef enum {
-  T_REQ		= 1,
-  T_GRANT	= 2,
-  T_REL		= 3,
-  T_SSR		= 4,
-  T_SSW		= 5,
-  T_GPS		= 6,
-  T_THREAD_STOP = 7,
-  T_THREAD_START = 8,
-  T_THREAD_SUSPEND = 9,
-  T_THREAD_WAKE = 10,
+  T_REQ			= 1,
+  T_GRANT		= 2,
+  T_REL			= 3,
+  T_SSR			= 4,
+  T_SSW			= 5,
+  T_GPS			= 6,
+  T_THREAD_STOP		= 7,
+  T_THREAD_START	= 8,
+  T_THREAD_SUSPEND	= 9,
+  T_THREAD_WAKE		= 10,
 
-  T_GPS_DEF_GRANT = 11,
-  T_GPS_DEF_DEFERRED = 12,
-  T_GPS_RELEASING = 13,
-  T_GPS_RELEASED = 14,
+  T_GPS_DEF_GRANT	= 11,
+  T_GPS_DEF_DEFERRED	= 12,
+  T_GPS_RELEASING	= 13,
+  T_GPS_RELEASED	= 14,
+  T_GPS_DEF_REQUESTED	= 15,
+  T_GPS_HOLD_TIME	= 16,
+  T_SS_WRITE_TIME	= 17,
 
   /*
    * For debugging Arbiter 1
    */
-  T_A1_REQ	= 1 + 256,
-  T_A1_GRANT	= 2 + 256,
-  T_A1_REL	= 3 + 256,
+  T_A1_REQ		= 1 + 256,
+  T_A1_GRANT		= 2 + 256,
+  T_A1_REL		= 3 + 256,
 } trace_where_t;
 
 

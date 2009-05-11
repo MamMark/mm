@@ -27,10 +27,10 @@ dis
 
 
 # 5 debug_break
-b PanicP.nc:61
+b PanicP.nc:62
 
 # 6 panic
-b PanicP.nc:74
+b PanicP.nc:76
 comm
 printf "pcode: %d (0x%0x)  where: %d  %04x %04x %04x %04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
@@ -41,22 +41,22 @@ b GPSMsgP.nc:538
 # 8 Msg checksum fail
 b GPSMsgP.nc:561
 
-#  9 finish      479
+#  9 finish      502
 # 10 signal surface mm3ControlP.nc:107
-# 11 start       645
-# 12 SerialDefOwner.requested 1099
-# 13 SerialDefOwner.granted    762
-# 14 msgBoundary 1076
-# 15 SerialDemuxResource.granted 747
+# 11 start       669
+# 12 SerialDefOwner.requested 1134
+# 13 SerialDefOwner.granted    787
+# 14 msgBoundary 1102
+# 15 SerialDemuxResource.granted 766
 
 # 9 finish
-b GPSP.nc:479
+b GPSP.nc:502
 b mm3ControlP.nc:107
-b GPSP.nc:645
-b GPSP.nc:1099
+b GPSP.nc:669
+b GPSP.nc:1134
 b *GPSP$SerialDefOwner$granted
-b GPSP.nc:1076
-b GPSP.nc:747
+b GPSP.nc:1102
+b GPSP.nc:766
 
 dis 7-15
 ena 10

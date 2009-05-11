@@ -10,6 +10,7 @@ norace uint16_t save_sr;
 norace bool save_sr_free;
 norace uint8_t _p, _w;
 norace uint16_t _a0, _a1, _a2, _a3, _arg;
+norace uint32_t last_panic;
 
 #ifdef PANIC_DINT
 #define MAYBE_SAVE_SR_AND_DINT	do {	\
@@ -71,6 +72,7 @@ implementation {
 
     _p = pcode; _w = where; _a0 = arg0; _a1 = arg1; _a2 = arg2; _a3 = arg3;
     MAYBE_SAVE_SR_AND_DINT;
+    last_panic = call LocalTime.get();
     nop();
 
     if (pcode == PANIC_SD || pcode == PANIC_SS)
