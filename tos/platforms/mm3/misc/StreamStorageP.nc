@@ -106,6 +106,7 @@ module StreamStorageP {
     interface LocalTime<TMilli>;
     interface Trace;
     interface SystemCall;
+    interface LogEvent;
   }
 }
   
@@ -155,6 +156,11 @@ implementation {
   semaphore_t read_sem;
   ss_rd_req_t ssr_reqs[SSR_NUM_REQS];
 
+  /*
+   * instrumentation for measuring how long things take.
+   */
+  uint32_t ssw_delay_start;		// how long are we held off?
+  uint32_t ssw_write_grp_start;		// when we start the write of the group.
 
   command error_t Init.init() {
     uint16_t i;
@@ -564,6 +570,7 @@ implementation {
   event void SSWriter.run(void* arg) {
     ss_wr_req_t* cur_handle;
     error_t err;
+    uint16_t delta, num;
 
     /*
      * call the system to arbritrate and configure the SPI
@@ -611,7 +618,7 @@ implementation {
        * time for Stream Storage to gain  control.
        */
 
-      if (ssc.ssw_num_full < 3)	// for now gather three up and ship out together
+      if (ssc.ssw_num_full < SSW_GROUP)	// for now gather n up and ship out together
 	continue;
 
       /*
@@ -624,11 +631,17 @@ implementation {
 	 * a delay prior to shutting the hardware off.  But if we are in OFF_WAIT
 	 * we won't be here but rather later down in this processing loop.
 	 */
-	call BlockingWriteResource.request(); // this will also turn on the hardware when granted.
+	ssw_delay_start = call LocalTime.get();
+	call BlockingWriteResource.request();		 // this will also turn on the hardware when granted.
+	ssw_write_grp_start = call LocalTime.get();
+	delta = (uint16_t) (ssw_write_grp_start - ssw_delay_start);
+	call LogEvent.logEvent(DT_EVENT_SSW_DELAY_TIME, delta);
+	call Trace.trace(T_SSW_DELAY_TIME, delta, 0);
 	if (ss_reset_maybe())
-	  continue;			/* failed, keep looking for work */
+	  continue;					/* failed, keep looking for work */
       }
 
+      num = 0;
       for (;;) {
 	/*
 	 * current buffer needs to be full if we have work to do
@@ -653,7 +666,11 @@ implementation {
 	  err = call SD.write(ssc.dblk_nxt, cur_handle->buf);
 	  if (err)
 	    ss_panic(27, err);
+	  num++;
 	  w_diff = call LocalTime.get() - w_t0;
+	  delta = (uint16_t) w_diff;
+	  call LogEvent.logEvent(DT_EVENT_SSW_BLK_TIME, delta);
+	  call Trace.trace(T_SSW_BLK_TIME, delta, num);
 	}
 
 	cur_handle->stamp = call LocalTime.get();
@@ -666,7 +683,8 @@ implementation {
 	  if (ssc.dblk_nxt >= ssc.dblk_end) {
 	    /*
 	     * We also might want to check for next to last and
-	     * write a record indicating this via Collect.
+	     * write a record indicating this via Collect.  What would
+	     * this buy us?
 	     *
 	     * NOTE: the SSF.dblk_stream_full signal executes on
 	     * the thread stack.  Just be aware.
@@ -674,12 +692,16 @@ implementation {
 	    signal SSF.dblk_stream_full();
 	    ssc.dblk_nxt = 0;
 	    atomic ss_state = SS_STATE_IDLE;
-	    call BlockingWriteResource.release(); // will shutdown the hardware
+	    call BlockingWriteResource.release();	// will shutdown the hardware
 	  } else
 	    ssc.dblk_nxt++;
 	}
 	cur_handle = ssh_ptrs[ssc.ssw_out];
       }
+
+      delta = (uint16_t) (call LocalTime.get() - ssw_write_grp_start);
+      call LogEvent.logEvent(DT_EVENT_SSW_GRP_TIME, delta);
+      call Trace.trace(T_SSW_GRP_TIME, delta, num);
 
       if (ssc.dblk_nxt != 0) {
 	/*

@@ -36,11 +36,12 @@ printf "pcode: %d (0x%0x)  where: %d  %04x %04x %04x %04x\n",_p,_p, _w, _a0, _a1
 end
 
 # 7 Msg Collect too big
-b GPSMsgP.nc:538
+#b GPSMsgP.nc:538
 
 # 8 Msg checksum fail
-b GPSMsgP.nc:561
+#b GPSMsgP.nc:561
 
+# GPSP.nc
 #  9 finish      502
 # 10 signal surface mm3ControlP.nc:107
 # 11 start       669
@@ -50,20 +51,20 @@ b GPSMsgP.nc:561
 # 15 SerialDemuxResource.granted 766
 
 # 9 finish
-b GPSP.nc:502
-b mm3ControlP.nc:107
-b GPSP.nc:669
-b GPSP.nc:1134
-b *GPSP$SerialDefOwner$granted
-b GPSP.nc:1102
-b GPSP.nc:766
+#b GPSP.nc:502
+#b mm3ControlP.nc:107
+#b GPSP.nc:669
+#b GPSP.nc:1134
+#b *GPSP$SerialDefOwner$granted
+#b GPSP.nc:1102
+#b GPSP.nc:766
 
-dis 7-15
-ena 10
-comm 10
-ena 11-14
-dis 10
-end
+#dis 7-15
+#ena 10
+#comm 10
+#ena 11-14
+#dis 10
+#end
 
 # 11 12
 #b mm3SerialCommP.nc:52
@@ -76,41 +77,8 @@ end
 # 8 SSRead
 #b StreamStorageP.nc:798
 
-# 7 BRK_FINISH
-#b GPSP.nc:392
-
-# 8 fake surfaced toggle
-# b mm3ControlP.nc:58
-
 # 9 process_geodetic got over determined
 # b GPSMsgP.nc:209
-
-# 8
-#b *ArbiterP$0$Resource$request+0d22
-#comm
-#printf "request: %d\n", id
-#end
-
-# 9
-#b *ArbiterP$0$Resource$release+0d26
-#comm
-#printf "release: %d\n", id
-#end
-
-# x msgBoundary
-#b GPSP.nc:951
-
-# x requested
-#b GPSP.nc:977
-
-#dis 7-10
-
-# 9 g_idx wrap
-#b *GPSP$UartStream$receivedByte+0d28
-
-# 10 g_nev wrap
-#b *GPSP$gpsc_change_state+0d34
-
 
 # b sig_TIMERA0_VECTOR
 # b sig_TIMERA1_VECTOR

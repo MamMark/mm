@@ -24,13 +24,14 @@ Duty Analysis:
 Current Code:
 
 . Turn on DMA for SD
+. find out why GPS gets toobig and checksum fail
 
 
 Serial Restructure:
 
-. What happens if USART (arb0) is requested while arb1 is cycling.
+*. What happens if USART (arb0) is requested while arb1 is cycling.
 
-1) Understand panics
+*1) Understand panics
 2) Diagram usage of SerialDemux, SerialClientUart{Byte, Stream},
    SerialDefOwnerClient, SerialDemuxResource, SerialDemuxDefaultOwner,
    MuxControl
@@ -61,7 +62,7 @@ How do we want the machine to degrade if there are failures?
 manager to control where the image gets written.
 
 
-Need versioning.  So if we look at a ram image we can correlate it to a code version.
+*Need versioning.  So if we look at a ram image we can correlate it to a code version.
 
 
 

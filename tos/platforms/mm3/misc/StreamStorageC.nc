@@ -68,8 +68,9 @@ implementation {
   SS_P.HW -> HplMM3AdcC;
   SS_P.LocalTime -> LocalTimeMilliC;
 
-  components TraceC;
-  SS_P.Trace -> TraceC;
+  components TraceC, CollectC;
+  SS_P.Trace    -> TraceC;
+  SS_P.LogEvent -> CollectC;
 
   components SystemCallC;
   SS_P.SystemCall -> SystemCallC;

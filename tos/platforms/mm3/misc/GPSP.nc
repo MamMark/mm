@@ -430,11 +430,11 @@ implementation {
 	 */
 	if (call SerialDefOwner.isOwner()) {
 	  gpsc_change_release_state(GPSC_RS_OWNED, GPSW_OWNER_TASK);
-	  call Trace.trace(T_GPS_DEF_GRANT, 1, 0);
+	  call Trace.trace(T_GPS_DO_GRANT, 1, 0);
 	  gps_granted();
 	} else {
 	  gpsc_change_release_state(GPSC_RS_RELEASED, GPSW_OWNER_TASK);
-	  call Trace.trace(T_GPS_DEF_DEFERRED, 1, 0);
+	  call Trace.trace(T_GPS_DO_DEFERRED, 1, 0);
 	}
 	return;
 
@@ -765,10 +765,10 @@ implementation {
     t_gps_pwr_on = call LocalTime.get();
     if (call SerialDefOwner.isOwner()) {
       gpsc_change_release_state(GPSC_RS_OWNED, GPSW_DEF_RESOURCE_GRANT);
-      call Trace.trace(T_GPS_DEF_GRANT, 2, 0);
+      call Trace.trace(T_GPS_DO_GRANT, 2, 0);
       gps_granted();
     } else
-      call Trace.trace(T_GPS_DEF_DEFERRED, 2, 0);
+      call Trace.trace(T_GPS_DO_DEFERRED, 2, 0);
   }
 
   /*
@@ -1130,7 +1130,7 @@ implementation {
        * mux hasn't been switched yet (race condition).  Simply
        * release so the higher priority device gets ownership.
        */
-      call Trace.trace(T_GPS_DEF_REQUESTED, gpsc_state, gpsc_release_state);
+      call Trace.trace(T_GPS_DO_REQUESTED, gpsc_state, gpsc_release_state);
       if (gpsc_state == GPSC_OFF) {
 	call SerialDefOwner.release();
 	return;
@@ -1151,7 +1151,7 @@ implementation {
 	  gpsc_request_defers = MAX_GPS_DEFERS;
 	  return;
 	} else {
-	  call Trace.trace(T_GPS_DEF_DEFERRED, 3, gpsc_request_defers);
+	  call Trace.trace(T_GPS_DO_DEFERRED, 3, gpsc_request_defers);
 	}
       } else {
 	if (ignoreRelease())

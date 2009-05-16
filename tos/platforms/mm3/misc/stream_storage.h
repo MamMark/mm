@@ -19,6 +19,13 @@
 #define SSW_NUM_BUFS   4
 #define SSR_NUM_REQS   4
 
+/*
+ * SSW_GROUP defines how many buffers to group together before trying to fire up the SD
+ * to write them out.   Amortizes the turn on cost over this many buffers.  Note that there
+ * need to be more than this number of buffers so the collection system has something to
+ * write into while the write is happening.
+ */
+#define SSW_GROUP  3
 
 /*
  * Stream Storage Buffer States
