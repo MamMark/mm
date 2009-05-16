@@ -25,6 +25,7 @@ Current Code:
 
 . Turn on DMA for SD
 . find out why GPS gets toobig and checksum fail
+. figure out when to do the dcocalibrate.
 
 
 Serial Restructure:

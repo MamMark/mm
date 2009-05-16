@@ -52,6 +52,15 @@ enum {
   SNS_ID_MAG		= 9,    // Magnetometer (x,y,z)
 
   SNS_MAX_ID		= 9,
+
+  /*
+   * MM3_NUM_SENSORS controls how many sensors are compiled into the system.  This also
+   * effects allocation of communication message structures.  The allocation doesn't happen
+   * automagically as it should so one needs to search all files for use of MM3_NUM_SENSORS and
+   * make the changes manually.  For example, mm3CommDataP.nc needs to have pointers to each
+   * of the sensor data packets.  But this is done manually since we want it to be allocated
+   * in code space.
+   */
   MM3_NUM_SENSORS	= 10,	// includes none
 };
 

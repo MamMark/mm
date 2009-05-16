@@ -19,7 +19,7 @@ enum {
   ACCEL_STATE_READ_Z      = 4,
 };
 
-#define ACCEL_SAMPLES 10
+#define ACCEL_SAMPLES 16
 
 /*
  * Accel is one device with 3 parts.  First X is used

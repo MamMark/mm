@@ -33,6 +33,18 @@ module mm3CommDataP {
 
 implementation {
   message_t data_msg[MM3_NUM_SENSORS];
+  message_t * const dm_p[MM3_NUM_SENSORS] = {
+    &data_msg[0],
+    &data_msg[1],
+    &data_msg[2],
+    &data_msg[3],
+    &data_msg[4],
+    &data_msg[5],
+    &data_msg[6],
+    &data_msg[7],
+    &data_msg[8],
+    &data_msg[9],
+  };
 
   /*
    * Accepts a buffer formatted as a data block (see sd_blocks.h) and sends
@@ -44,10 +56,12 @@ implementation {
     uint8_t *bp;
     message_t *dm;
 
-    dm = &data_msg[client_id];		/* FIX ME, umulqihi3 */
+    dm = (void *) dm_p[client_id];
     bp = call Packet.getPayload(dm, len);
-    if (!bp)
-      return FAIL;			/* change into PANIC.warn */
+    if (!dm || !bp) {
+      call Panic.warn(PANIC_COMM, 10, (uint16_t) dm, (uint16_t) bp, 0, 0);
+      return FAIL;
+    }
     memcpy(bp, buf, len);
     call AMPacket.setType(dm, AM_MM3_DATA);
     call AMPacket.setDestination(dm, AM_BROADCAST_ADDR);
@@ -59,6 +73,6 @@ implementation {
   }
 
   default event void mm3CommData.send_data_done[uint8_t client_id](error_t rtn) {
-    call Panic.brk(0);
+    call Panic.panic(PANIC_COMM, 11, 0, 0, 0, 0);
   }
 }
