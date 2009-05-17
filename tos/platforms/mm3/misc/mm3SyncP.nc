@@ -82,10 +82,16 @@ implementation {
   }
 
 
+  /*
+   * Uses mm3CommData port SNS_ID_NONE (shared with others) so need
+   * to be prepared to handle send_data_done completion events that
+   * we didn't kick off.
+   */
   event void mm3CommData.send_data_done(error_t err) {
     switch (boot_state) {
       default:
 	break;
+
       case SYNC_BOOT_1:
 	boot_state = SYNC_BOOT_2;
 	write_version_record(MAJOR, MINOR, TWEAK);

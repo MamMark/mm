@@ -67,7 +67,6 @@ implementation {
   uint8_t  sal_state;
   uint32_t err_overruns;
   uint32_t err_eaves_drops;
-  bool     eaves_busy;
   bool     record;
 
   /*
@@ -135,14 +134,8 @@ implementation {
     sdp->data[1] = sal_data = temp_data[1];
     signal SenseVal.valAvail(sal_data, sal_stamp);
     if (call mm3Control.eavesdrop()) {
-      if (eaves_busy)
+      if (call mm3CommData.send_data(sdp, SAL_BLOCK_SIZE))
 	err_eaves_drops++;
-      else {
-	if (call mm3CommData.send_data(sdp, SAL_BLOCK_SIZE))
-	  err_eaves_drops++;
-	else
-	  eaves_busy = TRUE;
-      }
     }
     if (record)
       call Collect.collect(sal_block, SAL_BLOCK_SIZE);
@@ -150,7 +143,6 @@ implementation {
 
 
   event void mm3CommData.send_data_done(error_t rtn) {
-    eaves_busy = FALSE;
   }
 
   event void RegimeCtrl.regimeChange() {

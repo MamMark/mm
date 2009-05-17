@@ -8,6 +8,7 @@
 configuration mm3SerialCommC {
   provides {
     interface Send[uint8_t id];
+    interface SendBusy[uint8_t id];
     interface AMPacket;
     interface Packet;
     interface SplitControl;
@@ -27,6 +28,7 @@ implementation {
   MainC.SoftwareInit -> mm3SerialCommP;
 
   Send = AMQueueImplP;
+  SendBusy = AMQueueImplP;
   Resource = mm3SerialCommP;
   ResourceRequested = mm3SerialCommP;
   AMPacket = SerialAMSenderC;

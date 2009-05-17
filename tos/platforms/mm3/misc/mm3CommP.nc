@@ -31,6 +31,7 @@
 #include "AM.h"
 #include "Serial.h"
 #include "sensors.h"
+#include "panic.h"
 
 typedef enum {
   COMM_STATE_OFF         = 1,
@@ -49,6 +50,7 @@ module mm3CommP {
     interface Init;
     interface mm3Comm;
     interface Send[uint8_t id];
+    interface SendBusy[uint8_t id];
     interface Receive[uint8_t id];
     interface AMPacket;
     interface Packet;
@@ -58,12 +60,14 @@ module mm3CommP {
   
     interface SplitControl as SerialAMControl;
     interface Send         as SerialSend[uint8_t id];
+    interface SendBusy	   as SerialSendBusy[uint8_t id];
     interface Receive      as SerialReceive[uint8_t id];
     interface Packet	   as SerialPacket;
     interface AMPacket	   as SerialAMPacket;
     
     interface SplitControl as RadioAMControl;
     interface Send         as RadioSend[uint8_t id];
+    interface SendBusy	   as RadioSendBusy[uint8_t id];
     interface Receive      as RadioReceive[uint8_t id];
     interface Packet	   as RadioPacket;
     interface AMPacket	   as RadioAMPacket;
@@ -97,7 +101,7 @@ implementation {
       comm_state = COMM_STATE_SERIAL; 
       signal mm3Comm.serialOn();
     } else {
-      call Panic.brk(0);
+      call Panic.panic(PANIC_COMM, 20, error, 0, 0, 0);
       call SerialAMControl.start();
     }
   }
@@ -120,7 +124,7 @@ implementation {
       comm_state = COMM_STATE_RADIO; 
       signal mm3Comm.radioOn();
     } else {
-      call Panic.brk(0);
+      call Panic.panic(PANIC_COMM, 21, error, 0, 0, 0);
       call RadioAMControl.start();
     }
   }
@@ -148,7 +152,7 @@ implementation {
       comm_state = COMM_STATE_OFF; 
       signal mm3Comm.commOff();
     } else {
-      call Panic.brk(0);
+      call Panic.panic(PANIC_COMM, 22, error, 0, 0, 0);
       call SerialAMControl.stop();
     }
   }
@@ -158,7 +162,7 @@ implementation {
       comm_state = COMM_STATE_OFF; 
       signal mm3Comm.commOff();
     } else {
-      call Panic.brk(0);
+      call Panic.panic(PANIC_COMM, 23, error, 0, 0, 0);
       call RadioAMControl.stop();
     }
   }
@@ -173,7 +177,28 @@ implementation {
     return signal Receive.receive[id](msg, payload, len);
   }
 
+
+
+  void bad_comm_state(uint8_t where) {
+    call Panic.panic(PANIC_COMM, where, comm_state, 0, 0, 0);
+  }
+
   //********************* Sending *******************************//
+
+  command bool SendBusy.busy[uint8_t id]() {
+    switch (comm_state) {
+      case COMM_STATE_SERIAL:
+	return call SerialSendBusy.busy[id]();
+      case COMM_STATE_RADIO:
+	return call RadioSendBusy.busy[id]();
+
+      default:
+      case COMM_STATE_OFF:
+      case COMM_STATE_SERIAL_INIT:
+      case COMM_STATE_RADIO_INIT:
+	return TRUE;
+    }
+  }
 
   command error_t Send.send[uint8_t id](message_t* msg, uint8_t len) {
     switch (comm_state) {
@@ -187,7 +212,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioSend.send[id](msg, len);
       default:
-	call Panic.brk(0);
+	bad_comm_state(37);
 	return FAIL;
     }
   }
@@ -204,7 +229,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioSend.cancel[id](msg);
       default:
-	call Panic.brk(0);
+	bad_comm_state(38);
 	return FAIL;
     }  
   }
@@ -224,7 +249,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioSend.maxPayloadLength[id]();
       default:
-	call Panic.brk(0);
+	bad_comm_state(39);
 	return -1;
     }
   }
@@ -237,7 +262,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioSend.getPayload[id](msg, len);
       default:
-	call Panic.brk(0);
+	bad_comm_state(40);
 	return NULL;
     }
   }
@@ -250,7 +275,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioAMPacket.address();
       default:
-	call Panic.brk(0);
+	bad_comm_state(41);
 	return -1;
     }  
   }
@@ -263,7 +288,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioAMPacket.destination(amsg);
       default:
-	call Panic.brk(0);
+	bad_comm_state(42);
 	return -1;
     }    
   }
@@ -276,7 +301,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioAMPacket.source(amsg);
       default:
-	call Panic.brk(0);
+	bad_comm_state(24);
 	return -1;
     }    
   }
@@ -291,7 +316,7 @@ implementation {
 	call RadioAMPacket.setDestination(amsg, addr);
 	return;
       default:
-	call Panic.brk(0);
+	bad_comm_state(25);
 	return;
     }   
   }
@@ -306,7 +331,7 @@ implementation {
 	call RadioAMPacket.setSource(amsg, addr);
 	return;
       default:
-	call Panic.brk(0);
+	bad_comm_state(26);
 	return;
     }   
   }
@@ -319,7 +344,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioAMPacket.isForMe(amsg);
       default:
-	call Panic.brk(0);
+	bad_comm_state(27);
 	return FALSE;
     } 
   }
@@ -332,7 +357,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioAMPacket.type(amsg);
       default:
-	call Panic.brk(0);
+	bad_comm_state(28);
 	return -1;
     }  
   }
@@ -347,7 +372,7 @@ implementation {
 	call RadioAMPacket.setType(amsg, t);
 	return;
       default:
-	call Panic.brk(0);
+	bad_comm_state(29);
 	return;
     } 
   }
@@ -360,7 +385,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioAMPacket.group(amsg);
       default:
-	call Panic.brk(0);
+	bad_comm_state(30);
 	return -1;
     } 
   }
@@ -375,7 +400,7 @@ implementation {
 	call RadioAMPacket.setGroup(amsg, grp);
 	return;
       default:
-	call Panic.brk(0);
+	bad_comm_state(31);
 	return;
     } 
   }
@@ -388,7 +413,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioAMPacket.localGroup();
       default:
-	call Panic.brk(0);
+	bad_comm_state(32);
 	return -1;
     }
   }
@@ -403,7 +428,7 @@ implementation {
 	call RadioPacket.clear(msg);
 	return;
       default:
-	call Panic.brk(0);
+	bad_comm_state(33);
 	return;
     }
   }
@@ -416,7 +441,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioPacket.payloadLength(msg);
       default:
-	call Panic.brk(0);
+	bad_comm_state(34);
 	return -1;
     }  
   }
@@ -430,7 +455,7 @@ implementation {
 	call RadioPacket.setPayloadLength(msg, len);
 	return;
       default:
-	call Panic.brk(0);
+	bad_comm_state(35);
 	return;
     }  
   }
@@ -442,7 +467,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioPacket.maxPayloadLength();
       default:
-	call Panic.brk(0);
+	bad_comm_state(36);
 	return -1;
     }  
   }
@@ -454,7 +479,7 @@ implementation {
       case COMM_STATE_RADIO:
 	return call RadioPacket.getPayload(msg, len);
       default:
-	call Panic.brk(0);
+	bad_comm_state(37);
 	return NULL;
     }  
   }

@@ -37,7 +37,9 @@ implementation {
 
   event void Boot.booted() {
 
+#ifdef TEST_READER
     call SSR.read_block(0, temp_buf);
+#endif
 
     /*
      * set the initial regime.  This will also

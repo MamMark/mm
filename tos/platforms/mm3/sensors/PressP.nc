@@ -37,7 +37,6 @@ implementation {
   uint8_t  press_state;
   uint32_t err_overruns;
   uint32_t err_eaves_drops;
-  bool     eaves_busy;
 
 
   command error_t Init.init() {
@@ -88,21 +87,14 @@ implementation {
     pdp->sched_mis = call PeriodTimer.gett0();
     pdp->stamp_mis = call PeriodTimer.getNow();
     if (call mm3Control.eavesdrop()) {
-      if (eaves_busy)
+      if (call mm3CommData.send_data(pdp, PRESS_BLOCK_SIZE))
 	err_eaves_drops++;
-      else {
-	if (call mm3CommData.send_data(pdp, PRESS_BLOCK_SIZE))
-	  err_eaves_drops++;
-	else
-	  eaves_busy = TRUE;
-      }
     }
     call Collect.collect(press_data, PRESS_BLOCK_SIZE);
   }
 
 
   event void mm3CommData.send_data_done(error_t rtn) {
-    eaves_busy = FALSE;
   }
 
   event void RegimeCtrl.regimeChange() {

@@ -256,14 +256,14 @@ print StreamStorageP$ss_state
 printf "  control struct: "
 print StreamStorageP$ssc
 printf "    alloc: %02x  in: %02x  out: %02x\n", StreamStorageP$ssc.ssw_alloc, StreamStorageP$ssc.ssw_in, StreamStorageP$ssc.ssw_out
-printf "  buffers: [%04x] %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[0]->buf, StreamStorageP$ssh_ptrs[0]->majik, StreamStorageP$ssh_ptrs[0]->stamp
-print StreamStorageP$ssh_ptrs[0]->req_state
-printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[1]->buf, StreamStorageP$ssh_ptrs[1]->majik, StreamStorageP$ssh_ptrs[1]->stamp
-print StreamStorageP$ssh_ptrs[1]->req_state
-printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[2]->buf, StreamStorageP$ssh_ptrs[2]->majik, StreamStorageP$ssh_ptrs[2]->stamp
-print StreamStorageP$ssh_ptrs[2]->req_state
-printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssh_ptrs[3]->buf, StreamStorageP$ssh_ptrs[3]->majik, StreamStorageP$ssh_ptrs[3]->stamp
-print StreamStorageP$ssh_ptrs[3]->req_state
+printf "  buffers: [%04x] %04x  ts: %04lx ", StreamStorageP$ssw_p[0]->buf, StreamStorageP$ssw_p[0]->majik, StreamStorageP$ssw_p[0]->stamp
+print StreamStorageP$ssw_p[0]->req_state
+printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssw_p[1]->buf, StreamStorageP$ssw_p[1]->majik, StreamStorageP$ssw_p[1]->stamp
+print StreamStorageP$ssw_p[1]->req_state
+printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssw_p[2]->buf, StreamStorageP$ssw_p[2]->majik, StreamStorageP$ssw_p[2]->stamp
+print StreamStorageP$ssw_p[2]->req_state
+printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssw_p[3]->buf, StreamStorageP$ssw_p[3]->majik, StreamStorageP$ssw_p[3]->stamp
+print StreamStorageP$ssw_p[3]->req_state
 printf "     read:  in: %02x  out: %02x\n", StreamStorageP$ssc.ssr_in, StreamStorageP$ssc.ssr_out
 printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP$ssr_reqs[0].majik, StreamStorageP$ssr_reqs[0].stamp,\
     StreamStorageP$ssr_reqs[0].blk, StreamStorageP$ssr_reqs[0].buf

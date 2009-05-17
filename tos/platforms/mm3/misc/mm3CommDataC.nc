@@ -16,6 +16,7 @@ implementation {
 
   components mm3CommC;
   mm3CommDataP.Send     -> mm3CommC;
+  mm3CommDataP.SendBusy -> mm3CommC;
   mm3CommDataP.Packet   -> mm3CommC;
   mm3CommDataP.AMPacket -> mm3CommC;
   

@@ -120,8 +120,9 @@ implementation {
   } read_block_t;
   
 
+  semaphore_t write_sem;
   ss_wr_req_t ssw_handles[SSW_NUM_BUFS];
-  ss_wr_req_t * const ssh_ptrs[SSW_NUM_BUFS] = {
+  ss_wr_req_t * const ssw_p[SSW_NUM_BUFS] = {
     &ssw_handles[0],
     &ssw_handles[1],
     &ssw_handles[2],
@@ -146,8 +147,6 @@ implementation {
   ss_state_t ss_state;		 // current state of machine (2 bytes)
   ss_control_t ssc;
 
-  semaphore_t write_sem;
-
 
   /*
    * Globals for the Stream Read interface
@@ -155,6 +154,12 @@ implementation {
 
   semaphore_t read_sem;
   ss_rd_req_t ssr_reqs[SSR_NUM_REQS];
+  ss_rd_req_t * const ssr_p[SSR_NUM_REQS] = {
+    &ssr_reqs[0],
+    &ssr_reqs[1],
+    &ssr_reqs[2],
+    &ssr_reqs[3]
+  };
 
   /*
    * instrumentation for measuring how long things take.
@@ -186,15 +191,15 @@ implementation {
     ssc.majik_b     = SSC_MAJIK_B;
 
     for (i = 0; i < SSW_NUM_BUFS; i++) {
-      ssw_handles[i].majik     = SS_REQ_MAJIK;
-      ssw_handles[i].req_state = SS_REQ_STATE_FREE;
-      ssw_handles[i].stamp     = 0;
+      ssw_p[i]->majik     = SS_REQ_MAJIK;
+      ssw_p[i]->req_state = SS_REQ_STATE_FREE;
+      ssw_p[i]->stamp     = 0;
     }
 
     for (i = 0; i < SSR_NUM_REQS; i++) {
-      ssr_reqs[i].majik     = SS_REQ_MAJIK;
-      ssr_reqs[i].req_state = SS_REQ_STATE_FREE;
-      ssr_reqs[i].stamp     = 0;
+      ssr_p[i]->majik     = SS_REQ_MAJIK;
+      ssr_p[i]->req_state = SS_REQ_STATE_FREE;
+      ssr_p[i]->stamp     = 0;
     }
     return SUCCESS;
   }
@@ -232,7 +237,7 @@ implementation {
    */
 
   command void SSW.buffer_full(ss_wr_req_t *handle) {
-    ss_wr_req_t *sshp;
+    ss_wr_req_t *sswp;
     uint8_t in_index;
 
     /*
@@ -240,15 +245,15 @@ implementation {
      * in should be where in_index points.
      */
     in_index = ssc.ssw_in;
-    sshp = ssh_ptrs[in_index];
-    if (&ssw_handles[in_index] != sshp) // shouldn't ever happen,  uses math
-      ss_panic(10, (uint16_t) sshp);
+    sswp = ssw_p[in_index];
+    if (in_index >= SSW_NUM_BUFS)
+      ss_panic(10, in_index);
 
     /* the next check also catches the null pointer */
-    if (sshp != handle ||
+    if (sswp != handle ||
 	handle->majik != SS_REQ_MAJIK ||
 	handle->req_state != SS_REQ_STATE_ALLOC) {
-      call Panic.panic(PANIC_SS, 11, (uint16_t) handle, handle->majik, handle->req_state, (uint16_t) sshp);
+      call Panic.panic(PANIC_SS, 11, (uint16_t) handle, handle->majik, handle->req_state, (uint16_t) sswp);
     }
 
     if (ssc.majik_a != SSC_MAJIK_A || ssc.majik_b != SSC_MAJIK_B)
@@ -363,7 +368,7 @@ implementation {
       return err;
     }
 
-    dp = ssw_handles[0].buf;
+    dp = ssw_p[0]->buf;
     if ((err = read_blk_fail(0, dp)))
       return err;
 
@@ -444,29 +449,29 @@ implementation {
 
 
   command ss_wr_req_t* SSW.get_free_buf_handle() {
-    ss_wr_req_t *sshp;
+    ss_wr_req_t *sswp;
 
-    sshp = ssh_ptrs[ssc.ssw_alloc];
+    sswp = ssw_p[ssc.ssw_alloc];
     if (ssc.ssw_alloc >= SSW_NUM_BUFS ||
 	ssc.majik_a != SSC_MAJIK_A ||
 	ssc.majik_b != SSC_MAJIK_B ||
-	sshp->req_state < SS_REQ_STATE_FREE ||
-	sshp->req_state >= SS_REQ_STATE_MAX) {
+	sswp->req_state < SS_REQ_STATE_FREE ||
+	sswp->req_state >= SS_REQ_STATE_MAX) {
       ss_panic(18, -1);
       return NULL;
     }
 
-    if (sshp->req_state == SS_REQ_STATE_FREE) {
-      if (sshp->majik != SS_REQ_MAJIK) {
+    if (sswp->req_state == SS_REQ_STATE_FREE) {
+      if (sswp->majik != SS_REQ_MAJIK) {
 	ss_panic(19, -1);
 	return NULL;
       }
-      sshp->stamp = call LocalTime.get();
-      sshp->req_state = SS_REQ_STATE_ALLOC;
+      sswp->stamp = call LocalTime.get();
+      sswp->req_state = SS_REQ_STATE_ALLOC;
       ssc.ssw_alloc++;
       if (ssc.ssw_alloc >= SSW_NUM_BUFS)
 	ssc.ssw_alloc = 0;
-      return sshp;
+      return sswp;
     }
     ss_panic(20, -1);
     return NULL;
@@ -608,7 +613,7 @@ implementation {
        * The access of req_state is atomic so shouldn't have a race problem with
        * the task level.
        */
-      cur_handle = ssh_ptrs[ssc.ssw_out];
+      cur_handle = ssw_p[ssc.ssw_out];
       if (cur_handle->req_state != SS_REQ_STATE_FULL)
 	continue;
 
@@ -696,7 +701,7 @@ implementation {
 	  } else
 	    ssc.dblk_nxt++;
 	}
-	cur_handle = ssh_ptrs[ssc.ssw_out];
+	cur_handle = ssw_p[ssc.ssw_out];
       }
 
       delta = (uint16_t) (call LocalTime.get() - ssw_write_grp_start);
@@ -756,7 +761,7 @@ implementation {
      * in should be where in_index points.
      */
     in_index = ssc.ssr_in;
-    rdp = &ssr_reqs[in_index];
+    rdp = ssr_p[in_index];
 
     /* the next check also catches the null pointer */
     if (!buf || rdp->majik != SS_REQ_MAJIK ||
@@ -814,7 +819,7 @@ implementation {
       call Semaphore.acquire(&read_sem);
 
       //Get the current req handle
-      cur_handle = &ssr_reqs[ssc.ssr_out];
+      cur_handle = ssr_p[ssc.ssr_out];
 
       call BlockingReadResource.request();
       if (ss_reset_maybe()) {
@@ -851,7 +856,7 @@ implementation {
 	ssc.ssr_out++;
 	if (ssc.ssr_out >= SSR_NUM_REQS)
 	  ssc.ssr_out = 0;
-	cur_handle = &ssr_reqs[ssc.ssr_out];
+	cur_handle = ssr_p[ssc.ssr_out];
       }
 
       atomic ss_state = SS_STATE_IDLE;

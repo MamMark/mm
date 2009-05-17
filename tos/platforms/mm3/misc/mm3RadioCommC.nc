@@ -7,6 +7,7 @@
 
 configuration mm3RadioCommC {
   provides interface Send[uint8_t id];
+  provides interface SendBusy[uint8_t id];
   provides interface AMPacket;
   provides interface Packet;
   provides interface SplitControl;
@@ -17,6 +18,7 @@ implementation {
   components new AMQueueImplP(MM3_NUM_SENSORS), ActiveMessageC;
 
   Send = AMQueueImplP;
+  SendBusy = AMQueueImplP;
   AMPacket = AMSenderC;
   Packet = AMSenderC;
   SplitControl = ActiveMessageC;

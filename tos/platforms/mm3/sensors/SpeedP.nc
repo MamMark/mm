@@ -37,7 +37,6 @@ implementation {
   uint8_t  speed_state;
   uint32_t err_overruns;
   uint32_t err_eaves_drops;
-  bool     eaves_busy;
   
   uint16_t data[2];
 
@@ -103,21 +102,14 @@ implementation {
     sdp->data[0] = data[0];
     sdp->data[1] = data[1];
     if (call mm3Control.eavesdrop()) {
-      if (eaves_busy)
+      if (call mm3CommData.send_data(sdp, SPEED_BLOCK_SIZE))
 	err_eaves_drops++;
-      else {
-	if (call mm3CommData.send_data(sdp, SPEED_BLOCK_SIZE))
-	  err_eaves_drops++;
-	else
-	  eaves_busy = TRUE;
-      }
     }
     call Collect.collect(speed_data, SPEED_BLOCK_SIZE);
   }
 
 
   event void mm3CommData.send_data_done(error_t rtn) {
-    eaves_busy = FALSE;
   }
 
   event void RegimeCtrl.regimeChange() {

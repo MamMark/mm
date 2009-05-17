@@ -600,5 +600,10 @@ implementation {
     atomic return (collect_state == COLLECT_START);
   }
 
+  /*
+   * GPS status messages are sent via mm3commdata as SNS_ID 0 (same as sync and restart
+   * messages.  That means that any send_data_done signal for SNS_ID 0 will also come
+   * here.
+   */
   event void mm3CommData.send_data_done(error_t err) {}
 }
