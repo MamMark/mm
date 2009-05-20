@@ -1,0 +1,121 @@
+
+In a previous life I spent 8 years (80-88) doing processor (CPU) development
+and processor bring-up.  I then spent 12 years working at cisco Systems
+during the early years where we extensively dealt with the encapsulation/packet
+format problem being discussed.
+
+Here is my take on the message/packet encapsulation problem.
+
+Packet flow: What problem are we trying to solve?  Do we need to be able to
+access arbitrary layers in an arbitrary fashion?  Or is it sufficient to
+deal with encapsulations as the packet is handed up the stack or conversely
+down.
+
+Classically on receive, as a packet moves up the stack, each layer  will
+process whatever it needs from the header it concerns itself with.  When
+done it will hand the packet to the next layer up after removing the
+current header (for its layer) from the packet.
+
+Each layer only concerns itself with its header and no access across
+encapsulation boundaries is needed.  Similarily, on output only in
+reverse.
+
+Is there a need for arbritrary access to the different header encapsulations?
+I think that insisting on encapsulation boundaries is a good thing (tm), so
+think we should keep things simple.  ie.  headers get processed and stripped
+off on the way up and get added on the way down.  It argues for the simplicity
+of Jan's approach.
+
+
+H/W and alignment considerations:  Jan's circular buffer scheme mentions the
+need to potentially move the contents of a packet around to make sure that
+headers fit and do not wrap.  It is clear that making a header continguous
+is necessary to allow proper access when using C structures.
+
+However, there is another consideration.  If h/w is involved then the entire
+packet needs to be contiguous (to keep things simple anyway, it is possible
+to cascade h/w output ie. cascaded DMA engines but it certainly complicates
+things).  This argues for keeping the entire output packet contiguous.
+
+It is desireable to provide a mechanism for a higher layer to place its data
+so that more often then not the headers and footers all fit contiguously.  In
+other words avoiding the memmoves.
+
+I actually think this is what Miklos' KISS proposal with Packet.format() gives
+us.  It could be made more automatic via something like Packet.data_offset()
+which could call each layer below to see what needs to be added.  However this
+assumes we know something about what interface (MAC) encapsulation we want to
+use so requires apriori knowledge about what interface this packet wants to get
+sent out on.  Not great.  However, a reasonable compromise would combine both
+Jan's and Miklos' mechanism.  Packet.format() tells the system the predominate
+layout.  But inspection and apriori knowledge we would set this for the specific system
+being built (tuned) to minimize the packet layout problems.
+
+What really solves this problem is scatter/gather (actually gather).  Because
+we don't have to worry about properly positioning the application layer's data
+so all the headers fit properly.  Rather we link in successive layer's
+encapsulations as the packet travels down the stack.  Yes we really are
+reinventing this.  Do we really want to add iovecs to the system?  I think
+we can implement something like what Jan suggests fairly simply that also
+allows for positioning the most used packets such that they are contiguous.
+
+
+ActiveMessaging:  The AM layer is an interesting example of an encapsulation
+that interfers with a lower layer.  The inner workings of the AM layer depend
+on what the MAC layer is.  For example Serial vs. C2420.  AM has a dispatch
+byte (type) that determines what the encapsulation of the rest of the packet is
+but also assumes that the dest and src fields of the MAC layer are the same as
+the AM fields of the same name.   This only works if a) there is a resonable
+mapping between the AM address and the underlying MAC address and b) AM knows
+ahead of time what MAC is being used so the format of the fields is known.  But
+this needs to be known apriori.
+
+I have a system where we can switch on the fly between Serial and Radio (but
+it can be any two arbritrary network interfaces).  But currently any queued up
+packets have already been written with the wrong encapsulation.  And when
+switched to the different interface they are wrong.  This is because AM knows
+too much and the h/w encapsulation should be written until the packet actually
+goes out the interface.
+
+AM really should have its own addressing which would allow mappings similar to
+IP to ethernet or serial encapsulations used on routers.  But this would burn
+scarce bytes in the payload.  The current behaviour of the AM layer confuses
+the issue of how encapsulating layers should behave.  This can be handled in
+the new scheme very easily.  AM can lay down an AM header and then we define
+a simple MAC encapsulation for the AM type that gets written by the MAC layer.
+We define a simple AM_addr to MAC_addr transform that then results in no
+loss of bytes in the payload.  The MAC encapsulation would remove the AM layer
+and replace it with the optimized header.  Conversly on the way up.  In this way AM
+wouldn't have any knowledge of what is below it.  And the smarts gets buried in
+the MAC encapsulation which is were it belongs.  This transformation would also
+not occur until it really needed to avoid miswrites.
+
+
+Length:  Currently, length is maintained by AM writing to whatever it thinks
+the length cell is for the MAC layer that AM is bound to.  One can not currently
+just look at the packet data and know what the size of the packet is.  One needs
+to know what the MAC encapsulation is so the appropriate cell can be looked at
+which then tells what length it is.  And this can not be determined by just
+looking at the data packet as layed down in memory.
+
+It seems to make sense that there should be a cell associated with the packet
+that tells the currently as encapsulated packets length (meta data?).  This is
+inherent in Jan's start/end cells but would be easier to access if it were
+maintained independently.
+
+
+Simlarily a cell that denotes the current encapsulation of the packet in
+memory as it currently stands would be a reasonable thing.  ie.  Last written
+encapsulation.  This would change as the packet is handed up and down the stack.
+It also serves to tell us where in the stack it is.
+
+Speaking of length we really need a mechanism for a higher layer (application)
+to find out what the MTU that it can send is.  If we are sitting on top of
+TCP/UDP it can be one thing.  But if sitting on top of a physical interface
+it should be something else.  This should be seperated from what TOSH_MAX_DATA
+is defined as.  Which is a link layer thing.
+
+that's all I've got for now.  Hopefully that helps with the discussion.
+
+
+eric
