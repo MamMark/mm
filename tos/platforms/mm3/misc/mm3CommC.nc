@@ -23,8 +23,6 @@ implementation {
   components MainC;
   components mm3CommP;
   
-  MainC.SoftwareInit -> mm3CommP;
-  
   mm3Comm  = mm3CommP;
   Send     = mm3CommP;
   SendBusy = mm3CommP;

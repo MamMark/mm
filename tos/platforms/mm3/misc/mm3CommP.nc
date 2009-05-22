@@ -34,7 +34,7 @@
 #include "panic.h"
 
 typedef enum {
-  COMM_STATE_OFF         = 1,
+  COMM_STATE_OFF         = 0,
   COMM_STATE_SERIAL_REQUEST,
   COMM_STATE_SERIAL_INIT,
   COMM_STATE_SERIAL,
@@ -47,11 +47,10 @@ typedef enum {
 
 module mm3CommP {
   provides {
-    interface Init;
     interface mm3Comm;
-    interface Send[uint8_t id];
-    interface SendBusy[uint8_t id];
-    interface Receive[uint8_t id];
+    interface Send[uint8_t cid];
+    interface SendBusy[uint8_t cid];
+    //    interface Receive[uint8_t cid];
     interface AMPacket;
     interface Packet;
   }
@@ -59,16 +58,16 @@ module mm3CommP {
     interface Panic;
   
     interface SplitControl as SerialAMControl;
-    interface Send         as SerialSend[uint8_t id];
-    interface SendBusy	   as SerialSendBusy[uint8_t id];
-    interface Receive      as SerialReceive[uint8_t id];
+    interface Send         as SerialSend[uint8_t cid];
+    interface SendBusy	   as SerialSendBusy[uint8_t cid];
+    //    interface Receive      as SerialReceive[uint8_t cid];
     interface Packet	   as SerialPacket;
     interface AMPacket	   as SerialAMPacket;
     
     interface SplitControl as RadioAMControl;
-    interface Send         as RadioSend[uint8_t id];
-    interface SendBusy	   as RadioSendBusy[uint8_t id];
-    interface Receive      as RadioReceive[uint8_t id];
+    interface Send         as RadioSend[uint8_t cid];
+    interface SendBusy	   as RadioSendBusy[uint8_t cid];
+    //    interface Receive      as RadioReceive[uint8_t cid];
     interface Packet	   as RadioPacket;
     interface AMPacket	   as RadioAMPacket;
   }
@@ -78,10 +77,6 @@ implementation {
 
   comm_state_t comm_state;
 
-  command error_t Init.init() {
-    comm_state = COMM_STATE_OFF;
-    return SUCCESS;
-  }
 
   //********************* Use SERIAL *******************************//
 
@@ -169,13 +164,15 @@ implementation {
 
   //********************* Receiving *******************************//
 
-  event message_t* SerialReceive.receive[uint8_t id](message_t* msg, void* payload, uint8_t len) {
+#ifdef notdef
+  event message_t* SerialReceive.receive[uint8_t cid](message_t* msg, void* payload, uint8_t len) {
     return signal Receive.receive[id](msg, payload, len);
   }
 
-  event message_t* RadioReceive.receive[uint8_t id](message_t* msg, void* payload, uint8_t len) {
+  event message_t* RadioReceive.receive[uint8_t cid](message_t* msg, void* payload, uint8_t len) {
     return signal Receive.receive[id](msg, payload, len);
   }
+#endif
 
 
 
@@ -185,39 +182,39 @@ implementation {
 
   //********************* Sending *******************************//
 
-  command bool SendBusy.busy[uint8_t id]() {
+  command bool SendBusy.busy[uint8_t cid]() {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	return call SerialSendBusy.busy[id]();
+	return call SerialSendBusy.busy[cid]();
       case COMM_STATE_RADIO:
-	return call RadioSendBusy.busy[id]();
+	return call RadioSendBusy.busy[cid]();
 
       default:
       case COMM_STATE_OFF:
       case COMM_STATE_SERIAL_INIT:
       case COMM_STATE_RADIO_INIT:
+	bad_comm_state(43);
 	return TRUE;
     }
   }
 
-  command error_t Send.send[uint8_t id](message_t* msg, uint8_t len) {
+  command error_t Send.send[uint8_t cid](message_t* msg, uint8_t len) {
     switch (comm_state) {
+      case COMM_STATE_SERIAL:
+	return call SerialSend.send[cid](msg, len);
+      case COMM_STATE_RADIO:
+	return call RadioSend.send[cid](msg, len);
+
+      default:
       case COMM_STATE_OFF:
-	return EOFF;  
       case COMM_STATE_SERIAL_INIT:
       case COMM_STATE_RADIO_INIT:
-	return EBUSY;
-      case COMM_STATE_SERIAL:
-	return call SerialSend.send[id](msg, len);
-      case COMM_STATE_RADIO:
-	return call RadioSend.send[id](msg, len);
-      default:
 	bad_comm_state(37);
 	return FAIL;
     }
   }
 
-  command error_t Send.cancel[uint8_t id](message_t* msg) {
+  command error_t Send.cancel[uint8_t cid](message_t* msg) {
     switch (comm_state) {
       case COMM_STATE_OFF:
 	return EOFF;  
@@ -225,29 +222,29 @@ implementation {
       case COMM_STATE_RADIO_INIT:
 	return EBUSY;
       case COMM_STATE_SERIAL:
-	return call SerialSend.cancel[id](msg);
+	return call SerialSend.cancel[cid](msg);
       case COMM_STATE_RADIO:
-	return call RadioSend.cancel[id](msg);
+	return call RadioSend.cancel[cid](msg);
       default:
 	bad_comm_state(38);
 	return FAIL;
     }  
   }
 
-  event void SerialSend.sendDone[uint8_t id](message_t* msg, error_t error) {
-    signal Send.sendDone[id](msg, error);
+  event void SerialSend.sendDone[uint8_t cid](message_t* msg, error_t error) {
+    signal Send.sendDone[cid](msg, error);
   }
   
-  event void RadioSend.sendDone[uint8_t id](message_t* msg, error_t error) {
-    signal Send.sendDone[id](msg, error);
+  event void RadioSend.sendDone[uint8_t cid](message_t* msg, error_t error) {
+    signal Send.sendDone[cid](msg, error);
   }
 
-  command uint8_t Send.maxPayloadLength[uint8_t id]() {
+  command uint8_t Send.maxPayloadLength[uint8_t cid]() {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	return call SerialSend.maxPayloadLength[id]();
+	return call SerialSend.maxPayloadLength[cid]();
       case COMM_STATE_RADIO:
-	return call RadioSend.maxPayloadLength[id]();
+	return call RadioSend.maxPayloadLength[cid]();
       default:
 	bad_comm_state(39);
 	return -1;
@@ -255,12 +252,12 @@ implementation {
   }
 
 
-  command void* Send.getPayload[uint8_t id](message_t* msg, uint8_t len) {
+  command void* Send.getPayload[uint8_t cid](message_t* msg, uint8_t len) {
     switch (comm_state) {
       case COMM_STATE_SERIAL:
-	return call SerialSend.getPayload[id](msg, len);
+	return call SerialSend.getPayload[cid](msg, len);
       case COMM_STATE_RADIO:
-	return call RadioSend.getPayload[id](msg, len);
+	return call RadioSend.getPayload[cid](msg, len);
       default:
 	bad_comm_state(40);
 	return NULL;
