@@ -45,12 +45,12 @@ typedef enum {
 } comm_state_t;
 
 
-module mm3CommP {
+module mm3CommSwP {
   provides {
-    interface mm3Comm;
+    interface mm3CommSw;
     interface Send[uint8_t cid];
     interface SendBusy[uint8_t cid];
-    //    interface Receive[uint8_t cid];
+//  interface Receive[uint8_t cid];
     interface AMPacket;
     interface Packet;
   }
@@ -60,14 +60,14 @@ module mm3CommP {
     interface SplitControl as SerialAMControl;
     interface Send         as SerialSend[uint8_t cid];
     interface SendBusy	   as SerialSendBusy[uint8_t cid];
-    //    interface Receive      as SerialReceive[uint8_t cid];
+//  interface Receive      as SerialReceive[uint8_t cid];
     interface Packet	   as SerialPacket;
     interface AMPacket	   as SerialAMPacket;
     
     interface SplitControl as RadioAMControl;
     interface Send         as RadioSend[uint8_t cid];
     interface SendBusy	   as RadioSendBusy[uint8_t cid];
-    //    interface Receive      as RadioReceive[uint8_t cid];
+//  interface Receive      as RadioReceive[uint8_t cid];
     interface Packet	   as RadioPacket;
     interface AMPacket	   as RadioAMPacket;
   }
@@ -80,7 +80,7 @@ implementation {
 
   //********************* Use SERIAL *******************************//
 
-  command error_t mm3Comm.useSerial() {
+  command error_t mm3CommSw.useSerial() {
     if (comm_state == COMM_STATE_SERIAL)
       return EALREADY;
     if (comm_state == COMM_STATE_OFF || comm_state == COMM_STATE_RADIO) {
@@ -94,7 +94,7 @@ implementation {
   event void SerialAMControl.startDone(error_t error) {
     if (error == SUCCESS) {
       comm_state = COMM_STATE_SERIAL; 
-      signal mm3Comm.serialOn();
+      signal mm3CommSw.serialOn();
     } else {
       call Panic.panic(PANIC_COMM, 20, error, 0, 0, 0);
       call SerialAMControl.start();
@@ -103,7 +103,7 @@ implementation {
   
   //********************* Use RADIO *******************************//
 
-  command error_t mm3Comm.useRadio() {
+  command error_t mm3CommSw.useRadio() {
     if(comm_state == COMM_STATE_RADIO)
       return EALREADY;
     if(comm_state == COMM_STATE_OFF || comm_state == COMM_STATE_SERIAL) {
@@ -117,7 +117,7 @@ implementation {
   event void RadioAMControl.startDone(error_t error) {
     if(error == SUCCESS) {
       comm_state = COMM_STATE_RADIO; 
-      signal mm3Comm.radioOn();
+      signal mm3CommSw.radioOn();
     } else {
       call Panic.panic(PANIC_COMM, 21, error, 0, 0, 0);
       call RadioAMControl.start();
@@ -126,7 +126,7 @@ implementation {
   
   //********************* Use NONE *******************************//
 
-  command error_t mm3Comm.useNone() {
+  command error_t mm3CommSw.useNone() {
     if(comm_state == COMM_STATE_OFF)
       return EALREADY;
     if(comm_state == COMM_STATE_SERIAL) {
@@ -145,7 +145,7 @@ implementation {
   event void SerialAMControl.stopDone(error_t error) {
     if(error == SUCCESS) {
       comm_state = COMM_STATE_OFF; 
-      signal mm3Comm.commOff();
+      signal mm3CommSw.commOff();
     } else {
       call Panic.panic(PANIC_COMM, 22, error, 0, 0, 0);
       call SerialAMControl.stop();
@@ -155,7 +155,7 @@ implementation {
   event void RadioAMControl.stopDone(error_t error) {
     if(error == SUCCESS) {
       comm_state = COMM_STATE_OFF; 
-      signal mm3Comm.commOff();
+      signal mm3CommSw.commOff();
     } else {
       call Panic.panic(PANIC_COMM, 23, error, 0, 0, 0);
       call RadioAMControl.stop();
