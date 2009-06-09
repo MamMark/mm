@@ -4,12 +4,8 @@
  */
 
 /**
- * mm3Comm provides a single interface that can be switched between
- * the radio or the direct connect serial line.
- *
- * Each channel (control, debug, or data) contends for the comm line.
- * Data packets contend with each other before contending for the
- * comm line with control and debug traffic.
+ * mm3CommData provides a data stream for data blocks.  Typed data
+ * blocks as defined in sd_bocks.h.
  *
  * @author Eric B. Decker
  * @date   Apr 3 2008
@@ -34,7 +30,12 @@ module mm3CommDataP {
 
 implementation {
   message_t data_msg[MM3_NUM_SENSORS];
-  message_t * const dm_p[MM3_NUM_SENSORS] = {
+
+#if NUM_SENSORS != 10
+#warning "MM3_NUM_SENSORS/NUM_SENSORS is different than 10"
+#endif
+
+  message_t * const dm_p[NUM_SENSORS] = {
     &data_msg[0],
     &data_msg[1],
     &data_msg[2],

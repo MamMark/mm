@@ -64,6 +64,11 @@ enum {
   MM3_NUM_SENSORS	= 10,	// includes none
 };
 
+/*
+ * should be same as MM3_NUM_SENSORS
+ */
+#define NUM_SENSORS 10
+
 
 /*
  * Mux setings to read from sensors

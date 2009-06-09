@@ -1,4 +1,5 @@
 /* $Id: platform_message.h,v 1.5 2008/02/19 22:03:45 scipio Exp $
+ * Copyright (c) 2008-2009 Eric B. Decker
  * "Copyright (c) 2005 The Regents of the University  of California.  
  * All rights reserved.
  *
@@ -28,9 +29,14 @@
  */
 
 /**
- * Defining the platform-independently named packet structures to be the
- * chip-specific CC1000 packet structures.
+ * Defining the platform independently named packet structures for the MM3
+ * platform.  Currently this is defined for serial, cc2420 radio, and AM
+ * headers.  The AM header is a place holder until a determination is made
+ * for how to send the packet out is made.  What actual interface is determined
+ * later on the way out.  At that time the header is written for the interface
+ * as appropriate.
  *
+ * @author Eric B. Decker <cire831@gmail.com>
  * @author Philip Levis
  * @version $Revision: 1.5 $ $Date: 2008/02/19 22:03:45 $
  */
@@ -41,10 +47,12 @@
 
 #include <CC2420.h>
 #include <Serial.h>
+#include <AM.h>
 
 typedef union message_header {
   cc2420_header_t cc2420;
   serial_header_t serial;
+  am_header_t     am;
 } message_header_t;
 
 typedef union TOSRadioFooter {
