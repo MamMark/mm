@@ -1,4 +1,7 @@
 
+This brief is written assuming that there is a common root directory,  we'll
+call it mm_t2 and it is usually at the top level of a working directory.
+
 1) OS Install.
 
 Install the OS, Ubuntu (Xubuntu uses less resources) on the box.  Recommended is
@@ -7,35 +10,54 @@ ISO install images can be found at [http://xubuntu.com/get#hardy 8.04 ISO].
 
 
 When the install is complete, boot the system, and use Synaptic or other package
-manager to make sure the following packages are installed:
+manager ("apt-get install") to make sure the following packages are installed:
 
-      subversion
-      cvs
-      build-essentials
-      stow
-      automake
-      autoconf
-      autobook
-      libtool
+    build-essentials, stow, automake, autoconf, autobook, libtool, libc6-dev,
+    git-core, git-daemon-run, git-doc, git-email, git-gui, gitk, gitmagic
 
 
-2) TinyOS 2.x tree checkout
+2) Check out the current t2_mm3 tree.  The t2_mm3 tree is a seperate t2 based
+tree that has mm3 unique code to build the mm3 load.  The code lives in a git
+repository at either of the following URLs:
 
-Check out the current TinyOS 2.x tree.   We use the head of the T2 development
-tree which is a little dangerous so pay attention to what comes in with an update.
-<t2_base> refers to the root of the T2 tree.  For example: /home/joe/t2_base
+    git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only)
+    gitosis@overtux.cse.ucsc.edu:cire/t2_mm3.git (need access permissions)
+    ssh://hinrg.cs.jhu.edu/home/cire/t2_mm3.git (need access permisssions)
+
+    cd mm_t2
+    git clone -v <t2_mm3 repo path>
+
+    this will create the directory mm_t2/t2_mm3
+    
+
+3) TinyOS 2.x tree checkout
+
+The following git repos are hosted at git://hinrg.cs.jhu.edu/git/<tree>:
+
+    tinyos-2.x.git:	tracks the main t2 cvs repository (updated hourly)
+    cire/tinyos-2.x.git: manually tracking of the main hinrg t2 tree
+        t2_base:    branch that tracks the main hinrg
+	encaps:	    encapsulation modification to the mainline
+	mm3_mods:   modifications needed for the mm3 project
+
+    t2 (cvs) -> tinyos-2.x.git -> cire/tinyos-2.x.git (t2_base)
+             -> (encaps) -> (m3_mods)
 
 
-   a) cd <t2_base>
-   b) mkdir <t2_cur> (one suggestion is to use t2_<date_stamp> and then ln -s t2_<date_stamp> t2_cur)
-   c) cd t2_cur
-   d) cvs -z3 -d:pserver:anonymous@tinyos.cvs.sourceforge.net:/cvsroot/tinyos co -P tinyos-2.x
+Changes needed to build the mm3 tree can be obtained via the mm3_mods branch
+on the cire/tinyos-2.x.git repo.
+
+To obtain the current mm3_mods changes:
+
+    cd mm_t2
+    mkdir t2_cur
+    cd t2_cur
+    git clone -v git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
+    cd tinyos-2.x
+    git checkout m3_mods
 
 
-This will pull the current T2 CVS source tree starting at /home/joe/t2_cur/tinyos-2.x.
-
-
-3) Install TinyOS toolset (msp430, avr)
+4) Install TinyOS toolset (msp430, avr)
 
 We want the tinyos toolset for the msp430 (telosb) and the avr (micaz, mica2).
 Debian packages are available from Stanford.
@@ -68,7 +90,7 @@ Install the following packages:
            tinyos-optional (but doesn't work) (for gdb and msp430-jtag)
 
 
-4) Modify PATH and LD_LIBRARY_PATH
+5) Modify PATH and LD_LIBRARY_PATH
 
 Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430 and
 /usr/msp430 as appropriate.
@@ -79,7 +101,7 @@ Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430 and
    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$M1/lib:$M2/lib:/usr/local/lib"
 
 
-5) Set up build environment settings
+6) Set up build environment settings
 
 The following environment variables must be set to build.
 
@@ -122,7 +144,7 @@ The following environment variables must be set to build.
   	export LIBMSPGCC MOTECOM MAMMARK_DIR TOSMAKE_PATH
 
 
-6) TI USB Jtag driver fix
+7) TI USB Jtag driver fix
 
 [Needs Work], Where to grab the driver code from.
 
@@ -184,7 +206,7 @@ updated.  This occurs when any kernel packages are updated.  When this occurs
 the permanent copy must be done again.
 
 
-7) USB Jtag, /dev/ttyUSBn config 2, permissions fix
+8) USB Jtag, /dev/ttyUSBn config 2, permissions fix
 
 [Needs work], Where to grab the driver from
 
@@ -212,7 +234,7 @@ group user can access the jtag pod.  Files exist in the msp430fet_driver directo
    Make sure that any users that will be using the device are in group "users".
 
 
-8) Install gdb and msp430-jtag from temporary location
+9) Install gdb and msp430-jtag from temporary location
 
 [Needs work] where to stash the packages.
 
@@ -228,7 +250,7 @@ group user can access the jtag pod.  Files exist in the msp430fet_driver directo
    /opt/msp430/lib.
 
 
-9) Build SerialForwarder and libmote library.
+10) Build SerialForwarder and libmote library.
 
     Build the serial forwarder and associated library (also includes direct serial access)
 
@@ -253,7 +275,7 @@ group user can access the jtag pod.  Files exist in the msp430fet_driver directo
       stow sf_c
 
 
-10) Using the serialforwarder/seriallistener
+11) Using the serialforwarder/seriallistener
 
     a) make sure that tinyos.jar has been built.  It should live in $TOSROOT/support/sdk/java/tinyos.jar
     b) to rebuild:
