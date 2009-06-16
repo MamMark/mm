@@ -44,6 +44,9 @@ The following git repos are hosted at git://hinrg.cs.jhu.edu/git/<tree>:
              -> (encaps) -> (m3_mods)
 
 
+    t2 (cvs) denotes the cvs based main t2 tree.   tinyos-2.x.git denotes
+    the hourly pull mirror hosted at hinrg.cs.jhu.edu.
+
 Changes needed to build the mm3 tree can be obtained via the mm3_mods branch
 on the cire/tinyos-2.x.git repo.
 
@@ -82,12 +85,8 @@ Install the following packages:
            msp430-tinyos
            msp430-tinyos-base
            nesc
-           tinyos
-           tinyos-2.1
            tinyos-base
-           tinyos-required
            tinyos-tools
-           tinyos-optional (but doesn't work) (for gdb and msp430-jtag)
 
 
 5) Modify PATH and LD_LIBRARY_PATH
