@@ -29,9 +29,9 @@ manager ("apt-get install") to make sure the following packages are installed:
 tree that has mm3 unique code to build the mm3 load.  The code lives in a git
 repository at either of the following URLs:
 
-    git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only)
     gitosis@overtux.cse.ucsc.edu:cire/t2_mm3.git (need access permissions)
     ssh://hinrg.cs.jhu.edu/home/cire/t2_mm3.git (need access permisssions)
+    git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only) (mirror of ssh:..)
 
     cd mm_t2
     git clone -v <t2_mm3 repo path>
@@ -41,7 +41,21 @@ repository at either of the following URLs:
 
 4) TinyOS 2.x tree checkout
 
-The following git repos are hosted at git://hinrg.cs.jhu.edu/git/<tree>:
+T2 git repositories:
+
+    git://hinrg.cs.jhu.edu/git/tinyos-2.x.git
+        read-only, hinrg git tracking from cvs t2 main (updated hourly)
+
+    git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
+        read-only, cire tracking repo that tracks hinrg t2, updated manually
+
+    ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git
+        read-write (need access permissions), cire tracking repo that tracks
+        hinrg t2, updated manually (same as git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git)
+
+    gitosis@overtux.cse.ucsc.edu:cire/t2_cire_hinrg.git tinyos-2.x
+        read-write (need access perissions), cire traccking repo that tracks
+        hinrg t2_cire, updated manually (same as ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git)
 
     tinyos-2.x.git:	tracks the main t2 cvs repository (updated hourly)
     cire/tinyos-2.x.git: manually tracking of the main hinrg t2 tree
@@ -52,21 +66,21 @@ The following git repos are hosted at git://hinrg.cs.jhu.edu/git/<tree>:
     t2 (cvs) -> tinyos-2.x.git -> cire/tinyos-2.x.git (t2_base)
              -> (encaps) -> (m3_mods)
 
-
     t2 (cvs) denotes the cvs based main t2 tree.   tinyos-2.x.git denotes
     the hourly pull mirror hosted at hinrg.cs.jhu.edu.
 
-Changes needed to build the mm3 tree can be obtained via the mm3_mods branch
-on the cire/tinyos-2.x.git repo.
+Changes needed to build the mm3 tree can be obtained via the "all" branch
+on the cire/tinyos-2.x.git repo.  This includes the combination of the
+branches: basic_mods, misc_mods, encaps, mm3_mods, and encaps.
 
-To obtain the current mm3_mods changes:
+To obtain the current all branch:
 
     cd mm_t2
     mkdir t2_cur
     cd t2_cur
     git clone -v git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
     cd tinyos-2.x
-    git checkout m3_mods
+    git checkout all
 
 
 5) Install TinyOS toolset (msp430, avr)
