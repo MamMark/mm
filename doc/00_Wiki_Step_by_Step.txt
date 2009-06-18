@@ -16,7 +16,16 @@ manager ("apt-get install") to make sure the following packages are installed:
     git-core, git-daemon-run, git-doc, git-email, git-gui, gitk, gitmagic
 
 
-2) Check out the current t2_mm3 tree.  The t2_mm3 tree is a seperate t2 based
+2) We use GIT as the SCM.  Here are some pointers to get you started:
+
+   Start here:   http://book.git-scm.com/2_setup_and_initialization.html
+   Everyday GIT: http://www.kernel.org/pub/software/scm/git/docs/everyday.html
+   Cheat Sheet:  http://zrusin.blogspot.com/2007/09/git-cheat-sheet.html
+   SVN to GIT:   http://git-scm.com/course/svn.html
+   GIT Book:     http://book.git-scm.com/
+
+
+3) Check out the current t2_mm3 tree.  The t2_mm3 tree is a seperate t2 based
 tree that has mm3 unique code to build the mm3 load.  The code lives in a git
 repository at either of the following URLs:
 
@@ -30,7 +39,7 @@ repository at either of the following URLs:
     this will create the directory mm_t2/t2_mm3
     
 
-3) TinyOS 2.x tree checkout
+4) TinyOS 2.x tree checkout
 
 The following git repos are hosted at git://hinrg.cs.jhu.edu/git/<tree>:
 
@@ -60,7 +69,7 @@ To obtain the current mm3_mods changes:
     git checkout m3_mods
 
 
-4) Install TinyOS toolset (msp430, avr)
+5) Install TinyOS toolset (msp430, avr)
 
 We want the tinyos toolset for the msp430 (telosb) and the avr (micaz, mica2).
 Debian packages are available from Stanford.
@@ -89,7 +98,7 @@ Install the following packages:
            tinyos-tools
 
 
-5) Modify PATH and LD_LIBRARY_PATH
+6) Modify PATH and LD_LIBRARY_PATH
 
 Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430 and
 /usr/msp430 as appropriate.
@@ -100,7 +109,7 @@ Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430 and
    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$M1/lib:$M2/lib:/usr/local/lib"
 
 
-6) Set up build environment settings
+7) Set up build environment settings
 
 The following environment variables must be set to build.
 
@@ -143,7 +152,7 @@ The following environment variables must be set to build.
   	export LIBMSPGCC MOTECOM MAMMARK_DIR TOSMAKE_PATH
 
 
-7) TI USB Jtag driver fix
+8) TI USB Jtag driver fix
 
 [Needs Work], Where to grab the driver code from.
 
@@ -205,7 +214,7 @@ updated.  This occurs when any kernel packages are updated.  When this occurs
 the permanent copy must be done again.
 
 
-8) USB Jtag, /dev/ttyUSBn config 2, permissions fix
+9) USB Jtag, /dev/ttyUSBn config 2, permissions fix
 
 [Needs work], Where to grab the driver from
 
@@ -233,7 +242,7 @@ group user can access the jtag pod.  Files exist in the msp430fet_driver directo
    Make sure that any users that will be using the device are in group "users".
 
 
-9) Install gdb and msp430-jtag from temporary location
+10) Install gdb and msp430-jtag from temporary location
 
 [Needs work] where to stash the packages.
 
@@ -249,7 +258,7 @@ group user can access the jtag pod.  Files exist in the msp430fet_driver directo
    /opt/msp430/lib.
 
 
-10) Build SerialForwarder and libmote library.
+11) Build SerialForwarder and libmote library.
 
     Build the serial forwarder and associated library (also includes direct serial access)
 
@@ -274,7 +283,7 @@ group user can access the jtag pod.  Files exist in the msp430fet_driver directo
       stow sf_c
 
 
-11) Using the serialforwarder/seriallistener
+12) Using the serialforwarder/seriallistener
 
     a) make sure that tinyos.jar has been built.  It should live in $TOSROOT/support/sdk/java/tinyos.jar
     b) to rebuild:
@@ -322,4 +331,54 @@ And you should see packets that look something like this:  (depends on what the 
 If you define MOTECOM you won't need to specify the -comm parameter.  ie:
 
        MOTECOM=serial@/dev/ttyUSB0:telosb
+
+
+13) Do a test compile and gdb run.  This assumes that the JTAG pod is connected to ttyUSB0.
+
+    If you have mm3 hardware:
+
+    cd mm_t2/t2_mm3/apps/mm3
+    make debug mm3 threads
+    msp430-jtag -l /dev/ttyUSB0 -e build/mm3/main.exe
+
+    from a different window run:
+
+    msp430-gdbproxy msp430 /dev/ttyUSB0
+
+
+    There should be a .gdbinit file in apps/mm3 which contains the following lines at the top:
+
+        set remoteaddresssize 0d64
+        set remotetimeout 0d999999
+        target remote localhost:2000
+
+    change into build/mm3/ and create a symbolic link to the .gdbinit file in the upper directory.
+    This prevents the .gdbinit file from being wiped if one does make clean.
+
+        pushd build/mm3
+	ln -s ../../.gdbinit
+	popd
+
+    now if you run gdb.430 build/mm3/main.exe  gdb should connect to the proxy and start
+    to debug your code in the device.  To let the device run use 'c', continue.  Do not use
+    'run'.
+
+
+14) Do a test compile and gdb run from the main tree.
+
+    If you have telosb hardware:
+
+    cd ~/mm_t2/t2_cur/tinyos-2.x/apps/Blink
+    make debug telosb
+    msp430-jtag -l /dev/ttyUSB0 -e build/telosb/main.exe
+
+    from a different window run:
+
+    msp430-gdbproxy msp430 /dev/ttyUSB0
+
+
+    Make sure that you have a .gdbinit file in the app directory and the symbolic link
+    from the build/telosb directory as described in 13.
+
+    run gdb as described in 13.
 
