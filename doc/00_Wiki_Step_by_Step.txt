@@ -156,6 +156,10 @@ The following environment variables must be set to build.
 
 [Needs Work], Where to grab the driver code from.
 
+The TI USB driver, (ti_usb_3410_5052 in Ubuntu kernels prior to 2.6.29 is broken, note
+the default driver from kernel.org is correct and given below, needs to be built for
+the JTAG to function.
+
 The TI USB JTAG pod is used for debugging MSP430 based motes such as the TelosB.  If you
 aren't using the pod you don't need to fix the driver.
 
