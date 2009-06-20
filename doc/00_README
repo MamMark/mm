@@ -133,16 +133,16 @@ The following environment variables must be set to build.
     CLASSPATH
     TOSMAKE_PATH
 
-    for example:  note: <t2_base> := ~/t2_base
+    for example:  working dir ~/mm_t2
   
   	#!/bin/sh
   
   	MOTECOM="serial@/dev/ttyS0:telosb"
   
-  	TOSROOT=~/t2_base/t2_cur/tinyos-2.x
+  	TOSROOT=~/mm_t2/t2_cur/tinyos-2.x
   	TOSDIR=$TOSROOT/tos
   
-  	MAMMARK_DIR="/home/joe/t2_base/t2_mm3"
+  	MAMMARK_DIR="/home/joe/mm_t2/t2_mm3"
   	TOSMAKE_PATH="$TOSMAKE_PATH $MAMMARK_DIR/support/make"
   
   	M1="/opt/msp430"
@@ -224,7 +224,7 @@ ti serial driver works so we will just reinstall that.
       modprobe -r ti_usb_3410_5052
       cd /lib/modules/2.6.24-19-generic/kernel/drivers/usb/serial
       cp ti_usb_3410_5052.ko ti_usb_3410_5052.ko_old
-      cp <t2_base>/t2_mm3/Added_Bits/mspfet_driver/ti_usb_3410_5052.ko .
+      cp ~/mm_t2/t2_mm3/Added_Bits/mspfet_driver/ti_usb_3410_5052.ko .
       modprobe ti_usb_3410_5052
   
 NOTE: It is possible for the correct driver to get replaced if the system is
@@ -267,7 +267,7 @@ group user can access the jtag pod.  Files exist in the msp430fet_driver directo
    *** These need to be put into a hardy debian package, they will be ***
    *** included in the tinyos-optional (msp430 flavor)                ***
 
-   a) cd <t2_base>.  (remember to be enabled, sudo)
+   a) cd ~/mm_t2  (remember to be enabled, sudo)
    b) cd t2_mm3/Added_Bits/tools
    c) make install
 
@@ -319,7 +319,7 @@ group user can access the jtag pod.  Files exist in the msp430fet_driver directo
   
        Make sure CLASSPATH includes $TOSROOT/support/sdk/java/tinyos.jar, ie:
   
-           CLASSPATH=.:/home/joe/t2_base/t2_cur/tinyos-2.x/support/sdk/java/tinyos.jar
+           CLASSPATH=.:/home/joe/mm_t2/t2_cur/tinyos-2.x/support/sdk/java/tinyos.jar
 
 execute:
 
@@ -355,7 +355,7 @@ If you define MOTECOM you won't need to specify the -comm parameter.  ie:
 
     If you have mm3 hardware:
 
-    cd mm_t2/t2_mm3/apps/mm3
+    cd ~/mm_t2/t2_mm3/apps/mm3
     make debug mm3 threads
     msp430-jtag -l /dev/ttyUSB0 -e build/mm3/main.exe
 
