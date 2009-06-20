@@ -53,18 +53,18 @@ T2 git repositories:
         read-write (need access permissions), cire tracking repo that tracks
         hinrg t2, updated manually (same as git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git)
 
-    gitosis@overtux.cse.ucsc.edu:cire/t2_cire_hinrg.git tinyos-2.x
+    gitosis@overtux.cse.ucsc.edu:cire/t2_cire_hinrg.git   tinyos-2.x
         read-write (need access perissions), cire traccking repo that tracks
         hinrg t2_cire, updated manually (same as ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git)
+	make sure to specify the directory as tinyos-2.x (just to be consistent)
 
-    tinyos-2.x.git:	tracks the main t2 cvs repository (updated hourly)
-    cire/tinyos-2.x.git: manually tracking of the main hinrg t2 tree
-        t2_base:    branch that tracks the main hinrg
+    branches in cire/tinyos-2.x.git: manually tracking of the main hinrg t2 tree
+        t2_base:    base branch, tracks the main hinrg
 	encaps:	    encapsulation modification to the mainline
 	mm3_mods:   modifications needed for the mm3 project
 
     t2 (cvs) -> tinyos-2.x.git -> cire/tinyos-2.x.git (t2_base)
-             -> (encaps) -> (m3_mods)
+                                          -> (encaps) -> (m3_mods)
 
     t2 (cvs) denotes the cvs based main t2 tree.   tinyos-2.x.git denotes
     the hourly pull mirror hosted at hinrg.cs.jhu.edu.
