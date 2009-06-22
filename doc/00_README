@@ -25,62 +25,41 @@ manager ("apt-get install") to make sure the following packages are installed:
    GIT Book:     http://book.git-scm.com/
 
 
-3) Check out the current t2_mm3 tree.  The t2_mm3 tree is a seperate t2 based
-tree that has mm3 unique code to build the mm3 load.  The code lives in a git
-repository at either of the following URLs:
+3) T2_MM3 tree checkout:  The t2_mm3 tree is a seperate t2 based
+tree that has mm3 unique code to build the mm3 load.
 
-    gitosis@overtux.cse.ucsc.edu:cire/t2_mm3.git (need access permissions)
-    ssh://hinrg.cs.jhu.edu/home/cire/t2_mm3.git (need access permisssions)
-    git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only) (mirror of ssh:..)
+    git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only)
 
-    cd mm_t2
-    git clone -v <t2_mm3 repo path>
+    cd ~/mm_t2				# cd to top working dir.
+    git clone git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git
+    cd t2_mm3
 
-    this will create the directory mm_t2/t2_mm3
-    
+    this will create the directory ~/mm_t2/t2_mm3 and you will be on the master
+    branch.  Which is where you want to be.
+
+    Any patches etc should be emailed.  (Can be prepared with git-format-patch
+    or git-log).
+
 
 4) TinyOS 2.x tree checkout
 
-T2 git repositories:
-
-    git://hinrg.cs.jhu.edu/git/tinyos-2.x.git
-        read-only, hinrg git tracking from cvs t2 main (updated hourly)
+The main tracking repo is at:
 
     git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
         read-only, cire tracking repo that tracks hinrg t2, updated manually
+	This also has the mm3 code, branched off the hinrg t2 mainline
 
-    ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git
-        read-write (need access permissions), cire tracking repo that tracks
-        hinrg t2, updated manually (same as git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git)
+Changes needed to build the mm3 tree can be obtained via the mm3_tip
+branch on the cire/tinyos-2.x.git repo.
 
-    gitosis@overtux.cse.ucsc.edu:cire/t2_cire_hinrg.git   tinyos-2.x
-        read-write (need access perissions), cire traccking repo that tracks
-        hinrg t2_cire, updated manually (same as ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git)
-	make sure to specify the directory as tinyos-2.x (just to be consistent)
+To obtain the current mm3_tip branch:
 
-    branches in cire/tinyos-2.x.git: manually tracking of the main hinrg t2 tree
-        t2_base:    base branch, tracks the main hinrg
-	encaps:	    encapsulation modification to the mainline
-	mm3_mods:   modifications needed for the mm3 project
-
-    t2 (cvs) -> tinyos-2.x.git -> cire/tinyos-2.x.git (t2_base)
-                                          -> (encaps) -> (m3_mods)
-
-    t2 (cvs) denotes the cvs based main t2 tree.   tinyos-2.x.git denotes
-    the hourly pull mirror hosted at hinrg.cs.jhu.edu.
-
-Changes needed to build the mm3 tree can be obtained via the "all" branch
-on the cire/tinyos-2.x.git repo.  This includes the combination of the
-branches: basic_mods, misc_mods, encaps, mm3_mods, and encaps.
-
-To obtain the current all branch:
-
-    cd mm_t2
+    cd ~/mm_t2
     mkdir t2_cur
     cd t2_cur
     git clone -v git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
     cd tinyos-2.x
-    git checkout all
+    git checkout -t origin/mm3_tip
 
 
 5) Install TinyOS toolset (msp430, avr)
@@ -90,7 +69,7 @@ Debian packages are available from Stanford.
 
 Modify the repository list using Applications->System->Software_Sources to include:
 
-   	  http://tinyos.stanford.edu/tinyos/dists/ubuntu/ hardy main
+    deb http://tinyos.stanford.edu/tinyos/dists/ubuntu/ hardy main
 
 
 Install the following packages:
@@ -390,6 +369,7 @@ If you define MOTECOM you won't need to specify the -comm parameter.  ie:
     make debug telosb
     msp430-jtag -l /dev/ttyUSB0 -e build/telosb/main.exe
 
+
     from a different window run:
 
     msp430-gdbproxy msp430 /dev/ttyUSB0
@@ -400,3 +380,48 @@ If you define MOTECOM you won't need to specify the -comm parameter.  ie:
 
     run gdb as described in 13.
 
+
+
+15) Repos:
+
+T2 git repositories:
+
+    git://hinrg.cs.jhu.edu/git/tinyos-2.x.git
+	hinrg T2 core: read-only, hinrg git tracking from cvs t2 main (updated hourly)
+
+    git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
+	cire/tinyos-2.x: read-only.  manual update tracking of hinrg T2 core.  Also
+	includes mm3_tip and encap branches.
+
+    ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git
+        read-write (need access permissions), cire tracking repo that tracks
+        hinrg t2, updated manually (same as git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git)
+
+    gitosis@overtux.cse.ucsc.edu:cire/t2_cire_hinrg.git   -> tinyos-2.x
+        read-write (need access perissions), cire tracking repo that tracks
+        hinrg t2_cire, updated manually (same as ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git)
+
+
+    tinyos-2.x.git:	tracks the main t2 cvs repository (updated hourly)
+    cire/tinyos-2.x.git: manually tracking of the main hinrg t2 tree
+	t2_base:    branch that tracks the main hinrg
+	encap:	    encapsulation modification to the mainline
+	mm3_tip:    working tip for mm3 development (no encap changes)
+
+    t2 (cvs) -> tinyos-2.x.git -> cire/tinyos-2.x.git (t2_base)
+             ----> (encap)
+	     ----> (mm3_tip)
+
+    t2 (cvs) denotes the cvs based main t2 tree.   tinyos-2.x.git denotes
+    the hourly pull mirror hosted at hinrg.cs.jhu.edu.  And cire/tinyos-2.x
+    is the tracking branch + mm3 branches.
+
+
+T2_MM3 git repositories:
+
+    git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only)
+	read-only, primary pull T2 MM3 repo.  pulls from /home/cire/t2_mm3.git.
+
+    ssh://hinrg.cs.jhu.edu/home/cire/t2_mm3.git  (read write)
+
+    gitosis@overtux.cs.ucsc.edu:cire/t2_mm3.git  (read write)  (backup)
