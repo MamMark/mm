@@ -47,12 +47,10 @@
 
 #include <CC2420.h>
 #include <Serial.h>
-#include <AM.h>
 
 typedef union message_header {
   cc2420_header_t cc2420;
   serial_header_t serial;
-  am_header_t     am;
 } message_header_t;
 
 typedef union TOSRadioFooter {
