@@ -147,14 +147,18 @@ The following environment variables must be set to build.
 
 8) TI USB Jtag driver fix
 
-[Needs Work], Where to grab the driver code from.
+The TI USB JTAG pod is used for debugging MSP430 based motes such as the TelosB.  If you
+aren't using the pod you don't need the ti_usb_3410_5052 serial driver.
 
-The TI USB driver, (ti_usb_3410_5052 in Ubuntu kernels prior to 2.6.29 is broken, note
+The Ubuntu 2.6.24-24-generic kernel package has a verified ti_usb_3410_5052 driver that
+works properly with the TI USB JTAG.  If you have this kernel or a later version you
+can skip step 8.
+
+The TI USB driver, (ti_usb_3410_5052 in Ubuntu kernels prior to 2.6.24 is broken, note
 the default driver from kernel.org is correct and given below, needs to be built for
 the JTAG to function.
 
-The TI USB JTAG pod is used for debugging MSP430 based motes such as the TelosB.  If you
-aren't using the pod you don't need to fix the driver.
+[Needs Work], Where to grab the driver code from.
 
 Initial Ubuntu 8.04 has a version of the ti_usb_3410_5052 driver (used to
 talk to the MSP430 jtag pod) that is slightly modified from the standard
@@ -212,8 +216,6 @@ the permanent copy must be done again.
 
 
 9) USB Jtag, /dev/ttyUSBn config 2, permissions fix
-
-[Needs work], Where to grab the driver from
 
 We also want to install a udev rule that will correctly enable configuration 2
 of the jtag pod (this makes it work).  We also modify the permission rule so that
