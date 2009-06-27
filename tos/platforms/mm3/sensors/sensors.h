@@ -32,6 +32,11 @@ typedef uint16_t sensor_data_t;
    Sequenced sensors include Salinity (2 x 16), Accel (3 x 16),
    Pressure (2 x 16, pressure and pressure temp), Velocity (2 x 16),
    and Magnatometer (3 x 16).
+
+
+   NOTE: SNS_ID 0 (SNS_ID_NONE) is used when added information to the data
+   stream.  The information is still in data_block format (see sd_blocks.h)
+   but doesn't have a normal sensor id associated with it.
 */
 
 enum {
