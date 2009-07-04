@@ -836,8 +836,13 @@ main(int argc, char **argv) {
     }
     if (!packet)
       exit(0);
-    if (len < 1 + SPACKET_SIZE ||
-	packet[0] != SERIAL_TOS_SERIAL_ACTIVE_MESSAGE_ID) {
+    msg = new_tmsg(packet, len);
+    if (!msg) {
+      fprintf(stderr, "*** new_tmsg failed (null)\n");
+      exit(2);
+    }
+    c = spacket_header_dispatch_get(msg);
+    if (len < SPACKET_SIZE || c != SERIAL_TOS_SERIAL_ACTIVE_MESSAGE_ID) {
       fprintf(stderr, "*** non-AM packet (type %d, len %d (%0x)): ",
 	      packet[0], len, len);
       hexprint(packet, len);
@@ -845,16 +850,15 @@ main(int argc, char **argv) {
     }
     if (debug > 1)
       hexprint(packet, len);
-    msg = new_tmsg(packet + 1, len - 1);
-    if (!msg) {
-      fprintf(stderr, "*** new_tmsg failed (null)\n");
-      exit(2);
-    }
     dest = spacket_header_dest_get(msg);
     src  = spacket_header_src_get(msg);
     len  = spacket_header_length_get(msg);
     group= spacket_header_group_get(msg);
     stype= spacket_header_type_get(msg);
+
+    /*
+     * move over serial header
+     */
     reset_tmsg(msg, ((uint8_t *)tmsg_data(msg)) + SPACKET_SIZE, tmsg_length(msg) - spacket_data_offset(0));
     switch(stype) {
       case MM3_DATA_MSG_AM_TYPE:
