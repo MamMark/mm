@@ -49,6 +49,7 @@ implementation {
 
 
   command error_t StdControl.start() {
+    // check to see if this is right.  FIXME
     call HW.batt_on();
     return SUCCESS;
   }
@@ -64,6 +65,8 @@ implementation {
      * For the time being we attach the battery to the ext charge
      * pin to fake it.  So for the time being don't turn the Batt
      * FET on just to be safe.
+     *
+     * FIXME
      */
 //    if (call Docked.isDocked() == FALSE)
     call HW.batt_off();

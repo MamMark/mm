@@ -30,10 +30,13 @@ dis
 b PanicP.nc:62
 
 # 6 panic
-b PanicP.nc:76
+b PanicP.nc:77
 comm
-printf "pcode: %d (0x%0x)  where: %d  %04x %04x %04x %04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
+printf "pcode: 0d%d (0x%0x)  where: 0d%d  0x%04x 0x%04x 0x%04x 0x%04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
+
+# 7
+b mm3C.nc:50
 
 # 7 Msg Collect too big
 #b GPSMsgP.nc:538

@@ -1,5 +1,5 @@
-. fix Arbiter bug (fcfs) so it correctly cycles.
-. make sure that BlockingAMReceiverImple still works.  What was the bug?
+. fix Arbiter bug (fcfs) so it correctly cycles.  (fixed?)
+. make sure that BlockingAMReceiverImpl still works.  What was the bug?
 
 
 CmdHandler:
@@ -19,6 +19,7 @@ Duty Analysis:
 1) Port John's code.
 2) Sample run.
 3) Flesh out effort.
+4) log interface to SD.  Can we reuse StreamWrite code?
 
 
 Current Code:
@@ -26,6 +27,13 @@ Current Code:
 . Turn on DMA for SD
 . find out why GPS gets toobig and checksum fail
 . figure out when to do the dcocalibrate.
+
+
+SD work:
+
+. Robustness of SD driver
+. remove threadbase, event driven?
+. add code for SDHC.
 
 
 Serial Restructure:

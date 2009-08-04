@@ -650,7 +650,7 @@ implementation {
      */
     d = data;
     if (*d == 0xfe) {
-      call Panic.panic(PANIC_SD, 25, *d, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 25, *d, 0, 0, 0);
       err = sd_read_data_direct(SD_BLOCKSIZE, data);
     }
     return err;

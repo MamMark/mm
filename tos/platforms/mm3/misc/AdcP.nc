@@ -210,8 +210,7 @@ implementation {
     uint16_t delay;
     const mm3_sensor_config_t *config;
 
-    if (adc_state != ADC_POWERING_DOWN &&
-        adc_state != ADC_GRANTING) {
+    if (adc_state != ADC_POWERING_DOWN && adc_state != ADC_GRANTING) {
       call Panic.panic(PANIC_ADC, 1, adc_state, 0, 0, 0);
     }
 
@@ -420,6 +419,8 @@ implementation {
 	 * off.  We insist on running everything through the queue to
 	 * make sure the round robin order is honored.  This effects what
 	 * order following enqueues get pulled.  Basically, it updates last.
+	 *
+	 * FIXME.  Check out this enqueue/dequeue thing.
 	 */
 	call Queue.enqueue(client_id);
 	req_client = call Queue.dequeue();
@@ -527,8 +528,7 @@ implementation {
 
     ifg1[0] = IFG1;
     result = 0;
-    if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) || 
-	((U0TCTL & TXEPT) == 0)) {
+    if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) || ((U0TCTL & TXEPT) == 0)) {
       /*
        * no space in transmitter (huh?)
        * receiver not empty
@@ -557,14 +557,18 @@ implementation {
     t0 = TAR;
     while (!(IFG1 & URXIFG0)) {
       if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
-	call Panic.warn(PANIC_ADC, 9, 1, IFG1, 0, 0);
+	/*
+	 * FIXME.  we choke.  Figure out why.
+	 */
+//	call Panic.warn(PANIC_ADC, 9, 1, IFG1, 0, 0);
       }
     }
     result = ((uint16_t) U0RXBUF) << 8;
 
     ifg1[2] = IFG1;
     if (!(IFG1 & UTXIFG0)) {
-      call Panic.warn(PANIC_ADC, 9, 2, IFG1, 0, 0);
+      /* FIXME */
+//      call Panic.warn(PANIC_ADC, 9, 2, IFG1, 0, 0);
     }
 
     /*
@@ -574,7 +578,8 @@ implementation {
     t0 = TAR;
     while (!(IFG1 & URXIFG0)) {
       if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
-	call Panic.warn(PANIC_ADC, 9, 3, IFG1, 0, 0);
+	/* FIXME */
+//	call Panic.warn(PANIC_ADC, 9, 3, IFG1, 0, 0);
       }
     }
     result |= ((uint16_t) U0RXBUF);
@@ -584,11 +589,10 @@ implementation {
      */
     ifg1[3] = IFG1;
     ifg1[4] = U0TCTL;
-    if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) ||
-	((U0TCTL & TXEPT) == 0)) {
-      call Panic.warn(PANIC_ADC, 10, IFG1, U0TCTL, 0, 0);
+    if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) || ((U0TCTL & TXEPT) == 0)) {
+      /* FIXME */
+//      call Panic.warn(PANIC_ADC, 10, IFG1, U0TCTL, 0, 0);
     }
-
     return(result);
   }
 
