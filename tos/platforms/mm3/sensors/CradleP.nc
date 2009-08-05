@@ -174,11 +174,11 @@ implementation {
     cdp->sns_id = SNS_ID_CRADLE;
     cdp->sched_mis = call PeriodTimer.gett0();
     cdp->stamp_mis = call PeriodTimer.getNow();
-\\#ifdef notdef
+//#ifdef notdef
     if (comm_idle)
       if (call mm3CommData.send_data(cdp, BATT_BLOCK_SIZE) == SUCCESS)
 	comm_idle = FALSE;
-\\#endif
+//#endif
     call Collect.collect(cradle_data, BATT_BLOCK_SIZE);
 
     /*
