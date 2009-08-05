@@ -9,10 +9,10 @@
 #include "sensors.h"
 
 /*
- * Once a minute
+ * Check 4 times a minute
  */
 
-//#define CRADLE_PERIOD (1024UL*60*1)
+//#define CRADLE_PERIOD (1024UL*15)
 #define CRADLE_PERIOD (1024UL)
 
 #define CRADLE_THRESHOLD (40000UL)

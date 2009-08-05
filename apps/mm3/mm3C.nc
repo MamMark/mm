@@ -12,7 +12,8 @@
 #define SYNC_PERIOD (1UL * 60 * 1024)
 
 //noinit uint8_t use_regime;
-uint8_t use_regime = 14;
+//uint8_t use_regime = 14;
+uint8_t use_regime = 2;
 
 module mm3C {
   uses {

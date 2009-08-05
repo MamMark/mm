@@ -69,13 +69,15 @@ implementation {
 
   async command void Panic.panic(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
     struct p_blk_struct *p;
+    uint8_t temp;
 
     _p = pcode; _w = where; _a0 = arg0; _a1 = arg1; _a2 = arg2; _a3 = arg3;
     MAYBE_SAVE_SR_AND_DINT;
     last_panic = call LocalTime.get();
     nop();
 
-    if (pcode == PANIC_SD || pcode == PANIC_SS)
+    temp = pcode & ~PANIC_WARN_FLAG;
+    if (temp == PANIC_SD || temp == PANIC_SS)
       return;
 
     if (!p_blk[0].busy)

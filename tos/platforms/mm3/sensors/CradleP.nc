@@ -117,6 +117,7 @@ implementation {
      *
      *
      * So we don't need to do anything when starting and stopping.
+     * FIXME.  Check to see if we are doing this right.
      */
     call HW.batt_off();
     return SUCCESS;
@@ -128,6 +129,8 @@ implementation {
    * charging the battery.
    */
   command error_t StdControl.stop() {
+//
+// what should this be?   FIXME
 //    if (docked)
 //      call HW.batt_on();
     return SUCCESS;
@@ -171,9 +174,11 @@ implementation {
     cdp->sns_id = SNS_ID_CRADLE;
     cdp->sched_mis = call PeriodTimer.gett0();
     cdp->stamp_mis = call PeriodTimer.getNow();
+\\#ifdef notdef
     if (comm_idle)
       if (call mm3CommData.send_data(cdp, BATT_BLOCK_SIZE) == SUCCESS)
 	comm_idle = FALSE;
+\\#endif
     call Collect.collect(cradle_data, BATT_BLOCK_SIZE);
 
     /*
