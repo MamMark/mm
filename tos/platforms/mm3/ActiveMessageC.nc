@@ -1,4 +1,4 @@
-// $Id: ActiveMessageC.nc,v 1.5 2007/05/23 22:17:49 idgay Exp $
+// $Id$
 /*
  * Copyright (c) 2005-2006 Intel Corporation
  * All rights reserved.
@@ -7,9 +7,6 @@
  * file. If you do not find these files, copies can be found by writing to
  * Intel Research Berkeley, 2150 Shattuck Avenue, Suite 1300, Berkeley, CA, 
  * 94704.  Attention:  Intel License Inquiry.
- */
-/**
- * Dummy implementation to support the null platform.
  */
 
 #ifdef CC2420_STACK
