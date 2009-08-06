@@ -13,7 +13,8 @@ When the install is complete, boot the system, and use Synaptic or other package
 manager ("apt-get install") to make sure the following packages are installed:
 
     build-essentials, stow, automake, autoconf, autobook, libtool, libc6-dev,
-    git-core, git-daemon-run, git-doc, git-email, git-gui, gitk, gitmagic
+    git-core, git-daemon-run, git-doc, git-email, git-gui, gitk, gitmagic,
+    openssh-client, openssh-server
 
 
 2) We use GIT as the SCM.  Here are some pointers to get you started:
@@ -405,13 +406,14 @@ T2 git repositories:
         hinrg t2_cire, updated manually (same as ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git)
 
 
-    tinyos-2.x.git:	tracks the main t2 cvs repository (updated hourly)
-    cire/tinyos-2.x.git: manually tracking of the main hinrg t2 tree
-	t2_base:    branch that tracks the main hinrg
+    tinyos-2.x.git:	tracks the main t2 cvs repository (hinrg, updated hourly)
+
+    cire/tinyos-2.x.git: manually tracking of the main hinrg t2 tree (labeled t2_base)
+	t2_base:    master that tracks the main hinrg
 	encap:	    encapsulation modification to the mainline
 	mm3_tip:    working tip for mm3 development (no encap changes)
 
-    t2 (cvs) -> tinyos-2.x.git -> cire/tinyos-2.x.git (t2_base)
+    t2 (cvs) -> tinyos-2.x.git (hinrg, hourly) -> cire/tinyos-2.x.git (t2_base, manual)
              ----> (encap)
 	     ----> (mm3_tip)
 
