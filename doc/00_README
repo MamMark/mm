@@ -23,6 +23,7 @@ manager ("apt-get install") to make sure the following packages are installed:
    Cheat Sheet:  http://zrusin.blogspot.com/2007/09/git-cheat-sheet.html
    SVN to GIT:   http://git-scm.com/course/svn.html
    GIT Book:     http://book.git-scm.com/
+   Another Book: http://progit.org/book/
 
 
 3) T2_MM3 tree checkout:  The t2_mm3 tree is a seperate t2 based
