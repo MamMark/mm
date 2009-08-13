@@ -26,9 +26,6 @@ AM_ALERT                         22     0x16            AntiTheft
 AM_CTP_DATA                      23     0x17
 AM_CTP_ROUTING                   24     0x18
 AM_CTP_DEBUG                     25     0x19
-AM_MM3_CONTROL                   32     0x20
-AM_MM3_DATA                      33     0x21
-AM_MM3_DEBUG                     34     0x22
 AM_SETTINGS                      54     0x36            AntiTheft
 AM_IP_MSG                        65     0x41            6lowpan
 AM_TEST_LOCALTIME_MSG            88     0x58
@@ -44,6 +41,11 @@ AM_OSCILLOSCOPE                 147     0x93
 AM_MVIZ_MSG                     147     0x93
 AM_SAMPLE_MSG                   152     0x98            LowPowerSensing
 AM_SERIAL_SAMPLE_MSG            153     0x99            LowPowerSensing
+
+AM_MM3_CONTROL                  160     0xA0
+AM_MM3_DATA                     161     0xA1
+AM_MM3_DEBUG                    162     0xA2
+
 AM_DELUGEADVMSG                 161     0xa1
 AM_DELUGEREQMSG                 162     0xa2
 AM_DELUGEDATAMSG                163     0xa3

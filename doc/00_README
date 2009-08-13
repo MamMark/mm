@@ -45,6 +45,12 @@ tree that has mm3 unique code to build the mm3 load.
 
 4) TinyOS 2.x tree checkout
 
+Documentation on getting started with T2 can be found at:
+
+    http://docs.tinyos.net
+    http://docs.tinyos.net/index.php/Getting_started
+
+
 The main tracking repo is at:
 
     git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
@@ -311,13 +317,13 @@ execute:
 
 And you should see packets that look something like this:  (depends on what the mote is sending)
 
-            00 FF FF 00 00 12 00 21 00 12 07 09 00 0C 9E 23 00 0C 9E 30 F6 2C FF D7 FF FF
-            00 FF FF 00 00 12 00 21 00 12 07 05 00 0C 9E 24 00 0C 9E 3F E5 AF B1 6F 9E D4
-            00 FF FF 00 00 0E 00 21 00 0E 07 06 00 0C 9E 33 00 0C 9E 46 78 80
-            00 FF FF 00 00 0E 00 21 00 0E 07 07 00 0C 9E 33 00 0C 9E 52 FF FF
-            00 FF FF 00 00 10 00 21 00 10 07 08 00 0C 9E 33 00 0C 9E 61 FF FF FF FF
+            00 FF FF 00 00 12 00 A1 00 12 07 09 00 0C 9E 23 00 0C 9E 30 F6 2C FF D7 FF FF
+            00 FF FF 00 00 12 00 A1 00 12 07 05 00 0C 9E 24 00 0C 9E 3F E5 AF B1 6F 9E D4
+            00 FF FF 00 00 0E 00 A1 00 0E 07 06 00 0C 9E 33 00 0C 9E 46 78 80
+            00 FF FF 00 00 0E 00 A1 00 0E 07 07 00 0C 9E 33 00 0C 9E 52 FF FF
+            00 FF FF 00 00 10 00 A1 00 10 07 08 00 0C 9E 33 00 0C 9E 61 FF FF FF FF
   
-            00 FF FF 00 00 10 00 21 00 10 07 08 00 0C 9E 33 00 0C 9E 61 FF FF FF FF
+            00 FF FF 00 00 10 00 A1 00 10 07 08 00 0C 9E 33 00 0C 9E 61 FF FF FF FF
             ^  ^     ^     ^  ^  ^  ^     ^  ^  | -- sensor 8 data
             |  |     |     |  |  |  |     |  |- sensor id
             |  |     |     |  |  |  |     |- sensor data type
