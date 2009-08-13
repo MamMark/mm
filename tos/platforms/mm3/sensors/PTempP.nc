@@ -104,13 +104,13 @@ implementation {
     if (call Adc.isOwner())
       call Adc.release();
     new_period = call RegimeCtrl.sensorPeriod(SNS_ID_PTEMP);
-    if (new_period == 0)
+    if (new_period == 0) {
       ptemp_state = PTEMP_STATE_OFF;
-    else if (new_period != period) {
-      ptemp_state = PTEMP_STATE_IDLE;
-      period = new_period;
-      call PeriodTimer.startPeriodic(period);
+      return;
     }
+    ptemp_state = PTEMP_STATE_IDLE;
+    period = new_period;
+    call PeriodTimer.startPeriodic(period);
   }
 
 

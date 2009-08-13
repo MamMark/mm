@@ -119,13 +119,13 @@ implementation {
     if (call Adc.isOwner())
       call Adc.release();
     new_period = call RegimeCtrl.sensorPeriod(SNS_ID_SPEED);
-    if (new_period == 0)
+    if (new_period == 0) {
       speed_state = SPEED_STATE_OFF;
-    else if (new_period != period) {
-      speed_state = SPEED_STATE_IDLE;
-      period = new_period;
-      call PeriodTimer.startPeriodic(period);
+      return;
     }
+    speed_state = SPEED_STATE_IDLE;
+    period = new_period;
+    call PeriodTimer.startPeriodic(period);
   }
 
   async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {

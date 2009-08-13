@@ -130,13 +130,13 @@ implementation {
     if (call Adc.isOwner())
       call Adc.release();
     new_period = call RegimeCtrl.sensorPeriod(SNS_ID_MAG);
-    if (new_period == 0)
+    if (new_period == 0) {
       mag_state = MAG_STATE_OFF;
-    else if (new_period != period) {
-      mag_state = MAG_STATE_IDLE;
-      period = new_period;
-      call PeriodTimer.startPeriodic(period);
+      return;
     }
+    mag_state = MAG_STATE_IDLE;
+    period = new_period;
+    call PeriodTimer.startPeriodic(period);
   }
 
 

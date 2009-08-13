@@ -114,13 +114,13 @@ implementation {
     if (call Adc.isOwner())
       call Adc.release();
     new_period = call RegimeCtrl.sensorPeriod(SNS_ID_BATT);
-    if (new_period == 0)
+    if (new_period == 0) {
       batt_state = BATT_STATE_OFF;
-    else if (new_period != period) {
-      batt_state = BATT_STATE_IDLE;
-      period = new_period;
-      call PeriodTimer.startPeriodic(period);
+      return;
     }
+    batt_state = BATT_STATE_IDLE;
+    period = new_period;
+    call PeriodTimer.startPeriodic(period);
   }
 
   event void Docked.docked() {}

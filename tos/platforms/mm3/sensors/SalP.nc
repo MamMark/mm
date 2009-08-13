@@ -152,10 +152,10 @@ implementation {
     if (call Adc.isOwner())
       call Adc.release();
     new_period = call RegimeCtrl.sensorPeriod(SNS_ID_SAL);
-    if (new_period == 0) {
+    if (new_period == 0) { 
       period = SAL_OFF_SAMPLE_RATE;
       record = FALSE;
-    } else if (new_period != period) {
+    } else {
       period = new_period;
       record = TRUE;
     }
