@@ -4,17 +4,16 @@ call it mm_t2 and it is usually at the top level of a working directory.
 
 1) OS Install.
 
-Install the OS, Ubuntu (Xubuntu uses less resources) on the box.  Recommended is
-Xubuntu 8.04 (LTS).  A simple install is fine and will take less time.  Current
-ISO install images can be found at [http://xubuntu.com/get#hardy 8.04 ISO].
-
+Install the OS, Ubuntu on the box.  Recommended is Ubuntu 9.10.  A
+simple install is fine and will take less time.  Download the install
+ISO from http://www.ubuntu.com/getubuntu/download.
 
 When the install is complete, boot the system, and use Synaptic or other package
 manager ("apt-get install") to make sure the following packages are installed:
 
-    build-essentials, stow, automake, autoconf, autobook, libtool, libc6-dev,
-    git-core, git-daemon-run, git-doc, git-email, git-gui, gitk, gitmagic,
-    openssh-client, openssh-server
+    build-essential stow automake autoconf libtool libc6-dev
+    git-core git-daemon-run git-doc git-email git-gui gitk gitmagic
+    openssh-client openssh-server
 
 
 2) We use GIT as the SCM.  Here are some pointers to get you started:
@@ -75,19 +74,16 @@ To obtain the current mm3_tip branch:
 We want the tinyos toolset for the msp430 (telosb) and the avr (micaz, mica2).
 Debian packages are available from Stanford.
 
-Modify the repository list using Applications->System->Software_Sources to include:
+Modify the repository list using "System->Administration->Software
+Sources", "Other Software" to include:
 
     deb http://tinyos.stanford.edu/tinyos/dists/ubuntu/ hardy main
+
+Enter the above to the APT Line prompt as written above.
 
 
 Install the following packages:
 
-           avr-binutils-tinyos
-           avrdude-tinyos
-           avr-gcc-tinyos
-           avr-libc-tinyos
-           avr-tinyos
-           avr-tinyos-base
            deputy-tinyos
            msp430-binutils-tinyos
            msp430-gcc-tinyos
@@ -102,7 +98,10 @@ Install the following packages:
 6) Modify PATH and LD_LIBRARY_PATH
 
 Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430 and
-/usr/msp430 as appropriate.
+/usr/msp430 as appropriate.  Note if you use the build environment as
+specified in the next section you don't have to mess with M1 and M2
+below.  It is done in section 7.
+
 
    M1="/opt/msp430"
    M2="/usr/msp430"
@@ -155,72 +154,7 @@ The following environment variables must be set to build.
 
 8) TI USB Jtag driver fix
 
-The TI USB JTAG pod is used for debugging MSP430 based motes such as the TelosB.  If you
-aren't using the pod you don't need the ti_usb_3410_5052 serial driver.
-
-The Ubuntu 2.6.24-24-generic kernel package has a verified ti_usb_3410_5052 driver that
-works properly with the TI USB JTAG.  If you have this kernel or a later version you
-can skip step 8.
-
-The TI USB driver, (ti_usb_3410_5052 in Ubuntu kernels prior to 2.6.24 is broken, note
-the default driver from kernel.org is correct and given below, needs to be built for
-the JTAG to function.
-
-[Needs Work], Where to grab the driver code from.
-
-Initial Ubuntu 8.04 has a version of the ti_usb_3410_5052 driver (used to
-talk to the MSP430 jtag pod) that is slightly modified from the standard
-linux kernel available at kernel.org.  The standard kernel's version of the
-ti serial driver works so we will just reinstall that.
-
-  a) Expand t2_mm3/Added_Bits/mspfet_driver.zip.  (This will create the directory
-     mspfet_driver).
-  b) mspfet_driver/readme.txt has more information.  Read them.  It is good.
-  c) make
-  d) temporarily install the new driver.
-
-      /build/buildd/linux-2.6.24/drivers/usb/serial/usb-serial.c: USB Serial support registered for TI USB 3410 1 port adapter
-      /build/buildd/linux-2.6.24/drivers/usb/serial/usb-serial.c: USB Serial support registered for TI USB 5052 2 port adapter
-      usbcore: registered new interface driver ti_usb_3410_5052
-      /home/joe/Desktop/mspfet_driver/ti_usb_3410_5052.c: TI USB 3410/5052 Serial Driver v0.9
-      usb 1-2: new full speed USB device using ohci_hcd and address 2
-      usb 1-2: configuration #1 chosen from 1 choice
-      ti_usb_3410_5052 1-2:1.0: TI USB 3410 1 port adapter converter detected
-      usb 1-2: reset full speed USB device using ohci_hcd and address 2
-      usb 1-2: device firmware changed
-      ti_usb_3410_5052: probe of 1-2:1.0 failed with error -5
-      usb 1-2: USB disconnect, address 2
-      usb 1-2: new full speed USB device using ohci_hcd and address 3
-      usb 1-2: configuration #1 chosen from 2 choices
-      ti_usb_3410_5052 1-2:1.0: TI USB 3410 1 port adapter converter detected
-      ti_usb_3410_5052: probe of 1-2:1.0 failed with error -5
-      ti_usb_3410_5052 1-2:2.0: TI USB 3410 1 port adapter converter detected
-      usb 1-2: TI USB 3410 1 port adapter converter now attached to ttyUSB0
-
-  e) run "lsusb" which should look something like the following:
-  
-         m-tag (19): lsusb
-         Bus 003 Device 001: ID 0000:0000
-         Bus 002 Device 001: ID 0000:0000
-         Bus 001 Device 005: ID 0451:f430 Texas Instruments, Inc. MSP-FET430UIF JTAG Tool
-         Bus 001 Device 001: ID 0000:0000
-         m-tag (20):
-
-
-  f) Make our new version of the ti serial driver permanent.
-     1st make a back up of the originally installed driver
-     (/lib/modules/<kernel version>/kernel/drivers/usb/serial/ti_usb_3410_5052.ko)
-  
-     ie:
-      modprobe -r ti_usb_3410_5052
-      cd /lib/modules/2.6.24-19-generic/kernel/drivers/usb/serial
-      cp ti_usb_3410_5052.ko ti_usb_3410_5052.ko_old
-      cp ~/mm_t2/t2_mm3/Added_Bits/mspfet_driver/ti_usb_3410_5052.ko .
-      modprobe ti_usb_3410_5052
-  
-NOTE: It is possible for the correct driver to get replaced if the system is
-updated.  This occurs when any kernel packages are updated.  When this occurs
-the permanent copy must be done again.
+9.10 has the correct driver so this no longer needs to be done.
 
 
 9) USB Jtag, /dev/ttyUSBn config 2, permissions fix
