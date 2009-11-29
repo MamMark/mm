@@ -1,12 +1,16 @@
 
-This brief is written assuming that there is a common root directory,  we'll
-call it mm_t2 and it is usually at the top level of a working directory.
+Installing a development environment for the MM3 tag.  TinyOS, Ubuntu,
+Wine JTag.
+
+This brief is written assuming that there is a common root directory,
+we'll call it mm_t2 and it is usually at the top level of a working
+directory.  ie.  ~/mm_t2.
 
 1) OS Install.
 
-Install the OS, Ubuntu on the box.  Recommended is Ubuntu 9.10.  A
-simple install is fine and will take less time.  Download the install
-ISO from http://www.ubuntu.com/getubuntu/download.
+Install the Ubuntu 9.10 on the box.  A simple install is fine and will
+take less time. Download the install ISO from
+http://www.ubuntu.com/getubuntu/download.
 
 When the install is complete, boot the system, and use Synaptic or other package
 manager ("apt-get install") to make sure the following packages are installed:
@@ -16,7 +20,67 @@ manager ("apt-get install") to make sure the following packages are installed:
     openssh-client openssh-server
 
 
-2) We use GIT as the SCM.  Here are some pointers to get you started:
+2) Install TinyOS toolset (msp430)
+
+We want the tinyos toolset for the msp430 (telosb). Debian packages
+are available from Stanford.
+
+Modify the repository list using "System->Administration->Software
+Sources", "Other Software" to include:
+
+    deb http://tinyos.stanford.edu/tinyos/dists/ubuntu/ hardy main
+
+This line is input to the APT Line prompt.
+
+
+Install the following packages:
+
+           deputy-tinyos
+           msp430-binutils-tinyos
+           msp430-gcc-tinyos
+           msp430-libc-tinyos
+           msp430-tinyos
+           msp430-tinyos-base
+           nesc
+           tinyos-base
+           tinyos-tools
+
+
+3) Install wine.
+
+We need wine in order to run msp430-gdbproxy and msp430-jtag.
+
+Details can be found at: http://www.winehq.org/download/deb
+
+Add the following repository using "System->Administration->Software
+Sources", "Other Software":
+
+	ppa:ubuntu-wine/ppa
+
+Install:
+
+	wine1.2
+
+
+4) Install gdb.430, msp430-jtag, and msp430-gdbproxy.
+
+You first need to pull a t2_mm3 tree as that is where the files needed
+live.  See section 6 below.
+
+   a) cd ~/mm_t2  (remember to be enabled, sudo)
+   b) cd t2_mm3/Added_Bits/tools
+   c) make install
+
+   This should install into /opt/msp430/bin gdb.430 (the msp430-gdb debugger),
+   msp430-jtag, and msp430-gdbproxy.
+
+   It will also create the link needed to associate COM1 with the jtag
+   pod assuming it is connected to the system as /dev/ttyUSB0.  If you
+   always plug the jtag in as the first usb device it will always be
+   USB0.
+
+
+5) We use GIT as the SCM.  Here are some pointers to get you started:
 
    Start here:   http://book.git-scm.com/2_setup_and_initialization.html
    Everyday GIT: http://www.kernel.org/pub/software/scm/git/docs/everyday.html
@@ -26,7 +90,7 @@ manager ("apt-get install") to make sure the following packages are installed:
    Another Book: http://progit.org/book/
 
 
-3) T2_MM3 tree checkout:  The t2_mm3 tree is a seperate t2 based
+6) T2_MM3 tree checkout:  The t2_mm3 tree is a seperate t2 based
 tree that has mm3 unique code to build the mm3 load.
 
     git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only)
@@ -42,7 +106,7 @@ tree that has mm3 unique code to build the mm3 load.
     or git-log).
 
 
-4) TinyOS 2.x tree checkout
+7) TinyOS 2.x tree checkout
 
 Documentation on getting started with T2 can be found at:
 
@@ -69,33 +133,7 @@ To obtain the current mm3_tip branch:
     git checkout -t origin/mm3_tip
 
 
-5) Install TinyOS toolset (msp430, avr)
-
-We want the tinyos toolset for the msp430 (telosb) and the avr (micaz, mica2).
-Debian packages are available from Stanford.
-
-Modify the repository list using "System->Administration->Software
-Sources", "Other Software" to include:
-
-    deb http://tinyos.stanford.edu/tinyos/dists/ubuntu/ hardy main
-
-Enter the above to the APT Line prompt as written above.
-
-
-Install the following packages:
-
-           deputy-tinyos
-           msp430-binutils-tinyos
-           msp430-gcc-tinyos
-           msp430-libc-tinyos
-           msp430-tinyos
-           msp430-tinyos-base
-           nesc
-           tinyos-base
-           tinyos-tools
-
-
-6) Modify PATH and LD_LIBRARY_PATH
+8) Modify PATH and LD_LIBRARY_PATH
 
 Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430 and
 /usr/msp430 as appropriate.  Note if you use the build environment as
@@ -109,7 +147,7 @@ below.  It is done in section 7.
    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$M1/lib:$M2/lib:/usr/local/lib"
 
 
-7) Set up build environment settings
+9) Set up build environment settings
 
 The following environment variables must be set to build.
 
@@ -152,54 +190,7 @@ The following environment variables must be set to build.
   	export LIBMSPGCC MOTECOM MAMMARK_DIR TOSMAKE_PATH
 
 
-8) TI USB Jtag driver fix
-
-9.10 has the correct driver so this no longer needs to be done.
-
-
-9) USB Jtag, /dev/ttyUSBn config 2, permissions fix
-
-We also want to install a udev rule that will correctly enable configuration 2
-of the jtag pod (this makes it work).  We also modify the permission rule so that
-group user can access the jtag pod.  Files exist in the msp430fet_driver directory.
-
-   a) Install the 40-ti-usb-3410-5052.rules into /etc/udev/rules.d.
-  
-      cp 40-ti-usb-3410-5052.rules /etc/udev/rules.d
-      mkdir -p /etc/udev/scripts
-      cp msp430_init /etc/udev/scripts
-  
-   b) make the following change in /etc/udev/rules.d/40-permissions.rules
-  
-   change:
-  
-       SUBSYSTEM=="tty",                        GROUP="dialout"
-  
-   to:
-  
-       SUBSYSTEM=="tty",                        GROUP="users", MODE="0660"
-  
-  
-   Make sure that any users that will be using the device are in group "users".
-
-
-10) Install gdb and msp430-jtag from temporary location
-
-[Needs work] where to stash the packages.
-
-   *** These need to be put into a hardy debian package, they will be ***
-   *** included in the tinyos-optional (msp430 flavor)                ***
-
-   a) cd ~/mm_t2  (remember to be enabled, sudo)
-   b) cd t2_mm3/Added_Bits/tools
-   c) make install
-
-   This should install into /opt/msp430/bin gdb.430 (the msp430-gdb debugger),
-   msp430-jtag and some other tools.  Appropriate libraries are installed into
-   /opt/msp430/lib.
-
-
-11) Build SerialForwarder and libmote library.
+10) Build SerialForwarder and libmote library.
 
     Build the serial forwarder and associated library (also includes direct serial access)
 
@@ -224,7 +215,7 @@ group user can access the jtag pod.  Files exist in the msp430fet_driver directo
       stow sf_c
 
 
-12) Using the serialforwarder/seriallistener
+11) Using the serialforwarder/seriallistener
 
     a) make sure that tinyos.jar has been built.  It should live in $TOSROOT/support/sdk/java/tinyos.jar
     b) to rebuild:
@@ -274,7 +265,7 @@ If you define MOTECOM you won't need to specify the -comm parameter.  ie:
        MOTECOM=serial@/dev/ttyUSB0:telosb
 
 
-13) Do a test compile and gdb run.  This assumes that the JTAG pod is connected to ttyUSB0.
+12) Do a test compile and gdb run.  This assumes that the JTAG pod is connected to ttyUSB0.
 
     If you have mm3 hardware:
 
@@ -305,7 +296,7 @@ If you define MOTECOM you won't need to specify the -comm parameter.  ie:
     'run'.
 
 
-14) Do a test compile and gdb run from the main tree.
+13) Do a test compile and gdb run from the main tree.
 
     If you have telosb hardware:
 
@@ -326,7 +317,7 @@ If you define MOTECOM you won't need to specify the -comm parameter.  ie:
 
 
 
-15) Repos:
+14) Repos:
 
 T2 git repositories:
 
