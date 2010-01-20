@@ -6,6 +6,7 @@ This brief is written assuming that there is a common root directory,
 we'll call it mm_t2 and it is usually at the top level of a working
 directory.  ie.  ~/mm_t2.
 
+
 1) OS Install.
 
 Install the Ubuntu 9.10 on the box.  A simple install is fine and will
@@ -23,17 +24,14 @@ manager ("apt-get install") to make sure the following packages are installed:
 2) Install TinyOS toolset (msp430)
 
 We want the tinyos toolset for the msp430 (telosb). Debian packages
-are available from Stanford.
+are available from Stanford.  We need to modify the list of source
+repositories.
 
-Modify the repository list using "System->Administration->Software
-Sources", "Other Software" to include:
+Execute the following as root from a terminal window.
 
-    deb http://tinyos.stanford.edu/tinyos/dists/ubuntu/ hardy main
+echo "deb http://tinyos.stanford.edu/tinyos/dists/ubuntu hardy main" >> /etc/apt/sources.list
 
-This line is input to the APT Line prompt.
-
-
-Install the following packages:
+We want the following packages:
 
            deputy-tinyos
            msp430-binutils-tinyos
@@ -44,6 +42,33 @@ Install the following packages:
            nesc
            tinyos-base
            tinyos-tools
+
+However we also want a modified toolchain that supports the msp430x
+architecture.  Currently the simplest way to install all this stuff is
+to start with the tinyos-2.1.0 deb file and then overlay the z1
+toolchain from Zolertia (http://zolertia.sourceforge.net/wiki/index.php/Getting_Started_with_Z1)
+
+First:
+
+sudo apt-get install tinyos-2.1.0
+
+
+Then download and install tinyos-z1-0.0.1-10_i386.deb
+from (http://sourceforge.net/projects/zolertia/files/).
+
+sudo dpkg -i tinyos-z1-0.0.1.-10_i386.deb
+
+
+This will install the tinyos source code as of the 2.1.0 release and
+add in the z1 changes on top of it.  The part we use however is
+the z1 toolchain which has a working msp430-gcc that supports the 430x
+chips.  We don't actually use the source code, just the tool chain.
+
+This is a temporary measure because cleaning this up involves a
+somewhat involved learning curve.
+
+The Z1 toolchain lives at /opt/msp430-z1 the corresponding bin and lib
+lib directories must be included in environment variables.
 
 
 3) Install wine.
@@ -135,16 +160,12 @@ To obtain the current mm3_tip branch:
 
 8) Modify PATH and LD_LIBRARY_PATH
 
-Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430 and
-/usr/msp430 as appropriate.  Note if you use the build environment as
-specified in the next section you don't have to mess with M1 and M2
-below.  It is done in section 7.
+Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430-z1 as
+appropriate. 
 
-
-   M1="/opt/msp430"
-   M2="/usr/msp430"
-   export PATH="$PATH:$M1/bin:$M2/bin"
-   export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$M1/lib:$M2/lib:/usr/local/lib"
+   M1="/opt/msp430-z1"
+   export PATH="$PATH:$M1/bin"
+   export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$M1/lib:/usr/local/lib"
 
 
 9) Set up build environment settings
@@ -169,25 +190,23 @@ The following environment variables must be set to build.
   	MAMMARK_DIR="/home/joe/mm_t2/t2_mm3"
   	TOSMAKE_PATH="$TOSMAKE_PATH $MAMMARK_DIR/support/make"
   
-  	M1="/opt/msp430"
-  	M2="/usr/msp430"
-  	PATH="$PATH:$M1/bin:$M2/bin"
-  	LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$M1/lib:$M2/lib:/usr/local/lib"
+  	M1="/opt/msp430-z1"
+  	PATH="$M1/bin:$PATH"
+  	LD_LIBRARY_PATH="$M1/lib:/usr/local/lib:$LD_LIBRARY_PATH"
   
-  	MAN_PATH="$MAN_PATH:$M1/man:$M2/man"
+  	MAN_PATH="$M1/man:$MAN_PATH"
   
   	MAKERULES=$TOSROOT/support/make/Makerules
   	CLASSPATH=.:$TOSROOT/support/sdk/java/tinyos.jar
   
   	PYTHONPATH=$TOSROOT/support/sdk/python:$PYTHONPATH
-  	PYTHONPATH=$M1/lib:$M1/bin:$M2/lib:$M2/bin:$PYTHONPATH
+  	PYTHONPATH=$M1/lib:$M1/bin:$PYTHONPATH
   	PYTHONPATH=$M1/lib/python2.3/site-packages:$PYTHONPATH
-  	PYTHONPATH=$M2/lib/python2.3/site-packages:$PYTHONPATH
   
-  	#LIBMSPGCC_PATH=$M1/lib:$M2/lib
+  	#LIBMSPGCC_PATH=$M1/lib
   
   	export MAKERULES TOSDIR TOSROOT CLASSPATH PYTHONPATH LD_LIBRARY_PATH
-  	export LIBMSPGCC MOTECOM MAMMARK_DIR TOSMAKE_PATH
+  	export LIBMSPGCC MOTECOM MAMMARK_DIR TOSMAKE_PATH PATH
 
 
 10) Build SerialForwarder and libmote library.
