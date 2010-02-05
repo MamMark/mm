@@ -70,6 +70,8 @@ somewhat involved learning curve.
 The Z1 toolchain lives at /opt/msp430-z1 the corresponding bin and lib
 lib directories must be included in environment variables.
 
+$PATH needs to be modified to search /opt/msp430-z1 first.
+
 
 3) Install wine.
 
@@ -164,8 +166,8 @@ Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430-z1 as
 appropriate. 
 
    M1="/opt/msp430-z1"
-   export PATH="$PATH:$M1/bin"
-   export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$M1/lib:/usr/local/lib"
+   export PATH="$M1/bin:$PATH"
+   export LD_LIBRARY_PATH="$M1/lib:$LD_LIBRARY_PATH:/usr/local/lib"
 
 
 9) Set up build environment settings
@@ -192,7 +194,7 @@ The following environment variables must be set to build.
   
   	M1="/opt/msp430-z1"
   	PATH="$M1/bin:$PATH"
-  	LD_LIBRARY_PATH="$M1/lib:/usr/local/lib:$LD_LIBRARY_PATH"
+  	LD_LIBRARY_PATH="$M1/lib:$LD_LIBRARY_PATH:/usr/local/lib"
   
   	MAN_PATH="$M1/man:$MAN_PATH"
   
