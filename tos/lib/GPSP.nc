@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Eric B. Decker
+ * Copyright (c) 2008-2010 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -130,7 +130,7 @@ const msp430_uart_union_config_t gps_57600_serial_config = { {
 } };
 
 #else
-#error need one of MM_MM3, MM_MM4, MM_MM5 defined.
+#error need one of MM_MM3, MM_MM4, or MM_MM5 defined.
 #endif
 
 

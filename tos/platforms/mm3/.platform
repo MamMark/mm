@@ -8,6 +8,7 @@ push( @includes, qw(
 
   %P/misc
   %P/sensors
+  %P/../../lib
   %P/../../chips/msp430/timer
   %P/../../chips/msp430/usart
   %P/../../../support/utils/include
