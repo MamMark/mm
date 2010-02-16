@@ -1,13 +1,13 @@
 /**
  *
- * Copyright 2008 (c) Eric B. Decker
+ * Copyright 2008-2010 (c) Eric B. Decker
  * All rights reserved.
  *
  * @author Eric B. Decker
  */
 
-#ifndef _H_hardware_h
-#define _H_hardware_h
+#ifndef _H_HARDWARE_h
+#define _H_HARDWARE_h
 
 #include "msp430hardware.h"
 #include "mm3PortRegs.h"
@@ -15,11 +15,11 @@
 /*
  * Port definitions:
  *
- * what do these damn codes mean?  (<dir><usage><default val>: Is0 <input><spi><0, zero>)
+ * Various codes for port settings: (<dir><usage><default val>: Is0 <input><spi><0, zero>)
  * another nomenclature used is <value><function><direction>, 0pO (0 (zero), port, Output),
  *    xpI (don't care, port, Input), mI (module input).
  *
- * Need:
+ * Other functions wanted:
  *	red, green, yellow leds
  *	cc2420: csn, vref, reset, fifop, sfd, gio0, fifo, gio1, cca
  *	    cc: fifop, fifo, sfd, vren, rstn (these aren't assigned, where to put them)
@@ -28,33 +28,33 @@
  *      gps is wired to a mux and then to uart1.  And power up/down
  *	cc2420 (spi1), sd (spi1), gps, and serial direct connect (uart1) on same usart.
  *
- * port 1.0	O	d_mux_a0		port 4.0	O	gain_mux_a0
- *       .1	O	d_mux_a1		      .1	O	gain_mux_a1
- *       .2	O	mag_degauss_1		      .2	O	vdiff_off
- *       .3     O		  		      .3	O	vref_off
- *       .4	O	mag_deguass_2		      .4	O	solar_chg_on
- *       .5	O	press_res_off		      .5	O	extchg_battchk
- *       .6	O	salinity_off		      .6	O	gps_off
- *       .7	O	press_off		      .7	O	led_g (rf232_pwr off)
+ * port 1.0	0pO	d_mux_a0		port 4.0	0pO	gain_mux_a0
+ *       .1	0pO	d_mux_a1		      .1	0pO	gain_mux_a1
+ *       .2	0pO	mag_degauss_1		      .2	1pO	vdiff_off
+ *       .3     0pO		  		      .3	1pO	vref_off
+ *       .4	0pO	mag_deguass_2		      .4	0pO	solar_chg_on
+ *       .5	1pO	press_res_off		      .5	0pO	extchg_battchk
+ *       .6	1pO	salinity_off		      .6	1pO	gps_off
+ *       .7	1pO	press_off		      .7	1pO	led_g (rf232_pwr off)
  *
- * port 2.0	O	U8_inhibit		port 5.0	O	sd_pwr_off (1 = off)
- *       .1	O	accel_wake		      .1	0sO	sd_di (simo1, spi1)  (0pO, sd off)
- *       .2	O	salinity_polarity	      .2	0sI	sd_do (somi1, spi1)  (0pO, sd off)
- *       .3	O	u12_inhibit		      .3	0sO	sd_clk (uclk1, spi1) (0pO, sd off)
- *       .4	O	s_mux_a0		      .4	O	sd_csn (cs low true) (0pO, sd off)
- *       .5	O	s_mux_a1		      .5	O	rf_beeper_off
- *       .6	O	adc_cnv			      .6	O	ser_sel_a0
- *       .7	I	adc_da0			      .7	O	ser_sel_a1  (cc2420_reset)
+ * port 2.0	1pO	U8_inhibit		port 5.0	1pO	sd_pwr_off (1 = off)
+ *       .1	0pO	accel_wake		      .1	0sO	sd_di (simo1, spi1)  (0pO, sd off)
+ *       .2	0pO	salinity_polarity	      .2	0sI	sd_do (somi1, spi1)  (0pO, sd off)
+ *       .3	1pO	u12_inhibit		      .3	0sO	sd_clk (uclk1, spi1) (0pO, sd off)
+ *       .4	0pO	s_mux_a0		      .4	0pO	sd_csn (cs low true) (0pO, sd off)
+ *       .5	0pO	s_mux_a1		      .5	0pO	rf_beeper_off
+ *       .6	0pO	adc_cnv			      .6	1pO	ser_sel_a0
+ *       .7	0pI	adc_da0			      .7	1pO	ser_sel_a1
  *
- * port 3.0	O	cc2420_csn		port 6.0	O	cc2420_fifop
- *       .1	O	s_mux_a2		      .1	O	cc2420_sfd
- *       .2	0sI	adc_somi (spi0)		      .2	I	cc2420_fifo
- *       .3	0sO	adc_clk (uclk0, spi0)	      .3	O	telltale (cc2420_cca)
- *       .4	OpO	tmp_on			      .4	O	speed_off
- *       .5	1pO	adc_sdi (not part of spi)     .5	O	mag_xy_off
+ * port 3.0	0pO				port 6.0	0pI	led_r
+ *       .1	0pO	s_mux_a2		      .1	0pI	led_y
+ *       .2	0sI	adc_somi, adc_sdo (spi0)      .2	0pI	led_g
+ *       .3	0sO	adc_clk, (uclk0, spi0)	      .3	0pO	telltale
+ *       .4	0pO	tmp_on			      .4	1pO	speed_off
+ *       .5	1pO	adc_sdi (not part of spi)     .5	1pO	mag_xy_off
  *			  (mode control in, adc)
- *       .6	1uO	ser_txd (uart1)		      .6	O	led_y
- *       .7	0uI	ser_rxd (uart1)		      .7	O	mag_z_off
+ *       .6	1pO	ser_txd (uart1)		      .6	1pO
+ *       .7	0pI	ser_rxd (uart1)		      .7	1pO	mag_z_off
  */
 
 /*
@@ -89,39 +89,12 @@
  * the settings on a h/w multiplexor.
  */
 
-TOSH_ASSIGN_PIN(GSP_RXx, 1, 3);
-
-#define ADC_CNV mmP2out.adc_cnv
-
-TOSH_ASSIGN_PIN(ADCxCNV, 2, 6);
-
-#define ADC_SDO mmP3out.adc_sdo
-#define ADC_CLK mmP3out.adc_clk
-#define ADC_SDI mmP3out.adc_sdi
-
-TOSH_ASSIGN_PIN(ADCxSDO, 3, 2);
-TOSH_ASSIGN_PIN(ADCxCLK, 3, 3);
-TOSH_ASSIGN_PIN(ADCxSDI, 3, 5);
-
-TOSH_ASSIGN_PIN(SDxSDI, 5, 1);
-TOSH_ASSIGN_PIN(SDxSDO, 5, 2);
-TOSH_ASSIGN_PIN(SDxCLK, 5, 3);
-TOSH_ASSIGN_PIN(SDxCSN, 5, 4);
-
-  enum {
-    SER_SEL_CRADLE =	0,
-    SER_SEL_GPS    =	1,	/* temp so we can see it via the uart */
-    SER_SEL_UNUSED  =	2,
-    SER_SEL_NONE   =	3,
-  };
-
-#define TELL mmP6out.tell
-TOSH_ASSIGN_PIN(TELLx, 6, 3);
-
 // LEDs
-TOSH_ASSIGN_PIN(GREEN_LED, 6, 4);
-TOSH_ASSIGN_PIN(YELLOW_LED, 6, 6);
+TOSH_ASSIGN_PIN(RED_LED, 6, 0);
+TOSH_ASSIGN_PIN(YELLOW_LED, 6, 1);
+TOSH_ASSIGN_PIN(GREEN_LED, 6, 2);
 
+TOSH_ASSIGN_PIN(TELLx, 6, 3);
 
 // CC2420 RADIO #defines
 TOSH_ASSIGN_PIN(RADIO_CSN, 4, 2);
@@ -226,7 +199,7 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
 #define P5_BASE_VAL	0xe1
 
 /* mag pwr off */
-#define P6_BASE_DIR	0xff
+#define P6_BASE_DIR	0xf8
 #define P6_BASE_VAL	0xf0
 
 
@@ -236,7 +209,7 @@ inline void uwait(uint16_t u) {
 }
 
 
-void TOSH_MM3_INITIAL_PIN_STATE(void) {
+void TOSH_MM_INITIAL_PIN_STATE(void) {
   atomic {
     SVSCTL = 0;			/* for now, disable SVS */
     U0CTL = SWRST;		/* hold USART0 in reset */
@@ -274,4 +247,4 @@ void TOSH_MM3_INITIAL_PIN_STATE(void) {
   }
 }
 
-#endif // _H_hardware_h
+#endif // _H_HARDWARE_H

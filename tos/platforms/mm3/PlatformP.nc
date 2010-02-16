@@ -144,7 +144,7 @@ implementation {
   }
 
     command error_t Init.init() __attribute__ ((noinline)) {
-    TOSH_MM3_INITIAL_PIN_STATE();
+    TOSH_MM_INITIAL_PIN_STATE();
 
     /*
      * It takes a long time for the 32KHz Xtal to come up.

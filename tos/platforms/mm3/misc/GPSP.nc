@@ -71,6 +71,11 @@ uint16_t g_idx;
 #error "GPS_SPEED not valid (see gps.h)"
 #endif
 
+#if defined(MM_MM3)
+/*
+ * MM3, 1611, uses lots of control bits
+ */
+
 const msp430_uart_union_config_t gps_4800_serial_config = { {
   ubr:   UBR_4MHZ_4800,
   umctl: UMCTL_4MHZ_4800,
@@ -107,6 +112,26 @@ const msp430_uart_union_config_t gps_57600_serial_config = { {
   utxe : 1,			// tx interrupt enabled
   urxe : 1			// rx interrupt enabled
 } };
+
+#elif defined(MM_MM4)
+/*
+ * MM4, 2618, so simplified control parameters.
+ */
+
+const msp430_uart_union_config_t gps_4800_serial_config = { {
+  ubr:   UBR_4MHZ_4800,
+  umctl: UMCTL_4MHZ_4800
+} };
+
+
+const msp430_uart_union_config_t gps_57600_serial_config = { {
+  ubr:   UBR_4MHZ_57600,
+  umctl: UMCTL_4MHZ_57600
+} };
+
+#else
+#error need one of MM_MM3, MM_MM4, MM_MM5 defined.
+#endif
 
 
 typedef enum {

@@ -1,10 +1,15 @@
-#-*-Makefile-*- vim:syntax=make
-#$Id: telosb.target,v 1.4 2006/12/12 18:22:55 vlahan Exp $
+# -*-Makefile-*- vim:syntax=make
+
+#
+# mm3 is based on msp430f1611
+# see tos/platform/mm3/hardware.h for how the pins are assigned.
+#
 
 PLATFORM ?= mm3
 
 # THREADS_MSP430_DIR comes from main tree support/make/threads.extra
 # mm3 is based on the msp430 so we use that threads variant.
+
 ifdef THREADS
 CFLAGS += $(THREADS_MSP430_INCLUDE_DIRS)
 CFLAGS += $(THREADS_CC2420_INCLUDE_DIRS)
@@ -16,8 +21,11 @@ PFLAGS += -I$(MAMMARK_DIR)/tos/platforms/mm3
 PFLAGS += -I$(MAMMARK_DIR)/tos/system
 PFLAGS += -I$(MAMMARK_DIR)/tos/interfaces
 
+PFLAGS += -DMM_MM3
+
 # Disable MSP430 hardware multiply because it makes MSPGCC die
 PFLAGS += -mdisable-hwmul
+
 OPTFLAGS += -O
 
 MSP_BSL ?= tos-bsl

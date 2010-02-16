@@ -1,10 +1,10 @@
 
-Installing a development environment for the MM3 tag.  TinyOS, Ubuntu,
-Wine JTag.
+Installing a development environment for the MamMark tag.  TinyOS, Ubuntu,
+Wine Jtag.
 
 This brief is written assuming that there is a common root directory,
-we'll call it mm_t2 and it is usually at the top level of a working
-directory.  ie.  ~/mm_t2.
+we'll call it mm and it is usually at the top level of a working
+directory.  ie.  ~/mm.
 
 
 1) OS Install.
@@ -91,21 +91,27 @@ Install:
 
 4) Install gdb.430, msp430-jtag, and msp430-gdbproxy.
 
-You first need to pull a t2_mm3 tree as that is where the files needed
+You first need to pull a t2_mm tree as that is where the files needed
 live.  See section 6 below.
 
-   a) cd ~/mm_t2  (remember to be enabled, sudo)
-   b) cd t2_mm3/Added_Bits/tools
+   a) cd ~/mm  (remember to be enabled, sudo)
+   b) cd t2_mm/Added_Bits/tools
    c) make install
 
-   This should install into /opt/msp430/bin gdb.430 (the msp430-gdb debugger),
-   msp430-jtag, and msp430-gdbproxy.
+   This will install gdb.430, msp430-jtag, and msp430-gdbproxy into
+   /opt/msp430-z1/bin.  Needed libraries will be installed in
+   appropriate places.
 
    It will also create the link needed to associate COM1 with the jtag
    pod assuming it is connected to the system as /dev/ttyUSB0.  If you
    always plug the jtag in as the first usb device it will always be
    USB0.
 
+   The windows version of msp430-jtag defaults to using COM1 which
+   we've linked to /dev/ttyUSB0.  You can override this setting by
+   passing the -l <device> switch on the command line.  These need
+   to be windows devices.
+   
 
 5) We use GIT as the SCM.  Here are some pointers to get you started:
 
@@ -117,16 +123,17 @@ live.  See section 6 below.
    Another Book: http://progit.org/book/
 
 
-6) T2_MM3 tree checkout:  The t2_mm3 tree is a seperate t2 based
-tree that has mm3 unique code to build the mm3 load.
+6) T2_MM tree checkout:  The t2_mm tree is a seperate t2 based
+repo that has mammark unique code.  It is used to build firmware
+for the mm3 (1611 based) and mm4 (2618 based) tag devices.
 
     git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only)
 
-    cd ~/mm_t2				# cd to top working dir.
-    git clone git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git
-    cd t2_mm3
+    cd ~/mm				# cd to top working dir.
+    git clone git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git t2_mm
+    cd t2_mm
 
-    this will create the directory ~/mm_t2/t2_mm3 and you will be on the master
+    this will create the directory ~/mm/t2_mm and you will be on the master
     branch.  Which is where you want to be.
 
     Any patches etc should be emailed.  (Can be prepared with git-format-patch
@@ -145,19 +152,19 @@ The main tracking repo is at:
 
     git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
         read-only, cire tracking repo that tracks hinrg t2, updated manually
-	This also has the mm3 code, branched off the hinrg t2 mainline
+	This also has the mm code, branched off the hinrg t2 mainline
 
-Changes needed to build the mm3 tree can be obtained via the mm3_tip
+Changes needed to build the mm tree can be obtained via the mm_tip
 branch on the cire/tinyos-2.x.git repo.
 
-To obtain the current mm3_tip branch:
+To obtain the current mm_tip branch:
 
-    cd ~/mm_t2
+    cd ~/mm
     mkdir t2_cur
     cd t2_cur
     git clone -v git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
     cd tinyos-2.x
-    git checkout -t origin/mm3_tip
+    git checkout -t origin/mm_tip
 
 
 8) Modify PATH and LD_LIBRARY_PATH
@@ -180,16 +187,16 @@ The following environment variables must be set to build.
     CLASSPATH
     TOSMAKE_PATH
 
-    for example:  working dir ~/mm_t2
+    for example:  working dir ~/mm
   
   	#!/bin/sh
   
-  	MOTECOM="serial@/dev/ttyS0:telosb"
+  	MOTECOM="serial@/dev/ttyUSB1:telosb"
   
-  	TOSROOT=~/mm_t2/t2_cur/tinyos-2.x
+  	TOSROOT=~/mm/t2_cur/tinyos-2.x
   	TOSDIR=$TOSROOT/tos
   
-  	MAMMARK_DIR="/home/joe/mm_t2/t2_mm3"
+  	MAMMARK_DIR="/home/joe/mm/t2_mm"
   	TOSMAKE_PATH="$TOSMAKE_PATH $MAMMARK_DIR/support/make"
   
   	M1="/opt/msp430-z1"
@@ -254,7 +261,7 @@ The following environment variables must be set to build.
   
        Make sure CLASSPATH includes $TOSROOT/support/sdk/java/tinyos.jar, ie:
   
-           CLASSPATH=.:/home/joe/mm_t2/t2_cur/tinyos-2.x/support/sdk/java/tinyos.jar
+           CLASSPATH=.:/home/joe/mm/t2_cur/tinyos-2.x/support/sdk/java/tinyos.jar
 
 execute:
 
@@ -274,7 +281,7 @@ And you should see packets that look something like this:  (depends on what the 
             |  |     |     |  |  |  |     |  |- sensor id
             |  |     |     |  |  |  |     |- sensor data type
             |  |     |     |  |  |  |-- length of data block
-            |  |     |     |  |  |-- AM type MM3_DATA
+            |  |     |     |  |  |-- AM type MM_DATA
             |  |     |     |  |-- AM group
             |  |     |     |-- serial length
             |  |     |-- src addr           
@@ -283,30 +290,32 @@ And you should see packets that look something like this:  (depends on what the 
                              
 If you define MOTECOM you won't need to specify the -comm parameter.  ie:
 
-       MOTECOM=serial@/dev/ttyUSB0:telosb
+       MOTECOM=serial@/dev/ttyUSB1:telosb
 
 
-12) Do a test compile and gdb run.  This assumes that the JTAG pod is connected to ttyUSB0.
+12) Do a test compile and gdb run.  This assumes that the JTAG pod is
+    connected to ttyUSB0 via COM1.  The default device assumed by the
+    windows version of msp430-jtag is COM1.
 
     If you have mm3 hardware:
 
-    cd ~/mm_t2/t2_mm3/apps/mm3
+    cd ~/mm/t2_mm/apps/mm
     make debug mm3 threads
-    msp430-jtag -l /dev/ttyUSB0 -e build/mm3/main.exe
+    msp430-jtag -e build/mm3/main.exe
 
-    from a different window run:
+    When the download completes use a different window and run:
 
-    msp430-gdbproxy msp430 /dev/ttyUSB0
+    msp430-gdbproxy msp430 COM1
 
 
-    There should be a .gdbinit file in apps/mm3 which contains the following lines at the top:
+    There should be a .gdbinit file in apps/mm which contains the following lines at the top:
 
         set remoteaddresssize 0d64
         set remotetimeout 0d999999
         target remote localhost:2000
 
     change into build/mm3/ and create a symbolic link to the .gdbinit file in the upper directory.
-    This prevents the .gdbinit file from being wiped if one does make clean.
+    This prevents the .gdbinit file from being wiped if one does "make clean".
 
         pushd build/mm3
 	ln -s ../../.gdbinit
@@ -317,18 +326,21 @@ If you define MOTECOM you won't need to specify the -comm parameter.  ie:
     'run'.
 
 
+    To use the mm4 (2618 based) hardware, change mm3 to mm4.
+
+
 13) Do a test compile and gdb run from the main tree.
 
     If you have telosb hardware:
 
-    cd ~/mm_t2/t2_cur/tinyos-2.x/apps/Blink
+    cd ~/mm/t2_cur/tinyos-2.x/apps/Blink
     make debug telosb
-    msp430-jtag -l /dev/ttyUSB0 -e build/telosb/main.exe
+    msp430-jtag -e build/telosb/main.exe
 
 
     from a different window run:
 
-    msp430-gdbproxy msp430 /dev/ttyUSB0
+    msp430-gdbproxy msp430 COM1
 
 
     Make sure that you have a .gdbinit file in the app directory and the symbolic link
@@ -347,7 +359,7 @@ T2 git repositories:
 
     git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
 	cire/tinyos-2.x: read-only.  manual update tracking of hinrg T2 core.  Also
-	includes mm3_tip and encap branches.
+	includes mm_tip and encap branches.
 
     ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git
         read-write (need access permissions), cire tracking repo that tracks
@@ -363,18 +375,18 @@ T2 git repositories:
     cire/tinyos-2.x.git: manually tracking of the main hinrg t2 tree (labeled t2_base)
 	t2_base:    master that tracks the main hinrg
 	encap:	    encapsulation modification to the mainline
-	mm3_tip:    working tip for mm3 development (no encap changes)
+	mm_tip:     working tip for mm3 development (no encap changes)
 
     t2 (cvs) -> tinyos-2.x.git (hinrg, hourly) -> cire/tinyos-2.x.git (t2_base, manual)
              ----> (encap)
-	     ----> (mm3_tip)
+	     ----> (mm_tip)
 
     t2 (cvs) denotes the cvs based main t2 tree.   tinyos-2.x.git denotes
     the hourly pull mirror hosted at hinrg.cs.jhu.edu.  And cire/tinyos-2.x
-    is the tracking branch + mm3 branches.
+    is the tracking branch + mm branches.
 
 
-T2_MM3 git repositories:
+T2_MM git repositories:
 
     git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only)
 	read-only, primary pull T2 MM3 repo.  pulls from /home/cire/t2_mm3.git.

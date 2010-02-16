@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (c) Eric B. Decker
+ * Copyright 2008-2010 (c) Eric B. Decker
  * All rights reserved.
  *
  * @author Eric B. Decker
@@ -19,6 +19,8 @@ module mm3SerialP {
 }
 implementation {
   
+#if defined(MM_MM3)
+
   msp430_uart_union_config_t mm3_direct_serial_config = {
     {
 //       ubr:   UBR_4MHZ_57600,
@@ -40,6 +42,22 @@ implementation {
        urxe : 1			// rx interrupt enabled
     }
   };
+
+#elif defined(MM_MM4)
+
+  msp430_uart_union_config_t mm3_direct_serial_config = {
+    {
+//       ubr:   UBR_4MHZ_57600,
+//       umctl: UMCTL_4MHZ_57600
+      ubr:   UBR_4MHZ_115200,
+      umctl: UMCTL_4MHZ_115200
+    }
+  };
+
+#else
+#error need one of MM_MM3, MM_MM4, MM_MM5 defined.
+#endif
+
 
   command error_t StdControl.start(){
     return SUCCESS;

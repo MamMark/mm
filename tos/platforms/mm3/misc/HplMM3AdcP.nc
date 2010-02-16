@@ -118,11 +118,11 @@ implementation {
   }
 
   command void HW.temp_on() {
-    mmP3out.tmp_on = 1;
+    TMP_ON = 1;
   }
 
   command void HW.temp_off() {
-    mmP3out.tmp_on = 0;
+    TMP_ON = 0;
   }
 
   command void HW.sal_on() {

@@ -1,0 +1,61 @@
+
+MM3: msp430f1611 based prototype.  see tos/platforms/mm3/hardware.h
+     for port mapping.
+
+MM4: msp430f2618 varient.  Note that the 2618 has a form factor that
+     is a drop in for the 1611.  Some of the pins map differently.
+     Note that the pin out of the 2618 and the 1611 are very close and
+     the 2618 is essentially a h/w drop in for the 1611.  The f/w
+     needs to change somewhat to account for the h/w differences
+     (primarily between the USARTs and USCIs).
+
+MM5: is planned to be based on the msp430f5438A.  The 5438 has more
+h/w than the 2618 and its pin out is significantly different than the
+2618.
+
+
+Differences between the mm3 and mm4:
+
+1) the 2618 uses USCIs vs. USARTs in the 1611.  Need to translate
+the SPI and UART code from USARTs to SPIs.  Is there a simple way in
+place or is it better to have new modules and tweak the wiring.
+Note that the serial stuff in tinyos for the msp430 assumes that
+serial stuff is implemented using usarts and the various
+procedures reflect this.  How to generalize?  Is it worth it?  How did
+the z1 do it?
+
+
+2) USART 1 (Serial and SPI) reassignment.
+
+   The mm3 is based on the msp430f1611 which has two USARTs which can
+   be programmed as either a UART or a SPI.  Given that there are 4
+   functions that are needed requires multiplexing the h/w and control
+   structures via arbiters.
+
+   USART 0 (spi) dedicated to ADC.
+   USART 1 (uart) used by direct serial.  (serial_mux)
+   USART 1 (uart) gps (serial_mux)
+   USART 1 (spi)  SD.
+
+
+   The mm4 is based on the msp430f2618 which has 4 uscis.
+
+   USCI A0 (uart) is dedicated to the direct serial.
+   USCI A1 (uart) dedicated to the gps.
+   USCI B0 (spi)  dedicated to the ADC.
+   USCI B1 (spi)  dedicated to the SD.
+
+
+3) Port/Pin modifications:
+
+from mm3 (1611) -> to mm4 (2618)
+
+tmp_on:  p3.4 -> p3.0
+
+              -> p3.4 (gps_txd)
+	      -> p3.5 (gps_rxd)
+	     
+adc_sdi: p3.5 -> p6.6 (adc_sdi)
+
+ser_txd: p3.6 -> p3.6 (dock_txd)
+ser_rxd: p3.7 -> p3.7 (dock_rxd)
