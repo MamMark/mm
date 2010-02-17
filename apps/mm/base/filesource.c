@@ -16,7 +16,7 @@
 #include "mm3DataMsg.h"
 #include "SDConstants.h"
 #include "SensorConstants.h"
-#include "mm3dump.h"
+#include "mmdump.h"
 
 /*
  * Number of empty sectors that will cause the dump to stop.
@@ -46,7 +46,7 @@ typedef enum {
  * sns_payload_len: allows an easy conversion from sensor id
  * to how many bytes in the payload.
  */
-extern uint8_t sns_payload_len[MM3_NUM_SENSORS];
+extern uint8_t sns_payload_len[MM_NUM_SENSORS];
 
 /*
  * Get Sector
@@ -458,7 +458,7 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
 
     case DT_SENSOR_DATA:
       sns_id = dt_sensor_data_sns_id_get(msg);
-      if (sns_id < 1 || sns_id >= MM3_NUM_SENSORS) {
+      if (sns_id < 1 || sns_id >= MM_NUM_SENSORS) {
 	fprintf(stderr, "*** DT_SENSOR: bad sensor id: %d\n", sns_id);
 	rtn = GS_BAD_DBLK;
 	break;

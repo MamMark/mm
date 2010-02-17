@@ -29,7 +29,7 @@
 #include "GpsUnkMsg.h"
 #include "GpsNavLibDataMsg.h"
 
-//From mm3dump.c
+//From mmdump.c
 extern int debug,
            verbose,
            write_data;

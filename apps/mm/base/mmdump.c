@@ -1,8 +1,8 @@
 /*
- * mm3dump - dump mm3 data, debug, or control stream from
+ * mmdump - dump mm data, debug, or control stream from
  * file, serial, or serial forwarder.
  *
- * Copyright 2008 Eric B. Decker
+ * Copyright 2008, 2010 Eric B. Decker
  * Mam-Mark Project
  *
  * @author Eric B. Decker
@@ -38,7 +38,7 @@
 #include "DtGpsRawMsg.h"
 #include "ParseSirf.h"
 
-#define VERSION "mm3dump: v0.9.0  (10 Sep 2008)\n"
+#define VERSION "mmdump: v0.9.0  (10 Sep 2008)\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -73,7 +73,7 @@ static char *msgs[] = {
 };
 
 
-FILE *fp[MM3_NUM_SENSORS];
+FILE *fp[MM_NUM_SENSORS];
 
 void stderr_msg(serial_source_msg problem) {
   fprintf(stderr, "*** Note: %s\n", msgs[problem]);
@@ -85,7 +85,7 @@ void stderr_msg(serial_source_msg problem) {
  * to how many bytes in the payload.
  */
 
-uint8_t sns_payload_len[MM3_NUM_SENSORS] = {
+uint8_t sns_payload_len[MM_NUM_SENSORS] = {
   0,				/* not used */
   BATT_PAYLOAD_SIZE,		/* dock, looks like batt */
   BATT_PAYLOAD_SIZE,		/* batt */
@@ -222,7 +222,7 @@ open_files(char *prefix) {
   len += snprintf(&name[len], STAMP_LEN, "%04d%02d%02d%02d%02d_",
 		  1900 + local.tm_year, 1 + local.tm_mon, local.tm_mday,
 		  local.tm_hour, local.tm_min);
-  for (i = 1; i < MM3_NUM_SENSORS; i++) {
+  for (i = 1; i < MM_NUM_SENSORS; i++) {
     if (i == SNS_ID_CRADLE)
       continue;
     name[len] = 0;
@@ -294,7 +294,7 @@ process_sync(tmsg_t *msg) {
     printf("SYNC: %c %d (%x) %08x (%s)\n", c, stamp, stamp, majik, s);
   }
   if (write_data) {
-    for (i = 0; i < MM3_NUM_SENSORS; i++) {
+    for (i = 0; i < MM_NUM_SENSORS; i++) {
       fprintf(fp[i], "%% SYNC: %c %d %08x %s\n",
 	      c, stamp, majik, s);
     }
@@ -492,7 +492,7 @@ process_sensor_data(tmsg_t *msg) {
   if (verbose) {
     printf("SNS: %-6s (%d) %8u (%04x/%04x, %3d)",
 	   snsid2str(sns_id), sns_id, sched, sched, stamp, stamp-sched);
-    if (sns_id < MM3_NUM_SENSORS) {
+    if (sns_id < MM_NUM_SENSORS) {
       for (i = 0; i < (sns_payload_len[sns_id]/2); i++)
 	printf(" %5d", dt_sensor_data_data_get(msg, i));
       printf("  [ ");
@@ -502,7 +502,7 @@ process_sensor_data(tmsg_t *msg) {
     } else
       printf("(unk) %04x\n", dt_sensor_data_data_get(msg, 0));
   }
-  if (sns_id > 0 && sns_id < MM3_NUM_SENSORS) {
+  if (sns_id > 0 && sns_id < MM_NUM_SENSORS) {
     if (write_data) {
       fprintf(fp[sns_id], "%-8u ", stamp);
       for (i = 0; i < (sns_payload_len[sns_id]/2); i++)
@@ -523,7 +523,7 @@ process_version(tmsg_t *msg) {
   tweak = dt_version_tweak_get(msg);
   printf("VER: %d.%d.%d\n", major, minor, tweak);
   if (write_data)
-    for (i = 1; i < MM3_NUM_SENSORS; i++)
+    for (i = 1; i < MM_NUM_SENSORS; i++)
       fprintf(fp[i], "%% Tag Version: %d.%d.%d\n", major, minor, tweak);
 }
 

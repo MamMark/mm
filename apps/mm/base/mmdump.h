@@ -1,14 +1,14 @@
 /*
- * mm3dump.h - common defines
+ * mmdump.h - common defines
  *
- * Copyright 2008 Eric B. Decker
+ * Copyright 2008, 2010 Eric B. Decker
  * Mam-Mark Project
  */
 
-#ifndef __MM3DUMP_H__
-#define __MM3DUMP_H__
+#ifndef __MMDUMP_H__
+#define __MMDUMP_H__
 
-#define VERSION "mm3dump: v0.9 1 Sep 2008\n"
+#define VERSION "mmdump: v0.9 1 Sep 2008\n"
 
 /*
  * Make sure this matches the defines in sd_block.h
@@ -19,4 +19,4 @@
  */
 #define SYNC_MAJIK 0xdedf00ef
 
-#endif		// __MM3DUMP_H__
+#endif		// __MMDUMP_H__
