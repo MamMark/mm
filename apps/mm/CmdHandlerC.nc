@@ -25,10 +25,10 @@ implementation {
 //  MainC.SoftwareInit -> CmdHandlerP;
 //  CmdHandlerP.Boot -> MainC;
 
-//  components new SerialAMSenderC(AM_MM3_CONTROL_MSG);
+//  components new SerialAMSenderC(AM_MM_CONTROL_MSG);
 //  CmdHandlerP.AMSend -> SerialAMSenderC;
 
-  components new SerialAMReceiverC(AM_MM3_CONTROL_MSG);
+  components new SerialAMReceiverC(AM_MM_CONTROL_MSG);
   CmdHandlerP.CmdReceive -> SerialAMReceiverC;
 //  CmdHandlerP.Packet -> SerialAMSenderC;
 

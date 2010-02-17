@@ -17,7 +17,7 @@ implementation {
   components HplMM3AdcC;
   AdcP.HW -> HplMM3AdcC;
 
-  components new RoundRobinResourceQueueC(MM3_NUM_SENSORS) as RR;
+  components new RoundRobinResourceQueueC(MM_NUM_SENSORS) as RR;
   AdcP.Queue -> RR;
 
   components new Alarm32khzC() as PA;

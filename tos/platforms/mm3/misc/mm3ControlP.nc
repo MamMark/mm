@@ -43,7 +43,7 @@ module mm3ControlP {
 }
 
 implementation {
-  bool eaves[MM3_NUM_SENSORS];
+  bool eaves[MM_NUM_SENSORS];
   bool m_surfaced;
 
 #ifdef FAKE_SURFACE
@@ -51,7 +51,7 @@ implementation {
 #endif
 
   command bool mm3Control.eavesdrop[uint8_t sns_id]() {
-    if (sns_id < MM3_NUM_SENSORS)
+    if (sns_id < MM_NUM_SENSORS)
       return eaves[sns_id];
     return FALSE;
   }
@@ -59,7 +59,7 @@ implementation {
   command error_t Init.init() {
     uint8_t i;
 
-    for (i = 0; i < MM3_NUM_SENSORS; i++)
+    for (i = 0; i < MM_NUM_SENSORS; i++)
       eaves[i] = EAVES;
 #ifdef FAKE_SURFACE
     call SurfaceTimer.startOneShot(SUBMERGED_TIME);

@@ -15,7 +15,7 @@
 //uint8_t use_regime = 14;
 uint8_t use_regime = 2;
 
-module mm3C {
+module mmC {
   uses {
     interface Regime;
     interface Leds;
@@ -28,7 +28,7 @@ module mm3C {
 
     interface StreamStorageRead as SSR;
 #ifdef notdef
-    interface HplMM3Adc as HW;
+    interface HplMMAdc as HW;
 #endif
   }
 }

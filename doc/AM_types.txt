@@ -42,9 +42,9 @@ AM_MVIZ_MSG                     147     0x93
 AM_SAMPLE_MSG                   152     0x98            LowPowerSensing
 AM_SERIAL_SAMPLE_MSG            153     0x99            LowPowerSensing
 
-AM_MM3_CONTROL                  160     0xA0
-AM_MM3_DATA                     161     0xA1
-AM_MM3_DEBUG                    162     0xA2
+AM_MM_CONTROL                   160     0xA0
+AM_MM_DATA                      161     0xA1
+AM_MM_DEBUG                     162     0xA2
 
 AM_DELUGEADVMSG                 161     0xa1
 AM_DELUGEREQMSG                 162     0xa2

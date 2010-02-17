@@ -25,7 +25,7 @@
 # SERIAL_DEFAULT_OWNER: test code for trying out Serial owning the comm.
 #
 
-COMPONENT=mm3AppC
+COMPONENT=mmAppC
 PFLAGS += -DENABLE_ERASE -DFAKE_SURFACE 
 
 PFLAGS += -DDEFAULT_EAVES=TRUE

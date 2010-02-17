@@ -71,8 +71,8 @@ typedef nx_struct mm3_cmd_note {
  * Not actually used.  Only here to make "mig" happy.
  */
 enum {
-  AM_MM3_CONTROL_MSG = 0xA0,
-  AM_MM3_CMD         = 0xA0,
+  AM_MM_CONTROL_MSG = 0xA0,
+  AM_MM_CMD         = 0xA0,
 };
 
 #endif

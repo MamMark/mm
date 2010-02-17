@@ -29,10 +29,10 @@ module mm3CommDataP {
 }
 
 implementation {
-  message_t data_msg[MM3_NUM_SENSORS];
+  message_t data_msg[MM_NUM_SENSORS];
 
 #if NUM_SENSORS != 10
-#warning "MM3_NUM_SENSORS/NUM_SENSORS is different than 10"
+#warning "MM_NUM_SENSORS/NUM_SENSORS is different than 10"
 #endif
 
   message_t * const dm_p[NUM_SENSORS] = {
@@ -73,7 +73,7 @@ implementation {
       return FAIL;
     }
     memcpy(bp, buf, len);
-    call AMPacket.setType(dm, AM_MM3_DATA);
+    call AMPacket.setType(dm, AM_MM_DATA);
     call AMPacket.setDestination(dm, AM_BROADCAST_ADDR);
     return call Send.send[cid](dm, len);
   }

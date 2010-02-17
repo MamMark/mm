@@ -11,12 +11,12 @@
 #define SNS_ALL_OFF_REGIME		0
 #define SNS_DEFAULT_REGIME		1
 #define SNS_MAX_REGIME			15
-#define MM3_NUM_REGIMES			(SNS_MAX_REGIME + 1)
+#define MM_NUM_REGIMES			(SNS_MAX_REGIME + 1)
   
 /*
  * All times in milliseconds.  Or should they be in binary milliseconds?  (mis?)
  */
-const uint32_t sns_period_table[MM3_NUM_REGIMES][MM3_NUM_SENSORS] = {
+const uint32_t sns_period_table[MM_NUM_REGIMES][MM_NUM_SENSORS] = {
   /* none    cradle    batt       temp       sal        accel      ptemp      press      speed      mag */
   {  0UL,    0UL,      0UL,       0UL,       0UL,       0UL,       0UL,       0UL,       0UL,       0UL     }, /* 0 - all off  */
   {  0UL,    0UL,      1024UL,    1024UL,    1024UL,    51UL,      1024UL,    1024UL,    1024UL,    51UL    }, /* 1 - main regime */

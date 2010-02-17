@@ -47,7 +47,7 @@ typedef nx_struct mm3_data_msg {
  * Not actually used.  Only here to make "mig" happy.
  */
 enum {
-  AM_MM3_DATA_MSG = 0xA1,
+  AM_MM_DATA_MSG = 0xA1,
 };
 
 #endif

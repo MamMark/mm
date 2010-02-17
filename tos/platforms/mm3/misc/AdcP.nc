@@ -241,7 +241,7 @@ implementation {
     }
 
     if (adc_state == ADC_GRANTING) {
-      if (!req_client || req_client >= MM3_NUM_SENSORS) {
+      if (!req_client || req_client >= MM_NUM_SENSORS) {
 	call Panic.panic(PANIC_ADC, 2, req_client, 0, 0, 0);
       }
 

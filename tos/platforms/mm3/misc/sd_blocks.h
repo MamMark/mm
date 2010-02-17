@@ -19,15 +19,15 @@
 
 /*
  * keep mig happy.  Each tag SD block can be transmitted in an encapsulated
- * mote packet.  The AM type can be AM_MM3_CONTROL, DATA, or DEBUG.
+ * mote packet.  The AM type can be AM_MM_CONTROL, DATA, or DEBUG.
  *
  * Place the AM code into the unreserved block.  Formerly we were 0x2x,
  * move this to 0xAx.
  */
 enum {
-  AM_MM3_CONTROL	= 0xA0,
-  AM_MM3_DATA		= 0xA1,
-  AM_MM3_DEBUG		= 0xA2,
+  AM_MM_CONTROL		= 0xA0,
+  AM_MM_DATA		= 0xA1,
+  AM_MM_DEBUG		= 0xA2,
 
   AM_DT_IGNORE		= 0xA1,
   AM_DT_CONFIG		= 0xA1,

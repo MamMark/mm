@@ -14,8 +14,8 @@ configuration mm3RadioCommC {
 }
 
 implementation {
-  components new AMSenderC(AM_MM3_DATA);
-  components new AMQueueImplP(MM3_NUM_SENSORS), ActiveMessageC;
+  components new AMSenderC(AM_MM_DATA);
+  components new AMQueueImplP(MM_NUM_SENSORS), ActiveMessageC;
 
   Send = AMQueueImplP;
   SendBusy = AMQueueImplP;
@@ -23,7 +23,7 @@ implementation {
   Packet = AMSenderC;
   SplitControl = ActiveMessageC;
   
-  AMQueueImplP.AMSend[AM_MM3_DATA] -> AMSenderC;
+  AMQueueImplP.AMSend[AM_MM_DATA] -> AMSenderC;
   AMQueueImplP.Packet -> AMSenderC;
   AMQueueImplP.AMPacket -> AMSenderC;
 }

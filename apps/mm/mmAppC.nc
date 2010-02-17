@@ -5,29 +5,29 @@
 
 #include "stream_storage.h"
 
-configuration mm3AppC {}
+configuration mmAppC {}
 implementation {
-  components SystemBootC, mm3C;
-  mm3C -> SystemBootC.Boot;
+  components SystemBootC, mmC;
+  mmC -> SystemBootC.Boot;
   
   components RegimeC;
-  mm3C.Regime -> RegimeC;
+  mmC.Regime -> RegimeC;
   
 #ifdef notdef
-  components HplMM3AdcC;
-  mm3C.HW -> HplMM3AdcC;
+  components HplMMAdcC;
+  mmC.HW -> HplMMAdcC;
 #endif
 
   components PanicC;
-  mm3C.Panic -> PanicC;
+  mmC.Panic -> PanicC;
 
   components CollectC;
-  mm3C.Collect -> CollectC;
+  mmC.Collect -> CollectC;
 
   components StreamStorageC;
-  mm3C.StreamStorageFull -> StreamStorageC;
+  mmC.StreamStorageFull -> StreamStorageC;
 
-  mm3C.SSR -> StreamStorageC.SSR[SSR_CLIENT_TEST];
+  mmC.SSR -> StreamStorageC.SSR[SSR_CLIENT_TEST];
   
   /*
    * Include sensor components.  No need to wire.  They will
