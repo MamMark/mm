@@ -48,9 +48,9 @@ GpsUnkMsg.c
 GpsUnkMsg.h
 SDConstants.h
 SensorConstants.h
-mm3DataMsg.c
-mm3DataMsg.h
-mm3dump
+mmDataMsg.c
+mmDataMsg.h
+mmdump
 serialpacket.c
 serialpacket.h
 serialprotocol.h

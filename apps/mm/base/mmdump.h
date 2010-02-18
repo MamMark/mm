@@ -8,7 +8,7 @@
 #ifndef __MMDUMP_H__
 #define __MMDUMP_H__
 
-#define VERSION "mmdump: v0.9 1 Sep 2008\n"
+#define VERSION "mmdump: v0.10  17 Feb 2010\n"
 
 /*
  * Make sure this matches the defines in sd_block.h

@@ -24,7 +24,7 @@
 #include "filesource.h"
 #include "serialpacket.h"
 #include "serialprotocol.h"
-#include "mm3DataMsg.h"
+#include "mmDataMsg.h"
 #include "SensorConstants.h"
 #include "SDConstants.h"
 #include "DtIgnoreMsg.h"
@@ -635,7 +635,7 @@ process_unk_dblk(tmsg_t *msg) {
 
 
 void
-process_mm3_data(tmsg_t *msg) {
+process_mm_data(tmsg_t *msg) {
   uint16_t len;
   uint8_t  dtype;
 
@@ -861,8 +861,8 @@ main(int argc, char **argv) {
      */
     reset_tmsg(msg, ((uint8_t *)tmsg_data(msg)) + SPACKET_SIZE, tmsg_length(msg) - spacket_data_offset(0));
     switch(stype) {
-      case MM3_DATA_MSG_AM_TYPE:
-	process_mm3_data(msg);
+      case MM_DATA_MSG_AM_TYPE:
+	process_mm_data(msg);
 	break;
 
       default:
