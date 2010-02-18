@@ -1,6 +1,6 @@
 /* 
  * PressP.nc: implementation for Pressure (differential)
- * Copyright 2008 Eric B. Decker
+ * Copyright 2008, 2010 Eric B. Decker
  * All rights reserved.
  */
 
@@ -17,7 +17,7 @@ module PressP {
   provides {
     interface StdControl;
     interface Init;
-    interface AdcConfigure<const mm3_sensor_config_t*>;
+    interface AdcConfigure<const mm_sensor_config_t*>;
   }
 
   uses {
@@ -25,9 +25,9 @@ module PressP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface Collect;
-    interface HplMM3Adc as HW;
-    interface mm3Control;
-    interface mm3CommData;
+    interface Hpl_MM_hw as HW;
+    interface mmControl;
+    interface mmCommData;
     interface Panic;
   }
 }
@@ -86,15 +86,15 @@ implementation {
     pdp->sns_id = SNS_ID_PRESS;
     pdp->sched_mis = call PeriodTimer.gett0();
     pdp->stamp_mis = call PeriodTimer.getNow();
-    if (call mm3Control.eavesdrop()) {
-      if (call mm3CommData.send_data(pdp, PRESS_BLOCK_SIZE))
+    if (call mmControl.eavesdrop()) {
+      if (call mmCommData.send_data(pdp, PRESS_BLOCK_SIZE))
 	err_eaves_drops++;
     }
     call Collect.collect(press_data, PRESS_BLOCK_SIZE);
   }
 
 
-  event void mm3CommData.send_data_done(error_t rtn) {
+  event void mmCommData.send_data_done(error_t rtn) {
   }
 
   event void RegimeCtrl.regimeChange() {
@@ -114,7 +114,7 @@ implementation {
   }
 
 
-  async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
+  async command const mm_sensor_config_t* AdcConfigure.getConfiguration() {
     return &press_config;
   }
 }

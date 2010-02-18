@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -27,14 +27,14 @@ implementation {
   components CollectC;
   PTempP.Collect -> CollectC;
 
-  components HplMM3AdcC;
-  PTempP.HW -> HplMM3AdcC;
+  components Hpl_MM_hwC;
+  PTempP.HW -> Hpl_MM_hwC;
 
-  components mm3ControlC;
-  PTempP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_PTEMP];
+  components mmControlC;
+  PTempP.mmControl -> mmControlC.mmControl[SNS_ID_PTEMP];
 
-  components mm3CommDataC;
-  PTempP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_PTEMP];
+  components mmCommDataC;
+  PTempP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_PTEMP];
 
   components PanicC;
   PTempP.Panic -> PanicC;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -9,7 +9,7 @@
 typedef uint8_t  sensor_id_t;
 typedef uint16_t sensor_data_t;
 
-/* MM3 Sensors
+/* MM Sensors
 
    A primitive sensor is either a single sensor or a sequence
    of single sensors that need to be read at one time.  For
@@ -62,7 +62,7 @@ enum {
    * MM_NUM_SENSORS controls how many sensors are compiled into the system.  This also
    * effects allocation of communication message structures.  The allocation doesn't happen
    * automagically as it should so one needs to search all files for use of MM_NUM_SENSORS and
-   * make the changes manually.  For example, mm3CommDataP.nc needs to have pointers to each
+   * make the changes manually.  For example, mmCommDataP.nc needs to have pointers to each
    * of the sensor data packets.  But this is done manually since we want it to be allocated
    * in code space.
    */
@@ -116,7 +116,7 @@ enum {
 #define VDIFF_SWING_DMUX	DMUX_PRESS
 
 /*
- * mm3_sensor_config_t is used to pass information from the
+ * mm_sensor_config_t is used to pass information from the
  * adc client to the adc subsystem about how to configure
  * the adc h/w for the sensor read being requested.
  *
@@ -136,8 +136,8 @@ typedef struct {
   uint8_t	mux;			// Smux or Dmux value
   uint16_t	t_settle;		// Setting time for configuration to complete
   uint8_t	gmux;			// gmux value if differential sensor (i.e. sns_id >= 6)
-} mm3_sensor_config_t;
+} mm_sensor_config_t;
 
-#include "sd_blocks.h"
+#include "typed_data.h"
 
 #endif

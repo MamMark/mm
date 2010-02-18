@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
 /**
- * mm3Comm provides a single interface that can be switched between
+ * mmComm provides a single interface that can be switched between
  * the radio or the direct connect serial line.
  *
  * Each channel (control, debug, or data) contends for the comm line.
@@ -18,9 +18,9 @@
 #include "AM.h"
 #include "sensors.h"
 
-uint16_t mm3Serial_busy;
+uint16_t mmSerial_busy;
 
-module mm3SerialCommP {
+module mmSerialCommP {
   provides {
     interface Init;
     interface AMSend[uint8_t id];
@@ -116,7 +116,7 @@ implementation {
         return SUCCESS;
       }
     }
-    mm3Serial_busy++;
+    mmSerial_busy++;
     return EBUSY;
   }
 

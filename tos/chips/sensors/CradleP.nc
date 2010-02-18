@@ -1,6 +1,6 @@
 /*
  * CradleP.nc: Handle docking functions
- * Copyright 2008 Eric B. Decker
+ * Copyright 2008, 2010 Eric B. Decker
  * All rights reserved.
  *
  * Cradle Monitor Sensor Driver
@@ -72,7 +72,7 @@ module CradleP {
   provides {
     interface StdControl;
     interface Init;
-    interface AdcConfigure<const mm3_sensor_config_t*>;
+    interface AdcConfigure<const mm_sensor_config_t*>;
     interface Docked;
   }
 
@@ -81,8 +81,8 @@ module CradleP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface Collect;
-    interface HplMM3Adc as HW;
-    interface mm3CommData;
+    interface Hpl_MM_hw as HW;
+    interface mmCommData;
     interface Panic;
     interface LogEvent;
   }
@@ -176,7 +176,7 @@ implementation {
     cdp->stamp_mis = call PeriodTimer.getNow();
 //#ifdef notdef
     if (comm_idle)
-      if (call mm3CommData.send_data(cdp, BATT_BLOCK_SIZE) == SUCCESS)
+      if (call mmCommData.send_data(cdp, BATT_BLOCK_SIZE) == SUCCESS)
 	comm_idle = FALSE;
 //#endif
     call Collect.collect(cradle_data, BATT_BLOCK_SIZE);
@@ -201,7 +201,7 @@ implementation {
   }
 
 
-  event void mm3CommData.send_data_done(error_t rtn) {
+  event void mmCommData.send_data_done(error_t rtn) {
     comm_idle = TRUE;
   }
 
@@ -215,7 +215,7 @@ implementation {
   }
 
 
-  async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
+  async command const mm_sensor_config_t* AdcConfigure.getConfiguration() {
     return &cradle_config;
   }
 }

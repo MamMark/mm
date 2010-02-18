@@ -62,10 +62,10 @@ implementation {
 //  components new BlockingResourceC();
 //  BlockingResourceC.Resource -> SpiC;
 
-  components SDC, PanicC, HplMM3AdcC, LocalTimeMilliC;
+  components SDC, PanicC, Hpl_MM_hwC, LocalTimeMilliC;
   SS_P.SD -> SDC;
   SS_P.Panic -> PanicC;
-  SS_P.HW -> HplMM3AdcC;
+  SS_P.HW -> Hpl_MM_hwC;
   SS_P.LocalTime -> LocalTimeMilliC;
 
   components TraceC, CollectC;

@@ -1,6 +1,6 @@
 /* 
  * SalP.nc: implementation for salinity/surface detector
- * Copyright 2008 Eric B. Decker
+ * Copyright 2008, 2010 Eric B. Decker
  * All rights reserved.
  *
  * Salinity Sensor Driver
@@ -20,7 +20,7 @@
  * surface state is used to tell the GPS to acquire.  Surface
  * -> acquire,   Submerged -> shutdown.   Probably need hysterisis.
  *
- * Would like to put Tag control over in mm3Control and abstract
+ * Would like to put Tag control over in mmControl and abstract
  * out the control functions.  Bury the semantics of control
  * in a different module then the sensing modules.  But that
  * means there needs to be a mechanism to pass sensor values
@@ -44,7 +44,7 @@ module SalP {
   provides {
     interface StdControl;
     interface Init;
-    interface AdcConfigure<const mm3_sensor_config_t*>;
+    interface AdcConfigure<const mm_sensor_config_t*>;
     interface SenseVal;
   }
   uses {
@@ -52,9 +52,9 @@ module SalP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface Collect;
-    interface HplMM3Adc as HW;
-    interface mm3Control;
-    interface mm3CommData;
+    interface Hpl_MM_hw as HW;
+    interface mmControl;
+    interface mmCommData;
     interface Panic;
   }
 }
@@ -133,8 +133,8 @@ implementation {
     sdp->data[0] = temp_data[0];
     sdp->data[1] = sal_data = temp_data[1];
     signal SenseVal.valAvail(sal_data, sal_stamp);
-    if (call mm3Control.eavesdrop()) {
-      if (call mm3CommData.send_data(sdp, SAL_BLOCK_SIZE))
+    if (call mmControl.eavesdrop()) {
+      if (call mmCommData.send_data(sdp, SAL_BLOCK_SIZE))
 	err_eaves_drops++;
     }
     if (record)
@@ -142,7 +142,7 @@ implementation {
   }
 
 
-  event void mm3CommData.send_data_done(error_t rtn) {
+  event void mmCommData.send_data_done(error_t rtn) {
   }
 
   event void RegimeCtrl.regimeChange() {
@@ -164,7 +164,7 @@ implementation {
   }
 
 
-  async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
+  async command const mm_sensor_config_t* AdcConfigure.getConfiguration() {
     return &sal_config_1;
   }
 }

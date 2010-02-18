@@ -9,6 +9,9 @@ PLATFORM ?= mm3
 
 # THREADS_MSP430_DIR comes from main tree support/make/threads.extra
 # mm3 is based on the msp430 so we use that threads variant.
+#
+# PFLAGS gets invoked first on the command line followed by CFLAGS
+#
 
 ifdef THREADS
 CFLAGS += $(THREADS_MSP430_INCLUDE_DIRS)
@@ -17,11 +20,19 @@ CFLAGS += $(THREADS_TELOS_INCLUDE_DIRS)
 endif
 
 #MSP_MCU = msp430x1611
-PFLAGS += -I$(MAMMARK_DIR)/tos/platforms/mm3
-PFLAGS += -I$(MAMMARK_DIR)/tos/system
-PFLAGS += -I$(MAMMARK_DIR)/tos/interfaces
 
-PFLAGS += -DMM_MM3
+#
+# The first PFLAGS addition, platforms/mm3 must be here otherwise
+# the make mm3 doesn't work.  The others for tos/{system,interfaces}
+# need to be here to make sure we don't get overridden by threads or
+# other stuff that comes in via the CFLAGS varient.  Stuff in the .platform
+# file come in last after PFLAGS and CFLAGS.
+#
+
+PFLAGS += -I$(MM_ROOT)/include
+PFLAGS += -I$(MM_ROOT)/tos/platforms/mm3
+PFLAGS += -I$(MM_ROOT)/tos/system
+PFLAGS += -I$(MM_ROOT)/tos/interfaces
 
 # Disable MSP430 hardware multiply because it makes MSPGCC die
 PFLAGS += -mdisable-hwmul

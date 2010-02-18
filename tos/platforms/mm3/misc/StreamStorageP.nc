@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2008, 2010 - Eric B. Decker
+ * All rights reserved.
+ *
  * StreamStorage.nc - stream storage based on contiguous
  * blocks on a FAT32 filesystem.  Ported to TinyOS 2.x
  *
@@ -97,7 +100,7 @@ module StreamStorageP {
     interface Thread as SSWriter;
     interface Thread as SSReader;
     interface SD;
-    interface HplMM3Adc as HW;
+    interface Hpl_MM_hw as HW;
     interface Semaphore;
     interface BlockingResource as BlockingWriteResource;
     interface BlockingResource as BlockingReadResource;

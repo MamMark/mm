@@ -3,9 +3,9 @@
  * @author Eric B. Decker
  */
 
-configuration mm3ControlC {
+configuration mmControlC {
   provides {
-    interface mm3Control[uint8_t sns_id];
+    interface mmControl[uint8_t sns_id];
     interface Surface;
   }
   uses {
@@ -14,20 +14,20 @@ configuration mm3ControlC {
 }
 
 implementation {
-  components mm3ControlP, MainC;
-  mm3Control = mm3ControlP;
-  MainC.SoftwareInit -> mm3ControlP;
-  SenseVal = mm3ControlP;
-  Surface  = mm3ControlP;
+  components mmControlP, MainC;
+  mmControl = mmControlP;
+  MainC.SoftwareInit -> mmControlP;
+  SenseVal = mmControlP;
+  Surface  = mmControlP;
 
   components PanicC;
-  mm3ControlP.Panic -> PanicC;
+  mmControlP.Panic -> PanicC;
 
   components CollectC;
-  mm3ControlP.LogEvent -> CollectC;
+  mmControlP.LogEvent -> CollectC;
 
 #ifdef FAKE_SURFACE
   components new TimerMilliC() as SurfaceTimer;
-  mm3ControlP.SurfaceTimer -> SurfaceTimer;
+  mmControlP.SurfaceTimer -> SurfaceTimer;
 #endif
 }

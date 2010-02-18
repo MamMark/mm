@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  *
- * This interface provides access to the mm3 ADC subsystem.
+ * This interface provides access to the mmADC subsystem.
  *
- * The MM3 ADC uses a stand alone ADC chip interfaced to a combination
+ * The mmADC uses a stand alone ADC chip interfaced to a combination
  * differential and single ended multiplexed system.  The read of the
  * actual ADC is single ended and the call returns the value read (it
  * takes approximately 5 uS)
@@ -99,7 +99,7 @@ interface Adc {
    *
    * Only the current owner can reconfigure the ADC subsystem.
    */
-  command void reconfigure(const mm3_sensor_config_t* config);
+  command void reconfigure(const mm_sensor_config_t* config);
 
 
   /**

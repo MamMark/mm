@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -17,7 +17,7 @@
  */
         
 /**
- * The HplMM3Adc interface exports low-level access control registers effecting
+ * The Hpl_MM_hw interface exports low-level access control registers effecting
  * the MM3 conversion system.  This includes power control for the Vref, Vdiff,
  * and sensor power.  Also included is access to the control muxes (smux, dmux, and
  * gmux).
@@ -25,7 +25,7 @@
  * @author Eric B. Decker
  */
  
-interface HplMM3Adc {
+interface Hpl_MM_hw {
   command void	  vref_on();
   command void	  vref_off();
   command void	  vdiff_on();

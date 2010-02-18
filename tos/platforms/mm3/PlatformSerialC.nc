@@ -17,11 +17,11 @@ implementation {
   UartStream = UartC;  
   UartByte = UartC;
   
-  components mm3SerialP;
-  StdControl = mm3SerialP;
-  mm3SerialP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
+  components mmSerialP;
+  StdControl = mmSerialP;
+  mmSerialP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
   
-  components mm3SerialCommC;
-  mm3SerialCommC.Resource -> UartC.Resource;
-  mm3SerialCommC.ResourceRequested -> UartC.ResourceRequested;
+  components mmSerialCommC;
+  mmSerialCommC.Resource -> UartC.Resource;
+  mmSerialCommC.ResourceRequested -> UartC.ResourceRequested;
 }

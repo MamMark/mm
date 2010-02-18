@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -26,9 +26,9 @@
 #define SUBMERGED_TIME (30*1024UL)
 #endif
 
-module mm3ControlP {
+module mmControlP {
   provides {
-    interface mm3Control[uint8_t sns_id];
+    interface mmControl[uint8_t sns_id];
     interface Init;
     interface Surface;
   }
@@ -50,7 +50,7 @@ implementation {
   bool fake_surfaced;
 #endif
 
-  command bool mm3Control.eavesdrop[uint8_t sns_id]() {
+  command bool mmControl.eavesdrop[uint8_t sns_id]() {
     if (sns_id < MM_NUM_SENSORS)
       return eaves[sns_id];
     return FALSE;
@@ -121,6 +121,6 @@ implementation {
    * default commands aren't needed.  Right?  ask kevin   How are default commands
    * used?
    */
-  default command bool mm3Control.eavesdrop[uint8_t sns_id]() { return SUCCESS; }
+  default command bool mmControl.eavesdrop[uint8_t sns_id]() { return SUCCESS; }
 #endif
 }

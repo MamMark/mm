@@ -70,8 +70,8 @@ b mm3C.nc:50
 #end
 
 # 11 12
-#b mm3SerialCommP.nc:52
-#b mm3SerialCommP.nc:84
+#b mmSerialCommP.nc:52
+#b mmSerialCommP.nc:84
 
 
 # 7 SSWrite

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -28,15 +28,15 @@ implementation {
   components CollectC;
   SalP.Collect -> CollectC;
 
-  components HplMM3AdcC;
-  SalP.HW -> HplMM3AdcC;
+  components Hpl_MM_hwC;
+  SalP.HW -> Hpl_MM_hwC;
 
-  components mm3ControlC;
-  SalP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_SAL];
-  SalP.SenseVal <- mm3ControlC.SenseVal[SNS_ID_SAL];
+  components mmControlC;
+  SalP.mmControl -> mmControlC.mmControl[SNS_ID_SAL];
+  SalP.SenseVal <- mmControlC.SenseVal[SNS_ID_SAL];
 
-  components mm3CommDataC;
-  SalP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_SAL];
+  components mmCommDataC;
+  SalP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_SAL];
 
   components PanicC;
   SalP.Panic -> PanicC;

@@ -7,7 +7,7 @@
  */
 
 #include "Collect.h"
-#include "sd_blocks.h"
+#include "typed_data.h"
 
 module CollectP {
   provides {

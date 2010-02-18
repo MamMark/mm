@@ -1,8 +1,7 @@
 
-PFLAGS += -I$(MAMMARK_DIR)/tos/platforms/mm3/dummy
-PFLAGS += -I$(MAMMARK_DIR)/tos/platforms/mm3/misc
-PFLAGS += -I$(MAMMARK_DIR)/tos/platforms/mm3/sensors
-PFLAGS += -I$(MAMMARK_DIR)/tos/system
-PFLAGS += -I$(MAMMARK_DIR)/tos/interfaces
-PFLAGS += -I$(MAMMARK_DIR)/tos/chips/msp430/timer
-PFLAGS += -I$(MAMMARK_DIR)/support/utils/include
+PFLAGS += -I$(MM_ROOT)/tos/platforms/mm3/dummy
+PFLAGS += -I$(MM_ROOT)/tos/platforms/mm3/misc
+PFLAGS += -I$(MM_ROOT)/tos/system
+PFLAGS += -I$(MM_ROOT)/tos/interfaces
+PFLAGS += -I$(MM_ROOT)/tos/chips/msp430/timer
+PFLAGS += -I$(MM_ROOT)/support/utils/include

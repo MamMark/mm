@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -33,11 +33,11 @@ implementation {
   CradleP.Collect -> CollectC;
   CradleP.LogEvent -> CollectC;
 
-  components HplMM3AdcC;
-  CradleP.HW -> HplMM3AdcC;
+  components Hpl_MM_hwC;
+  CradleP.HW -> Hpl_MM_hwC;
 
-  components mm3CommDataC;
-  CradleP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_CRADLE];
+  components mmCommDataC;
+  CradleP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_CRADLE];
 
   components PanicC;
   CradleP.Panic -> PanicC;

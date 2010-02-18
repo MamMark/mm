@@ -2,7 +2,7 @@
 GEN=CollectMsg.java DtIgnoreMsg.java DtSensorDataMsg.java SensorConstants.java \
     SDConstants.java
 
-MAMMARK_PLATFORM_DIR=$(MAMMARK_DIR)/tos/platforms/mm3
+MAMMARK_PLATFORM_DIR=$(MM_ROOT)/tos/platforms/mm3
 
 all: Mm3SerialCollectApp.jar
 

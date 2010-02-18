@@ -1,13 +1,13 @@
 /**
- * Copyright @ 2008-2009 Eric B. Decker
+ * Copyright @ 2008-2010 Eric B. Decker
  * @author Eric B. Decker <cire831@gmail.com>
  */
  
 #include "sensors.h"
 
-configuration mm3CommSwC {
+configuration mmCommSwC {
   provides {
-    interface mm3CommSw;
+    interface mmCommSw;
     interface Send[uint8_t cid];
     interface SendBusy[uint8_t cid];
     interface AMPacket;
@@ -20,31 +20,31 @@ configuration mm3CommSwC {
 }
 
 implementation {
-  components mm3CommSwP;
+  components mmCommSwP;
   
-  mm3CommSw  = mm3CommSwP;
-  Send       = mm3CommSwP;
-  SendBusy   = mm3CommSwP;
-  AMPacket   = mm3CommSwP;
-  Packet     = mm3CommSwP;
+  mmCommSw   = mmCommSwP;
+  Send       = mmCommSwP;
+  SendBusy   = mmCommSwP;
+  AMPacket   = mmCommSwP;
+  Packet     = mmCommSwP;
 
-//  mm3CommSwP.AsyncStdControl = AsyncStdControl;
-//  mm3CommSwP.ResourceDefaultOwner = ResourceDefaultOwner;
+//  mmCommSwP.AsyncStdControl = AsyncStdControl;
+//  mmCommSwP.ResourceDefaultOwner = ResourceDefaultOwner;
   
-  components mm3SerialCommC;
-  mm3CommSwP.SerialSend     -> mm3SerialCommC;
-  mm3CommSwP.SerialSendBusy -> mm3SerialCommC;
-  mm3CommSwP.SerialAMPacket -> mm3SerialCommC;
-  mm3CommSwP.SerialPacket   -> mm3SerialCommC;
-  mm3CommSwP.SerialAMControl-> mm3SerialCommC;
+  components mmSerialCommC;
+  mmCommSwP.SerialSend     -> mmSerialCommC;
+  mmCommSwP.SerialSendBusy -> mmSerialCommC;
+  mmCommSwP.SerialAMPacket -> mmSerialCommC;
+  mmCommSwP.SerialPacket   -> mmSerialCommC;
+  mmCommSwP.SerialAMControl-> mmSerialCommC;
 
-  components mm3RadioCommC;
-  mm3CommSwP.RadioSend     -> mm3RadioCommC;
-  mm3CommSwP.RadioSendBusy -> mm3RadioCommC;
-  mm3CommSwP.RadioAMPacket -> mm3RadioCommC;
-  mm3CommSwP.RadioPacket   -> mm3RadioCommC;
-  mm3CommSwP.RadioAMControl-> mm3RadioCommC;
+  components mmRadioCommC;
+  mmCommSwP.RadioSend     -> mmRadioCommC;
+  mmCommSwP.RadioSendBusy -> mmRadioCommC;
+  mmCommSwP.RadioAMPacket -> mmRadioCommC;
+  mmCommSwP.RadioPacket   -> mmRadioCommC;
+  mmCommSwP.RadioAMControl-> mmRadioCommC;
 
   components PanicC;
-  mm3CommSwP.Panic -> PanicC;
+  mmCommSwP.Panic -> PanicC;
 }

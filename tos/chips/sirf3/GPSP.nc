@@ -44,7 +44,7 @@
  *
  * Interaction strategy:
  *
- * While booting the GPS ignore other requests and camp on the h/w.
+ * While booting the Sirf_GPS ignore other requests and camp on the h/w.
  * Once booted
  */
 
@@ -68,10 +68,10 @@ uint16_t g_idx;
 #elif GPS_SPEED==57600
 #define GPS_OP_SERIAL_CONFIG gps_57600_serial_config
 #else
-#error "GPS_SPEED not valid (see gps.h)"
+#error "GPS_SPEED not valid (see gps.h), 4800 or 57600"
 #endif
 
-#if defined(MM_MM3)
+#if defined(PLATFORM_MM3)
 /*
  * MM3, 1611, uses lots of control bits
  */
@@ -113,7 +113,7 @@ const msp430_uart_union_config_t gps_57600_serial_config = { {
   urxe : 1			// rx interrupt enabled
 } };
 
-#elif defined(MM_MM4)
+#elif defined(PLATFORM_MM4)
 /*
  * MM4, 2618, so simplified control parameters.
  */
@@ -130,7 +130,7 @@ const msp430_uart_union_config_t gps_57600_serial_config = { {
 } };
 
 #else
-#error need one of MM_MM3, MM_MM4, or MM_MM5 defined.
+#error need one of PLATFORM_MM3, PLATFORM_MM4, or PLATFORM_MM5 defined.
 #endif
 
 
@@ -297,7 +297,7 @@ module GPSP {
     interface Boot;
     interface Timer<TMilli> as GPSTimer;
     interface LocalTime<TMilli>;
-    interface HplMM3Adc as HW;
+    interface Hpl_MM_hw as HW;
     interface UartStream;
     interface Panic;
     interface HplMsp430Usart as Usart;

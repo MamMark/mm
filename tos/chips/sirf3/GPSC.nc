@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Eric B. Decker
+ * Copyright (c) 2008, 2010 Eric B. Decker
  * Copyright (c) 2008 Stanford University.
  * All rights reserved.
  *
@@ -59,8 +59,8 @@ implementation {
   GPSP.GPSMsg -> GPSMsgC;
   GPSP.GPSMsgControl -> GPSMsgC;
 
-  components HplMM3AdcC;
-  GPSP.HW -> HplMM3AdcC;
+  components Hpl_MM_hwC;
+  GPSP.HW -> Hpl_MM_hwC;
 
   components LocalTimeMilliC;
   GPSP.LocalTime -> LocalTimeMilliC;

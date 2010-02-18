@@ -41,9 +41,9 @@ configuration Phase1BootC {
   uses interface Boot;
 }
 implementation {
-  components Phase1BootP, mm3CommSwC;
+  components Phase1BootP, mmCommSwC;
   
   Phase1Boot = Phase1BootP.Phase1Boot;
   Boot = Phase1BootP;
-  Phase1BootP.mm3CommSw -> mm3CommSwC;
+  Phase1BootP.mmCommSw -> mmCommSwC;
 }

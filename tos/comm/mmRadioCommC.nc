@@ -5,7 +5,7 @@
  
 #include "sensors.h"
 
-configuration mm3RadioCommC {
+configuration mmRadioCommC {
   provides interface Send[uint8_t id];
   provides interface SendBusy[uint8_t id];
   provides interface AMPacket;

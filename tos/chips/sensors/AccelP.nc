@@ -1,6 +1,6 @@
 /*
  * AccelP.nc: implementation for accelerometer
- * Copyright 2008 Eric B. Decker
+ * Copyright 2008, 2010 Eric B. Decker
  * All rights reserved.
  */
 
@@ -27,7 +27,7 @@ module AccelP {
   provides {
     interface StdControl;
     interface Init;
-    interface AdcConfigure<const mm3_sensor_config_t*>;
+    interface AdcConfigure<const mm_sensor_config_t*>;
   }
 
   uses {
@@ -35,9 +35,9 @@ module AccelP {
     interface Timer<TMilli> as PeriodTimer;
     interface Adc;
     interface Collect;
-    interface HplMM3Adc as HW;
-    interface mm3Control;
-    interface mm3CommData;
+    interface Hpl_MM_hw as HW;
+    interface mmControl;
+    interface mmCommData;
     interface Panic;
   }
 }
@@ -128,15 +128,15 @@ implementation {
     adp->data[0] = data[0];
     adp->data[1] = data[1];
     adp->data[2] = data[2];
-    if (call mm3Control.eavesdrop()) {
-      if (call mm3CommData.send_data(adp, ACCEL_BLOCK_SIZE))
+    if (call mmControl.eavesdrop()) {
+      if (call mmCommData.send_data(adp, ACCEL_BLOCK_SIZE))
 	  err_eaves_drops++;
     }
     call Collect.collect(accel_data, ACCEL_BLOCK_SIZE);
   }
 
 
-  event void mm3CommData.send_data_done(error_t rtn) {
+  event void mmCommData.send_data_done(error_t rtn) {
   }
 
 
@@ -157,7 +157,7 @@ implementation {
   }
 
 
-  async command const mm3_sensor_config_t* AdcConfigure.getConfiguration() {
+  async command const mm_sensor_config_t* AdcConfigure.getConfiguration() {
     return &accel_config_X;
   }
 }

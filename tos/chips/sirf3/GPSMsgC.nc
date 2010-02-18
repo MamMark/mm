@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Eric B. Decker
+ * Copyright (c) 2008, 2010 Eric B. Decker
  * All rights reserved.
  */
  
@@ -37,9 +37,9 @@ implementation {
   components GPSC;
   GPSMsgP.GPSControl -> GPSC;
 
-  components mm3ControlC;
-  GPSMsgP.Surface -> mm3ControlC;
+  components mmControlC;
+  GPSMsgP.Surface -> mmControlC;
 
-  components mm3CommDataC;
-  GPSMsgP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_NONE];
+  components mmCommDataC;
+  GPSMsgP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_NONE];
 }

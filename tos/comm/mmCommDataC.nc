@@ -1,25 +1,25 @@
 /**
- * Copyright @ 2008 Eric B. Decker
+ * Copyright @ 2008, 2010 Eric B. Decker
  * @author Eric B. Decker
  */
 
-configuration mm3CommDataC {
-  provides interface mm3CommData[uint8_t sns_id];
+configuration mmCommDataC {
+  provides interface mmCommData[uint8_t sns_id];
 }
 
 implementation {
-  components mm3CommDataP;
-  mm3CommData = mm3CommDataP;
+  components mmCommDataP;
+  mmCommData = mmCommDataP;
 
   components PanicC;
-  mm3CommDataP.Panic -> PanicC;
+  mmCommDataP.Panic -> PanicC;
 
-  components mm3CommSwC;
-  mm3CommDataP.Send     -> mm3CommSwC;
-  mm3CommDataP.SendBusy -> mm3CommSwC;
-  mm3CommDataP.Packet   -> mm3CommSwC;
-  mm3CommDataP.AMPacket -> mm3CommSwC;
+  components mmCommSwC;
+  mmCommDataP.Send     -> mmCommSwC;
+  mmCommDataP.SendBusy -> mmCommSwC;
+  mmCommDataP.Packet   -> mmCommSwC;
+  mmCommDataP.AMPacket -> mmCommSwC;
   
   components LedsC;
-  mm3CommDataP.Leds -> LedsC;
+  mmCommDataP.Leds -> LedsC;
 }

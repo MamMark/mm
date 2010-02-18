@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Eric B. Decker
+ * Copyright (c) 2008, 2010 Eric B. Decker
  * Copyright (c) 2008 Stanford University.
  * All rights reserved.
  *
@@ -43,7 +43,7 @@
  * 1) Bring up the serial or radio stack first so we can watch
  *    what is happening via the Debug port.  (for debug)
  * 2) Bring up the SD/StreamStorage
- * 3) Collect initial status information (Restart and Version)  mm3Sync
+ * 3) Collect initial status information (Restart and Version)  mmSync
  * 4) Bring up the GPS.  (GPS assumes SS is up)
  *
  * Note Serial/Radio, StreamStorage, and GPS all use the same
@@ -61,18 +61,18 @@ implementation {
 
   components Phase1BootC;
   components StreamStorageC as SS;
-  components mm3SyncC;
+  components mmSyncC;
 #ifdef GPS_TEST
   components GPSC;
 #endif
 
   Phase1BootC.Boot -> MainC;	// Main kicks Phase1 (serial/radio)
   SS.Boot -> Phase1BootC;	//    which kicks StreamStorage
-  mm3SyncC.Boot -> SS;		//        then write initial status
+  mmSyncC.Boot -> SS;		//        then write initial status
 #ifdef GPS_TEST
-  GPSC.Boot -> mm3SyncC;	//            and then GPS.
+  GPSC.Boot -> mmSyncC;		//            and then GPS.
   Boot = GPSC;			// bring up everyone else
 #else
-  Boot = mm3SyncC;
+  Boot = mmSyncC;
 #endif
 }

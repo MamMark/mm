@@ -5,7 +5,7 @@
  
 #include "sensors.h"
 
-configuration mm3SerialCommC {
+configuration mmSerialCommC {
   provides {
     interface Send[uint8_t id];
     interface AMPacket;
@@ -16,25 +16,25 @@ configuration mm3SerialCommC {
 
 implementation {
   components MainC;
-  components mm3SerialCommP;
+  components mmSerialCommP;
   components new SerialAMSenderC(AM_MM_DATA);
   components new AMQueueImplP(MM_NUM_SENSORS), SerialActiveMessageC;
   
-  MainC.SoftwareInit -> mm3SerialCommP;
+  MainC.SoftwareInit -> mmSerialCommP;
 
   Send = AMQueueImplP;
   AMPacket = SerialAMSenderC;
   Packet = SerialAMSenderC;
   SplitControl = SerialActiveMessageC;
   
-  mm3SerialCommP.SubAMSend[AM_MM_DATA] -> SerialAMSenderC;
-  AMQueueImplP.AMSend -> mm3SerialCommP.AMSend;
+  mmSerialCommP.SubAMSend[AM_MM_DATA] -> SerialAMSenderC;
+  AMQueueImplP.AMSend -> mmSerialCommP.AMSend;
   AMQueueImplP.Packet -> SerialAMSenderC;
   AMQueueImplP.AMPacket -> SerialAMSenderC;
   
   components new NoArbiterC();
-  mm3SerialCommP.Resource -> NoArbiterC.Resource;
+  mmSerialCommP.Resource -> NoArbiterC.Resource;
   
   components LedsC;
-  mm3SerialCommP.Leds -> LedsC;
+  mmSerialCommP.Leds -> LedsC;
 }

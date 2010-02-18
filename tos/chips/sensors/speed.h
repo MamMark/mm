@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -19,7 +19,7 @@ enum {
 };
 
 
-const mm3_sensor_config_t speed_config_1 = {
+const mm_sensor_config_t speed_config_1 = {
   .sns_id = SNS_ID_SPEED,
   .mux  = DMUX_SPEED_1,
   .t_settle = 164,		/* ~ 5mS */
@@ -27,7 +27,7 @@ const mm3_sensor_config_t speed_config_1 = {
 };
 
 
-const mm3_sensor_config_t speed_config_2 = {
+const mm_sensor_config_t speed_config_2 = {
   .sns_id = SNS_ID_SPEED,
   .mux  = DMUX_SPEED_2,
   .t_settle = 4,		/* ~ 120 uS */

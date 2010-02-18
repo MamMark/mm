@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -16,7 +16,7 @@
  */
 
 /**
- * The HplMM3Adc interface exports low-level access to control registers
+ * The Hpl_MM_hw interface exports low-level access to control registers
  * of the Mam_Mark ADC subsystem.
  *
  * @author Eric B. Decker
@@ -27,8 +27,8 @@
 #include "gps.h"
 #include "sd.h"
 
-module HplMM3AdcP {
-  provides interface HplMM3Adc as HW;
+module Hpl_MM_hwP {
+  provides interface Hpl_MM_hw as HW;
 }
 
 implementation {

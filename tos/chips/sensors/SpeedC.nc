@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -28,14 +28,14 @@ implementation {
   components CollectC;
   SpeedP.Collect -> CollectC;
 
-  components HplMM3AdcC;
-  SpeedP.HW -> HplMM3AdcC;
+  components Hpl_MM_hwC;
+  SpeedP.HW -> Hpl_MM_hwC;
 
-  components mm3ControlC;
-  SpeedP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_SPEED];
+  components mmControlC;
+  SpeedP.mmControl -> mmControlC.mmControl[SNS_ID_SPEED];
 
-  components mm3CommDataC;
-  SpeedP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_SPEED];
+  components mmCommDataC;
+  SpeedP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_SPEED];
 
   components PanicC;
   SpeedP.Panic -> PanicC;

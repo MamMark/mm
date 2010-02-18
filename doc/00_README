@@ -186,6 +186,7 @@ The following environment variables must be set to build.
     MAKERULES
     CLASSPATH
     TOSMAKE_PATH
+    MM_ROOT
 
     for example:  working dir ~/mm
   
@@ -196,8 +197,8 @@ The following environment variables must be set to build.
   	TOSROOT=~/mm/t2_cur/tinyos-2.x
   	TOSDIR=$TOSROOT/tos
   
-  	MAMMARK_DIR="/home/joe/mm/t2_mm"
-  	TOSMAKE_PATH="$TOSMAKE_PATH $MAMMARK_DIR/support/make"
+  	MM_ROOT="/home/joe/mm/t2_mm"
+  	TOSMAKE_PATH="$TOSMAKE_PATH $MM_ROOT/support/make"
   
   	M1="/opt/msp430-z1"
   	PATH="$M1/bin:$PATH"
@@ -215,7 +216,7 @@ The following environment variables must be set to build.
   	#LIBMSPGCC_PATH=$M1/lib
   
   	export MAKERULES TOSDIR TOSROOT CLASSPATH PYTHONPATH LD_LIBRARY_PATH
-  	export LIBMSPGCC MOTECOM MAMMARK_DIR TOSMAKE_PATH PATH
+  	export LIBMSPGCC MOTECOM MM_ROOT TOSMAKE_PATH PATH
 
 
 10) Build SerialForwarder and libmote library.

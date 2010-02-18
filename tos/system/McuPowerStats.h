@@ -17,10 +17,10 @@ typedef struct mcustat_entry_t {
 
 // this is what is recorded in the "statistics" table
 //     3 states for the MCU:  ACTIVE, LPM1, LPM3
-//     how many states for GPS?   c.f. platforms/mm3/misc/GPSP.nc
-//     how many states for ADC?   c.f. platforms/mm3/misc/AdcP.nc : Adc_Power_Up_Down()
-//     how many states for uart1?  c.f. platforms/mm3/misc/mm3CommSwP.nc
-//     how many states for uart0?  c.f. platforms/mm3/misc/HplMM3AdcP.nc USE THIS!!!!!
+//     how many states for sirf3_GPS?   c.f. tos/chips/sirf3/SirfP.nc
+//     how many states for ADC?         c.f. tos/mm/AdcP.nc : Adc_Power_Up_Down()
+//     how many states for uart1?       c.f. tos/comm/mmCommSwP.nc
+//     how many states for uart0?       c.f. tos/platforms/mm3/misc/Hpl_MM_hw.nc USE THIS!!!!!
 
 typedef nx_struct mcustat {
 	nx_uint8_t state;      // power state

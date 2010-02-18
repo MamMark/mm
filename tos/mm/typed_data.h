@@ -1,5 +1,6 @@
 /*
- * sd_blocks: definitions for typed data on Mass Storage
+ * typed_data: definitions for typed data on Mass Storage
+ * and any Data network packets.
  *
  * This file must be portable.  It is used across multiple
  * machines.

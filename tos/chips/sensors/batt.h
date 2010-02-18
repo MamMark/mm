@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -19,7 +19,7 @@ enum {
 
 
 
-const mm3_sensor_config_t batt_config = {
+const mm_sensor_config_t batt_config = {
   .sns_id = SNS_ID_BATT,
   .mux  = SMUX_BATT,
   .t_settle = 164,		/* ~ 5mS */

@@ -63,10 +63,10 @@ module AdcP {
     interface Init;
   }
   uses {
-    interface AdcConfigure<const mm3_sensor_config_t*> as Config[uint8_t client_id];
+    interface AdcConfigure<const mm_sensor_config_t*> as Config[uint8_t client_id];
     interface StdControl as SensorPowerControl[uint8_t id];
     interface ResourceQueue as Queue;
-    interface HplMM3Adc as HW;
+    interface Hpl_MM_hw as HW;
     interface Alarm<T32khz, uint16_t> as PowerAlarm;
     interface Panic;
   }
@@ -98,7 +98,7 @@ implementation {
   uint8_t adc_state;
   uint8_t vref_state;
   uint8_t vdiff_state;
-  const mm3_sensor_config_t *m_config;
+  const mm_sensor_config_t *m_config;
 
 
   /*
@@ -208,7 +208,7 @@ implementation {
    */
   task void adcPower_Up_Down() {
     uint16_t delay;
-    const mm3_sensor_config_t *config;
+    const mm_sensor_config_t *config;
 
     if (adc_state != ADC_POWERING_DOWN && adc_state != ADC_GRANTING) {
       call Panic.panic(PANIC_ADC, 1, adc_state, 0, 0, 0);
@@ -360,7 +360,7 @@ implementation {
    * setting and let the whole thing settle.
    */
   task void PowerAlarm_task() {
-    const mm3_sensor_config_t *config;
+    const mm_sensor_config_t *config;
 
     if (vref_state == VREF_POWER_WAIT)
       vref_state = VREF_ON;
@@ -447,7 +447,7 @@ implementation {
   }
 
 
-  command void AdcClient.reconfigure[uint8_t client_id](const mm3_sensor_config_t *config) {
+  command void AdcClient.reconfigure[uint8_t client_id](const mm_sensor_config_t *config) {
     uint16_t delay;
 
     if (adc_owner != client_id || adc_state != ADC_BUSY) {
@@ -598,9 +598,9 @@ implementation {
 
   default event void AdcClient.configured[uint8_t id]() {} // fix me.  add call to panic
 
-  const mm3_sensor_config_t defaultConfig = {SNS_ID_NONE, 0, 0, 0};
+  const mm_sensor_config_t defaultConfig = {SNS_ID_NONE, 0, 0, 0};
 
-  default async command const mm3_sensor_config_t *Config.getConfiguration[uint8_t id]() { 
+  default async command const mm_sensor_config_t *Config.getConfiguration[uint8_t id]() { 
       return &defaultConfig;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2009 Eric B. Decker
+ * Copyright (c) 2008-2010 Eric B. Decker
  * All rights reserved.
  */
  
@@ -7,7 +7,7 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-interface mm3CommSw {
+interface mmCommSw {
   command error_t useSerial();
   event void serialOn();
   command error_t useRadio();

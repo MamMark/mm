@@ -1,5 +1,5 @@
 /*
- * GPS defines
+ * GPS platform defines
  *
  * @author Eric B. Decker (cire831@gmail.com)
  * @date 27 May 2008

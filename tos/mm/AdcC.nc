@@ -1,5 +1,5 @@
 /**
- * Copyright @ 2008 Eric B. Decker
+ * Copyright @ 2008, 2010 Eric B. Decker
  * @author Eric B. Decker
  */
 
@@ -14,8 +14,8 @@ implementation {
   SensorPowerControl = AdcP;
   MainC.SoftwareInit -> AdcP;
 
-  components HplMM3AdcC;
-  AdcP.HW -> HplMM3AdcC;
+  components Hpl_MM_hwC;
+  AdcP.HW -> Hpl_MM_hwC;
 
   components new RoundRobinResourceQueueC(MM_NUM_SENSORS) as RR;
   AdcP.Queue -> RR;

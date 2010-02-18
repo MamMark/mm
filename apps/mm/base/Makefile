@@ -12,7 +12,7 @@
 # the hassle to fix this.
 #
 
-MM_PLATFORM_DIR=$(MAMMARK_DIR)/tos/platforms/mm3
+MM_PLATFORM_DIR=$(MM_ROOT)/tos/platforms/mm3
 
 STOW_DIR=/opt
 

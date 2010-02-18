@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -18,7 +18,7 @@ typedef enum {
   SYNC_BOOT_2      = 2,
 } sync_boot_state_t;
 
-module mm3SyncP {
+module mmSyncP {
   provides {
     interface Boot as OutBoot;
   }
@@ -27,7 +27,7 @@ module mm3SyncP {
     interface Boot as SysBoot;
     interface Timer<TMilli> as SyncTimer;
     interface Collect;
-    interface mm3CommData;
+    interface mmCommData;
   }
 }
 
@@ -35,7 +35,7 @@ implementation {
   sync_boot_state_t boot_state;
 
   /*
-   * Need to rework usage of mm3CommData.send_data so if it fails
+   * Need to rework usage of mmCommData.send_data so if it fails
    * it still generates send_data_done.
    *
    * Otherwise, we hang in the boot sequence.  How does this work
@@ -52,7 +52,7 @@ implementation {
     vp->minor = minor;
     vp->tweak = tweak;
     call Collect.collect(vdata, DT_HDR_SIZE_VERSION);
-    call mm3CommData.send_data(vdata, DT_HDR_SIZE_VERSION);
+    call mmCommData.send_data(vdata, DT_HDR_SIZE_VERSION);
   }
 
 
@@ -69,7 +69,7 @@ implementation {
     sdp->stamp_mis = call SyncTimer.getNow();
     sdp->sync_majik = SYNC_MAJIK;
     call Collect.collect(sync_data, DT_HDR_SIZE_SYNC);
-    call mm3CommData.send_data(sync_data, DT_HDR_SIZE_SYNC);
+    call mmCommData.send_data(sync_data, DT_HDR_SIZE_SYNC);
   }
 
 
@@ -83,11 +83,11 @@ implementation {
 
 
   /*
-   * Uses mm3CommData port SNS_ID_NONE (shared with others) so need
+   * Uses mmCommData port SNS_ID_NONE (shared with others) so need
    * to be prepared to handle send_data_done completion events that
    * we didn't kick off.
    */
-  event void mm3CommData.send_data_done(error_t err) {
+  event void mmCommData.send_data_done(error_t err) {
     switch (boot_state) {
       default:
 	break;

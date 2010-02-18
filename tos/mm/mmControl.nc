@@ -3,6 +3,6 @@
  * All rights reserved.
  */
 
-interface mm3Control {
+interface mmControl {
   command bool eavesdrop();
 }

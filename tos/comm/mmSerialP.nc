@@ -8,7 +8,7 @@
 
 #include "serial_speed.h"
 
-module mm3SerialP {
+module mmSerialP {
   provides {
     interface StdControl;
     interface Msp430UartConfigure;
@@ -19,9 +19,9 @@ module mm3SerialP {
 }
 implementation {
   
-#if defined(MM_MM3)
+#if defined(PLATFORM_MM3)
 
-  msp430_uart_union_config_t mm3_direct_serial_config = {
+  msp430_uart_union_config_t mm_direct_serial_config = {
     {
 //       ubr:   UBR_4MHZ_57600,
 //       umctl: UMCTL_4MHZ_57600,
@@ -43,9 +43,9 @@ implementation {
     }
   };
 
-#elif defined(MM_MM4)
+#elif defined(PLATFORM_MM4)
 
-  msp430_uart_union_config_t mm3_direct_serial_config = {
+  msp430_uart_union_config_t mm_direct_serial_config = {
     {
 //       ubr:   UBR_4MHZ_57600,
 //       umctl: UMCTL_4MHZ_57600
@@ -55,7 +55,7 @@ implementation {
   };
 
 #else
-#error need one of MM_MM3, MM_MM4, MM_MM5 defined.
+#error need one of PLATFORM_MM3, PLATFORM_MM4, PLATFORM_MM5 defined.
 #endif
 
 
@@ -69,6 +69,6 @@ implementation {
 
   async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
     mmP5out.ser_sel = SER_SEL_CRADLE;
-    return &mm3_direct_serial_config;
+    return &mm_direct_serial_config;
   }
 }

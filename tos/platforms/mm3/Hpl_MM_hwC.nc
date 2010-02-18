@@ -1,8 +1,8 @@
-configuration HplMM3AdcC {
-  provides interface HplMM3Adc;
+configuration Hpl_MM_hwC {
+  provides interface Hpl_MM_hw;
 }
 
 implementation {
-  components HplMM3AdcP;
-  HplMM3Adc = HplMM3AdcP;
+  components Hpl_MM_hwP;
+  Hpl_MM_hw = Hpl_MM_hwP;
 }

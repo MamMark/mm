@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
-configuration mm3SyncC {
+configuration mmSyncC {
   provides {
     interface Boot as OutBoot;
   }
@@ -14,20 +14,20 @@ configuration mm3SyncC {
 }
 
 implementation {
-  components SystemBootC, mm3SyncP;
-//  SystemBootC.SoftwareInit -> mm3SyncP;
-  mm3SyncP.SysBoot -> SystemBootC.Boot;
+  components SystemBootC, mmSyncP;
+//  SystemBootC.SoftwareInit -> mmSyncP;
+  mmSyncP.SysBoot -> SystemBootC.Boot;
 
-  OutBoot = mm3SyncP;
-  Boot = mm3SyncP.Boot;
-  SysBoot = mm3SyncP.SysBoot;
+  OutBoot = mmSyncP;
+  Boot = mmSyncP.Boot;
+  SysBoot = mmSyncP.SysBoot;
   
   components new TimerMilliC() as SyncTimerC;
-  mm3SyncP.SyncTimer -> SyncTimerC;
+  mmSyncP.SyncTimer -> SyncTimerC;
 
-  components mm3CommDataC;
-  mm3SyncP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_NONE];
+  components mmCommDataC;
+  mmSyncP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_NONE];
 
   components CollectC;
-  mm3SyncP.Collect -> CollectC;
+  mmSyncP.Collect -> CollectC;
 }

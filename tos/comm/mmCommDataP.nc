@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
 /**
- * mm3CommData provides a data stream for data blocks.  Typed data
+ * mmCommData provides a data stream for data blocks.  Typed data
  * blocks as defined in sd_bocks.h.
  *
  * @author Eric B. Decker
@@ -14,9 +14,9 @@
 #include "AM.h"
 #include "sensors.h"
 
-module mm3CommDataP {
+module mmCommDataP {
   provides {
-    interface mm3CommData[uint8_t cid];
+    interface mmCommData[uint8_t cid];
   }
   uses {
     interface Send[uint8_t cid];
@@ -60,7 +60,7 @@ implementation {
    *
    * If the send returns SUCCESS will get a send_data_done signal back.
    */
-  command error_t mm3CommData.send_data[uint8_t cid](void *buf, uint8_t len) {
+  command error_t mmCommData.send_data[uint8_t cid](void *buf, uint8_t len) {
     uint8_t *bp;
     message_t *dm;
 
@@ -79,10 +79,10 @@ implementation {
   }
 
   event void Send.sendDone[uint8_t cid](message_t* msg, error_t err) {
-    signal mm3CommData.send_data_done[cid](err);
+    signal mmCommData.send_data_done[cid](err);
   }
 
-  default event void mm3CommData.send_data_done[uint8_t cid](error_t rtn) {
+  default event void mmCommData.send_data_done[uint8_t cid](error_t rtn) {
     call Panic.panic(PANIC_COMM, 11, 0, 0, 0, 0);
   }
 }

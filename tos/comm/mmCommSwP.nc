@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  *
- * Provides multiplexing from the 3 MM3 comm streams (Control,
+ * Provides multiplexing from the 3 MM comm streams (Control,
  * Debug, and Data) onto either the Radio stack or the serial
  * stack depending on how the tag is interconnected.
  */
 
 /**
- * mm3Comm provides a single interface that can be switched between
+ * mmComm provides a single interface that can be switched between
  * the radio or the direct connect serial line.
  *
  * Control packets:
@@ -17,7 +17,7 @@
  *
  * Data packets:  Data packets are currently just used for sending
  * sensor eavesdrops.  Space is allocated for each sensor to have
- * at most one eavesdrop packet outstanding at any time.  See mm3CommData
+ * at most one eavesdrop packet outstanding at any time.  See mmCommData
  * where this is implemented.
  *
  * Each channel (control, debug, or data) contends for the comm line.
@@ -45,9 +45,9 @@ typedef enum {
 } comm_state_t;
 
 
-module mm3CommSwP {
+module mmCommSwP {
   provides {
-    interface mm3CommSw;
+    interface mmCommSw;
     interface Send[uint8_t cid];
     interface SendBusy[uint8_t cid];
 //  interface Receive[uint8_t cid];
@@ -80,7 +80,7 @@ implementation {
 
   //********************* Use SERIAL *******************************//
 
-  command error_t mm3CommSw.useSerial() {
+  command error_t mmCommSw.useSerial() {
     if (comm_state == COMM_STATE_SERIAL)
       return EALREADY;
     if (comm_state == COMM_STATE_OFF || comm_state == COMM_STATE_RADIO) {
@@ -94,7 +94,7 @@ implementation {
   event void SerialAMControl.startDone(error_t error) {
     if (error == SUCCESS) {
       comm_state = COMM_STATE_SERIAL; 
-      signal mm3CommSw.serialOn();
+      signal mmCommSw.serialOn();
     } else {
       call Panic.panic(PANIC_COMM, 20, error, 0, 0, 0);
       call SerialAMControl.start();
@@ -103,7 +103,7 @@ implementation {
   
   //********************* Use RADIO *******************************//
 
-  command error_t mm3CommSw.useRadio() {
+  command error_t mmCommSw.useRadio() {
     if(comm_state == COMM_STATE_RADIO)
       return EALREADY;
     if(comm_state == COMM_STATE_OFF || comm_state == COMM_STATE_SERIAL) {
@@ -117,7 +117,7 @@ implementation {
   event void RadioAMControl.startDone(error_t error) {
     if(error == SUCCESS) {
       comm_state = COMM_STATE_RADIO; 
-      signal mm3CommSw.radioOn();
+      signal mmCommSw.radioOn();
     } else {
       call Panic.panic(PANIC_COMM, 21, error, 0, 0, 0);
       call RadioAMControl.start();
@@ -126,7 +126,7 @@ implementation {
   
   //********************* Use NONE *******************************//
 
-  command error_t mm3CommSw.useNone() {
+  command error_t mmCommSw.useNone() {
     if(comm_state == COMM_STATE_OFF)
       return EALREADY;
     if(comm_state == COMM_STATE_SERIAL) {
@@ -145,7 +145,7 @@ implementation {
   event void SerialAMControl.stopDone(error_t error) {
     if(error == SUCCESS) {
       comm_state = COMM_STATE_OFF; 
-      signal mm3CommSw.commOff();
+      signal mmCommSw.commOff();
     } else {
       call Panic.panic(PANIC_COMM, 22, error, 0, 0, 0);
       call SerialAMControl.stop();
@@ -155,7 +155,7 @@ implementation {
   event void RadioAMControl.stopDone(error_t error) {
     if(error == SUCCESS) {
       comm_state = COMM_STATE_OFF; 
-      signal mm3CommSw.commOff();
+      signal mmCommSw.commOff();
     } else {
       call Panic.panic(PANIC_COMM, 23, error, 0, 0, 0);
       call RadioAMControl.stop();

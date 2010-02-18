@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -21,14 +21,14 @@ enum {
     SAL_STATE_READ_2		= 3,
 };
 
-const mm3_sensor_config_t sal_config_1 = {
+const mm_sensor_config_t sal_config_1 = {
   .sns_id = SNS_ID_SAL,
   .mux  = SMUX_SALINITY,
   .t_settle = 164,		/* ~ 5mS */
   .gmux = 0,
 };
 
-const mm3_sensor_config_t sal_config_2 = {
+const mm_sensor_config_t sal_config_2 = {
   .sns_id = SNS_ID_SAL,
   .mux  = SMUX_SALINITY,
   .t_settle = 4,		/* ~120uS */

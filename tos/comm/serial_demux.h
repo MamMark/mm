@@ -1,6 +1,6 @@
 /*
  * serial_demux.h
- * Copyright 2009, Eric B. Decker
+ * Copyright 2008-2010, Eric B. Decker
  * Mam-Mark Project
  */
 

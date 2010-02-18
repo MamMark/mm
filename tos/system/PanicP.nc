@@ -4,7 +4,7 @@
  */
 
 #include "panic.h"
-#include "sd_blocks.h"
+#include "typed_data.h"
 
 norace uint16_t save_sr;
 norace bool save_sr_free;

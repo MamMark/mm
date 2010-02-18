@@ -3,7 +3,7 @@
  * See tos/chips/msp430/usart/Msp430UsartShare1P.nc for the wiring that
  * causes this module to be invoked by the USART1 arbiter.
  *
- * Copyright @ 2008 Eric B. Decker
+ * Copyright @ 2008-2010 Eric B. Decker
  * @author Eric B. Decker
  *
  * This module provides a DefaultOwner Multiplexer intended to sit on top

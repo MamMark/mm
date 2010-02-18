@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -17,7 +17,7 @@ enum {
     TEMP_STATE_READ		= 2,
 };
 
-const mm3_sensor_config_t temp_config = {
+const mm_sensor_config_t temp_config = {
   .sns_id = SNS_ID_TEMP,
   .mux  = SMUX_TEMP,
   .t_settle = 164,          /* ~ 5mS */

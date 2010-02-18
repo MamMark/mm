@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -28,14 +28,14 @@ implementation {
   components CollectC;
   AccelP.Collect -> CollectC;
 
-  components HplMM3AdcC;
-  AccelP.HW -> HplMM3AdcC;
+  components Hpl_MM_hwC;
+  AccelP.HW -> Hpl_MM_hwC;
 
-  components mm3ControlC;
-  AccelP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_ACCEL];
+  components mmControlC;
+  AccelP.mmControl -> mmControlC.mmControl[SNS_ID_ACCEL];
 
-  components mm3CommDataC;
-  AccelP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_ACCEL];
+  components mmCommDataC;
+  AccelP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_ACCEL];
 
   components PanicC;
   AccelP.Panic -> PanicC;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -27,14 +27,14 @@ implementation {
   components CollectC;
   PressP.Collect -> CollectC;
 
-  components HplMM3AdcC;
-  PressP.HW -> HplMM3AdcC;
+  components Hpl_MM_hwC;
+  PressP.HW -> Hpl_MM_hwC;
 
-  components mm3ControlC;
-  PressP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_PRESS];
+  components mmControlC;
+  PressP.mmControl -> mmControlC.mmControl[SNS_ID_PRESS];
 
-  components mm3CommDataC;
-  PressP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_PRESS];
+  components mmCommDataC;
+  PressP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_PRESS];
 
   components PanicC;
   PressP.Panic -> PanicC;

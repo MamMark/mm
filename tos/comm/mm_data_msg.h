@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2010 Eric B. Decker
+ * All rights reserved.
  * Copyright (c) 2008 Stanford University.
  * All rights reserved.
  *
@@ -32,16 +34,18 @@
 /**
  * @author Kevin Klues <klueska@cs.stanford.edu>
  * @date March 3rd, 2008
+ * @author Eric B. Decker <cire831@gmail.com>
+ * @date Feb 27, 2010
  */
 
-#ifndef MM3_DATA_MSG_H
-#define MM3_DATA_MSG_H
+#ifndef MM_DATA_MSG_H
+#define MM_DATA_MSG_H
 
 #include "message.h"
 
-typedef nx_struct mm3_data_msg {
+typedef nx_struct mm_data_msg {
   nx_uint8_t buffer[TOSH_DATA_LENGTH];
-} mm3_data_msg_t;
+} mm_data_msg_t;
 
 /*
  * Not actually used.  Only here to make "mig" happy.

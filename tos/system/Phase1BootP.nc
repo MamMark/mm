@@ -45,7 +45,7 @@ module Phase1BootP {
   }
   uses {
     interface Boot;
-    interface mm3CommSw;
+    interface mmCommSw;
   }
 }
 implementation {
@@ -58,20 +58,20 @@ implementation {
 #ifdef TEST_NO_COMM
     signal Phase1Boot.booted();
 #else
-    call mm3CommSw.useSerial();
+    call mmCommSw.useSerial();
 #endif
-//    call mm3CommSw.useRadio();
+//    call mmCommSw.useRadio();
 
   }
 
-  event void mm3CommSw.serialOn() {
+  event void mmCommSw.serialOn() {
     signal Phase1Boot.booted();
   }
 
-  event void mm3CommSw.radioOn() {
+  event void mmCommSw.radioOn() {
 //    signal Phase1Boot.booted();
   }
 
-  event void mm3CommSw.commOff() {}
+  event void mmCommSw.commOff() {}
 }
 

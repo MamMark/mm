@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  */
 
@@ -28,14 +28,14 @@ implementation {
   components CollectC;
   BattP.Collect -> CollectC;
 
-  components HplMM3AdcC;
-  BattP.HW -> HplMM3AdcC;
+  components Hpl_MM_hwC;
+  BattP.HW -> Hpl_MM_hwC;
 
-  components mm3ControlC;
-  BattP.mm3Control -> mm3ControlC.mm3Control[SNS_ID_BATT];
+  components mmControlC;
+  BattP.mmControl -> mmControlC.mmControl[SNS_ID_BATT];
 
-  components mm3CommDataC;
-  BattP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_BATT];
+  components mmCommDataC;
+  BattP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_BATT];
 
   components CradleC;
   BattP.Docked -> CradleC;
