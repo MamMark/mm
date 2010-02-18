@@ -1,5 +1,5 @@
 # $Id: Makefile,v 1.3 2006/07/08 07:54:11 cire Exp $
-# Copyright 2006, Eric B. Decker
+# Copyright 2006, 2010, Eric B. Decker
 # Mam-Mark Project
 
 F_DIR   = ../fat
@@ -7,7 +7,7 @@ F_DIR   = ../fat
 SOURCE  = mkdblk.c ms_unix.c ms_util.c util.c $(F_DIR)/fatxfc.c
 OBJECTS = mkdblk.o fatxfc.o ms_unix.o ms_util.o util.o
 
-CFLAGS += -g -Wall -O0 -I../include -I../fat -I.
+CFLAGS += -g -Wall -O0 -I../include -I../fat -I. -I$(MM_ROOT)/include
 VPATH = $(F_DIR)
 
 all: mkdblk
@@ -33,3 +33,16 @@ dep:
 	mv tmp_make Makefile
 
 ### Dependencies
+mkdblk.o: mkdblk.c /home/cire/mm/t2_mm/include/mm_types.h \
+ /home/cire/mm/t2_mm/include/mm_byteswap.h ../include/fat_fs.h \
+ ../fat/fatxfc.h ms.h
+ms_unix.o: ms_unix.c /home/cire/mm/t2_mm/include/mm_types.h \
+ /home/cire/mm/t2_mm/include/mm_byteswap.h ms.h ms_util.h \
+ /home/cire/mm/t2_mm/include/dblk_loc.h
+ms_util.o: ms_util.c /home/cire/mm/t2_mm/include/mm_types.h \
+ /home/cire/mm/t2_mm/include/mm_byteswap.h ms.h ms_util.h \
+ /home/cire/mm/t2_mm/include/dblk_loc.h
+util.o: util.c /home/cire/mm/t2_mm/include/mm_types.h util.h
+fatxfc.o: ../fat/fatxfc.c /home/cire/mm/t2_mm/include/mm_types.h \
+ /home/cire/mm/t2_mm/include/mm_byteswap.h ../include/fat_fs.h \
+ ../fat/fatxfc.h ms.h util.h /home/cire/mm/t2_mm/include/dblk_loc.h
