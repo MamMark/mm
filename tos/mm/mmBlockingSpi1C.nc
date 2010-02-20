@@ -34,7 +34,7 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
  
-generic configuration mm3BlockingSpi1C() {
+generic configuration mmBlockingSpi1C() {
   provides {
     interface BlockingResource;
     interface BlockingSpiByte;

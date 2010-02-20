@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Eric B. Decker
+ * Copyright (c) 2008, 2010 Eric B. Decker
  * All rights reserved.
  */
 
@@ -10,7 +10,7 @@
  * Handle processing cmds received on the command (control) channel.
  */
 
-#include "mm3_control_msg.h"
+#include "mm_control_msg.h"
 
 configuration CmdHandlerC {
   provides interface StdControl as CmdControl;

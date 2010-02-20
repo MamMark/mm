@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Eric B. Decker
+ * Copyright (c) 2008, 2010 Eric B. Decker
  * All rights reserved.
  */
 
@@ -51,7 +51,7 @@ implementation {
   }
 
   event message_t * CmdReceive.receive(message_t * msg, void * payload, uint8_t len) {
-    mm3_control_msg_t * cmd_payload = payload;
+    mm_control_msg_t * cmd_payload = payload;
     nop();
     return msg;
   }

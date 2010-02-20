@@ -15,7 +15,7 @@ b TinyOSMainP.nc:89
 
 # 2
 b TinyOSMainP.nc:96
-#b *TinyOSMainP$TinyOSBoot$booted+0d64
+#b *TinyOSMainP__TinyOSBoot__booted+0d64
 
 # 3 task scheduler
 b SchedulerBasicP.nc:137
@@ -58,7 +58,7 @@ b mm3C.nc:50
 #b mm3ControlP.nc:107
 #b GPSP.nc:669
 #b GPSP.nc:1134
-#b *GPSP$SerialDefOwner$granted
+#b *GPSP__SerialDefOwner__granted
 #b GPSP.nc:1102
 #b GPSP.nc:766
 
@@ -90,11 +90,11 @@ b mm3C.nc:50
 
 # b AdcP.nc:219
 # comm
-# printf "PUD: owner: %d  req: %d  adc_state: %02x\n", AdcP$adc_owner, AdcP$req_client, AdcP$adc_state
+# printf "PUD: owner: %d  req: %d  adc_state: %02x\n", AdcP__adc_owner, AdcP__req_client, AdcP__adc_state
 # end
 # b AdcP.nc:372
 # comm
-# printf "PowerAlarm: owner: %d\n", AdcP$adc_owner
+# printf "PowerAlarm: owner: %d\n", AdcP__adc_owner
 # end
 # b AdcP.nc:412
 # comm
@@ -102,11 +102,11 @@ b mm3C.nc:50
 # end
 # b AdcP.nc:453
 # comm
-# printf "reconfig: %d\n",AdcP$adc_owner
+# printf "reconfig: %d\n",AdcP__adc_owner
 # end
 # b AdcP.nc:492
 # comm
-# printf "release: %d %d\n",AdcP$adc_owner,client_id
+# printf "release: %d %d\n",AdcP__adc_owner,client_id
 # end
 
 # display trace buffer
@@ -122,16 +122,16 @@ print gpsc_state
 printf "gpsc_release_state: "
 print gpsc_release_state
 printf "msg_collect_state: "
-print GPSMsgP$collect_state
-printf "left: %d, collect_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP$collect_left, GPSMsgP$collect_length, GPSMsgP$collect_cur_chksum
-printf "collect_nxt:  0x%02x  on_overflow: %d\n", GPSMsgP$collect_nxt, GPSMsgP$on_overflow
+print GPSMsgP__collect_state
+printf "left: %d, collect_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP__collect_left, GPSMsgP__collect_length, GPSMsgP__collect_cur_chksum
+printf "collect_nxt:  0x%02x  on_overflow: %d\n", GPSMsgP__collect_nxt, GPSMsgP__on_overflow
 printf "Msg State: "
 print gpsm_state
 printf "\nbuffer:\n"
-x/32xb GPSMsgP$collect_msg
+x/32xb GPSMsgP__collect_msg
 printf "overflow:\n"
-x/16xb GPSMsgP$collect_overflow
-printf "\nerrors: ovrfull: %d  ovrmax: %d  too_big: %d  chk fail: %d  proto fail: %d\n", GPSMsgP$collect_overflow_full, GPSMsgP$collect_overflow_max, GPSMsgP$collect_too_big, GPSMsgP$collect_chksum_fail, GPSMsgP$collect_proto_fail
+x/16xb GPSMsgP__collect_overflow
+printf "\nerrors: ovrfull: %d  ovrmax: %d  too_big: %d  chk fail: %d  proto fail: %d\n", GPSMsgP__collect_overflow_full, GPSMsgP__collect_overflow_max, GPSMsgP__collect_too_big, GPSMsgP__collect_chksum_fail, GPSMsgP__collect_proto_fail
 end
 
 define erase
@@ -166,32 +166,32 @@ end
 
 define timers
 printf "Timer Block 0:\n  n       trip        t0        dt  shot  run\n"
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0, VirtualizeTimerC$0$m_timers[0].t0 + VirtualizeTimerC$0$m_timers[0].dt, VirtualizeTimerC$0$m_timers[0].t0, \
-	VirtualizeTimerC$0$m_timers[0].dt, VirtualizeTimerC$0$m_timers[0].isoneshot, VirtualizeTimerC$0$m_timers[0].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 1, VirtualizeTimerC$0$m_timers[1].t0 + VirtualizeTimerC$0$m_timers[1].dt, VirtualizeTimerC$0$m_timers[1].t0, \
-	VirtualizeTimerC$0$m_timers[1].dt, VirtualizeTimerC$0$m_timers[1].isoneshot, VirtualizeTimerC$0$m_timers[1].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 2, VirtualizeTimerC$0$m_timers[2].t0 + VirtualizeTimerC$0$m_timers[2].dt, VirtualizeTimerC$0$m_timers[2].t0, \
-	VirtualizeTimerC$0$m_timers[2].dt, VirtualizeTimerC$0$m_timers[2].isoneshot, VirtualizeTimerC$0$m_timers[2].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 3, VirtualizeTimerC$0$m_timers[3].t0 + VirtualizeTimerC$0$m_timers[3].dt, VirtualizeTimerC$0$m_timers[3].t0, \
-	VirtualizeTimerC$0$m_timers[3].dt, VirtualizeTimerC$0$m_timers[3].isoneshot, VirtualizeTimerC$0$m_timers[3].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 4, VirtualizeTimerC$0$m_timers[4].t0 + VirtualizeTimerC$0$m_timers[4].dt, VirtualizeTimerC$0$m_timers[4].t0, \
-	VirtualizeTimerC$0$m_timers[4].dt, VirtualizeTimerC$0$m_timers[4].isoneshot, VirtualizeTimerC$0$m_timers[4].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 5, VirtualizeTimerC$0$m_timers[5].t0 + VirtualizeTimerC$0$m_timers[5].dt, VirtualizeTimerC$0$m_timers[5].t0, \
-	VirtualizeTimerC$0$m_timers[5].dt, VirtualizeTimerC$0$m_timers[5].isoneshot, VirtualizeTimerC$0$m_timers[5].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 6, VirtualizeTimerC$0$m_timers[6].t0 + VirtualizeTimerC$0$m_timers[6].dt, VirtualizeTimerC$0$m_timers[6].t0, \
-	VirtualizeTimerC$0$m_timers[6].dt, VirtualizeTimerC$0$m_timers[6].isoneshot, VirtualizeTimerC$0$m_timers[6].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 7, VirtualizeTimerC$0$m_timers[7].t0 + VirtualizeTimerC$0$m_timers[7].dt, VirtualizeTimerC$0$m_timers[7].t0, \
-	VirtualizeTimerC$0$m_timers[7].dt, VirtualizeTimerC$0$m_timers[7].isoneshot, VirtualizeTimerC$0$m_timers[7].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 8, VirtualizeTimerC$0$m_timers[8].t0 + VirtualizeTimerC$0$m_timers[8].dt, VirtualizeTimerC$0$m_timers[8].t0, \
-	VirtualizeTimerC$0$m_timers[8].dt, VirtualizeTimerC$0$m_timers[8].isoneshot, VirtualizeTimerC$0$m_timers[8].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 9, VirtualizeTimerC$0$m_timers[9].t0 + VirtualizeTimerC$0$m_timers[9].dt, VirtualizeTimerC$0$m_timers[9].t0, \
-	VirtualizeTimerC$0$m_timers[9].dt, VirtualizeTimerC$0$m_timers[9].isoneshot, VirtualizeTimerC$0$m_timers[9].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d10, VirtualizeTimerC$0$m_timers[0d10].t0 + VirtualizeTimerC$0$m_timers[0d10].dt, VirtualizeTimerC$0$m_timers[0d10].t0, \
-	VirtualizeTimerC$0$m_timers[0d10].dt, VirtualizeTimerC$0$m_timers[0d10].isoneshot, VirtualizeTimerC$0$m_timers[0d10].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d11, VirtualizeTimerC$0$m_timers[0d11].t0 + VirtualizeTimerC$0$m_timers[0d11].dt, VirtualizeTimerC$0$m_timers[0d11].t0, \
-	VirtualizeTimerC$0$m_timers[0d11].dt, VirtualizeTimerC$0$m_timers[0d11].isoneshot, VirtualizeTimerC$0$m_timers[0d11].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d12, VirtualizeTimerC$0$m_timers[0d12].t0 + VirtualizeTimerC$0$m_timers[0d12].dt, VirtualizeTimerC$0$m_timers[0d12].t0, \
-	VirtualizeTimerC$0$m_timers[0d12].dt, VirtualizeTimerC$0$m_timers[0d12].isoneshot, VirtualizeTimerC$0$m_timers[0d12].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0, VirtualizeTimerC__0__m_timers[0].t0 + VirtualizeTimerC__0__m_timers[0].dt, VirtualizeTimerC__0__m_timers[0].t0, \
+	VirtualizeTimerC__0__m_timers[0].dt, VirtualizeTimerC__0__m_timers[0].isoneshot, VirtualizeTimerC__0__m_timers[0].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 1, VirtualizeTimerC__0__m_timers[1].t0 + VirtualizeTimerC__0__m_timers[1].dt, VirtualizeTimerC__0__m_timers[1].t0, \
+	VirtualizeTimerC__0__m_timers[1].dt, VirtualizeTimerC__0__m_timers[1].isoneshot, VirtualizeTimerC__0__m_timers[1].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 2, VirtualizeTimerC__0__m_timers[2].t0 + VirtualizeTimerC__0__m_timers[2].dt, VirtualizeTimerC__0__m_timers[2].t0, \
+	VirtualizeTimerC__0__m_timers[2].dt, VirtualizeTimerC__0__m_timers[2].isoneshot, VirtualizeTimerC__0__m_timers[2].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 3, VirtualizeTimerC__0__m_timers[3].t0 + VirtualizeTimerC__0__m_timers[3].dt, VirtualizeTimerC__0__m_timers[3].t0, \
+	VirtualizeTimerC__0__m_timers[3].dt, VirtualizeTimerC__0__m_timers[3].isoneshot, VirtualizeTimerC__0__m_timers[3].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 4, VirtualizeTimerC__0__m_timers[4].t0 + VirtualizeTimerC__0__m_timers[4].dt, VirtualizeTimerC__0__m_timers[4].t0, \
+	VirtualizeTimerC__0__m_timers[4].dt, VirtualizeTimerC__0__m_timers[4].isoneshot, VirtualizeTimerC__0__m_timers[4].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 5, VirtualizeTimerC__0__m_timers[5].t0 + VirtualizeTimerC__0__m_timers[5].dt, VirtualizeTimerC__0__m_timers[5].t0, \
+	VirtualizeTimerC__0__m_timers[5].dt, VirtualizeTimerC__0__m_timers[5].isoneshot, VirtualizeTimerC__0__m_timers[5].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 6, VirtualizeTimerC__0__m_timers[6].t0 + VirtualizeTimerC__0__m_timers[6].dt, VirtualizeTimerC__0__m_timers[6].t0, \
+	VirtualizeTimerC__0__m_timers[6].dt, VirtualizeTimerC__0__m_timers[6].isoneshot, VirtualizeTimerC__0__m_timers[6].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 7, VirtualizeTimerC__0__m_timers[7].t0 + VirtualizeTimerC__0__m_timers[7].dt, VirtualizeTimerC__0__m_timers[7].t0, \
+	VirtualizeTimerC__0__m_timers[7].dt, VirtualizeTimerC__0__m_timers[7].isoneshot, VirtualizeTimerC__0__m_timers[7].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 8, VirtualizeTimerC__0__m_timers[8].t0 + VirtualizeTimerC__0__m_timers[8].dt, VirtualizeTimerC__0__m_timers[8].t0, \
+	VirtualizeTimerC__0__m_timers[8].dt, VirtualizeTimerC__0__m_timers[8].isoneshot, VirtualizeTimerC__0__m_timers[8].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 9, VirtualizeTimerC__0__m_timers[9].t0 + VirtualizeTimerC__0__m_timers[9].dt, VirtualizeTimerC__0__m_timers[9].t0, \
+	VirtualizeTimerC__0__m_timers[9].dt, VirtualizeTimerC__0__m_timers[9].isoneshot, VirtualizeTimerC__0__m_timers[9].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d10, VirtualizeTimerC__0__m_timers[0d10].t0 + VirtualizeTimerC__0__m_timers[0d10].dt, VirtualizeTimerC__0__m_timers[0d10].t0, \
+	VirtualizeTimerC__0__m_timers[0d10].dt, VirtualizeTimerC__0__m_timers[0d10].isoneshot, VirtualizeTimerC__0__m_timers[0d10].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d11, VirtualizeTimerC__0__m_timers[0d11].t0 + VirtualizeTimerC__0__m_timers[0d11].dt, VirtualizeTimerC__0__m_timers[0d11].t0, \
+	VirtualizeTimerC__0__m_timers[0d11].dt, VirtualizeTimerC__0__m_timers[0d11].isoneshot, VirtualizeTimerC__0__m_timers[0d11].isrunning
+printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d12, VirtualizeTimerC__0__m_timers[0d12].t0 + VirtualizeTimerC__0__m_timers[0d12].dt, VirtualizeTimerC__0__m_timers[0d12].t0, \
+	VirtualizeTimerC__0__m_timers[0d12].dt, VirtualizeTimerC__0__m_timers[0d12].isoneshot, VirtualizeTimerC__0__m_timers[0d12].isrunning
 end
 document timers
 display virtualized timers block 0
@@ -239,15 +239,15 @@ end
 
 #show adc arbritration queue
 define sa
-printf "resQ:  %02x%02x\n", RoundRobinResourceQueueC$0$resQ[1], RoundRobinResourceQueueC$0$resQ[0]
-printf "adc: state: %02x, req: %02x, owner: %02x\n", AdcP$adc_state, AdcP$req_client, AdcP$adc_owner
+printf "resQ:  %02x%02x\n", RoundRobinResourceQueueC__0__resQ[1], RoundRobinResourceQueueC__0__resQ[0]
+printf "adc: state: %02x, req: %02x, owner: %02x\n", AdcP__adc_state, AdcP__req_client, AdcP__adc_owner
 end
 document sa
 show adc arbritration queue
 end
 
 define rq
-printf "rq: %02x%02x  last: %d\n",RoundRobinResourceQueueC$0$resQ[1],RoundRobinResourceQueueC$0$resQ[0],RoundRobinResourceQueueC$0$last
+printf "rq: %02x%02x  last: %d\n",RoundRobinResourceQueueC__0__resQ[1],RoundRobinResourceQueueC__0__resQ[0],RoundRobinResourceQueueC__0__last
 end
 document rq
 RoundRobin Resource Queue (ADC arbiter)
@@ -255,31 +255,31 @@ end
 
 define ss
 printf "SS: state: \n"
-print StreamStorageP$ss_state
+print StreamStorageP__ss_state
 printf "  control struct: "
-print StreamStorageP$ssc
-printf "    alloc: %02x  in: %02x  out: %02x\n", StreamStorageP$ssc.ssw_alloc, StreamStorageP$ssc.ssw_in, StreamStorageP$ssc.ssw_out
-printf "  buffers: [%04x] %04x  ts: %04lx ", StreamStorageP$ssw_p[0]->buf, StreamStorageP$ssw_p[0]->majik, StreamStorageP$ssw_p[0]->stamp
-print StreamStorageP$ssw_p[0]->req_state
-printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssw_p[1]->buf, StreamStorageP$ssw_p[1]->majik, StreamStorageP$ssw_p[1]->stamp
-print StreamStorageP$ssw_p[1]->req_state
-printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssw_p[2]->buf, StreamStorageP$ssw_p[2]->majik, StreamStorageP$ssw_p[2]->stamp
-print StreamStorageP$ssw_p[2]->req_state
-printf "           [%04x] %04x  ts: %04lx ", StreamStorageP$ssw_p[3]->buf, StreamStorageP$ssw_p[3]->majik, StreamStorageP$ssw_p[3]->stamp
-print StreamStorageP$ssw_p[3]->req_state
-printf "     read:  in: %02x  out: %02x\n", StreamStorageP$ssc.ssr_in, StreamStorageP$ssc.ssr_out
-printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP$ssr_reqs[0].majik, StreamStorageP$ssr_reqs[0].stamp,\
-    StreamStorageP$ssr_reqs[0].blk, StreamStorageP$ssr_reqs[0].buf
-print StreamStorageP$ssr_reqs[0]->req_state
-printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP$ssr_reqs[1].majik, StreamStorageP$ssr_reqs[1].stamp,\
-    StreamStorageP$ssr_reqs[1].blk, StreamStorageP$ssr_reqs[1].buf
-print StreamStorageP$ssr_reqs[1]->req_state
-printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP$ssr_reqs[2].majik, StreamStorageP$ssr_reqs[2].stamp,\
-    StreamStorageP$ssr_reqs[2].blk, StreamStorageP$ssr_reqs[2].buf
-print StreamStorageP$ssr_reqs[2]->req_state
-printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP$ssr_reqs[3].majik, StreamStorageP$ssr_reqs[3].stamp,\
-    StreamStorageP$ssr_reqs[3].blk, StreamStorageP$ssr_reqs[3].buf
-print StreamStorageP$ssr_reqs[3]->req_state
+print StreamStorageP__ssc
+printf "    alloc: %02x  in: %02x  out: %02x\n", StreamStorageP__ssc.ssw_alloc, StreamStorageP__ssc.ssw_in, StreamStorageP__ssc.ssw_out
+printf "  buffers: [%04x] %04x  ts: %04lx ", StreamStorageP__ssw_p[0]->buf, StreamStorageP__ssw_p[0]->majik, StreamStorageP__ssw_p[0]->stamp
+print StreamStorageP__ssw_p[0]->req_state
+printf "           [%04x] %04x  ts: %04lx ", StreamStorageP__ssw_p[1]->buf, StreamStorageP__ssw_p[1]->majik, StreamStorageP__ssw_p[1]->stamp
+print StreamStorageP__ssw_p[1]->req_state
+printf "           [%04x] %04x  ts: %04lx ", StreamStorageP__ssw_p[2]->buf, StreamStorageP__ssw_p[2]->majik, StreamStorageP__ssw_p[2]->stamp
+print StreamStorageP__ssw_p[2]->req_state
+printf "           [%04x] %04x  ts: %04lx ", StreamStorageP__ssw_p[3]->buf, StreamStorageP__ssw_p[3]->majik, StreamStorageP__ssw_p[3]->stamp
+print StreamStorageP__ssw_p[3]->req_state
+printf "     read:  in: %02x  out: %02x\n", StreamStorageP__ssc.ssr_in, StreamStorageP__ssc.ssr_out
+printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP__ssr_reqs[0].majik, StreamStorageP__ssr_reqs[0].stamp,\
+    StreamStorageP__ssr_reqs[0].blk, StreamStorageP__ssr_reqs[0].buf
+print StreamStorageP__ssr_reqs[0]->req_state
+printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP__ssr_reqs[1].majik, StreamStorageP__ssr_reqs[1].stamp,\
+    StreamStorageP__ssr_reqs[1].blk, StreamStorageP__ssr_reqs[1].buf
+print StreamStorageP__ssr_reqs[1]->req_state
+printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP__ssr_reqs[2].majik, StreamStorageP__ssr_reqs[2].stamp,\
+    StreamStorageP__ssr_reqs[2].blk, StreamStorageP__ssr_reqs[2].buf
+print StreamStorageP__ssr_reqs[2]->req_state
+printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP__ssr_reqs[3].majik, StreamStorageP__ssr_reqs[3].stamp,\
+    StreamStorageP__ssr_reqs[3].blk, StreamStorageP__ssr_reqs[3].buf
+print StreamStorageP__ssr_reqs[3]->req_state
 end
 document ss
 StreamStorage state
@@ -312,43 +312,43 @@ define sd
 printf "sd:  pwr: %d  csn: %d  p5: %02x  dir: %02x  sel: %02x  rx: %02x  tx: %02x\n",\
     (((*(uint8_t *)0x31) & 1) ? 0 : 1), (((*(uint8_t *)0x31) & 0x10) ? 1 : 0),\
     (*(uint8_t *)0x31), (*(uint8_t *)0x32), (*(uint8_t *)0x33), (*(uint8_t *)0x7e), (*(uint8_t *)0x7f)
-p/x SDP$sd_cmd
+p/x SDP__sd_cmd
 end
 document sd
 display SD state
 end
 
 define th
-printf "current_thread: %04x  num_runnable: %d\n",TinyThreadSchedulerP$current_thread,TinyThreadSchedulerP$num_runnable_threads
-print *TinyThreadSchedulerP$current_thread
-printf "\ntos_thread: %04x\n",TinyThreadSchedulerP$tos_thread
-print *TinyThreadSchedulerP$tos_thread
+printf "current_thread: %04x  num_runnable: %d\n",TinyThreadSchedulerP__current_thread,TinyThreadSchedulerP__num_runnable_threads
+print *TinyThreadSchedulerP__current_thread
+printf "\ntos_thread: %04x\n",TinyThreadSchedulerP__tos_thread
+print *TinyThreadSchedulerP__tos_thread
 end
 document th
 display thread state
 end
 
 define tq
-printf "taskq: head: %d  tail %d\n", (uint8_t) SchedulerBasicP$m_head, (uint8_t) SchedulerBasicP$m_tail
-x/25bu SchedulerBasicP$m_next
+printf "taskq: head: %d  tail %d\n", (uint8_t) SchedulerBasicP__m_head, (uint8_t) SchedulerBasicP__m_tail
+x/25bu SchedulerBasicP__m_next
 end
 document tq
 display task queue
 end
 
 define usq
-printf "ArbiterP$0: resId: %d, reqResId: %d,  state: %d\n", ArbiterP$0$resId, ArbiterP$0$reqResId, ArbiterP$0$state
-printf "usartQ (FcfsResourceQueueC$0): head: %d  tail %d\n", FcfsResourceQueueC$0$qHead, FcfsResourceQueueC$0$qTail
-x/4ub FcfsResourceQueueC$0$resQ
+printf "ArbiterP__0: resId: %d, reqResId: %d,  state: %d\n", ArbiterP__0__resId, ArbiterP__0__reqResId, ArbiterP__0__state
+printf "usartQ (FcfsResourceQueueC__0): head: %d  tail %d\n", FcfsResourceQueueC__0__qHead, FcfsResourceQueueC__0__qTail
+x/4ub FcfsResourceQueueC__0__resQ
 end
 document usq
 display usart arbritration queue
 end
 
 define sdq
-printf "ArbiterP$1: resId: %d, reqResId: %d,  state: %d\n", ArbiterP$1$resId, ArbiterP$1$reqResId, ArbiterP$1$state
-printf "serialDemuxQ (FcfsResourceQueueC$1): head: %d  tail %d\n", FcfsResourceQueueC$1$qHead, FcfsResourceQueueC$1$qTail
-x/4ub FcfsResourceQueueC$1$resQ
+printf "ArbiterP__1: resId: %d, reqResId: %d,  state: %d\n", ArbiterP__1__resId, ArbiterP__1__reqResId, ArbiterP__1__state
+printf "serialDemuxQ (FcfsResourceQueueC__1): head: %d  tail %d\n", FcfsResourceQueueC__1__qHead, FcfsResourceQueueC__1__qTail
+x/4ub FcfsResourceQueueC__1__resQ
 end
 document usq
 display usart arbritration queue

@@ -50,8 +50,8 @@ implementation {
   components SemaphoreC;
   SS_P.Semaphore -> SemaphoreC;
 
-  components new mm3BlockingSpi1C() as SpiWrite;
-  components new mm3BlockingSpi1C() as SpiRead;
+  components new mmBlockingSpi1C() as SpiWrite;
+  components new mmBlockingSpi1C() as SpiRead;
   SS_P.BlockingWriteResource -> SpiWrite;
   SS_P.BlockingReadResource -> SpiRead;
   SS_P.ResourceConfigure <- SpiWrite;

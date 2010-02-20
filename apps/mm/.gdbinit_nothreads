@@ -52,11 +52,11 @@ end
 
 # b AdcP.nc:219
 # comm
-# printf "PUD: owner: %d  req: %d  adc_state: %02x\n", AdcP$adc_owner, AdcP$req_client, AdcP$adc_state
+# printf "PUD: owner: %d  req: %d  adc_state: %02x\n", AdcP__adc_owner, AdcP__req_client, AdcP__adc_state
 # end
 # b AdcP.nc:372
 # comm
-# printf "PowerAlarm: owner: %d\n", AdcP$adc_owner
+# printf "PowerAlarm: owner: %d\n", AdcP__adc_owner
 # end
 # b AdcP.nc:412
 # comm
@@ -64,9 +64,9 @@ end
 # end
 # b AdcP.nc:453
 # comm
-# printf "reconfig: %d\n",AdcP$adc_owner
+# printf "reconfig: %d\n",AdcP__adc_owner
 # end
 # b AdcP.nc:492
 # comm
-# printf "release: %d %d\n",AdcP$adc_owner,client_id
+# printf "release: %d %d\n",AdcP__adc_owner,client_id
 # end
