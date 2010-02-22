@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008-2010 (c) Eric B. Decker
+ * Copyright 2010 (c) Eric B. Decker
  * All rights reserved.
  *
  * @author Eric B. Decker
@@ -10,10 +10,18 @@
 #define _H_HARDWARE_h
 
 #include "msp430hardware.h"
-#include "mm3PortRegs.h"
+#include "mm4PortRegs.h"
 
 /*
  * Port definitions:
+ *
+ * changes from mm3:
+ *
+ * . move p3.4->p3.0 tmp_on (make room for gps on p3.4)
+ * . gps serial on p3.4, p3.5 (dedicated)
+ * . dock on p3.6, p3.7 (dedicated)
+ * . adc_sdi p3.5 -> p6.6
+ *
  *
  * Various codes for port settings: (<dir><usage><default val>: Is0 <input><spi><0, zero>)
  * another nomenclature used is <value><function><direction>, 0pO (0 (zero), port, Output),
@@ -35,26 +43,27 @@
  *       .4	0pO	mag_deguass_2		      .4	0pO	solar_chg_on
  *       .5	1pO	press_res_off		      .5	0pO	extchg_battchk
  *       .6	1pO	salinity_off		      .6	1pO	gps_off
- *       .7	1pO	press_off		      .7	1pO	led_g (rf232_pwr off)
+ *       .7	1pO	press_off		      .7	0pI
  *
  * port 2.0	1pO	U8_inhibit		port 5.0	1pO	sd_pwr_off (1 = off)
- *       .1	0pO	accel_wake		      .1	0sO	sd_di (simo1, spi1)  (0pO, sd off)
- *       .2	0pO	salinity_polarity	      .2	0sI	sd_do (somi1, spi1)  (0pO, sd off)
- *       .3	1pO	u12_inhibit		      .3	0sO	sd_clk (uclk1, spi1) (0pO, sd off)
+ *       .1	0pO	accel_wake		      .1	0sO	sd_di (simo1, ub0spi)  (0pO, sd off)
+ *       .2	0pO	salinity_polarity	      .2	0sI	sd_do (somi1, ub0spi)  (0pO, sd off)
+ *       .3	1pO	u12_inhibit		      .3	0sO	sd_clk (uclk1, ub0spi) (0pO, sd off)
  *       .4	0pO	s_mux_a0		      .4	0pO	sd_csn (cs low true) (0pO, sd off)
  *       .5	0pO	s_mux_a1		      .5	0pO	rf_beeper_off
  *       .6	0pO	adc_cnv			      .6	1pO	ser_sel_a0
  *       .7	0pI	adc_da0			      .7	1pO	ser_sel_a1
  *
- * port 3.0	0pO				port 6.0	0pI	led_r
+ * port 3.0	0pO	tmp_on			port 6.0	0pI	led_r
  *       .1	0pO	s_mux_a2		      .1	0pI	led_y
  *       .2	0sI	adc_somi, adc_sdo (spi0)      .2	0pI	led_g
  *       .3	0sO	adc_clk, (uclk0, spi0)	      .3	0pO	telltale
- *       .4	0pO	tmp_on			      .4	1pO	speed_off
- *       .5	1pO	adc_sdi (not part of spi)     .5	1pO	mag_xy_off
- *			  (mode control in, adc)
- *       .6	1pO	ser_txd (uart1)		      .6	1pO
- *       .7	0pI	ser_rxd (uart1)		      .7	1pO	mag_z_off
+ *       .4	1pI	gps_txd			      .4	1pO	speed_off
+ *       .5	0pI	gps_rxd			      .5	1pO	mag_xy_off
+ *       .6	1uI	dock_txd (uart1)	      .6	1pO	adc_sdi (not part of spi)
+ *									  (mode control in, adc)
+ *       .7	0uI	dock_rxd (uart1)	      .7	1pO	mag_z_off
+ *
  */
 
 /*
@@ -72,21 +81,20 @@
  * (Smux is P2.4-5 and P3.1)
  *
  *
- * USART Pins
+ * USCI Usage
  *
- * usart 0 is dedicated to the ADC in SPI mode.  3.2-3, 5-6.
- * 2.7 is an input coming from the ADC that indicates the conversion
+ * USCI A0 is dedicated to the gps
+ *
+ * USCI A1 is dedicated to the dock serial.  When docked the serial
+ * mux selects dock_serial.  When undocked it should select none so
+ * the serial lines aren't energized.
+ *
+ * USCI B0 (spi) is dedicated to the ADC.  3.2-3, 6.6
+ * adc_da0 (2.7) is an input coming from the ADC that indicates the conversion
  * is complete.
  *
- * usart 1 is shared between the sd (spi), radio (spi), gps, and direct connect
- * (gps and direct connect use the uart).  The radio is mutually exclusive with
- * direct connect.
+ * USCI B1 (spi) is dedicated to the SD.
  *
- * uart1 is used to communicate with the direct connect cradle or with the gps.
- * The gps also connects to p1.3 which allows an interrupt to be generated when
- * the gps starts to send data.  This pin can also be used in conjunction with
- * Timer A to implement a s/w uart.  Which port is connected is determined by
- * the settings on a h/w multiplexor.
  */
 
 // LEDs
@@ -115,7 +123,6 @@ TOSH_ASSIGN_PIN(CC_VREN, 4, 5);
 TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
 
 #endif
-
 
 // need to undef atomic inside header files or nesC ignores the directive
 #undef atomic
@@ -180,25 +187,31 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
 #define P2_BASE_VAL	0x09
 
 /*
- * rx in, tx out/1, adc_sdi high (sets mode), temp off, s_mux 0
- * ser_txd is set to 1 (mark).
+ * tmp_on 0 (off), s_mux 0, adc_somi/adc_clk assigned to
+ * spi.  GPS is off so we don't want to power it via its
+ * uart pins.  Set to 0 (both inputs)  Dock uart is assumed
+ * off (ser_sel <- None), set to inputs.
  *
- * ADC_SDO and ADC_CLK are assigned to SPI0
+ * Initially, both the gps and dock ports are assigned to port
+ * function.  This allows us to directly control the state of
+ * the port so when disconnected the pins aren't energized.
+ *
+ * ADC_SDO and ADC_CLK are assigned to USCI B0 SPI.
  */
-#define P3_BASE_DIR	0x7b
-#define P3_BASE_VAL	0x60
+#define P3_BASE_DIR	0x0b
+#define P3_BASE_VAL	0x50
 #define P3_BASE_SEL	0x0c
 
 /* gps off, no batt chk, no solar, vref/vdiff off, g_mux 0 */
-#define P4_BASE_DIR	0xff
-#define P4_BASE_VAL	0xcc
+#define P4_BASE_DIR	0x7f
+#define P4_BASE_VAL	0x4c
 
 /*
  * ser_sel 3 (none), beeper off, sd bits 0pO, sd pwr off 1pO
- * (when powered off we dont want to power the chip via any of its other
+ * (when powered off we dont want to power the sd via any of its other
  * pins).  So set any pins connected to the SD to output 0.
  */
-#define P5_BASE_DIR	0xff
+#define P5_BASE_DIR	0xfb
 #define P5_BASE_VAL	0xe1
 
 /* mag pwr off */

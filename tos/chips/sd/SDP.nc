@@ -12,7 +12,6 @@
 #include <msp430usart.h>
 #include <msp430hardware.h>
 #include "hardware.h"
-#include "mm3PortRegs.h"
 #include "sd.h"
 
 #define SD_PUT_GET_TO 1024

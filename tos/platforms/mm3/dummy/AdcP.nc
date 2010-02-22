@@ -36,7 +36,6 @@
 
 #include "hardware.h"
 #include "sensors.h"
-#include "mm3PortRegs.h"
 
 //#define FAKE_ADC
 

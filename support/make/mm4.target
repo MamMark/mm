@@ -1,14 +1,14 @@
 # -*-Makefile-*- vim:syntax=make
 
 #
-# mm3 is based on msp430f1611
+# mm4 is based on msp430f2618
 # see tos/platform/mm3/hardware.h for how the pins are assigned.
 #
 
-PLATFORM ?= mm3
+PLATFORM ?= mm4
 
 # THREADS_MSP430_DIR comes from main tree support/make/threads.extra
-# mm3 is based on the msp430 so we use that threads variant.
+# mm4 is based on the msp430 so we use that threads variant.
 #
 # PFLAGS gets invoked first on the command line followed by CFLAGS
 #
@@ -19,7 +19,7 @@ CFLAGS += $(THREADS_MSP430_INCLUDE_DIRS)
 #CFLAGS += $(THREADS_TELOS_INCLUDE_DIRS)
 endif
 
-#MSP_MCU = msp430x1611
+#MSP_MCU = msp430x2618
 
 #
 # The first PFLAGS addition, platforms/mm3 must be here otherwise
@@ -30,12 +30,14 @@ endif
 #
 
 PFLAGS += -I$(MM_ROOT)/include
+PFLAGS += -I$(MM_ROOT)/tos/platforms/mm4
 PFLAGS += -I$(MM_ROOT)/tos/platforms/mm3
 PFLAGS += -I$(MM_ROOT)/tos/system
 PFLAGS += -I$(MM_ROOT)/tos/interfaces
 
 # Disable MSP430 hardware multiply because it makes MSPGCC die
 PFLAGS += -mdisable-hwmul
+PFLAGS += -mdata-64k
 
 OPTFLAGS += -O
 
@@ -51,5 +53,5 @@ endif
 
 $(call TOSMake_include_platform,msp)
 
-mm3: $(BUILD_DEPS)
+mm4: $(BUILD_DEPS)
 	@:

@@ -5,11 +5,13 @@
 #
 # $(MM_ROOT)/support/make/mm4.target includes PFLAG modifications that
 # set up include paths that come in first.  That is where
-# $(MM_ROOT)/tos/platforms/mm3 is included.
+# $(MM_ROOT)/tos/platforms/mm4 and /mm3 are included.  That is why
+# %P and %P/../mm3 don't show up below.
 #
-# %P refers to the local platform file: $(MM_ROOT)/tos/platforms/mm3
+# %P refers to the local platform file: $(MM_ROOT)/tos/platforms/mm4
 # %P/../.. gets us to tos/
-# %P/../../.. is root of the tree.
+# %P/../../.. is root of the tree.  ie. $(MM_ROOT) which doesn't
+# work in this file.
 #
 # %P/../../../support/utils/include
 # %P/../../../include

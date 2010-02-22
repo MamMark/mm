@@ -4,3 +4,4 @@ Oops
 build
 build/*/.gdbinit
 doc/nesdoc
+support/utils/mkdblk/mkdblk
