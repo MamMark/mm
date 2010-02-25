@@ -2,34 +2,6 @@
  * Copyright (c) 2008-2010 Eric B. Decker
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * - Redistributions of source code must retain the above copyright
- *   notice, this list of conditions and the following disclaimer.
- * - Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in the
- *   documentation and/or other materials provided with the
- *   distribution.
- * - Neither the name of the Stanford University nor the names of
- *   its contributors may be used to endorse or promote products derived
- *   from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL STANFORD
- * UNIVERSITY OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- * OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/**
  * @author Eric B. Decker (cire831@gmail.com)
  * @date 28 May 2008
  *
@@ -64,75 +36,14 @@ uint8_t gbuf[GPS_EAVES_SIZE];
 uint16_t g_idx;
 
 #if GPS_SPEED==4800
-#define GPS_OP_SERIAL_CONFIG gps_4800_serial_config
+#define GPS_OP_SERIAL_CONFIG sirf3_4800_serial_config
 #elif GPS_SPEED==57600
-#define GPS_OP_SERIAL_CONFIG gps_57600_serial_config
+#define GPS_OP_SERIAL_CONFIG sirf3_57600_serial_config
 #else
 #error "GPS_SPEED not valid (see gps.h), 4800 or 57600"
 #endif
 
-#if defined(PLATFORM_MM3)
-/*
- * MM3, 1611, uses lots of control bits
- */
-
-const msp430_uart_union_config_t gps_4800_serial_config = { {
-  ubr:   UBR_4MHZ_4800,
-  umctl: UMCTL_4MHZ_4800,
-  ssel: 0x02,			// smclk selected (DCO, 4MHz)
-  pena: 0,			// no parity
-  pev: 0,			// no parity
-  spb: 0,			// one stop bit
-  clen: 1,			// 8 bit data
-  listen: 0,			// no loopback
-  mm: 0,			// idle-line
-  ckpl: 0,			// non-inverted clock
-  urxse: 0,			// start edge off
-  urxeie: 1,			// error interrupt enabled
-  urxwie: 0,			// rx wake up disabled
-  utxe : 1,			// tx interrupt enabled
-  urxe : 1			// rx interrupt enabled
-} };
-
-
-const msp430_uart_union_config_t gps_57600_serial_config = { {
-  ubr:   UBR_4MHZ_57600,
-  umctl: UMCTL_4MHZ_57600,
-  ssel: 0x02,			// smclk selected (DCO, 4MHz)
-  pena: 0,			// no parity
-  pev: 0,			// no parity
-  spb: 0,			// one stop bit
-  clen: 1,			// 8 bit data
-  listen: 0,			// no loopback
-  mm: 0,			// idle-line
-  ckpl: 0,			// non-inverted clock
-  urxse: 0,			// start edge off
-  urxeie: 1,			// error interrupt enabled
-  urxwie: 0,			// rx wake up disabled
-  utxe : 1,			// tx interrupt enabled
-  urxe : 1			// rx interrupt enabled
-} };
-
-#elif defined(PLATFORM_MM4)
-/*
- * MM4, 2618, so simplified control parameters.
- */
-
-const msp430_uart_union_config_t gps_4800_serial_config = { {
-  ubr:   UBR_4MHZ_4800,
-  umctl: UMCTL_4MHZ_4800
-} };
-
-
-const msp430_uart_union_config_t gps_57600_serial_config = { {
-  ubr:   UBR_4MHZ_57600,
-  umctl: UMCTL_4MHZ_57600
-} };
-
-#else
-#error need one of PLATFORM_MM3, PLATFORM_MM4, or PLATFORM_MM5 defined.
-#endif
-
+#include "platform_sirf3_serial.h"
 
 typedef enum {
   GPSC_FAIL = 1,
@@ -868,7 +779,7 @@ implementation {
 	mmP5out.ser_sel = SER_SEL_GPS;
 	t_gps_pwr_on = call LocalTime.get();
 	call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
-	call Usart.setModeUart((msp430_uart_union_config_t *) &gps_4800_serial_config);
+	call Usart.setModeUart((msp430_uart_union_config_t *) &sirf3_4800_serial_config);
 	return;
 
       case GPSC_RECONFIG_4800_START_DELAY:
@@ -1073,7 +984,7 @@ implementation {
 	gpsc_change_state(GPSC_FINI_WAIT, GPSW_SEND_DONE);
 	post gps_config_task();
 	while (!call Usart.isTxEmpty()) ;
-	call Usart.setModeUart((msp430_uart_union_config_t *) &gps_4800_serial_config);
+	call Usart.setModeUart((msp430_uart_union_config_t *) &sirf3_4800_serial_config);
 	call Usart.enableIntr();
 	break;
 

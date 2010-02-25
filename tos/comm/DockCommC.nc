@@ -5,7 +5,7 @@
  
 #include "sensors.h"
 
-configuration mmSerialCommC {
+configuration DockCommC {
   provides {
     interface Send[uint8_t id];
     interface SendBusy[uint8_t id];
@@ -21,25 +21,25 @@ configuration mmSerialCommC {
 
 implementation {
   components MainC;
-  components mmSerialCommP;
+  components DockCommP;
   components new SerialAMSenderC(AM_MM_DATA);
   components new AMQueueImplP(MM_NUM_SENSORS), SerialActiveMessageC;
   
-  MainC.SoftwareInit -> mmSerialCommP;
+  MainC.SoftwareInit -> DockCommP;
 
   Send = AMQueueImplP;
   SendBusy = AMQueueImplP;
-  Resource = mmSerialCommP;
-  ResourceRequested = mmSerialCommP;
+  Resource = DockCommP;
+  ResourceRequested = DockCommP;
   AMPacket = SerialAMSenderC;
   Packet = SerialAMSenderC;
   SplitControl = SerialActiveMessageC;
   
-  mmSerialCommP.SubAMSend[AM_MM_DATA] -> SerialAMSenderC;
-  AMQueueImplP.AMSend -> mmSerialCommP.AMSend;
+  DockCommP.SubAMSend[AM_MM_DATA] -> SerialAMSenderC;
+  AMQueueImplP.AMSend -> DockCommP.AMSend;
   AMQueueImplP.Packet -> SerialAMSenderC;
   AMQueueImplP.AMPacket -> SerialAMSenderC;
   
   components LedsC;
-  mmSerialCommP.Leds -> LedsC;
+  DockCommP.Leds -> LedsC;
 }

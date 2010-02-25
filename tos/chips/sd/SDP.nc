@@ -14,6 +14,8 @@
 #include "hardware.h"
 #include "sd.h"
 
+#include "platform_sd_spi.h"
+
 #define SD_PUT_GET_TO 1024
 #define SD_PARANOID
 

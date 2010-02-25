@@ -41,11 +41,11 @@ push( @includes, qw(
   %P/../../chips/sensors
   %P/../../chips/sirf3
   %T/chips/cc2420
-  %T/chips/msp430
-  %T/chips/msp430/pins
-  %T/chips/msp430/timer
-  %T/chips/msp430/usart
-  %T/chips/msp430/dma
+  %T/chips/msp430X
+  %T/chips/msp430X/pins
+  %T/chips/msp430X/timer
+  %T/chips/msp430X/usci
+  %T/chips/msp430X/dma
   %T/lib/timer
   %T/lib/serial
   %T/lib/power
@@ -54,7 +54,7 @@ push( @includes, qw(
 @opts = qw(
 
   -gcc=msp430-gcc
-  -mmcu=msp430x1611
+  -mmcu=msp430x2618
   -fnesc-target=msp430
   -fnesc-no-debug
 );

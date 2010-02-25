@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2008 (c) Eric B. Decker
+ * Copyright 2008, 2010 (c) Eric B. Decker
  * All rights reserved.
  *
  * @author Eric B. Decker
@@ -14,14 +14,14 @@ configuration PlatformSerialC {
 
 implementation {
   components new Msp430Uart1C() as UartC;
-  UartStream = UartC;  
+  UartStream = UartC;
   UartByte = UartC;
-  
-  components mmSerialP;
-  StdControl = mmSerialP;
-  mmSerialP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
-  
-  components mmSerialCommC;
-  mmSerialCommC.Resource -> UartC.Resource;
-  mmSerialCommC.ResourceRequested -> UartC.ResourceRequested;
+
+  components mm3DockSerialP;
+  StdControl = mm3DockSerialP;
+  mm3DockSerialP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
+
+  components DockCommArbiterC;
+  DockCommArbiterC.Resource -> UartC.Resource;
+  DockCommArbiterC.ResourceRequested -> UartC.ResourceRequested;
 }

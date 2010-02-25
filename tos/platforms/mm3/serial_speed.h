@@ -1,12 +1,17 @@
 /*
  * serial_speed.h - define msp430 values for different baud rates
- * Copyright 2008, Eric B. Decker
+ * Copyright 2008, 2010 Eric B. Decker
+ *
  * Mam-Mark Project
+ *
+ * MM3, 1611, 4 MHz DCO -> SMCLK, various serial speed settings.
+ *
+ * These defines are used to program the MSP430 USART in UART mode.
+ * UBR is baud rate setting.  UMCTL is the modulation control setting.
  */
 
 #ifndef __SERIAL_SPEED_H__
 #define __SERIAL_SPEED_H__
-
 
 
 enum {

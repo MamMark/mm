@@ -5,14 +5,19 @@
 
 /**
  * mmComm provides a single interface that can be switched between
- * the radio or the direct connect serial line.
+ * the radio or the dock serial.
  *
  * Each channel (control, debug, or data) contends for the comm line.
  * Data packets contend with each other before contending for the
  * comm line with control and debug traffic.
  *
+ * DockComm provides the interface to the dock serial port.
+ * DockCommArbiter assumes that the dock serial port is shared
+ * and is arbitrated.  DockComm assumes the port is dedicated.
+ *
  * @author Eric B. Decker
  * @date   Apr 3 2008
+ * @date   Feb 24 2010
  */ 
 
 #include "AM.h"
@@ -20,7 +25,7 @@
 
 uint16_t mmSerial_busy;
 
-module mmSerialCommP {
+module DockCommArbiterP {
   provides {
     interface Init;
     interface AMSend[uint8_t id];

@@ -1,8 +1,9 @@
 /**
  *
- * Copyright 2008 (c) Kevin Klues
+ * Copyright 2008 (c) Eric Decker
  * All rights reserved.
  *
+ * @author Eric Decker
  * @author Kevin Klues
  */
 

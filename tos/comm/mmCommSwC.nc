@@ -31,12 +31,12 @@ implementation {
 //  mmCommSwP.AsyncStdControl = AsyncStdControl;
 //  mmCommSwP.ResourceDefaultOwner = ResourceDefaultOwner;
   
-  components mmSerialCommC;
-  mmCommSwP.SerialSend     -> mmSerialCommC;
-  mmCommSwP.SerialSendBusy -> mmSerialCommC;
-  mmCommSwP.SerialAMPacket -> mmSerialCommC;
-  mmCommSwP.SerialPacket   -> mmSerialCommC;
-  mmCommSwP.SerialAMControl-> mmSerialCommC;
+  components DockCommArbiterC;
+  mmCommSwP.SerialSend     -> DockCommArbiterC;
+  mmCommSwP.SerialSendBusy -> DockCommArbiterC;
+  mmCommSwP.SerialAMPacket -> DockCommArbiterC;
+  mmCommSwP.SerialPacket   -> DockCommArbiterC;
+  mmCommSwP.SerialAMControl-> DockCommArbiterC;
 
   components mmRadioCommC;
   mmCommSwP.RadioSend     -> mmRadioCommC;

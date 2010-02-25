@@ -228,35 +228,41 @@ inline void uwait(uint16_t u) {
 void TOSH_MM_INITIAL_PIN_STATE(void) {
   atomic {
     SVSCTL = 0;			/* for now, disable SVS */
-    U0CTL = SWRST;		/* hold USART0 in reset */
-    U1CTL = SWRST;		/* and  USART1 as well  */
-    ME1 = 0;
-    ME2 = 0;
+    UCA0CTL1 = UCSWRST;		/* hold gps uart in reset */
+    UCA1CTL1 = UCSWRST;		/* hold dock uart in reset */
+    UCB0CTL1 = UCSWRST;		/* hold ADC spi in reset */
+    UCB1CTL1 = UCSWRST;		/* hold SD spi in reset */
 
+    P1REN = 0;
     P1SEL = 0;			/* all ports port function */
     P1DIR = P1_BASE_DIR;
     P1OUT = P1_BASE_VAL;
     P1IES = 0;
     P1IFG = 0;
 
+    P2REN = 0;
     P2SEL = 0;
     P2DIR = P2_BASE_DIR;
     P2OUT = P2_BASE_VAL;
     P2IES = 0;
     P2IFG = 0;
 
+    P3REN = 0;
     P3SEL = P3_BASE_SEL;
     P3DIR = P3_BASE_DIR;
     P3OUT = P3_BASE_VAL;
 
+    P4REN = 0;
     P4SEL = 0;
     P4DIR = P4_BASE_DIR;
     P4OUT = P4_BASE_VAL;
 
+    P5REN = 0;
     P5SEL = 0;
     P5DIR = P5_BASE_DIR;
     P5OUT = P5_BASE_VAL;
 
+    P6REN = 0;
     P6SEL = 0;
     P6DIR = P6_BASE_DIR;
     P6OUT = P6_BASE_VAL;

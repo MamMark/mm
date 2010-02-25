@@ -17,7 +17,10 @@
 
 /**
  * The Hpl_MM_hw interface exports low-level access to control registers
- * of the Mam_Mark ADC subsystem.
+ * of the mammark h/w.
+ *
+ * It works for both the MM3 and MM4 hardware as h/w differences are reflected
+ * in defines controlled by port definition files in the platform directory.
  *
  * @author Eric B. Decker
  */
@@ -228,8 +231,8 @@ implementation {
   }
 
   async command void HW.gps_off() {
-    if (mmP5out.ser_sel == SER_SEL_GPS)
-      mmP5out.ser_sel = SER_SEL_NONE;
+    if (SER_SEL == SER_SEL_GPS)
+      SER_SEL = SER_SEL_NONE;
     mmP4out.gps_off = 1;
   }
 }
