@@ -1,0 +1,2 @@
+COMPONENT=SerialDirectAppC
+include $(MAKERULES)
