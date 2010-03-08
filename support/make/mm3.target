@@ -28,9 +28,13 @@ endif
 # other stuff that comes in via the CFLAGS varient.  Stuff in the .platform
 # file come in last after PFLAGS and CFLAGS.
 #
+# shared platform files shared across MM varients are held in platforms/mm
+# There is no make support for mm.  (no target file in support/make).
+#
 
 PFLAGS += -I$(MM_ROOT)/include
 PFLAGS += -I$(MM_ROOT)/tos/platforms/mm3
+PFLAGS += -I$(MM_ROOT)/tos/platforms/mm
 PFLAGS += -I$(MM_ROOT)/tos/system
 PFLAGS += -I$(MM_ROOT)/tos/interfaces
 

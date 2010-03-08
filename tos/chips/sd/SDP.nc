@@ -9,7 +9,6 @@
  * a threaded implementation.
  */
 
-#include <msp430usart.h>
 #include <msp430hardware.h>
 #include "hardware.h"
 #include "sd.h"
@@ -25,7 +24,14 @@ module SDP {
     interface Init;
   }
   uses {
-    interface HplMsp430Usart as Usart;
+#if defined(PLATFORM_MM3)
+    interface HplMsp430Usart as Umod;
+#elif defined(PLATFORM_MM4)
+    interface HplMsp430UsciB as Umod;
+#else
+#error "One of MM3 or MM4 need to be defined"
+#endif
+    
     interface Panic;
     interface BlockingSpiPacket;
   }
@@ -48,26 +54,26 @@ implementation {
     uint8_t tmp;
 
 #ifdef SD_PARANOID
-    if (!(U1_TX_EMPTY)) {
+    if (SD_SPI_BUSY) {
       call Panic.panic(PANIC_SD, 1, 0, 0, 0, 0);
       /*
        * how to clean out the transmitter?  It could be
        * hung.  Which would be weird.
        */
     }
-    if (U1_OVERRUN) {
-      call Panic.panic(PANIC_SD, 2, U1RCTL, 0, 0, 0);
-      URCTL &= ~OE;
+    if (SD_SPI_OVERRUN) {
+      call Panic.panic(PANIC_SD, 2, SD_SPI_OE_REG, 0, 0, 0);
+      SD_SPI_CLR_OE;
     }
-    if (U1_RX_RDY) {
-      tmp = U1RXBUF;
+    if (SD_SPI_RX_RDY) {
+      tmp = SD_SPI_RX_BUF;
       call Panic.panic(PANIC_SD, 3, tmp, 0, 0, 0);
     }
 #else
-    if (U1_OVERRUN)
-      U1RCTL &= ~OE;
-    if (U1_RX_RDY)
-      tmp = U1RXBUF;
+    if (SD_SPI_OVERRUN)
+      SD_SPI_CLR_OE;
+    if (SD_SPI_RX_RDY)
+      tmp = SD_SPI_RX_BUF;
 #endif
   }
 
@@ -75,19 +81,19 @@ implementation {
     uint16_t i;
 
     sd_chk_clean();
-    U1TXBUF = tx_data;
+    SD_SPI_TX_BUF = tx_data;
 
     i = SD_PUT_GET_TO;
-    while ( !(U1_RX_RDY) && i > 0)
+    while ( !(SD_SPI_RX_RDY) && i > 0)
       i--;
     if (i == 0)				/* rx timeout */
       call Panic.panic(PANIC_SD, 4, 0, 0, 0, 0);
-    if (U1_OVERRUN)
+    if (SD_SPI_OVERRUN)
       call Panic.panic(PANIC_SD, 5, 0, 0, 0, 0);
 
     /* clean out RX buf and the IFG. */
-    U1_CLR_RX;
-    tx_data = U1RXBUF;
+    SD_SPI_CLR_RXINT;
+    tx_data = SD_SPI_RX_BUF;
   }
 
 
@@ -95,23 +101,23 @@ implementation {
     uint16_t i;
 
     sd_chk_clean();
-    U1TXBUF = 0xff;
+    SD_SPI_TX_BUF = 0xff;
 
     i = SD_PUT_GET_TO;
-    while ( !U1_RX_RDY && i > 0)
+    while ( !SD_SPI_RX_RDY && i > 0)
       i--;
 
     if (i == 0)				/* rx timeout */
       call Panic.panic(PANIC_SD, 6, 0, 0, 0, 0);
 
-    if (U1_OVERRUN)
+    if (SD_SPI_OVERRUN)
       call Panic.panic(PANIC_SD, 7, 0, 0, 0, 0);
 /*
- * do not explicitly clear the rx interrupt.  reading u1rxbuf will
+ * do not explicitly clear the rx interrupt.  reading SD_SPI_RX_BUF will
  * clear it automatically.
  */
-//  U1_CLR_RX;
-    return(U1RXBUF);
+//  SD_SPI_CLR_RXINT;
+    return(SD_SPI_RX_BUF);
   }
 
 
@@ -319,18 +325,6 @@ implementation {
   }
 
 
-  const msp430_spi_union_config_t sd_400K_config = { {
-    ubr    : SPI_400K_DIV,
-    ssel   : 0x02,
-    clen   : 1,
-    listen : 0,
-    mm     : 1,
-    ckph   : 1,
-    ckpl   : 0,
-    stc    : 1
-  } };
-
-
   /* Reset the SD card.
      ret:	    0,	card initilized
      non-zero, error return
@@ -344,7 +338,7 @@ implementation {
     sd_cmd_blk_t *cmd;
 
     cmd = &sd_cmd;
-    call Usart.setModeSpi((msp430_spi_union_config_t *)&sd_400K_config);
+    call Umod.setModeSpi((msp430_spi_union_config_t *) &sd_400K_config);
     sd_packarg(0);
 
     /* Clock out at least 74 bits of idles (0xFF).  This allows
@@ -420,7 +414,7 @@ implementation {
     }
 
     /* If we got this far, initialization was OK. */
-    call Usart.setModeSpi(&msp430_spi_default_config);
+    call Umod.setModeSpi((msp430_spi_union_config_t *) &SD_FULL_SPEED_CONFIG);
     return SUCCESS;
   }
 
@@ -561,22 +555,24 @@ implementation {
     }
 
     idle_byte = 0xff;
-    U1IFG &= ~(URXIFG1 | UTXIFG1);
 
-    DMA0SA  = (uint16_t) &U1RXBUF;
+    /* do you really want to clear the tx interrupt? */
+    SD_SPI_CLR_BOTH;			/* clear rx and tx ints */
+
+    DMA0SA  = (uint16_t) &SD_SPI_RX_BUF;
     DMA0DA  = (uint16_t) data;
     DMA0SZ  = data_len;
     DMA0CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_EN |
       DMA_DST_INC | DMA_SRC_NC;
 
     DMA1SA  = (uint16_t) &idle_byte;
-    DMA1DA  = (uint16_t) &U1TXBUF;
+    DMA1DA  = (uint16_t) &SD_SPI_TX_BUF;
     DMA1SZ  = data_len - 1;
     DMA1CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_EN |
       DMA_DST_NC | DMA_SRC_NC;
 
     DMACTL0 = DMA1_TSEL_U1RX | DMA0_TSEL_U1RX;
-    U1TXBUF = 0xff;
+    SD_SPI_TX_BUF = 0xff;
 
     while (DMA0CTL & DMA_EN)	/* wait for chn 0 to finish */
       ;
@@ -725,16 +721,16 @@ implementation {
     if (tmp != 0xff)
       call Panic.panic(PANIC_SD, 28, tmp, 0, 0, 0);
 
-    U1IFG = ~(URXIFG1 | UTXIFG1);
+    SD_SPI_CLR_BOTH;
     DMA0SA = (uint16_t) data;
-    DMA0DA = (uint16_t) &U1TXBUF;
+    DMA0DA = (uint16_t) &SD_SPI_TX_BUF;
     DMA0SZ = SD_BLOCKSIZE;
     DMA0CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_EN |
       DMA_DST_NC | DMA_SRC_INC;
     DMACTL0 = DMA0_TSEL_U1TX;
 
     /* Send start block token to start the transfer */
-    U1TXBUF = SD_TOK_WRITE_STARTBLOCK;
+    SD_SPI_TX_BUF = SD_TOK_WRITE_STARTBLOCK;
     return SUCCESS;
   }
 
@@ -774,8 +770,8 @@ implementation {
      * to empty.  Then we should have seen the last char received and
      * we can successfully clean out both data avail and the overrun.
      */
-    while (!(U1_TX_EMPTY)) {
-#ifdef not
+    while (SD_SPI_BUSY) {
+#ifdef notdef
       /*
        * Need a timeout
        */
@@ -785,11 +781,11 @@ implementation {
 #endif
     }
 
-    tmp = U1IFG;
-    U1_CLR_RX;
-    tmp = U1RXBUF;		/* clean out OE and data avail */
+    tmp = SD_SPI_IFG;
+    SD_SPI_CLR_RXINT;
+    tmp = SD_SPI_RX_BUF;		/* clean out OE and data avail */
 
-    if (!(U1_TX_EMPTY) || U1_RX_RDY)
+    if (SD_SPI_BUSY)
       call Panic.panic(PANIC_SD, 30, 0, 0, 0, 0);
 
     sd_put(0xff);		/* crc ignored */

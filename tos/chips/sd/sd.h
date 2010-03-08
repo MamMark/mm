@@ -10,19 +10,9 @@
 
 /*
  * hardware interface dependencies can be found in
- * tos/platforms/<platform>/hardware.h
- *
+ * tos/platforms/<platform>/hardware.h and platform_sd_spi.h
  */
 
-/*
- * when reseting the SD we don't want to be any faster
- * then 400KHz.  We divide by 11 to be on the safe side.
- * Normal operation we run with the maximum clock rate which
- * is /2.  Which is the minimum UBR allowed.
- */
-
-#define SPI_400K_DIV 11
-#define SPI_2M_DIV    2
 #define SD_RESET_IDLES  74
 
 #define SD_BLOCKSIZE 512

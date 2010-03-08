@@ -3,13 +3,16 @@
 # @includes instead of -I's to @opts, otherwise the %T won't be processed
 # by ncc.
 #
-# $(MM_ROOT)/support/make/mm4.target includes PFLAG modifications that
+# $(MM_ROOT)/support/make/mm3.target includes PFLAG modifications that
 # set up include paths that come in first.  That is where
 # $(MM_ROOT)/tos/platforms/mm3 is included.
 #
 # %P refers to the local platform file: $(MM_ROOT)/tos/platforms/mm3
 # %P/../.. gets us to tos/
 # %P/../../.. is root of the tree.
+#
+# support/utils/include moved to include.   include is pulled in via
+# the support/make/mm3.target.
 #
 # %P/../../../support/utils/include
 # %P/../../../include

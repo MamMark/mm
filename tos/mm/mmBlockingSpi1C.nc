@@ -52,7 +52,7 @@ implementation {
   BlockingSpiByte   = BlockingSpiP;
   BlockingSpiPacket = BlockingSpiP;
   
-  components new mm3Spi1C() as SPI_1;
+  components new mmSpi1C() as SPI_1;
 //  components new Msp430Spi1C() as SPI_1;
   SpiResourceConfigure = SPI_1;
   ResourceConfigure = SPI_1;

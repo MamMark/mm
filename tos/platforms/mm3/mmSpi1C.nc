@@ -1,6 +1,6 @@
 #include "msp430usart.h"
 
-generic configuration mm3Spi1C() {
+generic configuration mmSpi1C() {
 
   provides {
     interface Resource;

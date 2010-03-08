@@ -6,17 +6,12 @@
  * @author Eric B. Decker
  */
 
-#include "serial_speed.h"
-
 #include "platform_dock_serial.h"
 
-module mm3DockSerialP {
+module mmDockSerialP {
   provides {
     interface StdControl;
     interface Msp430UartConfigure;
-  }
-  uses {
-    interface HplMsp430Usart as Usart;
   }
 }
 implementation {

@@ -19,5 +19,5 @@ implementation {
   SDP.BlockingSpiPacket -> StreamStorageC;
 
   components HplMsp430Usart1C as UsartC;
-  SDP.Usart -> UsartC;
+  SDP.Umod -> UsartC;
 }

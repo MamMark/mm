@@ -11,7 +11,6 @@
 #define _H_PLATFORM_DOCK_SERIAL_H
 
 #include "msp430usart.h"
-#include "serial_speed.h"
 
 /*
  * MM3, 1611, uses lots of control bits

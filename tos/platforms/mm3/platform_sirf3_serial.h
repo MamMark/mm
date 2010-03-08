@@ -10,7 +10,6 @@
 #define _H_MM3SIRF3_DEFS_H
 
 #include "msp430usart.h"
-#include "serial_speed.h"
 
 /*
  * MM3, 1611, uses lots of control bits
