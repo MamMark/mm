@@ -1,0 +1,127 @@
+3/10/2010 v0.2
+
+MM3 version changed to reflect MM4 changes.
+
+Overview of MamMark 4 Communications Sub-system
+
+1. MamMark 4 Hardware.
+
+The MamMark 4 is a small embedded computer system intended to be used to
+monitor marine and terrestrial animals.  Its hardware includes:
+
+. TI MSP430F2618 MCU.
+
+. external 16 bit ADC converter connected to SPI0 (UsciB0, dedicated)
+. various external sensors connected to 16 bit ADC
+
+. Dock serial (cradle), Uart1, UsciA1, dedicated.
+
+. GPS serial, UART0, UsciA0, external mux
+
+. CC2420 Radio, not present
+
+. Mass Storage on external Secure Digital card, SPI1, UsciB1, dedicated.
+
+
+2. Mass Storage
+
+Mass Storage is implemented using a 2 Gigabyte Secure Digital card.  A
+custom SD driver implements the interface to the SD card.  The card sits
+on the SPI bus and must arbritrate for any shared resources before access.
+Data going to the SD card is packetized into sectors of 512 bytes.
+
+The driver is forced to poll the SD card when implementing the SD protocol.
+No hardware events are available.  This requires either busy wait delays or
+using timers.  Timers have somewhat higher overhead while the busy waits keeps
+the cpu busy.  The driver was ported from a previous design (non-TinyOS) and the
+least expensive (in terms of development effort) implementation uses threads.
+
+The storage system uses a fixed number of buffers to feed the data stream going
+to the SD card.  If these buffers get exhausted a failure is signaled.
+
+The primary impact on the rest of the system is the necessity of sharing.
+Mechanisms are needed that allow other subsystems to signal the need for the
+resource.  The owner can then decide when it is appropriate to release the
+resource followed by an appropriate rerequest.
+
+3. Communications Structure
+
+Communications is needed via the serial port (cradle, docked), via the Radio (when
+surfaced and the in a resonable location for the communications to occur), and when
+talking to the GPS module.
+
+The serial port is multiplexed between the GPS and the cradle.  Further when the
+radio is active it needs to own the SPI1/USART1 resource as well.  The SD also
+uses SPI1/USART1.
+
+When the device is submerged, no communications is needed, NONE owns the resource.
+When docked, communications makes use of the direct connect serial mechanism (SERIAL).
+When the tag is in a defined GPS location, the radio will be enabled and used for
+communications (RADIO).
+
+When a subsytem owns the hardware it will be looking to collect packets for receive
+and sending packets for transmit.  While owned it should be prepared to release
+the resource if another subsystem requests.  However this should only happen when
+the subsystem is in an idle state.  Ie. at a packet boundary so that some level
+of forward progress can be made.  Currently there are no provisions in the serial
+stack nor the radio stack for packet boundary detection/release.
+
+
+Issues:
+
+- The ResourceRequested interface will only connect to the actual owner of the
+  resource.  If multiple requesters occur at the same time and prior to one
+  of them being granted, the fact that other requesters are present isn't seen
+  by the eventual owner of the resource.
+
+- We want some kind of default owner implementation to handle the condition
+  when no communications is occuring.  This will allow turning off using
+  DCO sourcing SMCLK which in turn allows setting the CPU into a lower power
+  mode when sleeping.
+
+- we need a mechanism to periodically resync the DCO (which supplies the clock
+  to the subsystem clock for the UART hardward, baud rate) to ACLK.  Currently
+  this only occurs once on boot.
+
+- We tried an experimental implementation giving ownership to SERIAL (immediate
+  request).  When another subsystem (SD, GPS, etc) requests ResourceRequested.requested
+  will be signalled.  SERIAL (the current owner) will receive this event and do
+  a Release followed by another Request.
+
+  The intent is to release thus allowing the requesting subsystem to get in and use
+  the resource with SERIAL being queued up for later access.
+
+  However this doesn't work.  The default Arbiter implementation signals requested when
+  the new subsystem call request.  However, the new subsystem request hasn't been queued
+  when the requested event is signaled.  The Release/Request then causes the same owner
+  to own the resource.
+
+
+What I need:
+
+1) Mechanism that allows a dynamic ownership of the resource (USART1) with signalling
+   that indicates new requesters so an owner can release and possibly rerequest appropriately.
+
+2) Serial and Radio stack modifications that allow detection of packet boundaries (idle)
+   so appropriate release points (if others are requesting) can be defined.
+
+
+
+The mm3 platform source tree can be gotten via:
+
+mkdir mm_t2
+cd mm_t2
+svn co svn://<repo_site>/mammark_tinyos2/t2_mm3
+
+this will create mm_t2/t2_mm3.
+
+I also have some changes to the t2.1 tree.  Assuming that mm_t2/t2_cur/tinyos-2.x holds
+the current cvs tip of the t2.1 tree apply patches...
+
+cd mm_t2
+mkdir t2_cur
+cd t2_cur
+cvs -z3 -d:pserver:anonymous@tinyos.cvs.sourceforge.net:/cvsroot/tinyos co -P tinyos-2.x
+
+for i in ../../t2_mm3/Added_Bits/*.patch; do \
+    patch -p0 < $i ; done
