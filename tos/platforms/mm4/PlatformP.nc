@@ -10,7 +10,7 @@
 
 #ifdef notdef
 
-#define STUFF_SIZE 256
+#define STUFF_SIZE 32
 
 noinit struct {
   uint8_t dcoctl;
@@ -38,7 +38,7 @@ void set_stuff() {
 }
 
 #endif
-      
+
 
 module PlatformP{
   provides {
@@ -54,27 +54,49 @@ module PlatformP{
 
 implementation {
 
-#define PWR_UP_CYCLES_32KHZ 128
+#define PWR_UP_SEC 16
 
+  /*
+   * We assume that the clock system after reset has been
+   * set to some reasonable value.  ie ~1MHz.  We assume that
+   * all the selects are 0, ie.  DIVA/1, XTS 0, XT2OFF, SELM 0,
+   * DIVM/1, SELS 0, DIVS/1.  MCLK <- DCO, SMCLK <- DCO,
+   * LFXT1S 32768, XCAP ~6pf
+   *
+   * We wait about a second for the 32KHz to stablize.
+   */
   void wait_for_32K() __attribute__ ((noinline)) {
-    uint16_t t1, t2;
+    uint16_t left, t1;
 
+    left = PWR_UP_SEC;
     TACTL = TACLR;
     TAIV = 0;
     TBCTL = TBCLR;
     TBIV = 0;
-    TACTL = TASSEL1 | MC1; // source SMCLK, continuous mode, everything else 0
-    TBCTL = TBSSEL0 | MC1;
-    BCSCTL1 = XT2OFF | RSEL2;
-    BCSCTL2 = 0;
+    TACTL = TASSEL_2 | MC_2;	// SMCLK/1, continuous
+    TBCTL = TBSSEL_1 | MC_2;	//  ACLK/1, continuous
     TBCCTL0 = 0;
 
+    /*
+     * wait for about a sec for the 32KHz to come up and
+     * stabilize.  We are guessing that it is stable and
+     * on frequency after about a second but this needs
+     * to be verified.
+     *
+     * FIX ME.
+     */
     while (1) {
-      t1 = TBR;
-      t2 = TBR;
-      if (t1 == t2 && t2 >= PWR_UP_CYCLES_32KHZ)
-	break;
+      if (TACTL & TAIFG) {
+	/*
+	 * wrapped, clear IFG, and decrement major count
+	 */
+	TACTL &= ~TAIFG;
+	if (--left == 0)
+	  break;
+      }
     }
+    nop();
+    t1 = TBR;
   }
 
   /*
