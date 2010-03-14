@@ -550,11 +550,11 @@ implementation {
     }
 
     ADC_CNV = 1;			/* launch a conversion */
-    TELL = 1;
+//    TELL = 1;
     for (result = 0; result < 3; result++) {
       nop();
     }
-    TELL = 0;
+//    TELL = 0;
     ADC_CNV = 0;
 
     /*
