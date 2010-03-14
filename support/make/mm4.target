@@ -42,6 +42,10 @@ PFLAGS += -I$(MM_ROOT)/tos/interfaces
 PFLAGS += -mdisable-hwmul
 PFLAGS += -mdata-64k -mcode-64k
 
+# the include files for the 2618 needs to have the svsctl at 55
+# not 56 which is where the dcoctl register lives.
+PFLAGS += -D__msp430_has_svs_at_0x55
+
 OPTFLAGS += -O
 
 MSP_BSL ?= tos-bsl
