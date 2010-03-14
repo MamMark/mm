@@ -35,7 +35,8 @@ module Hpl_MM_hwP {
 }
 
 implementation {
-  MSP430REG_NORACE(P5SEL);
+  MSP430REG_NORACE(P3SEL);
+  MSP430REG_NORACE(P5DIR);
 
   command void HW.vref_on() {
     mmP4out.vref_off = 0;
@@ -92,16 +93,16 @@ implementation {
   command uint8_t HW.get_smux() {
     uint8_t temp;
 
-    temp = mmP2out.smux_low2;
-    if (mmP3out.smux_a2)
+    temp = SMUX_LOW2;
+    if (SMUX_A2)
       temp |= 4;
     return(temp);
   }
 
 
   command void HW.set_smux(uint8_t val) {
-    mmP2out.smux_low2 = (val & 3);
-    mmP3out.smux_a2   = ((val & 4) == 4);
+    SMUX_LOW2 = (val & 3);
+    SMUX_A2   = ((val & 4) == 4);
   }
   
   command uint8_t HW.get_gmux() {
@@ -190,9 +191,9 @@ implementation {
    * assumes pin state as follows:
    *
    *   p5.0 sd_pwr_off	1pO
-   *   p5.1 sd_mosi	0pO
-   *   p5.2 sd_miso	0pO
-   *   p5.3 sd_sck	0pO
+   *   p3.1 sd_mosi	0pO
+   *   p3.2 sd_miso	0pO
+   *   p3.3 sd_sck	0pO
    *   p5.4 sd_csn      0pO
    *
    *   sd_csn  1pO (holds csn high, deselected) (starts to power).
@@ -201,38 +202,29 @@ implementation {
    */
 
   async command void HW.sd_on() {
-    if (!call HW.isSDPowered()) { // if not powered, bring it up
-      SD_CSN = 1;		// make sure tristated
-      SD_PINS_SPI;		// switch pins over
-      SD_PWR_ON;		// turn on.
-    }
+    SD_CSN = 1;				// make sure tristated
+    SD_PWR_ON;				// turn on.
+    SD_PINS_SPI;			// switch pins over
   }
 
   /*
-   * turn sd_off and switch pins back to port (0pO) so we don't power the
+   * turn sd_off and switch pins back to port (0pI) so we don't power the
    * chip prior to powering it off.
-   *
-   * FIX ME: If the cc2420 spi radio is on the same bus won't this be
-   * a problem?  Because these pins will remain on the Module (assigned
-   * to the SPI and wiggling but the SD will be powered off and could be
-   * powered up and tortured.
    */
   async command void HW.sd_off() {
-    if (call HW.isSDPowered()) {
-      SD_CSN = 1;		// tri-state by deselecting
-      SD_PWR_OFF;		// kill power
-      SD_CSN = 0;		// don't power through CSN
-      SD_PINS_OUT_0;		// all data pins output 0
-    }
+    SD_CSN = 1;				// tri-state by deselecting
+    SD_PWR_OFF;				// kill power
+    SD_CSN = 0;				// don't power through CSN
+    SD_PINS_INPUT;			// all data pins inputs
   }
 
   async command void HW.gps_on() {
     mmP4out.gps_off = 0;
+    GPS_PINS_UART;		// switch pins over to the module
   }
 
   async command void HW.gps_off() {
-    if (SER_SEL == SER_SEL_GPS)
-      SER_SEL = SER_SEL_NONE;
+    GPS_PINS_INPUT;
     mmP4out.gps_off = 1;
   }
 }

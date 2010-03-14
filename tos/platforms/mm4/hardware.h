@@ -17,13 +17,18 @@
  *
  * changes from mm3:
  *
- * . move p3.4->p3.0 tmp_on (make room for gps on p3.4)
- * . gps serial on p3.4, p3.5 (dedicated, usciA0, uart)
- * . dock on p3.6, p3.7 (dedicated, usciA1, uart)
- * . adc_sdi p3.5 -> p6.6 (dedicated, needs to move to usciB1, spi)
- * . need to move adc to usciB1
- * . need to move sd from usciB1 to usciB0 for dma.
+ * . put gps on usciA0, uart0)
+ *   - move    p3.4 -> p3.0 tmp_on
+ *   - adc_sdi p3.5 -> p6.6
+ *   - gps serial on p3.4, p3.5 (dedicated, usciA0, uart)
  *
+ * . dock on p3.6, p3.7 (dedicated, usciA1, uart)
+ *
+ * . swap spi ports: adc and sd (usciB0 <-> usciB1).  need sd
+ *   on dma port.
+ *   - adc to usciB1, 3.2 -> 5.2, 3.3 -> 5.3
+ *   - s_mux_a1, 3.1 -> 5.1
+ *   - sd to usciB0 for dma. 5.1 -> 3.1, 5.2 -> 3.2, 5.3 -> 3.3
  *
  * Various codes for port settings: (<dir><usage><default val>: Is0 <input><spi><0, zero>)
  * another nomenclature used is <value><function><direction>, 0pO (0 (zero), port, Output),
@@ -36,35 +41,40 @@
  *	  (cc2420 power down?)
  *
  *	sd (spi0, usciB0), gps (uart0, usciA0), and dock serial (uart1, usciA1).
+ *      pins p3.1, 3.2, 3.3;   p3.5, 3.4            p3.6, 3.7
+ *
+ *      adc (spi1, usciB1): p5.3, 5.2
  *
  * port 1.0	0pO	d_mux_a0		port 4.0	0pO	gain_mux_a0
  *       .1	0pO	d_mux_a1		      .1	0pO	gain_mux_a1
  *       .2	0pO	mag_degauss_1		      .2	1pO	vdiff_off
- *       .3     0pO		  		      .3	1pO	vref_off
+ *       .3     0pO	telltale  		      .3	1pO	vref_off
  *       .4	0pO	mag_deguass_2		      .4	0pO	solar_chg_on
  *       .5	1pO	press_res_off		      .5	0pO	extchg_battchk
  *       .6	1pO	salinity_off		      .6	1pO	gps_off
  *       .7	1pO	press_off		      .7	0pI
  *
  * port 2.0	1pO	U8_inhibit		port 5.0	1pO	sd_pwr_off (1 = off)
- *       .1	0pO	accel_wake		      .1	0sO	sd_di  (simo1, ub1spi) (0pO, sd off)
- *       .2	0pO	salinity_polarity	      .2	0sI	sd_do  (somi1, ub1spi) (0pO, sd off)
- *       .3	1pO	u12_inhibit		      .3	0sO	sd_clk (uclk1, ub1spi) (0pO, sd off)
- *       .4	0pO	s_mux_a0		      .4	0pO	sd_csn (cs low true) (0pO, sd off)
- *       .5	0pO	s_mux_a1		      .5	0pO	rf_beeper_off
+ *       .1	0pO	accel_wake		      .1	0pO	s_mux_a2
+ *       .2	0pO	salinity_polarity	      .2	0sI     adc_somi, adc_sdo (spi1, uB1)
+ *       .3	1pO	u12_inhibit		      .3	0sO     adc_clk, (uclk0, spi1, uB1)
+ *       .4	0pO	s_mux_a0		      .4	1pO	sd_csn (cs low true) (1pI, sd off)
+ *       .5	0pO	s_mux_a1		      .5	1pO	rf_beeper_off
  *       .6	0pO	adc_cnv			      .6	1pO	ser_sel_a0
  *       .7	0pI	adc_da0			      .7	1pO	ser_sel_a1
  *
  * port 3.0	0pO	tmp_on			port 6.0	0pI	led_r
- *       .1	0pO	s_mux_a2		      .1	0pI	led_y
- *       .2	0sI	adc_somi, adc_sdo (spi0)      .2	0pI	led_g
- *       .3	0sO	adc_clk, (uclk0, spi0)	      .3	0pO	telltale
+ *       .1	0sI	sd_di  (0pI, sd off)	      .1	0pI	led_y
+ *       .2	0sI	sd_do  (0pI, sd off)	      .2	0pI	led_g
+ *       .3	0sI	sd_clk (0pI, sd off)	      .3	0pI
  *       .4	1pI	gps_txd			      .4	1pO	speed_off
  *       .5	0pI	gps_rxd			      .5	1pO	mag_xy_off
  *       .6	1uI	dock_txd (uart1)	      .6	1pO	adc_sdi (not part of spi)
  *									  (mode control in, adc)
  *       .7	0uI	dock_rxd (uart1)	      .7	1pO	mag_z_off
  *
+ * Note: When we used 6.3 as tell we saw no pull down.   Do we need to
+ * enable the resistors (fets).
  */
 
 /*
@@ -86,13 +96,14 @@
  *
  * usciA0: UART0 -> gps
  * usciA1: UART1 -> dock
- * usciB0: SPI0  -> adc
- * usciB1: SPI1  -> SD
+ * usciB0: SPI0  -> SD
+ * usciB1: SPI1  -> ADC
  *
  * USCI A1 is dedicated to the dock serial.  When docked the serial
  * mux selects dock_serial.  When undocked it should select none so
  * the serial lines aren't energized.
  *
+ * 
  * USCI B0 (spi) is dedicated to the ADC.  3.2-3, 6.6
  * adc_da0 (2.7) is an input coming from the ADC that indicates the conversion
  * is complete.
@@ -188,35 +199,34 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
 #define P2_BASE_VAL	0x09
 
 /*
- * tmp_on 0 (off), s_mux 0, adc_somi/adc_clk assigned to
- * spi.  GPS is off so we don't want to power it via its
+ * tmp_on 0 (off), sd is off, pins set to input.
+ * GPS is off so we don't want to power it via its
  * uart pins.  Set to 0 (both inputs)  Dock uart is assumed
  * off (ser_sel <- None), set to inputs.
  *
  * Initially, both the gps and dock ports are assigned to port
  * function.  This allows us to directly control the state of
  * the port so when disconnected the pins aren't energized.
- *
- * ADC_SDO and ADC_CLK are assigned to USCI B0 SPI.
  */
-#define P3_BASE_DIR	0x0b
+#define P3_BASE_DIR	0x01
 #define P3_BASE_VAL	0x50
-#define P3_BASE_SEL	0x0c
 
 /* gps off, no batt chk, no solar, vref/vdiff off, g_mux 0 */
 #define P4_BASE_DIR	0x7f
 #define P4_BASE_VAL	0x4c
 
 /*
- * ser_sel 3 (none), beeper off, sd bits 0pO, sd pwr off 1pO
- * (when powered off we dont want to power the sd via any of its other
- * pins).  So set any pins connected to the SD to output 0.
+ * sd off (1), s_mux 0, adc_somi/adc_clk assigned to spi.
+ * ser_sel 3 (none), beeper off
+ *
+ * ADC_SDO and ADC_CLK are assigned to USCI B1 SPI.
  */
-#define P5_BASE_DIR	0xfb
-#define P5_BASE_VAL	0xe1
+#define P5_BASE_DIR	0xeb
+#define P5_BASE_VAL	0xf1
+#define P5_BASE_SEL	0x0c
 
 /* mag pwr off */
-#define P6_BASE_DIR	0xf8
+#define P6_BASE_DIR	0xf0
 #define P6_BASE_VAL	0xf0
 
 
@@ -249,7 +259,7 @@ void TOSH_MM_INITIAL_PIN_STATE(void) {
     P2IFG = 0;
 
     P3REN = 0;
-    P3SEL = P3_BASE_SEL;
+    P3SEL = 0;
     P3DIR = P3_BASE_DIR;
     P3OUT = P3_BASE_VAL;
 
@@ -259,7 +269,7 @@ void TOSH_MM_INITIAL_PIN_STATE(void) {
     P4OUT = P4_BASE_VAL;
 
     P5REN = 0;
-    P5SEL = 0;
+    P5SEL = P5_BASE_SEL;
     P5DIR = P5_BASE_DIR;
     P5OUT = P5_BASE_VAL;
 

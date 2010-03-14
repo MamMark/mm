@@ -1,6 +1,6 @@
 #threads
 
-source ../../.gdb1611
+source ../../.gdb2618
 
 set remoteaddresssize 0d64
 set remotetimeout 0d999999
@@ -36,7 +36,10 @@ printf "pcode: 0d%d (0x%0x)  where: 0d%d  0x%04x 0x%04x 0x%04x 0x%04x\n",_p,_p, 
 end
 
 # 7
-b mm3C.nc:50
+b mmC.nc:50
+
+# 8 startup Platform init
+b PlatformP.nc:98
 
 # 7 Msg Collect too big
 #b GPSMsgP.nc:538
@@ -46,7 +49,7 @@ b mm3C.nc:50
 
 # GPSP.nc
 #  9 finish      502
-# 10 signal surface mm3ControlP.nc:107
+# 10 signal surface mmControlP.nc:107
 # 11 start       669
 # 12 SerialDefOwner.requested 1134
 # 13 SerialDefOwner.granted    787
@@ -55,7 +58,7 @@ b mm3C.nc:50
 
 # 9 finish
 #b GPSP.nc:502
-#b mm3ControlP.nc:107
+#b mmControlP.nc:107
 #b GPSP.nc:669
 #b GPSP.nc:1134
 #b *GPSP__SerialDefOwner__granted
