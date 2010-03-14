@@ -3,15 +3,13 @@
  * All rights reserved.
  *
  * Rewritten 2010, to avoid arbritration for the MM4, 2618.
- * Dedicated serial port.
+ * Dedicated serial port.  uses port usciA0, uart mode.
  */
  
 /**
  * @author Eric B. Decker (cire831@gmail.com)
  * @date May 27, 2008
  */
-
-#include "serial_demux.h"
 
 configuration GPSC {
   provides {
@@ -41,9 +39,12 @@ implementation {
   components new TimerMilliC() as GPSTimer;
   GPSP.GPSTimer -> GPSTimer;
 
-  components HplMsp430Usart1C;
-  GPSP.Usart -> HplMsp430Usart1C;
+  components HplMsp430UsciA0C as UsciC;
+  GPSP.Usci -> UsciC;
 
+  components new Msp430Uart0C() as UartC;
+  GPSP.UartStream -> UartC;  
+  
   components PanicC;
   GPSP.Panic -> PanicC;
 
@@ -52,15 +53,4 @@ implementation {
 
   components CollectC;
   GPSP.LogEvent -> CollectC;
-
-  components SerialDemuxC;
-  GPSP.SerialDefOwner      -> SerialDemuxC.SerialDefOwnerClient[SERIAL_OWNER_GPS];
-  GPSP.SerialDemuxResource -> SerialDemuxC.SerialDemuxResource[SERIAL_OWNER_GPS];
-  GPSP.UartStream          -> SerialDemuxC.SerialClientUartStream[SERIAL_OWNER_GPS];
-  GPSP.MuxControl          -> SerialDemuxC;
-
-//  components new Msp430Uart1C() as UartC;
-//  GPSP.UartStream -> UartC;  
-//  GPSP.UartByte -> UartC;
-
 }

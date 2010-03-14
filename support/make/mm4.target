@@ -1,12 +1,12 @@
 # -*-Makefile-*- vim:syntax=make
-
 #
 # mm4 is based on msp430f2618
-# see tos/platform/mm3/hardware.h for how the pins are assigned.
+# see tos/platform/mm4/hardware.h for how the pins are assigned.
 #
 
 PLATFORM ?= mm4
 
+#
 # THREADS_MSP430_DIR comes from main tree support/make/threads.extra
 # mm4 is based on the msp430 so we use that threads variant.
 #
@@ -14,7 +14,7 @@ PLATFORM ?= mm4
 #
 
 ifdef THREADS
-CFLAGS += $(THREADS_MSP430_INCLUDE_DIRS)
+CFLAGS  += $(THREADS_MSP430X_INCLUDE_DIRS) $(THREADS_MSP430_INCLUDE_DIRS)
 #CFLAGS += $(THREADS_CC2420_INCLUDE_DIRS)
 #CFLAGS += $(THREADS_TELOS_INCLUDE_DIRS)
 endif
@@ -28,16 +28,19 @@ endif
 # other stuff that comes in via the CFLAGS varient.  Stuff in the .platform
 # file come in last after PFLAGS and CFLAGS.
 #
+# shared platform files shared across MM varients are held in platforms/mm
+# There is no make support for mm.  (no target file in support/make).
+#
 
 PFLAGS += -I$(MM_ROOT)/include
 PFLAGS += -I$(MM_ROOT)/tos/platforms/mm4
-PFLAGS += -I$(MM_ROOT)/tos/platforms/mm3
+PFLAGS += -I$(MM_ROOT)/tos/platforms/mm
 PFLAGS += -I$(MM_ROOT)/tos/system
 PFLAGS += -I$(MM_ROOT)/tos/interfaces
 
 # Disable MSP430 hardware multiply because it makes MSPGCC die
 PFLAGS += -mdisable-hwmul
-PFLAGS += -mdata-64k
+PFLAGS += -mdata-64k -mcode-64k
 
 OPTFLAGS += -O
 

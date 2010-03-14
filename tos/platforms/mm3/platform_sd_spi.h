@@ -27,6 +27,12 @@
  * SD_SPI_OE_REG:	where the oe bit lives
  */
 
+MSP430REG_NORACE(IFG2);
+MSP430REG_NORACE(U1TXBUF);
+MSP430REG_NORACE(U1RXBUF);
+MSP430REG_NORACE(U1TCTL);
+MSP430REG_NORACE(U1RCTL);
+
 /* set for msp430f1611, usart_1 spi */
 #define SD_SPI_IFG		(IFG2)
 #define SD_SPI_TX_RDY		(IFG2 & UTXIFG1)
@@ -37,8 +43,8 @@
 #define SD_SPI_CLR_RXINT	(IFG2 &= ~URXIFG1)
 #define SD_SPI_CLR_BOTH		(IFG2 &= ~(URXIFG1 | UTXIFG1))
 #define SD_SPI_OVERRUN		(U1RCTL & OE)
-#define SD_SPI_CLR_OE		(URCTL &= ~OE)
-#define SD_SPI_OE_REG		(URCTL)
+#define SD_SPI_CLR_OE		(U1RCTL &= ~OE)
+#define SD_SPI_OE_REG		(U1RCTL)
 
 /*
  * DMA control defines.  Makes things more readable.

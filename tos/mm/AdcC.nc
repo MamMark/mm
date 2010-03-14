@@ -25,4 +25,8 @@ implementation {
 
   components PanicC;
   AdcP.Panic -> PanicC;
+
+  components HplMsp430UsciB1C as UsciC;
+  AdcP.Usci -> UsciC;
+  AdcP.UsciInterrupts -> UsciC;
 }

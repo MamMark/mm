@@ -13,6 +13,9 @@
 # %P/../../.. is root of the tree.  ie. $(MM_ROOT) which doesn't
 # work in this file.
 #
+# support/utils/include moved to include.   include is pulled in via
+# the support/make/mm4.target.
+#
 # %P/../../../support/utils/include
 # %P/../../../include
 #
@@ -36,7 +39,6 @@ push( @includes, qw(
   %P/../../mm
   %P/../../comm
   %P/../../chips/msp430/timer
-  %P/../../chips/msp430/usart
   %P/../../chips/sd
   %P/../../chips/sensors
   %P/../../chips/sirf3

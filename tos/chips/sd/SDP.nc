@@ -9,11 +9,9 @@
  * a threaded implementation.
  */
 
-#include <msp430hardware.h>
+#include "msp430hardware.h"
 #include "hardware.h"
 #include "sd.h"
-
-#include "platform_sd_spi.h"
 
 #define SD_PUT_GET_TO 1024
 #define SD_PARANOID
@@ -28,6 +26,7 @@ module SDP {
     interface HplMsp430Usart as Umod;
 #elif defined(PLATFORM_MM4)
     interface HplMsp430UsciB as Umod;
+    interface HplMsp430UsciInterrupts as UsciInterrupts;
 #else
 #error "One of MM3 or MM4 need to be defined"
 #endif
@@ -38,6 +37,8 @@ module SDP {
 }
 
 implementation {
+
+#include "platform_sd_spi.h"
 
   sd_cmd_blk_t sd_cmd;
   uint16_t     sd_r1b_timeout;
@@ -556,7 +557,11 @@ implementation {
 
     idle_byte = 0xff;
 
-    /* do you really want to clear the tx interrupt? */
+    /*
+     * do you really want to clear the tx interrupt?
+     * yes.  It is the rising edge that starts the
+     * dma transfer.
+     */
     SD_SPI_CLR_BOTH;			/* clear rx and tx ints */
 
     DMA0SA  = (uint16_t) &SD_SPI_RX_BUF;
@@ -571,9 +576,12 @@ implementation {
     DMA1CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_EN |
       DMA_DST_NC | DMA_SRC_NC;
 
-    DMACTL0 = DMA1_TSEL_U1RX | DMA0_TSEL_U1RX;
-    SD_SPI_TX_BUF = 0xff;
+    DMACTL0 = DMA1_TSEL_B0RX | DMA0_TSEL_B0RX;
+    SD_SPI_TX_BUF = 0xff;		/* write 1st byte to start things off */
 
+    /*
+     * need to put a timeout bail just in case it doesn't finish
+     */
     while (DMA0CTL & DMA_EN)	/* wait for chn 0 to finish */
       ;
 
@@ -727,7 +735,7 @@ implementation {
     DMA0SZ = SD_BLOCKSIZE;
     DMA0CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_EN |
       DMA_DST_NC | DMA_SRC_INC;
-    DMACTL0 = DMA0_TSEL_U1TX;
+    DMACTL0 = DMA0_TSEL_B0TX;
 
     /* Send start block token to start the transfer */
     SD_SPI_TX_BUF = SD_TOK_WRITE_STARTBLOCK;
@@ -973,4 +981,19 @@ implementation {
 
 #endif
 
+  async event void UsciInterrupts.txDone() {
+    /*
+     * shouldn't ever get here, we never turn intrrupts on for the ADC spi
+     *
+     * eventually put a panic in here.
+     */
+  };
+
+  async event void UsciInterrupts.rxDone(uint8_t data) {
+    /*
+     * shouldn't ever get here, we never turn intrrupts on for the ADC spi
+     *
+     * eventually put a panic in here.
+     */
+  };
 }

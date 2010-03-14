@@ -18,9 +18,11 @@
  * changes from mm3:
  *
  * . move p3.4->p3.0 tmp_on (make room for gps on p3.4)
- * . gps serial on p3.4, p3.5 (dedicated)
- * . dock on p3.6, p3.7 (dedicated)
- * . adc_sdi p3.5 -> p6.6
+ * . gps serial on p3.4, p3.5 (dedicated, usciA0, uart)
+ * . dock on p3.6, p3.7 (dedicated, usciA1, uart)
+ * . adc_sdi p3.5 -> p6.6 (dedicated, needs to move to usciB1, spi)
+ * . need to move adc to usciB1
+ * . need to move sd from usciB1 to usciB0 for dma.
  *
  *
  * Various codes for port settings: (<dir><usage><default val>: Is0 <input><spi><0, zero>)
@@ -33,8 +35,7 @@
  *	    cc: fifop, fifo, sfd, vren, rstn (these aren't assigned, where to put them)
  *	  (cc2420 power down?)
  *
- *      gps is wired to a mux and then to uart1.  And power up/down
- *	cc2420 (spi1), sd (spi1), gps, and serial direct connect (uart1) on same usart.
+ *	sd (spi0, usciB0), gps (uart0, usciA0), and dock serial (uart1, usciA1).
  *
  * port 1.0	0pO	d_mux_a0		port 4.0	0pO	gain_mux_a0
  *       .1	0pO	d_mux_a1		      .1	0pO	gain_mux_a1
@@ -46,9 +47,9 @@
  *       .7	1pO	press_off		      .7	0pI
  *
  * port 2.0	1pO	U8_inhibit		port 5.0	1pO	sd_pwr_off (1 = off)
- *       .1	0pO	accel_wake		      .1	0sO	sd_di (simo1, ub0spi)  (0pO, sd off)
- *       .2	0pO	salinity_polarity	      .2	0sI	sd_do (somi1, ub0spi)  (0pO, sd off)
- *       .3	1pO	u12_inhibit		      .3	0sO	sd_clk (uclk1, ub0spi) (0pO, sd off)
+ *       .1	0pO	accel_wake		      .1	0sO	sd_di  (simo1, ub1spi) (0pO, sd off)
+ *       .2	0pO	salinity_polarity	      .2	0sI	sd_do  (somi1, ub1spi) (0pO, sd off)
+ *       .3	1pO	u12_inhibit		      .3	0sO	sd_clk (uclk1, ub1spi) (0pO, sd off)
  *       .4	0pO	s_mux_a0		      .4	0pO	sd_csn (cs low true) (0pO, sd off)
  *       .5	0pO	s_mux_a1		      .5	0pO	rf_beeper_off
  *       .6	0pO	adc_cnv			      .6	1pO	ser_sel_a0
@@ -81,9 +82,12 @@
  * (Smux is P2.4-5 and P3.1)
  *
  *
- * USCI Usage
+ * USCI Usage/Mapping
  *
- * USCI A0 is dedicated to the gps
+ * usciA0: UART0 -> gps
+ * usciA1: UART1 -> dock
+ * usciB0: SPI0  -> adc
+ * usciB1: SPI1  -> SD
  *
  * USCI A1 is dedicated to the dock serial.  When docked the serial
  * mux selects dock_serial.  When undocked it should select none so
@@ -92,9 +96,6 @@
  * USCI B0 (spi) is dedicated to the ADC.  3.2-3, 6.6
  * adc_da0 (2.7) is an input coming from the ADC that indicates the conversion
  * is complete.
- *
- * USCI B1 (spi) is dedicated to the SD.
- *
  */
 
 // LEDs

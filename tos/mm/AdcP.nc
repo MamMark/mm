@@ -1,8 +1,10 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
  *
  * adc7685.h - Analog/Digital converter interface
+ *
+ * Modified to interface to the SPI via the usci/Hpl routines
  *
  * Analog Devices AD7685.
  *
@@ -29,19 +31,28 @@
  * P3.5    SDI	(P/O, set to 1) set high and left there.  Controls ADC mode (selected on
  *			rising edge of CNV.
  *
- * we assume sole control of SPI0 and USART0.  Dedicated to the
- * ADC so no need to arbritrate.
- *
+ * Interfaces using HplMsp430UsciXXC routines.  Wiring in AdcC determines which
+ * port.  The ADC assumes sole ownership of the underlying port and h/w associated with
+ * it.  No arbritration is done.
  */
 
 #include "hardware.h"
 #include "sensors.h"
 
 
+#ifdef notdef
+/*
+ * Originally we initilized the spi ourselves including what we wanted
+ * to use as the divider.  Now we use the Hpl interface and its default
+ * which uses smclk/2.  If we want to use something else then we should
+ * use our own initilization structure.
+ */
+
 /*
  * Fix me.  This can go down to 2.  check it out later.
  */
 #define ADC_DIV 4
+#endif
 
 /*
  * ADC_SPI_MAX_WAIT is the number of microsecs that the
@@ -52,10 +63,11 @@
  * Initially we panic.  But this will be replaced by making
  * the code recover.
  */
+
 #define ADC_SPI_MAX_WAIT 100
 
   volatile uint16_t num_reads;
-  int8_t ifg1[5];
+  int8_t ifg2[5];
 
 module AdcP {
   provides {
@@ -69,6 +81,8 @@ module AdcP {
     interface Hpl_MM_hw as HW;
     interface Alarm<T32khz, uint16_t> as PowerAlarm;
     interface Panic;
+    interface HplMsp430UsciB as Usci;
+    interface HplMsp430UsciInterrupts as UsciInterrupts;
   }
 }
 
@@ -105,7 +119,7 @@ implementation {
    * Adc Initilization.  (See above for pin definitions).
    *
    * Put the ADC into the initial state.  The ADC subsystem should
-   * always been in this state prior to a conversion.
+   * always be in this state prior to a conversion.
    *
    * According to the data sheet, if conversion data isn't available then
    * SDO will be in high-Z.  CNV_cmplt should be a 1.  but we only look
@@ -128,23 +142,15 @@ implementation {
    * o SOMI0 (SDO) is assigned to the SPI.
    *
    * o The SPI0 module is initialized and left running, it is idle.
+   *
+   * Does it make sense to keep the spi h/w in reset and only let it run
+   * when we want to do a conversion.  Initilization of the spi consists
+   * of register writes and takes only the time for those instructions.
+   * What state does the spi put itself in, ie. does it consume power
+   * if it isn't doing anything?
    */
 
   void init_adc_hw() {
-    /*
-     * Set USART0 as follows:
-     *
-     * no I2C
-     * CHAR:   8 bit data
-     * no loopback (LISTEN = 0)
-     * SYNC:   spi mode (synchronous)
-     * MM:     master (spi is master)
-     * SWRST:  hold in reset.
-     */
-    U0CTL = CHAR | SYNC | MM | SWRST;
-    ME1 = 0;				/* turn off US0 module enables */
-    IE1 &= ~(URXIE0 | UTXIE0);		/* no interrupts */
-
     /*
      * set ADC_CNV to 0.  Dir and FuncSel are set once by platform init
      * ADC_SDO, ADC_CLK assigned dir and sel by platform init.
@@ -152,18 +158,13 @@ implementation {
     ADC_CNV = 0;
 
     /*
-     * Set USART0 up as SPI0
+     * The default Hpl SPI configuration set the spi up for
+     * smclk/2, 3pin, no ste, master, 8 bit, msb first.
      *
-     * Normal clock phase, normally low clock, 3 pin SPI mode,
-     * clock from SMCLK.
+     * On return, interrupts for the spi will be off and the device
+     * will be running (taken out of reset).
      */
-    U0TCTL = SSEL1 + SSEL0 + STC; /* smclk, 3 pin SPI */
-    U0RCTL = 0;			  /* clear rx errors */
-    U0BR1  = 0;
-    U0BR0  = ADC_DIV;
-    U0MCTL = 0;			  /* no modulation, spi */
-    ME1 |= USPIE0;
-    U0CTL &= ~SWRST;		  /* and bring it out of reset */
+    call Usci.setModeSpi((msp430_spi_union_config_t *) &msp430_spi_default_config);
   }
 
 
@@ -518,28 +519,37 @@ implementation {
   /*
    * readAdc
    *
-   * put the external ADC through its paces.  Reads via Usart0 (SPI0).
+   * put the external ADC through its paces.
    *
+   * uses HplMspUsciB interfacee to access the spi.
    */
 
   command uint16_t AdcClient.readAdc[uint8_t client_id]() {
     uint16_t result;
     uint16_t t0;
 
-    ifg1[0] = IFG1;
+    ifg2[0] = IFG2;
     result = 0;
-    if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) || ((U0TCTL & TXEPT) == 0)) {
+    /*
+     * first do a sanity check.  If (tx is busy, not empty) or
+     * (rx has a chr, should be empty) or (hw thinks its busy)
+     * then panic.
+     */
+    if (  (call Usci.isTxIntrPending() == 0) ||
+	  (call Usci.isRxIntrPending()) ||
+	  (call Usci.isBusy())) {
       /*
        * no space in transmitter (huh?)
        * receiver not empty
        * transmitter should be completely empty
        *
-       * bitch bitch bitch
+       * bitch bitch bitch and reset the h/w.
        */
-      call Panic.warn(PANIC_ADC, 8, IFG1, U0TCTL, 0, 0);
+      call Panic.warn(PANIC_ADC, 8, IFG2, UCB0STAT, 0, 0);
+      init_adc_hw();
     }
 
-    ADC_CNV = 1;
+    ADC_CNV = 1;			/* launch a conversion */
     TELL = 1;
     for (result = 0; result < 3; result++) {
       nop();
@@ -552,49 +562,78 @@ implementation {
      * send first byte to receive 1st byte.
      */
 
-    U0TXBUF = 0x1a;		/* data doesn't matter */
-    ifg1[1] = IFG1;
+    call Usci.tx(0x1a);		/* data doesn't matter */
+    ifg2[1] = IFG2;
     t0 = TAR;
-    while (!(IFG1 & URXIFG0)) {
+    while (1) {
+      if (call Usci.isRxIntrPending())
+	break;
       if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
 	/*
 	 * FIXME.  we choke.  Figure out why.
 	 */
-//	call Panic.warn(PANIC_ADC, 9, 1, IFG1, 0, 0);
+//	call Panic.warn(PANIC_ADC, 9, 1, IFG2, TAR, t0);
+//	break;
       }
     }
-    result = ((uint16_t) U0RXBUF) << 8;
+    result = ((uint16_t) call Usci.rx()) << 8;
 
-    ifg1[2] = IFG1;
-    if (!(IFG1 & UTXIFG0)) {
-      /* FIXME */
-//      call Panic.warn(PANIC_ADC, 9, 2, IFG1, 0, 0);
+    ifg2[2] = IFG2;
+    if (call Usci.isTxIntrPending() == 0) { /* space to send? */
+      /* FIXME
+       * no space to send.  that's strange, panic/warn
+       */
+//      call Panic.warn(PANIC_ADC, 9, 2, IFG2, 0, 0);
     }
 
     /*
      * send 2nd and wait for the rx to come back
      */
-    U0TXBUF = 0x25;		/* send next to get next */
+    call Usci.tx(0x25);		/* send next to get next */
     t0 = TAR;
-    while (!(IFG1 & URXIFG0)) {
+    while (1) {
+      if (call Usci.isRxIntrPending())
+	break;
       if ((TAR - t0) > ADC_SPI_MAX_WAIT) {
-	/* FIXME */
-//	call Panic.warn(PANIC_ADC, 9, 3, IFG1, 0, 0);
+	/*
+	 * FIXME.  we choke.  Figure out why.
+	 */
+//	call Panic.warn(PANIC_ADC, 9, 3, IFG2, 0, 0);
+//	break;
       }
     }
-    result |= ((uint16_t) U0RXBUF);
+    result |= ((uint16_t) call Usci.rx());
 
     /*
      * Transmitter and Recevier should both be empty
      */
-    ifg1[3] = IFG1;
-    ifg1[4] = U0TCTL;
-    if (!(IFG1 & UTXIFG0) || (IFG1 & URXIFG0) || ((U0TCTL & TXEPT) == 0)) {
+    ifg2[3] = IFG2;
+    ifg2[4] = UCB0STAT;
+    if (  (call Usci.isTxIntrPending() == 0) ||
+	  (call Usci.isRxIntrPending()) ||
+	  (call Usci.isBusy())) {
       /* FIXME */
-//      call Panic.warn(PANIC_ADC, 10, IFG1, U0TCTL, 0, 0);
+//      call Panic.warn(PANIC_ADC, 10, IFG2, UCB0STAT, 0, 0);
     }
     return(result);
   }
+
+  async event void UsciInterrupts.txDone() {
+    /*
+     * shouldn't ever get here, we never turn intrrupts on for the ADC spi
+     *
+     * eventually put a panic in here.
+     */
+  };
+
+  async event void UsciInterrupts.rxDone(uint8_t data) {
+    /*
+     * shouldn't ever get here, we never turn intrrupts on for the ADC spi
+     *
+     * eventually put a panic in here.
+     */
+  };
+
 
   default event void AdcClient.configured[uint8_t id]() {} // fix me.  add call to panic
 

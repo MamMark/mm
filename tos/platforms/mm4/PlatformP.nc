@@ -16,6 +16,7 @@ noinit struct {
   uint8_t dcoctl;
   uint8_t bcsctl1;
   uint8_t bcsctl2;
+  uint8_t bcsctl3;
 } stuff[STUFF_SIZE];
 
 noinit bool clear_stuff;
@@ -29,11 +30,13 @@ void set_stuff() {
   }
   if (nxt >= STUFF_SIZE)
     nxt = 0;
-  stuff[nxt].dcoctl = DCOCTL;
+  stuff[nxt].dcoctl  = DCOCTL;
   stuff[nxt].bcsctl1 = BCSCTL1;
   stuff[nxt].bcsctl2 = BCSCTL2;
+  stuff[nxt].bcsctl3 = BCSCTL3;
   nxt++;
 }
+
 #endif
       
 
@@ -79,32 +82,40 @@ implementation {
    * commands in Msp430ClockInit but not sure how to do it.
    * So for now just do it by forcing it.
    *
-   * Originally SMCLK was set as DCO/4 and Timer A was run
-   * as SMCLK/1.  The problem is the SPI is clocked off
+   * The telosB mote originally set SMCLK as DCO/4 and TimerA
+   * was run with SMCLK/1.   The problem is the SPI is clocked off
    * SMCLK and its minimum divisor is /2 which gives us DCO/8.
+   * Given a DCO frequency of 4MHz this would result in clocking
+   * the SD/SPI at 512KHz.
+   *
    * We want to run the SPI as fast as possible.  SPI0 is the
    * ADC and SPI1 is the radio and SD card.  Both need to run
    * as fast as possible.
    *
-   * So after initilizing using the original code we wack
-   * BCSCTL2 to make SMCLK be DCO and TACTL to change its
-   * divisor to /4 to maintain 1uS ticks.
+   * For MM3:  After initilizing using the original code we
+   * wack BCSCTL2 to make SMCLK be DCO and TACTL to change
+   * its divisor to /4 to maintain 1uis ticks.
    *
    * This effects the serial usart (uart1) used for direct
    * connect.  So the UBR register values must be modified for
    * that as well.  See mm3SerialP.nc.
+   *
+   * For MM4:  We clock the DCO for 8MHz (currently 8,000,000,
+   * but eventually will be 8MiHz).   We run SMCLK and the SPI/SD
+   * at 8MiHz and use /8 for TimerA.
    */
 
   event void Msp430ClockInit.setupDcoCalibrate() {
     call Msp430ClockInit.defaultSetupDcoCalibrate();
   }
   
+  /*
+   * set for DCO of 8MHz.  /8 gives us 1uis ticks.
+   */
   event void Msp430ClockInit.initTimerA() {
     // TACTL
-    // .TACLGRP = 0; each TACL group latched independently
-    // .CNTL = 0; 16-bit counter
     // .TASSEL = 2; source SMCLK = DCO
-    // .ID = 2; input divisor of 4 (DCO/4)
+    // .ID = 3; input divisor of 8 (DCO/8)
     // .MC = 2; continuously running
     // .TACLR = 0; reset timer A
     // .TAIE = 1; enable timer A interrupts
@@ -115,7 +126,7 @@ implementation {
      * the clock (DCO).
      */
     TAR = 0;
-    TACTL = TASSEL1 | ID1 | MC1 | TAIE;
+    TACTL = TASSEL_2 | ID_3 | MC_2 | TAIE;
   }
 
   event void Msp430ClockInit.initTimerB() {
@@ -123,6 +134,9 @@ implementation {
   }
 
   event void Msp430ClockInit.initClocks() {
+    BCSCTL1 = CALBC1_8MHZ;                    // Set DCO to 8MHz
+    DCOCTL  = CALDCO_8MHZ;
+
     // BCSCTL1
     // .XT2OFF = 1; disable the external oscillator for SCLK and MCLK
     // .XTS = 0; set low frequency mode for LXFT1
@@ -139,11 +153,13 @@ implementation {
     // .DCOR = 0; select internal resistor for DCO
     BCSCTL2 = 0;
 
+    // BCSCTL3: use default, on reset set to 4, 6pF.
+
     // IE1.OFIE = 0; no interrupt for oscillator fault
     CLR_FLAG( IE1, OFIE );
   }
 
-    command error_t Init.init() __attribute__ ((noinline)) {
+  command error_t Init.init() __attribute__ ((noinline)) {
     TOSH_MM_INITIAL_PIN_STATE();
 
     /*

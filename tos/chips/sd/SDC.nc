@@ -18,6 +18,12 @@ implementation {
   components StreamStorageC;
   SDP.BlockingSpiPacket -> StreamStorageC;
 
+#if defined(PLATFORM_MM3)
   components HplMsp430Usart1C as UsartC;
   SDP.Umod -> UsartC;
+#elif defined(PLATFORM_MM4)
+  components HplMsp430UsciB0C as UsciC;
+  SDP.Umod -> UsciC;
+  SDP.UsciInterrupts -> UsciC;
+#endif
 }
