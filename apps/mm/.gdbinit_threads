@@ -38,9 +38,6 @@ end
 # 7
 b mmC.nc:50
 
-# 8 startup Platform init
-b PlatformP.nc:98
-
 # 7 Msg Collect too big
 #b GPSMsgP.nc:538
 

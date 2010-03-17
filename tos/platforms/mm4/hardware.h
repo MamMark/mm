@@ -244,39 +244,42 @@ void TOSH_MM_INITIAL_PIN_STATE(void) {
     UCB0CTL1 = UCSWRST;		/* hold ADC spi in reset */
     UCB1CTL1 = UCSWRST;		/* hold SD spi in reset */
 
+    /*
+     * set value first, then direction, eventually module/port (sel)
+     */
+    P1OUT = P1_BASE_VAL;
+    P1DIR = P1_BASE_DIR;
     P1REN = 0;
     P1SEL = 0;			/* all ports port function */
-    P1DIR = P1_BASE_DIR;
-    P1OUT = P1_BASE_VAL;
     P1IES = 0;
     P1IFG = 0;
 
+    P2OUT = P2_BASE_VAL;
+    P2DIR = P2_BASE_DIR;
     P2REN = 0;
     P2SEL = 0;
-    P2DIR = P2_BASE_DIR;
-    P2OUT = P2_BASE_VAL;
     P2IES = 0;
     P2IFG = 0;
 
+    P3OUT = P3_BASE_VAL;
+    P3DIR = P3_BASE_DIR;
     P3REN = 0;
     P3SEL = 0;
-    P3DIR = P3_BASE_DIR;
-    P3OUT = P3_BASE_VAL;
 
+    P4OUT = P4_BASE_VAL;
+    P4DIR = P4_BASE_DIR;
     P4REN = 0;
     P4SEL = 0;
-    P4DIR = P4_BASE_DIR;
-    P4OUT = P4_BASE_VAL;
 
+    P5OUT = P5_BASE_VAL;
+    P5DIR = P5_BASE_DIR;
     P5REN = 0;
     P5SEL = P5_BASE_SEL;
-    P5DIR = P5_BASE_DIR;
-    P5OUT = P5_BASE_VAL;
 
+    P6OUT = P6_BASE_VAL;
+    P6DIR = P6_BASE_DIR;
     P6REN = 0;
     P6SEL = 0;
-    P6DIR = P6_BASE_DIR;
-    P6OUT = P6_BASE_VAL;
   }
 }
 

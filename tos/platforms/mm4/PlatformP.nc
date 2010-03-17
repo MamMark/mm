@@ -3,6 +3,10 @@
  * Copyright 2010 (c) Eric B. Decker
  * All rights reserved.
  *
+ * Warning: many of these routines directly touch cpu registers
+ * it is assumed that this is initilization code and interrupts are
+ * off.
+ *
  * @author Eric B. Decker
  */
 
@@ -54,8 +58,6 @@ module PlatformP{
 
 implementation {
 
-#define PWR_UP_SEC 16
-
   /*
    * We assume that the clock system after reset has been
    * set to some reasonable value.  ie ~1MHz.  We assume that
@@ -64,17 +66,23 @@ implementation {
    * LFXT1S 32768, XCAP ~6pf
    *
    * We wait about a second for the 32KHz to stablize.
+   *
+   * PWR_UP_SEC is the number of times we need to wait for
+   * TimerA to cycle (16 bits) when clocked at the default
+   * msp430f2618 dco (about 1 MHz).
    */
-  void wait_for_32K() __attribute__ ((noinline)) {
-    uint16_t left, t1;
 
-    left = PWR_UP_SEC;
-    TACTL = TACLR;
+#define PWR_UP_SEC 16
+
+  void wait_for_32K() __attribute__ ((noinline)) {
+    uint16_t left;
+
+    TACTL = TACLR;			// also zeros out control bits
     TAIV = 0;
     TBCTL = TBCLR;
     TBIV = 0;
-    TACTL = TASSEL_2 | MC_2;	// SMCLK/1, continuous
-    TBCTL = TBSSEL_1 | MC_2;	//  ACLK/1, continuous
+    TACTL = TASSEL_2 | MC_2;		// SMCLK/1, continuous
+    TBCTL = TBSSEL_1 | MC_2;		//  ACLK/1, continuous
     TBCCTL0 = 0;
 
     /*
@@ -83,8 +91,11 @@ implementation {
      * on frequency after about a second but this needs
      * to be verified.
      *
-     * FIX ME.
+     * FIX ME.  Need to verify stability of 32KHz.  It definitely
+     * has a good looking waveform but what about its frequency
+     * stability.  Needs to be measured.
      */
+    left = PWR_UP_SEC;
     while (1) {
       if (TACTL & TAIFG) {
 	/*
@@ -95,58 +106,31 @@ implementation {
 	  break;
       }
     }
-    nop();
-    t1 = TBR;
   }
-
-  /*
-   * I know there is some way to mess with changing the default
-   * commands in Msp430ClockInit but not sure how to do it.
-   * So for now just do it by forcing it.
-   *
-   * The telosB mote originally set SMCLK as DCO/4 and TimerA
-   * was run with SMCLK/1.   The problem is the SPI is clocked off
-   * SMCLK and its minimum divisor is /2 which gives us DCO/8.
-   * Given a DCO frequency of 4MHz this would result in clocking
-   * the SD/SPI at 512KHz.
-   *
-   * We want to run the SPI as fast as possible.  SPI0 is the
-   * ADC and SPI1 is the radio and SD card.  Both need to run
-   * as fast as possible.
-   *
-   * For MM3:  After initilizing using the original code we
-   * wack BCSCTL2 to make SMCLK be DCO and TACTL to change
-   * its divisor to /4 to maintain 1uis ticks.
-   *
-   * This effects the serial usart (uart1) used for direct
-   * connect.  So the UBR register values must be modified for
-   * that as well.  See mm3SerialP.nc.
-   *
-   * For MM4:  We clock the DCO for 8MHz (currently 8,000,000,
-   * but eventually will be 8MiHz).   We run SMCLK and the SPI/SD
-   * at 8MiHz and use /8 for TimerA.
-   */
 
   event void Msp430ClockInit.setupDcoCalibrate() {
     call Msp430ClockInit.defaultSetupDcoCalibrate();
   }
   
   /*
-   * set for DCO of 8MHz.  /8 gives us 1uis ticks.
+   * using SMCLK = DCO = 8MHz.  /8 gives us 1us ticks.
+   *
+   * Assumes interrupts off.
    */
   event void Msp430ClockInit.initTimerA() {
-    // TACTL
-    // .TASSEL = 2; source SMCLK = DCO
-    // .ID = 3; input divisor of 8 (DCO/8)
-    // .MC = 2; continuously running
-    // .TACLR = 0; reset timer A
-    // .TAIE = 1; enable timer A interrupts
 
     /*
      * FIX ME.  Does this make it so low power mode doesn't
      * do its thing?  Also how often do we want to resyncronize
      * the clock (DCO).
      */
+
+    // TACTL
+    // .TASSEL = 2;	source SMCLK = DCO
+    // .ID = 3;		input divisor of 8 (DCO/8)
+    // .MC = 2;		continuously running
+    // .TACLR = 0;
+    // .TAIE = 1;	enable timer A interrupts
     TAR = 0;
     TACTL = TASSEL_2 | ID_3 | MC_2 | TAIE;
   }
@@ -156,23 +140,19 @@ implementation {
   }
 
   event void Msp430ClockInit.initClocks() {
-    BCSCTL1 = CALBC1_8MHZ;                    // Set DCO to 8MHz
-    DCOCTL  = CALDCO_8MHZ;
-
     // BCSCTL1
-    // .XT2OFF = 1; disable the external oscillator for SCLK and MCLK
-    // .XTS = 0; set low frequency mode for LXFT1
-    // .DIVA = 0; set the divisor on ACLK to 1
-    // .RSEL, do not modify
-    BCSCTL1 = XT2OFF | (BCSCTL1 & (RSEL2|RSEL1|RSEL0));
+    // .XT2OFF = 1;	external osc off
+    // .XTS = 0;	low frequency mode for LXFT1
+    // .DIVA = 0;	ACLK/1
+    // .RSEL,		do not modify
+    BCSCTL1 = XT2OFF | (BCSCTL1 & RSEL_MASK);
 
     // BCSCTL2
-    // .SELM = 0; select DCOCLK as source for MCLK
-    // .DIVM = 0; set the divisor of MCLK to 1
-    // .SELS = 0; select DCOCLK as source for SCLK
-    // .DIVS = 0; set the divisor of SCLK to 1
-    //            was formerly 2 (/4)
-    // .DCOR = 0; select internal resistor for DCO
+    // .SELM = 0;	MCLK <- DCO/1
+    // .DIVM = 0;	MCLK divisor 1
+    // .SELS = 0;	SMCLK <- DCO/1
+    // .DIVS = 0;	SMCLK divisor 1
+    // .DCOR = 0;	internal resistor
     BCSCTL2 = 0;
 
     // BCSCTL3: use default, on reset set to 4, 6pF.
@@ -187,13 +167,11 @@ implementation {
     /*
      * It takes a long time for the 32KHz Xtal to come up.
      * Go look to see when we start getting 32KHz ticks.
-     * Wait for 10.
+     * The routine waits for a second to give it time to
+     * start up.
      */
     wait_for_32K();
-
-//    set_stuff();
     call ClockInit.init();
-//    set_stuff();
     call LedsInit.init();
     return SUCCESS;
   }
