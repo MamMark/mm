@@ -17,20 +17,10 @@ configuration PlatformLedsC {
 
 implementation
 {
-  components
-    HplMsp430GeneralIOC as GeneralIOC,
-    new Msp430GpioC() as Led0Impl,
-    new Msp430GpioC() as Led1Impl;
-
   components PlatformP;
 
   Init = PlatformP.LedsInit;
-
-  Led0 = Led0Impl;
-  Led0Impl -> GeneralIOC.Port64;
-
-  Led1 = Led1Impl;
-  Led1Impl -> GeneralIOC.Port66;
-
-  Led2 = PlatformP;
+  Led0 = PlatformP.Led0;
+  Led1 = PlatformP.Led1;
+  Led2 = PlatformP.Led2;
 }

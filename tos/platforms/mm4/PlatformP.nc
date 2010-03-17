@@ -47,6 +47,8 @@ void set_stuff() {
 module PlatformP{
   provides {
     interface Init;
+    interface GeneralIO as Led0;
+    interface GeneralIO as Led1;
     interface GeneralIO as Led2;
   }
   uses {
@@ -176,6 +178,24 @@ implementation {
     return SUCCESS;
   }
 
+  async command void Led0.set() { };
+  async command void Led0.clr() { };
+  async command void Led0.toggle() { };
+  async command bool Led0.get() { return 0; };
+  async command void Led0.makeInput() { };
+  async command bool Led0.isInput() { return FALSE; };
+  async command void Led0.makeOutput() { };
+  async command bool Led0.isOutput() { return FALSE; };  
+  
+  async command void Led1.set() { };
+  async command void Led1.clr() { };
+  async command void Led1.toggle() { };
+  async command bool Led1.get() { return 0; };
+  async command void Led1.makeInput() { };
+  async command bool Led1.isInput() { return FALSE; };
+  async command void Led1.makeOutput() { };
+  async command bool Led1.isOutput() { return FALSE; };  
+  
   async command void Led2.set() { };
   async command void Led2.clr() { };
   async command void Led2.toggle() { };
