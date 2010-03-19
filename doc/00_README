@@ -53,10 +53,10 @@ First:
 sudo apt-get install tinyos-2.1.0
 
 
-Then download and install tinyos-z1-0.0.1-11_i386.deb
+Then download and install tinyos-z1-0.0.1-13_i386.deb
 from (http://sourceforge.net/projects/zolertia/files/).
 
-sudo dpkg -i tinyos-z1-0.0.1.-11_i386.deb
+sudo dpkg -i tinyos-z1-0.0.1.-13_i386.deb
 
 
 This will install the tinyos source code as of the 2.1.0 release and
@@ -103,7 +103,7 @@ live.  See section 6 below.
    appropriate places.
 
    NOTE: this step has to be done after the install of the
-   tinyos-z1-0.0.1.-11_i386.deb package as a msp430-jtag is installed
+   tinyos-z1-0.0.1.-13_i386.deb package as a msp430-jtag is installed
    as part of that package.  We replace it.
 
    It will also create the link needed to associate COM1 with the jtag
