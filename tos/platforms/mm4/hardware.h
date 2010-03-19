@@ -1,5 +1,4 @@
 /**
- *
  * Copyright 2010 (c) Eric B. Decker
  * All rights reserved.
  *
@@ -26,9 +25,10 @@
  *
  * . swap spi ports: adc and sd (usciB0 <-> usciB1).  need sd
  *   on dma port.
- *   - adc to usciB1, 3.2 -> 5.2, 3.3 -> 5.3
- *   - s_mux_a1, 3.1 -> 5.1
+ *   - adc to usciB1, 3.2 -> 5.2, 3.3 -> 5.3, note 5.1 is assigned not used.
+ *   - s_mux_a2, 3.1 -> 4.7
  *   - sd to usciB0 for dma. 5.1 -> 3.1, 5.2 -> 3.2, 5.3 -> 3.3
+ *
  *
  * Various codes for port settings: (<dir><usage><default val>: Is0 <input><spi><0, zero>)
  * another nomenclature used is <value><function><direction>, 0pO (0 (zero), port, Output),
@@ -43,7 +43,7 @@
  *	sd (spi0, usciB0), gps (uart0, usciA0), and dock serial (uart1, usciA1).
  *      pins p3.1, 3.2, 3.3;   p3.5, 3.4            p3.6, 3.7
  *
- *      adc (spi1, usciB1): p5.3, 5.2
+ *      adc (spi1, usciB1): p5.3, 5.2, 5.1 (reserved for spi interface)
  *
  * port 1.0	0pO	d_mux_a0		port 4.0	0pO	gain_mux_a0
  *       .1	0pO	d_mux_a1		      .1	0pO	gain_mux_a1
@@ -52,21 +52,21 @@
  *       .4	0pO	mag_deguass_2		      .4	0pO	solar_chg_on
  *       .5	1pO	press_res_off		      .5	0pO	extchg_battchk
  *       .6	1pO	salinity_off		      .6	1pO	gps_off
- *       .7	1pO	press_off		      .7	0pI
+ *       .7	1pO	press_off		      .7	0pO	s_mux_a2
  *
  * port 2.0	1pO	U8_inhibit		port 5.0	1pO	sd_pwr_off (1 = off)
- *       .1	0pO	accel_wake		      .1	0pO	s_mux_a2
- *       .2	0pO	salinity_polarity	      .2	0sI     adc_somi, adc_sdo (spi1, uB1)
- *       .3	1pO	u12_inhibit		      .3	0sO     adc_clk, (uclk0, spi1, uB1)
+ *       .1	0pO	accel_wake		      .1	0pO     adc_simo, reserved (not used)
+ *       .2	0pO	salinity_polarity	      .2	0pI     adc_somi, adc_sdo (spi1, uB1)
+ *       .3	1pO	u12_inhibit		      .3	0pO     adc_clk, (uclk0, spi1, uB1)
  *       .4	0pO	s_mux_a0		      .4	1pO	sd_csn (cs low true) (1pI, sd off)
  *       .5	0pO	s_mux_a1		      .5	1pO	rf_beeper_off
  *       .6	0pO	adc_cnv			      .6	1pO	ser_sel_a0
  *       .7	0pI	adc_da0			      .7	1pO	ser_sel_a1
  *
  * port 3.0	0pO	tmp_on			port 6.0	0pI	led_r
- *       .1	0sI	sd_di  (0pI, sd off)	      .1	0pI	led_y
- *       .2	0sI	sd_do  (0pI, sd off)	      .2	0pI	led_g
- *       .3	0sI	sd_clk (0pI, sd off)	      .3	0pI
+ *       .1	0pI	sd_di  (0pI, sd off)	      .1	0pI	led_y
+ *       .2	0pI	sd_do  (0pI, sd off)	      .2	0pI	led_g
+ *       .3	0pI	sd_clk (0pI, sd off)	      .3	0pI
  *       .4	1pI	gps_txd			      .4	1pO	speed_off
  *       .5	0pI	gps_rxd			      .5	1pO	mag_xy_off
  *       .6	1uI	dock_txd (uart1)	      .6	1pO	adc_sdi (not part of spi)
@@ -211,25 +211,31 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
 #define P3_BASE_DIR	0x01
 #define P3_BASE_VAL	0x50
 
-/* gps off, no batt chk, no solar, vref/vdiff off, g_mux 0 */
-#define P4_BASE_DIR	0x7f
+/* gps off, no batt chk, no solar, vref/vdiff off, g_mux 0,
+ * s_mux_a2 0
+ */
+#define P4_BASE_DIR	0xff
 #define P4_BASE_VAL	0x4c
 
 /*
- * sd off (1), s_mux 0, adc_somi/adc_clk assigned to spi.
+ * sd off (1), adc_simo/adc_somi/adc_clk assigned to spi.
  * ser_sel 3 (none), beeper off
  *
- * ADC_SDO and ADC_CLK are assigned to USCI B1 SPI.
+ * ADC_SIMO (not used), ADC_SDO and ADC_CLK are assigned to USCI B1 SPI.
  */
 #define P5_BASE_DIR	0xeb
 #define P5_BASE_VAL	0xf1
-#define P5_BASE_SEL	0x0c
 
 /* mag pwr off */
 #define P6_BASE_DIR	0xf0
 #define P6_BASE_VAL	0xf0
 
 
+/*
+ * assumes that TA is set up for uiS ticks.
+ *
+ * param u is number of uis to wait.
+ */
 inline void uwait(uint16_t u) {
   uint16_t t0 = TAR;
   while((TAR - t0) <= u);
@@ -274,7 +280,7 @@ void TOSH_MM_INITIAL_PIN_STATE(void) {
     P5OUT = P5_BASE_VAL;
     P5DIR = P5_BASE_DIR;
     P5REN = 0;
-    P5SEL = P5_BASE_SEL;
+    P5SEL = 0;
 
     P6OUT = P6_BASE_VAL;
     P6DIR = P6_BASE_DIR;

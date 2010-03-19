@@ -5,6 +5,7 @@
  * adc7685.h - Analog/Digital converter interface
  *
  * Modified to interface to the SPI via the usci/Hpl routines
+ * assigned to usciB1/SPI1.
  *
  * Analog Devices AD7685.
  *
@@ -12,8 +13,8 @@
  *
  * P/I    = port function, input.
  * P/O    = port function, output.
- * SPI0/O = assigned to SPI0 as an output.
- * SPI0/I = SPI0 input.
+ * SPI1/O = assigned to SPI1 as an output.
+ * SPI1/I = SPI1 input.
  *
  * P2.6    CNV	(P/O).  Convert.  low to high starts the conversion
  *			Also other functions (see the data sheet).
@@ -21,26 +22,29 @@
  * P2.7    CNV_complete  (P/I) (same as SOMI0) normally high (when SDO is high-Z)
  *			but goes low when a conversion completes (.7 to 3.2 us)
  *
- * P3.2    SOMI0	(SPI0/I) output from the ADC to the SPI module.  data clocks on
+ * P5.2    SOMI1	(SPI1/I) output from the ADC to the SPI module.  data clocks on
  *			falling edge of SCK.
  *
- * P3.3    SCK	(P/O and SPI0/O) clock to the ADC.  Initially configured as P/O so the
- *			start bit can be clocked out.  Then switched to SPI0/O
+ * P5.3    SCK	(P/O and SPI1/O) clock to the ADC.  Initially configured as P/O so the
+ *			start bit can be clocked out.  Then switched to SPI1/O
  *			and the SPI runs the rest of the data (16 bits).
  *
- * P3.5    SDI	(P/O, set to 1) set high and left there.  Controls ADC mode (selected on
+ * P5.5    SDI	(P/O, set to 1) set high and left there.  Controls ADC mode (selected on
  *			rising edge of CNV.
  *
  * Interfaces using HplMsp430UsciXXC routines.  Wiring in AdcC determines which
  * port.  The ADC assumes sole ownership of the underlying port and h/w associated with
  * it.  No arbritration is done.
+ *
+ * Note: Pin 5.1, SIMO is assigned to the SPI but the ADC is half duplex and we only
+ * read from it via SOMI.  The pin is assigned to the SPI anyway and is listed as
+ * reserved and is not connected.  This is so we can look at the SPI as a whole and
+ * use the defined access Hpl abstractions.
  */
 
 #include "hardware.h"
 #include "sensors.h"
 
-
-#ifdef notdef
 /*
  * Originally we initilized the spi ourselves including what we wanted
  * to use as the divider.  Now we use the Hpl interface and its default
@@ -48,20 +52,17 @@
  * use our own initilization structure.
  */
 
-/*
- * Fix me.  This can go down to 2.  check it out later.
- */
-#define ADC_DIV 4
-#endif
+#define ADC_DIV 1
 
 /*
- * ADC_SPI_MAX_WAIT is the number of microsecs that the
- * readAdc code will wait looking for bytes that should
+ * ADC_SPI_MAX_WAIT is the number of uis (binary microsecs)
+ * that the readAdc code will wait looking for bytes that should
  * be coming from the ADC.  We dont want to lock up and
- * stop things from working.
+ * stop things from working.  TA is assumed to be ticking at 1uis
+ * per tick.
  *
- * Initially we panic.  But this will be replaced by making
- * the code recover.
+ * Initially we do panic.warn.  But this will be replaced by logging and
+ * then recovering.
  */
 
 #define ADC_SPI_MAX_WAIT 100
@@ -123,10 +124,8 @@ implementation {
    *
    * According to the data sheet, if conversion data isn't available then
    * SDO will be in high-Z.  CNV_cmplt should be a 1.  but we only look
-   * at it after we start a conversion.  If interrupts are being used
-   * they should not be enabled until after a conversion is started.
-   * CNV_cmplt should then be a 1 and the interrupt is generated when
-   * CNV_cmplt goes low.
+   * at it after we start a conversion.  CNV_cmplt will go low when
+   * the ADC is done with the cycle.
    *
    * But this cpu is too slow to use this mode.
    *
@@ -152,8 +151,8 @@ implementation {
 
   void init_adc_hw() {
     /*
-     * set ADC_CNV to 0.  Dir and FuncSel are set once by platform init
-     * ADC_SDO, ADC_CLK assigned dir and sel by platform init.
+     * all conversion code assumes that the default value of
+     * ADC_CNV is 0.  Force it.
      */
     ADC_CNV = 0;
 
@@ -605,7 +604,7 @@ implementation {
     result |= ((uint16_t) call Usci.rx());
 
     /*
-     * Transmitter and Recevier should both be empty
+     * Transmitter and Receiver should both be empty
      */
     ifg2[3] = IFG2;
     ifg2[4] = UCB0STAT;

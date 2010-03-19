@@ -53,12 +53,14 @@ norace static volatile struct {
     uint8_t solar_chg_on	: 1;
     uint8_t extchg_battchk	: 1;
     uint8_t gps_off		: 1;
-    uint8_t rf232_off		: 1;
+    uint8_t smux_a2		: 1;
   } mmP4out asm("0x001d");
+
+#define SMUX_A2 mmP4out.smux_a2
 
 norace static volatile struct {
     uint8_t sd_pwr_off		: 1;
-    uint8_t smux_a2		: 1;
+    uint8_t adcx_sdi		: 1;	/* not used, reserved */
     uint8_t adcx_sdo		: 1;	/* input */
     uint8_t adcx_clk		: 1;
     uint8_t sd_csn		: 1;	/* chip select low true (deselect) */
@@ -66,18 +68,12 @@ norace static volatile struct {
     uint8_t ser_sel		: 2;
   } mmP5out asm("0x0031");
 
-#ifdef not_def
-#define ADC_SDO mmP5out.adcx_sdo
-#define ADC_CLK mmP5out.adc_clk
-#endif
-
-#define SMUX_A2 mmP5out.smux_a2
 #define SER_SEL mmP5out.ser_sel
 
   enum {
-    SER_SEL_CRADLE =	0,
-    SER_SEL_GPS    =	1,	/* temp so we can see it via the uart */
-    SER_SEL_UNUSED  =	2,
+    SER_SEL_DOCK   =	0,
+    SER_SEL_GPS    =	1,
+    SER_SEL_UNUSED =	2,
     SER_SEL_NONE   =	3,
   };
 
@@ -109,6 +105,8 @@ norace static volatile struct {
  * 3.1-3 SDI, SDO, CLK set to SPI Module.
  *
  * Similarily for the GPS uart pins.
+ *
+ * This needs to get reworked (FIX ME) for use of Hpl access routines.
  */
 #define SD_PINS_SPI   do { P3SEL |= 0x0e;   P5DIR |= 0x10; } while (0)
 #define GPS_PINS_UART do { P3SEL |= 0x03; } while (0)

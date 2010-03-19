@@ -25,7 +25,7 @@ implementation {
   }
 
   async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
-    SER_SEL = SER_SEL_CRADLE;
+    SER_SEL = SER_SEL_DOCK;
     return (msp430_uart_union_config_t *) &dock_serial_config;
   }
 }
