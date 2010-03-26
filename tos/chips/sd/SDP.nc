@@ -339,7 +339,7 @@ implementation {
     sd_cmd_blk_t *cmd;
 
     cmd = &sd_cmd;
-    call Umod.setModeSpi((msp430_spi_union_config_t *) &sd_400K_config);
+    call Umod.setUbr(SPI_400K_DIV);
     sd_packarg(0);
 
     /* Clock out at least 74 bits of idles (0xFF).  This allows
@@ -415,7 +415,7 @@ implementation {
     }
 
     /* If we got this far, initialization was OK. */
-    call Umod.setModeSpi((msp430_spi_union_config_t *) &SD_FULL_SPEED_CONFIG);
+    call Umod.setUbr(SPI_FULL_SPEED_DIV);
     return SUCCESS;
   }
 

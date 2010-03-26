@@ -34,7 +34,7 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
  
-generic configuration mmBlockingSpi1C() {
+generic configuration mmBlockingSpi0C() {
   provides {
     interface BlockingResource;
     interface BlockingSpiByte;
@@ -52,13 +52,13 @@ implementation {
   BlockingSpiByte   = BlockingSpiP;
   BlockingSpiPacket = BlockingSpiP;
   
-  components new mmSpi1C() as SPI_1;
-//  components new Msp430Spi1C() as SPI_1;
-  SpiResourceConfigure = SPI_1;
-  ResourceConfigure = SPI_1;
-  BlockingResourceC.Resource -> SPI_1;
-  BlockingSpiP.SpiByte -> SPI_1;
-  BlockingSpiP.SpiPacket -> SPI_1;
+  components new mmSpi0C() as SPI0;
+//  components new Msp430Spi0C() as SPI0;
+  SpiResourceConfigure = SPI0;
+  ResourceConfigure = SPI0;
+  BlockingResourceC.Resource -> SPI0;
+  BlockingSpiP.SpiByte -> SPI0;
+  BlockingSpiP.SpiPacket -> SPI0;
   
   components SystemCallC;
   BlockingSpiP.SystemCall -> SystemCallC;

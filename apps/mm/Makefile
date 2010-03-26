@@ -1,6 +1,6 @@
 #
 # USE_SPI_PACKET
-# ENABLE_SPI1_DMA
+# ENABLE_SPI0_DMA
 # GPS_TEST
 #   GPS_LEAVE_UP	don't turn power off to GPS
 #   GPS_NO_SHORT	don't do quick fix (always stay up for long window)
@@ -50,6 +50,6 @@ PFLAGS += -DGPS_COMM_EMIT_29
 
 #PFLAGS += -DTOSH_DATA_LENGTH=512
 #PFLAGS += -DALWAYS_ERASE
-#PFLAGS += -DUSE_SPI_PACKET -DENABLE_SPI1_DMA
+#PFLAGS += -DUSE_SPI_PACKET -DENABLE_SPI0_DMA
 
 include $(MAKERULES)

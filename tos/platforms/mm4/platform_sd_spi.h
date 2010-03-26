@@ -78,7 +78,7 @@ MSP430REG_NORACE(UCB0STAT);
 
 #define SPI_400K_DIV 21
 #define SPI_8M_DIV    1
-#define SD_FULL_SPEED_CONFIG sd_full_config
+#define SPI_FULL_SPEED_DIV SPI_8M_DIV
 
 const msp430_spi_union_config_t sd_400K_config = { {
   ubr		: SPI_400K_DIV,		/* slow the mother down. */

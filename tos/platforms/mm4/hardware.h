@@ -157,7 +157,7 @@ TOSH_ASSIGN_PIN(CC_RSTN, 4, 6);
  * PxIE		rw	reset to 0 (no port interrupts)
  * PxSEL	rw	reset to 0 (port function)
  *
- * SPI0 enabled, UART1 disabled, SPI1 disabled.
+ * SPI0 disabled, UART1 disabled, SPI1 disabled.
  *
  * P3.(2,3)   -> SPI0  (USART0), enabled
  * P3.(6,7)   -> UART1 (USART1), disabled
