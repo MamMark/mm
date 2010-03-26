@@ -11,7 +11,7 @@ monitor marine and terrestrial animals.  Its hardware includes:
 
 . TI MSP430F2618 MCU.
 
-. external 16 bit ADC converter connected to SPI0 (UsciB0, dedicated)
+. external 16 bit ADC converter connected to SPI1 (UsciB1, dedicated)
 . various external sensors connected to 16 bit ADC
 
 . Dock serial (cradle), Uart1, UsciA1, dedicated.
@@ -20,7 +20,9 @@ monitor marine and terrestrial animals.  Its hardware includes:
 
 . CC2420 Radio, not present
 
-. Mass Storage on external Secure Digital card, SPI1, UsciB1, dedicated.
+. Mass Storage on external Secure Digital card, SPI1, UsciB0,
+  dedicated.  Must be SPI1/UsciB0 
+
 
 
 2. Mass Storage

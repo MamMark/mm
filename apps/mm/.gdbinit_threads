@@ -226,14 +226,17 @@ end
 
 
 define sd
-printf "sd:  pwr: %d  csn: %d  p5: %02x  dir: %02x  sel: %02x  rx: %02x  tx: %02x\n",\
-    (((*(uint8_t *)0x31) & 1) ? 0 : 1), (((*(uint8_t *)0x31) & 0x10) ? 1 : 0),\
-    (*(uint8_t *)0x31), (*(uint8_t *)0x32), (*(uint8_t *)0x33), (*(uint8_t *)0x7e), (*(uint8_t *)0x7f)
+printf "sd:  pwr: %d  csn: %d/%c  p3d/s: %d/%d  rx: %02x  tx: %02x\n", \
+    (((*(uint8_t *)0x31) & 1) ? 0 : 1), \
+    (((*(uint8_t *)0x31) & 0x10) ? 1 : 0), (((*(uint8_t *)0x32) & 0x10) ? 'o' : 'i'), \
+    (((*(uint8_t *)0x1A) >> 1) & 7), (((*(uint8_t *)0x1B) >> 1) & 7), \
+    (*(uint8_t *)0x6e), (*(uint8_t *)0x6f)
 p/x SDP__sd_cmd
 end
 document sd
 display SD state
 end
+
 
 define th
 printf "current_thread: %04x  num_runnable: %d\n",TinyThreadSchedulerP__current_thread,TinyThreadSchedulerP__num_runnable_threads

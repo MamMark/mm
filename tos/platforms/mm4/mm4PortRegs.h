@@ -82,7 +82,7 @@ norace static volatile struct {
 #define SD_PWR_OFF (mmP5out.sd_pwr_off = 1)
 
 /*
- * SD_PINS_IN will set SPI0/SD data pins to inputs.  (no longer
+ * SD_PINS_INPUT will set SPI0/SD data pins to inputs.  (no longer
  * connected to the SPI module.  The values of these pins doesn't
  * matter but are assumed to be 0.  We are setting to inputs so who cars.
  * Direction of the pins is assumed to be input.  So the only thing that
@@ -102,7 +102,8 @@ norace static volatile struct {
  * And switches the sd_csn (5.4) from input to output,  the value should be
  * a 1 which deselects the sd and tri-states.
  *
- * 3.1-3 SDI, SDO, CLK set to SPI Module.
+ * 3.1-3 SDI, SDO, CLK set to SPI Module, SD_CSN switched to output
+ * (assumed 1, which is CSN, CS deasserted).
  *
  * Similarily for the GPS uart pins.
  *
