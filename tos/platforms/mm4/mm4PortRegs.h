@@ -90,11 +90,12 @@ norace static volatile struct {
  *
  * We also set SD_CSN to an input to avoid powering the chip.
  *
- * Similarily for the GPS uart pins.
+ * Similarily for the GPS uart pins.  Default setup is done in
+ * platform init and sets direction to input.  This isn't changed.
  */
 
 #define SD_PINS_INPUT  do { P3SEL &= ~0x0e;   P5DIR &= ~0x10; } while (0)
-#define GPS_PINS_INPUT do { P3SEL &= ~0x03; } while (0)
+#define GPS_PINS_INPUT do { P3SEL &= ~0x30; } while (0)
 
 
 /*
@@ -110,7 +111,7 @@ norace static volatile struct {
  * This needs to get reworked (FIX ME) for use of Hpl access routines.
  */
 #define SD_PINS_SPI   do { P3SEL |= 0x0e;   P5DIR |= 0x10; } while (0)
-#define GPS_PINS_UART do { P3SEL |= 0x03; } while (0)
+#define GPS_PINS_UART do { P3SEL |= 0x30; } while (0)
 
 
   static volatile struct {
