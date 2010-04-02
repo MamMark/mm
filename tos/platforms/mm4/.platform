@@ -33,6 +33,12 @@
 #  %T/chips/cc2420/transmit
 #  %T/chips/cc2420/unique
 #
+#  %T/chips/msp430X
+#  %T/chips/msp430X/pins
+#  %T/chips/msp430X/timer
+#  %T/chips/msp430X/usci
+#  %T/chips/msp430X/dma
+#
 
 push( @includes, qw(
 
@@ -42,12 +48,12 @@ push( @includes, qw(
   %P/../../chips/sd
   %P/../../chips/sensors
   %P/../../chips/sirf3
+  %T/chips/msp430/x2xxx
+  %T/chips/msp430/pins
+  %T/chips/msp430/timer
+  %T/chips/msp430/usci
+  %T/chips/msp430/dma
   %T/chips/cc2420
-  %T/chips/msp430X
-  %T/chips/msp430X/pins
-  %T/chips/msp430X/timer
-  %T/chips/msp430X/usci
-  %T/chips/msp430X/dma
   %T/lib/timer
   %T/lib/serial
   %T/lib/power
