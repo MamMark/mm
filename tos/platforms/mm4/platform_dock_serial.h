@@ -18,11 +18,11 @@
 
 const msp430_uart_union_config_t dock_serial_config = { {
 
-//       ubr:   UBR_8MHZ_57600,
-//       umctl: UMCTL_8MHZ_57600,
+//       ubr:   UBR_8MIHZ_57600,
+//       umctl: UMCTL_8MIHZ_57600,
 
-  ubr:   UBR_8MHZ_115200,
-  umctl: UMCTL_8MHZ_115200,
+  ubr:		UBR_8MIHZ_115200,
+  umctl:	UMCTL_8MIHZ_115200,
   ucmode:	0,			// uart
   ucspb:	0,			// one stop
   uc7bit:	0,			// 8 bit

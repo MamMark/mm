@@ -16,8 +16,8 @@
  */
 
 const msp430_uart_union_config_t sirf3_4800_serial_config = { {
-  ubr:		UBR_8MHZ_4800,
-  umctl:	UMCTL_8MHZ_4800,
+  ubr:		UBR_8MIHZ_4800,
+  umctl:	UMCTL_8MIHZ_4800,
   ucmode:	0,			// uart
   ucspb:	0,			// one stop
   uc7bit:	0,			// 8 bit
@@ -31,8 +31,8 @@ const msp430_uart_union_config_t sirf3_4800_serial_config = { {
 
 
 const msp430_uart_union_config_t sirf3_57600_serial_config = { {
-  ubr:		UBR_8MHZ_57600,
-  umctl:	UMCTL_8MHZ_57600,
+  ubr:		UBR_8MIHZ_57600,
+  umctl:	UMCTL_8MIHZ_57600,
   ucmode:	0,			// uart
   ucspb:	0,			// one stop
   uc7bit:	0,			// 8 bit
