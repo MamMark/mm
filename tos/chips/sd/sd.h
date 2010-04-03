@@ -303,8 +303,14 @@ typedef struct {
 /* Number of times to retry the probe cycle during initialization */
 #define SD_INIT_TRY 50
 
-/* Number of tries to wait for the card to go idle during initialization */
-#define SD_IDLE_WAIT_MAX 512
+/* SD_GO_OP_MAX
+ *
+ * when resetting, we periodically send SD_GO_OP to take the card out
+ * of reset.   We poll for the result and finish when the card comes
+ * out of idle.  GO_OP_MAX is the maximum number of times we try
+ * before giving up.
+ */
+#define SD_GO_OP_MAX 512
 
 /* Hardcoded timeout for commands. */
 #define SD_CMD_TIMEOUT 1024

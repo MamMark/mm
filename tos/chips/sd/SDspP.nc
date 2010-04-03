@@ -1,12 +1,9 @@
 /*
- * SD - low level Secure Digital storage driver
+ * SDsp - low level Secure Digital storage driver
+ * Split phase, event driven.
  *
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2010, Eric B. Decker
  * All rights reserved.
- *
- * T2 implementation.  This implementation uses
- * blocking calls and should only be called from
- * a threaded implementation.
  */
 
 #include "msp430hardware.h"
@@ -16,23 +13,20 @@
 #define SD_PUT_GET_TO 1024
 #define SD_PARANOID
 
-module SDP {
+module SDspP {
   provides {
-    interface SD;
+    interface SDreset;
+    interface SDread;
+    interface SDwrite;
+    interface SDerase;
     interface Init;
   }
   uses {
-#if defined(PLATFORM_MM3)
-    interface HplMsp430Usart as Umod;
-#elif defined(PLATFORM_MM4)
     interface HplMsp430UsciB as Umod;
     interface HplMsp430UsciInterrupts as UsciInterrupts;
-#else
-#error "One of MM3 or MM4 need to be defined"
-#endif
-    
     interface Panic;
     interface BlockingSpiPacket;
+    interface Timer<TMilli> as SD_reset_timer;
   }
 }
 
@@ -49,6 +43,8 @@ implementation {
   bool         sd_busyflag;
   uint16_t     sd_reset_idles;
 
+  uint16_t     sd_go_op_count;
+  
   void sd_wait_notbusy();
 
   void sd_chk_clean() {
@@ -333,12 +329,12 @@ implementation {
      SPI SD initialization sequence:
      CMD0 (reset), CMD55 (app cmd), ACMD41 (app_send_op_cond), CMD58 (send ocr)
   */
-
-  command error_t SD.reset() {
-    uint16_t i;
+ 
+  command error_t SDreset.reset() {
     sd_cmd_blk_t *cmd;
 
     cmd = &sd_cmd;
+
     call Umod.setUbr(SPI_400K_DIV);
     sd_packarg(0);
 
@@ -370,53 +366,87 @@ implementation {
     sd_delay(SD_RESET_IDLES);
 
     /* Put the card in the idle state, non-zero return -> error */
-    cmd->cmd     = SD_FORCE_IDLE;
+    cmd->cmd     = SD_FORCE_IDLE;       // Send CMD0, software reset
     cmd->rsp_len = SD_FORCE_IDLE_R;
     if (sd_send_command()) {
       call Panic.panic(PANIC_SD, 15, 0, 0, 0, 0);
       return FAIL;
     }
 
+    /*
+     * force the timer to go, which sends the first go_op.
+     * eventually it will cause a resetDone to get sent
+     */
+    sd_go_op_count = 0;		// Reset our counter for Pending tries
+    call SD_reset_timer.startOneShot(0);
+    return SUCCESS;
+  }
 
-    /* Now wait until the card goes idle. Retry at most SD_GO_OP_MAX times */
-    i = 0;
-    do {
-      i++;
-      cmd->cmd     = SD_GO_OP;
-      cmd->rsp_len = SD_GO_OP_R;
-      if (sd_send_command()) {
-	call Panic.panic(PANIC_SD, 16, 0, 0, 0, 0);
-	return FAIL;
-      }
-//    } while ((cmd->rsp[0] & MSK_IDLE) == MSK_IDLE && i < SD_GO_OP_MAX);
-    } while ((cmd->rsp[0] & MSK_IDLE) == MSK_IDLE);
-    sd_reset_timeout = i;
 
-    //    if (i >= SD_GO_OP_MAX)		/* did we bail? */
-    //	return(SD_INIT_TIMEOUT);
+  void reset_finish() {
+    sd_cmd_blk_t *cmd;
 
+    cmd = &sd_cmd;
     cmd->cmd     = SD_SEND_OCR;
     cmd->rsp_len = SD_SEND_OCR_R;
     if (sd_send_command()) {
       call Panic.panic(PANIC_SD, 17, 0, 0, 0, 0);
-      return FAIL;
+      signal SDreset.resetDone(FAIL);
+      return;
     }
 
     /* At a very minimum, we must allow 3.3V. */
     if ((cmd->rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
       call Panic.panic(PANIC_SD, 18, cmd->rsp[2], 0, 0, 0);
-      return FAIL;
+      signal SDreset.resetDone(FAIL);
+      return;
     }
 
     /* Set the block length */
     if (sd_set_blocklen(SD_BLOCKSIZE)) {
       call Panic.panic(PANIC_SD, 19, 0, 0, 0, 0);
-      return FAIL;
+      signal SDreset.resetDone(FAIL);
+      return;
     }
 
     /* If we got this far, initialization was OK. */
     call Umod.setUbr(SPI_FULL_SPEED_DIV);
-    return SUCCESS;
+    signal SDreset.resetDone(SUCCESS);
+  }
+
+
+  event void SD_reset_timer.fired() {
+    sd_cmd_blk_t *cmd;
+
+    cmd = &sd_cmd; 
+    cmd->cmd     = SD_GO_OP;            //Send ACMD41
+    cmd->rsp_len = SD_GO_OP_R;
+    if (sd_send_command()) {
+      call Panic.panic(PANIC_SD, 16, 0, 0, 0, 0);
+      signal SDreset.resetDone(FAIL);
+      return;
+    }
+
+    if (cmd->rsp[0] & MSK_IDLE) {
+      /* idle bit still set, means card is still in reset */
+      if (++sd_go_op_count >= SD_GO_OP_MAX) {
+	call Panic.panic(PANIC_SD, 40, 0, 0, 0, 0);     //We maxed the tries, panic and fail
+	signal SDreset.resetDone(FAIL);
+	return;
+      }
+      call SD_reset_timer.startOneShot(45);
+      return;
+    }
+
+    /*
+     * not idle finish things up.
+     */
+    reset_finish();
+    return;
+  }
+
+
+  void CheckSDPending() {
   }
 
 
@@ -618,14 +648,14 @@ implementation {
   
 
   /*
-   * SD.read: read a 512 byte block from the SD
+   * SDread.read: read a 512 byte block from the SD
    *
    * input:  blockaddr     block to read.  (max 23 bits)
    *         data          pointer to data buffer
    * output: rtn           0 call successful, err otherwise
    */
 
-  command error_t SD.read(uint32_t blockaddr, void *data) {
+  command error_t SDread.read(uint32_t blockaddr, void *data) {
     sd_cmd_blk_t *cmd;
     error_t err;
     uint8_t *d;
@@ -910,7 +940,7 @@ implementation {
   }
 
 
-  command error_t SD.write(uint32_t blockaddr, void *data) {
+  command error_t SDwrite.write(uint32_t blockaddr, void *data) {
     return sd_write_direct(blockaddr, data);
   }
 
@@ -923,7 +953,7 @@ implementation {
    * erase a contiguous number of blocks
    */
 
-  command error_t SD.erase(uint32_t blk_start, uint32_t blk_end) {
+  command error_t SDerase.erase(uint32_t blk_start, uint32_t blk_end) {
     sd_cmd_blk_t *cmd;
 
     cmd = &sd_cmd;

@@ -99,7 +99,10 @@ module StreamStorageP {
     interface Boot;
     interface Thread as SSWriter;
     interface Thread as SSReader;
-    interface SD;
+    interface SDreset;
+    interface SDread;
+    interface SDwrite;
+    interface SDerase;
     interface Hpl_MM_hw as HW;
     interface Semaphore;
     interface BlockingResource as BlockingWriteResource;
@@ -349,7 +352,7 @@ implementation {
   error_t read_blk_fail(uint32_t blk, uint8_t *buf) {
     error_t err;
 
-    err = call SD.read(blk, buf);
+    err = call SDread.read(blk, buf);
     if (err) {
       ss_panic(13, err);
       return err;
@@ -357,19 +360,22 @@ implementation {
     return err;
   }
 
+  void ss_boot_start() {
+    call SDreset.reset();
+  }
 
-  error_t ss_boot() {
+  error_t ss_boot_finish() {
     error_t err;
     uint8_t *dp;
     dblk_loc_t *dbl;
     uint32_t   lower, blk, upper;
     bool empty;
 
-    err = call SD.reset();
-    if (err) {
-      ss_panic(14, err);
-      return err;
-    }
+//    err = call SDreset.reset();
+//    if (err) {
+//      ss_panic(14, err);
+//      return err;
+//    }
 
     dp = ssw_p[0]->buf;
     if ((err = read_blk_fail(0, dp)))
@@ -399,7 +405,7 @@ implementation {
       erase_start = ssc.dblk_start;
       erase_end   = ssc.dblk_end;
       nop();
-      call SD.erase(erase_start, erase_end);
+      call SDerase.erase(erase_start, erase_end);
     }
 #endif
     if ((err = read_blk_fail(ssc.dblk_start, dp))) {
@@ -448,6 +454,11 @@ implementation {
 
     ss_panic(17, -1);
     return FAIL;
+  }
+
+
+  event void SDreset.resetDone(error_t error) {
+    ss_boot_finish();
   }
 
 
@@ -564,7 +575,7 @@ implementation {
     }
 
     if(cur_state == SS_STATE_PWR_UP) {
-      err = call SD.reset();
+      err = call SDreset.reset();
       if (err) {
 	ss_panic(26, err);
 	return TRUE;
@@ -592,9 +603,10 @@ implementation {
      * First start up and read in control blocks.
      * Then signal we have booted.
      */
-    if ((err = ss_boot())) {
-      ss_panic(24, err);
-    }
+//    if ((err = ss_boot())) {
+//      ss_panic(24, err);
+//    }
+    ss_boot_start();
 
     /*
      * releasing when IDLE will power the device down.
@@ -671,7 +683,7 @@ implementation {
 	  cur_handle->req_state = SS_REQ_STATE_WRITING;
 	  atomic ss_state = SS_STATE_XFER_W;
 	  w_t0 = call LocalTime.get();
-	  err = call SD.write(ssc.dblk_nxt, cur_handle->buf);
+	  err = call SDwrite.write(ssc.dblk_nxt, cur_handle->buf);
 	  if (err)
 	    ss_panic(27, err);
 	  num++;
@@ -847,7 +859,7 @@ implementation {
 
 	cur_handle->stamp = call LocalTime.get();
 	cur_handle->req_state = SS_REQ_STATE_READING;
-	err = call SD.read(cur_handle->blk, cur_handle->buf);
+	err = call SDread.read(cur_handle->blk, cur_handle->buf);
 	if (err)
 	  ss_panic(31, err);
  
