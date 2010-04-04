@@ -42,7 +42,7 @@ push( @includes, qw(
   %P/../../chips/sensors
   %P/../../chips/sirf3
   %T/chips/cc2420
-  %T/chips/msp430
+  %T/chips/msp430/x1xxx
   %T/chips/msp430/pins
   %T/chips/msp430/timer
   %T/chips/msp430/usart
