@@ -4,16 +4,18 @@
 # mmdump: dump/process the data file from a mammark tag.
 # can also handle a serial/network datastream.
 #
-# This makefile will build mmdump for a given platform
-# platform must be specified by MM_PLATFORM_DIR.
+# This makefile will build mmdump for a given platform platform
+# must be specified by MM_PLATFORM_DIR and MM_COMMON must point
+# to any shared directory.
 #
 # This hasn't been generalized because we really only do development
 # on one platform at a time.  h/w rev.  And it wasn't deemed worth
 # the hassle to fix this.
 #
 
-TARGET=mm3
+TARGET=mm4
 MM_PLATFORM_DIR=$(MM_ROOT)/tos/platforms/$(TARGET)
+MM_COMMON=$(MM_ROOT)/tos/platforms/mm
 TYPED_DATA=$(MM_ROOT)/tos/mm/typed_data.h
 COMM=$(MM_ROOT)/tos/comm
 SENSORS=$(MM_ROOT)/tos/chips/sensors
@@ -59,107 +61,107 @@ SERIAL_H = $(TOSDIR)/lib/serial/Serial.h
 all: $(PROGRAMS)
 
 mmDataMsg.h: $(COMM)/mm_data_msg.h
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(COMM)/mm_data_msg.h mm_data_msg -o mmDataMsg.h
 
 DtIgnoreMsg.c DtIgnoreMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_ignore -o DtIgnoreMsg.h
 
 DtConfigMsg.c DtConfigMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_config -o DtConfigMsg.h
 
 DtSyncMsg.c DtSyncMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_sync -o DtSyncMsg.h
 
 DtPanicMsg.c DtPanicMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_panic -o DtPanicMsg.h
 
 DtGpsTimeMsg.c DtGpsTimeMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_gps_time -o DtGpsTimeMsg.h
 
 DtGpsPosMsg.c DtGpsPosMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_gps_pos -o DtGpsPosMsg.h
 
 DtSensorDataMsg.c DtSensorDataMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_sensor_data -o DtSensorDataMsg.h
 
 DtSensorSetMsg.c DtSensorSetMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_sensor_set -o DtSensorSetMsg.h
 
 DtTestMsg.c DtTestMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_test -o DtTestMsg.h
 
 DtNoteMsg.c DtNoteMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_note -o DtNoteMsg.h
 
 DtGpsRawMsg.c DtGpsRawMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_gps_raw -o DtGpsRawMsg.h
 
 GpsNavDataMsg.c GpsNavDataMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) gps_nav_data -o GpsNavDataMsg.h
 
 GpsTrackerDataMsg.c GpsTrackerDataMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) gps_tracker_data -o GpsTrackerDataMsg.h
 
 GpsNavLibDataMsg.c GpsNavLibDataMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
         c $(TYPED_DATA) gps_nav_lib_data -o GpsNavLibDataMsg.h
 
 GpsGeodeticDataMsg.c GpsGeodeticDataMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) gps_geodetic -o GpsGeodeticDataMsg.h
 
 GpsDevDataMsg.c GpsDevDataMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) gps_dev_data -o GpsDevDataMsg.h
 
 GpsSoftVersMsg.c GpsSoftVersMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) gps_soft_version_data -o GpsSoftVersMsg.h
 
 GpsClockStatusMsg.c GpsClockStatusMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) gps_clock_status_data -o GpsClockStatusMsg.h
 
 GpsErrorMsg.c GpsErrorMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) gps_error_data -o GpsErrorMsg.h
 
 GpsAlmanacStatusMsg.c GpsAlmanacStatusMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) gps_almanac_status_data -o GpsAlmanacStatusMsg.h
 
 GpsPpsMsg.c GpsPpsMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) gps_pps_data -o GpsPpsMsg.h
 
 GpsUnkMsg.c GpsUnkMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) gps_unk -o GpsUnkMsg.h
 
 DtVersionMsg.c DtVersionMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_version -o DtVersionMsg.h
 
 DtEventMsg.c DtEventMsg.h: $(TYPED_DATA)
-	mig -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_event -o DtEventMsg.h
 
 SensorConstants.h: $(SENSORS)/sensors.h
-	ncg -I$(MM_PLATFORM_DIR) -I$(SENSORS) -target=$(TARGET) \
+	ncg -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -I$(SENSORS) -target=$(TARGET) \
 	c $(SENSORS)/sensors.h \
 	SNS_ID_NONE               \
 	SNS_ID_CRADLE             \
@@ -175,7 +177,7 @@ SensorConstants.h: $(SENSORS)/sensors.h
 	-o $@
 
 SDConstants.h: $(TYPED_DATA)
-	ncg -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	ncg -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) \
 	DT_IGNORE                 \
 	DT_CONFIG		  \
