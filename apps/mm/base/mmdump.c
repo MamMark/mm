@@ -515,16 +515,16 @@ process_sensor_data(tmsg_t *msg) {
 
 void
 process_version(tmsg_t *msg) {
-  uint8_t major, minor, tweak;
+  uint8_t major, minor, build;
   int i;
 
   major = dt_version_major_get(msg);
   minor = dt_version_minor_get(msg);
-  tweak = dt_version_tweak_get(msg);
-  printf("VER: %d.%d.%d\n", major, minor, tweak);
+  build = dt_version_build_get(msg);
+  printf("VER: %d.%d.%d\n", major, minor, build);
   if (write_data)
     for (i = 1; i < MM_NUM_SENSORS; i++)
-      fprintf(fp[i], "%% Tag Version: %d.%d.%d\n", major, minor, tweak);
+      fprintf(fp[i], "%% Tag Version: %d.%d.%d\n", major, minor, build);
 }
 
 

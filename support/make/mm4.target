@@ -5,6 +5,12 @@
 #
 
 PLATFORM ?= mm4
+PLATFORMDIR = $(MM_ROOT)/tos/platforms/$(PLATFORM)
+
+BUILD_NUM_FILE = $(PLATFORMDIR)/_Build
+BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)); else echo 0; fi)
+
+PFLAGS += -D_BUILD=$(BUILD_NUM)
 
 #
 # THREADS_MSP430_DIR comes from main tree support/make/threads.extra
@@ -60,5 +66,10 @@ endif
 
 $(call TOSMake_include_platform,msp)
 
-mm4: $(BUILD_DEPS)
+build_num: FORCE
+	@if [ ! -f $(BUILD_NUM_FILE) ] ; then echo -1 > $(BUILD_NUM_FILE); fi
+	@echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)) > $(BUILD_NUM_FILE)
+	@echo BUILD: $(BUILD_NUM)
+
+mm4: build_num $(BUILD_DEPS)
 	@:

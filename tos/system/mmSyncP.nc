@@ -3,9 +3,8 @@
  * All rights reserved.
  */
 
-#include "verMajor.h"
-#include "verMinor.h"
-#include "verTweak.h"
+#include "platform_version.h"
+
 
 /*
  * 1 min * 60 sec/min * 1024 ticks/sec  (binary millisecs, mis)
@@ -41,16 +40,16 @@ implementation {
    * Otherwise, we hang in the boot sequence.  How does this work
    * when comm is down?
    */
-  void write_version_record(uint8_t major, uint8_t minor, uint8_t tweak) {
+  void write_version_record() {
     uint8_t vdata[DT_HDR_SIZE_VERSION];
     dt_version_nt *vp;
 
     vp = (dt_version_nt *) &vdata;
-    vp->len = DT_HDR_SIZE_VERSION;
-    vp->dtype = DT_VERSION;
-    vp->major = major;
-    vp->minor = minor;
-    vp->tweak = tweak;
+    vp->len     = DT_HDR_SIZE_VERSION;
+    vp->dtype   = DT_VERSION;
+    vp->major   = MAJOR;
+    vp->minor   = MINOR;
+    vp->build   = _BUILD;
     call Collect.collect(vdata, DT_HDR_SIZE_VERSION);
     call mmCommData.send_data(vdata, DT_HDR_SIZE_VERSION);
   }
@@ -94,7 +93,7 @@ implementation {
 
       case SYNC_BOOT_1:
 	boot_state = SYNC_BOOT_2;
-	write_version_record(MAJOR, MINOR, TWEAK);
+	write_version_record();
 	break;
 
       case SYNC_BOOT_2:

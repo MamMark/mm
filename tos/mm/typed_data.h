@@ -467,7 +467,7 @@ typedef nx_struct dt_version {
   nx_uint8_t	dtype;
   nx_uint8_t	major;
   nx_uint8_t	minor;
-  nx_uint8_t	tweak;
+  nx_uint8_t	build;
 } dt_version_nt;
 
 
