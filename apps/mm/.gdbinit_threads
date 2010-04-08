@@ -38,6 +38,13 @@ end
 # 7
 b mmC.nc:50
 
+
+
+# ******************************************************************************
+b mmSyncP.nc:96
+
+
+
 # 7 Msg Collect too big
 #b GPSMsgP.nc:538
 
@@ -51,16 +58,9 @@ b mmC.nc:50
 # 12 SerialDefOwner.requested 1134
 # 13 SerialDefOwner.granted    787
 # 14 msgBoundary 1102
-# 15 SerialDemuxResource.granted 766
 
 # 9 finish
 #b GPSP.nc:502
-#b mmControlP.nc:107
-#b GPSP.nc:669
-#b GPSP.nc:1134
-#b *GPSP__SerialDefOwner__granted
-#b GPSP.nc:1102
-#b GPSP.nc:766
 
 #dis 7-15
 #ena 10

@@ -361,7 +361,7 @@ The main tracking repo is at:
 
 **************************************************************************************
 
-130) About the T2_MM tree.
+13) About the T2_MM tree.
 
 The t2_mm tree is a seperate t2 based repo that has mammark unique
 code.  It is used to build firmware for the mm3 (1611 based) and mm4

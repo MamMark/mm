@@ -71,7 +71,7 @@ implementation {
 #endif
 
   CommBootC.Boot -> MainC;	// Main kicks Comm (serial/radio)
-  SS.Boot -> CommBootC;	//    which kicks StreamStorage
+  SS.Boot -> CommBootC;		//    which kicks StreamStorage
   mmSyncC.Boot -> SS;		//        then write initial status
 #ifdef GPS_TEST
   GPSC.Boot -> mmSyncC;		//            and then GPS.
