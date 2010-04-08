@@ -1,7 +1,7 @@
 /*
  * rawDump - dump from serial or serial forwarder sensor data.
  *
- * Copyright 2008 Eric B. Decker
+ * Copyright 2008, 2010 Eric B. Decker
  * Mam-Mark Project
  */
 
@@ -20,6 +20,10 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include <serialsource.h>
+#include <sfsource.h>
+
+
 int debug	= 0,
     verbose	= 0,
     write_data  = 0,
@@ -28,12 +32,13 @@ int debug	= 0,
 static void usage(char *name) {
   fprintf(stderr, "usage: %s [-Dv] --serial  <serial device>  <baud rate>\n", name);
   fprintf(stderr, "       %s [-Dv] --sf  <host>  <port>\n", name);
+  fprintf(stderr, "       %s [-Dv] -r   <serial device>  <baud rate>\n", name);
   fprintf(stderr, "  -D           increment debugging level\n");
   fprintf(stderr, "  -v           verbose mode (increment)\n");
+  fprintf(stderr, "  -r           raw, direct to serial port, all bytes\n");
   exit(2);
 }
 
-#ifdef notdef
 static char *msgs[] = {
   "unknown_packet_type",
   "ack_timeout"	,
@@ -46,14 +51,12 @@ static char *msgs[] = {
   "no_memory"	,
   "unix_error"
 };
-#endif
 
 
-#ifdef notdef
 void stderr_msg(serial_source_msg problem) {
-  fprintf(stderr, "Note: %s\n", msgs[problem]);
+  fprintf(stderr, "*** Note: %s\n", msgs[problem]);
 }
-#endif
+
 
 tcflag_t parse_baudrate(int requested) {
   int baudrate;
@@ -155,6 +158,14 @@ tcflag_t parse_baudrate(int requested) {
   return baudrate;
 }
 
+
+typedef enum {
+  INPUT_SERIAL = 1,
+  INPUT_SF     = 2,
+  INPUT_RAW    = 3,
+} input_src_t;
+
+
 /* options descriptor */
 static struct option longopts[] = {
   { "sf",	no_argument,	NULL, 1 },
@@ -162,34 +173,47 @@ static struct option longopts[] = {
   { NULL,	0,		NULL, 0 }
 };
 
+serial_source   serial_src;
+int		sf_src;		/* fd for serial forwarder server */
+int             raw_fd;
+
 int 
 main(int argc, char **argv) {
+  int i;
+  uint8_t *packet;
   char *prog_name;
-  int c, use_serial, bail;
+  int len;
+  int c, bail;
+  input_src_t input_src;
   struct termios newtio;
-  int fd;
   tcflag_t baudflag;
   int cnt;
   uint8_t *buf;
 
-  use_serial = 1;
+  serial_src = NULL;
+  sf_src = 0;
+  input_src = INPUT_RAW;
   bail = 0;
   prog_name = basename(argv[0]);
-  while ((c = getopt_long(argc, argv, "Dv", longopts, NULL)) != EOF) {
+  while ((c = getopt_long(argc, argv, "Dvr", longopts, NULL)) != EOF) {
     switch (c) {
       case 1:
 	bail = 1;
-	use_serial = 0;
+	input_src = INPUT_SF;
 	break;
       case 2:
 	bail = 1;
-	use_serial = 1;
+	input_src = INPUT_SERIAL;
 	break;
       case 'D':
 	debug++;
 	break;
       case 'v':
 	verbose++;
+	break;
+      case 'r':
+	raw++;
+	input_src = INPUT_RAW;
 	break;
       default:
 	usage(prog_name);
@@ -199,41 +223,88 @@ main(int argc, char **argv) {
   }
   argc -= optind;
   argv += optind;
-  
+
   if (argc != 2) {
     usage(prog_name);
     exit(2);
   }
 
-  baudflag = parse_baudrate(atoi(argv[1]));
-  if (!baudflag)
-    exit(2);
-
-//    fd = open(argv[0], O_RDWR | O_NOCTTY | O_NONBLOCK);
-  fd = open(argv[0], O_RDWR | O_NOCTTY);
-  if (fd < 0)
-    exit(2);
-
-  /* Serial port setting */
-  memset(&newtio, 0, sizeof(newtio));
-  newtio.c_cflag = CS8 | CLOCAL | CREAD;
-  newtio.c_iflag = IGNPAR | IGNBRK;
-  cfsetispeed(&newtio, baudflag);
-  cfsetospeed(&newtio, baudflag);
-
-  /* Raw output_file */
-  newtio.c_oflag = 0;
-
-  if (tcflush(fd, TCIFLUSH) >= 0 &&
-      tcsetattr(fd, TCSANOW, &newtio) >= 0) {
-    buf = malloc(256);
-    while(1) {
-      cnt = read(fd, buf, 1);
-      if (cnt == 0)
-	continue;
-      fprintf(stderr, "%02x ", buf[0]);
+  if (input_src == INPUT_RAW) {
+    baudflag = parse_baudrate(platform_baud_rate(argv[1]));
+    if (!baudflag) {
+      fprintf(stderr, "couldn't figure out the baud rate\n");
+      exit(2);
     }
-  } else
-    close(fd);
-  exit(0);
+    raw_fd = open(argv[0], O_RDWR | O_NOCTTY);
+    if (raw_fd < 0)
+      exit(2);
+
+    /* Serial port setting */
+    memset(&newtio, 0, sizeof(newtio));
+    newtio.c_cflag = CS8 | CLOCAL | CREAD;
+    newtio.c_iflag = IGNPAR | IGNBRK;
+    cfsetispeed(&newtio, baudflag);
+    cfsetospeed(&newtio, baudflag);
+
+    /* Raw output_file */
+    newtio.c_oflag = 0;
+
+    if (tcflush(raw_fd, TCIFLUSH) >= 0 && tcsetattr(raw_fd, TCSANOW, &newtio) >= 0) {
+      buf = malloc(256);
+      while(1) {
+	cnt = read(raw_fd, buf, 1);
+	if (cnt == 0)
+	  continue;
+	fprintf(stderr, "%02x ", buf[0]);
+      }
+    } else
+      close(raw_fd);
+    exit(0);
+  }
+
+  switch(input_src) {
+    case INPUT_SERIAL:
+      serial_src = open_serial_source(argv[0], platform_baud_rate(argv[1]), 0, stderr_msg);
+      if (!serial_src) {
+	fprintf(stderr, "*** Couldn't open serial port at %s:%s\n", argv[0], argv[1]);
+	perror("error: ");
+	exit(1);
+      }
+      break;
+
+    case INPUT_SF:
+      sf_src = open_sf_source(argv[0], atoi(argv[1]));
+      if (sf_src < 0) {
+	fprintf(stderr, "*** Couldn't open serial forwarder at %s:%s\n", argv[0], argv[1]);
+	perror("error: ");
+	exit(1);
+      }
+      break;
+
+    default:
+      fprintf(stderr, "shouldn't be here\n");
+      exit(1);
+  }
+  for(;;) {
+    switch(input_src) {
+      case INPUT_SERIAL:
+	packet = read_serial_packet(serial_src, &len);
+	break;
+
+      case INPUT_SF:
+	packet = read_sf_packet(sf_src, &len);
+	break;
+
+      default:
+	fprintf(stderr, "shouldn't be here\n");
+	exit(1);
+    }
+    if (!packet)
+      exit(0);
+
+    for (i = 0; i < len; i++)
+      fprintf(stderr, "%02x ", packet[i]);
+    fprintf(stderr, "\n");
+    free((void *)packet);
+  }
 }
