@@ -4,13 +4,9 @@
 # mmdump: dump/process the data file from a mammark tag.
 # can also handle a serial/network datastream.
 #
-# This makefile will build mmdump for a given platform platform
-# must be specified by MM_PLATFORM_DIR and MM_COMMON must point
-# to any shared directory.
-#
-# This hasn't been generalized because we really only do development
-# on one platform at a time.  h/w rev.  And it wasn't deemed worth
-# the hassle to fix this.
+# This makefile will build mmdump for the platform specified by
+# MM_PLATFORM_DIR.  Shared platform files must be pointed to by
+# MM_COMMON.
 #
 
 TARGET=mm4
@@ -176,7 +172,7 @@ SensorConstants.h: $(SENSORS)/sensors.h
 	MM_NUM_SENSORS		  \
 	-o $@
 
-SDConstants.h: $(TYPED_DATA)
+SDConstants.h: $(TYPED_DATA) Makefile
 	ncg -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) \
 	DT_IGNORE                 \

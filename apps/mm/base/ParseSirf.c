@@ -697,9 +697,9 @@ hexprint(uint8_t *ptr, int len) {
   int i;
 
   for (i = 0; i < len; i++) {
-    if ((i % 16) == 0) {
+    if ((i % 32) == 0) {
       if (i == 0)
-	fprintf(stderr, "\n*** ");
+	fprintf(stderr, "*** ");
       else
 	fprintf(stderr, "\n    ");
     }

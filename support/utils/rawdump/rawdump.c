@@ -24,9 +24,10 @@
 #include <sfsource.h>
 
 
+#define VERSION "rawdump: v0.1.1  (10 Apr 2010)\n"
+
 int debug	= 0,
     verbose	= 0,
-    write_data  = 0,
     raw         = 0;
 
 static void usage(char *name) {
@@ -229,6 +230,21 @@ main(int argc, char **argv) {
     exit(2);
   }
 
+  if (verbose) {
+    fprintf(stderr, VERSION);
+    switch (input_src) {
+      case INPUT_SERIAL:
+	fprintf(stderr, "opening: serial@%s:%d\n", argv[0], platform_baud_rate(argv[1]));
+	break;
+      case INPUT_SF:
+	fprintf(stderr, "opening: sf@%s:%d\n", argv[0], atoi(argv[1]));
+	break;
+      case INPUT_RAW:
+	fprintf(stderr, "opening: raw@%s:%d\n", argv[0], platform_baud_rate(argv[1]));
+	break;
+    }
+  }
+
   if (input_src == INPUT_RAW) {
     baudflag = parse_baudrate(platform_baud_rate(argv[1]));
     if (!baudflag) {
@@ -236,8 +252,11 @@ main(int argc, char **argv) {
       exit(2);
     }
     raw_fd = open(argv[0], O_RDWR | O_NOCTTY);
-    if (raw_fd < 0)
+    if (raw_fd < 0) {
+      fprintf(stderr, "*** Couldn't open serial port at %s:%s\n", argv[0], argv[1]);
+      perror("error: ");
       exit(2);
+    }
 
     /* Serial port setting */
     memset(&newtio, 0, sizeof(newtio));
@@ -299,8 +318,11 @@ main(int argc, char **argv) {
 	fprintf(stderr, "shouldn't be here\n");
 	exit(1);
     }
-    if (!packet)
+    if (!packet) {
+      if (verbose)
+	fprintf(stderr, "*** end of stream, terminating\n");
       exit(0);
+    }
 
     for (i = 0; i < len; i++)
       fprintf(stderr, "%02x ", packet[i]);

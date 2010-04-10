@@ -1,0 +1,6 @@
+#!/bin/bash
+SIZE=8
+mrxvt -aht -xft -xftsz $SIZE -geometry 80x24+1240   -e sf 9002 /dev/ttyUSB1 telosb &
+sleep 1
+mrxvt -aht -xft -xftsz $SIZE -geometry 132x40-0+0   -e mmdump  -ve --sf localhost 9002 &
+mrxvt -aht -xft -xftsz $SIZE -geometry 132x40-0+550 -e rawdump -v  --sf localhost 9002 &
