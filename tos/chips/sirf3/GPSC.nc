@@ -43,7 +43,9 @@ implementation {
   GPSP.Usci -> UsciC;
 
   components new Msp430Uart0C() as UartC;
-  GPSP.UartStream -> UartC;  
+  GPSP.UartStream -> UartC;
+  GPSP.UsciResource -> UartC;
+  GPSP.UartConfigure <- UartC;
   
   components PanicC;
   GPSP.Panic -> PanicC;
