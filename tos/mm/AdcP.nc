@@ -68,7 +68,7 @@
 #define ADC_SPI_MAX_WAIT 100
 
   volatile uint16_t num_reads;
-  int8_t ifg2[5];
+  int8_t s_ifg[5];
 
 module AdcP {
   provides {
@@ -162,8 +162,15 @@ implementation {
      *
      * On return, interrupts for the spi will be off and the device
      * will be running (taken out of reset).
+     *
+     * There is a side effect that causes problems.  The setModeSpi routine
+     * also clears out any pending interrupts (tx_ifg) which tells us there
+     * is space in the transmit buffer.  We reset and then unreset the
+     * port to fix this.
      */
     call Usci.setModeSpi((msp430_spi_union_config_t *) &msp430_spi_default_config);
+    call Usci.resetUsci_n();
+    call Usci.unresetUsci_n();
   }
 
 
@@ -527,7 +534,7 @@ implementation {
     uint16_t result;
     uint16_t t0;
 
-    ifg2[0] = IFG2;
+    s_ifg[0] = UC1IFG;
     result = 0;
     /*
      * first do a sanity check.  If (tx is busy, not empty) or
@@ -544,7 +551,7 @@ implementation {
        *
        * bitch bitch bitch and reset the h/w.
        */
-      call Panic.warn(PANIC_ADC, 8, IFG2, UCB0STAT, 0, 0);
+      call Panic.warn(PANIC_ADC, 8, UC1IFG, UCB1STAT, 0, 0);
       init_adc_hw();
     }
 
@@ -562,7 +569,7 @@ implementation {
      */
 
     call Usci.tx(0x1a);		/* data doesn't matter */
-    ifg2[1] = IFG2;
+    s_ifg[1] = UC1IFG;
     t0 = TAR;
     while (1) {
       if (call Usci.isRxIntrPending())
@@ -571,18 +578,18 @@ implementation {
 	/*
 	 * FIXME.  we choke.  Figure out why.
 	 */
-//	call Panic.warn(PANIC_ADC, 9, 1, IFG2, TAR, t0);
-//	break;
+	call Panic.warn(PANIC_ADC, 9, 1, UC1IFG, TAR, t0);
+	break;
       }
     }
     result = ((uint16_t) call Usci.rx()) << 8;
 
-    ifg2[2] = IFG2;
+    s_ifg[2] = UC1IFG;
     if (call Usci.isTxIntrPending() == 0) { /* space to send? */
       /* FIXME
        * no space to send.  that's strange, panic/warn
        */
-//      call Panic.warn(PANIC_ADC, 9, 2, IFG2, 0, 0);
+      call Panic.warn(PANIC_ADC, 9, 2, UC1IFG, 0, 0);
     }
 
     /*
@@ -597,8 +604,8 @@ implementation {
 	/*
 	 * FIXME.  we choke.  Figure out why.
 	 */
-//	call Panic.warn(PANIC_ADC, 9, 3, IFG2, 0, 0);
-//	break;
+	call Panic.warn(PANIC_ADC, 9, 3, UC1IFG, 0, 0);
+	break;
       }
     }
     result |= ((uint16_t) call Usci.rx());
@@ -606,13 +613,13 @@ implementation {
     /*
      * Transmitter and Receiver should both be empty
      */
-    ifg2[3] = IFG2;
-    ifg2[4] = UCB0STAT;
+    s_ifg[3] = UC1IFG;
+    s_ifg[4] = UCB1STAT;
     if (  (call Usci.isTxIntrPending() == 0) ||
 	  (call Usci.isRxIntrPending()) ||
 	  (call Usci.isBusy())) {
       /* FIXME */
-//      call Panic.warn(PANIC_ADC, 10, IFG2, UCB0STAT, 0, 0);
+      call Panic.warn(PANIC_ADC, 10, UC1IFG, UCB1STAT, 0, 0);
     }
     return(result);
   }
