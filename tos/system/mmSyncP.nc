@@ -3,9 +3,11 @@
  * All rights reserved.
  */
 
-#include "verMajor.h"
-#include "verMinor.h"
-#include "verTweak.h"
+#include "platform_version.h"
+
+
+#define SYNC_TEST
+
 
 /*
  * 1 min * 60 sec/min * 1024 ticks/sec  (binary millisecs, mis)
@@ -16,6 +18,9 @@ typedef enum {
   SYNC_BOOT_NORMAL = 0,
   SYNC_BOOT_1      = 1,
   SYNC_BOOT_2      = 2,
+#ifdef SYNC_TEST
+  SYNC_SEND_TEST   = 3,
+#endif
 } sync_boot_state_t;
 
 module mmSyncP {
@@ -34,6 +39,18 @@ module mmSyncP {
 implementation {
   sync_boot_state_t boot_state;
 
+#ifdef SYNC_TEST
+  void write_test() {
+    uint8_t vdata[DT_HDR_SIZE_VERSION];
+    uint8_t i;
+
+    for (i = 0; i < DT_HDR_SIZE_VERSION; i++)
+      vdata[i] = i;
+    call mmCommData.send_data(vdata, DT_HDR_SIZE_VERSION);
+  }
+#endif
+
+
   /*
    * Need to rework usage of mmCommData.send_data so if it fails
    * it still generates send_data_done.
@@ -41,16 +58,16 @@ implementation {
    * Otherwise, we hang in the boot sequence.  How does this work
    * when comm is down?
    */
-  void write_version_record(uint8_t major, uint8_t minor, uint8_t tweak) {
+  void write_version_record() {
     uint8_t vdata[DT_HDR_SIZE_VERSION];
     dt_version_nt *vp;
 
     vp = (dt_version_nt *) &vdata;
-    vp->len = DT_HDR_SIZE_VERSION;
-    vp->dtype = DT_VERSION;
-    vp->major = major;
-    vp->minor = minor;
-    vp->tweak = tweak;
+    vp->len     = DT_HDR_SIZE_VERSION;
+    vp->dtype   = DT_VERSION;
+    vp->major   = MAJOR;
+    vp->minor   = MINOR;
+    vp->build   = _BUILD;
     call Collect.collect(vdata, DT_HDR_SIZE_VERSION);
     call mmCommData.send_data(vdata, DT_HDR_SIZE_VERSION);
   }
@@ -77,8 +94,13 @@ implementation {
    * Always write the sync record first.
    */
   event void Boot.booted() {
+#ifdef SYNC_TEST
+    boot_state = SYNC_SEND_TEST;
+    write_test();
+#else
     boot_state = SYNC_BOOT_1;
     write_sync_record(FALSE);
+#endif
   }
 
 
@@ -92,9 +114,16 @@ implementation {
       default:
 	break;
 
+#ifdef SYNC_TEST
+      case SYNC_SEND_TEST:
+	boot_state = SYNC_BOOT_1;
+	write_sync_record(FALSE);
+	break;
+#endif
+
       case SYNC_BOOT_1:
 	boot_state = SYNC_BOOT_2;
-	write_version_record(MAJOR, MINOR, TWEAK);
+	write_version_record();
 	break;
 
       case SYNC_BOOT_2:

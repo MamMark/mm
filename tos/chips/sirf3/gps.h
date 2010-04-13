@@ -95,28 +95,4 @@
 //#define DT_GPS_FINI_WAIT      512
 #define DT_GPS_FINI_WAIT      2048
 
-/*
- * Max time the gps will hold onto the resource.  This prevents a lock up
- * if we lose in the middle of a msg.  Needs to be small enough so that
- * we don't hold off the other users of the h/w too long.
- */
-#define DT_GPS_MAX_HOLD	(1024UL + 512)
-
-/*
- * MAX_GRANT_TO: time out if a grant isn't seen within this time.
- */
-#define DT_GPS_MAX_GRANT_TO	10240
-
-
-/*
- * If the GPS is in REQUESTED it is possible for transient users to keep
- * requesting holding the GPS off.  We would like the GPS to make some kind
- * of forward progress.
- *
- * If the GPS is REQUESTED, we have a counter that counts the number of
- * SerialDefOwner.requested events that we have seen and given up.  If the
- * count goes to 0 then we hold the transient off and let the GPS proceed.
- */
-#define MAX_GPS_DEFERS 5
-
 #endif /* __GPS_H__ */

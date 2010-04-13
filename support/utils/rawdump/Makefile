@@ -1,10 +1,13 @@
-# Copyright 2008, Eric B. Decker
+# Copyright 2008, 2010, Eric B. Decker
 # Mam-Mark Project
+
+STOW_DIR=/opt
 
 PROGRAMS= rawdump
 
 CC=gcc
-CFLAGS += -g -O0 -Wall
+CFLAGS += -g -O0 -Wall -I$(STOW_DIR)/include
+LIBS += $(STOW_DIR)/lib/libmote.a
 
 all: $(PROGRAMS)
 

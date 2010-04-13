@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2008, 2010 Eric B. Decker
  * Copyright (c) 2008 Stanford University.
  * All rights reserved.
  *
@@ -32,51 +31,35 @@
 
 /**
  * @author Kevin Klues <klueska@cs.stanford.edu>
- * @date March 3rd, 2008
- *
  * @author Eric B. Decker <cire831@gmail.com>
- * @date May 5th, 2008
- *
- * Sequence the bootup.  Components that should fire up when the
- * system is completely booted should wire to SystemBootC.Boot.
- *
- * 1) Bring up the comm stack first so we can watch
- *    what is happening via the Debug port.
- * 2) Bring up the SD/StreamStorage
- * 3) Collect initial status information (Restart and Version)  mmSync
- * 4) Bring up the GPS.  (GPS assumes SS is up)
- *
- * Originally Serial/Radio, StreamStorage, and GPS all used the same
- * hardware path, so they were serialized.  With new hardware there
- * are independent h/w paths.  We could possibly interleave but it
- * is simpler to debug serially.  Also there is only one cpu so unclear
- * how to increase the parallelism.  If the boot up time is an issue
- * this can be addressed later.
  */
-
-configuration SystemBootC {
-  provides interface Boot;
-  uses interface Init as SoftwareInit;
+ 
+generic configuration mm3BlockingSpi1C() {
+  provides {
+    interface BlockingResource;
+    interface BlockingSpiByte;
+    interface BlockingSpiPacket;
+    interface ResourceConfigure as SpiResourceConfigure;
+  }
+  uses interface ResourceConfigure;
 }
 
 implementation {
-  components MainC;
-  SoftwareInit = MainC.SoftwareInit;
-
-  components CommBootC;
-  components StreamStorageC as SS;
-  components mmSyncC;
-#ifdef GPS_TEST
-  components GPSC;
-#endif
-
-  CommBootC.Boot -> MainC;	// Main kicks Comm (serial/radio)
-  SS.Boot -> CommBootC;		//    which kicks StreamStorage
-  mmSyncC.Boot -> SS;		//        then write initial status
-#ifdef GPS_TEST
-  GPSC.Boot -> mmSyncC;		//            and then GPS.
-  Boot = GPSC;			// bring up everyone else
-#else
-  Boot = mmSyncC;
-#endif
+  components new BlockingResourceC();
+  components new BlockingSpiP();
+  
+  BlockingResource  = BlockingResourceC;
+  BlockingSpiByte   = BlockingSpiP;
+  BlockingSpiPacket = BlockingSpiP;
+  
+  components new mm3Spi1C() as SPI_1;
+//  components new Msp430Spi1C() as SPI_1;
+  SpiResourceConfigure = SPI_1;
+  ResourceConfigure = SPI_1;
+  BlockingResourceC.Resource -> SPI_1;
+  BlockingSpiP.SpiByte -> SPI_1;
+  BlockingSpiP.SpiPacket -> SPI_1;
+  
+  components SystemCallC;
+  BlockingSpiP.SystemCall -> SystemCallC;
 }

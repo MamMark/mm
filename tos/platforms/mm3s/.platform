@@ -3,46 +3,29 @@
 # @includes instead of -I's to @opts, otherwise the %T won't be processed
 # by ncc.
 #
-# $(MM_ROOT)/support/make/mm3.target includes PFLAG modifications that
-# set up include paths that come in first.  That is where
-# $(MM_ROOT)/tos/platforms/mm3 is included.
-#
-# %P refers to the local platform file: $(MM_ROOT)/tos/platforms/mm3
-# %P/../.. gets us to tos/
-# %P/../../.. is root of the tree.
-#
-# support/utils/include moved to include.   include is pulled in via
-# the support/make/mm3.target.
-#
-# %P/../../../support/utils/include
-# %P/../../../include
-#
-#  %T/platforms/telosa/chips/cc2420
-#  %T/chips/cc2420/alarm
-#  %T/chips/cc2420/control
-#  %T/chips/cc2420/csma
-#  %T/chips/cc2420/interfaces
-#  %T/chips/cc2420/link
-#  %T/chips/cc2420/lowpan
-#  %T/chips/cc2420/lpl
-#  %T/chips/cc2420/packet
-#  %T/chips/cc2420/receive
-#  %T/chips/cc2420/spi
-#  %T/chips/cc2420/transmit
-#  %T/chips/cc2420/unique
-#
 
 push( @includes, qw(
 
-  %P/../../mm
-  %P/../../comm
+  %P/misc
+  %P/sensors
   %P/../../chips/msp430/timer
   %P/../../chips/msp430/usart
-  %P/../../chips/sd
-  %P/../../chips/sensors
-  %P/../../chips/sirf3
+  %P/../../../support/utils/include
+  %T/platforms/telosa/chips/cc2420
   %T/chips/cc2420
-  %T/chips/msp430/x1xxx
+  %T/chips/cc2420/alarm
+  %T/chips/cc2420/control
+  %T/chips/cc2420/csma
+  %T/chips/cc2420/interfaces
+  %T/chips/cc2420/link
+  %T/chips/cc2420/lowpan
+  %T/chips/cc2420/lpl
+  %T/chips/cc2420/packet
+  %T/chips/cc2420/receive
+  %T/chips/cc2420/spi
+  %T/chips/cc2420/transmit
+  %T/chips/cc2420/unique
+  %T/chips/msp430
   %T/chips/msp430/pins
   %T/chips/msp430/timer
   %T/chips/msp430/usart

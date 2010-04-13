@@ -26,8 +26,8 @@ b TinyThreadSchedulerP.nc:89
 dis
 
 
-# 5 debug_break
-b PanicP.nc:62
+# 5 debug_break  (optimized out)
+# b PanicP.nc:62
 
 # 6 panic
 b PanicP.nc:77
@@ -37,6 +37,16 @@ end
 
 # 7
 b mmC.nc:50
+
+
+
+# ******************************************************************************
+# gps start
+b GPSP.nc:448
+
+# gps finish
+b GPSP.nc:301
+
 
 # 7 Msg Collect too big
 #b GPSMsgP.nc:538
@@ -51,16 +61,9 @@ b mmC.nc:50
 # 12 SerialDefOwner.requested 1134
 # 13 SerialDefOwner.granted    787
 # 14 msgBoundary 1102
-# 15 SerialDemuxResource.granted 766
 
 # 9 finish
 #b GPSP.nc:502
-#b mmControlP.nc:107
-#b GPSP.nc:669
-#b GPSP.nc:1134
-#b *GPSP__SerialDefOwner__granted
-#b GPSP.nc:1102
-#b GPSP.nc:766
 
 #dis 7-15
 #ena 10
@@ -119,8 +122,6 @@ end
 define gmd
 printf "gpsc_state: "
 print gpsc_state
-printf "gpsc_release_state: "
-print gpsc_release_state
 printf "msg_collect_state: "
 print GPSMsgP__collect_state
 printf "left: %d, collect_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP__collect_left, GPSMsgP__collect_length, GPSMsgP__collect_cur_chksum
@@ -133,6 +134,9 @@ printf "overflow:\n"
 x/16xb GPSMsgP__collect_overflow
 printf "\nerrors: ovrfull: %d  ovrmax: %d  too_big: %d  chk fail: %d  proto fail: %d\n", GPSMsgP__collect_overflow_full, GPSMsgP__collect_overflow_max, GPSMsgP__collect_too_big, GPSMsgP__collect_chksum_fail, GPSMsgP__collect_proto_fail
 end
+document gmd
+display gps message data
+end
 
 define erase
 ena 2
@@ -141,6 +145,9 @@ c
 set do_erase=1
 printf "do_erase: %d\n", do_erase
 dis 2
+end
+document erase
+set up for doing a manual errase
 end
 
 define timers
@@ -234,7 +241,20 @@ printf "sd:  pwr: %d  csn: %d/%c  p3d/s: %d/%d  rx: %02x  tx: %02x\n", \
 p/x SDP__sd_cmd
 end
 document sd
-display SD state
+display SD h/w state
+end
+
+
+define gps
+printf "gps(ua0):  pwr: %d  p3(4,5)d/s: %d/%d  rst: %d  ie: %d  ifg: %d  stat: %02x  rx: %02x  tx: %02x\n", \
+    (((*(uint8_t *)0x1d) & 0x40) ? 0 : 1), \
+    (((*(uint8_t *)0x1A) >> 4) & 3), (((*(uint8_t *)0x1B) >> 4) & 3), \
+    (((*(uint8_t *)0x61) & 1) ? 1 : 0), \
+    ((*(uint8_t *)0x01) & 3), ((*(uint8_t *)0x03) & 3), \
+    (*(uint8_t *)0x65), (*(uint8_t *)0x66), (*(uint8_t *)0x67)
+end
+document gps
+display gps h/w state
 end
 
 

@@ -6,6 +6,10 @@ This brief is written assuming that there is a common root directory,
 we'll call it mm and it is usually at the top level of a working
 directory.  ie.  ~/mm.
 
+Most commands are entered from a terminal window.
+
+
+**************************************************************************************
 
 1) OS Install.
 
@@ -20,16 +24,21 @@ manager ("apt-get install") to make sure the following packages are installed:
     git-core git-daemon-run git-doc git-email git-gui gitk gitmagic
     openssh-client openssh-server
 
+The following will do the trick:
+
+sudo -s
+apt-get install build-essential stow automake autoconf libtool libc6-dev
+apt-get install git-core git-daemon-run git-doc git-email git-gui gitk gitmagic
+apt-get install openssh-client openssh-server
+exit
+
+
+**************************************************************************************
 
 2) Install TinyOS toolset (msp430)
 
 We want the tinyos toolset for the msp430 (telosb). Debian packages
-are available from Stanford.  We need to modify the list of source
-repositories.
-
-Execute the following as root from a terminal window.
-
-echo "deb http://tinyos.stanford.edu/tinyos/dists/ubuntu hardy main" >> /etc/apt/sources.list
+are available from Stanford.
 
 We want the following packages:
 
@@ -42,6 +51,14 @@ We want the following packages:
            nesc
            tinyos-base
            tinyos-tools
+
+sudo -s
+echo "deb http://tinyos.stanford.edu/tinyos/dists/ubuntu karmic main" >> /etc/apt/sources.list
+apt-get update
+apt-get install deputy-tinyos msp430-binutils-tinyos msp430-gcc-tinyos msp430-libc-tinyos
+apt-get install msp430-tinyos msp430-tinyos-base nesc tinyos-base tinyos-tools
+exit
+
 
 However we also want a modified toolchain that supports the msp430x
 architecture.  Currently the simplest way to install all this stuff is
@@ -70,37 +87,71 @@ somewhat involved learning curve.
 The Z1 toolchain lives at /opt/msp430-z1 the corresponding bin and lib
 lib directories must be included in environment variables.
 
-$PATH needs to be modified to search /opt/msp430-z1 first.
+$PATH needs to be modified to search /opt/msp430-z1 first.   This can
+be done later and is described in section 8.
 
 
-3) Install wine.
+**************************************************************************************
+
+3) Install wine, Python, pyserial, and pywin32.
 
 We need wine in order to run msp430-gdbproxy and msp430-jtag.
 
 Details can be found at: http://www.winehq.org/download/deb
 
-Add the following repository using "System->Administration->Software
-Sources", "Other Software":
+Add the ppa:ubuntu-wine/ppa repository and install wine1.2:
 
-	ppa:ubuntu-wine/ppa
+sudo -s
+add-apt-repository ppa:ubuntu-wine/ppa
+apt-get update
+apt-get install wine1.2
+exit
 
-Install:
-
-	wine1.2
 
 
-4) Install gdb.430, msp430-jtag, and msp430-gdbproxy.
+Download the following into your home directory:
+http://www.python.org/ftp/python/2.6.5/python-2.6.5.msi
+http://sourceforge.net/projects/pyserial/files/pyserial/2.5-rc2/pyserial-2.5-rc2.win32.exe/download.
+http://sourceforge.net/projects/pywin32/files/pywin32/Build%20214/pywin32-214.win32-py2.6.exe/download
 
-You first need to pull a t2_mm tree as that is where the files needed
-live.  See section 6 below.
+These are windows installers.  They can be installed using wine by
+navigating to the file using a file browser, click "Places->Home
+Folder".  Right click on the file and select "Open with Wine Windows
+Program Loader".  This will bring up an installation
+window.  Follow the instructions.
 
-   a) cd ~/mm  (remember to be enabled, sudo)
-   b) cd t2_mm/Added_Bits/tools
-   c) make install
+Install Python2.6.5, pyserial, and pywin32.  This will also start wine
+up for the first time can create any special directories that Wine
+might need.
+
+
+**************************************************************************************
+
+4) Pull the t2_mm tree.
+
+Normal user (not enabled).
+
+cd ~/mm
+git clone git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git t2_mm
+cd t2_mm
+
+
+
+**************************************************************************************
+
+5) Install gdb.430, msp430-jtag, and msp430-gdbproxy.
+
+Once a t2_mm tree has been pulled we need to install some extra items
+that come from t2_mm/Added_Bit/tools.
+
+sudo -s
+cd ~/mm/t2_mm/Added_Bits/tools
+make install
+exit
 
    This will install gdb.430, msp430-jtag, and msp430-gdbproxy into
-   /opt/msp430-z1/bin.  Needed libraries will be installed in
-   appropriate places.
+   /opt/msp430-z1/bin.  Needed libraries will be installed in appropriate
+   places.
 
    NOTE: this step has to be done after the install of the
    tinyos-z1-0.0.1.-13_i386.deb package as a msp430-jtag is installed
@@ -117,46 +168,10 @@ live.  See section 6 below.
    to be windows devices.
    
 
-5) We use GIT as the SCM.  Here are some pointers to get you started:
 
-   Start here:   http://book.git-scm.com/2_setup_and_initialization.html
-   Everyday GIT: http://www.kernel.org/pub/software/scm/git/docs/everyday.html
-   Cheat Sheet:  http://zrusin.blogspot.com/2007/09/git-cheat-sheet.html
-   SVN to GIT:   http://git-scm.com/course/svn.html
-   GIT Book:     http://book.git-scm.com/
-   Another Book: http://progit.org/book/
+**************************************************************************************
 
-
-6) T2_MM tree checkout:  The t2_mm tree is a seperate t2 based
-repo that has mammark unique code.  It is used to build firmware
-for the mm3 (1611 based) and mm4 (2618 based) tag devices.
-
-    git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only)
-
-    cd ~/mm				# cd to top working dir.
-    git clone git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git t2_mm
-    cd t2_mm
-
-    this will create the directory ~/mm/t2_mm and you will be on the master
-    branch.  Which is where you want to be.
-
-    Any patches etc should be emailed.  (Can be prepared with git-format-patch
-    or git-log).
-
-
-7) TinyOS 2.x tree checkout
-
-Documentation on getting started with T2 can be found at:
-
-    http://docs.tinyos.net
-    http://docs.tinyos.net/index.php/Getting_started
-
-
-The main tracking repo is at:
-
-    git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
-        read-only, cire tracking repo that tracks hinrg t2, updated manually
-	This also has the mm code, branched off the hinrg t2 mainline
+6) TinyOS 2.x tree checkout
 
 Changes needed to build the mm tree can be obtained via the mm_tip
 branch on the cire/tinyos-2.x.git repo.
@@ -171,7 +186,9 @@ To obtain the current mm_tip branch:
     git checkout -t origin/mm_tip
 
 
-8) Modify PATH and LD_LIBRARY_PATH
+**************************************************************************************
+
+7) Modify PATH and LD_LIBRARY_PATH
 
 Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430-z1 as
 appropriate. 
@@ -181,7 +198,10 @@ appropriate.
    export LD_LIBRARY_PATH="$M1/lib:$LD_LIBRARY_PATH:/usr/local/lib"
 
 
-9) Set up build environment settings
+
+**************************************************************************************
+
+8) Set up build environment settings
 
 The following environment variables must be set to build.
 
@@ -223,7 +243,71 @@ The following environment variables must be set to build.
   	export LIBMSPGCC MOTECOM MM_ROOT TOSMAKE_PATH PATH
 
 
-10) Build SerialForwarder and libmote library.
+**************************************************************************************
+
+9) Do a test compile and gdb run.  This assumes that the JTAG pod is
+    connected to ttyUSB0 via COM1.  The default device assumed by the
+    windows version of msp430-jtag is COM1.  COM1 is automatically
+    linked to /dev/ttyUSB0 when the windows versions of
+    msp430-gdbproxy and msp430-jtag are installed above.
+    
+
+    For mm4 hardware:
+
+    cd ~/mm/t2_mm/apps/mm
+    make debug mm4 threads
+    msp430-jtag -e build/mm4/main.exe
+
+    When the download completes use a different window and run:
+
+    msp430-gdbproxy msp430 COM1
+
+
+    There should be a .gdbinit file in apps/mm which contains the following lines at the top:
+
+        set remoteaddresssize 0d64
+        set remotetimeout 0d999999
+        target remote localhost:2000
+
+    change into build/mm4/ and create a symbolic link to the .gdbinit file in the upper directory.
+    This prevents the .gdbinit file from being wiped if one does "make clean".
+
+        pushd build/mm4
+	ln -s ../../.gdbinit
+	popd
+
+    now if you run gdb.430 build/mm4/main.exe  gdb should connect to the proxy and start
+    to debug your code in the device.  To let the device run use 'c', continue.  Do not use
+    'run'.
+
+
+**************************************************************************************
+
+10) Do a test compile and gdb run from the main tree.
+
+    If you have telosb hardware:
+
+    cd ~/mm/t2_cur/tinyos-2.x/apps/Blink
+    make debug telosb
+    msp430-jtag -e build/telosb/main.exe
+
+
+    from a different window run:
+
+    msp430-gdbproxy msp430 COM1
+
+
+    Make sure that you have a .gdbinit file in the app directory and the symbolic link
+    from the build/telosb directory as described in 13.
+
+    run gdb as described in 13.
+
+
+
+
+**************************************************************************************
+
+11) Build SerialForwarder and libmote library.
 
     Build the serial forwarder and associated library (also includes direct serial access)
 
@@ -248,7 +332,53 @@ The following environment variables must be set to build.
       stow sf_c
 
 
-11) Using the serialforwarder/seriallistener
+**************************************************************************************
+
+12) We use GIT as the SCM.  Here are some pointers to get you started:
+
+   Start here:   http://book.git-scm.com/2_setup_and_initialization.html
+   Everyday GIT: http://www.kernel.org/pub/software/scm/git/docs/everyday.html
+   Cheat Sheet:  http://zrusin.blogspot.com/2007/09/git-cheat-sheet.html
+   SVN to GIT:   http://git-scm.com/course/svn.html
+   GIT Book:     http://book.git-scm.com/
+   Another Book: http://progit.org/book/
+
+
+
+
+Documentation on getting started with T2 can be found at:
+
+    http://docs.tinyos.net
+    http://docs.tinyos.net/index.php/Getting_started
+
+
+The main tracking repo is at:
+
+    git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
+        read-only, cire tracking repo that tracks hinrg t2, updated manually
+	This also has the mm code, branched off the hinrg t2 mainline
+
+
+**************************************************************************************
+
+13) About the T2_MM tree.
+
+The t2_mm tree is a seperate t2 based repo that has mammark unique
+code.  It is used to build firmware for the mm3 (1611 based) and mm4
+(2618 based) tag devices.
+
+    git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only)
+
+    The main branch is "master".
+
+    Any patches etc should be emailed.  (Can be prepared with git-format-patch
+    or git-log).
+
+
+
+**************************************************************************************
+
+14) Using the serialforwarder/seriallistener
 
     a) make sure that tinyos.jar has been built.  It should live in $TOSROOT/support/sdk/java/tinyos.jar
     b) to rebuild:
@@ -298,64 +428,11 @@ If you define MOTECOM you won't need to specify the -comm parameter.  ie:
        MOTECOM=serial@/dev/ttyUSB1:telosb
 
 
-12) Do a test compile and gdb run.  This assumes that the JTAG pod is
-    connected to ttyUSB0 via COM1.  The default device assumed by the
-    windows version of msp430-jtag is COM1.
-
-    If you have mm3 hardware:
-
-    cd ~/mm/t2_mm/apps/mm
-    make debug mm3 threads
-    msp430-jtag -e build/mm3/main.exe
-
-    When the download completes use a different window and run:
-
-    msp430-gdbproxy msp430 COM1
 
 
-    There should be a .gdbinit file in apps/mm which contains the following lines at the top:
+**************************************************************************************
 
-        set remoteaddresssize 0d64
-        set remotetimeout 0d999999
-        target remote localhost:2000
-
-    change into build/mm3/ and create a symbolic link to the .gdbinit file in the upper directory.
-    This prevents the .gdbinit file from being wiped if one does "make clean".
-
-        pushd build/mm3
-	ln -s ../../.gdbinit
-	popd
-
-    now if you run gdb.430 build/mm3/main.exe  gdb should connect to the proxy and start
-    to debug your code in the device.  To let the device run use 'c', continue.  Do not use
-    'run'.
-
-
-    To use the mm4 (2618 based) hardware, change mm3 to mm4.
-
-
-13) Do a test compile and gdb run from the main tree.
-
-    If you have telosb hardware:
-
-    cd ~/mm/t2_cur/tinyos-2.x/apps/Blink
-    make debug telosb
-    msp430-jtag -e build/telosb/main.exe
-
-
-    from a different window run:
-
-    msp430-gdbproxy msp430 COM1
-
-
-    Make sure that you have a .gdbinit file in the app directory and the symbolic link
-    from the build/telosb directory as described in 13.
-
-    run gdb as described in 13.
-
-
-
-14) Repos:
+15) Repos:
 
 T2 git repositories:
 

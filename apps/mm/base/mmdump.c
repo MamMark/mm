@@ -38,7 +38,15 @@
 #include "DtGpsRawMsg.h"
 #include "ParseSirf.h"
 
-#define VERSION "mmdump: v0.9.0  (10 Sep 2008)\n"
+/*
+ * We use mig and ncg to autogenerate header files that can be shared
+ * between systems.  This handles enums and data structures.  But it
+ * doesn't handle defines nor large numbers.  So we cheat.  This needs
+ * to match what is in typed_data.h
+ */
+#define SYNC_MAJIK 0xdedf00ef
+
+#define VERSION "mmdump: v0.10.1  (10 Apr 2010)\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -274,11 +282,14 @@ process_sync(tmsg_t *msg) {
   uint32_t majik;
   uint8_t c;
   char *s;
+  int err = 0;
 
   len = dt_sync_len_get(msg);
   dtype = dt_sync_dtype_get(msg);
   stamp = dt_sync_stamp_mis_get(msg);
   majik = dt_sync_sync_majik_get(msg);
+  if (len != DT_SYNC_SIZE || majik != SYNC_MAJIK)
+    err = 1;
   switch (dtype) {
     case DT_SYNC:
       c = 'S';
@@ -290,13 +301,17 @@ process_sync(tmsg_t *msg) {
       s = "restart";
       break;
   }
-  if (verbose || dtype == DT_SYNC_RESTART) {
+  if (err)
+    printf("--- ");
+  if (err || verbose || dtype == DT_SYNC_RESTART) {
     printf("SYNC: %c %d (%x) %08x (%s)\n", c, stamp, stamp, majik, s);
   }
   if (write_data) {
     for (i = 0; i < MM_NUM_SENSORS; i++) {
-      fprintf(fp[i], "%% SYNC: %c %d %08x %s\n",
-	      c, stamp, majik, s);
+      fprintf(fp[i], "%% ");
+      if (err) 
+	fprintf(fp[i], "--- err ");
+      fprintf(fp[i], "SYNC: %c %d %08x %s\n", c, stamp, majik, s);
     }
   }
 }
@@ -515,16 +530,16 @@ process_sensor_data(tmsg_t *msg) {
 
 void
 process_version(tmsg_t *msg) {
-  uint8_t major, minor, tweak;
+  uint8_t major, minor, build;
   int i;
 
   major = dt_version_major_get(msg);
   minor = dt_version_minor_get(msg);
-  tweak = dt_version_tweak_get(msg);
-  printf("VER: %d.%d.%d\n", major, minor, tweak);
+  build = dt_version_build_get(msg);
+  printf("VER: %d.%d.%d\n", major, minor, build);
   if (write_data)
     for (i = 1; i < MM_NUM_SENSORS; i++)
-      fprintf(fp[i], "%% Tag Version: %d.%d.%d\n", major, minor, tweak);
+      fprintf(fp[i], "%% Tag Version: %d.%d.%d\n", major, minor, build);
 }
 
 
@@ -781,7 +796,17 @@ main(int argc, char **argv) {
 
   if (verbose) {
     fprintf(stderr, VERSION);
-    fprintf(stderr, "arg1: %s  arg2: %s\n", argv[0], argv[1]);
+    switch (input_src) {
+      case INPUT_SERIAL:
+	fprintf(stderr, "opening: serial@%s:%d\n", argv[0], platform_baud_rate(argv[1]));
+	break;
+      case INPUT_SF:
+	fprintf(stderr, "opening: sf@%s:%d\n", argv[0], atoi(argv[1]));
+	break;
+      case INPUT_FILE:
+	fprintf(stderr, "opening: file@%s\n", argv[0]);
+	break;
+    }
   } else {
     fprintf(stderr, "*** (non-verbose) no data will be displayed\n");
   }
@@ -834,8 +859,11 @@ main(int argc, char **argv) {
 	packet = read_file_packet(file_src, &len);
 	break;
     }
-    if (!packet)
+    if (!packet) {
+      if (verbose)
+	fprintf(stderr, "*** end of stream, terminating\n");
       exit(0);
+    }
     msg = new_tmsg(packet, len);
     if (!msg) {
       fprintf(stderr, "*** new_tmsg failed (null)\n");

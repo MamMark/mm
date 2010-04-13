@@ -5,34 +5,16 @@
  * @author Eric B. Decker (cire831@gmail.com)
  * @date 28 May 2008
  *
- * Currently assumes dedicated access to a 2618 usci uart port.
- *
- * SerialDeMux: retired 3/12/2010.  switched to the 2618 which has
- * more hardware and eliminates the need for muxing the serial port.
- *
- * Reworked to use the SerialDemux multiplexed ResourceDefaultOwner
- * interface.  Instead of arbritrating for the UART1 resource we
- * arbritrate for the priviledge of being the DefaultOwner and use the
- * interface when no one else wants it.
- *
- * The logic should remain about the same.  However, note that the
- * DefaultOwner.grant won't have caused the h/w to be configured so
- * we have to do it by hand.
- *
- * Interaction strategy:
- *
- * While booting the Sirf_GPS ignore other requests and camp on the h/w.
- * Once booted
+ * Dedicated 2618 usci uart port.
  */
 
 #include "panic.h"
 #include "gps.h"
 #include "sirf.h"
 
-#ifdef notdef
-uint8_t gps_speed;		// will default to 0, 57600 (1 is 4800, 2 is 115200 (if compiled in))
-uint8_t ro;
-uint8_t gc;
+#ifdef GPS_RO
+noinit uint8_t gps_speed;		// will default to 0, 57600 (1 is 4800, 2 is 115200 (if compiled in))
+noinit uint8_t ro;
 #endif
 
 #define GPS_EAVES_SIZE 2048
@@ -111,90 +93,23 @@ typedef enum {
   GPSC_FINI_WAIT,
   GPSC_FINISH,
 
-  /*
-   * Dedicated logic:   We never enter GPSC_REQUESTED but transition from
-   * GPS_OFF -> GPS_START_DELAY and take needed actions, power up etc.
-   *
-   * Old arbitrated logic:
-   *
-   * Normal sequencing.   GPS is assumed to be configured for SirfBin@op_speed
-   *
-   * There is a trade off that effects how this is put together.
-   *
-   * On one hand, if we request and obtain the GPS prior to powering
-   * the GPS will hold the h/w for a longer period of time (all of the
-   * power up and any communication it needs).  This might create problems
-   * for the other devices on the h/w, namely the SD and comm.
-   *
-   * Another approach is to power the GPS up and then request at the end of
-   * the power window.  The downside is if another module has the h/w, then
-   * the GPS will stay powered longer then needed.  We can protect against
-   * a hog by use of a timer.
-   *
-   * One still wants to be careful because we need to wait enough time to get out
-   * of the start up window before sending the poll command.  Otherwise the gps
-   * ignores our commands.
-   *
-   * For the time being we use method 1 and request then power.  This way we
-   * can watch the start up stream.   
-   */
-
-  GPSC_REQUESTED,			// waiting for usart ownership
-  GPSC_START_DELAY,			// power on
+  GPSC_START_DELAY,			// power on, waiting for gps to come up.
   GPSC_HUNT_1,				// Can we see them?
   GPSC_HUNT_2,
   GPSC_ON,
   GPSC_BACK_TO_NMEA,
-
-#ifdef notdef
-  /*
-   * we no longer allow for releasing because another user wants the
-   * device.
-   */
-
-  /*
-   * kludge for debugging release states
-   */
-  RS_RELEASED		= 32,
-  RS_DEF_GRANTING	= 33,
-  RS_OWNED		= 34,
-  RS_RELEASING		= 35,
-#endif
-
 } gpsc_state_t;
 
 
-#ifdef notdef
-
-/* no longer support releasing to another user */
-typedef enum {
-  GPSC_RS_RELEASED	= 32,		// released, waiting for grant
-  GPSC_RS_DEF_GRANTING	= 33,		// default granting in progress.
-  GPSC_RS_OWNED		= 34,		// we think we own it.
-  GPSC_RS_RELEASING	= 35,		// pending release
-} gpsc_release_state_t;
-
-#endif
-
 typedef enum {
   GPSW_NONE =			0,
-  GPSW_GRANT =			1,
-  GPSW_TIMER =			2,
-  GPSW_RXBYTE =			3,
-  GPSW_CONFIG_TASK =		4,
-  GPSW_SEND_DONE =		5,
-  GPSW_MSG_BOUNDARY =		6,
-  GPSW_START =			9,
-  GPSW_STOP =			10,
-
-//  deprecated.
-//
-//  GPSW_RESOURCE_REQUESTED =	7,
-//  GPSW_OWNER_TASK =		8,
-//  GPSW_DEF_RESOURCE_GRANT =	11,
-//  GPSW_DEF_REQUESTED =	12,
-//  GPSW_DEF_GRANT =		13,
-
+  GPSW_TIMER,
+  GPSW_RXBYTE,
+  GPSW_CONFIG_TASK,
+  GPSW_SEND_DONE,
+  GPSW_MSG_BOUNDARY,
+  GPSW_START,
+  GPSW_STOP,
 } gps_where_t;
 
 
@@ -218,13 +133,11 @@ uint8_t g_nev;			// next gps event
 
 norace gpsc_state_t	    gpsc_state;			// low level collector state
 
-//norace gpsc_release_state_t gpsc_release_state;		// owned or released?
-
 /* instrumentation */
-norace uint32_t             gpsc_start_hold;		// time of ownership start
-norace uint32_t		    gpsc_last_hold;		// how long last time.
-norace uint32_t		    gpsc_boot_hold;		// time it took to boot.
-norace uint32_t		    gpsc_max_hold;		// longest hold time.
+norace uint32_t		    gpsc_boot_time;		// time it took to boot.
+norace uint32_t		    gpsc_cycle_time;		// time last cycle took
+norace uint32_t		    gpsc_max_cycle;		// longest cycle time.
+norace uint32_t		    t_gps_first_char;
 
 
 module GPSP {
@@ -232,6 +145,7 @@ module GPSP {
     interface Init;
     interface StdControl as GPSControl;
     interface Boot as GPSBoot;
+    interface Msp430UartConfigure as UartConfigure;
   }
   uses {
     interface Boot;
@@ -240,15 +154,12 @@ module GPSP {
     interface Hpl_MM_hw as HW;
     interface UartStream;
     interface Panic;
-    interface HplMsp430UsciA as Usci;
     interface GPSMsg;
     interface StdControl as GPSMsgControl;
     interface Trace;
     interface LogEvent;
-
-//    interface Resource                as SerialDemuxResource;
-//    interface ResourceDefaultOwner    as SerialDefOwner;
-//    interface ResourceDefaultOwnerMux as MuxControl;
+    interface HplMsp430UsciA as Usci;
+    interface Resource as UsciResource;
   }
 }
 
@@ -258,9 +169,6 @@ implementation {
   norace uint32_t     t_gps_pwr_on;
   norace uint8_t      gpsc_reconfig_trys;
   norace bool	      gpsc_operational;		// if 0 then booting, do special stuff
-
-//         uint8_t      gpsc_request_defers;
-//  norace bool	      othersWaiting;
 
   void gpsc_log_state(gpsc_state_t next_state, gps_where_t where) {
 #ifdef GPS_LOG_EVENTS
@@ -388,8 +296,8 @@ implementation {
 	gpsc_operational = 1;
 	control_stop();
 	nop();				// BRK_FINISH
-	gpsc_boot_hold = call LocalTime.get() - gpsc_start_hold;
-	call LogEvent.logEvent(DT_EVENT_GPS_BOOT_TIME, (uint16_t) gpsc_boot_hold);
+	gpsc_boot_time = call LocalTime.get() - t_gps_pwr_on;
+	call LogEvent.logEvent(DT_EVENT_GPS_BOOT_TIME, (uint16_t) gpsc_boot_time);
 	signal GPSBoot.booted();
 	return;
 
@@ -402,6 +310,10 @@ implementation {
 	call GPSTimer.stop();
 	return;
     }
+  }
+
+  async command msp430_uart_union_config_t *UartConfigure.getConfig() {
+    return (msp430_uart_union_config_t *) &GPS_OP_SERIAL_CONFIG;
   }
 
   command error_t Init.init() {
@@ -418,6 +330,17 @@ implementation {
     t_gps_pwr_on = 0;
     gpsc_reconfig_trys = MAX_GPS_RECONFIG_TRYS;
     gpsc_operational = 0;
+    atomic {
+      call UsciResource.immediateRequest();
+      /*
+       * default resource configure enables interrupts, turn them back off
+       * Also flip the i/o pins back to input.   this is the default gps
+       * off state.  No need to call disableIntr because the reset clears
+       * all the enable bits.
+       */
+      call Usci.resetUsci(TRUE);
+      call HW.gps_off();
+    }
     return SUCCESS;
   }
 
@@ -459,24 +382,16 @@ implementation {
    * Based on the following, setting power up delay to 350 and Hunt time out to 500
    * should be fine.
    *
-   * DO WE NEED TIMINGS FOR 57600?  We have switched to 57600 because we were losing
-   * chars at 115200.
-   *
-   * gps @ 4800, uart 115200 time to first char...  when do overruns and rx errors occur.
-   *	no characters received.  no errors.  got power on timeout.
-   *
-   * gps @ 115200, 115200, TTFC:  start up message length: 129 (time 107 mis), binary
-   *	first_char = 160 (0xa0), char_count = 129, t_request = 386, t_pwr_on = 387,
-   *	t_first_char = 701 (314 mis), t_last_char = 808, t_eos = 778
-   *	TTS: (nmea_go_sirf_bin, 26 bytes)  3 mis
+   * Currently running at 57600.  There was too much interrupt overhead when using
+   * current interrupt stack and the Threads postAmble.  Losing bytes at 115200.
+   * interarrival bytes time:  57600, 174 uS.   115200, 87 uS.  really simple
+   * interrupt handler would do but there are a number of layers in the TinyOS
+   * code and the Thread overhead just makes this worse.
    *
    * gps @ 4800, 4800: TTFC:  start up message length: 250 chars, 724 mis, 330 from gps power on
    *	first_char = 36 '$', char_count = 250, t_request = 394, t_pwr_on = 394,
    *	t_first_char = 724 (from gps power on 330 mis), t_eos = 1702 (delta (first) 978, from pwr_on 1308 mis)
    *	TTS: (nmea_go_sirf_bin, 26 bytes) 58 mis
-   *
-   * gps @ 115200, uart 4800:
-   *	no characters received.  no errors.  get power on timeout.
    *
    * ------------------------------------------------------------------------
    */
@@ -511,15 +426,15 @@ implementation {
    *
    * Some thoughts...
    *
-   * 1) Turn the gps on.  start timer for pwr up interrupts off window.  The device
-   *    won't start talking for about 300ms or so (note tinyos timers are in mis
-   *    units).   We also want to give the gps enough time to recapture.
+   * 1) Turn the gps on.  The device won't start talking for about 300ms or so
+   *    (note tinyos timers are in mis units).   We also want to give the gps
+   *    enough time to recapture.
    * 2) can we immediately throw commands requesting the navigation data we want?
    * 3) can we send commands back to back?
    * 4) is it reliable?
    * 5) would it be better to sequence?
    *
-   * Dedicated h/w.
+   * Dedicated h/w.  No resource arbitration.
    */
 
   command error_t GPSControl.start() {
@@ -527,12 +442,41 @@ implementation {
       gps_warn(3, gpsc_state);
       return FAIL;
     }
-    call LogEvent.logEvent(DT_EVENT_GPS_START,0);
-    gpsc_change_state(GPSC_REQUESTED, GPSW_START);
+    call LogEvent.logEvent(DT_EVENT_GPS_START, 0);
     call GPSMsgControl.start();
-    call GPSTimer.startOneShot(DT_GPS_MAX_GRANT_TO);
-    call Trace.trace(T_GPS, 0x20, 0);
-    call Trace.trace(T_GPS, 0x21, 0);
+    t_gps_pwr_on = call LocalTime.get();
+    call HW.gps_on();
+    call Usci.setModeUart((msp430_uart_union_config_t *) &GPS_OP_SERIAL_CONFIG);
+
+#ifdef GPS_RO
+    if (gps_speed > 1)
+      gps_speed = 1;
+    if (ro > 1)
+      ro = 0;
+    if (ro) {
+      gpsc_change_state(GPSC_ON, GPSW_START);
+      call GPSTimer.stop();
+      switch (gps_speed) {
+	default:
+	case 0:
+	  call Usci.setModeUart((msp430_uart_union_config_t *) &sirf3_57600_serial_config);
+	  call Usci.enableIntr();
+	  return SUCCESS;
+	case 1:
+	  call Usci.setModeUart((msp430_uart_union_config_t *) &sirf3_4800_serial_config);
+	  call Usci.enableIntr();
+	  return SUCCESS;
+      }
+    }
+#endif
+    gpsc_change_state(GPSC_START_DELAY, GPSW_START);
+    call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
+
+    /*
+     * While debugging we turn interrupts on.  The intent of start_delay however is to
+     * allow the gps to be coming up without interrupts on so the cpu can sleep.
+     */
+    call Usci.enableIntr();
     return SUCCESS;
   }
 
@@ -550,106 +494,6 @@ implementation {
     control_stop();
     return SUCCESS;
   }
-
-
-  /*
-   * This routine is called anytime the GPS is granted the actual h/w.
-   * This can occur when the GPS is the default owner (owns the SerialDemuxResource)
-   * and a higher priority device releases.  Or if the GPS has asked for
-   * the resource, it is granted, and no one owns the underlying resource.
-   */
-  void gps_granted() {
-    gpsc_start_hold = call LocalTime.get();
-    call LogEvent.logEvent(DT_EVENT_GPS_GRANT, gpsc_state);
-    call Usci.setModeUart((msp430_uart_union_config_t *) &GPS_OP_SERIAL_CONFIG);
-
-#ifdef notdef
-    if (ro == 1 && gpsc_state != GPSC_OFF) {
-      gpsc_change_state(GPSC_ON, GPSW_GRANT);
-      call GPSTimer.stop();
-      switch (gps_speed) {
-	default:
-	case 0:
-	  call Usci.setModeUart((msp430_uart_union_config_t *) &gps_57600_serial_config);
-	  call Usci.enableIntr();
-	  return;
-	case 1:
-	  call Usci.setModeUart((msp430_uart_union_config_t *) &gps_4800_serial_config);
-	  call Usci.enableIntr();
-	  return;
-      }
-    }
-#endif
-
-    if (gpsc_state == GPSC_OFF) {
-      /*
-       * We are off which means someone called stop after a request
-       * was issued but the grant hadn't happened yet.  Since we got
-       * the grant, that means there was an outstanding request.
-       */
-      gps_panic(16, 0);		/* do we ever see this? */
-#ifndef GPS_LEAVE_UP
-      call HW.gps_off();
-#endif
-      call GPSTimer.stop();
-      return;
-    }
-
-    if (gpsc_state == GPSC_REQUESTED) {
-      gpsc_change_state(GPSC_START_DELAY, GPSW_GRANT);
-      call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
-      call Usci.enableIntr();
-      return;
-    }
-  }
-
-
-#ifdef notdef
-  /*
-   * SerialDemuxResource.granted
-   *
-   * event signalled when we have gained default control of the UART.  This only
-   * occurs when we are first turning the GPS on.  When the GPS is started the
-   * SerialDemuxResource is requested.  When granted it signifies that the GPS
-   * now owns the UART by default.
-   *
-   * That doesn't mean the GPS owns the device.  A higher priority client
-   * may actually own it.  So we need to check.
-   */
-
-  event void SerialDemuxResource.granted() {
-    call MuxControl.set_mux(SERIAL_OWNER_GPS);
-    call HW.gps_on();
-    t_gps_pwr_on = call LocalTime.get();
-    if (call SerialDefOwner.isOwner()) {
-      gpsc_change_release_state(GPSC_RS_OWNED, GPSW_DEF_RESOURCE_GRANT);
-      call Trace.trace(T_GPS_DO_GRANT, 2, 0);
-      gps_granted();
-    } else
-      call Trace.trace(T_GPS_DO_DEFERRED, 2, 0);
-  }
-
-
-  /*
-   * A user of the resource has finished and we are being told no one
-   * else wants it.  So we are being given the resource because we are a
-   * default owner.
-   *
-   * Note it is possible that by the time the gps_owner_task runs it is possible
-   * that another user of the resource can have requested the resource which could
-   * cause out state to be different that DEF_GRANTING.
-   *
-   * release_state must RELEASED.
-   */
-
-  async event void SerialDefOwner.granted() {
-    if (gpsc_release_state != GPSC_RS_RELEASED)
-      gps_panic(7, gpsc_state);
-    gpsc_change_release_state(GPSC_RS_DEF_GRANTING, GPSW_DEF_GRANT);
-    post gps_owner_task();
-  }
-
-#endif
 
 
   event void GPSTimer.fired() {
@@ -720,11 +564,6 @@ implementation {
 	  call Panic.panic(PANIC_GPS, 10, err, gpsc_state, 0, 0);
 	return;
 
-      case GPSC_REQUESTED:			// request took too long
-	gps_panic(11, gpsc_state);
-	nop();
-	return;
-
       case GPSC_START_DELAY:
 	gpsc_change_state(GPSC_HUNT_1, GPSW_TIMER);
 	post gps_config_task();
@@ -785,9 +624,6 @@ implementation {
   
 
   /*
-   * This needs to be revised.  We are now using the 2618 usci
-   * hardware.  Verify how the interrupt handler works.
-   *
    * NOTE on overruns and other rx errors.  The driver in
    * $TOSROOT/lib/tosthreads/chips/msp430/HplMsp430Usart1P.nc or
    * $TOSROOT/tos/chips/msp430/usart/HplMsp430Usart1P.nc
@@ -803,6 +639,11 @@ implementation {
     gbuf[g_idx++] = byte;
     if (g_idx >= GPS_EAVES_SIZE)
       g_idx = 0;
+    if (!t_gps_first_char) {
+      t_gps_first_char = call LocalTime.get();
+      t_gps_first_char -= t_gps_pwr_on;
+      nop();
+    }
 
     call GPSMsg.byteAvail(byte);
 
@@ -819,8 +660,7 @@ implementation {
       case GPSC_SENDING:
       case GPSC_FINI_WAIT:
       case GPSC_FINISH:
-      case GPSC_REQUESTED:			/* small interrupt window between configure and grant, ignore */
-      case GPSC_START_DELAY:
+      case GPSC_START_DELAY:			/* could panic, but why bother */
 	return;					/* ignore (collected above) */
 
       case GPSC_HUNT_1:
@@ -889,9 +729,12 @@ implementation {
 	post gps_config_task();
 
 	/*
-	 * wait till all bytes have gone out.
+	 * wait till all bytes have gone out.  The TI h/w provides a busy bit but
+	 * this denotes either tx or rx is busy so we can't use it.  So shove one
+	 * more byte out and wait for the TXBUF to go empty.
 	 */
-	while (call Usci.isBusy()) ;
+	call Usci.tx(0);
+	while (!call Usci.isTxIntrPending()) ;
 	call Usci.setModeUart((msp430_uart_union_config_t *) &GPS_OP_SERIAL_CONFIG);
 	call Usci.enableIntr();
 	return;
@@ -910,7 +753,8 @@ implementation {
       case GPSC_BACK_TO_NMEA:
 	gpsc_change_state(GPSC_FINI_WAIT, GPSW_SEND_DONE);
 	post gps_config_task();
-	while (call Usci.isBusy()) ;
+	call Usci.tx(0);
+	while (!call Usci.isTxIntrPending()) ;
 	call Usci.setModeUart((msp430_uart_union_config_t *) &sirf3_4800_serial_config);
 	call Usci.enableIntr();
 	break;
@@ -931,4 +775,8 @@ implementation {
   }
 
   async event void UartStream.receiveDone( uint8_t* buf, uint16_t len, error_t error ) { }
+
+  event void UsciResource.granted() {
+    nop();
+  }
 }
