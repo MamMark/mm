@@ -31,6 +31,9 @@ implementation {
   components new TimerMilliC() as T0;
   SDspP.SD_reset_timer -> T0;
 
+  components new TimerMilliC() as T1;
+  SDspP.SD_read_timer -> T1;
+
   components HplMsp430UsciB0C as UsciC;
   SDspP.Umod -> UsciC;
   SDspP.UsciInterrupts -> UsciC;

@@ -27,6 +27,7 @@ module SDspP {
     interface Panic;
     interface BlockingSpiPacket;
     interface Timer<TMilli> as SD_reset_timer;
+    interface Timer<TMilli> as SD_read_timer;
   }
 }
 
@@ -42,8 +43,9 @@ implementation {
   uint16_t     sd_busy_timeout;
   bool         sd_busyflag;
   uint16_t     sd_reset_idles;
-
-  uint16_t     sd_go_op_count;
+  uint16_t     sd_go_op_count, sd_read_count;
+  uint32_t     blk;
+  void	       *data_read_buf;
   
   void sd_wait_notbusy();
 
@@ -109,10 +111,11 @@ implementation {
 
     if (SD_SPI_OVERRUN)
       call Panic.panic(PANIC_SD, 7, 0, 0, 0, 0);
-/*
- * do not explicitly clear the rx interrupt.  reading SD_SPI_RX_BUF will
- * clear it automatically.
- */
+
+    /*
+     * do not explicitly clear the rx interrupt.  reading SD_SPI_RX_BUF will
+     * clear it automatically.
+     */
 //  SD_SPI_CLR_RXINT;
     return(SD_SPI_RX_BUF);
   }
@@ -213,10 +216,10 @@ implementation {
     while (i < 4);
 
     /* This is the CRC. It only matters what we put here for the first
-       command. Otherwise, the CRC is ignored for SPI mode unless we
-       enable CRC checking which we don't because it is a royal pain
-       in the ass.
-    */
+     * command. Otherwise, the CRC is ignored for SPI mode unless we
+     * enable CRC checking which we don't because it is a royal pain
+     * in the ass.
+     */
     sd_put(0x95);
 
     /* Wait for a response.  */
@@ -305,11 +308,11 @@ implementation {
 
 
   /* Set block length (size of data transaction)
-
-  input:  length	size of block
-  output: rtn:		0 block length set okay.
-  non-zero, error return from send_command
-  */
+   *
+   * input:  length  size of block
+   * output: rtn:    0 block length set okay.
+   * non-zero, error return from send_command
+   */
 
   int sd_set_blocklen(uint32_t length) {
     sd_cmd_blk_t *cmd;
@@ -323,13 +326,13 @@ implementation {
 
 
   /* Reset the SD card.
-     ret:	    0,	card initilized
-     non-zero, error return
+   * ret:      0,  card initilized
+   * non-zero, error return
+   *
+   * SPI SD initialization sequence:
+   * CMD0 (reset), CMD55 (app cmd), ACMD41 (app_send_op_cond), CMD58 (send ocr)
+   */
 
-     SPI SD initialization sequence:
-     CMD0 (reset), CMD55 (app cmd), ACMD41 (app_send_op_cond), CMD58 (send ocr)
-  */
- 
   command error_t SDreset.reset() {
     sd_cmd_blk_t *cmd;
 
@@ -339,28 +342,28 @@ implementation {
     sd_packarg(0);
 
     /* Clock out at least 74 bits of idles (0xFF).  This allows
-       the SD card to complete its power up prior to talking to
-       the card.
-
-       When experimenting with different SPI clocks (4M ... 400K) and
-       the power up sequence.  ie.
-
-       power off SD
-       wait 1 sec
-       power on
-       set spi speed
-       select SD
-       sd_reset
-       preliminaries
-       deselect sd
-       sd_delay(100)
-
-       If sd_delay is set to 10 then a power on delay is needed.  The
-       amount of delay depends on which SPI clock is used.  Using an
-       sd_delay of 100 eliminates the need for the power on delay and
-       doesn't appreciably change the reset time which is dominated
-       by the GO_OP (A41) time.
-    */
+     * the SD card to complete its power up prior to talking to
+     * the card.
+     *
+     * When experimenting with different SPI clocks (4M ... 400K) and
+     * the power up sequence.  ie.
+     *
+     * power off SD
+     * wait 1 sec
+     * power on
+     * set spi speed
+     * select SD
+     * sd_reset
+     * preliminaries
+     * deselect sd
+     * sd_delay(100)
+     *
+     * If sd_delay is set to 10 then a power on delay is needed.  The
+     * amount of delay depends on which SPI clock is used.  Using an
+     * sd_delay of 100 eliminates the need for the power on delay and
+     * doesn't appreciably change the reset time which is dominated
+     * by the GO_OP (A41) time.
+     */
 
     SD_CSN = 1;
     sd_delay(SD_RESET_IDLES);
@@ -375,7 +378,10 @@ implementation {
 
     /*
      * force the timer to go, which sends the first go_op.
-     * eventually it will cause a resetDone to get sent
+     * eventually it will cause a resetDone to get sent.
+     *
+     * This switches us to the context that we want so the
+     * signal for resetDone always comes from the same place.
      */
     sd_go_op_count = 0;		// Reset our counter for Pending tries
     call SD_reset_timer.startOneShot(0);
@@ -452,14 +458,12 @@ implementation {
 
   /*
    * sd_read_data_direct: read data from the SD after sending a command
-   *    does not use dma and waits for the data.
+   *
+   * does not use dma and waits for the data.
    */
 
   error_t sd_read_data_direct(uint16_t data_len, uint8_t *data) {
-    uint16_t i;
-    uint8_t  tmp;
     sd_cmd_blk_t *cmd;
-    error_t err;
 
     cmd = &sd_cmd;
     sd_wait_notbusy();
@@ -477,35 +481,29 @@ implementation {
     /* Re-assert CS to continue the transfer */
     SD_CSN = 0;
 
-    /* Wait for the token */
-    i=0;
-    do {
-      tmp = sd_get();
-      i++;
-    } while ((tmp == 0xFF) && i < SD_READ_TIMEOUT);
-    sd_rd_timeout = i;
-
-    if ((tmp & MSK_TOK_DATAERROR) == 0 || i >= SD_READ_TIMEOUT) {
-      /*
-       * Clock out a byte before returning, let SD finish
-       * what is this based on?
-       */
-      sd_put(0xff);
-
-      /* The card returned an error, or timed out. */
-      return FAIL;
-    }
-
-#ifdef USE_SPI_PACKET
-    err = call BlockingSpiPacket.send(NULL, data, data_len);
-    /*
-     * what to do if it fails?
+    /* CWD 4/10/10 Implement split-phase functionality.
+     *  Call a oneshottimer then check for the response from the SD card.
      */
-#else
+
+    /*
+     * Force the read timer to fire we can see if our data is ready
+     * eventually it will cause a resetDone to get sent
+     */
+    sd_read_count = 0;                         // Reset our counter for Pending tries
+    call SD_read_timer.startOneShot(0);
+    return SUCCESS;
+  }
+
+
+  void read_finish() {  
+    error_t err;
+    uint16_t i;
+    uint8_t *data;
+
+    data = data_read_buf;
     err = SUCCESS;
-    for (i = 0; i < data_len; i++)
+    for (i = 0; i < SD_BLOCKSIZE; i++)
       data[i] = sd_get();
-#endif
 
     /* Ignore the CRC */
     sd_get();
@@ -514,9 +512,32 @@ implementation {
     SD_CSN = 1;
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
-
-    return err;
+    signal SDread.readDone(blk, data_read_buf, err);
   }
+
+
+  event void SD_read_timer.fired() {
+    uint8_t tmp;
+    
+    tmp = sd_get();
+    if ((tmp == 0xFF) && (sd_read_count++ < SD_READ_TIMEOUT)) {
+      if ((tmp & MSK_TOK_DATAERROR) == 0 || sd_read_count >= SD_READ_TIMEOUT) {
+        // Clock out a byte before returning so the SD can finish
+        sd_put(0xff);
+        call Panic.panic(PANIC_SD, 50, 0, 0, 0, 0);
+        signal SDread.readDone(blk, data_read_buf, FAIL);
+        return;
+      }
+      call SD_read_timer.startOneShot(5);        // Need to determine proper wait time for SD to respond  
+      return;
+    }
+
+    /*
+     * read was successful, time to finish things up.
+     */
+    read_finish();
+    return;
+  }  
 
 
   /* sd_check_crc
@@ -643,15 +664,15 @@ implementation {
     if (sd_send_command())
       return(0xffff);
     i = (cmd->rsp[0] << 8) | cmd->rsp[1];
-    return(i);
+    return i;
   }
-  
+
 
   /*
    * SDread.read: read a 512 byte block from the SD
    *
    * input:  blockaddr     block to read.  (max 23 bits)
-   *         data          pointer to data buffer
+   *         data          pointer to data buffer, assumed 512 bytes
    * output: rtn           0 call successful, err otherwise
    */
 
@@ -660,7 +681,10 @@ implementation {
     error_t err;
     uint8_t *d;
 
+    data_read_buf = data;
+    
     cmd = &sd_cmd;
+
     /* Adjust the block address to a byte address */
     blockaddr <<= SD_BLOCKSIZE_NBITS;
 
@@ -670,7 +694,7 @@ implementation {
     /* Need to add size checking, 0 = success */
     cmd->cmd     = SD_READ_BLOCK;
     cmd->rsp_len = SD_READ_BLOCK_R;
-    err = sd_read_data_direct(SD_BLOCKSIZE, data);
+    err = sd_read_data_direct(SD_BLOCKSIZE, data_read_buf);
     if (err) {
       call Panic.panic(PANIC_SD, 24, err, 0, 0, 0);
       return(err);
@@ -683,10 +707,10 @@ implementation {
      * flag it and re-read the buffer.  We don't keep trying so it
      * had better work.
      */
-    d = data;
+    d = data_read_buf;
     if (*d == 0xfe) {
       call Panic.warn(PANIC_SD, 25, *d, 0, 0, 0);
-      err = sd_read_data_direct(SD_BLOCKSIZE, data);
+      err = sd_read_data_direct(SD_BLOCKSIZE, data_read_buf);
     }
     return err;
   }
@@ -706,7 +730,8 @@ implementation {
     sd_cmd_blk_t *cmd;
 
     cmd = &sd_cmd;
-    /* Adjust the block address to a linear address */
+
+    /* Adjust the block address to a byte address */
     blockaddr <<= SD_BLOCKSIZE_NBITS;
 
     /* Pack the address */
@@ -754,7 +779,8 @@ implementation {
     SD_CSN = 0;
 
     /* The write command needs an additional 8 clock cycles before
-     * the block write is started. */
+     * the block write is started.
+     */
     tmp = sd_get();
     if (tmp != 0xff)
       call Panic.panic(PANIC_SD, 28, tmp, 0, 0, 0);
@@ -789,8 +815,7 @@ implementation {
 #ifdef notdef
     /*
      * This needs to get changed for the thread.  need a timeout sequence.
-     */
-    /*
+     *
      * We give up to 10 mis for things to settle down.
      *
      * need to convert this timing stuff into using a Timer.
@@ -815,7 +840,7 @@ implementation {
        */
       time_get_cur(&t);
       if (time_leq(&to, &t))
-	call Panic.panic(PANIC_SD, 29, 0, 0, 0, 0);
+      call Panic.panic(PANIC_SD, 29, 0, 0, 0, 0);
 #endif
     }
 
@@ -935,6 +960,7 @@ implementation {
 
     /* Deassert CS */
     SD_CSN = 1;
+
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
   }
