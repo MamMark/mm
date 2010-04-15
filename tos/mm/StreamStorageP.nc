@@ -462,6 +462,10 @@ implementation {
   }
 
 
+  event void SDread.readDone(uint32_t blk, void *buf, error_t error) {
+  }
+
+
   command ss_wr_req_t* SSW.get_free_buf_handle() {
     ss_wr_req_t *sswp;
 
