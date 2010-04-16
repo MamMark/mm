@@ -13,6 +13,7 @@
 
 #include "AM.h"
 #include "sensors.h"
+#include "am_types.h"
 
 module mmCommDataP {
   provides {

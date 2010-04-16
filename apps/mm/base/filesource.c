@@ -8,15 +8,15 @@
 #include <string.h>
 
 #include <message.h>
+#include "am_types.h"
 #include "filesource.h"
 #include "serialprotocol.h"
 #include "serialpacket.h"
 #include "DtSensorDataMsg.h"
 #include "DtSyncMsg.h"
-#include "mmDataMsg.h"
-#include "SDConstants.h"
-#include "SensorConstants.h"
-#include "mmdump.h"
+#include "gDTConstants.h"
+#include "gSensorIDs.h"
+#include "sync.h"
 
 /*
  * Number of empty sectors that will cause the dump to stop.
@@ -203,7 +203,8 @@ resync(int fd, int ignore_cur, uint8_t *dbuff) {
   int bad_blks;
   uint skipped;
 
-  fprintf(stderr, "*** RESYNC: last expected sector: %d (0x%04x)\n", cur_seq, cur_seq);
+  fprintf(stderr, "*** RESYNC: last expected sector: %d (0x%04x)\n",
+	  cur_seq, cur_seq);
   msg = new_tmsg(dbuff, DT_SYNC_SIZE);
   if (!msg) {
     fprintf(stderr, "*** new_tmsg failed (null)\n");
@@ -228,7 +229,8 @@ resync(int fd, int ignore_cur, uint8_t *dbuff) {
 	  (dt_sync_dtype_get(msg) == DT_SYNC ||
 	   dt_sync_dtype_get(msg) == DT_SYNC_RESTART)) {
 	free_tmsg(msg);
-	fprintf(stderr, "*** RESYNC: skipped %u bytes, new cur_seq: %d (0x%04x)\n", skipped, cur_seq, cur_seq);
+	fprintf(stderr, "*** RESYNC: skipped %u bytes, new cur_seq: %d (0x%04x)\n",
+		skipped, cur_seq, cur_seq);
 	return;
       }
       cur_sector_ptr++;
@@ -381,7 +383,7 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
     spacket_header_src_set(msg, 0);
     spacket_header_length_set(msg, l);
     spacket_header_group_set(msg, 0);
-    spacket_header_type_set(msg, MM_DATA_MSG_AM_TYPE);
+    spacket_header_type_set(msg, AM_MM_DATA);
     dptr = (bp + 1) + spacket_data_offset(0);
     dptr[0] = hdr[0];
     dptr[1] = hdr[1];
