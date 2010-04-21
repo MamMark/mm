@@ -5,12 +5,13 @@
 
 /**
  * @author Eric B. Decker (cire831@gmail.com)
- * @date 20 Jan 2009
+ * @date 13 Apr 2010
  *
  * Handle processing cmds received on the command (control) channel.
  */
 
-#include "mm_control_msg.h"
+#include "am_types.h"
+#include "mm_control.h"
 
 configuration CmdHandlerC {
   provides interface StdControl as CmdControl;
@@ -25,10 +26,10 @@ implementation {
 //  MainC.SoftwareInit -> CmdHandlerP;
 //  CmdHandlerP.Boot -> MainC;
 
-//  components new SerialAMSenderC(AM_MM_CONTROL_MSG);
+//  components new SerialAMSenderC(AM_MM_CONTROL);
 //  CmdHandlerP.AMSend -> SerialAMSenderC;
 
-  components new SerialAMReceiverC(AM_MM_CONTROL_MSG);
+  components new SerialAMReceiverC(AM_MM_CONTROL);
   CmdHandlerP.CmdReceive -> SerialAMReceiverC;
 //  CmdHandlerP.Packet -> SerialAMSenderC;
 

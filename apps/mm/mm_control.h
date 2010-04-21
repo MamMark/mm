@@ -42,10 +42,6 @@
 
 #include "message.h"
 
-typedef nx_struct mm_control_msg {
-  nx_uint8_t buffer[TOSH_DATA_LENGTH];
-} mm_control_msg_t;
-
 typedef nx_struct mm_cmd {
   nx_uint8_t len;
   nx_uint8_t cmd;
@@ -53,11 +49,13 @@ typedef nx_struct mm_cmd {
   nx_uint8_t  data[0];
 } mm_cmd_t;
 
+
 enum {
   CMD_PING		= 0,
   CMD_WR_NOTE		= 1,
   CMD_RESPONSE		= 0x80,
 };
+
 
 typedef nx_struct mm_cmd_note {
   nx_uint16_t	     year;
@@ -66,7 +64,7 @@ typedef nx_struct mm_cmd_note {
   nx_uint8_t	     hrs;
   nx_uint8_t	     min;
   nx_uint8_t	     sec;
-  nx_uint16_t	     note_len;
+  nx_uint8_t	     len;
   nx_uint8_t	     data[0];
 } mm_cmd_note_t;
 
@@ -74,8 +72,8 @@ typedef nx_struct mm_cmd_note {
  * Not actually used.  Only here to make "mig" happy.
  */
 enum {
-  AM_MM_CONTROL_MSG = 0xA0,
   AM_MM_CMD         = 0xA0,
+  AM_MM_CMD_NOTE    = 0xA0,
 };
 
 #endif

@@ -5,7 +5,7 @@
 
 /**
  * @author Eric B. Decker (cire831@gmail.com)
- * @date 28 May 2008
+ * @date 13 April 2010
  *
  * Handle processing cmds received on the command (control) channel.
  */
@@ -51,7 +51,7 @@ implementation {
   }
 
   event message_t * CmdReceive.receive(message_t * msg, void * payload, uint8_t len) {
-    mm_control_msg_t * cmd_payload = payload;
+    mm_cmd_t * cmd = payload;
     nop();
     return msg;
   }
