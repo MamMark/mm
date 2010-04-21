@@ -1,35 +1,23 @@
 /*
  * typed_data: definitions for typed data on Mass Storage
- * and any Data network packets.
- *
- * This file must be portable.  It is used across multiple
- * machines.
+ * and any Data network packets.  DT, stands for data typed.
  *
  * MSP430 (using ncc/gcc): the structures are
  * set up to be 2 byte aligned (short alignment) and the structures
  * are filled in completely.  16 bit fields are positioned to be
- * aligned at 16 bit alignment.
- *
- * x86 (under Linux and gcc):
- *
- * MAC OS (OS X, gcc): mactels ae little endian while powermacs are big.
+ * aligned at 16 bit alignment.  Not sure if this matters.
  */
 
-#ifndef __SD_BLOCKS_H__
-#define __SD_BLOCKS_H__
+#ifndef __TYPED_DATA_H__
+#define __TYPED_DATA_H__
 
 /*
- * keep mig happy.  Each tag SD block can be transmitted in an encapsulated
- * mote packet.  The AM type can be AM_MM_CONTROL, DATA, or DEBUG.
- *
- * Place the AM code into the unreserved block.  Formerly we were 0x2x,
- * move this to 0xAx.
+ * keep mig happy.  Each tag typed_data block can be transmitted in an
+ * encapsulated AM message packet.  The AM type can be AM_MM_CONTROL, DATA,
+ * or DEBUG.
  */
-enum {
-  AM_MM_CONTROL		= 0xA0,
-  AM_MM_DATA		= 0xA1,
-  AM_MM_DEBUG		= 0xA2,
 
+enum {
   AM_DT_IGNORE		= 0xA1,
   AM_DT_CONFIG		= 0xA1,
   AM_DT_SYNC		= 0xA1,
@@ -61,6 +49,7 @@ enum {
   AM_DT_DEBUG		= 0xA1,
 };
 
+
 enum {
   DT_IGNORE		= 0,
   DT_CONFIG		= 1,
@@ -86,7 +75,7 @@ enum {
 
 
 /*
- * All record multibyte fields are stored in network order
+ * All multibyte fields are stored in network order
  * which is big endian.
  *
  * All records (data blocks) start with a big endian
@@ -569,4 +558,4 @@ enum {
   GPS_POS_BLOCK_SIZE      = (DT_HDR_SIZE_GPS_TIME + GPS_POS_PAYLOAD_SIZE),
 };
 
-#endif  /* __SD_BLOCKS_H__ */
+#endif  /* __TYPED_DATA_H__ */

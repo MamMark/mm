@@ -21,12 +21,13 @@
 #include <serialsource.h>
 #include <sfsource.h>
 #include <message.h>
+#include "am_types.h"
+#include "sync.h"
 #include "filesource.h"
 #include "serialpacket.h"
 #include "serialprotocol.h"
-#include "mmDataMsg.h"
-#include "SensorConstants.h"
-#include "SDConstants.h"
+#include "gSensorIDs.h"
+#include "gDTConstants.h"
 #include "DtIgnoreMsg.h"
 #include "DtSyncMsg.h"
 #include "DtPanicMsg.h"
@@ -37,14 +38,6 @@
 #include "DtGpsPosMsg.h"
 #include "DtGpsRawMsg.h"
 #include "ParseSirf.h"
-
-/*
- * We use mig and ncg to autogenerate header files that can be shared
- * between systems.  This handles enums and data structures.  But it
- * doesn't handle defines nor large numbers.  So we cheat.  This needs
- * to match what is in typed_data.h
- */
-#define SYNC_MAJIK 0xdedf00ef
 
 #define VERSION "mmdump: v0.10.1  (10 Apr 2010)\n"
 
@@ -560,10 +553,6 @@ event2str(uint8_t ev) {
       return "gps_reconfig";
     case DT_EVENT_GPS_START:
       return "gps_start";
-    case DT_EVENT_GPS_GRANT:
-      return "gps_grant";
-    case DT_EVENT_GPS_RELEASE:
-      return "gps_release";
     case DT_EVENT_GPS_OFF:
       return "gps_off";
     case DT_EVENT_GPS_FAST:
@@ -889,7 +878,7 @@ main(int argc, char **argv) {
      */
     reset_tmsg(msg, ((uint8_t *)tmsg_data(msg)) + SPACKET_SIZE, tmsg_length(msg) - spacket_data_offset(0));
     switch(stype) {
-      case MM_DATA_MSG_AM_TYPE:
+      case AM_MM_DATA:
 	process_mm_data(msg);
 	break;
 

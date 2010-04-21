@@ -21,44 +21,49 @@ STOW_DIR=/opt
 PROGRAMS=mmdump
 
 CC=gcc
-CFLAGS += -g -O0 -Wall -I$(STOW_DIR)/include
+CFLAGS += -g -O0 -Wall -I$(STOW_DIR)/include -I$(COMM)
 LIBS += $(STOW_DIR)/lib/libmote.a
 
-GEN=mmDataMsg.h mmDataMsg.c \
-    DtIgnoreMsg.h DtIgnoreMsg.c \
-    DtConfigMsg.h DtConfigMsg.c \
-    DtSyncMsg.h DtSyncMsg.c \
-    DtPanicMsg.h DtPanicMsg.c \
-    DtGpsTimeMsg.h DtGpsTimeMsg.c \
-    DtGpsPosMsg.h DtGpsPosMsg.c \
-    DtSensorDataMsg.h DtSensorDataMsg.c \
-    DtSensorSetMsg.h DtSensorSetMsg.c \
-    DtTestMsg.h DtTestMsg.c \
-    DtNoteMsg.h DtNoteMsg.c \
-    DtGpsRawMsg.h DtGpsRawMsg.c \
-    GpsNavDataMsg.h GpsNavDataMsg.c \
-    GpsGeodeticDataMsg.h GpsGeodeticDataMsg.c \
-    GpsNavLibDataMsg.h GpsNavLibDataMsg.c\
-    GpsTrackerDataMsg.h GpsTrackerDataMsg.c \
-    GpsSoftVersMsg.h GpsSoftVersMsg.c \
-    GpsClockStatusMsg.h GpsClockStatusMsg.c \
-    GpsErrorMsg.h GpsErrorMsg.c \
-    GpsAlmanacStatusMsg.h GpsAlmanacStatusMsg.c\
-    GpsPpsMsg.h GpsPpsMsg.c \
-    GpsDevDataMsg.h GpsDevDataMsg.c \
-    GpsUnkMsg.h GpsUnkMsg.c \
-    DtVersionMsg.h DtVersionMsg.c \
-    DtEventMsg.h DtEventMsg.c \
-    SDConstants.h SensorConstants.h \
-    serialpacket.c serialpacket.h serialprotocol.h
+GEN = DtIgnoreMsg.h DtIgnoreMsg.c \
+      DtConfigMsg.h DtConfigMsg.c \
+      DtSyncMsg.h DtSyncMsg.c \
+      DtPanicMsg.h DtPanicMsg.c \
+      DtGpsTimeMsg.h DtGpsTimeMsg.c \
+      DtGpsPosMsg.h DtGpsPosMsg.c \
+      DtSensorDataMsg.h DtSensorDataMsg.c \
+      DtSensorSetMsg.h DtSensorSetMsg.c \
+      DtTestMsg.h DtTestMsg.c \
+      DtNoteMsg.h DtNoteMsg.c \
+      DtVersionMsg.h DtVersionMsg.c \
+      DtEventMsg.h DtEventMsg.c \
+      DtGpsRawMsg.h DtGpsRawMsg.c \
+      GpsNavDataMsg.h GpsNavDataMsg.c \
+      GpsGeodeticDataMsg.h GpsGeodeticDataMsg.c \
+      GpsNavLibDataMsg.h GpsNavLibDataMsg.c\
+      GpsTrackerDataMsg.h GpsTrackerDataMsg.c \
+      GpsSoftVersMsg.h GpsSoftVersMsg.c \
+      GpsClockStatusMsg.h GpsClockStatusMsg.c \
+      GpsErrorMsg.h GpsErrorMsg.c \
+      GpsAlmanacStatusMsg.h GpsAlmanacStatusMsg.c\
+      GpsPpsMsg.h GpsPpsMsg.c \
+      GpsDevDataMsg.h GpsDevDataMsg.c \
+      GpsUnkMsg.h GpsUnkMsg.c \
+      gSensorIDs.h gDTConstants.h \
+      serialpacket.c serialpacket.h serialprotocol.h
 
 SERIAL_H = $(TOSDIR)/lib/serial/Serial.h
 
 all: $(PROGRAMS)
 
-mmDataMsg.h: $(COMM)/mm_data_msg.h
-	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
-	c $(COMM)/mm_data_msg.h mm_data_msg -o mmDataMsg.h
+#
+# typed_data.h is run through mig to produce access routines
+# for each of the network packets.  Mig generates a C file and
+# associated header.  A pair is generated for each packet format
+# because that is how mig does it.
+#
+# Convention: for the packet dt_ignore we generate the files
+# DtIgnoreMsg.{c,h}
+#
 
 DtIgnoreMsg.c DtIgnoreMsg.h: $(TYPED_DATA)
 	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
@@ -156,9 +161,9 @@ DtEventMsg.c DtEventMsg.h: $(TYPED_DATA)
 	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_event -o DtEventMsg.h
 
-SensorConstants.h: $(SENSORS)/sensors.h
-	ncg -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -I$(SENSORS) -target=$(TARGET) \
-	c $(SENSORS)/sensors.h \
+gSensorIDs.h: $(SENSORS)/sensors.h
+	ncg -o $@ -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -I$(SENSORS) \
+	-target=$(TARGET) c $(SENSORS)/sensors.h \
 	SNS_ID_NONE               \
 	SNS_ID_CRADLE             \
 	SNS_ID_BATT               \
@@ -169,11 +174,10 @@ SensorConstants.h: $(SENSORS)/sensors.h
 	SNS_ID_PRESS              \
 	SNS_ID_SPEED              \
 	SNS_ID_MAG                \
-	MM_NUM_SENSORS		  \
-	-o $@
+	MM_NUM_SENSORS
 
-SDConstants.h: $(TYPED_DATA) Makefile
-	ncg -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+gDTConstants.h: $(TYPED_DATA) Makefile
+	ncg -o $@ -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) \
 	DT_IGNORE                 \
 	DT_CONFIG		  \
@@ -243,8 +247,7 @@ SDConstants.h: $(TYPED_DATA) Makefile
 	MAG_PAYLOAD_SIZE          \
 	MAG_BLOCK_SIZE            \
 	GPS_TIME_BLOCK_SIZE	  \
-	GPS_POS_BLOCK_SIZE	  \
-	-o $@
+	GPS_POS_BLOCK_SIZE
 
 serialpacket.c serialpacket.h: $(SERIAL_H)
 	mig -o serialpacket.h -c-prefix=spacket c $(SERIAL_H) serial_packet
@@ -255,20 +258,14 @@ serialprotocol.h: $(SERIAL_H)
 .c.o:
 	$(CC) -c $(CFLAGS) $<
 
-mmdump.o: mmdump.c mmDataMsg.h DtIgnoreMsg.h DtConfigMsg.h DtSyncMsg.h DtPanicMsg.h DtGpsTimeMsg.h \
-	DtGpsPosMsg.h DtSensorDataMsg.h DtSensorSetMsg.h DtTestMsg.h DtNoteMsg.h DtGpsRawMsg.h DtVersionMsg.h \
-	DtEventMsg.h \
-	GpsNavDataMsg.h GpsTrackerDataMsg.h GpsSoftVersMsg.h GpsErrorMsg.h GpsGeodeticDataMsg.h GpsPpsMsg.h \
-	GpsClockStatusMsg.h GpsNavLibDataMsg.h GpsAlmanacStatusMsg.h GpsDevDataMsg.h GpsUnkMsg.h \
-	ParseSirf.h \
-	SensorConstants.h SDConstants.h serialpacket.h serialprotocol.h
-
-mmdump: mmdump.o filesource.o mmDataMsg.o DtIgnoreMsg.o DtConfigMsg.o DtSyncMsg.o DtPanicMsg.o DtGpsTimeMsg.o \
-	DtGpsPosMsg.o DtSensorDataMsg.o DtSensorDataMsg.o DtSensorSetMsg.o DtTestMsg.o DtNoteMsg.o \
-	DtGpsRawMsg.o DtVersionMsg.o GpsNavLibDataMsg.o DtEventMsg.o serialpacket.o \
-	ParseSirf.o GpsNavDataMsg.o GpsTrackerDataMsg.o GpsSoftVersMsg.o GpsErrorMsg.o GpsGeodeticDataMsg.o \
-	GpsClockStatusMsg.o GpsAlmanacStatusMsg.o GpsPpsMsg.o GpsDevDataMsg.o GpsUnkMsg.o \
-
+mmdump: mmdump.o filesource.o ParseSirf.o serialpacket.o                    \
+	    DtIgnoreMsg.o DtConfigMsg.o DtSyncMsg.o DtPanicMsg.o            \
+	    DtGpsTimeMsg.o DtGpsPosMsg.o DtSensorDataMsg.o                  \
+	    DtSensorSetMsg.o DtTestMsg.o DtNoteMsg.o DtVersionMsg.o         \
+	    DtEventMsg.o DtGpsRawMsg.o GpsNavDataMsg.o GpsGeodeticDataMsg.o \
+	    GpsNavLibDataMsg.o GpsTrackerDataMsg.o GpsSoftVersMsg.o         \
+	    GpsClockStatusMsg.o GpsErrorMsg.o GpsAlmanacStatusMsg.o         \
+	    GpsPpsMsg.o GpsDevDataMsg.o GpsUnkMsg.o
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
 TAGS:
@@ -302,9 +299,10 @@ DtSensorSetMsg.o: DtSensorSetMsg.c /opt/include/message.h \
 DtSyncMsg.o: DtSyncMsg.c /opt/include/message.h DtSyncMsg.h
 DtTestMsg.o: DtTestMsg.c /opt/include/message.h DtTestMsg.h
 DtVersionMsg.o: DtVersionMsg.c /opt/include/message.h DtVersionMsg.h
-filesource.o: filesource.c /opt/include/message.h filesource.h \
- serialprotocol.h serialpacket.h DtSensorDataMsg.h DtSyncMsg.h \
- mmDataMsg.h SDConstants.h SensorConstants.h mmdump.h
+filesource.o: filesource.c /opt/include/message.h \
+ /home/cire/mm/t2_mm/tos/comm/am_types.h filesource.h serialprotocol.h \
+ serialpacket.h DtSensorDataMsg.h DtSyncMsg.h gDTConstants.h gSensorIDs.h \
+ sync.h
 GpsAlmanacStatusMsg.o: GpsAlmanacStatusMsg.c /opt/include/message.h \
  GpsAlmanacStatusMsg.h
 GpsClockStatusMsg.o: GpsClockStatusMsg.c /opt/include/message.h \
@@ -322,16 +320,15 @@ GpsSoftVersMsg.o: GpsSoftVersMsg.c /opt/include/message.h \
 GpsTrackerDataMsg.o: GpsTrackerDataMsg.c /opt/include/message.h \
  GpsTrackerDataMsg.h
 GpsUnkMsg.o: GpsUnkMsg.c /opt/include/message.h GpsUnkMsg.h
-mmDataMsg.o: mmDataMsg.c /opt/include/message.h mmDataMsg.h
 mmdump.o: mmdump.c /opt/include/serialsource.h /opt/include/sfsource.h \
- /opt/include/message.h filesource.h serialpacket.h serialprotocol.h \
- mmDataMsg.h SensorConstants.h SDConstants.h DtIgnoreMsg.h DtSyncMsg.h \
- DtPanicMsg.h DtSensorDataMsg.h DtVersionMsg.h DtEventMsg.h \
- DtGpsTimeMsg.h DtGpsPosMsg.h DtGpsRawMsg.h ParseSirf.h
+ /opt/include/message.h /home/cire/mm/t2_mm/tos/comm/am_types.h sync.h \
+ filesource.h serialpacket.h serialprotocol.h gSensorIDs.h gDTConstants.h \
+ DtIgnoreMsg.h DtSyncMsg.h DtPanicMsg.h DtSensorDataMsg.h DtVersionMsg.h \
+ DtEventMsg.h DtGpsTimeMsg.h DtGpsPosMsg.h DtGpsRawMsg.h ParseSirf.h
 ParseSirf.o: ParseSirf.c /opt/include/serialsource.h \
  /opt/include/sfsource.h /opt/include/message.h filesource.h \
- serialpacket.h serialprotocol.h SDConstants.h DtGpsRawMsg.h ParseSirf.h \
+ serialpacket.h serialprotocol.h gDTConstants.h ParseSirf.h \
  GpsNavDataMsg.h GpsTrackerDataMsg.h GpsGeodeticDataMsg.h GpsDevDataMsg.h \
  GpsSoftVersMsg.h GpsClockStatusMsg.h GpsPpsMsg.h GpsAlmanacStatusMsg.h \
- GpsErrorMsg.h GpsUnkMsg.h GpsNavLibDataMsg.h
+ DtGpsRawMsg.h GpsErrorMsg.h GpsUnkMsg.h GpsNavLibDataMsg.h
 serialpacket.o: serialpacket.c /opt/include/message.h serialpacket.h

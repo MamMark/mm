@@ -13,9 +13,8 @@
 #include "filesource.h"
 #include "serialpacket.h"
 #include "serialprotocol.h"
-#include "SDConstants.h"
-#include "DtGpsRawMsg.h"
 
+#include "gDTConstants.h"
 #include "ParseSirf.h"
 #include "GpsNavDataMsg.h"
 #include "GpsTrackerDataMsg.h"
@@ -25,6 +24,7 @@
 #include "GpsClockStatusMsg.h"
 #include "GpsPpsMsg.h"
 #include "GpsAlmanacStatusMsg.h"
+#include "DtGpsRawMsg.h"
 #include "GpsErrorMsg.h"
 #include "GpsUnkMsg.h"
 #include "GpsNavLibDataMsg.h"

@@ -34,4 +34,6 @@ implementation {
    * start when regimeChange() is signalled.
    */
   components CradleC, BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, MagC;
+
+  components CmdHandlerC;
 }

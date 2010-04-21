@@ -4,6 +4,7 @@
  */
  
 #include "sensors.h"
+#include "am_types.h"
 
 configuration mmRadioCommC {
   provides interface Send[uint8_t id];

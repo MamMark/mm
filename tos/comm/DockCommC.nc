@@ -4,6 +4,7 @@
  */
  
 #include "sensors.h"
+#include "am_types.h"
 
 configuration DockCommC {
   provides {

@@ -1,20 +1,21 @@
 /*
- * Copyright (c) 2010 Eric B. Decker
- * All rights reserved.
- * Copyright (c) 2008 Stanford University.
+ * Copyright (c) 2008, 2010 Eric B. Decker.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
+ *
  * - Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
+ *
  * - Redistributions in binary form must reproduce the above copyright
  *   notice, this list of conditions and the following disclaimer in the
  *   documentation and/or other materials provided with the
  *   distribution.
- * - Neither the name of the Stanford University nor the names of
- *   its contributors may be used to endorse or promote products derived
+ *
+ * - Neither the name of the Eric B. Decker nor the names of
+ *   any contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -32,26 +33,47 @@
  */
 
 /**
- * @author Kevin Klues <klueska@cs.stanford.edu>
- * @date March 3rd, 2008
  * @author Eric B. Decker <cire831@gmail.com>
- * @date Feb 27, 2010
+ * @date April 13, 2010
  */
 
-#ifndef MM_DATA_MSG_H
-#define MM_DATA_MSG_H
+#ifndef MM_CONTROL_MSG_H
+#define MM_CONTROL_MSG_H
 
 #include "message.h"
 
-typedef nx_struct mm_data_msg {
-  nx_uint8_t buffer[TOSH_DATA_LENGTH];
-} mm_data_msg_t;
+typedef nx_struct mm_cmd {
+  nx_uint8_t len;
+  nx_uint8_t cmd;
+  nx_uint8_t seq;
+  nx_uint8_t  data[0];
+} mm_cmd_t;
+
+
+enum {
+  CMD_PING		= 0,
+  CMD_WR_NOTE		= 1,
+  CMD_RESPONSE		= 0x80,
+};
+
+
+typedef nx_struct mm_cmd_note {
+  nx_uint16_t	     year;
+  nx_uint8_t	     month;
+  nx_uint8_t	     day;
+  nx_uint8_t	     hrs;
+  nx_uint8_t	     min;
+  nx_uint8_t	     sec;
+  nx_uint8_t	     len;
+  nx_uint8_t	     data[0];
+} mm_cmd_note_t;
 
 /*
  * Not actually used.  Only here to make "mig" happy.
  */
 enum {
-  AM_MM_DATA_MSG = 0xA1,
+  AM_MM_CMD         = 0xA0,
+  AM_MM_CMD_NOTE    = 0xA0,
 };
 
 #endif

@@ -46,10 +46,8 @@ GpsTrackerDataMsg.c
 GpsTrackerDataMsg.h
 GpsUnkMsg.c
 GpsUnkMsg.h
-SDConstants.h
-SensorConstants.h
-mmDataMsg.c
-mmDataMsg.h
+gDTConstants.h
+gSensorIDs.h
 mmdump
 serialpacket.c
 serialpacket.h
