@@ -23,8 +23,7 @@
  */
 
 typedef struct {
-    uint16_t   majik_a;		/* practice safe computing */
-
+    uint16_t majik_a;		/* practice safe computing */
     uint32_t panic_start;	/* where to write panic information */
     uint32_t panic_end;
     uint32_t config_start;	/* blk id of configuration */
@@ -32,12 +31,11 @@ typedef struct {
     uint32_t dblk_start;	/* blk id, don't go in front */
     uint32_t dblk_end;		/* blk id, don't go beyond*/
     uint32_t dblk_nxt;		/* blk id, next to write */
-
-    uint16_t   majik_b;
+    uint16_t majik_b;
 } fs_control_t;
 
-#define FS_MAJIK_A 0x8181
-#define FS_MAJIK_B 0x324f
+#define FSC_MAJIK_A 0x8181
+#define FSC_MAJIK_B 0x324f
 
 
 enum {

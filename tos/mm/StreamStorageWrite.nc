@@ -25,6 +25,7 @@ interface StreamStorageWrite {
    *   <li>buffer if good buf_handle.
    */
   command uint8_t *buf_handle_to_buf(ss_wr_req_t *buf_handle);
+  command uint8_t *get_temp_buf();
 
   /**
    * request a new buffer from the Stream Storage system.

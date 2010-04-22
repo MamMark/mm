@@ -110,17 +110,6 @@ typedef struct {
 } ss_rd_req_t;
 
 
-typedef enum {
-  SS_STATE_CRASHED	= 0x10,	/* something went wrong with stream storage.  hard fail */
-  SS_STATE_OFF,			/* power is off to the SS device */
-  SS_STATE_PWR_UP,		/* powering up, needs reset */
-  SS_STATE_XFER_R,		/* reading data from the SD */
-  SS_STATE_XFER_W,		/* writing data out to the SS device, dma */
-  SS_STATE_IDLE,		/* powered up but idle */
-  SS_STATE_MAX
-} ss_state_t;
-
-
 /*
  * Stream Storage Control Structure
  *
@@ -128,8 +117,6 @@ typedef enum {
  * the data collector.  The data collector gets and sends back buffers
  * completely sequentially.
  *
- * ss_state:	indicates what the main controller is doing, powering up,
- *		writing via dma, etc.
  * ssw_out:	Buffer being written out via dma to the stream storage device.
  * ssw_in:	Next buffer that should be coming back from the collector.
  * ssw_alloc:   Next buffer to be given out.
@@ -138,15 +125,6 @@ typedef enum {
  *
  * ssr_in:	request that will be used next
  * ssr_out:	request being processed
- *
- * panic_start: where to write panic information when all hell breaks loose
- * panic_end:   end of panic block.
- * config_start: block number of where the config is located.  must be contiguous
- * config_end:  ending block number of end of config.
- * dblk_start:  where to start writing data collected
- * dblk_end:    last block id of where to write data collected.
- * dblk_nxt:	current block to write.  If we are writting this is the
- *		block being written.
  */
 
 typedef struct {
@@ -161,27 +139,12 @@ typedef struct {
     uint8_t    ssr_in;		/* next request to use */
     uint8_t    ssr_out;		/* next request to process */
 
-    uint32_t panic_start;	/* where to write panic information */
-    uint32_t panic_end;
-    uint32_t config_start;	/* blk id of configuration */
-    uint32_t config_end;
-    uint32_t dblk_start;	/* blk id, don't go in front */
-    uint32_t dblk_end;		/* blk id, don't go beyond*/
-    uint32_t dblk_nxt;		/* blk id, next to write */
-
     uint16_t   majik_b;
 } ss_control_t;
 
 #define SSC_MAJIK_A 0x9191
 #define SSC_MAJIK_B 0xf423
 
-
-/*
- * Erased sectors show up as zero.  Not sure if this always
- * works but we don't want to deal with erasure.  So we assume
- * that the dblk area of the flash has been initially erased.
- */
- 
 
 /*
  * StreamStorage also has an interface that allows reading

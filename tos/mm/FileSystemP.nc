@@ -20,6 +20,7 @@
  * need to be supported for post processing data).
  */
 
+#include "file_system.h"
 #include "dblk_loc.h"
 
 /*
@@ -50,21 +51,27 @@ uint32_t erase_start;
 uint32_t erase_end;
 #endif
 
+
+typedef enum {
+  FSS_IDLE = 0,				/* doing nothing */
+  FSS_REQUEST,				/* resource requested */
+  FSS_ZERO,				/* reading block zero */
+  FSS_START,				/* read first block, chk empty */
+  FSS_SCAN,				/* scanning for 1st blank */
+} fs_state_t;
+
+
 module FileSystemP {
   provides {
     interface Init;
     interface Boot as OutBoot;
-//    interface ResourceConfigure;
   }
   uses {
     interface Boot;
     interface SDreset;
     interface SDread;
     interface SDerase;
-    interface Hpl_MM_hw as HW;
-    interface Resource as WriteResource;
-    interface Resource as ReadResource;
-//    interface ResourceConfigure as SpiResourceConfigure;
+    interface Resource
     interface Panic;
     interface LocalTime<TMilli>;
     interface Trace;
@@ -74,114 +81,22 @@ module FileSystemP {
   
 implementation {
 
-init
-
-    ssc.panic_start = ssc.panic_end = 0;
-    ssc.config_start= ssc.config_end = 0;
-    ssc.dblk_start  = ssc.dblk_end = 0;
-    dblk_nxt        = 0;
-
-*****
-
-  void ss_boot_start() {
-    call SDreset.reset();
-  }
-
-  error_t ss_boot_finish() {
-    error_t err;
-    uint8_t *dp;
-    dblk_loc_t *dbl;
-    uint32_t   lower, blk, upper;
-    bool empty;
-
-//    err = call SDreset.reset();
-//    if (err) {
-//      ss_panic(14, err);
-//      return err;
-//    }
-
-    dp = ssw_p[0]->buf;
-    if ((err = read_blk_fail(0, dp)))
-      return err;
-
-    dbl = (void *) ((uint8_t *) dp + DBLK_LOC_OFFSET);
-
-#ifdef notdef
-    if (do_test)
-      sd_display_card(dp);
-#endif
-
-    if (check_dblk_loc(dbl)) {
-      ss_panic(15, -1);
-      return FAIL;
-    }
-
-    ssc.panic_start  = CF_LE_32(dbl->panic_start);
-    ssc.panic_end    = CF_LE_32(dbl->panic_end);
-    ssc.config_start = CF_LE_32(dbl->config_start);
-    ssc.config_end   = CF_LE_32(dbl->config_end);
-    ssc.dblk_start   = CF_LE_32(dbl->dblk_start);
-    ssc.dblk_end     = CF_LE_32(dbl->dblk_end);
-
-#ifdef ENABLE_ERASE
-    if (do_erase) {
-      erase_start = ssc.dblk_start;
-      erase_end   = ssc.dblk_end;
-      nop();
-      call SDerase.erase(erase_start, erase_end);
-    }
-#endif
-    if ((err = read_blk_fail(ssc.dblk_start, dp))) {
-      ss_panic(16, -1);
-      return err;
-    }
-
-    if (blk_empty(dp)) {
-      ssc.dblk_nxt = ssc.dblk_start;
-      return SUCCESS;
-    }
-
-    lower = ssc.dblk_start;
-    upper = ssc.dblk_end;
-    empty = 0; blk = 0;
-
-    while (lower < upper) {
-      blk = (upper - lower)/2 + lower;
-      if (blk == lower)
-	blk = lower = upper;
-      if ((err = read_blk_fail(blk, dp)))
-	return err;
-      if (blk_empty(dp)) {
-	upper = blk;
-	empty = 1;
-      } else {
-	lower = blk;
-	empty = 0;
-      }
-    }
-
-#ifdef notdef
-    if (do_test) {
-      ssc.dblk_nxt = ssc.dblk_start;
-      ss_test();
-    }
-#endif
-
-    /* for now force to always hit the start. */
-//    empty = 1; blk = ssc.dblk_start;
-
-    if (empty) {
-      ssc.dblk_nxt = blk;
-      return SUCCESS;
-    }
-
-    ss_panic(17, -1);
-    return FAIL;
-  }
+  fs_control_t fsc;
+  fs_state_t   fs_state;
+  uint8_t     *fs_buf;
+  uint32_t     lower, blk, upper;
 
 
-  event void SDreset.resetDone(error_t error) {
-    ss_boot_finish();
+  /*
+   * on boot, the data area is zero'd so most of the fsc structure
+   * gets zero'd.
+   */
+  command error_t Init.init() {
+    uint16_t i;
+
+    fsc.majik_a     = FSC_MAJIK_A;
+    fsc.majik_b     = FSC_MAJIK_B;
+    return SUCCESS;
   }
 
 
@@ -247,56 +162,126 @@ init
 
 
   event void Boot.booted() {
-    call SSWriter.start(NULL);
-#ifdef TEST_READER
-    call SSReader.start(NULL);
-#endif
+    fs_state = FSS_REQUEST;
+    call Resource.request();
+    return;
+  }
 
+  event void Resource.granted() {
+    error_t err;
 
-
-    /*
-     * call the system to arbritrate and configure the SPI
-     * we use the default configuration for now which matches
-     * what we need.
-     */
-    
-    call WriteResource.request();
-
-    /*
-     * First start up and read in control blocks.
-     * Then signal we have booted.
-     */
-//    if ((err = ss_boot())) {
-//      ss_panic(24, err);
-//    }
-    ss_boot_start();
-
-    /*
-     * releasing when IDLE will power the device down.
-     * and set our current state to OFF.
-     */
-    atomic ss_state = SS_STATE_IDLE;
-    call WriteResource.release();
-    signal OutBoot.booted();
-
+    fs_state = FSS_ZERO;
+    fs_buf = call SSW.get_temp_buf();
+    if ((err = call SDRead.read(0, fs_buf))) {
+      panic!
+    }
   }
   
+
+  event SDRead.readDone() {
+    dblk_loc_t *dbl;
+    uint8_t    *dp;
+    bool        empty;
+
+    dp = fs_buf;
+
+    check for errors,  panic!
+
+    switch(fs_state) {
+      case FSS_ZERO:
+	dbl = (void *) ((uint8_t *) dp + DBLK_LOC_OFFSET);
+	if (check_dblk_loc(dbl)) {
+	  ss_panic(15, -1);
+	  return;
+	}
+
+	fsc.panic_start  = CF_LE_32(dbl->panic_start);
+	fsc.panic_end    = CF_LE_32(dbl->panic_end);
+	fsc.config_start = CF_LE_32(dbl->config_start);
+	fsc.config_end   = CF_LE_32(dbl->config_end);
+	fsc.dblk_start   = CF_LE_32(dbl->dblk_start);
+	fsc.dblk_end     = CF_LE_32(dbl->dblk_end);
+
+	fs_state = FSS_START;
+	if ((err = SDRead.read(fsc.dblk_start, dp))) {
+	  ss_panic(16, -1);
+	  return err;
+	}
+	return;
+
+      case FSS_START:
+	if (blk_empty(dp)) {
+	  fsc.dblk_nxt = fsc.dblk_start;
+	  break;
+	}
+
+	lower = fsc.dblk_start;
+	upper = fsc.dblk_end;
+
+	blk = (upper - lower)/2 + lower;
+	if (blk == lower)
+	  blk = lower = upper;
+
+	fs_state = FSS_SCAN;
+	if ((err = SDRead.read(blk, dp))) {
+	  panic;
+	}
+	return;
+
+      case FSS_SCAN:
+	if (blk_empty(dp)) {
+	  upper = blk;
+	  empty = 1;
+	} else {
+	  lower = blk;
+	  empty = 0;
+	}
+
+	if (lower >= upper) {
+	  /*
+	   * we've looked at all the blocks.  Check the state of the last block looked at
+	   * if empty we be good.  Otherwise no available storage.
+	   */
+	  if (empty) {
+	    fsc.dblk_nxt = blk;
+	    break;
+	  }
+	  ss_panic(17, -1);
+	  return;
+	}
+
+	/*
+	 * haven't looked at all the blocks.  try again
+	 */
+	blk = (upper - lower)/2 + lower;
+	if (blk == lower)
+	  blk = lower = upper;
+	if ((err = SDRead.read(blk, dp))) {
+	  panic;
+	}
+	return;
+    }
+
+    fs_state = FSS_IDLE;
+    call Resource.release();
+    signal OutBoot.booted();
+  }
 
 
   command uint32_t FS.area_start(uint8_t which) {
     switch (which) {
       default:			return 0;
-      case FS_AREA_PANIC:	return ssc.panic_start;
-      case FS_AREA_CONFIG:	return ssc.config_start;
-      case FS_AREA_DATA:	return ssc.dblk_start;
+      case FS_AREA_PANIC:	return fsc.panic_start;
+      case FS_AREA_CONFIG:	return fsc.config_start;
+      case FS_AREA_DATA:	return fsc.dblk_start;
     }
   }
 
   command uint32_t FS.area_end(uint8_t which) {
     switch (which) {
       default:	return 0;
-      case FS_AREA_PANIC:	return ssc.panic_end;
-      case FS_AREA_CONFIG:	return ssc.config_end;
-      case FS_AREA_DATA:	return ssc.dblk_end;
+      case FS_AREA_PANIC:	return fsc.panic_end;
+      case FS_AREA_CONFIG:	return fsc.config_end;
+      case FS_AREA_DATA:	return fsc.dblk_end;
     }
   }
