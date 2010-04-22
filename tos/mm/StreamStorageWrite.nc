@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008, Eric Decker
+ * Copyright (c) 2008, 2010, Eric Decker
  * All rights reserved.
  */
 
@@ -44,18 +44,4 @@ interface StreamStorageWrite {
    */  
   command void buffer_full(ss_wr_req_t *buf_handle);
 
-  /**
-   * check a buffer (assumed to be 512 bytes) according to whatever
-   * streamstorage does to look for an empty buffer.
-   *
-   * @param buf buffer to check for empty.
-   *
-   * @return
-   *    <li> FALSE	buffer not empty
-   *    <li> TRUE	buffer empty
-   */
-  command bool buffer_empty(uint8_t *buf);
-
-  command uint32_t area_start(uint8_t which);
-  command uint32_t area_end(uint8_t which);
 }

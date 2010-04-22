@@ -17,7 +17,7 @@ configuration StreamStorageC {
     interface StreamStorageWrite as SSW;
     interface StreamStorageRead  as SSR[uint8_t client_id];
     interface StreamStorageFull  as SSF;
-    interface BlockingSpiPacket;
+//    interface SpiPacket;
   }
   uses interface Boot;
 }
@@ -35,29 +35,14 @@ implementation {
   Boot = SS_P.Boot;
   SSBoot = BlockingBootC;
 
-  /*
-   * Not sure of the stack size needed here
-   * If things seems to break make it bigger...
-   *
-   * We need to implement stack guards
-   * This will also give us an idea of how deep the stacks have been
-   */
-
-  components new ThreadC(256) as SSWriter, new ThreadC(256) as SSReader;
-  SS_P.SSWriter -> SSWriter;
-  SS_P.SSReader -> SSReader;
-  
-  components SemaphoreC;
-  SS_P.Semaphore -> SemaphoreC;
-
-  components new mmBlockingSpi0C() as SpiWrite;
-  components new mmBlockingSpi0C() as SpiRead;
-  SS_P.BlockingWriteResource -> SpiWrite;
-  SS_P.BlockingReadResource -> SpiRead;
+  components new mmSpi0C() as SpiWrite;
+  components new mmSpi0C() as SpiRead;
+  SS_P.WriteResource -> SpiWrite;
+  SS_P.ReadResource  -> SpiRead;
   SS_P.ResourceConfigure <- SpiWrite;
   SS_P.ResourceConfigure <- SpiRead;
   SS_P.SpiResourceConfigure -> SpiWrite;
-  BlockingSpiPacket = SpiWrite;
+//  SpiPacket = SpiWrite;
 
 //  components new BlockingResourceC();
 //  BlockingResourceC.Resource -> SpiC;
@@ -74,7 +59,4 @@ implementation {
   components TraceC, CollectC;
   SS_P.Trace    -> TraceC;
   SS_P.LogEvent -> CollectC;
-
-  components SystemCallC;
-  SS_P.SystemCall -> SystemCallC;
 }

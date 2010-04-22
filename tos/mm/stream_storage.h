@@ -1,10 +1,7 @@
 /*
  * stream_storage.h - Stream Storage Interface (low level)
- * Copyright 2006, Eric B. Decker
+ * Copyright 2006, 2010 Eric B. Decker, Carl Davis
  * Mam-Mark Project
- *
- * Port to TinyOS 2x
- * Copyright 2008, Eric B. Decker
  */
 
 #ifndef _STREAM_STORAGE_H
@@ -194,12 +191,6 @@ typedef struct {
  * data areas).  So it is a compromise to sit on top of Stream
  * Storage.
  */
-
-enum {
-  SS_AREA_PANIC  = 0,
-  SS_AREA_CONFIG = 1,
-  SS_AREA_DATA   = 2,
-};
 
 
 /*

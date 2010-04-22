@@ -2,42 +2,18 @@
  * Copyright (c) 2008, 2010 - Eric B. Decker
  * All rights reserved.
  *
- * StreamStorage.nc - stream storage based on contiguous
- * blocks on a FAT32 filesystem.  Ported to TinyOS 2.x
- *
- * Block 0 of the SD is the MBR.  If the filesystem is
- * bootable then most of this block (512 bytes) is code
- * that boot straps the system.  The SD card we are using
- * is not bootable.  So we lay a record down in the middle
- * of the MBR identified by majik numbers that tells us
- * the absolute block numbers of the data areas.  These
- * areas have been built by special tools that allocate
- * according to FAT rules files that encompass these regions.
- * That way the actual data files can be accessed directly
- * from any system that understands the FAT filesystem.  No
- * special tools are needed.  This greatly eases the accessibility
- * of the resultant data on Winbloz machines (which unfortunately
- * need to be supported for post processing data).
+ * StreamStorage.nc - write/read sequential blocks to/from
+ * a contiguous data area.  The area is considered a file
+ * and managed by the file system such as it is.
  *
  * The principal interface provided by StreamStorage is writing sequential
- * blocks to the the storage device.  There are no provisions for
- * a file system.
- *
- * An auxiliary interface is provided for reading a stream of raw blocks
- * from the device.
+ * blocks to the the storage device.  Other than that there is no file
+ * semantics.
  *
  * SSW (StreamStorageWriter) provides a pool of buffers to its users and manages
  * when those buffers get written to the SD.
  *
  * The calling user of Reader provides the buffer.
- *
- * Copyright 2008 (c) Eric B. Decker
- * Mam-Mark Project
- * All rights reserved.
- *
- * Based on ms_sd.c - Stream Storage Interface - SD direct interface
- * Copyright 2006-2007, Eric B. Decker
- * Mam-Mark Project
  *
  * Overview:
  *
@@ -92,26 +68,22 @@ module StreamStorageP {
     interface StreamStorageWrite as SSW;
     interface StreamStorageRead  as SSR[uint8_t client_id];
     interface StreamStorageFull  as SSF;
-    interface Boot as BlockingBoot;
-    interface ResourceConfigure;
+//    interface Boot as OutBoot;
+//    interface ResourceConfigure;
   }
   uses {
-    interface Boot;
-    interface Thread as SSWriter;
-    interface Thread as SSReader;
+//    interface Boot;
     interface SDreset;
     interface SDread;
     interface SDwrite;
     interface SDerase;
     interface Hpl_MM_hw as HW;
-    interface Semaphore;
-    interface BlockingResource as BlockingWriteResource;
-    interface BlockingResource as BlockingReadResource;
-    interface ResourceConfigure as SpiResourceConfigure;
+    interface Resource as WriteResource;
+    interface Resource as ReadResource;
+//    interface ResourceConfigure as SpiResourceConfigure;
     interface Panic;
     interface LocalTime<TMilli>;
     interface Trace;
-    interface SystemCall;
     interface LogEvent;
   }
 }
@@ -126,7 +98,6 @@ implementation {
   } read_block_t;
   
 
-  semaphore_t write_sem;
   ss_wr_req_t ssw_handles[SSW_NUM_BUFS];
   ss_wr_req_t * const ssw_p[SSW_NUM_BUFS] = {
     &ssw_handles[0],
@@ -158,7 +129,6 @@ implementation {
    * Globals for the Stream Read interface
    */
 
-  semaphore_t read_sem;
   ss_rd_req_t ssr_reqs[SSR_NUM_REQS];
   ss_rd_req_t * const ssr_p[SSR_NUM_REQS] = {
     &ssr_reqs[0],
@@ -176,8 +146,6 @@ implementation {
   command error_t Init.init() {
     uint16_t i;
 
-    call Semaphore.reset(&write_sem, 0);
-    call Semaphore.reset(&read_sem, 0);
     ss_state        = SS_STATE_OFF;
 
     ssc.majik_a     = SSC_MAJIK_A;
@@ -189,11 +157,6 @@ implementation {
 
     ssc.ssr_in      = 0;
     ssc.ssr_out     = 0;
-
-    ssc.panic_start = ssc.panic_end = 0;
-    ssc.config_start= ssc.config_end = 0;
-    ssc.dblk_start  = ssc.dblk_end = 0;
-    ssc.dblk_nxt    = 0;
     ssc.majik_b     = SSC_MAJIK_B;
 
     for (i = 0; i < SSW_NUM_BUFS; i++) {
@@ -210,14 +173,6 @@ implementation {
     return SUCCESS;
   }
 
-
-  event void Boot.booted() {
-    call SSWriter.start(NULL);
-#ifdef TEST_READER
-    call SSReader.start(NULL);
-#endif
-  }
-  
 
   void ss_panic(uint8_t where, uint16_t err) {
     call Panic.panic(PANIC_SS, where, err, 0, 0, 0);
@@ -283,72 +238,6 @@ implementation {
   }
 
 
-  /*
-   * blk_empty
-   *
-   * check if a Stream storage data block is empty.
-   * Currently, an empty (erased SD data block) looks like
-   * it is zeroed.  So we look for all data being zero.
-   */
-
-  int blk_empty(uint8_t *buf) {
-    uint16_t i;
-    uint16_t *ptr;
-
-    ptr = (void *) buf;
-    for (i = 0; i < SD_BLOCKSIZE/2; i++)
-      if (ptr[i])
-	return(0);
-    return(1);
-  }
-
-
-  command bool SSW.buffer_empty(uint8_t *buf) {
-    return blk_empty(buf) == 1;
-  }
-
-
-  /*
-   * check_dblk_loc
-   *
-   * Check the Dblk Locator for validity.
-   *
-   * First, we look for the magic number in the majik spot
-   * Second, we need the checksum to match.  Checksum is computed over
-   * the entire dblk_loc structure.
-   *
-   * i: *dbl	dblk locator structure pointer
-   *
-   * o: rtn	0  if dblk valid
-   *		1  if no dblk found
-   *		2  if dblk checksum failed
-   *		3  bad value in dblk
-   */
-
-  uint16_t check_dblk_loc(dblk_loc_t *dbl) {
-    uint16_t *p;
-    uint16_t sum, i;
-
-    if (dbl->sig != CT_LE_32(TAG_DBLK_SIG))
-      return(1);
-    if (dbl->panic_start == 0 || dbl->panic_end == 0 ||
-	dbl->config_start == 0 || dbl->config_end == 0 ||
-	dbl->dblk_start == 0 || dbl->dblk_end == 0)
-      return(3);
-    if (dbl->panic_start > dbl->panic_end ||
-	dbl->config_start > dbl->config_end ||
-	dbl->dblk_start > dbl->dblk_end)
-      return(3);
-    p = (void *) dbl;
-    sum = 0;
-    for (i = 0; i < DBLK_LOC_SIZE_SHORTS; i++)
-      sum += CF_LE_16(p[i]);
-    if (sum)
-      return(2);
-    return(0);
-  }
-
-
   error_t read_blk_fail(uint32_t blk, uint8_t *buf) {
     error_t err;
 
@@ -359,108 +248,6 @@ implementation {
     }
     return err;
   }
-
-  void ss_boot_start() {
-    call SDreset.reset();
-  }
-
-  error_t ss_boot_finish() {
-    error_t err;
-    uint8_t *dp;
-    dblk_loc_t *dbl;
-    uint32_t   lower, blk, upper;
-    bool empty;
-
-//    err = call SDreset.reset();
-//    if (err) {
-//      ss_panic(14, err);
-//      return err;
-//    }
-
-    dp = ssw_p[0]->buf;
-    if ((err = read_blk_fail(0, dp)))
-      return err;
-
-    dbl = (void *) ((uint8_t *) dp + DBLK_LOC_OFFSET);
-
-#ifdef notdef
-    if (do_test)
-      sd_display_card(dp);
-#endif
-
-    if (check_dblk_loc(dbl)) {
-      ss_panic(15, -1);
-      return FAIL;
-    }
-
-    ssc.panic_start  = CF_LE_32(dbl->panic_start);
-    ssc.panic_end    = CF_LE_32(dbl->panic_end);
-    ssc.config_start = CF_LE_32(dbl->config_start);
-    ssc.config_end   = CF_LE_32(dbl->config_end);
-    ssc.dblk_start   = CF_LE_32(dbl->dblk_start);
-    ssc.dblk_end     = CF_LE_32(dbl->dblk_end);
-
-#ifdef ENABLE_ERASE
-    if (do_erase) {
-      erase_start = ssc.dblk_start;
-      erase_end   = ssc.dblk_end;
-      nop();
-      call SDerase.erase(erase_start, erase_end);
-    }
-#endif
-    if ((err = read_blk_fail(ssc.dblk_start, dp))) {
-      ss_panic(16, -1);
-      return err;
-    }
-
-    if (blk_empty(dp)) {
-      ssc.dblk_nxt = ssc.dblk_start;
-      return SUCCESS;
-    }
-
-    lower = ssc.dblk_start;
-    upper = ssc.dblk_end;
-    empty = 0; blk = 0;
-
-    while (lower < upper) {
-      blk = (upper - lower)/2 + lower;
-      if (blk == lower)
-	blk = lower = upper;
-      if ((err = read_blk_fail(blk, dp)))
-	return err;
-      if (blk_empty(dp)) {
-	upper = blk;
-	empty = 1;
-      } else {
-	lower = blk;
-	empty = 0;
-      }
-    }
-
-#ifdef notdef
-    if (do_test) {
-      ssc.dblk_nxt = ssc.dblk_start;
-      ss_test();
-    }
-#endif
-
-    /* for now force to always hit the start. */
-//    empty = 1; blk = ssc.dblk_start;
-
-    if (empty) {
-      ssc.dblk_nxt = blk;
-      return SUCCESS;
-    }
-
-    ss_panic(17, -1);
-    return FAIL;
-  }
-
-
-  event void SDreset.resetDone(error_t error) {
-    ss_boot_finish();
-  }
-
 
   event void SDread.readDone(uint32_t blk, void *buf, error_t error) {
   }
@@ -594,31 +381,7 @@ implementation {
     ss_wr_req_t* cur_handle;
     error_t err;
     uint16_t delta, num;
-
-    /*
-     * call the system to arbritrate and configure the SPI
-     * we use the default configuration for now which matches
-     * what we need.
-     */
-    
-    call BlockingWriteResource.request();
-
-    /*
-     * First start up and read in control blocks.
-     * Then signal we have booted.
-     */
-//    if ((err = ss_boot())) {
-//      ss_panic(24, err);
-//    }
-    ss_boot_start();
-
-    /*
-     * releasing when IDLE will power the device down.
-     * and set our current state to OFF.
-     */
-    atomic ss_state = SS_STATE_IDLE;
-    call BlockingWriteResource.release();
-    signal BlockingBoot.booted();
+    uint32_t dblk_nxt;
 
     for(;;) {
       call Semaphore.acquire(&write_sem);
@@ -646,23 +409,19 @@ implementation {
 	continue;
 
       /*
-       * Only power up and obtain the SPI bus if the stream isn't full
+       * We have blocks to write.   If dblk_nxt is 0 then the stream is full.
+       * Otherwise, request the mass storage, which handles turning itself on and off.
+       * When the grant comes back the device has been turned on and reset has completed.
        */
 
-      if (ssc.dblk_nxt != 0) {
-	/*
-	 * should be OFF or if implemented in OFF_WAIT (which implements
-	 * a delay prior to shutting the hardware off.  But if we are in OFF_WAIT
-	 * we won't be here but rather later down in this processing loop.
-	 */
+      dblk_nxt = call FS.get_nxt_blk(FS_AREA_TYPED_DATA);
+      if (dblk_nxt != 0) {
 	ssw_delay_start = call LocalTime.get();
-	call BlockingWriteResource.request();		 // this will also turn on the hardware when granted.
+	call WriteResource.request();		 // this will also turn on the hardware when granted.
 	ssw_write_grp_start = call LocalTime.get();
 	delta = (uint16_t) (ssw_write_grp_start - ssw_delay_start);
 	call LogEvent.logEvent(DT_EVENT_SSW_DELAY_TIME, delta);
 	call Trace.trace(T_SSW_DELAY_TIME, delta, 0);
-	if (ss_reset_maybe())
-	  continue;					/* failed, keep looking for work */
       }
 
       num = 0;
@@ -673,7 +432,7 @@ implementation {
 	if (cur_handle->req_state != SS_REQ_STATE_FULL)
 	  break;
 
-	if (ssc.dblk_nxt != 0) {
+	if (dblk_nxt != 0) {
 	  /*
 	   * If dblk_nxt is 0 then the dblk stream is full and we
 	   * shouldn't do anymore writes.
@@ -687,7 +446,7 @@ implementation {
 	  cur_handle->req_state = SS_REQ_STATE_WRITING;
 	  atomic ss_state = SS_STATE_XFER_W;
 	  w_t0 = call LocalTime.get();
-	  err = call SDwrite.write(ssc.dblk_nxt, cur_handle->buf);
+	  err = call SDwrite.write(dblk_nxt, cur_handle->buf);
 	  if (err)
 	    ss_panic(27, err);
 	  num++;
@@ -703,22 +462,17 @@ implementation {
 	if (ssc.ssw_out >= SSW_NUM_BUFS)
 	  ssc.ssw_out = 0;
 	ssc.ssw_num_full--;
-	if (ssc.dblk_nxt != 0) {
-	  if (ssc.dblk_nxt >= ssc.dblk_end) {
+	if (dblk_nxt != 0) {
+	  dblk_nxt = call FS.advance_nxt_blk(FS_AREA_TYPED_DATA);
+	  if (dblk_nxt == 0) {
 	    /*
-	     * We also might want to check for next to last and
-	     * write a record indicating this via Collect.  What would
-	     * this buy us?
-	     *
-	     * NOTE: the SSF.dblk_stream_full signal executes on
-	     * the thread stack.  Just be aware.
+	     * advance_nxt_blk returning 0 says we ran off the end of
+	     * the file system area.
 	     */
 	    signal SSF.dblk_stream_full();
-	    ssc.dblk_nxt = 0;
 	    atomic ss_state = SS_STATE_IDLE;
-	    call BlockingWriteResource.release();	// will shutdown the hardware
-	  } else
-	    ssc.dblk_nxt++;
+	    call WriteResource.release();	// will shutdown the hardware
+	  }
 	}
 	cur_handle = ssw_p[ssc.ssw_out];
       }
@@ -727,7 +481,7 @@ implementation {
       call LogEvent.logEvent(DT_EVENT_SSW_GRP_TIME, delta);
       call Trace.trace(T_SSW_GRP_TIME, delta, num);
 
-      if (ssc.dblk_nxt != 0) {
+      if (dblk_nxt != 0) {
 	/*
 	 * Only have to release if the stream is active
 	 *
@@ -735,31 +489,13 @@ implementation {
 	 * For now we just go idle and release
 	 */
 	atomic ss_state = SS_STATE_IDLE;
-	call BlockingWriteResource.release(); // will shutdown the hardware
+	call WriteResource.release(); // will shutdown the hardware
       }
     }
   }
 
 
-  command uint32_t SSW.area_start(uint8_t which) {
-    switch (which) {
-      default:			return 0;
-      case SS_AREA_PANIC:	return ssc.panic_start;
-      case SS_AREA_CONFIG:	return ssc.config_start;
-      case SS_AREA_DATA:	return ssc.dblk_start;
-    }
-  }
-
-  command uint32_t SSW.area_end(uint8_t which) {
-    switch (which) {
-      default:	return 0;
-      case SS_AREA_PANIC:	return ssc.panic_end;
-      case SS_AREA_CONFIG:	return ssc.config_end;
-      case SS_AREA_DATA:	return ssc.dblk_end;
-    }
-  }
-
-  
+#ifdef notdef
   /*****************************************************************************
    *
    * READING
@@ -840,7 +576,7 @@ implementation {
       //Get the current req handle
       cur_handle = ssr_p[ssc.ssr_out];
 
-      call BlockingReadResource.request();
+      call ReadResource.request();
       if (ss_reset_maybe()) {
 	/*
 	 * Actually, fix this so it errors out the client
@@ -879,10 +615,11 @@ implementation {
       }
 
       atomic ss_state = SS_STATE_IDLE;
-      call BlockingReadResource.release();    //Shouldn't this be on the outside of this for-loop?
+      call ReadResource.release();    //Shouldn't this be on the outside of this for-loop?
       //We have that 'continue' statement outisde of this for-loop
     }
   }
+#endif
 
 
 #ifdef notdef
@@ -1014,7 +751,7 @@ implementation {
 	ss_wto_handle = timer_set(&t, ss_write_timeout, &mtd);
 	ss_handle->req_state = SS_REQ_STATE_WRITING;
 	err =
-	  sd_start_write(NULL, ssc.dblk_nxt, ss_handle->buf);
+	  sd_start_write(NULL, dblk_nxt, ss_handle->buf);
 	if (err)
 	  panic();
 	ss_state = SS_STATE_XFER_W;
@@ -1094,8 +831,8 @@ implementation {
 	  ssc.ssw_out++;
 	  if (ssc.ssw_out >= SSW_NUM_BUFS)
 	    ssc.ssw_out = 0;
-	  ssc.dblk_nxt++;
-	  if (ssc.dblk_nxt >= ssc.dblk_end)
+	  dblk_nxt++;
+	  if (dblk_nxt >= ssc.dblk_end)
 	    panic();
 
 	  /*
@@ -1110,7 +847,7 @@ implementation {
 	    ss_wto_handle = timer_set(&t, ss_write_timeout, &mtd);
 	    ssw_handles[ssc.ssw_out].req_state = SS_REQ_STATE_WRITING;
 	    err =
-	      sd_start_write(NULL, ssc.dblk_nxt, ssw_handles[ssc.ssw_out].buf);
+	      sd_start_write(NULL, dblk_nxt, ssw_handles[ssc.ssw_out].buf);
 	    if (err)
 	      panic();
 	    DMA0CTL_bit.DMAIE = 1;

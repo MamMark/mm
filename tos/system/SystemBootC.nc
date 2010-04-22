@@ -36,6 +36,7 @@
  *
  * @author Eric B. Decker <cire831@gmail.com>
  * @date May 5th, 2008
+ * reworked Apr 21st, 2010
  *
  * Sequence the bootup.  Components that should fire up when the
  * system is completely booted should wire to SystemBootC.Boot.
@@ -64,15 +65,15 @@ implementation {
   SoftwareInit = MainC.SoftwareInit;
 
   components CommBootC;
-  components StreamStorageC as SS;
+  components FileSystemC as FS;
   components mmSyncC;
 #ifdef GPS_TEST
   components GPSC;
 #endif
 
   CommBootC.Boot -> MainC;	// Main kicks Comm (serial/radio)
-  SS.Boot -> CommBootC;		//    which kicks StreamStorage
-  mmSyncC.Boot -> SS;		//        then write initial status
+  FS.Boot -> CommBootC;		//    which kicks FileSystem bootstrap
+  mmSyncC.Boot -> FS;		//        then write initial status
 #ifdef GPS_TEST
   GPSC.Boot -> mmSyncC;		//            and then GPS.
   Boot = GPSC;			// bring up everyone else
