@@ -46,16 +46,12 @@ module StreamStorageP {
   provides {
     interface Init;
     interface StreamStorageWrite as SSW;
-//    interface StreamStorageRead  as SSR[uint8_t client_id];
     interface StreamStorageFull  as SSF;
   }
   uses {
-    interface SDreset;
-//    interface SDread;
     interface SDwrite;
-    interface Hpl_MM_hw as HW;
+    interface FileSystem as FS;
     interface Resource as WriteResource;
-//    interface Resource as ReadResource;
     interface Panic;
     interface LocalTime<TMilli>;
     interface Trace;
@@ -206,21 +202,6 @@ implementation {
     ssc.ssw_in++;
     if (ssc.ssw_in >= SSW_NUM_BUFS)
       ssc.ssw_in = 0;
-  }
-
-
-  error_t read_blk_fail(uint32_t blk, uint8_t *buf) {
-    error_t err;
-
-    err = call SDread.read(blk, buf);
-    if (err) {
-      ss_panic(13, err);
-      return err;
-    }
-    return err;
-  }
-
-  event void SDread.readDone(uint32_t blk, void *buf, error_t error) {
   }
 
 
@@ -379,7 +360,7 @@ implementation {
   }
 
 
-  event WriteResource.granted() {
+  event void WriteResource.granted() {
     delta = (uint16_t) (ssw_write_grp_start - ssw_delay_start);
     call LogEvent.logEvent(DT_EVENT_SSW_DELAY_TIME, delta);
     call Trace.trace(T_SSW_DELAY_TIME, delta, 0);
@@ -408,7 +389,7 @@ implementation {
 
   /* needs to start up the next buffer too! */
 
-  event SDwrite.writeDone() {
+  event void SDwrite.writeDone() {
     if (err)
       ss_panic(27, err);
     num++;
