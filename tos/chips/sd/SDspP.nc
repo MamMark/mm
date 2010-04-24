@@ -9,6 +9,7 @@
 #include "msp430hardware.h"
 #include "hardware.h"
 #include "sd.h"
+#include "panic.h"
 
 #define SD_PUT_GET_TO 1024
 #define SD_PARANOID

@@ -1,0 +1,2 @@
+COMPONENT=TestSDArbC
+include $(MAKERULES)
