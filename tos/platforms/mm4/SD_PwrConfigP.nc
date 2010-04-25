@@ -63,17 +63,20 @@ implementation {
     call Usci.resetUsci_n();
   }
 
+  task void sd_pwr_task() {
+    call SDreset.reset();
+  }
+
   async event void ResourceDefaultOwner.requested() {
     call HW.sd_on();
     call Usci.setModeSpi((msp430_spi_union_config_t *) &msp430_spi_default_config);
-    call SDreset.reset();
   }
 
   async event void ResourceDefaultOwner.immediateRequested() {
     call ResourceDefaultOwner.release();
   }
 
-  async event void SDreset.resetDone(error_t err) {
+  event void SDreset.resetDone(error_t err) {
     call ResourceDefaultOwner.release();
   }
 }

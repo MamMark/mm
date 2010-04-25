@@ -58,8 +58,11 @@ implementation {
   
   void sd_wait_notbusy();
 
-  void sd_panic(uint8_t where, uint16_t arg) {
-    call Panic.panic(PANIC_SD, where, arg, 0, 0, 0);
+#define sd_panic(where, arg) do { call Panic.panic(PANIC_MS, where, arg, 0, 0, 0); } while (0)
+#define  sd_warn(where, arg) do { call  Panic.warn(PANIC_MS, where, arg, 0, 0, 0); } while (0)
+
+  void sd_panic_idle(uint8_t where, uint16_t arg) {
+    call Panic.panic(PANIC_MS, where, arg, 0, 0, 0);
     sd_state = SDS_IDLE;
   }
 
@@ -69,7 +72,7 @@ implementation {
 
 #ifdef SD_PARANOID
     if (SD_SPI_BUSY) {
-      call Panic.warn(PANIC_SD, 1, 0, 0, 0, 0);
+      sd_panic(16, 0);
 
       /*
        * how to clean out the transmitter?  It could be
@@ -77,12 +80,12 @@ implementation {
        */
     }
     if (SD_SPI_OVERRUN) {
-      call Panic.warn(PANIC_SD, 2, SD_SPI_OE_REG, 0, 0, 0);
+      sd_warn(17, SD_SPI_OE_REG);
       SD_SPI_CLR_OE;
     }
     if (SD_SPI_RX_RDY) {
       tmp = SD_SPI_RX_BUF;
-      call Panic.warn(PANIC_SD, 3, tmp, 0, 0, 0);
+      sd_warn(18, tmp);
     }
 #else
     if (SD_SPI_OVERRUN)
@@ -102,9 +105,9 @@ implementation {
     while ( !(SD_SPI_RX_RDY) && i > 0)
       i--;
     if (i == 0)				/* rx timeout */
-      call Panic.warn(PANIC_SD, 4, 0, 0, 0, 0);
+      sd_warn(19, 0);
     if (SD_SPI_OVERRUN)
-      call Panic.warn(PANIC_SD, 5, 0, 0, 0, 0);
+      sd_warn(20, 0);
 
     /* clean out RX buf and the IFG. */
     SD_SPI_CLR_RXINT;
@@ -123,10 +126,10 @@ implementation {
       i--;
 
     if (i == 0)				/* rx timeout */
-      call Panic.warn(PANIC_SD, 6, 0, 0, 0, 0);
+      sd_warn(21, 0);
 
     if (SD_SPI_OVERRUN)
-      call Panic.warn(PANIC_SD, 7, 0, 0, 0, 0);
+      sd_warn(22, 0);
 
     /*
      * do not explicitly clear the rx interrupt.  reading SD_SPI_RX_BUF will
@@ -171,13 +174,13 @@ implementation {
     cmd->stage_count = i;
 
     if (i >= SD_CMD_TIMEOUT) {
-      call Panic.warn(PANIC_SD, 8, i, 0, 0, 0);
+      sd_warn(23, i);
       return FAIL;
     }
 
     tmp = sd_get();		/* finish the command */
     if (tmp != 0xff)
-      call Panic.warn(PANIC_SD, 9, tmp, 0, 0, 0);
+      sd_warn(24, tmp);
     return SUCCESS;
   }
 
@@ -205,11 +208,11 @@ implementation {
     cmd = &sd_cmd;
     rsp_len = cmd->rsp_len & RSP_LEN_MASK;
     if (rsp_len != 1 && rsp_len != 2 && rsp_len != 5) {
-      call Panic.warn(PANIC_SD, 10, rsp_len, 0, 0, 0);
+      sd_warn(25, rsp_len);
       return FAIL;
     }
     if (SD_CSN == 0)		// already selected
-      call Panic.warn(PANIC_SD, 11, 0, 0, 0, 0);
+      sd_warn(26, 0);
 
     SD_CSN = 0;
     cmd->stage = 1;
@@ -218,7 +221,7 @@ implementation {
       if (tmp) {
 	/* failed, how odd */
 	SD_CSN = 1;
-	call Panic.warn(PANIC_SD, 12, tmp, 0, 0, 0);
+	sd_warn(27, tmp);
 	return FAIL;
       }
     } else
@@ -251,7 +254,7 @@ implementation {
     /* Just bail if we never got a response */
     if (i >= SD_CMD_TIMEOUT) {
       /* stage 2 bail, timeout */
-      call Panic.warn(PANIC_SD, 13, tmp, 0, 0, 0);
+      sd_warn(28, tmp);
       SD_CSN = 1;
       return FAIL;
     }
@@ -263,9 +266,8 @@ implementation {
 
     cmd->stage = 3;
     tmp = sd_get();
-    if (tmp != 0xff) {
-      call Panic.warn(PANIC_SD, 14, tmp, 0, 0, 0);
-    }
+    if (tmp != 0xff)
+      sd_warn(29, tmp);
 
     /* If the response is a "busy" type (R1B), then there's some
      * special handling that needs to be done. The card will
@@ -349,11 +351,11 @@ implementation {
    * CMD0 (reset), CMD55 (app cmd), ACMD41 (app_send_op_cond), CMD58 (send ocr)
    */
 
-  async command error_t SDreset.reset() {
+  command error_t SDreset.reset() {
     sd_cmd_blk_t *cmd;
 
     if (sd_state) {
-      call Panic.panic(PANIC_SD, 15, 0, 0, 0, 0);
+      sd_panic_idle(30, sd_state);
       return EBUSY;
     }
 
@@ -393,7 +395,7 @@ implementation {
     cmd->cmd     = SD_FORCE_IDLE;       // Send CMD0, software reset
     cmd->rsp_len = SD_FORCE_IDLE_R;
     if (sd_send_command()) {
-      sd_panic(15, 0);
+      sd_panic_idle(31, 0);
       return FAIL;
     }
 
@@ -417,21 +419,21 @@ implementation {
     cmd->cmd     = SD_SEND_OCR;
     cmd->rsp_len = SD_SEND_OCR_R;
     if (sd_send_command()) {
-      sd_panic(17, 0);
+      sd_panic_idle(32, 0);
       signal SDreset.resetDone(FAIL);
       return;
     }
 
     /* At a very minimum, we must allow 3.3V. */
     if ((cmd->rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
-      sd_panic(18, cmd->rsp[2]);
+      sd_panic_idle(33, cmd->rsp[2]);
       signal SDreset.resetDone(FAIL);
       return;
     }
 
     /* Set the block length */
     if (sd_set_blocklen(SD_BLOCKSIZE)) {
-      sd_panic(19, 0);
+      sd_panic_idle(34, 0);
       signal SDreset.resetDone(FAIL);
       return;
     }
@@ -454,7 +456,7 @@ implementation {
 	cmd->cmd     = SD_GO_OP;            //Send ACMD41
 	cmd->rsp_len = SD_GO_OP_R;
 	if (sd_send_command()) {
-	  sd_panic(16, 0);
+	  sd_panic_idle(35, 0);
 	  signal SDreset.resetDone(FAIL);
 	  return;
 	}
@@ -462,7 +464,7 @@ implementation {
 	if (cmd->rsp[0] & MSK_IDLE) {
 	  /* idle bit still set, means card is still in reset */
 	  if (++sd_go_op_count >= SD_GO_OP_MAX) {
-	    call Panic.panic(PANIC_SD, 40, 0, 0, 0, 0);     //We maxed the tries, panic and fail
+	    sd_panic_idle(36, 0);			// We maxed the tries, panic and fail
 	    signal SDreset.resetDone(FAIL);
 	    return;
 	  }
@@ -482,7 +484,7 @@ implementation {
 	  if ((tmp & MSK_TOK_DATAERROR) == 0 || sd_read_count >= SD_READ_TIMEOUT) {
 	    // Clock out a byte before returning so the SD can finish
 	    sd_put(0xff);
-	    sd_panic(50, 0);
+	    sd_panic_idle(37, 0);
 	    signal SDread.readDone(blk, data_read_buf, FAIL);
 	    return;
 	  }
@@ -518,13 +520,13 @@ implementation {
     cmd = &sd_cmd;
     sd_wait_notbusy();
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 20, 0, 0, 0, 0);
+      sd_panic(38, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 21, cmd->cmd, cmd->rsp[0], 0, 0);
+      call Panic.panic(PANIC_MS, 39, cmd->cmd, cmd->rsp[0], 0, 0);
       return FAIL;
     }
 
@@ -607,7 +609,7 @@ implementation {
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 22, 0, 0, 0, 0);
+      sd_panic_idle(40, 0);
       return FAIL;
     }
 
@@ -671,7 +673,7 @@ implementation {
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
     if (sd_check_crc(data, data_len, crc)) {
-      call Panic.panic(PANIC_SD, 23, 0, 0, 0, 0);
+      sd_panic_idle(41, 0);
       return FAIL;
     }
     return SUCCESS;
@@ -705,8 +707,12 @@ implementation {
     error_t err;
     uint8_t *d;
 
+    if (sd_state) {
+      sd_panic_idle(30, sd_state);
+      return EBUSY;
+    }
+
     data_read_buf = data;
-    
     cmd = &sd_cmd;
 
     /* Adjust the block address to a byte address */
@@ -720,7 +726,7 @@ implementation {
     cmd->rsp_len = SD_READ_BLOCK_R;
     err = sd_read_data_direct(SD_BLOCKSIZE, data_read_buf);
     if (err) {
-      call Panic.panic(PANIC_SD, 24, err, 0, 0, 0);
+      sd_panic_idle(42, err);
       return(err);
     }
 
@@ -733,7 +739,7 @@ implementation {
      */
     d = data_read_buf;
     if (*d == 0xfe) {
-      call Panic.warn(PANIC_SD, 25, *d, 0, 0, 0);
+      sd_warn(43, *d);
       err = sd_read_data_direct(SD_BLOCKSIZE, data_read_buf);
     }
     return err;
@@ -789,13 +795,13 @@ implementation {
     cmd->cmd     = SD_WRITE_BLOCK;
     cmd->rsp_len = SD_WRITE_BLOCK_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 26, 0, 0, 0, 0);
+      sd_panic_idle(44, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 27, 0, 0, 0, 0);
+      sd_panic_idle(45, 0);
       return FAIL;
     }
 
@@ -807,7 +813,7 @@ implementation {
      */
     tmp = sd_get();
     if (tmp != 0xff)
-      call Panic.panic(PANIC_SD, 28, tmp, 0, 0, 0);
+      sd_panic(46, tmp);
 
     SD_SPI_CLR_BOTH;
     DMA0SA = (uint16_t) data;
@@ -864,7 +870,7 @@ implementation {
        */
       time_get_cur(&t);
       if (time_leq(&to, &t))
-      call Panic.panic(PANIC_SD, 29, 0, 0, 0, 0);
+	sd_panic(47, 0);
 #endif
     }
 
@@ -873,7 +879,7 @@ implementation {
     tmp = SD_SPI_RX_BUF;		/* clean out OE and data avail */
 
     if (SD_SPI_BUSY)
-      call Panic.panic(PANIC_SD, 30, 0, 0, 0, 0);
+      sd_panic(48, 0);
 
     sd_put(0xff);		/* crc ignored */
     sd_put(0xff);
@@ -898,7 +904,7 @@ implementation {
 
     if ((tmp & 0x0F) != 0x05) {
       i = sd_read_status();
-      call Panic.panic(PANIC_SD, 31, tmp, i, 0, 0);
+      call Panic.panic(PANIC_MS, 49, tmp, i, 0, 0);
       return FAIL;
     }
 
@@ -908,7 +914,7 @@ implementation {
       i++;
 #ifdef notdef
       if (time_leq(&to, &t))
-	call Panic.panic(PANIC_SD, 32, 0, 0, 0, 0);
+	sd_panic(50, 0);
 #endif
     }
     sd_busy_timeout = i;
@@ -924,7 +930,7 @@ implementation {
 
     i = sd_read_status();
     if (i)
-      call Panic.panic(PANIC_SD, 33, i, 0, 0, 0);
+      sd_panic(51, i);
     return SUCCESS;
   }
 
@@ -1018,13 +1024,13 @@ implementation {
     cmd->cmd     = SD_SET_ERASE_START;
     cmd->rsp_len = SD_SET_ERASE_START_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 34, 0, 0, 0, 0);
+      sd_panic_idle(52, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 35, cmd->rsp[0], 0, 0, 0);
+      sd_panic_idle(53, cmd->rsp[0]);
       return FAIL;
     }
 
@@ -1032,26 +1038,26 @@ implementation {
     cmd->cmd     = SD_SET_ERASE_END;
     cmd->rsp_len = SD_SET_ERASE_END_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 36, 0, 0, 0, 0);
+      sd_panic_idle(54, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 37, cmd->rsp[0], 0, 0, 0);
+      sd_panic_idle(55, cmd->rsp[0]);
       return FAIL;
     }
 
     cmd->cmd     = SD_ERASE;
     cmd->rsp_len = SD_ERASE_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 38, 0, 0, 0, 0);
+      sd_panic_idle(56, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_SD, 39, cmd->rsp[0], 0, 0, 0);
+      sd_panic_idle(57, cmd->rsp[0]);
       return FAIL;
     }
     return SUCCESS;

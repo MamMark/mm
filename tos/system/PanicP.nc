@@ -77,7 +77,7 @@ implementation {
     nop();
 
     temp = pcode & ~PANIC_WARN_FLAG;
-    if (temp == PANIC_SD || temp == PANIC_SS)
+    if (temp == PANIC_MS || temp == PANIC_SS)
       return;
 
     if (!p_blk[0].busy)

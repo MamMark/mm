@@ -17,18 +17,29 @@
 #define P_BLK_SIZE 2
 #define PANIC_WARN_FLAG 0x80
 
-#define PANIC_KERN	1
-#define PANIC_ADC	2
-#define PANIC_MISC	3
-#define PANIC_COMM	4
-#define PANIC_SD	5
-#define PANIC_SS	6
-#define PANIC_SS_RECOV	7
-#define PANIC_GPS	8
+/*
+ * KERN:	core kernal
+ * ADC:		Analog Digital Conversion subsystem (AdcP.nc)
+ * MISC:
+ * COMM:	communications subsystem
+ * MS:		Mass Storage (FileSystemP, SD)
+ * SS:		Stream Storage, hard fail
+ * SS_RECOV:	Stream Storage, recoverable
+ * GPS:		gps subsystem
+ */
+
+#define PANIC_KERN	0x01
+#define PANIC_ADC	0x02
+#define PANIC_MISC	0x03
+#define PANIC_COMM	0x04
+#define PANIC_MS	0x05
+#define PANIC_SS	0x06
+#define PANIC_SS_RECOV	0x07
+#define PANIC_GPS	0x08
 
 #ifdef notdef
-#define PANIC_SNS	6
-#define PANIC_PWR	7
+#define PANIC_SNS	0x09
+#define PANIC_PWR	0x0A
 #endif
 
 #endif /* __PANIC_H__ */
