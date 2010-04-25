@@ -73,7 +73,7 @@ implementation {
     call ResourceDefaultOwner.release();
   }
 
-  event void SDreset.resetDone(error_t err) {
+  async event void SDreset.resetDone(error_t err) {
     call ResourceDefaultOwner.release();
   }
 }

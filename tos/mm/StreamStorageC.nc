@@ -24,8 +24,8 @@ implementation {
   SSF = SS_P;
   MainC.SoftwareInit -> SS_P;
 
-  components new mmSpi0C() as SpiWrite;
-  SS_P.WriteResource -> SpiWrite;
+  components new SD_ArbC() as SD;
+  SS_P.WriteResource -> SD;
 
   components SDspC, PanicC, LocalTimeMilliC;
   SS_P.SDwrite -> SDspC;
@@ -35,4 +35,7 @@ implementation {
   components TraceC, CollectC;
   SS_P.Trace    -> TraceC;
   SS_P.LogEvent -> CollectC;
+
+  components FileSystemC as FS;
+  SS_P.FS -> FS;
 }

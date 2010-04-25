@@ -69,6 +69,7 @@ implementation {
   } read_block_t;
   
 
+  ss_wr_req_t *cur_handle;
   ss_wr_req_t ssw_handles[SSW_NUM_BUFS];
   ss_wr_req_t * const ssw_p[SSW_NUM_BUFS] = {
     &ssw_handles[0],
@@ -87,11 +88,14 @@ implementation {
 
   ssw_state_t  ssw_state;		 // current state of writer machine (2 bytes)
   ss_control_t ssc;
+  uint32_t     cur_dblk;
 
 
   /*
    * Globals for the Stream Read interface
    */
+
+
 
   ss_rd_req_t ssr_reqs[SSR_NUM_REQS];
   ss_rd_req_t * const ssr_p[SSR_NUM_REQS] = {
@@ -249,6 +253,7 @@ implementation {
     return(ssw_p[0]->buf);
   }
 
+// All of the Configure stuff can be taken out...
 
 #ifdef notdef
   async command void ResourceConfigure.configure() {
@@ -304,10 +309,8 @@ implementation {
 
 
   task void SSWriter_task() {
-    ss_wr_req_t* cur_handle;
     error_t err;
     uint16_t delta, num;
-    uint32_t dblk_nxt;
 
     /*
      * This task should only be activated if the Writer is IDLE and a buffer
@@ -338,12 +341,12 @@ implementation {
 
     /*
      * We have blocks to write.
-     * dblk_nxt being zero denotes the stream is full.  Bail.
-     * dblk_nxt non-zero, request the h/w.
+     * cur_dblk being zero denotes the stream is full.  Bail.
+     * non-zero, request the h/w.
      */
 
-    dblk_nxt = call FS.get_nxt_blk(FS_AREA_TYPED_DATA);
-    if (dblk_nxt == 0) {
+    cur_dblk = call FS.get_nxt_blk(FS_AREA_TYPED_DATA);
+    if (cur_dblk == 0) {
       /*
        * shut down.  always just free any incoming buffers.
        */
@@ -356,26 +359,39 @@ implementation {
     ssw_delay_start = call LocalTime.get();
     ssw_write_grp_start = call LocalTime.get();
     call WriteResource.request();		 // this will also turn on the hardware when granted.
+    /*
+     * need to check error return
+     */
     ssw_state = SSW_REQUESTED;
   }
 
 
   event void WriteResource.granted() {
+    uint16_t delta;
+    uint8_t  num;
+    error_t  err;
+
     delta = (uint16_t) (ssw_write_grp_start - ssw_delay_start);
     call LogEvent.logEvent(DT_EVENT_SSW_DELAY_TIME, delta);
     call Trace.trace(T_SSW_DELAY_TIME, delta, 0);
 
     num = 0;
+
+    /*
+     * the whole algorithm needs to be reviewed and fixed.
+     */
+#ifdef notdef
     if (cur_handle->req_state != SS_REQ_STATE_FULL)
       break;
+#endif
 
-    if (dblk_nxt != 0) {
+    cur_dblk = call FS.get_nxt_blk(FS_AREA_TYPED_DATA);
+    if (cur_dblk) {
       /*
-       * If dblk_nxt is 0 then the dblk stream is full and we
+       * If cur_dblk is 0 then the dblk stream is full and we
        * shouldn't do anymore writes.
        *
        * the write needs a time out of some kind.
-       * The write runs to completion.
        *
        * Observed 5ms write time unerased block.
        */
@@ -383,13 +399,19 @@ implementation {
       cur_handle->req_state = SS_REQ_STATE_WRITING;
       ssw_state = SSW_WRITING;
       w_t0 = call LocalTime.get();
-      err = call SDwrite.write(dblk_nxt, cur_handle->buf);
+      err = call SDwrite.write(cur_dblk, cur_handle->buf);
+      /*
+       * need to check err
+       */
     }
   }
 
   /* needs to start up the next buffer too! */
 
-  event void SDwrite.writeDone() {
+  event void SDwrite.writeDone(uint32_t blk, void *buf, error_t err) {
+    uint8_t num;
+    uint16_t delta;
+
     if (err)
       ss_panic(27, err);
     num++;
@@ -403,11 +425,11 @@ implementation {
     if (ssc.ssw_out >= SSW_NUM_BUFS)
       ssc.ssw_out = 0;
     ssc.ssw_num_full--;
-    if (dblk_nxt != 0) {
-      dblk_nxt = call FS.advance_nxt_blk(FS_AREA_TYPED_DATA);
-      if (dblk_nxt == 0) {
+    if (cur_dblk) {
+      cur_dblk = call FS.adv_nxt_blk(FS_AREA_TYPED_DATA);
+      if (cur_dblk == 0) {
 	/*
-	 * advance_nxt_blk returning 0 says we ran off the end of
+	 * adv_nxt_blk returning 0 says we ran off the end of
 	 * the file system area.
 	 */
 	signal SSF.dblk_stream_full();
@@ -422,7 +444,7 @@ implementation {
     call LogEvent.logEvent(DT_EVENT_SSW_GRP_TIME, delta);
     call Trace.trace(T_SSW_GRP_TIME, delta, num);
 
-    if (dblk_nxt != 0) {
+    if (cur_dblk) {
       /*
        * Only have to release if the stream is active
        *

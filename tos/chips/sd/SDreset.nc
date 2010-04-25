@@ -16,6 +16,6 @@ interface SDreset {
    *
    * if SUCCESS, it is guaranteed that a future resetDone will be signalled.
    */
-  command error_t reset();
-  event   void    resetDone(error_t error);
+  async command error_t reset();
+  async event   void    resetDone(error_t error);
 }

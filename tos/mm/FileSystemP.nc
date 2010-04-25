@@ -71,7 +71,7 @@ module FileSystemP {
     interface SDreset;
     interface SDread;
     interface SDerase;
-    interface Resource
+    interface Resource;
     interface Panic;
     interface LocalTime<TMilli>;
     interface Trace;
@@ -167,25 +167,35 @@ implementation {
     return;
   }
 
+
   event void Resource.granted() {
     error_t err;
 
+    if (fs_state != FSS_REQUEST) {
+      call Panic.panic(PANIC_FS, 21, err, fs_state, 0, 0);
+      return;
+    }
     fs_state = FSS_ZERO;
     fs_buf = call SSW.get_temp_buf();
     if ((err = call SDRead.read(0, fs_buf))) {
-      panic!
+      call Panic.panic(PANIC_FS, 22, err, 0, 0, 0);
+      return;
     }
   }
-  
 
-  event SDRead.readDone() {
+
+  event SDRead.readDone(uint32_t blk, uint8_t *read_buf, error_t err) {
     dblk_loc_t *dbl;
     uint8_t    *dp;
     bool        empty;
 
     dp = fs_buf;
 
-    check for errors,  panic!
+    // check for errors,  panic!
+    if (err || dp == NULL || dp != read_buf) {
+      Panic.panic(PANIC_FS, 23, err, dp, read_buf, 0, 0);
+      return;
+    }
 
     switch(fs_state) {
       case FSS_ZERO:
@@ -204,7 +214,7 @@ implementation {
 
 	fs_state = FSS_START;
 	if ((err = SDRead.read(fsc.dblk_start, dp))) {
-	  ss_panic(16, -1);
+	  ss_panic(16, err);
 	  return err;
 	}
 	return;
@@ -261,7 +271,6 @@ implementation {
 	}
 	return;
     }
-
     fs_state = FSS_IDLE;
     call Resource.release();
     signal OutBoot.booted();
@@ -270,18 +279,41 @@ implementation {
 
   command uint32_t FS.area_start(uint8_t which) {
     switch (which) {
-      default:			return 0;
       case FS_AREA_PANIC:	return fsc.panic_start;
       case FS_AREA_CONFIG:	return fsc.config_start;
-      case FS_AREA_DATA:	return fsc.dblk_start;
+      case FS_AREA_TYPED_DATA:	return fsc.dblk_start;
+      default:			return 0;
     }
   }
 
+
   command uint32_t FS.area_end(uint8_t which) {
     switch (which) {
-      default:	return 0;
       case FS_AREA_PANIC:	return fsc.panic_end;
       case FS_AREA_CONFIG:	return fsc.config_end;
-      case FS_AREA_DATA:	return fsc.dblk_end;
+      case FS_AREA_TYPED_DATA:	return fsc.dblk_end;
+      default:			return 0;
     }
   }
+
+
+  command uint32_t FS.get_nxt_blk(uint8_t area_type) {
+    switch (area_type) {
+      case FS_AREA_TYPED_DATA:	return fsc.dblk_nxt;
+      default:			return 0;
+    }
+  }
+
+
+  command uint32_t FS.advance_nxt_blk(uint8_t area_type) {
+    if (area_type == FS_AREA_TYPED_DATA) {
+      if (fsc.dblk_nxt) {
+	fsc.dblk_nxt++;
+	if (fsc.dblk_nxt > fsc.dblk_end)
+	  fsc.dblk_nxt = 0;
+      }
+      return fsc.dblk_nxt;
+    } else
+      return 0;
+  }
+}

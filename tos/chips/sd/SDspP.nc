@@ -2,7 +2,7 @@
  * SDsp - low level Secure Digital storage driver
  * Split phase, event driven.
  *
- * Copyright (c) 2010, Eric B. Decker
+ * Copyright (c) 2010, Eric B. Decker, Carl Davis
  * All rights reserved.
  */
 
@@ -13,6 +13,15 @@
 
 #define SD_PUT_GET_TO 1024
 #define SD_PARANOID
+
+typedef enum {
+  SDS_IDLE = 0,
+  SDS_RESET,
+  SDS_READ,
+  SDS_WRITE,
+  SDS_ERASE,
+} sd_state_t;
+
 
 module SDspP {
   provides {
@@ -26,9 +35,7 @@ module SDspP {
     interface HplMsp430UsciB as Umod;
     interface HplMsp430UsciInterrupts as UsciInterrupts;
     interface Panic;
-    interface BlockingSpiPacket;
-    interface Timer<TMilli> as SD_reset_timer;
-    interface Timer<TMilli> as SD_read_timer;
+    interface Timer<TMilli> as SDtimer;
   }
 }
 
@@ -36,6 +43,7 @@ implementation {
 
 #include "platform_sd_spi.h"
 
+  sd_state_t   sd_state;
   sd_cmd_blk_t sd_cmd;
   uint16_t     sd_r1b_timeout;
   uint16_t     sd_rd_timeout;
@@ -50,24 +58,31 @@ implementation {
   
   void sd_wait_notbusy();
 
+  void sd_panic(uint8_t where, uint16_t arg) {
+    call Panic.panic(PANIC_SD, where, arg, 0, 0, 0);
+    sd_state = SDS_IDLE;
+  }
+
+
   void sd_chk_clean() {
     uint8_t tmp;
 
 #ifdef SD_PARANOID
     if (SD_SPI_BUSY) {
-      call Panic.panic(PANIC_SD, 1, 0, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 1, 0, 0, 0, 0);
+
       /*
        * how to clean out the transmitter?  It could be
        * hung.  Which would be weird.
        */
     }
     if (SD_SPI_OVERRUN) {
-      call Panic.panic(PANIC_SD, 2, SD_SPI_OE_REG, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 2, SD_SPI_OE_REG, 0, 0, 0);
       SD_SPI_CLR_OE;
     }
     if (SD_SPI_RX_RDY) {
       tmp = SD_SPI_RX_BUF;
-      call Panic.panic(PANIC_SD, 3, tmp, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 3, tmp, 0, 0, 0);
     }
 #else
     if (SD_SPI_OVERRUN)
@@ -87,9 +102,9 @@ implementation {
     while ( !(SD_SPI_RX_RDY) && i > 0)
       i--;
     if (i == 0)				/* rx timeout */
-      call Panic.panic(PANIC_SD, 4, 0, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 4, 0, 0, 0, 0);
     if (SD_SPI_OVERRUN)
-      call Panic.panic(PANIC_SD, 5, 0, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 5, 0, 0, 0, 0);
 
     /* clean out RX buf and the IFG. */
     SD_SPI_CLR_RXINT;
@@ -108,10 +123,10 @@ implementation {
       i--;
 
     if (i == 0)				/* rx timeout */
-      call Panic.panic(PANIC_SD, 6, 0, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 6, 0, 0, 0, 0);
 
     if (SD_SPI_OVERRUN)
-      call Panic.panic(PANIC_SD, 7, 0, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 7, 0, 0, 0, 0);
 
     /*
      * do not explicitly clear the rx interrupt.  reading SD_SPI_RX_BUF will
@@ -156,13 +171,13 @@ implementation {
     cmd->stage_count = i;
 
     if (i >= SD_CMD_TIMEOUT) {
-      call Panic.panic(PANIC_SD, 8, i, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 8, i, 0, 0, 0);
       return FAIL;
     }
 
     tmp = sd_get();		/* finish the command */
     if (tmp != 0xff)
-      call Panic.panic(PANIC_SD, 9, tmp, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 9, tmp, 0, 0, 0);
     return SUCCESS;
   }
 
@@ -190,7 +205,7 @@ implementation {
     cmd = &sd_cmd;
     rsp_len = cmd->rsp_len & RSP_LEN_MASK;
     if (rsp_len != 1 && rsp_len != 2 && rsp_len != 5) {
-      call Panic.panic(PANIC_SD, 10, rsp_len, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 10, rsp_len, 0, 0, 0);
       return FAIL;
     }
     if (SD_CSN == 0)		// already selected
@@ -203,7 +218,7 @@ implementation {
       if (tmp) {
 	/* failed, how odd */
 	SD_CSN = 1;
-	call Panic.panic(PANIC_SD, 12, tmp, 0, 0, 0);
+	call Panic.warn(PANIC_SD, 12, tmp, 0, 0, 0);
 	return FAIL;
       }
     } else
@@ -236,7 +251,7 @@ implementation {
     /* Just bail if we never got a response */
     if (i >= SD_CMD_TIMEOUT) {
       /* stage 2 bail, timeout */
-      call Panic.panic(PANIC_SD, 13, tmp, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 13, tmp, 0, 0, 0);
       SD_CSN = 1;
       return FAIL;
     }
@@ -249,7 +264,7 @@ implementation {
     cmd->stage = 3;
     tmp = sd_get();
     if (tmp != 0xff) {
-      call Panic.panic(PANIC_SD, 14, tmp, 0, 0, 0);
+      call Panic.warn(PANIC_SD, 14, tmp, 0, 0, 0);
     }
 
     /* If the response is a "busy" type (R1B), then there's some
@@ -334,11 +349,16 @@ implementation {
    * CMD0 (reset), CMD55 (app cmd), ACMD41 (app_send_op_cond), CMD58 (send ocr)
    */
 
-  command error_t SDreset.reset() {
+  async command error_t SDreset.reset() {
     sd_cmd_blk_t *cmd;
 
-    cmd = &sd_cmd;
+    if (sd_state) {
+      call Panic.panic(PANIC_SD, 15, 0, 0, 0, 0);
+      return EBUSY;
+    }
 
+    sd_state = SDS_RESET;
+    cmd = &sd_cmd;
     call Umod.setUbr(SPI_400K_DIV);
     sd_packarg(0);
 
@@ -373,7 +393,7 @@ implementation {
     cmd->cmd     = SD_FORCE_IDLE;       // Send CMD0, software reset
     cmd->rsp_len = SD_FORCE_IDLE_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 15, 0, 0, 0, 0);
+      sd_panic(15, 0);
       return FAIL;
     }
 
@@ -385,7 +405,7 @@ implementation {
      * signal for resetDone always comes from the same place.
      */
     sd_go_op_count = 0;		// Reset our counter for Pending tries
-    call SD_reset_timer.startOneShot(0);
+    call SDtimer.startOneShot(0);
     return SUCCESS;
   }
 
@@ -397,21 +417,21 @@ implementation {
     cmd->cmd     = SD_SEND_OCR;
     cmd->rsp_len = SD_SEND_OCR_R;
     if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 17, 0, 0, 0, 0);
+      sd_panic(17, 0);
       signal SDreset.resetDone(FAIL);
       return;
     }
 
     /* At a very minimum, we must allow 3.3V. */
     if ((cmd->rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
-      call Panic.panic(PANIC_SD, 18, cmd->rsp[2], 0, 0, 0);
+      sd_panic(18, cmd->rsp[2]);
       signal SDreset.resetDone(FAIL);
       return;
     }
 
     /* Set the block length */
     if (sd_set_blocklen(SD_BLOCKSIZE)) {
-      call Panic.panic(PANIC_SD, 19, 0, 0, 0, 0);
+      sd_panic(19, 0);
       signal SDreset.resetDone(FAIL);
       return;
     }
@@ -422,36 +442,65 @@ implementation {
   }
 
 
-  event void SD_reset_timer.fired() {
+  void read_finish();
+
+  event void SDtimer.fired() {
     sd_cmd_blk_t *cmd;
+    uint8_t tmp;
 
-    cmd = &sd_cmd; 
-    cmd->cmd     = SD_GO_OP;            //Send ACMD41
-    cmd->rsp_len = SD_GO_OP_R;
-    if (sd_send_command()) {
-      call Panic.panic(PANIC_SD, 16, 0, 0, 0, 0);
-      signal SDreset.resetDone(FAIL);
-      return;
-    }
+    switch (sd_state) {
+      case SDS_RESET:
+	cmd = &sd_cmd; 
+	cmd->cmd     = SD_GO_OP;            //Send ACMD41
+	cmd->rsp_len = SD_GO_OP_R;
+	if (sd_send_command()) {
+	  sd_panic(16, 0);
+	  signal SDreset.resetDone(FAIL);
+	  return;
+	}
 
-    if (cmd->rsp[0] & MSK_IDLE) {
-      /* idle bit still set, means card is still in reset */
-      if (++sd_go_op_count >= SD_GO_OP_MAX) {
-	call Panic.panic(PANIC_SD, 40, 0, 0, 0, 0);     //We maxed the tries, panic and fail
-	signal SDreset.resetDone(FAIL);
+	if (cmd->rsp[0] & MSK_IDLE) {
+	  /* idle bit still set, means card is still in reset */
+	  if (++sd_go_op_count >= SD_GO_OP_MAX) {
+	    call Panic.panic(PANIC_SD, 40, 0, 0, 0, 0);     //We maxed the tries, panic and fail
+	    signal SDreset.resetDone(FAIL);
+	    return;
+	  }
+	  call SDtimer.startOneShot(45);
+	  return;
+	}
+
+	/*
+	 * not idle finish things up.
+	 */
+	reset_finish();
 	return;
-      }
-      call SD_reset_timer.startOneShot(45);
-      return;
-    }
 
-    /*
-     * not idle finish things up.
-     */
-    reset_finish();
-    return;
+      case SDS_READ:
+	tmp = sd_get();
+	if ((tmp == 0xFF) && (sd_read_count++ < SD_READ_TIMEOUT)) {
+	  if ((tmp & MSK_TOK_DATAERROR) == 0 || sd_read_count >= SD_READ_TIMEOUT) {
+	    // Clock out a byte before returning so the SD can finish
+	    sd_put(0xff);
+	    sd_panic(50, 0);
+	    signal SDread.readDone(blk, data_read_buf, FAIL);
+	    return;
+	  }
+	  call SDtimer.startOneShot(5);        // Need to determine proper wait time for SD to respond  
+	  return;
+	}
+
+	/*
+	 * read was successful, time to finish things up.
+	 */
+	read_finish();
+	return;
+    }
   }
 
+
+  task void sd_task() {
+  }
 
   void CheckSDPending() {
   }
@@ -482,16 +531,13 @@ implementation {
     /* Re-assert CS to continue the transfer */
     SD_CSN = 0;
 
-    /* CWD 4/10/10 Implement split-phase functionality.
-     *  Call a oneshottimer then check for the response from the SD card.
-     */
-
     /*
      * Force the read timer to fire we can see if our data is ready
      * eventually it will cause a resetDone to get sent
      */
     sd_read_count = 0;                         // Reset our counter for Pending tries
-    call SD_read_timer.startOneShot(0);
+    sd_state = SDS_READ;
+    call SDtimer.startOneShot(0);
     return SUCCESS;
   }
 
@@ -513,32 +559,9 @@ implementation {
     SD_CSN = 1;
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
+    sd_state = SDS_IDLE;
     signal SDread.readDone(blk, data_read_buf, err);
   }
-
-
-  event void SD_read_timer.fired() {
-    uint8_t tmp;
-    
-    tmp = sd_get();
-    if ((tmp == 0xFF) && (sd_read_count++ < SD_READ_TIMEOUT)) {
-      if ((tmp & MSK_TOK_DATAERROR) == 0 || sd_read_count >= SD_READ_TIMEOUT) {
-        // Clock out a byte before returning so the SD can finish
-        sd_put(0xff);
-        call Panic.panic(PANIC_SD, 50, 0, 0, 0, 0);
-        signal SDread.readDone(blk, data_read_buf, FAIL);
-        return;
-      }
-      call SD_read_timer.startOneShot(5);        // Need to determine proper wait time for SD to respond  
-      return;
-    }
-
-    /*
-     * read was successful, time to finish things up.
-     */
-    read_finish();
-    return;
-  }  
 
 
   /* sd_check_crc
@@ -972,8 +995,6 @@ implementation {
   }
 
 
-#ifdef ENABLE_ERASE
-
   /*
    * sd_erase
    *
@@ -1036,7 +1057,6 @@ implementation {
     return SUCCESS;
   }
 
-#endif
 
   async event void UsciInterrupts.txDone() {
     /*

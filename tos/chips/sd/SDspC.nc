@@ -25,14 +25,8 @@ implementation {
   components PanicC;
   SDspP.Panic -> PanicC;
 
-  components StreamStorageC;
-  SDspP.BlockingSpiPacket -> StreamStorageC;
-
-  components new TimerMilliC() as T0;
-  SDspP.SD_reset_timer -> T0;
-
-  components new TimerMilliC() as T1;
-  SDspP.SD_read_timer -> T1;
+  components new TimerMilliC() as SDTimer;
+  SDspP.SDtimer -> SDTimer;
 
   components HplMsp430UsciB0C as UsciC;
   SDspP.Umod -> UsciC;

@@ -47,7 +47,7 @@ implementation {
   components SD_PwrConfigP as Pwr;
   ResourceDefaultOwner = Pwr;
 
-  components SDspC as SD
+  components SDspC as SD;
   Pwr.SDreset -> SD;
 
   components Hpl_MM_hwC as HW;
