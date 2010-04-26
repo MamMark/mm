@@ -343,6 +343,10 @@ implementation {
   }
 
 
+  task void sd_task() {
+  }
+
+
   /* Reset the SD card.
    * ret:      0,  card initilized
    * non-zero, error return
@@ -451,6 +455,10 @@ implementation {
     uint8_t tmp;
 
     switch (sd_state) {
+
+      default:
+	return;
+
       case SDS_RESET:
 	cmd = &sd_cmd; 
 	cmd->cmd     = SD_GO_OP;            //Send ACMD41
@@ -500,9 +508,6 @@ implementation {
     }
   }
 
-
-  task void sd_task() {
-  }
 
   void CheckSDPending() {
   }

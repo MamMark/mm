@@ -71,13 +71,9 @@ module FileSystemP {
   uses {
     interface Boot;
     interface SDread;
-    interface SDerase;
     interface StreamStorageWrite as SSW;
     interface Resource;
     interface Panic;
-    interface LocalTime<TMilli>;
-    interface Trace;
-    interface LogEvent;
   }
 }
   
@@ -94,8 +90,6 @@ implementation {
    * gets zero'd.
    */
   command error_t Init.init() {
-    uint16_t i;
-
     fsc.majik_a     = FSC_MAJIK_A;
     fsc.majik_b     = FSC_MAJIK_B;
     return SUCCESS;

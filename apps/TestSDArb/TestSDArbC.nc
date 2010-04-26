@@ -12,6 +12,9 @@ implementation {
   components new SD_ArbC();
   TestSDArbP.Resource -> SD_ArbC;
 
+  components SDspC;
+  TestSDArbP.SDread -> SDspC;
+
   components new TimerMilliC() as T;
   TestSDArbP.Timer -> T;
 }

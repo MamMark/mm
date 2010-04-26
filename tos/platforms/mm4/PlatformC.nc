@@ -20,4 +20,8 @@ implementation
   Init = PlatformP;
   PlatformP.ClockInit -> Msp430ClockC.Init;
   PlatformP.Msp430ClockInit -> Msp430ClockC;
+
+  components SD_PwrConfigC as SDpwr;
+  components Msp430UsciShareB0P as usciB0;
+  SDpwr.ResourceDefaultOwner -> usciB0;
 }

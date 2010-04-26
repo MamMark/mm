@@ -70,6 +70,7 @@ implementation {
   async event void ResourceDefaultOwner.requested() {
     call HW.sd_on();
     call Usci.setModeSpi((msp430_spi_union_config_t *) &msp430_spi_default_config);
+    post sd_pwr_task();
   }
 
   async event void ResourceDefaultOwner.immediateRequested() {

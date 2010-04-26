@@ -24,8 +24,8 @@ implementation {
   SSF = SS_P;
   MainC.SoftwareInit -> SS_P;
 
-  components new SD_ArbC() as SD;
-  SS_P.WriteResource -> SD;
+  components new SD_ArbC();
+  SS_P.WriteResource -> SD_ArbC;
 
   components SDspC, PanicC, LocalTimeMilliC;
   SS_P.SDwrite -> SDspC;

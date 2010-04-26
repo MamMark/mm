@@ -8,6 +8,7 @@ module TestSDArbP {
     interface Boot;
     interface Resource;
     interface Timer<TMilli>;
+    interface SDread;
   }
 }
 
@@ -24,5 +25,9 @@ implementation {
   event void Timer.fired() {
     call Resource.release();
     call Resource.request();
+  }
+
+  event void SDread.readDone(uint32_t blk_id, void *buf, error_t error) {
+    nop();
   }
 }

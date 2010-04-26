@@ -68,7 +68,4 @@ implementation {
   SpiP.UsciResource[CLIENT_ID] -> UsciC.Resource;
   SpiP.ResourceConfigure[CLIENT_ID] <- UsciC.ResourceConfigure;
   SpiP.UsciInterrupts -> UsciC.HplMsp430UsciInterrupts;
-
-  components SD_PwrConfigC as Pwr;
-  Pwr.ResourceDefaultOwner -> UsciC;
 }

@@ -25,9 +25,4 @@ implementation {
 
   components PanicC, LocalTimeMilliC;
   FS_P.Panic -> PanicC;
-  FS_P.LocalTime -> LocalTimeMilliC;
-
-  components TraceC, CollectC;
-  FS_P.Trace    -> TraceC;
-  FS_P.LogEvent -> CollectC;
 }

@@ -309,8 +309,6 @@ implementation {
 
 
   task void SSWriter_task() {
-    error_t err;
-    uint16_t delta, num;
 
     /*
      * This task should only be activated if the Writer is IDLE and a buffer
