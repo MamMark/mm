@@ -36,6 +36,7 @@ module SDspP {
     interface HplMsp430UsciInterrupts as UsciInterrupts;
     interface Panic;
     interface Timer<TMilli> as SDtimer;
+    interface LocalTime<TMilli> as lt;
   }
 }
 
@@ -43,7 +44,22 @@ implementation {
 
 #include "platform_sd_spi.h"
 
+  /*
+   * main SDsp control cells.   The code can handle at most one operation at a time,
+   * duh, we've only got one piece of h/w.
+   *
+   * sd_state will be non-IDLE if we are busy doing something.
+   * blk_start holds the blk id we are working on
+   * blk_end   if needed holds the last block working on (like for erase)
+   * data_ptr  buffer pointer if needed.
+   *
+   * if sd_state is SDS_IDLE these cells are meaningless.
+   */
+
   sd_state_t   sd_state;
+  uint32_t     blk_start, blk_end;
+  void	       *data_ptr;
+
   sd_cmd_blk_t sd_cmd;
   uint16_t     sd_r1b_timeout;
   uint16_t     sd_rd_timeout;
@@ -53,8 +69,6 @@ implementation {
   bool         sd_busyflag;
   uint16_t     sd_reset_idles;
   uint16_t     sd_go_op_count, sd_read_count;
-  uint32_t     blk;
-  void	       *data_read_buf;
   
   void sd_wait_notbusy();
 
@@ -97,7 +111,9 @@ implementation {
 
   void sd_put(uint8_t tx_data) {
     uint16_t i;
+    volatile uint16_t t1, t2;
 
+    t1 = TAR;
     sd_chk_clean();
     SD_SPI_TX_BUF = tx_data;
 
@@ -108,10 +124,10 @@ implementation {
       sd_warn(19, 0);
     if (SD_SPI_OVERRUN)
       sd_warn(20, 0);
-
-    /* clean out RX buf and the IFG. */
-    SD_SPI_CLR_RXINT;
     tx_data = SD_SPI_RX_BUF;
+    t2 = TAR;
+    nop();
+    t1 = t2 - t1;
   }
 
 
@@ -208,7 +224,7 @@ implementation {
     cmd = &sd_cmd;
     rsp_len = cmd->rsp_len & RSP_LEN_MASK;
     if (rsp_len != 1 && rsp_len != 2 && rsp_len != 5) {
-      sd_warn(25, rsp_len);
+      sd_panic(25, rsp_len);
       return FAIL;
     }
     if (SD_CSN == 0)		// already selected
@@ -343,10 +359,6 @@ implementation {
   }
 
 
-  task void sd_task() {
-  }
-
-
   /* Reset the SD card.
    * ret:      0,  card initilized
    * non-zero, error return
@@ -357,7 +369,9 @@ implementation {
 
   command error_t SDreset.reset() {
     sd_cmd_blk_t *cmd;
+    volatile uint16_t u0, u1;
 
+    u0 = TAR;
     if (sd_state) {
       sd_panic_idle(30, sd_state);
       return EBUSY;
@@ -365,7 +379,7 @@ implementation {
 
     sd_state = SDS_RESET;
     cmd = &sd_cmd;
-    call Umod.setUbr(SPI_400K_DIV);
+//    call Umod.setUbr(SPI_400K_DIV);
     sd_packarg(0);
 
     /* Clock out at least 74 bits of idles (0xFF).  This allows
@@ -392,8 +406,11 @@ implementation {
      * by the GO_OP (A41) time.
      */
 
-    SD_CSN = 1;
+    SD_CSN = 1;				/* force to known state */
     sd_delay(SD_RESET_IDLES);
+    u1 = TAR;
+    nop();
+    u1 -= u0;
 
     /* Put the card in the idle state, non-zero return -> error */
     cmd->cmd     = SD_FORCE_IDLE;       // Send CMD0, software reset
@@ -411,6 +428,8 @@ implementation {
      * signal for resetDone always comes from the same place.
      */
     sd_go_op_count = 0;		// Reset our counter for Pending tries
+    u1 = TAR;
+    u1 -= u0;
     call SDtimer.startOneShot(0);
     return SUCCESS;
   }
@@ -448,11 +467,8 @@ implementation {
   }
 
 
-  void read_finish();
-
   event void SDtimer.fired() {
     sd_cmd_blk_t *cmd;
-    uint8_t tmp;
 
     switch (sd_state) {
 
@@ -485,26 +501,6 @@ implementation {
 	 */
 	reset_finish();
 	return;
-
-      case SDS_READ:
-	tmp = sd_get();
-	if ((tmp == 0xFF) && (sd_read_count++ < SD_READ_TIMEOUT)) {
-	  if ((tmp & MSK_TOK_DATAERROR) == 0 || sd_read_count >= SD_READ_TIMEOUT) {
-	    // Clock out a byte before returning so the SD can finish
-	    sd_put(0xff);
-	    sd_panic_idle(37, 0);
-	    signal SDread.readDone(blk, data_read_buf, FAIL);
-	    return;
-	  }
-	  call SDtimer.startOneShot(5);        // Need to determine proper wait time for SD to respond  
-	  return;
-	}
-
-	/*
-	 * read was successful, time to finish things up.
-	 */
-	read_finish();
-	return;
     }
   }
 
@@ -515,48 +511,52 @@ implementation {
 
   /*
    * sd_read_data_direct: read data from the SD after sending a command
-   *
-   * does not use dma and waits for the data.
+   *    does not use dma and waits for the data.
    */
 
   error_t sd_read_data_direct(uint16_t data_len, uint8_t *data) {
+    uint16_t i;
+    uint8_t  tmp;
     sd_cmd_blk_t *cmd;
+    error_t err;
 
     cmd = &sd_cmd;
     sd_wait_notbusy();
     if (sd_send_command()) {
-      sd_panic(38, 0);
+      sd_panic_idle(37, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_MS, 39, cmd->cmd, cmd->rsp[0], 0, 0);
+      call Panic.panic(PANIC_MS, 38, cmd->cmd, cmd->rsp[0], 0, 0);
       return FAIL;
     }
 
     /* Re-assert CS to continue the transfer */
     SD_CSN = 0;
 
-    /*
-     * Force the read timer to fire we can see if our data is ready
-     * eventually it will cause a resetDone to get sent
-     */
-    sd_read_count = 0;                         // Reset our counter for Pending tries
-    sd_state = SDS_READ;
-    call SDtimer.startOneShot(0);
-    return SUCCESS;
-  }
+    /* Wait for the token */
+    i=0;
+    do {
+      tmp = sd_get();
+      i++;
+    } while ((tmp == 0xFF) && i < SD_READ_TIMEOUT);
+    sd_rd_timeout = i;
 
+    if ((tmp & MSK_TOK_DATAERROR) == 0 || i >= SD_READ_TIMEOUT) {
+      /*
+       * Clock out a byte before returning, let SD finish
+       * what is this based on?
+       */
+      sd_put(0xff);
 
-  void read_finish() {  
-    error_t err;
-    uint16_t i;
-    uint8_t *data;
+      /* The card returned an error, or timed out. */
+      return FAIL;
+    }
 
-    data = data_read_buf;
     err = SUCCESS;
-    for (i = 0; i < SD_BLOCKSIZE; i++)
+    for (i = 0; i < data_len; i++)
       data[i] = sd_get();
 
     /* Ignore the CRC */
@@ -566,8 +566,9 @@ implementation {
     SD_CSN = 1;
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
+
     sd_state = SDS_IDLE;
-    signal SDread.readDone(blk, data_read_buf, err);
+    return SUCCESS;
   }
 
 
@@ -614,7 +615,7 @@ implementation {
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      sd_panic_idle(40, 0);
+      sd_panic_idle(39, 0);
       return FAIL;
     }
 
@@ -678,7 +679,7 @@ implementation {
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
     if (sd_check_crc(data, data_len, crc)) {
-      sd_panic_idle(41, 0);
+      sd_panic_idle(40, 0);
       return FAIL;
     }
     return SUCCESS;
@@ -699,6 +700,37 @@ implementation {
   }
 
 
+  task void sd_read_task() {
+    error_t err;
+    uint8_t *d;
+
+    err = sd_read_data_direct(SD_BLOCKSIZE, data_ptr);
+    if (err) {
+      signal SDread.readDone(blk_start, data_ptr, err);
+      return;
+    }
+
+    /*
+     * sometimes.  not sure of the conditions.  When using dma
+     * the first byte will show up as 0xfe (something having
+     * to do with the cmd response).  Check for this and if seen
+     * flag it and re-read the buffer.  We don't keep trying so it
+     * had better work.
+     */
+    d = data_ptr;
+    if (*d == 0xfe) {
+      sd_warn(41, *d);
+      err = sd_read_data_direct(SD_BLOCKSIZE, data_ptr);
+      if (err) {
+	sd_panic_idle(42, err);
+	signal SDread.readDone(blk_start, data_ptr, err);
+	return;
+      }
+    }
+    signal SDread.readDone(blk_start, data_ptr, SUCCESS);
+  }
+
+
   /*
    * SDread.read: read a 512 byte block from the SD
    *
@@ -709,15 +741,16 @@ implementation {
 
   command error_t SDread.read(uint32_t blockaddr, void *data) {
     sd_cmd_blk_t *cmd;
-    error_t err;
-    uint8_t *d;
 
     if (sd_state) {
-      sd_panic_idle(30, sd_state);
+      sd_panic_idle(43, sd_state);
       return EBUSY;
     }
 
-    data_read_buf = data;
+    sd_state = SDS_READ;
+    blk_start = blockaddr;
+    data_ptr = data;
+
     cmd = &sd_cmd;
 
     /* Adjust the block address to a byte address */
@@ -729,25 +762,10 @@ implementation {
     /* Need to add size checking, 0 = success */
     cmd->cmd     = SD_READ_BLOCK;
     cmd->rsp_len = SD_READ_BLOCK_R;
-    err = sd_read_data_direct(SD_BLOCKSIZE, data_read_buf);
-    if (err) {
-      sd_panic_idle(42, err);
-      return(err);
-    }
 
-    /*
-     * sometimes.  not sure of the conditions.  When using dma
-     * the first byte will show up as 0xfe (something having
-     * to do with the cmd response).  Check for this and if seen
-     * flag it and re-read the buffer.  We don't keep trying so it
-     * had better work.
-     */
-    d = data_read_buf;
-    if (*d == 0xfe) {
-      sd_warn(43, *d);
-      err = sd_read_data_direct(SD_BLOCKSIZE, data_read_buf);
-    }
-    return err;
+    post sd_read_task();
+
+    return SUCCESS;
   }
 
 
@@ -1002,6 +1020,15 @@ implementation {
 
 
   command error_t SDwrite.write(uint32_t blockaddr, void *data) {
+    if (sd_state) {
+      sd_panic_idle(52, sd_state);
+      return EBUSY;
+    }
+
+    sd_state = SDS_WRITE;
+    blk_start = blockaddr;
+    data_ptr = data;
+
     return sd_write_direct(blockaddr, data);
   }
 
@@ -1012,8 +1039,17 @@ implementation {
    * erase a contiguous number of blocks
    */
 
-  command error_t SDerase.erase(uint32_t blk_start, uint32_t blk_end) {
+  command error_t SDerase.erase(uint32_t blk_s, uint32_t blk_e) {
     sd_cmd_blk_t *cmd;
+
+    if (sd_state) {
+      sd_panic_idle(53, sd_state);
+      return EBUSY;
+    }
+
+    sd_state = SDS_ERASE;
+    blk_start = blk_s;
+    blk_end = blk_e;
 
     cmd = &sd_cmd;
     /*
@@ -1029,20 +1065,6 @@ implementation {
     cmd->cmd     = SD_SET_ERASE_START;
     cmd->rsp_len = SD_SET_ERASE_START_R;
     if (sd_send_command()) {
-      sd_panic_idle(52, 0);
-      return FAIL;
-    }
-
-    /* Check for an error, like a misaligned write */
-    if (cmd->rsp[0] != 0) {
-      sd_panic_idle(53, cmd->rsp[0]);
-      return FAIL;
-    }
-
-    sd_packarg(blk_end);
-    cmd->cmd     = SD_SET_ERASE_END;
-    cmd->rsp_len = SD_SET_ERASE_END_R;
-    if (sd_send_command()) {
       sd_panic_idle(54, 0);
       return FAIL;
     }
@@ -1053,8 +1075,9 @@ implementation {
       return FAIL;
     }
 
-    cmd->cmd     = SD_ERASE;
-    cmd->rsp_len = SD_ERASE_R;
+    sd_packarg(blk_end);
+    cmd->cmd     = SD_SET_ERASE_END;
+    cmd->rsp_len = SD_SET_ERASE_END_R;
     if (sd_send_command()) {
       sd_panic_idle(56, 0);
       return FAIL;
@@ -1063,6 +1086,19 @@ implementation {
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
       sd_panic_idle(57, cmd->rsp[0]);
+      return FAIL;
+    }
+
+    cmd->cmd     = SD_ERASE;
+    cmd->rsp_len = SD_ERASE_R;
+    if (sd_send_command()) {
+      sd_panic_idle(58, 0);
+      return FAIL;
+    }
+
+    /* Check for an error, like a misaligned write */
+    if (cmd->rsp[0] != 0) {
+      sd_panic_idle(59, cmd->rsp[0]);
       return FAIL;
     }
     return SUCCESS;

@@ -31,4 +31,7 @@ implementation {
   components HplMsp430UsciB0C as UsciC;
   SDspP.Umod -> UsciC;
   SDspP.UsciInterrupts -> UsciC;
+
+  components LocalTimeMilliC as L;
+  SDspP.lt -> L;
 }
