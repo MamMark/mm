@@ -1,2 +1,2 @@
-COMPONENT=SerialDirectAppC
+COMPONENT=SerialDirectC
 include $(MAKERULES)
