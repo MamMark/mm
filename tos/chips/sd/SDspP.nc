@@ -66,6 +66,11 @@ implementation {
   void	       *data_ptr;
 
   sd_cmd_blk_t sd_cmd;
+
+  /* instrumentation
+   *
+   * need to think about these timeout and how to do with time vs. counts
+   */
   uint16_t     sd_r1b_timeout;
   uint16_t     sd_rd_timeout;
   uint16_t     sd_wr_timeout;
@@ -74,6 +79,8 @@ implementation {
   bool         sd_busyflag;
   uint16_t     sd_reset_idles;
   uint16_t     sd_go_op_count, sd_read_count;
+
+  uint32_t     last_reset_time, inst_t0;
   
   void sd_wait_notbusy();
 
@@ -226,6 +233,24 @@ implementation {
     uint8_t  tmp;
     sd_cmd_blk_t *cmd;
 
+    /* instrumentation
+     *
+     * u0: when the cmd starts.
+     * u1: end of 55 cmd and response if any.
+     * u2: end of cmd
+     * u3: end of response obtained.
+     *
+     * d1: time from start to 55 sent
+     * d2: time from start to cmd sent
+     * d3: time from start to response obtained.
+     *
+     * all times in uis.
+     *
+     */
+    volatile register uint16_t u0, u1, u2, u3;
+    volatile register uint16_t d1, d2, d3;
+
+    u0 = TAR;
     cmd = &sd_cmd;
     rsp_len = cmd->rsp_len & RSP_LEN_MASK;
     if (rsp_len != 1 && rsp_len != 2 && rsp_len != 5) {
@@ -248,6 +273,8 @@ implementation {
     } else
       cmd->rsp55 = 0x55;
 
+    u1 = TAR;
+    d1 = u1 - u0;
     cmd->stage = 2;
     sd_put((cmd->cmd & 0x3F) | 0x40);
     i = 0;
@@ -261,6 +288,9 @@ implementation {
      * in the ass.
      */
     sd_put(0x95);
+
+    u2 = TAR;
+    d2 = u2 -u0;
 
     /* Wait for a response.  */
     i=0;
@@ -307,6 +337,10 @@ implementation {
 //	cmd->stage_count = i;
       sd_put(0xff);
     }
+
+    u3 = TAR;
+    d3 = u3 - u0;
+    nop();
     cmd->stage = 0;
     SD_CSN = 1;
     return SUCCESS;
@@ -382,13 +416,14 @@ implementation {
       return EBUSY;
     }
 
+    inst_t0 = call lt.get();
     sd_state = SDS_RESET;
     cmd = &sd_cmd;
 //    call Umod.setUbr(SPI_400K_DIV);
     sd_packarg(0);
 
     /* Clock out at least 74 bits of idles (0xFF).  This allows
-     * the SD card to complete its power up prior to talking to
+     * the SD card to complete its power up prior to us talking to
      * the card.
      *
      * When experimenting with different SPI clocks (4M ... 400K) and
@@ -414,8 +449,8 @@ implementation {
     SD_CSN = 1;				/* force to known state */
     sd_delay(SD_RESET_IDLES);
     u1 = TAR;
-    nop();
     u1 -= u0;
+    nop();
 
     /* Put the card in the idle state, non-zero return -> error */
     cmd->cmd     = SD_FORCE_IDLE;       // Send CMD0, software reset
@@ -466,8 +501,14 @@ implementation {
       return;
     }
 
-    /* If we got this far, initialization was OK. */
-//    call Umod.setUbr(SPI_FULL_SPEED_DIV);
+    /* If we got this far, initialization was OK.
+     *
+     * If we were running with a reduced clock then this is the place to
+     * crank it up to full speed.  We do everything at full speed so there
+     * isn't currently any need.
+     */
+    last_reset_time = call lt.get() - inst_t0;
+    sd_state = SDS_IDLE;
     signal SDreset.resetDone(SUCCESS);
   }
 

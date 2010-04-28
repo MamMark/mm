@@ -6,15 +6,14 @@
 configuration TestSDArbC {}
 
 implementation {
-  components MainC, TestSDArbP;
-  TestSDArbP -> MainC.Boot;
+  components TestSDArbP as App;
+  components MainC;
+  App.Boot -> MainC.Boot;
 
   components new SD_ArbC();
-  TestSDArbP.Resource -> SD_ArbC;
+  App.Resource -> SD_ArbC;
 
-  components SDspC;
-  TestSDArbP.SDread -> SDspC;
-
-  components new TimerMilliC() as T;
-  TestSDArbP.Timer -> T;
+  components SDspC, FileSystemC as FS;
+  App.SDread -> SDspC;
+  App.FS_OutBoot -> FS;
 }

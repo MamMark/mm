@@ -7,27 +7,33 @@ module TestSDArbP {
   uses {
     interface Boot;
     interface Resource;
-    interface Timer<TMilli>;
     interface SDread;
+    interface Boot as FS_OutBoot;
   }
 }
 
 implementation {
+
+  uint8_t buff[514];
 
   event void Boot.booted() {
     call Resource.request();
   }
 
   event void Resource.granted() {
-    call Timer.startOneShot(1024);
-  }
+    error_t err;
 
-  event void Timer.fired() {
-    call Resource.release();
-    call Resource.request();
+    if ((err = call SDread.read(0, buff)))
+      nop();
   }
 
   event void SDread.readDone(uint32_t blk_id, void *buf, error_t error) {
     nop();
+    call Resource.release();
   }
+
+  event void FS_OutBoot.booted() {
+    nop();
+  }
+
 }
