@@ -80,11 +80,11 @@ MSP430REG_NORACE(UCB0STAT);
  */
 
 #define SPI_400K_DIV 21
-#define SPI_8M_DIV    1
-#define SPI_FULL_SPEED_DIV SPI_8M_DIV
+#define SPI_8MIHZ_DIV    1
+#define SPI_FULL_SPEED_DIV SPI_8MIHZ_DIV
 
 const msp430_spi_union_config_t sd_full_config = { {
-  ubr		: SPI_8M_DIV,		/* full speed */
+  ubr		: SPI_8MIHZ_DIV,	/* full speed */
   ucmode	: 0,			/* 3 pin master, no ste */
   ucmst		: 1,
   uc7bit	: 0,			/* 8 bit */
