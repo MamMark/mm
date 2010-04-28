@@ -1,0 +1,3 @@
+COMPONENT=TestTimerC
+PFLAGS += -DNO_SD
+include $(MAKERULES)

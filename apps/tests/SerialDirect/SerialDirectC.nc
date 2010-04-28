@@ -12,9 +12,4 @@ implementation {
   components HplMsp430UsciA1C as Usci;
   App.Port -> Usci;
   App.PortInt -> Usci;
-
-  components SDspC;
-  App.SDread -> SDspC;
 }
-
-

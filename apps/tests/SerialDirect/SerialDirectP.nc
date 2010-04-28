@@ -29,7 +29,6 @@ module SerialDirectP {
     interface HplMsp430UsciA as Port;
     interface HplMsp430UsciInterrupts as PortInt;
     interface Boot;
-    interface SDread;
   }
 }
 implementation {
@@ -55,9 +54,5 @@ implementation {
 
     rx_ints++;
     tmp = call Port.rx();
-  }
-
-  event void SDread.readDone(uint32_t blk_id, void *buf, error_t error) {
-    nop();
   }
 }

@@ -1,0 +1,3 @@
+COMPONENT=TestAlarmC
+PFLAGS += -DNO_SD
+include $(MAKERULES)

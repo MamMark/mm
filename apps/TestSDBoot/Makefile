@@ -1,2 +1,0 @@
-COMPONENT=TestSDBootAppC
-include $(MAKERULES)

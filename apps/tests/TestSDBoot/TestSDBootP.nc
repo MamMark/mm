@@ -30,26 +30,19 @@
  */
  
 /*
- * Author: Kevin Klues (klueska@cs.stanford.edu)
- *
+ * @author: Kevin Klues (klueska@cs.stanford.edu)
+ * @author: Eric B. Decker <cire831@gmail.com>
  */
 
-
-configuration TestAlarmAppC
-{
-}
-implementation
-{
-  components MainC, TestAlarmC, LedsC;
-  components new Alarm32khzC() as Alarm0;
-  components new Alarm32khzC() as Alarm1;
-  components new Alarm32khzC() as Alarm2;
-
-  TestAlarmC -> MainC.Boot;
-
-  TestAlarmC.Alarm0 -> Alarm0;
-  TestAlarmC.Alarm1 -> Alarm1;
-  TestAlarmC.Alarm2 -> Alarm2;
-  TestAlarmC.Leds -> LedsC;
+module TestSDBootP {
+  uses {
+    interface Boot;
+    interface Leds;
+  }
 }
 
+implementation {
+  event void Boot.booted() {
+    call Leds.led1Toggle();
+  }
+}

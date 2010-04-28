@@ -1,5 +1,5 @@
 
-module TestCmdC {
+module TestCmdP {
   uses {
     interface StdControl as CmdControl;
     interface Boot;

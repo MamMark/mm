@@ -1,0 +1,3 @@
+COMPONENT=TestSDBootC
+PFLAGS += -DNO_SD
+include $(MAKERULES)

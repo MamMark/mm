@@ -30,18 +30,40 @@
  */
  
 /*
- * Author: Kevin Klues (klueska@cs.stanford.edu)
- *
+ * @author: Kevin Klues (klueska@cs.stanford.edu)
+ * @author: Eric B. Decker <cire831@gmail.com>
  */
 
-module TestSDBootC {
-  uses {
-    interface Boot;
-    interface Leds;
-  }
+
+#include "Timer.h"
+
+module TestAlarmP {
+  uses interface Alarm<T32khz, uint16_t> as Alarm0;
+  uses interface Alarm<T32khz, uint16_t> as Alarm1;
+  uses interface Alarm<T32khz, uint16_t> as Alarm2;
+  uses interface Leds;
+  uses interface Boot;
 }
+
 implementation {
   event void Boot.booted() {
+    call Alarm0.start( 2500 );
+    call Alarm1.start( 5000 );
+    call Alarm2.start( 10000 );
+  }
+
+  async event void Alarm0.fired() {
+    call Leds.led0Toggle();
+    call Alarm0.start( 2500 );
+  }
+
+  async event void Alarm1.fired() {
     call Leds.led1Toggle();
+    call Alarm1.start( 5000 );
+  }
+
+  async event void Alarm2.fired() {
+    call Leds.led2Toggle();
+    call Alarm2.start( 10000 );
   }
 }

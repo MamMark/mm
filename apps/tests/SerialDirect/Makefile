@@ -1,2 +1,3 @@
 COMPONENT=SerialDirectC
+PFLAGS += -DNO_SD
 include $(MAKERULES)

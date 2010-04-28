@@ -19,6 +19,7 @@ implementation {
   PlatformP.ClockInit -> Msp430ClockC.Init;
   PlatformP.Msp430ClockInit -> Msp430ClockC;
 
+#ifndef NO_SD
   /*
    * SD_PwrConfigC handles, pwr up/configuration, reset, and
    * pwr down/deconfiguration for the SD on ucsiB0.  It is
@@ -27,4 +28,5 @@ implementation {
   components SD_PwrConfigC as SDpwr;
   components Msp430UsciShareB0P as usciB0;
   SDpwr.ResourceDefaultOwner -> usciB0;
+#endif
 }

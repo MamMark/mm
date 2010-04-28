@@ -30,46 +30,28 @@
  */
  
 /*
- * Author: Kevin Klues (klueska@cs.stanford.edu)
- *
+ * @author: Kevin Klues (klueska@cs.stanford.edu)
+ * @author: Eric B. Decker <cire831@gmail.com>
  */
 
+/*
+ *  We expect the red led to run for a while flashing so fast we cant see it
+ *  then the green light should come on.  
+ *
+ *  The Red flashing is the thread starting upa nd doing its thing
+ *
+ *  The Green Led is when the booted comes back from the TOS system and we continue
+ *  after the thread has signaled it.
+ */
 
-#include "Timer.h"
+configuration TestSDBootC {}
+implementation {
+  components SystemBootC;
+  components TestSDBootP as App;
 
-module TestAlarmC
-{
-  uses interface Alarm<T32khz, uint16_t> as Alarm0;
-  uses interface Alarm<T32khz, uint16_t> as Alarm1;
-  uses interface Alarm<T32khz, uint16_t> as Alarm2;
-  uses interface Leds;
-  uses interface Boot;
-}
-implementation
-{
-  event void Boot.booted()
-  {
-    call Alarm0.start( 2500 );
-    call Alarm1.start( 5000 );
-    call Alarm2.start( 10000 );
-  }
-
-  async event void Alarm0.fired()
-  {
-    call Leds.led0Toggle();
-    call Alarm0.start( 2500 );
-  }
+  App -> SystemBootC.Boot;
   
-  async event void Alarm1.fired()
-  {
-    call Leds.led1Toggle();
-    call Alarm1.start( 5000 );
-  }
-  
-  async event void Alarm2.fired()
-  {
-    call Leds.led2Toggle();
-    call Alarm2.start( 10000 );
-  }
+  components LedsC;
+  App.Leds -> LedsC;
 }
 

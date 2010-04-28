@@ -30,28 +30,26 @@
  */
  
 /*
- * Author: Kevin Klues (klueska@cs.stanford.edu)
- *
+ * @author: Kevin Klues (klueska@cs.stanford.edu)
+ * @author: Eric B. Decker <cire831@gmail.com>
  */
 
-/*
- *  We expect the red led to run for a while flashing so fast we cant see it
- *  then the green light should come on.  
- *
- *  The Red flashing is the thread starting upa nd doing its thing
- *
- *  The Green Led is when the booted comes back from the TOS system and we continue
- *  after the thread has signaled it.
- */
 
-configuration TestSDBootAppC {}
+configuration TestAlarmC {
+}
+
 implementation {
-  components SystemBootC;
-  components TestSDBootC;
+  components TestAlarmP as App;
+  components MainC, LedsC;
+  components new Alarm32khzC() as Alarm0;
+  components new Alarm32khzC() as Alarm1;
+  components new Alarm32khzC() as Alarm2;
 
-  TestSDBootC -> SystemBootC.Boot;
-  
-  components LedsC;
-  TestSDBootC.Leds -> LedsC;
+  App -> MainC.Boot;
+
+  App.Alarm0 -> Alarm0;
+  App.Alarm1 -> Alarm1;
+  App.Alarm2 -> Alarm2;
+  App.Leds -> LedsC;
 }
 
