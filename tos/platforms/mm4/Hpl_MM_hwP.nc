@@ -208,13 +208,12 @@ implementation {
   }
 
   /*
-   * turn sd_off and switch pins back to port (0pI) so we don't power the
+   * turn sd_off and switch pins back to port (1pI) so we don't power the
    * chip prior to powering it off.
    */
   async command void HW.sd_off() {
     SD_CSN = 1;				// tri-state by deselecting
     SD_PWR_OFF;				// kill power
-    SD_CSN = 0;				// don't power through CSN
     SD_PINS_INPUT;			// all data pins inputs
   }
 

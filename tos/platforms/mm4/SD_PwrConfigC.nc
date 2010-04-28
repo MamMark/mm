@@ -55,4 +55,7 @@ implementation {
 
   components HplMsp430UsciB0C as UsciC;
   Pwr.Usci -> UsciC;
+
+  components PanicC;
+  Pwr.Panic -> PanicC;
 }

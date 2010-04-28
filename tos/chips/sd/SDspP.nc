@@ -11,6 +11,11 @@
 #include "sd.h"
 #include "panic.h"
 
+#ifdef FAIL
+#warning "FAIL defined, undefining, it should be an enum"
+#undef FAIL
+#endif
+
 #define SD_PUT_GET_TO 1024
 #define SD_PARANOID
 
@@ -462,7 +467,7 @@ implementation {
     }
 
     /* If we got this far, initialization was OK. */
-    call Umod.setUbr(SPI_FULL_SPEED_DIV);
+//    call Umod.setUbr(SPI_FULL_SPEED_DIV);
     signal SDreset.resetDone(SUCCESS);
   }
 

@@ -37,16 +37,32 @@
  * deconfigure and power the SD h/w down.
  */
 
+#include "panic.h"
+
 module SD_PwrConfigP {
   uses {
     interface ResourceDefaultOwner;
     interface SDreset;
     interface Hpl_MM_hw as HW;
     interface HplMsp430UsciB as Usci;
+    interface Panic;
   }
 }
 
 implementation {
+
+#define SPI_8M_DIV    1
+
+  const msp430_spi_union_config_t sd_full_config = { {
+    ubr		: SPI_8M_DIV,		/* full speed */
+    ucmode	: 0,			/* 3 pin master, no ste */
+    ucmst	: 1,
+    uc7bit	: 0,			/* 8 bit */
+    ucmsb	: 1,			/* msb first, compatible with msp430 usart */
+    ucckpl	: 0,			/* inactive state low */
+    ucckph	: 1,			/* data captured on rising, changed falling */
+    ucssel	: 2,			/* smclk */
+    } };
 
   /*
    * .granted: power down the SD.
@@ -64,12 +80,15 @@ implementation {
   }
 
   task void sd_pwr_task() {
-    call SDreset.reset();
+    error_t err;
+
+    if ((err = call SDreset.reset()))
+      call Panic.panic(PANIC_MS, 0x80, err, 0, 0, 0);
   }
 
   async event void ResourceDefaultOwner.requested() {
     call HW.sd_on();
-    call Usci.setModeSpi((msp430_spi_union_config_t *) &msp430_spi_default_config);
+    call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
     post sd_pwr_task();
   }
 
@@ -78,6 +97,8 @@ implementation {
   }
 
   event void SDreset.resetDone(error_t err) {
+    if (err)
+      call Panic.panic(PANIC_MS, 0x81, err, 0, 0, 0);
     call ResourceDefaultOwner.release();
   }
 }
