@@ -30,15 +30,20 @@ typedef enum {
 
 module SDspP {
   provides {
+    /*
+     * SDread, write, and erase are available to clients,
+     * SDreset is not parameterized and is intended to only be called
+     * by a power manager.
+     */
     interface SDreset;
-    interface SDread;
-    interface SDwrite;
-    interface SDerase;
+    interface SDread[uint8_t cid];
+    interface SDwrite[uint8_t cid];
+    interface SDerase[uint8_t cid];
     interface Init;
   }
   uses {
     interface HplMsp430UsciB as Umod;
-    interface HplMsp430UsciInterrupts as UsciInterrupts;
+//    interface HplMsp430UsciInterrupts as UsciInterrupts;
     interface Panic;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
@@ -53,7 +58,16 @@ implementation {
    * main SDsp control cells.   The code can handle at most one operation at a time,
    * duh, we've only got one piece of h/w.
    *
-   * sd_state will be non-IDLE if we are busy doing something.
+   * SD_Arb provides for arbritration as well as assignment of client ids (cid).
+   * SDsp however does not assume access control via the arbiter.  One could wire
+   * in directly.  Rather it uses a state variable to control coherent access.  If
+   * the driver is IDLE then it allows a client to start something new up.  It is
+   * assumed that the client has gained access using the arbiter.  The arbiter is what
+   * queuing of clients when the SD is already busy.  When the current client finishes
+   * and releases the device, the arbiter will signal the next client to begin.
+   *
+   * sd_state  current driver state, non-IDLE if we are busy doing something.
+   * cur_cid   client id of who has requested the activity.
    * blk_start holds the blk id we are working on
    * blk_end   if needed holds the last block working on (like for erase)
    * data_ptr  buffer pointer if needed.
@@ -62,6 +76,7 @@ implementation {
    */
 
   sd_state_t   sd_state;
+  uint8_t      cur_cid;			/* current client */
   uint32_t     blk_start, blk_end;
   void	       *data_ptr;
 
@@ -418,8 +433,13 @@ implementation {
 
     inst_t0 = call lt.get();
     sd_state = SDS_RESET;
+    cur_cid = -1;			/* reset is not parameterized. */
     cmd = &sd_cmd;
-//    call Umod.setUbr(SPI_400K_DIV);
+
+    /*
+     * Originally, we set the divisor to produce 400KHz spi clock for backward compatibility
+     * with MMC (open drain) chips.   The /1 seems to work okay so blow that off.
+     */
     sd_packarg(0);
 
     /* Clock out at least 74 bits of idles (0xFF).  This allows
@@ -752,7 +772,7 @@ implementation {
 
     err = sd_read_data_direct(SD_BLOCKSIZE, data_ptr);
     if (err) {
-      signal SDread.readDone(blk_start, data_ptr, err);
+      signal SDread.readDone[cur_cid](blk_start, data_ptr, err);
       return;
     }
 
@@ -769,11 +789,11 @@ implementation {
       err = sd_read_data_direct(SD_BLOCKSIZE, data_ptr);
       if (err) {
 	sd_panic_idle(42, err);
-	signal SDread.readDone(blk_start, data_ptr, err);
+	signal SDread.readDone[cur_cid](blk_start, data_ptr, err);
 	return;
       }
     }
-    signal SDread.readDone(blk_start, data_ptr, SUCCESS);
+    signal SDread.readDone[cur_cid](blk_start, data_ptr, SUCCESS);
   }
 
 
@@ -785,7 +805,7 @@ implementation {
    * output: rtn           0 call successful, err otherwise
    */
 
-  command error_t SDread.read(uint32_t blockaddr, void *data) {
+  command error_t SDread.read[uint8_t cid](uint32_t blockaddr, void *data) {
     sd_cmd_blk_t *cmd;
 
     if (sd_state) {
@@ -794,6 +814,7 @@ implementation {
     }
 
     sd_state = SDS_READ;
+    cur_cid = cid;
     blk_start = blockaddr;
     data_ptr = data;
 
@@ -810,7 +831,6 @@ implementation {
     cmd->rsp_len = SD_READ_BLOCK_R;
 
     post sd_read_task();
-
     return SUCCESS;
   }
 
@@ -1065,7 +1085,7 @@ implementation {
   }
 
 
-  command error_t SDwrite.write(uint32_t blockaddr, void *data) {
+  command error_t SDwrite.write[uint8_t cid](uint32_t blockaddr, void *data) {
     if (sd_state) {
       sd_panic_idle(52, sd_state);
       return EBUSY;
@@ -1085,7 +1105,7 @@ implementation {
    * erase a contiguous number of blocks
    */
 
-  command error_t SDerase.erase(uint32_t blk_s, uint32_t blk_e) {
+  command error_t SDerase.erase[uint8_t cid](uint32_t blk_s, uint32_t blk_e) {
     sd_cmd_blk_t *cmd;
 
     if (sd_state) {
@@ -1094,6 +1114,7 @@ implementation {
     }
 
     sd_state = SDS_ERASE;
+    cur_cid = cid;
     blk_start = blk_s;
     blk_end = blk_e;
 
@@ -1151,6 +1172,7 @@ implementation {
   }
 
 
+#ifdef notdef
   async event void UsciInterrupts.txDone() {
     /*
      * shouldn't ever get here, we never turn intrrupts on for the ADC spi
@@ -1166,4 +1188,9 @@ implementation {
      * eventually put a panic in here.
      */
   };
+#endif
+
+  default event void   SDread.readDone[uint8_t cid](uint32_t blk_id, void *buf, error_t error) {}
+  default event void SDwrite.writeDone[uint8_t cid](uint32_t blk, void *buf, error_t error) {}
+//  default event void SDerase.eraseDone[uint8_t cid](uint32_t blk_start, uint32_t blk_end, error_t error) {}
 }

@@ -19,35 +19,31 @@
 
 generic configuration SD_ArbC() {
   provides {
+
     interface Resource;
-    interface SpiByte;
-    interface SpiPacket;
+
+    interface SDread;
+    interface SDwrite;
+    interface SDerase;
   }
 }
 
 implementation {
   enum {
-    CLIENT_ID = unique(MSP430_SPI0_BUS),
+    CLIENT_ID = unique(MSP430_HPLUSCIB0_RESOURCE),
   };
-
-#ifdef ENABLE_SD_DMA
-#warning "Enabling DMA for SD/SPI0 (usciB0)"
-  components Msp430Spi0DmaP as SpiP;
-#else
-  components Msp430Spi0NoDmaP as SpiP;
-#endif
-
-  Resource = SpiP.Resource[CLIENT_ID];
-  SpiByte = SpiP.SpiByte;
-  SpiPacket = SpiP.SpiPacket[CLIENT_ID];
 
   /*
    * SD_ArbC provides arbited access to the SD on usciB0.  Pwr
    * control and configuration is handled by SD_PwrConfig.  Don't
-   * wire in ResourceConfigure from SpiP because that would mess
+   * wire in ResourceConfigure because that would mess
    * with the configuration established by the DefaultOwner.
    */
-  components new Msp430UsciB0C() as UsciC;
-  SpiP.UsciResource[CLIENT_ID] -> UsciC.Resource;
-  SpiP.UsciInterrupts -> UsciC.HplMsp430UsciInterrupts;
+  components Msp430UsciShareB0P as UsciShareP;
+  Resource = UsciShareP.Resource[CLIENT_ID];
+
+  components SDspC as SD;
+  SDread  = SD.SDread[CLIENT_ID];
+  SDwrite = SD.SDwrite[CLIENT_ID];
+  SDerase = SD.SDerase[CLIENT_ID];
 }

@@ -5,9 +5,9 @@
 
 module TestSDArbP {
   uses {
+    interface SDread;
     interface Boot;
     interface Resource;
-    interface SDread;
     interface Boot as FS_OutBoot;
   }
 }

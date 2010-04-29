@@ -14,7 +14,7 @@
  * Power control, and resetting the SD is handled by
  * a default owner.  The default owner (SD_PwrConfigC) handles
  * power up, reset, and any configuration issues.  Client
- * configuration (SpiP.ResourceConfigure isn't wired which
+ * configuration (xxx.ResourceConfigure isn't wired which
  * prevents the tinyOS core files (ie. Msp430Spi0DmaP etc)
  * from configuring the SPI when the Arbiter signals
  * the grant.  Configuration is handled by PwrConfig.

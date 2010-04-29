@@ -10,10 +10,10 @@ implementation {
   components MainC;
   App.Boot -> MainC.Boot;
 
-  components new SD_ArbC();
-  App.Resource -> SD_ArbC;
+  components new SD_ArbC() as SD;
+  App.Resource -> SD;
+  App.SDread -> SD;
 
-  components SDspC, FileSystemC as FS;
-  App.SDread -> SDspC;
+  components FileSystemC as FS;
   App.FS_OutBoot -> FS;
 }

@@ -24,11 +24,11 @@ implementation {
   SSF = SS_P;
   MainC.SoftwareInit -> SS_P;
 
-  components new SD_ArbC();
-  SS_P.WriteResource -> SD_ArbC;
+  components new SD_ArbC() as SD;
+  SS_P.WriteResource -> SD;
+  SS_P.SDwrite -> SD;
 
-  components SDspC, PanicC, LocalTimeMilliC;
-  SS_P.SDwrite -> SDspC;
+  components PanicC, LocalTimeMilliC;
   SS_P.Panic -> PanicC;
   SS_P.LocalTime -> LocalTimeMilliC;
 

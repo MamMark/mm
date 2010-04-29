@@ -29,10 +29,11 @@ implementation {
   OutBoot = FS_P;
   Boot    = FS_P;
 
-  components SDspC as SD, StreamStorageC as SS;
-  components new SD_ArbC() as SD_Res, PanicC;
+  components new SD_ArbC() as SD, StreamStorageC as SS;
+  components PanicC;
+
+  FS_P.Resource -> SD;
   FS_P.SDread -> SD;
   FS_P.SSW -> SS;
-  FS_P.Resource -> SD_Res;
   FS_P.Panic -> PanicC;
 }
