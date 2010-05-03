@@ -1,0 +1,3 @@
+COMPONENT=dmaC
+PFLAGS += -DNO_SD
+include $(MAKERULES)
