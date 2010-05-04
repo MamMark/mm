@@ -198,6 +198,10 @@ implementation {
     uint16_t  i;
     uint8_t   tmp;
     sd_ctl_t *ctl;
+    volatile register uint16_t u0, u1, u2;
+    volatile register uint16_t d1, d2;
+
+    u0 = TAR;
 
     ctl = &sd_ctl;
     sd_put(SD_APP_CMD | 0x40);		/* CMD55 */
@@ -206,6 +210,9 @@ implementation {
     sd_put(0);
     sd_put(0);
     sd_put(0xff);				/* crc, don't care */
+
+    u1 = TAR;
+    d1 = u1 - u0;
 
     i=0;
     do {
@@ -222,8 +229,13 @@ implementation {
     }
 
     tmp = sd_get();		/* finish the command */
-    if (tmp != 0xff)
+    if (tmp != 0xff)		/* should be idle bus (high) */
       sd_warn(24, tmp);
+
+    u2 = TAR;
+    d2 = u2 - u1;
+    nop();
+
     return SUCCESS;
   }
 
@@ -248,24 +260,26 @@ implementation {
     uint8_t   tmp;
     sd_cmd_t *cmd;
     sd_ctl_t *ctl;
-    uint32_t  t;
+    uint8_t  *ap;
 
     /* instrumentation
      *
      * u0: when the cmd starts.
-     * u1: end of 55 cmd and response if any.
+     * u1: preliminaries.
      * u2: end of cmd
      * u3: end of response obtained.
      *
-     * d1: time from start to 55 sent
-     * d2: time from start to cmd sent
-     * d3: time from start to response obtained.
+     * d1: preliminaries delta
+     * d2: cmd delta
+     * d3: response delta
+     * t4: total time
      *
      * all times in uis.
      *
      */
+
     volatile register uint16_t u0, u1, u2, u3;
-    volatile register uint16_t d1, d2, d3;
+    volatile register uint16_t d1, d2, d3, t4;
 
     u0 = TAR;
     cmd = &sd_cmd;
@@ -275,8 +289,13 @@ implementation {
       sd_panic(25, rsp_len);
       return FAIL;
     }
-    if (SD_CSN == 0)		// already selected
-      sd_warn(26, 0);
+
+    /*
+     * We used to check for chip select being down (CSN, low true)
+     * but when ACMD processing was pulled out to simplify the code
+     * sd_send_acmd now sets CSN and then calls us.  It doesn't hurt
+     * anything to really make sure that it is set :-).
+     */
 
     SD_CSN = 0;
 
@@ -284,10 +303,10 @@ implementation {
     d1 = u1 - u0;
     ctl->stage = 2;
     sd_put((cmd->cmd & 0x3F) | 0x40);
-    t = cmd->arg;
-    i = 3;
+    ap = (uint8_t *) (&cmd->cmd) + 1;
+    i = 0;
     do
-      sd_put(((uint8_t *) &t)[i--]);
+      sd_put(ap[i++]);
     while (i < 4);
 
     /* This is the CRC. It only matters what we put here for the first
@@ -298,7 +317,7 @@ implementation {
     sd_put(0x95);
 
     u2 = TAR;
-    d2 = u2 -u0;
+    d2 = u2 - u1;
 
     /* Wait for a response.  */
     i=0;
@@ -347,7 +366,8 @@ implementation {
     }
 
     u3 = TAR;
-    d3 = u3 - u0;
+    d3 = u3 - u2;
+    t4 = u3 - u0;
     nop();
     ctl->stage = 0;
     SD_CSN = 1;
@@ -359,6 +379,10 @@ implementation {
     uint16_t  rsp_len;
     uint8_t   tmp;
     sd_ctl_t *ctl;
+    volatile register uint16_t u0, u1, u2;
+    volatile register uint16_t d1, d2;
+
+    u0 = TAR;
 
     ctl = &sd_ctl;
     rsp_len = ctl->rsp_len & RSP_LEN_MASK;
@@ -366,11 +390,13 @@ implementation {
       sd_panic(25, rsp_len);
       return FAIL;
     }
-    if (SD_CSN == 0)		// already selected
-      sd_warn(26, 0);
 
     SD_CSN = 0;
     ctl->stage = 1;
+
+    u1 = TAR;
+    d1 = u1 - u0;
+
     tmp = sd_send_cmd55();
     if (tmp) {
       /* failed, how odd */
@@ -378,6 +404,11 @@ implementation {
       sd_warn(27, tmp);
       return FAIL;
     }
+
+    u2 = TAR;
+    d2 = u2 - u1;
+    nop();
+
     return sd_send_command();
   }
 
@@ -385,18 +416,19 @@ implementation {
   /* sd_delay: send idle data while clocking */
 
   void sd_delay(uint16_t number) {
-    volatile register uint16_t t0, t1, t2;
+    volatile register uint16_t t0, t1, t2, t3;
 
     t0 = TAR;
     if (number == 0)
       return;
+
     /*
      * We use the dma engine to kick out the idle bytes.
      * To keep from overrunning, we use another dma channel
      * to suck bytes as they show up.
      *
-     * priorities are 0 over 1 over 2 so we put RX on channel
-     * 0 so they bytes get pulled prior to a pending tx byte.
+     * priorities are 0 > 1 > 2.  RX has priority on channel
+     * 0 so any bytes get pulled prior to a pending tx byte.
      *
      * this should run bytes to the SD card as fast as possible.
      */
@@ -429,8 +461,10 @@ implementation {
       ;
 
     t2 = TAR;
-    t2 = t2 - t1;
-    t1 = t1 - t0;
+    t3 = t2 - t0;			/* total time */
+    t2 = t2 - t1;			/* data transfer time */
+    t1 = t1 - t0;			/* preamble */
+    nop();
     DMACTL0 = 0;			/* kick triggers */
     DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
   }
@@ -555,9 +589,10 @@ implementation {
      * signal for resetDone always comes from the same place.
      */
     sd_go_op_count = 0;		// Reset our counter for Pending tries
+    call SDtimer.startOneShot(0);
     u1 = TAR;
     u1 -= u0;
-    call SDtimer.startOneShot(0);
+    nop();
     return SUCCESS;
   }
 
@@ -597,6 +632,7 @@ implementation {
      * isn't currently any need.
      */
     last_reset_time = call lt.get() - inst_t0;
+    nop();
     sd_state = SDS_IDLE;
     signal SDreset.resetDone(SUCCESS);
   }

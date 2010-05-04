@@ -23,11 +23,11 @@
 #define R1B_FLAG  0x80
 #define RSP_LEN_MASK 0x7f
 
-typedef nx_struct sd_cmd {
-  nx_uint8_t  cmd;		/* high bit says acmd */
+typedef struct sd_cmd {
+  uint8_t     cmd;
   nx_uint32_t arg;
-  nx_uint8_t  crc;
-  nx_uint8_t  rsp[5];
+  uint8_t     crc;
+  uint8_t     rsp[5];
 } sd_cmd_t;
 
 
@@ -171,7 +171,7 @@ typedef struct {
 
 /* Ask the card for the status of the write protection bits */
 #define CMD30 30
-#define SD_SEND_PROTECT CMD29
+#define SD_SEND_PROTECT CMD30
 #define SD_SEND_PROTECT_R R1_LEN
 
 /***************************** Erase commands *******************************/
