@@ -46,23 +46,24 @@ implementation {
      * this should run bytes to the SD card as fast as possible.
      */
 
-    DMA0CTL = DMA1CTL = 0;		/* hit DMA_EN to disable dma engines */
+    DMA0CTL = 0;			/* hit DMA_EN to disable dma engines */
+    DMA1CTL = 0;
     DMA0SA  = (uint16_t) &SD_SPI_RX_BUF;
     DMA0DA  = (uint16_t) &rx;
     DMA0SZ  = number;
-    DMA0CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_EN |
-      DMA_DST_INC | DMA_SRC_NC;
+    DMA0CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_INC | DMA_SRC_NC;
 
     DMA1SA  = (uint16_t) &tx;
     DMA1DA  = (uint16_t) &SD_SPI_TX_BUF;
     DMA1SZ  = number;
-    DMA1CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_EN |
-      DMA_DST_NC | DMA_SRC_INC;
+    DMA1CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_INC;
 
     DMACTL0 = DMA0_TSEL_B0RX | DMA1_TSEL_B0TX;
+    SD_SPI_CLR_TXINT;			/* make sure we get a rising edge */
+    DMA0CTL |= DMA_EN;			/* must be done after TSELs get set */
+    DMA1CTL |= DMA_EN;
 
     t1 = TAR;
-    SD_SPI_CLR_TXINT;
     SD_SPI_SET_TXINT;
     while (DMA0CTL & DMA_EN)		/* wait for chn 0 to finish */
       ;

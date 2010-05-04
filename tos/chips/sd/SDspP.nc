@@ -11,6 +11,12 @@
 #include "sd.h"
 #include "panic.h"
 
+/*
+ * GO_OP_POLL is the time between sending GO_OPs to the SD
+ * when resetting.
+ */
+#define GO_OP_POLL_TIME 4
+
 #ifdef FAIL
 #warning "FAIL defined, undefining, it should be an enum"
 #undef FAIL
@@ -78,7 +84,10 @@ implementation {
   sd_state_t   sd_state;
   uint8_t      cur_cid;			/* current client */
   uint32_t     blk_start, blk_end;
-  void	       *data_ptr;
+  void	      *data_ptr;
+
+  uint8_t idle_byte = 0xff;
+  uint8_t recv_dump;
 
   sd_cmd_blk_t sd_cmd;
 
@@ -174,12 +183,7 @@ implementation {
     if (SD_SPI_OVERRUN)
       sd_warn(22, 0);
 
-    /*
-     * do not explicitly clear the rx interrupt.  reading SD_SPI_RX_BUF will
-     * clear it automatically.
-     */
-//  SD_SPI_CLR_RXINT;
-    return(SD_SPI_RX_BUF);
+    return(SD_SPI_RX_BUF);		/* also clears RXINT */
   }
 
 
@@ -365,15 +369,62 @@ implementation {
   /* sd_delay: send idle data while clocking */
 
   void sd_delay(uint16_t number) {
-    uint16_t i;
+    volatile register uint16_t t0, t1, t2;
 
-    for(i = 0; i < number; i++)
-      sd_put(0xff);
+    t0 = TAR;
+    if (number == 0)
+      return;
+    /*
+     * We use the dma engine to kick out the idle bytes.
+     * To keep from overrunning, we use another dma channel
+     * to suck bytes as they show up.
+     *
+     * priorities are 0 over 1 over 2 so we put RX on channel
+     * 0 so they bytes get pulled prior to a pending tx byte.
+     *
+     * this should run bytes to the SD card as fast as possible.
+     */
+
+    DMA0CTL = 0;			/* hit DMA_EN to disable dma engines */
+    DMA1CTL = 0;
+    DMA0SA  = (uint16_t) &SD_SPI_RX_BUF;
+    DMA0DA  = (uint16_t) &recv_dump;
+    DMA0SZ  = number;
+    DMA0CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_NC;
+
+    DMA1SA  = (uint16_t) &idle_byte;
+    DMA1DA  = (uint16_t) &SD_SPI_TX_BUF;
+    DMA1SZ  = number;
+    DMA1CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_NC;
+
+    DMACTL0 = DMA0_TSEL_B0RX | DMA1_TSEL_B0TX;
+    SD_SPI_CLR_TXINT;			/* make sure we get a rising edge */
+
+    /*
+     * enable dma engines, do rx first.  tx shouldn't take off until we bring
+     * txint back up.
+     */
+    DMA0CTL |= DMA_EN;			/* must be done after TSELs get set */
+    DMA1CTL |= DMA_EN;
+    nop();
+    nop();
+    nop();
+
+    t1 = TAR;
+    SD_SPI_SET_TXINT;
+    while (DMA0CTL & DMA_EN)		/* wait for chn 0 to finish */
+      ;
+
+    t2 = TAR;
+    t2 = t2 - t1;
+    t1 = t1 - t0;
+    DMACTL0 = 0;			/* kick triggers */
+    DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
   }
 
 
   command error_t Init.init() {
-    uint8_t i;
+    uint16_t i;
 
     sd_cmd.cmd = 0xf0;
     sd_cmd.rsp_len = 0;
@@ -467,7 +518,7 @@ implementation {
      */
 
     SD_CSN = 1;				/* force to known state */
-    sd_delay(SD_RESET_IDLES);
+    sd_delay(74);
     u1 = TAR;
     u1 -= u0;
     nop();
@@ -558,7 +609,7 @@ implementation {
 	    signal SDreset.resetDone(FAIL);
 	    return;
 	  }
-	  call SDtimer.startOneShot(45);
+	  call SDtimer.startOneShot(GO_OP_POLL_TIME);
 	  return;
 	}
 
@@ -672,7 +723,7 @@ implementation {
 
   error_t sd_read_data_dma(uint16_t data_len, uint8_t *data) {
     uint16_t i, crc;
-    uint8_t  tmp, idle_byte;
+    uint8_t  tmp;
     sd_cmd_blk_t *cmd;
     
     cmd = &sd_cmd;

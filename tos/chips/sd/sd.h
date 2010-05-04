@@ -54,9 +54,9 @@ typedef enum {
 
 typedef struct {
     uint8_t  cmd;		/* high bit says acmd */
-    uint8_t  rsp_len;		/* how long of a response */
     uint8_t  arg[4];
     uint8_t  rsp[5];
+    uint8_t  rsp_len;		/* how long of a response */
     uint8_t  rsp55;
     uint8_t  stage;		/* where did it bail. */
     uint16_t stage_count;	/* timeout value */

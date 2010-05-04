@@ -1,4 +1,22 @@
 
+#display dma
+define dma
+printf "dctl0: %04x  dctl1: %04x  iv: %04x\n", \
+    *((uint16_t *) 0x122), *((uint16_t *) 0x124), *((uint16_t *) 0x126)
+printf "d0ctl: %04x  d0sa: %04x%04x  d0da: %04x%04x  d0sz: %04x\n", \
+    *((uint16_t *) 0x1d0), *((uint16_t *) 0x1d4), *((uint16_t *) 0x1d2), \
+    *((uint16_t *) 0x1d8), *((uint16_t *) 0x1d6), *((uint16_t *) 0x1da)
+printf "d1ctl: %04x  d1sa: %04x%04x  d1da: %04x%04x  d1sz: %04x\n", \
+    *((uint16_t *) 0x1dc), *((uint16_t *) 0x1e0), *((uint16_t *) 0x1de), \
+    *((uint16_t *) 0x1e4), *((uint16_t *) 0x1e2), *((uint16_t *) 0x1e6)
+printf "d2ctl: %04x  d2sa: %04x%04x  d2da: %04x%04x  d2sz: %04x\n", \
+    *((uint16_t *) 0x1e8), *((uint16_t *) 0x1ec), *((uint16_t *) 0x1ea), \
+    *((uint16_t *) 0x1f0), *((uint16_t *) 0x1ee), *((uint16_t *) 0x1f2)
+end
+document dma
+Display msp430 dma hardware
+end
+
 #display timers
 define dt
 printf "TA: tar: %04x  ccr0: %04x  1: %04x  2: %04x\n",\
