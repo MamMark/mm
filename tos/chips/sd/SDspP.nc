@@ -17,7 +17,6 @@
  */
 #define GO_OP_POLL_TIME 4
 
-
 #ifdef FAIL
 #warning "FAIL defined, undefining, it should be an enum"
 #undef FAIL
@@ -188,6 +187,109 @@ implementation {
   }
 
 
+  /*
+   * sd_start_dma:  Start up dma 0 and 1 for SD/SPI0 access.
+   *
+   * input:  sndbuf	pntr to transmit buffer.  If null 0xff will be sent.
+   *         rcvbuf	pntr to recveive buffer.  If null no rx bytes will be stored.
+   *         length     number of bytes to transfer.   Buffers are assumed to be this size.
+   *
+   * Channel 0 is used to RX and has priority.  Channel 1 for TX.
+   *
+   * If sndbuf is NULL, 0xff  will be sent on the transmit side to facilitate receiving.
+   * If rcvbuf is NULL, a single byte recv_dump is used to receive incoming bytes.  This
+   * is used for transmitting without receiving.
+   *
+   * To use for clocking the sd: sd_start_dma(NULL, NULL, 10)
+   * To use for receiving:       sd_start_dma(NULL, rx_buf, 512)
+   * To use for transmitting:    sd_start_dma(tx_buf, NULL, 512)
+   *
+   */
+
+  void sd_start_dma(uint8_t *sndbuf, uint8_t *rcvbuf, uint16_t length) {
+    volatile register uint16_t u0, u1;
+    volatile register uint16_t d1;
+
+    u0 = TAR;
+
+    if (length == 0)
+      sd_panic(50, length);
+
+    DMA0CTL = 0;			/* hit DMA_EN to disable dma engines */
+    DMA1CTL = 0;
+
+    DMA0SA  = (uint16_t) &SD_SPI_RX_BUF;
+    DMA0SZ  = length;
+    DMA0CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_NC;
+    if (rcvbuf) {
+      /* note we know DMA_DST_NC is 0 so all we need to do is or
+       * in DMA_DST_INC to get the address to increment.
+       */
+      DMA0DA  = (uint16_t) &rcvbuf;
+      DMA0CTL |= DMA_DST_INC;
+    } else
+      DMA0DA  = (uint16_t) &recv_dump;
+
+    DMA1DA  = (uint16_t) &SD_SPI_TX_BUF;
+    DMA1SZ  = length;
+    DMA1CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_NC;
+    if (sndbuf) {
+      DMA1SA  = (uint16_t) &sndbuf;
+      DMA1CTL |= DMA_SRC_INC;
+    } else
+      DMA1SA  = (uint16_t) &idle_byte;
+
+    DMACTL0 = DMA0_TSEL_B0RX | DMA1_TSEL_B0TX;
+
+    /*
+     * enable dma engines, do rx first.  tx shouldn't take off until we bring
+     * txint back up.
+     *
+     * clear, enable, set
+     */
+    SD_SPI_CLR_TXINT;			/* make sure we get a rising edge */
+    DMA0CTL |= DMA_EN;			/* must be done after TSELs get set */
+    DMA1CTL |= DMA_EN;
+    SD_SPI_SET_TXINT;
+
+    u1 = TAR;
+    d1 = u1 - u0;
+    nop();
+  }
+
+
+  /*
+   * sd_wait_dma: busy wait for dma to finish.
+   *
+   * watches channel 0 till DMA_EN goes off.  Channel 0 is RX.
+   *
+   * Also utilizes the SZ register to find out how many bytes remain
+   * and assuming 1uis/byte a reasonable timeout.  A timeout kicks panic.
+   */
+
+  void sd_wait_dma() {
+    uint16_t max_count, t0;
+    volatile register uint16_t u1;
+    volatile register uint16_t d1;
+
+    t0 = TAR;
+
+    max_count = (DMA1SZ * 8);
+
+    while (DMA0CTL & DMA_EN) { 		
+      if ((TAR - t0) > max_count)
+	sd_panic(51, t0);
+    }
+
+    u1 = TAR;
+    d1 = u1 - t0;			/* total time */
+    nop();
+
+    DMACTL0 = 0;			/* kick triggers */
+    DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
+  }
+
+
   const uint8_t cmd55[] = {
     SD_APP_CMD | 0x40,
     0, 0, 0, 0, 0xff,
@@ -198,18 +300,14 @@ implementation {
     uint16_t  i;
     uint8_t   tmp;
     sd_ctl_t *ctl;
+
     volatile register uint16_t u0, u1, u2;
     volatile register uint16_t d1, d2;
 
     u0 = TAR;
 
-    ctl = &sd_ctl;
-    sd_put(SD_APP_CMD | 0x40);		/* CMD55 */
-    sd_put(0);
-    sd_put(0);
-    sd_put(0);
-    sd_put(0);
-    sd_put(0xff);				/* crc, don't care */
+    sd_start_dma((uint8_t *) cmd55, NULL, sizeof(cmd55));
+    sd_wait_dma();
 
     u1 = TAR;
     d1 = u1 - u0;
@@ -220,6 +318,7 @@ implementation {
       i++;
     } while((tmp > 127) && (i < SD_CMD_TIMEOUT));
 
+    ctl = &sd_ctl;
     ctl->rsp55 = tmp;
     ctl->stage_count = i;
 
@@ -302,6 +401,7 @@ implementation {
 
     u1 = TAR;
     d1 = u1 - u0;
+
     ctl->stage = 2;
     sd_put((cmd->cmd & 0x3F) | 0x40);
     ap = (uint8_t *) (&cmd->cmd) + 1;
@@ -551,7 +651,9 @@ implementation {
      */
 
     SD_CSN = 1;				/* force to known state */
-    sd_delay(10);
+    sd_start_dma(NULL, NULL, 10);	/* send 10 0xff to clock SD */
+    sd_wait_dma();
+
     u1 = TAR;
     u1 -= u0;
     nop();
@@ -672,6 +774,7 @@ implementation {
     sd_cmd_t *cmd;
     sd_ctl_t *ctl;
     error_t   err;
+
     volatile uint16_t t0, t1, t2, t3;
     volatile uint16_t d1, d2, d3, d4;
 
@@ -728,7 +831,8 @@ implementation {
 
     SD_CSN = 1;
     /* Send some extra clocks so the card can finish */
-    sd_delay(2);
+    sd_start_dma(NULL, NULL, 2);
+    sd_wait_dma();
 
     t3 = TAR;
     d3 = t3 - t2;    d4 = t3 - t0;
@@ -842,10 +946,11 @@ implementation {
     crc = crc << 8;
     crc |= sd_get();
 
-    /* Deassert CS */
-    SD_CSN = 1;
+    SD_CSN = 1;				/* deassert CS */
+
     /* Send some extra clocks so the card can finish */
-    sd_delay(2);
+    sd_start_dma(NULL, NULL, 2);
+    sd_wait_dma();
     if (sd_check_crc(data, data_len, crc)) {
       sd_panic_idle(40, 0);
       return FAIL;
@@ -1120,7 +1225,8 @@ implementation {
      * Send some extra clocks so the card can finish
      * (Where did this come from?)
      */
-    sd_delay(2);
+    sd_start_dma(NULL, NULL, 2);
+    sd_wait_dma();
 
     i = sd_read_status();
     if (i)
