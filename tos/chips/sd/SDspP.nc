@@ -12,10 +12,11 @@
 #include "panic.h"
 
 /*
-
- * when resetting.
+ * when resetting.   How long to wait before trying to send the GO_OP
+ * to the SD card again.  We let other things happen in the tinyOS system.
  */
 #define GO_OP_POLL_TIME 4
+
 
 #ifdef FAIL
 #warning "FAIL defined, undefining, it should be an enum"
@@ -106,8 +107,9 @@ implementation {
   uint16_t     sd_reset_idles;
   uint16_t     sd_go_op_count, sd_read_count;
 
-  uint32_t     last_reset_time, inst_t0;
-  
+  uint32_t     last_reset_time, reset_t0;
+  uint32_t     last_read_time,  read_t0;
+
 
 #define sd_panic(where, arg) do { call Panic.panic(PANIC_MS, where, arg, 0, 0, 0); } while (0)
 #define  sd_warn(where, arg) do { call  Panic.warn(PANIC_MS, where, arg, 0, 0, 0); } while (0)
@@ -151,7 +153,6 @@ implementation {
     volatile uint16_t t1, t2;
 
     t1 = TAR;
-    sd_chk_clean();
     SD_SPI_TX_BUF = tx_data;
 
     i = SD_PUT_GET_TO;
@@ -171,7 +172,6 @@ implementation {
   uint8_t sd_get() {
     uint16_t i;
 
-    sd_chk_clean();
     SD_SPI_TX_BUF = 0xff;
 
     i = SD_PUT_GET_TO;
@@ -297,6 +297,7 @@ implementation {
      * anything to really make sure that it is set :-).
      */
 
+    sd_chk_clean();
     SD_CSN = 0;
 
     u1 = TAR;
@@ -391,6 +392,7 @@ implementation {
       return FAIL;
     }
 
+    sd_chk_clean();
     SD_CSN = 0;
     ctl->stage = 1;
 
@@ -508,7 +510,7 @@ implementation {
     cmd->arg = length;
     cmd->cmd     = SD_SET_BLOCKLEN;
     ctl->rsp_len = SD_SET_BLOCKLEN_R;
-    return(sd_send_command());
+    return sd_send_command();
   }
 
 
@@ -531,7 +533,7 @@ implementation {
       return EBUSY;
     }
 
-    inst_t0 = call lt.get();
+    reset_t0 = call lt.get();
     sd_state = SDS_RESET;
     cur_cid = -1;			/* reset is not parameterized. */
     cmd = &sd_cmd;
@@ -543,32 +545,13 @@ implementation {
      */
     cmd->arg = 0;
 
-    /* Clock out at least 74 bits of idles (0xFF).  This allows
+    /* Clock out at least 74 bits of idles (0xFF).  Thats 10 bytes. This allows
      * the SD card to complete its power up prior to us talking to
      * the card.
-     *
-     * When experimenting with different SPI clocks (4M ... 400K) and
-     * the power up sequence.  ie.
-     *
-     * power off SD
-     * wait 1 sec
-     * power on
-     * set spi speed
-     * select SD
-     * sd_reset
-     * preliminaries
-     * deselect sd
-     * sd_delay(100)
-     *
-     * If sd_delay is set to 10 then a power on delay is needed.  The
-     * amount of delay depends on which SPI clock is used.  Using an
-     * sd_delay of 100 eliminates the need for the power on delay and
-     * doesn't appreciably change the reset time which is dominated
-     * by the GO_OP (A41) time.
      */
 
     SD_CSN = 1;				/* force to known state */
-    sd_delay(74);
+    sd_delay(10);
     u1 = TAR;
     u1 -= u0;
     nop();
@@ -631,7 +614,7 @@ implementation {
      * crank it up to full speed.  We do everything at full speed so there
      * isn't currently any need.
      */
-    last_reset_time = call lt.get() - inst_t0;
+    last_reset_time = call lt.get() - reset_t0;
     nop();
     sd_state = SDS_IDLE;
     signal SDreset.resetDone(SUCCESS);
@@ -678,10 +661,6 @@ implementation {
   }
 
 
-  void CheckSDPending() {
-  }
-
-
   /*
    * sd_read_data_direct: read data from the SD after sending a command
    *    does not use dma and waits for the data.
@@ -693,7 +672,10 @@ implementation {
     sd_cmd_t *cmd;
     sd_ctl_t *ctl;
     error_t   err;
+    volatile uint16_t t0, t1, t2, t3;
+    volatile uint16_t d1, d2, d3, d4;
 
+    t0 = TAR;
     cmd = &sd_cmd;
     ctl = &sd_ctl;
 
@@ -707,6 +689,9 @@ implementation {
       call Panic.panic(PANIC_MS, 38, cmd->cmd, cmd->rsp[0], 0, 0);
       return FAIL;
     }
+
+    t1 = TAR;
+    d1 = t1 - t0;
 
     /* Re-assert CS to continue the transfer */
     SD_CSN = 0;
@@ -730,6 +715,9 @@ implementation {
       return FAIL;
     }
 
+    t2 = TAR;
+    d2 = t2 - t1;
+
     err = SUCCESS;
     for (i = 0; i < data_len; i++)
       data[i] = sd_get();
@@ -741,6 +729,10 @@ implementation {
     SD_CSN = 1;
     /* Send some extra clocks so the card can finish */
     sd_delay(2);
+
+    t3 = TAR;
+    d3 = t3 - t2;    d4 = t3 - t0;
+    nop();
 
     sd_state = SDS_IDLE;
     return SUCCESS;
@@ -879,8 +871,21 @@ implementation {
 
 
   task void sd_read_task() {
+    sd_cmd_t *cmd;
+    sd_ctl_t *ctl;
     error_t err;
     uint8_t *d;
+
+    read_t0 = call lt.get();
+
+    cmd = &sd_cmd;
+    ctl = &sd_ctl;
+
+    cmd->arg = (blk_start << SD_BLOCKSIZE_NBITS);
+
+    /* Need to add size checking, 0 = success */
+    cmd->cmd     = SD_READ_BLOCK;
+    ctl->rsp_len = SD_READ_BLOCK_R;
 
     err = sd_read_data_direct(SD_BLOCKSIZE, data_ptr);
     if (err) {
@@ -905,6 +910,8 @@ implementation {
 	return;
       }
     }
+    last_read_time = call lt.get() - read_t0;
+    nop();
     signal SDread.readDone[cur_cid](blk_start, data_ptr, SUCCESS);
   }
 
@@ -918,9 +925,6 @@ implementation {
    */
 
   command error_t SDread.read[uint8_t cid](uint32_t blockaddr, void *data) {
-    sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
-
     if (sd_state) {
       sd_panic_idle(43, sd_state);
       return EBUSY;
@@ -930,20 +934,6 @@ implementation {
     cur_cid = cid;
     blk_start = blockaddr;
     data_ptr = data;
-
-    cmd = &sd_cmd;
-    ctl = &sd_ctl;
-
-    /* Adjust the block address to a byte address */
-    blockaddr <<= SD_BLOCKSIZE_NBITS;
-
-    /* Pack the address */
-    cmd->arg = blockaddr;
-
-    /* Need to add size checking, 0 = success */
-    cmd->cmd     = SD_READ_BLOCK;
-    ctl->rsp_len = SD_READ_BLOCK_R;
-
     post sd_read_task();
     return SUCCESS;
   }
