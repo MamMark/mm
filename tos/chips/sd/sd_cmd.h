@@ -34,6 +34,7 @@ typedef struct sd_cmd {
 typedef struct {
   uint8_t  rsp_len;		/* how long of a response */
   uint8_t  rsp55;
+  uint16_t cmd55_delta;
   uint8_t  stage;		/* where did it bail. */
   uint16_t stage_count;	/* timeout value */
 } sd_ctl_t;
@@ -74,21 +75,6 @@ typedef struct {
 */
 #define MSK_OCR_33 0xC0
 
-/* Number of times to retry the probe cycle during initialization */
-#define SD_INIT_TRY 50
-
-/* SD_GO_OP_MAX
- *
- * when resetting, we periodically send SD_GO_OP to take the card out
- * of reset.   We poll for the result and finish when the card comes
- * out of idle.  GO_OP_MAX is the maximum number of times we try
- * before giving up.
- */
-
-#define SD_GO_OP_MAX 512
-
-/* Hardcoded timeout for commands. */
-#define SD_CMD_TIMEOUT 1024
 
 /******************************** Basic command set **************************/
 

@@ -206,7 +206,7 @@ implementation {
    *
    */
 
-  void sd_start_dma(uint8_t *sndbuf, uint8_t *rcvbuf, uint16_t length) {
+  void sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length) {
     volatile register uint16_t u0, u1;
     volatile register uint16_t d1;
 
@@ -221,11 +221,11 @@ implementation {
     DMA0SA  = (uint16_t) &SD_SPI_RX_BUF;
     DMA0SZ  = length;
     DMA0CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_NC;
-    if (rcvbuf) {
+    if (rcvptr) {
       /* note we know DMA_DST_NC is 0 so all we need to do is or
        * in DMA_DST_INC to get the address to increment.
        */
-      DMA0DA  = (uint16_t) &rcvbuf;
+      DMA0DA  = (uint16_t) rcvptr;
       DMA0CTL |= DMA_DST_INC;
     } else
       DMA0DA  = (uint16_t) &recv_dump;
@@ -233,8 +233,8 @@ implementation {
     DMA1DA  = (uint16_t) &SD_SPI_TX_BUF;
     DMA1SZ  = length;
     DMA1CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_NC;
-    if (sndbuf) {
-      DMA1SA  = (uint16_t) &sndbuf;
+    if (sndptr) {
+      DMA1SA  = (uint16_t) sndptr;
       DMA1CTL |= DMA_SRC_INC;
     } else
       DMA1SA  = (uint16_t) &idle_byte;
@@ -301,16 +301,12 @@ implementation {
     uint8_t   tmp;
     sd_ctl_t *ctl;
 
-    volatile register uint16_t u0, u1, u2;
-    volatile register uint16_t d1, d2;
+    uint16_t t0;
 
-    u0 = TAR;
+    t0 = TAR;
 
     sd_start_dma((uint8_t *) cmd55, NULL, sizeof(cmd55));
     sd_wait_dma();
-
-    u1 = TAR;
-    d1 = u1 - u0;
 
     i=0;
     do {
@@ -331,10 +327,7 @@ implementation {
     if (tmp != 0xff)		/* should be idle bus (high) */
       sd_warn(24, tmp);
 
-    u2 = TAR;
-    d2 = u2 - u1;
-    nop();
-
+    ctl->cmd55_delta = TAR - t0;
     return SUCCESS;
   }
 
@@ -359,7 +352,6 @@ implementation {
     uint8_t   tmp;
     sd_cmd_t *cmd;
     sd_ctl_t *ctl;
-    uint8_t  *ap;
 
     /* instrumentation
      *
@@ -403,19 +395,9 @@ implementation {
     d1 = u1 - u0;
 
     ctl->stage = 2;
-    sd_put((cmd->cmd & 0x3F) | 0x40);
-    ap = (uint8_t *) (&cmd->cmd) + 1;
-    i = 0;
-    do
-      sd_put(ap[i++]);
-    while (i < 4);
-
-    /* This is the CRC. It only matters what we put here for the first
-     * command. Otherwise, the CRC is ignored for SPI mode unless we
-     * enable CRC checking which we don't because it is a royal pain
-     * in the ass.
-     */
-    sd_put(0x95);
+    cmd->crc = 0x95;
+    sd_start_dma(&cmd->cmd, NULL, 6);
+    sd_wait_dma();
 
     u2 = TAR;
     d2 = u2 - u1;
@@ -512,63 +494,6 @@ implementation {
     nop();
 
     return sd_send_command();
-  }
-
-
-  /* sd_delay: send idle data while clocking */
-
-  void sd_delay(uint16_t number) {
-    volatile register uint16_t t0, t1, t2, t3;
-
-    t0 = TAR;
-    if (number == 0)
-      return;
-
-    /*
-     * We use the dma engine to kick out the idle bytes.
-     * To keep from overrunning, we use another dma channel
-     * to suck bytes as they show up.
-     *
-     * priorities are 0 > 1 > 2.  RX has priority on channel
-     * 0 so any bytes get pulled prior to a pending tx byte.
-     *
-     * this should run bytes to the SD card as fast as possible.
-     */
-
-    DMA0CTL = 0;			/* hit DMA_EN to disable dma engines */
-    DMA1CTL = 0;
-    DMA0SA  = (uint16_t) &SD_SPI_RX_BUF;
-    DMA0DA  = (uint16_t) &recv_dump;
-    DMA0SZ  = number;
-    DMA0CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_NC;
-
-    DMA1SA  = (uint16_t) &idle_byte;
-    DMA1DA  = (uint16_t) &SD_SPI_TX_BUF;
-    DMA1SZ  = number;
-    DMA1CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_NC;
-
-    DMACTL0 = DMA0_TSEL_B0RX | DMA1_TSEL_B0TX;
-    SD_SPI_CLR_TXINT;			/* make sure we get a rising edge */
-
-    /*
-     * enable dma engines, do rx first.  tx shouldn't take off until we bring
-     * txint back up.
-     */
-    DMA0CTL |= DMA_EN;			/* must be done after TSELs get set */
-    DMA1CTL |= DMA_EN;
-
-    t1 = TAR;
-    SD_SPI_SET_TXINT;
-    while (DMA0CTL & DMA_EN)		/* wait for chn 0 to finish */
-      ;
-
-    t2 = TAR;
-    t3 = t2 - t0;			/* total time */
-    t2 = t2 - t1;			/* data transfer time */
-    t1 = t1 - t0;			/* preamble */
-    nop();
-    DMACTL0 = 0;			/* kick triggers */
-    DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
   }
 
 
@@ -746,7 +671,7 @@ implementation {
 	if (cmd->rsp[0] & MSK_IDLE) {
 	  /* idle bit still set, means card is still in reset */
 	  if (++sd_go_op_count >= SD_GO_OP_MAX) {
-	    sd_panic_idle(36, 0);			// We maxed the tries, panic and fail
+	    sd_panic_idle(36, sd_go_op_count);			// We maxed the tries, panic and fail
 	    signal SDreset.resetDone(FAIL);
 	    return;
 	  }
@@ -764,94 +689,17 @@ implementation {
 
 
   /*
-   * sd_read_data_direct: read data from the SD after sending a command
-   *    does not use dma and waits for the data.
-   */
-
-  error_t sd_read_data_direct(uint16_t data_len, uint8_t *data) {
-    uint16_t  i;
-    uint8_t   tmp;
-    sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
-    error_t   err;
-
-    volatile uint16_t t0, t1, t2, t3;
-    volatile uint16_t d1, d2, d3, d4;
-
-    t0 = TAR;
-    cmd = &sd_cmd;
-    ctl = &sd_ctl;
-
-    if (sd_send_command()) {
-      sd_panic_idle(37, 0);
-      return FAIL;
-    }
-
-    /* Check for an error, like a misaligned read */
-    if (cmd->rsp[0] != 0) {
-      call Panic.panic(PANIC_MS, 38, cmd->cmd, cmd->rsp[0], 0, 0);
-      return FAIL;
-    }
-
-    t1 = TAR;
-    d1 = t1 - t0;
-
-    /* Re-assert CS to continue the transfer */
-    SD_CSN = 0;
-
-    /* Wait for the token */
-    i=0;
-    do {
-      tmp = sd_get();
-      i++;
-    } while ((tmp == 0xFF) && i < SD_READ_TIMEOUT);
-    sd_rd_timeout = i;
-
-    if ((tmp & MSK_TOK_DATAERROR) == 0 || i >= SD_READ_TIMEOUT) {
-      /*
-       * Clock out a byte before returning, let SD finish
-       * what is this based on?
-       */
-      sd_put(0xff);
-
-      /* The card returned an error, or timed out. */
-      return FAIL;
-    }
-
-    t2 = TAR;
-    d2 = t2 - t1;
-
-    err = SUCCESS;
-    for (i = 0; i < data_len; i++)
-      data[i] = sd_get();
-
-    /* Ignore the CRC */
-    sd_get();
-    sd_get();
-
-    SD_CSN = 1;
-    /* Send some extra clocks so the card can finish */
-    sd_start_dma(NULL, NULL, 2);
-    sd_wait_dma();
-
-    t3 = TAR;
-    d3 = t3 - t2;    d4 = t3 - t0;
-    nop();
-
-    sd_state = SDS_IDLE;
-    return SUCCESS;
-  }
-
-
-  /* sd_check_crc
+   * sd_check_crc
    *
    * i: data	pointer to a 512 byte + 2 bytes of CRC at end (514)
    *
    * o: rtn	0 (SUCCESS) if crc is okay
    *		1 (FAIL) crc didn't check.
+   *
+   * SD_BLOCKSIZE+2 is the size of the buffer (2 is crc at end)
    */
 
-  int sd_check_crc(uint8_t *data, uint16_t len, uint16_t crc) {
+  int sd_check_crc(uint8_t *data, uint16_t crc) {
     return SUCCESS;
   }
 
@@ -868,94 +716,6 @@ implementation {
   void sd_compute_crc(uint8_t *data) {
     //    data[512] = 0;
     //    data[513] = 0;
-  }
-
-
-  /*
-   * sd_read_data_dma: read data from the SD after sending a command
-   */
-
-  error_t sd_read_data_dma(uint16_t data_len, uint8_t *data) {
-    uint16_t      i, crc;
-    uint8_t       tmp;
-    sd_cmd_t     *cmd;
-    
-    cmd = &sd_cmd;
-    if (sd_send_command())
-      return FAIL;
-
-    /* Check for an error, like a misaligned read */
-    if (cmd->rsp[0] != 0) {
-      sd_panic_idle(39, 0);
-      return FAIL;
-    }
-
-    /* Re-assert CS to continue the transfer */
-    SD_CSN = 0;
-
-    /* Wait for the token */
-    i=0;
-    do {
-      tmp = sd_get();
-      i++;
-    } while ((tmp == 0xFF) && i < SD_READ_TIMEOUT);
-    sd_rd_timeout = i;
-
-    if ((tmp & MSK_TOK_DATAERROR) == 0 || i >= SD_READ_TIMEOUT) {
-      /* Clock out a byte before returning, let SD finish */
-      sd_get();
-
-      /* The card returned an error, or timed out. */
-      return FAIL;
-    }
-
-    DMA0CTL = 0;			/* hit DMA_EN to disable dma engines */
-    DMA1CTL = 0;
-    DMA0SA  = (uint16_t) &SD_SPI_RX_BUF;
-    DMA0DA  = (uint16_t) data;
-    DMA0SZ  = data_len;
-    DMA0CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_INC | DMA_SRC_NC;
-
-    DMA1SA  = (uint16_t) &idle_byte;
-    DMA1DA  = (uint16_t) &SD_SPI_TX_BUF;
-    DMA1SZ  = data_len;
-    DMA1CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_NC;
-
-    DMACTL0 = DMA0_TSEL_B0RX | DMA1_TSEL_B0TX;
-    SD_SPI_CLR_TXINT;			/* make sure we get a rising edge */
-
-    /*
-     * enable dma engines, do rx first.  tx shouldn't take off until we bring
-     * txint back up.
-     */
-    DMA0CTL |= DMA_EN;			/* must be done after TSELs get set */
-    DMA1CTL |= DMA_EN;
-
-    SD_SPI_SET_TXINT;
-
-    /*
-     * need to put a timeout bail just in case it doesn't finish
-     */
-    while (DMA0CTL & DMA_EN)		/* wait for chn 0 to finish */
-      ;
-
-    DMACTL0 = 0;			/* kick triggers */
-    DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
-
-    crc = sd_get();
-    crc = crc << 8;
-    crc |= sd_get();
-
-    SD_CSN = 1;				/* deassert CS */
-
-    /* Send some extra clocks so the card can finish */
-    sd_start_dma(NULL, NULL, 2);
-    sd_wait_dma();
-    if (sd_check_crc(data, data_len, crc)) {
-      sd_panic_idle(40, 0);
-      return FAIL;
-    }
-    return SUCCESS;
   }
 
 
@@ -976,25 +736,23 @@ implementation {
 
 
   task void sd_read_task() {
-    sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
-    error_t err;
     uint8_t *d;
+    uint16_t crc;
 
-    read_t0 = call lt.get();
+    sd_wait_dma();
 
-    cmd = &sd_cmd;
-    ctl = &sd_ctl;
+    crc = sd_get();
+    crc = crc << 8;
+    crc |= sd_get();
 
-    cmd->arg = (blk_start << SD_BLOCKSIZE_NBITS);
+    SD_CSN = 1;				/* deassert CS */
 
-    /* Need to add size checking, 0 = success */
-    cmd->cmd     = SD_READ_BLOCK;
-    ctl->rsp_len = SD_READ_BLOCK_R;
-
-    err = sd_read_data_direct(SD_BLOCKSIZE, data_ptr);
-    if (err) {
-      signal SDread.readDone[cur_cid](blk_start, data_ptr, err);
+    /* Send some extra clocks so the card can finish */
+    sd_start_dma(NULL, NULL, 2);
+    sd_wait_dma();
+    if (sd_check_crc(data_ptr, crc)) {
+      sd_panic_idle(40, 0);
+      signal SDread.readDone[cur_cid](blk_start, data_ptr, FAIL);
       return;
     }
 
@@ -1006,15 +764,9 @@ implementation {
      * had better work.
      */
     d = data_ptr;
-    if (*d == 0xfe) {
+    if (*d == 0xfe)
       sd_warn(41, *d);
-      err = sd_read_data_direct(SD_BLOCKSIZE, data_ptr);
-      if (err) {
-	sd_panic_idle(42, err);
-	signal SDread.readDone[cur_cid](blk_start, data_ptr, err);
-	return;
-      }
-    }
+
     last_read_time = call lt.get() - read_t0;
     nop();
     signal SDread.readDone[cur_cid](blk_start, data_ptr, SUCCESS);
@@ -1030,45 +782,66 @@ implementation {
    */
 
   command error_t SDread.read[uint8_t cid](uint32_t blockaddr, void *data) {
+    sd_cmd_t *cmd;
+    sd_ctl_t *ctl;
+    uint16_t i;
+    uint8_t  tmp;
+
     if (sd_state) {
       sd_panic_idle(43, sd_state);
       return EBUSY;
     }
 
+    read_t0 = call lt.get();
+
     sd_state = SDS_READ;
     cur_cid = cid;
     blk_start = blockaddr;
     data_ptr = data;
-    post sd_read_task();
-    return SUCCESS;
-  }
-
-
-  /* sd_read8
-   *
-   * read a buffer from the SD that is 8 only long.  Used for
-   * looking at the 1st 8 bytes of each sector.
-   *
-   * Assumes that a sd_set_blocklen(8) has been executed.  After
-   * the user is done with reading 1st 8 make sure you reset
-   * the blocklen back to 512.  Otherwise things get weird.  (timeouts)
-   */
-
-  error_t sd_read8(uint32_t blockaddr, uint8_t *data) {
-    sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
 
     cmd = &sd_cmd;
     ctl = &sd_ctl;
 
-    /* Adjust the block address to a byte address */
-    blockaddr <<= SD_BLOCKSIZE_NBITS;
-    cmd->arg = blockaddr;
-
     /* Need to add size checking, 0 = success */
     cmd->cmd     = SD_READ_BLOCK;
     ctl->rsp_len = SD_READ_BLOCK_R;
-    return(sd_read_data_direct(8, data));
+    cmd->arg = (blk_start << SD_BLOCKSIZE_NBITS);
+
+    if (sd_send_command()) {
+      sd_panic_idle(39, 0);
+      return FAIL;
+    }
+
+    /* Check for an error, like a misaligned read */
+    if (cmd->rsp[0] != 0) {
+      sd_panic_idle(39, cmd->rsp[0]);
+      return FAIL;
+    }
+
+    /* Re-assert CS to continue the transfer */
+    SD_CSN = 0;
+
+    /* Wait for the token */
+    i=0;
+    do {
+      tmp = sd_get();
+      i++;
+    } while ((tmp == 0xFF) && i < SD_READ_TIMEOUT);
+
+    sd_rd_timeout = i;
+
+    if ((tmp & MSK_TOK_DATAERROR) == 0 || i >= SD_READ_TIMEOUT) {
+      /* Clock out a byte before returning, let SD finish */
+      sd_get();
+
+      /* The card returned an error, or timed out. */
+      sd_panic_idle(39, 0);
+      return FAIL;
+    }
+
+    sd_start_dma(NULL, data, SD_BLOCKSIZE);
+    post sd_read_task();
+    return SUCCESS;
   }
 
 
