@@ -20,9 +20,6 @@ configuration SDspC {
 }
 
 implementation {
-  components MainC;
-  MainC.SoftwareInit -> SDspP;
-
   components SDspP;
   SDreset = SDspP;
   SDread  = SDspP;
