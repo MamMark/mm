@@ -75,7 +75,7 @@
  *    for the data.
  *
  * 3) The request will be placed in the next free read request block.
- *    and the reader semaphore will be kicked to wake up the reader.
+ *    And the reader signalled that a new request is pending.
  */
 
 typedef enum {
@@ -96,7 +96,7 @@ typedef struct {
     uint16_t majik;
     ss_req_state_t req_state;
     uint32_t stamp;
-    uint8_t  buf[SS_BLOCK_SIZE + 2]; /* include room for CRC */
+    uint8_t  buf[SD_BUF_SIZE];		/* include room for CRC */
 } ss_wr_req_t;
 
 

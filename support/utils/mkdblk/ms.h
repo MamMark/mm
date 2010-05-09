@@ -11,12 +11,14 @@
 #define _MS_H
 
 /* needs to agree with SECTOR_SIZE and SD_BLOCKSIZE
-   yeah it is stupid and ugly
+   MS_BUF_SIZE includes CRC bytes.
+   yeah it is stupid and ugly.
 
    MS_CRITICAL_BUFS is the number of full buffers that
    will force the MS system to take the usart h/w.
 */
 #define MS_BLOCK_SIZE 512
+#define MS_BUF_SIZE   514
 #define MS_NUM_BUFS   4
 #define MS_CRITICAL_BUFS 3
 
@@ -76,7 +78,7 @@ typedef enum {
 typedef struct {
     uint16_t majik;
     ms_buf_state_t buf_state;
-    uint8_t  buf[MS_BLOCK_SIZE + 2]; /* include crc */
+    uint8_t  buf[MS_BUF_SIZE];		/* includes crc */
 } ms_handle_t;
 
 

@@ -4,6 +4,7 @@ MM3 version changed to reflect MM4 changes.
 
 Overview of MamMark 4 Communications Sub-system
 
+
 1. MamMark 4 Hardware.
 
 The MamMark 4 is a small embedded computer system intended to be used to
@@ -27,24 +28,30 @@ monitor marine and terrestrial animals.  Its hardware includes:
 
 2. Mass Storage
 
-Mass Storage is implemented using a 2 Gigabyte Secure Digital card.  A
-custom SD driver implements the interface to the SD card.  The card sits
-on the SPI bus and must arbritrate for any shared resources before access.
-Data going to the SD card is packetized into sectors of 512 bytes.
+Mass Storage is implemented using Secure Digital cards (full size,
+micro-sd).  Currently the driver only supports the 1st generation of
+the SD protocol which limits the size to 2 gigabytes.
 
-The driver is forced to poll the SD card when implementing the SD protocol.
-No hardware events are available.  This requires either busy wait delays or
-using timers.  Timers have somewhat higher overhead while the busy waits keeps
-the cpu busy.  The driver was ported from a previous design (non-TinyOS) and the
-least expensive (in terms of development effort) implementation uses threads.
+A custom SD driver implements the interface to the SD card.  The card
+sits on a dedicated SPI/USCI bus and is shared between users.  A power
+and configuration module controls turning the card on and off and
+configuration of i/o pins.  Data going to and from the card is in
+blocks of 514 bytes.  This is a sector size of 512 bytes and 2 bytes
+of CRC.
+
+SD cards provide no provisions to signal to a s/w driver that
+attention is needed (no h/w events, interrupts, etc).  The driver
+implements polling using tinyos timers when doing reset operations and
+other operations when reading and writing.
+
+The driver is fully event driven and the interface to it is split
+phase.  An operation is started up and when completed by the driver a
+coresponding completion signal is generated.  See SDsp.nc for details
+of the interface.
 
 The storage system uses a fixed number of buffers to feed the data stream going
 to the SD card.  If these buffers get exhausted a failure is signaled.
 
-The primary impact on the rest of the system is the necessity of sharing.
-Mechanisms are needed that allow other subsystems to signal the need for the
-resource.  The owner can then decide when it is appropriate to release the
-resource followed by an appropriate rerequest.
 
 3. Communications Structure
 

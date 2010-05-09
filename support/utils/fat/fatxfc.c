@@ -33,8 +33,8 @@
  *    (could be a multiple).
  *
  * 2) Block size is also chosen taking into account where the data
- *    lives in i/o memory.  On the MSP420 there is only 10K of RAM so
- *    a block of 512 is reasonable.
+ *    lives in i/o memory.  The msp430f1611 has 10k while the
+ *    msp430f2618 only 8K.  A block size of 512 seems reasonable.
  *
  * 3) Blocks are referenced via a blk_id.  32 bits max in length.
  *    With a block size of 512 bytes this allows storage of up to
@@ -56,14 +56,16 @@
  *
  * 4) Ability to find configuration files in the root directory
  *
- * 5) Ability to find a data file (data block, dblk).  A data file has
- *    a unique name (ie. data0001) and consists of contiguous sectors
- *    typically the remainder of the storage device (less any
- *    pre-existing files on the device).
+ * 5) Ability to find one or more data files (data block, dblk).
+ *    A data file has a unique name (ie. data0001) and consists of
+ *    contiguous sectors typically the remainder of the storage
+ *    device (less any pre-existing files on the device).  The size
+ *    is also limited by the size limit of FAT filesystem.  32 bits
+ *    of size.
  *
  * 6) Ability to close off a data file at a particular block and
  *    create a new data file that contains the remainder of unused
- *    space from the previous data file.
+ *    space from the previous data file.  (Not supported)
  *
  * 7) Long file names are not supported.
  *

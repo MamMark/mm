@@ -34,7 +34,7 @@ module mmC {
 }
 
 implementation {
-  uint8_t temp_buf[512];
+  uint8_t temp_buf[514];
 
   event void Boot.booted() {
 

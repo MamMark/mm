@@ -18,7 +18,22 @@
 #define SD_BLOCKSIZE 512
 #define SD_BLOCKSIZE_NBITS 9
 
-#define SD_READ_TIMEOUT  32768UL
+/*
+ * all data transfers to/from the SD include a 2 byte crc which is
+ * assumed to be included in any buffers passed into the SD driver.
+ */
+#define SD_BUF_SIZE 514
+
+/*
+ * read.read launches a read and then polls the SD card
+ * waiting for the card to say it has the data ready.  The
+ * SD card starts sending the data using a START_TOKEN.
+ * We will poll a maximum of SD_READ_TOK_MAX times before
+ * bitching
+ */
+#define SD_READ_TOK_MAX 512
+
+
 #define SD_WRITE_TIMEOUT 32768UL
 
 
