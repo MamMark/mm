@@ -51,18 +51,7 @@ module SD_PwrConfigP {
 
 implementation {
 
-#define SPI_8MIHZ_DIV    1
-
-  const msp430_spi_union_config_t sd_full_config = { {
-    ubr		: SPI_8MIHZ_DIV,	/* full speed */
-    ucmode	: 0,			/* 3 pin master, no ste */
-    ucmst	: 1,
-    uc7bit	: 0,			/* 8 bit */
-    ucmsb	: 1,			/* msb first, compatible with msp430 usart */
-    ucckpl	: 0,			/* inactive state low */
-    ucckph	: 1,			/* data captured on rising, changed falling */
-    ucssel	: 2,			/* smclk */
-    } };
+#include "platform_sd_spi.h"
 
   /*
    * .granted: power down the SD.
