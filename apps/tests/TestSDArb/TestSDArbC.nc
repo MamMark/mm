@@ -12,7 +12,9 @@ implementation {
 
   components new SD_ArbC() as SD;
   App.Resource -> SD;
-  App.SDread -> SD;
+  App.SDread   -> SD;
+  App.SDwrite  -> SD;
+  App.SDerase  -> SD;
 
   components FileSystemC as FS;
   App.FS_OutBoot -> FS;

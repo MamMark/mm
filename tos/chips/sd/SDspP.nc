@@ -30,6 +30,7 @@ typedef enum {
   SDS_RESET,
   SDS_READ,
   SDS_WRITE,
+  SDS_WRITE_BUSY,
   SDS_ERASE,
 } sd_state_t;
 
@@ -48,10 +49,12 @@ module SDspP {
   }
   uses {
     interface HplMsp430UsciB as Umod;
-//    interface HplMsp430UsciInterrupts as UsciInterrupts;
     interface Panic;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
+
+//    interface HplMsp430UsciInterrupts as UsciInterrupts;
+
   }
 }
 
@@ -100,12 +103,12 @@ implementation {
   uint16_t     sd_r1b_timeout;
   uint16_t     sd_wr_timeout;
   uint16_t     sd_reset_timeout;
-  uint16_t     sd_busy_timeout;
   uint16_t     sd_reset_idles;
   uint16_t     sd_go_op_count, sd_read_count;
 
   uint16_t     sd_read_tok_count;	/* how many times we've looked for a read token */
   uint16_t     tmp_rd_post;
+  uint16_t     sd_busy_count;
 
   /*
    * these times are in mis.
@@ -152,11 +155,10 @@ implementation {
 #endif
   }
 
+
   void sd_put(uint8_t tx_data) {
     uint16_t i;
-    volatile uint16_t t1, t2;
 
-    t1 = TAR;
     SD_SPI_TX_BUF = tx_data;
 
     i = SD_PUT_GET_TO;
@@ -166,10 +168,8 @@ implementation {
       sd_warn(19, 0);
     if (SD_SPI_OVERRUN)
       sd_warn(20, 0);
+
     tx_data = SD_SPI_RX_BUF;
-    t2 = TAR;
-    nop();
-    t1 = t2 - t1;
   }
 
 
@@ -213,14 +213,11 @@ implementation {
    */
 
   void sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length) {
-    volatile register uint16_t u0, u1;
-    volatile register uint16_t d1;
     uint8_t first_byte;
 
-    u0 = TAR;
-
+    sd_chk_clean();
     if (length == 0)
-      sd_panic(50, length);
+      sd_panic(23, length);
 
     DMA0CTL = 0;			/* hit DMA_EN to disable dma engines */
     DMA1CTL = 0;
@@ -276,9 +273,6 @@ implementation {
     DMA1CTL |= DMA_EN;
 
     SD_SPI_TX_BUF = first_byte;		/* start dma up */
-
-    u1 = TAR;
-    d1 = u1 - u0;
     nop();
   }
 
@@ -303,7 +297,7 @@ implementation {
 
     while (DMA0CTL & DMA_EN) {
       if ((TAR - t0) > max_count) {
-	sd_panic(51, max_count);
+	sd_panic(24, max_count);
 	return;
       }
     }
@@ -346,13 +340,13 @@ implementation {
     ctl->stage_count = i;
 
     if (i >= SD_CMD_TIMEOUT) {
-      sd_warn(23, i);
+      sd_warn(25, i);
       return FAIL;
     }
 
     tmp = sd_get();		/* finish the command */
     if (tmp != 0xff)		/* should be idle bus (high) */
-      sd_warn(24, tmp);
+      sd_warn(26, tmp);
 
     ctl->cmd55_delta = TAR - t0;
     return SUCCESS;
@@ -376,7 +370,7 @@ implementation {
   int sd_send_command() {
     uint16_t  i;
     uint16_t  rsp_len;
-    uint8_t   tmp;
+    uint8_t   tmp, tmp1;
     sd_cmd_t *cmd;
     sd_ctl_t *ctl;
 
@@ -404,7 +398,7 @@ implementation {
     ctl = &sd_ctl;
     rsp_len = ctl->rsp_len & RSP_LEN_MASK;
     if (rsp_len != 1 && rsp_len != 2 && rsp_len != 5) {
-      sd_panic(25, rsp_len);
+      sd_panic(27, rsp_len);
       return FAIL;
     }
 
@@ -453,7 +447,7 @@ implementation {
       cmd->rsp[i++] = sd_get();
 
     ctl->stage = 3;
-    tmp = sd_get();
+    tmp = sd_get();   tmp1 = sd_get();
     if (tmp != 0xff)
       sd_warn(29, tmp);
 
@@ -497,7 +491,7 @@ implementation {
     ctl = &sd_ctl;
     rsp_len = ctl->rsp_len & RSP_LEN_MASK;
     if (rsp_len != 1 && rsp_len != 2 && rsp_len != 5) {
-      sd_panic(25, rsp_len);
+      sd_panic(30, rsp_len);
       return FAIL;
     }
 
@@ -512,7 +506,7 @@ implementation {
     if (tmp) {
       /* failed, how odd */
       SD_CSN = 1;
-      sd_warn(27, tmp);
+      sd_warn(31, tmp);
       return FAIL;
     }
 
@@ -566,7 +560,7 @@ implementation {
 
     u0 = TAR;
     if (sd_state) {
-      sd_panic_idle(30, sd_state);
+      sd_panic_idle(32, sd_state);
       return EBUSY;
     }
 
@@ -599,7 +593,7 @@ implementation {
     cmd->cmd     = SD_FORCE_IDLE;       // Send CMD0, software reset
     ctl->rsp_len = SD_FORCE_IDLE_R;
     if (sd_send_command()) {
-      sd_panic_idle(31, 0);
+      sd_panic_idle(33, 0);
       return FAIL;
     }
 
@@ -628,21 +622,21 @@ implementation {
     cmd->cmd     = SD_SEND_OCR;
     ctl->rsp_len = SD_SEND_OCR_R;
     if (sd_send_command()) {
-      sd_panic_idle(32, 0);
+      sd_panic_idle(34, 0);
       signal SDreset.resetDone(FAIL);
       return;
     }
 
     /* At a very minimum, we must allow 3.3V. */
     if ((cmd->rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
-      sd_panic_idle(33, cmd->rsp[2]);
+      sd_panic_idle(35, cmd->rsp[2]);
       signal SDreset.resetDone(FAIL);
       return;
     }
 
     /* Set the block length */
     if (sd_set_blocklen(SD_BLOCKSIZE)) {
-      sd_panic_idle(34, 0);
+      sd_panic_idle(36, 0);
       signal SDreset.resetDone(FAIL);
       return;
     }
@@ -677,7 +671,7 @@ implementation {
 	cmd->cmd     = SD_GO_OP;            //Send ACMD41
 	ctl->rsp_len = SD_GO_OP_R;
 	if (sd_send_acmd()) {
-	  sd_panic_idle(35, 0);
+	  sd_panic_idle(37, 0);
 	  signal SDreset.resetDone(FAIL);
 	  return;
 	}
@@ -685,7 +679,7 @@ implementation {
 	if (cmd->rsp[0] & MSK_IDLE) {
 	  /* idle bit still set, means card is still in reset */
 	  if (++sd_go_op_count >= SD_GO_OP_MAX) {
-	    sd_panic_idle(36, sd_go_op_count);			// We maxed the tries, panic and fail
+	    sd_panic_idle(38, sd_go_op_count);			// We maxed the tries, panic and fail
 	    signal SDreset.resetDone(FAIL);
 	    return;
 	  }
@@ -844,7 +838,7 @@ implementation {
     sd_ctl_t *ctl;
 
     if (sd_state) {
-      sd_panic_idle(43, sd_state);
+      sd_panic_idle(42, sd_state);
       return EBUSY;
     }
 
@@ -864,13 +858,13 @@ implementation {
     cmd->arg = (blk_start << SD_BLOCKSIZE_NBITS);
 
     if (sd_send_command()) {
-      sd_panic_idle(39, 0);
+      sd_panic_idle(43, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned read */
     if (cmd->rsp[0] != 0) {
-      sd_panic_idle(39, cmd->rsp[0]);
+      sd_panic_idle(44, cmd->rsp[0]);
       return FAIL;
     }
 
@@ -895,42 +889,42 @@ implementation {
    */
 
   task void sd_write_task() {
-    uint16_t i;
+    uint16_t i;		volatile uint16_t u0;
     uint8_t  tmp;
 
-    sd_wait_dma();
+    u0 = TAR;
 
-#ifdef notdef
-    /*
-     * SD should tell us if it accepted the data block
-     */
-    i=0;
-    do {
+    if (sd_state == SDS_WRITE) {
+
+      sd_wait_dma();
+
+      /*
+       * After the data block is accepted the SD sends a data response token
+       * that tells whether it accepted the block.  0x05 says all is good.
+       */
       tmp = sd_get();
-      i++;
-      time_get_cur(&t);
-    } while ((tmp == 0xFF) && time_leq(&t, &to));
-#endif
-
-    i=0;
-    do {
-      tmp = sd_get();
-      i++;
-    } while (tmp == 0xFF);
-
-    if ((tmp & 0x0F) != 0x05) {
-      i = sd_read_status();
-      call Panic.panic(PANIC_MS, 49, tmp, i, 0, 0);
-      signal SDwrite.writeDone[cur_cid](blk_start, data_ptr, FAIL);
+      if ((tmp & 0x1F) != 0x05) {
+	i = sd_read_status();
+	call Panic.panic(PANIC_MS, 45, tmp, i, 0, 0);
+	signal SDwrite.writeDone[cur_cid](blk_start, data_ptr, FAIL);
+	return;
+      }
+      sd_busy_count = 0;
+      sd_state = SDS_WRITE_BUSY;
+      post sd_write_task();
       return;
     }
 
-    /* wait for the card to go unbusy */
-    i = 0;
-    while ((tmp = sd_get()) != 0xff) {
-      i++;
+    /* card is busy writing the block.  ask if still busy. */
+
+    tmp = sd_get();
+    sd_busy_count++;
+    if (tmp != 0xff) {
+      post sd_write_task();
+      return;
     }
-    sd_busy_timeout = i;
+
+    tmp = sd_get();			/* send 8 more clocks to let card finish */
 
     /* Deassert CS */
     SD_CSN = 1;
@@ -944,7 +938,11 @@ implementation {
 
     i = sd_read_status();
     if (i)
-      sd_panic(51, i);
+      sd_panic(46, i);
+
+    last_write_time_ms = call lt.get() - write_t0_ms;
+    if (last_write_time_ms > max_write_time_ms)
+      max_write_time_ms = last_write_time_ms;
     nop();
     sd_state = SDS_IDLE;
     signal SDwrite.writeDone[cur_cid](blk_start, data_ptr, SUCCESS);
@@ -957,7 +955,7 @@ implementation {
     uint8_t  tmp;
 
     if (sd_state) {
-      sd_panic_idle(52, sd_state);
+      sd_panic_idle(47, sd_state);
       return EBUSY;
     }
 
@@ -976,13 +974,13 @@ implementation {
     cmd->cmd     = SD_WRITE_BLOCK;
     ctl->rsp_len = SD_WRITE_BLOCK_R;
     if (sd_send_command()) {
-      sd_panic_idle(44, 0);
+      sd_panic_idle(48, 0);
       return FAIL;
     }
 
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
-      sd_panic_idle(45, 0);
+      sd_panic_idle(49, 0);
       return FAIL;
     }
 
@@ -994,7 +992,7 @@ implementation {
      */
     tmp = sd_get();
     if (tmp != 0xff) {
-      sd_panic(46, tmp);
+      sd_panic(50, tmp);
       return FAIL;
     }
 
@@ -1002,7 +1000,7 @@ implementation {
      * The SD needs a write token, send it first then fire
      * up the dma.
      */
-    SD_SPI_TX_BUF = SD_TOK_WRITE_STARTBLOCK;
+    sd_put(SD_TOK_WRITE_STARTBLOCK);
 
     /* send the sector size and include the 2 crc bytes */
     sd_start_dma(data, NULL, SD_BUF_SIZE);
@@ -1028,7 +1026,7 @@ implementation {
     sd_ctl_t *ctl;
 
     if (sd_state) {
-      sd_panic_idle(53, sd_state);
+      sd_panic_idle(51, sd_state);
       return EBUSY;
     }
 
@@ -1052,6 +1050,20 @@ implementation {
     cmd->cmd     = SD_SET_ERASE_START;
     ctl->rsp_len = SD_SET_ERASE_START_R;
     if (sd_send_command()) {
+      sd_panic_idle(52, 0);
+      return FAIL;
+    }
+
+    /* Check for an error, like a misaligned write */
+    if (cmd->rsp[0] != 0) {
+      sd_panic_idle(53, cmd->rsp[0]);
+      return FAIL;
+    }
+
+    cmd->arg = blk_end;
+    cmd->cmd     = SD_SET_ERASE_END;
+    ctl->rsp_len = SD_SET_ERASE_END_R;
+    if (sd_send_command()) {
       sd_panic_idle(54, 0);
       return FAIL;
     }
@@ -1062,9 +1074,8 @@ implementation {
       return FAIL;
     }
 
-    cmd->arg = blk_end;
-    cmd->cmd     = SD_SET_ERASE_END;
-    ctl->rsp_len = SD_SET_ERASE_END_R;
+    cmd->cmd     = SD_ERASE;
+    ctl->rsp_len = SD_ERASE_R;
     if (sd_send_command()) {
       sd_panic_idle(56, 0);
       return FAIL;
@@ -1073,19 +1084,6 @@ implementation {
     /* Check for an error, like a misaligned write */
     if (cmd->rsp[0] != 0) {
       sd_panic_idle(57, cmd->rsp[0]);
-      return FAIL;
-    }
-
-    cmd->cmd     = SD_ERASE;
-    ctl->rsp_len = SD_ERASE_R;
-    if (sd_send_command()) {
-      sd_panic_idle(58, 0);
-      return FAIL;
-    }
-
-    /* Check for an error, like a misaligned write */
-    if (cmd->rsp[0] != 0) {
-      sd_panic_idle(59, cmd->rsp[0]);
       return FAIL;
     }
     return SUCCESS;
