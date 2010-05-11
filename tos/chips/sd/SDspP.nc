@@ -46,6 +46,7 @@ module SDspP {
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
     interface SDerase[uint8_t cid];
+    interface SDraw;
   }
   uses {
     interface HplMsp430UsciB as Umod;
@@ -619,6 +620,8 @@ implementation {
 
     cmd = &sd_cmd;
     ctl = &sd_ctl;
+
+#ifdef notdef
     cmd->cmd     = SD_SEND_OCR;
     ctl->rsp_len = SD_SEND_OCR_R;
     if (sd_send_command()) {
@@ -640,6 +643,7 @@ implementation {
       signal SDreset.resetDone(FAIL);
       return;
     }
+#endif
 
     /* If we got this far, initialization was OK.
      *
@@ -1087,6 +1091,16 @@ implementation {
       return FAIL;
     }
     return SUCCESS;
+  }
+
+
+  command int SDraw.send_cmd() {
+    return sd_send_command();
+  }
+
+  command void SDraw.get_ptrs(sd_cmd_t **cmd, sd_ctl_t **ctl) {
+    *cmd = &sd_cmd;
+    *ctl = &sd_ctl;
   }
 
 
