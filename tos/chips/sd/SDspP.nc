@@ -30,7 +30,9 @@ typedef enum {
   SDS_IDLE = 0,
   SDS_RESET,
   SDS_READ,
+  SDS_READ_DMA,
   SDS_WRITE,
+  SDS_WRITE_DMA,
   SDS_WRITE_BUSY,
   SDS_ERASE,
 } sd_state_t;
@@ -112,12 +114,14 @@ implementation {
   uint16_t     tmp_rd_post;
   uint16_t     sd_busy_count;
 
-  /*
-   * these times are in mis.
-   */
-  uint32_t     max_reset_time_ms, last_reset_time_ms, reset_t0_ms;
-  uint32_t     max_read_time_ms,  last_read_time_ms,  read_t0_ms;
-  uint32_t     max_write_time_ms, last_write_time_ms, write_t0_ms;
+  uint32_t     max_reset_time_mis, last_reset_time_mis, reset_t0_mis;
+  uint16_t     max_reset_time_uis, last_reset_time_uis, reset_t0_uis;
+
+  uint32_t     max_read_time_mis,  last_read_time_mis,  read_t0_mis;
+  uint16_t     max_read_time_uis,  last_read_time_uis,  read_t0_uis;
+
+  uint32_t     max_write_time_mis, last_write_time_mis, write_t0_mis;
+  uint16_t     max_write_time_uis, last_write_time_uis, write_t0_uis;
 
 
 #define sd_panic(where, arg) do { call Panic.panic(PANIC_MS, where, arg, 0, 0, 0); } while (0)
@@ -289,8 +293,6 @@ implementation {
 
   void sd_wait_dma() {
     uint16_t max_count, t0;
-    volatile register uint16_t u1;
-    volatile register uint16_t d1;
 
     t0 = TAR;
 
@@ -302,10 +304,6 @@ implementation {
 	return;
       }
     }
-
-    u1 = TAR;
-    d1 = u1 - t0;			/* total time */
-    nop();
 
     DMACTL0 = 0;			/* kick triggers */
     DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
@@ -559,15 +557,15 @@ implementation {
   command error_t SDreset.reset() {
     sd_cmd_t *cmd;
     sd_ctl_t *ctl;
-    volatile uint16_t u0, u1;
 
-    u0 = TAR;
     if (sd_state) {
       sd_panic_idle(32, sd_state);
       return EBUSY;
     }
 
-    reset_t0_ms = call lt.get();
+    reset_t0_uis = TAR;
+    reset_t0_mis = call lt.get();
+
     sd_state = SDS_RESET;
     cur_cid = -1;			/* reset is not parameterized. */
     cmd = &sd_cmd;
@@ -588,10 +586,6 @@ implementation {
     sd_start_dma(NULL, NULL, 10);	/* send 10 0xff to clock SD */
     sd_wait_dma();
 
-    u1 = TAR;
-    u1 -= u0;
-    nop();
-
     /* Put the card in the idle state, non-zero return -> error */
     cmd->cmd     = SD_FORCE_IDLE;       // Send CMD0, software reset
     ctl->rsp_len = SD_FORCE_IDLE_R;
@@ -607,11 +601,8 @@ implementation {
      * This switches us to the context that we want so the
      * signal for resetDone always comes from the same place.
      */
-    sd_go_op_count = 0;		// Reset our counter for Pending tries
+    sd_go_op_count = 0;		// Reset our counter for pending tries
     call SDtimer.startOneShot(0);
-    u1 = TAR;
-    u1 -= u0;
-    nop();
     return SUCCESS;
   }
 
@@ -653,9 +644,15 @@ implementation {
      * crank it up to full speed.  We do everything at full speed so there
      * isn't currently any need.
      */
-    last_reset_time_ms = call lt.get() - reset_t0_ms;
-    if (last_reset_time_ms > max_reset_time_ms)
-      max_reset_time_ms = last_reset_time_ms;
+
+    last_reset_time_uis = TAR - reset_t0_uis;
+    if (last_reset_time_uis > max_reset_time_uis)
+      max_reset_time_uis = last_reset_time_uis;
+
+    last_reset_time_mis = call lt.get() - reset_t0_mis;
+    if (last_reset_time_mis > max_reset_time_mis)
+      max_reset_time_mis = last_reset_time_mis;
+
     nop();
     sd_state = SDS_IDLE;
     signal SDreset.resetDone(SUCCESS);
@@ -786,14 +783,18 @@ implementation {
     }
 
     /* read the block (512 bytes) and include the crc (2 bytes) */
+    sd_state = SDS_READ_DMA;
     sd_start_dma(NULL, data_ptr, SD_BUF_SIZE);
+    DMA0_ENABLE_INT;
+    return;
+  }
 
 
-    /*
-     * for now pretend that the dma has completed.  This will eventually get pulled out
-     * onto a dma interrupt completion signal.
-     */
-    sd_wait_dma();
+  void sd_read_dma_handler() {
+    uint16_t crc;
+
+    DMACTL0 = 0;			/* kick triggers */
+    DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
 
     SD_CSN = 1;				/* deassert CS */
 
@@ -818,9 +819,14 @@ implementation {
     if (data_ptr[0] == 0xfe)
       sd_warn(41, data_ptr[0]);
 
-    last_read_time_ms = call lt.get() - read_t0_ms;
-    if (last_read_time_ms > max_read_time_ms)
-      max_read_time_ms = last_read_time_ms;
+    last_read_time_uis = TAR - read_t0_uis;
+    if (last_read_time_uis > max_read_time_uis)
+      max_read_time_uis = last_read_time_uis;
+
+    last_read_time_mis = call lt.get() - read_t0_mis;
+    if (last_read_time_mis > max_read_time_mis)
+      max_read_time_mis = last_read_time_mis;
+
     nop();
     sd_state = SDS_IDLE;
     signal SDread.readDone[cur_cid](blk_start, data_ptr, SUCCESS);
@@ -847,7 +853,8 @@ implementation {
       return EBUSY;
     }
 
-    read_t0_ms = call lt.get();
+    read_t0_uis = TAR;
+    read_t0_mis = call lt.get();
 
     sd_state = SDS_READ;
     cur_cid = cid;
@@ -894,31 +901,8 @@ implementation {
    */
 
   task void sd_write_task() {
-    uint16_t i;		volatile uint16_t u0;
+    uint16_t i;
     uint8_t  tmp;
-
-    u0 = TAR;
-
-    if (sd_state == SDS_WRITE) {
-
-      sd_wait_dma();
-
-      /*
-       * After the data block is accepted the SD sends a data response token
-       * that tells whether it accepted the block.  0x05 says all is good.
-       */
-      tmp = sd_get();
-      if ((tmp & 0x1F) != 0x05) {
-	i = sd_read_status();
-	call Panic.panic(PANIC_MS, 45, tmp, i, 0, 0);
-	signal SDwrite.writeDone[cur_cid](blk_start, data_ptr, FAIL);
-	return;
-      }
-      sd_busy_count = 0;
-      sd_state = SDS_WRITE_BUSY;
-      post sd_write_task();
-      return;
-    }
 
     /* card is busy writing the block.  ask if still busy. */
 
@@ -945,12 +929,48 @@ implementation {
     if (i)
       sd_panic(46, i);
 
-    last_write_time_ms = call lt.get() - write_t0_ms;
-    if (last_write_time_ms > max_write_time_ms)
-      max_write_time_ms = last_write_time_ms;
+    last_write_time_uis = TAR - write_t0_uis;
+    if (last_write_time_uis > max_write_time_uis)
+      max_write_time_uis = last_write_time_uis;
+
+    last_write_time_mis = call lt.get() - write_t0_mis;
+    if (last_write_time_mis > max_write_time_mis)
+      max_write_time_mis = last_write_time_mis;
+
     nop();
+
     sd_state = SDS_IDLE;
     signal SDwrite.writeDone[cur_cid](blk_start, data_ptr, SUCCESS);
+  }
+
+
+  void sd_write_dma_handler() {
+    uint8_t  tmp;
+    uint16_t i;
+
+    DMACTL0 = 0;			/* kick triggers */
+    DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
+
+    /*
+     * After the data block is accepted the SD sends a data response token
+     * that tells whether it accepted the block.  0x05 says all is good.
+     */
+    tmp = sd_get();
+    if ((tmp & 0x1F) != 0x05) {
+      i = sd_read_status();
+      call Panic.panic(PANIC_MS, 45, tmp, i, 0, 0);
+      signal SDwrite.writeDone[cur_cid](blk_start, data_ptr, FAIL);
+      return;
+    }
+
+    /*
+     * the SD goes busy until the block is written.  (busy is data out low).
+     * we poll using a task.  The amount of time it take has been observed
+     * to be about 800uis.
+     */
+    sd_busy_count = 0;
+    sd_state = SDS_WRITE_BUSY;
+    post sd_write_task();
   }
 
 
@@ -964,7 +984,8 @@ implementation {
       return EBUSY;
     }
 
-    write_t0_ms = call lt.get();
+    write_t0_uis = TAR;
+    write_t0_mis = call lt.get();
 
     sd_state = SDS_WRITE;
     blk_start = blockaddr;
@@ -1008,8 +1029,9 @@ implementation {
     sd_put(SD_TOK_WRITE_STARTBLOCK);
 
     /* send the sector size and include the 2 crc bytes */
+    sd_state = SDS_WRITE_DMA;
     sd_start_dma(data, NULL, SD_BUF_SIZE);
-    post sd_write_task();
+    DMA0_ENABLE_INT;
     return SUCCESS;
   }
 
@@ -1110,6 +1132,30 @@ implementation {
     sd_start_dma(tx, rx, len);
     sd_wait_dma();
   }
+
+
+  task void dma_task() {
+    switch (sd_state) {
+      case SDS_READ_DMA:
+	sd_read_dma_handler();
+	break;
+
+      case SDS_WRITE_DMA:
+	sd_write_dma_handler();
+	break;
+
+      default:
+	sd_panic(58, sd_state);
+	break;
+    }
+  }
+
+
+  TOSH_SIGNAL( DMA_VECTOR ) {
+    DMA0_DISABLE_INT;
+    post dma_task();
+  }
+
 
 #ifdef notdef
   async event void UsciInterrupts.txDone() {

@@ -31,6 +31,7 @@ MSP430REG_NORACE(IFG2);
 MSP430REG_NORACE(UCB0TXBUF);
 MSP430REG_NORACE(UCB0RXBUF);
 MSP430REG_NORACE(UCB0STAT);
+MSP430REG_NORACE(DMA0CTL);
 
 /* set for msp430f2618, usci_b0 spi */
 #define SD_SPI_IFG		(IFG2)
@@ -64,6 +65,10 @@ MSP430REG_NORACE(UCB0STAT);
 #define DMA0_TSEL_B0TX (13<<0)	/* DMA chn 0, UCB0TXIFG */
 #define DMA1_TSEL_B0TX (13<<4)	/* DMA chn 1, UCB0TXIFG */
 
+#define DMA0_ENABLE_INT		(DMA0CTL |= DMAIE)
+#define DMA0_DISABLE_INT	(DMA0CTL &= ~DMAIE)
+
+
 /*
  * The MM4 is clocked at 8MHz.  (could go up to 16MHz)
  *
@@ -82,7 +87,7 @@ MSP430REG_NORACE(UCB0STAT);
  * /8.  This impacts timing for all the timers.
  */
 
-#define SPI_400K_DIV 21
+// #define SPI_400K_DIV 21
 #define SPI_8MIHZ_DIV    1
 #define SPI_FULL_SPEED_DIV SPI_8MIHZ_DIV
 
