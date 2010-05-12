@@ -6,6 +6,8 @@
  * @author Carl W. Davis
  */
 
+#include "sd_cmd.h"
+
 interface SDraw {
   /**
    * SD raw, back door to SD card.
@@ -18,4 +20,5 @@ interface SDraw {
    */
   command int send_cmd();
   command void get_ptrs(sd_cmd_t **cmd, sd_ctl_t **ctl);
+  command void send_recv(uint8_t *tx, uint8_t *rx, uint16_t len);
 }

@@ -9,6 +9,7 @@
 #include "msp430hardware.h"
 #include "hardware.h"
 #include "sd.h"
+#include "sd_cmd.h"
 #include "panic.h"
 
 /*
@@ -53,6 +54,7 @@ module SDspP {
     interface Panic;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
+//    interface DmaInterrupt;
 
 //    interface HplMsp430UsciInterrupts as UsciInterrupts;
 
@@ -62,7 +64,6 @@ module SDspP {
 implementation {
 
 #include "platform_sd_spi.h"
-#include "sd_cmd.h"
 
   /*
    * main SDsp control cells.   The code can handle at most one operation at a time,
@@ -274,7 +275,6 @@ implementation {
     DMA1CTL |= DMA_EN;
 
     SD_SPI_TX_BUF = first_byte;		/* start dma up */
-    nop();
   }
 
 
@@ -519,6 +519,7 @@ implementation {
   }
 
 
+#ifdef notdef
   /*
    * Set block length (size of data transaction)
    *
@@ -538,6 +539,7 @@ implementation {
     ctl->rsp_len = SD_SET_BLOCKLEN_R;
     return sd_send_command();
   }
+#endif
 
 
   /************************************************************************
@@ -577,7 +579,7 @@ implementation {
      */
     cmd->arg = 0;
 
-    /* Clock out at least 74 bits of idles (0xFF).  Thats 10 bytes. This allows
+    /* Clock out at least 74 bits of idles (0xFF is 8 bits).  Thats 10 bytes. This allows
      * the SD card to complete its power up prior to us talking to
      * the card.
      */
@@ -754,7 +756,6 @@ implementation {
    */
 
   task void sd_read_task() {
-    uint16_t crc;
     uint8_t tmp;
 
     /* Wait for the token */
@@ -1098,11 +1099,17 @@ implementation {
     return sd_send_command();
   }
 
+
   command void SDraw.get_ptrs(sd_cmd_t **cmd, sd_ctl_t **ctl) {
     *cmd = &sd_cmd;
     *ctl = &sd_ctl;
   }
 
+
+  command void SDraw.send_recv(uint8_t *tx, uint8_t *rx, uint16_t len) {
+    sd_start_dma(tx, rx, len);
+    sd_wait_dma();
+  }
 
 #ifdef notdef
   async event void UsciInterrupts.txDone() {
