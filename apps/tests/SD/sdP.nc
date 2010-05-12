@@ -9,62 +9,93 @@
 #include "sd_cmd.h"
 
 module sdP {
-  provides {
-    interface ResourceDefaultOwner as PwrMgr;
-  }
   uses {
+    interface SDreset;
     interface SDread;
-    //interface SDreset;
     interface Boot;
-    interface Boot as FS_OutBoot;
+    interface Resource;
     interface SDraw;
+    interface Boot as FS_OutBoot;
   }
 }
 
 implementation {
 
-  event void Boot.booted() {
+  sd_cmd_t *cmd;                // Command Structure
+  sd_ctl_t *ctl;                // Control Structure
+  //uint8_t  data_buf[514];       // 512 for data, 2 at end for CRC
+  //uint32_t blk_id;              // Block ID
 
-    signal PwrMgr.requested();
+  event void Boot.booted() {
+    call Resource.request();    // Request the arbiter to power and ready SD
   }
 
-  uint8_t d[514];
 
-  async command error_t PwrMgr.release() {
-    sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
-    uint8_t  rtn;
-
-    //blkaddr = 0x0300;
-    //call SDread.read(blkaddr, d);
-
+  event void Resource.granted() {
+    //error_t err;
 
     call SDraw.get_ptrs(&cmd, &ctl);
 
-    /* Read the OCR (SPI mode only), Operation Condition Register
-       #define CMD58 (58 | 0x40)
-       #define SD_SEND_OCR CMD58
-       #define SD_SEND_OCR_R R3_LEN
-    */
+    /* The following information for the SD card registers references the
+     *  "Physical Layer Simplified Specification Version 2.00, Sept, 25 2006"
+     */
 
+
+    /* Setup for CMD58, Read the OCR register.  Operation Condition Register
+     *  returns R3_LEN, 5 bytes.  See Section 5.1
+     * The OCR register contains the suppored operating voltages for the 
+     *  current card. Look at bits 15 - 23.
+     *  Newer cards, SDHC has a different implementation, check the HCS bit.
+     *  See Section 7.2.1 Mode Selection and Init, and Table 7-3.
+     */
     cmd->cmd     = SD_SEND_OCR;
-    ctl->rsp_len = SD_SEND_OCR_R;    // Set to 5
+    ctl->rsp_len = SD_SEND_OCR_R;
+    call SDraw.send_cmd();
+    nop();
 
-    //cmd->arg = (blk_start << SD_BLOCKSIZE_NBITS); No arguments for OCR
+    /* Setup for CMD10, Read the CID register,  Card Identification Register
+     *  returns R1_LEN, 1 byte.  See Section 5.2
+     * The CID register contains the Mfg specific info, 128 bits wide,
+     *  contains Mfg, OEM, Prod Name, Rev, etc.
+     */
+    cmd->cmd     = SD_SEND_CID;
+    ctl->rsp_len = SD_SEND_CID_R;
+    call SDraw.send_cmd();
+    nop();
+
+    /* Setup for CMD9, read the CSD register, Card Specific Data register
+     *  returns R1_LEN, 1 byte.  See Section 5.3
+     * The CSD register contains data format, erro correction type, max
+     *  data access time, etc.
+     * Access this register to find read block size READ_BL_LEN, write block 
+     *  size WRITE_BL_LEN, and erase sector size SECTOR_SIZE, etc.
+     *
+     */
+    cmd->cmd     = SD_SEND_CSD;
+    ctl->rsp_len = SD_SEND_CSD_R;
+    call SDraw.send_cmd();
+    nop();
+
+    /* CMD8
+
+     */
 
 
 
-    if ((rtn = call SDraw.send_cmd()) == 0)
-      return FAIL;
-    else
-      return SUCCESS;
+
+
+
+
   }
 
-  event void SDread.readDone(uint32_t backdoorblk, void *databuf, error_t err) {
-    signal PwrMgr.granted();
+  event void SDread.readDone(uint32_t blk_id, void *data_buf, error_t err) {
+    nop();                  // Just a location for a break point
+    call Resource.release();
   }
 
-  async command bool PwrMgr.isOwner() { return TRUE; }
-  //event void SDreset.resetDone(error_t err) {}
-  event void FS_OutBoot.booted() {}
+  event void SDreset.resetDone(error_t err) {}
+
+  event void FS_OutBoot.booted() {
+    nop();
+  }
 }

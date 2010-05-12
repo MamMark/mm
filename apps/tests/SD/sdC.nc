@@ -16,13 +16,13 @@ implementation {
   sdP.Boot -> MainC;
 
  components SDspC;
-   //sdP.SDread  -> SDspC.SDread[0];
-   //sdP.SDreset -> SDspC;
+   sdP.SDread  -> SDspC.SDread[0];
+   sdP.SDreset -> SDspC;
    sdP.SDraw -> SDspC;
 
   components FileSystemC as FS;
   sdP.FS_OutBoot -> FS;
 
-  components SD_PwrConfigC as Pwr;
-  sdP.PwrMgr <- Pwr;
+  components new SD_ArbC() as SDrb;
+  sdP.Resource -> SDrb;
 }
