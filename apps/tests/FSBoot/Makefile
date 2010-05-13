@@ -1,0 +1,2 @@
+COMPONENT=FSBootC
+include $(MAKERULES)
