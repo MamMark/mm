@@ -10,19 +10,6 @@
  * tos/platforms/<platform>/hardware.h and platform_sd_spi.h
  */
 
-
-/*
- * send_cmd used to handle ACMD too by first sending a CMD55.  This
- * was indicated by ACMD_FLAG being set (high order bit).  It makes
- * more sense to manage this manually and to call a different routine
- * that handles sending the CMD55 and the ACMD.
- *
- * R1B_FLAG is or'd with rsp_len to indicate a busy wait is needed.
-*/
-
-#define R1B_FLAG  0x80
-#define RSP_LEN_MASK 0x7f
-
 typedef struct sd_cmd {
   uint8_t     cmd;
   nx_uint32_t arg;

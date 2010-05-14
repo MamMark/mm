@@ -126,6 +126,9 @@ implementation {
   uint16_t     max_write_time_uis, last_write_time_uis, write_t0_uis;
 
 
+  void sd_cmd_crc();
+
+
 #define sd_panic(where, arg) do { call Panic.panic(PANIC_MS, where, arg, 0, 0, 0); } while (0)
 #define  sd_warn(where, arg) do { call  Panic.warn(PANIC_MS, where, arg, 0, 0, 0); } while (0)
 
@@ -424,6 +427,7 @@ implementation {
     uint8_t rsp, tmp;
 
     SD_CSN = 0;
+    sd_cmd_crc();
     rsp = sd_raw_cmd();
     tmp = sd_get();			/* close transaction out */
     SD_CSN = 1;
@@ -481,12 +485,6 @@ implementation {
     cur_cid = -1;			/* reset is not parameterized. */
     cmd = &sd_cmd;
 
-    /*
-     * Originally, we set the divisor to produce 400KHz spi clock for backward compatibility
-     * with MMC (open drain) chips.   The /1 seems to work okay so blow that off.
-     */
-    cmd->arg = 0;
-
     /* Clock out at least 74 bits of idles (0xFF is 8 bits).  Thats 10 bytes. This allows
      * the SD card to complete its power up prior to us talking to
      * the card.
@@ -498,6 +496,7 @@ implementation {
 
     /* Put the card in the idle state, non-zero return -> error */
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
+    cmd->arg = 0;
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
       sd_panic_idle(33, rsp);
@@ -514,28 +513,6 @@ implementation {
     sd_go_op_count = 0;		// Reset our counter for pending tries
     call SDtimer.startOneShot(0);
     return SUCCESS;
-  }
-
-
-  void reset_finish() {
-    /* If we got this far, initialization was OK.
-     *
-     * If we were running with a reduced clock then this is the place to
-     * crank it up to full speed.  We do everything at full speed so there
-     * isn't currently any need.
-     */
-
-    last_reset_time_uis = TAR - reset_t0_uis;
-    if (last_reset_time_uis > max_reset_time_uis)
-      max_reset_time_uis = last_reset_time_uis;
-
-    last_reset_time_mis = call lt.get() - reset_t0_mis;
-    if (last_reset_time_mis > max_reset_time_mis)
-      max_reset_time_mis = last_reset_time_mis;
-
-    nop();
-    sd_state = SDS_IDLE;
-    signal SDreset.resetDone(SUCCESS);
   }
 
 
@@ -569,9 +546,24 @@ implementation {
 	}
 
 	/*
-	 * not idle finish things up.
+	 * no longer idle, initialization was OK.
+	 *
+	 * If we were running with a reduced clock then this is the place to
+	 * crank it up to full speed.  We do everything at full speed so there
+	 * isn't currently any need.
 	 */
-	reset_finish();
+
+	last_reset_time_uis = TAR - reset_t0_uis;
+	if (last_reset_time_uis > max_reset_time_uis)
+	  max_reset_time_uis = last_reset_time_uis;
+
+	last_reset_time_mis = call lt.get() - reset_t0_mis;
+	if (last_reset_time_mis > max_reset_time_mis)
+	  max_reset_time_mis = last_reset_time_mis;
+
+	nop();
+	sd_state = SDS_IDLE;
+	signal SDreset.resetDone(SUCCESS);
 	return;
     }
   }
@@ -605,6 +597,19 @@ implementation {
   void sd_compute_crc(uint8_t *data) {
     data[512] = 0;
     data[513] = 0;
+  }
+
+
+  /*
+   * sd_cmd_crc
+   *
+   * set the crc for the command block
+   *
+   * currently we just force 0x95 which is the crc for GO_IDLE
+   */
+
+  void sd_cmd_crc() {
+    sd_cmd.crc = 0x95;
   }
 
 
