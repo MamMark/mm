@@ -49,7 +49,10 @@ module SDspP {
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
     interface SDerase[uint8_t cid];
+
+#ifdef SD_RAW
     interface SDraw;
+#endif
   }
   uses {
     interface HplMsp430UsciB as Umod;
@@ -94,10 +97,9 @@ implementation {
   uint8_t      *data_ptr;
 
   uint8_t idle_byte = 0xff;
-  uint8_t recv_dump;
+  uint8_t recv_dump[16];
 
   sd_cmd_t sd_cmd;
-  sd_ctl_t sd_ctl;
 
 
   /* instrumentation
@@ -179,8 +181,12 @@ implementation {
   }
 
 
+  uint8_t sg[16];
+  uint8_t sg_nxt;
+
   uint8_t sd_get() {
     uint16_t i;
+    uint8_t  byte;
 
     SD_SPI_TX_BUF = 0xff;
 
@@ -194,7 +200,11 @@ implementation {
     if (SD_SPI_OVERRUN)
       sd_warn(22, 0);
 
-    return(SD_SPI_RX_BUF);		/* also clears RXINT */
+    byte = SD_SPI_RX_BUF;		/* also clears RXINT */
+    sg[sg_nxt++] = byte;
+    if (sg_nxt >= 16)
+      sg_nxt = 0;
+    return byte;
   }
 
 
@@ -239,7 +249,7 @@ implementation {
       DMA0DA  = (uint16_t) rcvptr;
       DMA0CTL |= DMA_DST_INC;
     } else
-      DMA0DA  = (uint16_t) &recv_dump;
+      DMA0DA  = (uint16_t) recv_dump;
 
     /*
      * There is a race condition that makes using an rx dma engine triggered
@@ -316,90 +326,63 @@ implementation {
   };
 
 
-  int sd_send_cmd55() {
-    uint16_t  i;
-    uint8_t   tmp;
-    sd_ctl_t *ctl;
+  /*
+   * ACMDs have to be preceeded by a regular CMD55 to indicate that the next command
+   * is from a different command set.
+   *
+   * CMD55 is a complete op, meaning it does cmd, response, and needs 1 extra byte
+   * to finish clocking the SD front end.  We assume CS is already asserted.  We are
+   * part of a complete op (ACMD41 for example).
+   *
+   * This command can be issued while the card is in reset so we ignore the IDLE
+   * bit in the response.
+   */
 
-    uint16_t t0;
+  void sd_send_cmd55() {
+    uint16_t i;
+    uint8_t  rsp, tmp;
 
-    t0 = TAR;
-
-    sd_start_dma((uint8_t *) cmd55, NULL, sizeof(cmd55));
+    sd_chk_clean();
+    sd_start_dma((uint8_t *) cmd55, recv_dump, sizeof(cmd55));
     sd_wait_dma();
 
     i=0;
     do {
       tmp = sd_get();
       i++;
-    } while((tmp > 127) && (i < SD_CMD_TIMEOUT));
-
-    ctl = &sd_ctl;
-    ctl->rsp55 = tmp;
-    ctl->stage_count = i;
+    } while ((tmp == 0xff) && (i < SD_CMD_TIMEOUT));
 
     if (i >= SD_CMD_TIMEOUT) {
-      sd_warn(25, i);
-      return FAIL;
+      sd_panic(25, i);
+      return;
     }
-
-    tmp = sd_get();		/* finish the command */
-    if (tmp != 0xff)		/* should be idle bus (high) */
-      sd_warn(26, tmp);
-
-    ctl->cmd55_delta = TAR - t0;
-    return SUCCESS;
+    rsp = tmp;
+    if (rsp & ~MSK_IDLE)
+      sd_panic(26, rsp);
+    tmp = sd_get();			/* close the cmd/rsp op */
   }
 
 
-  /* sd_send_command
+  /* sd_raw_cmd
    *
-   * Send a command to the SD card waiting for the response (length given
-   * in the command block.
+   * Send a command to the SD and receive a response from the SD.
+   * The response is always a single byte and is the R1 response
+   * as documented in the SD manual.
    *
-   * broken up into several stages and marked accordingly in the command block
+   * raw_cmd does not change the SD card state in any other way
+   * meaning it doesn't read any more bytes from the card for other
+   * types of responses.
    *
-   * stage 1: For ACMDs send CMD55.  If not an acmd set rsp55 to 0x55 to flag.
-   * stage 2: Send the command and wait for response.  Could time out.  stage_count
-   *          holds the time out value if it does.
-   * stage 3: extra clocks at end of cmd/response
-   * stage 4: R1B busy wait.
+   * Does not provide any kind of transactional control meaning
+   * it doesn't send the extra clocks that are needed at the end
+   * of a transaction, cmd/rsp, data transfer, etc.
+   *
+   * return: R1 response byte,  0 says everything is wonderful.
    */
 
-  int sd_send_command() {
+  uint8_t sd_raw_cmd() {
     uint16_t  i;
-    uint16_t  rsp_len;
-    uint8_t   tmp, tmp1;
-    sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
-
-    /* instrumentation
-     *
-     * u0: when the cmd starts.
-     * u1: preliminaries.
-     * u2: end of cmd
-     * u3: end of response obtained.
-     *
-     * d1: preliminaries delta
-     * d2: cmd delta
-     * d3: response delta
-     * t4: total time
-     *
-     * all times in uis.
-     *
-     */
-
-    volatile register uint16_t u0, u1, u2, u3;
-    volatile register uint16_t d1, d2, d3, t4;
-
-    u0 = TAR;
-    cmd = &sd_cmd;
-    ctl = &sd_ctl;
-    rsp_len = ctl->rsp_len & RSP_LEN_MASK;
-    if (rsp_len != 1 && rsp_len != 2 && rsp_len != 5) {
-      sd_panic(27, rsp_len);
-      return FAIL;
-    }
+    uint8_t   tmp, rsp;
 
     /*
      * We used to check for chip select being down (CSN, low true)
@@ -409,135 +392,63 @@ implementation {
      */
 
     sd_chk_clean();
-    SD_CSN = 0;
-
-    u1 = TAR;
-    d1 = u1 - u0;
-
-    ctl->stage = 2;
-    cmd->crc = 0x95;
-    sd_start_dma(&cmd->cmd, NULL, 6);
+    sd_start_dma(&sd_cmd.cmd, recv_dump, 6);
     sd_wait_dma();
-
-    u2 = TAR;
-    d2 = u2 - u1;
 
     /* Wait for a response.  */
     i=0;
     do {
       tmp = sd_get();
       i++;
-    } while ((tmp & 0x80) && (i < SD_CMD_TIMEOUT));
+    } while ((tmp == 0xff) && (i < SD_CMD_TIMEOUT));
 
-    cmd->rsp[0] = tmp;		/* first byte of the response */
-    ctl->stage_count = i;
+    rsp = tmp;				/* response byte */
 
     /* Just bail if we never got a response */
     if (i >= SD_CMD_TIMEOUT) {
-      /* stage 2 bail, timeout */
-      sd_warn(28, tmp);
-      SD_CSN = 1;
-      return FAIL;
+      sd_panic(28, tmp);
+      return 0xff;
     }
-
-    /* get rest of response if needed */
-    i = 1;
-    while (i < rsp_len)
-      cmd->rsp[i++] = sd_get();
-
-    ctl->stage = 3;
-    tmp = sd_get();   tmp1 = sd_get();
-    if (tmp != 0xff)
-      sd_warn(29, tmp);
-
-    /* If the response is a "busy" type (R1B), then there's some
-     * special handling that needs to be done. The card will
-     * output a continuous stream of zeros, so the end of the BUSY
-     * state is signaled by any nonzero response. The bus idles
-     * high.
-     */
-    if (ctl->rsp_len & R1B_FLAG) {
-      ctl->stage = 4;
-      i = 0;
-      do {
-	i++;
-	tmp = sd_get();
-      } while (tmp != 0xFF);
-      sd_r1b_timeout = i;
-//	ctl->stage_count = i;
-      sd_put(0xff);
-    }
-
-    u3 = TAR;
-    d3 = u3 - u2;
-    t4 = u3 - u0;
-    nop();
-    ctl->stage = 0;
-    SD_CSN = 1;
-    return SUCCESS;
+    return rsp;
   }
 
 
-  int sd_send_acmd() {
-    uint16_t  rsp_len;
-    uint8_t   tmp;
-    sd_ctl_t *ctl;
-    volatile register uint16_t u0, u1, u2;
-    volatile register uint16_t d1, d2;
-
-    u0 = TAR;
-
-    ctl = &sd_ctl;
-    rsp_len = ctl->rsp_len & RSP_LEN_MASK;
-    if (rsp_len != 1 && rsp_len != 2 && rsp_len != 5) {
-      sd_panic(30, rsp_len);
-      return FAIL;
-    }
-
-    sd_chk_clean();
-    SD_CSN = 0;
-    ctl->stage = 1;
-
-    u1 = TAR;
-    d1 = u1 - u0;
-
-    tmp = sd_send_cmd55();
-    if (tmp) {
-      /* failed, how odd */
-      SD_CSN = 1;
-      sd_warn(31, tmp);
-      return FAIL;
-    }
-
-    u2 = TAR;
-    d2 = u2 - u1;
-    nop();
-
-    return sd_send_command();
-  }
-
-
-#ifdef notdef
   /*
-   * Set block length (size of data transaction)
+   * send_command:
    *
-   * input:  length  size of block
-   * output: rtn:    0 block length set okay.
-   * non-zero, error return from send_command
+   * send a simple command to the SD.  A simple command has an R1 response
+   * and we handle it as a cmd/rsp transaction with the extra clocks at
+   * the end to let the SD finish.
    */
+  uint8_t sd_send_command() {
+    uint8_t rsp, tmp;
 
-  int sd_set_blocklen(uint32_t length) {
-    sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
-
-    cmd = &sd_cmd;
-    ctl = &sd_ctl;
-    cmd->arg = length;
-    cmd->cmd     = SD_SET_BLOCKLEN;
-    ctl->rsp_len = SD_SET_BLOCKLEN_R;
-    return sd_send_command();
+    SD_CSN = 0;
+    rsp = sd_raw_cmd();
+    tmp = sd_get();			/* close transaction out */
+    SD_CSN = 1;
+    return rsp;
   }
-#endif
+
+
+  /*
+   * Send ACMD
+   *
+   * assume the command in the cmd buffer is an ACMD and should
+   * be proceeded by a CMD55.
+   *
+   * closes the cmd/rsp transaction when done.
+   */
+  uint8_t sd_send_acmd() {
+    uint8_t rsp, tmp;
+
+    SD_CSN = 0;
+    sd_send_cmd55();
+    rsp = sd_raw_cmd();
+    tmp = sd_get();
+    SD_CSN = 1;
+    return rsp;
+  }
 
 
   /************************************************************************
@@ -556,7 +467,7 @@ implementation {
 
   command error_t SDreset.reset() {
     sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
+    uint8_t   rsp;
 
     if (sd_state) {
       sd_panic_idle(32, sd_state);
@@ -569,7 +480,6 @@ implementation {
     sd_state = SDS_RESET;
     cur_cid = -1;			/* reset is not parameterized. */
     cmd = &sd_cmd;
-    ctl = &sd_ctl;
 
     /*
      * Originally, we set the divisor to produce 400KHz spi clock for backward compatibility
@@ -583,14 +493,14 @@ implementation {
      */
 
     SD_CSN = 1;				/* force to known state */
-    sd_start_dma(NULL, NULL, 10);	/* send 10 0xff to clock SD */
+    sd_start_dma(NULL, recv_dump, 10);	/* send 10 0xff to clock SD */
     sd_wait_dma();
 
     /* Put the card in the idle state, non-zero return -> error */
-    cmd->cmd     = SD_FORCE_IDLE;       // Send CMD0, software reset
-    ctl->rsp_len = SD_FORCE_IDLE_R;
-    if (sd_send_command()) {
-      sd_panic_idle(33, 0);
+    cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
+    rsp = sd_send_command();
+    if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
+      sd_panic_idle(33, rsp);
       return FAIL;
     }
 
@@ -608,36 +518,6 @@ implementation {
 
 
   void reset_finish() {
-    sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
-
-    cmd = &sd_cmd;
-    ctl = &sd_ctl;
-
-#ifdef notdef
-    cmd->cmd     = SD_SEND_OCR;
-    ctl->rsp_len = SD_SEND_OCR_R;
-    if (sd_send_command()) {
-      sd_panic_idle(34, 0);
-      signal SDreset.resetDone(FAIL);
-      return;
-    }
-
-    /* At a very minimum, we must allow 3.3V. */
-    if ((cmd->rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
-      sd_panic_idle(35, cmd->rsp[2]);
-      signal SDreset.resetDone(FAIL);
-      return;
-    }
-
-    /* Set the block length */
-    if (sd_set_blocklen(SD_BLOCKSIZE)) {
-      sd_panic_idle(36, 0);
-      signal SDreset.resetDone(FAIL);
-      return;
-    }
-#endif
-
     /* If we got this far, initialization was OK.
      *
      * If we were running with a reduced clock then this is the place to
@@ -661,25 +541,23 @@ implementation {
 
   event void SDtimer.fired() {
     sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
+    uint8_t   rsp;
 
     switch (sd_state) {
-
       default:
 	return;
 
       case SDS_RESET:
 	cmd = &sd_cmd;
-	ctl = &sd_ctl;
-	cmd->cmd     = SD_GO_OP;            //Send ACMD41
-	ctl->rsp_len = SD_GO_OP_R;
-	if (sd_send_acmd()) {
-	  sd_panic_idle(37, 0);
+	cmd->cmd = SD_GO_OP;            // Send ACMD41
+	rsp = sd_send_acmd();
+	if (rsp & ~MSK_IDLE) {		/* any other bits set? */
+	  sd_panic_idle(37, rsp);
 	  signal SDreset.resetDone(FAIL);
 	  return;
 	}
 
-	if (cmd->rsp[0] & MSK_IDLE) {
+	if (rsp & MSK_IDLE) {
 	  /* idle bit still set, means card is still in reset */
 	  if (++sd_go_op_count >= SD_GO_OP_MAX) {
 	    sd_panic_idle(38, sd_go_op_count);			// We maxed the tries, panic and fail
@@ -731,18 +609,14 @@ implementation {
 
 
   uint16_t sd_read_status() {
-    sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
-    uint16_t i;
+    uint8_t  tmp, rsp, stat_byte;
 
-    cmd = &sd_cmd;
-    ctl = &sd_ctl;
-    cmd->cmd     = SD_SEND_STATUS;
-    ctl->rsp_len = SD_SEND_STATUS_R;
-    if (sd_send_command())
-      return(0xffff);
-    i = (cmd->rsp[0] << 8) | cmd->rsp[1];
-    return i;
+    SD_CSN = 0;
+    rsp = sd_raw_cmd();
+    stat_byte = sd_get();
+    tmp = sd_get();			/* close it off */
+    SD_CSN = 1;
+    return ((rsp << 8) | stat_byte);
   }
 
 
@@ -846,7 +720,7 @@ implementation {
 
   command error_t SDread.read[uint8_t cid](uint32_t blockaddr, void *data) {
     sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
+    uint8_t   rsp;
 
     if (sd_state) {
       sd_panic_idle(42, sd_state);
@@ -862,32 +736,22 @@ implementation {
     data_ptr = data;
 
     cmd = &sd_cmd;
-    ctl = &sd_ctl;
 
     /* Need to add size checking, 0 = success */
-    cmd->cmd     = SD_READ_BLOCK;
-    ctl->rsp_len = SD_READ_BLOCK_R;
+    cmd->cmd = SD_READ_BLOCK;
     cmd->arg = (blk_start << SD_BLOCKSIZE_NBITS);
 
-    if (sd_send_command()) {
-      sd_panic_idle(43, 0);
+    if ((rsp = sd_send_command())) {
+      sd_panic_idle(43, rsp);
       return FAIL;
     }
-
-    /* Check for an error, like a misaligned read */
-    if (cmd->rsp[0] != 0) {
-      sd_panic_idle(44, cmd->rsp[0]);
-      return FAIL;
-    }
-
-    /* Re-assert CS to continue the transfer */
-    SD_CSN = 0;
 
     /*
      * The SD card can take some time before it says continue.
      * We've seen upto 300-400 uis before it says continue.
      * kick to a task to let other folks run.
      */
+    SD_CSN = 0;				/* rassert to continue xfer */
     sd_read_tok_count = 0;
     post sd_read_task();
     return SUCCESS;
@@ -912,18 +776,7 @@ implementation {
       post sd_write_task();
       return;
     }
-
-    tmp = sd_get();			/* send 8 more clocks to let card finish */
-
-    /* Deassert CS */
-    SD_CSN = 1;
-
-    /*
-     * Send some extra clocks so the card can finish
-     * (Where did this come from?)
-     */
-    sd_put(0xff);
-    sd_put(0xff);
+    SD_CSN = 1;				/* deassert CS */
 
     i = sd_read_status();
     if (i)
@@ -976,8 +829,7 @@ implementation {
 
   command error_t SDwrite.write[uint8_t cid](uint32_t blockaddr, void *data) {
     sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
-    uint8_t  tmp;
+    uint8_t  tmp, rsp;
 
     if (sd_state) {
       sd_panic_idle(47, sd_state);
@@ -992,26 +844,17 @@ implementation {
     data_ptr = data;
 
     cmd = &sd_cmd;
-    ctl = &sd_ctl;
 
     sd_compute_crc(data);
     cmd->arg = (blk_start << SD_BLOCKSIZE_NBITS);
 
-    cmd->cmd     = SD_WRITE_BLOCK;
-    ctl->rsp_len = SD_WRITE_BLOCK_R;
-    if (sd_send_command()) {
-      sd_panic_idle(48, 0);
+    cmd->cmd = SD_WRITE_BLOCK;
+    if ((rsp = sd_send_command())) {
+      sd_panic_idle(48, rsp);
       return FAIL;
     }
 
-    /* Check for an error, like a misaligned write */
-    if (cmd->rsp[0] != 0) {
-      sd_panic_idle(49, 0);
-      return FAIL;
-    }
-
-    /* Re-assert CS to continue the transfer */
-    SD_CSN = 0;
+    SD_CSN = 0;				/* reassert to continue xfer */
 
     /* The write command needs an additional 8 clock cycles before
      * the block write is started.
@@ -1050,7 +893,7 @@ implementation {
 
   command error_t SDerase.erase[uint8_t cid](uint32_t blk_s, uint32_t blk_e) {
     sd_cmd_t *cmd;
-    sd_ctl_t *ctl;
+    uint8_t   rsp;
 
     if (sd_state) {
       sd_panic_idle(51, sd_state);
@@ -1063,68 +906,76 @@ implementation {
     blk_end = blk_e;
 
     cmd = &sd_cmd;
-    ctl = &sd_ctl;
-    /*
-     * convert blocks into byte addresses.
-     */
-    blk_start <<= SD_BLOCKSIZE_NBITS;
-    blk_end   <<= SD_BLOCKSIZE_NBITS;
 
     /*
      * send the start and then the end
      */
-    cmd->arg = blk_start;
-    cmd->cmd     = SD_SET_ERASE_START;
-    ctl->rsp_len = SD_SET_ERASE_START_R;
-    if (sd_send_command()) {
-      sd_panic_idle(52, 0);
+    cmd->arg = blk_start << SD_BLOCKSIZE_NBITS;
+    cmd->cmd = SD_SET_ERASE_START;
+    if ((rsp = sd_send_command())) {
+      sd_panic_idle(52, rsp);
       return FAIL;
     }
 
-    /* Check for an error, like a misaligned write */
-    if (cmd->rsp[0] != 0) {
-      sd_panic_idle(53, cmd->rsp[0]);
+    cmd->arg = blk_end << SD_BLOCKSIZE_NBITS;
+    cmd->cmd = SD_SET_ERASE_END;
+    if ((rsp = sd_send_command())) {
+      sd_panic_idle(54, rsp);
       return FAIL;
     }
 
-    cmd->arg = blk_end;
-    cmd->cmd     = SD_SET_ERASE_END;
-    ctl->rsp_len = SD_SET_ERASE_END_R;
-    if (sd_send_command()) {
-      sd_panic_idle(54, 0);
-      return FAIL;
-    }
-
-    /* Check for an error, like a misaligned write */
-    if (cmd->rsp[0] != 0) {
-      sd_panic_idle(55, cmd->rsp[0]);
-      return FAIL;
-    }
-
-    cmd->cmd     = SD_ERASE;
-    ctl->rsp_len = SD_ERASE_R;
-    if (sd_send_command()) {
-      sd_panic_idle(56, 0);
-      return FAIL;
-    }
-
-    /* Check for an error, like a misaligned write */
-    if (cmd->rsp[0] != 0) {
-      sd_panic_idle(57, cmd->rsp[0]);
+    cmd->cmd = SD_ERASE;
+    if ((rsp = sd_send_command())) {
+      sd_panic_idle(56, rsp);
       return FAIL;
     }
     return SUCCESS;
   }
 
 
-  command int SDraw.send_cmd() {
+  /*************************************************************************
+   *
+   * SDraw: raw interface to SD card from test programs.
+   *
+   *************************************************************************/
+
+#ifdef SD_RAW
+
+  command void SDraw.start_op() {
+    SD_CSN = 0;
+  }
+
+
+  command void SDraw.end_op() {
+    uint8_t tmp;
+
+    tmp = sd_get();
+    SD_CSN = 1;
+  }
+
+
+  command uint8_t SDraw.get() {
+    return sd_get();
+  }
+
+
+  command void SDraw.put(uint8_t byte) {
+    sd_put(byte);
+  }
+
+
+  command sd_cmd_t *SDraw.cmd_ptr() {
+    return &sd_cmd;
+  }
+
+
+  command uint8_t SDraw.send_cmd() {
     return sd_send_command();
   }
 
 
-  command void SDraw.get_ptrs(sd_cmd_t **cmd, sd_ctl_t **ctl) {
-    *cmd = &sd_cmd;
-    *ctl = &sd_ctl;
+  command uint8_t SDraw.raw_cmd() {
+    return sd_raw_cmd();
   }
 
 
@@ -1132,6 +983,15 @@ implementation {
     sd_start_dma(tx, rx, len);
     sd_wait_dma();
   }
+#endif /* SD_RAW */
+
+
+
+  /*************************************************************************
+   *
+   * DMA interaction
+   *
+   *************************************************************************/
 
 
   task void dma_task() {

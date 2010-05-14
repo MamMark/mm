@@ -1,4 +1,4 @@
 COMPONENT=sdC
-PFLAGS += -DNO_SD
-PFLAGS += -I$(MM_ROOT)/apps/mm -I$(MM_ROOT)/tos/interfaces
+PFLAGS += -DSD_RAW
+#PFLAGS += -DNO_SD
 include $(MAKERULES)
