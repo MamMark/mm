@@ -16,13 +16,16 @@ implementation {
   sdP.Boot -> MainC;
 
  components SDspC;
-   sdP.SDread  -> SDspC.SDread[0];
+//   sdP.SDread  -> SDspC.SDread[0];
    sdP.SDreset -> SDspC;
    sdP.SDraw -> SDspC;
 
   components FileSystemC as FS;
   sdP.FS_OutBoot -> FS;
 
-  components new SD_ArbC() as SDrb;
-  sdP.Resource -> SDrb;
+  components Hpl_MM_hwC as HW;
+  sdP.HW -> HW;
+
+  components HplMsp430UsciB0C as UsciC;
+  sdP.Usci -> UsciC;
 }

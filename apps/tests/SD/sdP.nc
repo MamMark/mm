@@ -7,31 +7,37 @@
  */
 
 #include "sd_cmd.h"
+#include "msp430usci.h"
 
 module sdP {
   uses {
     interface SDreset;
-    interface SDread;
     interface Boot;
-    interface Resource;
     interface SDraw;
     interface Boot as FS_OutBoot;
+    interface Hpl_MM_hw as HW;
+    interface HplMsp430UsciB as Usci;
   }
 }
 
 implementation {
+
+#include "platform_sd_spi.h"
 
   sd_cmd_t *cmd;                // Command Structure
   //uint8_t  data_buf[514];       // 512 for data, 2 at end for CRC
   //uint32_t blk_id;              // Block ID
 
   event void Boot.booted() {
-    call Resource.request();    // Request the arbiter to power and ready SD
+    call HW.sd_on();
+    call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
+    call SDreset.reset();        // 74 Clocks, Go Op, call resetDone
   }
 
 
-  event void Resource.granted() {
-    uint8_t ocr_data[4], rsp;
+  event void SDreset.resetDone(error_t err) {
+    uint8_t ocr_data[4], rsp, tmp;
+    int i;
 
     cmd = call SDraw.cmd_ptr();
 
@@ -71,9 +77,18 @@ implementation {
      * The CID register contains the Mfg specific info, 128 bits wide,
      *  contains Mfg, OEM, Prod Name, Rev, etc.
      */
+    call SDraw.start_op();
     cmd->cmd     = SD_SEND_CID;
-    rsp = call SDraw.send_cmd();
+    rsp = call SDraw.raw_cmd();
+    while (1) {
+      tmp = call SDraw.get();
+      if (tmp == 0xfe)
+	break;
+    }
+    for (i = 0; i < 20; i++)
+      tmp = call SDraw.get();
     nop();
+    call SDraw.end_op();
 
     /* Setup for CMD9, read the CSD register, Card Specific Data register
      *  returns R1_LEN, 1 byte.  See Section 5.3
@@ -83,28 +98,33 @@ implementation {
      *  size WRITE_BL_LEN, and erase sector size SECTOR_SIZE, etc.
      *
      */
+    call SDraw.start_op();
     cmd->cmd     = SD_SEND_CSD;
-    rsp = call SDraw.send_cmd();
+    rsp = call SDraw.raw_cmd();
+    while (1) {
+      tmp = call SDraw.get();
+      if (tmp == 0xfe)
+	break;
+    }
+    for (i = 0; i < 20; i++)
+      tmp = call SDraw.get();
     nop();
+    call SDraw.end_op();
+
 
     /* CMD8
 
      */
 
 
-
-
-
-
-
   }
 
+#ifdef notdef
   event void SDread.readDone(uint32_t blk_id, void *data_buf, error_t err) {
     nop();                  // Just a location for a break point
     call Resource.release();
   }
-
-  event void SDreset.resetDone(error_t err) {}
+#endif
 
   event void FS_OutBoot.booted() {
     nop();

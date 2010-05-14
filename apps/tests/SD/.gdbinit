@@ -27,29 +27,7 @@ comm
 printf "pcode: 0d%d (0x%0x)  where: 0d%d  0x%04x 0x%04x 0x%04x 0x%04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
 
-# sd_send_command
-b SDspP.nc:474
-comm
-printf "sd_send_command\n"
-printf "prelim delta: "
-x/hd &d1
-printf "cmd delta:    "
-x/hd &d2
-printf "rsp delta:    "
-x/hd &d3
-printf "total time:   "
-x/hd &t4
-end
-
-b SDspP.nc:656
-comm
-printf "SDreset.reset complete\n"
-p/d SDspP__sd_go_op_count
-p/d SDspP__last_reset_time_mis
-p/d SDspP__last_reset_time_uis
-end
-
 dis
 ena 5
 
-b sdP.nc:37
+b sdP.nc:36
