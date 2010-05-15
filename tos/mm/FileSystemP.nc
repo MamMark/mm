@@ -64,18 +64,15 @@ typedef enum {
 
 module FileSystemP {
   provides {
-    /* exports */
     interface Init;
     interface Boot as OutBoot;		/* signals OutBoot */
     interface FileSystem as FS;
   }
   uses {
-    /* imports */
-    interface Boot;			/* incoming Booted signal */
-
+    interface Boot;			/* incoming booted signal */
     interface SDread;
-    interface StreamStorageWrite as SSW;
-    interface Resource;
+    interface SSWrite as SSW;
+    interface Resource as SDResource;
     interface Panic;
   }
 }
@@ -172,13 +169,13 @@ implementation {
     error_t err;
 
     fs_state = FSS_REQUEST;
-    if ((err = call Resource.request()))
+    if ((err = call SDResource.request()))
       fs_panic_idle(1, err);
     return;
   }
 
 
-  event void Resource.granted() {
+  event void SDResource.granted() {
     error_t err;
 
     if (fs_state != FSS_REQUEST) {
@@ -281,7 +278,7 @@ implementation {
 	return;
     }
     fs_state = FSS_IDLE;
-    call Resource.release();
+    call SDResource.release();
     signal OutBoot.booted();
   }
 

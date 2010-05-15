@@ -16,8 +16,8 @@ implementation {
   Collect = CollectP;
   LogEvent = CollectP;
 
-  components StreamStorageC;
-  CollectP.SSW -> StreamStorageC;
+  components SSWriteC;
+  CollectP.SSW -> SSWriteC;
 
   components PanicC;
   CollectP.Panic -> PanicC;

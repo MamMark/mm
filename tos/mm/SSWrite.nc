@@ -9,11 +9,15 @@
 
 #include "stream_storage.h"
 
-interface StreamStorageWrite {
+interface SSWrite {
   /*
    * StreamStorage provides an interface to sector orientated 512 byte
    * stream storage devices.  Data is accessed as blocks of 512 bytes.
    * A stream of 512 byte blocks is written to the stream device.
+   *
+   * Note the actual size of the buffer is 514 because it includes
+   * space for a 16 bit CRC.  The client shouldn't count on this and
+   * this should be opaque to the client.
    */
 
   /**
@@ -25,7 +29,17 @@ interface StreamStorageWrite {
    *   <li>buffer if good buf_handle.
    */
   command uint8_t *buf_handle_to_buf(ss_wr_req_t *buf_handle);
+
+
+  /*
+   * get_temp_buf provides a mechanism where a client can ask for space
+   * controlled by SSWrite to use on a temporary basis.  It is assumed
+   * that this occurs while booting and before SSWrite is active.
+   *
+   * This routine should not be used after the boot sequence completes.
+   */
   command uint8_t *get_temp_buf();
+
 
   /**
    * request a new buffer from the Stream Storage system.
@@ -44,5 +58,4 @@ interface StreamStorageWrite {
    * @param buf_handle address of the ss_buf_handle ready to be flushed.
    */  
   command void buffer_full(ss_wr_req_t *buf_handle);
-
 }

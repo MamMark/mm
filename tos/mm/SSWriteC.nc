@@ -1,31 +1,32 @@
 /**
- * Copyright @ 2008 Eric B. Decker
+ * Copyright @ 2008, 2010 Eric B. Decker
  * @author Eric B. Decker
- * @date 5/8/2008
+ * @date 5/14/2010
  *
- * Configuration wiring for StreamStorage.  See StreamStorageP for
- * more details on what StreamStorage does.
+ * Configuration wiring for stream storage write (SSWrite).  See
+ * SSWriteP for more details on how stream storage works.
  *
- * Threaded TinyOS 2 implementation.
+ * Stream storage is split phase and interfaces to a split phase
+ * SD mass storage driver.
  */
 
 #include "stream_storage.h"
 
-configuration StreamStorageC {
+configuration SSWriteC {
   provides {
-    interface StreamStorageWrite as SSW;
-    interface StreamStorageFull  as SSF;
+    interface SSWrite as SSW;
+    interface SSFull  as SSF;
   }
 }
 
 implementation {
-  components StreamStorageP as SS_P, MainC;
+  components SSWriteP as SS_P, MainC;
   SSW = SS_P;
   SSF = SS_P;
   MainC.SoftwareInit -> SS_P;
 
   components new SD_ArbC() as SD;
-  SS_P.WriteResource -> SD;
+  SS_P.SDResource -> SD;
   SS_P.SDwrite -> SD;
 
   components PanicC, LocalTimeMilliC;

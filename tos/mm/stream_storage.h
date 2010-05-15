@@ -14,7 +14,6 @@
 */
 #define SS_BLOCK_SIZE 512
 #define SSW_NUM_BUFS   4
-#define SSR_NUM_REQS   4
 
 /*
  * SSW_GROUP defines how many buffers to group together before trying to fire up the SD
@@ -26,13 +25,11 @@
 
 /*
  * Stream Storage Buffer States
- * used for both Reader and Writer interfaces
  *
  * Free:	available to be assigned.  empty.
  * Alloc:	allocated.  owned by the collector.
  * Full:	full.  waiting to be written.
- * Writing:	being written by the dma engine
- * Reading:	being read by the dma engine.
+ * Writing:	being written
  *
  * Buffer sequencing is critical to the data stream remaining
  * consistant.  Data is composed of a single typed stream being
@@ -43,39 +40,20 @@
  * order and expected to be handed back in the same order as
  * used.
  *
- * Reading is done on a per block basis and doesn't have the
- * strict sequencing criteria.  Requests are processed in order.
- *
  * A buffer cycle is as follows:
  *
- * 1) Initially a buffer or request is marked FREE.
+ * 1) Initially a buffer is marked FREE.
  *
  * 2) The data collector requests the buffer via get_buffer and
  *    the buffer transitions to ALLOC.
  *
  * 3) The data collector fills the buffer and hands it off to
- *    StreamStorage via the command StreamStorageWrite.buffer_full
+ *    StreamStorage via the command SSWrite.buffer_full
  *
- * 4) When the DMA engine is actively writing the buffer it is
- *    marked BUSY.
+ * 4) Full buffers are handed to the SD driver in the order they
+ *    are received (filled up).  marked WRITING.
  *
- * 5) When the DMA engine completes the write, the buffer is
- *    marked DONE.  And the event SD.dma_done is sent
- *    back to the StreamStorage implementation.  (This should
- *    happen in the SD driver).
- *
- * 7) Upon successful completion, the buffer is marked FREE.
- *
- *
- * Read cycle.
- *
- * 1) Initially all read request blocks are marked FREE
- *
- * 2) The caller will request a particular block and provide a buffer
- *    for the data.
- *
- * 3) The request will be placed in the next free read request block.
- *    And the reader signalled that a new request is pending.
+ * 5) Upon successful completion, the buffer is marked FREE.
  */
 
 typedef enum {
@@ -83,8 +61,6 @@ typedef enum {
     SS_REQ_STATE_ALLOC,
     SS_REQ_STATE_FULL,
     SS_REQ_STATE_WRITING,
-    SS_REQ_STATE_READ_REQ,
-    SS_REQ_STATE_READING,
     SS_REQ_STATE_DONE,
     SS_REQ_STATE_MAX
 } ss_req_state_t;
@@ -100,16 +76,6 @@ typedef struct {
 } ss_wr_req_t;
 
 
-typedef struct {
-  uint16_t majik;
-  ss_req_state_t  req_state;
-  uint32_t stamp;
-  uint32_t blk;
-  uint8_t *buf;
-  uint8_t  cid;				/* client id */
-} ss_rd_req_t;
-
-
 /*
  * Stream Storage Control Structure
  *
@@ -122,9 +88,6 @@ typedef struct {
  * ssw_alloc:   Next buffer to be given out.
  * ssw_num_full:number of full buffers including the one being written.
  * ssw_max_full:maximum number of full buffers ever
- *
- * ssr_in:	request that will be used next
- * ssr_out:	request being processed
  */
 
 typedef struct {
@@ -136,33 +99,10 @@ typedef struct {
     uint8_t    ssw_num_full;	/* number of full buffers including active */
     uint8_t    ssw_max_full;	/* maximum that ever went, max */
 
-    uint8_t    ssr_in;		/* next request to use */
-    uint8_t    ssr_out;		/* next request to process */
-
     uint16_t   majik_b;
 } ss_control_t;
 
 #define SSC_MAJIK_A 0x9191
 #define SSC_MAJIK_B 0xf423
-
-
-/*
- * StreamStorage also has an interface that allows reading
- * of raw blocks.  Raw because it is simple.  Yes this is a
- * wart that goes around the StreamStorage abstraction, but
- * StreamStorage is what knows about where things (panic, config,
- * data areas).  So it is a compromise to sit on top of Stream
- * Storage.
- */
-
-
-/*
- * client numbers for SSReader
- */
-enum {
-  SSR_CLIENT_TEST = 0,
-  SSR_CLIENT_DUMP = 1,
-  SSR_CLIENT_MAX  = 1,
-};
 
 #endif /* _STREAM_STORAGE_H */

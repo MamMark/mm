@@ -16,7 +16,7 @@ module CollectP {
     interface LogEvent;
   }
   uses {
-    interface StreamStorageWrite as SSW;
+    interface SSWrite as SSW;
     interface Panic;
     interface LocalTime<TMilli>;
   }
@@ -27,12 +27,6 @@ implementation {
 
   command error_t Init.init() {
     dcc.majik_a = DC_MAJIK_A;
-    dcc.handle = NULL;
-    dcc.cur_buf = NULL;
-    dcc.cur_ptr = NULL;
-    dcc.remaining = 0;
-    dcc.chksum  = 0;
-    dcc.seq = 0;
     dcc.majik_b = DC_MAJIK_B;
     return SUCCESS;
   }

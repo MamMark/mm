@@ -1,13 +1,9 @@
 /**
- * Copyright (c) 2008, Eric Decker
+ * Copyright (c) 2008, 2010, Eric Decker
  * All rights reserved.
  */
 
-/**
- * @author Eric Decker
- */
-
-interface StreamStorageFull {
+interface SSFull {
   /**
    * The event "dblk_stream_full" is signaled when the assigned area
    * for data block storage is full.  Typically this will cause the
