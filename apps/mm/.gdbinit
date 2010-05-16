@@ -1,1 +1,1 @@
-.gdbinit_threads
+.gdbinit_nothreads

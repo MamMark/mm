@@ -1,13 +1,25 @@
 
 #no threads
 
+source ../../.gdb2618
+source ../../.gdb_mm
+
 set remoteaddresssize 0d64
 set remotetimeout 0d999999
-
 target remote localhost:2000
 
 disp/i $pc
 x/i $pc
+set pri ele 0
+
+define inst
+p/d SDspP__last_reset_time_uis
+p/d SDspP__last_reset_time_mis
+p/d SDspP__last_read_time_uis
+p/d SDspP__last_read_time_mis
+p/d SDspP__last_write_time_uis
+p/d SDspP__last_write_time_mis
+end
 
 b RealMainP.nc:75
 b RealMainP.nc:82
@@ -16,9 +28,13 @@ b SchedulerBasicP.nc:148
 b VirtualizeTimerC.nc:81
 dis
 
-b PanicP.nc:42
+# 5 debug_break  (optimized out)
+# b PanicP.nc:62
+
+# 5 panic
+b PanicP.nc:77
 comm
-printf "pcode: %d  where: %d  %04x %04x %04x %04x\n",_p, _w, _a0, _a1, _a2, _a3
+printf "pcode: 0d%d (0x%0x)  where: 0d%d  0x%04x 0x%04x 0x%04x 0x%04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
 
 #b CollectP.nc:45
@@ -32,9 +48,30 @@ end
 #end
 #dis 7-8
 
-#b mm3C.nc:136
-#b SDP.nc:229
-#b SDP.nc:390
+# 7
+b mmP.nc:44
+
+# ******************************************************************************
+# gps start
+#b GPSP.nc:448
+
+# gps finish
+#b GPSP.nc:301
+
+# 7 Msg Collect too big
+#b GPSMsgP.nc:538
+
+# 8 Msg checksum fail
+#b GPSMsgP.nc:561
+
+# GPSP.nc
+#  9 finish      502
+# 10 signal surface mmControlP.nc:107
+# 11 start       669
+# 14 msgBoundary 1102
+
+# 9 finish
+#b GPSP.nc:502
 
 #b mm3CommDataP.nc:163
 #comm
@@ -45,10 +82,6 @@ end
 # b sig_TIMERA1_VECTOR
 # b sig_TIMERB0_VECTOR
 # b sig_TIMERB1_VECTOR
-
-#set remoteaddresssize 0d64
-#set remotetimeout 0d999999
-#target remote localhost:2000
 
 # b AdcP.nc:219
 # comm
@@ -70,3 +103,14 @@ end
 # comm
 # printf "release: %d %d\n",AdcP__adc_owner,client_id
 # end
+
+define nx
+fini
+ni 3
+si 2
+end
+
+define noint
+printf "cur sr: %02x\n", $r2
+set $r2=0
+end
