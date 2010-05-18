@@ -16,6 +16,9 @@ TYPED_DATA=$(MM_ROOT)/tos/mm/typed_data.h
 COMM=$(MM_ROOT)/tos/comm
 SENSORS=$(MM_ROOT)/tos/chips/sensors
 
+BUILD_NUM_FILE = $(MM_PLATFORM_DIR)/_Build
+REF_BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_NUM_FILE)))); else echo 0; fi)
+
 STOW_DIR=/opt
 
 PROGRAMS=mmdump
@@ -254,6 +257,9 @@ serialpacket.c serialpacket.h: $(SERIAL_H)
 
 serialprotocol.h: $(SERIAL_H)
 	ncg -o $@ -c-prefix=SERIAL c $(SERIAL_H) Serial.h
+
+mmdump.o: mmdump.c $(BUILD_NUM_FILE)
+	$(CC) -c $(CFLAGS) -I$(MM_PLATFORM_DIR) -DREF_BUILD=$(REF_BUILD_NUM) $<
 
 .c.o:
 	$(CC) -c $(CFLAGS) $<
