@@ -71,7 +71,6 @@
 module CradleP {
   provides {
     interface StdControl;
-    interface Init;
     interface AdcConfigure<const mm_sensor_config_t*>;
     interface Docked;
   }
@@ -91,21 +90,12 @@ module CradleP {
 implementation {
   uint8_t  cradle_state;
   uint32_t err_overruns;
-  bool     docked;
-  bool     comm_idle;
+  bool     docked = FALSE;
+  bool     comm_idle = TRUE;
 
 
   command bool Docked.isDocked() {
     return docked;
-  }
-
-
-  command error_t Init.init() {
-    cradle_state = CRADLE_STATE_OFF;
-    err_overruns = 0;
-    docked = FALSE;
-    comm_idle = TRUE;
-    return SUCCESS;
   }
 
 

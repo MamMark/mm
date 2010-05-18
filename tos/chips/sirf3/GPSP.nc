@@ -317,19 +317,8 @@ implementation {
   }
 
   command error_t Init.init() {
-    /*
-     * initilize the gps event trace buffer
-     * initilize eavesdrop memory
-     */
-    memset(g_evs, 0, sizeof(g_evs));
-    g_nev = 0;
-    memset(gbuf, 0, sizeof(gbuf));
-    g_idx = 0;
-
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
-    t_gps_pwr_on = 0;
     gpsc_reconfig_trys = MAX_GPS_RECONFIG_TRYS;
-    gpsc_operational = 0;
     atomic {
       call UsciResource.immediateRequest();
       /*

@@ -9,8 +9,7 @@ configuration PressC {
   provides interface StdControl;
 }
 implementation {
-  components MainC, PressP;
-  MainC.SoftwareInit -> PressP;
+  components PressP;
   StdControl = PressP;
 
   components RegimeC, new TimerMilliC() as PeriodTimer;

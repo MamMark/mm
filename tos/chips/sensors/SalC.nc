@@ -10,8 +10,7 @@ configuration SalC {
 }
 
 implementation {
-  components MainC, SalP;
-  MainC.SoftwareInit -> SalP;
+  components SalP;
   StdControl = SalP;
 
   components RegimeC, new TimerMilliC() as PeriodTimer;

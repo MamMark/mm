@@ -35,6 +35,9 @@
  * being, the control mechanism (minimum sensing period) is hard
  * coded.  The data path is implemented as a push via an event
  * signal.
+ *
+ * Data structures are initilized to zero by start up code.
+ * Initial state is OFF (0).   Period 0.
  */
 
 #include "sensors.h"
@@ -43,7 +46,6 @@
 module SalP {
   provides {
     interface StdControl;
-    interface Init;
     interface AdcConfigure<const mm_sensor_config_t*>;
     interface SenseVal;
   }
@@ -76,11 +78,6 @@ implementation {
    */
   uint16_t sal_data, temp_data[2];
   uint32_t sal_stamp;
-
-  command error_t Init.init() {
-    sal_state = SAL_STATE_OFF;
-    return SUCCESS;
-  }
 
   command error_t StdControl.start() {
     call HW.sal_on();

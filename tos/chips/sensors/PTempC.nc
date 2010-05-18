@@ -9,8 +9,7 @@ configuration PTempC {
   provides interface StdControl;
 }
 implementation {
-  components MainC, PTempP;
-  MainC.SoftwareInit -> PTempP;
+  components PTempP;
   StdControl = PTempP;
 
   components RegimeC, new TimerMilliC() as PeriodTimer;

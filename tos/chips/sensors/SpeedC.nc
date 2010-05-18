@@ -10,8 +10,7 @@ configuration SpeedC {
 }
 
 implementation {
-  components MainC, SpeedP;
-  MainC.SoftwareInit -> SpeedP;
+  components SpeedP;
   StdControl = SpeedP;
 
   components RegimeC, new TimerMilliC() as PeriodTimer;

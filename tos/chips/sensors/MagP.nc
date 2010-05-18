@@ -8,6 +8,9 @@
 /**
  *  Magnatometer Sensor Driver
  *  @author: Eric B. Decker
+ *
+ * Data structures are initilized to zero by start up code.
+ * Initial state is OFF (0).   Period 0.
  */
 
 #include "sensors.h"
@@ -16,7 +19,6 @@
 module MagP {
   provides {
     interface StdControl;
-    interface Init;
     interface AdcConfigure<const mm_sensor_config_t*>;
   }
 
@@ -39,14 +41,6 @@ implementation {
   uint32_t err_eaves_drops;
 
   uint16_t data[3];
-
-
-  command error_t Init.init() {
-    period = 0;
-    mag_state = MAG_STATE_OFF;
-    err_overruns = 0;
-    return SUCCESS;
-  }
 
 
   command error_t StdControl.start() {

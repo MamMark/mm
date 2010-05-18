@@ -27,7 +27,6 @@ uint16_t mmSerial_busy;
 
 module DockCommArbiterP {
   provides {
-    interface Init;
     interface AMSend[uint8_t id];
   }
   uses {
@@ -105,10 +104,6 @@ implementation {
   }
 
 #else
-
-  command error_t Init.init() {
-    return SUCCESS;
-  }
 
   command error_t AMSend.send[uint8_t id](am_addr_t addr, message_t *msg, uint8_t len) {
     if(busy == FALSE) {

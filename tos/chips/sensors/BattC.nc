@@ -10,8 +10,7 @@ configuration BattC {
 }
 
 implementation {
-  components MainC, BattP;
-  MainC.SoftwareInit -> BattP;
+  components BattP;
   StdControl = BattP;
 
   components RegimeC, new TimerMilliC() as PeriodTimer;

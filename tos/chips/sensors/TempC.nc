@@ -10,8 +10,7 @@ configuration TempC {
 }
 
 implementation {
-  components MainC, TempP;
-  MainC.SoftwareInit -> TempP;
+  components TempP;
   StdControl = TempP;
 
   components RegimeC, new TimerMilliC() as PeriodTimer;

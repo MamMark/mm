@@ -21,13 +21,10 @@ configuration DockCommArbiterC {
 }
 
 implementation {
-  components MainC;
   components DockCommArbiterP;
   components new SerialAMSenderC(AM_MM_DATA);
   components new AMQueueImplP(MM_NUM_SENSORS), SerialActiveMessageC;
   
-  MainC.SoftwareInit -> DockCommArbiterP;
-
   Send = AMQueueImplP;
   SendBusy = AMQueueImplP;
   Resource = DockCommArbiterP;

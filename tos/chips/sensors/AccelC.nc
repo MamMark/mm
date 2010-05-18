@@ -10,8 +10,7 @@ configuration AccelC {
 }
 
 implementation {
-  components MainC, AccelP;
-  MainC.SoftwareInit -> AccelP;
+  components AccelP;
   StdControl = AccelP;
 
   components RegimeC, new TimerMilliC() as PeriodTimer;

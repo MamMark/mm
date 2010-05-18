@@ -18,6 +18,9 @@
  * reads the X data, switches to Y (smux change), and delays
  * to allow settling time for the smux switch.  This is
  * repeated for the Z axis.
+ *
+ * Data structures are initilized to zero by start up code.
+ * Initial state is OFF (0).   Period 0.
  */
 
 #include "sensors.h"
@@ -26,7 +29,6 @@
 module AccelP {
   provides {
     interface StdControl;
-    interface Init;
     interface AdcConfigure<const mm_sensor_config_t*>;
   }
 
@@ -50,13 +52,6 @@ implementation {
   
   uint16_t data[3];
 
-  command error_t Init.init() {
-    period = 0;
-    accel_state = ACCEL_STATE_OFF;
-    err_overruns = 0;
-    err_eaves_drops = 0;
-    return SUCCESS;
-  }
 
   command error_t StdControl.start() {
     call HW.accel_on();

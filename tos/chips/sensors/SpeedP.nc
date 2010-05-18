@@ -8,6 +8,9 @@
 /**
  *  Speed Sensor Driver
  *  @author: Eric B. Decker
+ *
+ * Data structures are initilized to zero by start up code.
+ * Initial state is OFF (0).   Period 0.
  */
 
 #include "sensors.h"
@@ -16,7 +19,6 @@
 module SpeedP {
   provides {
     interface StdControl;
-    interface Init;
     interface AdcConfigure<const mm_sensor_config_t*>;
   }
 
@@ -40,12 +42,6 @@ implementation {
   
   uint16_t data[2];
 
-  command error_t Init.init() {
-    period = 0;
-    speed_state = SPEED_STATE_OFF;
-    err_overruns = 0;
-    return SUCCESS;
-  }
 
   command error_t StdControl.start() {
     call HW.speed_on();

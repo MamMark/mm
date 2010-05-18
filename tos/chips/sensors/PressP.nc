@@ -8,6 +8,9 @@
 /**
  *  Pressure Sensor Driver
  *  @author: Eric B. Decker
+ *
+ * Data structures are initilized to zero by start up code.
+ * Initial state is OFF (0).   Period 0.
  */
 
 #include "sensors.h"
@@ -16,7 +19,6 @@
 module PressP {
   provides {
     interface StdControl;
-    interface Init;
     interface AdcConfigure<const mm_sensor_config_t*>;
   }
 
@@ -37,14 +39,6 @@ implementation {
   uint8_t  press_state;
   uint32_t err_overruns;
   uint32_t err_eaves_drops;
-
-
-  command error_t Init.init() {
-    period = 0;
-    press_state = PRESS_STATE_OFF;
-    err_overruns = 0;
-    return SUCCESS;
-  }
 
 
   command error_t StdControl.start() {

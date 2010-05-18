@@ -10,8 +10,7 @@ configuration MagC {
 }
 
 implementation {
-  components MainC, MagP;
-  MainC.SoftwareInit -> MagP;
+  components MagP;
   StdControl = MagP;
 
   components RegimeC, new TimerMilliC() as PeriodTimer;

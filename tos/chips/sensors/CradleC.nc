@@ -13,8 +13,7 @@ configuration CradleC {
 }
 
 implementation {
-  components MainC, CradleP;
-  MainC.SoftwareInit -> CradleP;
+  components CradleP;
   StdControl = CradleP;
   Docked = CradleP;
 

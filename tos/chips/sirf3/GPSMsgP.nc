@@ -460,13 +460,6 @@ implementation {
 
   command error_t Init.init() {
     gpsm_state = GPSM_DOWN;
-    got_fix = FALSE;
-    collect_overflow_full = 0;
-    collect_overflow_max  = 0;
-    collect_too_big = 0;
-    collect_chksum_fail = 0;
-    collect_proto_fail = 0;
-    memset(collect_msg, 0, sizeof(collect_msg));
     call GPSMsgControl.start();
     return SUCCESS;
   }
