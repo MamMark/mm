@@ -8,7 +8,13 @@
  * @date March 21, 2010
  */
 
-uint8_t wait;
+#ifndef WAIT
+#define WAIT 0
+#endif
+
+
+uint8_t wait = WAIT;
+
 
 module CommBootP {
   provides {
@@ -21,8 +27,6 @@ module CommBootP {
 }
 implementation {
   event void Boot.booted() {
-    if (wait > 1)
-      wait = 1;
     while (wait) {
       nop();
     }
