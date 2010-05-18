@@ -20,6 +20,9 @@ implementation {
    sdP.SDreset -> SDspC;
    sdP.SDraw -> SDspC;
 
+  components SDsaC;
+  sdP.SDsa -> SDsaC;
+
   components FileSystemC as FS;
   sdP.FS_OutBoot -> FS;
 

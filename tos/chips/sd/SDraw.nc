@@ -15,6 +15,7 @@ interface SDraw {
   command void      put(uint8_t byte);
   command sd_cmd_t *cmd_ptr();
   command uint8_t   send_cmd();
+  command uint8_t   send_acmd();
   command uint8_t   raw_cmd();
   command void      send_recv(uint8_t *tx, uint8_t *rx, uint16_t len);
 }

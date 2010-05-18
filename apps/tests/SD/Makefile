@@ -1,4 +1,3 @@
 COMPONENT=sdC
-PFLAGS += -DSD_RAW
 #PFLAGS += -DNO_SD
 include $(MAKERULES)

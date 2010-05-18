@@ -49,10 +49,7 @@ module SDspP {
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
     interface SDerase[uint8_t cid];
-
-#ifdef SD_RAW
     interface SDraw;
-#endif
   }
   uses {
     interface HplMsp430UsciB as Umod;
@@ -944,8 +941,6 @@ implementation {
    *
    *************************************************************************/
 
-#ifdef SD_RAW
-
   command void SDraw.start_op() {
     SD_CSN = 0;
   }
@@ -979,6 +974,11 @@ implementation {
   }
 
 
+  command uint8_t SDraw.send_acmd() {
+    return sd_send_acmd();
+  }
+
+
   command uint8_t SDraw.raw_cmd() {
     return sd_raw_cmd();
   }
@@ -988,8 +988,6 @@ implementation {
     sd_start_dma(tx, rx, len);
     sd_wait_dma();
   }
-#endif /* SD_RAW */
-
 
 
   /*************************************************************************

@@ -17,6 +17,7 @@ module sdP {
     interface Boot as FS_OutBoot;
     interface Hpl_MM_hw as HW;
     interface HplMsp430UsciB as Usci;
+    interface SDsa;
   }
 }
 
@@ -25,20 +26,12 @@ implementation {
 #include "platform_sd_spi.h"
 
   sd_cmd_t *cmd;                // Command Structure
-  //uint8_t  data_buf[514];       // 512 for data, 2 at end for CRC
-  //uint32_t blk_id;              // Block ID
 
   event void Boot.booted() {
-    call HW.sd_on();
-    call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
-    call SDreset.reset();        // 74 Clocks, Go Op, call resetDone
-  }
-
-
-  event void SDreset.resetDone(error_t err) {
     uint8_t ocr_data[4], rsp, tmp;
     int i;
 
+    call SDsa.reset();
     cmd = call SDraw.cmd_ptr();
 
     /* The following information for the SD card registers references the
