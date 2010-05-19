@@ -653,7 +653,7 @@ implementation {
      * about 300 uis.  Not enough to kick a timer off (mis granularity) but
      * long enough that we don't want to sit on the cpu.
      */
-    if (tmp == 0xFF) {
+    if (tmp == 0xFF) {			/* should we explicitly check for START_TOK? */
       post sd_read_task();
       return;
     }
@@ -871,7 +871,7 @@ implementation {
      * The SD needs a write token, send it first then fire
      * up the dma.
      */
-    sd_put(SD_TOK_WRITE_STARTBLOCK);
+    sd_put(SD_START_TOK);
 
     /* send the sector size and include the 2 crc bytes */
     sd_state = SDS_WRITE_DMA;

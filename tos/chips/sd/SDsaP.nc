@@ -18,9 +18,7 @@
 #endif
 
 module SDsaP {
-  provides {
-    interface SDsa;
-  }
+  provides interface SDsa;
   uses {
     interface SDraw;
     interface HplMsp430UsciB as Usci;
@@ -34,6 +32,7 @@ implementation {
 
   command error_t SDsa.reset() {
     sd_cmd_t *cmd;                // Command Structure
+    uint8_t rsp;
 
     call HW.sd_on();
     call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
@@ -41,23 +40,25 @@ implementation {
     call SDraw.send_recv(NULL, NULL, 10);
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
     cmd->arg = 0;
-    rsp = sd_send_command();
+    rsp = call SDraw.send_cmd();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
       return FAIL;
     }
 
-    send acmd go_op;
-    call SDraw.send_acmd();
+    do {
+      cmd->cmd = SD_GO_OP;		// Send CMD0, software reset
+      rsp = call SDraw.send_acmd();
+    } while (rsp & 1);
     return SUCCESS;
   }
 
 
-  command error_t SDsa.read() {
+  command error_t SDsa.read(uint32_t blk_id, void *buf) {
     return SUCCESS;
   }
 
 
-  command error_t SDsa.write() {
+  command error_t SDsa.write(uint32_t blk_id, void *buf) {
     return SUCCESS;
   }
 }

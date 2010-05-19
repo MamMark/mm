@@ -16,9 +16,7 @@ configuration SDspC {
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
     interface SDerase[uint8_t cid];
-#ifdef SD_RAW
     interface SDraw;
-#endif
   }
 }
 
@@ -28,10 +26,7 @@ implementation {
   SDread  = SDspP;
   SDwrite = SDspP;
   SDerase = SDspP;
-
-#ifdef SD_RAW
   SDraw   = SDspP;
-#endif
 
   components PanicC;
   SDspP.Panic -> PanicC;

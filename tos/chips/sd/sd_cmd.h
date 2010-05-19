@@ -25,8 +25,7 @@ typedef struct sd_cmd {
 #define MSK_ADDR_ERR 0x20
 #define MSK_PARAM_ERR 0x40
 
-#define SD_TOK_READ_STARTBLOCK 0xFE
-#define SD_TOK_WRITE_STARTBLOCK 0xFE
+#define SD_START_TOK 0xfe
 #define SD_TOK_READ_STARTBLOCK_M 0xFE
 #define SD_TOK_WRITE_STARTBLOCK_M 0xFC
 #define SD_TOK_STOP_MULTI 0xFD
@@ -62,15 +61,27 @@ typedef struct sd_cmd {
 #define CMD1 (1 | 0x40)
 #define MMC_GO_OP CMD1
 
-/* Card sends the CSD, Card Specific Data */
+/* get simplified voltage supported, and enable SDHC
+ * And now for a brief moment of whining:  Why can't
+ * they name things in English or any other reasonable
+ * language.  Bastard committees!
+ */
+#define CMD8 (8 | 0x40)
+#define SD_SEND_IF_COND CMD8
+
+/* Card sends the CSD, Card Specific Data
+ * include CRC (2 bytes) in length
+ */
 #define CMD9 (9 | 0x40)
 #define SD_SEND_CSD CMD9
-#define SD_CSD_LEN 16
+#define SD_CSD_LEN 18
 
-/* Card sends CID, Card Identification */
+/* Card sends CID, Card Identification
+ * Note, SD_CID_LEN includes a 16 bit CRC on the end.
+ */
 #define CMD10 (10 | 0x40)
 #define SD_SEND_CID CMD10
-#define SD_CID_LEN 16
+#define SD_CID_LEN 18
 
 /* Stop a multiblock (stream) read/write operation */
 #define CMD12 (12 | 0x40)
@@ -168,8 +179,8 @@ typedef struct sd_cmd {
 
 /* Get the SD card's status */
 #define ACMD13 (13 | 0x40)
-#define SD_SEND_SCS ACMD13
-#define SD_SCS_LEN 64
+#define SD_SEND_SD_STATUS ACMD13
+#define SD_SEND_SD_STATUS_LEN 64
 
 /* Get the number of written write blocks (Minus errors ) */
 #define ACMD22 (22 | 0x40)

@@ -16,8 +16,6 @@ implementation {
   sdP.Boot -> MainC;
 
  components SDspC;
-//   sdP.SDread  -> SDspC.SDread[0];
-   sdP.SDreset -> SDspC;
    sdP.SDraw -> SDspC;
 
   components SDsaC;
