@@ -16,6 +16,7 @@ configuration SDspC {
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
     interface SDerase[uint8_t cid];
+    interface SDsa;
     interface SDraw;
   }
 }
@@ -26,6 +27,7 @@ implementation {
   SDread  = SDspP;
   SDwrite = SDspP;
   SDerase = SDspP;
+  SDsa    = SDspP;
   SDraw   = SDspP;
 
   components PanicC;
@@ -37,6 +39,9 @@ implementation {
   components HplMsp430UsciB0C as UsciC;
   SDspP.Umod -> UsciC;
 //  SDspP.UsciInterrupts -> UsciC;
+
+  components Hpl_MM_hwC as HW;
+  SDspP.HW -> HW;
 
   components LocalTimeMilliC as L;
   SDspP.lt -> L;

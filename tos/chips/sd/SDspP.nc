@@ -49,10 +49,12 @@ module SDspP {
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
     interface SDerase[uint8_t cid];
-    interface SDraw;
+    interface SDsa;			/* standalone */
+    interface SDraw;			/* raw */
   }
   uses {
     interface HplMsp430UsciB as Umod;
+    interface Hpl_MM_hw as HW;
     interface Panic;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
@@ -933,6 +935,50 @@ implementation {
     }
     return SUCCESS;
   }
+
+
+  /*************************************************************************
+   *
+   * SDsa: standalone SD implementation, no split phase, no clients
+   *
+   *************************************************************************/
+
+  command error_t SDsa.reset() {
+    sd_cmd_t *cmd;                // Command Structure
+    uint8_t rsp;
+
+    cmd = &sd_cmd;
+    call HW.sd_on();
+    call Umod.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
+    
+    SD_CSN = 1;				/* force to known state */
+    sd_start_dma(NULL, recv_dump, 10);	/* send 10 0xff to clock SD */
+    sd_wait_dma();
+
+    cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
+    cmd->arg = 0;
+    rsp = sd_send_command();
+    if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
+      return FAIL;
+    }
+
+    do {
+      cmd->cmd = SD_GO_OP;		// Send CMD0, software reset
+      rsp = sd_send_acmd();
+    } while (rsp & 1);
+    return SUCCESS;
+  }
+
+
+  command error_t SDsa.read(uint32_t blk_id, void *buf) {
+    return SUCCESS;
+  }
+
+
+  command error_t SDsa.write(uint32_t blk_id, void *buf) {
+    return SUCCESS;
+  }
+
 
 
   /*************************************************************************

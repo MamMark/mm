@@ -8,15 +8,13 @@
 
 #include "sd_cmd.h"
 #include "sd.h"
-#include "msp430usci.h"
+
 
 module sdP {
   uses {
     interface Boot;
     interface SDraw;
     interface Boot as FS_OutBoot;
-    interface Hpl_MM_hw as HW;
-    interface HplMsp430UsciB as Usci;
     interface SDsa;
   }
 }

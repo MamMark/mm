@@ -16,17 +16,10 @@ implementation {
   sdP.Boot -> MainC;
 
  components SDspC;
-   sdP.SDraw -> SDspC;
+  sdP.SDraw -> SDspC;
+  sdP.SDsa  -> SDspC;
 
-  components SDsaC;
-  sdP.SDsa -> SDsaC;
 
   components FileSystemC as FS;
   sdP.FS_OutBoot -> FS;
-
-  components Hpl_MM_hwC as HW;
-  sdP.HW -> HW;
-
-  components HplMsp430UsciB0C as UsciC;
-  sdP.Usci -> UsciC;
 }
