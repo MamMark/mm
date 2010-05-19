@@ -786,7 +786,7 @@ main(int argc, char **argv) {
 
   if (verbose) {
     fprintf(stderr, VERSION);
-    fprintf(stderr, "  ref build: %d.%d.%d\n", MAJOR, MINOR, REF_BUILD);
+    fprintf(stderr, "ref build: %d.%d.%d\n", MAJOR, MINOR, REF_BUILD);
     switch (input_src) {
       case INPUT_SERIAL:
 	fprintf(stderr, "opening: serial@%s:%d\n", argv[0], platform_baud_rate(argv[1]));
