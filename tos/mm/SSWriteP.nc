@@ -362,4 +362,8 @@ implementation {
     if (call SDResource.release())
       ss_panic(28, 0);
   }
+
+
+  default event void SSF.dblk_stream_full() { }
+
 }
