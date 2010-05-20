@@ -14,8 +14,8 @@ module sdP {
   uses {
     interface Boot;
     interface SDraw;
-    interface Boot as FS_OutBoot;
     interface SDsa;
+    interface Boot as FS_OutBoot;
   }
 }
 
@@ -102,7 +102,7 @@ implementation {
     uint8_t r;
 
     call SDraw.start_op();
-    cmd->cmd = SD_SEND_CID;
+    cmd->cmd = SD_SEND_CSD;
     r = call SDraw.raw_cmd();
     while (1) {
       r = call SDraw.get();
@@ -143,8 +143,8 @@ implementation {
     uint8_t  indx;
 
     call SDraw.start_op();
-    rsp = call SDraw.send_acmd();
     cmd->cmd = SD_SEND_SCR;
+    rsp = call SDraw.raw_acmd();
     for (indx = 0; indx < SD_SCR_LEN; indx++)
       scr_data[indx] = call SDraw.get();
     call SDraw.end_op();

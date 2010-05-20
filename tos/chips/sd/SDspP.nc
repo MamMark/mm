@@ -1010,21 +1010,45 @@ implementation {
   }
 
 
+  /*
+   * return pointer to the global command block
+   */
   command sd_cmd_t *SDraw.cmd_ptr() {
     return &sd_cmd;
   }
 
 
+  /*
+   * send the command, return response (R1) for the
+   * command loaded into the command block.
+   *
+   * This is a complete op.
+   */
   command uint8_t SDraw.send_cmd() {
     return sd_send_command();
   }
 
 
-  command uint8_t SDraw.send_acmd() {
-    return sd_send_acmd();
+  /*
+   * send the ACMD loaded into the command block.  It is assumed
+   * that the command in the command block is an ACMD and should
+   * be proceeded by CMD55.
+   *
+   * This is NOT a complete op.  start_op and end_op have
+   * to used to begin and end the SD op.
+   */
+  command uint8_t SDraw.raw_acmd() {
+    sd_send_cmd55();
+    return sd_raw_cmd();
   }
 
 
+  /*
+   * send the CMD loaded into the command block.
+   *
+   * This is NOT a complete op.  start_op and end_op have
+   * to used to begin and end the SD op.
+   */
   command uint8_t SDraw.raw_cmd() {
     return sd_raw_cmd();
   }
