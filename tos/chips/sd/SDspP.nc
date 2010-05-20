@@ -51,6 +51,7 @@ module SDspP {
     interface SDerase[uint8_t cid];
     interface SDsa;			/* standalone */
     interface SDraw;			/* raw */
+    interface Init;
   }
   uses {
     interface HplMsp430UsciB as Umod;
@@ -58,10 +59,6 @@ module SDspP {
     interface Panic;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
-//    interface DmaInterrupt;
-
-//    interface HplMsp430UsciInterrupts as UsciInterrupts;
-
   }
 }
 
@@ -90,13 +87,20 @@ implementation {
    * if sd_state is SDS_IDLE these cells are meaningless.
    */
 
-  sd_state_t   sd_state;
-  uint8_t      cur_cid;			/* current client */
-  uint32_t     blk_start, blk_end;
-  uint8_t      *data_ptr;
+#define SD_MAJIK 0x5aa5
+#define CID_NONE 0xff;
+
+  struct {
+    uint16_t   majik_a;
+    sd_state_t sd_state;
+    uint8_t    cur_cid;			/* current client */
+    uint32_t   blk_start, blk_end;
+    uint8_t    *data_ptr;
+    uint16_t   majik_b;
+  } sdc;
 
   uint8_t idle_byte = 0xff;
-  uint8_t recv_dump[16];
+  uint8_t recv_dump[514];
 
   sd_cmd_t sd_cmd;
 
@@ -133,7 +137,8 @@ implementation {
 
   void sd_panic_idle(uint8_t where, uint16_t arg) {
     call Panic.panic(PANIC_MS, where, arg, 0, 0, 0);
-    sd_state = SDS_IDLE;
+    sdc.sd_state = SDS_IDLE;
+    sdc.cur_cid = CID_NONE;
   }
 
 
@@ -183,9 +188,11 @@ implementation {
   }
 
 
-  uint8_t sg[16];
-  uint8_t sg_nxt;
-
+#define SG_SIZE 32
+  uint16_t sg_tar[SG_SIZE];
+  uint8_t  sg[SG_SIZE];
+  uint8_t  sg_nxt;
+  
   uint8_t sd_get() {
     uint16_t i;
     uint8_t  byte;
@@ -203,8 +210,9 @@ implementation {
       sd_warn(22, 0);
 
     byte = SD_SPI_RX_BUF;		/* also clears RXINT */
+    sg_tar[sg_nxt] = TAR;
     sg[sg_nxt++] = byte;
-    if (sg_nxt >= 16)
+    if (sg_nxt >= SG_SIZE)
       sg_nxt = 0;
     return byte;
   }
@@ -324,7 +332,7 @@ implementation {
 
   const uint8_t cmd55[] = {
     SD_APP_CMD | 0x40,
-    0, 0, 0, 0, 0xff,
+    0, 0, 0, 0, 0xff,			/* when crc's get implemented need to change. */
   };
 
 
@@ -371,6 +379,9 @@ implementation {
    * The response is always a single byte and is the R1 response
    * as documented in the SD manual.
    *
+   * raw_cmd is always part of a cmd sequence and that the caller
+   * has asserted CS.
+   *
    * raw_cmd does not change the SD card state in any other way
    * meaning it doesn't read any more bytes from the card for other
    * types of responses.
@@ -379,6 +390,8 @@ implementation {
    * it doesn't send the extra clocks that are needed at the end
    * of a transaction, cmd/rsp, data transfer, etc.
    *
+   * raw_cmd is responsible for computing the cmd block crc.
+   *
    * return: R1 response byte,  0 says everything is wonderful.
    */
 
@@ -386,14 +399,8 @@ implementation {
     uint16_t  i;
     uint8_t   tmp, rsp;
 
-    /*
-     * We used to check for chip select being down (CSN, low true)
-     * but when ACMD processing was pulled out to simplify the code
-     * sd_send_acmd now sets CSN and then calls us.  It doesn't hurt
-     * anything to really make sure that it is set :-).
-     */
-
     sd_chk_clean();
+    sd_cmd_crc();
     sd_start_dma(&sd_cmd.cmd, recv_dump, 6);
     sd_wait_dma();
 
@@ -421,12 +428,13 @@ implementation {
    * send a simple command to the SD.  A simple command has an R1 response
    * and we handle it as a cmd/rsp transaction with the extra clocks at
    * the end to let the SD finish.
+   *
+   * cmd block crc computation is performed by raw_cmd.
    */
   uint8_t sd_send_command() {
     uint8_t rsp, tmp;
 
     SD_CSN = 0;
-    sd_cmd_crc();
     rsp = sd_raw_cmd();
     tmp = sd_get();			/* close transaction out */
     SD_CSN = 1;
@@ -456,6 +464,19 @@ implementation {
 
   /************************************************************************
    *
+   * Init
+   *
+   */
+
+  command error_t Init.init() {
+    sdc.majik_a = SD_MAJIK;
+    sdc.majik_b = SD_MAJIK;
+    return SUCCESS;
+  }
+
+
+  /************************************************************************
+   *
    * Reset
    *
    */
@@ -472,16 +493,16 @@ implementation {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
-    if (sd_state) {
-      sd_panic_idle(32, sd_state);
+    if (sdc.sd_state) {
+      sd_panic_idle(32, sdc.sd_state);
       return EBUSY;
     }
 
     reset_t0_uis = TAR;
     reset_t0_mis = call lt.get();
 
-    sd_state = SDS_RESET;
-    cur_cid = -1;			/* reset is not parameterized. */
+    sdc.sd_state = SDS_RESET;
+    sdc.cur_cid = CID_NONE;	        /* reset is not parameterized. */
     cmd = &sd_cmd;
 
     /* Clock out at least 74 bits of idles (0xFF is 8 bits).  Thats 10 bytes. This allows
@@ -519,7 +540,7 @@ implementation {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
-    switch (sd_state) {
+    switch (sdc.sd_state) {
       default:
 	return;
 
@@ -561,7 +582,8 @@ implementation {
 	  max_reset_time_mis = last_reset_time_mis;
 
 	nop();
-	sd_state = SDS_IDLE;
+	sdc.sd_state = SDS_IDLE;
+	sdc.cur_cid = CID_NONE;
 	signal SDreset.resetDone(SUCCESS);
 	return;
     }
@@ -616,6 +638,8 @@ implementation {
     uint8_t  tmp, rsp, stat_byte;
 
     SD_CSN = 0;
+    sd_cmd.cmd = SD_SEND_STATUS;
+    sd_cmd.arg = 0;
     rsp = sd_raw_cmd();
     stat_byte = sd_get();
     tmp = sd_get();			/* close it off */
@@ -643,8 +667,9 @@ implementation {
 
       /* The card returned an error, or timed out. */
       call Panic.panic(PANIC_MS, 39, tmp, sd_read_tok_count, 0, 0);
-      sd_state = SDS_IDLE;
-      signal SDread.readDone[cur_cid](blk_start, data_ptr, FAIL);
+      sdc.sd_state = SDS_IDLE;
+      signal SDread.readDone[sdc.cur_cid](sdc.blk_start, sdc.data_ptr, FAIL);
+      sdc.cur_cid = CID_NONE;
       return;
     }
 
@@ -661,8 +686,8 @@ implementation {
     }
 
     /* read the block (512 bytes) and include the crc (2 bytes) */
-    sd_state = SDS_READ_DMA;
-    sd_start_dma(NULL, data_ptr, SD_BUF_SIZE);
+    sdc.sd_state = SDS_READ_DMA;
+    sd_start_dma(NULL, sdc.data_ptr, SD_BUF_SIZE);
     DMA0_ENABLE_INT;
     return;
   }
@@ -680,10 +705,10 @@ implementation {
     sd_put(0xff);
     sd_put(0xff);
 
-    crc = (data_ptr[512] << 8) | data_ptr[513];
-    if (sd_check_crc(data_ptr, crc)) {
+    crc = (sdc.data_ptr[512] << 8) | sdc.data_ptr[513];
+    if (sd_check_crc(sdc.data_ptr, crc)) {
       sd_panic_idle(40, crc);
-      signal SDread.readDone[cur_cid](blk_start, data_ptr, FAIL);
+      signal SDread.readDone[sdc.cur_cid](sdc.blk_start, sdc.data_ptr, FAIL);
       return;
     }
 
@@ -694,8 +719,8 @@ implementation {
      * flag it and re-read the buffer.  We don't keep trying so it
      * had better work.
      */
-    if (data_ptr[0] == 0xfe)
-      sd_warn(41, data_ptr[0]);
+    if (sdc.data_ptr[0] == 0xfe)
+      sd_warn(41, sdc.data_ptr[0]);
 
     last_read_time_uis = TAR - read_t0_uis;
     if (last_read_time_uis > max_read_time_uis)
@@ -706,8 +731,9 @@ implementation {
       max_read_time_mis = last_read_time_mis;
 
     nop();
-    sd_state = SDS_IDLE;
-    signal SDread.readDone[cur_cid](blk_start, data_ptr, SUCCESS);
+    sdc.sd_state = SDS_IDLE;
+    signal SDread.readDone[sdc.cur_cid](sdc.blk_start, sdc.data_ptr, SUCCESS);
+    sdc.cur_cid = CID_NONE;
   }
 
 
@@ -726,24 +752,24 @@ implementation {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
-    if (sd_state) {
-      sd_panic_idle(42, sd_state);
+    if (sdc.sd_state) {
+      sd_panic_idle(42, sdc.sd_state);
       return EBUSY;
     }
 
     read_t0_uis = TAR;
     read_t0_mis = call lt.get();
 
-    sd_state = SDS_READ;
-    cur_cid = cid;
-    blk_start = blockaddr;
-    data_ptr = data;
+    sdc.sd_state = SDS_READ;
+    sdc.cur_cid = cid;
+    sdc.blk_start = blockaddr;
+    sdc.data_ptr = data;
 
     cmd = &sd_cmd;
 
     /* Need to add size checking, 0 = success */
     cmd->cmd = SD_READ_BLOCK;
-    cmd->arg = (blk_start << SD_BLOCKSIZE_NBITS);
+    cmd->arg = (sdc.blk_start << SD_BLOCKSIZE_NBITS);
 
     if ((rsp = sd_send_command())) {
       sd_panic_idle(43, rsp);
@@ -796,8 +822,9 @@ implementation {
 
     nop();
 
-    sd_state = SDS_IDLE;
-    signal SDwrite.writeDone[cur_cid](blk_start, data_ptr, SUCCESS);
+    sdc.sd_state = SDS_IDLE;
+    signal SDwrite.writeDone[sdc.cur_cid](sdc.blk_start, sdc.data_ptr, SUCCESS);
+    sdc.cur_cid = CID_NONE;
   }
 
 
@@ -816,7 +843,7 @@ implementation {
     if ((tmp & 0x1F) != 0x05) {
       i = sd_read_status();
       call Panic.panic(PANIC_MS, 45, tmp, i, 0, 0);
-      signal SDwrite.writeDone[cur_cid](blk_start, data_ptr, FAIL);
+      signal SDwrite.writeDone[sdc.cur_cid](sdc.blk_start, sdc.data_ptr, FAIL);
       return;
     }
 
@@ -826,31 +853,31 @@ implementation {
      * to be about 800uis.
      */
     sd_busy_count = 0;
-    sd_state = SDS_WRITE_BUSY;
+    sdc.sd_state = SDS_WRITE_BUSY;
     post sd_write_task();
   }
 
 
   command error_t SDwrite.write[uint8_t cid](uint32_t blockaddr, void *data) {
     sd_cmd_t *cmd;
-    uint8_t  tmp, rsp;
+    uint8_t   rsp;
 
-    if (sd_state) {
-      sd_panic_idle(47, sd_state);
+    if (sdc.sd_state) {
+      sd_panic_idle(47, sdc.sd_state);
       return EBUSY;
     }
 
     write_t0_uis = TAR;
     write_t0_mis = call lt.get();
 
-    sd_state = SDS_WRITE;
-    blk_start = blockaddr;
-    data_ptr = data;
+    sdc.sd_state = SDS_WRITE;
+    sdc.blk_start = blockaddr;
+    sdc.data_ptr = data;
 
     cmd = &sd_cmd;
 
     sd_compute_crc(data);
-    cmd->arg = (blk_start << SD_BLOCKSIZE_NBITS);
+    cmd->arg = (sdc.blk_start << SD_BLOCKSIZE_NBITS);
 
     cmd->cmd = SD_WRITE_BLOCK;
     if ((rsp = sd_send_command())) {
@@ -863,11 +890,11 @@ implementation {
     /* The write command needs an additional 8 clock cycles before
      * the block write is started.
      */
-    tmp = sd_get();
-    if (tmp != 0xff) {
-      sd_panic(50, tmp);
-      return FAIL;
-    }
+//    tmp = sd_get();
+//    if (tmp != 0xff) {
+//      sd_panic(50, tmp);
+//      return FAIL;
+//    }
 
     /*
      * The SD needs a write token, send it first then fire
@@ -876,8 +903,8 @@ implementation {
     sd_put(SD_START_TOK);
 
     /* send the sector size and include the 2 crc bytes */
-    sd_state = SDS_WRITE_DMA;
-    sd_start_dma(data, NULL, SD_BUF_SIZE);
+    sdc.sd_state = SDS_WRITE_DMA;
+    sd_start_dma(data, recv_dump, SD_BUF_SIZE);
     DMA0_ENABLE_INT;
     return SUCCESS;
   }
@@ -899,29 +926,29 @@ implementation {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
-    if (sd_state) {
-      sd_panic_idle(51, sd_state);
+    if (sdc.sd_state) {
+      sd_panic_idle(51, sdc.sd_state);
       return EBUSY;
     }
 
-    sd_state = SDS_ERASE;
-    cur_cid = cid;
-    blk_start = blk_s;
-    blk_end = blk_e;
+    sdc.sd_state = SDS_ERASE;
+    sdc.cur_cid = cid;
+    sdc.blk_start = blk_s;
+    sdc.blk_end = blk_e;
 
     cmd = &sd_cmd;
 
     /*
      * send the start and then the end
      */
-    cmd->arg = blk_start << SD_BLOCKSIZE_NBITS;
+    cmd->arg = sdc.blk_start << SD_BLOCKSIZE_NBITS;
     cmd->cmd = SD_SET_ERASE_START;
     if ((rsp = sd_send_command())) {
       sd_panic_idle(52, rsp);
       return FAIL;
     }
 
-    cmd->arg = blk_end << SD_BLOCKSIZE_NBITS;
+    cmd->arg = sdc.blk_end << SD_BLOCKSIZE_NBITS;
     cmd->cmd = SD_SET_ERASE_END;
     if ((rsp = sd_send_command())) {
       sd_panic_idle(54, rsp);
@@ -1068,7 +1095,7 @@ implementation {
 
 
   task void dma_task() {
-    switch (sd_state) {
+    switch (sdc.sd_state) {
       case SDS_READ_DMA:
 	sd_read_dma_handler();
 	break;
@@ -1078,7 +1105,7 @@ implementation {
 	break;
 
       default:
-	sd_panic(58, sd_state);
+	sd_panic(58, sdc.sd_state);
 	break;
     }
   }
@@ -1090,25 +1117,11 @@ implementation {
   }
 
 
-#ifdef notdef
-  async event void UsciInterrupts.txDone() {
-    /*
-     * shouldn't ever get here, we never turn intrrupts on for the ADC spi
-     *
-     * eventually put a panic in here.
-     */
-  };
-
-  async event void UsciInterrupts.rxDone(uint8_t data) {
-    /*
-     * shouldn't ever get here, we never turn intrrupts on for the ADC spi
-     *
-     * eventually put a panic in here.
-     */
-  };
-#endif
-
-  default event void   SDread.readDone[uint8_t cid](uint32_t blk_id, void *buf, error_t error) {}
-  default event void SDwrite.writeDone[uint8_t cid](uint32_t blk, void *buf, error_t error) {}
-//  default event void SDerase.eraseDone[uint8_t cid](uint32_t blk_start, uint32_t blk_end, error_t error) {}
+  default event void   SDread.readDone[uint8_t cid](uint32_t blk_id, void *buf, error_t error) {
+    sd_panic(59, cid);
+  }
+  default event void SDwrite.writeDone[uint8_t cid](uint32_t blk, void *buf, error_t error) {
+    sd_panic(60, cid);
+}
+//  default event void SDerase.eraseDone[uint8_t cid](uint32_t sdc.blk_start, uint32_t sdc.blk_end, error_t error) {}
 }

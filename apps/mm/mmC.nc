@@ -8,7 +8,7 @@
 configuration mmC {}
 implementation {
   components SystemBootC, mmP;
-  mmP -> SystemBootC.Boot;
+  mmP.Boot -> SystemBootC.Boot;
   
   components RegimeC;
   mmP.Regime -> RegimeC;

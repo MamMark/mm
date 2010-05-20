@@ -23,12 +23,15 @@ configuration SDspC {
 
 implementation {
   components SDspP;
-  SDreset = SDspP;
-  SDread  = SDspP;
-  SDwrite = SDspP;
-  SDerase = SDspP;
-  SDsa    = SDspP;
-  SDraw   = SDspP;
+  SDreset  = SDspP;
+  SDread   = SDspP;
+  SDwrite  = SDspP;
+  SDerase  = SDspP;
+  SDsa     = SDspP;
+  SDraw    = SDspP;
+
+  components MainC;
+  MainC.SoftwareInit -> SDspP;
 
   components PanicC;
   SDspP.Panic -> PanicC;
@@ -38,7 +41,6 @@ implementation {
 
   components HplMsp430UsciB0C as UsciC;
   SDspP.Umod -> UsciC;
-//  SDspP.UsciInterrupts -> UsciC;
 
   components Hpl_MM_hwC as HW;
   SDspP.HW -> HW;
