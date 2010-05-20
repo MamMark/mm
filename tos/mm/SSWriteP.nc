@@ -59,9 +59,9 @@ module SSWriteP {
   
 implementation {
 
-  ss_wr_req_t *cur_handle;
-  ss_wr_req_t ssw_handles[SSW_NUM_BUFS];
-  ss_wr_req_t * const ssw_p[SSW_NUM_BUFS] = {
+  ss_wr_buf_t *cur_handle;
+  ss_wr_buf_t ssw_handles[SSW_NUM_BUFS];
+  ss_wr_buf_t * const ssw_p[SSW_NUM_BUFS] = {
     &ssw_handles[0],
     &ssw_handles[1],
     &ssw_handles[2],
@@ -89,9 +89,10 @@ implementation {
 
 
   void flush_buffers(void) {
-    while (cur_handle->req_state == SS_REQ_STATE_FULL) {
+    while (cur_handle->buf_state == SS_BUF_STATE_FULL) {
       cur_handle->stamp = call LocalTime.get();
-      cur_handle->req_state = SS_REQ_STATE_FREE;
+      cur_handle->buf_state = SS_BUF_STATE_FREE;
+      memset(cur_handle->buf, 0, SD_BUF_SIZE);
       ssc.ssw_out++;
       if (ssc.ssw_out >= SSW_NUM_BUFS)
 	ssc.ssw_out = 0;
@@ -109,9 +110,11 @@ implementation {
     ssc.majik_b     = SSC_MAJIK_B;
 
     for (i = 0; i < SSW_NUM_BUFS; i++) {
-      ssw_p[i]->majik     = SS_REQ_MAJIK;
-      ssw_p[i]->req_state = SS_REQ_STATE_FREE;
+      ssw_p[i]->majik     = SS_BUF_MAJIK;
+      ssw_p[i]->buf_state = SS_BUF_STATE_FREE;
     }
+
+    /* no need to zero the buffer, done by start up code */
     return SUCCESS;
   }
 
@@ -128,8 +131,8 @@ implementation {
 
   task void SSWriter_task();
 
-  command void SSW.buffer_full(ss_wr_req_t *handle) {
-    ss_wr_req_t *sswp;
+  command void SSW.buffer_full(ss_wr_buf_t *handle) {
+    ss_wr_buf_t *sswp;
     uint8_t in_index;
 
     /*
@@ -143,16 +146,16 @@ implementation {
 
     /* the next check also catches the null pointer */
     if (sswp != handle ||
-	handle->majik != SS_REQ_MAJIK ||
-	handle->req_state != SS_REQ_STATE_ALLOC) {
-      call Panic.panic(PANIC_SS, 11, (uint16_t) handle, handle->majik, handle->req_state, (uint16_t) sswp);
+	handle->majik != SS_BUF_MAJIK ||
+	handle->buf_state != SS_BUF_STATE_ALLOC) {
+      call Panic.panic(PANIC_SS, 11, (uint16_t) handle, handle->majik, handle->buf_state, (uint16_t) sswp);
     }
 
     if (ssc.majik_a != SSC_MAJIK_A || ssc.majik_b != SSC_MAJIK_B)
       call Panic.panic(PANIC_SS, 12, ssc.majik_a, ssc.majik_b, 0, 0);
 
     handle->stamp = call LocalTime.get();
-    handle->req_state = SS_REQ_STATE_FULL;
+    handle->buf_state = SS_BUF_STATE_FULL;
     ssc.ssw_num_full++;
     if (ssc.ssw_num_full > ssc.ssw_max_full)
       ssc.ssw_max_full = ssc.ssw_num_full;
@@ -164,26 +167,26 @@ implementation {
   }
 
 
-  command ss_wr_req_t* SSW.get_free_buf_handle() {
-    ss_wr_req_t *sswp;
+  command ss_wr_buf_t* SSW.get_free_buf_handle() {
+    ss_wr_buf_t *sswp;
 
     sswp = ssw_p[ssc.ssw_alloc];
     if (ssc.ssw_alloc >= SSW_NUM_BUFS ||
 	ssc.majik_a != SSC_MAJIK_A ||
 	ssc.majik_b != SSC_MAJIK_B ||
-	sswp->req_state < SS_REQ_STATE_FREE ||
-	sswp->req_state >= SS_REQ_STATE_MAX) {
+	sswp->buf_state < SS_BUF_STATE_FREE ||
+	sswp->buf_state >= SS_BUF_STATE_MAX) {
       ss_panic(18, ssc.ssw_alloc);
       return NULL;
     }
 
-    if (sswp->req_state == SS_REQ_STATE_FREE) {
-      if (sswp->majik != SS_REQ_MAJIK) {
+    if (sswp->buf_state == SS_BUF_STATE_FREE) {
+      if (sswp->majik != SS_BUF_MAJIK) {
 	ss_panic(19, sswp->majik);
 	return NULL;
       }
       sswp->stamp = call LocalTime.get();
-      sswp->req_state = SS_REQ_STATE_ALLOC;
+      sswp->buf_state = SS_BUF_STATE_ALLOC;
       ssc.ssw_alloc++;
       if (ssc.ssw_alloc >= SSW_NUM_BUFS)
 	ssc.ssw_alloc = 0;
@@ -194,9 +197,9 @@ implementation {
   }
 
 
-  command uint8_t *SSW.buf_handle_to_buf(ss_wr_req_t *handle) {
-    if (!handle || handle->majik != SS_REQ_MAJIK ||
-	handle->req_state != SS_REQ_STATE_ALLOC) {
+  command uint8_t *SSW.buf_handle_to_buf(ss_wr_buf_t *handle) {
+    if (!handle || handle->majik != SS_BUF_MAJIK ||
+	handle->buf_state != SS_BUF_STATE_ALLOC) {
       ss_panic(21, (uint16_t) handle);
       return NULL;
     }
@@ -243,8 +246,8 @@ implementation {
     }
 
     cur_handle = ssw_p[ssc.ssw_out];
-    if (cur_handle->req_state != SS_REQ_STATE_FULL) {
-      ss_panic(23, cur_handle->req_state);
+    if (cur_handle->buf_state != SS_BUF_STATE_FULL) {
+      ss_panic(23, cur_handle->buf_state);
       return;
     }
 
@@ -289,8 +292,8 @@ implementation {
   event void SDResource.granted() {
     error_t  err;
 
-    if (cur_handle->req_state != SS_REQ_STATE_FULL) {
-      call Panic.panic(PANIC_SS, 25, (uint16_t) cur_handle, cur_handle->req_state, 0, 0);
+    if (cur_handle->buf_state != SS_BUF_STATE_FULL) {
+      call Panic.panic(PANIC_SS, 25, (uint16_t) cur_handle, cur_handle->buf_state, 0, 0);
       return;
     }
 
@@ -306,7 +309,7 @@ implementation {
     }
 
     cur_handle->stamp = call LocalTime.get();
-    cur_handle->req_state = SS_REQ_STATE_WRITING;
+    cur_handle->buf_state = SS_BUF_STATE_WRITING;
     ssw_state = SSW_WRITING;
     w_t0 = call LocalTime.get();
     err = call SDwrite.write(cur_dblk, cur_handle->buf);
@@ -325,7 +328,8 @@ implementation {
     }
 
     cur_handle->stamp = call LocalTime.get();
-    cur_handle->req_state = SS_REQ_STATE_FREE;
+    cur_handle->buf_state = SS_BUF_STATE_FREE;
+    memset(cur_handle->buf, 0, SD_BUF_SIZE);
     ssc.ssw_out++;
     if (ssc.ssw_out >= SSW_NUM_BUFS)
       ssc.ssw_out = 0;
@@ -345,12 +349,12 @@ implementation {
       return;
     }
 
-    if (cur_handle->req_state == SS_REQ_STATE_FULL) {
+    if (cur_handle->buf_state == SS_BUF_STATE_FULL) {
       /*
        * more work to do
        */
       cur_handle->stamp = call LocalTime.get();
-      cur_handle->req_state = SS_REQ_STATE_WRITING;
+      cur_handle->buf_state = SS_BUF_STATE_WRITING;
       w_t0 = call LocalTime.get();
       err = call SDwrite.write(cur_dblk, cur_handle->buf);
       if (err) {

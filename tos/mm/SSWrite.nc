@@ -28,7 +28,7 @@ interface SSWrite {
    *   <li>NULL   if bad buf_handle or buffer not allocated.
    *   <li>buffer if good buf_handle.
    */
-  command uint8_t *buf_handle_to_buf(ss_wr_req_t *buf_handle);
+  command uint8_t *buf_handle_to_buf(ss_wr_buf_t *buf_handle);
 
 
   /*
@@ -48,7 +48,7 @@ interface SSWrite {
    *   <li>NULL   if no buffer available.
    *   <li>buf_handle if buffer available.  Buffer marked allocated.
    */
-  command ss_wr_req_t* get_free_buf_handle();
+  command ss_wr_buf_t* get_free_buf_handle();
 
   /**
    * call when the buffer objectified by buf_handle has been
@@ -57,5 +57,5 @@ interface SSWrite {
    *
    * @param buf_handle address of the ss_buf_handle ready to be flushed.
    */  
-  command void buffer_full(ss_wr_req_t *buf_handle);
+  command void buffer_full(ss_wr_buf_t *buf_handle);
 }

@@ -11,6 +11,11 @@
 
 /* needs to agree with SECTOR_SIZE and SD_BLOCKSIZE
    yeah it is stupid and ugly
+
+   Actual buffers are SD_BUF_SIZE which is 512 + 2 which includes
+   space for the SD crc.  Use SD_BUF_SIZE.
+
+   Clients should only know about SS_BLOCK_SIZE.
 */
 #define SS_BLOCK_SIZE 512
 #define SSW_NUM_BUFS   4
@@ -57,23 +62,23 @@
  */
 
 typedef enum {
-    SS_REQ_STATE_FREE = 0x1561,
-    SS_REQ_STATE_ALLOC,
-    SS_REQ_STATE_FULL,
-    SS_REQ_STATE_WRITING,
-    SS_REQ_STATE_DONE,
-    SS_REQ_STATE_MAX
-} ss_req_state_t;
+    SS_BUF_STATE_FREE = 0x1561,
+    SS_BUF_STATE_ALLOC,
+    SS_BUF_STATE_FULL,
+    SS_BUF_STATE_WRITING,
+    SS_BUF_STATE_DONE,
+    SS_BUF_STATE_MAX
+} ss_buf_state_t;
 
 
-#define SS_REQ_MAJIK 0xeaf0
+#define SS_BUF_MAJIK 0xeaf0
 
 typedef struct {
     uint16_t majik;
-    ss_req_state_t req_state;
+    ss_buf_state_t buf_state;
     uint32_t stamp;
     uint8_t  buf[SD_BUF_SIZE];		/* include room for CRC */
-} ss_wr_req_t;
+} ss_wr_buf_t;
 
 
 /*
@@ -93,7 +98,7 @@ typedef struct {
 typedef struct {
     uint16_t   majik_a;		/* practice safe computing */
 
-    uint8_t    ssw_out;		/* buffer going out via dma to the sd card */
+    uint8_t    ssw_out;		/* next buffer to be written to mass storage */
     uint8_t    ssw_in;		/* next buffer that should come back from the collector */
     uint8_t    ssw_alloc;	/* next buffer to be allocated. */
     uint8_t    ssw_num_full;	/* number of full buffers including active */

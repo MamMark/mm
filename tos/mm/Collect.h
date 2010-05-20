@@ -31,7 +31,7 @@
 
 typedef struct {
   uint16_t majik_a;
-  ss_wr_req_t *handle;
+  ss_wr_buf_t *handle;
   uint8_t *cur_buf;
   uint8_t *cur_ptr;
   uint16_t remaining;
