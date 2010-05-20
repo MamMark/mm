@@ -86,32 +86,16 @@ RoundRobin Resource Queue (ADC arbiter)
 end
 
 define ss
-printf "SS: state: \n"
-print StreamStorageP__ss_state
-printf "  control struct: "
-print StreamStorageP__ssc
-printf "    alloc: %02x  in: %02x  out: %02x\n", StreamStorageP__ssc.ssw_alloc, StreamStorageP__ssc.ssw_in, StreamStorageP__ssc.ssw_out
-printf "  buffers: [%04x] %04x  ts: %04lx ", StreamStorageP__ssw_p[0]->buf, StreamStorageP__ssw_p[0]->majik, StreamStorageP__ssw_p[0]->stamp
-print StreamStorageP__ssw_p[0]->req_state
-printf "           [%04x] %04x  ts: %04lx ", StreamStorageP__ssw_p[1]->buf, StreamStorageP__ssw_p[1]->majik, StreamStorageP__ssw_p[1]->stamp
-print StreamStorageP__ssw_p[1]->req_state
-printf "           [%04x] %04x  ts: %04lx ", StreamStorageP__ssw_p[2]->buf, StreamStorageP__ssw_p[2]->majik, StreamStorageP__ssw_p[2]->stamp
-print StreamStorageP__ssw_p[2]->req_state
-printf "           [%04x] %04x  ts: %04lx ", StreamStorageP__ssw_p[3]->buf, StreamStorageP__ssw_p[3]->majik, StreamStorageP__ssw_p[3]->stamp
-print StreamStorageP__ssw_p[3]->req_state
-printf "     read:  in: %02x  out: %02x\n", StreamStorageP__ssc.ssr_in, StreamStorageP__ssc.ssr_out
-printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP__ssr_reqs[0].majik, StreamStorageP__ssr_reqs[0].stamp,\
-    StreamStorageP__ssr_reqs[0].blk, StreamStorageP__ssr_reqs[0].buf
-print StreamStorageP__ssr_reqs[0]->req_state
-printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP__ssr_reqs[1].majik, StreamStorageP__ssr_reqs[1].stamp,\
-    StreamStorageP__ssr_reqs[1].blk, StreamStorageP__ssr_reqs[1].buf
-print StreamStorageP__ssr_reqs[1]->req_state
-printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP__ssr_reqs[2].majik, StreamStorageP__ssr_reqs[2].stamp,\
-    StreamStorageP__ssr_reqs[2].blk, StreamStorageP__ssr_reqs[2].buf
-print StreamStorageP__ssr_reqs[2]->req_state
-printf "           %04x  ts: %04lx  blk: %04u  buf: %04x  ", StreamStorageP__ssr_reqs[3].majik, StreamStorageP__ssr_reqs[3].stamp,\
-    StreamStorageP__ssr_reqs[3].blk, StreamStorageP__ssr_reqs[3].buf
-print StreamStorageP__ssr_reqs[3]->req_state
+print SSWriteP__ssc
+printf "    alloc: %02x  in: %02x  out: %02x\n", SSWriteP__ssc.ssw_alloc, SSWriteP__ssc.ssw_in, SSWriteP__ssc.ssw_out
+printf "  buffers: [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[0]->buf, SSWriteP__ssw_p[0]->majik, SSWriteP__ssw_p[0]->stamp
+print SSWriteP__ssw_p[0]->buf_state
+printf "           [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[1]->buf, SSWriteP__ssw_p[1]->majik, SSWriteP__ssw_p[1]->stamp
+print SSWriteP__ssw_p[1]->buf_state
+printf "           [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[2]->buf, SSWriteP__ssw_p[2]->majik, SSWriteP__ssw_p[2]->stamp
+print SSWriteP__ssw_p[2]->buf_state
+printf "           [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[3]->buf, SSWriteP__ssw_p[3]->majik, SSWriteP__ssw_p[3]->stamp
+print SSWriteP__ssw_p[3]->buf_state
 end
 document ss
 StreamStorage state
