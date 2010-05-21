@@ -40,7 +40,7 @@ implementation {
   SDspP.SDtimer -> SDTimer;
 
   components HplMsp430UsciB0C as UsciC;
-  SDspP.Umod -> UsciC;
+  SDspP.Usci -> UsciC;
 
   components Hpl_MM_hwC as HW;
   SDspP.HW -> HW;

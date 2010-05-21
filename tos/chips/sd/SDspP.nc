@@ -54,7 +54,7 @@ module SDspP {
     interface Init;
   }
   uses {
-    interface HplMsp430UsciB as Umod;
+    interface HplMsp430UsciB as Usci;
     interface Hpl_MM_hw as HW;
     interface Panic;
     interface Timer<TMilli> as SDtimer;
@@ -308,7 +308,12 @@ implementation {
    * watches channel 0 till DMA_EN goes off.  Channel 0 is RX.
    *
    * Also utilizes the SZ register to find out how many bytes remain
-   * and assuming 1uis/byte a reasonable timeout.  A timeout kicks panic.
+   * and assuming 1uis/byte a reasonable timeout (factor of 2).
+   * A timeout kicks panic.
+   *
+   * This routine can be interrupted and time continues to run while
+   * we are away.  This needs to be accounted for when checking for
+   * timeouts.  While we were away did our operation complete?
    */
 
   void sd_wait_dma() {
@@ -316,10 +321,19 @@ implementation {
 
     t0 = TAR;
 
-    max_count = (DMA1SZ * 8);
+    max_count = (DMA0SZ * 8);
 
-    while (DMA0CTL & DMA_EN) {
-      if ((TAR - t0) > max_count) {
+    while (1) {
+      if ((DMA0CTL & DMA_EN) == 0)	/* early bail check for completion */
+	break;
+      /*
+       * We may have taken an interrupt just after checking to see if the
+       * dma engine is still running.  This may put us into a timeout
+       * condition.
+       *
+       * Only take the time out panic if the DMA engine is still running!
+       */
+      if (((TAR - t0) > max_count) && (DMA0CTL & DMA_EN)) {
 	sd_panic(24, max_count);
 	return;
       }
@@ -331,8 +345,7 @@ implementation {
 
 
   const uint8_t cmd55[] = {
-    SD_APP_CMD | 0x40,
-    0, 0, 0, 0, 0xff,			/* when crc's get implemented need to change. */
+    SD_APP_CMD, 0, 0, 0, 0, 0xff	/* when crc's get implemented need to change. */
   };
 
 
@@ -470,6 +483,7 @@ implementation {
 
   command error_t Init.init() {
     sdc.majik_a = SD_MAJIK;
+    sdc.cur_cid = CID_NONE;
     sdc.majik_b = SD_MAJIK;
     return SUCCESS;
   }
@@ -656,6 +670,7 @@ implementation {
 
   task void sd_read_task() {
     uint8_t tmp;
+    uint8_t cid;
 
     /* Wait for the token */
     sd_read_tok_count++;
@@ -667,9 +682,10 @@ implementation {
 
       /* The card returned an error, or timed out. */
       call Panic.panic(PANIC_MS, 39, tmp, sd_read_tok_count, 0, 0);
+      cid = sdc.cur_cid;			/* remember for signaling */
       sdc.sd_state = SDS_IDLE;
-      signal SDread.readDone[sdc.cur_cid](sdc.blk_start, sdc.data_ptr, FAIL);
       sdc.cur_cid = CID_NONE;
+      signal SDread.readDone[cid](sdc.blk_start, sdc.data_ptr, FAIL);
       return;
     }
 
@@ -695,20 +711,22 @@ implementation {
 
   void sd_read_dma_handler() {
     uint16_t crc;
+    uint8_t  cid;
 
+    cid = sdc.cur_cid;			/* remember for signalling */
     DMACTL0 = 0;			/* kick triggers */
     DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
 
     SD_CSN = 1;				/* deassert CS */
 
     /* Send some extra clocks so the card can finish */
-    sd_put(0xff);
-    sd_put(0xff);
+    sd_get();
+    sd_get();
 
     crc = (sdc.data_ptr[512] << 8) | sdc.data_ptr[513];
     if (sd_check_crc(sdc.data_ptr, crc)) {
       sd_panic_idle(40, crc);
-      signal SDread.readDone[sdc.cur_cid](sdc.blk_start, sdc.data_ptr, FAIL);
+      signal SDread.readDone[cid](sdc.blk_start, sdc.data_ptr, FAIL);
       return;
     }
 
@@ -718,6 +736,9 @@ implementation {
      * to do with the cmd response).  Check for this and if seen
      * flag it and re-read the buffer.  We don't keep trying so it
      * had better work.
+     *
+     * Haven't seen this in a while pretty sure it got cleaned up when
+     * we got a better handle on the transaction sequence of the SD.
      */
     if (sdc.data_ptr[0] == 0xfe)
       sd_warn(41, sdc.data_ptr[0]);
@@ -732,8 +753,8 @@ implementation {
 
     nop();
     sdc.sd_state = SDS_IDLE;
-    signal SDread.readDone[sdc.cur_cid](sdc.blk_start, sdc.data_ptr, SUCCESS);
     sdc.cur_cid = CID_NONE;
+    signal SDread.readDone[cid](sdc.blk_start, sdc.data_ptr, SUCCESS);
   }
 
 
@@ -797,6 +818,7 @@ implementation {
   task void sd_write_task() {
     uint16_t i;
     uint8_t  tmp;
+    uint8_t  cid;
 
     /* card is busy writing the block.  ask if still busy. */
 
@@ -822,15 +844,17 @@ implementation {
 
     nop();
 
+    cid = sdc.cur_cid;
     sdc.sd_state = SDS_IDLE;
-    signal SDwrite.writeDone[sdc.cur_cid](sdc.blk_start, sdc.data_ptr, SUCCESS);
     sdc.cur_cid = CID_NONE;
+    signal SDwrite.writeDone[cid](sdc.blk_start, sdc.data_ptr, SUCCESS);
   }
 
 
   void sd_write_dma_handler() {
     uint8_t  tmp;
     uint16_t i;
+    uint8_t  cid;
 
     DMACTL0 = 0;			/* kick triggers */
     DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
@@ -843,7 +867,8 @@ implementation {
     if ((tmp & 0x1F) != 0x05) {
       i = sd_read_status();
       call Panic.panic(PANIC_MS, 45, tmp, i, 0, 0);
-      signal SDwrite.writeDone[sdc.cur_cid](sdc.blk_start, sdc.data_ptr, FAIL);
+      cid = sdc.cur_cid;		/* remember for signals */
+      signal SDwrite.writeDone[cid](sdc.blk_start, sdc.data_ptr, FAIL);
       return;
     }
 
@@ -871,6 +896,7 @@ implementation {
     write_t0_mis = call lt.get();
 
     sdc.sd_state = SDS_WRITE;
+    sdc.cur_cid = cid;
     sdc.blk_start = blockaddr;
     sdc.data_ptr = data;
 
@@ -887,9 +913,9 @@ implementation {
 
     SD_CSN = 0;				/* reassert to continue xfer */
 
-    /* The write command needs an additional 8 clock cycles before
-     * the block write is started.
-     */
+//    /* The write command needs an additional 8 clock cycles before
+//     * the block write is started.
+//     */
 //    tmp = sd_get();
 //    if (tmp != 0xff) {
 //      sd_panic(50, tmp);
@@ -976,7 +1002,7 @@ implementation {
 
     cmd = &sd_cmd;
     call HW.sd_on();
-    call Umod.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
+    call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
     
     SD_CSN = 1;				/* force to known state */
     sd_start_dma(NULL, recv_dump, 10);	/* send 10 0xff to clock SD */
@@ -994,6 +1020,12 @@ implementation {
       rsp = sd_send_acmd();
     } while (rsp & 1);
     return SUCCESS;
+  }
+
+
+  command error_t SDsa.off() {
+    call HW.sd_off();
+    call Usci.resetUsci_n();
   }
 
 
@@ -1120,8 +1152,14 @@ implementation {
   default event void   SDread.readDone[uint8_t cid](uint32_t blk_id, void *buf, error_t error) {
     sd_panic(59, cid);
   }
+
+
   default event void SDwrite.writeDone[uint8_t cid](uint32_t blk, void *buf, error_t error) {
     sd_panic(60, cid);
-}
-//  default event void SDerase.eraseDone[uint8_t cid](uint32_t sdc.blk_start, uint32_t sdc.blk_end, error_t error) {}
+  }
+
+
+//  default event void SDerase.eraseDone[uint8_t cid](uint32_t sdc.blk_start, uint32_t sdc.blk_end, error_t error) {
+//    sd_panic(61, cid);
+//  }
 }

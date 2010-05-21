@@ -8,8 +8,7 @@
 
 interface SDsa {
   command error_t reset();
-
+  command error_t off();
   command error_t read(uint32_t blk_id, void *buf);
-
   command error_t write(uint32_t blk, void *buf);
 }
