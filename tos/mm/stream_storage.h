@@ -88,23 +88,36 @@ typedef struct {
  * the data collector.  The data collector gets and sends back buffers
  * completely sequentially.
  *
- * ssw_out:	Buffer being written out via dma to the stream storage device.
- * ssw_in:	Next buffer that should be coming back from the collector.
- * ssw_alloc:   Next buffer to be given out.
- * ssw_num_full:number of full buffers including the one being written.
- * ssw_max_full:maximum number of full buffers ever
+ * state:	 state of the writer
+ * dblk:	 block id of where to put the nxt buffer
+ * ssw_out: 	 Buffer being written out via dma to the stream storage device.
+ * ssw_in:	 Next buffer that should be coming back from the collector.
+ * ssw_alloc:    Next buffer to be given out.
+ * ssw_num_full: number of full buffers including the one being written.
+ * ssw_max_full: maximum number of full buffers ever
  */
 
+typedef enum {
+  SSW_IDLE	= 0,
+  SSW_REQUESTED,
+  SSW_WRITING,
+} ssw_state_t;
+
+
 typedef struct {
-    uint16_t   majik_a;		/* practice safe computing */
+  uint16_t    majik_a;		/* practice safe computing */
 
-    uint8_t    ssw_out;		/* next buffer to be written to mass storage */
-    uint8_t    ssw_in;		/* next buffer that should come back from the collector */
-    uint8_t    ssw_alloc;	/* next buffer to be allocated. */
-    uint8_t    ssw_num_full;	/* number of full buffers including active */
-    uint8_t    ssw_max_full;	/* maximum that ever went, max */
+  ssw_state_t state;		/* state of the writer. */
+  uint32_t    dblk;		/* our idea of where to put the nxt block */
+  ss_wr_buf_t *cur_handle;	/* which buffer is being worked on */
+  uint8_t     ssw_out;		/* next buffer to be written to mass storage */
+  uint8_t     ssw_in;		/* next buffer that should come back from the collector */
+  uint8_t     ssw_alloc;	/* next buffer to be allocated. */
+  uint8_t     ssw_num_full;	/* number of full buffers including active */
+  uint8_t     ssw_max_full;	/* maximum that ever went, max */
+  uint8_t     pad;
 
-    uint16_t   majik_b;
+  uint16_t    majik_b;		/* tombstone */
 } ss_control_t;
 
 #define SSC_MAJIK_A 0x9191

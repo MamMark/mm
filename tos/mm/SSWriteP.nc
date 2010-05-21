@@ -33,13 +33,6 @@
 
 uint32_t w_t0, w_diff;
 
-typedef enum {
-  SSW_IDLE	= 0,
-  SSW_REQUESTED,
-  SSW_WRITING,
-} ssw_state_t;
-
-
 module SSWriteP {
   provides {
     interface Init;
@@ -59,7 +52,6 @@ module SSWriteP {
   
 implementation {
 
-  ss_wr_buf_t *cur_handle;
   ss_wr_buf_t ssw_handles[SSW_NUM_BUFS];
   ss_wr_buf_t * const ssw_p[SSW_NUM_BUFS] = {
     &ssw_handles[0],
@@ -72,9 +64,7 @@ implementation {
 #warning "SSW_NUM_BUFS is other than 4"
 #endif
 
-  ssw_state_t  ssw_state;		 // current state of writer machine (2 bytes)
-  ss_control_t ssc;
-  uint32_t     cur_dblk;
+  ss_control_t ssc;			 /* all global control cells */
 
 
   /*
@@ -89,17 +79,17 @@ implementation {
 
 
   void flush_buffers(void) {
-    while (cur_handle->buf_state == SS_BUF_STATE_FULL) {
-      cur_handle->stamp = call LocalTime.get();
-      cur_handle->buf_state = SS_BUF_STATE_FREE;
-      memset(cur_handle->buf, 0, SD_BUF_SIZE);
+    while (ssc.cur_handle->buf_state == SS_BUF_STATE_FULL) {
+      ssc.cur_handle->stamp = call LocalTime.get();
+      ssc.cur_handle->buf_state = SS_BUF_STATE_FREE;
+      memset(ssc.cur_handle->buf, 0, SD_BUF_SIZE);
       ssc.ssw_out++;
       if (ssc.ssw_out >= SSW_NUM_BUFS)
 	ssc.ssw_out = 0;
       ssc.ssw_num_full--;
-      cur_handle = ssw_p[ssc.ssw_out];
+      ssc.cur_handle = ssw_p[ssc.ssw_out];
     }
-    cur_handle = NULL;
+    ssc.cur_handle = NULL;
   }
 
 
@@ -159,7 +149,7 @@ implementation {
     ssc.ssw_num_full++;
     if (ssc.ssw_num_full > ssc.ssw_max_full)
       ssc.ssw_max_full = ssc.ssw_num_full;
-    if (ssw_state == SSW_IDLE && ssc.ssw_num_full >= SSW_GROUP)
+    if (ssc.state == SSW_IDLE && ssc.ssw_num_full >= SSW_GROUP)
       post SSWriter_task();
     ssc.ssw_in++;
     if (ssc.ssw_in >= SSW_NUM_BUFS)
@@ -240,14 +230,14 @@ implementation {
     /*
      * This task should only get kicked if not doing anything
      */
-    if (ssw_state != SSW_IDLE || ssc.ssw_num_full < SSW_GROUP) {
-      call Panic.panic(PANIC_SS, 22, ssw_state, ssc.ssw_num_full, 0, 0);
+    if (ssc.state != SSW_IDLE || ssc.ssw_num_full < SSW_GROUP) {
+      call Panic.panic(PANIC_SS, 22, ssc.state, ssc.ssw_num_full, 0, 0);
       return;
     }
 
-    cur_handle = ssw_p[ssc.ssw_out];
-    if (cur_handle->buf_state != SS_BUF_STATE_FULL) {
-      ss_panic(23, cur_handle->buf_state);
+    ssc.cur_handle = ssw_p[ssc.ssw_out];
+    if (ssc.cur_handle->buf_state != SS_BUF_STATE_FULL) {
+      ss_panic(23, ssc.cur_handle->buf_state);
       return;
     }
 
@@ -262,12 +252,11 @@ implementation {
 
     /*
      * We have blocks to write.
-     * cur_dblk being zero denotes the stream is full.  Bail.
+     * ssc.dblk being zero denotes the stream is full.  Bail.
      * non-zero, request the h/w.
      */
 
-    cur_dblk = call FS.get_nxt_blk(FS_AREA_TYPED_DATA);
-    if (cur_dblk == 0) {
+    if ((ssc.dblk = call FS.get_nxt_blk(FS_AREA_TYPED_DATA)) == 0) {
       /*
        * shut down.  always just free any incoming buffers.
        */
@@ -280,7 +269,7 @@ implementation {
      */
     ssw_delay_start = call LocalTime.get();
     ssw_write_grp_start = call LocalTime.get();
-    ssw_state = SSW_REQUESTED;
+    ssc.state = SSW_REQUESTED;
     err = call SDResource.request();		 // this will also turn on the hardware when granted.
     if (err) {
       ss_panic(24, err);
@@ -292,27 +281,27 @@ implementation {
   event void SDResource.granted() {
     error_t  err;
 
-    if (cur_handle->buf_state != SS_BUF_STATE_FULL) {
-      call Panic.panic(PANIC_SS, 25, (uint16_t) cur_handle, cur_handle->buf_state, 0, 0);
+    if (ssc.cur_handle->buf_state != SS_BUF_STATE_FULL) {
+      call Panic.panic(PANIC_SS, 25, (uint16_t) ssc.cur_handle, ssc.cur_handle->buf_state, 0, 0);
       return;
     }
 
-    if (!cur_dblk) {
+    if (ssc.dblk == 0) {
       /*
        * shouldn't be here.
        */
-      ss_panic(26, ssw_state);
-      ssw_state = SSW_IDLE;
+      ss_panic(26, ssc.state);
+      ssc.state = SSW_IDLE;
       if (call SDResource.release())
 	ss_panic(27, 0);
       return;
     }
 
-    cur_handle->stamp = call LocalTime.get();
-    cur_handle->buf_state = SS_BUF_STATE_WRITING;
-    ssw_state = SSW_WRITING;
+    ssc.cur_handle->stamp = call LocalTime.get();
+    ssc.cur_handle->buf_state = SS_BUF_STATE_WRITING;
+    ssc.state = SSW_WRITING;
     w_t0 = call LocalTime.get();
-    err = call SDwrite.write(cur_dblk, cur_handle->buf);
+    err = call SDwrite.write(ssc.dblk, ssc.cur_handle->buf);
     if (err) {
       ss_panic(27, err);
       return;
@@ -322,47 +311,46 @@ implementation {
 
   event void SDwrite.writeDone(uint32_t blk, void *buf, error_t err) {
 
-    if (err || blk != cur_dblk) {
-      call Panic.panic(PANIC_SS, 28, err, blk, cur_dblk, 0);
+    if (err || blk != ssc.dblk || ssc.cur_handle->buf_state != SS_BUF_STATE_WRITING) {
+      call Panic.panic(PANIC_SS, 28, err, blk, ssc.dblk, ssc.cur_handle->buf_state);
       return;
     }
 
-    cur_handle->stamp = call LocalTime.get();
-    cur_handle->buf_state = SS_BUF_STATE_FREE;
-    memset(cur_handle->buf, 0, SD_BUF_SIZE);
+    ssc.cur_handle->stamp = call LocalTime.get();
+    ssc.cur_handle->buf_state = SS_BUF_STATE_FREE;
+    memset(ssc.cur_handle->buf, 0, SD_BUF_SIZE);
     ssc.ssw_out++;
     if (ssc.ssw_out >= SSW_NUM_BUFS)
       ssc.ssw_out = 0;
-    cur_handle = ssw_p[ssc.ssw_out];		/* point to nxt buf */
+    ssc.cur_handle = ssw_p[ssc.ssw_out];		/* point to nxt buf */
     ssc.ssw_num_full--;
-    cur_dblk = call FS.adv_nxt_blk(FS_AREA_TYPED_DATA);
-    if (cur_dblk == 0) {
+    if ((ssc.dblk = call FS.adv_nxt_blk(FS_AREA_TYPED_DATA)) == 0) {
       /*
        * adv_nxt_blk returning 0 says we ran off the end of
        * the file system area.
        */
       signal SSF.dblk_stream_full();
       flush_buffers();
-      ssw_state = SSW_IDLE;
+      ssc.state = SSW_IDLE;
       if (call SDResource.release())
 	ss_panic(29, 0);
       return;
     }
 
-    if (cur_handle->buf_state == SS_BUF_STATE_FULL) {
+    if (ssc.cur_handle->buf_state == SS_BUF_STATE_FULL) {
       /*
        * more work to do
        */
-      cur_handle->stamp = call LocalTime.get();
-      cur_handle->buf_state = SS_BUF_STATE_WRITING;
+      ssc.cur_handle->stamp = call LocalTime.get();
+      ssc.cur_handle->buf_state = SS_BUF_STATE_WRITING;
       w_t0 = call LocalTime.get();
-      err = call SDwrite.write(cur_dblk, cur_handle->buf);
+      err = call SDwrite.write(ssc.dblk, ssc.cur_handle->buf);
       if (err) {
 	ss_panic(27, err);
 	return;
       }
     }
-    ssw_state = SSW_IDLE;
+    ssc.state = SSW_IDLE;
     if (call SDResource.release())
       ss_panic(28, 0);
   }
