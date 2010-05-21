@@ -6,7 +6,7 @@
 #include "platform_version.h"
 
 
-#define SYNC_TEST
+//#define SYNC_TEST
 
 
 /*
