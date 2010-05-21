@@ -67,7 +67,7 @@ typedef struct sd_cmd {
  * language.  Bastard committees!
  */
 #define CMD8 (8 | 0x40)
-#define SD_SEND_IF_COND CMD8
+#define SD_SEND_IF_CONDITION CMD8
 
 /* Card sends the CSD, Card Specific Data
  * include CRC (2 bytes) in length

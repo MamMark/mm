@@ -23,8 +23,13 @@ implementation {
 
 #include "platform_sd_spi.h"
 
-  sd_cmd_t    *cmd;                // Command Structure
-  uint8_t      rsp;
+  sd_cmd_t *cmd;			// Command Structure
+  uint8_t   rsp;
+
+  /* CMD8 with voltage selelcted, aa as the echo back, and crc of 87 */
+  //const uint8_t cmd8[] = {
+  //  SD_GET_VOLTAGE, 0, 0, 0x01, 0xaa, 0x87,
+  //};
     
 
   /* Setup for CMD58, Read the OCR register.  Operation Condition Register
@@ -71,23 +76,23 @@ implementation {
     sd_cid_t *cidp;
     uint8_t   indx, tmp;
 
-    call SDraw.start_op();
+    call SDraw.start_op();               // Chip Select Low
     cmd->cmd = SD_SEND_CID;
-    rsp      = call SDraw.raw_cmd();
+    rsp      = call SDraw.raw_cmd();     // Sends command and waits for response
     while (1) {
-      tmp = call SDraw.get();
+      tmp = call SDraw.get();            // Check for start token in prefix
       if (tmp == SD_START_TOK)
 	break;
     }
-    for (indx = 0; indx < SD_CID_LEN; indx++)
+    for (indx = 0; indx < SD_CID_LEN; indx++)  // Read in CID register
       cid_data[indx] = call SDraw.get();
-    call SDraw.end_op();
+    call SDraw.end_op();                       // Chip Select High
     cidp = (sd_cid_t *) cid_data;
   }
 
 
   /* Setup for CMD9, read the CSD register, Card Specific Data register
-   *  returns R1_LEN, 1 byte.  See Section 5.3
+   *  response is R1_LEN, 1 byte, register contains 128 bits.  See Section 5.3
    * The CSD register contains data format, erro correction type, max
    *  data access time, etc.
    *
@@ -100,7 +105,7 @@ implementation {
     sd_csd_V2_t *csd2p;
     uint8_t indx;
     uint8_t r;
-
+                                // Reading CSD is same as CID above
     call SDraw.start_op();
     cmd->cmd = SD_SEND_CSD;
     r = call SDraw.raw_cmd();
@@ -119,32 +124,39 @@ implementation {
 
 
   /* Setup for CMD13, send status of the card
-   *  returns R2_LEN, 2 bytes.  See Section 7.3.1.3
+   *  returns R2_LEN, 2 bytes, no data block.  See Section 7.3.1.3
    */
   void get_status() {
     uint8_t      status_data[2];
     sd_status_t *sdp;
 
-    call SDraw.start_op();
+    call SDraw.start_op();                 // Chip Select Low
     cmd->cmd = SD_SEND_STATUS;
-    status_data[0] = call SDraw.raw_cmd();
-    status_data[1] = call SDraw.get();
-    call SDraw.end_op();
+    status_data[0] = call SDraw.raw_cmd(); // Send and wait for response
+    status_data[1] = call SDraw.get();     // Reset of R2 response
+    call SDraw.end_op();                   // Chip Select High
     sdp = (sd_status_t *) status_data;
   }
 
 
   /* Setup for ACMD51, read the SD Configuration Register,
-   *  returns R1_LEN, 1 byte.
+   *  returns R1_LEN, 1 byte, register contains 64 bits.  See Section 5.6
+   *
+   * The SCR register contains SCR structure, Spec Version, security support, etc.
    */
   void get_scr() {
     uint8_t scr_data[SD_SCR_LEN];
     sd_scr_t *scrp;
     uint8_t  indx;
 
-    call SDraw.start_op();
+    call SDraw.start_op();                    // Chip Select Low
     cmd->cmd = SD_SEND_SCR;
-    rsp = call SDraw.raw_acmd();
+    rsp = call SDraw.raw_acmd();              // CMD55 then send and get response
+
+    /* Determine if this acts like a data block, if so, look for a token
+     *  in the prefix.
+     */
+
     for (indx = 0; indx < SD_SCR_LEN; indx++)
       scr_data[indx] = call SDraw.get();
     call SDraw.end_op();
@@ -152,10 +164,64 @@ implementation {
   }
 
 
+  /* Returns bit 0-7 of the data
+   */
+   uint8_t getbit(uint8_t in_data, uint8_t bit) {
+     return(in_data >> bit) & 1;
+   }
+
+
+  /* Calculate the CRC7 value for the given command
+   *
+   */
+  uint8_t calc_crc7(uint8_t past_crc, uint8_t data) {
+    uint8_t new_crc, cnt, bit_shift;
+
+    new_crc = past_crc;
+    for(cnt = 7; cnt >= 0; cnt--) {
+      new_crc <<= 1;
+      new_crc |= getbit(data, cnt);
+      if (getbit(new_crc, 7) == 1)
+        new_crc ^= 0x89;
+    }
+    return(new_crc);
+  }
+
+
+  /* Send CMD8, default voltage argument to 0x01, and echo to 0xAA
+   *
+   */
+  uint8_t send_cmd8() {
+    uint8_t cond[4], crc7;
+
+    call SDraw.start_op();                // Chip Select Low
+
+    cmd->cmd = SD_SEND_IF_CONDITION;
+    cmd->arg = 0x000001aa;
+    cmd->crc = 0x87;
+ 
+    rsp = call SDraw.raw_cmd();
+    cond[0] = call SDraw.get();
+    cond[1] = call SDraw.get();
+    cond[2] = call SDraw.get();
+    cond[3] = call SDraw.get();
+    crc7 = call SDraw.get();
+
+    call SDraw.end_op();
+
+    if (cond[3] != 0xaa)                   // Check echo and voltage
+      return(FAIL);
+    if ((cond[2] && 0xf) != 0x01)
+      return(FAIL);
+    return SUCCESS;
+  }
+
+
   event void Boot.booted() {
     call SDsa.reset();
     cmd = call SDraw.cmd_ptr();
 
+    send_cmd8();
     get_ocr();				// CMD58
     get_cid();				// CMD10
     get_csd();				// CMD9
