@@ -201,11 +201,12 @@ implementation {
     cmd->crc = 0x87;
  
     rsp = call SDraw.raw_cmd();
-    cond[0] = call SDraw.get();
-    cond[1] = call SDraw.get();
-    cond[2] = call SDraw.get();
-    cond[3] = call SDraw.get();
-    crc7 = call SDraw.get();
+    if (rsp == 0) {
+      cond[0] = call SDraw.get();
+      cond[1] = call SDraw.get();
+      cond[2] = call SDraw.get();
+      cond[3] = call SDraw.get();
+    }
 
     call SDraw.end_op();
 
