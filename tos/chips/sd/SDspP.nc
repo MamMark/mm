@@ -429,7 +429,7 @@ implementation {
     /* Just bail if we never got a response */
     if (i >= SD_CMD_TIMEOUT) {
       sd_panic(28, tmp);
-      return 0xff;
+      return 0xf0;
     }
     return rsp;
   }
@@ -493,14 +493,22 @@ implementation {
    *
    * Reset
    *
+   * See SDsa for notes on reseting the SD card and powering it up.
    */
 
   /* Reset the SD card.
    * ret:      0,  card initilized
    * non-zero, error return
    *
+   * 0 return guarantees a SDreset.resetDone will be signalled later.
+   *
    * SPI SD initialization sequence:
-   * CMD0 (reset), CMD55 (app cmd), ACMD41 (app_send_op_cond), CMD58 (send ocr)
+   * CMD0 (reset), CMD8, CMD55 (app cmd), ACMD41 (app_send_op_cond)
+   *
+   * See SDsa for details on power up timing.  We power up using
+   * SD_PwrConfig via the ResourceDefaultOwner interface.  There is
+   * enough delay prior to SDreset.reset being called so that things
+   * work.  We use 20 clock bytes to give us a bit of cushion.
    */
 
   command error_t SDreset.reset() {
@@ -519,13 +527,14 @@ implementation {
     sdc.cur_cid = CID_NONE;	        /* reset is not parameterized. */
     cmd = &sd_cmd;
 
-    /* Clock out at least 74 bits of idles (0xFF is 8 bits).  Thats 10 bytes. This allows
-     * the SD card to complete its power up prior to us talking to
-     * the card.
+    /*
+     * Clock out at least 74 bits of idles (0xFF is 8 bits).  Thats 10 bytes. This allows
+     * the SD card to complete its power up prior to us talking to the card.  We send
+     * 20 to give a bit more timing cushion.
      */
 
     SD_CSN = 1;				/* force to known state */
-    sd_start_dma(NULL, recv_dump, 10);	/* send 10 0xff to clock SD */
+    sd_start_dma(NULL, recv_dump, 20);	/* send 20 0xff to clock SD */
     sd_wait_dma();
 
     /* Put the card in the idle state, non-zero return -> error */
@@ -913,15 +922,6 @@ implementation {
 
     SD_CSN = 0;				/* reassert to continue xfer */
 
-//    /* The write command needs an additional 8 clock cycles before
-//     * the block write is started.
-//     */
-//    tmp = sd_get();
-//    if (tmp != 0xff) {
-//      sd_panic(50, tmp);
-//      return FAIL;
-//    }
-
     /*
      * The SD needs a write token, send it first then fire
      * up the dma.
@@ -994,20 +994,97 @@ implementation {
    *
    * SDsa: standalone SD implementation, no split phase, no clients
    *
+   * Notes on resetting the SD.
+   *
+   * We run the SD in SPI mode.  This is accomplished by setting CSN (chip
+   * select, low true) to 0 and sending the FORCE_IDLE command.
+   *
+   * Steps:
+   *
+   *    1) Configure USCI h/w for SPI mode.
+   *    2) turn on the SD.
+   *    3) need to wait the initilization delay, supply voltage builds
+   *	   to bus master voltage.  doc says maximum of 1ms, 74 clocks
+   *	   and supply ramp up time.  But unclear how long is the actual
+   *	   minimum.
+   *	4) send FORCE_IDLE, sd_send_command also lowers CSN (low true).
+   *	5) Repeatedly send GO_OP (ACMD41) to take the SD out of idle (what
+   *	   they call reset).
+   *
+   * empirically, we can send 40-65 bytes during initilization clocking
+   * or can delay 65+ uis prior to clocking 10 bytes (80 clocks, need
+   * minimum of 74 clocks).
+   *
+   * We don't know how close to the hairy edge we are if we use a dt of
+   * around 100uis.  We get to dt of 100uis using about 36 clock bytes
+   * or a delay of 65uis and 10 clock bytes.
+   *
+   * So for the time being, we use 100 clock bytes and let the dma engine
+   * pump them out.  The mainline code uses the dma engine and uses the
+   * dma interrupt to signal completion.
+   *
+   *    configure
+   *		<--- t_0
+   *    pwr on
+   *    csn = 1
+   *		<--- delay A
+   *    n byte clocking (74 clocks)  <--- modify # of clocks
+   *		<--- delay B
+   *    send FORCE_IDLE
+   *		<---  dt = TAR - t_0
+   *
+   * clock	dt	result
+   *  bytes
+   * 10		48	panic
+   * 20		68	panic
+   * 32		94	panic
+   * 36		103	panic
+   * 40		111	works
+   * 64		162	works
+   *
+   *
+   * Delay A: Add delay after pwr on, prior to clock bytes, after csn = 1.
+   * fixed clock bytes (10).  dt is time between pwr_on and send_command
+   * (force idle).
+   *
+   * delay		dt	result
+   * 50		94	panic
+   * 60		103	panic
+   * 65		109	works
+   * 70		114	works
+   * 75		118	works
+   * 100	143	works
+   *
+   *
+   * Delay B: delay after clock bytes.  prior to  FORCE_IDLE.
+   *
+   * delay	dt	result
+   * 100	104	panic
+   * 105	109	panic
+   * 110	114	panic
+   * 200	204	panic
+   *
    *************************************************************************/
 
   command error_t SDsa.reset() {
     sd_cmd_t *cmd;                // Command Structure
     uint8_t rsp;
 
-    cmd = &sd_cmd;
-    call HW.sd_on();
     call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
-    
+    call HW.sd_on();
+
     SD_CSN = 1;				/* force to known state */
-    sd_start_dma(NULL, recv_dump, 10);	/* send 10 0xff to clock SD */
+
+    /*
+     * send 800 clocks, 100 bytes.  about 240uis.  This satisfies
+     * sending 74 clocks but is significantly short of the 1ms called
+     * out in the doc.  But it seems to work.  Seems to depend on whose
+     * SD card we are using.
+     */
+    sd_start_dma(NULL, recv_dump, 100);
     sd_wait_dma();
 
+    cmd = &sd_cmd;
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
     cmd->arg = 0;
     rsp = sd_send_command();
