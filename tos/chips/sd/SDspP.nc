@@ -479,7 +479,7 @@ implementation {
    *
    * Init
    *
-   */
+   ***********************************************************************/
 
   command error_t Init.init() {
     sdc.majik_a = SD_MAJIK;
@@ -675,7 +675,7 @@ implementation {
    *
    * Read
    *
-   */
+   ***********************************************************************/
 
   task void sd_read_task() {
     uint8_t tmp;
@@ -877,6 +877,8 @@ implementation {
       i = sd_read_status();
       call Panic.panic(PANIC_MS, 45, tmp, i, 0, 0);
       cid = sdc.cur_cid;		/* remember for signals */
+      sdc.cur_cid = CID_NONE;
+      sdc.sd_state = SDS_IDLE;
       signal SDwrite.writeDone[cid](sdc.blk_start, sdc.data_ptr, FAIL);
       return;
     }

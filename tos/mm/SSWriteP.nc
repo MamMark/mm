@@ -268,7 +268,6 @@ implementation {
      * something to actually write out to h/w.
      */
     ssw_delay_start = call LocalTime.get();
-    ssw_write_grp_start = call LocalTime.get();
     ssc.state = SSW_REQUESTED;
     err = call SDResource.request();		 // this will also turn on the hardware when granted.
     if (err) {
@@ -297,10 +296,11 @@ implementation {
       return;
     }
 
-    ssc.cur_handle->stamp = call LocalTime.get();
+    w_t0 = call LocalTime.get();
+    ssw_write_grp_start = w_t0;
+    ssc.cur_handle->stamp = w_t0;
     ssc.cur_handle->buf_state = SS_BUF_STATE_WRITING;
     ssc.state = SSW_WRITING;
-    w_t0 = call LocalTime.get();
     err = call SDwrite.write(ssc.dblk, ssc.cur_handle->buf);
     if (err) {
       ss_panic(27, err);
@@ -339,17 +339,21 @@ implementation {
 
     if (ssc.cur_handle->buf_state == SS_BUF_STATE_FULL) {
       /*
-       * more work to do
+       * more work to do, stay in SSW_WRITING.
        */
+      w_t0 = call LocalTime.get();
       ssc.cur_handle->stamp = call LocalTime.get();
       ssc.cur_handle->buf_state = SS_BUF_STATE_WRITING;
-      w_t0 = call LocalTime.get();
       err = call SDwrite.write(ssc.dblk, ssc.cur_handle->buf);
       if (err) {
 	ss_panic(27, err);
 	return;
       }
+      return;
     }
+    w_t0 = call LocalTime.get();
+    w_diff = w_t0 - ssw_write_grp_start;
+
     ssc.state = SSW_IDLE;
     if (call SDResource.release())
       ss_panic(28, 0);
