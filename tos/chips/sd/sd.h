@@ -54,6 +54,10 @@
 #define SD_CMD_TIMEOUT 1024
 
 
+/* dma xfer timeout in mis (binary milliseconds) */
+SD_SECTOR_XFER_TIMEOUT	4
+
+
 /*
  * Definitions for each of the SD registers
  */

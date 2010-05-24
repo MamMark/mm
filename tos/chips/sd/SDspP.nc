@@ -565,6 +565,9 @@ implementation {
 
     switch (sdc.sd_state) {
       default:
+      case SDS_WRITE_DMA:
+      case SDS_READ_DMA:
+        sd_panic(100, sdc.state);
 	return;
 
       case SDS_RESET:
@@ -710,9 +713,14 @@ implementation {
       return;
     }
 
-    /* read the block (512 bytes) and include the crc (2 bytes) */
+    /*
+     * read the block (512 bytes) and include the crc (2 bytes)
+     * we fire up the dma, turn on a timer to do a timeout, and
+     * enable the dma interrupt to generate a h/w event when complete.
+     */
     sdc.sd_state = SDS_READ_DMA;
     sd_start_dma(NULL, sdc.data_ptr, SD_BUF_SIZE);
+    call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
     DMA0_ENABLE_INT;
     return;
   }
@@ -930,9 +938,14 @@ implementation {
      */
     sd_put(SD_START_TOK);
 
-    /* send the sector size and include the 2 crc bytes */
+    /*
+     * send the sector data, include the 2 crc bytes
+     * start the dma, enable a time out to monitor the h/w
+     * and enable the dma h/w interrupt to generate the h/w event.
+     */
     sdc.sd_state = SDS_WRITE_DMA;
     sd_start_dma(data, recv_dump, SD_BUF_SIZE);
+    call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
     DMA0_ENABLE_INT;
     return SUCCESS;
   }
@@ -1049,7 +1062,7 @@ implementation {
    * fixed clock bytes (10).  dt is time between pwr_on and send_command
    * (force idle).
    *
-   * delay		dt	result
+   * delay	dt	result
    * 50		94	panic
    * 60		103	panic
    * 65		109	works
@@ -1222,8 +1235,14 @@ implementation {
   }
 
 
+  /*
+   * DMA interrupt is only used for channel 0, RX for the SD.
+   * When it goes off turn off the timeout timer and kick over to
+   * sync level to finish.  The main SD driver code runs at sync level.
+   */
   TOSH_SIGNAL( DMA_VECTOR ) {
     DMA0_DISABLE_INT;
+    call SDtimer.stop();
     post dma_task();
   }
 
