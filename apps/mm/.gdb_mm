@@ -96,6 +96,8 @@ printf "           [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[2]->buf, SSWriteP__
 print SSWriteP__ssw_p[2]->buf_state
 printf "           [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[3]->buf, SSWriteP__ssw_p[3]->majik, SSWriteP__ssw_p[3]->stamp
 print SSWriteP__ssw_p[3]->buf_state
+printf "           [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[4]->buf, SSWriteP__ssw_p[4]->majik, SSWriteP__ssw_p[4]->stamp
+print SSWriteP__ssw_p[4]->buf_state
 end
 document ss
 StreamStorage state

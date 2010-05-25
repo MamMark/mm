@@ -18,7 +18,7 @@
    Clients should only know about SS_BLOCK_SIZE.
 */
 #define SS_BLOCK_SIZE 512
-#define SSW_NUM_BUFS   4
+#define SSW_NUM_BUFS   5
 
 /*
  * SSW_GROUP defines how many buffers to group together before trying to fire up the SD

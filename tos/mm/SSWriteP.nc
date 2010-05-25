@@ -57,11 +57,12 @@ implementation {
     &ssw_handles[0],
     &ssw_handles[1],
     &ssw_handles[2],
-    &ssw_handles[3]
+    &ssw_handles[3],
+    &ssw_handles[4]
   };
 
-#if SSW_NUM_BUFS != 4
-#warning "SSW_NUM_BUFS is other than 4"
+#if SSW_NUM_BUFS != 5
+#warning "SSW_NUM_BUFS is other than 5"
 #endif
 
   ss_control_t ssc;			 /* all global control cells */
