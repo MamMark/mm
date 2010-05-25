@@ -3,16 +3,20 @@
  * All rights reserved.
  */
 
+//#include "printf.h"
+
 uint16_t doit, erase;
 
 module TestSDArbP {
+  provides interface Boot as Out_Boot;	/* out to FileSystem */
   uses {
+    interface Boot;			/* incoming from Main */
+    interface Boot as FS_OutBoot;	/* incoming from FileSystem */
+
     interface SDread;
     interface SDwrite;
     interface SDerase;
-    interface Boot;
     interface Resource;
-    interface Boot as FS_OutBoot;
   }
 }
 
@@ -32,19 +36,28 @@ implementation {
     while (!doit)
       ;
 
+    signal Out_Boot.booted();		/* tell FileSystem to do its thing */
+  }
+
+
+  event void FS_OutBoot.booted() {	/* FileSystem has finished. */
     call Resource.request();
   }
 
 
   event void Resource.granted() {
-    error_t err;
-
-    if (erase)
+    if (erase) {
       call SDerase.erase(0x5000, 0x5000);
-
+      return;
+    }
     sd_arb_state = SDArb_0;
-    if ((err = call SDread.read(0, buff)))
-      nop();
+    call SDread.read(0, buff);
+  }
+
+
+  event void SDerase.eraseDone(uint32_t blk_start, uint32_t blk_end, error_t error) {
+    sd_arb_state = SDArb_0;
+    call SDread.read(0, buff);
   }
 
 
@@ -86,9 +99,5 @@ implementation {
     return;
   }
 
-
-  event void FS_OutBoot.booted() {
-    nop();
-  }
 
 }

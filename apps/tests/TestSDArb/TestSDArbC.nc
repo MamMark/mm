@@ -18,4 +18,5 @@ implementation {
 
   components FileSystemC as FS;
   App.FS_OutBoot -> FS;
+  App.Out_Boot   <- FS;
 }
