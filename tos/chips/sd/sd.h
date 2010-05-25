@@ -55,7 +55,12 @@
 
 
 /* dma xfer timeout in mis (binary milliseconds) */
-SD_SECTOR_XFER_TIMEOUT	4
+#define SD_SECTOR_XFER_TIMEOUT	4
+
+
+/* timeout values for Write busy and Erase busy */
+#define SD_WRITE_BUSY_TIMEOUT	120
+#define SD_ERASE_BUSY_TIMEOUT	10240
 
 
 /*

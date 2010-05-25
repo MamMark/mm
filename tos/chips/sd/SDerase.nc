@@ -17,5 +17,5 @@ interface SDerase {
    * if SUCCESS, it is guaranteed that future eraseDone will be signalled.
    */
   command error_t erase(uint32_t blk_start, uint32_t blk_end);
-//  event   void    eraseDone(uint32_t blk_start, uint32_t blk_end, error_t error);
+  event   void    eraseDone(uint32_t blk_start, uint32_t blk_end, error_t error);
 }

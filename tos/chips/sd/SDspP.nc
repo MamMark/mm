@@ -35,8 +35,10 @@ typedef enum {
   SDS_WRITE_DMA,
   SDS_WRITE_BUSY,
   SDS_ERASE,
+  SDS_ERASE_BUSY,
 } sd_state_t;
 
+uint32_t w_t, w_diff;
 
 module SDspP {
   provides {
@@ -117,16 +119,23 @@ implementation {
 
   uint16_t     sd_read_tok_count;	/* how many times we've looked for a read token */
   uint16_t     tmp_rd_post;
-  uint16_t     sd_busy_count;
+  uint16_t     sd_erase_busy_count;
+  uint16_t     sd_write_busy_count;
 
-  uint32_t     max_reset_time_mis, last_reset_time_mis, reset_t0_mis;
-  uint16_t     max_reset_time_uis, last_reset_time_uis, reset_t0_uis;
+  uint32_t     op_t0_mis;
+  uint16_t     op_t0_uis;
 
-  uint32_t     max_read_time_mis,  last_read_time_mis,  read_t0_mis;
-  uint16_t     max_read_time_uis,  last_read_time_uis,  read_t0_uis;
+  uint32_t     max_reset_time_mis, last_reset_time_mis;
+  uint16_t     max_reset_time_uis, last_reset_time_uis;
 
-  uint32_t     max_write_time_mis, last_write_time_mis, write_t0_mis;
-  uint16_t     max_write_time_uis, last_write_time_uis, write_t0_uis;
+  uint32_t     max_read_time_mis,  last_read_time_mis;
+  uint16_t     max_read_time_uis,  last_read_time_uis;
+
+  uint32_t     max_write_time_mis, last_write_time_mis;
+  uint16_t     max_write_time_uis, last_write_time_uis;
+
+  uint32_t     max_erase_time_mis, last_erase_time_mis;
+  uint16_t     max_erase_time_uis, last_erase_time_uis;
 
 
   void sd_cmd_crc();
@@ -520,8 +529,8 @@ implementation {
       return EBUSY;
     }
 
-    reset_t0_uis = TAR;
-    reset_t0_mis = call lt.get();
+    op_t0_uis = TAR;
+    op_t0_mis = call lt.get();
 
     sdc.sd_state = SDS_RESET;
     sdc.cur_cid = CID_NONE;	        /* reset is not parameterized. */
@@ -565,9 +574,15 @@ implementation {
 
     switch (sdc.sd_state) {
       default:
+      case SDS_ERASE_BUSY:		/* these are various timeout states */
+      case SDS_WRITE_BUSY:		/* the timer went off which shouldn't happen */
       case SDS_WRITE_DMA:
       case SDS_READ_DMA:
-        sd_panic(100, sdc.state);
+	w_t = call lt.get();
+	w_diff = w_t - op_t0_mis;
+	rsp = sd_get();
+	call Panic.panic(PANIC_MS, 100, sdc.sd_state, (w_diff >> 16), w_diff & 0xffff, 0);
+	rsp = sd_get();
 	return;
 
       case SDS_RESET:
@@ -599,11 +614,11 @@ implementation {
 	 * isn't currently any need.
 	 */
 
-	last_reset_time_uis = TAR - reset_t0_uis;
+	last_reset_time_uis = TAR - op_t0_uis;
 	if (last_reset_time_uis > max_reset_time_uis)
 	  max_reset_time_uis = last_reset_time_uis;
 
-	last_reset_time_mis = call lt.get() - reset_t0_mis;
+	last_reset_time_mis = call lt.get() - op_t0_mis;
 	if (last_reset_time_mis > max_reset_time_mis)
 	  max_reset_time_mis = last_reset_time_mis;
 
@@ -760,11 +775,11 @@ implementation {
     if (sdc.data_ptr[0] == 0xfe)
       sd_warn(41, sdc.data_ptr[0]);
 
-    last_read_time_uis = TAR - read_t0_uis;
+    last_read_time_uis = TAR - op_t0_uis;
     if (last_read_time_uis > max_read_time_uis)
       max_read_time_uis = last_read_time_uis;
 
-    last_read_time_mis = call lt.get() - read_t0_mis;
+    last_read_time_mis = call lt.get() - op_t0_mis;
     if (last_read_time_mis > max_read_time_mis)
       max_read_time_mis = last_read_time_mis;
 
@@ -795,8 +810,8 @@ implementation {
       return EBUSY;
     }
 
-    read_t0_uis = TAR;
-    read_t0_mis = call lt.get();
+    op_t0_uis = TAR;
+    op_t0_mis = call lt.get();
 
     sdc.sd_state = SDS_READ;
     sdc.cur_cid = cid;
@@ -840,22 +855,23 @@ implementation {
     /* card is busy writing the block.  ask if still busy. */
 
     tmp = sd_get();
-    sd_busy_count++;
-    if (tmp != 0xff) {
+    sd_write_busy_count++;
+    if (tmp != 0xff) {			/* protected by timeout timer */
       post sd_write_task();
       return;
     }
+    call SDtimer.stop();		/* write busy done, kill timeout timer */
     SD_CSN = 1;				/* deassert CS */
 
     i = sd_read_status();
     if (i)
       sd_panic(46, i);
 
-    last_write_time_uis = TAR - write_t0_uis;
+    last_write_time_uis = TAR - op_t0_uis;
     if (last_write_time_uis > max_write_time_uis)
       max_write_time_uis = last_write_time_uis;
 
-    last_write_time_mis = call lt.get() - write_t0_mis;
+    last_write_time_mis = call lt.get() - op_t0_mis;
     if (last_write_time_mis > max_write_time_mis)
       max_write_time_mis = last_write_time_mis;
 
@@ -893,11 +909,13 @@ implementation {
 
     /*
      * the SD goes busy until the block is written.  (busy is data out low).
-     * we poll using a task.  The amount of time it take has been observed
-     * to be about 800uis.
+     * we poll using a task.
+     *
+     * We also start up a timeout timer to protect against hangs.
      */
-    sd_busy_count = 0;
+    sd_write_busy_count = 0;
     sdc.sd_state = SDS_WRITE_BUSY;
+    call SDtimer.startOneShot(SD_WRITE_BUSY_TIMEOUT);
     post sd_write_task();
   }
 
@@ -911,8 +929,8 @@ implementation {
       return EBUSY;
     }
 
-    write_t0_uis = TAR;
-    write_t0_mis = call lt.get();
+    op_t0_uis = TAR;
+    op_t0_mis = call lt.get();
 
     sdc.sd_state = SDS_WRITE;
     sdc.cur_cid = cid;
@@ -951,17 +969,43 @@ implementation {
   }
 
 
+
   /************************************************************************
    *
-   * Erase
+   * SDerase.erase
    *
    */
 
-  /*
-   * sd_erase
-   *
-   * erase a contiguous number of blocks
-   */
+  task void sd_erase_task() {
+    uint8_t  tmp;
+    uint8_t  cid;
+
+    /*
+     * card is busy erasing the block.  ask if still busy.
+     */
+    tmp = sd_get();
+    sd_erase_busy_count++;
+    if (tmp != 0xff) {			/* protected by timeout timer */
+      post sd_erase_task();
+      return;
+    }
+    call SDtimer.stop();		/* busy done, kill timeout */
+    SD_CSN = 1;				/* deassert CS */
+
+    last_erase_time_uis = TAR - op_t0_uis;
+    if (last_erase_time_uis > max_erase_time_uis)
+      max_erase_time_uis = last_erase_time_uis;
+
+    last_erase_time_mis = call lt.get() - op_t0_mis;
+    if (last_erase_time_mis > max_erase_time_mis)
+      max_erase_time_mis = last_erase_time_mis;
+
+    cid = sdc.cur_cid;
+    sdc.sd_state = SDS_IDLE;
+    sdc.cur_cid = CID_NONE;
+    signal SDerase.eraseDone[cid](sdc.blk_start, sdc.blk_end, SUCCESS);
+  }
+
 
   command error_t SDerase.erase[uint8_t cid](uint32_t blk_s, uint32_t blk_e) {
     sd_cmd_t *cmd;
@@ -971,6 +1015,9 @@ implementation {
       sd_panic_idle(51, sdc.sd_state);
       return EBUSY;
     }
+
+    op_t0_uis = TAR;
+    op_t0_mis = call lt.get();
 
     sdc.sd_state = SDS_ERASE;
     sdc.cur_cid = cid;
@@ -1001,6 +1048,18 @@ implementation {
       sd_panic_idle(56, rsp);
       return FAIL;
     }
+
+    SD_CSN = 0;				/* reassert to continue xfer */
+
+    /*
+     * the SD goes busy until the block is written.  (busy is data out low).
+     * we poll using a task.  The amount of time it take has been observed
+     * to be about 800uis.
+     */
+    sd_erase_busy_count = 0;
+    sdc.sd_state = SDS_ERASE_BUSY;
+    call SDtimer.startOneShot(SD_ERASE_BUSY_TIMEOUT);
+    post sd_erase_task();
     return SUCCESS;
   }
 
@@ -1219,6 +1278,7 @@ implementation {
 
 
   task void dma_task() {
+    call SDtimer.stop();
     switch (sdc.sd_state) {
       case SDS_READ_DMA:
 	sd_read_dma_handler();
@@ -1242,7 +1302,6 @@ implementation {
    */
   TOSH_SIGNAL( DMA_VECTOR ) {
     DMA0_DISABLE_INT;
-    call SDtimer.stop();
     post dma_task();
   }
 
@@ -1257,7 +1316,7 @@ implementation {
   }
 
 
-//  default event void SDerase.eraseDone[uint8_t cid](uint32_t sdc.blk_start, uint32_t sdc.blk_end, error_t error) {
-//    sd_panic(61, cid);
-//  }
+  default event void SDerase.eraseDone[uint8_t cid](uint32_t blk_start, uint32_t blk_end, error_t error) {
+    sd_panic(61, cid);
+  }
 }
