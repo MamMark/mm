@@ -10,6 +10,9 @@
 #include "sd.h"
 
 
+uint8_t d[514];
+
+
 module sdP {
   uses {
     interface Boot;
@@ -222,6 +225,9 @@ implementation {
     call SDsa.reset();
     cmd = call SDraw.cmd_ptr();
 
+    call SDsa.read(0, d);
+    call SDsa.read(0x5000, d);
+    call SDsa.write(0x5000, d);
     send_cmd8();
     get_ocr();				// CMD58
     get_cid();				// CMD10

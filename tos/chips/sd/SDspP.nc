@@ -39,6 +39,9 @@ typedef enum {
 } sd_state_t;
 
 uint32_t w_t, w_diff;
+norace uint32_t sdsa_majik;
+#define SDSA_MAJIK 0xAAAA5555
+
 
 module SDspP {
   provides {
@@ -728,6 +731,12 @@ implementation {
       return;
     }
 
+    if (tmp != 0xfe) {
+      /*
+       * needs a panic.  change fe into start_tok or what ever symbolic
+       */
+    }
+
     /*
      * read the block (512 bytes) and include the crc (2 bytes)
      * we fire up the dma, turn on a timer to do a timeout, and
@@ -1051,11 +1060,6 @@ implementation {
 
     SD_CSN = 0;				/* reassert to continue xfer */
 
-    /*
-     * the SD goes busy until the block is written.  (busy is data out low).
-     * we poll using a task.  The amount of time it take has been observed
-     * to be about 800uis.
-     */
     sd_erase_busy_count = 0;
     sdc.sd_state = SDS_ERASE_BUSY;
     call SDtimer.startOneShot(SD_ERASE_BUSY_TIMEOUT);
@@ -1140,10 +1144,27 @@ implementation {
    *
    *************************************************************************/
 
-  command error_t SDsa.reset() {
+  /*
+   * return TRUE if in standalone.
+   *
+   * Standalone code can panic.  provide a mechanism so panic can tell if
+   * in standalone and special handling is needed.
+   *
+   * we have a majik number in the sdc (control block).  If this majik is
+   * the SDSA_MAJIK then we are in standalone.
+   */
+  async command bool SDsa.inSA() {
+    if (sdsa_majik == SDSA_MAJIK)
+      return TRUE;
+    return FALSE;
+  }
+
+
+  command void SDsa.reset() {
     sd_cmd_t *cmd;                // Command Structure
     uint8_t rsp;
 
+    sdsa_majik = SDSA_MAJIK;    
     call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
     call HW.sd_on();
 
@@ -1163,30 +1184,141 @@ implementation {
     cmd->arg = 0;
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
-      return FAIL;
+      sd_panic(100, rsp);
+      return;
     }
 
     do {
+      /*
+       * CD todo: add counter based time out.  1st see how long by counting
+       */
       cmd->cmd = SD_GO_OP;		// Send CMD0, software reset
       rsp = sd_send_acmd();
     } while (rsp & 1);
-    return SUCCESS;
   }
 
 
-  command error_t SDsa.off() {
+  command void SDsa.off() {
     call HW.sd_off();
     call Usci.resetUsci_n();
+    sdsa_majik = 0;
   }
 
 
-  command error_t SDsa.read(uint32_t blk_id, void *buf) {
-    return SUCCESS;
+  command void SDsa.read(uint32_t blk_id, void *buf) {
+    sd_cmd_t *cmd;
+    uint8_t   rsp, tmp;
+    uint16_t  crc;
+
+    cmd = &sd_cmd;
+
+    /* Need to add size checking, 0 = success */
+    cmd->cmd = SD_READ_BLOCK;
+    cmd->arg = (blk_id << SD_BLOCKSIZE_NBITS);
+
+    /* send read data command */
+    SD_CSN = 0;
+    rsp = sd_raw_cmd();                 /* clean, crc, send, get response */
+
+    sd_read_tok_count = 0;
+
+    /* read till we get a start token or timeout */
+    do {
+      sd_read_tok_count++;
+      tmp = sd_get();			/* read a byte from the SD */
+
+      if (((tmp & MSK_TOK_DATAERROR) == 0) || (sd_read_tok_count >= SD_READ_TOK_MAX)) {
+	/* Clock out a byte before returning, let SD finish */
+	/*
+	 * needs a panic in here.
+	 */
+	sd_get();
+	return;
+      }
+      if (tmp != 0xFF)
+	break;
+    } while ((sd_read_tok_count < SD_READ_TOK_MAX) || (tmp == 0xFF));
+
+    if (tmp != 0xfe) {
+      /*
+       * needs a panic.  change fe into start_tok or what ever symbolic
+       */
+      return;
+    }
+
+    /*
+     * read the block (512 bytes) and include the crc (2 bytes)
+     * we fire up the dma, turn on a timer to do a timeout, and
+     * enable the dma interrupt to generate a h/w event when complete.
+     */
+    sd_start_dma(NULL, buf, SD_BUF_SIZE);
+    sd_wait_dma();
+    SD_CSN = 1;                  /* deassert the SD card */
+
+    sd_get();
+    sd_get();
+
+    crc = (buf[512] << 8) | buf[513];
+    if (sd_check_crc(buf, crc)) {
+      /*
+       * needs a panic.
+       */
+      return;
+    }
+
+    // What types of checks can we perform here besides crc?   Just CRC
+
+    return;
   }
 
 
-  command error_t SDsa.write(uint32_t blk_id, void *buf) {
-    return SUCCESS;
+  command void SDsa.write(uint32_t blk_id, void *buf) {
+    sd_cmd_t *cmd;
+    uint8_t   rsp, status_byte, tmp;
+
+    cmd = &sd_cmd;
+    sd_compute_crc(buf);                /* sets bits 512, 513 to 0x00 */
+
+    SD_CSN = 0;
+    cmd->arg = (blk_id << SD_BLOCKSIZE_NBITS);
+    cmd->cmd = SD_WRITE_BLOCK;
+    rsp = sd_raw_cmd();                 /* clean, crc, send, get response */
+    /* check response, panic */
+    sd_put(SD_START_TOK);
+
+    sd_start_dma(buf, recv_dump, SD_BUF_SIZE);
+    sd_wait_dma();
+
+    /*
+     * After the data block is accepted the SD sends a data response token
+     * that tells whether it accepted the block.  0x05 says all is good.
+     */
+    tmp = sd_get();
+    if ((tmp & 0x1F) != 0x05) {
+      /* panic!   CD:  do me
+       */
+      return;
+    }
+
+    op_t0_uis = TAR;
+
+    /*
+     * card is doing busy's while it is writing.  wait for all ones before stopping
+     */
+    do {				/* count how many iterations and time */
+      tmp =  sd_get();
+      if (tmp == 0xFF)
+        break;
+    } while ((TAR - op_t0_uis)  < 5000);
+
+    cmd->arg = 0;
+    cmd->cmd = SD_SEND_STATUS;		/* use sd_read_status */
+    rsp = sd_raw_cmd();
+    status_byte = sd_get();
+    tmp = sd_get();      
+
+    SD_CSN = 1;                  /* deassert the SD card */
+    return;
   }
 
 

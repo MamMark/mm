@@ -7,8 +7,9 @@
  */
 
 interface SDsa {
-  command error_t reset();
-  command error_t off();
-  command error_t read(uint32_t blk_id, void *buf);
-  command error_t write(uint32_t blk, void *buf);
+  async command bool inSA();
+  command void reset();
+  command void off();
+  command void read(uint32_t blk_id, void *buf);
+  command void write(uint32_t blk, void *buf);
 }

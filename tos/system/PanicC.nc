@@ -17,4 +17,7 @@ implementation {
   components LocalTimeMilliC, CollectC;
   PanicP.LocalTime -> LocalTimeMilliC;
   PanicP.Collect -> CollectC;
+
+  components SDspP;
+  PanicP.SDsa -> SDspP;
 }

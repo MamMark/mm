@@ -15,10 +15,9 @@ implementation {
   components MainC;
   sdP.Boot -> MainC;
 
- components SDspC;
+  components SDspC;
   sdP.SDraw -> SDspC;
   sdP.SDsa  -> SDspC;
-
 
   components FileSystemC as FS;
   sdP.FS_OutBoot -> FS;

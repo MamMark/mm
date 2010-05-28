@@ -32,6 +32,7 @@ module PanicP {
   uses {
     interface Collect;
     interface LocalTime<TMilli>;
+    interface SDsa;
   }
 }
 
@@ -75,6 +76,11 @@ implementation {
     MAYBE_SAVE_SR_AND_DINT;
     last_panic = call LocalTime.get();
     nop();
+
+    if (call SDsa.inSA()) {
+      while (1)
+	nop();
+    }
 
     temp = pcode & ~PANIC_WARN_FLAG;
     if (temp == PANIC_MS || temp == PANIC_SS)

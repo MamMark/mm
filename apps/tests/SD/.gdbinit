@@ -22,7 +22,7 @@ dis
 # b PanicP.nc:62
 
 # 5 panic
-b PanicP.nc:77
+b PanicP.nc:78
 comm
 printf "pcode: 0d%d (0x%0x)  where: 0d%d  0x%04x 0x%04x 0x%04x 0x%04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
@@ -30,5 +30,5 @@ end
 dis
 ena 5
 
-b sdP.nc:221
+b sdP.nc:225
 b SDspP__SDsa__reset
