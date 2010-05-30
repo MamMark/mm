@@ -17,9 +17,10 @@ implementation {
   UartStream = UartC;
   UartByte = UartC;
 
-  components mmDockSerialP;
-  StdControl = mmDockSerialP;
-  mmDockSerialP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
+  components DockSerialP;
+  StdControl = DockSerialP;
+  DockSerialP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
+  DockSerialP.Resource -> UartC;
 
   components DockCommArbiterC;
   DockCommArbiterC.Resource -> UartC.Resource;

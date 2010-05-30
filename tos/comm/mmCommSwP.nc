@@ -17,11 +17,11 @@
  *
  * Data packets:  Data packets are currently just used for sending
  * sensor eavesdrops.  Space is allocated for each sensor to have
- * at most one eavesdrop packet outstanding at any time.  See mmCommData
+ * at most one eavesdrop packet outstanding at any time.  See CommDT
  * where this is implemented.
  *
  * Each channel (control, debug, or data) contends for the comm line.
- * Data packets contend with each other before contending for the
+ * Typed Data (DT) packets contend with each other before contending for the
  * comm line with control and debug traffic.
  *
  * @author Eric B. Decker

@@ -15,7 +15,7 @@ configuration mmRadioCommC {
 }
 
 implementation {
-  components new AMSenderC(AM_MM_DATA);
+  components new AMSenderC(AM_MM_DT);
   components new AMQueueImplP(MM_NUM_SENSORS), ActiveMessageC;
 
   Send = AMQueueImplP;
@@ -24,7 +24,7 @@ implementation {
   Packet = AMSenderC;
   SplitControl = ActiveMessageC;
   
-  AMQueueImplP.AMSend[AM_MM_DATA] -> AMSenderC;
+  AMQueueImplP.AMSend[AM_MM_DT] -> AMSenderC;
   AMQueueImplP.Packet -> AMSenderC;
   AMQueueImplP.AMPacket -> AMSenderC;
 }

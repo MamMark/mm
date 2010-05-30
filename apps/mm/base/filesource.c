@@ -383,7 +383,7 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
     spacket_header_src_set(msg, 0);
     spacket_header_length_set(msg, l);
     spacket_header_group_set(msg, 0);
-    spacket_header_type_set(msg, AM_MM_DATA);
+    spacket_header_type_set(msg, AM_MM_DT);	/* data, typed */
     dptr = (bp + 1) + spacket_data_offset(0);
     dptr[0] = hdr[0];
     dptr[1] = hdr[1];

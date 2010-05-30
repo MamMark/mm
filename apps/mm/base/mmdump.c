@@ -640,7 +640,7 @@ process_unk_dblk(tmsg_t *msg) {
 
 
 void
-process_mm_data(tmsg_t *msg) {
+process_mm_dt(tmsg_t *msg) {		/* data, typed */
   uint16_t len;
   uint8_t  dtype;
 
@@ -880,8 +880,8 @@ main(int argc, char **argv) {
      */
     reset_tmsg(msg, ((uint8_t *)tmsg_data(msg)) + SPACKET_SIZE, tmsg_length(msg) - spacket_data_offset(0));
     switch(stype) {
-      case AM_MM_DATA:
-	process_mm_data(msg);
+      case AM_MM_DT:			/* data, typed */
+	process_mm_dt(msg);
 	break;
 
       default:

@@ -35,8 +35,8 @@ implementation {
   components Hpl_MM_hwC;
   CradleP.HW -> Hpl_MM_hwC;
 
-  components mmCommDataC;
-  CradleP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_CRADLE];
+  components CommDTC;
+  CradleP.CommDT -> CommDTC.CommDT[SNS_ID_CRADLE];
 
   components PanicC;
   CradleP.Panic -> PanicC;

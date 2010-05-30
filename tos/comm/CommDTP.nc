@@ -1,11 +1,9 @@
 /*
  * Copyright (c) 2008, 2010, Eric B. Decker
  * All rights reserved.
- */
-
-/**
- * mmCommData provides a data stream for data blocks.  Typed data
- * blocks as defined in sd_bocks.h.
+ *
+ * CommDT provides a data stream for typed data blocks.  Typed data
+ * blocks are defined in typed_data.h.
  *
  * @author Eric B. Decker
  * @date   Apr 3 2008
@@ -15,9 +13,9 @@
 #include "sensors.h"
 #include "am_types.h"
 
-module mmCommDataP {
+module CommDTP {
   provides {
-    interface mmCommData[uint8_t cid];
+    interface CommDT[uint8_t cid];
   }
   uses {
     interface Send[uint8_t cid];
@@ -61,7 +59,7 @@ implementation {
    *
    * If the send returns SUCCESS will get a send_data_done signal back.
    */
-  command error_t mmCommData.send_data[uint8_t cid](void *buf, uint8_t len) {
+  command error_t CommDT.send_data[uint8_t cid](void *buf, uint8_t len) {
     uint8_t *bp;
     message_t *dm;
 
@@ -74,16 +72,16 @@ implementation {
       return FAIL;
     }
     memcpy(bp, buf, len);
-    call AMPacket.setType(dm, AM_MM_DATA);
+    call AMPacket.setType(dm, AM_MM_DT);
     call AMPacket.setDestination(dm, AM_BROADCAST_ADDR);
     return call Send.send[cid](dm, len);
   }
 
   event void Send.sendDone[uint8_t cid](message_t* msg, error_t err) {
-    signal mmCommData.send_data_done[cid](err);
+    signal CommDT.send_data_done[cid](err);
   }
 
-  default event void mmCommData.send_data_done[uint8_t cid](error_t rtn) {
+  default event void CommDT.send_data_done[uint8_t cid](error_t rtn) {
     call Panic.panic(PANIC_COMM, 11, 0, 0, 0, 0);
   }
 }

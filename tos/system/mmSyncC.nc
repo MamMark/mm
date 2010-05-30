@@ -25,8 +25,8 @@ implementation {
   components new TimerMilliC() as SyncTimerC;
   mmSyncP.SyncTimer -> SyncTimerC;
 
-  components mmCommDataC;
-  mmSyncP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_NONE];
+  components CommDTC;
+  mmSyncP.CommDT -> CommDTC.CommDT[SNS_ID_NONE];
 
   components CollectC;
   mmSyncP.Collect -> CollectC;

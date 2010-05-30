@@ -17,7 +17,7 @@ configuration mmSerialCommC {
 implementation {
   components MainC;
   components mmSerialCommP;
-  components new SerialAMSenderC(AM_MM_DATA);
+  components new SerialAMSenderC(AM_MM_DT);
   components new AMQueueImplP(MM_NUM_SENSORS), SerialActiveMessageC;
   
   MainC.SoftwareInit -> mmSerialCommP;
@@ -27,7 +27,7 @@ implementation {
   Packet = SerialAMSenderC;
   SplitControl = SerialActiveMessageC;
   
-  mmSerialCommP.SubAMSend[AM_MM_DATA] -> SerialAMSenderC;
+  mmSerialCommP.SubAMSend[AM_MM_DT] -> SerialAMSenderC;
   AMQueueImplP.AMSend -> mmSerialCommP.AMSend;
   AMQueueImplP.Packet -> SerialAMSenderC;
   AMQueueImplP.AMPacket -> SerialAMSenderC;

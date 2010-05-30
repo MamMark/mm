@@ -43,7 +43,7 @@ AM_SAMPLE_MSG                   152     0x98            LowPowerSensing
 AM_SERIAL_SAMPLE_MSG            153     0x99            LowPowerSensing
 
 AM_MM_CONTROL                   160     0xA0
-AM_MM_DATA                      161     0xA1
+AM_MM_DT                        161     0xA1		data, typed
 AM_MM_DEBUG                     162     0xA2
 
 AM_DELUGEADVMSG                 161     0xa1

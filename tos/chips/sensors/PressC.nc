@@ -32,8 +32,8 @@ implementation {
   components mmControlC;
   PressP.mmControl -> mmControlC.mmControl[SNS_ID_PRESS];
 
-  components mmCommDataC;
-  PressP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_PRESS];
+  components CommDTC;
+  PressP.CommDT -> CommDTC.CommDT[SNS_ID_PRESS];
 
   components PanicC;
   PressP.Panic -> PanicC;

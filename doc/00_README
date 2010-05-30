@@ -416,7 +416,7 @@ And you should see packets that look something like this:  (depends on what the 
             |  |     |     |  |  |  |     |  |- sensor id
             |  |     |     |  |  |  |     |- sensor data type
             |  |     |     |  |  |  |-- length of data block
-            |  |     |     |  |  |-- AM type MM_DATA
+            |  |     |     |  |  |-- AM type MM_DT (data, typed)
             |  |     |     |  |-- AM group
             |  |     |     |-- serial length
             |  |     |-- src addr           

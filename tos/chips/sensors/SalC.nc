@@ -34,8 +34,8 @@ implementation {
   SalP.mmControl -> mmControlC.mmControl[SNS_ID_SAL];
   SalP.SenseVal <- mmControlC.SenseVal[SNS_ID_SAL];
 
-  components mmCommDataC;
-  SalP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_SAL];
+  components CommDTC;
+  SalP.CommDT -> CommDTC.CommDT[SNS_ID_SAL];
 
   components PanicC;
   SalP.Panic -> PanicC;

@@ -23,7 +23,7 @@ configuration DockCommC {
 implementation {
   components MainC;
   components DockCommP;
-  components new SerialAMSenderC(AM_MM_DATA);
+  components new SerialAMSenderC(AM_MM_DT);
   components new AMQueueImplP(MM_NUM_SENSORS), SerialActiveMessageC;
   
   MainC.SoftwareInit -> DockCommP;
@@ -36,7 +36,7 @@ implementation {
   Packet = SerialAMSenderC;
   SplitControl = SerialActiveMessageC;
   
-  DockCommP.SubAMSend[AM_MM_DATA] -> SerialAMSenderC;
+  DockCommP.SubAMSend[AM_MM_DT] -> SerialAMSenderC;
   AMQueueImplP.AMSend -> DockCommP.AMSend;
   AMQueueImplP.Packet -> SerialAMSenderC;
   AMQueueImplP.AMPacket -> SerialAMSenderC;

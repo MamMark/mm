@@ -13,7 +13,7 @@
 
 enum {
   AM_MM_CONTROL		= 0xA0,
-  AM_MM_DATA		= 0xA1,
+  AM_MM_DT		= 0xA1,		/* data, typed */
   AM_MM_DEBUG		= 0xA2,
 };
 

@@ -62,7 +62,7 @@ enum {
    * MM_NUM_SENSORS controls how many sensors are compiled into the system.  This also
    * effects allocation of communication message structures.  The allocation doesn't happen
    * automagically as it should so one needs to search all files for use of MM_NUM_SENSORS and
-   * make the changes manually.  For example, mmCommDataP.nc needs to have pointers to each
+   * make the changes manually.  For example, CommDTP.nc needs to have pointers to each
    * of the sensor data packets.  But this is done manually since we want it to be allocated
    * in code space.
    */

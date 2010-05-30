@@ -81,7 +81,7 @@ module CradleP {
     interface Adc;
     interface Collect;
     interface Hpl_MM_hw as HW;
-    interface mmCommData;
+    interface CommDT;
     interface Panic;
     interface LogEvent;
   }
@@ -166,7 +166,7 @@ implementation {
     cdp->stamp_mis = call PeriodTimer.getNow();
 //#ifdef notdef
     if (comm_idle)
-      if (call mmCommData.send_data(cdp, BATT_BLOCK_SIZE) == SUCCESS)
+      if (call CommDT.send_data(cdp, BATT_BLOCK_SIZE) == SUCCESS)
 	comm_idle = FALSE;
 //#endif
     call Collect.collect(cradle_data, BATT_BLOCK_SIZE);
@@ -191,7 +191,7 @@ implementation {
   }
 
 
-  event void mmCommData.send_data_done(error_t rtn) {
+  event void CommDT.send_data_done(error_t rtn) {
     comm_idle = TRUE;
   }
 

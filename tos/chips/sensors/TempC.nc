@@ -33,8 +33,8 @@ implementation {
   components mmControlC;
   TempP.mmControl -> mmControlC.mmControl[SNS_ID_TEMP];
 
-  components mmCommDataC;
-  TempP.mmCommData -> mmCommDataC.mmCommData[SNS_ID_TEMP];
+  components CommDTC;
+  TempP.CommDT -> CommDTC.CommDT[SNS_ID_TEMP];
 
   components PanicC;
   TempP.Panic -> PanicC;

@@ -29,7 +29,7 @@ module TempP {
     interface Collect;
     interface Hpl_MM_hw as HW;
     interface mmControl;
-    interface mmCommData;
+    interface CommDT;
     interface Panic;
   }
 }
@@ -82,14 +82,14 @@ implementation {
     tdp->sched_mis = call PeriodTimer.gett0();
     tdp->stamp_mis = call PeriodTimer.getNow();
     if (call mmControl.eavesdrop()) {
-      if (call mmCommData.send_data(tdp, TEMP_BLOCK_SIZE))
+      if (call CommDT.send_data(tdp, TEMP_BLOCK_SIZE))
 	err_eaves_drops++;
     }
     call Collect.collect(temp_data, TEMP_BLOCK_SIZE);
   }
 
 
-  event void mmCommData.send_data_done(error_t rtn) {
+  event void CommDT.send_data_done(error_t rtn) {
   }
 
   event void RegimeCtrl.regimeChange() {
