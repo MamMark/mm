@@ -192,7 +192,7 @@ implementation {
   }
 
 
-  event void SDread.readDone(uint32_t blk_id, void *read_buf, error_t err) {
+  event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
     dblk_loc_t *dbl;
     uint8_t    *dp;
     bool        empty;

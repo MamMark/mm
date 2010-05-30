@@ -810,7 +810,7 @@ implementation {
    * will be signalled.
    */
 
-  command error_t SDread.read[uint8_t cid](uint32_t blockaddr, void *data) {
+  command error_t SDread.read[uint8_t cid](uint32_t blockaddr, uint8_t *data) {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
@@ -929,7 +929,7 @@ implementation {
   }
 
 
-  command error_t SDwrite.write[uint8_t cid](uint32_t blockaddr, void *data) {
+  command error_t SDwrite.write[uint8_t cid](uint32_t blockaddr, uint8_t *data) {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
@@ -1205,7 +1205,7 @@ implementation {
   }
 
 
-  command void SDsa.read(uint32_t blk_id, void *buf) {
+  command void SDsa.read(uint32_t blk_id, uint8_t *buf) {
     sd_cmd_t *cmd;
     uint8_t   rsp, tmp;
     uint16_t  crc;
@@ -1272,7 +1272,7 @@ implementation {
   }
 
 
-  command void SDsa.write(uint32_t blk_id, void *buf) {
+  command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
     sd_cmd_t *cmd;
     uint8_t   rsp, status_byte, tmp;
 
@@ -1438,12 +1438,12 @@ implementation {
   }
 
 
-  default event void   SDread.readDone[uint8_t cid](uint32_t blk_id, void *buf, error_t error) {
+  default event void   SDread.readDone[uint8_t cid](uint32_t blk_id, uint8_t *buf, error_t error) {
     sd_panic(59, cid);
   }
 
 
-  default event void SDwrite.writeDone[uint8_t cid](uint32_t blk, void *buf, error_t error) {
+  default event void SDwrite.writeDone[uint8_t cid](uint32_t blk, uint8_t *buf, error_t error) {
     sd_panic(60, cid);
   }
 

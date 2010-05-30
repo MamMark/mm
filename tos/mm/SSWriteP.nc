@@ -310,7 +310,7 @@ implementation {
   }
 
 
-  event void SDwrite.writeDone(uint32_t blk, void *buf, error_t err) {
+  event void SDwrite.writeDone(uint32_t blk, uint8_t *buf, error_t err) {
 
     if (err || blk != ssc.dblk || ssc.cur_handle->buf_state != SS_BUF_STATE_WRITING) {
       call Panic.panic(PANIC_SS, 28, err, blk, ssc.dblk, ssc.cur_handle->buf_state);

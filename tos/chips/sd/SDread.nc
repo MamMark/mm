@@ -20,6 +20,6 @@ interface SDread {
    *
    * if SUCCESS, it is guaranteed that a future readDone will be signalled.
    */
-  command error_t read(uint32_t blk_id, void *buf);
-  event void  readDone(uint32_t blk_id, void *buf, error_t error);
+  command error_t read(uint32_t blk_id, uint8_t *buf);
+  event void  readDone(uint32_t blk_id, uint8_t *buf, error_t error);
 }

@@ -20,6 +20,6 @@ interface SDwrite {
    *
    * if SUCCESS, it is guaranteed that a future writeDone will be signalled.
    */
-  command error_t write(uint32_t blk, void *buf);
-  event   void    writeDone(uint32_t blk, void *buf, error_t error);
+  command error_t write(uint32_t blk, uint8_t *buf);
+  event   void    writeDone(uint32_t blk, uint8_t *buf, error_t error);
 }
