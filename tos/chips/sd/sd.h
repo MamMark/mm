@@ -27,7 +27,7 @@
 /*
  * read.read launches a read and then polls the SD card
  * waiting for the card to say it has the data ready.  The
- * SD card starts sending the data using a START_TOKEN.
+ * SD card starts sending the data using SD_START_TOK.
  * We will poll a maximum of SD_READ_TOK_MAX times before
  * bitching
  */

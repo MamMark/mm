@@ -440,7 +440,7 @@ implementation {
 
     /* Just bail if we never got a response */
     if (i >= SD_CMD_TIMEOUT) {
-      sd_panic(28, tmp);
+      sd_panic(27, tmp);
       return 0xf0;
     }
     return rsp;
@@ -528,7 +528,7 @@ implementation {
     uint8_t   rsp;
 
     if (sdc.sd_state) {
-      sd_panic_idle(32, sdc.sd_state);
+      sd_panic_idle(28, sdc.sd_state);
       return EBUSY;
     }
 
@@ -554,7 +554,7 @@ implementation {
     cmd->arg = 0;
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
-      sd_panic_idle(33, rsp);
+      sd_panic_idle(29, rsp);
       return FAIL;
     }
 
@@ -584,7 +584,7 @@ implementation {
 	w_t = call lt.get();
 	w_diff = w_t - op_t0_mis;
 	rsp = sd_get();
-	call Panic.panic(PANIC_MS, 100, sdc.sd_state, (w_diff >> 16), w_diff & 0xffff, 0);
+	call Panic.panic(PANIC_MS, 30, sdc.sd_state, (w_diff >> 16), w_diff & 0xffff, 0);
 	rsp = sd_get();
 	return;
 
@@ -593,7 +593,7 @@ implementation {
 	cmd->cmd = SD_GO_OP;            // Send ACMD41
 	rsp = sd_send_acmd();
 	if (rsp & ~MSK_IDLE) {		/* any other bits set? */
-	  sd_panic_idle(37, rsp);
+	  sd_panic_idle(31, rsp);
 	  signal SDreset.resetDone(FAIL);
 	  return;
 	}
@@ -601,7 +601,7 @@ implementation {
 	if (rsp & MSK_IDLE) {
 	  /* idle bit still set, means card is still in reset */
 	  if (++sd_go_op_count >= SD_GO_OP_MAX) {
-	    sd_panic_idle(38, sd_go_op_count);			// We maxed the tries, panic and fail
+	    sd_panic_idle(32, sd_go_op_count);			// We maxed the tries, panic and fail
 	    signal SDreset.resetDone(FAIL);
 	    return;
 	  }
@@ -625,7 +625,6 @@ implementation {
 	if (last_reset_time_mis > max_reset_time_mis)
 	  max_reset_time_mis = last_reset_time_mis;
 
-	nop();
 	sdc.sd_state = SDS_IDLE;
 	sdc.cur_cid = CID_NONE;
 	signal SDreset.resetDone(SUCCESS);
@@ -711,7 +710,7 @@ implementation {
       sd_get();
 
       /* The card returned an error, or timed out. */
-      call Panic.panic(PANIC_MS, 39, tmp, sd_read_tok_count, 0, 0);
+      call Panic.panic(PANIC_MS, 33, tmp, sd_read_tok_count, 0, 0);
       cid = sdc.cur_cid;			/* remember for signaling */
       sdc.sd_state = SDS_IDLE;
       sdc.cur_cid = CID_NONE;
@@ -726,16 +725,13 @@ implementation {
      * about 300 uis.  Not enough to kick a timer off (mis granularity) but
      * long enough that we don't want to sit on the cpu.
      */
-    if (tmp == 0xFF) {			/* should we explicitly check for START_TOK? */
+    if (tmp == 0xFF) {
       post sd_read_task();
       return;
     }
 
-    if (tmp != 0xfe) {
-      /*
-       * needs a panic.  change fe into start_tok or what ever symbolic
-       */
-    }
+    if (tmp != SD_START_TOK)
+      call Panic.panic(PANIC_MS, 34, tmp, sd_read_tok_count, 0, 0);
 
     /*
      * read the block (512 bytes) and include the crc (2 bytes)
@@ -766,7 +762,7 @@ implementation {
 
     crc = (sdc.data_ptr[512] << 8) | sdc.data_ptr[513];
     if (sd_check_crc(sdc.data_ptr, crc)) {
-      sd_panic_idle(40, crc);
+      sd_panic_idle(35, crc);
       signal SDread.readDone[cid](sdc.blk_start, sdc.data_ptr, FAIL);
       return;
     }
@@ -782,7 +778,7 @@ implementation {
      * we got a better handle on the transaction sequence of the SD.
      */
     if (sdc.data_ptr[0] == 0xfe)
-      sd_warn(41, sdc.data_ptr[0]);
+      sd_warn(36, sdc.data_ptr[0]);
 
     last_read_time_uis = TAR - op_t0_uis;
     if (last_read_time_uis > max_read_time_uis)
@@ -792,7 +788,6 @@ implementation {
     if (last_read_time_mis > max_read_time_mis)
       max_read_time_mis = last_read_time_mis;
 
-    nop();
     sdc.sd_state = SDS_IDLE;
     sdc.cur_cid = CID_NONE;
     signal SDread.readDone[cid](sdc.blk_start, sdc.data_ptr, SUCCESS);
@@ -815,7 +810,7 @@ implementation {
     uint8_t   rsp;
 
     if (sdc.sd_state) {
-      sd_panic_idle(42, sdc.sd_state);
+      sd_panic_idle(37, sdc.sd_state);
       return EBUSY;
     }
 
@@ -834,7 +829,7 @@ implementation {
     cmd->arg = (sdc.blk_start << SD_BLOCKSIZE_NBITS);
 
     if ((rsp = sd_send_command())) {
-      sd_panic_idle(43, rsp);
+      sd_panic_idle(38, rsp);
       return FAIL;
     }
 
@@ -874,7 +869,7 @@ implementation {
 
     i = sd_read_status();
     if (i)
-      sd_panic(46, i);
+      sd_panic(39, i);
 
     last_write_time_uis = TAR - op_t0_uis;
     if (last_write_time_uis > max_write_time_uis)
@@ -883,8 +878,6 @@ implementation {
     last_write_time_mis = call lt.get() - op_t0_mis;
     if (last_write_time_mis > max_write_time_mis)
       max_write_time_mis = last_write_time_mis;
-
-    nop();
 
     cid = sdc.cur_cid;
     sdc.sd_state = SDS_IDLE;
@@ -908,7 +901,7 @@ implementation {
     tmp = sd_get();
     if ((tmp & 0x1F) != 0x05) {
       i = sd_read_status();
-      call Panic.panic(PANIC_MS, 45, tmp, i, 0, 0);
+      call Panic.panic(PANIC_MS, 40, tmp, i, 0, 0);
       cid = sdc.cur_cid;		/* remember for signals */
       sdc.cur_cid = CID_NONE;
       sdc.sd_state = SDS_IDLE;
@@ -934,7 +927,7 @@ implementation {
     uint8_t   rsp;
 
     if (sdc.sd_state) {
-      sd_panic_idle(47, sdc.sd_state);
+      sd_panic_idle(41, sdc.sd_state);
       return EBUSY;
     }
 
@@ -953,7 +946,7 @@ implementation {
 
     cmd->cmd = SD_WRITE_BLOCK;
     if ((rsp = sd_send_command())) {
-      sd_panic_idle(48, rsp);
+      sd_panic_idle(42, rsp);
       return FAIL;
     }
 
@@ -1021,7 +1014,7 @@ implementation {
     uint8_t   rsp;
 
     if (sdc.sd_state) {
-      sd_panic_idle(51, sdc.sd_state);
+      sd_panic_idle(43, sdc.sd_state);
       return EBUSY;
     }
 
@@ -1041,20 +1034,20 @@ implementation {
     cmd->arg = sdc.blk_start << SD_BLOCKSIZE_NBITS;
     cmd->cmd = SD_SET_ERASE_START;
     if ((rsp = sd_send_command())) {
-      sd_panic_idle(52, rsp);
+      sd_panic_idle(44, rsp);
       return FAIL;
     }
 
     cmd->arg = sdc.blk_end << SD_BLOCKSIZE_NBITS;
     cmd->cmd = SD_SET_ERASE_END;
     if ((rsp = sd_send_command())) {
-      sd_panic_idle(54, rsp);
+      sd_panic_idle(45, rsp);
       return FAIL;
     }
 
     cmd->cmd = SD_ERASE;
     if ((rsp = sd_send_command())) {
-      sd_panic_idle(56, rsp);
+      sd_panic_idle(46, rsp);
       return FAIL;
     }
 
@@ -1184,17 +1177,20 @@ implementation {
     cmd->arg = 0;
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
-      sd_panic(100, rsp);
+      sd_panic(47, rsp);
       return;
     }
 
+    sd_go_op_count = 0;
+
     do {
-      /*
-       * CD todo: add counter based time out.  1st see how long by counting
-       */
+      sd_go_op_count++;
       cmd->cmd = SD_GO_OP;		// Send CMD0, software reset
       rsp = sd_send_acmd();
-    } while (rsp & 1);
+    } while ((rsp & MSK_IDLE) || (sd_go_op_count >= SD_GO_OP_MAX));
+
+    if (sd_go_op_count >= SD_GO_OP_MAX)
+      sd_panic(48, sd_go_op_count);
   }
 
 
@@ -1228,21 +1224,21 @@ implementation {
       tmp = sd_get();			/* read a byte from the SD */
 
       if (((tmp & MSK_TOK_DATAERROR) == 0) || (sd_read_tok_count >= SD_READ_TOK_MAX)) {
-	/* Clock out a byte before returning, let SD finish */
 	/*
-	 * needs a panic in here.
+	 *Clock out a byte before returning, let SD finish
 	 */
 	sd_get();
+        call Panic.panic(PANIC_MS, 49, tmp, sd_read_tok_count, 0, 0);
 	return;
       }
+
       if (tmp != 0xFF)
 	break;
+
     } while ((sd_read_tok_count < SD_READ_TOK_MAX) || (tmp == 0xFF));
 
-    if (tmp != 0xfe) {
-      /*
-       * needs a panic.  change fe into start_tok or what ever symbolic
-       */
+    if (tmp != SD_START_TOK) {
+      call Panic.panic(PANIC_MS, 50, tmp, sd_read_tok_count, 0, 0);
       return;
     }
 
@@ -1260,32 +1256,27 @@ implementation {
 
     crc = (buf[512] << 8) | buf[513];
     if (sd_check_crc(buf, crc)) {
-      /*
-       * needs a panic.
-       */
+      sd_panic(51, crc);
       return;
     }
-
-    // What types of checks can we perform here besides crc?   Just CRC
-
-    return;
   }
 
 
   command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
     sd_cmd_t *cmd;
     uint8_t   rsp, status_byte, tmp;
+    uint16_t  i;
 
     cmd = &sd_cmd;
     sd_compute_crc(buf);                /* sets bits 512, 513 to 0x00 */
 
-    SD_CSN = 0;
     cmd->arg = (blk_id << SD_BLOCKSIZE_NBITS);
     cmd->cmd = SD_WRITE_BLOCK;
-    rsp = sd_raw_cmd();                 /* clean, crc, send, get response */
-    /* check response, panic */
-    sd_put(SD_START_TOK);
+    if ((rsp = sd_send_command()))
+      sd_panic(52, rsp);
 
+    SD_CSN = 0;
+    sd_put(SD_START_TOK);
     sd_start_dma(buf, recv_dump, SD_BUF_SIZE);
     sd_wait_dma();
 
@@ -1295,32 +1286,32 @@ implementation {
      */
     tmp = sd_get();
     if ((tmp & 0x1F) != 0x05) {
-      /* panic!   CD:  do me
-       */
+      i = sd_read_status();
+      call Panic.panic(PANIC_MS, 53, tmp, i, 0, 0);
       return;
     }
 
     op_t0_uis = TAR;
+    sd_write_busy_count = 0;
 
     /*
      * card is doing busy's while it is writing.  wait for all ones before stopping
      */
     do {				/* count how many iterations and time */
+      sd_write_busy_count++;
       tmp =  sd_get();
       if (tmp == 0xFF)
         break;
     } while ((TAR - op_t0_uis)  < 5000);
 
-    cmd->arg = 0;
-    cmd->cmd = SD_SEND_STATUS;		/* use sd_read_status */
-    rsp = sd_raw_cmd();
-    status_byte = sd_get();
-    tmp = sd_get();      
+    if ((TAR - op_t0_uis) >= 5000)
+      sd_panic(54, tmp);
 
-    SD_CSN = 1;                  /* deassert the SD card */
-    return;
+    SD_CSN = 1;				/* deassert. */
+    i = sd_read_status();
+    if (i)
+      call Panic.panic(PANIC_MS, 55, tmp, i, 0, 0);
   }
-
 
 
   /*************************************************************************
@@ -1421,7 +1412,7 @@ implementation {
 	break;
 
       default:
-	sd_panic(58, sdc.sd_state);
+	sd_panic(56, sdc.sd_state);
 	break;
     }
   }
@@ -1439,16 +1430,16 @@ implementation {
 
 
   default event void   SDread.readDone[uint8_t cid](uint32_t blk_id, uint8_t *buf, error_t error) {
-    sd_panic(59, cid);
+    sd_panic(57, cid);
   }
 
 
   default event void SDwrite.writeDone[uint8_t cid](uint32_t blk, uint8_t *buf, error_t error) {
-    sd_panic(60, cid);
+    sd_panic(58, cid);
   }
 
 
   default event void SDerase.eraseDone[uint8_t cid](uint32_t blk_start, uint32_t blk_end, error_t error) {
-    sd_panic(61, cid);
+    sd_panic(59, cid);
   }
 }
