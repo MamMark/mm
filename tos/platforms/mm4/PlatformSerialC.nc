@@ -21,8 +21,4 @@ implementation {
   StdControl = DockSerialP;
   DockSerialP.Msp430UartConfigure <- UartC.Msp430UartConfigure;
   DockSerialP.Resource -> UartC;
-
-  components DockCommArbiterC;
-  DockCommArbiterC.Resource -> UartC.Resource;
-  DockCommArbiterC.ResourceRequested -> UartC.ResourceRequested;
 }
