@@ -17,12 +17,11 @@ uint8_t wait = WAIT;
 
 
 module CommBootP {
-  provides {
-    interface Boot as CommBoot;
-  }
+  provides interface Boot as CommBoot;
   uses {
     interface Boot;
-    interface mmCommSw;
+    interface SplitControl as DockSerial;
+    interface Panic;
   }
 }
 implementation {
@@ -33,20 +32,21 @@ implementation {
 #ifdef TEST_NO_COMM
     signal CommBoot.booted();
 #else
-    call mmCommSw.useSerial();
+    call DockSerial.start();
 #endif
-//    call mmCommSw.useRadio();
-
   }
 
-  event void mmCommSw.serialOn() {
+
+  event void DockSerial.startDone(error_t err) {
+    if (err) {
+      call Panic.panic(PANIC_COMM, 1, err, 0, 0, 0);
+      return;
+    }
     signal CommBoot.booted();
   }
 
-  event void mmCommSw.radioOn() {
-//    signal CommBoot.booted();
+
+  event void DockSerial.stopDone(error_t err) {
+    call Panic.panic(PANIC_COMM, 2, err, 0, 0, 0);
   }
-
-  event void mmCommSw.commOff() {}
 }
-

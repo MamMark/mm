@@ -79,7 +79,7 @@ module GPSMsgP {
     interface StdControl as GPSControl;
     interface Surface;
     interface LogEvent;
-    interface CommDT;
+    interface DTSender;
   }
 }
 
@@ -236,7 +236,7 @@ implementation {
     edp->stamp_mis = call LocalTime.get();
     edp->ev = DT_EVENT_GPS_SATS_2;
     edp->arg = np->sats;
-    call CommDT.send_data(event_data, DT_HDR_SIZE_EVENT);
+    call DTSender.send(event_data, DT_HDR_SIZE_EVENT);
 #endif
 
     if (np->len != NAVDATA_LEN)
@@ -262,7 +262,7 @@ implementation {
     edp->stamp_mis = call LocalTime.get();
     edp->ev = DT_EVENT_GPS_SATS_7;
     edp->arg = cp->sats;
-    call CommDT.send_data(event_data, DT_HDR_SIZE_EVENT);
+    call DTSender.send(event_data, DT_HDR_SIZE_EVENT);
 #endif
 
     if (cp->len != CLOCKSTATUS_LEN)
@@ -334,7 +334,7 @@ implementation {
     edp->stamp_mis = call LocalTime.get();
     edp->ev = DT_EVENT_GPS_SATS_29;
     edp->arg = gp->num_svs;
-    call CommDT.send_data(event_data, DT_HDR_SIZE_EVENT);
+    call DTSender.send(event_data, DT_HDR_SIZE_EVENT);
 #endif
     call LogEvent.logEvent(DT_EVENT_GPS_SATS_29, gp->num_svs);
     call LogEvent.logEvent(DT_EVENT_GPSCM_STATE, (gpsc_state << 8) | gpsm_state);
@@ -594,9 +594,9 @@ implementation {
   }
 
   /*
-   * GPS status messages are sent via CommDT as SNS_ID 0 (same as sync and restart
+   * GPS status messages are sent via DTSender as SNS_ID 0 (same as sync and restart
    * messages.  That means that any send_data_done signal for SNS_ID 0 will also come
    * here.
    */
-  event void CommDT.send_data_done(error_t err) {}
+  event void DTSender.sendDone(error_t err) {}
 }

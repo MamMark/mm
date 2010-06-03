@@ -33,8 +33,8 @@ implementation {
   components mmControlC;
   BattP.mmControl -> mmControlC.mmControl[SNS_ID_BATT];
 
-  components CommDTC;
-  BattP.CommDT -> CommDTC.CommDT[SNS_ID_BATT];
+  components DTSenderC;
+  BattP.DTSender -> DTSenderC.DTSender[SNS_ID_BATT];
 
   components CradleC;
   BattP.Docked -> CradleC;

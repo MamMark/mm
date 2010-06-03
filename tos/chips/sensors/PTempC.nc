@@ -32,8 +32,8 @@ implementation {
   components mmControlC;
   PTempP.mmControl -> mmControlC.mmControl[SNS_ID_PTEMP];
 
-  components CommDTC;
-  PTempP.CommDT -> CommDTC.CommDT[SNS_ID_PTEMP];
+  components DTSenderC;
+  PTempP.DTSender -> DTSenderC.DTSender[SNS_ID_PTEMP];
 
   components PanicC;
   PTempP.Panic -> PanicC;

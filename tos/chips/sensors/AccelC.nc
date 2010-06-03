@@ -33,8 +33,8 @@ implementation {
   components mmControlC;
   AccelP.mmControl -> mmControlC.mmControl[SNS_ID_ACCEL];
 
-  components CommDTC;
-  AccelP.CommDT -> CommDTC.CommDT[SNS_ID_ACCEL];
+  components DTSenderC;
+  AccelP.DTSender -> DTSenderC.DTSender[SNS_ID_ACCEL];
 
   components PanicC;
   AccelP.Panic -> PanicC;

@@ -13,9 +13,12 @@ configuration CommBootC {
   uses interface Boot;
 }
 implementation {
-  components CommBootP, mmCommSwC;
-  
+  components CommBootP;
+
   CommBoot = CommBootP.CommBoot;
   Boot = CommBootP;
-  CommBootP.mmCommSw -> mmCommSwC;
+
+  components SerialActiveMessageC, PanicC;
+  CommBootP.DockSerial -> SerialActiveMessageC;
+  CommBootP.Panic -> PanicC;
 }

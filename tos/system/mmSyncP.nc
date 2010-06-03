@@ -32,7 +32,7 @@ module mmSyncP {
     interface Boot as SysBoot;
     interface Timer<TMilli> as SyncTimer;
     interface Collect;
-    interface CommDT;
+    interface DTSender;
   }
 }
 
@@ -46,13 +46,13 @@ implementation {
 
     for (i = 0; i < DT_HDR_SIZE_VERSION; i++)
       vdata[i] = i;
-    call CommDT.send_data(vdata, DT_HDR_SIZE_VERSION);
+    call DTSender.send(vdata, DT_HDR_SIZE_VERSION);
   }
 #endif
 
 
   /*
-   * Need to rework usage of CommDT.send_data so if it fails
+   * Need to rework usage of DTSender.send so if it fails
    * it still generates send_data_done.
    *
    * Otherwise, we hang in the boot sequence.  How does this work
@@ -69,7 +69,7 @@ implementation {
     vp->minor   = MINOR;
     vp->build   = _BUILD;
     call Collect.collect(vdata, DT_HDR_SIZE_VERSION);
-    call CommDT.send_data(vdata, DT_HDR_SIZE_VERSION);
+    call DTSender.send(vdata, DT_HDR_SIZE_VERSION);
   }
 
 
@@ -86,7 +86,7 @@ implementation {
     sdp->stamp_mis = call SyncTimer.getNow();
     sdp->sync_majik = SYNC_MAJIK;
     call Collect.collect(sync_data, DT_HDR_SIZE_SYNC);
-    call CommDT.send_data(sync_data, DT_HDR_SIZE_SYNC);
+    call DTSender.send(sync_data, DT_HDR_SIZE_SYNC);
   }
 
 
@@ -105,11 +105,11 @@ implementation {
 
 
   /*
-   * Uses CommDT port SNS_ID_NONE (shared with others) so need
+   * Uses DTSender port SNS_ID_NONE (shared with others) so need
    * to be prepared to handle send_data_done completion events that
    * we didn't kick off.
    */
-  event void CommDT.send_data_done(error_t err) {
+  event void DTSender.sendDone(error_t err) {
     switch (boot_state) {
       default:
 	break;

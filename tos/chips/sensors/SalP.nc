@@ -56,7 +56,7 @@ module SalP {
     interface Collect;
     interface Hpl_MM_hw as HW;
     interface mmControl;
-    interface CommDT;
+    interface DTSender;
     interface Panic;
   }
 }
@@ -131,7 +131,7 @@ implementation {
     sdp->data[1] = sal_data = temp_data[1];
     signal SenseVal.valAvail(sal_data, sal_stamp);
     if (call mmControl.eavesdrop()) {
-      if (call CommDT.send_data(sdp, SAL_BLOCK_SIZE))
+      if (call DTSender.send(sdp, SAL_BLOCK_SIZE))
 	err_eaves_drops++;
     }
     if (record)
@@ -139,7 +139,7 @@ implementation {
   }
 
 
-  event void CommDT.send_data_done(error_t rtn) {
+  event void DTSender.sendDone(error_t rtn) {
   }
 
   event void RegimeCtrl.regimeChange() {

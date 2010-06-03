@@ -39,7 +39,7 @@ module AccelP {
     interface Collect;
     interface Hpl_MM_hw as HW;
     interface mmControl;
-    interface CommDT;
+    interface DTSender;
     interface Panic;
   }
 }
@@ -124,14 +124,14 @@ implementation {
     adp->data[1] = data[1];
     adp->data[2] = data[2];
     if (call mmControl.eavesdrop()) {
-      if (call CommDT.send_data(adp, ACCEL_BLOCK_SIZE))
+      if (call DTSender.send(adp, ACCEL_BLOCK_SIZE))
 	  err_eaves_drops++;
     }
     call Collect.collect(accel_data, ACCEL_BLOCK_SIZE);
   }
 
 
-  event void CommDT.send_data_done(error_t rtn) {
+  event void DTSender.sendDone(error_t rtn) {
   }
 
 

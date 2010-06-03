@@ -40,6 +40,6 @@ implementation {
   components mmControlC;
   GPSMsgP.Surface -> mmControlC;
 
-  components CommDTC;
-  GPSMsgP.CommDT -> CommDTC.CommDT[SNS_ID_NONE];
+  components DTSenderC;
+  GPSMsgP.DTSender -> DTSenderC.DTSender[SNS_ID_NONE];
 }

@@ -32,17 +32,17 @@ dis
 # b PanicP.nc:62
 
 # 5 panic
-b PanicP.nc:77
+b PanicP.nc:78
 comm
 printf "pcode: 0d%d (0x%0x)  where: 0d%d  0x%04x 0x%04x 0x%04x 0x%04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
 
 # 7
-b mmP.nc:44
+# b mmP.nc:44
 
-b SDspP__SDwrite__write
-b SSWriteP.nc:152
-
+b FileSystemP.nc:282
+b mmSyncP.nc:89
+b DTSenderP.nc:95
 
 # ******************************************************************************
 # gps start
