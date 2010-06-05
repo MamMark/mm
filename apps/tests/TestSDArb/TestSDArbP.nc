@@ -61,7 +61,7 @@ implementation {
   }
 
 
-  event void SDread.readDone(uint32_t blk_id, void *buf, error_t error) {
+  event void SDread.readDone(uint32_t blk_id, uint8_t *buf, error_t error) {
     uint16_t i;
     uint8_t *d;
 
@@ -87,7 +87,7 @@ implementation {
   }
 
 
-  event void SDwrite.writeDone(uint32_t blk_id, void *buf, error_t error) {
+  event void SDwrite.writeDone(uint32_t blk_id, uint8_t *buf, error_t error) {
     uint16_t i;
     uint8_t *d;
 

@@ -255,7 +255,7 @@ The following environment variables must be set to build.
     For mm4 hardware:
 
     cd ~/mm/t2_mm/apps/mm
-    make debug mm4 threads
+    make debug mm4
     msp430-jtag -e build/mm4/main.exe
 
     When the download completes use a different window and run:

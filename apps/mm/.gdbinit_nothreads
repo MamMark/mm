@@ -41,8 +41,9 @@ end
 # b mmP.nc:44
 
 b FileSystemP.nc:282
-b mmSyncP.nc:89
-b DTSenderP.nc:95
+#b mmSyncP.nc:89
+#b DTSenderP.nc:95
+
 
 # ******************************************************************************
 # gps start
