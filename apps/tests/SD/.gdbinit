@@ -30,5 +30,3 @@ end
 dis
 ena 5
 
-b sdP.nc:225
-b SDspP__SDsa__reset

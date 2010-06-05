@@ -11,6 +11,7 @@
 
 
 uint8_t d[514];
+bool wait = 1;
 
 
 module sdP {
@@ -221,13 +222,30 @@ implementation {
   }
 
 
+  void set(uint8_t val) {
+    uint16_t i;
+
+    for (i = 0; i < 514; i++)
+      d[i] = val;
+  }
+
+
   event void Boot.booted() {
+    uint16_t i;
+
+    while (wait)
+      ;
     call SDsa.reset();
     cmd = call SDraw.cmd_ptr();
 
     call SDsa.read(0, d);
+    set(0xff);
     call SDsa.read(0x5000, d);
+    for (i = 0; i < 514; i++)
+      d[i] = i + 1;
     call SDsa.write(0x5000, d);
+    set(0);
+    call SDsa.read(0x5000, d);
     send_cmd8();
     get_ocr();				// CMD58
     get_cid();				// CMD10

@@ -39,6 +39,7 @@ typedef enum {
 } sd_state_t;
 
 uint32_t w_t, w_diff;
+uint16_t sa_t0, sa_t1, sa_t2, sa_t3, sa_t4;
 norace uint32_t sdsa_majik;
 #define SDSA_MAJIK 0xAAAA5555
 
@@ -1072,8 +1073,8 @@ implementation {
    *
    * Steps:
    *
-   *    1) Configure USCI h/w for SPI mode.
-   *    2) turn on the SD.
+   *    1) turn on the SD.
+   *    2) Configure USCI h/w for SPI mode.
    *    3) need to wait the initilization delay, supply voltage builds
    *	   to bus master voltage.  doc says maximum of 1ms, 74 clocks
    *	   and supply ramp up time.  But unclear how long is the actual
@@ -1160,6 +1161,7 @@ implementation {
     sdsa_majik = SDSA_MAJIK;    
     call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
     call HW.sd_on();
+    sa_t0 = TAR;
 
     SD_CSN = 1;				/* force to known state */
 
@@ -1169,9 +1171,10 @@ implementation {
      * out in the doc.  But it seems to work.  Seems to depend on whose
      * SD card we are using.
      */
-    sd_start_dma(NULL, recv_dump, 100);
+    sd_start_dma(NULL, recv_dump, 1024);
     sd_wait_dma();
 
+    sa_t1 = TAR;
     cmd = &sd_cmd;
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
     cmd->arg = 0;
@@ -1182,15 +1185,21 @@ implementation {
     }
 
     sd_go_op_count = 0;
+    sa_t2 = TAR;
 
     do {
       sd_go_op_count++;
       cmd->cmd = SD_GO_OP;		// Send CMD0, software reset
       rsp = sd_send_acmd();
-    } while ((rsp & MSK_IDLE) || (sd_go_op_count >= SD_GO_OP_MAX));
+    } while ((rsp & MSK_IDLE) && (sd_go_op_count < SD_GO_OP_MAX));
 
+    sa_t3 = TAR;
+    sa_t4 = TAR;
+    nop();
     if (sd_go_op_count >= SD_GO_OP_MAX)
       sd_panic(48, sd_go_op_count);
+    sa_t4 = TAR;
+    nop();
   }
 
 
