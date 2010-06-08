@@ -222,7 +222,7 @@ The following environment variables must be set to build.
   	TOSDIR=$TOSROOT/tos
   
   	MM_ROOT="/home/joe/mm/t2_mm"
-  	TOSMAKE_PATH="$TOSMAKE_PATH $MM_ROOT/support/make"
+  	TOSMAKE_PATH="$MM_ROOT/support/make"
   
   	M1="/opt/msp430-z1"
   	PATH="$M1/bin:$PATH"
@@ -234,8 +234,8 @@ The following environment variables must be set to build.
   	CLASSPATH=.:$TOSROOT/support/sdk/java/tinyos.jar
   
   	PYTHONPATH=$TOSROOT/support/sdk/python:$PYTHONPATH
-  	PYTHONPATH=$M1/lib:$M1/bin:$PYTHONPATH
-  	PYTHONPATH=$M1/lib/python2.3/site-packages:$PYTHONPATH
+#  	PYTHONPATH=$M1/lib:$M1/bin:$PYTHONPATH
+#  	PYTHONPATH=$M1/lib/python2.3/site-packages:$PYTHONPATH
   
   	#LIBMSPGCC_PATH=$M1/lib
   
