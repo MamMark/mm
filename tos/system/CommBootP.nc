@@ -8,12 +8,12 @@
  * @date March 21, 2010
  */
 
-#ifndef WAIT
-#define WAIT 0
+#ifndef XWAIT
+#define XWAIT 0
 #endif
 
 
-uint8_t wait = WAIT;
+uint8_t wait = XWAIT;
 
 
 module CommBootP {
