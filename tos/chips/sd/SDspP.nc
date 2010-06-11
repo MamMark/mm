@@ -46,12 +46,6 @@ norace uint32_t sdsa_majik;
 
 module SDspP {
   provides {
-    /*
-     * SDread, write, and erase are available to clients,
-     * SDreset is not parameterized and is intended to only be called
-     * by a power manager.
-     */
-    interface SDreset;
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
     interface SDerase[uint8_t cid];
@@ -60,11 +54,12 @@ module SDspP {
     interface Init;
   }
   uses {
+    interface ResourceDefaultOwner;
     interface HplMsp430UsciB as Usci;
-    interface Hpl_MM_hw as HW;
-    interface Panic;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
+    interface Hpl_MM_hw as HW;
+    interface Panic;
   }
 }
 
@@ -509,11 +504,8 @@ implementation {
    * See SDsa for notes on reseting the SD card and powering it up.
    */
 
-  /* Reset the SD card.
-   * ret:      0,  card initilized
-   * non-zero, error return
-   *
-   * 0 return guarantees a SDreset.resetDone will be signalled later.
+  /*
+   * Reset the SD card:  start the reset sequence.
    *
    * SPI SD initialization sequence:
    * CMD0 (reset), CMD8, CMD55 (app cmd), ACMD41 (app_send_op_cond)
@@ -522,15 +514,24 @@ implementation {
    * SD_PwrConfig via the ResourceDefaultOwner interface.  There is
    * enough delay prior to SDreset.reset being called so that things
    * work.  We use 20 clock bytes to give us a bit of cushion.
+   *
+   * Power is turned on by the arbiter calling ResourceDefaultOwner.requested.
+   * The reset sequence is started by clocking out bytes to clock the SD,
+   * FORCE_IDLE is sent.  This drops CS while the command is sent which puts
+   * the SD into SPI mode.  We then use a Timer to poll.  Each poll sends a
+   * GO_OP to request operational mode.
+   *
+   * Once the SD indicates non-IDLE, we call ResourceDefaultOwner.release
+   * to tell the arbiter to start granting.
    */
 
-  command error_t SDreset.reset() {
+  void sd_start_reset(void) {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
     if (sdc.sd_state) {
       sd_panic_idle(28, sdc.sd_state);
-      return EBUSY;
+      return;
     }
 
     op_t0_uis = TAR;
@@ -543,7 +544,7 @@ implementation {
     /*
      * Clock out at least 74 bits of idles (0xFF is 8 bits).  Thats 10 bytes. This allows
      * the SD card to complete its power up prior to us talking to the card.  We send
-     * 20 to give a bit more timing cushion.
+     * 20 to give a bit more timing cushion.  see SDsa.reset for more info.
      */
 
     SD_CSN = 1;				/* force to known state */
@@ -556,7 +557,7 @@ implementation {
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
       sd_panic_idle(29, rsp);
-      return FAIL;
+      return;
     }
 
     /*
@@ -568,7 +569,7 @@ implementation {
      */
     sd_go_op_count = 0;		// Reset our counter for pending tries
     call SDtimer.startOneShot(0);
-    return SUCCESS;
+    return;
   }
 
 
@@ -595,7 +596,6 @@ implementation {
 	rsp = sd_send_acmd();
 	if (rsp & ~MSK_IDLE) {		/* any other bits set? */
 	  sd_panic_idle(31, rsp);
-	  signal SDreset.resetDone(FAIL);
 	  return;
 	}
 
@@ -603,7 +603,6 @@ implementation {
 	  /* idle bit still set, means card is still in reset */
 	  if (++sd_go_op_count >= SD_GO_OP_MAX) {
 	    sd_panic_idle(32, sd_go_op_count);			// We maxed the tries, panic and fail
-	    signal SDreset.resetDone(FAIL);
 	    return;
 	  }
 	  call SDtimer.startOneShot(GO_OP_POLL_TIME);
@@ -628,9 +627,43 @@ implementation {
 
 	sdc.sd_state = SDS_IDLE;
 	sdc.cur_cid = CID_NONE;
-	signal SDreset.resetDone(SUCCESS);
+	call ResourceDefaultOwner.release();
 	return;
     }
+  }
+
+
+  /*
+   * ResourceDefaultOwner.granted: power down the SD.
+   *
+   * reconfigure connections to the SD as input to avoid powering the chip
+   * and power off.
+   *
+   * The HW.sd_off routine will put the i/o pins into a reasonable state to
+   * avoid powering the SD chip and will kill power.  Also make sure that
+   * the SPI module is held in reset.
+   */
+
+  async event void ResourceDefaultOwner.granted() {
+    call HW.sd_off();
+    call Usci.resetUsci_n();
+  }
+
+
+  task void sd_pwr_task() {
+    sd_start_reset();
+  }
+
+
+  async event void ResourceDefaultOwner.requested() {
+    call HW.sd_on();
+    call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
+    post sd_pwr_task();
+  }
+
+
+  async event void ResourceDefaultOwner.immediateRequested() {
+    sd_panic(0x80, 0);
   }
 
 

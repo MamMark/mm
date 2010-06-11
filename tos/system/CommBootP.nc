@@ -8,6 +8,8 @@
  * @date March 21, 2010
  */
 
+#include "panic.h"
+
 #ifndef XWAIT
 #define XWAIT 0
 #endif
