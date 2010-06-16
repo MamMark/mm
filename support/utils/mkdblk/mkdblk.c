@@ -1,7 +1,7 @@
 /* $Id: mkdblk.c,v 1.10 2007/07/11 05:03:47 cire Exp $ */
 /*
  * mkdblk - create dblk structures on mass storage
- * Copyright 2006-2007, Eric B. Decker
+ * Copyright 2006-2008, 2010 Eric B. Decker
  * Mam-Mark Project
  */
 
@@ -17,15 +17,16 @@
 #include "ms.h"
 
 
-#define VERSION "mkdblk: (mam_mark, T2) v2.0 18 May 2008\n"
+#define VERSION "mkdblk: (mam_mark, T2) v2.1 15 Jun 2010\n"
 
 int debug	= 0,
     verbose	= 0,
-    config_size =   8*1024,
-    panic_size  = 128*1024,
-    dblk_size   = 0,
     list        = 0;
-    
+
+uint32_t config_size = 8*1024,
+	 panic_size  = 128*1024,
+	 dblk_size   = 0;
+
 
 static void usage(char *name) {
     fprintf(stderr, VERSION);
@@ -54,21 +55,21 @@ display_info(void) {
     de = f32_get_de("PANIC001", "   ", &rds);
     if (de) {
 	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
-	fprintf(stderr, "PANIC001:  start  0x%04lx  size: %10ld (0x%lx)\n",
+	fprintf(stderr, "PANIC001:  start  0x%04lx  size: %10lu (0x%lx)\n",
 		fx_clu2sec(rds), CF_LE_32(de->size), CF_LE_32(de->size));
     } else
 	fprintf(stderr, "PANIC001: not found\n");
     de = f32_get_de("CNFG0001", "   ", &rds);
     if (de) {
 	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
-	fprintf(stderr, "CNFG0001:  start  0x%04lx  size: %10ld (0x%lx)\n",
+	fprintf(stderr, "CNFG0001:  start  0x%04lx  size: %10lu (0x%lx)\n",
 		fx_clu2sec(rds), CF_LE_32(de->size), CF_LE_32(de->size));
     } else
 	fprintf(stderr, "CNFG001: not found\n");
     de = f32_get_de("DBLK0001", "   ", &rds);
     if (de) {
 	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
-	fprintf(stderr, "DBLK0001:  start  0x%04lx  size: %10ld (0x%lx)\n",
+	fprintf(stderr, "DBLK0001:  start  0x%04lx  size: %10lu (0x%lx)\n",
 		fx_clu2sec(rds), CF_LE_32(de->size), CF_LE_32(de->size));
     } else
 	fprintf(stderr, "DBLK001: not found\n");
