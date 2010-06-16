@@ -39,7 +39,7 @@ typedef enum {
 } sd_state_t;
 
 uint32_t w_t, w_diff;
-uint16_t sa_t0, sa_t1, sa_t2, sa_t3, sa_t4;
+uint16_t sa_t3;
 norace uint32_t sdsa_majik;
 #define SDSA_MAJIK 0xAAAA5555
 
@@ -110,19 +110,17 @@ implementation {
    *
    * need to think about these timeout and how to do with time vs. counts
    */
-  uint16_t     sd_r1b_timeout;
-  uint16_t     sd_wr_timeout;
-  uint16_t     sd_reset_timeout;
-  uint16_t     sd_reset_idles;
-  uint16_t     sd_go_op_count, sd_read_count;
-
+  uint16_t     sd_go_op_count;
   uint16_t     sd_read_tok_count;	/* how many times we've looked for a read token */
-  uint16_t     tmp_rd_post;
   uint16_t     sd_erase_busy_count;
   uint16_t     sd_write_busy_count;
 
   uint32_t     op_t0_mis;
   uint16_t     op_t0_uis;
+
+norace uint16_t sd_pwr_on_time_uis;
+  uint16_t      last_pwr_on_first_cmd_uis;
+  uint16_t      last_full_reset_time_uis;
 
   uint32_t     max_reset_time_mis, last_reset_time_mis;
   uint16_t     max_reset_time_uis, last_reset_time_uis;
@@ -544,16 +542,18 @@ implementation {
     /*
      * Clock out at least 74 bits of idles (0xFF is 8 bits).  Thats 10 bytes. This allows
      * the SD card to complete its power up prior to us talking to the card.  We send
-     * 20 to give a bit more timing cushion.  see SDsa.reset for more info.
+     * 40 to give a bit more timing cushion.  This gets us to about 200uis before the first
+     * command is sent.  see SDsa.reset for more info.
      */
 
     SD_CSN = 1;				/* force to known state */
-    sd_start_dma(NULL, recv_dump, 20);	/* send 20 0xff to clock SD */
+    sd_start_dma(NULL, recv_dump, 40);	/* send 40 0xff to clock SD */
     sd_wait_dma();
 
     /* Put the card in the idle state, non-zero return -> error */
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
     cmd->arg = 0;
+    last_pwr_on_first_cmd_uis = TAR - sd_pwr_on_time_uis;
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
       sd_panic_idle(29, rsp);
@@ -625,6 +625,8 @@ implementation {
 	if (last_reset_time_mis > max_reset_time_mis)
 	  max_reset_time_mis = last_reset_time_mis;
 
+	last_full_reset_time_uis = TAR - sd_pwr_on_time_uis;
+
 	sdc.sd_state = SDS_IDLE;
 	sdc.cur_cid = CID_NONE;
 	call ResourceDefaultOwner.release();
@@ -645,6 +647,7 @@ implementation {
    */
 
   async event void ResourceDefaultOwner.granted() {
+    sd_pwr_on_time_uis = 0;
     call HW.sd_off();
     call Usci.resetUsci_n();
   }
@@ -656,6 +659,7 @@ implementation {
 
 
   async event void ResourceDefaultOwner.requested() {
+    sd_pwr_on_time_uis = TAR;
     call HW.sd_on();
     call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
     post sd_pwr_task();
@@ -1099,8 +1103,6 @@ implementation {
    *
    * SDsa: standalone SD implementation, no split phase, no clients
    *
-   * Notes on resetting the SD.
-   *
    * We run the SD in SPI mode.  This is accomplished by setting CSN (chip
    * select, low true) to 0 and sending the FORCE_IDLE command.
    *
@@ -1115,59 +1117,6 @@ implementation {
    *	4) send FORCE_IDLE, sd_send_command also lowers CSN (low true).
    *	5) Repeatedly send GO_OP (ACMD41) to take the SD out of idle (what
    *	   they call reset).
-   *
-   * empirically, we can send 40-65 bytes during initilization clocking
-   * or can delay 65+ uis prior to clocking 10 bytes (80 clocks, need
-   * minimum of 74 clocks).
-   *
-   * We don't know how close to the hairy edge we are if we use a dt of
-   * around 100uis.  We get to dt of 100uis using about 36 clock bytes
-   * or a delay of 65uis and 10 clock bytes.
-   *
-   * So for the time being, we use 100 clock bytes and let the dma engine
-   * pump them out.  The mainline code uses the dma engine and uses the
-   * dma interrupt to signal completion.
-   *
-   *    configure
-   *		<--- t_0
-   *    pwr on
-   *    csn = 1
-   *		<--- delay A
-   *    n byte clocking (74 clocks)  <--- modify # of clocks
-   *		<--- delay B
-   *    send FORCE_IDLE
-   *		<---  dt = TAR - t_0
-   *
-   * clock	dt	result
-   *  bytes
-   * 10		48	panic
-   * 20		68	panic
-   * 32		94	panic
-   * 36		103	panic
-   * 40		111	works
-   * 64		162	works
-   *
-   *
-   * Delay A: Add delay after pwr on, prior to clock bytes, after csn = 1.
-   * fixed clock bytes (10).  dt is time between pwr_on and send_command
-   * (force idle).
-   *
-   * delay	dt	result
-   * 50		94	panic
-   * 60		103	panic
-   * 65		109	works
-   * 70		114	works
-   * 75		118	works
-   * 100	143	works
-   *
-   *
-   * Delay B: delay after clock bytes.  prior to  FORCE_IDLE.
-   *
-   * delay	dt	result
-   * 100	104	panic
-   * 105	109	panic
-   * 110	114	panic
-   * 200	204	panic
    *
    *************************************************************************/
 
@@ -1191,10 +1140,11 @@ implementation {
     sd_cmd_t *cmd;                // Command Structure
     uint8_t rsp;
 
-    sdsa_majik = SDSA_MAJIK;    
-    call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
+    sdsa_majik = SDSA_MAJIK;
+    w_t = call lt.get();
+    sd_pwr_on_time_uis = TAR;
     call HW.sd_on();
-    sa_t0 = TAR;
+    call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
 
     SD_CSN = 1;				/* force to known state */
 
@@ -1204,39 +1154,41 @@ implementation {
      * out in the doc.  But it seems to work.  Seems to depend on whose
      * SD card we are using.
      */
-    sd_start_dma(NULL, recv_dump, 1024);
+    sd_start_dma(NULL, recv_dump, 256);
     sd_wait_dma();
 
-    sa_t1 = TAR;
     cmd = &sd_cmd;
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
     cmd->arg = 0;
+    last_pwr_on_first_cmd_uis = TAR - sd_pwr_on_time_uis;
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
       sd_panic(47, rsp);
       return;
     }
 
+    /*
+     * SD_GO_OP_MAX is set for normal operation which is polled every 4 or so mis.
+     * SA hits it in a tight loop, so we increase the max allowed to be 8 times
+     * normal.
+     */
     sd_go_op_count = 0;
-    sa_t2 = TAR;
-
     do {
       sd_go_op_count++;
       cmd->cmd = SD_GO_OP;		// Send CMD0, software reset
       rsp = sd_send_acmd();
-    } while ((rsp & MSK_IDLE) && (sd_go_op_count < SD_GO_OP_MAX));
+    } while ((rsp & MSK_IDLE) && (sd_go_op_count < (SD_GO_OP_MAX * 8)));
 
-    sa_t3 = TAR;
-    sa_t4 = TAR;
+    sa_t3 = TAR - sd_pwr_on_time_uis;;
+    w_diff = call lt.get() - w_t;
     nop();
-    if (sd_go_op_count >= SD_GO_OP_MAX)
+    if (sd_go_op_count >= (SD_GO_OP_MAX * 8))
       sd_panic(48, sd_go_op_count);
-    sa_t4 = TAR;
-    nop();
   }
 
 
   command void SDsa.off() {
+    sd_pwr_on_time_uis = 0;
     call HW.sd_off();
     call Usci.resetUsci_n();
     sdsa_majik = 0;
@@ -1306,7 +1258,7 @@ implementation {
 
   command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
     sd_cmd_t *cmd;
-    uint8_t   rsp, status_byte, tmp;
+    uint8_t   rsp, tmp;
     uint16_t  i;
 
     cmd = &sd_cmd;

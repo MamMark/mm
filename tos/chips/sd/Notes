@@ -1,0 +1,46 @@
+Notes on resetting the SD.
+
+Resetting the SD into SPI mode consists of powering up and asserting CS while
+sending CMD0 (FORCE_IDLE, SD_RESET).  Prior to talking to the card for the 
+first time there is a power up window and the SD card needs to be clocked for
+74 clocks, 1ms, and supply ramp up time.  We've tested different chips under
+various conditions and wing how much time we spend.
+
+We have two kinds of resets.  The first is the normal reset utilized by the
+normal system.  It uses tinyos constructs and is friendly to other tasks and
+pieces of code running.  The mechanism uses task polls and timer polls for
+seeing if the sd card has reached certian states.  40 bytes are clocked out
+for the initial delay.
+
+The other reset is a stand alone reset.  No tinyos services are used and
+tight loops are used.  xxx bytes are clocked out for the initial delay.
+
+
+		<--- t_pwr_on
+    pwr on
+    configure
+    csn = 1
+    n byte clocking (delay bytes)  <--- modify # of clocks
+		<--- t_to_first_cmd
+    send FORCE_IDLE (CMD_0)
+		<---  dt = TAR - t_pwr_on
+
+
+request SD (turn on), normal reset, release (turn off), then SDsa.reset.
+The SDsa.reset will not take as long because we haven't bleed off pwr.
+
+
+SanDisk 2G
+		1st cmd		full
+Normal reset:	200 uis		53 mis	 (40 delay)
+SDsa.reset:	596 uis		2.3 mis  (256 delay)
+
+SDsa.reset:	596 uis		50 mis   (256 delay)
+
+
+uSD SanDisk 2G
+		1st cmd		full
+Normal reset:	200 uis		157 mis	 (40 delay)
+SDsa.reset:	596 uis		8 mis    (256 delay)
+
+SDsa.reset:	596 uis		154 mis   (256 delay)

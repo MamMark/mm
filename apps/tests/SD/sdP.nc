@@ -19,6 +19,7 @@ module sdP {
     interface Boot;
     interface SDraw;
     interface SDsa;
+    interface Resource as SDResource;
     interface Boot as FS_OutBoot;
   }
 }
@@ -231,10 +232,17 @@ implementation {
 
 
   event void Boot.booted() {
-    uint16_t i;
-
     while (wait)
       ;
+//    signal SDResource.granted();
+    call SDResource.request();
+  }
+
+
+  event void SDResource.granted() {
+    uint16_t i;
+
+    call SDResource.release();
     call SDsa.reset();
     cmd = call SDraw.cmd_ptr();
 

@@ -1,5 +1,5 @@
 # display trace buffer
-define trace
+define tb
 printf "trace buffer:  nxt: %d\n", trace_nxt
 print trace_buf
 end

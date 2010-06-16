@@ -30,3 +30,20 @@ end
 dis
 ena 5
 
+b SDspP.nc:632
+comm
+p/d SDspP__last_pwr_on_first_cmd_uis
+p/d SDspP__last_full_reset_time_uis
+p/d SDspP__last_reset_time_uis
+p/d SDspP__last_reset_time_mis
+end
+
+b sdP.nc:246
+
+b SDspP.nc:1184
+comm
+p/d SDspP__last_pwr_on_first_cmd_uis
+p/d sa_t3
+p/d w_diff
+p/d SDspP__sd_go_op_count
+end

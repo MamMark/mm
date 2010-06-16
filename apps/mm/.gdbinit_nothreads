@@ -44,6 +44,14 @@ b FileSystemP.nc:282
 #b mmSyncP.nc:89
 #b DTSenderP.nc:95
 
+b SDspP.nc:631
+comm
+p/d SDspP__last_pwr_on_first_cmd_uis
+p/d SDspP__last_full_reset_time_uis
+p/d SDspP__last_reset_time_uis
+p/d SDspP__last_reset_time_mis
+end
+
 
 # ******************************************************************************
 # gps start

@@ -15,6 +15,9 @@ implementation {
   components MainC;
   sdP.Boot -> MainC;
 
+  components new SD_ArbC();
+  sdP.SDResource -> SD_ArbC;
+
   components SDspC;
   sdP.SDraw -> SDspC;
   sdP.SDsa  -> SDspC;
