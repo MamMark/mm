@@ -15,7 +15,7 @@
 #endif
 
 
-uint8_t wait = XWAIT;
+volatile uint8_t wait = XWAIT;
 
 
 module CommBootP {

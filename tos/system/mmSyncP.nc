@@ -23,6 +23,12 @@ typedef enum {
 #endif
 } sync_boot_state_t;
 
+
+const uint8_t _major = MAJOR;
+const uint8_t _minor = MINOR;
+const uint8_t _build = _BUILD;
+
+
 module mmSyncP {
   provides {
     interface Boot as OutBoot;
@@ -65,9 +71,9 @@ implementation {
     vp = (dt_version_nt *) &vdata;
     vp->len     = DT_HDR_SIZE_VERSION;
     vp->dtype   = DT_VERSION;
-    vp->major   = MAJOR;
-    vp->minor   = MINOR;
-    vp->build   = _BUILD;
+    vp->major   = _major;
+    vp->minor   = _minor;
+    vp->build   = _build;
     call Collect.collect(vdata, DT_HDR_SIZE_VERSION);
     call DTSender.send(vdata, DT_HDR_SIZE_VERSION);
   }
