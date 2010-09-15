@@ -67,16 +67,17 @@ toolchain from Zolertia (http://zolertia.sourceforge.net/wiki/index.php/Getting_
 
 First:
 
-sudo apt-get install tinyos-2.1.0
+sudo apt-get install tinyos-2.1.1
 
 
-Then download and install tinyos-z1-0.0.1-13_i386.deb
-from (http://sourceforge.net/projects/zolertia/files/).
+Then download and install tinyos-z1-2.1.1-15_i386.deb
+from (http://sourceforge.net/projects/zolertia/files/).  You'll have
+to poke around to find the .deb file.
 
-sudo dpkg -i tinyos-z1-0.0.1.-13_i386.deb
+sudo dpkg -i tinyos-z1-2.1.1-15_i386.deb
 
 
-This will install the tinyos source code as of the 2.1.0 release and
+This will install the tinyos source code as of the 2.1.1 release and
 add in the z1 changes on top of it.  The part we use however is
 the z1 toolchain which has a working msp430-gcc that supports the 430x
 chips.  We don't actually use the source code, just the tool chain.
@@ -154,7 +155,7 @@ exit
    places.
 
    NOTE: this step has to be done after the install of the
-   tinyos-z1-0.0.1.-13_i386.deb package as a msp430-jtag is installed
+   tinyos-z1-2.1.1-15_i386.deb package as a msp430-jtag is installed
    as part of that package.  We replace it.
 
    It will also create the link needed to associate COM1 with the jtag
