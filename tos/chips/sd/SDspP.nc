@@ -95,6 +95,7 @@ implementation {
     uint16_t   majik_a;
     sd_state_t sd_state;
     uint8_t    cur_cid;			/* current client */
+    bool       high_cap;		/* true if sdhc */
     uint32_t   blk_start, blk_end;
     uint8_t    *data_ptr;
     uint16_t   majik_b;
@@ -398,8 +399,7 @@ norace uint16_t sd_pwr_on_time_uis;
    * The response is always a single byte and is the R1 response
    * as documented in the SD manual.
    *
-   * raw_cmd is always part of a cmd sequence and that the caller
-   * has asserted CS.
+   * caller is responsible for asserting CS.
    *
    * raw_cmd does not change the SD card state in any other way
    * meaning it doesn't read any more bytes from the card for other
@@ -525,7 +525,7 @@ norace uint16_t sd_pwr_on_time_uis;
 
   void sd_start_reset(void) {
     sd_cmd_t *cmd;
-    uint8_t   rsp;
+    uint8_t   rsp, cond[4];
 
     if (sdc.sd_state) {
       sd_panic_idle(28, sdc.sd_state);
@@ -538,6 +538,12 @@ norace uint16_t sd_pwr_on_time_uis;
     sdc.sd_state = SDS_RESET;
     sdc.cur_cid = CID_NONE;	        /* reset is not parameterized. */
     cmd = &sd_cmd;
+
+    /*
+     * start out assuming high cap.  If any of the high cap functions fail
+     * then turn off high cap and give up.
+     */
+    sdc.high_cap = 0;			/* for now we don't do high cap */
 
     /*
      * Clock out at least 74 bits of idles (0xFF is 8 bits).  Thats 10 bytes. This allows
@@ -560,6 +566,22 @@ norace uint16_t sd_pwr_on_time_uis;
       return;
     }
 
+    SD_CSN = 0;
+    cmd->cmd = SD_SEND_IF_CONDITION;
+    cmd->arg = 0x000001aa;
+    cmd->crc = 0x87;
+    rsp = sd_raw_cmd();
+    if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
+      sd_panic_idle(29, rsp);
+      return;
+    }
+    cond[0] = call SDraw.get();
+    cond[1] = call SDraw.get();
+    cond[2] = call SDraw.get();
+    cond[3] = call SDraw.get();
+    rsp = sd_get();
+    SD_CSN = 1;
+
     /*
      * force the timer to go, which sends the first go_op.
      * eventually it will cause a resetDone to get sent.
@@ -575,7 +597,7 @@ norace uint16_t sd_pwr_on_time_uis;
 
   event void SDtimer.fired() {
     sd_cmd_t *cmd;
-    uint8_t   rsp;
+    uint8_t   rsp, ocr[4];
 
     switch (sdc.sd_state) {
       default:
@@ -593,6 +615,7 @@ norace uint16_t sd_pwr_on_time_uis;
       case SDS_RESET:
 	cmd = &sd_cmd;
 	cmd->cmd = SD_GO_OP;            // Send ACMD41
+	cmd->arg = (sdc.high_cap ? 0x40000000 : 0);
 	rsp = sd_send_acmd();
 	if (rsp & ~MSK_IDLE) {		/* any other bits set? */
 	  sd_panic_idle(31, rsp);
@@ -612,10 +635,22 @@ norace uint16_t sd_pwr_on_time_uis;
 	/*
 	 * no longer idle, initialization was OK.
 	 *
-	 * If we were running with a reduced clock then this is the place to
-	 * crank it up to full speed.  We do everything at full speed so there
-	 * isn't currently any need.
+	 * read OCR, check CCS which indicates SDHC.
 	 */
+
+	SD_CSN = 0;
+	cmd->cmd    = SD_SEND_OCR;
+	rsp         = call SDraw.raw_cmd();
+	if (rsp & ~MSK_IDLE) {		/* any other bits set? */
+	  sd_panic_idle(31, rsp);
+	  return;
+	}
+	ocr[0] = call SDraw.get();
+	ocr[1] = call SDraw.get();
+	ocr[2] = call SDraw.get();
+	ocr[3] = call SDraw.get();
+	rsp    = call SDraw.get();
+	SD_CSN = 1;
 
 	last_reset_time_uis = TAR - op_t0_uis;
 	if (last_reset_time_uis > max_reset_time_uis)
@@ -711,6 +746,8 @@ norace uint16_t sd_pwr_on_time_uis;
    */
 
   void sd_cmd_crc() {
+    if (sd_cmd.cmd == SD_SEND_IF_CONDITION)
+      return;
     sd_cmd.crc = 0x95;
   }
 
@@ -864,8 +901,7 @@ norace uint16_t sd_pwr_on_time_uis;
 
     /* Need to add size checking, 0 = success */
     cmd->cmd = SD_READ_BLOCK;
-    cmd->arg = (sdc.blk_start << SD_BLOCKSIZE_NBITS);
-
+    cmd->arg = sdc.blk_start << (sdc.high_cap ? 0 : SD_BLOCKSIZE_NBITS);
     if ((rsp = sd_send_command())) {
       sd_panic_idle(38, rsp);
       return FAIL;
@@ -980,7 +1016,7 @@ norace uint16_t sd_pwr_on_time_uis;
     cmd = &sd_cmd;
 
     sd_compute_crc(data);
-    cmd->arg = (sdc.blk_start << SD_BLOCKSIZE_NBITS);
+    cmd->arg = sdc.blk_start << (sdc.high_cap ? 0 : SD_BLOCKSIZE_NBITS);
 
     cmd->cmd = SD_WRITE_BLOCK;
     if ((rsp = sd_send_command())) {
@@ -1069,14 +1105,14 @@ norace uint16_t sd_pwr_on_time_uis;
     /*
      * send the start and then the end
      */
-    cmd->arg = sdc.blk_start << SD_BLOCKSIZE_NBITS;
+    cmd->arg = sdc.blk_start << (sdc.high_cap ? 0 : SD_BLOCKSIZE_NBITS);
     cmd->cmd = SD_SET_ERASE_START;
     if ((rsp = sd_send_command())) {
       sd_panic_idle(44, rsp);
       return FAIL;
     }
 
-    cmd->arg = sdc.blk_end << SD_BLOCKSIZE_NBITS;
+    cmd->arg = sdc.blk_end << (sdc.high_cap ? 0 : SD_BLOCKSIZE_NBITS);
     cmd->cmd = SD_SET_ERASE_END;
     if ((rsp = sd_send_command())) {
       sd_panic_idle(45, rsp);
@@ -1138,7 +1174,7 @@ norace uint16_t sd_pwr_on_time_uis;
 
   command void SDsa.reset() {
     sd_cmd_t *cmd;                // Command Structure
-    uint8_t rsp;
+    uint8_t rsp, cond[4];
 
     sdsa_majik = SDSA_MAJIK;
     w_t = call lt.get();
@@ -1147,13 +1183,6 @@ norace uint16_t sd_pwr_on_time_uis;
     call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
 
     SD_CSN = 1;				/* force to known state */
-
-    /*
-     * send 800 clocks, 100 bytes.  about 240uis.  This satisfies
-     * sending 74 clocks but is significantly short of the 1ms called
-     * out in the doc.  But it seems to work.  Seems to depend on whose
-     * SD card we are using.
-     */
     sd_start_dma(NULL, recv_dump, 256);
     sd_wait_dma();
 
@@ -1166,6 +1195,22 @@ norace uint16_t sd_pwr_on_time_uis;
       sd_panic(47, rsp);
       return;
     }
+
+    SD_CSN = 0;
+    cmd->cmd = SD_SEND_IF_CONDITION;
+    cmd->arg = 0x000001aa;
+    cmd->crc = 0x87;
+    rsp = sd_raw_cmd();
+    if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
+      sd_panic_idle(29, rsp);
+      return;
+    }
+    cond[0] = call SDraw.get();
+    cond[1] = call SDraw.get();
+    cond[2] = call SDraw.get();
+    cond[3] = call SDraw.get();
+    rsp = sd_get();
+    SD_CSN = 1;
 
     /*
      * SD_GO_OP_MAX is set for normal operation which is polled every 4 or so mis.
@@ -1204,7 +1249,7 @@ norace uint16_t sd_pwr_on_time_uis;
 
     /* Need to add size checking, 0 = success */
     cmd->cmd = SD_READ_BLOCK;
-    cmd->arg = (blk_id << SD_BLOCKSIZE_NBITS);
+    cmd->arg = blk_id << (sdc.high_cap ? 0 : SD_BLOCKSIZE_NBITS);
 
     /* send read data command */
     SD_CSN = 0;
@@ -1264,7 +1309,7 @@ norace uint16_t sd_pwr_on_time_uis;
     cmd = &sd_cmd;
     sd_compute_crc(buf);                /* sets bits 512, 513 to 0x00 */
 
-    cmd->arg = (blk_id << SD_BLOCKSIZE_NBITS);
+    cmd->arg = blk_id << (sdc.high_cap ? 0 : SD_BLOCKSIZE_NBITS);
     cmd->cmd = SD_WRITE_BLOCK;
     if ((rsp = sd_send_command()))
       sd_panic(52, rsp);
@@ -1395,7 +1440,7 @@ norace uint16_t sd_pwr_on_time_uis;
 
 
   task void dma_task() {
-    call SDtimer.stop();
+    call SDtimer.stop();		/* turn off any timeouts */
     switch (sdc.sd_state) {
       case SDS_READ_DMA:
 	sd_read_dma_handler();

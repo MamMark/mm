@@ -44,3 +44,161 @@ Normal reset:	200 uis		157 mis	 (40 delay)
 SDsa.reset:	596 uis		8 mis    (256 delay)
 
 SDsa.reset:	596 uis		154 mis   (256 delay)
+
+
+
+SDHC Notes:
+
+CMD8: send after FORCE_IDLE (CMD0) and prior to 1st GO_OP (ACMD41).
+Enables different behaviour for CMD58 (SEND_OCR) and ACMD41.
+
+To enable HC, 1st send CMD8 and then need to set bit 30 of arg (HCS)
+in ACMD41.  Reading OCR, OCR[30] is CCS.
+
+
+
+SanDisk uSD, 2G
+responds to CMD8
+
+
+SanDisk SD, 2G
+responds to CMD8
+
+
+
+
+
+Notes about sdhc.c (linux driver):
+
+Write block:
+    cs low
+    4 x ff
+    58,
+    address,
+    0xff		/* crc byte */
+    with timeout look for 00
+    if (r != 0x00)
+        cs high
+	1 x ff
+	return 1
+
+    0xfe
+    send data
+    send crc
+    with timeout look for ff  (busy)
+    if (r != 0xff)
+	cs high
+	1 x 0xff
+	return 3
+    cs high
+    1 x ff
+    return 0
+
+
+Read block:
+    cs low
+    4 x ff
+    51
+    address
+    ff		crc
+    with timeout look for 00
+    if (r != 0x00)
+        cs high
+	1 x ff
+	return 1
+    with timeout look for fe
+    if (r != 0xfe)
+	cs high
+	1 x 0xff
+	return 2
+    read data
+    read crc
+    cs high
+    1 x ff
+    return 0
+
+
+mmc_card_init
+    cs high
+    20 x 0xff  (start clocks)
+    cs low
+    40		cmd0
+    4 x 00
+    95		crc
+    with timeout look for 01
+    cs high,   1 x ff
+    if (r != 01) return 1
+
+    cs low
+    x48		cmd8
+    00
+    00
+    01
+    aa
+    ff		crc
+
+    with timeout look for 00
+    if (r != 0) cs high, 1 x ff, return 2
+    4x resp bytes
+    cs high, 1 x ff
+    if (resp[2] != aa) return 2
+
+    cs low
+    7a			cmd 58, ocr
+    4x 00
+    ff			crc
+
+    with timeout look for 00
+    if (r != 00)  cs high, 1x ff, return 3
+
+    4x resp bytes
+    cs high, 1x ff
+
+try loop:
+    cs low
+    1x ff
+    77			cmd 55 (acmd 41)
+    4x 00
+    ff			crc
+
+    with timeout look for 00, 01
+    cs high, 1x ff
+    if (r != 01) cs high, 1x ff, rturn 41
+
+    cs low
+    1x ff
+    69			cmd 41
+    20			enable HCS
+    3x 00
+    0xff		crc
+
+    with timeout look for 00, 01
+
+    if (r == 01) cs high, 1x ff, try again (try loop)
+    if (r == 00) cs high, 1x ff, break
+
+    end of try loop
+
+
+    cs high, 1x ff
+    500x ff
+
+    cs high, 1x ff
+    4x ff
+    cs high, 1x ff
+
+    cs low
+    7a			cmd 58
+    4x 00
+    0xff		crc
+
+    with timeout look for 00
+    if (r != 0) cs high, 1x ff, return 5
+    get resp 4x
+
+    cs high
+    ff
+
+    return 0
+
+

@@ -31,18 +31,15 @@ implementation {
   sd_cmd_t *cmd;			// Command Structure
   uint8_t   rsp;
 
-  /* CMD8 with voltage selelcted, aa as the echo back, and crc of 87 */
-  //const uint8_t cmd8[] = {
-  //  SD_GET_VOLTAGE, 0, 0, 0x01, 0xaa, 0x87,
-  //};
-    
-
-  /* Setup for CMD58, Read the OCR register.  Operation Condition Register
-   *  returns R3_LEN, 5 bytes.  See Section 5.1
+  /*
+   * Setup for CMD58, Read the OCR register.  Operation Condition Register
+   * returns 5 bytes.  See Section 5.1
+   *
    * The OCR register contains the suppored operating voltages for the 
-   *  current card. Look at bits 15 - 23.
-   *  Newer cards, SDHC has a different implementation, check the HCS bit.
-   *  See Section 7.2.1 Mode Selection and Init, and Table 7-3.
+   * current card. Look at bits 15 - 23.
+   *
+   * Newer cards, SDHC has a different implementation, check the HCS bit.
+   * See Section 7.2.1 Mode Selection and Init, and Table 7-3.
    */
   void get_ocr() {
     uint8_t ocr_data[4];
@@ -193,8 +190,8 @@ implementation {
   }
 
 
-  /* Send CMD8, default voltage argument to 0x01, and echo to 0xAA
-   *
+  /*
+   * Send CMD8, default voltage argument to 0x01, and echo to 0xAA
    */
   uint8_t send_cmd8() {
     uint8_t cond[4], crc7;
