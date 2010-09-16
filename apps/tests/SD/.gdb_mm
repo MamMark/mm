@@ -125,6 +125,7 @@ printf "sd:  pwr: %d  csn: %d/%c  p3d/s: %d/%d  rx: %02x  tx: %02x\n", \
     (((*(uint8_t *)0x1A) >> 1) & 7), (((*(uint8_t *)0x1B) >> 1) & 7), \
     (*(uint8_t *)0x6e), (*(uint8_t *)0x6f)
 p/x SDspP__sd_cmd
+p SDspP__sdc
 end
 document sd
 display SD h/w state
