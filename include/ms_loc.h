@@ -9,8 +9,16 @@
  * MBR, sector 0, has a dblk locator buried that defines all
  * contiguous file areas (panic, config, and data blocks).
  *
- * PANIC0, sector 1, is a special sector used by panic to locate the
+ * PANIC0, sector 2, is a special sector used by panic to locate the
  * panic section of the disk.
+ *
+ * It is assumed that the SD has been formated as a super block, using
+ * mkdosfs -F32 -I -n2G -vvv /dev/sdb.
+ *
+ * Sector 0 is the mbr, boot sector.  Sector 1 is unknown but if
+ * modified make it so the media won't automount on Linux boxes.  The
+ * backup boot block is at sector 6.  There are a total of 32 reserved
+ * sectors at the front of the file system (0-31, 0 is mbr, etc).
  */
 
 #ifndef _MS_LOC_H
@@ -36,7 +44,7 @@ typedef struct {
 #define DBLK_LOC_SIZE_SHORTS 15
 
 
-#define PANIC0_SECTOR 1
+#define PANIC0_SECTOR 2
 #define PANIC0_MAJIK  0x23626223
 
 
