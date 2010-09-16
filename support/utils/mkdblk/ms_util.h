@@ -8,7 +8,7 @@
 #ifndef _MS_UTIL_H
 #define _MS_UTIL_H
 
-#include "dblk_loc.h"
+#include "ms_loc.h"
 
 extern int msu_blk_empty(uint8_t *buf);
 extern int msu_check_dblk_loc(dblk_loc_t *dbl);

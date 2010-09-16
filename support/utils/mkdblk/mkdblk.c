@@ -17,7 +17,7 @@
 #include "ms.h"
 
 
-#define VERSION "mkdblk: (mam_mark, T2) v2.1 15 Jun 2010\n"
+#define VERSION "mkdblk: (mam_mark, T2) v3.0 15 Sep 2010\n"
 
 int debug	= 0,
     verbose	= 0,

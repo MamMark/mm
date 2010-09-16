@@ -110,7 +110,7 @@
 #include "fatxfc.h"
 #include "ms.h"
 #include "util.h"
-#include "dblk_loc.h"
+#include "ms_loc.h"
 
 
 extern int debug;

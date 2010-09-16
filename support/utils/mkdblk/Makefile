@@ -38,11 +38,11 @@ mkdblk.o: mkdblk.c /home/cire/mm/t2_mm/include/mm_types.h \
  ../fat/fatxfc.h ms.h
 ms_unix.o: ms_unix.c /home/cire/mm/t2_mm/include/mm_types.h \
  /home/cire/mm/t2_mm/include/mm_byteswap.h ms.h ms_util.h \
- /home/cire/mm/t2_mm/include/dblk_loc.h
+ /home/cire/mm/t2_mm/include/ms_loc.h
 ms_util.o: ms_util.c /home/cire/mm/t2_mm/include/mm_types.h \
  /home/cire/mm/t2_mm/include/mm_byteswap.h ms.h ms_util.h \
- /home/cire/mm/t2_mm/include/dblk_loc.h
+ /home/cire/mm/t2_mm/include/ms_loc.h
 util.o: util.c /home/cire/mm/t2_mm/include/mm_types.h util.h
 fatxfc.o: ../fat/fatxfc.c /home/cire/mm/t2_mm/include/mm_types.h \
  /home/cire/mm/t2_mm/include/mm_byteswap.h ../include/fat_fs.h \
- ../fat/fatxfc.h ms.h util.h /home/cire/mm/t2_mm/include/dblk_loc.h
+ ../fat/fatxfc.h ms.h util.h /home/cire/mm/t2_mm/include/ms_loc.h

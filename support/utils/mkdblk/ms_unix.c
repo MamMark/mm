@@ -22,7 +22,7 @@
 
 #include "ms.h"
 #include "ms_util.h"
-#include "dblk_loc.h"
+#include "ms_loc.h"
 
 static int fd = -1;
 
