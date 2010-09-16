@@ -63,7 +63,7 @@ panic_regs16_t pregs16;                   //Registers for Panic
 
 
 typedef struct {
-  uint16_t panic_majic;
+  uint16_t panic_majik;
   uint16_t cpu_type;
   uint16_t flags;
   uint32_t ver;

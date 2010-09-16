@@ -1,16 +1,22 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2008, 2010, Eric B. Decker, Carl W. Davis
  * All rights reserved.
  */
 
 #include "panic.h"
 #include "typed_data.h"
+#include "ms_loc.h"
+#include "panic_elem.h"
+#include "file_system.h"
 
 norace uint16_t save_sr;
 norace bool save_sr_free;
 norace uint8_t _p, _w;
 norace uint16_t _a0, _a1, _a2, _a3, _arg;
 norace uint32_t last_panic;
+
+uint8_t panic_buf[514];
+
 
 #ifdef PANIC_DINT
 #define MAYBE_SAVE_SR_AND_DINT	do {	\
@@ -68,14 +74,25 @@ implementation {
     call Panic.panic(pcode, where, arg0, arg1, arg2, arg3);
   }
 
+
+  /* The Panic procedure will perform the following functions:
+   *   Save the current maching state
+   *   Calc the next panic block location
+   *   DMA I/O to the SD card
+   *   DMA RAM to the SD card
+   *   
+   */
   async command void Panic.panic(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
+
     struct p_blk_struct *p;
     uint8_t temp;
+    uint16_t ptr;           // where we are currently writing
 
     _p = pcode; _w = where; _a0 = arg0; _a1 = arg1; _a2 = arg2; _a3 = arg3;
     MAYBE_SAVE_SR_AND_DINT;
     last_panic = call LocalTime.get();
     nop();
+    panic_buf[0] = pcode;
 
     if (call SDsa.inSA()) {
       while (1)
@@ -106,6 +123,36 @@ implementation {
     p->blk.arg2 = arg2;
     p->blk.arg3 = arg3;
     post panic_task();
+
+    /* Start panic dump section
+    SAVE_PANIC_SP16;
+    SAVE_PANIC_SR16;
+    SAVE_PANIC_REGS16;
+     */
+
+    /* find the next panic block location */
+    
+    
+    /* DMA the I/O to the SD card */
+    call SDsa.reset();         //turn on and make ready
+
+
+
+
+    /* Will not work...
+    for (ptr = io_start; ptr <= io_end; ptr++) {
+      SDsa.write(blk_id, ptr)
+
+    }
+    for (ptr = ram_start; ptr < ram_end; ptr++) {
+      SDsa.write(blk_id, ptr)
+
+    }
+    */
+
+
+    call SDsa.off();
+
   }
 
   async command void Panic.reboot(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {

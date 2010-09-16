@@ -10,6 +10,8 @@
 
 #include "panic.h"
 
+#define PANIC_CARL
+
 #ifndef XWAIT
 #define XWAIT 0
 #endif
@@ -31,6 +33,10 @@ implementation {
     while (wait) {
       nop();
     }
+#ifdef PANIC_CARL
+    call Panic.panic(5, 32, 1, 2, 3, 4);
+#endif
+
 #ifdef TEST_NO_COMM
     signal CommBoot.booted();
 #else

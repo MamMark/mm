@@ -39,8 +39,12 @@ typedef enum {
 } sd_state_t;
 
 uint32_t w_t, w_diff;
-uint16_t sa_t3;
 norace uint32_t sdsa_majik;
+
+
+uint32_t sa_t0, sa_diff;
+uint16_t sa_t3;
+
 #define SDSA_MAJIK 0xAAAA5555
 
 
@@ -1143,10 +1147,9 @@ norace uint16_t sd_pwr_on_time_uis;
   command void SDsa.reset() {
     sd_cmd_t *cmd;                // Command Structure
     uint8_t rsp;
+    uint16_t sa_op_cnt;
 
     sdsa_majik = SDSA_MAJIK;
-    w_t = call lt.get();
-    sd_pwr_on_time_uis = TAR;
     call HW.sd_on();
     call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
 
@@ -1164,7 +1167,6 @@ norace uint16_t sd_pwr_on_time_uis;
     cmd = &sd_cmd;
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
     cmd->arg = 0;
-    last_pwr_on_first_cmd_uis = TAR - sd_pwr_on_time_uis;
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
       sd_panic(47, rsp);
@@ -1176,23 +1178,20 @@ norace uint16_t sd_pwr_on_time_uis;
      * SA hits it in a tight loop, so we increase the max allowed to be 8 times
      * normal.
      */
-    sd_go_op_count = 0;
+    sa_op_cnt = 0;
     do {
-      sd_go_op_count++;
+      sa_op_cnt++;
       cmd->cmd = SD_GO_OP;		// Send CMD0, software reset
       rsp = sd_send_acmd();
-    } while ((rsp & MSK_IDLE) && (sd_go_op_count < (SD_GO_OP_MAX * 8)));
+    } while ((rsp & MSK_IDLE) && (sa_op_cnt < (SD_GO_OP_MAX * 8)));
 
-    sa_t3 = TAR - sd_pwr_on_time_uis;;
-    w_diff = call lt.get() - w_t;
     nop();
-    if (sd_go_op_count >= (SD_GO_OP_MAX * 8))
-      sd_panic(48, sd_go_op_count);
+    if (sa_op_cnt >= (SD_GO_OP_MAX * 8))
+      sd_panic(48, sa_op_cnt);
   }
 
 
   command void SDsa.off() {
-    sd_pwr_on_time_uis = 0;
     call HW.sd_off();
     call Usci.resetUsci_n();
     sdsa_majik = 0;
