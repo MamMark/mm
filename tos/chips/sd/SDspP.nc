@@ -917,6 +917,10 @@ norace uint16_t sd_pwr_on_time_uis;
     if (last_write_time_mis > max_write_time_mis)
       max_write_time_mis = last_write_time_mis;
 
+    if (last_write_time_mis > SD_WRITE_WARN_THRESHOLD) {
+      call Panic.warn(PANIC_MS, 128, (sdc.blk_start >> 16), (sdc.blk_start & 0xffff),
+		      (last_write_time_mis >> 16), (last_write_time_mis &0xffff));
+    }
     cid = sdc.cur_cid;
     sdc.sd_state = SDS_IDLE;
     sdc.cur_cid = CID_NONE;

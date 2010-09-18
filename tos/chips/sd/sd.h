@@ -34,9 +34,6 @@
 #define SD_READ_TOK_MAX 512
 
 
-#define SD_WRITE_TIMEOUT 32768UL
-
-
 /* Number of times to retry the probe cycle during initialization */
 #define SD_INIT_TRY 50
 
@@ -58,9 +55,31 @@
 #define SD_SECTOR_XFER_TIMEOUT	4
 
 
-/* timeout values for Write busy and Erase busy */
-#define SD_WRITE_BUSY_TIMEOUT	120
-#define SD_ERASE_BUSY_TIMEOUT	10240
+/*
+ * timeout values for Write busy and Erase busy
+ *
+ * We've observed some strange SD timing where it takes
+ * a really long time to write (which causes a timeout).
+ * Normally we expect 3-5 mis for the write to happen so
+ * a timeout of 120 mis seems plenty, but we've exceeded this
+ * (conditions not understood).  A guess is the SD card is
+ * actually doing a remapping of somekind which takes a bunch
+ * of time.  Observed time of 190mis.
+ *
+ * This impacts the tag because the longer the SD is on the
+ * more power it consumes.  So we want to see this condition
+ * so we can possibly change things.
+ *
+ * Strategy is to log excess writes.  But use a long time out
+ * for the real failure condition.
+ *
+ * Expected write time is about 3-5 mis.  Warning generated if
+ * we take longer than 3*.  And the failure timeout is set
+ * to 300 mis.  This is all fairly arbitrary.
+ */
+#define SD_WRITE_WARN_THRESHOLD	15
+#define SD_WRITE_BUSY_TIMEOUT	300
+#define SD_ERASE_BUSY_TIMEOUT	20480
 
 
 /*
