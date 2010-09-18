@@ -46,7 +46,7 @@ uint32_t w_t0, w_diff;
 #ifdef ALWAYS_ERASE
 bool     do_erase = 1;
 #else
-bool     do_erase;
+bool     do_erase = 0;
 #endif
 uint32_t erase_start;
 uint32_t erase_end;
@@ -74,6 +74,11 @@ module FileSystemP {
     interface SSWrite as SSW;
     interface Resource as SDResource;
     interface Panic;
+
+#ifdef ENABLE_ERASE
+    interface SDerase;
+#endif
+
   }
 }
   
@@ -277,10 +282,30 @@ implementation {
 	  fs_panic_idle(9, err);
 	return;
     }
+
+
+#ifdef ENABLE_ERASE
+    if (do_erase) {
+      erase_start = fsc.dblk_start;
+      erase_end = fsc.dblk_end;
+      call SDerase.erase(erase_start, erase_end);
+      return;
+    }
+#endif
+
     fs_state = FSS_IDLE;
     call SDResource.release();
     signal OutBoot.booted();
   }
+
+
+#ifdef ENABLE_ERASE
+  event void SDerase.eraseDone(uint32_t blk_start, uint32_t blk_end, error_t error) {
+    fs_state = FSS_IDLE;
+    call SDResource.release();
+    signal OutBoot.booted();
+  }
+#endif
 
 
   command uint32_t FS.area_start(uint8_t which) {

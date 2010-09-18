@@ -35,6 +35,10 @@ implementation {
   FS_P.SDResource -> SD;
   FS_P.SDread     -> SD;
 
+#ifdef ENABLE_ERASE
+  FS_P.SDerase    -> SD;
+#endif
+
   components PanicC;
   FS_P.Panic -> PanicC;
 }
