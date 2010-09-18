@@ -5,7 +5,7 @@
 
 //#include "printf.h"
 
-uint16_t doit, erase;
+uint16_t wait = 1, erase;
 
 module TestSDArbP {
   provides interface Boot as Out_Boot;	/* out to FileSystem */
@@ -33,8 +33,8 @@ implementation {
 
 
   event void Boot.booted() {
-    while (!doit)
-      ;
+    while (wait)
+      nop();
 
     signal Out_Boot.booted();		/* tell FileSystem to do its thing */
   }
