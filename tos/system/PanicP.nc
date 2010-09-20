@@ -6,8 +6,7 @@
 #include "panic.h"
 #include "typed_data.h"
 #include "ms_loc.h"
-#include "panic_elem.h"
-#include "file_system.h"
+//#include "panic_elem.h"
 
 norace uint16_t save_sr;
 norace bool save_sr_free;
@@ -63,45 +62,35 @@ implementation {
     }
   }
 
+
   void debug_break(uint16_t arg)  __attribute__ ((noinline)) {
-//    MAYBE_SAVE_SR_AND_DINT;
     _arg = arg;
     nop();
   }
 
-  async command void Panic.warn(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
-    pcode |= PANIC_WARN_FLAG;
-    call Panic.panic(pcode, where, arg0, arg1, arg2, arg3);
-  }
 
-
-  /* The Panic procedure will perform the following functions:
-   *   Save the current maching state
-   *   Calc the next panic block location
-   *   DMA I/O to the SD card
-   *   DMA RAM to the SD card
-   *   
-   */
-  async command void Panic.panic(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
+  async command void
+  Panic.warn(uint8_t pcode, uint8_t where,
+	     uint16_t arg0, uint16_t arg1,
+	     uint16_t arg2, uint16_t arg3) {
 
     struct p_blk_struct *p;
-    uint8_t temp;
-    uint16_t ptr;           // where we are currently writing
 
-    _p = pcode; _w = where; _a0 = arg0; _a1 = arg1; _a2 = arg2; _a3 = arg3;
+    pcode |= PANIC_WARN_FLAG;
+    panic_buf[0] = pcode;
+
+    _p = pcode; _w = where;
+    _a0 = arg0; _a1 = arg1;
+    _a2 = arg2; _a3 = arg3;
+
     MAYBE_SAVE_SR_AND_DINT;
     last_panic = call LocalTime.get();
-    nop();
-    panic_buf[0] = pcode;
+    debug_break(0);
 
     if (call SDsa.inSA()) {
       while (1)
 	nop();
     }
-
-    temp = pcode & ~PANIC_WARN_FLAG;
-    if (temp == PANIC_MS || temp == PANIC_SS)
-      return;
 
     if (!p_blk[0].busy)
       p = &p_blk[0];
@@ -123,6 +112,25 @@ implementation {
     p->blk.arg2 = arg2;
     p->blk.arg3 = arg3;
     post panic_task();
+  }
+
+
+  /*
+   * Panic.panic: something really bad happened.
+   *
+   * Take over the machine and dump state.
+   *
+   * Panic takes care of the following:
+   *   Save the current maching state
+   *   Calc the next panic block location
+   *   DMA I/O to the SD card
+   *   DMA RAM to the SD card
+   */
+
+  async command void
+  Panic.panic(uint8_t pcode, uint8_t where,
+	      uint16_t arg0, uint16_t arg1,
+	      uint16_t arg2, uint16_t arg3) {
 
     /* Start panic dump section
     SAVE_PANIC_SP16;
@@ -131,8 +139,7 @@ implementation {
      */
 
     /* find the next panic block location */
-    
-    
+
     /* DMA the I/O to the SD card */
     call SDsa.reset();         //turn on and make ready
 
@@ -155,14 +162,12 @@ implementation {
 
   }
 
-  async command void Panic.reboot(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1, uint16_t arg2, uint16_t arg3) {
-    call Panic.panic(pcode, where, arg0, arg1, arg2, arg3);
-  }
 
   async command void Panic.brk(uint16_t arg) {
     debug_break(arg);
   }
     
+
   command error_t Init.init() {
     save_sr_free = TRUE;
     save_sr = 0xffff;

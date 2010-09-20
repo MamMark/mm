@@ -42,11 +42,11 @@ implementation {
     num_copied = (data[0] << 8) + data[1];
 
     if (num_copied != dlen || data[2] >= DT_MAX || dlen < 3)
-      call Panic.reboot(PANIC_SS, 1, dlen, num_copied, data[2], 0);
+      call Panic.panic(PANIC_SS, 1, dlen, num_copied, data[2], 0);
     if (dcc.majik_a != DC_MAJIK_A || dcc.majik_b != DC_MAJIK_B)
-      call Panic.reboot(PANIC_SS, 2, dcc.majik_a, dcc.majik_b, 0, 0);
+      call Panic.panic(PANIC_SS, 2, dcc.majik_a, dcc.majik_b, 0, 0);
     if (dcc.remaining > DC_BLK_SIZE)
-      call Panic.reboot(PANIC_SS, 3, dcc.remaining, 0, 0, 0);
+      call Panic.panic(PANIC_SS, 3, dcc.remaining, 0, 0, 0);
 
     while (dlen > 0) {
       if (dcc.cur_buf == NULL) {
