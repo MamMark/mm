@@ -1,14 +1,18 @@
-/* $Id: ms.h,v 1.23 2007/08/22 23:07:59 cire Exp $ */
 /*
  * ms.h - Mass Storage Interface (low level)
- * Copyright 2006, Eric B. Decker
+ * Copyright 2006, 2010, Eric B. Decker
  * Mam-Mark Project
  *
  * Provides a simple abstraction to the h/w.
+ *
+ * WARNING: This file is now only used for MKDBLK and
+ * is no longer used for building a working embeded system.
  */
 
 #ifndef _MS_H
 #define _MS_H
+
+#include "ms_loc.h"
 
 /* needs to agree with SECTOR_SIZE and SD_BLOCKSIZE
    MS_BUF_SIZE includes CRC bytes.
@@ -20,7 +24,7 @@
 #define MS_BLOCK_SIZE 512
 #define MS_BUF_SIZE   514
 #define MS_NUM_BUFS   4
-#define MS_CRITICAL_BUFS 3
+//#define MS_CRITICAL_BUFS 3
 
 
 /*
@@ -142,6 +146,14 @@ typedef struct {
     uint32_t dblk_end;		/* blk id, don't go beyond*/
     uint32_t dblk_nxt;		/* blk id, next to write */
 
+    /*
+     * PANIC0 is a special block used only by the panic subsystem
+     * A special block with panic information is located at sector 2
+     * (see ms_loc.h).   panic0_blk will be 0 if not found and the
+     * actual location (in blk_id) where the PANIC0 block is located.
+     */
+    uint32_t panic0_blk;	/* where panic0 block is located */
+
     uint16_t   majik_b;
 } ms_control_t;
 
@@ -191,6 +203,7 @@ typedef enum {
  */
 
 extern ms_control_t msc;
+extern panic0_hdr_t p0c;
 
 extern ms_rtn ms_init(char *device_name);
 extern uint8_t *ms_get_buffer(void);
