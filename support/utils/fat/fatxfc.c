@@ -868,6 +868,38 @@ fx_write_locator(u32_t pstart, u32_t pend, u32_t cstart, u32_t cend, u32_t dstar
 }
 
 
+fx_rtn
+fx_write_panic0(u32_t pstart, u32_t pend) {
+    panic0_hdr_t *p;
+    uint16_t   *ptr, i, sum;
+
+    assert(fx_buf);
+    memset(fx_buf, 0, MS_BUF_SIZE);
+    p = (void *) fx_buf;
+    p->sig_a       = CT_LE_32(PANIC0_MAJIK);
+    p0c.sig_a	   = CF_LE_32(p->sig_a);
+    p->panic_start = CT_LE_32(pstart);
+    p0c.panic_start= CF_LE_32(p->panic_start);
+    p->panic_nxt   = CT_LE_32(pstart);
+    p0c.panic_nxt  = CF_LE_32(p->panic_nxt);
+    p->panic_end   = CT_LE_32(pend);
+    p0c.panic_end  = CF_LE_32(p->panic_end);
+    p->fubar       = 0;
+    p0c.fubar      = 0;
+    p->sig_b       = CT_LE_32(PANIC0_MAJIK);
+    p0c.sig_b      = CF_LE_32(p->sig_b);
+    p->chksum      = 0;
+    ptr = (void *) p;
+    sum = 0;
+    for (i = 0; i < PANIC0_SIZE_SHORTS; i++)
+	sum += CF_LE_16(ptr[i]);
+    p->chksum = CT_LE_16((uint16_t) (0 - sum));
+    p0c.chksum = CF_LE_16(p->chksum);
+    assert(!ms_write_blk(PANIC0_SECTOR, fx_buf));
+    return(FX_OK);
+}
+
+
 char *
 fx_dsp_err(fx_rtn err) {
     switch(err) {

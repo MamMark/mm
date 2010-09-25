@@ -19,6 +19,12 @@
  * modified make it so the media won't automount on Linux boxes.  The
  * backup boot block is at sector 6.  There are a total of 32 reserved
  * sectors at the front of the file system (0-31, 0 is mbr, etc).
+ *
+ * multibyte data is stored in little endian order.  This is because
+ * the machines we are using are all little endian order and this is
+ * much more effiecient then dealing with byte swapping.  This means
+ * one can't use nx types for these dataums which makes sharing the
+ * header files easier too.
  */
 
 #ifndef _MS_LOC_H
@@ -29,6 +35,9 @@
 #define TAG_DBLK_SIG 0xdeedbeaf
 #define DBLK_LOC_OFFSET 0x01a8
 
+/*
+ * dblock locator, stored little endian order
+ */
 typedef struct {
   uint32_t sig;
   uint32_t panic_start;
@@ -46,8 +55,12 @@ typedef struct {
 
 #define PANIC0_SECTOR 2
 #define PANIC0_MAJIK  0x23626223
+#define PANIC0_SIZE_SHORTS 13
 
 
+/*
+ * Panic0 block, stored little endian order
+ */
 typedef struct {
   uint32_t sig_a;			/* tombstone */
   uint32_t panic_start;			/* abs blk id */

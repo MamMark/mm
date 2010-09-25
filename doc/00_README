@@ -448,10 +448,6 @@ T2 git repositories:
         read-write (need access permissions), cire tracking repo that tracks
         hinrg t2, updated manually (same as git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git)
 
-    gitosis@overtux.cse.ucsc.edu:cire/t2_cire_hinrg.git   -> tinyos-2.x
-        read-write (need access perissions), cire tracking repo that tracks
-        hinrg t2_cire, updated manually (same as ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git)
-
 
     tinyos-2.x.git:	tracks the main t2 cvs repository (hinrg, updated hourly)
 
@@ -477,3 +473,10 @@ T2_MM git repositories:
     ssh://hinrg.cs.jhu.edu/home/cire/t2_mm3.git  (read write)
 
     gitosis@overtux.cs.ucsc.edu:cire/t2_mm3.git  (read write)  (backup)
+
+
+16) Formating SD media for use by the tag.
+
+  To format: mkdosfs -F 32 -I -n"TagTest" -v /dev/sda
+
+  To create Dblk Locator: ./mkdblk -w /dev/sda

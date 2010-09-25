@@ -4,6 +4,8 @@
 
 F_DIR   = ../fat
 
+INSTALL_DIR = /usr/local/bin
+
 SOURCE  = mkdblk.c ms_unix.c ms_util.c util.c $(F_DIR)/fatxfc.c
 OBJECTS = mkdblk.o fatxfc.o ms_unix.o ms_util.o util.o
 
@@ -32,17 +34,20 @@ dep:
 	$(CPP) $(CFLAGS) -MM $(SOURCE) $(S_FAT) >>tmp_make
 	mv tmp_make Makefile
 
+install: mkdblk
+	install -t $(INSTALL_DIR) mkdblk
+
 ### Dependencies
 mkdblk.o: mkdblk.c /home/cire/mm/t2_mm/include/mm_types.h \
  /home/cire/mm/t2_mm/include/mm_byteswap.h ../include/fat_fs.h \
- ../fat/fatxfc.h ms.h
+ ../fat/fatxfc.h ms.h /home/cire/mm/t2_mm/include/ms_loc.h
 ms_unix.o: ms_unix.c /home/cire/mm/t2_mm/include/mm_types.h \
- /home/cire/mm/t2_mm/include/mm_byteswap.h ms.h ms_util.h \
- /home/cire/mm/t2_mm/include/ms_loc.h
+ /home/cire/mm/t2_mm/include/mm_byteswap.h ms.h \
+ /home/cire/mm/t2_mm/include/ms_loc.h ms_util.h
 ms_util.o: ms_util.c /home/cire/mm/t2_mm/include/mm_types.h \
- /home/cire/mm/t2_mm/include/mm_byteswap.h ms.h ms_util.h \
- /home/cire/mm/t2_mm/include/ms_loc.h
+ /home/cire/mm/t2_mm/include/mm_byteswap.h ms.h \
+ /home/cire/mm/t2_mm/include/ms_loc.h ms_util.h
 util.o: util.c /home/cire/mm/t2_mm/include/mm_types.h util.h
 fatxfc.o: ../fat/fatxfc.c /home/cire/mm/t2_mm/include/mm_types.h \
  /home/cire/mm/t2_mm/include/mm_byteswap.h ../include/fat_fs.h \
- ../fat/fatxfc.h ms.h util.h /home/cire/mm/t2_mm/include/ms_loc.h
+ ../fat/fatxfc.h ms.h /home/cire/mm/t2_mm/include/ms_loc.h util.h
