@@ -1,15 +1,19 @@
 # $Id: Makefile,v 1.3 2006/07/08 07:54:11 cire Exp $
 # Copyright 2006, 2010, Eric B. Decker
 # Mam-Mark Project
+#
+# ROOT_DIR should be same as $(MM_ROOT)
+#
 
 F_DIR   = ../fat
+ROOT_DIR   = ../../..
 
 INSTALL_DIR = /usr/local/bin
 
 SOURCE  = mkdblk.c ms_unix.c ms_util.c util.c $(F_DIR)/fatxfc.c
 OBJECTS = mkdblk.o fatxfc.o ms_unix.o ms_util.o util.o
 
-CFLAGS += -g -Wall -O0 -I../include -I../fat -I. -I$(MM_ROOT)/include
+CFLAGS += -g -Wall -O0 -I../include -I../fat -I. -I$(ROOT_DIR)/include
 VPATH = $(F_DIR)
 
 all: mkdblk
@@ -38,16 +42,14 @@ install: mkdblk
 	install -t $(INSTALL_DIR) mkdblk
 
 ### Dependencies
-mkdblk.o: mkdblk.c /home/cire/mm/t2_mm/include/mm_types.h \
- /home/cire/mm/t2_mm/include/mm_byteswap.h ../include/fat_fs.h \
- ../fat/fatxfc.h ms.h /home/cire/mm/t2_mm/include/ms_loc.h
-ms_unix.o: ms_unix.c /home/cire/mm/t2_mm/include/mm_types.h \
- /home/cire/mm/t2_mm/include/mm_byteswap.h ms.h \
- /home/cire/mm/t2_mm/include/ms_loc.h ms_util.h
-ms_util.o: ms_util.c /home/cire/mm/t2_mm/include/mm_types.h \
- /home/cire/mm/t2_mm/include/mm_byteswap.h ms.h \
- /home/cire/mm/t2_mm/include/ms_loc.h ms_util.h
-util.o: util.c /home/cire/mm/t2_mm/include/mm_types.h util.h
-fatxfc.o: ../fat/fatxfc.c /home/cire/mm/t2_mm/include/mm_types.h \
- /home/cire/mm/t2_mm/include/mm_byteswap.h ../include/fat_fs.h \
- ../fat/fatxfc.h ms.h /home/cire/mm/t2_mm/include/ms_loc.h util.h
+mkdblk.o: mkdblk.c ../../../include/mm_types.h \
+ ../../../include/mm_byteswap.h ../include/fat_fs.h ../fat/fatxfc.h ms.h \
+ ../../../include/ms_loc.h
+ms_unix.o: ms_unix.c ../../../include/mm_types.h \
+ ../../../include/mm_byteswap.h ms.h ../../../include/ms_loc.h ms_util.h
+ms_util.o: ms_util.c ../../../include/mm_types.h \
+ ../../../include/mm_byteswap.h ms.h ../../../include/ms_loc.h ms_util.h
+util.o: util.c ../../../include/mm_types.h util.h
+fatxfc.o: ../fat/fatxfc.c ../../../include/mm_types.h \
+ ../../../include/mm_byteswap.h ../include/fat_fs.h ../fat/fatxfc.h ms.h \
+ ../../../include/ms_loc.h util.h
