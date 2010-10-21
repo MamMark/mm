@@ -8,12 +8,12 @@
 #include "ms_loc.h"
 #include "panic_elem.h"
 
-norace uint16_t save_sr;
-norace bool save_sr_free;
-//norace uint8_t _p, _w;
-//norace uint16_t _a0, _a1, _a2, _a3, _arg;
+uint16_t save_sr;
+bool save_sr_free;
+norace uint8_t _p, _w;
+norace uint16_t _a0, _a1, _a2, _a3, _arg;
 norace uint32_t last_panic;
-norace uint16_t missed_panics;
+norace uint16_t missed_panic_warns;
 
 
 uint8_t panic_buf[514];
@@ -47,19 +47,20 @@ module PanicP {
 
 implementation {
 
-  norace struct p_blk_struct {
+  struct p_blk_struct {
     bool busy;
     dt_panic_nt blk;
   } p_blk[P_BLK_SIZE];
 
   
 
-  /* panic_task, send the panic block to the collector
+  /*
+   * panic_task, send the panic block to the collector
    */
+
   task void panic_task() {
     int i;
 
-#ifdef notdef
     atomic {
       for (i = 0; i < P_BLK_SIZE; i++) {
 	if (p_blk[i].busy) {
@@ -68,26 +69,21 @@ implementation {
 	}
       }
     }
-#endif
   }
 
 
   void debug_break(uint16_t arg)  __attribute__ ((noinline)) {
-    //    _arg = arg;
+    _arg = arg;
     nop();
   }
 
 
-  async command void
-  Panic.warn(uint8_t pcode, uint8_t where,
-	     uint16_t arg0, uint16_t arg1,
-	     uint16_t arg2, uint16_t arg3) {
+  async command void Panic.warn(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1,
+				uint16_t arg2, uint16_t arg3) {
 
-#ifdef notdef
     struct p_blk_struct *p;
 
     pcode |= PANIC_WARN_FLAG;
-    //panic_wn_buf[0] = pcode;
 
     _p = pcode; _w = where;
     _a0 = arg0; _a1 = arg1;
@@ -97,25 +93,20 @@ implementation {
     last_panic = call LocalTime.get();
     debug_break(0);
 
-    if (call SDsa.inSA()) {
-      while (1)
-	nop();
-    }
-
     if (!p_blk[0].busy)
       p = &p_blk[0];
 
     else if (!p_blk[1].busy)
       p = &p_blk[1];
     else {
-      missed_panics++;
+      missed_panic_warns++;
       return;
     }
 
     p->busy = TRUE;
     p->blk.len = sizeof(dt_panic_nt);
     p->blk.dtype = DT_PANIC;
-    p->blk.stamp_mis = call LocalTime.get();
+    p->blk.stamp_mis = last_panic;
     p->blk.pcode = pcode;
     p->blk.where = where;
     p->blk.arg0 = arg0;
@@ -123,7 +114,6 @@ implementation {
     p->blk.arg2 = arg2;
     p->blk.arg3 = arg3;
     post panic_task();
-#endif
   }
 
 
@@ -133,10 +123,14 @@ implementation {
    * Take over the machine and dump state.
    *
    * Panic takes care of the following:
-   *   Save the current maching state
-   *   Calc the next panic block location
-   *   DMA I/O to the SD card
-   *   DMA RAM to the SD card
+   *
+   * . save cpu registers
+   * . Find next panic area available from PANIC0
+   * . Save the current machine state and header
+   * . write out IO area
+   * . write out RAM area
+   *
+   * All SD access uses stand alone routines.
    */
 
   async command void Panic.panic(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1,
@@ -150,6 +144,11 @@ implementation {
      * Save off the registers first in a temp ram area.
      */
     PANIC_SAVE_REGS16(&panic_regs);
+
+    _p = pcode; _w = where;
+    _a0 = arg0; _a1 = arg1;
+    _a2 = arg2; _a3 = arg3;
+    debug_break(1);
 
     if (call SDsa.inSA()) {
       while (1)
@@ -170,12 +169,8 @@ implementation {
             p0h->panic_nxt > p0h->panic_end   ||
 	    p0h->panic_nxt == 0) {
 
-      p0h->fubar++;
-
-      /*
-       * HEY MARVIN!   redo checksum.
-       */
-
+      p0h->really_really_fubard_sig = FUBAR_REALLY_REALLY_FUBARD;
+      p0h->sig_c = FUBAR_REALLY_REALLY_FUBARD;
       call SDsa.write(PANIC0_SECTOR, panic_buf);
       call SDsa.off();
 
@@ -237,6 +232,7 @@ implementation {
       blk++;
     } while (ram_loc < (uint8_t *) (RAM_START + RAM_BYTES));
     call SDsa.off();
+    debug_break(2);
   }
 
 

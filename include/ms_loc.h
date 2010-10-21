@@ -57,6 +57,8 @@ typedef struct {
 #define PANIC0_MAJIK  0x23626223UL
 #define PANIC0_SIZE_SHORTS 13
 
+#define FUBAR_REALLY_REALLY_FUBARD 0x08313108UL
+
 
 /*
  * Panic0 block, stored little endian order
@@ -69,6 +71,9 @@ typedef struct {
   uint32_t fubar;			/* fell off bottom */
   uint32_t sig_b;			/* tombstone */
   uint16_t chksum;
+  uint16_t pad[16];
+  uint32_t really_really_fubard_sig;
+  uint32_t sig_c;
 } panic0_hdr_t;
 
 

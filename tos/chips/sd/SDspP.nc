@@ -1153,8 +1153,6 @@ norace uint16_t sd_pwr_on_time_uis;
     call HW.sd_on();
     call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
 
-    SD_CSN = 1;				/* force to known state */
-
     /*
      * send 800 clocks, 100 bytes.  about 240uis.  This satisfies
      * sending 74 clocks but is significantly short of the 1ms called

@@ -116,7 +116,7 @@ typedef struct {
 
 
 #define PANIC_SAVE_REGS16(rp)			\
-  atomic {					\
+  do {						\
   __asm__("mov.w r1,%0"  : "=m" ((rp)->r1));	\
   __asm__("mov.w r2,%0"  : "=m" ((rp)->r2));  	\
   __asm__("mov.w r3,%0"  : "=m" ((rp)->r3));  	\
@@ -132,6 +132,6 @@ typedef struct {
   __asm__("mov.w r13,%0" : "=m" ((rp)->r13)); 	\
   __asm__("mov.w r14,%0" : "=m" ((rp)->r14)); 	\
   __asm__("mov.w r15,%0" : "=m" ((rp)->r15));	\
-  }
+  } while (0)
 
 #endif
