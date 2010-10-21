@@ -10,7 +10,7 @@
 
 #include "panic.h"
 
-#define PANIC_CARL
+//#define PANIC_CARL
 
 #ifndef XWAIT
 #define XWAIT 0
