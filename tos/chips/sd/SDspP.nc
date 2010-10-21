@@ -1302,7 +1302,7 @@ norace uint16_t sd_pwr_on_time_uis;
     } while ((TAR - op_t0_uis)  < 5000);
 
     if ((TAR - op_t0_uis) >= 5000)
-      sd_panic(54, tmp);
+      call Panic.panic(PANIC_MS, 54, tmp, TAR, op_t0_uis, 0);
 
     SD_CSN = 1;				/* deassert. */
     i = sd_read_status();
