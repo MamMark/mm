@@ -21,11 +21,11 @@ p/d SDspP__last_write_time_uis
 p/d SDspP__last_write_time_mis
 end
 
-b RealMainP.nc:75
-b RealMainP.nc:80
-b SchedulerBasicP.nc:151
-b SchedulerBasicP.nc:148
-b VirtualizeTimerC.nc:81
+b RealMainP.nc:86
+b RealMainP.nc:91
+b SchedulerBasicP.nc:159
+b SchedulerBasicP.nc:162
+b VirtualizeTimerC.nc:92
 dis
 
 # 5 debug_break  (optimized out)
@@ -72,33 +72,6 @@ comm
 p SDspP__last_erase_time_mis
 end
 
-
-# ******************************************************************************
-# gps start
-#b GPSP.nc:448
-
-# gps finish
-#b GPSP.nc:301
-
-# 7 Msg Collect too big
-#b GPSMsgP.nc:538
-
-# 8 Msg checksum fail
-#b GPSMsgP.nc:561
-
-# GPSP.nc
-#  9 finish      502
-# 10 signal surface mmControlP.nc:107
-# 11 start       669
-# 14 msgBoundary 1102
-
-# 9 finish
-#b GPSP.nc:502
-
-# b sig_TIMERA0_VECTOR
-# b sig_TIMERA1_VECTOR
-# b sig_TIMERB0_VECTOR
-# b sig_TIMERB1_VECTOR
 
 define nx
 fini

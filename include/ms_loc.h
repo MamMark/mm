@@ -53,8 +53,8 @@ typedef struct {
 #define DBLK_LOC_SIZE_SHORTS 15
 
 
-#define PANIC0_SECTOR 2
-#define PANIC0_MAJIK  0x23626223
+#define PANIC0_SECTOR 2UL
+#define PANIC0_MAJIK  0x23626223UL
 #define PANIC0_SIZE_SHORTS 13
 
 
