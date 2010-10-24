@@ -151,6 +151,7 @@ implementation {
     debug_break(1);
 
     if (call SDsa.inSA()) {
+      debug_break(2);
       while (1)
 	nop();
     }
@@ -184,6 +185,7 @@ implementation {
        *
        * well for now, let's just bend over and kiss our ass goodbye.
        */
+      debug_break(3);
       while (1)
 	nop();
     }
@@ -230,9 +232,19 @@ implementation {
       call SDsa.write(blk, ram_loc);
       ram_loc += BUF_SIZE;
       blk++;
+      debug_break(4);
     } while (ram_loc < (uint8_t *) (RAM_START + RAM_BYTES));
+
+    /*
+     * Upate panic next
+     */
+    call SDsa.read(PANIC0_SECTOR, panic_buf);
+    p0h = (void *) &panic_buf[0];
+    p0h->panic_nxt = blk;
+    call SDsa.write(PANIC0_SECTOR, panic_buf);
+
     call SDsa.off();
-    debug_break(2);
+    debug_break(5);
   }
 
 
