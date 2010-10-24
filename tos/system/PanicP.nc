@@ -207,9 +207,6 @@ implementation {
     pep->args.arg1      = arg1;
     pep->args.arg2      = arg2;
     pep->args.arg3      = arg3;
-
-    pep->panic_regs = panic_regs;
-    pep->panic_regs.r1 = panic_regs.r1;
     memcpy(&pep->panic_regs, &panic_regs, sizeof(panic_regs_t));
 
     /*
