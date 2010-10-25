@@ -1223,7 +1223,7 @@ norace uint16_t sd_pwr_on_time_uis;
 	 *Clock out a byte before returning, let SD finish
 	 */
 	sd_get();
-        call Panic.panic(PANIC_MS, 49, tmp, sd_read_tok_count, 0, 0);
+        call Panic.panic(PANIC_MS, 49, tmp, sd_read_tok_count, 0, blk_id);
 	return;
       }
 
@@ -1233,7 +1233,7 @@ norace uint16_t sd_pwr_on_time_uis;
     } while ((sd_read_tok_count < SD_READ_TOK_MAX) || (tmp == 0xFF));
 
     if (tmp != SD_START_TOK) {
-      call Panic.panic(PANIC_MS, 50, tmp, sd_read_tok_count, 0, 0);
+      call Panic.panic(PANIC_MS, 50, tmp, sd_read_tok_count, 0, blk_id);
       return;
     }
 
@@ -1282,7 +1282,7 @@ norace uint16_t sd_pwr_on_time_uis;
     tmp = sd_get();
     if ((tmp & 0x1F) != 0x05) {
       i = sd_read_status();
-      call Panic.panic(PANIC_MS, 53, tmp, i, 0, 0);
+      call Panic.panic(PANIC_MS, 53, tmp, i, 0, blk_id);
       return;
     }
 
@@ -1300,12 +1300,12 @@ norace uint16_t sd_pwr_on_time_uis;
     } while ((TAR - op_t0_uis)  < 5000);
 
     if ((TAR - op_t0_uis) >= 5000)
-      call Panic.panic(PANIC_MS, 54, tmp, TAR, op_t0_uis, 0);
+      call Panic.panic(PANIC_MS, 54, tmp, (TAR - op_t0_uis), 0, blk_id);
 
     SD_CSN = 1;				/* deassert. */
     i = sd_read_status();
     if (i)
-      call Panic.panic(PANIC_MS, 55, tmp, i, 0, 0);
+      call Panic.panic(PANIC_MS, 55, tmp, i, 0, blk_id);
   }
 
 
