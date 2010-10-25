@@ -138,6 +138,7 @@ implementation {
     panic0_hdr_t     *p0h;
     panic_elem_hdr_t *pep;
     uint32_t          blk;
+    uint32_t	      panic_time;
     uint8_t          *ram_loc;
 
     /*
@@ -150,6 +151,14 @@ implementation {
     _a2 = arg2; _a3 = arg3;
     debug_break(1);
 
+    /*
+     * It is important to pull the system time of the crash
+     * prior to any SDsa calls.  SDsa uses underlying h/w, ie
+     * TAR for doing timeout timing.  So get the current sys time
+     * while the getting is good.
+     */
+    panic_time = call LocalTime.get();
+
     if (call SDsa.inSA()) {
       debug_break(2);
       while (1)
@@ -160,11 +169,11 @@ implementation {
 
     /* find the next panic block location */
     call SDsa.read(PANIC0_SECTOR, panic_buf);
-    p0h = (void *) &panic_buf[0];
 
     /*
      * verify the tombstones and check that nxt is within bounds.
      */
+    p0h = (void *) &panic_buf[0];
     if (p0h->sig_a != PANIC0_MAJIK            ||
             p0h->panic_nxt < p0h->panic_start ||
             p0h->panic_nxt > p0h->panic_end   ||
@@ -196,7 +205,7 @@ implementation {
     pep = (void *) &panic_buf[0];
     pep->panic_majik_a = PANIC0_MAJIK;
     pep->panic_majik_b = PANIC0_MAJIK;
-    pep->sys_time = call LocalTime.get();
+    pep->sys_time = panic_time;
 
     /*
      * Save off what happened.
@@ -232,7 +241,7 @@ implementation {
     } while (ram_loc < (uint8_t *) (RAM_START + RAM_BYTES));
 
     /*
-     * Upate panic next
+     * Upate panic_nxt
      */
     call SDsa.read(PANIC0_SECTOR, panic_buf);
     p0h = (void *) &panic_buf[0];
