@@ -44,6 +44,16 @@ void set_stuff() {
 #endif
 
 
+const uint8_t _major = MAJOR;
+const uint8_t _minor = MINOR;
+const uint8_t _build = _BUILD;
+
+
+#define BOOT_MAJIK 0x01021910
+noinit uint32_t boot_majik;
+noinit uint16_t boot_count;
+
+
 module PlatformP{
   provides {
     interface Init;
@@ -166,6 +176,18 @@ implementation {
   command error_t Init.init() __attribute__ ((noinline)) {
     TOSH_MM_INITIAL_PIN_STATE();
 
+
+    /*
+     * check to see if memory is okay.   The boot_majik cell tells the story.
+     * If it isn't okay we lost RAM, reinitilize boot_count.
+     */
+
+    if (boot_majik != BOOT_MAJIK) {
+      boot_majik = BOOT_MAJIK;
+      boot_count = 0;
+    }
+    boot_count++;
+
     /*
      * It takes a long time for the 32KHz Xtal to come up.
      * Go look to see when we start getting 32KHz ticks.
@@ -177,6 +199,27 @@ implementation {
     call LedsInit.init();
     return SUCCESS;
   }
+
+
+  async command uint16_t BootParams.getBootCount() {
+    return boot_count;
+  }
+
+
+  async command uint8_t BootParams.getMajor() {
+    return _major;
+  }
+
+
+  async command uint8_t BootParams.getMinor() {
+    return _minor;
+  }
+
+
+  async command uint8_t BootParams.getBuild() {
+    return _build;
+  }
+
 
   async command void Led0.set() { };
   async command void Led0.clr() { };

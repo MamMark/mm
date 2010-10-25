@@ -24,14 +24,10 @@ typedef enum {
 } sync_boot_state_t;
 
 
-const uint8_t _major = MAJOR;
-const uint8_t _minor = MINOR;
-const uint8_t _build = _BUILD;
-
-
 module mmSyncP {
   provides {
     interface Boot as OutBoot;
+    interface BootParams;
   }
   uses {
     interface Boot;
@@ -71,24 +67,21 @@ implementation {
     vp = (dt_version_nt *) &vdata;
     vp->len     = DT_HDR_SIZE_VERSION;
     vp->dtype   = DT_VERSION;
-    vp->major   = _major;
-    vp->minor   = _minor;
-    vp->build   = _build;
+    vp->major   = BootParams.getMajor();
+    vp->minor   = BootParams.getMinor();
+    vp->build   = BootParams.getBuild();
     call Collect.collect(vdata, DT_HDR_SIZE_VERSION);
     call DTSender.send(vdata, DT_HDR_SIZE_VERSION);
   }
 
 
-  void write_sync_record(bool sync) {
+  void write_sync_record() {
     uint8_t sync_data[DT_HDR_SIZE_SYNC];
     dt_sync_nt *sdp;
 
     sdp = (dt_sync_nt *) &sync_data;
     sdp->len = DT_HDR_SIZE_SYNC;
-    if (sync)
-      sdp->dtype = DT_SYNC;
-    else
-      sdp->dtype = DT_SYNC_RESTART;
+    sdp->dtype = DT_SYNC;
     sdp->stamp_mis = call SyncTimer.getNow();
     sdp->sync_majik = SYNC_MAJIK;
     call Collect.collect(sync_data, DT_HDR_SIZE_SYNC);
@@ -96,8 +89,23 @@ implementation {
   }
 
 
+  void write_resync_record() {
+    uint8_t resync_data[DT_HDR_SIZE_RESYNC];
+    dt_resync_nt *sdp;
+
+    sdp = (dt_sync_nt *) &resync_data;
+    sdp->len = DT_HDR_SIZE_RESYNC;
+    sdp->dtype = DT_SYNC_RESTART;
+    sdp->stamp_mis = call SyncTimer.getNow();
+    sdp->sync_majik = SYNC_MAJIK;
+    sdp->boot_count = BootParams.getBootCount();
+    call Collect.collect(sync_data, DT_HDR_SIZE_RESYNC);
+    call DTSender.send(sync_data, DT_HDR_SIZE_RESYNC);
+  }
+
+
   /*
-   * Always write the sync record first.
+   * Always write the resync record first.
    */
   event void Boot.booted() {
 #ifdef SYNC_TEST
@@ -105,7 +113,7 @@ implementation {
     write_test();
 #else
     boot_state = SYNC_BOOT_1;
-    write_sync_record(FALSE);
+    write_resync_record();
 #endif
   }
 
@@ -123,7 +131,7 @@ implementation {
 #ifdef SYNC_TEST
       case SYNC_SEND_TEST:
 	boot_state = SYNC_BOOT_1;
-	write_sync_record(FALSE);
+	write_resync_record();
 	break;
 #endif
 
@@ -146,6 +154,6 @@ implementation {
 
 
   event void SyncTimer.fired() {
-    write_sync_record(TRUE);
+    write_sync_record();
   }
 }

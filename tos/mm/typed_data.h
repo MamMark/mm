@@ -136,6 +136,15 @@ typedef nx_struct dt_sync {
 } dt_sync_nt;
 
 
+typedef nx_struct dt_resync {
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
+  nx_uint32_t stamp_mis;
+  nx_uint32_t sync_majik;
+  nx_uint16_t boot_count;
+} dt_resync_nt;
+
+
 typedef nx_struct dt_panic {
   nx_uint16_t len;
   nx_uint8_t  dtype;
@@ -503,6 +512,7 @@ enum {
   DT_HDR_SIZE_IGNORE        = sizeof(dt_ignore_nt),
   DT_HDR_SIZE_CONFIG        = sizeof(dt_config_nt),
   DT_HDR_SIZE_SYNC          = sizeof(dt_sync_nt),
+  DT_HDR_SIZE_RESYNC        = sizeof(dt_resync_nt),
   DT_HDR_SIZE_PANIC         = sizeof(dt_panic_nt),
   DT_HDR_SIZE_GPS_TIME      = sizeof(dt_gps_time_nt),
   DT_HDR_SIZE_GPS_POS       = sizeof(dt_gps_pos_nt),
