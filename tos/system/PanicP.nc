@@ -229,7 +229,6 @@ implementation {
       call SDsa.write(blk, ram_loc);
       ram_loc += BUF_SIZE;
       blk++;
-      debug_break(4);
     } while (ram_loc < (uint8_t *) (RAM_START + RAM_BYTES));
 
     /*
@@ -241,7 +240,7 @@ implementation {
     call SDsa.write(PANIC0_SECTOR, panic_buf);
 
     call SDsa.off();
-    debug_break(5);
+    debug_break(4);
   }
 
 
