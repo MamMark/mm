@@ -1,6 +1,4 @@
 
-#no threads
-
 source ../../.gdb2618
 source ../../.gdb_mm
 
@@ -12,93 +10,22 @@ disp/i $pc
 x/i $pc
 set pri ele 0
 
-define inst
-p/d SDspP__last_reset_time_uis
-p/d SDspP__last_reset_time_mis
-p/d SDspP__last_read_time_uis
-p/d SDspP__last_read_time_mis
-p/d SDspP__last_write_time_uis
-p/d SDspP__last_write_time_mis
-end
-
-b RealMainP.nc:75
-b RealMainP.nc:80
-b SchedulerBasicP.nc:151
-b SchedulerBasicP.nc:148
-b VirtualizeTimerC.nc:81
+b RealMainP.nc:86
+b RealMainP.nc:91
+b SchedulerBasicP.nc:159
+b SchedulerBasicP.nc:162
 dis
 
-# 5 debug_break  (optimized out)
-# b PanicP.nc:62
-
-# 6 panic
-b PanicP.nc:78
+b SerialP.nc:443
 comm
-printf "pcode: 0d%d (0x%0x)  where: 0d%d  0x%04x 0x%04x 0x%04x 0x%04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
+p SerialP__rxState
+p data
 end
 
-# 7
-# b mmP.nc:44
-
-# 7
-b FileSystemP.nc:285
-comm
-p FileSystemP__fsc
-end
-
-#b mmSyncP.nc:89
-#b DTSenderP.nc:95
-
-# 8
-b SDspP.nc:631
-comm
-p/d SDspP__last_pwr_on_first_cmd_uis
-p/d SDspP__last_full_reset_time_uis
-p/d SDspP__last_reset_time_uis
-p/d SDspP__last_reset_time_mis
-end
-dis 8
-
-# 9
-b SDspP.nc:920
-comm
-p SDspP__last_write_time_mis
-end
-
-
-# 10
-b SDspP.nc:1047
-comm
-p SDspP__last_erase_time_mis
-end
-
-
-# ******************************************************************************
-# gps start
-#b GPSP.nc:448
-
-# gps finish
-#b GPSP.nc:301
-
-# 7 Msg Collect too big
-#b GPSMsgP.nc:538
-
-# 8 Msg checksum fail
-#b GPSMsgP.nc:561
-
-# GPSP.nc
-#  9 finish      502
-# 10 signal surface mmControlP.nc:107
-# 11 start       669
-# 14 msgBoundary 1102
-
-# 9 finish
-#b GPSP.nc:502
-
-# b sig_TIMERA0_VECTOR
-# b sig_TIMERA1_VECTOR
-# b sig_TIMERB0_VECTOR
-# b sig_TIMERB1_VECTOR
+b SerialP.nc:460
+b SerialP.nc:489
+b SerialP.nc:515
+b SerialDispatcherP.nc:277
 
 define nx
 fini
@@ -109,4 +36,17 @@ end
 define noint
 printf "cur sr: %02x\n", $r2
 set $r2=0
+end
+
+
+define sdp
+printf "SDP rx_state: "
+print SerialDispatcherP__0__rx_state
+printf "SDP rx_index: %d,  rx_buffer: %04x\n", SerialDispatcherP__0__rx_index, SerialDispatcherP__0__rx_buffer
+printf "P_rx_slot: %d,  C_rx_slot: %d\n", SerialDispatcherP__0__P_rx_slot, SerialDispatcherP__0__C_rx_slot
+print SerialDispatcherP__0__rx_slots[0]
+print SerialDispatcherP__0__rx_slots[1]
+end
+document sdp
+display SerialDispatcherP state informtion
 end
