@@ -126,7 +126,7 @@ typedef nx_struct dt_config {
  * need to do a resync.
  */
 
-#define SYNC_MAJIK 0xdedf00ef
+#define SYNC_MAJIK 0xdedf00efUL
 
 typedef nx_struct dt_sync {
   nx_uint16_t len;

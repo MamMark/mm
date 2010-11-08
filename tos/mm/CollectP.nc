@@ -26,8 +26,8 @@ implementation {
   dc_control_t dcc;
 
   command error_t Init.init() {
-    dcc.majik_a = DC_MAJIK_A;
-    dcc.majik_b = DC_MAJIK_B;
+    dcc.majik_a = DC_MAJIK;
+    dcc.majik_b = DC_MAJIK;
     return SUCCESS;
   }
 
@@ -43,7 +43,7 @@ implementation {
 
     if (num_copied != dlen || data[2] >= DT_MAX || dlen < 3)
       call Panic.panic(PANIC_SS, 1, dlen, num_copied, data[2], 0);
-    if (dcc.majik_a != DC_MAJIK_A || dcc.majik_b != DC_MAJIK_B)
+    if (dcc.majik_a != DC_MAJIK || dcc.majik_b != DC_MAJIK)
       call Panic.panic(PANIC_SS, 2, dcc.majik_a, dcc.majik_b, 0, 0);
     if (dcc.remaining > DC_BLK_SIZE)
       call Panic.panic(PANIC_SS, 3, dcc.remaining, 0, 0, 0);

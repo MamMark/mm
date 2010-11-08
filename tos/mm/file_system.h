@@ -34,8 +34,7 @@ typedef struct {
     uint16_t majik_b;
 } fs_control_t;
 
-#define FSC_MAJIK_A 0x8181
-#define FSC_MAJIK_B 0x324f
+#define FSC_MAJIK 0x8181
 
 
 enum {

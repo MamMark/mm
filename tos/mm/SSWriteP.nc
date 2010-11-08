@@ -97,8 +97,8 @@ implementation {
   command error_t Init.init() {
     uint16_t i;
 
-    ssc.majik_a     = SSC_MAJIK_A;
-    ssc.majik_b     = SSC_MAJIK_B;
+    ssc.majik_a     = SSC_MAJIK;
+    ssc.majik_b     = SSC_MAJIK;
 
     for (i = 0; i < SSW_NUM_BUFS; i++) {
       ssw_p[i]->majik     = SS_BUF_MAJIK;
@@ -142,7 +142,7 @@ implementation {
       call Panic.panic(PANIC_SS, 11, (uint16_t) handle, handle->majik, handle->buf_state, (uint16_t) sswp);
     }
 
-    if (ssc.majik_a != SSC_MAJIK_A || ssc.majik_b != SSC_MAJIK_B)
+    if (ssc.majik_a != SSC_MAJIK || ssc.majik_b != SSC_MAJIK)
       call Panic.panic(PANIC_SS, 12, ssc.majik_a, ssc.majik_b, 0, 0);
 
     handle->stamp = call LocalTime.get();
@@ -163,8 +163,8 @@ implementation {
 
     sswp = ssw_p[ssc.ssw_alloc];
     if (ssc.ssw_alloc >= SSW_NUM_BUFS ||
-	ssc.majik_a != SSC_MAJIK_A ||
-	ssc.majik_b != SSC_MAJIK_B ||
+	ssc.majik_a != SSC_MAJIK ||
+	ssc.majik_b != SSC_MAJIK ||
 	sswp->buf_state < SS_BUF_STATE_FREE ||
 	sswp->buf_state >= SS_BUF_STATE_MAX) {
       ss_panic(18, ssc.ssw_alloc);

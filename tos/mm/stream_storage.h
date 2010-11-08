@@ -120,7 +120,6 @@ typedef struct {
   uint16_t    majik_b;		/* tombstone */
 } ss_control_t;
 
-#define SSC_MAJIK_A 0x9191
-#define SSC_MAJIK_B 0xf423
+#define SSC_MAJIK 0x9191
 
 #endif /* _STREAM_STORAGE_H */

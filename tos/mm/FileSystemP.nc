@@ -95,8 +95,8 @@ implementation {
    * gets zero'd.
    */
   command error_t Init.init() {
-    fsc.majik_a     = FSC_MAJIK_A;
-    fsc.majik_b     = FSC_MAJIK_B;
+    fsc.majik_a     = FSC_MAJIK;
+    fsc.majik_b     = FSC_MAJIK;
     return SUCCESS;
   }
 

@@ -40,8 +40,6 @@ typedef struct {
   uint16_t majik_b;
 } dc_control_t;
 
-#define DC_MAJIK_A 0x1008
-#define DC_MAJIK_B 0x0403
-
+#define DC_MAJIK 0x1008
 
 #endif  /* __COLLECTOR_H__ */
