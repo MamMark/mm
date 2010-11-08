@@ -11,6 +11,7 @@
  */
 
 #include "hardware.h"
+#include "platform_version.h"
 
 #ifdef notdef
 
@@ -57,6 +58,7 @@ noinit uint16_t boot_count;
 module PlatformP{
   provides {
     interface Init;
+    interface BootParams;
     interface GeneralIO as Led0;
     interface GeneralIO as Led1;
     interface GeneralIO as Led2;

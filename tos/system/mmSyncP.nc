@@ -3,9 +3,6 @@
  * All rights reserved.
  */
 
-#include "platform_version.h"
-
-
 //#define SYNC_TEST
 
 
@@ -27,11 +24,11 @@ typedef enum {
 module mmSyncP {
   provides {
     interface Boot as OutBoot;
-    interface BootParams;
   }
   uses {
     interface Boot;
     interface Boot as SysBoot;
+    interface BootParams;
     interface Timer<TMilli> as SyncTimer;
     interface Collect;
     interface DTSender;
@@ -67,9 +64,9 @@ implementation {
     vp = (dt_version_nt *) &vdata;
     vp->len     = DT_HDR_SIZE_VERSION;
     vp->dtype   = DT_VERSION;
-    vp->major   = BootParams.getMajor();
-    vp->minor   = BootParams.getMinor();
-    vp->build   = BootParams.getBuild();
+    vp->major   = call BootParams.getMajor();
+    vp->minor   = call BootParams.getMinor();
+    vp->build   = call BootParams.getBuild();
     call Collect.collect(vdata, DT_HDR_SIZE_VERSION);
     call DTSender.send(vdata, DT_HDR_SIZE_VERSION);
   }
@@ -89,23 +86,23 @@ implementation {
   }
 
 
-  void write_resync_record() {
-    uint8_t resync_data[DT_HDR_SIZE_RESYNC];
-    dt_resync_nt *sdp;
+  void write_reboot_record() {
+    uint8_t reboot_data[DT_HDR_SIZE_REBOOT];
+    dt_reboot_nt *rbdp;
 
-    sdp = (dt_sync_nt *) &resync_data;
-    sdp->len = DT_HDR_SIZE_RESYNC;
-    sdp->dtype = DT_SYNC_RESTART;
-    sdp->stamp_mis = call SyncTimer.getNow();
-    sdp->sync_majik = SYNC_MAJIK;
-    sdp->boot_count = BootParams.getBootCount();
-    call Collect.collect(sync_data, DT_HDR_SIZE_RESYNC);
-    call DTSender.send(sync_data, DT_HDR_SIZE_RESYNC);
+    rbdp = (dt_reboot_nt *) &reboot_data;
+    rbdp->len = DT_HDR_SIZE_REBOOT;
+    rbdp->dtype = DT_REBOOT;
+    rbdp->stamp_mis = call SyncTimer.getNow();
+    rbdp->sync_majik = SYNC_MAJIK;
+    rbdp->boot_count = call BootParams.getBootCount();
+    call Collect.collect(reboot_data, DT_HDR_SIZE_REBOOT);
+    call DTSender.send(reboot_data, DT_HDR_SIZE_REBOOT);
   }
 
 
   /*
-   * Always write the resync record first.
+   * Always write the reboot record first.
    */
   event void Boot.booted() {
 #ifdef SYNC_TEST
@@ -113,7 +110,7 @@ implementation {
     write_test();
 #else
     boot_state = SYNC_BOOT_1;
-    write_resync_record();
+    write_reboot_record();
 #endif
   }
 
@@ -131,7 +128,7 @@ implementation {
 #ifdef SYNC_TEST
       case SYNC_SEND_TEST:
 	boot_state = SYNC_BOOT_1;
-	write_resync_record();
+	write_reboot_record();
 	break;
 #endif
 

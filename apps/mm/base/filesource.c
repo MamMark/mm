@@ -14,6 +14,7 @@
 #include "serialpacket.h"
 #include "DtSensorDataMsg.h"
 #include "DtSyncMsg.h"
+#include "DtRebootMsg.h"
 #include "gDTConstants.h"
 #include "gSensorIDs.h"
 #include "sync.h"
@@ -22,6 +23,15 @@
  * Number of empty sectors that will cause the dump to stop.
  */
 #define MAX_EMPTY   10
+
+
+/*
+ * Sector format:
+ *
+ * 0-507	dblk data
+ * 508, 509	sequence number (little endian)
+ * 510, 511	checksum (little endian)
+ */
 
 #define SECTOR_SIZE 512
 #define SEQ_OFF     508
@@ -187,11 +197,14 @@ get_sector(int fd, uint8_t *dbuff) {
  * boundary.  This means that the entire SYNC dblock must fit in the sector
  * including the dblock header.
  *
+ * We resync on either a sync dblock or a reboot dblock.
+ *
  * Sync dblock:
  *    2 len
  *    1 dtype
  *    4 stamp
  *    4 sync_majik
+ *    2 boot_count	(only in reboot dblock)
  *
  * To avoid problems with alignment and endianess we use the message library.
  */
@@ -224,10 +237,16 @@ resync(int fd, int ignore_cur, uint8_t *dbuff) {
   skipped = 0;
   for (;;) {
     if (ignore_cur == RESYNC_USE_CUR) {
-      if ((dt_sync_sync_majik_get(msg) == SYNC_MAJIK) &&
-	  (dt_sync_len_get(msg) == DT_SYNC_SIZE) &&
-	  (dt_sync_dtype_get(msg) == DT_SYNC ||
-	   dt_sync_dtype_get(msg) == DT_SYNC_RESTART)) {
+      /*
+       * look for sync_majik, if found then check for the rest of
+       * the dblk looking sane.
+       *
+       * REBOOT used to be the same size as SYNC, be backward compatible.
+       */
+      if (dt_sync_sync_majik_get(msg) == SYNC_MAJIK &&
+	  ((dt_sync_dtype_get(msg) == DT_SYNC   && dt_sync_len_get(msg) == DT_SYNC_SIZE)   ||
+	   (dt_sync_dtype_get(msg) == DT_REBOOT && dt_sync_len_get(msg) == DT_SYNC_SIZE)   ||
+	   (dt_sync_dtype_get(msg) == DT_REBOOT && dt_sync_len_get(msg) == DT_REBOOT_SIZE))) {
 	free_tmsg(msg);
 	fprintf(stderr, "*** RESYNC: skipped %u bytes, new cur_seq: %d (0x%04x)\n",
 		skipped, cur_seq, cur_seq);
@@ -372,19 +391,24 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
       return(GS_BAD_DBLK);
     }
 
-    l = cur_dblk_len + 1 + SPACKET_SIZE;
-    bp[0] = SERIAL_TOS_SERIAL_ACTIVE_MESSAGE_ID;
-    msg = new_tmsg(bp + 1, l - 1);
+    /*
+     * build what looks like a packet that came from the comm system.
+     * Need to add a serial header on the front (SPACKET_SIZE), this
+     * includes the dispatch byte.
+     */
+    l = cur_dblk_len + SPACKET_SIZE;
+    msg = new_tmsg(bp, l);
     if (!msg) {
       fprintf(stderr, "*** new_tmsg failed (null)\n");
       exit(2);
     }
+    spacket_header_dispatch_set(msg, SERIAL_TOS_SERIAL_ACTIVE_MESSAGE_ID);
     spacket_header_dest_set(msg, 0xffff);
     spacket_header_src_set(msg, 0);
-    spacket_header_length_set(msg, l);
+    spacket_header_length_set(msg, cur_dblk_len);
     spacket_header_group_set(msg, 0);
     spacket_header_type_set(msg, AM_MM_DT);	/* data, typed */
-    dptr = (bp + 1) + spacket_data_offset(0);
+    dptr = bp + spacket_data_offset(0);
     dptr[0] = hdr[0];
     dptr[1] = hdr[1];
     dptr[2] = hdr[2];
@@ -430,8 +454,8 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
 	rtn = GS_OK;
       break;
 
-    case DT_SYNC_RESTART:
-      if(cur_dblk_len == DT_HDR_SIZE_SYNC)
+    case DT_REBOOT:
+      if(cur_dblk_len == DT_HDR_SIZE_REBOOT)
 	rtn = GS_OK;
       break;
 
