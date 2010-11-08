@@ -198,7 +198,7 @@ implementation {
   }
 
 
-  command uint8_t *SSW.get_temp_buf() {
+  async command uint8_t *SSW.get_temp_buf() {
     return(ssw_p[0]->buf);
   }
 

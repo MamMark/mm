@@ -38,7 +38,7 @@ interface SSWrite {
    *
    * This routine should not be used after the boot sequence completes.
    */
-  command uint8_t *get_temp_buf();
+  async command uint8_t *get_temp_buf();
 
 
   /**
