@@ -20,4 +20,7 @@ implementation {
 
   components SDspP;
   PanicP.SDsa -> SDspP;
+
+  components SSWriteC;
+  PanicP.SSW -> SSWriteC;
 }

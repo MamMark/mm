@@ -15,8 +15,10 @@ norace uint16_t _a0, _a1, _a2, _a3, _arg;
 norace uint32_t last_panic;
 norace uint16_t missed_panic_warns;
 
+//uint8_t dedicated_panic_buf[514];
+//uint8_t *panic_buf = dedicated_panic_buf;
+norace uint8_t *panic_buf;
 
-uint8_t panic_buf[514];
 panic_regs_t panic_regs;
 
 
@@ -42,6 +44,7 @@ module PanicP {
     interface Collect;
     interface LocalTime<TMilli>;
     interface SDsa;
+    interface SSWrite as SSW;
   }
 }
 
@@ -166,6 +169,8 @@ implementation {
     }
 
     call SDsa.reset();         // turn on and make ready
+
+    panic_buf = call SSW.get_temp_buf();
 
     /* find the next panic block location */
     call SDsa.read(PANIC0_SECTOR, panic_buf);
