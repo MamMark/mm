@@ -31,6 +31,7 @@
 #include "gDTConstants.h"
 #include "DtIgnoreMsg.h"
 #include "DtSyncMsg.h"
+#include "DtRebootMsg.h"
 #include "DtPanicMsg.h"
 #include "DtSensorDataMsg.h"
 #include "DtVersionMsg.h"
@@ -40,7 +41,7 @@
 #include "DtGpsRawMsg.h"
 #include "ParseSirf.h"
 
-#define VERSION "mmdump: v0.10.1  (10 Apr 2010)\n"
+#define VERSION "mmdump: v0.11.0  (06 Nov 2010)\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -49,15 +50,18 @@ int debug	= 0,
 
 static void usage(char *name) {
   fprintf(stderr, VERSION);
-  fprintf(stderr, "usage: %s [-Dev] --serial  <serial device>  <baud rate>\n", name);
+  fprintf(stderr, "usage: %s [-Dev] --serial <serial device>  <baud rate>\n", name);
   fprintf(stderr, "       %s [-Dev] --sf  <host>  <port>\n", name);
-  fprintf(stderr, "       %s [-Dev] [-f][--file] <input file>\n", name);
-  fprintf(stderr, "  -D   increment debugging level\n");
-  fprintf(stderr, "         1 - basic debugging, 2 - dump packet data\n");
-  fprintf(stderr, "  -e   show event logging\n");
-  fprintf(stderr, "  -v   verbose mode (increment)\n");
-  fprintf(stderr, "  -d   write data files for each sensor\n");
-  fprintf(stderr, "  -f   take input from <input file>\n");
+  fprintf(stderr, "       %s [-Dev] [-f | --file] <input file>\n", name);
+  fprintf(stderr, "  --serial take input directly from serial port (default)\n");
+  fprintf(stderr, "  --sf     connect via serial forwarder\n");
+  fprintf(stderr, "  --file | -f\n");
+  fprintf(stderr, "           take input from <input file>\n");
+  fprintf(stderr, "  -D       increment debugging level\n");
+  fprintf(stderr, "             1 - basic debugging, 2 - dump packet data\n");
+  fprintf(stderr, "  -e       show event logging\n");
+  fprintf(stderr, "  -v       verbose mode (increment)\n");
+  fprintf(stderr, "  -d       write data files for each sensor\n");
   exit(2);
 }
 
@@ -107,7 +111,7 @@ dtype2str(uint8_t id) {
     case DT_IGNORE:	return("ignore");
     case DT_CONFIG:	return("config");
     case DT_SYNC:	return("sync");
-    case DT_SYNC_RESTART:return("sync_restart");
+    case DT_REBOOT:	return("reboot");
     case DT_PANIC:	return("panic"); 
     case DT_GPS_RAW:    return("gps_raw");
     case DT_GPS_TIME:	return("gps_time");
@@ -274,38 +278,48 @@ process_sync(tmsg_t *msg) {
   uint8_t dtype;
   uint32_t stamp;
   uint32_t majik;
+  uint16_t boot_count;
   uint8_t c;
   char *s;
   int err = 0;
 
-  len = dt_sync_len_get(msg);
+  /*
+   * first part of sync and reboot messages are exactly the same.
+   * reboot also has boot_count.
+   */
+  len =   dt_sync_len_get(msg);
   dtype = dt_sync_dtype_get(msg);
   stamp = dt_sync_stamp_mis_get(msg);
   majik = dt_sync_sync_majik_get(msg);
-  if (len != DT_SYNC_SIZE || majik != SYNC_MAJIK)
+  boot_count = 0;
+  if (majik != SYNC_MAJIK)
     err = 1;
   switch (dtype) {
     case DT_SYNC:
+      if (len != DT_SYNC_SIZE)
+	err = 1;
       c = 'S';
       s = "sync";
       break;
 
-    case DT_SYNC_RESTART:
+    case DT_REBOOT:
+      if (len != DT_REBOOT_SIZE)
+	err = 1;
       c = 'R';
-      s = "restart";
+      s = "reboot";
+      boot_count = dt_reboot_boot_count_get(msg);
       break;
   }
   if (err)
     printf("--- ");
-  if (err || verbose || dtype == DT_SYNC_RESTART) {
-    printf("SYNC: %c %d (%x) %08x (%s)\n", c, stamp, stamp, majik, s);
-  }
+  if (err || verbose || dtype == DT_REBOOT)
+    printf("SYNC: %c %d (%x) %08x (%s) bc: %d\n", c, stamp, stamp, majik, s, boot_count);
   if (write_data) {
     for (i = 0; i < MM_NUM_SENSORS; i++) {
       fprintf(fp[i], "%% ");
       if (err) 
 	fprintf(fp[i], "--- err ");
-      fprintf(fp[i], "SYNC: %c %d %08x %s\n", c, stamp, majik, s);
+      fprintf(fp[i], "SYNC: %c %d %08x %s %d\n", c, stamp, majik, s, boot_count);
     }
   }
 }
@@ -658,7 +672,7 @@ process_mm_dt(tmsg_t *msg) {		/* data, typed */
       process_config(msg);
       break;
     case DT_SYNC:
-    case DT_SYNC_RESTART:
+    case DT_REBOOT:
       process_sync(msg);
       break;
     case DT_PANIC:

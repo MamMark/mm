@@ -20,6 +20,8 @@ DtSensorSetMsg.c
 DtSensorSetMsg.h
 DtSyncMsg.c
 DtSyncMsg.h
+DtRebootMsg.c
+DtRebootMsg.h
 DtTestMsg.c
 DtTestMsg.h
 DtVersionMsg.c

@@ -13,8 +13,7 @@
 
 /*
  * keep mig happy.  Each tag typed_data block can be transmitted in an
- * encapsulated AM message packet.  The AM type can be AM_MM_CONTROL, DATA,
- * or DEBUG.
+ * encapsulated AM message packet.  The AM type is AM_MM_DATA.
  */
 
 enum {
@@ -22,6 +21,7 @@ enum {
   AM_DT_CONFIG		= 0xA1,
   AM_DT_SYNC		= 0xA1,
   AM_DT_SYNC_RESTART	= 0xA1,
+  AM_DT_REBOOT		= 0xA1,
   AM_DT_PANIC		= 0xA1,
   AM_DT_GPS_TIME	= 0xA1,
   AM_DT_GPS_POS		= 0xA1,
@@ -54,7 +54,7 @@ enum {
   DT_IGNORE		= 0,
   DT_CONFIG		= 1,
   DT_SYNC		= 2,
-  DT_SYNC_RESTART	= 3,
+  DT_REBOOT		= 3,		/* reboot sync */
   DT_PANIC		= 4,
   DT_GPS_TIME		= 5,
   DT_GPS_POS		= 6,
@@ -115,13 +115,13 @@ typedef nx_struct dt_config {
  * Data written to the SD card is a byte stream of typed data records.
  * If we lose a byte or somehow get out order (lost sector etc) then
  * we be screwed.  Unless there is some mechanism for resyncing.  The
- * SYNC/SYNC_RESTART data block contains a 32 bit majik number that we
+ * SYNC/REBOOT data block contains a 32 bit majik number that we
  * search for if we get out of sync.  This lets us sync back up to the
  * data stream.
  *
  * The same majik number is written in both data block types so we only
  * have to search for one value when resyncing.  On reboot the dtype
- * is set to SYNC_RESTART indicating the reboot.  Every N minutes
+ * is set to REBOOT indicating the reboot.  Every N minutes
  * a sync record is written to minimize how much data is lost if we
  * need to do a resync.
  */
@@ -134,6 +134,15 @@ typedef nx_struct dt_sync {
   nx_uint32_t stamp_mis;
   nx_uint32_t sync_majik;
 } dt_sync_nt;
+
+
+typedef nx_struct dt_reboot {
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
+  nx_uint32_t stamp_mis;
+  nx_uint32_t sync_majik;
+  nx_uint16_t boot_count;
+} dt_reboot_nt;
 
 
 typedef nx_struct dt_panic {
@@ -503,6 +512,7 @@ enum {
   DT_HDR_SIZE_IGNORE        = sizeof(dt_ignore_nt),
   DT_HDR_SIZE_CONFIG        = sizeof(dt_config_nt),
   DT_HDR_SIZE_SYNC          = sizeof(dt_sync_nt),
+  DT_HDR_SIZE_REBOOT        = sizeof(dt_reboot_nt),
   DT_HDR_SIZE_PANIC         = sizeof(dt_panic_nt),
   DT_HDR_SIZE_GPS_TIME      = sizeof(dt_gps_time_nt),
   DT_HDR_SIZE_GPS_POS       = sizeof(dt_gps_pos_nt),

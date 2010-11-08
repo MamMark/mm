@@ -24,12 +24,13 @@ STOW_DIR=/opt
 PROGRAMS=mmdump
 
 CC=gcc
-CFLAGS += -g -O0 -Wall -I$(STOW_DIR)/include -I$(COMM)
+CFLAGS += -g -O0 -Wall -I$(STOW_DIR)/include -I$(COMM) -I$(MM_PLATFORM_DIR) -DREF_BUILD=$(REF_BUILD_NUM)
 LIBS += $(STOW_DIR)/lib/libmote.a
 
 GEN = DtIgnoreMsg.h DtIgnoreMsg.c \
       DtConfigMsg.h DtConfigMsg.c \
       DtSyncMsg.h DtSyncMsg.c \
+      DtRebootMsg.h DtRebootMsg.c \
       DtPanicMsg.h DtPanicMsg.c \
       DtGpsTimeMsg.h DtGpsTimeMsg.c \
       DtGpsPosMsg.h DtGpsPosMsg.c \
@@ -79,6 +80,10 @@ DtConfigMsg.c DtConfigMsg.h: $(TYPED_DATA)
 DtSyncMsg.c DtSyncMsg.h: $(TYPED_DATA)
 	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
 	c $(TYPED_DATA) dt_sync -o DtSyncMsg.h
+
+DtRebootMsg.c DtRebootMsg.h: $(TYPED_DATA)
+	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
+	c $(TYPED_DATA) dt_reboot -o DtRebootMsg.h
 
 DtPanicMsg.c DtPanicMsg.h: $(TYPED_DATA)
 	mig -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
@@ -185,7 +190,7 @@ gDTConstants.h: $(TYPED_DATA) Makefile
 	DT_IGNORE                 \
 	DT_CONFIG		  \
 	DT_SYNC			  \
-	DT_SYNC_RESTART		  \
+	DT_REBOOT		  \
 	DT_PANIC		  \
 	DT_GPS_TIME		  \
 	DT_GPS_POS		  \
@@ -219,6 +224,7 @@ gDTConstants.h: $(TYPED_DATA) Makefile
 	DT_HDR_SIZE_IGNORE        \
 	DT_HDR_SIZE_CONFIG        \
 	DT_HDR_SIZE_SYNC          \
+	DT_HDR_SIZE_REBOOT        \
 	DT_HDR_SIZE_PANIC         \
 	DT_HDR_SIZE_GPS_TIME      \
 	DT_HDR_SIZE_GPS_POS       \
@@ -259,18 +265,18 @@ serialprotocol.h: $(SERIAL_H)
 	ncg -o $@ -c-prefix=SERIAL c $(SERIAL_H) Serial.h
 
 mmdump.o: mmdump.c $(BUILD_NUM_FILE)
-	$(CC) -c $(CFLAGS) -I$(MM_PLATFORM_DIR) -DREF_BUILD=$(REF_BUILD_NUM) $<
+	$(CC) -c $(CFLAGS) $<
 
 .c.o:
 	$(CC) -c $(CFLAGS) $<
 
-mmdump: mmdump.o filesource.o ParseSirf.o serialpacket.o                    \
-	    DtIgnoreMsg.o DtConfigMsg.o DtSyncMsg.o DtPanicMsg.o            \
-	    DtGpsTimeMsg.o DtGpsPosMsg.o DtSensorDataMsg.o                  \
-	    DtSensorSetMsg.o DtTestMsg.o DtNoteMsg.o DtVersionMsg.o         \
-	    DtEventMsg.o DtGpsRawMsg.o GpsNavDataMsg.o GpsGeodeticDataMsg.o \
-	    GpsNavLibDataMsg.o GpsTrackerDataMsg.o GpsSoftVersMsg.o         \
-	    GpsClockStatusMsg.o GpsErrorMsg.o GpsAlmanacStatusMsg.o         \
+mmdump: mmdump.o filesource.o ParseSirf.o serialpacket.o                       \
+	    DtIgnoreMsg.o DtConfigMsg.o DtSyncMsg.o DtRebootMsg.o DtPanicMsg.o \
+	    DtGpsTimeMsg.o DtGpsPosMsg.o DtSensorDataMsg.o                     \
+	    DtSensorSetMsg.o DtTestMsg.o DtNoteMsg.o DtVersionMsg.o            \
+	    DtEventMsg.o DtGpsRawMsg.o GpsNavDataMsg.o GpsGeodeticDataMsg.o    \
+	    GpsNavLibDataMsg.o GpsTrackerDataMsg.o GpsSoftVersMsg.o            \
+	    GpsClockStatusMsg.o GpsErrorMsg.o GpsAlmanacStatusMsg.o            \
 	    GpsPpsMsg.o GpsDevDataMsg.o GpsUnkMsg.o
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
@@ -298,6 +304,7 @@ DtGpsTimeMsg.o: DtGpsTimeMsg.c /opt/include/message.h DtGpsTimeMsg.h
 DtIgnoreMsg.o: DtIgnoreMsg.c /opt/include/message.h DtIgnoreMsg.h
 DtNoteMsg.o: DtNoteMsg.c /opt/include/message.h DtNoteMsg.h
 DtPanicMsg.o: DtPanicMsg.c /opt/include/message.h DtPanicMsg.h
+DtRebootMsg.o: DtRebootMsg.c /opt/include/message.h DtRebootMsg.h
 DtSensorDataMsg.o: DtSensorDataMsg.c /opt/include/message.h \
  DtSensorDataMsg.h
 DtSensorSetMsg.o: DtSensorSetMsg.c /opt/include/message.h \
@@ -306,7 +313,7 @@ DtSyncMsg.o: DtSyncMsg.c /opt/include/message.h DtSyncMsg.h
 DtTestMsg.o: DtTestMsg.c /opt/include/message.h DtTestMsg.h
 DtVersionMsg.o: DtVersionMsg.c /opt/include/message.h DtVersionMsg.h
 filesource.o: filesource.c /opt/include/message.h \
- /home/cire/mm/t2_mm/tos/comm/am_types.h filesource.h serialprotocol.h \
+ ../../../tos/comm/am_types.h filesource.h serialprotocol.h \
  serialpacket.h DtSensorDataMsg.h DtSyncMsg.h gDTConstants.h gSensorIDs.h \
  sync.h
 GpsAlmanacStatusMsg.o: GpsAlmanacStatusMsg.c /opt/include/message.h \
@@ -327,10 +334,12 @@ GpsTrackerDataMsg.o: GpsTrackerDataMsg.c /opt/include/message.h \
  GpsTrackerDataMsg.h
 GpsUnkMsg.o: GpsUnkMsg.c /opt/include/message.h GpsUnkMsg.h
 mmdump.o: mmdump.c /opt/include/serialsource.h /opt/include/sfsource.h \
- /opt/include/message.h /home/cire/mm/t2_mm/tos/comm/am_types.h sync.h \
- filesource.h serialpacket.h serialprotocol.h gSensorIDs.h gDTConstants.h \
- DtIgnoreMsg.h DtSyncMsg.h DtPanicMsg.h DtSensorDataMsg.h DtVersionMsg.h \
- DtEventMsg.h DtGpsTimeMsg.h DtGpsPosMsg.h DtGpsRawMsg.h ParseSirf.h
+ /opt/include/message.h ../../../tos/comm/am_types.h sync.h \
+ filesource.h serialpacket.h serialprotocol.h \
+ ../../../tos/platforms/mm4/platform_version.h gSensorIDs.h \
+ gDTConstants.h DtIgnoreMsg.h DtSyncMsg.h DtRebootMsg.h DtPanicMsg.h \
+ DtSensorDataMsg.h DtVersionMsg.h DtEventMsg.h DtGpsTimeMsg.h \
+ DtGpsPosMsg.h DtGpsRawMsg.h ParseSirf.h
 ParseSirf.o: ParseSirf.c /opt/include/serialsource.h \
  /opt/include/sfsource.h /opt/include/message.h filesource.h \
  serialpacket.h serialprotocol.h gDTConstants.h ParseSirf.h \

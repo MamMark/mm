@@ -15,13 +15,15 @@ configuration mmSyncC {
 
 implementation {
   components SystemBootC, mmSyncP;
-//  SystemBootC.SoftwareInit -> mmSyncP;
   mmSyncP.SysBoot -> SystemBootC.Boot;
 
   OutBoot = mmSyncP;
   Boot = mmSyncP.Boot;
   SysBoot = mmSyncP.SysBoot;
   
+  components PlatformC;
+  mmSyncP.BootParams -> PlatformC;
+
   components new TimerMilliC() as SyncTimerC;
   mmSyncP.SyncTimer -> SyncTimerC;
 
