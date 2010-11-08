@@ -14,10 +14,12 @@ configuration PlatformC {
 }
 
 implementation {
-  components PlatformP, Msp430ClockC;
+  components PlatformP, Msp430ClockC, StackC;
 
   Init = PlatformP;
   BootParams = PlatformP;
+
   PlatformP.ClockInit -> Msp430ClockC.Init;
   PlatformP.Msp430ClockInit -> Msp430ClockC;
+  PlatformP.Stack -> StackC;
 }

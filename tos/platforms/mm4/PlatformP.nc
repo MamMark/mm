@@ -13,6 +13,7 @@
 #include "hardware.h"
 #include "platform_version.h"
 
+
 #ifdef notdef
 
 #define STUFF_SIZE 32
@@ -67,6 +68,7 @@ module PlatformP{
     interface Init as ClockInit;
     interface Init as LedsInit;
     interface Msp430ClockInit;
+    interface Stack;
   }
 }
 
@@ -189,6 +191,8 @@ implementation {
       boot_count = 0;
     }
     boot_count++;
+
+    call Stack.init();
 
     /*
      * It takes a long time for the 32KHz Xtal to come up.
