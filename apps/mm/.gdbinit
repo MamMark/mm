@@ -26,11 +26,9 @@ b SchedulerBasicP.nc:162
 b VirtualizeTimerC.nc:92
 dis
 
-# 5 debug_break  (optimized out)
-# b PanicP.nc:62
 
-# 6 panic
-b PanicP.nc:77
+# 6 panic   debug_break
+b PanicP.nc:80
 comm
 printf "pcode: 0d%d (0x%0x)  where: 0d%d  0x%04x 0x%04x 0x%04x 0x%04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
