@@ -103,15 +103,15 @@ typedef struct {
   uint16_t	cpu_type;
   uint16_t	platform_type;
   uint16_t	boot_count;
-  uint32_t	reserved;
   uint16_t	flags;
   uint8_t	ver_major;
   uint8_t	ver_minor;
   uint8_t	ver_build;
   uint8_t	ver_pad;
-  panic_regs_t	panic_regs;
   panic_arg_t	args;
+  panic_regs_t	panic_regs;
   uint32_t	panic_majik_b;
+  uint8_t	reserved;		/* rest of block is reserved */
 } panic_elem_hdr_t;
 
 
