@@ -8,8 +8,8 @@
 
 interface SDsa {
   async command bool inSA();
-  command void reset();
-  command void off();
-  command void read(uint32_t blk_id, uint8_t *buf);
-  command void write(uint32_t blk, uint8_t *buf);
+  async command void reset();
+  async command void off();
+  async command void read(uint32_t blk_id, uint8_t *buf);
+  async command void write(uint32_t blk, uint8_t *buf);
 }

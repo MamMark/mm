@@ -39,6 +39,8 @@ typedef enum {
 } sd_state_t;
 
 uint32_t w_t, w_diff;
+
+/* sdsa_majik only looked at in SDsa, ints should be off and should always be atomic */
 norace uint32_t sdsa_majik;
 
 
@@ -107,24 +109,24 @@ implementation {
   uint8_t idle_byte = 0xff;
   uint8_t recv_dump[514];
 
-  sd_cmd_t sd_cmd;
+  norace sd_cmd_t sd_cmd;
 
 
   /* instrumentation
    *
    * need to think about these timeout and how to do with time vs. counts
    */
-  uint16_t     sd_go_op_count;
-  uint16_t     sd_read_tok_count;	/* how many times we've looked for a read token */
-  uint16_t     sd_erase_busy_count;
-  uint16_t     sd_write_busy_count;
+         uint16_t     sd_go_op_count;
+  norace uint16_t     sd_read_tok_count;	/* how many times we've looked for a read token */
+         uint16_t     sd_erase_busy_count;
+  norace uint16_t     sd_write_busy_count;
 
-  uint32_t     op_t0_mis;
-  uint16_t     op_t0_uis;
+         uint32_t     op_t0_mis;
+  norace uint16_t     op_t0_uis;
 
-norace uint16_t sd_pwr_on_time_uis;
-  uint16_t      last_pwr_on_first_cmd_uis;
-  uint16_t      last_full_reset_time_uis;
+  norace uint16_t     sd_pwr_on_time_uis;
+         uint16_t     last_pwr_on_first_cmd_uis;
+         uint16_t     last_full_reset_time_uis;
 
   uint32_t     max_reset_time_mis, last_reset_time_mis;
   uint16_t     max_reset_time_uis, last_reset_time_uis;
@@ -199,9 +201,9 @@ norace uint16_t sd_pwr_on_time_uis;
 
 
 #define SG_SIZE 32
-  uint16_t sg_tar[SG_SIZE];
-  uint8_t  sg[SG_SIZE];
-  uint8_t  sg_nxt;
+  norace uint16_t sg_tar[SG_SIZE];
+  norace uint8_t  sg[SG_SIZE];
+  norace uint8_t  sg_nxt;
   
   uint8_t sd_get() {
     uint16_t i;
@@ -350,7 +352,8 @@ norace uint16_t sd_pwr_on_time_uis;
     }
 
     DMACTL0 = 0;			/* kick triggers */
-    DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
+    DMA0CTL = 0;			/* reset engines 0 and 1 */
+    DMA1CTL = 0;
   }
 
 
@@ -794,7 +797,8 @@ norace uint16_t sd_pwr_on_time_uis;
 
     cid = sdc.cur_cid;			/* remember for signalling */
     DMACTL0 = 0;			/* kick triggers */
-    DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
+    DMA0CTL = 0;			/* reset engines 0 and 1 */
+    DMA1CTL = 0;
 
     SD_CSN = 1;				/* deassert CS */
 
@@ -938,7 +942,8 @@ norace uint16_t sd_pwr_on_time_uis;
     uint8_t  cid;
 
     DMACTL0 = 0;			/* kick triggers */
-    DMA0CTL = DMA1CTL = 0;		/* reset engines 0 and 1 */
+    DMA0CTL = 0;			/* reset engines 0 and 1 */
+    DMA1CTL = 0;
 
     /*
      * After the data block is accepted the SD sends a data response token
@@ -1144,7 +1149,7 @@ norace uint16_t sd_pwr_on_time_uis;
   }
 
 
-  command void SDsa.reset() {
+  async command void SDsa.reset() {
     sd_cmd_t *cmd;                // Command Structure
     uint8_t rsp;
     uint16_t sa_op_cnt;
@@ -1189,14 +1194,14 @@ norace uint16_t sd_pwr_on_time_uis;
   }
 
 
-  command void SDsa.off() {
+  async command void SDsa.off() {
     call HW.sd_off();
     call Usci.resetUsci_n();
     sdsa_majik = 0;
   }
 
 
-  command void SDsa.read(uint32_t blk_id, uint8_t *buf) {
+  async command void SDsa.read(uint32_t blk_id, uint8_t *buf) {
     sd_cmd_t *cmd;
     uint8_t   rsp, tmp;
     uint16_t  crc;
@@ -1257,7 +1262,7 @@ norace uint16_t sd_pwr_on_time_uis;
   }
 
 
-  command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
+  async command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
     sd_cmd_t *cmd;
     uint8_t   rsp, tmp;
     uint16_t  i;
