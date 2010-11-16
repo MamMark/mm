@@ -174,17 +174,17 @@ exit
 
 6) TinyOS 2.x tree checkout
 
-Changes needed to build the mm tree can be obtained via the mm_tip
+Changes needed to build the mm tree can be obtained via the mm_core
 branch on the cire/tinyos-2.x.git repo.
 
-To obtain the current mm_tip branch:
+To obtain the current mm_core branch:
 
     cd ~/mm
     mkdir t2_cur
     cd t2_cur
     git clone -v git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
     cd tinyos-2.x
-    git checkout -t origin/mm_tip
+    git checkout -t origin/mm_core
 
 
 **************************************************************************************
@@ -442,7 +442,7 @@ T2 git repositories:
 
     git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
 	cire/tinyos-2.x: read-only.  manual update tracking of hinrg T2 core.  Also
-	includes mm_tip and encap branches.
+	includes mm_core and encap branches.
 
     ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git
         read-write (need access permissions), cire tracking repo that tracks
@@ -454,11 +454,11 @@ T2 git repositories:
     cire/tinyos-2.x.git: manually tracking of the main hinrg t2 tree (labeled t2_base)
 	t2_base:    master that tracks the main hinrg
 	encap:	    encapsulation modification to the mainline
-	mm_tip:     working tip for mm3 development (no encap changes)
+	mm_core:    changes to t2 core for mm development (no encap changes)
 
     t2 (cvs) -> tinyos-2.x.git (hinrg, hourly) -> cire/tinyos-2.x.git (t2_base, manual)
              ----> (encap)
-	     ----> (mm_tip)
+	     ----> (mm_core)
 
     t2 (cvs) denotes the cvs based main t2 tree.   tinyos-2.x.git denotes
     the hourly pull mirror hosted at hinrg.cs.jhu.edu.  And cire/tinyos-2.x
