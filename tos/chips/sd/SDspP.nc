@@ -109,7 +109,7 @@ MSP430REG_NORACE(TAR);
   } sdc;
 
   uint8_t idle_byte = 0xff;
-  uint8_t recv_dump[514];
+  uint8_t recv_dump[SD_BUF_SIZE];
 
   norace sd_cmd_t sd_cmd;
 

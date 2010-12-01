@@ -7,6 +7,7 @@
 #include "typed_data.h"
 #include "ms_loc.h"
 #include "panic_elem.h"
+#include "sd.h"
 
 uint16_t save_sr;
 bool save_sr_free;
@@ -15,9 +16,11 @@ norace uint16_t _a0, _a1, _a2, _a3, _arg;
 norace uint32_t last_panic;
 norace uint16_t missed_panic_warns;
 
-//uint8_t dedicated_panic_buf[514];
+//uint8_t dedicated_panic_buf[SD_BUF_SIZE];
 //uint8_t *panic_buf = dedicated_panic_buf;
 norace uint8_t *panic_buf;
+
+#define PANIC_BUF_SIZE SD_BUF_SIZE
 
 panic_regs_t panic_regs;
 
@@ -209,7 +212,7 @@ implementation {
 
 
     blk = p0h->panic_nxt;
-    memset(panic_buf, 0, sizeof(panic_buf));
+    memset(panic_buf, 0, PANIC_BUF_SIZE);
 
     pep = (void *) &panic_buf[0];
     pep->panic_majik_a = PANIC0_MAJIK;
