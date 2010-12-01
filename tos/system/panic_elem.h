@@ -47,6 +47,9 @@
  *	panic_elem_hdr:		1 blk
  *	panic_io:		n blks (2618, 1 blk)
  *	panic_ram:		m blks (2618, 16 blks)
+ *
+ * PANIC_ELEM_BLOCKS is defined as the size in blocks for all
+ * the above.  ie. n+m+1.
  */
 
 
@@ -56,12 +59,17 @@
 /*
  * Specific definition platform MSP430F2618 for Panic
  * element
+ *
  * special function registers from 0x0 to 0xF
  * 8 bit peripherals, from 0x10 to 0xFF
  * 16 bit peripherals, from 0x100 to 0x1FF
  * RAM from 0x1100 to 0x30FF
+ *
+ * PANIC_ELEM take up space for the header (1 blk),
+ * io space (
  */
 
+#define PANIC_ELEM_BLOCKS 18
 #define IO_START  0x0000
 #define IO_BYTES  0x0200
 #define RAM_START 0x1100

@@ -143,6 +143,7 @@ implementation {
     uint32_t          blk;
     uint32_t	      panic_time;
     uint8_t          *ram_loc;
+    uint16_t         avail_blks;
 
     /*
      * Save off the registers first in a temp ram area.
@@ -179,10 +180,12 @@ implementation {
      * verify the tombstones and check that nxt is within bounds.
      */
     p0h = (void *) &panic_buf[0];
-    if (p0h->sig_a != PANIC0_MAJIK            ||
-            p0h->panic_nxt < p0h->panic_start ||
-            p0h->panic_nxt > p0h->panic_end   ||
-	    p0h->panic_nxt == 0) {
+    avail_blks = p0h->panic_end - p0h->panic_nxt;
+    if (p0h->sig_a != PANIC0_MAJIK        ||
+	p0h->panic_nxt < p0h->panic_start ||
+	p0h->panic_nxt > p0h->panic_end   ||
+	p0h->panic_nxt == 0               ||
+	avail_blks < PANIC_ELEM_BLOCKS) {
 
       p0h->really_really_fubard_sig = FUBAR_REALLY_REALLY_FUBARD;
       p0h->sig_c = FUBAR_REALLY_REALLY_FUBARD;
@@ -203,6 +206,7 @@ implementation {
       while (1)
 	nop();
     }
+
 
     blk = p0h->panic_nxt;
     memset(panic_buf, 0, sizeof(panic_buf));
