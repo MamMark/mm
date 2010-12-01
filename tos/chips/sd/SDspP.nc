@@ -73,6 +73,8 @@ implementation {
 
 #include "platform_sd_spi.h"
 
+MSP430REG_NORACE(TAR);
+
   /*
    * main SDsp control cells.   The code can handle at most one operation at a time,
    * duh, we've only got one piece of h/w.
@@ -1265,10 +1267,10 @@ implementation {
   async command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
     sd_cmd_t *cmd;
     uint8_t   rsp, tmp;
-    uint16_t  i;
+    uint16_t  t, last_tar, tar_wraps;
 
     cmd = &sd_cmd;
-    sd_compute_crc(buf);                /* sets bits 512, 513 to 0x00 */
+    sd_compute_crc(buf);
 
     cmd->arg = (blk_id << SD_BLOCKSIZE_NBITS);
     cmd->cmd = SD_WRITE_BLOCK;
@@ -1286,31 +1288,49 @@ implementation {
      */
     tmp = sd_get();
     if ((tmp & 0x1F) != 0x05) {
-      i = sd_read_status();
-      call Panic.panic(PANIC_MS, 53, tmp, i, 0, blk_id);
+      t = sd_read_status();
+      call Panic.panic(PANIC_MS, 53, tmp, t, 0, blk_id);
       return;
     }
 
-    op_t0_uis = TAR;
+    /*
+     * The SD can take a variable amount of time to do the actual write.
+     * This depends upon the status of the block being written.   The SD
+     * handles bad blocks automatically and the block in question can take
+     * a while to write when it has started to go bad.  We have observed
+     * anywhere from a nominal 3ms to > 120ms when the block is thinking
+     * about going bad.
+     *
+     * The largest timeout we can get with just TAR is 64Ki uis, which is
+     * about 64+ mis.  So we implement a wrap counter.
+     */
+    last_tar = 0;
+    TAR = 0;			/* reset to 0, easier to deal with */
+    tar_wraps = 0;
     sd_write_busy_count = 0;
 
     /*
-     * card is doing busy's while it is writing.  wait for all ones before stopping
+     * while busy writing, card is indicating busy, Data line low.  Wait until
+     * we see one full byte of 1's to indicate not busy.
      */
     do {				/* count how many iterations and time */
       sd_write_busy_count++;
       tmp =  sd_get();
       if (tmp == 0xFF)
-        break;
-    } while ((TAR - op_t0_uis)  < 5000);
+	break;
 
-    if ((TAR - op_t0_uis) >= 5000)
-      call Panic.panic(PANIC_MS, 54, tmp, (TAR - op_t0_uis), 0, blk_id);
+      if ((t = TAR) < last_tar) {
+	if (++tar_wraps > 5)
+	  call Panic.panic(PANIC_MS, 54, tar_wraps, t,
+			   (blk_id >> 16), blk_id & 0xffff);
+      }
+      last_tar = t;
+    } while (1);
 
     SD_CSN = 1;				/* deassert. */
-    i = sd_read_status();
-    if (i)
-      call Panic.panic(PANIC_MS, 55, tmp, i, 0, blk_id);
+    t = sd_read_status();
+    if (t)
+      call Panic.panic(PANIC_MS, 55, tmp, t, (blk_id >> 16), blk_id & 0xffff);
   }
 
 
