@@ -23,22 +23,8 @@
 #include "file_system.h"
 #include "ms_loc.h"
 #include "panic.h"
+#include "mm_byteswap.h"
 
-/*
- * These macros are used to ConvertFrom_LittleEndian to the native
- * format of the machine this code is running on.  The Data Block
- * Locator (the block of information in the MBR that tells us where
- * our data areas live) is written in little endian order because most
- * machines in existence (thanks Intel) are little endian.
- *
- * The MSP430 is little endian so these macros do nothing.  If a machine
- * is big endian they would have to do byte swapping.
- */
-
-#define CF_LE_16(v) (v)
-#define CF_LE_32(v) (v)
-#define CT_LE_16(v) (v)
-#define CT_LE_32(v) (v)
 
 uint32_t w_t0, w_diff;
 

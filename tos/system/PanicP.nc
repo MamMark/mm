@@ -8,6 +8,8 @@
 #include "ms_loc.h"
 #include "panic_elem.h"
 #include "sd.h"
+#include "mm_byteswap.h"
+
 
 uint16_t save_sr;
 bool save_sr_free;
@@ -81,6 +83,48 @@ implementation {
   void debug_break(uint16_t arg)  __attribute__ ((noinline)) {
     _arg = arg;
     nop();
+  }
+
+
+  /*
+   * check the Panic0 header for valid checksum.
+   *
+   * input:  p0		pointer to a p0 header.
+   * output: ret	0 (SUCCESS), validated
+   *                    1 (FAIL), oht oh
+   */
+
+  error_t p0_chk_bad(panic0_hdr_t *p0) {
+    uint16_t *p, sum, i;
+
+    p = (void *) p0;
+    sum = 0;
+    for (i = 0; i < PANIC0_SIZE_SHORTS; i++)
+      sum += CF_LE_16(p[i]);
+    if (sum)
+      return(FAIL);
+    return(SUCCESS);
+  }
+
+
+  /*
+   * set the checksum for the panic 0 header
+   *
+   * input: p0		pointer to a p0 header.
+   * output: none
+   *
+   * Will reset the checksum for the header given the current
+   * contents of the p0 header.
+   */
+
+  void p0_chk_set(panic0_hdr_t *p0) {
+    uint16_t *p, sum, i;
+
+    p = (void *) p0;
+    sum = 0;
+    for (i = 0; i < PANIC0_SIZE_SHORTS - 1; i++)
+      sum += CF_LE_16(p[i]);
+    p0->chksum = 0 - sum;
   }
 
 
@@ -185,6 +229,7 @@ implementation {
     p0h = (void *) &panic_buf[0];
     avail_blks = p0h->panic_end - p0h->panic_nxt;
     if (p0h->sig_a != PANIC0_MAJIK        ||
+	p0_chk_bad(p0h)                   ||
 	p0h->panic_nxt < p0h->panic_start ||
 	p0h->panic_nxt > p0h->panic_end   ||
 	p0h->panic_nxt == 0               ||
@@ -258,6 +303,7 @@ implementation {
     call SDsa.read(PANIC0_SECTOR, panic_buf);
     p0h = (void *) &panic_buf[0];
     p0h->panic_nxt = blk;
+    p0_chk_set(p0h);			/* recompute checksum, we changed it */
     call SDsa.write(PANIC0_SECTOR, panic_buf);
 
     call SDsa.off();

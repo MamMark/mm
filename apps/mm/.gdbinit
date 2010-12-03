@@ -28,13 +28,13 @@ dis
 
 
 # 6 panic   debug_break
-b PanicP.nc:83
+b PanicP.nc:85
 comm
 printf "pcode: 0d%d (0x%0x)  where: 0d%d  0x%04x 0x%04x 0x%04x 0x%04x\n",_p,_p, _w, _a0, _a1, _a2, _a3
 end
 
 # 7
-b FileSystemP.nc:288
+b FileSystemP.nc:274
 comm
 p FileSystemP__fsc
 end
