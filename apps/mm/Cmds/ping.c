@@ -1,24 +1,28 @@
 /*
  * mmping - ping a tag, look for result
  *
- * Copyright 2010 Eric B. Decker
+ * Copyright 2010-2011 Eric B. Decker
+ * Copyright      2011 Carl W. Davis
  * Mam-Mark Project
  *
  * @author Eric B. Decker
+ * @author Carl W. Davis
  */
 
 #include <stdio.h>
+#include <errno.h>
 #include <getopt.h>
 #include <libgen.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/time.h>
-#include <unistd.h>
 
-#include <serialsource.h>
-#include <sfsource.h>
-#include "serialpacket.h"
-#include "serialprotocol.h"
+#include <netlib.h>
+#include <motenet.h>
+#include <am.h>
+
 #include "am_types.h"
 #include "gCmdIDs.h"
 #include "mmCmd.h"
@@ -26,7 +30,7 @@
 
 #define MAX_PACKET_SIZE 256
 
-#define VERSION "mm_ping: v0.1  (19 Apr 2010)\n"
+#define VERSION "mmping: v0.75  (23 Feb 2011) motenet\n"
 
 int debug	= 0,
   verbose	= 0,
@@ -34,30 +38,16 @@ int debug	= 0,
 
 uint16_t timeout;
 
-typedef enum {
-  SERIAL_CONN = 1,
-  SF_CONN     = 2,
-} conn_t;
-  
 
-/* options descriptor */
-static struct option longopts[] = {
-  { "sf",	no_argument, NULL, 1 },
-  { "serial",	no_argument, NULL, 2 },
-  { NULL,	0,	     NULL, 0 }
-};
-
-serial_source   serial_conn;
-int		sf_conn;		/* fd for serial forwarder server */
-conn_t		conn;
 uint16_t	count;
-uint16_t	sent, recv;
+uint16_t	sent_pkts, recv_pkts;
+int		sockfd;			/* socket file descriptor */
+char	       *prog_name;
 
 
-static void usage(char *name) {
+static void usage() {
   fprintf(stderr, VERSION);
-  fprintf(stderr, "usage: %s [-c count] [-t timeout] [-Dvq] --serial  <serial device>  <baud rate>\n", name);
-  fprintf(stderr, "       %s [-c count] [-t timeout] [-Dvq] --sf  <host>  <port>\n\n", name);
+  fprintf(stderr, "usage: %s [-c count] [-t timeout] [-Dvq] <conn_str>\n\n", prog_name);
   fprintf(stderr, "  -c   set count, defaults to 5\n");
   fprintf(stderr, "  -t   set per packet timeout in secs, defaults to 1 secs\n");
   fprintf(stderr, "  -D   increment debugging level\n");
@@ -65,24 +55,6 @@ static void usage(char *name) {
   fprintf(stderr, "  -v   verbose mode (increment)\n");
   fprintf(stderr, "  -q   quiet\n");
   exit(2);
-}
-
-static char *msgs[] = {
-  "unknown_packet_type",
-  "ack_timeout"	,
-  "sync"	,
-  "too_long"	,
-  "too_short"	,
-  "bad_sync"	,
-  "bad_crc"	,
-  "closed"	,
-  "no_memory"	,
-  "unix_error"
-};
-
-
-void stderr_msg(serial_source_msg problem) {
-  fprintf(stderr, "*** Note: %s\n", msgs[problem]);
 }
 
 
@@ -123,57 +95,52 @@ hexprint(uint8_t *ptr, int len) {
 
 void send_pack(void) {
   uint8_t *tx_packet;
-  uint8_t tx_size;
-  uint8_t buff[MAX_PACKET_SIZE];
-  tmsg_t *msg;
+  uint8_t  tx_size;
+  uint8_t  buff[MAX_PACKET_SIZE];
+  tmsg_t  *msg;
+  int      sent;
 
   tx_packet = buff;
-  tx_size = SPACKET_SIZE + MM_CMD_SIZE;
-  msg = new_tmsg(&tx_packet[SPACKET_SIZE], MAX_PACKET_SIZE - SPACKET_SIZE);
-  mm_cmd_len_set(msg, MM_CMD_SIZE);
-  mm_cmd_cmd_set(msg, CMD_PING);
-  mm_cmd_seq_set(msg, (uint8_t) sent);
+  tx_size = MM_CMD_SIZE;
+  msg = new_tmsg(&tx_packet[0], MAX_PACKET_SIZE);
 
-  reset_tmsg(msg, ((uint8_t *) tmsg_data(msg)) - SPACKET_SIZE,
-	     tmsg_length(msg) + spacket_data_offset(0));
-  spacket_header_dispatch_set(msg, SERIAL_TOS_SERIAL_ACTIVE_MESSAGE_ID);
-  spacket_header_dest_set(msg, 0xffff);
-  spacket_header_src_set(msg, 1);
-  spacket_header_length_set(msg, MM_CMD_SIZE);
-  spacket_header_group_set(msg, 0);
-  spacket_header_type_set(msg, AM_MM_CONTROL);
-  sent++;
-  switch(conn) {
-    case SERIAL_CONN:
-      write_serial_packet(serial_conn, tx_packet, tx_size);
-      break;
-
-    case SF_CONN:
-      write_sf_packet(sf_conn, tx_packet, tx_size);
-      break;
+  sent_pkts++;
+  mm_cmd_len_set(msg, MM_CMD_SIZE);	     /* set length */
+  mm_cmd_cmd_set(msg, CMD_PING);	     /* send a ping command */
+  mm_cmd_seq_set(msg, (uint8_t) sent_pkts);  /* sequence number */
+  
+  sent = mn_send(sockfd, tx_packet, tx_size, 0);
+  if (sent == -1) {
+    perror("mn_sendto");
+    exit(1);
   }
+  if (sent != tx_size) {
+    fprintf(stderr, "%s: did not send full packet, sent %d",prog_name, sent);
+    exit(1);
+  }
+  fprintf(stderr, "%s: success sending %d bytes\n", prog_name, sent);
 }
 
 
 void finish(void) {
   if (!quiet)
     fprintf(stderr, "\n");
-  fprintf(stderr, "sent: %d, recv: %d, %d percent\n", sent, recv, (recv*100)/sent);
+  fprintf(stderr, "sent: %d, recv: %d, %d percent\n", sent_pkts, recv_pkts, (recv_pkts*100)/sent_pkts);
   exit(0);
 }
 
 
 void alarm_catcher(void) {
-  if (sent) {
+  if (sent_pkts) {
     /*
-     * if sent non-zero than we have an outstanding packet and
+     * if sent non-zero then we have an outstanding packet and
      * have timed out.  Display failure indicator and send next
      * packet.
      */
     if (!quiet)
       fprintf(stderr, ".");
   }
-  if (sent >= count) {
+  if (sent_pkts >= count) {
     /*
      * already sent the max requested.
      */
@@ -186,41 +153,33 @@ void alarm_catcher(void) {
 
 int 
 main(int argc, char **argv) {
-  uint8_t *rx_packet;
-  char *prog_name;
-  int len;
-  int c, bail;
-  tmsg_t *msg;
-  uint16_t dest, src;
-  uint8_t group;
-  uint8_t stype;
+  int              c, err, direct;
+  int              recvbytes;
+  uint8_t          rbuf[MAX_PACKET_SIZE];
+//  char             buff[256];
+  char             *p;
+  motecom_conn_t   mcs_conn;
+  struct sockaddr *localp,    *remotep;
+  struct sockaddr  local_addr, remote_addr;
+  socklen_t        local_len,  remote_len;
+  struct sockaddr_am *am_l;
 
-  serial_conn = NULL;
-  sf_conn = 0;
-  conn = SERIAL_CONN;
-  bail = 0;
+  direct = 0;
   count = 5;
   timeout = 1;
-  sent = recv = 0;
   quiet = 0;
+  sent_pkts = recv_pkts = 0;
   prog_name = basename(argv[0]);
-  while ((c = getopt_long(argc, argv, "c:t:Ddvq", longopts, NULL)) != EOF) {
+
+  while ((c = getopt_long(argc, argv, "c:t:dvq", NULL, NULL)) != EOF) {
     switch (c) {
-      case 1:
-	bail = 1;
-	conn = SF_CONN;
-	break;
-      case 2:
-	bail = 1;
-	conn = SERIAL_CONN;
-	break;
       case 'c':
 	count = atoi(optarg);
 	break;
       case 't':
 	timeout = atoi(optarg);
 	break;
-      case 'D':
+      case 'd':
 	debug++;
 	break;
       case 'v':
@@ -230,26 +189,23 @@ main(int argc, char **argv) {
 	quiet++;
 	break;
       default:
-	usage(prog_name);
+	usage();
     }
-    if (bail)
-      break;
   }
   argc -= optind;
   argv += optind;
 
-  switch(conn) {
-    case SERIAL_CONN:
-    case SF_CONN:
-      if (argc != 2) {
-	usage(prog_name);
-	exit(2);
-      }
-      break;
-  }
+  /*
+   * at this point we have pulled any option switches off and should be left with either 1 or 2
+   * arguments.   If not bitch and bail.
+   */
+  if (argc < 1 || argc > 2)
+    usage();
 
+#ifdef notdef
   if (verbose) {
     fprintf(stderr, VERSION);
+    /*
     switch (conn) {
       case SERIAL_CONN:
 	fprintf(stderr, "opening: serial@%s:%d\n", argv[0], platform_baud_rate(argv[1]));
@@ -258,29 +214,9 @@ main(int argc, char **argv) {
 	fprintf(stderr, "opening: sf@%s:%d\n", argv[0], atoi(argv[1]));
 	break;
     }
+    */
   }
-
-  switch(conn) {
-    case SERIAL_CONN:
-      serial_conn = open_serial_source(argv[0], platform_baud_rate(argv[1]), 0, stderr_msg);
-      if (!serial_conn) {
-	fprintf(stderr, "*** Couldn't open serial port at %s:%s\n",
-		argv[0], argv[1]);
-	perror("error: ");
-	exit(1);
-      }
-      break;
-
-    case SF_CONN:
-      sf_conn = open_sf_source(argv[0], atoi(argv[1]));
-      if (sf_conn < 0) {
-	fprintf(stderr, "*** Couldn't open serial forwarder at %s:%s\n",
-		argv[0], argv[1]);
-	perror("error: ");
-	exit(1);
-      }
-      break;
-  }
+#endif
 
   if (!quiet) {
     fprintf(stderr, "sending %d pings, timeout: %d secs\n", count, timeout);
@@ -289,62 +225,118 @@ main(int argc, char **argv) {
   set_signal(SIGINT, finish);
   set_signal(SIGALRM, alarm_catcher);
 
+  debug++;
+
+  p = argv[0];
+  mn_debug_set(debug);
+  if (mn_parse_motecom(&mcs_conn, p)) {
+    fprintf(stderr, "\nCmd Line/MOTECOM connection string didn't parse\n");
+    fprintf(stderr, "Command line: \"%s\"\n", p);
+    p = getenv("MOTECOM");
+    fprintf(stderr, "MOTECOM: \"%s\"\n\n", (p ? p : "not found"));
+    usage();
+  }
+
+  //fprintf(stderr, "Connecting: %s\n", mn_mcs2str(&mcs_conn, buff, 256));
+
+  /*
+   * direct has only one parameter and we ping that directly.
+   * what do we do for the local address side?
+   *
+   * if through a server or via a serial amgw then we will have two parameters and the
+   * first will be a connection string saying how to get to the amgw.   The second parameter
+   * will then be strictly an am endpoint (amaddr:amport).
+   *
+   * Also what do we do for setting our local am_addr?
+   * For the time being we force it to be node 1.
+   *
+   * argc tells the story, if argc is 2 (1 arg) then should be direct
+   * if argc is 3 (2 args) then argv[1] is connection string and argv[2]
+   * is the am_endpoint.
+   */
+
+  remotep = &remote_addr;
+  remote_len = sizeof(remote_addr);
+
+  localp = &local_addr;
+  am_l = (struct sockaddr_am *) localp;
+  am_l->sam_family = AF_AM;
+  am_l->sam_addr   = htons(0x0001);
+  am_l->sam_grp    = AM_GRP_ANY;
+  am_l->sam_type   = AM_MM_CONTROL;	/* mm_control port */
+  local_len = sizeof(struct sockaddr_am);
+
+  if (argc == 1) {
+    /*
+     * Direct connect case.   So destination is the same as the connection
+     * string result.
+     */
+    remotep = mcs_conn.ai->ai_addr;
+    remote_len = mcs_conn.ai->ai_addrlen;
+    direct = 1;
+  } else {
+    /*
+     * we have a connection string (already parsed into mcs_conn) and we have
+     * an am_endpoint (am_addr:am_port).  Parse that and set it as dest.
+     */
+    direct = 0;
+    exit(1);
+  }
+
+  sockfd = mn_socket(&mcs_conn, remotep->sa_family, SOCK_DGRAM, 0);
+  if (sockfd < 0) {
+    fprintf(stderr, "%s: mn_socket: %s (%d)\n", prog_name, strerror(errno), errno);
+    exit(1);
+  }
+
+  if (!direct) {
+    /*
+     * If using an AMGW, we must always bind the local address because that
+     * forces the type for the entire connection.
+     *
+     * If direct, then let the underlying kernel chose the local port.
+     */
+    err = mn_bind(sockfd, localp, local_len);
+    if (err) {
+      fprintf(stderr, "%s: mn_bind: %s (%d)\n", prog_name, strerror(errno), errno);
+      exit(1);
+    }
+  }
+
+  /* set remote address */
+  err = mn_connect(sockfd, remotep, remote_len);
+  if (err) {
+    fprintf(stderr, "%s: mn_connect: %s (%d)\n", prog_name, strerror(errno), errno);
+    exit(1);
+  }
+
   /*
    * call the alarm_catcher as if we timed out to start things off
    */
-  alarm_catcher();
+  alarm_catcher();               /* setup timer and send packet */
 
   for(;;) {
-    switch(conn) {
-      case SERIAL_CONN:
-	rx_packet = read_serial_packet(serial_conn, &len);
-	break;
-
-      case SF_CONN:
-	rx_packet = read_sf_packet(sf_conn, &len);
-	break;
+    recvbytes = mn_recv(sockfd, rbuf, MAX_PACKET_SIZE, 0);
+    if (recvbytes == -1) {
+      perror("receive failed");
+      exit(1);
     }
-    if (!rx_packet) {
+
+    /* how many bytes did we receive, display? */
+
+    if (recvbytes <= 0) {
       if (verbose)
 	fprintf(stderr, "*** timeout\n");
       if (!quiet)
 	fprintf(stderr, ".");
       continue;
     }
-    msg = new_tmsg(rx_packet, len);
-    if (!msg) {
-      fprintf(stderr, "*** new_tmsg failed (null)\n");
-      exit(2);
-    }
-    c = spacket_header_dispatch_get(msg);
-    if (len < SPACKET_SIZE || c != SERIAL_TOS_SERIAL_ACTIVE_MESSAGE_ID) {
-      fprintf(stderr, "*** non-AM packet (type %d, len %d (%0x)): ",
-	      rx_packet[0], len, len);
-      hexprint(rx_packet, len);
-      continue;
-    }
-    if (debug > 1)
-      hexprint(rx_packet, len);
-    dest = spacket_header_dest_get(msg);
-    src  = spacket_header_src_get(msg);
-    len  = spacket_header_length_get(msg);
-    group= spacket_header_group_get(msg);
-    stype= spacket_header_type_get(msg);
-
-    /*
-     * move over serial header
-     */
-    reset_tmsg(msg, ((uint8_t *) tmsg_data(msg)) + SPACKET_SIZE,
-	       tmsg_length(msg) - spacket_data_offset(0));
-    if (!quiet)
-      fprintf(stderr, "!");
-    recv++;
-    free_tmsg(msg);
-    free((void *) rx_packet);
-    if (sent >= count)
+    if (sent_pkts >= count)
       finish();
     send_pack();
     alarm(timeout);
   }
+
+  mn_close(sockfd);
   exit(0);
 }

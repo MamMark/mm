@@ -18,11 +18,11 @@ COMM=$(MM_ROOT)/tos/comm
 
 STOW_DIR = /opt
 
-PROGRAMS = mmping mmnote
+PROGRAMS = mmping mmnote simpleping
 
 CC=gcc
 CFLAGS += -g -O0 -Wall -I$(STOW_DIR)/include -I$(COMM)
-LIBS += $(STOW_DIR)/lib/libmote.a
+LIBS += $(STOW_DIR)/lib/libmotenet.a $(STOW_DIR)/lib/libnetlib.a
 
 GEN = gCmdIDs.h mmCmd.h mmCmd.c mmCmdNote.h mmCmdNote.c \
       serialpacket.c serialpacket.h serialprotocol.h
@@ -89,13 +89,20 @@ dep: $(GEN)
 	$(CPP) $(CFLAGS) -MM *.c >>tmp_make
 	mv tmp_make Makefile
 
+
+simpleping: simpleping.o
+	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+
 ### Dependencies
 mmCmd.o: mmCmd.c /opt/include/message.h mmCmd.h
 mmCmdNote.o: mmCmdNote.c /opt/include/message.h mmCmdNote.h
 note.o: note.c /opt/include/serialsource.h /opt/include/sfsource.h \
- /opt/include/message.h serialpacket.h serialprotocol.h \
- /home/cire/mm/t2_mm/tos/comm/am_types.h gCmdIDs.h mmCmd.h mmCmdNote.h
-ping.o: ping.c /opt/include/serialsource.h /opt/include/sfsource.h \
- /opt/include/message.h serialpacket.h serialprotocol.h \
- /home/cire/mm/t2_mm/tos/comm/am_types.h gCmdIDs.h mmCmd.h
+ serialpacket.h /opt/include/message.h serialprotocol.h \
+ /home/cd/mm/t2_mm/tos/comm/am_types.h gCmdIDs.h mmCmd.h mmCmdNote.h
+ping.o: ping.c /opt/include/netlib.h /opt/include/motenet.h \
+ /opt/include/sfsource.h /opt/include/serialsource.h /opt/include/am.h \
+ /home/cd/mm/t2_mm/tos/comm/am_types.h gCmdIDs.h mmCmd.h \
+ /opt/include/message.h
 serialpacket.o: serialpacket.c /opt/include/message.h serialpacket.h
+simpleping.o: simpleping.c /opt/include/netlib.h /opt/include/motenet.h \
+ /opt/include/sfsource.h /opt/include/serialsource.h
