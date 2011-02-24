@@ -22,8 +22,8 @@
 #include <netlib.h>
 #include <motenet.h>
 #include <am.h>
+#include <am_types.h>
 
-#include "am_types.h"
 #include "gCmdIDs.h"
 #include "mmCmd.h"
 

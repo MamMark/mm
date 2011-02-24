@@ -16,9 +16,9 @@
 
 #include <serialsource.h>
 #include <sfsource.h>
+#include <am_types.h>
 #include "serialpacket.h"
 #include "serialprotocol.h"
-#include "am_types.h"
 #include "gCmdIDs.h"
 #include "mmCmd.h"
 #include "mmCmdNote.h"

@@ -5,6 +5,7 @@ mmCmdNote.c
 mmCmdNote.h
 mmnote
 mmping
+simpleping
 serialpacket.c
 serialpacket.h
 serialprotocol.h
