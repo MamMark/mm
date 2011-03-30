@@ -25,7 +25,7 @@ PROGRAMS=mmdump
 
 CC=gcc
 CFLAGS += -g -O0 -Wall -I$(STOW_DIR)/include -I$(COMM) -I$(MM_PLATFORM_DIR) -DREF_BUILD=$(REF_BUILD_NUM)
-LIBS += $(STOW_DIR)/lib/libmote.a
+LIBS += $(STOW_DIR)/lib/libmotenet.a
 
 GEN = DtIgnoreMsg.h DtIgnoreMsg.c \
       DtConfigMsg.h DtConfigMsg.c \

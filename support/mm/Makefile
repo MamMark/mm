@@ -15,6 +15,7 @@ TARGET=mm4
 MM_PLATFORM_DIR=$(MM_ROOT)/tos/platforms/$(TARGET)
 MM_COMMON=$(MM_ROOT)/tos/platforms/mm
 COMM=$(MM_ROOT)/tos/comm
+CTRL=$(MM_ROOT)/include/mm_control.h
 
 STOW_DIR = /opt
 
@@ -32,8 +33,9 @@ SERIAL_H = $(TOSDIR)/lib/serial/Serial.h
 all: $(PROGRAMS)
 
 #
-# ../mm_control.h contains definitions for any commands and responses
-# sent between the base station and the tag.
+# $(CTRL) [$(MM_ROOT)/include/mm_control.h] contains definitions for any
+# commands and responses sent between the base station and the tag.
+# Shared across platforms, mote, linux, etc.
 #
 # mm_control.h is run through mig to produce access routines
 # for each control packet.  Mig generates a C file and associated
@@ -44,15 +46,15 @@ all: $(PROGRAMS)
 # structure mm_cmd_note, produces mmCmdNote.{c,h}.
 #
 
-mmCmd.c mmCmd.h:  ../mm_control.h
+mmCmd.c mmCmd.h:  $(CTRL)
 	mig -o mmCmd.h -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
-	c ../mm_control.h mm_cmd
+	c $(CTRL) mm_cmd
 
-mmCmdNote.c mmCmdNote.h:  ../mm_control.h
+mmCmdNote.c mmCmdNote.h:  $(CTRL)
 	mig -o mmCmdNote.h -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) -target=$(TARGET) \
-	c ../mm_control.h mm_cmd_note
+	c $(CTRL) mm_cmd_note
 
-gCmdIDs.h: ../mm_control.h
+gCmdIDs.h: $(CTRL)
 	ncg -o $@ -I$(MM_COMMON) -I$(MM_PLATFORM_DIR) \
 	-target=$(TARGET) c $<  \
 	CMD_PING		\
