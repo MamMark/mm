@@ -1,4 +1,6 @@
+AM_ANY				  0	0x00		should be reserved.
 AM_PACKETLINKMSG                  0     0x00            TestPacketLink
+AM_DATAMSG			  1	0x01		mts400/DataMsg
 AM_LQI_DEBUG_PACKET               3     0x03
 AM_TEST                           5     0x05            TestSimComm
 AM_TESTPERIODICMSG                5     0x05            TestPeriodic (cc2420)
@@ -16,6 +18,7 @@ AM_MHPACKET                             AM_MULTIHOP
 AM_TESTSERIALMSG                  9     0x09            TestSerialBandwidth
 AM_TEST_SERIAL_MSG                9     0x09            TestSerial
 AM_TESTSENSORMSG                 10     0x0a
+AM_RSSIMSG			 10	0x0a		RssiDemoMessages
 AM_DISSEMINATION_MESSAGE         13     0x0D
 AM_DISSEMINATION_PROBE_MESSAGE   14     0x0E
 AM_COLLECTION_DATA               20     0x14
@@ -23,18 +26,60 @@ AM_COLLECTION_CONTROL            21     0x15
 AM_COLLECTION_DEBUG              22     0x16
 AM_LQI_DEBUG                     22     0x16
 AM_ALERT                         22     0x16            AntiTheft
+AM_SRP				 23	0x16
 AM_CTP_DATA                      23     0x17
 AM_CTP_ROUTING                   24     0x18
 AM_CTP_DEBUG                     25     0x19
+AM_SENSOR_DATA_MSG		 37	0x25		SenseStoreAndForward
 AM_SETTINGS                      54     0x36            AntiTheft
+
+AM_TIMESYNCMSG			 61	0x3D		rfxlink/layers/TimeSyncMessageLayer
+AM_TIMESYNC_FTSP		 62	0x3E		ftsp/TimeSyncMsg
+AM_NALP				 63	0x3F		tep125
+
 AM_IP_MSG                        65     0x41            6lowpan
+
+AM_DELUGEADVMSG			 80	0x50		deluge advertisements
+AM_DELUGEREQMSG			 81	0x51		deluge requests
+AM_DELUGEDATAMSG		 82	0x52		deluge data
+AM_DELUGE_FLASH_VOL_MANAGER	 83	0x53		flash volume manager
+AM_DELUGE_MANAGER		 84	0x54		deluge manager
+
 AM_TEST_LOCALTIME_MSG            88     0x58
+
+AM_DISSEMINATION_MESSAGE	 96	0x60		drip
+AM_DISSEMINATION_PROBE_MESSAGE	 97	0x61		drip
+
+AM_DIP				 98	0x62
+AM_DHV				 99	0x63		DHV
 AM_THEFT                         99     0x63            AntiTheft
 AM_PRINTF_MSG                   100     0x64
+
+AM_CTP_ROUTING			112	0x70
+AM_CTP_DATA			113	0x71
+AM_CTP_DEBUG			114	0x72
+
+AM_LQI_BEACON_MSG		115	0x73
+AM_LQI_DATA_MSG			116	0x74
+AM_LQI_DEBUG			117	0x75
+
+AM_SRP				118	0x76
+
+AM_PACKETLINKMSG		128	0x80		TestPacketLink (cc2420)
 AM_DIP                          132     0x84
 AM_DIP_DATA_MSG                 132     0x84
 AM_DIP_MSG                      132     0x84
 AM_DIP_DATA                     132     0x84
+AM_TEST				133	0x85		TestSimComm
+AM_THROUGHPUTMSG		133	0x85		cc2420/TxThroughput
+AM_TESTPERIODICMSG		133	0x85		LplUnicastPeriodicDelivery
+AM_RADIO_COUNT_MSG		134	0x86		LplBroadcastCountToLeds
+AM_RSSI_SERIAL_MSG		134	0x86		tests/cc2420/RssiToSerial
+AM_TEST_FTSP_MSG		137	0x89
+AM_TEST_SERIAL_MSG		137	0x89		TestSerial
+AM_BOUNCE0_MSG			144	0x90
+AM_BOUNCE1_MSG			145	0x91
+AM_BOUNCE2_MSG			146	0x92
 AM_SERIAL_REQUEST_SAMPLES_MSG   146     0x92            LowPowerSensing
 AM_REQUEST_SAMPLES_MSG          147     0x93            LowPowerSensing
 AM_OSCILLOSCOPE                 147     0x93
@@ -46,11 +91,15 @@ AM_MM_CONTROL                   160     0xA0
 AM_MM_DT                        161     0xA1		data, typed
 AM_MM_DEBUG                     162     0xA2
 
-AM_DELUGEADVMSG                 161     0xa1
-AM_DELUGEREQMSG                 162     0xa2
-AM_DELUGEDATAMSG                163     0xa3
+AM_DELUGEADVMSG                 161     0xA1
+AM_DELUGEREQMSG                 162     0xA2
+AM_DELUGEDATAMSG                163     0xA3
+
+AM_DHV_TEST_MSG			171	0xAB
+AM_TESTDIP			171	0xAB		tests/TestDip
+
 AM_DIAG_MSG                     177     0xB1
+
 AM_TREE_ROUTING_CONTROL         206     0xCE
 AM_LQI_BEACON_MSG               250     0xFA
 AM_LQI_DATA_MSG                 251     0xFB
-
