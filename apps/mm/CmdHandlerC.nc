@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010 Eric B. Decker
+ * Copyright (c) 2008, 2010-2011 Eric B. Decker
  * All rights reserved.
  */
 
@@ -18,20 +18,24 @@ configuration CmdHandlerC {
 }
 
 implementation {
-  components CmdHandlerP;
+  components   CmdHandlerP;
   CmdControl = CmdHandlerP;
 
-//  components CmdHandlerP, MainC;
+//  components MainC;
 
 //  MainC.SoftwareInit -> CmdHandlerP;
 //  CmdHandlerP.Boot -> MainC;
 
-//  components new SerialAMSenderC(AM_MM_CONTROL);
-//  CmdHandlerP.AMSend -> SerialAMSenderC;
+  components new TimerMilliC();
+  CmdHandlerP.Timer -> TimerMilliC;
+
+  components new SerialAMSenderC(AM_MM_CONTROL);
+  CmdHandlerP.AMSend   -> SerialAMSenderC;
+  CmdHandlerP.AMPacket -> SerialAMSenderC;
+  CmdHandlerP.Packet   -> SerialAMSenderC;
 
   components new SerialAMReceiverC(AM_MM_CONTROL);
   CmdHandlerP.CmdReceive -> SerialAMReceiverC;
-//  CmdHandlerP.Packet -> SerialAMSenderC;
 
   components SerialActiveMessageC;
   CmdHandlerP.SerialControl -> SerialActiveMessageC;
