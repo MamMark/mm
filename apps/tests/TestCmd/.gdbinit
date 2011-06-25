@@ -1,6 +1,6 @@
 
 source ../../.gdb2618
-source ../../.gdb_mm
+# source ../../.gdb_mm
 
 set remoteaddresssize 0d64
 set remotetimeout 0d999999
@@ -10,22 +10,29 @@ disp/i $pc
 x/i $pc
 set pri ele 0
 
-b RealMainP.nc:86
-b RealMainP.nc:91
+#b RealMainP.nc:86
+#b RealMainP.nc:91
 b SchedulerBasicP.nc:159
 b SchedulerBasicP.nc:162
 dis
 
-b SerialP.nc:443
-comm
-p SerialP__rxState
-p data
-end
+#b SerialP.nc:443
+#comm
+#p SerialP__rxState
+#p data
+#end
 
-b SerialP.nc:460
-b SerialP.nc:489
-b SerialP.nc:515
-b SerialDispatcherP.nc:277
+#b SerialP.nc:483
+#b SerialDispatcherP.nc:258
+#dis 5-6
+
+#b CmdHandlerP.nc:99
+#b CmdHandlerP.nc:112
+#b CmdHandlerP.nc:122
+
+#b SerialP.nc:460
+#b SerialP.nc:489
+#b SerialP.nc:515
 
 define nx
 fini
