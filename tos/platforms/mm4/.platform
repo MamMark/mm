@@ -48,6 +48,7 @@ push( @includes, qw(
   %P/../../chips/sd
   %P/../../chips/sensors
   %P/../../chips/sirf3
+  %T/chips/msp430/x2xxx/usci
   %T/chips/msp430/x2xxx
   %T/chips/msp430/pins
   %T/chips/msp430/timer
