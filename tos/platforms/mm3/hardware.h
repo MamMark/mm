@@ -13,6 +13,22 @@
 #include "mm3PortRegs.h"
 
 /*
+ * Basic clock system has 3 or 4 RSEL bits depending on whether
+ * BC2 (Basic clock 2).  We use RSEL3 to determine how wide the
+ * field is.
+ *
+ * This only works for MSP430 (1611) or MSP430X (2618).  The 5438
+ * parts use the UCS and are very different.
+ */
+#ifdef RSEL3
+#define RSEL_MASK (RSEL0 | RSEL1 | RSEL2 | RSEL3)
+#define RSEL_MAX RSEL3
+#else
+#define RSEL_MASK (RSEL0 | RSEL1 | RSEL2)
+#define RSEL_MAX RSEL2
+#endif
+
+/*
  * Port definitions:
  *
  * Various codes for port settings: (<dir><usage><default val>: Is0 <input><spi><0, zero>)
