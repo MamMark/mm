@@ -24,6 +24,7 @@
 #include "ms_loc.h"
 #include "panic.h"
 #include "mm_byteswap.h"
+#include "sd.h"
 
 
 uint32_t w_t0, w_diff;
