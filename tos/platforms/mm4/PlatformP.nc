@@ -94,9 +94,7 @@ implementation {
     uint16_t left;
 
     TACTL = TACLR;			// also zeros out control bits
-    TAIV = 0;
     TBCTL = TBCLR;
-    TBIV = 0;
     TACTL = TASSEL_2 | MC_2;		// SMCLK/1, continuous
     TBCTL = TBSSEL_1 | MC_2;		//  ACLK/1, continuous
     TBCCTL0 = 0;
@@ -193,6 +191,7 @@ implementation {
     boot_count++;
 
     call Stack.init();
+    call Stack.size();
 
     /*
      * It takes a long time for the 32KHz Xtal to come up.
