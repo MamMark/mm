@@ -1,14 +1,49 @@
-This is the MamMark tinyos 2 tree.  MamMark is a marine mammal tracker
-for marine research (not limited to marine environments).  The core os
-is based on TinyOS 2.
+This is the MamMark tinyos 2 tree.
+
+MamMark is an advance low power, sensor based, animal environmental
+tracking device.  Originally it was designed for marine mammals (mammal
+marker, mammark) but is no longer limited to those environments.
+
+The core os is based on TinyOS 2.  Changes to the core for the MM
+software load are held on the mm_core branch.
 
 See doc/00_README for installing a complete development environment.
-Other notes:  doc/Notes and apps/mm3/Notes.
+Also see:  (doc directory) 01_Platforms, Notes, Status.txt, and ToDo.
 
-See doc/01_Platforms for a description of different platforms supported.
 
-mm3:	msp430f1611 based prototype
-mm3s:	simple version of the above, used for building components
-	seperately.
-mm4:	msp430f2618 based prototype
-mm4s:	simple version.
+Platform revisions:
+
+mm3:	msp430f1611 (non-production, prototype only)
+mm4:	msp430f2618 (non-production, prototype only)
+mm5:	msp430f5438a (production and prototype)
+
+
+Main repositories are held at github.com as tinyprod/prod and MamMark/mm.
+Working development versions of the T2 core can be referenced as
+tp-freeforall/prod.   TinyProd/prod is intended to be a more stable, less
+volatile flavor.
+
+github.com:tinyprod/prod(mm_core) contains the main T2 code and includes needed
+modifications to support the MM platforms.   Prod tracks the mainline T2
+SVN trunk.  The branch mm_core tracks changes to the t2 core needed for
+the mm software load.
+
+github:MamMark/mm contains the majority of the MM tracking code including various
+device drivers for mass storage (SD), GPS,  and sensor drivers.
+
+You need working copies of both repos to build code for the mm5 platform.
+github:tp-freeforall/prod(mm_core) and github:MamMark/mm(master) are the
+repositories needed for the build.  See doc/00_README for instruction on
+how to set up a development environment and detailed instructions on
+obtaining the source code.
+
+
+Note: As of 20110722, the mm5 is a work in progress.   We are also
+transitioning to the new tinyos 2 msp430 core using the TinyProd (TinyOS
+Production) code base.  The mm5 platform is based on this new core.
+
+As of 20110722, the mm4 core (mm_core, T2 svn trunk mods) is based on a
+snapshot of the T2 svn trunk maintained in a private git repository hosted
+on hinrg (cs.jhu.edu, John Hopkins University).  It is unclear whether the
+mm4 platform will be ported (probably, but hasn't been done yet) to the new
+msp430 core.

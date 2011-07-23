@@ -1,8 +1,22 @@
 
-Installing a development environment for the MamMark tag.  TinyOS, Ubuntu,
-Wine Jtag.
 
-Status: 12/5/2010
+Installing a development environment for the MamMark tag.
+
+
+State:
+
+2011-07-22:
+    Ubuntu 10.04, T2 (TinyProd) github:tp-freeforall/prod(msp430-int-pu),
+    github:tp-freeforall/prod(mm_core), MM github:MamMark/mm(master)
+    mspdebug JTAG debugging.  New mspgcc-20110716 toolchain
+
+    mm5, msp430f5438a
+    modified sensor array
+
+
+2010-12-05:  (Obsolete)
+    Ubuntu 10.04, T2 (mm_core, hinrg), mm3.git (hinrg)
+    Wine base JTAG debugging.
 
     Ubuntu 10.04 Lucid
     mm4, msp430f2618.
@@ -12,13 +26,9 @@ Status: 12/5/2010
     msp430-gdbproxy.exe (windows)
     mspdebug, mostly works for the 2618
 
-transitioning:
-
-    board turn...   -> msp430f5438a (mm5)
-    mm5, msp430f5438a
-    modified sensor array
-    mspdebug primary h/w interface.
-    osian/tinyos comm stack.
+    Information on installing a development environment for the 20101205 style
+    is available as a version of this document frozen on the git tag mm4-20110722,
+    github:MamMark/mm(tag:mm4-20110722).
 
 
 This brief is written assuming that there is a common root directory,
@@ -32,11 +42,16 @@ Most commands are entered from a terminal window.
 
 1) OS Install.
 
-Install the Ubuntu 10.04 on the box.  A simple install is fine and will
-take less time. Download the install ISO from http://www.ubuntu.com/getubuntu/download.
+We currently use Ubuntu 10.04.  Primarily because we've been using Macs and 10.04 seems
+to run the best (11.04 seems to run hot because the fans and cpu throttling don't work
+right).
 
-When the install is complete, boot the system, and use Synaptic or other package
-manager ("apt-get install") to make sure the following packages are installed:
+Obtain an ISO image from releases/ubuntu.com or alternativly from tinyprod.net/downloads.
+Burn the iso to a CD and install on your box.  A simple install is fine and will
+take less time.
+
+When the install is complete, boot the system, and use "apt-get" to install the following
+packages:
 
     build-essential stow automake autoconf libtool libc6-dev
     git-core git-daemon-run git-doc git-email git-gui gitk gitmagic
@@ -53,7 +68,7 @@ exit
 
 **************************************************************************************
 
-2) Install TinyOS toolset (msp430)
+2) Install the TinyOS toolset (msp430)
 
 We want the tinyos toolset for the msp430 (telosb). Debian packages
 are available from Stanford.
@@ -78,97 +93,53 @@ apt-get install msp430-tinyos msp430-tinyos-base nesc tinyos-base tinyos-tools
 exit
 
 
-However we also want a modified toolchain that supports the msp430x
-architecture.  Currently the simplest way to install all this stuff is
-to start with the tinyos-2.1.1 deb file and then overlay the z1
-toolchain from Zolertia (http://zolertia.sourceforge.net/wiki/index.php/Getting_Started_with_Z1)
+The tinyos msp430 toolchain is based on a very old compiler (mspgcc 3.2.3) and should be
+replaced by a more modern variant, mspgcc 4.5 (20110712).   There is also a variant
+provided by Zolertia that support early version of their Z1 mote.
 
-First:
+The modern msp430 4.5 toolchain and the Z1 toolchains live in the /opt hierarchy.
+Tar balls of the installed toolchains are provided in tinyprod.net/downloads.
 
-sudo apt-get install tinyos-2.1.1
+    sudo -s
+    cd /opt
+    wget http://tinyprod.net/downloads/msp430-20110612.tgz
+    tar xf msp430-20110612.tgz
 
+The current mspgcc lives at /opt/msp430-20110612.   Corresponding modifications need
+to made to your environment variables to enable utilization of the toolchain.
 
-Then download and install tinyos-z1-2.1.1-16_i386.deb
-from (http://sourceforge.net/projects/zolertia/files/).  You'll have
-to poke around to find the .deb file.   There maybe a more current version than
-version 16.
-
-wget http://sourceforge.net/projects/zolertia/files/tinyos-z1-2.1.1/tinyos-z1-2.1.1-16_i386.deb
-sudo dpkg -i tinyos-z1-2.1.1-16_i386.deb
-
-
-This will install the tinyos source code as of the 2.1.1 release and
-add in the z1 changes on top of it.  The part we use however is
-the z1 toolchain which has a working msp430-gcc that supports the 430x
-chips.  We don't actually use the source code, just the tool chain.
-
-This is a temporary measure because cleaning this up involves a
-somewhat involved learning curve.
-
-The Z1 toolchain lives at /opt/msp430-z1 the corresponding bin and lib
-lib directories must be included in environment variables.
-
-$PATH needs to be modified to search /opt/msp430-z1 first.   This can
-be done later and is described in section 8.
+See Section 8.
 
 
 **************************************************************************************
 
 3) Install wine, Python, pyserial, and pywin32.
 
-We need wine in order to run msp430-gdbproxy and msp430-jtag.
-
-Details can be found at: http://www.winehq.org/download/deb
-
-Add the ppa:ubuntu-wine/ppa repository and install wine1.2:
-
-sudo -s
-add-apt-repository ppa:ubuntu-wine/ppa
-apt-get update
-apt-get install wine1.2
-exit
-
-
-
-Download the following into your home directory:
-http://www.python.org/ftp/python/2.6.5/python-2.6.5.msi
-http://sourceforge.net/projects/pyserial/files/pyserial/2.5-rc2/pyserial-2.5-rc2.win32.exe/download.
-http://sourceforge.net/projects/pywin32/files/pywin32/Build%20214/pywin32-214.win32-py2.6.exe/download
-
-These are windows installers.  They can be installed using wine by
-navigating to the file using a file browser, click "Places->Home
-Folder".  Right click on the file and select "Open with Wine Windows
-Program Loader".  This will bring up an installation
-window.  Follow the instructions.
-
-Install Python2.6.5, pyserial, and pywin32.  This will also start wine
-up for the first time can create any special directories that Wine
-might need.
+Defunct.   We now use mspdebug solely for debugging the MM platform.
 
 
 **************************************************************************************
 
 4) Install mspdebug
 
-mspdebug takes the place of msp430-gdbproxy and msp430-jtag.  It provides the gdb-jtag interface
+mspdebug takes the place of msp430-gdbproxy and msp430-jtag.  It provides a gdb server
 needed for gdb source level debugging and can be used to download programs via the jtag
 interface.
 
-However, the gdbproxy function for the 2618 cpu is somewhat flakey.  5438a usage is still
-being evaluated.
-
-mspdebug is available from a git source repo:
-
-git clone git://mspdebug.git.sourceforge.net/gitroot/mspdebug/mspdebug
+mspdebug is available as a Ubuntu package for natty (11.04)  and later releases.  And can be
+downloaded and built for 10.04 from its git repository
+mspdebug.git.sourceforge.net/gitroot/mspdebug/mspdebug
 
 The following additional packages are needed:
 
     libusb libusb-dev libreadline-dev libreadline6-dev
 
+sudo apt-get install libusb libusb-dev libreadline-dev libreadline6-dev
 cd ~/mm
 mkdir Others
 cd Others
 git clone git://mspdebug.git.sourceforge.net/gitroot/mspdebug/mspdebug
+cd mspdebug
 make
 sudo make install
 
@@ -176,13 +147,23 @@ mspdebug is installed into /usr/local
 
 **************************************************************************************
 
-5) Pull the t2_mm tree.
+5) Pull the MM tree.
+
+The main body of MM code is held in the git repository github:MamMark/mm(master).  You
+pull a read only copy from git://github.com/MamMark/mm.git.
+
+If you will be contributing code to the project you should follow the instruction found
+in doc/02_Contributing_Code.  You will get a github login in and fork your own copy
+of the MamMark/mm repo.   Work is done on local working branches, moved to your local
+master branch and then a pull request is forwarded to MamMark/master.
 
 Normal user (not enabled).
 
 cd ~/mm
-git clone git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git t2_mm
+git clone git://github.com/MamMark/mm.git t2_mm
 cd t2_mm
+
+# you should be on the master branch by default.
 
 
 
@@ -190,37 +171,19 @@ cd t2_mm
 
 6) Install gdb.430, msp430-jtag, and msp430-gdbproxy.
 
-Once a t2_mm tree has been pulled we need to install some extra items
-that come from t2_mm/Added_Bit/tools.
-
-sudo -s
-cd ~/mm/t2_mm/Added_Bits/tools
-make install
-exit
-
-   This will install gdb.430, msp430-jtag, and msp430-gdbproxy into
-   /opt/msp430-z1/bin.  Needed libraries will be installed in appropriate
-   places.
-
-   NOTE: this step has to be done after the install of the
-   tinyos-z1-2.1.1-15_i386.deb package as a msp430-jtag is installed
-   as part of that package.  We replace it.
-
-   It will also create the link needed to associate COM1 with the jtag
-   pod assuming it is connected to the system as /dev/ttyUSB0.  If you
-   always plug the jtag in as the first usb device it will always be
-   USB0.
-
-   The windows version of msp430-jtag defaults to using COM1 which
-   we've linked to /dev/ttyUSB0.  You can override this setting by
-   passing the -l <device> switch on the command line.  These need
-   to be windows devices.
-   
+Defunct.   Mspdebug takes the place of gdb.430, msp430-jtag and msp430-gdbproxy.
 
 
 **************************************************************************************
 
 7) TinyOS 2.x tree checkout
+
+WARNING: This procedure currently still uses the old mm_core branch from the MM modified
+T2 git repository on HINRG.cs.jhu.edu.
+
+Work is in progress to move the mm_core changes to the new msp430 core T2 repo maintained
+at github:tp-freeforall/prod (tinyprod/prod).   The branch name is still mm_core.
+
 
 Changes needed to build the mm tree can be obtained via the mm_core
 branch on the cire/tinyos-2.x.git repo.
@@ -284,7 +247,7 @@ The following environment variables must be set to build.
   
   	PYTHONPATH=$TOSROOT/support/sdk/python:$PYTHONPATH
 #  	PYTHONPATH=$M1/lib:$M1/bin:$PYTHONPATH
-#  	PYTHONPATH=$M1/lib/python2.3/site-packages:$PYTHONPATH
+#  	PYTHONPATH=$M1/lib/python2.6/site-packages:$PYTHONPATH
   
   	#LIBMSPGCC_PATH=$M1/lib
   
@@ -295,37 +258,29 @@ The following environment variables must be set to build.
 **************************************************************************************
 
 10) Do a test compile and gdb run.  This assumes that the JTAG pod is
-    connected to ttyUSB0 via COM1.  The default device assumed by the
-    windows version of msp430-jtag is COM1.  COM1 is automatically
-    linked to /dev/ttyUSB0 when the windows versions of
-    msp430-gdbproxy and msp430-jtag are installed above.
-    
+    connected to /dev/ttyUSB0.
 
-    For mm4 hardware:
+    Currently you can ignore this.   We don't have mm5 h/w yet so this doesn't work.
+    If you have z1 h/w, you can try this with that h/w.   But you will have to build
+    for the z1 platform in the main T2 application directory (ie.  $TOSROOT/apps/Blink).
+
+
+    For mm5 hardware:
 
     cd ~/mm/t2_mm/apps/mm
-    make debug mm4
-    msp430-jtag -e build/mm4/main.exe
+    make debugopt mm5
+    mspdebug uif -qjd /dev/ttyUSB0 "prog build/mm5/main.exe"
+
 
     When the download completes use a different window and run:
 
-    msp430-gdbproxy msp430 COM1
+    mspdebug uif -qjd /dev/ttyUSB0 "opt gdb_loop true" gdb
 
 
-    There should be a .gdbinit file in apps/mm which contains the following lines at the top:
+    Follow the instructions in $TOSROOT/tos/chips/msp430/99_gdb/00_README to set
+    up the gdb control files in their proper places (.gdbinit, .gdb_x5, etc).
 
-        set remoteaddresssize 0d64
-        set remotetimeout 0d999999
-        target remote localhost:2000
-
-    change into build/mm4/ and create a symbolic link to the .gdbinit file in the upper directory.
-    This prevents the .gdbinit file from being wiped if one does "make clean".
-
-        pushd build/mm4
-	ln -s ../../.gdbinit
-	popd
-
-    now if you run gdb.430 build/mm4/main.exe  gdb should connect to the proxy and start
+    now if you run msp430-gdb build/mm5/main.exe  gdb should connect to the proxy and start
     to debug your code in the device.  To let the device run use 'c', continue.  Do not use
     'run'.
 
@@ -337,26 +292,17 @@ The following environment variables must be set to build.
     If you have telosb hardware:
 
     cd ~/mm/t2_cur/tinyos-2.x/apps/Blink
-    make debug telosb
-    msp430-jtag -e build/telosb/main.exe
-
-
-    from a different window run:
-
-    msp430-gdbproxy msp430 COM1
-
-
-    Make sure that you have a .gdbinit file in the app directory and the symbolic link
-    from the build/telosb directory as described in 13.
-
-    run gdb as described in 13.
-
+    make debugopt telosb install
 
 
 
 **************************************************************************************
 
 12) Build SerialForwarder and libmote library.
+
+WARNING:  This should get replaced with libmotenet.   Superset of the SF but also
+allows using AM sockets or IPv6 sockets for connections.
+
 
     Build the serial forwarder and associated library (also includes direct serial access)
 
@@ -403,9 +349,13 @@ Documentation on getting started with T2 can be found at:
 
 The main tracking repo is at:
 
-    git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
-        read-only, cire tracking repo that tracks hinrg t2, updated manually
-	This also has the mm code, branched off the hinrg t2 mainline
+    git://github.com/tinyprod/prod.git
+        read-only, production orientated tracking repo.   Tracks T2 SVN mainline.
+	MM modifications to the T2 core are on the mm_core branch.
+
+    git://github.com/tp-freeforall/prod.git
+        read-only, development version of the tinyprod/prod repository.  Typically
+	used for integrating working development code.
 
 
 **************************************************************************************
@@ -413,16 +363,12 @@ The main tracking repo is at:
 14) About the T2_MM tree.
 
 The t2_mm tree is a seperate t2 based repo that has mammark unique
-code.  It is used to build firmware for the mm3 (1611 based) and mm4
-(2618 based) tag devices.
+code.  It is used to build firmware for the mm3 (1611 based), mm4
+(2618 based), and mm5 (5438a) tag devices.
 
-    git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only)
+    git://github.com/MamMark/mm.git   (read only)
 
     The main branch is "master".
-
-    Any patches etc should be emailed.  (Can be prepared with git-format-patch
-    or git-log).
-
 
 
 **************************************************************************************
@@ -483,44 +429,14 @@ If you define MOTECOM you won't need to specify the -comm parameter.  ie:
 
 16) Repos:
 
-T2 git repositories:
-
-    git://hinrg.cs.jhu.edu/git/tinyos-2.x.git
-	hinrg T2 core: read-only, hinrg git tracking from cvs t2 main (updated hourly)
-
-    git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
-	cire/tinyos-2.x: read-only.  manual update tracking of hinrg T2 core.  Also
-	includes mm_core and encap branches.
-
-    ssh://hinrg.cs.jhu.edu/home/cire/tinyos-2.x.git
-        read-write (need access permissions), cire tracking repo that tracks
-        hinrg t2, updated manually (same as git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git)
-
-
-    tinyos-2.x.git:	tracks the main t2 cvs repository (hinrg, updated hourly)
-
-    cire/tinyos-2.x.git: manually tracking of the main hinrg t2 tree (labeled t2_base)
-	t2_base:    master that tracks the main hinrg
-	encap:	    encapsulation modification to the mainline
-	mm_core:    changes to t2 core for mm development (no encap changes)
-
-    t2 (cvs) -> tinyos-2.x.git (hinrg, hourly) -> cire/tinyos-2.x.git (t2_base, manual)
-             ----> (encap)
-	     ----> (mm_core)
-
-    t2 (cvs) denotes the cvs based main t2 tree.   tinyos-2.x.git denotes
-    the hourly pull mirror hosted at hinrg.cs.jhu.edu.  And cire/tinyos-2.x
-    is the tracking branch + mm branches.
+See $(TOSROOT)/01_Repo_Notes for details about how the TinyProd/prod repo is organized.
+github:tinyprod/prod or github:tp-freeforall/prod hold the main t2 repository.   Working
+branch for the MM platform is mm_core.
 
 
 T2_MM git repositories:
 
-    git://hinrg.cs.jhu.edu/git/cire/t2_mm3.git (read only)
-	read-only, primary pull T2 MM3 repo.  pulls from /home/cire/t2_mm3.git.
-
-    ssh://hinrg.cs.jhu.edu/home/cire/t2_mm3.git  (read write)
-
-    gitosis@overtux.cs.ucsc.edu:cire/t2_mm3.git  (read write)  (backup)
+    github:MamMark/mm.git    (read-only: git://github.com/MamMark/mm.git).
 
 
 17) Formating SD media for use by the tag.

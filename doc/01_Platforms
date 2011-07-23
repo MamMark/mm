@@ -1,18 +1,29 @@
 
+MM5: The MM5 is a major reimplementation using the msp430f5438a as
+the main processor.   The major benefit of the 5438 is more USCI
+ports which cuts down on the need for sharing (arbritration).
+The sensor set has also been majorly revamped.   See $(LOCAL_REPO)/
+tos/platforms/mm5/hardware.h.   ie. github:MamMark/mm(master)/tos/
+platforms/mm5/hardware.h.
+
+
 MM3: msp430f1611 based prototype.  see tos/platforms/mm3/hardware.h
      for port mapping.
 
-MM4: msp430f2618 varient.  Note that the 2618 has a form factor that
+MM4: msp430f2618 variant.  Note that the 2618 has a form factor that
      is a drop in for the 1611.  Some of the pins map differently.
      Note that the pin out of the 2618 and the 1611 are very close and
      the 2618 is essentially a h/w drop in for the 1611.  The f/w
      needs to change somewhat to account for the h/w differences
      (primarily between the USARTs and USCIs).
 
-MM5: is planned to be based on the msp430f5438A.  The 5438 has more
-h/w than the 2618 and its pin out is significantly different than the
-2618.
 
+
+The following is maintained for historical reference.   A difference between
+the mm4 and mm5 has not been done.   Too many differences.
+
+The mm3 and mm4 were very close.   The 2618 was a drop in (pin for pin) for
+the 1611 and the differences were minimal.
 
 Differences between the mm3 and mm4:
 
