@@ -42,9 +42,10 @@ Most commands are entered from a terminal window.
 
 1) OS Install.
 
-We currently use Ubuntu 10.04.  Primarily because we've been using Macs and 10.04 seems
-to run the best (11.04 seems to run hot because the fans and cpu throttling don't work
-right).
+We currently only support development using Linux Ubuntu 10.04 (lucid).  10.04 was
+chosen because Mac laptops (MacBook Pros (3,1 and 7,1)) seem to work pretty well
+using 10.04.  11.04 (natty) also works but the Macs run hot.  (fans and cpu
+throttling doesn't seem to work right).
 
 Obtain an ISO image from releases/ubuntu.com or alternativly from tinyprod.net/downloads.
 Burn the iso to a CD and install on your box.  A simple install is fine and will
@@ -98,12 +99,19 @@ replaced by a more modern variant, mspgcc 4.5 (20110712).   There is also a vari
 provided by Zolertia that support early version of their Z1 mote.
 
 The modern msp430 4.5 toolchain and the Z1 toolchains live in the /opt hierarchy.
-Tar balls of the installed toolchains are provided in tinyprod.net/downloads.
+Tar balls of the installed toolchains are provided in tinyprod.net/downloads.  Be sure
+to check the contents of the tarballs for included directory paths.
 
     sudo -s
     cd /opt
     wget http://tinyprod.net/downloads/msp430-20110612.tgz
     tar xf msp430-20110612.tgz
+
+You will also need to install two packages needed by the toolchain.  libmpc-dev and
+libmpc2.
+
+    sudo apt-get install libmpc-dev libmpc2
+
 
 The current mspgcc lives at /opt/msp430-20110612.   Corresponding modifications need
 to made to your environment variables to enable utilization of the toolchain.
@@ -126,8 +134,8 @@ mspdebug takes the place of msp430-gdbproxy and msp430-jtag.  It provides a gdb 
 needed for gdb source level debugging and can be used to download programs via the jtag
 interface.
 
-mspdebug is available as a Ubuntu package for natty (11.04)  and later releases.  And can be
-downloaded and built for 10.04 from its git repository
+mspdebug is available as a Ubuntu package for natty (11.04) and later releases.
+And can be downloaded and built for 10.04 from its git repository
 mspdebug.git.sourceforge.net/gitroot/mspdebug/mspdebug
 
 The following additional packages are needed:
