@@ -114,7 +114,8 @@ libmpc2.
 
 
 The current mspgcc lives at /opt/msp430-20110612.   Corresponding modifications need
-to made to your environment variables to enable utilization of the toolchain.
+to made to your environment variables to enable utilization of this toolchain.
+(PATH modification)
 
 See Section 8.
 
