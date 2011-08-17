@@ -104,8 +104,8 @@ to check the contents of the tarballs for included directory paths.
 
     sudo -s
     cd /opt
-    wget http://tinyprod.net/downloads/msp430-20110612.tgz
-    tar xf msp430-20110612.tgz
+    wget http://tinyprod.net/downloads/msp430-20110813.tgz
+    tar xf msp430-20110813.tgz
 
 You will also need to install two packages needed by the toolchain.  libmpc-dev and
 libmpc2.
@@ -113,7 +113,7 @@ libmpc2.
     sudo apt-get install libmpc-dev libmpc2
 
 
-The current mspgcc lives at /opt/msp430-20110612.   Corresponding modifications need
+The current mspgcc lives at /opt/msp430-20110813.   Corresponding modifications need
 to made to your environment variables to enable utilization of this toolchain.
 (PATH modification)
 
@@ -211,10 +211,10 @@ To obtain the current mm_core branch:
 
 8) Modify PATH and LD_LIBRARY_PATH
 
-Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430-20110612 as
+Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430-20110813 as
 appropriate. 
 
-   M1="/opt/msp430-20110612"
+   M1="/opt/msp430-20110813"
    export PATH="$M1/bin:$PATH"
    export LD_LIBRARY_PATH="$M1/lib:$LD_LIBRARY_PATH:/usr/local/lib"
 
@@ -245,7 +245,7 @@ The following environment variables must be set to build.
   	MM_ROOT="/home/joe/mm/t2_mm"
   	TOSMAKE_PATH="$MM_ROOT/support/make"
   
-  	M1="/opt/msp430-20110612"
+  	M1="/opt/msp430-20110813"
   	PATH="$M1/bin:$PATH"
   	LD_LIBRARY_PATH="$M1/lib:$LD_LIBRARY_PATH:/usr/local/lib"
   
