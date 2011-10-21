@@ -5,7 +5,19 @@ Installing a development environment for the MamMark tag.
 
 State:
 
-2011-07-22:
+2011-10-20
+    Ubuntu 10.04, T2 (TinyProd) github:tp-freeforall/prod(mm-core-next),
+    (based on tp-freeforall/prod(msp430-int-next)),
+    MM github:MamMark/mm(master)
+    mspdebug JTAG debugging.
+    mspgcc-LTS20110716+patches toolchain, tinyprod.net/debian-dev
+
+    mm4, msp430f2618
+    mm5, msp430f5438a
+    modified sensor array
+
+
+2011-07-22: (obsolete)
     Ubuntu 10.04, T2 (TinyProd) github:tp-freeforall/prod(msp430-int-pu),
     github:tp-freeforall/prod(mm_core), MM github:MamMark/mm(master)
     mspdebug JTAG debugging.  New mspgcc-20110716 toolchain
@@ -40,123 +52,41 @@ Most commands are entered from a terminal window.
 
 **************************************************************************************
 
-1) OS Install.
+0) Overview.
 
-We currently only support development using Linux Ubuntu 10.04 (lucid).  10.04 was
-chosen because Mac laptops (MacBook Pros (3,1 and 7,1)) seem to work pretty well
-using 10.04.  11.04 (natty) also works but the Macs run hot.  (fans and cpu
-throttling doesn't seem to work right).
+MamMark code is built using two trees.
 
-Obtain an ISO image from releases/ubuntu.com or alternativly from tinyprod.net/downloads.
-Burn the iso to a CD and install on your box.  A simple install is fine and will
-take less time.
+    I)  Modified TinyOS trunk.  Adds support for msp430f5438a.  MM core changes.
+    II) Main MM trunk.  Main body of MM code.
 
-When the install is complete, boot the system, and use "apt-get" to install the following
-packages:
+The following parts are essential to building MM images:
 
-    build-essential stow automake autoconf libtool libc6-dev
-    git-core git-daemon-run git-doc git-email git-gui gitk gitmagic
-    openssh-client openssh-server
+a) Set up a development environment.  (Ubuntu or Debian based)
+b) mspgcc (LTS-20110716) toolchain (gcc 4.5.3)
+c) two trees are used and environment is set to include both trees.
+d) Jtag pod is connected to /dev/ttyUSB0
+e) Serial (Dock) port is connected to /dev/ttyUSB1
 
-The following will do the trick:
+**************************************************************************************
 
-sudo -s
-apt-get install build-essential stow automake autoconf libtool libc6-dev
-apt-get install git-core git-daemon-run git-doc git-email git-gui gitk gitmagic
-apt-get install openssh-client openssh-server
-exit
+1) Development Environment Installation
+
+https://github.com/tp-freeforall/prod/blob/msp430-int-next/00b_Development_Environment
 
 
 **************************************************************************************
 
-2) Install the TinyOS toolset (msp430)
+2) Pull main tinyos tree (msp430-int-next, mm-core-next)
 
-We want the tinyos toolset for the msp430 (telosb). Debian packages
-are available from Stanford.
-
-We want the following packages:
-
-           deputy-tinyos
-           msp430-binutils-tinyos
-           msp430-gcc-tinyos
-           msp430-libc-tinyos
-           msp430-tinyos
-           msp430-tinyos-base
-           nesc
-           tinyos-base
-           tinyos-tools
-
-sudo -s
-echo "deb http://tinyos.stanford.edu/tinyos/dists/ubuntu lucid main" >> /etc/apt/sources.list
-apt-get update
-apt-get install deputy-tinyos msp430-binutils-tinyos msp430-gcc-tinyos msp430-libc-tinyos
-apt-get install msp430-tinyos msp430-tinyos-base nesc tinyos-base tinyos-tools
-exit
-
-
-The tinyos msp430 toolchain is based on a very old compiler (mspgcc 3.2.3) and should be
-replaced by a more modern variant, mspgcc 4.5 (20110712).   There is also a variant
-provided by Zolertia that support early version of their Z1 mote.
-
-The modern msp430 4.5 toolchain and the Z1 toolchains live in the /opt hierarchy.
-Tar balls of the installed toolchains are provided in tinyprod.net/downloads.  Be sure
-to check the contents of the tarballs for included directory paths.
-
-    sudo -s
-    cd /opt
-    wget http://tinyprod.net/downloads/msp430-20110813.tgz
-    tar xf msp430-20110813.tgz
-
-You will also need to install two packages needed by the toolchain.  libmpc-dev and
-libmpc2.
-
-    sudo apt-get install libmpc-dev libmpc2
-
-
-The current mspgcc lives at /opt/msp430-20110813.   Corresponding modifications need
-to made to your environment variables to enable utilization of this toolchain.
-(PATH modification)
-
-See Section 8.
-
-
-**************************************************************************************
-
-3) Install wine, Python, pyserial, and pywin32.
-
-Defunct.   We now use mspdebug solely for debugging the MM platform.
-
-
-**************************************************************************************
-
-4) Install mspdebug
-
-mspdebug takes the place of msp430-gdbproxy and msp430-jtag.  It provides a gdb server
-needed for gdb source level debugging and can be used to download programs via the jtag
-interface.
-
-mspdebug is available as a Ubuntu package for natty (11.04) and later releases.
-And can be downloaded and built for 10.04 from its git repository
-mspdebug.git.sourceforge.net/gitroot/mspdebug/mspdebug
-
-The following additional packages are needed:
-
-    libusb libusb-dev libreadline-dev libreadline6-dev
-
-sudo apt-get install libusb libusb-dev libreadline-dev libreadline6-dev
 cd ~/mm
-mkdir Others
-cd Others
-git clone git://mspdebug.git.sourceforge.net/gitroot/mspdebug/mspdebug
-cd mspdebug
-make
-sudo make install
-
-mspdebug is installed into /usr/local
+mkdir t2_cur
+cd t2_cur
+git clone git://github.com/tp-freeforall/prod tinyos-2.x
+git checkout mm-core-next
 
 **************************************************************************************
 
-5) Pull the MM tree.
+3) Pull the MM tree.
 
 The main body of MM code is held in the git repository github:MamMark/mm(master).  You
 pull a read only copy from git://github.com/MamMark/mm.git.
@@ -174,193 +104,73 @@ cd t2_mm
 
 # you should be on the master branch by default.
 
+**************************************************************************************
+
+4) Set environment variables.
+
+MOTECOM="serial@/dev/ttyUSB1:115200"
+MM_ROOT="$HOME/mm/t2_mm"
+TOSMAKE_PATH="$MM_ROOT/support/make"
+TOSROOT=$HOME/mm/t2_cur/tinyos-2.x
+TOSDIR=$TOSROOT/tos
+
+MAKERULES=$TOSROOT/support/make/Makerules
+CLASSPATH=.:$TOSROOT/support/sdk/java/tinyos.jar
+
+PYTHONPATH=$TOSROOT/support/sdk/python:$PYTHONPATH
+PYTHONPATH="/usr/local/lib/python3.1/dist-packages:$PYTHONPATH"
+
+export MAKERULES TOSDIR TOSROOT CLASSPATH PYTHONPATH LD_LIBRARY_PATH
+export MOTECOM OSIAN_PPPD_DEVICE OSIAN_ROOT MM_ROOT TOSMAKE_PATH
 
 
 **************************************************************************************
 
-6) Install gdb.430, msp430-jtag, and msp430-gdbproxy.
 
-Defunct.   Mspdebug takes the place of gdb.430, msp430-jtag and msp430-gdbproxy.
+5) Do a test compile and gdb run.  This assumes that the JTAG pod is
+   connected to /dev/ttyUSB0.
 
+   Currently you can ignore this.   We don't have mm5 h/w yet so this doesn't work.
+   If you have z1 h/w, you can try this with that h/w.   But you will have to build
+   for the z1 platform in the main T2 application directory (ie.  $TOSROOT/apps/Blink).
 
-**************************************************************************************
+   For mm5 hardware:
 
-7) TinyOS 2.x tree checkout
-
-WARNING: This procedure currently still uses the old mm_core branch from the MM modified
-T2 git repository on HINRG.cs.jhu.edu.
-
-Work is in progress to move the mm_core changes to the new msp430 core T2 repo maintained
-at github:tp-freeforall/prod (tinyprod/prod).   The branch name is still mm_core.
-
-
-Changes needed to build the mm tree can be obtained via the mm_core
-branch on the cire/tinyos-2.x.git repo.
-
-To obtain the current mm_core branch:
-
-    cd ~/mm
-    mkdir t2_cur
-    cd t2_cur
-    git clone -v git://hinrg.cs.jhu.edu/git/cire/tinyos-2.x.git
-    cd tinyos-2.x
-    git checkout -t origin/mm_core
+   cd ~/mm/t2_mm/apps/mm
+   make debugopt mm5
+   mspdebug uif -qjd /dev/ttyUSB0 "prog build/mm5/main.exe"
 
 
-**************************************************************************************
+   When the download completes use a different window and run:
 
-8) Modify PATH and LD_LIBRARY_PATH
+   mspdebug uif -qjd /dev/ttyUSB0 "opt gdb_loop true" gdb
 
-Make sure your PATH and LD_LIBRARY_PATH include /opt/msp430-20110813 as
-appropriate. 
 
-   M1="/opt/msp430-20110813"
-   export PATH="$M1/bin:$PATH"
-   export LD_LIBRARY_PATH="$M1/lib:$LD_LIBRARY_PATH:/usr/local/lib"
+   Follow the instructions in $TOSROOT/tos/chips/msp430/99_gdb/00_README to set
+   up the gdb control files in their proper places (.gdbinit, .gdb_x5, etc).
 
+   now if you run msp430-gdb build/mm5/main.exe  gdb should connect to the proxy and start
+   to debug your code in the device.  To let the device run use 'c', continue.  Do not use
+   'run'.
 
 
 **************************************************************************************
 
-9) Set up build environment settings
+6) Do a test compile and gdb run from the main tree.
 
-The following environment variables must be set to build.
+   If you have telosb hardware:
 
-    TOSROOT
-    TOSDIR
-    MAKERULES
-    CLASSPATH
-    TOSMAKE_PATH
-    MM_ROOT
-
-    for example:  working dir ~/mm
-  
-  	#!/bin/sh
-  
-  	MOTECOM="serial@/dev/ttyUSB1:telosb"
-  
-  	TOSROOT=~/mm/t2_cur/tinyos-2.x
-  	TOSDIR=$TOSROOT/tos
-  
-  	MM_ROOT="/home/joe/mm/t2_mm"
-  	TOSMAKE_PATH="$MM_ROOT/support/make"
-  
-  	M1="/opt/msp430-20110813"
-  	PATH="$M1/bin:$PATH"
-  	LD_LIBRARY_PATH="$M1/lib:$LD_LIBRARY_PATH:/usr/local/lib"
-  
-  	MAN_PATH="$M1/man:$MAN_PATH"
-  
-  	MAKERULES=$TOSROOT/support/make/Makerules
-  	CLASSPATH=.:$TOSROOT/support/sdk/java/tinyos.jar
-  
-  	PYTHONPATH=$TOSROOT/support/sdk/python:$PYTHONPATH
-#  	PYTHONPATH=$M1/lib:$M1/bin:$PYTHONPATH
-#  	PYTHONPATH=$M1/lib/python2.6/site-packages:$PYTHONPATH
-  
-  	#LIBMSPGCC_PATH=$M1/lib
-  
-  	export MAKERULES TOSDIR TOSROOT CLASSPATH PYTHONPATH LD_LIBRARY_PATH
-  	export LIBMSPGCC MOTECOM MM_ROOT TOSMAKE_PATH PATH
+   cd ~/mm/t2_cur/tinyos-2.x/apps/Blink
+   make debugopt telosb install
 
 
 **************************************************************************************
-
-10) Do a test compile and gdb run.  This assumes that the JTAG pod is
-    connected to /dev/ttyUSB0.
-
-    Currently you can ignore this.   We don't have mm5 h/w yet so this doesn't work.
-    If you have z1 h/w, you can try this with that h/w.   But you will have to build
-    for the z1 platform in the main T2 application directory (ie.  $TOSROOT/apps/Blink).
-
-
-    For mm5 hardware:
-
-    cd ~/mm/t2_mm/apps/mm
-    make debugopt mm5
-    mspdebug uif -qjd /dev/ttyUSB0 "prog build/mm5/main.exe"
-
-
-    When the download completes use a different window and run:
-
-    mspdebug uif -qjd /dev/ttyUSB0 "opt gdb_loop true" gdb
-
-
-    Follow the instructions in $TOSROOT/tos/chips/msp430/99_gdb/00_README to set
-    up the gdb control files in their proper places (.gdbinit, .gdb_x5, etc).
-
-    now if you run msp430-gdb build/mm5/main.exe  gdb should connect to the proxy and start
-    to debug your code in the device.  To let the device run use 'c', continue.  Do not use
-    'run'.
-
-
-**************************************************************************************
-
-11) Do a test compile and gdb run from the main tree.
-
-    If you have telosb hardware:
-
-    cd ~/mm/t2_cur/tinyos-2.x/apps/Blink
-    make debugopt telosb install
-
-
-
-**************************************************************************************
-
-12) Build SerialForwarder and libmote library.
-
-WARNING:  This should get replaced with libmotenet.   Superset of the SF but also
-allows using AM sockets or IPv6 sockets for connections.
-
-
-    Build the serial forwarder and associated library (also includes direct serial access)
-
-      cd $TOSROOT/support/sdk/c/sf
-      ./bootstrap
-      ./configure --prefix=/opt/stow/sf_c
-      make
-
-      sudo -s
-      make install
-
-      ("sudo make install" for some reason doesn't pick up the value of $TOSROOT properly so
-      the make install doesn't work write unless you are root first)
-
-      This will install bin/{sf, sflisten, sfsend, seriallisten, serialsend}, include/{message.h,
-      serialsource.h, sfsource.h}, and lib/libmote.a.  These will be installed into /opt/stow/sf_c.
-
-
-   Install into /opt/{bin,include,lib} using stow.
-
-      cd /opt/stow
-      stow sf_c
-
-
-**************************************************************************************
-
-13) We use GIT as the SCM.  Here are some pointers to get you started:
-
-   Start here:   http://book.git-scm.com/2_setup_and_initialization.html
-   Everyday GIT: http://www.kernel.org/pub/software/scm/git/docs/everyday.html
-   Cheat Sheet:  http://zrusin.blogspot.com/2007/09/git-cheat-sheet.html
-   SVN to GIT:   http://git-scm.com/course/svn.html
-   GIT Book:     http://book.git-scm.com/
-   Another Book: http://progit.org/book/
-
-
-
-
-Documentation on getting started with T2 can be found at:
-
-    http://docs.tinyos.net
-    http://docs.tinyos.net/index.php/Getting_started
-
 
 The main tracking repo is at:
 
     git://github.com/tinyprod/prod.git
         read-only, production orientated tracking repo.   Tracks T2 SVN mainline.
-	MM modifications to the T2 core are on the mm_core branch.
+	MM modifications to the T2 core are on the mm-core-next branch.
 
     git://github.com/tp-freeforall/prod.git
         read-only, development version of the tinyprod/prod repository.  Typically
@@ -369,7 +179,7 @@ The main tracking repo is at:
 
 **************************************************************************************
 
-14) About the T2_MM tree.
+7) About the T2_MM tree.
 
 The t2_mm tree is a seperate t2 based repo that has mammark unique
 code.  It is used to build firmware for the mm3 (1611 based), mm4
@@ -382,65 +192,11 @@ code.  It is used to build firmware for the mm3 (1611 based), mm4
 
 **************************************************************************************
 
-15) Using the serialforwarder/seriallistener
+8) Repos:
 
-    a) make sure that tinyos.jar has been built.  It should live in $TOSROOT/support/sdk/java/tinyos.jar
-    b) to rebuild:
-  
-       cd $TOSROOT/support/sdk/java/
-       make tinyos.jar
-  
-    c) Install TOSComm JNI support if needed.  Did java bitch about not finding TOSComm JNI support?
-  
-       assuming tinyos-tools is installed run:
-  
-       tos-install-jni
-  
-    d) To watch raw bytes coming from the serial port
-  
-       Make sure CLASSPATH includes $TOSROOT/support/sdk/java/tinyos.jar, ie:
-  
-           CLASSPATH=.:/home/joe/mm/t2_cur/tinyos-2.x/support/sdk/java/tinyos.jar
-
-execute:
-
-       java net.tinyos.tools.Listen -comm serial@/dev/ttyUSB0:telosb
-
-
-And you should see packets that look something like this:  (depends on what the mote is sending)
-
-            00 FF FF 00 00 12 00 A1 00 12 07 09 00 0C 9E 23 00 0C 9E 30 F6 2C FF D7 FF FF
-            00 FF FF 00 00 12 00 A1 00 12 07 05 00 0C 9E 24 00 0C 9E 3F E5 AF B1 6F 9E D4
-            00 FF FF 00 00 0E 00 A1 00 0E 07 06 00 0C 9E 33 00 0C 9E 46 78 80
-            00 FF FF 00 00 0E 00 A1 00 0E 07 07 00 0C 9E 33 00 0C 9E 52 FF FF
-            00 FF FF 00 00 10 00 A1 00 10 07 08 00 0C 9E 33 00 0C 9E 61 FF FF FF FF
-  
-            00 FF FF 00 00 10 00 A1 00 10 07 08 00 0C 9E 33 00 0C 9E 61 FF FF FF FF
-            ^  ^     ^     ^  ^  ^  ^     ^  ^  | -- sensor 8 data
-            |  |     |     |  |  |  |     |  |- sensor id
-            |  |     |     |  |  |  |     |- sensor data type
-            |  |     |     |  |  |  |-- length of data block
-            |  |     |     |  |  |-- AM type MM_DT (data, typed)
-            |  |     |     |  |-- AM group
-            |  |     |     |-- serial length
-            |  |     |-- src addr           
-            |  |-- dest addr
-            |-- dispatch byte - 0 says AM
-                             
-If you define MOTECOM you won't need to specify the -comm parameter.  ie:
-
-       MOTECOM=serial@/dev/ttyUSB1:telosb
-
-
-
-
-**************************************************************************************
-
-16) Repos:
-
-See $(TOSROOT)/01_Repo_Notes for details about how the TinyProd/prod repo is organized.
-github:tinyprod/prod or github:tp-freeforall/prod hold the main t2 repository.   Working
-branch for the MM platform is mm_core.
+See $(TOSROOT)/00a_Repo_Notes for details about how the TinyProd/prod repo is organized.
+github:tinyprod/prod or github:tp-freeforall/prod holds the main t2 repository.   Working
+branch for the MM platform is mm-core-next.
 
 
 T2_MM git repositories:
@@ -448,7 +204,7 @@ T2_MM git repositories:
     github:MamMark/mm.git    (read-only: git://github.com/MamMark/mm.git).
 
 
-17) Formating SD media for use by the tag.
+9) Formating SD media for use by the tag.
 
   To format: mkdosfs -F 32 -I -n"TagTest" -v /dev/sda
 
