@@ -82,6 +82,7 @@ const uint8_t _build = _BUILD;
 #define BOOT_MAJIK 0x01021910
 noinit uint32_t boot_majik;
 noinit uint16_t boot_count;
+noinit uint16_t stack_size;
 
 
 module PlatformP{
@@ -204,6 +205,7 @@ implementation {
   }
 
   command error_t Init.init() __attribute__ ((noinline)) {
+    WDTCTL = WDTPW + WDTHOLD;
     TOSH_MM_INITIAL_PIN_STATE();
 
 
@@ -219,7 +221,7 @@ implementation {
     boot_count++;
 
     call Stack.init();
-    call Stack.size();
+    stack_size = call Stack.size();
 
     /*
      * It takes a long time for the 32KHz Xtal to come up.

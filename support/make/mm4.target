@@ -7,6 +7,8 @@
 PLATFORM ?= mm4
 PLATFORMDIR = $(MM_ROOT)/tos/platforms/$(PLATFORM)
 
+MSP_MCU ?= msp430f2618
+
 BUILD_NUM_FILE = $(PLATFORMDIR)/_Build
 BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)); else echo 0; fi)
 
@@ -25,8 +27,6 @@ CFLAGS  += $(THREADS_MSP430X_INCLUDE_DIRS) $(THREADS_MSP430_INCLUDE_DIRS)
 #CFLAGS += $(THREADS_TELOS_INCLUDE_DIRS)
 endif
 
-#MSP_MCU = msp430x2618
-
 #
 # The first PFLAGS addition, platforms/mm3 must be here otherwise
 # the make mm3 doesn't work.  The others for tos/{system,interfaces}
@@ -44,22 +44,13 @@ PFLAGS += -I$(MM_ROOT)/tos/platforms/mm
 PFLAGS += -I$(MM_ROOT)/tos/system
 PFLAGS += -I$(MM_ROOT)/tos/interfaces
 
-# Disable MSP430 hardware multiply because it makes MSPGCC die
-PFLAGS += -mdisable-hwmul
-
-#With mspgccX, 3.2.3, turn off far code and far data
-#With current mspgcc4, these aren't supported, turn them off.
-#PFLAGS += -mdata-64k -mcode-64k
-
 # the include files for the 2618 needs to have the svsctl at 55
 # not 56 which is where the dcoctl register lives.
 #
 # No longer needed with the new TI headers.  But leave for now
 # because we switch between mspgcc4 (new ti headers) and mspgccX, 3.2.3
 #
-PFLAGS += -D__msp430_has_svs_at_0x55
-
-OPTFLAGS += -O
+#PFLAGS += -D__msp430_has_svs_at_0x55
 
 MSP_BSL ?= tos-bsl
 MSP_BSL_FLAGS = --telosb

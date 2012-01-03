@@ -7,6 +7,8 @@
 
 PLATFORM ?= mm3
 
+MSP_MCU ?= msp430f1611
+
 # THREADS_MSP430_DIR comes from main tree support/make/threads.extra
 # mm3 is based on the msp430 so we use that threads variant.
 #
@@ -18,8 +20,6 @@ CFLAGS += $(THREADS_MSP430_INCLUDE_DIRS)
 #CFLAGS += $(THREADS_CC2420_INCLUDE_DIRS)
 #CFLAGS += $(THREADS_TELOS_INCLUDE_DIRS)
 endif
-
-#MSP_MCU = msp430x1611
 
 #
 # The first PFLAGS addition, platforms/mm3 must be here otherwise
@@ -37,11 +37,6 @@ PFLAGS += -I$(MM_ROOT)/tos/platforms/mm3
 PFLAGS += -I$(MM_ROOT)/tos/platforms/mm
 PFLAGS += -I$(MM_ROOT)/tos/system
 PFLAGS += -I$(MM_ROOT)/tos/interfaces
-
-# Disable MSP430 hardware multiply because it makes MSPGCC die
-PFLAGS += -mdisable-hwmul
-
-OPTFLAGS += -O
 
 MSP_BSL ?= tos-bsl
 MSP_BSL_FLAGS = --telosb

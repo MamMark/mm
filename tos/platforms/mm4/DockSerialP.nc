@@ -54,9 +54,9 @@ implementation {
     return SUCCESS;
   }
 
-  async command msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
+  async command const msp430_uart_union_config_t* Msp430UartConfigure.getConfig() {
     SER_SEL = SER_SEL_DOCK;
-    return (msp430_uart_union_config_t *) &dock_serial_config;
+    return &dock_serial_config;
   }
 
   event void Resource.granted() { }

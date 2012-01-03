@@ -10,14 +10,6 @@
 
 #include "panic.h"
 
-#ifndef XWAIT
-#define XWAIT 0
-#endif
-
-
-volatile uint8_t wait = XWAIT;
-
-
 module CommBootP {
   provides interface Boot as CommBoot;
   uses {
@@ -28,9 +20,6 @@ module CommBootP {
 }
 implementation {
   event void Boot.booted() {
-    while (wait) {
-      nop();
-    }
 #ifdef PANIC_CARL
     call Panic.panic(5, 32, 1, 2, 3, 4);
 #endif

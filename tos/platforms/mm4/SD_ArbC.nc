@@ -63,8 +63,8 @@ implementation {
    * SD_ArbC provides arbited access to the SD on usciB0.  Pwr
    * control is wired in SPI0_Owner (SDspC/P).
    */
-  components Msp430UsciShareB0P as UsciShareP;
-  Resource = UsciShareP.Resource[CLIENT_ID];
+  components Msp430UsciArbB0P as UsciArbP;
+  Resource = UsciArbP.Resource[CLIENT_ID];
 
   components SDspC as SD;
   SDread  = SD.SDread[CLIENT_ID];

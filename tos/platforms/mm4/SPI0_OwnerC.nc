@@ -48,8 +48,8 @@ configuration SPI0_OwnerC {
 }
 
 implementation {
-  components Msp430UsciShareB0P;
-  ResourceDefaultOwner = Msp430UsciShareB0P;
+  components Msp430UsciArbB0P;
+  ResourceDefaultOwner = Msp430UsciArbB0P;
 
   components HplMsp430UsciB0C;
   Usci = HplMsp430UsciB0C;

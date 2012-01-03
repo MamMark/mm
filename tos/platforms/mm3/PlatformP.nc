@@ -143,7 +143,8 @@ implementation {
     CLR_FLAG( IE1, OFIE );
   }
 
-    command error_t Init.init() __attribute__ ((noinline)) {
+  command error_t Init.init() __attribute__ ((noinline)) {
+    WDTCTL = WDTPW + WDTHOLD;
     TOSH_MM_INITIAL_PIN_STATE();
 
     /*

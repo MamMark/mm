@@ -41,7 +41,7 @@ configuration PlatformSerialC {
 }
 
 implementation {
-  components new Msp430Uart1C() as UartC;
+  components new Msp430UartA1C() as UartC;
   UartStream = UartC;
   UartByte = UartC;
 

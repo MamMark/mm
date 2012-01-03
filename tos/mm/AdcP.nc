@@ -174,9 +174,9 @@ implementation {
   }
 
 
-  command error_t Init.init() {
-    adc_owner  = SNS_ID_NONE;
-    req_client = SNS_ID_NONE;
+  command error_t Init.init() {		/* rework for initilization beign 0 */
+    adc_owner  = SNS_ID_NONE;		/* nuke the initilization, base values */
+    req_client = SNS_ID_NONE;		/* should be zero. */
     adc_state  = ADC_IDLE;
     vref_state = VREF_OFF;
     vdiff_state = VDIFF_OFF;

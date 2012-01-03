@@ -1,5 +1,5 @@
 
-source ../../.gdb2618
+source ../../.gdb_x2
 source ../../.gdb_mm
 
 set remoteaddresssize 0d64
@@ -19,8 +19,12 @@ p/d SDspP__last_write_time_uis
 p/d SDspP__last_write_time_mis
 end
 
-b RealMainP.nc:86
-b RealMainP.nc:91
+#b RealMainP.nc:85   (PlatformInit)
+b *316c
+
+#b RealMainP.nc:92   (SoftwareInit)
+b *3176
+
 b SchedulerBasicP.nc:159
 b SchedulerBasicP.nc:162
 b VirtualizeTimerC.nc:92
@@ -34,7 +38,7 @@ printf "pcode: 0d%d (0x%0x)  where: 0d%d  0x%04x 0x%04x 0x%04x 0x%04x\n",_p,_p, 
 end
 
 # 7
-b FileSystemP.nc:274
+b FileSystemP.nc:275
 comm
 p FileSystemP__fsc
 end
@@ -48,4 +52,11 @@ end
 define noint
 printf "cur sr: %02x\n", $r2
 set $r2=0
+end
+
+define npc
+x/16i $pc
+end
+document npc
+display next (16) instructions from $pc
 end

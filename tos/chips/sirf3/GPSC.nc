@@ -42,7 +42,7 @@ implementation {
   components HplMsp430UsciA0C as UsciC;
   GPSP.Usci -> UsciC;
 
-  components new Msp430Uart0C() as UartC;
+  components new Msp430UartA0C() as UartC;
   GPSP.UartStream -> UartC;
   GPSP.UsciResource -> UartC;
   GPSP.UartConfigure <- UartC;

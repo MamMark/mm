@@ -312,8 +312,8 @@ implementation {
     }
   }
 
-  async command msp430_uart_union_config_t *UartConfigure.getConfig() {
-    return (msp430_uart_union_config_t *) &GPS_OP_SERIAL_CONFIG;
+  async command const msp430_uart_union_config_t *UartConfigure.getConfig() {
+    return &GPS_OP_SERIAL_CONFIG;
   }
 
   command error_t Init.init() {
@@ -435,7 +435,7 @@ implementation {
     call GPSMsgControl.start();
     t_gps_pwr_on = call LocalTime.get();
     call HW.gps_on();
-    call Usci.setModeUart((msp430_uart_union_config_t *) &GPS_OP_SERIAL_CONFIG);
+    call Usci.setModeUart(&GPS_OP_SERIAL_CONFIG);
 
 #ifdef GPS_RO
     if (gps_speed > 1)
@@ -448,11 +448,11 @@ implementation {
       switch (gps_speed) {
 	default:
 	case 0:
-	  call Usci.setModeUart((msp430_uart_union_config_t *) &sirf3_57600_serial_config);
+	  call Usci.setModeUart(&sirf3_57600_serial_config);
 	  call Usci.enableIntr();
 	  return SUCCESS;
 	case 1:
-	  call Usci.setModeUart((msp430_uart_union_config_t *) &sirf3_4800_serial_config);
+	  call Usci.setModeUart(&sirf3_4800_serial_config);
 	  call Usci.enableIntr();
 	  return SUCCESS;
       }
@@ -537,7 +537,7 @@ implementation {
 	call HW.gps_on();
 	t_gps_pwr_on = call LocalTime.get();
 	call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
-	call Usci.setModeUart((msp430_uart_union_config_t *) &sirf3_4800_serial_config);
+	call Usci.setModeUart(&sirf3_4800_serial_config);
 	return;
 
       case GPSC_RECONFIG_4800_START_DELAY:
@@ -724,7 +724,7 @@ implementation {
 	 */
 	call Usci.tx(0);
 	while (!call Usci.isTxIntrPending()) ;
-	call Usci.setModeUart((msp430_uart_union_config_t *) &GPS_OP_SERIAL_CONFIG);
+	call Usci.setModeUart(&GPS_OP_SERIAL_CONFIG);
 	call Usci.enableIntr();
 	return;
 
@@ -744,7 +744,7 @@ implementation {
 	post gps_config_task();
 	call Usci.tx(0);
 	while (!call Usci.isTxIntrPending()) ;
-	call Usci.setModeUart((msp430_uart_union_config_t *) &sirf3_4800_serial_config);
+	call Usci.setModeUart(&sirf3_4800_serial_config);
 	call Usci.enableIntr();
 	break;
 
