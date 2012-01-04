@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 (c) Eric B. Decker
+ * Copyright 2010, 2012 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -94,9 +94,8 @@ module PlatformP{
     interface GeneralIO as Led2;
   }
   uses {
-    interface Init as ClockInit;
+    interface Init as Msp430ClockInit;
     interface Init as LedsInit;
-    interface Msp430ClockInit;
     interface Stack;
   }
 }
@@ -151,63 +150,10 @@ implementation {
     }
   }
 
-  event void Msp430ClockInit.setupDcoCalibrate() {
-    call Msp430ClockInit.defaultSetupDcoCalibrate();
-  }
-  
-  /*
-   * using SMCLK = DCO = 8MHz.  /8 gives us 1us ticks.
-   *
-   * Assumes interrupts off.
-   */
-  event void Msp430ClockInit.initTimerA() {
-
-    /*
-     * FIX ME.  Does this make it so low power mode doesn't
-     * do its thing?  Also how often do we want to resyncronize
-     * the clock (DCO).
-     */
-
-    // TACTL
-    // .TASSEL = 2;	source SMCLK = DCO
-    // .ID = 3;		input divisor of 8 (DCO/8)
-    // .MC = 2;		continuously running
-    // .TACLR = 0;
-    // .TAIE = 1;	enable timer A interrupts
-    TAR = 0;
-    TACTL = TASSEL_2 | ID_3 | MC_2 | TAIE;
-  }
-
-  event void Msp430ClockInit.initTimerB() {
-    call Msp430ClockInit.defaultInitTimerB();
-  }
-
-  event void Msp430ClockInit.initClocks() {
-    // BCSCTL1
-    // .XT2OFF = 1;	external osc off
-    // .XTS = 0;	low frequency mode for LXFT1
-    // .DIVA = 0;	ACLK/1
-    // .RSEL,		do not modify
-    BCSCTL1 = XT2OFF | (BCSCTL1 & RSEL_MASK);
-
-    // BCSCTL2
-    // .SELM = 0;	MCLK <- DCO/1
-    // .DIVM = 0;	MCLK divisor 1
-    // .SELS = 0;	SMCLK <- DCO/1
-    // .DIVS = 0;	SMCLK divisor 1
-    // .DCOR = 0;	internal resistor
-    BCSCTL2 = 0;
-
-    // BCSCTL3: use default, on reset set to 4, 6pF.
-
-    // IE1.OFIE = 0; no interrupt for oscillator fault
-    CLR_FLAG( IE1, OFIE );
-  }
 
   command error_t Init.init() __attribute__ ((noinline)) {
     WDTCTL = WDTPW + WDTHOLD;
     TOSH_MM_INITIAL_PIN_STATE();
-
 
     /*
      * check to see if memory is okay.   The boot_majik cell tells the story.
@@ -230,7 +176,7 @@ implementation {
      * start up.
      */
     wait_for_32K();
-    call ClockInit.init();
+    call Msp430ClockInit.init();
     call LedsInit.init();
     return SUCCESS;
   }

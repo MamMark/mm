@@ -1,5 +1,5 @@
 /**
- * Copyright 2008 (c) Eric B. Decker
+ * Copyright 2008, 2012 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,6 @@ implementation {
   Init = PlatformP;
   BootParams = PlatformP;
 
-  PlatformP.ClockInit -> Msp430ClockC.Init;
-  PlatformP.Msp430ClockInit -> Msp430ClockC;
+  PlatformP.Msp430ClockInit -> Msp430ClockC.Init;
   PlatformP.Stack -> StackC;
 }
