@@ -24,7 +24,9 @@
 
 COMPONENT=mmC
 
-OPTFLAGS = -g -O1 -fnesc-no-inline
+CFLAGS += -Wa,-ahdlns=$(COMPONENT).lst -save-temps
+OPTFLAGS = -ggdb -O1 -fnesc-no-inline
+PFLAGS += -DDISABLE_ATOMIC_INLINE
 
 #PFLAGS += -DPANIC_CARL
 
