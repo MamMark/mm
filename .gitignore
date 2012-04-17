@@ -1,5 +1,6 @@
 Oops
 *.[oa]
+*.lst
 *~
 build
 build/*/.gdbinit
