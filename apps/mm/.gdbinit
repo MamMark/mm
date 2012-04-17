@@ -19,15 +19,16 @@ p/d SDspP__last_write_time_uis
 p/d SDspP__last_write_time_mis
 end
 
-#b RealMainP.nc:85   (PlatformInit)
-b *316c
+# b RealMainP.nc:85   (PlatformInit)
+# b RealMainP.nc:93   (SoftwareInit)
+# b RealMainP.nc:100   (booted)
+#b RealMainP.nc:85
+#b RealMainP.nc:93
+#b RealMainP.nc:100
 
-#b RealMainP.nc:92   (SoftwareInit)
-b *3176
-
-b SchedulerBasicP.nc:159
+#b SchedulerBasicP.nc:159
 b SchedulerBasicP.nc:162
-b VirtualizeTimerC.nc:92
+#b VirtualizeTimerC.nc:92
 dis
 
 
@@ -38,10 +39,12 @@ printf "pcode: 0d%d (0x%0x)  where: 0d%d  0x%04x 0x%04x 0x%04x 0x%04x\n",_p,_p, 
 end
 
 # 7
-b FileSystemP.nc:275
+b FileSystemP.nc:276
 comm
 p FileSystemP__fsc
 end
+
+b mmSyncP.nc:99
 
 define nx
 fini
@@ -59,4 +62,12 @@ x/16i $pc
 end
 document npc
 display next (16) instructions from $pc
+end
+
+define gg
+set wait=0
+c
+end
+document gg
+go, set wait to 0 and continue
 end
