@@ -37,6 +37,10 @@
 #ifndef _H_MM4_PORT_REGS_H
 #define _H_MM4_PORT_REGS_H
 
+#ifndef PACKED
+#define PACKED __attribute__((__packed__))
+#endif
+
   static volatile struct {
     uint8_t dmux            : 2;
     uint8_t mag_deguass1    : 1;
@@ -45,7 +49,7 @@
     uint8_t press_res_off   : 1;
     uint8_t salinity_off    : 1;
     uint8_t press_off       : 1;
-  } mmP1out asm("0x0021");
+  } PACKED mmP1out asm("0x0021");
 
 #define TELL mmP1out.tell
 
@@ -57,7 +61,7 @@
     uint8_t smux_low2		: 2;
     uint8_t adc_cnv		: 1;
     uint8_t			: 1;
-  } mmP2out asm("0x0029");
+  } PACKED mmP2out asm("0x0029");
 
 #define SMUX_LOW2 mmP2out.smux_low2
 #define ADC_CNV mmP2out.adc_cnv
@@ -71,7 +75,7 @@
     uint8_t gpsx_rxd		: 1;
     uint8_t dockx_utxd1		: 1;
     uint8_t dockx_urxd1_o	: 1;
-  } mmP3out asm("0x0019");
+  } PACKED mmP3out asm("0x0019");
 
 #define TMP_ON mmP3out.tmp_on
 
@@ -83,7 +87,7 @@ norace static volatile struct {
     uint8_t extchg_battchk	: 1;
     uint8_t gps_off		: 1;
     uint8_t smux_a2		: 1;
-  } mmP4out asm("0x001d");
+  } PACKED mmP4out asm("0x001d");
 
 #define SMUX_A2 mmP4out.smux_a2
 
@@ -95,7 +99,7 @@ norace static volatile struct {
     uint8_t sd_csn		: 1;	/* chip select low true (deselect) */
     uint8_t rf_beep_off		: 1;
     uint8_t ser_sel		: 2;
-  } mmP5out asm("0x0031");
+  } PACKED mmP5out asm("0x0031");
 
 #define SER_SEL mmP5out.ser_sel
 
@@ -152,6 +156,6 @@ norace static volatile struct {
     uint8_t mag_xy_off		: 1;
     uint8_t adcx_sdi		: 1;
     uint8_t mag_z_off		: 1;
-  } mmP6out asm("0x0035");
+  } PACKED mmP6out asm("0x0035");
   
 #endif
