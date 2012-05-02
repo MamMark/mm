@@ -109,7 +109,7 @@ ms_init(char *device_name) {
      * Otherwise flag no panic block.
      */
     if (verbose || debug)
-      fprintf(stderr, "*** reading PANIC0 (sector %d)\n", PANIC0_SECTOR);
+      fprintf(stderr, "*** reading PANIC0 (sector %lu)\n", PANIC0_SECTOR);
     ms_read_blk_fail(PANIC0_SECTOR, dp);
     php = (void *) dp;
     empty = msu_check_panic0_blk(php);
