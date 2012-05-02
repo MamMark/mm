@@ -1,4 +1,3 @@
-/* $Id: mkdblk.c,v 1.10 2007/07/11 05:03:47 cire Exp $ */
 /*
  * mkdblk - create dblk structures on mass storage
  * Copyright 2006-2008, 2010 Eric B. Decker
@@ -22,7 +21,7 @@
 #include "ms.h"
 
 
-#define VERSION "mkdblk: (mam_mark, T2) v3.0 24 Sep 2010\n"
+#define VERSION "mkdblk: (mam_mark, T2) v3.1  2012/05/02\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -33,14 +32,25 @@ uint32_t config_size = 8*1024,
 	 dblk_size   = 0;
 
 
+static struct option longopts[] = {
+  { "version",	no_argument, NULL, 'V' },
+  { "help",	no_argument, NULL, 'h' },
+  { NULL,	0,	     NULL, 0 }
+};
+
+
 static void usage(char *name) {
     fprintf(stderr, VERSION);
     fprintf(stderr, "usage: %s [-c <config_size>] [-d <data_size>] [-p <panic size>] [-Dvw] device_file\n", name);
     fprintf(stderr, "  -c <size>    set config size\n");
     fprintf(stderr, "  -d <size>    set dblk size\n");
+    fprintf(stderr, "  -h           this usage\n");
+    fprintf(stderr, "  --help\n");
     fprintf(stderr, "  -p <size>    set panic size\n\n");
     fprintf(stderr, "  -D           increment debugging level\n");
     fprintf(stderr, "  -v           verbose mode (increment)\n");
+    fprintf(stderr, "  -V           display version\n");
+    fprintf(stderr, "  --version\n");
     fprintf(stderr, "  -w           enable write of any changes needed\n");
     fprintf(stderr, "               otherwise just list what is there\n");
     exit(2);
@@ -98,7 +108,7 @@ int main(int argc, char **argv) {
     u32_t   pstart, pend, cstart, cend, dstart, dend;
     int     do_dblk_loc, do_panic0;
 
-    while ((c = getopt(argc,argv,"c:d:p:Dvw")) != EOF)
+    while ((c = getopt_long(argc,argv,"c:d:p:DhvVw", longopts, NULL)) != EOF)
 	switch (c) {
 	  case 'c':
 	      fprintf(stderr, "-c not implemented yet, defaults to 8192\n");
@@ -109,17 +119,25 @@ int main(int argc, char **argv) {
 	  case 'D':
 	      debug++;
 	      break;
+	  case 'h':
+	      usage(argv[0]);
+	      break;
 	  case 'p':
 	      fprintf(stderr, "-c not implemented yet, defaults to 128k\n");
 	      break;
 	  case 'v':
 	      verbose++;
 	      break;
+	  case 'V':
+	      fprintf(stderr, VERSION);
+	      exit(0);
+	      break;
 	  case 'w':
 	      do_write++;
 	      break;
 	  default:
 	      usage(argv[0]);
+	      break;
 	}
     if (optind != argc - 1)
 	usage(argv[0]);
