@@ -239,7 +239,7 @@ implementation {
     call DTSender.send(event_data, DT_HDR_SIZE_EVENT);
 #endif
 
-    if (np->len != NAVDATA_LEN)
+    if (!np || np->len != NAVDATA_LEN)
       return;
 
     call LogEvent.logEvent(DT_EVENT_GPS_SATS_2, np->sats);
@@ -265,7 +265,7 @@ implementation {
     call DTSender.send(event_data, DT_HDR_SIZE_EVENT);
 #endif
 
-    if (cp->len != CLOCKSTATUS_LEN)
+    if (!cp || cp->len != CLOCKSTATUS_LEN)
       return;
 
     call LogEvent.logEvent(DT_EVENT_GPS_SATS_7, cp->sats);
@@ -292,7 +292,7 @@ implementation {
     dt_gps_pos_nt *posp;
     uint32_t t, t1;
 
-    if (gp->len != GEODETIC_LEN)
+    if (!gp || gp->len != GEODETIC_LEN)
       return;
 
     timep = (dt_gps_time_nt*)gps_time_block;
@@ -311,7 +311,7 @@ implementation {
     timep->utc_millsec = gp->utc_sec;
     timep->clock_bias = gp->clock_bias;
     timep->clock_drift = gp->clock_drift;
-  
+
     posp->len = GPS_POS_BLOCK_SIZE;
     posp->dtype = DT_GPS_POS;
     posp->stamp_mis = timep->stamp_mis;
