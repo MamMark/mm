@@ -190,11 +190,13 @@ typedef struct {
 
 typedef enum {
     MS_OK		= 0,
-    MS_INTERNAL		= (MS_ID | 1),
-    MS_READ_FAIL	= (MS_ID | 2),
-    MS_READ_TOO_SHORT	= (MS_ID | 3),
-    MS_WRITE_FAIL	= (MS_ID | 4),
-    MS_WRITE_TOO_SHORT	= (MS_ID | 5),
+    MS_FAIL		= (MS_ID | 1),
+    MS_READONLY		= (MS_ID | 2),
+    MS_INTERNAL		= (MS_ID | 3),
+    MS_READ_FAIL	= (MS_ID | 4),
+    MS_READ_TOO_SHORT	= (MS_ID | 5),
+    MS_WRITE_FAIL	= (MS_ID | 6),
+    MS_WRITE_TOO_SHORT	= (MS_ID | 7),
 } ms_rtn;
 
 

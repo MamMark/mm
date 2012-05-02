@@ -69,13 +69,26 @@ ms_init(char *device_name) {
     uint32_t   blk, lower, upper;
     int empty;
     uint8_t *dp;
+    ms_rtn rtn;
 
     assert(device_name);
+    rtn = MS_OK;
     fd = open(device_name, O_RDWR);
     if (fd < 0) {
-	fprintf(stderr, "ms_init: open fail: %s, %s (%d)\n",
-		device_name, strerror(errno), errno);
-	return(MS_INTERNAL);
+	if (errno != EROFS) {
+	    fprintf(stderr, "ms_init: open fail: %s, %s (%d)\n",
+		    device_name, strerror(errno), errno);
+	    return MS_INTERNAL;
+	}
+	if (verbose)
+	  fprintf(stderr, "ms_init: ROFS, trying read only\n");
+	fd = open(device_name, O_RDONLY);
+	if (fd < 0) {
+	    fprintf(stderr, "ms_init: readonly open fail: %s, %s (%d)\n",
+		    device_name, strerror(errno), errno);
+	    return MS_INTERNAL;
+	}
+	rtn = MS_READONLY;
     }
 
     msc.panic_start = msc.panic_end = 0;
@@ -94,7 +107,7 @@ ms_init(char *device_name) {
     empty = msu_check_dblk_loc(dbl);
     fprintf(stderr, "dblk_loc:  %s (%d)\n", msu_check_string(empty), empty);
     if (empty)
-      return(MS_OK);
+      return rtn;
 
     msc.panic_start  = CF_LE_32(dbl->panic_start);
     msc.panic_end    = CF_LE_32(dbl->panic_end);
@@ -145,7 +158,7 @@ ms_init(char *device_name) {
     ms_read_blk_fail(msc.dblk_start, dp);
     if (msu_blk_empty(dp)) {
 	msc.dblk_nxt = msc.dblk_start;
-	return(MS_OK);
+	return rtn;
     }
     lower = msc.dblk_start;
     upper = msc.dblk_end;
@@ -177,7 +190,7 @@ ms_init(char *device_name) {
       fprintf(stderr, "panic0:    p:   s: %-8lx   e: %-8lx   n: %-8lx\n",
 	      p0c.panic_start, p0c.panic_end, p0c.panic_nxt);
     }
-    return(MS_OK);
+    return rtn;
 }
 
 
@@ -279,6 +292,8 @@ char *
 ms_dsp_err(ms_rtn err) {
     switch (err) {
       case MS_OK:		return("ok");
+      case MS_FAIL:		return("fail");
+      case MS_READONLY:		return("readonly");
       case MS_INTERNAL:		return("internal");
       case MS_READ_FAIL:	return("read fail");
       case MS_READ_TOO_SHORT:	return("read too short");

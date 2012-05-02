@@ -146,6 +146,10 @@ int main(int argc, char **argv) {
 	fprintf(stderr, VERSION);
     fx_hard_init();
     err = ms_init(argv[optind]);
+    if (err == MS_READONLY) {
+      err = MS_OK;
+      do_write = 0;
+    }
     if (err) {
 	fprintf(stderr, "ms_init: %s (0x%x)\n", ms_dsp_err(err), err);
 	exit(1);
