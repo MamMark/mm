@@ -1,3 +1,111 @@
+Bugs:
+
+mkdblk:
+
+  mkdosfs -F32 -I -n"TagTest" -v /dev/sdb
+  fsck -v /dev/sdb
+  mkdblk -v -w /dev/sdb
+  fsck -v /dev/sdb
+
+(root) zot (7)# fsck -v /dev/sdb
+fsck from util-linux 2.19.1
+dosfsck 3.0.9 (31 Jan 2010)
+dosfsck 3.0.9, 31 Jan 2010, FAT32, LFN
+Checking we can access the last sector of the filesystem
+Boot sector contents:
+System ID "mkdosfs"
+Media byte 0xf8 (hard disk)
+       512 bytes per logical sector
+      4096 bytes per cluster
+        32 reserved sectors
+First FAT starts at byte 16384 (sector 32)
+         2 FATs, 32 bit entries
+   1945600 bytes per FAT (= 3800 sectors)
+Root directory start at cluster 2 (arbitrary size)
+Data area starts at byte 3907584 (sector 7632)
+    486214 data clusters (1991532544 bytes)
+62 sectors/track, 62 heads
+         0 hidden sectors
+   3897344 sectors total
+FATs differ but appear to be intact. Use which FAT ?
+1) Use first FAT
+2) Use second FAT
+? 1
+
+Selected 1st FAT.
+
+Cluster 486213 out of range (486216 > 486215). Setting to EOF.
+/DBLK0001
+  File size is 1991913472 bytes, cluster chain length is 1991389184 bytes.
+  Truncating file to 1991389184 bytes.
+Checking for unused clusters.
+Checking free cluster summary.
+Leaving file system unchanged.
+/dev/sdb: 4 files, 486214/486214 clusters
+
+
+(root) zot (9)# fsck -v /dev/sdb
+fsck from util-linux 2.19.1
+dosfsck 3.0.9 (31 Jan 2010)
+dosfsck 3.0.9, 31 Jan 2010, FAT32, LFN
+Checking we can access the last sector of the filesystem
+Boot sector contents:
+System ID "mkdosfs"
+Media byte 0xf8 (hard disk)
+       512 bytes per logical sector
+      4096 bytes per cluster
+        32 reserved sectors
+First FAT starts at byte 16384 (sector 32)
+         2 FATs, 32 bit entries
+   1945600 bytes per FAT (= 3800 sectors)
+Root directory start at cluster 2 (arbitrary size)
+Data area starts at byte 3907584 (sector 7632)
+    486214 data clusters (1991532544 bytes)
+62 sectors/track, 62 heads
+         0 hidden sectors
+   3897344 sectors total
+FATs differ but appear to be intact. Use which FAT ?
+1) Use first FAT
+2) Use second FAT
+? 2
+
+2nd FAT all messed up.
+
+Cluster 486213 out of range (486216 > 486215). Setting to EOF.
+/DBLK0001
+  Circular cluster chain. Truncating to 0 clusters.
+/DBLK0001
+  File size is 1991913472 bytes, cluster chain length is 0 bytes.
+  Truncating file to 0 bytes.
+Checking for unused clusters.
+Reclaimed 179138 unused clusters (733749248 bytes).
+Checking free cluster summary.
+Free cluster summary wrong (0 vs. really 179138)
+1) Correct
+2) Don't correct
+? 2
+Leaving file system unchanged.
+/dev/sdb: 4 files, 307076/486214 clusters
+(root) zot (10)# 
+
+
+*** after a clean mkdblk and format, running for a little bit (not starting in middle of dblk (unerased),
+  we then fsck and get...
+
+zot (22): fsck /dev/sdb
+fsck from util-linux 2.19.1
+dosfsck 3.0.9, 31 Jan 2010, FAT32, LFN
+Cluster 486213 out of range (486216 > 486215). Setting to EOF.
+/DBLK0001
+  File size is 1991913472 bytes, cluster chain length is 1991389184 bytes.
+  Truncating file to 1991389184 bytes.
+Free cluster summary uninitialized (should be 0)
+Leaving file system unchanged.
+/dev/sdb: 4 files, 486214/486214 clusters
+
+should be clean.
+
+
 - at 115200, SiRFBin with recv_only turned on we see the stream no problem.
 - at 115200, SiRFBin, recv_only == 0, we seem to lose some of the bytes.
   (check path length, this seems to have to do with setting timers which
@@ -7,7 +115,6 @@
 - try 57600.
 
 1) Debug timed start up structure for GPS boot.
-2) 
 
 In no particular order:
 
