@@ -147,6 +147,7 @@ int main(int argc, char **argv) {
     fx_hard_init();
     err = ms_init(argv[optind]);
     if (err == MS_READONLY) {
+      fprintf(stderr, "mkdblk: %s is read only\n", argv[optind]);
       err = MS_OK;
       do_write = 0;
     }
