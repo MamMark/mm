@@ -206,6 +206,15 @@ T2_MM git repositories:
 
 9) Formating SD media for use by the tag.
 
-  To format: mkdosfs -F 32 -I -n"TagTest" -v /dev/sda
-
-  To create Dblk Locator: ./mkdblk -w /dev/sda
+  format
+	mkdosfs -F 32 -I -n"TagTest" -v /dev/sdb
+  check
+	fsck /dev/sdb
+  build
+	mkdblk -w /dev/sdb
+  check
+	fsck /dev/sdb
+  correct
+	fsck -a /dev/sdb
+	fsck    /dev/sdb
+	eject   /dev/sdb
