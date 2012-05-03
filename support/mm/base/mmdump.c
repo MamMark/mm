@@ -41,7 +41,7 @@
 #include "DtGpsRawMsg.h"
 #include "ParseSirf.h"
 
-#define VERSION "mmdump: v0.11.0  (06 Nov 2010)\n"
+#define VERSION "mmdump: v0.11.1  (20120502)\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -60,8 +60,10 @@ static void usage(char *name) {
   fprintf(stderr, "  -D       increment debugging level\n");
   fprintf(stderr, "             1 - basic debugging, 2 - dump packet data\n");
   fprintf(stderr, "  -e       show event logging\n");
-  fprintf(stderr, "  -v       verbose mode (increment)\n");
   fprintf(stderr, "  -d       write data files for each sensor\n");
+  fprintf(stderr, "  -h | --help\n");
+  fprintf(stderr, "  -V | --version\n");
+  fprintf(stderr, "  -v       verbose mode (increment)\n");
   exit(2);
 }
 
@@ -721,6 +723,8 @@ static struct option longopts[] = {
   { "sf",	no_argument, NULL, 1 },
   { "serial",	no_argument, NULL, 2 },
   { "file",	no_argument, NULL, 'f' },
+  { "version",	no_argument, NULL, 'V' },
+  { "help",	no_argument, NULL, 'h' },
   { NULL,	0,	     NULL, 0 }
 };
 
@@ -772,6 +776,10 @@ main(int argc, char **argv) {
       case 'v':
 	verbose++;
 	break;
+      case 'V':
+	fprintf(stderr, VERSION);
+	exit(2);
+      case 'h':
       default:
 	usage(prog_name);
     }
