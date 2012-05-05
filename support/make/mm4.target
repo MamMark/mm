@@ -28,8 +28,8 @@ CFLAGS  += $(THREADS_MSP430X_INCLUDE_DIRS) $(THREADS_MSP430_INCLUDE_DIRS)
 endif
 
 #
-# The first PFLAGS addition, platforms/mm3 must be here otherwise
-# the make mm3 doesn't work.  The others for tos/{system,interfaces}
+# The PFLAGS addition for tos/platforms/mm4 is required so the make system
+# can find the platform.  The others for tos/{system,interfaces}
 # need to be here to make sure we don't get overridden by threads or
 # other stuff that comes in via the CFLAGS varient.  Stuff in the .platform
 # file come in last after PFLAGS and CFLAGS.
