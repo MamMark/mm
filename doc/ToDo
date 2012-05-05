@@ -1,5 +1,10 @@
 Bugs:
 
+tos/platforms/mm5s/hardware/clock/PlatformClockP.nc - 
+  check clock register settings.   See 194c7f2 from mm5s -> now msp430-int 67008c5
+  check ucsctl6.xt1bypass, etc.
+
+
 mkdblk:
 
   mkdosfs -F32 -I -n"TagTest" -v /dev/sdb
