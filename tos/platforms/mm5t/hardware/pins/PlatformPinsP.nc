@@ -47,12 +47,46 @@ implementation {
   int i;
 
   command error_t Init.init() {
+    uint8_t test;
+
     atomic {
       /*
        * for now, just leave it all as the reset state.
        *
+       * For gps, P4.0 to P43 used.
+       *
+       * p4.0: on_off
+       * p4.1: resetn
+       * p4.2: csn
+       * p4.3: wakeup
+       *
        * 5438, all input, with OUT/IN left alone.
        */
+      P4OUT = BIT2 | BIT1;		/* csn and resetn deasserted. */
+      P4DIR = BIT2 | BIT1 | BIT0;	/* 2, 1, 0 outputs */
+
+      P4OUT &= ~BIT1;			/* reset */
+      P4OUT |=  BIT1;			/* unreset */
+      test = P4IN & BIT3;
+      P4OUT |= BIT0;
+      P4OUT &= ~BIT0;
+      test = P4IN & BIT3;
+      P4OUT |= BIT0;
+      P4OUT &= ~BIT0;
+      test = P4IN & BIT3;
+      
+      P4OUT &= ~BIT1;			/* reset */
+      P4OUT |=  BIT1;			/* unreset */
+      test = P4IN & BIT3;
+      P4OUT |= BIT0;
+      P4OUT &= ~BIT0;
+      test = P4IN & BIT3;
+      P4OUT |= BIT0;
+      P4OUT &= ~BIT0;
+      test = P4IN & BIT3;
+      
+      P4OUT &= ~BIT1;			/* reset */
+      P4OUT |=  BIT1;			/* unreset */
 
 #if 0 /* Disabled: these specific setting sare defaults, but others might not be */
       PMAPPWD = PMAPPW;                         // Get write-access to port mapping regs
