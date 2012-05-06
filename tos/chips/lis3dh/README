@@ -1,0 +1,11 @@
+
+LIS3DHC.nc           - provides Init, SplitControl and LIS3DH
+LIS3DH.nc            -
+LIS3DHP.nc           - provides Init, SplitControl, and LIS3DH
+                       uses SpiPacket, GeneralIO
+
+LIS3DHReaderC.nc    - provides AccelX, AccelY, AccelZ
+LIS3DHReaderP.nc
+LIS3DHReaderP.nc~
+LIS3DHRegisters.h
+README
