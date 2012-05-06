@@ -1,0 +1,4 @@
+COMPONENT=TestLIS3DHC
+include $(MAKERULES)
+
+
