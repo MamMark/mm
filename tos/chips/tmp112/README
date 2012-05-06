@@ -1,0 +1,18 @@
+README for the TMP112 Driver
+
+The following notes are based on the TMP112 data sheet ...
+
+When successful, the driver will return a word of data.  Depending on the
+TMP112 configuration, the first 12 or 13 bits of that word will contain
+a temperature value in Celsius degrees in the driver format.  One LSB corresponds
+to 0.0625 degrees, which is 1/16 degree.
+
+In 12 bit mode, the first byte contains a whole number of degrees and
+the first four bits of the second byte contain a fractional degree.
+To round off to whole degrees:  look at the four bits containing the fraction
+and add one if they are greater than equal to 8.
+
+Negative degree values are provided in twos complement form.
+
+It should be possible to compress 16 bit temperature words to 8 bit when
+what you need is accuracy to 1/2 degree.
