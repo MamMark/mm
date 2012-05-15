@@ -1,7 +1,8 @@
 #-*-Makefile-*- vim:syntax=make
 #
-# mm5t is based on msp430f5438a
-# see tos/platform/mm4/hardware.h for how the pins are assigned.
+# mm5t is based on msp430f5438a.  Eval-430f5438 board.
+# see tos/platform/mm5t/hardware.h for how the pins are assigned.
+# Origin ORG4472 is wired in at various of the break out pins.
 #
 
 PLATFORM = mm5t
@@ -29,6 +30,7 @@ PFLAGS += -I$(MM_ROOT)/include
 PFLAGS += -I$(MM_ROOT)/tos/platforms/mm5t
 PFLAGS += -I$(MM_ROOT)/tos/platforms/mm
 PFLAGS += -I$(MM_ROOT)/tos/system
+PFLAGS += -I$(MM_ROOT)/tos/system/panic_simple
 PFLAGS += -I$(MM_ROOT)/tos/interfaces
 
 $(call TOSMake_include_platform,msp)

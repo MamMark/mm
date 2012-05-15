@@ -42,6 +42,7 @@ PFLAGS += -I$(MM_ROOT)/include
 PFLAGS += -I$(MM_ROOT)/tos/platforms/mm4
 PFLAGS += -I$(MM_ROOT)/tos/platforms/mm
 PFLAGS += -I$(MM_ROOT)/tos/system
+PFLAGS += -I$(MM_ROOT)/tos/system/panic
 PFLAGS += -I$(MM_ROOT)/tos/interfaces
 
 # the include files for the 2618 needs to have the svsctl at 55
