@@ -273,11 +273,11 @@ typedef nx_struct dt_gps_raw {
 
 
 /*
- * Not data types. Sub fields of raw
- * gps data. Defining them to use tos
- * tools. They are sirf output messages.
+ * Not data types. Sub fields of raw gps data.  Defining them to use tos
+ * tools.  They are sirf output messages.
  */
 
+/* MID 2, Nav Data */
 typedef nx_struct gps_nav_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -298,6 +298,7 @@ typedef nx_struct gps_nav_data {
   nx_uint8_t   data[0];
 } gps_nav_data_nt;
 
+/* MID 4, Tracker Data */
 typedef nx_struct gps_tracker_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -309,6 +310,7 @@ typedef nx_struct gps_tracker_data {
   nx_uint8_t   data[0];
 } gps_tracker_data_nt;
 
+/* MID 6, s/w version */
 typedef nx_struct gps_soft_version_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -317,6 +319,7 @@ typedef nx_struct gps_soft_version_data {
   nx_uint8_t   data[0];
 } gps_soft_version_data_nt;
 
+/* MID 7, clock status */
 typedef nx_struct gps_clock_status_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -330,6 +333,7 @@ typedef nx_struct gps_clock_status_data {
   nx_uint32_t  gpstime; 
 } gps_clock_status_data_nt;
 
+/* MID 10, error data */
 typedef nx_struct gps_error_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -340,6 +344,7 @@ typedef nx_struct gps_error_data {
   nx_uint8_t   data[0];
 } gps_error_data_nt;
 
+/* MID 14, almanac data */
 typedef nx_struct gps_almanac_status_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -351,6 +356,7 @@ typedef nx_struct gps_almanac_status_data {
 } gps_almanac_status_data_nt;
 
 
+/* MID 28, nav lib data */
 typedef nx_struct gps_nav_lib_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -382,6 +388,7 @@ typedef nx_struct gps_nav_lib_data {
   nx_uint8_t   low_pow_cnt;
 } gps_nav_lib_data_nt;
 
+/* MID 41, geodetic data */
 typedef nx_struct gps_geodetic {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -424,6 +431,7 @@ typedef nx_struct gps_geodetic {
   nx_uint8_t   mode;
 } gps_geodetic_nt;
 
+/* MID 52, 1PPS data */
 typedef nx_struct gps_pps_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -442,6 +450,7 @@ typedef nx_struct gps_pps_data {
 } gps_pps_data_nt;
 
 
+/* MID 255, Dev Data */
 typedef nx_struct gps_dev_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
