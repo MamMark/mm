@@ -1,8 +1,6 @@
 /*
- * Copyright (c) 2009-2010 People Power Company
+ * Copyright (c) 2012 Eric B. Decker
  * All rights reserved.
- *
- * This open source code was developed with funding from People Power Company
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,11 +30,8 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/**
- * @author David Moss
- * @author Peter A. Bigot <pab@peoplepowerco.com>
+ *
+ * @author Eric B. Decker <cire831@gmail.com>
  */
 
 module PlatformPinsP {
@@ -44,49 +39,22 @@ module PlatformPinsP {
 }
 
 implementation {
-  int i;
-
   command error_t Init.init() {
-    uint8_t test;
 
     atomic {
       /*
        * for now, just leave it all as the reset state.
        *
-       * For gps, P4.0 to P43 used.
+       * For gps, P4.0 to P4.3 used.
        *
        * p4.0: on_off
        * p4.1: resetn
        * p4.2: csn
        * p4.3: wakeup
-       *
-       * 5438, all input, with OUT/IN left alone.
        */
-      P4OUT = BIT2 | BIT1;		/* csn and resetn deasserted. */
+      P4OUT = BIT2 | BIT1;		/* csn and resetn deasserted (1), on_off is 0. */
       P4DIR = BIT2 | BIT1 | BIT0;	/* 2, 1, 0 outputs */
-
-      P4OUT &= ~BIT1;			/* reset */
-      P4OUT |=  BIT1;			/* unreset */
-      test = P4IN & BIT3;
-      P4OUT |= BIT0;
-      P4OUT &= ~BIT0;
-      test = P4IN & BIT3;
-      P4OUT |= BIT0;
-      P4OUT &= ~BIT0;
-      test = P4IN & BIT3;
-      
-      P4OUT &= ~BIT1;			/* reset */
-      P4OUT |=  BIT1;			/* unreset */
-      test = P4IN & BIT3;
-      P4OUT |= BIT0;
-      P4OUT &= ~BIT0;
-      test = P4IN & BIT3;
-      P4OUT |= BIT0;
-      P4OUT &= ~BIT0;
-      test = P4IN & BIT3;
-      
-      P4OUT &= ~BIT1;			/* reset */
-      P4OUT |=  BIT1;			/* unreset */
+    }
 
 #if 0 /* Disabled: these specific setting sare defaults, but others might not be */
       PMAPPWD = PMAPPW;                         // Get write-access to port mapping regs
@@ -94,8 +62,6 @@ implementation {
       P1MAP6 = PM_UCA0TXD;                      // Map UCA0TXD output to P1.6
       PMAPPWD = 0;                              // Lock port mapping registers
 #endif //
-
-    }
     return SUCCESS;
   }
 }

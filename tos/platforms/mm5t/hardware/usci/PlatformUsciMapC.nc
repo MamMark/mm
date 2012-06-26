@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010 People Power Co.
+ * Copyright (c) 2012 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,26 +35,36 @@
 #include "msp430usci.h"
 
 /**
- * Connect the appropriate pins for USCI support on a CC430.
+ * Connect the appropriate pins for USCI support on a msp430f5438a (also
+ * works for 5438)
  *
- * @author Peter A. Bigot <pab@peoplepowerco.com>
+ * @author Eric B. Decker <cire831@gmail.com>
  */
 
 configuration PlatformUsciMapC {
 } implementation {
   components HplMsp430GeneralIOC as GIO;
 
-  components Msp430UsciUartA0P as UartA0C;
-  UartA0C.URXD -> GIO.UCA0RXD;
-  UartA0C.UTXD -> GIO.UCA0TXD;
+  components Msp430UsciUartA0P as UartA0;
+  UartA0.URXD -> GIO.UCA0RXD;
+  UartA0.UTXD -> GIO.UCA0TXD;
 
-  components Msp430UsciSpiB0P as SpiB0C;
-  SpiB0C.SIMO -> GIO.UCB0SIMO;
-  SpiB0C.SOMI -> GIO.UCB0SOMI;
-  SpiB0C.CLK  -> GIO.UCB0CLK;
+  components Msp430UsciSpiA3P as SpiA3;
+  SpiA3.SIMO -> GIO.UCA3SIMO;
+  SpiA3.SOMI -> GIO.UCA3SOMI;
+  SpiA3.CLK  -> GIO.UCA3CLK;
 
-  components Msp430UsciSpiA3P as SpiA3C;
-  SpiA3C.SIMO -> GIO.UCA3SIMO;
-  SpiA3C.SOMI -> GIO.UCA3SOMI;
-  SpiA3C.CLK  -> GIO.UCA3CLK;
+  components Msp430UsciSpiB0P as SpiB0;
+  SpiB0.SIMO -> GIO.UCB0SIMO;
+  SpiB0.SOMI -> GIO.UCB0SOMI;
+  SpiB0.CLK  -> GIO.UCB0CLK;
+
+  components Msp430UsciSpiB1P as SpiB1;
+  SpiB1.SIMO -> GIO.UCB1SIMO;
+  SpiB1.SOMI -> GIO.UCB1SOMI;
+  SpiB1.CLK  -> GIO.UCB1CLK;
+
+  components Msp430UsciI2CB3P as I2CB3;
+  I2CB3.SDA -> GIO.UCB3SDA;
+  I2CB3.SCL -> GIO.UCB3SCL;
 }

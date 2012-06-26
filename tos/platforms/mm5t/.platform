@@ -5,6 +5,8 @@
 
 for (split(/\n/, <<'EOText'
 
+  %P/../../mm
+  %P/../../chips/org4472
   %P/hardware/adc
   %P/hardware/buttons
   %P/hardware/clock
@@ -15,7 +17,7 @@ for (split(/\n/, <<'EOText'
   %T/chips/msp430/x5xxx
   %T/chips/msp430/x5xxx/lpm
   %T/chips/msp430/x5xxx/timer
-  %T/chips/msp430/x5xxx/usci
+  %T/chips/msp430/x5xxx/usci-bf
   %T/chips/msp430
   %T/chips/msp430/pins
   %T/chips/msp430/timer
