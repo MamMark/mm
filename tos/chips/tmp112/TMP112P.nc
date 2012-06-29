@@ -49,22 +49,14 @@ uint8_t pointerReg;
 uint8_t tempData[2];
 
 module TMP112P {
-   provides interface Read<uint16_t> as ReadTemp;
-   uses {
+  provides interface Read<uint16_t> as ReadTemp;
+  uses {
     interface Resource;
     interface I2CPacket<TI2CBasicAddr> as I2C;        
   }
 }
 
 implementation {  
-
-  /*
-     Convenience method for debugging.  Set a breakpoint here to see the
-     stack just before the driver returns an error.
-  */     
-  int errorBreakpoint() {
-    nop();
-  }
 
   command error_t ReadTemp.read(){
     return call Resource.request();  // see granted()
@@ -95,15 +87,12 @@ implementation {
   }
 
 
-  /*
-    Called when access to the I2C is granted.  This writes a request to read the temperature.
-  */
   event void Resource.granted(){
     pointerReg = TEMP_REGISTER;
 
-    if(SUCCESS != call I2C.write((I2C_START | I2C_STOP), CLIENT_ADDRESS, 1, &pointerReg)) {  // see writeDone
+    if (call I2C.write((I2C_START | I2C_STOP), CLIENT_ADDRESS, 1, &pointerReg)) {
       call Resource.release();
-      errorBreakpoint();
+      nop();
       post readError();
     }
   }
@@ -113,24 +102,28 @@ implementation {
     Called when the write to the I2C completes.  This reads the temperature data.
   */
   async event void I2C.writeDone(error_t error, uint16_t addr, uint8_t length, uint8_t *data) {
-    if(SUCCESS != call I2C.read((I2C_START | I2C_STOP),  CLIENT_ADDRESS, 2, tempData)) {  // see readDone
+    if (error) {
+      /*
+       * oops
+       */
+      nop();
+    }
+    if (call I2C.read((I2C_START | I2C_STOP),  CLIENT_ADDRESS, 2, tempData)) {
+      /* whoops */
       call Resource.release();
-      errorBreakpoint();
+      nop();
       post readError();  
     } 
   }   
 
 
-  /*
-    Called when the I2C read completes.  
-  */
   async event void I2C.readDone(error_t error, uint16_t addr, uint8_t length, uint8_t *data){
      call Resource.release();
-     if(error == SUCCESS) {
-       post readSuccess();
-     } else {
-       errorBreakpoint();
+     if(error) {
+       nop();
        post readError();
+       return;
      }
+     post readSuccess();
   }
 }

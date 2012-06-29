@@ -46,5 +46,5 @@ implementation {
 
   components new Msp430UsciI2CB3C() as I2C;  
   TMP112P.Resource -> I2C;
-  TMP112P.I2C -> I2C;     
+  TMP112P.I2C -> I2C;
 }
