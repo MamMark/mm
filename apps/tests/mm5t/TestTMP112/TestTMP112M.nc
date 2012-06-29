@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include "Timer.h"
 
-char buf[80];
+char __buf[80];
 
 module TestTMP112M {
   uses {
@@ -56,9 +56,9 @@ implementation {
 
   event void TempSensor.readDone(error_t error, uint16_t data){
     if (error == SUCCESS) {
-      sprintf(buf, "SUCCESS:  Temperature reading = %x", data);
+      sprintf(__buf, "SUCCESS:  Temperature reading = %x", data);
     } else {
-      sprintf(buf, "ERROR:  TempSensor returned an error");
+      sprintf(__buf, "ERROR:  TempSensor returned an error");
     }
     nop();
   }
