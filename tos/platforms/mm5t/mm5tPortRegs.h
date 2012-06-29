@@ -181,6 +181,8 @@ norace static volatile struct {
     uint8_t accel_csn	    : 1;	/* p10 7, output */
   } PACKED mm5tP10out asm("0x0283");
 
+#define LIS3DH_CSN mm5tP4out.accel_csn
+
   static volatile struct {
     uint8_t p110	    : 1;
     uint8_t p111	    : 1;

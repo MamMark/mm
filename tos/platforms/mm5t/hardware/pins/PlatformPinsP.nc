@@ -43,7 +43,13 @@ implementation {
 
     atomic {
       /*
-       * for now, just leave it all as the reset state.
+       * Main default pin setting is all input after reset
+       * except for the follow exceptions where we have hardware
+       * hooked up.
+       */
+
+      /*
+       * GPS: ORG4472, USCI B1, SPI
        *
        * For gps, P4.0 to P4.3 used.
        *
@@ -54,6 +60,26 @@ implementation {
        */
       P4OUT = BIT2 | BIT1;		/* csn and resetn deasserted (1), on_off is 0. */
       P4DIR = BIT2 | BIT1 | BIT0;	/* 2, 1, 0 outputs */
+
+      /*
+       * TMP102/112, USCI B3, I2C
+       *
+       * P10.1: B3SDA
+       * P10.2: B3SCL
+       *
+       * no initilization, leave alone.
+       */
+
+      /*
+       * Accel, LIS331HH (breakout), erzatz LIS3DH.   USCI A3, SPI
+       *
+       * P10.0: accel_sclk, A3SCLK
+       * P10.4: accel_mosi, A3MOSI
+       * P10.5: accel_miso, A3MISO
+       * P10.7: accel_cs_n
+       */
+      P10OUT = BIT7;			/* csn deasserted */
+      P10DIR = BIT7;
     }
 
 #if 0 /* Disabled: these specific setting sare defaults, but others might not be */
