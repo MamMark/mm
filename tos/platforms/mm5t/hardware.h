@@ -42,6 +42,18 @@
 #include "msp430hardware.h"
 #include "mm5tPortRegs.h"
 
+
+/*
+ * We are using the I2C single master driver.  Use the default configuration
+ * so use UCMST instead of UCMM.
+ *
+ * This has to be defined prior to pulling in msp430usci.h.   If it doesn't
+ * happen early enough a warning gets kicked.
+ */
+#define MSP430_I2C_MASTER_MODE UCMST
+#define MSP430_I2C_DEFAULT_DIVISOR 20
+
+
 /*
  * Port definitions:
  *
