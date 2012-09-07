@@ -311,11 +311,6 @@ implementation {
   }
 
 
-  async command void Panic.brk(uint16_t arg) {
-    debug_break(arg);
-  }
-    
-
   command error_t Init.init() {
     save_sr_free = TRUE;
     save_sr = 0xffff;
