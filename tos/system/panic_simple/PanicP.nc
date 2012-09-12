@@ -37,12 +37,6 @@ module PanicP {
 
 implementation {
 
-  struct p_blk_struct {
-    bool busy;
-    dt_panic_nt blk;
-  } p_blk[P_BLK_SIZE];
-
-  
   void debug_break(uint16_t arg)  __attribute__ ((noinline)) {
     _arg = arg;
     nop();

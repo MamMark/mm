@@ -22,6 +22,7 @@ norace uint16_t missed_panic_warns;
 //uint8_t *panic_buf = dedicated_panic_buf;
 norace uint8_t *panic_buf;
 
+#define P_BLK_SIZE 2
 #define PANIC_BUF_SIZE SD_BUF_SIZE
 
 panic_regs_t panic_regs;
