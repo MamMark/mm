@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2008, Eric B. Decker
+ * Copyright (c) 2012, Eric B. Decker
  * All rights reserved.
  */
 
 configuration testGPSC {}
 implementation {
-  components SystemBootC, testGPSP;
-  SystemBootC.SoftwareInit -> testGPSP;
-  testGPSP -> SystemBootC.Boot;
-  
-  components PanicC;
-  testGPSP.Panic -> PanicC;
+  components MainC, testGPSP;
+  MainC.SoftwareInit -> testGPSP;
+  testGPSP -> MainC.Boot;
 
-  components GPSC;
-  testGPSP.GPSControl -> GPSC;
+  components Hpl_MM5t_hwC as HW;
+  testGPSP.HW -> HW;
 
-  components StreamStorageC;
-  testGPSP.StreamStorageFull -> StreamStorageC;
+  components new TimerMilliC() as Timer;
+  testGPSP.testTimer -> Timer;
 
-  components mm3CommDataC;
-  testGPSP.mm3CommData -> mm3CommDataC.mm3CommData[SNS_ID_NONE];
+  components LocalTimeMilliC;
+  testGPSP.LocalTime -> LocalTimeMilliC;
+
+  components ORG4472C;
+  testGPSP.GPSControl -> ORG4472C;
 }
