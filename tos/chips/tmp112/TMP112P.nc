@@ -33,97 +33,207 @@
  */
 
 #include <TinyError.h>
+#include "tmp112.h"
 
-#define CLIENT_ADDRESS 0x48   // use 0x48 = 1001000 for ADD0 connected to ground
-                              //     0x49 = 1001001 for ADD0 connected to V+
-                              //          = 1001010 for ADD0 connected to SDA
-                              //          = 1001011 for ADD0 connected to SCL
-
-// possible values for the Pointer Register (Datasheet, p. 7)
-#define TEMP_REGISTER    0   
-#define CONFIG_REGISTER  1
-#define TLOW_REGISTER    2
-#define THIGH_REGISTER   3
-
-uint8_t pointerReg;
-uint8_t tempData[2];
+norace uint8_t xbuf[32];
 
 module TMP112P {
   provides interface Read<uint16_t> as ReadTemp;
   uses {
     interface Resource;
-    interface I2CPacket<TI2CBasicAddr> as I2C;        
+    interface I2CReg;
+    interface I2CPacket<TI2CBasicAddr> as I2C;
   }
 }
+implementation {
+  norace uint8_t state;
 
-implementation {  
+#define DEVID	0x48	// use 0x48 = 1001000 for ADD0 connected to ground
+			//     0x49 = 1001001 for ADD0 connected to V+
+			//     0x4a = 1001010 for ADD0 connected to SDA
+			//     0x4b = 1001011 for ADD0 connected to SCL
 
-  command error_t ReadTemp.read(){
-    return call Resource.request();  // see granted()
+#define CONFIG (TMP112_CONFIG_RES_3 | TMP112_CONFIG_FAULT_1 \
+	| TMP112_CONFIG_4HZ   | TMP112_CONFIG_EM)
+
+
+  task void signalDone() {
+    uint16_t d, *p;
+
+    TOGGLE_TELL;
+    TOGGLE_TELL;
+    TOGGLE_TELL;
+    TOGGLE_TELL;
+    TOGGLE_TELL;
+    p = (uint16_t *) xbuf;
+    d = *p;
+    signal ReadTemp.readDone(SUCCESS, d);
+  }
+    
+
+  command error_t ReadTemp.read() {
+    return call Resource.request();
   }
 
 
-  /*
-     Signal an unsuccesful read.  Using tasks to call readDone avoids using
-     nested interrupts and a compile time warning.
-  */
-  task void readError() {
-    //TEP114 says this MUST be a 0
-    signal ReadTemp.readDone(FAIL, 0);
+  void bunch_of_nops() __attribute__ ((noinline)) {
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); 
+    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
   }
 
 
-  /* 
-     Signal a successful read and pass readDone the data.  Depending on how the
-     TMP112 is configured, the first 12 or 13 bits of the data word will contain
-     a reading.   See the README for more.
-  */
-  task void readSuccess() {
-    uint16_t temp;
-    temp = tempData[0];
-    temp <<= 8;
-    temp |=  tempData[1];
-    signal ReadTemp.readDone(SUCCESS, temp);
+  event void Resource.granted() {
+    state = 0;
+    xbuf[0] = 2;			/* T_low register */
+    xbuf[1] = 0x1a;
+    xbuf[2] = 0xa1;
+    nop();
+    TOGGLE_TELL;
+    TOGGLE_TELL;
+    call I2C.write(I2C_START, DEVID, 1, xbuf);
   }
 
 
-  event void Resource.granted(){
-    pointerReg = TEMP_REGISTER;
+  async event void I2C.writeDone(error_t error, uint16_t addr, uint8_t length, uint8_t* data) {
+    nop();
+    switch (state) {
+      case 0:
+	state = 1;
+	call I2C.read(I2C_RESTART | I2C_STOP, DEVID, 2, &xbuf[1]);
+	break;
 
-    if (call I2C.write((I2C_START | I2C_STOP), CLIENT_ADDRESS, 1, &pointerReg)) {
-      call Resource.release();
-      nop();
-      post readError();
+      case 2:
+	state = 3;
+	call I2C.read(I2C_RESTART | I2C_STOP, DEVID, 2, &xbuf[1]);
+	break;
+
+      case 4:
+	state = 5;
+	call I2C.read(I2C_START | I2C_STOP, DEVID, 2, xbuf);
+	break;
+
+      case 99:
+	state = 99;
+	post signalDone();
+	break;
+
+      case 1:
+      case 3:
+      case 5:
+      case 6:
+      case 7:
+      case 8:
+      default:
+	break;
     }
   }
 
 
-  /*
-    Called when the write to the I2C completes.  This reads the temperature data.
-  */
-  async event void I2C.writeDone(error_t error, uint16_t addr, uint8_t length, uint8_t *data) {
-    if (error) {
-      /*
-       * oops
-       */
-      nop();
+  async event void I2C.readDone(error_t error, uint16_t addr, uint8_t length, uint8_t* data) {
+    nop();
+    switch (state) {
+      case 1:
+	state = 2;
+	xbuf[0] = 0;
+	call I2C.write(I2C_START, DEVID, 1, xbuf);
+	break;
+
+      case 3:
+	state = 4;
+	xbuf[0] = 2;
+	call I2C.write(I2C_START | I2C_STOP, DEVID, 1, xbuf);
+	break;
+
+      case 5:
+	state = 99;
+	call I2C.read(I2C_START | I2C_STOP, DEVID, 2, xbuf);
+	break;
+
+      case 99:
+	state = 99;
+	post signalDone();
+	break;
+
+      case 0:
+      case 2:
+      case 4:
+      case 7:
+      default:
+	break;
     }
-    if (call I2C.read((I2C_START | I2C_STOP),  CLIENT_ADDRESS, 2, tempData)) {
-      /* whoops */
-      call Resource.release();
-      nop();
-      post readError();  
-    } 
-  }   
-
-
-  async event void I2C.readDone(error_t error, uint16_t addr, uint8_t length, uint8_t *data){
-     call Resource.release();
-     if(error) {
-       nop();
-       post readError();
-       return;
-     }
-     post readSuccess();
   }
+
+
+#ifdef notdef
+  event void Resource.granted() {
+    uint16_t d;
+
+    xbuf[0] = 0x1a;
+    xbuf[1] = 0x2a;
+    xbuf[2] = 0x3a;
+    xbuf[3] = 0x11;
+    xbuf[4] = 0x22;
+    xbuf[5] = 0x33;
+    xbuf[0] = 1;
+    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 0, xbuf);
+    nop();
+    xbuf[0] = 2;
+    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 1, NULL);
+    nop();
+    xbuf[0] = 3;
+    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 1, xbuf);
+    nop();
+    xbuf[0] = 4;
+    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 2, xbuf);
+    nop();
+    xbuf[0] = 5;
+    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 3, xbuf);
+    nop();
+    xbuf[0] = 6;
+    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 4, xbuf);
+    nop();
+    xbuf[0] = 7;
+    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 5, xbuf);
+    nop();
+    xbuf[0] = 8;
+    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 6, xbuf);
+    nop();
+
+#ifdef notdef
+    call I2CReg.reg_read16(DEVID,  TMP112_TEMP,   &d);
+    call I2CReg.reg_read16(DEVID,  TMP112_CONFIG, &d);
+
+    call I2CReg.reg_write16(DEVID, TMP112_CONFIG, CONFIG);
+    call I2CReg.reg_read16(DEVID,  TMP112_CONFIG, &d);
+
+    call I2CReg.reg_read16(DEVID, TMP112_TEMP, &d);
+    nop();
+#endif
+
+    signal ReadTemp.readDone(SUCCESS, d);
+  }
+#endif
+
 }

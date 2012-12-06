@@ -35,8 +35,6 @@
 #include <stdio.h>
 #include "Timer.h"
 
-char __buf[80];
-
 module TestTMP112M {
   uses {
     interface Boot;
@@ -54,12 +52,7 @@ implementation {
     nop();
   }
 
-  event void TempSensor.readDone(error_t error, uint16_t data){
-    if (error == SUCCESS) {
-      sprintf(__buf, "SUCCESS:  Temperature reading = %x", data);
-    } else {
-      sprintf(__buf, "ERROR:  TempSensor returned an error");
-    }
+  event void TempSensor.readDone(error_t error, uint16_t data) {
     nop();
   }
 }
