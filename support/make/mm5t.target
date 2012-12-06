@@ -30,7 +30,7 @@ PFLAGS += -I$(MM_ROOT)/include
 PFLAGS += -I$(MM_ROOT)/tos/platforms/mm5t
 PFLAGS += -I$(MM_ROOT)/tos/platforms/mm
 PFLAGS += -I$(MM_ROOT)/tos/system
-PFLAGS += -I$(MM_ROOT)/tos/system/panic_simple
+PFLAGS += -I$(TOSROOT)/tos/system/panic_simple
 PFLAGS += -I$(MM_ROOT)/tos/interfaces
 
 $(call TOSMake_include_platform,msp)
