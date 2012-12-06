@@ -80,6 +80,14 @@ implementation {
        */
       P10OUT = BIT7;			/* csn deasserted */
       P10DIR = BIT7;
+
+      /*
+       * Debugging.   tell is used for triggers.
+       *
+       * tell is P10.3
+       */
+      P10OUT &= ~BIT3;			/* turn it off */
+      P10DIR |=  BIT3;			/* output */
     }
 
 #if 0 /* Disabled: these specific setting sare defaults, but others might not be */

@@ -170,18 +170,21 @@ norace static volatile struct {
     uint8_t p97		    : 1;
   } PACKED mm5tP9out asm("0x0282");
 
+norace
   static volatile struct {
     uint8_t accel_sclk	    : 1;	/* p10 0, spi a3sclk */
     uint8_t xi2c_sda	    : 1;	/* p10 1, i2c b3sda */
     uint8_t xi2c_scl	    : 1;	/* p10 2, i2c b3scl */
-    uint8_t p103	    : 1;
+    uint8_t tell	    : 1;	/* p10 3, used for triggers */
     uint8_t accel_mosi	    : 1;	/* p10 4, spi a3mosi */
     uint8_t accel_miso	    : 1;	/* p10 5, spi a3miso */
     uint8_t p106	    : 1;
     uint8_t accel_csn	    : 1;	/* p10 7, output */
   } PACKED mm5tP10out asm("0x0283");
 
-#define LIS3DH_CSN mm5tP4out.accel_csn
+#define LIS3DH_CSN mm5tP10out.accel_csn
+#define TELL mm5tP10out.tell
+#define TOGGLE_TELL do { TELL = 1; TELL = 0; } while(0)
 
   static volatile struct {
     uint8_t p110	    : 1;
