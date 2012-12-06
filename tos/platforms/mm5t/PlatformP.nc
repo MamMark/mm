@@ -55,7 +55,10 @@ noinit uint16_t boot_count;
 
 
 module PlatformP {
-  provides interface Init;
+  provides {
+    interface Init;
+    interface Platform;
+  }
   uses {
     interface Init as PlatformPins;
     interface Init as PlatformLeds;
@@ -68,10 +71,12 @@ module PlatformP {
 
 implementation {
 
+#ifdef notdef
   void uwait(uint16_t u) {
     uint16_t t0 = TA0R;
     while((TA0R - t0) <= u);
   }
+#endif
 
   command error_t Init.init() {
     WDTCTL = WDTPW + WDTHOLD;    // Stop watchdog timer
@@ -82,6 +87,12 @@ implementation {
     call PeripheralInit.init();
     return SUCCESS;
   }
+
+  /*
+   * See PlatformClockP.nc for assignments
+   */
+  async command uint16_t Platform.usecsRaw()   { return TA1R; }
+  async command uint16_t Platform.jiffiesRaw() { return TA0R; }
 
   /***************** Defaults ***************/
   default command error_t PeripheralInit.init() {

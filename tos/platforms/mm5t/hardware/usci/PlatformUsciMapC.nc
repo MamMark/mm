@@ -43,6 +43,10 @@
 
 configuration PlatformUsciMapC {
 } implementation {
+
+  /* used to wire in Panic and Platform low level functions */
+  components PanicC, PlatformC;
+
   components HplMsp430GeneralIOC as GIO;
 
   components Msp430UsciUartA0P as UartA0;
@@ -67,4 +71,6 @@ configuration PlatformUsciMapC {
   components Msp430UsciI2CB3P as I2CB3;
   I2CB3.SDA -> GIO.UCB3SDA;
   I2CB3.SCL -> GIO.UCB3SCL;
+  I2CB3.Panic -> PanicC;
+  I2CB3.Platform -> PlatformC;
 }
