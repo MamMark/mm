@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-#include "mm5tPortRegs.h"
+#include "mmPortRegs.h"
 
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;

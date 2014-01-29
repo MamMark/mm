@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2014 Eric B. Decker
  * Copyright (c) 2009-2010 People Power Co.
  * All rights reserved.
  *
@@ -40,7 +40,7 @@
 #define _H_hardware_h
 
 #include "msp430hardware.h"
-#include "mm5tPortRegs.h"
+#include "mmPortRegs.h"
 
 
 /*
