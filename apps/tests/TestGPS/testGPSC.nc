@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Eric B. Decker
+ * Copyright (c) 2012, 2014 Eric B. Decker
  * All rights reserved.
  */
 
@@ -9,7 +9,7 @@ implementation {
   MainC.SoftwareInit -> testGPSP;
   testGPSP -> MainC.Boot;
 
-  components Hpl_MM5t_hwC as HW;
+  components Hpl_MM_hwC as HW;
   testGPSP.HW -> HW;
 
   components new TimerMilliC() as Timer;

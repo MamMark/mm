@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2014 Eric B. Decker
  * All rights reserved.
  */
 
@@ -15,7 +15,7 @@ module testGPSP {
     interface StdControl as GPSControl;
     interface Timer<TMilli> as testTimer;
     interface LocalTime<TMilli>;
-    interface Hpl_MM5t_hw as HW;
+    interface Hpl_MM_hw as HW;
   }
 }
 

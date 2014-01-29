@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2014 Eric B. Decker
  * All rights reserved.
  *
  * @author Eric B. Decker (cire831@gmail.com)
@@ -143,7 +143,7 @@ module ORG4472P {
   uses {
     interface Timer<TMilli> as GPSTimer;
     interface LocalTime<TMilli>;
-    interface Hpl_MM5t_hw as HW;
+    interface Hpl_MM_hw as HW;
     interface Panic;
     interface SpiBlock;
     interface SpiByte;

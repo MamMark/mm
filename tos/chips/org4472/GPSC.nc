@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2014 Eric B. Decker
  * All rights reserved.
  *
  * Reworked for the org4472 gps spi chip.
@@ -28,8 +28,8 @@ implementation {
 //  GPSP.GPSMsg -> GPSMsgC;
 //  GPSP.GPSMsgControl -> GPSMsgC;
 
-  components Hpl_mm5t_hwC;
-  GPSP.HW -> Hpl_mm5t_hwC;
+  components Hpl_MM_hwC;
+  GPSP.HW -> Hpl_MM_hwC;
 
   components LocalTimeMilliC;
   GPSP.LocalTime -> LocalTimeMilliC;

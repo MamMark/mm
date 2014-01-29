@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2014 Eric B. Decker
  * All rights reserved.
  *
  * ORG4472 gps spi chip.
@@ -24,7 +24,7 @@ implementation {
   ORG4472P.GPSMsgS       -> GPSMsgC;
   ORG4472P.GPSMsgControl -> GPSMsgC;
 
-  components Hpl_MM5t_hwC as HW;
+  components Hpl_MM_hwC as HW;
   ORG4472P.HW -> HW;
 
   components LocalTimeMilliC;
@@ -33,7 +33,7 @@ implementation {
   components new TimerMilliC() as GPSTimer;
   ORG4472P.GPSTimer -> GPSTimer;
 
-    components new Msp430UsciSpiB1C() as SpiC;
+  components new Msp430UsciSpiB1C() as SpiC;
   ORG4472P.SpiBlock     -> SpiC;
   ORG4472P.SpiByte      -> SpiC;
   ORG4472P.SpiResource  -> SpiC;

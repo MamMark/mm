@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012-2014 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,11 +33,10 @@
  */
 
 /**
- * The Hpl_MM5t_hw interface exports low-level access to control registers
+ * The Hpl_MM_hw interface exports low-level access to control registers
  * of the mammark h/w.
  *
- * MM5t hardware for early debugging.   MM5t corresponds to the msp430
- * eval board.
+ * Various flavors but they all export the same hw interface.
  *
  * @author Eric B. Decker
  */
@@ -45,8 +44,8 @@
 #include "hardware.h"
 #include "mm5tPortRegs.h"
 
-module Hpl_MM5t_hwP {
-  provides interface Hpl_MM5t_hw as HW;
+module Hpl_MM_hwP {
+  provides interface Hpl_MM_hw as HW;
 }
 
 implementation {
