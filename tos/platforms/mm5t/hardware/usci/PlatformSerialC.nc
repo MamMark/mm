@@ -70,5 +70,4 @@ implementation {
   UartByte = UartC;
   Msp430UsciError = UartC;
   PlatformSerialP.Resource -> UartC.Resource;
-
 }

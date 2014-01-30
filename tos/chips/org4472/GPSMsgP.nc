@@ -55,7 +55,7 @@ bool     gbuf_idle;
  * by the bss initilizer and we don't have to do it.
  */
 typedef enum {
-  COLLECT_START = 0,
+  COLLECT_START = 0,			/* must be zero */
   COLLECT_START_2,
   COLLECT_LEN,
   COLLECT_LEN_2,
