@@ -11,10 +11,10 @@
  * GPSC -> Gps Control
  */
 
-#include "panic.h"
 #include "gps.h"
 #include "sirf.h"
 
+#include "platform_panic.h"
 #include "platform_org4472_spi.h"
 
 /*
@@ -772,4 +772,6 @@ implementation {
 
   event void GPSMsgS.resume() { }
   event void SpiResource.granted() { }
+
+//  async event void Panic.hook() { }
 }
