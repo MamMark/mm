@@ -1,0 +1,44 @@
+#-*-Makefile-*- vim:syntax=make
+#
+# exp5438_gps is based on msp430f5438a.  Eval-430f5438 board.
+# see tos/platform/exp5438_gps/hardware.h for how the pins are assigned.
+# Origin ORG4472 is wired in at various of the break out pins.
+#
+
+PLATFORM = exp5438_gps
+PLATFORMDIR = $(MM_ROOT)/tos/platforms/$(PLATFORM)
+
+MSP_MCU = msp430f5438a
+
+BUILD_NUM_FILE = $(PLATFORMDIR)/_Build
+BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)); else echo 0; fi)
+
+PFLAGS += -D_BUILD=$(BUILD_NUM)
+
+#
+# The PFLAGS addition for tos/platforms/mm5t is required so the make system
+# can find the platform.  The others for tos/{system,interfaces}
+# need to be here to make sure we don't get overridden by threads or
+# other stuff that comes in via the CFLAGS varient.  Stuff in the .platform
+# file come in last after PFLAGS and CFLAGS.
+#
+# shared platform files shared across MM varients are held in platforms/mm
+# There is no make support for mm.  (no target file in support/make).
+#
+
+PFLAGS += -I$(MM_ROOT)/include
+PFLAGS += -I$(PLATFORMDIR)
+PFLAGS += -I$(MM_ROOT)/tos/platforms/mm
+PFLAGS += -I$(MM_ROOT)/tos/system
+PFLAGS += -I$(TOSROOT)/tos/system/panic_simple
+PFLAGS += -I$(MM_ROOT)/tos/interfaces
+
+$(call TOSMake_include_platform,msp)
+
+build_num: FORCE
+	@if [ ! -f $(BUILD_NUM_FILE) ] ; then echo -1 > $(BUILD_NUM_FILE); fi
+	@echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)) > $(BUILD_NUM_FILE)
+	@echo BUILD: $(BUILD_NUM)
+
+exp5438_gps: build_num $(BUILD_DEPS)
+        @:
