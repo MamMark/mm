@@ -9,7 +9,7 @@
 #include "panic.h"
 
 /*
- * KERN:	core kernal
+ * KERN:	core kernal (defined in panic.h)
  * ADC:		Analog Digital Conversion subsystem (AdcP.nc)
  * MISC:
  * COMM:	communications subsystem
@@ -21,10 +21,6 @@
 
 enum {
 #ifdef notdef
-//  PANIC_KERN = PANIC_HC_START,		/* 0x10, see panic.h */
-#endif
-  PANIC_KERN = 0x10,
-#ifdef notdef
   PANIC_ADC,
   PANIC_MISC,
   PANIC_COMM,
@@ -32,7 +28,7 @@ enum {
   PANIC_SS,
   PANIC_SS_RECOV,
 #endif
-  PANIC_GPS,
+  PANIC_GPS = PANIC_HC_START,		/* 0x10, see panic.h */
 
 #ifdef notdef
   PANIC_SNS,
