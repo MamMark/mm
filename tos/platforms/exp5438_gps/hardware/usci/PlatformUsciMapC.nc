@@ -57,16 +57,22 @@ configuration PlatformUsciMapC {
   SpiA3.SIMO -> GIO.UCA3SIMO;
   SpiA3.SOMI -> GIO.UCA3SOMI;
   SpiA3.CLK  -> GIO.UCA3CLK;
+  SpiA3.Panic -> PanicC;
+  SpiA3.Platform -> PlatformC;
 
   components Msp430UsciSpiB0P as SpiB0;
   SpiB0.SIMO -> GIO.UCB0SIMO;
   SpiB0.SOMI -> GIO.UCB0SOMI;
   SpiB0.CLK  -> GIO.UCB0CLK;
+  SpiB0.Panic -> PanicC;
+  SpiB0.Platform -> PlatformC;
 
   components Msp430UsciSpiB1P as SpiB1;
   SpiB1.SIMO -> GIO.UCB1SIMO;
   SpiB1.SOMI -> GIO.UCB1SOMI;
   SpiB1.CLK  -> GIO.UCB1CLK;
+  SpiB1.Panic -> PanicC;
+  SpiB1.Platform -> PlatformC;
 
   components Msp430UsciI2CB3P as I2CB3;
   I2CB3.SDA -> GIO.UCB3SDA;
