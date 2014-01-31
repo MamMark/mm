@@ -773,5 +773,5 @@ implementation {
   event void GPSMsgS.resume() { }
   event void SpiResource.granted() { }
 
-//  async event void Panic.hook() { }
+  async event void Panic.hook() { }
 }

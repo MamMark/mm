@@ -663,5 +663,5 @@ implementation {
   event void DTSender.sendDone(error_t err) {}
 #endif
 
-//  async event void Panic.hook() { }
+  async event void Panic.hook() { }
 }
