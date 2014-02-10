@@ -18,6 +18,6 @@ implementation {
   components LocalTimeMilliC;
   testGPSP.LocalTime -> LocalTimeMilliC;
 
-  components ORG4472C;
-  testGPSP.GPSControl -> ORG4472C;
+  components Gsd4eC;
+  testGPSP.GPSControl -> Gsd4eC;
 }
