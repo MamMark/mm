@@ -1,12 +1,18 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2014 Eric B. Decker
  * All rights reserved.
  *
  * @author Eric B. Decker (cire831@gmail.com)
  * @date 04 June 2012
+ * @updated 05 Feb 2014
  *
- * Handle an incoming SIRF binary byte stream assembling it into
- * protocol messages and then process the ones we are interested in.
+ * Handle an incoming SIRF binary byte stream (OSP, SirfBin) assembling
+ * it into protocol messages and then process the ones we are interested in.
+ *
+ * Originally written for the ORG4472 chip which includes a SirfIV
+ * gps processor.  Updated in 2014 for the Antenova M2M M10478 which is a
+ * SirfStarIV GSD4e 9333 processor.  It includes a small GPS antenna in
+ * addition to the gps processor.
  *
  * A single buffer is used which assumes that the processing occurs
  * fairly quickly.  In our case we copy the data over to the data
@@ -17,10 +23,14 @@
  *
  * Unlike, the SIRF3 implementation (which is interrupt driven async
  * serial), the ORG4472 transfers data via SPI which is strictly
- * master/slave and not run off interrupts.  The SPI interface is also
- * run significantly faster than the serial connection... (4Mbps vs.
- * 57600 bps).  This yields significantly lower per packet transient
- * times and makes it feasible to transfer packets directly and in line.
+ * master/slave and not run off interrupts.  There is a provison
+ * for a gpio pin from the gps chip to signal message waiting but
+ * we haven't figured out how to set that up yet.
+ *
+ * The SPI interface is run significantly faster than the serial
+ * connection... (4Mbps vs. 57600 bps).  This yields significantly
+ * lower per packet transit times and makes it feasible to transfer
+ * packets directly and in line.
  */
 
 #include "panic.h"
@@ -55,7 +65,7 @@ bool     gbuf_idle;
  * by the bss initilizer and we don't have to do it.
  */
 typedef enum {
-  COLLECT_START = 0,			/* must be zero */
+  COLLECT_START = 0,
   COLLECT_START_2,
   COLLECT_LEN,
   COLLECT_LEN_2,
@@ -73,7 +83,7 @@ typedef enum {
  */
 
 typedef enum {
-  GPSM_DOWN = 0x10,
+  GPSM_DOWN = 0,
   GPSM_STARTING,
   GPSM_SHORT,				/* looking for hot fix */
   GPSM_LONG,				/* loading almanac */
@@ -82,7 +92,7 @@ typedef enum {
 
 
 /* GPSM -> gps msg */
-gpsm_state_t gpsm_state;
+gpsm_state_t gpsm_state;                /* inits to 0,  */
 
 
 module GPSMsgP {
@@ -105,7 +115,7 @@ module GPSMsgP {
 
 implementation {
 
-  collect_state_t collect_state;		// message collection state
+  collect_state_t collect_state;		// message collection state, init to 0
   norace uint16_t collect_length;		// length of payload
   uint16_t        collect_cur_chksum;		// running chksum of payload
 

@@ -15,7 +15,7 @@
 
 //#define GPS_NO_SHORT
 //#define GPS_SHORT_COUNT 40
-//#define GPS_LEAVE_UP
+//#define GPS_LEAVE_UP 
 //#define GPS_STAY_UP
 
 #define NMEA_START       '$'
@@ -36,6 +36,9 @@
  *
  * After the pwr_up_delay, we hunt for the start up sequence.  If we time
  * out we will try to reconfigure from nmea-4800 baud to sirfbin-57600.
+ *
+ * The ORG4472 and Antenova M10478 use the SirfStarIV GSD4e gps chip.  We
+ * use the SPI interface to communicate so the the baud rate is ignored.
  */
 
 // not used.
@@ -43,9 +46,9 @@
 //#define DT_GPS_PWR_UP_DELAY   512
 
 /*
- * The ORG4472 gets turned on and off using the gps_on_off signal.  Its
+ * The ORG4472/M10478 gets turned on and off using the gps_on_off signal.  Its
  * weird but there it is.   This signal gets pulsed for about 100ms
- * to turn on or off.
+ * to turn on or off.  The M10478 says it needs > 90 uS.   We leave it at 100ms.
  */
 
 #define DT_GPS_ON_OFF_PULSE_WIDTH 100
@@ -55,9 +58,12 @@
  * HUNT_LIMIT
  *
  * HUNT_LIMIT places an upper bound on how long we wait before giving up on
- * the hunt.  We don't want to hunt for ever.    The time needs to be long
+ * the hunt.  We don't want to hunt forever.    The time needs to be long
  * enough so that when the gps is at 4800 and we are switching over from 57600
  * there is a good chance that we will see the new 4800 stream.
+ *
+ * Hunting is a hold over from the older Sirf3 implementation which used the
+ * UART for communications.
  */
 
 #define DT_GPS_HUNT_LIMIT (4 * 1024UL)
