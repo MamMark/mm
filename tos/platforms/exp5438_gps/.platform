@@ -6,7 +6,7 @@
 for (split(/\n/, <<'EOText'
 
   %P/../../mm
-  %P/../../chips/org4472
+  %P/../../chips/gsd4e_v2
   %P/../../chips/tmp112
   %P/../../chips/lis3dh
 
