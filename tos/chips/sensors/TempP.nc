@@ -1,6 +1,6 @@
 /* 
  * TempP.nc: implementation for temperature
- * Copyright 2008, 2010 Eric B. Decker
+ * Copyright 2008, 2010, 2014: Eric B. Decker
  * All rights reserved.
  */
 
@@ -79,8 +79,8 @@ implementation {
     tdp->len = TEMP_BLOCK_SIZE;
     tdp->dtype = DT_SENSOR_DATA;
     tdp->sns_id = SNS_ID_TEMP;
-    tdp->sched_mis = call PeriodTimer.gett0();
-    tdp->stamp_mis = call PeriodTimer.getNow();
+    tdp->sched_ms = call PeriodTimer.gett0();
+    tdp->stamp_ms = call PeriodTimer.getNow();
     if (call mmControl.eavesdrop()) {
       if (call DTSender.send(tdp, TEMP_BLOCK_SIZE))
 	err_eaves_drops++;

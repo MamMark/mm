@@ -1,7 +1,8 @@
 /*
  * mm3CollectP.nc - data collector (record managment) interface
  * between data collection and mass storage.
- * Copyright 2008, Eric B. Decker
+ *
+ * Copyright 2008, 2014: Eric B. Decker
  * Mam-Mark Project
  *
  */
@@ -91,7 +92,7 @@ implementation {
     ep = (dt_event_nt *) event_data;
     ep->len = DT_HDR_SIZE_EVENT;
     ep->dtype = DT_EVENT;
-    ep->stamp_mis = call LocalTime.get();
+    ep->stamp_ms = call LocalTime.get();
     ep->ev = ev;
     ep->arg = arg;
     call Collect.collect(event_data, DT_HDR_SIZE_EVENT);

@@ -2,7 +2,9 @@
  * mmdump - dump mm data, debug, or control stream from
  * file, serial, or serial forwarder.
  *
- * Copyright 2008, 2010 Eric B. Decker
+ * Copyright 2008, 2010, 2014: Eric B. Decker
+ * All rights reserved.
+ *
  * Mam-Mark Project
  *
  * @author Eric B. Decker
@@ -277,11 +279,11 @@ void
 process_sync(tmsg_t *msg) {
   int i;
   uint16_t len;
-  uint8_t dtype;
+  uint8_t  dtype;
   uint32_t stamp;
   uint32_t majik;
   uint16_t boot_count;
-  uint8_t c;
+  uint8_t  c;
   char *s;
   int err = 0;
 
@@ -291,7 +293,7 @@ process_sync(tmsg_t *msg) {
    */
   len =   dt_sync_len_get(msg);
   dtype = dt_sync_dtype_get(msg);
-  stamp = dt_sync_stamp_mis_get(msg);
+  stamp = dt_sync_stamp_ms_get(msg);
   majik = dt_sync_sync_majik_get(msg);
   boot_count = 0;
   if (majik != SYNC_MAJIK)
@@ -328,7 +330,7 @@ process_sync(tmsg_t *msg) {
 
 void
 process_panic(tmsg_t *msg) {
-  uint32_t stamp_mis;
+  uint32_t stamp_ms;
   uint8_t  pcode;
   uint8_t  where;
   uint16_t arg0;
@@ -336,7 +338,7 @@ process_panic(tmsg_t *msg) {
   uint16_t arg2;
   uint16_t arg3;
 
-  stamp_mis = dt_panic_stamp_mis_get(msg);
+  stamp_ms  = dt_panic_stamp_ms_get(msg);
   pcode     = dt_panic_pcode_get(msg);
   where     = dt_panic_where_get(msg);
   arg0      = dt_panic_arg0_get(msg);
@@ -345,13 +347,13 @@ process_panic(tmsg_t *msg) {
   arg3      = dt_panic_arg3_get(msg);
   printf("*** %s:  %u (0x%04x) pcode: %d (0x%0x)  where: %d (0x%02x)  0x%04x 0x%04x 0x%04x 0x%04x\n",
 	 ((pcode & 0x80) ? "pWARN" : "PANIC"),
-	 stamp_mis, stamp_mis, pcode, pcode, where, where, arg0, arg1, arg2, arg3);
+	 stamp_ms, stamp_ms, pcode, pcode, where, where, arg0, arg1, arg2, arg3);
 }
 
 
 void
 process_gps_time(tmsg_t *msg) {
-  uint32_t stamp_mis;
+  uint32_t stamp_ms;
   uint8_t  chip_type;
   uint8_t  num_svs;
   uint16_t utc_year;
@@ -363,7 +365,7 @@ process_gps_time(tmsg_t *msg) {
   double clock_bias;		/* m x 10^2 */
   double clock_drift;		/* m/s x 10^2 */
 
-  stamp_mis = dt_gps_time_stamp_mis_get(msg);
+  stamp_ms  = dt_gps_time_stamp_ms_get(msg);
   chip_type = dt_gps_time_chip_type_get(msg);
   num_svs = dt_gps_time_num_svs_get(msg);
   utc_year = dt_gps_time_utc_year_get(msg);
@@ -376,7 +378,7 @@ process_gps_time(tmsg_t *msg) {
   clock_drift = ((double)dt_gps_time_clock_drift_get(msg))/100;
 
   if (verbose) {
-    fprintf(stderr, "GPS TIME[%d] %d (0x%04x): nsats: %d  ", chip_type, stamp_mis, stamp_mis, num_svs);
+    fprintf(stderr, "GPS TIME[%d] %d (0x%04x): nsats: %d  ", chip_type, stamp_ms, stamp_ms, num_svs);
     fprintf(stderr, "%2d/%02d/%04d %2d:%02d:%06.3f\n", utc_month, utc_day, utc_year, utc_hour, utc_min, utc_millsec);
     fprintf(stderr, "  Clock bias: %f  drift: %f\n", clock_bias, clock_drift);
   }
@@ -385,7 +387,7 @@ process_gps_time(tmsg_t *msg) {
 
 void
 process_gps_pos(tmsg_t *msg) {
-  uint32_t stamp_mis;
+  uint32_t stamp_ms;
   uint8_t  chip_type;
   uint16_t nav_type;
   uint32_t sats_seen;		/* bit mask, sats in solution */
@@ -395,7 +397,7 @@ process_gps_pos(tmsg_t *msg) {
   float hdop;		        /* err *5 m x 4 */
   int i;
 
-  stamp_mis = dt_gps_pos_stamp_mis_get(msg);
+  stamp_ms  = dt_gps_pos_stamp_ms_get(msg);
   chip_type = dt_gps_pos_chip_type_get(msg);
   num_svs = dt_gps_pos_num_svs_get(msg);
   nav_type = dt_gps_pos_nav_type_get(msg);
@@ -406,7 +408,7 @@ process_gps_pos(tmsg_t *msg) {
   hdop = ((float)dt_gps_pos_hdop_get(msg))/5;
 
   if (verbose) {
-    fprintf(stderr, "GPS POS[%d] %d (0x%04x): nsats %d\n", chip_type, stamp_mis, stamp_mis, num_svs);
+    fprintf(stderr, "GPS POS[%d] %d (0x%04x): nsats %d\n", chip_type, stamp_ms, stamp_ms, num_svs);
     fprintf(stderr,"  Nav type (0x%04x): ", nav_type);
     switch(nav_type & 0x0007) {
       case(0x0):
@@ -485,11 +487,10 @@ process_gps_raw(tmsg_t *msg) {
   uint8_t dtype, chip;
   uint16_t len;
 
-
-  len = dt_gps_raw_len_get(msg);  
+  len   = dt_gps_raw_len_get(msg);
   dtype = dt_gps_raw_dtype_get(msg);
-  chip = dt_gps_raw_chip_get(msg);
-  stamp = dt_gps_raw_stamp_mis_get(msg);
+  chip  = dt_gps_raw_chip_get(msg);
+  stamp = dt_gps_raw_stamp_ms_get(msg);
 
   if (verbose) {
     fprintf(stderr, "GPS RAW (%d): t: %d (0x%04x) ", chip, stamp, stamp);
@@ -512,8 +513,8 @@ process_sensor_data(tmsg_t *msg) {
 
   dt_sensor_data_sns_id_set(msg, sns_id + 1); /* why is this here? */
 
-  sched = dt_sensor_data_sched_mis_get(msg);
-  stamp = dt_sensor_data_stamp_mis_get(msg);
+  sched = dt_sensor_data_sched_ms_get(msg);
+  stamp = dt_sensor_data_stamp_ms_get(msg);
   if (verbose) {
     printf("SNS: %-6s (%d) %8u (%04x/%04x, %3d)",
 	   snsid2str(sns_id), sns_id, sched, sched, stamp, stamp-sched);
@@ -635,7 +636,7 @@ process_event(tmsg_t *msg) {
   uint8_t  ev;
   uint16_t arg;
 
-  stamp = dt_event_stamp_mis_get(msg);
+  stamp = dt_event_stamp_ms_get(msg);
   ev = dt_event_ev_get(msg);
   arg = dt_event_arg_get(msg);
   if (verbose || force_events) {

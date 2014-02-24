@@ -1,6 +1,6 @@
 /* 
  * MagP.nc: implementation for Magnatometer
- * Copyright (c) 2008, 2010, Eric B. Decker
+ * Copyright (c) 2008, 2010, 2014: Eric B. Decker
  * All rights reserved.
  */
 
@@ -101,8 +101,8 @@ implementation {
     mdp->len = MAG_BLOCK_SIZE;
     mdp->dtype = DT_SENSOR_DATA;
     mdp->sns_id = SNS_ID_MAG;
-    mdp->sched_mis = call PeriodTimer.gett0();
-    mdp->stamp_mis = call PeriodTimer.getNow();
+    mdp->sched_ms = call PeriodTimer.gett0();
+    mdp->stamp_ms = call PeriodTimer.getNow();
     mdp->data[0] = data[0];
     mdp->data[1] = data[1];
     mdp->data[2] = data[2];

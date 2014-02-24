@@ -131,7 +131,7 @@ typedef nx_struct dt_config {
 typedef nx_struct dt_sync {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint32_t sync_majik;
 } dt_sync_nt;
 
@@ -139,7 +139,7 @@ typedef nx_struct dt_sync {
 typedef nx_struct dt_reboot {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint32_t sync_majik;
   nx_uint16_t boot_count;
 } dt_reboot_nt;
@@ -148,7 +148,7 @@ typedef nx_struct dt_reboot {
 typedef nx_struct dt_panic {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint8_t  pcode;
   nx_uint8_t  where;
   nx_uint16_t arg0;
@@ -168,13 +168,13 @@ enum {
 
 
 /*
- * For Sirf3, chip_type CHIP_GPS_SIRF3
+ * For Sirf3,   chip_type CHIP_GPS_SIRF3
  * For ORG4472, CHIP_GPS_ORG4472
  */
 typedef nx_struct dt_gps_time {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint8_t  chip_type;
   nx_uint8_t  num_svs;
   nx_uint16_t utc_year;
@@ -191,11 +191,12 @@ typedef nx_struct dt_gps_time {
 /*
  * For Sirf3, chip_type CHIP_GPS_SIRF3
  * For ORG4472, CHIP_GPS_ORG4472
+ * For GSD4e,   CHIP_GPS_GSD4E
  */
 typedef nx_struct dt_gps_pos {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint8_t  chip_type;
   nx_uint16_t nav_type;
   nx_uint8_t  num_svs;			/* number of sv in solution */
@@ -210,16 +211,16 @@ typedef nx_struct dt_sensor_data {
   nx_uint16_t len;
   nx_uint8_t  dtype;
   nx_uint8_t  sns_id;
-  nx_uint32_t sched_mis;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t sched_ms;
+  nx_uint32_t stamp_ms;
   nx_uint16_t data[0];
 } dt_sensor_data_nt;
 
 typedef nx_struct dt_sensor_set {
   nx_uint16_t      len;
   nx_uint8_t       dtype;
-  nx_uint32_t      sched_mis;
-  nx_uint32_t      stamp_mis;
+  nx_uint32_t      sched_ms;
+  nx_uint32_t      stamp_ms;
   nx_uint16_t      mask;
   nx_uint8_t       mask_id;
   nx_uint16_t      data[0];
@@ -260,7 +261,7 @@ typedef nx_struct dt_gps_raw {
   nx_uint16_t	len;
   nx_uint8_t	dtype;
   nx_uint8_t	chip;
-  nx_uint32_t   stamp_mis;
+  nx_uint32_t   stamp_ms;
   nx_uint8_t	data[0];
 } dt_gps_raw_nt;
 
@@ -507,7 +508,7 @@ enum {
 typedef nx_struct dt_event {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint8_t  ev;
   nx_uint16_t arg;
 } dt_event_nt;
@@ -516,7 +517,7 @@ typedef nx_struct dt_event {
 typedef nx_struct dt_debug {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
 } dt_debug_nt;
 
 

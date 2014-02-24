@@ -32,17 +32,17 @@ ena 5
 
 b SDspP.nc:665
 comm
-p/d SDspP__last_pwr_on_first_cmd_uis
-p/d SDspP__last_full_reset_time_uis
-p/d SDspP__last_reset_time_uis
-p/d SDspP__last_reset_time_mis
+p/d SDspP__last_pwr_on_first_cmd_us
+p/d SDspP__last_full_reset_time_us
+p/d SDspP__last_reset_time_us
+p/d SDspP__last_reset_time_ms
 end
 
 b sdP.nc:246
 
 b SDspP.nc:1210
 comm
-p/d SDspP__last_pwr_on_first_cmd_uis
+p/d SDspP__last_pwr_on_first_cmd_us
 p/d sa_t3
 p/d w_diff
 p/d SDspP__sd_go_op_count

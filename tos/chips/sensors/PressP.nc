@@ -1,6 +1,6 @@
 /* 
  * PressP.nc: implementation for Pressure (differential)
- * Copyright 2008, 2010 Eric B. Decker
+ * Copyright 2008, 2010, 2014: Eric B. Decker
  * All rights reserved.
  */
 
@@ -78,8 +78,8 @@ implementation {
     pdp->len = PRESS_BLOCK_SIZE;
     pdp->dtype = DT_SENSOR_DATA;
     pdp->sns_id = SNS_ID_PRESS;
-    pdp->sched_mis = call PeriodTimer.gett0();
-    pdp->stamp_mis = call PeriodTimer.getNow();
+    pdp->sched_ms = call PeriodTimer.gett0();
+    pdp->stamp_ms = call PeriodTimer.getNow();
     if (call mmControl.eavesdrop()) {
       if (call DTSender.send(pdp, PRESS_BLOCK_SIZE))
 	err_eaves_drops++;

@@ -1,6 +1,6 @@
 /*
  * AccelP.nc: implementation for accelerometer
- * Copyright 2008, 2010 Eric B. Decker
+ * Copyright 2008, 2010, 2014: Eric B. Decker
  * All rights reserved.
  */
 
@@ -118,8 +118,8 @@ implementation {
     adp->len = ACCEL_BLOCK_SIZE;
     adp->dtype = DT_SENSOR_DATA;
     adp->sns_id = SNS_ID_ACCEL;
-    adp->sched_mis = call PeriodTimer.gett0();
-    adp->stamp_mis = call PeriodTimer.getNow();
+    adp->sched_ms = call PeriodTimer.gett0();
+    adp->stamp_ms = call PeriodTimer.getNow();
     adp->data[0] = data[0];
     adp->data[1] = data[1];
     adp->data[2] = data[2];

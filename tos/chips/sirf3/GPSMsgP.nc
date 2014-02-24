@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Eric B. Decker
+ * Copyright (c) 2008, 2014: Eric B. Decker
  * All rights reserved.
  *
  * @author Eric B. Decker (cire831@gmail.com)
@@ -233,7 +233,7 @@ implementation {
     edp = (dt_event_nt *) &event_data;
     edp->len = DT_HDR_SIZE_EVENT;
     edp->dtype = DT_EVENT;
-    edp->stamp_mis = call LocalTime.get();
+    edp->stamp_ms = call LocalTime.get();
     edp->ev = DT_EVENT_GPS_SATS_2;
     edp->arg = np->sats;
     call DTSender.send(event_data, DT_HDR_SIZE_EVENT);
@@ -259,7 +259,7 @@ implementation {
     edp = (dt_event_nt *) &event_data;
     edp->len = DT_HDR_SIZE_EVENT;
     edp->dtype = DT_EVENT;
-    edp->stamp_mis = call LocalTime.get();
+    edp->stamp_ms = call LocalTime.get();
     edp->ev = DT_EVENT_GPS_SATS_7;
     edp->arg = cp->sats;
     call DTSender.send(event_data, DT_HDR_SIZE_EVENT);
@@ -300,7 +300,7 @@ implementation {
 
     timep->len = GPS_TIME_BLOCK_SIZE;
     timep->dtype = DT_GPS_TIME;
-    timep->stamp_mis = call LocalTime.get();
+    timep->stamp_ms = call LocalTime.get();
     timep->chip_type = CHIP_GPS_SIRF3;
     timep->num_svs = gp->num_svs;
     timep->utc_year = gp->utc_year;
@@ -314,7 +314,7 @@ implementation {
 
     posp->len = GPS_POS_BLOCK_SIZE;
     posp->dtype = DT_GPS_POS;
-    posp->stamp_mis = timep->stamp_mis;
+    posp->stamp_ms = timep->stamp_ms;
     posp->chip_type = CHIP_GPS_SIRF3;
     posp->nav_type = gp->nav_type;
     posp->num_svs = gp->num_svs;
@@ -331,7 +331,7 @@ implementation {
     edp = (dt_event_nt *) &event_data;
     edp->len = DT_HDR_SIZE_EVENT;
     edp->dtype = DT_EVENT;
-    edp->stamp_mis = call LocalTime.get();
+    edp->stamp_ms = call LocalTime.get();
     edp->ev = DT_EVENT_GPS_SATS_29;
     edp->arg = gp->num_svs;
     call DTSender.send(event_data, DT_HDR_SIZE_EVENT);
@@ -394,7 +394,7 @@ implementation {
     gdp->len = DT_HDR_SIZE_GPS_RAW + SIRF_OVERHEAD + collect_length;
     gdp->dtype = DT_GPS_RAW;
     gdp->chip  = CHIP_GPS_SIRF3;
-    gdp->stamp_mis = call LocalTime.get();
+    gdp->stamp_ms = call LocalTime.get();
     call Collect.collect(collect_msg, gdp->len);
 
     /*
