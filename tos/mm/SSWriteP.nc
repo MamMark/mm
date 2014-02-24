@@ -363,4 +363,5 @@ implementation {
 
   default event void SSF.dblk_stream_full() { }
 
+  async event void Panic.hook() { }
 }

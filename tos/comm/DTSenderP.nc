@@ -164,4 +164,6 @@ implementation {
   default event void DTSender.sendDone[uint8_t cid](error_t rtn) {
     dts_panic_comm(10, 0);
   }
+
+  async event void Panic.hook() { }
 }

@@ -155,4 +155,6 @@ implementation {
   async command const mm_sensor_config_t* AdcConfigure.getConfiguration() {
     return &accel_config_X;
   }
+
+  async event void Panic.hook() { }
 }

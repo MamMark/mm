@@ -123,4 +123,6 @@ implementation {
   async command const mm_sensor_config_t* AdcConfigure.getConfiguration() {
     return &batt_config;
   }
+
+  async event void Panic.hook() { }
 }

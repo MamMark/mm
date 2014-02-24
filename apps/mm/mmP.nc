@@ -78,4 +78,6 @@ implementation {
 
 
   event void Regime.regimeChange() {} // do nothing.  that's okay.
+
+  async event void Panic.hook() { }
 }

@@ -1493,4 +1493,6 @@ MSP430REG_NORACE(TAR);
   default event void SDerase.eraseDone[uint8_t cid](uint32_t blk_start, uint32_t blk_end, error_t error) {
     sd_panic(59, cid);
   }
+
+  async event void Panic.hook() { }
 }

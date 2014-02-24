@@ -768,4 +768,6 @@ implementation {
   event void UsciResource.granted() {
     nop();
   }
+
+  async event void Panic.hook() { }
 }
