@@ -322,7 +322,7 @@ implementation {
     timep->len = GPS_TIME_BLOCK_SIZE;
     timep->dtype = DT_GPS_TIME;
     timep->stamp_ms = call LocalTime.get();
-    timep->chip_type = CHIP_GPS_SIRF3;
+    timep->chip_type = CHIP_GPS_ORG4472;
     timep->num_svs = gp->num_svs;
     timep->utc_year = gp->utc_year;
     timep->utc_month = gp->utc_month;
@@ -336,7 +336,7 @@ implementation {
     posp->len = GPS_POS_BLOCK_SIZE;
     posp->dtype = DT_GPS_POS;
     posp->stamp_ms = timep->stamp_ms;
-    posp->chip_type = CHIP_GPS_SIRF3;
+    posp->chip_type = CHIP_GPS_ORG4472;
     posp->nav_type = gp->nav_type;
     posp->num_svs = gp->num_svs;
     posp->sats_seen = gp->sat_mask;

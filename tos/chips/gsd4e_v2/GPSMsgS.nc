@@ -2,7 +2,7 @@
  * Copyright (c) 2012, Eric B. Decker
  * All rights reserved.
  *
- * GPSMsgS: GPSMsg interface, syncronous version.
+ * GPSMsgS: GPSMsg interface, synchronous version.
  */
 
 interface GPSMsgS {

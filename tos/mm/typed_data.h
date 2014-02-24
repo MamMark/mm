@@ -164,12 +164,14 @@ typedef nx_struct dt_panic {
 enum {
   CHIP_GPS_SIRF3   = 1,
   CHIP_GPS_ORG4472 = 2,
+  CHIP_GPS_GSD4E   = 3,
 };
 
 
 /*
  * For Sirf3,   chip_type CHIP_GPS_SIRF3
  * For ORG4472, CHIP_GPS_ORG4472
+ * M10478,      CHIP_GPS_GSD4E
  */
 typedef nx_struct dt_gps_time {
   nx_uint16_t len;
@@ -191,7 +193,7 @@ typedef nx_struct dt_gps_time {
 /*
  * For Sirf3, chip_type CHIP_GPS_SIRF3
  * For ORG4472, CHIP_GPS_ORG4472
- * For GSD4e,   CHIP_GPS_GSD4E
+ * M10478,      CHIP_GPS_GSD4E
  */
 typedef nx_struct dt_gps_pos {
   nx_uint16_t len;
