@@ -3,9 +3,9 @@
  *
  * @author Eric B. Decker (cire831@gmail.com)
  * @date 23 May 2012
+ * @updated 10 Feb 2014
  *
- * Currently set up for Origin ORG-4472 gps module which
- * incorporates a SirfStarIV chip.
+ * Antenova M10478 module uses SirfStarIV GSD4e-9333.
  */
 
 #ifndef __GPS_H__
@@ -18,55 +18,13 @@
 //#define GPS_LEAVE_UP 
 //#define GPS_STAY_UP
 
-#define NMEA_START       '$'
-
 /*
- * PWR_UP_DELAY
- *
- * When the gps is turned on it takes about 300 ms before it starts
- * to transmit.  And when it does it first spits out some debugging
- * information.
- *
- * When booting we want to get some information from the gps but have
- * to wait because sending early gets ignored.
- *
- * When starting we look at the first bytes to see if we are communicating
- * correctly (we know what baud we are at) and initially we want to
- * collect these bytes and put them into the SD for analysis.
- *
- * After the pwr_up_delay, we hunt for the start up sequence.  If we time
- * out we will try to reconfigure from nmea-4800 baud to sirfbin-57600.
- *
- * The ORG4472 and Antenova M10478 use the SirfStarIV GSD4e gps chip.  We
- * use the SPI interface to communicate so the the baud rate is ignored.
+ * The M10478 gets turned on and off using the gps_on_off signal.  Its
+ * weird but there it is.   The M10478 documentation says it needs to
+ * be > 90 uS.  We use 200ms.
  */
 
-// not used.
-//#define DT_GPS_PWR_UP_DELAY   100
-//#define DT_GPS_PWR_UP_DELAY   512
-
-/*
- * The ORG4472/M10478 gets turned on and off using the gps_on_off signal.  Its
- * weird but there it is.   This signal gets pulsed for about 100ms
- * to turn on or off.  The M10478 says it needs > 90 uS.   We leave it at 100ms.
- */
-
-#define DT_GPS_ON_OFF_PULSE_WIDTH 100
-
-
-/*
- * HUNT_LIMIT
- *
- * HUNT_LIMIT places an upper bound on how long we wait before giving up on
- * the hunt.  We don't want to hunt forever.    The time needs to be long
- * enough so that when the gps is at 4800 and we are switching over from 57600
- * there is a good chance that we will see the new 4800 stream.
- *
- * Hunting is a hold over from the older Sirf3 implementation which used the
- * UART for communications.
- */
-
-#define DT_GPS_HUNT_LIMIT (4 * 1024UL)
+#define DT_GPS_ON_OFF_PULSE_WIDTH 200
 
 #define MAX_GPS_RECONFIG_TRYS   5
 

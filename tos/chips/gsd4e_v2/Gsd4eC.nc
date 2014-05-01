@@ -34,6 +34,9 @@ implementation {
   components new TimerMilliC() as GPSTimer;
   Gsd4eP.GPSTimer -> GPSTimer;
 
+  components PlatformC;
+  Gsd4eP.Platform -> PlatformC;
+
   components new Msp430UsciSpiB1C() as SpiC;
   Gsd4eP.SpiBlock     -> SpiC;
   Gsd4eP.SpiByte      -> SpiC;

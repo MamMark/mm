@@ -9,6 +9,10 @@
  * M10478 GSD4e driver, dedicated 5438 usci spi port
  * based on dedicated 2618 usci uart port sirf3 driver.
  *
+ * Feb 16, 2014, Antenova M10478 prototype contains version:
+ *
+ *     GSD4e_4.1.2-P1 R+ 11/15/2011 319-Nov 15 2011-23:04:55.GSD4e..2..
+ *
  * GPSC -> Gps Control
  */
 
@@ -28,7 +32,36 @@
  *
  * There is a provision on the M10478 gps module for a GPIO signal to be used
  * as a Message Awaiting signal but it is currently unknown how to enable that.
+ * Also we use the GPS in a strictly command/response mode.  We turn off periodic
+ * messages and explicitly ask for messages.
  *
+ * M10478 GSD4e power up observations:
+ *
+ * o When first powered up, one must pulse ON_OFF to wake the chip.  M10478 documentation
+ *   states pulse must be held for > 90us.  We've observed ON_OFF edge up -> AWAKE takes
+ *   between 130-145us.
+ *
+ * o If we try to talk to the chip too early after being woken up it fails.   Returns
+ *   nothing but zeros.  DT_GPS_ON_OFF_PULSE_WIDTH controls how long the ON_OFF is
+ *   asserted.  It also controls when we first try to look at the chips output fifo
+ *   via the SPI.
+ *
+ *   < 70ms     hangs
+ *   < 120ms    get idles
+ *   120ms +    see oktosend
+ *   225ms      see oktosend + mid 47
+ *
+ * 200ms seems about right.
+ *
+ * The driver needs to function so as to keep the gps TX fifo (gps to cpu) empty.
+ * When the gps is first powered on it will be configured to be sending messages
+ * periodically.  The chip is a SPI slave and so doing async I/O into the fifos is
+ * stupid.  This basically means the CPU has to poll to see if anything interesting
+ * is in the fifos.  So we instead we turn off all periodic messages and instead
+ * ask for the current status when we need to know something.
+ *
+ *
+ * ORG4472 info (from observations, Fastrax and ORG docs):
  * On initial power on (system power up), the gps can take anywhere from 300ms upwards to
  * 5 secs (in cold conditions) to power up the RTC module.  (Info from the Fastrax, org
  * data sheet).  Normally, we keep powered applied so this shouldn't be an issue.  Normal
@@ -38,23 +71,6 @@
  * 300ms upwards to 5 seconds to turn on).   Unclear if this effects the operation of
  * the SPI h/w.   We need have the wakeup state machine handle this.   If the initial attempt
  * to communicate fails, then take CS down, possibly reset, and delay longer.
- *
- * When the GPS is turned on, we first assume that it is has preserved its
- * running configuration which is OSP/SirfBin.  We look for the OkToSend (bin 18).
- *
- * The driver needs to function so as to keep the gps TX fifo (gps to cpu) empty.
- * When the gps is first powered on it will be configured to be sending messages
- * periodically.   If we need to switch from NMEA we also turn off all periodic
- * messages and only get information via direct polling.   The chip is a SPI slave
- * and so doing async I/O into the fifos is stupid.
- *
- * Questions questions questions...
- *
- * 1) Currently we request the SPI which configures it once at the beginning via SoftwareInit.
- *    Does this have power implications?   Revisit later.   May need to deconfigure when
- *    down/off to turn off the SPI hardware....   Does having the SPI configured but not
- *    clocking cost power?  Probably not.   The SPI only clocks when bytes are being moved.
- *    This refers to the SPI h/w on the cpu (not the gps chip).
  */
 
 typedef enum {
@@ -81,7 +97,7 @@ typedef enum {
 
 
 typedef enum {
-  GPSW_NONE =			0,
+  GPSW_NONE = 0,
   GPSW_TIMER,
   GPSW_RXBYTE,
   GPSW_CONFIG_TASK,
@@ -111,8 +127,11 @@ uint8_t g_nev;			// next gps event
 
 
 uint16_t wait_time = 500;
+uint32_t g_t0, g_t1;
+volatile bool g_flush = TRUE;
 
-gpsc_state_t	    gpsc_state;			// low level collector state
+
+gpsc_state_t    	    gpsc_state;			// low level collector state
 
 /* instrumentation */
 uint32_t		    gpsc_boot_time;		// time it took to boot.
@@ -155,6 +174,7 @@ module Gsd4eP {
 //    interface Trace;
 //    interface LogEvent;
 //    interface Boot;
+    interface Platform;
   }
 }
 
@@ -162,6 +182,7 @@ module Gsd4eP {
 implementation {
 
   uint32_t	t_gps_pwr_on;
+  uint16_t      t_gps_pwr_on_usecs;
   uint8_t	gpsc_reconfig_trys;
   bool		gpsc_operational;		// if 0 then booting, do special stuff
 
@@ -193,49 +214,6 @@ implementation {
   void gps_panic(uint8_t where, uint16_t p) {
     call Panic.panic(PANIC_GPS, where, p, 0, 0, 0);
   }
-
-
-#ifdef notdef
-  /* add NMEA checksum to a possibly  *-terminated sentence */
-  void nmea_add_checksum(uint8_t *sentence) {
-    uint8_t sum = 0;
-    uint8_t c, *p = sentence;
-
-    if (*p == '$') {
-      p++;
-      while ( ((c = *p) != '*') && (c != '\0')) {
-	sum ^= c;
-	p++;
-      }
-      *p++ = '*';
-      c = sum >> 4;
-      if (c > 9)
-	*p++ = c + 0x40;
-      else
-	*p++ = c + 0x30;
-      c = sum & 0x0f;
-      if (c > 9)
-	*p++ = c + 0x37;
-      else
-	*p++ = c + 0x30;
-      *p++ = '\r';
-      *p++ = '\n';
-    }
-  }
-
-  void sirf_bin_add_checksum(uint8_t *buf) {
-    uint8_t *bp;
-    uint16_t n, sum, len;
-
-    sum = 0;
-    len = buf[2] << 8 | buf[3];
-    bp = &buf[4];
-    for (n = 0; n < len; n++)
-      sum += bp[n];
-    bp[n] = (sum >> 8) & 0x7f;
-    bp[n+1] = (sum & 0xff);
-  }
-#endif
 
 
   /*
@@ -385,7 +363,6 @@ implementation {
    */
   task void gps_config_task() {
     gpsc_state_t cur_gps_state;
-    uint16_t count;
 
     cur_gps_state = gpsc_state;
     gpsc_change_state(cur_gps_state, GPSW_CONFIG_TASK);
@@ -396,7 +373,7 @@ implementation {
 	return;
 
       case GPSC_POLL_NAV:
-	call GPSTimer.startOneShot(2000);
+	call GPSTimer.startOneShot(30000UL);
 	return;
 
 #ifdef notdef
@@ -519,13 +496,14 @@ implementation {
     }
 
     /*
-     * not awake (which is what we expect).   So kick the on_off pulse
+     * not awake (which is what we expected).   So kick the on_off pulse
      * and wake the critter up.
      */
-    t_gps_pwr_on = call LocalTime.get();
     call GPSMsgControl.start();
     gpsc_change_state(GPSC_PULSE_ON, GPSW_START);
     call GPSTimer.startOneShot(DT_GPS_ON_OFF_PULSE_WIDTH);
+    t_gps_pwr_on = call LocalTime.get();
+    t_gps_pwr_on_usecs = call Platform.usecsRaw();
     call HW.gps_set_on_off();
     return SUCCESS;
 
@@ -593,63 +571,40 @@ implementation {
 
 	/*
 	 * We should have the 1st message after coming out of hibernate.
-	 * The expected 1st message is OkToSend (either NMEA or SirfBin
-	 * variety).  If NMEA, we want to reconfigure.
-	 *
-	 * We have observed that immediately after the PulseOn (100ms after
-	 * sending on_off high) we should have an OkToSend, either flavor.
-	 *
-	 * Check which flavor and change state accordingly.
+	 * The expected 1st message is OkToSend (should be SirfBin).
 	 */
 
-	call HW.gps_set_cs();
+        call HW.gps_set_cs();
 	gps_send_receive(osp_idle_block, BUF_INCOMING_SIZE);
 	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
 	incoming.remaining = 0;			// throw current away
 	call HW.gps_clr_cs();
 
-	if (memcmp(incoming.buf, nmea_oktosend, sizeof(nmea_oktosend)) == 0) {
-	  /*
-	   * looks like nema, reconfigure
-	   *
-	   * observed behaviour, we've seen the nmea oktostart and we now
-	   * send the nmea_go_sirf_bin.  And what we get back is idles, so
-	   * we just throw the incoming data away.   From observations, we
-	   * also need to wait awile after telling the chip to switch over
-	   * to sirfbin.
-	   */
-	  gps_mark(0xc0);
-	  call HW.gps_set_cs();
-	  gps_send_receive(nmea_go_sirf_bin, sizeof(nmea_go_sirf_bin));
-	  call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	  incoming.remaining = 0;
-	  gps_send_receive(osp_idle_block, BUF_INCOMING_SIZE - sizeof(nmea_go_sirf_bin));
-	  call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	  incoming.remaining = 0;
-	  call HW.gps_clr_cs();
-	  gps_mark(0xc1);
+	if (memcmp(incoming.buf, osp_oktosend, sizeof(osp_oktosend)) == 0) {
+          gps_mark(0xce);
 
-	  gpsc_change_state(GPSC_RECONFIG_WAIT, GPSW_CONFIG_TASK);
-	  call GPSTimer.startOneShot(wait_time);	// wait for the switch to go.
-	  return;
-	} else if (memcmp(incoming.buf, osp_oktosend, sizeof(osp_oktosend)) == 0) {
-	  /*
-	   * already in sirfbin mode...
-	   */
+          call HW.gps_set_cs();
+          gps_send_receive(osp_send_sw_ver, sizeof(osp_send_sw_ver));
+          call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
+          incoming.remaining = 0;
+          call HW.gps_clr_cs();
+
+          g_t0 = call LocalTime.get();
+          gps_drain(0,1);
+          g_t1 = call LocalTime.get();
+
+          gps_mark(0xcd);
+          nop();
+
+          gps_drain(0,1);
+
 	  gpsc_change_state(GPSC_POLL_NAV, GPSW_CONFIG_TASK);
 	  post gps_config_task();
 	  return;
-	} else if (incoming.buf[0] == SIRF_BIN_START) {
+	} else {
 	  gps_panic(7, incoming.buf[0]);
 	  nop();
-	} else {
-	  /*
-	   * hem.  nothing we recognize.   panic
-	   */
-	  gps_panic(8, incoming.buf[0]);
-	  nop();
 	}
-
 	return;
 
       case GPSC_RECONFIG_WAIT:
@@ -657,19 +612,16 @@ implementation {
 	gps_drain(16, 1);
 	gps_mark(0xc3);
 	call HW.gps_set_cs();
+	gps_send_receive(osp_send_sw_ver, sizeof(osp_send_sw_ver));
+	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
+	incoming.remaining = 0;
 	gps_send_receive(osp_poll_clock, sizeof(osp_poll_clock));
 	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
 	incoming.remaining = 0;
 	gps_send_receive(osp_poll_nav, sizeof(osp_poll_nav));
 	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
 	incoming.remaining = 0;
-	gps_send_receive(osp_send_sw_ver, sizeof(osp_send_sw_ver));
-	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	incoming.remaining = 0;
-	gps_send_receive(osp_send_tracker, sizeof(osp_send_tracker));
-	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	incoming.remaining = 0;
-	gps_send_receive(osp_revision_req, sizeof(osp_revision_req));
+	gps_send_receive(osp_enable_tracker, sizeof(osp_enable_tracker));
 	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
 	incoming.remaining = 0;
 	call HW.gps_clr_cs();
@@ -683,27 +635,42 @@ implementation {
 	return;
 
       case GPSC_POLL_NAV:
+        g_t1 = call LocalTime.get();
 	gps_mark(0xcf);
-	call HW.gps_set_cs();
-	gps_send_receive(osp_pwr_mode, sizeof(osp_pwr_mode));
+        gps_drain(0,1);
+	gps_mark(0xce);
+        call HW.gps_set_cs();
+	gps_send_receive(osp_poll_clock, sizeof(osp_poll_clock));
 	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
 	incoming.remaining = 0;
-	call HW.gps_clr_cs();
+	gps_send_receive(osp_poll_nav, sizeof(osp_poll_nav));
+	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
+	incoming.remaining = 0;
+        call HW.gps_clr_cs();
+        gps_drain(0,1);
+        nop();
 
-	gps_drain(0,1);
+        while (g_flush) {
+          gps_drain(0,1);
+        }
+        nop();
 
-	gps_mark(0xce);
+        call HW.gps_set_on_off();
+        gps_drain(0,1);
+	gps_mark(0xcd);
+        call HW.gps_clr_on_off();
+        nop();
+
 	call HW.gps_set_cs();
 	gps_send_receive(osp_shutdown, sizeof(osp_shutdown));
 	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
 	incoming.remaining = 0;
 	call HW.gps_clr_cs();
 
-	gps_drain(0,1);
+        gps_drain(0,1);
+	gps_mark(0xcc);
+        nop();
 
-	while(1) {
-	  gps_drain(0,1);
-	}
 	call GPSTimer.startOneShot(2000);
 	return;
 
