@@ -20,8 +20,7 @@
  */
 
 enum {
-  PANIC_KERN = PANIC_HC_START,		/* 0x10, see panic.h */
-  PANIC_ADC,
+  PANIC_ADC  = PANIC_HC_START,          /* 0x70, see panic.h */
   PANIC_MISC,
   PANIC_COMM,
   PANIC_MS,
