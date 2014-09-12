@@ -40,11 +40,16 @@
 #include "gps_msg.h"
 
 /*
- * gbuf is for eavesdropping.   The ORG4472 is SPI based with fifos and
- * idle bytes.  The protocol is binary and so we need to know if we are
+ * gbuf is for eavesdropping.   The ORG4472 and M10478 are SPI based with fifos
+ * and idle bytes.  The protocol is binary and so we need to know if we are
  * seeing idle bytes inside packets or outside (they should only show up
  * outside packets).  The only piece that knows whether we are in a
- * packet or not is the packet processor (GPSMsgP).
+ * packet or not is the packet processor (GPSMsgP).  There is no escape
+ * protocol like HDLC.  It is possible for bytes inside packets to look like
+ * an idle byte but these are really data.   Have to look at the current
+ * message state.
+ *
+ * We are outside a packet iff state is COLLECT_START or COLLECT_BUSY.
  *
  * m_times is used for instrumentating and capturing packet arrival times.
  */
@@ -53,28 +58,41 @@
 #define GPS_EAVES_SIZE 2048
 #define M_TIMES_SIZE   256
 
+uint8_t last_byte;
+bool    repeat_marked;
+bool    idle_marked;
+bool    current_idle, last_idle;
+
 uint8_t gbuf[GPS_EAVES_SIZE];
 uint16_t g_idx;
-uint32_t m_times[M_TIMES_SIZE];
+uint32_t bcount;
+uint32_t mcount;
+
+typedef struct {
+  uint32_t time;
+  uint16_t idx;
+} m_time_t;
+
+m_time_t m_times[M_TIMES_SIZE];
 uint16_t m_idx;
-bool     gbuf_idle;
 
 /*
  * GPS Message Collector states.  Where in the message is the state machine.  Used
  * when collecting messages.   Force COLLECT_START to be 0 so it gets initilized
  * by the bss initilizer and we don't have to do it.
  */
-typedef enum {
-  COLLECT_START = 0,
-  COLLECT_START_2,
-  COLLECT_LEN,
-  COLLECT_LEN_2,
-  COLLECT_PAYLOAD,
-  COLLECT_CHK,
-  COLLECT_CHK_2,
-  COLLECT_END,
-  COLLECT_END_2,
-  COLLECT_BUSY,				/* buffer is being processed. */
+typedef enum {                          /* looking for...  */
+  COLLECT_START = 0,                    /* start of packet */
+                                        /* must be zero    */
+  COLLECT_START_2,                      /* a2              */
+  COLLECT_LEN,                          /* 1st len byte    */
+  COLLECT_LEN_2,                        /* 2nd len byte    */
+  COLLECT_PAYLOAD,                      /* payload         */
+  COLLECT_CHK,                          /* 1st chksum byte */
+  COLLECT_CHK_2,                        /* 2nd chksum byte */
+  COLLECT_END,                          /* b0              */
+  COLLECT_END_2,                        /* b3              */
+  COLLECT_BUSY,				/* processing      */
 } collect_state_t;
 
 
@@ -115,6 +133,15 @@ module GPSMsgP {
 
 implementation {
 
+  /*
+   * EAVES_ states are similar to COLLECT_ states.  It is possible to
+   * be doing eavesdropping when the COLLECT state machine isn't
+   * running yet.   EAVES_ states are used to remember when we are in
+   * a packet.  If the COLLECT_ state machine is running, EAVES_ state
+   * tracks it.  Otherwise, EAVES_ state is cycled independently.
+   */
+
+  collect_state_t eaves_state;                  // inits to 0
   collect_state_t collect_state;		// message collection state, init to 0
   norace uint16_t collect_length;		// length of payload
   uint16_t        collect_cur_chksum;		// running chksum of payload
@@ -441,6 +468,7 @@ implementation {
     gdp->data[0] = 0;
     gdp->data[1] = 0;
     collect_state = COLLECT_START;
+    eaves_state   = COLLECT_START;
     signal GPSMsgS.resume();	/* tell source to fire up data stream again... */
   }
 
@@ -476,38 +504,93 @@ implementation {
 
   inline void collect_restart() {
     collect_state = COLLECT_START;
-    gbuf_idle = FALSE;
+    idle_marked = FALSE;
+    last_idle = FALSE;
+    repeat_marked = FALSE;
+    last_byte = 0x55;
+    g_idx = 0;
+    m_idx = 0;
   }
 
 
+  /*
+   * add an incoming byte to the eavesdrop buffer.
+   *
+   * We are inbetween packets iff state is COLLECT_START or COLLECT_BUSY
+   * otherwise we are inside a packet.
+   *
+   * If we are inside a packet, always collect all bytes.
+   *
+   * Outside packets we want to compress:
+   *
+   * If seeing idles, only put one idle byte into gbuf.  If seeing more
+   * than one, mark with a '*' to indicate more than one seen.
+   *
+   * Other bytes, remember the last_byte seen.   If multiples of the
+   * same byte, mark with a '*' to indicate more than one seen.
+   */
   void addEavesDrop(uint8_t byte) {
+    bcount++;
+    current_idle = (byte == SIRF_SPI_IDLE || byte == SIRF_SPI_IDLE_2);
     do {
-      /*
-       * If we are between packets (COLLECT_START), then we only
-       * capture the first idle byte seen.  Otherwise capture
-       * any bytes we see.
-       */
-      if (byte == SIRF_SPI_IDLE || byte == SIRF_SPI_IDLE_2) {
-	if (gbuf_idle &&
-	    (collect_state == COLLECT_START || collect_state == COLLECT_BUSY))
-	  break;
-	gbuf_idle = TRUE;
-//	gbuf_idle = FALSE;
-      } else gbuf_idle = FALSE;
-      gbuf[g_idx++] = byte;
-      if (g_idx >= GPS_EAVES_SIZE) {
-	g_idx = 0;
-	nop();
+      if (collect_state ==  COLLECT_START || collect_state == COLLECT_BUSY) {
+        /* between packets */
+        if (current_idle) {
+          if (last_idle) {
+            if (idle_marked)
+              break;
+
+            idle_marked = TRUE;
+            byte = '*';
+          } else {
+            /*
+             * current byte is idle, last byte something else
+             * set last_byte and insert current into gbuf
+             */
+            last_byte = byte;
+            last_idle = current_idle;
+            idle_marked = FALSE;
+          }
+        } else {
+          /*
+           * current byte not an idle, check against last_byte
+           * if different, just insert, otherwise see if we've
+           * marked it.
+           */
+          last_byte = byte - 1;
+          if (byte == last_byte) {
+            if (repeat_marked)
+              break;                    /* nothing to add */
+
+            /* mark it as repeated */
+            byte = '*';
+            repeat_marked = TRUE;
+          } else {
+            last_byte = byte;
+            last_idle = current_idle;
+            repeat_marked = FALSE;
+          }
+        }
+      } else {
+        last_byte = 0x55;
+        repeat_marked = FALSE;
+        idle_marked = FALSE;
+        last_idle = FALSE;
       }
-      if (byte == '$' || byte == SIRF_BIN_START
-//	  || (byte >= 0xc0 && byte <= 0xcf)
-	  ) {		// markers
-	m_times[m_idx] = call LocalTime.get();
+      if (byte == SIRF_BIN_START) {
+        mcount++;
+	m_times[m_idx].time = call LocalTime.get();
+        m_times[m_idx].idx  = g_idx;
 	m_idx++;
 	if (m_idx >= M_TIMES_SIZE) {
 	  m_idx = 0;
 	  nop();
 	}
+      }
+      gbuf[g_idx++] = byte;
+      if (g_idx >= GPS_EAVES_SIZE) {
+	g_idx = 0;
+	nop();
       }
     } while (0);
   }
