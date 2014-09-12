@@ -44,4 +44,6 @@ implementation {
   event void DockSerial.stopDone(error_t err) {
     call Panic.panic(PANIC_COMM, 2, err, 0, 0, 0);
   }
+
+  async event void Panic.hook() { }
 }

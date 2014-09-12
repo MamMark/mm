@@ -1,6 +1,6 @@
 /* 
  * SalP.nc: implementation for salinity/surface detector
- * Copyright 2008, 2010 Eric B. Decker
+ * Copyright 2008, 2010, 2014: Eric B. Decker
  * All rights reserved.
  *
  * Salinity Sensor Driver
@@ -125,10 +125,12 @@ implementation {
     sdp->len = SAL_BLOCK_SIZE;
     sdp->dtype = DT_SENSOR_DATA;
     sdp->sns_id = SNS_ID_SAL;
-    sdp->sched_mis = call PeriodTimer.gett0();
-    sdp->stamp_mis = sal_stamp = call PeriodTimer.getNow();
-    sdp->data[0] = temp_data[0];
-    sdp->data[1] = sal_data = temp_data[1];
+    sdp->sched_ms = call PeriodTimer.gett0();
+    sal_stamp     = call PeriodTimer.getNow();
+    sdp->stamp_ms = sal_stamp;
+    sdp->data[0]  = temp_data[0];
+    sal_data      = temp_data[1];
+    sdp->data[1]  = sal_data;
     signal SenseVal.valAvail(sal_data, sal_stamp);
     if (call mmControl.eavesdrop()) {
       if (call DTSender.send(sdp, SAL_BLOCK_SIZE))
@@ -164,4 +166,6 @@ implementation {
   async command const mm_sensor_config_t* AdcConfigure.getConfiguration() {
     return &sal_config_1;
   }
+
+  async event void Panic.hook() { }
 }

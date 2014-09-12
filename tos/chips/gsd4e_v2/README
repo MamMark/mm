@@ -1,0 +1,112 @@
+
+This is a tinyos driver for the Origin ORG4472 GPS chip.
+
+The org4472 can interface using UART, SPI, or I2C.  The default
+interface and what we use is SPI.   Max SPI clock is 6.8 MHz.  This
+driver assumes that the main CPU clock is running at 8 MHz (decimal
+on the 5438a) and that the SPI is run at 4 MHz or below.
+
+The lowest level interface is via an SPI port dedicated to the
+GPS chip.  This means that when the main cpu needs to obtain
+data from the gps, it has to initiate communications.  (The org4472
+is a SPI slave).   This is implemented by GPSP.   It includes a state
+machine that is used to configure the GPS.  Configuration is responsible
+for powering up the gps chip and making sure that the chip is talking
+the correct protocol (OSP, sirfbin.   rather than NMEA).
+
+The next level is the GPS_Msg layer.  GPS_Msg is responsible for collecting
+bytes from the SPI layer into gps messages per the gps messaging protocol.
+NMEA provides basic GPS functionality.   We implement OSP (One Socket Protocol)
+messaging as this provides the most flexibility.   GPS_Msg is responsible
+for collection the messages and knows about framing.   It does not process
+any contents of any messages.   Collected messages are handed off to GPS message
+processing.
+
+There is also a signalling convention between collection and processing so
+the collection buffer does not get abused.
+
+Following control signals are used for messing with the GPS:  (org4472, pins
+in parenthesis)
+
+gps_wakeup (pin 4): 0 indicates hibernate, 1 full power.   1 (full power)
+  indicates the GPS has been woken up.
+
+gps_on_off (pin 9): pulsed signal used to wake up and put to sleep the gps.  Also
+  used to generate an interrupt in PTF (push-to-fix) mode.
+
+  Width should be 100us < width < 1s (for interrupt).  Interrupt interval should
+  be greater than 1s.  100ms is recommended.  Diagram shows 100ms minimum 1 sec
+  between pulses minimum.  Needs to remain low for minimum of 100us.
+
+gps_reset_n (pin 5): do not drive high.  Driving low (0) will cause the gps
+  chip to reset to factory default, clears RTC block and sets back to default
+  configuration.  Needs to be held for 1us.
+
+SPI interface:
+
+gps_csn  (pin 7, nRTS): gps spi chip select (low true).
+
+gps_sclk (pin 6, nCTS): gps spi clock.
+
+gps_mosi (pin 8, rx): gps spi rx (master out, slave in)
+
+gps_miso (pin 11, tx): gps spi tx (master in, slave out)
+
+
+SPI configuration: CPOL=0, base clock is 0, CPHA=1, data changed on
+  rising edge, data sampled on falling edge.  About 20ms from power
+  on before SPI drivers to be initialized.  20ms is what the data
+  sheet says but what has been observed is ~73ms is required.  We
+  use 100ms for the on_off pulse and don't access the SPI until after
+  this time slot.   So this shouldn't be a problem.
+
+max clock rate 6.8MHz.  Default GPS output format NEMA, we change it to OSP
+  binary.
+
+TX and RX (gps relative) paths have 1024 byte fifos.  Idle bytes are 0xA7
+  and 0xB4.   Which of course complicates things.   We have to take into
+  account whether we are inside a packet (can these bytes show up in a
+  packet?).  These bytes are only idle bytes if they are not in packets.
+  We do not check for sequences because this is a pain in the but.
+
+
+Message format:
+
+Idle: 0xA7, 0xB4
+
+NMEA: $?????
+
+OSP (sirfbin): (CS-129291-TCP9, Issue 9, 21 Dec 2010, )
+
+<A0 A2> <len (2 bytes, 15 bits)> <payload> <checksum, 2 bytes> <B0 B3>
+
+multibyte fields MSB first.
+
+checksum: 15 bit checksum over payload.
+
+    index = 0;
+    checksum = 0;
+    while (index < length) {
+	checksum += payload[index++];
+	checksum &= 0x7fff;
+    }
+
+
+Interface question:  DMA or byte by byte?
+
+Note: We clock the main CPU at 8MHz and so clock the SPI at /2 or 4MHz
+which gives a byte time of 2.5us.  Not worth running via interrupts for
+small message lengths.   Where is the trade off?  It has been observed
+that SpiByte.write yeilds a byte time of about 40us which yields about
+200kbps.   We should use an optimized loop to fill our incoming buffer.
+This yields a byte time of xxx (needs to be measured).
+
+Do we want to run via DMA to keep the CPU out of the loop?   How to
+set the DMA up, what length count to use?  Length can come from the
+length in the packet payload.   Do later if needed...   Look at the timing
+costs and differences.
+
+The biggest problem with DMA is we only have 3 engines and running SPI
+via DMA requires 2 engines, leaving one free engine.   And the SD card
+driver uses dma to move buffers in and out (which also requires 2 engines).
+So there is a collision.  For the time being, we ignore DMA.

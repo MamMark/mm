@@ -238,6 +238,8 @@ gDTConstants.h: $(TYPED_DATA) Makefile
 	DT_HDR_SIZE_DEBUG         \
 	                          \
 	CHIP_GPS_SIRF3            \
+	CHIP_GPS_ORG4472          \
+	CHIP_GPS_GSD4E            \
 	                          \
 	BATT_PAYLOAD_SIZE         \
 	BATT_BLOCK_SIZE           \

@@ -11,12 +11,12 @@ x/i $pc
 set pri ele 0
 
 define inst
-p/d SDspP__last_reset_time_uis
-p/d SDspP__last_reset_time_mis
-p/d SDspP__last_read_time_uis
-p/d SDspP__last_read_time_mis
-p/d SDspP__last_write_time_uis
-p/d SDspP__last_write_time_mis
+p/d SDspP__last_reset_time_us
+p/d SDspP__last_reset_time_ms
+p/d SDspP__last_read_time_us
+p/d SDspP__last_read_time_ms
+p/d SDspP__last_write_time_us
+p/d SDspP__last_write_time_ms
 end
 
 # b RealMainP.nc:85   (PlatformInit)

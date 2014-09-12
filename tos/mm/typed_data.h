@@ -131,7 +131,7 @@ typedef nx_struct dt_config {
 typedef nx_struct dt_sync {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint32_t sync_majik;
 } dt_sync_nt;
 
@@ -139,7 +139,7 @@ typedef nx_struct dt_sync {
 typedef nx_struct dt_reboot {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint32_t sync_majik;
   nx_uint16_t boot_count;
 } dt_reboot_nt;
@@ -148,7 +148,7 @@ typedef nx_struct dt_reboot {
 typedef nx_struct dt_panic {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint8_t  pcode;
   nx_uint8_t  where;
   nx_uint16_t arg0;
@@ -162,17 +162,21 @@ typedef nx_struct dt_panic {
  */
 
 enum {
-  CHIP_GPS_SIRF3 = 1,
+  CHIP_GPS_SIRF3   = 1,
+  CHIP_GPS_ORG4472 = 2,
+  CHIP_GPS_GSD4E   = 3,
 };
 
 
 /*
- * For Sirf3, chip_type CHIP_GPS_SIRF3
+ * For Sirf3,   chip_type CHIP_GPS_SIRF3
+ * For ORG4472, CHIP_GPS_ORG4472
+ * M10478,      CHIP_GPS_GSD4E
  */
 typedef nx_struct dt_gps_time {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint8_t  chip_type;
   nx_uint8_t  num_svs;
   nx_uint16_t utc_year;
@@ -188,11 +192,13 @@ typedef nx_struct dt_gps_time {
 
 /*
  * For Sirf3, chip_type CHIP_GPS_SIRF3
+ * For ORG4472, CHIP_GPS_ORG4472
+ * M10478,      CHIP_GPS_GSD4E
  */
 typedef nx_struct dt_gps_pos {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint8_t  chip_type;
   nx_uint16_t nav_type;
   nx_uint8_t  num_svs;			/* number of sv in solution */
@@ -207,16 +213,16 @@ typedef nx_struct dt_sensor_data {
   nx_uint16_t len;
   nx_uint8_t  dtype;
   nx_uint8_t  sns_id;
-  nx_uint32_t sched_mis;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t sched_ms;
+  nx_uint32_t stamp_ms;
   nx_uint16_t data[0];
 } dt_sensor_data_nt;
 
 typedef nx_struct dt_sensor_set {
   nx_uint16_t      len;
   nx_uint8_t       dtype;
-  nx_uint32_t      sched_mis;
-  nx_uint32_t      stamp_mis;
+  nx_uint32_t      sched_ms;
+  nx_uint32_t      stamp_ms;
   nx_uint16_t      mask;
   nx_uint8_t       mask_id;
   nx_uint16_t      data[0];
@@ -257,7 +263,7 @@ typedef nx_struct dt_gps_raw {
   nx_uint16_t	len;
   nx_uint8_t	dtype;
   nx_uint8_t	chip;
-  nx_uint32_t   stamp_mis;
+  nx_uint32_t   stamp_ms;
   nx_uint8_t	data[0];
 } dt_gps_raw_nt;
 
@@ -273,11 +279,11 @@ typedef nx_struct dt_gps_raw {
 
 
 /*
- * Not data types. Sub fields of raw
- * gps data. Defining them to use tos
- * tools. They are sirf output messages.
+ * Not data types. Sub fields of raw gps data.  Defining them to use tos
+ * tools.  They are sirf output messages.
  */
 
+/* MID 2, Nav Data */
 typedef nx_struct gps_nav_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -298,6 +304,7 @@ typedef nx_struct gps_nav_data {
   nx_uint8_t   data[0];
 } gps_nav_data_nt;
 
+/* MID 4, Tracker Data */
 typedef nx_struct gps_tracker_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -309,6 +316,7 @@ typedef nx_struct gps_tracker_data {
   nx_uint8_t   data[0];
 } gps_tracker_data_nt;
 
+/* MID 6, s/w version */
 typedef nx_struct gps_soft_version_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -317,6 +325,7 @@ typedef nx_struct gps_soft_version_data {
   nx_uint8_t   data[0];
 } gps_soft_version_data_nt;
 
+/* MID 7, clock status */
 typedef nx_struct gps_clock_status_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -330,6 +339,7 @@ typedef nx_struct gps_clock_status_data {
   nx_uint32_t  gpstime; 
 } gps_clock_status_data_nt;
 
+/* MID 10, error data */
 typedef nx_struct gps_error_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -340,6 +350,7 @@ typedef nx_struct gps_error_data {
   nx_uint8_t   data[0];
 } gps_error_data_nt;
 
+/* MID 14, almanac data */
 typedef nx_struct gps_almanac_status_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -351,6 +362,7 @@ typedef nx_struct gps_almanac_status_data {
 } gps_almanac_status_data_nt;
 
 
+/* MID 28, nav lib data */
 typedef nx_struct gps_nav_lib_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -382,6 +394,7 @@ typedef nx_struct gps_nav_lib_data {
   nx_uint8_t   low_pow_cnt;
 } gps_nav_lib_data_nt;
 
+/* MID 41, geodetic data */
 typedef nx_struct gps_geodetic {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -424,6 +437,7 @@ typedef nx_struct gps_geodetic {
   nx_uint8_t   mode;
 } gps_geodetic_nt;
 
+/* MID 52, 1PPS data */
 typedef nx_struct gps_pps_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -442,6 +456,7 @@ typedef nx_struct gps_pps_data {
 } gps_pps_data_nt;
 
 
+/* MID 255, Dev Data */
 typedef nx_struct gps_dev_data {
   nx_uint8_t   start1;
   nx_uint8_t   start2;
@@ -495,7 +510,7 @@ enum {
 typedef nx_struct dt_event {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
   nx_uint8_t  ev;
   nx_uint16_t arg;
 } dt_event_nt;
@@ -504,7 +519,7 @@ typedef nx_struct dt_event {
 typedef nx_struct dt_debug {
   nx_uint16_t len;
   nx_uint8_t  dtype;
-  nx_uint32_t stamp_mis;
+  nx_uint32_t stamp_ms;
 } dt_debug_nt;
 
 

@@ -1,6 +1,6 @@
 /* 
  * SpeedP.nc: implementation for Speed
- * Copyright 2008, 2010 Eric B. Decker
+ * Copyright 2008, 2010, 2014: Eric B. Decker
  * All rights reserved.
  */
 
@@ -93,8 +93,8 @@ implementation {
     sdp->len = SPEED_BLOCK_SIZE;
     sdp->dtype = DT_SENSOR_DATA;
     sdp->sns_id = SNS_ID_SPEED;
-    sdp->sched_mis = call PeriodTimer.gett0();
-    sdp->stamp_mis = call PeriodTimer.getNow();
+    sdp->sched_ms = call PeriodTimer.gett0();
+    sdp->stamp_ms = call PeriodTimer.getNow();
     sdp->data[0] = data[0];
     sdp->data[1] = data[1];
     if (call mmControl.eavesdrop()) {
@@ -127,4 +127,6 @@ implementation {
   async command const mm_sensor_config_t* AdcConfigure.getConfiguration() {
     return &speed_config_1;
   }
+
+  async event void Panic.hook() { }
 }

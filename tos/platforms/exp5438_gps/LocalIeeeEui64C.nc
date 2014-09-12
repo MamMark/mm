@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2007, Vanderbilt University
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,52 +29,35 @@
  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- * OF THE POSSIBILITY OF SUCH DAMAGE.
+ * OF THE POSSIBILITY OF SUCH DAMAGE.* All rights reserved.
  */
 
-/**
- * The Hpl_MM5t_hw interface exports low-level access to control registers
- * of the mammark h/w.
- *
- * MM5t hardware for early debugging.   MM5t corresponds to the msp430
- * eval board.
- *
- * @author Eric B. Decker
+ /**
+ *  Stephen Dawson-Haggerty <stevedh@eecs.berkeley.edu>
+ *  Dummy Extended Address
  */
 
-#include "hardware.h"
-#include "mm5tPortRegs.h"
+#include "IeeeEui64.h"
 
-module Hpl_MM5t_hwP {
-  provides interface Hpl_MM5t_hw as HW;
-}
+module LocalIeeeEui64C {
+  provides interface LocalIeeeEui64;
+} implementation {
+  command ieee_eui64_t LocalIeeeEui64.getId() {
+    ieee_eui64_t id;
+    /* this is UCB's OUI */
+    id.data[0] = 0x00;
+    id.data[1] = 0x12;
+    id.data[2] = 0x6d;
 
-implementation {
-  async command void HW.gps_set_on_off() {
-    ORG_GPS_SET_ONOFF;
-  }
+    /* UCB will let anyone use this OUI so long as these two octets
+       are 'LO' -- "local".  All other octets are reserved.  */
+    /* SDH -- 9/10/2010 */
+    id.data[3] = 'L';
+    id.data[4] = 'O';
 
-  async command void HW.gps_clr_on_off() {
-    ORG_GPS_CLR_ONOFF;
-  }
-
-  async command void HW.gps_set_cs() {
-    ORG_GPS_CSN = 0;
-  }
-
-  async command void HW.gps_clr_cs() {
-    ORG_GPS_CSN = 1;
-  }
-
-  async command void HW.gps_set_reset() {
-    ORG_GPS_RESET;
-  }
-
-  async command void HW.gps_clr_reset() {
-    ORG_GPS_UNRESET;
-  }
-
-  async command bool HW.gps_awake() {
-    return ORG_GPS_WAKEUP;
+    id.data[5] = 0;
+    id.data[6] = TOS_NODE_ID >> 8;
+    id.data[7] = TOS_NODE_ID & 0xff;
+    return id;
   }
 }

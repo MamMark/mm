@@ -342,4 +342,5 @@ implementation {
     return fsc.dblk_nxt;
   }
 
+  async event void Panic.hook() { }
 }

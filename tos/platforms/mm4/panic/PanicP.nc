@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2014, Eric B. Decker
  * Copyright (c) 2008, 2010, Eric B. Decker, Carl W. Davis
  * All rights reserved.
  */
@@ -157,7 +158,7 @@ implementation {
     p->busy = TRUE;
     p->blk.len = sizeof(dt_panic_nt);
     p->blk.dtype = DT_PANIC;
-    p->blk.stamp_mis = last_panic;
+    p->blk.stamp_ms = last_panic;
     p->blk.pcode = pcode;
     p->blk.where = where;
     p->blk.arg0 = arg0;

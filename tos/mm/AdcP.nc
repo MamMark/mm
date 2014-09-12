@@ -652,4 +652,6 @@ implementation {
   default command error_t SensorPowerControl.start[uint8_t id]() { return SUCCESS; } // fix me.  panic
 
   default command error_t SensorPowerControl.stop[uint8_t id]() { return SUCCESS; } //  fix me.  panic
+
+  async event void Panic.hook() { }
 }

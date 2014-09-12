@@ -123,4 +123,6 @@ implementation {
    */
   default command bool mmControl.eavesdrop[uint8_t sns_id]() { return SUCCESS; }
 #endif
+
+  async event void Panic.hook() { }
 }

@@ -2,6 +2,7 @@
  * SDsp - low level Secure Digital storage driver
  * Split phase, event driven.
  *
+ * Copyright (c) 2014: Eric B. Decker
  * Copyright (c) 2010, Eric B. Decker, Carl Davis
  * All rights reserved.
  *
@@ -152,24 +153,24 @@ MSP430REG_NORACE(TAR);
          uint16_t     sd_erase_busy_count;
   norace uint16_t     sd_write_busy_count;
 
-         uint32_t     op_t0_mis;
-  norace uint16_t     op_t0_uis;
+         uint32_t     op_t0_ms;
+  norace uint16_t     op_t0_us;
 
-  norace uint16_t     sd_pwr_on_time_uis;
-         uint16_t     last_pwr_on_first_cmd_uis;
-         uint16_t     last_full_reset_time_uis;
+  norace uint16_t     sd_pwr_on_time_us;
+         uint16_t     last_pwr_on_first_cmd_us;
+         uint16_t     last_full_reset_time_us;
 
-  uint32_t     max_reset_time_mis, last_reset_time_mis;
-  uint16_t     max_reset_time_uis, last_reset_time_uis;
+  uint32_t     max_reset_time_ms, last_reset_time_ms;
+  uint16_t     max_reset_time_us, last_reset_time_us;
 
-  uint32_t     max_read_time_mis,  last_read_time_mis;
-  uint16_t     max_read_time_uis,  last_read_time_uis;
+  uint32_t     max_read_time_ms,  last_read_time_ms;
+  uint16_t     max_read_time_us,  last_read_time_us;
 
-  uint32_t     max_write_time_mis, last_write_time_mis;
-  uint16_t     max_write_time_uis, last_write_time_uis;
+  uint32_t     max_write_time_ms, last_write_time_ms;
+  uint16_t     max_write_time_us, last_write_time_us;
 
-  uint32_t     max_erase_time_mis, last_erase_time_mis;
-  uint16_t     max_erase_time_uis, last_erase_time_uis;
+  uint32_t     max_erase_time_ms, last_erase_time_ms;
+  uint16_t     max_erase_time_us, last_erase_time_us;
 
 
   void sd_cmd_crc();
@@ -351,7 +352,7 @@ MSP430REG_NORACE(TAR);
    * watches channel 0 till DMA_EN goes off.  Channel 0 is RX.
    *
    * Also utilizes the SZ register to find out how many bytes remain
-   * and assuming 1uis/byte a reasonable timeout (factor of 2).
+   * and assuming 1 us/byte a reasonable timeout (factor of 2).
    * A timeout kicks panic.
    *
    * This routine can be interrupted and time continues to run while
@@ -571,8 +572,8 @@ MSP430REG_NORACE(TAR);
       return;
     }
 
-    op_t0_uis = TAR;
-    op_t0_mis = call lt.get();
+    op_t0_us = TAR;
+    op_t0_ms = call lt.get();
 
     sdc.sd_state = SDS_RESET;
     sdc.cur_cid = CID_NONE;	        /* reset is not parameterized. */
@@ -581,7 +582,7 @@ MSP430REG_NORACE(TAR);
     /*
      * Clock out at least 74 bits of idles (0xFF is 8 bits).  Thats 10 bytes. This allows
      * the SD card to complete its power up prior to us talking to the card.  We send
-     * 40 to give a bit more timing cushion.  This gets us to about 200uis before the first
+     * 40 to give a bit more timing cushion.  This gets us to about 200 us before the first
      * command is sent.  see SDsa.reset for more info.
      */
 
@@ -592,7 +593,7 @@ MSP430REG_NORACE(TAR);
     /* Put the card in the idle state, non-zero return -> error */
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
     cmd->arg = 0;
-    last_pwr_on_first_cmd_uis = TAR - sd_pwr_on_time_uis;
+    last_pwr_on_first_cmd_us = TAR - sd_pwr_on_time_us;
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
       sd_panic_idle(29, rsp);
@@ -623,7 +624,7 @@ MSP430REG_NORACE(TAR);
       case SDS_WRITE_DMA:
       case SDS_READ_DMA:
 	w_t = call lt.get();
-	w_diff = w_t - op_t0_mis;
+	w_diff = w_t - op_t0_ms;
 	rsp = sd_get();
 	call Panic.panic(PANIC_MS, 30, sdc.sd_state, (w_diff >> 16), w_diff & 0xffff, 0);
 	rsp = sd_get();
@@ -656,15 +657,15 @@ MSP430REG_NORACE(TAR);
 	 * isn't currently any need.
 	 */
 
-	last_reset_time_uis = TAR - op_t0_uis;
-	if (last_reset_time_uis > max_reset_time_uis)
-	  max_reset_time_uis = last_reset_time_uis;
+	last_reset_time_us = TAR - op_t0_us;
+	if (last_reset_time_us > max_reset_time_us)
+	  max_reset_time_us = last_reset_time_us;
 
-	last_reset_time_mis = call lt.get() - op_t0_mis;
-	if (last_reset_time_mis > max_reset_time_mis)
-	  max_reset_time_mis = last_reset_time_mis;
+	last_reset_time_ms = call lt.get() - op_t0_ms;
+	if (last_reset_time_ms > max_reset_time_ms)
+	  max_reset_time_ms = last_reset_time_ms;
 
-	last_full_reset_time_uis = TAR - sd_pwr_on_time_uis;
+	last_full_reset_time_us = TAR - sd_pwr_on_time_us;
 
 	sdc.sd_state = SDS_IDLE;
 	sdc.cur_cid = CID_NONE;
@@ -686,7 +687,7 @@ MSP430REG_NORACE(TAR);
    */
 
   async event void ResourceDefaultOwner.granted() {
-    sd_pwr_on_time_uis = 0;
+    sd_pwr_on_time_us = 0;
     call HW.sd_off();
     call Usci.resetUsci_n();
   }
@@ -698,7 +699,7 @@ MSP430REG_NORACE(TAR);
 
 
   async event void ResourceDefaultOwner.requested() {
-    sd_pwr_on_time_uis = TAR;
+    sd_pwr_on_time_us = TAR;
     call HW.sd_on();
     call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
     post sd_pwr_task();
@@ -799,7 +800,7 @@ MSP430REG_NORACE(TAR);
      * if we haven't seen the token yet then try again.  We just repost
      * ourselves to try again.  This lets others run.  We've observed
      * that in a tight loop it took about 50-60 loops before we saw the token
-     * about 300 uis.  Not enough to kick a timer off (mis granularity) but
+     * about 300 us.  Not enough to kick a timer off (ms granularity) but
      * long enough that we don't want to sit on the cpu.
      */
     if (tmp == 0xFF) {
@@ -858,13 +859,13 @@ MSP430REG_NORACE(TAR);
     if (sdc.data_ptr[0] == 0xfe)
       sd_warn(36, sdc.data_ptr[0]);
 
-    last_read_time_uis = TAR - op_t0_uis;
-    if (last_read_time_uis > max_read_time_uis)
-      max_read_time_uis = last_read_time_uis;
+    last_read_time_us = TAR - op_t0_us;
+    if (last_read_time_us > max_read_time_us)
+      max_read_time_us = last_read_time_us;
 
-    last_read_time_mis = call lt.get() - op_t0_mis;
-    if (last_read_time_mis > max_read_time_mis)
-      max_read_time_mis = last_read_time_mis;
+    last_read_time_ms = call lt.get() - op_t0_ms;
+    if (last_read_time_ms > max_read_time_ms)
+      max_read_time_ms = last_read_time_ms;
 
     sdc.sd_state = SDS_IDLE;
     sdc.cur_cid = CID_NONE;
@@ -892,8 +893,8 @@ MSP430REG_NORACE(TAR);
       return EBUSY;
     }
 
-    op_t0_uis = TAR;
-    op_t0_mis = call lt.get();
+    op_t0_us = TAR;
+    op_t0_ms = call lt.get();
 
     sdc.sd_state = SDS_READ;
     sdc.cur_cid = cid;
@@ -913,7 +914,7 @@ MSP430REG_NORACE(TAR);
 
     /*
      * The SD card can take some time before it says continue.
-     * We've seen upto 300-400 uis before it says continue.
+     * We've seen upto 300-400 us before it says continue.
      * kick to a task to let other folks run.
      */
     SD_CSN = 0;				/* rassert to continue xfer */
@@ -949,17 +950,17 @@ MSP430REG_NORACE(TAR);
     if (i)
       sd_panic(39, i);
 
-    last_write_time_uis = TAR - op_t0_uis;
-    if (last_write_time_uis > max_write_time_uis)
-      max_write_time_uis = last_write_time_uis;
+    last_write_time_us = TAR - op_t0_us;
+    if (last_write_time_us > max_write_time_us)
+      max_write_time_us = last_write_time_us;
 
-    last_write_time_mis = call lt.get() - op_t0_mis;
-    if (last_write_time_mis > max_write_time_mis)
-      max_write_time_mis = last_write_time_mis;
+    last_write_time_ms = call lt.get() - op_t0_ms;
+    if (last_write_time_ms > max_write_time_ms)
+      max_write_time_ms = last_write_time_ms;
 
-    if (last_write_time_mis > SD_WRITE_WARN_THRESHOLD) {
+    if (last_write_time_ms > SD_WRITE_WARN_THRESHOLD) {
       call Panic.warn(PANIC_MS, 128, (sdc.blk_start >> 16), (sdc.blk_start & 0xffff),
-		      (last_write_time_mis >> 16), (last_write_time_mis &0xffff));
+		      (last_write_time_ms >> 16), (last_write_time_ms &0xffff));
     }
     cid = sdc.cur_cid;
     sdc.sd_state = SDS_IDLE;
@@ -1014,8 +1015,8 @@ MSP430REG_NORACE(TAR);
       return EBUSY;
     }
 
-    op_t0_uis = TAR;
-    op_t0_mis = call lt.get();
+    op_t0_us = TAR;
+    op_t0_ms = call lt.get();
 
     sdc.sd_state = SDS_WRITE;
     sdc.cur_cid = cid;
@@ -1077,13 +1078,13 @@ MSP430REG_NORACE(TAR);
     call SDtimer.stop();		/* busy done, kill timeout */
     SD_CSN = 1;				/* deassert CS */
 
-    last_erase_time_uis = TAR - op_t0_uis;
-    if (last_erase_time_uis > max_erase_time_uis)
-      max_erase_time_uis = last_erase_time_uis;
+    last_erase_time_us = TAR - op_t0_us;
+    if (last_erase_time_us > max_erase_time_us)
+      max_erase_time_us = last_erase_time_us;
 
-    last_erase_time_mis = call lt.get() - op_t0_mis;
-    if (last_erase_time_mis > max_erase_time_mis)
-      max_erase_time_mis = last_erase_time_mis;
+    last_erase_time_ms = call lt.get() - op_t0_ms;
+    if (last_erase_time_ms > max_erase_time_ms)
+      max_erase_time_ms = last_erase_time_ms;
 
     cid = sdc.cur_cid;
     sdc.sd_state = SDS_IDLE;
@@ -1101,8 +1102,8 @@ MSP430REG_NORACE(TAR);
       return EBUSY;
     }
 
-    op_t0_uis = TAR;
-    op_t0_mis = call lt.get();
+    op_t0_us = TAR;
+    op_t0_ms = call lt.get();
 
     sdc.sd_state = SDS_ERASE;
     sdc.cur_cid = cid;
@@ -1191,8 +1192,8 @@ MSP430REG_NORACE(TAR);
     call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
 
     /*
-     * send 800 clocks, 100 bytes.  about 240uis.  This satisfies
-     * sending 74 clocks but is significantly short of the 1ms called
+     * send 800 clocks, 100 bytes.  about 240 us.  This satisfies
+     * sending 74 clocks but is significantly short of the 1 ms called
      * out in the doc.  But it seems to work.  Seems to depend on whose
      * SD card we are using.
      */
@@ -1209,7 +1210,7 @@ MSP430REG_NORACE(TAR);
     }
 
     /*
-     * SD_GO_OP_MAX is set for normal operation which is polled every 4 or so mis.
+     * SD_GO_OP_MAX is set for normal operation which is polled every 4 or so ms.
      * SA hits it in a tight loop, so we increase the max allowed to be 8 times
      * normal.
      */
@@ -1331,8 +1332,8 @@ MSP430REG_NORACE(TAR);
      * anywhere from a nominal 3ms to > 120ms when the block is thinking
      * about going bad.
      *
-     * The largest timeout we can get with just TAR is 64Ki uis, which is
-     * about 64+ mis.  So we implement a wrap counter.
+     * The largest timeout we can get with just TAR is 64Ki us, which is
+     * about 64+ ms.  So we implement a wrap counter.
      */
     last_tar = 0;
     TAR = 0;			/* reset to 0, easier to deal with */
@@ -1492,4 +1493,6 @@ MSP430REG_NORACE(TAR);
   default event void SDerase.eraseDone[uint8_t cid](uint32_t blk_start, uint32_t blk_end, error_t error) {
     sd_panic(59, cid);
   }
+
+  async event void Panic.hook() { }
 }

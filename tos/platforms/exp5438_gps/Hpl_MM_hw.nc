@@ -17,13 +17,13 @@
  */
         
 /**
- * The Hpl_MM5t_hw interface exports low-level access control registers effecting
+ * The Hpl_MM_hw interface exports low-level access control registers effecting
  * the MM5t conversion system.
  *
  * @author Eric B. Decker
  */
  
-interface Hpl_MM5t_hw {
+interface Hpl_MM_hw {
   async command void gps_set_on_off();
   async command void gps_clr_on_off();
   async command void gps_set_cs();

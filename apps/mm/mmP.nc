@@ -7,9 +7,9 @@
 #include "panic.h"
 
 /*
- * 1 min * 60 sec/min * 1024 ticks/sec  (binary millisecs, mis)
+ * 1 min * 60 sec/min * 1000 ticks/sec
  */
-#define SYNC_PERIOD (1UL * 60 * 1024)
+#define SYNC_PERIOD (1UL * 60 * 1000)
 
 //noinit uint8_t use_regime;
 //uint8_t use_regime = 14;
@@ -78,4 +78,6 @@ implementation {
 
 
   event void Regime.regimeChange() {} // do nothing.  that's okay.
+
+  async event void Panic.hook() { }
 }

@@ -1,6 +1,6 @@
 /*
  * CradleP.nc: Handle docking functions
- * Copyright 2008, 2010 Eric B. Decker
+ * Copyright 2008, 2010, 2014: Eric B. Decker
  * All rights reserved.
  *
  * Cradle Monitor Sensor Driver
@@ -162,8 +162,8 @@ implementation {
     cdp->len = BATT_BLOCK_SIZE;
     cdp->dtype = DT_SENSOR_DATA;
     cdp->sns_id = SNS_ID_CRADLE;
-    cdp->sched_mis = call PeriodTimer.gett0();
-    cdp->stamp_mis = call PeriodTimer.getNow();
+    cdp->sched_ms = call PeriodTimer.gett0();
+    cdp->stamp_ms = call PeriodTimer.getNow();
 //#ifdef notdef
     if (comm_idle)
       if (call DTSender.send(cdp, BATT_BLOCK_SIZE) == SUCCESS)
@@ -208,4 +208,6 @@ implementation {
   async command const mm_sensor_config_t* AdcConfigure.getConfiguration() {
     return &cradle_config;
   }
+
+  async event void Panic.hook() { }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Eric B. Decker
+ * Copyright (c) 2011-2012, 2014 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -170,8 +170,9 @@ module PlatformClockP {
    * are reset to inputs and Pin Control and this shuts down the oscillator.
    * So we need to bring it back up.
    *
-   * On reset the 5438/5438a UCS is set to a configuration much like the
-   * following:  (all values in hex).
+   * On reset the x5 (543x/543xa) UCS is set to a configuration much like the
+   * following:  (all values in hex).  observed on both 5438a and 5437.
+   * 5437 observed MCLK 1.075 MHz.
    *
    * ucsctl0: 13e8 0020 101f 0000 0044 0000 c1cd 0403 0307
    *
@@ -190,6 +191,9 @@ module PlatformClockP {
    * PWR_UP_SEC is the number of times we need to wait for
    * TimerA to cycle (16 bits) when clocked at the default
    * msp430f5438 dco (about 2MHz).
+   *
+   * msp430f5438 dco (about 2MHz).    use 16   (verify clock)
+   * msp430f5437 dco (about 1MHz).    use 32
    */
 
 #define PWR_UP_SEC 16
@@ -279,7 +283,8 @@ module PlatformClockP {
      * Enable XT1, lowest capacitance.
      *
      * XT1 pins (7.0 and 7.1) default to Pins/In.   For the XT1
-     * to function these have to be swithed to Module control.
+     * to function these have to be switched to Module control.
+     * XT1 is used to control the 32 KiHz Xtal.
      *
      * Surf code mumbles something about P5.0 and 1 must be clear
      * in P5DIR.   Shouldn't have any effect (the pins get kicked
@@ -296,6 +301,10 @@ module PlatformClockP {
      * be checked.   FIXME. 
      */
 
+    /*
+     * P7.0 and P7.1 connect to the 32 KiHz Xtal.  Pins 13, 14 checked
+     * out for the 5437 and 5438.
+     */
     P7SEL |= (BIT0 | BIT1);
     UCSCTL6 &= ~(XT1OFF | XCAP_3);
 
@@ -337,11 +346,13 @@ module PlatformClockP {
      * This is a major failure as we assume we have an XT1 xtal for
      * timing stability.   Flag it and try again?
      * FIXME
+     *
+     * Should PANIC!
      */
     if (UCSCTL7 & XT1LFOFFG) {
       P7SEL &= ~(BIT0| BIT1);
       UCSCTL6 |= XT1OFF;
-      while (1)
+      while (1)				/* PANIC! */
 	nop();
       return FAIL;
     }
@@ -446,7 +457,7 @@ module PlatformClockP {
     do {
       UCSCTL7 &= ~(XT1LFOFFG | DCOFFG);
       SFRIFG1 &= ~OFIFG;                      // Clear fault flags
-    } while (UCSCTL7 & DCOFFG); // Test DCO fault flag
+    } while (UCSCTL7 & DCOFFG);		      // Test DCO fault flag
 
     /*
      * ACLK is XT1/1, 32KiHz.

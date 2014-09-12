@@ -27,7 +27,7 @@ PFLAGS += -D_BUILD=$(BUILD_NUM)
 #
 
 PFLAGS += -I$(MM_ROOT)/include
-PFLAGS += -I$(MM_ROOT)/tos/platforms/mm5t
+PFLAGS += -I$(PLATFORMDIR)
 PFLAGS += -I$(MM_ROOT)/tos/platforms/mm
 PFLAGS += -I$(MM_ROOT)/tos/system
 PFLAGS += -I$(TOSROOT)/tos/system/panic_simple

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Eric B. Decker
+ * Copyright (c) 2008, 2010, 2014: Eric B. Decker
  * All rights reserved.
  */
 
@@ -7,9 +7,9 @@
 
 
 /*
- * 1 min * 60 sec/min * 1024 ticks/sec  (binary millisecs, mis)
+ * 1 min * 60 sec/min * 1000 ticks/sec
  */
-#define SYNC_PERIOD (1UL * 60 * 1024)
+#define SYNC_PERIOD (1UL * 60 * 1000)
 
 typedef enum {
   SYNC_BOOT_NORMAL = 0,
@@ -79,7 +79,7 @@ implementation {
     sdp = (dt_sync_nt *) &sync_data;
     sdp->len = DT_HDR_SIZE_SYNC;
     sdp->dtype = DT_SYNC;
-    sdp->stamp_mis = call SyncTimer.getNow();
+    sdp->stamp_ms = call SyncTimer.getNow();
     sdp->sync_majik = SYNC_MAJIK;
     call Collect.collect(sync_data, DT_HDR_SIZE_SYNC);
     call DTSender.send(sync_data, DT_HDR_SIZE_SYNC);
@@ -93,7 +93,7 @@ implementation {
     rbdp = (dt_reboot_nt *) &reboot_data;
     rbdp->len = DT_HDR_SIZE_REBOOT;
     rbdp->dtype = DT_REBOOT;
-    rbdp->stamp_mis = call SyncTimer.getNow();
+    rbdp->stamp_ms = call SyncTimer.getNow();
     rbdp->sync_majik = SYNC_MAJIK;
     rbdp->boot_count = call BootParams.getBootCount();
     call Collect.collect(reboot_data, DT_HDR_SIZE_REBOOT);

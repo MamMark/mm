@@ -33,6 +33,12 @@ typedef enum {
   T_SSW_BLK_TIME	= 18,
   T_SSW_GRP_TIME	= 19,
 
+  T_TL                  =64,
+  T_INT_OVR,
+  T_INT_T0A0,
+  T_INT_T0A1,
+  T_INT_P1,
+
   /*
    * For debugging Arbiter 1
    */

@@ -2,7 +2,6 @@
  * TraceP.nc - trace logging
  * Copyright 2008, Eric B. Decker
  * Mam-Mark Project
- *
  */
 
 #include "trace.h"
@@ -38,4 +37,6 @@ implementation {
 	trace_nxt = 0;
     }
   }
+
+  async event void Panic.hook() { }
 }

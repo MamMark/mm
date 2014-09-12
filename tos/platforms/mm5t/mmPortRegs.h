@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 (c) Eric B. Decker
+ * Copyright 2012, 2104 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,8 @@
  * @author Eric B. Decker
  */
 
-#ifndef _H_MM5T_PORT_REGS_H
-#define _H_MM5T_PORT_REGS_H
+#ifndef _H_MM_PORT_REGS_H
+#define _H_MM_PORT_REGS_H
 
 #ifndef PACKED
 #define PACKED __attribute__((__packed__))
@@ -50,7 +50,7 @@
     uint8_t p15		    : 1;
     uint8_t p16		    : 1;
     uint8_t p17		    : 1;
-  } PACKED mm5tP1out asm("0x0202");
+  } PACKED mmP1out asm("0x0202");
 
   static volatile struct {
     uint8_t p20		    : 1;
@@ -61,7 +61,7 @@
     uint8_t p25_down	    : 1;
     uint8_t p26_sw1	    : 1;
     uint8_t p27_sw2	    : 1;
-  } PACKED mm5tP2in asm("0x0201");
+  } PACKED mmP2in asm("0x0201");
 
   static volatile struct {
     uint8_t p20		    : 1;
@@ -72,7 +72,7 @@
     uint8_t p25		    : 1;
     uint8_t p26		    : 1;
     uint8_t p27		    : 1;
-  } PACKED mm5tP2out asm("0x0203");
+  } PACKED mmP2out asm("0x0203");
 
   static volatile struct {
     uint8_t p30		    : 1;
@@ -83,7 +83,7 @@
     uint8_t p35		    : 1;
     uint8_t p36		    : 1;
     uint8_t gps_mosi	    : 1;	/* x.y 3.7, spi B1MOSI */
-  } PACKED mm5tP3out asm("0x0222");
+  } PACKED mmP3out asm("0x0222");
 
   static volatile struct {
     uint8_t p40		    : 1;
@@ -94,9 +94,9 @@
     uint8_t p45		    : 1;
     uint8_t p46		    : 1;
     uint8_t p47		    : 1;
-  } PACKED mm5tP4in asm("0x0221");
+  } PACKED mmP4in asm("0x0221");
 
-#define ORG_GPS_WAKEUP (mm5tP4in.gps_wakeup)
+#define ORG_GPS_WAKEUP (mmP4in.gps_wakeup)
 
 norace static volatile struct {
     uint8_t gps_on_off	    : 1;	/* x.y 4.0, output */
@@ -107,13 +107,13 @@ norace static volatile struct {
     uint8_t p45		    : 1;
     uint8_t p46		    : 1;
     uint8_t p47		    : 1;
-  } PACKED mm5tP4out asm("0x0223");
+  } PACKED mmP4out asm("0x0223");
 
-#define ORG_GPS_SET_ONOFF (mm5tP4out.gps_on_off = 1)
-#define ORG_GPS_CLR_ONOFF (mm5tP4out.gps_on_off = 0)
-#define ORG_GPS_RESET     (mm5tP4out.gps_reset_n = 0)
-#define ORG_GPS_UNRESET   (mm5tP4out.gps_reset_n = 1)
-#define ORG_GPS_CSN        mm5tP4out.gps_csn
+#define ORG_GPS_SET_ONOFF (mmP4out.gps_on_off = 1)
+#define ORG_GPS_CLR_ONOFF (mmP4out.gps_on_off = 0)
+#define ORG_GPS_RESET     (mmP4out.gps_reset_n = 0)
+#define ORG_GPS_UNRESET   (mmP4out.gps_reset_n = 1)
+#define ORG_GPS_CSN        mmP4out.gps_csn
 
   static volatile struct {
     uint8_t p50		    : 1;
@@ -124,7 +124,7 @@ norace static volatile struct {
     uint8_t gps_sclk	    : 1;	/* x.y 5.5, spi B1SCLK */
     uint8_t p56		    : 1;
     uint8_t p57		    : 1;
-  } PACKED mm5tP5out asm("0x0242");
+  } PACKED mmP5out asm("0x0242");
 
   static volatile struct {
     uint8_t p60		    : 1;
@@ -135,7 +135,7 @@ norace static volatile struct {
     uint8_t p65		    : 1;
     uint8_t p66		    : 1;
     uint8_t p67		    : 1;
-  } PACKED mm5tP6out asm("0x0243");
+  } PACKED mmP6out asm("0x0243");
   
   static volatile struct {
     uint8_t p70_xin	    : 1;
@@ -146,7 +146,7 @@ norace static volatile struct {
     uint8_t p75_a13	    : 1;
     uint8_t p76_a14	    : 1;
     uint8_t p77_a15	    : 1;
-  } PACKED mm5tP7out asm("0x0262");
+  } PACKED mmP7out asm("0x0262");
 
   static volatile struct {
     uint8_t p80		    : 1;
@@ -157,7 +157,7 @@ norace static volatile struct {
     uint8_t p85		    : 1;
     uint8_t p86		    : 1;
     uint8_t p87		    : 1;
-  } PACKED mm5tP8out asm("0x0263");
+  } PACKED mmP8out asm("0x0263");
 
   static volatile struct {
     uint8_t p90		    : 1;
@@ -168,7 +168,7 @@ norace static volatile struct {
     uint8_t p95		    : 1;
     uint8_t p96		    : 1;
     uint8_t p97		    : 1;
-  } PACKED mm5tP9out asm("0x0282");
+  } PACKED mmP9out asm("0x0282");
 
 norace
   static volatile struct {
@@ -180,10 +180,10 @@ norace
     uint8_t accel_miso	    : 1;	/* p10 5, spi a3miso */
     uint8_t p106	    : 1;
     uint8_t accel_csn	    : 1;	/* p10 7, output */
-  } PACKED mm5tP10out asm("0x0283");
+  } PACKED mmP10out asm("0x0283");
 
-#define LIS3DH_CSN mm5tP10out.accel_csn
-#define TELL mm5tP10out.tell
+#define LIS3DH_CSN mmP10out.accel_csn
+#define TELL mmP10out.tell
 #define TOGGLE_TELL do { TELL = 1; TELL = 0; } while(0)
 
   static volatile struct {
@@ -195,6 +195,6 @@ norace
     uint8_t p115	    : 1;
     uint8_t p116	    : 1;
     uint8_t p117	    : 1;
-  } PACKED mm5tP11out asm("0x02A2");
+  } PACKED mmP11out asm("0x02A2");
 
 #endif

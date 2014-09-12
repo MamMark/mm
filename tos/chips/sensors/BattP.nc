@@ -1,6 +1,6 @@
 /*
  * BattP.nc: implementation for Battery Monitor
- * Copyright 2008, 2010 Eric B. Decker
+ * Copyright 2008, 2010, 2014: Eric B. Decker
  * All rights reserved.
  */
 
@@ -89,8 +89,8 @@ implementation {
     bdp->len = BATT_BLOCK_SIZE;
     bdp->dtype = DT_SENSOR_DATA;
     bdp->sns_id = SNS_ID_BATT;
-    bdp->sched_mis = call PeriodTimer.gett0();
-    bdp->stamp_mis = call PeriodTimer.getNow();
+    bdp->sched_ms = call PeriodTimer.gett0();
+    bdp->stamp_ms = call PeriodTimer.getNow();
     if (call mmControl.eavesdrop()) {
       if (call DTSender.send(bdp, BATT_BLOCK_SIZE))
 	err_eaves_drops++;
@@ -123,4 +123,6 @@ implementation {
   async command const mm_sensor_config_t* AdcConfigure.getConfiguration() {
     return &batt_config;
   }
+
+  async event void Panic.hook() { }
 }
