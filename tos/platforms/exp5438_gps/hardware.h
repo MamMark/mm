@@ -34,6 +34,12 @@
  *
  * @author Peter Bigot
  * @author Eric B. Decker <cire831@gmail.com>
+ *
+ * 04/29/2014: Eric B. Decker.  Added SiLabs Si4463 E10-M4463D 433MHz
+ * radio module (A3, P10).
+ *
+ * 2014: Eric B. Decker.  Modified MM5t platform, removed Accel and
+ * Tmp to build a module with the Antenova M1048 GPS module (B1, P3, P5).
  */
 
 #ifndef _H_hardware_h
@@ -65,7 +71,7 @@
  *       .1	0pO	led1    		      .1	1pO    gps_reset_n (nRST)
  *       .2	0pO	             		      .2	1pO    gps_csn (nRTS)
  *       .3     0pO	          		      .3	0pI    gps_awake
- *       .4	0pO	             		      .4	0pO
+ *       .4	0pO	r4463_int      		      .4	0pO
  *       .5	1pO	             		      .5	0pO
  *       .6	1pO	            		      .6	1pO
  *       .7	1pO	         		      .7	0pO
@@ -83,7 +89,7 @@
  *       .1	0pI	                    	      .1	0pI
  *       .2	0pI	                    	      .2	0pI
  *       .3	0pI	                    	      .3	0pI
- *       .4	1pI	       			      .4	1pO
+ *       .4	1pI	led2   			      .4	1pO
  *       .5	0pI	       			      .5	1pO
  *       .6	1pI	                	      .6	1pO
  *       .7	1pI	gps_simo (rx, B1SIMO)  	      .7	1pO
@@ -92,14 +98,14 @@
  * enable the resistors (fets).
  *
  *
- * port 10.0	0pO	accel_sclk (a3sclk)	port 11.0	0pI
- *        .1	1pI	xi2c_sda (b3sda)    	       .1	0pI
- *        .2	1pI	xi2c_scl (b3scl)    	       .2	0pI
+ * port 10.0	0pO	r4463_sclk (a3sclk)	port 11.0	0pI
+ *        .1	1pI	(nc) xi2c_sda (b3sda)  	       .1	0pI
+ *        .2	1pI	(nc) xi2c_scl (b3scl)  	       .2	0pI
  *        .3	0pI	                    	       .3	0pI
- *        .4	1pI	accel_mosi (a3mosi)	       .4	1pO
- *        .5	1pI	accel_miso (a3miso)	       .5	1pO
- *        .6	1pI	                	       .6	1pO
- *        .7	1pO	accel_csn		       .7	1pO
+ *        .4	1pI	r4463_mosi (a3mosi)	       .4	1pO
+ *        .5	1pI	r4463_miso (a3miso)	       .5	1pO
+ *        .6	1pI	r4463_sdn              	       .6	1pO
+ *        .7	1pO	r4463_csn		       .7	1pO
  */
 
 
