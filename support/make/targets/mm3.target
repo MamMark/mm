@@ -5,50 +5,20 @@
 # see tos/platform/mm3/hardware.h for how the pins are assigned.
 #
 
-PLATFORM ?= mm3
-
-MSP_MCU ?= msp430f1611
-
-# THREADS_MSP430_DIR comes from main tree support/make/threads.extra
-# mm3 is based on the msp430 so we use that threads variant.
-#
-# PFLAGS gets invoked first on the command line followed by CFLAGS
-#
-
-ifdef THREADS
-CFLAGS += $(THREADS_MSP430_INCLUDE_DIRS)
-#CFLAGS += $(THREADS_CC2420_INCLUDE_DIRS)
-#CFLAGS += $(THREADS_TELOS_INCLUDE_DIRS)
-endif
-
-#
-# The first PFLAGS addition, platforms/mm3 must be here otherwise
-# the make mm3 doesn't work.  The others for tos/{system,interfaces}
-# need to be here to make sure we don't get overridden by threads or
-# other stuff that comes in via the CFLAGS varient.  Stuff in the .platform
-# file come in last after PFLAGS and CFLAGS.
-#
-# shared platform files shared across MM varients are held in platforms/mm
-# There is no make support for mm.  (no target file in support/make).
-#
+TARGET = mm3
+PLATFORMDIR = $(MM_ROOT)/tos/platforms/$(TARGET)
 
 PFLAGS += -I$(MM_ROOT)/include
-PFLAGS += -I$(MM_ROOT)/tos/platforms/mm3
-PFLAGS += -I$(MM_ROOT)/tos/platforms/mm
-PFLAGS += -I$(MM_ROOT)/tos/system
-PFLAGS += -I$(MM_ROOT)/tos/interfaces
 
 MSP_BSL ?= tos-bsl
 MSP_BSL_FLAGS = --telosb
-
-#VOLUME_FILE = volumes-stm25p.xml
-#VOLUME_ALLOCATOR = tos-storage-stm25p
 
 ifdef CC2420_CHANNEL
 PFLAGS += -DCC2420_DEF_CHANNEL=$(CC2420_CHANNEL)
 endif
 
-$(call TOSMake_include_platform,msp)
+$(call TOSMake_include_platform,mm3)
+$(call TOSMake_include_make_platform,msp)
 
 mm3: $(BUILD_DEPS)
 	@:

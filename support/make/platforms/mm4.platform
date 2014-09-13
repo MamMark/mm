@@ -1,23 +1,9 @@
-# Includes that should take precedence come first.  Platforms come before
-# chips because they may override files.  These must be specified as
-# @includes instead of -I's to @opts, otherwise the %T won't be processed
-# by ncc.
+#-*-Makefile-*- vim:syntax=make
 #
-# $(MM_ROOT)/support/make/mm4.target includes PFLAG modifications that
-# set up include paths that come in first.  That is where
-# $(MM_ROOT)/tos/platforms/mm4 and /mm3 are included.  That is why
-# %P and %P/../mm3 don't show up below.
-#
-# %P refers to the local platform file: $(MM_ROOT)/tos/platforms/mm4
-# %P/../.. gets us to tos/
-# %P/../../.. is root of the tree.  ie. $(MM_ROOT) which doesn't
-# work in this file.
-#
-# support/utils/include moved to include.   include is pulled in via
-# the support/make/mm4.target.
-#
-# %P/../../../support/utils/include
-# %P/../../../include
+# %T/{system,types,interfaces} gets added automatically by
+# Makedefaults/Makerules.  If you need a different order
+# you have to do it in the <xxx>.target file.  That is don't
+# use the %T expansion.
 #
 #  %T/platforms/telosa/chips/cc2420
 #  %T/chips/cc2420/alarm
@@ -40,64 +26,35 @@
 #  %T/chips/msp430X/dma
 #
 
-push( @includes, qw(
+PFLAGS += -I%T/platforms/mm4
+PFLAGS += -I%T/platforms/mm
+PFLAGS += -I%T/platforms/mm4/panic
+PFLAGS += -I%T/system/panic
 
-  %P/../../mm
-  %P/../../comm
-  %P/../../chips/msp430/timer
-  %P/../../chips/sd
-  %P/../../chips/sensors
-  %P/../../chips/sirf3
-  %P/panic
-  %T/chips/msp430
-  %T/chips/msp430/adc12
-  %T/chips/msp430/clock_bcs
-  %T/chips/msp430/dma
-  %T/chips/msp430/pins
-  %T/chips/msp430/timer
-  %T/chips/msp430/sensors
-  %T/chips/msp430/x1x2/timer
-  %T/chips/msp430/x2xxx
-  %T/chips/msp430/x2xxx/usci
-  %T/chips/cc2420
-  %T/lib/timer
-  %T/lib/serial
-  %T/lib/power
-) );
+PFLAGS += -I%T/mm
+PFLAGS += -I%T/comm
+PFLAGS += -I%T/chips/msp430/timer
+PFLAGS += -I%T/chips/sd
+PFLAGS += -I%T/chips/sensors
+PFLAGS += -I%T/chips/sirf3
 
-@opts = qw(
+PFLAGS += -I%T/chips/msp430/x1x2/pins
+PFLAGS += -I%T/chips/msp430/x1x2/timer
+PFLAGS += -I%T/chips/msp430/x2xxx/usci
+PFLAGS += -I%T/chips/msp430/x2xxx
+PFLAGS += -I%T/chips/msp430
+PFLAGS += -I%T/chips/msp430/clock_bcs
+PFLAGS += -I%T/chips/msp430/adc12
+PFLAGS += -I%T/chips/msp430/dma
+PFLAGS += -I%T/chips/msp430/pins
+PFLAGS += -I%T/chips/msp430/timer
+PFLAGS += -I%T/chips/msp430/sensors
 
-  -gcc=msp430-gcc
-  -mmcu=msp430f2618
-  -fnesc-target=msp430
-  -fnesc-no-debug
-);
+PFLAGS += -I%T/chips/cc2420
+PFLAGS += -I%T/lib/timer
+PFLAGS += -I%T/lib/serial
+PFLAGS += -I%T/lib/power
 
-push @opts, "-fnesc-scheduler=TinySchedulerC,TinySchedulerC.TaskBasic,TaskBasic,TaskBasic,runTask,postTask" if !$with_scheduler_flag;
-push @opts, "-mingw-gcc" if $cygwin;
-
-$ENV{'CIL_MACHINE'} =
-    "version_major=3 " .
-    "version_minor=2 " .
-    "version=msp430-3.2.3 " .
-    "short=2,2 " .
-    "int=2,2 " .
-    "long=4,2 " .
-    "long_long=8,2 " .
-    "pointer=2,2 " .
-    "enum=2,2 " .
-    "float=4,2 " .
-    "double=4,2 " .
-    "long_double=4,2 " .
-    "void=1,1 " .
-    "fun=1,2 " .
-    "wchar_size_size=2,2 " .
-    "alignof_string=1 " .
-    "max_alignment=1 " .
-    "char_wchar_signed=true,true " .
-    "const_string_literals=true " .
-    "big_endian=false " .
-    "underscore_name=false " .
-    "__builtin_va_list=true " .
-    "__thread_is_keyword=true";
-
+PFLAGS += -mmcu=msp430f2618
+PFLAGS += -fnesc-target=msp430
+PFLAGS += -fnesc-no-debug
