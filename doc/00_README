@@ -1,46 +1,21 @@
 
-
 Installing a development environment for the MamMark tag.
 
 
 State:
 
-2011-10-20
+2014-09-14
+    Ubuntu 14.04, T2 (TinyProd) github:tp-freeforall/prod(tp-master),
+    MM github:MamMark/mm(master)
+    mspdebug JTAG debugging.  (v2)
+    mspgcc-LTS20120406 toolchain, tinyprod.net/repos/debian
+
+2011-10-20 (obsolete)
     Ubuntu 10.04, T2 (TinyProd) github:tp-freeforall/prod(mm-core-next),
     (based on tp-freeforall/prod(msp430-int-next)),
     MM github:MamMark/mm(master)
     mspdebug JTAG debugging.
     mspgcc-LTS20110716+patches toolchain, tinyprod.net/debian-dev
-
-    mm4, msp430f2618
-    mm5, msp430f5438a
-    modified sensor array
-
-
-2011-07-22: (obsolete)
-    Ubuntu 10.04, T2 (TinyProd) github:tp-freeforall/prod(msp430-int-pu),
-    github:tp-freeforall/prod(mm_core), MM github:MamMark/mm(master)
-    mspdebug JTAG debugging.  New mspgcc-20110716 toolchain
-
-    mm5, msp430f5438a
-    modified sensor array
-
-
-2010-12-05:  (Obsolete)
-    Ubuntu 10.04, T2 (mm_core, hinrg), mm3.git (hinrg)
-    Wine base JTAG debugging.
-
-    Ubuntu 10.04 Lucid
-    mm4, msp430f2618.
-    mspgcc-z1 Zolertia toolchain.
-    HIL.dll, MSP430.dll from TI via IAR (jtag lib)
-    msp430-jtag uses Python (windows)
-    msp430-gdbproxy.exe (windows)
-    mspdebug, mostly works for the 2618
-
-    Information on installing a development environment for the 20101205 style
-    is available as a version of this document frozen on the git tag mm4-20110722,
-    github:MamMark/mm(tag:mm4-20110722).
 
 
 This brief is written assuming that there is a common root directory,
@@ -62,39 +37,42 @@ MamMark code is built using two trees.
 The following parts are essential to building MM images:
 
 a) Set up a development environment.  (Ubuntu or Debian based)
-b) mspgcc (LTS-20110716) toolchain (gcc 4.5.3)
+b) mspgcc (LTS-20110716) toolchain (gcc 4.6.3)
 c) two trees are used and environment is set to include both trees.
-d) Jtag pod is connected to /dev/ttyUSB0
+d) Jtag pod is connected to /dev/ttyUSB0 (v2)
 e) Serial (Dock) port is connected to /dev/ttyUSB1
 
 **************************************************************************************
 
 1) Development Environment Installation
 
-https://github.com/tp-freeforall/prod/blob/msp430-int-next/00b_Development_Environment
+https://github.com/tp-freeforall/prod/blob/tp-master/00b_Development_Environment
 
 
 **************************************************************************************
 
-2) Pull main tinyos tree (msp430-int-next, mm-core-next)
+2) Pull main tinyos tree, gh:tp-freeforall/prod(mm-core)
 
 cd ~/mm
 mkdir t2_cur
 cd t2_cur
 git clone git://github.com/tp-freeforall/prod tinyos-2.x
-git checkout mm-core-next
+git checkout mm-core
+
 
 **************************************************************************************
 
 3) Pull the MM tree.
 
-The main body of MM code is held in the git repository github:MamMark/mm(master).  You
-pull a read only copy from git://github.com/MamMark/mm.git.
+The main body of MM code is held in the git repository gh:MamMark/mm(master).
+You pull a read only copy from git://github.com/MamMark/mm.git.
 
-If you will be contributing code to the project you should follow the instruction found
-in doc/02_Contributing_Code.  You will get a github login in and fork your own copy
-of the MamMark/mm repo.   Work is done on local working branches, moved to your local
-master branch and then a pull request is forwarded to MamMark/master.
+If you will be contributing code to the project you should follow the
+instruction found in gh:tp-freeforall/prod(tp-master)/00d_Contribution_Process.
+You will get a github login in and fork your own copy of the MamMark/mm repo.
+Work is done on local working branches, moved to your local master branch
+and then a pull request is forwarded to MamMark/master.
+
 
 Normal user (not enabled).
 
@@ -104,24 +82,22 @@ cd t2_mm
 
 # you should be on the master branch by default.
 
+
 **************************************************************************************
 
 4) Set environment variables.
 
 MOTECOM="serial@/dev/ttyUSB1:115200"
 MM_ROOT="$HOME/mm/t2_mm"
-TOSMAKE_PATH="$MM_ROOT/support/make"
-TOSROOT=$HOME/mm/t2_cur/tinyos-2.x
-TOSDIR=$TOSROOT/tos
+TINYOS_ROOT_DIR=$HOME/mm/t2_cur/tinyos-2.x
+TINYOS_ROOT_DIR_ADDITIONAL="$MM_ROOT:$TINYOS_ROOT_DIR_ADDITIONAL"
+CLASSPATH=.:$TINYOS_ROOT_DIR/support/sdk/java/tinyos.jar
 
-MAKERULES=$TOSROOT/support/make/Makerules
-CLASSPATH=.:$TOSROOT/support/sdk/java/tinyos.jar
-
-PYTHONPATH=$TOSROOT/support/sdk/python:$PYTHONPATH
+PYTHONPATH=$TINYOS_ROOT_DIR/support/sdk/python:$PYTHONPATH
 PYTHONPATH="/usr/local/lib/python3.1/dist-packages:$PYTHONPATH"
 
-export MAKERULES TOSDIR TOSROOT CLASSPATH PYTHONPATH LD_LIBRARY_PATH
-export MOTECOM OSIAN_PPPD_DEVICE OSIAN_ROOT MM_ROOT TOSMAKE_PATH
+export TINYOS_ROOT_DIR TINYOS_ROOT_DIR_ADDITIONAL CLASSPATH PYTHONPATH
+export LD_LIBRARY_PATH MOTECOM MM_ROOT
 
 
 **************************************************************************************
@@ -130,15 +106,11 @@ export MOTECOM OSIAN_PPPD_DEVICE OSIAN_ROOT MM_ROOT TOSMAKE_PATH
 5) Do a test compile and gdb run.  This assumes that the JTAG pod is
    connected to /dev/ttyUSB0.
 
-   Currently you can ignore this.   We don't have mm5 h/w yet so this doesn't work.
-   If you have z1 h/w, you can try this with that h/w.   But you will have to build
-   for the z1 platform in the main T2 application directory (ie.  $TOSROOT/apps/Blink).
-
    For mm5 hardware:
 
    cd ~/mm/t2_mm/apps/mm
-   make debugopt mm5
-   mspdebug uif -qjd /dev/ttyUSB0 "prog build/mm5/main.exe"
+   make debugopt mm5a
+   mspdebug uif -qjd /dev/ttyUSB0 "prog build/mm5a/main.exe"
 
 
    When the download completes use a different window and run:
@@ -146,10 +118,14 @@ export MOTECOM OSIAN_PPPD_DEVICE OSIAN_ROOT MM_ROOT TOSMAKE_PATH
    mspdebug uif -qjd /dev/ttyUSB0 "opt gdb_loop true" gdb
 
 
-   Follow the instructions in $TOSROOT/tos/chips/msp430/99_gdb/00_README to set
-   up the gdb control files in their proper places (.gdbinit, .gdb_x5, etc).
+   Follow the instructions in
 
-   now if you run msp430-gdb build/mm5/main.exe  gdb should connect to the proxy and start
+      $TINYOS_ROOT_DIR/tos/chips/msp430/99_gdb/00_README
+
+   to set up the gdb control files in their proper places (.gdbinit, .gdb_x5,
+   etc).
+
+   now if you run msp430-gdb build/mm5a/main.exe  gdb should connect to the proxy and start
    to debug your code in the device.  To let the device run use 'c', continue.  Do not use
    'run'.
 
@@ -169,12 +145,13 @@ export MOTECOM OSIAN_PPPD_DEVICE OSIAN_ROOT MM_ROOT TOSMAKE_PATH
 The main tracking repo is at:
 
     git://github.com/tinyprod/prod.git
-        read-only, production orientated tracking repo.   Tracks T2 SVN mainline.
-	MM modifications to the T2 core are on the mm-core-next branch.
+        read-only, production orientated tracking repo.   Tracks the main TinyOS
+        development repository, gh:tinyos/tinyos-main.	MM modifications to the
+        T2 core are on the tp-master and mm-core branches.
 
     git://github.com/tp-freeforall/prod.git
         read-only, development version of the tinyprod/prod repository.  Typically
-	used for integrating working development code.
+	used for integrating working development code.  tp-master/mm-core.
 
 
 **************************************************************************************
@@ -183,7 +160,7 @@ The main tracking repo is at:
 
 The t2_mm tree is a seperate t2 based repo that has mammark unique
 code.  It is used to build firmware for the mm3 (1611 based), mm4
-(2618 based), and mm5 (5438a) tag devices.
+(2618 based), and mm5a (5438a) tag devices.
 
     git://github.com/MamMark/mm.git   (read only)
 
@@ -194,26 +171,30 @@ code.  It is used to build firmware for the mm3 (1611 based), mm4
 
 8) Repos:
 
-See $(TOSROOT)/00a_Repo_Notes for details about how the TinyProd/prod repo is organized.
-github:tinyprod/prod or github:tp-freeforall/prod holds the main t2 repository.   Working
-branch for the MM platform is mm-core-next.
+See $(TINYOS_ROOT_DIR)/00a_Repo_Notes for details about how the TinyProd/prod
+repo is organized.  gh:tinyprod/prod and gh:tp-freeforall/prod holds the main
+t2 repository.   Working branch for the MM platform is mm-core.
 
 
 T2_MM git repositories:
 
-    github:MamMark/mm.git    (read-only: git://github.com/MamMark/mm.git).
+    gh:MamMark/mm.git    (read-only: git://github.com/MamMark/mm.git).
 
 
 9) Formating SD media for use by the tag.
 
   format
 	mkdosfs -F 32 -I -n"TagTest" -v /dev/sdb
+
   check
 	fsck /dev/sdb
+
   build
 	mkdblk -w /dev/sdb
+
   check
 	fsck /dev/sdb
+
   correct
 	fsck -a /dev/sdb
 	fsck    /dev/sdb

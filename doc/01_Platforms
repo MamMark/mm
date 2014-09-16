@@ -1,11 +1,10 @@
 
-MM5: The MM5 is a major reimplementation using the msp430f5438a as
+MM5a: The MM5a is a major reimplementation using the msp430f5438a as
 the main processor.   The major benefit of the 5438 is more USCI
 ports which cuts down on the need for sharing (arbritration).
 The sensor set has also been majorly revamped.   See $(LOCAL_REPO)/
-tos/platforms/mm5/hardware.h.   ie. github:MamMark/mm(master)/tos/
-platforms/mm5/hardware.h.
-
+tos/platforms/mm5a/hardware.h.   ie. gh:MamMark/mm(master)/tos/
+platforms/mm5a/hardware.h.
 
 MM3: msp430f1611 based prototype.  see tos/platforms/mm3/hardware.h
      for port mapping.
