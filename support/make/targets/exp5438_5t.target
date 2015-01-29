@@ -1,0 +1,27 @@
+#-*-Makefile-*- vim:syntax=make
+#
+# exp5438_5t is based on msp430f5438a.  Eval-430f5438 board.
+# see tos/platform/exp5438_5t/hardware.h for how the pins are assigned.
+#
+# support/make/platforms/exp5438_5t.platform sets what cpu we are using.
+#
+
+TARGET = exp5438_5t
+PLATFORMDIR = $(MM_ROOT)/tos/platforms/$(TARGET)
+
+BUILD_NUM_FILE = $(PLATFORMDIR)/_Build
+BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)); else echo 0; fi)
+
+PFLAGS += -D_BUILD=$(BUILD_NUM)
+
+PFLAGS += -I$(MM_ROOT)/include
+$(call TOSMake_include_platform,exp5438_5t)
+$(call TOSMake_include_make_platform,msp)
+
+build_num: FORCE
+	@if [ ! -f $(BUILD_NUM_FILE) ] ; then echo -1 > $(BUILD_NUM_FILE); fi
+	@echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)) > $(BUILD_NUM_FILE)
+	@echo BUILD: $(BUILD_NUM)
+
+exp5438_5t: build_num $(BUILD_DEPS)
+        @:

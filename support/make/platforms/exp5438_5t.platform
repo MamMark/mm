@@ -1,0 +1,47 @@
+#-*-Makefile-*- vim:syntax=make
+#
+# %T/{system,types,interfaces} gets added automatically by
+# Makedefaults/Makerules.  If you need a different order
+# you have to do it in the <xxx>.target file.  That is don't
+# use the %T expansion.
+
+PFLAGS += -I%T/platforms/exp5438_5t
+PFLAGS += -I%T/platforms/mm
+
+PFLAGS += -I%T/mm
+PFLAGS += -I%T/system/panic_simple
+
+PFLAGS += -I%T/platforms/exp5438_5t/hardware/adc
+PFLAGS += -I%T/platforms/exp5438_5t/hardware/buttons
+PFLAGS += -I%T/platforms/exp5438_5t/hardware/clock
+PFLAGS += -I%T/platforms/exp5438_5t/hardware/leds
+PFLAGS += -I%T/platforms/exp5438_5t/hardware/pins
+PFLAGS += -I%T/platforms/exp5438_5t/hardware/usci
+
+PFLAGS += -I%T/chips/gsd4e_v2
+PFLAGS += -I%T/chips/tmp112
+PFLAGS += -I%T/chips/lis3dh
+
+PFLAGS += -I%T/chips/msp430/x5xxx
+PFLAGS += -I%T/chips/msp430/x5xxx/lpm
+PFLAGS += -I%T/chips/msp430/x5xxx/pins
+PFLAGS += -I%T/chips/msp430/x5xxx/timer
+PFLAGS += -I%T/chips/msp430/x2x5/timer
+PFLAGS += -I%T/chips/msp430/x5xxx/usci-v2
+PFLAGS += -I%T/chips/msp430/x5xxx/usci-v2/i2c-sm
+PFLAGS += -I%T/chips/msp430
+PFLAGS += -I%T/chips/msp430/dma
+PFLAGS += -I%T/chips/msp430/pins
+PFLAGS += -I%T/chips/msp430/timer
+
+PFLAGS += -I%T/chips/msp430/pmm
+PFLAGS += -I%T/chips/msp430/adc12
+
+PFLAGS += -I%T/lib/timer
+PFLAGS += -I%T/lib/serial
+PFLAGS += -I%T/lib/power
+PFLAGS += -I%T/lib/printf
+
+PFLAGS += -mmcu=msp430f5438a
+PFLAGS += -fnesc-target=msp430
+PFLAGS += -fnesc-no-debug
