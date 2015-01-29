@@ -1,0 +1,27 @@
+#-*-Makefile-*- vim:syntax=make
+#
+# see tos/platform/mm5a/hardware.h for how the pins are assigned.
+# Origin ORG4472 is wired in at various of the break out pins.
+#
+# support/make/platforms/mm5a.platform sets what cpu we are using.
+#
+
+TARGET = mm5a
+PLATFORMDIR = $(MM_ROOT)/tos/platforms/$(TARGET)
+
+BUILD_NUM_FILE = $(PLATFORMDIR)/_Build
+BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)); else echo 0; fi)
+
+PFLAGS += -D_BUILD=$(BUILD_NUM)
+
+PFLAGS += -I$(MM_ROOT)/include
+$(call TOSMake_include_platform,mm5a)
+$(call TOSMake_include_make_platform,msp)
+
+build_num: FORCE
+	@if [ ! -f $(BUILD_NUM_FILE) ] ; then echo -1 > $(BUILD_NUM_FILE); fi
+	@echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)) > $(BUILD_NUM_FILE)
+	@echo BUILD: $(BUILD_NUM)
+
+mm5a: build_num $(BUILD_DEPS)
+        @:

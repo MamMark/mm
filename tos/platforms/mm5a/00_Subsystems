@@ -1,0 +1,284 @@
+
+Hardware Interface:
+
+Power Management:
+
+  The main power bus is 1.8V (1V8 rail).   This bus is on all the time and
+  powers the uP (5438a).
+
+  There is also a 3.3V bus that is used to power the uSD and most of the
+  analog circuitry.  This bus is powered from the 1.8V bus via a switching
+  power supply.
+
+  The radio system is powered by a switching regulator that can provide
+  either 1.8V (for lower power) or 3.3V for high power transmission.
+
+  Solar:
+
+  Battery:
+  
+  Pins:
+      P6.2:  pwr_3v3_ena
+      P6.4:  solar_ena
+      P6.6:  bat_sense_ena
+      P7.3:  usd_pwr_ena
+      P10.1: temp_pwr
+      PJ.1:  radio_volt_sel
+
+
+Temp
+
+  Temp subsystem consists of one onboard and one external tmp102 (TI TMP102)
+  temperature sensors.  The two temperature sensors are physically connected
+  to UCSI B2 and communicates via I2C.
+
+  Pins:
+      TP14:  temp_pwr (via 1K)
+      TP15:  temp_gnd
+      TP16:  temp_sda
+      TP17:  temp_scl
+
+      P9.1:  temp_sda (ucb2sda)
+      P9.2:  temp_scl (ucb2scl)
+      P10.1: temp_pwr                 (0: off, 1: on)
+
+
+  P10.1 must be 1 to power both temperature sensors.
+
+  The onboard tmp102 uses address 0x48 (ADD0 grounded) while the external
+  tmp102 uses address 0x49 (ADD0 connected to V+).
+
+  Communications on this I2C bus occurs at 400KHz.  The power consumption of
+  the tmp102 chips at 400KHz is 10-15uA vs 80-85uA at 3.4MHz.
+
+
+Analog to Digital Conversion (ADC)
+
+  The ADC subsystem takes analog signals from several analog sources and
+  converts them into corresponding digital values.  Included are the
+  following sources:
+
+    1) Salinity sensor
+    2) Pressure Transducer
+    3) Battery Voltage
+    4) Solar Input
+
+  Most of the analog circuitry requires the 3V3 power rail to be on
+  (pwr_3v3_ena).
+
+  The actual conversion is preformed by an ADS1148 analog to digital converter
+  that lives on a dedicated SPI bus (UCSI B1).  The ads1148 has an internal
+  8 input multiplex. In addition two MAX4782 dual 4-1 analog multiplexors are
+  used in the system as well.
+
+  Pins:
+      TP1:
+      TP2:
+      TP19:
+      TP20:
+      TP21:
+      TP22:
+      TP26:
+
+      P1.4:  adc_drdy_n
+      P3.7:  adc_do        (ucb1)
+      P4.7:  adc_start
+      P5.0:  mux4x_A
+      P5.1:  mux4X_B
+      P5.4:  adc_di        (ucb1)
+      P5.5:  adc_clk       (ucb1)
+      P6.4:  solar_ena
+      P6.6:  bat_sense_ena
+      P7.5:  mux2x_A
+      P10.6: adc_csn
+
+
+uSD - Storage System
+
+  The uSD subsystem provides a single uSD module for mass storage.  Currently
+  only up to 2GB can be used.  This is a sw driver issue (sd vs. sdhc
+  protocols).
+
+  Normally the 5438a uP is responsible for powering the uSD and accessing the
+  contents.  The 5438a accesses the uSD using SPI mode only.
+
+  The 5438a access the uSD via a dedicated UCSI (uca1) as a SPI master.
+
+  Provisions have been made for direct access when the Tag is docked.  The
+  dock brings out all 8 of the uSD pins and the uSD can be accessed using SD
+  mode for higher speed access.
+
+  When docked, a timer is started on the dock.  When this timer expires the
+  dock will override the 5438a and take control directly of the uSD.  This
+  will provide a failsafe mechanism for accessing the contents of the uSD.
+
+  See Dock section for more information.
+
+  Power and Voltage Levels:
+
+    The uSD is powered 
+    The uSD operates at 3.3V (3V3 rail on, pwr_3v3_ena) and  and needs the 3V3 rail turned on via pwr_3v3_ena.
+    Logic level translation between the processor (5438a, 1.8v) and the uSD
+    (3.3V) is done.
+
+  Pins:
+            (usd pin) <usd spi mode>/<usd sd mode>
+      TP4:  (usd 2) usd_cs/usd_cd_dat3
+      TP5:  (usd 3) usd_di/usd_cmd
+      TP6:  (usd 4) usd_vdd
+      TP7:  (usd 5) usd_sclk/usd_clk
+      TP8:  (usd_6) usd_gnd
+      TP9:  (usd_7) usd_do/usd_dat0
+      TP10: (usd_8) usd_rsv2/usd_dat1
+      TP36: (usd 1) usd_rsv1/usd_dat2
+
+      P9.1:  temp_sda (ucb2sda)
+      P9.2:  temp_scl (ucb2scl)
+      P10.1: temp_pwr                 (0: off, 1: on)
+
+      P1.3:  usd_access_sense
+      P1.5:  usd_access_ena_n
+      P3.6:  usd_clk           (uca1)
+      P5.6:  usd_mosi          (uca1)
+      P5.7:  usd_miso          (uca1)
+      P7.3:  usd_pwr_ena
+      P8.2:  usd_csn
+
+*** on the schematic there is a reference to "add sd power sense".  Do
+    we need a sd power sense?  Probably not.
+
+  5438a/uSD access protocol:  When ever the 5438a wants to access the uSD
+  it must follow the following protocol.
+
+  1) drive usd_access_ena_n low.
+
+     if the dock hasn't disabled access, this will drive the OEn of U37 low
+     enabling the 5438a to control the pins of the uSD.
+
+  2) read usd_access_sense.  If the 5438a has control of the uSD then this
+     signal will be low.  If the dock is overriding uSD access then this line
+     will be high.
+
+     [what should the software do if we have been kicked off the uSD?  This
+     should eventually cause the same behaviour as seeing the docked signal]
+
+  3) power the uSD up by asserting usd_pwr_ena
+
+
+
+Dock Interface
+
+  Pins:
+      TP3:   docked
+      TP11:  dock_mosi (dock -> 5438a) (uca0txd)
+      TP12:  dock_clk
+      TP13:  dock_usd_override
+      TP27:  dock_miso (5438a -> dock) (uca0rxd)
+      TP34:  1V8 rail Vdd
+      TP35:  gnd
+
+      P1.7:  dock_irq
+      P3.0:  dock_clk   (dock supplied clock)
+      P3.4:  dock_mosi  (dock -> 5438a)
+      P3.5:  dock_miso  (dock <- 5438a)
+
+
+  The Dock provides two interfaces to the mm5a tag, a) a communications port
+  (dockcomm) and b) a direct uSD interface.
+
+  The dockcomm port uses SPI to communicate between the Dock and the mm5a tag.
+  The Dock provides a USB interface to the outside world that makes the
+  mm5a tag look like a run of the mill USB serial port.  The Dock acts as
+  an SPI master and the 5438a runs its SPI port as a slave.  A dedicated SPI
+  port (uca0) running in slave mode is used on the 5438a side.
+  
+  Dock/uSD/5438a protocol:  When the mm5a tag is plugged into the dock, a
+  mutual exclusion problem exists.  Both the 5438a and the dock may want to
+  access the uSD at the same time.  This must be prevented.
+
+  However, when first docked, the 5438a maybe in the middle of something and
+  we want to give it a reasonable amount of time to complete.
+
+  When docked, a signal is generated that informs the 5438a that a docking
+  event has occured.  This should cause the 5438a to finish what it is doing
+  and go into a docked mode.
+
+
+  Dock Protocol:  When the mm5a is plugged into the dock the following occurs:
+
+  1) When plugged in, docked (TP3) is driven high.  This causes an interrupt
+     to be generated on the 5438a via dock_irq.
+
+     dock_usd_override will be tristated.
+
+  2) the dock starts a failsafe timer used to force dock control of the uSD if
+     the timer expires.
+
+*** So the dock can say "hey, I'm here" via docked/dock_irq.
+
+    How does the 5438a tell the dock, great I'm in docked mode?
+
+    One way is have the dock start to communicate on the dockcomm, asking for
+    status.  The 5438a responds appropriately saying either (running, or docked).
+
+    That should work.  Or do we want an pin coming back?
+
+  dock_usd_override: when the dock wants to access the uSD, it drives this
+  signal with a 1.  This diables any access of the mm5a 5438a processor to the
+  uSD.
+
+
+
+Radio Subsystem:
+
+The mm5a has a transceiver that operates in the 433MHz frequency band for off
+tag communications.  Communications between the 5438a and the SI446X is via
+a dedicated UCSI (uca2) running in SPI master mode.
+
+  Pins:
+      P1.0: radio_irq
+      P8.7: radio_sdn  (shutdown)
+      P9.0: radio_clk  (uca2)
+      P9.4: radio_mosi (uca2)
+      P9.5: radio_miso (uca2)
+      P9.7: radio_csn
+      PJ.1: radio_volt_sel
+
+*** How does the radio_volt_sel actually work?
+
+
+
+GPS
+
+Dedicated port uca3
+
+  Pins:
+      P5.0:  gps_awake
+      P5.3:  gps_csn
+      P10.0: gps_clk  (uca3)
+      P10.4: gps_mosi (uca3)
+      P10.5: gps_miso (uca3)
+      P11.0: gps_on_off
+      P11.2: gps_resetn
+
+
+MEMS bus:
+
+Dedicated port ucb0.  Master SPI
+
+  Pins:
+      P3.1: mems_mosi (ucb0)
+      P3.2: mems_miso (ucb0)
+      P3.3: mems_clk  (ucb0)
+
+      P2.4: accel_int1
+      P2.6: accel_int2
+      P4.1: accel_csn
+
+      P1.1: gyro_drdy
+      P2.2: gyro_irq
+      P4.4: gyro_csn
+
+      P2.0: mag_drdy
+      P2.3: mag_irq
+      P4.6: mag_csn
