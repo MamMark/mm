@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014 Eric B. Decker
+ * Copyright (c) 2012, 2014-2015 Eric B. Decker
  * Copyright (c) 2009-2010 People Power Co.
  * All rights reserved.
  *
@@ -69,7 +69,7 @@
  *
  * port 1.0	0pO	led0    		port 4.0	0pO    gps_on_off
  *       .1	0pO	led1    		      .1	1pO    gps_reset_n (nRST)
- *       .2	0pO	             		      .2	1pO    gps_csn (nRTS)
+ *       .2	0pO	r4463_cts      		      .2	1pO    gps_csn (nRTS)
  *       .3     0pO	          		      .3	0pI    gps_awake
  *       .4	0pO	r4463_int      		      .4	0pO
  *       .5	1pO	             		      .5	0pO
