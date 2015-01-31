@@ -14,11 +14,19 @@ See doc/00_README for installing a complete development environment.  Also
 see: (doc directory) 01_Platforms, Notes, Status.txt, and ToDo.
 
 
-Platform revisions:
+Platforms:
 
 mm3:	msp430f1611 (prototype)
 mm4:	msp430f2618 (prototype)
-mm5a:	msp430f5438a (production and prototype)
+mm5a:	msp430f5438a (prototype and production)
+
+
+Other development platforms:
+
+the exp5438 is TI's MSP-EXP430F5438 development board.
+
+exp5438_5t:     dev board with various sensors
+exp5438_gps:    dev board with gps and radio
 
 
 Centralized repositories are hosted at github.com.  github:tinyprod/prod

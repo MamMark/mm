@@ -1,21 +1,32 @@
 
 MM5a: The MM5a is a major reimplementation using the msp430f5438a as
-the main processor.   The major benefit of the 5438 is more USCI
-ports which cuts down on the need for sharing (arbritration).
-The sensor set has also been majorly revamped.   See $(LOCAL_REPO)/
-tos/platforms/mm5a/hardware.h.   ie. gh:MamMark/mm(master)/tos/
-platforms/mm5a/hardware.h.
+  the main processor.   The major benefit of the 5438 is more USCI
+  ports which cuts down on the need for sharing (arbritration).
+  The sensor set has also been majorly revamped.   See $(LOCAL_REPO)/
+  tos/platforms/mm5a/hardware.h.   ie. gh:MamMark/mm(master)/tos/
+  platforms/mm5a/hardware.h.
 
 MM3: msp430f1611 based prototype.  see tos/platforms/mm3/hardware.h
-     for port mapping.
+  for port mapping.
 
 MM4: msp430f2618 variant.  Note that the 2618 has a form factor that
-     is a drop in for the 1611.  Some of the pins map differently.
-     Note that the pin out of the 2618 and the 1611 are very close and
-     the 2618 is essentially a h/w drop in for the 1611.  The f/w
-     needs to change somewhat to account for the h/w differences
-     (primarily between the USARTs and USCIs).
+  is a drop in for the 1611.  Some of the pins map differently.
+  Note that the pin out of the 2618 and the 1611 are very close and
+  the 2618 is essentially a h/w drop in for the 1611.  The f/w
+  needs to change somewhat to account for the h/w differences
+  (primarily between the USARTs and USCIs).
 
+
+Development Platforms:
+
+exp5438_5t: a test platform based on the TI MSP-EXP430F5438 combined
+  with various sensors.
+
+exp5438_gps: TI MSP-EXP430F5438 wired with a gps module and the Si4463
+  radio.
+
+mm5t: a test platfrom based on the TI MSP-EXP430F5438 development board
+  superseeded by exp5438_5t.  (deprecated).
 
 
 The following is maintained for historical reference.   A difference between
