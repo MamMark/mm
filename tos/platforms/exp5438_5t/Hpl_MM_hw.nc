@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2014 Eric B. Decker
  * All rights reserved.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
