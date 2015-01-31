@@ -1,2 +1,0 @@
-#define REQUIRE_PANIC
-#define REQUIRE_PLATFORM
