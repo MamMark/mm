@@ -51,13 +51,13 @@ https://github.com/tp-freeforall/prod/blob/tp-master/00b_Development_Environment
 
 **************************************************************************************
 
-2) Pull main tinyos tree, gh:tp-freeforall/prod(mm-core)
+2) Pull main tinyos tree, gh:tp-freeforall/prod(tp-master)
 
 cd ~/mm
 mkdir t2_cur
 cd t2_cur
 git clone git://github.com/tp-freeforall/prod tinyos-2.x
-git checkout mm-core
+git checkout tp-master
 
 
 **************************************************************************************
@@ -149,6 +149,8 @@ The main tracking repo is at:
         development repository, gh:tinyos/tinyos-main.	MM modifications to the
         T2 core are on the tp-master and mm-core branches.
 
+        Unless, you specifically need something on mm-core, use tp-master.
+
     git://github.com/tp-freeforall/prod.git
         read-only, development version of the tinyprod/prod repository.  Typically
 	used for integrating working development code.  tp-master/mm-core.
@@ -173,7 +175,19 @@ code.  It is used to build firmware for the mm3 (1611 based), mm4
 
 See $(TINYOS_ROOT_DIR)/00a_Repo_Notes for details about how the TinyProd/prod
 repo is organized.  gh:tinyprod/prod and gh:tp-freeforall/prod holds the main
-t2 repository.   Working branch for the MM platform is mm-core.
+t2 repository.   Working branch for the MM platform is tp-master.  Some
+additional modifications are on the mm-core branch.
+
+Note: The mm-core branch is currently being rebased when the mainline
+(tp-master) is moved forward (upstream tracking).  If you are using mm-core
+you currently have to do the following to update to a new version.  Assumes
+that you have both mm-core nad tp-master branches.  Make sure you have no
+pending changes on mm-core (you shouldn't, currently read-only).
+
+    git checkout tp-master              # switch to mainline
+    git pull ffa                        # update to new mainline
+    git b -D mm-core                    # nuke mm-core
+    git checkout -t ffa/mm-core         # get new mm-core
 
 
 T2_MM git repositories:
