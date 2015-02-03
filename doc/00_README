@@ -147,13 +147,15 @@ The main tracking repo is at:
     git://github.com/tinyprod/prod.git
         read-only, production orientated tracking repo.   Tracks the main TinyOS
         development repository, gh:tinyos/tinyos-main.	MM modifications to the
-        T2 core are on the tp-master and mm-core branches.
-
-        Unless, you specifically need something on mm-core, use tp-master.
+        T2 core are on the tp-master branch.
 
     git://github.com/tp-freeforall/prod.git
-        read-only, development version of the tinyprod/prod repository.  Typically
-	used for integrating working development code.  tp-master/mm-core.
+        read-only, development version of the tinyprod/prod repository.
+        Typically used for integrating working development code.
+
+        there is an experimental branch mm-expr that gets rebased to tp-master
+        when tp-master moves.
+
 
 
 **************************************************************************************
@@ -176,18 +178,18 @@ code.  It is used to build firmware for the mm3 (1611 based), mm4
 See $(TINYOS_ROOT_DIR)/00a_Repo_Notes for details about how the TinyProd/prod
 repo is organized.  gh:tinyprod/prod and gh:tp-freeforall/prod holds the main
 t2 repository.   Working branch for the MM platform is tp-master.  Some
-additional modifications are on the mm-core branch.
+additional modifications are on the mm-expr branch.
 
-Note: The mm-core branch is currently being rebased when the mainline
-(tp-master) is moved forward (upstream tracking).  If you are using mm-core
+Note: The mm-expr branch is currently being rebased when the mainline
+(tp-master) is moved forward (upstream tracking).  If you are using mm-expr
 you currently have to do the following to update to a new version.  Assumes
-that you have both mm-core nad tp-master branches.  Make sure you have no
-pending changes on mm-core (you shouldn't, currently read-only).
+that you have both mm-expr and tp-master branches.  Make sure you have no
+pending changes on mm-expr (you shouldn't, currently read-only).
 
     git checkout tp-master              # switch to mainline
     git pull ffa                        # update to new mainline
-    git b -D mm-core                    # nuke mm-core
-    git checkout -t ffa/mm-core         # get new mm-core
+    git b -D mm-expr                    # nuke mm-expr
+    git checkout -t ffa/mm-expr         # get new mm-expr
 
 
 T2_MM git repositories:
