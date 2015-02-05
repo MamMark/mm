@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 (c) Eric B. Decker
+ * Copyright 2014-2015 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
     uint8_t gyro_drdy           : 1;
     uint8_t p12                 : 1;
     uint8_t sd_access_sense     : 1;
-    uint8_t adc_drdy            : 1;
+    uint8_t adc_drdy_n          : 1;
     uint8_t p15                 : 1;
     uint8_t p16                 : 1;
     uint8_t dock_irq            : 1;
