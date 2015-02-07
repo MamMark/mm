@@ -1,8 +1,9 @@
-COMPONENT=TestTMP112C
+COMPONENT=TestTmp1x2C
 
 #OPTFLAGS = -ggdb -O0 -fnesc-no-inline
 OPTFLAGS = -ggdb -Os -fnesc-no-inline
 
-include $(MAKERULES)
+TINYOS_ROOT_DIR ?= ../../../..
+include $(TINYOS_ROOT_DIR)/Makefile.include
 
 
