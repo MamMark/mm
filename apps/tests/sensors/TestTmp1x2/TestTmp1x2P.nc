@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include "Timer.h"
 
-module TestTMP112M {
+module TestTmp1x2P {
   uses {
     interface Boot;
     interface Read<uint16_t> as TempSensor;

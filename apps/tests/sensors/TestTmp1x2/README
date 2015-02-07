@@ -1,12 +1,8 @@
-README for TestTMP112
-Tod Landis <go@todlandis.com>
+README for TestTmp1x2
 
-These are test applications for the TMP112 driver.  TestTempApp 
+These are test applications for the Tmp1x2 driver.  The App
 does a reading, which you can examine by setting a breakpoint on
 the nop() call in TempSensor.readDone().  Modify convert.c to
 convert the value you find to degrees Celsius and Fahrenheit.
 
 There is also wiring for a timer, but the timer isn't used yet.
-
-
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2015 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,19 +33,19 @@
  */
 
 /*
- * Read the temperature from a TMP112 digital thermometer.
+ * Read the temperature from a tmp1x2 digital thermometer.
  * See the README for a description of the value returned.
  */
 
-generic configuration TMP112C() {
+generic configuration Tmp1x2C() {
   provides interface Read<uint16_t>;
 }
 implementation {
-  components TMP112P;
-  Read = TMP112P.ReadTemp;
+  components Tmp1x2P;
+  Read = Tmp1x2P.ReadTemp;
 
   components new Msp430UsciI2CB3C() as I2C;  
-  TMP112P.Resource -> I2C;
-  TMP112P.I2CReg   -> I2C;
-  TMP112P.I2C      -> I2C;
+  Tmp1x2P.Resource -> I2C;
+  Tmp1x2P.I2CReg   -> I2C;
+  Tmp1x2P.I2C      -> I2C;
 }

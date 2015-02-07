@@ -1,9 +1,12 @@
-README for the TMP112 Driver
+README for the tmp1x2 Driver
 
-The following notes are based on the TMP112 data sheet ...
+The tmp102 and tmp112 temperature sensor chips are very similar and this
+driver supports both.  The tmp112 has an extended range.
+
+From the tmp102/tmp112 datasheet:
 
 When successful, the driver will return a word of data.  Depending on the
-TMP112 configuration, the first 12 or 13 bits of that word will contain
+tmp102 configuration, the first 12 or 13 bits of that word will contain
 a temperature value in Celsius degrees in the driver format.  One LSB corresponds
 to 0.0625 degrees, which is 1/16 degree.
 

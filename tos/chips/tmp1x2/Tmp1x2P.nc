@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2015 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,11 +33,11 @@
  */
 
 #include <TinyError.h>
-#include "tmp112.h"
+#include "tmp1x2.h"
 
 norace uint8_t xbuf[32];
 
-module TMP112P {
+module Tmp1x2P {
   provides interface Read<uint16_t> as ReadTemp;
   uses {
     interface Resource;
@@ -53,8 +53,8 @@ implementation {
 			//     0x4a = 1001010 for ADD0 connected to SDA
 			//     0x4b = 1001011 for ADD0 connected to SCL
 
-#define CONFIG (TMP112_CONFIG_RES_3 | TMP112_CONFIG_FAULT_1 \
-	| TMP112_CONFIG_4HZ   | TMP112_CONFIG_EM)
+#define CONFIG (TMP1X2_CONFIG_RES_3 | TMP1X2_CONFIG_FAULT_1 \
+	| TMP1X2_CONFIG_4HZ   | TMP1X2_CONFIG_EM)
 
 
   task void signalDone() {
@@ -197,38 +197,38 @@ implementation {
     xbuf[4] = 0x22;
     xbuf[5] = 0x33;
     xbuf[0] = 1;
-    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 0, xbuf);
+    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 0, xbuf);
     nop();
     xbuf[0] = 2;
-    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 1, NULL);
+    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 1, NULL);
     nop();
     xbuf[0] = 3;
-    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 1, xbuf);
+    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 1, xbuf);
     nop();
     xbuf[0] = 4;
-    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 2, xbuf);
+    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 2, xbuf);
     nop();
     xbuf[0] = 5;
-    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 3, xbuf);
+    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 3, xbuf);
     nop();
     xbuf[0] = 6;
-    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 4, xbuf);
+    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 4, xbuf);
     nop();
     xbuf[0] = 7;
-    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 5, xbuf);
+    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 5, xbuf);
     nop();
     xbuf[0] = 8;
-    call I2CReg.reg_writeBlock(DEVID, TMP112_TEMP, 6, xbuf);
+    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 6, xbuf);
     nop();
 
 #ifdef notdef
-    call I2CReg.reg_read16(DEVID,  TMP112_TEMP,   &d);
-    call I2CReg.reg_read16(DEVID,  TMP112_CONFIG, &d);
+    call I2CReg.reg_read16(DEVID,  TMP1X2_TEMP,   &d);
+    call I2CReg.reg_read16(DEVID,  TMP1X2_CONFIG, &d);
 
-    call I2CReg.reg_write16(DEVID, TMP112_CONFIG, CONFIG);
-    call I2CReg.reg_read16(DEVID,  TMP112_CONFIG, &d);
+    call I2CReg.reg_write16(DEVID, TMP1X2_CONFIG, CONFIG);
+    call I2CReg.reg_read16(DEVID,  TMP1X2_CONFIG, &d);
 
-    call I2CReg.reg_read16(DEVID, TMP112_TEMP, &d);
+    call I2CReg.reg_read16(DEVID, TMP1X2_TEMP, &d);
     nop();
 #endif
 
