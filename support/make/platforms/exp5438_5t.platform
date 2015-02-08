@@ -19,7 +19,7 @@ PFLAGS += -I%T/platforms/exp5438_5t/hardware/pins
 PFLAGS += -I%T/platforms/exp5438_5t/hardware/usci
 
 PFLAGS += -I%T/chips/gsd4e_v2
-PFLAGS += -I%T/chips/tmp112
+PFLAGS += -I%T/chips/tmp1x2
 PFLAGS += -I%T/chips/lis3dh
 
 PFLAGS += -I%T/chips/msp430/x5xxx
