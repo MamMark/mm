@@ -11,12 +11,12 @@ PFLAGS += -I%T/platforms/mm
 PFLAGS += -I%T/mm
 PFLAGS += -I%T/system/panic_simple
 
-PFLAGS += -I%T/platforms/exp5438_gps/hardware/adc
-PFLAGS += -I%T/platforms/exp5438_gps/hardware/buttons
-PFLAGS += -I%T/platforms/exp5438_gps/hardware/clock
-PFLAGS += -I%T/platforms/exp5438_gps/hardware/leds
-PFLAGS += -I%T/platforms/exp5438_gps/hardware/pins
-PFLAGS += -I%T/platforms/exp5438_gps/hardware/usci
+PFLAGS += -I%T/platforms/mm5a/hardware/adc
+PFLAGS += -I%T/platforms/mm5a/hardware/buttons
+PFLAGS += -I%T/platforms/mm5a/hardware/clock
+PFLAGS += -I%T/platforms/mm5a/hardware/leds
+PFLAGS += -I%T/platforms/mm5a/hardware/pins
+PFLAGS += -I%T/platforms/mm5a/hardware/usci
 
 PFLAGS += -I%T/chips/gsd4e_v2
 PFLAGS += -I%T/chips/tmp1x2
