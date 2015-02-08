@@ -34,8 +34,8 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#ifndef _H_PLATFORM_SD_SPI_H_
-#define _H_PLATFORM_SD_SPI_H_
+#ifndef _H_PLATFORM_SPI_SD_H_
+#define _H_PLATFORM_SPI_SD_H_
 
 #include "msp430usci.h"
 
@@ -137,4 +137,4 @@ const msp430_usci_config_t sd_spi_config = {
   i2coa: 0
 };
 
-#endif    /* _H_PLATFORM_SD_SPI_H_ */
+#endif    /* _H_PLATFORM_SPI_SD_H_ */

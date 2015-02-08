@@ -34,8 +34,8 @@
  * @author Eric Decker
  */
 
-#ifndef _H_PLATFORM_GSD4E_SPI_H_
-#define _H_PLATFORM_GSD4E_SPI_H_
+#ifndef _H_PLATFORM_SPI_GSD4E_H_
+#define _H_PLATFORM_SPI_GSD4E_H_
 
 #include "msp430usci.h"
 
@@ -54,4 +54,4 @@ const msp430_usci_config_t gsd4e_spi_config = {
   i2coa: 0
 };
 
-#endif	/* _H_PLATFORM_GSD4E_SPI_H_ */
+#endif	/* _H_PLATFORM_SPI_GSD4E_H_ */

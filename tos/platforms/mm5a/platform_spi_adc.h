@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 (c) Eric B. Decker
+ * Copyright 2015 (c) Eric Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,25 +31,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @author Eric B. Decker <cire831@gmail.com>
+ * @author Eric Decker
  */
 
-#ifndef _H_PLATFORM_DOCK_SPI_H_
-#define _H_PLATFORM_DOCK_SPI_H_
+#ifndef _H_PLATFORM_SPI_ADC_H_
+#define _H_PLATFORM_SPI_ADC_H_
 
 #include "msp430usci.h"
 
-/* MM5, 5438a, USCI, SPI, dock interface
- * phase 0, polarity 0, msb, 8 bit, slave,
+/* MM5, 5438a, USCI, SPI, gps interface
+ * phase 0, polarity 0, msb, 8 bit, master,
  * mode 3 pin, sync.
+ *
+ * SMCLK (8MHz)/2 -> 4MHz
  */
-const msp430_usci_config_t dock_spi_config = {
-  ctl0 : (UCMSB | UCSYNC),
+const msp430_usci_config_t adc_spi_config = {
+  ctl0 : (UCMSB | UCMST | UCSYNC),
   ctl1 : UCSSEL__SMCLK,
-  br0  : 2,			/* 8MHz -> 4 MHz (NA) */
+  br0  : 2,			/* 8MHz -> 4 MHz */
   br1  : 0,
   mctl : 0,                     /* Always 0 in SPI mode */
   i2coa: 0
 };
 
-#endif	/* _H_PLATFORM_DOCK_SPI_H_ */
+#endif	/* _H_PLATFORM_SPI_ADC_H_ */
