@@ -38,12 +38,14 @@
 module TestTmp1x2P {
   uses {
     interface Boot;
+    interface Hpl_MM_hw as HW;
     interface Read<uint16_t> as TempSensor;
     interface Timer<TMilli> as  TestTimer;  // not yet
   }
 }
 implementation {  
   event void Boot.booted() {
+    call HW.pwr_tmp_on();
     call TempSensor.read();
   }
 

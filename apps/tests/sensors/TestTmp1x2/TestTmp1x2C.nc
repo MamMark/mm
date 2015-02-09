@@ -42,11 +42,12 @@ implementation {
   components MainC, TestTmp1x2P as App;
   App.Boot -> MainC.Boot;
 
+  components Hpl_MM_hwC as HW;
+  App.HW -> HW;
+
   components new Tmp1x2C() as TempSensor;
   App.TempSensor -> TempSensor; 
   
   components new TimerMilliC() as Timer;
   App.TestTimer -> Timer;
 }
-
-
