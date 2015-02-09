@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Eric B. Decker
+ * Copyright (c) 2014-2015 Eric B. Decker
  * All rights reserved.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -24,11 +24,58 @@
  */
  
 interface Hpl_MM_hw {
-  async command void gps_set_on_off();
-  async command void gps_clr_on_off();
+  async command bool radio_irq();
+  async command void radio_shutdown();
+  async command void radio_unshutdown();
+  async command void radio_set_cs();
+  async command void radio_clr_cs();
+  async command void radio_set_low_pwr();
+  async command void radio_set_high_pwr();
+
+  async command bool mems_gyro_drdy();
+  async command bool mems_gyro_irq();
+  async command bool mems_mag_drdy();
+  async command bool mems_mag_irq();
+  async command bool mems_accel_int1();
+  async command bool mems_accel_int2();
+  async command void mems_accel_set_cs();
+  async command void mems_accel_clr_cs();
+  async command void mems_gyro_set_cs();
+  async command void mems_gyro_clr_cs();
+  async command void mems_mag_set_cs();
+  async command void mems_mag_clr_cs();
+
+  async command void sd_set_access();
+  async command void sd_clr_access();
+  async command bool sd_got_access();
+  async command void sd_pwr_on();
+  async command void sd_pwr_off();
+  async command void sd_set_cs();
+  async command void sd_clr_cs();
+
+  async command bool adc_drdy();
+  async command void adc_set_start();
+  async command void adc_clr_start();
+  async command void adc_set_cs();
+  async command void adc_clr_cs();
+  /* need mux4x and mux2x */
+
+  async command bool dock_irq();
+
+  async command bool gps_awake();
   async command void gps_set_cs();
   async command void gps_clr_cs();
+  async command void gps_set_on_off();
+  async command void gps_clr_on_off();
   async command void gps_set_reset();
   async command void gps_clr_reset();
-  async command bool gps_awake();
+
+  async command void pwr_3v3_on();
+  async command void pwr_3v3_off();
+  async command void pwr_solar_ena();
+  async command void pwr_solar_dis();
+  async command void pwr_bat_sense_ena();
+  async command void pwr_bat_sense_dis();
+  async command void pwr_tmp_on();
+  async command void pwr_tmp_off();
 }
