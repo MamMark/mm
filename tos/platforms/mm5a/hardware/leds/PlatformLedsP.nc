@@ -60,12 +60,12 @@ implementation {
   /***************** Init Commands ****************/
   command error_t Init.init() {
     atomic {
-      call Led0.makeOutput();
-      call Led1.makeOutput();
-      call Led2.makeOutput();
       call Led0.clr();
       call Led1.clr();
       call Led2.clr();
+      call Led0.makeOutput();
+      call Led1.makeOutput();
+      call Led2.makeOutput();
     }
     return SUCCESS;
   }
