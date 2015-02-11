@@ -49,18 +49,18 @@ implementation {
 
   components HplMsp430GeneralIOC as GeneralIOC;
 
-  /* RED LED (D1) at P4.7 */
+  /* RED LED (D1) at P11.5 */
   components new Msp430GpioC() as Led0Impl;
-  Led0Impl -> GeneralIOC.Port10;
+  Led0Impl -> GeneralIOC.Port115;
   PlatformLedsP.Led0 -> Led0Impl;
 
-  /* Yellow LED (D2) at P4.6 */
+  /* Yellow LED (D2) at P11.6 */
   components new Msp430GpioC() as Led1Impl;
-  Led1Impl -> GeneralIOC.Port11;
+  Led1Impl -> GeneralIOC.Port116;
   PlatformLedsP.Led1 -> Led1Impl;
 
- /* Green LED (D1) at P4.5 */
+ /* Green LED (D1) at P11.7 */
   components new Msp430GpioC() as Led2Impl;
-  Led2Impl -> GeneralIOC.Port45;
+  Led2Impl -> GeneralIOC.Port117;
   PlatformLedsP.Led2 -> Led2Impl;
 }
