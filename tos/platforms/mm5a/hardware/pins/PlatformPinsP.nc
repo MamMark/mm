@@ -48,7 +48,7 @@ implementation {
        * hooked up.
        */
 
-      /* sd_access_enan = 1 */
+      /* sd_access_ena_n = 1 */
       P1OUT = 0x20;
       P1DIR = 0x20;                     /* P1.5 output */
 
@@ -58,7 +58,7 @@ implementation {
       P3OUT = 0x00;
       P3DIR = 0xdb;
 
-      /* acces_csn = gyro_csn = mag_csn = 1
+      /* accel_csn = gyro_csn = mag_csn = 1
        * adc_start = 0
        */
       P4OUT = 0x52;
