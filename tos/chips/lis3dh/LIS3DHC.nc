@@ -44,10 +44,10 @@ implementation {
   SplitControl = LIS3DHP.SplitControl;
   LIS3DH =       LIS3DHP.LIS3DH;
 
-  components new Msp430UsciSpiA3C() as Spi;
+  components new Msp430UsciSpiB0C() as Spi;
   LIS3DHP.AccelResource -> Spi;
   LIS3DHP.SpiBlock      -> Spi;
 
   components HplMsp430GeneralIOC  as Pins;  // FIXME refactor away the Hpl reference                                 
-  LIS3DHP.CSN -> Pins.Port107;
+  LIS3DHP.CSN -> Pins.Port41;
 }
