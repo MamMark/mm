@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2015 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,26 +33,24 @@
  */
 
 /**
- * This module is the driver component for the LIS3DH
+ * This module is the driver component for the lis3dh
  * accelerometer in 3 wire SPI mode. It requires the SPI Block
  * interface and assumes the ability to manually toggle the chip select
- * via a GPIO. It provides the HplLIS3DH HPL interface.
- *
- * LIS3DHC.nc is  HplLIS3L02DQLogicSPIP.nc (2006-12-12 18:23:06) with changes.
- * @author Tod Landis
+ * via a GPIO.
  */
 
-#include "LIS3DHRegisters.h"
+#include "lis3dh.h"
 
-module LIS3DHP {
+module Lis3dhP {
   provides interface Init;
   provides interface SplitControl;
-  provides interface LIS3DH;
+  provides interface Lis3dh;
 
   uses interface Resource as AccelResource;
   uses interface SpiBlock;
   uses interface HplMsp430GeneralIO as CSN;
 }
+
 implementation {
 
   uint8_t rx[16], tx[16];
@@ -138,7 +136,7 @@ implementation {
     return SUCCESS;
   }
   
-  command error_t LIS3DH.getReg(uint8_t regAddr) {
+  command error_t Lis3dh.getReg(uint8_t regAddr) {
     if((regAddr < 0x07) || (regAddr > 0x3D))
       return EINVAL;
 
@@ -188,7 +186,7 @@ implementation {
 #endif
   }
 
-  command error_t LIS3DH.setReg(uint8_t regAddr, uint8_t val) {
+  command error_t Lis3dh.setReg(uint8_t regAddr, uint8_t val) {
     error_t error = SUCCESS;
 
     if((regAddr < 0x07) || (regAddr > 0x3D))
@@ -213,11 +211,11 @@ implementation {
 
 
       call CSN.set(); // CS HIGH
-      signal LIS3DH.getRegDone(error, (txBuf[0] & 0x7F) , rxBuf[1]);   // clears the read bit?
+      signal Lis3dh.getRegDone(error, (txBuf[0] & 0x7F) , rxBuf[1]);   // clears the read bit?
       break;
     case STATE_SETREG:
       mState = STATE_IDLE;
-      signal LIS3DH.setRegDone(error, (txBuf[0] & 0x7F), txBuf[1]);
+      signal Lis3dh.setRegDone(error, (txBuf[0] & 0x7F), txBuf[1]);
       break;
     case STATE_STARTING:
       mState = STATE_IDLE;
@@ -237,12 +235,12 @@ implementation {
 #endif
 
   //  async event void InterruptAlert.fired() {
-  //    signal LIS3DH.alertThreshold();
+  //    signal Lis3dh.alertThreshold();
   //    return;
   //  }
 
   default event void SplitControl.startDone( error_t error ) { return; }
   default event void SplitControl.stopDone( error_t error ) { return; }
 
-  default async event void LIS3DH.alertThreshold(){ return; }
+  default async event void Lis3dh.alertThreshold(){ return; }
 }

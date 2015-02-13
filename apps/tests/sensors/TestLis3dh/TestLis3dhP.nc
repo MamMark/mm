@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2015 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,23 +31,65 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+ 
+#include <stdio.h>
+#include "Timer.h"
+#include "lis3dh.h"
 
-generic configuration LIS3DHC() {
-  provides interface Init;
-  provides interface SplitControl;
-  provides interface LIS3DH;
+char abuf[80];
+char bufx[80];  // for  debugging messages
+char bufy[80];
+char bufz[80];
+
+module TestLis3dhP {
+  uses {
+    interface Boot;
+    interface Init           as InitAccel;
+    interface SplitControl   as ControlAccel;
+    interface Lis3dh         as Accel;
+
+    interface Hpl_MM_hw as HW;
+
+    interface Timer<TMilli>  as PeriodTimer;
+  }
 }
 
-implementation {
-  components LIS3DHP;
-  Init =         LIS3DHP.Init;
-  SplitControl = LIS3DHP.SplitControl;
-  LIS3DH =       LIS3DHP.LIS3DH;
+implementation {  
 
-  components new Msp430UsciSpiB0C() as Spi;
-  LIS3DHP.AccelResource -> Spi;
-  LIS3DHP.SpiBlock      -> Spi;
+  void whoAmI() {
+    call Accel.getReg(WHO_AM_I);
+  }
 
-  components HplMsp430GeneralIOC  as Pins;  // FIXME refactor away the Hpl reference                                 
-  LIS3DHP.CSN -> Pins.Port41;
+  event void Boot.booted() {
+    nop();
+    call HW.pwr_3v3_on();
+    call InitAccel.init();
+    call ControlAccel.start();
+  }
+  
+  event void ControlAccel.startDone(error_t error) {
+    whoAmI();
+    call ControlAccel.stop();
+  }  
+
+  event void ControlAccel.stopDone(error_t error) {
+    //todo
+  }  
+
+  async event void Accel.getRegDone( error_t error, uint8_t regAddr, uint8_t val) {
+    sprintf(abuf, "getRegDone  error=%x regAddr=%x val=%x (expecting 0x33)", error, regAddr, val);
+  }  
+
+  async event void Accel.alertThreshold() {
+    //todo
+  }  
+
+  async event void Accel.setRegDone( error_t error , uint8_t regAddr, uint8_t val) {
+    //todo
+  }
+
+  event void PeriodTimer.fired(){
+    nop();
+  }
+
 }

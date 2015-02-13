@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2015 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,23 +32,22 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * Interface for the LIS3DH Accelerometer.  
- *
- * Macros for 'regAddr'  * register addresses are in LIS3DHRegisters.h.  
- * See the LIS3DH datasheet for the possible 'val' values.  The README in this
- * directory has more details.  
- *
- * LIS3DH.nc is HplLIS3L02DQ.nc with changes.
- * @author Tod Landis <go@todlandis.com>
- */
+generic configuration Lis3dhC() {
+  provides interface Init;
+  provides interface SplitControl;
+  provides interface Lis3dh;
+}
 
-interface LIS3DH {
-  command     error_t     getReg(uint8_t regAddr);
-  async event void    getRegDone(error_t error,   uint8_t regAddr, uint8_t val);
+implementation {
+  components Lis3dhP;
+  Init         = Lis3dhP.Init;
+  SplitControl = Lis3dhP.SplitControl;
+  Lis3dh       = Lis3dhP.Lis3dh;
 
-  command     error_t     setReg(uint8_t regAddr, uint8_t val);
-  async event void    setRegDone(error_t error,   uint8_t regAddr, uint8_t val);
+  components new Msp430UsciSpiB0C() as Spi;
+  Lis3dhP.AccelResource -> Spi;
+  Lis3dhP.SpiBlock      -> Spi;
 
-  async event void    alertThreshold();
+  components HplMsp430GeneralIOC  as Pins;  // FIXME refactor away the Hpl reference
+  Lis3dhP.CSN -> Pins.Port41;
 }

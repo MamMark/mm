@@ -1,12 +1,10 @@
 /**
- *  Defines for LIS3DH registers for use with its driver's getReg() and setReg().  
- *  See p. 26 of the LIS3DH datasheet.
- *
- *  @author Tod Landis <go@todlandis.com>  
+ *  Defines for lis3dh registers for use with its driver's getReg() and setReg().  
+ *  See p. 26 of the lis3dh datasheet.
  */
 
-#ifndef LIS3DHREGISTERS_H
-#define LIS3DHREGISTERS_H
+#ifndef __LIS3DH_H__
+#define __LIS3DH_H__
 
 #define  STATUS_REG_AUX       0x07             // data overrun or new data available
 
@@ -18,12 +16,13 @@
 #define  OUT_ADC3_H           0x0D
 
 #define  INT_COUNTER_REG      0x0E
-#define  WHO_AM_I             0x0F             // for debugging:  returns constant 0x33
+#define  WHO_AM_I             0x0F
 #define  TEMP_CFG_REG         0x1F
 #define  CTRL_REG1            0x20             // low power enable; enable x,y and z 
 #define  CTRL_REG2            0x21             // enable on-board filtering & autoreset
 #define  CTRL_REG3            0x22             // enable various interrupts
-#define  CTRL_REG4            0x23             // scale selection, SPI enable,   ** don't know what high resolution does **
+#define  CTRL_REG4            0x23             // scale selection, SPI enable,
+                                               // what does high resolution do
 #define  CTRL_REG5            0x24             // reboot, fifo/ 4d-6d selection
 #define  CTRL_REG6            0x25             // click enabled 
 #define  REFERENCE            0x26             // reference value for interrupt generation
@@ -50,12 +49,12 @@
 #define  TIME_LATENCY         0x3C
 #define  TIME_WINDOW          0x3D
 
-#define  L3DH_MULT		0x40
-#define  L3DH_READ		0x80
+#define  L3DH_MULT            0x40
+#define  L3DH_READ            0x80
 
 #define XEN       0x01      // p. 29  CTRL_REG1 bit for x enable                
 #define YEN       0x20      //                      for y                       
 #define ZEN       0x40      //                      for z                       
 #define LPEN      0x80      //                      for low power enable        
 
-#endif
+#endif  /* __LIS3DH_H__ */

@@ -1,4 +1,4 @@
-COMPONENT=TestLIS3DHC
+COMPONENT=TestLis3dhC
 
 #OPTFLAGS = -ggdb -O0 -fnesc-no-inline
 OPTFLAGS = -ggdb -Os -fnesc-no-inline

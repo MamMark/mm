@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2015 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,65 +31,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-#include <stdio.h>
-#include "Timer.h"
-#include "LIS3DHRegisters.h"
 
-char abuf[80];
-char bufx[80];  // for  debugging messages
-char bufy[80];
-char bufz[80];
-
-module TestLIS3DHM {
-  uses {
-    interface Boot;
-    interface Init           as InitAccel;
-    interface SplitControl   as ControlAccel;
-    interface LIS3DH         as Accel;
-
-    interface Hpl_MM_hw as HW;
-
-    interface Timer<TMilli>  as PeriodTimer;
-  }
+/**
+  This is a test application for the lis3dh driver.
+*/ 
+configuration TestLis3dhC {
 }
+implementation {
+  components MainC, TestLis3dhP as App;
+  App.Boot -> MainC.Boot;
 
-implementation {  
+  components Hpl_MM_hwC as HW;
+  App.HW -> HW;
 
-  void whoAmI() {
-    call Accel.getReg(WHO_AM_I);
-  }
+  components new Lis3dhC() as Accel;
+  App.Accel  ->       Accel.Lis3dh;
+  App.ControlAccel -> Accel.SplitControl;
+  App.InitAccel ->    Accel.Init;  
 
-  event void Boot.booted() {
-    nop();
-    call HW.pwr_3v3_on();
-    call InitAccel.init();
-    call ControlAccel.start();
-  }
-  
-  event void ControlAccel.startDone(error_t error) {
-    whoAmI();
-    call ControlAccel.stop();
-  }  
-
-  event void ControlAccel.stopDone(error_t error) {
-    //todo
-  }  
-
-  async event void Accel.getRegDone( error_t error, uint8_t regAddr, uint8_t val) {
-    sprintf(abuf, "getRegDone  error=%x regAddr=%x val=%x (expecting 0x33)", error, regAddr, val);
-  }  
-
-  async event void Accel.alertThreshold() {
-    //todo
-  }  
-
-  async event void Accel.setRegDone( error_t error , uint8_t regAddr, uint8_t val) {
-    //todo
-  }
-
-  event void PeriodTimer.fired(){
-    nop();
-  }
-
+  components new TimerMilliC() as PeriodTimer;
+  App.PeriodTimer -> PeriodTimer;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2015 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,22 +33,19 @@
  */
 
 /**
-  This is a test application for the LIS3DH driver.
-*/ 
-configuration TestLIS3DHC {
-}
-implementation {
-  components MainC, TestLIS3DHM as App;
-  App.Boot -> MainC.Boot;
+ * Interface for the LIS3DH Accelerometer.  
+ *
+ * Definitions for regAddrs are in lis3dh.h
+ * See the lis3dh datasheet for the possible 'val' values.  The README in this
+ * directory has more details.  
+ */
 
-  components Hpl_MM_hwC as HW;
-  App.HW -> HW;
+interface Lis3dh {
+  command     error_t     getReg(uint8_t regAddr);
+  async event void    getRegDone(error_t error,   uint8_t regAddr, uint8_t val);
 
-  components new LIS3DHC() as Accel;
-  App.Accel  ->       Accel.LIS3DH;
-  App.ControlAccel -> Accel.SplitControl;
-  App.InitAccel ->    Accel.Init;  
+  command     error_t     setReg(uint8_t regAddr, uint8_t val);
+  async event void    setRegDone(error_t error,   uint8_t regAddr, uint8_t val);
 
-  components new TimerMilliC() as PeriodTimer;
-  App.PeriodTimer -> PeriodTimer;
+  async event void    alertThreshold();
 }
