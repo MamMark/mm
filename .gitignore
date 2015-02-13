@@ -2,6 +2,7 @@ Oops
 *.[oa]
 *.lst
 *~
+.gdb*
 build
 build/*/.gdbinit
 doc/nesdoc
