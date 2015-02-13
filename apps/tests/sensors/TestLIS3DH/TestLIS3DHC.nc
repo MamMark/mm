@@ -41,6 +41,9 @@ implementation {
   components MainC, TestLIS3DHM as App;
   App.Boot -> MainC.Boot;
 
+  components Hpl_MM_hwC as HW;
+  App.HW -> HW;
+
   components new LIS3DHC() as Accel;
   App.Accel  ->       Accel.LIS3DH;
   App.ControlAccel -> Accel.SplitControl;

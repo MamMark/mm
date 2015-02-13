@@ -48,6 +48,8 @@ module TestLIS3DHM {
     interface SplitControl   as ControlAccel;
     interface LIS3DH         as Accel;
 
+    interface Hpl_MM_hw as HW;
+
     interface Timer<TMilli>  as PeriodTimer;
   }
 }
@@ -59,16 +61,8 @@ implementation {
   }
 
   event void Boot.booted() {
-
-    P11DIR = (BIT2 | BIT1 | BIT0);
-    P11SEL = (BIT2 | BIT1 | BIT0);
-
-    P10OUT = 0;
-    P10DIR = (BIT7 | BIT5 | BIT4 | BIT0);
-    P10OUT = 0xff;
-    P10OUT = 0;
-    P10OUT = 0xff;
-
+    nop();
+    call HW.pwr_3v3_on();
     call InitAccel.init();
     call ControlAccel.start();
   }
