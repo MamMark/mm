@@ -47,7 +47,7 @@
 module LIS3DHP {
   provides interface Init;
   provides interface SplitControl;
-  provides interface LIS3DH;           // getReg() and setReg()
+  provides interface LIS3DH;
 
   uses interface Resource as AccelResource;
   uses interface SpiBlock;
@@ -55,20 +55,20 @@ module LIS3DHP {
 }
 implementation {
 
-uint8_t rx[16], tx[16];
+  uint8_t rx[16], tx[16];
 
-typedef enum {
-  STATE_STOPPED = 0,
-  STATE_IDLE,
-  STATE_STARTING,
-  STATE_STOPPING,
-  STATE_GETREG,
-  STATE_SETREG,
-  STATE_ERROR
-} lis3dh_state_t;
+  typedef enum {
+    STATE_STOPPED = 0,
+    STATE_IDLE,
+    STATE_STARTING,
+    STATE_STOPPING,
+    STATE_GETREG,
+    STATE_SETREG,
+    STATE_ERROR
+  } lis3dh_state_t;
 
   lis3dh_state_t mState;
-  bool    misInited = FALSE;
+  bool    m_Initialized = FALSE;
   norace error_t mSSError;
 
   task void StopDone() {
@@ -77,8 +77,8 @@ typedef enum {
   }
 
   command error_t Init.init() {
-    if (!misInited) {
-      misInited = TRUE;
+    if (!m_Initialized) {
+      m_Initialized = TRUE;
       mState = STATE_STOPPED;
     }
 
@@ -154,6 +154,7 @@ typedef enum {
     }
 #endif
 
+    nop();
     mState = STATE_GETREG;
     call CSN.clr();		// assert CS
     call SpiBlock.transfer(tx, rx, 8);

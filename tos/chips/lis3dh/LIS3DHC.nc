@@ -32,14 +32,14 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-generic configuration lis3dhc() {
+generic configuration LIS3DHC() {
   provides interface Init;
   provides interface SplitControl;
-  provides interface lis3dh;
+  provides interface LIS3DH;
 }
 
 implementation {
-  components lis3dhP;
+  components LIS3DHP;
   Init =         LIS3DHP.Init;
   SplitControl = LIS3DHP.SplitControl;
   LIS3DH =       LIS3DHP.LIS3DH;

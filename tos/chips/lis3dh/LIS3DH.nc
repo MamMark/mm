@@ -31,7 +31,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- */
 
 /**
  * Interface for the LIS3DH Accelerometer.  
@@ -45,11 +44,11 @@
  */
 
 interface LIS3DH {
-  command error_t getReg(uint8_t regAddr);
-  async event void getRegDone( error_t error, uint8_t regAddr, uint8_t val);
+  command     error_t     getReg(uint8_t regAddr);
+  async event void    getRegDone(error_t error,   uint8_t regAddr, uint8_t val);
 
-  command error_t setReg( uint8_t regAddr, uint8_t val);
-  async event void setRegDone( error_t error , uint8_t regAddr, uint8_t val);
+  command     error_t     setReg(uint8_t regAddr, uint8_t val);
+  async event void    setRegDone(error_t error,   uint8_t regAddr, uint8_t val);
 
-  async event void alertThreshold();
+  async event void    alertThreshold();
 }
