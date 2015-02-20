@@ -37,7 +37,7 @@ implementation {
   components PlatformC;
   Gsd4eP.Platform -> PlatformC;
 
-  components new Msp430UsciSpiB1C() as SpiC;
+  components new Msp430UsciSpiA3C() as SpiC;
   Gsd4eP.SpiBlock     -> SpiC;
   Gsd4eP.SpiByte      -> SpiC;
   Gsd4eP.SpiResource  -> SpiC;
