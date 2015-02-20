@@ -89,7 +89,7 @@
     uint8_t p40		    : 1;
     uint8_t p41		    : 1;
     uint8_t p42		    : 1;
-    uint8_t gps_wakeup	    : 1;	/* x.y 4.3, input */
+    uint8_t gps_awake	    : 1;	/* x.y 4.3, input */
     uint8_t p44		    : 1;
     uint8_t p45		    : 1;
     uint8_t p46		    : 1;
