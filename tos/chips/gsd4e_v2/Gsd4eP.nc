@@ -20,7 +20,7 @@
 #include "sirf.h"
 
 #include "platform_panic.h"
-#include "platform_gsd4e_spi.h"
+#include "platform_spi_gsd4e.h"
 
 /*
  * The M10478 GSD4e GPS module is interfaced using SPI at 4MHz.  By default

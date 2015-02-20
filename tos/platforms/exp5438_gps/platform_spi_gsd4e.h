@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 (c) Eric Decker
+ * Copyright 2014-2015 (c) Eric Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,8 @@
  * @author Eric Decker
  */
 
-#ifndef _H_PLATFORM_GSD4E_SERIAL_H_
-#define _H_PLATFORM_GSD4E_SERIAL_H_
+#ifndef _H_PLATFORM_SPI_GSD4E_H_
+#define _H_PLATFORM_SPI_GSD4E_H_
 
 #include "msp430usci.h"
 
@@ -63,4 +63,4 @@ const msp430_usci_config_t gsd4e_spi_config = {
   i2coa: 0
 };
 
-#endif	/* _H_PLATFORM_GSD4E_SERIAL_H_ */
+#endif	/* _H_PLATFORM_SPI_GSD4E_H_ */
