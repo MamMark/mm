@@ -96,7 +96,7 @@
     uint8_t p47		    : 1;
   } PACKED mmP4in asm("0x0221");
 
-#define ORG_GPS_WAKEUP (mmP4in.gps_wakeup)
+#define GSD4E_GPS_AWAKE (mmP4in.gps_awake)
 
 norace static volatile struct {
     uint8_t gps_on_off	    : 1;	/* x.y 4.0, output */
@@ -109,11 +109,11 @@ norace static volatile struct {
     uint8_t p47		    : 1;
   } PACKED mmP4out asm("0x0223");
 
-#define ORG_GPS_SET_ONOFF (mmP4out.gps_on_off = 1)
-#define ORG_GPS_CLR_ONOFF (mmP4out.gps_on_off = 0)
-#define ORG_GPS_RESET     (mmP4out.gps_reset_n = 0)
-#define ORG_GPS_UNRESET   (mmP4out.gps_reset_n = 1)
-#define ORG_GPS_CSN        mmP4out.gps_csn
+#define GSD4E_GPS_SET_ONOFF (mmP4out.gps_on_off = 1)
+#define GSD4E_GPS_CLR_ONOFF (mmP4out.gps_on_off = 0)
+#define GSD4E_GPS_RESET     (mmP4out.gps_reset_n = 0)
+#define GSD4E_GPS_UNRESET   (mmP4out.gps_reset_n = 1)
+#define GSD4E_GPS_CSN        mmP4out.gps_csn
 
   static volatile struct {
     uint8_t p50		    : 1;

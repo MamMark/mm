@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014 Eric B. Decker
+ * Copyright (c) 2012, 2014, 2015 Eric B. Decker
  * All rights reserved.
  */
 
@@ -33,10 +33,10 @@ implementation {
     nop();
     gt0 = call LocalTime.get();
     tt0 = TA1R;
-    ORG_GPS_RESET;
-    ORG_GPS_UNRESET;
+    GSD4E_GPS_RESET;
+    GSD4E_GPS_UNRESET;
     while (1) {
-      if (ORG_GPS_WAKEUP == 0)
+      if (GSD4E_GPS_AWAKE == 0)
 	break;
     }
     tt1 = TA1R;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014 Eric B. Decker
+ * Copyright (c) 2012, 2014, 2015 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,31 +49,11 @@ module Hpl_MM_hwP {
 }
 
 implementation {
-  async command void HW.gps_set_on_off() {
-    ORG_GPS_SET_ONOFF;
-  }
-
-  async command void HW.gps_clr_on_off() {
-    ORG_GPS_CLR_ONOFF;
-  }
-
-  async command void HW.gps_set_cs() {
-    ORG_GPS_CSN = 0;
-  }
-
-  async command void HW.gps_clr_cs() {
-    ORG_GPS_CSN = 1;
-  }
-
-  async command void HW.gps_set_reset() {
-    ORG_GPS_RESET;
-  }
-
-  async command void HW.gps_clr_reset() {
-    ORG_GPS_UNRESET;
-  }
-
-  async command bool HW.gps_awake() {
-    return ORG_GPS_WAKEUP;
-  }
+  async command void HW.gps_set_on_off() { GSD4E_GPS_SET_ONOFF; }
+  async command void HW.gps_clr_on_off() { GSD4E_GPS_CLR_ONOFF; }
+  async command void HW.gps_set_cs()     { GSD4E_GPS_CSN = 0; }
+  async command void HW.gps_clr_cs()     { GSD4E_GPS_CSN = 1; }
+  async command void HW.gps_set_reset()  { GSD4E_GPS_RESET; }
+  async command void HW.gps_clr_reset()  { GSD4E_GPS_UNRESET; }
+  async command bool HW.gps_awake()      { return GSD4E_GPS_AWAKE; }
 }
