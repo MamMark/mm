@@ -1,0 +1,47 @@
+set $_gps_reset_addr  = 0x2a2
+set $_gps_reset_bit   = 0xf8
+set $_gps_unreset_bit = 0x04
+define gps
+set $_p5in   = *(uint8_t *) 0x0240
+set $_p5out  = *(uint8_t *) 0x0242
+set $_p5dir  = *(uint8_t *) 0x0244
+set $_p11in  = *(uint8_t *) 0x02a0
+set $_p11out = *(uint8_t *) 0x02a2
+set $_p11dir = *(uint8_t *) 0x02a4
+printf "\ngps(ua3): on_off: %d  nRst: %d  CSn: %d  awake: %d\n", \
+    ($_p11out & 1), (($_p11out >> 2) & 1), (($_p5out >> 3) & 1), (($_p5in >> 2) & 1)
+printf "               %c        %c       %c         %c\n", \
+    ($_p11dir&1)?'O':'I', ($_p11dir&4)?'O':'I', ($_p5dir&8)?'O':'I', ($_p5dir&4)?'O':'I'
+set $_ub = 0x0680
+printf "A3: IE: %02x   IFG: %02x  IV: %04x\n", \
+    (*(uint8_t *)($_ub+0x1c)), (*(uint8_t *)($_ub+0x1d)), (*(uint8_t *)($_ub+0x1e))
+printf "  ctl0: %02x  ctl1: %02x  br: %02x%02x  mctl: %02x  stat: %02x  rx: %02x  tx: %02x\n\n",\
+    (*(uint8_t *)($_ub+1)), (*(uint8_t *)($_ub+0)),   (*(uint8_t *)($_ub+7)),   (*(uint8_t *)($_ub+6)),\
+    (*(uint8_t *)($_ub+8)), (*(uint8_t *)($_ub+0xa)), (*(uint8_t *)($_ub+0xc)), (*(uint8_t *)($_ub+0xe))
+printf "gpsc_state: "
+output gpsc_state
+printf "    gpsm_state: "
+output gpsm_state
+printf "    collect_state: "
+output GPSMsgP__collect_state
+printf "\n"
+end
+document gps
+display gps state
+end
+
+define tq
+printf "taskq: head: %d  tail %d\n", (uint8_t) SchedulerBasicP__m_head, (uint8_t) SchedulerBasicP__m_tail
+x/25bu SchedulerBasicP__m_next
+end
+document tq
+display task queue
+end
+
+define rg
+set (*(uint8_t*)$_gps_reset_addr)=(*(uint8_t*)$_gps_reset_addr) & $_gps_reset_bit
+set (*(uint8_t*)$_gps_reset_addr)=(*(uint8_t*)$_gps_reset_addr) | $_gps_unreset_bit
+end
+document rg
+reset gps h/w
+end
