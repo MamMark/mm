@@ -1,5 +1,7 @@
 
-This is a tinyos driver for the Origin ORG4472 GPS chip.
+This is a tinyos driver for the Origin ORG4472 and Antenova M10478
+GPS subsystem.  These subsystems are based on the Sirf IV GSD4e
+chipset.
 
 The org4472 can interface using UART, SPI, or I2C.  The default
 interface and what we use is SPI.   Max SPI clock is 6.8 MHz.  This
@@ -26,31 +28,31 @@ There is also a signalling convention between collection and processing so
 the collection buffer does not get abused.
 
 Following control signals are used for messing with the GPS:  (org4472, pins
-in parenthesis)
+in parenthesis, Antenova M10478 in [])
 
-gps_wakeup (pin 4): 0 indicates hibernate, 1 full power.   1 (full power)
+gps_wakeup aka gps_awake (4)[18]: 0 indicates hibernate, 1 full power, which
   indicates the GPS has been woken up.
 
-gps_on_off (pin 9): pulsed signal used to wake up and put to sleep the gps.  Also
+gps_on_off (9)[26]: pulsed signal used to wake up and put to sleep the gps.  Also
   used to generate an interrupt in PTF (push-to-fix) mode.
 
   Width should be 100us < width < 1s (for interrupt).  Interrupt interval should
   be greater than 1s.  100ms is recommended.  Diagram shows 100ms minimum 1 sec
   between pulses minimum.  Needs to remain low for minimum of 100us.
 
-gps_reset_n (pin 5): do not drive high.  Driving low (0) will cause the gps
+gps_reset_n (5)[10]: do not drive high.  Driving low (0) will cause the gps
   chip to reset to factory default, clears RTC block and sets back to default
   configuration.  Needs to be held for 1us.
 
 SPI interface:
 
-gps_csn  (pin 7, nRTS): gps spi chip select (low true).
+gps_csn  (7, nRTS)[22]: gps spi chip select (low true).
 
-gps_sclk (pin 6, nCTS): gps spi clock.
+gps_sclk (6, nCTS)[23]: gps spi clock.
 
-gps_mosi (pin 8, rx): gps spi rx (master out, slave in)
+gps_mosi (8, rx)[21]: gps spi rx (master out, slave in)
 
-gps_miso (pin 11, tx): gps spi tx (master in, slave out)
+gps_miso (11, tx)[20]: gps spi tx (master in, slave out)
 
 
 SPI configuration: CPOL=0, base clock is 0, CPHA=1, data changed on
@@ -74,8 +76,6 @@ Message format:
 
 Idle: 0xA7, 0xB4
 
-NMEA: $?????
-
 OSP (sirfbin): (CS-129291-TCP9, Issue 9, 21 Dec 2010, )
 
 <A0 A2> <len (2 bytes, 15 bits)> <payload> <checksum, 2 bytes> <B0 B3>
@@ -94,10 +94,10 @@ checksum: 15 bit checksum over payload.
 
 Interface question:  DMA or byte by byte?
 
-Note: We clock the main CPU at 8MHz and so clock the SPI at /2 or 4MHz
+Note: We clock the main CPU at 8MHz.  The SPI is clocked at /2 or 4MHz
 which gives a byte time of 2.5us.  Not worth running via interrupts for
 small message lengths.   Where is the trade off?  It has been observed
-that SpiByte.write yeilds a byte time of about 40us which yields about
+that SpiByte.write yields a byte time of about 40us which yields about
 200kbps.   We should use an optimized loop to fill our incoming buffer.
 This yields a byte time of xxx (needs to be measured).
 
@@ -109,4 +109,4 @@ costs and differences.
 The biggest problem with DMA is we only have 3 engines and running SPI
 via DMA requires 2 engines, leaving one free engine.   And the SD card
 driver uses dma to move buffers in and out (which also requires 2 engines).
-So there is a collision.  For the time being, we ignore DMA.
+So there is a collision.  DMA does not make sense.
