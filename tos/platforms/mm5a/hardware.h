@@ -58,16 +58,16 @@
  * another nomenclature used is <value><function><direction>, 0pO (0 (zero), port, Output),
  *    xpI (don't care, port, Input), mI (module input).
  *
- * uca0: dock  (spi)
- * uca1: uSD   (spi)
- * uca2: radio (spi)  Si4463, upg2214tb
- * uca3: gps   (spi)  Antenova M10478, ORG4472, 25WF040
- * ucb0: mems  (spi)  lis3dh    accel
- *                    l3g4200   gyro
- *                    lis3mdl   mag
- * ucb1: adc   (spi)  ads1148
- * ucb2: temp  (i2c)  tmp102
- * ucb3:
+ * uca0: (5c0) dock  (spi)
+ * ucb0: (5e0) mems  (spi)  lis3dh    accel
+ *                          l3g4200   gyro
+ *                          lis3mdl   mag
+ * uca1: (600) uSD   (spi)
+ * ucb1: (620) adc   (spi)  ads1148
+ * uca2: (640) radio (spi)  Si4463, upg2214tb
+ * ucb2: (660) temp  (i2c)  tmp102
+ * uca3: (680) gps   (spi)  Antenova M10478, ORG4472, 25WF040
+ * ucb3: (6a0)
  *
  * port 1.0	0pI	radio_irqn     		port 7.0	0pI     xin
  *       .1	0pI	gyro_drdy      		      .1	0pI     xout
@@ -105,9 +105,9 @@
  *        .6	1pO	mag_csn   (ucb0)               .6	1pO     adc_csn
  *        .7	0pO	adc_start                      .7	0pI
  *
- * port  5.0	0pO	mux4x_A                 port 11.0	0pO     gps_on_off
- *        .1	0pO	mux4x_B                        .1	0pI
- *        .2	0pI     gps_awake                      .2	1pO     gps_resetn
+ * port  5.0	0pO	mux4x_A                 port 11.0	0pO     gps_on_off 
+ * 240 I  .1	0pO	mux4x_B                 2a0 I  .1	0pI
+ *   2 O  .2	0pI     gps_awake                 2 O  .2	1pO     gps_resetn
  *        .3	1pO	gps_csn                        .3	0pI
  *        .4	0pI	adc_miso (ucb1)                .4	0pI
  *        .5	0pO	adc_clk  (ucb1)                .5	0pO     led_1 (red)
