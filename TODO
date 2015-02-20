@@ -1,3 +1,23 @@
+General
+
+  Blink for some reason seems to fire the 500 timer
+  first.  Why?
+
+
+Bring Up (mm5a):
+
+. verify clocks
+  . 32KHz
+  . 8 MHz
+
+. verify power
+  . 3v3 rail
+  . 1V8 rail
+  . solar
+  . bat sense
+  . try bat pwr
+
+
 . turn deputy/safe on and see what happens
 
 . fix Arbiter bug (fcfs) so it correctly cycles.  (fixed?)
