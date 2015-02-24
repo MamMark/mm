@@ -16,6 +16,7 @@ PFLAGS += -I%T/platforms/mm5a/hardware/buttons
 PFLAGS += -I%T/platforms/mm5a/hardware/clock
 PFLAGS += -I%T/platforms/mm5a/hardware/leds
 PFLAGS += -I%T/platforms/mm5a/hardware/pins
+PFLAGS += -I%T/platforms/mm5a/hardware/pwr
 PFLAGS += -I%T/platforms/mm5a/hardware/usci
 
 PFLAGS += -I%T/chips/gsd4e_v2
