@@ -98,7 +98,7 @@ implementation {
     nop();
     nop();
     nop();
-    tx[0] = DIR_READ | WHO_AM_I;
+    tx[0] = READ_REG | WHO_AM_I;
     call SpiBlock.transfer(tx, rx, 2);
     *id = rx[1];
     call CS.set();
