@@ -30,8 +30,8 @@ enum {
 #endif
   PANIC_GPS = PANIC_HC_START,		/* 0x10, see panic.h */
 
-#ifdef notdef
   PANIC_SNS,
+#ifdef notdef
   PANIC_PWR,
 #endif
 };

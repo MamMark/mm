@@ -1,6 +1,8 @@
 configuration Lis3dhC {
-  provides interface SplitControl;
-  provides interface Lis3dh;
+  provides {
+    interface SplitControl;
+    interface Lis3dh;
+  }
 }
 implementation {
   components Lis3dhP;
@@ -20,4 +22,7 @@ implementation {
 
   components Pwr3V3C;
   Lis3dhP.PwrReg -> Pwr3V3C.PwrReg;
+
+  components PanicC;
+  Lis3dhP.Panic -> PanicC;
 }
