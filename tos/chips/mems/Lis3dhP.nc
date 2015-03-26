@@ -100,7 +100,7 @@ implementation {
     }
   }
 
-  error_t spi_rx(uint8_t addr, uint8_t len, bool mult_addr) {
+  error_t spiRx(uint8_t addr, uint8_t len, bool mult_addr) {
     nop();
     nop();
     nop();
@@ -118,7 +118,7 @@ implementation {
     return SUCCESS;
   }
 
-  error_t spi_tx(uint8_t addr, uint8_t len, bool mult_addr) {
+  error_t spiTx(uint8_t addr, uint8_t len, bool mult_addr) {
     nop();
     nop();
     nop();
@@ -135,31 +135,58 @@ implementation {
     return SUCCESS;
   }
 
-  error_t read_reg(uint8_t addr, uint8_t *val) {
-    error_t ret = spi_rx(addr, 1, FALSE);
+  error_t readReg(uint8_t addr, uint8_t *val) {
+    error_t ret = spiRx(addr, 1, FALSE);
     *val = rx[1];
     return ret;
   }
 
-  error_t write_reg(uint8_t addr, uint8_t val) {
+  error_t writeReg(uint8_t addr, uint8_t val) {
     tx[1] = val;
-    return spi_tx(addr, 1, FALSE);
+    return spiTx(addr, 1, FALSE);
   }
 
-  error_t modify_reg(uint8_t addr, uint8_t clear_bits, uint8_t set_bits) {
+  error_t modifyReg(uint8_t addr, uint8_t clear_bits, uint8_t set_bits) {
     uint8_t reg;
     error_t ret;
-    ret = read_reg(addr, &reg);
+    ret = readReg(addr, &reg);
     if (ret == SUCCESS) {
       reg &= ~clear_bits;
       reg |= set_bits;
-      return write_reg(addr, reg);
+      return writeReg(addr, reg);
     }
     return ret;
   }
 
+  /*
+   * Experiment with setting up the chip to sample at 1Hz
+   */
+  command error_t Lis3dh.config1Hz() {
+    error_t ret;
+
+    /* Turn on chip and set output data rate */
+    ret = writeReg(CTRL_REG4, HR);
+    if (ret != SUCCESS)
+      return ret;
+
+    ret = writeReg(CTRL_REG1, ODR_1HZ | ZEN | YEN | XEN);
+    if (ret != SUCCESS)
+      return ret;
+
+    /* Enable FIFO so we don't have to sample as frequently */
+    ret = writeReg(CTRL_REG5, FIFO_EN);
+    if (ret != SUCCESS)
+      return ret;
+
+    ret = writeReg(FIFO_CTRL_REG, FIFO_MODE);
+    if (ret != SUCCESS)
+      return ret;
+
+    return SUCCESS;
+  }
+
   command error_t Lis3dh.whoAmI(uint8_t *id) {
-    return read_reg(WHO_AM_I, id);
+    return readReg(WHO_AM_I, id);
   }
 
   async event void Panic.hook() { }

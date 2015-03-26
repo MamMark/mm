@@ -53,6 +53,17 @@
 #define ZEN              0x04	/* Accel Z axis enable */
 #define LPEN             0x08	/* Low power mode enable */
 #define ODR              0xf0	/* Output data rate mask */
+#define  ODR_OFF         0x00	/* Sets power down mode */
+#define  ODR_1HZ         0x10	/* Output data rate: 1Hz */
+#define  ODR_10HZ        0x20	/* Output data rate: 10Hz */
+#define  ODR_25HZ        0x30	/* 25Hz */
+#define  ODR_50HZ        0x40	/* 50Hz */
+#define  ODR_100HZ       0x50	/* 100Hz */
+#define  ODR_200HZ       0x60	/* 200Hz */
+#define  ODR_400HZ       0x70	/* 400Hz */
+#define  ODR_1K600HZ	 0x80	/* 1.6KHz: Low power mode only */
+#define  ODR_1K250HZ	 0x90	/* 1.25KHz: Normal mode only */
+#define  ODR_5KHZ	 0x90	/* 5KHz: Low power mode only */
 
 /*
  * CTRL_REG2
