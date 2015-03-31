@@ -15,17 +15,23 @@ module MemsAppP {
   uses interface SplitControl as MagControl;
 }
 implementation {
-  event void Boot.booted() {
-    /* Run all at 1sec interval so they contend for bus */
-    call AccelTimer.startPeriodic(1000);
-    call GyroTimer.startPeriodic(1000);
-    call MagTimer.startPeriodic(1000);
-  }
+  typedef struct {
+    uint8_t xLow;
+    uint8_t xHigh;
+    uint8_t yLow;
+    uint8_t yHigh;
+    uint8_t zLow;
+    uint8_t zHigh;
+  } accel_sample_t;
 
-  event void AccelTimer.fired() {
-    nop();
-    nop();
-    nop();
+  #define ACCEL_SAMPLE_COUNT 60
+  #define ACCEL_SAMPLE_SIZE 6
+
+  uint8_t m_accelSampleCount;
+
+  accel_sample_t m_accelSamples[ACCEL_SAMPLE_COUNT];
+  
+  event void Boot.booted() {
     call AccelControl.start();
   }
 
@@ -34,12 +40,27 @@ implementation {
     nop();
     nop();
     nop();
-    call Accel.whoAmI(&id);
-    dbg("MemsAppP", "Accel id = %x\n", id);
-    call AccelControl.stop();
+    call AccelTimer.startPeriodic(500);
+  }
+
+  event void AccelTimer.fired() {
+    nop();
+    nop();
+    nop();
+    if (call Accel.xyzDataAvail()) {
+      call Accel.readSample((uint8_t *)(&m_accelSamples[m_accelSampleCount]),
+			    ACCEL_SAMPLE_SIZE);
+      m_accelSampleCount++;
+    }
+    if (m_accelSampleCount >= ACCEL_SAMPLE_COUNT) {
+      call AccelTimer.stop();
+      call AccelControl.stop();
+    }
   }
 
   event void AccelControl.stopDone(error_t error) {
+    nop();
+    nop();
     nop();
   }
 

@@ -189,5 +189,18 @@ implementation {
     return readReg(WHO_AM_I, id);
   }
 
+  command bool Lis3dh.xyzDataAvail() {
+    uint8_t status;
+    
+    if (readReg(STATUS_REG, &status) != SUCCESS)
+      return FALSE;
+
+    return status & XYZDA;
+  }
+
+  command error_t Lis3dh.readSample(uint8_t *buf, uint8_t bufLen) {
+    return spiRx(OUT_X_L, bufLen, TRUE);
+  }
+
   async event void Panic.hook() { }
 }
