@@ -1,6 +1,7 @@
 
 module MemsAppP {
   uses interface Boot;
+  uses interface Panic;
   
   uses interface Timer<TMilli> as AccelTimer;
   uses interface Lis3dh as Accel;
@@ -40,7 +41,12 @@ implementation {
     nop();
     nop();
     nop();
-    call AccelTimer.startPeriodic(500);
+    call Accel.whoAmI(&id);
+    if (id != 0x33) {
+      call Panic.panic(PANIC_SNS, 1, id, 0, 0, 0);
+    } else if (call Accel.config1Hz() == SUCCESS) {
+      call AccelTimer.startPeriodic(500);
+    }
   }
 
   event void AccelTimer.fired() {
@@ -105,4 +111,6 @@ implementation {
   event void MagControl.stopDone(error_t error) {
     nop();
   }
+
+  async event void Panic.hook() { }
 }

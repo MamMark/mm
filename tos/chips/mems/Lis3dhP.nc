@@ -113,7 +113,7 @@ implementation {
     tx[0] = READ_REG | addr;
     if (mult_addr)
       tx[0] |= MULT_ADDR;
-    call SpiBlock.transfer(tx, rx, len);
+    call SpiBlock.transfer(tx, rx, len+1);
     call CS.set();
     return SUCCESS;
   }
@@ -130,18 +130,25 @@ implementation {
     tx[0] = WRITE_REG | addr;
     if (mult_addr)
       tx[0] |= MULT_ADDR;
-    call SpiBlock.transfer(tx, 0, len);
+    call SpiBlock.transfer(tx, 0, len+1);
     call CS.set();
     return SUCCESS;
   }
 
   error_t readReg(uint8_t addr, uint8_t *val) {
-    error_t ret = spiRx(addr, 1, FALSE);
+    error_t ret;
+    nop();
+    nop();
+    nop();
+    ret = spiRx(addr, 1, FALSE);
     *val = rx[1];
     return ret;
   }
 
   error_t writeReg(uint8_t addr, uint8_t val) {
+    nop();
+    nop();
+    nop();
     tx[1] = val;
     return spiTx(addr, 1, FALSE);
   }
@@ -149,6 +156,9 @@ implementation {
   error_t modifyReg(uint8_t addr, uint8_t clear_bits, uint8_t set_bits) {
     uint8_t reg;
     error_t ret;
+    nop();
+    nop();
+    nop();
     ret = readReg(addr, &reg);
     if (ret == SUCCESS) {
       reg &= ~clear_bits;
@@ -164,6 +174,9 @@ implementation {
   command error_t Lis3dh.config1Hz() {
     error_t ret;
 
+    nop();
+    nop();
+    nop();
     /* Turn on chip and set output data rate */
     ret = writeReg(CTRL_REG4, HR);
     if (ret != SUCCESS)
@@ -186,12 +199,18 @@ implementation {
   }
 
   command error_t Lis3dh.whoAmI(uint8_t *id) {
+    nop();
+    nop();
+    nop();
     return readReg(WHO_AM_I, id);
   }
 
   command bool Lis3dh.xyzDataAvail() {
     uint8_t status;
     
+    nop();
+    nop();
+    nop();
     if (readReg(STATUS_REG, &status) != SUCCESS)
       return FALSE;
 
@@ -199,7 +218,15 @@ implementation {
   }
 
   command error_t Lis3dh.readSample(uint8_t *buf, uint8_t bufLen) {
-    return spiRx(OUT_X_L, bufLen, TRUE);
+    error_t ret;
+    nop();
+    nop();
+    nop();
+    ret = spiRx(OUT_X_L, bufLen, TRUE);
+    if (ret == SUCCESS) {
+      memcpy(buf, &rx[1], bufLen);
+    }
+    return ret;
   }
 
   async event void Panic.hook() { }

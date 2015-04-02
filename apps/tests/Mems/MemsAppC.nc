@@ -21,4 +21,7 @@ implementation {
   components Lis3mdlC as Mag;
   MemsAppP.Mag -> Mag;
   MemsAppP.MagControl -> Mag;
+
+  components PanicC;
+  MemsAppP.Panic -> PanicC;
 }
