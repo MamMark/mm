@@ -52,7 +52,7 @@
 #define YEN              0x02	/* Accel Y axis enable */
 #define ZEN              0x04	/* Accel Z axis enable */
 #define LPEN             0x08	/* Low power mode enable */
-#define ODR              0xf0	/* Output data rate mask */
+#define ODR_MASK         0xf0	/* Output data rate mask */
 #define  ODR_OFF         0x00	/* Sets power down mode */
 #define  ODR_1HZ         0x10	/* Output data rate: 1Hz */
 #define  ODR_10HZ        0x20	/* Output data rate: 10Hz */
@@ -99,12 +99,12 @@
  */
 #define CTRL_REG4        0x23
 #define SIM              0x01	/* Serial mode: 0:4-wire, 1:3-wire */
-#define STMODE           0x06	/* Self test mask */
+#define STMODE_MASK      0x06	/* Self test mask */
 #define  STMODE_DISABLE  0x00	/* Self test disabled */
 #define  STMODE_1        0x02	/* Self test mode 0 */
 #define  STMODE_2        0x04	/* Self test mode 1 */
 #define HR               0x08	/* High Res output. Enable for normal mode */
-#define FS               0x30	/* Full-scale selection mask */
+#define FS_MASK          0x30	/* Full-scale selection mask */
 #define  FS_2G           0x00	/* FS = +- 2G */
 #define  FS_4G           0x10	/* FS = +- 4G */
 #define  FS_8G           0x20	/* FS = +- 8G */
@@ -157,7 +157,7 @@
 #define FIFO_CTRL_REG    0x2e
 #define FTH              0x1f	/* FIFO watermark thresold value */
 #define TRIG_SEL         0x20	/* Trigger select: 0=INT1, 1=INT2 */
-#define FIFO_MODE_SEL    0xc0	/* FIFO mode selection mask */
+#define FIFO_MODE_MASK   0xc0	/* FIFO mode selection mask */
 #define  FIFO_BYPASS     0x00
 #define  FIFO_MODE       0x40
 #define  FIFO_STREAM     0x80
@@ -169,7 +169,7 @@
  * watermark is exceeded and whether FIFO is full or empty.
  */
 #define FIFO_SRC_REG     0x2f
-#define FSS              0x1f	/* FIFO sample count mask */
+#define FSS_MASK         0x1f	/* FIFO sample count mask */
 #define EMPTY            0x20	/* FIFO empty flag */
 #define OVRN_FIFO        0x40	/* FIFO overrun flag */
 #define WTM              0x80	/* FIFO watermark exceeded flag */

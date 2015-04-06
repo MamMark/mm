@@ -15,6 +15,12 @@
 #define WHO_AM_I         0x0f
 #define WHO_I_AM         0xd3
 
+/*
+ * CTRL_REG1
+ * - Set output data rate
+ * - Set power up/down mode
+ * - Enable X,Y,Z axes
+ */
 #define CTRL_REG1        0x20
 #define ODR_MASK         0xf0	/* Output data rate mask */
 #define POWER            0x08	/* Power: 0=power down,1=normal/sleep */
@@ -23,6 +29,11 @@
 #define YEN              0x02	/* Y axis enable */
 #define XEN              0x01   /* X axis enable */
 
+/*
+ * CTRL_REG2
+ * - Set high pass filter mode
+ * - Set high pass filter cutoff
+ */
 #define CTRL_REG2        0x21
 #define HPM_MASK         0x30   /* High pass filter mode mask */
 #define  HPM_NORMAL      0x00   /*  High pass normal mode */
@@ -31,6 +42,10 @@
 #define  HPM_AUTORESET   0x30   /*  Reset on interrupt */
 #define HPC_MASK         0x0f   /* High pass filter cutoff mask */
 
+/*
+ * CTRL_REG3
+ * - Configure INT1 and INT2 interrupts
+ */
 #define CTRL_REG3        0x22
 #define I1_INT1          0x80   /* Enable interrupt on INT1 pin */
 #define I1_BOOT          0x40   /* Boot status on INT1 pin */
@@ -41,6 +56,14 @@
 #define I2_ORUN          0x02   /* FIFO Overrun interrupt on INT2 */
 #define I2_EMPTY         0x01   /* FIFO empty interrupt on INT2 */
 
+/*
+ * CTRL_REG4
+ * - Enable block data update mode
+ * - Configure big/little endian mode
+ * - Set full scale deflection
+ * - Set self-test mode
+ * - Set SPI mode (3 or 4 wire)
+ */
 #define CTRL_REG4        0x23
 #define BDU              0x80   /* Block data update */
 #define BLE              0x40   /* Big or little endian */
@@ -54,6 +77,14 @@
 #define  ST_1            0x06   /*  Self test 1 */
 #define SIM              0x01   /* SPI mode: 0=4wire, 1=3wire */
 
+/*
+ * CTRL_REG5
+ * - Reboot memory content
+ * - Enable FIFO
+ * - Enable high pass filter
+ * - Select INT1 interrupt generation
+ * - Select output filtering mode
+ */
 #define CTRL_REG5        0x24
 #define BOOT             0x80   /* Reboot memory content */
 #define FIFO_ENABLE      0x40   /* FIFO Enable */
@@ -65,6 +96,11 @@
 
 #define OUT_TEMP         0x26
 
+/*
+ * STATUS_REG
+ * - Output register overrun status
+ * - Outout register data available status
+ */
 #define STATUS_REG       0x27
 #define ZYZOR            0x80   /* ZYX Overrun */
 #define ZOR              0x40   /* Z Overrun */
@@ -85,6 +121,11 @@
 #define OUT_Z_L          0x2c
 #define OUT_Z_H          0x2d
 
+/*
+ * FIFO_CTRL_REG
+ * - Set FIFO operation mode (bypass, FIFO, stream, etc)
+ * - Set FIFO watermark
+ */
 #define FIFO_CTRL_REG    0x2e
 #define FM_MASK          0xe0   /* FIFO mode select mask */
 #define  FM_BYPASS       0x00   /*  FIFO Bypass mode */
@@ -94,6 +135,13 @@
 #define  FM_B2S          0x80   /*  Bypass-to-Stream mode */
 #define WTM_MASK         0x1f   /* FIFO Watermark mask */
 
+/*
+ * FIFO_SRC_REG
+ * - FIFO watermark status
+ * - FIFO overrun status
+ * - FIFO empty
+ * - FIFO sample count
+ */
 #define FIFO_SRC_REG     0x2f
 #define WTM              0x80   /* FIFO watermark status */
 #define OVRN             0x40   /* FIFO Overrun status */
