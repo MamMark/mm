@@ -2,12 +2,6 @@
  * lis3dh.h
  */
 
-/* SPI Flag Bits */
-#define READ_REG         0x80
-#define WRITE_REG        0x00
-#define MULT_ADDR        0x40
-#define SINGLE_ADDR      0x00
-
 /* Aux register indicates data available or overrun for the Aux ADC */
 #define STATUS_REG_AUX   0x07
 #define STAT_1DA         0x01

@@ -5,24 +5,26 @@ configuration Lis3dhC {
   }
 }
 implementation {
+  components new MemsCtrlP() as MemsP;
+
   components Lis3dhP;
   Lis3dh = Lis3dhP.Lis3dh;
-  SplitControl = Lis3dhP.SplitControl;
+  SplitControl = MemsP.SplitControl;
+  Lis3dhP.MemsCtrl -> MemsP;
 
   components MainC;
-  Lis3dhP.Init <- MainC.SoftwareInit;
+  MemsP.Init <- MainC.SoftwareInit;
   
   components HplMsp430GeneralIOC;
-  Lis3dhP.CS -> HplMsp430GeneralIOC.Port41;
+  MemsP.CSN -> HplMsp430GeneralIOC.Port41;
 
   components new Msp430UsciSpiB0C() as Spi;
-  Lis3dhP.SpiResource -> Spi.Resource;
-  Lis3dhP.SpiBlock -> Spi.SpiBlock;
-  Lis3dhP.SpiByte -> Spi.SpiByte;
+  MemsP.SpiResource -> Spi.Resource;
+  MemsP.SpiBlock -> Spi.SpiBlock;
 
   components Pwr3V3C;
-  Lis3dhP.PwrReg -> Pwr3V3C.PwrReg;
+  MemsP.PwrReg -> Pwr3V3C.PwrReg;
 
   components PanicC;
-  Lis3dhP.Panic -> PanicC;
+  MemsP.Panic -> PanicC;
 }
