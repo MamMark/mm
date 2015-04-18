@@ -2,12 +2,6 @@
  * l3g4200.h
  */
 
-/* SPI Flag Bits */
-#define READ_REG         0x80
-#define WRITE_REG        0x00
-#define MULT_ADDR        0x40
-#define SINGLE_ADDR      0x00
-
 /* 
  * Register with ID value. Validate SPI xfer by reading this
  * register: Value should equal WHO_I_AM.

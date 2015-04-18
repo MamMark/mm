@@ -61,7 +61,6 @@ implementation {
   }
 
   command error_t Lis3dh.readSample(uint8_t *buf, uint8_t bufLen) {
-    error_t ret;
     nop();
     nop();
     nop();

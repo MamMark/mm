@@ -34,6 +34,8 @@ implementation {
   
   event void Boot.booted() {
     call AccelControl.start();
+    call GyroControl.start();
+    call MagControl.start();
   }
 
   event void AccelControl.startDone(error_t error) {
@@ -41,6 +43,7 @@ implementation {
     nop();
     nop();
     nop();
+    id = 0;
     call Accel.whoAmI(&id);
     if (id != 0x33) {
       call Panic.panic(PANIC_SNS, 1, id, 0, 0, 0);
@@ -70,32 +73,28 @@ implementation {
     nop();
   }
 
-  event void GyroTimer.fired() {
-    nop();
-    nop();
-    nop();
-    call GyroControl.start();
-  }
-
   event void GyroControl.startDone(error_t error) {
     uint8_t id;
     nop();
     nop();
     nop();
+    id = 0;
     call Gyro.whoAmI(&id);
     dbg("MemsAppP", "Gyro id = %x\n", id);
+    if (id != 0xd3) {
+      call Panic.panic(PANIC_SNS, 2, id, 0, 0, 0);
+    }
     call GyroControl.stop();
+  }
+
+  event void GyroTimer.fired() {
+    nop();
+    nop();
+    nop();
   }
 
   event void GyroControl.stopDone(error_t error) {
     nop();
-  }
-
-  event void MagTimer.fired() {
-    nop();
-    nop();
-    nop();
-    call MagControl.start();
   }
 
   event void MagControl.startDone(error_t error) {
@@ -103,9 +102,19 @@ implementation {
     nop();
     nop();
     nop();
+    id = 0;
     call Mag.whoAmI(&id);
     dbg("MemsAppP", "Mag id = %u\n", id);
+    if (id != 0x3d) {
+      call Panic.panic(PANIC_SNS, 3, id, 0, 0, 0);
+    }
     call MagControl.stop();
+  }
+
+  event void MagTimer.fired() {
+    nop();
+    nop();
+    nop();
   }
 
   event void MagControl.stopDone(error_t error) {

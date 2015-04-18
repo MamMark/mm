@@ -1,23 +1,30 @@
 configuration Lis3mdlC {
-  provides interface SplitControl;
-  provides interface Lis3mdl;
+  provides {
+    interface SplitControl;
+    interface Lis3mdl;
+  }
 }
 implementation {
+  components new MemsCtrlP() as MemsP;
+
   components Lis3mdlP;
   Lis3mdl = Lis3mdlP.Lis3mdl;
-  SplitControl = Lis3mdlP.SplitControl;
+  SplitControl = MemsP.SplitControl;
+  Lis3mdlP.MemsCtrl -> MemsP;
 
   components MainC;
-  Lis3mdlP.Init <- MainC.SoftwareInit;
+  MemsP.Init <- MainC.SoftwareInit;
   
   components HplMsp430GeneralIOC;
-  Lis3mdlP.CS -> HplMsp430GeneralIOC.Port46;
+  MemsP.CSN -> HplMsp430GeneralIOC.Port46;
 
   components new Msp430UsciSpiB0C() as Spi;
-  Lis3mdlP.SpiResource -> Spi.Resource;
-  Lis3mdlP.SpiBlock -> Spi.SpiBlock;
-  Lis3mdlP.SpiByte -> Spi.SpiByte;
+  MemsP.SpiResource -> Spi.Resource;
+  MemsP.SpiBlock -> Spi.SpiBlock;
 
   components Pwr3V3C;
-  Lis3mdlP.PwrReg -> Pwr3V3C.PwrReg;
+  MemsP.PwrReg -> Pwr3V3C.PwrReg;
+
+  components PanicC;
+  MemsP.Panic -> PanicC;
 }

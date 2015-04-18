@@ -1,23 +1,30 @@
 configuration L3g4200C {
-  provides interface SplitControl;
-  provides interface L3g4200;
+  provides {
+    interface SplitControl;
+    interface L3g4200;
+  }
 }
 implementation {
+  components new MemsCtrlP() as MemsP;
+
   components L3g4200P;
   L3g4200 = L3g4200P.L3g4200;
-  SplitControl = L3g4200P.SplitControl;
+  SplitControl = MemsP.SplitControl;
+  L3g4200P.MemsCtrl -> MemsP;
 
   components MainC;
-  L3g4200P.Init <- MainC.SoftwareInit;
+  MemsP.Init <- MainC.SoftwareInit;
   
   components HplMsp430GeneralIOC;
-  L3g4200P.CS -> HplMsp430GeneralIOC.Port44;
+  MemsP.CSN -> HplMsp430GeneralIOC.Port44;
 
   components new Msp430UsciSpiB0C() as Spi;
-  L3g4200P.SpiResource -> Spi.Resource;
-  L3g4200P.SpiBlock -> Spi.SpiBlock;
-  L3g4200P.SpiByte -> Spi.SpiByte;
+  MemsP.SpiResource -> Spi.Resource;
+  MemsP.SpiBlock -> Spi.SpiBlock;
 
   components Pwr3V3C;
-  L3g4200P.PwrReg -> Pwr3V3C.PwrReg;
+  MemsP.PwrReg -> Pwr3V3C.PwrReg;
+
+  components PanicC;
+  MemsP.Panic -> PanicC;
 }
