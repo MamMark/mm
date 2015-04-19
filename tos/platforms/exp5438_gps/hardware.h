@@ -69,9 +69,9 @@
  *
  * port 1.0	0pO	led0    		port 4.0	0pO    gps_on_off
  *       .1	0pO	led1    		      .1	1pO    gps_reset_n (nRST)
- *       .2	0pO	r4463_cts      		      .2	1pO    gps_csn (nRTS)
+ *       .2	0pO	r446x_cts      		      .2	1pO    gps_csn (nRTS)
  *       .3     0pO	          		      .3	0pI    gps_awake
- *       .4	0pO	r4463_int      		      .4	0pO
+ *       .4	0pO	r446x_int      		      .4	0pO
  *       .5	1pO	             		      .5	0pO
  *       .6	1pO	            		      .6	1pO
  *       .7	1pO	         		      .7	0pO
@@ -94,18 +94,14 @@
  *       .6	1pI	                	      .6	1pO
  *       .7	1pI	gps_simo (rx, B1SIMO)  	      .7	1pO
  *
- * Note: When we used 6.3 as tell we saw no pull down.   Do we need to
- * enable the resistors (fets).
- *
- *
- * port 10.0	0pO	r4463_sclk (a3sclk)	port 11.0	0pI
+ * port 10.0	0pO	r446x_sclk (a3sclk)	port 11.0	0pI
  *        .1	1pI	(nc) xi2c_sda (b3sda)  	       .1	0pI
  *        .2	1pI	(nc) xi2c_scl (b3scl)  	       .2	0pI
- *        .3	0pI	                    	       .3	0pI
- *        .4	1pI	r4463_mosi (a3mosi)	       .4	1pO
- *        .5	1pI	r4463_miso (a3miso)	       .5	1pO
- *        .6	1pI	r4463_sdn              	       .6	1pO
- *        .7	1pO	r4463_csn		       .7	1pO
+ *        .3	0pO     tell               	       .3	0pI
+ *        .4	1pI	r446x_mosi (a3mosi)	       .4	1pO
+ *        .5	1pI	r446x_miso (a3miso)	       .5	1pO
+ *        .6	1pI	r446x_sdn              	       .6	1pO
+ *        .7	1pO	r446x_csn		       .7	1pO
  */
 
 
@@ -136,27 +132,5 @@ enum {
 TOSH_ASSIGN_PIN(RED_LED, 1, 0);
 TOSH_ASSIGN_PIN(GREEN_LED, 1, 1);
 TOSH_ASSIGN_PIN(YELLOW_LED, 4, 6);
-
-TOSH_ASSIGN_PIN(GPS_RESET, 4, 1);
-
-
-#ifdef notdef
-// CC2420 RADIO #defines
-TOSH_ASSIGN_PIN(RADIO_CSN, 3, 0);
-TOSH_ASSIGN_PIN(RADIO_VREF, 2, 6);
-TOSH_ASSIGN_PIN(RADIO_RESET, 2, 5);
-TOSH_ASSIGN_PIN(RADIO_FIFOP, 2, 3);
-TOSH_ASSIGN_PIN(RADIO_SFD, 2, 1);
-TOSH_ASSIGN_PIN(RADIO_GIO0, 5, 0);
-TOSH_ASSIGN_PIN(RADIO_FIFO, 2, 2);
-TOSH_ASSIGN_PIN(RADIO_GIO1, 5, 1);
-TOSH_ASSIGN_PIN(RADIO_CCA, 2, 4);
-
-TOSH_ASSIGN_PIN(CC_FIFOP, 2, 3);
-TOSH_ASSIGN_PIN(CC_FIFO, 2, 2);
-TOSH_ASSIGN_PIN(CC_SFD, 2, 1);
-TOSH_ASSIGN_PIN(CC_VREN, 2, 6);
-TOSH_ASSIGN_PIN(CC_RSTN, 2, 5);
-#endif
 
 #endif // _H_hardware_h

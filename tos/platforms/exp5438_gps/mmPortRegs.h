@@ -1,5 +1,5 @@
 /*
- * Copyright 2012, 2014 (c) Eric B. Decker
+ * Copyright 2012, 2014-2105 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,11 +42,22 @@
 #endif
 
   static volatile struct {
+    uint8_t p10             : 1;
+    uint8_t p11 	    : 1;
+    uint8_t r446x_cts	    : 1;
+    uint8_t p13		    : 1;
+    uint8_t r446x_irq_n	    : 1;
+    uint8_t p15		    : 1;
+    uint8_t p16		    : 1;
+    uint8_t p17		    : 1;
+  } PACKED mmP1in asm("0x0200");
+
+  static volatile struct {
     uint8_t led0            : 1;	/* red, led1 */
     uint8_t led1	    : 1;	/* yellow, led2 */
-    uint8_t p12		    : 1;
+    uint8_t p12 	    : 1;
     uint8_t p13		    : 1;
-    uint8_t p14		    : 1;
+    uint8_t p14 	    : 1;
     uint8_t p15		    : 1;
     uint8_t p16		    : 1;
     uint8_t p17		    : 1;
@@ -96,7 +107,6 @@
     uint8_t p47		    : 1;
   } PACKED mmP4in asm("0x0221");
 
-#define GSD4E_GPS_AWAKE (mmP4in.gps_awake)
 
 norace static volatile struct {
     uint8_t gps_on_off	    : 1;	/* x.y 4.0, output */
@@ -108,12 +118,6 @@ norace static volatile struct {
     uint8_t p46		    : 1;
     uint8_t p47		    : 1;
   } PACKED mmP4out asm("0x0223");
-
-#define GSD4E_GPS_SET_ONOFF (mmP4out.gps_on_off = 1)
-#define GSD4E_GPS_CLR_ONOFF (mmP4out.gps_on_off = 0)
-#define GSD4E_GPS_RESET     (mmP4out.gps_reset_n = 0)
-#define GSD4E_GPS_UNRESET   (mmP4out.gps_reset_n = 1)
-#define GSD4E_GPS_CSN        mmP4out.gps_csn
 
   static volatile struct {
     uint8_t p50		    : 1;
@@ -182,9 +186,6 @@ norace
     uint8_t accel_csn	    : 1;	/* p10 7, output */
   } PACKED mmP10out asm("0x0283");
 
-#define LIS3DH_CSN mmP10out.accel_csn
-#define TELL mmP10out.tell
-#define TOGGLE_TELL do { TELL = 1; TELL = 0; } while(0)
 
   static volatile struct {
     uint8_t p110	    : 1;
@@ -196,5 +197,24 @@ norace
     uint8_t p116	    : 1;
     uint8_t p117	    : 1;
   } PACKED mmP11out asm("0x02A2");
+
+/* gps -gsd4e/org */
+#define GSD4E_GPS_AWAKE     (mmP4in.gps_awake)
+#define GSD4E_GPS_SET_ONOFF (mmP4out.gps_on_off = 1)
+#define GSD4E_GPS_CLR_ONOFF (mmP4out.gps_on_off = 0)
+#define GSD4E_GPS_RESET     (mmP4out.gps_reset_n = 0)
+#define GSD4E_GPS_UNRESET   (mmP4out.gps_reset_n = 1)
+#define GSD4E_GPS_CSN        mmP4out.gps_csn
+
+#define LIS3DH_CSN mmP10out.accel_csn
+
+#define TELL mmP10out.tell
+#define TOGGLE_TELL do { TELL = 1; TELL = 0; } while(0)
+
+/* radio */
+#define R446X_CTS            mmP1in.r446x_cts
+#define R446X_IRQ_N          mmP1in.r446x_irq_n
+#define R446X_SDN            mmP10out.r446x_sdn
+#define R446X_CSN            mmP10out.r446x_csn
 
 #endif
