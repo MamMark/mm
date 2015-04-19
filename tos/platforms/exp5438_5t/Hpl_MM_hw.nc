@@ -24,15 +24,6 @@
  */
  
 interface Hpl_MM_hw {
-  async command bool r446x_cts();
-  async command bool r446x_irq();
-  async command void r446x_shutdown();
-  async command void r446x_unshutdown();
-  async command void r446x_set_cs();
-  async command void r446x_clr_cs();
-  async command void r446x_set_low_pwr();
-  async command void r446x_set_high_pwr();
-
   async command bool gps_awake();
   async command void gps_set_cs();
   async command void gps_clr_cs();

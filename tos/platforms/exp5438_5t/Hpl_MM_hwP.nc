@@ -49,15 +49,6 @@ module Hpl_MM_hwP {
 }
 
 implementation {
-  async command bool HW.r446x_cts()          { return R446X_CTS; }
-  async command bool HW.r446x_irq()          { return !R446X_IRQ_N; }
-  async command void HW.r446x_shutdown()     { R446X_SDN = 1; }
-  async command void HW.r446x_unshutdown()   { R446X_SDN = 0; }
-  async command void HW.r446x_set_cs()       { R446X_CSN = 0; }
-  async command void HW.r446x_clr_cs()       { R446X_CSN = 1; }
-  async command void HW.r446x_set_low_pwr()  { R446X_VOLT_SEL = 0; }
-  async command void HW.r446x_set_high_pwr() { R446X_VOLT_SEL = 1; }
-
   async command bool HW.gps_awake()      { return GSD4E_GPS_AWAKE; }
   async command void HW.gps_set_cs()     { GSD4E_GPS_CSN = 0; }
   async command void HW.gps_clr_cs()     { GSD4E_GPS_CSN = 1; }
