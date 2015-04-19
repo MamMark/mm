@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014 Eric B. Decker
+ * Copyright (c) 2012, 2014, 2015 Eric B. Decker
  * All rights reserved.
  *
  * @author Eric B. Decker (cire831@gmail.com)
@@ -47,9 +47,9 @@
  *   via the SPI.
  *
  *   < 70ms     hangs
- *   < 120ms    get idles
- *   120ms +    see oktosend
- *   225ms      see oktosend + mid 47
+ *   < 120ms    get idles (a7 b4)
+ *   120ms +    see oktosend (mid 18)
+ *   225ms      see oktosend (mid 18) + Nav_Complete (mid 47)
  *
  * 200ms seems about right.
  *
@@ -59,7 +59,6 @@
  * stupid.  This basically means the CPU has to poll to see if anything interesting
  * is in the fifos.  So we instead we turn off all periodic messages and instead
  * ask for the current status when we need to know something.
- *
  *
  * ORG4472 info (from observations, Fastrax and ORG docs):
  * On initial power on (system power up), the gps can take anywhere from 300ms upwards to
@@ -551,6 +550,7 @@ implementation {
 
 
   event void GPSTimer.fired() {
+    nop();
     switch (gpsc_state) {
       default:
       case GPSC_FAIL:
@@ -561,6 +561,7 @@ implementation {
 	return;
 
       case GPSC_PULSE_ON:
+        nop();
 	call HW.gps_clr_on_off();
 	if (!call HW.gps_awake()) {
 	  gps_panic(13, gpsc_state);
@@ -571,7 +572,13 @@ implementation {
 
 	/*
 	 * We should have the 1st message after coming out of hibernate.
-	 * The expected 1st message is OkToSend (should be SirfBin).
+	 * The expected 1st message is OkToSend (either NMEA or SirfBin
+	 * variety).  If NMEA, we want to reconfigure.
+	 *
+	 * We have observed that immediately after the PulseOn (100ms after
+	 * sending on_off high) we should have an OkToSend, either flavor.
+	 *
+	 * Check which flavor and change state accordingly.
 	 */
 
         call HW.gps_set_cs();
@@ -580,7 +587,33 @@ implementation {
 	incoming.remaining = 0;			// throw current away
 	call HW.gps_clr_cs();
 
-	if (memcmp(incoming.buf, osp_oktosend, sizeof(osp_oktosend)) == 0) {
+        nop();
+	if (memcmp(incoming.buf, nmea_oktosend, sizeof(nmea_oktosend)) == 0) {
+	  /*
+	   * looks like nema, reconfigure
+	   *
+	   * observed behaviour, we've seen the nmea oktostart and we now
+	   * send the nmea_go_sirf_bin.  And what we get back is idles, so
+	   * we just throw the incoming data away.   From observations, we
+	   * also need to wait awile after telling the chip to switch over
+	   * to sirfbin.
+	   */
+	  gps_mark(0xc0);
+	  call HW.gps_set_cs();
+	  gps_send_receive(nmea_go_sirf_bin, sizeof(nmea_go_sirf_bin));
+	  call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
+	  incoming.remaining = 0;
+	  gps_send_receive(osp_idle_block, BUF_INCOMING_SIZE - sizeof(nmea_go_sirf_bin));
+	  call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
+	  incoming.remaining = 0;
+	  call HW.gps_clr_cs();
+	  gps_mark(0xc1);
+
+	  gpsc_change_state(GPSC_RECONFIG_WAIT, GPSW_CONFIG_TASK);
+	  call GPSTimer.startOneShot(wait_time);	// wait for the switch to go.
+          nop();
+	  return;
+	} else if (memcmp(incoming.buf, osp_oktosend, sizeof(osp_oktosend)) == 0) {
           gps_mark(0xce);
 
           call HW.gps_set_cs();

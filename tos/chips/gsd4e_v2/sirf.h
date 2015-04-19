@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, 2012, 2014 Eric B. Decker
+ * Copyright (c) 2008, 2010, 2012, 2014, 2015 Eric B. Decker
  * All rights reserved.
  *
  * looks like the next time this code will be worked on is 2016
@@ -73,6 +73,39 @@ const uint8_t osp_idle_block[] = {
   0xa7, 0xb4, 0xa7, 0xb4, 0xa7, 0xb4, 0xa7, 0xb4,
   0xa7, 0xb4, 0xa7, 0xb4, 0xa7, 0xb4, 0xa7, 0xb4,
   0xa7, 0xb4, 0xa7, 0xb4, 0xa7, 0xb4, 0xa7, 0xb4,
+};
+
+
+/*
+ * nmea_go_sirf_bin: tell the gps in nmea mode to go into sirf binary.
+ * checksum for 115200 is 04, 57600 is 37
+ *
+ * note: baud doesn't really matter.  We are using the org4472 in
+ * SPI mode.
+ *
+ * output means we send it to the chip.   input comes from the chip.
+ * ie.  relative to the host (us, main cpu).
+ */
+
+const uint8_t nmea_go_sirf_bin[] = {	// output
+  '$', 'P', 'S', 'R', 'F',		// header
+  '1', '0', '0', ',',			// set serial port MID
+  '0', ',',				// protocol 0 SirfBinary, 1 - NEMA
+  '5', '7', '6', '0', '0', ',',		// baud rate
+  '8', ',',				// 8 data bits
+  '1', ',',				// 1 stop bit
+  '0',					// no parity
+  '*', '3', '7',			// checksum
+  '\r', '\n'				// terminator
+};
+
+
+const uint8_t nmea_oktosend[] = {	// input
+  '$', 'P', 'S', 'R', 'F',		// header
+  '1', '5', '0', ',',			// OkToSend
+  '1',					// 1 - says yep
+  '*', '3', 'E',			// checksum
+  '\r', '\n'				// terminator
 };
 
 
