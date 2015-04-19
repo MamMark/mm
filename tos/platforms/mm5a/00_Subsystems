@@ -23,7 +23,7 @@ Power Management:
       P6.6:  bat_sense_ena
       P7.3:  usd_pwr_ena
       P10.1: temp_pwr
-      PJ.1:  radio_volt_sel
+      PJ.1:  r446x_volt_sel
 
 
 Temp
@@ -224,28 +224,26 @@ Dock Interface
     That should work.  Or do we want an pin coming back?
 
   dock_usd_override: when the dock wants to access the uSD, it drives this
-  signal with a 1.  This diables any access of the mm5a 5438a processor to the
+  signal with a 1.  This disables any access of the mm5a 5438a processor to the
   uSD.
 
 
 
 Radio Subsystem:
 
-The mm5a has a transceiver that operates in the 433MHz frequency band for off
-tag communications.  Communications between the 5438a and the SI446X is via
-a dedicated UCSI (uca2) running in SPI master mode.
+The mm5a has a transceiver that operates in the 433MHz frequency band for
+wireless communications.  Communications between the 5438a and the si446X
+is via a dedicated UCSI (uca2) running in SPI master mode.
 
   Pins:
-      P1.0: radio_irq
-      P8.7: radio_sdn  (shutdown)
-      P9.0: radio_clk  (uca2)
-      P9.4: radio_mosi (uca2)
-      P9.5: radio_miso (uca2)
-      P9.7: radio_csn
-      PJ.1: radio_volt_sel
-
-*** How does the radio_volt_sel actually work?
-
+      P1.0: r446x_irq
+      P8.7: r446x_sdn  (shutdown)
+      P9.0: r446x_clk  (uca2)
+      P9.4: r446x_mosi (uca2)
+      P9.5: r446x_miso (uca2)
+      P9.7: r446x_csn
+      PJ.1: r446x_volt_sel
+      PJ.3  r446x_cts
 
 
 GPS

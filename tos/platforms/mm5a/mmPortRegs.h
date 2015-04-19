@@ -42,7 +42,7 @@
 #endif
 
 norace static volatile struct {
-    uint8_t radio_irq_n         : 1;
+    uint8_t r446x_irq_n         : 1;
     uint8_t gyro_drdy           : 1;
     uint8_t p12                 : 1;
     uint8_t sd_access_sense     : 1;
@@ -214,7 +214,7 @@ norace static volatile struct {
     uint8_t p84                 : 1;
     uint8_t p85                 : 1;
     uint8_t p86                 : 1;
-    uint8_t radio_sdn           : 1;
+    uint8_t r446x_sdn           : 1;
   } PACKED mmP8out asm("0x0263");
 
 norace static volatile struct {
@@ -223,20 +223,20 @@ norace static volatile struct {
     uint8_t p92                 : 1;
     uint8_t p93                 : 1;
     uint8_t p94                 : 1;
-    uint8_t radio_di            : 1;
+    uint8_t r446x_miso          : 1;
     uint8_t p96                 : 1;
     uint8_t p97                 : 1;
   } PACKED mmP9in asm("0x0280");
 
 norace static volatile struct {
-    uint8_t radio_clk           : 1;
+    uint8_t r446x_clk           : 1;
     uint8_t temp_sda            : 1;
     uint8_t temp_scl            : 1;
     uint8_t p93                 : 1;
-    uint8_t radio_do            : 1;
+    uint8_t r446x_mosi          : 1;
     uint8_t p95                 : 1;
     uint8_t p96                 : 1;
-    uint8_t radio_csn           : 1;
+    uint8_t r446x_csn           : 1;
   } PACKED mmP9out asm("0x0282");
 
 norace static volatile struct {
@@ -287,7 +287,7 @@ norace static volatile struct {
     uint8_t pj0                 : 1;
     uint8_t pj1                 : 1;
     uint8_t pj2                 : 1;
-    uint8_t pj3                 : 1;
+    uint8_t r446x_cts           : 1;
     uint8_t pj4                 : 1;
     uint8_t pj5                 : 1;
     uint8_t pj6                 : 1;
@@ -296,7 +296,7 @@ norace static volatile struct {
 
 norace static volatile struct {
     uint8_t pj0                 : 1;
-    uint8_t radio_volt_sel      : 1;
+    uint8_t r446x_volt_sel      : 1;
     uint8_t pj2                 : 1;
     uint8_t tell                : 1;
     uint8_t pj4                 : 1;
@@ -305,11 +305,12 @@ norace static volatile struct {
     uint8_t pj7                 : 1;
   } PACKED mmPJout asm("0x0322");
 
-/* radio */
-#define RADIO_IRQ_N             mmP1in.radio_irq_n
-#define RADIO_SDN               mmP8out.radio_sdn
-#define RADIO_CSN               mmP9out.radio_csn
-#define RADIO_VOLT_SEL          mmPJout.radio_volt_sel
+/* radio - si446x */
+#define R446X_CTS               mmPJin.r446x_cts
+#define R446X_IRQ_N             mmP1in.r446x_irq_n
+#define R446X_SDN               mmP8out.r446x_sdn
+#define R446X_CSN               mmP9out.r446x_csn
+#define R446X_VOLT_SEL          mmPJout.r446x_volt_sel
 
 /* mems */
 #define GYRO_DRDY               mmP1in.gyro_drdy

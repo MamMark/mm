@@ -47,13 +47,14 @@ module Hpl_MM_hwP {
 }
 
 implementation {
-  async command bool HW.radio_irq()          { return !RADIO_IRQ_N; }
-  async command void HW.radio_shutdown()     { RADIO_SDN = 1; }
-  async command void HW.radio_unshutdown()   { RADIO_SDN = 0; }
-  async command void HW.radio_set_cs()       { RADIO_CSN = 0; }
-  async command void HW.radio_clr_cs()       { RADIO_CSN = 1; }
-  async command void HW.radio_set_low_pwr()  { RADIO_VOLT_SEL = 0; }
-  async command void HW.radio_set_high_pwr() { RADIO_VOLT_SEL = 1; }
+  async command bool HW.r446x_cts()          { return R446X_CTS; }
+  async command bool HW.r446x_irq()          { return !R446X_IRQ_N; }
+  async command void HW.r446x_shutdown()     { R446X_SDN = 1; }
+  async command void HW.r446x_unshutdown()   { R446X_SDN = 0; }
+  async command void HW.r446x_set_cs()       { R446X_CSN = 0; }
+  async command void HW.r446x_clr_cs()       { R446X_CSN = 1; }
+  async command void HW.r446x_set_low_pwr()  { R446X_VOLT_SEL = 0; }
+  async command void HW.r446x_set_high_pwr() { R446X_VOLT_SEL = 1; }
 
   async command bool HW.mems_gyro_drdy()     { return GYRO_DRDY; }
   async command bool HW.mems_gyro_irq()      { return GYRO_IRQ; }

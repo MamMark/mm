@@ -24,13 +24,14 @@
  */
  
 interface Hpl_MM_hw {
-  async command bool radio_irq();
-  async command void radio_shutdown();
-  async command void radio_unshutdown();
-  async command void radio_set_cs();
-  async command void radio_clr_cs();
-  async command void radio_set_low_pwr();
-  async command void radio_set_high_pwr();
+  async command bool r446x_cts();
+  async command bool r446x_irq();
+  async command void r446x_shutdown();
+  async command void r446x_unshutdown();
+  async command void r446x_set_cs();
+  async command void r446x_clr_cs();
+  async command void r446x_set_low_pwr();
+  async command void r446x_set_high_pwr();
 
   async command bool mems_gyro_drdy();
   async command bool mems_gyro_irq();
