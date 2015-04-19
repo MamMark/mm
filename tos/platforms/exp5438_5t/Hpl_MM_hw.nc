@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014 Eric B. Decker
+ * Copyright (c) 2012, 2014-2015 Eric B. Decker
  * All rights reserved.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -18,17 +18,26 @@
         
 /**
  * The Hpl_MM_hw interface exports low-level access control registers effecting
- * the MM5t conversion system.
+ * the exp5438_5t conversion system.
  *
  * @author Eric B. Decker
  */
  
 interface Hpl_MM_hw {
-  async command void gps_set_on_off();
-  async command void gps_clr_on_off();
+  async command bool r446x_cts();
+  async command bool r446x_irq();
+  async command void r446x_shutdown();
+  async command void r446x_unshutdown();
+  async command void r446x_set_cs();
+  async command void r446x_clr_cs();
+  async command void r446x_set_low_pwr();
+  async command void r446x_set_high_pwr();
+
+  async command bool gps_awake();
   async command void gps_set_cs();
   async command void gps_clr_cs();
+  async command void gps_set_on_off();
+  async command void gps_clr_on_off();
   async command void gps_set_reset();
   async command void gps_clr_reset();
-  async command bool gps_awake();
 }
