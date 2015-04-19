@@ -4,6 +4,15 @@ General
   first.  Why?
 
 
+  LedRail with 2 timers when -Os optimization does the
+  wrong thing.  ie. It should fire timer 0 (VoutTimer) but
+  fires Timer0 from LedRailC.  Wrong code is generated.
+  Adding a 3rd timer makes it work right.
+
+
+  Investigate using IAR or CCS.
+
+
 Bring Up (mm5a):
 
 . verify clocks
