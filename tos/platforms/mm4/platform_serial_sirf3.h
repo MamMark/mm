@@ -34,8 +34,8 @@
  * @author Eric Decker
  */
 
-#ifndef _H_PLATFORM_SIRF3_SERIAL_H_
-#define _H_PLATFORM_SIRF3_SERIAL_H_
+#ifndef _H_PLATFORM_SERIAL_SIRF3_H_
+#define _H_PLATFORM_SERIAL_SIRF3_H_
 
 #include "msp430usci.h"
 
@@ -73,4 +73,4 @@ const msp430_uart_union_config_t sirf3_57600_serial_config = { {
 } };
 
 
-#endif	/* _H_PLATFORM_SIRF3_SERIAL_H_ */
+#endif	/* _H_PLATFORM_SERIAL_SIRF3_H_ */

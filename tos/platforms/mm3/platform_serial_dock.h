@@ -7,8 +7,8 @@
  * @date Feb 25, 2010
  */
 
-#ifndef _H_PLATFORM_DOCK_SERIAL_H
-#define _H_PLATFORM_DOCK_SERIAL_H
+#ifndef _H_PLATFORM_SERIAL_DOCK_H
+#define _H_PLATFORM_SERIAL_DOCK_H
 
 #include "msp430usart.h"
 
@@ -38,4 +38,4 @@ const msp430_uart_union_config_t dock_serial_config = { {
   urxe : 1		// rx interrupt enabled
   } };
 
-#endif	/* _H_PLATFORM_DOCK_SERIAL_H */
+#endif	/* _H_PLATFORM_SERIAL_DOCK_H */

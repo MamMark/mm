@@ -34,7 +34,7 @@
  * @author Eric B. Decker
  */
 
-#include "platform_dock_serial.h"
+#include "platform_serial_dock.h"
 
 module DockSerialP {
   provides {

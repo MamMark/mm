@@ -30,7 +30,7 @@ uint16_t g_idx;
 #error "GPS_SPEED not valid (see gps.h), 4800 or 57600"
 #endif
 
-#include "platform_sirf3_serial.h"
+#include "platform_serial_sirf3.h"
 
 typedef enum {
   GPSC_FAIL = 1,
