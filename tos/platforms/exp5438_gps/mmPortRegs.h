@@ -90,7 +90,7 @@
     uint8_t p31		    : 1;
     uint8_t p32		    : 1;
     uint8_t p33		    : 1;
-    uint8_t p34		    : 1;
+    uint8_t led2	    : 1;
     uint8_t p35		    : 1;
     uint8_t p36		    : 1;
     uint8_t gps_mosi	    : 1;	/* x.y 3.7, spi B1MOSI */
@@ -176,14 +176,14 @@ norace static volatile struct {
 
 norace
   static volatile struct {
-    uint8_t accel_sclk	    : 1;	/* p10 0, spi a3sclk */
+    uint8_t r446x_sclk	    : 1;	/* p10 0, spi a3sclk */
     uint8_t xi2c_sda	    : 1;	/* p10 1, i2c b3sda */
     uint8_t xi2c_scl	    : 1;	/* p10 2, i2c b3scl */
     uint8_t tell	    : 1;	/* p10 3, used for triggers */
-    uint8_t accel_mosi	    : 1;	/* p10 4, spi a3mosi */
-    uint8_t accel_miso	    : 1;	/* p10 5, spi a3miso */
-    uint8_t p106	    : 1;
-    uint8_t accel_csn	    : 1;	/* p10 7, output */
+    uint8_t r446x_mosi	    : 1;	/* p10 4, spi a3mosi */
+    uint8_t r446x_miso	    : 1;	/* p10 5, spi a3miso */
+    uint8_t r446x_sdn	    : 1;        /* p10.6, shutdown */
+    uint8_t r446x_csn	    : 1;	/* p10 7, chip select */
   } PACKED mmP10out asm("0x0283");
 
 
@@ -205,8 +205,6 @@ norace
 #define GSD4E_GPS_RESET     (mmP4out.gps_reset_n = 0)
 #define GSD4E_GPS_UNRESET   (mmP4out.gps_reset_n = 1)
 #define GSD4E_GPS_CSN        mmP4out.gps_csn
-
-#define LIS3DH_CSN mmP10out.accel_csn
 
 #define TELL mmP10out.tell
 #define TOGGLE_TELL do { TELL = 1; TELL = 0; } while(0)

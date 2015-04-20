@@ -49,6 +49,15 @@ implementation {
        */
 
       /*
+       * Port 1: leds
+       * Port 3: led
+       */
+      P1OUT = 0;
+      P1DIR = 0x3;
+      P3OUT = 0;
+      P3DIR = 0x10;
+
+      /*
        * GPS: ORG4472, USCI B1, SPI
        *
        * For gps, P4.0 to P4.3 used.
@@ -56,38 +65,22 @@ implementation {
        * p4.0: on_off
        * p4.1: resetn
        * p4.2: csn
-       * p4.3: wakeup
+       * p4.3: awake
        */
       P4OUT = BIT2 | BIT1;		/* csn and resetn deasserted (1), on_off is 0. */
       P4DIR = BIT2 | BIT1 | BIT0;	/* 2, 1, 0 outputs */
 
       /*
-       * TMP102/112, USCI B3, I2C
+       * Radio, siLabs 4463 module   USCI A3, SPI
        *
-       * P10.1: B3SDA
-       * P10.2: B3SCL
-       *
-       * no initilization, leave alone.
+       * P10.0: r446x_sclk, A3SCLK
+       * P10.4: r446x_mosi, A3MOSI
+       * P10.5: r446x_miso, A3MISO
+       * P10.6: r446x_sdn (shutdown)
+       * P10.7: r446x_csn
        */
-
-      /*
-       * Accel, LIS331HH (breakout), erzatz LIS3DH.   USCI A3, SPI
-       *
-       * P10.0: accel_sclk, A3SCLK
-       * P10.4: accel_mosi, A3MOSI
-       * P10.5: accel_miso, A3MISO
-       * P10.7: accel_cs_n
-       */
-      P10OUT = BIT7;			/* csn deasserted */
-      P10DIR = BIT7;
-
-      /*
-       * Debugging.   tell is used for triggers.
-       *
-       * tell is P10.3
-       */
-      P10OUT &= ~BIT3;			/* turn it off */
-      P10DIR |=  BIT3;			/* output */
+      P10OUT = 0xc0;                    /* sdn = 1, csn = 1 (deasserted) */
+      P10DIR = 0xc9;
     }
 
 #if 0 /* Disabled: these specific setting sare defaults, but others might not be */

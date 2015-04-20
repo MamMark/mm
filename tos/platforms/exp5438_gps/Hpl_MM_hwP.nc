@@ -36,7 +36,8 @@
  * The Hpl_MM_hw interface exports low-level access to control registers
  * of the mammark h/w.
  *
- * exp5438_gps is the msp430 5438 eval board wired up to talk to the gps.
+ * exp5438_gps is the msp430 5438 eval board wired up to talk to the gps
+ * and siLabs 4463 radio module.
  *
  * @author Eric B. Decker
  */
@@ -55,8 +56,8 @@ implementation {
   async command void HW.r446x_unshutdown()   { R446X_SDN = 0; }
   async command void HW.r446x_set_cs()       { R446X_CSN = 0; }
   async command void HW.r446x_clr_cs()       { R446X_CSN = 1; }
-  async command void HW.r446x_set_low_pwr()  { R446X_VOLT_SEL = 0; }
-  async command void HW.r446x_set_high_pwr() { R446X_VOLT_SEL = 1; }
+  async command void HW.r446x_set_low_pwr()  { }
+  async command void HW.r446x_set_high_pwr() { }
 
   async command bool HW.gps_awake()      { return GSD4E_GPS_AWAKE; }
   async command void HW.gps_set_cs()     { GSD4E_GPS_CSN = 0; }

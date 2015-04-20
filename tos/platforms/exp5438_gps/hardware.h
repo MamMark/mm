@@ -69,39 +69,39 @@
  *
  * port 1.0	0pO	led0    		port 4.0	0pO    gps_on_off
  *       .1	0pO	led1    		      .1	1pO    gps_reset_n (nRST)
- *       .2	0pO	r446x_cts      		      .2	1pO    gps_csn (nRTS)
- *       .3     0pO	          		      .3	0pI    gps_awake
- *       .4	0pO	r446x_int      		      .4	0pO
- *       .5	1pO	             		      .5	0pO
- *       .6	1pO	            		      .6	1pO
- *       .7	1pO	         		      .7	0pO
+ *       .2	0pI	r446x_cts      		      .2	1pO    gps_csn (nRTS)
+ *       .3     0pI	          		      .3	0pI    gps_awake
+ *       .4	0pI	r446x_irqn     		      .4	0pI
+ *       .5	0pI	             		      .5	0pI
+ *       .6	0pI	            		      .6	0pI
+ *       .7	0pI	         		      .7	0pI
  *
- * port 2.0	1pO	          		port 5.0	1pI
- *       .1	0pO	          		      .1	1pI
- *       .2	0pO	                 	      .2	1pI
- *       .3	1pO	           		      .3	1pI
- *       .4	0pO	        		      .4	1pI    gps_somi (tx,   B1SOMI)
- *       .5	0pO	        		      .5	1pI    gps_sclk (nCTS, B1CLK)
- *       .6	0pO	       			      .6	1pI
- *       .7	0pI	       			      .7	1pI
+ * port 2.0	0pI	          		port 5.0	0pI
+ *       .1	0pI	          		      .1	0pI
+ *       .2	0pI	                 	      .2	0pI
+ *       .3	0pI	           		      .3	0pI
+ *       .4	0pI	        		      .4	0pI    gps_somi (tx,   B1SOMI)
+ *       .5	0pI	        		      .5	0pI    gps_sclk (nCTS, B1CLK)
+ *       .6	0pI	       			      .6	0pI
+ *       .7	0pI	       			      .7	0pI
  *
- * port 3.0	0pO	      			port 6.0	0pI
+ * port 3.0	0pI	      			port 6.0	0pI
  *       .1	0pI	                    	      .1	0pI
  *       .2	0pI	                    	      .2	0pI
  *       .3	0pI	                    	      .3	0pI
- *       .4	1pI	led2   			      .4	1pO
- *       .5	0pI	       			      .5	1pO
- *       .6	1pI	                	      .6	1pO
- *       .7	1pI	gps_simo (rx, B1SIMO)  	      .7	1pO
+ *       .4	0pO	led2   			      .4	0pI
+ *       .5	0pI	       			      .5	0pI
+ *       .6	0pI	                	      .6	0pI
+ *       .7	0pI	gps_simo (rx, B1SIMO)  	      .7	0pI
  *
  * port 10.0	0pO	r446x_sclk (a3sclk)	port 11.0	0pI
- *        .1	1pI	(nc) xi2c_sda (b3sda)  	       .1	0pI
- *        .2	1pI	(nc) xi2c_scl (b3scl)  	       .2	0pI
+ *        .1	0pI	(nc) xi2c_sda (b3sda)  	       .1	0pI
+ *        .2	0pI	(nc) xi2c_scl (b3scl)  	       .2	0pI
  *        .3	0pO     tell               	       .3	0pI
- *        .4	1pI	r446x_mosi (a3mosi)	       .4	1pO
- *        .5	1pI	r446x_miso (a3miso)	       .5	1pO
- *        .6	1pI	r446x_sdn              	       .6	1pO
- *        .7	1pO	r446x_csn		       .7	1pO
+ *        .4	0pI	r446x_mosi (a3mosi)	       .4	0pI
+ *        .5	0pI	r446x_miso (a3miso)	       .5	0pI
+ *        .6	1p0	r446x_sdn              	       .6	0pI
+ *        .7	1pO	r446x_csn		       .7	0pI
  */
 
 
@@ -129,8 +129,8 @@ enum {
  * We keep the Yellow LED on P4.6, which is on the header
  * but isn't connected to anything.
  */
-TOSH_ASSIGN_PIN(RED_LED, 1, 0);
-TOSH_ASSIGN_PIN(GREEN_LED, 1, 1);
-TOSH_ASSIGN_PIN(YELLOW_LED, 4, 6);
+TOSH_ASSIGN_PIN(RED_LED,    1, 0);
+TOSH_ASSIGN_PIN(GREEN_LED,  1, 1);
+TOSH_ASSIGN_PIN(YELLOW_LED, 3, 4);
 
 #endif // _H_hardware_h
