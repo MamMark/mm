@@ -18,7 +18,7 @@
 uint8_t gbuf[GPS_EAVES_SIZE];
 uint16_t g_idx;
 
-#include "platform_org4472_spi.h"
+#include "platform_spi_org4472.h"
 
 typedef enum {
   GPSC_FAIL = 1,

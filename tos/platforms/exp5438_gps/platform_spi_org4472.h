@@ -34,8 +34,8 @@
  * @author Eric Decker
  */
 
-#ifndef _H_PLATFORM_ORG4472_SERIAL_H_
-#define _H_PLATFORM_ORG4472_SERIAL_H_
+#ifndef _H_PLATFORM_SPI_ORG4472_H_
+#define _H_PLATFORM_SPI_ORG4472_H_
 
 #include "msp430usci.h"
 
@@ -63,4 +63,4 @@ const msp430_usci_config_t org4472_spi_config = {
   i2coa: 0
 };
 
-#endif	/* _H_PLATFORM_ORG4472_SERIAL_H_ */
+#endif	/* _H_PLATFORM_SPI_ORG4472_H_ */

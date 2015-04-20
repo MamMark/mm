@@ -59,7 +59,7 @@ module sdP {
 
 implementation {
 
-#include "platform_sd_spi.h"
+#include "platform_spi_sd.h"
 
   sd_cmd_t *cmd;			// Command Structure
   uint8_t   rsp;

@@ -101,7 +101,7 @@ module SDspP {
 
 implementation {
 
-#include "platform_sd_spi.h"
+#include "platform_spi_sd.h"
 
 MSP430REG_NORACE(TAR);
 

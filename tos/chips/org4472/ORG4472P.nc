@@ -15,7 +15,7 @@
 #include "sirf.h"
 
 #include "platform_panic.h"
-#include "platform_org4472_spi.h"
+#include "platform_spi_org4472.h"
 
 /*
  * The ORG4472 GPS module is interfaced using SPI at 4MHz.  It can communicate

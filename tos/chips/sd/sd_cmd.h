@@ -39,7 +39,7 @@
 
 /*
  * hardware interface dependencies can be found in
- * tos/platforms/<platform>/hardware.h and platform_sd_spi.h
+ * tos/platforms/<platform>/hardware.h and platform_spi_sd.h
  */
 
 typedef struct sd_cmd {

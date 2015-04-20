@@ -20,7 +20,7 @@ module dmaP {
 
 implementation {
 
-#include "platform_sd_spi.h"
+#include "platform_spi_sd.h"
 
   void zero_rx(void) {
     uint16_t i;
