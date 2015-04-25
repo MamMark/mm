@@ -12,15 +12,15 @@ interface L3g4200 {
   /**
    * Configure for Gyro XYZ 1Hz Sample Rate
    */
-  //command error_t config1Hz();
+  command error_t config100Hz();
 
   /**
    * Check for sample availability
    */
-  //command bool xyzDataAvail();
+  command bool xyzDataAvail();
 
   /**
    * Read an XYZ sample
    */
-  //command error_t readSample(uint8_t *buf, uint8_t bufLen);
+  command error_t readSample(uint8_t *buf, uint8_t bufLen);
 }

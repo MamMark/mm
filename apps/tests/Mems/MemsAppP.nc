@@ -23,14 +23,18 @@ implementation {
     uint8_t yHigh;
     uint8_t zLow;
     uint8_t zHigh;
-  } accel_sample_t;
+  } mems_sample_t;
 
-  #define ACCEL_SAMPLE_COUNT 60
-  #define ACCEL_SAMPLE_SIZE 6
+  #define SAMPLE_COUNT 60
+  #define SAMPLE_SIZE 6
 
   uint8_t m_accelSampleCount;
+  uint8_t m_gyroSampleCount;
+  uint8_t m_magSampleCount;
 
-  accel_sample_t m_accelSamples[ACCEL_SAMPLE_COUNT];
+  mems_sample_t m_accelSamples[SAMPLE_COUNT];
+  mems_sample_t m_gyroSamples[SAMPLE_COUNT];
+  mems_sample_t m_magSamples[SAMPLE_COUNT];
   
   event void Boot.booted() {
     call AccelControl.start();
@@ -58,10 +62,10 @@ implementation {
     nop();
     if (call Accel.xyzDataAvail()) {
       call Accel.readSample((uint8_t *)(&m_accelSamples[m_accelSampleCount]),
-			    ACCEL_SAMPLE_SIZE);
+			    SAMPLE_SIZE);
       m_accelSampleCount++;
     }
-    if (m_accelSampleCount >= ACCEL_SAMPLE_COUNT) {
+    if (m_accelSampleCount >= SAMPLE_COUNT) {
       call AccelTimer.stop();
       call AccelControl.stop();
     }
@@ -83,14 +87,24 @@ implementation {
     dbg("MemsAppP", "Gyro id = %x\n", id);
     if (id != 0xd3) {
       call Panic.panic(PANIC_SNS, 2, id, 0, 0, 0);
+    } else if (call Gyro.config100Hz() == SUCCESS) {
+      call GyroTimer.startPeriodic(1000);
     }
-    call GyroControl.stop();
   }
 
   event void GyroTimer.fired() {
     nop();
     nop();
     nop();
+    if (call Gyro.xyzDataAvail()) {
+      call Gyro.readSample((uint8_t *)(&m_gyroSamples[m_gyroSampleCount]),
+			   SAMPLE_SIZE);
+      m_gyroSampleCount++;
+    }
+    if (m_gyroSampleCount >= SAMPLE_COUNT) {
+      call GyroTimer.stop();
+      call GyroControl.stop();
+    }
   }
 
   event void GyroControl.stopDone(error_t error) {
@@ -107,14 +121,24 @@ implementation {
     dbg("MemsAppP", "Mag id = %u\n", id);
     if (id != 0x3d) {
       call Panic.panic(PANIC_SNS, 3, id, 0, 0, 0);
+    } else if (call Mag.config10Hz() == SUCCESS) {
+      call MagTimer.startPeriodic(1000);
     }
-    call MagControl.stop();
   }
 
   event void MagTimer.fired() {
     nop();
     nop();
     nop();
+    if (call Mag.xyzDataAvail()) {
+      call Mag.readSample((uint8_t *)(&m_magSamples[m_magSampleCount]),
+			  SAMPLE_SIZE);
+      m_magSampleCount++;
+    }
+    if (m_magSampleCount >= SAMPLE_COUNT) {
+      call MagTimer.stop();
+      call MagControl.stop();
+    }
   }
 
   event void MagControl.stopDone(error_t error) {
