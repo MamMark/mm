@@ -37,9 +37,6 @@
  *
  * 11/29/2014: Eric B. Decker.  created exp5438_5t platform for testing
  * various mm5a routines in the exp5438 environment.
- *
- * 2014: Eric B. Decker.  Modified MM5t platform, removed Accel and
- * Tmp to build a module with the Antenova M1048 GPS module (B1, P3, P5).
  */
 
 #ifndef _H_hardware_h
