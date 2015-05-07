@@ -26,10 +26,10 @@ implementation {
     nop();
 
     /* Turn on chip and set output data rate */
-    /* For now, just turn on power, xyz are enabled by default
-     * and setting DR:BW to zero gives the lowest output rate (100Hz)
+    /* For now, just turn on power and enable xyz
+     * Setting DR:BW to zero gives the lowest output rate (100Hz)
      */
-    ret = call MemsCtrl.writeReg(CTRL_REG1, POWER);
+    ret = call MemsCtrl.writeReg(CTRL_REG1, (POWER | ZEN | YEN | XEN));
     if (ret != SUCCESS)
       return ret;
 
