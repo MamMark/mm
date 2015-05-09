@@ -27,21 +27,13 @@ implementation {
     nop();
     nop();
     nop();
+
     /* Turn on chip and set output data rate */
     ret = call MemsCtrl.writeReg(CTRL_REG4, HR);
     if (ret != SUCCESS)
       return ret;
 
     ret = call MemsCtrl.writeReg(CTRL_REG1, ODR_1HZ | ZEN | YEN | XEN);
-    if (ret != SUCCESS)
-      return ret;
-
-    /* Enable FIFO so we don't have to sample as frequently */
-    ret = call MemsCtrl.writeReg(CTRL_REG5, FIFO_EN);
-    if (ret != SUCCESS)
-      return ret;
-
-    ret = call MemsCtrl.writeReg(FIFO_CTRL_REG, FIFO_MODE);
     if (ret != SUCCESS)
       return ret;
 
