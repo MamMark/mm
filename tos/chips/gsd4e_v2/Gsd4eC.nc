@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014 Eric B. Decker
+ * Copyright (c) 2012, 2014-2015 Eric B. Decker
  * All rights reserved.
  *
  * GSD4E gps spi chip.  SirfStarIV
@@ -25,7 +25,7 @@ implementation {
   Gsd4eP.GPSMsgS       -> GPSMsgC;
   Gsd4eP.GPSMsgControl -> GPSMsgC;
 
-  components Hpl_MM_hwC as HW;
+  components HplGsd4eC as HW;
   Gsd4eP.HW -> HW;
 
   components LocalTimeMilliC;

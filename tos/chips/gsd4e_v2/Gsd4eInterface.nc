@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014-2015 Eric B. Decker
+ * Copyright (c) 2015, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,29 +31,66 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+        
 /**
- * The Hpl_MM_hw interface exports low-level access to control registers
- * of the mammark h/w.
+ * Define the interface to Gsd4e GPS chips.  Following pins can be
+ * manipulated:
  *
- * exp5438_5t is the msp430 5438 eval board wired up for various test sensors
+ *  gps_on_off: access to interrupt pin.  Also needs to be wired into
+ *  gps_csn:    low true chip select
+ *  gps_reset:  access to clear to send mechanism.  Either via a gpio h/w
+ *  gps_awake:  will be 1 if the chip is awake (turned on).
  *
- * @author Eric B. Decker
+ *  SPI interface:
+ *    gps_sclk
+ *    gps_miso
+ *    gps_mosi
+ *
+ * @author Eric B. Decker <cire831@gmail.com>
  */
+ 
+interface Gsd4eInterface {
 
-#include "hardware.h"
-#include "mmPortRegs.h"
+  /**
+   * gps_set_on_off: turn the on_off pin on.
+   *
+   * if the GPS is off, on_off needs to be toggled.
+   *
+   * supposedly, if the GPS is on we can turn it off by
+   * also toggling on_off but we haven't seen that work.
+   */
+  async command void gps_set_on_off();
 
-module Hpl_MM_hwP {
-  provides interface Hpl_MM_hw as HW;
-}
 
-implementation {
-  async command bool HW.gps_awake()      { return GSD4E_GPS_AWAKE; }
-  async command void HW.gps_set_cs()     { GSD4E_GPS_CSN = 0; }
-  async command void HW.gps_clr_cs()     { GSD4E_GPS_CSN = 1; }
-  async command void HW.gps_set_on_off() { GSD4E_GPS_SET_ONOFF; }
-  async command void HW.gps_clr_on_off() { GSD4E_GPS_CLR_ONOFF; }
-  async command void HW.gps_set_reset()  { GSD4E_GPS_RESET; }
-  async command void HW.gps_clr_reset()  { GSD4E_GPS_UNRESET; }
+  /**
+   * gps_clr_on_off: clear on_off pin (turn off).
+   */
+  async command void gps_clr_on_off();
+
+  /**
+   * gps_set_cs: assert chip select
+   *
+   * CSN = 0 (low true)
+   */
+  async command void gps_set_cs();
+
+  /**
+   * gps_clr_cs: unassert chip select
+   */
+  async command void gps_clr_cs();
+
+  /**
+   * gps_set_reset: assert RESET
+   */
+  async command void gps_set_reset();
+
+  /**
+   * gps_clr_reset: deassert RESET
+   */
+  async command void gps_clr_reset();
+
+  /**
+   * gps_awake: return awake status of gps.
+   */
+  async command bool gps_awake();
 }

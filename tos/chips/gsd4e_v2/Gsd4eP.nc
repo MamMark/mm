@@ -162,7 +162,7 @@ module Gsd4eP {
   uses {
     interface Timer<TMilli> as GPSTimer;
     interface LocalTime<TMilli>;
-    interface Hpl_MM_hw as HW;
+    interface Gsd4eInterface as HW;
     interface Panic;
     interface SpiBlock;
     interface SpiByte;

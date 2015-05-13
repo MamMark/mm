@@ -14,6 +14,7 @@ PFLAGS += -I%T/system/panic_simple
 PFLAGS += -I%T/platforms/exp5438_5t/hardware/adc
 PFLAGS += -I%T/platforms/exp5438_5t/hardware/buttons
 PFLAGS += -I%T/platforms/exp5438_5t/hardware/clock
+PFLAGS += -I%T/platforms/exp5438_5t/hardware/gsd4e
 PFLAGS += -I%T/platforms/exp5438_5t/hardware/leds
 PFLAGS += -I%T/platforms/exp5438_5t/hardware/pins
 PFLAGS += -I%T/platforms/exp5438_5t/hardware/usci

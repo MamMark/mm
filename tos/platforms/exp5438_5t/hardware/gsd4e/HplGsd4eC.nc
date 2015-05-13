@@ -33,37 +33,22 @@
  */
 
 /**
- * The Hpl_MM_hw interface exports low-level access to control registers
- * of the mammark h/w.
- *
- * exp5438_gps is the msp430 5438 eval board wired up to talk to the gps
- * and siLabs 4463 radio module.
- *
  * @author Eric B. Decker
  */
 
 #include "hardware.h"
 #include "mmPortRegs.h"
 
-module Hpl_MM_hwP {
-  provides interface Hpl_MM_hw as HW;
+module HplGsd4eC {
+  provides interface Gsd4eInterface as HW;
 }
 
 implementation {
-  async command bool HW.r446x_cts()          { return R446X_CTS; }
-  async command bool HW.r446x_irq()          { return !R446X_IRQ_N; }
-  async command void HW.r446x_shutdown()     { R446X_SDN = 1; }
-  async command void HW.r446x_unshutdown()   { R446X_SDN = 0; }
-  async command void HW.r446x_set_cs()       { R446X_CSN = 0; }
-  async command void HW.r446x_clr_cs()       { R446X_CSN = 1; }
-  async command void HW.r446x_set_low_pwr()  { }
-  async command void HW.r446x_set_high_pwr() { }
-
-  async command bool HW.gps_awake()      { return GSD4E_GPS_AWAKE; }
-  async command void HW.gps_set_cs()     { GSD4E_GPS_CSN = 0; }
-  async command void HW.gps_clr_cs()     { GSD4E_GPS_CSN = 1; }
   async command void HW.gps_set_on_off() { GSD4E_GPS_SET_ONOFF; }
   async command void HW.gps_clr_on_off() { GSD4E_GPS_CLR_ONOFF; }
+  async command void HW.gps_set_cs()     { GSD4E_GPS_CSN = 0; }
+  async command void HW.gps_clr_cs()     { GSD4E_GPS_CSN = 1; }
   async command void HW.gps_set_reset()  { GSD4E_GPS_RESET; }
   async command void HW.gps_clr_reset()  { GSD4E_GPS_UNRESET; }
+  async command bool HW.gps_awake()      { return GSD4E_GPS_AWAKE; }
 }

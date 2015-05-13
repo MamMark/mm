@@ -3,8 +3,6 @@
  * All rights reserved.
  */
 
-#include "mmPortRegs.h"
-
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;
 
@@ -15,7 +13,7 @@ module testGPSP {
     interface StdControl as GPSControl;
     interface Timer<TMilli> as testTimer;
     interface LocalTime<TMilli>;
-    interface Hpl_MM_hw as HW;
+    interface Gsd4eInterface as HW;
   }
 }
 
@@ -33,11 +31,12 @@ implementation {
     nop();
     gt0 = call LocalTime.get();
     tt0 = TA1R;
-    GSD4E_GPS_RESET;
-    GSD4E_GPS_UNRESET;
+    call HW.gps_set_reset();
+    call HW.gps_clr_reset();
     while (1) {
-      if (GSD4E_GPS_AWAKE == 0)
-	break;
+      if (call HW.gps_awake())
+        continue;
+      break;
     }
     tt1 = TA1R;
     gt1 = call LocalTime.get();

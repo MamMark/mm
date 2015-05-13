@@ -9,7 +9,7 @@ implementation {
   MainC.SoftwareInit -> testGPSP;
   testGPSP -> MainC.Boot;
 
-  components Hpl_MM_hwC as HW;
+  components HplGsd4eC as HW;
   testGPSP.HW -> HW;
 
   components new TimerMilliC() as Timer;
