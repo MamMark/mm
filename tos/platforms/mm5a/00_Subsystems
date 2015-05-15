@@ -23,7 +23,7 @@ Power Management:
       P6.6:  bat_sense_ena
       P7.3:  usd_pwr_ena
       P10.1: temp_pwr
-      PJ.1:  r446x_volt_sel
+      PJ.1:  si446x_volt_sel
 
 
 Temp
@@ -236,14 +236,14 @@ wireless communications.  Communications between the 5438a and the si446X
 is via a dedicated UCSI (uca2) running in SPI master mode.
 
   Pins:
-      P1.0: r446x_irq
-      P8.7: r446x_sdn  (shutdown)
-      P9.0: r446x_clk  (uca2)
-      P9.4: r446x_mosi (uca2)
-      P9.5: r446x_miso (uca2)
-      P9.7: r446x_csn
-      PJ.1: r446x_volt_sel
-      PJ.3  r446x_cts
+      P1.0: si446x_irq
+      P8.7: si446x_sdn  (shutdown)
+      P9.0: si446x_clk  (uca2)
+      P9.4: si446x_mosi (uca2)
+      P9.5: si446x_miso (uca2)
+      P9.7: si446x_csn
+      PJ.1: si446x_volt_sel
+      PJ.3  si446x_cts
 
 
 GPS

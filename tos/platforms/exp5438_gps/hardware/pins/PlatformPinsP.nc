@@ -73,11 +73,11 @@ implementation {
       /*
        * Radio, siLabs 4463 module   USCI A3, SPI
        *
-       * P10.0: r446x_sclk, A3SCLK
-       * P10.4: r446x_mosi, A3MOSI
-       * P10.5: r446x_miso, A3MISO
-       * P10.6: r446x_sdn (shutdown)
-       * P10.7: r446x_csn
+       * P10.0: si446x_sclk, A3SCLK
+       * P10.4: si446x_mosi, A3MOSI
+       * P10.5: si446x_miso, A3MISO
+       * P10.6: si446x_sdn (shutdown)
+       * P10.7: si446x_csn
        */
       P10OUT = 0xc0;                    /* sdn = 1, csn = 1 (deasserted) */
       P10DIR = 0xc9;

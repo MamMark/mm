@@ -58,18 +58,18 @@
  * another nomenclature used is <value><function><direction>, 0pO (0 (zero), port, Output),
  *    xpI (don't care, port, Input), mI (module input).
  *
- * uca0: (5c0) dock  (spi)
- * ucb0: (5e0) mems  (spi)  lis3dh    accel
- *                          l3g4200   gyro
- *                          lis3mdl   mag
- * uca1: (600) uSD   (spi)
- * ucb1: (620) adc   (spi)  ads1148
- * uca2: (640) r446x (spi)  radio, Si4468, upg2214tb
- * ucb2: (660) temp  (i2c)  tmp102
- * uca3: (680) gps   (spi)  Antenova M10478, ORG4472, 25WF040
+ * uca0: (5c0) dock   (spi)
+ * ucb0: (5e0) mems   (spi)  lis3dh    accel
+ *                           l3g4200   gyro
+ *                           lis3mdl   mag
+ * uca1: (600) uSD    (spi)
+ * ucb1: (620) adc    (spi)  ads1148
+ * uca2: (640) si446x (spi)  radio, Si4468, upg2214tb
+ * ucb2: (660) temp   (i2c)  tmp102
+ * uca3: (680) gps    (spi)  Antenova M10478, ORG4472, 25WF040
  * ucb3: (6a0)
  *
- * port 1.0	0pI	r446x_irqn     		port 7.0	0pI     xin
+ * port 1.0	0pI	si446x_irqn    		port 7.0	0pI     xin
  *       .1	0pI	gyro_drdy      		      .1	0pI     xout
  *       .2	0pI	             		      .2	0pI
  *       .3     0pI	usd_access_sense	      .3	0pO     usd_pwr_ena
@@ -85,18 +85,18 @@
  *       .4	0pI	accel_int1     		      .4	0pI
  *       .5	0pI	        		      .5	0pI
  *       .6	0pI	accel_int2		      .6	0pI
- *       .7	0pI	       			      .7	0pO     r446x_sdn
+ *       .7	0pI	       			      .7	0pO     si446x_sdn
  *
- * port 3.0	0pO	dock_clk  (uca0)	port 9.0	0pO     r446x_sclk (uca2)
- *       .1	0pO	mems_mosi (ucb0)              .1	0pO     temp_sda   (ucb2)
- *       .2	0pI	mems_miso (ucb0)              .2	0pO     temp_scl   (ucb2)
+ * port 3.0	0pO	dock_clk  (uca0)	port 9.0	0pO     si446x_sclk (uca2)
+ *       .1	0pO	mems_mosi (ucb0)              .1	0pO     temp_sda    (ucb2)
+ *       .2	0pI	mems_miso (ucb0)              .2	0pO     temp_scl    (ucb2)
  *       .3	0pO	mems_clk  (ucb0) 	      .3	0pI
- *       .4	0pO	dock_mosi (uca0)	      .4	0pO     r446x_mosi (uca2)
- *       .5	0pI	dock_miso (uca0)	      .5	0pI     r446x_miso (uca2)
+ *       .4	0pO	dock_mosi (uca0)	      .4	0pO     si446x_mosi (uca2)
+ *       .5	0pI	dock_miso (uca0)	      .5	0pI     si446x_miso (uca2)
  *       .6	0pO	usd_clk   (uca1)       	      .6	0pI
- *       .7	0pO     adc_mosi  (ucb1)       	      .7	1pO     r446x_csn
+ *       .7	0pO     adc_mosi  (ucb1)       	      .7	1pO     si446x_csn
  *
- * port  4.0	0pI	                        port 10.0	0pO     gps_clk    (uca3)
+ * port  4.0	0pI	                        port 10.0	0pO     gps_clk     (uca3)
  *        .1	1pO	accel_csn (ucb0)               .1	0pO     temp_pwr
  *        .2	0pI	                               .2	0pI
  *        .3	0pI	                               .3	0pI
@@ -115,9 +115,9 @@
  *        .7	0pI	usd_miso (uca1)                .7	0pO     led_3 (yellow)
  *
  * port  6.0	0pI                             port  J.0       0pI
- *        .1	0pI                                    .1       0pO     r446x_volt_sel, (tdi/tclk)
+ *        .1	0pI                                    .1       0pO     si446x_volt_sel, (tdi/tclk)
  *        .2	0pO     pwr_3v3_ena                    .2       0pO     tell
- *        .3	0pI                                    .3       0pO     r446x_cts
+ *        .3	0pI                                    .3       0pO     si446x_cts
  *        .4	0pO     solar_ena
  *        .5	0pI
  *        .6	0pO     bat_sense_ena

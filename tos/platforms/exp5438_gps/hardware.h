@@ -69,9 +69,9 @@
  *
  * port 1.0	0pO	led0    		port 4.0	0pO    gps_on_off
  *       .1	0pO	led1    		      .1	1pO    gps_reset_n (nRST)
- *       .2	0pI	r446x_cts      		      .2	1pO    gps_csn (nRTS)
+ *       .2	0pI	si446x_cts     		      .2	1pO    gps_csn (nRTS)
  *       .3     0pI	          		      .3	0pI    gps_awake
- *       .4	0pI	r446x_irqn     		      .4	0pI
+ *       .4	0pI	si446x_irqn    		      .4	0pI
  *       .5	0pI	             		      .5	0pI
  *       .6	0pI	            		      .6	0pI
  *       .7	0pI	         		      .7	0pI
@@ -94,14 +94,14 @@
  *       .6	0pI	                	      .6	0pI
  *       .7	0pI	gps_simo (rx, B1SIMO)  	      .7	0pI
  *
- * port 10.0	0pO	r446x_sclk (a3sclk)	port 11.0	0pI
+ * port 10.0	0pO	si446x_sclk (a3sclk)	port 11.0	0pI
  *        .1	0pI	(nc) xi2c_sda (b3sda)  	       .1	0pI
  *        .2	0pI	(nc) xi2c_scl (b3scl)  	       .2	0pI
  *        .3	0pO     tell               	       .3	0pI
- *        .4	0pI	r446x_mosi (a3mosi)	       .4	0pI
- *        .5	0pI	r446x_miso (a3miso)	       .5	0pI
- *        .6	1p0	r446x_sdn              	       .6	0pI
- *        .7	1pO	r446x_csn		       .7	0pI
+ *        .4	0pI	si446x_mosi (a3mosi)	       .4	0pI
+ *        .5	0pI	si446x_miso (a3miso)	       .5	0pI
+ *        .6	1p0	si446x_sdn             	       .6	0pI
+ *        .7	1pO	si446x_csn		       .7	0pI
  */
 
 

@@ -44,9 +44,9 @@
   static volatile struct {
     uint8_t p10             : 1;
     uint8_t p11 	    : 1;
-    uint8_t r446x_cts	    : 1;
+    uint8_t si446x_cts	    : 1;
     uint8_t p13		    : 1;
-    uint8_t r446x_irq_n	    : 1;
+    uint8_t si446x_irq_n    : 1;
     uint8_t p15		    : 1;
     uint8_t p16		    : 1;
     uint8_t p17		    : 1;
@@ -176,14 +176,14 @@ norace static volatile struct {
 
 norace
   static volatile struct {
-    uint8_t r446x_sclk	    : 1;	/* p10 0, spi a3sclk */
+    uint8_t si446x_sclk	    : 1;	/* p10 0, spi a3sclk */
     uint8_t xi2c_sda	    : 1;	/* p10 1, i2c b3sda */
     uint8_t xi2c_scl	    : 1;	/* p10 2, i2c b3scl */
     uint8_t tell	    : 1;	/* p10 3, used for triggers */
-    uint8_t r446x_mosi	    : 1;	/* p10 4, spi a3mosi */
-    uint8_t r446x_miso	    : 1;	/* p10 5, spi a3miso */
-    uint8_t r446x_sdn	    : 1;        /* p10.6, shutdown */
-    uint8_t r446x_csn	    : 1;	/* p10 7, chip select */
+    uint8_t si446x_mosi	    : 1;	/* p10 4, spi a3mosi */
+    uint8_t si446x_miso	    : 1;	/* p10 5, spi a3miso */
+    uint8_t si446x_sdn	    : 1;        /* p10.6, shutdown */
+    uint8_t si446x_csn	    : 1;	/* p10 7, chip select */
   } PACKED mmP10out asm("0x0283");
 
 
@@ -210,9 +210,9 @@ norace
 #define TOGGLE_TELL do { TELL = 1; TELL = 0; } while(0)
 
 /* radio */
-#define R446X_CTS            mmP1in.r446x_cts
-#define R446X_IRQ_N          mmP1in.r446x_irq_n
-#define R446X_SDN            mmP10out.r446x_sdn
-#define R446X_CSN            mmP10out.r446x_csn
+#define SI446X_CTS      mmP1in.si446x_cts
+#define SI446X_IRQ_N    mmP1in.si446x_irq_n
+#define SI446X_SDN      mmP10out.si446x_sdn
+#define SI446X_CSN      mmP10out.si446x_csn
 
 #endif
