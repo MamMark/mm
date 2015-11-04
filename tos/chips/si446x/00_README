@@ -1,0 +1,204 @@
+This is the driver for the Silcon Labs si446x family of chips.  In
+particular the si4468.  Should also work with the si4463.
+
+The h/w interface consists of a SPI port and the following signals
+CTS (clear to send, GPIO1 default configuration), IRQN (radio interrupts),
+SDN (shutdown), and CSN (chip select, aka NSEL).
+
+We use h/w CTS instead of using bus cycles.  This allows monitoring CTS
+on power up as well as when sending commands to the radio chip.  Using
+a h/w CTS for the handshake is just cleaner.
+
+    si446x_irqn                 si446x_sclk
+    si446x_cts                  si446x_miso
+    si446x_csn  (aka nsel)      si446x_mosi
+    si446x_sdn
+
+
+States:
+
+  (hw states:)
+                TX      RX
+    Shutdown    15ms    15ms            Full powerdown 30nA, no registers
+    Standby     440us   440us           40 nA, good regs, no WUT
+    Sleep       440us   440us           740 nA, good regs, WUT, 32kHz
+    SPI_Active  340us   340us           1.35 mA
+    Ready       100us   100us           1.8 mA
+    TX          -       100us           18 mA @ +10dBm
+    RX          100us   75us            10.9 mA or 13.7 mA
+
+    TX Tune     58us    -               7.8 mA
+    RX Tune     -       60us            7.6 mA
+
+  (sw states:)
+
+    SDN:        h/w is in shutdown state
+    POR_WAIT:   h/w taken out of shutdown, waiting for the POR to complete.
+    PWR_UP_WAIT:POR has completed, POWER_UP has been issued.  Waiting for
+                h/w to finish.
+    LOAD:       Loading configuration.
+
+
+API notes:
+
+- documentation implies that one can use either the h/w (gp1) cts or the
+  s/w CTS (via CMD_READ_CMD_BUF) to obtain the value of CTS.  But they
+  don't actually appear to be exactly the same.  (See notes on POWER_UP
+  for at least one incongruence).
+
+  CTS = h/w CTS pin,  CTS(sw) = s/w CTS via CMD_READ_CMD_BUF.
+
+
+- POWER_UP:
+
+  CTS 1, bring NSEL down (cs)
+  CTS 1, write POWER_UP
+  CTS 0, write parameters
+  CTS 0, write last parameter, NSEL up (no cs)
+  CTS 0, wait....   16mS
+
+  check cts .should be 1.  (no?  panic)
+
+Prior to Power_Up, no NIRQ (high):
+
+  int_status:
+    int_pend = 0x00, chip_pend = 0x00
+  chip_status:
+    chip_pend = 0x0x8
+
+  we clear it, then read again...  Doesn't clear.  Strange.
+  We then power_up and look again.
+
+On Power_Up, we see NIRQ go low.  We see the following:
+
+  int_status:
+    int_pend = 0x4, int_status = 0x4,
+        (says chip_pend interrupt)
+    ph_pend = 0x0, ph_status = 0x2,
+    modem_pend = 0x0, modem_status = 0x0,
+    chip_pend = 0x14, chip_status = 0x14,
+        (14 says State_change, chip_rdy)
+    info_flags = 0x0
+
+  chip_status:
+    chip_pend = 0x14, chip_status = 0x14,
+    cmd_err_status = 0x00, cmd_err_cmd_id = 0x0,
+    info_flags = 0x0
+
+- PART_INFO
+
+  (rsp[1] << 8) | rsp[2] is part number, ie. 4468.  from RadioHead
+  RH_RF24.cpp code.
+
+
+
+Packet format:
+
+The si446x chips has many configuration options that determine what the
+actual packet format looks like.  These fields must be programmed properly
+on both ends of the communications channel for communications to occur.
+
+
+The SI443X radio driver has the following configuration options. Some of 
+these are set in the platforms/xxx/chips/si443x/RadioConfig.h header file, 
+others can be set in your Makefile.
+
+SI443X_DEF_RFPOWER:
+
+This is the default value of the TX POWER register. This can be changed via the
+PacketTransmitPower interface provided by the SI443XActiveMessageC.
+
+SI443X_BASE_FREQ_10MHZ:
+SI443X_BASE_FREQ_KHZ:
+SI443X_BASE_FREQ_MILLIHZ:
+
+The base carrier frequency is set according to these two values. The carrier frequency is
+set to (SI443X_BASE_FREQ_10MHZ * 10^7 + SI443X_BASE_FREQ_KHZ * 10^3 + SI443X_BASE_FREQ_MILLIHZ * 10^(-2) ) Hz.
+Any values between 240000 kHz (240.000 MHz) and 959999 kHz (959.999 Mhz) can be given. For details, see the RadioConfig.h file.
+
+SI443X_CHANNEL_STEP_KHZ:
+
+This is the spacing between channels over the frequency band. The 0th channel starts
+from the preset base carrier frequency, the k'th channel starts from (base carrier frequency) +
+k * SI443X_CHANNEL_STEP_KHZ. The channel spacing is defined in kHz precision, minimum 
+value is 1 (1 kHz), maximum value is 2550 (2,55 Mhz).
+
+SI443X_MODEM_CONFIG:
+
+The modem is configured based on precomputed register values. These values can be found in RadioConfig.h, new config values should be
+inserted there. If multiple modem configuration exist, there is a possibility to choose from them using this constant.
+
+SI443X_DEF_CHANNEL:
+
+This is the default value of the Frequency Hopping Channel Select register
+This can be cahanged via the RadioChannel interface provided by the 
+SI443XActiveMessageC.
+
+SI443X_BACKOFF_MIN
+SI443X_BACKOFF_INIT
+SI443X_BACKOFF_CONG
+
+The minimum backoff time, the initial backoff time, and the cognestion backoff
+time in microseconds for the random CSMA/CA algorithm. See the SI443XRadioP.nc.
+
+
+
+*** getting properties
+
+  If you ask for more than 16 consecutive, it will return zeros.
+
+
+*** Radio Dump Notes:
+
+  takes about 5ms.
+
+
+*** Anomalies
+
+  On the way up, after Power_Up, we drf() (A), clear interrupts, then drf() (B) again.
+
+  After A, we see rd.gpio_cfg.nirq is 0x27 as it should be.  After B, it is 0xA7, why is
+  the high order bit set?
+
+
+*** Power Up State:
+
+  4463: power up state
+
+  part_info    = {chiprev = 0x11, part_15 = 0x44, part_7 = 0x63, pbuild = 0x0, id_15 = 0x0, id_7 = 0xf, customer = 0x0, romid = 0x3},
+  func_info    = {revext = 0x3, revbranch = 0x0, revint = 0xf, reserved0 = 0x0, reserved1 = 0x0, func = 0x1},
+  gpio_cfg     = {gpio0 = 0xc, gpio1 = 0x8, gpio2 = 0xc, gpio3 = 0xc, nirq = 0x27, sdo = 0xb, gen_config = 0x0},
+  rxfifocnt    = 0x0, txfifofree = 0x40,
+  int_status   = {int_pend = 0x4, int_status = 0x4, ph_pend = 0x0, ph_status = 0x2, modem_pend = 0x0,
+                  modem_status = 0x0, chip_pend = 0x14, chip_status = 0x14, info_flags = 0x0},
+  ph_status    = {ph_pend = 0x0, ph_status = 0x2},
+  modem_status = {modem_pend = 0x0, modem_status = 0x0, curr_rssi = 0x0, latch_rssi = 0x0, ant1_rssi = 0x0,
+                  ant2_rssi = 0x0, afc_freq_offset15 = 0x82, afc_freq_offset7 = 0xfe, info_flags = 0x0},
+  chip_status  = {chip_pend = 0x14, chip_status = 0x14, cmd_err_status = 0x0, cmd_err_cmd_id = 0x0, info_flags = 0x0}
+  device_state = 0x3, channel = 0x0,
+  frr_a = 0x4, frr_b = 0x4, frr_c = 0x3, frr_d = 0x0,
+  packet_info_len = { 0x00, 0x00 },
+
+  properties:  (* doesn't match default listed in silabs doc)
+* gr00_global   = {0x0 <repeats 11 times>},
+  gr01_int      = {0x4, 0x0, 0x0, 0x4},
+  gr02_frr      = {0x1, 0x2, 0x9, 0x0},  (int_status), (int_pending), (current_state), (disabled)
+  gr10_preamble = {0x8, 0x14, 0x0, 0xf, 0x21, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+* gr11_sync     = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+  gr12_pkt      = {0x0, 0x1, 0x8, 0xff, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x30, 0x30, 0x0, 0x0, 0x0, 0x0},
+  gr20_modem    = {0x2, 0x80, 0x7, 0xf, 0x42, 0x40, 0x1, 0xc9, 0xc3, 0x80, 0x0, 0x6, 0xd3, 0x0, 0x0,
+                   0x67, 0x60, 0x4d, 0x36, 0x21, 0x11, 0x8, 0x3, 0x1, 0x1, 0x0, 0x8, 0x3, 0xc0, 0x0,
+                   0x10, 0x20, 0x0, 0x0, 0x0, 0x4b, 0x6, 0xd3, 0xa0, 0x6, 0xd3, 0x2, 0xc0, 0x0, 0x0,
+                   0x23, 0x83, 0x69, 0x0, 0x40, 0xa0, 0x0, 0x0, 0xe0, 0x0, 0x0, 0x11, 0x10, 0x10,
+                   0xb, 0x1c, 0x40, 0x0, 0x0, 0x2b, 0xc, 0xa4, 0x3, 0x56, 0x2, 0x0, 0xa3, 0x2, 0x80,
+                   0xff, 0xc, 0x1, 0x0, 0x32, 0x3, 0x0 <repeats 16 times>},
+  gr21_modem    = {0xff, 0xba, 0xf, 0x51, 0xcf, 0xa9, 0xc9, 0xfc, 0x1b, 0x1e, 0xf, 0x1, 0xfc, 0xfd,
+                   0x15, 0xff, 0x0, 0xf, 0xff, 0xc4, 0x30, 0x7f, 0xf5, 0xb5, 0xb8, 0xde, 0x5, 0x17,
+                   0x16, 0xc, 0x3, 0x0, 0x15, 0xff, 0x0, 0x0},
+* gr22_pa       = {0x8, 0x7f, 0x0, 0x5d, 0x00, 0x23, 0x00},
+* gr22_pa       = {0x8, 0x7f, 0x0, 0x5d, 0x80, 0x23, 0x03},
+  gr23_synth    = {0x2c, 0xe, 0xb, 0x4, 0xc, 0x73, 0x3, 0x5},
+  gr30_match    = {0x0 <repeats 12 times>},
+  gr40_freq_ctl = {0x3c, 0x8, 0x0, 0x0, 0x0, 0x0, 0x20, 0xff},
+  gr50_hop      = {0x4, 0x1, 0x0, 0x1},
+  grF0_pti      = {0x0, 0x0, 0x0, 0x0, 0x0}   (4463 doesn't have a PTI)

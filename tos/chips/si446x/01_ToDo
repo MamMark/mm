@@ -1,0 +1,84 @@
+
+- Transmit Power
+
+- Timesync/Packet Timestamping (similar to CC2520-v2 SFD stuff)
+- SFD/packeting timestamping
+
+- Packet Handler usage
+
+- > 63 byte packets.
+
+  - one fifo 129 bytes long.   128 byte packets.  seems simplest.
+
+    how does dumping the fifo work with a single fifo?  Size, how
+    to see what's in it.  Non-transparent.
+
+- TX turn around for ACK.  How long?
+
+  TX -> RX takes 100uS once commanded.
+  RX -> TX takes 100uS once commanded
+
+  assumes Zero-IF mode is off.
+
+- how to deal with CCA
+  - how to detect
+  - backoff algorithm
+
+- what to dump from the radio?  everything?
+  - main state
+  - properties
+
+
+*** Packet Lenght manipulations
+  packet length.   See PKT_LEN_ADJUST.  Auto Packet Handler in use.
+  LEN_ADJUST is added to len extracted from src_field,
+  PKT_LEN_FIELD_SOURCE, tweaks DST_FIELD value in PKT_LEN property.
+
+  by default, LEN_ADJUST 0, rx pkt len does not include pkt len bytes nor
+  crc  bytes.
+
+  packet length value returned by PACKET_INFO reflects the value extracted
+  from the received packet prior to LEN_ADJUST adjustment.
+
+  what does LEN_ADJUST actually modify?  what returns the result?  [LEN_ADJUST
+  is added to the received value of the packet length extracted from the field
+  specified by the SRC_FIELD value in the PKT_LEN_FIELD_SOURCE property. The
+  resulting value is then used to configure the length of the variable length
+  field specified by the DST_FIELD value in the PKT_LEN property.]
+
+  [okay what does that mean?]
+
+  also pkt len value stored in RX_FIFO (PKT_LEN:IN_FIFO must be set) also
+  is a unadjusted value.
+
+  see PACKET_INFO cmd, PKT_LEN, PKT_LEN_FIELD_SOURCE, PKT_LEN:DST_FIELD
+
+
+--- Strange behaviour on POWER_UP with a stopping breakpoint
+  [not reproducible]
+
+  when a bp is put at AAA in DriverLayerP.n:cs_por_wait, after launch of
+  the CMD_POWER_UP, the timeout at the start of cs_pwr_up_wait fails on
+  the cts check.
+
+  We also tried pulling CTS via CMD_READ_CMD_BUF on the SPI.  Doesn't
+  change the behaviour.
+
+  CTS should be set.  If we don't stop at the above nop, then CTS gets
+  set properly.  Both with and without the CMD_READ_CMD_BUF.
+
+  We need to understand what is going on and why it is behaving differently
+  when stopping vs. not stopping.
+
+
+*** Move platform dependent h/w pin definitions for Radio to Platform Si446x
+  file when dumping radio h/w state.
+
+
+*** Get_Properties has some strange results....
+
+  after power-up, we grab all the properties and compare against defaults.
+  some don't match.  Eh?
+
+  gr00_global: all zeros, should 40 00 18 20 00 00 01 60 00 00
+  
