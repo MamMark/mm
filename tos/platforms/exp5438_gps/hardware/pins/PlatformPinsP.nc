@@ -80,7 +80,7 @@ implementation {
        * P10.7: si446x_csn
        */
       P10OUT = 0xc0;                    /* sdn = 1, csn = 1 (deasserted) */
-      P10DIR = 0xc9;
+      P10DIR = 0xd9;
     }
 
 #if 0 /* Disabled: these specific setting sare defaults, but others might not be */
