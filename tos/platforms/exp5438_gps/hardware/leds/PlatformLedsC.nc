@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2015, Eric B. Decker
  * Copyright (c) 2009-2010 People Power Co.
  * All rights reserved.
  *
@@ -32,6 +33,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @author Peter A. Bigot <pab@peoplepowerco.com>
+ * @author Eric B. Decker <cire831@gmail.com>
  */
 
 #include "hardware.h"
@@ -49,18 +51,18 @@ implementation {
 
   components HplMsp430GeneralIOC as GeneralIOC;
 
-  /* RED LED (D1) at P4.7 */
+  /* RED LED (D1) at P1.0 */
   components new Msp430GpioC() as Led0Impl;
   Led0Impl -> GeneralIOC.Port10;
   PlatformLedsP.Led0 -> Led0Impl;
 
-  /* Yellow LED (D2) at P4.6 */
+  /* Yellow LED (D2) at P1.1 */
   components new Msp430GpioC() as Led1Impl;
   Led1Impl -> GeneralIOC.Port11;
   PlatformLedsP.Led1 -> Led1Impl;
 
- /* Green LED (D1) at P4.5 */
+ /* Green LED (D1) at P3.4 */
   components new Msp430GpioC() as Led2Impl;
-  Led2Impl -> GeneralIOC.Port45;
+  Led2Impl -> GeneralIOC.Port34;
   PlatformLedsP.Led2 -> Led2Impl;
 }

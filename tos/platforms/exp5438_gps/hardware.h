@@ -98,7 +98,7 @@
  *        .1	0pI	(nc) xi2c_sda (b3sda)  	       .1	0pI
  *        .2	0pI	(nc) xi2c_scl (b3scl)  	       .2	0pI
  *        .3	0pO     tell               	       .3	0pI
- *        .4	0pI	si446x_mosi (a3mosi)	       .4	0pI
+ *        .4	0pO	si446x_mosi (a3mosi)	       .4	0pI
  *        .5	0pI	si446x_miso (a3miso)	       .5	0pI
  *        .6	1p0	si446x_sdn             	       .6	0pI
  *        .7	1pO	si446x_csn		       .7	0pI
@@ -126,8 +126,7 @@ enum {
  * Platform LEDs,
  *
  * Eval board has two leads, P1.0 and P1.1.
- * We keep the Yellow LED on P4.6, which is on the header
- * but isn't connected to anything.
+ * we add a third led on P3.4
  */
 TOSH_ASSIGN_PIN(RED_LED,    1, 0);
 TOSH_ASSIGN_PIN(GREEN_LED,  1, 1);
