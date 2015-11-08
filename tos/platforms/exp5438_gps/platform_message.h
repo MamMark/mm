@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2005 The Regents of the University  of California.
- * Copyright (c) 2002-2005 Intel Corporation
+ * Copyright (c) 2015, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,23 +36,26 @@
  * Defining the platform-independently named packet structures to be the
  * chip-specific CC1000 packet structures.
  *
- * @author Philip Levis
+ * @author Eric B. Decker <cire831@gmail.com>
  */
 
 #ifndef PLATFORM_MESSAGE_H
 #define PLATFORM_MESSAGE_H
 
-#include <CC2420.h>
 #include <Serial.h>
+#include <Si446xRadio.h>
 
 typedef union message_header {
   serial_header_t serial;
+  si446x_packet_header_t header;
 } message_header_t;
 
-typedef union TOSRadioFooter {
+typedef union message_footer {
+  si446x_packet_footer_t footer;
 } message_footer_t;
 
-typedef union TOSRadioMetadata {
+typedef union message_metadata {
+  si446x_packet_metadata_t meta;
 } message_metadata_t;
 
 #endif
