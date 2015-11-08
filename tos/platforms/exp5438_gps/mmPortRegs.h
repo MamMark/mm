@@ -46,11 +46,14 @@
     uint8_t p11 	    : 1;
     uint8_t si446x_cts	    : 1;
     uint8_t p13		    : 1;
-    uint8_t si446x_irq_n    : 1;
+    uint8_t si446x_irqn     : 1;
     uint8_t p15		    : 1;
     uint8_t p16		    : 1;
     uint8_t p17		    : 1;
   } PACKED mmP1in asm("0x0200");
+
+#define SI446X_CTS_BIT  0x04
+#define SI446X_IRQN_BIT 0x10
 
   static volatile struct {
     uint8_t led0            : 1;	/* red, led1 */
@@ -174,6 +177,20 @@ norace static volatile struct {
     uint8_t p97		    : 1;
   } PACKED mmP9out asm("0x0282");
 
+  static volatile struct {
+    uint8_t p100	    : 1;
+    uint8_t p101	    : 1;
+    uint8_t p102	    : 1;
+    uint8_t p103	    : 1;
+    uint8_t p104	    : 1;
+    uint8_t p105	    : 1;
+    uint8_t si446x_sdn_in   : 1;
+    uint8_t si446x_csn_in   : 1;
+  } PACKED mmP10in asm("0x0281");
+
+#define SI446X_SDN_BIT  0x40
+#define SI446X_CSN_BIT  0x80
+
 norace
   static volatile struct {
     uint8_t si446x_sclk	    : 1;	/* p10 0, spi a3sclk */
@@ -210,9 +227,15 @@ norace
 #define TOGGLE_TELL do { TELL = 1; TELL = 0; } while(0)
 
 /* radio */
-#define SI446X_CTS      mmP1in.si446x_cts
-#define SI446X_IRQ_N    mmP1in.si446x_irq_n
+
+// #define SI446X_CTS      mmP1in.si446x_cts
+//#define SI446X_IRQN      mmP1in.si446x_irqn
+
+#define SI446X_CTS_P    (P1IN & SI446X_CTS_BIT)
+#define SI446X_IRQN_P   (P1IN & SI446X_IRQN_BIT)
 #define SI446X_SDN      mmP10out.si446x_sdn
 #define SI446X_CSN      mmP10out.si446x_csn
+#define SI446X_SDN_IN   (P10IN & SI446X_SDN_BIT)
+#define SI446X_CSN_IN   (P10IN & SI446X_CSN_BIT)
 
 #endif
