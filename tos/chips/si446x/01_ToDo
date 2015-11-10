@@ -1,3 +1,10 @@
+- Receive timing
+
+  how long does SpiBlock.transfer actually take.  What is the
+  timing for receiving bytes, can we keep the fifo empty?
+
+  Only an issue for higher data rates, ie. > 800 Kbps.
+
 
 - Transmit Power
 
@@ -29,7 +36,7 @@
   - properties
 
 
-*** Packet Lenght manipulations
+*** Packet Length manipulations
   packet length.   See PKT_LEN_ADJUST.  Auto Packet Handler in use.
   LEN_ADJUST is added to len extracted from src_field,
   PKT_LEN_FIELD_SOURCE, tweaks DST_FIELD value in PKT_LEN property.
@@ -80,5 +87,4 @@
   after power-up, we grab all the properties and compare against defaults.
   some don't match.  Eh?
 
-  gr00_global: all zeros, should 40 00 18 20 00 00 01 60 00 00
-  
+  gr00_global: all zeros, should be 40 00 18 20 00 00 01 60 00 00
