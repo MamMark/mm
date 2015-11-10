@@ -45,7 +45,7 @@ module Si446xPinsP {
 }
 implementation {
   async command uint8_t HW.si446x_cts()             { return SI446X_CTS_P; }
-  async command uint8_t HW.si446x_irq()             { return !SI446X_IRQN_P; }
+  async command uint8_t HW.si446x_irqn()            { return SI446X_IRQN_P; }
   async command uint8_t HW.si446x_sdn()             { return SI446X_SDN_IN; }
   async command uint8_t HW.si446x_csn()             { return SI446X_CSN_IN; }
   async command void    HW.si446x_shutdown()        { SI446X_SDN = 1; }

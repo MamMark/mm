@@ -84,11 +84,11 @@ interface Si446xInterface {
 
 
   /**
-   * si446x_irq: return current status of radio interrupt pin.
+   * si446x_irqn: return current status of radio interrupt pin.
    *
-   * return positive true value.  irqN is negative (low) true.
+   * Note: Low true to stay true to the h/w definition.
    **/
-  async command uint8_t si446x_irq();
+  async command uint8_t si446x_irqn();
 
 
   /*

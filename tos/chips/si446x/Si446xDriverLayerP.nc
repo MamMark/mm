@@ -198,7 +198,7 @@ typedef struct {
   uint32_t              m_ts;           /* milli timestamp */
 
   uint8_t               CTS_pin;
-  uint8_t               IRQ_pin;
+  uint8_t               IRQN_pin;
   uint8_t               SDN_pin;
   uint8_t               CSN_pin;
   uint8_t               ta0ccr3;
@@ -1141,7 +1141,7 @@ implementation {
     /* do CSN before we reset the SPI port */
     rd.CSN_pin     = call HW.si446x_csn();
     rd.CTS_pin     = call HW.si446x_cts();
-    rd.IRQ_pin     = call HW.si446x_irq();
+    rd.IRQN_pin    = call HW.si446x_irqn();
     rd.SDN_pin     = call HW.si446x_sdn();
 
     call HW.si446x_clr_cs();          /* reset SPI on chip */
@@ -1568,7 +1568,12 @@ implementation {
 
     drf();
     nop();
-    if (!call HW.si446x_irq()) {
+
+    /*
+     * if IRQN is a 1, no interrupt, fail.  We expect an interrupt
+     * to be there.  Should be CHIP interrupt saying chip is ready
+     */
+    if (call HW.si446x_irqn()) {
       __PANIC_RADIO(11, 0, 0, 0, 0);
     }
 
