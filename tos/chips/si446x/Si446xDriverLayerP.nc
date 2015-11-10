@@ -1136,9 +1136,13 @@ implementation {
   void drf() __attribute__((noinline)) {
 
     mt0 = call LocalTime.get();
+    rd.u_ts        = call Platform.usecsRaw();
 
     /* do CSN before we reset the SPI port */
     rd.CSN_pin     = call HW.si446x_csn();
+    rd.CTS_pin     = call HW.si446x_cts();
+    rd.IRQ_pin     = call HW.si446x_irq();
+    rd.SDN_pin     = call HW.si446x_sdn();
 
     call HW.si446x_clr_cs();          /* reset SPI on chip */
     nop();
@@ -1146,10 +1150,6 @@ implementation {
     nop();
     call HW.si446x_clr_cs();
 
-    rd.u_ts        = call Platform.usecsRaw();
-    rd.CTS_pin     = call HW.si446x_cts();
-    rd.IRQ_pin     = call HW.si446x_irq();
-    rd.SDN_pin     = call HW.si446x_sdn();
     rd.ta0ccr3     = TA0CCR3;
     rd.ta0cctl3    = TA0CCTL3;
 
