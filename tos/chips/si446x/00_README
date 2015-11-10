@@ -158,7 +158,9 @@ time in microseconds for the random CSMA/CA algorithm. See the SI443XRadioP.nc.
   On the way up, after Power_Up, we drf() (A), clear interrupts, then drf() (B) again.
 
   After A, we see rd.gpio_cfg.nirq is 0x27 as it should be.  After B, it is 0xA7, why is
-  the high order bit set?
+  the high order bit set?   Becasue nirq is set and the read returns the value of NIRQ
+  as the high order bit (NIRQ_STATE).  so yes 0x27 becomes 0xa7.  If NIRQ were down then
+  this would be 0x27.
 
 
 *** Power Up State:
@@ -202,3 +204,17 @@ time in microseconds for the random CSMA/CA algorithm. See the SI443XRadioP.nc.
   gr40_freq_ctl = {0x3c, 0x8, 0x0, 0x0, 0x0, 0x0, 0x20, 0xff},
   gr50_hop      = {0x4, 0x1, 0x0, 0x1},
   grF0_pti      = {0x0, 0x0, 0x0, 0x0, 0x0}   (4463 doesn't have a PTI)
+
+
+*** Various Command completion times:
+
+    Time in uS after command has been issued and we start looking for CTS back up.
+
+    In general it looks like most commands take between 24 and 25us for CTS to come
+    back up.
+
+    Commands that we've looked at include part_info, func_info, gpio_cfg_nc, fifo_info_nc,
+    ph_status_nc, modem_status_nc, chip_status_nc, int_status_nc.
+
+    Device_State and Packet_Info_Nc appear to take 0uS.  At end of the sequence in
+    Dump_Radio_Full (drf).
