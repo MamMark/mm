@@ -749,14 +749,14 @@ implementation {
 
 
   /*
-   * send_cmd_no_cts
+   * send_cmd_no_cts_wait
    *
    * send command but don't wait for CTS at end.
    *
    * should always be CTS at the beginning else panic.
    */
 
-  void si446x_send_cmd_no_cts(const uint8_t *c, uint8_t *response, uint16_t length) {
+  void si446x_send_cmd_no_cts_wait(const uint8_t *c, uint8_t *response, uint16_t length) {
     if (!si446x_get_cts()) {
         __PANIC_RADIO(2, 0, 0, 0, 0);
     }      
@@ -782,7 +782,7 @@ implementation {
   uint16_t si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
     uint16_t t0, t1;
 
-    si446x_send_cmd_no_cts(c, response, length);
+    si446x_send_cmd_no_cts_wait(c, response, length);
     t0 = call Platform.usecsRaw();
     t1 = t0;
     while (!si446x_get_cts()) {
@@ -1549,7 +1549,7 @@ implementation {
       return;
     }
     next_state(STATE_PWR_UP_WAIT);
-    si446x_send_cmd_no_cts(si446x_power_up, rsp, sizeof(si446x_power_up));
+    si446x_send_cmd_no_cts_wait(si446x_power_up, rsp, sizeof(si446x_power_up));
     stateAlarm_active = TRUE;
     call RadioAlarm.wait(SI446X_POWER_UP_WAIT_TIME);
   }
