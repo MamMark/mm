@@ -480,7 +480,20 @@ typedef struct {
 } reg_init_t;
 
 
-norace uint8_t cmd_timings[256];
+typedef struct {
+  uint16_t cmd;
+  uint16_t t_cts0;
+  uint16_t t_cmd0;
+  uint16_t d_len0;
+  uint16_t t_cts_r;
+  uint16_t t_reply;
+  uint16_t d_reply_len;
+  uint16_t t_elapsed;
+  uint8_t  frr[4];
+} cmd_timing_t;
+
+norace cmd_timing_t  cmd_timings[256];
+norace cmd_timing_t prop_timings[256];
 
 /*
  * Radio Commands
@@ -807,16 +820,28 @@ implementation {
 
   void si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
     uint16_t t0, t1;
+    cmd_timing_t *ctp;
+    uint8_t cmd;
 
-    si446x_send_cmd_no_cts_wait(c, response, length);
+    cmd = c[0];
+    ctp = &cmd_timings[cmd];
+    ctp->cmd = cmd;
     t0 = call Platform.usecsRaw();
-    t1 = t0;
     while (!si446x_get_cts()) {
       t1 = call Platform.usecsRaw();
       if ((t1-t0) > SI446X_CTS_TIMEOUT) {
-        __PANIC_RADIO(3, t1, t0, t1-t0, 0);
+        __PANIC_RADIO(2, t1, t0, t1-t0, 0);
       }
     }
+    t1 = call Platform.usecsRaw();
+    ctp->t_cts0 = t1 - t0;
+    t0 = t1;
+    call HW.si446x_set_cs();
+    call SpiBlock.transfer((void *) c, response, length);
+    call HW.si446x_clr_cs();
+    t1 = call Platform.usecsRaw();
+    ctp->t_cmd0 = t1 - t0;
+    ctp->d_len0 = length;
   }
 
 
@@ -833,12 +858,22 @@ implementation {
    * On entry makes sure that CTS is up so we can reliably
    * read the return/reply stream.
    */
-  void si446x_get_reply(uint8_t *r, uint16_t l) {
+  void si446x_get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
     uint8_t rcts;
+    uint16_t t0, t1;
+    cmd_timing_t *ctp;
 
-    if (!si446x_get_cts()) {
-        __PANIC_RADIO(4, 0, 0, 0, 0);
-    }      
+    ctp = &cmd_timings[cmd];
+    t0 = call Platform.usecsRaw();
+    while (!si446x_get_cts()) {
+      t1 = call Platform.usecsRaw();
+      if ((t1-t0) > SI446X_CTS_TIMEOUT) {
+        __PANIC_RADIO(4, t1, t0, t1-t0, 0);
+      }
+    }
+    t1 = call Platform.usecsRaw();
+    ctp->t_cts_r = t1 - t0;
+    t0 = t1;
     call HW.si446x_set_cs();
     call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
     call FastSpiByte.splitReadWrite(0);
@@ -848,41 +883,26 @@ implementation {
     }
     call SpiBlock.transfer(NULL, r, l);
     call HW.si446x_clr_cs();
+    t1 = call Platform.usecsRaw();
+    ctp->t_reply = t1 - t0;
+    ctp->d_reply_len = l + 2;
   }
 
 
   void si446x_cmd_reply(const uint8_t *cp, uint16_t cl, uint8_t *rp, uint16_t rl) {
     uint16_t t0, t1;
+    cmd_timing_t *ctp;
 
+    ctp = &cmd_timings[cp[0]];
     t0 = call Platform.usecsRaw();
     si446x_send_cmd(cp, rsp, cl);
-    si446x_get_reply(rp, rl);
+    si446x_get_reply(rp, rl, cp[0]);
     t1 = call Platform.usecsRaw();
-    cmd_timings[cp[0]] = t1 - t0;
+    ctp->t_elapsed = t1 - t0;
+    si446x_read_status(ctp->frr);
   }
 
 
-  /*
-   * Read FRR
-   *
-   * read 1 Fast Response Register
-   *
-   * register comes back on the same SPI transaction as the command
-   *
-   * CTS does not need to be true.
-   */
-  uint8_t si446x_read_frr(uint8_t which) {
-    uint8_t result;
-
-    call HW.si446x_set_cs();
-    call FastSpiByte.splitWrite(which);
-    result = call FastSpiByte.splitReadWrite(0);
-    result = call FastSpiByte.splitRead();
-    call HW.si446x_clr_cs();
-    return result;
-  }
-
-   
   /*
    * get current interrupt state -> *isp
    *
@@ -1126,22 +1146,42 @@ implementation {
   /* dump_properties */
   void dump_properties() {
     const dump_prop_desc_t *dpp;
+    cmd_timing_t *ctp, *ctp_ff;
     uint8_t group, index, length;
     uint8_t  *w, wl;                    /* working */
-    uint16_t t0, t1;
+    uint16_t t0, t1, tot0;
 
-    if (!si446x_get_cts()) {
-        __PANIC_RADIO(8, 0, 0, 0, 0);
-    }      
+    ctp_ff = &cmd_timings[0xff];
+    t0 = call Platform.usecsRaw();
+    while (!si446x_get_cts()) {
+      t1 = call Platform.usecsRaw();
+      if ((t1-t0) > SI446X_CTS_TIMEOUT) {
+        __PANIC_RADIO(8, t1, t0, t1-t0, 0);
+      }
+    }
+    t1 = call Platform.usecsRaw();
     dpp = &dump_prop[0];
     while (dpp->length) {
       group = dpp->group;
       index = 0;
       length = dpp->length;
       w = dpp->where;
-      *dpp->time = call Platform.usecsRaw();
+      t0 = call Platform.usecsRaw();
+      tot0 = t0;
+      ctp = &prop_timings[group];
+      memset(ctp, 0, sizeof(*ctp));
+      ctp->cmd = group;
+
       while (length) {
+        t0 = call Platform.usecsRaw();
+        if (!si446x_get_cts()) {
+          __PANIC_RADIO(8, 0, 0, 0, 0);
+        }      
+        t1 = call Platform.usecsRaw();
+        ctp->t_cts0 += t1 - t0;
+
         wl = (length > 16) ? 16 : length;
+        t0 = call Platform.usecsRaw();
         call HW.si446x_set_cs();
         call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
         call FastSpiByte.splitReadWrite(group);
@@ -1149,23 +1189,22 @@ implementation {
         call FastSpiByte.splitReadWrite(index);
         call FastSpiByte.splitRead();
         call HW.si446x_clr_cs();
+        t1 = call Platform.usecsRaw();
+        ctp->t_cmd0 += t1 - t0;
+        ctp->d_len0 += 4;
 
-        /*
-         * wait for CTS, then suck the reply
-         */
-        t0 = call Platform.usecsRaw();
-        t1 = t0;
-        while (!si446x_get_cts()) {
-          t1 = call Platform.usecsRaw();
-          if ((t1-t0) > SI446X_CTS_TIMEOUT) {
-            __PANIC_RADIO(64, t1, t0, t1-t0, 0);
-          }
-        }
-        si446x_get_reply(w, wl);
+        si446x_get_reply(w, wl, 0xff);
+        ctp->t_cts_r     += ctp_ff->t_cts_r;
+        ctp->t_reply     += ctp_ff->t_reply;
+        ctp->d_reply_len += ctp_ff->d_reply_len;
         length -= wl;
         index += wl;
         w += wl;
       }
+      t1 = call Platform.usecsRaw();
+      ctp->t_elapsed = t1 - tot0;
+      nop();
+      si446x_read_status(ctp->frr);
       dpp++;
     }
   }
@@ -1617,6 +1656,10 @@ implementation {
       __PANIC_RADIO(11, 0, 0, 0, 0);
     }
 
+    nop();
+    si446x_read_status((uint8_t *)radio_status);
+    stuff_config(&si446x_frr_config[0]);
+    si446x_read_status((uint8_t *)radio_status);
     drf();
     nop();
 
