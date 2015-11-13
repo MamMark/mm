@@ -20,6 +20,14 @@
     how does dumping the fifo work with a single fifo?  Size, how
     to see what's in it.  Non-transparent.
 
+-> fifo control
+
+   fifo_info command can clear the tx and rx fifos (don't do this
+   when in TX or Rx (ie something happening).
+
+   if fifo cmd sent without the fifo reset byte, what happens?
+
+
 - TX turn around for ACK.  How long?
 
   TX -> RX takes 100uS once commanded.
