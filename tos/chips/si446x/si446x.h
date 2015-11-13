@@ -107,16 +107,16 @@
 #define SI446X_CMD_RX_FIFO_READ               0x77
 
 //#define SI446X_CMD_PART_INFO                  0x01
-#define SI446X_PART_INFO_SIZE                 8
+#define SI446X_PART_INFO_REPLY_SIZE           8
 
 //#define SI446X_CMD_POWER_UP                   0x02
 #define SI446X_PU_EZRADIO_PRO                 0x01
 
 //#define SI446X_CMD_FUNC_INFO                  0x10
-#define SI446X_FUNC_INFO_SIZE                 6
+#define SI446X_FUNC_INFO_REPLY_SIZE           6
 
 //#define SI446X_CMD_GPIO_PIN_CFG               0x13
-#define SI446X_GPIO_CFG_SIZE                  7
+#define SI446X_GPIO_CFG_REPLY_SIZE            7
 
 #define SI446X_GPIO_NO_CHANGE                   0
 #define SI446X_GPIO_DISABLED                    1
@@ -156,15 +156,15 @@
 #define SI446X_GPIO_HOP_TABLE_WRAPPED           39
 
 //#define SI446X_CMD_FIFO_INFO                  0x15
-#define SI446X_FIFO_INFO_SIZE                 2
+#define SI446X_FIFO_INFO_REPLY_SIZE           2
 #define SI446X_FIFO_FLUSH_RX                  0x2
 #define SI446X_FIFO_FLUSH_TX                  0x1
 
 //#define SI446X_CMD_PACKET_INFO                0x16
-#define SI446X_PACKET_INFO_SIZE               2
+#define SI446X_PACKET_INFO_REPLY_SIZE         2
 
 //#define SI446X_CMD_GET_INT_STATUS             0x20
-#define SI446X_INT_STATUS_SIZE                9
+#define SI446X_INT_STATUS_REPLY_SIZE          9
 /*
  * Warning: sending no parameters with GET_INT_STATUS will clear all interrupts.
  * Reply stream returned is status of interrupts prior to any clearing that
@@ -173,13 +173,13 @@
 #define SI446X_INT_NO_CLEAR                   0xff
 
 //#define SI446X_CMD_GET_PH_STATUS              0x21
-#define SI446X_PH_STATUS_SIZE                 2
+#define SI446X_PH_STATUS_REPLY_SIZE           2
 
 //#define SI446X_CMD_GET_MODEM_STATUS           0x22
-#define SI446X_MODEM_STATUS_SIZE              9
+#define SI446X_MODEM_STATUS_REPLY_SIZE        9
 
 //#define SI446X_CMD_GET_CHIP_STATUS            0x23
-#define SI446X_CHIP_STATUS_SIZE               5
+#define SI446X_CHIP_STATUS_REPLY_SIZE         5
 
 //#define SI446X_CMD_START_TX                   0x31
 #define SI446X_CONDITION_TX_COMPLETE_STATE      0xf0
@@ -192,7 +192,7 @@
 #define SI446X_CONDITION_RX_START_IMMEDIATE     0x00
 
 //#define SI446X_CMD_REQUEST_DEVICE_STATE       0x33
-#define SI446X_DEVICE_STATE_SIZE                2
+#define SI446X_DEVICE_STATE_REPLY_SIZE          2
 
 #define SI446X_DEVICE_STATE_NO_CHANGE           0x00
 #define SI446X_DEVICE_STATE_SLEEP               0x01
