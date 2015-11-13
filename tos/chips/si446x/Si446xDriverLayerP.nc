@@ -196,6 +196,11 @@ norace uint16_t ut0, ut1;
 
 
 typedef struct {
+  uint8_t frr[4];
+} radio_status_t;
+
+
+typedef struct {
   uint16_t              p_dump_start;   /* 16 bit raw (platform) us timestamp */
   uint32_t              l_dump_start;   /* 32 bit us TRadio Localtime timestamp */
   uint32_t              l_dump_end;     /* 32 bit us TRadio Localtime timestamp */
@@ -363,8 +368,8 @@ const uint8_t test2[] = { 0x11, 0x01, 0x04, 0x00, 7, 0xbd, 0x08, 0x17 };
 const uint8_t rf_gpio_pin_cfg[]     = { 0x13, 0x08, 0x08, 0x08, 0x08,
                                               0x08, 0x00, 0x00 };
 const uint8_t rf_int_ctl_enable_1[] = { 0x11, 0x01, 0x01, 0x00, 0x00 };
-const uint8_t rf_frr_ctl_a_mode_4[] = { 0x11, 0x02, 0x04, 0x00, 0x00,
-                                              0x00, 0x00, 0x00 };
+const uint8_t rf_frr_ctl_a_mode_4[] = { 0x11, 0x02, 0x04, 0x00,
+                                              0x02, 0x04, 0x06, 0x08 };
 const uint8_t rf_pkt_crc_config_7[] = { 0x11, 0x12, 0x07, 0x00, 0x84, 0x01,
                                               0x08, 0xFF, 0xFF, 0x00, 0x02 };
 const uint8_t rf_pkt_len_12[] = { 0x11, 0x12, 0x0C, 0x08, 0x2A, 0x01,
@@ -394,6 +399,12 @@ const si446x_radio_config_t si446x_local_config[] = {
 };
 
 
+const si446x_radio_config_t si446x_frr_config[] = {
+  { sizeof(rf_frr_ctl_a_mode_4),            rf_frr_ctl_a_mode_4 },
+  { 0, NULL}
+};
+
+
 /* last CTS values, last command sent, xcts h/w, xcts_s spi */
 volatile norace uint8_t xcts, xcts0, xcts_s;
 
@@ -406,6 +417,8 @@ typedef struct {
 
 volatile norace si446x_chip_int_t chip_debug;
 volatile norace si446x_chip_int_t int_state;
+
+volatile norace uint8_t radio_status[4];
 
 norace uint8_t      rsp[16];
 
