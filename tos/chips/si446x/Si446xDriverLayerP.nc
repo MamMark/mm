@@ -208,54 +208,48 @@ typedef struct {
   uint8_t               ta0ccr3;
   uint8_t               ta0cctl3;
 
-  si446x_part_info_t    part_info;      uint16_t part_start;
-  si446x_func_info_t    func_info;      uint16_t func_start;
-  si446x_gpio_cfg_t     gpio_cfg;       uint16_t gpio_start;
+  si446x_part_info_t    part_info;
+  si446x_func_info_t    func_info;
+  si446x_gpio_cfg_t     gpio_cfg;
 
   /* fifoinfo */
-  uint8_t               rxfifocnt;      uint16_t fifo_start;
+  uint8_t               rxfifocnt;
   uint8_t               txfifofree;
 
-  si446x_ph_status_t    ph_status;      uint16_t ph_status_start;
-  si446x_modem_status_t modem_status;   uint16_t modem_status_start;
-  si446x_chip_status_t  chip_status;    uint16_t chip_status_start;
-  si446x_int_status_t   int_status;     uint16_t int_status_start;
+  si446x_ph_status_t    ph_status;
+  si446x_modem_status_t modem_status;
+  si446x_chip_status_t  chip_status;
+  si446x_int_status_t   int_status;
 
   /* request_device_state */
-  uint8_t               device_state;   uint16_t device_state_start;
+  uint8_t               device_state;
   uint8_t               channel;
+  uint8_t               frr_a, frr_b, frr_c, frr_d;
 
-  uint8_t               frr_a;          uint16_t frr_start;
-  uint8_t               frr_b;
-  uint8_t               frr_c;
-  uint8_t               frr_d;
-
-  uint8_t               packet_info_len[2];  uint16_t packet_info_start;
+  uint8_t               packet_info_len[2];
 
   /* properties */
-  uint8_t               gr00_global[SI446X_GROUP00_SIZE];       uint16_t gr00_start;
-  uint8_t               gr01_int[SI446X_GROUP01_SIZE];          uint16_t gr01_start;
-  uint8_t               gr02_frr[SI446X_GROUP02_SIZE];          uint16_t gr02_start;
-  uint8_t               gr10_preamble[SI446X_GROUP10_SIZE];     uint16_t gr10_start;
-  uint8_t               gr11_sync[SI446X_GROUP11_SIZE];         uint16_t gr11_start;
-  uint8_t               gr12_pkt[SI446X_GROUP12_SIZE];          uint16_t gr12_start;
-  uint8_t               gr20_modem[SI446X_GROUP20_SIZE];        uint16_t gr20_start;
-  uint8_t               gr21_modem[SI446X_GROUP21_SIZE];        uint16_t gr21_start;
-  uint8_t               gr22_pa[SI446X_GROUP22_SIZE];           uint16_t gr22_start;
-  uint8_t               gr23_synth[SI446X_GROUP23_SIZE];        uint16_t gr23_start;
-  uint8_t               gr30_match[SI446X_GROUP30_SIZE];        uint16_t gr30_start;
-  uint8_t               gr40_freq_ctl[SI446X_GROUP40_SIZE];     uint16_t gr40_start;
-  uint8_t               gr50_hop[SI446X_GROUP50_SIZE];          uint16_t gr50_start;
-  uint8_t               grF0_pti[SI446X_GROUPF0_SIZE];          uint16_t grF0_start;
+  uint8_t               gr00_global[SI446X_GROUP00_SIZE];
+  uint8_t               gr01_int[SI446X_GROUP01_SIZE];
+  uint8_t               gr02_frr[SI446X_GROUP02_SIZE];
+  uint8_t               gr10_preamble[SI446X_GROUP10_SIZE];
+  uint8_t               gr11_sync[SI446X_GROUP11_SIZE];
+  uint8_t               gr12_pkt[SI446X_GROUP12_SIZE];
+  uint8_t               gr20_modem[SI446X_GROUP20_SIZE];
+  uint8_t               gr21_modem[SI446X_GROUP21_SIZE];
+  uint8_t               gr22_pa[SI446X_GROUP22_SIZE];
+  uint8_t               gr23_synth[SI446X_GROUP23_SIZE];
+  uint8_t               gr30_match[SI446X_GROUP30_SIZE];
+  uint8_t               gr40_freq_ctl[SI446X_GROUP40_SIZE];
+  uint8_t               gr50_hop[SI446X_GROUP50_SIZE];
+  uint8_t               grF0_pti[SI446X_GROUPF0_SIZE];
 } radio_dump_t;
 
 typedef struct {
   uint8_t   group;
   uint8_t   length;
   uint8_t  *where;
-  uint16_t *time;
 } dump_prop_desc_t;
-
 
 norace radio_dump_t rd;
 norace uint8_t      fifo[129];
@@ -263,21 +257,21 @@ norace uint8_t      fifo[129];
 norace si446x_chip_status_t chip0, chip1;
 
 const dump_prop_desc_t dump_prop[] = {
-  { 0x01, SI446X_GROUP01_SIZE, (void *) &rd.gr01_int,       &rd.gr01_start },
-  { 0x00, SI446X_GROUP00_SIZE, (void *) &rd.gr00_global,    &rd.gr00_start },
-  { 0x02, SI446X_GROUP02_SIZE, (void *) &rd.gr02_frr,       &rd.gr02_start },
-  { 0x10, SI446X_GROUP10_SIZE, (void *) &rd.gr10_preamble,  &rd.gr10_start },
-  { 0x11, SI446X_GROUP11_SIZE, (void *) &rd.gr11_sync,      &rd.gr11_start },
-  { 0x12, SI446X_GROUP12_SIZE, (void *) &rd.gr12_pkt,       &rd.gr12_start },
-  { 0x20, SI446X_GROUP20_SIZE, (void *) &rd.gr20_modem,     &rd.gr20_start },
-  { 0x21, SI446X_GROUP21_SIZE, (void *) &rd.gr21_modem,     &rd.gr21_start },
-  { 0x22, SI446X_GROUP22_SIZE, (void *) &rd.gr22_pa,        &rd.gr22_start },
-  { 0x23, SI446X_GROUP23_SIZE, (void *) &rd.gr23_synth,     &rd.gr23_start },
-  { 0x30, SI446X_GROUP30_SIZE, (void *) &rd.gr30_match,     &rd.gr30_start },
-  { 0x40, SI446X_GROUP40_SIZE, (void *) &rd.gr40_freq_ctl,  &rd.gr40_start },
-  { 0x50, SI446X_GROUP50_SIZE, (void *) &rd.gr50_hop,       &rd.gr50_start },
-  { 0xF0, SI446X_GROUPF0_SIZE, (void *) &rd.grF0_pti,       &rd.grF0_start },
-  { 0, 0, NULL, NULL },
+  { 0x01, SI446X_GROUP01_SIZE, (void *) &rd.gr01_int },
+  { 0x00, SI446X_GROUP00_SIZE, (void *) &rd.gr00_global },
+  { 0x02, SI446X_GROUP02_SIZE, (void *) &rd.gr02_frr },
+  { 0x10, SI446X_GROUP10_SIZE, (void *) &rd.gr10_preamble },
+  { 0x11, SI446X_GROUP11_SIZE, (void *) &rd.gr11_sync },
+  { 0x12, SI446X_GROUP12_SIZE, (void *) &rd.gr12_pkt },
+  { 0x20, SI446X_GROUP20_SIZE, (void *) &rd.gr20_modem },
+  { 0x21, SI446X_GROUP21_SIZE, (void *) &rd.gr21_modem },
+  { 0x22, SI446X_GROUP22_SIZE, (void *) &rd.gr22_pa },
+  { 0x23, SI446X_GROUP23_SIZE, (void *) &rd.gr23_synth },
+  { 0x30, SI446X_GROUP30_SIZE, (void *) &rd.gr30_match },
+  { 0x40, SI446X_GROUP40_SIZE, (void *) &rd.gr40_freq_ctl },
+  { 0x50, SI446X_GROUP50_SIZE, (void *) &rd.gr50_hop },
+  { 0xF0, SI446X_GROUPF0_SIZE, (void *) &rd.grF0_pti },
+  { 0, 0, NULL },
 };
 
 
@@ -1176,53 +1170,42 @@ implementation {
     rd.ta0cctl3    = TA0CCTL3;
 
     nop();
-    rd.part_start = call Platform.usecsRaw();
     si446x_cmd_reply(si446x_part_info, sizeof(si446x_part_info),
                      (void *) &rd.part_info, SI446X_PART_INFO_REPLY_SIZE);
 
-    rd.func_start = call Platform.usecsRaw();
     si446x_cmd_reply(si446x_func_info, sizeof(si446x_func_info),
                      (void *) &rd.func_info, SI446X_FUNC_INFO_REPLY_SIZE);
 
-    rd.gpio_start = call Platform.usecsRaw();
     si446x_cmd_reply(si446x_gpio_cfg_nc, sizeof(si446x_gpio_cfg_nc),
                      (void *) &rd.gpio_cfg, SI446X_GPIO_CFG_REPLY_SIZE);
 
-    rd.fifo_start = call Platform.usecsRaw();
     si446x_cmd_reply(si446x_fifo_info_nc, sizeof(si446x_fifo_info_nc),
                      rsp, SI446X_FIFO_INFO_REPLY_SIZE);
     rd.rxfifocnt  = rsp[0];
     rd.txfifofree = rsp[1];
 
-    rd.ph_status_start = call Platform.usecsRaw();
     si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
                      (void *) &rd.ph_status, SI446X_PH_STATUS_REPLY_SIZE);
 
-    rd.modem_status_start = call Platform.usecsRaw();
     si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
                      (void *) &rd.modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
 
-    rd.chip_status_start = call Platform.usecsRaw();
     si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
                      (void *) &rd.chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
 
-    rd.int_status_start = call Platform.usecsRaw();
     si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
                      (void *) &rd.int_status, SI446X_INT_STATUS_REPLY_SIZE);
 
-    rd.device_state_start = call Platform.usecsRaw();
     si446x_cmd_reply(si446x_device_state, sizeof(si446x_device_state),
                      rsp, SI446X_DEVICE_STATE_REPLY_SIZE);
     rd.device_state = rsp[0];
     rd.channel      = rsp[1];
 
-    rd.frr_start = call Platform.usecsRaw();
     rd.frr_a = si446x_read_frr(SI446X_CMD_FRR_A);
     rd.frr_b = si446x_read_frr(SI446X_CMD_FRR_B);
     rd.frr_c = si446x_read_frr(SI446X_CMD_FRR_C);
     rd.frr_d = si446x_read_frr(SI446X_CMD_FRR_D);
 
-    rd.packet_info_start = call Platform.usecsRaw();
     si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc),
                      (void *) &rd.packet_info_len, SI446X_PACKET_INFO_REPLY_SIZE);
 
