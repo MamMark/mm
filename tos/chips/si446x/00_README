@@ -218,3 +218,188 @@ time in microseconds for the random CSMA/CA algorithm. See the SI443XRadioP.nc.
 
     Device_State and Packet_Info_Nc appear to take 0uS.  At end of the sequence in
     Dump_Radio_Full (drf).
+
+
+*** Interrupts
+
+    get_int_status:
+
+    get_modem_status:
+
+    get_ph_status:
+
+    get_chip_status:
+
+
+
+
+s/w cts
+
+command timings (drf):
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 1, t_cts0 = 24, t_cmd0 = 17, d_len0 = 1, t_cts_r = 24, t_reply = 109, d_reply_len = 10, t_elapsed = 187},
+{cmd = 2, t_cts0 = 24, t_cmd0 = 82, d_len0 = 7, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0}<repeats 13 times>,
+{cmd = 16, t_cts0 = 25, t_cmd0 = 17, d_len0 = 1, t_cts_r = 25, t_reply = 88, d_reply_len = 8, t_elapsed = 166},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 19, t_cts0 = 25, t_cmd0 = 93, d_len0 = 8, t_cts_r = 49, t_reply = 100, d_reply_len = 9, t_elapsed = 277},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 21, t_cts0 = 25, t_cmd0 = 28, d_len0 = 2, t_cts_r = 25, t_reply = 46, d_reply_len = 4, t_elapsed = 135},
+{cmd = 22, t_cts0 = 24, t_cmd0 = 17, d_len0 = 1, t_cts_r = 24, t_reply = 46, d_reply_len = 4, t_elapsed = 124},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 32, t_cts0 = 24, t_cmd0 = 50, d_len0 = 4, t_cts_r = 49, t_reply = 121, d_reply_len = 11, t_elapsed = 255},
+{cmd = 33, t_cts0 = 25, t_cmd0 = 27, d_len0 = 2, t_cts_r = 49, t_reply = 47, d_reply_len = 4, t_elapsed = 160},
+{cmd = 34, t_cts0 = 24, t_cmd0 = 28, d_len0 = 2, t_cts_r = 49, t_reply = 120, d_reply_len = 11, t_elapsed = 234},
+{cmd = 35, t_cts0 = 24, t_cmd0 = 28, d_len0 = 2, t_cts_r = 49, t_reply = 78, d_reply_len = 7, t_elapsed = 192},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0}<repeats 15 times>,
+{cmd = 51, t_cts0 = 25, t_cmd0 = 17, d_len0 = 1, t_cts_r = 25, t_reply = 46, d_reply_len = 4, t_elapsed = 124},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 203 times>,
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 74, t_reply = 78, d_reply_len = 7, t_elapsed = 0}}
+
+property timings (drf):
+{grp: 0, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 49, t_reply = 141, d_reply_len = 13, t_elapsed = 282},
+{grp: 1, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 49, t_reply = 67, d_reply_len = 6, t_elapsed = 208},
+{grp: 2, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 49, t_reply = 68, d_reply_len = 6, t_elapsed = 209},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0}<repeats 13 times>,
+{grp: 16, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 49, t_reply = 172, d_reply_len = 16, t_elapsed = 313},
+{grp: 17, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 49, t_reply = 131, d_reply_len = 12, t_elapsed = 272},
+{grp: 18, t_cts0 = 48, t_cmd0 = 80, d_len0 = 8, t_cts_r = 98, t_reply = 230, d_reply_len = 21, t_elapsed = 496},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0}<repeats 13 times>,
+{grp: 32, t_cts0 = 144, t_cmd0 = 240, d_len0 = 24, t_cts_r = 294, t_reply = 1162, d_reply_len = 108, t_elapsed = 1932},
+{grp: 33, t_cts0 = 72, t_cmd0 = 120, d_len0 = 12, t_cts_r = 147, t_reply = 455, d_reply_len = 42, t_elapsed = 848},
+{grp: 34, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 49, t_reply = 99, d_reply_len = 9, t_elapsed = 240},
+{grp: 35, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 49, t_reply = 109, d_reply_len = 10, t_elapsed = 250},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0}<repeats 12 times>,
+{grp: 48, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 49, t_reply = 152, d_reply_len = 14, t_elapsed = 293},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 15 times>,
+{grp: 64, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 49, t_reply = 109, d_reply_len = 10, t_elapsed = 250},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 15 times>,
+{grp: 80, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 49, t_reply = 68, d_reply_len = 6, t_elapsed = 209},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 159 times>,
+{grp: 240, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 74, t_reply = 78, d_reply_len = 7, t_elapsed = 244},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 15 times>}
+
+
+h/w cts:
+
+command timings (drf):
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 1, t_cts0 = 1, t_cmd0 = 17, d_len0 = 1, t_cts_r = 6, t_reply = 110, d_reply_len = 10, t_elapsed = 147},
+{cmd = 2, t_cts0 = 1, t_cmd0 = 82, d_len0 = 7, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0}<repeats 13 times>,
+{cmd = 16, t_cts0 = 1, t_cmd0 = 17, d_len0 = 1, t_cts_r = 8, t_reply = 89, d_reply_len = 8, t_elapsed = 127},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 19, t_cts0 = 1, t_cmd0 = 93, d_len0 = 8, t_cts_r = 24, t_reply = 99, d_reply_len = 9, t_elapsed = 230},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 21, t_cts0 = 1, t_cmd0 = 28, d_len0 = 2, t_cts_r = 8, t_reply = 46, d_reply_len = 4, t_elapsed = 96},
+{cmd = 22, t_cts0 = 1, t_cmd0 = 17, d_len0 = 1, t_cts_r = 6, t_reply = 47, d_reply_len = 4, t_elapsed = 84},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0},
+{cmd = 32, t_cts0 = 1, t_cmd0 = 50, d_len0 = 4, t_cts_r = 28, t_reply = 120, d_reply_len = 11, t_elapsed = 211},
+{cmd = 33, t_cts0 = 1, t_cmd0 = 28, d_len0 = 2, t_cts_r = 21, t_reply = 47, d_reply_len = 4, t_elapsed = 108},
+{cmd = 34, t_cts0 = 1, t_cmd0 = 28, d_len0 = 2, t_cts_r = 26, t_reply = 120, d_reply_len = 11, t_elapsed = 187},
+{cmd = 35, t_cts0 = 2, t_cmd0 = 27, d_len0 = 2, t_cts_r = 21, t_reply = 78, d_reply_len = 7, t_elapsed = 140},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 15 times>,
+{cmd = 51, t_cts0 = 1, t_cmd0 = 17, d_len0 = 1, t_cts_r = 3, t_reply = 47, d_reply_len = 4, t_elapsed = 80},
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0}<repeats 203 times>,
+{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 38, t_reply = 78, d_reply_len = 7, t_elapsed = 0}
+
+property timings (drf):
+{grp: 0, t_cts0 = 1, t_cmd0 = 40, d_len0 = 4, t_cts_r = 26, t_reply = 141, d_reply_len = 13, t_elapsed = 236},
+{grp: 1, t_cts0 = 1, t_cmd0 = 40, d_len0 = 4, t_cts_r = 16, t_reply = 67, d_reply_len = 6, t_elapsed = 152},
+{grp: 2, t_cts0 = 1, t_cmd0 = 40, d_len0 = 4, t_cts_r = 13, t_reply = 68, d_reply_len = 6, t_elapsed = 150},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0}<repeats 13 times>,
+{grp: 16, t_cts0 = 1, t_cmd0 = 40, d_len0 = 4, t_cts_r = 22, t_reply = 173, d_reply_len = 16, t_elapsed = 264},
+{grp: 17, t_cts0 = 1, t_cmd0 = 40, d_len0 = 4, t_cts_r = 29, t_reply = 130, d_reply_len = 12, t_elapsed = 229},
+{grp: 18, t_cts0 = 2, t_cmd0 = 80, d_len0 = 8, t_cts_r = 42, t_reply = 231, d_reply_len = 21, t_elapsed = 395},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 13 times>,
+{grp: 32, t_cts0 = 6, t_cmd0 = 240, d_len0 = 24, t_cts_r = 160, t_reply = 1161, d_reply_len = 108, t_elapsed = 1660},
+{grp: 33, t_cts0 = 3, t_cmd0 = 120, d_len0 = 12, t_cts_r = 75, t_reply = 455, d_reply_len = 42, t_elapsed = 707},
+{grp: 34, t_cts0 = 1, t_cmd0 = 40, d_len0 = 4, t_cts_r = 24, t_reply = 99, d_reply_len = 9, t_elapsed = 192},
+{grp: 35, t_cts0 = 1, t_cmd0 = 40, d_len0 = 4, t_cts_r = 24, t_reply = 110, d_reply_len = 10, t_elapsed = 203},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0}<repeats 12 times>,
+{grp: 48, t_cts0 = 1, t_cmd0 = 40, d_len0 = 4, t_cts_r = 27, t_reply = 152, d_reply_len = 14, t_elapsed = 248},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 15 times>,
+{grp: 64, t_cts0 = 1, t_cmd0 = 40, d_len0 = 4, t_cts_r = 27, t_reply = 110, d_reply_len = 10, t_elapsed = 206},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 15 times>,
+{grp: 80, t_cts0 = 1, t_cmd0 = 40, d_len0 = 4, t_cts_r = 27, t_reply = 68, d_reply_len = 6, t_elapsed = 164},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 159 times>,
+{grp: 240, t_cts0 = 1, t_cmd0 = 40, d_len0 = 4, t_cts_r = 38, t_reply = 78, d_reply_len = 7, t_elapsed = 185},
+{grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 15 times>
+
+
+
+
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x1, t_cts0 = 0x2, t_cmd0 = 0x11, d_len0 = 0x1, t_cts_r = 0x1, t_reply = 0x6e, d_reply_len = 0xa, t_elapsed = 0x8f, frr = {0x4, 0x0, 0x0, 0x14}},
+{cmd = 0x2, t_cts0 = 0x1, t_cmd0 = 0x52, d_len0 = 0x7, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}<repeats13 times>,
+{cmd = 0x10, t_cts0 = 0x1, t_cmd0 = 0x11, d_len0 = 0x1, t_cts_r = 0x8, t_reply = 0x58, d_reply_len = 0x8, t_elapsed = 0x80, frr = {0x4, 0x0, 0x0, 0x14}},
+{cmd = 0x11, t_cts0 = 0x1, t_cmd0 = 0x5d, d_len0 = 0x8, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x13, t_cts0 = 0x1, t_cmd0 = 0x5e, d_len0 = 0x8, t_cts_r = 0x16, t_reply = 0x63, d_reply_len = 0x9, t_elapsed = 0xe5, frr = {0x4, 0x0, 0x0, 0x14}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x15, t_cts0 = 0x1, t_cmd0 = 0x1c, d_len0 = 0x2, t_cts_r = 0x8, t_reply = 0x2f, d_reply_len = 0x4, t_elapsed = 0x61, frr = {0x4, 0x0, 0x0, 0x14}},
+{cmd = 0x16, t_cts0 = 0x1, t_cmd0 = 0x11, d_len0 = 0x1, t_cts_r = 0x4, t_reply = 0x2f, d_reply_len = 0x4, t_elapsed = 0x53, frr = {0x4, 0x0, 0x0, 0x14}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}},
+{cmd = 0x20, t_cts0 = 0x1, t_cmd0 = 0x32, d_len0 = 0x4, t_cts_r = 0x1a, t_reply = 0x78, d_reply_len = 0xb, t_elapsed = 0xd2, frr = {0x4, 0x0, 0x0, 0x14}},
+{cmd = 0x21, t_cts0 = 0x1, t_cmd0 = 0x1c, d_len0 = 0x2, t_cts_r = 0x15, t_reply = 0x2e, d_reply_len = 0x4, t_elapsed = 0x6d, frr = {0x4, 0x0, 0x0, 0x14}},
+{cmd = 0x22, t_cts0 = 0x1, t_cmd0 = 0x1c, d_len0 = 0x2, t_cts_r = 0x19, t_reply = 0x78, d_reply_len = 0xb, t_elapsed = 0xbc, frr = {0x4, 0x0, 0x0, 0x14}},
+{cmd = 0x23, t_cts0 = 0x1, t_cmd0 = 0x1c, d_len0 = 0x2, t_cts_r = 0x14, t_reply = 0x4e, d_reply_len = 0x7, t_elapsed = 0x8d, frr = {0x4, 0x0, 0x0, 0x14}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+<repeats
+15
+times>,
+{cmd = 0x33, t_cts0 = 0x1, t_cmd0 = 0x11, d_len0 = 0x1, t_cts_r = 0x3, t_reply = 0x2f, d_reply_len = 0x4, t_elapsed = 0x51, frr = {0x4, 0x0, 0x0, 0x14}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+<repeats 203 times>,
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x25, t_reply = 0x4e, d_reply_len = 0x7, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}}
+
+
+{cmd = 0x0, t_cts0 = 0x1, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x1a, t_reply = 0x8d, d_reply_len = 0xd, t_elapsed = 0xee, frr = {0x4, 0x0, 0x0, 0x1c}},
+{cmd = 0x1, t_cts0 = 0x1, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x1, t_reply = 0x44, d_reply_len = 0x6, t_elapsed = 0x8c, frr = {0x4, 0x0, 0x0, 0x14}},
+{cmd = 0x2, t_cts0 = 0x1, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0xe, t_reply = 0x43, d_reply_len = 0x6, t_elapsed = 0x98, frr = {0x4, 0x0, 0x0, 0x1c}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+<repeats
+13 times>,
+{cmd = 0x10, t_cts0 = 0x1, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x16, t_reply = 0xac, d_reply_len = 0x10, t_elapsed = 0x10a, frr = {0x4, 0x0, 0x0, 0x1c}},
+{cmd = 0x11, t_cts0 = 0x1, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x1b, t_reply = 0x83, d_reply_len = 0xc, t_elapsed = 0xe6, frr = {0x4, 0x0, 0x0, 0x1c}},
+{cmd = 0x12, t_cts0 = 0x2, t_cmd0 = 0x50, d_len0 = 0x8, t_cts_r = 0x2b, t_reply = 0xe5, d_reply_len = 0x15, t_elapsed = 0x18d, frr = {0x4, 0x0, 0x0, 0x1c}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+<repeats 13 times>,
+{cmd = 0x20, t_cts0 = 0x6, t_cmd0 = 0xf0, d_len0 = 0x18, t_cts_r = 0x9f, t_reply = 0x489, d_reply_len = 0x6c, t_elapsed = 0x67e, frr = {0x4, 0x0, 0x0, 0x1c}},
+{cmd = 0x21, t_cts0 = 0x3, t_cmd0 = 0x78, d_len0 = 0xc, t_cts_r = 0x4b, t_reply = 0x1c7, d_reply_len = 0x2a, t_elapsed = 0x2c6, frr = {0x4, 0x0, 0x0, 0x1c}},
+{cmd = 0x22, t_cts0 = 0x1, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x16, t_reply = 0x63, d_reply_len = 0x9, t_elapsed = 0xc0, frr = {0x4, 0x0, 0x0, 0x1c}},
+{cmd = 0x23, t_cts0 = 0x1, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x18, t_reply = 0x6e, d_reply_len = 0xa, t_elapsed = 0xcd, frr = {0x4, 0x0, 0x0, 0x1c}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+<repeats 12 times>,
+{cmd = 0x30, t_cts0 = 0x1, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x1c, t_reply = 0x97, d_reply_len = 0xe, t_elapsed = 0xfa, frr = {0x4, 0x0, 0x0, 0x1c}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+<repeats 15 times>, {cmd = 0x40, t_cts0 = 0x1, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x1a, t_reply = 0x6e, d_reply_len = 0xa, t_elapsed = 0xcf, frr = {0x4, 0x0, 0x0, 0x1c}}, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}} <repeats 15 times>, {cmd = 0x50, t_cts0 = 0x1, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x1a, t_reply = 0x43, d_reply_len = 0x6, t_elapsed = 0xa4, frr = {0x4, 0x0, 0x0, 0x1c}}, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}} <repeats 159 times>,
+{cmd = 0xf0, t_cts0 = 0x1, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x25, t_reply = 0x4e, d_reply_len = 0x7, t_elapsed = 0xba, frr = {0x4, 0x0, 0x0, 0x1c}},
+{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}} <repeats 15 times>}
