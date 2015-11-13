@@ -733,10 +733,9 @@ implementation {
   bool si446x_get_cts() {
     uint8_t cts_s;
 
-//#ifdef SI446x_HW_CTS
-#ifdef notdef
+#ifdef SI446x_HW_CTS
     cts_s = call HW.si446x_cts();
-    return cts_s
+    return cts_s;
 #else
     xcts = call HW.si446x_cts();
     call HW.si446x_set_cs();
