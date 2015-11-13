@@ -751,34 +751,58 @@ implementation {
 
 
   /*
-   * send_cmd_no_cts_wait
+   * Read FRR
    *
-   * send command but don't wait for CTS at end.
+   * read 1 Fast Response Register
    *
-   * should always be CTS at the beginning else panic.
+   * register comes back on the same SPI transaction as the command
+   *
+   * CTS does not need to be true.
    */
+  uint8_t si446x_read_frr(uint8_t which) {
+    uint8_t result;
 
-  void si446x_send_cmd_no_cts_wait(const uint8_t *c, uint8_t *response, uint16_t length) {
-    if (!si446x_get_cts()) {
-        __PANIC_RADIO(2, 0, 0, 0, 0);
-    }      
     call HW.si446x_set_cs();
-    call SpiBlock.transfer((void *) c, response, length);
+    call FastSpiByte.splitWrite(which);
+    result = call FastSpiByte.splitReadWrite(0);
+    result = call FastSpiByte.splitRead();
     call HW.si446x_clr_cs();
-    return;
+    return result;
   }
 
-
+   
   /*
-   * Send command with CTS follow up.
+   * Read status
    *
-   * Send command pull returned bytes into response buff.
-   * then waits for CTS to go up with a time out.
+   * reads status of important control registers (FRRs)
+   * via the FRR mechanism.
    *
-   * If the time out trips, we panic.
+   * pointer to uint8_t xyz[4] buffer;
    *
-   * returns number of uS it took before CTS came up.  (for observing
-   * chip behaviour).   
+   * CTS does not need to be true.
+   */
+  uint8_t si446x_read_status(uint8_t *s) {
+    uint8_t result;
+
+    call HW.si446x_set_cs();
+    call FastSpiByte.splitWrite(SI446X_CMD_FRR_A);
+    result = call FastSpiByte.splitReadWrite(0);
+    s[0] = call FastSpiByte.splitReadWrite(0);
+    s[1] = call FastSpiByte.splitReadWrite(0);
+    s[2] = call FastSpiByte.splitReadWrite(0);
+    s[3] = call FastSpiByte.splitRead();
+    call HW.si446x_clr_cs();
+    return result;
+  }
+
+   
+  /*
+   * send_cmd
+   *
+   * send command
+   *
+   * should always be CTS at the beginning else panic.
+   * no wait for cts on exit.  CTS 
    */
 
   void si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
@@ -1567,7 +1591,8 @@ implementation {
       return;
     }
     next_state(STATE_PWR_UP_WAIT);
-    si446x_send_cmd_no_cts_wait(si446x_power_up, rsp, sizeof(si446x_power_up));
+    nop();
+    si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
     stateAlarm_active = TRUE;
     call RadioAlarm.wait(SI446X_POWER_UP_WAIT_TIME);
   }
