@@ -1113,6 +1113,9 @@ implementation {
     uint8_t  *w, wl;                    /* working */
     uint16_t t0, t1;
 
+    if (!si446x_get_cts()) {
+        __PANIC_RADIO(8, 0, 0, 0, 0);
+    }      
     dpp = &dump_prop[0];
     while (dpp->length) {
       group = dpp->group;
