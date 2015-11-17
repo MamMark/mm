@@ -531,19 +531,30 @@ const uint8_t si446x_gpio_cfg_nc[]   = { SI446X_CMD_GPIO_PIN_CFG,   /* 13 */
   0                                     /* gen_config */
 };
 const uint8_t si446x_fifo_info_nc[]  = { SI446X_CMD_FIFO_INFO, 0 }; /* 15 */
+
 const uint8_t si446x_packet_info_nc[]= { SI446X_CMD_PACKET_INFO };  /* 16 */
+
 const uint8_t si446x_int_status_nc[] = { SI446X_CMD_GET_INT_STATUS, /* 20 */
   SI446X_INT_NO_CLEAR, SI446X_INT_NO_CLEAR, SI446X_INT_NO_CLEAR };
+
 const uint8_t si446x_int_clr[] = { SI446X_CMD_GET_INT_STATUS };     /* 20 */
+
 const uint8_t si446x_ph_status_nc[] = {                             /* 21 */
   SI446X_CMD_GET_PH_STATUS, SI446X_INT_NO_CLEAR };
+
 const uint8_t si446x_ph_clr[] = { SI446X_CMD_GET_PH_STATUS};        /* 21 */
+
 const uint8_t si446x_modem_status_nc[] = {                          /* 22 */
   SI446X_CMD_GET_MODEM_STATUS, SI446X_INT_NO_CLEAR };
+
 const uint8_t si446x_modem_clr[] = { SI446X_CMD_GET_MODEM_STATUS }; /* 22 */
+
 const uint8_t si446x_chip_status_nc[] = {                           /* 23 */
   SI446X_CMD_GET_CHIP_STATUS, SI446X_INT_NO_CLEAR };
+
 const uint8_t si446x_chip_clr[] = { SI446X_CMD_GET_CHIP_STATUS };   /* 23 */
+const uint8_t si446x_chip_clr_cmd_err[] = { SI446X_CMD_GET_CHIP_STATUS, 0xf7 };
+
 const uint8_t si446x_device_state[] = { SI446X_CMD_REQUEST_DEVICE_STATE }; /* 33 */
 
 tasklet_norace message_t  * txMsg;            /* msg driver owns */
@@ -1285,7 +1296,7 @@ implementation {
     rd.ta0ccr3     = TA0CCR3;
     rd.ta0cctl3    = TA0CCTL3;
 
-    nop();
+    nop();                              /* these should become ll_* */
     si446x_cmd_reply(si446x_part_info, sizeof(si446x_part_info),
                      (void *) &rd.part_info, SI446X_PART_INFO_REPLY_SIZE);
 
@@ -1327,6 +1338,7 @@ implementation {
 
     nop();
     dump_properties();
+    nop();
     rd.l_dump_end = call LocalTime.get();
     rd.l_delta =  rd.l_dump_end - rd.l_dump_start;
   }
