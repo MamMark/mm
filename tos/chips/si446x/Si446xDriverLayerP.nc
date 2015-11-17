@@ -1208,6 +1208,24 @@ implementation {
   }
 
 
+  uint8_t r_prop(uint16_t p_id, uint16_t num, uint8_t *w) {
+    uint8_t group, index, chip_pend;
+
+    group = p_id >> 8;
+    index = p_id & 0xff;
+    call HW.si446x_set_cs();
+    call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
+    call FastSpiByte.splitReadWrite(group);
+    call FastSpiByte.splitReadWrite(num);
+    call FastSpiByte.splitReadWrite(index);
+    call FastSpiByte.splitRead();
+    call HW.si446x_clr_cs();
+    ll_si446x_get_reply(w, num, 0xff);
+    chip_pend = si446x_fast_chip_pend();
+    return chip_pend;
+  }
+
+
   /* dump_properties */
   void dump_properties() {
     const dump_prop_desc_t *dpp;
