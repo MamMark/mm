@@ -1226,7 +1226,7 @@ implementation {
     }
     t1 = call Platform.usecsRaw();
     dpp = &dump_prop[0];
-    while (dpp->length) {
+    while (dpp->where) {
       group = dpp->group;
       index = 0;
       length = dpp->length;
