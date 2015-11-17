@@ -250,20 +250,18 @@ typedef struct {
   uint8_t               grF0_pti[SI446X_GROUPF0_SIZE];
 } radio_dump_t;
 
+norace radio_dump_t rd;
+
 typedef struct {
   uint8_t   group;
   uint8_t   length;
   uint8_t  *where;
 } dump_prop_desc_t;
 
-norace radio_dump_t rd;
-norace uint8_t      fifo[129];
-
-norace si446x_chip_status_t chip0, chip1;
 
 const dump_prop_desc_t dump_prop[] = {
-  { 0x01, SI446X_GROUP01_SIZE, (void *) &rd.gr01_int },
   { 0x00, SI446X_GROUP00_SIZE, (void *) &rd.gr00_global },
+  { 0x01, SI446X_GROUP01_SIZE, (void *) &rd.gr01_int },
   { 0x02, SI446X_GROUP02_SIZE, (void *) &rd.gr02_frr },
   { 0x10, SI446X_GROUP10_SIZE, (void *) &rd.gr10_preamble },
   { 0x11, SI446X_GROUP11_SIZE, (void *) &rd.gr11_sync },
@@ -422,6 +420,12 @@ volatile norace si446x_chip_int_t int_state;
 volatile norace uint8_t radio_status[4];
 
 norace uint8_t      rsp[16];
+
+norace si446x_ph_status_t    ph_status;
+norace si446x_modem_status_t modem_status;
+norace si446x_chip_status_t  chip_status;
+
+norace uint8_t      fifo[129];
 
 
 /*
