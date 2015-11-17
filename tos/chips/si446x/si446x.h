@@ -228,19 +228,16 @@
 #define SI446X_PROP_GLOBAL_WUT_LDC                   0x0008
 #define SI446X_PROP_GLOBAL_WUT_CAL                   0x0009
 #define SI446X_PROP_GLOBAL_BUFCLK_CFG                0x000a
-#define SI446X_GROUP00_SIZE                     0xb
 
 #define SI446X_PROP_INT_CTL_ENABLE                   0x0100
 #define SI446X_PROP_INT_CTL_PH_ENABLE                0x0101
 #define SI446X_PROP_INT_CTL_MODEM_ENABLE             0x0102
 #define SI446X_PROP_INT_CTL_CHIP_ENABLE              0x0103
-#define SI446X_GROUP01_SIZE                     0x4
 
 #define SI446X_PROP_FRR_CTL_A_MODE                   0x0200
 #define SI446X_PROP_FRR_CTL_B_MODE                   0x0201
 #define SI446X_PROP_FRR_CTL_C_MODE                   0x0202
 #define SI446X_PROP_FRR_CTL_D_MODE                   0x0203
-#define SI446X_GROUP02_SIZE                     0x4
 
 #define SI446X_PROP_PREAMBLE_TX_LENGTH               0x1000
 #define SI446X_PROP_PREAMBLE_CONFIG_STD_1            0x1001
@@ -256,7 +253,6 @@
 #define SI446X_PROP_PREAMBLE_POSTAMBLE_PATTERN_B     0x100b
 #define SI446X_PROP_PREAMBLE_POSTAMBLE_PATTERN_C     0x100c
 #define SI446X_PROP_PREAMBLE_POSTAMBLE_PATTERN_D     0x100d
-#define SI446X_GROUP10_SIZE                     0xe
 
 #define SI446X_PROP_SYNC_CONFIG                      0x1100
 #define SI446X_PROP_SYNC_BITS_31_24                  0x1101
@@ -268,7 +264,6 @@
 #define SI446X_PROP_SYNC_BITS2_23_16                 0x1107
 #define SI446X_PROP_SYNC_BITS2_15_8                  0x1108
 #define SI446X_PROP_SYNC_BITS2_7_0                   0x1109
-#define SI446X_GROUP11_SIZE                     0xa
 
 #define SI446X_PROP_PKT_CRC_CONFIG                   0x1200
 #define SI446X_PROP_PKT_WHT_POLY_15                  0x1201
@@ -327,7 +322,6 @@
 #define SI446X_PROP_PKT_CRC_SEED_2                   0x1237
 #define SI446X_PROP_PKT_CRC_SEED_1                   0x1238
 #define SI446X_PROP_PKT_CRC_SEED_0                   0x1239
-#define SI446X_GROUP12_SIZE                     0x11
 
 #define SI446X_PROP_MODEM_MOD_TYPE                   0x2000
 #define SI446X_PROP_MODEM_MAP_CONTROL                0x2001
@@ -410,7 +404,6 @@
 #define SI446X_PROP_MODEM_DSA_QUAL                   0x205d
 #define SI446X_PROP_MODEM_DSA_RSSI                   0x205e
 #define SI446X_PROP_MODEM_DSA_MISC                   0x205f
-#define SI446X_GROUP20_SIZE                     0x60
 
 #define SI446X_PROP_MODEM_CHFLT_RX1_CHFLT_COE13_7_0  0x2100
 #define SI446X_PROP_MODEM_CHFLT_RX1_CHFLT_COE12_7_0  0x2101
@@ -448,7 +441,6 @@
 #define SI446X_PROP_MODEM_CHFLT_RX2_CHFLT_COEM1      0x2121
 #define SI446X_PROP_MODEM_CHFLT_RX2_CHFLT_COEM2      0x2122
 #define SI446X_PROP_MODEM_CHFLT_RX2_CHFLT_COEM3      0x2123
-#define SI446X_GROUP21_SIZE                     0x24
 
 #define SI446X_PROP_PA_MODE                          0x2200
 #define SI446X_PROP_PA_PWR_LVL                       0x2201
@@ -457,7 +449,6 @@
 #define SI446X_PROP_PA_RAMP_EX                       0x2204
 #define SI446X_PROP_PA_DOWN_DELAY                    0x2205
 #define SI446X_PROP_PA_DIG_PWR_SEQ_CONFIG            0x2206
-#define SI446X_GROUP22_SIZE                     0x7
 
 #define SI446X_PROP_SYNTH_PFDCP_CPFF                 0x2300
 #define SI446X_PROP_SYNTH_PFDCP_CPINT                0x2301
@@ -467,7 +458,6 @@
 #define SI446X_PROP_SYNTH_LPFILT1                    0x2305
 #define SI446X_PROP_SYNTH_LPFILT0                    0x2306
 #define SI446X_PROP_SYNTH_VCO_KVCAL                  0x2307
-#define SI446X_GROUP23_SIZE                     0x8
 
 #define SI446X_PROP_MATCH_VALUE_1                    0x3000
 #define SI446X_PROP_MATCH_MASK_1                     0x3001
@@ -481,7 +471,6 @@
 #define SI446X_PROP_MATCH_VALUE_4                    0x3009
 #define SI446X_PROP_MATCH_MASK_4                     0x300a
 #define SI446X_PROP_MATCH_CTRL_4                     0x300b
-#define SI446X_GROUP30_SIZE                     0xc
 
 #define SI446X_PROP_FREQ_CONTROL_INTE                0x4000
 #define SI446X_PROP_FREQ_CONTROL_FRAC_2              0x4001
@@ -491,19 +480,82 @@
 #define SI446X_PROP_FREQ_CONTROL_CHANNEL_STEP_SIZE_0 0x4005
 #define SI446X_PROP_FREQ_CONTROL_W_SIZE              0x4006
 #define SI446X_PROP_FREQ_CONTROL_VCOCNT_RX_ADJ       0x4007
-#define SI446X_GROUP40_SIZE                     0x8
 
 #define SI446X_PROP_RX_HOP_CONTROL                   0x5000
 #define SI446X_PROP_RX_HOP_TABLE_SIZE                0x5001
 #define SI446X_PROP_RX_HOP_TABLE_ENTRY_0             0x5002
-#define SI446X_GROUP50_SIZE                     0x4
 
 #define SI446X_PROP_PTI_CTL                          0xf000
 #define SI446X_PROP_PTI_BAUD_1                       0xf001
 #define SI446X_PROP_PTI_BAUD_0                       0xf002
 #define SI446X_PROP_PTI_LOG_EN                       0xf003
 #define SI446X_PROP_PTI_LOG_EN_2                     0xf004
-#define SI446X_GROUPF0_SIZE                     0x5
+
+
+/*
+ * different chips in the same family (446x family, 4463 vs. 4468)
+ * have different length properties.  We put the lengths here
+ * and select based on a Platform define for which chip we are
+ * using.
+ *
+ * We collect them all here so easy to maintain.
+ */
+#if SI446X_CHIP == 0x4463
+
+#define SI446X_GROUP00_SIZE                     0x0a
+#define SI446X_GROUP01_SIZE                     0x04
+#define SI446X_GROUP02_SIZE                     0x04
+#define SI446X_GROUP10_SIZE                     0x0e
+#define SI446X_GROUP11_SIZE                     0x05
+#define SI446X_GROUP12_SIZE                     0x35
+#define SI446X_GROUP20_SIZE                     0x52
+#define SI446X_GROUP21_SIZE                     0x24
+#define SI446X_GROUP22_SIZE                     0x06
+#define SI446X_GROUP23_SIZE                     0x08
+#define SI446X_GROUP30_SIZE                     0x0c
+#define SI446X_GROUP40_SIZE                     0x08
+#define SI446X_GROUP50_SIZE                     0x42
+#define SI446X_GROUPF0_SIZE                     0x0
+
+#elif SI446X_CHIP == 0x4463a
+
+#define SI446X_GROUP00_SIZE                     0x0a
+#define SI446X_GROUP01_SIZE                     0x04
+#define SI446X_GROUP02_SIZE                     0x04
+#define SI446X_GROUP10_SIZE                     0x0e
+#define SI446X_GROUP11_SIZE                     0x05
+
+/* gr12 shortened to 0x29, PKT_RX_FLD_3_LEN */
+#define SI446X_GROUP12_SIZE                     0x29
+#define SI446X_GROUP20_SIZE                     0x52
+#define SI446X_GROUP21_SIZE                     0x24
+#define SI446X_GROUP22_SIZE                     0x06
+#define SI446X_GROUP23_SIZE                     0x08
+#define SI446X_GROUP30_SIZE                     0x00
+#define SI446X_GROUP40_SIZE                     0x08
+#define SI446X_GROUP50_SIZE                     0x00
+#define SI446X_GROUPF0_SIZE                     0x00
+
+#elif SI446X_CHIP == 0x4468
+
+#define SI446X_GROUP00_SIZE                     0x0b
+#define SI446X_GROUP01_SIZE                     0x04
+#define SI446X_GROUP02_SIZE                     0x04
+#define SI446X_GROUP10_SIZE                     0x0e
+#define SI446X_GROUP11_SIZE                     0x0a
+#define SI446X_GROUP12_SIZE                     0x3a
+#define SI446X_GROUP20_SIZE                     0x60
+#define SI446X_GROUP21_SIZE                     0x24
+#define SI446X_GROUP22_SIZE                     0x07
+#define SI446X_GROUP23_SIZE                     0x08
+#define SI446X_GROUP30_SIZE                     0x0c
+#define SI446X_GROUP40_SIZE                     0x08
+#define SI446X_GROUP50_SIZE                     0x42
+#define SI446X_GROUPF0_SIZE                     0x04
+
+#else
+#error Unrecognized value for SI446X_CHIP
+#endif
 
 
 // #define SI446X_CMD_GET_INT_STATUS             0x20

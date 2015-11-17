@@ -14,6 +14,8 @@
 #ifndef __RADIO_CONFIG_SI4463W_H__
 #define __RADIO_CONFIG_SI4463W_H__
 
+#define SI446X_CHIP 0x4463a
+
 // USER DEFINED PARAMETERS
 // Define your own parameters here
 

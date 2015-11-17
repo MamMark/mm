@@ -273,7 +273,9 @@ const dump_prop_desc_t dump_prop[] = {
   { 0x30, SI446X_GROUP30_SIZE, (void *) &rd.gr30_match },
   { 0x40, SI446X_GROUP40_SIZE, (void *) &rd.gr40_freq_ctl },
   { 0x50, SI446X_GROUP50_SIZE, (void *) &rd.gr50_hop },
+#if SI446X_CHIP == 0x4468
   { 0xF0, SI446X_GROUPF0_SIZE, (void *) &rd.grF0_pti },
+#endif
   { 0, 0, NULL },
 };
 
