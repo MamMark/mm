@@ -823,15 +823,17 @@ implementation {
 
    
   /*
-   * send_cmd
+   * read fast chip pend
    *
-   * send command
-   *
-   * should always be CTS at the beginning else panic.
-   * no wait for cts on exit.  CTS 
+   * reads the preassigned FRR that has chip_pend status information
+   * this is from the assigned FRR, see si446x.h
    */
+  uint8_t si446x_fast_chip_pend() {
+    return si446x_read_frr(SI446X_GET_CHIP_PEND);
+  }
 
-  void si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
+    
+  void ll_si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
     uint16_t t0, t1;
     cmd_timing_t *ctp;
     uint8_t cmd;
@@ -858,20 +860,7 @@ implementation {
   }
 
 
-  /*
-   * Get a Reply stream.  Uses READ_CMD_BUFF
-   *
-   * Always assumes the reply stream starts with CTS.
-   *
-   * r          where to put the reply
-   * l          length of reply
-   *
-   * l doesn't include the cts byte.
-   *
-   * On entry makes sure that CTS is up so we can reliably
-   * read the return/reply stream.
-   */
-  void si446x_get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
+  void ll_si446x_get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
     uint8_t rcts;
     uint16_t t0, t1;
     cmd_timing_t *ctp;
@@ -902,14 +891,14 @@ implementation {
   }
 
 
-  void si446x_cmd_reply(const uint8_t *cp, uint16_t cl, uint8_t *rp, uint16_t rl) {
+  void ll_si446x_cmd_reply(const uint8_t *cp, uint16_t cl, uint8_t *rp, uint16_t rl) {
     uint16_t t0, t1;
     cmd_timing_t *ctp;
 
     ctp = &cmd_timings[cp[0]];
     t0 = call Platform.usecsRaw();
-    si446x_send_cmd(cp, rsp, cl);
-    si446x_get_reply(rp, rl, cp[0]);
+    ll_si446x_send_cmd(cp, rsp, cl);
+    ll_si446x_get_reply(rp, rl, cp[0]);
     t1 = call Platform.usecsRaw();
     ctp->t_elapsed = t1 - t0;
     si446x_read_status(ctp->frr);
@@ -921,15 +910,15 @@ implementation {
    *
    * This is debug code for observing interrupt state.
    */
-  void si446x_get_int_state(volatile si446x_chip_int_t *isp) {
-    si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                     (void *) &isp->ph_status, SI446X_PH_STATUS_REPLY_SIZE);
-    si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                     (void *) &isp->modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
-    si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                     (void *) &isp->chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
-    si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
-                     (void *) &isp->int_status, SI446X_INT_STATUS_REPLY_SIZE);
+  void ll_si446x_get_int_state(volatile si446x_chip_int_t *isp) {
+    ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
+                        (void *) &isp->ph_status, SI446X_PH_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
+                        (void *) &isp->modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
+                        (void *) &isp->chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
+                        (void *) &isp->int_status, SI446X_INT_STATUS_REPLY_SIZE);
   }
 
 
@@ -943,15 +932,60 @@ implementation {
    *
    * This is debug code for observing interrupt state.
    */
-  void si446x_getclr_int_state(volatile si446x_chip_int_t *isp) {
-    si446x_cmd_reply(si446x_ph_clr, sizeof(si446x_ph_clr),
-                     (void *) &isp->ph_status, SI446X_PH_STATUS_REPLY_SIZE);
-    si446x_cmd_reply(si446x_modem_clr, sizeof(si446x_modem_clr),
-                     (void *) &isp->modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
-    si446x_cmd_reply(si446x_chip_clr, sizeof(si446x_chip_clr),
-                     (void *) &isp->chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
-    si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
-                     (void *) &isp->int_status, SI446X_INT_STATUS_REPLY_SIZE);
+  void ll_si446x_getclr_int_state(volatile si446x_chip_int_t *isp) {
+    ll_si446x_cmd_reply(si446x_ph_clr, sizeof(si446x_ph_clr),
+                        (void *) &isp->ph_status, SI446X_PH_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_modem_clr, sizeof(si446x_modem_clr),
+                        (void *) &isp->modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_chip_clr, sizeof(si446x_chip_clr),
+                        (void *) &isp->chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
+                        (void *) &isp->int_status, SI446X_INT_STATUS_REPLY_SIZE);
+  }
+
+
+  void si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
+    uint8_t chip_pend;
+
+    ll_si446x_send_cmd(c, response, length);
+    chip_pend = si446x_fast_chip_pend();
+    if (chip_pend & SI446X_CHIP_STATUS_CMD_ERROR) {
+      ll_si446x_get_int_state(&chip_debug);
+      __PANIC_RADIO(30, chip_pend, 0, 0, 0);
+      ll_si446x_cmd_reply(si446x_chip_clr_cmd_err, sizeof(si446x_chip_clr_cmd_err),
+                          (void *) &chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
+      ll_si446x_get_int_state(&chip_debug);
+    }
+  }
+
+
+  void si446x_get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
+    uint8_t chip_pend;
+
+    ll_si446x_get_reply(r, l, cmd);
+    chip_pend = si446x_fast_chip_pend();
+    if (chip_pend & SI446X_CHIP_STATUS_CMD_ERROR) {
+      ll_si446x_get_int_state(&chip_debug);
+      ll_si446x_get_int_state(&chip_debug);
+      __PANIC_RADIO(31, chip_pend, 0, 0, 0);
+      ll_si446x_cmd_reply(si446x_chip_clr_cmd_err, sizeof(si446x_chip_clr_cmd_err),
+                          (void *) &chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
+      ll_si446x_get_int_state(&chip_debug);
+    }
+  }
+
+
+  void si446x_cmd_reply(const uint8_t *cp, uint16_t cl, uint8_t *rp, uint16_t rl) {
+    uint16_t t0, t1;
+    cmd_timing_t *ctp;
+
+    ctp = &cmd_timings[cp[0]];
+    t0 = call Platform.usecsRaw();
+    si446x_send_cmd(cp, rsp, cl);
+    si446x_get_reply(rp, rl, cp[0]);
+    t1 = call Platform.usecsRaw();
+    ctp->t_elapsed = t1 - t0;
+    si446x_read_status(ctp->frr);
   }
 
 
@@ -1644,7 +1678,7 @@ implementation {
     }
     next_state(STATE_PWR_UP_WAIT);
     nop();
-    si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
+    ll_si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
     stateAlarm_active = TRUE;
     call RadioAlarm.wait(SI446X_POWER_UP_WAIT_TIME);
   }
@@ -1669,34 +1703,27 @@ implementation {
       __PANIC_RADIO(11, 0, 0, 0, 0);
     }
 
-    nop();
-    si446x_read_status((uint8_t *)radio_status);
-    stuff_config(&si446x_frr_config[0]);
-    si446x_read_status((uint8_t *)radio_status);
-    drf();
-    nop();
+    /*
+     * make the FRRs return for the time being, int_pend, ph_pend,
+     * modem_pend, and chip_pend.  We rely on frr_d being chip_pend.
+     */
+    stuff_config(si446x_frr_config);
 
     /* clear out pending interrupts */
-    si446x_getclr_int_state(&int_state);
-    si446x_get_int_state(&chip_debug);
-    nop();
-
-    drf();
-    nop();
+    ll_si446x_getclr_int_state(&int_state);
+    ll_si446x_get_int_state(&chip_debug);
 
     mt0 = call LocalTime.get();
     load_config();
     mt1 = call LocalTime.get();
-    nop();
 
     drf();
     nop();
 
     /* clear out pending interrupts */
-    si446x_getclr_int_state(&int_state);
-    si446x_get_int_state(&chip_debug);
+    ll_si446x_getclr_int_state(&int_state);
+    ll_si446x_get_int_state(&chip_debug);
     nop();
-
   }
 
 
