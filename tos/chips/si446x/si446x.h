@@ -103,6 +103,10 @@
 #define SI446X_CMD_FRR_B                      0x51
 #define SI446X_CMD_FRR_C                      0x53
 #define SI446X_CMD_FRR_D                      0x57
+
+/* driver wants chip_pend on FRR_D, make it simple to access */
+#define SI446X_GET_CHIP_PEND                  0x57
+
 #define SI446X_CMD_TX_FIFO_WRITE              0x66
 #define SI446X_CMD_RX_FIFO_READ               0x77
 
