@@ -181,10 +181,17 @@ enum {
 #include <radio_config_si4463w.h>
 
 /* max time we look for CTS to come back from command (us). The max we've
-   observed is 95uS.  Power_Up however takes 15ms so we don't use this
-   timeout with that command.
-*/
+ * observed is 95uS.  Power_Up however takes 15ms so we don't use this
+ * timeout with that command.
+ */
 #define SI446X_CTS_TIMEOUT 200
+
+#define FINNISH_WAIT 0
+#define FINNISH_RX   1
+#define FINNISH_TX   2
+
+volatile norace uint8_t finnish_gate = FINNISH_WAIT;
+
 
          norace bool    do_dump;        /* defaults to FALSE */
 volatile norace uint8_t xirq, p1;
@@ -1714,14 +1721,25 @@ implementation {
       return;
     }
     next_state(STATE_PWR_UP_WAIT);
-    nop();
     ll_si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
     stateAlarm_active = TRUE;
     call RadioAlarm.wait(SI446X_POWER_UP_WAIT_TIME);
   }
 
 
+  const uint8_t rf_start_rx[]         = {
+    0x32,                               /* start_rx */
+    0,                                  /* channel */
+    0,                                  /* start (immed) */
+    0, 32,                              /* rx_len */
+    8,                                  /* rxtimeout_state, RX */
+    3,                                  /* rxvalid, READY */
+    3                                   /* rxinvalid, READY */
+  };
+
   void cs_pwr_up_wait() {
+    uint16_t t0, t1;
+
     if (!(xcts = call HW.si446x_cts())) {
       __PANIC_RADIO(10, 0, 0, 0, 0);
     }
@@ -1740,6 +1758,9 @@ implementation {
       __PANIC_RADIO(11, 0, 0, 0, 0);
     }
 
+    drf();
+    nop();
+
     /*
      * make the FRRs return for the time being, int_pend, ph_pend,
      * modem_pend, and chip_pend.  We rely on frr_d being chip_pend.
@@ -1757,9 +1778,23 @@ implementation {
     drf();
     nop();
 
-    /* clear out pending interrupts */
-    ll_si446x_getclr_int_state(&int_state);
-    ll_si446x_get_int_state(&chip_debug);
+    while(finnish_gate == FINNISH_WAIT) {
+      nop();
+    }
+
+    if (finnish_gate == FINNISH_TX) {
+    }
+
+    if (finnish_gate == FINNISH_RX) {
+      next_state(STATE_RX_ON);
+      dvr_cmd = CMD_SIGNAL_DONE;
+      si446x_send_cmd(rf_start_rx, rsp, sizeof(rf_start_rx));
+      t0 = call Platform.usecsRaw();
+      while (!si446x_get_cts()) {
+      }
+      t1 = call Platform.usecsRaw();
+    }
+    drf();
     nop();
   }
 
