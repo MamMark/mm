@@ -104,8 +104,11 @@
 #define SI446X_CMD_FRR_C                      0x53
 #define SI446X_CMD_FRR_D                      0x57
 
-/* driver wants chip_pend on FRR_D, make it simple to access */
-#define SI446X_GET_CHIP_PEND                  0x57
+/* FRRs configured for fast access, make it simple to access using si446x_read_frr() */
+#define SI446X_GET_INT_PEND                   0x50    /* interrupt pending */
+#define SI446X_GET_PH_PEND                    0x51    /* packet_handler pending */
+#define SI446X_GET_MODEM_PEND                 0x53    /* modem pending */
+#define SI446X_GET_CHIP_PEND                  0x57    /* chip pending */
 
 #define SI446X_CMD_TX_FIFO_WRITE              0x66
 #define SI446X_CMD_RX_FIFO_READ               0x77
@@ -736,7 +739,7 @@ typedef struct {
   uint8_t modem_status;
   uint8_t chip_pend;
   uint8_t chip_status;
-  uint8_t info_flags;
+  uint8_t info_flags;                   /* 68 only */
 } si446x_int_status_t;                  /* INT_STATUS, 0x20 */
 
 typedef struct {
@@ -753,7 +756,7 @@ typedef struct {
   uint8_t ant2_rssi;
   uint8_t afc_freq_offset15;
   uint8_t afc_freq_offset7;
-  uint8_t info_flags;
+  uint8_t info_flags;                   /* 68 only */
 } si446x_modem_status_t;                /* MODEM_STATUS, 0x22 */
 
 typedef struct {
@@ -761,7 +764,7 @@ typedef struct {
   uint8_t chip_status;
   uint8_t cmd_err_status;
   uint8_t cmd_err_cmd_id;
-  uint8_t info_flags;
+  uint8_t info_flags;                   /* 68 only */
 } si446x_chip_status_t;                 /* CHIP_STATUS, 0x23 */
 
 #endif          //__SI446X_H__
