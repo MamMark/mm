@@ -190,7 +190,7 @@ enum {
 #define FINNISH_RX   1
 #define FINNISH_TX   2
 
-volatile norace uint8_t finnish_gate = FINNISH_WAIT;
+volatile norace uint8_t finnish_gate = FINNISH_TX;
 
 
          norace bool    do_dump;        /* defaults to FALSE */
@@ -203,9 +203,14 @@ norace uint16_t ut0, ut1;
 
 
 typedef struct {
-  uint8_t frr[4];
-} radio_status_t;
+  uint16_t ts;
+  uint16_t cts;
+  uint8_t  frr[4];
+} rps_t;
 
+#define  RPS_MAX 16
+norace uint16_t rps_next;
+norace rps_t    rps[RPS_MAX];
 
 typedef struct {
   uint16_t              p_dump_start;   /* 16 bit raw (platform) us timestamp */
@@ -236,7 +241,7 @@ typedef struct {
   /* request_device_state */
   uint8_t               device_state;
   uint8_t               channel;
-  uint8_t               frr_a, frr_b, frr_c, frr_d;
+  uint8_t               frr[4];
 
   uint8_t               packet_info_len[2];
 
@@ -368,28 +373,36 @@ const si446x_radio_config_t si446x_wds_config[] = {
 };
 
 
-const uint8_t test1[] = { 0x11, 0x00, 0x0c, 0x00, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-const uint8_t test2[] = { 0x11, 0x01, 0x04, 0x00, 7, 0xbd, 0x08, 0x17 };
-
-
 const uint8_t rf_gpio_pin_cfg[]     = { 0x13, 0x08, 0x08, 0x08, 0x08,
                                               0x00, 0x00, 0x00 };
 const uint8_t rf_int_ctl_enable_1[] = { 0x11, 0x01, 0x01, 0x00, 0x00 };
 
-/* frr is set manually right after POWER_UP */
+/*
+ * frr is set manually right after POWER_UP
+ *
+ * A: device state
+ * B: PH_PEND
+ * C: MODEM_PEND
+ * D: CHIP_PEND
+ */
 const uint8_t rf_frr_ctl_a_mode_4[] = { 0x11, 0x02, 0x04, 0x00,
-                                              0x02, 0x04, 0x06, 0x08 };
+                                              0x09, 0x04, 0x06, 0x08 };
+
 const uint8_t rf_pkt_crc_config_7[] = { 0x11, 0x12, 0x07, 0x00, 0x84, 0x01,
                                               0x08, 0xFF, 0xFF, 0x00, 0x02 };
+
 const uint8_t rf_pkt_len_12[] = { 0x11, 0x12, 0x0C, 0x08, 0x2A, 0x01,
                                         0x00, 0x30, 0x30, 0x00, 0x01,
                                         0x04, 0x82, 0x00, 0x3F, 0x00 };
+
 const uint8_t rf_pkt_field_2_crc_config_12[] =
   { 0x11, 0x12, 0x0C, 0x14, 0x2A, 0x00, 0x00, 0x00, 0x00,
           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
 const uint8_t rf_pkt_field_5_crc_config_12[] =
   { 0x11, 0x12, 0x0C, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00,
           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
 const uint8_t rf_pkt_rx_field_3_crc_config_9[] =
   { 0x11, 0x12, 0x09, 0x2C, 0x00, 0x00, 0x00, 0x00, 0x00,
           0x00, 0x00, 0x00, 0x00 };
@@ -426,7 +439,7 @@ typedef struct {
 volatile norace si446x_chip_int_t chip_debug;
 volatile norace si446x_chip_int_t int_state;
 
-volatile norace uint8_t radio_status[4];
+norace uint8_t radio_pend[4];
 
 norace uint8_t      rsp[16];
 
@@ -801,6 +814,18 @@ implementation {
   }
 
 
+  uint8_t get_sw_cts() {
+    uint8_t res;
+
+    call HW.si446x_set_cs();
+    call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
+    call FastSpiByte.splitReadWrite(0);
+    res = call FastSpiByte.splitRead();
+    call HW.si446x_clr_cs();
+    return res;
+  }
+
+
   /*
    * Read FRR
    *
@@ -823,63 +848,122 @@ implementation {
 
    
   /*
-   * Read status
+   * Read Fast Status
    *
    * reads status of important control registers (FRRs)
-   * via the FRR mechanism.
+   * via the FRR mechanism.  Doesn't need CTS.
    *
    * pointer to uint8_t xyz[4] buffer;
    *
    * CTS does not need to be true.
    */
-  uint8_t si446x_read_status(uint8_t *s) {
-    uint8_t result;
+  void si446x_read_fast_status(void *s) {
+    uint8_t *p;
 
-    call HW.si446x_set_cs();
-    call FastSpiByte.splitWrite(SI446X_CMD_FRR_A);
-    result = call FastSpiByte.splitReadWrite(0);
-    s[0] = call FastSpiByte.splitReadWrite(0);
-    s[1] = call FastSpiByte.splitReadWrite(0);
-    s[2] = call FastSpiByte.splitReadWrite(0);
-    s[3] = call FastSpiByte.splitRead();
-    call HW.si446x_clr_cs();
-    return result;
+    p = (uint8_t *) s;
+    SI446X_ATOMIC {
+      call HW.si446x_set_cs();
+      call FastSpiByte.splitWrite(SI446X_CMD_FRR_A);
+      call FastSpiByte.splitReadWrite(0);
+      p[0] = call FastSpiByte.splitReadWrite(0);
+      p[1] = call FastSpiByte.splitReadWrite(0);
+      p[2] = call FastSpiByte.splitReadWrite(0);
+      p[3] = call FastSpiByte.splitRead();
+      call HW.si446x_clr_cs();
+    }
   }
 
    
   /*
-   * read fast chip pend
+   * read fast xxx_pend
    *
-   * reads the preassigned FRR that has chip_pend status information
-   * this is from the assigned FRR, see si446x.h
+   * reads the preassigned FRR that has the various pend info
+   * on it.
    */
+
+  uint8_t si446x_fast_int_pend() {
+    return si446x_read_frr(SI446X_GET_INT_PEND);
+  }
+
+
+  uint8_t si446x_fast_ph_pend() {
+    return si446x_read_frr(SI446X_GET_PH_PEND);
+  }
+
+
+  uint8_t si446x_fast_modem_pend() {
+    return si446x_read_frr(SI446X_GET_MODEM_PEND);
+  }
+
+
   uint8_t si446x_fast_chip_pend() {
     return si446x_read_frr(SI446X_GET_CHIP_PEND);
   }
 
     
+  void trace_radio_pend() {
+    rps_t *rpp;
+
+    rpp = &rps[rps_next];
+    rpp->ts = call Platform.usecsRaw();
+    rpp->cts = si446x_get_cts();
+    si446x_read_fast_status(&rpp->frr[0]);
+    if (++rps_next >= RPS_MAX)
+      rps_next = 0;
+  }
+
+
   void ll_si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
-    uint16_t t0, t1;
+    uint16_t      t0, t1;
     cmd_timing_t *ctp;
-    uint8_t cmd;
+    uint8_t       cmd;
+    bool          done;
 
     cmd = c[0];
     ctp = &cmd_timings[cmd];
     ctp->cmd = cmd;
-    t0 = call Platform.usecsRaw();
-    while (!si446x_get_cts()) {
-      t1 = call Platform.usecsRaw();
-      if ((t1-t0) > SI446X_CTS_TIMEOUT) {
-        __PANIC_RADIO(2, t1, t0, t1-t0, 0);
+    done = 0;
+    while (1) {
+      t0 = call Platform.usecsRaw();
+      t1 = t0;
+      while (!si446x_get_cts()) {
+        t1 = call Platform.usecsRaw();
+        if ((t1-t0) > SI446X_CTS_TIMEOUT) {
+          done = get_sw_cts();
+          __PANIC_RADIO(2, t1, t0, t1-t0, done);
+          call HW.si446x_set_cs();
+          call HW.si446x_clr_cs();
+          call HW.si446x_set_cs();
+          call HW.si446x_clr_cs();
+        }
       }
+      SI446X_ATOMIC {
+        /*
+         * first make sure we still have CTS.  It is possible that
+         * someone (mr. interupt) got in and did something that made
+         * us busy.  Truely paranoid code but if we ever hit this
+         * window the failure is truely nasty.  And it is possible.
+         * close to 0 but not zero.
+         */
+        if (si446x_get_cts()) {
+          t1 = call Platform.usecsRaw();
+          ctp->t_cts0 = t1 - t0;
+          t0 = t1;
+          call HW.si446x_set_cs();
+          call SpiBlock.transfer((void *) c, response, length);
+          call HW.si446x_clr_cs();
+          t1 = call Platform.usecsRaw();
+          done = TRUE;
+        }
+      }
+      if (done)
+        break;
+
+      /*
+       * oops.  if we get here someone grabbed the channel (mr. interrupt)
+       * so go try again to make sure the radio is okay to take another big one.
+       */
     }
-    t1 = call Platform.usecsRaw();
-    ctp->t_cts0 = t1 - t0;
-    t0 = t1;
-    call HW.si446x_set_cs();
-    call SpiBlock.transfer((void *) c, response, length);
-    call HW.si446x_clr_cs();
-    t1 = call Platform.usecsRaw();
     ctp->t_cmd0 = t1 - t0;
     ctp->d_len0 = length;
   }
@@ -921,12 +1005,14 @@ implementation {
     cmd_timing_t *ctp;
 
     ctp = &cmd_timings[cp[0]];
-    t0 = call Platform.usecsRaw();
-    ll_si446x_send_cmd(cp, rsp, cl);
-    ll_si446x_get_reply(rp, rl, cp[0]);
-    t1 = call Platform.usecsRaw();
+    SI446X_ATOMIC {                     /* check for tasklet protection */
+      t0 = call Platform.usecsRaw();
+      ll_si446x_send_cmd(cp, rsp, cl);
+      ll_si446x_get_reply(rp, rl, cp[0]);
+      t1 = call Platform.usecsRaw();
+      si446x_read_fast_status(ctp->frr);
+    }
     ctp->t_elapsed = t1 - t0;
-    si446x_read_status(ctp->frr);
   }
 
 
@@ -1010,7 +1096,7 @@ implementation {
     si446x_get_reply(rp, rl, cp[0]);
     t1 = call Platform.usecsRaw();
     ctp->t_elapsed = t1 - t0;
-    si446x_read_status(ctp->frr);
+    si446x_read_fast_status(ctp->frr);
   }
 
 
@@ -1294,7 +1380,7 @@ implementation {
       t1 = call Platform.usecsRaw();
       ctp->t_elapsed = t1 - tot0;
       nop();
-      si446x_read_status(ctp->frr);
+      si446x_read_fast_status(ctp->frr);
       dpp++;
     }
   }
@@ -1353,10 +1439,7 @@ implementation {
     rd.device_state = rsp[0];
     rd.channel      = rsp[1];
 
-    rd.frr_a = si446x_read_frr(SI446X_CMD_FRR_A);
-    rd.frr_b = si446x_read_frr(SI446X_CMD_FRR_B);
-    rd.frr_c = si446x_read_frr(SI446X_CMD_FRR_C);
-    rd.frr_d = si446x_read_frr(SI446X_CMD_FRR_D);
+    si446x_read_fast_status(rd.frr);
 
     si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc),
                      (void *) &rd.packet_info_len, SI446X_PACKET_INFO_REPLY_SIZE);
@@ -1376,6 +1459,19 @@ implementation {
   }
 
 
+  void si446x_fifo_info(uint16_t *rxp, uint16_t *txp, uint8_t flush_bits) {
+    uint8_t flusher[2], fifo_cnts[2];
+
+    flusher[0] = SI446X_CMD_FIFO_INFO;
+    flusher[1] = flush_bits;
+    ll_si446x_cmd_reply(flusher, 2, fifo_cnts, 2);
+    if (rxp)
+      *rxp = fifo_cnts[0];
+    if (txp)
+      *txp = fifo_cnts[1];
+  }
+
+
   /*
    * writeTxFifo sends data bytes into the TXFIFO.
    *
@@ -1388,11 +1484,16 @@ implementation {
    * FIFO Overflow exception.
    */
   void writeTxFifo(uint8_t *data, uint8_t length) {
+    uint16_t t0, t1;
+
     SI446X_ATOMIC {
+      t0 = call Platform.usecsRaw();
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(SI446X_CMD_TX_FIFO_WRITE);
       writeBlock(data, length);
       call HW.si446x_clr_cs();
+      t1 = call Platform.usecsRaw();
+      nop();
     }
   }
 
@@ -1407,22 +1508,7 @@ implementation {
    * should make sure the chip is in Standby state first.
    */
   void flushFifo() {
-    SI446X_ATOMIC {
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_FIFO_INFO);
-      call FastSpiByte.splitReadWrite(SI446X_FIFO_FLUSH_RX |
-                                      SI446X_FIFO_FLUSH_TX);
-      call FastSpiByte.splitRead();
-
-      /*
-       * response, do we even need to read it?
-       * does popping CS clean out any previous response?
-       */
-      call FastSpiByte.splitReadWrite(0);       /* CTS */
-      call FastSpiByte.splitReadWrite(0);       /* RX_FIFO_CNT */
-      call FastSpiByte.splitRead();             /* TX_FIFO_CNT */
-      call HW.si446x_clr_cs();
-    }
+    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
   }
 
 
@@ -1737,8 +1823,18 @@ implementation {
     3                                   /* rxinvalid, READY */
   };
 
+  const uint8_t rf_start_tx[]         = {
+    0x31,                               /* start_rx */
+    0,                                  /* channel */
+    0x30,                               /* -> READY, new, start */
+    0,
+    0x35
+  };
+
   void cs_pwr_up_wait() {
-    uint16_t t0, t1;
+    uint16_t t0, t1, i, tx_len, rx_len, len_to_send;
+    uint8_t  tx_buf[0x40];
+    bool     done;
 
     if (!(xcts = call HW.si446x_cts())) {
       __PANIC_RADIO(10, 0, 0, 0, 0);
@@ -1783,6 +1879,77 @@ implementation {
     }
 
     if (finnish_gate == FINNISH_TX) {
+      ll_si446x_getclr_int_state(&int_state);
+
+      /* packet_sent 0x20, crc_error 0x08, tx_fifo_almost_emtpy 0x02 */
+      /* state_change 0x10, cmd_error 0x08 chip_ready 0x04 */
+      si446x_read_fast_status(radio_pend);
+
+      len_to_send = 0x35;
+      tx_buf[0] = len_to_send;
+      for (i = 1; i < len_to_send; i++)
+	  tx_buf[i] = i;
+
+      nop();
+      writeTxFifo(tx_buf, len_to_send);
+      si446x_fifo_info(&rx_len, &tx_len, 0);
+//      si446x_fifo_info(&rx_len, &tx_len,
+//                       SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
+      si446x_fifo_info(&rx_len, &tx_len, 0);
+
+      si446x_send_cmd(rf_start_tx, rsp, sizeof(rf_start_tx));
+
+      ut0 = call Platform.usecsRaw();
+      while(1) {
+        if (si446x_get_cts())
+          break;
+        trace_radio_pend();
+      }
+      ut1 = call Platform.usecsRaw();
+      xcts_s = get_sw_cts();
+      si446x_read_fast_status(radio_pend);
+      trace_radio_pend();
+      trace_radio_pend();
+      trace_radio_pend();
+      trace_radio_pend();
+      trace_radio_pend();
+      si446x_read_fast_status(radio_pend);
+      si446x_fifo_info(NULL, &rx_len, 0);
+      nop();
+      si446x_fifo_info(NULL, &tx_len, 0);
+      nop();
+      si446x_fifo_info(NULL, &rx_len, 0);
+      nop();
+      si446x_fifo_info(NULL, &tx_len, 0);
+      trace_radio_pend();
+      ll_si446x_getclr_int_state(&int_state);
+      nop();
+
+      writeTxFifo(tx_buf, len_to_send);
+
+      si446x_send_cmd(rf_start_tx, rsp, sizeof(rf_start_tx));
+
+      si446x_fifo_info(&tx_len, &rx_len, 0);
+      si446x_read_fast_status(radio_pend);
+
+      si446x_fifo_info(&tx_len, &rx_len, 0);
+      si446x_fifo_info(&tx_len, &rx_len, 0);
+      si446x_fifo_info(&tx_len, &rx_len, 0);
+      si446x_fifo_info(&tx_len, &rx_len, 0);
+      si446x_fifo_info(&tx_len, &rx_len, 0);
+      si446x_fifo_info(&tx_len, &rx_len, 0);
+      ll_si446x_get_int_state(&int_state);
+
+      nop();
+
+      /* wait for completion */
+      done = 0;
+      while (!done) {
+	nop();
+	/* packet_sent 0x20, crc_error 0x08, tx_fifo_almost_emtpy 0x02 */
+      }
+      drf();
+      nop();
     }
 
     if (finnish_gate == FINNISH_RX) {
