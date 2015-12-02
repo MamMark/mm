@@ -1518,6 +1518,32 @@ implementation {
 
 
   /*
+   * readRxFifo read data bytes from the TXFIFO.
+   *
+   * First it sets CS which resets the radio SPI and enables
+   * the SPI subsystem, next the cmd SI446X_CMD_RX_FIFO_READ
+   * and then we pull data from the FIFO across the SPI bus.
+   * CS is deasserted which terminates the block.
+   *
+   * If we pull too many bytes from the RX fifo, the chip will
+   * throw an FIFO Underflow exception.
+   */
+  void readRxFifo(uint8_t *data, uint8_t length) {
+    uint16_t t0, t1;
+
+    SI446X_ATOMIC {
+      t0 = call Platform.usecsRaw();
+      call HW.si446x_set_cs();
+      call FastSpiByte.splitWrite(SI446X_CMD_RX_FIFO_READ);
+      readBlock(data, length);
+      call HW.si446x_clr_cs();
+      t1 = call Platform.usecsRaw();
+      nop();
+    }
+  }
+
+
+  /*
    * writeTxFifo sends data bytes into the TXFIFO.
    *
    * First it sets CS which resets the radio SPI and enables
@@ -2004,10 +2030,33 @@ implementation {
       next_state(STATE_RX_ON);
       dvr_cmd = CMD_SIGNAL_DONE;
       si446x_send_cmd(rf_start_rx, rsp, sizeof(rf_start_rx));
-      t0 = call Platform.usecsRaw();
+      ut0 = call Platform.usecsRaw();
       while (!si446x_get_cts()) {
+        si446x_get_int_status(radio_pend);
       }
-      t1 = call Platform.usecsRaw();
+      si446x_get_int_status(radio_pend);
+      ut1 = call Platform.usecsRaw();
+      nop();
+      while (1) {
+        si446x_get_int_status(radio_pend);
+        nop();
+        if ((radio_pend[PH_STATUS] & SI446X_PH_INTEREST) ||
+            (radio_pend[MODEM_STATUS] & SI446X_MODEM_INTEREST) ||
+            (radio_pend[CHIP_STATUS] & SI446X_CHIP_INTEREST)) {
+          nop();
+        }
+        if (radio_pend[PH_STATUS] & SI446X_PH_STATUS_PACKET_RX)
+          break;
+        if ((radio_pend[CHIP_STATUS] & (SI446X_CHIP_STATUS_CMD_ERROR |
+                                        SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR)))
+          break;
+      }
+      for (i = 1; i < len_to_send; i++)
+        tx_buf[i] = 0;
+      si446x_fifo_info(&rx_len, &tx_len, 0);
+      readRxFifo(tx_buf, rx_len);
+      si446x_get_int_status(radio_pend);
+      nop();
     }
     drf();
     nop();
