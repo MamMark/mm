@@ -195,7 +195,7 @@ volatile norace uint8_t finnish_gate = FINNISH_RX;
 
          norace bool     do_dump;        /* defaults to FALSE */
 volatile norace uint8_t  xirq, p1;
-volatile norace uint16_t tx_len, rx_len;
+         norace uint16_t t_tx_len, t_rx_len;
 
 norace uint32_t t_por;
 
@@ -1964,10 +1964,10 @@ implementation {
 
       nop();
       writeTxFifo(tx_buf, len_to_send);
-      si446x_fifo_info(&rx_len, &tx_len, 0);
-//      si446x_fifo_info(&rx_len, &tx_len,
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+//      si446x_fifo_info(&t_rx_len, &t_tx_len,
 //                       SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-      si446x_fifo_info(&rx_len, &tx_len, 0);
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
 
       si446x_send_cmd(rf_start_tx, rsp, sizeof(rf_start_tx));
 
@@ -1987,13 +1987,13 @@ implementation {
       si446x_get_int_status(radio_pend);
       si446x_get_int_status(radio_pend);
       si446x_get_int_status(radio_pend);
-      si446x_fifo_info(NULL, &rx_len, 0);
+      si446x_fifo_info(NULL, &t_rx_len, 0);
       nop();
-      si446x_fifo_info(NULL, &tx_len, 0);
+      si446x_fifo_info(NULL, &t_tx_len, 0);
       nop();
-      si446x_fifo_info(NULL, &rx_len, 0);
+      si446x_fifo_info(NULL, &t_rx_len, 0);
       nop();
-      si446x_fifo_info(NULL, &tx_len, 0);
+      si446x_fifo_info(NULL, &t_tx_len, 0);
       si446x_get_int_status(radio_pend);
       ll_si446x_getclr_int_state(&int_state);
       nop();
@@ -2002,16 +2002,16 @@ implementation {
 
       si446x_send_cmd(rf_start_tx, rsp, sizeof(rf_start_tx));
 
-      si446x_fifo_info(&rx_len, &tx_len, 0);
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
       si446x_get_int_status(radio_pend);
       si446x_get_int_status(radio_pend);
 
-      si446x_fifo_info(&rx_len, &tx_len, 0);
-      si446x_fifo_info(&rx_len, &tx_len, 0);
-      si446x_fifo_info(&rx_len, &tx_len, 0);
-      si446x_fifo_info(&rx_len, &tx_len, 0);
-      si446x_fifo_info(&rx_len, &tx_len, 0);
-      si446x_fifo_info(&rx_len, &tx_len, 0);
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
       ll_si446x_get_int_state(&int_state);
 
       nop();
@@ -2053,8 +2053,8 @@ implementation {
       }
       for (i = 1; i < len_to_send; i++)
         tx_buf[i] = 0;
-      si446x_fifo_info(&rx_len, &tx_len, 0);
-      readRxFifo(tx_buf, rx_len);
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      readRxFifo(tx_buf, t_rx_len);
       si446x_get_int_status(radio_pend);
       nop();
     }
