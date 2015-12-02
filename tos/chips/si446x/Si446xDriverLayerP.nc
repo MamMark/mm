@@ -1888,7 +1888,7 @@ implementation {
     0x32,                               /* start_rx */
     0,                                  /* channel */
     0,                                  /* start (immed) */
-    0, 32,                              /* rx_len */
+    0, 0x35,                              /* rx_len */
     8,                                  /* rxtimeout_state, RX */
     3,                                  /* rxvalid, READY */
     3                                   /* rxinvalid, READY */
@@ -1899,7 +1899,7 @@ implementation {
     0,                                  /* channel */
     0x30,                               /* -> READY, new, start */
     0,
-    0x35
+    32
   };
 
   void cs_pwr_up_wait() {
@@ -1957,7 +1957,7 @@ implementation {
       /* state_change 0x10, cmd_error 0x08 chip_ready 0x04 */
       si446x_get_int_status(radio_pend);
 
-      len_to_send = 0x35;
+      len_to_send = 32;
       tx_buf[0] = len_to_send;
       for (i = 1; i < len_to_send; i++)
         tx_buf[i] = i;
