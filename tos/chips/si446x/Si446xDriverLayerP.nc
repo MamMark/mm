@@ -190,7 +190,7 @@ enum {
 #define FINNISH_RX   1
 #define FINNISH_TX   2
 
-volatile norace uint8_t finnish_gate = FINNISH_TX;
+volatile norace uint8_t finnish_gate = FINNISH_RX;
 
 
          norace bool     do_dump;        /* defaults to FALSE */
