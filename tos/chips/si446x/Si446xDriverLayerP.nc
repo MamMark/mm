@@ -193,8 +193,9 @@ enum {
 volatile norace uint8_t finnish_gate = FINNISH_TX;
 
 
-         norace bool    do_dump;        /* defaults to FALSE */
-volatile norace uint8_t xirq, p1;
+         norace bool     do_dump;        /* defaults to FALSE */
+volatile norace uint8_t  xirq, p1;
+volatile norace uint16_t tx_len, rx_len;
 
 norace uint32_t t_por;
 
@@ -204,12 +205,18 @@ norace uint16_t ut0, ut1;
 
 typedef struct {
   uint16_t ts;
-  uint16_t cts;
-  uint8_t  frr[4];
+  uint8_t  cts;
+  uint8_t  irqn;
+  uint8_t  csn;
+  uint8_t  ds;
+  uint8_t  ph;
+  uint8_t  modem;
+  uint8_t  chip;
+  uint8_t  r;
 } rps_t;
 
-#define  RPS_MAX 16
-norace uint16_t rps_next;
+#define  RPS_MAX 64
+norace uint16_t rps_next, rps_prev;
 norace rps_t    rps[RPS_MAX];
 
 typedef struct {
@@ -439,7 +446,14 @@ typedef struct {
 volatile norace si446x_chip_int_t chip_debug;
 volatile norace si446x_chip_int_t int_state;
 
+/* rf_frr_ctl_a_mode_4 defines what the four FRR registers return
+ * and how they show up in radio_pend
+ */
 norace uint8_t radio_pend[4];
+#define DEVICE_STATE 0
+#define PH_STATUS    1
+#define MODEM_STATUS 2
+#define CHIP_STATUS  3
 
 norace uint8_t      rsp[16];
 
@@ -761,8 +775,6 @@ implementation {
    */
   norace bool stateAlarm_active   = FALSE;
 
-//  si446x_status_t getStatus();
-
 
   si446x_packet_header_t *getPhyHeader(message_t *msg) {
     return ((void *) msg) + call Config.headerOffset(msg);
@@ -901,15 +913,48 @@ implementation {
   }
 
     
-  void trace_radio_pend() {
+  void trace_radio_pend(uint8_t *pend) {
     rps_t *rpp;
+    rps_t *ppp;
+    uint8_t cts, irqn, csn;
+    uint8_t state, ph, modem, chip;
 
-    rpp = &rps[rps_next];
+    rpp  = &rps[rps_next];
+    ppp  = &rps[rps_prev];
+
+    cts  = si446x_get_cts();
+    irqn = call HW.si446x_irqn();
+    csn  = call HW.si446x_csn();
+
+    state = pend[0];
+    ph    = pend[1];
+    modem = pend[2];
+    chip  = pend[3];
+
+    if ((cts == ppp->cts) && (irqn == ppp->irqn) && (csn == ppp->csn) &&
+        (state == ppp->ds) && (ph == ppp->ph) &&
+        (modem == ppp->modem) && (chip == ppp->chip)) {
+      return;
+    }
+
     rpp->ts = call Platform.usecsRaw();
-    rpp->cts = si446x_get_cts();
-    si446x_read_fast_status(&rpp->frr[0]);
+    rpp->cts   = cts;
+    rpp->irqn  = irqn;
+    rpp->csn   = csn;
+    rpp->ds    = state;
+    rpp->ph    = ph;
+    rpp->modem = modem;
+    rpp->chip  = chip;
+
+    rps_prev = rps_next;
     if (++rps_next >= RPS_MAX)
       rps_next = 0;
+  }
+
+
+  void si446x_get_int_status(uint8_t *status) {
+    si446x_read_fast_status(status);
+    trace_radio_pend(status);
   }
 
 
@@ -1832,7 +1877,7 @@ implementation {
   };
 
   void cs_pwr_up_wait() {
-    uint16_t t0, t1, i, tx_len, rx_len, len_to_send;
+    uint16_t t0, t1, i, len_to_send;
     uint8_t  tx_buf[0x40];
     bool     done;
 
@@ -1879,16 +1924,17 @@ implementation {
     }
 
     if (finnish_gate == FINNISH_TX) {
+      si446x_get_int_status(radio_pend);
       ll_si446x_getclr_int_state(&int_state);
 
       /* packet_sent 0x20, crc_error 0x08, tx_fifo_almost_emtpy 0x02 */
       /* state_change 0x10, cmd_error 0x08 chip_ready 0x04 */
-      si446x_read_fast_status(radio_pend);
+      si446x_get_int_status(radio_pend);
 
       len_to_send = 0x35;
       tx_buf[0] = len_to_send;
       for (i = 1; i < len_to_send; i++)
-	  tx_buf[i] = i;
+        tx_buf[i] = i;
 
       nop();
       writeTxFifo(tx_buf, len_to_send);
@@ -1903,17 +1949,18 @@ implementation {
       while(1) {
         if (si446x_get_cts())
           break;
-        trace_radio_pend();
+        si446x_get_int_status(radio_pend);
       }
+      si446x_get_int_status(radio_pend);
+
       ut1 = call Platform.usecsRaw();
       xcts_s = get_sw_cts();
-      si446x_read_fast_status(radio_pend);
-      trace_radio_pend();
-      trace_radio_pend();
-      trace_radio_pend();
-      trace_radio_pend();
-      trace_radio_pend();
-      si446x_read_fast_status(radio_pend);
+      si446x_get_int_status(radio_pend);
+      si446x_get_int_status(radio_pend);
+      si446x_get_int_status(radio_pend);
+      si446x_get_int_status(radio_pend);
+      si446x_get_int_status(radio_pend);
+      si446x_get_int_status(radio_pend);
       si446x_fifo_info(NULL, &rx_len, 0);
       nop();
       si446x_fifo_info(NULL, &tx_len, 0);
@@ -1921,7 +1968,7 @@ implementation {
       si446x_fifo_info(NULL, &rx_len, 0);
       nop();
       si446x_fifo_info(NULL, &tx_len, 0);
-      trace_radio_pend();
+      si446x_get_int_status(radio_pend);
       ll_si446x_getclr_int_state(&int_state);
       nop();
 
@@ -1929,15 +1976,16 @@ implementation {
 
       si446x_send_cmd(rf_start_tx, rsp, sizeof(rf_start_tx));
 
-      si446x_fifo_info(&tx_len, &rx_len, 0);
-      si446x_read_fast_status(radio_pend);
+      si446x_fifo_info(&rx_len, &tx_len, 0);
+      si446x_get_int_status(radio_pend);
+      si446x_get_int_status(radio_pend);
 
-      si446x_fifo_info(&tx_len, &rx_len, 0);
-      si446x_fifo_info(&tx_len, &rx_len, 0);
-      si446x_fifo_info(&tx_len, &rx_len, 0);
-      si446x_fifo_info(&tx_len, &rx_len, 0);
-      si446x_fifo_info(&tx_len, &rx_len, 0);
-      si446x_fifo_info(&tx_len, &rx_len, 0);
+      si446x_fifo_info(&rx_len, &tx_len, 0);
+      si446x_fifo_info(&rx_len, &tx_len, 0);
+      si446x_fifo_info(&rx_len, &tx_len, 0);
+      si446x_fifo_info(&rx_len, &tx_len, 0);
+      si446x_fifo_info(&rx_len, &tx_len, 0);
+      si446x_fifo_info(&rx_len, &tx_len, 0);
       ll_si446x_get_int_state(&int_state);
 
       nop();
