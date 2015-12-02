@@ -580,7 +580,7 @@
 
 #define SI446X_PH_INTEREST      0xFC
 
-#define SI446X_MODEM_STATUS_POSTAMBLE_DETECT             0x02
+#define SI446X_MODEM_STATUS_POSTAMBLE_DETECT             0x40
 #define SI446X_MODEM_STATUS_INVALID_SYNC                 0x20
 #define SI446X_MODEM_STATUS_RSSI_JUMP                    0x10
 #define SI446X_MODEM_STATUS_RSSI                         0x08
