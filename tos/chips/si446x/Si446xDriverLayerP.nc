@@ -380,10 +380,6 @@ const si446x_radio_config_t si446x_wds_config[] = {
 };
 
 
-const uint8_t rf_gpio_pin_cfg[]     = { 0x13, 0x08, 0x08, 0x08, 0x08,
-                                              0x00, 0x00, 0x00 };
-const uint8_t rf_int_ctl_enable_1[] = { 0x11, 0x01, 0x01, 0x00, 0x00 };
-
 /*
  * frr is set manually right after POWER_UP
  *
@@ -392,37 +388,32 @@ const uint8_t rf_int_ctl_enable_1[] = { 0x11, 0x01, 0x01, 0x00, 0x00 };
  * C: MODEM_PEND
  * D: CHIP_PEND
  */
-const uint8_t rf_frr_ctl_a_mode_4[] = { 0x11, 0x02, 0x04, 0x00,
-                                              0x09, 0x04, 0x06, 0x08 };
+const uint8_t rf_frr_ctl_a_mode_4[]    = { 0x11, 0x02, 0x04, 0x00,
+                                           0x09, 0x04, 0x06, 0x08 };
 
-const uint8_t rf_pkt_crc_config_7[] = { 0x11, 0x12, 0x07, 0x00, 0x84, 0x01,
-                                              0x08, 0xFF, 0xFF, 0x00, 0x02 };
+const uint8_t rf_gpio_pin_cfg[]     = { 0x13, 0x08, 0x08, 0x08, 0x08,
+                                              0x00, 0x00, 0x00 };
 
-const uint8_t rf_pkt_len_12[] = { 0x11, 0x12, 0x0C, 0x08, 0x2A, 0x01,
-                                        0x00, 0x30, 0x30, 0x00, 0x01,
-                                        0x04, 0x82, 0x00, 0x3F, 0x00 };
+const uint8_t rf_int_ctl_enable_1[] = { 0x11, 0x01, 0x01, 0x00, 0x00 };
 
-const uint8_t rf_pkt_field_2_crc_config_12[] =
-  { 0x11, 0x12, 0x0C, 0x14, 0x2A, 0x00, 0x00, 0x00, 0x00,
-          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+const uint8_t rf_pkt_crc_config_7[]    = { 0x11, 0x12, 0x07, 0x00,
+                                           0x84, 0x01, 0x08, 0xFF, 0xFF, 0x00, 0x02 };
 
-const uint8_t rf_pkt_field_5_crc_config_12[] =
-  { 0x11, 0x12, 0x0C, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00,
-          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+const uint8_t rf_pkt_len_5[]           = { 0x11, 0x12, 0x05, 0x08,
+                                           0x2a, 0x01, 0x00, 0x30, 0x30 };
 
-const uint8_t rf_pkt_rx_field_3_crc_config_9[] =
-  { 0x11, 0x12, 0x09, 0x2C, 0x00, 0x00, 0x00, 0x00, 0x00,
-          0x00, 0x00, 0x00, 0x00 };
+const uint8_t rf_pkt_field_config_10[] = { 0x11, 0x12, 0x0a, 0x0d,
+                                           0x00, 0x01, 0x04, 0x82,
+                                           0x00, 0x3F, 0x00, 0x2A, 0x00, 0x00 };
+
 
 /* local config, driver/hw dependent */
 const si446x_radio_config_t si446x_local_config[] = {
   { sizeof(rf_gpio_pin_cfg),                rf_gpio_pin_cfg },
   { sizeof(rf_int_ctl_enable_1),            rf_int_ctl_enable_1 },
   { sizeof(rf_pkt_crc_config_7),            rf_pkt_crc_config_7 },
-  { sizeof(rf_pkt_len_12),                  rf_pkt_len_12 },
-  { sizeof(rf_pkt_field_2_crc_config_12),   rf_pkt_field_2_crc_config_12 },
-  { sizeof(rf_pkt_field_5_crc_config_12),   rf_pkt_field_5_crc_config_12 },
-  { sizeof(rf_pkt_rx_field_3_crc_config_9), rf_pkt_rx_field_3_crc_config_9 },
+  { sizeof(rf_pkt_len_5),                   rf_pkt_len_5 },
+  { sizeof(rf_pkt_field_config_10),         rf_pkt_field_config_10 },
   { 0, NULL}
 };
 
@@ -590,6 +581,16 @@ const uint8_t si446x_chip_clr[] = { SI446X_CMD_GET_CHIP_STATUS };   /* 23 */
 const uint8_t si446x_chip_clr_cmd_err[] = { SI446X_CMD_GET_CHIP_STATUS, 0xf7 };
 
 const uint8_t si446x_device_state[] = { SI446X_CMD_REQUEST_DEVICE_STATE }; /* 33 */
+
+  typedef struct {
+    uint8_t len;
+    uint8_t proto;
+    uint16_t da;
+    uint16_t sa;
+    uint8_t data[];
+  } ds_pkt_t;
+
+
 
 tasklet_norace message_t  * txMsg;            /* msg driver owns */
 message_t                   rxMsgBuffer;
@@ -958,7 +959,15 @@ implementation {
   }
 
 
-  void ll_si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
+  /*
+   * ll_si446x_send_cmd: send a command to the radio (low level)
+   *
+   * c:         pointer to buffer to send
+   * response:  pointer to response bytes if any
+   * cl:        length of cmd (buffer)
+   * 
+   */
+  void ll_si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t cl) {
     uint16_t      t0, t1;
     cmd_timing_t *ctp;
     uint8_t       cmd;
@@ -995,7 +1004,7 @@ implementation {
           ctp->t_cts0 = t1 - t0;
           t0 = t1;
           call HW.si446x_set_cs();
-          call SpiBlock.transfer((void *) c, response, length);
+          call SpiBlock.transfer((void *) c, response, cl);
           call HW.si446x_clr_cs();
           t1 = call Platform.usecsRaw();
           done = TRUE;
@@ -1010,7 +1019,7 @@ implementation {
        */
     }
     ctp->t_cmd0 = t1 - t0;
-    ctp->d_len0 = length;
+    ctp->d_len0 = cl;
   }
 
 
@@ -1142,6 +1151,18 @@ implementation {
     t1 = call Platform.usecsRaw();
     ctp->t_elapsed = t1 - t0;
     si446x_read_fast_status(ctp->frr);
+  }
+
+
+  void si446x_start_tx(uint16_t len) {
+    uint8_t tx_buff[5];
+
+    tx_buff[0] = 0x31;
+    tx_buff[1] = 0;                     /* channel */
+    tx_buff[2] = 0x30;
+    tx_buff[3] = 0;
+    tx_buff[4] = len & 0xff;
+    si446x_send_cmd((void *) tx_buff, rsp, 5);
   }
 
 
@@ -1888,23 +1909,17 @@ implementation {
     0x32,                               /* start_rx */
     0,                                  /* channel */
     0,                                  /* start (immed) */
-    0, 0x35,                              /* rx_len */
+    0, 0,                               /* rx_len */
     8,                                  /* rxtimeout_state, RX */
     3,                                  /* rxvalid, READY */
     3                                   /* rxinvalid, READY */
   };
 
-  const uint8_t rf_start_tx[]         = {
-    0x31,                               /* start_rx */
-    0,                                  /* channel */
-    0x30,                               /* -> READY, new, start */
-    0,
-    32
-  };
 
   void cs_pwr_up_wait() {
     uint16_t t0, t1, i, len_to_send;
     uint8_t  tx_buf[0x40];
+    ds_pkt_t *dsp;
     bool     done;
 
     if (!(xcts = call HW.si446x_cts())) {
@@ -1958,19 +1973,22 @@ implementation {
       si446x_get_int_status(radio_pend);
 
       len_to_send = 32;
-      tx_buf[0] = len_to_send;
-      for (i = 1; i < len_to_send; i++)
-        tx_buf[i] = i;
+      dsp = (void *) tx_buf;
+      dsp->len = len_to_send + 5;
+      dsp->proto = 0x42;
+      dsp->da = 0x5225;
+      dsp->sa = 0x1441;
+      for (i = 0; i < len_to_send; i++)
+        dsp->data[i] = i;
 
       nop();
-      writeTxFifo(tx_buf, len_to_send);
+      writeTxFifo(tx_buf, len_to_send + 6);
       si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
 //      si446x_fifo_info(&t_rx_len, &t_tx_len,
 //                       SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
       si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
 
-      si446x_send_cmd(rf_start_tx, rsp, sizeof(rf_start_tx));
-
+      si446x_start_tx(len_to_send + 6);
       ut0 = call Platform.usecsRaw();
       while(1) {
         if (si446x_get_cts())
@@ -1996,31 +2014,23 @@ implementation {
       si446x_fifo_info(NULL, &t_tx_len, 0);
       si446x_get_int_status(radio_pend);
       ll_si446x_getclr_int_state(&int_state);
-      nop();
-
-      writeTxFifo(tx_buf, len_to_send);
-
-      si446x_send_cmd(rf_start_tx, rsp, sizeof(rf_start_tx));
-
-      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-      si446x_get_int_status(radio_pend);
-      si446x_get_int_status(radio_pend);
-
-      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-      ll_si446x_get_int_state(&int_state);
 
       nop();
 
       /* wait for completion */
       done = 0;
       while (!done) {
-	nop();
-	/* packet_sent 0x20, crc_error 0x08, tx_fifo_almost_emtpy 0x02 */
+        si446x_get_int_status(radio_pend);
+        if ((radio_pend[PH_STATUS] & SI446X_PH_INTEREST) ||
+            (radio_pend[MODEM_STATUS] & SI446X_MODEM_INTEREST) ||
+            (radio_pend[CHIP_STATUS] & SI446X_CHIP_INTEREST)) {
+          nop();
+        }
+        if (radio_pend[PH_STATUS] & SI446X_PH_STATUS_PACKET_SENT)
+          break;
+        if ((radio_pend[CHIP_STATUS] & (SI446X_CHIP_STATUS_CMD_ERROR |
+                                        SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR)))
+          break;
       }
       drf();
       nop();
