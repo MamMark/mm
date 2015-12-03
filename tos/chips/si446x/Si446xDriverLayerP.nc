@@ -1044,7 +1044,7 @@ implementation {
     call FastSpiByte.splitReadWrite(0);
     rcts = call FastSpiByte.splitRead();
     if (rcts != 0xff) {
-        __PANIC_RADIO(5, 0, 0, 0, 0);
+        __PANIC_RADIO(5, rcts, 0, 0, 0);
     }
     call SpiBlock.transfer(NULL, r, l);
     call HW.si446x_clr_cs();
@@ -2032,6 +2032,7 @@ implementation {
                                         SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR)))
           break;
       }
+      nop();
       drf();
       nop();
     }
