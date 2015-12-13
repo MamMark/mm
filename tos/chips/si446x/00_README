@@ -99,8 +99,8 @@ actual packet format looks like.  These fields must be programmed properly
 on both ends of the communications channel for communications to occur.
 
 
-The SI443X radio driver has the following configuration options. Some of 
-these are set in the platforms/xxx/chips/si443x/RadioConfig.h header file, 
+The SI443X radio driver has the following configuration options. Some of
+these are set in the platforms/xxx/chips/si443x/RadioConfig.h header file,
 others can be set in your Makefile.
 
 SI443X_DEF_RFPOWER:
@@ -120,7 +120,7 @@ SI443X_CHANNEL_STEP_KHZ:
 
 This is the spacing between channels over the frequency band. The 0th channel starts
 from the preset base carrier frequency, the k'th channel starts from (base carrier frequency) +
-k * SI443X_CHANNEL_STEP_KHZ. The channel spacing is defined in kHz precision, minimum 
+k * SI443X_CHANNEL_STEP_KHZ. The channel spacing is defined in kHz precision, minimum
 value is 1 (1 kHz), maximum value is 2550 (2,55 Mhz).
 
 SI443X_MODEM_CONFIG:
@@ -131,7 +131,7 @@ inserted there. If multiple modem configuration exist, there is a possibility to
 SI443X_DEF_CHANNEL:
 
 This is the default value of the Frequency Hopping Channel Select register
-This can be cahanged via the RadioChannel interface provided by the 
+This can be changed via the RadioChannel interface provided by the
 SI443XActiveMessageC.
 
 SI443X_BACKOFF_MIN
@@ -145,7 +145,8 @@ time in microseconds for the random CSMA/CA algorithm. See the SI443XRadioP.nc.
 
 *** getting properties
 
-  If you ask for more than 16 consecutive, it will return zeros.
+  If you ask for more than 16 consecutive, it will return zeros.  Also for the
+  ones below 0x10.
 
 
 *** Radio Dump Notes:
@@ -154,20 +155,6 @@ time in microseconds for the random CSMA/CA algorithm. See the SI443XRadioP.nc.
 
 
 *** Anomalies
-
-  On the way up, after Power_Up, we drf() (A), clear interrupts, then drf() (B) again.
-
-  After A, we see rd.gpio_cfg.nirq is 0x27 as it should be.  After B, it is 0xA7, why is
-  the high order bit set?   Becasue nirq is set and the read returns the value of NIRQ
-  as the high order bit (NIRQ_STATE).  so yes 0x27 becomes 0xa7.  If NIRQ were down then
-  this would be 0x27.
-
-
-*** Power Up State:
-
-  4463: power up state
-
-
 
 *** Various Command completion times:
 
@@ -256,7 +243,7 @@ property timings (drf):
 {grp: 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0} <repeats 15 times>
 
 
-Initial state after power up:  (before frr mod)
+*** Initial state after power up:  (before frr mod)
 
 p_dump_start = 0x5cf6,
 l_dump_start = 0x5cf9,
@@ -300,7 +287,7 @@ gr50_hop = 0x33ac,
 grF0_pti = 0x33ac}
 
 
-State after Load_Config:
+*** State after Load_Config:
 
 p_dump_start = 0x96eb,
 l_dump_start = 0x96ee,
@@ -376,7 +363,7 @@ gr12_pkt = {0x84, 0x01, 0x08, 0xff, 0xff, 0x0, 0x2, 0x0, 0x2a, 0x1, 0x0, 0x30, 0
                  0x1207, 0x00, reserved
   pkt_len        0x1208, 0x2a, (0x00) BIG_ENDIAN, LEN (1 byte), IN_FIFO (LEAVE_IN), DST (Field 2)
                                       ENDIAN, SIZE, IN_FIFO, DST_FIELD
-                                                      
+
   pkt_len_field_source
                  0x1209, 0x01, field 1 is the length.
   pkt_len_adjust 0x120a, 0x00
@@ -393,7 +380,7 @@ gr12_pkt = {0x84, 0x01, 0x08, 0xff, 0xff, 0x0, 0x2, 0x0, 0x2a, 0x1, 0x0, 0x30, 0
 
   pkt_f_3_len    0x1215, 0x0000 (disabled)
 
-  
+
 gr20_modem = {
   modem_mod_type        0x3 (0x2), SYNC, GPIO0, PACKET (FIFO), MOD_TYPE 2GFSK
   modem_map_control     0x0 (0x80),
