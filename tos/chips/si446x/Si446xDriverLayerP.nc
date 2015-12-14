@@ -1977,6 +1977,23 @@ implementation {
     x[1] = 0;
     set_property(SI446X_PROP_PKT_CONFIG1, x, 1);
   }
+
+
+  void start_rx(uint16_t len) {
+    uint8_t x[8];
+
+    x[0] = 0x32;
+    x[1] = 0;
+    x[2] = 0;
+    x[3] = 0;
+    x[4] = len & 0xff;
+    x[5] = 8;
+    x[6] = 3;
+    x[7] = 3;
+    si446x_send_cmd(rf_start_rx, rsp, sizeof(rf_start_rx));
+  }
+
+
   void cs_pwr_up_wait() {
     uint16_t t0, t1, i, len_to_send;
     uint8_t  tx_buf[0x40];
