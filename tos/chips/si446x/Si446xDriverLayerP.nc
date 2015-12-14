@@ -1578,6 +1578,21 @@ implementation {
 
 
   /*
+   * get packet_info for last received packet
+   *
+   * returns variable length field value (length) from last rx packet.
+   *
+   * we do not override and fields length (that's just weird).
+   */
+  uint16_t si446x_get_packet_info() {
+    uint8_t r[2];
+
+    si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc), r, 2);
+    return r[0] << 8 | r[1];
+  }
+
+
+  /*
    * readRxFifo read data bytes from the TXFIFO.
    *
    * First it sets CS which resets the radio SPI and enables
