@@ -815,12 +815,14 @@ implementation {
     return cts_s;
 #else
     xcts = call HW.si446x_cts();
-    call HW.si446x_set_cs();
-    call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
-    xcts0 = call FastSpiByte.splitReadWrite(0);
-    cts_s = call FastSpiByte.splitRead();
-    xcts_s = cts_s;
-    call HW.si446x_clr_cs();
+    SI446X_ATOMIC {
+      call HW.si446x_set_cs();
+      call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
+      xcts0 = call FastSpiByte.splitReadWrite(0);
+      cts_s = call FastSpiByte.splitRead();
+      xcts_s = cts_s;
+      call HW.si446x_clr_cs();
+    }
     nop();
     return cts_s;
 #endif
@@ -830,11 +832,13 @@ implementation {
   uint8_t get_sw_cts() {
     uint8_t res;
 
-    call HW.si446x_set_cs();
-    call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
-    call FastSpiByte.splitReadWrite(0);
-    res = call FastSpiByte.splitRead();
-    call HW.si446x_clr_cs();
+    SI446X_ATOMIC {
+      call HW.si446x_set_cs();
+      call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
+      call FastSpiByte.splitReadWrite(0);
+      res = call FastSpiByte.splitRead();
+      call HW.si446x_clr_cs();
+    }
     return res;
   }
 
@@ -851,11 +855,13 @@ implementation {
   uint8_t si446x_read_frr(uint8_t which) {
     uint8_t result;
 
-    call HW.si446x_set_cs();
-    call FastSpiByte.splitWrite(which);
-    result = call FastSpiByte.splitReadWrite(0);
-    result = call FastSpiByte.splitRead();
-    call HW.si446x_clr_cs();
+    SI446X_ATOMIC {
+      call HW.si446x_set_cs();
+      call FastSpiByte.splitWrite(which);
+      result = call FastSpiByte.splitReadWrite(0);
+      result = call FastSpiByte.splitRead();
+      call HW.si446x_clr_cs();
+    }
     return result;
   }
 
@@ -1039,15 +1045,17 @@ implementation {
     t1 = call Platform.usecsRaw();
     ctp->t_cts_r = t1 - t0;
     t0 = t1;
-    call HW.si446x_set_cs();
-    call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
-    call FastSpiByte.splitReadWrite(0);
-    rcts = call FastSpiByte.splitRead();
-    if (rcts != 0xff) {
+    SI446X_ATOMIC {
+      call HW.si446x_set_cs();
+      call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
+      call FastSpiByte.splitReadWrite(0);
+      rcts = call FastSpiByte.splitRead();
+      if (rcts != 0xff) {
         __PANIC_RADIO(5, rcts, 0, 0, 0);
+      }
+      call SpiBlock.transfer(NULL, r, l);
+      call HW.si446x_clr_cs();
     }
-    call SpiBlock.transfer(NULL, r, l);
-    call HW.si446x_clr_cs();
     t1 = call Platform.usecsRaw();
     ctp->t_reply = t1 - t0;
     ctp->d_reply_len = l + 2;
@@ -1269,17 +1277,19 @@ implementation {
      */
     call HW.si446x_clr_cs();
     nop();
-    call HW.si446x_set_cs();
-    call FastSpiByte.splitWrite(SI446X_CMD_FIFO_INFO);
-    call FastSpiByte.splitReadWrite(0);
-    call FastSpiByte.splitRead();
+    SI446X_ATOMIC {
+      call HW.si446x_set_cs();
+      call FastSpiByte.splitWrite(SI446X_CMD_FIFO_INFO);
+      call FastSpiByte.splitReadWrite(0);
+      call FastSpiByte.splitRead();
 
-    /* response */
-    call FastSpiByte.splitWrite(0);
-    cts = call FastSpiByte.splitReadWrite(0);           /* CTS */
-    rx_count = call FastSpiByte.splitReadWrite(0);      /* RX_FIFO_CNT */
-    tx_count = call FastSpiByte.splitRead();            /* TX_FIFO_CNT */
-    call HW.si446x_clr_cs();
+      /* response */
+      call FastSpiByte.splitWrite(0);
+      cts = call FastSpiByte.splitReadWrite(0);           /* CTS */
+      rx_count = call FastSpiByte.splitReadWrite(0);      /* RX_FIFO_CNT */
+      tx_count = call FastSpiByte.splitRead();            /* TX_FIFO_CNT */
+      call HW.si446x_clr_cs();
+    }
 
     /*
      * how to figure out if it is a tx or rx in the fifo.  So
@@ -1372,15 +1382,17 @@ implementation {
 
     group = p_id >> 8;
     index = p_id & 0xff;
-    call HW.si446x_set_cs();
-    call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
-    call FastSpiByte.splitReadWrite(group);
-    call FastSpiByte.splitReadWrite(num);
-    call FastSpiByte.splitReadWrite(index);
-    call FastSpiByte.splitRead();
-    call HW.si446x_clr_cs();
-    ll_si446x_get_reply(w, num, 0xff);
-    chip_pend = si446x_fast_chip_pend();
+    SI446X_ATOMIC {
+      call HW.si446x_set_cs();
+      call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
+      call FastSpiByte.splitReadWrite(group);
+      call FastSpiByte.splitReadWrite(num);
+      call FastSpiByte.splitReadWrite(index);
+      call FastSpiByte.splitRead();
+      call HW.si446x_clr_cs();
+      ll_si446x_get_reply(w, num, 0xff);
+      chip_pend = si446x_fast_chip_pend();
+    }
     return chip_pend;
   }
 
@@ -1424,18 +1436,20 @@ implementation {
 
         wl = (length > 16) ? 16 : length;
         t0 = call Platform.usecsRaw();
-        call HW.si446x_set_cs();
-        call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
-        call FastSpiByte.splitReadWrite(group);
-        call FastSpiByte.splitReadWrite(wl);
-        call FastSpiByte.splitReadWrite(index);
-        call FastSpiByte.splitRead();
-        call HW.si446x_clr_cs();
-        t1 = call Platform.usecsRaw();
-        ctp->t_cmd0 += t1 - t0;
-        ctp->d_len0 += 4;
+        SI446X_ATOMIC {
+          call HW.si446x_set_cs();
+          call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
+          call FastSpiByte.splitReadWrite(group);
+          call FastSpiByte.splitReadWrite(wl);
+          call FastSpiByte.splitReadWrite(index);
+          call FastSpiByte.splitRead();
+          call HW.si446x_clr_cs();
+          t1 = call Platform.usecsRaw();
+          ctp->t_cmd0 += t1 - t0;
+          ctp->d_len0 += 4;
 
-        si446x_get_reply(w, wl, 0xff);
+          si446x_get_reply(w, wl, 0xff);
+        }
         ctp->t_cts_r     += ctp_ff->t_cts_r;
         ctp->t_reply     += ctp_ff->t_reply;
         ctp->d_reply_len += ctp_ff->d_reply_len;
