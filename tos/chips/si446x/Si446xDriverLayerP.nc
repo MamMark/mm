@@ -1117,34 +1117,35 @@ implementation {
   }
 
 
-  void si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
-    uint8_t chip_pend;
-
-    ll_si446x_send_cmd(c, response, length);
-    chip_pend = si446x_fast_chip_pend();
-    if (chip_pend & SI446X_CHIP_STATUS_CMD_ERROR) {
+  void check_weird(uint8_t *status) {
+    if ((status[PH_STATUS]    & 0xC0) ||
+        (status[MODEM_STATUS] & 0x58) ||
+        (status[CHIP_STATUS]  & 0x6B)) {
       ll_si446x_get_int_state(&chip_debug);
-      __PANIC_RADIO(30, chip_pend, 0, 0, 0);
-      ll_si446x_cmd_reply(si446x_chip_clr_cmd_err, sizeof(si446x_chip_clr_cmd_err),
-                          (void *) &chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
-      ll_si446x_get_int_state(&chip_debug);
+      __PANIC_RADIO(98, status[DEVICE_STATE], status[PH_STATUS],
+                    status[MODEM_STATUS], status[CHIP_STATUS]);
+      ll_si446x_getclr_int_state(&chip_debug);
+      nop();
     }
   }
 
 
-  void si446x_get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
-    uint8_t chip_pend;
+  void ll_si446x_get_int_status(uint8_t *status) {
+    ll_si446x_read_fast_status(status);
+    trace_radio_pend(status);
+    check_weird(status);
+  }
 
+
+  void si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
+    ll_si446x_send_cmd(c, response, length);
+    ll_si446x_get_int_status(radio_pend);
+  }
+
+
+  void si446x_get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
     ll_si446x_get_reply(r, l, cmd);
-    chip_pend = si446x_fast_chip_pend();
-    if (chip_pend & SI446X_CHIP_STATUS_CMD_ERROR) {
-      ll_si446x_get_int_state(&chip_debug);
-      ll_si446x_get_int_state(&chip_debug);
-      __PANIC_RADIO(31, chip_pend, 0, 0, 0);
-      ll_si446x_cmd_reply(si446x_chip_clr_cmd_err, sizeof(si446x_chip_clr_cmd_err),
-                          (void *) &chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
-      ll_si446x_get_int_state(&chip_debug);
-    }
+    ll_si446x_get_int_status(radio_pend);
   }
 
 
