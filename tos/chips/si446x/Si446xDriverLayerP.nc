@@ -428,10 +428,10 @@ const si446x_radio_config_t si446x_frr_config[] = {
 volatile norace uint8_t xcts, xcts0, xcts_s;
 
 typedef struct {
+  si446x_int_status_t   int_status;
   si446x_ph_status_t    ph_status;
   si446x_modem_status_t modem_status;
   si446x_chip_status_t  chip_status;
-  si446x_int_status_t   int_status;
 } si446x_chip_int_t;
 
 volatile norace si446x_chip_int_t chip_debug;
@@ -555,6 +555,7 @@ const uint8_t si446x_gpio_cfg_nc[]   = { SI446X_CMD_GPIO_PIN_CFG,   /* 13 */
   SI446X_GPIO_NO_CHANGE,                /* sdo, no change */
   0                                     /* gen_config */
 };
+
 const uint8_t si446x_fifo_info_nc[]  = { SI446X_CMD_FIFO_INFO, 0 }; /* 15 */
 
 const uint8_t si446x_packet_info_nc[]= { SI446X_CMD_PACKET_INFO };  /* 16 */
