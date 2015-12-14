@@ -852,7 +852,7 @@ implementation {
    *
    * CTS does not need to be true.
    */
-  uint8_t si446x_read_frr(uint8_t which) {
+  uint8_t ll_si446x_read_frr(uint8_t which) {
     uint8_t result;
 
     SI446X_ATOMIC {
@@ -876,7 +876,7 @@ implementation {
    *
    * CTS does not need to be true.
    */
-  void si446x_read_fast_status(void *s) {
+  void ll_si446x_read_fast_status(void *s) {
     uint8_t *p;
 
     p = (uint8_t *) s;
@@ -893,30 +893,23 @@ implementation {
   }
 
    
-  /*
-   * read fast xxx_pend
-   *
-   * reads the preassigned FRR that has the various pend info
-   * on it.
-   */
-
-  uint8_t si446x_fast_int_pend() {
-    return si446x_read_frr(SI446X_GET_INT_PEND);
+  uint8_t si446x_fast_device_state() {
+    return ll_si446x_read_frr(SI446X_GET_DEVICE_STATE);
   }
 
 
   uint8_t si446x_fast_ph_pend() {
-    return si446x_read_frr(SI446X_GET_PH_PEND);
+    return ll_si446x_read_frr(SI446X_GET_PH_PEND);
   }
 
 
   uint8_t si446x_fast_modem_pend() {
-    return si446x_read_frr(SI446X_GET_MODEM_PEND);
+    return ll_si446x_read_frr(SI446X_GET_MODEM_PEND);
   }
 
 
   uint8_t si446x_fast_chip_pend() {
-    return si446x_read_frr(SI446X_GET_CHIP_PEND);
+    return ll_si446x_read_frr(SI446X_GET_CHIP_PEND);
   }
 
     
@@ -956,12 +949,6 @@ implementation {
     rps_prev = rps_next;
     if (++rps_next >= RPS_MAX)
       rps_next = 0;
-  }
-
-
-  void si446x_get_int_status(uint8_t *status) {
-    si446x_read_fast_status(status);
-    trace_radio_pend(status);
   }
 
 
@@ -1072,7 +1059,7 @@ implementation {
       ll_si446x_send_cmd(cp, rsp, cl);
       ll_si446x_get_reply(rp, rl, cp[0]);
       t1 = call Platform.usecsRaw();
-      si446x_read_fast_status(ctp->frr);
+      ll_si446x_read_fast_status(ctp->frr);
     }
     ctp->t_elapsed = t1 - t0;
   }
@@ -1158,7 +1145,7 @@ implementation {
     si446x_get_reply(rp, rl, cp[0]);
     t1 = call Platform.usecsRaw();
     ctp->t_elapsed = t1 - t0;
-    si446x_read_fast_status(ctp->frr);
+    ll_si446x_read_fast_status(ctp->frr);
   }
 
 
@@ -1460,7 +1447,7 @@ implementation {
       t1 = call Platform.usecsRaw();
       ctp->t_elapsed = t1 - tot0;
       nop();
-      si446x_read_fast_status(ctp->frr);
+      ll_si446x_read_fast_status(ctp->frr);
       dpp++;
     }
   }
