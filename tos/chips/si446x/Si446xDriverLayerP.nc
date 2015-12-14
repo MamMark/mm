@@ -1611,6 +1611,7 @@ implementation {
       t0 = call Platform.usecsRaw();
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(SI446X_CMD_RX_FIFO_READ);
+      call FastSpiByte.splitReadWrite(0);
       readBlock(data, length);
       call HW.si446x_clr_cs();
       t1 = call Platform.usecsRaw();
