@@ -1995,10 +1995,10 @@ implementation {
 
 
   void cs_pwr_up_wait() {
-    uint16_t t0, t1, i, len_to_send;
+    uint16_t t0, t1, i, len_to_send, rx_len;
     uint8_t  tx_buf[0x40];
     ds_pkt_t *dsp;
-    bool     done;
+    si446x_chip_int_t *isp;
 
     if (!(xcts = call HW.si446x_cts())) {
       __PANIC_RADIO(10, 0, 0, 0, 0);
@@ -2037,18 +2037,18 @@ implementation {
 
     drf();
     nop();
+    nop();
 
     while(finnish_gate == FINNISH_WAIT) {
       nop();
     }
 
-    if (finnish_gate == FINNISH_TX) {
-      si446x_get_int_status(radio_pend);
-      ll_si446x_getclr_int_state(&int_state);
+    for (i = 0; i < 64; i++)
+      tx_buf[i] = 0xde;
+    ll_si446x_getclr_int_state(&int_state);
 
-      /* packet_sent 0x20, crc_error 0x08, tx_fifo_almost_emtpy 0x02 */
-      /* state_change 0x10, cmd_error 0x08 chip_ready 0x04 */
-      si446x_get_int_status(radio_pend);
+    while (finnish_gate == FINNISH_TX) {
+      ll_si446x_get_int_status(radio_pend);
 
       len_to_send = 32;
       dsp = (void *) tx_buf;
@@ -2059,59 +2059,36 @@ implementation {
       for (i = 0; i < len_to_send; i++)
         dsp->data[i] = i;
 
-      nop();
-      writeTxFifo(tx_buf, len_to_send + 6);
       si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-//      si446x_fifo_info(&t_rx_len, &t_tx_len,
-//                       SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
+      nop();
+      si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_TX);
+
+      writeTxFifo(tx_buf, len_to_send + 6);
       si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
 
       si446x_start_tx(len_to_send + 6);
       ut0 = call Platform.usecsRaw();
-      while(1) {
-        if (si446x_get_cts())
-          break;
-        si446x_get_int_status(radio_pend);
+      while (!si446x_get_cts()) {
+        ll_si446x_get_int_status(radio_pend);
       }
-      si446x_get_int_status(radio_pend);
-
+      ll_si446x_get_int_status(radio_pend);
       ut1 = call Platform.usecsRaw();
-      xcts_s = get_sw_cts();
-      si446x_get_int_status(radio_pend);
-      si446x_get_int_status(radio_pend);
-      si446x_get_int_status(radio_pend);
-      si446x_get_int_status(radio_pend);
-      si446x_get_int_status(radio_pend);
-      si446x_get_int_status(radio_pend);
-      si446x_fifo_info(NULL, &t_rx_len, 0);
-      nop();
-      si446x_fifo_info(NULL, &t_tx_len, 0);
-      nop();
-      si446x_fifo_info(NULL, &t_rx_len, 0);
-      nop();
-      si446x_fifo_info(NULL, &t_tx_len, 0);
-      si446x_get_int_status(radio_pend);
-      ll_si446x_getclr_int_state(&int_state);
-
       nop();
 
-      /* wait for completion */
-      done = 0;
-      while (!done) {
-        si446x_get_int_status(radio_pend);
-        if ((radio_pend[PH_STATUS] & SI446X_PH_INTEREST) ||
-            (radio_pend[MODEM_STATUS] & SI446X_MODEM_INTEREST) ||
-            (radio_pend[CHIP_STATUS] & SI446X_CHIP_INTEREST)) {
+      while (1) {
+        ll_si446x_get_int_status(radio_pend);
+        isp = (void *) &int_state;
+        ll_si446x_getclr_int_state(isp);
+        if ((isp->int_status.ph_pend    & SI446X_PH_INTEREST) ||
+            (isp->int_status.modem_pend & SI446X_MODEM_INTEREST) ||
+            (isp->int_status.chip_pend  & SI446X_CHIP_INTEREST)) {
           nop();
         }
-        if (radio_pend[PH_STATUS] & SI446X_PH_STATUS_PACKET_SENT)
-          break;
-        if ((radio_pend[CHIP_STATUS] & (SI446X_CHIP_STATUS_CMD_ERROR |
-                                        SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR)))
+        if (isp->int_status.ph_pend & SI446X_PH_STATUS_PACKET_SENT)
           break;
       }
-      nop();
-      drf();
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      ll_si446x_get_int_status(radio_pend);
       nop();
     }
 
