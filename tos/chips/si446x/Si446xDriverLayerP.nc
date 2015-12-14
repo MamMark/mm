@@ -1492,66 +1492,68 @@ implementation {
   /* drf: dump_radio_full */
   void drf() __attribute__((noinline)) {
 
-    rd.p_dump_start = call Platform.usecsRaw();
-    rd.l_dump_start = call LocalTime.get();
+    SI446X_ATOMIC {
+      rd.p_dump_start = call Platform.usecsRaw();
+      rd.l_dump_start = call LocalTime.get();
 
-    /* do CSN before we reset the SPI port */
-    rd.CSN_pin     = call HW.si446x_csn();
-    rd.CTS_pin     = call HW.si446x_cts();
-    rd.IRQN_pin    = call HW.si446x_irqn();
-    rd.SDN_pin     = call HW.si446x_sdn();
+      /* do CSN before we reset the SPI port */
+      rd.CSN_pin     = call HW.si446x_csn();
+      rd.CTS_pin     = call HW.si446x_cts();
+      rd.IRQN_pin    = call HW.si446x_irqn();
+      rd.SDN_pin     = call HW.si446x_sdn();
 
-    call HW.si446x_clr_cs();          /* reset SPI on chip */
-    nop();
-    call HW.si446x_set_cs();
-    nop();
-    call HW.si446x_clr_cs();
+      call HW.si446x_clr_cs();          /* reset SPI on chip */
+      nop();
+      call HW.si446x_set_cs();
+      nop();
+      call HW.si446x_clr_cs();
 
-    rd.ta0ccr3     = TA0CCR3;
-    rd.ta0cctl3    = TA0CCTL3;
+      rd.ta0ccr3     = TA0CCR3;
+      rd.ta0cctl3    = TA0CCTL3;
 
-    nop();                              /* these should become ll_* */
-    si446x_cmd_reply(si446x_part_info, sizeof(si446x_part_info),
-                     (void *) &rd.part_info, SI446X_PART_INFO_REPLY_SIZE);
+      nop();                              /* these should become ll_* */
+      ll_si446x_cmd_reply(si446x_part_info, sizeof(si446x_part_info),
+                          (void *) &rd.part_info, SI446X_PART_INFO_REPLY_SIZE);
 
-    si446x_cmd_reply(si446x_func_info, sizeof(si446x_func_info),
-                     (void *) &rd.func_info, SI446X_FUNC_INFO_REPLY_SIZE);
+      ll_si446x_cmd_reply(si446x_func_info, sizeof(si446x_func_info),
+                          (void *) &rd.func_info, SI446X_FUNC_INFO_REPLY_SIZE);
 
-    si446x_cmd_reply(si446x_gpio_cfg_nc, sizeof(si446x_gpio_cfg_nc),
-                     (void *) &rd.gpio_cfg, SI446X_GPIO_CFG_REPLY_SIZE);
+      ll_si446x_cmd_reply(si446x_gpio_cfg_nc, sizeof(si446x_gpio_cfg_nc),
+                          (void *) &rd.gpio_cfg, SI446X_GPIO_CFG_REPLY_SIZE);
 
-    si446x_cmd_reply(si446x_fifo_info_nc, sizeof(si446x_fifo_info_nc),
-                     rsp, SI446X_FIFO_INFO_REPLY_SIZE);
-    rd.rxfifocnt  = rsp[0];
-    rd.txfifofree = rsp[1];
+      ll_si446x_cmd_reply(si446x_fifo_info_nc, sizeof(si446x_fifo_info_nc),
+                          rsp, SI446X_FIFO_INFO_REPLY_SIZE);
+      rd.rxfifocnt  = rsp[0];
+      rd.txfifofree = rsp[1];
 
-    si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                     (void *) &rd.ph_status, SI446X_PH_STATUS_REPLY_SIZE);
+      ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
+                          (void *) &rd.ph_status, SI446X_PH_STATUS_REPLY_SIZE);
 
-    si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                     (void *) &rd.modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
+      ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
+                          (void *) &rd.modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
 
-    si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                     (void *) &rd.chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
+      ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
+                          (void *) &rd.chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
 
-    si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
-                     (void *) &rd.int_status, SI446X_INT_STATUS_REPLY_SIZE);
+      ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
+                          (void *) &rd.int_status, SI446X_INT_STATUS_REPLY_SIZE);
 
-    si446x_cmd_reply(si446x_device_state, sizeof(si446x_device_state),
-                     rsp, SI446X_DEVICE_STATE_REPLY_SIZE);
-    rd.device_state = rsp[0];
-    rd.channel      = rsp[1];
+      ll_si446x_cmd_reply(si446x_device_state, sizeof(si446x_device_state),
+                          rsp, SI446X_DEVICE_STATE_REPLY_SIZE);
+      rd.device_state = rsp[0];
+      rd.channel      = rsp[1];
 
-    si446x_read_fast_status(rd.frr);
+      ll_si446x_read_fast_status(rd.frr);
 
-    si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc),
-                     (void *) &rd.packet_info_len, SI446X_PACKET_INFO_REPLY_SIZE);
+      ll_si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc),
+                          (void *) &rd.packet_info_len, SI446X_PACKET_INFO_REPLY_SIZE);
 
-    nop();
-    dump_properties();
-    nop();
-    rd.l_dump_end = call LocalTime.get();
-    rd.l_delta =  rd.l_dump_end - rd.l_dump_start;
+      nop();
+      dump_properties();
+      nop();
+      rd.l_dump_end = call LocalTime.get();
+      rd.l_delta =  rd.l_dump_end - rd.l_dump_start;
+    }
   }
 
 
