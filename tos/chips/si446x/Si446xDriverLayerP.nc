@@ -2092,36 +2092,54 @@ implementation {
       nop();
     }
 
-    if (finnish_gate == FINNISH_RX) {
+    while (finnish_gate == FINNISH_RX) {
+      ll_si446x_get_int_status(radio_pend);
+
       next_state(STATE_RX_ON);
       dvr_cmd = CMD_SIGNAL_DONE;
-      si446x_send_cmd(rf_start_rx, rsp, sizeof(rf_start_rx));
+      nop();
+      si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
+      nuke_props();
+      start_rx(40);
       ut0 = call Platform.usecsRaw();
       while (!si446x_get_cts()) {
-        si446x_get_int_status(radio_pend);
+        ll_si446x_get_int_status(radio_pend);
       }
-      si446x_get_int_status(radio_pend);
+      ll_si446x_get_int_status(radio_pend);
       ut1 = call Platform.usecsRaw();
       nop();
+
       while (1) {
-        si446x_get_int_status(radio_pend);
         nop();
-        if ((radio_pend[PH_STATUS] & SI446X_PH_INTEREST) ||
-            (radio_pend[MODEM_STATUS] & SI446X_MODEM_INTEREST) ||
-            (radio_pend[CHIP_STATUS] & SI446X_CHIP_INTEREST)) {
+        ll_si446x_get_int_status(radio_pend);
+        si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+        isp = (void *) &int_state;
+        ll_si446x_getclr_int_state(isp);
+        if ((isp->int_status.ph_pend    & SI446X_PH_INTEREST) ||
+            (isp->int_status.modem_pend & SI446X_MODEM_INTEREST) ||
+            (isp->int_status.chip_pend  & SI446X_CHIP_INTEREST)) {
           nop();
         }
-        if (radio_pend[PH_STATUS] & SI446X_PH_STATUS_PACKET_RX)
+        if (isp->int_status.ph_pend & SI446X_PH_STATUS_PACKET_RX)
           break;
-        if ((radio_pend[CHIP_STATUS] & (SI446X_CHIP_STATUS_CMD_ERROR |
-                                        SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR)))
+        if (isp->int_status.ph_pend & SI446X_PH_STATUS_CRC_ERROR)
           break;
       }
-      for (i = 1; i < len_to_send; i++)
-        tx_buf[i] = 0;
+      ll_si446x_get_int_status(radio_pend);
+      rx_len = si446x_get_packet_info();        /* include len byte */
+      nop();
       si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-      readRxFifo(tx_buf, t_rx_len);
-      si446x_get_int_status(radio_pend);
+      nop();
+      for (i = 1; i < 0x40; i++)
+        tx_buf[i] = 0;
+      readRxFifo(tx_buf, rx_len);
+      ll_si446x_get_int_status(radio_pend);
+      nop();
+      readRxFifo(tx_buf, 1);
+      ll_si446x_get_int_status(radio_pend);
+      nop();
+      readRxFifo(tx_buf, 1);
+      ll_si446x_get_int_status(radio_pend);
       nop();
     }
     drf();
