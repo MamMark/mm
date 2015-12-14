@@ -1970,6 +1970,13 @@ implementation {
   };
 
 
+  void nuke_props() {
+    uint8_t x[8];
+
+    x[0] = 0x42;
+    x[1] = 0;
+    set_property(SI446X_PROP_PKT_CONFIG1, x, 1);
+  }
   void cs_pwr_up_wait() {
     uint16_t t0, t1, i, len_to_send;
     uint8_t  tx_buf[0x40];
