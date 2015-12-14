@@ -1099,14 +1099,21 @@ implementation {
    * This is debug code for observing interrupt state.
    */
   void ll_si446x_getclr_int_state(volatile si446x_chip_int_t *isp) {
-    ll_si446x_cmd_reply(si446x_ph_clr, sizeof(si446x_ph_clr),
-                        (void *) &isp->ph_status, SI446X_PH_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_modem_clr, sizeof(si446x_modem_clr),
-                        (void *) &isp->modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_chip_clr, sizeof(si446x_chip_clr),
-                        (void *) &isp->chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
+    uint8_t pends[4];
+
+    ll_si446x_cmd_reply(si446x_int_clr, sizeof(si446x_int_clr),
                         (void *) &isp->int_status, SI446X_INT_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
+                        (void *) &isp->ph_status, SI446X_PH_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
+                        (void *) &isp->modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
+                        (void *) &isp->chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
+    pends[DEVICE_STATE] = si446x_fast_device_state();
+    pends[PH_STATUS]    = isp->int_status.ph_pend;
+    pends[MODEM_STATUS] = isp->int_status.modem_pend;
+    pends[CHIP_STATUS]  = isp->int_status.chip_pend;
+    trace_radio_pend(pends);
   }
 
 
