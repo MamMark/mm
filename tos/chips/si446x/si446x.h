@@ -174,7 +174,7 @@
 #define SI446X_PACKET_INFO_REPLY_SIZE         2
 
 //#define SI446X_CMD_GET_INT_STATUS             0x20
-#define SI446X_INT_STATUS_REPLY_SIZE          9
+#define SI446X_INT_STATUS_REPLY_SIZE          8
 /*
  * Warning: sending no parameters with GET_INT_STATUS will clear all interrupts.
  * Reply stream returned is status of interrupts prior to any clearing that
@@ -186,10 +186,10 @@
 #define SI446X_PH_STATUS_REPLY_SIZE           2
 
 //#define SI446X_CMD_GET_MODEM_STATUS           0x22
-#define SI446X_MODEM_STATUS_REPLY_SIZE        9
+#define SI446X_MODEM_STATUS_REPLY_SIZE        8
 
 //#define SI446X_CMD_GET_CHIP_STATUS            0x23
-#define SI446X_CHIP_STATUS_REPLY_SIZE         5
+#define SI446X_CHIP_STATUS_REPLY_SIZE         4
 
 //#define SI446X_CMD_START_TX                   0x31
 #define SI446X_CONDITION_TX_COMPLETE_STATE      0xf0
