@@ -1179,14 +1179,21 @@ implementation {
 
 
   void si446x_start_tx(uint16_t len) {
-    uint8_t tx_buff[5];
+    uint8_t working[5];
 
-    tx_buff[0] = 0x31;
-    tx_buff[1] = 0;                     /* channel */
-    tx_buff[2] = 0x30;
-    tx_buff[3] = 0;
-    tx_buff[4] = len & 0xff;
-    si446x_send_cmd((void *) tx_buff, rsp, 5);
+    /*
+     * The RadioHead RH24 driver sets F2_len to be the length of the
+     * payload.  F1 is 1 byte (length) and F2 is the rest, so len-1
+     */
+    working[0] = 0;
+    working[1] = (len-1) & 0xff;
+    set_property(SI446X_PROP_PKT_FIELD_2_LENGTH, working, 2);
+    working[0] = SI446X_CMD_START_TX;
+    working[1] = 0;                     /* channel */
+    working[2] = 0x30;                  /* back to READY */
+    working[3] = 0;
+    working[4] = len & 0xff;
+    si446x_send_cmd((void *) working, rsp, 5);
   }
 
 
