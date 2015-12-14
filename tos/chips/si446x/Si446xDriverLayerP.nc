@@ -1163,6 +1163,21 @@ implementation {
   }
 
 
+  void set_property(uint16_t prop, uint8_t *values, uint16_t vl) {
+    uint8_t prop_buf[16];
+    uint16_t i;
+
+    prop_buf[0] = SI446X_CMD_SET_PROPERTY;
+    prop_buf[1] = prop >> 8;            /* group */
+    prop_buf[2] = vl;                   /* num_props */
+    prop_buf[3] = prop & 0xff;          /* start_prop */
+
+    for (i = 0; i < 12 && i < vl; i++ )
+      prop_buf[i+4] = values[i];
+    si446x_send_cmd(prop_buf, rsp, vl+4);
+  }
+
+
   void si446x_start_tx(uint16_t len) {
     uint8_t tx_buff[5];
 
