@@ -928,8 +928,12 @@ implementation {
 
     state = pend[0];
     ph    = pend[1];
-    modem = pend[2];
-    chip  = pend[3];
+
+    /* we don't care about modem:invalid preamble
+     * nor chip:(state_change|chip_ready)
+     */
+    modem = pend[2] & 0xfb;
+    chip  = pend[3] & 0xeb;
 
     if ((cts == ppp->cts) && (irqn == ppp->irqn) && (csn == ppp->csn) &&
         (state == ppp->ds) && (ph == ppp->ph) &&
@@ -937,6 +941,8 @@ implementation {
       return;
     }
 
+    modem = pend[2];                    /* trace actual values */
+    chip  = pend[3];
     rpp->ts = call Platform.usecsRaw();
     rpp->cts   = cts;
     rpp->irqn  = irqn;
