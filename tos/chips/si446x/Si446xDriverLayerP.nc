@@ -3927,8 +3927,8 @@ implementation {
 
 
   async event void Panic.hook() {
-    dump_radio();
 #ifdef notdef
+    dump_radio();
     call CSN.set();
     call CSN.clr();
     call CSN.set();
