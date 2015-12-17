@@ -450,6 +450,7 @@ grF0_pti = 0x33ae}
 
 
 *** RadioHead RH_RF24 initialization
+    grabed from git version 1.49
 
         0x07, RF_POWER_UP,
         0x08, RF_GPIO_PIN_CFG,
@@ -605,11 +606,13 @@ pkt_config1     0x11 0x12 0x01 0x06 0x02                        prop 1206
 
 pkt_len         0x11 0x12 0x03 0x08 0x00 0x00 0x00              prop 1208
                 pkt_len: 0x00 disabled.
+                pkt_len_field_src: 0
+                pkt_len_adjust:    0
 
 f_len_1         0x11 0x12 0x0c 0x0d 0x00 0x0e 0x04 0xaa 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
                 f1_len: 0x000e (14)  (fixed length)
                 f1_config: 0x04
-                f1_crc_config: 0xaa
+                f1_crc_config: 0xaa, crc_start,send_crc, check_crc,crc_enable
                 f2_len: 0 disabled
                 f3_len: 0 disabled
 
@@ -717,24 +720,46 @@ rf_init_freq:
 
         0x05, RF_GLOBAL_CONFIG_1, \
 #define RF_GLOBAL_CONFIG_1 0x11, 0x00, 0x01, 0x03, 0x60
+        global_config: 0x60, reserved, fast, generic, high perf
 
         0x06, RF_INT_CTL_ENABLE_2, \
 #define RF_INT_CTL_ENABLE_2 0x11, 0x01, 0x02, 0x00, 0x01, 0x18
+        int_ctl_enable: 01, ph_int
+        int_ctl_ph_enable: 0x18, packet_rx, crc_error
 
         0x08, RF_FRR_CTL_A_MODE_4, \
 #define RF_FRR_CTL_A_MODE_4 0x11, 0x02, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00
+        frr_a: disabled
+        frr_b: disabled
+        frr_c: disabled
+        frr_d: disabled
 
         0x05, RF_PREAMBLE_CONFIG_1, \
 #define RF_PREAMBLE_CONFIG_1 0x11, 0x10, 0x01, 0x04, 0x31
+        preamble_config: 0x31, first_1, byte, standard preamble
+        (default preamble_tx_len 0x8, rx_thres: 0x14 bits)
 
         0x07, RF_SYNC_CONFIG_3, \
 #define RF_SYNC_CONFIG_3 0x11, 0x11, 0x03, 0x00, 0x01, 0xB4, 0x2B
+        sync_config: 0x01, 2 bytes
+        sync_bits: 0xb4, 0x2b
+
+[pkt_crc_config default (1200) 0x00, 0 seed, no_crc]
 
         0x05, RF_PKT_CONFIG1_1, \
 #define RF_PKT_CONFIG1_1 0x11, 0x12, 0x01, 0x06, 0x02
+        pkt_config1: 0x02, crc bigendian, bit_order bigendian
+
+[pkt_len, (1208) default 0x00 no variable length, dst_field 0
+ pkt_len_field_src, (1209) default 0x00
+ pkt_len_adjust,    (120a) default 0x00
+ pkt_f1_length,     (120d) default 0x0000
 
         0x05, RF_PKT_FIELD_1_CONFIG_1, \
 #define RF_PKT_FIELD_1_CONFIG_1 0x11, 0x12, 0x01, 0x0F, 0x04
+        f1_config: 0x04, pn_start
+
+[pkt_f1_crc_config, (1210) default 0x00,  crc disabled.
 
         0x10, RF_MODEM_MOD_TYPE_12, \
 #define RF_MODEM_MOD_TYPE_12 0x11, 0x20, 0x0C, 0x00, 0x02, 0x00, 0x07, 0x01, 0x86, 0xA0, 0x01, 0xC9, 0xC3, 0x80, 0x00, 0x05
@@ -818,12 +843,22 @@ rf_init_freq:
 
         0x05, RF_GLOBAL_CONFIG_1, \
 #define RF_GLOBAL_CONFIG_1 0x11, 0x00, 0x01, 0x03, 0x22
+        global_config: 0x22, sequencer fast, protocol 1 (802.15.4)
 
         0x08, RF_INT_CTL_ENABLE_4, \
 #define RF_INT_CTL_ENABLE_4 0x11, 0x01, 0x04, 0x00, 0x07, 0x3C, 0x01, 0x08
+        int_ctl_enable: 7 (chip, modem, ph enabled)
+        int_ctl_ph_enable: 0x3c, Packet_sent, packet_rx, crc_err, unknown
+        int_ctl_modem_enable: 0x01, sync_detect
+        int_ctl_chip_enable: 0x08, cmd_error
+        
 
         0x08, RF_FRR_CTL_A_MODE_4, \
 #define RF_FRR_CTL_A_MODE_4 0x11, 0x02, 0x04, 0x00, 0x01, 0x07, 0x02, 0x0A
+        frr_a: 0x01 int_status
+        frr_b: 0x07 chip_status
+        frr_c: 0x02 int_pend
+        frr_d: 0x0a latched_rssi
 
         0x0D, RF_PREAMBLE_TX_LENGTH_9, \
 #define RF_PREAMBLE_TX_LENGTH_9 0x11, 0x10, 0x09, 0x00, 0x08, 0x14, 0x00, 0x0F, 0x12, 0x00, 0x00, 0x00, 0x00
@@ -943,24 +978,60 @@ rf_init_freq:
 
         0x08, RF_INT_CTL_ENABLE_4, \
 #define RF_INT_CTL_ENABLE_4 0x11, 0x01, 0x04, 0x00, 0x07, 0x18, 0x01, 0x08
+        int_ctl_enable: 0x07, chip, modem, ph
+        ph_enable:      0x18, packet_rx, crc_err
+        modem_enable:   0x01, sync_detect
+        chip_enable:    0x08, cmd_error
 
         0x08, RF_FRR_CTL_A_MODE_4, \
 #define RF_FRR_CTL_A_MODE_4 0x11, 0x02, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00
+        no frrs, all disabled
 
         0x0D, RF_PREAMBLE_TX_LENGTH_9, \
 #define RF_PREAMBLE_TX_LENGTH_9 0x11, 0x10, 0x09, 0x00, 0x08, 0x14, 0x00, 0x0F, 0x31, 0x00, 0x00, 0x00, 0x00
+        tx_length: 8
+        config_std: 0x14
+        config_nstd: 0
+        config_std2: 0x0f, preamble timeout 0xf bytes
+        config: 0x31, first 1, bytes, standard
 
         0x09, RF_SYNC_CONFIG_5, \
 #define RF_SYNC_CONFIG_5 0x11, 0x11, 0x05, 0x00, 0x01, 0xB4, 0x2B, 0x00, 0x00
+        config: 0x01 length 2 bytes
+        sync_bits: 0xb4 0x2b
 
         0x0B, RF_PKT_CRC_CONFIG_7, \
 #define RF_PKT_CRC_CONFIG_7 0x11, 0x12, 0x07, 0x00, 0x84, 0x01, 0x08, 0xFF, 0xFF, 0x00, 0x02
+        crc_config: 0x84, crc_seed 1, CRC_16_IBM
+        wht_poly: 0x0108
+        wht_seed: 0xffff
+        wht_bit_num: 0x00
+        pkt_config1: 0x02, crc bigendian, bitorder bigendian
 
         0x10, RF_PKT_LEN_12, \
 #define RF_PKT_LEN_12 0x11, 0x12, 0x0C, 0x08, 0x00, 0x00, 0x00, 0x30, 0x30, 0x00, 0x07, 0x04, 0x80, 0x00, 0x00, 0x00
+        pkt_len: 0x00 dst_field 0, disabled
+        pkt_len_field_src: 0x00
+        pkt_len_adjust: 0x00
+        tx_thres: 0x30
+        rx_thres: 0x30
+        f1_len: 0x0007
+        f1_config: 0x04 pn_start
+        f1_crc_config: 80 src_start
+        f2_len: 0x0000
+        f2_config: 0x00 
 
         0x10, RF_PKT_FIELD_2_CRC_CONFIG_12, \
 #define RF_PKT_FIELD_2_CRC_CONFIG_12 0x11, 0x12, 0x0C, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        f2_crc_config: 00
+        f3_len: 0000
+        f3_config: 00
+        f3_crc_config: 00
+        f4_len: 0000
+        f4_config: 00
+        f4_crc_config: 00
+        f5_len: 0000
+        f5_config: 00
 
         0x10, RF_PKT_FIELD_5_CRC_CONFIG_12, \
 #define RF_PKT_FIELD_5_CRC_CONFIG_12 0x11, 0x12, 0x0C, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
