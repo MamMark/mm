@@ -1186,21 +1186,16 @@ implementation {
 
 
   void si446x_start_tx(uint16_t len) {
-    uint8_t working[5];
+    uint8_t x[5];
 
-    /*
-     * The RadioHead RH24 driver sets F2_len to be the length of the
-     * payload.  F1 is 1 byte (length) and F2 is the rest, so len-1
-     */
-    working[0] = 0;
-    working[1] = (len-1) & 0xff;
-    set_property(SI446X_PROP_PKT_FIELD_2_LENGTH, working, 2);
-    working[0] = SI446X_CMD_START_TX;
-    working[1] = 0;                     /* channel */
-    working[2] = 0x30;                  /* back to READY */
-    working[3] = 0;
-    working[4] = len & 0xff;
-    si446x_send_cmd((void *) working, rsp, 5);
+    x[0] = SI446X_CMD_START_TX;
+    x[1] = 0;                     /* channel */
+    x[2] = 0x30;                  /* back to READY */
+    x[3] = 0;
+    x[4] = len & 0xff;
+    drf();
+    nop();
+    si446x_send_cmd((void *) x, rsp, 5);
   }
 
 
@@ -1967,38 +1962,21 @@ implementation {
   }
 
 
-  const uint8_t rf_start_rx[]         = {
-    0x32,                               /* start_rx */
+  const uint8_t start_rx_cmd[] = {
+    0x32,
     0,                                  /* channel */
-    0,                                  /* start (immed) */
-    0, 0,                               /* rx_len */
-    8,                                  /* rxtimeout_state, RX */
-    3,                                  /* rxvalid, READY */
-    3                                   /* rxinvalid, READY */
+    0,                                  /* start immediate */
+    0, 0,                               /* len, use variable length */
+    0,                                  /* rxtimeout, stay, good boy */
+    0,                                  /* rxvalid */
+    0,                                  /* rxinvalid */
   };
 
 
-  void nuke_props() {
-    uint8_t x[8];
-
-    x[0] = 0x42;
-    x[1] = 0;
-    set_property(SI446X_PROP_PKT_CONFIG1, x, 1);
-  }
-
-
-  void start_rx(uint16_t len) {
-    uint8_t x[8];
-
-    x[0] = 0x32;
-    x[1] = 0;
-    x[2] = 0;
-    x[3] = 0;
-    x[4] = len & 0xff;
-    x[5] = 8;
-    x[6] = 3;
-    x[7] = 3;
-    si446x_send_cmd(rf_start_rx, rsp, sizeof(rf_start_rx));
+  void start_rx() {
+    drf();
+    nop();
+    si446x_send_cmd(start_rx_cmd, rsp, sizeof(start_rx_cmd));
   }
 
 
@@ -2107,8 +2085,7 @@ implementation {
       dvr_cmd = CMD_SIGNAL_DONE;
       nop();
       si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
-      nuke_props();
-      start_rx(40);
+      start_rx();
       ut0 = call Platform.usecsRaw();
       while (!si446x_get_cts()) {
         ll_si446x_get_int_status(radio_pend);
@@ -2133,20 +2110,15 @@ implementation {
         if (isp->int_status.ph_pend & SI446X_PH_STATUS_CRC_ERROR)
           break;
       }
+      nop();
       ll_si446x_get_int_status(radio_pend);
-      rx_len = si446x_get_packet_info();        /* include len byte */
+      t_rx_len = si446x_get_packet_info() + 1;        /* include len byte */
       nop();
       si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
       nop();
       for (i = 1; i < 0x40; i++)
         tx_buf[i] = 0;
-      readRxFifo(tx_buf, rx_len);
-      ll_si446x_get_int_status(radio_pend);
-      nop();
-      readRxFifo(tx_buf, 1);
-      ll_si446x_get_int_status(radio_pend);
-      nop();
-      readRxFifo(tx_buf, 1);
+      readRxFifo(tx_buf, t_rx_len);
       ll_si446x_get_int_status(radio_pend);
       nop();
     }
