@@ -784,6 +784,8 @@ implementation {
   norace bool stateAlarm_active   = FALSE;
 
 
+  void drf();
+
   si446x_packet_header_t *getPhyHeader(message_t *msg) {
     return ((void *) msg) + call Config.headerOffset(msg);
   }
@@ -1339,8 +1341,6 @@ implementation {
 
 
   bool toogle;
-
-  void drf();
 
   /*
    * stuff_config
