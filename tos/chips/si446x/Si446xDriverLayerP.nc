@@ -397,14 +397,19 @@ const uint8_t rf_gpio_pin_cfg[]     = { 0x13, 0x08, 0x08, 0x08, 0x08,
 const uint8_t rf_int_ctl_enable_1[] = { 0x11, 0x01, 0x01, 0x00, 0x00 };
 
 const uint8_t rf_pkt_crc_config_7[]    = { 0x11, 0x12, 0x07, 0x00,
-                                           0x84, 0x01, 0x08, 0xFF, 0xFF, 0x00, 0x02 };
+                                           0x85, 0x01, 0x08, 0xFF, 0xFF, 0x00, 0x82 };
 
 const uint8_t rf_pkt_len_5[]           = { 0x11, 0x12, 0x05, 0x08,
                                            0x2a, 0x01, 0x00, 0x30, 0x30 };
 
-const uint8_t rf_pkt_field_config_10[] = { 0x11, 0x12, 0x0a, 0x0d,
-                                           0x00, 0x01, 0x04, 0x82,
-                                           0x00, 0x3F, 0x00, 0x2A, 0x00, 0x00 };
+const uint8_t rf_pkt_tx_field_config_6[] = { 0x11, 0x12, 0x06, 0x0d,
+                                             0x00, 0x01, 0x04, 0xa2,
+                                             0x00, 0x00 };
+
+const uint8_t rf_pkt_rx_field_config_10[] = { 0x11, 0x12, 0x0a, 0x21,
+                                              0x00, 0x01, 0x04, 0x82,
+                                              0x00, 0x3f, 0x00, 0x2a,
+                                              0x00, 0x00 };
 
 
 /* local config, driver/hw dependent */
@@ -413,7 +418,8 @@ const si446x_radio_config_t si446x_local_config[] = {
   { sizeof(rf_int_ctl_enable_1),            rf_int_ctl_enable_1 },
   { sizeof(rf_pkt_crc_config_7),            rf_pkt_crc_config_7 },
   { sizeof(rf_pkt_len_5),                   rf_pkt_len_5 },
-  { sizeof(rf_pkt_field_config_10),         rf_pkt_field_config_10 },
+  { sizeof(rf_pkt_tx_field_config_6),       rf_pkt_tx_field_config_6 },
+  { sizeof(rf_pkt_rx_field_config_10),      rf_pkt_rx_field_config_10 },
   { 0, NULL}
 };
 
