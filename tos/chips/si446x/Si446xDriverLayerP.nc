@@ -186,13 +186,6 @@ enum {
  */
 #define SI446X_CTS_TIMEOUT 200
 
-#define FINNISH_WAIT 0
-#define FINNISH_RX   1
-#define FINNISH_TX   2
-
-volatile norace uint8_t finnish_gate = FINNISH_RX;
-
-
          norace bool     do_dump;        /* defaults to FALSE */
 volatile norace uint8_t  xirq, p1;
          norace uint16_t t_tx_len, t_rx_len;
@@ -1981,10 +1974,7 @@ implementation {
 
 
   void cs_pwr_up_wait() {
-    uint16_t t0, t1, i, len_to_send, rx_len;
-    uint8_t  tx_buf[0x40];
-    ds_pkt_t *dsp;
-    si446x_chip_int_t *isp;
+    uint16_t t0, t1;
 
     if (!(xcts = call HW.si446x_cts())) {
       __PANIC_RADIO(10, 0, 0, 0, 0);
@@ -2025,103 +2015,18 @@ implementation {
     nop();
     nop();
 
-    while(finnish_gate == FINNISH_WAIT) {
-      nop();
-    }
-
-    for (i = 0; i < 64; i++)
-      tx_buf[i] = 0xde;
     ll_si446x_getclr_int_state(&int_state);
-
-    while (finnish_gate == FINNISH_TX) {
+    next_state(STATE_RX_ON);
+    dvr_cmd = CMD_SIGNAL_DONE;
+    nop();
+    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
+    start_rx();
+    ut0 = call Platform.usecsRaw();
+    while (!si446x_get_cts()) {
       ll_si446x_get_int_status(radio_pend);
-
-      len_to_send = 32;
-      dsp = (void *) tx_buf;
-      dsp->len = len_to_send + 5;
-      dsp->proto = 0x42;
-      dsp->da = 0x5225;
-      dsp->sa = 0x1441;
-      for (i = 0; i < len_to_send; i++)
-        dsp->data[i] = i;
-
-      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-      nop();
-      si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_TX);
-
-      writeTxFifo(tx_buf, len_to_send + 6);
-      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-
-      si446x_start_tx(len_to_send + 6);
-      ut0 = call Platform.usecsRaw();
-      while (!si446x_get_cts()) {
-        ll_si446x_get_int_status(radio_pend);
-      }
-      ll_si446x_get_int_status(radio_pend);
-      ut1 = call Platform.usecsRaw();
-      nop();
-
-      while (1) {
-        ll_si446x_get_int_status(radio_pend);
-        isp = (void *) &int_state;
-        ll_si446x_getclr_int_state(isp);
-        if ((isp->int_status.ph_pend    & SI446X_PH_INTEREST) ||
-            (isp->int_status.modem_pend & SI446X_MODEM_INTEREST) ||
-            (isp->int_status.chip_pend  & SI446X_CHIP_INTEREST)) {
-          nop();
-        }
-        if (isp->int_status.ph_pend & SI446X_PH_STATUS_PACKET_SENT)
-          break;
-      }
-      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-      ll_si446x_get_int_status(radio_pend);
-      nop();
     }
-
-    while (finnish_gate == FINNISH_RX) {
-      ll_si446x_get_int_status(radio_pend);
-
-      next_state(STATE_RX_ON);
-      dvr_cmd = CMD_SIGNAL_DONE;
-      nop();
-      si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
-      start_rx();
-      ut0 = call Platform.usecsRaw();
-      while (!si446x_get_cts()) {
-        ll_si446x_get_int_status(radio_pend);
-      }
-      ll_si446x_get_int_status(radio_pend);
-      ut1 = call Platform.usecsRaw();
-      nop();
-
-      while (1) {
-        nop();
-        ll_si446x_get_int_status(radio_pend);
-        si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-        isp = (void *) &int_state;
-        ll_si446x_getclr_int_state(isp);
-        if ((isp->int_status.ph_pend    & SI446X_PH_INTEREST) ||
-            (isp->int_status.modem_pend & SI446X_MODEM_INTEREST) ||
-            (isp->int_status.chip_pend  & SI446X_CHIP_INTEREST)) {
-          nop();
-        }
-        if (isp->int_status.ph_pend & SI446X_PH_STATUS_PACKET_RX)
-          break;
-        if (isp->int_status.ph_pend & SI446X_PH_STATUS_CRC_ERROR)
-          break;
-      }
-      nop();
-      ll_si446x_get_int_status(radio_pend);
-      t_rx_len = si446x_get_packet_info() + 1;        /* include len byte */
-      nop();
-      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-      nop();
-      for (i = 1; i < 0x40; i++)
-        tx_buf[i] = 0;
-      readRxFifo(tx_buf, t_rx_len);
-      ll_si446x_get_int_status(radio_pend);
-      nop();
-    }
+    ut1 = call Platform.usecsRaw();
+    nop();
     drf();
     nop();
   }
