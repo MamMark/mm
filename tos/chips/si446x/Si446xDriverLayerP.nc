@@ -41,7 +41,8 @@
  * spi pins: SCLK, MISO (SO), MOSI (SI).
  *
  * HplSi446xC provides the H/W Presentation which includes which SPI
- * to use and access routines for the above physical pins.
+ * to use and access routines for the above physical pins.  HplSi446xC
+ * is provided by the platform.
  *
  * Power States:
  *
@@ -75,8 +76,10 @@
  *    and the timeout is set to 16.5ms.
  * 3) program h/w state.
  * 4) Chip goes to Standby state.
+ * 5) Start initial RX.
+ * 6) signal Turn_On complete and hang in STATE_RX.
  *
- * This puts the driver into STANDBY s/w state (match h/w standby state).
+ * This puts the driver into RX s/w state (match h/w rx state).
  *
  * When we talk to the chip via SPI, the chip automatically transitions
  * to SPI Active state.  After talking to the chip, we must take care
@@ -383,28 +386,38 @@ const uint8_t rf_frr_ctl_a_mode_4[]    = { 0x11, 0x02, 0x04, 0x00,
                                            0x09, 0x04, 0x06, 0x08 };
 
 /*
- * set GLOBAL_CONFIG:(0003), sequencer_mode (FAST), fifo_mode (HALF_DUPLEX FIFO)
+ * GLOBAL_CONFIG:(0003), sequencer_mode (FAST), fifo_mode (HALF_DUPLEX FIFO)
  *     protocol (0, GENERIC), power_mode (0, HIGH_PERF).
  *
  * fifo_mode HALF_DUPLEX yields a unified 129 byte fifo.
  */
-const uint8_t rf_global_config_1[]     = { 0x11, 0x00, 0x01, 0x03,
-                                           0x70 };
+const uint8_t rf_global_config_1[]        = { 0x11, 0x00, 0x01, 0x03,
+                                              0x70 };
 
-const uint8_t rf_gpio_pin_cfg[]     = { 0x13, 0x08, 0x08, 0x08, 0x08,
+const uint8_t rf_gpio_pin_cfg[]           = { 0x13, 0x08, 0x08, 0x08, 0x08,
                                               0x00, 0x00, 0x00 };
 
-const uint8_t rf_int_ctl_enable_1[] = { 0x11, 0x01, 0x01, 0x00, 0x00 };
+const uint8_t rf_int_ctl_enable_1[]       = { 0x11, 0x01, 0x01, 0x00,
+                                              0x00 };
 
-const uint8_t rf_pkt_crc_config_7[]    = { 0x11, 0x12, 0x07, 0x00,
-                                           0x85, 0x01, 0x08, 0xFF, 0xFF, 0x00, 0x82 };
+/*
+ * CRC_CONFIG: 0x85, CRC_SEED, POLY 5 CCITT_16
+ * various whitening
+ * CONFIG1: 0x82, PH_FIELD_SPLIT, CRC_ENDIAN msb, bit_order msb
+ *
+ * TX and RX fields are split.  Different field definitions are used for TX
+ * and RX.  See documentation on TX and RX at the front of this file.
+ */
+const uint8_t rf_pkt_crc_config_7[]       = { 0x11, 0x12, 0x07, 0x00,
+                                              0x85, 0x01, 0x08, 0xFF, 0xFF, 0x00,
+                                              0x82 };
 
-const uint8_t rf_pkt_len_5[]           = { 0x11, 0x12, 0x05, 0x08,
-                                           0x2a, 0x01, 0x00, 0x30, 0x30 };
+const uint8_t rf_pkt_len_5[]              = { 0x11, 0x12, 0x05, 0x08,
+                                              0x2a, 0x01, 0x00, 0x30, 0x30 };
 
-const uint8_t rf_pkt_tx_field_config_6[] = { 0x11, 0x12, 0x06, 0x0d,
-                                             0x00, 0x01, 0x04, 0xa2,
-                                             0x00, 0x00 };
+const uint8_t rf_pkt_tx_field_config_6[]  = { 0x11, 0x12, 0x06, 0x0d,
+                                              0x00, 0x01, 0x04, 0xa2,
+                                              0x00, 0x00 };
 
 const uint8_t rf_pkt_rx_field_config_10[] = { 0x11, 0x12, 0x0a, 0x21,
                                               0x00, 0x01, 0x04, 0x82,
@@ -551,7 +564,6 @@ norace cmd_timing_t prop_timings[256];
  * Radio Commands
  */
 
-const uint8_t si446x_nop[]           = { SI446X_CMD_NOP };          /* 00 */
 const uint8_t si446x_part_info[]     = { SI446X_CMD_PART_INFO };    /* 01 */
 const uint8_t si446x_power_up[]      = { RF_POWER_UP };             /* 02 */
 const uint8_t si446x_func_info[]     = { SI446X_CMD_FUNC_INFO };    /* 10 */
