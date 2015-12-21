@@ -1258,6 +1258,37 @@ implementation {
   }
 
 
+  const uint8_t start_rx_cmd[] = {
+    0x32,
+    0,                                  /* channel */
+    0,                                  /* start immediate */
+    0, 0,                               /* len, use variable length */
+    0,                                  /* rxtimeout, stay, good boy */
+    0,                                  /* rxvalid */
+    0,                                  /* rxinvalid */
+  };
+
+
+  void start_rx() {
+    drf();
+    nop();
+    si446x_send_cmd(start_rx_cmd, rsp, sizeof(start_rx_cmd));
+  }
+
+
+  void si446x_fifo_info(uint16_t *rxp, uint16_t *txp, uint8_t flush_bits) {
+    uint8_t flusher[2], fifo_cnts[2];
+
+    flusher[0] = SI446X_CMD_FIFO_INFO;
+    flusher[1] = flush_bits;
+    ll_si446x_cmd_reply(flusher, 2, fifo_cnts, 2);
+    if (rxp)
+      *rxp = fifo_cnts[0];
+    if (txp)
+      *txp = fifo_cnts[1];
+  }
+
+
   /*
    * resets the Sfd queue back to an empty state.
    *
@@ -1620,19 +1651,6 @@ implementation {
     atomic {
       drf();
     }
-  }
-
-
-  void si446x_fifo_info(uint16_t *rxp, uint16_t *txp, uint8_t flush_bits) {
-    uint8_t flusher[2], fifo_cnts[2];
-
-    flusher[0] = SI446X_CMD_FIFO_INFO;
-    flusher[1] = flush_bits;
-    ll_si446x_cmd_reply(flusher, 2, fifo_cnts, 2);
-    if (rxp)
-      *rxp = fifo_cnts[0];
-    if (txp)
-      *txp = fifo_cnts[1];
   }
 
 
@@ -2016,24 +2034,6 @@ implementation {
     ll_si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
     stateAlarm_active = TRUE;
     call RadioAlarm.wait(SI446X_POWER_UP_WAIT_TIME);
-  }
-
-
-  const uint8_t start_rx_cmd[] = {
-    0x32,
-    0,                                  /* channel */
-    0,                                  /* start immediate */
-    0, 0,                               /* len, use variable length */
-    0,                                  /* rxtimeout, stay, good boy */
-    0,                                  /* rxvalid */
-    0,                                  /* rxinvalid */
-  };
-
-
-  void start_rx() {
-    drf();
-    nop();
-    si446x_send_cmd(start_rx_cmd, rsp, sizeof(start_rx_cmd));
   }
 
 
