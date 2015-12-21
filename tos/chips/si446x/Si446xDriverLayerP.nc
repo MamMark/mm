@@ -312,30 +312,29 @@ typedef struct {
 norace radio_dump_t rd;
 
 typedef struct {
-  uint8_t   group;
-  uint8_t   length;
+  uint16_t  prop_id;
   uint8_t  *where;
+  uint8_t   length;
 } dump_prop_desc_t;
 
 
 const dump_prop_desc_t dump_prop[] = {
-  { 0x00, SI446X_GROUP00_SIZE, (void *) &rd.gr00_global },
-  { 0x01, SI446X_GROUP01_SIZE, (void *) &rd.gr01_int },
-  { 0x02, SI446X_GROUP02_SIZE, (void *) &rd.gr02_frr },
-  { 0x10, SI446X_GROUP10_SIZE, (void *) &rd.gr10_preamble },
-  { 0x11, SI446X_GROUP11_SIZE, (void *) &rd.gr11_sync },
-  { 0x12, SI446X_GROUP12_SIZE, (void *) &rd.gr12_pkt },
-  { 0x20, SI446X_GROUP20_SIZE, (void *) &rd.gr20_modem },
-  { 0x21, SI446X_GROUP21_SIZE, (void *) &rd.gr21_modem },
-  { 0x22, SI446X_GROUP22_SIZE, (void *) &rd.gr22_pa },
-  { 0x23, SI446X_GROUP23_SIZE, (void *) &rd.gr23_synth },
-  { 0x30, SI446X_GROUP30_SIZE, (void *) &rd.gr30_match },
-  { 0x40, SI446X_GROUP40_SIZE, (void *) &rd.gr40_freq_ctl },
-  { 0x50, SI446X_GROUP50_SIZE, (void *) &rd.gr50_hop },
-#if SI446X_CHIP == 0x4468
-  { 0xF0, SI446X_GROUPF0_SIZE, (void *) &rd.grF0_pti },
+  { 0x0000, (void *) &rd.gr00_global,   SI446X_GROUP00_SIZE },
+  { 0x0100, (void *) &rd.gr01_int,      SI446X_GROUP01_SIZE },
+  { 0x0200, (void *) &rd.gr02_frr,      SI446X_GROUP02_SIZE },
+  { 0x1000, (void *) &rd.gr10_preamble, SI446X_GROUP10_SIZE },
+  { 0x1100, (void *) &rd.gr11_sync,     SI446X_GROUP11_SIZE },
+  { 0x1200, (void *) &rd.gr12_pkt,      SI446X_GROUP12_SIZE },
 #endif
-  { 0, 0, NULL },
+  { 0x2000, (void *) &rd.gr20_modem,    SI446X_GROUP20_SIZE },
+  { 0x2100, (void *) &rd.gr21_modem,    SI446X_GROUP21_SIZE },
+  { 0x2200, (void *) &rd.gr22_pa,       SI446X_GROUP22_SIZE },
+  { 0x2300, (void *) &rd.gr23_synth,    SI446X_GROUP23_SIZE },
+  { 0x3000, (void *) &rd.gr30_match,    SI446X_GROUP30_SIZE },
+  { 0x4000, (void *) &rd.gr40_freq_ctl, SI446X_GROUP40_SIZE },
+  { 0x5000, (void *) &rd.gr50_hop,      SI446X_GROUP50_SIZE },
+  { 0xF000, (void *) &rd.grF0_pti,      SI446X_GROUPF0_SIZE },
+  { 0, NULL, 0 },
 };
 
 
@@ -1535,8 +1534,8 @@ implementation {
     t1 = call Platform.usecsRaw();
     dpp = &dump_prop[0];
     while (dpp->where) {
-      group = dpp->group;
-      index = 0;
+      group = dpp->prop_id >> 8;
+      index = dpp->prop_id & 0xff;
       length = dpp->length;
       w = dpp->where;
       t0 = call Platform.usecsRaw();
