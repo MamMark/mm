@@ -465,7 +465,7 @@ const uint8_t rf_pkt_tx_field_config_6[]  = { 0x11, 0x12, 0x06, 0x0d,
 
 const uint8_t rf_pkt_rx_field_config_10[] = { 0x11, 0x12, 0x0a, 0x21,
                                               0x00, 0x01, 0x04, 0x82,
-                                              0x00, 0x3f, 0x00, 0x2a,
+                                              0x00, 0x81, 0x00, 0x0a,
                                               0x00, 0x00 };
 
 
@@ -1487,6 +1487,12 @@ implementation {
   void load_config() {
     stuff_config(&si446x_wds_config[0]);
     stuff_config(&si446x_local_config[0]);
+
+    /*
+     * local_config puts the FIFO into unified mode, which needs a FIFO
+     * reset to fire it up.  Do a flush here to do the reset
+     */
+    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
   }
 
 
