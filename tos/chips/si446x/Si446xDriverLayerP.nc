@@ -299,6 +299,9 @@ typedef struct {
   uint8_t               gr10_preamble[SI446X_GROUP10_SIZE];
   uint8_t               gr11_sync[SI446X_GROUP11_SIZE];
   uint8_t               gr12_pkt[SI446X_GROUP12_SIZE];
+#ifdef SI446X_GROUP12a_SIZE
+  uint8_t               gr12a_pkt[SI446X_GROUP12a_SIZE];
+#endif
   uint8_t               gr20_modem[SI446X_GROUP20_SIZE];
   uint8_t               gr21_modem[SI446X_GROUP21_SIZE];
   uint8_t               gr22_pa[SI446X_GROUP22_SIZE];
@@ -325,6 +328,8 @@ const dump_prop_desc_t dump_prop[] = {
   { 0x1000, (void *) &rd.gr10_preamble, SI446X_GROUP10_SIZE },
   { 0x1100, (void *) &rd.gr11_sync,     SI446X_GROUP11_SIZE },
   { 0x1200, (void *) &rd.gr12_pkt,      SI446X_GROUP12_SIZE },
+#ifdef SI446X_GROUP12a_SIZE
+  { 0x1221, (void *) &rd.gr12a_pkt,     SI446X_GROUP12a_SIZE },
 #endif
   { 0x2000, (void *) &rd.gr20_modem,    SI446X_GROUP20_SIZE },
   { 0x2100, (void *) &rd.gr21_modem,    SI446X_GROUP21_SIZE },

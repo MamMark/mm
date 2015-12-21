@@ -547,8 +547,12 @@
 #define SI446X_GROUP10_SIZE                     0x0e
 #define SI446X_GROUP11_SIZE                     0x05
 
-/* gr12 shortened to 0x29, PKT_RX_FLD_3_LEN */
-#define SI446X_GROUP12_SIZE                     0x29
+/*
+ * gr12  1200-1212, (F2_len)    (size 0x13)
+ * gr12a 1221-122a, (RX_F3_len) (size 0x0a)
+ */
+#define SI446X_GROUP12_SIZE                     0x13
+#define SI446X_GROUP12a_SIZE                    0x0a
 #define SI446X_GROUP20_SIZE                     0x52
 #define SI446X_GROUP21_SIZE                     0x24
 #define SI446X_GROUP22_SIZE                     0x06
@@ -574,6 +578,29 @@
 #define SI446X_GROUP40_SIZE                     0x08
 #define SI446X_GROUP50_SIZE                     0x42
 #define SI446X_GROUPF0_SIZE                     0x04
+
+#elif SI446X_CHIP == 0x4468a
+
+#define SI446X_GROUP00_SIZE                     0x0a
+#define SI446X_GROUP01_SIZE                     0x04
+#define SI446X_GROUP02_SIZE                     0x04
+#define SI446X_GROUP10_SIZE                     0x0e
+#define SI446X_GROUP11_SIZE                     0x05
+
+/*
+ * gr12  1200-1212, (F2_len)    (size 0x13)
+ * gr12a 1221-122a, (RX_F3_len) (size 0x0a)
+ */
+#define SI446X_GROUP12_SIZE                     0x13
+#define SI446X_GROUP12a_SIZE                    0x0a
+#define SI446X_GROUP20_SIZE                     0x52
+#define SI446X_GROUP21_SIZE                     0x24
+#define SI446X_GROUP22_SIZE                     0x06
+#define SI446X_GROUP23_SIZE                     0x08
+#define SI446X_GROUP30_SIZE                     0x00
+#define SI446X_GROUP40_SIZE                     0x08
+#define SI446X_GROUP50_SIZE                     0x00
+#define SI446X_GROUPF0_SIZE                     0x00
 
 #else
 #error Unrecognized value for SI446X_CHIP
