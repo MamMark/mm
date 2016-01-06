@@ -61,8 +61,17 @@
  *
  *  The routines, si446x_set_high_tx_pwr and si446x_set_low_tx_pwr are
  *  used to control what the radio chip can do when transmitting.
- * 
+ *
+ *
+ * Interrupts:  There are platform dependent routines for enabling and
+ * disabling interrupts on the radio h/w.  This is because there may
+ * be platform dependent behaviours needed when turning interrupts on and
+ * off.  In particular if timestamping requires h/w support, the platform
+ * would need to do additional activities when turning interrupts on and
+ * off.
+ *
  * @author Eric B. Decker <cire831@gmail.com>
+ * December, 2015
  */
  
 interface Si446xInterface {
@@ -138,13 +147,27 @@ interface Si446xInterface {
   async command void si446x_set_high_tx_pwr();
 
 
-#ifdef notdef
   /**
-   * si44sx_interrupted
+   * si446x_interrupt
    *
    * signalled when an interrupt has occurred on the
    * interrupt pin NIRQ.
    */
-  async event void si446x_interrupted();
-#endif
+  async event void si446x_interrupt();
+
+
+  /**
+   * si446x_enableInterrupt
+   *
+   * enable any h/w interrupt associated with the radio
+   */
+  async command void si446x_enableInterrupt();
+
+
+  /**
+   * si446x_disableInterrupt
+   *
+   * disable any h/w interrupt associated with the radio
+   */
+  async command void si446x_disableInterrupt();
 }

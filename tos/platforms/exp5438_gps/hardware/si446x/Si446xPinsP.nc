@@ -42,6 +42,9 @@ module Si446xPinsP {
   provides {
     interface Si446xInterface as HW;
   }
+  uses {
+    interface GpioInterrupt  as RadioNIRQ;
+  }
 }
 implementation {
   async command uint8_t HW.si446x_cts()             { return SI446X_CTS_P; }
@@ -54,4 +57,20 @@ implementation {
   async command void    HW.si446x_clr_cs()          { SI446X_CSN = 1; }
   async command void    HW.si446x_set_low_tx_pwr()  { }
   async command void    HW.si446x_set_high_tx_pwr() { }
+
+  async command void    HW.si446x_enableInterrupt() {
+    atomic {
+      call RadioNIRQ.enableFallingEdge();
+    }
+  }
+
+  async command void    HW.si446x_disableInterrupt() {
+    atomic {
+      call RadioNIRQ.disable();
+    }
+  }
+
+  async event void RadioNIRQ.fired() {
+    signal HW.si446x_interrupt();
+  }
 }

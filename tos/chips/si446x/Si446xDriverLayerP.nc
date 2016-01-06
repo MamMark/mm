@@ -1822,33 +1822,6 @@ implementation {
   }
 
 
-  void disableInterrupts() {
-#ifdef notdef
-    atomic {
-      call ExcAInterrupt.disable();
-      call SfdCapture.disable();
-    }
-#endif
-  }
-
-
-  /*
-   * enableInterrupts: turn on interrupts we are interested in.
-   *
-   * Clears out anything pending
-   */
-  void enableInterrupts() {
-#ifdef notdef
-    atomic {
-      call ExcAInterrupt.enableRisingEdge();
-      call SfdCapture.captureBothEdges();
-      call SfdCapture.clearOverflow();
-      call SfdCapture.enableInterrupt();
-    }
-#endif
-  }
-
-
   /*
    * resetRadio: kick the radio
    *
@@ -1905,7 +1878,7 @@ implementation {
      * reset the radio which also reloads the configuration
      * because reset sets the config back to POR values.
      */
-    disableInterrupts();
+    call HW.si446x_disableInterrupt();
     loadRadioConfig();                          /* load registers */
     txPower = SI446X_DEF_RFPOWER & SI446X_TX_PWR_MASK;
     channel = SI446X_DEF_CHANNEL & SI446X_CHANNEL_MASK;
@@ -1952,10 +1925,10 @@ implementation {
        */
       setChannel();
       if (dvr_state == STATE_RX_ON) {
-        disableInterrupts();
+        call HW.si446x_disableInterrupt();
         resetExc();                                     /* clean out exceptions */
         strobe(SI446X_CMD_SRXON);                       /* force a calibration cycle */
-        enableInterrupts();
+        call HW.si446x_enableInterrupt();
         dvr_cmd = CMD_SIGNAL_DONE;
         return;
       }
@@ -2180,7 +2153,7 @@ implementation {
       next_state(STATE_RX_ON);
       dvr_cmd = CMD_SIGNAL_DONE;
       setChannel();
-      enableInterrupts();
+      call HW.si446x_enableInterrupt();
 
       /*
        * all the majik starts to happen after the RXON is issued.
@@ -2218,7 +2191,7 @@ implementation {
        * We also need to clean out and reset any data structures associated
        * with the radio, like the SFD queue etc.       
        */
-      disableInterrupts();
+      call HW.si446x_disableInterrupt();
 //      strobe(SI446X_CMD_SRFOFF);
 //      strobe(SI446X_CMD_SFLUSHTX);      /* nuke  txfifo            */
       flushFifo();                      /* nuke fifo               */
@@ -2232,7 +2205,7 @@ implementation {
     }
 
     if (dvr_cmd == CMD_TURNOFF) {
-      disableInterrupts();
+      call HW.si446x_disableInterrupt();
       call HW.si446x_shutdown();
       next_state(STATE_SDN);
       dvr_cmd = CMD_SIGNAL_DONE;
@@ -2563,7 +2536,7 @@ implementation {
    * violations.
    */
   void nuke2rxon() {
-    disableInterrupts();
+    call HW.si446x_disableInterrupt();
 //    strobe(SI446X_CMD_SRFOFF);
 //    strobe(SI446X_CMD_SFLUSHTX);
     flushFifo();
@@ -2574,7 +2547,7 @@ implementation {
     next_state(STATE_RX_ON);            /* before enableInts and RXON */
 //    strobe(SI446X_CMD_SRXON);
     si446x_inst_nukes++;
-    enableInterrupts();                 /* clears all ints out too */
+    call HW.si446x_enableInterrupt();
   }
 
 
@@ -3095,12 +3068,11 @@ implementation {
 #endif
 
 
-#ifdef notdef
-  async event void ExcAInterrupt.fired() {
+  async event void HW.si446x_interrupt() {
     radioIrq = TRUE;
+    nop();
     call Tasklet.schedule();
   }
-#endif
 
 
   /*
