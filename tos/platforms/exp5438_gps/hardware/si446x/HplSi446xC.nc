@@ -56,7 +56,11 @@ configuration HplSi446xC {
 implementation {
 
   components Si446xPinsP;
+  components HplMsp430InterruptC;
+  components new Msp430InterruptC() as RadioInterruptC;
   Si446xInterface = Si446xPinsP;
+  RadioInterruptC.HplInterrupt -> HplMsp430InterruptC.Port14;
+  Si446xPinsP.RadioNIRQ -> RadioInterruptC;
 
 
   /* see exp5438_gps/hardware/usci/PlatformUsciMapC.nc for pin mappage */
