@@ -11,8 +11,8 @@
  * @n http://www.silabs.com
  */
 
-#ifndef __RADIO_CONFIG_SI4463W_H__
-#define __RADIO_CONFIG_SI4463W_H__
+#ifndef __RADIO_CONFIG_SI446X_H__
+#define __RADIO_CONFIG_SI446X_H__
 
 #define SI446X_CHIP 0x4463a
 
@@ -623,4 +623,4 @@
                             RADIO_CONFIGURATION_DATA_RADIO_DELAY_CNT_AFTER_RESET       \
                             }
 
-#endif /* __RADIO_CONFIG_SI4463W_H__ */
+#endif /* __RADIO_CONFIG_SI446X_H__ */
