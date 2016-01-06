@@ -37,7 +37,11 @@
 
 #include <Timer.h>
 #include <message.h>
-#include "radio_config_si4463w.h"
+
+/* Also include the platform dependent si446x definitions generated
+   from the SiLabs WDS program (Wireless Development Studio.
+*/
+#include "radio_config_si446x.h"
 
 /*
  * TXPOWER register value, see Table 17 of the 2520 data sheet
