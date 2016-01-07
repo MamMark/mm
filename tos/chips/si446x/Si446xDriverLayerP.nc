@@ -702,7 +702,7 @@ implementation {
     STATE_SDN = 0,                      /* shutdown */
     STATE_POR_WAIT,                     /* waiting for POR to complete */
     STATE_PWR_UP_WAIT,                  /* waiting on POWER_UP cmd */
-    STATE_LOAD,                         /* loading configuration */
+    STATE_LOAD_CONFIG,                  /* loading configuration */
 
     STATE_SDN_2_LOAD,
     STATE_STANDBY_2_LOAD,
@@ -715,6 +715,12 @@ implementation {
     STATE_TX_ACTIVE,                    /* actively transmitting */
   } si446x_driver_state_t;
 
+  /* load_config_task state */
+  norace uint8_t   config_task_not_done = FALSE;  /* initialize for first entry to task */
+  norace uint8_t   outer_i, inner_i;
+  norace uint16_t  config_task_time, config_start_time;
+  // si446x_radio_config_t  config_list[] = {si446x_wds_config, si446x_local_config, si446x_frr_config?, NULL};
+  const si446x_radio_config_t  *config_list[] = {si446x_wds_config, si446x_local_config, NULL};
 
   /*
    * on boot, initilized to STATE_SDN (0)
@@ -1680,6 +1686,7 @@ implementation {
       call HW.si446x_clr_cs();
       t1 = call Platform.usecsRaw();
       nop();
+      t1 -= t0;
     }
   }
 
@@ -1915,6 +1922,51 @@ implementation {
 #endif
   }
 
+  task void load_config_task() {
+    uint16_t iter_time;
+    si446x_radio_config_t *cp;
+    uint8_t i;
+
+    call Tasklet.suspend();
+    if (dvr_state == STATE_LOAD_CONFIG) {
+      if (!config_task_not_done) { /* re-init the config task state */
+	config_task_not_done = TRUE;
+	outer_i = 0;
+	inner_i = 0;
+	config_task_time = 0;
+	config_start_time = call Platform.usecsRaw();
+      }
+      iter_time = call Platform.usecsRaw();
+      /* repeat while more config strings exist and less than one millisecond time expired */
+      while ((config_list[outer_i]) && ((call Platform.usecsRaw() - iter_time) < 1000 )) {
+	cp = (void *) config_list[outer_i];
+	for (i=0;i<inner_i;i++) {cp++;}
+	if (cp->size == 0) {
+	  outer_i++;
+	  inner_i = 0;
+	} else {
+	  if (cp->size > 16) {
+	    __PANIC_RADIO(7, (uint16_t) cp->data, cp->size, 0, 0);
+	  }
+	  si446x_send_cmd(cp->data, rsp, cp->size);
+	  inner_i++;
+	}
+      }
+
+      if (config_list[outer_i]) {   /*  if more configuration strings */
+	post load_config_task();
+      } else {                      /* finalize configuration and initialization */
+	si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
+	config_task_time = call Platform.usecsRaw() - config_start_time;
+	config_task_not_done = FALSE;         /* report task completion */
+      }
+    }
+    if (!config_task_not_done)
+      call Tasklet.schedule();   /* notify tasklet to run its state machine */
+
+    call Tasklet.resume();
+  }
+
 
   void cs_sdn() {                       /* change state from SDN */
     /*
@@ -1973,7 +2025,7 @@ implementation {
 
 
   void cs_pwr_up_wait() {
-    uint16_t t0, t1;
+    //    uint16_t t0, t1;
 
     if (!(xcts = call HW.si446x_cts())) {
       __PANIC_RADIO(10, 0, 0, 0, 0);
@@ -2006,30 +2058,32 @@ implementation {
     ll_si446x_getclr_int_state(&int_state);
     ll_si446x_get_int_state(&chip_debug);
 
-    mt0 = call LocalTime.get();
-    load_config();
-    mt1 = call LocalTime.get();
-
-    drf();
-    nop();
-    nop();
-
-    ll_si446x_getclr_int_state(&int_state);
-    next_state(STATE_RX_ON);
-    dvr_cmd = CMD_SIGNAL_DONE;
-    nop();
-    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
-    start_rx();
-    ut0 = call Platform.usecsRaw();
-    while (!si446x_get_cts()) {
-      ll_si446x_get_int_status(radio_pend);
-    }
-    ut1 = call Platform.usecsRaw();
-    nop();
-    drf();
-    nop();
+    next_state(STATE_LOAD_CONFIG);
+    post load_config_task();
   }
 
+  void cs_load_config() {
+    //    uint16_t t0, t1;
+
+    if (!(xcts = call HW.si446x_cts())) {
+      __PANIC_RADIO(10, 0, 0, 0, 0);
+    }
+    if (!isSpiAcquired())               /* if no SPI */
+      return;
+    if (dvr_cmd != CMD_TURNON) {
+      bad_state();
+      return;
+    }
+
+    drf();        /** debugging **/
+    nop();
+    nop();
+
+    if (!config_task_not_done) {  /* check if task has completed all configuration */
+      next_state(STATE_READY);
+      call Tasklet.schedule();
+    }
+  }
 
   void cs_xxx_2_load() {
     /*
@@ -2055,7 +2109,7 @@ implementation {
      * STANDBY_2_LOAD only does StandbyInit
      */
     if (dvr_state == STATE_SDN_2_LOAD)
-      next_state(STATE_LOAD);
+      next_state(STATE_LOAD_CONFIG);
     post SI446X_Load_Config();
   }
 
@@ -2102,10 +2156,21 @@ implementation {
       return;
 
     if (dvr_cmd == CMD_TURNON) {
-      next_state(STATE_RX_ON);
-      dvr_cmd = CMD_SIGNAL_DONE;
+      nop();
+      ll_si446x_getclr_int_state(&int_state);
+      si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
+      start_rx();
+      ut0 = call Platform.usecsRaw();
+      while (!si446x_get_cts()) { /* wait for command completion */
+	ll_si446x_get_int_status(radio_pend);
+      }
+      ut1 = call Platform.usecsRaw();
+      nop();
+      drf();
+      nop();
+
       setChannel();
-      call HW.si446x_enableInterrupt();
+      //      enableInterrupts();
 
       /*
        * all the majik starts to happen after the RXON is issued.
@@ -2115,7 +2180,10 @@ implementation {
        * So the minimum time before the 1st SFD interrupt is 192 + 160 us
        * (352 us, decimal).
        */
-//      strobe(SI446X_CMD_SRXON);         /* (192+160)us before 1st SFD int.  */
+      //      strobe(SI446X_CMD_SRXON);         /* (192+160)us before 1st SFD int.  */
+
+      next_state(STATE_RX_ON);
+      dvr_cmd = CMD_SIGNAL_DONE;
       return;
     }
 
