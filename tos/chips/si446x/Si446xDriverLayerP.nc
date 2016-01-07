@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Eric B. Decker
+ * Copyright (c) 2015, 2016 Eric B. Decker, Dan J. Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Eric B. Decker <cire831@gmail.com>
+ * Author: Dan J. Maltbie <dmaltbie@daloma.org>
  */
 
 /*
@@ -716,11 +717,12 @@ implementation {
   } si446x_driver_state_t;
 
   /* load_config_task state */
-  norace uint8_t   config_task_not_done = FALSE;  /* initialize for first entry to task */
-  norace uint8_t   outer_i, inner_i;
-  norace uint16_t  config_task_time, config_start_time;
-  // si446x_radio_config_t  config_list[] = {si446x_wds_config, si446x_local_config, si446x_frr_config?, NULL};
-  const si446x_radio_config_t  *config_list[] = {si446x_wds_config, si446x_local_config, NULL};
+  norace uint8_t        config_list_iter;
+  norace const uint8_t *config_prop_ptr;
+  norace uint16_t       config_task_time, config_start_time;
+
+  const uint8_t *config_list[] = {si446x_wds_config, si446x_local_config, NULL};
+
 
   /*
    * on boot, initilized to STATE_SDN (0)
@@ -1901,69 +1903,66 @@ implementation {
   /*
    * task to actually load any configuration information into
    * the radio chip.   Done at task level because it takes a while
-   * (up to 2ms) and we don't want to do this at interrupt level
-   *
-   * state will be LOAD_CONFIG or STANDBY_2_LOAD.
-   *
-   * We don't use a suspend/resume block because the radio won't
-   * be generating any interrupt level events so Tasklet.schedule
-   * should be fine.
+   * (up to ?ms) and we want to let other folks to run.
    */
-  task void SI446X_Load_Config() {
-#ifdef notdef
-    call Tasklet.suspend();
-    if (dvr_state == STATE_LOAD_CONFIG)
-      fullInitRadio();                /* in LOAD_CONFIG */
-    else
-      standbyInitRadio();             /* one of the STANDBYs */
+  task void load_config_task() {
+    uint16_t iter_start;
+    uint16_t size;
+    uint8_t *cp;
+
+    if (dvr_state != STATE_LOAD_CONFIG) {
+      __PANIC_RADIO(90, (uint16_t) dvr_state, 0, 0, 0);
+    }
+
+    cp = (void *) config_prop_ptr;
+
+    /*
+     * config_prop_ptr will be NULL if we haven't started yet.
+     *
+     * Don't let any other radio stuff in via suspend.
+     */
+    if (!cp) {
+      call Tasklet.suspend();
+      config_prop_ptr = config_list[config_list_iter];
+      cp = (void *) config_prop_ptr;
+      config_task_time = 0;
+      config_start_time = call Platform.usecsRaw();
+    }
+
+    iter_start = call Platform.usecsRaw();
+
+    /* repeat while more config strings exist and less than one millisecond time expired */
+    while (cp) {
+
+      /* check to see if we've spent too much time */
+      if ((call Platform.usecsRaw() - iter_start) > 1000) {
+	config_prop_ptr = cp;
+	break;
+      }
+
+      size = *cp++;
+      if (size > 16) {
+	__PANIC_RADIO(91, config_list_iter, (uint16_t) config_prop_ptr, size, 0);
+      }
+      if (size == 0) {
+	config_list_iter++;
+	config_prop_ptr = config_list[config_list_iter];
+	cp = (void *) config_prop_ptr;
+	continue;
+      }
+      si446x_send_cmd(cp, rsp, size);
+      cp += size;
+    }
+
+    if (cp) { 			/* more to do, post, let others run */
+      post load_config_task();
+      return;
+    }
+
+    config_task_time = call Platform.usecsRaw() - config_start_time;
+    config_list_iter = 0;
     next_state(STATE_READY);
     call Tasklet.schedule();
-    call Tasklet.resume();
-#endif
-  }
-
-  task void load_config_task() {
-    uint16_t iter_time;
-    si446x_radio_config_t *cp;
-    uint8_t i;
-
-    call Tasklet.suspend();
-    if (dvr_state == STATE_LOAD_CONFIG) {
-      if (!config_task_not_done) { /* re-init the config task state */
-	config_task_not_done = TRUE;
-	outer_i = 0;
-	inner_i = 0;
-	config_task_time = 0;
-	config_start_time = call Platform.usecsRaw();
-      }
-      iter_time = call Platform.usecsRaw();
-      /* repeat while more config strings exist and less than one millisecond time expired */
-      while ((config_list[outer_i]) && ((call Platform.usecsRaw() - iter_time) < 1000 )) {
-	cp = (void *) config_list[outer_i];
-	for (i=0;i<inner_i;i++) {cp++;}
-	if (cp->size == 0) {
-	  outer_i++;
-	  inner_i = 0;
-	} else {
-	  if (cp->size > 16) {
-	    __PANIC_RADIO(7, (uint16_t) cp->data, cp->size, 0, 0);
-	  }
-	  si446x_send_cmd(cp->data, rsp, cp->size);
-	  inner_i++;
-	}
-      }
-
-      if (config_list[outer_i]) {   /*  if more configuration strings */
-	post load_config_task();
-      } else {                      /* finalize configuration and initialization */
-	si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-	config_task_time = call Platform.usecsRaw() - config_start_time;
-	config_task_not_done = FALSE;         /* report task completion */
-      }
-    }
-    if (!config_task_not_done)
-      call Tasklet.schedule();   /* notify tasklet to run its state machine */
-
     call Tasklet.resume();
   }
 
