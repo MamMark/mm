@@ -2061,59 +2061,9 @@ implementation {
     post load_config_task();
   }
 
-  void cs_load_config() {
-    //    uint16_t t0, t1;
-
-    if (!(xcts = call HW.si446x_cts())) {
-      __PANIC_RADIO(10, 0, 0, 0, 0);
-    }
-    if (!isSpiAcquired())               /* if no SPI */
-      return;
-    if (dvr_cmd != CMD_TURNON) {
-      bad_state();
-      return;
-    }
-
-    drf();        /** debugging **/
-    nop();
-    nop();
-
-    if (!config_task_not_done) {  /* check if task has completed all configuration */
-      next_state(STATE_READY);
-      call Tasklet.schedule();
-    }
-  }
-
-  void cs_xxx_2_load() {
-    /*
-     * This can be invoked when in SDN_2_LOAD or STANDBY_2_LOAD
-     *
-     * This doesn't run if the RadioAlarm is still active
-     * stateAlarm_active is 1.
-     */
-
-    /*
-     * check for SPI ownership.  No ownership -> stay in current state
-     */
-    if (!isSpiAcquired())               /* if no SPI */
-      return;
-
-    if (dvr_cmd != CMD_TURNON) {
-      bad_state();
-      return;
-    }
-
-    /*
-     * SDN_2_LOAD -> LOAD_CONFIG to force full config.
-     * STANDBY_2_LOAD only does StandbyInit
-     */
-    if (dvr_state == STATE_SDN_2_LOAD)
-      next_state(STATE_LOAD_CONFIG);
-    post SI446X_Load_Config();
-  }
-
 
   void cs_standby() {
+#ifdef notdef
     uint16_t wait_time;
 
     if (!isSpiAcquired())
@@ -2142,6 +2092,7 @@ implementation {
       post SI446X_Load_Config();
       return;
     }
+#endif
 
     bad_state();
   }
@@ -2244,9 +2195,6 @@ implementation {
       case STATE_SDN:           cs_sdn();               break;
       case STATE_POR_WAIT:      cs_por_wait();          break;
       case STATE_PWR_UP_WAIT:   cs_pwr_up_wait();       break;
-
-      case STATE_SDN_2_LOAD:
-                                cs_xxx_2_load(); break;
       case STATE_STANDBY:       cs_standby();    break;
       case STATE_READY:         cs_ready();      break;
       case STATE_RX_ON:         cs_rx_on();      break;
