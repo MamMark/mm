@@ -2062,6 +2062,23 @@ implementation {
   }
 
 
+  void cs_load_config() {
+    /*
+     * The state machine can get invoked multiple times, like
+     * when RadioAlarm fires.  (1st when RadioAlarm goes (its part
+     * of the Tasklet group) and (2nd when RadioAlarm does
+     * the Tasklet.schedule.
+     *
+     * So it is possible to transition to PWR_UP_WAIT -> LOAD_CONFIG
+     * and then the state machine will see current state of LOAD_CONFIG
+     * which should do nothing.
+     *
+     * The transition out of LOAD_CONFIG -> READY happens when the
+     * Load_Config_Task completes.
+     */
+  }
+
+
   void cs_standby() {
 #ifdef notdef
     uint16_t wait_time;
@@ -2195,9 +2212,10 @@ implementation {
       case STATE_SDN:           cs_sdn();               break;
       case STATE_POR_WAIT:      cs_por_wait();          break;
       case STATE_PWR_UP_WAIT:   cs_pwr_up_wait();       break;
-      case STATE_STANDBY:       cs_standby();    break;
-      case STATE_READY:         cs_ready();      break;
-      case STATE_RX_ON:         cs_rx_on();      break;
+      case STATE_LOAD_CONFIG:   cs_load_config();       break;
+      case STATE_STANDBY:       cs_standby();           break;
+      case STATE_READY:         cs_ready();             break;
+      case STATE_RX_ON:         cs_rx_on();             break;
 
       case STATE_TX_START:
       default:
@@ -3658,6 +3676,16 @@ implementation {
     nop();
     nop();
     stateAlarm_active = FALSE;
+
+    /*
+     * currently RadioAlarm just invokes the Tasklet group to run in order
+     * to cause a state transition.  We are already running the Tasklet group
+     * and we aren't doing anything here but the group is already running
+     * so no need to invoke it again.
+     *
+     * But we need to schedule one more time because we don't know the order
+     * of the Tasklet.runs are executed.
+     */
     call Tasklet.schedule();            /* process additional work */
   }
 
