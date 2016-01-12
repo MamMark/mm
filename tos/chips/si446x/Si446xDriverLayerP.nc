@@ -750,14 +750,6 @@ implementation {
 //  } tx_user_state;
 
 
-  /*
-   * if transmitting a timesync message, the original absolute timestamp
-   * is kept in timesync_absolute.  0 is stored if not doing a timesync
-   * message.
-   */
-
-  norace uint32_t timesync_absolute;
-
   enum {
     FCS_SIZE     = 2,
   };
@@ -2114,7 +2106,6 @@ implementation {
       call HW.si446x_disableInterrupt();
       flushFifo();                      /* nuke fifo               */
       flushSfdQueue();                  /* reset sfd queue         */
-      timesync_absolute = 0;            /* no timesync in progress */
       /* reset exceptions */
       next_state(STATE_STANDBY);        /* no need to idle first */
       dvr_cmd = CMD_SIGNAL_DONE;
@@ -2202,7 +2193,6 @@ implementation {
 
     uint8_t     length, preload_len;
     uint8_t   * dp;                     /* data pointer */
-    void      * timesync;
 
     call PacketTimeStamp.clear(msg);
     if (txMsg) {
@@ -2369,26 +2359,8 @@ implementation {
 #endif
     } /* end atomic */
 
-    timesync = call PacketTimeSyncOffset.isSet(msg) ? ((void*)msg) + call PacketTimeSyncOffset.get(msg) : 0;
-    if (timesync) {
-      /*
-       * if we have a pointer into the packet, (timesync non-NULL), then
-       * it points to where the absolute time of the event is stored.
-       *
-       * grab the absolute time and store in m_timesync_absolute.   This also
-       * tells SfdCapture that we need to finish the timesync writing.
-       *
-       * Write all the payload to the txfifo except the last 4 bytes which is
-       * the relative timesync value.  This will be done from the SfdCapture
-       * interrupt.
-       */
-      writeTxFifo(dp, length - sizeof(timesync_relative_t) - FCS_SIZE);
-      timesync_absolute = (*(timesync_absolute_t *) timesync);
-    } else {
-      /* no timesync, write full packet */
-      if (length > 0)
-        writeTxFifo(dp, length - FCS_SIZE);
-    }
+    if (length > 0)
+      writeTxFifo(dp, length - FCS_SIZE);
 
     /*
      * If something catastrophic, we may have let the interrupt handler
@@ -2448,7 +2420,6 @@ implementation {
     flushFifo();
     flushSfdQueue();
     setChannel();
-    timesync_absolute = 0;
     next_state(STATE_RX_ON);            /* before enableInts and RXON */
     si446x_inst_nukes++;
     call HW.si446x_enableInterrupt();
