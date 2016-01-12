@@ -370,8 +370,7 @@ const dump_prop_desc_t dump_prop[] = {
  *
  * The second class are those parameters that are either h/w dependent
  * or are protocol/packet format dependent or are driver dependent.  These are
- * called "local" properties.  Also contained in the radio_config_si446x.h
- * file and exported as SI446X_LOCAL_CONFIG_BYTES.
+ * called "local" properties.  These are defined below.
  *
  * Both si446x_wds_config and si446x_local_config are simple byte arrays.
  * Each entry starts with the length of the following command, followed by
@@ -544,13 +543,6 @@ norace uint16_t si446x_tx_startup_time_max;
 
 
 typedef struct {
-  uint8_t        reg_start;
-  uint8_t        len;
-  const uint8_t *vals;
-} reg_init_t;
-
-
-typedef struct {
   uint16_t cmd;
   uint16_t t_cts0;
   uint16_t t_cmd0;
@@ -607,7 +599,7 @@ const uint8_t si446x_chip_clr_cmd_err[] = { SI446X_CMD_GET_CHIP_STATUS, 0xf7 };
 
 const uint8_t si446x_device_state[] = { SI446X_CMD_REQUEST_DEVICE_STATE }; /* 33 */
 
-  typedef struct {
+ typedef struct {
     uint8_t len;
     uint8_t proto;
     uint16_t da;
@@ -701,14 +693,10 @@ implementation {
    */
   typedef enum {
     STATE_SDN = 0,                      /* shutdown */
+    STATE_STANDBY,
     STATE_POR_WAIT,                     /* waiting for POR to complete */
     STATE_PWR_UP_WAIT,                  /* waiting on POWER_UP cmd */
     STATE_LOAD_CONFIG,                  /* loading configuration */
-
-    STATE_SDN_2_LOAD,
-    STATE_STANDBY_2_LOAD,
-    STATE_STANDBY,
-    STATE_SPI,                          /* spi active */
     STATE_READY,
     STATE_RX_ON,                        /* ready to receive */
     STATE_RX_ACTIVE,                    /* actively receiving */
@@ -772,7 +760,6 @@ implementation {
 
   enum {
     FCS_SIZE     = 2,
-    TXA_MAX_WAIT = 50,                  /* in uS */
   };
 
 
@@ -1338,15 +1325,6 @@ implementation {
 
 
   /*
-   * FIXME: this needs to get moved to PlatformCC2520
-   *
-   * Wiring and platform dependent.
-   */
-  void dr_hw_state() {
-  }
-
-
-  /*
    * It is unclear if dumping the FIFO is a) possible or b) useful.
    */
   void dump_radio_fifo() {
@@ -1417,49 +1395,8 @@ implementation {
 
 
   /*
-   * load configuration
-   *
-   * The configuration comes from a SiLabs program that generates
-   * the file "radio_config_si446x.h" which lives in
-   * tos/platforms/<platform>/hardware/si446x directory.  See the include
-   * at the front of this file.  It is clearly denoted.
-   *
-   * this defines RADIO_CONFIGURATION_DATA_ARRAY.  We pull only the pieces
-   * that we need rather than using RADIO_CONFIGURATION_DATA_ARRAY.
-   *
-   * "wds_config" pulls generated data from the SiLabs configuration data.
-   *
-   * "local_config" is data that is hand built and contains the driver and
-   * h/w dependencies.
-   *
-   *  RF_POWER_UP       remove, requires timing
-   *  RF_GPIO_PIN_CFG   remove, h/w dependent
-   *  RF_INT_CTL_ENABLE_1 driver dependent
-   *  RF_FRR_CTL_A_MODE_4 driver dependent
-   *  RF_PKT_CRC_CONFIG_7 driver dependent (packet format)
-   *  RF_PKT_LEN_12     driver dependent (packet format)
-   *  RF_PKT_FIELD_2_CRC_CONFIG_12
-   *  RF_PKT_FIELD_5_CRC_CONFIG_12
-   *  RF_PKT_RX_FIELD_3_CRC_CONFIG_9
-   *
-   * The RF_* entries include the command being used to modify the chip state.
-   * This is from the code generated from the EzRadioPro s/w from SiLabs.
-   * It is too much trouble to change it so we just live
-   * with it.
+   * read property
    */
-
-  void load_config() {
-    stuff_config(si446x_wds_config);
-    stuff_config(si446x_local_config);
-
-    /*
-     * local_config puts the FIFO into unified mode, which needs a FIFO
-     * reset to fire it up.  Do a flush here to do the reset
-     */
-    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-  }
-
-
   uint8_t r_prop(uint16_t p_id, uint16_t num, uint8_t *w) {
     uint8_t group, index, chip_pend;
 
@@ -2024,8 +1961,6 @@ implementation {
 
 
   void cs_pwr_up_wait() {
-    //    uint16_t t0, t1;
-
     if (!(xcts = call HW.si446x_cts())) {
       __PANIC_RADIO(10, 0, 0, 0, 0);
     }
@@ -2087,7 +2022,6 @@ implementation {
       return;
 
     if ((dvr_cmd == CMD_TURNOFF)) {
-//      call PlatformCC2520.powerDown();
       call HW.si446x_shutdown();
       next_state(STATE_SDN);
       dvr_cmd = CMD_SIGNAL_DONE;
@@ -2095,7 +2029,6 @@ implementation {
     }
 
     if (dvr_cmd == CMD_TURNON) {
-//      wait_time = call PlatformCC2520.wakeup();
       wait_time = 0;
       if (wait_time) {
         if (!call RadioAlarm.isFree())
@@ -2179,13 +2112,10 @@ implementation {
        * with the radio, like the SFD queue etc.       
        */
       call HW.si446x_disableInterrupt();
-//      strobe(SI446X_CMD_SRFOFF);
-//      strobe(SI446X_CMD_SFLUSHTX);      /* nuke  txfifo            */
       flushFifo();                      /* nuke fifo               */
       flushSfdQueue();                  /* reset sfd queue         */
-//      resetExc();                       /* blow out exceptions     */
       timesync_absolute = 0;            /* no timesync in progress */
-//      call PlatformCC2520.sleep();      /* tell PlatformCC2520 we are in standby */
+      /* reset exceptions */
       next_state(STATE_STANDBY);        /* no need to idle first */
       dvr_cmd = CMD_SIGNAL_DONE;
       return;
@@ -2369,12 +2299,6 @@ implementation {
     /*
      * Critical Region!
      *
-     * First, the current state must be checked in an atomic block. We want to hold
-     * off the SFD interrupt which can cause a change in dvr_state.
-     *
-     * Second, once we issue the strobe, we want to look for the TXA coming up
-     * in a tight loop.  It should come up fast and we only look for about 30uS
-     * or so (TXA_MAX_WAIT).  So don't let anything else in either.
      */
     atomic {
       /*
@@ -2386,7 +2310,6 @@ implementation {
           radioIrq                   ||
           tx_user_state != TXUS_STARTUP) {
         tx_user_state = TXUS_IDLE;
-//        strobe(SI446X_CMD_SFLUSHTX);          /* discard header */
         return EBUSY;
       }
 
@@ -2522,15 +2445,11 @@ implementation {
    */
   void nuke2rxon() {
     call HW.si446x_disableInterrupt();
-//    strobe(SI446X_CMD_SRFOFF);
-//    strobe(SI446X_CMD_SFLUSHTX);
     flushFifo();
     flushSfdQueue();
-//    resetExc();
     setChannel();
     timesync_absolute = 0;
     next_state(STATE_RX_ON);            /* before enableInts and RXON */
-//    strobe(SI446X_CMD_SRXON);
     si446x_inst_nukes++;
     call HW.si446x_enableInterrupt();
   }
@@ -3086,8 +3005,6 @@ implementation {
       if (drainOneSfd(sfd_p, SFD_TX))   /* we should be pointing at a SFD_TX */
         return TRUE;                    /* so shouldn't ever happen */
     }
-//    writeReg(SI446X_EXCFLAG0, ~SI446X_EXC0_TX_FRM_DONE);
-//    writeReg(SI446X_EXCFLAG1, ~SI446X_EXC1_CLR_OTHERS);
     if (dvr_cmd == CMD_TRANSMIT)
       dvr_cmd = CMD_NONE;                     /* must happen before signal */
     else
@@ -3225,12 +3142,6 @@ implementation {
           (exc2 & SI446X_EXC2_RX_FRM_ABORTED)) {
         __PANIC_RADIO(23, exc0, exc1, exc2, 0);
 
-        /* shouldn't ever happen, just looking for now */
-//        if (exc0 & SI446X_EXC0_TX_ACK_DONE)
-//          writeReg(SI446X_EXCFLAG0, ~SI446X_EXC0_TX_ACK_DONE);
-//        if (exc2 & SI446X_EXC2_RX_FRM_ABORTED)
-//          writeReg(SI446X_EXCFLAG2, ~SI446X_EXC2_RX_FRM_ABORTED);
-
         /* doesn't force a recovery */
       }
 
@@ -3299,7 +3210,6 @@ implementation {
          * need to flush the last packet, and then restart the RX up
          * again.
          */
-//        writeReg(SI446X_EXCFLAG0, ~SI446X_EXC0_RX_OVERFLOW);
         rx_overflow = TRUE;
         si446x_inst_rx_overflows++;
         call Trace.trace(T_R_RX_OVR, (sfd_fill << 8) | sfd_drain, sfd_entries);
@@ -3355,9 +3265,6 @@ implementation {
              * completed yet, and will eventually generate the RX_FRM_DONE
              * exception.
              */
-//            writeReg(SI446X_EXCFLAG1, ~SI446X_EXC1_RX_CLR);
-//            length  = readReg(SI446X_RXFIRST);
-//            fifocnt = readReg(SI446X_RXFIFOCNT);
             call Trace.trace(T_R_RX_LOOP, length, fifocnt);
 
             /*
@@ -3448,7 +3355,6 @@ implementation {
             }
 
             if (exc0 & SI446X_EXC0_RX_OVERFLOW) {
-//              writeReg(SI446X_EXCFLAG0, ~SI446X_EXC0_RX_OVERFLOW);
               rx_overflow = TRUE;
               si446x_inst_rx_overflows++;
               call Trace.trace(T_R_RX_OVR_1, (sfd_fill << 8) | sfd_drain,
