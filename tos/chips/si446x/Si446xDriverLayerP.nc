@@ -480,54 +480,6 @@ norace uint8_t      fifo[129];
 
 
 /*
- * SFD timestamps
- */
-
-typedef enum {
-  SFD_UP   = 0x0001,
-  SFD_DWN  = 0x0002,
-  SFD_RX   = 0x0010,
-  SFD_TX   = 0x0020,
-  SFD_OVW  = 0x0100,
-  SFD_BUSY = 0x8000,
-
-  MAX_SFD_STAMPS = 8,
-} sfd_status_t;
-
-
-typedef struct {
-  uint32_t local;                       /* rising edge   */
-  uint16_t time_up;                     /* rising edge   */
-  uint16_t time_down;                   /* falling edge  */
-  uint32_t time_finish;                 /* frm_done time */
-  uint16_t sfd_status;                  /* sfd_status_t, but hex */
-} sfd_stamp_t;
-
-
-/*
- * Note: The TX SFD entry could be a seperate entry since there can only
- * be one outstanding at a time.   But to avoid strange out of order effects,
- * ie. processing a transmitted packet that was transmitted after a RX packet
- * came in first.   Shouldn't ever happen since the chip is single duplex.
- *
- * But if we have a single SFDQueue that represents the actual time order that
- * packets have happened, then it isn't even an issue.
- *
- * sfd_lost is TRUE if the current set of sfd_stamps has seen an OVR
- * (overwritten), or if we have lost a time stamp for some other reason.
- * We assume they are all crap.
- */
-
-norace bool sfd_lost;
-norace uint8_t sfd_fill,   sfd_drain, sfd_entries;
-               sfd_stamp_t sfd_stamps[MAX_SFD_STAMPS];
-sfd_stamp_t * const sfd_ptrs[MAX_SFD_STAMPS] = {
-  &sfd_stamps[0], &sfd_stamps[1], &sfd_stamps[2], &sfd_stamps[3],
-  &sfd_stamps[4], &sfd_stamps[5], &sfd_stamps[6], &sfd_stamps[7]
-};
-
-
-/*
  * Instrumentation, error counters, etc.
  */
 
@@ -536,7 +488,6 @@ norace uint16_t si446x_inst_rx_toolarge;
 norace uint16_t si446x_inst_rx_toosmall;
 norace uint16_t si446x_inst_pkt_toolarge;
 norace uint16_t si446x_inst_bad_crc;
-norace uint16_t si446x_inst_sfd_overwrites;
 norace uint16_t si446x_inst_nukes;
 norace uint16_t si446x_inst_other;
 norace uint16_t si446x_tx_startup_time_max;
@@ -1233,54 +1184,6 @@ implementation {
       *rxp = fifo_cnts[0];
     if (txp)
       *txp = fifo_cnts[1];
-  }
-
-
-  /*
-   * resets the Sfd queue back to an empty state.
-   *
-   * must be called when the h/w is shutdown.  Or
-   * interrupts disabled.
-   */
-  void flushSfdQueue() {
-    uint16_t i;
-
-    call Trace.trace(T_R_SFD_FLUSH, 0xffff, 0xff00 | READ_SR);
-    for (i = 0; i < MAX_SFD_STAMPS; i++)
-      sfd_ptrs[i]->sfd_status = 0;
-    sfd_fill    = 0;
-    sfd_drain   = 0;
-    sfd_entries = 0;
-    sfd_lost = FALSE;
-  }
-
-
-  /*
-   * advance the SfdQueue from the drain point after verifying we
-   * are looking at the expected entry.
-   *
-   * returns TRUE if recovery should be invoked.
-   *
-   * drainOneSfd shouldn't ever get called if sfd_lost is set.
-   */
-  bool drainOneSfd(sfd_stamp_t *sfd_p, uint8_t sfd_lookfor) {
-    if (sfd_lost)                       /* paranoid */
-      return TRUE;
-
-    /* check for out of order, what are we expecting */
-    if ((sfd_p->sfd_status & (SFD_BUSY | sfd_lookfor))
-                          != (SFD_BUSY | sfd_lookfor)) {
-      __PANIC_RADIO(6, sfd_fill, sfd_drain, sfd_entries,
-                    sfd_p->sfd_status);
-      return TRUE;
-    }
-    sfd_p->sfd_status &= ~SFD_BUSY;
-    if (++sfd_drain >= MAX_SFD_STAMPS)
-      sfd_drain = 0;
-    sfd_entries--;
-    call Trace.trace(T_R_SFD_DRAIN, (sfd_fill << 8) | sfd_drain,
-                     (sfd_lost ? 0x8000 : 0) | sfd_entries);
-    return FALSE;
   }
 
 
@@ -2105,7 +2008,6 @@ implementation {
        */
       call HW.si446x_disableInterrupt();
       flushFifo();                      /* nuke fifo               */
-      flushSfdQueue();                  /* reset sfd queue         */
       /* reset exceptions */
       next_state(STATE_STANDBY);        /* no need to idle first */
       dvr_cmd = CMD_SIGNAL_DONE;
@@ -2418,7 +2320,6 @@ implementation {
   void nuke2rxon() {
     call HW.si446x_disableInterrupt();
     flushFifo();
-    flushSfdQueue();
     setChannel();
     next_state(STATE_RX_ON);            /* before enableInts and RXON */
     si446x_inst_nukes++;
@@ -2445,7 +2346,6 @@ implementation {
     uint8_t     * dp;                   /* data pointer */
     uint8_t       tmp, rssi;
     uint8_t       crc_lqi;
-    sfd_stamp_t * sfd_p;
 
     /*
      * start pulling data from the rxfifo
@@ -2482,19 +2382,7 @@ implementation {
       pullBlock(length);                /* length is number of spi reads to do */
       call HW.si446x_clr_cs();
       __nesc_disable_interrupt();
-
-      /*
-       * We need to account for the SFD entry too.  See below for the details
-       * but this is a subset of what is done below.
-       *
-       * interrupts need to be off, SfdQueue gets manipulated at interrupt level
-       * so it needs to be protected.
-       */
-      if (sfd_lost || sfd_entries == 0)
-        return FALSE;
-
-      sfd_p  = sfd_ptrs[sfd_drain];
-      return drainOneSfd(sfd_p, SFD_RX);
+      return FALSE;
     }
 
     if (!rxMsg) {                       /* never should be null */
@@ -2516,33 +2404,6 @@ implementation {
     rssi    = call FastSpiByte.splitReadWrite(0);
     crc_lqi = call FastSpiByte.splitRead();
     call HW.si446x_clr_cs();
-
-    /*
-     * SFD handling.
-     *
-     * Overflow/Overwrite (sfd_lost TRUE) causes the entire sfdqueue to be
-     * ignored until both fifos are emptied.  Overwrite, sets sfd_lost and
-     * sets sfd_entries to 0.  sfd_entries will stay 0 until the
-     * sfd_lost condition is cleared.
-     *
-     * If we are receiving packets, we process the sfdqueue for only rx
-     * packets.  We assume that there are no tx packets in the way.  The
-     * single TX packet should have been taken care of before any other rx
-     * packets could get in the way.
-     */
-    if (sfd_lost || sfd_entries == 0)
-      call PacketTimeStamp.clear(rxMsg);
-    else {
-      sfd_p  = sfd_ptrs[sfd_drain];
-      if ((sfd_p->sfd_status & (SFD_BUSY | SFD_RX))
-                            == (SFD_BUSY | SFD_RX)) {
-        call PacketTimeStamp.set(rxMsg, sfd_p->local);
-        sfd_p->time_finish = call LocalTime.get();
-      } else
-        call PacketTimeStamp.clear(rxMsg);
-      if (drainOneSfd(sfd_p, SFD_RX))
-        return TRUE;                    /* oops */
-    }
 
     /* see if we should accept the packet */
     if (signal RadioReceive.header(rxMsg)) {
@@ -2965,17 +2826,7 @@ implementation {
    * returns TRUE if we want recovery.
    */
   bool process_tx_frm_done() {
-    sfd_stamp_t         *sfd_p;
-
-    call Trace.trace(T_R_TX_PKT, (sfd_fill << 8) | sfd_drain,
-                     (sfd_lost ? 0x8000 : 0) | sfd_entries);
-    if (!sfd_lost && sfd_entries) {
-      sfd_p  = sfd_ptrs[sfd_drain];
-      call PacketTimeStamp.set(txMsg, sfd_p->local);
-      sfd_p->time_finish = call LocalTime.get();
-      if (drainOneSfd(sfd_p, SFD_TX))   /* we should be pointing at a SFD_TX */
-        return TRUE;                    /* so shouldn't ever happen */
-    }
+    call Trace.trace(T_R_TX_PKT, 0, 0);
     if (dvr_cmd == CMD_TRANSMIT)
       dvr_cmd = CMD_NONE;                     /* must happen before signal */
     else
