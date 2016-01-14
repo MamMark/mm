@@ -2025,7 +2025,10 @@ implementation {
     return TRUE;
   }
 
-  /*----------------- IRQs -----------------*/
+
+  default tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
+    return msg;
+  }
 
   /**************************************************************************/
 
