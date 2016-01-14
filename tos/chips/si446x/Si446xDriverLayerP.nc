@@ -238,6 +238,8 @@ enum {
 volatile norace uint8_t  xirq, p1;
          norace uint16_t t_tx_len, t_rx_len;
 
+norace uint32_t t_por;
+
 norace uint32_t mt0, mt1;
 norace uint16_t ut0, ut1;
 
@@ -684,7 +686,6 @@ implementation {
   enum {
     FCS_SIZE     = 2,
   };
-
 
   typedef enum {
     CMD_NONE        = 0,     // no command pending.
