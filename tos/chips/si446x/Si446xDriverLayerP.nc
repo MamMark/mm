@@ -98,8 +98,8 @@
  * to transition the chip back to Standby to take advantage of the low
  * current consumption.
  *
- * 
- * Basic Packet operations:
+ *
+ * Basic Packet operations
  *
  * The radio chip can actively be doing only one thing at a time, either
  * transmitting or receiving.  It is not Hear-Self.
@@ -130,7 +130,7 @@
  *   CRC_START, CRC_SEND, CHECK_CRC, CRC_ENABLE per field.
  *
  *   On TX, if Len specified in START_TX control block, then F1 controls CRC
- *   If Len 0 (RX and TX) then fields are controlled by Field specs.
+ *   If Len 0 (RX and TX) then fields are controlled by Field specs
  *
  * Unified FIFO.  129 bytes.  controlled by (0003) GLOBAL_CONFIG:FIFO_MODE
  *
@@ -240,11 +240,15 @@ enum {
  */
 #define SI446X_CTS_TIMEOUT 200
 
+
+/**************************************************************************/
+
+/*
+ * chip debugging
+ */
          norace bool     do_dump;        /* defaults to FALSE */
 volatile norace uint8_t  xirq, p1;
          norace uint16_t t_tx_len, t_rx_len;
-
-norace uint32_t t_por;
 
 norace uint32_t mt0, mt1;
 norace uint16_t ut0, ut1;
@@ -360,6 +364,8 @@ const dump_prop_desc_t dump_prop[] = {
 };
 
 
+/**************************************************************************/
+
 /*
  * Configuration Parameters
  *
@@ -391,6 +397,8 @@ const uint8_t si446x_wds_config[] = SI446X_WDS_CONFIG_BYTES;
 const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
                                          0x09, 0x04, 0x06, 0x08,
                                          0 };
+
+/**************************************************************************/
 
 /*
  * GLOBAL_CONFIG:(0003), sequencer_mode (FAST), fifo_mode (HALF_DUPLEX FIFO)
@@ -435,20 +443,27 @@ const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
                                               0x00, 0x00
 
 
-/* local config, driver/hw dependent */
+/**************************************************************************/
+
+/*
+ * Local Config, driver/hw dependent
+ */
 const uint8_t si446x_local_config[] = {
-  SI446X_GLOBAL_CONFIG_1_LEN,        SI446X_GLOBAL_CONFIG_1,            \
-  SI446X_GPIO_PIN_CFG_LEN,           SI446X_GPIO_PIN_CFG,               \
-  SI446X_INT_CTL_ENABLE_1_LEN,       SI446X_INT_CTL_ENABLE_1,           \
-  SI446X_PKT_CRC_CONFIG_7_LEN,       SI446X_PKT_CRC_CONFIG_7,           \
-  SI446X_PKT_LEN_5_LEN,              SI446X_PKT_LEN_5,                  \
-  SI446X_PKT_TX_FIELD_CONFIG_6_LEN,  SI446X_PKT_TX_FIELD_CONFIG_6,      \
-  SI446X_PKT_RX_FIELD_CONFIG_10_LEN, SI446X_PKT_RX_FIELD_CONFIG_10,     \
-  0                                                                     \
+  SI446X_GLOBAL_CONFIG_1_LEN,        SI446X_GLOBAL_CONFIG_1,
+  SI446X_GPIO_PIN_CFG_LEN,           SI446X_GPIO_PIN_CFG,
+  SI446X_INT_CTL_ENABLE_1_LEN,       SI446X_INT_CTL_ENABLE_1,
+  SI446X_PKT_CRC_CONFIG_7_LEN,       SI446X_PKT_CRC_CONFIG_7,
+  SI446X_PKT_LEN_5_LEN,              SI446X_PKT_LEN_5,
+  SI446X_PKT_TX_FIELD_CONFIG_6_LEN,  SI446X_PKT_TX_FIELD_CONFIG_6,
+  SI446X_PKT_RX_FIELD_CONFIG_10_LEN, SI446X_PKT_RX_FIELD_CONFIG_10,
+  0
 };
 
+/**************************************************************************/
 
-/* last CTS values, last command sent, xcts h/w, xcts_s spi */
+/*
+ * last CTS values, last command sent, xcts h/w, xcts_s spi
+ */
 volatile norace uint8_t xcts, xcts0, xcts_s;
 
 typedef struct {
@@ -461,7 +476,11 @@ typedef struct {
 volatile norace si446x_chip_int_t chip_debug;
 volatile norace si446x_chip_int_t int_state;
 
-/* rf_frr_ctl_a_mode_4 defines what the four FRR registers return
+
+/**************************************************************************/
+
+/*
+ * rf_frr_ctl_a_mode_4 defines what the four FRR registers return
  * and how they show up in radio_pend
  */
 norace uint8_t radio_pend[4];
@@ -478,6 +497,8 @@ norace si446x_chip_status_t  chip_status;
 
 norace uint8_t      fifo[129];
 
+
+/**************************************************************************/
 
 /*
  * Instrumentation, error counters, etc.
@@ -507,6 +528,9 @@ typedef struct {
 
 norace cmd_timing_t  cmd_timings[256];
 norace cmd_timing_t prop_timings[256];
+
+
+/**************************************************************************/
 
 /*
  * Radio Commands
@@ -559,19 +583,17 @@ const uint8_t si446x_device_state[] = { SI446X_CMD_REQUEST_DEVICE_STATE }; /* 33
   } ds_pkt_t;
 
 
+/**************************************************************************/
 
+/*
+ * Message Buffers
+ */
 tasklet_norace message_t  * txMsg;            /* msg driver owns */
 message_t                   rxMsgBuffer;
 tasklet_norace message_t  * rxMsg = &rxMsgBuffer;
 
-/* needs to be volatile, can be modified at interrupt level */
-norace volatile enum {                /* no race is fine. */
-  TXUS_IDLE,                          /* nothing happening */
-  TXUS_STARTUP,                       /* starting to write h/w */
-  TXUS_PENDING,                       /* waiting to finish */
-  TXUS_ABORT                          /* oops */
-} tx_user_state;
 
+/**************************************************************************/
 
 module Si446xDriverLayerP {
   provides {
@@ -597,7 +619,6 @@ module Si446xDriverLayerP {
     interface Resource       as SpiResource;
     interface FastSpiByte;
     interface SpiByte;
-    interface SpiPacket;
     interface SpiBlock;
 
     interface Si446xInterface as HW;
@@ -636,12 +657,6 @@ implementation {
 
   /*----------------- STATE -----------------*/
 
-  /*
-   * order matters:
-   *
-   * RX:  RX_ON    to RX_ACTIVE
-   * TX:  TX_START to TX_ACTIVE
-   */
   typedef enum {
     STATE_SDN = 0,                      /* shutdown */
     STATE_STANDBY,
@@ -664,42 +679,25 @@ implementation {
 
 
   /*
-   * on boot, initilized to STATE_SDN (0)
+
+  /*************************************************************************
    *
-   * Also, on boot, platform initialization is responsible for setting
-   * the pins on the si446x so it is effectively turned off.  (SDN = 1)
    *
-   * Platform initialization occurs shortly after boot.  On the MSP430
-   * platforms, reset forces all of the digital I/O in to input mode
-   * which will effectively power down the CC2520.  Platform code then
-   * initializes pin state so the chip is held in the OFF state until
-   * commanded otherwise.
-   *
-   * Platform code is responsible for setting the various pins needed by
-   * the chip to proper states.  ie.  NIRQ, CTS, inputs.  CSN (deasserted)
-   * SDN (asserted).  SPI pins set up for SPI mode.
    */
 
   norace si446x_driver_state_t dvr_state;
 
+  /**************************************************************************/
+
   /*
-   * tx_user_state is used for handshaking with the interrupt level
-   * when doing a transmit.  The TX startup code will set this
-   * datum to tell the interrupt level that TX start up code has been
-   * doing something.   If a catastrophic error occurs, it will be
-   * switched to TXUS_ABORT, which tells the TX code to fail.
    *
    * when tx_user_state is STARTUP or PENDING, txMsg holds a pointer the the
    * msg buffer that the upper layers want to transmit.   The driver owns
    * this buffer while it is working on it.
    */
-//  norace enum {                         /* no race is fine. */
-//    TXUS_IDLE,                          /* nothing happening */
-//    TXUS_STARTUP,                       /* starting to write h/w */
-//    TXUS_PENDING,                       /* waiting to finish */
-//    TXUS_ABORT                          /* oops */
-//  } tx_user_state;
 
+
+  /*************************************************************************/
 
   enum {
     FCS_SIZE     = 2,
@@ -721,15 +719,16 @@ implementation {
   tasklet_norace si446x_cmd_t dvr_cmd;        /* gets initialized to 0, CMD_NONE  */
   tasklet_norace bool         radioIrq;       /* gets initialized to 0 */
 
+  /*************************************************************************
+   *
+   * user configurable radio parameters
+   */
   tasklet_norace uint8_t      txPower;        /* current power setting   */
   tasklet_norace uint8_t      channel;        /* current channel setting */
 
-//  tasklet_norace message_t  * txMsg;          /* msg driver owns */
 
-//  message_t                   rxMsgBuffer;
-//  tasklet_norace message_t  * rxMsg = &rxMsgBuffer;
-
-  /*
+  /*************************************************************************
+   *
    * When powering up/down and changing state we use the rfxlink
    * utilities and the TRadio alarm for timing.   We flag this
    * using stateAlarm_active.  This allows for bailing out from
@@ -738,6 +737,8 @@ implementation {
    */
   norace bool stateAlarm_active   = FALSE;
 
+
+  /**************************************************************************/
 
   void drf();
 
@@ -751,6 +752,8 @@ implementation {
   }
 
 
+  /**************************************************************************/
+
   void bad_state() {
     __PANIC_RADIO(1, dvr_state, dvr_cmd, 0, 0);
   }
@@ -761,6 +764,8 @@ implementation {
     dvr_state = s;
   }
 
+
+  /**************************************************************************/
 
   /*
    * si446x_get_cts
@@ -792,7 +797,6 @@ implementation {
 #endif
   }
 
-
   uint8_t get_sw_cts() {
     uint8_t res;
 
@@ -806,6 +810,8 @@ implementation {
     return res;
   }
 
+
+  /**************************************************************************/
 
   /*
    * Read FRR
@@ -830,6 +836,8 @@ implementation {
   }
 
    
+  /**************************************************************************/
+
   /*
    * Read Fast Status
    *
@@ -855,28 +863,26 @@ implementation {
       call HW.si446x_clr_cs();
     }
   }
-
    
   uint8_t si446x_fast_device_state() {
     return ll_si446x_read_frr(SI446X_GET_DEVICE_STATE);
   }
 
-
   uint8_t si446x_fast_ph_pend() {
     return ll_si446x_read_frr(SI446X_GET_PH_PEND);
   }
-
 
   uint8_t si446x_fast_modem_pend() {
     return ll_si446x_read_frr(SI446X_GET_MODEM_PEND);
   }
 
-
   uint8_t si446x_fast_chip_pend() {
     return ll_si446x_read_frr(SI446X_GET_CHIP_PEND);
   }
 
-    
+
+  /**************************************************************************/
+
   void trace_radio_pend(uint8_t *pend) {
     rps_t *rpp;
     rps_t *ppp;
@@ -921,6 +927,8 @@ implementation {
       rps_next = 0;
   }
 
+
+  /**************************************************************************/
 
   /*
    * ll_si446x_send_cmd: send a command to the radio (low level)
@@ -986,6 +994,8 @@ implementation {
   }
 
 
+  /**************************************************************************/
+
   void ll_si446x_get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
     uint8_t rcts;
     uint16_t t0, t1;
@@ -1035,6 +1045,8 @@ implementation {
   }
 
 
+  /**************************************************************************/
+
   /*
    * get current interrupt state -> *isp
    *
@@ -1051,6 +1063,8 @@ implementation {
                         (void *) &isp->int_status, SI446X_INT_STATUS_REPLY_SIZE);
   }
 
+
+  /**************************************************************************/
 
   /*
    * get/clr interrupt state
@@ -1187,7 +1201,7 @@ implementation {
   }
 
 
-  /* ----------------- Basic Access ----------------- */
+  /* ----------------- Basic Access -----------------  */
 
   /* read from the SPI, putting bytes in buf */
   void readBlock(uint8_t *buf, uint8_t count) {
@@ -1289,9 +1303,7 @@ implementation {
   }
 
 
-  /*
-   * read property
-   */
+  /* read property */
   uint8_t r_prop(uint16_t p_id, uint16_t num, uint8_t *w) {
     uint8_t group, index, chip_pend;
 
@@ -1312,7 +1324,9 @@ implementation {
   }
 
 
-  /* dump_properties */
+  /*
+   * dump_properties
+   */
   void dump_properties() {
     const dump_prop_desc_t *dpp;
     cmd_timing_t *ctp, *ctp_ff;
@@ -1498,6 +1512,7 @@ implementation {
   }
 
 
+  /**************************************************************************/
   /*
    * writeTxFifo sends data bytes into the TXFIFO.
    *
@@ -1525,6 +1540,7 @@ implementation {
   }
 
 
+  /**************************************************************************/
   /*
    * flushFifo: resets internal chip fifo data structures
    *
@@ -1539,7 +1555,9 @@ implementation {
   }
 
 
-  /*----------------- INIT -----------------*/
+  /**************************************************************************/
+
+  /* ----------------- INIT ----------------- */
 
   command error_t SoftwareInit.init() {
     error_t err;
@@ -1560,7 +1578,9 @@ implementation {
       __PANIC_RADIO(8, err, 0, 0, 0);
       return err;
     }
+
     call HW.si446x_clr_cs();
+
     rxMsg = &rxMsgBuffer;
     return SUCCESS;
   }
@@ -1596,90 +1616,9 @@ implementation {
   }
 
 
-  async event void SpiPacket.sendDone(uint8_t* txBuf, uint8_t* rxBuf,
-                                      uint16_t len, error_t error) { };
+  /**************************************************************************/
 
-
-  void loadRadioConfig() {
-#ifdef notdef
-    uint16_t i;
-
-     for (i = 0; reg_config[i].len; i++)
-      writeRegBlock(reg_config[i].reg_start, (void *) reg_config[i].vals,
-                    reg_config[i].len);
-
-    /* Manual register settings.  See Table 21 */
-    writeReg(SI446X_TXPOWER,  0x32);
-    writeReg(SI446X_FSCAL1,   0x2B);
-#endif
-  }
-
-
-  /*
-   * resetRadio: kick the radio
-   *
-   * Reset always sets the chip's registers back to the Reset
-   * configuration.   So we need to reload any changes we've
-   * made.
-   *
-   * resetRadio has to disableInterrupts because it tweaks how
-   * the gpio pins are connected which can easily cause them
-   * to glitch and cause an interrupt or capture to occur.
-   *
-   * So anytime the radio is reset, radio interrupts are disabled.
-   * The caller of resetRadio needs to figure out when it is reasonable
-   * to reenable interrupts.  (most likely when we go back into RX_ON).
-   *
-   * No one currently resets the Radio, no calls to resetRadio.  Have a
-   * proceedure that resets the Radio is problematic.  The documented
-   * way to reset the radio according to SI446x documentation from SiLabs
-   * is to shutdown the radio and reinitilize.  That takes a considerable
-   * amount of time and requires sequencing the state machine.  Left as an
-   * exercise for when needed.
-   */
-
-
-  /*
-   * standbyInitRadio: radio power already on, assume config is correct
-   *
-   * on exit make sure exceptions cleared.  Assumed still
-   * configured correctly.
-   *
-   * Do not call resetRadio, that will reset internal registers
-   * requiring them to be reload which defeats the purpose
-   * of going into standby.
-   */
-  void standbyInitRadio() {
-    /*
-     * do not reset!  Exceptions were cleared out when going into
-     * STANDBY.  Interrupts get cleared out when they get enabled.
-     */
-    txPower = SI446X_DEF_RFPOWER;
-    channel = SI446X_DEF_CHANNEL;
-  }
-
-
-  /*
-   * fullInitRadio: radio was off full initilization
-   *
-   * needs to download config (loadRadioConfig).
-   * on exit exceptions cleared and configured.
-   */
-  void fullInitRadio() {
-#ifdef notdef
-    /*
-     * reset the radio which also reloads the configuration
-     * because reset sets the config back to POR values.
-     */
-    call HW.si446x_disableInterrupt();
-    loadRadioConfig();                          /* load registers */
-    txPower = SI446X_DEF_RFPOWER & SI446X_TX_PWR_MASK;
-    channel = SI446X_DEF_CHANNEL & SI446X_CHANNEL_MASK;
-#endif
-  }
-
-
-  /*----------------- CHANNEL -----------------*/
+  /* ----------------- CHANNEL ----------------- */
 
   tasklet_async command uint8_t RadioState.getChannel() {
     return channel;
@@ -1699,43 +1638,22 @@ implementation {
     return SUCCESS;
   }
 
-
   void setChannel() {
-#ifdef notdef
-    uint8_t tmp;
-
-    tmp = (11 + 5 * (channel - 11));
-    writeReg(SI446X_FREQCTRL, tmp);
-#endif
   }
 
 
-  void changeChannel() {
-#ifdef notdef
-    if (isSpiAcquired()) {
-      /*
-       * changing channels requires recalibration etc.
-       */
-      setChannel();
-      if (dvr_state == STATE_RX_ON) {
-        call HW.si446x_disableInterrupt();
-        resetExc();                                     /* clean out exceptions */
-        strobe(SI446X_CMD_SRXON);                       /* force a calibration cycle */
-        call HW.si446x_enableInterrupt();
-        dvr_cmd = CMD_SIGNAL_DONE;
-        return;
-      }
-    }
-#endif
   }
 
 
-  /*----------------- TURN_OFF, STANDBY, TURN_ON -----------------*/
+  /**************************************************************************/
+
+  /* ----  Load Config ---- */
 
   /*
-   * task to actually load any configuration information into
-   * the radio chip.   Done at task level because it takes a while
-   * (up to ?ms) and we want to let other folks to run.
+   * load_config_task - guts of chip configuration loading.
+   *
+   * iterates through the configuration, breaking it into 1 millisecond
+   * processing periods until all configuration records are processed.
    */
   task void load_config_task() {
     uint16_t iter_start;
@@ -2284,10 +2202,15 @@ implementation {
 
 
   default tasklet_async event void RadioSend.sendDone(error_t error) { }
+
+
   default tasklet_async event void RadioSend.ready() { }
 
 
-  /*----------------- CCA -----------------*/
+  /**************************************************************************/
+
+  /* ----------------- RadioCCA ----------------- */
+
 
   tasklet_async command error_t RadioCCA.request() {
     if (dvr_cmd != CMD_NONE || dvr_state != STATE_RX_ON)
@@ -2799,14 +2722,11 @@ implementation {
       next_state(STATE_RX_ON);
     }
 
-    in_sfdcapture_captured= FALSE;
-  }
-#endif
+  /**************************************************************************/
 
+  /* ------------ HW Interrupt ----------------- */
 
   async event void HW.si446x_interrupt() {
-    radioIrq = TRUE;
-    nop();
     call Tasklet.schedule();
   }
 
@@ -2852,6 +2772,7 @@ implementation {
     return FALSE;
   }
 
+  /**************************************************************************/
 
   /*
    * make a pass at processing any ExcA exceptions that are up.  We only
@@ -3387,16 +3308,6 @@ implementation {
   }
 
 
-  default tasklet_async event bool RadioReceive.header(message_t *msg) {
-    return TRUE;
-  }
-
-
-  default tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
-    return msg;
-  }
-
-
   /* ----------------- TASKLET ----------------- */
   /* -------------- State Machine -------------- */
 
@@ -3417,6 +3328,7 @@ implementation {
     call Tasklet.schedule();            /* process additional work */
   }
 
+  /**************************************************************************/
 
   /*
    * Main State Machine Sequencer
@@ -3474,7 +3386,9 @@ implementation {
   }
 
 
-  /*----------------- RadioPacket -----------------*/
+  /**************************************************************************/
+
+  /* ----------------- RadioPacket ----------------- */
 
   /*
    * this returns the total offset from the start of the message buffer
@@ -3517,7 +3431,9 @@ implementation {
   }
 
 
-  /*----------------- PacketTransmitPower -----------------*/
+  /**************************************************************************/
+
+  /* ----------------- PacketTransmitPower ----------------- */
 
   async command bool PacketTransmitPower.isSet(message_t *msg) {
     return call TransmitPowerFlag.get(msg);
@@ -3540,7 +3456,9 @@ implementation {
   }
 
 
-  /*----------------- PacketRSSI -----------------*/
+/**************************************************************************/
+
+/* ----------------- PacketRSSI ----------------- */
 
   async command bool PacketRSSI.isSet(message_t *msg) {
     return call RSSIFlag.get(msg);
@@ -3566,7 +3484,9 @@ implementation {
   }
 
 
-  /*----------------- PacketTimeSyncOffset -----------------*/
+  /**************************************************************************/
+
+  /* ----------------- PacketTimeSyncOffset ----------------- */
 
   async command bool PacketTimeSyncOffset.isSet(message_t *msg) {
     return call TimeSyncFlag.get(msg);
@@ -3590,7 +3510,9 @@ implementation {
   }
 
 
-  /*----------------- PacketLinkQuality -----------------*/
+  /**************************************************************************/
+
+  /* ----------------- PacketLinkQuality ----------------- */
 
   async command bool PacketLinkQuality.isSet(message_t *msg) {
     return TRUE;
@@ -3639,6 +3561,8 @@ implementation {
   }
 
 
+  /**************************************************************************/
+
   async event void Panic.hook() {
 #ifdef notdef
     dump_radio();
@@ -3650,6 +3574,9 @@ implementation {
 #endif
   }
 
+
+
+  /**************************************************************************/
 
 #ifndef REQUIRE_PLATFORM
   /*
