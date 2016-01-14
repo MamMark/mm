@@ -76,6 +76,14 @@
  */
 #define SI446X_POWER_UP_WAIT_TIME       16500
 
+/*
+ * max time we look for CTS to come back from command (us). The max we've
+ * observed is 95uS.  Power_Up however takes 15ms so we don't use this
+ * timeout with that command.
+ */
+#define SI446X_CTS_TIMEOUT 200
+
+
 #define SI446X_CMD_NOP                        0x00
 #define SI446X_CMD_PART_INFO                  0x01
 #define SI446X_CMD_POWER_UP                   0x02

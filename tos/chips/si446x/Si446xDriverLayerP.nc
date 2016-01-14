@@ -229,12 +229,6 @@ enum {
 #include <RadioConfig.h>
 #include <si446x.h>
 
-/* max time we look for CTS to come back from command (us). The max we've
- * observed is 95uS.  Power_Up however takes 15ms so we don't use this
- * timeout with that command.
- */
-#define SI446X_CTS_TIMEOUT 200
-
 
 /**************************************************************************/
 
