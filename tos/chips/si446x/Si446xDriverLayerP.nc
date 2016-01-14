@@ -916,7 +916,46 @@ implementation {
    *
    * given an event as input, search event based fsm transitions to match current state.
    * perform the associated action and update the global state.
+   *
+   * mutual exclusion is provided using a Tasklet group.  Must be called from within
+   * Tasklet.run.
+   *
+   * There are 4 different sources of events that potentially can occur for this
+   * state machine, Alarms (timeouts, waiting, etc), Interrupts, User, and Task.
+   * We provide a 1 element queue for each of this sources.
+   *
+   * Alarm doesn't queue via fsm_alarm_event.  Priority is Alarm > Int > User > Task.
    */
+
+  tasklet_norace fsm_event_t fsm_int_event, fsm_user_event, fsm_task_event;
+
+  void fsm_int_queue(fsm_event_t ev) {
+    if (fsm_int_event) {
+      __PANIC_RADIO(82, ev, fsm_int_event,  0, 0);
+    }
+    fsm_int_event = ev;
+    call Tasklet.schedule();
+  }
+
+
+  void fsm_user_queue(fsm_event_t ev) {
+    if (fsm_user_event) {
+      __PANIC_RADIO(83, ev, fsm_user_event,  0, 0);
+    }
+    fsm_user_event = ev;
+    call Tasklet.schedule();
+  }
+
+
+  void fsm_task_queue(fsm_event_t ev) {
+    if (fsm_task_event) {
+      __PANIC_RADIO(84, ev, fsm_task_event,  0, 0);
+    }
+    fsm_task_event = ev;
+    call Tasklet.schedule();
+  }
+
+
   void fsm_change_state(fsm_event_t ev) {
     fsm_transition_t *t;
     fsm_state_t ns = S_SDN;
@@ -1953,13 +1992,13 @@ implementation {
     iter_now = call Platform.usecsRaw();
     config_task_time = iter_now - config_start_time;
     config_list_iter = 0;
-    call Tasklet.resume();
 
     nop();
     nop();
 
     // invoke driver state machine with completion notification event
-    fsm_change_state(E_CONFIG_DONE);
+    fsm_task_queue(E_CONFIG_DONE);
+    call Tasklet.resume();
   }
 
 
@@ -2164,7 +2203,7 @@ implementation {
       return EALREADY;
 
     dvr_cmd = CMD_TURNOFF;
-    fsm_change_state(E_TURNOFF);
+    fsm_user_queue(E_TURNOFF);
     return SUCCESS;
   }
 
@@ -2176,7 +2215,7 @@ implementation {
       return EALREADY;
 
     dvr_cmd = CMD_STANDBY;
-    fsm_change_state(E_STANDBY);
+    fsm_user_queue(E_STANDBY);
     return SUCCESS;
   }
 
@@ -2188,7 +2227,7 @@ implementation {
       return EALREADY;
 
     dvr_cmd = CMD_TURNON;
-    fsm_change_state(E_TURNON);
+    fsm_user_queue(E_TURNON);
     return SUCCESS;
   }
 
@@ -2250,12 +2289,6 @@ implementation {
   }
 
 
-  /**************************************************************************/
-
-  void processExceptions() {
-  }
-
-
   /* ----------------- TASKLET ----------------- */
   /* -------------- State Machine -------------- */
 
@@ -2286,13 +2319,34 @@ implementation {
    * Main State Machine Sequencer
    */
   tasklet_async event void Tasklet.run() {
+    fsm_event_t ev;
     nop();
     nop();
 
     if (stateAlarm_active)
       return;
 
-    processExceptions();
+    while (TRUE) {
+      if (fsm_int_event) {
+        ev = fsm_int_event;
+        fsm_int_event = E_NOP;
+        fsm_change_state(ev);
+        continue;
+      }
+      if (fsm_user_event) {
+        ev = fsm_user_event;
+        fsm_user_event = E_NOP;
+        fsm_change_state(ev);
+        continue;
+      }
+      if (fsm_task_event) {
+        ev = fsm_task_event;
+        fsm_task_event = E_NOP;
+        fsm_change_state(ev);
+        continue;
+      }
+      break;
+    }
   }
 
 
