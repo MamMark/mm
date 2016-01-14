@@ -204,7 +204,6 @@
  */
 
 #define SI446X_ATOMIC_SPI
-#define SI446X_NO_ARB
 #define SI446X_HW_CTS
 
 #ifdef SI446X_ATOMIC_SPI
@@ -1566,34 +1565,7 @@ implementation {
   }
 
 
-  /*----------------- SPI -----------------*/
-
-  event void SpiResource.granted() {
-    call Tasklet.schedule();
-  }
-
-
-  bool isSpiAcquired() {
-#ifdef SI446X_NO_ARB
-    return TRUE;
-#else
-    if (call SpiResource.isOwner())
-      return TRUE;
-    if (call SpiResource.immediateRequest() == SUCCESS)
-      return TRUE;
-    call SpiResource.request();
-    return FALSE;
-#endif
-  }
-
-
-  void releaseSpi() {
-#ifdef SI446X_NO_ARB
-    return;
-#else
-    call SpiResource.release();
-#endif
-  }
+  event void SpiResource.granted() { }
 
 
   /**************************************************************************/
@@ -1696,13 +1668,6 @@ implementation {
 
   void cs_sdn() {                       /* change state from SDN */
     /*
-     * we need the spi, if not available we will
-     * try again when the grant happens.
-     */
-    if (!isSpiAcquired())
-      return;
-
-    /*
      * the only command currently allowed is TURNON
      * if someone trys something different we will
      * bitch in an obvious way.
@@ -1737,8 +1702,6 @@ implementation {
     if (!(xcts = call HW.si446x_cts())) {
       __PANIC_RADIO(9, 0, 0, 0, 0);
     }
-    if (!isSpiAcquired())               /* if no SPI */
-      return;
     if (dvr_cmd != CMD_TURNON) {
       bad_state();
       return;
@@ -1754,8 +1717,6 @@ implementation {
     if (!(xcts = call HW.si446x_cts())) {
       __PANIC_RADIO(10, 0, 0, 0, 0);
     }
-    if (!isSpiAcquired())               /* if no SPI */
-      return;
     if (dvr_cmd != CMD_TURNON) {
       bad_state();
       return;
@@ -1842,9 +1803,6 @@ implementation {
     /*
      * READY always transitions to RX_ON.
      */
-    if (!isSpiAcquired())
-      return;
-
     if (dvr_cmd == CMD_TURNON) {
       nop();
       ll_si446x_getclr_int_state(&int_state);
@@ -1886,9 +1844,6 @@ implementation {
 
 
   void cs_rx_on() {
-    if (!isSpiAcquired())
-      return;
-
     if (dvr_cmd == CMD_STANDBY) {
       /*
        * going into standby, kill the radio.  But killing the radio
@@ -2110,10 +2065,6 @@ implementation {
 
     if (dvr_cmd == CMD_NONE && dvr_state == STATE_RX_ON && ! radioIrq)
       signal RadioSend.ready();
-
-    if (dvr_cmd == CMD_NONE) {
-      releaseSpi();
-    }
   }
 
 
