@@ -679,25 +679,19 @@ implementation {
 
 
   /*
-
-  /*************************************************************************
+   * on boot, initilized to STATE_SDN (0)
    *
+   * Also, on boot, platform initialization is responsible for setting
+   * the pins on the si446x so it is effectively turned off.  (SDN = 1)
    *
+   * Platform code is responsible for setting the various pins needed by
+   * the chip to proper states.  ie.  NIRQ, CTS, inputs.  CSN (deasserted)
+   * SDN (asserted).  SPI pins set up for SPI mode.
    */
 
   norace si446x_driver_state_t dvr_state;
 
   /**************************************************************************/
-
-  /*
-   *
-   * when tx_user_state is STARTUP or PENDING, txMsg holds a pointer the the
-   * msg buffer that the upper layers want to transmit.   The driver owns
-   * this buffer while it is working on it.
-   */
-
-
-  /*************************************************************************/
 
   enum {
     FCS_SIZE     = 2,
@@ -1639,9 +1633,6 @@ implementation {
   }
 
   void setChannel() {
-  }
-
-
   }
 
 
@@ -2722,6 +2713,7 @@ implementation {
       next_state(STATE_RX_ON);
     }
 
+
   /**************************************************************************/
 
   /* ------------ HW Interrupt ----------------- */
@@ -3362,7 +3354,7 @@ implementation {
         break;
 
       case CMD_CHANNEL:
-        changeChannel();
+//        changeChannel();
         break;
 
       case CMD_SIGNAL_DONE:
