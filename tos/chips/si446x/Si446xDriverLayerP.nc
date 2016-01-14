@@ -645,41 +645,332 @@ implementation {
   } while (0)
 
 
-  /*----------------- STATE -----------------*/
+
+/**************************************************************************/
+
+/*
+ * Driver Layer Finite State Machine
+ *
+ * The driver FSM is defined by events, actions, and states. For a given
+ * event for a given current state, there is an action and next state.
+ * Events are presented from various parts of the system, including
+ * commands, interrupts
+ * consists of the current state along with the action and next state
+ * each event will be defined by a list of these entries thereby
+ * describing the state transitions for each event (e.g, fsm_turnon).
+ * the collection of all of the event transition lists into a single
+ * array indexed by event (fsm_events).
+ */
+
+/**************************************************************************/
+
+/*
+ * STATES
+ *
+ * on boot, initilized to STATE_SDN (0)
+ *
+ * Also, on boot, platform initialization is responsible for setting
+ * the pins on the si446x so it is effectively turned off.  (SDN = 1)
+ *
+ * Platform code is responsible for setting the various pins needed by
+ * the chip to determine proper states.  ie.  NIRQ, CTS, inputs,
+ * CSN (deasserted), SDN (asserted).  SPI pins set up for SPI mode.
+ */
 
   typedef enum {
-    STATE_SDN = 0,                      /* shutdown */
-    STATE_STANDBY,
-    STATE_POR_WAIT,                     /* waiting for POR to complete */
-    STATE_PWR_UP_WAIT,                  /* waiting on POWER_UP cmd */
-    STATE_LOAD_CONFIG,                  /* loading configuration */
-    STATE_READY,
-    STATE_RX_ON,                        /* ready to receive */
-    STATE_RX_ACTIVE,                    /* actively receiving */
-    STATE_TX_START,                     /* starting transmission */
-    STATE_TX_ACTIVE,                    /* actively transmitting */
-  } si446x_driver_state_t;
+    S_SDN = 0,                      // shutdown
+    S_POR_W,                        // waiting for POR to complete
+    S_PWR_UP_W,                     // waiting on POWER_UP cmd to complete
+    S_CONFIG_W,                     // loading configuration
+    S_STANDBY,                      // reducing power but retain config
+    S_READY,                        // wait for user command
+    S_RX_ON,                        // ready to receive
+    S_RX_ACTIVE,                    // actively receiving
+    S_TX_ACTIVE,                    // actively transmitting
+    S_DEFAULT,                      // wildcard, always perform transition
+  } fsm_state_t;
 
-  /* load_config_task state */
-  norace uint8_t        config_list_iter;
-  norace const uint8_t *config_prop_ptr;
-  norace uint16_t       config_task_time, config_start_time;
+  typedef enum {
+    A_BREAK = 0,                  // special case to denote end of list
+    A_NOP,                        // no action to be taken
+    A_UNSHUT,                     // take chip out of shutdown
+    A_POR,                        // let the chip do Power On Reset (POR)
+    A_PWR_UP,                     // let the chip to POWER_UP (cmd)
+    A_CONFIG,                     // configing the chip
+    A_STANDBY,                    // lower power consumption but retain chip config
+    A_PWR_DN,                     // start power down
+    A_RX_ON,                      // start receiving
+    A_TX_ON,                      // start transmitting
+    A_COUNT_ERROR,                // count crc error
+    A_TX_CMP,                     // handle transmit complete
+    A_RX_CMP,                     // handle receive complete
+    A_RX_PREAMBLE,                // handle seeing a preamble
+    A_RX_SYNC,                    // handle receive sync detected
+  } fsm_action_t;
 
-  const uint8_t *config_list[] = {si446x_wds_config, si446x_local_config, NULL};
+  typedef enum {
+    E_NOP = 0,                    // no event to process, ignore
+    E_TURNON = 1,                 // goto RX_ON state
+    E_TURNOFF = 2,                // goto lowest power state
+    E_STANDBY = 3,                // goto low power state
+    E_TRANSMIT = 4,               // start transmit a message
+    E_RECEIVE = 5,                // start receive a message
+    E_WAIT_DONE = 6,              // alarm timer expired
+    E_CONFIG_DONE = 7,            // configuration task is done
+    E_PACKET_RX = 8,              // packet received
+    E_PACKET_SENT = 9,            // packet transmit complete
+    E_CRC_ERROR = 10,             // packet receive crc error detected
+    E_PREAMBLE_DETECT  = 11,      // premable detected
+  } fsm_event_t;
 
+  // define fsm transition structure.
+  typedef struct {
+    fsm_state_t current_state;
+    fsm_action_t action;
+    fsm_state_t next_state;
+  } fsm_transition_t;
+
+  // forward declare fsm event lists
+  const fsm_transition_t fsm_e_nop[];
+  const fsm_transition_t fsm_e_turnon[];
+  const fsm_transition_t fsm_e_turnoff[];
+  const fsm_transition_t fsm_e_standby[];
+  const fsm_transition_t fsm_e_transmit[];
+  const fsm_transition_t fsm_e_receive[];
+  const fsm_transition_t fsm_e_wait_done[];
+  const fsm_transition_t fsm_e_config_done[];
+  const fsm_transition_t fsm_e_packet_rx[];
+  const fsm_transition_t fsm_e_packet_sent[];
+  const fsm_transition_t fsm_e_crc_error[];
+  const fsm_transition_t fsm_e_preamble_detect[];
+
+  // list of all of the fsm event lists - order must match the fsm_event_t enum
+  const fsm_transition_t *fsm_events_group[] = {fsm_e_nop,            fsm_e_turnon,
+						fsm_e_turnoff,        fsm_e_standby,
+						fsm_e_transmit,       fsm_e_receive,
+						fsm_e_wait_done,      fsm_e_config_done,
+						fsm_e_packet_rx,      fsm_e_packet_sent,
+						fsm_e_crc_error,      fsm_e_preamble_detect,
+						};
+
+  // The following group of arrays define the (current_state, action, next_state) tuples
+  // that are valid for every event.
+  // Each event has a list of all transitions defined for it.
+
+  // e_nop - for any state, do nothing and don't change state
+  const fsm_transition_t fsm_e_nop[] = {
+    { S_DEFAULT, A_NOP, S_DEFAULT },
+  };
+
+  // e_turnon
+  const fsm_transition_t fsm_e_turnon[] = {
+    { S_SDN, A_UNSHUT, S_POR_W },
+    { S_STANDBY, A_CONFIG, S_READY },
+    { S_READY, A_NOP, S_READY },
+    { S_RX_ON, A_NOP, S_RX_ON },
+    { S_RX_ACTIVE, A_NOP, S_RX_ACTIVE },
+    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_turnoff
+  const fsm_transition_t fsm_e_turnoff[] = {
+    { S_READY, A_PWR_DN, S_SDN },
+    { S_RX_ON, A_PWR_DN, S_SDN },
+    { S_RX_ACTIVE, A_PWR_DN, S_SDN },
+    { S_STANDBY, A_PWR_DN, S_SDN },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_standby
+  const fsm_transition_t fsm_e_standby[] = {
+    { S_READY, A_STANDBY, S_STANDBY },
+    { S_RX_ON, A_STANDBY, S_STANDBY },
+    { S_RX_ACTIVE, A_STANDBY, S_STANDBY },
+    { S_TX_ACTIVE, A_STANDBY, S_STANDBY },
+    { S_STANDBY, A_NOP, S_STANDBY },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_transmit
+  const fsm_transition_t fsm_e_transmit[] = {
+    { S_READY, A_TX_ON, S_TX_ACTIVE },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_receive
+  const fsm_transition_t fsm_e_receive[] = {
+    { S_READY, A_RX_ON, S_RX_ON },
+    { S_DEFAULT, A_NOP, S_DEFAULT },
+  };
+
+  // e_wait_done
+  const fsm_transition_t fsm_e_wait_done[] = {
+    { S_POR_W, A_POR, S_PWR_UP_W },
+    { S_PWR_UP_W, A_PWR_UP, S_CONFIG_W },
+    { S_RX_ACTIVE, A_COUNT_ERROR, S_RX_ON },
+    { S_TX_ACTIVE, A_COUNT_ERROR, S_TX_ACTIVE },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_config_done
+  const fsm_transition_t fsm_e_config_done[] = {
+    { S_CONFIG_W, A_CONFIG, S_READY },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_packet_rx
+  const fsm_transition_t fsm_e_packet_rx[] = {
+    { S_RX_ACTIVE, A_RX_CMP, S_RX_ON },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_packet_sent
+  const fsm_transition_t fsm_e_packet_sent[] = {
+    { S_TX_ACTIVE, A_TX_CMP, S_READY },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_crc_error
+  const fsm_transition_t fsm_e_crc_error[] = {
+    { S_RX_ACTIVE, A_COUNT_ERROR, S_RX_ON },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_preamble_detect
+  const fsm_transition_t fsm_e_preamble_detect[] = {
+    { S_DEFAULT, A_NOP, S_DEFAULT },
+  };
+
+  /**************************************************************************/
 
   /*
-   * on boot, initilized to STATE_SDN (0)
+   * FSM state, on boot, initilized to S_SDN (0)
    *
    * Also, on boot, platform initialization is responsible for setting
    * the pins on the si446x so it is effectively turned off.  (SDN = 1)
+   * This matches the FSM state.
    *
    * Platform code is responsible for setting the various pins needed by
    * the chip to proper states.  ie.  NIRQ, CTS, inputs.  CSN (deasserted)
    * SDN (asserted).  SPI pins set up for SPI mode.
    */
 
-  norace si446x_driver_state_t dvr_state;
+  tasklet_norace fsm_state_t fsm_global_current_state;
+
+  /*
+   * fsm_get_state - return value of current state
+   */
+  fsm_state_t fsm_get_state() {
+    return fsm_global_current_state;
+  }
+
+
+#define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
+
+  /*************************************************************************
+   *
+   * fsm_select_transition
+   *
+   * finds the state transition record for the given event and state
+   */
+  fsm_transition_t *fsm_select_transition(fsm_event_t ev, fsm_state_t st) {
+    fsm_transition_t *ev_list;
+    fsm_transition_t *trans;
+    fsm_event_t n_events;
+
+    n_events = NELEMS(fsm_events_group);
+    nop();
+    if (ev >= n_events) __PANIC_RADIO(80, ev, st, 0, 0);
+
+    trans = NULL;
+    for (ev_list = (fsm_transition_t *) fsm_events_group[ev];
+         ev_list && (ev_list->action != A_BREAK); ev_list++) {
+      if ((ev_list->current_state == st) || (ev_list->current_state == S_DEFAULT)) {
+	trans = ev_list;
+	break;
+      }
+    }
+    if (trans == NULL)  __PANIC_RADIO(81, ev, st, (uint16_t) trans, 0);
+    return trans;
+  }
+
+  // forward define all action functions
+  fsm_state_t a_nop(fsm_transition_t *t);
+  fsm_state_t a_unshut(fsm_transition_t *t);
+  fsm_state_t a_por(fsm_transition_t *t);
+  fsm_state_t a_pwr_up(fsm_transition_t *t);
+  fsm_state_t a_config(fsm_transition_t *t);
+  fsm_state_t a_standby(fsm_transition_t *t);
+  fsm_state_t a_pwr_dn(fsm_transition_t *t);
+  fsm_state_t a_rx_on(fsm_transition_t *t);
+  fsm_state_t a_rx_cmp(fsm_transition_t *t);
+  fsm_state_t a_tx_cmp(fsm_transition_t *t);
+  fsm_state_t a_count_error(fsm_transition_t *t);
+
+  norace uint8_t fsm_active;
+
+  /**************************************************************************/
+  /*
+   * fsm_change_state
+   *
+   * given an event as input, search event based fsm transitions to match current state.
+   * perform the associated action and update the global state.
+   */
+  void fsm_change_state(fsm_event_t ev) {
+    fsm_transition_t *t;
+    fsm_state_t ns = S_SDN;
+
+    if (fsm_active)
+      __PANIC_RADIO(82, ev, fsm_global_current_state,  1, 1);
+
+    nop();
+    fsm_active = TRUE;
+    if ((t = fsm_select_transition(ev, fsm_global_current_state))) {
+      switch (t->action) {
+      case A_NOP:	  ns = a_nop(t);         break;
+      case A_UNSHUT:	  ns = a_unshut(t);      break;
+      case A_POR:	  ns = a_por(t);         break;
+      case A_PWR_UP:	  ns = a_pwr_up(t);      break;
+      case A_CONFIG:	  ns = a_config(t);      break;
+      case A_STANDBY:	  ns = a_standby(t);     break;
+      case A_PWR_DN:	  ns = a_pwr_dn(t);      break;
+      case A_RX_ON:	  ns = a_rx_on(t);       break;
+      case A_TX_ON:	  ns = a_rx_on(t);       break;
+      case A_COUNT_ERROR: ns = a_count_error(t); break;
+      case A_TX_CMP:      ns = a_rx_cmp(t);      break;
+      case A_RX_CMP:	  ns = a_tx_cmp(t);      break;
+      case A_RX_SYNC:     ns = a_nop(t);         break;
+      case A_BREAK:
+      default:            t = NULL;              break;
+      }
+
+      // update with new state, or keep current if default or unknown
+      if ((t) && (ns < S_DEFAULT)) {
+	fsm_global_current_state = ns;
+      }
+    }
+
+    nop();
+    fsm_active = FALSE;
+
+    // break detected or no transition record was identified,
+    // so state machine is lost
+    if (!t)
+      __PANIC_RADIO(82, ev, fsm_global_current_state,  (uint16_t) t, ns);
+  }
+
+  /**************************************************************************/
+  /*
+   * load_config_task state variables
+   */
+  norace uint8_t        config_list_iter;
+  norace const uint8_t *config_prop_ptr;
+  norace uint16_t       config_task_time, config_start_time;
+  norace uint8_t        config_task_posts, config_task_records;
+
+  const uint8_t *config_list[] = {si446x_wds_config, si446x_local_config, NULL};
+
 
   /**************************************************************************/
 
@@ -738,13 +1029,7 @@ implementation {
   /**************************************************************************/
 
   void bad_state() {
-    __PANIC_RADIO(1, dvr_state, dvr_cmd, 0, 0);
-  }
-
-
-  void next_state(si446x_driver_state_t s) {
-    call Trace.trace(T_RS, dvr_state, s);
-    dvr_state = s;
+    __PANIC_RADIO(1, fsm_get_state(), dvr_cmd, 0, 0);
   }
 
 
@@ -1587,7 +1872,6 @@ implementation {
 
     channel = c;
     dvr_cmd = CMD_CHANNEL;
-    call Tasklet.schedule();
     return SUCCESS;
   }
 
@@ -1606,12 +1890,12 @@ implementation {
    * processing periods until all configuration records are processed.
    */
   task void load_config_task() {
-    uint16_t iter_start;
+    uint16_t iter_start, iter_now;
     uint16_t size;
     uint8_t *cp;
 
-    if (dvr_state != STATE_LOAD_CONFIG) {
-      __PANIC_RADIO(90, (uint16_t) dvr_state, 0, 0, 0);
+    if (fsm_get_state() != S_CONFIG_W) {
+      __PANIC_RADIO(90, fsm_get_state(), 0, 0, 0);
     }
 
     cp = (void *) config_prop_ptr;
@@ -1626,6 +1910,8 @@ implementation {
       config_prop_ptr = config_list[config_list_iter];
       cp = (void *) config_prop_ptr;
       config_task_time = 0;
+      config_task_posts = 0;
+      config_task_records = 0;
       config_start_time = call Platform.usecsRaw();
     }
 
@@ -1635,11 +1921,13 @@ implementation {
     while (cp) {
 
       /* check to see if we've spent too much time */
-      if ((call Platform.usecsRaw() - iter_start) > 1000) {
+      iter_now = call Platform.usecsRaw();
+      if ((iter_now - iter_start) > 1000) {
 	config_prop_ptr = cp;
 	break;
       }
 
+      // process next command in list
       size = *cp++;
       if (size > 16) {
 	__PANIC_RADIO(91, config_list_iter, (uint16_t) config_prop_ptr, size, 0);
@@ -1652,49 +1940,82 @@ implementation {
       }
       si446x_send_cmd(cp, rsp, size);
       cp += size;
+      config_task_records++;
     }
 
-    if (cp) { 			/* more to do, post, let others run */
+    if (cp) { 			/* still more to do, post, let others run */
+      config_task_posts++;
       post load_config_task();
       return;
     }
 
-    config_task_time = call Platform.usecsRaw() - config_start_time;
+    // measure time to execution
+    iter_now = call Platform.usecsRaw();
+    config_task_time = iter_now - config_start_time;
     config_list_iter = 0;
-    next_state(STATE_READY);
-    call Tasklet.schedule();
     call Tasklet.resume();
+
+    nop();
+    nop();
+
+    // invoke driver state machine with completion notification event
+    fsm_change_state(E_CONFIG_DONE);
   }
 
 
-  void cs_sdn() {                       /* change state from SDN */
-    /*
-     * the only command currently allowed is TURNON
-     * if someone trys something different we will
-     * bitch in an obvious way.
-     */
-    if (dvr_cmd != CMD_TURNON) {
-      bad_state();
-      return;
-    }
+  /**************************************************************************/
 
-    /*
-     * we are going to need the RadioAlarm, if not free bail.  We stay in
-     * STATE_OFF with a pending cmd TRUE.   When the RadioAlarm does
-     * trip, it will run Tasklet.schedule() which will cause the Driver
-     * state machine to run again and we will execute this code again.
-     */
-    if (!call RadioAlarm.isFree())
-      return;
-    t_por = call LocalTime.get();
-    next_state(STATE_POR_WAIT);
+  /*
+   * user_response_task
+   *
+   * handle signaling completion of user command
+   */
+  task void user_response_task() {
+    nop();
+    nop();
+    switch (dvr_cmd){
+    case CMD_TURNON:
+    case CMD_TURNOFF:
+    case CMD_STANDBY:
+      dvr_cmd = CMD_NONE;
+      signal RadioState.done();
+      break;
+    default:
+      break;
+    }
+    if ((dvr_cmd == CMD_NONE) && (fsm_get_state() >= S_READY) && ( !radioIrq))
+      signal RadioSend.ready();
+  }
+
+
+  /**************************************************************************/
+
+  /*  do nothing. */
+  fsm_state_t a_nop(fsm_transition_t *t) {
+    return t->next_state;
+  }
+
+
+  /**************************************************************************/
+  /*
+   * we are going to need the RadioAlarm, if not free, bail.  We stay in
+   * STATE_OFF with a pending cmd TRUE.   When the RadioAlarm does
+   * trip, it will cause the Driver finite state machine to run again.
+   */
+
+  fsm_state_t a_unshut(fsm_transition_t *t) {
+    if (call RadioAlarm.isFree() == 0) {
+      __PANIC_RADIO(92, 0, 0, 0, 0);
+    }
     call HW.si446x_unshutdown();
     stateAlarm_active = TRUE;
     call RadioAlarm.wait(SI446X_POR_WAIT_TIME);
+    return t->next_state;
   }
 
+  /**************************************************************************/
 
-  void cs_por_wait() {
+  fsm_state_t a_por(fsm_transition_t *t) {
     /*
      * check to see if CTS is up, better be.  Then send POWER_UP to
      * continue with powering up the chip.  This will take some
@@ -1703,37 +2024,18 @@ implementation {
     if (!(xcts = call HW.si446x_cts())) {
       __PANIC_RADIO(9, 0, 0, 0, 0);
     }
-    if (dvr_cmd != CMD_TURNON) {
-      bad_state();
-      return;
-    }
-    next_state(STATE_PWR_UP_WAIT);
     ll_si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
+
     stateAlarm_active = TRUE;
     call RadioAlarm.wait(SI446X_POWER_UP_WAIT_TIME);
+
+    return t->next_state;
   }
 
 
-  void cs_pwr_up_wait() {
-    if (!(xcts = call HW.si446x_cts())) {
-      __PANIC_RADIO(10, 0, 0, 0, 0);
-    }
-    if (dvr_cmd != CMD_TURNON) {
-      bad_state();
-      return;
-    }
+  /**************************************************************************/
 
-    /*
-     * if IRQN is a 1, no interrupt, fail.  We expect an interrupt
-     * to be there.  Should be CHIP interrupt saying chip is ready
-     */
-    if (call HW.si446x_irqn()) {
-      __PANIC_RADIO(11, 0, 0, 0, 0);
-    }
-
-    drf();
-    nop();
-
+  fsm_state_t a_pwr_up(fsm_transition_t *t) {
     /*
      * make the FRRs return for the time being, int_pend, ph_pend,
      * modem_pend, and chip_pend.  We rely on frr_d being chip_pend.
@@ -1744,107 +2046,61 @@ implementation {
     ll_si446x_getclr_int_state(&int_state);
     ll_si446x_get_int_state(&chip_debug);
 
-    next_state(STATE_LOAD_CONFIG);
     post load_config_task();
+    return t->next_state;
   }
 
 
-  void cs_load_config() {
-    /*
-     * The state machine can get invoked multiple times, like
-     * when RadioAlarm fires.  (1st when RadioAlarm goes (its part
-     * of the Tasklet group) and (2nd when RadioAlarm does
-     * the Tasklet.schedule.
-     *
-     * So it is possible to transition to PWR_UP_WAIT -> LOAD_CONFIG
-     * and then the state machine will see current state of LOAD_CONFIG
-     * which should do nothing.
-     *
-     * The transition out of LOAD_CONFIG -> READY happens when the
-     * Load_Config_Task completes.
-     */
-  }
+  /**************************************************************************/
 
+  /* finish configuration and initialization */
 
-  void cs_standby() {
-#ifdef notdef
-    uint16_t wait_time;
+  fsm_state_t a_config(fsm_transition_t *t) {
 
-    if (!isSpiAcquired())
-      return;
-
-    if ((dvr_cmd == CMD_TURNOFF)) {
-      call HW.si446x_shutdown();
-      next_state(STATE_SDN);
-      dvr_cmd = CMD_SIGNAL_DONE;
-      return;
+    nop();
+    ll_si446x_getclr_int_state(&int_state);
+    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
+    ut0 = call Platform.usecsRaw();
+    while (!si446x_get_cts()) {      /* wait for command completion */
+      ll_si446x_get_int_status(radio_pend);
     }
+    ut1 = call Platform.usecsRaw();
 
-    if (dvr_cmd == CMD_TURNON) {
-      wait_time = 0;
-      if (wait_time) {
-        if (!call RadioAlarm.isFree())
-          return;
-        next_state(STATE_STANDBY);
-        stateAlarm_active = TRUE;
-        call RadioAlarm.wait(wait_time);
-        return;
-      }
-      next_state(STATE_STANDBY_2_LOAD);
-      post SI446X_Load_Config();
-      return;
-    }
-#endif
+    nop();
+    drf();
+    nop();
 
-    bad_state();
+    setChannel();
+
+    //    enableInterrupts();
+
+    post user_response_task();
+
+    return t->next_state;
   }
 
 
-  void cs_ready() {
-    /*
-     * READY always transitions to RX_ON.
-     */
-    if (dvr_cmd == CMD_TURNON) {
-      nop();
-      ll_si446x_getclr_int_state(&int_state);
-      si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
-      start_rx();
-      ut0 = call Platform.usecsRaw();
-      while (!si446x_get_cts()) { /* wait for command completion */
-	ll_si446x_get_int_status(radio_pend);
-      }
-      ut1 = call Platform.usecsRaw();
-      nop();
-      drf();
-      nop();
+  /**************************************************************************/
 
-      setChannel();
-      //      enableInterrupts();
+  /* go into standby to lower power consumption */
 
-      /*
-       * all the majik starts to happen after the RXON is issued.
-       * The chip will first go into RX Calibration (state 2) and
-       * 192us later will enter SFDWait (3-6).  A preamble coming in
-       * (after the 192us calibration) and SFD is another 160us.
-       * So the minimum time before the 1st SFD interrupt is 192 + 160 us
-       * (352 us, decimal).
-       */
-      //      strobe(SI446X_CMD_SRXON);         /* (192+160)us before 1st SFD int.  */
-
-      next_state(STATE_RX_ON);
-      dvr_cmd = CMD_SIGNAL_DONE;
-      return;
-    }
-
-    /*
-     * IDLE is a transitory state.  Other commands can't happen
-     */
-
-    bad_state();
+  fsm_state_t a_standby(fsm_transition_t *t) {
+    post user_response_task();
+    return t->next_state;
   }
 
 
-  void cs_rx_on() {
+  /**************************************************************************/
+
+  fsm_state_t a_pwr_dn(fsm_transition_t *t) {
+    post user_response_task();
+    return t->next_state;
+  }
+
+
+  /**************************************************************************/
+
+  fsm_state_t a_rx_on(fsm_transition_t *t) {
     if (dvr_cmd == CMD_STANDBY) {
       /*
        * going into standby, kill the radio.  But killing the radio
@@ -1853,57 +2109,62 @@ implementation {
        *
        * Interrupts are disabled here but cleaned out when they are
        * reenabled.
+       *
+       * We also need to clean out and reset any data structures associated
+       * with the radio, like the SFD queue etc.
        */
-      call HW.si446x_disableInterrupt();
-      flushFifo();                      /* nuke fifo               */
+//      call HW.si446x_disableInterrupt();
+//      flushFifo();                      /* nuke fifo               */
       /* reset exceptions */
-      next_state(STATE_STANDBY);        /* no need to idle first */
-      dvr_cmd = CMD_SIGNAL_DONE;
-      return;
+      post user_response_task();
+      return S_STANDBY;
     }
 
     if (dvr_cmd == CMD_TURNOFF) {
-      call HW.si446x_disableInterrupt();
-      call HW.si446x_shutdown();
-      next_state(STATE_SDN);
-      dvr_cmd = CMD_SIGNAL_DONE;
-      return;
+//      call HW.si446x_disableInterrupt();
+//      call HW.si446x_shutdown();
+
+      post user_response_task();
+      return S_SDN;
     }
 
-    bad_state();
+    return t->next_state;
   }
 
 
-  void changeState() {
-    /*
-     * these only get called from the Main State Machine Sequencer (MSMS)
-     * RadioAlarm has some other transitions
-     */
-    switch (dvr_state) {
-      case STATE_SDN:           cs_sdn();               break;
-      case STATE_POR_WAIT:      cs_por_wait();          break;
-      case STATE_PWR_UP_WAIT:   cs_pwr_up_wait();       break;
-      case STATE_LOAD_CONFIG:   cs_load_config();       break;
-      case STATE_STANDBY:       cs_standby();           break;
-      case STATE_READY:         cs_ready();             break;
-      case STATE_RX_ON:         cs_rx_on();             break;
+  /**************************************************************************/
 
-      case STATE_TX_START:
-      default:
-        bad_state();
-        break;
-    }
+  fsm_state_t a_rx_cmp(fsm_transition_t *t) {
+    return t->next_state;
   }
 
+
+  /**************************************************************************/
+
+  fsm_state_t a_tx_cmp(fsm_transition_t *t) {
+    return t->next_state;
+  }
+
+
+  /**************************************************************************/
+
+  fsm_state_t a_count_error(fsm_transition_t *t) {
+    return t->next_state;
+  }
+
+
+  /**************************************************************************/
+
+  /* ----------------- RadioState --------------- */
 
   tasklet_async command error_t RadioState.turnOff() {
     if (dvr_cmd != CMD_NONE)
       return EBUSY;
-    else if (dvr_state == STATE_SDN)
+    else if (fsm_get_state() == S_SDN)
       return EALREADY;
 
     dvr_cmd = CMD_TURNOFF;
-    call Tasklet.schedule();
+    fsm_change_state(E_TURNOFF);
     return SUCCESS;
   }
 
@@ -1911,11 +2172,11 @@ implementation {
   tasklet_async command error_t RadioState.standby() {
     if (dvr_cmd != CMD_NONE)
       return EBUSY;
-    if (dvr_state == STATE_STANDBY)
+    if (fsm_get_state() == S_STANDBY)
       return EALREADY;
 
     dvr_cmd = CMD_STANDBY;
-    call Tasklet.schedule();
+    fsm_change_state(E_STANDBY);
     return SUCCESS;
   }
 
@@ -1923,11 +2184,11 @@ implementation {
   tasklet_async command error_t RadioState.turnOn() {
     if (dvr_cmd != CMD_NONE)
       return EBUSY;
-    if (dvr_state >= STATE_RX_ON)
+    if (fsm_get_state() >= S_RX_ON)
       return EALREADY;
 
     dvr_cmd = CMD_TURNON;
-    call Tasklet.schedule();
+    fsm_change_state(E_TURNON);
     return SUCCESS;
   }
 
@@ -1956,13 +2217,13 @@ implementation {
 
 
   tasklet_async command error_t RadioCCA.request() {
-    if (dvr_cmd != CMD_NONE || dvr_state != STATE_RX_ON)
+    if (dvr_cmd != CMD_NONE || fsm_get_state() != S_RX_ON)
       return EBUSY;
 
     dvr_cmd = CMD_CCA;
-    call Tasklet.schedule();        /* still can signal out of here */
     return SUCCESS;
   }
+
 
   default tasklet_async event void RadioCCA.done(error_t error) { }
 
@@ -1998,22 +2259,26 @@ implementation {
   /* ----------------- TASKLET ----------------- */
   /* -------------- State Machine -------------- */
 
+  /**************************************************************************/
+
+  /* ----------------- RadioAlarm ----------------- */
+
+  /*
+   * WARNING: RadioAlarm has to be wired into the same Tasklet as the
+   * FSM below.  That is what provides mutual exclusion for the state
+   * machine.   See <tinyos>/tos/lib/rfxlink/util/RadioAlarmP.nc. etc.
+   *
+   * Note: by calling fsm_change_state directly we avoid having to
+   * invoke the Tasklet group (via .schedule).  We don't know what
+   * order the Tasklet.runs are invoked in.
+   */
   tasklet_async event void RadioAlarm.fired() {
     nop();
     nop();
     stateAlarm_active = FALSE;
-
-    /*
-     * currently RadioAlarm just invokes the Tasklet group to run in order
-     * to cause a state transition.  We are already running the Tasklet group
-     * and we aren't doing anything here but the group is already running
-     * so no need to invoke it again.
-     *
-     * But we need to schedule one more time because we don't know the order
-     * of the Tasklet.runs are executed.
-     */
-    call Tasklet.schedule();            /* process additional work */
+    fsm_change_state(E_WAIT_DONE);
   }
+
 
   /**************************************************************************/
 
@@ -2023,49 +2288,11 @@ implementation {
   tasklet_async event void Tasklet.run() {
     nop();
     nop();
-    if (radioIrq)
-      serviceRadio();
 
     if (stateAlarm_active)
       return;
 
-    switch (dvr_cmd) {
-      case CMD_NONE:
-        break;
-
-      case CMD_TURNOFF:
-      case CMD_STANDBY:
-      case CMD_TURNON:
-        changeState();
-        break;
-
-      case CMD_TRANSMIT:
-      case CMD_RECEIVE:
-        break;
-
-      case CMD_CCA:
-        signal RadioCCA.done(checkCCA() ? SUCCESS : EBUSY);
-        dvr_cmd = CMD_NONE;
-        break;
-
-      case CMD_CHANNEL:
-//        changeChannel();
-        break;
-
-      case CMD_SIGNAL_DONE:
-        break;
-
-      default:
-        break;
-    }
-
-    if (dvr_cmd == CMD_SIGNAL_DONE) {
-      dvr_cmd = CMD_NONE;
-      signal RadioState.done();
-    }
-
-    if (dvr_cmd == CMD_NONE && dvr_state == STATE_RX_ON && ! radioIrq)
-      signal RadioSend.ready();
+    processExceptions();
   }
 
 
