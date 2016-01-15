@@ -678,32 +678,34 @@ implementation {
  */
 
   typedef enum {
-    S_SDN = 0,                      // shutdown
-    S_POR_W,                        // waiting for POR to complete
-    S_PWR_UP_W,                     // waiting on POWER_UP cmd to complete
-    S_CONFIG_W,                     // loading configuration
-    S_STANDBY,                      // reducing power but retain config
-    S_READY,                        // wait for user command
-    S_RX_ON,                        // ready to receive
-    S_RX_ACTIVE,                    // actively receiving
-    S_TX_ACTIVE,                    // actively transmitting
-    S_DEFAULT,                      // wildcard, always perform transition
+    S_SDN = 0,                    // shutdown
+    S_POR_W,                      // waiting for POR to complete
+    S_PWR_UP_W,                   // waiting on POWER_UP cmd to complete
+    S_CONFIG_W,                   // loading configuration
+    S_STANDBY,                    // reducing power but retain config
+    S_READY,                      // wait for user command
+    S_RX_ON,                      // ready to receive
+    S_RX_ACTIVE,                  // actively receiving
+    S_TX_ACTIVE,                  // actively transmitting
+    S_DEFAULT,                    // wildcard, always perform transition
   } fsm_state_t;
 
   typedef enum {
     A_BREAK = 0,                  // special case to denote end of list
     A_NOP,                        // no action to be taken
-    A_UNSHUT,                     // take chip out of shutdown
-    A_POR,                        // let the chip do Power On Reset (POR)
-    A_PWR_UP,                     // let the chip to POWER_UP (cmd)
-    A_CONFIG,                     // configing the chip
+    A_UNSHUT,                     // take chip out of hardware shutdown state
+    A_PWR_UP,                     // power up chip (issue POWER_UP command)
+    A_CONFIG,                     // configure the chip
+    A_READY,                      // finalize configuration and start receiving
     A_STANDBY,                    // lower power consumption but retain chip config
-    A_PWR_DN,                     // start power down
-    A_RX_ON,                      // start receiving
-    A_TX_ON,                      // start transmitting
-    A_COUNT_ERROR,                // count crc error
+    A_PWR_DN,                     // power off the chip
+    A_RX_ON,                      // start receiver hunt for a packet to receive
+    A_TX_ON,                      // start transmitting a packet
+    A_RX_ERROR,                   // count errors
+    A_TX_ERROR,                   // count errors
     A_TX_CMP,                     // handle transmit complete
     A_RX_CMP,                     // handle receive complete
+    A_RX_HEADER,                  // handle receive sync detected
     A_RX_PREAMBLE,                // handle seeing a preamble
     A_RX_SYNC,                    // handle receive sync detected
   } fsm_action_t;
@@ -714,13 +716,14 @@ implementation {
     E_TURNOFF = 2,                // goto lowest power state
     E_STANDBY = 3,                // goto low power state
     E_TRANSMIT = 4,               // start transmit a message
-    E_RECEIVE = 5,                // start receive a message
+    E_FIFO = 5,                   // start receiving a message with radioReceive.header
     E_WAIT_DONE = 6,              // alarm timer expired
     E_CONFIG_DONE = 7,            // configuration task is done
     E_PACKET_RX = 8,              // packet received
     E_PACKET_SENT = 9,            // packet transmit complete
     E_CRC_ERROR = 10,             // packet receive crc error detected
     E_PREAMBLE_DETECT  = 11,      // premable detected
+    E_SYNC_DETECT  = 12,          // premable detected
   } fsm_event_t;
 
   // define fsm transition structure.
@@ -736,7 +739,7 @@ implementation {
   const fsm_transition_t fsm_e_turnoff[];
   const fsm_transition_t fsm_e_standby[];
   const fsm_transition_t fsm_e_transmit[];
-  const fsm_transition_t fsm_e_receive[];
+  const fsm_transition_t fsm_e_fifo[];
   const fsm_transition_t fsm_e_wait_done[];
   const fsm_transition_t fsm_e_config_done[];
   const fsm_transition_t fsm_e_packet_rx[];
@@ -747,7 +750,7 @@ implementation {
   // list of all of the fsm event lists - order must match the fsm_event_t enum
   const fsm_transition_t *fsm_events_group[] = {fsm_e_nop,            fsm_e_turnon,
 						fsm_e_turnoff,        fsm_e_standby,
-						fsm_e_transmit,       fsm_e_receive,
+						fsm_e_transmit,       fsm_e_fifo,
 						fsm_e_wait_done,      fsm_e_config_done,
 						fsm_e_packet_rx,      fsm_e_packet_sent,
 						fsm_e_crc_error,      fsm_e_preamble_detect,
@@ -765,7 +768,7 @@ implementation {
   // e_turnon
   const fsm_transition_t fsm_e_turnon[] = {
     { S_SDN, A_UNSHUT, S_POR_W },
-    { S_STANDBY, A_CONFIG, S_READY },
+    { S_STANDBY, A_READY, S_READY },
     { S_READY, A_NOP, S_READY },
     { S_RX_ON, A_NOP, S_RX_ON },
     { S_RX_ACTIVE, A_NOP, S_RX_ACTIVE },
@@ -778,6 +781,7 @@ implementation {
     { S_READY, A_PWR_DN, S_SDN },
     { S_RX_ON, A_PWR_DN, S_SDN },
     { S_RX_ACTIVE, A_PWR_DN, S_SDN },
+    { S_TX_ACTIVE, A_PWR_DN, S_SDN },
     { S_STANDBY, A_PWR_DN, S_SDN },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
@@ -788,34 +792,35 @@ implementation {
     { S_RX_ON, A_STANDBY, S_STANDBY },
     { S_RX_ACTIVE, A_STANDBY, S_STANDBY },
     { S_TX_ACTIVE, A_STANDBY, S_STANDBY },
-    { S_STANDBY, A_NOP, S_STANDBY },
+    { S_STANDBY, A_STANDBY, S_STANDBY },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
   // e_transmit
   const fsm_transition_t fsm_e_transmit[] = {
     { S_READY, A_TX_ON, S_TX_ACTIVE },
+    { S_RX_ON, A_TX_ON, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
-  // e_receive
-  const fsm_transition_t fsm_e_receive[] = {
-    { S_READY, A_RX_ON, S_RX_ON },
-    { S_DEFAULT, A_NOP, S_DEFAULT },
+  // e_fifo
+  const fsm_transition_t fsm_e_fifo[] = {
+    { S_RX_ON, A_RX_HEADER, S_RX_ACTIVE },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
   // e_wait_done
   const fsm_transition_t fsm_e_wait_done[] = {
-    { S_POR_W, A_POR, S_PWR_UP_W },
-    { S_PWR_UP_W, A_PWR_UP, S_CONFIG_W },
-    { S_RX_ACTIVE, A_COUNT_ERROR, S_RX_ON },
-    { S_TX_ACTIVE, A_COUNT_ERROR, S_TX_ACTIVE },
+    { S_POR_W, A_PWR_UP, S_PWR_UP_W },
+    { S_PWR_UP_W, A_CONFIG, S_CONFIG_W },
+    { S_RX_ACTIVE, A_RX_ERROR, S_RX_ON },
+    { S_TX_ACTIVE, A_TX_ERROR, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
   // e_config_done
   const fsm_transition_t fsm_e_config_done[] = {
-    { S_CONFIG_W, A_CONFIG, S_READY },
+    { S_CONFIG_W, A_READY, S_RX_ON },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -827,19 +832,26 @@ implementation {
 
   // e_packet_sent
   const fsm_transition_t fsm_e_packet_sent[] = {
-    { S_TX_ACTIVE, A_TX_CMP, S_READY },
+    { S_TX_ACTIVE, A_TX_CMP, S_RX_ON },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
   // e_crc_error
   const fsm_transition_t fsm_e_crc_error[] = {
-    { S_RX_ACTIVE, A_COUNT_ERROR, S_RX_ON },
+    { S_RX_ACTIVE, A_RX_ERROR, S_RX_ON },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
   // e_preamble_detect
   const fsm_transition_t fsm_e_preamble_detect[] = {
-    { S_DEFAULT, A_NOP, S_DEFAULT },
+    { S_RX_ON, A_RX_PREAMBLE, S_RX_ON },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_sync_detect
+  const fsm_transition_t fsm_e_sync_detect[] = {
+    { S_RX_ON, A_RX_SYNC, S_RX_ACTIVE },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
   /**************************************************************************/
@@ -898,15 +910,20 @@ implementation {
   // forward define all action functions
   fsm_state_t a_nop(fsm_transition_t *t);
   fsm_state_t a_unshut(fsm_transition_t *t);
-  fsm_state_t a_por(fsm_transition_t *t);
   fsm_state_t a_pwr_up(fsm_transition_t *t);
   fsm_state_t a_config(fsm_transition_t *t);
+  fsm_state_t a_ready(fsm_transition_t *t);
   fsm_state_t a_standby(fsm_transition_t *t);
   fsm_state_t a_pwr_dn(fsm_transition_t *t);
   fsm_state_t a_rx_on(fsm_transition_t *t);
+  fsm_state_t a_tx_on(fsm_transition_t *t);
+  fsm_state_t a_rx_error(fsm_transition_t *t);
+  fsm_state_t a_tx_error(fsm_transition_t *t);
   fsm_state_t a_rx_cmp(fsm_transition_t *t);
   fsm_state_t a_tx_cmp(fsm_transition_t *t);
-  fsm_state_t a_count_error(fsm_transition_t *t);
+  fsm_state_t a_rx_header(fsm_transition_t *t);
+  fsm_state_t a_rx_preamble(fsm_transition_t *t);
+  fsm_state_t a_rx_sync(fsm_transition_t *t);
 
   norace uint8_t fsm_active;
 
@@ -969,16 +986,19 @@ implementation {
       switch (t->action) {
       case A_NOP:	  ns = a_nop(t);         break;
       case A_UNSHUT:	  ns = a_unshut(t);      break;
-      case A_POR:	  ns = a_por(t);         break;
       case A_PWR_UP:	  ns = a_pwr_up(t);      break;
       case A_CONFIG:	  ns = a_config(t);      break;
+      case A_READY:	  ns = a_ready(t);       break;
       case A_STANDBY:	  ns = a_standby(t);     break;
       case A_PWR_DN:	  ns = a_pwr_dn(t);      break;
       case A_RX_ON:	  ns = a_rx_on(t);       break;
-      case A_TX_ON:	  ns = a_rx_on(t);       break;
-      case A_COUNT_ERROR: ns = a_count_error(t); break;
+      case A_TX_ON:	  ns = a_tx_on(t);       break;
+      case A_RX_ERROR:    ns = a_rx_error(t);    break;
+      case A_TX_ERROR:    ns = a_tx_error(t);    break;
       case A_TX_CMP:      ns = a_rx_cmp(t);      break;
-      case A_RX_CMP:	  ns = a_tx_cmp(t);      break;
+      case A_RX_CMP:      ns = a_tx_cmp(t);      break;
+      case A_RX_HEADER:   ns = a_nop(t);         break;
+      case A_RX_PREAMBLE: ns = a_nop(t);         break;
       case A_RX_SYNC:     ns = a_nop(t);         break;
       case A_BREAK:
       default:            t = NULL;              break;
@@ -2028,8 +2048,28 @@ implementation {
 
 
   /**************************************************************************/
+  /*
+   * start_alarm
+   *
+   * check to see that RadioAlarm is free, otherwise panic.
+   * When the RadioAlarm times out, it will cause the Driver finite state machine
+   * to run again with E_WAIT_DONE event
+   */
 
-  /*  do nothing. */
+  uint8_t start_alarm(uint16_t t) {
+    if (call RadioAlarm.isFree()) {
+      call RadioAlarm.wait(t);
+      return TRUE;
+    }
+    __PANIC_RADIO(63, t, 0, 0, 0);
+    return FALSE;
+  }
+
+
+  /**************************************************************************/
+  /*  do nothing.
+   */
+
   fsm_state_t a_nop(fsm_transition_t *t) {
     return t->next_state;
   }
@@ -2037,9 +2077,11 @@ implementation {
 
   /**************************************************************************/
   /*
-   * we are going to need the RadioAlarm, if not free, bail.  We stay in
-   * STATE_OFF with a pending cmd TRUE.   When the RadioAlarm does
-   * trip, it will cause the Driver finite state machine to run again.
+   * a_unshut
+   *
+   * turn on power to the SI446x chip and start a timer to allow time for
+   * power to become stable.
+   *
    */
 
   fsm_state_t a_unshut(fsm_transition_t *t) {
@@ -2053,13 +2095,15 @@ implementation {
   }
 
   /**************************************************************************/
+  /*
+  * a_pwr_up
+  *
+  * check to see if CTS is up, better be.  Then send POWER_UP command to
+  * continue with powering up the chip.  This will take some
+  * time (16ms).  CTS will go back up when done.
+  */
 
-  fsm_state_t a_por(fsm_transition_t *t) {
-    /*
-     * check to see if CTS is up, better be.  Then send POWER_UP to
-     * continue with powering up the chip.  This will take some
-     * time (16ms).  CTS will go back up when done.
-     */
+  fsm_state_t a_pwr_up(fsm_transition_t *t) {
     if (!(xcts = call HW.si446x_cts())) {
       __PANIC_RADIO(9, 0, 0, 0, 0);
     }
@@ -2073,29 +2117,39 @@ implementation {
 
 
   /**************************************************************************/
+  /*
+   * a_config
+   *
+   * prepare the chip for configuration and post the config task to start
+   * loading it.
+   */
 
-  fsm_state_t a_pwr_up(fsm_transition_t *t) {
+  fsm_state_t a_config(fsm_transition_t *t) {
     /*
      * make the FRRs return for the time being, int_pend, ph_pend,
      * modem_pend, and chip_pend.  We rely on frr_d being chip_pend.
      */
     stuff_config(si446x_frr_config);
-
     /* clear out pending interrupts */
     ll_si446x_getclr_int_state(&int_state);
     ll_si446x_get_int_state(&chip_debug);
-
     post load_config_task();
     return t->next_state;
   }
 
 
   /**************************************************************************/
+  /*
+   * a_ready
+   *
+   * Make the chip ready for receive operation, including final configuration
+   * and initialization steps.
+   * The user turnon command is acknowledged by the response task and interrupts
+   * are enabled.
+   * Finally, receiver is turned on (repurposes fsm action).
+   */
 
-  /* finish configuration and initialization */
-
-  fsm_state_t a_config(fsm_transition_t *t) {
-
+  fsm_state_t a_ready(fsm_transition_t *t) {
     nop();
     ll_si446x_getclr_int_state(&int_state);
     si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
@@ -2104,18 +2158,14 @@ implementation {
       ll_si446x_get_int_status(radio_pend);
     }
     ut1 = call Platform.usecsRaw();
-
     nop();
     drf();
     nop();
-
     setChannel();
-
-    //    enableInterrupts();
-
     post user_response_task();
-
-    return t->next_state;
+//    enableInterrupts();
+    /* proceed with a_rx_on action to start receiving */
+    return a_rx_on(t);
   }
 
 
@@ -2137,36 +2187,31 @@ implementation {
   }
 
 
+
   /**************************************************************************/
 
   fsm_state_t a_rx_on(fsm_transition_t *t) {
-    if (dvr_cmd == CMD_STANDBY) {
-      /*
-       * going into standby, kill the radio.  But killing the radio
-       * doesn't clean everything we need out.  So we need to kill any
-       * pending exceptions and nuke the fifos.
-       *
-       * Interrupts are disabled here but cleaned out when they are
-       * reenabled.
-       *
-       * We also need to clean out and reset any data structures associated
-       * with the radio, like the SFD queue etc.
-       */
-//      call HW.si446x_disableInterrupt();
-//      flushFifo();                      /* nuke fifo               */
-      /* reset exceptions */
-      post user_response_task();
-      return S_STANDBY;
-    }
+    return t->next_state;
+  }
 
-    if (dvr_cmd == CMD_TURNOFF) {
-//      call HW.si446x_disableInterrupt();
-//      call HW.si446x_shutdown();
 
-      post user_response_task();
-      return S_SDN;
-    }
+  /**************************************************************************/
 
+  fsm_state_t a_tx_on(fsm_transition_t *t) {
+    return t->next_state;
+  }
+
+
+ /**************************************************************************/
+
+  fsm_state_t a_rx_error(fsm_transition_t *t) {
+    return t->next_state;
+  }
+
+
+ /**************************************************************************/
+
+  fsm_state_t a_tx_error(fsm_transition_t *t) {
     return t->next_state;
   }
 
@@ -2187,7 +2232,14 @@ implementation {
 
   /**************************************************************************/
 
-  fsm_state_t a_count_error(fsm_transition_t *t) {
+  fsm_state_t a_rx_preamble(fsm_transition_t *t) {
+    return t->next_state;
+  }
+
+
+  /**************************************************************************/
+
+  fsm_state_t a_rx_sync(fsm_transition_t *t) {
     return t->next_state;
   }
 
