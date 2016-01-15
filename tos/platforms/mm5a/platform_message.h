@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 (c) Eric B. Decker
+ * Copyright 2016 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
  */
 
 /**
- * The mm5a platform communicates using a SiLab 4463 radio and the
+ * The mm5a platform communicates using a SiLab 4468 radio and the
  * dock interface.  The packet size on the radio is constrained
  * while the dock/spi packet size can be much larger.
  *
@@ -44,15 +44,19 @@
 #define PLATFORM_MESSAGE_H
 
 #include <Serial.h>
+#include <Si446xRadio.h>
 
 typedef union message_header {
   serial_header_t serial;
+  si446x_packet_header_t header;
 } message_header_t;
 
-typedef union TOSRadioFooter {
+typedef union message_footer {
+  si446x_packet_footer_t footer;
 } message_footer_t;
 
-typedef union TOSRadioMetadata {
+typedef union message_metadata {
+  si446x_packet_metadata_t meta;
 } message_metadata_t;
 
 #endif
