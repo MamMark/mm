@@ -2085,12 +2085,9 @@ implementation {
    */
 
   fsm_state_t a_unshut(fsm_transition_t *t) {
-    if (call RadioAlarm.isFree() == 0) {
-      __PANIC_RADIO(92, 0, 0, 0, 0);
-    }
-    call HW.si446x_unshutdown();
-    stateAlarm_active = TRUE;
-    call RadioAlarm.wait(SI446X_POR_WAIT_TIME);
+    if (start_alarm(SI446X_POR_WAIT_TIME)) {
+      call HW.si446x_unshutdown();
+      }
     return t->next_state;
   }
 
@@ -2107,11 +2104,9 @@ implementation {
     if (!(xcts = call HW.si446x_cts())) {
       __PANIC_RADIO(9, 0, 0, 0, 0);
     }
-    ll_si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
-
-    stateAlarm_active = TRUE;
-    call RadioAlarm.wait(SI446X_POWER_UP_WAIT_TIME);
-
+    if (start_alarm(SI446X_POWER_UP_WAIT_TIME)) {
+      ll_si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
+    }
     return t->next_state;
   }
 
@@ -2374,9 +2369,6 @@ implementation {
     fsm_event_t ev;
     nop();
     nop();
-
-    if (stateAlarm_active)
-      return;
 
     while (TRUE) {
       if (fsm_int_event) {
