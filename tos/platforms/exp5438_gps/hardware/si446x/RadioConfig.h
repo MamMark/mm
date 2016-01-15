@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Eric B. Decker
+ * Copyright (c) 2015, 2016 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,14 +38,14 @@
 #include <Timer.h>
 #include <message.h>
 
-/* Also include the platform dependent si446x definitions generated
-   from the SiLabs WDS program (Wireless Development Studio.
-*/
-#include "radio_config_si446x.h"
-
 /*
- * TXPOWER register value, see Table 17 of the 2520 data sheet
+ * Also include the platform dependent si446x definitions generated
+ *  from the SiLabs WDS program (Wireless Development Studio.
  */
+#include "radio_config_si446x.h"
+#include "radio_platform_si446x.h"
+
+/* TODO: need to figure out correct power value */
 #ifndef SI446X_DEF_RFPOWER
 #define SI446X_DEF_RFPOWER	31
 #endif
