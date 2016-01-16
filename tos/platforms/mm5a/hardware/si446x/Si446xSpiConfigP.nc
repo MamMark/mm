@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 (c) Eric B. Decker
+ * Copyright (c) 2016 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,30 +33,42 @@
  */
 
 /**
- * The mm5a platform communicates using a SiLab 4468 radio and the
- * dock interface.  The packet size on the radio is constrained
- * while the dock/spi packet size can be much larger.
- *
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#ifndef PLATFORM_MESSAGE_H
-#define PLATFORM_MESSAGE_H
+#include "msp430usci.h"
 
-#include <Serial.h>
-#include <Si446xRadio.h>
+/*
+ * exp5438_gps, 5438a, USCI, SPI
+ * x5 usci configuration
+ * interface to si446x chip
+ */
 
-typedef union message_header {
-  serial_header_t serial;
-  si446x_packet_header_t header;
-} message_header_t;
+const msp430_usci_config_t si446x_spi_config = {
+  /*
+   * UCCKPH: 1,         data captured on rising edge
+   * UCCKPL: 0,         inactive state is low
+   * UCMSB:  1,
+   * UC7BIT: 0,         8 bit
+   * UCMST:  1,
+   * UCMODE: 0b00,      3 wire SPI
+   * UCSYNC: 1
+   * UCSSEL: SMCLK
+   */
+  ctl0 : (UCCKPH | UCMSB | UCMST | UCSYNC),
+  ctl1 : UCSSEL__SMCLK,
+  br0  : 2,			/* 8MHz -> 4 MHz */
+  br1  : 0,
+  mctl : 0,                     /* Always 0 in SPI mode */
+  i2coa: 0
+};
 
-typedef union message_footer {
-  si446x_packet_footer_t footer;
-} message_footer_t;
 
-typedef union message_metadata {
-  si446x_packet_metadata_t meta;
-} message_metadata_t;
-
-#endif
+module Si446xSpiConfigP {
+  provides interface Msp430UsciConfigure;
+}
+implementation {
+  async command const msp430_usci_config_t *Msp430UsciConfigure.getConfiguration() {
+    return &si446x_spi_config;
+  }
+}

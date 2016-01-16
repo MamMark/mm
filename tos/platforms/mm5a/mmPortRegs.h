@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 (c) Eric B. Decker
+ * Copyright 2014-2015, 2016 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@
 #endif
 
 norace static volatile struct {
-    uint8_t si446x_irq_n        : 1;
+    uint8_t si446x_irqn         : 1;
     uint8_t gyro_drdy           : 1;
     uint8_t p12                 : 1;
     uint8_t sd_access_sense     : 1;
@@ -51,6 +51,8 @@ norace static volatile struct {
     uint8_t p16                 : 1;
     uint8_t dock_irq            : 1;
   } PACKED mmP1in asm("0x0200");
+
+#define SI446X_IRQN_BIT 0x01
 
 norace static volatile struct {
     uint8_t p10                 : 1;
@@ -203,8 +205,10 @@ norace static volatile struct {
     uint8_t p84                 : 1;
     uint8_t p85                 : 1;
     uint8_t p86                 : 1;
-    uint8_t p87                 : 1;
+    uint8_t si446x_sdn_in       : 1;
   } PACKED mmP8in asm("0x0261");
+
+#define SI446X_SDN_BIT  0x80
 
 norace static volatile struct {
     uint8_t p80                 : 1;
@@ -225,8 +229,10 @@ norace static volatile struct {
     uint8_t p94                 : 1;
     uint8_t si446x_miso         : 1;
     uint8_t p96                 : 1;
-    uint8_t p97                 : 1;
+    uint8_t si446x_csn_in       : 1;
   } PACKED mmP9in asm("0x0280");
+
+#define SI446X_CSN_BIT  0x80
 
 norace static volatile struct {
     uint8_t si446x_clk          : 1;
@@ -294,6 +300,8 @@ norace static volatile struct {
     uint8_t pj7                 : 1;
   } PACKED mmPJin asm("0x0320");
 
+#define SI446X_CTS_BIT  0x08
+
 norace static volatile struct {
     uint8_t pj0                 : 1;
     uint8_t si446x_volt_sel     : 1;
@@ -306,8 +314,14 @@ norace static volatile struct {
   } PACKED mmPJout asm("0x0322");
 
 /* radio - si446x */
+
+#define SI446X_CTS_P    (PJIN & SI446X_CTS_BIT)
+#define SI446X_IRQN_P   (P1IN & SI446X_IRQN_BIT)
+#define SI446X_SDN_IN   (P8IN & SI446X_SDN_BIT)
+#define SI446X_CSN_IN   (P9IN & SI446X_CSN_BIT)
+
 #define SI446X_CTS              mmPJin.si446x_cts
-#define SI446X_IRQ_N            mmP1in.si446x_irq_n
+#define SI446X_IRQN             mmP1in.si446x_irqn
 #define SI446X_SDN              mmP8out.si446x_sdn
 #define SI446X_CSN              mmP9out.si446x_csn
 #define SI446X_VOLT_SEL         mmPJout.si446x_volt_sel

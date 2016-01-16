@@ -5,7 +5,9 @@
 #define REQUIRE_PLATFORM
 #define FORCE_ATOMIC
 #define TRACE_MICRO
-//#define TRACE_USE_PLATFORM
+#define TRACE_USE_PLATFORM
+
+#define SI446x_HW_CTS
 
 #include "platform_panic.h"
 

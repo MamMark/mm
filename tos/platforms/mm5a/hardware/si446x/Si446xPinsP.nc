@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 (c) Eric B. Decker
+ * Copyright (c) 2016 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,30 +33,44 @@
  */
 
 /**
- * The mm5a platform communicates using a SiLab 4468 radio and the
- * dock interface.  The packet size on the radio is constrained
- * while the dock/spi packet size can be much larger.
- *
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#ifndef PLATFORM_MESSAGE_H
-#define PLATFORM_MESSAGE_H
+#include "mmPortRegs.h"
 
-#include <Serial.h>
-#include <Si446xRadio.h>
+module Si446xPinsP {
+  provides {
+    interface Si446xInterface as HW;
+  }
+  uses {
+    interface GpioInterrupt  as RadioNIRQ;
+  }
+}
+implementation {
+  async command uint8_t HW.si446x_cts()             { return SI446X_CTS_P; }
+  async command uint8_t HW.si446x_irqn()            { return SI446X_IRQN_P; }
+  async command uint8_t HW.si446x_sdn()             { return SI446X_SDN_IN; }
+  async command uint8_t HW.si446x_csn()             { return SI446X_CSN_IN; }
+  async command void    HW.si446x_shutdown()        { SI446X_SDN = 1; }
+  async command void    HW.si446x_unshutdown()      { SI446X_SDN = 0; }
+  async command void    HW.si446x_set_cs()          { SI446X_CSN = 0; }
+  async command void    HW.si446x_clr_cs()          { SI446X_CSN = 1; }
+  async command void    HW.si446x_set_low_tx_pwr()  { }
+  async command void    HW.si446x_set_high_tx_pwr() { }
 
-typedef union message_header {
-  serial_header_t serial;
-  si446x_packet_header_t header;
-} message_header_t;
+  async command void    HW.si446x_enableInterrupt() {
+    atomic {
+      call RadioNIRQ.enableFallingEdge();
+    }
+  }
 
-typedef union message_footer {
-  si446x_packet_footer_t footer;
-} message_footer_t;
+  async command void    HW.si446x_disableInterrupt() {
+    atomic {
+      call RadioNIRQ.disable();
+    }
+  }
 
-typedef union message_metadata {
-  si446x_packet_metadata_t meta;
-} message_metadata_t;
-
-#endif
+  async event void RadioNIRQ.fired() {
+    signal HW.si446x_interrupt();
+  }
+}

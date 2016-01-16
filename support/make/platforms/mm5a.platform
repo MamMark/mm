@@ -14,12 +14,15 @@ PFLAGS += -I%T/system/panic_simple
 PFLAGS += -I%T/platforms/mm5a/hardware/adc
 PFLAGS += -I%T/platforms/mm5a/hardware/buttons
 PFLAGS += -I%T/platforms/mm5a/hardware/clock
+PFLAGS += -I%T/platforms/mm5a/hardware/gsd4e
 PFLAGS += -I%T/platforms/mm5a/hardware/leds
 PFLAGS += -I%T/platforms/mm5a/hardware/pins
 PFLAGS += -I%T/platforms/mm5a/hardware/pwr
+PFLAGS += -I%T/platforms/mm5a/hardware/si446x
 PFLAGS += -I%T/platforms/mm5a/hardware/usci
 
 PFLAGS += -I%T/chips/gsd4e_v2
+PFLAGS += -I%T/chips/si446x
 PFLAGS += -I%T/chips/tmp1x2
 PFLAGS += -I%T/chips/lis3dh
 
@@ -42,6 +45,11 @@ PFLAGS += -I%T/lib/timer
 PFLAGS += -I%T/lib/serial
 PFLAGS += -I%T/lib/power
 PFLAGS += -I%T/lib/printf
+
+PFLAGS += -I%T/lib/rfxlink/layers
+PFLAGS += -I%T/lib/rfxlink/util
+
+PFLAGS += -I%T/lib/diagmsg
 
 PFLAGS += -mmcu=msp430f5438a
 PFLAGS += -fnesc-target=msp430

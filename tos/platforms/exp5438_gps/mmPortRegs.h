@@ -228,14 +228,19 @@ norace
 
 /* radio */
 
-// #define SI446X_CTS      mmP1in.si446x_cts
-//#define SI446X_IRQN      mmP1in.si446x_irqn
-
 #define SI446X_CTS_P    (P1IN & SI446X_CTS_BIT)
 #define SI446X_IRQN_P   (P1IN & SI446X_IRQN_BIT)
-#define SI446X_SDN      mmP10out.si446x_sdn
-#define SI446X_CSN      mmP10out.si446x_csn
 #define SI446X_SDN_IN   (P10IN & SI446X_SDN_BIT)
 #define SI446X_CSN_IN   (P10IN & SI446X_CSN_BIT)
+
+#define SI446X_CTS      mmP1in.si446x_cts
+#define SI446X_IRQN     mmP1in.si446x_irqn
+#define SI446X_SDN      mmP10out.si446x_sdn
+#define SI446X_CSN      mmP10out.si446x_csn
+
+/* exp5438_gps platform doesn't have volt_sel implemented
+ * set_low/high_tx_pwr is a nop.
+ */
+//#define SI446X_VOLT_SEL         mmPJout.si446x_volt_sel
 
 #endif
