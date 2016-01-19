@@ -80,10 +80,15 @@
  * max time we look for CTS to come back from command (us). The max we've
  * observed is 95uS.  Power_Up however takes 15ms so we don't use this
  * timeout with that command.
+ * maximum time to wait for a tx/rx command to complete. failsafe timer.
  */
-#define SI446X_CTS_TIMEOUT 200
+#define SI446X_CTS_TIMEOUT                    200
+#define SI446X_TX_WAIT_TIME                   30000
+#define SI446X_RX_WAIT_TIME                   30000
 
-
+/*
+ * Si446x Radio command identifiers
+ */
 #define SI446X_CMD_NOP                        0x00
 #define SI446X_CMD_PART_INFO                  0x01
 #define SI446X_CMD_POWER_UP                   0x02
@@ -640,7 +645,7 @@
 #define SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY            0x02
 #define SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL             0x01
 
-#define SI446X_PH_INTEREST      0xFC
+#define SI446X_PH_INTEREST      0xC5
 
 #define SI446X_MODEM_STATUS_POSTAMBLE_DETECT             0x40
 #define SI446X_MODEM_STATUS_INVALID_SYNC                 0x20
@@ -650,7 +655,7 @@
 #define SI446X_MODEM_STATUS_PREAMBLE_DETECT              0x02
 #define SI446X_MODEM_STATUS_SYNC_DETECT                  0x01
 
-#define SI446X_MODEM_INTEREST     0xFB
+#define SI446X_MODEM_INTEREST     0xFC
 
 #define SI446X_CHIP_STATUS_CAL                           0x40
 #define SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR         0x20
@@ -660,7 +665,7 @@
 #define SI446X_CHIP_STATUS_LOW_BATT                      0x02
 #define SI446X_CHIP_STATUS_WUT                           0x01
 
-#define SI446X_CHIP_INTEREST    0xEF
+#define SI446X_CHIP_INTEREST    0xFF
 
 //#define SI446X_PROP_FRR_CTL_A_MODE                   0x0200
 //#define SI446X_PROP_FRR_CTL_B_MODE                   0x0201

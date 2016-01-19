@@ -587,8 +587,8 @@ const uint8_t si446x_device_state[] = { SI446X_CMD_REQUEST_DEVICE_STATE }; /* 33
  * Message Buffers
  */
 tasklet_norace message_t  * txMsg;            /* msg driver owns */
-message_t                   rxMsgBuffer;
-tasklet_norace message_t  * rxMsg = &rxMsgBuffer;
+uint8_t                     rxMsgBuffer[129];
+tasklet_norace message_t  * rxMsg;
 
 
 /**************************************************************************/
@@ -776,8 +776,7 @@ implementation {
   // e_turnon
   const fsm_transition_t fsm_e_turnon[] = {
     { S_SDN, A_UNSHUT, S_POR_W },
-    { S_STANDBY, A_READY, S_READY },
-    { S_READY, A_NOP, S_READY },
+    { S_STANDBY, A_READY, S_RX_ON },
     { S_RX_ON, A_NOP, S_RX_ON },
     { S_RX_ACTIVE, A_NOP, S_RX_ACTIVE },
     { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
@@ -786,7 +785,6 @@ implementation {
 
   // e_turnoff
   const fsm_transition_t fsm_e_turnoff[] = {
-    { S_READY, A_PWR_DN, S_SDN },
     { S_RX_ON, A_PWR_DN, S_SDN },
     { S_RX_ACTIVE, A_PWR_DN, S_SDN },
     { S_TX_ACTIVE, A_PWR_DN, S_SDN },
@@ -796,7 +794,6 @@ implementation {
 
   // e_standby
   const fsm_transition_t fsm_e_standby[] = {
-    { S_READY, A_STANDBY, S_STANDBY },
     { S_RX_ON, A_STANDBY, S_STANDBY },
     { S_RX_ACTIVE, A_STANDBY, S_STANDBY },
     { S_TX_ACTIVE, A_STANDBY, S_STANDBY },
@@ -806,7 +803,6 @@ implementation {
 
   // e_transmit
   const fsm_transition_t fsm_e_transmit[] = {
-    { S_READY, A_TX_ON, S_TX_ACTIVE },
     { S_RX_ON, A_TX_ON, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
@@ -953,10 +949,11 @@ implementation {
    */
 
   tasklet_norace fsm_event_t fsm_int_event, fsm_user_event, fsm_task_event;
+  tasklet_norace si446x_chip_int_t fsm_int_flags;
 
   void fsm_int_queue(fsm_event_t ev) {
     if (fsm_int_event) {
-      __PANIC_RADIO(82, ev, fsm_int_event,  0, 0);
+      __PANIC_RADIO(82, (uint16_t) ev, fsm_int_event,  0, 0);
     }
     fsm_int_event = ev;
     call Tasklet.schedule();
@@ -1005,9 +1002,9 @@ implementation {
       case A_TX_ERROR:    ns = a_tx_error(t);    break;
       case A_TX_CMP:      ns = a_rx_cmp(t);      break;
       case A_RX_CMP:      ns = a_tx_cmp(t);      break;
-      case A_RX_HEADER:   ns = a_nop(t);         break;
-      case A_RX_PREAMBLE: ns = a_nop(t);         break;
-      case A_RX_SYNC:     ns = a_nop(t);         break;
+      case A_RX_HEADER:   ns = a_rx_header(t);   break;
+      case A_RX_PREAMBLE: ns = a_rx_preamble(t); break;
+      case A_RX_SYNC:     ns = a_rx_sync(t);     break;
       case A_BREAK:
       default:            t = NULL;              break;
       }
@@ -1905,7 +1902,7 @@ implementation {
 
     call HW.si446x_clr_cs();
 
-    rxMsg = &rxMsgBuffer;
+    rxMsg = (message_t *) rxMsgBuffer;
     return SUCCESS;
   }
 
@@ -2182,7 +2179,6 @@ implementation {
   }
 
 
-
   /**************************************************************************/
 
   fsm_state_t a_rx_on(fsm_transition_t *t) {
@@ -2191,9 +2187,57 @@ implementation {
 
 
   /**************************************************************************/
-
+  /*
+   * a_tx_on
+   *
+   * start the transmission of a packet, subsequent events will complete it
+   */
   fsm_state_t a_tx_on(fsm_transition_t *t) {
+    uint8_t        *dp;
+    uint8_t        length;
+
+    if (!txMsg){
+      __PANIC_RADIO(5, 0, 0, 0, 0);
+    }
+    nop();
+    dp     = (uint8_t *) getPhyHeader(txMsg);
+    length = *dp;                       /* length is first byte. */
+    si446x_fifo_info(&t_rx_len, &t_tx_len, SI446X_FIFO_FLUSH_TX);
+    writeTxFifo(dp, length + 1);
+    si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+    RADIO_ASSERT( 1 <= t_tx_len && t_tx_len <= 125 );
+    si446x_start_tx(length);
+    ut0 = call Platform.usecsRaw();
+    while (!si446x_get_cts()) {
+      ll_si446x_get_int_status(radio_pend);
+    }
+    ll_si446x_get_int_status(radio_pend);
+    ut1 = call Platform.usecsRaw();
+    nop();
     return t->next_state;
+  }
+
+
+  /**************************************************************************/
+  /*
+   * a_rx_header
+   *
+   * use the rx_fifo_almost_full to indicate that the packet header is in
+   * the fifo
+   */
+
+  fsm_state_t a_rx_header(fsm_transition_t *t) {
+    uint8_t        rssi;
+
+    if (signal RadioReceive.header(rxMsg)) {
+/* need to read the rssi somehow */
+//      call PacketRSSI.set(rxMsg, rssi);         /* set only if accepting */
+//      call PacketLinkQuality.set(rxMsg, crc_lqi & 0x7f);
+      return S_RX_ACTIVE;
+    } else {
+      /* proceed with a_rx_on action to start receiving again */
+      return a_rx_on(t);
+    }
   }
 
 
@@ -2207,6 +2251,8 @@ implementation {
  /**************************************************************************/
 
   fsm_state_t a_tx_error(fsm_transition_t *t) {
+    txMsg = NULL;
+    signal RadioSend.sendDone(FAIL);
     return t->next_state;
   }
 
@@ -2214,6 +2260,7 @@ implementation {
   /**************************************************************************/
 
   fsm_state_t a_rx_cmp(fsm_transition_t *t) {
+    rxMsg = signal RadioReceive.receive(rxMsg);
     return t->next_state;
   }
 
@@ -2221,6 +2268,8 @@ implementation {
   /**************************************************************************/
 
   fsm_state_t a_tx_cmp(fsm_transition_t *t) {
+    txMsg = NULL;
+    signal RadioSend.sendDone(SUCCESS);
     return t->next_state;
   }
 
@@ -2287,6 +2336,12 @@ implementation {
   /* ----------------- RadioSend ----------------- */
 
   tasklet_async command error_t RadioSend.send(message_t *msg) {
+    if (dvr_cmd != CMD_NONE)
+      return EBUSY;
+    if (txMsg)
+	return EALREADY;
+    dvr_cmd = CMD_TRANSMIT;
+    fsm_user_queue(E_TRANSMIT);
     return SUCCESS;
   }
 
@@ -2303,7 +2358,7 @@ implementation {
 
 
   tasklet_async command error_t RadioCCA.request() {
-    if (dvr_cmd != CMD_NONE || fsm_get_state() != S_RX_ON)
+    if (dvr_cmd != CMD_NONE)
       return EBUSY;
 
     dvr_cmd = CMD_CCA;
@@ -2318,20 +2373,24 @@ implementation {
 
   /* ----------------- RadioReceive ----------------- */
 
-  default tasklet_async event bool RadioReceive.header(message_t *msg) {
-    return TRUE;
-  }
+  // default tasklet_async event bool RadioReceive.header(message_t *msg) {
+  // return TRUE;
+  // }
 
 
-  default tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
-    return msg;
-  }
+  // default tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
+  // return msg;
+  // }
 
   /**************************************************************************/
 
   /* ------------ HW Interrupt ----------------- */
 
   async event void HW.si446x_interrupt() {
+    if (fsm_int_event)
+	__PANIC_RADIO(18, fsm_int_event, 0, 0, 0);
+    ll_si446x_getclr_int_state(&fsm_int_flags);
+    fsm_int_queue(!E_NOP);
     call Tasklet.schedule();
   }
 
@@ -2359,23 +2418,66 @@ implementation {
     fsm_change_state(E_WAIT_DONE);
   }
 
-
   /**************************************************************************/
 
+  fsm_event_t process_interrupts() {
+
+    if (fsm_int_flags.int_status.ph_pend & SI446X_PH_STATUS_PACKET_RX) {
+      fsm_int_flags.int_status.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
+      return E_PACKET_RX;
+    }
+    if (fsm_int_flags.int_status.ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
+      fsm_int_flags.int_status.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
+      return E_PACKET_RX;
+    }
+    if (fsm_int_flags.int_status.ph_pend & SI446X_PH_STATUS_PACKET_RX) {
+      fsm_int_flags.int_status.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
+      return E_PACKET_SENT;
+    }
+    if (fsm_int_flags.int_status.ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
+      fsm_int_flags.int_status.ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
+      return E_FIFO;
+    }
+    if (fsm_int_flags.int_status.modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
+      fsm_int_flags.int_status.modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
+      return E_PREAMBLE_DETECT;
+    }
+    if (fsm_int_flags.int_status.modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
+      fsm_int_flags.int_status.modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
+      return E_SYNC_DETECT;
+    }
+    if ((fsm_int_flags.int_status.ph_pend    & SI446X_PH_INTEREST) ||    /* missed something */
+	(fsm_int_flags.int_status.modem_pend & SI446X_MODEM_INTEREST) ||
+	(fsm_int_flags.int_status.chip_pend  & SI446X_CHIP_INTEREST)) {
+      nop();
+      __PANIC_RADIO(19, 0, 0, 0, 0);
+    }
+    return E_NOP;
+  }
+
+void clean_interrupts(){
+  fsm_int_flags.int_status.ph_pend    &= SI446X_PH_INTEREST;
+  fsm_int_flags.int_status.modem_pend &= SI446X_MODEM_INTEREST;
+  fsm_int_flags.int_status.chip_pend  &= SI446X_CHIP_INTEREST;
+}
+
+  /**************************************************************************/
   /*
    * Main State Machine Sequencer
    */
   tasklet_async event void Tasklet.run() {
     fsm_event_t ev;
+
     nop();
     nop();
 
     while (TRUE) {
       if (fsm_int_event) {
-        ev = fsm_int_event;
         fsm_int_event = E_NOP;
-        fsm_change_state(ev);
-        continue;
+	while ((ev = process_interrupts())) {
+	  fsm_change_state(ev);
+	}
+	continue;
       }
       if (fsm_user_event) {
         ev = fsm_user_event;
@@ -2416,8 +2518,8 @@ implementation {
     RADIO_ASSERT( 1 <= length && length <= 125 );
     RADIO_ASSERT( call RadioPacket.headerLength(msg) + length + call RadioPacket.metadataLength(msg) <= sizeof(message_t) );
 
-    // we add the length of the CRC, which is automatically generated
-    getPhyHeader(msg)->length = length + FCS_SIZE;
+    // we DON'T include the CRC, which is automatically generated
+    getPhyHeader(msg)->length = length;
   }
 
 
