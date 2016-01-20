@@ -734,12 +734,33 @@ implementation {
     E_SYNC_DETECT  = 12,          // premable detected
   } fsm_event_t;
 
-  // define fsm transition structure.
+  // define fsm transition structure. Used in event lists below.
+  // organized as a list per event, this tuple provides a
+  // match field for current state, the action to perform if
+  // matched, and then setting the resulting next state
   typedef struct {
-    fsm_state_t current_state;
-    fsm_action_t action;
-    fsm_state_t next_state;
+    fsm_state_t    current_state;
+    fsm_action_t   action;
+    fsm_state_t    next_state;
   } fsm_transition_t;
+
+  // used to record the state transition machine operation
+  // each stage represents a record of the FSM stage execution
+  typedef struct {
+    uint16_t       ptime;
+    uint16_t       ltime;
+    fsm_event_t    this_event;
+    fsm_state_t    current_state;
+    fsm_action_t   action;
+    fsm_state_t    next_state;
+  } fsm_stage_info_t;
+
+  // define results from an action (return value). provides option for
+  // changing next state value as well as generating another event
+  typedef struct {
+    fsm_event_t    next_event;
+    fsm_state_t    state;
+  } fsm_result_t;
 
   // forward declare fsm event lists
   const fsm_transition_t fsm_e_nop[];
@@ -978,6 +999,23 @@ implementation {
   }
 
 
+
+  tasklet_norace fsm_stage_info_t fsm_trace_array[16];
+  tasklet_norace uint8_t fsm_tp, fsm_tc;
+
+  void fsm_trace(fsm_event_t ev, fsm_state_t cs, fsm_action_t ac, fsm_state_t ns) {
+    nop(); 
+    fsm_trace_array[fsm_tc].ltime = call Platform.usecsRaw();
+    fsm_trace_array[fsm_tc].ptime  = call LocalTime.get();
+    fsm_trace_array[fsm_tc].this_event = ev;
+    fsm_trace_array[fsm_tc].current_state = cs;
+    fsm_trace_array[fsm_tc].action = ac;
+    fsm_trace_array[fsm_tc].next_state = ns;
+    fsm_tp=fsm_tc;
+    if (++fsm_tc >= NELEMS(fsm_trace_array))
+      fsm_tc = 0;
+  }
+
   void fsm_change_state(fsm_event_t ev) {
     fsm_transition_t *t;
     fsm_state_t ns = S_SDN;
@@ -1008,6 +1046,7 @@ implementation {
       case A_BREAK:
       default:            t = NULL;              break;
       }
+      fsm_trace(ev, fsm_global_current_state, t->action, ns);
 
       // update with new state, or keep current if default or unknown
       if ((t) && (ns < S_DEFAULT)) {

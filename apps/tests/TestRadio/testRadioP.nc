@@ -119,7 +119,7 @@ implementation {
       break;
     case TX:
       test_tx_errors++;
-      if (transmit_iterations++ < 1000) {
+      if (transmit_iterations++ < 10) {
 //	error = call RadioSend.send(txMsg);
 	call testTimer.startOneShot(1000);
       } else {
