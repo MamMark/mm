@@ -1038,8 +1038,8 @@ implementation {
       case A_TX_ON:	  ns = a_tx_on(t);       break;
       case A_RX_ERROR:    ns = a_rx_error(t);    break;
       case A_TX_ERROR:    ns = a_tx_error(t);    break;
-      case A_TX_CMP:      ns = a_rx_cmp(t);      break;
-      case A_RX_CMP:      ns = a_tx_cmp(t);      break;
+      case A_TX_CMP:      ns = a_tx_cmp(t);      break;
+      case A_RX_CMP:      ns = a_rx_cmp(t);      break;
       case A_RX_HEADER:   ns = a_rx_header(t);   break;
       case A_RX_PREAMBLE: ns = a_rx_preamble(t); break;
       case A_RX_SYNC:     ns = a_rx_sync(t);     break;
@@ -2183,7 +2183,7 @@ implementation {
   fsm_state_t a_ready(fsm_transition_t *t) {
     nop();
     ll_si446x_getclr_int_state(&int_state);
-    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
+    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
     ut0 = call Platform.usecsRaw();
     while (!si446x_get_cts()) {      /* wait for command completion */
       ll_si446x_get_int_status(radio_pend);
@@ -2413,11 +2413,13 @@ implementation {
   /* ----------------- RadioReceive ----------------- */
 
   // default tasklet_async event bool RadioReceive.header(message_t *msg) {
+  // nop();
   // return TRUE;
   // }
 
 
   // default tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
+  // nop();
   // return msg;
   // }
 

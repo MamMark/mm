@@ -19,6 +19,8 @@ implementation {
 
   components Si446xDriverLayerC;
   testRadioP.RadioState -> Si446xDriverLayerC;
+  testRadioP.RadioSend -> Si446xDriverLayerC;
+  testRadioP.RadioReceive -> Si446xDriverLayerC;
 
   components PanicC;
   testRadioP.Panic -> PanicC;
