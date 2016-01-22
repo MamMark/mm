@@ -499,7 +499,7 @@ norace si446x_ph_status_t    ph_status;
 norace si446x_modem_status_t modem_status;
 norace si446x_chip_status_t  chip_status;
 
-norace uint8_t      fifo[129];
+norace uint8_t      fifo_buf[129];
 
 
 /**************************************************************************/
