@@ -1577,9 +1577,9 @@ implementation {
   void readBlock(uint8_t *buf, uint8_t count) {
     uint8_t i;
 
-    for (i = 1; i < count; i++)
-      buf[i-1] = call FastSpiByte.splitReadWrite(0);
-    buf[i-1] = call FastSpiByte.splitRead();
+    for (i = 0; i < count-1; i++)
+      buf[i] = call FastSpiByte.splitReadWrite(0);
+    buf[i] = call FastSpiByte.splitRead();
   }
 
 
