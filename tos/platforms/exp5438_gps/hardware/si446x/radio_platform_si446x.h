@@ -66,7 +66,13 @@
  * gp1: h/w cts
  */
 #define SI446X_GPIO_PIN_CFG_LEN    8
-#define SI446X_RF_GPIO_PIN_CFG     0x13, 0x08, 0x08, 0x08, 0x08, 0x00, 0x00, 0x00
+//#define SI446X_RF_GPIO_PIN_CFG     0x13, 0x08, 0x08, 0x08, 0x08, 0x00, 0x00, 0x00
+
+/*
+ * gp0: 0, gp1: cts, gp2: rx_state (33), gp3: tx_state (32)
+ * gp2: 0, gp3: 1 -> Tx,   gp2: 1, gp3: 0 -> Rx
+ */
+#define SI446X_RF_GPIO_PIN_CFG     0x13, 2, 8, 33, 32, 0x00, 0x00, 0x00
 
 
 /*
