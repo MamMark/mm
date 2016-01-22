@@ -402,6 +402,15 @@ const uint8_t si446x_wds_config[] = SI446X_WDS_CONFIG_BYTES;
 const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
                                          0x09, 0x04, 0x06, 0x0a,
                                          0 };
+/*
+ * global frr state info and constants for accessing
+ */
+typedef struct {
+  uint8_t       device_state;
+  uint8_t       ph_pend;
+  uint8_t       modem_pend;
+  uint8_t       chip_pend;
+} si446x_frr_info_t;
 
 /**************************************************************************/
 
@@ -425,9 +434,14 @@ const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
 #define SI446X_GLOBAL_CONFIG_1_LEN      5
 #define SI446X_GLOBAL_CONFIG_1          0x11, 0x00, 0x01, 0x03, 0x60
 
-/* interrupt enable (p0100) */
-#define SI446X_INT_CTL_ENABLE_1_LEN     5
-#define SI446X_INT_CTL_ENABLE_1         0x11, 0x01, 0x01, 0x00, 0x00
+/* interrupt enable (p0100)
+ * enable selected interrupts
+ */
+#define SI446X_INT_CTL_ENABLE_4_LEN     8
+#define SI446X_INT_CTL_ENABLE_4         0x11, 0x01, 0x04, 0x00,  \
+                                        SI446X_INT_STATUS_MODEM_INT_STATUS + SI446X_INT_STATUS_PH_INT_STATUS,  \
+                                        SI446X_PH_INTEREST, SI446X_MODEM_INTEREST, SI446X_CHIP_INTEREST
+
 
 /*
  * PREAMBLE: (p1000+)
@@ -490,7 +504,7 @@ const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
 const uint8_t si446x_local_config[] = {
   SI446X_GPIO_PIN_CFG_LEN,           SI446X_RF_GPIO_PIN_CFG,
   SI446X_GLOBAL_CONFIG_1_LEN,        SI446X_GLOBAL_CONFIG_1,
-  SI446X_INT_CTL_ENABLE_1_LEN,       SI446X_INT_CTL_ENABLE_1,
+  SI446X_INT_CTL_ENABLE_4_LEN,       SI446X_INT_CTL_ENABLE_4,
   SI446X_PREAMBLE_LEN,               SI446X_PREAMBLE,
   SI446X_PKT_CRC_CONFIG_7_LEN,       SI446X_PKT_CRC_CONFIG_7,
   SI446X_PKT_LEN_5_LEN,              SI446X_PKT_LEN_5,
@@ -1147,7 +1161,6 @@ tasklet_norace message_t  * globalRxMsg;
   } si446x_cmd_t;
 
   tasklet_norace si446x_cmd_t dvr_cmd;        /* gets initialized to 0, CMD_NONE  */
-  tasklet_norace bool         radioIrq;       /* gets initialized to 0 */
 
   /*************************************************************************
    *
@@ -2150,7 +2163,7 @@ tasklet_norace message_t  * globalRxMsg;
     default:
       break;
     }
-    if ((dvr_cmd == CMD_NONE) && (fsm_get_state() >= S_READY) && ( !radioIrq))
+    if ((dvr_cmd == CMD_NONE) && (fsm_get_state() >= S_READY))
       signal RadioSend.ready();
   }
 
@@ -2256,17 +2269,18 @@ tasklet_norace message_t  * globalRxMsg;
     nop();
     ll_si446x_getclr_int_state(&int_state);
     si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-    ut0 = call Platform.usecsRaw();
-    while (!si446x_get_cts()) {      /* wait for command completion */
-      ll_si446x_get_int_status(radio_pend);
-    }
-    ut1 = call Platform.usecsRaw();
+//    ut0 = call Platform.usecsRaw();
+    // wait for command completion
+//    while (!si446x_get_cts()) {
+//      ll_si446x_get_int_status(radio_pend);
+//    }
+//    ut1 = call Platform.usecsRaw();
     nop();
     drf();
     nop();
     setChannel();
+    call HW.si446x_enableInterrupt();
     post user_response_task();
-//    enableInterrupts();
     /* proceed with a_rx_on action to start receiving */
     return a_rx_on(t);
   }
@@ -2285,6 +2299,7 @@ tasklet_norace message_t  * globalRxMsg;
   /**************************************************************************/
 
   fsm_state_t a_pwr_dn(fsm_transition_t *t) {
+    call HW.si446x_disableInterrupt();
     post user_response_task();
     return t->next_state;
   }
@@ -2530,19 +2545,96 @@ tasklet_norace message_t  * globalRxMsg;
 
   /**************************************************************************/
 
-  /* ------------ HW Interrupt ----------------- */
+  /* ------------ HW Interrupt Handling ----------------- */
 
+  /*
+   * queue up the fsm_int_event and schedule the tasklet to handle interrupts
+   */
   async event void HW.si446x_interrupt() {
+    nop();
+    nop();
     if (fsm_int_event)
 	__PANIC_RADIO(18, fsm_int_event, 0, 0, 0);
-    ll_si446x_getclr_int_state(&fsm_int_flags);
     fsm_int_queue(!E_NOP);
     call Tasklet.schedule();
   }
 
+  /*
+   * store radio chip interrupt pending information for tasklet processing.
+   *
+   */
+  tasklet_norace si446x_frr_info_t          pending_interrupts;
 
-  /* ----------------- TASKLET ----------------- */
-  /* -------------- State Machine -------------- */
+  /*
+   * get_next_interrupt_event
+   *
+   * get next available interrupt from the pending information and return
+   * associated FSM event to be processed.
+   * clear the flag in the pending information to denote handled.
+   */
+  fsm_event_t get_next_interrupt_event() {
+    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_PACKET_RX) {
+      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
+      return E_PACKET_RX;
+    }
+    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
+      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_PACKET_SENT;
+      return E_PACKET_SENT;
+    }
+    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
+      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_CRC_ERROR;
+      return E_CRC_ERROR;
+    }
+    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
+      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
+      return E_RX_FIFO;
+    }
+    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
+      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
+      return E_PREAMBLE_DETECT;
+    }
+    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
+      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
+      return E_SYNC_DETECT;
+    }
+    if ((pending_interrupts.ph_pend    & SI446X_PH_INTEREST) ||    /* missed something */
+	(pending_interrupts.modem_pend & SI446X_MODEM_INTEREST) ||
+	(pending_interrupts.chip_pend  & SI446X_CHIP_INTEREST)) {
+      nop();
+      __PANIC_RADIO(19, 0, 0, 0, 0);
+    }
+    return E_NOP;
+  }
+
+  /*
+   * process_interrupt
+   *
+   * called from the tasklet, this routine processes all of the chip
+   * interrupt pending conditions.
+   * a single hardware interrupt can have pending information on multiple
+   * chip related conditions.
+   * after clearing chip interrupt pending flags an additional check
+   * occurs to prevent race condition with NIRQ changes when clearing
+   * pending flags and missing a pending condition.
+   */
+  fsm_event_t process_interrupt() {
+    fsm_event_t ev;
+
+    while (TRUE) {
+      ll_si446x_read_fast_status((uint8_t *) &pending_interrupts);
+      if ((!(pending_interrupts.ph_pend &= SI446X_PH_INTEREST)) &&
+	  (!(pending_interrupts.modem_pend &= SI446X_MODEM_INTEREST)) &&
+	  (!(pending_interrupts.chip_pend &= SI446X_CHIP_INTEREST))) {
+	break;
+      }
+      while ((ev = get_next_interrupt_event())) {
+        fsm_change_state(ev);
+      }
+      // *** need to find lower overhead method to clear interrupts
+      ll_si446x_getclr_int_state(&chip_debug);
+    }
+  }
+
 
   /**************************************************************************/
 
@@ -2564,48 +2656,6 @@ tasklet_norace message_t  * globalRxMsg;
     fsm_change_state(E_WAIT_DONE);
   }
 
-  /**************************************************************************/
-
-  fsm_event_t process_interrupts() {
-
-    if (fsm_int_flags.int_status.ph_pend & SI446X_PH_STATUS_PACKET_RX) {
-      fsm_int_flags.int_status.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
-      return E_PACKET_RX;
-    }
-    if (fsm_int_flags.int_status.ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
-      fsm_int_flags.int_status.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
-      return E_PACKET_RX;
-    }
-    if (fsm_int_flags.int_status.ph_pend & SI446X_PH_STATUS_PACKET_RX) {
-      fsm_int_flags.int_status.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
-      return E_PACKET_SENT;
-    }
-    if (fsm_int_flags.int_status.ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
-      fsm_int_flags.int_status.ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
-      return E_FIFO;
-    }
-    if (fsm_int_flags.int_status.modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
-      fsm_int_flags.int_status.modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
-      return E_PREAMBLE_DETECT;
-    }
-    if (fsm_int_flags.int_status.modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
-      fsm_int_flags.int_status.modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
-      return E_SYNC_DETECT;
-    }
-    if ((fsm_int_flags.int_status.ph_pend    & SI446X_PH_INTEREST) ||    /* missed something */
-	(fsm_int_flags.int_status.modem_pend & SI446X_MODEM_INTEREST) ||
-	(fsm_int_flags.int_status.chip_pend  & SI446X_CHIP_INTEREST)) {
-      nop();
-      __PANIC_RADIO(19, 0, 0, 0, 0);
-    }
-    return E_NOP;
-  }
-
-void clean_interrupts(){
-  fsm_int_flags.int_status.ph_pend    &= SI446X_PH_INTEREST;
-  fsm_int_flags.int_status.modem_pend &= SI446X_MODEM_INTEREST;
-  fsm_int_flags.int_status.chip_pend  &= SI446X_CHIP_INTEREST;
-}
 
   /**************************************************************************/
   /*
@@ -2619,10 +2669,8 @@ void clean_interrupts(){
 
     while (TRUE) {
       if (fsm_int_event) {
-        fsm_int_event = E_NOP;
-	while ((ev = process_interrupts())) {
-	  fsm_change_state(ev);
-	}
+	fsm_int_event = E_NOP;
+	process_interrupt(); // may process multiple pending events
 	continue;
       }
       if (fsm_user_event) {

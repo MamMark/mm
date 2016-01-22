@@ -653,7 +653,8 @@
 #define SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY            0x02
 #define SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL             0x01
 
-#define SI446X_PH_INTEREST      0xC5
+// bits set to one enable interrupt
+#define SI446X_PH_INTEREST      0x39
 
 #define SI446X_MODEM_STATUS_POSTAMBLE_DETECT             0x40
 #define SI446X_MODEM_STATUS_INVALID_SYNC                 0x20
@@ -663,7 +664,8 @@
 #define SI446X_MODEM_STATUS_PREAMBLE_DETECT              0x02
 #define SI446X_MODEM_STATUS_SYNC_DETECT                  0x01
 
-#define SI446X_MODEM_INTEREST     0xFC
+// bits set to one enable interrupt
+#define SI446X_MODEM_INTEREST     0x03
 
 #define SI446X_CHIP_STATUS_CAL                           0x40
 #define SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR         0x20
@@ -673,7 +675,8 @@
 #define SI446X_CHIP_STATUS_LOW_BATT                      0x02
 #define SI446X_CHIP_STATUS_WUT                           0x01
 
-#define SI446X_CHIP_INTEREST    0xFF
+// bits set to one enable interrupt
+#define SI446X_CHIP_INTEREST    0x00
 
 //#define SI446X_PROP_FRR_CTL_A_MODE                   0x0200
 //#define SI446X_PROP_FRR_CTL_B_MODE                   0x0201
