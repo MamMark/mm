@@ -1256,7 +1256,7 @@ implementation {
     rps_t *rpp;
     rps_t *ppp;
     uint8_t cts, irqn, csn;
-    uint8_t state, ph, modem, chip;
+    uint8_t state, ph, modem, chip, pmodem, pchip;
 
     rpp  = &rps[rps_next];
     ppp  = &rps[rps_prev];
@@ -1271,12 +1271,14 @@ implementation {
     /* we don't care about modem:invalid preamble
      * nor chip:(state_change|chip_ready)
      */
-    modem = pend[2] & 0xfb;
-    chip  = pend[3] & 0xeb;
+    modem  = pend[2] & 0xfb;
+    chip   = pend[3] & 0xeb;
+    pmodem = ppp->modem & 0xfb;
+    pchip  = ppp->chip  & 0xeb;
 
     if ((cts == ppp->cts) && (irqn == ppp->irqn) && (csn == ppp->csn) &&
         (state == ppp->ds) && (ph == ppp->ph) &&
-        (modem == ppp->modem) && (chip == ppp->chip)) {
+        (modem == pmodem) && (chip == pchip)) {
       return;
     }
 
