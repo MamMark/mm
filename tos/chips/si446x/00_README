@@ -1177,3 +1177,22 @@ gr12_pkt = {0x84, 0x1, 0x8, 0xff, 0xff, 0x0, 0x2, 0x0, 0x2a, 0x1, 0x0, 0x30, 0x3
 f2_len: 0x25
 
 start_tx cmd: {0x31, 0x0, 0x30, 0x0, 0x26}
+
+
+
+CCA approach:
+
+Start_RX:RXTIMEOUT_STATE <- 8 (to rearm if RXTIMEOUT).
+
+Modem_Rssi_Control:check_thresh_at_latch <- 1, checks LR vs MRT, < goes to Start_Rx:RxTOState and
+Invalid_Preamble Int asserted.
+
+gp0 can be configured to output CCA, if CR is > MRT, CCA will output 1
+RSSI interrupt (Modem), if CR > MRT (crosses), generate RSSI_int
+
+MRT needs to be set to a threshold.  (0x90 to start).
+
+Then we can either look at gp0 (configured for CCA) or read RSSI bit in Modem_Status.  One can read Modem_Status and only read 3 bytes (cts, pend, status).  We want RSSI in status not pend.
+
+
+change rx_preamble_timeout to 0x0f  60 bit timeout.
