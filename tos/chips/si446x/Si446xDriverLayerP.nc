@@ -406,9 +406,11 @@ const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
  *     protocol (0, GENERIC), power_mode (0, HIGH_PERF).
  *
  * fifo_mode HALF_DUPLEX yields a unified 129 byte fifo.
+ * 0003 <- 0x60, split fifo
+ * 0003 <- 0x70, unified fifo
  */
 #define SI446X_GLOBAL_CONFIG_1_LEN      5
-#define SI446X_GLOBAL_CONFIG_1          0x11, 0x00, 0x01, 0x03, 0x70
+#define SI446X_GLOBAL_CONFIG_1          0x11, 0x00, 0x01, 0x03, 0x60
 
 #define SI446X_INT_CTL_ENABLE_1_LEN     5
 #define SI446X_INT_CTL_ENABLE_1         0x11, 0x01, 0x01, 0x00, 0x00
