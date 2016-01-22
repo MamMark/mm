@@ -124,7 +124,7 @@
 #define SI446X_GET_DEVICE_STATE               0x50    /* device state */
 #define SI446X_GET_PH_PEND                    0x51    /* packet_handler pending */
 #define SI446X_GET_MODEM_PEND                 0x53    /* modem pending */
-#define SI446X_GET_CHIP_PEND                  0x57    /* chip pending */
+#define SI446X_GET_LATCHED_RSSI               0x57    /* latched rssi */
 
 #define SI446X_CMD_TX_FIFO_WRITE              0x66
 #define SI446X_CMD_RX_FIFO_READ               0x77
@@ -824,7 +824,7 @@ typedef struct {
   uint8_t modem_pend;
   uint8_t modem_status;
   uint8_t curr_rssi;
-  uint8_t latch_rssi;
+  uint8_t latched_rssi;
   uint8_t ant1_rssi;
   uint8_t ant2_rssi;
   uint8_t afc_freq_offset15;

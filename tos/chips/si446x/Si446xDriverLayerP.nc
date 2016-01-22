@@ -385,10 +385,10 @@ const uint8_t si446x_wds_config[] = SI446X_WDS_CONFIG_BYTES;
  * A: device state
  * B: PH_PEND
  * C: MODEM_PEND
- * D: CHIP_PEND
+ * D: Latched RSSI
  */
 const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
-                                         0x09, 0x04, 0x06, 0x08,
+                                         0x09, 0x04, 0x06, 0x0a,
                                          0 };
 
 /**************************************************************************/
@@ -440,6 +440,9 @@ const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
                                               0x00, 0x81, 0x00, 0x0a, \
                                               0x00, 0x00
 
+#define SI446X_MODEM_RSSI_CONTROL_LEN   5
+#define SI446X_MODEM_RSSI_CONTROL       0x11, 0x20, 0x01, 0x4c, 0x02
+
 
 /**************************************************************************/
 
@@ -454,6 +457,7 @@ const uint8_t si446x_local_config[] = {
   SI446X_PKT_LEN_5_LEN,              SI446X_PKT_LEN_5,
   SI446X_PKT_TX_FIELD_CONFIG_6_LEN,  SI446X_PKT_TX_FIELD_CONFIG_6,
   SI446X_PKT_RX_FIELD_CONFIG_10_LEN, SI446X_PKT_RX_FIELD_CONFIG_10,
+  SI446X_MODEM_RSSI_CONTROL_LEN,     SI446X_MODEM_RSSI_CONTROL,
   0
 };
 
@@ -485,7 +489,7 @@ norace uint8_t radio_pend[4];
 #define DEVICE_STATE 0
 #define PH_STATUS    1
 #define MODEM_STATUS 2
-#define CHIP_STATUS  3
+#define LATCHED_RSSI 3
 
 norace uint8_t      rsp[16];
 
@@ -1239,8 +1243,8 @@ implementation {
     return ll_si446x_read_frr(SI446X_GET_MODEM_PEND);
   }
 
-  uint8_t si446x_fast_chip_pend() {
-    return ll_si446x_read_frr(SI446X_GET_CHIP_PEND);
+  uint8_t si446x_fast_latched_rssi() {
+    return ll_si446x_read_frr(SI446X_GET_LATCHED_RSSI);
   }
 
 
@@ -1453,18 +1457,17 @@ implementation {
     pends[DEVICE_STATE] = si446x_fast_device_state();
     pends[PH_STATUS]    = isp->int_status.ph_pend;
     pends[MODEM_STATUS] = isp->int_status.modem_pend;
-    pends[CHIP_STATUS]  = isp->int_status.chip_pend;
+    pends[LATCHED_RSSI] = isp->modem_status.latched_rssi;
     trace_radio_pend(pends);
   }
 
 
   void check_weird(uint8_t *status) {
     if ((status[PH_STATUS]    & 0xC0) ||
-        (status[MODEM_STATUS] & 0x58) ||
-        (status[CHIP_STATUS]  & 0x6B)) {
+        (status[MODEM_STATUS] & 0x58)) {
       ll_si446x_get_int_state(&chip_debug);
       __PANIC_RADIO(98, status[DEVICE_STATE], status[PH_STATUS],
-                    status[MODEM_STATUS], status[CHIP_STATUS]);
+                    status[MODEM_STATUS], 0);
       ll_si446x_getclr_int_state(&chip_debug);
       nop();
     }
@@ -1667,8 +1670,8 @@ implementation {
 
 
   /* read property */
-  uint8_t r_prop(uint16_t p_id, uint16_t num, uint8_t *w) {
-    uint8_t group, index, chip_pend;
+  void r_prop(uint16_t p_id, uint16_t num, uint8_t *w) {
+    uint8_t group, index;
 
     group = p_id >> 8;
     index = p_id & 0xff;
@@ -1681,9 +1684,7 @@ implementation {
       call FastSpiByte.splitRead();
       call HW.si446x_clr_cs();
       ll_si446x_get_reply(w, num, 0xff);
-      chip_pend = si446x_fast_chip_pend();
     }
-    return chip_pend;
   }
 
 
@@ -2157,8 +2158,8 @@ implementation {
 
   fsm_state_t a_config(fsm_transition_t *t) {
     /*
-     * make the FRRs return for the time being, int_pend, ph_pend,
-     * modem_pend, and chip_pend.  We rely on frr_d being chip_pend.
+     * make the FRRs return a driver custom setting, see si446x_frr_config for
+     * details.
      */
     stuff_config(si446x_frr_config);
     /* clear out pending interrupts */
