@@ -245,7 +245,6 @@ enum {
  */
          norace bool     do_dump;        /* defaults to FALSE */
 volatile norace uint8_t  xirq, p1;
-         norace uint16_t t_tx_len, t_rx_len;
 
 norace uint32_t t_por;
 
@@ -625,15 +624,6 @@ const uint8_t si446x_device_state[] = { SI446X_CMD_REQUEST_DEVICE_STATE }; /* 33
   } ds_pkt_t;
 
 
-/**************************************************************************/
-
-/*
- * Message Buffers
- */
-tasklet_norace message_t  * txMsg;            /* msg driver owns */
-uint8_t                     rxMsgBuffer[129];
-tasklet_norace message_t  * rxMsg;
-
 
 /**************************************************************************/
 
@@ -708,6 +698,14 @@ implementation {
   } while (0)
 
 
+/**************************************************************************/
+/*
+ * Message Buffers
+ */
+tasklet_norace message_t  * globalTxMsg;            /* msg driver owns */
+uint8_t                     rxMsgBuffer[129];
+tasklet_norace message_t  * globalRxMsg;
+
 
 /**************************************************************************/
 
@@ -779,7 +777,7 @@ implementation {
     E_TURNOFF = 2,                // goto lowest power state
     E_STANDBY = 3,                // goto low power state
     E_TRANSMIT = 4,               // start transmit a message
-    E_FIFO = 5,                   // start receiving a message with radioReceive.header
+    E_RX_FIFO = 5,                // received partial message for radioReceive.header
     E_WAIT_DONE = 6,              // alarm timer expired
     E_CONFIG_DONE = 7,            // configuration task is done
     E_PACKET_RX = 8,              // packet received
@@ -823,7 +821,7 @@ implementation {
   const fsm_transition_t fsm_e_turnoff[];
   const fsm_transition_t fsm_e_standby[];
   const fsm_transition_t fsm_e_transmit[];
-  const fsm_transition_t fsm_e_fifo[];
+  const fsm_transition_t fsm_e_rx_fifo[];
   const fsm_transition_t fsm_e_wait_done[];
   const fsm_transition_t fsm_e_config_done[];
   const fsm_transition_t fsm_e_packet_rx[];
@@ -834,7 +832,7 @@ implementation {
   // list of all of the fsm event lists - order must match the fsm_event_t enum
   const fsm_transition_t *fsm_events_group[] = {fsm_e_nop,            fsm_e_turnon,
 						fsm_e_turnoff,        fsm_e_standby,
-						fsm_e_transmit,       fsm_e_fifo,
+						fsm_e_transmit,       fsm_e_rx_fifo,
 						fsm_e_wait_done,      fsm_e_config_done,
 						fsm_e_packet_rx,      fsm_e_packet_sent,
 						fsm_e_crc_error,      fsm_e_preamble_detect,
@@ -883,8 +881,8 @@ implementation {
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
-  // e_fifo
-  const fsm_transition_t fsm_e_fifo[] = {
+  // e_rx_fifo
+  const fsm_transition_t fsm_e_rx_fifo[] = {
     { S_RX_ON, A_RX_HEADER, S_RX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
@@ -2011,7 +2009,7 @@ implementation {
 
     call HW.si446x_clr_cs();
 
-    rxMsg = (message_t *) rxMsgBuffer;
+    globalRxMsg = (message_t *) rxMsgBuffer;
     return SUCCESS;
   }
 
@@ -2295,31 +2293,8 @@ implementation {
   /**************************************************************************/
 
   fsm_state_t a_rx_on(fsm_transition_t *t) {
-    return t->next_state;
-  }
-
-
-  /**************************************************************************/
-  /*
-   * a_tx_on
-   *
-   * start the transmission of a packet, subsequent events will complete it
-   */
-  fsm_state_t a_tx_on(fsm_transition_t *t) {
-    uint8_t        *dp;
-    uint8_t        length;
-
-    if (!txMsg){
-      __PANIC_RADIO(5, 0, 0, 0, 0);
-    }
     nop();
-    dp     = (uint8_t *) getPhyHeader(txMsg);
-    length = *dp;                       /* length is first byte. */
-    si446x_fifo_info(&t_rx_len, &t_tx_len, SI446X_FIFO_FLUSH_TX);
-    writeTxFifo(dp, length + 1);
-    si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
-    RADIO_ASSERT( 1 <= t_tx_len && t_tx_len <= 125 );
-    si446x_start_tx(length);
+    start_rx();
     ut0 = call Platform.usecsRaw();
     while (!si446x_get_cts()) {
       ll_si446x_get_int_status(radio_pend);
@@ -2333,7 +2308,40 @@ implementation {
 
   /**************************************************************************/
   /*
-   * a_rx_header
+   * a_tx_on
+   *
+   * start the transmission of a packet, subsequent events will complete it
+   */
+  fsm_state_t a_tx_on(fsm_transition_t *t) {
+    uint8_t        *dp;
+    uint16_t        pkt_len, tx_len, rx_len;
+
+    if (!globalTxMsg){
+      __PANIC_RADIO(5, 0, 0, 0, 0);
+    }
+    nop();
+    dp     = (uint8_t *) getPhyHeader(globalTxMsg);
+    pkt_len = *dp + 1;              // length of data field is first byte
+    si446x_fifo_info(&rx_len, &tx_len, SI446X_FIFO_FLUSH_TX);
+    if (tx_len != 129)  __PANIC_RADIO(6, tx_len, pkt_len, (uint16_t) dp, 0);
+    writeTxFifo(dp, pkt_len);
+    si446x_fifo_info(&rx_len, &tx_len, 0);
+    if (tx_len != (129 - pkt_len))  __PANIC_RADIO(7, tx_len, pkt_len, (uint16_t) dp, 0);
+    nop();
+    si446x_start_tx(pkt_len);
+/*** need a better way to do this, if needed at all */
+//    while (!si446x_get_cts()) {
+//      ll_si446x_get_int_status(radio_pend);
+//    }
+//    ll_si446x_get_int_status(radio_pend);
+    nop();
+    return t->next_state;
+  }
+
+
+  /**************************************************************************/
+  /*
+   * a_rx_header - NOT WORKING YET
    *
    * use the rx_fifo_almost_full to indicate that the packet header is in
    * the fifo
@@ -2342,10 +2350,10 @@ implementation {
   fsm_state_t a_rx_header(fsm_transition_t *t) {
     uint8_t        rssi;
 
-    if (signal RadioReceive.header(rxMsg)) {
+    if (signal RadioReceive.header(globalRxMsg)) {
       rssi = si446x_fast_latched_rssi();
-      call PacketRSSI.set(rxMsg, rssi);         /* set only if accepting */
-      call PacketLinkQuality.set(rxMsg, rssi);
+      call PacketRSSI.set(globalRxMsg, rssi);         /* set only if accepting */
+      call PacketLinkQuality.set(globalRxMsg, rssi); 
       return S_RX_ACTIVE;
     } else {
       /* proceed with a_rx_on action to start receiving again */
@@ -2364,7 +2372,7 @@ implementation {
  /**************************************************************************/
 
   fsm_state_t a_tx_error(fsm_transition_t *t) {
-    txMsg = NULL;
+    globalTxMsg = NULL;
     signal RadioSend.sendDone(FAIL);
     return t->next_state;
   }
@@ -2373,15 +2381,32 @@ implementation {
   /**************************************************************************/
 
   fsm_state_t a_rx_cmp(fsm_transition_t *t) {
-    rxMsg = signal RadioReceive.receive(rxMsg);
-    return t->next_state;
+    uint16_t        pkt_len, tx_len, rx_len;
+
+    nop();
+    pkt_len = si446x_get_packet_info() + 1;        // include len byte
+    nop();
+    si446x_fifo_info(&rx_len, &tx_len, 0);
+    RADIO_ASSERT( tx_len == pkt_len );
+    nop();
+    readRxFifo(rxMsgBuffer, pkt_len);  // byte buffer underlying globalRxMsg
+    nop();
+    // check to see if upper layer wants the packet [**will move to a_rx_hdr]
+    if (signal RadioReceive.header(globalRxMsg))
+      globalRxMsg = signal RadioReceive.receive(globalRxMsg);
+    // proceed with a_rx_on action to start receiving again
+    return a_rx_on(t);
   }
 
 
   /**************************************************************************/
 
   fsm_state_t a_tx_cmp(fsm_transition_t *t) {
-    txMsg = NULL;
+    uint16_t        tx_len, rx_len;
+
+    si446x_fifo_info(&rx_len, &tx_len, 0);
+    RADIO_ASSERT( tx_len == 0 );
+    globalTxMsg = NULL;
     signal RadioSend.sendDone(SUCCESS);
     return t->next_state;
   }
@@ -2397,7 +2422,8 @@ implementation {
   /**************************************************************************/
 
   fsm_state_t a_rx_sync(fsm_transition_t *t) {
-    return t->next_state;
+    /* proceed with a_rx_on action to start receiving again */
+    return a_rx_on(t);
   }
 
 
@@ -2449,11 +2475,15 @@ implementation {
   /* ----------------- RadioSend ----------------- */
 
   tasklet_async command error_t RadioSend.send(message_t *msg) {
+    nop();
+    ll_si446x_get_int_status(radio_pend);
+    nop();
+    nop();
     if (dvr_cmd != CMD_NONE)
       return EBUSY;
-    if (txMsg)
+    if (globalTxMsg)
 	return EALREADY;
-    dvr_cmd = CMD_TRANSMIT;
+    globalTxMsg = msg;
     fsm_user_queue(E_TRANSMIT);
     return SUCCESS;
   }
