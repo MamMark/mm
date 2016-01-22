@@ -33,7 +33,7 @@ module testRadioP {
 
 implementation {
 
-  uint16_t test_iterations, test_tx_errors, test_rx_errors;
+  uint16_t test_iterations, test_tx_errors, test_rx_errors, test_tx_busy;
   uint16_t transmit_iterations, receive_iterations;
 
   message_t  * rxMsg;            /* msg driver owns */
@@ -68,6 +68,7 @@ implementation {
       state = TX;
       transmit_iterations = 0;
       receive_iterations = 0;
+      test_tx_busy = 0;
       break;
 
     case STOPPING:
@@ -119,8 +120,12 @@ implementation {
       break;
     case TX:
       test_tx_errors++;
-      if (transmit_iterations++ < 10) {
-	error = call RadioSend.send(txMsg);
+      if (transmit_iterations++ < 50) {
+	nop();
+	if ((error = call RadioSend.send(txMsg)) == EALREADY)
+	  test_tx_busy++;
+	else
+	  call Panic.panic(-1, 4, state, error, test_tx_errors, transmit_iterations);
 	call testTimer.startOneShot(1000);
       } else {
 	state = STOPPING;
