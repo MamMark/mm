@@ -116,8 +116,8 @@
  *
  * port  6.0	0pI                             port  J.0       0pI
  *        .1	0pI                                    .1       0pO     si446x_volt_sel, (tdi/tclk)
- *        .2	0pO     pwr_3v3_ena                    .2       0pO     tell
- *        .3	0pI                                    .3       0pO     si446x_cts
+ *        .2	0pO     pwr_3v3_ena                    .2       0pI
+ *        .3	0pI                                    .3       0pI     si446x_cts
  *        .4	0pO     solar_ena
  *        .5	0pI
  *        .6	0pO     bat_sense_ena
