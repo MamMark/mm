@@ -169,24 +169,30 @@
  *
  * 5) CCA, Clear Channel Assessment.
  *    (204a) MODEM_RSSI_THRESH: is used to set the RSSI threshold.  Above this
- *    value indicates channel is busy (?).  (Low true CCA?)
+ *    value indicates channel is busy.
  *
  *    MODEM_RSSI_CONTROL
  *
- *    GPIO pin (value 27/37).
+ *    GPIO pin (value 27/37).  37 isn't usable because it gets cleared when SYNC
+ *    has been detected.  27 causes the pin to be a real time comparison between
+ *    CR (current RSSI) and MRT (Modem_RSSI_Thres (p104a).
  *
  *    Latched_RSSI may be compared against this threshold and if below the chip
  *    proceeds to the specified START_RX:NEXT_STATE1:RXTIMEOUT_STATE and generates
- *    a PREAMBLE_INVALID interrupt.  What does this have to do with CCA?
+ *    a PREAMBLE_INVALID interrupt.  What does this have to do with CCA?  Well,
+ *    the latched value if > MRT will indicate we are currently receiving a packet
+ *    (maybe for us, maybe not), but regardless the "wire" is busy.
  *
  * 6) It is possible that the transmission is deferred because the channel
- *    is busy.   See above.  Depends on how CCA works.
+ *    is busy.   See above.
  *
  * 7) Deferred TX packets may be tried again by the upper layer.  A deferred
  *    packet is indicated by an EBUSY return.
  *
  * 8) Timestamping.
  *    GPIO0 can be set to SYNC_WORD_DETECT but only works for RX.
+ *    We don't do it.  TimeSync needs timing for TX packets and time stamping RX packets
+ *    isn't that useful.
  *
  *
  * RX:
@@ -380,12 +386,19 @@ const dump_prop_desc_t dump_prop[] = {
 const uint8_t si446x_wds_config[] = SI446X_WDS_CONFIG_BYTES;
 
 /*
+ * FRR_CTL_A_MODE (p0200)
+ *
  * frr is set manually right after POWER_UP
  *
  * A: device state
  * B: PH_PEND
  * C: MODEM_PEND
- * D: Latched RSSI
+ * D: Latched_RSSI
+ *
+ * We use LR (Latched_RSSI) when receiving a packet.  The RSSI value is
+ * attached to the last RX packet.  The Latched_RSSI value may (depending on
+ * configuration, be associated with some number of bit times once RX is enabled
+ * or when SYNC is detected.
  */
 const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
                                          0x09, 0x04, 0x06, 0x0a,
@@ -398,11 +411,12 @@ const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
  * Driver/Platform dependent
  *
  * SI446X_GPIO_PIN_CFG_LEN and SI446X_RF_GPIO_PIN_CFG are provided by platform
- * dependent code and are in radio_platform_si446x.h.  See platform code.
+ * dependent code and are in radio_platform_si446x.h.  See platform code,
+ * tos/platform/<platform>/hardware/si446x/...
  */
 
 /*
- * GLOBAL_CONFIG:(0003), sequencer_mode (FAST), fifo_mode (HALF_DUPLEX FIFO)
+ * GLOBAL_CONFIG:(p0003), sequencer_mode (FAST), fifo_mode (HALF_DUPLEX FIFO)
  *     protocol (0, GENERIC), power_mode (0, HIGH_PERF).
  *
  * fifo_mode HALF_DUPLEX yields a unified 129 byte fifo.
@@ -412,10 +426,25 @@ const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
 #define SI446X_GLOBAL_CONFIG_1_LEN      5
 #define SI446X_GLOBAL_CONFIG_1          0x11, 0x00, 0x01, 0x03, 0x60
 
+/* interrupt enable (p0100) */
 #define SI446X_INT_CTL_ENABLE_1_LEN     5
 #define SI446X_INT_CTL_ENABLE_1         0x11, 0x01, 0x01, 0x00, 0x00
 
 /*
+ * PREAMBLE: (p1000+)
+ *
+ * TX_LENGTH:   8 bytes (64bits)
+ * CONFIG_STD_1:RX_THRESH (0x14) 20 bits, do not skip SYNC
+ * CONFIG_NSTD: not used, 0x00
+ * CONFIG_STD_2: TIMEOUT_EXTENDED 0, TIMEOUT: 0xf 60 bit time out
+ * PREAMBLE_CONFIG: 0x31, 1 tx first, tx_length in bytes, no manchester, pre_1010
+ */
+#define SI446X_PREAMBLE_LEN             9
+#define SI446X_PREAMBLE                 0x11, 0x10, 0x09, 0x00, 0x08, 0x14, 0x00, 0x0f, 0x31
+
+/*
+ * Various Pkt configs: (p1200+)
+ *
  * CRC_CONFIG: 0x85, CRC_SEED, POLY 5 CCITT_16
  * various whitening
  * CONFIG1: 0x82, PH_FIELD_SPLIT, CRC_ENDIAN msb, bit_order msb
@@ -442,9 +471,17 @@ const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
                                               0x00, 0x81, 0x00, 0x0a, \
                                               0x00, 0x00
 
-#define SI446X_MODEM_RSSI_CONTROL_LEN   5
-#define SI446X_MODEM_RSSI_CONTROL       0x11, 0x20, 0x01, 0x4c, 0x02
-
+/* MODEM_RSSI (p204a+)
+ *
+ * MODEM_RSSI_THRESH (p204a): set to INITIAL_RSSI_THRESH
+ * MODEM_RSSI_JUMP_THRESH:    default 0xc (not used)
+ * MODEM_RSSI_CONTROL:        CHECK_THRESH_AT_LATCH 1
+ *                            AVERAGE: 0 (updated every bit time, average of 4 bit times)
+ *                            LATCH: 5 RX_STATE3, 15 bit times after RX enabled.
+ */
+#define SI446X_MODEM_RSSI_LEN           7
+#define SI446X_MODEM_RSSI               0x11, 0x20, 0x03, 0x4a, SI446X_INITIAL_RSSI_THRESH, \
+                                              0x0c, 0x25
 
 /**************************************************************************/
 
@@ -452,14 +489,15 @@ const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
  * Local Config, driver/hw dependent
  */
 const uint8_t si446x_local_config[] = {
-  SI446X_GLOBAL_CONFIG_1_LEN,        SI446X_GLOBAL_CONFIG_1,
   SI446X_GPIO_PIN_CFG_LEN,           SI446X_RF_GPIO_PIN_CFG,
+  SI446X_GLOBAL_CONFIG_1_LEN,        SI446X_GLOBAL_CONFIG_1,
   SI446X_INT_CTL_ENABLE_1_LEN,       SI446X_INT_CTL_ENABLE_1,
+  SI446X_PREAMBLE_LEN,               SI446X_PREAMBLE,
   SI446X_PKT_CRC_CONFIG_7_LEN,       SI446X_PKT_CRC_CONFIG_7,
   SI446X_PKT_LEN_5_LEN,              SI446X_PKT_LEN_5,
   SI446X_PKT_TX_FIELD_CONFIG_6_LEN,  SI446X_PKT_TX_FIELD_CONFIG_6,
   SI446X_PKT_RX_FIELD_CONFIG_10_LEN, SI446X_PKT_RX_FIELD_CONFIG_10,
-  SI446X_MODEM_RSSI_CONTROL_LEN,     SI446X_MODEM_RSSI_CONTROL,
+  SI446X_MODEM_RSSI,                 SI446X_MODEM_RSSI,
   0
 };
 
@@ -647,6 +685,17 @@ module Si446xDriverLayerP {
 }
 
 implementation {
+
+  /*
+   * CCA: note!  The SiLabs folks flip the sense of CCA.  CCA for them
+   * is true if the channel is busy.  Other folks (the reasonable ones)
+   * consider CCA TRUE if the channel is clear.  We handle this in checkCCA().
+   *
+   * si446x_cca_threshold is where we hold the value we program the h/w
+   * RSSI_THRESHOLD.  We use it to compare received RSSI values to determine
+   * whether the channel is busy.
+   */
+  uint8_t si446x_cca_threshold = SI446X_INITIAL_RSSI_THRESH;
 
 #define HI_UINT16(val) (((val) >> 8) & 0xFF)
 #define LO_UINT16(val) ((val) & 0xFF)
@@ -1540,21 +1589,39 @@ implementation {
   }
 
 
+  /*
+   * Cmd to fire up RX
+   *
+   * len: 0, use variable length in packet
+   * rxtimeout_state: 8, stay in rx but rearm.  We make use of the RXTIMEOUT
+   *   mechanism provided with RSSI checking.  See MODEM_RSSI_THRESH (p204a).
+   * rxvalid_state:   0, stay in rx but do not rearm.
+   * rxinvalid_state: 0, stay in rx but do not rearm.
+   */
   const uint8_t start_rx_cmd[] = {
-    0x32,
+    SI446X_CMD_START_RX,
     0,                                  /* channel */
     0,                                  /* start immediate */
     0, 0,                               /* len, use variable length */
-    0,                                  /* rxtimeout, stay, good boy */
+    SI446X_DEVICE_STATE_RX,             /* rxtimeout, stay, good boy */
     0,                                  /* rxvalid */
     0,                                  /* rxinvalid */
   };
 
 
+  /* uses previous values */
+  const uint8_t start_rx_short_cmd[] = {
+    SI446X_CMD_START_RX
+  };
+
+
   void start_rx() {
-    drf();
-    nop();
     si446x_send_cmd(start_rx_cmd, rsp, sizeof(start_rx_cmd));
+  }
+
+
+  void start_rx_short() {
+    si446x_send_cmd(start_rx_short_cmd, rsp, sizeof(start_rx_short));
   }
 
 
@@ -1642,13 +1709,11 @@ implementation {
 
 
   bool checkCCA() {
-#ifdef notdef
-    si446x_fsmstat1_t fsmstat1;
+    uint8_t rssi;
 
-    fsmstat1.value  = readReg(SI446X_FSMSTAT1);
-    if (fsmstat1.f.cca)
+    rssi = si446x_fast_latched_rssi();
+    if (rssi < si446x_cca_threshold)
       return TRUE;
-#endif
     return FALSE;
   }
 
@@ -2080,6 +2145,10 @@ implementation {
       dvr_cmd = CMD_NONE;
       signal RadioState.done();
       break;
+    case CMD_CCA:
+      signal RadioCCA.done(checkCCA() ? SUCCESS : EBUSY);
+      dvr_cmd = CMD_NONE;
+      break;
     default:
       break;
     }
@@ -2274,9 +2343,9 @@ implementation {
     uint8_t        rssi;
 
     if (signal RadioReceive.header(rxMsg)) {
-/* need to read the rssi somehow */
-//      call PacketRSSI.set(rxMsg, rssi);         /* set only if accepting */
-//      call PacketLinkQuality.set(rxMsg, crc_lqi & 0x7f);
+      rssi = si446x_fast_latched_rssi();
+      call PacketRSSI.set(rxMsg, rssi);         /* set only if accepting */
+      call PacketLinkQuality.set(rxMsg, rssi);
       return S_RX_ACTIVE;
     } else {
       /* proceed with a_rx_on action to start receiving again */
@@ -2406,6 +2475,7 @@ implementation {
       return EBUSY;
 
     dvr_cmd = CMD_CCA;
+    post user_response_task();
     return SUCCESS;
   }
 

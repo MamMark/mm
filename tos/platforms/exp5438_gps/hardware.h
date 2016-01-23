@@ -71,7 +71,7 @@
  *       .1	0pO	led1    		      .1	1pO    gps_reset_n (nRST)
  *       .2	0pI	si446x_cts     		      .2	1pO    gps_csn (nRTS)
  *       .3     0pI	          		      .3	0pI    gps_awake
- *       .4	0pI	si446x_irqn    		      .4	0pI
+ *       .4	0pI	si446x_irqn (int, fe)	      .4	0pI
  *       .5	0pI	             		      .5	0pI
  *       .6	0pI	            		      .6	0pI
  *       .7	0pI	         		      .7	0pI

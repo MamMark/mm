@@ -87,6 +87,14 @@
 #define SI446X_RX_WAIT_TIME                   30000
 
 /*
+ * initial RSSI_THRESH (threshold) for rssi comparisons.  Stuffed into
+ * MODEM_RSSI_THRESH (p204a).  RSSIs below this value will cause an
+ * incoming packet to not be received (probably not a packet or signal
+ * strength too low.
+ */ 
+#define SI446X_INITIAL_RSSI_THRESH      0x90
+
+/*
  * Si446x Radio command identifiers
  */
 #define SI446X_CMD_NOP                        0x00
