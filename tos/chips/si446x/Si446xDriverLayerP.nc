@@ -2309,10 +2309,19 @@ tasklet_norace message_t  * globalRxMsg;
 
 
   /**************************************************************************/
-
+  /*
+   * a_rx_on
+   *
+   * enable the receiver for the next packet
+   */
   fsm_state_t a_rx_on(fsm_transition_t *t) {
+
+    if (!globalRxMsg){
+      __PANIC_RADIO(3, 0, 0, 0, 0);
+    }
     nop();
     start_rx();
+// is the following required?
     ut0 = call Platform.usecsRaw();
     while (!si446x_get_cts()) {
       ll_si446x_get_int_status(radio_pend);
@@ -2405,7 +2414,6 @@ tasklet_norace message_t  * globalRxMsg;
     pkt_len = si446x_get_packet_info() + 1;        // include len byte
     nop();
     si446x_fifo_info(&rx_len, &tx_len, 0);
-    RADIO_ASSERT( tx_len == pkt_len );
     nop();
     readRxFifo(rxMsgBuffer, pkt_len);  // byte buffer underlying globalRxMsg
     nop();
