@@ -409,7 +409,7 @@ typedef struct {
   uint8_t       device_state;
   uint8_t       ph_pend;
   uint8_t       modem_pend;
-  uint8_t       chip_pend;
+  uint8_t       latched_rssi;
 } si446x_frr_info_t;
 
 /**************************************************************************/
@@ -2598,8 +2598,7 @@ tasklet_norace message_t  * globalRxMsg;
       return E_SYNC_DETECT;
     }
     if ((pending_interrupts.ph_pend    & SI446X_PH_INTEREST) ||    /* missed something */
-	(pending_interrupts.modem_pend & SI446X_MODEM_INTEREST) ||
-	(pending_interrupts.chip_pend  & SI446X_CHIP_INTEREST)) {
+	(pending_interrupts.modem_pend & SI446X_MODEM_INTEREST)) {
       nop();
       __PANIC_RADIO(19, 0, 0, 0, 0);
     }
@@ -2623,8 +2622,7 @@ tasklet_norace message_t  * globalRxMsg;
     while (TRUE) {
       ll_si446x_read_fast_status((uint8_t *) &pending_interrupts);
       if ((!(pending_interrupts.ph_pend &= SI446X_PH_INTEREST)) &&
-	  (!(pending_interrupts.modem_pend &= SI446X_MODEM_INTEREST)) &&
-	  (!(pending_interrupts.chip_pend &= SI446X_CHIP_INTEREST))) {
+	  (!(pending_interrupts.modem_pend &= SI446X_MODEM_INTEREST))) {
 	break;
       }
       while ((ev = get_next_interrupt_event())) {
