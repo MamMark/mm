@@ -814,8 +814,8 @@ tasklet_norace message_t  * globalRxMsg;
   // used to record the state transition machine operation
   // each stage represents a record of the FSM stage execution
   typedef struct {
-    uint16_t       ptime;
-    uint16_t       ltime;
+    uint32_t       time_start;
+    uint16_t       time_delta;
     fsm_event_t    this_event;
     fsm_state_t    current_state;
     fsm_action_t   action;
@@ -1069,11 +1069,12 @@ tasklet_norace message_t  * globalRxMsg;
 
   tasklet_norace fsm_stage_info_t fsm_trace_array[16];
   tasklet_norace uint8_t fsm_tp, fsm_tc;
+  tasklet_norace uint32_t fsm_start_time, fsm_end_time;
 
   void fsm_trace(fsm_event_t ev, fsm_state_t cs, fsm_action_t ac, fsm_state_t ns) {
     nop(); 
-    fsm_trace_array[fsm_tc].ltime = call Platform.usecsRaw();
-    fsm_trace_array[fsm_tc].ptime  = call LocalTime.get();
+    fsm_trace_array[fsm_tc].time_delta = fsm_end_time - fsm_start_time;
+    fsm_trace_array[fsm_tc].time_start  = fsm_start_time;
     fsm_trace_array[fsm_tc].this_event = ev;
     fsm_trace_array[fsm_tc].current_state = cs;
     fsm_trace_array[fsm_tc].action = ac;
@@ -1090,6 +1091,7 @@ tasklet_norace message_t  * globalRxMsg;
     if (fsm_active)
       __PANIC_RADIO(82, ev, fsm_global_current_state,  1, 1);
 
+    fsm_start_time = call LocalTime.get();
     nop();
     fsm_active = TRUE;
     if ((t = fsm_select_transition(ev, fsm_global_current_state))) {
@@ -1113,6 +1115,7 @@ tasklet_norace message_t  * globalRxMsg;
       case A_BREAK:
       default:            t = NULL;              break;
       }
+      fsm_end_time = call LocalTime.get();
       fsm_trace(ev, fsm_global_current_state, t->action, ns);
 
       // update with new state, or keep current if default or unknown
