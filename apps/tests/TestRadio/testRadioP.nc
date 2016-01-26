@@ -43,6 +43,7 @@ implementation {
   typedef enum {
     OFF = 0,
     STARTING,
+    WAITING,
     TX,
     STOPPING,
   } test_state_t;
@@ -65,10 +66,8 @@ implementation {
     nop();
     switch(state) {
     case STARTING:
-      state = TX;
-      transmit_iterations = 0;
-      receive_iterations = 0;
-      test_tx_busy = 0;
+      state = WAITING;
+      call testTimer.startOneShot(1000);
       break;
 
     case STOPPING:
@@ -77,8 +76,16 @@ implementation {
       break;
 
     case TX:
-      call testTimer.startOneShot(1000);
       transmit_iterations++;
+      if ((transmit_iterations % 5) == 0) {
+	nop();
+	error = call RadioState.turnOff();
+	state = STOPPING;
+	call testTimer.startOneShot(1000);
+	break;
+      }
+      state = WAITING;
+      call testTimer.startOneShot(1000);
       break;
 
     default:
@@ -118,20 +125,22 @@ implementation {
       call testTimer.startOneShot(1000);
       error = call RadioState.turnOn();
       break;
+    case WAITING:
+      nop();
+      error = call RadioSend.send(txMsg);
+      if (error == SUCCESS) {
+	state = TX;
+      } else if (error == EALREADY) {
+	test_tx_busy++;
+      } else {
+	call Panic.panic(-1, 4, state, error, test_tx_errors, transmit_iterations);
+      }
+      call testTimer.startOneShot(1000);
+      break;
     case TX:
       test_tx_errors++;
-      if (transmit_iterations++ < 50) {
-	nop();
-	if ((error = call RadioSend.send(txMsg)) == EALREADY)
-	  test_tx_busy++;
-	else
-	  call Panic.panic(-1, 4, state, error, test_tx_errors, transmit_iterations);
-	call testTimer.startOneShot(1000);
-      } else {
-	state = STOPPING;
-	call RadioState.turnOff();
-	call testTimer.startOneShot(1000);
-      }
+      state = WAITING;
+      call testTimer.startOneShot(1000);
       break;
     case STARTING:
     case STOPPING:
