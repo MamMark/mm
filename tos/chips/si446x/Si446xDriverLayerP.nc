@@ -428,11 +428,12 @@ typedef struct {
  *     protocol (0, GENERIC), power_mode (0, HIGH_PERF).
  *
  * fifo_mode HALF_DUPLEX yields a unified 129 byte fifo.
- * 0003 <- 0x60, split fifo
- * 0003 <- 0x70, unified fifo
+ * 0003 <- 0x60, split fifo,   empty_tx_len 64
+ * 0003 <- 0x70, unified fifo, empty_tx_len 129
  */
 #define SI446X_GLOBAL_CONFIG_1_LEN      5
 #define SI446X_GLOBAL_CONFIG_1          0x11, 0x00, 0x01, 0x03, 0x60
+#define SI446X_EMPTY_TX_LEN             64
 
 /* interrupt enable (p0100)
  * enable selected interrupts
@@ -2350,10 +2351,12 @@ tasklet_norace message_t  * globalRxMsg;
     dp     = (uint8_t *) getPhyHeader(globalTxMsg);
     pkt_len = *dp + 1;              // length of data field is first byte
     si446x_fifo_info(&rx_len, &tx_len, SI446X_FIFO_FLUSH_TX);
-    if (tx_len != 129)  __PANIC_RADIO(6, tx_len, pkt_len, (uint16_t) dp, 0);
+    if (tx_len != SI446X_EMPTY_TX_LEN)
+      __PANIC_RADIO(6, tx_len, pkt_len, (uint16_t) dp, 0);
     writeTxFifo(dp, pkt_len);
     si446x_fifo_info(&rx_len, &tx_len, 0);
-    if (tx_len != (129 - pkt_len))  __PANIC_RADIO(7, tx_len, pkt_len, (uint16_t) dp, 0);
+    if (tx_len != (SI446X_EMPTY_TX_LEN - pkt_len))
+      __PANIC_RADIO(7, tx_len, pkt_len, (uint16_t) dp, 0);
     nop();
     si446x_start_tx(pkt_len);
 /*** need a better way to do this, if needed at all */
