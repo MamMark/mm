@@ -49,6 +49,7 @@ implementation {
   } test_state_t;
 
   norace test_state_t state;
+  norace uint16_t     iteration_modulo = 10;
 
   command error_t Init.init() {
     return SUCCESS;
@@ -77,7 +78,7 @@ implementation {
 
     case TX:
       transmit_iterations++;
-      if ((transmit_iterations % 5) == 0) {
+      if ((transmit_iterations % iteration_modulo) == 0) {
 	nop();
 	error = call RadioState.turnOff();
 	state = STOPPING;
@@ -89,6 +90,7 @@ implementation {
       break;
 
     default:
+      nop();
       call Panic.panic(-1, 1, state, 0, 0, 0);
       break;
     }
@@ -144,6 +146,7 @@ implementation {
       break;
     case STARTING:
     case STOPPING:
+      nop();
       call Panic.panic(-1, 3, state, 0, 0, 0);
       state = OFF;
       call testTimer.startOneShot(1000);
