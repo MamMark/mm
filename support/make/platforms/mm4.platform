@@ -27,7 +27,6 @@
 #
 
 PFLAGS += -I%T/platforms/mm4
-PFLAGS += -I%T/platforms/mm
 PFLAGS += -I%T/platforms/mm4/panic
 PFLAGS += -I%T/platforms/mm4/sensors
 PFLAGS += -I%T/system/panic

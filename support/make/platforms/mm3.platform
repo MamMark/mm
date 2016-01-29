@@ -21,7 +21,6 @@
 #
 
 PFLAGS += -I%T/platforms/mm3
-PFLAGS += -I%T/platforms/mm
 
 PFLAGS += -I%T/mm
 PFLAGS += -I%T/comm

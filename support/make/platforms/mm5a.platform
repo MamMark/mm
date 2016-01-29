@@ -6,7 +6,6 @@
 # use the %T expansion.
 
 PFLAGS += -I%T/platforms/mm5a
-PFLAGS += -I%T/platforms/mm
 
 PFLAGS += -I%T/mm
 PFLAGS += -I%T/system/panic_simple
