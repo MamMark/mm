@@ -94,6 +94,55 @@ On Power_Up, we see NIRQ go low.  We see the following:
 
 Packet format:
 
+TinyOS breaks packet buffers up into:
+
+   Header (union of low level headers that are being used)
+   Data   (application payload, defaults to 28)
+   Footer (can be FCS, typically empty)
+   Metadata used for various things in the stack.
+
+A typical si446x packet buffer looks like:  (rfxlink/tinyos 154ish packet)
+(both TFRAMES_ENABLED and IEEE154FRAMES_ENABLED undefined)
+
+          len (base 10)       offset                    addr
+   header:  1 len               0x00                    32d2
+   ieee154  2 fcf
+
+            1 dsn
+            2 dpan
+                                      2 dest    0x5
+            2 dest
+                                      2 src
+            2 src
+                                      1 length
+            1 network (0x3f)            group
+            1 am_type                   type
+   data    28                   0x0c                    32de
+
+   meta     1 serial.ack        0x28                    32fa
+
+              si446x_meta
+            2   rxInterval      0x28                    32fa
+            1   rssi            0x2a
+            1   lqi             0x2b
+            1   tx_power        0x2c
+            1   crc             0x2d
+            1   ack             0x2e
+            1   timesync        0x2f
+
+              lpl_meta
+            2   sleep_int       0x30                    3302
+
+              ts_meta
+            4   timestamp       0x32                    3304
+
+              link_meta
+            2   maxRetries      0x36                    3308
+            2   retryDelay      0x38
+
+              flags_meta
+            1   flags           0x3a                    330c
+
 The si446x chips has many configuration options that determine what the
 actual packet format looks like.  These fields must be programmed properly
 on both ends of the communications channel for communications to occur.
