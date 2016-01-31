@@ -45,6 +45,8 @@
 #include "radio_config_si446x.h"
 #include "radio_platform_si446x.h"
 
+//#define LOW_POWER_LISTENING
+
 /* TODO: need to figure out correct power value */
 #ifndef SI446X_DEF_RFPOWER
 #define SI446X_DEF_RFPOWER	31

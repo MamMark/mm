@@ -2709,14 +2709,16 @@ tasklet_norace message_t  * globalRxMsg;
   /*
    * this returns the total offset from the start of the message buffer
    * to the MPDU header.
+   *
+   * MPDU start right after PPDU (PHY) which is only the length (1 byte)
    */
   async command uint8_t RadioPacket.headerLength(message_t *msg) {
-    return call Config.headerOffset(msg) + sizeof(si446x_packet_header_t);
+    return call Config.headerOffset(msg) + 1;
   }
 
 
   async command uint8_t RadioPacket.payloadLength(message_t *msg) {
-    return getPhyHeader(msg)->length - FCS_SIZE;
+    return getPhyHeader(msg)->length;
   }
 
 
