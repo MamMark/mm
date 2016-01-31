@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Eric B. Decker
+ * Copyright (c) 2016, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,12 +46,6 @@ interface Si446xDriverConfig {
    * length field but not counting the FCS field.
    */
   async command uint8_t maxPayloadLength();
-
-  /**
-   * Returns the length of a dummy metadata section to align the
-   * metadata section properly.
-   */
-  async command uint8_t metadataLength(message_t* msg);
 
   /**
    * Gets the number of bytes we should read before the RadioReceive.header

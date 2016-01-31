@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Eric B. Decker
+ * Copyright (c) 2015-2016, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -129,31 +129,14 @@ typedef nx_struct si446x_packet_footer {
  * that will not be transmitted.
  */
 typedef struct si446x_metadata_t {
+  uint16_t rxInterval;
   uint8_t  rssi;
   uint8_t  lqi;
   uint8_t  tx_power;
   bool     crc;
   bool     ack;
   bool     timesync;
-  uint32_t timestamp;
-  uint16_t rxInterval;
-
-#ifdef LOW_POWER_LISTENING
-  lpl_metadata_t lpl;
-#endif
-
-  /** Packet Link Metadata */
-#ifdef PACKET_LINK
-  link_metadata_t link;
-#endif
 } si446x_metadata_t;
-
-
-typedef struct si446x_packet_metadata {
-  timestamp_metadata_t timestamp;
-  flags_metadata_t flags;
-  si446x_metadata_t si446x_meta;
-} si446x_packet_metadata_t;
 
 
 typedef nx_struct si446x_packet_t {

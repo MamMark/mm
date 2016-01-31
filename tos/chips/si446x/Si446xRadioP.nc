@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Eric B. Decker
+ * Copyright (c) 2015-2016, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -76,10 +76,6 @@ implementation {
 
   async command uint8_t Si446xDriverConfig.maxPayloadLength() {
     return sizeof(si446x_packet_header_t) + TOSH_DATA_LENGTH;
-  }
-
-  async command uint8_t Si446xDriverConfig.metadataLength(message_t* msg) {
-    return 0;
   }
 
   async command uint8_t Si446xDriverConfig.headerPreloadLength() {

@@ -55,8 +55,25 @@ typedef union message_footer {
   si446x_packet_footer_t footer;
 } message_footer_t;
 
-typedef union message_metadata {
-  si446x_packet_metadata_t meta;
+typedef struct message_metadata {
+  union {
+    serial_metadata_t serial_meta;
+    si446x_metadata_t si446x_meta;
+  };
+
+#ifdef LOW_POWER_LISTENING
+  lpl_metadata_t       lpl_meta;
+#endif
+
+  timestamp_metadata_t ts_meta;
+
+ /** Packet Link Metadata */
+#ifdef PACKET_LINK
+  link_metadata_t      link_meta;
+#endif
+
+  flags_metadata_t     flags_meta;
+
 } message_metadata_t;
 
 #endif
