@@ -2630,7 +2630,7 @@ tasklet_norace message_t  * globalRxMsg;
    * occurs to prevent race condition with NIRQ changes when clearing
    * pending flags and missing a pending condition.
    */
-  fsm_event_t process_interrupt() {
+  void process_interrupt() {
     fsm_event_t ev;
 
     while (TRUE) {
