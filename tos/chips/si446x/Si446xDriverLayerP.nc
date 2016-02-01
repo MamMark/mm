@@ -1532,7 +1532,7 @@ tasklet_norace message_t  * globalRxMsg;
 
   void check_weird(uint8_t *status) {
     if ((status[PH_STATUS]    & 0xC0) ||
-        (status[MODEM_STATUS] & 0x58)) {
+        (status[MODEM_STATUS] & 0x50)) {
       ll_si446x_get_int_state(&chip_debug);
       __PANIC_RADIO(98, status[DEVICE_STATE], status[PH_STATUS],
                     status[MODEM_STATUS], 0);
