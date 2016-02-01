@@ -238,6 +238,15 @@ enum {
 #include <si446x.h>
 
 
+#define FINNISH_WAIT               0
+#define FINNISH_RX                 1
+#define FINNISH_TX                 2
+#define FINNISH_RX_BLAST        0x81
+#define FINNISH_TX_BLAST        0x82
+
+volatile norace uint8_t finnish_gate = FINNISH_RX;
+
+
 /**************************************************************************/
 
 /*
@@ -245,6 +254,7 @@ enum {
  */
          norace bool     do_dump;        /* defaults to FALSE */
 volatile norace uint8_t  xirq, p1;
+         norace uint16_t t_tx_len, t_rx_len;
 
 norace uint32_t t_por;
 
@@ -1096,6 +1106,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     nop();
     fsm_active = TRUE;
     if ((t = fsm_select_transition(ev, fsm_global_current_state))) {
+      nop();
       switch (t->action) {
       case A_NOP:	  ns = a_nop(t);         break;
       case A_UNSHUT:	  ns = a_unshut(t);      break;
@@ -1598,8 +1609,18 @@ tasklet_norace message_t  * globalRxMsgPtr;
     x[2] = 0x30;                  /* back to READY */
     x[3] = 0;
     x[4] = len & 0xff;
-    drf();
-    nop();
+    si446x_send_cmd((void *) x, rsp, 5);
+  }
+
+
+  void si446x_retrans(uint16_t len) {
+    uint8_t x[5];
+
+    x[0] = SI446X_CMD_START_TX;
+    x[1] = 0;                     /* channel */
+    x[2] = 0x34;                  /* back to READY and retrans */
+    x[3] = 0;
+    x[4] = len & 0xff;
     si446x_send_cmd((void *) x, rsp, 5);
   }
 
@@ -2265,6 +2286,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
      * make the FRRs return a driver custom setting, see si446x_frr_config for
      * details.
      */
+    nop();
     stuff_config(si446x_frr_config);
     /* clear out pending interrupts */
     ll_si446x_getclr_int_state(&int_state);
@@ -2286,6 +2308,10 @@ tasklet_norace message_t  * globalRxMsgPtr;
    */
 
   fsm_state_t a_ready(fsm_transition_t *t) {
+    uint16_t i, len_to_send;
+    ds_pkt_t *dsp;
+    si446x_chip_int_t *isp;
+
     nop();
     ll_si446x_getclr_int_state(&int_state);
     si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
@@ -2296,8 +2322,155 @@ tasklet_norace message_t  * globalRxMsgPtr;
     }
     ut1 = call Platform.usecsRaw();
     nop();
+
+    while(finnish_gate == FINNISH_WAIT) {
+      nop();
+    }
+
+    for (i = 0; i < 64; i++)
+      fifo_buf[i] = 0xde;
+
+    while (finnish_gate == FINNISH_TX) {
+      ll_si446x_get_int_status(radio_pend);
+
+      len_to_send = 32;
+      dsp = (void *) fifo_buf;
+      dsp->len = len_to_send + 5;
+      dsp->proto = 0x42;
+      dsp->da = 0x5225;
+      dsp->sa = 0x1441;
+      for (i = 0; i < len_to_send; i++)
+        dsp->data[i] = i;
+
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      nop();
+      si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_TX);
+
+      writeTxFifo(fifo_buf, len_to_send + 6);
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+
+      nop();
+      si446x_start_tx(len_to_send + 6);
+      ut0 = call Platform.usecsRaw();
+      while (!si446x_get_cts()) {
+        ll_si446x_get_int_status(radio_pend);
+      }
+      ll_si446x_get_int_status(radio_pend);
+      ut1 = call Platform.usecsRaw();
+      nop();
+
+      while (1) {
+        ll_si446x_get_int_status(radio_pend);
+        isp = (void *) &int_state;
+        ll_si446x_getclr_int_state(isp);
+        if ((isp->int_status.ph_pend    & SI446X_PH_INTEREST) ||
+            (isp->int_status.modem_pend & SI446X_MODEM_INTEREST) ||
+            (isp->int_status.chip_pend  & SI446X_CHIP_INTEREST)) {
+          nop();
+        }
+        if (isp->int_status.ph_pend & SI446X_PH_STATUS_PACKET_SENT)
+          break;
+      }
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      ll_si446x_get_int_status(radio_pend);
+      nop();
+    }
+
+    while (finnish_gate == FINNISH_TX_BLAST) {
+      ll_si446x_get_int_status(radio_pend);
+
+      len_to_send = 64;
+      fifo_buf[0] = len_to_send - 1 ;
+      for (i = 1; i < len_to_send; i++)
+        fifo_buf[i] = 0xaa;
+
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      nop();
+      si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_TX);
+
+doit_again:
+      writeTxFifo(fifo_buf, len_to_send);
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      ll_si446x_get_int_status(radio_pend);
+      ll_si446x_get_int_state(isp);
+
+      nop();
+      si446x_start_tx(len_to_send);
+      ut0 = call Platform.usecsRaw();
+      while (!si446x_get_cts()) {
+        ll_si446x_get_int_status(radio_pend);
+      }
+      ll_si446x_get_int_status(radio_pend);
+      ut1 = call Platform.usecsRaw();
+      nop();
+
+      while (1) {
+        while (1) {
+          ll_si446x_get_int_status(radio_pend);
+          isp = (void *) &int_state;
+          ll_si446x_getclr_int_state(isp);
+          if ((isp->int_status.ph_pend    & SI446X_PH_INTEREST) ||
+              (isp->int_status.modem_pend & SI446X_MODEM_INTEREST) ||
+              (isp->int_status.chip_pend  & SI446X_CHIP_INTEREST)) {
+            nop();
+          }
+          if (isp->int_status.ph_pend & SI446X_PH_STATUS_PACKET_SENT)
+            break;
+        }
+        si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+        ll_si446x_get_int_status(radio_pend);
+        nop();
+        goto doit_again;
+        si446x_retrans(len_to_send);
+      }
+    }
+
+    while (finnish_gate == FINNISH_RX) {
+      ll_si446x_get_int_status(radio_pend);
+
+      nop();
+      si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
+      start_rx();
+      ut0 = call Platform.usecsRaw();
+      while (!si446x_get_cts()) {
+        ll_si446x_get_int_status(radio_pend);
+      }
+      ll_si446x_get_int_status(radio_pend);
+      ut1 = call Platform.usecsRaw();
+      nop();
+
+      while (1) {
+        nop();
+        si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+        isp = (void *) &int_state;
+        ll_si446x_getclr_int_state(isp);
+        ll_si446x_get_int_status(radio_pend);
+        if ((isp->int_status.ph_pend    & SI446X_PH_INTEREST) ||
+            (isp->int_status.modem_pend & SI446X_MODEM_INTEREST) ||
+            (isp->int_status.chip_pend  & SI446X_CHIP_INTEREST)) {
+          nop();
+        }
+        if (isp->int_status.ph_pend & SI446X_PH_STATUS_PACKET_RX)
+          break;
+        if (isp->int_status.ph_pend & SI446X_PH_STATUS_CRC_ERROR)
+          break;
+      }
+      t_rx_len = si446x_get_packet_info() + 1;        /* include len byte */
+      nop();
+      si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
+      nop();
+      for (i = 0; i < 0x40; i++)
+        fifo_buf[i] = 0;
+      nop();
+      readRxFifo(fifo_buf, t_rx_len);
+      nop();
+      ll_si446x_get_int_state(isp);
+      nop();
+    }
     drf();
     nop();
+
+
     setChannel();
     call HW.si446x_enableInterrupt();
     post user_response_task();
@@ -2512,6 +2685,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     if (fsm_get_state() >= S_RX_ON)
       return EALREADY;
 
+    nop();
     dvr_cmd = CMD_TURNON;
     fsm_user_queue(E_TURNON);
     return SUCCESS;
