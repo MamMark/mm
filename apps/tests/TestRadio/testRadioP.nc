@@ -4,12 +4,7 @@
  */
 
 
-#include <Si446xDriverLayer.h>
 #include <Tasklet.h>
-#include <RadioAssert.h>
-#include <TimeSyncMessageLayer.h>
-#include <RadioConfig.h>
-#include <si446x.h>
 
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;
