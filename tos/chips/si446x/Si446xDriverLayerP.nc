@@ -2190,6 +2190,22 @@ tasklet_norace message_t  * globalRxMsgPtr;
     return FALSE;
   }
 
+  /**************************************************************************/
+  /*
+   * stop_alarm
+   *
+   * check to see that RadioAlarm is active and cancel it, otherwise panic.
+   */
+
+  uint8_t stop_alarm() {
+    if (!call RadioAlarm.isFree()) {
+      call RadioAlarm.cancel();
+      return TRUE;
+    }
+    __PANIC_RADIO(64, 0, 0, 0, 0);
+    return FALSE;
+  }
+
 
   /**************************************************************************/
   /*  do nothing.
@@ -2414,6 +2430,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     uint16_t        pkt_len, tx_len, rx_len;
 
     nop();
+    stop_alarm();
     pkt_len = si446x_get_packet_info() + 1;        // include len byte
     nop();
     si446x_fifo_info(&rx_len, &tx_len, 0);
