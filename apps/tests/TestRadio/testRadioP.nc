@@ -28,12 +28,15 @@ module testRadioP {
 
 implementation {
 
-  uint16_t test_iterations, test_tx_errors, test_rx_errors, test_tx_busy;
-  uint16_t transmit_iterations, receive_iterations;
+  uint16_t        test_iterations, test_tx_errors, test_rx_errors, test_tx_busy;
+  uint16_t        transmit_iterations, receive_iterations;
+  uint16_t        iteration_modulo = 10;
+  uint8_t         active_mode;
+  uint16_t        wait_time, tx_time;
 
-  message_t  * rxMsg;            /* msg driver owns */
-  uint8_t      txMsgBuffer[129] = {'\6','H', 'e', 'l', 'l', 'o', '\0'};
-  message_t  * txMsg = (message_t *) txMsgBuffer;
+  message_t     * rxMsg;            /* msg driver owns */
+  uint8_t         txMsgBuffer[129] = {'\6','H', 'e', 'l', 'l', 'o', '\0'};
+  message_t     * txMsg = (message_t *) txMsgBuffer;
 
   typedef enum {
     OFF = 0,
@@ -44,13 +47,15 @@ implementation {
   } test_state_t;
 
   norace test_state_t state;
-  norace uint16_t     iteration_modulo = 10;
 
   command error_t Init.init() {
+    wait_time = 30000;
+    tx_time = 1000;
     return SUCCESS;
   }
 
   event void Boot.booted() {
+    nop();
     nop();
     call testTimer.startOneShot(0);
   }
@@ -81,7 +86,7 @@ implementation {
 	break;
       }
       state = WAITING;
-      call testTimer.startOneShot(1000);
+      call testTimer.startOneShot(wait_time);
       break;
 
     default:
@@ -103,10 +108,12 @@ implementation {
   }
 
   tasklet_async event bool RadioReceive.header(message_t *msg) {
+    nop();
     return TRUE;
   }
 
   tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
+    nop();
     receive_iterations++;
     return msg;
   }
@@ -114,6 +121,7 @@ implementation {
 
   event void testTimer.fired() {
     error_t      error;
+    uint16_t     ntime;
 
     nop();
     switch(state) {
@@ -124,15 +132,20 @@ implementation {
       break;
     case WAITING:
       nop();
-      error = call RadioSend.send(txMsg);
-      if (error == SUCCESS) {
-	state = TX;
-      } else if (error == EALREADY) {
-	test_tx_busy++;
-      } else {
-	call Panic.panic(-1, 4, state, error, test_tx_errors, transmit_iterations);
+      ntime = wait_time;
+      if (active_mode) {
+	error = call RadioSend.send(txMsg);
+	if (error == SUCCESS) {
+	  ntime = tx_time;
+	  state = TX;
+	} else if (error == EALREADY) {
+	  test_tx_busy++;
+	  // stay in waiting state, try sending again
+	} else {
+	  call Panic.panic(-1, 4, state, error, test_tx_errors, transmit_iterations);
+	}
       }
-      call testTimer.startOneShot(1000);
+      call testTimer.startOneShot(ntime);
       break;
     case TX:
       test_tx_errors++;
