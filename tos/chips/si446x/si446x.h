@@ -101,7 +101,7 @@
  * incoming packet to not be received (probably not a packet or signal
  * strength too low.
  */ 
-#define SI446X_INITIAL_RSSI_THRESH      0x90
+#define SI446X_INITIAL_RSSI_THRESH      0x20
 
 /*
  * Si446x Radio command identifiers
