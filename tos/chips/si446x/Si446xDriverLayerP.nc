@@ -717,9 +717,9 @@ implementation {
 /*
  * Message Buffers
  */
-tasklet_norace message_t  * globalTxMsg;            /* msg driver owns */
+tasklet_norace message_t  * globalTxMsgPtr;            /* msg driver owns */
 uint8_t                     rxMsgBuffer[129];
-tasklet_norace message_t  * globalRxMsg;
+tasklet_norace message_t  * globalRxMsgPtr;
 
 
 /**************************************************************************/
@@ -2026,7 +2026,7 @@ tasklet_norace message_t  * globalRxMsg;
 
     call HW.si446x_clr_cs();
 
-    globalRxMsg = (message_t *) rxMsgBuffer;
+    globalRxMsgPtr = (message_t *) &rxMsgBuffer;
     return SUCCESS;
   }
 
@@ -2317,7 +2317,7 @@ tasklet_norace message_t  * globalRxMsg;
    */
   fsm_state_t a_rx_on(fsm_transition_t *t) {
 
-    if (!globalRxMsg){
+    if (!globalRxMsgPtr){
       __PANIC_RADIO(3, 0, 0, 0, 0);
     }
     nop();
@@ -2344,11 +2344,11 @@ tasklet_norace message_t  * globalRxMsg;
     uint8_t        *dp;
     uint16_t        pkt_len, tx_len, rx_len;
 
-    if (!globalTxMsg){
+    if (!globalTxMsgPtr){
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
     nop();
-    dp     = (uint8_t *) getPhyHeader(globalTxMsg);
+    dp     = (uint8_t *) getPhyHeader(globalTxMsgPtr);
     pkt_len = *dp + 1;              // length of data field is first byte
     si446x_fifo_info(&rx_len, &tx_len, SI446X_FIFO_FLUSH_TX);
     if (tx_len != SI446X_EMPTY_TX_LEN)
@@ -2380,10 +2380,10 @@ tasklet_norace message_t  * globalRxMsg;
   fsm_state_t a_rx_header(fsm_transition_t *t) {
     uint8_t        rssi;
 
-    if (signal RadioReceive.header(globalRxMsg)) {
+    if (signal RadioReceive.header(globalRxMsgPtr)) {
       rssi = si446x_fast_latched_rssi();
-      call PacketRSSI.set(globalRxMsg, rssi);         /* set only if accepting */
-      call PacketLinkQuality.set(globalRxMsg, rssi); 
+      call PacketRSSI.set(globalRxMsgPtr, rssi);         /* set only if accepting */
+      call PacketLinkQuality.set(globalRxMsgPtr, rssi); 
       return S_RX_ACTIVE;
     } else {
       /* proceed with a_rx_on action to start receiving again */
@@ -2402,7 +2402,7 @@ tasklet_norace message_t  * globalRxMsg;
  /**************************************************************************/
 
   fsm_state_t a_tx_error(fsm_transition_t *t) {
-    globalTxMsg = NULL;
+    globalTxMsgPtr = NULL;
     signal RadioSend.sendDone(FAIL);
     return t->next_state;
   }
@@ -2418,11 +2418,11 @@ tasklet_norace message_t  * globalRxMsg;
     nop();
     si446x_fifo_info(&rx_len, &tx_len, 0);
     nop();
-    readRxFifo(rxMsgBuffer, pkt_len);  // byte buffer underlying globalRxMsg
+    readRxFifo((uint8_t *) globalRxMsgPtr, pkt_len);
     nop();
     // check to see if upper layer wants the packet [**will move to a_rx_hdr]
-    if (signal RadioReceive.header(globalRxMsg))
-      globalRxMsg = signal RadioReceive.receive(globalRxMsg);
+    if (signal RadioReceive.header(globalRxMsgPtr))
+      globalRxMsgPtr = signal RadioReceive.receive(globalRxMsgPtr);
     // proceed with a_rx_on action to start receiving again
     return a_rx_on(t);
   }
@@ -2433,9 +2433,11 @@ tasklet_norace message_t  * globalRxMsg;
   fsm_state_t a_tx_cmp(fsm_transition_t *t) {
     uint16_t        tx_len, rx_len;
 
+    nop();
+    stop_alarm();
     si446x_fifo_info(&rx_len, &tx_len, 0);
     RADIO_ASSERT( tx_len == 0 );
-    globalTxMsg = NULL;
+    globalTxMsgPtr = NULL;
     signal RadioSend.sendDone(SUCCESS);
     return t->next_state;
   }
@@ -2508,14 +2510,12 @@ tasklet_norace message_t  * globalRxMsg;
 
   tasklet_async command error_t RadioSend.send(message_t *msg) {
     nop();
-    ll_si446x_get_int_status(radio_pend);
-    nop();
     nop();
     if ((dvr_cmd != CMD_NONE) || (fsm_get_state() != S_RX_ON))
       return EBUSY;
-    if (globalTxMsg)
+    if (globalTxMsgPtr)
 	return EALREADY;
-    globalTxMsg = msg;
+    globalTxMsgPtr = msg;
     fsm_user_queue(E_TRANSMIT);
     return SUCCESS;
   }
