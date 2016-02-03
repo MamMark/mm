@@ -937,7 +937,7 @@ tasklet_norace message_t  * globalRxMsg;
 
   // e_preamble_detect
   const fsm_transition_t fsm_e_preamble_detect[] = {
-    { S_RX_ON, A_RX_PREAMBLE, S_RX_ON },
+    { S_RX_ON, A_RX_PREAMBLE, S_RX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -2273,12 +2273,12 @@ tasklet_norace message_t  * globalRxMsg;
     nop();
     ll_si446x_getclr_int_state(&int_state);
     si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-//    ut0 = call Platform.usecsRaw();
-    // wait for command completion
-//    while (!si446x_get_cts()) {
-//      ll_si446x_get_int_status(radio_pend);
-//    }
-//    ut1 = call Platform.usecsRaw();
+    ut0 = call Platform.usecsRaw();
+    //    wait for command completion
+    while (!si446x_get_cts()) {
+      ll_si446x_get_int_status(radio_pend);
+    }
+    ut1 = call Platform.usecsRaw();
     nop();
     drf();
     nop();
@@ -2444,6 +2444,8 @@ tasklet_norace message_t  * globalRxMsg;
   /**************************************************************************/
 
   fsm_state_t a_rx_preamble(fsm_transition_t *t) {
+    nop();
+    start_alarm(SI446X_SOP_TIME);
     return t->next_state;
   }
 
@@ -2451,8 +2453,9 @@ tasklet_norace message_t  * globalRxMsg;
   /**************************************************************************/
 
   fsm_state_t a_rx_sync(fsm_transition_t *t) {
-    /* proceed with a_rx_on action to start receiving again */
-    return a_rx_on(t);
+    nop();
+    start_alarm(SI446X_SOP_TIME);
+    return t->next_state;
   }
 
 
@@ -2508,7 +2511,7 @@ tasklet_norace message_t  * globalRxMsg;
     ll_si446x_get_int_status(radio_pend);
     nop();
     nop();
-    if (dvr_cmd != CMD_NONE)
+    if ((dvr_cmd != CMD_NONE) || (fsm_get_state() != S_RX_ON))
       return EBUSY;
     if (globalTxMsg)
 	return EALREADY;
@@ -2587,6 +2590,14 @@ tasklet_norace message_t  * globalRxMsg;
    * clear the flag in the pending information to denote handled.
    */
   fsm_event_t get_next_interrupt_event() {
+    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
+      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
+      return E_PREAMBLE_DETECT;
+    }
+    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
+      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
+      return E_SYNC_DETECT;
+    }
     if (pending_interrupts.ph_pend & SI446X_PH_STATUS_PACKET_RX) {
       pending_interrupts.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
       return E_PACKET_RX;
@@ -2602,14 +2613,6 @@ tasklet_norace message_t  * globalRxMsg;
     if (pending_interrupts.ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
       pending_interrupts.ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
       return E_RX_FIFO;
-    }
-    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
-      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
-      return E_PREAMBLE_DETECT;
-    }
-    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
-      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
-      return E_SYNC_DETECT;
     }
     if ((pending_interrupts.ph_pend    & SI446X_PH_INTEREST) ||    /* missed something */
 	(pending_interrupts.modem_pend & SI446X_MODEM_INTEREST)) {
