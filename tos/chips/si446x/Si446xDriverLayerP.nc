@@ -251,16 +251,27 @@ norace uint32_t t_por;
 norace uint32_t mt0, mt1;
 norace uint16_t ut0, ut1;
 
+typedef enum {
+	NO_STATE   = 0,
+	SLEEP      = 1,
+	SPI_ACT    = 2,
+	READY      = 3,
+	READYA     = 4,
+	TX_TUNE    = 5,
+	RX_TUNE    = 6,
+	TX         = 7,
+	RX         = 8,
+} Si446x_device_state_t;
 
 typedef struct {
   uint16_t ts;
   uint8_t  cts;
   uint8_t  irqn;
   uint8_t  csn;
-  uint8_t  ds;
+  Si446x_device_state_t  ds;
   uint8_t  ph;
   uint8_t  modem;
-  uint8_t  chip;
+  uint8_t  rssi;
   uint8_t  r;
 } rps_t;
 
