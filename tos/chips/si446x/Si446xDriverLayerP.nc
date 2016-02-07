@@ -1330,7 +1330,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     rps_t *rpp;
     rps_t *ppp;
     uint8_t cts, irqn, csn;
-    uint8_t state, ph, modem, chip, pmodem, pchip;
+    uint8_t state, ph, modem, rssi, pmodem;
 
     rpp  = &rps[rps_next];
     ppp  = &rps[rps_prev];
@@ -1339,25 +1339,22 @@ tasklet_norace message_t  * globalRxMsgPtr;
     irqn = call HW.si446x_irqn();
     csn  = call HW.si446x_csn();
 
+    /* we don't care about modem:invalid preamble
+     */
     state = pend[0];
     ph    = pend[1];
-
-    /* we don't care about modem:invalid preamble
-     * nor chip:(state_change|chip_ready)
-     */
+    rssi  = pend[3];
     modem  = pend[2] & 0xfb;
-    chip   = pend[3] & 0xeb;
     pmodem = ppp->modem & 0xfb;
-    pchip  = ppp->chip  & 0xeb;
 
     if ((cts == ppp->cts) && (irqn == ppp->irqn) && (csn == ppp->csn) &&
         (state == ppp->ds) && (ph == ppp->ph) &&
-        (modem == pmodem) && (chip == pchip)) {
+        (modem == pmodem) && (rssi == ppp->rssi)) {
       return;
     }
 
     modem = pend[2];                    /* trace actual values */
-    chip  = pend[3];
+    rssi  = pend[3];
     rpp->ts = call Platform.usecsRaw();
     rpp->cts   = cts;
     rpp->irqn  = irqn;
@@ -1365,7 +1362,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     rpp->ds    = state;
     rpp->ph    = ph;
     rpp->modem = modem;
-    rpp->chip  = chip;
+    rpp->rssi  = rssi;
 
     rps_prev = rps_next;
     if (++rps_next >= RPS_MAX)
