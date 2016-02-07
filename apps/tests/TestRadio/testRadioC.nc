@@ -13,11 +13,16 @@ implementation {
   MainC.SoftwareInit -> testRadioP;
   testRadioP -> MainC.Boot;
 
-  components new TimerMilliC() as Timer;
-  testRadioP.testTimer -> Timer;
+  components new TimerMilliC() as Timer0;
+  testRadioP.rcTimer -> Timer0;
+  components new TimerMilliC() as Timer1;
+  testRadioP.txTimer -> Timer1;
 
   components LocalTimeMilliC;
   testRadioP.LocalTime -> LocalTimeMilliC;
+
+  components LedsC;
+  testRadioP.Leds -> LedsC;
 
 //  components Si446xRadioC;
   components new TaskletC();

@@ -14,8 +14,10 @@ module testRadioP {
     interface Init;
   } uses {
     interface Boot;
-    interface Timer<TMilli> as testTimer;
+    interface Timer<TMilli> as rcTimer;
+    interface Timer<TMilli> as txTimer;
     interface LocalTime<TMilli>;
+    interface Leds;
     interface Panic;
     interface RadioState;
     interface RadioPacket;
@@ -35,76 +37,129 @@ implementation {
   uint16_t        wait_time, tx_time;
 
   message_t     * rxMsg;            /* msg driver owns */
-  uint8_t         txMsgBuffer[129] = {'\6','H', 'e', 'l', 'l', 'o', '\0'};
+  uint8_t         txMsgBuffer[129] = {'\31', '\1', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', '\0'};
   message_t     * txMsg = (message_t *) txMsgBuffer;
 
+  /*
+   * state info
+   */
   typedef enum {
     OFF = 0,
     STARTING,
     WAITING,
-    TX,
     STOPPING,
   } test_state_t;
 
   norace test_state_t state;
 
-  command error_t Init.init() {
-    wait_time = 30000;
-    tx_time = 1000;
-    return SUCCESS;
+  typedef enum {
+    DISABLED = 0,
+    RUN = 1,
+    PING = 2,
+    PONG = 4,
+  } test_mode_t;
+
+  /*
+   * packet test transmission is controlled by timer interrupt.
+   *
+   */
+  typedef struct {
+    uint32_t        iterations;
+    uint32_t        pings;
+    uint16_t        delay;
+    uint16_t        error;
+    uint16_t        errors;
+    uint16_t        busy;
+    uint8_t         size;
+    test_mode_t     mode;
+  } tx_t;
+
+  norace tx_t       tx;
+
+  void tx_start() {
+    nop();
+    if (tx.mode)
+      call txTimer.startOneShot(tx.delay);
   }
 
-  event void Boot.booted() {
+  void tx_stop() {
     nop();
-    nop();
-    call testTimer.startOneShot(0);
+    // cancel timer
   }
 
 
-  task void change_state() {
-    error_t      error;
-
+  task void tx_task() {
     nop();
-    switch(state) {
-    case STARTING:
-      state = WAITING;
-      call testTimer.startOneShot(1000);
-      break;
-
-    case STOPPING:
-      state = OFF;
-      call testTimer.startOneShot(1000);
-      break;
-
-    case TX:
-      transmit_iterations++;
-      if ((transmit_iterations % iteration_modulo) == 0) {
-	nop();
-	error = call RadioState.turnOff();
-	state = STOPPING;
-	call testTimer.startOneShot(1000);
-	break;
+    nop();
+    if ((tx.mode == RUN) || (tx.mode == PING)) {
+      tx.error = call RadioSend.send(txMsg);
+      if (tx.error == SUCCESS) {
+	call Leds.led0Toggle();
+      } else if (tx.error == EALREADY) {
+	tx.busy++;
+      } else {
+	call Panic.panic(-1, 4, state, tx.error, tx.errors++, tx.iterations);
       }
-      state = WAITING;
-      call testTimer.startOneShot(wait_time);
-      break;
-
-    default:
-      nop();
-      call Panic.panic(-1, 1, state, 0, 0, 0);
-      break;
     }
+    if (tx.mode == PING) {
+      tx.mode = PONG;
+    } else if (tx.mode == PONG) {
+      tx.errors++;
+      tx.mode = PING;
+    }
+    call txTimer.startOneShot(tx.delay);
   }
 
 
-  async event void RadioState.done() {
-    post change_state();
+  event void txTimer.fired() {
+    post tx_task();
   }
 
   tasklet_async event void RadioSend.ready() { }
 
   tasklet_async event void RadioSend.sendDone(error_t error) {
-    post change_state();
+    nop();
+    nop();
+    if (error) {
+      tx.errors++;
+      tx.error = error;
+    }
+    tx.iterations++;
+  }
+
+
+  /*
+   * packet test reception is handled by event callback
+   *
+   */
+  typedef struct {
+    uint32_t        iterations;
+    test_mode_t     mode;
+    uint8_t         enable;
+  } rx_t;
+
+  norace rx_t     rx;
+
+  void rx_start() {
+    nop();
+  }
+
+  void rx_stop() {
+    nop();
+  }
+
+  tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
+    nop();
+    nop();
+    if (rx.mode == RUN) {
+      rx.iterations++;
+      call Leds.led1Toggle();
+    }
+    if (tx.mode == PONG) {
+      tx.pings++;
+      tx.mode = PING;
+    }
+    return msg;
   }
 
   tasklet_async event bool RadioReceive.header(message_t *msg) {
@@ -112,54 +167,110 @@ implementation {
     return TRUE;
   }
 
-  tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
+  /*
+   * radio control state is cycled periodically
+   *
+   */
+
+  typedef struct {
+    uint16_t        iterations;
+    uint16_t        starts;
+    uint16_t        errors;
+    uint16_t        last_error;
+    uint16_t        delay;
+    uint16_t        modulo;
+  } rc_t;
+
+  norace rc_t     rc;
+
+  void task rc_task() {
     nop();
-    receive_iterations++;
-    return msg;
+    nop();
+    switch(state) {
+    case STARTING:
+      call Leds.led0Off();
+      call Leds.led1Off();
+      call Leds.led2Off();
+      state = WAITING;
+      tx_start();
+      rx_start();
+      call rcTimer.startOneShot(rc.delay);
+      break;
+    case STOPPING:
+      call Leds.led0On();
+      call Leds.led1On();
+      call Leds.led2On();
+      state = OFF;
+      tx_stop();
+      rx_stop();
+      call rcTimer.startOneShot(rc.delay);
+      break;
+    default:
+      nop();
+      call Panic.panic(-1, 1, state, 0, 0, 0);
+      state = OFF;
+      call rcTimer.startOneShot(rc.delay);
+      break;
+    }
   }
 
+  async event void RadioState.done() {
+    post rc_task();
+  }
 
-  event void testTimer.fired() {
-    error_t      error;
-    uint16_t     ntime;
-
+  event void rcTimer.fired() {
+    nop();
     nop();
     switch(state) {
     case OFF:
+      nop();
+      call Leds.led0On();
+      call Leds.led1On();
+      call Leds.led2On();
+      rc.starts++;
       state = STARTING;
-      call testTimer.startOneShot(1000);
-      error = call RadioState.turnOn();
+      call rcTimer.startOneShot(rc.delay);
+      rc.last_error = call RadioState.turnOn();
       break;
     case WAITING:
       nop();
-      ntime = wait_time;
-      if (active_mode) {
-	error = call RadioSend.send(txMsg);
-	if (error == SUCCESS) {
-	  ntime = tx_time;
-	  state = TX;
-	} else if (error == EALREADY) {
-	  test_tx_busy++;
-	  // stay in waiting state, try sending again
-	} else {
-	  call Panic.panic(-1, 4, state, error, test_tx_errors, transmit_iterations);
-	}
+      if ((rc.iterations++ % rc.modulo) == 0) {
+	call Leds.led0On();
+	call Leds.led1On();
+	call Leds.led2On();
+	nop();
+	state = STOPPING;
+	rc.last_error = call RadioState.turnOff();
+      } else {
+	call rcTimer.startOneShot(rc.delay);
       }
-      call testTimer.startOneShot(ntime);
       break;
-    case TX:
-      test_tx_errors++;
-      state = WAITING;
-      call testTimer.startOneShot(1000);
-      break;
-    case STARTING:
-    case STOPPING:
+    default:
       nop();
       call Panic.panic(-1, 3, state, 0, 0, 0);
       state = OFF;
-      call testTimer.startOneShot(1000);
+      call rcTimer.startOneShot(rc.delay);
       break;
     }
+  }
+
+
+  /*
+   * operating system hooks
+   */
+  command error_t Init.init() {
+    return SUCCESS;
+  }
+
+  event void Boot.booted() {
+    nop();
+    nop();
+    tx.mode    = PING;    // enable transmission
+    rx.mode    = RUN;     // enable reception
+    tx.delay   = 100;     // set timeout between transmssions
+    rc.delay   = 5000;    // set timeout between radio checks
+    rc.modulo  = 100;     // power cycle every nth check
+    call rcTimer.startOneShot(0);
   }
 
 
