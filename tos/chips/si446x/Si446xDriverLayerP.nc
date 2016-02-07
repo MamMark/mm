@@ -2382,11 +2382,11 @@ tasklet_norace message_t  * globalRxMsgPtr;
       __PANIC_RADIO(7, tx_len, pkt_len, (uint16_t) dp, 0);
     nop();
     si446x_start_tx(pkt_len);
-/*** need a better way to do this, if needed at all */
-//    while (!si446x_get_cts()) {
-//      ll_si446x_get_int_status(radio_pend);
-//    }
-//    ll_si446x_get_int_status(radio_pend);
+    // wait for command to complete
+    while (!si446x_get_cts()) {
+      ll_si446x_get_int_status(radio_pend);
+    }
+    ll_si446x_get_int_status(radio_pend);
     nop();
     return t->next_state;
   }
