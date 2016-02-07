@@ -824,8 +824,8 @@ typedef struct {
 } si446x_gpio_cfg_t;
 
 typedef struct {
-  uint8_t int_pend;
-  uint8_t int_status;
+  uint8_t pend;
+  uint8_t status;
   uint8_t ph_pend;
   uint8_t ph_status;
   uint8_t modem_pend;
@@ -836,13 +836,13 @@ typedef struct {
 } si446x_int_status_t;                  /* INT_STATUS, 0x20 */
 
 typedef struct {
-  uint8_t ph_pend;
-  uint8_t ph_status;
+  uint8_t pend;
+  uint8_t status;
 } si446x_ph_status_t;                   /* PH_STATUS, 0x21 */
 
 typedef struct {
-  uint8_t modem_pend;
-  uint8_t modem_status;
+  uint8_t pend;
+  uint8_t status;
   uint8_t curr_rssi;
   uint8_t latched_rssi;
   uint8_t ant1_rssi;
@@ -853,8 +853,8 @@ typedef struct {
 } si446x_modem_status_t;                /* MODEM_STATUS, 0x22 */
 
 typedef struct {
-  uint8_t chip_pend;
-  uint8_t chip_status;
+  uint8_t pend;
+  uint8_t status;
   uint8_t cmd_err_status;
   uint8_t cmd_err_cmd_id;
   uint8_t info_flags;                   /* 68 only */

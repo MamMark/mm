@@ -523,15 +523,14 @@ const uint8_t si446x_local_config[] = {
 volatile norace uint8_t xcts, xcts0, xcts_s;
 
 typedef struct {
-  si446x_int_status_t   int_status;
-  si446x_ph_status_t    ph_status;
-  si446x_modem_status_t modem_status;
-  si446x_chip_status_t  chip_status;
+  si446x_int_status_t   ints;
+  si446x_ph_status_t    ph;
+  si446x_modem_status_t modem;
+  si446x_chip_status_t  chip;
 } si446x_chip_int_t;
 
 volatile norace si446x_chip_int_t chip_debug;
 volatile norace si446x_chip_int_t int_state;
-
 
 /**************************************************************************/
 
@@ -1489,13 +1488,13 @@ tasklet_norace message_t  * globalRxMsgPtr;
    */
   void ll_si446x_get_int_state(volatile si446x_chip_int_t *isp) {
     ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                        (void *) &isp->ph_status, SI446X_PH_STATUS_REPLY_SIZE);
+                        (void *) &isp->ph, SI446X_PH_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                        (void *) &isp->modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
+                        (void *) &isp->modem, SI446X_MODEM_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                        (void *) &isp->chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
+                        (void *) &isp->chip, SI446X_CHIP_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
-                        (void *) &isp->int_status, SI446X_INT_STATUS_REPLY_SIZE);
+                        (void *) &isp->ints, SI446X_INT_STATUS_REPLY_SIZE);
   }
 
 
@@ -1515,17 +1514,17 @@ tasklet_norace message_t  * globalRxMsgPtr;
     uint8_t pends[4];
 
     ll_si446x_cmd_reply(si446x_int_clr, sizeof(si446x_int_clr),
-                        (void *) &isp->int_status, SI446X_INT_STATUS_REPLY_SIZE);
+                        (void *) &isp->ints, SI446X_INT_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                        (void *) &isp->ph_status, SI446X_PH_STATUS_REPLY_SIZE);
+                        (void *) &isp->ph, SI446X_PH_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                        (void *) &isp->modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
+                        (void *) &isp->modem, SI446X_MODEM_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                        (void *) &isp->chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
+                        (void *) &isp->chip, SI446X_CHIP_STATUS_REPLY_SIZE);
     pends[DEVICE_STATE] = si446x_fast_device_state();
-    pends[PH_STATUS]    = isp->int_status.ph_pend;
-    pends[MODEM_STATUS] = isp->int_status.modem_pend;
-    pends[LATCHED_RSSI] = isp->modem_status.latched_rssi;
+    pends[PH_STATUS]    = isp->ph.pend;
+    pends[MODEM_STATUS] = isp->modem.pend;
+    pends[LATCHED_RSSI] = isp->modem.latched_rssi;
     trace_radio_pend(pends);
   }
 
@@ -2602,37 +2601,39 @@ tasklet_norace message_t  * globalRxMsgPtr;
   /*
    * get_next_interrupt_event
    *
-   * get next available interrupt from the pending information and return
-   * associated FSM event to be processed.
-   * clear the flag in the pending information to denote handled.
+   * Check to see if any more interrupts are in the pending information
+   * and return associated FSM event to be processed.
+   * Clear the flag in the pending information to denote handled.
    */
   fsm_event_t get_next_interrupt_event() {
-    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
-      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
+    nop();
+    if (ints.modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
+      ints.modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
       return E_PREAMBLE_DETECT;
     }
-    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
-      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
+    if (ints.modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
+      ints.modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
       return E_SYNC_DETECT;
     }
-    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_PACKET_RX) {
-      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
+    if (ints.ph_pend & SI446X_PH_STATUS_PACKET_RX) {
+      ints.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
       return E_PACKET_RX;
     }
-    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
-      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_PACKET_SENT;
+    if (ints.ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
+      ints.ph_pend &= !SI446X_PH_STATUS_PACKET_SENT;
       return E_PACKET_SENT;
     }
-    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
-      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_CRC_ERROR;
+    if (ints.ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
+      ints.ph_pend &= !SI446X_PH_STATUS_CRC_ERROR;
       return E_CRC_ERROR;
     }
-    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
-      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
+    if (ints.ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
+      ints.ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
       return E_RX_FIFO;
     }
-    if ((pending_interrupts.ph_pend    & SI446X_PH_INTEREST) ||    /* missed something */
-	(pending_interrupts.modem_pend & SI446X_MODEM_INTEREST)) {
+    /* missed something */
+    if ((ints.ph_pend    & SI446X_PH_INTEREST) ||
+	(ints.modem_pend & SI446X_MODEM_INTEREST)) {
       nop();
       __PANIC_RADIO(19, 0, 0, 0, 0);
     }
