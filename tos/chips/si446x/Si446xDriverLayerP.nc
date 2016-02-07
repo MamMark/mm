@@ -917,7 +917,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     { S_POR_W, A_PWR_UP, S_PWR_UP_W },
     { S_PWR_UP_W, A_CONFIG, S_CONFIG_W },
     { S_RX_ACTIVE, A_RX_ERROR, S_RX_ON },
-    { S_TX_ACTIVE, A_TX_ERROR, S_TX_ACTIVE },
+    { S_TX_ACTIVE, A_TX_ERROR, S_RX_ON },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -2404,30 +2404,37 @@ tasklet_norace message_t  * globalRxMsgPtr;
     uint8_t        rssi;
 
     if (signal RadioReceive.header(globalRxMsgPtr)) {
+      start_alarm(SI446X_SOP_TIME);
       rssi = si446x_fast_latched_rssi();
       call PacketRSSI.set(globalRxMsgPtr, rssi);         /* set only if accepting */
       call PacketLinkQuality.set(globalRxMsgPtr, rssi); 
       return S_RX_ACTIVE;
-    } else {
-      /* proceed with a_rx_on action to start receiving again */
-      return a_rx_on(t);
     }
+    stop_alarm();
+    /* proceed with a_rx_on action to start receiving again */
+    return a_rx_on(t);
   }
 
 
  /**************************************************************************/
 
   fsm_state_t a_rx_error(fsm_transition_t *t) {
-    return t->next_state;
+    nop();
+    stop_alarm();
+    /* proceed with a_rx_on action to start receiving again */
+    return a_rx_on(t);
   }
 
 
  /**************************************************************************/
 
   fsm_state_t a_tx_error(fsm_transition_t *t) {
+    nop();
+    stop_alarm();
     globalTxMsgPtr = NULL;
     signal RadioSend.sendDone(FAIL);
-    return t->next_state;
+    /* proceed with a_rx_on action to start receiving again */
+    return a_rx_on(t);
   }
 
 
@@ -2460,10 +2467,11 @@ tasklet_norace message_t  * globalRxMsgPtr;
     nop();
     stop_alarm();
     si446x_fifo_info(&rx_len, &tx_len, 0);
-    RADIO_ASSERT( tx_len == 0 );
+//    RADIO_ASSERT( tx_len == max(64/129)? );
     globalTxMsgPtr = NULL;
     signal RadioSend.sendDone(SUCCESS);
-    return t->next_state;
+    /* proceed with a_rx_on action to start receiving again */
+    return a_rx_on(t);
   }
 
 
