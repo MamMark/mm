@@ -55,8 +55,8 @@ implementation {
   async command void    HW.si446x_unshutdown()      { SI446X_SDN = 0; }
   async command void    HW.si446x_set_cs()          { SI446X_CSN = 0; }
   async command void    HW.si446x_clr_cs()          { SI446X_CSN = 1; }
-  async command void    HW.si446x_set_low_tx_pwr()  { }
-  async command void    HW.si446x_set_high_tx_pwr() { }
+  async command void    HW.si446x_set_low_tx_pwr()  { SI446X_VOLT_SEL = 0; }
+  async command void    HW.si446x_set_high_tx_pwr() { SI446X_VOLT_SEL = 1; }
 
   async command void    HW.si446x_enableInterrupt() {
     atomic {
