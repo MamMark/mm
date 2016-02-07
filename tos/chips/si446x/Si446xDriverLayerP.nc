@@ -2623,33 +2623,33 @@ tasklet_norace message_t  * globalRxMsgPtr;
    */
   fsm_event_t get_next_interrupt_event() {
     nop();
-    if (ints.modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
-      ints.modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
+    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
+      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
       return E_PREAMBLE_DETECT;
     }
-    if (ints.modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
-      ints.modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
+    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
+      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
       return E_SYNC_DETECT;
     }
-    if (ints.ph_pend & SI446X_PH_STATUS_PACKET_RX) {
-      ints.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
+    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_PACKET_RX) {
+      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
       return E_PACKET_RX;
     }
-    if (ints.ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
-      ints.ph_pend &= !SI446X_PH_STATUS_PACKET_SENT;
+    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
+      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_PACKET_SENT;
       return E_PACKET_SENT;
     }
-    if (ints.ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
-      ints.ph_pend &= !SI446X_PH_STATUS_CRC_ERROR;
+    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
+      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_CRC_ERROR;
       return E_CRC_ERROR;
     }
-    if (ints.ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
-      ints.ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
+    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
+      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
       return E_RX_FIFO;
     }
     /* missed something */
-    if ((ints.ph_pend    & SI446X_PH_INTEREST) ||
-	(ints.modem_pend & SI446X_MODEM_INTEREST)) {
+    if ((pending_interrupts.ph_pend    & SI446X_PH_INTEREST) ||
+	(pending_interrupts.modem_pend & SI446X_MODEM_INTEREST)) {
       nop();
       __PANIC_RADIO(19, 0, 0, 0, 0);
     }
