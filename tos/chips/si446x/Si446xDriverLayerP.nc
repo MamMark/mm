@@ -2382,8 +2382,11 @@ tasklet_norace message_t  * globalRxMsgPtr;
       len_to_send = 64;
       fifo_buf[0] = len_to_send - 1 ;
       for (i = 1; i < len_to_send; i++)
-        fifo_buf[i] = 0xaa;
+        fifo_buf[i] = 0xff;
 
+      nop();
+      call HW.si446x_set_low_tx_pwr();
+      call HW.si446x_set_high_tx_pwr();
       si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
       nop();
       si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_TX);
@@ -2420,7 +2423,7 @@ doit_again:
         si446x_fifo_info(&t_rx_len, &t_tx_len, 0);
         ll_si446x_get_int_status(radio_pend);
         nop();
-        goto doit_again;
+//        goto doit_again;
         si446x_retrans(len_to_send);
       }
     }
