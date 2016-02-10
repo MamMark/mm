@@ -1,9 +1,11 @@
 configuration Lis3mdlC {
+  provides interface SplitControl;
   provides interface Lis3mdl;
 }
 implementation {
   components Lis3mdlP;
-  Lis3mdl = Lis3mdlP;
+  Lis3mdl = Lis3mdlP.Lis3mdl;
+  SplitControl = Lis3mdlP.SplitControl;
 
   components MainC;
   Lis3mdlP.Init <- MainC.SoftwareInit;
@@ -15,4 +17,7 @@ implementation {
   Lis3mdlP.SpiResource -> Spi.Resource;
   //Lis3mdl.SpiBlock -> Spi.SpiBlock;
   Lis3mdlP.SpiByte -> Spi.SpiByte;
+
+  components Pwr3V3C;
+  Lis3mdlP.PwrReg -> Pwr3V3C.PwrReg;
 }
