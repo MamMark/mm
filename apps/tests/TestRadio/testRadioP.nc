@@ -9,6 +9,8 @@
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;
 
+uint16_t global_node_id = 42;
+
 module testRadioP {
   provides {
     interface Init;
@@ -16,9 +18,11 @@ module testRadioP {
     interface Boot;
     interface Timer<TMilli> as rcTimer;
     interface Timer<TMilli> as txTimer;
+    //    interface Timer<TMilli> as pgTimer;
     interface LocalTime<TMilli>;
     interface Leds;
     interface Panic;
+    interface Random;
     interface RadioState;
     interface RadioPacket;
     interface RadioSend;
@@ -32,116 +36,210 @@ implementation {
 
   uint16_t        test_iterations, test_tx_errors, test_rx_errors, test_tx_busy;
   uint16_t        transmit_iterations, receive_iterations;
-  uint16_t        iteration_modulo = 10;
+  uint16_t        iteration_modulo;
+  uint32_t        wait_time, tx_time;
   uint8_t         active_mode;
-  uint16_t        wait_time, tx_time;
 
-  message_t     * rxMsg;            /* msg driver owns */
-  uint8_t         txMsgBuffer[129] = {'\31', '\1', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', '\0'};
-  message_t     * txMsg = (message_t *) txMsgBuffer;
+  typedef enum {
+    DISABLED = 0,
+    RUN  = 1,
+    PEND = 2,
+    PING = 3,
+    PONG = 4,
+    REP  = 5,
+  } test_mode_t;
 
   /*
-   * state info
+   * radio state info
    */
   typedef enum {
     OFF = 0,
     STARTING,
-    WAITING,
+    ACTIVE,
     STOPPING,
-  } test_state_t;
+  } radio_state_t;
 
-  norace test_state_t state;
+  norace radio_state_t radio_state;
 
-  typedef enum {
-    DISABLED = 0,
-    RUN = 1,
-    PING = 2,
-    PONG = 4,
-  } test_mode_t;
+  typedef struct test_msg {
+    uint8_t       len;
+    uint8_t       seq;
+    uint16_t      addr;
+    test_mode_t   mode;
+    uint8_t       data[0];
+  } PACKED test_msg_t;
+
+  volatile uint8_t  txMsgBuffer[129] = {'\37', '\1', '\1', '\1', '\1', '\1', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', '\0'};
+  message_t       * pTosTxMsg = (message_t *) txMsgBuffer;
+  test_msg_t      * pTxMsg = (test_msg_t *) txMsgBuffer;
+  volatile uint8_t  pgMsgBuffer[129];
+  message_t       * pTosPgMsg = (message_t *) pgMsgBuffer;
+  test_msg_t      * pPgMsg = (test_msg_t *) pgMsgBuffer;
+
+
+  typedef struct {
+    uint16_t        iterations;
+    uint16_t        starts;
+    uint16_t        errors;
+    error_t         last_error;
+    uint16_t        delay;
+    uint16_t        modulo;
+    uint16_t        addr;
+  } rc_t;
+
+  norace rc_t     rc;
+
+  typedef struct {
+    uint32_t        iterations;
+    uint16_t        delay;
+    error_t         last_error;
+    uint16_t        errors;
+    uint16_t        pingerrors;
+    uint16_t        busy;
+    uint8_t         size;
+    test_mode_t     mode;
+    bool            waiting_to_send;
+  } tx_t;
+
+  norace tx_t       tx;
+
+  typedef struct {
+    uint32_t        iterations;
+    uint16_t        errors;
+    error_t         last_error;
+    uint16_t        pongerrors;
+    test_mode_t     mode;
+  } rx_t;
+
+  norace rx_t     rx;
+
+  typedef struct {
+    uint32_t        iterations;
+    uint16_t        errors;
+    uint16_t        last_error;
+    test_mode_t     mode;
+    bool            waiting_to_send;
+  } pg_t;
+
+  norace pg_t     pg;
 
   /*
    * packet test transmission is controlled by timer interrupt.
    *
    */
-  typedef struct {
-    uint32_t        iterations;
-    uint32_t        pings;
-    uint16_t        delay;
-    uint16_t        error;
-    uint16_t        errors;
-    uint16_t        busy;
-    uint8_t         size;
-    test_mode_t     mode;
-  } tx_t;
-
-  norace tx_t       tx;
-
   void tx_start() {
     nop();
-    if (tx.mode)
-      call txTimer.startOneShot(tx.delay);
+    if (!(call txTimer.isRunning())) {
+      call txTimer.stop();
+    }
+    if (tx.mode) {
+      if (tx.mode == PONG)
+	tx.mode = PING;
+      tx.waiting_to_send = FALSE;
+      pg.mode = PING;
+      pg.waiting_to_send = FALSE;
+      call txTimer.startPeriodic(tx.delay);
+    }
   }
 
   void tx_stop() {
     nop();
-    // cancel timer
+    call txTimer.stop();
   }
-
 
   task void tx_task() {
+    error_t     error;
     nop();
     nop();
+    if (tx.mode == DISABLED) {
+      return;
+    }
     if ((tx.mode == RUN) || (tx.mode == PING)) {
-      tx.error = call RadioSend.send(txMsg);
-      if (tx.error == SUCCESS) {
-	call Leds.led0Toggle();
-      } else if (tx.error == EALREADY) {
-	tx.busy++;
-      } else {
-	call Panic.panic(-1, 4, state, tx.error, tx.errors++, tx.iterations);
+      pTxMsg->addr = rc.addr;
+      pTxMsg->mode = tx.mode;
+      pTxMsg->seq = (uint8_t) ++tx.iterations; 
+      error = call RadioSend.send(pTosTxMsg);
+    } else if (pg.mode == PONG) {
+      error = call RadioSend.send(pTosPgMsg);
+    } else {
+      return;
+    }
+    switch (error) {
+    case SUCCESS:
+      if (tx.mode == RUN) {                     // wait for timer to repeat sending run msg
+	tx.mode = PEND;
+      } else if (tx.mode == PING) {             // wait for timer to repeat sending ping msg
+	tx.mode = PONG;
+      } else if (pg.mode == PONG) {             // wait to receive another ping msg
+	pg.mode = PING;
       }
-    }
-    if (tx.mode == PING) {
-      tx.mode = PONG;
-    } else if (tx.mode == PONG) {
+      call Leds.led0Toggle();
+      return;
+    case EALREADY:
+    case EBUSY:
+      nop();
+      if (tx.mode == PEND) {
+	tx.mode = RUN;
+      } else if (tx.mode == PONG) {
+	tx.mode = PING;
+      }
+      tx.waiting_to_send = TRUE;                // request earliest opportunity to re-send
+      tx.busy++;
+      break;
+    default:
+      call Panic.panic(-1, 4, radio_state, error, tx.errors, tx.iterations);
+      tx.last_error = error;
       tx.errors++;
-      tx.mode = PING;
+      break;
     }
-    call txTimer.startOneShot(tx.delay);
   }
 
-
   event void txTimer.fired() {
+    nop();
+    nop();
+    if (tx.mode == DISABLED) {
+      return;
+    }
+    if (tx.mode == PEND) {
+      tx.mode = RUN;
+    } else if (tx.mode == PONG) {
+      tx.mode = PING;
+    }
     post tx_task();
   }
 
-  tasklet_async event void RadioSend.ready() { }
+  void tx_check_waiting() {
+    if (tx.waiting_to_send) {
+      tx.waiting_to_send = FALSE;
+      post tx_task();
+    }
+  }
+
+  tasklet_async event void RadioSend.ready() {
+    nop();
+    if (!(tx.mode == DISABLED)) 
+      tx_check_waiting();
+  }
 
   tasklet_async event void RadioSend.sendDone(error_t error) {
     nop();
-    nop();
-    if (error) {
-      tx.errors++;
-      tx.error = error;
+    if (tx.mode == DISABLED) {
+      return;
     }
-    tx.iterations++;
+    if (error) {
+      tx.last_error = error;
+      tx.errors++;
+    }
+    tx_check_waiting();
   }
-
 
   /*
    * packet test reception is handled by event callback
    *
    */
-  typedef struct {
-    uint32_t        iterations;
-    test_mode_t     mode;
-    uint8_t         enable;
-  } rx_t;
-
-  norace rx_t     rx;
-
   void rx_start() {
     nop();
+    // initialize state variables
   }
 
   void rx_stop() {
@@ -149,15 +247,34 @@ implementation {
   }
 
   tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
+    test_msg_t          * pm;
     nop();
     nop();
     if (rx.mode == RUN) {
+      pm = (test_msg_t *) msg;
+      if ((pm->addr == rc.addr) || (pm->addr == global_node_id)) {
+	if ((pm->mode == PONG) && (tx.mode == PONG)) {  // response to our ping
+	  if (pm->seq != tx.iterations)
+	    tx.pingerrors++;
+	  tx.mode = PING;
+	} else {
+	  if (pm->addr != global_node_id) {   // ignore messages with default addr
+	    rx.errors++;             // shouldn't get other msg types with my addr
+	  }
+	}
+      } else {
+	// ping msg from other addr, copy msg send pong back
+	if ((pm->mode == PING) && (pg.mode == PING)) {
+	  memcpy((void *) pPgMsg, (void *) pm, pm->len + 1);
+	  pPgMsg->mode = PONG;
+	  pg.mode = PONG;
+	  pg.iterations++;
+	  post tx_task();
+	}
+      }
       rx.iterations++;
       call Leds.led1Toggle();
-    }
-    if (tx.mode == PONG) {
-      tx.pings++;
-      tx.mode = PING;
+      tx_check_waiting();
     }
     return msg;
   }
@@ -168,87 +285,95 @@ implementation {
   }
 
   /*
-   * radio control state is cycled periodically
+   * radio control state is cycled periodically through power cycle
    *
    */
-
-  typedef struct {
-    uint16_t        iterations;
-    uint16_t        starts;
-    uint16_t        errors;
-    uint16_t        last_error;
-    uint16_t        delay;
-    uint16_t        modulo;
-  } rc_t;
-
-  norace rc_t     rc;
 
   void task rc_task() {
     nop();
     nop();
-    switch(state) {
+    switch(radio_state) {
     case STARTING:
-      call Leds.led0Off();
-      call Leds.led1Off();
-      call Leds.led2Off();
-      state = WAITING;
-      tx_start();
-      rx_start();
-      call rcTimer.startOneShot(rc.delay);
-      break;
-    case STOPPING:
       call Leds.led0On();
       call Leds.led1On();
       call Leds.led2On();
-      state = OFF;
-      tx_stop();
-      rx_stop();
+      radio_state = ACTIVE;
+      rx_start();
+      tx_start();
+      call rcTimer.startOneShot(rc.delay);
+      break;
+    case STOPPING:
+      call Leds.led0Off();
+      call Leds.led1Off();
+      call Leds.led2Off();
+      radio_state = OFF;
       call rcTimer.startOneShot(rc.delay);
       break;
     default:
       nop();
-      call Panic.panic(-1, 1, state, 0, 0, 0);
-      state = OFF;
+      call Panic.panic(-1, 1, radio_state, 0, 0, 0);
+      radio_state = OFF;
       call rcTimer.startOneShot(rc.delay);
       break;
     }
   }
 
   async event void RadioState.done() {
+    nop();
+    nop();
     post rc_task();
   }
 
   event void rcTimer.fired() {
+    error_t      error;
     nop();
     nop();
-    switch(state) {
+    switch(radio_state) {
     case OFF:
       nop();
-      call Leds.led0On();
-      call Leds.led1On();
-      call Leds.led2On();
-      rc.starts++;
-      state = STARTING;
-      call rcTimer.startOneShot(rc.delay);
-      rc.last_error = call RadioState.turnOn();
-      break;
-    case WAITING:
-      nop();
-      if ((rc.iterations++ % rc.modulo) == 0) {
-	call Leds.led0On();
-	call Leds.led1On();
-	call Leds.led2On();
+      error = call RadioState.turnOn();
+      if (error == 0) {
 	nop();
-	state = STOPPING;
-	rc.last_error = call RadioState.turnOff();
+	radio_state = STARTING;
+	rc.starts++;
+	call Leds.led0Off();
+	call Leds.led1Off();
+	call Leds.led2Off();
+	break;
+      } else {
+	nop();
+	rc.last_error = error;
+	rc.errors++;
+	call rcTimer.startOneShot(rc.delay);
+      }
+      break;
+    case ACTIVE:
+      nop();
+      if ((++rc.iterations % rc.modulo) == 0) {
+	error = call RadioState.turnOff();
+	if (error == 0) {
+	  nop();
+	  radio_state = STOPPING;
+	  call Leds.led0On();
+	  call Leds.led1On();
+	  call Leds.led2On();
+	  tx_stop();
+	  rx_stop();
+	  break;
+	} else {
+	  nop();
+	  rc.last_error = error;
+	  rc.errors++;
+	  call rcTimer.startOneShot(rc.delay);
+	}
       } else {
 	call rcTimer.startOneShot(rc.delay);
       }
       break;
     default:
       nop();
-      call Panic.panic(-1, 3, state, 0, 0, 0);
-      state = OFF;
+      call Panic.panic(-1, 3, radio_state, 0, 0, 0);
+      radio_state = OFF;
       call rcTimer.startOneShot(rc.delay);
       break;
     }
@@ -265,11 +390,15 @@ implementation {
   event void Boot.booted() {
     nop();
     nop();
-    tx.mode    = PING;    // enable transmission
+    tx.mode    = RUN;     // enable transmission
     rx.mode    = RUN;     // enable reception
+    pg.mode    = DISABLED;
     tx.delay   = 100;     // set timeout between transmssions
-    rc.delay   = 5000;    // set timeout between radio checks
-    rc.modulo  = 100;     // power cycle every nth check
+    rc.delay   = 1000;    // set timeout between radio checks
+    rc.modulo  = 30;      // power cycle radio after every nth check
+    //    rc.addr    = call Random.rand16() % 128; // pick a random value for link addr
+    rc.addr    = global_node_id;
+    nop();
     call rcTimer.startOneShot(0);
   }
 

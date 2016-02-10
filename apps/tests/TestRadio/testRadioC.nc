@@ -17,9 +17,15 @@ implementation {
   testRadioP.rcTimer -> Timer0;
   components new TimerMilliC() as Timer1;
   testRadioP.txTimer -> Timer1;
-
+  /*
+  components new TimerMilliC() as Timer2;
+  testRadioP.pgTimer -> Timer2;
+  */
   components LocalTimeMilliC;
   testRadioP.LocalTime -> LocalTimeMilliC;
+
+  components RandomC;
+  testRadioP.Random -> RandomC;
 
   components LedsC;
   testRadioP.Leds -> LedsC;
