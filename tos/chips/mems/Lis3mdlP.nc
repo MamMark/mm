@@ -1,4 +1,4 @@
-module Lis3dhP {
+module Lis3mdlP {
   provides interface Init;
   provides interface Lis3mdl;
 

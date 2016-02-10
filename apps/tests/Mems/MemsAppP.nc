@@ -1,12 +1,16 @@
 
 module MemsAppP {
   uses interface Boot;
+  
   uses interface Timer<TMilli> as AccelTimer;
   uses interface Timer<TMilli> as GyroTimer;
   uses interface Timer<TMilli> as MagTimer;
 
   uses interface Lis3dh as Accel;
+  uses interface SplitControl as AccelControl;
+  
   uses interface L3g4200 as Gyro;
+  
   uses interface Lis3mdl as Mag;
 }
 implementation {
@@ -18,12 +22,16 @@ implementation {
   }
 
   event void AccelTimer.fired() {
-    call Accel.whoAmI();
+    call AccelControl.start();
   }
 
-  event void Accel.whoAmIDone (error_t status, uint8_t id) {
-    nop();
-    nop();
+  event void AccelControl.startDone(error_t error) {
+    uint8_t id;
+    call Accel.whoAmI(&id);
+    call AccelControl.stop();
+  }
+
+  event void AccelControl.stopDone(error_t error) {
     nop();
   }
 
