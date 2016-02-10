@@ -761,6 +761,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
  * Platform code is responsible for setting the various pins needed by
  * the chip to determine proper states.  ie.  NIRQ, CTS, inputs,
  * CSN (deasserted), SDN (asserted).  SPI pins set up for SPI mode.
+ * The S_READY value has special meaning in that any state of greater
+ * value is an "operational" state when signalling ready.
  */
 
   typedef enum {
@@ -853,6 +855,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   const fsm_transition_t fsm_e_packet_sent[];
   const fsm_transition_t fsm_e_crc_error[];
   const fsm_transition_t fsm_e_preamble_detect[];
+  const fsm_transition_t fsm_e_sync_detect[];
 
   // list of all of the fsm event lists - order must match the fsm_event_t enum
   const fsm_transition_t *fsm_events_group[] = {fsm_e_nop,            fsm_e_turnon,
@@ -861,7 +864,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 						fsm_e_wait_done,      fsm_e_config_done,
 						fsm_e_packet_rx,      fsm_e_packet_sent,
 						fsm_e_crc_error,      fsm_e_preamble_detect,
-						};
+						fsm_e_sync_detect};
 
   // The following group of arrays define the (current_state, action, next_state) tuples
   // that are valid for every event.
@@ -909,6 +912,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
   // e_rx_fifo
   const fsm_transition_t fsm_e_rx_fifo[] = {
     { S_RX_ON, A_RX_HEADER, S_RX_ACTIVE },
+    { S_RX_ACTIVE, A_RX_HEADER, S_RX_ACTIVE },
+    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -930,6 +935,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   // e_packet_rx
   const fsm_transition_t fsm_e_packet_rx[] = {
     { S_RX_ACTIVE, A_RX_CMP, S_RX_ON },
+    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -942,18 +948,24 @@ tasklet_norace message_t  * globalRxMsgPtr;
   // e_crc_error
   const fsm_transition_t fsm_e_crc_error[] = {
     { S_RX_ACTIVE, A_RX_ERROR, S_RX_ON },
+    { S_RX_ON, A_NOP, S_RX_ON },
+    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
   // e_preamble_detect
   const fsm_transition_t fsm_e_preamble_detect[] = {
     { S_RX_ON, A_RX_PREAMBLE, S_RX_ACTIVE },
+    { S_RX_ACTIVE, A_NOP, S_RX_ACTIVE },
+    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
   // e_sync_detect
   const fsm_transition_t fsm_e_sync_detect[] = {
     { S_RX_ON, A_RX_SYNC, S_RX_ACTIVE },
+    { S_RX_ACTIVE, A_NOP, S_RX_ACTIVE },
+    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -1200,7 +1212,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
   void drf();
 
   si446x_packet_header_t *getPhyHeader(message_t *msg) {
-    return ((void *) msg) + call Config.headerOffset(msg);
+//    return ((void *) msg) + call Config.headerOffset(msg);
+    return ((void *) &msg->data - sizeof(si446x_packet_header_t));
   }
 
 
@@ -1659,6 +1672,22 @@ tasklet_norace message_t  * globalRxMsgPtr;
       *txp = fifo_cnts[1];
   }
 
+  bool wait_for_cts() {
+    uint16_t t0, t1;
+    t0 = call Platform.usecsRaw();
+    t1 = t0;
+    while (!si446x_get_cts()) {
+      t1 = call Platform.usecsRaw();
+      ll_si446x_get_int_status(radio_pend);
+      if ((t1-t0) > SI446X_CTS_TIMEOUT) {
+	__PANIC_RADIO(24, t1, t0, t1-t0, 0);
+	return FALSE;
+      }
+    }
+    ll_si446x_get_int_status(radio_pend);
+    return TRUE;
+  }
+
 
   /* ----------------- Basic Access -----------------  */
 
@@ -1964,6 +1993,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
       t1 = call Platform.usecsRaw();
       nop();
     }
+    t1 -= t0;
   }
 
 
@@ -2174,7 +2204,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     default:
       break;
     }
-    if ((dvr_cmd == CMD_NONE) && (fsm_get_state() >= S_READY))
+    if ((dvr_cmd == CMD_NONE) && (fsm_get_state() == S_RX_ON))
       signal RadioSend.ready();
   }
 
@@ -2188,7 +2218,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
    * to run again with E_WAIT_DONE event
    */
 
-  uint8_t start_alarm(uint16_t t) {
+  uint8_t start_alarm(uint32_t t) {
     if (call RadioAlarm.isFree()) {
       call RadioAlarm.wait(t);
       return TRUE;
@@ -2207,10 +2237,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
   uint8_t stop_alarm() {
     if (!call RadioAlarm.isFree()) {
       call RadioAlarm.cancel();
-      return TRUE;
     }
-    __PANIC_RADIO(64, 0, 0, 0, 0);
-    return FALSE;
+    return TRUE;
   }
 
 
@@ -2280,7 +2308,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
     return t->next_state;
   }
 
-
   /**************************************************************************/
   /*
    * a_ready
@@ -2296,12 +2323,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
     nop();
     ll_si446x_getclr_int_state(&int_state);
     si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-    ut0 = call Platform.usecsRaw();
     //    wait for command completion
-    while (!si446x_get_cts()) {
-      ll_si446x_get_int_status(radio_pend);
-    }
-    ut1 = call Platform.usecsRaw();
+    wait_for_cts();
     nop();
     drf();
     nop();
@@ -2318,6 +2341,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
   /* go into standby to lower power consumption */
 
   fsm_state_t a_standby(fsm_transition_t *t) {
+    nop();
+    stop_alarm();
     post user_response_task();
     return t->next_state;
   }
@@ -2326,7 +2351,9 @@ tasklet_norace message_t  * globalRxMsgPtr;
   /**************************************************************************/
 
   fsm_state_t a_pwr_dn(fsm_transition_t *t) {
+    nop();
     call HW.si446x_disableInterrupt();
+    stop_alarm();
     post user_response_task();
     return t->next_state;
   }
@@ -2343,15 +2370,12 @@ tasklet_norace message_t  * globalRxMsgPtr;
     if (!globalRxMsgPtr){
       __PANIC_RADIO(3, 0, 0, 0, 0);
     }
+    ll_si446x_getclr_int_state(&int_state);
     nop();
     start_rx();
-// is the following required?
-    ut0 = call Platform.usecsRaw();
-    while (!si446x_get_cts()) {
-      ll_si446x_get_int_status(radio_pend);
-    }
-    ll_si446x_get_int_status(radio_pend);
-    ut1 = call Platform.usecsRaw();
+    // start_rx takes a while, so need to wait for command confirmation
+    wait_for_cts();
+    post user_response_task();
     nop();
     return t->next_state;
   }
@@ -2370,6 +2394,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     if (!globalTxMsgPtr){
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
+    start_alarm(SI446X_TX_WAIT_TIME);
     nop();
     dp     = (uint8_t *) getPhyHeader(globalTxMsgPtr);
     pkt_len = *dp + 1;              // length of data field is first byte
@@ -2381,12 +2406,11 @@ tasklet_norace message_t  * globalRxMsgPtr;
     if (tx_len != (SI446X_EMPTY_TX_LEN - pkt_len))
       __PANIC_RADIO(7, tx_len, pkt_len, (uint16_t) dp, 0);
     nop();
+    ll_si446x_getclr_int_state(&int_state);
     si446x_start_tx(pkt_len);
-    // wait for command to complete
-    while (!si446x_get_cts()) {
-      ll_si446x_get_int_status(radio_pend);
-    }
-    ll_si446x_get_int_status(radio_pend);
+    // start_tx takes a while, so need to wait for command confirmation
+    wait_for_cts();
+    post user_response_task();           // signal send ready event to user
     nop();
     return t->next_state;
   }
@@ -2403,14 +2427,14 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_state_t a_rx_header(fsm_transition_t *t) {
     uint8_t        rssi;
 
+    stop_alarm();
     if (signal RadioReceive.header(globalRxMsgPtr)) {
-      start_alarm(SI446X_SOP_TIME);
+      start_alarm(SI446X_RX_WAIT_TIME);
       rssi = si446x_fast_latched_rssi();
       call PacketRSSI.set(globalRxMsgPtr, rssi);         /* set only if accepting */
       call PacketLinkQuality.set(globalRxMsgPtr, rssi); 
       return S_RX_ACTIVE;
     }
-    stop_alarm();
     /* proceed with a_rx_on action to start receiving again */
     return a_rx_on(t);
   }
@@ -2420,7 +2444,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   fsm_state_t a_rx_error(fsm_transition_t *t) {
     nop();
-    stop_alarm();
     /* proceed with a_rx_on action to start receiving again */
     return a_rx_on(t);
   }
@@ -2430,7 +2453,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   fsm_state_t a_tx_error(fsm_transition_t *t) {
     nop();
-    stop_alarm();
     globalTxMsgPtr = NULL;
     signal RadioSend.sendDone(FAIL);
     /* proceed with a_rx_on action to start receiving again */
@@ -2602,10 +2624,10 @@ tasklet_norace message_t  * globalRxMsgPtr;
   async event void HW.si446x_interrupt() {
     nop();
     nop();
-    if (fsm_int_event)
-	__PANIC_RADIO(18, fsm_int_event, 0, 0, 0);
-    fsm_int_queue(!E_NOP);
-    call Tasklet.schedule();
+    if (!fsm_int_event) {
+      fsm_int_queue(!E_NOP);
+      call Tasklet.schedule();
+    }
   }
 
   /*
@@ -2672,6 +2694,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
     while (TRUE) {
       ll_si446x_read_fast_status((uint8_t *) &pending_interrupts);
+      trace_radio_pend((uint8_t *) &pending_interrupts);
       if ((!(pending_interrupts.ph_pend &= SI446X_PH_INTEREST)) &&
 	  (!(pending_interrupts.modem_pend &= SI446X_MODEM_INTEREST))) {
 	break;
