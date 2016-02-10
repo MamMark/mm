@@ -15,7 +15,7 @@ implementation {
 
   components new Msp430UsciSpiB0C() as Spi;
   L3g4200P.SpiResource -> Spi.Resource;
-  //L3g4200.SpiBlock -> Spi.SpiBlock;
+  L3g4200P.SpiBlock -> Spi.SpiBlock;
   L3g4200P.SpiByte -> Spi.SpiByte;
 
   components Pwr3V3C;

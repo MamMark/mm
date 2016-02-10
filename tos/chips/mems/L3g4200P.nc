@@ -2,10 +2,9 @@ module L3g4200P {
   provides interface Init;
   provides interface SplitControl;
   provides interface L3g4200;
-  //provides interface Msp430UsciConfigure;
 
   uses interface Resource as SpiResource;
-  //uses interface SpiBlock as SpiBlock;
+  uses interface SpiBlock as SpiBlock;
   uses interface SpiByte as SpiByte;
   uses interface HplMsp430GeneralIO as CS;
   uses interface PwrReg;
@@ -14,6 +13,8 @@ module L3g4200P {
 #include "l3g4200.h"
 
 implementation {
+  uint8_t rx[16], tx[16];
+  
   typedef enum {
     GYRO_IDLE = 0,
     GYRO_STOPPING,
@@ -93,8 +94,13 @@ implementation {
   command error_t L3g4200.whoAmI(uint8_t *id) {
     if (m_gyro_state != GYRO_ACTIVE)
       return EOFF;
+    nop();
+    nop();
+    nop();
     call CS.clr();
-    *id = call SpiByte.write(DIR_READ | WHO_AM_I);
+    tx[0] = DIR_READ | WHO_AM_I;
+    call SpiBlock.transfer(tx, rx, 2);
+    *id = rx[1];
     call CS.set();
     return SUCCESS;
   }

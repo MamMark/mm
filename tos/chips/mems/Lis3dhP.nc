@@ -2,10 +2,9 @@ module Lis3dhP {
   provides interface Init;
   provides interface SplitControl;
   provides interface Lis3dh;
-  //provides interface Msp430UsciConfigure;
 
   uses interface Resource as SpiResource;
-  //uses interface SpiBlock as SpiBlock;
+  uses interface SpiBlock as SpiBlock;
   uses interface SpiByte as SpiByte;
   uses interface HplMsp430GeneralIO as CS;
   uses interface PwrReg;
@@ -14,6 +13,8 @@ module Lis3dhP {
 #include "lis3dh.h"
 
 implementation {
+  uint8_t rx[16], tx[16];
+
   typedef enum {
     ACCEL_IDLE = 0,
     ACCEL_STOPPING,
@@ -24,7 +25,7 @@ implementation {
   } accel_state_t;
 
   accel_state_t m_accel_state;
-  
+
   command error_t Init.init() {
     call CS.set();
     call CS.makeOutput();
@@ -94,7 +95,12 @@ implementation {
     if (m_accel_state != ACCEL_ACTIVE)
       return EOFF;
     call CS.clr();
-    *id = call SpiByte.write(DIR_READ | WHO_AM_I);
+    nop();
+    nop();
+    nop();
+    tx[0] = DIR_READ | WHO_AM_I;
+    call SpiBlock.transfer(tx, rx, 2);
+    *id = rx[1];
     call CS.set();
     return SUCCESS;
   }

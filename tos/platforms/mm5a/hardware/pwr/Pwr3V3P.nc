@@ -11,8 +11,15 @@ module Pwr3V3P {
 }
 implementation {
 
-/* tps78233 output rise delay in msec */
-#define PWR3V3_VOUT_RISETIME 5
+/*
+ * tps78233 output rise delay in msec
+ * 10ms to allow chips to boot.  Probably should
+ * be done differently.  ie.  time for Vout to
+ * stablize and additional time for a chip to boot.
+ *
+ * Do all mems chips
+ */
+#define PWR3V3_VOUT_RISETIME 10
 
   typedef enum {
     P3V3_OFF = 0,

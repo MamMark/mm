@@ -23,12 +23,19 @@ implementation {
   }
 
   event void AccelTimer.fired() {
+    nop();
+    nop();
+    nop();
     call AccelControl.start();
   }
 
   event void AccelControl.startDone(error_t error) {
     uint8_t id;
+    nop();
+    nop();
+    nop();
     call Accel.whoAmI(&id);
+    dbg("MemsAppP", "Accel id = %x\n", id);
     call AccelControl.stop();
   }
 
@@ -37,12 +44,19 @@ implementation {
   }
 
   event void GyroTimer.fired() {
+    nop();
+    nop();
+    nop();
     call GyroControl.start();
   }
 
   event void GyroControl.startDone(error_t error) {
     uint8_t id;
+    nop();
+    nop();
+    nop();
     call Gyro.whoAmI(&id);
+    dbg("MemsAppP", "Gyro id = %x\n", id);
     call GyroControl.stop();
   }
 
@@ -51,12 +65,19 @@ implementation {
   }
 
   event void MagTimer.fired() {
+    nop();
+    nop();
+    nop();
     call MagControl.start();
   }
 
   event void MagControl.startDone(error_t error) {
     uint8_t id;
+    nop();
+    nop();
+    nop();
     call Mag.whoAmI(&id);
+    dbg("MemsAppP", "Mag id = %u\n", id);
     call MagControl.stop();
   }
 
