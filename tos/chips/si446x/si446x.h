@@ -833,7 +833,7 @@ typedef struct {
   uint8_t chip_pend;
   uint8_t chip_status;
   uint8_t info_flags;                   /* 68 only */
-} si446x_int_status_t;                  /* INT_STATUS, 0x20 */
+} si446x_int_state_t;                   /* INT_STATUS, 0x20 */
 
 typedef struct {
   uint8_t pend;

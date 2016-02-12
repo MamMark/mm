@@ -303,7 +303,7 @@ typedef struct {
   si446x_ph_status_t    ph_status;
   si446x_modem_status_t modem_status;
   si446x_chip_status_t  chip_status;
-  si446x_int_status_t   int_status;
+  si446x_int_state_t    int_state;
 
   /* request_device_state */
   uint8_t               device_state;
@@ -534,14 +534,14 @@ const uint8_t si446x_local_config[] = {
 volatile norace uint8_t xcts, xcts0, xcts_s;
 
 typedef struct {
-  si446x_int_status_t   ints;
+  si446x_int_state_t    ints;
   si446x_ph_status_t    ph;
   si446x_modem_status_t modem;
   si446x_chip_status_t  chip;
-} si446x_chip_int_t;
+} si446x_chip_all_t;
 
-volatile norace si446x_chip_int_t chip_debug;
-volatile norace si446x_chip_int_t int_state;
+volatile norace si446x_chip_all_t  chip_debug;
+volatile norace si446x_int_state_t cur_int_state;
 
 /**************************************************************************/
 
@@ -636,6 +636,7 @@ const uint8_t si446x_chip_status_nc[] = {                           /* 23 */
   SI446X_CMD_GET_CHIP_STATUS, SI446X_INT_NO_CLEAR };
 
 const uint8_t si446x_chip_clr[] = { SI446X_CMD_GET_CHIP_STATUS };   /* 23 */
+
 const uint8_t si446x_chip_clr_cmd_err[] = { SI446X_CMD_GET_CHIP_STATUS, 0xf7 };
 
 const uint8_t si446x_device_state[] = { SI446X_CMD_REQUEST_DEVICE_STATE }; /* 33 */
@@ -1502,60 +1503,78 @@ tasklet_norace message_t  * globalRxMsgPtr;
   /**************************************************************************/
 
   /*
-   * get current interrupt state -> *isp
-   *
-   * This is debug code for observing interrupt state.
+   * get/clr interrupt state
+   * clr all pendings and return previous state in *intp
    */
-  void ll_si446x_get_int_state(volatile si446x_chip_int_t *isp) {
+  void ll_si446x_getclr_ints(volatile si446x_int_state_t *intp) {
+    ll_si446x_cmd_reply(si446x_int_clr, sizeof(si446x_int_clr),
+                        (void *) intp, SI446X_INT_STATUS_REPLY_SIZE);
+  }
+
+
+  /*
+   * get current chip state -> *allp
+   *
+   * This is debug code for observing most of the chip state.
+   */
+  void ll_si446x_get_all_state(volatile si446x_chip_all_t *allp) {
+    uint8_t pends[4];
+
     ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                        (void *) &isp->ph, SI446X_PH_STATUS_REPLY_SIZE);
+                        (void *) &allp->ph, SI446X_PH_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                        (void *) &isp->modem, SI446X_MODEM_STATUS_REPLY_SIZE);
+                        (void *) &allp->modem, SI446X_MODEM_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                        (void *) &isp->chip, SI446X_CHIP_STATUS_REPLY_SIZE);
+                        (void *) &allp->chip, SI446X_CHIP_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
-                        (void *) &isp->ints, SI446X_INT_STATUS_REPLY_SIZE);
+                        (void *) &allp->ints, SI446X_INT_STATUS_REPLY_SIZE);
+    pends[DEVICE_STATE] = si446x_fast_device_state();
+    pends[PH_STATUS]    = allp->ph.pend;
+    pends[MODEM_STATUS] = allp->modem.pend;
+    pends[LATCHED_RSSI] = allp->modem.latched_rssi;
+    trace_radio_pend(pends);
   }
 
 
   /**************************************************************************/
 
+#ifdef notdef
   /*
-   * get/clr interrupt state
-   * clr interrupts and return previous state in *isp
+   * get/clr all state
+   * clr all pendings and return previous state in *allp
    *
    * we grab and clear each of the individual blocks then grab int_status
-   * without doing any additional clears.  Otherwise there is a window where
-   * we can lose interrupts.
+   * without doing any additional clears.
    *
-   * This is debug code for observing interrupt state.
+   * This is debug code for observing most of the chip state.
    */
-  void ll_si446x_getclr_int_state(volatile si446x_chip_int_t *isp) {
+  void ll_si446x_getclr_all_state(volatile si446x_chip_all_t *allp) {
     uint8_t pends[4];
 
     ll_si446x_cmd_reply(si446x_int_clr, sizeof(si446x_int_clr),
-                        (void *) &isp->ints, SI446X_INT_STATUS_REPLY_SIZE);
+                        (void *) &allp->ints, SI446X_INT_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                        (void *) &isp->ph, SI446X_PH_STATUS_REPLY_SIZE);
+                        (void *) &allp->ph, SI446X_PH_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                        (void *) &isp->modem, SI446X_MODEM_STATUS_REPLY_SIZE);
+                        (void *) &allp->modem, SI446X_MODEM_STATUS_REPLY_SIZE);
     ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                        (void *) &isp->chip, SI446X_CHIP_STATUS_REPLY_SIZE);
+                        (void *) &allp->chip, SI446X_CHIP_STATUS_REPLY_SIZE);
     pends[DEVICE_STATE] = si446x_fast_device_state();
-    pends[PH_STATUS]    = isp->ph.pend;
-    pends[MODEM_STATUS] = isp->modem.pend;
-    pends[LATCHED_RSSI] = isp->modem.latched_rssi;
+    pends[PH_STATUS]    = allp->ph.pend;
+    pends[MODEM_STATUS] = allp->modem.pend;
+    pends[LATCHED_RSSI] = allp->modem.latched_rssi;
     trace_radio_pend(pends);
   }
+#endif
 
 
   void check_weird(uint8_t *status) {
     if ((status[PH_STATUS]    & 0xC0) ||
         (status[MODEM_STATUS] & 0x50)) {
-      ll_si446x_get_int_state(&chip_debug);
+      ll_si446x_get_all_state(&chip_debug);
       __PANIC_RADIO(98, status[DEVICE_STATE], status[PH_STATUS],
                     status[MODEM_STATUS], 0);
-      ll_si446x_getclr_int_state(&chip_debug);
+      ll_si446x_get_all_state(&chip_debug);
       nop();
     }
   }
@@ -1925,7 +1944,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
                           (void *) &rd.chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
 
       ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
-                          (void *) &rd.int_status, SI446X_INT_STATUS_REPLY_SIZE);
+                          (void *) &rd.int_state, SI446X_INT_STATUS_REPLY_SIZE);
 
       ll_si446x_cmd_reply(si446x_device_state, sizeof(si446x_device_state),
                           rsp, SI446X_DEVICE_STATE_REPLY_SIZE);
