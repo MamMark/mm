@@ -550,6 +550,7 @@ volatile norace si446x_int_state_t cur_int_state;
  * and how they show up in radio_pend
  */
 norace uint8_t radio_pend[4];
+norace uint8_t radio_pend1[4];
 #define DEVICE_STATE 0
 #define PH_STATUS    1
 #define MODEM_STATUS 2
@@ -1580,7 +1581,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   }
 
 
-  void ll_si446x_get_int_status(uint8_t *status) {
+  void ll_si446x_fast_int_status(uint8_t *status) {
     ll_si446x_read_fast_status(status);
     trace_radio_pend(status);
     check_weird(status);
@@ -1589,13 +1590,13 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   void si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
     ll_si446x_send_cmd(c, response, length);
-    ll_si446x_get_int_status(radio_pend);
+    ll_si446x_fast_int_status(radio_pend);
   }
 
 
   void si446x_get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
     ll_si446x_get_reply(r, l, cmd);
-    ll_si446x_get_int_status(radio_pend);
+    ll_si446x_fast_int_status(radio_pend);
   }
 
 
@@ -1696,13 +1697,16 @@ tasklet_norace message_t  * globalRxMsgPtr;
     t1 = t0;
     while (!si446x_get_cts()) {
       t1 = call Platform.usecsRaw();
-      ll_si446x_get_int_status(radio_pend);
+      ll_si446x_fast_int_status(radio_pend);
       if ((t1-t0) > SI446X_CTS_TIMEOUT) {
+        ll_si446x_fast_int_status(radio_pend1);
+        drf();
 	__PANIC_RADIO(24, t1, t0, t1-t0, 0);
+        ll_si446x_fast_int_status(radio_pend);
 	return FALSE;
       }
     }
-    ll_si446x_get_int_status(radio_pend);
+    ll_si446x_fast_int_status(radio_pend);
     return TRUE;
   }
 
