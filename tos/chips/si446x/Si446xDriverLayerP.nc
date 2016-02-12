@@ -2955,8 +2955,9 @@ tasklet_norace message_t  * globalRxMsgPtr;
   /**************************************************************************/
 
   async event void Panic.hook() {
-#ifdef notdef
     dump_radio();
+    nop();
+#ifdef notdef
     call CSN.set();
     call CSN.clr();
     call CSN.set();
