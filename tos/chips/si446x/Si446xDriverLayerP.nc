@@ -2276,7 +2276,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   */
 
   fsm_state_t a_pwr_up(fsm_transition_t *t) {
-    if (!(xcts = call HW.si446x_cts())) {
+    if (!(xcts = si446x_get_cts())) {
       __PANIC_RADIO(9, 0, 0, 0, 0);
     }
     if (start_alarm(SI446X_POWER_UP_WAIT_TIME)) {
