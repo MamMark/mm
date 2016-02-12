@@ -1414,10 +1414,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
         if ((t1-t0) > SI446X_CTS_TIMEOUT) {
           done = get_sw_cts();
           __PANIC_RADIO(2, t1, t0, t1-t0, done);
-          call HW.si446x_set_cs();
-          call HW.si446x_clr_cs();
-          call HW.si446x_set_cs();
-          call HW.si446x_clr_cs();
         }
       }
       SI446X_ATOMIC {
