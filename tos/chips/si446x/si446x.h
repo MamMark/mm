@@ -203,8 +203,12 @@
 //#define SI446X_CMD_PACKET_INFO                0x16
 #define SI446X_PACKET_INFO_REPLY_SIZE         2
 
+/* Warning: 4463 int_status is 8 bytes long, 4468 is 9.  Currently
+   we only use 8 bytes and ignore the 9th byte (INFO_FLAGS)
+*/
 //#define SI446X_CMD_GET_INT_STATUS             0x20
 #define SI446X_INT_STATUS_REPLY_SIZE          8
+
 /*
  * Warning: sending no parameters with GET_INT_STATUS will clear all interrupts.
  * Reply stream returned is status of interrupts prior to any clearing that
@@ -832,7 +836,7 @@ typedef struct {
   uint8_t modem_status;
   uint8_t chip_pend;
   uint8_t chip_status;
-  uint8_t info_flags;                   /* 68 only */
+//  uint8_t info_flags;                 /* 68 only */
 } si446x_int_state_t;                   /* INT_STATUS, 0x20 */
 
 typedef struct {
@@ -849,7 +853,7 @@ typedef struct {
   uint8_t ant2_rssi;
   uint8_t afc_freq_offset15;
   uint8_t afc_freq_offset7;
-  uint8_t info_flags;                   /* 68 only */
+//  uint8_t info_flags;                 /* 68 only */
 } si446x_modem_status_t;                /* MODEM_STATUS, 0x22 */
 
 typedef struct {
@@ -857,7 +861,7 @@ typedef struct {
   uint8_t status;
   uint8_t cmd_err_status;
   uint8_t cmd_err_cmd_id;
-  uint8_t info_flags;                   /* 68 only */
+//  uint8_t info_flags;                 /* 68 only */
 } si446x_chip_status_t;                 /* CHIP_STATUS, 0x23 */
 
 #endif          //__SI446X_H__
