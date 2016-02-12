@@ -1244,6 +1244,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
     uint8_t res;
 
     SI446X_ATOMIC {
+      /* clear cs on entry prior to set,  make sure a reasonable state */
+      call HW.si446x_clr_cs();
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
       call FastSpiByte.splitReadWrite(0);
@@ -1282,6 +1284,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     uint8_t result;
 
     SI446X_ATOMIC {
+      call HW.si446x_clr_cs();          /* make sure reasonable state */
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(which);
       result = call FastSpiByte.splitReadWrite(0);
