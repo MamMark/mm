@@ -1062,7 +1062,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
    */
 
   tasklet_norace fsm_event_t fsm_int_event, fsm_user_event, fsm_task_event;
-  tasklet_norace si446x_chip_int_t fsm_int_flags;
 
   void fsm_int_queue(fsm_event_t ev) {
     if (fsm_int_event) {
@@ -1502,6 +1501,11 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
 
   /**************************************************************************/
+
+  void ll_si446x_clr_ints() {
+    ll_si446x_send_cmd(si446x_int_clr, rsp, sizeof(si446x_int_clr));
+  }
+
 
   /*
    * get/clr interrupt state
@@ -2323,9 +2327,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
      * details.
      */
     stuff_config(si446x_frr_config);
-    /* clear out pending interrupts */
-    ll_si446x_getclr_int_state(&int_state);
-    ll_si446x_get_int_state(&chip_debug);
     post load_config_task();
     return t->next_state;
   }
@@ -2343,7 +2344,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   fsm_state_t a_ready(fsm_transition_t *t) {
     nop();
-    ll_si446x_getclr_int_state(&int_state);
     si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
     //    wait for command completion
     wait_for_cts();
@@ -2351,6 +2351,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     drf();
     nop();
     setChannel();
+    ll_si446x_clr_ints();
     call HW.si446x_enableInterrupt();
     post user_response_task();
     /* proceed with a_rx_on action to start receiving */
@@ -2392,11 +2393,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
     if (!globalRxMsgPtr){
       __PANIC_RADIO(3, 0, 0, 0, 0);
     }
-    ll_si446x_getclr_int_state(&int_state);
-    nop();
     start_rx();
-    // start_rx takes a while, so need to wait for command confirmation
-    wait_for_cts();
+    wait_for_cts();                     /* wait for rx start up */
     post user_response_task();
     nop();
     return t->next_state;
@@ -2428,7 +2426,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
     if (tx_len != (SI446X_EMPTY_TX_LEN - pkt_len))
       __PANIC_RADIO(7, tx_len, pkt_len, (uint16_t) dp, 0);
     nop();
-    ll_si446x_getclr_int_state(&int_state);
     si446x_start_tx(pkt_len);
     // start_tx takes a while, so need to wait for command confirmation
     wait_for_cts();
@@ -2665,35 +2662,35 @@ tasklet_norace message_t  * globalRxMsgPtr;
    * and return associated FSM event to be processed.
    * Clear the flag in the pending information to denote handled.
    */
-  fsm_event_t get_next_interrupt_event() {
+  fsm_event_t get_next_interrupt_event(volatile si446x_int_state_t *isp) {
     nop();
-    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
-      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
+    if (isp->modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
+      isp->modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
       return E_PREAMBLE_DETECT;
     }
-    if (pending_interrupts.modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
-      pending_interrupts.modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
+    if (isp->modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
+      isp->modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
       return E_SYNC_DETECT;
     }
-    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_PACKET_RX) {
-      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
+    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_RX) {
+      isp->ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
       return E_PACKET_RX;
     }
-    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
-      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_PACKET_SENT;
+    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
+      isp->ph_pend &= !SI446X_PH_STATUS_PACKET_SENT;
       return E_PACKET_SENT;
     }
-    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
-      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_CRC_ERROR;
+    if (isp->ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
+      isp->ph_pend &= !SI446X_PH_STATUS_CRC_ERROR;
       return E_CRC_ERROR;
     }
-    if (pending_interrupts.ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
-      pending_interrupts.ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
+    if (isp->ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
+      isp->ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
       return E_RX_FIFO;
     }
-    /* missed something */
-    if ((pending_interrupts.ph_pend    & SI446X_PH_INTEREST) ||
-	(pending_interrupts.modem_pend & SI446X_MODEM_INTEREST)) {
+
+    if (isp->ph_pend || isp->modem_pend || isp->chip_pend) {
+      /* missed something */
       nop();
       __PANIC_RADIO(19, 0, 0, 0, 0);
     }
@@ -2713,19 +2710,22 @@ tasklet_norace message_t  * globalRxMsgPtr;
    */
   void process_interrupt() {
     fsm_event_t ev;
+    volatile si446x_int_state_t *isp;
 
+    isp = &cur_int_state;
     while (TRUE) {
-      ll_si446x_read_fast_status((uint8_t *) &pending_interrupts);
-      trace_radio_pend((uint8_t *) &pending_interrupts);
-      if ((!(pending_interrupts.ph_pend &= SI446X_PH_INTEREST)) &&
-	  (!(pending_interrupts.modem_pend &= SI446X_MODEM_INTEREST))) {
-	break;
-      }
-      while ((ev = get_next_interrupt_event())) {
-        fsm_change_state(ev);
-      }
-      // *** need to find lower overhead method to clear interrupts
-      ll_si446x_getclr_int_state(&chip_debug);
+      ll_si446x_read_fast_status(radio_pend);
+      trace_radio_pend(radio_pend);
+      ll_si446x_getclr_ints(isp);
+      isp->ph_pend    &= SI446X_PH_INTEREST;
+      isp->modem_pend &= SI446X_MODEM_INTEREST;
+      isp->chip_pend  &= SI446X_CHIP_INTEREST;
+      if ((isp->ph_pend || isp->modem_pend || isp->chip_pend)) {
+          while ((ev = get_next_interrupt_event(isp))) {
+            fsm_change_state(ev);
+          }
+        } else
+            break;
     }
   }
 
