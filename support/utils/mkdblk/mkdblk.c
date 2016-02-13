@@ -21,7 +21,7 @@
 #include "ms.h"
 
 
-#define VERSION "mkdblk: (mam_mark, T2) v3.1  2012/05/02\n"
+#define VERSION "mkdblk: (mam_mark, TinyOS_2) v3.1.1  2016/02/12\n"
 
 int debug	= 0,
     verbose	= 0,
