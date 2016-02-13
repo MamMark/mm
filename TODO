@@ -108,3 +108,6 @@ manager to control where the image gets written.
 
 
 done . remove othersWaiting
+
+
+* Better documentation about the layout of the SD card.
