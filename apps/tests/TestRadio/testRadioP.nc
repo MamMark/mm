@@ -6,6 +6,10 @@
 
 #include <Tasklet.h>
 
+#ifndef PACKED
+#warning PACKED not defined but used
+#endif
+
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;
 
