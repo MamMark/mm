@@ -63,38 +63,38 @@ display_info(void) {
     u32_t rds;
     
     if (msc.dblk_start) {
-      fprintf(stderr, "dblk_loc:  p: %-8lx %-8lx\n",
-	      msc.panic_start, msc.panic_end);
-      fprintf(stderr, "           c: %-8lx %-8lx\n",
-	      msc.config_start, msc.config_end);
-      fprintf(stderr, "           d: %-8lx %-8lx  (nxt) %-8lx\n",
-		msc.dblk_start, msc.dblk_end, msc.dblk_nxt);
+      fprintf(stderr, "dblk_loc:  p: %-8x %-8x\n",
+              msc.panic_start,  msc.panic_end);
+      fprintf(stderr, "           c: %-8x %-8x\n",
+              msc.config_start, msc.config_end);
+      fprintf(stderr, "           d: %-8x %-8x  (nxt) %-8x\n",
+              msc.dblk_start, msc.dblk_end, msc.dblk_nxt);
     }
 
     if (p0c.panic_start)
-      fprintf(stderr, "panic0:    p: %-8lx %-8lx  (nxt) %-8lx\n",
-	      p0c.panic_start, p0c.panic_end, p0c.panic_nxt);
+      fprintf(stderr, "panic0:    p: %-8x %-8x  (nxt) %-8x\n",
+	      p0c.panic_start, p0c.panic_end,  p0c.panic_nxt);
     else
       fprintf(stderr, "panic0:    no panic0 block\n");
 
     de = f32_get_de("PANIC001", "   ", &rds);
     if (de) {
 	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
-	fprintf(stderr, "PANIC001:  start  0x%04lx  size: %10lu (0x%lx)\n",
-		fx_clu2sec(rds), CF_LE_32(de->size), CF_LE_32(de->size));
+	fprintf(stderr, "PANIC001:  start  0x%04x  size: %10u (0x%x)\n",
+                fx_clu2sec(rds),  CF_LE_32(de->size), CF_LE_32(de->size));
     } else
 	fprintf(stderr, "PANIC001: not found\n");
     de = f32_get_de("CNFG0001", "   ", &rds);
     if (de) {
 	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
-	fprintf(stderr, "CNFG0001:  start  0x%04lx  size: %10lu (0x%lx)\n",
-		fx_clu2sec(rds), CF_LE_32(de->size), CF_LE_32(de->size));
+	fprintf(stderr, "CNFG0001:  start  0x%04x  size: %10u (0x%x)\n",
+                fx_clu2sec(rds),  CF_LE_32(de->size), CF_LE_32(de->size));
     } else
 	fprintf(stderr, "CNFG0001: not found\n");
     de = f32_get_de("DBLK0001", "   ", &rds);
     if (de) {
 	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
-	fprintf(stderr, "DBLK0001:  start  0x%04lx  size: %10lu (0x%lx)\n",
+	fprintf(stderr, "DBLK0001:  start  0x%04x  size: %10u (0x%x)\n",
 		fx_clu2sec(rds), CF_LE_32(de->size), CF_LE_32(de->size));
     } else
 	fprintf(stderr, "DBLK0001: not found\n");

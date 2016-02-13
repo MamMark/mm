@@ -35,9 +35,9 @@ typedef enum {
   #define FX_NUM_FATS		fx_num_fats
 */
 
-#define FX_CLUSTER_SIZE		8
-#define FX_NUM_FATS		2
-#define FX_CB_MASK		0xfff
+#define FX_CLUSTER_SIZE		8U
+#define FX_NUM_FATS		2U
+#define FX_CB_MASK		0xfffU
 
 
 extern u32_t  fx_clu2sec(u32_t clu);

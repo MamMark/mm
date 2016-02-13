@@ -30,7 +30,6 @@ msu_blk_empty(uint8_t *buf) {
 	if (ptr[i])
 	    return(0);
     return(1);
-//    return(0);
 }
 
 

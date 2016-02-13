@@ -49,12 +49,12 @@ check_panic0_values(panic0_hdr_t *p) {
 
   rtn = 0;
   if (msc.panic_start != p->panic_start) {
-    fprintf(stderr, "*** panic0 mismatch: (start) %lx/%lx\n",
+    fprintf(stderr, "*** panic0 mismatch: (start) %x/%x\n",
 	    msc.panic_start, p->panic_start);
     rtn = 1;
   }
   if (msc.panic_end != p->panic_end) {
-    fprintf(stderr, "*** panic0 mismatch: (end) %lx/%lx\n",
+    fprintf(stderr, "*** panic0 mismatch: (end) %x/%x\n",
 	    msc.panic_end, p->panic_end);
     rtn = 1;
   }
@@ -122,7 +122,7 @@ ms_init(char *device_name) {
      * Otherwise flag no panic block.
      */
     if (verbose || debug)
-      fprintf(stderr, "*** reading PANIC0 (sector %lu)\n", PANIC0_SECTOR);
+      fprintf(stderr, "*** reading PANIC0 (sector %u)\n", PANIC0_SECTOR);
     ms_read_blk_fail(PANIC0_SECTOR, dp);
     php = (void *) dp;
     empty = msu_check_panic0_blk(php);
@@ -179,15 +179,15 @@ ms_init(char *device_name) {
     if (empty)
 	msc.dblk_nxt = blk;
     if (verbose || debug) {
-      fprintf(stderr, "dblk_loc:  p:   s: %-8lx   e: %-8lx\n",
+      fprintf(stderr, "dblk_loc:  p:   s: %-8x   e: %-8x\n",
 	      msc.panic_start, msc.panic_end);
-      fprintf(stderr, "           c:   s: %-8lx   e: %-8lx\n",
+      fprintf(stderr, "           c:   s: %-8x   e: %-8x\n",
 	      msc.config_start, msc.config_end);
-      fprintf(stderr, "           d:   s: %-8lx   e: %-8lx   n: %-8lx\n",
+      fprintf(stderr, "           d:   s: %-8x   e: %-8x   n: %-8x\n",
 		msc.dblk_start, msc.dblk_end, msc.dblk_nxt);
       if (msc.dblk_nxt == 0)
 	fprintf(stderr, "*** dblk_nxt not set ***\n");
-      fprintf(stderr, "panic0:    p:   s: %-8lx   e: %-8lx   n: %-8lx\n",
+      fprintf(stderr, "panic0:    p:   s: %-8x   e: %-8x   n: %-8x\n",
 	      p0c.panic_start, p0c.panic_end, p0c.panic_nxt);
     }
     return rtn;

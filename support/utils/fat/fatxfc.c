@@ -126,12 +126,12 @@ static u32_t fx_max_cluster;		/* last real data cluster, 2 - max */
 static u32_t fx_data_start;		/* first actual data sector, could be a dir */
 static u32_t fx_data_end;		/* last sector accessable */
 
-static u32_t fx_total_sectors;	/* total in partition */
+static u32_t fx_total_sectors;          /* total in partition */
 static u32_t fx_fat_size;		/* in sectors */
 
 static u32_t fx_info_sector;		/* where info lives. */
-static u32_t fx_free_clusters;	/* from info sector */
-static u32_t fx_next_cluster;	/* next free, from info */
+static u32_t fx_free_clusters;          /* from info sector */
+static u32_t fx_next_cluster;           /* next free, from info */
 
 static uint8_t  fx_reserved;		/* sectors */
 
@@ -233,13 +233,13 @@ f32_get_chain(u32_t cluster, u32_t *start, u32_t *end) {
     *end = 0;
     cluster &= FAT32_CLUSTER_MASK;
     if (cluster < 2 || cluster > fx_max_cluster) {
-      fprintf(stderr, "*** bad cluster, %lu\n", cluster);
+      fprintf(stderr, "*** bad cluster, %u\n", cluster);
       return(FALSE);
     }
     fat_sector = FAT_SECTOR(cluster);
     fat_sector += fx_fat_start;
     if (fat_sector > fx_fat_end) {
-      fprintf(stderr, "*** bad fat sector: %lu\n", fat_sector);
+      fprintf(stderr, "*** bad fat sector: %u\n", fat_sector);
       return(FALSE);
     }
     fat_offset = FAT_OFFSET(cluster);
@@ -256,14 +256,14 @@ f32_get_chain(u32_t cluster, u32_t *start, u32_t *end) {
 	    fat_sector++;
 	    fat_offset = 0;
 	    if (fat_sector > fx_fat_end) {
-	      fprintf(stderr, "*** fat_sector (%lu) > fx_fat_end (%lu)\n", fat_sector, fx_fat_end);
+	      fprintf(stderr, "*** fat_sector (%u) > fx_fat_end (%u)\n", fat_sector, fx_fat_end);
 	      return(FALSE);
 	    }
 	    assert(!ms_read_blk(fat_sector, fx_buf));
 	}
 	nxt_cluster = CF_LE_32(fats[fat_offset]) & FAT32_CLUSTER_MASK;
 	if (nxt_cluster == BAD_FAT32) {
-	  fprintf(stderr, "*** nxt_cluster is BAD_FAT32, %lu\n", nxt_cluster);
+	  fprintf(stderr, "*** nxt_cluster is BAD_FAT32, %u\n", nxt_cluster);
 	  return(FALSE);
 	}
     }
@@ -440,7 +440,7 @@ fx_init(void) {
 	*/
 	if (size != CF_LE_32(bs->total_sect)) {		/* and partition size should match internal */
 	    if (debug)
-		printf("*** mbr/fs size mismatch: mbr: %lu (%lx), fs: %lu (%lx)\n",
+		printf("*** mbr/fs size mismatch: mbr: %u (%x), fs: %u (%x)\n",
 		       size, size, CF_LE_32(bs->total_sect), CF_LE_32(bs->total_sect));
 	    if (size != CF_LE_32(bs->total_sect) + 1)
 		return(FX_SIZE_MISMATCH);
@@ -449,7 +449,7 @@ fx_init(void) {
     }
 
     if (debug)
-	printf("Partition start: %lx, size: %lx\n",
+	printf("Partition start: %x, size: %x\n",
 		(u32_t) fx_data_start, CF_LE_32(bs->total_sect));
 
     /* buf contains the boot_sector.  compute total data sectors and make
@@ -472,7 +472,7 @@ fx_init(void) {
     fx_max_cluster = size/fx_cluster_size;		/* last cluster */
 
     if (debug)
-	printf("phys data sectors: %lx, phys clusters: %lx, unused sectors: %lx\n",
+	printf("phys data sectors: %x, phys clusters: %x, unused sectors: %x\n",
 		size,
 		fx_max_cluster,
 		size - fx_max_cluster * fx_cluster_size);
@@ -484,9 +484,11 @@ fx_init(void) {
     fx_data_end = clu2sec(fx_max_cluster + 1) - 1;	/* get last usable data sector */
 
     if (fx_cluster_size != FX_CLUSTER_SIZE)
-      fprintf(stderr, "*** bad fx_cluster_size (%u) should be (%u)\n", fx_cluster_size, FX_CLUSTER_SIZE);
+      fprintf(stderr, "*** bad fx_cluster_size (%u) should be (%u)\n",
+              fx_cluster_size, FX_CLUSTER_SIZE);
     if (fx_num_fats != FX_NUM_FATS)
-      fprintf(stderr, "*** wrong number of FATS: (%u) should be (%u)\n", fx_num_fats, FX_NUM_FATS);
+      fprintf(stderr, "*** wrong number of FATS: (%u) should be (%u)\n",
+              fx_num_fats, FX_NUM_FATS);
 
     f32_get_chain(CF_LE_32(bs->root_cluster), &fx_rdir_start, &fx_rdir_end);
     assert(fx_rdir_start && fx_rdir_end);
@@ -503,29 +505,29 @@ fx_init(void) {
     }
 
     if (debug) {
-	printf("ts: %lx, r: %x, fat_s: %lx, n: %d, ds: %lx\n",
+	printf("ts: %x, r: %x, fat_s: %x, n: %d, ds: %x\n",
 		fx_total_sectors, fx_reserved,  fx_fat_size, fx_num_fats,
 		fx_total_sectors-fx_reserved-(fx_num_fats*fx_fat_size));
-	printf("fat_size (secs): %lx, (clus) %lx, %lx bytes\n",
-		fx_fat_size, fx_fat_size * SECTOR_SIZE / sizeof(u32_t),
-		fx_fat_size * SECTOR_SIZE);
-	printf("data_start: %lx, end: %lx, usable sectors: %lx, last phys sector: %lx\n",
+	printf("fat_size (secs): %x, (clus) %lx, %x bytes\n",
+               fx_fat_size, (ulong) (fx_fat_size * SECTOR_SIZE / sizeof(u32_t)),
+               fx_fat_size * SECTOR_SIZE);
+	printf("data_start: %x, end: %x, usable sectors: %x, last phys sector: %x\n",
 		fx_data_start,
 		fx_data_end,
 		fx_data_end - fx_data_start + 1,	/* usable */
 		fx_data_start + (fx_total_sectors - fx_reserved -
 				 (fx_num_fats * fx_fat_size))  - 1);
-	printf("unused fat entries: %lx,  cluster ids: 2 - %lx\n",
-		(fx_fat_end - fx_fat_start + 1) * FAT32_CPB - (fx_max_cluster + 1),
-		    fx_max_cluster);
-	printf("Last cluster: %lx,  sectors: %lx - %lx, fat sector: %lx, off: %lx\n",
+	printf("unused fat entries: %lx,  cluster ids: 2 - %x\n",
+               (ulong) ((fx_fat_end - fx_fat_start + 1) * FAT32_CPB - (fx_max_cluster + 1)),
+               fx_max_cluster);
+	printf("Last cluster: %x,  sectors: %x - %x, fat sector: %x, off: %x\n",
 		fx_max_cluster,
 		clu2sec(fx_max_cluster),
 		clu2sec(fx_max_cluster + 1) - 1,
 		FAT_SECTOR(fx_max_cluster) + fx_fat_start,
 		FAT_OFFSET(fx_max_cluster));
-	printf("  fat_start: %5lx, fat_end: %5lx\n", fx_fat_start, fx_fat_end);
-	printf("  info: free %5lx, next:    %5lx\n", fx_free_clusters, fx_next_cluster);
+	printf("  fat_start: %5x, fat_end: %5x\n", fx_fat_start, fx_fat_end);
+	printf("  info: free %5x, next:    %5x\n", fx_free_clusters, fx_next_cluster);
     }
 
     return(FX_OK);
@@ -753,8 +755,8 @@ fx_create_contig(char *name, char *ext, u32_t size, u32_t *s, u32_t *e) {
 	max_count = count;
     }
     if (debug) {
-	printf("create_contig: size: %lx   s: %lx, count: %lx\n", size, max, max_count);
-	printf("               clusters: %lx-%lx, sectors: %lx-%lx, size: %lx\n",
+	printf("create_contig: size: %x   s: %x, count: %x\n", size, max, max_count);
+	printf("               clusters: %x-%x, sectors: %x-%x, size: %x\n",
 		max, max + max_count - 1, clu2sec(max), clu2sec(max + max_count) - 1,
 		max_count * FX_CLUSTER_SIZE * SECTOR_SIZE);
     }

@@ -22,8 +22,8 @@
  *
  * multibyte data is stored in little endian order.  This is because
  * the machines we are using are all little endian order and this is
- * much more effiecient then dealing with byte swapping.  This means
- * one can't use nx types for these dataums which makes sharing the
+ * much more efficient then dealing with byte swapping.  This means
+ * one can't use nx types for these datums which makes sharing the
  * header files easier too.
  */
 
@@ -53,11 +53,11 @@ typedef struct {
 #define DBLK_LOC_SIZE_SHORTS 15
 
 
-#define PANIC0_SECTOR 2UL
-#define PANIC0_MAJIK  0x23626223UL
+#define PANIC0_SECTOR UINT32_C(2)
+#define PANIC0_MAJIK  UINT32_C(0x23626223)
 #define PANIC0_SIZE_SHORTS 13
 
-#define FUBAR_REALLY_REALLY_FUBARD 0x08313108UL
+#define FUBAR_REALLY_REALLY_FUBARD UINT32_C(0x08313108)
 
 
 /*
@@ -71,8 +71,11 @@ typedef struct {
   uint32_t fubar;			/* fell off bottom */
   uint32_t sig_b;			/* tombstone */
   uint16_t chksum;
+
+  /* end of actual panic0 struct */
+
   uint16_t pad[16];
-  uint32_t really_really_fubard_sig;
+  uint32_t really_really_fubard_sig;    /* special wartage */
   uint32_t sig_c;
 } panic0_hdr_t;
 
