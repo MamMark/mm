@@ -983,8 +983,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
   }
 
 
-#define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
-
   /*************************************************************************
    *
    * fsm_select_transition
