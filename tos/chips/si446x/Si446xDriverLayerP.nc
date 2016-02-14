@@ -2327,17 +2327,13 @@ tasklet_norace message_t  * globalRxMsgPtr;
    */
 
   fsm_state_t a_ready(fsm_transition_t *t) {
-    nop();
-    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-    //    wait for command completion
-    wait_for_cts();
-    nop();
     drf();
     nop();
     setChannel();
     ll_si446x_clr_ints();
     call HW.si446x_enableInterrupt();
     post user_response_task();
+
     /* proceed with a_rx_on action to start receiving */
     return a_rx_on(t);
   }
@@ -2376,6 +2372,13 @@ tasklet_norace message_t  * globalRxMsgPtr;
     if (!globalRxMsgPtr){
       __PANIC_RADIO(3, 0, 0, 0, 0);
     }
+    /*
+     * transitioning to rx_on should flush both.  Clean out transmit, no longer
+     * transmitting, and make sure that we don't have anyone else's crap in
+     * the fifo.
+     */
+    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
+    wait_for_cts();
     start_rx();
     wait_for_cts();                     /* wait for rx start up */
     post user_response_task();
