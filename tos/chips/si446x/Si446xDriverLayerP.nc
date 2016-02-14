@@ -791,6 +791,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     A_PWR_DN,                     // power off the chip
     A_RX_ON,                      // start receiver hunt for a packet to receive
     A_TX_ON,                      // start transmitting a packet
+    A_RX_CNT_CRC,                 // account for a crc error
     A_RX_TIMEOUT,                 // rx operation timeout
     A_TX_TIMEOUT,                 // tx operation timeout
     A_TX_CMP,                     // handle transmit complete
@@ -942,7 +943,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   // e_crc_error
   const fsm_transition_t fsm_e_crc_error[] = {
-    { S_RX_ACTIVE, A_RX_TIMEOUT, S_RX_ON },
+    { S_RX_ACTIVE, A_RX_CNT_CRC, S_RX_ON },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -1021,6 +1022,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_state_t a_pwr_dn(fsm_transition_t *t);
   fsm_state_t a_rx_on(fsm_transition_t *t);
   fsm_state_t a_tx_on(fsm_transition_t *t);
+  fsm_state_t a_rx_cnt_crc(fsm_transition_t *t);
   fsm_state_t a_rx_timeout(fsm_transition_t *t);
   fsm_state_t a_tx_timeout(fsm_transition_t *t);
   fsm_state_t a_rx_cmp(fsm_transition_t *t);
@@ -1116,6 +1118,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
       case A_PWR_DN:	  ns = a_pwr_dn(t);      break;
       case A_RX_ON:	  ns = a_rx_on(t);       break;
       case A_TX_ON:	  ns = a_tx_on(t);       break;
+      case A_RX_CNT_CRC:  ns = a_rx_cnt_crc(t);  break;
       case A_RX_TIMEOUT:  ns = a_rx_timeout(t);  break;
       case A_TX_TIMEOUT:  ns = a_tx_timeout(t);  break;
       case A_TX_CMP:      ns = a_tx_cmp(t);      break;
@@ -2445,6 +2448,13 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
  /**************************************************************************/
 
+  fsm_state_t a_rx_cnt_crc(fsm_transition_t *t) {
+    stop_alarm();
+    return a_rx_on(t);
+  }
+
+
+ /**************************************************************************/
   fsm_state_t a_rx_timeout(fsm_transition_t *t) {
     stop_alarm();
     return a_rx_on(t);
