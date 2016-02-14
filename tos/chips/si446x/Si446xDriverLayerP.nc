@@ -2399,7 +2399,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     if (!globalTxMsgPtr){
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
-    start_alarm(SI446X_TX_WAIT_TIME);
+    start_alarm(SI446X_TX_TIMEOUT);
     nop();
     dp     = (uint8_t *) getPhyHeader(globalTxMsgPtr);
     pkt_len = *dp + 1;              // length of data field is first byte
@@ -2499,7 +2499,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   /**************************************************************************/
 
   fsm_state_t a_rx_preamble(fsm_transition_t *t) {
-    start_alarm(SI446X_SOP_TIME);
+    start_alarm(SI446X_RX_TIMEOUT);
     return t->next_state;
   }
 
@@ -2507,7 +2507,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   /**************************************************************************/
 
   fsm_state_t a_rx_sync(fsm_transition_t *t) {
-    start_alarm(SI446X_SOP_TIME);
+    start_alarm(SI446X_RX_TIMEOUT);
     return t->next_state;
   }
 

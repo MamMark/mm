@@ -87,13 +87,11 @@
 /*
  * maximum times to wait for transmit and receive operations to complete
  * (protect against false starts)
- * TX_WAIT_TIME = time to wait for packet transmission to complete
- * TX_WAIT_TIME = time to wait for packet reception to complete
- * SOP_TIME = time to wait for receive to start after SYNC or PREAMBLE
+ * TX_TIMEOUT = time to wait for packet transmission to complete
+ * RX_TIMEOUT = time to wait for packet reception to complete
  */
-#define SI446X_TX_WAIT_TIME                   500000
-#define SI446X_RX_WAIT_TIME                   500000
-#define SI446X_SOP_TIME                       500000
+#define SI446X_TX_TIMEOUT                   100000
+#define SI446X_RX_TIMEOUT                   100000
 
 /*
  * initial RSSI_THRESH (threshold) for rssi comparisons.  Stuffed into
