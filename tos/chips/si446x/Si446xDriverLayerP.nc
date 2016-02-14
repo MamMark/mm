@@ -791,8 +791,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
     A_PWR_DN,                     // power off the chip
     A_RX_ON,                      // start receiver hunt for a packet to receive
     A_TX_ON,                      // start transmitting a packet
-    A_RX_ERROR,                   // count errors
-    A_TX_ERROR,                   // count errors
+    A_RX_TIMEOUT,                 // rx operation timeout
+    A_TX_TIMEOUT,                 // tx operation timeout
     A_TX_CMP,                     // handle transmit complete
     A_RX_CMP,                     // handle receive complete
     A_RX_HEADER,                  // handle receive sync detected
@@ -917,8 +917,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
   const fsm_transition_t fsm_e_wait_done[] = {
     { S_POR_W, A_PWR_UP, S_PWR_UP_W },
     { S_PWR_UP_W, A_CONFIG, S_CONFIG_W },
-    { S_RX_ACTIVE, A_RX_ERROR, S_RX_ON },
-    { S_TX_ACTIVE, A_TX_ERROR, S_RX_ON },
+    { S_RX_ACTIVE, A_RX_TIMEOUT, S_RX_ON },
+    { S_TX_ACTIVE, A_TX_TIMEOUT, S_RX_ON },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -942,7 +942,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   // e_crc_error
   const fsm_transition_t fsm_e_crc_error[] = {
-    { S_RX_ACTIVE, A_RX_ERROR, S_RX_ON },
+    { S_RX_ACTIVE, A_RX_TIMEOUT, S_RX_ON },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -1021,8 +1021,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_state_t a_pwr_dn(fsm_transition_t *t);
   fsm_state_t a_rx_on(fsm_transition_t *t);
   fsm_state_t a_tx_on(fsm_transition_t *t);
-  fsm_state_t a_rx_error(fsm_transition_t *t);
-  fsm_state_t a_tx_error(fsm_transition_t *t);
+  fsm_state_t a_rx_timeout(fsm_transition_t *t);
+  fsm_state_t a_tx_timeout(fsm_transition_t *t);
   fsm_state_t a_rx_cmp(fsm_transition_t *t);
   fsm_state_t a_tx_cmp(fsm_transition_t *t);
   fsm_state_t a_rx_header(fsm_transition_t *t);
@@ -1116,8 +1116,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
       case A_PWR_DN:	  ns = a_pwr_dn(t);      break;
       case A_RX_ON:	  ns = a_rx_on(t);       break;
       case A_TX_ON:	  ns = a_tx_on(t);       break;
-      case A_RX_ERROR:    ns = a_rx_error(t);    break;
-      case A_TX_ERROR:    ns = a_tx_error(t);    break;
+      case A_RX_TIMEOUT:  ns = a_rx_timeout(t);  break;
+      case A_TX_TIMEOUT:  ns = a_tx_timeout(t);  break;
       case A_TX_CMP:      ns = a_tx_cmp(t);      break;
       case A_RX_CMP:      ns = a_rx_cmp(t);      break;
       case A_RX_HEADER:   ns = a_rx_header(t);   break;
@@ -2445,7 +2445,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
  /**************************************************************************/
 
-  fsm_state_t a_rx_error(fsm_transition_t *t) {
+  fsm_state_t a_rx_timeout(fsm_transition_t *t) {
     stop_alarm();
     return a_rx_on(t);
   }
@@ -2453,10 +2453,9 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
  /**************************************************************************/
 
-  fsm_state_t a_tx_error(fsm_transition_t *t) {
+  fsm_state_t a_tx_timeout(fsm_transition_t *t) {
     globalTxMsgPtr = NULL;
     signal RadioSend.sendDone(FAIL);
-    /* proceed with a_rx_on action to start receiving again */
     return a_rx_on(t);
   }
 
