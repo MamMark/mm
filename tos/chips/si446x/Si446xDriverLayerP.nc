@@ -807,14 +807,15 @@ tasklet_norace message_t  * globalRxMsgPtr;
     E_TURNOFF = 2,                // goto lowest power state
     E_STANDBY = 3,                // goto low power state
     E_TRANSMIT = 4,               // start transmit a message
-    E_RX_FIFO = 5,                // received partial message for radioReceive.header
-    E_WAIT_DONE = 6,              // alarm timer expired
-    E_CONFIG_DONE = 7,            // configuration task is done
-    E_PACKET_RX = 8,              // packet received
-    E_PACKET_SENT = 9,            // packet transmit complete
-    E_CRC_ERROR = 10,             // packet receive crc error detected
-    E_PREAMBLE_DETECT  = 11,      // premable detected
-    E_SYNC_DETECT  = 12,          // premable detected
+    E_RX_THRESH = 5,              // received partial message for radioReceive.header
+    E_TX_THRESH = 6,              // TX thresh reached, (not used yet).
+    E_WAIT_DONE = 7,              // alarm timer expired
+    E_CONFIG_DONE = 8,            // configuration task is done
+    E_PACKET_RX = 9,              // packet received
+    E_PACKET_SENT = 10,            // packet transmit complete
+    E_CRC_ERROR = 11,             // packet receive crc error detected
+    E_PREAMBLE_DETECT  = 12,      // premable detected
+    E_SYNC_DETECT  = 13,          // premable detected
   } fsm_event_t;
 
   // define fsm transition structure. Used in event lists below.
@@ -851,7 +852,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   const fsm_transition_t fsm_e_turnoff[];
   const fsm_transition_t fsm_e_standby[];
   const fsm_transition_t fsm_e_transmit[];
-  const fsm_transition_t fsm_e_rx_fifo[];
+  const fsm_transition_t fsm_e_rx_thresh[];
   const fsm_transition_t fsm_e_wait_done[];
   const fsm_transition_t fsm_e_config_done[];
   const fsm_transition_t fsm_e_packet_rx[];
@@ -863,7 +864,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   // list of all of the fsm event lists - order must match the fsm_event_t enum
   const fsm_transition_t *fsm_events_group[] = {fsm_e_nop,            fsm_e_turnon,
 						fsm_e_turnoff,        fsm_e_standby,
-						fsm_e_transmit,       fsm_e_rx_fifo,
+						fsm_e_transmit,       fsm_e_rx_thresh, NULL,
 						fsm_e_wait_done,      fsm_e_config_done,
 						fsm_e_packet_rx,      fsm_e_packet_sent,
 						fsm_e_crc_error,      fsm_e_preamble_detect,
@@ -2673,7 +2674,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     }
     if (isp->ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
       isp->ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
-      return E_RX_FIFO;
+      return E_RX_THRESH;
     }
 
     if (isp->ph_pend || isp->modem_pend || isp->chip_pend) {
