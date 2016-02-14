@@ -1,3 +1,31 @@
+Working List:
+
+- Need SD port for mm5a
+ (eric)
+
+- Radio Op Tracing.
+
+- Reorg Radio fsm state tracing
+ (dan)
+
+- Clean up Panic state saving.  1st entry
+ (eric)
+
+- New Toolchain (TI)
+
+- S_SDN (E_STANDBY) -> ... -> S_READY -> S_STANDBY
+ (dan)
+
+- Port Mems Code to current tree
+ (eric, in progress)
+
+- Port GPS code to mm5a
+
+- remove preamble
+ (dan)
+
+
+
 General
 
   Blink for some reason seems to fire the 500 timer
