@@ -2353,9 +2353,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
   /**************************************************************************/
 
   fsm_state_t a_pwr_dn(fsm_transition_t *t) {
-    nop();
-    call HW.si446x_disableInterrupt();
     stop_alarm();
+    call HW.si446x_disableInterrupt();
     post user_response_task();
     return t->next_state;
   }
@@ -2432,15 +2431,14 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_state_t a_rx_header(fsm_transition_t *t) {
     uint8_t        rssi;
 
-    stop_alarm();
     if (signal RadioReceive.header(globalRxMsgPtr)) {
-      start_alarm(SI446X_RX_WAIT_TIME);
       rssi = si446x_fast_latched_rssi();
       call PacketRSSI.set(globalRxMsgPtr, rssi);         /* set only if accepting */
       call PacketLinkQuality.set(globalRxMsgPtr, rssi); 
       return S_RX_ACTIVE;
     }
     /* proceed with a_rx_on action to start receiving again */
+    stop_alarm();
     return a_rx_on(t);
   }
 
