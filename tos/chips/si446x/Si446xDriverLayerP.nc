@@ -2231,27 +2231,26 @@ tasklet_norace message_t  * globalRxMsgPtr;
    * to run again with E_WAIT_DONE event
    */
 
-  uint8_t start_alarm(uint32_t t) {
+  void start_alarm(uint32_t t) {
     if (call RadioAlarm.isFree()) {
       call RadioAlarm.wait(t);
-      return TRUE;
+      return;
     }
     __PANIC_RADIO(63, t, 0, 0, 0);
-    return FALSE;
   }
+
 
   /**************************************************************************/
   /*
    * stop_alarm
    *
-   * check to see that RadioAlarm is active and cancel it, otherwise panic.
+   * check to see that RadioAlarm is active and cancel it.
    */
 
-  uint8_t stop_alarm() {
-    if (!call RadioAlarm.isFree()) {
-      call RadioAlarm.cancel();
-    }
-    return TRUE;
+  void stop_alarm() {
+    if (call RadioAlarm.isFree())
+      return;
+    call RadioAlarm.cancel();
   }
 
 
@@ -2274,9 +2273,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
    */
 
   fsm_state_t a_unshut(fsm_transition_t *t) {
-    if (start_alarm(SI446X_POR_WAIT_TIME)) {
-      call HW.si446x_unshutdown();
-      }
+    start_alarm(SI446X_POR_WAIT_TIME);
+    call HW.si446x_unshutdown();
     return t->next_state;
   }
 
@@ -2293,9 +2291,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
     if (!(xcts = si446x_get_cts())) {
       __PANIC_RADIO(9, 0, 0, 0, 0);
     }
-    if (start_alarm(SI446X_POWER_UP_WAIT_TIME)) {
-      ll_si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
-    }
+    start_alarm(SI446X_POWER_UP_WAIT_TIME);
+    ll_si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
     return t->next_state;
   }
 
