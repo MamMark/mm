@@ -881,9 +881,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
   const fsm_transition_t fsm_e_turnon[] = {
     { S_SDN, A_UNSHUT, S_POR_W },
     { S_STANDBY, A_READY, S_RX_ON },
-    { S_RX_ON, A_NOP, S_RX_ON },
-    { S_RX_ACTIVE, A_NOP, S_RX_ACTIVE },
-    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -901,7 +898,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
     { S_RX_ON, A_STANDBY, S_STANDBY },
     { S_RX_ACTIVE, A_STANDBY, S_STANDBY },
     { S_TX_ACTIVE, A_STANDBY, S_STANDBY },
-    { S_STANDBY, A_STANDBY, S_STANDBY },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -913,9 +909,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   // e_rx_fifo
   const fsm_transition_t fsm_e_rx_fifo[] = {
-    { S_RX_ON, A_RX_HEADER, S_RX_ACTIVE },
     { S_RX_ACTIVE, A_RX_HEADER, S_RX_ACTIVE },
-    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -937,7 +931,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
   // e_packet_rx
   const fsm_transition_t fsm_e_packet_rx[] = {
     { S_RX_ACTIVE, A_RX_CMP, S_RX_ON },
-    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -950,16 +943,12 @@ tasklet_norace message_t  * globalRxMsgPtr;
   // e_crc_error
   const fsm_transition_t fsm_e_crc_error[] = {
     { S_RX_ACTIVE, A_RX_ERROR, S_RX_ON },
-    { S_RX_ON, A_NOP, S_RX_ON },
-    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
   // e_preamble_detect
   const fsm_transition_t fsm_e_preamble_detect[] = {
     { S_RX_ON, A_RX_PREAMBLE, S_RX_ACTIVE },
-    { S_RX_ACTIVE, A_NOP, S_RX_ACTIVE },
-    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -967,7 +956,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
   const fsm_transition_t fsm_e_sync_detect[] = {
     { S_RX_ON, A_RX_SYNC, S_RX_ACTIVE },
     { S_RX_ACTIVE, A_NOP, S_RX_ACTIVE },
-    { S_TX_ACTIVE, A_NOP, S_TX_ACTIVE },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
@@ -1009,8 +997,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
     fsm_event_t n_events;
 
     n_events = NELEMS(fsm_events_group);
-    nop();
-    if (ev >= n_events) __PANIC_RADIO(80, ev, st, 0, 0);
+    if (ev >= n_events)
+      __PANIC_RADIO(80, ev, st, 0, 0);
 
     trans = NULL;
     for (ev_list = (fsm_transition_t *) fsm_events_group[ev];
@@ -1020,7 +1008,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
 	break;
       }
     }
-    if (trans == NULL)  __PANIC_RADIO(81, ev, st, (uint16_t) trans, 0);
+    if (trans == NULL)
+      __PANIC_RADIO(81, ev, st, (uint16_t) trans, 0);
     return trans;
   }
 
@@ -2364,7 +2353,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
   /* go into standby to lower power consumption */
 
   fsm_state_t a_standby(fsm_transition_t *t) {
-    nop();
     stop_alarm();
     post user_response_task();
     return t->next_state;
@@ -2471,7 +2459,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
  /**************************************************************************/
 
   fsm_state_t a_tx_error(fsm_transition_t *t) {
-    nop();
     globalTxMsgPtr = NULL;
     signal RadioSend.sendDone(FAIL);
     /* proceed with a_rx_on action to start receiving again */
@@ -2484,7 +2471,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_state_t a_rx_cmp(fsm_transition_t *t) {
     uint16_t        pkt_len, tx_len, rx_len;
 
-    nop();
     stop_alarm();
     pkt_len = si446x_get_packet_info() + 1;        // include len byte
     nop();
@@ -2505,7 +2491,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_state_t a_tx_cmp(fsm_transition_t *t) {
     uint16_t        tx_len, rx_len;
 
-    nop();
     stop_alarm();
     si446x_fifo_info(&rx_len, &tx_len, 0);
 //    RADIO_ASSERT( tx_len == max(64/129)? );
@@ -2519,7 +2504,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
   /**************************************************************************/
 
   fsm_state_t a_rx_preamble(fsm_transition_t *t) {
-    nop();
     start_alarm(SI446X_SOP_TIME);
     return t->next_state;
   }
@@ -2528,7 +2512,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
   /**************************************************************************/
 
   fsm_state_t a_rx_sync(fsm_transition_t *t) {
-    nop();
     start_alarm(SI446X_SOP_TIME);
     return t->next_state;
   }
