@@ -886,35 +886,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
-  // e_turnoff
-  const fsm_transition_t fsm_e_turnoff[] = {
-    { S_RX_ON, A_PWR_DN, S_SDN },
-    { S_RX_ACTIVE, A_PWR_DN, S_SDN },
-    { S_TX_ACTIVE, A_PWR_DN, S_SDN },
-    { S_STANDBY, A_PWR_DN, S_SDN },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_standby
-  const fsm_transition_t fsm_e_standby[] = {
-    { S_RX_ON, A_STANDBY, S_STANDBY },
-    { S_RX_ACTIVE, A_STANDBY, S_STANDBY },
-    { S_TX_ACTIVE, A_STANDBY, S_STANDBY },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_transmit
-  const fsm_transition_t fsm_e_transmit[] = {
-    { S_RX_ON, A_TX_ON, S_TX_ACTIVE },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_rx_fifo
-  const fsm_transition_t fsm_e_rx_fifo[] = {
-    { S_RX_ACTIVE, A_RX_HEADER, S_RX_ACTIVE },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
   // e_wait_done
   const fsm_transition_t fsm_e_wait_done[] = {
     { S_POR_W, A_PWR_UP, S_PWR_UP_W },
@@ -930,24 +901,6 @@ tasklet_norace message_t  * globalRxMsgPtr;
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
-  // e_packet_rx
-  const fsm_transition_t fsm_e_packet_rx[] = {
-    { S_RX_ACTIVE, A_RX_CMP, S_RX_ON },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_packet_sent
-  const fsm_transition_t fsm_e_packet_sent[] = {
-    { S_TX_ACTIVE, A_TX_CMP, S_RX_ON },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_crc_error
-  const fsm_transition_t fsm_e_crc_error[] = {
-    { S_RX_ACTIVE, A_RX_CNT_CRC, S_RX_ON },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
   // e_preamble_detect
   const fsm_transition_t fsm_e_preamble_detect[] = {
     { S_RX_ON, A_RX_PREAMBLE, S_RX_ACTIVE },
@@ -958,6 +911,53 @@ tasklet_norace message_t  * globalRxMsgPtr;
   const fsm_transition_t fsm_e_sync_detect[] = {
     { S_RX_ON, A_RX_SYNC, S_RX_ACTIVE },
     { S_RX_ACTIVE, A_NOP, S_RX_ACTIVE },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_rx_thresh
+  const fsm_transition_t fsm_e_rx_thresh[] = {
+    { S_RX_ACTIVE, A_RX_HEADER, S_RX_ACTIVE },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_packet_rx
+  const fsm_transition_t fsm_e_packet_rx[] = {
+    { S_RX_ACTIVE, A_RX_CMP, S_RX_ON },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_crc_error
+  const fsm_transition_t fsm_e_crc_error[] = {
+    { S_RX_ACTIVE, A_RX_CNT_CRC, S_RX_ON },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_transmit
+  const fsm_transition_t fsm_e_transmit[] = {
+    { S_RX_ON, A_TX_ON, S_TX_ACTIVE },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_packet_sent
+  const fsm_transition_t fsm_e_packet_sent[] = {
+    { S_TX_ACTIVE, A_TX_CMP, S_RX_ON },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_turnoff
+  const fsm_transition_t fsm_e_turnoff[] = {
+    { S_RX_ON, A_PWR_DN, S_SDN },
+    { S_RX_ACTIVE, A_PWR_DN, S_SDN },
+    { S_TX_ACTIVE, A_PWR_DN, S_SDN },
+    { S_STANDBY, A_PWR_DN, S_SDN },
+    { S_DEFAULT, A_BREAK, S_DEFAULT },
+  };
+
+  // e_standby
+  const fsm_transition_t fsm_e_standby[] = {
+    { S_RX_ON, A_STANDBY, S_STANDBY },
+    { S_RX_ACTIVE, A_STANDBY, S_STANDBY },
+    { S_TX_ACTIVE, A_STANDBY, S_STANDBY },
     { S_DEFAULT, A_BREAK, S_DEFAULT },
   };
 
