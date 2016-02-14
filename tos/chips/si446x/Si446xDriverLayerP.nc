@@ -2446,8 +2446,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
  /**************************************************************************/
 
   fsm_state_t a_rx_error(fsm_transition_t *t) {
-    nop();
-    /* proceed with a_rx_on action to start receiving again */
+    stop_alarm();
     return a_rx_on(t);
   }
 
