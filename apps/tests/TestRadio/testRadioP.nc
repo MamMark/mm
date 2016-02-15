@@ -80,7 +80,6 @@ implementation {
   message_t       * pTosPgMsg = (message_t *) pgMsgBuffer;
   test_msg_t      * pPgMsg = (test_msg_t *) pgMsgBuffer;
 
-
   typedef struct {
     uint16_t        iterations;
     uint16_t        starts;
@@ -196,6 +195,13 @@ implementation {
       tx.errors++;
       break;
     }
+    if (tx.mode == PING) {
+      tx.mode = PONG;
+    } else if (tx.mode == PONG) {
+      tx.errors++;
+      tx.mode = PING;
+    }
+    call txTimer.startOneShot(tx.delay);
   }
 
   event void txTimer.fired() {
