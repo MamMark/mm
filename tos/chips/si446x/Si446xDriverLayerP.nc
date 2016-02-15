@@ -837,13 +837,14 @@ tasklet_norace message_t  * globalRxMsgPtr;
     fsm_state_t    current_state;
     fsm_action_t   action;
     fsm_state_t    next_state;
+    fsm_state_t    next_event;
   } fsm_stage_info_t;
 
   // define results from an action (return value). provides option for
   // changing next state value as well as generating another event
   typedef struct {
-    fsm_event_t    next_event;
-    fsm_state_t    state;
+    fsm_event_t    e;
+    fsm_state_t    s;
   } fsm_result_t;
 
   // forward declare fsm event lists
@@ -1014,23 +1015,23 @@ tasklet_norace message_t  * globalRxMsgPtr;
   }
 
   // forward define all action functions
-  fsm_state_t a_nop(fsm_transition_t *t);
-  fsm_state_t a_unshut(fsm_transition_t *t);
-  fsm_state_t a_pwr_up(fsm_transition_t *t);
-  fsm_state_t a_config(fsm_transition_t *t);
-  fsm_state_t a_ready(fsm_transition_t *t);
-  fsm_state_t a_standby(fsm_transition_t *t);
-  fsm_state_t a_pwr_dn(fsm_transition_t *t);
-  fsm_state_t a_rx_on(fsm_transition_t *t);
-  fsm_state_t a_tx_on(fsm_transition_t *t);
-  fsm_state_t a_rx_cnt_crc(fsm_transition_t *t);
-  fsm_state_t a_rx_timeout(fsm_transition_t *t);
-  fsm_state_t a_tx_timeout(fsm_transition_t *t);
-  fsm_state_t a_rx_cmp(fsm_transition_t *t);
-  fsm_state_t a_tx_cmp(fsm_transition_t *t);
-  fsm_state_t a_rx_header(fsm_transition_t *t);
-  fsm_state_t a_rx_preamble(fsm_transition_t *t);
-  fsm_state_t a_rx_sync(fsm_transition_t *t);
+  fsm_result_t a_nop(fsm_transition_t *t);
+  fsm_result_t a_unshut(fsm_transition_t *t);
+  fsm_result_t a_pwr_up(fsm_transition_t *t);
+  fsm_result_t a_config(fsm_transition_t *t);
+  fsm_result_t a_ready(fsm_transition_t *t);
+  fsm_result_t a_standby(fsm_transition_t *t);
+  fsm_result_t a_pwr_dn(fsm_transition_t *t);
+  fsm_result_t a_rx_on(fsm_transition_t *t);
+  fsm_result_t a_tx_on(fsm_transition_t *t);
+  fsm_result_t a_rx_cnt_crc(fsm_transition_t *t);
+  fsm_result_t a_rx_timeout(fsm_transition_t *t);
+  fsm_result_t a_tx_timeout(fsm_transition_t *t);
+  fsm_result_t a_rx_cmp(fsm_transition_t *t);
+  fsm_result_t a_tx_cmp(fsm_transition_t *t);
+  fsm_result_t a_rx_header(fsm_transition_t *t);
+  fsm_result_t a_rx_preamble(fsm_transition_t *t);
+  fsm_result_t a_rx_sync(fsm_transition_t *t);
 
   norace uint8_t fsm_active;
 
@@ -1080,7 +1081,10 @@ tasklet_norace message_t  * globalRxMsgPtr;
   }
 
 
-
+  /*
+   * fsm_trace related global variables and update routines. records state
+   * machine execution details.
+   */
   tasklet_norace fsm_stage_info_t fsm_trace_array[16];
   tasklet_norace uint8_t fsm_tp, fsm_tc;
   tasklet_norace uint32_t fsm_start_time, fsm_end_time;
@@ -1093,10 +1097,11 @@ tasklet_norace message_t  * globalRxMsgPtr;
     fsm_trace_array[fsm_tc].action = ac;
   }
 
-  void fsm_trace_end(fsm_state_t ns) {
+  void fsm_trace_end(fsm_result_t ns) {
     nop(); 
     fsm_trace_array[fsm_tc].time_delta = call LocalTime.get() - fsm_trace_array[fsm_tc].time_start;
-    fsm_trace_array[fsm_tc].next_state = ns;
+    fsm_trace_array[fsm_tc].next_state = ns.s;
+    fsm_trace_array[fsm_tc].next_event = ns.e;
     fsm_tp=fsm_tc;
     if (++fsm_tc >= NELEMS(fsm_trace_array))
       fsm_tc = 0;
@@ -1104,43 +1109,54 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   void fsm_change_state(fsm_event_t ev) {
     fsm_transition_t *t;
-    fsm_state_t ns = S_SDN;
+    fsm_result_t ns;
 
     if (fsm_active)
       __PANIC_RADIO(82, ev, fsm_global_current_state,  1, 1);
 
     nop();
-    fsm_active = TRUE;
-    if ((t = fsm_select_transition(ev, fsm_global_current_state))) {
-      fsm_trace_start(ev, fsm_global_current_state, t->action);
-      switch (t->action) {
-      case A_NOP:	  ns = a_nop(t);         break;
-      case A_UNSHUT:	  ns = a_unshut(t);      break;
-      case A_PWR_UP:	  ns = a_pwr_up(t);      break;
-      case A_CONFIG:	  ns = a_config(t);      break;
-      case A_READY:	  ns = a_ready(t);       break;
-      case A_STANDBY:	  ns = a_standby(t);     break;
-      case A_PWR_DN:	  ns = a_pwr_dn(t);      break;
-      case A_RX_ON:	  ns = a_rx_on(t);       break;
-      case A_TX_ON:	  ns = a_tx_on(t);       break;
-      case A_RX_CNT_CRC:  ns = a_rx_cnt_crc(t);  break;
-      case A_RX_TIMEOUT:  ns = a_rx_timeout(t);  break;
-      case A_TX_TIMEOUT:  ns = a_tx_timeout(t);  break;
-      case A_TX_CMP:      ns = a_tx_cmp(t);      break;
-      case A_RX_CMP:      ns = a_rx_cmp(t);      break;
-      case A_RX_HEADER:   ns = a_rx_header(t);   break;
-      case A_RX_PREAMBLE: ns = a_rx_preamble(t); break;
-      case A_RX_SYNC:     ns = a_rx_sync(t);     break;
-      case A_BREAK:
-      default:            t = NULL;              break;
-      }
-      fsm_trace_end(ns);
+    do {
+      fsm_active++;
+      ns.s = S_SDN;
+      ns.e = E_NOP;
+      if ((t = fsm_select_transition(ev, fsm_global_current_state))) {
+	fsm_trace_start(ev, fsm_global_current_state, t->action);
+	switch (t->action) {
+	case A_NOP:	  ns = a_nop(t);         break;
+	case A_UNSHUT:	  ns = a_unshut(t);      break;
+	case A_PWR_UP:	  ns = a_pwr_up(t);      break;
+	case A_CONFIG:	  ns = a_config(t);      break;
+	case A_READY:	  ns = a_ready(t);       break;
+	case A_STANDBY:	  ns = a_standby(t);     break;
+	case A_PWR_DN:	  ns = a_pwr_dn(t);      break;
+	case A_RX_ON:	  ns = a_rx_on(t);       break;
+	case A_TX_ON:	  ns = a_tx_on(t);       break;
+	case A_RX_CNT_CRC:  ns = a_rx_cnt_crc(t);  break;
+	case A_RX_TIMEOUT:  ns = a_rx_timeout(t);  break;
+	case A_TX_TIMEOUT:  ns = a_tx_timeout(t);  break;
+	case A_TX_CMP:      ns = a_tx_cmp(t);      break;
+	case A_RX_CMP:      ns = a_rx_cmp(t);      break;
+	case A_RX_HEADER:   ns = a_rx_header(t);   break;
+	case A_RX_PREAMBLE: ns = a_rx_preamble(t); break;
+	case A_RX_SYNC:     ns = a_rx_sync(t);     break;
+	case A_BREAK:
+	default:            t = NULL;              break;
+	}
+	fsm_trace_end(ns);
 
-      // update with new state, or keep current if default or unknown
-      if ((t) && (ns < S_DEFAULT)) {
-	fsm_global_current_state = ns;
+	// update with new state, or keep current if default or unknown
+	if ((t) && (ns.s < S_DEFAULT)) {
+	  fsm_global_current_state = ns.s;
+	}
       }
-    }
+      // protect against infinite loop errors, no more than 3
+      // consequtive events are allowed to be generated by
+      // action processing
+      if (fsm_active > 3)
+	__PANIC_RADIO(83, ev, fsm_global_current_state, ns.s, ns.e);
+      // process new event generated by previous action, if any
+      ev = ns.e;
+    } while (ev);
 
     nop();
     fsm_active = FALSE;
@@ -1148,7 +1164,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     // break detected or no transition record was identified,
     // so state machine is lost
     if (!t)
-      __PANIC_RADIO(82, ev, fsm_global_current_state,  (uint16_t) t, ns);
+      __PANIC_RADIO(84, ev, fsm_global_current_state, ns.s, ns.e);
   }
 
   /**************************************************************************/
@@ -2260,13 +2276,19 @@ tasklet_norace message_t  * globalRxMsgPtr;
     call RadioAlarm.cancel();
   }
 
+  fsm_result_t fsm_results(fsm_state_t s, fsm_event_t e) {
+    fsm_result_t t;
+    t.s = s;
+    t.e = e;
+    return t;
+  }
 
   /**************************************************************************/
   /*  do nothing.
    */
 
-  fsm_state_t a_nop(fsm_transition_t *t) {
-    return t->next_state;
+  fsm_result_t a_nop(fsm_transition_t *t) {
+    return fsm_results(t->next_state, E_NOP);
   }
 
 
@@ -2279,10 +2301,10 @@ tasklet_norace message_t  * globalRxMsgPtr;
    *
    */
 
-  fsm_state_t a_unshut(fsm_transition_t *t) {
+  fsm_result_t a_unshut(fsm_transition_t *t) {
     start_alarm(SI446X_POR_WAIT_TIME);
     call HW.si446x_unshutdown();
-    return t->next_state;
+    return fsm_results(t->next_state, E_NOP);
   }
 
   /**************************************************************************/
@@ -2294,13 +2316,13 @@ tasklet_norace message_t  * globalRxMsgPtr;
   * time (16ms).  CTS will go back up when done.
   */
 
-  fsm_state_t a_pwr_up(fsm_transition_t *t) {
+  fsm_result_t a_pwr_up(fsm_transition_t *t) {
     if (!(xcts = si446x_get_cts())) {
       __PANIC_RADIO(9, 0, 0, 0, 0);
     }
     start_alarm(SI446X_POWER_UP_WAIT_TIME);
     ll_si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
-    return t->next_state;
+    return fsm_results(t->next_state, E_NOP);
   }
 
 
@@ -2312,14 +2334,14 @@ tasklet_norace message_t  * globalRxMsgPtr;
    * loading it.
    */
 
-  fsm_state_t a_config(fsm_transition_t *t) {
+  fsm_result_t a_config(fsm_transition_t *t) {
     /*
      * make the FRRs return a driver custom setting, see si446x_frr_config for
      * details.
      */
     stuff_config(si446x_frr_config);
     post load_config_task();
-    return t->next_state;
+    return fsm_results(t->next_state, E_NOP);
   }
 
   /**************************************************************************/
@@ -2333,7 +2355,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
    * Finally, receiver is turned on (repurposes fsm action).
    */
 
-  fsm_state_t a_ready(fsm_transition_t *t) {
+  fsm_result_t a_ready(fsm_transition_t *t) {
     drf();
     nop();
     setChannel();
@@ -2350,20 +2372,20 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   /* go into standby to lower power consumption */
 
-  fsm_state_t a_standby(fsm_transition_t *t) {
+  fsm_result_t a_standby(fsm_transition_t *t) {
     stop_alarm();
     post user_response_task();
-    return t->next_state;
+    return fsm_results(t->next_state, E_NOP);
   }
 
 
   /**************************************************************************/
 
-  fsm_state_t a_pwr_dn(fsm_transition_t *t) {
+  fsm_result_t a_pwr_dn(fsm_transition_t *t) {
     stop_alarm();
     call HW.si446x_disableInterrupt();
     post user_response_task();
-    return t->next_state;
+    return fsm_results(t->next_state, E_NOP);
   }
 
 
@@ -2373,7 +2395,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
    *
    * enable the receiver for the next packet
    */
-  fsm_state_t a_rx_on(fsm_transition_t *t) {
+  fsm_result_t a_rx_on(fsm_transition_t *t) {
 
     if (!globalRxMsgPtr){
       __PANIC_RADIO(3, 0, 0, 0, 0);
@@ -2389,7 +2411,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     wait_for_cts();                     /* wait for rx start up */
     post user_response_task();
     nop();
-    return t->next_state;
+    return fsm_results(t->next_state, E_NOP);
   }
 
 
@@ -2399,7 +2421,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
    *
    * start the transmission of a packet, subsequent events will complete it
    */
-  fsm_state_t a_tx_on(fsm_transition_t *t) {
+  fsm_result_t a_tx_on(fsm_transition_t *t) {
     uint8_t        *dp;
     uint16_t        pkt_len, tx_len, rx_len;
 
@@ -2423,7 +2445,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     wait_for_cts();
     post user_response_task();           // signal send ready event to user
     nop();
-    return t->next_state;
+    return fsm_results(t->next_state, E_NOP);
   }
 
 
@@ -2435,14 +2457,14 @@ tasklet_norace message_t  * globalRxMsgPtr;
    * the fifo
    */
 
-  fsm_state_t a_rx_header(fsm_transition_t *t) {
+  fsm_result_t a_rx_header(fsm_transition_t *t) {
     uint8_t        rssi;
 
     if (signal RadioReceive.header(globalRxMsgPtr)) {
       rssi = si446x_fast_latched_rssi();
       call PacketRSSI.set(globalRxMsgPtr, rssi);         /* set only if accepting */
       call PacketLinkQuality.set(globalRxMsgPtr, rssi); 
-      return S_RX_ACTIVE;
+      return fsm_results(S_RX_ACTIVE, E_NOP);
     }
     /* proceed with a_rx_on action to start receiving again */
     stop_alarm();
@@ -2452,14 +2474,14 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
  /**************************************************************************/
 
-  fsm_state_t a_rx_cnt_crc(fsm_transition_t *t) {
+  fsm_result_t a_rx_cnt_crc(fsm_transition_t *t) {
     stop_alarm();
     return a_rx_on(t);
   }
 
 
  /**************************************************************************/
-  fsm_state_t a_rx_timeout(fsm_transition_t *t) {
+  fsm_result_t a_rx_timeout(fsm_transition_t *t) {
     stop_alarm();
     return a_rx_on(t);
   }
@@ -2467,7 +2489,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
  /**************************************************************************/
 
-  fsm_state_t a_tx_timeout(fsm_transition_t *t) {
+  fsm_result_t a_tx_timeout(fsm_transition_t *t) {
     globalTxMsgPtr = NULL;
     signal RadioSend.sendDone(FAIL);
     return a_rx_on(t);
@@ -2476,7 +2498,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   /**************************************************************************/
 
-  fsm_state_t a_rx_cmp(fsm_transition_t *t) {
+  fsm_result_t a_rx_cmp(fsm_transition_t *t) {
     uint16_t        pkt_len, tx_len, rx_len;
 
     stop_alarm();
@@ -2496,7 +2518,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   /**************************************************************************/
 
-  fsm_state_t a_tx_cmp(fsm_transition_t *t) {
+  fsm_result_t a_tx_cmp(fsm_transition_t *t) {
     uint16_t        tx_len, rx_len;
 
     stop_alarm();
@@ -2511,17 +2533,17 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   /**************************************************************************/
 
-  fsm_state_t a_rx_preamble(fsm_transition_t *t) {
+  fsm_result_t a_rx_preamble(fsm_transition_t *t) {
     start_alarm(SI446X_RX_TIMEOUT);
-    return t->next_state;
+    return fsm_results(t->next_state, E_NOP);
   }
 
 
   /**************************************************************************/
 
-  fsm_state_t a_rx_sync(fsm_transition_t *t) {
+  fsm_result_t a_rx_sync(fsm_transition_t *t) {
     start_alarm(SI446X_RX_TIMEOUT);
-    return t->next_state;
+    return fsm_results(t->next_state, E_NOP);
   }
 
 
