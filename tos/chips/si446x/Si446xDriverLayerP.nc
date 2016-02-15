@@ -1085,13 +1085,17 @@ tasklet_norace message_t  * globalRxMsgPtr;
   tasklet_norace uint8_t fsm_tp, fsm_tc;
   tasklet_norace uint32_t fsm_start_time, fsm_end_time;
 
-  void fsm_trace(fsm_event_t ev, fsm_state_t cs, fsm_action_t ac, fsm_state_t ns) {
+  void fsm_trace_start(fsm_event_t ev, fsm_state_t cs, fsm_action_t ac) {
     nop(); 
-    fsm_trace_array[fsm_tc].time_delta = fsm_end_time - fsm_start_time;
-    fsm_trace_array[fsm_tc].time_start  = fsm_start_time;
+    fsm_trace_array[fsm_tc].time_start  = call LocalTime.get();
     fsm_trace_array[fsm_tc].this_event = ev;
     fsm_trace_array[fsm_tc].current_state = cs;
     fsm_trace_array[fsm_tc].action = ac;
+  }
+
+  void fsm_trace_end(fsm_state_t ns) {
+    nop(); 
+    fsm_trace_array[fsm_tc].time_delta = call LocalTime.get() - fsm_trace_array[fsm_tc].time_start;
     fsm_trace_array[fsm_tc].next_state = ns;
     fsm_tp=fsm_tc;
     if (++fsm_tc >= NELEMS(fsm_trace_array))
@@ -1105,10 +1109,10 @@ tasklet_norace message_t  * globalRxMsgPtr;
     if (fsm_active)
       __PANIC_RADIO(82, ev, fsm_global_current_state,  1, 1);
 
-    fsm_start_time = call LocalTime.get();
     nop();
     fsm_active = TRUE;
     if ((t = fsm_select_transition(ev, fsm_global_current_state))) {
+      fsm_trace_start(ev, fsm_global_current_state, t->action);
       switch (t->action) {
       case A_NOP:	  ns = a_nop(t);         break;
       case A_UNSHUT:	  ns = a_unshut(t);      break;
@@ -1130,8 +1134,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
       case A_BREAK:
       default:            t = NULL;              break;
       }
-      fsm_end_time = call LocalTime.get();
-      fsm_trace(ev, fsm_global_current_state, t->action, ns);
+      fsm_trace_end(ns);
 
       // update with new state, or keep current if default or unknown
       if ((t) && (ns < S_DEFAULT)) {
