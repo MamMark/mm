@@ -264,7 +264,7 @@ typedef enum {
 } Si446x_device_state_t;
 
 typedef struct {
-  uint16_t ts;
+  uint32_t ts;
   uint8_t  cts;
   uint8_t  irqn;
   uint8_t  csn;
@@ -1383,7 +1383,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
     modem = pend[2];                    /* trace actual values */
     rssi  = pend[3];
-    rpp->ts = call Platform.usecsRaw();
+    rpp->ts = call LocalTime.get();
     rpp->cts   = cts;
     rpp->irqn  = irqn;
     rpp->csn   = csn;
