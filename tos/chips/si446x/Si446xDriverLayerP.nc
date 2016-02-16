@@ -2709,7 +2709,28 @@ tasklet_norace message_t  * globalRxMsgPtr;
       nop();
       __PANIC_RADIO(19, 0, 0, 0, 0);
     }
-    return E_NOP;
+    return E_NONE;
+  }
+
+
+  typedef struct int_trace {
+    uint32_t       time;
+    uint8_t        ph_pend;
+    uint8_t        modem_pend;
+    uint8_t        chip_pend;
+  } int_trace_t;
+
+  tasklet_norace uint8_t          int_tc, int_tp;
+  tasklet_norace int_trace_t      int_trace_array[16];
+
+  void interrupt_trace(si446x_int_state_t *isp) {
+    int_trace_array[int_tc].time = call LocalTime.get();
+    int_trace_array[int_tc].ph_pend = isp->ph_pend;
+    int_trace_array[int_tc].modem_pend = isp->modem_pend;
+    int_trace_array[int_tc].chip_pend = isp->chip_pend;
+    int_tp = int_tc;
+    if (++int_tc >= NELEMS(int_trace_array))
+      int_tc = 0;
   }
 
   /*
@@ -2732,6 +2753,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
       ll_si446x_read_fast_status(radio_pend);
       trace_radio_pend(radio_pend);
       ll_si446x_getclr_ints(isp);
+      interrupt_trace(isp);
       isp->ph_pend    &= SI446X_PH_INTEREST;
       isp->modem_pend &= SI446X_MODEM_INTEREST;
       isp->chip_pend  &= SI446X_CHIP_INTEREST;
