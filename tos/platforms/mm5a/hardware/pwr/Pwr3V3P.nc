@@ -4,12 +4,23 @@
 
 module Pwr3V3P {
   provides interface PwrReg;
-  uses interface Leds as Enable;
+  uses interface GeneralIO as Pwr3V3Enable;
 
   /* Timer to wait for Vout rise delay */
   uses interface Timer<TMilli> as VoutTimer;
 }
 implementation {
+
+/*
+ * tps78233 output rise delay in msec
+ * 10ms to allow chips to boot.  Probably should
+ * be done differently.  ie.  time for Vout to
+ * stablize and additional time for a chip to boot.
+ *
+ * Do all mems chips
+ */
+#define PWR3V3_VOUT_RISETIME 10
+
   typedef enum {
     P3V3_OFF = 0,
     P3V3_STARTING,
@@ -22,22 +33,14 @@ implementation {
   uint8_t m_refcount;
 
   command error_t PwrReg.pwrReq() {
-    nop();
-    nop();
-    nop();
     m_refcount++;
     if (m_pwr3v3_state == P3V3_ON) {
       return EALREADY;
     }
     if (m_pwr3v3_state == P3V3_OFF) {
       m_pwr3v3_state = P3V3_STARTING;
-
-      /*
-       * turn led0 on to simulate enabling regulator
-       * start a timer equal to Vout rise time delay
-       */
-      call Enable.led0On();
-      call VoutTimer.startOneShot(3000);
+      call Pwr3V3Enable.set();
+      call VoutTimer.startOneShot(PWR3V3_VOUT_RISETIME);
     }
     return SUCCESS;
   }
@@ -49,7 +52,7 @@ implementation {
 
     if (m_refcount == 0) {
       m_pwr3v3_state = P3V3_OFF;
-      call Enable.led1Off();
+      call Pwr3V3Enable.clr();
       call VoutTimer.stop();
     }
   }
