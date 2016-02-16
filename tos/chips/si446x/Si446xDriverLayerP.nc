@@ -642,6 +642,8 @@ const uint8_t si446x_chip_clr_cmd_err[] = { SI446X_CMD_GET_CHIP_STATUS, 0xf7 };
 
 const uint8_t si446x_device_state[] = { SI446X_CMD_REQUEST_DEVICE_STATE }; /* 33 */
 
+const uint8_t si446x_change_state_ready[] = { SI446X_CMD_CHANGE_STATE, READY }; /* 34 */
+
  typedef struct {
     uint8_t len;
     uint8_t proto;
@@ -2430,7 +2432,9 @@ tasklet_norace message_t  * globalRxMsgPtr;
     if (!globalTxMsgPtr){
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
-    start_alarm(SI446X_TX_TIMEOUT);
+    nop();
+    ll_si446x_send_cmd(si446x_change_state_ready, rsp, sizeof(si446x_change_state_ready));
+    wait_for_cts();                     /* wait for ready state */
     nop();
     dp     = (uint8_t *) getPhyHeader(globalTxMsgPtr);
     pkt_len = *dp + 1;              // length of data field is first byte
@@ -2447,7 +2451,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
     wait_for_cts();
     post user_response_task();           // signal send ready event to user
     nop();
-    return fsm_results(t->next_state, E_NOP);
+    start_alarm(SI446X_TX_TIMEOUT);
+    return fsm_results(t->next_state, E_NONE);
   }
 
 
