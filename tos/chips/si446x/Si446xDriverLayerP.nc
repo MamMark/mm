@@ -803,6 +803,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   typedef enum {
     E_NOP = 0,                    // no event to process, ignore
+    E_NONE = 0,                   // another name for no event
     E_TURNON = 1,                 // goto RX_ON state
     E_TURNOFF = 2,                // goto lowest power state
     E_STANDBY = 3,                // goto low power state
@@ -2288,7 +2289,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
    */
 
   fsm_result_t a_nop(fsm_transition_t *t) {
-    return fsm_results(t->next_state, E_NOP);
+    return fsm_results(t->next_state, E_NONE);
   }
 
 
@@ -2304,7 +2305,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_result_t a_unshut(fsm_transition_t *t) {
     start_alarm(SI446X_POR_WAIT_TIME);
     call HW.si446x_unshutdown();
-    return fsm_results(t->next_state, E_NOP);
+    return fsm_results(t->next_state, E_NONE);
   }
 
   /**************************************************************************/
@@ -2322,7 +2323,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     }
     start_alarm(SI446X_POWER_UP_WAIT_TIME);
     ll_si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
-    return fsm_results(t->next_state, E_NOP);
+    return fsm_results(t->next_state, E_NONE);
   }
 
 
@@ -2341,7 +2342,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
      */
     stuff_config(si446x_frr_config);
     post load_config_task();
-    return fsm_results(t->next_state, E_NOP);
+    return fsm_results(t->next_state, E_NONE);
   }
 
   /**************************************************************************/
@@ -2375,7 +2376,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_result_t a_standby(fsm_transition_t *t) {
     stop_alarm();
     post user_response_task();
-    return fsm_results(t->next_state, E_NOP);
+    return fsm_results(t->next_state, E_NONE);
   }
 
 
@@ -2384,8 +2385,9 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_result_t a_pwr_dn(fsm_transition_t *t) {
     stop_alarm();
     call HW.si446x_disableInterrupt();
+    call HW.si446x_shutdown();
     post user_response_task();
-    return fsm_results(t->next_state, E_NOP);
+    return fsm_results(t->next_state, E_NONE);
   }
 
 
@@ -2411,7 +2413,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     wait_for_cts();                     /* wait for rx start up */
     post user_response_task();
     nop();
-    return fsm_results(t->next_state, E_NOP);
+    return fsm_results(t->next_state, E_NONE);
   }
 
 
@@ -2464,7 +2466,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
       rssi = si446x_fast_latched_rssi();
       call PacketRSSI.set(globalRxMsgPtr, rssi);         /* set only if accepting */
       call PacketLinkQuality.set(globalRxMsgPtr, rssi); 
-      return fsm_results(S_RX_ACTIVE, E_NOP);
+      return fsm_results(S_RX_ACTIVE, E_NONE);
     }
     /* proceed with a_rx_on action to start receiving again */
     stop_alarm();
@@ -2535,7 +2537,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   fsm_result_t a_rx_preamble(fsm_transition_t *t) {
     start_alarm(SI446X_RX_TIMEOUT);
-    return fsm_results(t->next_state, E_NOP);
+    return fsm_results(t->next_state, E_NONE);
   }
 
 
@@ -2543,7 +2545,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
   fsm_result_t a_rx_sync(fsm_transition_t *t) {
     start_alarm(SI446X_RX_TIMEOUT);
-    return fsm_results(t->next_state, E_NOP);
+    return fsm_results(t->next_state, E_NONE);
   }
 
 
@@ -2657,7 +2659,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     nop();
     nop();
     if (!fsm_int_event) {
-      fsm_int_queue(!E_NOP);
+      fsm_int_queue(!E_NONE);
       call Tasklet.schedule();
     }
   }
@@ -2776,19 +2778,19 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
     while (TRUE) {
       if (fsm_int_event) {
-	fsm_int_event = E_NOP;
+	fsm_int_event = E_NONE;
 	process_interrupt(); // may process multiple pending events
 	continue;
       }
       if (fsm_user_event) {
         ev = fsm_user_event;
-        fsm_user_event = E_NOP;
+        fsm_user_event = E_NONE;
         fsm_change_state(ev);
         continue;
       }
       if (fsm_task_event) {
         ev = fsm_task_event;
-        fsm_task_event = E_NOP;
+        fsm_task_event = E_NONE;
         fsm_change_state(ev);
         continue;
       }
