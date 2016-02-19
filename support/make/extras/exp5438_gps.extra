@@ -1,0 +1,17 @@
+#-#-Makefile-#- vim:syntax=make
+###
+ # @author Dan Maltbie <dmaltbie@daloma.org>
+ ##
+
+MSP430FET ?= /dev/ttyACM0
+
+TOSMAKE_PROGRAMMER_TYPE = MSP-FET430UIF
+PROGRAMMER = mspdebug tilib
+
+program: setid FORCE
+	@echo -e '$(INFO_STRING) installing $(TARGET) binary using $(TOSMAKE_PROGRAMMER_TYPE)'
+	$(PROGRAMMER) -d "$(MSP430FET)" 'prog $(TOSMAKE_BUILD_DIR)/main.exe.out-$(NODEID)'
+	@echo -e 'Next execute: mspdebug tilib -d "$(MSP430FET)"  "gdb 2000"'
+	@echo -e 'Followed by: cd build/exp5438_gps'
+	@echo -e '        and: msp430-gdb -i=mi -nx -ex "target remote localhost:2000" -x .gdbinit main.exe'
+	@echo -e 'Use different port numbers (e.g., 2000) with gdb to access more than one device concurrently'
