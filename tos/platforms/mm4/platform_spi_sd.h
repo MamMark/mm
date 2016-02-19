@@ -34,8 +34,8 @@
  * @author Eric Decker
  */
 
-#ifndef _H_PLATFORM_SD_SPI_H_
-#define _H_PLATFORM_SD_SPI_H_
+#ifndef _H_PLATFORM_SPI_SD_H_
+#define _H_PLATFORM_SPI_SD_H_
 
 #include <msp430usci.h>
 
@@ -143,4 +143,4 @@ const msp430_spi_union_config_t sd_full_config = { {
   ucssel	: 2,			/* smclk */
   } };
 
-#endif    /* _H_PLATFORM_SD_SPI_H_ */
+#endif    /* _H_PLATFORM_SPI_SD_H_ */
