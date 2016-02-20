@@ -75,9 +75,9 @@ implementation {
   components new TimerMilliC() as SDTimer;
   SDspP.SDtimer -> SDTimer;
 
-  components SPI0_OwnerC;
-  SDspP.ResourceDefaultOwner -> SPI0_OwnerC;
-  SDspP.Usci -> SPI0_OwnerC;
+  components SD_OwnerC;
+  SDspP.ResourceDefaultOwner -> SD_OwnerC;
+  SDspP.Usci -> SD_OwnerC;
 
   components Hpl_MM_hwC as HW;
   SDspP.HW -> HW;

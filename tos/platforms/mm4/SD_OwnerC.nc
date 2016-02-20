@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, Eric B. Decker
+ * Copyright 2010, 2016, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 
 #include "msp430usci.h"
 
-configuration SPI0_OwnerC {
+configuration SD_OwnerC {
   provides {
     interface ResourceDefaultOwner;
     interface HplMsp430UsciB as Usci;
