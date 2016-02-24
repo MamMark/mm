@@ -131,8 +131,7 @@ implementation {
    *
    */
   void tx_start() {
-    nop();
-    if (!(call txTimer.isRunning())) {
+    if (call txTimer.isRunning()) {
       call txTimer.stop();
     }
     if (tx.mode) {
@@ -146,7 +145,6 @@ implementation {
   }
 
   void tx_stop() {
-    nop();
     call txTimer.stop();
   }
 
