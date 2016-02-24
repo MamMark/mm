@@ -1,0 +1,156 @@
+<?xml version='1.0'?>
+<!DOCTYPE qfsmproject SYSTEM 'qfsm.dtd'>
+<qfsmproject version="0.54" author="Qfsm">
+  <machine nummooreout="0" transfontitalic="0" draw_it="1" statefontsize="10" transfont="Ubuntu" statefontitalic="0" author="" description="" version="1.0" name="FSM" arrowtype="1" numbits="3" statefontweight="75" statefont="Ubuntu" numin="0" transfontsize="9" transfontweight="63" type="2" numout="0" initialstate="4">
+    <outputnames_moore></outputnames_moore>
+    <inputnames></inputnames>
+    <outputnames></outputnames>
+    <itransition ypos="536.16" endx="187.2" xpos="127.2" endy="536.16"/>
+    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="536.16" code="4" xpos="237.2" linewidth="1">SDN</state>
+    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="193.456" code="0" xpos="506.912" linewidth="1">POR_W</state>
+    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="151.472" code="2" xpos="918.496" linewidth="1">PWR_UP_W</state>
+    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="217.024" code="3" xpos="1320.256" linewidth="1">CONFIG_W</state>
+    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="500.32" code="1" xpos="1567.44" linewidth="1">RX_ON</state>
+    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="890" code="5" xpos="1370" linewidth="1">RX_ACTIVE</state>
+    <state pencolor="0" exit_actions="" radius="53" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="642.48" code="6" xpos="977.12" linewidth="1">TX_ACTIVE</state>
+    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="380" code="7" xpos="830.08" linewidth="1">STANDBY</state>
+    <transition c1x="222.216563623803" c2y="278.7313460216856" c1y="384.8506651277132" description="" straight="0" type="2" ypos="486.8403038083928" endx="464.4591698113207" xpos="228.9800506347322" endy="219.8710943396226" c2x="376.8085175913134">
+      <from>4</from>
+      <to>0</to>
+      <inputs default="0" any="0" invert="0">TURNON</inputs>
+      <outputs>unshut</outputs>
+    </transition>
+    <transition c1x="498.8000694695039" c2y="500.7654118340602" c1y="540.1080748027264" description="" straight="0" type="2" ypos="550.3797509185654" endx="785.2934497994124" xpos="285.1353594313629" endy="402.2298205375178" c2x="616.5975555752165">
+      <from>4</from>
+      <to>7</to>
+      <inputs default="0" any="0" invert="0">STANDBY</inputs>
+      <outputs>config</outputs>
+    </transition>
+    <transition c1x="633.0515912644133" c2y="103.8030619933735" c1y="117.5894308555761" description="" straight="0" type="2" ypos="172.4411531715984" endx="870.965727175451" xpos="552.2813311916631" endy="135.951910914433" c2x="750.5228542241426">
+      <from>0</from>
+      <to>2</to>
+      <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
+      <outputs>pwr_up</outputs>
+    </transition>
+    <transition c1x="1082.951980139984" c2y="117.1100730212335" c1y="103.4888610559886" description="" straight="0" type="2" ypos="126.1209936718303" endx="1283.091292687642" xpos="961.5927107578884" endy="183.5757634188775" c2x="1182.37827238116">
+      <from>2</from>
+      <to>3</to>
+      <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
+      <outputs>config</outputs>
+    </transition>
+    <transition c1x="1465.550590023198" c2y="332.376952420709" c1y="289.9054108113646" description="" straight="0" type="2" ypos="229.2174920342661" endx="1561.362940477375" xpos="1368.746398554872" endy="450.6906805652296" c2x="1510.384170544828">
+      <from>3</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">CONFIG_DONE</inputs>
+      <outputs>ready</outputs>
+    </transition>
+    <transition c1x="1694.769458934607" c2y="611.0046080126147" c1y="474.1053306826096" description="" straight="1" type="2" ypos="503.2561010975735" endx="1603.788837407554" xpos="1617.35371865875" endy="534.6531038375383" c2x="1635.622971107849">
+      <from>1</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">PREAMBLE_DETECT</inputs>
+      <outputs>nop</outputs>
+    </transition>
+    <transition c1x="1127.607176133304" c2y="204.64545387099" c1y="189.3274521630501" description="" straight="0" type="2" ypos="455.0108430002366" endx="269.5824210047771" xpos="1546.295726733444" endy="498.063034112027" c2x="563.4951232212034">
+      <from>1</from>
+      <to>4</to>
+      <inputs default="0" any="0" invert="0">TURNOFF</inputs>
+      <outputs>pwr_dn</outputs>
+    </transition>
+    <transition c1x="1301.703479240543" c2y="438.3388238673076" c1y="464.4341007741261" description="" straight="1" type="2" ypos="490.5293776809446" endx="868.2945741753946" xpos="1518.407931773118" endy="412.2435469604891" c2x="1084.999026707969">
+      <from>1</from>
+      <to>7</to>
+      <inputs default="0" any="0" invert="0">STANDBY</inputs>
+      <outputs>standby</outputs>
+    </transition>
+    <transition c1x="1286.157620463198" c2y="512.420717832489" c1y="502.3903913678639" description="" straight="0" type="2" ypos="505.0845444695727" endx="1012.519216314195" xpos="1517.667526523213" endy="603.0351589641832" c2x="1172.523678559187">
+      <from>1</from>
+      <to>6</to>
+      <inputs default="0" any="0" invert="0">TRANSMIT</inputs>
+      <outputs>tx_on</outputs>
+    </transition>
+    <transition c1x="1673.801332985559" c2y="875.6928511280007" c1y="767.8211334893942" description="" straight="0" type="2" ypos="547.8363907046667" endx="1419.997423477273" xpos="1583.002538816063" endy="889.4924119443932" c2x="1545.054914031462">
+      <from>1</from>
+      <to>5</to>
+      <inputs default="0" any="0" invert="0">SYNC_DETECT</inputs>
+      <outputs>rx_on</outputs>
+    </transition>
+    <transition c1x="1345.503677094943" c2y="948.483855191634" c1y="1015.646704631655" description="" straight="0" type="2" ypos="939.4807791820787" endx="1332.688832257348" xpos="1362.813033217388" endy="923.2847827344522" c2x="1253.898153839295">
+      <from>5</from>
+      <to>5</to>
+      <inputs default="0" any="0" invert="0">RX_THRESH</inputs>
+      <outputs>rx_header</outputs>
+    </transition>
+    <transition c1x="1451.423654865187" c2y="723.5131878618238" c1y="817.4869678245275" description="" straight="0" type="2" ypos="868.0223568009587" endx="1568.197488814813" xpos="1414.910836102389" endy="550.3142617776824" c2x="1589.697530433882">
+      <from>5</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
+      <outputs>rx_timeout</outputs>
+    </transition>
+    <transition c1x="1414.938192339884" c2y="648.9961949126966" c1y="742.0723898253938" description="" straight="0" type="2" ypos="845.6285847380907" endx="1553.439999999999" xpos="1393.047288509827" endy="548.3199999999997" c2x="1501.309096169942">
+      <from>5</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">PACKET_RX</inputs>
+      <outputs>rx_cmp</outputs>
+    </transition>
+    <transition c1x="1331.346160456994" c2y="603.4441268383994" c1y="712.8961196375437" description="" straight="0" type="2" ypos="842.9792055772884" endx="1539.241917692123" xpos="1352.998679702532" endy="541.6100490936764" c2x="1416.328980130958">
+      <from>5</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">CRC_ERROR</inputs>
+      <outputs>rx_cnt_crc</outputs>
+    </transition>
+    <transition c1x="606.2772759715057" c2y="656.7318059184749" c1y="849.8410954119474" description="" straight="0" type="2" ypos="871.3358590285006" endx="808.8346431493065" xpos="1323.614120232597" endy="425.2618472036514" c2x="728.867785835555">
+      <from>5</from>
+      <to>7</to>
+      <inputs default="0" any="0" invert="0">STANDBY</inputs>
+      <outputs>standby</outputs>
+    </transition>
+    <transition c1x="811.6013253967008" c2y="930.3214213658866" c1y="857.9409209376508" description="" straight="0" type="2" ypos="895.717641437633" endx="251.4738293300083" xpos="1320.327990010564" endy="584.0792841793134" c2x="405.3475885112225">
+      <from>5</from>
+      <to>4</to>
+      <inputs default="0" any="0" invert="0">TURNOFF</inputs>
+      <outputs>pwr_dn</outputs>
+    </transition>
+    <transition c1x="1604.914120493294" c2y="1034.302221281961" c1y="897.4202582177305" description="" straight="0" type="2" ypos="917.3233784939245" endx="1389.49732492638" xpos="1411.874013274079" endy="936.0418757297654" c2x="1436.366783984857">
+      <from>5</from>
+      <to>5</to>
+      <inputs default="0" any="0" invert="0">PREAMBLE_DETECT</inputs>
+      <outputs>nop</outputs>
+    </transition>
+    <transition c1x="1223.996242290185" c2y="583.4663487171754" c1y="545.8237434689077" description="" straight="0" type="2" ypos="622.7016065138779" endx="1520.772719689847" xpos="1026.291283805775" endy="518.2689539654434" c2x="1300.644480990016">
+      <from>6</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
+      <outputs>tx_timeout</outputs>
+    </transition>
+    <transition c1x="915.8783487288697" c2y="484.6552569780807" c1y="542.6176763713532" description="" straight="1" type="2" ypos="598.0661015105032" endx="847.9623633303521" xpos="948.1993219138161" endy="426.6928375848082" c2x="881.9203560296108">
+      <from>6</from>
+      <to>7</to>
+      <inputs default="0" any="0" invert="0">STANDBY</inputs>
+      <outputs>standby</outputs>
+    </transition>
+    <transition c1x="723.8934360163083" c2y="696.6800784000244" c1y="618.6947396159642" description="" straight="0" type="2" ypos="649.2053712984994" endx="271.9710713758028" xpos="924.5484356244051" endy="572.0901070883295" c2x="411.1301614203927">
+      <from>6</from>
+      <to>4</to>
+      <inputs default="0" any="0" invert="0">TURNOFF</inputs>
+      <outputs>pwr_dn</outputs>
+    </transition>
+    <transition c1x="1215.206191180151" c2y="603.9105516841674" c1y="650.4746129633362" description="" straight="0" type="2" ypos="657.4197429694715" endx="1528.473477792016" xpos="1027.970802156958" endy="531.6506582601562" c2x="1359.232946831854">
+      <from>6</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">PACKET_SENT</inputs>
+      <outputs>tx_cmp</outputs>
+    </transition>
+    <transition c1x="1091.723242499997" c2y="411.5643635398885" c1y="335.6885951881782" description="" straight="0" type="2" ypos="381.4357961607218" endx="1527.972389131184" xpos="880.0593806422695" endy="469.622969324254" c2x="1310.27949348891">
+      <from>7</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">TURNON</inputs>
+      <outputs>ready</outputs>
+    </transition>
+    <transition c1x="580.4413794122402" c2y="434.8284337361912" c1y="384.1616141065496" description="" straight="0" type="2" ypos="366.7667832083256" endx="286.280132377507" xpos="781.8629700899719" endy="526.6132410836769" c2x="437.2109064898718">
+      <from>7</from>
+      <to>4</to>
+      <inputs default="0" any="0" invert="0">TURNOFF</inputs>
+      <outputs>pwr_dn</outputs>
+    </transition>
+  </machine>
+</qfsmproject>
