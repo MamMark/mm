@@ -2500,8 +2500,8 @@ implementation {
 
     if (signal RadioReceive.header(global_ioc.pRxMsg)) {
       rssi = si446x_fast_latched_rssi();
-      call PacketRSSI.set(globalRxMsgPtr, rssi);         /* set only if accepting */
-      call PacketLinkQuality.set(globalRxMsgPtr, rssi); 
+      call PacketRSSI.set(global_ioc.pRxMsg, rssi);         /* set only if accepting */
+      call PacketLinkQuality.set(global_ioc.pRxMsg, rssi); 
       return fsm_results(S_RX_ACTIVE, E_NONE);
     }
     /* proceed with a_rx_on action to start receiving again */
