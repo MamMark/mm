@@ -2520,7 +2520,6 @@ implementation {
 
  /**************************************************************************/
   fsm_result_t a_rx_timeout(fsm_transition_t *t) {
-    stop_alarm();
     return a_rx_on(t);
   }
 
