@@ -841,6 +841,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
     fsm_action_t   action;
     fsm_state_t    next_state;
     fsm_event_t    next_event;
+    uint8_t        alarm_s;
+    uint8_t        alarm_e;
   } fsm_stage_info_t;
 
   // define results from an action (return value). provides option for
@@ -1101,6 +1103,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     fsm_trace_array[fsm_tc].time_delta = 0;
     fsm_trace_array[fsm_tc].next_state = S_SDN;
     fsm_trace_array[fsm_tc].next_event = E_NOP;
+    fsm_trace_array[fsm_tc].alarm_s = call RadioAlarm.isFree();
   }
 
   void fsm_trace_end(fsm_result_t ns) {
@@ -1108,6 +1111,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     fsm_trace_array[fsm_tc].time_delta = call LocalTime.get() - fsm_trace_array[fsm_tc].time_start;
     fsm_trace_array[fsm_tc].next_state = ns.s;
     fsm_trace_array[fsm_tc].next_event = ns.e;
+    fsm_trace_array[fsm_tc].alarm_e = call RadioAlarm.isFree();
     fsm_tp=fsm_tc;
     if (++fsm_tc >= NELEMS(fsm_trace_array))
       fsm_tc = 0;
