@@ -1124,6 +1124,8 @@ implementation {
       fsm_tc = 0;
   }
 
+  task void cmd_done_task();
+
   void fsm_change_state(fsm_event_t ev) {
     fsm_transition_t *t;
     fsm_result_t ns;
@@ -1161,7 +1163,6 @@ implementation {
 	default:            t = NULL;              break;
 	}
 	fsm_trace_end(ns);
-
 	// update with new state, or keep current if default or unknown
 	if ((t) && (ns.s < S_DEFAULT)) {
 	  fsm_global_current_state = ns.s;
@@ -1176,14 +1177,14 @@ implementation {
       elast = ev;
       ev = ns.e;
     } while (ev);
-
-    nop();
-    fsm_active = FALSE;
-
     // break detected or no transition record was identified,
     // so state machine is lost
     if (!t)
       __PANIC_RADIO(84, ev, fsm_global_current_state, ns.s, ns.e);
+    nop();
+    fsm_active = FALSE;
+    if ((global_ioc.rc_signal) || (global_ioc.tx_signal))
+      post cmd_done_task();                // signal cmd completions
   }
 
   /**************************************************************************/
@@ -2236,33 +2237,38 @@ implementation {
 
 
   /**************************************************************************/
-
   /*
-   * user_response_task
+   * cmd_done_task
    *
-   * handle signaling completion of user command
+   * handle signaling completion of user commands
    */
-  task void user_response_task() {
-    nop();
-    nop();
-    switch (dvr_cmd){
-    case CMD_TURNON:
-    case CMD_TURNOFF:
-    case CMD_STANDBY:
-      dvr_cmd = CMD_NONE;
-      signal RadioState.done();
-      break;
-    case CMD_CCA:
-      signal RadioCCA.done(checkCCA() ? SUCCESS : EBUSY);
-      dvr_cmd = CMD_NONE;
-      break;
-    default:
-      break;
+  task void cmd_done_task() {
+    if (global_ioc.rc_signal) {
+      switch (dvr_cmd){
+      case CMD_TURNON:
+      case CMD_TURNOFF:
+      case CMD_STANDBY:
+	dvr_cmd = CMD_NONE;
+	signal RadioState.done();
+	break;
+      case CMD_CCA:
+	signal RadioCCA.done(checkCCA() ? SUCCESS : EBUSY);
+	dvr_cmd = CMD_NONE;
+	break;
+      default:
+	break;
+      }
+      global_ioc.rc_signal = FALSE;
+    }
+    if (global_ioc.tx_signal) {
+      signal RadioSend.sendDone(global_ioc.tx_error);
+      global_ioc.pTxMsg = NULL;
+      global_ioc.tx_signal = FALSE;
+      global_ioc.tx_error = 0;
     }
     if ((dvr_cmd == CMD_NONE) && (fsm_get_state() == S_RX_ON))
       signal RadioSend.ready();
   }
-
 
   /**************************************************************************/
   /*
@@ -2380,8 +2386,6 @@ implementation {
     setChannel();
     ll_si446x_clr_ints();
     call HW.si446x_enableInterrupt();
-    post user_response_task();
-
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
     /* proceed with a_rx_on action to start receiving */
@@ -2395,7 +2399,6 @@ implementation {
 
   fsm_result_t a_standby(fsm_transition_t *t) {
     stop_alarm();
-    post user_response_task();
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
     return fsm_results(t->next_state, E_NONE);
@@ -2408,7 +2411,8 @@ implementation {
     stop_alarm();
     call HW.si446x_disableInterrupt();
     call HW.si446x_shutdown();
-    post user_response_task();
+    // set flag for returning cmd done after fsm completes
+    global_ioc.rc_signal = TRUE;
     return fsm_results(t->next_state, E_NONE);
   }
 
@@ -2429,11 +2433,11 @@ implementation {
      * transmitting, and make sure that we don't have anyone else's crap in
      * the fifo.
      */
+    stop_alarm();
     si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
     wait_for_cts();
     start_rx();
-    wait_for_cts();                     /* wait for rx start up */
-    post user_response_task();
+    wait_for_cts();                     // wait for rx start up
     nop();
     return fsm_results(t->next_state, E_NONE);
   }
@@ -2469,7 +2473,6 @@ implementation {
     si446x_start_tx(pkt_len);
     // start_tx takes a while, so need to wait for command confirmation
     wait_for_cts();
-    post user_response_task();           // signal send ready event to user
     nop();
     start_alarm(SI446X_TX_TIMEOUT);
     return fsm_results(t->next_state, E_NONE);
