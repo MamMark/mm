@@ -2465,9 +2465,10 @@ implementation {
     }
     nop();
     ll_si446x_send_cmd(si446x_change_state_ready, rsp, sizeof(si446x_change_state_ready));
-    wait_for_cts();                     /* wait for ready state */
+    wait_for_cts();                     // wait for ready state, disables receiver
+    ll_si446x_clr_ints();               // clear the receive interrupts - needs work
     nop();
-    dp     = (uint8_t *) getPhyHeader(globalTxMsgPtr);
+    dp     = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
     pkt_len = *dp + 1;              // length of data field is first byte
     si446x_fifo_info(&rx_len, &tx_len, SI446X_FIFO_FLUSH_TX);
     if (tx_len != SI446X_EMPTY_TX_LEN)
