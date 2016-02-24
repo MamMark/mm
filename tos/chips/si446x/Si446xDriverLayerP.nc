@@ -2288,10 +2288,14 @@ implementation {
    */
 
   void start_alarm(uint32_t t) {
+    if (!(call RadioAlarm.isFree()))
+      call RadioAlarm.cancel();
     if (call RadioAlarm.isFree()) {
       call RadioAlarm.wait(t);
+      stateAlarm_active = TRUE;
       return;
     }
+      stateAlarm_active = TRUE;
     __PANIC_RADIO(63, t, 0, 0, 0);
   }
 
