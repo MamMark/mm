@@ -2695,11 +2695,8 @@ implementation {
    * queue up the fsm_int_event and schedule the tasklet to handle interrupts
    */
   async event void HW.si446x_interrupt() {
-    nop();
-    nop();
     if (!fsm_int_event) {
-      fsm_int_queue(!E_NONE);
-      call Tasklet.schedule();
+      fsm_int_queue(!E_NONE);  // just queue non-null value
     }
   }
 
