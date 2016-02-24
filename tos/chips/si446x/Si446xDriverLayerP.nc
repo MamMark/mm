@@ -2759,7 +2759,7 @@ implementation {
   tasklet_norace uint8_t          int_tc, int_tp;
   tasklet_norace int_trace_t      int_trace_array[16];
 
-  void interrupt_trace(si446x_int_state_t *isp) {
+  void interrupt_trace(volatile si446x_int_state_t *isp) {
     int_trace_array[int_tc].time = call LocalTime.get();
     int_trace_array[int_tc].ph_pend = isp->ph_pend;
     int_trace_array[int_tc].modem_pend = isp->modem_pend;
@@ -2794,11 +2794,12 @@ implementation {
       isp->modem_pend &= SI446X_MODEM_INTEREST;
       isp->chip_pend  &= SI446X_CHIP_INTEREST;
       if ((isp->ph_pend || isp->modem_pend || isp->chip_pend)) {
-          while ((ev = get_next_interrupt_event(isp))) {
-            fsm_change_state(ev);
-          }
-        } else
-            break;
+	while ((ev = get_next_interrupt_event(isp))) {
+	  fsm_change_state(ev);
+	  interrupt_trace(isp);
+	}
+      } else
+	break;
     }
   }
 
