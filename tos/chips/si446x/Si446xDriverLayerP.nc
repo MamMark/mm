@@ -2679,16 +2679,13 @@ implementation {
 
   /* ----------------- RadioReceive ----------------- */
 
-  // default tasklet_async event bool RadioReceive.header(message_t *msg) {
-  // nop();
-  // return TRUE;
-  // }
+ default tasklet_async event bool RadioReceive.header(message_t *msg) {
+   return TRUE;
+ }
 
-
-  // default tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
-  // nop();
-  // return msg;
-  // }
+ default tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
+   return msg;
+ }
 
   /**************************************************************************/
 
