@@ -2152,7 +2152,7 @@ implementation {
       return EALREADY;
 
     channel = c;
-    dvr_cmd = CMD_CHANNEL;
+//    dvr_cmd = CMD_CHANNEL;
     return SUCCESS;
   }
 
