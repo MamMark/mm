@@ -2694,27 +2694,27 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_event_t get_next_interrupt_event(volatile si446x_int_state_t *isp) {
     nop();
     if (isp->modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
-      isp->modem_pend &= !SI446X_MODEM_STATUS_PREAMBLE_DETECT;
+      isp->modem_pend ^= SI446X_MODEM_STATUS_PREAMBLE_DETECT;
       return E_PREAMBLE_DETECT;
     }
     if (isp->modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
-      isp->modem_pend &= !SI446X_MODEM_STATUS_SYNC_DETECT;
+      isp->modem_pend ^= SI446X_MODEM_STATUS_SYNC_DETECT;
       return E_SYNC_DETECT;
     }
     if (isp->ph_pend & SI446X_PH_STATUS_PACKET_RX) {
-      isp->ph_pend &= !SI446X_PH_STATUS_PACKET_RX;
+      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_RX;
       return E_PACKET_RX;
     }
     if (isp->ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
-      isp->ph_pend &= !SI446X_PH_STATUS_PACKET_SENT;
+      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_SENT;
       return E_PACKET_SENT;
     }
     if (isp->ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
-      isp->ph_pend &= !SI446X_PH_STATUS_CRC_ERROR;
+      isp->ph_pend ^= SI446X_PH_STATUS_CRC_ERROR;
       return E_CRC_ERROR;
     }
     if (isp->ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
-      isp->ph_pend &= !SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
+      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
       return E_RX_THRESH;
     }
 
