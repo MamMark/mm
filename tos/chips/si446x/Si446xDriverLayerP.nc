@@ -1094,6 +1094,14 @@ implementation {
   }
 
 
+  fsm_result_t fsm_results(fsm_state_t s, fsm_event_t e) {
+    fsm_result_t t;
+    t.s = s;
+    t.e = e;
+    return t;
+  }
+
+
   /*
    * fsm_trace related global variables and update routines. records state
    * machine execution details.
@@ -2296,17 +2304,12 @@ implementation {
    */
 
   void stop_alarm() {
+    stateAlarm_active = FALSE;
     if (call RadioAlarm.isFree())
       return;
     call RadioAlarm.cancel();
   }
 
-  fsm_result_t fsm_results(fsm_state_t s, fsm_event_t e) {
-    fsm_result_t t;
-    t.s = s;
-    t.e = e;
-    return t;
-  }
 
   /**************************************************************************/
   /*  do nothing.
