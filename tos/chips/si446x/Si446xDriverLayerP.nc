@@ -729,11 +729,18 @@ implementation {
 
 /**************************************************************************/
 /*
- * Message Buffers
+ * global I/O context
  */
-tasklet_norace message_t  * globalTxMsgPtr;            /* msg driver owns */
-uint8_t                     rxMsgBuffer[129];
-tasklet_norace message_t  * globalRxMsgPtr;
+  typedef struct global_io_context {
+    message_t                       * pRxMsg;          /* msg driver owns */
+    message_t                       * pTxMsg;          /* msg driver owns */
+    bool                              rc_signal;
+    bool                              tx_signal;
+    error_t                           tx_error;
+  } global_io_context_t;
+
+  tasklet_norace global_io_context_t  global_ioc;
+  tasklet_norace uint8_t              rxMsgBuffer[129];
 
 
 /**************************************************************************/
@@ -2111,7 +2118,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
 
     call HW.si446x_clr_cs();
 
-    globalRxMsgPtr = (message_t *) &rxMsgBuffer;
+    global_ioc.pRxMsg = (message_t *) &rxMsgBuffer;
     return SUCCESS;
   }
 
@@ -2375,6 +2382,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
     call HW.si446x_enableInterrupt();
     post user_response_task();
 
+    // set flag for returning cmd done after fsm completes
+    global_ioc.rc_signal = TRUE;
     /* proceed with a_rx_on action to start receiving */
     return a_rx_on(t);
   }
@@ -2387,6 +2396,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_result_t a_standby(fsm_transition_t *t) {
     stop_alarm();
     post user_response_task();
+    // set flag for returning cmd done after fsm completes
+    global_ioc.rc_signal = TRUE;
     return fsm_results(t->next_state, E_NONE);
   }
 
@@ -2410,7 +2421,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
    */
   fsm_result_t a_rx_on(fsm_transition_t *t) {
 
-    if (!globalRxMsgPtr){
+    if (!global_ioc.pRxMsg){
       __PANIC_RADIO(3, 0, 0, 0, 0);
     }
     /*
@@ -2438,7 +2449,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
     uint8_t        *dp;
     uint16_t        pkt_len, tx_len, rx_len;
 
-    if (!globalTxMsgPtr){
+    if (!global_ioc.pTxMsg){
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
     nop();
@@ -2476,7 +2487,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
   fsm_result_t a_rx_header(fsm_transition_t *t) {
     uint8_t        rssi;
 
-    if (signal RadioReceive.header(globalRxMsgPtr)) {
+    if (signal RadioReceive.header(global_ioc.pRxMsg)) {
       rssi = si446x_fast_latched_rssi();
       call PacketRSSI.set(globalRxMsgPtr, rssi);         /* set only if accepting */
       call PacketLinkQuality.set(globalRxMsgPtr, rssi); 
@@ -2506,8 +2517,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
  /**************************************************************************/
 
   fsm_result_t a_tx_timeout(fsm_transition_t *t) {
-    globalTxMsgPtr = NULL;
-    signal RadioSend.sendDone(FAIL);
+    global_ioc.tx_signal = TRUE;
+    global_ioc.tx_error = FAIL;
     return a_rx_on(t);
   }
 
@@ -2522,11 +2533,11 @@ tasklet_norace message_t  * globalRxMsgPtr;
     nop();
     si446x_fifo_info(&rx_len, &tx_len, 0);
     nop();
-    readRxFifo((uint8_t *) globalRxMsgPtr, pkt_len);
+    readRxFifo((uint8_t *) global_ioc.pRxMsg, pkt_len);
     nop();
     // check to see if upper layer wants the packet [**will move to a_rx_hdr]
-    if (signal RadioReceive.header(globalRxMsgPtr))
-      globalRxMsgPtr = signal RadioReceive.receive(globalRxMsgPtr);
+    if (signal RadioReceive.header(global_ioc.pRxMsg))
+      global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
     // proceed with a_rx_on action to start receiving again
     return a_rx_on(t);
   }
@@ -2540,8 +2551,9 @@ tasklet_norace message_t  * globalRxMsgPtr;
     stop_alarm();
     si446x_fifo_info(&rx_len, &tx_len, 0);
 //    RADIO_ASSERT( tx_len == max(64/129)? );
-    globalTxMsgPtr = NULL;
-    signal RadioSend.sendDone(SUCCESS);
+    // set conditions for returning send done after fsm completes
+    global_ioc.tx_signal = TRUE;
+    global_ioc.tx_error = SUCCESS;
     /* proceed with a_rx_on action to start receiving again */
     return a_rx_on(t);
   }
@@ -2574,6 +2586,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
       return EALREADY;
 
     dvr_cmd = CMD_TURNOFF;
+    global_ioc.rc_signal = FALSE;
     fsm_user_queue(E_TURNOFF);
     return SUCCESS;
   }
@@ -2586,6 +2599,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
       return EALREADY;
 
     dvr_cmd = CMD_STANDBY;
+    global_ioc.rc_signal = FALSE;
     fsm_user_queue(E_STANDBY);
     return SUCCESS;
   }
@@ -2598,6 +2612,7 @@ tasklet_norace message_t  * globalRxMsgPtr;
       return EALREADY;
 
     dvr_cmd = CMD_TURNON;
+    global_ioc.rc_signal = FALSE;
     fsm_user_queue(E_TURNON);
     return SUCCESS;
   }
@@ -2615,9 +2630,11 @@ tasklet_norace message_t  * globalRxMsgPtr;
     nop();
     if ((dvr_cmd != CMD_NONE) || (fsm_get_state() != S_RX_ON))
       return EBUSY;
-    if (globalTxMsgPtr)
-	return EALREADY;
-    globalTxMsgPtr = msg;
+    if (global_ioc.pTxMsg)
+      return EALREADY;
+    global_ioc.pTxMsg = msg;
+    global_ioc.tx_signal = FALSE;
+    global_ioc.tx_error = 0;
     fsm_user_queue(E_TRANSMIT);
     return SUCCESS;
   }
@@ -2639,7 +2656,8 @@ tasklet_norace message_t  * globalRxMsgPtr;
       return EBUSY;
 
     dvr_cmd = CMD_CCA;
-    post user_response_task();
+    // set conditions for returning send done after fsm completes
+    global_ioc.rc_signal = TRUE;
     return SUCCESS;
   }
 
