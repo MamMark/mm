@@ -2172,7 +2172,7 @@ implementation {
       __PANIC_RADIO(9, 0, 0, 0, 0);
     }
     start_alarm(SI446X_POWER_UP_WAIT_TIME);
-    ll_si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
+    si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
     return fsm_results(t->next_state, E_NONE);
   }
 
@@ -2284,7 +2284,7 @@ implementation {
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
     nop();
-    ll_si446x_send_cmd(si446x_change_state_ready, rsp, sizeof(si446x_change_state_ready));
+    si446x_send_cmd(si446x_change_state_ready, rsp, sizeof(si446x_change_state_ready));
     wait_for_cts();                     // wait for ready state, disables receiver
     ll_si446x_clr_ints();               // clear the receive interrupts - needs work
     nop();
