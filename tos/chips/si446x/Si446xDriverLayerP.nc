@@ -737,6 +737,16 @@ implementation {
     bool                              rc_signal;
     bool                              tx_signal;
     error_t                           tx_error;
+    uint32_t                          tx_packets;
+    uint16_t                          tx_timeouts;
+    uint32_t                          tx_reports;
+    uint32_t                          tx_readys;
+    uint32_t                          rx_packets;
+    uint16_t                          rx_bad_crcs;
+    uint32_t                          rx_reports;
+    uint16_t                          rx_timeouts;
+    uint16_t                          nops;
+    uint16_t                          unshuts;
   } global_io_context_t;
 
   tasklet_norace global_io_context_t  global_ioc;
@@ -2124,10 +2134,7 @@ implementation {
       __PANIC_RADIO(8, err, 0, 0, 0);
       return err;
     }
-
     call HW.si446x_clr_cs();
-
-    global_ioc.pRxMsg = (message_t *) &rxMsgBuffer;
     return SUCCESS;
   }
 
@@ -2271,11 +2278,14 @@ implementation {
     if (global_ioc.tx_signal) {
       signal RadioSend.sendDone(global_ioc.tx_error);
       global_ioc.pTxMsg = NULL;
-      global_ioc.tx_signal = FALSE;
       global_ioc.tx_error = 0;
+      global_ioc.tx_reports++;
+      global_ioc.tx_signal = FALSE;
     }
-    if ((dvr_cmd == CMD_NONE) && (fsm_get_state() == S_RX_ON))
+    if ((dvr_cmd == CMD_NONE) && (fsm_get_state() == S_RX_ON)) {
       signal RadioSend.ready();
+      global_ioc.tx_readys++;
+    }
   }
 
   /**************************************************************************/
@@ -2320,6 +2330,7 @@ implementation {
    */
 
   fsm_result_t a_nop(fsm_transition_t *t) {
+    global_ioc.nops++;
     return fsm_results(t->next_state, E_NONE);
   }
 
@@ -2336,6 +2347,14 @@ implementation {
   fsm_result_t a_unshut(fsm_transition_t *t) {
     start_alarm(SI446X_POR_WAIT_TIME);
     call HW.si446x_unshutdown();
+    // re-initialize global variables
+//    i = global_ioc.unshuts;
+//    memset(&global_ioc, 0, sizeof(global_ioc));
+    global_ioc.pRxMsg = (message_t *) &rxMsgBuffer;
+    global_ioc.pTxMsg = 0;
+    global_ioc.rc_signal = 0;
+    global_ioc.tx_signal = 0;
+    global_ioc.unshuts++;
     return fsm_results(t->next_state, E_NONE);
   }
 
@@ -2513,6 +2532,7 @@ implementation {
  /**************************************************************************/
 
   fsm_result_t a_rx_cnt_crc(fsm_transition_t *t) {
+    global_ioc.rx_bad_crcs++;
     stop_alarm();
     return a_rx_on(t);
   }
@@ -2520,6 +2540,7 @@ implementation {
 
  /**************************************************************************/
   fsm_result_t a_rx_timeout(fsm_transition_t *t) {
+    global_ioc.rx_timeouts++;
     return a_rx_on(t);
   }
 
@@ -2527,6 +2548,7 @@ implementation {
  /**************************************************************************/
 
   fsm_result_t a_tx_timeout(fsm_transition_t *t) {
+    global_ioc.tx_timeouts++;
     global_ioc.tx_signal = TRUE;
     global_ioc.tx_error = FAIL;
     return a_rx_on(t);
@@ -2546,8 +2568,11 @@ implementation {
     readRxFifo((uint8_t *) global_ioc.pRxMsg, pkt_len);
     nop();
     // check to see if upper layer wants the packet [**will move to a_rx_hdr]
-    if (signal RadioReceive.header(global_ioc.pRxMsg))
+    if (signal RadioReceive.header(global_ioc.pRxMsg)) {
       global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
+      global_ioc.rx_reports++;
+    }
+    global_ioc.rx_packets++;
     // proceed with a_rx_on action to start receiving again
     return a_rx_on(t);
   }
@@ -2559,9 +2584,10 @@ implementation {
     uint16_t        tx_len, rx_len;
 
     stop_alarm();
+    global_ioc.tx_packets++;
     si446x_fifo_info(&rx_len, &tx_len, 0);
 //    RADIO_ASSERT( tx_len == max(64/129)? );
-    // set conditions for returning send done after fsm completes
+    // set conditions for returning send done after FSM completes
     global_ioc.tx_signal = TRUE;
     global_ioc.tx_error = SUCCESS;
     /* proceed with a_rx_on action to start receiving again */
@@ -2636,12 +2662,11 @@ implementation {
   /* ----------------- RadioSend ----------------- */
 
   tasklet_async command error_t RadioSend.send(message_t *msg) {
-    nop();
-    nop();
     if ((dvr_cmd != CMD_NONE) || (fsm_get_state() != S_RX_ON))
       return EBUSY;
     if (global_ioc.pTxMsg)
       return EALREADY;
+
     global_ioc.pTxMsg = msg;
     global_ioc.tx_signal = FALSE;
     global_ioc.tx_error = 0;
