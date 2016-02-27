@@ -2069,14 +2069,15 @@ implementation {
       case CMD_TURNON:
       case CMD_TURNOFF:
       case CMD_STANDBY:
-	dvr_cmd = CMD_NONE;
 	signal RadioState.done();
+	dvr_cmd = CMD_NONE;
 	break;
       case CMD_CCA:
 	signal RadioCCA.done(checkCCA() ? SUCCESS : EBUSY);
 	dvr_cmd = CMD_NONE;
 	break;
       default:
+	dvr_cmd = CMD_NONE;
 	break;
       }
       global_ioc.rc_signal = FALSE;
