@@ -2263,6 +2263,7 @@ implementation {
     stop_alarm();
     si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
     wait_for_cts();
+    ll_si446x_clr_ints();               // clear the receive interrupts - needs work
     start_rx();
     wait_for_cts();                     // wait for rx start up
     nop();
