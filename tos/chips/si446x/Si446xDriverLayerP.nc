@@ -1008,6 +1008,28 @@ implementation {
     return fsm_global_current_state;
   }
 
+  norace uint8_t fsm_active;
+
+  /**************************************************************************/
+
+  // used to record the state transition machine operation
+  // each stage represents a record of the FSM stage execution
+  typedef struct {
+    uint32_t               start;
+    uint16_t               elapsed;
+    uint16_t               ph;
+    uint16_t               modem;
+    uint16_t               chip;
+    Si446x_device_state_t  ds;
+    uint16_t               rssi;
+    fsm_event_t            ev;
+    fsm_state_t            cs;
+    fsm_action_t           ac;
+    fsm_state_t            ns;
+    fsm_event_t            ne;
+    uint8_t                al_s;
+    uint8_t                al_e;
+  } fsm_stage_info_t;
 
   /*************************************************************************
    *
@@ -1119,24 +1141,26 @@ implementation {
   tasklet_norace fsm_stage_info_t fsm_trace_array[16];
   tasklet_norace uint8_t fsm_tp, fsm_tc;
 
+  uint8_t si446x_fast_latched_rssi();
+  uint8_t si446x_fast_device_state();
+
   void fsm_trace_start(fsm_event_t ev, fsm_state_t cs, fsm_action_t ac) {
-    nop(); 
-    fsm_trace_array[fsm_tc].time_start  = call LocalTime.get();
-    fsm_trace_array[fsm_tc].this_event = ev;
-    fsm_trace_array[fsm_tc].current_state = cs;
-    fsm_trace_array[fsm_tc].action = ac;
-    fsm_trace_array[fsm_tc].time_delta = 0;
-    fsm_trace_array[fsm_tc].next_state = S_SDN;
-    fsm_trace_array[fsm_tc].next_event = E_NOP;
-    fsm_trace_array[fsm_tc].alarm_s = call RadioAlarm.isFree();
+    fsm_trace_array[fsm_tc].start  = call LocalTime.get();
+    fsm_trace_array[fsm_tc].ev = ev;
+    fsm_trace_array[fsm_tc].cs = cs;
+    fsm_trace_array[fsm_tc].ac = ac;
+    fsm_trace_array[fsm_tc].elapsed = 0;
+    fsm_trace_array[fsm_tc].ns = S_SDN;
+    fsm_trace_array[fsm_tc].ne = E_0NOP;
+    fsm_trace_array[fsm_tc].al_s = call RadioAlarm.isFree();
   }
 
   void fsm_trace_end(fsm_result_t ns) {
     nop(); 
-    fsm_trace_array[fsm_tc].time_delta = call LocalTime.get() - fsm_trace_array[fsm_tc].time_start;
-    fsm_trace_array[fsm_tc].next_state = ns.s;
-    fsm_trace_array[fsm_tc].next_event = ns.e;
-    fsm_trace_array[fsm_tc].alarm_e = call RadioAlarm.isFree();
+    fsm_trace_array[fsm_tc].elapsed = call LocalTime.get() - fsm_trace_array[fsm_tc].start;
+    fsm_trace_array[fsm_tc].ns = ns.s;
+    fsm_trace_array[fsm_tc].ne = ns.e;
+    fsm_trace_array[fsm_tc].al_e = call RadioAlarm.isFree();
     fsm_tp=fsm_tc;
     if (++fsm_tc >= NELEMS(fsm_trace_array))
       fsm_tc = 0;
@@ -2775,20 +2799,27 @@ implementation {
 
 
   typedef struct int_trace {
-    uint32_t       time;
-    uint8_t        ph_pend;
-    uint8_t        modem_pend;
-    uint8_t        chip_pend;
+    uint32_t               time;
+    uint8_t                ph_pend;
+    uint8_t                modem_pend;
+    uint8_t                chip_pend;
+    Si446x_device_state_t  ds;
   } int_trace_t;
 
   tasklet_norace uint8_t          int_tc, int_tp;
   tasklet_norace int_trace_t      int_trace_array[16];
 
   void interrupt_trace(volatile si446x_int_state_t *isp) {
+    fsm_trace_array[fsm_tc].ph = isp->ph_pend;
+    fsm_trace_array[fsm_tc].modem = isp->modem_pend;
+    fsm_trace_array[fsm_tc].chip = isp->chip_pend;
+    fsm_trace_array[fsm_tc].ds = si446x_fast_device_state();
+    fsm_trace_array[fsm_tc].rssi = si446x_fast_latched_rssi();
     int_trace_array[int_tc].time = call LocalTime.get();
     int_trace_array[int_tc].ph_pend = isp->ph_pend;
     int_trace_array[int_tc].modem_pend = isp->modem_pend;
     int_trace_array[int_tc].chip_pend = isp->chip_pend;
+    int_trace_array[fsm_tc].ds = si446x_fast_device_state();
     int_tp = int_tc;
     if (++int_tc >= NELEMS(int_trace_array))
       int_tc = 0;
