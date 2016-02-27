@@ -102,6 +102,7 @@ implementation {
     uint8_t         size;
     test_mode_t     mode;
     bool            waiting_to_send;
+    bool            paused;
   } tx_t;
 
   norace tx_t       tx;
@@ -142,17 +143,20 @@ implementation {
       pg.waiting_to_send = FALSE;
       call txTimer.startPeriodic(tx.delay);
     }
+    tx.paused = FALSE;
+    tx.waiting_to_send = FALSE;
   }
 
   void tx_stop() {
     call txTimer.stop();
+    tx.paused = TRUE;
   }
 
   task void tx_task() {
     error_t     error;
     nop();
     nop();
-    if (tx.mode == DISABLED) {
+    if ((tx.mode == DISABLED) || tx.paused) {
       return;
     }
     if ((tx.mode == RUN) || (tx.mode == PING)) {
@@ -205,7 +209,7 @@ implementation {
   event void txTimer.fired() {
     nop();
     nop();
-    if (tx.mode == DISABLED) {
+    if ((tx.mode == DISABLED) || tx.paused) {
       return;
     }
     if (tx.mode == PEND) {
