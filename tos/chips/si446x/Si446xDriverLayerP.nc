@@ -2442,7 +2442,7 @@ implementation {
   tasklet_async command error_t RadioState.turnOn() {
     if (dvr_cmd != CMD_NONE)
       return EBUSY;
-    if (fsm_get_state() >= S_RX_ON)
+    if ((fsm_get_state() != S_SDN) && (fsm_get_state() != S_STANDBY))
       return EALREADY;
 
     dvr_cmd = CMD_TURNON;
