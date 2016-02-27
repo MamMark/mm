@@ -2273,11 +2273,23 @@ implementation {
 
   /**************************************************************************/
   /*
-   * a_tx_on
+   * a_rx_start
+   *
+   * detection of active packet reception
+   */
+  fsm_result_t a_rx_start(fsm_transition_t *t) {
+    start_alarm(SI446X_RX_TIMEOUT);
+    return fsm_results(t->next_state, E_NONE);
+  }
+
+
+  /**************************************************************************/
+  /*
+   * a_tx_start
    *
    * start the transmission of a packet, subsequent events will complete it
    */
-  fsm_result_t a_tx_on(fsm_transition_t *t) {
+  fsm_result_t a_tx_start(fsm_transition_t *t) {
     uint8_t        *dp;
     uint16_t        pkt_len, tx_len, rx_len;
 
