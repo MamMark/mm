@@ -19,7 +19,7 @@ import csv
 
 def read_input():
     states = []
-    events = ['E_NOP']
+    events = ['E_0NOP']
     actions = ['a_break', 'a_nop']
     trans = {}
 
@@ -51,7 +51,7 @@ def read_input():
                 trans.update({ev: [[cs, ac, ns]]})  # create a new dict entry for even
             if ac not in actions:
                 actions.append(ac)                  # save name of action
-        trans.update({'E_NOP': [[]]})               # add empty transition for E_NOP
+        trans.update({'E_0NOP': [['S_DEFAULT', 'A_NOP', 'S_DEFAULT']]}) # add E_NOP transition
 
     return (states, events, actions, trans)
 
@@ -94,10 +94,10 @@ def write_enums(sl, el, al):
 
     # events enum type
     print '\ntypedef enum {'
-    print "  E_NOP = 0,"
+    print "  E_0NOP = 0,"
     print '  E_NONE = 0,'
     for e in sorted(el):
-        if (e == 'E_NOP'):
+        if (e == 'E_0NOP'):
             continue
         print '  ' + e + ','
     print '} fsm_event_t;'
