@@ -409,7 +409,7 @@ implementation {
     rc.delay   = 1000;    // set timeout between radio checks
     rc.modulo  = 30;      // power cycle radio after every nth check
     //    rc.addr    = call Random.rand16() % 128; // pick a random value for link addr
-    rc.addr    = global_node_id;
+    rc.addr    = TOS_NODE_ID;
     nop();
     call rcTimer.startOneShot(0);
   }
