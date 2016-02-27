@@ -770,11 +770,25 @@ implementation {
  */
 
 /**************************************************************************/
-
 /*
- * STATES
+ * FINITE STATE MACHINE
  *
- * on boot, initilized to STATE_SDN (0)
+ * The Si446x Driver uses a Finite State Machine to control all significant
+ * operations of the driver. The FSM description is data-driven, created by
+ * an interactive graphical editor (QFSM) and translated into c-code by a
+ * custom Python script fsmc.py (found in mm/support/utils/fsmc). The
+ * resulting si446xFSM.h file, included below, contains all of the
+ * definitions for states, events, actions, transitions, and other related
+ * data structures and compiler needs. The routines in this file use these
+ * definitions to operate, introducing some dependencies between the FSM
+ * and this code. For instance, fsmc.py generates all of forward declarations
+ * for the action routines. It is expected that the code below provides the
+ * actual routines that correspond to what is generated. Note that while the
+ * compiler can detect that a routine is declared but not provided, it
+ * cannot detect that a routine is provided but not declared (and therefore
+ * not used by the state machine).
+ *
+ * on boot, the FSM is initilized to STATE_SDN (0)
  *
  * Also, on boot, platform initialization is responsible for setting
  * the pins on the si446x so it is effectively turned off.  (SDN = 1)
@@ -782,222 +796,12 @@ implementation {
  * Platform code is responsible for setting the various pins needed by
  * the chip to determine proper states.  ie.  NIRQ, CTS, inputs,
  * CSN (deasserted), SDN (asserted).  SPI pins set up for SPI mode.
- * The S_READY value has special meaning in that any state of greater
- * value is an "operational" state when signalling ready.
+ *
  */
+#include <Si446xFSM.h>
 
-  typedef enum {
-    S_SDN = 0,                    // shutdown
-    S_POR_W,                      // waiting for POR to complete
-    S_PWR_UP_W,                   // waiting on POWER_UP cmd to complete
-    S_CONFIG_W,                   // loading configuration
-    S_STANDBY,                    // reducing power but retain config
-    S_READY,                      // wait for user command
-    S_RX_ON,                      // ready to receive
-    S_RX_ACTIVE,                  // actively receiving
-    S_TX_ACTIVE,                  // actively transmitting
-    S_DEFAULT,                    // wildcard, always perform transition
-  } fsm_state_t;
-
-  typedef enum {
-    A_BREAK = 0,                  // special case to denote end of list
-    A_NOP,                        // no action to be taken
-    A_UNSHUT,                     // take chip out of hardware shutdown state
-    A_PWR_UP,                     // power up chip (issue POWER_UP command)
-    A_CONFIG,                     // configure the chip
-    A_READY,                      // finalize configuration and start receiving
-    A_STANDBY,                    // lower power consumption but retain chip config
-    A_PWR_DN,                     // power off the chip
-    A_RX_ON,                      // start receiver hunt for a packet to receive
-    A_TX_ON,                      // start transmitting a packet
-    A_RX_CNT_CRC,                 // account for a crc error
-    A_RX_TIMEOUT,                 // rx operation timeout
-    A_TX_TIMEOUT,                 // tx operation timeout
-    A_TX_CMP,                     // handle transmit complete
-    A_RX_CMP,                     // handle receive complete
-    A_RX_HEADER,                  // handle receive sync detected
-    A_RX_PREAMBLE,                // handle seeing a preamble
-    A_RX_SYNC,                    // handle receive sync detected
-  } fsm_action_t;
-
-  typedef enum {
-    E_NOP = 0,                    // no event to process, ignore
-    E_NONE = 0,                   // another name for no event
-    E_TURNON = 1,                 // goto RX_ON state
-    E_TURNOFF = 2,                // goto lowest power state
-    E_STANDBY = 3,                // goto low power state
-    E_TRANSMIT = 4,               // start transmit a message
-    E_RX_THRESH = 5,              // received partial message for radioReceive.header
-    E_TX_THRESH = 6,              // TX thresh reached, (not used yet).
-    E_WAIT_DONE = 7,              // alarm timer expired
-    E_CONFIG_DONE = 8,            // configuration task is done
-    E_PACKET_RX = 9,              // packet received
-    E_PACKET_SENT = 10,            // packet transmit complete
-    E_CRC_ERROR = 11,             // packet receive crc error detected
-    E_PREAMBLE_DETECT  = 12,      // premable detected
-    E_SYNC_DETECT  = 13,          // premable detected
-  } fsm_event_t;
-
-  // define fsm transition structure. Used in event lists below.
-  // organized as a list per event, this tuple provides a
-  // match field for current state, the action to perform if
-  // matched, and then setting the resulting next state
-  typedef struct {
-    fsm_state_t    current_state;
-    fsm_action_t   action;
-    fsm_state_t    next_state;
-  } fsm_transition_t;
-
-  // used to record the state transition machine operation
-  // each stage represents a record of the FSM stage execution
-  typedef struct {
-    uint32_t       time_start;
-    uint16_t       time_delta;
-    fsm_event_t    this_event;
-    fsm_state_t    current_state;
-    fsm_action_t   action;
-    fsm_state_t    next_state;
-    fsm_event_t    next_event;
-    uint8_t        alarm_s;
-    uint8_t        alarm_e;
-  } fsm_stage_info_t;
-
-  // define results from an action (return value). provides option for
-  // changing next state value as well as generating another event
-  typedef struct {
-    fsm_event_t    e;
-    fsm_state_t    s;
-  } fsm_result_t;
-
-  // forward declare fsm event lists
-  const fsm_transition_t fsm_e_nop[];
-  const fsm_transition_t fsm_e_turnon[];
-  const fsm_transition_t fsm_e_turnoff[];
-  const fsm_transition_t fsm_e_standby[];
-  const fsm_transition_t fsm_e_transmit[];
-  const fsm_transition_t fsm_e_rx_thresh[];
-  const fsm_transition_t fsm_e_wait_done[];
-  const fsm_transition_t fsm_e_config_done[];
-  const fsm_transition_t fsm_e_packet_rx[];
-  const fsm_transition_t fsm_e_packet_sent[];
-  const fsm_transition_t fsm_e_crc_error[];
-  const fsm_transition_t fsm_e_preamble_detect[];
-  const fsm_transition_t fsm_e_sync_detect[];
-
-  // list of all of the fsm event lists - order must match the fsm_event_t enum
-  const fsm_transition_t *fsm_events_group[] = {fsm_e_nop,            fsm_e_turnon,
-						fsm_e_turnoff,        fsm_e_standby,
-						fsm_e_transmit,       fsm_e_rx_thresh, NULL,
-						fsm_e_wait_done,      fsm_e_config_done,
-						fsm_e_packet_rx,      fsm_e_packet_sent,
-						fsm_e_crc_error,      fsm_e_preamble_detect,
-						fsm_e_sync_detect};
-
-  // The following group of arrays define the (current_state, action, next_state) tuples
-  // that are valid for every event.
-  // Each event has a list of all transitions defined for it.
-
-  // e_nop - for any state, do nothing and don't change state
-  const fsm_transition_t fsm_e_nop[] = {
-    { S_DEFAULT, A_NOP, S_DEFAULT },
-  };
-
-  // e_turnon
-  const fsm_transition_t fsm_e_turnon[] = {
-    { S_SDN, A_UNSHUT, S_POR_W },
-    { S_STANDBY, A_READY, S_RX_ON },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_wait_done
-  const fsm_transition_t fsm_e_wait_done[] = {
-    { S_POR_W, A_PWR_UP, S_PWR_UP_W },
-    { S_PWR_UP_W, A_CONFIG, S_CONFIG_W },
-    { S_RX_ACTIVE, A_RX_TIMEOUT, S_RX_ON },
-    { S_TX_ACTIVE, A_TX_TIMEOUT, S_RX_ON },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_config_done
-  const fsm_transition_t fsm_e_config_done[] = {
-    { S_CONFIG_W, A_READY, S_RX_ON },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_preamble_detect
-  const fsm_transition_t fsm_e_preamble_detect[] = {
-    { S_RX_ON, A_RX_PREAMBLE, S_RX_ACTIVE },
-    { S_RX_ACTIVE, A_NOP, S_RX_ACTIVE },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_sync_detect
-  const fsm_transition_t fsm_e_sync_detect[] = {
-    { S_RX_ON, A_RX_SYNC, S_RX_ACTIVE },
-    { S_RX_ACTIVE, A_NOP, S_RX_ACTIVE },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_rx_thresh
-  const fsm_transition_t fsm_e_rx_thresh[] = {
-    { S_RX_ACTIVE, A_RX_HEADER, S_RX_ACTIVE },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_packet_rx
-  const fsm_transition_t fsm_e_packet_rx[] = {
-    { S_RX_ACTIVE, A_RX_CMP, S_RX_ON },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_crc_error
-  const fsm_transition_t fsm_e_crc_error[] = {
-    { S_RX_ACTIVE, A_RX_CNT_CRC, S_RX_ON },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_transmit
-  const fsm_transition_t fsm_e_transmit[] = {
-    { S_RX_ON, A_TX_ON, S_TX_ACTIVE },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_packet_sent
-  const fsm_transition_t fsm_e_packet_sent[] = {
-    { S_TX_ACTIVE, A_TX_CMP, S_RX_ON },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_turnoff
-  const fsm_transition_t fsm_e_turnoff[] = {
-    { S_RX_ON, A_PWR_DN, S_SDN },
-    { S_RX_ACTIVE, A_PWR_DN, S_SDN },
-    { S_TX_ACTIVE, A_PWR_DN, S_SDN },
-    { S_STANDBY, A_PWR_DN, S_SDN },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  // e_standby
-  const fsm_transition_t fsm_e_standby[] = {
-    { S_RX_ON, A_STANDBY, S_STANDBY },
-    { S_RX_ACTIVE, A_STANDBY, S_STANDBY },
-    { S_TX_ACTIVE, A_STANDBY, S_STANDBY },
-    { S_DEFAULT, A_BREAK, S_DEFAULT },
-  };
-
-  /**************************************************************************/
-
-  /*
-   * FSM state, on boot, initilized to S_SDN (0)
-   *
-   * Also, on boot, platform initialization is responsible for setting
-   * the pins on the si446x so it is effectively turned off.  (SDN = 1)
-   * This matches the FSM state.
-   *
-   * Platform code is responsible for setting the various pins needed by
-   * the chip to proper states.  ie.  NIRQ, CTS, inputs.  CSN (deasserted)
-   * SDN (asserted).  SPI pins set up for SPI mode.
-   */
+  // this action is used by several other actions to re-initialize the receiver
+  fsm_result_t a_rx_on(fsm_transition_t *t);
 
   tasklet_norace fsm_state_t fsm_global_current_state;
 
@@ -1058,27 +862,6 @@ implementation {
       __PANIC_RADIO(81, ev, st, (uint16_t) trans, 0);
     return trans;
   }
-
-  // forward define all action functions
-  fsm_result_t a_nop(fsm_transition_t *t);
-  fsm_result_t a_unshut(fsm_transition_t *t);
-  fsm_result_t a_pwr_up(fsm_transition_t *t);
-  fsm_result_t a_config(fsm_transition_t *t);
-  fsm_result_t a_ready(fsm_transition_t *t);
-  fsm_result_t a_standby(fsm_transition_t *t);
-  fsm_result_t a_pwr_dn(fsm_transition_t *t);
-  fsm_result_t a_rx_on(fsm_transition_t *t);
-  fsm_result_t a_tx_on(fsm_transition_t *t);
-  fsm_result_t a_rx_cnt_crc(fsm_transition_t *t);
-  fsm_result_t a_rx_timeout(fsm_transition_t *t);
-  fsm_result_t a_tx_timeout(fsm_transition_t *t);
-  fsm_result_t a_rx_cmp(fsm_transition_t *t);
-  fsm_result_t a_tx_cmp(fsm_transition_t *t);
-  fsm_result_t a_rx_header(fsm_transition_t *t);
-  fsm_result_t a_rx_preamble(fsm_transition_t *t);
-  fsm_result_t a_rx_sync(fsm_transition_t *t);
-
-  norace uint8_t fsm_active;
 
   /**************************************************************************/
   /*
@@ -1171,41 +954,40 @@ implementation {
   void fsm_change_state(fsm_event_t ev) {
     fsm_transition_t *t;
     fsm_result_t ns;
-    volatile fsm_event_t elast = E_NONE;
 
     if (fsm_active)
       __PANIC_RADIO(82, ev, fsm_global_current_state,  1, 1);
 
     nop();
     do {
-      fsm_active++;
+      fsm_active++; // keep track of number of iterations of internal events
       ns.s = S_SDN;
       ns.e = E_NONE;
+      // select transition record based on event and current state
       if ((t = fsm_select_transition(ev, fsm_global_current_state))) {
 	fsm_trace_start(ev, fsm_global_current_state, t->action);
+	// this list must match with actions defined by FSM
 	switch (t->action) {
-	case A_NOP:	    ns = a_nop(t);         break;
-	case A_UNSHUT:	    ns = a_unshut(t);      break;
-	case A_PWR_UP:      ns = a_pwr_up(t);      break;
 	case A_CONFIG:      ns = a_config(t);      break;
-	case A_READY:	    ns = a_ready(t);       break;
-	case A_STANDBY:	    ns = a_standby(t);     break;
+	case A_NOP:	    ns = a_nop(t);         break;
 	case A_PWR_DN:	    ns = a_pwr_dn(t);      break;
-	case A_RX_ON:	    ns = a_rx_on(t);       break;
-	case A_TX_ON:	    ns = a_tx_on(t);       break;
-	case A_RX_CNT_CRC:  ns = a_rx_cnt_crc(t);  break;
-	case A_RX_TIMEOUT:  ns = a_rx_timeout(t);  break;
-	case A_TX_TIMEOUT:  ns = a_tx_timeout(t);  break;
-	case A_TX_CMP:      ns = a_tx_cmp(t);      break;
+	case A_PWR_UP:      ns = a_pwr_up(t);      break;
+	case A_READY:	    ns = a_ready(t);       break;
 	case A_RX_CMP:      ns = a_rx_cmp(t);      break;
+	case A_RX_CNT_CRC:  ns = a_rx_cnt_crc(t);  break;
 	case A_RX_HEADER:   ns = a_rx_header(t);   break;
-	case A_RX_PREAMBLE: ns = a_rx_preamble(t); break;
-	case A_RX_SYNC:     ns = a_rx_sync(t);     break;
+	case A_RX_START:    ns = a_rx_start(t);    break;
+	case A_RX_TIMEOUT:  ns = a_rx_timeout(t);  break;
+	case A_STANDBY:	    ns = a_standby(t);     break;
+	case A_TX_CMP:      ns = a_tx_cmp(t);      break;
+	case A_TX_START:    ns = a_tx_start(t);    break;
+	case A_TX_TIMEOUT:  ns = a_tx_timeout(t);  break;
+	case A_UNSHUT:	    ns = a_unshut(t);      break;
 	case A_BREAK:
 	default:            t = NULL;              break;
 	}
 	fsm_trace_end(ns);
-	// update with new state, or keep current if default or unknown
+	// update new state, (keep current if default or unknown)
 	if ((t) && (ns.s < S_DEFAULT)) {
 	  fsm_global_current_state = ns.s;
 	}
