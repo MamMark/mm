@@ -927,15 +927,20 @@ implementation {
   uint8_t si446x_fast_latched_rssi();
   uint8_t si446x_fast_device_state();
 
-  void fsm_trace_start(fsm_event_t ev, fsm_state_t cs, fsm_action_t ac) {
+  void fsm_trace_start(fsm_event_t ev, fsm_state_t cs) {
     fsm_trace_array[fsm_tc].start  = call LocalTime.get();
     fsm_trace_array[fsm_tc].ev = ev;
     fsm_trace_array[fsm_tc].cs = cs;
-    fsm_trace_array[fsm_tc].ac = ac;
+    fsm_trace_array[fsm_tc].ac = 0;
     fsm_trace_array[fsm_tc].elapsed = 0;
     fsm_trace_array[fsm_tc].ns = S_SDN;
     fsm_trace_array[fsm_tc].ne = E_0NOP;
     fsm_trace_array[fsm_tc].al_s = call RadioAlarm.isFree();
+  }
+
+  fsm_action_t fsm_trace_action(fsm_action_t ac) {
+    fsm_trace_array[fsm_tc].ac = ac;
+    return ac;
   }
 
   void fsm_trace_end(fsm_result_t ns) {
@@ -963,11 +968,11 @@ implementation {
       fsm_active++; // keep track of number of iterations of internal events
       ns.s = S_SDN;
       ns.e = E_NONE;
+      fsm_trace_start(ev, fsm_global_current_state);
       // select transition record based on event and current state
       if ((t = fsm_select_transition(ev, fsm_global_current_state))) {
-	fsm_trace_start(ev, fsm_global_current_state, t->action);
 	// this list must match with actions defined by FSM
-	switch (t->action) {
+	switch (fsm_trace_action(t->action)) {
 	case A_CONFIG:      ns = a_config(t);      break;
 	case A_NOP:	    ns = a_nop(t);         break;
 	case A_PWR_DN:	    ns = a_pwr_dn(t);      break;
