@@ -2,6 +2,8 @@
 
 # generate c-code structures for data-driven finite state machine
 
+import sys
+import getopt
 import csv
 
 ########## read_input
@@ -17,13 +19,13 @@ import csv
 # means that no transition pair is defined for that event/state combination.
 # " TURNOFF";"-";"-";"-";"-";"SDN pwr_dn";"SDN pwr_dn";"-";"-"
 
-def read_input():
+def read_input(fn):
     states = []
     events = ['E_0NOP']
     actions = ['a_break', 'a_nop']
     trans = {}
 
-    file = csv.reader(open("FSM.txt","rb"), delimiter = ';')
+    file = csv.reader(open(fn, "rb"), delimiter = ';')
 
     row = file.next()
     row.reverse()    # make it easier to manipulate the list
@@ -166,12 +168,44 @@ def print_results(results):
         print ev, ts
 
 
+def usage():
+    print 'Usage: '+sys.argv[0]+' -i <file> -o <file>\n'
+
 ########## main
 #
-results = read_input()
-# print_results(results)
-write_enums(results[0], results[1], results[2])
-write_types()
-write_fdecs(results[1], results[2])
-write_transitions(results[3])
-write_variables(results[1])
+def main(argv):
+    input = "FSM.txt"
+    output = "FSM.h"
+    try:
+        opts, args = getopt.getopt(argv, "hi:o:d", ["help", "input=", "outout="])
+    except getopt.GetoptError:
+        usage()
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif opt == '-d':
+            global _debug
+            _debug = 1
+        elif opt in ("-i", "--input"):
+            input = arg
+        elif opt in ("-o", "--output"):
+            output = arg
+#    source = "".join(args)
+
+    results = read_input(input)
+
+    target = open(output, 'w')              # a writable object
+    sys.stdout = target                         # redirection
+    write_enums(results[0], results[1], results[2])
+    write_types()
+    write_fdecs(results[1], results[2])
+    write_transitions(results[3])
+    write_variables(results[1])
+#    sys.stdout = sys.__stdout__              # remember to reset sys.stdout!
+#    print "'s content:", target.content     # show the result of the writing
+    target.close()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
