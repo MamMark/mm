@@ -240,422 +240,6 @@ enum {
 
 /**************************************************************************/
 
-/*
- * chip debugging
- */
-         norace bool     do_dump;        /* defaults to FALSE */
-volatile norace uint8_t  xirq, p1;
-
-norace uint32_t t_por;
-
-norace uint32_t mt0, mt1;
-norace uint16_t ut0, ut1;
-
-typedef enum {
-	NO_STATE   = 0,
-	SLEEP      = 1,
-	SPI_ACT    = 2,
-	READY      = 3,
-	READYA     = 4,
-	TX_TUNE    = 5,
-	RX_TUNE    = 6,
-	TX         = 7,
-	RX         = 8,
-} Si446x_device_state_t;
-
-typedef struct {
-  uint32_t ts;
-  uint8_t  cts;
-  uint8_t  irqn;
-  uint8_t  csn;
-  Si446x_device_state_t  ds;
-  uint8_t  ph;
-  uint8_t  modem;
-  uint8_t  rssi;
-  uint8_t  r;
-} rps_t;
-
-#define  RPS_MAX 64
-norace uint16_t rps_next, rps_prev;
-norace rps_t    rps[RPS_MAX];
-
-typedef struct {
-  uint16_t              p_dump_start;   /* 16 bit raw (platform) us timestamp */
-  uint32_t              l_dump_start;   /* 32 bit us TRadio Localtime timestamp */
-  uint32_t              l_dump_end;     /* 32 bit us TRadio Localtime timestamp */
-  uint32_t              l_delta;        /* how long did dump take */
-
-  uint8_t               CTS_pin;
-  uint8_t               IRQN_pin;
-  uint8_t               SDN_pin;
-  uint8_t               CSN_pin;
-  uint8_t               ta0ccr3;
-  uint8_t               ta0cctl3;
-
-  si446x_part_info_t    part_info;
-  si446x_func_info_t    func_info;
-  si446x_gpio_cfg_t     gpio_cfg;
-
-  /* fifoinfo */
-  uint8_t               rxfifocnt;
-  uint8_t               txfifofree;
-
-  si446x_ph_status_t    ph_status;
-  si446x_modem_status_t modem_status;
-  si446x_chip_status_t  chip_status;
-  si446x_int_state_t    int_state;
-
-  /* request_device_state */
-  uint8_t               device_state;
-  uint8_t               channel;
-  uint8_t               frr[4];
-
-  uint8_t               packet_info_len[2];
-
-  /* properties */
-  uint8_t               gr00_global[SI446X_GROUP00_SIZE];
-  uint8_t               gr01_int[SI446X_GROUP01_SIZE];
-  uint8_t               gr02_frr[SI446X_GROUP02_SIZE];
-  uint8_t               gr10_preamble[SI446X_GROUP10_SIZE];
-  uint8_t               gr11_sync[SI446X_GROUP11_SIZE];
-
-  /*
-   * group12 defines various properties about packets including
-   * various fields and how CRC is handled.  One can dump the
-   * entire group.  Alternatively one can use a sparse set of properties
-   * for packets and packet fields, ie the TX props for TX and the
-   * RX props for RX props.  We reduce GROUP12_SIZE and define
-   * GROUP12a_SIZE to minimize how many Packet properites we add to the
-   * radio dump.  Group12a starts at 0x1221, PKT_RX_FIELD_1_LENGTH.
-   */
-  uint8_t               gr12_pkt[SI446X_GROUP12_SIZE];
-#ifdef SI446X_GROUP12a_SIZE
-  uint8_t               gr12a_pkt[SI446X_GROUP12a_SIZE];
-#endif
-  uint8_t               gr20_modem[SI446X_GROUP20_SIZE];
-  uint8_t               gr21_modem[SI446X_GROUP21_SIZE];
-  uint8_t               gr22_pa[SI446X_GROUP22_SIZE];
-  uint8_t               gr23_synth[SI446X_GROUP23_SIZE];
-  uint8_t               gr30_match[SI446X_GROUP30_SIZE];
-  uint8_t               gr40_freq_ctl[SI446X_GROUP40_SIZE];
-  uint8_t               gr50_hop[SI446X_GROUP50_SIZE];
-  uint8_t               grF0_pti[SI446X_GROUPF0_SIZE];
-} radio_dump_t;
-
-norace radio_dump_t rd;
-
-typedef struct {
-  uint16_t  prop_id;
-  uint8_t  *where;
-  uint8_t   length;
-} dump_prop_desc_t;
-
-
-const dump_prop_desc_t dump_prop[] = {
-  { 0x0000, (void *) &rd.gr00_global,   SI446X_GROUP00_SIZE },
-  { 0x0100, (void *) &rd.gr01_int,      SI446X_GROUP01_SIZE },
-  { 0x0200, (void *) &rd.gr02_frr,      SI446X_GROUP02_SIZE },
-  { 0x1000, (void *) &rd.gr10_preamble, SI446X_GROUP10_SIZE },
-  { 0x1100, (void *) &rd.gr11_sync,     SI446X_GROUP11_SIZE },
-  { 0x1200, (void *) &rd.gr12_pkt,      SI446X_GROUP12_SIZE },
-#ifdef SI446X_GROUP12a_SIZE
-  { 0x1221, (void *) &rd.gr12a_pkt,     SI446X_GROUP12a_SIZE },
-#endif
-  { 0x2000, (void *) &rd.gr20_modem,    SI446X_GROUP20_SIZE },
-  { 0x2100, (void *) &rd.gr21_modem,    SI446X_GROUP21_SIZE },
-  { 0x2200, (void *) &rd.gr22_pa,       SI446X_GROUP22_SIZE },
-  { 0x2300, (void *) &rd.gr23_synth,    SI446X_GROUP23_SIZE },
-  { 0x3000, (void *) &rd.gr30_match,    SI446X_GROUP30_SIZE },
-  { 0x4000, (void *) &rd.gr40_freq_ctl, SI446X_GROUP40_SIZE },
-  { 0x5000, (void *) &rd.gr50_hop,      SI446X_GROUP50_SIZE },
-  { 0xF000, (void *) &rd.grF0_pti,      SI446X_GROUPF0_SIZE },
-  { 0, NULL, 0 },
-};
-
-
-/**************************************************************************/
-
-/*
- * Configuration Parameters
- *
- * Two major classes.  The first is static and is generated
- * by the EZ Radio Pro program based on various input parameters.
- * Static WDS parameters are exported via the radio_config_si446x.h
- * file via the simple byte define SI446X_WDS_CONFIG_BYTES.
- *
- * The second class are those parameters that are either h/w dependent
- * or are protocol/packet format dependent or are driver dependent.  These are
- * called "local" properties.  These are defined below.
- *
- * Both si446x_wds_config and si446x_local_config are simple byte arrays.
- * Each entry starts with the length of the following command, followed by
- * command bytes.  The array is terminated by a zero length.
- */
-
-/* configuration generated by the WDS3 program */
-const uint8_t si446x_wds_config[] = SI446X_WDS_CONFIG_BYTES;
-
-/*
- * FRR_CTL_A_MODE (p0200)
- *
- * frr is set manually right after POWER_UP
- *
- * A: device state
- * B: PH_PEND
- * C: MODEM_PEND
- * D: Latched_RSSI
- *
- * We use LR (Latched_RSSI) when receiving a packet.  The RSSI value is
- * attached to the last RX packet.  The Latched_RSSI value may (depending on
- * configuration, be associated with some number of bit times once RX is enabled
- * or when SYNC is detected.
- */
-const uint8_t si446x_frr_config[] = { 8, 0x11, 0x02, 0x04, 0x00,
-                                         0x09, 0x04, 0x06, 0x0a,
-                                         0 };
-/*
- * global frr state info and constants for accessing
- */
-typedef struct {
-  uint8_t       device_state;
-  uint8_t       ph_pend;
-  uint8_t       modem_pend;
-  uint8_t       latched_rssi;
-} si446x_frr_info_t;
-
-/**************************************************************************/
-
-/*  ---  Local Config ---
- *
- * Driver/Platform dependent
- *
- * SI446X_GPIO_PIN_CFG_LEN and SI446X_RF_GPIO_PIN_CFG are provided by platform
- * dependent code and are in radio_platform_si446x.h.  See platform code,
- * tos/platform/<platform>/hardware/si446x/...
- */
-
-/*
- * GLOBAL_CONFIG:(p0003), sequencer_mode (FAST), fifo_mode (HALF_DUPLEX FIFO)
- *     protocol (0, GENERIC), power_mode (0, HIGH_PERF).
- *
- * fifo_mode HALF_DUPLEX yields a unified 129 byte fifo.
- * 0003 <- 0x60, split fifo,   empty_tx_len 64
- * 0003 <- 0x70, unified fifo, empty_tx_len 129
- */
-#define SI446X_GLOBAL_CONFIG_1_LEN      5
-#define SI446X_GLOBAL_CONFIG_1          0x11, 0x00, 0x01, 0x03, 0x60
-#define SI446X_EMPTY_TX_LEN             64
-
-/* interrupt enable (p0100)
- * enable selected interrupts
- */
-#define SI446X_INT_CTL_ENABLE_4_LEN     8
-#define SI446X_INT_CTL_ENABLE_4         0x11, 0x01, 0x04, 0x00,  \
-                                        SI446X_INT_STATUS_MODEM_INT_STATUS + SI446X_INT_STATUS_PH_INT_STATUS,  \
-                                        SI446X_PH_INTEREST, SI446X_MODEM_INTEREST, SI446X_CHIP_INTEREST
-
-
-/*
- * PREAMBLE: (p1000+)
- *
- * TX_LENGTH:   8 bytes (64bits)
- * CONFIG_STD_1:RX_THRESH (0x14) 20 bits, do not skip SYNC
- * CONFIG_NSTD: not used, 0x00
- * CONFIG_STD_2: TIMEOUT_EXTENDED 0, TIMEOUT: 0xf 60 bit time out
- * PREAMBLE_CONFIG: 0x31, 1 tx first, tx_length in bytes, no manchester, pre_1010
- */
-#define SI446X_PREAMBLE_LEN             9
-#define SI446X_PREAMBLE                 0x11, 0x10, 0x09, 0x00, 0x08, 0x14, 0x00, 0x0f, 0x31
-
-/*
- * Various Pkt configs: (p1200+)
- *
- * CRC_CONFIG: 0x85, CRC_SEED, POLY 5 CCITT_16
- * various whitening
- * CONFIG1: 0x82, PH_FIELD_SPLIT, CRC_ENDIAN msb, bit_order msb
- *
- * TX and RX fields are split.  Different field definitions are used for TX
- * and RX.  See documentation on TX and RX at the front of this file.
- */
-#define SI446X_PKT_CRC_CONFIG_7_LEN     11
-#define SI446X_PKT_CRC_CONFIG_7         0x11, 0x12, 0x07, 0x00, \
-                                              0x85, 0x01, 0x08, 0xFF, 0xFF, 0x00, 0x82
-
-#define SI446X_PKT_LEN_5_LEN            9
-#define SI446X_PKT_LEN_5                0x11, 0x12, 0x05, 0x08, \
-                                              0x2a, 0x01, 0x00, 0x30, 0x30
-
-#define SI446X_PKT_TX_FIELD_CONFIG_6_LEN 10
-#define SI446X_PKT_TX_FIELD_CONFIG_6    0x11, 0x12, 0x06, 0x0d, \
-                                              0x00, 0x01, 0x04, 0xa2, \
-                                              0x00, 0x00
-
-#define SI446X_PKT_RX_FIELD_CONFIG_10_LEN 14
-#define SI446X_PKT_RX_FIELD_CONFIG_10   0x11, 0x12, 0x0a, 0x21, \
-                                              0x00, 0x01, 0x04, 0x82, \
-                                              0x00, 0x81, 0x00, 0x0a, \
-                                              0x00, 0x00
-
-/* MODEM_RSSI (p204a+)
- *
- * MODEM_RSSI_THRESH (p204a): set to INITIAL_RSSI_THRESH
- * MODEM_RSSI_JUMP_THRESH:    default 0xc (not used)
- * MODEM_RSSI_CONTROL:        CHECK_THRESH_AT_LATCH 1
- *                            AVERAGE: 0 (updated every bit time, average of 4 bit times)
- *                            LATCH: 5 RX_STATE3, 15 bit times after RX enabled.
- */
-#define SI446X_MODEM_RSSI_LEN           7
-#define SI446X_MODEM_RSSI               0x11, 0x20, 0x03, 0x4a, SI446X_INITIAL_RSSI_THRESH, \
-                                              0x0c, 0x25
-
-/**************************************************************************/
-
-/*
- * Local Config, driver/hw dependent
- */
-const uint8_t si446x_local_config[] = {
-  SI446X_GPIO_PIN_CFG_LEN,           SI446X_RF_GPIO_PIN_CFG,
-  SI446X_GLOBAL_CONFIG_1_LEN,        SI446X_GLOBAL_CONFIG_1,
-  SI446X_INT_CTL_ENABLE_4_LEN,       SI446X_INT_CTL_ENABLE_4,
-  SI446X_PREAMBLE_LEN,               SI446X_PREAMBLE,
-  SI446X_PKT_CRC_CONFIG_7_LEN,       SI446X_PKT_CRC_CONFIG_7,
-  SI446X_PKT_LEN_5_LEN,              SI446X_PKT_LEN_5,
-  SI446X_PKT_TX_FIELD_CONFIG_6_LEN,  SI446X_PKT_TX_FIELD_CONFIG_6,
-  SI446X_PKT_RX_FIELD_CONFIG_10_LEN, SI446X_PKT_RX_FIELD_CONFIG_10,
-  SI446X_MODEM_RSSI_LEN,             SI446X_MODEM_RSSI,
-  0
-};
-
-/**************************************************************************/
-
-/*
- * last CTS values, last command sent, xcts h/w, xcts_s spi
- */
-volatile norace uint8_t xcts, xcts0, xcts_s;
-
-typedef struct {
-  si446x_int_state_t    ints;
-  si446x_ph_status_t    ph;
-  si446x_modem_status_t modem;
-  si446x_chip_status_t  chip;
-} si446x_chip_all_t;
-
-volatile norace si446x_chip_all_t  chip_debug;
-volatile norace si446x_int_state_t cur_int_state;
-
-/**************************************************************************/
-
-/*
- * rf_frr_ctl_a_mode_4 defines what the four FRR registers return
- * and how they show up in radio_pend
- */
-norace uint8_t radio_pend[4];
-norace uint8_t radio_pend1[4];
-#define DEVICE_STATE 0
-#define PH_STATUS    1
-#define MODEM_STATUS 2
-#define LATCHED_RSSI 3
-
-norace uint8_t      rsp[16];
-
-norace si446x_ph_status_t    ph_status;
-norace si446x_modem_status_t modem_status;
-norace si446x_chip_status_t  chip_status;
-
-norace uint8_t      fifo_buf[129];
-
-
-/**************************************************************************/
-
-/*
- * Instrumentation, error counters, etc.
- */
-
-norace uint16_t si446x_inst_rx_overflows;
-norace uint16_t si446x_inst_rx_toolarge;
-norace uint16_t si446x_inst_rx_toosmall;
-norace uint16_t si446x_inst_pkt_toolarge;
-norace uint16_t si446x_inst_bad_crc;
-norace uint16_t si446x_inst_nukes;
-norace uint16_t si446x_inst_other;
-norace uint16_t si446x_tx_startup_time_max;
-
-
-typedef struct {
-  uint16_t cmd;
-  uint16_t t_cts0;
-  uint16_t t_cmd0;
-  uint16_t d_len0;
-  uint16_t t_cts_r;
-  uint16_t t_reply;
-  uint16_t d_reply_len;
-  uint16_t t_elapsed;
-  uint8_t  frr[4];
-} cmd_timing_t;
-
-norace cmd_timing_t  cmd_timings[256];
-norace cmd_timing_t prop_timings[256];
-
-
-/**************************************************************************/
-
-/*
- * Radio Commands
- */
-
-const uint8_t si446x_part_info[]     = { SI446X_CMD_PART_INFO };    /* 01 */
-const uint8_t si446x_power_up[]      = { SI446X_RF_POWER_UP };      /* 02 */
-const uint8_t si446x_func_info[]     = { SI446X_CMD_FUNC_INFO };    /* 10 */
-const uint8_t si446x_gpio_cfg_nc[]   = { SI446X_CMD_GPIO_PIN_CFG,   /* 13 */
-  SI446X_GPIO_NO_CHANGE, SI446X_GPIO_NO_CHANGE,
-  SI446X_GPIO_NO_CHANGE, SI446X_GPIO_NO_CHANGE,
-  SI446X_GPIO_NO_CHANGE,                /* nirq, no change */
-  SI446X_GPIO_NO_CHANGE,                /* sdo, no change */
-  0                                     /* gen_config */
-};
-
-const uint8_t si446x_fifo_info_nc[]  = { SI446X_CMD_FIFO_INFO, 0 }; /* 15 */
-
-const uint8_t si446x_packet_info_nc[]= { SI446X_CMD_PACKET_INFO };  /* 16 */
-
-const uint8_t si446x_int_status_nc[] = { SI446X_CMD_GET_INT_STATUS, /* 20 */
-  SI446X_INT_NO_CLEAR, SI446X_INT_NO_CLEAR, SI446X_INT_NO_CLEAR };
-
-const uint8_t si446x_int_clr[] = { SI446X_CMD_GET_INT_STATUS };     /* 20 */
-
-const uint8_t si446x_ph_status_nc[] = {                             /* 21 */
-  SI446X_CMD_GET_PH_STATUS, SI446X_INT_NO_CLEAR };
-
-const uint8_t si446x_ph_clr[] = { SI446X_CMD_GET_PH_STATUS};        /* 21 */
-
-const uint8_t si446x_modem_status_nc[] = {                          /* 22 */
-  SI446X_CMD_GET_MODEM_STATUS, SI446X_INT_NO_CLEAR };
-
-const uint8_t si446x_modem_clr[] = { SI446X_CMD_GET_MODEM_STATUS }; /* 22 */
-
-const uint8_t si446x_chip_status_nc[] = {                           /* 23 */
-  SI446X_CMD_GET_CHIP_STATUS, SI446X_INT_NO_CLEAR };
-
-const uint8_t si446x_chip_clr[] = { SI446X_CMD_GET_CHIP_STATUS };   /* 23 */
-
-const uint8_t si446x_chip_clr_cmd_err[] = { SI446X_CMD_GET_CHIP_STATUS, 0xf7 };
-
-const uint8_t si446x_device_state[] = { SI446X_CMD_REQUEST_DEVICE_STATE }; /* 33 */
-
-const uint8_t si446x_change_state_ready[] = { SI446X_CMD_CHANGE_STATE, READY }; /* 34 */
-
- typedef struct {
-    uint8_t len;
-    uint8_t proto;
-    uint16_t da;
-    uint16_t sa;
-    uint8_t data[];
-  } ds_pkt_t;
-
-
-
-/**************************************************************************/
-
 module Si446xDriverLayerP {
   provides {
     interface Init as SoftwareInit @exactlyonce();
@@ -676,13 +260,12 @@ module Si446xDriverLayerP {
   uses {
     interface LocalTime<TRadio>;
     interface Si446xDriverConfig as Config;
+    interface Si446xCmd;
 
     interface Resource       as SpiResource;
     interface FastSpiByte;
     interface SpiByte;
     interface SpiBlock;
-
-    interface Si446xInterface as HW;
 
     interface PacketFlag     as TransmitPowerFlag;
     interface PacketFlag     as RSSIFlag;
@@ -704,17 +287,6 @@ module Si446xDriverLayerP {
 }
 
 implementation {
-
-  /*
-   * CCA: note!  The SiLabs folks flip the sense of CCA.  CCA for them
-   * is true if the channel is busy.  Other folks (the reasonable ones)
-   * consider CCA TRUE if the channel is clear.  We handle this in checkCCA().
-   *
-   * si446x_cca_threshold is where we hold the value we program the h/w
-   * RSSI_THRESHOLD.  We use it to compare received RSSI values to determine
-   * whether the channel is busy.
-   */
-  uint8_t si446x_cca_threshold = SI446X_INITIAL_RSSI_THRESH;
 
 #define HI_UINT16(val) (((val) >> 8) & 0xFF)
 #define LO_UINT16(val) ((val) & 0xFF)
@@ -924,8 +496,8 @@ implementation {
   tasklet_norace fsm_stage_info_t fsm_trace_array[16];
   tasklet_norace uint8_t fsm_tp, fsm_tc;
 
-  uint8_t si446x_fast_latched_rssi();
-  uint8_t si446x_fast_device_state();
+  //  uint8_t si446x_fast_latched_rssi();
+  //  uint8_t si446x_fast_device_state();
 
   void fsm_trace_start(fsm_event_t ev, fsm_state_t cs) {
     fsm_trace_array[fsm_tc].start  = call LocalTime.get();
@@ -956,6 +528,10 @@ implementation {
 
   task void cmd_done_task();
 
+  /*
+   * fsm_change_state
+   *
+   */
   void fsm_change_state(fsm_event_t ev) {
     fsm_transition_t *t;
     fsm_result_t ns;
@@ -1021,18 +597,11 @@ implementation {
    * load_config_task state variables
    */
   norace uint8_t        config_list_iter;
-  norace const uint8_t *config_prop_ptr;
+  norace uint8_t       *config_prop_ptr;
   norace uint16_t       config_task_time, config_start_time;
   norace uint8_t        config_task_posts, config_task_records;
 
-  const uint8_t *config_list[] = {si446x_wds_config, si446x_local_config, NULL};
-
-
   /**************************************************************************/
-
-  enum {
-    FCS_SIZE     = 2,
-  };
 
   typedef enum {
     CMD_NONE        = 0,     // no command pending.
@@ -1069,8 +638,6 @@ implementation {
 
   /**************************************************************************/
 
-  void drf();
-
   si446x_packet_header_t *getPhyHeader(message_t *msg) {
 //    return ((void *) msg) + call Config.headerOffset(msg);
     return ((void *) &msg->data - sizeof(si446x_packet_header_t));
@@ -1084,844 +651,10 @@ implementation {
 
   /**************************************************************************/
 
-  /*
-   * si446x_get_cts
-   *
-   * encapsulate obtaining the current CTS value.
-   *
-   * CTS can be on a h/w pin or can be obtained via the SPI
-   * bus.  This routine hides how it is obtained.
-   */
-
-  uint8_t get_sw_cts() {
-    uint8_t res;
-
-    SI446X_ATOMIC {
-      /* clear cs on entry prior to set,  make sure a reasonable state */
-      call HW.si446x_clr_cs();
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
-      call FastSpiByte.splitReadWrite(0);
-      res = call FastSpiByte.splitRead();
-      call HW.si446x_clr_cs();
-    }
-    return res;
-  }
-
-
-  bool si446x_get_cts() {
-    uint8_t cts_s;
-
-#ifdef SI446X_HW_CTS
-    cts_s = call HW.si446x_cts();
-    return cts_s;
-#else
-    cts_s = get_sw_cts();
-    return cts_s;
-#endif
-  }
-
-
-  /**************************************************************************/
-
-  /*
-   * Read FRR
-   *
-   * read 1 Fast Response Register
-   *
-   * register comes back on the same SPI transaction as the command
-   *
-   * CTS does not need to be true.
-   */
-  uint8_t ll_si446x_read_frr(uint8_t which) {
-    uint8_t result;
-
-    SI446X_ATOMIC {
-      call HW.si446x_clr_cs();          /* make sure reasonable state */
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(which);
-      result = call FastSpiByte.splitReadWrite(0);
-      result = call FastSpiByte.splitRead();
-      call HW.si446x_clr_cs();
-    }
-    return result;
-  }
-
-   
-  /**************************************************************************/
-
-  /*
-   * Read Fast Status
-   *
-   * reads status of important control registers (FRRs)
-   * via the FRR mechanism.  Doesn't need CTS.
-   *
-   * pointer to uint8_t xyz[4] buffer;
-   *
-   * CTS does not need to be true.
-   */
-  void ll_si446x_read_fast_status(void *s) {
-    uint8_t *p;
-
-    p = (uint8_t *) s;
-    SI446X_ATOMIC {
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_FRR_A);
-      call FastSpiByte.splitReadWrite(0);
-      p[0] = call FastSpiByte.splitReadWrite(0);
-      p[1] = call FastSpiByte.splitReadWrite(0);
-      p[2] = call FastSpiByte.splitReadWrite(0);
-      p[3] = call FastSpiByte.splitRead();
-      call HW.si446x_clr_cs();
-    }
-  }
-   
-  uint8_t si446x_fast_device_state() {
-    return ll_si446x_read_frr(SI446X_GET_DEVICE_STATE);
-  }
-
-  uint8_t si446x_fast_ph_pend() {
-    return ll_si446x_read_frr(SI446X_GET_PH_PEND);
-  }
-
-  uint8_t si446x_fast_modem_pend() {
-    return ll_si446x_read_frr(SI446X_GET_MODEM_PEND);
-  }
-
-  uint8_t si446x_fast_latched_rssi() {
-    return ll_si446x_read_frr(SI446X_GET_LATCHED_RSSI);
-  }
-
-
-  /**************************************************************************/
-
-  void trace_radio_pend(uint8_t *pend) {
-    rps_t *rpp;
-    rps_t *ppp;
-    uint8_t cts, irqn, csn;
-    uint8_t state, ph, modem, rssi, pmodem;
-
-    rpp  = &rps[rps_next];
-    ppp  = &rps[rps_prev];
-
-    cts  = si446x_get_cts();
-    irqn = call HW.si446x_irqn();
-    csn  = call HW.si446x_csn();
-
-    /* we don't care about modem:invalid preamble
-     */
-    state = pend[0];
-    ph    = pend[1];
-    rssi  = pend[3];
-    modem  = pend[2] & 0xfb;
-    pmodem = ppp->modem & 0xfb;
-
-    if ((cts == ppp->cts) && (irqn == ppp->irqn) && (csn == ppp->csn) &&
-        (state == ppp->ds) && (ph == ppp->ph) &&
-        (modem == pmodem) && (rssi == ppp->rssi)) {
-      return;
-    }
-
-    modem = pend[2];                    /* trace actual values */
-    rssi  = pend[3];
-    rpp->ts = call LocalTime.get();
-    rpp->cts   = cts;
-    rpp->irqn  = irqn;
-    rpp->csn   = csn;
-    rpp->ds    = state;
-    rpp->ph    = ph;
-    rpp->modem = modem;
-    rpp->rssi  = rssi;
-
-    rps_prev = rps_next;
-    if (++rps_next >= RPS_MAX)
-      rps_next = 0;
-  }
-
-
-  /**************************************************************************/
-
-  /*
-   * ll_si446x_send_cmd: send a command to the radio (low level)
-   *
-   * c:         pointer to buffer to send
-   * response:  pointer to response bytes if any
-   * cl:        length of cmd (buffer)
-   * 
-   */
-  void ll_si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t cl) {
-    uint16_t      t0, t1;
-    cmd_timing_t *ctp;
-    uint8_t       cmd;
-    bool          done;
-
-    cmd = c[0];
-    ctp = &cmd_timings[cmd];
-    ctp->cmd = cmd;
-    done = 0;
-    while (1) {
-      t0 = call Platform.usecsRaw();
-      t1 = t0;
-      while (!si446x_get_cts()) {
-        t1 = call Platform.usecsRaw();
-        if ((t1-t0) > SI446X_CTS_TIMEOUT) {
-          done = get_sw_cts();
-          __PANIC_RADIO(2, t1, t0, t1-t0, done);
-        }
-      }
-      SI446X_ATOMIC {
-        /*
-         * first make sure we still have CTS.  It is possible that
-         * someone (mr. interupt) got in and did something that made
-         * us busy.  Truely paranoid code but if we ever hit this
-         * window the failure is truely nasty.  And it is possible.
-         * close to 0 but not zero.
-         */
-        if (si446x_get_cts()) {
-          t1 = call Platform.usecsRaw();
-          ctp->t_cts0 = t1 - t0;
-          t0 = t1;
-          call HW.si446x_set_cs();
-          call SpiBlock.transfer((void *) c, response, cl);
-          call HW.si446x_clr_cs();
-          t1 = call Platform.usecsRaw();
-          done = TRUE;
-        }
-      }
-      if (done)
-        break;
-
-      /*
-       * oops.  if we get here someone grabbed the channel (mr. interrupt)
-       * so go try again to make sure the radio is okay to take another big one.
-       */
-    }
-    ctp->t_cmd0 = t1 - t0;
-    ctp->d_len0 = cl;
-  }
-
-
-  /**************************************************************************/
-
-  void ll_si446x_get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
-    uint8_t rcts;
-    uint16_t t0, t1;
-    cmd_timing_t *ctp;
-
-    ctp = &cmd_timings[cmd];
-    t0 = call Platform.usecsRaw();
-    while (!si446x_get_cts()) {
-      t1 = call Platform.usecsRaw();
-      if ((t1-t0) > SI446X_CTS_TIMEOUT) {
-        __PANIC_RADIO(4, t1, t0, t1-t0, 0);
-      }
-    }
-    t1 = call Platform.usecsRaw();
-    ctp->t_cts_r = t1 - t0;
-    t0 = t1;
-    SI446X_ATOMIC {
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
-      call FastSpiByte.splitReadWrite(0);
-      rcts = call FastSpiByte.splitRead();
-      if (rcts != 0xff) {
-        __PANIC_RADIO(5, rcts, 0, 0, 0);
-      }
-      call SpiBlock.transfer(NULL, r, l);
-      call HW.si446x_clr_cs();
-    }
-    t1 = call Platform.usecsRaw();
-    ctp->t_reply = t1 - t0;
-    ctp->d_reply_len = l + 2;
-  }
-
-
-  void ll_si446x_cmd_reply(const uint8_t *cp, uint16_t cl, uint8_t *rp, uint16_t rl) {
-    uint16_t t0, t1;
-    cmd_timing_t *ctp;
-
-    ctp = &cmd_timings[cp[0]];
-    SI446X_ATOMIC {                     /* check for tasklet protection */
-      t0 = call Platform.usecsRaw();
-      ll_si446x_send_cmd(cp, rsp, cl);
-      ll_si446x_get_reply(rp, rl, cp[0]);
-      t1 = call Platform.usecsRaw();
-      ll_si446x_read_fast_status(ctp->frr);
-    }
-    ctp->t_elapsed = t1 - t0;
-  }
-
-
-  /**************************************************************************/
-
-  void ll_si446x_clr_ints() {
-    ll_si446x_send_cmd(si446x_int_clr, rsp, sizeof(si446x_int_clr));
-  }
-
-
-  /*
-   * get/clr interrupt state
-   * clr all pendings and return previous state in *intp
-   */
-  void ll_si446x_getclr_ints(volatile si446x_int_state_t *intp) {
-    ll_si446x_cmd_reply(si446x_int_clr, sizeof(si446x_int_clr),
-                        (void *) intp, SI446X_INT_STATUS_REPLY_SIZE);
-  }
-
-
-  /*
-   * get current chip state -> *allp
-   *
-   * This is debug code for observing most of the chip state.
-   */
-  void ll_si446x_get_all_state(volatile si446x_chip_all_t *allp) {
-    uint8_t pends[4];
-
-    ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                        (void *) &allp->ph, SI446X_PH_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                        (void *) &allp->modem, SI446X_MODEM_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                        (void *) &allp->chip, SI446X_CHIP_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
-                        (void *) &allp->ints, SI446X_INT_STATUS_REPLY_SIZE);
-    pends[DEVICE_STATE] = si446x_fast_device_state();
-    pends[PH_STATUS]    = allp->ph.pend;
-    pends[MODEM_STATUS] = allp->modem.pend;
-    pends[LATCHED_RSSI] = allp->modem.latched_rssi;
-    trace_radio_pend(pends);
-  }
-
-
-  /**************************************************************************/
-
-#ifdef notdef
-  /*
-   * get/clr all state
-   * clr all pendings and return previous state in *allp
-   *
-   * we grab and clear each of the individual blocks then grab int_status
-   * without doing any additional clears.
-   *
-   * This is debug code for observing most of the chip state.
-   */
-  void ll_si446x_getclr_all_state(volatile si446x_chip_all_t *allp) {
-    uint8_t pends[4];
-
-    ll_si446x_cmd_reply(si446x_int_clr, sizeof(si446x_int_clr),
-                        (void *) &allp->ints, SI446X_INT_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                        (void *) &allp->ph, SI446X_PH_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                        (void *) &allp->modem, SI446X_MODEM_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                        (void *) &allp->chip, SI446X_CHIP_STATUS_REPLY_SIZE);
-    pends[DEVICE_STATE] = si446x_fast_device_state();
-    pends[PH_STATUS]    = allp->ph.pend;
-    pends[MODEM_STATUS] = allp->modem.pend;
-    pends[LATCHED_RSSI] = allp->modem.latched_rssi;
-    trace_radio_pend(pends);
-  }
-#endif
-
-
-  void check_weird(uint8_t *status) {
-    if ((status[PH_STATUS]    & 0xC0) ||
-        (status[MODEM_STATUS] & 0x50)) {
-      ll_si446x_get_all_state(&chip_debug);
-      __PANIC_RADIO(98, status[DEVICE_STATE], status[PH_STATUS],
-                    status[MODEM_STATUS], 0);
-      ll_si446x_get_all_state(&chip_debug);
-      nop();
-    }
-  }
-
-
-  void ll_si446x_fast_int_status(uint8_t *status) {
-    ll_si446x_read_fast_status(status);
-    trace_radio_pend(status);
-    check_weird(status);
-  }
-
-
-  void si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
-    ll_si446x_send_cmd(c, response, length);
-    ll_si446x_fast_int_status(radio_pend);
-  }
-
-
-  void si446x_get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
-    ll_si446x_get_reply(r, l, cmd);
-    ll_si446x_fast_int_status(radio_pend);
-  }
-
-
-  void si446x_cmd_reply(const uint8_t *cp, uint16_t cl, uint8_t *rp, uint16_t rl) {
-    uint16_t t0, t1;
-    cmd_timing_t *ctp;
-
-    ctp = &cmd_timings[cp[0]];
-    t0 = call Platform.usecsRaw();
-    si446x_send_cmd(cp, rsp, cl);
-    si446x_get_reply(rp, rl, cp[0]);
-    t1 = call Platform.usecsRaw();
-    ctp->t_elapsed = t1 - t0;
-    ll_si446x_read_fast_status(ctp->frr);
-  }
-
-
-  void set_property(uint16_t prop, uint8_t *values, uint16_t vl) {
-    uint8_t prop_buf[16];
-    uint16_t i;
-
-    prop_buf[0] = SI446X_CMD_SET_PROPERTY;
-    prop_buf[1] = prop >> 8;            /* group */
-    prop_buf[2] = vl;                   /* num_props */
-    prop_buf[3] = prop & 0xff;          /* start_prop */
-
-    for (i = 0; i < 12 && i < vl; i++ )
-      prop_buf[i+4] = values[i];
-    si446x_send_cmd(prop_buf, rsp, vl+4);
-  }
-
-
-  void si446x_start_tx(uint16_t len) {
-    uint8_t x[5];
-
-    x[0] = SI446X_CMD_START_TX;
-    x[1] = 0;                     /* channel */
-    x[2] = 0x30;                  /* back to READY */
-    x[3] = 0;
-    x[4] = len & 0xff;
-    drf();
-    nop();
-    si446x_send_cmd((void *) x, rsp, 5);
-  }
-
-
-  /*
-   * Cmd to fire up RX
-   *
-   * len: 0, use variable length in packet
-   * rxtimeout_state: 8, stay in rx but rearm.  We make use of the RXTIMEOUT
-   *   mechanism provided with RSSI checking.  See MODEM_RSSI_THRESH (p204a).
-   * rxvalid_state:   0, stay in rx but do not rearm.
-   * rxinvalid_state: 0, stay in rx but do not rearm.
-   */
-  const uint8_t start_rx_cmd[] = {
-    SI446X_CMD_START_RX,
-    0,                                  /* channel */
-    0,                                  /* start immediate */
-    0, 0,                               /* len, use variable length */
-    SI446X_DEVICE_STATE_RX,             /* rxtimeout, stay, good boy */
-    0,                                  /* rxvalid */
-    0,                                  /* rxinvalid */
-  };
-
-
-  /* uses previous values */
-  const uint8_t start_rx_short_cmd[] = {
-    SI446X_CMD_START_RX
-  };
-
-
-  void start_rx() {
-    si446x_send_cmd(start_rx_cmd, rsp, sizeof(start_rx_cmd));
-  }
-
-
-  void start_rx_short() {
-    si446x_send_cmd(start_rx_short_cmd, rsp, sizeof(start_rx_short));
-  }
-
-
-  void si446x_fifo_info(uint16_t *rxp, uint16_t *txp, uint8_t flush_bits) {
-    uint8_t flusher[2], fifo_cnts[2];
-
-    flusher[0] = SI446X_CMD_FIFO_INFO;
-    flusher[1] = flush_bits;
-    ll_si446x_cmd_reply(flusher, 2, fifo_cnts, 2);
-    if (rxp)
-      *rxp = fifo_cnts[0];
-    if (txp)
-      *txp = fifo_cnts[1];
-  }
-
-  bool wait_for_cts() {
-    uint16_t t0, t1;
-    t0 = call Platform.usecsRaw();
-    t1 = t0;
-    while (!si446x_get_cts()) {
-      t1 = call Platform.usecsRaw();
-      ll_si446x_fast_int_status(radio_pend);
-      if ((t1-t0) > SI446X_CTS_TIMEOUT) {
-        ll_si446x_fast_int_status(radio_pend1);
-        drf();
-	__PANIC_RADIO(24, t1, t0, t1-t0, 0);
-        ll_si446x_fast_int_status(radio_pend);
-	return FALSE;
-      }
-    }
-    ll_si446x_fast_int_status(radio_pend);
-    return TRUE;
-  }
-
-
-  /* ----------------- Basic Access -----------------  */
-
-  /* read from the SPI, putting bytes in buf */
-  void readBlock(uint8_t *buf, uint8_t count) {
-    uint8_t i;
-
-    for (i = 0; i < count-1; i++)
-      buf[i] = call FastSpiByte.splitReadWrite(0);
-    buf[i] = call FastSpiByte.splitRead();
-  }
-
-
-  /* pull bytes from the SPI, throwing them away */
-  void pullBlock(uint8_t count) {
-    uint8_t i;
-
-    for (i = 1; i < count; i++)
-      call FastSpiByte.splitReadWrite(0);
-    call FastSpiByte.splitRead();
-  }
-
-
-  /* write bytes from buf to the SPI */
-  void writeBlock(uint8_t *buf, uint8_t count) {
-    uint8_t i;
-
-    for (i = 0; i < count; i++)
-      call FastSpiByte.splitReadWrite(buf[i]);
-    call FastSpiByte.splitRead();
-  }
-
-
-  /*
-   * It is unclear if dumping the FIFO is a) possible or b) useful.
-   */
-  void dump_radio_fifo() {
-    uint8_t cts, rx_count, tx_count;
-
-    /*
-     * CSn (NSEL), needs to be held high (deasserted, cleared) for 80ns.
-     * We throw a nop in just to make sure it stays up long enough.
-     * Usually it isn't a problem but dump has a back to back because
-     * we don't know the state of CS when called.
-     */
-    call HW.si446x_clr_cs();
-    nop();
-    SI446X_ATOMIC {
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_FIFO_INFO);
-      call FastSpiByte.splitReadWrite(0);
-      call FastSpiByte.splitRead();
-
-      /* response */
-      call FastSpiByte.splitWrite(0);
-      cts = call FastSpiByte.splitReadWrite(0);           /* CTS */
-      rx_count = call FastSpiByte.splitReadWrite(0);      /* RX_FIFO_CNT */
-      tx_count = call FastSpiByte.splitRead();            /* TX_FIFO_CNT */
-      call HW.si446x_clr_cs();
-    }
-
-    /*
-     * how to figure out if it is a tx or rx in the fifo.  So
-     * we can pull the fifo contents.  Do we need to look at the
-     * radio state to see what is going on?
-     */
-    if (tx_count < rx_count)
-      tx_count = rx_count;
-  }
-
-
-  bool checkCCA() {
-    uint8_t rssi;
-
-    rssi = si446x_fast_latched_rssi();
-    if (rssi < si446x_cca_threshold)
-      return TRUE;
-    return FALSE;
-  }
-
-
-  /*
-   * stuff_config
-   *
-   * send a block of configuration data to the radio.  Each block is
-   * is made up of multiple commands, (size, command data, starts with
-   * command to send), terminated by 0.
-   */
-  void stuff_config(const uint8_t *rcp) {
-    uint16_t size;
-
-    while ((size = *rcp++)) {
-      if (size > 16) {
-        __PANIC_RADIO(7, (uint16_t) rcp, size, 0, 0);
-      }
-      si446x_send_cmd(rcp, rsp, size);
-      rcp += size;
-    }
-  }
-
-
-  /* read property */
-  void r_prop(uint16_t p_id, uint16_t num, uint8_t *w) {
-    uint8_t group, index;
-
-    group = p_id >> 8;
-    index = p_id & 0xff;
-    SI446X_ATOMIC {
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
-      call FastSpiByte.splitReadWrite(group);
-      call FastSpiByte.splitReadWrite(num);
-      call FastSpiByte.splitReadWrite(index);
-      call FastSpiByte.splitRead();
-      call HW.si446x_clr_cs();
-      ll_si446x_get_reply(w, num, 0xff);
-    }
-  }
-
-
-  /*
-   * dump_properties
-   */
-  void dump_properties() {
-    const dump_prop_desc_t *dpp;
-    cmd_timing_t *ctp, *ctp_ff;
-    uint8_t group, index, length;
-    uint8_t  *w, wl;                    /* working */
-    uint16_t t0, t1, tot0;
-
-    ctp_ff = &cmd_timings[0xff];
-    t0 = call Platform.usecsRaw();
-    while (!si446x_get_cts()) {
-      t1 = call Platform.usecsRaw();
-      if ((t1-t0) > SI446X_CTS_TIMEOUT) {
-        __PANIC_RADIO(8, t1, t0, t1-t0, 0);
-      }
-    }
-    t1 = call Platform.usecsRaw();
-    dpp = &dump_prop[0];
-    while (dpp->where) {
-      group = dpp->prop_id >> 8;
-      index = dpp->prop_id & 0xff;
-      length = dpp->length;
-      w = dpp->where;
-      t0 = call Platform.usecsRaw();
-      tot0 = t0;
-      ctp = &prop_timings[group];
-      memset(ctp, 0, sizeof(*ctp));
-      ctp->cmd = group;
-
-      while (length) {
-        t0 = call Platform.usecsRaw();
-        if (!si446x_get_cts()) {
-          __PANIC_RADIO(8, 0, 0, 0, 0);
-        }      
-        t1 = call Platform.usecsRaw();
-        ctp->t_cts0 += t1 - t0;
-
-        wl = (length > 16) ? 16 : length;
-        t0 = call Platform.usecsRaw();
-        SI446X_ATOMIC {
-          call HW.si446x_set_cs();
-          call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
-          call FastSpiByte.splitReadWrite(group);
-          call FastSpiByte.splitReadWrite(wl);
-          call FastSpiByte.splitReadWrite(index);
-          call FastSpiByte.splitRead();
-          call HW.si446x_clr_cs();
-          t1 = call Platform.usecsRaw();
-          ctp->t_cmd0 += t1 - t0;
-          ctp->d_len0 += 4;
-
-          si446x_get_reply(w, wl, 0xff);
-        }
-        ctp->t_cts_r     += ctp_ff->t_cts_r;
-        ctp->t_reply     += ctp_ff->t_reply;
-        ctp->d_reply_len += ctp_ff->d_reply_len;
-        length -= wl;
-        index += wl;
-        w += wl;
-      }
-      t1 = call Platform.usecsRaw();
-      ctp->t_elapsed = t1 - tot0;
-      nop();
-      ll_si446x_read_fast_status(ctp->frr);
-      dpp++;
-    }
-  }
-
-
-  /* drf: dump_radio_full */
-  void drf() __attribute__((noinline)) {
-
-    SI446X_ATOMIC {
-      rd.p_dump_start = call Platform.usecsRaw();
-      rd.l_dump_start = call LocalTime.get();
-
-      /* do CSN before we reset the SPI port */
-      rd.CSN_pin     = call HW.si446x_csn();
-      rd.CTS_pin     = call HW.si446x_cts();
-      rd.IRQN_pin    = call HW.si446x_irqn();
-      rd.SDN_pin     = call HW.si446x_sdn();
-
-      call HW.si446x_clr_cs();          /* reset SPI on chip */
-      nop();
-      call HW.si446x_set_cs();
-      nop();
-      call HW.si446x_clr_cs();
-
-      rd.ta0ccr3     = TA0CCR3;
-      rd.ta0cctl3    = TA0CCTL3;
-
-      nop();                              /* these should become ll_* */
-      ll_si446x_cmd_reply(si446x_part_info, sizeof(si446x_part_info),
-                          (void *) &rd.part_info, SI446X_PART_INFO_REPLY_SIZE);
-
-      ll_si446x_cmd_reply(si446x_func_info, sizeof(si446x_func_info),
-                          (void *) &rd.func_info, SI446X_FUNC_INFO_REPLY_SIZE);
-
-      ll_si446x_cmd_reply(si446x_gpio_cfg_nc, sizeof(si446x_gpio_cfg_nc),
-                          (void *) &rd.gpio_cfg, SI446X_GPIO_CFG_REPLY_SIZE);
-
-      ll_si446x_cmd_reply(si446x_fifo_info_nc, sizeof(si446x_fifo_info_nc),
-                          rsp, SI446X_FIFO_INFO_REPLY_SIZE);
-      rd.rxfifocnt  = rsp[0];
-      rd.txfifofree = rsp[1];
-
-      ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                          (void *) &rd.ph_status, SI446X_PH_STATUS_REPLY_SIZE);
-
-      ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                          (void *) &rd.modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
-
-      ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                          (void *) &rd.chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
-
-      ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
-                          (void *) &rd.int_state, SI446X_INT_STATUS_REPLY_SIZE);
-
-      ll_si446x_cmd_reply(si446x_device_state, sizeof(si446x_device_state),
-                          rsp, SI446X_DEVICE_STATE_REPLY_SIZE);
-      rd.device_state = rsp[0];
-      rd.channel      = rsp[1];
-
-      ll_si446x_read_fast_status(rd.frr);
-
-      ll_si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc),
-                          (void *) &rd.packet_info_len, SI446X_PACKET_INFO_REPLY_SIZE);
-
-      nop();
-      dump_properties();
-      nop();
-      rd.l_dump_end = call LocalTime.get();
-      rd.l_delta =  rd.l_dump_end - rd.l_dump_start;
-    }
-  }
-
-
-  void dump_radio() __attribute__((noinline)) {
-    atomic {
-      drf();
-    }
-  }
-
-
-  /*
-   * get packet_info for last received packet
-   *
-   * returns variable length field value (length) from last rx packet.
-   *
-   * we do not override and fields length (that's just weird).
-   */
-  uint16_t si446x_get_packet_info() {
-    uint8_t r[2];
-
-    si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc), r, 2);
-    return r[0] << 8 | r[1];
-  }
-
-
-  /*
-   * readRxFifo read data bytes from the TXFIFO.
-   *
-   * First it sets CS which resets the radio SPI and enables
-   * the SPI subsystem, next the cmd SI446X_CMD_RX_FIFO_READ
-   * and then we pull data from the FIFO across the SPI bus.
-   * CS is deasserted which terminates the block.
-   *
-   * If we pull too many bytes from the RX fifo, the chip will
-   * throw an FIFO Underflow exception.
-   */
-  void readRxFifo(uint8_t *data, uint8_t length) {
-    uint16_t t0, t1;
-
-    SI446X_ATOMIC {
-      t0 = call Platform.usecsRaw();
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_RX_FIFO_READ);
-      call FastSpiByte.splitReadWrite(0);
-      readBlock(data, length);
-      call HW.si446x_clr_cs();
-      t1 = call Platform.usecsRaw();
-      nop();
-    }
-    t1 -= t0;
-  }
-
-
-  /**************************************************************************/
-  /*
-   * writeTxFifo sends data bytes into the TXFIFO.
-   *
-   * First it sets CS which resets the radio SPI and enables
-   * the SPI subsystem, next the cmd SI446X_CMD_TX_FIFO_WRITE
-   * is sent followed by the data.  After the data is sent
-   * CS is deasserted which terminates the block.
-   *
-   * If the TX fifo gets full, an additional write will throw a
-   * FIFO Overflow exception.
-   */
-  void writeTxFifo(uint8_t *data, uint8_t length) {
-    uint16_t t0, t1;
-
-    SI446X_ATOMIC {
-      t0 = call Platform.usecsRaw();
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_TX_FIFO_WRITE);
-      writeBlock(data, length);
-      call HW.si446x_clr_cs();
-      t1 = call Platform.usecsRaw();
-      nop();
-      t1 -= t0;
-    }
-  }
-
-
-  /**************************************************************************/
-  /*
-   * flushFifo: resets internal chip fifo data structures
-   *
-   * should not get used if RX or TX is currently active.  That is we
-   * should make sure the chip is in Standby state first.
-   */
-  void flushFifo() {
-    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-  }
-
-
-  /**************************************************************************/
-
   /* ----------------- INIT ----------------- */
 
   command error_t SoftwareInit.init() {
     error_t err;
-
     /*
      * We need the SPI bus for initialization and SoftwareInit
      * is called early in the boot up process.  Because of this
@@ -1938,7 +671,7 @@ implementation {
       __PANIC_RADIO(8, err, 0, 0, 0);
       return err;
     }
-    call HW.si446x_clr_cs();
+    call Si446xCmd.clr_cs();
     return SUCCESS;
   }
 
@@ -1972,23 +705,25 @@ implementation {
 
 
   /**************************************************************************/
-
-  /* ----  Load Config ---- */
-
   /*
    * load_config_task - guts of chip configuration loading.
    *
    * iterates through the configuration, breaking it into 1 millisecond
    * processing periods until all configuration records are processed.
    */
+  norace uint8_t      rsp[16];
+
   task void load_config_task() {
     uint16_t iter_start, iter_now;
     uint16_t size;
     uint8_t *cp;
+    uint8_t **config_list;
 
     if (fsm_get_state() != S_CONFIG_W) {
       __PANIC_RADIO(90, fsm_get_state(), 0, 0, 0);
     }
+
+    config_list = call Si446xCmd.get_config_lists();
 
     cp = (void *) config_prop_ptr;
 
@@ -1999,7 +734,7 @@ implementation {
      */
     if (!cp) {
       call Tasklet.suspend();
-      config_prop_ptr = config_list[config_list_iter];
+      config_prop_ptr = (uint8_t *) config_list[config_list_iter];
       cp = (void *) config_prop_ptr;
       config_task_time = 0;
       config_task_posts = 0;
@@ -2026,11 +761,11 @@ implementation {
       }
       if (size == 0) {
 	config_list_iter++;
-	config_prop_ptr = config_list[config_list_iter];
+	config_prop_ptr = (uint8_t *) config_list[config_list_iter];
 	cp = (void *) config_prop_ptr;
 	continue;
       }
-      si446x_send_cmd(cp, rsp, size);
+      call Si446xCmd.send_cmd(cp, rsp, size);
       cp += size;
       config_task_records++;
     }
@@ -2071,7 +806,7 @@ implementation {
 	dvr_cmd = CMD_NONE;
 	break;
       case CMD_CCA:
-	signal RadioCCA.done(checkCCA() ? SUCCESS : EBUSY);
+	signal RadioCCA.done(call Si446xCmd.check_CCA() ? SUCCESS : EBUSY);
 	dvr_cmd = CMD_NONE;
 	break;
       default:
@@ -2151,10 +886,7 @@ implementation {
 
   fsm_result_t a_unshut(fsm_transition_t *t) {
     start_alarm(SI446X_POR_WAIT_TIME);
-    call HW.si446x_unshutdown();
-    // re-initialize global variables
-//    i = global_ioc.unshuts;
-//    memset(&global_ioc, 0, sizeof(global_ioc));
+    call Si446xCmd.unshutdown();
     global_ioc.pRxMsg = (message_t *) &rxMsgBuffer;
     global_ioc.pTxMsg = 0;
     global_ioc.rc_signal = 0;
@@ -2162,6 +894,7 @@ implementation {
     global_ioc.unshuts++;
     return fsm_results(t->next_state, E_NONE);
   }
+
 
   /**************************************************************************/
   /*
@@ -2173,11 +906,13 @@ implementation {
   */
 
   fsm_result_t a_pwr_up(fsm_transition_t *t) {
-    if (!(xcts = si446x_get_cts())) {
+    volatile norace uint8_t xcts;
+
+    if (!(xcts = call Si446xCmd.get_cts())) {
       __PANIC_RADIO(9, 0, 0, 0, 0);
     }
     start_alarm(SI446X_POWER_UP_WAIT_TIME);
-    si446x_send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
+    call Si446xCmd.power_up();
     return fsm_results(t->next_state, E_NONE);
   }
 
@@ -2195,10 +930,11 @@ implementation {
      * make the FRRs return a driver custom setting, see si446x_frr_config for
      * details.
      */
-    stuff_config(si446x_frr_config);
+    call Si446xCmd.config_frr();
     post load_config_task();
     return fsm_results(t->next_state, E_NONE);
   }
+
 
   /**************************************************************************/
   /*
@@ -2212,12 +948,12 @@ implementation {
    */
 
   fsm_result_t a_ready(fsm_transition_t *t) {
-    drf();
+    call Si446xCmd.dump_radio();
     nop();
     setChannel();
     // initialize interrupts
-    ll_si446x_clr_ints();
-    call HW.si446x_enableInterrupt();
+    call Si446xCmd.ll_clr_ints();
+    call Si446xCmd.enableInterrupt();
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
     /* proceed with a_rx_on action to start receiving */
@@ -2241,8 +977,8 @@ implementation {
 
   fsm_result_t a_pwr_dn(fsm_transition_t *t) {
     stop_alarm();
-    call HW.si446x_disableInterrupt();
-    call HW.si446x_shutdown();
+    call Si446xCmd.disableInterrupt();
+    call Si446xCmd.shutdown();
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
     return fsm_results(t->next_state, E_NONE);
@@ -2266,11 +1002,11 @@ implementation {
      * the fifo.
      */
     stop_alarm();
-    si446x_fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-    wait_for_cts();
-    ll_si446x_clr_ints();               // clear the receive interrupts - needs work
-    start_rx();
-    wait_for_cts();                     // wait for rx start up
+    call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
+    call Si446xCmd.wait_for_cts();
+    call Si446xCmd.ll_clr_ints();            // clear the receive interrupts - needs work
+    call Si446xCmd.start_rx();
+    call Si446xCmd.wait_for_cts();                     // wait for rx start up
     nop();
     return fsm_results(t->next_state, E_NONE);
   }
@@ -2302,23 +1038,23 @@ implementation {
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
     nop();
-    si446x_send_cmd(si446x_change_state_ready, rsp, sizeof(si446x_change_state_ready));
-    wait_for_cts();                     // wait for ready state, disables receiver
-    ll_si446x_clr_ints();               // clear the receive interrupts - needs work
+    call Si446xCmd.goto_ready();
+    call Si446xCmd.wait_for_cts();           // wait for ready state, disables receiver
+    call Si446xCmd.ll_clr_ints();               // clear the receive interrupts - needs work
     nop();
     dp     = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
     pkt_len = *dp + 1;              // length of data field is first byte
-    si446x_fifo_info(&rx_len, &tx_len, SI446X_FIFO_FLUSH_TX);
+    call Si446xCmd.fifo_info(&rx_len, &tx_len, SI446X_FIFO_FLUSH_TX);
     if (tx_len != SI446X_EMPTY_TX_LEN)
       __PANIC_RADIO(6, tx_len, pkt_len, (uint16_t) dp, 0);
-    writeTxFifo(dp, pkt_len);
-    si446x_fifo_info(&rx_len, &tx_len, 0);
+    call Si446xCmd.write_tx_fifo(dp, pkt_len);
+    call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
     if (tx_len != (SI446X_EMPTY_TX_LEN - pkt_len))
       __PANIC_RADIO(7, tx_len, pkt_len, (uint16_t) dp, 0);
     nop();
-    si446x_start_tx(pkt_len);
+    call Si446xCmd.start_tx(pkt_len);
     // start_tx takes a while, so need to wait for command confirmation
-    wait_for_cts();
+    call Si446xCmd.wait_for_cts();
     nop();
     start_alarm(SI446X_TX_TIMEOUT);
     return fsm_results(t->next_state, E_NONE);
@@ -2337,7 +1073,7 @@ implementation {
     uint8_t        rssi;
 
     if (signal RadioReceive.header(global_ioc.pRxMsg)) {
-      rssi = si446x_fast_latched_rssi();
+      rssi = call Si446xCmd.fast_latched_rssi();
       call PacketRSSI.set(global_ioc.pRxMsg, rssi);         /* set only if accepting */
       call PacketLinkQuality.set(global_ioc.pRxMsg, rssi); 
       return fsm_results(S_RX_ACTIVE, E_NONE);
@@ -2380,11 +1116,11 @@ implementation {
     uint16_t        pkt_len, tx_len, rx_len;
 
     stop_alarm();
-    pkt_len = si446x_get_packet_info() + 1;        // include len byte
+    pkt_len = call Si446xCmd.get_packet_info() + 1;        // include len byte
     nop();
-    si446x_fifo_info(&rx_len, &tx_len, 0);
+    call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
     nop();
-    readRxFifo((uint8_t *) global_ioc.pRxMsg, pkt_len);
+    call Si446xCmd.read_rx_fifo((uint8_t *) global_ioc.pRxMsg, pkt_len);
     nop();
     // check to see if upper layer wants the packet [**will move to a_rx_hdr]
     if (signal RadioReceive.header(global_ioc.pRxMsg)) {
@@ -2404,7 +1140,7 @@ implementation {
 
     stop_alarm();
     global_ioc.tx_packets++;
-    si446x_fifo_info(&rx_len, &tx_len, 0);
+    call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
 //    RADIO_ASSERT( tx_len == max(64/129)? );
     // set conditions for returning send done after FSM completes
     global_ioc.tx_signal = TRUE;
@@ -2522,7 +1258,7 @@ implementation {
   /*
    * queue up the fsm_int_event and schedule the tasklet to handle interrupts
    */
-  async event void HW.si446x_interrupt() {
+  async event void Si446xCmd.interrupt() {
     if (!fsm_int_event) {
       fsm_int_queue(!E_NONE);  // just queue non-null value
     }
@@ -2594,13 +1330,13 @@ implementation {
     fsm_trace_array[fsm_tc].ph = isp->ph_pend;
     fsm_trace_array[fsm_tc].modem = isp->modem_pend;
     fsm_trace_array[fsm_tc].chip = isp->chip_pend;
-    fsm_trace_array[fsm_tc].ds = si446x_fast_device_state();
-    fsm_trace_array[fsm_tc].rssi = si446x_fast_latched_rssi();
+    fsm_trace_array[fsm_tc].ds = call Si446xCmd.fast_device_state();
+    fsm_trace_array[fsm_tc].rssi = call Si446xCmd.fast_latched_rssi();
     int_trace_array[int_tc].time = call LocalTime.get();
     int_trace_array[int_tc].ph_pend = isp->ph_pend;
     int_trace_array[int_tc].modem_pend = isp->modem_pend;
     int_trace_array[int_tc].chip_pend = isp->chip_pend;
-    int_trace_array[fsm_tc].ds = si446x_fast_device_state();
+    int_trace_array[fsm_tc].ds = call Si446xCmd.fast_device_state();
     int_tp = int_tc;
     if (++int_tc >= NELEMS(int_trace_array))
       int_tc = 0;
@@ -2617,15 +1353,18 @@ implementation {
    * occurs to prevent race condition with NIRQ changes when clearing
    * pending flags and missing a pending condition.
    */
+  volatile norace si446x_int_state_t cur_int_state;
+  norace uint8_t radio_pend[4];
+
   void process_interrupt() {
     fsm_event_t ev;
     volatile si446x_int_state_t *isp;
 
     isp = &cur_int_state;
     while (TRUE) {
-      ll_si446x_read_fast_status(radio_pend);
-      trace_radio_pend(radio_pend);
-      ll_si446x_getclr_ints(isp);
+      call Si446xCmd.fast_all(radio_pend);
+      call Si446xCmd.trace_radio_pend(radio_pend);
+      call Si446xCmd.ll_getclr_ints(isp);
       interrupt_trace(isp);
       isp->ph_pend    &= SI446X_PH_INTEREST;
       isp->modem_pend &= SI446X_MODEM_INTEREST;
@@ -2855,7 +1594,7 @@ implementation {
 
 
   async command bool PacketAcknowledgements.wasAcked(message_t* msg) {
-#ifdef SI446X_HARDWARE_ACK
+#ifdef SI446X_nHARDWARE_ACK
     return call AckReceivedFlag.get(msg);
 #else
     return FALSE;
@@ -2866,7 +1605,7 @@ implementation {
   /**************************************************************************/
 
   async event void Panic.hook() {
-    dump_radio();
+    call Si446xCmd.dump_radio();
     nop();
 #ifdef notdef
     call CSN.set();

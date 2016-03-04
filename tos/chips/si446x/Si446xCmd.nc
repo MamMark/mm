@@ -1,0 +1,36 @@
+interface Si446xCmd {
+  async command bool          check_CCA();
+  async command void          clr_cs();
+  async command void          cmd_reply(const uint8_t *cp, uint16_t cl, uint8_t *rp, uint16_t rl);
+  async command void          config_frr();
+  async command void          disableInterrupt();
+  async command void          dump_radio();
+  async command void          enableInterrupt();
+  async command uint8_t       fast_device_state();
+  async command uint8_t       fast_ph_pend();
+  async command uint8_t       fast_modem_pend();
+  async command uint8_t       fast_latched_rssi();
+  async command void          fast_all(uint8_t *status);
+  async command void          fifo_info(uint16_t *rxp, uint16_t *txp, uint8_t flush_bits);
+  async command uint8_t    ** get_config_lists();
+  async command bool          get_cts();
+  async command uint16_t      get_packet_info();
+  async command void          get_reply(uint8_t *r, uint16_t l, uint8_t cmd);
+  async command void          goto_ready();
+  async event void            interrupt();
+  async command void          ll_clr_ints();
+  async command void          ll_getclr_ints(volatile si446x_int_state_t *intp);
+  async command void          power_up();
+  async command void          read_property(uint16_t p_id, uint16_t num, uint8_t *w);
+  async command void          read_rx_fifo(uint8_t *data, uint8_t length);
+  async command void          set_property(uint16_t prop, uint8_t *values, uint16_t vl);
+  async command void          send_cmd(const uint8_t *c, uint8_t *response, uint16_t length);
+  async command void          shutdown();
+  async command void          start_tx(uint16_t len);
+  async command void          start_rx();
+  async command void          start_rx_short();
+  async command void          trace_radio_pend(uint8_t *pend);
+  async command void          unshutdown();
+  async command bool          wait_for_cts();
+  async command void          write_tx_fifo(uint8_t *data, uint8_t length);
+}

@@ -101,6 +101,11 @@
  */ 
 #define SI446X_INITIAL_RSSI_THRESH      0x20
 
+/* 
+ * size of TX fifo when empty
+ */
+#define SI446X_EMPTY_TX_LEN             64
+
 /*
  * Si446x Radio command identifiers
  */
@@ -255,6 +260,13 @@
 #define SI446X_FRR_C                          0x53
 #define SI446X_FRR_D                          0x57
 
+// logical definition of register values within an array
+typedef enum {
+  DEVICE_STATE=0,
+  PH_STATUS=1,
+  MODEM_STATUS=2,
+  LATCHED_RSSI=3,
+} frr_map_t;
 
 /*
  * Properties.
@@ -861,5 +873,141 @@ typedef struct {
   uint8_t cmd_err_cmd_id;
 //  uint8_t info_flags;                 /* 68 only */
 } si446x_chip_status_t;                 /* CHIP_STATUS, 0x23 */
+
+typedef enum {
+	NO_STATE   = 0,
+	SLEEP      = 1,
+	SPI_ACT    = 2,
+	READY      = 3,
+	READYA     = 4,
+	TX_TUNE    = 5,
+	RX_TUNE    = 6,
+	TX         = 7,
+	RX         = 8,
+} Si446x_device_state_t;
+
+typedef struct {
+  uint32_t ts;
+  uint8_t  cts;
+  uint8_t  irqn;
+  uint8_t  csn;
+  Si446x_device_state_t  ds;
+  uint8_t  ph;
+  uint8_t  modem;
+  uint8_t  rssi;
+  uint8_t  r;
+} rps_t;
+
+typedef struct {
+  uint16_t              p_dump_start;   /* 16 bit raw (platform) us timestamp */
+  uint32_t              l_dump_start;   /* 32 bit us TRadio Localtime timestamp */
+  uint32_t              l_dump_end;     /* 32 bit us TRadio Localtime timestamp */
+  uint32_t              l_delta;        /* how long did dump take */
+
+  uint8_t               CTS_pin;
+  uint8_t               IRQN_pin;
+  uint8_t               SDN_pin;
+  uint8_t               CSN_pin;
+  uint8_t               ta0ccr3;
+  uint8_t               ta0cctl3;
+
+  si446x_part_info_t    part_info;
+  si446x_func_info_t    func_info;
+  si446x_gpio_cfg_t     gpio_cfg;
+
+  /* fifoinfo */
+  uint8_t               rxfifocnt;
+  uint8_t               txfifofree;
+
+  si446x_ph_status_t    ph_status;
+  si446x_modem_status_t modem_status;
+  si446x_chip_status_t  chip_status;
+  si446x_int_state_t    int_state;
+
+  /* request_device_state */
+  uint8_t               device_state;
+  uint8_t               channel;
+  uint8_t               frr[4];
+
+  uint8_t               packet_info_len[2];
+
+  /* properties */
+  uint8_t               gr00_global[SI446X_GROUP00_SIZE];
+  uint8_t               gr01_int[SI446X_GROUP01_SIZE];
+  uint8_t               gr02_frr[SI446X_GROUP02_SIZE];
+  uint8_t               gr10_preamble[SI446X_GROUP10_SIZE];
+  uint8_t               gr11_sync[SI446X_GROUP11_SIZE];
+
+  /*
+   * group12 defines various properties about packets including
+   * various fields and how CRC is handled.  One can dump the
+   * entire group.  Alternatively one can use a sparse set of properties
+   * for packets and packet fields, ie the TX props for TX and the
+   * RX props for RX props.  We reduce GROUP12_SIZE and define
+   * GROUP12a_SIZE to minimize how many Packet properites we add to the
+   * radio dump.  Group12a starts at 0x1221, PKT_RX_FIELD_1_LENGTH.
+   */
+  uint8_t               gr12_pkt[SI446X_GROUP12_SIZE];
+#ifdef SI446X_GROUP12a_SIZE
+  uint8_t               gr12a_pkt[SI446X_GROUP12a_SIZE];
+#endif
+  uint8_t               gr20_modem[SI446X_GROUP20_SIZE];
+  uint8_t               gr21_modem[SI446X_GROUP21_SIZE];
+  uint8_t               gr22_pa[SI446X_GROUP22_SIZE];
+  uint8_t               gr23_synth[SI446X_GROUP23_SIZE];
+  uint8_t               gr30_match[SI446X_GROUP30_SIZE];
+  uint8_t               gr40_freq_ctl[SI446X_GROUP40_SIZE];
+  uint8_t               gr50_hop[SI446X_GROUP50_SIZE];
+  uint8_t               grF0_pti[SI446X_GROUPF0_SIZE];
+} radio_dump_t;
+
+norace radio_dump_t rd;
+
+typedef struct {
+  uint16_t  prop_id;
+  uint8_t  *where;
+  uint8_t   length;
+} dump_prop_desc_t;
+
+/*
+ * global frr state info and constants for accessing
+ */
+typedef struct {
+  uint8_t       device_state;
+  uint8_t       ph_pend;
+  uint8_t       modem_pend;
+  uint8_t       latched_rssi;
+} si446x_frr_info_t;
+
+typedef struct {
+  si446x_int_state_t    ints;
+  si446x_ph_status_t    ph;
+  si446x_modem_status_t modem;
+  si446x_chip_status_t  chip;
+} si446x_chip_all_t;
+
+typedef struct {
+  uint16_t cmd;
+  uint16_t t_cts0;
+  uint16_t t_cmd0;
+  uint16_t d_len0;
+  uint16_t t_cts_r;
+  uint16_t t_reply;
+  uint16_t d_reply_len;
+  uint16_t t_elapsed;
+  uint8_t  frr[4];
+} cmd_timing_t;
+
+ typedef struct {
+    uint8_t len;
+    uint8_t proto;
+    uint16_t da;
+    uint16_t sa;
+    uint8_t data[];
+  } ds_pkt_t;
+
+  enum {
+    FCS_SIZE     = 2,
+  };
 
 #endif          //__SI446X_H__

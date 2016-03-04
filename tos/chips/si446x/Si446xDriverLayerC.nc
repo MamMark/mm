@@ -60,10 +60,10 @@ configuration Si446xDriverLayerC {
     interface PacketTimeStamp<TRadio, uint32_t>;
 
     interface PacketFlag as TransmitPowerFlag;
-    interface PacketFlag as RSSIFlag;    
-    interface PacketFlag as TimeSyncFlag; 
+    interface PacketFlag as RSSIFlag;
+    interface PacketFlag as TimeSyncFlag;
     interface PacketFlag as AckReceivedFlag;
-    interface RadioAlarm;     
+    interface RadioAlarm;
     interface Tasklet;
   }
 }
@@ -84,8 +84,6 @@ implementation {
 
   LocalTimeRadio = HWHplC;
   Config = DriverLayerP;
-
-  DriverLayerP.HW -> HWHplC;    /* Si446xInterface (hw interface) */
 
   PacketTransmitPower = DriverLayerP.PacketTransmitPower;
   DriverLayerP.TransmitPowerFlag = TransmitPowerFlag;
@@ -118,6 +116,9 @@ implementation {
   Tasklet = DriverLayerP.Tasklet;
 
   DriverLayerP.LocalTime-> HWHplC.LocalTimeRadio;
+
+  components Si446xCmdC;
+  DriverLayerP.Si446xCmd         -> Si446xCmdC;
 
 #ifdef RADIO_DEBUG_MESSAGES
   components DiagMsgC;
