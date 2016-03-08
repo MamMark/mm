@@ -18,6 +18,13 @@
   */
 
 interface Si446xCmd {
+  /**
+   * force radio chip to change to specific state.
+   *
+   * @param     state         desired state
+   */
+  async command Si446x_device_state_t change_state(Si446x_device_state_t state, bool wait);
+
   async command bool          check_CCA();
   async command void          clr_cs();
   async command void          cmd_reply(const uint8_t *cp, uint16_t cl, uint8_t *rp, uint16_t rl);
@@ -61,7 +68,6 @@ interface Si446xCmd {
   async command bool          get_cts();
   async command uint16_t      get_packet_info();
   async command void          get_reply(uint8_t *r, uint16_t l, uint8_t cmd);
-  async command void          goto_ready();
   async event void            interrupt();
   async command void          ll_clr_ints();
   async command void          ll_getclr_ints(volatile si446x_int_state_t *intp);
@@ -76,6 +82,6 @@ interface Si446xCmd {
   async command void          start_rx_short();
   async command void          trace_radio_pend(uint8_t *pend);
   async command void          unshutdown();
-  async command bool          wait_for_cts();
+  //  async command bool          wait_for_cts();
   async command void          write_tx_fifo(uint8_t *data, uint8_t length);
 }

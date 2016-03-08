@@ -1003,10 +1003,8 @@ implementation {
      */
     stop_alarm();
     call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-    call Si446xCmd.wait_for_cts();
     call Si446xCmd.ll_clr_ints();            // clear the receive interrupts - needs work
     call Si446xCmd.start_rx();
-    call Si446xCmd.wait_for_cts();                     // wait for rx start up
     nop();
     return fsm_results(t->next_state, E_NONE);
   }
@@ -1038,11 +1036,10 @@ implementation {
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
     nop();
-    call Si446xCmd.goto_ready();
-    call Si446xCmd.wait_for_cts();           // wait for ready state, disables receiver
-    call Si446xCmd.ll_clr_ints();               // clear the receive interrupts - needs work
+    call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
+    call Si446xCmd.ll_clr_ints();            // clear the receive interrupts - needs work
     nop();
-    dp     = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
+    dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
     pkt_len = *dp + 1;              // length of data field is first byte
     call Si446xCmd.fifo_info(&rx_len, &tx_len, SI446X_FIFO_FLUSH_TX);
     if (tx_len != SI446X_EMPTY_TX_LEN)
@@ -1053,9 +1050,6 @@ implementation {
       __PANIC_RADIO(7, tx_len, pkt_len, (uint16_t) dp, 0);
     nop();
     call Si446xCmd.start_tx(pkt_len);
-    // start_tx takes a while, so need to wait for command confirmation
-    call Si446xCmd.wait_for_cts();
-    nop();
     start_alarm(SI446X_TX_TIMEOUT);
     return fsm_results(t->next_state, E_NONE);
   }

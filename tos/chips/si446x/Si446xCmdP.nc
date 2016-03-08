@@ -979,6 +979,32 @@ implementation {
 
   /**************************************************************************/
   /*
+   * ll_wait_for_cts
+   *
+   * wait for the radio chip to report that it is ready for the next command.
+   */
+  bool ll_wait_for_cts() {
+    uint16_t t0, t1;
+    t0 = call Platform.usecsRaw();
+    t1 = t0;
+    while (!ll_si446x_get_cts()) {
+      t1 = call Platform.usecsRaw();
+      ll_si446x_read_fast_status(radio_pend);
+      if ((t1-t0) > SI446X_CTS_TIMEOUT) {
+        ll_si446x_read_fast_status(radio_pend1);
+        ll_si446x_drf();
+	__PANIC_RADIO(24, t1, t0, t1-t0, 0);
+        ll_si446x_read_fast_status(radio_pend);
+	return FALSE;
+      }
+    }
+    ll_si446x_read_fast_status(radio_pend);
+    return TRUE;
+  }
+
+
+  /**************************************************************************/
+  /*
    * HW.interrupt
    */
   async event void HW.si446x_interrupt() {
@@ -1284,13 +1310,24 @@ implementation {
 
   /**************************************************************************/
   /*
-   * Si446xCmd.goto_ready
+   * Si446xCmd.change_state
    *
-   * force radio chip to the ready state
+   * Force radio chip to the specified state.
    *
+   * @param     state       new state to enter
+   *
+   * @return    final state achieved
    */
-  async command void Si446xCmd.goto_ready() {
-    call Si446xCmd.send_cmd(si446x_change_state_ready, rsp, sizeof(si446x_change_state_ready));
+
+  async command Si446x_device_state_t Si446xCmd.change_state(Si446x_device_state_t state, bool wait) {
+    uint8_t cmd[2];
+
+    cmd[0] = SI446X_CMD_CHANGE_STATE;
+    cmd[1] = state;                          // new state
+    call Si446xCmd.send_cmd(cmd, rsp, sizeof(cmd));
+    if (wait)
+      ll_wait_for_cts();           // wait for command to complete
+    return call Si446xCmd.fast_device_state();
   }
 
 
@@ -1326,32 +1363,6 @@ implementation {
     ll_si446x_read_fast_status(status);
     ll_si446x_trace_radio_pend(status);
     ll_si446x_check_weird(status);
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.wait_for_cts
-   *
-   * wait for the radio chip to report that it is ready for the next command.
-   */
-  async command bool Si446xCmd.wait_for_cts() {
-    uint16_t t0, t1;
-    t0 = call Platform.usecsRaw();
-    t1 = t0;
-    while (!ll_si446x_get_cts()) {
-      t1 = call Platform.usecsRaw();
-      ll_si446x_read_fast_status(radio_pend);
-      if ((t1-t0) > SI446X_CTS_TIMEOUT) {
-        ll_si446x_read_fast_status(radio_pend1);
-        ll_si446x_drf();
-	__PANIC_RADIO(24, t1, t0, t1-t0, 0);
-        ll_si446x_read_fast_status(radio_pend);
-	return FALSE;
-      }
-    }
-    ll_si446x_read_fast_status(radio_pend);
-    return TRUE;
   }
 
 
