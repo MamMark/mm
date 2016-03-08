@@ -242,9 +242,24 @@ const uint8_t si446x_chip_clr_cmd_err[] = { SI446X_CMD_GET_CHIP_STATUS, 0xf7 };
 
 const uint8_t si446x_device_state[] = { SI446X_CMD_REQUEST_DEVICE_STATE }; /* 33 */
 
-const uint8_t si446x_change_state_ready[] = { SI446X_CMD_CHANGE_STATE, READY }; /* 34 */
-
 const uint8_t start_rx_short_cmd[] = {  SI446X_CMD_START_RX };
+
+/*
+ * len: 0, use variable length in packet
+ * rxtimeout_state: 8, stay in rx but rearm.  We make use of the RXTIMEOUT
+ *   mechanism provided with RSSI checking.  See MODEM_RSSI_THRESH (p204a).
+ * rxvalid_state:   0, stay in rx but do not rearm.
+ * rxinvalid_state: 0, stay in rx but do not rearm.
+ */
+const uint8_t start_rx_cmd[] = {
+  SI446X_CMD_START_RX,
+  0,                                  /* channel */
+  0,                                  /* start immediate */
+  0, 0,                               /* len, use variable length */
+  RC_RX,                              /* rxtimeout, stay, good boy */
+  0,                                  /* rxvalid */
+  0,                                  /* rxinvalid */
+};
 
 /*
  * FRR_CTL_A_MODE (p0200)
@@ -1261,24 +1276,9 @@ implementation {
   /*
    * Si446xCmd.start_rx
    *
-   * start the RX quickly by using parameters set from previous
+   * start the Receiver using specified parameters
    *
-   * len: 0, use variable length in packet
-   * rxtimeout_state: 8, stay in rx but rearm.  We make use of the RXTIMEOUT
-   *   mechanism provided with RSSI checking.  See MODEM_RSSI_THRESH (p204a).
-   * rxvalid_state:   0, stay in rx but do not rearm.
-   * rxinvalid_state: 0, stay in rx but do not rearm.
    */
-  const uint8_t start_rx_cmd[] = {
-    SI446X_CMD_START_RX,
-    0,                                  /* channel */
-    0,                                  /* start immediate */
-    0, 0,                               /* len, use variable length */
-    SI446X_DEVICE_STATE_RX,             /* rxtimeout, stay, good boy */
-    0,                                  /* rxvalid */
-    0,                                  /* rxinvalid */
-  };
-
   async command void Si446xCmd.start_rx() {
     call Si446xCmd.send_cmd(start_rx_cmd, rsp, sizeof(start_rx_cmd));
   }

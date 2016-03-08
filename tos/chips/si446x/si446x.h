@@ -241,15 +241,17 @@
 //#define SI446X_CMD_REQUEST_DEVICE_STATE       0x33
 #define SI446X_DEVICE_STATE_REPLY_SIZE          2
 
-#define SI446X_DEVICE_STATE_NO_CHANGE           0x00
-#define SI446X_DEVICE_STATE_SLEEP               0x01
-#define SI446X_DEVICE_STATE_SPI_ACTIVE          0x02
-#define SI446X_DEVICE_STATE_READY               0x03
-#define SI446X_DEVICE_STATE_ALSO_READY          0x04
-#define SI446X_DEVICE_STATE_TUNE_TX             0x05
-#define SI446X_DEVICE_STATE_TUNE_RX             0x06
-#define SI446X_DEVICE_STATE_TX                  0x07
-#define SI446X_DEVICE_STATE_RX                  0x08
+typedef enum {
+	RC_NO_STATE   = 0,
+	RC_SLEEP      = 1,
+	RC_SPI_ACT    = 2,
+	RC_READY      = 3,
+	RC_READYA     = 4,
+	RC_TX_TUNE    = 5,
+	RC_RX_TUNE    = 6,
+	RC_TX         = 7,
+	RC_RX         = 8,
+} Si446x_device_state_t;
 
 //#define SI446X_CMD_READ_BUFF                  0x44
 #define SI446X_REPLY_CTS                      0xff
@@ -873,18 +875,6 @@ typedef struct {
   uint8_t cmd_err_cmd_id;
 //  uint8_t info_flags;                 /* 68 only */
 } si446x_chip_status_t;                 /* CHIP_STATUS, 0x23 */
-
-typedef enum {
-	NO_STATE   = 0,
-	SLEEP      = 1,
-	SPI_ACT    = 2,
-	READY      = 3,
-	READYA     = 4,
-	TX_TUNE    = 5,
-	RX_TUNE    = 6,
-	TX         = 7,
-	RX         = 8,
-} Si446x_device_state_t;
 
 typedef struct {
   uint32_t ts;
