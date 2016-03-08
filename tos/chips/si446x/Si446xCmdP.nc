@@ -1269,8 +1269,8 @@ implementation {
     ll_si446x_drf();
     nop();
     call Si446xCmd.send_cmd((void *) x, rsp, 5);
-  }
-
+    ll_wait_for_cts();
+ }
 
   /**************************************************************************/
   /*
@@ -1281,6 +1281,7 @@ implementation {
    */
   async command void Si446xCmd.start_rx() {
     call Si446xCmd.send_cmd(start_rx_cmd, rsp, sizeof(start_rx_cmd));
+    ll_wait_for_cts();                    // wait for rx start up
   }
 
 
@@ -1345,6 +1346,7 @@ implementation {
     flusher[0] = SI446X_CMD_FIFO_INFO;
     flusher[1] = flush_bits;
     ll_si446x_cmd_reply(flusher, 2, fifo_cnts, 2);
+    ll_wait_for_cts();
     if (rxp)
       *rxp = fifo_cnts[0];
     if (txp)
