@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, Eric B. Decker
+ * Copyright 2010, 2016 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,27 +30,43 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- * DefaultOwner functions for the SD and SPI0 are handled by the SD driver
- * in SDspP.  This configuration exports the required interfaces and wires
- * them to the appropriate h/w interface.
  *
- * SD_ArbC provides an provides the corresponding arbitrated interface to
- * SD mass storage.
+ * SD_ArbC provides an provides an arbitrated interface to the SD.
+ * Originally, we piggy-backed on the UCSI/SPI arbiter.  And explicitly
+ * tweak the UCSI when the SD gets powered up/down.  However, this made
+ * the driver cognizant of what h/w the SD is hanging off (ie. msp430
+ * ucsi dependent).
+ *
+ * Mulitple clients are supported with  automatic power up, reset, and
+ * power down when no further requests are pending.
  */
 
-#include "msp430usci.h"
 
-configuration SPI0_OwnerC {
+#ifndef SD_RESOURCE
+#define SD_RESOURCE     "Sd.Resource"
+#endif
+
+generic configuration SD_ArbC() {
   provides {
-    interface ResourceDefaultOwner;
-    interface HplMsp430UsciB as Usci;
+    interface Resource;
+    interface ResourceRequested;
+    interface SDread;
+    interface SDwrite;
+    interface SDerase;
   }
 }
 
 implementation {
-  components Msp430UsciArbB0P;
-  ResourceDefaultOwner = Msp430UsciArbB0P;
+  enum {
+    CLIENT_ID = unique(SD_RESOURCE),
+  };
 
-  components HplMsp430UsciB0C;
-  Usci = HplMsp430UsciB0C;
+  components SD_ArbP;
+  Resource                 = SD_ArbP.Resource[CLIENT_ID];
+  ResourceRequested        = SD_ArbP.ResourceRequested[CLIENT_ID];
+
+  components SDspC as SD;
+  SDread  = SD.SDread[CLIENT_ID];
+  SDwrite = SD.SDwrite[CLIENT_ID];
+  SDerase = SD.SDerase[CLIENT_ID];
 }

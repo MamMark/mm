@@ -1,5 +1,5 @@
 /**
- * Copyright 2008, 2012 (c) Eric B. Decker
+ * Copyright 2008, 2012, 2016 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,14 +37,18 @@
 #include "hardware.h"
 
 configuration PlatformC {
-  provides interface Init;
-  provides interface BootParams;
+  provides {
+    interface Init;
+    interface Platform;
+    interface BootParams;
+  }
 }
 
 implementation {
   components PlatformP, Msp430ClockC, StackC;
 
   Init = PlatformP;
+  Platform   = PlatformP;
   BootParams = PlatformP;
 
   PlatformP.Msp430ClockInit -> Msp430ClockC.Init;

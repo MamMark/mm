@@ -2,7 +2,7 @@
  * SDsp - low level Secure Digital storage driver
  * Split phase, event driven.
  *
- * Copyright (c) 2014: Eric B. Decker
+ * Copyright (c) 2014, 2016: Eric B. Decker
  * Copyright (c) 2010, Eric B. Decker, Carl Davis
  * All rights reserved.
  *
@@ -34,6 +34,8 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Uses a dedicated SPI bus and I/O port.
  */
 
 #include "msp430hardware.h"
@@ -45,6 +47,7 @@
 /*
  * when resetting.   How long to wait before trying to send the GO_OP
  * to the SD card again.  We let other things happen in the tinyOS system.
+ * Units are in millisecs (TMilli).
  */
 #define GO_OP_POLL_TIME 4
 
@@ -82,19 +85,20 @@ uint16_t sa_t3;
 
 module SDspP {
   provides {
+    interface Init as SoftwareInit @exactlyonce();
+
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
     interface SDerase[uint8_t cid];
     interface SDsa;			/* standalone */
     interface SDraw;			/* raw */
-    interface Init;
   }
   uses {
     interface ResourceDefaultOwner;
-    interface HplMsp430UsciB as Usci;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
-    interface Hpl_MM_hw as HW;
+    interface SDInterface as HW;
+    interface Platform;
     interface Panic;
   }
 }
@@ -102,8 +106,6 @@ module SDspP {
 implementation {
 
 #include "platform_spi_sd.h"
-
-MSP430REG_NORACE(TAR);
 
   /*
    * main SDsp control cells.   The code can handle at most one operation at a time,
@@ -153,7 +155,7 @@ MSP430REG_NORACE(TAR);
          uint16_t     sd_erase_busy_count;
   norace uint16_t     sd_write_busy_count;
 
-         uint32_t     op_t0_ms;
+         uint32_t     op_t0_ms;                 /* start time of various operations */
   norace uint16_t     op_t0_us;
 
   norace uint16_t     sd_pwr_on_time_us;
@@ -233,7 +235,7 @@ MSP430REG_NORACE(TAR);
 
 
 #define SG_SIZE 32
-  norace uint16_t sg_tar[SG_SIZE];
+  norace uint16_t sg_ts[SG_SIZE];
   norace uint8_t  sg[SG_SIZE];
   norace uint8_t  sg_nxt;
   
@@ -254,7 +256,7 @@ MSP430REG_NORACE(TAR);
       sd_warn(22, 0);
 
     byte = SD_SPI_RX_BUF;		/* also clears RXINT */
-    sg_tar[sg_nxt] = TAR;
+    sg_ts[sg_nxt] = call Platform.usecsRaw();
     sg[sg_nxt++] = byte;
     if (sg_nxt >= SG_SIZE)
       sg_nxt = 0;
@@ -361,14 +363,14 @@ MSP430REG_NORACE(TAR);
    */
 
   void sd_wait_dma() {
-    uint16_t max_count, t0;
+    uint16_t max_timeout, t0;
 
-    t0 = TAR;
+    t0 = call Platform.usecsRaw();
 
-    max_count = (DMA0SZ * 8);
+    max_timeout = (DMA0SZ * 8);
 
     while (1) {
-      if ((DMA0CTL & DMA_EN) == 0)	/* early bail check for completion */
+      if ((DMA0CTL & DMA_EN) == 0)	/* check for completion */
 	break;
       /*
        * We may have taken an interrupt just after checking to see if the
@@ -377,8 +379,8 @@ MSP430REG_NORACE(TAR);
        *
        * Only take the time out panic if the DMA engine is still running!
        */
-      if (((TAR - t0) > max_count) && (DMA0CTL & DMA_EN)) {
-	sd_panic(24, max_count);
+      if (((call Platform.usecsRaw() - t0) > max_timeout) && (DMA0CTL & DMA_EN)) {
+	sd_panic(24, max_timeout);
 	return;
       }
     }
@@ -492,10 +494,10 @@ MSP430REG_NORACE(TAR);
   uint8_t sd_send_command() {
     uint8_t rsp, tmp;
 
-    SD_CSN = 0;
+    call HW.sd_set_cs();
     rsp = sd_raw_cmd();
     tmp = sd_get();			/* close transaction out */
-    SD_CSN = 1;
+    call HW.sd_clr_cs();
     return rsp;
   }
 
@@ -511,11 +513,11 @@ MSP430REG_NORACE(TAR);
   uint8_t sd_send_acmd() {
     uint8_t rsp, tmp;
 
-    SD_CSN = 0;
+    call HW.sd_set_cs();
     sd_send_cmd55();
     rsp = sd_raw_cmd();
     tmp = sd_get();
-    SD_CSN = 1;
+    call HW.sd_clr_cs();
     return rsp;
   }
 
@@ -526,10 +528,14 @@ MSP430REG_NORACE(TAR);
    *
    ***********************************************************************/
 
-  command error_t Init.init() {
+  command error_t SoftwareInit.init() {
+    error_t err;
+
     sdc.majik_a = SD_MAJIK;
     sdc.cur_cid = CID_NONE;
     sdc.majik_b = SD_MAJIK;
+
+    call HW.sd_spi_init();
     return SUCCESS;
   }
 
@@ -572,7 +578,7 @@ MSP430REG_NORACE(TAR);
       return;
     }
 
-    op_t0_us = TAR;
+    op_t0_us = call Platform.usecsRaw();
     op_t0_ms = call lt.get();
 
     sdc.sd_state = SDS_RESET;
@@ -586,14 +592,14 @@ MSP430REG_NORACE(TAR);
      * command is sent.  see SDsa.reset for more info.
      */
 
-    SD_CSN = 1;				/* force to known state */
+    call HW.sd_clr_cs();                /* force to known state, no CS */
     sd_start_dma(NULL, recv_dump, 40);	/* send 40 0xff to clock SD */
     sd_wait_dma();
 
     /* Put the card in the idle state, non-zero return -> error */
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
     cmd->arg = 0;
-    last_pwr_on_first_cmd_us = TAR - sd_pwr_on_time_us;
+    last_pwr_on_first_cmd_us = call Platform.usecsRaw() - sd_pwr_on_time_us;
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
       sd_panic_idle(29, rsp);
@@ -657,7 +663,7 @@ MSP430REG_NORACE(TAR);
 	 * isn't currently any need.
 	 */
 
-	last_reset_time_us = TAR - op_t0_us;
+	last_reset_time_us = call Platform.usecsRaw() - op_t0_us;
 	if (last_reset_time_us > max_reset_time_us)
 	  max_reset_time_us = last_reset_time_us;
 
@@ -665,8 +671,9 @@ MSP430REG_NORACE(TAR);
 	if (last_reset_time_ms > max_reset_time_ms)
 	  max_reset_time_ms = last_reset_time_ms;
 
-	last_full_reset_time_us = TAR - sd_pwr_on_time_us;
+	last_full_reset_time_us = call Platform.usecsRaw() - sd_pwr_on_time_us;
 
+        nop();
 	sdc.sd_state = SDS_IDLE;
 	sdc.cur_cid = CID_NONE;
 	call ResourceDefaultOwner.release();
@@ -688,8 +695,8 @@ MSP430REG_NORACE(TAR);
 
   async event void ResourceDefaultOwner.granted() {
     sd_pwr_on_time_us = 0;
+    call HW.sd_spi_disable();
     call HW.sd_off();
-    call Usci.resetUsci_n();
   }
 
 
@@ -699,15 +706,15 @@ MSP430REG_NORACE(TAR);
 
 
   async event void ResourceDefaultOwner.requested() {
-    sd_pwr_on_time_us = TAR;
+    sd_pwr_on_time_us = call Platform.usecsRaw();
     call HW.sd_on();
-    call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
+    call HW.sd_spi_enable();
     post sd_pwr_task();
   }
 
 
   async event void ResourceDefaultOwner.immediateRequested() {
-    sd_panic(0x80, 0);
+    sd_panic(0x81, 0);
   }
 
 
@@ -756,15 +763,15 @@ MSP430REG_NORACE(TAR);
 
 
   uint16_t sd_read_status() {
-    uint8_t  tmp, rsp, stat_byte;
+    uint8_t  rsp, stat_byte;
 
-    SD_CSN = 0;
+    call HW.sd_set_cs();
     sd_cmd.cmd = SD_SEND_STATUS;
     sd_cmd.arg = 0;
     rsp = sd_raw_cmd();
     stat_byte = sd_get();
-    tmp = sd_get();			/* close it off */
-    SD_CSN = 1;
+    sd_get();                           /* close it off */
+    call HW.sd_clr_cs();
     return ((rsp << 8) | stat_byte);
   }
 
@@ -833,7 +840,7 @@ MSP430REG_NORACE(TAR);
     DMA0CTL = 0;			/* reset engines 0 and 1 */
     DMA1CTL = 0;
 
-    SD_CSN = 1;				/* deassert CS */
+    call HW.sd_clr_cs();
 
     /* Send some extra clocks so the card can finish */
     sd_get();
@@ -859,7 +866,7 @@ MSP430REG_NORACE(TAR);
     if (sdc.data_ptr[0] == 0xfe)
       sd_warn(36, sdc.data_ptr[0]);
 
-    last_read_time_us = TAR - op_t0_us;
+    last_read_time_us = call Platform.usecsRaw() - op_t0_us;
     if (last_read_time_us > max_read_time_us)
       max_read_time_us = last_read_time_us;
 
@@ -893,7 +900,7 @@ MSP430REG_NORACE(TAR);
       return EBUSY;
     }
 
-    op_t0_us = TAR;
+    op_t0_us = call Platform.usecsRaw();
     op_t0_ms = call lt.get();
 
     sdc.sd_state = SDS_READ;
@@ -917,7 +924,7 @@ MSP430REG_NORACE(TAR);
      * We've seen upto 300-400 us before it says continue.
      * kick to a task to let other folks run.
      */
-    SD_CSN = 0;				/* rassert to continue xfer */
+    call HW.sd_set_cs();		/* rassert to continue xfer */
     sd_read_tok_count = 0;
     post sd_read_task();
     return SUCCESS;
@@ -944,13 +951,13 @@ MSP430REG_NORACE(TAR);
       return;
     }
     call SDtimer.stop();		/* write busy done, kill timeout timer */
-    SD_CSN = 1;				/* deassert CS */
+    call HW.sd_clr_cs();
 
     i = sd_read_status();
     if (i)
       sd_panic(39, i);
 
-    last_write_time_us = TAR - op_t0_us;
+    last_write_time_us = call Platform.usecsRaw() - op_t0_us;
     if (last_write_time_us > max_write_time_us)
       max_write_time_us = last_write_time_us;
 
@@ -1015,7 +1022,7 @@ MSP430REG_NORACE(TAR);
       return EBUSY;
     }
 
-    op_t0_us = TAR;
+    op_t0_us = call Platform.usecsRaw();
     op_t0_ms = call lt.get();
 
     sdc.sd_state = SDS_WRITE;
@@ -1034,7 +1041,7 @@ MSP430REG_NORACE(TAR);
       return FAIL;
     }
 
-    SD_CSN = 0;				/* reassert to continue xfer */
+    call HW.sd_set_cs();		/* reassert to continue xfer */
 
     /*
      * The SD needs a write token, send it first then fire
@@ -1076,9 +1083,9 @@ MSP430REG_NORACE(TAR);
       return;
     }
     call SDtimer.stop();		/* busy done, kill timeout */
-    SD_CSN = 1;				/* deassert CS */
+    call HW.sd_clr_cs();		/* deassert CS */
 
-    last_erase_time_us = TAR - op_t0_us;
+    last_erase_time_us = call Platform.usecsRaw() - op_t0_us;
     if (last_erase_time_us > max_erase_time_us)
       max_erase_time_us = last_erase_time_us;
 
@@ -1102,7 +1109,7 @@ MSP430REG_NORACE(TAR);
       return EBUSY;
     }
 
-    op_t0_us = TAR;
+    op_t0_us = call Platform.usecsRaw();
     op_t0_ms = call lt.get();
 
     sdc.sd_state = SDS_ERASE;
@@ -1135,7 +1142,7 @@ MSP430REG_NORACE(TAR);
       return FAIL;
     }
 
-    SD_CSN = 0;				/* reassert to continue xfer */
+    call HW.sd_set_cs();		/* reassert to continue xfer */
 
     sd_erase_busy_count = 0;
     sdc.sd_state = SDS_ERASE_BUSY;
@@ -1155,7 +1162,7 @@ MSP430REG_NORACE(TAR);
    * Steps:
    *
    *    1) turn on the SD.
-   *    2) Configure USCI h/w for SPI mode.
+   *    2) Configure Spi h/w.
    *    3) need to wait the initilization delay, supply voltage builds
    *	   to bus master voltage.  doc says maximum of 1ms, 74 clocks
    *	   and supply ramp up time.  But unclear how long is the actual
@@ -1189,7 +1196,7 @@ MSP430REG_NORACE(TAR);
 
     sdsa_majik = SDSA_MAJIK;
     call HW.sd_on();
-    call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
+    call HW.sd_spi_enable();
 
     /*
      * send 800 clocks, 100 bytes.  about 240 us.  This satisfies
@@ -1228,8 +1235,8 @@ MSP430REG_NORACE(TAR);
 
 
   async command void SDsa.off() {
+    call HW.sd_spi_disable();
     call HW.sd_off();
-    call Usci.resetUsci_n();
     sdsa_majik = 0;
   }
 
@@ -1246,7 +1253,7 @@ MSP430REG_NORACE(TAR);
     cmd->arg = (blk_id << SD_BLOCKSIZE_NBITS);
 
     /* send read data command */
-    SD_CSN = 0;
+    call HW.sd_set_cs();
     rsp = sd_raw_cmd();                 /* clean, crc, send, get response */
 
     sd_read_tok_count = 0;
@@ -1282,7 +1289,7 @@ MSP430REG_NORACE(TAR);
      */
     sd_start_dma(NULL, buf, SD_BUF_SIZE);
     sd_wait_dma();
-    SD_CSN = 1;                  /* deassert the SD card */
+    call HW.sd_clr_cs();         /* deassert the SD card */
 
     sd_get();
     sd_get();
@@ -1298,7 +1305,7 @@ MSP430REG_NORACE(TAR);
   async command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
     sd_cmd_t *cmd;
     uint8_t   rsp, tmp;
-    uint16_t  t, last_tar, tar_wraps;
+    uint16_t  t, last_time, time_wraps;
 
     cmd = &sd_cmd;
     sd_compute_crc(buf);
@@ -1308,7 +1315,7 @@ MSP430REG_NORACE(TAR);
     if ((rsp = sd_send_command()))
       sd_panic(52, rsp);
 
-    SD_CSN = 0;
+    call HW.sd_set_cs();
     sd_put(SD_START_TOK);
     sd_start_dma(buf, recv_dump, SD_BUF_SIZE);
     sd_wait_dma();
@@ -1332,12 +1339,12 @@ MSP430REG_NORACE(TAR);
      * anywhere from a nominal 3ms to > 120ms when the block is thinking
      * about going bad.
      *
-     * The largest timeout we can get with just TAR is 64Ki us, which is
-     * about 64+ ms.  So we implement a wrap counter.
+     * We get usec raw time from Platform.usecsRaw().  We will timeout the
+     * write if we wrap 6 times.  This gives us at least 5 full wraps which
+     * is at least 5 * 64536 usecs (300+ ms).
      */
-    last_tar = 0;
-    TAR = 0;			/* reset to 0, easier to deal with */
-    tar_wraps = 0;
+    last_time = call Platform.usecsRaw();
+    time_wraps = 0;
     sd_write_busy_count = 0;
 
     /*
@@ -1350,15 +1357,15 @@ MSP430REG_NORACE(TAR);
       if (tmp == 0xFF)
 	break;
 
-      if ((t = TAR) < last_tar) {
-	if (++tar_wraps > 5)
-	  call Panic.panic(PANIC_MS, 54, tar_wraps, t,
+      if ((t = call Platform.usecsRaw()) < last_time) {
+	if (++time_wraps > 6)
+	  call Panic.panic(PANIC_MS, 54, time_wraps, t,
 			   (blk_id >> 16), blk_id & 0xffff);
       }
-      last_tar = t;
+      last_time = t;
     } while (1);
 
-    SD_CSN = 1;				/* deassert. */
+    call HW.sd_clr_cs();		/* deassert. */
     t = sd_read_status();
     if (t)
       call Panic.panic(PANIC_MS, 55, tmp, t, (blk_id >> 16), blk_id & 0xffff);
@@ -1372,15 +1379,13 @@ MSP430REG_NORACE(TAR);
    *************************************************************************/
 
   command void SDraw.start_op() {
-    SD_CSN = 0;
+    call HW.sd_set_cs();
   }
 
 
   command void SDraw.end_op() {
-    uint8_t tmp;
-
-    tmp = sd_get();
-    SD_CSN = 1;
+    sd_get();                           /* read one */
+    call HW.sd_clr_cs();
   }
 
 

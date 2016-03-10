@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, 2012 (c) Eric B. Decker
+ * Copyright 2010, 2012, 2016 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -85,10 +85,11 @@ noinit uint16_t boot_count;
 noinit uint16_t stack_size;
 
 
-module PlatformP{
+module PlatformP {
   provides {
     interface Init;
     interface BootParams;
+    interface Platform;
     interface GeneralIO as Led0;
     interface GeneralIO as Led1;
     interface GeneralIO as Led2;
@@ -230,4 +231,10 @@ implementation {
   async command bool Led2.isOutput() { return FALSE; };  
   
   default command error_t LedsInit.init() { return SUCCESS; }
+
+  /*
+   * See PlatformClockP.nc for assignments
+   */
+  async command uint16_t Platform.usecsRaw()   { return TAR; }
+  async command uint16_t Platform.jiffiesRaw() { return TBR; }
 }

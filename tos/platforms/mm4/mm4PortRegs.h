@@ -140,8 +140,6 @@ norace static volatile struct {
  * (assumed 1, which is CSN, CS deasserted).
  *
  * Similarily for the GPS uart pins.
- *
- * This needs to get reworked (FIX ME) for use of Hpl access routines.
  */
 #define SD_PINS_SPI   do { P3SEL |= 0x0e;   P5DIR |= 0x10; } while (0)
 #define GPS_PINS_UART do { P3SEL |= 0x30; } while (0)
