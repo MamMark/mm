@@ -44,7 +44,7 @@
 
 
 uint8_t d[514];
-bool sd_wait = 1;
+volatile bool sd_wait = 1;
 
 
 module sdP {
@@ -275,6 +275,7 @@ implementation {
   event void SDResource.granted() {
     uint16_t i;
 
+    nop();
     call SDResource.release();
     call SDsa.reset();
     cmd = call SDraw.cmd_ptr();
