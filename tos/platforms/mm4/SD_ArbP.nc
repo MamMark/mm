@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, 2016 Eric B. Decker
+ * Copyright 2016 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,43 +30,21 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * SD_ArbC provides an provides an arbitrated interface to the SD.
- * Originally, we piggy-backed on the UCSI/SPI arbiter.  And explicitly
- * tweak the UCSI when the SD gets powered up/down.  However, this made
- * the driver cognizant of what h/w the SD is hanging off (ie. msp430
- * ucsi dependent).
- *
- * Mulitple clients are supported with  automatic power up, reset, and
- * power down when no further requests are pending.
  */
-
 
 #ifndef SD_RESOURCE
 #define SD_RESOURCE     "Sd.Resource"
 #endif
 
-generic configuration SD_ArbC() {
+configuration SD_ArbP {
   provides {
-    interface Resource;
-    interface ResourceRequested;
-    interface SDread;
-    interface SDwrite;
-    interface SDerase;
+    interface Resource[uint8_t id];
+    interface ResourceRequested[uint8_t id];
   }
 }
-
 implementation {
-  enum {
-    CLIENT_ID = unique(SD_RESOURCE),
-  };
-
-  components SD_ArbP;
-  Resource                 = SD_ArbP.Resource[CLIENT_ID];
-  ResourceRequested        = SD_ArbP.ResourceRequested[CLIENT_ID];
-
-  components SDspC as SD;
-  SDread  = SD.SDread[CLIENT_ID];
-  SDwrite = SD.SDwrite[CLIENT_ID];
-  SDerase = SD.SDerase[CLIENT_ID];
+  components new FcfsArbiterC(SD_RESOURCE) as ArbiterC, SDspC;
+  Resource             = ArbiterC;
+  ResourceRequested    = ArbiterC;
+  SDspC.ResourceDefaultOwner -> ArbiterC;
 }
