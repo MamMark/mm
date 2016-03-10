@@ -45,7 +45,6 @@
 #include "hardware.h"
 #include "sensors.h"
 #include "gps.h"
-#include "sd.h"
 
 module Hpl_MM_hwP {
   provides interface Hpl_MM_hw as HW;
@@ -196,42 +195,6 @@ implementation {
   command void HW.mag_off() {
     mmP6out.mag_xy_off = 1;
     mmP6out.mag_z_off  = 1;
-  }
-
-  async command bool HW.isSDPowered() {
-    return (mmP5out.sd_pwr_off == 0);
-  }
-
-  /*
-   * see HW.sd_off for problems.
-   *
-   * assumes pin state as follows:
-   *
-   *   p5.0 sd_pwr_off	1pO
-   *   p3.1 sd_mosi	0pO
-   *   p3.2 sd_miso	0pO
-   *   p3.3 sd_sck	0pO
-   *   p5.4 sd_csn      0pO
-   *
-   *   sd_csn  1pO (holds csn high, deselected) (starts to power).
-   *   set pins to Module (mosi, miso, and sck)
-   *   power up
-   */
-
-  async command void HW.sd_on() {
-    SD_CSN = 1;				// make sure tristated
-    SD_PWR_ON;				// turn on.
-    SD_PINS_SPI;			// switch pins over
-  }
-
-  /*
-   * turn sd_off and switch pins back to port (1pI) so we don't power the
-   * chip prior to powering it off.
-   */
-  async command void HW.sd_off() {
-    SD_CSN = 1;				// tri-state by deselecting
-    SD_PWR_OFF;				// kill power
-    SD_PINS_INPUT;			// all data pins inputs
   }
 
   async command void HW.gps_on() {

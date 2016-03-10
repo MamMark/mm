@@ -32,6 +32,9 @@ PFLAGS += -I%T/platforms/mm4/sensors
 PFLAGS += -I%T/system/panic
 
 PFLAGS += -I%T/mm
+
+PFLAGS += -I%T/platforms/mm4/hardware/sd
+
 PFLAGS += -I%T/comm
 PFLAGS += -I%T/chips/msp430/timer
 PFLAGS += -I%T/chips/sd

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Eric B. Decker
+ * Copyright (c) 2008, 2010, 2016 Eric B. Decker
  * All rights reserved.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -58,9 +58,6 @@ interface Hpl_MM_hw {
   command void	  mag_on();
   command void	  mag_off();
 
-  async command bool isSDPowered();
-  async command void sd_on();
-  async command void sd_off();
   async command void gps_on();
   async command void gps_off();
 }

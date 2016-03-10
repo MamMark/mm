@@ -34,6 +34,8 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Uses a dedicated SPI bus and I/O port.
  */
 
 #include "msp430hardware.h"
@@ -45,6 +47,7 @@
 /*
  * when resetting.   How long to wait before trying to send the GO_OP
  * to the SD card again.  We let other things happen in the tinyOS system.
+ * Units are in millisecs (TMilli).
  */
 #define GO_OP_POLL_TIME 4
 
@@ -82,19 +85,19 @@ uint16_t sa_t3;
 
 module SDspP {
   provides {
+    interface Init as SoftwareInit @exactlyonce();
+
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
     interface SDerase[uint8_t cid];
     interface SDsa;			/* standalone */
     interface SDraw;			/* raw */
-    interface Init;
   }
   uses {
     interface ResourceDefaultOwner;
-    interface HplMsp430UsciB as Usci;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
-    interface Hpl_MM_hw as HW;
+    interface SDInterface as HW;
     interface Platform;
     interface Panic;
   }
@@ -491,10 +494,10 @@ implementation {
   uint8_t sd_send_command() {
     uint8_t rsp, tmp;
 
-    SD_CSN = 0;
+    call HW.sd_set_cs();
     rsp = sd_raw_cmd();
     tmp = sd_get();			/* close transaction out */
-    SD_CSN = 1;
+    call HW.sd_clr_cs();
     return rsp;
   }
 
@@ -510,11 +513,11 @@ implementation {
   uint8_t sd_send_acmd() {
     uint8_t rsp, tmp;
 
-    SD_CSN = 0;
+    call HW.sd_set_cs();
     sd_send_cmd55();
     rsp = sd_raw_cmd();
     tmp = sd_get();
-    SD_CSN = 1;
+    call HW.sd_clr_cs();
     return rsp;
   }
 
@@ -525,10 +528,14 @@ implementation {
    *
    ***********************************************************************/
 
-  command error_t Init.init() {
+  command error_t SoftwareInit.init() {
+    error_t err;
+
     sdc.majik_a = SD_MAJIK;
     sdc.cur_cid = CID_NONE;
     sdc.majik_b = SD_MAJIK;
+
+    call HW.sd_spi_init();
     return SUCCESS;
   }
 
@@ -585,7 +592,7 @@ implementation {
      * command is sent.  see SDsa.reset for more info.
      */
 
-    SD_CSN = 1;				/* force to known state */
+    call HW.sd_clr_cs();                /* force to known state, no CS */
     sd_start_dma(NULL, recv_dump, 40);	/* send 40 0xff to clock SD */
     sd_wait_dma();
 
@@ -666,6 +673,7 @@ implementation {
 
 	last_full_reset_time_us = call Platform.usecsRaw() - sd_pwr_on_time_us;
 
+        nop();
 	sdc.sd_state = SDS_IDLE;
 	sdc.cur_cid = CID_NONE;
 	call ResourceDefaultOwner.release();
@@ -687,8 +695,8 @@ implementation {
 
   async event void ResourceDefaultOwner.granted() {
     sd_pwr_on_time_us = 0;
+    call HW.sd_spi_disable();
     call HW.sd_off();
-    call Usci.resetUsci_n();
   }
 
 
@@ -700,13 +708,13 @@ implementation {
   async event void ResourceDefaultOwner.requested() {
     sd_pwr_on_time_us = call Platform.usecsRaw();
     call HW.sd_on();
-    call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
+    call HW.sd_spi_enable();
     post sd_pwr_task();
   }
 
 
   async event void ResourceDefaultOwner.immediateRequested() {
-    sd_panic(0x80, 0);
+    sd_panic(0x81, 0);
   }
 
 
@@ -757,13 +765,13 @@ implementation {
   uint16_t sd_read_status() {
     uint8_t  rsp, stat_byte;
 
-    SD_CSN = 0;
+    call HW.sd_set_cs();
     sd_cmd.cmd = SD_SEND_STATUS;
     sd_cmd.arg = 0;
     rsp = sd_raw_cmd();
     stat_byte = sd_get();
     sd_get();                           /* close it off */
-    SD_CSN = 1;
+    call HW.sd_clr_cs();
     return ((rsp << 8) | stat_byte);
   }
 
@@ -832,7 +840,7 @@ implementation {
     DMA0CTL = 0;			/* reset engines 0 and 1 */
     DMA1CTL = 0;
 
-    SD_CSN = 1;				/* deassert CS */
+    call HW.sd_clr_cs();
 
     /* Send some extra clocks so the card can finish */
     sd_get();
@@ -916,7 +924,7 @@ implementation {
      * We've seen upto 300-400 us before it says continue.
      * kick to a task to let other folks run.
      */
-    SD_CSN = 0;				/* rassert to continue xfer */
+    call HW.sd_set_cs();		/* rassert to continue xfer */
     sd_read_tok_count = 0;
     post sd_read_task();
     return SUCCESS;
@@ -943,7 +951,7 @@ implementation {
       return;
     }
     call SDtimer.stop();		/* write busy done, kill timeout timer */
-    SD_CSN = 1;				/* deassert CS */
+    call HW.sd_clr_cs();
 
     i = sd_read_status();
     if (i)
@@ -1033,7 +1041,7 @@ implementation {
       return FAIL;
     }
 
-    SD_CSN = 0;				/* reassert to continue xfer */
+    call HW.sd_set_cs();		/* reassert to continue xfer */
 
     /*
      * The SD needs a write token, send it first then fire
@@ -1075,7 +1083,7 @@ implementation {
       return;
     }
     call SDtimer.stop();		/* busy done, kill timeout */
-    SD_CSN = 1;				/* deassert CS */
+    call HW.sd_clr_cs();		/* deassert CS */
 
     last_erase_time_us = call Platform.usecsRaw() - op_t0_us;
     if (last_erase_time_us > max_erase_time_us)
@@ -1134,7 +1142,7 @@ implementation {
       return FAIL;
     }
 
-    SD_CSN = 0;				/* reassert to continue xfer */
+    call HW.sd_set_cs();		/* reassert to continue xfer */
 
     sd_erase_busy_count = 0;
     sdc.sd_state = SDS_ERASE_BUSY;
@@ -1154,7 +1162,7 @@ implementation {
    * Steps:
    *
    *    1) turn on the SD.
-   *    2) Configure USCI h/w for SPI mode.
+   *    2) Configure Spi h/w.
    *    3) need to wait the initilization delay, supply voltage builds
    *	   to bus master voltage.  doc says maximum of 1ms, 74 clocks
    *	   and supply ramp up time.  But unclear how long is the actual
@@ -1188,7 +1196,7 @@ implementation {
 
     sdsa_majik = SDSA_MAJIK;
     call HW.sd_on();
-    call Usci.setModeSpi((msp430_spi_union_config_t *) &sd_full_config);
+    call HW.sd_spi_enable();
 
     /*
      * send 800 clocks, 100 bytes.  about 240 us.  This satisfies
@@ -1227,8 +1235,8 @@ implementation {
 
 
   async command void SDsa.off() {
+    call HW.sd_spi_disable();
     call HW.sd_off();
-    call Usci.resetUsci_n();
     sdsa_majik = 0;
   }
 
@@ -1245,7 +1253,7 @@ implementation {
     cmd->arg = (blk_id << SD_BLOCKSIZE_NBITS);
 
     /* send read data command */
-    SD_CSN = 0;
+    call HW.sd_set_cs();
     rsp = sd_raw_cmd();                 /* clean, crc, send, get response */
 
     sd_read_tok_count = 0;
@@ -1281,7 +1289,7 @@ implementation {
      */
     sd_start_dma(NULL, buf, SD_BUF_SIZE);
     sd_wait_dma();
-    SD_CSN = 1;                  /* deassert the SD card */
+    call HW.sd_clr_cs();         /* deassert the SD card */
 
     sd_get();
     sd_get();
@@ -1307,7 +1315,7 @@ implementation {
     if ((rsp = sd_send_command()))
       sd_panic(52, rsp);
 
-    SD_CSN = 0;
+    call HW.sd_set_cs();
     sd_put(SD_START_TOK);
     sd_start_dma(buf, recv_dump, SD_BUF_SIZE);
     sd_wait_dma();
@@ -1357,7 +1365,7 @@ implementation {
       last_time = t;
     } while (1);
 
-    SD_CSN = 1;				/* deassert. */
+    call HW.sd_clr_cs();		/* deassert. */
     t = sd_read_status();
     if (t)
       call Panic.panic(PANIC_MS, 55, tmp, t, (blk_id >> 16), blk_id & 0xffff);
@@ -1371,13 +1379,13 @@ implementation {
    *************************************************************************/
 
   command void SDraw.start_op() {
-    SD_CSN = 0;
+    call HW.sd_set_cs();
   }
 
 
   command void SDraw.end_op() {
     sd_get();                           /* read one */
-    SD_CSN = 1;
+    call HW.sd_clr_cs();
   }
 
 

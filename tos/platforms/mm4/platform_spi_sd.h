@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 (c) Eric Decker
+ * Copyright 2010, 2016 (c) Eric Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -108,39 +108,5 @@ MSP430REG_NORACE(DMA1SZ);
 
 #define DMA0_ENABLE_INT		(DMA0CTL |= DMAIE)
 #define DMA0_DISABLE_INT	(DMA0CTL &= ~DMAIE)
-
-
-/*
- * The MM4 is clocked at 8MHz.  (could go up to 16MHz)
- *
- * There is documentation that says initilization on the SD
- * shouldn't be done any faster than 400 KHz to be compatible
- * with MMC which is open drain.  We don't have to be compatible
- * with that.  We've tested at 8MHz and everything seems to
- * work fine.
- *
- * Normal operation occurs at 8MHz.  The usci on the 2618 can be
- * run as fast as smclk which can be set to be the main dco frequency
- * which is at 8MHz.  Currently we run at 8MHz.   The SPI runs at
- * DCO/1 to maximize its performance.  Timers run at DCO/8 (max
- * divisor) to get 1uis ticks.  If we increase DCO to 16 MHz there
- * is a problem with the main timer because the max divisor is
- * /8.  This impacts timing for all the timers.
- */
-
-// #define SPI_400K_DIV 21
-#define SPI_8MIHZ_DIV    1
-#define SPI_FULL_SPEED_DIV SPI_8MIHZ_DIV
-
-const msp430_spi_union_config_t sd_full_config = { {
-  ubr		: SPI_8MIHZ_DIV,	/* full speed */
-  ucmode	: 0,			/* 3 pin master, no ste */
-  ucmst		: 1,
-  uc7bit	: 0,			/* 8 bit */
-  ucmsb		: 1,			/* msb first, compatible with msp430 usart */
-  ucckpl	: 0,			/* inactive state low */
-  ucckph	: 1,			/* data captured on rising, changed falling */
-  ucssel	: 2,			/* smclk */
-  } };
 
 #endif    /* _H_PLATFORM_SPI_SD_H_ */
