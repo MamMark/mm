@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 (c) Eric B. Decker
+ * Copyright 2014, 2016 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,12 +32,12 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @author Eric B. Decker <cire831@gmail.com>
+ *
+ * Must be included from within an implementation block.
  */
 
 #ifndef _H_PLATFORM_SPI_SD_H_
 #define _H_PLATFORM_SPI_SD_H_
-
-#include "msp430usci.h"
 
 /*
  * Use better names for when we hit the SPI module hardware directly.
@@ -56,10 +56,10 @@
  * SD_SPI_OE_REG:	where the oe bit lives
  */
 
-MSP430REG_NORACE(IFG2);
-MSP430REG_NORACE(UCB0TXBUF);
-MSP430REG_NORACE(UCB0RXBUF);
-MSP430REG_NORACE(UCB0STAT);
+MSP430REG_NORACE(UCA1IFG);
+MSP430REG_NORACE(UCA1TXBUF);
+MSP430REG_NORACE(UCA1RXBUF);
+MSP430REG_NORACE(UCA1STAT);
 
 MSP430REG_NORACE(DMACTL0);
 MSP430REG_NORACE(DMA0CTL);
@@ -74,20 +74,20 @@ MSP430REG_NORACE(DMA1SA);
 MSP430REG_NORACE(DMA1SZ);
 
 
-/* set for msp430f2618, usci_b0 spi */
-#define SD_SPI_IFG		(IFG2)
-#define SD_SPI_TX_RDY		(IFG2 & UCB0TXIFG)
-#define SD_SPI_TX_BUF		(UCB0TXBUF)
-#define SD_SPI_RX_RDY		(IFG2 & UCB0RXIFG)
-#define SD_SPI_RX_BUF		(UCB0RXBUF)
-#define SD_SPI_BUSY		(UCB0STAT & UCBUSY)
-#define SD_SPI_CLR_RXINT	(IFG2 &=  ~UCB0RXIFG)
-#define SD_SPI_CLR_TXINT	(IFG2 &=  ~UCB0TXIFG)
-#define SD_SPI_SET_TXINT	(IFG2 |=   UCB0TXIFG)
-#define SD_SPI_CLR_BOTH		(IFG2 &= ~(UCB0RXIFG | UCB0TXIFG))
-#define SD_SPI_OVERRUN		(UCB0STAT & UCOE)
-#define SD_SPI_CLR_OE		(UCB0RXBUF)
-#define SD_SPI_OE_REG		(UCB0STAT)
+/* set for msp430f5438a, usci_a1 spi */
+#define SD_SPI_IFG		(UCA1IFG)
+#define SD_SPI_TX_RDY		(UCA1IFG & UCTXIFG)
+#define SD_SPI_TX_BUF		(UCA1TXBUF)
+#define SD_SPI_RX_RDY		(UCA1IFG & UCRXIFG)
+#define SD_SPI_RX_BUF		(UCA1RXBUF)
+#define SD_SPI_BUSY		(UCA1STAT & UCBUSY)
+#define SD_SPI_CLR_RXINT	(UCA1IFG &=  ~UCRXIFG)
+#define SD_SPI_CLR_TXINT	(UCA1IFG &=  ~UCTXIFG)
+#define SD_SPI_SET_TXINT	(UCA1IFG |=   UCTXIFG)
+#define SD_SPI_CLR_BOTH		(UCA1IFG &= ~(UCRXIFG | UCTXIFG))
+#define SD_SPI_OVERRUN		(UCA1STAT & UCOE)
+#define SD_SPI_CLR_OE		(UCA1RXBUF)
+#define SD_SPI_OE_REG		(UCA1STAT)
 
 /*
  * DMA control defines.  Makes things more readable.
@@ -101,40 +101,15 @@ MSP430REG_NORACE(DMA1SZ);
 #define DMA_SRC_NC    DMASRCINCR_0
 #define DMA_SRC_INC   DMASRCINCR_3
 
-#define DMA0_TSEL_B0RX (12<<0)	/* DMA chn 0, UCB0RXIFG */
-#define DMA1_TSEL_B0RX (12<<4)	/* DMA chn 1, UCB0RXIFG */
-#define DMA0_TSEL_B0TX (13<<0)	/* DMA chn 0, UCB0TXIFG */
-#define DMA1_TSEL_B0TX (13<<4)	/* DMA chn 1, UCB0TXIFG */
+#define DMA0_TSEL_A1RX (20<<0)	/* DMA chn 0, UCA1RXIFG */
+#define DMA1_TSEL_A1RX (20<<4)	/* DMA chn 1, UCA1RXIFG */
+#define DMA0_TSEL_A1TX (21<<0)	/* DMA chn 0, UCA1TXIFG */
+#define DMA1_TSEL_A1TX (21<<4)	/* DMA chn 1, UCA1TXIFG */
+
+#define DMA0_TSEL_RX_TRIG       DMA0_TSEL_A1RX
+#define DMA1_TSEL_RX_TRIG       DMA1_TSEL_A1RX
 
 #define DMA0_ENABLE_INT		(DMA0CTL |= DMAIE)
 #define DMA0_DISABLE_INT	(DMA0CTL &= ~DMAIE)
-
-
-/*
- * The MM5a is clocked at 8MHz.
- *
- * There is documentation that says initilization on the SD
- * shouldn't be done any faster than 400 KHz to be compatible
- * with MMC which is open drain.  We don't have to be compatible
- * with that.  We've tested at 8MHz and everything seems to
- * work fine.
- */
-
-// #define SPI_400K_DIV 21
-#define SPI_8MIHZ_DIV    1
-#define SPI_FULL_SPEED_DIV SPI_8MIHZ_DIV
-
-/* MM5, 5438a, USCI, SPI, sc interface
- * phase 1, polarity 0, msb, 8 bit, master,
- * mode 3 pin, sync.
- */
-const msp430_usci_config_t sd_spi_config = {
-  ctl0 : (UCCKPH | UCMSB | UCMST | UCSYNC),
-  ctl1 : UCSSEL__SMCLK,
-  br0  : SPI_8MHZ_DIV,		/* 8MHz -> 8 MHz */
-  br1  : 0,
-  mctl : 0,                     /* Always 0 in SPI mode */
-  i2coa: 0
-};
 
 #endif    /* _H_PLATFORM_SPI_SD_H_ */

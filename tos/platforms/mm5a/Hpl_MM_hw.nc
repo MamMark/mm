@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Eric B. Decker
+ * Copyright (c) 2014-2016 Eric B. Decker
  * All rights reserved.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -24,15 +24,6 @@
  */
  
 interface Hpl_MM_hw {
-  async command bool si446x_cts();
-  async command bool si446x_irq();
-  async command void si446x_shutdown();
-  async command void si446x_unshutdown();
-  async command void si446x_set_cs();
-  async command void si446x_clr_cs();
-  async command void si446x_set_low_pwr();
-  async command void si446x_set_high_pwr();
-
   async command bool mems_gyro_drdy();
   async command bool mems_gyro_irq();
   async command bool mems_mag_drdy();
@@ -45,14 +36,6 @@ interface Hpl_MM_hw {
   async command void mems_gyro_clr_cs();
   async command void mems_mag_set_cs();
   async command void mems_mag_clr_cs();
-
-  async command void sd_set_access();
-  async command void sd_clr_access();
-  async command bool sd_got_access();
-  async command void sd_pwr_on();
-  async command void sd_pwr_off();
-  async command void sd_set_cs();
-  async command void sd_clr_cs();
 
   async command bool adc_drdy();
   async command void adc_set_start();
