@@ -60,14 +60,6 @@ implementation {
   async command void HW.mems_mag_set_cs()    { MAG_CSN = 0; }
   async command void HW.mems_mag_clr_cs()    { MAG_CSN = 1; }
 
-  async command void HW.sd_set_access()      { SD_ACCESS_ENA_N = 0; }
-  async command void HW.sd_clr_access()      { SD_ACCESS_ENA_N = 1; }
-  async command bool HW.sd_got_access()      { return !SD_ACCESS_SENSE; }
-  async command void HW.sd_pwr_on()          { SD_PWR_ENA = 1; }
-  async command void HW.sd_pwr_off()         { SD_PWR_ENA = 0; }
-  async command void HW.sd_set_cs()          { SD_CSN = 0; }          
-  async command void HW.sd_clr_cs()          { SD_CSN = 1; }
-
   async command bool HW.adc_drdy()           { return !ADC_DRDY_N; }
   async command void HW.adc_set_start()      { ADC_START = 1; }
   async command void HW.adc_clr_start()      { ADC_START = 0; }

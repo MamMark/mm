@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 (c) Eric B. Decker
+ * Copyright 2014, 2016 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,12 +32,12 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @author Eric B. Decker <cire831@gmail.com>
+ *
+ * Must be included from within an implementation block.
  */
 
 #ifndef _H_PLATFORM_SPI_SD_H_
 #define _H_PLATFORM_SPI_SD_H_
-
-#include "msp430usci.h"
 
 /*
  * Use better names for when we hit the SPI module hardware directly.
@@ -108,33 +108,5 @@ MSP430REG_NORACE(DMA1SZ);
 
 #define DMA0_ENABLE_INT		(DMA0CTL |= DMAIE)
 #define DMA0_DISABLE_INT	(DMA0CTL &= ~DMAIE)
-
-
-/*
- * The MM5a is clocked at 8MHz.
- *
- * There is documentation that says initilization on the SD
- * shouldn't be done any faster than 400 KHz to be compatible
- * with MMC which is open drain.  We don't have to be compatible
- * with that.  We've tested at 8MHz and everything seems to
- * work fine.
- */
-
-// #define SPI_400K_DIV 21
-#define SPI_8MIHZ_DIV    1
-#define SPI_FULL_SPEED_DIV SPI_8MIHZ_DIV
-
-/* MM5, 5438a, USCI, SPI, sc interface
- * phase 1, polarity 0, msb, 8 bit, master,
- * mode 3 pin, sync.
- */
-const msp430_usci_config_t sd_spi_config = {
-  ctl0 : (UCCKPH | UCMSB | UCMST | UCSYNC),
-  ctl1 : UCSSEL__SMCLK,
-  br0  : SPI_8MHZ_DIV,		/* 8MHz -> 8 MHz */
-  br1  : 0,
-  mctl : 0,                     /* Always 0 in SPI mode */
-  i2coa: 0
-};
 
 #endif    /* _H_PLATFORM_SPI_SD_H_ */

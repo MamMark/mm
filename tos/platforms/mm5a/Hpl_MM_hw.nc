@@ -37,14 +37,6 @@ interface Hpl_MM_hw {
   async command void mems_mag_set_cs();
   async command void mems_mag_clr_cs();
 
-  async command void sd_set_access();
-  async command void sd_clr_access();
-  async command bool sd_got_access();
-  async command void sd_pwr_on();
-  async command void sd_pwr_off();
-  async command void sd_set_cs();
-  async command void sd_clr_cs();
-
   async command bool adc_drdy();
   async command void adc_set_start();
   async command void adc_clr_start();
