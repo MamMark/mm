@@ -1,29 +1,27 @@
 Working List:
 
-- Need SD port for mm5a
- (eric)
-
-- Radio Op Tracing.
-
-- Reorg Radio fsm state tracing
- (dan)
+- Port GPS code to mm5a
 
 - Clean up Panic state saving.  1st entry
  (eric)
 
-- New Toolchain (TI)
+- Radio Op Tracing.
 
 - S_SDN (E_STANDBY) -> ... -> S_READY -> S_STANDBY
  (dan)
 
-- Port Mems Code to current tree
- (eric, in progress)
-
-- Port GPS code to mm5a
-
 - remove preamble
  (dan)
 
+- New Toolchain (TI)
+
+
+* - Need SD port for mm5a
+ (eric, done)
+* - Port Mems Code to current tree
+ (eric, done)
+* - Reorg Radio fsm state tracing
+ (dan)
 
 
 General
