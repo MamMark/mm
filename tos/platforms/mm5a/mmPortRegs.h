@@ -343,6 +343,48 @@ norace static volatile struct {
 #define SD_PWR_ENA              mmP7out.sd_pwr_ena
 #define SD_CSN                  mmP8out.sd_csn
 
+/*
+ * The mm5 local processor (lp) runs at 1.8V while the uSD runs at 3.3V.
+ * All the h/w connections from the lp to the uSD go through a level
+ * shifter.  We can prevent the uSD from being powered by inputs by simply
+ * turning off the OE on level shifter.  This is done by simply setting
+ * SD_ACCESS_ENA_N to a 1.
+ *
+ * However, we still switch the pins over to input to minimize power
+ * (needs to be verified, FIX ME).
+
+ * SD_PINS_INPUT will set SD/SPI pins to inputs.  (no longer connected to
+ * the SPI module.  The values of these pins doesn't matter (set to inputs).
+ * We also set SD_CSN to an input to avoid powering the chip.
+ *
+ * On the mm5a/b, the uSD is behind a level shifter and when we turn the OE*
+ * off it will isolate and not power the chip.  If we set the lp's pins to
+ * inputs does this save any power?  FIXME.
+ *
+ * The cpu definitions for the msp430f5438a, circa 2012, ver 1.4,
+ * __MSP430_HEADER_VERSION__ 1064, doesn't define P3SEL.  Rather it defines the
+ * 16 bit aggragate port (PBSEL).  Between msp430hardware.h and the TI include
+ * file this gets sorted out (P3SEL is renamed to be PBSEL_L).
+ *
+ * Similarily for P5 (-> PC and P8 -> PD).
+ * 21 -> PA, 43 -> PB, 65 -> PC, 87 -> PD, 109 -> PE
+ *
+ * p3sel -> pbsel_l, p5sel -> pcsel_l, p8dir -> pddir_h
+ */
+
+#define SD_PINS_INPUT  do { P3SEL &= ~0x40; P5SEL &= ~0xc0; P8DIR &= ~0x04; } while (0)
+
+/*
+ * SD_PINS_SPI will connect the 3 spi lines on the SD to the SPI.
+ * And switches the sd_csn (8.2) from input to output,  the value should be
+ * a 1 which deselects the sd and tri-states.
+ *
+ * 3.6, CLK, 5.6-7 SDI, SDO set to SPI Module, SD_CSN switched to output
+ * (assumed 1, which is CSN, CS deasserted).
+ */
+#define SD_PINS_SPI   do { P3SEL |= 0x40; P5SEL |= 0xc0; P8DIR |= 0x04; } while (0)
+
+
 /* adc */
 #define ADC_DRDY_N              mmP1in.adc_drdy_n
 #define ADC_START               mmP4out.adc_start
