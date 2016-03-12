@@ -34,13 +34,6 @@ typedef enum {
 
   T_RS                  = 20,
 
-  T_R_SFD_UP            = 32,
-  T_R_SFD_DOWN,
-  T_R_SFD_OVW,
-  T_R_SFD_FILL,
-  T_R_SFD_DRAIN,
-  T_R_SFD_FLUSH,
-
 //  T_R_EXCEP,
 //  T_R_EXCEP_1,
 //  T_R_TX_FD,
