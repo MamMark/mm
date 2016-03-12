@@ -339,7 +339,7 @@ implementation {
       DMA1SA  = (uint16_t) &idle_byte;
     }
 
-    DMACTL0 = DMA0_TSEL_B0RX | DMA1_TSEL_B0RX;
+    DMACTL0 = DMA0_TSEL_RX_TRIG | DMA1_TSEL_RX_TRIG;
 
     DMA0CTL |= DMA_EN;			/* must be done after TSELs get set */
     DMA1CTL |= DMA_EN;
