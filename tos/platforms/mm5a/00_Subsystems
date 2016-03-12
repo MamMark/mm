@@ -116,10 +116,8 @@ uSD - Storage System
 
   Power and Voltage Levels:
 
-    The uSD is powered 
-    The uSD operates at 3.3V (3V3 rail on, pwr_3v3_ena) and  and needs the 3V3 rail turned on via pwr_3v3_ena.
-    Logic level translation between the processor (5438a, 1.8v) and the uSD
-    (3.3V) is done.
+    The uSD operates at 3.3V (3V3 rail on, pwr_3v3_ena). Logic level translation
+    between the processor (5438a, 1.8v) and the uSD (3.3V) is done.
 
   Pins:
             (usd pin) <usd spi mode>/<usd sd mode>
