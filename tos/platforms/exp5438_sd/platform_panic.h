@@ -20,15 +20,15 @@
  */
 
 enum {
-#ifdef notdef
-  PANIC_ADC,
-  PANIC_MISC,
-  PANIC_COMM,
+  PANIC_ADC  = PANIC_HC_START,          /* 0x70, see panic.h */
   PANIC_MS,
   PANIC_SS,
   PANIC_SS_RECOV,
+  PANIC_GPS,
+#ifdef notdef
+  PANIC_MISC,
+  PANIC_COMM,
 #endif
-  PANIC_GPS = PANIC_HC_START,		/* 0x10, see panic.h */
 
 #ifdef notdef
   PANIC_SNS,

@@ -1,9 +1,9 @@
 /**
  *
- * Copyright 2015 (c) Eric B. Decker
+ * Copyright 2016 (c) Eric B. Decker
  * All rights reserved.
  *
- * @author Eric B. Decker
+ * @author Eric B. Decker, <cire831@gmail.com>
  */
 
 #ifndef __PLATFORM_TRACE_H__
@@ -34,13 +34,6 @@ typedef enum {
   T_SSW_GRP_TIME	= 19,
 
   T_RS                  = 20,
-
-  T_R_SFD_UP            = 32,
-  T_R_SFD_DOWN,
-  T_R_SFD_OVW,
-  T_R_SFD_FILL,
-  T_R_SFD_DRAIN,
-  T_R_SFD_FLUSH,
 
 //  T_R_EXCEP,
 //  T_R_EXCEP_1,
