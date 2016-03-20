@@ -1,13 +1,12 @@
 #-*-Makefile-*- vim:syntax=make
 #
-# exp5438_gps is based on msp430f5438a.  Eval-430f5438 board.
-# see tos/platform/exp5438_gps/hardware.h for how the pins are assigned.
-# Origin ORG4472 is wired in at various of the break out pins.
+# exp5438_sd is based on msp430f5438a.  Eval-430f5438 board.
+# see tos/platform/exp5438_sd/hardware.h for how the pins are assigned.
 #
-# support/make/platforms/exp5438_gps.platform sets what cpu we are using.
+# support/make/platforms/exp5438_sd.platform sets what cpu we are using.
 #
 
-TARGET = exp5438_gps
+TARGET = exp5438_sd
 PLATFORMDIR = $(MM_ROOT)/tos/platforms/$(TARGET)
 
 BUILD_NUM_FILE = $(PLATFORMDIR)/_Build
@@ -16,7 +15,7 @@ BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_N
 PFLAGS += -D_BUILD=$(BUILD_NUM)
 
 PFLAGS += -I$(MM_ROOT)/include
-$(call TOSMake_include_platform,exp5438_gps)
+$(call TOSMake_include_platform,exp5438_sd)
 $(call TOSMake_include_make_platform,msp)
 
 build_num: FORCE
@@ -24,5 +23,5 @@ build_num: FORCE
 	@echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)) > $(BUILD_NUM_FILE)
 	@echo BUILD: $(BUILD_NUM)
 
-exp5438_gps: build_num $(BUILD_DEPS)
+exp5438_sd: build_num $(BUILD_DEPS)
         @:
