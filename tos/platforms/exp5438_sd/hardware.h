@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014-2015 Eric B. Decker
+ * Copyright (c) 2012, 2014-2016 Eric B. Decker
  * Copyright (c) 2009-2010 People Power Co.
  * All rights reserved.
  *
@@ -35,6 +35,9 @@
  * @author Peter Bigot
  * @author Eric B. Decker <cire831@gmail.com>
  *
+ * 3/19/2016: Eric B. Decker.  Add SD interface on USCI B1.  Based on
+ * exp5438_gps.  steal gps port for SD.
+ *
  * 04/29/2014: Eric B. Decker.  Added SiLabs Si4463 E10-M4463D 433MHz
  * radio module (A3, P10).
  *
@@ -67,10 +70,19 @@
  * another nomenclature used is <value><function><direction>, 0pO (0 (zero), port, Output),
  *    xpI (don't care, port, Input), mI (module input).
  *
- * port 1.0	0pO	led0    		port 4.0	0pO    gps_on_off
- *       .1	0pO	led1    		      .1	1pO    gps_reset_n (nRST)
- *       .2	0pI	si446x_cts     		      .2	1pO    gps_csn (nRTS)
- *       .3     0pI	          		      .3	0pI    gps_awake
+ * uca0: (5c0)
+ * ucb0: (5e0)
+ * uca1: (600)
+ * ucb1: (620) usd    (spi3)
+ * uca2: (640)
+ * ucb2: (660)
+ * uca3: (680) si446x (spi6)  radio, Si4468
+ * ucb3: (6a0)
+ *
+ * port 1.0	0pO	led0    		port 4.0	1pI    gps
+ *       .1	0pO	led1    		      .1	1pI    gps
+ *       .2	0pI	si446x_cts     		      .2	1pO    usd_csn
+ *       .3     0pI	          		      .3	0pI    gps
  *       .4	0pI	si446x_irqn (int, fe)	      .4	0pI
  *       .5	0pI	             		      .5	0pI
  *       .6	0pI	            		      .6	0pI
@@ -80,8 +92,8 @@
  *       .1	0pI	          		      .1	0pI
  *       .2	0pI	                 	      .2	0pI
  *       .3	0pI	           		      .3	0pI
- *       .4	0pI	        		      .4	0pI    gps_somi (tx,   B1SOMI)
- *       .5	0pI	        		      .5	0pI    gps_sclk (nCTS, B1CLK)
+ *       .4	0pI	        		      .4	0pI    usd_somi (do,   B1SOMI)
+ *       .5	0pI	        		      .5	0pO    usd_sclk (sclk, B1CLK)
  *       .6	0pI	       			      .6	0pI
  *       .7	0pI	       			      .7	0pI
  *
@@ -92,7 +104,7 @@
  *       .4	0pO	led2   			      .4	0pI
  *       .5	0pI	       			      .5	0pI
  *       .6	0pI	                	      .6	0pI
- *       .7	0pI	gps_simo (rx, B1SIMO)  	      .7	0pI
+ *       .7	0pO	usd_simo (di, B1SIMO)  	      .7	0pI
  *
  * port 10.0	0pO	si446x_sclk (a3sclk)	port 11.0	0pI
  *        .1	0pI	(nc) xi2c_sda (b3sda)  	       .1	0pI

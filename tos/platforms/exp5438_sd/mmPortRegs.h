@@ -1,5 +1,5 @@
 /*
- * Copyright 2012, 2014-2015 (c) Eric B. Decker
+ * Copyright 2012, 2014-2016 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -96,7 +96,7 @@
     uint8_t led2	    : 1;
     uint8_t p35		    : 1;
     uint8_t p36		    : 1;
-    uint8_t gps_mosi	    : 1;	/* x.y 3.7, spi B1MOSI */
+    uint8_t usd_mosi	    : 1;	/* x.y 3.7, spi B1MOSI */
   } PACKED mmP3out asm("0x0222");
 
   static volatile struct {
@@ -116,7 +116,7 @@
 norace static volatile struct {
     uint8_t gps_on_off	    : 1;	/* x.y 4.0, output */
     uint8_t gps_reset_n	    : 1;	/* x.y 4.1, output */
-    uint8_t gps_csn	    : 1;	/* x.y 4.2, output */
+    uint8_t usd_csn	    : 1;	/* x.y 4.2, output */
     uint8_t p43		    : 1;
     uint8_t p44		    : 1;
     uint8_t p45		    : 1;
@@ -129,8 +129,8 @@ norace static volatile struct {
     uint8_t p51		    : 1;
     uint8_t p52		    : 1;
     uint8_t p53		    : 1;
-    uint8_t gps_miso	    : 1;	/* x.y 5.4, spi B1MISO */
-    uint8_t gps_sclk	    : 1;	/* x.y 5.5, spi B1SCLK */
+    uint8_t usd_miso	    : 1;	/* x.y 5.4, spi B1MISO */
+    uint8_t usd_sclk	    : 1;	/* x.y 5.5, spi B1SCLK */
     uint8_t p56		    : 1;
     uint8_t p57		    : 1;
   } PACKED mmP5out asm("0x0242");
@@ -217,13 +217,12 @@ norace
     uint8_t p117	    : 1;
   } PACKED mmP11out asm("0x02A2");
 
-/* gps -gsd4e/org */
-#define GSD4E_GPS_AWAKE     (P4IN & GSD4E_GPS_AWAKE_BIT)
-#define GSD4E_GPS_SET_ONOFF (mmP4out.gps_on_off = 1)
-#define GSD4E_GPS_CLR_ONOFF (mmP4out.gps_on_off = 0)
-#define GSD4E_GPS_RESET     (mmP4out.gps_reset_n = 0)
-#define GSD4E_GPS_UNRESET   (mmP4out.gps_reset_n = 1)
-#define GSD4E_GPS_CSN        mmP4out.gps_csn
+/* micro SD */
+#define SD_CSN                  mmP4out.usd_csn
+#define SD_PINS_INPUT  do { P3SEL &= ~0x80; P4DIR &= ~0x04; \
+                            P5SEL &= ~0x30; } while (0)
+#define SD_PINS_SPI    do { P3SEL |= 0x80;  P4DIR |= 0x04; \
+                            P5SEL |= 0x30; } while (0)
 
 #define TELL mmP10out.tell
 #define TOGGLE_TELL do { TELL = 1; TELL = 0; } while(0)
