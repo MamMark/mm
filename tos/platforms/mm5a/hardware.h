@@ -70,8 +70,8 @@
  * ucb3: (6a0)
  *
  * port 1.0	0pI	si446x_irqn    		port 7.0	0pI     xin
- *       .1	0pI	gyro_drdy      		      .1	0pI     xout
- *       .2	0pI	             		      .2	0pI
+ * 200 I .1	0pI	gyro_drdy      		      .1	0pI     xout
+ * 202 O .2	0pI	             		      .2	0pI
  *       .3     0pI	usd_access_sense	      .3	0pO     usd_pwr_ena
  *       .4	0pI	adc_drdy_n     		      .4	0pI
  *       .5	1pO	usd_access_ena_n	      .5	0pO     mux2x_A
@@ -79,8 +79,8 @@
  *       .7	0pI	dock_irq       		      .7	0pI
  *
  * port 2.0	0pI	mag_drdy       		port 8.0	0pI
- *       .1	0pI	          		      .1	0pI
- *       .2	0pI	gyro_irq               	      .2	1pI     usd_csn
+ *       .1	0pI	          		261 I .1	0pI
+ *       .2	0pI	gyro_irq               	263 O .2	1pI     usd_csn
  *       .3	0pI	mag_irq        		      .3	0pI
  *       .4	0pI	accel_int1     		      .4	0pI
  *       .5	0pI	        		      .5	0pI
@@ -88,8 +88,8 @@
  *       .7	0pI	       			      .7	1pO     si446x_sdn
  *
  * port 3.0	0mO	dock_clk  (uca0)	port 9.0	0pI     si446x_sclk (uca2)
- *       .1	0mO	mems_mosi (ucb0)              .1	0pI     temp_sda    (ucb2)
- *       .2	0mI	mems_miso (ucb0)              .2	0pI     temp_scl    (ucb2)
+ *       .1	0mO	mems_mosi (ucb0)        280 I .1	0pI     temp_sda    (ucb2)
+ *       .2	0mI	mems_miso (ucb0)        282 O .2	0pI     temp_scl    (ucb2)
  *       .3	0mO	mems_clk  (ucb0) 	      .3	0pI
  *       .4	0mO	dock_mosi (uca0)	      .4	0pO     si446x_mosi (uca2)
  *       .5	0mI	dock_miso (uca0)	      .5	0pI     si446x_miso (uca2)
@@ -97,8 +97,8 @@
  *       .7	0pI     adc_mosi  (ucb1)       	      .7	1pO     si446x_csn
  *
  * port  4.0	0pI	                        port 10.0	0pO     gps_clk     (uca3)
- *        .1	1pO	accel_csn (ucb0)               .1	0pO     temp_pwr
- *        .2	0pI	                               .2	0pI
+ *        .1	1pO	accel_csn (ucb0)        281 I  .1	0pO     temp_pwr
+ *        .2	0pI	                        283 O  .2	0pI
  *        .3	0pI	                               .3	0pI
  *        .4	1pO	gyro_csn  (ucb0)               .4	0pO     gps_mosi   (uca3)
  *        .5	0pI	                               .5	0pI     gps_miso   (uca3)
@@ -115,8 +115,8 @@
  *        .7	0pI	usd_miso (uca1)                .7	0pO     led_3 (yellow)
  *
  * port  6.0	0pI                             port  J.0       0pI
- *        .1	0pI                                    .1       0pO     si446x_volt_sel, (tdi/tclk)
- *        .2	1pO     pwr_3v3_ena                    .2       0pI
+ * 241 I  .1	0pI                             320 I  .1       0pO     si446x_volt_sel, (tdi/tclk)
+ * 243 O  .2	1pO     pwr_3v3_ena             322 O  .2       0pI
  *        .3	0pI                                    .3       0pI     si446x_cts
  *        .4	0pO     solar_ena
  *        .5	0pI
