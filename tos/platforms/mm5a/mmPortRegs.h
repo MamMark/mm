@@ -52,7 +52,8 @@ norace static volatile struct {
     uint8_t dock_irq            : 1;
   } PACKED mmP1in asm("0x0200");
 
-#define SI446X_IRQN_BIT 0x01
+#define SI446X_IRQN_BIT         0x01
+#define SD_ACCESS_SENSE_BIT     0x08
 
 norace static volatile struct {
     uint8_t p10                 : 1;
@@ -338,8 +339,8 @@ norace static volatile struct {
 #define MAG_CSN                 mmP4out.mag_csn
 
 /* micro SD */
+#define SD_ACCESS_SENSE_N       (P1IN & SD_ACCESS_SENSE_BIT)
 #define SD_ACCESS_ENA_N         mmP1out.sd_access_ena_n
-#define SD_ACCESS_SENSE         mmP1in.sd_access_sense
 #define SD_PWR_ENA              mmP7out.sd_pwr_ena
 #define SD_CSN                  mmP8out.sd_csn
 
@@ -348,18 +349,9 @@ norace static volatile struct {
  * All the h/w connections from the lp to the uSD go through a level
  * shifter.  We can prevent the uSD from being powered by inputs by simply
  * turning off the OE on level shifter.  This is done by simply setting
- * SD_ACCESS_ENA_N to a 1.
- *
- * However, we still switch the pins over to input to minimize power
- * (needs to be verified, FIX ME).
-
- * SD_PINS_INPUT will set SD/SPI pins to inputs.  (no longer connected to
- * the SPI module.  The values of these pins doesn't matter (set to inputs).
- * We also set SD_CSN to an input to avoid powering the chip.
- *
- * On the mm5a/b, the uSD is behind a level shifter and when we turn the OE*
- * off it will isolate and not power the chip.  If we set the lp's pins to
- * inputs does this save any power?  FIXME.
+ * SD_ACCESS_ENA_N to a 1.  Also when the uSD is powered off (via usd_pwr_ena
+ * being 0), this also kills power to the Vb side which kills any possibility
+ * of any inputs powering the uSD.
  *
  * The cpu definitions for the msp430f5438a, circa 2012, ver 1.4,
  * __MSP430_HEADER_VERSION__ 1064, doesn't define P3SEL.  Rather it defines the
