@@ -79,10 +79,10 @@
  * uca3: (680) si446x (spi6)  radio, Si4468
  * ucb3: (6a0)
  *
- * port 1.0	0pO	led0    		port 4.0	1pI    gps
- *       .1	0pO	led1    		      .1	1pI    gps
- *       .2	0pI	si446x_cts     		      .2	1pO    usd_csn
- *       .3     0pI	          		      .3	0pI    gps
+ * port 1.0	0pO	led0    		port 4.0	0pI
+ *       .1	0pO	led1    		      .1	0pI
+ *       .2	0pI	si446x_cts     		      .2	1pI    usd_csn (REN)
+ *       .3     0pI	          		      .3	0pI
  *       .4	0pI	si446x_irqn (int, fe)	      .4	0pI
  *       .5	0pI	             		      .5	0pI
  *       .6	0pI	            		      .6	0pI
@@ -92,8 +92,8 @@
  *       .1	0pI	          		      .1	0pI
  *       .2	0pI	                 	      .2	0pI
  *       .3	0pI	           		      .3	0pI
- *       .4	0pI	        		      .4	0pI    usd_somi (do,   B1SOMI)
- *       .5	0pI	        		      .5	0pO    usd_sclk (sclk, B1CLK)
+ *       .4	0pI	        		      .4	1pI    usd_somi (do,   B1SOMI) REN
+ *       .5	0pI	        		      .5	1pI    usd_sclk (sclk, B1CLK)  REN
  *       .6	0pI	       			      .6	0pI
  *       .7	0pI	       			      .7	0pI
  *
@@ -104,7 +104,7 @@
  *       .4	0pO	led2   			      .4	0pI
  *       .5	0pI	       			      .5	0pI
  *       .6	0pI	                	      .6	0pI
- *       .7	0pO	usd_simo (di, B1SIMO)  	      .7	0pI
+ *       .7	1pI	usd_simo (di, B1SIMO) REN     .7	0pI
  *
  * port 10.0	0pO	si446x_sclk (a3sclk)	port 11.0	0pI
  *        .1	0pI	(nc) xi2c_sda (b3sda)  	       .1	0pI

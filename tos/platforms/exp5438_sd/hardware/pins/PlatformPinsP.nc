@@ -56,16 +56,19 @@ implementation {
       P1OUT = 0;
       P1DIR = 0x3;
 
-      P3OUT = 0;
-      P3DIR = 0x90;
+      P3REN = 0x80;
+      P3OUT = 0x80;
+      P3DIR = 0x10;
 
       /* usd_csn, P4.2, low true, deassert */
+      P4REN = 0x04;
       P4OUT = 0x04;
-      P4DIR = 0x04;
+      P4DIR = 0x00;
 
       /* usd_somi, usd_sclk */
-      P5OUT = 0;
-      P5DIR = 0x20;
+      P5REN = 0x30;
+      P5OUT = 0x30;
+      P5DIR = 0x00;
 
       /*
        * Radio, siLabs 4463 module   USCI A3, SPI
