@@ -1,5 +1,8 @@
 Working List:
 
+- rework SD power on to deal with settling needed.
+  - currently we turn on power and leave it on to prevent glitches.
+
 - Port GPS code to mm5a
 
 - Clean up Panic state saving.  1st entry
@@ -52,8 +55,6 @@ Bring Up (mm5a):
   . bat sense
   . try bat pwr
 
-
-. turn deputy/safe on and see what happens
 
 . fix Arbiter bug (fcfs) so it correctly cycles.  (fixed?)
 . make sure that BlockingAMReceiverImpl still works.  What was the bug?
