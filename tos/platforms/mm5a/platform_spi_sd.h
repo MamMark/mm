@@ -94,17 +94,20 @@ MSP430REG_NORACE(DMA1SZ);
  */
 
 #define DMA_DT_SINGLE DMADT_0
+#define DMA_DT_BLOCK  DMADT_1
 #define DMA_SB_DB     DMASBDB
 #define DMA_EN        DMAEN
+#define DMA_IFG       DMAIFG
+#define DMA_REQ       DMAREQ
 #define DMA_DST_NC    DMADSTINCR_0
 #define DMA_DST_INC   DMADSTINCR_3
 #define DMA_SRC_NC    DMASRCINCR_0
 #define DMA_SRC_INC   DMASRCINCR_3
 
 #define DMA0_TSEL_A1RX (20<<0)	/* DMA chn 0, UCA1RXIFG */
-#define DMA1_TSEL_A1RX (20<<4)	/* DMA chn 1, UCA1RXIFG */
+#define DMA1_TSEL_A1RX (20<<8)	/* DMA chn 1, UCA1RXIFG */
 #define DMA0_TSEL_A1TX (21<<0)	/* DMA chn 0, UCA1TXIFG */
-#define DMA1_TSEL_A1TX (21<<4)	/* DMA chn 1, UCA1TXIFG */
+#define DMA1_TSEL_A1TX (21<<8)	/* DMA chn 1, UCA1TXIFG */
 
 #define DMA0_TSEL_RX_TRIG       DMA0_TSEL_A1RX
 #define DMA1_TSEL_RX_TRIG       DMA1_TSEL_A1RX
