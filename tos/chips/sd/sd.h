@@ -63,7 +63,8 @@
  * We will poll a maximum of SD_READ_TOK_MAX times before
  * bitching
  */
-#define SD_READ_TOK_MAX 512
+//#define SD_READ_TOK_MAX 512
+#define SD_READ_TOK_MAX 4096
 
 
 /* Number of times to retry the probe cycle during initialization */
@@ -80,11 +81,19 @@
 #define SD_GO_OP_MAX 512
 
 /* Hardcoded timeout for commands. */
-#define SD_CMD_TIMEOUT 1024
+//#define SD_CMD_TIMEOUT 1024
+#define SD_CMD_TIMEOUT 8192
 
 
-/* dma xfer timeout in mis (binary milliseconds) */
-#define SD_SECTOR_XFER_TIMEOUT	4
+/*
+ * dma xfer timeout in ms at 8MHz, 1 bit time is
+ * 1/8000000 = 125ns, * 8 is 1us/byte, * 514 = 514uS.
+ * 8 times that is the timeout of 4 mS.
+ *
+ * we further fudge it by a factor of 8
+ */
+//#define SD_SECTOR_XFER_TIMEOUT	4
+#define SD_SECTOR_XFER_TIMEOUT	(4 * 8)
 
 
 /*
@@ -92,11 +101,11 @@
  *
  * We've observed some strange SD timing where it takes
  * a really long time to write (which causes a timeout).
- * Normally we expect 3-5 mis for the write to happen so
- * a timeout of 120 mis seems plenty, but we've exceeded this
+ * Normally we expect 3-5 ms for the write to happen so
+ * a timeout of 120 ms seems plenty, but we've exceeded this
  * (conditions not understood).  A guess is the SD card is
  * actually doing a remapping of somekind which takes a bunch
- * of time.  Observed time of 190mis.
+ * of time.  Observed time of 190 ms.
  *
  * This impacts the tag because the longer the SD is on the
  * more power it consumes.  So we want to see this condition
@@ -105,9 +114,9 @@
  * Strategy is to log excess writes.  But use a long time out
  * for the real failure condition.
  *
- * Expected write time is about 3-5 mis.  Warning generated if
+ * Expected write time is about 3-5 ms.  Warning generated if
  * we take longer than 3*.  And the failure timeout is set
- * to 300 mis.  This is all fairly arbitrary.
+ * to 300 ms.  This is all fairly arbitrary.
  */
 #define SD_WRITE_WARN_THRESHOLD	15
 #define SD_WRITE_BUSY_TIMEOUT	300

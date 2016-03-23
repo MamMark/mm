@@ -265,7 +265,7 @@ implementation {
 
 
   /*
-   * sd_start_dma:  Start up dma 0 and 1 for SD/SPI0 access.
+   * sd_start_dma:  Start up dma 0 and 1 for SD/SPI access.
    *
    * input:  sndbuf	pntr to transmit buffer.  If null 0xff will be sent.
    *         rcvbuf	pntr to recveive buffer.  If null no rx bytes will be stored.
@@ -367,7 +367,7 @@ implementation {
 
     t0 = call Platform.usecsRaw();
 
-    max_timeout = (DMA0SZ * 8);
+    max_timeout = (DMA0SZ * 64);
 
     while (1) {
       if ((DMA0CTL & DMA_EN) == 0)	/* check for completion */
@@ -588,7 +588,7 @@ implementation {
     /*
      * Clock out at least 74 bits of idles (0xFF is 8 bits).  Thats 10 bytes. This allows
      * the SD card to complete its power up prior to us talking to the card.  We send
-     * 40 to give a bit more timing cushion.  This gets us to about 200 us before the first
+     * 40 to give a bit more timing cushion.  This gets us to about 100 us before the first
      * command is sent.  see SDsa.reset for more info.
      */
 
@@ -1291,7 +1291,7 @@ implementation {
     sd_wait_dma();
     call HW.sd_clr_cs();         /* deassert the SD card */
 
-    sd_get();
+    sd_get();                    /* what are these twos for? */
     sd_get();
 
     crc = (buf[512] << 8) | buf[513];
