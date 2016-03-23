@@ -386,7 +386,7 @@ norace static volatile struct {
 #define DOCK_IRQ                mmP1in.dock_irq
 
 /* gps */
-#define GSD4E_GPS_AWAKE         (mmP5in.gps_awake)
+#define GSD4E_GPS_AWAKE         (P5IN & GSD4E_GPS_AWAKE_BIT)
 #define GSD4E_GPS_CSN           mmP5out.gps_csn
 #define GSD4E_GPS_ON_OFF        mmP11out.gps_on_off
 #define GSD4E_GPS_RESET         (mmP11out.gps_resetn = 0)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012, 2014-2105 (c) Eric B. Decker
+ * Copyright 2012, 2014-2016 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -110,6 +110,8 @@
     uint8_t p47		    : 1;
   } PACKED mmP4in asm("0x0221");
 
+#define GSD4E_GPS_AWAKE_BIT 0x08
+
 
 norace static volatile struct {
     uint8_t gps_on_off	    : 1;	/* x.y 4.0, output */
@@ -216,7 +218,7 @@ norace
   } PACKED mmP11out asm("0x02A2");
 
 /* gps -gsd4e/org */
-#define GSD4E_GPS_AWAKE     (mmP4in.gps_awake)
+#define GSD4E_GPS_AWAKE     (P4IN & GSD4E_GPS_AWAKE_BIT)
 #define GSD4E_GPS_SET_ONOFF (mmP4out.gps_on_off = 1)
 #define GSD4E_GPS_CLR_ONOFF (mmP4out.gps_on_off = 0)
 #define GSD4E_GPS_RESET     (mmP4out.gps_reset_n = 0)
