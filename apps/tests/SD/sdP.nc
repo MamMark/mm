@@ -276,17 +276,27 @@ implementation {
     uint16_t i;
 
     nop();
+    nop();
     call SDResource.release();
     call SDsa.reset();
     cmd = call SDraw.cmd_ptr();
 
+    nop();
+    call SDsa.read(0, d);
     call SDsa.read(0, d);
     set(0xff);
-    call SDsa.read(0x5000, d);
+    nop();
+    call SDsa.read(0x08000, d);
+    call SDsa.read(0x08000, d);
+    call SDsa.read(0x10000, d);
+    call SDsa.read(0x20000, d);
+    call SDsa.read(0x40000, d);
     for (i = 0; i < 514; i++)
       d[i] = i + 1;
+    nop();
     call SDsa.write(0x5000, d);
     set(0);
+    nop();
     call SDsa.read(0x5000, d);
     send_cmd8();
     get_ocr();				// CMD58
