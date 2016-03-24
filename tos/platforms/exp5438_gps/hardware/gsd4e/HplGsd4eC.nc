@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, 2015 Eric B. Decker
+ * Copyright (c) 2012, 2014-2016 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,16 +39,21 @@
 #include "hardware.h"
 #include "mmPortRegs.h"
 
-module HplGsd4eC {
-  provides interface Gsd4eInterface as HW;
+configuration HplGsd4eC {
+  provides {
+    interface Gsd4eInterface;
+    interface SpiBlock;
+    interface SpiByte;
+  }
 }
 
 implementation {
-  async command void HW.gps_set_on_off() { GSD4E_GPS_SET_ONOFF; }
-  async command void HW.gps_clr_on_off() { GSD4E_GPS_CLR_ONOFF; }
-  async command void HW.gps_set_cs()     { GSD4E_GPS_CSN = 0; }
-  async command void HW.gps_clr_cs()     { GSD4E_GPS_CSN = 1; }
-  async command void HW.gps_set_reset()  { GSD4E_GPS_RESET; }
-  async command void HW.gps_clr_reset()  { GSD4E_GPS_UNRESET; }
-  async command bool HW.gps_awake()      { return GSD4E_GPS_AWAKE; }
+  components new Msp430UsciSpiB1C() as SpiC;
+  components Msp430UsciB1P as UsciP;
+  components Gsd4ePinsP;
+  Gsd4eInterface = Gsd4ePinsP;
+  Gsd4ePinsP.Usci -> UsciP;
+
+  SpiBlock = SpiC;
+  SpiByte  = SpiC;
 }

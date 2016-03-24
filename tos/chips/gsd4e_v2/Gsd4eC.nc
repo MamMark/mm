@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2012, 2014-2015 Eric B. Decker
+ * Copyright (c) 2012, 2014-2016 Eric B. Decker
  * All rights reserved.
  *
  * GSD4E gps spi chip.  SirfStarIV
- * uses PlatformGPS_SPI for port selection.
+ * uses hardware/gsd4e/HplGsd4e for port selection.
  *
  * @author Eric B. Decker (cire831@gmail.com)
  * @date May 23, 2012
@@ -27,6 +27,8 @@ implementation {
 
   components HplGsd4eC as HW;
   Gsd4eP.HW -> HW;
+  Gsd4eP.SpiBlock -> HW;
+  Gsd4eP.SpiByte  -> HW;
 
   components LocalTimeMilliC;
   Gsd4eP.LocalTime -> LocalTimeMilliC;
@@ -36,12 +38,6 @@ implementation {
 
   components PlatformC;
   Gsd4eP.Platform -> PlatformC;
-
-  components new Msp430UsciSpiA3C() as SpiC;
-  Gsd4eP.SpiBlock     -> SpiC;
-  Gsd4eP.SpiByte      -> SpiC;
-  Gsd4eP.SpiResource  -> SpiC;
-  Gsd4eP.Msp430UsciConfigure <- SpiC;
 
   components PanicC;
   Gsd4eP.Panic -> PanicC;

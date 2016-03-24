@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2012, 2014, 2015 Eric B. Decker
+ * Copyright (c) 2012, 2014-2016 Eric B. Decker
  * All rights reserved.
  *
  * @author Eric B. Decker (cire831@gmail.com)
  * @date 23 May 2012
  * @updated Feb 9, 2014
+ * @updated Mar 23, 2016 ported to mm5a/b
  *
  * M10478 GSD4e driver, dedicated 5438 usci spi port
  * based on dedicated 2618 usci uart port sirf3 driver.
@@ -20,7 +21,6 @@
 #include "sirf.h"
 
 #include "platform_panic.h"
-#include "platform_spi_gsd4e.h"
 
 /*
  * The M10478 GSD4e GPS module is interfaced using SPI at 4MHz.  By default
@@ -156,7 +156,6 @@ module Gsd4eP {
   provides {
     interface Init;
     interface StdControl as GPSControl;
-    interface Msp430UsciConfigure;
 //    interface Boot as GPSBoot;
   }
   uses {
@@ -166,8 +165,6 @@ module Gsd4eP {
     interface Panic;
     interface SpiBlock;
     interface SpiByte;
-    interface Resource as SpiResource;
-
     interface GPSMsgS;
     interface StdControl as GPSMsgControl;
 //    interface Trace;
@@ -405,15 +402,10 @@ implementation {
   }
 
 
-  async command const msp430_usci_config_t *Msp430UsciConfigure.getConfiguration() {
-    return &gsd4e_spi_config;
-  }
-
-
   command error_t Init.init() {
     /* gpsc_state is set to GPSC_OFF (0) by ram initializer */
     gpsc_reconfig_trys = MAX_GPS_RECONFIG_TRYS;
-    call SpiResource.immediateRequest();
+    call HW.gps_spi_init();
     return SUCCESS;
   }
 
@@ -772,7 +764,5 @@ implementation {
   }
 
   event void GPSMsgS.resume() { }
-  event void SpiResource.granted() { }
-
   async event void Panic.hook() { }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Eric B. Decker
+ * Copyright (c) 2015-2016, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,10 @@
  *  gps_reset:  access to clear to send mechanism.  Either via a gpio h/w
  *  gps_awake:  will be 1 if the chip is awake (turned on).
  *
+ *  gps_spi_init: sets up spi and any initial power state
+ *  gps_spi_enable: turn spi back on, come out of low power
+ *  gps_spi_disable: turn spi off, go into low power mode.
+ *
  *  SPI interface:
  *    gps_sclk
  *    gps_miso
@@ -50,6 +54,10 @@
  */
  
 interface Gsd4eInterface {
+
+  async command void gps_spi_init();
+  async command void gps_spi_enable();
+  async command void gps_spi_disable();
 
   /**
    * gps_set_on_off: turn the on_off pin on.
