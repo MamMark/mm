@@ -476,6 +476,7 @@ implementation {
     }
 
     if (call HW.gps_awake()) {
+#ifdef notdef
       /*
        * shouldn't be awake.   If so, jump forward in the state machine
        * and make sure we can talk to the gps.
@@ -484,6 +485,11 @@ implementation {
       gpsc_change_state(GPSC_POLL_NAV, GPSW_START);
       post gps_config_task();
       return SUCCESS;
+#endif
+      gps_panic_warn(10, call HW.gps_awake());
+      call HW.gps_set_reset();
+      nop();
+      call HW.gps_clr_reset();
     }
 
     /*
