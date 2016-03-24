@@ -96,12 +96,12 @@
  *       .6	0pI	usd_sclk  (uca1)       	      .6	0pI
  *       .7	0pI     adc_mosi  (ucb1)       	      .7	1pO     si446x_csn
  *
- * port  4.0	0pI	                        port 10.0	0pO     gps_clk     (uca3)
+ * port  4.0	0pI	                        port 10.0	0mO     gps_clk     (uca3)
  *        .1	1pO	accel_csn (ucb0)        281 I  .1	0pO     temp_pwr
  *        .2	0pI	                        283 O  .2	0pI
  *        .3	0pI	                               .3	0pI
- *        .4	1pO	gyro_csn  (ucb0)               .4	0pO     gps_mosi   (uca3)
- *        .5	0pI	                               .5	0pI     gps_miso   (uca3)
+ *        .4	1pO	gyro_csn  (ucb0)               .4	0mO     gps_mosi   (uca3)
+ *        .5	0pI	                               .5	0mI     gps_miso   (uca3)
  *        .6	1pO	mag_csn   (ucb0)               .6	1pI     adc_csn
  *        .7	0pI	adc_start                      .7	0pI
  *

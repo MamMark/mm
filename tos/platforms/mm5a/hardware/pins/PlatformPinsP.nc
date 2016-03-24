@@ -108,10 +108,11 @@ implementation {
     P9DIR = 0x90;
 
     /* adc_csn = 1 input; temp_pwr = 0 (off)
-     * clk, do, 0; di input
+     * gps_clk, gps_mosi, 0; gps_miso input, give to USCI module
      */
     P10OUT = 0x40;
     P10DIR = 0x13;
+    P10SEL = 0x31;
 
     /* gps_on_off = 0, gps_resetn = 1 */
     P11OUT = 0x04;

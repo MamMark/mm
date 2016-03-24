@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 (c) Eric Decker
+ * Copyright (c) 2012, 2014-2016 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,28 +30,30 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @author Eric Decker
  */
 
-#ifndef _H_PLATFORM_SPI_GSD4E_H_
-#define _H_PLATFORM_SPI_GSD4E_H_
-
-#include "msp430usci.h"
-
-/* MM5, 5438a, USCI, SPI, gps interface
- * phase 0, polarity 0, msb, 8 bit, master,
- * mode 3 pin, sync.
- *
- * SMCLK (8MHz)/2 -> 4MHz
+/**
+ * @author Eric B. Decker
  */
-const msp430_usci_config_t gsd4e_spi_config = {
-  ctl0 : (UCMSB | UCMST | UCSYNC),
-  ctl1 : UCSSEL__SMCLK,
-  br0  : 2,			/* 8MHz -> 4 MHz */
-  br1  : 0,
-  mctl : 0,                     /* Always 0 in SPI mode */
-  i2coa: 0
-};
 
-#endif	/* _H_PLATFORM_SPI_GSD4E_H_ */
+#include "hardware.h"
+#include "mmPortRegs.h"
+
+configuration HplGsd4eC {
+  provides {
+    interface Gsd4eInterface;
+    interface SpiBlock;
+    interface SpiByte;
+  }
+}
+
+implementation {
+  components new Msp430UsciSpiA3C() as SpiC;
+  components Msp430UsciA3P as UsciP;
+  components Gsd4ePinsP;
+  Gsd4eInterface = Gsd4ePinsP;
+  Gsd4ePinsP.Usci -> UsciP;
+
+  SpiBlock = SpiC;
+  SpiByte  = SpiC;
+}

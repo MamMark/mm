@@ -143,6 +143,8 @@ norace static volatile struct {
     uint8_t sd_di               : 1;
   } PACKED mmP5in asm("0x0240");
 
+#define GSD4E_GPS_AWAKE_BIT 0x04
+
 norace static volatile struct {
     uint8_t mux4x_A             : 1;
     uint8_t mux4x_B             : 1;
@@ -252,7 +254,7 @@ norace static volatile struct {
     uint8_t p102                : 1;
     uint8_t p103                : 1;
     uint8_t p104                : 1;
-    uint8_t gps_di              : 1;
+    uint8_t gps_miso            : 1;
     uint8_t p106                : 1;
     uint8_t p107                : 1;
   } PACKED mmP10in asm("0x0281");
@@ -262,7 +264,7 @@ norace static volatile struct {
     uint8_t temp_pwr            : 1;
     uint8_t p102                : 1;
     uint8_t p103                : 1;
-    uint8_t gps_do              : 1;
+    uint8_t gps_mosi            : 1;
     uint8_t p105                : 1;
     uint8_t adc_csn             : 1;
     uint8_t p107                : 1;
@@ -282,7 +284,7 @@ norace static volatile struct {
 norace static volatile struct {
     uint8_t gps_on_off          : 1;
     uint8_t p111                : 1;
-    uint8_t gps_resetn          : 1;
+    uint8_t gps_reset_n         : 1;
     uint8_t p113                : 1;
     uint8_t p114                : 1;
     uint8_t led_1               : 1;    /* red    */
@@ -385,12 +387,13 @@ norace static volatile struct {
 /* dock */
 #define DOCK_IRQ                mmP1in.dock_irq
 
-/* gps */
+/* gps -gsd4e/org */
 #define GSD4E_GPS_AWAKE         (P5IN & GSD4E_GPS_AWAKE_BIT)
-#define GSD4E_GPS_CSN           mmP5out.gps_csn
-#define GSD4E_GPS_ON_OFF        mmP11out.gps_on_off
-#define GSD4E_GPS_RESET         (mmP11out.gps_resetn = 0)
-#define GSD4E_GPS_UNRESET       (mmP11out.gps_resetn = 1)
+#define GSD4E_GPS_SET_ONOFF     (mmP11out.gps_on_off = 1)
+#define GSD4E_GPS_CLR_ONOFF     (mmP11out.gps_on_off = 0)
+#define GSD4E_GPS_RESET         (mmP11out.gps_reset_n = 0)
+#define GSD4E_GPS_UNRESET       (mmP11out.gps_reset_n = 1)
+#define GSD4E_GPS_CSN            mmP5out.gps_csn
 
 /* power */
 #define PWR_3V3_ENA             mmP6out.pwr_3v3_ena
