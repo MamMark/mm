@@ -80,8 +80,8 @@
  *       .1	0pI	          		      .1	0pI
  *       .2	0pI	                 	      .2	0pI
  *       .3	0pI	           		      .3	0pI
- *       .4	0pI	        		      .4	0pI    gps_somi (tx,   B1SOMI)
- *       .5	0pI	        		      .5	0pI    gps_sclk (nCTS, B1CLK)
+ *       .4	0pI	        		      .4	0mI    gps_somi (tx,   B1SOMI)
+ *       .5	0pI	        		      .5	0mI    gps_sclk (nCTS, B1CLK)
  *       .6	0pI	       			      .6	0pI
  *       .7	0pI	       			      .7	0pI
  *
@@ -92,7 +92,7 @@
  *       .4	0pO	led2   			      .4	0pI
  *       .5	0pI	       			      .5	0pI
  *       .6	0pI	                	      .6	0pI
- *       .7	0pI	gps_simo (rx, B1SIMO)  	      .7	0pI
+ *       .7	0mI	gps_simo (rx, B1SIMO)  	      .7	0pI
  *
  * port 10.0	0pO	si446x_sclk (a3sclk)	port 11.0	0pI
  *        .1	0pI	(nc) xi2c_sda (b3sda)  	       .1	0pI

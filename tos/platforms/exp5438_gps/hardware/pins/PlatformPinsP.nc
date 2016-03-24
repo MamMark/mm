@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Eric B. Decker
+ * Copyright (c) 2012, 2016 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,12 +50,13 @@ implementation {
 
       /*
        * Port 1: leds
-       * Port 3: led
+       * Port 3: led, gps_simo
        */
       P1OUT = 0;
       P1DIR = 0x3;
       P3OUT = 0;
       P3DIR = 0x10;
+      P3SEL = 0x80;
 
       /*
        * GPS: ORG4472, USCI B1, SPI
@@ -66,9 +67,12 @@ implementation {
        * p4.1: resetn
        * p4.2: csn
        * p4.3: awake
+       *
+       * P5.4/5 gps_somi, gps_sclk
        */
       P4OUT = BIT2 | BIT1;		/* csn and resetn deasserted (1), on_off is 0. */
       P4DIR = BIT2 | BIT1 | BIT0;	/* 2, 1, 0 outputs */
+      P5SEL = 0x30;
 
       /*
        * Radio, siLabs 4463 module   USCI A3, SPI
