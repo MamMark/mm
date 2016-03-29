@@ -962,102 +962,6 @@ implementation {
 
   /**************************************************************************/
   /*
-   * Si446xCmd.get_packet_info
-   *
-   * get packet_info for last received packet.
-   * returns variable length field value (length) from last rx packet.
-   * we do not override and fields length (that's just weird).
-   */
-  async command uint16_t Si446xCmd.get_packet_info() {
-    uint8_t r[2];
-
-    call Si446xCmd.cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc), r, 2);
-    return r[0] << 8 | r[1];
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.read_rx_fifo
-   *
-   * read data bytes from the TXFIFO.
-   * First it sets CS which resets the radio SPI and enables
-   * the SPI subsystem, next the cmd SI446X_CMD_RX_FIFO_READ
-   * and then we pull data from the FIFO across the SPI bus.
-   * CS is deasserted which terminates the block.
-   *
-   * If we pull too many bytes from the RX fifo, the chip will
-   * throw an FIFO Underflow exception.
-   */
-  async command void Si446xCmd.read_rx_fifo(uint8_t *data, uint8_t length) {
-    uint16_t t0, t1;
-
-    SI446X_ATOMIC {
-      t0 = call Platform.usecsRaw();
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_RX_FIFO_READ);
-      call FastSpiByte.splitReadWrite(0);
-      readBlock(data, length);
-      call HW.si446x_clr_cs();
-      t1 = call Platform.usecsRaw();
-      nop();
-    }
-    t1 -= t0;
-  }
-
-
-  /**************************************************************************/
-  /*
-   * write_tx_fifo
-   *
-   * sends data bytes into the TXFIFO.
-   * First it sets CS which resets the radio SPI and enables
-   * the SPI subsystem, next the cmd SI446X_CMD_TX_FIFO_WRITE
-   * is sent followed by the data.  After the data is sent
-   * CS is deasserted which terminates the block.
-   *
-   * If the TX fifo gets full, an additional write will throw a
-   * FIFO Overflow exception.
-   */
-  async command void Si446xCmd.write_tx_fifo(uint8_t *data, uint8_t length) {
-    uint16_t t0, t1;
-
-    SI446X_ATOMIC {
-      t0 = call Platform.usecsRaw();
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_TX_FIFO_WRITE);
-      writeBlock(data, length);
-      call HW.si446x_clr_cs();
-      t1 = call Platform.usecsRaw();
-      nop();
-      t1 -= t0;
-    }
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.ll_clr_ints
-   * Si446xCmd.ll_getclr_ints
-   *
-   * clear chip interrupt pending status.
-   * alternately method reads current status as well.
-   */
-  async command void Si446xCmd.ll_clr_ints() {
-    ll_si446x_send_cmd(si446x_int_clr, rsp, sizeof(si446x_int_clr));
-  }
-  /*
-   * get/clr interrupt state
-   * clr all pendings and return previous state in *intp
-   */
-  async command void Si446xCmd.ll_getclr_ints(volatile si446x_int_state_t *intp) {
-    ll_si446x_cmd_reply(si446x_int_clr, sizeof(si446x_int_clr),
-                        (void *) intp, SI446X_INT_STATUS_REPLY_SIZE);
-  }
-
-
-  /**************************************************************************/
-  /*
    * ll_wait_for_cts
    *
    * wait for the radio chip to report that it is ready for the next command.
@@ -1102,6 +1006,53 @@ implementation {
 
   /**************************************************************************/
   /*
+   * Si446xCmd.change_state
+   *
+   * Force radio chip to the specified state.
+   *
+   * @param     state       new state to enter
+   *
+   * @return    final state achieved
+   */
+
+  async command Si446x_device_state_t Si446xCmd.change_state(Si446x_device_state_t state, bool wait) {
+    uint8_t cmd[2];
+    uint8_t ro, rn;
+
+    cmd[0] = SI446X_CMD_CHANGE_STATE;
+    cmd[1] = state;                          // new state
+    ro = ll_si446x_read_frr(SI446X_GET_DEVICE_STATE);
+    ll_si446x_send_cmd(cmd, sizeof(cmd));
+    if (wait)
+      ll_wait_for_cts();           // wait for command to complete
+    rn = ll_si446x_read_frr(SI446X_GET_DEVICE_STATE);
+    ll_si446x_trace(T_RC_CHG_STATE, ro, rn);
+    return rn;
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.check_CCA
+   *
+   * check the 'clear channel assessment' condition. denotes if our receiver
+   * is detecting an incoming radio signal of sufficient strength to denote
+   * channel is occupied.
+   * returns true if channel is assessed as clear (low RSSI value)
+   */
+  async command bool Si446xCmd.check_CCA() {
+    uint8_t rssi;
+    bool    r;
+
+    rssi = call Si446xCmd.fast_latched_rssi();
+    r = (rssi < si446x_cca_threshold) ? (TRUE) : (FALSE);
+    ll_si446x_trace(T_RC_CHECK_CCA, r, 0);
+    return r;
+  }
+
+
+  /**************************************************************************/
+  /*
    * Si446xCmd.clr_cs
    */
   async command void          Si446xCmd.clr_cs() {
@@ -1111,19 +1062,14 @@ implementation {
 
   /**************************************************************************/
   /*
-   * Si446xCmd.shutdown
+   * Si446xCmd.config_frr
+   *
+   * send a block of configuration data to the radio.  Each block is
+   * is made up of multiple commands, (size, command data, starts with
+   * command to send), terminated by 0.
    */
-  async command void          Si446xCmd.shutdown() {
-    call HW.si446x_shutdown();
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.unshutdown
-   */
-  async command void         Si446xCmd.unshutdown() {
-    call HW.si446x_unshutdown();
+  async command void Si446xCmd.config_frr() {
+    ll_si446x_send_cmd(si446x_frr_config, sizeof(si446x_frr_config));
   }
 
 
@@ -1133,25 +1079,12 @@ implementation {
    */
   async command void          Si446xCmd.disableInterrupt() {
     call HW.si446x_disableInterrupt();
+    ll_si446x_trace(T_RC_DIS_INTR, 0, 0);
   }
 
   /**************************************************************************/
   /*
-   * Si446xCmd.enableInterrupt
-   */
-  async command void          Si446xCmd.enableInterrupt() {
-    call HW.si446x_enableInterrupt();
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.get_cts
-   *
-   * encapsulate obtaining the current CTS value.
-   *
-   * CTS can be on a h/w pin or can be obtained via the SPI
-   * bus.  This routine hides how it is obtained.
+   * Si446xCmd.dump_radio
    */
   async command void Si446xCmd.dump_radio() {
     atomic {
@@ -1163,18 +1096,11 @@ implementation {
 
   /**************************************************************************/
   /*
-   * Si446xCmd.get_config_lists()
-   *
-   * return the list of config lists to be used to configure the 446x chip.
-   * since configuration is a long process (around 10ms), the list is processed
-   * by the a separate task managed by the driver.
+   * Si446xCmd.enableInterrupt
    */
-  const uint8_t *config_list[] = {si446x_wds_config, si446x_local_config, NULL};
-
-  async command uint8_t ** Si446xCmd.get_config_lists() {
-    nop();
-    call Trace.trace(T_R_RX_RECV, 0, 0);
-    return (uint8_t **) config_list;
+  async command void          Si446xCmd.enableInterrupt() {
+    call HW.si446x_enableInterrupt();
+    ll_si446x_trace(T_RC_ENABLE_INT, 0, 0);
   }
 
 
@@ -1209,202 +1135,15 @@ implementation {
 
   /**************************************************************************/
   /*
-   * Si446xCmd.check_CCA
+   * Si446xCmd.fast_all
    *
-   * check the 'clear channel assessment' condition. denotes if our receiver
-   * is detecting an incoming radio signal of sufficient strength to denote
-   * channel is occupied.
-   * returns true if channel is assessed as clear (low RSSI value)
+   * read the fast status registers.
+   * trace the status and check for abnormal conditions.
    */
-  async command bool Si446xCmd.check_CCA() {
-    uint8_t rssi;
-
-    rssi = call Si446xCmd.fast_latched_rssi();
-    if (rssi < si446x_cca_threshold)
-      return TRUE;
-    return FALSE;
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.config_frr
-   *
-   * send a block of configuration data to the radio.  Each block is
-   * is made up of multiple commands, (size, command data, starts with
-   * command to send), terminated by 0.
-   */
-  async command void Si446xCmd.config_frr() {
-    call Si446xCmd.send_cmd(si446x_frr_config, rsp, sizeof(si446x_frr_config));
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.read_property
-   *
-   * read property of radio chip
-   */
-  async command void Si446xCmd.read_property(uint16_t p_id, uint16_t num, uint8_t *w) {
-    uint8_t group, index;
-
-    group = p_id >> 8;
-    index = p_id & 0xff;
-    SI446X_ATOMIC {
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
-      call FastSpiByte.splitReadWrite(group);
-      call FastSpiByte.splitReadWrite(num);
-      call FastSpiByte.splitReadWrite(index);
-      call FastSpiByte.splitRead();
-      call HW.si446x_clr_cs();
-      ll_si446x_get_reply(w, num, 0xff);
-    }
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.dump_radio
-   */
-  async command void Si446xCmd.dump_radio() {
-    atomic {
-      ll_si446x_drf();
-    }
-  }
-
-
-   /**************************************************************************/
-  /*
-   * Si446xCmd.send_cmd
-   * Si446xCmd.get_reply
-   * Si446xCmd.cmd_reply
-   *
-   * send command, get response, or perform both operations on radio chip.
-   */
-  async command void Si446xCmd.send_cmd(const uint8_t *c, uint8_t *response, uint16_t length) {
-    ll_si446x_send_cmd(c, response, length);
-    ll_si446x_read_fast_status(radio_pend);
-  }
-
-  async command void Si446xCmd.get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
-    ll_si446x_get_reply(r, l, cmd);
-    ll_si446x_read_fast_status(radio_pend);
-  }
-
-  async command void Si446xCmd.cmd_reply(const uint8_t *cp, uint16_t cl, uint8_t *rp, uint16_t rl) {
-    uint16_t t0, t1;
-    cmd_timing_t *ctp;
-
-    ctp = &cmd_timings[cp[0]];
-    t0 = call Platform.usecsRaw();
-    ll_si446x_send_cmd(cp, rsp, cl);
-    ll_si446x_get_reply(rp, rl, cp[0]);
-    t1 = call Platform.usecsRaw();
-    ctp->t_elapsed = t1 - t0;
-    ll_si446x_read_fast_status(ctp->frr);
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.set_property
-   *
-   * read a single property from the radio chip
-   */
-  async command void Si446xCmd.set_property(uint16_t prop, uint8_t *values, uint16_t vl) {
-    uint8_t prop_buf[16];
-    uint16_t i;
-
-    prop_buf[0] = SI446X_CMD_SET_PROPERTY;
-    prop_buf[1] = prop >> 8;            /* group */
-    prop_buf[2] = vl;                   /* num_props */
-    prop_buf[3] = prop & 0xff;          /* start_prop */
-
-    for (i = 0; i < 12 && i < vl; i++ )
-      prop_buf[i+4] = values[i];
-    call Si446xCmd.send_cmd(prop_buf, rsp, vl+4);
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.start_tx
-   *
-   * send the start command to the radio chip.
-   * input parameter specifies length of packet to transmit
-   */
-  async command void Si446xCmd.start_tx(uint16_t len) {
-    uint8_t x[5];
-
-    x[0] = SI446X_CMD_START_TX;
-    x[1] = 0;                     /* channel */
-    x[2] = 0x30;                  /* back to READY */
-    x[3] = 0;
-    x[4] = len & 0xff;
-    ll_si446x_drf();
-    nop();
-    call Si446xCmd.send_cmd((void *) x, rsp, 5);
-    ll_wait_for_cts();
- }
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.start_rx
-   *
-   * start the Receiver using specified parameters
-   *
-   */
-  async command void Si446xCmd.start_rx() {
-    ll_si446x_send_cmd(start_rx_cmd, sizeof(start_rx_cmd));
-    ll_wait_for_cts();                    // wait for rx start up
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.start_rx_short
-   *
-   * start receiver using settings from previous start_rx operation
-   *
-   */
-  async command void Si446xCmd.start_rx_short() {
-    call Si446xCmd.send_cmd(start_rx_short_cmd, rsp, sizeof(start_rx_short_cmd));
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.power_up
-   *
-   * tell the radio chip to power up
-   *
-   */
-  async command void Si446xCmd.power_up() {
-    call Si446xCmd.send_cmd(si446x_power_up, rsp, sizeof(si446x_power_up));
-  }
-
-
-  /**************************************************************************/
-  /*
-   * Si446xCmd.change_state
-   *
-   * Force radio chip to the specified state.
-   *
-   * @param     state       new state to enter
-   *
-   * @return    final state achieved
-   */
-
-  async command Si446x_device_state_t Si446xCmd.change_state(Si446x_device_state_t state, bool wait) {
-    uint8_t cmd[2];
-
-    cmd[0] = SI446X_CMD_CHANGE_STATE;
-    cmd[1] = state;                          // new state
-    call Si446xCmd.send_cmd(cmd, rsp, sizeof(cmd));
-    if (wait)
-      ll_wait_for_cts();           // wait for command to complete
-    return call Si446xCmd.fast_device_state();
+  async command void Si446xCmd.fast_all(uint8_t *status) {
+    ll_si446x_read_fast_status(status);
+    ll_si446x_trace_radio_pend(status);
+    ll_si446x_check_weird(status);
   }
 
 
@@ -1427,20 +1166,243 @@ implementation {
       *rxp = fifo_cnts[0];
     if (txp)
       *txp = fifo_cnts[1];
+    ll_si446x_trace(T_RC_FIFO_INFO, *rxp, *txp);
   }
 
 
   /**************************************************************************/
   /*
-   * Si446xCmd.fast_all
+   * Si446xCmd.get_config_lists()
    *
-   * read the fast status registers.
-   * trace the status and check for abnormal conditions.
+   * return the list of config lists to be used to configure the 446x chip.
+   * since configuration is a long process (around 10ms), the list is processed
+   * by the a separate task managed by the driver.
    */
-  async command void Si446xCmd.fast_all(uint8_t *status) {
-    ll_si446x_read_fast_status(status);
-    ll_si446x_trace_radio_pend(status);
-    ll_si446x_check_weird(status);
+  const uint8_t *config_list[] = {si446x_wds_config, si446x_local_config, NULL};
+
+  async command uint8_t ** Si446xCmd.get_config_lists() {
+    return (uint8_t **) config_list;
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.get_cts
+   *
+   * encapsulate obtaining the current CTS value.
+   *
+   * CTS can be on a h/w pin or can be obtained via the SPI
+   * bus.  This routine hides how it is obtained.
+   */
+  async command bool Si446xCmd.get_cts() {
+    return ll_si446x_get_cts();
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.get_packet_info
+   *
+   * get packet_info for last received packet.
+   * returns variable length field value (length) from last rx packet.
+   * we do not override and fields length (that's just weird).
+   */
+  async command uint16_t Si446xCmd.get_packet_info() {
+    ll_si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc), rsp, 2);
+    ll_si446x_trace(T_RC_GET_PKT_INF, rsp[0], rsp[1]);
+    return rsp[0] << 8 | rsp[1];
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.ll_clr_ints
+   * Si446xCmd.ll_getclr_ints
+   *
+   * clear chip interrupt pending status.
+   * alternately method reads current status as well.
+   */
+  async command void Si446xCmd.ll_clr_ints() {
+    ll_si446x_send_cmd(si446x_int_clr, sizeof(si446x_int_clr));
+  }
+  /*
+   * get/clr interrupt state
+   * clr all pendings and return previous state in *intp
+   */
+  async command void Si446xCmd.ll_getclr_ints(volatile si446x_int_state_t *intp) {
+    ll_si446x_cmd_reply(si446x_int_clr, sizeof(si446x_int_clr),
+                        (void *) intp, SI446X_INT_STATUS_REPLY_SIZE);
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.power_up
+   *
+   * tell the radio chip to power up
+   *
+   */
+  async command void Si446xCmd.power_up() {
+    ll_si446x_send_cmd(si446x_power_up, sizeof(si446x_power_up));
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.read_property
+   *
+   * read property of radio chip
+   */
+  async command void Si446xCmd.read_property(uint16_t p_id, uint16_t num, uint8_t *rsp_p) {
+    uint8_t group, index;
+
+    group = p_id >> 8;
+    index = p_id & 0xff;
+    SI446X_ATOMIC {
+      call HW.si446x_set_cs();
+      call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
+      call FastSpiByte.splitReadWrite(group);
+      call FastSpiByte.splitReadWrite(num);
+      call FastSpiByte.splitReadWrite(index);
+      call FastSpiByte.splitRead();
+      call HW.si446x_clr_cs();
+      ll_si446x_get_reply(rsp_p, num, 0xff);
+    }
+    ll_si446x_trace(T_RC_READ_PROP, p_id, (uint16_t) *rsp_p);
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.read_rx_fifo
+   *
+   * read data bytes from the TXFIFO.
+   * First it sets CS which resets the radio SPI and enables
+   * the SPI subsystem, next the cmd SI446X_CMD_RX_FIFO_READ
+   * and then we pull data from the FIFO across the SPI bus.
+   * CS is deasserted which terminates the block.
+   *
+   * If we pull too many bytes from the RX fifo, the chip will
+   * throw an FIFO Underflow exception.
+   */
+  async command void Si446xCmd.read_rx_fifo(uint8_t *data, uint8_t length) {
+    uint16_t t0, t1;
+
+    SI446X_ATOMIC {
+      t0 = call Platform.usecsRaw();
+      call HW.si446x_set_cs();
+      call FastSpiByte.splitWrite(SI446X_CMD_RX_FIFO_READ);
+      call FastSpiByte.splitReadWrite(0);
+      readBlock(data, length);
+      call HW.si446x_clr_cs();
+      t1 = call Platform.usecsRaw();
+      nop();
+    }
+    t1 -= t0;
+    ll_si446x_trace(T_RC_READ_RX_FF, 0, 0);
+  }
+
+
+   /**************************************************************************/
+  /*
+   * Si446xCmd.send_config
+   *
+   * send config string to the  radio chip.
+   */
+  async command void Si446xCmd.send_config(const uint8_t *properties, uint16_t length) {
+    ll_si446x_send_cmd(properties, length);
+    ll_si446x_read_fast_status(radio_pend);
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.set_property
+   *
+   * read one or more properties from the radio chip
+   */
+  async command void Si446xCmd.set_property(uint16_t prop, uint8_t *values, uint16_t vl) {
+    uint8_t prop_buf[16];
+    uint16_t i;
+
+    prop_buf[0] = SI446X_CMD_SET_PROPERTY;
+    prop_buf[1] = prop >> 8;            /* group */
+    prop_buf[2] = vl;                   /* num_props */
+    prop_buf[3] = prop & 0xff;          /* start_prop */
+
+    for (i = 0; i < 12 && i < vl; i++ )
+      prop_buf[i+4] = values[i];
+    ll_si446x_send_cmd(prop_buf, vl+4);
+    ll_si446x_trace(T_RC_SET_PROP, prop, (uint16_t) *values);
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.shutdown
+   */
+  async command void          Si446xCmd.shutdown() {
+    call HW.si446x_shutdown();
+    ll_si446x_trace(T_RC_SHUTDOWN, 0, 0);
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.start_rx
+   *
+   * start the Receiver using specified parameters
+   *
+   */
+  async command void Si446xCmd.start_rx() {
+    ll_si446x_send_cmd(start_rx_cmd, sizeof(start_rx_cmd));
+    ll_wait_for_cts();                    // wait for rx start up
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.start_rx_short
+   *
+   * start receiver using settings from previous start_rx operation
+   *
+   */
+  async command void Si446xCmd.start_rx_short() {
+    ll_si446x_send_cmd(start_rx_short_cmd, sizeof(start_rx_short_cmd));
+    ll_wait_for_cts();                    // wait for rx start up
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.start_tx
+   *
+   * send the start command to the radio chip.
+   * input parameter specifies length of packet to transmit
+   */
+  async command void Si446xCmd.start_tx(uint16_t len) {
+    uint8_t x[5];
+
+    x[0] = SI446X_CMD_START_TX;
+    x[1] = 0;                     /* channel */
+    x[2] = 0x30;                  /* back to READY */
+    x[3] = 0;
+    x[4] = len & 0xff;
+    //    ll_si446x_drf();
+    nop();
+    ll_si446x_send_cmd((void *) x, 5);
+    ll_wait_for_cts();
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.trace
+   *
+   * add entry to global trace
+   */
+  async command void Si446xCmd.trace(trace_where_t where, uint16_t r0, uint16_t r1) {
+  ll_si446x_trace(where, r0, r1);
   }
 
 
@@ -1452,6 +1414,46 @@ implementation {
    */
   async command void Si446xCmd.trace_radio_pend(uint8_t *pend) {
     ll_si446x_trace_radio_pend(pend);
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.unshutdown
+   */
+  async command void         Si446xCmd.unshutdown() {
+    call HW.si446x_unshutdown();
+    ll_si446x_trace(T_RC_UNSHUTDOWN, 0, 0);
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.write_tx_fifo
+   *
+   * sends data bytes into the TXFIFO.
+   * First it sets CS which resets the radio SPI and enables
+   * the SPI subsystem, next the cmd SI446X_CMD_TX_FIFO_WRITE
+   * is sent followed by the data.  After the data is sent
+   * CS is deasserted which terminates the block.
+   *
+   * If the TX fifo gets full, an additional write will throw a
+   * FIFO Overflow exception.
+   */
+  async command void Si446xCmd.write_tx_fifo(uint8_t *data, uint8_t length) {
+    uint16_t t0, t1;
+
+    SI446X_ATOMIC {
+      t0 = call Platform.usecsRaw();
+      call HW.si446x_set_cs();
+      call FastSpiByte.splitWrite(SI446X_CMD_TX_FIFO_WRITE);
+      writeBlock(data, length);
+      call HW.si446x_clr_cs();
+      t1 = call Platform.usecsRaw();
+      nop();
+      t1 -= t0;
+    }
+    ll_si446x_trace(T_RC_WRITE_TX_FF, 0, 0);
   }
 
 
