@@ -538,7 +538,7 @@ implementation {
    * cl:        length of cmd (buffer)
    * 
    */
-  void ll_si446x_send_cmd(const uint8_t *c, uint8_t *response, uint16_t cl) {
+  void ll_si446x_send_cmd(const uint8_t *c, uint16_t cl) {
     uint16_t      t0, t1;
     cmd_timing_t *ctp;
     uint8_t       cmd;
@@ -571,7 +571,7 @@ implementation {
           ctp->t_cts0 = t1 - t0;
           t0 = t1;
           call HW.si446x_set_cs();
-          call SpiBlock.transfer((void *) c, response, cl);
+          call SpiBlock.transfer((void *) c, rsp, cl);
           call HW.si446x_clr_cs();
           t1 = call Platform.usecsRaw();
           done = TRUE;
@@ -644,7 +644,7 @@ implementation {
     ctp = &cmd_timings[cp[0]];
     SI446X_ATOMIC {                     /* checkfor tasklet protection */
       t0 = call Platform.usecsRaw();
-      ll_si446x_send_cmd(cp, rsp, cl);
+      ll_si446x_send_cmd(cp, cl);
       ll_si446x_get_reply(rp, rl, cp[0]);
       t1 = call Platform.usecsRaw();
       ll_si446x_read_fast_status(ctp->frr);
@@ -1356,7 +1356,7 @@ implementation {
    *
    */
   async command void Si446xCmd.start_rx() {
-    call Si446xCmd.send_cmd(start_rx_cmd, rsp, sizeof(start_rx_cmd));
+    ll_si446x_send_cmd(start_rx_cmd, sizeof(start_rx_cmd));
     ll_wait_for_cts();                    // wait for rx start up
   }
 

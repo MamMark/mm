@@ -767,7 +767,7 @@ implementation {
 	cp = (void *) config_prop_ptr;
 	continue;
       }
-      call Si446xCmd.send_cmd(cp, rsp, size);
+      call Si446xCmd.send_config(cp, size);
       cp += size;
       config_task_records++;
     }
