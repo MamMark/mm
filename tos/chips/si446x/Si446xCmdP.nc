@@ -256,7 +256,8 @@ const uint8_t start_rx_cmd[] = {
   0,                                  /* channel */
   0,                                  /* start immediate */
   0, 0,                               /* len, use variable length */
-  RC_RX,                              /* rxtimeout, stay, good boy */
+  //  RC_RX,                              /* rxtimeout, stay, good boy */
+  0,                                  /* rxtimeout, stay, good boy */
   0,                                  /* rxvalid */
   0,                                  /* rxinvalid */
 };

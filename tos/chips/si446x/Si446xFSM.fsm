@@ -38,7 +38,7 @@
       <inputs default="0" any="0" invert="0">CONFIG_DONE</inputs>
       <outputs>ready</outputs>
     </transition>
-    <transition c1x="1694.769458934607" c2y="611.0046080126147" c1y="474.1053306826096" description="" straight="1" type="2" ypos="503.2561010975735" endx="1603.788837407554" xpos="1617.35371865875" endy="534.6531038375383" c2x="1635.622971107849">
+    <transition c1x="1698.769458934607" c2y="680.0046080126147" c1y="494.1053306826095" description="" straight="0" type="2" ypos="503.2561010975735" endx="1603.788837407554" xpos="1617.35371865875" endy="534.6531038375383" c2x="1695.622971107849">
       <from>1</from>
       <to>1</to>
       <inputs default="0" any="0" invert="0">PREAMBLE_DETECT</inputs>
@@ -68,7 +68,13 @@
       <inputs default="0" any="0" invert="0">SYNC_DETECT</inputs>
       <outputs>rx_start</outputs>
     </transition>
-    <transition c1x="1345.072459087987" c2y="951.4527019425587" c1y="1018.61555138258" description="" straight="0" type="2" ypos="942.4496259330034" endx="1332.257614250391" xpos="1362.381815210431" endy="926.2536294853769" c2x="1253.466935832339">
+    <transition c1x="1602.419594868224" c2y="460.9681952359214" c1y="305.1629670743156" description="" straight="0" type="2" ypos="455.1492571460405" endx="1611.948354053397" xpos="1588.878376571501" endy="477.538287609192" c2x="1713.908210882008">
+      <from>1</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">INVALID_SYNC</inputs>
+      <outputs>clear_sync</outputs>
+    </transition>
+    <transition c1x="1345.072459087987" c2y="926.4527019425587" c1y="1018.61555138258" description="" straight="0" type="2" ypos="942.4496259330034" endx="1332.257614250391" xpos="1362.381815210431" endy="926.2536294853769" c2x="1149.466935832339">
       <from>5</from>
       <to>5</to>
       <inputs default="0" any="0" invert="0">RX_THRESH</inputs>
@@ -86,29 +92,35 @@
       <inputs default="0" any="0" invert="0">PACKET_RX</inputs>
       <outputs>rx_cmp</outputs>
     </transition>
-    <transition c1x="1331.346160456994" c2y="603.4441268383994" c1y="712.8961196375437" description="" straight="0" type="2" ypos="840.1579579119258" endx="1539.241917692123" xpos="1351.978600484684" endy="541.6100490936764" c2x="1416.328980130958">
+    <transition c1x="1578.426561289739" c2y="1029.941623991596" c1y="876.0596609273659" description="" straight="0" type="2" ypos="918.9627812035599" endx="1392.009765722825" xpos="1414.386454070524" endy="937.6812784394008" c2x="1492.879224781302">
       <from>5</from>
-      <to>1</to>
-      <inputs default="0" any="0" invert="0">CRC_ERROR</inputs>
-      <outputs>rx_cnt_crc</outputs>
+      <to>5</to>
+      <inputs default="0" any="0" invert="0">PREAMBLE_DETECT</inputs>
+      <outputs>nop</outputs>
     </transition>
-    <transition c1x="606.2772759715057" c2y="656.7318059184749" c1y="849.8410954119474" description="" straight="0" type="2" ypos="870.2160105702106" endx="808.8346431493065" xpos="1320.830967446552" endy="425.2618472036514" c2x="728.867785835555">
-      <from>5</from>
-      <to>7</to>
-      <inputs default="0" any="0" invert="0">STANDBY</inputs>
-      <outputs>standby</outputs>
-    </transition>
-    <transition c1x="811.6013253967008" c2y="930.3214213658866" c1y="857.9409209376508" description="" straight="0" type="2" ypos="896.060699923891" endx="251.4738293300083" xpos="1317.347669411198" endy="584.0792841793134" c2x="405.3475885112225">
+    <transition c1x="814.392060779782" c2y="930.3214213658866" c1y="870.6246267844183" description="" straight="0" type="2" ypos="909.6837058467675" endx="251.4738293300083" xpos="1320.790735383081" endy="584.0792841793134" c2x="405.3475885112225">
       <from>5</from>
       <to>4</to>
       <inputs default="0" any="0" invert="0">TURNOFF</inputs>
       <outputs>pwr_dn</outputs>
     </transition>
-    <transition c1x="1607.426561289739" c2y="1035.941623991596" c1y="899.0596609273659" description="" straight="0" type="2" ypos="918.9627812035599" endx="1392.009765722825" xpos="1414.386454070524" endy="937.6812784394008" c2x="1438.879224781302">
+    <transition c1x="1350.131778612501" c2y="603.4441268383994" c1y="712.9693746829207" description="" straight="0" type="2" ypos="837.073255045377" endx="1539.241917692123" xpos="1372.785618155506" endy="541.6100490936764" c2x="1416.328980130958">
+      <from>5</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">CRC_ERROR</inputs>
+      <outputs>rx_cnt_crc</outputs>
+    </transition>
+    <transition c1x="1146.136577173727" c2y="771.8224984811977" c1y="867.3113893667773" description="" straight="0" type="2" ypos="866.2976794385022" endx="1354.255472710279" xpos="1322.595358877004" endy="839.3925908544684" c2x="1255.21532953889">
       <from>5</from>
       <to>5</to>
-      <inputs default="0" any="0" invert="0">PREAMBLE_DETECT</inputs>
-      <outputs>nop</outputs>
+      <inputs default="0" any="0" invert="0">INVALID_SYNC</inputs>
+      <outputs>clear_sync</outputs>
+    </transition>
+    <transition c1x="605.612055650916" c2y="656.7318059184749" c1y="865.8806050232297" description="" straight="0" type="2" ypos="884.9272424478544" endx="808.8346431493065" xpos="1317.243321457685" endy="425.2618472036514" c2x="728.867785835555">
+      <from>5</from>
+      <to>7</to>
+      <inputs default="0" any="0" invert="0">STANDBY</inputs>
+      <outputs>standby</outputs>
     </transition>
     <transition c1x="1223.996242290185" c2y="583.4663487171754" c1y="545.8237434689077" description="" straight="0" type="2" ypos="622.7016065138779" endx="1520.772719689847" xpos="1026.291283805775" endy="518.2689539654434" c2x="1300.644480990016">
       <from>6</from>

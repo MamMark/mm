@@ -549,6 +549,7 @@ implementation {
       if ((t = fsm_select_transition(ev, fsm_global_current_state))) {
 	// this list must match with actions defined by FSM
 	switch (fsm_trace_action(t->action)) {
+	case A_CLEAR_SYNC:  ns = a_clear_sync(t);  break;
 	case A_CONFIG:      ns = a_config(t);      break;
 	case A_NOP:	    ns = a_nop(t);         break;
 	case A_PWR_DN:	    ns = a_pwr_dn(t);      break;
@@ -1082,6 +1083,9 @@ implementation {
 
   fsm_result_t a_rx_cnt_crc(fsm_transition_t *t) {
     global_ioc.rx_bad_crcs++;
+    call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
+    // force radio chip to sleep. this is a workaround (see TI errata)
+    call Si446xCmd.change_state(RC_SLEEP, TRUE);
     stop_alarm();
     return a_rx_on(t);
   }
@@ -1090,6 +1094,15 @@ implementation {
  /**************************************************************************/
   fsm_result_t a_rx_timeout(fsm_transition_t *t) {
     global_ioc.rx_timeouts++;
+    //    call Si446xCmd.change_state(RC_SLEEP, FALSE);
+    return a_rx_on(t);
+  }
+
+
+ /**************************************************************************/
+  fsm_result_t a_clear_sync(fsm_transition_t *t) {
+    global_ioc.rx_inv_syncs++;
+    call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
     return a_rx_on(t);
   }
 
@@ -1272,7 +1285,10 @@ implementation {
    * Clear the flag in the pending information to denote handled.
    */
   fsm_event_t get_next_interrupt_event(volatile si446x_int_state_t *isp) {
-    nop();
+    if (isp->modem_pend & SI446X_MODEM_STATUS_INVALID_SYNC) {
+      isp->modem_pend ^= SI446X_MODEM_STATUS_INVALID_SYNC;
+      return E_INVALID_SYNC;
+    }
     if (isp->modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
       isp->modem_pend ^= SI446X_MODEM_STATUS_PREAMBLE_DETECT;
       return E_PREAMBLE_DETECT;
@@ -1299,11 +1315,22 @@ implementation {
       isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
       return E_RX_THRESH;
     }
+    if (isp->chip_pend & SI446X_CHIP_STATUS_CMD_ERROR) {
+#ifdef notdef
+      // should read chip status to get command error info
+      call Si446xCmd.dump_radio();
+      __PANIC_RADIO(18, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
+#endif
+      isp->chip_pend ^= SI446X_CHIP_STATUS_CMD_ERROR;
+      return E_NONE;
+    }
 
     if (isp->ph_pend || isp->modem_pend || isp->chip_pend) {
       /* missed something */
-      nop();
-      __PANIC_RADIO(19, 0, 0, 0, 0);
+      isp->ph_pend = 0;
+      isp->modem_pend = 0; 
+      isp->chip_pend = 0;
+      //      __PANIC_RADIO(19, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
     }
     return E_NONE;
   }
@@ -1359,17 +1386,17 @@ implementation {
       call Si446xCmd.fast_all(radio_pend);
       call Si446xCmd.trace_radio_pend(radio_pend);
       call Si446xCmd.ll_getclr_ints(isp);
-      interrupt_trace(isp);
+      if (!isp->ph_pend & !isp->modem_pend & !isp->chip_pend)
+	break;
       isp->ph_pend    &= SI446X_PH_INTEREST;
       isp->modem_pend &= SI446X_MODEM_INTEREST;
       isp->chip_pend  &= SI446X_CHIP_INTEREST;
-      if ((isp->ph_pend || isp->modem_pend || isp->chip_pend)) {
-	while ((ev = get_next_interrupt_event(isp))) {
+      while ((isp->ph_pend | isp->modem_pend | isp->chip_pend)) {
+	interrupt_trace(isp);
+	if ((ev = get_next_interrupt_event(isp))) {
 	  fsm_change_state(ev);
-	  interrupt_trace(isp);
 	}
-      } else
-	break;
+      }
     }
   }
 
