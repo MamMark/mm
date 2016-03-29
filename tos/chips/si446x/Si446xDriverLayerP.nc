@@ -1354,16 +1354,19 @@ implementation {
 
   typedef struct int_trace {
     uint32_t               time;
+    uint16_t               delta;
+    Si446x_idevice_state_t ds;
     uint8_t                ph_pend;
     uint8_t                modem_pend;
     uint8_t                chip_pend;
-    Si446x_device_state_t  ds;
   } int_trace_t;
 
   tasklet_norace uint8_t          int_tc, int_tp;
-  tasklet_norace int_trace_t      int_trace_array[16];
+  tasklet_norace int_trace_t      int_trace_array[64];
+  tasklet_norace uint32_t         int_trace_prev_time;
 
   void interrupt_trace(volatile si446x_int_state_t *isp) {
+    call Si446xCmd.trace(T_DL_INTERRUPT, isp->ph_pend, (isp->modem_pend << 8) | isp->chip_pend);
     fsm_trace_array[fsm_tc].ph = isp->ph_pend;
     fsm_trace_array[fsm_tc].modem = isp->modem_pend;
     fsm_trace_array[fsm_tc].chip = isp->chip_pend;
@@ -1374,6 +1377,8 @@ implementation {
     int_trace_array[int_tc].modem_pend = isp->modem_pend;
     int_trace_array[int_tc].chip_pend = isp->chip_pend;
     int_trace_array[fsm_tc].ds = call Si446xCmd.fast_device_state();
+    int_trace_array[fsm_tc].delta = int_trace_array[int_tc].time - int_trace_prev_time;
+    int_trace_prev_time =  int_trace_array[int_tc].time;
     int_tp = int_tc;
     if (++int_tc >= NELEMS(int_trace_array))
       int_tc = 0;
@@ -1434,7 +1439,8 @@ implementation {
     nop();
     nop();
     stateAlarm_active = FALSE;
-    fsm_change_state(E_WAIT_DONE);
+    fsm_task_queue(E_WAIT_DONE);
+    //    fsm_change_state(E_WAIT_DONE);
   }
 
 
