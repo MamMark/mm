@@ -684,24 +684,26 @@ implementation {
 
   /* ----------------- CHANNEL ----------------- */
 
-  tasklet_async command uint8_t RadioState.getChannel() {
-    return channel;
+  uint8_t get_channel() {
+    return global_ioc.channel;
   }
 
+  void set_channel(uint8_t c) {
+    global_ioc.channel = c;
+  }
+
+  tasklet_async command uint8_t RadioState.getChannel() {
+    return (get_channel());
+  }
 
   tasklet_async command error_t RadioState.setChannel(uint8_t c) {
     c &= SI446X_CHANNEL_MASK;
     if (dvr_cmd != CMD_NONE)
       return EBUSY;
-    else if (channel == c)
+    else if (get_channel() == c)
       return EALREADY;
-
-    channel = c;
-//    dvr_cmd = CMD_CHANNEL;
+    set_channel(c);
     return SUCCESS;
-  }
-
-  void setChannel() {
   }
 
 
@@ -962,15 +964,15 @@ implementation {
    */
 
   fsm_result_t a_ready(fsm_transition_t *t) {
-    call Si446xCmd.dump_radio();
-    nop();
-    setChannel();
+    set_channel(get_channel());
     // initialize interrupts
     call Si446xCmd.ll_clr_ints();
     call Si446xCmd.enableInterrupt();
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
-    /* proceed with a_rx_on action to start receiving */
+    // snapshot radio chip internal register state
+    call Si446xCmd.dump_radio();
+    // proceed with a_rx_on action to start receiving
     return a_rx_on(t);
   }
 
@@ -1126,6 +1128,7 @@ implementation {
     global_ioc.tx_timeouts++;
     global_ioc.tx_signal = TRUE;
     global_ioc.tx_error = FAIL;
+    //    call Si446xCmd.change_state(RC_SLEEP, FALSE);
     return a_rx_on(t);
   }
 
