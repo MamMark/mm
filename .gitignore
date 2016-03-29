@@ -10,4 +10,3 @@ support/utils/mkdblk/mkdblk
 _Build
 TAGS
 tos/chips/si446x/FSM.*
-tos/chips/si446x/Si446xFSM.h
