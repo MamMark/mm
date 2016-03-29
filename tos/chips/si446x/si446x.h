@@ -242,6 +242,18 @@
 #define SI446X_DEVICE_STATE_REPLY_SIZE          2
 
 typedef enum {
+	_NO_STATE   = 0,
+	_SLEEP___   = 1,
+	_SPI_ACT_   = 2,
+	_READY___   = 3,
+	_READYA__   = 4,
+	_TX_TUNE_   = 5,
+	_RX_TUNE_   = 6,
+	_TRANSMIT   = 7,
+	_RECEIVE_   = 8,
+} Si446x_idevice_state_t;
+
+typedef enum {
 	RC_NO_STATE   = 0,
 	RC_SLEEP      = 1,
 	RC_SPI_ACT    = 2,
@@ -249,8 +261,8 @@ typedef enum {
 	RC_READYA     = 4,
 	RC_TX_TUNE    = 5,
 	RC_RX_TUNE    = 6,
-	RC_TX         = 7,
-	RC_RX         = 8,
+	RC_TRANSMIT   = 7,
+	RC_RECEIVE    = 8,
 } Si446x_device_state_t;
 
 //#define SI446X_CMD_READ_BUFF                  0x44

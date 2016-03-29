@@ -328,6 +328,63 @@ implementation {
   uint8_t si446x_cca_threshold = SI446X_INITIAL_RSSI_THRESH;
 
 
+  /**************************************************************************/
+  /*
+   * ll_si446x_trace
+   */
+  uint8_t trace_predicate;
+
+#define TRACE_MUMBLE   1
+#define TRACE_WHISPER  2
+#define TRACE_TALK     4
+#define TRACE_SHOUT    8
+
+  void ll_si446x_trace(trace_where_t where, uint16_t r0, uint16_t r1) {
+  uint8_t    level;
+
+  switch (where) {
+ case T_RC_SHUTDOWN:
+ case T_RC_UNSHUTDOWN:
+ case T_RC_CHECK_CCA:
+ case T_DL_TRANS_ST:
+ case T_RC_WAIT_CTS_F:
+ default:
+   level = TRACE_MUMBLE;
+   break;
+
+ case T_RC_CHG_STATE:
+ case T_DL_INTERRUPT:
+ case T_RC_INTERRUPT:
+   level = TRACE_WHISPER;
+   break;
+
+ case T_RC_FIFO_INFO:
+ case T_RC_GET_PKT_INF:
+ case T_RC_READ_PROP:
+ case T_RC_SET_PROP:
+ case T_RC_READ_RX_FF:
+ case T_RC_WRITE_TX_FF:
+ case T_RC_SEND_CMD:
+ case T_RC_CMD_REPLY:
+ case T_RC_GET_REPLY:
+ case T_RC_WAIT_CTS:
+   level = TRACE_TALK;
+   break;
+
+ case T_RC_DIS_INTR:
+ case T_RC_DRF_ALL:
+ case T_RC_ENABLE_INT:
+ case T_RC_DUMP_PROPS:
+ case T_RC_DUMP_RADIO:
+ case T_RC_DUMP_FIFO:
+   level = TRACE_SHOUT;
+   break;
+}
+  nop();
+  if ((!trace_predicate) || (level & trace_predicate))
+    call Trace.trace(where, r0, r1);
+}
+
 
   /**************************************************************************/
   /*
@@ -530,6 +587,7 @@ implementation {
     }
     ctp->t_cmd0 = t1 - t0;
     ctp->d_len0 = cl;
+    ll_si446x_trace(T_RC_SEND_CMD, cmd, t1-t0);
   }
 
 
@@ -569,6 +627,7 @@ implementation {
     t1 = call Platform.usecsRaw();
     ctp->t_reply = t1 - t0;
     ctp->d_reply_len = l + 2;
+    ll_si446x_trace(T_RC_GET_REPLY, cmd, t1-t0);
   }
 
 
@@ -591,6 +650,7 @@ implementation {
       ll_si446x_read_fast_status(ctp->frr);
     }
     ctp->t_elapsed = t1 - t0;
+    ll_si446x_trace(T_RC_CMD_REPLY, cp[0], t1-t0);
   }
 
 
@@ -747,6 +807,7 @@ implementation {
      */
     if (tx_count < rx_count)
       tx_count = rx_count;
+    ll_si446x_trace(T_RC_DUMP_FIFO, 0, 0);
   }
 
 
@@ -763,6 +824,7 @@ implementation {
     uint8_t  *w, wl;                    /* working */
     uint16_t t0, t1, tot0;
 
+    ll_si446x_trace(T_RC_DUMP_PROPS, 0, 0);
     ctp_ff = &cmd_timings[0xff];
     t0 = call Platform.usecsRaw();
     while (!ll_si446x_get_cts()) {
@@ -826,12 +888,13 @@ implementation {
 
   /**************************************************************************/
   /*
-   * ll_si446x_dump_radio
+   * ll_si446x_drf
    *
    * dump full radio configuration and state.
    */
   void ll_si446x_drf() {
 
+    ll_si446x_trace(T_RC_DRF_ALL, 0, 0);
     SI446X_ATOMIC {
       rd.p_dump_start = call Platform.usecsRaw();
       rd.l_dump_start = call LocalTime.get();
@@ -1008,8 +1071,11 @@ implementation {
       ll_si446x_read_fast_status(radio_pend);
       if ((t1-t0) > SI446X_CTS_TIMEOUT) {
         ll_si446x_read_fast_status(radio_pend1);
+	ll_si446x_trace(T_RC_WAIT_CTS_F, radio_pend1[0], t1-t0);
+#ifdef notdef
         ll_si446x_drf();
 	__PANIC_RADIO(24, t1, t0, t1-t0, 0);
+#endif
         ll_si446x_read_fast_status(radio_pend);
 	return FALSE;
       }
@@ -1024,6 +1090,12 @@ implementation {
    * HW.interrupt
    */
   async event void HW.si446x_interrupt() {
+    ll_si446x_trace(T_RC_INTERRUPT,
+		    (ll_si446x_read_frr(SI446X_GET_DEVICE_STATE) << 8)
+		    | ll_si446x_read_frr(SI446X_GET_PH_PEND),
+		    (ll_si446x_read_frr(SI446X_GET_MODEM_PEND) << 8) 
+		    | ll_si446x_read_frr(SI446X_GET_LATCHED_RSSI)
+		    );
     signal Si446xCmd.interrupt();
   }
 
@@ -1081,8 +1153,11 @@ implementation {
    * CTS can be on a h/w pin or can be obtained via the SPI
    * bus.  This routine hides how it is obtained.
    */
-  async command bool Si446xCmd.get_cts() {
-       return ll_si446x_get_cts();
+  async command void Si446xCmd.dump_radio() {
+    atomic {
+      ll_si446x_drf();
+    }
+    ll_si446x_trace(T_RC_DUMP_RADIO, 0, 0);
   }
 
 

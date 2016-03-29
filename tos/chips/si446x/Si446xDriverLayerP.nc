@@ -500,6 +500,7 @@ implementation {
   //  uint8_t si446x_fast_device_state();
 
   void fsm_trace_start(fsm_event_t ev, fsm_state_t cs) {
+    call Si446xCmd.trace(T_DL_TRANS_ST, ev, cs);
     fsm_trace_array[fsm_tc].start  = call LocalTime.get();
     fsm_trace_array[fsm_tc].ev = ev;
     fsm_trace_array[fsm_tc].cs = cs;
