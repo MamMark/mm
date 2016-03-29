@@ -997,7 +997,7 @@ implementation {
     ll_si446x_trace(T_RC_INTERRUPT,
 		    (ll_si446x_read_frr(SI446X_GET_DEVICE_STATE) << 8)
 		    | ll_si446x_read_frr(SI446X_GET_PH_PEND),
-		    (ll_si446x_read_frr(SI446X_GET_MODEM_PEND) << 8) 
+		    (ll_si446x_read_frr(SI446X_GET_MODEM_PEND) << 8)
 		    | ll_si446x_read_frr(SI446X_GET_LATCHED_RSSI)
 		    );
     signal Si446xCmd.interrupt();
