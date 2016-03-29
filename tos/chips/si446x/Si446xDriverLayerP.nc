@@ -304,8 +304,8 @@ implementation {
  * global I/O context
  */
   typedef struct global_io_context {
-    message_t                       * pRxMsg;          /* msg driver owns */
-    message_t                       * pTxMsg;          /* msg driver owns */
+    message_t                       * pRxMsg;          // msg driver owns
+    message_t                       * pTxMsg;          // msg driver owns
     bool                              rc_signal;
     bool                              tx_signal;
     error_t                           tx_error;
@@ -317,8 +317,11 @@ implementation {
     uint16_t                          rx_bad_crcs;
     uint32_t                          rx_reports;
     uint16_t                          rx_timeouts;
+    uint16_t                          rx_inv_syncs;
     uint16_t                          nops;
     uint16_t                          unshuts;
+    uint8_t                           channel;         // current channel setting
+    uint8_t                           tx_power;        // current power setting
   } global_io_context_t;
 
   tasklet_norace global_io_context_t  global_ioc;
@@ -618,13 +621,6 @@ implementation {
   } si446x_cmd_t;
 
   tasklet_norace si446x_cmd_t dvr_cmd;        /* gets initialized to 0, CMD_NONE  */
-
-  /*************************************************************************
-   *
-   * user configurable radio parameters
-   */
-  tasklet_norace uint8_t      txPower;        /* current power setting   */
-  tasklet_norace uint8_t      channel;        /* current channel setting */
 
 
   /*************************************************************************
