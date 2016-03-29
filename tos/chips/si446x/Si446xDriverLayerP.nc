@@ -496,7 +496,7 @@ implementation {
    * fsm_trace related global variables and update routines. records state
    * machine execution details.
    */
-  tasklet_norace fsm_stage_info_t fsm_trace_array[16];
+  tasklet_norace fsm_stage_info_t fsm_trace_array[60];
   tasklet_norace uint8_t fsm_tp, fsm_tc;
 
   //  uint8_t si446x_fast_latched_rssi();
