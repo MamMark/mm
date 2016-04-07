@@ -26,6 +26,7 @@ typedef enum {
   E_TRANSMIT,
   E_TURNOFF,
   E_TURNON,
+  E_TX_THRESH,
   E_WAIT_DONE,
 } fsm_event_t;
 
@@ -39,11 +40,12 @@ typedef enum {
   A_READY,
   A_RX_CMP,
   A_RX_CNT_CRC,
-  A_RX_HEADER,
+  A_RX_DRAIN_FF,
   A_RX_START,
   A_RX_TIMEOUT,
   A_STANDBY,
   A_TX_CMP,
+  A_TX_FILL_FF,
   A_TX_START,
   A_TX_TIMEOUT,
   A_UNSHUT,
@@ -73,6 +75,7 @@ const fsm_transition_t fsm_e_sync_detect[];
 const fsm_transition_t fsm_e_transmit[];
 const fsm_transition_t fsm_e_turnoff[];
 const fsm_transition_t fsm_e_turnon[];
+const fsm_transition_t fsm_e_tx_thresh[];
 const fsm_transition_t fsm_e_wait_done[];
 
 fsm_result_t a_clear_sync(fsm_transition_t *t);
@@ -83,14 +86,20 @@ fsm_result_t a_pwr_up(fsm_transition_t *t);
 fsm_result_t a_ready(fsm_transition_t *t);
 fsm_result_t a_rx_cmp(fsm_transition_t *t);
 fsm_result_t a_rx_cnt_crc(fsm_transition_t *t);
-fsm_result_t a_rx_header(fsm_transition_t *t);
+fsm_result_t a_rx_drain_ff(fsm_transition_t *t);
 fsm_result_t a_rx_start(fsm_transition_t *t);
 fsm_result_t a_rx_timeout(fsm_transition_t *t);
 fsm_result_t a_standby(fsm_transition_t *t);
 fsm_result_t a_tx_cmp(fsm_transition_t *t);
+fsm_result_t a_tx_fill_ff(fsm_transition_t *t);
 fsm_result_t a_tx_start(fsm_transition_t *t);
 fsm_result_t a_tx_timeout(fsm_transition_t *t);
 fsm_result_t a_unshut(fsm_transition_t *t);
+
+const fsm_transition_t fsm_e_tx_thresh[] = {
+  {S_TX_ACTIVE, A_TX_FILL_FF, S_TX_ACTIVE},
+  { S_DEFAULT, A_BREAK, S_DEFAULT },
+};
 
 const fsm_transition_t fsm_e_invalid_sync[] = {
   {S_RX_ON, A_CLEAR_SYNC, S_RX_ON},
@@ -125,7 +134,7 @@ const fsm_transition_t fsm_e_config_done[] = {
 };
 
 const fsm_transition_t fsm_e_rx_thresh[] = {
-  {S_RX_ACTIVE, A_RX_HEADER, S_RX_ACTIVE},
+  {S_RX_ACTIVE, A_RX_DRAIN_FF, S_RX_ACTIVE},
   { S_DEFAULT, A_BREAK, S_DEFAULT },
 };
 
@@ -175,4 +184,4 @@ const fsm_transition_t fsm_e_turnoff[] = {
 };
 
 const fsm_transition_t *fsm_events_group[] = {
-fsm_e_0nop,  fsm_e_config_done,  fsm_e_crc_error,  fsm_e_invalid_sync,  fsm_e_packet_rx,  fsm_e_packet_sent,  fsm_e_preamble_detect,  fsm_e_rx_thresh,  fsm_e_standby,  fsm_e_sync_detect,  fsm_e_transmit,  fsm_e_turnoff,  fsm_e_turnon,  fsm_e_wait_done,  };
+fsm_e_0nop,  fsm_e_config_done,  fsm_e_crc_error,  fsm_e_invalid_sync,  fsm_e_packet_rx,  fsm_e_packet_sent,  fsm_e_preamble_detect,  fsm_e_rx_thresh,  fsm_e_standby,  fsm_e_sync_detect,  fsm_e_transmit,  fsm_e_turnoff,  fsm_e_turnon,  fsm_e_tx_thresh,  fsm_e_wait_done,  };

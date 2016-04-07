@@ -73,7 +73,20 @@ implementation {
     uint8_t       data[0];
   } PACKED test_msg_t;
 
-  volatile uint8_t  txMsgBuffer[129] = {'\37', '\1', '\1', '\1', '\1', '\1', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', 'H', 'e', 'l', 'l', 'o', '\0'};
+  volatile uint8_t  txMsgBuffer[128] = {127, 1, 1, 1, 1, 1, \
+                                       'H', 'e', 'l', '1', 'o', 'H', 'e', 'l', 'l', 'o', \
+				       'H', 'e', 'l', '2', 'o', 'H', 'e', 'l', 'l', 'o', \
+				       'H', 'e', 'l', '3', 'o', 'H', 'e', 'l', 'l', 'o', \
+				       'H', 'e', 'l', '4', 'o', 'H', 'e', 'l', 'l', 'o', \
+				       'H', 'e', 'l', '5', 'o', 'H', 'e', 'l', 'l', 'o', \
+                                       'H', 'e', 'l', '6', 'o', 'H', 'e', 'l', 'l', 'o', \
+				       'H', 'e', 'l', '7', 'o', 'H', 'e', 'l', 'l', 'o', \
+				       'H', 'e', 'l', '8', 'o', 'H', 'e', 'l', 'l', 'o', \
+				       'H', 'e', 'l', '9', 'o', 'H', 'e', 'l', 'l', 'o', \
+				       'H', 'e', '0', 'l', 'o', 'H', 'e', 'l', 'l', 'o', \
+				       'H', 'e', '1', 'l', 'o', 'H', 'e', 'l', 'l', 'o', \
+				       'H', 'e', '2', 'l', 'o', 'H', 'e', 'l', 'l', 'o', \
+				       0, 0 };
   message_t       * pTosTxMsg = (message_t *) txMsgBuffer;
   test_msg_t      * pTxMsg = (test_msg_t *) txMsgBuffer;
   volatile uint8_t  pgMsgBuffer[129];
