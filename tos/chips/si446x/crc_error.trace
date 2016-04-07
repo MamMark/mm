@@ -1,0 +1,445 @@
+p rd
+{p_dump_start = 28316, l_dump_start = 30371487, l_dump_end = 30381579, l_delta = 10092, CTS_pin = 4 '\004', IRQN_pin = 16 '\020', SDN_pin = 0 '\000', CSN_pin = 128 '\200', ta0ccr3 = 0 '\000', ta0cctl3 = 1 '\001', part_info = {chiprev = 17 '\021', part_15 = 68 'D', part_7 = 99 'c', pbuild = 0 '\000', id_15 = 0 '\000', id_7 = 15 '\017', customer = 0 '\000', romid = 3 '\003'},
+ func_info = {revext = 3 '\003', revbranch = 0 '\000', revint = 15 '\017', reserved0 = 0 '\000', reserved1 = 0 '\000', func = 1 '\001'},
+ gpio_cfg = {gpio0 = 2 '\002', gpio1 = 8 '\b', gpio2 = 33 '!', gpio3 = 32 ' ', nirq = 167 '\247', sdo = 11 '\v', gen_config = 0 '\000'},
+ rxfifocnt = 0 '\000', txfifofree = 64 '@', ph_status = {pend = 0 '\000', status = 2 '\002'},
+ modem_status = {pend = 0 '\000', status = 0 '\000', curr_rssi = 4 '\004', latched_rssi = 0 '\000', ant1_rssi = 0 '\000', ant2_rssi = 0 '\000', afc_freq_offset15 = 130 '\202', afc_freq_offset7 = 21 '\025'},
+ chip_status = {pend = 0 '\000', status = 20 '\024', cmd_err_status = 0 '\000', cmd_err_cmd_id = 0 '\000'},
+ int_state = {pend = 0 '\000', status = 0 '\000', ph_pend = 0 '\000', ph_status = 2 '\002', modem_pend = 0 '\000', modem_status = 0 '\000', chip_pend = 0 '\000', chip_status = 20 '\024'},
+ device_state = 3 '\003', channel = 0 '\000', frr = "\003\000\000", packet_info_len = "\000", gr00_global = "R\000\030`\000\000\001`\000", gr01_int = "\003\377\377\377", gr02_frr = "\t\004\006\n", gr10_preamble = "\030\024\000\017!\000\000\000\000\000\000\000\000", gr11_sync = "\001\264+\000", gr12_pkt = "\205\001\b\377\377\000\202\000*\001\000\060\060\000\001\004\242\000", gr12a_pkt = "\000\001\004\202\000\201\000\n\000", gr20_modem = "\003\000\a\017B@\t\311À\000\033O\000\000g`M6!\021\b\003\001\001\200\b\003\200\000\000\020\000\000\000\310\002\217\\\001H\002\302\000\004\066\200\222\nF\200\000\000\342\000\000\021,,\000\032\377\377\000)\f\244\002փ\001\177\001\200 \f%\000@\003\000\n", gr21_modem = "\377\304\060\177\365\265\270\336\005\027\026\f\003\000\025\377\000\000\377\304\060\177\365\265\270\336\005\027\026\f\003\000\025\377\000", gr22_pa = "\b\177\000=\000#", gr23_synth = ",\016\v\004\fs\003\005", gr30_match = 0x416e "\234n\237n\317\001\v\226\317\001l'", gr40_freq_ctl = "8\r\335\335DD \376", gr50_hop = 0x416e "\234n\237n\317\001\v\226\317\001l'", grF0_pti = 0x416e "\234n\237n\317\001\v\226\317\001l'"}
+
+p/x rd
+{p_dump_start = 0x6e9c, l_dump_start = 0x1cf6e9f, l_dump_end = 0x1cf960b, l_delta = 0x276c, CTS_pin = 0x4, IRQN_pin = 0x10, SDN_pin = 0x0, CSN_pin = 0x80, ta0ccr3 = 0x0, ta0cctl3 = 0x1, part_info = {chiprev = 0x11, part_15 = 0x44, part_7 = 0x63, pbuild = 0x0, id_15 = 0x0, id_7 = 0xf, customer = 0x0, romid = 0x3},
+ func_info = {revext = 0x3, revbranch = 0x0, revint = 0xf, reserved0 = 0x0, reserved1 = 0x0, func = 0x1},
+ gpio_cfg = {gpio0 = 0x2, gpio1 = 0x8, gpio2 = 0x21, gpio3 = 0x20, nirq = 0xa7, sdo = 0xb, gen_config = 0x0},
+ rxfifocnt = 0x0, txfifofree = 0x40, ph_status = {pend = 0x0, status = 0x2},
+ modem_status = {pend = 0x0, status = 0x0, curr_rssi = 0x4, latched_rssi = 0x0, ant1_rssi = 0x0, ant2_rssi = 0x0, afc_freq_offset15 = 0x82, afc_freq_offset7 = 0x15},
+ chip_status = {pend = 0x0, status = 0x14, cmd_err_status = 0x0, cmd_err_cmd_id = 0x0},
+ int_state = {pend = 0x0, status = 0x0, ph_pend = 0x0, ph_status = 0x2, modem_pend = 0x0, modem_status = 0x0, chip_pend = 0x0, chip_status = 0x14},
+ device_state = 0x3, channel = 0x0, frr = {0x3, 0x0, 0x0, 0x0},
+ packet_info_len = {0x0, 0x0},
+ gr00_global = {0x52, 0x0, 0x18, 0x60, 0x0, 0x0, 0x1, 0x60, 0x0, 0x0},
+ gr01_int = {0x3, 0xff, 0xff, 0xff},
+ gr02_frr = {0x9, 0x4, 0x6, 0xa},
+ gr10_preamble = {0x18, 0x14, 0x0, 0xf, 0x21, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+ gr11_sync = {0x1, 0xb4, 0x2b, 0x0, 0x0},
+ gr12_pkt = {0x85, 0x1, 0x8, 0xff, 0xff, 0x0, 0x82, 0x0, 0x2a, 0x1, 0x0, 0x30, 0x30, 0x0, 0x1, 0x4, 0xa2, 0x0, 0x0},
+ gr12a_pkt = {0x0, 0x1, 0x4, 0x82, 0x0, 0x81, 0x0, 0xa, 0x0, 0x0},
+ gr20_modem = {0x3, 0x0, 0x7, 0xf, 0x42, 0x40, 0x9, 0xc9, 0xc3, 0x80, 0x0, 0x1b, 0x4f, 0x0, 0x0, 0x67, 0x60, 0x4d, 0x36, 0x21, 0x11, 0x8, 0x3, 0x1, 0x1, 0x80, 0x8, 0x3, 0x80, 0x0, 0x0, 0x10, 0x0, 0x0, 0x0, 0xc8, 0x2, 0x8f, 0x5c, 0x1, 0x48, 0x2, 0xc2, 0x0, 0x4, 0x36, 0x80, 0x92, 0xa, 0x46, 0x80, 0x0, 0x0, 0xe2, 0x0, 0x0, 0x11, 0x2c, 0x2c, 0x0, 0x1a, 0xff, 0xff, 0x0, 0x29, 0xc, 0xa4, 0x2, 0xd6, 0x83, 0x1, 0x7f, 0x1, 0x80, 0x20, 0xc, 0x25, 0x0, 0x40, 0x3, 0x0, 0xa},
+ gr21_modem = {0xff, 0xc4, 0x30, 0x7f, 0xf5, 0xb5, 0xb8, 0xde, 0x5, 0x17, 0x16, 0xc, 0x3, 0x0, 0x15, 0xff, 0x0, 0x0, 0xff, 0xc4, 0x30, 0x7f, 0xf5, 0xb5, 0xb8, 0xde, 0x5, 0x17, 0x16, 0xc, 0x3, 0x0, 0x15, 0xff, 0x0, 0x0},
+ gr22_pa = {0x8, 0x7f, 0x0, 0x3d, 0x0, 0x23},
+ gr23_synth = {0x2c, 0xe, 0xb, 0x4, 0xc, 0x73, 0x3, 0x5},
+ gr30_match = 0x416e, gr40_freq_ctl = {0x38, 0xd, 0xdd, 0xdd, 0x44, 0x44, 0x20, 0xfe},
+ gr50_hop = 0x416e, grF0_pti = 0x416e}
+
+
+p cmd_timings
+{{cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 1, t_cts0 = 49, t_cmd0 = 17, d_len0 = 1, t_cts_r = 24, t_reply = 110, d_reply_len = 10, t_elapsed = 256, frr = "\003\000\000"},
+ {cmd = 2, t_cts0 = 49, t_cmd0 = 82, d_len0 = 7, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"} 
+<repeats 13 times>, {cmd = 16, t_cts0 = 49, t_cmd0 = 17, d_len0 = 1, t_cts_r = 24, t_reply = 89, d_reply_len = 8, t_elapsed = 237, frr = "\003\000\000"},
+ {cmd = 17, t_cts0 = 49, t_cmd0 = 82, d_len0 = 7, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 19, t_cts0 = 49, t_cmd0 = 93, d_len0 = 8, t_cts_r = 24, t_reply = 99, d_reply_len = 9, t_elapsed = 323, frr = "\003\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 21, t_cts0 = 50, t_cmd0 = 27, d_len0 = 2, t_cts_r = 25, t_reply = 46, d_reply_len = 4, t_elapsed = 205, frr = "\001\000\000<"},
+ {cmd = 22, t_cts0 = 49, t_cmd0 = 17, d_len0 = 1, t_cts_r = 24, t_reply = 47, d_reply_len = 4, t_elapsed = 194, frr = "\b\000\000?"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 32, t_cts0 = 49, t_cmd0 = 17, d_len0 = 1, t_cts_r = 49, t_reply = 110, d_reply_len = 10, t_elapsed = 282, frr = "\b\000\000<"},
+ {cmd = 33, t_cts0 = 50, t_cmd0 = 27, d_len0 = 2, t_cts_r = 25, t_reply = 46, d_reply_len = 4, t_elapsed = 205, frr = "\003\000\000"},
+ {cmd = 34, t_cts0 = 49, t_cmd0 = 28, d_len0 = 2, t_cts_r = 25, t_reply = 110, d_reply_len = 10, t_elapsed = 268, frr = "\003\000\000"},
+ {cmd = 35, t_cts0 = 49, t_cmd0 = 28, d_len0 = 2, t_cts_r = 24, t_reply = 68, d_reply_len = 6, t_elapsed = 226, frr = "\003\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"} 
+<repeats 13 times>, {cmd = 49, t_cts0 = 50, t_cmd0 = 60, d_len0 = 5, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 50, t_cts0 = 49, t_cmd0 = 93, d_len0 = 8, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 51, t_cts0 = 49, t_cmd0 = 17, d_len0 = 1, t_cts_r = 25, t_reply = 47, d_reply_len = 4, t_elapsed = 194, frr = "\003\000\000"},
+ {cmd = 52, t_cts0 = 50, t_cmd0 = 27, d_len0 = 2, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"} 
+<repeats 202 times>, {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 50, t_reply = 109, d_reply_len = 10, t_elapsed = 0, frr = "\000\000\000"}}
+
+p/x cmd_timings
+{{cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x1, t_cts0 = 0x31, t_cmd0 = 0x11, d_len0 = 0x1, t_cts_r = 0x18, t_reply = 0x6e, d_reply_len = 0xa, t_elapsed = 0x100, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x2, t_cts0 = 0x31, t_cmd0 = 0x52, d_len0 = 0x7, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+ <repeats 13 times>, {cmd = 0x10, t_cts0 = 0x31, t_cmd0 = 0x11, d_len0 = 0x1, t_cts_r = 0x18, t_reply = 0x59, d_reply_len = 0x8, t_elapsed = 0xed, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x11, t_cts0 = 0x31, t_cmd0 = 0x52, d_len0 = 0x7, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x13, t_cts0 = 0x31, t_cmd0 = 0x5d, d_len0 = 0x8, t_cts_r = 0x18, t_reply = 0x63, d_reply_len = 0x9, t_elapsed = 0x143, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x15, t_cts0 = 0x32, t_cmd0 = 0x1b, d_len0 = 0x2, t_cts_r = 0x19, t_reply = 0x2e, d_reply_len = 0x4, t_elapsed = 0xcd, frr = {0x1, 0x0, 0x0, 0x3c}}
+, {cmd = 0x16, t_cts0 = 0x31, t_cmd0 = 0x11, d_len0 = 0x1, t_cts_r = 0x18, t_reply = 0x2f, d_reply_len = 0x4, t_elapsed = 0xc2, frr = {0x8, 0x0, 0x0, 0x3f}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x20, t_cts0 = 0x31, t_cmd0 = 0x11, d_len0 = 0x1, t_cts_r = 0x31, t_reply = 0x6e, d_reply_len = 0xa, t_elapsed = 0x11a, frr = {0x8, 0x0, 0x0, 0x3c}}
+, {cmd = 0x21, t_cts0 = 0x32, t_cmd0 = 0x1b, d_len0 = 0x2, t_cts_r = 0x19, t_reply = 0x2e, d_reply_len = 0x4, t_elapsed = 0xcd, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x22, t_cts0 = 0x31, t_cmd0 = 0x1c, d_len0 = 0x2, t_cts_r = 0x19, t_reply = 0x6e, d_reply_len = 0xa, t_elapsed = 0x10c, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x23, t_cts0 = 0x31, t_cmd0 = 0x1c, d_len0 = 0x2, t_cts_r = 0x18, t_reply = 0x44, d_reply_len = 0x6, t_elapsed = 0xe2, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+ <repeats 13 times>, {cmd = 0x31, t_cts0 = 0x32, t_cmd0 = 0x3c, d_len0 = 0x5, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x32, t_cts0 = 0x31, t_cmd0 = 0x5d, d_len0 = 0x8, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x33, t_cts0 = 0x31, t_cmd0 = 0x11, d_len0 = 0x1, t_cts_r = 0x19, t_reply = 0x2f, d_reply_len = 0x4, t_elapsed = 0xc2, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x34, t_cts0 = 0x32, t_cmd0 = 0x1b, d_len0 = 0x2, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+ <repeats 202 times>, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x32, t_reply = 0x6d, d_reply_len = 0xa, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+}
+
+
+p prop_timings
+{{cmd = 0, t_cts0 = 25, t_cmd0 = 40, d_len0 = 4, t_cts_r = 49, t_reply = 131, d_reply_len = 12, t_elapsed = 296, frr = "\003\000\000"},
+ {cmd = 1, t_cts0 = 25, t_cmd0 = 39, d_len0 = 4, t_cts_r = 49, t_reply = 68, d_reply_len = 6, t_elapsed = 233, frr = "\003\000\000"},
+ {cmd = 2, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 50, t_reply = 67, d_reply_len = 6, t_elapsed = 233, frr = "\003\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"} 
+<repeats 13 times>, {cmd = 16, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 50, t_reply = 172, d_reply_len = 16, t_elapsed = 338, frr = "\003\000\000"},
+ {cmd = 17, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 50, t_reply = 78, d_reply_len = 7, t_elapsed = 244, frr = "\003\000\000"},
+ {cmd = 18, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 50, t_reply = 130, d_reply_len = 12, t_elapsed = 296, frr = "\003\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"} 
+<repeats 13 times>, {cmd = 32, t_cts0 = 144, t_cmd0 = 238, d_len0 = 24, t_cts_r = 297, t_reply = 1017, d_reply_len = 94, t_elapsed = 1919, frr = "\003\000\000"},
+ {cmd = 33, t_cts0 = 74, t_cmd0 = 120, d_len0 = 12, t_cts_r = 148, t_reply = 455, d_reply_len = 42, t_elapsed = 916, frr = "\003\000\000"},
+ {cmd = 34, t_cts0 = 25, t_cmd0 = 39, d_len0 = 4, t_cts_r = 49, t_reply = 89, d_reply_len = 8, t_elapsed = 254, frr = "\003\000\000"},
+ {cmd = 35, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 50, t_reply = 109, d_reply_len = 10, t_elapsed = 275, frr = "\003\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"} 
+<repeats 12 times>, {cmd = 48, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 18, frr = "\003\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"} 
+<repeats 15 times>, {cmd = 64, t_cts0 = 24, t_cmd0 = 40, d_len0 = 4, t_cts_r = 50, t_reply = 109, d_reply_len = 10, t_elapsed = 275, frr = "\003\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"} 
+<repeats 15 times>, {cmd = 80, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 18, frr = "\003\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"} 
+<repeats 159 times>, {cmd = 240, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 18, frr = "\003\000\000"},
+ {cmd = 0, t_cts0 = 0, t_cmd0 = 0, d_len0 = 0, t_cts_r = 0, t_reply = 0, d_reply_len = 0, t_elapsed = 0, frr = "\000\000\000"} 
+<repeats 15 times>}
+
+p/x prop_timings
+{{cmd = 0x0, t_cts0 = 0x19, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x31, t_reply = 0x83, d_reply_len = 0xc, t_elapsed = 0x128, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x1, t_cts0 = 0x19, t_cmd0 = 0x27, d_len0 = 0x4, t_cts_r = 0x31, t_reply = 0x44, d_reply_len = 0x6, t_elapsed = 0xe9, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x2, t_cts0 = 0x18, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x32, t_reply = 0x43, d_reply_len = 0x6, t_elapsed = 0xe9, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+ <repeats 13 times>, {cmd = 0x10, t_cts0 = 0x18, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x32, t_reply = 0xac, d_reply_len = 0x10, t_elapsed = 0x152, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x11, t_cts0 = 0x18, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x32, t_reply = 0x4e, d_reply_len = 0x7, t_elapsed = 0xf4, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x12, t_cts0 = 0x18, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x32, t_reply = 0x82, d_reply_len = 0xc, t_elapsed = 0x128, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+ <repeats 13 times>, {cmd = 0x20, t_cts0 = 0x90, t_cmd0 = 0xee, d_len0 = 0x18, t_cts_r = 0x129, t_reply = 0x3f9, d_reply_len = 0x5e, t_elapsed = 0x77f, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x21, t_cts0 = 0x4a, t_cmd0 = 0x78, d_len0 = 0xc, t_cts_r = 0x94, t_reply = 0x1c7, d_reply_len = 0x2a, t_elapsed = 0x394, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x22, t_cts0 = 0x19, t_cmd0 = 0x27, d_len0 = 0x4, t_cts_r = 0x31, t_reply = 0x59, d_reply_len = 0x8, t_elapsed = 0xfe, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x23, t_cts0 = 0x18, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x32, t_reply = 0x6d, d_reply_len = 0xa, t_elapsed = 0x113, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+ <repeats 12 times>, {cmd = 0x30, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x12, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+ <repeats 15 times>, {cmd = 0x40, t_cts0 = 0x18, t_cmd0 = 0x28, d_len0 = 0x4, t_cts_r = 0x32, t_reply = 0x6d, d_reply_len = 0xa, t_elapsed = 0x113, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+ <repeats 15 times>, {cmd = 0x50, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x12, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+ <repeats 159 times>, {cmd = 0xf0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x12, frr = {0x3, 0x0, 0x0, 0x0}}
+, {cmd = 0x0, t_cts0 = 0x0, t_cmd0 = 0x0, d_len0 = 0x0, t_cts_r = 0x0, t_reply = 0x0, d_reply_len = 0x0, t_elapsed = 0x0, frr = {0x0, 0x0, 0x0, 0x0}}
+ <repeats 15 times>}
+
+
+p dump_prop
+{{prop_id = 0, where = 0x41b8 "R", length = 10 '\n'},
+ {prop_id = 256, where = 0x41c2 "\003\377\377\377\t\004\006\n\030\024", length = 4 '\004'},
+ {prop_id = 512, where = 0x41c6 "\t\004\006\n\030\024", length = 4 '\004'},
+ {prop_id = 4096, where = 0x41ca "\030\024", length = 14 '\016'},
+ {prop_id = 4352, where = 0x41d8 "\001\264+", length = 5 '\005'},
+ {prop_id = 4608, where = 0x41dd "\205\001\b\377\377", length = 19 '\023'},
+ {prop_id = 4641, where = 0x41f0 "", length = 10 '\n'},
+ {prop_id = 8192, where = 0x41fa "\003", length = 82 'R'},
+ {prop_id = 8448, where = 0x424c "\377\304\060\177\365\265\270\336\005\027\026\f\003", length = 36 '$'},
+ {prop_id = 8704, where = 0x4270 "\b\177", length = 6 '\006'},
+ {prop_id = 8960, where = 0x4276 ",\016\v\004\fs\003\005\070\r\335\335DD \376", length = 8 '\b'},
+ {prop_id = 12288, where = 0x427e "8\r\335\335DD \376", length = 0 '\000'},
+ {prop_id = 16384, where = 0x427e "8\r\335\335DD \376", length = 8 '\b'},
+ {prop_id = 20480, where = 0x4286 "", length = 0 '\000'},
+ {prop_id = 61440, where = 0x4286 "", length = 0 '\000'},
+ {prop_id = 0, where = 0x0, length = 0 '\000'}}
+
+p/x dump_prop
+{{prop_id = 0x0, where = 0x41b8, length = 0xa},
+ {prop_id = 0x100, where = 0x41c2, length = 0x4},
+ {prop_id = 0x200, where = 0x41c6, length = 0x4},
+ {prop_id = 0x1000, where = 0x41ca, length = 0xe},
+ {prop_id = 0x1100, where = 0x41d8, length = 0x5},
+ {prop_id = 0x1200, where = 0x41dd, length = 0x13},
+ {prop_id = 0x1221, where = 0x41f0, length = 0xa},
+ {prop_id = 0x2000, where = 0x41fa, length = 0x52},
+ {prop_id = 0x2100, where = 0x424c, length = 0x24},
+ {prop_id = 0x2200, where = 0x4270, length = 0x6},
+ {prop_id = 0x2300, where = 0x4276, length = 0x8},
+ {prop_id = 0x3000, where = 0x427e, length = 0x0},
+ {prop_id = 0x4000, where = 0x427e, length = 0x8},
+ {prop_id = 0x5000, where = 0x4286, length = 0x0},
+ {prop_id = 0xf000, where = 0x4286, length = 0x0},
+ {prop_id = 0x0, where = 0x0, length = 0x0}}
+
+
+
+p/x fsm_trace_array
+ {start = 40197515, elapsed = 21, ph = 0, modem = 2, chip = 0, ds = RC_RECEIVE, rssi = 62, ev = E_PREAMBLE_DETECT, cs = S_RX_ON, ac = A_NOP, ns = S_RX_ON, ne = E_0NOP, al_s = 1 '\001', al_e = 1 '\001'},
+ {start = 40199360, elapsed = 57, ph = 0, modem = 1, chip = 0, ds = RC_RECEIVE, rssi = 62, ev = E_SYNC_DETECT, cs = S_RX_ON, ac = A_RX_START, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40207226, elapsed = 984, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 62, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40214908, elapsed = 972, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 62, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40220192, elapsed = 2007, ph = 16, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 62, ev = E_PACKET_RX, cs = S_RX_ACTIVE, ac = A_RX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40249815, elapsed = 1858, ph = 0, modem = 4, chip = 0, ds = RC_RECEIVE, rssi = 61, ev = E_TRANSMIT, cs = S_RX_ON, ac = A_TX_START, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40262139, elapsed = 1031, ph = 2, modem = 0, chip = 16, ds = RC_TRANSMIT, rssi = 61, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40270779, elapsed = 539, ph = 2, modem = 0, chip = 0, ds = RC_TRANSMIT, rssi = 61, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40275477, elapsed = 1324, ph = 32, modem = 0, chip = 16, ds = RC_READY, rssi = 61, ev = E_PACKET_SENT, cs = S_TX_ACTIVE, ac = A_TX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40299162, elapsed = 21, ph = 0, modem = 2, chip = 0, ds = RC_RECEIVE, rssi = 58, ev = E_PREAMBLE_DETECT, cs = S_RX_ON, ac = A_NOP, ns = S_RX_ON, ne = E_0NOP, al_s = 1 '\001', al_e = 1 '\001'},
+ {start = 40300987, elapsed = 57, ph = 0, modem = 1, chip = 0, ds = RC_RECEIVE, rssi = 58, ev = E_SYNC_DETECT, cs = S_RX_ON, ac = A_RX_START, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40308854, elapsed = 984, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 58, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40316536, elapsed = 972, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 58, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40321822, elapsed = 2006, ph = 16, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 58, ev = E_PACKET_RX, cs = S_RX_ACTIVE, ac = A_RX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40347482, elapsed = 1858, ph = 0, modem = 4, chip = 0, ds = RC_RECEIVE, rssi = 64, ev = E_TRANSMIT, cs = S_RX_ON, ac = A_TX_START, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40359807, elapsed = 1032, ph = 2, modem = 0, chip = 16, ds = RC_TRANSMIT, rssi = 64, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40368448, elapsed = 539, ph = 2, modem = 0, chip = 0, ds = RC_TRANSMIT, rssi = 64, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40373147, elapsed = 1324, ph = 32, modem = 0, chip = 16, ds = RC_READY, rssi = 64, ev = E_PACKET_SENT, cs = S_TX_ACTIVE, ac = A_TX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40394192, elapsed = 22, ph = 0, modem = 2, chip = 0, ds = RC_RECEIVE, rssi = 61, ev = E_PREAMBLE_DETECT, cs = S_RX_ON, ac = A_NOP, ns = S_RX_ON, ne = E_0NOP, al_s = 1 '\001', al_e = 1 '\001'},
+ {start = 40396058, elapsed = 57, ph = 0, modem = 1, chip = 0, ds = RC_RECEIVE, rssi = 61, ev = E_SYNC_DETECT, cs = S_RX_ON, ac = A_RX_START, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40403925, elapsed = 983, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 61, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40411606, elapsed = 973, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 61, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40416891, elapsed = 2007, ph = 16, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 61, ev = E_PACKET_RX, cs = S_RX_ACTIVE, ac = A_RX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40445151, elapsed = 1858, ph = 0, modem = 4, chip = 0, ds = RC_RECEIVE, rssi = 62, ev = E_TRANSMIT, cs = S_RX_ON, ac = A_TX_START, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40457501, elapsed = 1032, ph = 2, modem = 0, chip = 16, ds = RC_TRANSMIT, rssi = 62, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40466165, elapsed = 539, ph = 2, modem = 0, chip = 0, ds = RC_TRANSMIT, rssi = 62, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40470875, elapsed = 1324, ph = 32, modem = 0, chip = 16, ds = RC_READY, rssi = 62, ev = E_PACKET_SENT, cs = S_TX_ACTIVE, ac = A_TX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40490738, elapsed = 21, ph = 0, modem = 2, chip = 0, ds = RC_RECEIVE, rssi = 63, ev = E_PREAMBLE_DETECT, cs = S_RX_ON, ac = A_NOP, ns = S_RX_ON, ne = E_0NOP, al_s = 1 '\001', al_e = 1 '\001'},
+ {start = 40492563, elapsed = 57, ph = 0, modem = 1, chip = 0, ds = RC_RECEIVE, rssi = 63, ev = E_SYNC_DETECT, cs = S_RX_ON, ac = A_RX_START, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40500430, elapsed = 985, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 63, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40508044, elapsed = 972, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 63, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40513287, elapsed = 2007, ph = 16, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 63, ev = E_PACKET_RX, cs = S_RX_ACTIVE, ac = A_RX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40542774, elapsed = 1858, ph = 0, modem = 4, chip = 0, ds = RC_RECEIVE, rssi = 62, ev = E_TRANSMIT, cs = S_RX_ON, ac = A_TX_START, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40555122, elapsed = 1031, ph = 2, modem = 0, chip = 16, ds = RC_TRANSMIT, rssi = 62, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40563784, elapsed = 539, ph = 2, modem = 0, chip = 0, ds = RC_TRANSMIT, rssi = 62, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40568494, elapsed = 1324, ph = 32, modem = 0, chip = 16, ds = RC_READY, rssi = 62, ev = E_PACKET_SENT, cs = S_TX_ACTIVE, ac = A_TX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40588300, elapsed = 22, ph = 0, modem = 2, chip = 0, ds = RC_RECEIVE, rssi = 60, ev = E_PREAMBLE_DETECT, cs = S_RX_ON, ac = A_NOP, ns = S_RX_ON, ne = E_0NOP, al_s = 1 '\001', al_e = 1 '\001'},
+ {start = 40590126, elapsed = 57, ph = 0, modem = 1, chip = 0, ds = RC_RECEIVE, rssi = 60, ev = E_SYNC_DETECT, cs = S_RX_ON, ac = A_RX_START, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40598044, elapsed = 983, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 60, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40605785, elapsed = 972, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 60, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40611111, elapsed = 2006, ph = 16, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 60, ev = E_PACKET_RX, cs = S_RX_ACTIVE, ac = A_RX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40640692, elapsed = 1858, ph = 0, modem = 4, chip = 0, ds = RC_RECEIVE, rssi = 67, ev = E_TRANSMIT, cs = S_RX_ON, ac = A_TX_START, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40653043, elapsed = 1032, ph = 2, modem = 0, chip = 16, ds = RC_TRANSMIT, rssi = 67, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40661705, elapsed = 540, ph = 2, modem = 0, chip = 0, ds = RC_TRANSMIT, rssi = 67, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'}}
+{{start = 40666415, elapsed = 1324, ph = 32, modem = 0, chip = 16, ds = RC_READY, rssi = 67, ev = E_PACKET_SENT, cs = S_TX_ACTIVE, ac = A_TX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40687430, elapsed = 21, ph = 0, modem = 2, chip = 0, ds = RC_RECEIVE, rssi = 63, ev = E_PREAMBLE_DETECT, cs = S_RX_ON, ac = A_NOP, ns = S_RX_ON, ne = E_0NOP, al_s = 1 '\001', al_e = 1 '\001'},
+ {start = 40689255, elapsed = 57, ph = 0, modem = 1, chip = 0, ds = RC_RECEIVE, rssi = 63, ev = E_SYNC_DETECT, cs = S_RX_ON, ac = A_RX_START, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40697047, elapsed = 986, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 63, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40704736, elapsed = 973, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 63, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40710022, elapsed = 2006, ph = 16, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 63, ev = E_PACKET_RX, cs = S_RX_ACTIVE, ac = A_RX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40738305, elapsed = 1859, ph = 0, modem = 4, chip = 0, ds = RC_RECEIVE, rssi = 62, ev = E_TRANSMIT, cs = S_RX_ON, ac = A_TX_START, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40750655, elapsed = 1031, ph = 2, modem = 0, chip = 16, ds = RC_TRANSMIT, rssi = 62, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40759318, elapsed = 539, ph = 2, modem = 0, chip = 0, ds = RC_TRANSMIT, rssi = 62, ev = E_TX_THRESH, cs = S_TX_ACTIVE, ac = A_TX_FILL_FF, ns = S_TX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40764034, elapsed = 1331, ph = 32, modem = 0, chip = 16, ds = RC_READY, rssi = 62, ev = E_PACKET_SENT, cs = S_TX_ACTIVE, ac = A_TX_CMP, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40785063, elapsed = 21, ph = 0, modem = 2, chip = 0, ds = RC_RECEIVE, rssi = 60, ev = E_PREAMBLE_DETECT, cs = S_RX_ON, ac = A_NOP, ns = S_RX_ON, ne = E_0NOP, al_s = 1 '\001', al_e = 1 '\001'},
+ {start = 40786904, elapsed = 57, ph = 0, modem = 1, chip = 0, ds = RC_RECEIVE, rssi = 60, ev = E_SYNC_DETECT, cs = S_RX_ON, ac = A_RX_START, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 1 '\001', al_e = 0 '\000'},
+ {start = 40794694, elapsed = 983, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 60, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40802325, elapsed = 972, ph = 1, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 60, ev = E_RX_THRESH, cs = S_RX_ACTIVE, ac = A_RX_DRAIN_FF, ns = S_RX_ACTIVE, ne = E_0NOP, al_s = 0 '\000', al_e = 0 '\000'},
+ {start = 40807592, elapsed = 1972, ph = 8, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 60, ev = E_CRC_ERROR, cs = S_RX_ACTIVE, ac = A_RX_CNT_CRC, ns = S_RX_ON, ne = E_0NOP, al_s = 0 '\000', al_e = 1 '\001'},
+ {start = 40809736, elapsed = 0, ph = 17, modem = 0, chip = 0, ds = RC_RECEIVE, rssi = 0, ev = E_PACKET_RX, cs = S_RX_ON, ac = A_BREAK, ns = S_SDN, ne = E_0NOP, al_s = 1 '\001', al_e = 1 '\001'},
+
+p/x fsm_trace_array
+ {start = 0x2655d8b, elapsed = 0x15, ph = 0x0, modem = 0x2, chip = 0x0, ds = 0x8, rssi = 0x3e, ev = 0x6, cs = 0x5, ac = 0x3, ns = 0x5, ne = 0x0, al_s = 0x1, al_e = 0x1},
+ {start = 0x26564c0, elapsed = 0x39, ph = 0x0, modem = 0x1, chip = 0x0, ds = 0x8, rssi = 0x3e, ev = 0x9, cs = 0x5, ac = 0xa, ns = 0x4, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x265837a, elapsed = 0x3d8, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3e, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x265a17c, elapsed = 0x3cc, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3e, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x265b620, elapsed = 0x7d7, ph = 0x10, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3e, ev = 0x4, cs = 0x4, ac = 0x7, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x26629d7, elapsed = 0x742, ph = 0x0, modem = 0x4, chip = 0x0, ds = 0x8, rssi = 0x3d, ev = 0xa, cs = 0x5, ac = 0xf, ns = 0x7, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x26659fb, elapsed = 0x407, ph = 0x2, modem = 0x0, chip = 0x10, ds = 0x7, rssi = 0x3d, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x2667bbb, elapsed = 0x21b, ph = 0x2, modem = 0x0, chip = 0x0, ds = 0x7, rssi = 0x3d, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x2668e15, elapsed = 0x52c, ph = 0x20, modem = 0x0, chip = 0x10, ds = 0x3, rssi = 0x3d, ev = 0x5, cs = 0x7, ac = 0xd, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x266ea9a, elapsed = 0x15, ph = 0x0, modem = 0x2, chip = 0x0, ds = 0x8, rssi = 0x3a, ev = 0x6, cs = 0x5, ac = 0x3, ns = 0x5, ne = 0x0, al_s = 0x1, al_e = 0x1},
+ {start = 0x266f1bb, elapsed = 0x39, ph = 0x0, modem = 0x1, chip = 0x0, ds = 0x8, rssi = 0x3a, ev = 0x9, cs = 0x5, ac = 0xa, ns = 0x4, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x2671076, elapsed = 0x3d8, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3a, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x2672e78, elapsed = 0x3cc, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3a, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x267431e, elapsed = 0x7d6, ph = 0x10, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3a, ev = 0x4, cs = 0x4, ac = 0x7, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x267a75a, elapsed = 0x742, ph = 0x0, modem = 0x4, chip = 0x0, ds = 0x8, rssi = 0x40, ev = 0xa, cs = 0x5, ac = 0xf, ns = 0x7, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x267d77f, elapsed = 0x408, ph = 0x2, modem = 0x0, chip = 0x10, ds = 0x7, rssi = 0x40, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x267f940, elapsed = 0x21b, ph = 0x2, modem = 0x0, chip = 0x0, ds = 0x7, rssi = 0x40, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x2680b9b, elapsed = 0x52c, ph = 0x20, modem = 0x0, chip = 0x10, ds = 0x3, rssi = 0x40, ev = 0x5, cs = 0x7, ac = 0xd, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x2685dd0, elapsed = 0x16, ph = 0x0, modem = 0x2, chip = 0x0, ds = 0x8, rssi = 0x3d, ev = 0x6, cs = 0x5, ac = 0x3, ns = 0x5, ne = 0x0, al_s = 0x1, al_e = 0x1},
+ {start = 0x268651a, elapsed = 0x39, ph = 0x0, modem = 0x1, chip = 0x0, ds = 0x8, rssi = 0x3d, ev = 0x9, cs = 0x5, ac = 0xa, ns = 0x4, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x26883d5, elapsed = 0x3d7, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3d, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x268a1d6, elapsed = 0x3cd, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3d, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x268b67b, elapsed = 0x7d7, ph = 0x10, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3d, ev = 0x4, cs = 0x4, ac = 0x7, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x26924df, elapsed = 0x742, ph = 0x0, modem = 0x4, chip = 0x0, ds = 0x8, rssi = 0x3e, ev = 0xa, cs = 0x5, ac = 0xf, ns = 0x7, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x269551d, elapsed = 0x408, ph = 0x2, modem = 0x0, chip = 0x10, ds = 0x7, rssi = 0x3e, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26976f5, elapsed = 0x21b, ph = 0x2, modem = 0x0, chip = 0x0, ds = 0x7, rssi = 0x3e, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x269895b, elapsed = 0x52c, ph = 0x20, modem = 0x0, chip = 0x10, ds = 0x3, rssi = 0x3e, ev = 0x5, cs = 0x7, ac = 0xd, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x269d6f2, elapsed = 0x15, ph = 0x0, modem = 0x2, chip = 0x0, ds = 0x8, rssi = 0x3f, ev = 0x6, cs = 0x5, ac = 0x3, ns = 0x5, ne = 0x0, al_s = 0x1, al_e = 0x1},
+ {start = 0x269de13, elapsed = 0x39, ph = 0x0, modem = 0x1, chip = 0x0, ds = 0x8, rssi = 0x3f, ev = 0x9, cs = 0x5, ac = 0xa, ns = 0x4, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x269fcce, elapsed = 0x3d9, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3f, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26a1a8c, elapsed = 0x3cc, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3f, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26a2f07, elapsed = 0x7d7, ph = 0x10, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3f, ev = 0x4, cs = 0x4, ac = 0x7, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x26aa236, elapsed = 0x742, ph = 0x0, modem = 0x4, chip = 0x0, ds = 0x8, rssi = 0x3e, ev = 0xa, cs = 0x5, ac = 0xf, ns = 0x7, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x26ad272, elapsed = 0x407, ph = 0x2, modem = 0x0, chip = 0x10, ds = 0x7, rssi = 0x3e, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26af448, elapsed = 0x21b, ph = 0x2, modem = 0x0, chip = 0x0, ds = 0x7, rssi = 0x3e, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26b06ae, elapsed = 0x52c, ph = 0x20, modem = 0x0, chip = 0x10, ds = 0x3, rssi = 0x3e, ev = 0x5, cs = 0x7, ac = 0xd, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x26b540c, elapsed = 0x16, ph = 0x0, modem = 0x2, chip = 0x0, ds = 0x8, rssi = 0x3c, ev = 0x6, cs = 0x5, ac = 0x3, ns = 0x5, ne = 0x0, al_s = 0x1, al_e = 0x1},
+ {start = 0x26b5b2e, elapsed = 0x39, ph = 0x0, modem = 0x1, chip = 0x0, ds = 0x8, rssi = 0x3c, ev = 0x9, cs = 0x5, ac = 0xa, ns = 0x4, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x26b7a1c, elapsed = 0x3d7, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3c, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26b9859, elapsed = 0x3cc, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3c, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26bad27, elapsed = 0x7d6, ph = 0x10, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3c, ev = 0x4, cs = 0x4, ac = 0x7, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x26c20b4, elapsed = 0x742, ph = 0x0, modem = 0x4, chip = 0x0, ds = 0x8, rssi = 0x43, ev = 0xa, cs = 0x5, ac = 0xf, ns = 0x7, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x26c50f3, elapsed = 0x408, ph = 0x2, modem = 0x0, chip = 0x10, ds = 0x7, rssi = 0x43, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26c72c9, elapsed = 0x21c, ph = 0x2, modem = 0x0, chip = 0x0, ds = 0x7, rssi = 0x43, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0}}
+{{start = 0x26c852f, elapsed = 0x52c, ph = 0x20, modem = 0x0, chip = 0x10, ds = 0x3, rssi = 0x43, ev = 0x5, cs = 0x7, ac = 0xd, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x26cd746, elapsed = 0x15, ph = 0x0, modem = 0x2, chip = 0x0, ds = 0x8, rssi = 0x3f, ev = 0x6, cs = 0x5, ac = 0x3, ns = 0x5, ne = 0x0, al_s = 0x1, al_e = 0x1},
+ {start = 0x26cde67, elapsed = 0x39, ph = 0x0, modem = 0x1, chip = 0x0, ds = 0x8, rssi = 0x3f, ev = 0x9, cs = 0x5, ac = 0xa, ns = 0x4, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x26cfcd7, elapsed = 0x3da, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3f, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26d1ae0, elapsed = 0x3cd, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3f, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26d2f86, elapsed = 0x7d6, ph = 0x10, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3f, ev = 0x4, cs = 0x4, ac = 0x7, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x26d9e01, elapsed = 0x743, ph = 0x0, modem = 0x4, chip = 0x0, ds = 0x8, rssi = 0x3e, ev = 0xa, cs = 0x5, ac = 0xf, ns = 0x7, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x26dce3f, elapsed = 0x407, ph = 0x2, modem = 0x0, chip = 0x10, ds = 0x7, rssi = 0x3e, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26df016, elapsed = 0x21b, ph = 0x2, modem = 0x0, chip = 0x0, ds = 0x7, rssi = 0x3e, ev = 0xd, cs = 0x7, ac = 0xe, ns = 0x7, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26e0282, elapsed = 0x533, ph = 0x20, modem = 0x0, chip = 0x10, ds = 0x3, rssi = 0x3e, ev = 0x5, cs = 0x7, ac = 0xd, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x26e54a7, elapsed = 0x15, ph = 0x0, modem = 0x2, chip = 0x0, ds = 0x8, rssi = 0x3c, ev = 0x6, cs = 0x5, ac = 0x3, ns = 0x5, ne = 0x0, al_s = 0x1, al_e = 0x1},
+ {start = 0x26e5bd8, elapsed = 0x39, ph = 0x0, modem = 0x1, chip = 0x0, ds = 0x8, rssi = 0x3c, ev = 0x9, cs = 0x5, ac = 0xa, ns = 0x4, ne = 0x0, al_s = 0x1, al_e = 0x0},
+ {start = 0x26e7a46, elapsed = 0x3d7, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3c, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26e9815, elapsed = 0x3cc, ph = 0x1, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3c, ev = 0x7, cs = 0x4, ac = 0x9, ns = 0x4, ne = 0x0, al_s = 0x0, al_e = 0x0},
+ {start = 0x26eaca8, elapsed = 0x7b4, ph = 0x8, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x3c, ev = 0x2, cs = 0x4, ac = 0x8, ns = 0x5, ne = 0x0, al_s = 0x0, al_e = 0x1},
+ {start = 0x26eb508, elapsed = 0x0, ph = 0x11, modem = 0x0, chip = 0x0, ds = 0x8, rssi = 0x0, ev = 0x4, cs = 0x5, ac = 0x0, ns = 0x0, ne = 0x0, al_s = 0x1, al_e = 0x1},
+
+p Si446xDriverLayerP__int_trace_array
+ {time = 40411531, delta = 7455, ds = _TRANSMIT, ph_pend = 1 '\001', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40416818, delta = 4713, ds = _READY___, ph_pend = 16 '\020', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40419509, delta = 11772, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40420824, delta = 1825, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40457425, delta = 7914, ds = _RECEIVE_, ph_pend = 2 '\002', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40458631, delta = 7742, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40466088, delta = 5327, ds = _RECEIVE_, ph_pend = 2 '\002', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40470800, delta = 1315, ds = _RECEIVE_, ph_pend = 32 ' ', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40472304, delta = 37922, ds = _TRANSMIT, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40472955, delta = 7456, ds = _TRANSMIT, ph_pend = 0 '\000', modem_pend = 8 '\b', chip_pend = 16 '\020'},
+ {time = 40474266, delta = 0, ds = _NO_STATE, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40490666, delta = 0, ds = _NO_STATE, ph_pend = 0 '\000', modem_pend = 2 '\002', chip_pend = 0 '\000'},
+ {time = 40492491, delta = 0, ds = _NO_STATE, ph_pend = 0 '\000', modem_pend = 1 '\001', chip_pend = 0 '\000'},
+ {time = 40500354, delta = 0, ds = _NO_STATE, ph_pend = 1 '\001', modem_pend = 0 '\000', chip_pend = 0 '\000'}}
+{{time = 40507969, delta = 4712, ds = _READY___, ph_pend = 1 '\001', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40513214, delta = 16902, ds = _RECEIVE_, ph_pend = 16 '\020', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40515880, delta = 1825, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40517171, delta = 7789, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40555045, delta = 7689, ds = _RECEIVE_, ph_pend = 2 '\002', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40556252, delta = 5287, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40563707, delta = 1315, ds = _RECEIVE_, ph_pend = 2 '\002', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40568420, delta = 36623, ds = _TRANSMIT, ph_pend = 32 ' ', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40569923, delta = 7456, ds = _TRANSMIT, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40570575, delta = 4717, ds = _READY___, ph_pend = 0 '\000', modem_pend = 8 '\b', chip_pend = 16 '\020'},
+ {time = 40571885, delta = 17595, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40572534, delta = 1841, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40573836, delta = 7787, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40575147, delta = 7631, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40576457, delta = 5269, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40588229, delta = 2143, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 2 '\002', chip_pend = 0 '\000'},
+ {time = 40590054, delta = 16228, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 1 '\001', chip_pend = 0 '\000'},
+ {time = 40597968, delta = 1844, ds = _RECEIVE_, ph_pend = 1 '\001', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40605710, delta = 7863, ds = _RECEIVE_, ph_pend = 1 '\001', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40611037, delta = 7681, ds = _RECEIVE_, ph_pend = 16 '\020', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40613729, delta = 5287, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40615044, delta = 1315, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40652966, delta = 37937, ds = _TRANSMIT, ph_pend = 2 '\002', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40654173, delta = 7433, ds = _TRANSMIT, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40661629, delta = 4700, ds = _READY___, ph_pend = 2 '\002', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40666341, delta = 19574, ds = _RECEIVE_, ph_pend = 32 ' ', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40667844, delta = 1824, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40668496, delta = 7864, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 8 '\b', chip_pend = 16 '\020'},
+ {time = 40669806, delta = 7682, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40670456, delta = 5287, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40687358, delta = 1315, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 2 '\002', chip_pend = 0 '\000'},
+ {time = 40689183, delta = 33975, ds = _TRANSMIT, ph_pend = 0 '\000', modem_pend = 1 '\001', chip_pend = 0 '\000'},
+ {time = 40696972, delta = 7434, ds = _TRANSMIT, ph_pend = 1 '\001', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40704661, delta = 4701, ds = _READY___, ph_pend = 1 '\001', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40709948, delta = 17583, ds = _RECEIVE_, ph_pend = 16 '\020', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40712640, delta = 1865, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40713955, delta = 7864, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40750578, delta = 7681, ds = _RECEIVE_, ph_pend = 2 '\002', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40751785, delta = 5287, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40759241, delta = 1315, ds = _RECEIVE_, ph_pend = 2 '\002', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40763958, delta = 36601, ds = _TRANSMIT, ph_pend = 32 ' ', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40765471, delta = 7457, ds = _TRANSMIT, ph_pend = 0 '\000', modem_pend = 0 '\000', chip_pend = 16 '\020'},
+ {time = 40766101, delta = 4712, ds = _READY___, ph_pend = 0 '\000', modem_pend = 8 '\b', chip_pend = 16 '\020'},
+ {time = 40767396, delta = 16400, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 4 '\004', chip_pend = 0 '\000'},
+ {time = 40784991, delta = 1825, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 2 '\002', chip_pend = 0 '\000'},
+ {time = 40786832, delta = 7863, ds = _RECEIVE_, ph_pend = 0 '\000', modem_pend = 1 '\001', chip_pend = 0 '\000'},
+ {time = 40794619, delta = 7615, ds = _RECEIVE_, ph_pend = 1 '\001', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40802250, delta = 5245, ds = _RECEIVE_, ph_pend = 1 '\001', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40807519, delta = 1291, ds = _RECEIVE_, ph_pend = 8 '\b', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+ {time = 40809662, delta = 37874, ds = _TRANSMIT, ph_pend = 17 '\021', modem_pend = 0 '\000', chip_pend = 0 '\000'},
+
+p/x Si446xDriverLayerP__int_trace_array
+ {time = 0x268a18b, delta = 0x1d1f, ds = 0x7, ph_pend = 0x1, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x268b632, delta = 0x1269, ds = 0x3, ph_pend = 0x10, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x268c0b5, delta = 0x2dfc, ds = 0x8, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x268c5d8, delta = 0x721, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26954d1, delta = 0x1eea, ds = 0x8, ph_pend = 0x2, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x2695987, delta = 0x1e3e, ds = 0x8, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26976a8, delta = 0x14cf, ds = 0x8, ph_pend = 0x2, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x2698910, delta = 0x523, ds = 0x8, ph_pend = 0x20, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x2698ef0, delta = 0x9422, ds = 0x7, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x269917b, delta = 0x1d20, ds = 0x7, ph_pend = 0x0, modem_pend = 0x8, chip_pend = 0x10},
+ {time = 0x269969a, delta = 0x0, ds = 0x0, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x269d6aa, delta = 0x0, ds = 0x0, ph_pend = 0x0, modem_pend = 0x2, chip_pend = 0x0},
+ {time = 0x269ddcb, delta = 0x0, ds = 0x0, ph_pend = 0x0, modem_pend = 0x1, chip_pend = 0x0},
+ {time = 0x269fc82, delta = 0x0, ds = 0x0, ph_pend = 0x1, modem_pend = 0x0, chip_pend = 0x0}}
+{{time = 0x26a1a41, delta = 0x1268, ds = 0x3, ph_pend = 0x1, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26a2ebe, delta = 0x4206, ds = 0x8, ph_pend = 0x10, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26a3928, delta = 0x721, ds = 0x8, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26a3e33, delta = 0x1e6d, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26ad225, delta = 0x1e09, ds = 0x8, ph_pend = 0x2, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26ad6dc, delta = 0x14a7, ds = 0x8, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26af3fb, delta = 0x523, ds = 0x8, ph_pend = 0x2, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26b0664, delta = 0x8f0f, ds = 0x7, ph_pend = 0x20, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26b0c43, delta = 0x1d20, ds = 0x7, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26b0ecf, delta = 0x126d, ds = 0x3, ph_pend = 0x0, modem_pend = 0x8, chip_pend = 0x10},
+ {time = 0x26b13ed, delta = 0x44bb, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26b1676, delta = 0x731, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26b1b8c, delta = 0x1e6b, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26b20ab, delta = 0x1dcf, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26b25c9, delta = 0x1495, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26b53c5, delta = 0x85f, ds = 0x8, ph_pend = 0x0, modem_pend = 0x2, chip_pend = 0x0},
+ {time = 0x26b5ae6, delta = 0x3f64, ds = 0x8, ph_pend = 0x0, modem_pend = 0x1, chip_pend = 0x0},
+ {time = 0x26b79d0, delta = 0x734, ds = 0x8, ph_pend = 0x1, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26b980e, delta = 0x1eb7, ds = 0x8, ph_pend = 0x1, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26bacdd, delta = 0x1e01, ds = 0x8, ph_pend = 0x10, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26bb761, delta = 0x14a7, ds = 0x8, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26bbc84, delta = 0x523, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26c50a6, delta = 0x9431, ds = 0x7, ph_pend = 0x2, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26c555d, delta = 0x1d09, ds = 0x7, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26c727d, delta = 0x125c, ds = 0x3, ph_pend = 0x2, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26c84e5, delta = 0x4c76, ds = 0x8, ph_pend = 0x20, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26c8ac4, delta = 0x720, ds = 0x8, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26c8d50, delta = 0x1eb8, ds = 0x8, ph_pend = 0x0, modem_pend = 0x8, chip_pend = 0x10},
+ {time = 0x26c926e, delta = 0x1e02, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26c94f8, delta = 0x14a7, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26cd6fe, delta = 0x523, ds = 0x8, ph_pend = 0x0, modem_pend = 0x2, chip_pend = 0x0},
+ {time = 0x26cde1f, delta = 0x84b7, ds = 0x7, ph_pend = 0x0, modem_pend = 0x1, chip_pend = 0x0},
+ {time = 0x26cfc8c, delta = 0x1d0a, ds = 0x7, ph_pend = 0x1, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26d1a95, delta = 0x125d, ds = 0x3, ph_pend = 0x1, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26d2f3c, delta = 0x44af, ds = 0x8, ph_pend = 0x10, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26d39c0, delta = 0x749, ds = 0x8, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26d3ee3, delta = 0x1eb8, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26dcdf2, delta = 0x1e01, ds = 0x8, ph_pend = 0x2, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26dd2a9, delta = 0x14a7, ds = 0x8, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26defc9, delta = 0x523, ds = 0x8, ph_pend = 0x2, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26e0236, delta = 0x8ef9, ds = 0x7, ph_pend = 0x20, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26e081f, delta = 0x1d21, ds = 0x7, ph_pend = 0x0, modem_pend = 0x0, chip_pend = 0x10},
+ {time = 0x26e0a95, delta = 0x1268, ds = 0x3, ph_pend = 0x0, modem_pend = 0x8, chip_pend = 0x10},
+ {time = 0x26e0fa4, delta = 0x4010, ds = 0x8, ph_pend = 0x0, modem_pend = 0x4, chip_pend = 0x0},
+ {time = 0x26e545f, delta = 0x721, ds = 0x8, ph_pend = 0x0, modem_pend = 0x2, chip_pend = 0x0},
+ {time = 0x26e5b90, delta = 0x1eb7, ds = 0x8, ph_pend = 0x0, modem_pend = 0x1, chip_pend = 0x0},
+ {time = 0x26e79fb, delta = 0x1dbf, ds = 0x8, ph_pend = 0x1, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26e97ca, delta = 0x147d, ds = 0x8, ph_pend = 0x1, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26eac5f, delta = 0x50b, ds = 0x8, ph_pend = 0x8, modem_pend = 0x0, chip_pend = 0x0},
+ {time = 0x26eb4be, delta = 0x93f2, ds = 0x7, ph_pend = 0x11, modem_pend = 0x0, chip_pend = 0x0},
