@@ -498,7 +498,7 @@ implementation {
    * fsm_trace related global variables and update routines. records state
    * machine execution details.
    */
-  tasklet_norace fsm_stage_info_t fsm_trace_array[60];
+  tasklet_norace fsm_stage_info_t fsm_trace_array[40];
   tasklet_norace uint8_t fsm_tp, fsm_tc;
 
   //  uint8_t si446x_fast_latched_rssi();
@@ -1427,7 +1427,7 @@ implementation {
   } int_trace_t;
 
   tasklet_norace uint8_t          int_tc, int_tp;
-  tasklet_norace int_trace_t      int_trace_array[64];
+  tasklet_norace int_trace_t      int_trace_array[40];
   tasklet_norace uint32_t         int_trace_prev_time;
 
   void interrupt_trace(volatile si446x_int_state_t *isp) {
