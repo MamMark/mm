@@ -86,10 +86,10 @@ implementation {
 				       'H', 'e', '0', 'l', 'o', 'H', 'e', 'l', 'l', 'o', \
 				       'H', 'e', '1', 'l', 'o', 'H', 'e', 'l', 'l', 'o', \
 				       'H', 'e', '2', 'l', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       0, 0 };
+				       '!', 0 };
   message_t       * pTosTxMsg = (message_t *) txMsgBuffer;
   test_msg_t      * pTxMsg = (test_msg_t *) txMsgBuffer;
-  volatile uint8_t  pgMsgBuffer[129];
+  volatile uint8_t  pgMsgBuffer[256];
   message_t       * pTosPgMsg = (message_t *) pgMsgBuffer;
   test_msg_t      * pPgMsg = (test_msg_t *) pgMsgBuffer;
 

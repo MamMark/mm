@@ -327,7 +327,7 @@ implementation {
   } global_io_context_t;
 
   tasklet_norace global_io_context_t  global_ioc;
-  tasklet_norace uint8_t              rxMsgBuffer[129];
+  tasklet_norace uint8_t              rxMsgBuffer[256];
 
 
 /**************************************************************************/
