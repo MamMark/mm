@@ -1166,7 +1166,7 @@ implementation {
       *rxp = fifo_cnts[0];
     if (txp)
       *txp = fifo_cnts[1];
-    ll_si446x_trace(T_RC_FIFO_INFO, *rxp, *txp);
+    ll_si446x_trace(T_RC_FIFO_INFO, fifo_cnts[0], fifo_cnts[1]);
   }
 
 
