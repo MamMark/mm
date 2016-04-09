@@ -972,7 +972,7 @@ implementation {
   fsm_result_t a_ready(fsm_transition_t *t) {
     set_channel(get_channel());
     // initialize interrupts
-    call Si446xCmd.ll_clr_ints();
+    call Si446xCmd.ll_clr_ints(0xff, 0xff, 0xff);  // clear all interrupts
     call Si446xCmd.enableInterrupt();
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
@@ -1025,7 +1025,7 @@ implementation {
      */
     stop_alarm();
     call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-    call Si446xCmd.ll_clr_ints();            // clear the receive interrupts - needs work
+    call Si446xCmd.ll_clr_ints(0xff, 0xff, 0xff);  // clear all interrupts
     call Si446xCmd.start_rx();
     nop();
     return fsm_results(t->next_state, E_NONE);
@@ -1097,7 +1097,9 @@ implementation {
     }
     nop();
     call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
-    call Si446xCmd.ll_clr_ints();            // clear the receive interrupts - needs work
+    call Si446xCmd.ll_clr_ints(SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
+			       SI446X_MODEM_RX_CLEAR_MASK,
+			       SI446X_CHIP_RX_CLEAR_MASK);
     nop();
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
     pkt_len = *dp + 1;              // length of data field is first byte of msg
@@ -1146,8 +1148,11 @@ implementation {
   fsm_result_t a_rx_cnt_crc(fsm_transition_t *t) {
     global_ioc.rx_bad_crcs++;
     call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
-    // force radio chip to sleep. this is a workaround (see TI errata)
+    // force radio chip to sleep. this is a workaround (see SI446x errata)
     call Si446xCmd.change_state(RC_SLEEP, TRUE);
+    call Si446xCmd.ll_clr_ints(SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
+			       SI446X_MODEM_RX_CLEAR_MASK,
+			       SI446X_CHIP_RX_CLEAR_MASK);
     stop_alarm();
     return a_rx_on(t);
   }

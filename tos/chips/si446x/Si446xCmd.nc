@@ -149,7 +149,7 @@ interface Si446xCmd {
    * Clears all pending interrupts in the radio chip. This should also negate the radio chip
    * interrupt pin. This is a low overhead (ll_) routine.
    */
-  async command void          ll_clr_ints();
+  async command void          ll_clr_ints(uint8_t ph_clr, uint8_t modem_clr, uint8_t chip_clr);
 
   /**
    * Clear all of the radio chip pending interrupts return pending status (prior to clear).

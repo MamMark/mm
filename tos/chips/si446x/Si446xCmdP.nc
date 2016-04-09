@@ -1222,8 +1222,15 @@ implementation {
    * clear chip interrupt pending status.
    * alternately method reads current status as well.
    */
-  async command void Si446xCmd.ll_clr_ints() {
-    ll_si446x_send_cmd(si446x_int_clr, sizeof(si446x_int_clr));
+  async command void Si446xCmd.ll_clr_ints(uint8_t ph_clr, uint8_t modem_clr, uint8_t chip_clr) {
+    uint8_t              cmd[4];
+
+    cmd[0] = SI446X_CMD_GET_INT_STATUS;
+    cmd[1] = ph_clr;
+    cmd[2] = modem_clr;
+    cmd[3] = chip_clr;
+
+    ll_si446x_send_cmd(cmd, 4);
   }
   /*
    * get/clr interrupt state
