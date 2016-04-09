@@ -989,6 +989,7 @@ implementation {
 
   fsm_result_t a_standby(fsm_transition_t *t) {
     stop_alarm();
+    call Si446xCmd.change_state(RC_SLEEP, TRUE);   // instruct chip to go to standby state
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
     return fsm_results(t->next_state, E_NONE);
@@ -1253,7 +1254,7 @@ implementation {
 
 
   tasklet_async command error_t RadioState.standby() {
-    if (dvr_cmd != CMD_NONE)
+    if ((dvr_cmd != CMD_NONE) || (fsm_get_state() == S_TX_ACTIVE) || (fsm_get_state() == S_RX_ACTIVE))
       return EBUSY;
     if (fsm_get_state() == S_STANDBY)
       return EALREADY;
