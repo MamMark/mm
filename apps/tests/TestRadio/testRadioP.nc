@@ -61,6 +61,7 @@ implementation {
     STARTING,
     ACTIVE,
     STOPPING,
+    STANDBY,
   } radio_state_t;
 
   norace radio_state_t radio_state;
@@ -99,7 +100,10 @@ implementation {
     uint16_t        errors;
     error_t         last_error;
     uint16_t        delay;
-    uint16_t        modulo;
+    uint16_t        off_delay;
+    uint16_t        stby_delay;
+    uint16_t        off_modulo;
+    uint16_t        stby_modulo;
     uint16_t        addr;
   } rc_t;
 
@@ -332,7 +336,10 @@ implementation {
       call Leds.led1Off();
       call Leds.led2Off();
       radio_state = OFF;
-      call rcTimer.startOneShot(rc.delay);
+      call rcTimer.startOneShot(rc.off_delay);
+      break;
+    case STANDBY:
+      call rcTimer.startOneShot(rc.stby_delay);
       break;
     default:
       nop();
@@ -355,10 +362,10 @@ implementation {
     nop();
     switch(radio_state) {
     case OFF:
+    case STANDBY:
       nop();
       error = call RadioState.turnOn();
       if (error == 0) {
-	nop();
 	radio_state = STARTING;
 	rc.starts++;
 	call Leds.led0Off();
@@ -366,7 +373,6 @@ implementation {
 	call Leds.led2Off();
 	break;
       } else {
-	nop();
 	rc.last_error = error;
 	rc.errors++;
 	call rcTimer.startOneShot(rc.delay);
@@ -374,10 +380,9 @@ implementation {
       break;
     case ACTIVE:
       nop();
-      if ((++rc.iterations % rc.modulo) == 0) {
+      if ((++rc.iterations % rc.off_modulo) == 0) {
 	error = call RadioState.turnOff();
 	if (error == 0) {
-	  nop();
 	  radio_state = STOPPING;
 	  call Leds.led0On();
 	  call Leds.led1On();
@@ -386,7 +391,20 @@ implementation {
 	  rx_stop();
 	  break;
 	} else {
-	  nop();
+	  rc.last_error = error;
+	  rc.errors++;
+	  call rcTimer.startOneShot(rc.delay);
+	}
+      } else if ((rc.iterations % rc.stby_modulo) == 0) {
+	error = call RadioState.standby();
+	if (error == 0) {
+	  radio_state = STANDBY;
+	  call Leds.led0Off();
+	  call Leds.led1On();
+	  call Leds.led2On();
+	  tx_stop();
+	  rx_stop();
+	} else {
 	  rc.last_error = error;
 	  rc.errors++;
 	  call rcTimer.startOneShot(rc.delay);
@@ -415,12 +433,15 @@ implementation {
   event void Boot.booted() {
     nop();
     nop();
-    tx.mode    = RUN;     // enable transmission
-    rx.mode    = RUN;     // enable reception
+    tx.mode    = RUN;         // enable transmission
+    rx.mode    = RUN;         // enable reception
     pg.mode    = DISABLED;
-    tx.delay   = 100;     // set timeout between transmssions
-    rc.delay   = 1000;    // set timeout between radio checks
-    rc.modulo  = 30;      // power cycle radio after every nth check
+    tx.delay   = 100;         // set timeout between transmssions
+    rc.delay   = 1000;        // set timeout between radio checks
+    rc.stby_delay = 2000;     // set timeout to wait in off mode
+    rc.off_delay = 2000;      // set timeout to wait in standby mode
+    rc.off_modulo  = 60;      // power cycle radio after every nth check
+    rc.stby_modulo = 11;      // standby power radio after every nth check
     //    rc.addr    = call Random.rand16() % 128; // pick a random value for link addr
     rc.addr    = TOS_NODE_ID;
     nop();
