@@ -49,23 +49,11 @@ configuration PlatformUsciMapC {
 
   components HplMsp430GeneralIOC as GIO;
 
-  components Msp430UsciUartA0P as UartA0;
-  UartA0.URXD -> GIO.UCA0RXD;
-  UartA0.UTXD -> GIO.UCA0TXD;
-
-  components Msp430UsciSpiA3P as SpiA3;
-  SpiA3.SIMO -> GIO.UCA3SIMO;
-  SpiA3.SOMI -> GIO.UCA3SOMI;
-  SpiA3.CLK  -> GIO.UCA3CLK;
-  SpiA3.Panic -> PanicC;
-  SpiA3.Platform -> PlatformC;
-
-  components Msp430UsciSpiB0P as SpiB0;
-  SpiB0.SIMO -> GIO.UCB0SIMO;
-  SpiB0.SOMI -> GIO.UCB0SOMI;
-  SpiB0.CLK  -> GIO.UCB0CLK;
-  SpiB0.Panic -> PanicC;
-  SpiB0.Platform -> PlatformC;
+  components Msp430UsciUartA1P as UartA1;
+  UartA1.URXD -> GIO.UCA1RXD;
+  UartA1.UTXD -> GIO.UCA1TXD;
+//  UartA1.Panic -> PanicC;
+//  UartA1.Platform -> PlatformC;
 
   components Msp430UsciSpiB1P as SpiB1;
   SpiB1.SIMO -> GIO.UCB1SIMO;
@@ -74,9 +62,10 @@ configuration PlatformUsciMapC {
   SpiB1.Panic -> PanicC;
   SpiB1.Platform -> PlatformC;
 
-  components Msp430UsciI2CB3P as I2CB3;
-  I2CB3.SDA -> GIO.UCB3SDA;
-  I2CB3.SCL -> GIO.UCB3SCL;
-  I2CB3.Panic -> PanicC;
-  I2CB3.Platform -> PlatformC;
+  components Msp430UsciSpiA3P as SpiA3;
+  SpiA3.SIMO -> GIO.UCA3SIMO;
+  SpiA3.SOMI -> GIO.UCA3SOMI;
+  SpiA3.CLK  -> GIO.UCA3CLK;
+  SpiA3.Panic -> PanicC;
+  SpiA3.Platform -> PlatformC;
 }
