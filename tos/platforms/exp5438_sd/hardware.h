@@ -72,7 +72,7 @@
  *
  * uca0: (5c0)
  * ucb0: (5e0)
- * uca1: (600)
+ * uca1: (600) uart
  * ucb1: (620) usd    (spi3)
  * uca2: (640)
  * ucb2: (660)

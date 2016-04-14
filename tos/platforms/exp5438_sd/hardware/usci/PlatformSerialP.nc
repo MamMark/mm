@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2016, Eric B. Decker
  * Copyright (c) 2009-2010 People Power Company
  * All rights reserved.
  *
@@ -37,10 +38,14 @@
 /**
  * @author David Moss
  * @author Peter A. Bigot <pab@peoplepowerco.com>
+ * @author Eric B. Decker <cire831@gmail.com>
  */
 
 module PlatformSerialP {
-  provides interface StdControl;
+  provides {
+    interface StdControl;
+    interface Msp430UsciConfigure;
+  }
   uses interface Resource;
 }
 
@@ -55,4 +60,20 @@ implementation {
   }
 
   event void Resource.granted() { }
+
+  /* 115200 baud from 8,000,000 (8 MHz)
+   * See Table 36-4, UCBRx 69, UCBRSx 4, UCBRFx 0, UCOS16 0
+   */
+  const msp430_usci_config_t platform_serial_config = {
+    ctl0 : 0,
+    ctl1 : UCSSEL__SMCLK,
+    br0  : 69,                          /* 8MHz -> 115200 MHz */
+    br1  : 0,
+    mctl : 8,                           /* see Table 36-4, SLAU208 */
+    i2coa: 0
+  };
+
+  async command const msp430_usci_config_t *Msp430UsciConfigure.getConfiguration() {
+    return &platform_serial_config;
+  }
 }
