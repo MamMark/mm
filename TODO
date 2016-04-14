@@ -3,6 +3,9 @@ Working List:
 - rework SD power on to deal with settling needed.
   - currently we turn on power and leave it on to prevent glitches.
 
+- add panic/platform to Msp430UsciUart ((tp-master)/tos/chips/msp430/x5xxx/usci-v2)
+  (eric)
+
 - Port GPS code to mm5a
 
 - Clean up Panic state saving.  1st entry
@@ -24,7 +27,7 @@ Working List:
 * - Port Mems Code to current tree
  (eric, done)
 * - Reorg Radio fsm state tracing
- (dan)
+ (dan, done)
 
 
 General
