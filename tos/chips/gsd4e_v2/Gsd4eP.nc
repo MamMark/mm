@@ -61,15 +61,31 @@
  * ask for the current status when we need to know something.
  *
  * ORG4472 info (from observations, Fastrax and ORG docs):
+ *
  * On initial power on (system power up), the gps can take anywhere from 300ms upwards to
  * 5 secs (in cold conditions) to power up the RTC module.  (Info from the Fastrax, org
- * data sheet).  Normally, we keep powered applied so this shouldn't be an issue.  Normal
+ * data sheet).  Normally, we keep power applied so this shouldn't be an issue.  Normal
  * turn on (initiated by on_off toggle), takes at least 74ms (observed).   Documentation says
  * 20ms but that is wrong.  We pulse on_off for 100 ms to bring the chip out of hibernate
  * so that should cover it.   We will see initial turn on problems (given the RTC takes
  * 300ms upwards to 5 seconds to turn on).   Unclear if this effects the operation of
- * the SPI h/w.   We need have the wakeup state machine handle this.   If the initial attempt
+ * the SPI h/w.   We need to have the wakeup state machine handle this.   If the initial attempt
  * to communicate fails, then take CS down, possibly reset, and delay longer.
+ *
+ * Startup data from ORG4472 datasheet:
+ *
+ * RTC startup time: 300ms (dT1, delta T sub 1)
+ * T_rtc: 30.5176us (1/32768 Hz)
+ * Pwr stable: max 8 * t_rtc + dT1 = ~ 301ms
+ *
+ * on_off low:  3 * t_rtc -> 100us
+ * on_off High: 3 * t_rtc -> 100us
+ * dT3, startup sequencing: 1024 * t_rtc -> ~ 32ms (don't know what this is referencing)
+ * on_off -> wakeup high: 6 * t_rtc -> 184 us
+ * on_off -> arm start: 2130 * t_rtc -> 65ms
+ * dT7, main pwr seq start: 300 * t_rtc -> ~ 10ms.
+ *
+ * what does this all mean....?   not sure.
  */
 
 typedef enum {
