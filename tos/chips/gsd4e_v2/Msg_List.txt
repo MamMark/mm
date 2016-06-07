@@ -1,0 +1,86 @@
+Input
+0x81	129	Switch to NMEA
+0x84	132	Poll SW Version  (-> 6)
+0x90	144	Poll Clock (-> 7)
+0x98	152	Poll Nav Parameter (-> 19)
+0xa6	166	Message Rate
+0xa8	168	Poll Command Parmeters (-> 43)
+		queries for 128, 133, 136, 137, 138, 139, 140, 143, and 151.
+
+		0x80 128 Initialize Data Source		0x85 133 DGPS Source
+		0x88 136 Mode Control			0x89 137 DOP Mask
+		0x8a 138 DGPS Control			0x8b 139 Elevation Mask
+		0x8c 140 Power Mask			0x8f 143 Static Navigation
+		0x97 151 Set TricklePower
+
+0xcd,10	205,16	Shutdown
+0xd4,7	212,7	osp revision request
+
+
+Output
+0x02	2	(1Hz)	Measure Navigation Data Out (meters)
+0x04	4	(1Hz)	Measured Tracker Data
+0x06	6		Software Version String
+0x07	7	(1Hz)	Clock Status Data
+0x09	9	(1Hz)	CPU Throughput
+0x0b	11		Command Acknowledgment
+0x0c	12		Command Negative Acknowledgment
+0x12	18		OkToSend, val 1 ok, 0 shutup
+0x13	19		Nav Parameters
+0x29	41	(1Hz)	Geodetic Data
+0x2b	43		Queue Command Parameters (from 168)
+0x32	50	(1Hz)	SBAS Parameters
+0x46,7	70,7		OSP Revision
+0x47	71		Hardware Configuration Request
+0x4b,1	75,1		ACK/NACK/Error Notification
+0x5c,1	92,1		CW Output
+0x5c,2	92,2		CW Mitigation
+0x5d,1	93,1		TCXO Learning Clock Model Data Base
+0x5d,2	93,2		TCXO Learning Temperature Table
+
+
+
+
+Start Up messages:  Antenova M10478 (Gsd4e)
+
+
+
+Start Up messages:  ORG4472 (Gsd4e ?????   unknown revision).
+  ms	Start up (default) messages:
+ 102	0x12	18	OkToSend, val 1 ok, 0 shutup
+ 104	0x47	71	Hardware Configuration Request
+ 107	0x06	6	Software Version String
+ 109	0x0b,84	11,132	Command Ack
+
+1127	0x29	41	Geodetic Navigation Data
+1132	0x04	4	Measured Tracker Data
+1140	0x02	2	Measure Navigation Data Out
+1143	0x09	9	CPU Throughput
+1143	0x07	7	Clock Status Data
+1144	0x32	50	SBAS Parameters
+1146	0x5d,01	93,1	TCXO Learning Clock Model Data Base
+1146	0x5d,02	93,2	TCXO Learning Temperature Table
+
+2149	0x29	41
+2154	0x04	4
+2162	0x02	2
+2165	0x09	9
+2165	0x07	7
+2166	0x32	50
+
+3184	0x29	41
+3189	0x04	4
+3198	0x02	2
+3199	0x09	9
+3200	0x07	7
+3202	0x32	50
+
+4205	0x29	41
+4209	0x04	4
+4218	0x02	2
+4220	0x09	9
+4221	0x07	7
+4222	0x32	50
+
+5226	0x29	41
+5230	0x04	4
