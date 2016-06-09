@@ -1,4 +1,6 @@
 /*
+ * Currently not used.
+ *
  * GpsMsgBuffer.h - gps msg buffer interface (low level)
  * Copyright 2012 Eric B. Decker
  * Mam-Mark Project

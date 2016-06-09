@@ -1,4 +1,6 @@
 /*
+ * Currently not used.
+ *
  * Copyright (c) 2012 Eric B. Decker
  * All rights reserved.
  *
