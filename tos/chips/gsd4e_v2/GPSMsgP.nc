@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014 Eric B. Decker
+ * Copyright (c) 2012, 2014, 2016 Eric B. Decker
  * All rights reserved.
  *
  * @author Eric B. Decker (cire831@gmail.com)
@@ -557,7 +557,7 @@ implementation {
            * if different, just insert, otherwise see if we've
            * marked it.
            */
-          last_byte = byte - 1;
+          last_byte = byte - 1;         /* temp, put all bytes into eavesdrop */
           if (byte == last_byte) {
             if (repeat_marked)
               break;                    /* nothing to add */
