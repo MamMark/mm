@@ -57,8 +57,8 @@
  * When the gps is first powered on it will be configured to be sending messages
  * periodically.  The chip is a SPI slave and so doing async I/O into the fifos is
  * stupid.  This basically means the CPU has to poll to see if anything interesting
- * is in the fifos.  So we instead we turn off all periodic messages and instead
- * ask for the current status when we need to know something.
+ * is in the fifos.  So instead we turn off all periodic messages and ask for the
+ * current status when we need to know something.
  *
  * ORG4472 info (from observations, Fastrax and ORG docs):
  *
@@ -145,14 +145,12 @@ uint16_t wait_time = 500;
 uint32_t g_t0, g_t1;
 volatile bool g_flush = TRUE;
 
-
-gpsc_state_t    	    gpsc_state;			// low level collector state
+gpsc_state_t    	    gpsc_state; // low level gps driver (controller) state
 
 /* instrumentation */
 uint32_t		    gpsc_boot_time;		// time it took to boot.
 uint32_t		    gpsc_cycle_time;		// time last cycle took
 uint32_t		    gpsc_max_cycle;		// longest cycle time.
-
 
 /*
  * control structure for incoming bytes from the gps.
@@ -172,7 +170,6 @@ module Gsd4eP {
   provides {
     interface Init;
     interface StdControl as GPSControl;
-//    interface Boot as GPSBoot;
   }
   uses {
     interface Timer<TMilli> as GPSTimer;
@@ -418,13 +415,6 @@ implementation {
   }
 
 
-  command error_t Init.init() {
-    /* gpsc_state is set to GPSC_OFF (0) by ram initializer */
-    gpsc_reconfig_trys = MAX_GPS_RECONFIG_TRYS;
-    call HW.gps_spi_init();
-    return SUCCESS;
-  }
-
   /*
    * Boot up the GPS.
    *
@@ -432,6 +422,17 @@ implementation {
    *
    * ------------------------------------------------------------------------
    */
+
+  /*
+   * Init gets called on the way up, so we know we are rebooting the machine.
+   */
+  command error_t Init.init() {
+    /* gpsc_state is set to GPSC_OFF (0) by ram initializer */
+    gpsc_reconfig_trys = MAX_GPS_RECONFIG_TRYS;
+    call HW.gps_spi_init();
+    return SUCCESS;
+  }
+
 
 #ifdef notdef
  event void Boot.booted() {
@@ -482,7 +483,8 @@ implementation {
    *
    * 6) would it be better to sequence?
    *
-   * Dedicated h/w.  immediateRequest.   Should we switch it over to dedicated?
+   * Dedicated h/w.  SPI initialized via call to HW.gps_spi_init() provided by platform
+   * gps h/w code.  See Gsd4eInterface.nc
    */
 
   command error_t GPSControl.start() {
@@ -494,8 +496,12 @@ implementation {
     if (call HW.gps_awake()) {
 #ifdef notdef
       /*
-       * shouldn't be awake.   If so, jump forward in the state machine
-       * and make sure we can talk to the gps.
+       * OFF but Awake.  Shouldn't be here.  Go through a full reset cycle
+       * but first do a panic_warn to flag it.
+       *
+       * We do a full reset cycle to make sure we can bring it up.  For example
+       * it is possible that the gps is awake but in nmea mode.  In which case
+       * we won't be able to talk correctly to it.
        */
       gps_panic_warn(10, call HW.gps_awake());
       gpsc_change_state(GPSC_POLL_NAV, GPSW_START);
@@ -507,7 +513,7 @@ implementation {
       nop();
       call HW.gps_clr_reset();
     }
-
+    
     /*
      * not awake (which is what we expected).   So kick the on_off pulse
      * and wake the critter up.
@@ -519,8 +525,6 @@ implementation {
     t_gps_pwr_on_usecs = call Platform.usecsRaw();
     call HW.gps_set_on_off();
     return SUCCESS;
-
-//    call LogEvent.logEvent(DT_EVENT_GPS_START, 0);
   }
 
 
