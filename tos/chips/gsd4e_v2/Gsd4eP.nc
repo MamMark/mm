@@ -91,20 +91,18 @@
 typedef enum {
   GPSC_OFF  = 0,
   GPSC_FAIL = 1,
+  GPSC_RESET_PULSE,                     /* pulsing reset pin */
+  GPSC_RESET_WAIT,                      /* time after reset to wait */
   GPSC_PULSE_ON,			/* turning on */
-
   GPSC_RECONFIG_WAIT,			// initial wait when switching over
-
   GPSC_POLL_NAV,			// just turned on, see how we are doing.
 
-  GPSC_EOS_WAIT,			// special, wait before we can send.
+  GPSC_EOS_WAIT,			// special, EndOfStart, wait before we can send.
   GPSC_SENDING,				// sending commands we want to force
 
   GPSC_SHUTDOWN_WAIT,			// waiting to see if shutdown message worked
   GPSC_PULSE_OFF,			// trying pulse to turn off
   GPSC_PULSE_OFF_WAIT,			// give it time.
-  GPSC_RESET_PULSE,
-  GPSC_RESET_WAIT,
 
   GPSC_ON,
   GPSC_BACK_TO_NMEA,
@@ -190,10 +188,18 @@ module Gsd4eP {
 
 implementation {
 
+  enum {
+    GPS_CMD_NONE      = 0,              /* no command pending */
+    GPS_CMD_TURNON,                     /* turn gps on and start cycling */
+    GPS_CMD_TURNOFF,                    /* turn gps off */
+  } gps_cmd;
+
+
   uint32_t	t_gps_pwr_on;
   uint16_t      t_gps_pwr_on_usecs;
   uint8_t	gpsc_reconfig_trys;
   bool		gpsc_operational;		// if 0 then booting, do special stuff
+
 
   void gpsc_log_state(gpsc_state_t next_state, gps_where_t where) {
 #ifdef GPS_LOG_EVENTS
@@ -315,10 +321,7 @@ implementation {
    * mark the eavesdrop buffer...
    */
   void gps_mark(uint8_t m) {
-    uint8_t b[1];
-
-    b[0] = m;
-    call GPSMsgS.eavesDropBuffer(b, 1);
+    call GPSMsgS.eavesDrop(m);
   }
 
 
@@ -457,6 +460,18 @@ implementation {
 #endif
 
 
+  void gps_pulse_on(gps_where_t w) {
+    call GPSMsgControl.start();
+    gpsc_change_state(GPSC_PULSE_ON, w);
+    call GPSTimer.startOneShot(DT_GPS_ON_OFF_PULSE_WIDTH);
+    t_gps_pwr_on = call LocalTime.get();
+    t_gps_pwr_on_usecs = call Platform.usecsRaw();
+    call HW.gps_set_on_off();
+
+//    call LogEvent.logEvent(DT_EVENT_GPS_START, 0);
+  }
+
+
   /*
    * Start GPS.
    *
@@ -494,9 +509,15 @@ implementation {
       gps_panic_warn(9, gpsc_state);
       return FAIL;
     }
+    nop();
 
+    if (gps_cmd > GPS_CMD_NONE) {       /* check for something else going on */
+      gps_panic_warn(99, gps_cmd);
+      return EALREADY;
+    }
+
+    gps_cmd = GPS_CMD_TURNON;           /* we want to end up operational */
     if (call HW.gps_awake()) {
-#ifdef notdef
       /*
        * OFF but Awake.  Shouldn't be here.  Go through a full reset cycle
        * but first do a panic_warn to flag it.
@@ -509,7 +530,6 @@ implementation {
       gpsc_change_state(GPSC_POLL_NAV, GPSW_START);
       post gps_config_task();
       return SUCCESS;
-#endif
       gps_panic_warn(10, call HW.gps_awake());
       call HW.gps_set_reset();
       nop();
@@ -575,10 +595,37 @@ implementation {
       default:
       case GPSC_FAIL:
       case GPSC_OFF:
-	/* shouldn't be any timer running in this state... */
-	gps_panic(12, gpsc_state);
-	nop();
+	gps_panic(12, gpsc_state);      /* no timer should be running */
 	return;
+
+      case GPSC_RESET_PULSE:
+	call HW.gps_clr_reset();
+	gpsc_change_state(GPSC_RESET_WAIT, GPSW_TIMER);
+	call GPSTimer.startOneShot(DT_GPS_RESET_WAIT_TIME);
+	return;
+
+      case GPSC_RESET_WAIT:
+	if (call HW.gps_awake()) {
+          gps_panic(112, gpsc_state);
+	  gpsc_change_state(GPSC_FAIL, GPSW_TIMER);
+	  return;
+        }
+        nop();
+        switch (gps_cmd) {
+          default:
+            gps_panic(113, gpsc_state);
+            gpsc_change_state(GPSC_FAIL, GPSW_TIMER);
+            return;
+
+          case GPS_CMD_TURNON:
+            gps_pulse_on(GPSW_TIMER);
+            return;
+
+          case GPS_CMD_TURNOFF:
+            gpsc_change_state(GPSC_OFF, GPSW_TIMER);
+            gps_cmd = GPS_CMD_NONE;
+            return;
+        }
 
       case GPSC_PULSE_ON:
         nop();
@@ -760,21 +807,6 @@ implementation {
 	gpsc_change_state(GPSC_RESET_PULSE, GPSW_TIMER);
 	call GPSTimer.startOneShot(1);
 	call HW.gps_set_reset();
-	return;
-
-      case GPSC_RESET_PULSE:
-	call HW.gps_clr_reset();
-	gpsc_change_state(GPSC_RESET_WAIT, GPSW_TIMER);
-	call GPSTimer.startOneShot(1000);
-	return;
-
-      case GPSC_RESET_WAIT:
-	if (call HW.gps_awake() == 0) {
-	  gpsc_change_state(GPSC_OFF, GPSW_TIMER);
-	  return;
-	}
-	gps_panic(114, gpsc_state);
-	gpsc_change_state(GPSC_OFF, GPSW_TIMER);
 	return;
 
       case GPSC_EOS_WAIT:

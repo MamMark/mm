@@ -24,11 +24,12 @@
  * be > 90 uS.  We use 200ms.
  */
 
-#define DT_GPS_ON_OFF_PULSE_WIDTH 200
+#define DT_GPS_ON_OFF_PULSE_WIDTH       200
+#define DT_GPS_RESET_PULSE_WIDTH        200
+#define DT_GPS_RESET_WAIT_TIME          200
 
 #define MAX_GPS_RECONFIG_TRYS   5
 
-#define DT_GPS_PWR_BOUNCE       5
 #define DT_GPS_EOS_WAIT       512
 #define DT_GPS_SEND_TIME_OUT  512
 
