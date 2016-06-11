@@ -517,7 +517,7 @@ implementation {
   command error_t GPSControl.start() {
     if (gpsc_state != GPSC_OFF) {
       gps_panic_warn(9, gpsc_state);
-      return FAIL;
+      return SUCCESS;
     }
     nop();
 
