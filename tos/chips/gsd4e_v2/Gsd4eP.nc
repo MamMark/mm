@@ -249,6 +249,19 @@ implementation {
   }
 
 
+  void process_incoming() {
+    uint16_t num_processed;
+
+    while(incoming.remaining) {
+      nop();
+      num_processed = call GPSMsgS.processBuffer(&incoming.buf[incoming.index], incoming.remaining);
+      incoming.remaining -= num_processed;
+      if (!num_processed)
+        gps_panic(3, incoming.remaining);
+    }
+  }
+
+
   /*
    * checkIdle
    *
@@ -341,9 +354,8 @@ implementation {
     b_count = 0;
     call HW.gps_set_cs();
     while (1) {
-      incoming.remaining = 0;
       gps_send_receive(osp_idle_block, BUF_INCOMING_SIZE);
-      call GPSMsgS.eavesDropBuffer(incoming.buf, BUF_INCOMING_SIZE);
+      process_incoming();
       if (!pull && checkIdle())
 	break;
       b_count += BUF_INCOMING_SIZE;
@@ -351,7 +363,6 @@ implementation {
 	break;
     }
     call HW.gps_clr_cs();
-    incoming.remaining = 0;
     if (pull)				/* if pulling, then we always hit max b_count */
       return;				/* never panic. */
     if (limit >= 2047 && b_count > limit)
@@ -387,13 +398,12 @@ implementation {
 	return;
 
       case GPSC_POLL_NAV:
-	call GPSTimer.startOneShot(30000UL);
+	call GPSTimer.startOneShot(1000UL);
 	return;
 
 #ifdef notdef
 	gps_send_receive(osp_send_sw_ver, sizeof(osp_send_sw_ver));
-	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	incoming.remaining = 0;
+        process_incoming();
 //	while (1) {
 //	  gps_drain(0, 0);
 //	}
@@ -527,25 +537,17 @@ implementation {
        * we won't be able to talk correctly to it.
        */
       gps_panic_warn(10, call HW.gps_awake());
-      gpsc_change_state(GPSC_POLL_NAV, GPSW_START);
-      post gps_config_task();
-      return SUCCESS;
-      gps_panic_warn(10, call HW.gps_awake());
+      gpsc_change_state(GPSC_RESET_PULSE, GPSW_START);
+      call GPSTimer.startOneShot(DT_GPS_RESET_PULSE_WIDTH);
       call HW.gps_set_reset();
-      nop();
-      call HW.gps_clr_reset();
+      return SUCCESS;
     }
     
     /*
      * not awake (which is what we expected).   So kick the on_off pulse
      * and wake the critter up.
      */
-    call GPSMsgControl.start();
-    gpsc_change_state(GPSC_PULSE_ON, GPSW_START);
-    call GPSTimer.startOneShot(DT_GPS_ON_OFF_PULSE_WIDTH);
-    t_gps_pwr_on = call LocalTime.get();
-    t_gps_pwr_on_usecs = call Platform.usecsRaw();
-    call HW.gps_set_on_off();
+    gps_pulse_on(GPSW_START);
     return SUCCESS;
   }
 
@@ -556,10 +558,10 @@ implementation {
    * Stop all GPS activity.
    */
   command error_t GPSControl.stop() {
-//    if (gpsc_state == GPSC_OFF) {
+    if (gpsc_state == GPSC_OFF) {
       gps_panic_warn(110, gpsc_state);
-//      return EOFF;
-//    }
+      return EOFF;
+    }
     if (!call HW.gps_awake()) {
       gps_panic_warn(11, call HW.gps_awake());
       gpsc_change_state(GPSC_OFF, GPSW_STOP);
@@ -574,8 +576,7 @@ implementation {
     call HW.gps_set_cs();
     gps_mark(0xc9);
     gps_send_receive(osp_shutdown, sizeof(osp_shutdown));
-    call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-    incoming.remaining = 0;
+    process_incoming();
     call HW.gps_clr_cs();
     call GPSTimer.startOneShot(1000);	/* give it roughly 1 sec */
     gps_mark(0xca);
@@ -589,7 +590,29 @@ implementation {
   }
 
 
+  /*
+   * the GPSMsg processor can take some time to process the current packet.
+   * while it is doing so we shouldn't feed any more data to it.
+   * When it has finished with the current packet and the buffer becomes
+   * free again, it will signal us to resume.
+   */
+  event void GPSMsgS.resume() { }
+
+
+  /*
+   * when the GPSMsg processor has put together a full packet from the GPS
+   * it will signal with a pointer to the packet.  If we handle it at the
+   * low level, we will return TRUE to indicate that we have consumed it.
+   */
+  event bool GPSMsgS.packetAvail(uint8_t *msg) {
+    nop();
+    return TRUE;
+  }
+
+
   event void GPSTimer.fired() {
+    nop();
+    nop();
     nop();
     switch (gpsc_state) {
       default:
@@ -648,13 +671,11 @@ implementation {
 	 * Check which flavor and change state accordingly.
 	 */
 
+        nop();
         call HW.gps_set_cs();
 	gps_send_receive(osp_idle_block, BUF_INCOMING_SIZE);
-	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	incoming.remaining = 0;			// throw current away
+        process_incoming();
 	call HW.gps_clr_cs();
-
-        nop();
 	if (memcmp(incoming.buf, nmea_oktosend, sizeof(nmea_oktosend)) == 0) {
 	  /*
 	   * looks like nema, reconfigure
@@ -668,12 +689,12 @@ implementation {
 	  gps_mark(0xc0);
 	  call HW.gps_set_cs();
 	  gps_send_receive(nmea_go_sirf_bin, sizeof(nmea_go_sirf_bin));
-	  call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	  incoming.remaining = 0;
-	  gps_send_receive(osp_idle_block, BUF_INCOMING_SIZE - sizeof(nmea_go_sirf_bin));
-	  call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	  incoming.remaining = 0;
 	  call HW.gps_clr_cs();
+          process_incoming();
+	  call HW.gps_set_cs();
+	  gps_send_receive(osp_idle_block, BUF_INCOMING_SIZE);
+	  call HW.gps_clr_cs();
+          process_incoming();
 	  gps_mark(0xc1);
 
 	  gpsc_change_state(GPSC_RECONFIG_WAIT, GPSW_CONFIG_TASK);
@@ -685,8 +706,7 @@ implementation {
 
           call HW.gps_set_cs();
           gps_send_receive(osp_send_sw_ver, sizeof(osp_send_sw_ver));
-          call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-          incoming.remaining = 0;
+          process_incoming();
           call HW.gps_clr_cs();
 
           g_t0 = call LocalTime.get();
@@ -713,17 +733,13 @@ implementation {
 	gps_mark(0xc3);
 	call HW.gps_set_cs();
 	gps_send_receive(osp_send_sw_ver, sizeof(osp_send_sw_ver));
-	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	incoming.remaining = 0;
+        process_incoming();
 	gps_send_receive(osp_poll_clock, sizeof(osp_poll_clock));
-	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	incoming.remaining = 0;
+        process_incoming();
 	gps_send_receive(osp_poll_nav, sizeof(osp_poll_nav));
-	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	incoming.remaining = 0;
+        process_incoming();
 	gps_send_receive(osp_enable_tracker, sizeof(osp_enable_tracker));
-	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	incoming.remaining = 0;
+        process_incoming();
 	call HW.gps_clr_cs();
 	gps_mark(0xc4);
 	gps_drain(0, 1);
@@ -741,11 +757,9 @@ implementation {
 	gps_mark(0xce);
         call HW.gps_set_cs();
 	gps_send_receive(osp_poll_clock, sizeof(osp_poll_clock));
-	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	incoming.remaining = 0;
+        process_incoming();
 	gps_send_receive(osp_poll_nav, sizeof(osp_poll_nav));
-	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	incoming.remaining = 0;
+        process_incoming();
         call HW.gps_clr_cs();
         gps_drain(0,1);
         nop();
@@ -763,8 +777,7 @@ implementation {
 
 	call HW.gps_set_cs();
 	gps_send_receive(osp_shutdown, sizeof(osp_shutdown));
-	call GPSMsgS.eavesDropBuffer(&incoming.buf[incoming.index], incoming.remaining);
-	incoming.remaining = 0;
+        process_incoming();
 	call HW.gps_clr_cs();
 
         gps_drain(0,1);
@@ -823,6 +836,5 @@ implementation {
     }
   }
 
-  event void GPSMsgS.resume() { }
   async event void Panic.hook() { }
 }

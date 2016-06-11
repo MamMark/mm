@@ -695,7 +695,10 @@ implementation {
 	}
 	collect_nxt = 0;
 	collect_state = COLLECT_BUSY;
-	post gps_msg_task();
+        if (signal GPSMsgS.packetAvail(collect_msg))
+          collect_restart();
+        else
+          post gps_msg_task();
 	break;
 
       default:
