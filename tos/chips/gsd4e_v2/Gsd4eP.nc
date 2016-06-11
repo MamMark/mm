@@ -235,6 +235,8 @@ implementation {
   void gps_send_receive(const uint8_t *buf, uint16_t size) {
     if (incoming.remaining)
       gps_panic_warn(1, incoming.remaining);
+    if (size > BUF_INCOMING_SIZE)
+      gps_panic(2, size);
     call SpiBlock.transfer((uint8_t *) buf, incoming.buf, size);
     incoming.index = 0;
     incoming.remaining = size;
