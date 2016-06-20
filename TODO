@@ -1,5 +1,15 @@
 Working List:
 
+- is it reasonable to be bouncing the CS on the GPS as much as we are doing?
+  in gps_send_block.  Small SPI transfers.
+
+- change radio spi from 4MHz to 8MHz (/2 -> /1) and retest.
+  (dan)
+
+- rework sync/resync to change from time based to record based so sync's
+  keep track have how many previous records.  Include block of previous
+  sync so we can do a reverse chain.
+
 - rework SD power on to deal with settling needed.
   - currently we turn on power and leave it on to prevent glitches.
 
@@ -7,6 +17,7 @@ Working List:
   (eric)
 
 - Port GPS code to mm5a
+  (eric, in progress, refactor in process)
 
 - Clean up Panic state saving.  1st entry
  (eric)
@@ -14,10 +25,10 @@ Working List:
 - Radio Op Tracing.
 
 - S_SDN (E_STANDBY) -> ... -> S_READY -> S_STANDBY
- (dan)
+  (dan), powering down?  verify.
 
 - remove preamble
- (dan)
+  (dan)
 
 - New Toolchain (TI)
 
