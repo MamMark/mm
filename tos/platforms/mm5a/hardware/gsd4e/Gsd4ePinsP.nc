@@ -89,4 +89,6 @@ implementation {
   async command void HW.gps_set_reset()  { GSD4E_GPS_RESET; }
   async command void HW.gps_clr_reset()  { GSD4E_GPS_UNRESET; }
   async command bool HW.gps_awake()      { return GSD4E_GPS_AWAKE; }
+  async command void HW.gps_on()         { };
+  async command void HW.gps_off()        { };
 }

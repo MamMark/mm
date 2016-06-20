@@ -101,4 +101,11 @@ interface Gsd4eInterface {
    * gps_awake: return awake status of gps.
    */
   async command bool gps_awake();
+
+  /*
+   * If there is seperate power control for the gps, these routines
+   * control the power.
+   */
+  async command void gps_on();
+  async command void gps_off();
 }
