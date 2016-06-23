@@ -57,11 +57,11 @@ def read_input(fn):
 
     return (states, events, actions, trans)
 
-########## write_enums
+########## write_types
 #
-# write out the enum structs for states, events, and actions
+# write out type declarations
 #
-def write_types():
+def c_write_types():
     print '\ntypedef struct {'
     print '  fsm_state_t    current_state;'
     print '  fsm_action_t   action;'
@@ -73,11 +73,15 @@ def write_types():
     print '  fsm_state_t    s;'
     print '} fsm_result_t;'
 
+def p_write_types():
+    # example ?
+    return
+
 ########## write_enums
 #
 # write out the enum structs for states, events, and actions
 #
-def write_enums(sl, el, al):
+def c_write_enums(sl, el, al):
     # example:
     #   typedef enum {
     #     S_SDN = 0,
@@ -113,13 +117,37 @@ def write_enums(sl, el, al):
         print '  ' + a.upper() + ','
     print '} fsm_action_t;'
 
+def p_write_enums(sl, el, al):
+    # example:
+    #   class fsmStates(Names):
+    #       S_SDN = NamedConstant()
+    #       S_DEFAULT = NamedConstant()
+    nc = ' = NamedConstant()'
+    # states class constants
+    print "\nclass States(Names):"
+    for s in sorted(sl):
+        print '   ' + s + nc
+    print '   S_DEFAULT' + nc
+
+    # events class constants
+    print "\nclass Events(Names):"
+    for e in sorted(el):
+        print '   ' + e + nc
+
+    # actions class constants
+    print "\nclass Actions(Names):"
+    for a in sorted(al):
+        if (a == 'a_break'):
+            continue
+        print '   ' + a.upper() + nc
+
 
 ########## write_fdecs
 #
 # write out forward declarations for event transition tables and
 # action functions
 #
-def write_fdecs(el, al):
+def c_write_fdecs(el, al):
     # example: const fsm_transition_t fsm_e_nop[];
     print ""
     for e in sorted(el):
@@ -132,11 +160,21 @@ def write_fdecs(el, al):
             continue
         print 'fsm_result_t ' + a + '(fsm_transition_t *t);'
 
+def p_write_fdecs(el, al):
+    # example ?
+    return
+
+
 ########## write_transitions
 #
 # write out the event transition tables
 #
-def write_transitions(tr):
+def c_write_transitions(tr):
+    # example:
+    # const fsm_transition_t fsm_e_tx_thresh[] = {
+    #   {S_TX_ACTIVE, A_TX_FILL_FF, S_TX_ACTIVE},
+    #   { S_DEFAULT, A_BREAK, S_DEFAULT },
+    # };
     for ev, ts in tr.items():
         print '\nconst fsm_transition_t fsm_' + ev.lower() + '[] = {'
         for t in ts:
@@ -145,16 +183,30 @@ def write_transitions(tr):
         print '  { S_DEFAULT, A_BREAK, S_DEFAULT },'
         print '};'
 
-        
+def p_write_transitions(tr):
+    # example:
+    # fsm_table = table.addTransition(
+    #   State.UNLOCKED, Input.ARM_TURNED, [Output.ENGAGE_LOCK], State.ACTIVE)
+    print '\n'
+    for ev, ts in tr.items():
+        for t in ts:
+            if t:
+                print 'table = table.addTransition(' + 'States.' + t[0] + ', Events.' + ev + ', [Actions.' + t[1].upper() + '], States.' + t[2] + ')'
+
 ########## write_variables
 #
 # write out the event FSm related variables, including: the list of event lists
 #
-def write_variables(el):
+def c_write_variables(el):
     print '\nconst fsm_transition_t *fsm_events_group[] = {'
     for e in sorted(el):
         print 'fsm_' + e.lower() + ', ',
     print '};'
+
+def p_write_variables(el):
+    # example ?
+    return
+
 
 ########## print results
 #
@@ -167,20 +219,40 @@ def print_results(results):
     for ev, ts in transitions.items():
         print ev, ts
 
+def c_write_results(results):
+    c_write_enums(results[0], results[1], results[2])
+    c_write_types()
+    c_write_fdecs(results[1], results[2])
+    c_write_transitions(results[3])
+    c_write_variables(results[1])
+
+def p_write_results(results):
+    print '\nfrom twisted.python.constants import Names, NamedConstant'
+    print '\nfrom machinist import TransitionTable, MethodSuffixOutputer, constructFiniteStateMachine'
+    print '\ntable = TransitionTable()'
+    p_write_enums(results[0], results[1], results[2])
+#    p_write_types()
+#    p_write_fdecs(results[1], results[2])
+    p_write_transitions(results[3])
+#    p_write_variables(results[1])
+
 
 def usage():
-    print 'Usage: '+sys.argv[0]+' -i <file> -o <file>\n'
+    print 'Usage: '+sys.argv[0]+' -i <file> -o <file> --c-mode --python-mode\n'
 
 ########## main
 #
 def main(argv):
     input = "FSM.txt"
-    output = "FSM.h"
+    output = ""
+    c_out = False
+    p_out = False
     try:
-        opts, args = getopt.getopt(argv, "hi:o:d", ["help", "input=", "outout="])
+        opts, args = getopt.getopt(argv, "hi:o:dcp", ["help", "input=", "outout=", "debug", "c-mode", "python-mode"])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
+
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             usage()
@@ -192,20 +264,24 @@ def main(argv):
             input = arg
         elif opt in ("-o", "--output"):
             output = arg
+        elif opt in ("-c", "--c-mode"):
+            c_out = True
+        elif opt in ("-p", "--python-mode"):
+            p_out = True
 #    source = "".join(args)
 
     results = read_input(input)
 
+    if (c_out and not output): output = "FSM.h"
+    elif (p_out and not output): output = "FSM.py"
     target = open(output, 'w')              # a writable object
     sys.stdout = target                         # redirection
-    write_enums(results[0], results[1], results[2])
-    write_types()
-    write_fdecs(results[1], results[2])
-    write_transitions(results[3])
-    write_variables(results[1])
+    if c_out:         c_write_results(results)
+    elif p_out:       p_write_results(results)
+    target.close()
+
 #    sys.stdout = sys.__stdout__              # remember to reset sys.stdout!
 #    print "'s content:", target.content     # show the result of the writing
-    target.close()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
