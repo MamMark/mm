@@ -501,8 +501,6 @@ implementation {
     last_idle = FALSE;
     repeat_marked = FALSE;
     last_byte = 0x55;
-    g_idx = 0;
-    m_idx = 0;
   }
 
 
