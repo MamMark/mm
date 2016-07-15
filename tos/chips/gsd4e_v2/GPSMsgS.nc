@@ -15,5 +15,5 @@ interface GPSMsgS {
 
   command bool     atMsgBoundary();
   event   void     resume();
-  event   bool     packetAvail(uint8_t *msg);
+  event   bool     packetAvail(uint8_t *msg, uint16_t len);
 }

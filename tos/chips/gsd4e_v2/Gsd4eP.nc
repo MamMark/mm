@@ -600,11 +600,20 @@ implementation {
 
 
   /*
+   * packetAvail
+   *
+   * input:     msg     pointer to packet, points at beginning of SIRF packet
+   *            len     full length of the SIRF packet.  (len in the SIRF
+   *                    only includes payload,  we pass in the full length of
+   *                    the packet).
+   * output:    bool    TRUE if packet has been consummed.
+   *                    FALSE if the Msg Processor should continue processing.
+   *
    * when the GPSMsg processor has put together a full packet from the GPS
    * it will signal with a pointer to the packet.  If we handle it at the
    * low level, we will return TRUE to indicate that we have consumed it.
    */
-  event bool GPSMsgS.packetAvail(uint8_t *msg) {
+  event bool GPSMsgS.packetAvail(uint8_t *msg, uint16_t len) {
     nop();
     return TRUE;
   }

@@ -698,7 +698,9 @@ implementation {
 	}
 	collect_nxt = 0;
 	collect_state = COLLECT_BUSY;
-        if (signal GPSMsgS.packetAvail(collect_msg))
+        nop();
+        packet_len = collect_length + SIRF_OVERHEAD;
+        if (signal GPSMsgS.packetAvail(&collect_msg[GPS_START_OFFSET], packet_len))
           collect_restart();
         else
           post gps_msg_task();
