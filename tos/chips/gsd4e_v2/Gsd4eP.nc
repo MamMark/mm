@@ -349,6 +349,7 @@ implementation {
   void gps_drain(uint16_t limit, bool pull) {
     uint16_t b_count;
 
+    call GPSMsgS.setDraining(TRUE);
     if (limit == 0)
       limit = 2047;
     b_count = 0;
@@ -367,6 +368,7 @@ implementation {
       return;				/* never panic. */
     if (limit >= 2047 && b_count > limit)
       gps_panic_warn(3, b_count);
+    call GPSMsgS.setDraining(FALSE);
   }
 
 

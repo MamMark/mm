@@ -136,10 +136,12 @@ implementation {
   collect_state_t collect_state;		// message collection state, init to 0
   norace uint16_t collect_length;		// length of payload
   uint16_t        collect_cur_chksum;		// running chksum of payload
+  bool            draining;                     // non-zero if simply draining.
 
   uint8_t  collect_msg[GPS_BUF_SIZE];
   uint8_t  collect_nxt;				// where we are in the buffer
   uint8_t  collect_left;			// working copy
+
   bool     got_fix;
   uint32_t gps_on_time;
 
@@ -596,6 +598,10 @@ implementation {
    *
    * returns FALSE if the byte can't be processed (collection buffer is busy).
    * returns TRUE if the byte has been consummed.
+   *
+   * The global "draining" when TRUE informs us that the driver simply wants
+   * the fifos cleaned out.  Don't process any messages and keep the collection
+   * buffer free.
    */
   command bool GPSMsgS.byteAvail(uint8_t byte) {
     uint16_t chksum, packet_len;
@@ -688,7 +694,8 @@ implementation {
 	collect_state = COLLECT_BUSY;
         nop();
         packet_len = collect_length + SIRF_OVERHEAD;
-        if (signal GPSMsgS.packetAvail(&collect_msg[GPS_START_OFFSET], packet_len))
+        if (draining ||
+            signal GPSMsgS.packetAvail(&collect_msg[GPS_START_OFFSET], packet_len))
           collect_restart();
         else
           post gps_msg_task();
@@ -714,6 +721,10 @@ implementation {
   }
 
 
+  command void GPSMsgS.setDraining(bool setting) {
+    draining = setting;
+    if (draining)
+      collect_restart();
   }
 
 
