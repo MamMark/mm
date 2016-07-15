@@ -133,15 +133,6 @@ module GPSMsgP {
 
 implementation {
 
-  /*
-   * EAVES_ states are similar to COLLECT_ states.  It is possible to
-   * be doing eavesdropping when the COLLECT state machine isn't
-   * running yet.   EAVES_ states are used to remember when we are in
-   * a packet.  If the COLLECT_ state machine is running, EAVES_ state
-   * tracks it.  Otherwise, EAVES_ state is cycled independently.
-   */
-
-  collect_state_t eaves_state;                  // inits to 0
   collect_state_t collect_state;		// message collection state, init to 0
   norace uint16_t collect_length;		// length of payload
   uint16_t        collect_cur_chksum;		// running chksum of payload
@@ -471,7 +462,6 @@ implementation {
     gdp->data[0] = 0;
     gdp->data[1] = 0;
     collect_state = COLLECT_START;
-    eaves_state   = COLLECT_START;
     signal GPSMsgS.resume();	/* tell source to fire up data stream again... */
   }
 
