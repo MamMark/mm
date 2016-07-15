@@ -433,6 +433,9 @@ implementation {
     dt_gps_raw_nt *gdp;
     gps_geodetic_nt *gp;
 
+    if (collect_state != COLLECT_BUSY)
+      return;
+
     /*
      * collect raw message for debugging.  Eventually this will go away
      * or be put on a conditional.
