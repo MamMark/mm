@@ -13,7 +13,6 @@ interface GPSMsgS {
   command bool     byteAvail(uint8_t byte);
   command uint16_t processBuffer(uint8_t *buf, uint16_t len);
 
-  command bool     bufferAvail();
   command bool     atMsgBoundary();
   event   void     resume();
   event   bool     packetAvail(uint8_t *msg);

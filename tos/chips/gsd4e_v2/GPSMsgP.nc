@@ -724,8 +724,6 @@ implementation {
   }
 
 
-  command bool GPSMsgS.bufferAvail() {
-    return (collect_state != COLLECT_BUSY);
   }
 
 
