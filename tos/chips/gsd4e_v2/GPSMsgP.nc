@@ -598,7 +598,7 @@ implementation {
    * returns TRUE if the byte has been consummed.
    */
   command bool GPSMsgS.byteAvail(uint8_t byte) {
-    uint16_t chksum;
+    uint16_t chksum, packet_len;
 
     if (collect_state == COLLECT_BUSY)
       return FALSE;
