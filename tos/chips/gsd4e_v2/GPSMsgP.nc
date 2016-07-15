@@ -745,14 +745,6 @@ implementation {
   }
 
 
-  command void GPSMsgS.eavesDropBuffer(uint8_t *buf, uint16_t len) {
-    uint16_t i;
-
-    for (i = 0; i < len; i++)
-      addEavesDrop(buf[i]);
-  }
-
-
 #ifdef notdef
   /*
    * GPS status messages are sent via DTSender as SNS_ID 0 (same as sync and restart
