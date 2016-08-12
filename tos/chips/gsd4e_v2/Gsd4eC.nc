@@ -12,7 +12,7 @@
 
 configuration Gsd4eC {
   provides {
-    interface StdControl as GPSControl;
+    interface SplitControl as GPSControl;
   }
 }
 

@@ -123,7 +123,7 @@ module GPSMsgP {
     interface Panic;
     interface LocalTime<TMilli>;
     interface Timer<TMilli> as MsgTimer;
-    interface StdControl as GPSControl;
+    interface SplitControl as GPSControl;
 //    interface Collect;
 //    interface Surface;
 //    interface LogEvent;
@@ -260,6 +260,10 @@ implementation {
 	return;
     }
   }
+
+
+  event void GPSControl.startDone(error_t err) { }
+  event void GPSControl.stopDone(error_t err) { }
 
 
   /*

@@ -167,7 +167,7 @@ inbuf_t incoming;			/* incoming bytes from gps */
 module Gsd4eP {
   provides {
     interface Init;
-    interface StdControl as GPSControl;
+    interface SplitControl as GPSControl;
   }
   uses {
     interface Timer<TMilli> as GPSTimer;

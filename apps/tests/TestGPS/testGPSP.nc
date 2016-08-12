@@ -10,7 +10,7 @@ module testGPSP {
   provides interface Init;
   uses {
     interface Boot;
-    interface StdControl as GPSControl;
+    interface SplitControl as GPSControl;
     interface Timer<TMilli> as testTimer;
     interface LocalTime<TMilli>;
     interface Gsd4eInterface as HW;
@@ -51,6 +51,9 @@ implementation {
     call testTimer.startOneShot(0);
   }
 
+
+  event void GPSControl.startDone(error_t err) { }
+  event void GPSControl.stopDone(error_t err) { }
 
   event void testTimer.fired() {
     switch(state) {
