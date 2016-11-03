@@ -1,0 +1,110 @@
+
+The Clock System (CS) on the MSP432 is used to configure, control and
+connect clock sources to appropriate timing modules.  This then controls
+clocking and timing through out the system.
+
+Requirements:
+
+A key constraint is having sub-millisecond accuracy for timing controlling
+the network algorithms.  These algorithms have been crafted to minimize
+collisions, transmissions, and listening time.  A key factor in the proper
+functioning of the algorithm requires synchronized time between the tag
+nodes and the cluster controller.  (see networking discussion for more
+details).  The more accurate the timing the better the algorithm performs.
+
+
+Basic Clock Sources:
+
+LFXT    (L)     low frequency, crystal controlled, 32KiHz.
+REFOCLK (L)     low power, low frequency 32KiHz. backup to LFXT
+DCOCLK  (H)     digitally controlled oscillator, programable
+
+SYSOSC  (H)     5 MHz (off)
+MODCLK  (H)     typical 25 MHz (off)
+HFXT    (H)     high frequency, crystal controlled (off)
+VLOCLK  (L)     very low power oscillator, typical 9.4KHz (off)
+
+
+System Clocks:
+
+ACLK    32KiHz  provides clock for Tmilli/MilliTime timing system (LFXT)
+BCLK    32KiHz  provides clock for RTC and RealTime system (LFXT)
+MCLK    16MHz/48MHz main cpu clock, also drives DMA clock (DCOCLK)
+HSMCLK  High speed Subsystem Master Clock (DCOCLK)
+SMCLK   Low speed subsystem clock.  Source same as HSMCLK, max is HSMCLK/2
+
+
+Timing Components:
+
+RealTime:
+
+The core of the timing system is the RTC (real time clock) module.  It is
+clocked by the LFXT/BCLK system at 32KiHz.  It produces the following values:
+
+    Year        2       0       uninitilized
+                        2016+   valid year
+    Mon         1       1-12    month
+    Day         1       1-31    day
+    Hour        1       0-23    hour
+    Min         1       0-59    minute
+    Sec         1       0-59    seconds
+    j32         2       0-32767 jiffies
+
+The RTC module is clocked by BCLK driven by LFXT at 32KiHz.  It continues
+to clock when the system is sleeping (SLEEP and DEEP_SLEEP).
+
+Time is always kept in UTC.  J32 is the number of 1/32768 seconds since the
+last seconds transition.   Each jiffy is 1/32768 seconds = 30.51757813 uS.
+
+A j32 can be converted into ms by multipling by 1000(ms)/32768(j32).
+
+The j32 portion of RealTime is physically implemented by RTCPS1 and RTCPS0
+in the RTC module.  The high order bit of PS1 needs to be ignored, duplicate
+seconds digit.
+
+The RTC module's accuracy can be adjusted using RTCOCAL and compensated for
+temperature with RTCTCMP.  This needs to be researched....
+
+    o relationship between PS1|PS0 and 32Ki ticking driving MilliTime.
+    o what is the inaccuracy of the uncalibrated 32Ki Xtal?
+
+
+MilliTime:
+
+A MilliTime (TMilli) timer value is a 32 bit number of milliseconds since
+the last reboot.  TMilli wraps every 4,294,967,296 ms (2^32) or every
+49.71026 days.
+
+MilliTime counts the number of ms since the last reboot.  No provision is
+made to synchronize MilliTime with RealTime.  Rather, records are kept
+at intervals of the relationship between RealTime and MilliTime.  These
+records are kept in the DataStore.
+
+Timers are provided for timing needs in the main system.  These TMilli
+(millisecond units) timers are built using one of the MSP432 Timer_As
+connected to ACLK, ticking at 32768 ticks per second (the base timer is
+ticking using jiffies).
+
+TAn is used to implement MilliTime.  TAnR is a 16 bit counter that holds
+the current value of the timer.  Timer_A also implements Compare and Capture
+Registers that can be used to capture times when events happen.
+
+Events are captured using TAn because it gets clocked by ACLK even when
+the system is sleeping.  When the event being timed occurs, it causes
+the current value of TAnR to be copied into the corresponding TAn.CCIxR
+and the corresponding CCR IFG (interrupt) is set.
+
+
+MicroTime
+
+MicroTime counts microseconds while the main system clock is running.  This
+occurs when in ACTIVE and SLEEP.  The high frequency clock does not run
+when in DEEP_SLEEP.
+
+MicroTime is implemented using a 32 bit T32 timer.
+
+MicroTime is intended to provide microsecond instrumentation for various
+performance studies.
+
+Alternatively, if one needs microsecond event stamping, MicroTime can be
+moved to a different TAm timer clocked off the main system clock.

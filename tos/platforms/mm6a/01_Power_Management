@@ -1,0 +1,23 @@
+
+Power States:
+
+ACTIVE:         the main cpu is executing instructions, LF and HF clocks on
+
+  AM_LOW:       Active, low power, (same as active), Vcore0, 16 MHz
+  AM_HIGH:      Active, high speed, Vcore1, 48MHz.  Used when docked and
+                high speed SPI communications is needed.
+
+SLEEP:          (LPM0), cpu is sleeping, LF and HF clocks potentially on.
+
+DEEP_SLEEP:     (LPM3), no cpu.  only RTC and WDT are clocking
+                No HF.  LF clocks on.
+
+OFF:            (LPM4.5) Vcore off   (how to wake up).
+
+When ACTIVE or AM_LOW, the local cpu (msp432) is clocked at 16 MHz using
+AM_LDO_VCORE0.  In AM_HIGH, the cpu is clocked at 48MHz and the on-chip
+peripherals clocked at 24MHz (max).
+
+When in ACTIVE, the msp432 consumes approximately 80uA/MHz (1.28mA).
+Additional power will be consumed by the on chip peripherals and on board
+sub-systems.
