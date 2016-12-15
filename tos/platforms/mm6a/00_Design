@@ -151,8 +151,9 @@ Ports:
 
 Ports:
 
-dock (comm) (uart/spi)  A             3
-    dock_slave_rdy, dock_docked         2
+dock (comm) (uart/spi)  A             4         clk, somi, simo, ste/csn (b0)
+    dock_slave_rdy, dock_docked         2       1.5  1.7   1.6   1.4
+    dock_comm is also the bsl_spi port
 gps         (spi)       A             3
     (gps) _on_off, _resetn, _awake,     4
           _csn
