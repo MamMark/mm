@@ -24,8 +24,7 @@
  *
  * 1) Initially a buffer is marked FREE.
  *
- * 2) The GPS driver starts to fill in a buffer and marks it as
- *    being filling.
+ * 2) The GPS driver allocates a buffer, marks it Filling, and proceeds.
  *
  * 3) When filled it is handed over to the msg processing task
  *    after being marked Busy.

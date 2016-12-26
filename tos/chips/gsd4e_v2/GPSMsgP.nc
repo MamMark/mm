@@ -9,10 +9,8 @@
  * Handle an incoming SIRF binary byte stream (OSP, SirfBin) assembling
  * it into protocol messages and then process the ones we are interested in.
  *
- * Originally written for the ORG4472 chip which includes a SirfIV
- * gps processor.  Updated in 2014 for the Antenova M2M M10478 which is a
- * SirfStarIV GSD4e 9333 processor.  It includes a small GPS antenna in
- * addition to the gps processor.
+ * Written for SirfIV based modules including the ORG4472 and Antenova M2M
+ * M10478.  SirfStarIV GSD4e 9333 processors.
  *
  * A single buffer is used which assumes that the processing occurs
  * fairly quickly.  In our case we copy the data over to the data
@@ -21,10 +19,9 @@
  * There is room left at the front of the msg buffer to put the
  * collector header.
  *
- * Unlike, the SIRF3 implementation (which is interrupt driven async
- * serial), the ORG4472 transfers data via SPI which is strictly
- * master/slave and not run off interrupts.  There is a provison
- * for a gpio pin from the gps chip to signal message waiting but
+ * SPI implementation.  Reads in blocks of at most 32 bytes from the GPS SPI
+ * channel.  Strictly master/slave and not run off interrupts.  There is a
+ * provison for a gpio pin from the gps chip to signal message waiting but
  * we haven't figured out how to set that up yet.
  *
  * The SPI interface is run significantly faster than the serial
@@ -46,8 +43,8 @@
  * outside packets).  The only piece that knows whether we are in a
  * packet or not is the packet processor (GPSMsgP).  There is no escape
  * protocol like HDLC.  It is possible for bytes inside packets to look like
- * an idle byte but these are really data.   Have to look at the current
- * message state.
+ * idle bytes but are really data.   Have to look at the current message state
+ * to decide what to do.  If inside a packet, accumulate.
  *
  * We are outside a packet iff state is COLLECT_START or COLLECT_BUSY.
  *
