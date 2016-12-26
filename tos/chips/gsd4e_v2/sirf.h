@@ -1,16 +1,13 @@
 /*
- * Copyright (c) 2008, 2010, 2012, 2014, 2015 Eric B. Decker
+ * Copyright (c) 2008, 2010, 2012, 2014-2016 Eric B. Decker
  * All rights reserved.
- *
- * looks like the next time this code will be worked on is 2016
  *
  * Misc defines and constants for the sirf chipset.
  * Updated for SirfStarIV (org4472).   Further updated Feb 2014
  * for Antenova M10478 (yet another GSD4e chipset).
  *
  * Feb 16, 2014, Antenova M10478 prototype contains version:
- *
- *     GSD4e_4.1.2-P1 R+ 11/15/2011 319-Nov 15 2011-23:04:55.GSD4e..2..
+ *   GSD4e_4.1.2-P1 R+ 11/15/2011 319-Nov 15 2011-23:04:55.GSD4e..2..
  */
 
 #ifndef __SIRF_H__
@@ -27,8 +24,22 @@
 #define MID_NAVDATA	   2
 #define NAVDATA_LEN	   41
 
+/* 0x06 and 0x84 */
+#define MID_SW_VERSION     6
+#define MID_SEND_SW_VER    132
+
 #define MID_CLOCKSTATUS	   7
 #define CLOCKSTATUS_LEN	   20
+#define MID_POLL_CLOCK     144
+
+#define MID_SSB_ERROR      10
+#define MID_SSB_ACK        11
+#define MID_SSB_NACK       12
+
+#define MID_OK_TO_SEND     18
+
+#define MID_POLL_NAV       152
+#define MID_SET_MSG_RATE   166
 
 #define MID_GEODETIC	   41
 #define GEODETIC_LEN	   91
@@ -103,12 +114,39 @@ const uint8_t nmea_shutdown[] = {	// input
  */
 
 /*
+ * header structure
+ */
+
+typedef struct osp_header {
+  uint8_t start0;
+  uint8_t start1;
+  uint8_t len1;                         /* big endian */
+  uint8_t len0;
+  uint8_t mid;
+  uint8_t sid;                          /* depends on mid */
+} osp_header_t;
+
+
+/*
  * Ack/Nack/Error structure
  *
  * SSB ACK  MID 11
  * SSB NACK MID 12
  *
  * 2 byte payload, MID, and {N,}ACK_ID
+ */
+typedef struct osp_ack_nack {
+  uint8_t start0;
+  uint8_t start1;
+  uint8_t len1;                         /* big endian */
+  uint8_t len0;
+  uint8_t mid;                          // 0x0b (11) or 0x0c (12)
+  uint8_t ack_id;                       // what msg being ack'd/nack'd
+} osp_ack_nack_t;
+
+
+/*
+ * MID_MSG_ACK_OUT      0x4b (75)
  */
 
 typedef struct gsd4e_msg_ack75 {
