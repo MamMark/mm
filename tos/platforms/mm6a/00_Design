@@ -151,16 +151,16 @@ Ports:
 
 Ports:
 
-dock (comm) (uart/spi)  A             4         clk, somi, simo, ste/csn (b0)
-    dock_slave_rdy, dock_docked         2       1.5  1.7   1.6   1.4
-    dock_comm is also the bsl_spi port
+dock (comm) (uart/spi)  A             3         clk, somi, simo, ste/csn (b0)
+    dock_slave_rdy, dock_master_rdy     2       1.5  1.7   1.6   dock_master_rdy
+    dock_comm is also the bsl_spi port          dma x2 high want
 gps         (spi)       A             3
     (gps) _on_off, _resetn, _awake,     4
           _csn
-uSD         (spi)       A             3
+uSD         (spi)       A             3         dedicated dmax2
     (usd) _csn, _pwr_ena,               4
           _access_ena, _access_sense
-radio       (spi)       B             3
+radio       (spi)       B             3         dma x2 desired
     (si446x) _irq, _sdn, _csn,          5
              _volt_sel, _cts
 mems        (spi)       B             3
