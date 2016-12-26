@@ -134,6 +134,7 @@ implementation {
   norace uint16_t collect_length;		// length of payload
   uint16_t        collect_cur_chksum;		// running chksum of payload
   bool            draining;                     // non-zero if simply draining.
+  bool            collect_all;                  // TRUE if we collect all packets
 
   uint8_t  collect_msg[GPS_BUF_SIZE];
   uint8_t  collect_nxt;				// where we are in the buffer
@@ -471,6 +472,7 @@ implementation {
 
   command error_t GPSMsgControl.start() {
     collect_state = COLLECT_START;
+    collect_all = 1;
     return SUCCESS;
   }
 
@@ -524,6 +526,7 @@ implementation {
    * same byte, mark with a '*' to indicate more than one seen.
    */
   void addEavesDrop(uint8_t byte) {
+    nop();
     bcount++;
     current_idle = (byte == SIRF_SPI_IDLE || byte == SIRF_SPI_IDLE_2);
     do {
@@ -583,8 +586,8 @@ implementation {
       }
       gbuf[g_idx++] = byte;
       if (g_idx >= GPS_EAVES_SIZE) {
-	g_idx = 0;
 	nop();
+	g_idx = 0;
       }
     } while (0);
   }
@@ -606,6 +609,7 @@ implementation {
    */
   command bool GPSMsgS.byteAvail(uint8_t byte) {
     uint16_t chksum, packet_len;
+    bool     punt;
 
     if (collect_state == COLLECT_BUSY)
       return FALSE;
@@ -693,10 +697,9 @@ implementation {
 	}
 	collect_nxt = 0;
 	collect_state = COLLECT_BUSY;
-        nop();
         packet_len = collect_length + SIRF_OVERHEAD;
-        if (draining ||
-            signal GPSMsgS.packetAvail(&collect_msg[GPS_START_OFFSET], packet_len))
+        punt = signal GPSMsgS.packetAvail(&collect_msg[GPS_START_OFFSET], packet_len);
+        if (!collect_all && (draining || punt))
           collect_restart();
         else
           post gps_msg_task();
@@ -724,8 +727,16 @@ implementation {
 
   command void GPSMsgS.setDraining(bool setting) {
     draining = setting;
-    if (draining)
+    if (draining) {
+      if (collect_state == COLLECT_BUSY)
+	call Panic.warn(PANIC_GPS, 136, 0, 0, 0, 0);
       collect_restart();
+    }
+  }
+
+
+  command void GPSMsgS.setCollectAll(bool setting) {
+    collect_all = setting;
   }
 
 
