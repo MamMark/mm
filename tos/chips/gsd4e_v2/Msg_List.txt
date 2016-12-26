@@ -1,4 +1,5 @@
 Input
+0x80    128     factory reset
 0x81	129	Switch to NMEA
 0x84	132	Poll SW Version  (-> 6)
 0x90	144	Poll Clock (-> 7)
@@ -15,6 +16,8 @@ Input
 
 0xcd,10	205,16	Shutdown
 0xd4,7	212,7	osp revision request
+0xd6    214     hw_response
+0xe9    233     pwr_mode
 
 
 Output
@@ -30,6 +33,10 @@ Output
 0x29	41	(1Hz)	Geodetic Data
 0x2b	43		Queue Command Parameters (from 168)
 0x32	50	(1Hz)	SBAS Parameters
+0x33,1  51,1            unknown
+0x33,6  51,6            Tracker Load Status Report
+0x38    56, 42          extended ephemeris, SIF Status
+0x41,c0 65, 192         GPIO State Output
 0x46,7	70,7		OSP Revision
 0x47	71		Hardware Configuration Request
 0x4b,1	75,1		ACK/NACK/Error Notification
@@ -37,6 +44,8 @@ Output
 0x5c,2	92,2		CW Mitigation
 0x5d,1	93,1		TCXO Learning Clock Model Data Base
 0x5d,2	93,2		TCXO Learning Temperature Table
+0x5d,12 93,18           Temp Value Output
+0xe1    225, 6          statistics channel
 
 
 
