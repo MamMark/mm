@@ -6,7 +6,7 @@
 #
 
 TARGET = mm3
-PLATFORMDIR = $(MM_ROOT)/tos/platforms/$(TARGET)
+PLATFORM_DIR = $(MM_ROOT)/tos/platforms/$(TARGET)
 
 PFLAGS += -I$(MM_ROOT)/include
 

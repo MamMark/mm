@@ -7,9 +7,9 @@
 #
 
 TARGET = exp5438_sd
-PLATFORMDIR = $(MM_ROOT)/tos/platforms/$(TARGET)
+PLATFORM_DIR = $(MM_ROOT)/tos/platforms/$(TARGET)
 
-BUILD_NUM_FILE = $(PLATFORMDIR)/_Build
+BUILD_NUM_FILE = $(PLATFORM_DIR)/_Build
 BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)); else echo 0; fi)
 
 PFLAGS += -D_BUILD=$(BUILD_NUM)
