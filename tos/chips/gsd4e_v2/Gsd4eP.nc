@@ -201,6 +201,7 @@ volatile uint16_t wait_time = 5;
 volatile uint32_t g_t0, g_t1;
 volatile uint16_t u_t[4];
 volatile bool g_flush = TRUE;
+uint8_t gps_version[80];
 
 gpsc_state_t    	    gpsc_state; // low level gps driver (controller) state
 
@@ -965,15 +966,63 @@ implementation {
    * low level, we will return TRUE to indicate that we have consumed it.
    */
   event bool GPSMsgS.packetAvail(uint8_t *msg, uint16_t len) {
+    osp_header_t *oh;
+    osp_ack_nack_t *an;
+    gps_soft_version_data_nt *gsv;
+    register uint16_t l;
+
+    oh  = (void *) msg;
+    gsv = (void *) msg;
+    an  = (void *) msg;
+    nop();
+    nop();
+    switch (oh->mid) {
+      default:
+        break;
+
+      case MID_OK_TO_SEND:
+        return TRUE;
+
+      case MID_SW_VERSION:
+        u_t[3] = call Platform.usecsRaw();
+        g_t1 = call LocalTime.get();
+        /*
+         * should only show up if we've asked for it.  Just copy over the
+         * payload.  Copy over just data bytes, don't include the MID
+         */
+        l = len - SIRF_OVERHEAD - 1;
+        if (l > 80) l = 80;
+        memcpy(gps_version, gsv->data, l);
+        return TRUE;
+
+      case MID_SSB_ACK:
+        switch (an->ack_id) {
+          case MID_SEND_SW_VER:
+            if (gpsc_state < GPSC_SW_VER &&
+                gpsc_state > GPSC_SW_VER_C)
+              gps_panic(99, gpsc_state);
+            gpsc_change_state(GPSC_SW_VER_FINI, GPSW_MSG_BOUNDARY);
+            return TRUE;
+
+          case MID_POLL_CLOCK:
+          case MID_POLL_NAV:
+          case MID_SET_MSG_RATE:
+            return TRUE;
+        }
+        gps_panic(98, an->mid);
+        return TRUE;
+
+      case MID_SSB_ERROR:
+      case MID_SSB_NACK:
+        gps_panic(99, gpsc_state);
+        return TRUE;
+    }
     nop();
     return TRUE;
   }
 
 
   event void GPSTimer.fired() {
-    nop();
-    nop();
-    nop();
     switch (gpsc_state) {
       default:
       case GPSC_FAIL:

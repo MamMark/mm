@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2016, Eric B. Decker
+ * All Rights Reserved
+ *
  * typed_data: definitions for typed data on Mass Storage
  * and any Data network packets.  DT, stands for data typed.
  *
@@ -23,6 +26,7 @@ enum {
   AM_DT_SYNC_RESTART	= 0xA1,
   AM_DT_REBOOT		= 0xA1,
   AM_DT_PANIC		= 0xA1,
+  AM_DT_GPS_VERSION	= 0xA1,
   AM_DT_GPS_TIME	= 0xA1,
   AM_DT_GPS_POS		= 0xA1,
   AM_DT_SENSOR_DATA	= 0xA1,
@@ -56,20 +60,22 @@ enum {
   DT_SYNC		= 2,
   DT_REBOOT		= 3,		/* reboot sync */
   DT_PANIC		= 4,
-  DT_GPS_TIME		= 5,
-  DT_GPS_POS		= 6,
-  DT_SENSOR_DATA	= 7,
-  DT_SENSOR_SET		= 8,
-  DT_TEST		= 9,
-  DT_NOTE		= 10,
+  DT_VERSION		= 5,
+  DT_EVENT	        = 6,
+  DT_DEBUG		= 7,
+
+  DT_GPS_VERSION        = 8,
+  DT_GPS_TIME		= 9,
+  DT_GPS_POS		= 10,
+  DT_SENSOR_DATA	= 11,
+  DT_SENSOR_SET		= 12,
+  DT_TEST		= 13,
+  DT_NOTE		= 14,
 
   /*
    * GPS_RAW is used to encapsulate data as received from the GPS.
    */   
-  DT_GPS_RAW		= 11,
-  DT_VERSION		= 12,
-  DT_EVENT	        = 13,
-  DT_DEBUG		= 14,
+  DT_GPS_RAW		= 15,
   DT_MAX		= 15,
 };
 
@@ -113,7 +119,7 @@ typedef nx_struct dt_config {
  * SYNCing:
  *
  * Data written to the SD card is a byte stream of typed data records.
- * If we lose a byte or somehow get out order (lost sector etc) then
+ * If we lose a byte or somehow get out of order (lost sector etc) then
  * we be screwed.  Unless there is some mechanism for resyncing.  The
  * SYNC/REBOOT data block contains a 32 bit majik number that we
  * search for if we get out of sync.  This lets us sync back up to the
@@ -158,7 +164,7 @@ typedef nx_struct dt_panic {
 } dt_panic_nt;
 
 /*
- * Currently defined for SIRF chipset.  chip_type 1
+ * gps chip types
  */
 
 enum {
@@ -166,6 +172,15 @@ enum {
   CHIP_GPS_ORG4472 = 2,
   CHIP_GPS_GSD4E   = 3,
 };
+
+
+typedef nx_struct dt_gps_version {
+  nx_uint16_t len;
+  nx_uint8_t  dtype;
+  nx_uint32_t stamp_ms;
+  nx_uint8_t  chip_type;
+  nx_uint8_t  gps_version[80];
+} dt_gps_version_nt;
 
 
 /*
