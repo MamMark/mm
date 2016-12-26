@@ -235,6 +235,8 @@ implementation {
   /*
    * See PlatformClockP.nc for assignments
    */
-  async command uint16_t Platform.usecsRaw()   { return TAR; }
-  async command uint16_t Platform.jiffiesRaw() { return TBR; }
+  async command uint32_t Platform.usecsRaw()       { return TAR; }
+  async command uint32_t Platform.usecsRawSize()   { return 16; }
+  async command uint32_t Platform.jiffiesRaw()     { return TBR; }
+  async command uint32_t Platform.jiffiesRawSize() { return 16; }
 }

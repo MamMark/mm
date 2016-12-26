@@ -156,8 +156,10 @@ implementation {
   /*
    * See PlatformClockP.nc for assignments
    */
-  async command uint16_t Platform.usecsRaw()   { return TA1R; }
-  async command uint16_t Platform.jiffiesRaw() { return TA0R; }
+  async command uint32_t Platform.usecsRaw()       { return TA1R; }
+  async command uint32_t Platform.usecsRawSize()   { return 16; }
+  async command uint32_t Platform.jiffiesRaw()     { return TA0R; }
+  async command uint32_t Platform.jiffiesRawSize() { return 16; }
 
   /***************** Defaults ***************/
   default command error_t PeripheralInit.init() {
