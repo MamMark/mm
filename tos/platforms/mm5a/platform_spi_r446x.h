@@ -39,7 +39,7 @@
 
 #include "msp430usci.h"
 
-/* MM5, 5438a, USCI, SPI, gps interface
+/* MM5, 5438a, USCI, SPI, radio
  * phase 0, polarity 0, msb, 8 bit, master,
  * mode 3 pin, sync.
  *

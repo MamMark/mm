@@ -1,0 +1,76 @@
+
+One radio used is the e10-m4463d-sma radio module based on the silabs si4463
+radio chip.  Center frequency is 433 MHz.  exlene.com.
+
+Pinout:
+    1   gnd             7       miso
+    2   sdn             8       sck
+    3   gpio3           9       irq
+    4   gpio2           10      gpio1
+    5   nSel            11      gpio0
+    6   mosi            12      vdd
+
+
+40 pin Raspberry Pi GPIO connector
+Pi1 (first 26 pins), Pi3 (all 40 pins)
+
+(3V3 can only supply 50mA, it can supply more but that is the spec'd limit)
+
+    1   3v3             2       5v0
+    3   i2c0 sda        4       5v0
+    5   i2c0 scl        6       gnd
+    7   gpio4           8       txd0
+    9   gnd             10      rxd0
+    11  gpio17          12      gen1
+    13  gpio21          14      gnd
+    15  gpio22          16      gen4
+    17  3v3             18      gen5
+    19  spi0 mosi       20      gnd
+    21  spi0 miso       22      gen6  (gpio25) *
+    23  spi0 sclk       24      ce0_n (gpio8)
+    25  gnd             26      ce1_n (gpio7)
+
+    27  id_sd           28      id_sc (eeprom)
+    29  gpio5           30      gnd
+    31  gpio6           32      gpio12
+    33  gpio13          34      gnd
+    35  gpio19          36      gpio16
+    37  gpio26          38      gpio20
+    39  gnd             40      gpio21
+
+27 and 28 are reserved for HAT eeprom.  Do not use.
+
+
+Radio wiring:
+
+    Radio               RPi GPIO Conn.
+    1   gnd             25      gnd (6, 9, 14, 20, 25)
+    2   sdn             18      gpio24
+    3   gpio3
+    4   gpio2
+    5   nSel            24      Spi0 ce0
+    6   mosi            19      Spi0 mosi
+    7   miso            21      Spi0 miso
+    8   sck             23      Spi0 sclk
+    9   irqn            22      gpio25
+    10  gpio1   (cts)   16      gpio23
+    11  gpio0
+    12  vdd             17      3V3 (1, 17)
+
+Pi1 Notes:
+
+Pi3 Notes:
+
+Processor is Broadcom BCM2837,  Wireless chip is BCM43438 2.4GHz 802.11n
+4 x ARM Cortex A53, 32kB L1, 512 kB L2, 1GB LPDDR2 RAM.
+
+
+Power Consumption:
+
+        PSU recom.      total USB       bare active consumption
+Pi A    700ma           500ma           200ma
+Pi B    1.2a            500ma           500ma
+Pi A+   700ma           500ma           180ma
+Pi B+   1.8a            600ma/1.2a      330ma
+Pi 2B   1.8a            600ma/1.2a
+Pi 3B   2.5a            1.2a            ~400ma
