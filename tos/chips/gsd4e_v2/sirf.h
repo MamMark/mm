@@ -24,38 +24,6 @@
 #define SIRF_BIN_END     0xb0
 #define SIRF_BIN_END_2   0xb3
 
-/*
- * DT -> Data, Typed (should have been TD for Typed Data
- * but at this point, probably more trouble than it is worth
- * to change it).
- *
- * GPS_BUF_SIZE is biggest packet (MID 41, 188 bytes observed),
- *   SirfBin overhead (start, len, chksum, end) 8 bytes
- *   DT overhead (8 bytes).   204 rounded up to 256.
- *   GPS buffers are used to collect gps message packets and
- *   get passed to the msg processor (collector).
- *
- * The ORG4472/M10478 driver uses SPI which is master/slave.  Access is
- * direct and no interrupts are used.  All accesses are done from
- * syncronous (task) level.
- *
- * GPS_START_OFFSET: offset into the msg buffer where the incoming bytes
- *   should be put.  Skips over DT overhead.
- *
- * GPS_OVERHEAD: space in msg buffer for overhead bytes.  Sum of DT overhead
- * and osp packet header and trailer.  16 bytes total.
- *
- * BUF_INCOMING_SIZE is the size of the chunk used by the lowest
- * layer to snarf SPI blocks.  It is the minimum number of bytes we
- * snarf from the gps via the spi.
- */
-
-#define GPS_BUF_SIZE		256
-#define GPS_START_OFFSET	8
-#define SIRF_OVERHEAD		8
-#define GPS_OVERHEAD		16
-#define BUF_INCOMING_SIZE	32
-
 #define MID_NAVDATA	   2
 #define NAVDATA_LEN	   41
 
