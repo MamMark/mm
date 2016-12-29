@@ -78,7 +78,7 @@
  * March, 2016
  */
  
-interface SDInterface {
+interface SDhardware {
 
   async command void sd_spi_init();
   async command void sd_spi_enable();

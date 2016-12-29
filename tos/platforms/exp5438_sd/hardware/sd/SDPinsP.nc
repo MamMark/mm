@@ -39,7 +39,7 @@
 #include "mmPortRegs.h"
 
 module SDPinsP {
-  provides interface SDInterface as HW;
+  provides interface SDhardware as HW;
   uses {
     interface HplMsp430Usci as Usci;
     interface Panic;

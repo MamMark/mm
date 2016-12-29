@@ -38,7 +38,6 @@
  * Uses a dedicated SPI bus and I/O port.
  */
 
-#include "msp430hardware.h"
 #include "hardware.h"
 #include "sd.h"
 #include "sd_cmd.h"
@@ -97,7 +96,7 @@ module SDspP {
     interface ResourceDefaultOwner;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
-    interface SDInterface as HW;
+    interface SDhardware as HW;
     interface Platform;
     interface Panic;
   }
