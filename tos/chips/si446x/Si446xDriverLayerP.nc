@@ -436,7 +436,7 @@ implementation {
       }
     }
     if (trans == NULL)
-      __PANIC_RADIO(81, ev, st, (uint16_t) trans, 0);
+      __PANIC_RADIO(81, ev, st, (parg_t) trans, 0);
     return trans;
   }
 
@@ -461,7 +461,7 @@ implementation {
 
   void fsm_int_queue(fsm_event_t ev) {
     if (fsm_int_event) {
-      __PANIC_RADIO(82, (uint16_t) ev, fsm_int_event,  0, 0);
+      __PANIC_RADIO(82, (parg_t) ev, fsm_int_event,  0, 0);
     }
     fsm_int_event = ev;
     call Tasklet.schedule();
@@ -764,7 +764,7 @@ implementation {
       // process next command in list
       size = *cp++;
       if (size > 16) {
-	__PANIC_RADIO(91, config_list_iter, (uint16_t) config_prop_ptr, size, 0);
+	__PANIC_RADIO(91, config_list_iter, (parg_t) config_prop_ptr, size, 0);
       }
       if (size == 0) {
 	config_list_iter++;
@@ -1106,7 +1106,7 @@ implementation {
     pkt_len = *dp + 1;              // length of data field is first byte of msg
     call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, SI446X_FIFO_FLUSH_TX);
     if (tx_ff_free != SI446X_EMPTY_TX_LEN)   // fifo should be empty
-      __PANIC_RADIO(6, tx_ff_free, pkt_len, (uint16_t) dp, 0);
+      __PANIC_RADIO(6, tx_ff_free, pkt_len, (parg_t) dp, 0);
     // find size to fill fifo max(pkt_len, tx_ff_free)
     global_ioc.tx_ff_index = (pkt_len < tx_ff_free) ? pkt_len : tx_ff_free;
     call Si446xCmd.write_tx_fifo(dp, global_ioc.tx_ff_index);
@@ -1134,7 +1134,7 @@ implementation {
     if (chk_len > 0) {
       call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, 0);
       if (tx_ff_free == SI446X_EMPTY_TX_LEN)   // too late if fifo is already empty
-	__PANIC_RADIO(7, tx_ff_free, pkt_len, global_ioc.tx_ff_index, (uint16_t) dp);
+	__PANIC_RADIO(7, tx_ff_free, pkt_len, global_ioc.tx_ff_index, (parg_t) dp);
       // find size to fill fifo max(chk_len, tx_ff_free)
       chk_len = (chk_len < tx_ff_free) ? chk_len : tx_ff_free;
       call Si446xCmd.write_tx_fifo(dp + global_ioc.tx_ff_index, chk_len);
@@ -1204,7 +1204,7 @@ implementation {
     call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
     nop();
     if (pkt_len != (global_ioc.rx_ff_index + rx_len))
-      __PANIC_RADIO(11, pkt_len, rx_len, (uint16_t) dp, 0);
+      __PANIC_RADIO(11, pkt_len, rx_len, (parg_t) dp, 0);
     // check to see if upper layer wants the packet
     // if index > 0 then receive.header() was successful in a_rx_drain_ff()
     // else this is short packet and completed already, so still need to check
@@ -1745,9 +1745,9 @@ implementation {
 #endif
 
 #ifndef REQUIRE_PANIC
-  default async command void Panic.panic(uint8_t pcode, uint8_t where, uint16_t arg0,
-					 uint16_t arg1, uint16_t arg2, uint16_t arg3) { }
-  default async command void  Panic.warn(uint8_t pcode, uint8_t where, uint16_t arg0,
-					 uint16_t arg1, uint16_t arg2, uint16_t arg3) { }
+  default async command void Panic.panic(uint8_t pcode, uint8_t where,
+        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3) { }
+  default async command void  Panic.warn(uint8_t pcode, uint8_t where,
+        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3) { }
 #endif
 }

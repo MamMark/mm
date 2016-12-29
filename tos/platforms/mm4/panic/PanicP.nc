@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Eric B. Decker
+ * Copyright (c) 2014, 2016, Eric B. Decker
  * Copyright (c) 2008, 2010, Eric B. Decker, Carl W. Davis
  * All rights reserved.
  */
@@ -17,7 +17,7 @@ bool save_sr_free;
 norace uint8_t _p, _w;
 norace uint16_t _a0, _a1, _a2, _a3, _arg;
 norace uint32_t last_panic;
-norace uint16_t missed_panic_warns;
+norace uint32_t missed_panic_warns;
 
 //uint8_t dedicated_panic_buf[SD_BUF_SIZE];
 //uint8_t *panic_buf = dedicated_panic_buf;
@@ -130,8 +130,8 @@ implementation {
   }
 
 
-  async command void Panic.warn(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1,
-				uint16_t arg2, uint16_t arg3) {
+  async command void Panic.warn(uint8_t pcode, uint8_t where,
+        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3) {
 
     struct p_blk_struct *p;
 
@@ -185,14 +185,14 @@ implementation {
    * All SD access uses stand alone routines.
    */
 
-  async command void Panic.panic(uint8_t pcode, uint8_t where, uint16_t arg0, uint16_t arg1,
-				 uint16_t arg2, uint16_t arg3) {
+  async command void Panic.panic(uint8_t pcode, uint8_t where,
+        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3) {
     panic0_hdr_t     *p0h;
     panic_elem_hdr_t *pep;
     uint32_t          blk;
     uint32_t	      panic_time;
     uint8_t          *ram_loc;
-    uint16_t         avail_blks;
+    uint32_t          avail_blks;
 
     /*
      * Save off the registers first in a temp ram area.

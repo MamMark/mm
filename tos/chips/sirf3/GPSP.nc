@@ -191,11 +191,11 @@ implementation {
     gpsc_state = next_state;
   }
 
-  void gps_warn(uint8_t where, uint16_t p) {
+  void gps_warn(uint8_t where, parg_t p) {
     call Panic.warn(PANIC_GPS, where, p, 0, 0, 0);
   }
 
-  void gps_panic(uint8_t where, uint16_t p) {
+  void gps_panic(uint8_t where, parg_t p) {
     call Panic.panic(PANIC_GPS, where, p, 0, 0, 0);
   }
 

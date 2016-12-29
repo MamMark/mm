@@ -29,6 +29,7 @@
  * The device will be turned off if there are no other clients waiting.
  */
 
+#include <panic.h>
 #include "stream_storage.h"
 
 uint32_t w_t0, w_diff;
@@ -139,7 +140,8 @@ implementation {
     if (sswp != handle ||
 	handle->majik != SS_BUF_MAJIK ||
 	handle->buf_state != SS_BUF_STATE_ALLOC) {
-      call Panic.panic(PANIC_SS, 11, (uint16_t) handle, handle->majik, handle->buf_state, (uint16_t) sswp);
+      call Panic.panic(PANIC_SS, 11, (parg_t) handle, handle->majik,
+                       handle->buf_state, (parg_t) sswp);
     }
 
     if (ssc.majik_a != SSC_MAJIK || ssc.majik_b != SSC_MAJIK)
@@ -191,7 +193,7 @@ implementation {
   command uint8_t *SSW.buf_handle_to_buf(ss_wr_buf_t *handle) {
     if (!handle || handle->majik != SS_BUF_MAJIK ||
 	handle->buf_state != SS_BUF_STATE_ALLOC) {
-      ss_panic(21, (uint16_t) handle);
+      ss_panic(21, (parg_t) handle);
       return NULL;
     }
     return handle->buf;
@@ -282,7 +284,8 @@ implementation {
     error_t  err;
 
     if (ssc.cur_handle->buf_state != SS_BUF_STATE_FULL) {
-      call Panic.panic(PANIC_SS, 25, (uint16_t) ssc.cur_handle, ssc.cur_handle->buf_state, 0, 0);
+      call Panic.panic(PANIC_SS, 25, (parg_t) ssc.cur_handle,
+                       (parg_t) ssc.cur_handle->buf_state, 0, 0);
       return;
     }
 

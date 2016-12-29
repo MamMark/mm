@@ -103,7 +103,7 @@ implementation {
        * note: getPayload checks len to see if the data will fit.  If not
        * it returns NULL.  This is the check for len > maxPayloadLength.
        */
-      call Panic.panic(PANIC_COMM, 4, (uint16_t) dm, (uint16_t) bp, len, 0);
+      call Panic.panic(PANIC_COMM, 4, (parg_t) dm, (parg_t) bp, len, 0);
       return FAIL;
     }
     memcpy(bp, buf, len);
@@ -138,7 +138,7 @@ implementation {
     message_t * dm;
 
     if (msg != dm_p[head] || err) {
-      call Panic.panic(PANIC_COMM, 7, (uint16_t) msg, err, 0, 0);
+      call Panic.panic(PANIC_COMM, 7, (parg_t) msg, err, 0, 0);
       return;
     }
 

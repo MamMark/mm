@@ -68,7 +68,7 @@ implementation {
     dm = (void *) dm_p[cid];
     bp = call Packet.getPayload(dm, len);
     if (!dm || !bp) {
-      call Panic.warn(PANIC_COMM, 10, (uint16_t) dm, (uint16_t) bp, 0, 0);
+      call Panic.warn(PANIC_COMM, 10, (parg_t) dm, (parg_t) bp, 0, 0);
       return FAIL;
     }
     memcpy(bp, buf, len);
