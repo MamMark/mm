@@ -45,4 +45,8 @@ implementation {
   components Msp430UsciA1P as UsciC, SDPinsP;
   SDInterface = SDPinsP;
   SDPinsP.Usci -> UsciC;
+
+  components PanicC, PlatformC;
+  SDPinsP.Panic    -> PanicC;
+  SDPinsP.Platform -> PlatformC;
 }
