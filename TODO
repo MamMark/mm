@@ -6,21 +6,14 @@ Working List:
 - change radio spi from 4MHz to 8MHz (/2 -> /1) and retest.
   (dan)
 
-- rework sync/resync to change from time based to record based so sync's
-  keep track have how many previous records.  Include block of previous
-  sync so we can do a reverse chain.
-
 - rework SD power on to deal with settling needed.
   - currently we turn on power and leave it on to prevent glitches.
-
-- add panic/platform to Msp430UsciUart ((tp-master)/tos/chips/msp430/x5xxx/usci-v2)
-  (eric)
 
 - Port GPS code to mm5a
   (eric, in progress, refactor in process)
 
 - Clean up Panic state saving.  1st entry
- (eric)
+  (eric)
 
 - Radio Op Tracing.
 
@@ -29,9 +22,6 @@ Working List:
 
 - remove preamble
   (dan)
-
-- New Toolchain (TI)
-
 
 * - Need SD port for mm5a
  (eric, done)
