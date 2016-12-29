@@ -48,4 +48,8 @@ implementation {
 
   /* to deal with interrupts and other wiring crap */
   components Msp430UsciArbB0P;
+
+  components PanicC, PlatformC;
+  SDPinsP.Panic    -> PanicC;
+  SDPinsP.Platform -> PlatformC;
 }

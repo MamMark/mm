@@ -99,4 +99,15 @@ interface SDInterface {
    **/
   async command void sd_set_cs();
   async command void sd_clr_cs();
+
+  /*
+   * dma interface
+   */
+  async command void sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length);
+  async command void sd_wait_dma();
+  async command void sd_stop_dma();
+
+  async command void sd_dma_int_enable();
+  async command void sd_dma_int_disable();
+  async event   void sd_dma_interrupt();
 }
