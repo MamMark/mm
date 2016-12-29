@@ -38,12 +38,12 @@
 
 configuration HplSDC {
   provides {
-    interface SDInterface;
+    interface SDhardware;
   }
 }
 implementation {
   components Msp430UsciB1P as UsciC, SDPinsP;
-  SDInterface = SDPinsP;
+  SDhardware = SDPinsP;
   SDPinsP.Usci -> UsciC;
 
   components PanicC, PlatformC;

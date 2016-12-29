@@ -38,7 +38,6 @@
  * Uses a dedicated SPI bus and I/O port.
  */
 
-#include "msp430hardware.h"
 #include "hardware.h"
 #include "sd.h"
 #include "sd_cmd.h"
@@ -97,7 +96,7 @@ module SDspP {
     interface ResourceDefaultOwner;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
-    interface SDInterface as HW;
+    interface SDhardware as HW;
     interface Platform;
     interface Panic;
   }
@@ -284,7 +283,7 @@ implementation {
 
     sd_chk_clean();
     call HW.sd_start_dma((uint8_t *) cmd55, NULL, sizeof(cmd55));
-    call HW.sd_wait_dma();
+    call HW.sd_wait_dma(sizeof(cmd55));
 
     i=0;
     do {
@@ -332,7 +331,7 @@ implementation {
     sd_chk_clean();
     sd_cmd_crc();
     call HW.sd_start_dma(&sd_cmd.cmd, NULL, 6);
-    call HW.sd_wait_dma();
+    call HW.sd_wait_dma(6);
 
     /* Wait for a response.  */
     i=0;
@@ -465,7 +464,7 @@ implementation {
     sd_chk_clean();
     call HW.sd_clr_cs();                /* force to known state, no CS */
     call HW.sd_start_dma(NULL, NULL, 40);	/* send 40 0xff to clock SD */
-    call HW.sd_wait_dma();
+    call HW.sd_wait_dma(40);
 
     /* Put the card in the idle state, non-zero return -> error */
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
@@ -698,7 +697,7 @@ implementation {
     sd_chk_clean();
     call HW.sd_start_dma(NULL, sdc.data_ptr, SD_BUF_SIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
-    call HW.sd_dma_int_enable();
+    call HW.sd_dma_enable_int();
     return;
   }
 
@@ -925,7 +924,7 @@ implementation {
     sd_chk_clean();
     call HW.sd_start_dma(data, NULL, SD_BUF_SIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
-    call HW.sd_dma_int_enable();
+    call HW.sd_dma_enable_int();
     return SUCCESS;
   }
 
@@ -1074,7 +1073,7 @@ implementation {
      */
     sd_chk_clean();
     call HW.sd_start_dma(NULL, NULL, 256);
-    call HW.sd_wait_dma();
+    call HW.sd_wait_dma(256);
 
     cmd = &sd_cmd;
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
@@ -1158,7 +1157,7 @@ implementation {
      */
     sd_chk_clean();
     call HW.sd_start_dma(NULL, buf, SD_BUF_SIZE);
-    call HW.sd_wait_dma();
+    call HW.sd_wait_dma(SD_BUF_SIZE);
     call HW.sd_clr_cs();         /* deassert the SD card */
 
     sd_get();                    /* what are these twos for? */
@@ -1189,7 +1188,7 @@ implementation {
     sd_put(SD_START_TOK);
     sd_chk_clean();
     call HW.sd_start_dma(buf, NULL, SD_BUF_SIZE);
-    call HW.sd_wait_dma();
+    call HW.sd_wait_dma(SD_BUF_SIZE);
 
     /*
      * After the data block is accepted the SD sends a data response token
@@ -1317,7 +1316,7 @@ implementation {
   command void SDraw.send_recv(uint8_t *tx, uint8_t *rx, uint16_t len) {
     sd_chk_clean();
     call HW.sd_start_dma(tx, rx, len);
-    call HW.sd_wait_dma();
+    call HW.sd_wait_dma(len);
   }
 
 
@@ -1327,8 +1326,13 @@ implementation {
    *
    *************************************************************************/
 
-
   task void dma_task() {
+    /*
+     * always disable the interrupt, only way we got here.
+     * need to do from task level to avoid any interference
+     * with other dma users.
+     */
+    call HW.sd_dma_disable_int();
     call SDtimer.stop();
     switch (sdc.sd_state) {
       case SDS_READ_DMA:
@@ -1347,7 +1351,6 @@ implementation {
 
 
   async event void HW.sd_dma_interrupt() {
-    call HW.sd_dma_int_disable();
     post dma_task();
   }
 

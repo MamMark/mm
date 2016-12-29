@@ -1,5 +1,5 @@
 /*
- * Copyright @ 2010, 2016 Eric B. Decker, Carl Davis
+ * Copyright (c) 2010, 2016 Eric B. Decker, Carl Davis
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,8 +48,6 @@
  * up and down as it is used by clients.
  */
 
-#warning wiring to SDspC in tos/chips.  You really want a platform dependent
-
 configuration SDspC {
   provides {
     interface SDread[uint8_t cid];
@@ -63,6 +61,7 @@ configuration SDspC {
 
 implementation {
   components SDspP;
+
   SDread   = SDspP;
   SDwrite  = SDspP;
   SDerase  = SDspP;
@@ -80,9 +79,8 @@ implementation {
   components new TimerMilliC() as SDTimer;
   SDspP.SDtimer -> SDTimer;
 
-/* H/W definitions should be done in a Platform dir */
-//  components HplSDC as HW;
-//  SDspP.HW -> HW;
+  components HplSDC as HW;
+  SDspP.HW -> HW;
 
   components LocalTimeMilliC as L;
   SDspP.lt -> L;

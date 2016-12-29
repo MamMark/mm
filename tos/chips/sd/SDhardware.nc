@@ -78,7 +78,7 @@
  * March, 2016
  */
  
-interface SDInterface {
+interface SDhardware {
 
   async command void sd_spi_init();
   async command void sd_spi_enable();
@@ -104,10 +104,10 @@ interface SDInterface {
    * dma interface
    */
   async command void sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length);
-  async command void sd_wait_dma();
+  async command void sd_wait_dma(uint16_t length);
   async command void sd_stop_dma();
 
-  async command void sd_dma_int_enable();
-  async command void sd_dma_int_disable();
+  async command void sd_dma_enable_int();
+  async command void sd_dma_disable_int();
   async event   void sd_dma_interrupt();
 }
