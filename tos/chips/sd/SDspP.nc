@@ -140,9 +140,6 @@ implementation {
     uint16_t   majik_b;
   } sdc;
 
-  uint8_t idle_byte = 0xff;
-  uint8_t recv_dump[SD_BUF_SIZE];
-
   norace sd_cmd_t sd_cmd;
 
 
@@ -264,133 +261,6 @@ implementation {
   }
 
 
-  /*
-   * sd_start_dma:  Start up dma 0 and 1 for SD/SPI access.
-   *
-   * input:  sndbuf	pntr to transmit buffer.  If null 0xff will be sent.
-   *         rcvbuf	pntr to recveive buffer.  If null no rx bytes will be stored.
-   *         length     number of bytes to transfer.   Buffers are assumed to be this size.
-   *
-   * Channel 0 is used to RX and has priority.  Channel 1 for TX.
-   *
-   * If sndbuf is NULL, 0xff  will be sent on the transmit side to facilitate receiving.
-   * If rcvbuf is NULL, a single byte recv_dump is used to receive incoming bytes.  This
-   * is used for transmitting without receiving.
-   *
-   * To use for clocking the sd: sd_start_dma(NULL, NULL, 10)
-   * To use for receiving:       sd_start_dma(NULL, rx_buf, 514)
-   * To use for transmitting:    sd_start_dma(tx_buf, NULL, 514)
-   *
-   * The sector size (block size) is 512 bytes.  The additional two bytes are the crc.
-   */
-
-  void sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length) {
-    uint8_t first_byte;
-
-    sd_chk_clean();
-    if (length == 0)
-      sd_panic(23, length);
-
-    DMA0CTL = 0;			/* hit DMA_EN to disable dma engines */
-    DMA1CTL = 0;
-
-    DMA0SA  = (uint16_t) &SD_SPI_RX_BUF;
-    DMA0SZ  = length;
-    DMA0CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_NC;
-    if (rcvptr) {
-      /*
-       * note we know DMA_DST_NC is 0 so all we need to do is OR
-       * in DMA_DST_INC to get the address to increment.
-       */
-      DMA0DA  = (uint16_t) rcvptr;
-      DMA0CTL |= DMA_DST_INC;
-    } else
-      DMA0DA  = (uint16_t) recv_dump;
-
-    /*
-     * There is a race condition that makes using an rx dma engine triggered
-     * TSEL_xxRX and the tx engine triggered by TSEL_xxTX when running the
-     * UCSI as an SPI.  The race condition causes the rxbuf to get overrun
-     * very intermittently.  It loses a byte and the rx dma hangs.  We are
-     * looking for the rx dma to complete but one byte got lost.
-     *
-     * Note this condition is difficult to duplicate.  We've seen it in the main
-     * SDspP driver when using TSEL_TX to trigger channel 1.
-     *
-     * The work around is to trigger both dma channels on the RX trigger.  This
-     * only sends a new TX byte after a fresh RX byte has been received and makes
-     * sure that there isn't new data coming into the rx serial register which
-     * would when complete overwrite the RXBUF causing an over run (and the lost
-     * byte).
-     *
-     * Since the tx channel is triggered by an rx complete, we have to start
-     * the transfer up by stuffing the first byte out.  The TXIFG flag is
-     * ignored.
-     */
-    DMA1DA  = (uint16_t) &SD_SPI_TX_BUF;
-    DMA1SZ  = length - 1;
-    DMA1CTL = DMA_DT_SINGLE | DMA_SB_DB | DMA_DST_NC | DMA_SRC_NC;
-    if (sndptr) {
-      first_byte = sndptr[0];
-      DMA1SA  = (uint16_t) (&sndptr[1]);
-      DMA1CTL |= DMA_SRC_INC;
-    } else {
-      first_byte = 0xff;
-      DMA1SA  = (uint16_t) &idle_byte;
-    }
-
-    DMACTL0 = DMA0_TSEL_RX_TRIG | DMA1_TSEL_RX_TRIG;
-
-    DMA0CTL |= DMA_EN;			/* must be done after TSELs get set */
-    DMA1CTL |= DMA_EN;
-
-    SD_SPI_TX_BUF = first_byte;		/* start dma up */
-  }
-
-
-  /*
-   * sd_wait_dma: busy wait for dma to finish.
-   *
-   * watches channel 0 till DMA_EN goes off.  Channel 0 is RX.
-   *
-   * Also utilizes the SZ register to find out how many bytes remain
-   * and assuming 1 us/byte a reasonable timeout (factor of 2).
-   * A timeout kicks panic.
-   *
-   * This routine can be interrupted and time continues to run while
-   * we are away.  This needs to be accounted for when checking for
-   * timeouts.  While we were away did our operation complete?
-   */
-
-  void sd_wait_dma() {
-    uint16_t max_timeout, t0;
-
-    t0 = call Platform.usecsRaw();
-
-    max_timeout = (DMA0SZ * 64);
-
-    while (1) {
-      if ((DMA0CTL & DMA_EN) == 0)	/* check for completion */
-	break;
-      /*
-       * We may have taken an interrupt just after checking to see if the
-       * dma engine is still running.  This may put us into a timeout
-       * condition.
-       *
-       * Only take the time out panic if the DMA engine is still running!
-       */
-      if (((call Platform.usecsRaw() - t0) > max_timeout) && (DMA0CTL & DMA_EN)) {
-	sd_panic(24, max_timeout);
-	return;
-      }
-    }
-
-    DMACTL0 = 0;			/* kick triggers */
-    DMA0CTL = 0;			/* reset engines 0 and 1 */
-    DMA1CTL = 0;
-  }
-
-
   const uint8_t cmd55[] = {
     SD_APP_CMD, 0, 0, 0, 0, 0xff	/* when crc's get implemented need to change. */
   };
@@ -413,8 +283,8 @@ implementation {
     uint8_t  rsp, tmp;
 
     sd_chk_clean();
-    sd_start_dma((uint8_t *) cmd55, recv_dump, sizeof(cmd55));
-    sd_wait_dma();
+    call HW.sd_start_dma((uint8_t *) cmd55, NULL, sizeof(cmd55));
+    call HW.sd_wait_dma();
 
     i=0;
     do {
@@ -461,8 +331,8 @@ implementation {
 
     sd_chk_clean();
     sd_cmd_crc();
-    sd_start_dma(&sd_cmd.cmd, recv_dump, 6);
-    sd_wait_dma();
+    call HW.sd_start_dma(&sd_cmd.cmd, NULL, 6);
+    call HW.sd_wait_dma();
 
     /* Wait for a response.  */
     i=0;
@@ -592,9 +462,10 @@ implementation {
      * command is sent.  see SDsa.reset for more info.
      */
 
+    sd_chk_clean();
     call HW.sd_clr_cs();                /* force to known state, no CS */
-    sd_start_dma(NULL, recv_dump, 40);	/* send 40 0xff to clock SD */
-    sd_wait_dma();
+    call HW.sd_start_dma(NULL, NULL, 40);	/* send 40 0xff to clock SD */
+    call HW.sd_wait_dma();
 
     /* Put the card in the idle state, non-zero return -> error */
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
@@ -824,9 +695,10 @@ implementation {
      * enable the dma interrupt to generate a h/w event when complete.
      */
     sdc.sd_state = SDS_READ_DMA;
-    sd_start_dma(NULL, sdc.data_ptr, SD_BUF_SIZE);
+    sd_chk_clean();
+    call HW.sd_start_dma(NULL, sdc.data_ptr, SD_BUF_SIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
-    DMA0_ENABLE_INT;
+    call HW.sd_dma_int_enable();
     return;
   }
 
@@ -836,10 +708,7 @@ implementation {
     uint8_t  cid;
 
     cid = sdc.cur_cid;			/* remember for signalling */
-    DMACTL0 = 0;			/* kick triggers */
-    DMA0CTL = 0;			/* reset engines 0 and 1 */
-    DMA1CTL = 0;
-
+    call HW.sd_stop_dma();
     call HW.sd_clr_cs();
 
     /* Send some extra clocks so the card can finish */
@@ -981,9 +850,7 @@ implementation {
     uint16_t i;
     uint8_t  cid;
 
-    DMACTL0 = 0;			/* kick triggers */
-    DMA0CTL = 0;			/* reset engines 0 and 1 */
-    DMA1CTL = 0;
+    call HW.sd_stop_dma();
 
     /*
      * After the data block is accepted the SD sends a data response token
@@ -1055,9 +922,10 @@ implementation {
      * and enable the dma h/w interrupt to generate the h/w event.
      */
     sdc.sd_state = SDS_WRITE_DMA;
-    sd_start_dma(data, recv_dump, SD_BUF_SIZE);
+    sd_chk_clean();
+    call HW.sd_start_dma(data, NULL, SD_BUF_SIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
-    DMA0_ENABLE_INT;
+    call HW.sd_dma_int_enable();
     return SUCCESS;
   }
 
@@ -1204,8 +1072,9 @@ implementation {
      * out in the doc.  But it seems to work.  Seems to depend on whose
      * SD card we are using.
      */
-    sd_start_dma(NULL, recv_dump, 256);
-    sd_wait_dma();
+    sd_chk_clean();
+    call HW.sd_start_dma(NULL, NULL, 256);
+    call HW.sd_wait_dma();
 
     cmd = &sd_cmd;
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
@@ -1287,8 +1156,9 @@ implementation {
      * we fire up the dma, turn on a timer to do a timeout, and
      * enable the dma interrupt to generate a h/w event when complete.
      */
-    sd_start_dma(NULL, buf, SD_BUF_SIZE);
-    sd_wait_dma();
+    sd_chk_clean();
+    call HW.sd_start_dma(NULL, buf, SD_BUF_SIZE);
+    call HW.sd_wait_dma();
     call HW.sd_clr_cs();         /* deassert the SD card */
 
     sd_get();                    /* what are these twos for? */
@@ -1317,8 +1187,9 @@ implementation {
 
     call HW.sd_set_cs();
     sd_put(SD_START_TOK);
-    sd_start_dma(buf, recv_dump, SD_BUF_SIZE);
-    sd_wait_dma();
+    sd_chk_clean();
+    call HW.sd_start_dma(buf, NULL, SD_BUF_SIZE);
+    call HW.sd_wait_dma();
 
     /*
      * After the data block is accepted the SD sends a data response token
@@ -1444,8 +1315,9 @@ implementation {
 
 
   command void SDraw.send_recv(uint8_t *tx, uint8_t *rx, uint16_t len) {
-    sd_start_dma(tx, rx, len);
-    sd_wait_dma();
+    sd_chk_clean();
+    call HW.sd_start_dma(tx, rx, len);
+    call HW.sd_wait_dma();
   }
 
 
@@ -1474,13 +1346,8 @@ implementation {
   }
 
 
-  /*
-   * DMA interrupt is only used for channel 0, RX for the SD.
-   * When it goes off turn off the timeout timer and kick over to
-   * sync level to finish.  The main SD driver code runs at sync level.
-   */
-  TOSH_SIGNAL( DMA_VECTOR ) {
-    DMA0_DISABLE_INT;
+  async event void HW.sd_dma_interrupt() {
+    call HW.sd_dma_int_disable();
     post dma_task();
   }
 

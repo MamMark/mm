@@ -89,30 +89,4 @@ MSP430REG_NORACE(DMA1SZ);
 #define SD_SPI_CLR_OE		(UCB1RXBUF)
 #define SD_SPI_OE_REG		(UCB1STAT)
 
-/*
- * DMA control defines.  Makes things more readable.
- */
-
-#define DMA_DT_SINGLE DMADT_0
-#define DMA_DT_BLOCK  DMADT_1
-#define DMA_SB_DB     DMASBDB
-#define DMA_EN        DMAEN
-#define DMA_IFG       DMAIFG
-#define DMA_REQ       DMAREQ
-#define DMA_DST_NC    DMADSTINCR_0
-#define DMA_DST_INC   DMADSTINCR_3
-#define DMA_SRC_NC    DMASRCINCR_0
-#define DMA_SRC_INC   DMASRCINCR_3
-
-#define DMA0_TSEL_B1RX (22<<0)	/* DMA chn 0, UCB1RXIFG */
-#define DMA1_TSEL_B1RX (22<<8)	/* DMA chn 1, UCB1RXIFG */
-#define DMA0_TSEL_B1TX (23<<0)	/* DMA chn 0, UCB1TXIFG */
-#define DMA1_TSEL_B1TX (23<<8)	/* DMA chn 1, UCB1TXIFG */
-
-#define DMA0_TSEL_RX_TRIG       DMA0_TSEL_B1RX
-#define DMA1_TSEL_RX_TRIG       DMA1_TSEL_B1RX
-
-#define DMA0_ENABLE_INT		(DMA0CTL |= DMAIE)
-#define DMA0_DISABLE_INT	(DMA0CTL &= ~DMAIE)
-
 #endif    /* _H_PLATFORM_SPI_SD_H_ */
