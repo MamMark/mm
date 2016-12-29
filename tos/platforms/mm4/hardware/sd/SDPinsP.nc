@@ -324,12 +324,12 @@ const msp430_usci_config_t si446x_spi_config = {
    * timeouts.  While we were away did our operation complete?
    */
 
-  async command void HW.sd_wait_dma() {
+  async command void HW.sd_wait_dma(uint16_t length) {
     uint16_t max_timeout, t0;
 
     t0 = call Platform.usecsRaw();
 
-    max_timeout = (DMA0SZ * 64);
+    max_timeout = (length * 64);
 
     while (1) {
       if ((DMA0CTL & DMAEN) == 0)	/* check for completion */
@@ -355,8 +355,8 @@ const msp430_usci_config_t si446x_spi_config = {
     DMA1CTL = 0;
   }
 
-  async command void HW.sd_dma_int_enable()     { DMA0CTL |=  DMAIE; }
-  async command void HW.sd_dma_int_disable()    { DMA0CTL &= ~DMAIE; }
+  async command void HW.sd_dma_enable_int()     { DMA0CTL |=  DMAIE; }
+  async command void HW.sd_dma_disable_int()    { DMA0CTL &= ~DMAIE; }
 
   async event void Panic.hook() { }
 }
