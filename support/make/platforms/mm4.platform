@@ -29,7 +29,7 @@
 PFLAGS += -I%T/platforms/mm4
 PFLAGS += -I%T/platforms/mm4/panic
 PFLAGS += -I%T/platforms/mm4/sensors
-PFLAGS += -I%T/system/panic
+PFLAGS += -I%T/system/panic_simple
 
 PFLAGS += -I%T/mm
 
