@@ -1326,8 +1326,13 @@ implementation {
    *
    *************************************************************************/
 
-
   task void dma_task() {
+    /*
+     * always disable the interrupt, only way we got here.
+     * need to do from task level to avoid any interference
+     * with other dma users.
+     */
+    call HW.sd_dma_disable_int();
     call SDtimer.stop();
     switch (sdc.sd_state) {
       case SDS_READ_DMA:
@@ -1346,7 +1351,6 @@ implementation {
 
 
   async event void HW.sd_dma_interrupt() {
-    call HW.sd_dma_int_disable();
     post dma_task();
   }
 
