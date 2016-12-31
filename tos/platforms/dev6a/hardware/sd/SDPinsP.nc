@@ -169,7 +169,7 @@ const msp432_usci_config_t sd_spi_config = {
     uint8_t *working;
     uint32_t control;
 
-    if (length == 0)
+    if (length == 0 || (rcvptr == NULL && length > SD_BUF_SIZE))
       sd_panic(23, length, 0);
 
     call DmaTX.dma_stop_channel();
