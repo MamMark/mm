@@ -36,7 +36,7 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#include "mmPortRegs.h"
+#include "hardware.h"
 #include "msp430usci.h"
 
 module Gsd4ePinsP {

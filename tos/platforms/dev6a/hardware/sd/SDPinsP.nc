@@ -34,7 +34,7 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#include <mmPortRegs.h>
+#include <hardware.h>
 #include <panic.h>
 #include <msp432.h>
 #include <msp432dma.h>

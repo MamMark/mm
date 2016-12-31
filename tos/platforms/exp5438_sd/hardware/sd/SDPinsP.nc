@@ -36,7 +36,7 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#include "mmPortRegs.h"
+#include "hardware.h"
 
 module SDPinsP {
   provides interface SDhardware as HW;

@@ -37,7 +37,6 @@
  */
 
 #include "hardware.h"
-#include "mmPortRegs.h"
 
 configuration HplGsd4eC {
   provides {

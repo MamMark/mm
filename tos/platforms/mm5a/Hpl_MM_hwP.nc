@@ -40,7 +40,6 @@
  */
 
 #include "hardware.h"
-#include "mmPortRegs.h"
 
 module Hpl_MM_hwP {
   provides interface Hpl_MM_hw as HW;

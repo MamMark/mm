@@ -37,7 +37,6 @@
  */
 
 #include "hardware.h"
-#include "mmPortRegs.h"
 
 module HplGsd4eC {
   provides interface Gsd4eInterface as HW;
