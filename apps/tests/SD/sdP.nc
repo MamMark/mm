@@ -44,7 +44,7 @@
 
 
 uint8_t d[514];
-volatile bool sd_wait = 1;
+//volatile bool sd_wait = 1;
 
 
 module sdP {
@@ -265,8 +265,7 @@ implementation {
 
 
   event void Boot.booted() {
-    while (sd_wait)
-      ;
+    bkpt();
 //    signal SDResource.granted();
     call SDResource.request();
   }
