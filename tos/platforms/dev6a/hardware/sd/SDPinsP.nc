@@ -56,8 +56,13 @@ implementation {
 
 #include "platform_spi_sd.h"
 
-#define sd_panic(where, arg) do { call Panic.panic(PANIC_MS, where, arg, 0, 0, 0); } while (0)
-#define  sd_warn(where, arg) do { call  Panic.warn(PANIC_MS, where, arg, 0, 0, 0); } while (0)
+#define sd_panic(where, arg, arg1) do { \
+    call Panic.panic(PANIC_MS, where, arg, arg1, 0, 0); \
+  } while (0)
+
+#define  sd_warn(where, arg)      do { \
+    call  Panic.warn(PANIC_MS, where, arg, 0, 0, 0); \
+  } while (0)
 
   uint8_t idle_byte = 0xff;
   uint8_t recv_dump[SD_BUF_SIZE];
@@ -165,7 +170,7 @@ const msp432_usci_config_t sd_spi_config = {
     uint32_t control;
 
     if (length == 0)
-      sd_panic(23, length);
+      sd_panic(23, length, 0);
 
     call DmaTX.dma_stop_channel();
     call DmaRX.dma_stop_channel();
@@ -236,7 +241,7 @@ const msp432_usci_config_t sd_spi_config = {
        * Only take the time out panic if the DMA engine is still running!
        */
       if (((call Platform.usecsRaw() - t0) > max_timeout) && (call DmaRX.dma_enabled())) {
-	sd_panic(24, max_timeout);
+	sd_panic(24, max_timeout, 0);
 	return;
       }
     }
