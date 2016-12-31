@@ -76,7 +76,8 @@ enum {
    * GPS_RAW is used to encapsulate data as received from the GPS.
    */   
   DT_GPS_RAW		= 15,
-  DT_MAX		= 15,
+  DT_GPS_NMEA_RAW	= 16,
+  DT_MAX		= 16,
 };
 
 
@@ -281,6 +282,15 @@ typedef nx_struct dt_gps_raw {
   nx_uint32_t   stamp_ms;
   nx_uint8_t	data[0];
 } dt_gps_raw_nt;
+
+typedef nx_struct dt_gps_nmea_raw {
+  nx_uint16_t	len;
+  nx_uint8_t	dtype;
+  nx_uint8_t	chip;
+  nx_uint32_t   stamp_ms;
+  nx_uint8_t	data[0];
+} dt_gps_nmea_raw_nt;
+
 
 /*
  * The way the allocation works out is as follows:
