@@ -166,7 +166,6 @@ const msp432_usci_config_t sd_spi_config = {
 
 
   async command void HW.sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length) {
-    uint8_t *working;
     uint32_t control;
 
     if (length == 0 || (rcvptr == NULL && length > SD_BUF_SIZE))
@@ -183,12 +182,12 @@ const msp432_usci_config_t sd_spi_config = {
      * if rcvptr is NULL we pull into recv_dump (514, big enough),  DSTINC always 8
      * SRCINC is always NONE (coming from the port).
      */ 
-    working = rcvptr ? rcvptr : recv_dump;
     control = UDMA_CHCTL_DSTINC_8 | UDMA_CHCTL_SRCINC_NONE |
       MSP432_DMA_SIZE_8 | UDMA_CHCTL_ARBSIZE_1 | MSP432_DMA_MODE_BASIC;
+    rcvptr = rcvptr ? rcvptr : recv_dump;
 
     call DmaRX.dma_start_channel(MSP432_DMA_CH7_B3_RX0, length,
-        working, (void *) &(EUSCI_B3->RXBUF), control);
+        rcvptr, (void *) &(EUSCI_B3->RXBUF), control);
 
     /*
      * Set up the TX side
@@ -199,15 +198,14 @@ const msp432_usci_config_t sd_spi_config = {
     control = UDMA_CHCTL_DSTINC_NONE | MSP432_DMA_SIZE_8 |
       UDMA_CHCTL_ARBSIZE_1 | MSP432_DMA_MODE_BASIC;
     if (sndptr) {
-      working = sndptr;
       control |= UDMA_CHCTL_SRCINC_8;
     } else {
-      working = &idle_byte;
+      sndptr = &idle_byte;
       control |= UDMA_CHCTL_SRCINC_NONE;
     }      
 
     call DmaTX.dma_start_channel(MSP432_DMA_CH6_B3_TX0, length,
-        (void*) &(EUSCI_B3->TXBUF), working, control);
+        (void*) &(EUSCI_B3->TXBUF), sndptr, control);
   }
 
 
