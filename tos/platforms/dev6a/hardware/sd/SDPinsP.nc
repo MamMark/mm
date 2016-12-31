@@ -181,9 +181,9 @@ const msp432_usci_config_t sd_spi_config = {
      * if rcvptr is NULL we pull into recv_dump (514, big enough),  DSTINC always 8
      * SRCINC is always NONE (coming from the port).
      */ 
-    control = UDMA_CHCTL_DSTINC_8 | MSP432_DMA_SIZE_8 |
-      UDMA_CHCTL_ARBSIZE_1 | MSP432_DMA_MODE_BASIC;
     working = rcvptr ? rcvptr : recv_dump;
+    control = UDMA_CHCTL_DSTINC_8 | UDMA_CHCTL_SRCINC_NONE |
+      MSP432_DMA_SIZE_8 | UDMA_CHCTL_ARBSIZE_1 | MSP432_DMA_MODE_BASIC;
 
     call DmaRX.dma_start_channel(MSP432_DMA_CH7_B3_RX0, length,
         working, (void *) &(EUSCI_B3->RXBUF), control);
