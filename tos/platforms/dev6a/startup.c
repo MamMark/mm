@@ -352,6 +352,13 @@ void __pins_init() {
   P7->DIR  = 0x01;
   P7->SEL0 = 0x01;
   P7->SEL1 = 0x00;
+
+  /*
+   * SD is on P10.0 - P10.3  see hardware.h
+   * on reset all pins set to xpI (port, input)
+   */
+  P10->OUT = 1;
+  P10->DIR = 0x7;
 }
 
 

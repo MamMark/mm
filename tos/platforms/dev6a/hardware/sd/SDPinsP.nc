@@ -112,7 +112,7 @@ const msp432_usci_config_t sd_spi_config = {
 
   async command void HW.sd_spi_init() {
     call HW.sd_off();
-    SD_PINS_SPI;			// switch pins over
+    SD_PINS_INPUT;			// switch pins over
     call Usci.configure(&sd_spi_config, FALSE);
   }
 
