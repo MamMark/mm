@@ -1,0 +1,34 @@
+define radio
+
+printf "\nradio(ub2): cts: %d  irqN: %d  sdn: %d  csN: %d\n", \
+    (($p2->IN >> 3) & 1), (($p5->IN >> 1) & 1), \
+    (($p5->OUT >> 0) & 1), (($p5->OUT >> 2) & 1)
+printf "                 %c        %c       %c       %c\n", \
+    ($p2->DIR & (1<<3))?'O':'I', ($p5->DIR & (1<<1))?'O':'I', \
+    ($p5->DIR & (1<<0))?'O':'I', ($p5->DIR & (1<<2))?'O':'I'
+__p_usci $ucb2 2 1 0d22
+end
+document radio
+display radio state
+end
+
+define cts
+printf "cts: %d  irqN: %d  sdn: %d  csN: %d\n", \
+    (($p2->IN >> 3) & 1), (($p5->IN >> 1) & 1), (($p5->OUT >> 0) & 1), (($p5->OUT >> 2) & 1)
+end
+document cts
+current status of various Si446x radio pins
+end
+
+
+define sd
+printf "\nuSD(ub3): asN: %d  aeN: %d  3V3: %d  uSD_pwr: %d  csN: %d\n", \
+    0, 0, 1, 1, (($p10->OUT >> 0) & 1)
+printf "               %c       %c       %c           %c       %c\n", \
+    'O', 'O', 'O', 'O', $p10->DIR?'O':'I'
+__p_usci $ucb3 3 1 0d23
+p SDspP__sdc
+end
+document sd
+display sd state
+end
