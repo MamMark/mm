@@ -198,9 +198,9 @@
  *       .6	0pI	si446x_simo                   .6	0pI
  *       .7	0pI     si446x_somi                   .7	0pI
  *
- * port  4.0	0pI	                        port 10.0	0pI     sd_csn
- *  21    .1	0pI	                         81 I  .1	0pI     sd_clk
- *  23    .2	0pI	ACLK                     83 O  .2	0pI     sd_simo
+ * port  4.0	0pI	                        port 10.0	1pO     sd_csn
+ *  21    .1	0pI	                         81 I  .1	0pO     sd_clk
+ *  23    .2	0pI	ACLK                     83 O  .2	0pO     sd_simo
  *        .3	0pI	MCLK/RTC                       .3	0pI     sd_somi
  *        .4	0pI	HSMCLK                         .4	0pI
  *        .5	0pI	                               .5	0pI
@@ -208,7 +208,7 @@
  *        .7	0pI	                               .7	0pI
  *
  * port  5.0	0pO     si446x_sdn
- *  40 I  .1	0pO     si446x_irq
+ *  40 I  .1	0pO     si446x_irqn
  *  42 O  .2	0pI     si446x_csn
  *        .3	0pI
  *        .4	0pI
@@ -269,17 +269,17 @@
 #define SD_ACCESS_ENA_N
 #define SD_PWR_ENA
 
-#define SD_PINS_INPUT  do { } while (0)
+#define SD_PINS_INPUT  do { P10->SEL0 = 0; } while (0)
 
 /*
  * SD_PINS_SPI will connect the 3 spi lines on the SD to the SPI.
- * And switches the sd_csn (8.2) from input to output,  the value should be
+ * And switches the sd_csn (10.0) from input to output,  the value should be
  * a 1 which deselects the sd and tri-states.
  *
- * 3.6, CLK, 5.6-7 SDI, SDO set to SPI Module, SD_CSN switched to output
+ * 10.1, CLK, 10.2-3 SDI, SDO set to SPI Module, SD_CSN switched to output
  * (assumed 1, which is CSN, CS deasserted).
  */
-#define SD_PINS_SPI   do { } while (0)
+#define SD_PINS_SPI   do { P10->SEL0 = 0x0E; } while (0)
 
 
 #define TELL_PIN        0
