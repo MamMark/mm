@@ -225,6 +225,7 @@ const msp432_usci_config_t sd_spi_config = {
 
   async command void HW.sd_wait_dma(uint16_t length) {
     uint32_t max_timeout, t0;
+    uint32_t a, b;
 
     t0 = call Platform.usecsRaw();
 
@@ -245,7 +246,10 @@ const msp432_usci_config_t sd_spi_config = {
 	return;
       }
     }
-    call HW.sd_stop_dma();
+    a = call DmaTX.dma_enabled();
+    b = call DmaRX.dma_enabled();
+    if (a || b)
+      sd_panic(25, a, b);
   }
 
 
