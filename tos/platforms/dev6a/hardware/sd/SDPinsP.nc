@@ -172,8 +172,10 @@ const msp432_usci_config_t sd_spi_config = {
     if (length == 0 || (rcvptr == NULL && length > SD_BUF_SIZE))
       sd_panic(23, length, 0);
 
-    call DmaTX.dma_stop_channel();
-    call DmaRX.dma_stop_channel();
+    /*
+     * Dma.dma_start_channel checks if the requested engine is already
+     * running and panics if so.  No need to stop the channels here.
+     */
 
     /*
      * set the receiver up first.
