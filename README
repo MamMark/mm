@@ -5,10 +5,10 @@ their environment.  Originally it was designed for marine mammals (mammal
 marker, mammark) but is no longer limited to those environments.
 
 The core OS is based on TinyOS 2.  Significant changes have been made for
-support of more modern msp430 processors.  These changes are held on the
-gh:tinyprod/prod repository.  The working development trunk of TinyProd
-is the gh:tp-freeforall/prod repository.  Additional changes are on the
-mm_core branch (based off tp-master).
+support of more modern msp430 and msp432 processors.  These changes are
+held on the gh:tinyprod/prod repository.  The working development trunk of
+TinyProd is the gh:tp-freeforall/prod repository.  Additional changes are
+on the mm_core branch (based off tp-master).
 
 See doc/00_README for installing a complete development environment.  Also
 see: (doc directory) 01_Platforms, Notes, Status.txt, and ToDo.
@@ -18,7 +18,8 @@ Platforms:
 
 mm3:	msp430f1611 (prototype)
 mm4:	msp430f2618 (prototype)
-mm5a:	msp430f5438a (prototype and production)
+mm5a:	msp430f5438a (prototype)
+mm6a:   msp432p401r (prototype and production)
 
 
 Other development platforms:
@@ -27,6 +28,7 @@ the exp5438 is TI's MSP-EXP430F5438 development board.
 
 exp5438_5t:     dev board with various sensors
 exp5438_gps:    dev board with gps and radio
+dev6a:          msp432p401r development board
 
 
 Centralized repositories are hosted at github.com.  github:tinyprod/prod
