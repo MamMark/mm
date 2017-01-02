@@ -121,26 +121,8 @@ const msp432_usci_config_t sd_spi_config = {
     return SUCCESS;
   }
 
-  async command void HW.sd_spi_enable() {
-#ifdef notdef
-    /*
-     * the hardware has a level shifter with and OE* that decouples
-     * the uSD from the processor.  This is handled by sd_on and sd_off
-     * and we don't need to tweak the USCI.  We leave the pins in Module
-     * mode (connected to the SPI h/w) and let the driver handle seperation.
-     */
-    SD_PINS_SPI;			// switch pins over
-    call Usci.configure(&sd_spi_config, FALSE);
-#endif
-  }
-
-  async command void HW.sd_spi_disable() {
-#ifdef notdef
-    /* see sd_spi_enable for why we don't need to do this */
-    SD_PINS_INPUT;			// all data pins inputs
-    call Usci.enterResetMode_();        // just leave in reset
-#endif
-  }
+  async command void HW.sd_spi_enable()  { }
+  async command void HW.sd_spi_disable() { }
 
   async command void HW.sd_access_enable()      { }
   async command void HW.sd_access_disable()     { }
@@ -149,6 +131,7 @@ const msp432_usci_config_t sd_spi_config = {
 
   async command void HW.sd_on() {
     SD_CSN = 1;				// make sure tristated
+    SD_PINS_SPI;			// switch pins over
   }
 
   /*
@@ -156,7 +139,8 @@ const msp432_usci_config_t sd_spi_config = {
    * chip prior to powering it off.
    */
   async command void HW.sd_off() {
-    SD_CSN = 1;				// tri-state by deselecting
+    SD_CSN = 1;                 /* tri-state by deselecting */
+    SD_PINS_INPUT;		/* pins in proper state */
   }
 
   async command bool HW.isSDPowered() { return TRUE; }
