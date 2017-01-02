@@ -326,12 +326,17 @@ void __pins_init() {
    * P1.4 is a switch, needs pull up
    * P2.{0,1,2} is a 3 input led.
    */
+  PA->OUT = 0;
+  PB->OUT = 0;
+  PC->OUT = 0;
+  PD->OUT = 0;
+  PE->OUT = 0;
+
   P1->OUT = 0x12;               /* P1.1/P1.4 need pull up */
   P1->DIR = 1;
   P1->REN = 0x12;
   P1->IFG = 0;
 
-  P2->OUT = 0;
   P2->DIR = 7;
 
   /*

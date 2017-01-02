@@ -4,13 +4,14 @@ module PlatformPinsP {
 implementation {
   command error_t Init.init() {
 
-    /* clear any pendings */
-    P1->IFG = 0;
-    P2->IFG = 0;
-    P3->IFG = 0;
-    P4->IFG = 0;
-    P5->IFG = 0;
-    P6->IFG = 0;
+    /*
+     * clear any pendings.
+     *
+     * PA, PB, and PC, cover the 1st 6 8 bit ports.
+     */
+    PA->IFG = 0;                /* P1 and P2 */
+    PB->IFG = 0;                /* P3 and P4 */
+    PC->IFG = 0;                /* P5 and P6 */
 
     /*
      * Enable NVIC interrupts for any Ports that interrupts occur on.
