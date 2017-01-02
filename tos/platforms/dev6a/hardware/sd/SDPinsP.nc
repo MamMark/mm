@@ -91,7 +91,8 @@ implementation {
  *
  * Various documents (none definitive) state that SDs in SPI mode should use SPI
  * mode 0, which seems to mean Pos Pulse, latch then shift.  To get this with TI
- * SPI h/w we need PH 1, PL 0.
+ * SPI h/w we need PH 1, PL 0.  Note: This has worked on 3 generations of tags
+ * so we are "probably" safe.
  *
  * UCCKPH: 1,         data captured on rising edge
  * UCCKPL: 0,         inactive state is low
@@ -111,7 +112,7 @@ const msp432_usci_config_t sd_spi_config = {
            EUSCI_B_CTLW0_MST         | EUSCI_B_CTLW0_SYNC |
            EUSCI_B_CTLW0_SSEL__SMCLK),
   brw   : SPI_8MHZ_DIV,		/* 8MHz -> 8 MHz */
-  mctlw : 0,                     /* Always 0 in SPI mode */
+  mctlw : 0,                    /* Always 0 in SPI mode */
   i2coa : 0
 };
 
@@ -234,6 +235,7 @@ const msp432_usci_config_t sd_spi_config = {
     b = call DmaRX.dma_enabled();
     if (a || b)
       sd_panic(25, a, b);
+    nop();
   }
 
 
