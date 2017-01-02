@@ -20,12 +20,13 @@ document cts
 current status of various Si446x radio pins
 end
 
-
 define sd
-printf "\nuSD(ub3): asN: %d  aeN: %d  3V3: %d  uSD_pwr: %d  csN: %d\n", \
+printf "\nuSD(ub3): asN: %d  aeN: %d  3V3: %d  uSD_pwr: %d  csN: %d     iok\n", \
     0, 0, 1, 1, (($p10->OUT >> 0) & 1)
-printf "               %c       %c       %c           %c       %c\n", \
-    'O', 'O', 'O', 'O', $p10->DIR?'O':'I'
+printf "               %c       %c       %c           %c       %c     %c%c%c\n", \
+    'O', 'O', 'O', 'O', ($p10->DIR >> 0) ?'O':'I', \
+    ($p10->SEL0 >> 3) ? 'M' : 'p', ($p10->SEL0 >> 2) ? 'M' : 'p', \
+    ($p10->SEL0 >> 1) ? 'M' : 'p'
 __p_usci $ucb3 3 1 0d23
 p SDspP__sdc
 end
