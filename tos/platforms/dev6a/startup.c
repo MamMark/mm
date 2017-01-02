@@ -90,6 +90,7 @@
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
 #endif
 
+#ifdef notdef
 /* default 16MiHz */
 #define MSP432_DCOCLK      16777216UL
 #define MSP432_VCORE       0
@@ -99,6 +100,18 @@
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 1
 #endif
+
+/* most of the dividers are powers of 2 so it is difficult to
+ * get all the needed timing to work.  10MHz is for looking at
+ * clocks only.
+ */
+#define MSP432_DCOCLK      10000000UL
+#define MSP432_VCORE       0
+#define MSP432_FLASH_WAIT  0
+#define MSP432_T32_DIV     1
+#define MSP432_T32_ONE_SEC 1000000UL
+#define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 1
+#define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 5
 
 
 /*
@@ -589,18 +602,27 @@ void __t32_init() {
 #define MSP432_DCOCLK 16777216
 #endif
 
-#if MSP432_DCOCLK == 16777216
+#if MSP432_DCOCLK == 10000000
 #define CLK_DCORSEL CS_CTL0_DCORSEL_3
-#define CLK_DCOTUNE 152
+#define CLK_DCOTUNE (-107 & 0x3ff)
+
+#elif MSP432_DCOCLK == 16777216
+#define CLK_DCORSEL CS_CTL0_DCORSEL_3
+//#define CLK_DCOTUNE 152
+#define CLK_DCOTUNE 134
+
 #elif MSP432_DCOCLK == 24000000
 #define CLK_DCORSEL CS_CTL0_DCORSEL_4
 #define CLK_DCOTUNE 0
+
 #elif MSP432_DCOCLK == 33554432
 #define CLK_DCORSEL CS_CTL0_DCORSEL_4
 #define CLK_DCOTUNE 155
+
 #elif MSP432_DCOCLK == 48000000
 #define CLK_DCORSEL CS_CTL0_DCORSEL_5
 #define CLK_DCOTUNE 0
+
 #else
 #warning MSP432_DCOCLK illegal value, defaulting to 16777216
 #define CLK_DCORSEL CS_CTL0_DCORSEL_3
