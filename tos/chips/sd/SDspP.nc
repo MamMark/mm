@@ -84,13 +84,12 @@ uint16_t sa_t3;
 
 module SDspP {
   provides {
-    interface Init as SoftwareInit @exactlyonce();
-
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
     interface SDerase[uint8_t cid];
     interface SDsa;			/* standalone */
     interface SDraw;			/* raw */
+    interface Init as SoftwareInit @exactlyonce();
   }
   uses {
     interface ResourceDefaultOwner;
@@ -403,8 +402,6 @@ implementation {
     sdc.majik_a = SD_MAJIK;
     sdc.cur_cid = CID_NONE;
     sdc.majik_b = SD_MAJIK;
-
-    call HW.sd_spi_init();
     return SUCCESS;
   }
 

@@ -41,6 +41,7 @@
 
 module SDPinsP {
   provides {
+    interface Init;
     interface SDhardware as HW;
   }
   uses {
@@ -115,10 +116,9 @@ const msp432_usci_config_t sd_spi_config = {
 };
 
 
-  async command void HW.sd_spi_init() {
-    call HW.sd_off();
-    SD_PINS_INPUT;			// switch pins over
+  command error_t Init.init() {
     call Usci.configure(&sd_spi_config, FALSE);
+    return SUCCESS;
   }
 
   async command void HW.sd_spi_enable() {

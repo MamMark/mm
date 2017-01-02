@@ -80,7 +80,6 @@
  
 interface SDhardware {
 
-  async command void sd_spi_init();
   async command void sd_spi_enable();
   async command void sd_spi_disable();
 

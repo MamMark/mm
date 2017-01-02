@@ -57,4 +57,5 @@ implementation {
   SDPinsP.Platform -> PlatformC;
 
   PlatformC.PeripheralInit -> Msp432DmaC;
+  PlatformC.PeripheralInit -> SDPinsP;
 }
