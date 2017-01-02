@@ -43,19 +43,19 @@ configuration HplSDC {
 }
 implementation {
   components Msp432UsciB3P as UsciP;
-  components SDPinsP;
+  components SDHardwareP;
   components Msp432DmaC;
 
-  SDhardware = SDPinsP;
-  SDPinsP.Usci -> UsciP;
-  SDPinsP.Interrupt -> UsciP;
-  SDPinsP.DmaTX -> Msp432DmaC.Dma[6];
-  SDPinsP.DmaRX -> Msp432DmaC.Dma[7];
+  SDhardware = SDHardwareP;
+  SDHardwareP.Usci      -> UsciP;
+  SDHardwareP.Interrupt -> UsciP;
+  SDHardwareP.DmaTX     -> Msp432DmaC.Dma[6];
+  SDHardwareP.DmaRX     -> Msp432DmaC.Dma[7];
 
   components PanicC, PlatformC;
-  SDPinsP.Panic    -> PanicC;
-  SDPinsP.Platform -> PlatformC;
+  SDHardwareP.Panic    -> PanicC;
+  SDHardwareP.Platform -> PlatformC;
 
   PlatformC.PeripheralInit -> Msp432DmaC;
-  PlatformC.PeripheralInit -> SDPinsP;
+  PlatformC.PeripheralInit -> SDHardwareP;
 }

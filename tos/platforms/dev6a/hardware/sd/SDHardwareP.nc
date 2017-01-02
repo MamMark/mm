@@ -39,7 +39,7 @@
 #include <msp432.h>
 #include <msp432dma.h>
 
-module SDPinsP {
+module SDHardwareP {
   provides {
     interface Init;
     interface SDhardware as HW;
