@@ -53,7 +53,10 @@
  * MSP432_FLASH_WAIT:  number of wait states, [0-3]     needed wait states
  * MSP432_T32_DIV      (1 | 2 | 3)                      correction for t32
  * MSP432_T32_ONE_SEC  1048576 | 2097152 | 3000000      ticks for one sec (t32)
- * MSP432_TA_IDEX_DIV  1 | 2 | 3                        extra ta divisor
+ * MSP432_TA_ID        TIMER_A_CTL_ID__<n>              n is the divider
+ * MSP432_TA_EX        TIMER_A_EX0_IDEX__<n>            extra ta divisor <n>
+ *
+ * SMCLK is always DCOCLK/2.  SMCLK/(TA_ID * TA_EX) should be around 1MHz/1MiHz.
  */
 
 #ifdef notdef
@@ -62,7 +65,8 @@
 #define MSP432_FLASH_WAIT  1
 #define MSP432_T32_DIV     3
 #define MSP432_T32_ONE_SEC 3000000UL
-#define MSP432_TA_IDEX_DIV 3
+#define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
+#define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
 #endif
 
 #ifdef notdef
@@ -71,7 +75,8 @@
 #define MSP432_FLASH_WAIT  1
 #define MSP432_T32_DIV     2
 #define MSP432_T32_ONE_SEC 2097152
-#define MSP432_TA_IDEX_DIV 2
+#define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
+#define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 2
 #endif
 
 #ifdef notdef
@@ -81,7 +86,8 @@
 #define MSP432_FLASH_WAIT  0
 #define MSP432_T32_DIV     1
 #define MSP432_T32_ONE_SEC 1500000UL
-#define MSP432_TA_IDEX_DIV 1
+#define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 4
+#define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
 #endif
 
 /* default 16MiHz */
@@ -90,7 +96,9 @@
 #define MSP432_FLASH_WAIT  1
 #define MSP432_T32_DIV     1
 #define MSP432_T32_ONE_SEC 1048576UL
-#define MSP432_TA_IDEX_DIV 1
+#define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
+#define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 1
+#endif
 
 
 /*
@@ -652,18 +660,7 @@ void __core_clk_init() {
 #define TA_FREERUN      TIMER_A_CTL_MC__CONTINUOUS
 #define TA_CLR          TIMER_A_CTL_CLR
 #define TA_ACLK1        (TIMER_A_CTL_SSEL__ACLK  | TIMER_A_CTL_ID__1)
-#define TA_SMCLK8       (TIMER_A_CTL_SSEL__SMCLK | TIMER_A_CTL_ID__8)
-
-#if MSP432_TA_IDEX_DIV == 1
-#define MSP432_TA_EX (TIMER_A_EX0_IDEX__1)
-#elif MSP432_TA_IDEX_DIV == 2
-#define MSP432_TA_EX (TIMER_A_EX0_IDEX__2)
-#elif MSP432_TA_IDEX_DIV == 3
-#define MSP432_TA_EX (TIMER_A_EX0_IDEX__3)
-#else
-#warning MSP432_TA_IDEX_DIV bad value, using default of 1
-#define MSP432_TA_EX (TIMER_A_EX0_IDEX__1)
-#endif
+#define TA_SMCLK_ID     (TIMER_A_CTL_SSEL__SMCLK | MSP432_TA_ID)
 
 void __ta_init(Timer_A_Type * tap, uint32_t clkdiv, uint32_t ex_div) {
   tap->EX0 = ex_div;
@@ -735,7 +732,7 @@ void __system_init(void) {
   __core_clk_init();
   BITBAND_PERI(P1->OUT, 0) = 0;
 
-  __ta_init(TIMER_A0, TA_SMCLK8, MSP432_TA_EX);         /* Tmicro */
+  __ta_init(TIMER_A0, TA_SMCLK_ID, MSP432_TA_EX);       /* Tmicro */
   __ta_init(TIMER_A1, TA_ACLK1,  TIMER_A_EX0_IDEX__1);  /* Tmilli */
   __rtc_init();
   __start_timers();
