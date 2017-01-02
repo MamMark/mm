@@ -9,7 +9,6 @@
 #
 
 DVRLIB_DIR=$(TINYOS_OS_DIR)/chips/msp432/driverlib
-$(info dvrlib_dir: $(DVRLIB_DIR))
 
 TOSMAKE_ADDITIONAL_INPUTS += $(PLATFORM_DIR)/startup.c
 
