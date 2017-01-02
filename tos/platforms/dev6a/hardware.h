@@ -282,10 +282,24 @@
 #define SD_PINS_SPI   do { P10->SEL0 = 0x0E; } while (0)
 
 
-#define TELL_PIN        0
-#define TELL_BIT        (1 << TELL_PINT)
-#define TELL            BITBAND_PERI(P6->OUT, TELL_PIN)
-#define TOGGLE_TELL     do { TELL = 1; TELL = 0; } while(0)
+#ifdef notdef
+#define TELL_PORT       P6
+#define TELL_PIN        1
+#define TELL_BIT        (1 << TELL_PIN)
+#define TELL            BITBAND_PERI(TELL_PORT->OUT, TELL_PIN)
+#define TOGGLE_TELL     TELL ^= 1;
+#define WIGGLE_TELL     do { TELL = 1; TELL = 0; } while(0)
+#endif
+
+#define TELL_PORT       P6
+#define TELL_PIN        1
+#define TELL_BIT        (1 << TELL_PIN)
+#define TELL            TELL_PORT->OUT
+#define TOGGLE_TELL     TELL ^= TELL_BIT;
+#define WIGGLE_TELL     do { TELL1; TELL0; } while(0)
+#define TELL0           TELL = 0;
+#define TELL1           TELL = TELL_BIT;
+
 
 #ifdef notdef
 /* gps -gsd4e/org */
