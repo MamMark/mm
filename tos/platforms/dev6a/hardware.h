@@ -171,57 +171,57 @@
  * B3: SD
  *
  * Port: (0x4000_4C00)
- * port 1.0	0pI	LED1           		port 7.0	0pI     SMCLK
- *  00 I .1	0pI	PB1            		 60   .1	0pI
- *  02 O .2	0pI	BSLRXD_ (A0)     	 62   .2	0pI
- *       .3     0pI	BSLTXD  (A0)                  .3	0pI
- *       .4	0pI	BSLSTE, PB2                   .4	0pI
- *       .5	0pI     BSLCLK   test_clk             .5	0pI
- *       .6	0pI	BSLSIMO  test_simo            .6	0pI
- *       .7	0pI	BSLSOMI  test_somi            .7	0pI
+ * port 1.0	0pO	LED1           		port 7.0	0mO     SMCLK
+ *  00 I .1	1pI	PB1            		 60   .1	0pI
+ *  02 O .2	0mI	uart (A0)       BSLRXD   62   .2	0pI
+ *       .3     0mO	uart (A0)       BSLTXD        .3	0pI
+ *       .4	1pI	PB2             BSLSTE        .4	0pI
+ *       .5	0mO     master_clk      BSLCLK        .5	0pI
+ *       .6	0mO	master_simo     BSLSIMO       .6	0pI
+ *       .7	0mI	master_somi     BSLSOMI       .7	0pI
  *
- * port 2.0	0pI	LED2_RED                port 8.0	0pI
- *  01   .1	0pI	LED2_GREEN               61 I .1	0pI
- *  03   .2	0pI	LED2_BLUE                63 O .2	1pI
+ * port 2.0	0pO	LED2_RED                port 8.0	0pI
+ *  01   .1	0pO	LED2_GREEN               61 I .1	0pI
+ *  03   .2	0pO	LED2_BLUE                63 O .2	0pI
  *       .3	0pI     si446x_cts                    .3	0pI
  *       .4	0pI	                              .4	0pI
  *       .5	0pI	                              .5	0pI
- *       .6	0pI	masterRdy                     .6	0pI
- *       .7	0pI	slaveRdy                      .7	0pI
+ *       .6	0pO	masterRdy                     .6	0pI
+ *       .7	0pI	slaveRdy/tell                 .7	0pI
  *
  * port 3.0	0pI	gps_tp                  port 9.0	0pI
  *  20   .1	0pI	                         80 I .1	0pI
  *  22   .2	0pI	gps_out, URXD (A2)       82 O .2	0pI
- *       .3	0pI	gps_in,  UTXD (A2)            .3	0pI
- *       .4	0pI                                   .4	0pO
- *       .5	0pI	si446x_clk                    .5	0pI
- *       .6	0pI	si446x_simo                   .6	0pI
- *       .7	0pI     si446x_somi                   .7	0pI
+ *       .3	0pO	gps_in,  UTXD (A2)            .3	0pI
+ *       .4	0pI                                   .4	0pI
+ *       .5	0mO	si446x_clk      slave_clk     .5	0pI
+ *       .6	0mO	si446x_simo     slave_simo    .6	0pI
+ *       .7	0mI     si446x_somi     slave_somi    .7	0pI
  *
  * port  4.0	0pI	                        port 10.0	1pO     sd_csn
  *  21    .1	0pI	                         81 I  .1	0pO     sd_clk
- *  23    .2	0pI	ACLK                     83 O  .2	0pO     sd_simo
- *        .3	0pI	MCLK/RTC                       .3	0pI     sd_somi
- *        .4	0pI	HSMCLK                         .4	0pI
+ *  23    .2	0mO	ACLK                     83 O  .2	0pO     sd_simo
+ *        .3	0mO	MCLK/RTC                       .3	0pI     sd_somi
+ *        .4	0mO	HSMCLK                         .4	0pI
  *        .5	0pI	                               .5	0pI
  *        .6	0pI	                               .6	0pI
  *        .7	0pI	                               .7	0pI
  *
  * port  5.0	0pO     si446x_sdn
- *  40 I  .1	0pO     si446x_irqn
- *  42 O  .2	0pI     si446x_csn
+ *  40 I  .1	0pI     si446x_irqn
+ *  42 O  .2	0pO     si446x_csn
  *        .3	0pI
  *        .4	0pI
  *        .5	0pI
  *        .6	0pI
  *        .7	0pI
  *
- * port  6.0	0pI     tell                    port  J.0       0pI     LFXIN  (32KiHz)
- *  41 I  .1	0pI                             120 I  .1       0pO     LFXOUT (32KiHz)
+ * port  6.0	0pI                             port  J.0       0pI     LFXIN  (32KiHz)
+ *  41 I  .1	0pO     tell                    120 I  .1       0pO     LFXOUT (32KiHz)
  *  43 O  .2	0pI                             122 O  .2       0pI     HFXOUT (48MHz)
  *        .3	0pI                                    .3       0pI     HFXIN  (48MHz)
- *        .4	0pI                                    .4       0pI     TDI
- *        .5	0pI                                    .5       0pI     TDO/SWO
+ *        .4	0mI     i2c (b1, sda)                  .4       0pI     TDI
+ *        .5	0mO     i2c (b1, scl)                  .5       0pI     TDO/SWO
  *        .6	0pI     Capture, C1.1
  *        .7	0pI     Capture, C1.0
  *
