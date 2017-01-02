@@ -321,10 +321,7 @@ void __watchdog_init() {
 void __pins_init() {
 
   /*
-   * P1.0 is a red led, turn it on following power on
-   * P1.1 is a switch, needs pull up
-   * P1.4 is a switch, needs pull up
-   * P2.{0,1,2} is a 3 input led.
+   * see hardware.h for initial values
    */
   PA->OUT = 0;
   PB->OUT = 0;
@@ -333,34 +330,47 @@ void __pins_init() {
   PE->OUT = 0;
 
   P1->OUT = 0x12;               /* P1.1/P1.4 need pull up */
-  P1->DIR = 1;
+  P1->DIR = 0x69;
   P1->REN = 0x12;
-  P1->IFG = 0;
 
-  P2->DIR = 7;
+  P2->DIR = 47;
+
+  P3->DIR = 68;
 
   /*
    * We bring the clocks out so we can watch them.
    *
-   * P4.2 ACLK,   Opx,01 (Output/Port/Val/Sel01)
-   * P4.3 MCLK,   Opx,01
-   *      RTCCLK, Opx,10
-   * P4.4 HSMCLK, Opx,01
-   * P7.0 PM_SMCLK, Opx,01
+   * P4.2 ACLK
+   * P4.3 MCLK
+   *      RTCCLK
+   * P4.4 HSMCLK
+   * P7.0 PM_SMCLK
    *
    * 7 6 5 4 3 2 1 0
    * 0 0 0 1 1 1 0 0
    */
-  P4->DIR  = 0x1C;
+  P4->DIR  = 0x1C;              /* aclk, mclk/rtcclk, HSMCLK */
   P4->SEL0 = 0x1C;
   P4->SEL1 = 0x00;
-  P7->DIR  = 0x01;
+
+  P7->DIR  = 0x01;              /* smclk */
   P7->SEL0 = 0x01;
   P7->SEL1 = 0x00;
+
+  P5->DIR  = 0x05;
+
+  P6->DIR = 0x22;
+
+  /* P7 done above, SMCLK */
+
+  /* P8, P9 left as inputs, no changes */
 
   /*
    * SD is on P10.0 - P10.3  see hardware.h
    * on reset all pins set to xpI (port, input)
+   * CSN (P10.1) <- 1 to deassert CS
+   * CLK and SIMO drive 0.  output
+   * SOMI is an input.
    */
   P10->OUT = 1;
   P10->DIR = 0x7;

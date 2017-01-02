@@ -59,6 +59,9 @@ implementation {
 
   /***************** Init Commands ****************/
   command error_t Init.init() {
+#ifdef notdef
+    /* Init for PlatforLeds handled by __pins_init in startup.c */
+
     atomic {
       call Led0.makeOutput();
       call Led1.makeOutput();
@@ -67,6 +70,7 @@ implementation {
       call Led1.clr();
       call Led2.clr();
     }
+#endif
     return SUCCESS;
   }
 
