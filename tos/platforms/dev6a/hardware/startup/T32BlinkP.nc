@@ -3,7 +3,8 @@ module T32BlinkP {
 }
 implementation {
 
-#define T32_DIV_16 TIMER32_CONTROL_PRESCALE_1
+#include <platform_clk_defs.h>
+
 #define T32_ENABLE TIMER32_CONTROL_ENABLE
 #define T32_32BITS TIMER32_CONTROL_SIZE
 #define T32_PERIODIC TIMER32_CONTROL_MODE
@@ -26,9 +27,9 @@ implementation {
     NVIC_ClearPendingIRQ(T32_INT2_IRQn);
     NVIC_ClearPendingIRQ(T32_INTC_IRQn);
 
-    ty->LOAD = 1048576;         /* 1 MiHz -> 1/sec */
-    ty->CONTROL = T32_DIV_16 | T32_ENABLE | T32_32BITS | T32_PERIODIC |
-                  TIMER32_CONTROL_IE;
+    ty->LOAD = MSP432_T32_ONE_SEC;
+    ty->CONTROL = MSP432_T32_PS | T32_ENABLE | T32_32BITS |
+                T32_PERIODIC | TIMER32_CONTROL_IE;
     NVIC_SetPriority(T32_INT2_IRQn, 5);
     NVIC_EnableIRQ(T32_INT2_IRQn);
   }

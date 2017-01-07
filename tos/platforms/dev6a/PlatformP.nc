@@ -40,6 +40,7 @@
 
 #include "hardware.h"
 #include "cpu_stack.h"
+#include "platform_clk_defs.h"
 
 #ifndef noinit
 #define noinit	__attribute__ ((section(".noinit"))) 
@@ -73,7 +74,7 @@ implementation {
 
 
   /* T32 is a count down so negate it */
-  async command uint32_t Platform.usecsRaw()       { return -(TIMER32_1->VALUE); }
+  async command uint32_t Platform.usecsRaw()       { return (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV; }
   async command uint32_t Platform.usecsRawSize()   { return 32; }
   async command uint32_t Platform.jiffiesRaw()     { return (TIMER_A0->R); }
   async command uint32_t Platform.jiffiesRawSize() { return 16; }

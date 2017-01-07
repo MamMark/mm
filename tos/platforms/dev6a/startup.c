@@ -40,79 +40,11 @@
 
 #include <stdint.h>
 #include <msp432.h>
+#include <platform_clk_defs.h>
 
 #ifndef nop
 #define nop() __asm volatile("nop")
 #endif
-
-/*
- * The following defines control low level hw init.
- *
- * MSP432_DCOCLK       16777216 | 33554432 | 48000000   dcoclk
- * MSP432_VCORE:       0 or 1                           core voltage
- * MSP432_FLASH_WAIT:  number of wait states, [0-3]     needed wait states
- * MSP432_T32_DIV      (1 | 2 | 3)                      correction for t32
- * MSP432_T32_ONE_SEC  1048576 | 2097152 | 3000000      ticks for one sec (t32)
- * MSP432_TA_ID        TIMER_A_CTL_ID__<n>              n is the divider
- * MSP432_TA_EX        TIMER_A_EX0_IDEX__<n>            extra ta divisor <n>
- *
- * SMCLK is always DCOCLK/2.  SMCLK/(TA_ID * TA_EX) should be around 1MHz/1MiHz.
- */
-
-#ifdef notdef
-#define MSP432_DCOCLK      48000000UL
-#define MSP432_VCORE       1
-#define MSP432_FLASH_WAIT  1
-#define MSP432_T32_DIV     3
-#define MSP432_T32_ONE_SEC 3000000UL
-#define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
-#define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
-#endif
-
-#ifdef notdef
-#define MSP432_DCOCLK      33554432UL
-#define MSP432_VCORE       1
-#define MSP432_FLASH_WAIT  1
-#define MSP432_T32_DIV     2
-#define MSP432_T32_ONE_SEC 2097152
-#define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
-#define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 2
-#endif
-
-#ifdef notdef
-/* not quite right, can't get the divisors right */
-#define MSP432_DCOCLK      24000000UL
-#define MSP432_VCORE       1
-#define MSP432_FLASH_WAIT  0
-#define MSP432_T32_DIV     1
-#define MSP432_T32_ONE_SEC 1500000UL
-#define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 4
-#define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
-#endif
-
-#ifdef notdef
-/* default 16MiHz */
-#define MSP432_DCOCLK      16777216UL
-#define MSP432_VCORE       0
-#define MSP432_FLASH_WAIT  1
-#define MSP432_T32_DIV     1
-#define MSP432_T32_ONE_SEC 1048576UL
-#define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
-#define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 1
-#endif
-
-/* most of the dividers are powers of 2 so it is difficult to
- * get all the needed timing to work.  10MHz is for looking at
- * clocks only.
- */
-#define MSP432_DCOCLK      10000000UL
-#define MSP432_VCORE       0
-#define MSP432_FLASH_WAIT  0
-#define MSP432_T32_DIV     1
-#define MSP432_T32_ONE_SEC 1000000UL
-#define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 1
-#define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 5
-
 
 /*
  * msp432.h finds the right chip header (msp432p401r.h) which also pulls in
@@ -522,7 +454,6 @@ void __flash_init() {
 }
 
 
-#define T32_DIV_16 TIMER32_CONTROL_PRESCALE_1
 #define T32_ENABLE TIMER32_CONTROL_ENABLE
 #define T32_32BITS TIMER32_CONTROL_SIZE
 #define T32_PERIODIC TIMER32_CONTROL_MODE
@@ -530,16 +461,28 @@ void __flash_init() {
 void __t32_init() {
   Timer32_Type *tp = TIMER32_1;
 
-  /* MCLK/16 (1MiHz, 1uis), enable, freerunning, no int, 32 bits, wrap */
+  /*
+   * Tx (Timer32_1) is used for a 32 bit running count that is supposed to
+   * 1 uis (1 binary us).  However, depending on what clock is being used
+   * it may not be possible to get binary, it can be decimal us.  Further,
+   * the T32 h/w can only divide by 1, 16, and 32, so again it becomes
+   * difficult to get 1us or 1uis.  So platform_clk_defs.h defines various
+   * controls that gets us close.  The Prescaler (divider), MSP432_T32_PS
+   * gets us as close a possible and a correction is then applied by
+   * dividing further.  The correction divisior is MSP432_T32_USEC_DIV.
+   *
+   * The MSP432_T32_USEC_DIV correction is applied in Platform.usecsRaw, see
+   * PlatformP.nc.
+   */
   tp->LOAD = 0xffffffff;
-  tp->CONTROL = T32_DIV_16 | T32_ENABLE | T32_32BITS;
+  tp->CONTROL = MSP432_T32_PS | T32_ENABLE | T32_32BITS;
 
   /*
    * Using Ty as a 1 second ticker.
    */
   tp = TIMER32_2;
   tp->LOAD = MSP432_T32_ONE_SEC;        /* ticks in a seconds */
-  tp->CONTROL = T32_DIV_16 | T32_ENABLE | T32_32BITS | T32_PERIODIC;
+  tp->CONTROL = MSP432_T32_PS | T32_ENABLE | T32_32BITS | T32_PERIODIC;
 }
 
 
@@ -675,7 +618,7 @@ void __core_clk_init() {
     BITBAND_PERI(CS->CLRIFG,CS_CLRIFG_CLR_LFXTIFG_OFS) = 1;
   }
   CS->KEY = 0;                  /* lock module */
-  lfxt_startup_time = (-TIMER32_1->VALUE)/MSP432_T32_DIV;
+  lfxt_startup_time = (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV;
 }
 
 
