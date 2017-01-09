@@ -41,7 +41,7 @@
 
 module SDPinsP {
   provides {
-    interface SDhardware as HW;
+    interface SDHardware as HW;
   }
   uses {
     interface HplMsp430Usci as Usci;

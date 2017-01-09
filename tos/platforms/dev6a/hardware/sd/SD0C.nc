@@ -38,17 +38,17 @@
  *
  * read, write, and erase are for clients.
  *
- * Wire ResourceDefaultOwner so the DefaultOwner handles power up/down.
- * When no clients are using the resource, the default owner gets it and
- * powers down the SD.
- *
  * SD_Arb provides an arbitrated interface for clients.  This is wired into
  * Msp430UsciShareB0P and is used as a dedicated SPI device.  We wire the
  * SDsp default owner code into Msp430UsciShareB0P so it can pwr the SD
  * up and down as it is used by clients.
+ *
+ * Wire ResourceDefaultOwner so the DefaultOwner handles power up/down.
+ * When no clients are using the resource, the default owner gets it and
+ * powers down the SD.
  */
 
-configuration SDspC {
+configuration SD0C {
   provides {
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
@@ -56,35 +56,35 @@ configuration SDspC {
     interface SDsa;
     interface SDraw;
   }
-  uses interface ResourceDefaultOwner;
+  uses interface ResourceDefaultOwner;          /* power control */
 }
 
 implementation {
-  components SDspP;
+  components SDspP as SDdvrP;
 
-  SDread   = SDspP;
-  SDwrite  = SDspP;
-  SDerase  = SDspP;
-  SDsa     = SDspP;
-  SDraw    = SDspP;
+  SDread   = SDdvrP;
+  SDwrite  = SDdvrP;
+  SDerase  = SDdvrP;
+  SDsa     = SDdvrP;
+  SDraw    = SDdvrP;
 
-  ResourceDefaultOwner = SDspP;
+  ResourceDefaultOwner = SDdvrP;
 
   components MainC;
-  MainC.SoftwareInit -> SDspP;
+  MainC.SoftwareInit -> SDdvrP;
 
   components PanicC;
-  SDspP.Panic -> PanicC;
+  SDdvrP.Panic -> PanicC;
 
   components new TimerMilliC() as SDTimer;
-  SDspP.SDtimer -> SDTimer;
+  SDdvrP.SDtimer -> SDTimer;
 
   components HplSDC as HW;
-  SDspP.HW -> HW;
+  SDdvrP.HW -> HW;
 
-  components LocalTimeMilliC as L;
-  SDspP.lt -> L;
+  components LocalTimeMilliC;
+  SDdvrP.lt -> LocalTimeMilliC;
 
   components PlatformC;
-  SDspP.Platform    -> PlatformC;
+  SDdvrP.Platform    -> PlatformC;
 }

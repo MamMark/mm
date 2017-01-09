@@ -2,7 +2,7 @@
  * SDsp - low level Secure Digital storage driver
  * Split phase, event driven.
  *
- * Copyright (c) 2014, 2016: Eric B. Decker
+ * Copyright (c) 2014, 2016-2017: Eric B. Decker
  * Copyright (c) 2010, Eric B. Decker, Carl Davis
  * All rights reserved.
  *
@@ -95,7 +95,7 @@ module SDspP {
     interface ResourceDefaultOwner;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
-    interface SDhardware as HW;
+    interface SDHardware as HW;
     interface Platform;
     interface Panic;
   }

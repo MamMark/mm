@@ -39,10 +39,10 @@
 #include <msp432.h>
 #include <msp432dma.h>
 
-module SDHardwareP {
+module SD0HardwareP {
   provides {
     interface Init;
-    interface SDhardware as HW;
+    interface SDHardware as HW;
   }
   uses {
     interface HplMsp432Usci    as Usci;

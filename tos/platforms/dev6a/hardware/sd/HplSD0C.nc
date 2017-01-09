@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Eric B. Decker
+ * Copyright (c) 2016-2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,26 +36,26 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-configuration HplSDC {
+configuration HplSD0C {
   provides {
-    interface SDhardware;
+    interface SDHardware;
   }
 }
 implementation {
   components Msp432UsciB3P as UsciP;
-  components SDHardwareP;
-  components Msp432DmaC;
+  components SD0HardwareP  as SDHWP;
+  components Msp432DmaC    as DMAC;
 
-  SDhardware = SDHardwareP;
-  SDHardwareP.Usci      -> UsciP;
-  SDHardwareP.Interrupt -> UsciP;
-  SDHardwareP.DmaTX     -> Msp432DmaC.Dma[6];
-  SDHardwareP.DmaRX     -> Msp432DmaC.Dma[7];
+  SDHardware = SDHWP;
+  SDHWP.Usci      -> UsciP;
+  SDHWP.Interrupt -> UsciP;
+  SDHWP.DmaTX     -> DMAC.Dma[6];
+  SDHWP.DmaRX     -> DMAC.Dma[7];
 
   components PanicC, PlatformC;
-  SDHardwareP.Panic    -> PanicC;
-  SDHardwareP.Platform -> PlatformC;
+  SDHWP.Panic    -> PanicC;
+  SDHWP.Platform -> PlatformC;
 
-  PlatformC.PeripheralInit -> Msp432DmaC;
-  PlatformC.PeripheralInit -> SDHardwareP;
+  PlatformC.PeripheralInit -> DMAC;
+  PlatformC.PeripheralInit -> SDHWP;
 }

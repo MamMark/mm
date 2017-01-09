@@ -39,7 +39,7 @@
 #include "hardware.h"
 
 module SDPinsP {
-  provides interface SDhardware as HW;
+  provides interface SDHardware as HW;
   uses {
     interface HplMsp430Usci as Usci;
     interface Panic;
