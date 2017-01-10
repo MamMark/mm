@@ -1,5 +1,6 @@
 /**
- * Copyright @ 2010 Carl W. Davis, Eric B. Decker
+ * Copyright (c) 2017, Eric B. Decker
+ * Copyright (c) 2010, Carl W. Davis, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +33,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @author Carl W. Davis
- * @author Eric B. Decker
+ * @author Eric B. Decker <cire831@gmail.com>
  */
 
 /**
@@ -47,12 +48,12 @@ implementation {
   components MainC;
   sdP.Boot -> MainC;
 
-  components new SD_ArbC();
-  sdP.SDResource -> SD_ArbC;
+  components new SD0_ArbC();
+  sdP.SDResource -> SD0_ArbC;
 
-  components SDspC;
-  sdP.SDraw -> SDspC;
-  sdP.SDsa  -> SDspC;
+  components SD0C;
+  sdP.SDraw -> SD0C;
+  sdP.SDsa  -> SD0C;
 
   components FileSystemC as FS;
   sdP.FS_OutBoot -> FS;

@@ -36,6 +36,10 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Uses a dedicated SPI bus and I/O port.
+ *
+ * Wiring to this driver should be done via an affiliated platform
+ * configuration such as <platform>/hardware/sd/SD0C.nc.  See
+ * tos/platforms/dev6a/hardware/sd/SD0C.nc.
  */
 
 #include "hardware.h"

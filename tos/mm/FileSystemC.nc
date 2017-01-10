@@ -29,7 +29,7 @@ implementation {
   OutBoot = FS_P;
   Boot    = FS_P;
 
-  components new SD_ArbC() as SD, SSWriteC;
+  components new SD0_ArbC() as SD, SSWriteC;
 
   FS_P.SSW        -> SSWriteC;
   FS_P.SDResource -> SD;

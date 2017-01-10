@@ -25,7 +25,7 @@ implementation {
   SSF = SS_P;
   MainC.SoftwareInit -> SS_P;
 
-  components new SD_ArbC() as SD;
+  components new SD0_ArbC() as SD;
   SS_P.SDResource -> SD;
   SS_P.SDwrite -> SD;
 

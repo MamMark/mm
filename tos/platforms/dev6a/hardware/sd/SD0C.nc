@@ -79,7 +79,7 @@ implementation {
   components new TimerMilliC() as SDTimer;
   SDdvrP.SDtimer -> SDTimer;
 
-  components HplSDC as HW;
+  components HplSD0C as HW;
   SDdvrP.HW -> HW;
 
   components LocalTimeMilliC;

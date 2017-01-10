@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Eric B. Decker
+ * Copyright (c) 2010, 2016-2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,21 +30,57 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * SD_ArbC provides an provides an arbitrated interface to the SD.
+ * Originally, we piggy-backed on the UCSI/SPI arbiter.  And explicitly
+ * tweak the UCSI when the SD gets powered up/down.  However, this made
+ * the driver cognizant of what h/w the SD is hanging off (ie. msp430
+ * ucsi dependent).
+ *
+ * Mulitple clients are supported with  automatic power up, reset, and
+ * power down when no further requests are pending.
  */
 
-#ifndef SD_RESOURCE
-#define SD_RESOURCE     "Sd.Resource"
+
+/*
+ * SD0_ArbC pulls in SD0_ArbP which has the arbiter.  We can't pull ArbP
+ * into ArbC because FcfsArbiterC is generic and needs to be a singleton.
+ *
+ * SD0C is the exported SD port wired to a particular SPI port and
+ * connected to the actual driver.
+ *
+ * Wire ResourceDefaultOwner so the DefaultOwner handles power up/down.
+ * When no clients are using the resource, the default owner gets it and
+ * powers down the SD.
+ */
+
+#ifndef SD0_RESOURCE
+#define SD0_RESOURCE     "SD0.Resource"
 #endif
 
-configuration SD_ArbP {
+generic configuration SD0_ArbC() {
   provides {
-    interface Resource[uint8_t id];
-    interface ResourceRequested[uint8_t id];
+    interface SDread;
+    interface SDwrite;
+    interface SDerase;
+
+    interface Resource;
+    interface ResourceRequested;
   }
 }
+
 implementation {
-  components new FcfsArbiterC(SD_RESOURCE) as ArbiterC, SDspC;
-  Resource             = ArbiterC;
-  ResourceRequested    = ArbiterC;
-  SDspC.ResourceDefaultOwner -> ArbiterC;
+  enum {
+    CLIENT_ID = unique(SD0_RESOURCE),
+  };
+
+  components SD0_ArbP as ArbP;
+  components SD0C as SD;
+
+  Resource                 = ArbP.Resource[CLIENT_ID];
+  ResourceRequested        = ArbP.ResourceRequested[CLIENT_ID];
+
+  SDread  = SD.SDread[CLIENT_ID];
+  SDwrite = SD.SDwrite[CLIENT_ID];
+  SDerase = SD.SDerase[CLIENT_ID];
 }
