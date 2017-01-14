@@ -743,9 +743,30 @@ void __Reset() {
   uint32_t *from;
   uint32_t *to;
 
+  /*
+   * send clocks out for debugging.
+   *
+   * 4.2 ACLK
+   * 4.3 MCLK
+   * 4.4 HSMCLK
+   * 7.0 SMCLK
+   */
+  P4->DIR  = 0x1D;
+  P4->SEL0 = 0x1C;
+  P4->SEL1 = 0x00;
+
+  P7->DIR  = 0x01;              /* smclk */
+  P7->SEL0 = 0x01;
+  P7->SEL1 = 0x00;
+
+  P8->OUT = 0;                  /* set tell up */
+  P8->DIR = 0x40;
+
   __disable_irq();
   __watchdog_init();
   __pins_init();
+
+  __system_init();
 
   from = &__data_load__;
   to   = &__data_start__;;
@@ -759,7 +780,6 @@ void __Reset() {
     *to++ = 0;
   }
 
-  __system_init();
   main();
   while (1) {
     __BKPT(0);
