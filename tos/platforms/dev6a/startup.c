@@ -5,6 +5,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
+ *
  * - Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
  *
@@ -276,7 +277,7 @@ void __pins_init() {
   /*
    * see hardware.h for initial values
    */
-  PA->OUT = 0;
+  PA->OUT = 0;                  /* zero all 10 port registers */
   PB->OUT = 0;
   PC->OUT = 0;
   PD->OUT = 0;
@@ -286,12 +287,16 @@ void __pins_init() {
   P1->DIR = 0x69;
   P1->REN = 0x12;
 
-  P2->DIR = 47;
+  P2->DIR = 0x07;
 
-  P3->DIR = 68;
+  /* gps is on P3, P4, and P6 */
+  P3->OUT = 0x09;
+  P3->DIR = 0x69;
 
   /*
    * We bring the clocks out so we can watch them.
+   *
+   * gps_on_off and gps_tm are here too.
    *
    * P4.2 ACLK
    * P4.3 MCLK
@@ -302,7 +307,7 @@ void __pins_init() {
    * 7 6 5 4 3 2 1 0
    * 0 0 0 1 1 1 0 0
    */
-  P4->DIR  = 0x1C;              /* aclk, mclk/rtcclk, HSMCLK */
+  P4->DIR  = 0x1D;
   P4->SEL0 = 0x1C;
   P4->SEL1 = 0x00;
 
@@ -310,13 +315,16 @@ void __pins_init() {
   P7->SEL0 = 0x01;
   P7->SEL1 = 0x00;
 
+  /* si446x_sdn = 1, si446x_csn = 1 */
+  P5->OUT  = 0x05;
   P5->DIR  = 0x05;
 
-  P6->DIR = 0x22;
+  /* gps_resetn and gps_awake are here too */
+  P6->DIR = 0x21;               /* gps_resetn asserted */
 
   /* P7 done above, SMCLK */
 
-  /* P8, P9 left as inputs, no changes */
+  P8->DIR = 0x40;               /* tell is an output */
 
   /*
    * SD is on P10.0 - P10.3  see hardware.h
@@ -415,6 +423,11 @@ void __ram_init() {
 #endif
 
 void __pwr_init() {
+  /*
+   * we measured this at about 16us.  Basically the final
+   * loop waiting for the power system to come back doesn't
+   * take any time.
+   */
   while (PCM->CTL1 & PCM_CTL1_PMR_BUSY);
   PCM->CTL0 = PCM_CTL0_KEY_VAL | AMR_VCORE;
   while (PCM->CTL1 & PCM_CTL1_PMR_BUSY);
@@ -583,6 +596,8 @@ void __core_clk_init() {
    * When first out of POR, DCORSEL will be 1, once we've set DCORES
    * it stays set and we no longer care about changing it (because
    * it always stays 1).
+   *
+   * hitting the clocks here looks like it take 8.5us to switch.
    */
   CS->KEY = CS_KEY_VAL;
   CS->CTL0 = CLK_DCORSEL | CS_CTL0_DCORES | CLK_DCOTUNE;

@@ -69,21 +69,14 @@
  * the mm6a prototype.
  *
  * See the datasheet for clock speeds and flash wait states.  Also max
- * peripheral speed vs. Vcore voltage.  startup.c is definitive.
+ * peripheral speed vs. Vcore voltage.  startup.c and platform_clk_defs.h
+ * is definitive.
  *
- * See startup.c for definitive definitions.
+ * startup.c for startup code and initilization.
  *
- *.MCLK: 16 MiHz, Vcore0, 1 Flash wait states
+ * platform_clk_defs.h for actual clock definitions.
  *
- * DCOCLK:   16 MiHz
- * MCLK   <- DCOCLK/1
- * HSMCLK <- DCOCLK/2
- * SMCLK  <- DCOCLK/2 (limited to 12MHz (Vcore0) (8MiHz)
- * BCLK   <- LFXTCLK (32KiHz) (feeds RTC)
- * ACLK   <- LFXTCLK (32KiHz)
- *
- * DCOCLK -> MCLK, SMCLK (8 MiHz) /8 -> TMicro (1 MiHz) TA0
- * ACLK   -> TA1 (32 KiHz) -> TMilli
+ * platform_port_defs.h for port pin assignments.
  */
 
 /*
@@ -157,67 +150,67 @@
  *
  * Port definitions:
  *
- * Various codes for port settings: (<dir><usage><default val>: Is0 <input><spi><0, zero>)
- * another nomenclature used is <value><function><direction>, 0pO (0 (zero), port, Output),
- *    xpI (don't care, port, Input), mI (module input).
+ * Various codes for port settings: <value><func><dir><res>, 0pO (0 (zero), port, Output),
+ *    <res> will be "r" if a pull up or pull down is used.
+ *    xpI (don't care, port, Input), xmI (module input).
  *
- * A0:
- * A1:
- * A2: gps
- * A3:
+ * A0: (dma overlap with AES triggers, DMA ch 0, 1)
+ * A1: SD1 (SPI)
+ * A2: gps (antenova, sirfIV) UART
+ * A3: do not use (not on bga)
  * B0:
  * B1:
- * B2: Si4468 radio
- * B3: SD
+ * B2: Si4468 radio (SPI)
+ * B3: SD0 (SPI)
  *
  * Port: (0x4000_4C00)
  * port 1.0	0pO	LED1           		port 7.0	0mO     SMCLK
- *  00 I .1	1pI	PB1            		 60   .1	0pI
+ *  00 I .1	1pIr	PB1            		 60   .1	0pI
  *  02 O .2	0mI	uart (A0)       BSLRXD   62   .2	0pI
  *       .3     0mO	uart (A0)       BSLTXD        .3	0pI
- *       .4	1pI	PB2             BSLSTE        .4	0pI
+ *       .4	1pIr	dock_attn PB2   BSLSTE        .4	0pI
  *       .5	0mO     master_clk      BSLCLK        .5	0pI
  *       .6	0mO	master_simo     BSLSIMO       .6	0pI
  *       .7	0mI	master_somi     BSLSOMI       .7	0pI
  *
- * port 2.0	0pO	LED2_RED                port 8.0	0pI
- *  01   .1	0pO	LED2_GREEN               61 I .1	0pI
- *  03   .2	0pO	LED2_BLUE                63 O .2	0pI
+ * port 2.0	0pO	dock_led (LED2_RED)     port 8.0	0pI
+ *  01   .1	0pO	         (LED2_GREEN)    61 I .1	0pI
+ *  03   .2	0pO	         (LED2_BLUE)     63 O .2	0pI
  *       .3	0pI     si446x_cts                    .3	0pI
  *       .4	0pI	                              .4	0pI
  *       .5	0pI	                              .5	0pI
- *       .6	0pO	masterRdy                     .6	0pI
- *       .7	0pI	slaveRdy/tell                 .7	0pI
+ *       .6	0pI	                              .6	0pO     tell
+ *       .7	0pI	                              .7	0pI
  *
- * port 3.0	0pI	gps_tp                  port 9.0	0pI
- *  20   .1	0pI	                         80 I .1	0pI
- *  22   .2	0pI	gps_out, URXD (A2)       82 O .2	0pI
- *       .3	0pO	gps_in,  UTXD (A2)            .3	0pI
+ * port 3.0	1pO	gps_cts (gps_csn)       port 9.0	0pI
+ *  20   .1	0pI	gps_rts (gps_clk) A2     80 I .1	0pI
+ *  22   .2	0pI	gps_tx,  URXD (A2)       82 O .2	0pI
+ *       .3	1pO	gps_rx,  UTXD (A2)            .3	0pI
  *       .4	0pI                                   .4	0pI
  *       .5	0mO	si446x_clk      slave_clk     .5	0pI
  *       .6	0mO	si446x_simo     slave_simo    .6	0pI
  *       .7	0mI     si446x_somi     slave_somi    .7	0pI
  *
- * port  4.0	0pI	                        port 10.0	1pO     sd_csn
- *  21    .1	0pI	                         81 I  .1	0pO     sd_clk
- *  23    .2	0mO	ACLK                     83 O  .2	0pO     sd_simo
- *        .3	0mO	MCLK/RTC                       .3	0pI     sd_somi
+ * port  4.0	0pO	gps_on_off               port 10.0	1pO     sd0_csn
+ *  21    .1	0pI	gps_tm                   81 I  .1	0pO     sd0_clk
+ *  23    .2	0mO	ACLK                     83 O  .2	0pO     sd0_simo
+ *        .3	0mO	MCLK/RTC                       .3	0pI     sd0_somi
  *        .4	0mO	HSMCLK                         .4	0pI
  *        .5	0pI	                               .5	0pI
  *        .6	0pI	                               .6	0pI
  *        .7	0pI	                               .7	0pI
  *
- * port  5.0	0pO     si446x_sdn
+ * port  5.0	1pO     si446x_sdn
  *  40 I  .1	0pI     si446x_irqn
- *  42 O  .2	0pO     si446x_csn
+ *  42 O  .2	1pO     si446x_csn
  *        .3	0pI
  *        .4	0pI
  *        .5	0pI
  *        .6	0pI
  *        .7	0pI
  *
- * port  6.0	0pI                             port  J.0       0pI     LFXIN  (32KiHz)
- *  41 I  .1	0pO     tell                    120 I  .1       0pO     LFXOUT (32KiHz)
+ * port  6.0	0pO     gps_resetn              port  J.0       0pI     LFXIN  (32KiHz)
+ *  41 I  .1	0pI     gps_awake               120 I  .1       0pO     LFXOUT (32KiHz)
  *  43 O  .2	0pI                             122 O  .2       0pI     HFXOUT (48MHz)
  *        .3	0pI                                    .3       0pI     HFXIN  (48MHz)
  *        .4	0mI     i2c (b1, sda)                  .4       0pI     TDI
