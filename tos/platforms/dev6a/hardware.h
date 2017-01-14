@@ -217,99 +217,14 @@
  *        .5	0mO     i2c (b1, scl)                  .5       0pI     TDO/SWO
  *        .6	0pI     Capture, C1.1
  *        .7	0pI     Capture, C1.0
- *
- *
- * For master/slave:  (master_spi.c)
- *
- * 1.5 CLK  <--->  1.5
- * 1.6 SIMO <--->  1.6 
- * 1.7 SOMI <--->  1.7
- * 2.6 masterRdy   2.6
- * 2.7 slaveRdy    2.7
  */
-
-
-/* gps - ublox - (A2) */
-#define UBLOX_TP        (P3->IN)
-#define UBLOX_TP_BIT    1
-
-
-/* radio - si446x - (B2) */
-#define SI446X_CTS_BIT  0x08
-#define SI446X_CTS_P    (P2->IN & SI446X_CTS_BIT)
-
-#define SI446X_SDN_PIN  0
-#define SI446X_SDN_BIT  0x01
-#define SI446X_SDN_IN   (P5->IN & SI446X_SDN_BIT)
-#define SI446X_SHUTDOWN BITBAND_PERI(P5->OUT, SI446X_SDN_PIN) = 1
-#define SI446X_UNSHUT   BITBAND_PERI(P5->OUT, SI446X_SDN_PIN) = 0
-
-#define SI446X_IRQN_PIN 1
-#define SI446X_IRQN_BIT (1 << SI446X_IRQN_PIN)
-#define SI446X_IRQN_P   (P5->IN & SI446X_IRQN_BIT)
-
-#define SI446X_CSN_PIN  2
-#define SI446X_CSN_BIT  (1 << SI446X_CSN_PIN)
-#define SI446X_CSN_IN   (P5->IN & SI446X_CSN_BIT)
-#define SI446X_CSN      BITBAND_PERI(P5->OUT, SI446X_CSN_PIN)
-
-
-/* micro SD */
-#define SD_CSN          BITBAND_PERI(P10->OUT,0)
-
-#define SD_ACCESS_SENSE_BIT     0x08
-#define SD_ACCESS_SENSE_N       FALSE
-#define SD_ACCESS_ENA_N
-#define SD_PWR_ENA
-
-#define SD_PINS_INPUT  do { P10->SEL0 = 0; } while (0)
-
-/*
- * SD_PINS_SPI will connect the 3 spi lines on the SD to the SPI.
- * And switches the sd_csn (10.0) from input to output,  the value should be
- * a 1 which deselects the sd and tri-states.
- *
- * 10.1, CLK, 10.2-3 SDI, SDO set to SPI Module, SD_CSN switched to output
- * (assumed 1, which is CSN, CS deasserted).
- */
-#define SD_PINS_SPI   do { P10->SEL0 = 0x0E; } while (0)
-
-
-#ifdef notdef
-#define TELL_PORT       P6
-#define TELL_PIN        1
-#define TELL_BIT        (1 << TELL_PIN)
-#define TELL            BITBAND_PERI(TELL_PORT->OUT, TELL_PIN)
-#define TOGGLE_TELL     TELL ^= 1;
-#define WIGGLE_TELL     do { TELL = 1; TELL = 0; } while(0)
-#endif
-
-#define TELL_PORT       P6
-#define TELL_PIN        1
-#define TELL_BIT        (1 << TELL_PIN)
-#define TELL            TELL_PORT->OUT
-#define TOGGLE_TELL     TELL ^= TELL_BIT;
-#define WIGGLE_TELL     do { TELL1; TELL0; } while(0)
-#define TELL0           TELL = 0;
-#define TELL1           TELL = TELL_BIT;
-
-
-#ifdef notdef
-/* gps -gsd4e/org */
-#define GSD4E_GPS_AWAKE_BIT 0x04
-
-#define GSD4E_GPS_AWAKE         (P5IN & GSD4E_GPS_AWAKE_BIT)
-#define GSD4E_GPS_SET_ONOFF     (mmP11out.gps_on_off = 1)
-#define GSD4E_GPS_CLR_ONOFF     (mmP11out.gps_on_off = 0)
-#define GSD4E_GPS_RESET         (mmP11out.gps_reset_n = 0)
-#define GSD4E_GPS_UNRESET       (mmP11out.gps_reset_n = 1)
-#define GSD4E_GPS_CSN            mmP5out.gps_csn
-#endif
 
 // enum so components can override power saving,
 // as per TEP 112.
 enum {
   TOS_SLEEP_NONE = MSP432_POWER_ACTIVE,
 };
+
+#include <platform_port_defs.h>
 
 #endif // __HARDWARE_H__
