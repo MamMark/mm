@@ -48,14 +48,14 @@ configuration PlatformUsciMapC {
 
   components UsciConfP as Conf;
 
-  /* main uart port */
-  components Msp432UsciUartA0C as Uart;
-  Uart.TXD                      -> GIO.UCA0TXD;
-  Uart.RXD                      -> GIO.UCA0RXD;
-  Uart.Panic                    -> PanicC;
-  Uart.Platform                 -> PlatformC;
-  PlatformC.PeripheralInit      -> Uart;
-  Uart                          -> Conf.UartConf;
+  /* gps port */
+  components Msp432UsciUartA2C as Gps;
+  Gps.TXD                      -> GIO.UCA2TXDxPM;
+  Gps.RXD                      -> GIO.UCA2RXDxPM;
+  Gps.Panic                    -> PanicC;
+  Gps.Platform                 -> PlatformC;
+  PlatformC.PeripheralInit     -> Gps;
+  Gps                          -> Conf.GpsConf;
 
   components Msp432UsciI2CB1C as I2C;
   I2C.SDA                       -> GIO.UCB1SDA;
@@ -64,24 +64,4 @@ configuration PlatformUsciMapC {
   I2C.Platform                  -> PlatformC;
   PlatformC.PeripheralInit      -> I2C;
   I2C                           -> Conf.I2CConf;
-
-  /* master */
-  components Msp432UsciSpiB0C as Master;
-  Master.SIMO                   -> GIO.UCB0SIMO;
-  Master.SOMI                   -> GIO.UCB0SOMI;
-  Master.CLK                    -> GIO.UCB0CLK;
-  Master.Panic                  -> PanicC;
-  Master.Platform               -> PlatformC;
-  PlatformC.PeripheralInit      -> Master;
-  Master                        -> Conf.MasterConf;
-
-  /* slave */
-  components Msp432UsciSpiB2C as Slave;
-  Slave.SIMO                    -> GIO.UCB2SIMOxPM;
-  Slave.SOMI                    -> GIO.UCB2SOMIxPM;
-  Slave.CLK                     -> GIO.UCB2CLKxPM;
-  Slave.Panic                   -> PanicC;
-  Slave.Platform                -> PlatformC;
-  PlatformC.PeripheralInit      -> Slave;
-  Slave                         -> Conf.SlaveConf;
 }

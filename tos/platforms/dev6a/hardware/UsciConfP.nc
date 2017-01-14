@@ -35,24 +35,36 @@
  */
 
 #include <msp432usci.h>
+#include <platform_clk_defs.h>
 
 module UsciConfP {
   provides {
-    interface Msp432UsciConfigure as UartConf;
+    interface Msp432UsciConfigure as GpsConf;
     interface Msp432UsciConfigure as I2CConf;
-    interface Msp432UsciConfigure as MasterConf;
-    interface Msp432UsciConfigure as SlaveConf;
   }
 }
 implementation {
 
-  const msp432_usci_config_t uart_config = {
+  /* currently set up for a GPS, Antenova, UART @ 9600, MCLK 16Mi, SMCLK 8Mi */
+  /* for 1228800, brw 6, brs 0xbf */
+  const msp432_usci_config_t gps_config = {
     ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
-    brw   : 109,
+    brw   : 873,
     mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (2 << EUSCI_A_MCTLW_BRS_OFS),
+            (0xee << EUSCI_A_MCTLW_BRS_OFS),
     i2coa : 0
   };
+
+#ifdef notdef
+  /* currently set up for a GPS, Antenova, UART @ 9600, MCLK 32Mi, SMCLK 16Mi */
+  const msp432_usci_config_t gps_config = {
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
+    brw   : 1747,
+    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
+            (0xb5 << EUSCI_A_MCTLW_BRS_OFS),
+    i2coa : 0
+  };
+#endif
 
 #ifndef MSP430_I2C_DIVISOR
 #define MSP430_I2C_DIVISOR 80
@@ -67,48 +79,12 @@ implementation {
     i2coa : 0x41,
   };
 
-
-  /*
-   * PH, data captured on first UCLK edge, changed on falling
-   * pl, inactive low
-   * uclk <- smclk/2 (4Mhz), master, 8 bit, 3 wire spi (mode 0),
-   */
-  const msp432_usci_config_t master_config = {
-    ctlw0 : (EUSCI_B_CTLW0_CKPH        | EUSCI_B_CTLW0_MSB  |
-             EUSCI_B_CTLW0_MST         | EUSCI_B_CTLW0_SYNC |
-             EUSCI_B_CTLW0_SSEL__SMCLK),
-    brw   : 2,                  /* 8MHz/2 -> 4 MHz */
-    mctlw : 0,                  /* Always 0 in SPI mode */
-    i2coa : 0
-  };
-
-  /*
-   * PH, data captured on first UCLK edge, changed on falling
-   * pl, inactive low, SSEL doesn't matter (leave 0, reserved)
-   * slave, 8 bit, 3 wire spi (mode 0).
-   */
-  const msp432_usci_config_t slave_config = {
-    ctlw0 : (EUSCI_B_CTLW0_CKPH        | EUSCI_B_CTLW0_MSB  |
-             EUSCI_B_CTLW0_SYNC),
-    brw   : 2,
-    mctlw : 0,
-    i2coa : 0
-  };
-
-  async command const msp432_usci_config_t *UartConf.getConfiguration() {
-    return &uart_config;
+  async command const msp432_usci_config_t *GpsConf.getConfiguration() {
+    return &gps_config;
   }
 
   async command const msp432_usci_config_t *I2CConf.getConfiguration() {
     return &i2c_config;
-  }
-
-  async command const msp432_usci_config_t *MasterConf.getConfiguration() {
-    return &master_config;
-  }
-
-  async command const msp432_usci_config_t *SlaveConf.getConfiguration() {
-    return &slave_config;
   }
 
 }
