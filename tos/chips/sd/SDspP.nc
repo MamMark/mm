@@ -149,29 +149,29 @@ implementation {
    *
    * need to think about these timeout and how to do with time vs. counts
    */
-         uint16_t     sd_go_op_count;
-  norace uint16_t     sd_read_tok_count;	/* how many times we've looked for a read token */
-         uint16_t     sd_erase_busy_count;
-  norace uint16_t     sd_write_busy_count;
+         uint32_t     sd_go_op_count;
+  norace uint32_t     sd_read_tok_count;	/* how many times we've looked for a read token */
+         uint32_t     sd_erase_busy_count;
+  norace uint32_t     sd_write_busy_count;
 
          uint32_t     op_t0_ms;                 /* start time of various operations */
-  norace uint16_t     op_t0_us;
+  norace uint32_t     op_t0_us;
 
-  norace uint16_t     sd_pwr_on_time_us;
-         uint16_t     last_pwr_on_first_cmd_us;
-         uint16_t     last_full_reset_time_us;
+  norace uint32_t     sd_pwr_on_time_us;
+         uint32_t     last_pwr_on_first_cmd_us;
+         uint32_t     last_full_reset_time_us;
 
   uint32_t     max_reset_time_ms, last_reset_time_ms;
-  uint16_t     max_reset_time_us, last_reset_time_us;
+  uint32_t     max_reset_time_us, last_reset_time_us;
 
   uint32_t     max_read_time_ms,  last_read_time_ms;
-  uint16_t     max_read_time_us,  last_read_time_us;
+  uint32_t     max_read_time_us,  last_read_time_us;
 
   uint32_t     max_write_time_ms, last_write_time_ms;
-  uint16_t     max_write_time_us, last_write_time_us;
+  uint32_t     max_write_time_us, last_write_time_us;
 
   uint32_t     max_erase_time_ms, last_erase_time_ms;
-  uint16_t     max_erase_time_us, last_erase_time_us;
+  uint32_t     max_erase_time_us, last_erase_time_us;
 
 
   void sd_cmd_crc();
