@@ -213,8 +213,8 @@
  *  41 I  .1	0pI     gps_awake               120 I  .1       0pO     LFXOUT (32KiHz)
  *  43 O  .2	0pI                             122 O  .2       0pI     HFXOUT (48MHz)
  *        .3	0pI                                    .3       0pI     HFXIN  (48MHz)
- *        .4	0mI     i2c (b1, sda)                  .4       0pI     TDI
- *        .5	0mO     i2c (b1, scl)                  .5       0pI     TDO/SWO
+ *        .4	0mI                                    .4       0pI     TDI
+ *        .5	0mI                                    .5       0pI     TDO/SWO
  *        .6	0pI     Capture, C1.1
  *        .7	0pI     Capture, C1.0
  */

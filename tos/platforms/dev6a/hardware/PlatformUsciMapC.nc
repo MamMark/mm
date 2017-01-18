@@ -56,12 +56,4 @@ configuration PlatformUsciMapC {
   Gps.Platform                 -> PlatformC;
   PlatformC.PeripheralInit     -> Gps;
   Gps                          -> Conf.GpsConf;
-
-  components Msp432UsciI2CB1C as I2C;
-  I2C.SDA                       -> GIO.UCB1SDA;
-  I2C.SCL                       -> GIO.UCB1SCL;
-  I2C.Panic                     -> PanicC;
-  I2C.Platform                  -> PlatformC;
-  PlatformC.PeripheralInit      -> I2C;
-  I2C                           -> Conf.I2CConf;
 }
