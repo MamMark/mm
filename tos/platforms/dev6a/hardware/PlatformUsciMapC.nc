@@ -48,12 +48,14 @@ configuration PlatformUsciMapC {
 
   components UsciConfP as Conf;
 
+#ifdef notdef
   /* gps port */
-  components Msp432UsciUartA2C as Gps;
-  Gps.TXD                      -> GIO.UCA2TXDxPM;
-  Gps.RXD                      -> GIO.UCA2RXDxPM;
+  components Msp432UsciUartA0C as Gps;
+  Gps.TXD                      -> GIO.UCA0TXD;
+  Gps.RXD                      -> GIO.UCA0RXD;
   Gps.Panic                    -> PanicC;
   Gps.Platform                 -> PlatformC;
   PlatformC.PeripheralInit     -> Gps;
   Gps                          -> Conf.GpsConf;
+#endif
 }
