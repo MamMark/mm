@@ -47,6 +47,40 @@
  * 2.7 slaveRdy    2.7
  */
 
+/* gps -gsd4e/org */
+
+#define GSD4E_AWAKE_PORT    P6
+#define GSD4E_AWAKE_PIN     1
+#define GSD4E_AWAKE_BIT     (1 << GSD4E_AWAKE_PIN)
+#define GSD4E_AWAKE_P       (GSD4E_AWAKE_PORT->IN & GSD4E_AWAKE_BIT)
+
+#define GSD4E_CTS_PORT      P3
+#define GSD4E_CTS_PIN       0
+#define GSD4E_CTS           BITBAND_PERI(GSD4E_CTS_PORT->OUT, GSD4E_CTS_PIN)
+
+#define GSD4E_ONOFF_PORT    P4
+#define GSD4E_ONOFF_PIN     0
+#define GSD4E_ONOFF         BITBAND_PERI(GSD4E_ONOFF_PORT->OUT, GSD4E_ONOFF_PIN)
+
+#define GSD4E_RESETN_PORT   P6
+#define GSD4E_RESETN_PIN    0
+#define GSD4E_RESETN        BITBAND_PERI(GSD4E_RESETN_PORT->OUT, GSD4E_RESETN_PIN)
+#define GSD4E_RESETN_FLOAT  BITBAND_PERI(GSD4E_RESETN_PORT->DIR, GSD4E_RESETN_PIN) = 0;
+#define GSD4E_RESETN_OUTPUT BITBAND_PERI(GSD4E_RESETN_PORT->DIR, GSD4E_RESETN_PIN) = 1;
+
+#define GSD4E_RTS_PORT      P4
+#define GSD4E_RTS_PIN       5
+#define GSD4E_RTS_BIT       (1 << GSD4E_RTS_PIN)
+#define GSD4E_RTS_P         (GSD4E_RTS_PORT->IN & GSD4E_RTS_BIT)
+
+#define GSD4E_TM_PORT       P4
+#define GSD4E_TM_PIN        1
+#define GSD4E_TM_BIT        (1 << GSD4E_TM_PIN)
+#define GSD4E_TM_P          (GSD4E_TM_PORT->IN & GSD4E_TM_BIT)
+
+#define GSD4E_PINS_MODULE     do { P1->SEL0 |=  0x0c; } while (0)
+#define GSD4E_PINS_NON_MODULE do { P1->SEL0 &= ~0x0c; } while (0)
+
 /* radio - si446x - (B2) */
 #define SI446X_CTS_BIT  0x08
 #define SI446X_CTS_P    (P2->IN & SI446X_CTS_BIT)
@@ -96,18 +130,5 @@
 #define TELL0           TELL_PORT->OUT = 0;
 #define TELL1           TELL_PORT->OUT = TELL_BIT;
 #define WIGGLE_TELL     do { TELL1; TELL0; } while(0)
-
-
-#ifdef notdef
-/* gps -gsd4e/org */
-#define GSD4E_GPS_AWAKE_BIT 0x04
-
-#define GSD4E_GPS_AWAKE         (P5IN & GSD4E_GPS_AWAKE_BIT)
-#define GSD4E_GPS_SET_ONOFF     (mmP11out.gps_on_off = 1)
-#define GSD4E_GPS_CLR_ONOFF     (mmP11out.gps_on_off = 0)
-#define GSD4E_GPS_RESET         (mmP11out.gps_reset_n = 0)
-#define GSD4E_GPS_UNRESET       (mmP11out.gps_reset_n = 1)
-#define GSD4E_GPS_CSN            mmP5out.gps_csn
-#endif
 
 #endif    /* __PLATFORM_PORT_DEFS__ */
