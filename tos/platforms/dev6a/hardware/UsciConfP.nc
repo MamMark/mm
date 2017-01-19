@@ -46,6 +46,7 @@ implementation {
 
   /* currently set up for a GPS, Antenova, UART @ 9600, MCLK 16Mi, SMCLK 8Mi */
   /* for 1228800, brw 6, brs 0xbf */
+
   const msp432_usci_config_t gps_config = {
     ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
     brw   : 873,
@@ -55,7 +56,7 @@ implementation {
   };
 
 #ifdef notdef
-  /* currently set up for a GPS, Antenova, UART @ 9600, MCLK 32Mi, SMCLK 16Mi */
+  /* currently set up for a GPS, Antenova, UART @ 4800, MCLK 32Mi, SMCLK 16Mi */
   const msp432_usci_config_t gps_config = {
     ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
     brw   : 1747,

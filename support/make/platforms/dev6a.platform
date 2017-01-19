@@ -13,13 +13,13 @@ PFLAGS += -I%T/system/panic_simple
 PFLAGS += -I%T/platforms/dev6a/hardware/
 PFLAGS += -I%T/platforms/dev6a/hardware/startup
 
-# PFLAGS += -I%T/platforms/dev6a/hardware/gsd4e
 PFLAGS += -I%T/platforms/dev6a/hardware/sd
-PFLAGS += -I%T/platforms/dev6a/hardware/si446x
+PFLAGS += -I%T/platforms/dev6a/hardware/gps
+# PFLAGS += -I%T/platforms/dev6a/hardware/si446x
 
-# PFLAGS += -I%T/chips/gsd4e_v2
-PFLAGS += -I%T/chips/si446x
+# PFLAGS += -I%T/chips/si446x
 PFLAGS += -I%T/chips/sd
+PFLAGS += -I%T/chips/gsd4e_v3
 PFLAGS += -I%T/chips/tmp1x2
 PFLAGS += -I%T/chips/lis3dh
 

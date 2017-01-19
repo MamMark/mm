@@ -9,8 +9,11 @@ implementation {
   MainC.SoftwareInit -> testGPSP;
   testGPSP -> MainC.Boot;
 
-  components HplGsd4eC as HW;
-  testGPSP.HW -> HW;
+  components PlatformC;
+  components GPS0C as GpsPort;
+  testGPSP.HW -> GpsPort;
+  testGPSP.GPSControl -> GpsPort;
+  testGPSP.Platform -> PlatformC;
 
   components new TimerMilliC() as Timer;
   testGPSP.testTimer -> Timer;
@@ -18,6 +21,4 @@ implementation {
   components LocalTimeMilliC;
   testGPSP.LocalTime -> LocalTimeMilliC;
 
-  components Gsd4eC;
-  testGPSP.GPSControl -> Gsd4eC;
 }

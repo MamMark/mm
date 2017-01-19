@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,30 +32,26 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "msp432usci.h"
-
-/*
- * Only instantiate those we need.  Individual port users do their
- * own.  See SD.
- *
+/**
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-configuration PlatformUsciMapC {
-} implementation {
-  components HplMsp432GpioC as GIO;
+configuration HplGPS0C {
+  provides {
+    interface Gsd4eUHardware;
+  }
+}
+implementation {
+  components Msp432UsciA0P as UsciP;
+  components GPS0HardwareP  as GpsHwP;
+
+  Gsd4eUHardware = GpsHwP;
+  GpsHwP.Usci      -> UsciP;
+  GpsHwP.Interrupt -> UsciP;
+
   components PanicC, PlatformC;
+  GpsHwP.Panic    -> PanicC;
+  GpsHwP.Platform -> PlatformC;
 
-  components UsciConfP as Conf;
-
-#ifdef notdef
-  /* gps port */
-  components Msp432UsciUartA0C as Gps;
-  Gps.TXD                      -> GIO.UCA0TXD;
-  Gps.RXD                      -> GIO.UCA0RXD;
-  Gps.Panic                    -> PanicC;
-  Gps.Platform                 -> PlatformC;
-  PlatformC.PeripheralInit     -> Gps;
-  Gps                          -> Conf.GpsConf;
-#endif
+  PlatformC.PeripheralInit -> GpsHwP;
 }

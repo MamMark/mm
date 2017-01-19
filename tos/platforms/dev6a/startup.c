@@ -284,7 +284,7 @@ void __pins_init() {
   PD->OUT = 0;
   PE->OUT = 0;
 
-  P1->OUT = 0x12;               /* P1.1/P1.4 need pull up */
+  P1->OUT = 0x1a;               /* P1.1/P1.4 need pull up */
   P1->DIR = 0x69;
   P1->REN = 0x12;
 
@@ -320,8 +320,15 @@ void __pins_init() {
   P5->OUT  = 0x05;
   P5->DIR  = 0x05;
 
-  /* gps_resetn and gps_awake are here too */
-  P6->DIR = 0x21;               /* gps_resetn asserted */
+  /*
+   * gps_resetn and gps_awake are here too
+   *
+   * on boot, leave reset as an input, let it float.
+   * this lets the gps continue to do what it is doing.
+   * If we need to reset it, the gps driver will do it.
+   */
+  P6->OUT = 0x01;               /* gps_resetn deasserted */
+  P6->DIR = 0x20;               /* gps_resetn input */
 
   /* P7 done above, SMCLK */
 

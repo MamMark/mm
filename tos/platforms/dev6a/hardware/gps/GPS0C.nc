@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker, Daniel Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,32 +30,51 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-#include "msp432usci.h"
-
-/*
- * Only instantiate those we need.  Individual port users do their
- * own.  See SD.
  *
  * @author Eric B. Decker <cire831@gmail.com>
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  */
 
-configuration PlatformUsciMapC {
-} implementation {
-  components HplMsp432GpioC as GIO;
-  components PanicC, PlatformC;
+configuration GPS0C {
+  provides {
+    interface StdControl as GPSControl;
+    interface Boot as GPSBoot;
+    interface Gsd4eUHardware as HW;
+  }
+  uses interface Boot;
+}
 
-  components UsciConfP as Conf;
+implementation {
+  components MainC;
+  components Gsd4eUP as GpsDvrP;
+
+  MainC.SoftwareInit -> GpsDvrP;
+  GPSControl = GpsDvrP;
+  GPSBoot = GpsDvrP;
+  Boot = GpsDvrP.Boot;
+
+  components GPSMsgC;
+  GpsDvrP.GPSMsg -> GPSMsgC;
+  GpsDvrP.GPSMsgControl -> GPSMsgC;
+
+  components HplGPS0C;
+  GpsDvrP.HW -> HplGPS0C;
+  HW = HplGPS0C;
+
+  components LocalTimeMilliC;
+  GpsDvrP.LocalTime -> LocalTimeMilliC;
+
+  components new TimerMilliC() as GPSTimer;
+  GpsDvrP.GPSTimer -> GPSTimer;
+
+  components PanicC;
+  GpsDvrP.Panic -> PanicC;
+
+  components TraceC;
+  GpsDvrP.Trace -> TraceC;
 
 #ifdef notdef
-  /* gps port */
-  components Msp432UsciUartA0C as Gps;
-  Gps.TXD                      -> GIO.UCA0TXD;
-  Gps.RXD                      -> GIO.UCA0RXD;
-  Gps.Panic                    -> PanicC;
-  Gps.Platform                 -> PlatformC;
-  PlatformC.PeripheralInit     -> Gps;
-  Gps                          -> Conf.GpsConf;
+  components CollectC;
+  GpsDvrP.LogEvent -> CollectC;
 #endif
 }
