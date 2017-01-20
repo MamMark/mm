@@ -43,11 +43,8 @@
  *  gps_pwr_on():       turn pwr on (really?)
  *  gps_pwr_off():      your guess here.
  *
- *  gps_port_init():    sets up port and any initial power state
- *  gps_port_enable():  turn port/bus back on, come out of low power
- *  gps_port_disable(): turn port/bus off, go into low power mode.
- *  gps_port_flush_tx():make sure all transmit bytes have gone out.
  *  gps_port_speed():   set speed on port
+ *  gps_tx_finnish():   make sure all transmit bytes have gone out.
  *
  *  gps_port_interrupt_disable():
  *  gps_port_interrupt_enable():
