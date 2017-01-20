@@ -25,7 +25,7 @@
  * We've tried 115200 but the interrupt latency seems too high.
  * we drop chars now and then.  So we've gone down to 57600.
  *
- * Choices are 115200, 57600, and 4800
+ * Choices are 1228800, 115200, 57600, and 9600
  */
 #define GPS_SPEED 57600
 
