@@ -412,9 +412,7 @@ implementation {
     call GPSMsgControl.start();
     t_gps_pwr_on = call LocalTime.get();
     call HW.gps_pwr_on();
-//    call HW.gps_speed(57600);
-    nop();
-    call HW.gps_speed(9600);
+    call HW.gps_speed_di(57600);
 
 #ifdef GPS_RO
     if (gps_speed > 1)
@@ -427,11 +425,11 @@ implementation {
       switch (gps_speed) {
 	default:
 	case 0:
-          call HW.gps_speed(57600);
+          call HW.gps_speed_di(57600);
 	  call HW.gps_rx_int_enable();
 	  return SUCCESS;
 	case 1:
-          call HW.gps_speed(9600);
+          call HW.gps_speed_di(9600);
 	  call HW.gps_rx_int_enable();
 	  return SUCCESS;
       }
@@ -511,7 +509,7 @@ implementation {
 	call HW.gps_pwr_on();
 	t_gps_pwr_on = call LocalTime.get();
 	call GPSTimer.startOneShotAt(t_gps_pwr_on, DT_GPS_PWR_UP_DELAY);
-        call HW.gps_speed(9600);
+        call HW.gps_speed_di(9600);
 	return;
 
       case GPSC_RECONFIG_9600_START_DELAY:
@@ -687,7 +685,7 @@ implementation {
 	post gps_config_task();
 
         call HW.gps_tx_finnish();
-        call HW.gps_speed(57600);
+        call HW.gps_speed_di(57600);
         call HW.gps_rx_int_enable();
 	return;
 
@@ -706,7 +704,7 @@ implementation {
 	gpsc_change_state(GPSC_FINI_WAIT, GPSW_SEND_DONE);
 	post gps_config_task();
         call HW.gps_tx_finnish();
-        call HW.gps_speed(9600);
+        call HW.gps_speed_di(9600);
         call HW.gps_rx_int_enable();
 	break;
 

@@ -163,7 +163,7 @@ implementation {
     }
   }
 
-  async command void HW.gps_speed(uint32_t speed) {
+  async command void HW.gps_speed_di(uint32_t speed) {
     const msp432_usci_config_t *config = NULL;
 
     switch(speed) {
@@ -173,6 +173,7 @@ implementation {
     }
     if (config)
       call Usci.configure(config, FALSE);
+    /* Usci.configure turns off all interrupts */
   }
 
   async command void HW.gps_rx_int_enable() {

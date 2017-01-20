@@ -43,8 +43,8 @@
  *  gps_pwr_on():       turn pwr on (really?)
  *  gps_pwr_off():      your guess here.
  *
- *  gps_port_speed():   set speed on port
  *  gps_tx_finnish():   make sure all transmit bytes have gone out.
+ *  gps_speed_di():     set speed on port, disable rx interrupt
  *
  *  gps_port_interrupt_disable():
  *  gps_port_interrupt_enable():
@@ -100,8 +100,13 @@ interface Gsd4eUHardware {
   async command void gps_pwr_on();
   async command void gps_pwr_off();
 
-  /* gps_speed reconfigures the usci which turns off interrupts */
-  async command void gps_speed(uint32_t speed);
+  /*
+   * gps_speed_di reconfigures the usci which turns off interrupts
+   *
+   * _di on the end indicates that this also disables interrupts.
+   * this is a side effect of reconfiguring.
+   */
+  async command void gps_speed_di(uint32_t speed);
 
   async command void gps_tx_finnish();
   async command void gps_rx_int_enable();
