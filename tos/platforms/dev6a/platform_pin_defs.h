@@ -34,8 +34,8 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#ifndef __PLATFORM_PORT_DEFS__
-#define __PLATFORM_PORT_DEFS__
+#ifndef __PLATFORM_PIN_DEFS__
+#define __PLATFORM_PIN_DEFS__
 
 /*
  * For master/slave:  (master_spi.c)
@@ -131,4 +131,4 @@
 #define TELL1           TELL_PORT->OUT = TELL_BIT;
 #define WIGGLE_TELL     do { TELL1; TELL0; } while(0)
 
-#endif    /* __PLATFORM_PORT_DEFS__ */
+#endif    /* __PLATFORM_PIN_DEFS__ */

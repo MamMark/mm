@@ -42,7 +42,7 @@
 #include <stdint.h>
 #include <msp432.h>
 #include <platform_clk_defs.h>
-#include <platform_port_defs.h>
+#include <platform_pin_defs.h>
 
 #ifndef nop
 #define nop() __asm volatile("nop")

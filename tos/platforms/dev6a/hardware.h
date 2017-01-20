@@ -73,10 +73,8 @@
  * is definitive.
  *
  * startup.c for startup code and initilization.
- *
  * platform_clk_defs.h for actual clock definitions.
- *
- * platform_port_defs.h for port pin assignments.
+ * platform_pin_defs.h for our pin assignments.
  */
 
 /*
@@ -225,6 +223,6 @@ enum {
   TOS_SLEEP_NONE = MSP432_POWER_ACTIVE,
 };
 
-#include <platform_port_defs.h>
+#include <platform_pin_defs.h>
 
 #endif // __HARDWARE_H__
