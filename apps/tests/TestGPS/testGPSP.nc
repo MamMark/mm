@@ -48,9 +48,60 @@ implementation {
     return SUCCESS;
   }
 
+#ifdef TESTGPSP_RESET_CAPTURE_RESET
+  uint8_t bytes[8096];
+  volatile uint32_t wait = 1;
+
   event void Boot.booted() {
+    uint32_t nxt, t0;
+
+//    bkpt();
+
+    nop();
+    nop();
+    call HW.gps_pwr_on();
+    call HW.gps_speed_di(57600);
+    call HW.gps_set_reset();
+    t0 = call Platform.usecsRaw();
+    while (call Platform.usecsRaw() - t0 < 105) ;
+    call HW.gps_clr_reset();
+
+    t0 = call Platform.usecsRaw();
+    while (call Platform.usecsRaw() - t0 < 2048) ;
+
+    call HW.gps_set_on_off();
+    t0 = call Platform.usecsRaw();
+    while (call Platform.usecsRaw() - t0 < 105) ;
+    call HW.gps_clr_on_off();
+
+    nxt = 0;
+    while (1) {
+      if (EUSCI_A0->IFG & EUSCI_A_IFG_RXIFG) {
+        bytes[nxt++] = EUSCI_A0->RXBUF;
+        if (nxt >= 8096)
+          nxt = 0;
+        if (wait)
+          wait++;
+        if (wait > 32) {
+          call HW.gps_set_reset();
+          t0 = call Platform.usecsRaw();
+          while (call Platform.usecsRaw() - t0 < 105) ;
+          call HW.gps_clr_reset();
+          wait = 0;
+        }
+      }
+    }
+  }
+
+#else
+
+  event void Boot.booted() {
+
+//    bkpt();
+
     call testTimer.startOneShot(0);
   }
+#endif
 
 
 //  event void GPSControl.startDone(error_t err) { }
