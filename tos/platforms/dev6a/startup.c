@@ -488,13 +488,14 @@ void __t32_init() {
 
   /*
    * Tx (Timer32_1) is used for a 32 bit running count that is supposed to
-   * 1 uis (1 binary us).  However, depending on what clock is being used
-   * it may not be possible to get binary, it can be decimal us.  Further,
-   * the T32 h/w can only divide by 1, 16, and 32, so again it becomes
-   * difficult to get 1us or 1uis.  So platform_clk_defs.h defines various
-   * controls that gets us close.  The Prescaler (divider), MSP432_T32_PS
-   * gets us as close a possible and a correction is then applied by
-   * dividing further.  The correction divisior is MSP432_T32_USEC_DIV.
+   * be 1 uis (1 binary us).  However, depending on what clock is being
+   * used it may not be possible to get binary, it can be decimal us.
+   * Further, the T32 h/w can only divide by 1, 16, and 32, so again it
+   * becomes difficult to get 1us or 1uis.  So platform_clk_defs.h defines
+   * various controls that gets us close.  The Prescaler (divider),
+   * MSP432_T32_PS gets us as close a possible and a correction is then
+   * applied by dividing further.  The correction divisior is
+   * MSP432_T32_USEC_DIV.
    *
    * The MSP432_T32_USEC_DIV correction is applied in Platform.usecsRaw, see
    * PlatformP.nc.
@@ -750,6 +751,59 @@ void __system_init(void) {
  *      https://answers.launchpad.net/gcc-arm-embedded/+question/248410
  */
 
+uint32_t deltas[256];
+uint32_t next_delta;
+
+void timer_check() {
+  uint32_t t0, t1, dt;
+
+  TIMER_A1->CCR[0] = 31;
+  TIMER_A1->CTL = 0x116;
+  TIMER_A1->CCTL[0] = TIMER_A_CCTLN_OUTMOD_4; /* toggle */
+
+  TIMER32_2->CONTROL = 0;
+  TIMER32_2->INTCLR = 0;
+  TIMER32_2->LOAD = 1024;
+
+  TIMER_A1->R = 0;
+  while (TIMER_A1->R == 0) ;
+  TIMER_A1->CTL = 0x116;
+  TIMER32_2->CONTROL = 0xc6;
+
+  while(1) {
+    if (TIMER32_2->RIS) {
+      TIMER32_2->INTCLR = 0;
+      TELL_PORT->OUT ^= TELL_BIT;
+    }
+  }
+
+  /*
+   * TA1 is ticking at 32KiHz (1/32768 -> 30.5+ us/tick, jiffy)
+   * 32768 in one sec.  32 jiffies in 1mis.  1mis is .9765625 ms.
+   * 33 jiffies is 1.00708007829 us (.7% error).  It counts one
+   * more than what is in CCR0.
+   *
+   * 320 jiffies is 9.765625.  327 is 9.97924804851 (.2% error),
+   * 328 is 10.00976562664 (.1% error).
+   */
+  nop();
+  next_delta = 0;
+  t0 = (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV;
+  while (1) {
+    t1 = (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV;
+    if (TIMER_A1->CTL & TIMER_A_CTL_IFG) {
+      dt = t1 - t0;
+      deltas[next_delta++] = dt;
+      if (next_delta >= 256) next_delta = 0;
+      t0 = t1;
+      TELL_PORT->OUT ^= TELL_BIT;
+//    TIMER_A1->CCTL[0] ^= TIMER_A_CCTLN_OUT;
+      TIMER_A1->IV;
+    }
+  }
+}
+
+
 void start() __attribute__((alias("__Reset")));
 void __Reset() {
   uint32_t *from;
@@ -783,6 +837,8 @@ void __Reset() {
   __pins_init();
 
   __system_init();
+
+//  timer_check();
 
   from = &__data_load__;
   to   = &__data_start__;;
