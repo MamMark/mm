@@ -168,6 +168,7 @@ const msp432_usci_config_t sd_spi_config = {
       MSP432_DMA_SIZE_8 | UDMA_CHCTL_ARBSIZE_1 | MSP432_DMA_MODE_BASIC;
     rcvptr = rcvptr ? rcvptr : recv_dump;
 
+    call DmaRX.dma_set_priority(1);             /* run RX with high priority */
     call DmaRX.dma_start_channel(MSP432_DMA_CH7_B3_RX0, length,
         rcvptr, (void *) &(EUSCI_B3->RXBUF), control);
 
@@ -186,6 +187,7 @@ const msp432_usci_config_t sd_spi_config = {
       control |= UDMA_CHCTL_SRCINC_NONE;
     }      
 
+    call DmaTX.dma_set_priority(0);             /* run TX with normal priority */
     call DmaTX.dma_start_channel(MSP432_DMA_CH6_B3_TX0, length,
         (void*) &(EUSCI_B3->TXBUF), sndptr, control);
   }
