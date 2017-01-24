@@ -104,14 +104,11 @@ implementation {
  * UCSSEL: SMCLK
  */
 
-#define SPI_8MHZ_DIV    1
-#define SPI_FULL_SPEED_DIV SPI_8MHZ_DIV
-
 const msp432_usci_config_t sd_spi_config = {
   ctlw0 : (EUSCI_B_CTLW0_CKPH        | EUSCI_B_CTLW0_MSB  |
            EUSCI_B_CTLW0_MST         | EUSCI_B_CTLW0_SYNC |
            EUSCI_B_CTLW0_SSEL__SMCLK),
-  brw   : SPI_8MHZ_DIV,		/* 8MHz -> 8 MHz */
+  brw   : MSP432_SD_DIV,        /* see platform_clk_defs */
   mctlw : 0,                    /* Always 0 in SPI mode */
   i2coa : 0
 };
