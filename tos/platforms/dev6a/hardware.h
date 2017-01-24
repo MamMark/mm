@@ -48,7 +48,7 @@
 #define __HARDWARE_H__
 
 #define NO_MSP_CLASSIC_DEFINES
-// #define __MSP432_DVRLIB_ROM__
+//#define __MSP432_DVRLIB_ROM__
 
 /*
  * msp432.h will pull in the right chip header using DEVICE.
@@ -151,6 +151,8 @@
  * Various codes for port settings: <value><func><dir><res>, 0pO (0 (zero), port, Output),
  *    <res> will be "r" if a pull up or pull down is used.
  *    xpI (don't care, port, Input), xmI (module input).
+ *    module is m for m1 (sel1 0 sel0 1), same as msp430 module
+ *              m2 for sel1 1, sel0 0, and m3 for 11.
  *
  * A0: gps (antenova, sirfIV) UART (dma overlap with AES triggers, DMA ch 0, 1)
  * A1: SD1 (SPI)
@@ -171,7 +173,7 @@
  *       .6	0mO	master_simo     BSLSIMO       .6	0pI
  *       .7	0mI	master_somi     BSLSOMI       .7	0pI
  *
- * port 2.0	0pO	dock_led (LED2_RED)     port 8.0	0pI
+ * port 2.0	0pO	dock_led (LED2_RED)     port 8.0	0mO     TA1.0 (OUT0) (m2)
  *  01   .1	0pO	sd1_clk  (LED2_GREEN)    61 I .1	0pI
  *  03   .2	0pO	sd1_somi (LED2_BLUE)     63 O .2	0pI
  *       .3	0pI     sd1_simo                      .3	0pI

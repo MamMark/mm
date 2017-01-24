@@ -332,7 +332,11 @@ void __pins_init() {
 
   /* P7 done above, SMCLK */
 
-  P8->DIR = 0x40;               /* tell is an output */
+  /*
+   * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
+   */
+  P8->DIR = 0x41;               /* tell is an output */
+  P8->SEL1 = 1;
 
   /*
    * SD is on P10.0 - P10.3  see hardware.h
@@ -767,8 +771,12 @@ void __Reset() {
   P7->SEL0 = 0x01;
   P7->SEL1 = 0x00;
 
+  /*
+   * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
+   */
   P8->OUT = 0;                  /* set tell up */
-  P8->DIR = 0x40;
+  P8->DIR = 0x41;
+  P8->SEL1 = 1;
 
   __disable_irq();
   __watchdog_init();
