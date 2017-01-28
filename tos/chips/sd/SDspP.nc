@@ -312,7 +312,6 @@ implementation {
     rsp = tmp;
     if (rsp & ~MSK_IDLE)
       sd_panic(26, rsp);
-    tmp = sd_get();			/* close the cmd/rsp op */
   }
 
 
@@ -382,7 +381,6 @@ implementation {
 
     call HW.sd_set_cs();
     rsp = sd_raw_cmd();
-    tmp = sd_get();			/* close transaction out */
     call HW.sd_clr_cs();
     return rsp;
   }
@@ -402,7 +400,6 @@ implementation {
     call HW.sd_set_cs();
     sd_send_cmd55();
     rsp = sd_raw_cmd();
-    tmp = sd_get();
     call HW.sd_clr_cs();
     return rsp;
   }
@@ -655,7 +652,6 @@ implementation {
     sd_cmd.arg = 0;
     rsp = sd_raw_cmd();
     stat_byte = sd_get();
-    sd_get();                           /* close it off */
     call HW.sd_clr_cs();
     return ((rsp << 8) | stat_byte);
   }
@@ -1174,9 +1170,6 @@ implementation {
     call HW.sd_start_dma(NULL, buf, SD_BUF_SIZE);
     call HW.sd_wait_dma(SD_BUF_SIZE);
     call HW.sd_clr_cs();         /* deassert the SD card */
-
-    sd_get();                    /* what are these twos for? */
-    sd_get();
 
     crc = (buf[512] << 8) | buf[513];
     if (sd_check_crc(buf, crc)) {
