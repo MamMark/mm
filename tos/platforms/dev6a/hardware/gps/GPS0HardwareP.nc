@@ -171,6 +171,7 @@ implementation {
       case 9600:        config = &gps_9600_config;       break;
       case 57600:       config = &gps_57600_config;      break;
       case 1228800:     config = &gps_1228800_config;    break;
+      default:          gps_panic(2, speed, 0);          break;
     }
     if (config)
       call Usci.configure(config, FALSE);
