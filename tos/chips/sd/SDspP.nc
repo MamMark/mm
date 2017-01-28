@@ -263,6 +263,14 @@ implementation {
   }
 
 
+  void sd_kill_first_back() {
+    uint8_t tmp;
+    tmp = sd_get();
+    if (tmp != 0xff) {
+      sd_warn(23, tmp);
+    }
+  }
+
   const uint8_t cmd55[] = {
     SD_APP_CMD, 0, 0, 0, 0, 0xff	/* when crc's get implemented need to change. */
   };
@@ -287,6 +295,9 @@ implementation {
     sd_chk_clean();
     call HW.sd_start_dma((uint8_t *) cmd55, NULL, sizeof(cmd55));
     call HW.sd_wait_dma(sizeof(cmd55));
+
+    /* throw first byte away, never the response */
+    sd_kill_first_back();
 
     i=0;
     do {
@@ -335,6 +346,9 @@ implementation {
     sd_cmd_crc();
     call HW.sd_start_dma(&sd_cmd.cmd, NULL, 6);
     call HW.sd_wait_dma(6);
+
+    /* throw away the first byte, never the response */
+    sd_kill_first_back();
 
     /* Wait for a response.  */
     i=0;
