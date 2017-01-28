@@ -107,6 +107,7 @@ implementation {
 
   command error_t Init.init() {
     call Usci.enableModuleInterrupt();
+    GSD4E_PINS_MODULE;			/* connect from the UART */
     return SUCCESS;
   }
 
