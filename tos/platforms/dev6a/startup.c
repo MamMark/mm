@@ -282,7 +282,7 @@ void __pins_init() {
   PB->OUT = 0;
   PC->OUT = 0;
   PD->OUT = 0;
-  PE->OUT = 0;
+  PE->OUT = 0x0100;             /* wacking P10/P9 */
 
   P1->OUT = 0x1a;               /* P1.1/P1.4 need pull up */
   P1->DIR = 0x69;
@@ -339,7 +339,7 @@ void __pins_init() {
   P8->SEL1 = 1;
 
   /*
-   * SD is on P10.0 - P10.3  see hardware.h
+   * SD0 is on P10.0 - P10.3  see hardware.h
    * on reset all pins set to xpI (port, input)
    * CSN (P10.1) <- 1 to deassert CS
    * CLK and SIMO drive 0.  output
@@ -347,6 +347,7 @@ void __pins_init() {
    */
   P10->OUT = 1;
   P10->DIR = 0x7;
+  P10->REN = 0;
 }
 
 
@@ -831,6 +832,14 @@ void __Reset() {
   P8->OUT = 0;                  /* set tell up */
   P8->DIR = 0x41;
   P8->SEL1 = 1;
+
+  /*
+   * After reset all pins are input.  For the SD switch
+   * to pull ups and pull downs while initilizing.
+   * 10.0 csn hold high, 10.1-10.3 hold low
+   */
+  P10->OUT = 0x1;               /* 10.0 is pull up, others pull down */
+  P10->REN = 0xf;               /* on the way up. */
 
   __disable_irq();
   __watchdog_init();
