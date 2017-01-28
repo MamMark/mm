@@ -40,7 +40,7 @@ implementation {
    * we also need to clear out the pending INTC from the NVIC.
    * pain in the but.  Weird design.
    */
-  void T32_INT2_Handler() @C() @spontaneous() __attribute__((interrupt)) {
+  void T32_INT2_Handler() @C() @hwevent() __attribute__((interrupt)) {
     TIMER32_2->INTCLR = 0;
     NVIC_ClearPendingIRQ(T32_INTC_IRQn);
     BITBAND_PERI(P1->OUT, 0) ^= 1;
