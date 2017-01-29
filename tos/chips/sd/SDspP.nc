@@ -63,8 +63,10 @@
 #define SD_PARANOID
 
 typedef enum {
-  SDS_IDLE = 0,
+  SDS_OFF = 0,
+  SDS_OFF_TO_ON,
   SDS_RESET,
+  SDS_IDLE,
   SDS_READ,
   SDS_READ_DMA,
   SDS_WRITE,
@@ -437,8 +439,8 @@ implementation {
    * See SDsa for details on power up timing.  Power up and down is
    * handled by the ResourceDefaultOwner (in this module).  Invokation
    * is handled by the Arbiter.  SDsa handles its own power up and down.
-   * There needs to be enough delay prior to SDreset.reset.  We use 20
-   * clock bytes to give us a bit of cushion.
+   * There needs to be enough delay prior to SDreset.reset (according to
+   * Simplified v5 we need 1ms before clocking)
    *
    * Power is turned on by the arbiter calling ResourceDefaultOwner.requested.
    * The reset sequence is started by clocking out bytes to clock the SD,
@@ -467,16 +469,15 @@ implementation {
     cmd = &sd_cmd;
 
     /*
-     * Clock out at least 74 bits of idles (0xFF is 8 bits).  Thats 10 bytes. This allows
-     * the SD card to complete its power up prior to us talking to the card.  We send
-     * 40 to give a bit more timing cushion.  This gets us to about 100 us before the first
-     * command is sent.  see SDsa.reset for more info.
+     * Clock out at least 74 bits of idles (0xFF is 8 bits).  That's 10 bytes. This allows
+     * the SD card to complete its power up prior to us talking to the card.
+     * see SDsa.reset for more info.
      */
 
     sd_chk_clean();
-    call HW.sd_clr_cs();                /* force to known state, no CS */
-    call HW.sd_start_dma(NULL, NULL, 40);	/* send 40 0xff to clock SD */
-    call HW.sd_wait_dma(40);
+    call HW.sd_clr_cs();                        /* force to known state, no CS */
+    call HW.sd_start_dma(NULL, NULL, 10);	/* send 10 0xff to clock SD */
+    call HW.sd_wait_dma(10);
 
     /* Put the card in the idle state, non-zero return -> error */
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
@@ -517,6 +518,10 @@ implementation {
 	call Panic.panic(PANIC_MS, 30, sdc.sd_state, (w_diff >> 16), w_diff & 0xffff, 0);
 	rsp = sd_get();
 	return;
+
+      case SDS_OFF_TO_ON:
+        sd_start_reset();
+        return;
 
       case SDS_RESET:
 	cmd = &sd_cmd;
@@ -564,6 +569,14 @@ implementation {
   }
 
 
+  task void sd_pwr_up_task() {
+    sd_pwr_on_time_us = call Platform.usecsRaw();
+    call HW.sd_on();
+    call HW.sd_spi_enable();
+    call SDtimer.startOneShot(1);
+  }
+
+
   /*
    * ResourceDefaultOwner.granted: power down the SD.
    *
@@ -576,22 +589,19 @@ implementation {
    */
 
   async event void ResourceDefaultOwner.granted() {
+    sdc.sd_state = SDS_OFF;
     sd_pwr_on_time_us = 0;
     call HW.sd_spi_disable();
     call HW.sd_off();
   }
 
 
-  task void sd_pwr_task() {
-    sd_start_reset();
-  }
-
-
   async event void ResourceDefaultOwner.requested() {
-    sd_pwr_on_time_us = call Platform.usecsRaw();
-    call HW.sd_on();
-    call HW.sd_spi_enable();
-    post sd_pwr_task();
+    if (sdc.sd_state != SDS_OFF) {
+      sd_panic(0x80, 0);
+    }
+    sdc.sd_state = SDS_OFF_TO_ON;
+    post sd_pwr_up_task();
   }
 
 
@@ -1071,20 +1081,21 @@ implementation {
     sd_cmd_t *cmd;                // Command Structure
     uint8_t rsp;
     uint16_t sa_op_cnt;
+    uint32_t t0;
 
     sdsa_majik = SDSA_MAJIK;
     call HW.sd_on();
     call HW.sd_spi_enable();
 
     /*
-     * send 800 clocks, 100 bytes.  about 240 us.  This satisfies
-     * sending 74 clocks but is significantly short of the 1 ms called
-     * out in the doc.  But it seems to work.  Seems to depend on whose
-     * SD card we are using.
+     * we first need to wait for 1ms, then send > 74 clocks
+     * 1100 is a kludge to get us at least 1ms.
      */
+    t0 = call Platform.usecsRaw();
+    while ((call Platform.usecsRaw() - t0) < 1100) ;
     sd_chk_clean();
-    call HW.sd_start_dma(NULL, NULL, 256);
-    call HW.sd_wait_dma(256);
+    call HW.sd_start_dma(NULL, NULL, 10);
+    call HW.sd_wait_dma(10);
 
     cmd = &sd_cmd;
     cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
@@ -1096,9 +1107,10 @@ implementation {
     }
 
     /*
-     * SD_GO_OP_MAX is set for normal operation which is polled every 4 or so ms.
-     * SA hits it in a tight loop, so we increase the max allowed to be 8 times
-     * normal.
+     * SD_GO_OP_MAX is set for normal operation which is polled every 4 or
+     * so ms.  SA hits it in a tight loop, so we increase the max allowed
+     * to be 8 times normal.  We have observed it takes 7 or so iterations
+     * before going operational.
      */
     sa_op_cnt = 0;
     do {
@@ -1107,7 +1119,6 @@ implementation {
       rsp = sd_send_acmd();
     } while ((rsp & MSK_IDLE) && (sa_op_cnt < (SD_GO_OP_MAX * 8)));
 
-    nop();
     if (sa_op_cnt >= (SD_GO_OP_MAX * 8))
       sd_panic(48, sa_op_cnt);
   }
