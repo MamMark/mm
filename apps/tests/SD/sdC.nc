@@ -50,6 +50,7 @@ implementation {
 
   components new SD0_ArbC();
   sdP.SDResource -> SD0_ArbC;
+  sdP.SDread     -> SD0_ArbC;
 
   components SD0C;
   sdP.SDraw -> SD0C;

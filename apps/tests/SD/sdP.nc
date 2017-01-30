@@ -1,5 +1,6 @@
 /**
- * Copyright @ 2010 Carl W. Davis
+ * Copyright (c) 2010 Carl W. Davis
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +33,11 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @author Carl W. Davis
+ * @author Eric B. Decker <cire831@gmail.com>
  *
+ * Controlling defines:
+ *
+ * SD_TEST_STANDALONE   use standalong (SDsa) interface
  */
 
 /**
@@ -41,10 +46,11 @@
 
 #include "sd_cmd.h"
 #include "sd.h"
+#include <platform_pin_defs.h>
 
 
 uint8_t d[514];
-//volatile bool sd_wait = 1;
+volatile bool sd_wait = 1;
 
 
 module sdP {
@@ -52,6 +58,7 @@ module sdP {
     interface Boot;
     interface SDraw;
     interface SDsa;
+    interface SDread;
     interface Resource as SDResource;
     interface Boot as FS_OutBoot;
   }
@@ -61,8 +68,17 @@ implementation {
 
 #include "platform_spi_sd.h"
 
+  typedef enum {
+    READ0,
+    READ1,
+    READ2,
+    READ3,
+    READ4
+  } sd_state_t;
+
   sd_cmd_t *cmd;			// Command Structure
   uint8_t   rsp;
+  sd_state_t sd_state;
 
   /* CMD8 with voltage selelcted, aa as the echo back, and crc of 87 */
   //const uint8_t cmd8[] = {
@@ -93,13 +109,11 @@ implementation {
     rsp         = call SDraw.get();
     call SDraw.end_op();
 
-#ifdef notdef
     /* At a very minimum, we must allow 3.3V. */
     if ((cmd->rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
-      sd_panic_idle(35, cmd->rsp[2]);
+      bkpt();
       return;
     }
-#endif
   }
 
 
@@ -265,44 +279,85 @@ implementation {
 
 
   event void Boot.booted() {
-    bkpt();
-//    signal SDResource.granted();
+    nop();
+
+#ifdef SD_TEST_STANDALONE
+    call SDsa.reset();
+    call SDsa.read(0, d);
+    WIGGLE_TELL;
+    call SDsa.read(0x10000, d);
+    call SDsa.write(0x10000, d);
+    call SDsa.off();
+    while(1) ;
+#endif
+
+    call SDResource.request();
     call SDResource.request();
   }
 
 
   event void SDResource.granted() {
+    nop();
+    nop();
+    sd_state = READ0;
+    set(0xff);
+    call SDread.read(0x00000, d);
+  }
+
+  event void SDread.readDone(uint32_t blk_id, uint8_t* buf, error_t error) {
     uint16_t i;
 
     nop();
-    nop();
-    call SDResource.release();
-    call SDsa.reset();
-    cmd = call SDraw.cmd_ptr();
+    switch(sd_state) {
+      case READ0:
+        call SDread.read(0x08000, d);
+        sd_state = READ1;
+        break;
 
-    nop();
-    call SDsa.read(0, d);
-    call SDsa.read(0, d);
-    set(0xff);
-    nop();
-    call SDsa.read(0x08000, d);
-    call SDsa.read(0x08000, d);
-    call SDsa.read(0x10000, d);
-    call SDsa.read(0x20000, d);
-    call SDsa.read(0x40000, d);
-    for (i = 0; i < 514; i++)
-      d[i] = i + 1;
-    nop();
-    call SDsa.write(0x5000, d);
-    set(0);
-    nop();
-    call SDsa.read(0x5000, d);
-    send_cmd8();
-    get_ocr();				// CMD58
-    get_cid();				// CMD10
-    get_csd();				// CMD9
-    get_status();			// CMD13
-    get_scr();				// ACMD51
+      case READ1:
+        call SDread.read(0x10000, d);
+        sd_state = READ2;
+        break;
+
+      case READ2:
+        call SDread.read(0x20000, d);
+        sd_state = READ3;
+        break;
+
+      case READ3:
+        call SDread.read(0x40000, d);
+        sd_state = READ4;
+        break;
+
+      case READ4:
+        call SDResource.release();
+        call SDsa.reset();
+        cmd = call SDraw.cmd_ptr();
+
+        nop();
+        call SDsa.read(0, d);
+        call SDsa.read(0, d);
+        set(0xff);
+        nop();
+        call SDsa.read(0x00000, d);
+        call SDsa.read(0x08000, d);
+        call SDsa.read(0x10000, d);
+        call SDsa.read(0x20000, d);
+        call SDsa.read(0x40000, d);
+        for (i = 0; i < 514; i++)
+          d[i] = i + 1;
+        nop();
+        call SDsa.write(0x5000, d);
+        set(0);
+        nop();
+        call SDsa.read(0x5000, d);
+        send_cmd8();
+        get_ocr();				// CMD58
+        get_cid();				// CMD10
+        get_csd();				// CMD9
+        get_status();                           // CMD13
+        get_scr();				// ACMD51
+    }
   }
 
 
