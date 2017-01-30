@@ -95,6 +95,7 @@ implementation {
    */
   void get_ocr() {
     uint8_t ocr_data[4];
+    uint8_t x_rsp[4];
 
     call SDraw.start_op();
     cmd->cmd    = SD_SEND_OCR;
@@ -103,14 +104,14 @@ implementation {
     ocr_data[1] = call SDraw.get();
     ocr_data[2] = call SDraw.get();
     ocr_data[3] = call SDraw.get();
-    rsp         = call SDraw.get();
-    rsp         = call SDraw.get();
-    rsp         = call SDraw.get();
-    rsp         = call SDraw.get();
+    x_rsp[0]    = call SDraw.get();
+    x_rsp[1]    = call SDraw.get();
+    x_rsp[2]    = call SDraw.get();
+    x_rsp[3]    = call SDraw.get();
     call SDraw.end_op();
 
     /* At a very minimum, we must allow 3.3V. */
-    if ((cmd->rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
+    if ((x_rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
       bkpt();
       return;
     }
