@@ -276,7 +276,7 @@ implementation {
   }
 
   const uint8_t cmd55[] = {
-    SD_APP_CMD, 0, 0, 0, 0, 0xff	/* when crc's get implemented need to change. */
+    SD_APP_CMD, 0, 0, 0, 0, 0xff
   };
 
 
@@ -703,9 +703,10 @@ implementation {
     /*
      * if we haven't seen the token yet then try again.  We just repost
      * ourselves to try again.  This lets others run.  We've observed
-     * that in a tight loop it took about 50-60 loops before we saw the token
-     * about 300 us.  Not enough to kick a timer off (ms granularity) but
-     * long enough that we don't want to sit on the cpu.
+     * that in a tight loop it takes about 30-60 loops before we saw the token,
+     * between 300 us and 1ms.  Not enough to kick a timer off (ms granularity) but
+     * long enough that we don't want to sit on the cpu.  YMMV depending on what
+     * manufacture of  uSD card we are using.
      */
     if (tmp == 0xFF) {
       post sd_read_task();
@@ -1157,13 +1158,11 @@ implementation {
     /* read till we get a start token or timeout */
     do {
       sd_read_tok_count++;
-      tmp = sd_get();			/* read a byte from the SD */
+      tmp = sd_get();			/* looking for start token */
 
-      if (((tmp & MSK_TOK_DATAERROR) == 0) || (sd_read_tok_count >= SD_READ_TOK_MAX)) {
-	/*
-	 *Clock out a byte before returning, let SD finish
-	 */
-	sd_get();
+      if (((tmp & MSK_TOK_DATAERROR) == 0) ||
+          (sd_read_tok_count >= SD_READ_TOK_MAX)) {
+	sd_get();               /* let SD finish, clock one more */
         call Panic.panic(PANIC_MS, 49, tmp, sd_read_tok_count, 0, blk_id);
 	return;
       }

@@ -1,34 +1,38 @@
-Notes on resetting the SD.
+
+Notes on SDs:
+
+Resetting:
 
 Resetting the SD into SPI mode consists of powering up and asserting CS while
 sending CMD0 (FORCE_IDLE, SD_RESET).  Prior to talking to the card for the 
 first time there is a power up window and the SD card needs to be clocked for
-74 clocks, 1ms, and supply ramp up time.  We've tested different chips under
-various conditions and wing how much time we spend.
+74 clocks, 1ms, and supply ramp up time (max of those).  We adhere to the 1ms
+turn on time, then send 10 bytes (80 clocks).
 
 We have two kinds of resets.  The first is the normal reset utilized by the
 normal system.  It uses tinyos constructs and is friendly to other tasks and
 pieces of code running.  The mechanism uses task polls and timer polls for
-seeing if the sd card has reached certian states.  40 bytes are clocked out
-for the initial delay.
+seeing if the sd card has reached certian states.
 
 The other reset is a stand alone reset.  No tinyos services are used and
-tight loops are used.  xxx bytes are clocked out for the initial delay.
-
+tight loops are used.  We use the underlying 1usec ticker to do the initial
+delay followed by 10 bytes for 80 clocks.
 
 		<--- t_pwr_on
     pwr on
     configure
+    pwr on delay
     csn = 1
     n byte clocking (delay bytes)  <--- modify # of clocks
 		<--- t_to_first_cmd
     send FORCE_IDLE (CMD_0)
-		<---  dt = TAR - t_pwr_on
+		<---  dt = TA_usec->R - t_pwr_on
 
 
 request SD (turn on), normal reset, release (turn off), then SDsa.reset.
-The SDsa.reset will not take as long because we haven't bleed off pwr.
 
+
+Kingston uSD 2G
 
 SanDisk 2G
 		1st cmd		full
@@ -48,7 +52,8 @@ SDsa.reset:	596 uis		154 mis   (256 delay)
 
 Power up sequence:  (command sequence and responses)
 Note: After sending any SPI command, the SD needs 8 more clocks to finish
-processing and to go back to sleep.  That is why the one extra sd_get().
+processing and to go back to sleep.  We do this when we are powering
+down.
 
 clocked at 8MHz.  1 byte time is 1 uS.
 clocked at 4MHz.  1 byte time is 2 uS.
@@ -101,24 +106,6 @@ acmd: SD_GO_OP       (ACMD41), arg: 0
 
     repeats 3 times.
 
-intermediate breakpoints
-$1 = 132
-$2 = 11530
-$3 = 11497
-$4 = 12
-p SDspP__sd_go_op_count
-$5 = 0x3
-
-free run:
-$6 = 132
-$7 = 30954
-$8 = 30921
-$9 = 32
-p SDspP__sd_go_op_count
-$10 = 0x8
-
-Takes about 20-32mS POR
-
 
 SDsa.reset...
   start up clocks...  256 ... 561us
@@ -143,3 +130,15 @@ SDsa.read(0, xxx)
   0x00040000:       1932
   0x00005000: w
   0x00005000:       1561 us
+
+
+
+Start up - Reset sequence
+cmd0 0
+        ff
+        R1:01   idle
+
+cmd55 0
+        ff
+        R1:01
+        ff
