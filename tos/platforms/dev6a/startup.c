@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Eric B. Decker
+ * Copyright (c) 2016-2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -395,24 +395,26 @@ void __debug_init() {
   SCnSCB->ACTLR |= SCnSCB_ACTLR_DISOOFP_Pos |
     SCnSCB_ACTLR_DISDEFWBUF_Msk;
 
+#ifdef notdef
   SYSCTL->PERIHALT_CTL =
     SYSCTL_PERIHALT_CTL_HALT_T16_0      |       /* TA0 TMicro */
     SYSCTL_PERIHALT_CTL_HALT_T16_1      |       /* TA1 TMilli */
     SYSCTL_PERIHALT_CTL_HALT_T16_2      |
     SYSCTL_PERIHALT_CTL_HALT_T16_3      |
     SYSCTL_PERIHALT_CTL_HALT_T32_0      |       /* raw usecs */
-//    SYSCTL_PERIHALT_CTL_HALT_EUA0       |
-//    SYSCTL_PERIHALT_CTL_HALT_EUA1       |
-//    SYSCTL_PERIHALT_CTL_HALT_EUA2       |
-//    SYSCTL_PERIHALT_CTL_HALT_EUA3       |
-//    SYSCTL_PERIHALT_CTL_HALT_EUB0       |
-//    SYSCTL_PERIHALT_CTL_HALT_EUB1       |
-//    SYSCTL_PERIHALT_CTL_HALT_EUB2       |
-//    SYSCTL_PERIHALT_CTL_HALT_EUB3       |
+    SYSCTL_PERIHALT_CTL_HALT_EUA0       |
+    SYSCTL_PERIHALT_CTL_HALT_EUA1       |
+    SYSCTL_PERIHALT_CTL_HALT_EUA2       |
+    SYSCTL_PERIHALT_CTL_HALT_EUA3       |
+    SYSCTL_PERIHALT_CTL_HALT_EUB0       |
+    SYSCTL_PERIHALT_CTL_HALT_EUB1       |
+    SYSCTL_PERIHALT_CTL_HALT_EUB2       |
+    SYSCTL_PERIHALT_CTL_HALT_EUB3       |
     SYSCTL_PERIHALT_CTL_HALT_ADC        |
     SYSCTL_PERIHALT_CTL_HALT_WDT        |
     SYSCTL_PERIHALT_CTL_HALT_DMA
     ;
+#endif
 }
 
 void __ram_init() {
@@ -723,6 +725,7 @@ void __system_init(void) {
   __ram_init();
   __pwr_init();
   __flash_init();
+
   BITBAND_PERI(P1->OUT, 0) = 1;
   __core_clk_init();
   BITBAND_PERI(P1->OUT, 0) = 0;
