@@ -73,23 +73,34 @@ int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
 void __system_init();
 
+void handler_debug() {
+//  WIGGLE_TELL;
+  __bkpt(1);
+}
+
+
 void HardFault_Handler() __attribute__((interrupt));
 void HardFault_Handler() {
-  __bkpt();
+
+  handler_debug();
+
   /* If set, make sure to clear:
    *
    * CFSR.MMARVALID, BFARVALID
    */
-#ifdef notdef
   while (1) {
     __nop();
   }
-#endif
 }
 
 void __default_handler()  __attribute__((interrupt));
 void __default_handler() {
-  __bkpt(1);
+
+  handler_debug();
+
+  while (1) {
+    __nop();
+  }
 }
 
 
@@ -107,15 +118,15 @@ void Debug_Handler()      __attribute__((weak));
 void PendSV_Handler()     __attribute__((weak));
 void SysTick_Handler()    __attribute__((weak));
 
-void Nmi_Handler()        { __bkpt(1); while(1) { __nop(); } }
-//void HardFault_Handler()  { __bkpt(1); while(1) { __nop(); } }
-void MpuFault_Handler()   { __bkpt(1); while(1) { __nop(); } }
-void BusFault_Handler()   { __bkpt(1); /* while(1) { __nop(); }*/ }
-void UsageFault_Handler() { __bkpt(1); while(1) { __nop(); } }
-void SVCall_Handler()     { __bkpt(1); while(1) { __nop(); } }
-void Debug_Handler()      { __bkpt(1); while(1) { __nop(); } }
-void PendSV_Handler()     { __bkpt(1); while(1) { __nop(); } }
-void SysTick_Handler()    { __bkpt(1); while(1) { __nop(); } }
+void Nmi_Handler()        { handler_debug(); while(1) { __nop(); } }
+//void HardFault_Handler()  { handler_debug(); while(1) { __nop(); } }
+void MpuFault_Handler()   { handler_debug(); while(1) { __nop(); } }
+void BusFault_Handler()   { handler_debug(); while(1) { __nop(); } }
+void UsageFault_Handler() { handler_debug(); while(1) { __nop(); } }
+void SVCall_Handler()     { handler_debug(); while(1) { __nop(); } }
+void Debug_Handler()      { handler_debug(); while(1) { __nop(); } }
+void PendSV_Handler()     { handler_debug(); while(1) { __nop(); } }
+void SysTick_Handler()    { handler_debug(); while(1) { __nop(); } }
 
 void PSS_Handler()        __attribute__((weak, alias("__default_handler")));
 void CS_Handler()         __attribute__((weak, alias("__default_handler")));
