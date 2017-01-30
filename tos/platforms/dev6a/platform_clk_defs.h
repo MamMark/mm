@@ -72,6 +72,7 @@
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
 #define MSP432_SD_DIV     4
+#undef  TIME_BINARY
 
 #elif MSP432_CLK == 33554432
 #warning using Main Clock of 32MiHz
@@ -84,6 +85,7 @@
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 2
 #define MSP432_SD_DIV     2
+#define TIME_BINARY       1
 
 #elif MSP432_CLK == 24000000
 #warning using Main Clock of 24MHz
@@ -96,6 +98,7 @@
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 4
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
 #define MSP432_SD_DIV     2
+#undef  TIME_BINARY
 
 #elif MSP432_CLK == 16777216
 #define MSP432_DCOCLK      16777216UL
@@ -106,7 +109,8 @@
 #define MSP432_T32_ONE_SEC 1048576UL
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 1
-#define MSP432_SD_DIV     2
+#define MSP432_SD_DIV     4
+#define TIME_BINARY       1
 
 #elif MSP432_CLK == 10000000
 #warning using Main Clock of 10MHz
@@ -119,6 +123,7 @@
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 1
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 5
 #define MSP432_SD_DIV     1
+#undef  TIME_BINARY
 #endif
 
 #endif    /* __PLATFORM_CLK_DEFS__ */
