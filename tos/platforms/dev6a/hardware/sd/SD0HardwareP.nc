@@ -234,6 +234,8 @@ const msp432_usci_config_t sd_spi_config = {
     b = call DmaRX.dma_enabled();
     if (a || b)
       sd_panic(10, a, b);
+    call DmaTX.dma_clear_int();
+    call DmaRX.dma_clear_int();
   }
 
 
