@@ -716,9 +716,9 @@ implementation {
      */
     sdc.sd_state = SDS_READ_DMA;
     sd_chk_clean();
+    call HW.sd_dma_enable_int();
     call HW.sd_start_dma(NULL, sdc.data_ptr, SD_BUF_SIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
-    call HW.sd_dma_enable_int();
     return;
   }
 
@@ -943,9 +943,9 @@ implementation {
      */
     sdc.sd_state = SDS_WRITE_DMA;
     sd_chk_clean();
+    call HW.sd_dma_enable_int();
     call HW.sd_start_dma(data, NULL, SD_BUF_SIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
-    call HW.sd_dma_enable_int();
     return SUCCESS;
   }
 
@@ -1346,12 +1346,6 @@ implementation {
    *************************************************************************/
 
   task void dma_task() {
-    /*
-     * always disable the interrupt, only way we got here.
-     * need to do from task level to avoid any interference
-     * with other dma users.
-     */
-    call HW.sd_dma_disable_int();
     call SDtimer.stop();
     switch (sdc.sd_state) {
       case SDS_READ_DMA:
@@ -1370,6 +1364,7 @@ implementation {
 
 
   async event void HW.sd_dma_interrupt() {
+    call HW.sd_dma_disable_int();
     post dma_task();
   }
 
