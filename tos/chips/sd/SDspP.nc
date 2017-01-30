@@ -49,10 +49,12 @@
 
 /*
  * when resetting.   How long to wait before trying to send the GO_OP
- * to the SD card again.  We let other things happen in the tinyOS system.
+ * to the SD card again.  We let other things happen in the system.
  * Units are in millisecs (TMilli).
+ *
+ * Note:POLL_TIME of 1 gives us about 750us.
  */
-#define GO_OP_POLL_TIME 4
+#define GO_OP_POLL_TIME 1
 
 #ifdef FAIL
 #warning "FAIL defined, undefining, it should be an enum"
@@ -573,7 +575,11 @@ implementation {
     sd_pwr_on_time_us = call Platform.usecsRaw();
     call HW.sd_on();
     call HW.sd_spi_enable();
-    call SDtimer.startOneShot(1);
+
+    /*
+     * we want at least 1ms, Using 2 gives us approx 1.6ms as observed
+     */
+    call SDtimer.startOneShot(2);
   }
 
 
