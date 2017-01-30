@@ -456,7 +456,7 @@ implementation {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
-    if (sdc.sd_state) {
+    if (sdc.sd_state != SDS_OFF_TO_ON) {
       sd_panic_idle(28, sdc.sd_state);
       return;
     }
@@ -784,7 +784,7 @@ implementation {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
-    if (sdc.sd_state) {
+    if (sdc.sd_state != SDS_IDLE) {
       sd_panic_idle(37, sdc.sd_state);
       return EBUSY;
     }
@@ -904,7 +904,7 @@ implementation {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
-    if (sdc.sd_state) {
+    if (sdc.sd_state != SDS_IDLE) {
       sd_panic_idle(41, sdc.sd_state);
       return EBUSY;
     }
@@ -992,7 +992,7 @@ implementation {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
-    if (sdc.sd_state) {
+    if (sdc.sd_state != SDS_IDLE) {
       sd_panic_idle(43, sdc.sd_state);
       return EBUSY;
     }
