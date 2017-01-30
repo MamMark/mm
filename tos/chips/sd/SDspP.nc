@@ -137,7 +137,7 @@ implementation {
 #define SD_MAJIK 0x5aa5
 #define CID_NONE 0xff;
 
-  struct {
+  norace struct {
     uint16_t   majik_a;
     sd_state_t sd_state;
     uint8_t    cur_cid;			/* current client */
