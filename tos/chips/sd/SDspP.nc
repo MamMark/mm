@@ -604,7 +604,7 @@ implementation {
 
   async event void ResourceDefaultOwner.requested() {
     if (sdc.sd_state != SDS_OFF) {
-      sd_panic(0x80, 0);
+      sd_panic(33, 0);
     }
     sdc.sd_state = SDS_OFF_TO_ON;
     post sd_pwr_up_task();
@@ -612,7 +612,7 @@ implementation {
 
 
   async event void ResourceDefaultOwner.immediateRequested() {
-    sd_panic(0x81, 0);
+    sd_panic(34, 0);
   }
 
 
