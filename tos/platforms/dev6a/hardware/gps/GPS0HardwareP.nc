@@ -184,9 +184,12 @@ implementation {
       case 1228800:     config = &gps_1228800_config;    break;
       default:          gps_panic(2, speed, 0);          break;
     }
-    if (config)
-      call Usci.configure(config, FALSE);
+    if (!config)
+	gps_panic(1, speed, 0);
+    call Usci.configure(config, FALSE);
+
     /* Usci.configure turns off all interrupts */
+
   }
 
   async command void HW.gps_rx_int_enable() {
