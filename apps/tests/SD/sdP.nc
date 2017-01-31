@@ -66,7 +66,7 @@ module sdP {
 
 implementation {
 
-#include "platform_spi_sd.h"
+//#include "platform_spi_sd.h"
 
   typedef enum {
     READ0,
@@ -285,14 +285,12 @@ implementation {
 #ifdef SD_TEST_STANDALONE
     call SDsa.reset();
     call SDsa.read(0, d);
-    WIGGLE_TELL;
     call SDsa.read(0x10000, d);
     call SDsa.write(0x10000, d);
     call SDsa.off();
     while(1) ;
 #endif
 
-    call SDResource.request();
     call SDResource.request();
   }
 
