@@ -74,8 +74,7 @@ void __Reset();                 /* start up entry point */
 void __system_init();
 
 void handler_debug() {
-//  WIGGLE_TELL;
-  __bkpt(1);
+  ROM_DEBUG_BREAK(0);
 }
 
 
@@ -88,20 +87,10 @@ void HardFault_Handler() {
    *
    * CFSR.MMARVALID, BFARVALID
    */
-  while (1) {
-    __nop();
-  }
 }
 
 void __default_handler()  __attribute__((interrupt));
-void __default_handler() {
-
-  handler_debug();
-
-  while (1) {
-    __nop();
-  }
-}
+void __default_handler()  { handler_debug(); }
 
 
 /*
@@ -118,15 +107,15 @@ void Debug_Handler()      __attribute__((weak));
 void PendSV_Handler()     __attribute__((weak));
 void SysTick_Handler()    __attribute__((weak));
 
-void Nmi_Handler()        { handler_debug(); while(1) { __nop(); } }
-//void HardFault_Handler()  { handler_debug(); while(1) { __nop(); } }
-void MpuFault_Handler()   { handler_debug(); while(1) { __nop(); } }
-void BusFault_Handler()   { handler_debug(); while(1) { __nop(); } }
-void UsageFault_Handler() { handler_debug(); while(1) { __nop(); } }
-void SVCall_Handler()     { handler_debug(); while(1) { __nop(); } }
-void Debug_Handler()      { handler_debug(); while(1) { __nop(); } }
-void PendSV_Handler()     { handler_debug(); while(1) { __nop(); } }
-void SysTick_Handler()    { handler_debug(); while(1) { __nop(); } }
+void Nmi_Handler()        { handler_debug(); }
+//void HardFault_Handler()  { handler_debug(); }
+void MpuFault_Handler()   { handler_debug(); }
+void BusFault_Handler()   { handler_debug(); }
+void UsageFault_Handler() { handler_debug(); }
+void SVCall_Handler()     { handler_debug(); }
+void Debug_Handler()      { handler_debug(); }
+void PendSV_Handler()     { handler_debug(); }
+void SysTick_Handler()    { handler_debug(); }
 
 void PSS_Handler()        __attribute__((weak, alias("__default_handler")));
 void CS_Handler()         __attribute__((weak, alias("__default_handler")));
@@ -262,7 +251,7 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
  *
  * o enable all faults to go to their respective handlers
  *   mpu still hardfaults.
- *   others are caught with __bkpt()
+ *   others are caught with ROM_DEBUG_BREAK(0)
  *
  * Potential issue with PendSV.
  * http://embeddedgurus.com/state-space/2011/09/whats-the-state-of-your-cortex/
@@ -656,7 +645,7 @@ void __core_clk_init() {
     if (--timeout == 0) {
       CS->IFG;
       CS->STAT;
-      __bkpt(0);                /* panic?  what to do, what to do */
+      ROM_DEBUG_BREAK(0);       /* panic?  what to do, what to do */
     }
     BITBAND_PERI(CS->CLRIFG,CS_CLRIFG_CLR_LFXTIFG_OFS) = 1;
   }
@@ -762,7 +751,7 @@ void __system_init(void) {
  *
  * leaves interrupts off
  *
- * experiment with configurable/permanent bkpts:
+ * experiment with configurable/permanent ROM_DEBUG_BREAK:
  *      https://answers.launchpad.net/gcc-arm-embedded/+question/248410
  */
 
@@ -877,6 +866,6 @@ void __Reset() {
 
   main();
   while (1) {
-    __BKPT(0);
+    ROM_DEBUG_BREAK(0);
   }
 }

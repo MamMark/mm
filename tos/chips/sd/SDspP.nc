@@ -271,6 +271,7 @@ implementation {
     uint8_t tmp;
     tmp = sd_get();
     if (tmp != 0xff) {
+      ROM_DEBUG_BREAK(0);
       sd_warn(23, tmp);
     }
   }

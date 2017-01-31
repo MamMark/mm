@@ -112,7 +112,7 @@ implementation {
 
     /* At a very minimum, we must allow 3.3V. */
     if ((x_rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
-      bkpt();
+      ROM_DEBUG_BREAK(0);
       return;
     }
   }

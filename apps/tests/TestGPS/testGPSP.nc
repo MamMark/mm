@@ -55,7 +55,7 @@ implementation {
   event void Boot.booted() {
     uint32_t nxt, t0;
 
-//    bkpt();
+//    ROM_DEBUG_BREAK(0);
 
     nop();
     nop();
@@ -97,7 +97,7 @@ implementation {
 
   event void Boot.booted() {
 
-//    bkpt();
+//    ROM_DEBUG_BREAK(0);
 
     call testTimer.startOneShot(0);
   }
