@@ -126,4 +126,6 @@
 #undef  TIME_BINARY
 #endif
 
+#define USECS_VAL       (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV
+
 #endif    /* __PLATFORM_CLK_DEFS__ */

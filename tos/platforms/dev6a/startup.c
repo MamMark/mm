@@ -73,8 +73,32 @@ int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
 void __system_init();
 
+volatile        uint8_t handler_fault_wait = 1;
+
 void handler_debug() {
+  uint32_t t0, i, exception;
+
+  exception = __get_xPSR() & 0x1ff;
+  WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;      /* 5 */
+  t0 = USECS_VAL;
+  while ((USECS_VAL - t0) < WIGGLE_DELAY) ;
+
+  for (i = 0; i < exception; i++)
+    WIGGLE_EXC;
+
+  t0 = USECS_VAL;
+  while ((USECS_VAL - t0) < WIGGLE_DELAY) ;
+  WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;      /* 5 */
+
+  t0 = USECS_VAL;
+  while ((USECS_VAL - t0) < WIGGLE_DELAY) ;
+
   ROM_DEBUG_BREAK(0);
+
+#ifdef HANDLER_FAULT_WAIT
+  while (handler_fault_wait) ;
+#endif
+
 }
 
 
