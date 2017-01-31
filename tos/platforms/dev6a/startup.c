@@ -334,8 +334,9 @@ void __pins_init() {
 
   /*
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
+   * t_exc is 8.5 (0pO).
    */
-  P8->DIR = 0x41;               /* tell is an output */
+  P8->DIR = 0x61;               /* tell/t_exc are outputs */
   P8->SEL1 = 1;
 
   /*
@@ -821,19 +822,20 @@ void __Reset() {
    * 4.4 HSMCLK
    * 7.0 SMCLK
    */
-  P4->DIR  = 0x1D;
   P4->SEL0 = 0x1C;
   P4->SEL1 = 0x00;
+  P4->DIR  = 0x1C;
 
-  P7->DIR  = 0x01;              /* smclk */
-  P7->SEL0 = 0x01;
+  P7->SEL0 = 0x01;              /* smclk */
   P7->SEL1 = 0x00;
+  P7->DIR  = 0x01;
 
   /*
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
+   * t_exc (tell_exeception) is 8.5 0pO
    */
   P8->OUT = 0;                  /* set tell up */
-  P8->DIR = 0x41;
+  P8->DIR = 0x61;
   P8->SEL1 = 1;
 
   /*

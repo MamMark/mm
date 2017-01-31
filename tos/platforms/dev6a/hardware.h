@@ -178,7 +178,7 @@
  *  03   .2	0pO	sd1_somi (LED2_BLUE)     63 O .2	0pI
  *       .3	0pI     sd1_simo                      .3	0pI
  *       .4	0pI	si446x_cts                    .4	0pI
- *       .5	0pI	                              .5	0pI
+ *       .5	0pI	                              .5	0pO     tell_exception
  *       .6	0pI	                              .6	0pO     tell
  *       .7	0pI	                              .7	0pI
  *
