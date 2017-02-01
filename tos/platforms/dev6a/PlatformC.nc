@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Eric B. Decker
+ * Copyright (c) 2016-2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@ configuration PlatformC {
   provides {
     interface Init as PlatformInit;
     interface Platform;
+    interface BootParams;
   }
   uses interface Init as PeripheralInit;
 }
@@ -51,6 +52,7 @@ implementation {
   Platform = PlatformP;
   PlatformInit = PlatformP;
   PeripheralInit = PlatformP.PeripheralInit;
+  BootParams = PlatformP;
 
   PlatformP.Stack -> StackC;
 

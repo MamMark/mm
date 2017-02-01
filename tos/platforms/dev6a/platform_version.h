@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 (c) Eric B. Decker
+ * Copyright 2014, 2017 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

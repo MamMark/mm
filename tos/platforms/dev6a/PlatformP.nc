@@ -41,13 +41,25 @@
 #include "hardware.h"
 #include "cpu_stack.h"
 #include "platform_clk_defs.h"
+#include "platform_version.h"
 
 noinit uint32_t stack_size;
+
+const uint8_t _major = MAJOR;
+const uint8_t _minor = MINOR;
+const uint8_t _build = _BUILD;
+
+
+#define BOOT_MAJIK 0x01021910
+#define FUBAR_MAX 0xffff
+noinit uint32_t boot_majik;
+noinit uint16_t boot_count;
 
 module PlatformP {
   provides {
     interface Init;
     interface Platform;
+    interface BootParams;
   }
   uses {
     interface Init as PlatformPins;
@@ -60,12 +72,45 @@ module PlatformP {
 
 implementation {
   command error_t Init.init() {
+
+    /*
+     * check to see if memory is okay.   The boot_majik cell tells the story.
+     * If it isn't okay we lost RAM, reinitilize boot_count.
+     */
+
+    if (boot_majik != BOOT_MAJIK) {
+      boot_majik = BOOT_MAJIK;
+      boot_count = 0;
+    }
+    if (boot_count != FUBAR_MAX)
+      boot_count++;
+
 //    call Stack.init();
 //    stack_size = call Stack.size();
 
     call PlatformLeds.init();   // Initializes the Leds
     call PeripheralInit.init();
     return SUCCESS;
+  }
+
+
+  async command uint16_t BootParams.getBootCount() {
+    return boot_count;
+  }
+
+
+  async command uint8_t BootParams.getMajor() {
+    return _major;
+  }
+
+
+  async command uint8_t BootParams.getMinor() {
+    return _minor;
+  }
+
+
+  async command uint8_t BootParams.getBuild() {
+    return _build;
   }
 
 
