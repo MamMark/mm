@@ -704,8 +704,8 @@ implementation {
     /*
      * if we haven't seen the token yet then try again.  We just repost
      * ourselves to try again.  This lets others run.  We've observed
-     * that in a tight loop it takes about 30-60 loops before we saw the token,
-     * between 300 us and 1ms.  Not enough to kick a timer off (ms granularity) but
+     * that in a tight loop it takes about 30-110 loops before we saw the token,
+     * between 300 us and 1.8ms.  Not enough to kick a timer off (ms granularity) but
      * long enough that we don't want to sit on the cpu.  YMMV depending on what
      * manufacture of  uSD card we are using.
      */

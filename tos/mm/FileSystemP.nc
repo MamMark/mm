@@ -253,7 +253,7 @@ implementation {
 	   */
 	  if (empty) {
 	    fsc.dblk_nxt = cur_blk;
-	    break;
+	    break;              /* break out of switch, we be done */
 	  }
 	  fs_panic_idle(8, (parg_t) cur_blk);
 	  return;
