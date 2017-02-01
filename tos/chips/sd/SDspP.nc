@@ -54,7 +54,7 @@
  *
  * Note:POLL_TIME of 1 gives us about 750us.
  */
-#define GO_OP_POLL_TIME 1
+#define GO_OP_POLL_TIME 10
 
 #ifdef FAIL
 #warning "FAIL defined, undefining, it should be an enum"
@@ -269,9 +269,9 @@ implementation {
 
   void sd_kill_first_back() {
     uint8_t tmp;
+
     tmp = sd_get();
     if (tmp != 0xff) {
-      ROM_DEBUG_BREAK(0);
       sd_warn(23, tmp);
     }
   }
