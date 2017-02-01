@@ -55,4 +55,10 @@ implementation {
   components SD0C;
   sdP.SDraw -> SD0C;
   sdP.SDsa  -> SD0C;
+
+  components new TimerMilliC();
+  sdP.Timer -> TimerMilliC;
+
+  components CollectC;
+  sdP.Collect -> CollectC;
 }

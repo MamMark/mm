@@ -47,6 +47,7 @@
 #include "sd_cmd.h"
 #include "sd.h"
 #include <platform_pin_defs.h>
+#include "typed_data.h"
 
 
 uint8_t d[514] __attribute__ ((aligned (4)));
@@ -60,6 +61,9 @@ module sdP {
     interface SDsa;
     interface SDread;
     interface Resource as SDResource;
+
+    interface Collect;
+    interface Timer<TMilli>;
   }
 }
 
@@ -70,7 +74,8 @@ implementation {
     READ1,
     READ2,
     READ3,
-    READ4
+    READ4,
+    COLLECT
   } sd_state_t;
 
   sd_cmd_t *cmd;			// Command Structure
@@ -301,6 +306,7 @@ implementation {
   event void SDResource.granted() {
     nop();
     nop();
+//    WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
     sd_state = READ0;
     call SDread.read(0x00000, d);
   }
@@ -334,6 +340,7 @@ implementation {
 
       case READ4:
         call SDResource.release();
+//        WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
         call SDsa.reset();
         cmd = call SDraw.cmd_ptr();
 
@@ -360,6 +367,23 @@ implementation {
         get_csd();				// CMD9
         get_status();                           // CMD13
         get_scr();				// ACMD51
+//        WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
+        call Timer.startPeriodic(2048);
+        sd_state = COLLECT;
+        break;
+
+      case COLLECT: break;
     }
+  }
+
+  event void Timer.fired() {
+    dt_test_nt *tp;
+
+    WIGGLE_TELL;
+    nop();
+    tp = (void *) d;
+    tp->len     = 256;
+    tp->dtype   = DT_TEST;
+    call Collect.collect(d, 256);
   }
 }
