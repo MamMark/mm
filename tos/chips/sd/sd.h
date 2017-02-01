@@ -118,7 +118,7 @@
  * we take longer than 3*.  And the failure timeout is set
  * to 300 ms.  This is all fairly arbitrary.
  */
-#define SD_WRITE_WARN_THRESHOLD	15
+#define SD_WRITE_WARN_THRESHOLD	300
 #define SD_WRITE_BUSY_TIMEOUT	300
 #define SD_ERASE_BUSY_TIMEOUT	20480
 
