@@ -8,7 +8,7 @@
 #ifndef __PLATFORM_TRACE_H__
 #define __PLATFORM_TRACE_H__
 
-#define TRACE_SIZE 64
+#define TRACE_SIZE 256
 
 typedef enum {
   T_REQ			= 1,
