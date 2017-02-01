@@ -518,7 +518,7 @@ implementation {
 	w_t = call lt.get();
 	w_diff = w_t - op_t0_ms;
 	rsp = sd_get();
-	call Panic.panic(PANIC_MS, 30, sdc.sd_state, (w_diff >> 16), w_diff & 0xffff, 0);
+	call Panic.panic(PANIC_MS, 30, sdc.sd_state, w_diff, 0, 0);
 	rsp = sd_get();
 	return;
 
@@ -863,8 +863,7 @@ implementation {
       max_write_time_ms = last_write_time_ms;
 
     if (last_write_time_ms > SD_WRITE_WARN_THRESHOLD) {
-      call Panic.warn(PANIC_MS, 128, (sdc.blk_start >> 16), (sdc.blk_start & 0xffff),
-		      (last_write_time_ms >> 16), (last_write_time_ms &0xffff));
+      call Panic.warn(PANIC_MS, 128, sdc.blk_start, last_write_time_ms, 0, 0);
     }
     cid = sdc.cur_cid;
     sdc.sd_state = SDS_IDLE;
@@ -1254,8 +1253,7 @@ implementation {
 
       if ((t = call Platform.usecsRaw()) < last_time) {
 	if (++time_wraps > 6)
-	  call Panic.panic(PANIC_MS, 54, time_wraps, t,
-			   (blk_id >> 16), blk_id & 0xffff);
+	  call Panic.panic(PANIC_MS, 54, time_wraps, t, blk_id, 0);
       }
       last_time = t;
     } while (1);
@@ -1263,7 +1261,7 @@ implementation {
     call HW.sd_clr_cs();		/* deassert. */
     t = sd_read_status();
     if (t)
-      call Panic.panic(PANIC_MS, 55, tmp, t, (blk_id >> 16), blk_id & 0xffff);
+      call Panic.panic(PANIC_MS, 55, tmp, t, blk_id, 0);
   }
 
 
