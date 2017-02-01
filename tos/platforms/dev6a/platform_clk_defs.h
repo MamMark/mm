@@ -43,7 +43,7 @@
 /*
  * The following defines control low level hw init.
  *
- * MSP432_DCOCLK       16777216 | 33554432 | 48000000   dcoclk
+ * MSP432_DCOCLK       16777216 | 33554432 | 48000000   dcoclk  see below.
  * MSP432_VCORE:       0 or 1                           core voltage
  * MSP432_FLASH_WAIT:  number of wait states, [0-3]     needed wait states
  * MSP432_T32_PS       (1 | 16 | 32)                    prescale divisor for t32
@@ -71,7 +71,7 @@
 #define MSP432_T32_ONE_SEC 3000000UL
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
-#define MSP432_SD_DIV     4
+#define MSP432_SD_DIV     1
 #undef  TIME_BINARY
 
 #elif MSP432_CLK == 33554432
@@ -84,7 +84,7 @@
 #define MSP432_T32_ONE_SEC 2097152
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 2
-#define MSP432_SD_DIV     2
+#define MSP432_SD_DIV     1
 #define TIME_BINARY       1
 
 #elif MSP432_CLK == 24000000
@@ -97,7 +97,7 @@
 #define MSP432_T32_ONE_SEC 24000000UL
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 4
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
-#define MSP432_SD_DIV     2
+#define MSP432_SD_DIV     1
 #undef  TIME_BINARY
 
 #elif MSP432_CLK == 16777216
@@ -109,7 +109,7 @@
 #define MSP432_T32_ONE_SEC 1048576UL
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 1
-#define MSP432_SD_DIV     4
+#define MSP432_SD_DIV     1
 #define TIME_BINARY       1
 
 #elif MSP432_CLK == 10000000
