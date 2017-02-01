@@ -96,7 +96,9 @@ void handler_debug() {
   ROM_DEBUG_BREAK(0);
 
 #ifdef HANDLER_FAULT_WAIT
-  while (handler_fault_wait) ;
+  while (handler_fault_wait) {
+    nop();
+  };
 #endif
 
 }
