@@ -124,6 +124,9 @@
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 5
 #define MSP432_SD_DIV     1
 #undef  TIME_BINARY
+
+#else
+#error MSP432_CLK has an unrecognized speed
 #endif
 
 #define USECS_VAL       (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV
