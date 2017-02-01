@@ -41,6 +41,7 @@
 
 #include <stdint.h>
 #include <msp432.h>
+#include <platform.h>
 #include <platform_clk_defs.h>
 #include <platform_pin_defs.h>
 
@@ -72,6 +73,20 @@ extern uint32_t __StackTop__;
 int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
 void __system_init();
+
+#ifdef MEMINIT_STOP
+#define MEMINIT_MAGIC0 0x1061
+#define MEMINIT_MAGIC1 0x1062
+
+typedef struct {
+  uint16_t mi_magic0;
+  uint16_t mi_stop;
+  uint16_t mi_magic1;
+} meminit_stop_t;
+
+volatile noinit meminit_stop_t meminit_stop;
+
+#endif          /* MEMINIT_STOP */
 
 volatile        uint8_t handler_fault_wait = 1;
 
@@ -879,6 +894,26 @@ void __Reset() {
   __system_init();
 
 //  timer_check();
+
+#ifdef MEMINIT_STOP
+  /*
+   * when debugging weird shit, we sometimes need to take a look at
+   * what was left over from a previous fault or crash.
+   *
+   * meminit_stop_flag when set will stop the system from coming up and
+   * initializing memory.
+   */
+
+  if (meminit_stop.mi_magic0 != MEMINIT_MAGIC0 ||
+      meminit_stop.mi_magic1 != MEMINIT_MAGIC1) {
+    meminit_stop.mi_magic0 = MEMINIT_MAGIC0;
+    meminit_stop.mi_stop   = 0;
+    meminit_stop.mi_magic1 = MEMINIT_MAGIC1;
+  }
+  while (meminit_stop.mi_stop) {
+    nop();
+  }
+#endif
 
   from = &__data_load__;
   to   = &__data_start__;;
