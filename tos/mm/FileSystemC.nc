@@ -1,5 +1,6 @@
 /**
- * Copyright @ 2010 Eric B. Decker, Carl W. Davis
+ * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2010 Eric B. Decker, Carl W. Davis
  * @author Eric B. Decker
  * @author Carl W. Davis
  * @date 4/23/2010
