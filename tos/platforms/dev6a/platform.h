@@ -4,11 +4,29 @@
  * (see TEP 107)
  */
 
+/*
+ * REQUIRE_PLATFORM:    force Platform wiring (usecsRaw, etc)
+ * REQUIRE_PANIC:       force Panic wiring in all modules that use panic
+ *                      no default Panic
+ *
+ * TRACE_MICRO:         Trace timestamps in usecs vs. msecs
+ * TRACE_USE_PLATFORM:  Trace use Platform.usecsRaw for timestamping
+ *
+ * HANDLER_FAULT_WAIT:  default exception handlers should finish in a
+ *                      busy wait.
+ * MEMINIT_STOP:        cause memory initilization to not be done (hangs)
+ *                      so one can poke around at memory.
+ * PANIC_WIGGLE:        enable panic code to emit pcode and where on the
+ *                      exception wiggle line.
+ */
+
 #define REQUIRE_PLATFORM
 #define REQUIRE_PANIC
-#define FORCE_ATOMIC
 #define TRACE_MICRO
 #define TRACE_USE_PLATFORM
+#define HANDLER_FAULT_WAIT
+#define MEMINIT_STOP
+#define PANIC_WIGGLE
 
 #define SI446x_HW_CTS
 
