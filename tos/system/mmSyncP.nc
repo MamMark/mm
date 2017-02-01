@@ -7,7 +7,8 @@
 
 
 /*
- * 1 min * 60 sec/min * 1000 ticks/sec
+ * 1 min * 60 sec/min * 1024 ticks/sec
+ * Tmilli is binary
  */
 #define SYNC_PERIOD (1UL * 60 * 1000)
 

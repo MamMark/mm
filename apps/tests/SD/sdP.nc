@@ -60,13 +60,10 @@ module sdP {
     interface SDsa;
     interface SDread;
     interface Resource as SDResource;
-    interface Boot as FS_OutBoot;
   }
 }
 
 implementation {
-
-//#include "platform_spi_sd.h"
 
   typedef enum {
     READ0,
@@ -365,7 +362,4 @@ implementation {
         get_scr();				// ACMD51
     }
   }
-
-
-  event void FS_OutBoot.booted() { }
 }

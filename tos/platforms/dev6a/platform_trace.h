@@ -17,10 +17,6 @@ typedef enum {
   T_SSR			= 4,
   T_SSW			= 5,
   T_GPS			= 6,
-  T_THREAD_STOP		= 7,
-  T_THREAD_START	= 8,
-  T_THREAD_SUSPEND	= 9,
-  T_THREAD_WAKE		= 10,
 
   T_GPS_DO_GRANT	= 11,
   T_GPS_DO_DEFERRED	= 12,

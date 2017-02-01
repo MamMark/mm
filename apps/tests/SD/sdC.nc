@@ -55,7 +55,4 @@ implementation {
   components SD0C;
   sdP.SDraw -> SD0C;
   sdP.SDsa  -> SD0C;
-
-  components FileSystemC as FS;
-  sdP.FS_OutBoot -> FS;
 }
