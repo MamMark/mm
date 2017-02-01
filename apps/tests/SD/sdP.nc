@@ -49,7 +49,7 @@
 #include <platform_pin_defs.h>
 
 
-uint8_t d[514];
+uint8_t d[514] __attribute__ ((aligned (4)));
 volatile bool sd_wait = 1;
 
 
@@ -273,13 +273,18 @@ implementation {
 
   void set(uint8_t val) {
     uint16_t i;
+    uint32_t *dp, val32;
 
-    for (i = 0; i < 514; i++)
-      d[i] = val;
+    val32 = (val << 24 | val << 16 | val << 8 | val);
+    dp = (uint32_t *) &d;
+    for (i = 0; i < 514/4; i++)
+      dp[i] = val32;
+    d[512] = d[513] = val;
   }
 
 
   event void Boot.booted() {
+    nop();
     nop();
 
 #ifdef SD_TEST_STANDALONE
@@ -291,6 +296,7 @@ implementation {
     while(1) ;
 #endif
 
+    set(0xff);
     call SDResource.request();
   }
 
@@ -299,13 +305,14 @@ implementation {
     nop();
     nop();
     sd_state = READ0;
-    set(0xff);
     call SDread.read(0x00000, d);
   }
+
 
   event void SDread.readDone(uint32_t blk_id, uint8_t* buf, error_t error) {
     uint16_t i;
 
+    nop();
     nop();
     switch(sd_state) {
       case READ0:
