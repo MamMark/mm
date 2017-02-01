@@ -1,6 +1,5 @@
-/**
- * Copyright (c) 2017, Eric B. Decker
- * Copyright (c) 2010, Carl W. Davis, Eric B. Decker
+/*
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -15,16 +14,16 @@
  *   documentation and/or other materials provided with the
  *   distribution.
  *
- * - Neither the name of the copyright holders nor the names of
+ * - Neither the name of the Stanford University nor the names of
  *   its contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- * THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL STANFORD
+ * UNIVERSITY OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
@@ -32,30 +31,37 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @author Carl W. Davis
  * @author Eric B. Decker <cire831@gmail.com>
+ *
+ * Sequence the bootup.  Components that should fire up when the
+ * system is completely booted should wire to SystemBootC.Boot.
+ *
+ * 1) Bring up the SD/StreamStorage, FileSystem
+ * 3) Collect initial status information (Restart and Version)  mmSync
+ * 4) Bring up the GPS.  (GPS assumes SS is up)
  */
 
-/**
- * Configuration and wiring for sdP for backdoor commands to the SD card.
- */
-
-
-configuration sdC {}
+configuration SystemBootC {
+  provides interface Boot;
+  uses interface Init as SoftwareInit;
+}
 
 implementation {
-  components sdP;
-  components SystemBootC;
-  sdP.Boot -> SystemBootC;
-
-  components new SD0_ArbC();
-  sdP.SDResource -> SD0_ArbC;
-  sdP.SDread     -> SD0_ArbC;
-
-  components SD0C;
-  sdP.SDraw -> SD0C;
-  sdP.SDsa  -> SD0C;
+  components MainC;
+  SoftwareInit = MainC.SoftwareInit;
 
   components FileSystemC as FS;
-  sdP.FS_OutBoot -> FS;
+  components mmSyncC;
+#ifdef GPS_TEST
+  components GPSC;
+#endif
+
+  FS.Boot -> MainC;		// first up on the smorgasborg is FS
+  mmSyncC.Boot -> FS.OutBoot;   //        then write initial status
+#ifdef GPS_TEST
+  GPSC.Boot -> mmSyncC.OutBoot;	//            and then GPS.
+  Boot = GPSC.OutBoot;		// bring up everyone else
+#else
+  Boot = mmSyncC.OutBoot;
+#endif
 }

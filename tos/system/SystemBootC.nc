@@ -55,6 +55,8 @@
  * this can be addressed later.
  */
 
+#error using tos/system/SystemBootC, should use platform SystemBootC
+
 configuration SystemBootC {
   provides interface Boot;
   uses interface Init as SoftwareInit;
