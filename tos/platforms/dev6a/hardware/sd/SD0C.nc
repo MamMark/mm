@@ -60,7 +60,7 @@ configuration SD0C {
 }
 
 implementation {
-  components SDspP as SDdvrP;
+  components new SDspP() as SDdvrP;
 
   SDread   = SDdvrP;
   SDwrite  = SDdvrP;

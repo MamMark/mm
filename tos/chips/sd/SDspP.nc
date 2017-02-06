@@ -52,7 +52,7 @@
 #undef FAIL
 #endif
 
-module SDspP {
+generic module SDspP() {
   provides {
     interface SDread[uint8_t cid];
     interface SDwrite[uint8_t cid];
