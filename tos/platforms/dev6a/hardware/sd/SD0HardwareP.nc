@@ -55,7 +55,8 @@ module SD0HardwareP {
 }
 implementation {
 
-#include "platform_spi_sd.h"
+#define SPI_PUT_GET_TO 1024
+#define SPI_PARANOID
 
 #define sd_panic(where, arg, arg1) do { \
     call Panic.panic(PANIC_MS, where, arg, arg1, 0, 0); \
@@ -119,6 +120,80 @@ const msp432_usci_config_t sd_spi_config = {
     return SUCCESS;
   }
 
+  async command void HW.spi_check_clean() {
+    uint8_t tmp;
+
+    tmp = call Usci.getStat();
+#ifdef SPI_PARANOID
+    if (tmp & EUSCI_B_STATW_BUSY) {
+      sd_warn(16, 0);
+    }
+    if (tmp & EUSCI_B_STATW_OE) {
+      sd_warn(17, tmp);
+      call Usci.getRxbuf();             /* clears overrun */
+    }
+    if (call Usci.isRxIntrPending()) {
+      tmp = call Usci.getRxbuf();
+      sd_warn(18, tmp);
+    }
+#else
+    if (tmp & EUSCI_B_STATW_OE)
+      call Usci.getRxbuf();             /* clears overrun */
+    if (call Usci.isRxIntrPending()) {
+      call Usci.getRxbuf();
+#endif
+  }
+
+
+  async command uint8_t HW.spi_put(uint8_t tx_byte) {
+    uint16_t i;
+
+    call Usci.setTxbuf(tx_byte);
+
+    i = SPI_PUT_GET_TO;
+    while ( !(call Usci.isRxIntrPending()) && i > 0)
+      i--;
+    if (i == 0)				/* rx timeout */
+      sd_warn(19, 0);
+    i = call Usci.getStat();
+    if (i & EUSCI_B_STATW_OE)
+      sd_warn(20, i);
+
+    return call Usci.getRxbuf();
+  }
+
+
+#define SG_SIZE 32
+  norace uint16_t sg_ts[SG_SIZE];       /* spi get, eaves drop */
+  norace uint8_t  sg[SG_SIZE];
+  norace uint8_t  sg_nxt;
+
+  async command uint8_t HW.spi_get() {
+    uint16_t i;
+    uint8_t  byte;
+
+    call Usci.setTxbuf(0xff);
+
+    i = SPI_PUT_GET_TO;
+    while ( !call Usci.isRxIntrPending() && i > 0)
+      i--;
+
+    if (i == 0)				/* rx timeout */
+      sd_warn(21, 0);
+
+    i = call Usci.getStat();
+    if (i & EUSCI_B_STATW_OE)
+      sd_warn(22, i);
+
+    byte = call Usci.getRxbuf();
+    sg_ts[sg_nxt] = call Platform.usecsRaw();
+    sg[sg_nxt++] = byte;
+    if (sg_nxt >= SG_SIZE)
+      sg_nxt = 0;
+    return byte;
+  }
+
+
   async command void HW.sd_spi_enable()  { }
   async command void HW.sd_spi_disable() { }
 
@@ -163,7 +238,7 @@ const msp432_usci_config_t sd_spi_config = {
      *
      * if rcvptr is NULL we pull into recv_dump (514, big enough),  DSTINC always 8
      * SRCINC is always NONE (coming from the port).
-     */ 
+     */
     control = UDMA_CHCTL_DSTINC_8 | UDMA_CHCTL_SRCINC_NONE |
       MSP432_DMA_SIZE_8 | UDMA_CHCTL_ARBSIZE_1 | MSP432_DMA_MODE_BASIC;
     rcvptr = rcvptr ? rcvptr : recv_dump;
@@ -177,7 +252,7 @@ const msp432_usci_config_t sd_spi_config = {
      *
      * if sndptr is NULL we pull from a single byte, idle_byte,  SRCINC will be 8 if coming
      * from sndptr, otherwise (idle_byte) NONE.  DSTINC is always NONE (going to the port).
-     */ 
+     */
     control = UDMA_CHCTL_DSTINC_NONE | MSP432_DMA_SIZE_8 |
       UDMA_CHCTL_ARBSIZE_1 | MSP432_DMA_MODE_BASIC;
     if (sndptr) {
@@ -185,7 +260,7 @@ const msp432_usci_config_t sd_spi_config = {
     } else {
       sndptr = &idle_byte;
       control |= UDMA_CHCTL_SRCINC_NONE;
-    }      
+    }
 
     call DmaTX.dma_set_priority(0);             /* run TX with normal priority */
     call DmaTX.dma_start_channel(MSP432_DMA_CH6_B3_TX0, length,

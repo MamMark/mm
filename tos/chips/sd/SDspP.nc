@@ -61,9 +61,6 @@
 #undef FAIL
 #endif
 
-#define SD_PUT_GET_TO 1024
-#define SD_PARANOID
-
 typedef enum {
   SDS_OFF = 0,
   SDS_OFF_TO_ON,
@@ -110,8 +107,6 @@ module SDspP {
 }
 
 implementation {
-
-#include "platform_spi_sd.h"
 
   /*
    * main SDsp control cells.   The code can handle at most one operation at a time,
@@ -191,86 +186,10 @@ implementation {
   }
 
 
-  void sd_chk_clean() {
-    uint8_t tmp;
-
-#ifdef SD_PARANOID
-    if (SD_SPI_BUSY) {
-      sd_panic(16, 0);
-
-      /*
-       * how to clean out the transmitter?  It could be
-       * hung.  Which would be weird.
-       */
-    }
-    if (SD_SPI_OVERRUN) {
-      sd_warn(17, SD_SPI_OE_REG);
-      SD_SPI_CLR_OE;
-    }
-    if (SD_SPI_RX_RDY) {
-      tmp = SD_SPI_RX_BUF;
-      sd_warn(18, tmp);
-    }
-#else
-    if (SD_SPI_OVERRUN)
-      SD_SPI_CLR_OE;
-    if (SD_SPI_RX_RDY)
-      tmp = SD_SPI_RX_BUF;
-#endif
-  }
-
-
-  void sd_put(uint8_t tx_data) {
-    uint16_t i;
-
-    SD_SPI_TX_BUF = tx_data;
-
-    i = SD_PUT_GET_TO;
-    while ( !(SD_SPI_RX_RDY) && i > 0)
-      i--;
-    if (i == 0)				/* rx timeout */
-      sd_warn(19, 0);
-    if (SD_SPI_OVERRUN)
-      sd_warn(20, 0);
-
-    tx_data = SD_SPI_RX_BUF;
-  }
-
-
-#define SG_SIZE 32
-  norace uint16_t sg_ts[SG_SIZE];
-  norace uint8_t  sg[SG_SIZE];
-  norace uint8_t  sg_nxt;
-  
-  uint8_t sd_get() {
-    uint16_t i;
-    uint8_t  byte;
-
-    SD_SPI_TX_BUF = 0xff;
-
-    i = SD_PUT_GET_TO;
-    while ( !SD_SPI_RX_RDY && i > 0)
-      i--;
-
-    if (i == 0)				/* rx timeout */
-      sd_warn(21, 0);
-
-    if (SD_SPI_OVERRUN)
-      sd_warn(22, 0);
-
-    byte = SD_SPI_RX_BUF;		/* also clears RXINT */
-    sg_ts[sg_nxt] = call Platform.usecsRaw();
-    sg[sg_nxt++] = byte;
-    if (sg_nxt >= SG_SIZE)
-      sg_nxt = 0;
-    return byte;
-  }
-
-
   void sd_kill_first_back() {
     uint8_t tmp;
 
-    tmp = sd_get();
+    tmp = call HW.spi_get();
     if (tmp != 0xff) {
       sd_warn(23, tmp);
     }
@@ -297,7 +216,7 @@ implementation {
     uint16_t i;
     uint8_t  rsp, tmp;
 
-    sd_chk_clean();
+    call HW.spi_check_clean();
     call HW.sd_start_dma((uint8_t *) cmd55, NULL, sizeof(cmd55));
     call HW.sd_wait_dma(sizeof(cmd55));
 
@@ -306,7 +225,7 @@ implementation {
 
     i=0;
     do {
-      tmp = sd_get();
+      tmp = call HW.spi_get();
       i++;
     } while ((tmp == 0xff) && (i < SD_CMD_TIMEOUT));
 
@@ -346,7 +265,7 @@ implementation {
     uint16_t  i;
     uint8_t   tmp, rsp;
 
-    sd_chk_clean();
+    call HW.spi_check_clean();
     sd_cmd_crc();
     call HW.sd_start_dma(&sd_cmd.cmd, NULL, 6);
     call HW.sd_wait_dma(6);
@@ -357,7 +276,7 @@ implementation {
     /* Wait for a response.  */
     i=0;
     do {
-      tmp = sd_get();
+      tmp = call HW.spi_get();
       i++;
     } while ((tmp == 0xff) && (i < SD_CMD_TIMEOUT));
 
@@ -477,7 +396,7 @@ implementation {
      * see SDsa.reset for more info.
      */
 
-    sd_chk_clean();
+    call HW.spi_check_clean();
     call HW.sd_clr_cs();                        /* force to known state, no CS */
     call HW.sd_start_dma(NULL, NULL, 10);	/* send 10 0xff to clock SD */
     call HW.sd_wait_dma(10);
@@ -517,9 +436,9 @@ implementation {
       case SDS_READ_DMA:
 	w_t = call lt.get();
 	w_diff = w_t - op_t0_ms;
-	rsp = sd_get();
+	rsp = call HW.spi_get();
 	call Panic.panic(PANIC_MS, 30, sdc.sd_state, w_diff, 0, 0);
-	rsp = sd_get();
+	rsp = call HW.spi_get();
 	return;
 
       case SDS_OFF_TO_ON:
@@ -668,7 +587,7 @@ implementation {
     sd_cmd.cmd = SD_SEND_STATUS;
     sd_cmd.arg = 0;
     rsp = sd_raw_cmd();
-    stat_byte = sd_get();
+    stat_byte = call HW.spi_get();
     call HW.sd_clr_cs();
     return ((rsp << 8) | stat_byte);
   }
@@ -686,11 +605,11 @@ implementation {
 
     /* Wait for the token */
     sd_read_tok_count++;
-    tmp = sd_get();			/* read a byte from the SD */
+    tmp = call HW.spi_get();			/* read a byte from the SD */
 
     if ((tmp & MSK_TOK_DATAERROR) == 0 || sd_read_tok_count >= SD_READ_TOK_MAX) {
       /* Clock out a byte before returning, let SD finish */
-      sd_get();
+      call HW.spi_get();
 
       /* The card returned an error, or timed out. */
       call Panic.panic(PANIC_MS, 33, tmp, sd_read_tok_count, 0, 0);
@@ -723,7 +642,7 @@ implementation {
      * enable the dma interrupt to generate a h/w event when complete.
      */
     sdc.sd_state = SDS_READ_DMA;
-    sd_chk_clean();
+    call HW.spi_check_clean();
     call HW.sd_dma_enable_int();
     call HW.sd_start_dma(NULL, sdc.data_ptr, SD_BUF_SIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
@@ -740,8 +659,8 @@ implementation {
     call HW.sd_clr_cs();
 
     /* Send some extra clocks so the card can finish */
-    sd_get();
-    sd_get();
+    call HW.spi_get();
+    call HW.spi_get();
 
     crc = (sdc.data_ptr[512] << 8) | sdc.data_ptr[513];
     if (sd_check_crc(sdc.data_ptr, crc)) {
@@ -841,7 +760,7 @@ implementation {
 
     /* card is busy writing the block.  ask if still busy. */
 
-    tmp = sd_get();
+    tmp = call HW.spi_get();
     sd_write_busy_count++;
     if (tmp != 0xff) {			/* protected by timeout timer */
       post sd_write_task();
@@ -883,7 +802,7 @@ implementation {
      * After the data block is accepted the SD sends a data response token
      * that tells whether it accepted the block.  0x05 says all is good.
      */
-    tmp = sd_get();
+    tmp = call HW.spi_get();
     if ((tmp & 0x1F) != 0x05) {
       i = sd_read_status();
       call Panic.panic(PANIC_MS, 40, tmp, i, 0, 0);
@@ -941,7 +860,7 @@ implementation {
      * The SD needs a write token, send it first then fire
      * up the dma.
      */
-    sd_put(SD_START_TOK);
+    call HW.spi_put(SD_START_TOK);
 
     /*
      * send the sector data, include the 2 crc bytes
@@ -949,7 +868,7 @@ implementation {
      * and enable the dma h/w interrupt to generate the h/w event.
      */
     sdc.sd_state = SDS_WRITE_DMA;
-    sd_chk_clean();
+    call HW.spi_check_clean();
     call HW.sd_dma_enable_int();
     call HW.sd_start_dma(data, NULL, SD_BUF_SIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
@@ -971,7 +890,7 @@ implementation {
     /*
      * card is busy erasing the block.  ask if still busy.
      */
-    tmp = sd_get();
+    tmp = call HW.spi_get();
     sd_erase_busy_count++;
     if (tmp != 0xff) {			/* protected by timeout timer */
       post sd_erase_task();
@@ -1100,7 +1019,7 @@ implementation {
      */
     t0 = call Platform.usecsRaw();
     while ((call Platform.usecsRaw() - t0) < 1100) ;
-    sd_chk_clean();
+    call HW.spi_check_clean();
     call HW.sd_start_dma(NULL, NULL, 10);
     call HW.sd_wait_dma(10);
 
@@ -1158,11 +1077,11 @@ implementation {
     /* read till we get a start token or timeout */
     do {
       sd_read_tok_count++;
-      tmp = sd_get();			/* looking for start token */
+      tmp = call HW.spi_get();			/* looking for start token */
 
       if (((tmp & MSK_TOK_DATAERROR) == 0) ||
           (sd_read_tok_count >= SD_READ_TOK_MAX)) {
-	sd_get();               /* let SD finish, clock one more */
+	call HW.spi_get();               /* let SD finish, clock one more */
         call Panic.panic(PANIC_MS, 49, tmp, sd_read_tok_count, 0, blk_id);
 	return;
       }
@@ -1182,7 +1101,7 @@ implementation {
      * we fire up the dma, turn on a timer to do a timeout, and
      * enable the dma interrupt to generate a h/w event when complete.
      */
-    sd_chk_clean();
+    call HW.spi_check_clean();
     call HW.sd_start_dma(NULL, buf, SD_BUF_SIZE);
     call HW.sd_wait_dma(SD_BUF_SIZE);
     call HW.sd_clr_cs();         /* deassert the SD card */
@@ -1209,8 +1128,8 @@ implementation {
       sd_panic(52, rsp);
 
     call HW.sd_set_cs();
-    sd_put(SD_START_TOK);
-    sd_chk_clean();
+    call HW.spi_put(SD_START_TOK);
+    call HW.spi_check_clean();
     call HW.sd_start_dma(buf, NULL, SD_BUF_SIZE);
     call HW.sd_wait_dma(SD_BUF_SIZE);
 
@@ -1218,7 +1137,7 @@ implementation {
      * After the data block is accepted the SD sends a data response token
      * that tells whether it accepted the block.  0x05 says all is good.
      */
-    tmp = sd_get();
+    tmp = call HW.spi_get();
     if ((tmp & 0x1F) != 0x05) {
       t = sd_read_status();
       call Panic.panic(PANIC_MS, 53, tmp, t, 0, blk_id);
@@ -1247,7 +1166,7 @@ implementation {
      */
     do {				/* count how many iterations and time */
       sd_write_busy_count++;
-      tmp =  sd_get();
+      tmp =  call HW.spi_get();
       if (tmp == 0xFF)
 	break;
 
@@ -1277,18 +1196,18 @@ implementation {
 
 
   command void SDraw.end_op() {
-    sd_get();                           /* read one */
+    call HW.spi_get();                           /* read one */
     call HW.sd_clr_cs();
   }
 
 
   command uint8_t SDraw.get() {
-    return sd_get();
+    return call HW.spi_get();
   }
 
 
   command void SDraw.put(uint8_t byte) {
-    sd_put(byte);
+    call HW.spi_put(byte);
   }
 
 
@@ -1337,7 +1256,7 @@ implementation {
 
 
   command void SDraw.send_recv(uint8_t *tx, uint8_t *rx, uint16_t len) {
-    sd_chk_clean();
+    call HW.spi_check_clean();
     call HW.sd_start_dma(tx, rx, len);
     call HW.sd_wait_dma(len);
   }
