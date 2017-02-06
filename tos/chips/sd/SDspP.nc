@@ -47,45 +47,10 @@
 #include "sd_cmd.h"
 #include "panic.h"
 
-/*
- * when resetting.   How long to wait before trying to send the GO_OP
- * to the SD card again.  We let other things happen in the system.
- * Units are in millisecs (TMilli).
- *
- * Note:POLL_TIME of 1 gives us about 750us.
- */
-#define GO_OP_POLL_TIME 10
-
 #ifdef FAIL
 #warning "FAIL defined, undefining, it should be an enum"
 #undef FAIL
 #endif
-
-typedef enum {
-  SDS_OFF = 0,
-  SDS_OFF_TO_ON,
-  SDS_RESET,
-  SDS_IDLE,
-  SDS_READ,
-  SDS_READ_DMA,
-  SDS_WRITE,
-  SDS_WRITE_DMA,
-  SDS_WRITE_BUSY,
-  SDS_ERASE,
-  SDS_ERASE_BUSY,
-} sd_state_t;
-
-uint32_t w_t, w_diff;
-
-/* sdsa_majik only looked at in SDsa, ints should be off and should always be atomic */
-norace uint32_t sdsa_majik;
-
-
-uint32_t sa_t0, sa_diff;
-uint16_t sa_t3;
-
-#define SDSA_MAJIK 0xAAAA5555
-
 
 module SDspP {
   provides {
@@ -107,6 +72,41 @@ module SDspP {
 }
 
 implementation {
+
+/*
+ * when resetting.   How long to wait before trying to send the GO_OP
+ * to the SD card again.  We let other things happen in the system.
+ * Units are in millisecs (TMilli).
+ *
+ * Note:POLL_TIME of 1 gives us about 750us.
+ */
+#define GO_OP_POLL_TIME 10
+
+  typedef enum {
+    SDS_OFF = 0,
+    SDS_OFF_TO_ON,
+    SDS_RESET,
+    SDS_IDLE,
+    SDS_READ,
+    SDS_READ_DMA,
+    SDS_WRITE,
+    SDS_WRITE_DMA,
+    SDS_WRITE_BUSY,
+    SDS_ERASE,
+    SDS_ERASE_BUSY,
+  } sd_state_t;
+
+  uint32_t w_t, w_diff;
+
+/* sdsa_majik only looked at in SDsa, ints should be off and should always be atomic */
+  norace uint32_t sdsa_majik;
+
+
+  uint32_t sa_t0, sa_diff;
+  uint16_t sa_t3;
+
+#define SDSA_MAJIK 0xAAAA5555
+
 
   /*
    * main SDsp control cells.   The code can handle at most one operation at a time,
