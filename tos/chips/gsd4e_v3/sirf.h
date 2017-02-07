@@ -8,10 +8,14 @@
 #ifndef __SIRF_H__
 #define __SIRF_H__
 
-#define SIRF_BIN_START   0xa0
-#define SIRF_BIN_START_2 0xa2
-#define SIRF_BIN_END     0xb0
-#define SIRF_BIN_END_2   0xb3
+#define NMEA_START       '$'
+#define NMEA_END         '*'
+
+#define SIRF_BIN_A0      0xa0
+#define SIRF_BIN_A2      0xa2
+
+#define SIRF_BIN_B0      0xb0
+#define SIRF_BIN_B3      0xb3
 
 /*
  * BUF_SIZE is biggest packet (MID 41, 188 bytes observed),
@@ -40,24 +44,7 @@
 #define MID_GEODETIC	   41
 #define GEODETIC_LEN	   91
 
-/*
- * nmea_go_sirf_bin: tell the gps in nmea mode to go into sirf binary.
- * checksum for 115200 is 04, 57600 is 37
- */
-
-uint8_t nmea_go_sirf_bin[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '0', ',',				// protocol 0 SirfBinary, 1 - NEMA
-  '5', '7', '6', '0', '0', ',',		// baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '3', '7',			// checksum
-  '\r', '\n'				// terminator
-};
-
-
+#ifdef notdef
 /*
  * Boot up sequence commands:
  *
@@ -92,7 +79,6 @@ uint8_t sirf_send_boot[] = {
   0xb0, 0xb3,
 };
 
-
 /*
  * Message to send when turn on.
  *
@@ -110,11 +96,79 @@ uint8_t sirf_send_start[] = {
   0x00, 0xab,
   0xb0, 0xb3,
 };
+#endif notdef
 
 
-#ifdef GPS_TEST_FUTZ
+uint8_t nmea_set_9600[] = {
+  '$', 'P', 'S', 'R', 'F',		// header
+  '1', '0', '0', ',',			// set serial port MID
+  '1', ',',				// protocol 0 SirfBinary, 1 - NEMA
+  '9', '6', '0', '0', ',',		// baud rate
+  '8', ',',				// 8 data bits
+  '1', ',',				// 1 stop bit
+  '0',					// no parity
+  '*', '3', '7',			// checksum  ['0','D']
+  '\r', '\n'				// terminator
+};
 
-uint8_t sirf_go_nmea[] = {
+uint8_t nmea_set_sirf_9600[] = {
+  '$', 'P', 'S', 'R', 'F',		// header
+  '1', '0', '0', ',',			// set serial port MID
+  '0', ',',				// protocol 0 SirfBinary, 1 - NEMA
+  '9', '6', '0', '0', ',',		// baud rate
+  '8', ',',				// 8 data bits
+  '1', ',',				// 1 stop bit
+  '0',					// no parity
+  '*', '3', '7',			// checksum  ['0','C']
+  '\r', '\n'				// terminator
+};
+
+uint8_t nmea_set_57600[] = {
+  '$', 'P', 'S', 'R', 'F',		// header
+  '1', '0', '0', ',',			// set serial port MID
+  '1', ',',				// protocol 0 SirfBinary, 1 - NEMA
+  '5', '7', '6', '0', '0', ',',		// baud rate
+  '8', ',',				// 8 data bits
+  '1', ',',				// 1 stop bit
+  '0',					// no parity
+  '*', '3', '7',			// checksum  ['3','6']
+  '\r', '\n'				// terminator
+};
+
+uint8_t nmea_set_sirf_57600[] = {
+  '$', 'P', 'S', 'R', 'F',		// header
+  '1', '0', '0', ',',			// set serial port MID
+  '0', ',',				// protocol 0 SirfBinary, 1 - NEMA
+  '5', '7', '6', '0', '0', ',',		// baud rate
+  '8', ',',				// 8 data bits
+  '1', ',',				// 1 stop bit
+  '0',					// no parity
+  '*', '3', '7',			// checksum  ['3','7']
+  '\r', '\n'				// terminator
+};
+
+uint8_t sirf_ver[] = {
+  0xa0, 0xa2,
+  0x00, 0x02,
+  132,				// send sw ver (0x84)
+  0x00,
+  0x00, 0x84,
+  0xb0, 0xb3,
+};
+
+uint8_t sirf_set_9600[] = {
+  0xa0, 0xa2,
+  0x00, 0x09,
+  134,
+  0x00, 0x00,
+  0x25, 0x80,
+  0x08, 0x01,
+  0x00, 0x00,
+  0x01, 0x34,
+  0xb0, 0xb3,
+};
+
+uint8_t sirf_set_nmea[] = {
   0xa0, 0xa2,			// start seq
   0x00, 0x18,			// len 24 (0x18)
   129,				// set nmea
@@ -130,10 +184,21 @@ uint8_t sirf_go_nmea[] = {
   0, 1,				// ZDA
   0, 0,				// Unused
   0x12, 0xc0,			// Baud rate (4800) (big endian)
-  0x01, 0x65,			// checksum
+  0x01, 0x65,			// checksum [0x01, 0x65]
   0xb0, 0xb3			// end seq
 };
 
-#endif
+
+/*
+ * used to control what parameters setting to try when checking
+ * gps operational state.
+ */
+typedef struct {
+  uint8_t        mode;   // 0 = SIRF Binary, 1 = NMEA
+  uint32_t       speed;
+  uint32_t       len;
+  uint8_t        *msg;
+} gps_check_option_t;
+
 
 #endif	/* __SIRF_H__ */

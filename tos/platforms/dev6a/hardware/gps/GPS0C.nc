@@ -39,42 +39,50 @@ configuration GPS0C {
   provides {
     interface StdControl as GPSControl;
     interface Boot as GPSBoot;
-    interface Gsd4eUHardware as HW;
+    interface GPSReceive;
+    interface Gsd4eUHardware as HW; // !!! for debugging only, be careful
   }
   uses interface Boot;
 }
 
 implementation {
-  components MainC;
-  components Gsd4eUP as GpsDvrP;
+  components MainC, Gsd4eUP;
+  MainC.SoftwareInit -> Gsd4eUP;
 
-  MainC.SoftwareInit -> GpsDvrP;
-  GPSControl = GpsDvrP;
-  GPSBoot = GpsDvrP;
-  Boot = GpsDvrP.Boot;
+  GPSControl = Gsd4eUP;
+  GPSBoot = Gsd4eUP;
+  Boot = Gsd4eUP.Boot;
 
-  components GPSMsgC;
-  GpsDvrP.GPSMsg -> GPSMsgC;
-  GpsDvrP.GPSMsgControl -> GPSMsgC;
+  components Gsd4eUActP, GPSMsgBufP, PlatformC;
+  Gsd4eUP.Act -> Gsd4eUActP;
+  Gsd4eUActP.Platform -> PlatformC;
+  Gsd4eUActP.GPSBuffer -> GPSMsgBufP;
+  MainC.SoftwareInit -> GPSMsgBufP;
+  GPSReceive = GPSMsgBufP;
 
   components HplGPS0C;
-  GpsDvrP.HW -> HplGPS0C;
-  HW = HplGPS0C;
+  Gsd4eUActP.HW -> HplGPS0C;
+  HW = HplGPS0C;  // !!! wired twice, be careful to share this singleton interface
 
   components LocalTimeMilliC;
-  GpsDvrP.LocalTime -> LocalTimeMilliC;
+  Gsd4eUP.LocalTime -> LocalTimeMilliC;
 
-  components new TimerMilliC() as GPSTimer;
-  GpsDvrP.GPSTimer -> GPSTimer;
+  components new TimerMilliC() as GPSRxTimer;
+  Gsd4eUP.GPSTxTimer -> GPSTxTimer;
+
+  components new TimerMilliC() as GPSTxTimer;
+  Gsd4eUP.GPSRxTimer -> GPSRxTimer;
 
   components PanicC;
-  GpsDvrP.Panic -> PanicC;
+  Gsd4eUP.Panic -> PanicC;
+  Gsd4eUActP.Panic -> PanicC;
+  GPSMsgBufP.Panic -> PanicC;
 
   components TraceC;
-  GpsDvrP.Trace -> TraceC;
+  Gsd4eUP.Trace -> TraceC;
 
 #ifdef notdef
   components CollectC;
-  GpsDvrP.LogEvent -> CollectC;
+  Gsd4eUP.LogEvent -> CollectC;
 #endif
 }

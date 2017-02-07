@@ -1,7 +1,10 @@
 /*
  * Copyright (c) 2012, 2014, 2015 Eric B. Decker
+ * Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  */
+
+#include "GPSMsgBuf.h"
 
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;
@@ -13,8 +16,11 @@ module testGPSP {
     interface StdControl as GPSControl;
     interface Timer<TMilli> as testTimer;
     interface LocalTime<TMilli>;
+#ifdef notdef
     interface Gsd4eUHardware as HW;
+#endif
     interface Platform;
+    interface GPSReceive;
   }
 }
 
@@ -26,10 +32,17 @@ implementation {
     STOPPING,
   };
 
-  int state;
+  int               state;
+  norace gps_msg_t *p_msg;
+  uint32_t          recv_count;
 
   task void test_task() {
     nop();
+    // call Collect.collect();
+    call GPSReceive.recv_done(p_msg);
+    recv_count++;
+
+#ifdef notdef
     gt0 = call LocalTime.get();
     tt0 = call Platform.usecsRaw();
     call HW.gps_set_reset();
@@ -42,9 +55,11 @@ implementation {
     tt1 = call Platform.usecsRaw();
     gt1 = call LocalTime.get();
     nop();
+#endif
   }
 
   command error_t Init.init() {
+    recv_count = 0;
     return SUCCESS;
   }
 
@@ -97,8 +112,6 @@ implementation {
 
   event void Boot.booted() {
 
-//    ROM_DEBUG_BREAK(0);
-
     call testTimer.startOneShot(0);
   }
 #endif
@@ -133,7 +146,8 @@ implementation {
     }
   }
 
-  async event   void    HW.byte_avail(uint8_t byte) { };
-  async event   void    HW.receive_done(uint8_t *ptr, uint16_t len, error_t err) { };
-  async event   void    HW.send_done(uint8_t *ptr, uint16_t len, error_t error) { };
+  async event   void     GPSReceive.receive(gps_msg_t *ptr) {
+    p_msg = ptr;
+    post test_task();
+  }
 }

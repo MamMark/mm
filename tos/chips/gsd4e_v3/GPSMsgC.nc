@@ -16,7 +16,8 @@ configuration GPSMsgC {
 }
 
 implementation {
-  components MainC, GPSMsgP;
+  components MainC;
+  components GPSMsgP;
   MainC.SoftwareInit -> GPSMsgP;
   GPSMsg = GPSMsgP;
   GPSMsgControl = GPSMsgP;

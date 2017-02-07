@@ -2,6 +2,7 @@
  * GPS platform defines
  *
  * @author Eric B. Decker (cire831@gmail.com)
+ * @author Daniel J. Maltbie (dmaltbie@daloma.org)
  * @date 27 May 2008
  *
  * Currently set up for the ET-312 module using the Sirf-III
@@ -12,24 +13,44 @@
 #ifndef __GPS_H__
 #define __GPS_H__
 
+typedef enum {
+  GPSC_FAIL = 1,
+  GPSC_OFF,
+  GPSC_WAKING,
+  GPSC_SEND_CHECK,
+  GPSC_SC_WAIT,
+  GPSC_CHECK_NMEA_BIN,
+  GPSC_CHECK_BIN_2,
+  GPSC_CHECKING,
+  GPSC_CONFIG,
+  GPSC_CONFIGING,
+  GPSC_ON,
+  GPSC_RECEIVING,
+} gpsc_state_t;
+
+typedef enum {
+  GPSW_NONE = 0,
+  GPSW_TX_TIMER,
+  GPSW_RX_TIMER,
+  GPSW_RX_BYTE,
+  GPSW_CHANGE_SPEED,
+  GPSW_CHECK_TASK,
+  GPSW_CONFIG_TASK,
+  GPSW_COMM_TASK,
+  GPSW_SEND_DONE,
+  GPSW_START,
+  GPSW_STOP,
+  GPSW_ADD_BYTE,
+  GPSW_MSG_COMPLETE,
+  GPSW_MSG_START,
+} gps_where_t;
+
 #define GPS_LOG_EVENTS
 
 //#define GPS_NO_SHORT
 //#define GPS_SHORT_COUNT 40
 //#define GPS_LEAVE_UP
 //#define GPS_STAY_UP
-
-/*
- * Define the speed we want to run the gps at.
- *
- * We've tried 115200 but the interrupt latency seems too high.
- * we drop chars now and then.  So we've gone down to 57600.
- *
- * Choices are 1228800, 115200, 57600, and 9600
- */
-#define GPS_SPEED 57600
-
-#define NMEA_START       '$'
 
 /*
  * PWR_UP_DELAY
@@ -50,7 +71,9 @@
  */
 
 //#define DT_GPS_PWR_UP_DELAY   100
-#define DT_GPS_PWR_UP_DELAY   512
+#define DT_GPS_PWR_UP_DELAY        512
+
+#define DT_GPS_WAKE_UP_DELAY       200
 
 
 /*
@@ -92,7 +115,110 @@
 #define DT_GPS_EOS_WAIT       512
 #define DT_GPS_SEND_TIME_OUT  512
 
-//#define DT_GPS_FINI_WAIT      512
-#define DT_GPS_FINI_WAIT      2048
+#define GPS_LOG_EVENTS
+
+//#define GPS_NO_SHORT
+//#define GPS_SHORT_COUNT 40
+//#define GPS_LEAVE_UP
+//#define GPS_STAY_UP
+
+/*
+ * The M10478 gets turned on and off using the gps_on_off signal.  Its
+ * weird but there it is.   The M10478 documentation says it needs to
+ * be > 90 uS.  We use 200ms.  There are also references to the ARM
+ * taking 300ms to power up.
+ *
+ * OSP_WAIT_TIME is how long we wait after sending the go_sirf_bin msg.
+ * We have observed 18ms not working but 20 does.  To be on the safe
+ * side we use 50ms.  This is a rare occurance.  Normally, the gps stays
+ * in SirfBin (OSP).
+ */
+#ifdef notdef
+#define DT_GPS_OSP_WAIT_TIME            50
+#define DT_GPS_SHUTDOWN_CLEAN_TO        1000
+
+#define MAX_GPS_RECONFIG_TRYS           5
+
+#define DT_GPS_EOS_WAIT                 512
+#define DT_GPS_SEND_TIME_OUT            512
+//#define DT_GPS_FINI_WAIT       512
+#define DT_GPS_FINI_WAIT                2048
+#endif
+
+#define DT_GPS_RESET_WAIT               300
+#define DT_GPS_ON_OFF_PULSE_WIDTH       300
+#define DT_GPS_RESET_PULSE_WIDTH        300
+#define DT_GPS_SEND_CHECK_WAIT          120
+#define DT_GPS_RECV_CHECK_WAIT          240
+#define DT_GPS_CYCLE_CHECK_WAIT         2000
+
+/*
+ * DT -> Data, Typed (should have been TD for Typed Data
+ * but at this point, probably more trouble than it is worth
+ * to change it).
+ *
+ * GPS_BUF_SIZE is biggest packet (MID 41, 188 bytes observed),
+ *   (where did 188 come from?  docs imply 91 bytes)
+ *   SirfBin overhead (start, len, chksum, end) 8 bytes
+ *   DT overhead (8 bytes).   204 rounded up to 256.
+ *
+ * The ORG4472/M10478 driver uses SPI which is master/slave.  Access is
+ * direct and no interrupts are used.  All accesses are done from
+ * syncronous (task) level.
+ *
+ * GPS_START_OFFSET: offset into the msg buffer where the incoming bytes
+ *   should be put.  Skips over DT overhead.
+ *
+ * SIRF_OVERHEAD: overhead bytes not part of sirf_len.  Includes start_seq (2),
+ *   payload_len (2), checksum (2), and end_seq (2).  8 total.
+ *
+ * GPS_OVERHEAD: space in msg buffer for overhead bytes.  Sum of DT overhead
+ *   and osp packet header and trailer.  16 bytes total.
+ *
+ * BUF_INCOMING_SIZE is the size of the chunk used by the lowest
+ *   layer to snarf serial blocks.  It is the minimum number of bytes we
+ *   snarf from the gps via the uart when not doing specific osp packets.
+ */
+
+#define GPS_BUF_SIZE		256
+#define GPS_START_OFFSET	8
+#define SIRF_OVERHEAD		8
+#define GPS_OVERHEAD		16
+#define BUF_INCOMING_SIZE	32
+
+/*
+ * gpsr_rx_parse_state_t: states for receive byte-to-msg processing
+ */
+typedef enum {
+  GPSR_NONE = 0,
+  GPSR_HUNT,
+  GPSR_NMEA,
+  GPSR_NMEA_C1,
+  GPSR_NMEA_C2,
+  GPSR_SIRF,
+  GPSR_SIRF_S1,
+  GPSR_SIRF_E1,
+} gpsr_rx_parse_state_t;
+
+typedef enum {
+  GPSR_NMEA_START,
+  GPSR_NMEA_END,
+  GPSR_BIN_A0,
+  GPSR_BIN_A2,
+  GPSR_BIN_B0,
+  GPSR_BIN_B3,
+  GPSR_OTHER,
+} gpsr_rx_parse_where_t;
+
+/*
+ * control structure for incoming bytes from the gps.
+ * Blocks of data from the gps are variable so we need both
+ * an index and remaining counts.
+ */
+typedef struct {
+  uint16_t index;			/* where the next char is */
+  uint16_t remaining;			/* how many are left */
+  uint8_t buf[BUF_INCOMING_SIZE];
+} inbuf_t;
 
 #endif /* __GPS_H__ */

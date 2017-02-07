@@ -70,6 +70,16 @@ implementation {
     call  Panic.warn(PANIC_GPS, where, arg, 0, 0, 0); \
   } while (0)
 
+  /* Baud rate divisor equations
+   *
+   * N.Frac = BRCLK / bps
+   * brw = N
+   * BRCLK = 8Mi (8388608)
+   * EUSCI_A_MCTLW_BRS_OFS = lookup[Frac]
+   *
+   * (see table on page 736 of SLAU356E - Revised Dec 2016)
+   */
+
 
   /* BRCLK is SMCLK, assumed to be 8MiHz */
   const msp432_usci_config_t gps_4800_config = {
