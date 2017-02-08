@@ -200,11 +200,8 @@ const uint8_t si446x_frr_config[] = { 0x11, 0x02, 0x04, 0x00,
                                     };
 
 
-
 /**************************************************************************/
-/*
- * MODULE DECLARATION
- */
+
 module Si446xCmdP {
   provides {
     interface Si446xCmd;
@@ -221,11 +218,6 @@ module Si446xCmdP {
     interface Panic;
   }
 }
-
-/**************************************************************************/
-/*
- * IMPLEMENTATION
- */
 implementation {
 #define __PANIC_RADIO(where, w, x, y, z) do {		  \
     call Panic.panic(PANIC_RADIO, where, w, x, y, z);	  \
@@ -343,7 +335,7 @@ implementation {
 #endif
   }
 
-   
+
   /**************************************************************************/
   /*
    * ll_si446x_read_frr             (low level)
@@ -351,7 +343,7 @@ implementation {
    * read Fast Response Register.
    * input parameter selects one of four.
    */
-  uint8_t ll_si446x_read_frr(uint8_t which) { 
+  uint8_t ll_si446x_read_frr(uint8_t which) {
     uint8_t result;
 
     SI446X_ATOMIC {
@@ -440,7 +432,7 @@ implementation {
       call HW.si446x_clr_cs();
     }
   }
-   
+
 
   /**************************************************************************/
   /*
@@ -451,7 +443,7 @@ implementation {
    * c:         pointer to buffer to send
    * response:  pointer to response bytes if any
    * cl:        length of cmd (buffer)
-   * 
+   *
    */
   void ll_si446x_send_cmd(const uint8_t *c, uint16_t cl) {
     uint32_t      t0, t1;
@@ -640,7 +632,6 @@ implementation {
       __PANIC_RADIO(98, status[DEVICE_STATE], status[PH_STATUS],
                     status[MODEM_STATUS], 0);
       ll_si446x_get_all_state(&chip_debug);
-      nop();
     }
   }
 
@@ -709,7 +700,6 @@ implementation {
      * least 1us.
      */
     call HW.si446x_clr_cs();
-    nop();
     t0 = call Platform.usecsRaw();
     while (call Platform.usecsRaw() - t0 < 2) ;
     SI446X_ATOMIC {
@@ -776,7 +766,7 @@ implementation {
         t0 = call Platform.usecsRaw();
         if (!ll_si446x_get_cts()) {
           __PANIC_RADIO(8, 0, 0, 0, 0);
-        }      
+        }
         t1 = call Platform.usecsRaw();
         ctp->t_cts0 += t1 - t0;
 
@@ -805,7 +795,6 @@ implementation {
       }
       t1 = call Platform.usecsRaw();
       ctp->t_elapsed = t1 - tot0;
-      nop();
       ll_si446x_read_fast_status(ctp->frr);
       dpp++;
     }
@@ -836,12 +825,10 @@ implementation {
        * 1us because we have the technology via Platform.usecsRaw.
        */
       call HW.si446x_clr_cs();          /* reset SPI on chip */
-      nop();
       t0 = call Platform.usecsRaw();
       while (call Platform.usecsRaw() - t0 < 2) ;
 
       call HW.si446x_set_cs();
-      nop();
       t0 = call Platform.usecsRaw();
       while (call Platform.usecsRaw() - t0 < 2) ;
 
@@ -852,7 +839,6 @@ implementation {
       rd.cap_val     = call HW.si446x_cap_val();
       rd.cap_control = call HW.si446x_cap_control();
 
-      nop();                              /* these should become ll_* */
       ll_si446x_cmd_reply(si446x_part_info, sizeof(si446x_part_info),
                           (void *) &rd.part_info, SI446X_PART_INFO_REPLY_SIZE);
 
@@ -889,9 +875,7 @@ implementation {
       ll_si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc),
                           (void *) &rd.packet_info_len, SI446X_PACKET_INFO_REPLY_SIZE);
 
-      nop();
       ll_si446x_dump_properties();
-      nop();
       rd.dump_end = call Platform.usecsRaw();
       rd.delta =  rd.dump_end - rd.dump_start;
     }
@@ -1050,10 +1034,10 @@ implementation {
    * Si446xCmd.fast_modem_pend
    * Si446xCmd.fast_latched_rssi
    *
-   * read Fast Response Register. 
+   * read Fast Response Register.
    * register comes back on the same SPI transaction as the command.
    * CTS does not need to be true.
-   * 
+   *
    */
   async command uint8_t Si446xCmd.fast_device_state() {
     return ll_si446x_read_frr(SI446X_GET_DEVICE_STATE);
@@ -1242,7 +1226,6 @@ implementation {
       readBlock(data, length);
       call HW.si446x_clr_cs();
       t1 = call Platform.usecsRaw();
-      nop();
     }
     t1 -= t0;
     ll_si446x_trace(T_RC_READ_RX_FF, 0, 0);
@@ -1334,8 +1317,6 @@ implementation {
     x[2] = 0x30;                  /* back to READY */
     x[3] = 0;
     x[4] = len & 0xff;
-    //    ll_si446x_drf();
-    nop();
     ll_si446x_send_cmd((void *) x, 5);
     ll_wait_for_cts();
   }
@@ -1396,7 +1377,6 @@ implementation {
       writeBlock(data, length);
       call HW.si446x_clr_cs();
       t1 = call Platform.usecsRaw();
-      nop();
       t1 -= t0;
     }
     ll_si446x_trace(T_RC_WRITE_TX_FF, 0, 0);

@@ -92,12 +92,6 @@ implementation {
   PacketTimeSyncOffset = DriverLayerP.PacketTimeSyncOffset;
   DriverLayerP.TimeSyncFlag = TimeSyncFlag;
 
-/*
-  AckReceived = DriverLayerP.AckReceived;
-  components new CC2520MetadataFlagC() as AckFlagC;
-  DriverLayerP.AckFlag -> AckFlagC;
-*/
-
   AckReceivedFlag = DriverLayerP.AckReceivedFlag;
 
   PacketLinkQuality = DriverLayerP.PacketLinkQuality;

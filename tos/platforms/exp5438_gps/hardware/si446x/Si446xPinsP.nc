@@ -47,16 +47,16 @@ module Si446xPinsP {
   }
 }
 implementation {
-  async command uint8_t HW.si446x_cts()             { return SI446X_CTS_P; }
-  async command uint8_t HW.si446x_irqn()            { return SI446X_IRQN_P; }
-  async command uint8_t HW.si446x_sdn()             { return SI446X_SDN_IN; }
-  async command uint8_t HW.si446x_csn()             { return SI446X_CSN_IN; }
-  async command void    HW.si446x_shutdown()        { SI446X_SDN = 1; }
-  async command void    HW.si446x_unshutdown()      { SI446X_SDN = 0; }
-  async command void    HW.si446x_set_cs()          { SI446X_CSN = 0; }
-  async command void    HW.si446x_clr_cs()          { SI446X_CSN = 1; }
-  async command void    HW.si446x_set_low_tx_pwr()  { }
-  async command void    HW.si446x_set_high_tx_pwr() { }
+  async command uint8_t  HW.si446x_cts()             { return SI446X_CTS_P; }
+  async command uint8_t  HW.si446x_irqn()            { return SI446X_IRQN_P; }
+  async command uint8_t  HW.si446x_sdn()             { return SI446X_SDN_IN; }
+  async command uint8_t  HW.si446x_csn()             { return SI446X_CSN_IN; }
+  async command void     HW.si446x_shutdown()        { SI446X_SDN = 1; }
+  async command void     HW.si446x_unshutdown()      { SI446X_SDN = 0; }
+  async command void     HW.si446x_set_cs()          { SI446X_CSN = 0; }
+  async command void     HW.si446x_clr_cs()          { SI446X_CSN = 1; }
+  async command void     HW.si446x_set_low_tx_pwr()  { }
+  async command void     HW.si446x_set_high_tx_pwr() { }
   async command uint16_t HW.si446x_cap_val()         { return TA0CCR3;  }
   async command uint16_t HW.si446x_cap_control()     { return TA0CCTL3; }
 

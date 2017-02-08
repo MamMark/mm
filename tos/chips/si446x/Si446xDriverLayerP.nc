@@ -521,7 +521,6 @@ implementation {
   }
 
   void fsm_trace_end(fsm_result_t ns) {
-    nop(); 
     fsm_trace_array[fsm_tc].elapsed = call Platform.usecsRaw() - fsm_trace_array[fsm_tc].ts_start;
     fsm_trace_array[fsm_tc].ns = ns.s;
     fsm_trace_array[fsm_tc].ne = ns.e;
@@ -545,7 +544,6 @@ implementation {
     if (fsm_active)
       __PANIC_RADIO(82, ev, fsm_global_current_state,  1, 1);
 
-    nop();
     do {
       fsm_active++; // keep track of number of iterations of internal events
       ns.s = S_SDN;
@@ -593,7 +591,6 @@ implementation {
     // record identified. state machine is lost.
     if (!t)
       __PANIC_RADIO(84, ev, fsm_global_current_state, ns.s, ns.e);
-    nop();
     fsm_active = FALSE;
     // signal completions
     if (global_ioc.rc_signal)
@@ -786,9 +783,6 @@ implementation {
     iter_now = call Platform.usecsRaw();
     config_task_time = iter_now - config_start_time;
     config_list_iter = 0;
-
-    nop();
-    nop();
 
     // invoke driver state machine with completion notification event
     fsm_task_queue(E_CONFIG_DONE);
@@ -1027,7 +1021,6 @@ implementation {
     call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
     call Si446xCmd.ll_clr_ints(0xff, 0xff, 0xff);  // clear all interrupts
     call Si446xCmd.start_rx();
-    nop();
     return fsm_results(t->next_state, E_NONE);
   }
 
@@ -1095,12 +1088,10 @@ implementation {
     if (!global_ioc.pTxMsg) {            // should have something to send
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
-    nop();
     call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
     call Si446xCmd.ll_clr_ints(SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
 			       SI446X_MODEM_RX_CLEAR_MASK,
 			       SI446X_CHIP_RX_CLEAR_MASK);
-    nop();
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
     pkt_len = *dp + 1;              // length of data field is first byte of msg
     call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, SI446X_FIFO_FLUSH_TX);
@@ -1109,7 +1100,6 @@ implementation {
     // find size to fill fifo max(pkt_len, tx_ff_free)
     global_ioc.tx_ff_index = (pkt_len < tx_ff_free) ? pkt_len : tx_ff_free;
     call Si446xCmd.write_tx_fifo(dp, global_ioc.tx_ff_index);
-    nop();
     call Si446xCmd.start_tx(pkt_len);
     start_alarm(SI446X_TX_TIMEOUT);
     return fsm_results(t->next_state, E_NONE);
@@ -1197,11 +1187,8 @@ implementation {
     stop_alarm();
     dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
     pkt_len = call Si446xCmd.get_packet_info() + 1;        // include len byte
-    nop();
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
-    nop();
     call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
-    nop();
     if (pkt_len != (global_ioc.rx_ff_index + rx_len))
       __PANIC_RADIO(11, pkt_len, rx_len, (parg_t) dp, 0);
     // check to see if upper layer wants the packet
@@ -1506,11 +1493,8 @@ implementation {
    * order the Tasklet.runs are invoked in.
    */
   tasklet_async event void RadioAlarm.fired() {
-    nop();
-    nop();
     stateAlarm_active = FALSE;
     fsm_task_queue(E_WAIT_DONE);
-    //    fsm_change_state(E_WAIT_DONE);
   }
 
 
@@ -1520,9 +1504,6 @@ implementation {
    */
   tasklet_async event void Tasklet.run() {
     fsm_event_t ev;
-
-    nop();
-    nop();
 
     while (TRUE) {
       if (fsm_int_event) {
@@ -1719,13 +1700,11 @@ implementation {
 
   async event void Panic.hook() {
     call Si446xCmd.dump_radio();
-    nop();
 #ifdef notdef
     call CSN.set();
     call CSN.clr();
     call CSN.set();
     drs(TRUE);
-    nop();
 #endif
   }
 
