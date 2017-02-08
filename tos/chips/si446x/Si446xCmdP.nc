@@ -1,5 +1,5 @@
 /**
- * Copyright @ 2016 Dan Maltbie
+ * Copyright @ 2016-2017 Dan Maltbie
  * @author Dan Maltbie
  * All rights reserved.
  */
@@ -257,50 +257,49 @@ implementation {
 #define TRACE_SHOUT    8
 
   void ll_si446x_trace(trace_where_t where, uint16_t r0, uint16_t r1) {
-  uint8_t    level;
+    uint8_t    level;
 
-  switch (where) {
- case T_RC_SHUTDOWN:
- case T_RC_UNSHUTDOWN:
- case T_RC_CHECK_CCA:
- case T_DL_TRANS_ST:
- case T_RC_WAIT_CTS_F:
- default:
-   level = TRACE_MUMBLE;
-   break;
+    switch (where) {
+      case T_RC_SHUTDOWN:
+      case T_RC_UNSHUTDOWN:
+      case T_RC_CHECK_CCA:
+      case T_DL_TRANS_ST:
+      case T_RC_WAIT_CTS_F:
+      default:
+        level = TRACE_MUMBLE;
+        break;
 
- case T_RC_CHG_STATE:
- case T_DL_INTERRUPT:
- case T_RC_INTERRUPT:
-   level = TRACE_WHISPER;
-   break;
+      case T_RC_CHG_STATE:
+      case T_DL_INTERRUPT:
+      case T_RC_INTERRUPT:
+        level = TRACE_WHISPER;
+        break;
 
- case T_RC_FIFO_INFO:
- case T_RC_GET_PKT_INF:
- case T_RC_READ_PROP:
- case T_RC_SET_PROP:
- case T_RC_READ_RX_FF:
- case T_RC_WRITE_TX_FF:
- case T_RC_SEND_CMD:
- case T_RC_CMD_REPLY:
- case T_RC_GET_REPLY:
- case T_RC_WAIT_CTS:
-   level = TRACE_TALK;
-   break;
+      case T_RC_FIFO_INFO:
+      case T_RC_GET_PKT_INF:
+      case T_RC_READ_PROP:
+      case T_RC_SET_PROP:
+      case T_RC_READ_RX_FF:
+      case T_RC_WRITE_TX_FF:
+      case T_RC_SEND_CMD:
+      case T_RC_CMD_REPLY:
+      case T_RC_GET_REPLY:
+      case T_RC_WAIT_CTS:
+        level = TRACE_TALK;
+        break;
 
- case T_RC_DIS_INTR:
- case T_RC_DRF_ALL:
- case T_RC_ENABLE_INT:
- case T_RC_DUMP_PROPS:
- case T_RC_DUMP_RADIO:
- case T_RC_DUMP_FIFO:
-   level = TRACE_SHOUT;
-   break;
-}
-  nop();
-  if ((!trace_predicate) || (level & trace_predicate))
-    call Trace.trace(where, r0, r1);
-}
+      case T_RC_DIS_INTR:
+      case T_RC_DRF_ALL:
+      case T_RC_ENABLE_INT:
+      case T_RC_DUMP_PROPS:
+      case T_RC_DUMP_RADIO:
+      case T_RC_DUMP_FIFO:
+        level = TRACE_SHOUT;
+        break;
+    }
+    if ((!trace_predicate) || (level & trace_predicate))
+      call Trace.trace(where, r0, r1);
+  }
 
 
   /**************************************************************************/
