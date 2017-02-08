@@ -693,14 +693,25 @@ implementation {
    */
   void ll_i446x_dump_radio_fifo() {
     uint8_t cts, rx_count, tx_count;
+    uint32_t t0;
+
     /*
      * CSn (NSEL), needs to be held high (deasserted, cleared) for 80ns.
-     * We throw a nop in just to make sure it stays up long enough.
-     * Usually it isn't a problem but dump has a back to back because
-     * we don't know the state of CS when called.
+     *
+     * We used to use a nop to make sure we hold this up long enough,
+     * however nop is dangerous.  cpu dependent and may or maynot do
+     * anything.
+     *
+     * A better solution is to use Platform.usecsRaw which is required
+     * to be correct for each platform if implemented (required for us).
+     * We use 2 because we don't know where in the current usec window
+     * we are currently and want at least 80ns.  This will give us at
+     * least 1us.
      */
     call HW.si446x_clr_cs();
     nop();
+    t0 = call Platform.usecsRaw();
+    while (call Platform.usecsRaw() - t0 < 2) ;
     SI446X_ATOMIC {
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(SI446X_CMD_FIFO_INFO);
@@ -808,6 +819,7 @@ implementation {
    * dump full radio configuration and state.
    */
   void ll_si446x_drf() {
+    uint32_t t0;
 
     ll_si446x_trace(T_RC_DRF_ALL, 0, 0);
     SI446X_ATOMIC {
@@ -819,11 +831,23 @@ implementation {
       rd.IRQN_pin    = call HW.si446x_irqn();
       rd.SDN_pin     = call HW.si446x_sdn();
 
+      /*
+       * make sure we don't violate the CS hold time of 80ns.  We use
+       * 1us because we have the technology via Platform.usecsRaw.
+       */
       call HW.si446x_clr_cs();          /* reset SPI on chip */
       nop();
+      t0 = call Platform.usecsRaw();
+      while (call Platform.usecsRaw() - t0 < 2) ;
+
       call HW.si446x_set_cs();
       nop();
+      t0 = call Platform.usecsRaw();
+      while (call Platform.usecsRaw() - t0 < 2) ;
+
       call HW.si446x_clr_cs();
+      t0 = call Platform.usecsRaw();
+      while (call Platform.usecsRaw() - t0 < 2) ;
 
       rd.ta0ccr3     = TA0CCR3;
       rd.ta0cctl3    = TA0CCTL3;
