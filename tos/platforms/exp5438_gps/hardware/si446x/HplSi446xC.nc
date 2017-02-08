@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Eric B. Decker
+ * Copyright (c) 2015, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,6 @@ configuration HplSi446xC {
     interface Resource as SpiResource;
 
     interface Alarm<TRadio, uint16_t> as Alarm;
-    interface LocalTime<TRadio> as LocalTimeRadio;
   }
 }
 implementation {
@@ -128,7 +127,4 @@ implementation {
 
   components new AlarmMicro16C() as AlarmC;
   Alarm = AlarmC;
-
-  components LocalTimeMicroC;
-  LocalTimeRadio = LocalTimeMicroC.LocalTime;
 }

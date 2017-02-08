@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Eric B. Decker, Dan J. Maltbie
+ * Copyright (c) 2015, 2016-2017 Eric B. Decker, Dan J. Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -258,7 +258,6 @@ module Si446xDriverLayerP {
     interface PacketAcknowledgements;
   }
   uses {
-    interface LocalTime<TRadio>;
     interface Si446xDriverConfig as Config;
     interface Si446xCmd;
 
@@ -396,7 +395,7 @@ implementation {
   // used to record the state transition machine operation
   // each stage represents a record of the FSM stage execution
   typedef struct {
-    uint32_t               start;
+    uint32_t               ts_start;
     uint16_t               elapsed;
     uint16_t               ph;
     uint16_t               modem;
@@ -506,7 +505,7 @@ implementation {
 
   void fsm_trace_start(fsm_event_t ev, fsm_state_t cs) {
     call Si446xCmd.trace(T_DL_TRANS_ST, ev, cs);
-    fsm_trace_array[fsm_tc].start  = call LocalTime.get();
+    fsm_trace_array[fsm_tc].ts_start  = call Platform.usecsRaw();
     fsm_trace_array[fsm_tc].ev = ev;
     fsm_trace_array[fsm_tc].cs = cs;
     fsm_trace_array[fsm_tc].ac = 0;
@@ -523,7 +522,7 @@ implementation {
 
   void fsm_trace_end(fsm_result_t ns) {
     nop(); 
-    fsm_trace_array[fsm_tc].elapsed = call LocalTime.get() - fsm_trace_array[fsm_tc].start;
+    fsm_trace_array[fsm_tc].elapsed = call Platform.usecsRaw() - fsm_trace_array[fsm_tc].ts_start;
     fsm_trace_array[fsm_tc].ns = ns.s;
     fsm_trace_array[fsm_tc].ne = ns.e;
     fsm_trace_array[fsm_tc].al_e = call RadioAlarm.isFree();
@@ -1424,7 +1423,7 @@ implementation {
 
 
   typedef struct int_trace {
-    uint32_t               time;
+    uint32_t               time_stamp;
     uint16_t               delta;
     Si446x_idevice_state_t ds;
     uint8_t                ph_pend;
@@ -1443,13 +1442,13 @@ implementation {
     fsm_trace_array[fsm_tc].chip = isp->chip_pend;
     fsm_trace_array[fsm_tc].ds = call Si446xCmd.fast_device_state();
     fsm_trace_array[fsm_tc].rssi = call Si446xCmd.fast_latched_rssi();
-    int_trace_array[int_tc].time = call LocalTime.get();
+    int_trace_array[int_tc].time_stamp = call Platform.usecsRaw();
     int_trace_array[int_tc].ph_pend = isp->ph_pend;
     int_trace_array[int_tc].modem_pend = isp->modem_pend;
     int_trace_array[int_tc].chip_pend = isp->chip_pend;
     int_trace_array[fsm_tc].ds = call Si446xCmd.fast_device_state();
-    int_trace_array[fsm_tc].delta = int_trace_array[int_tc].time - int_trace_prev_time;
-    int_trace_prev_time =  int_trace_array[int_tc].time;
+    int_trace_array[fsm_tc].delta = int_trace_array[int_tc].time_stamp - int_trace_prev_time;
+    int_trace_prev_time =  int_trace_array[int_tc].time_stamp;
     int_tp = int_tc;
     if (++int_tc >= NELEMS(int_trace_array))
       int_tc = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Eric B. Decker
+ * Copyright (c) 2015, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,6 @@ configuration Si446xDriverLayerC {
     interface PacketField<uint8_t> as PacketLinkQuality;
     //interface PacketField<uint8_t> as AckReceived;
 
-    interface LocalTime<TRadio> as LocalTimeRadio;
     interface Alarm<TRadio, tradio_size>;
     interface PacketAcknowledgements;
   }
@@ -82,7 +81,6 @@ implementation {
   RadioPacket = DriverLayerP;
   PacketAcknowledgements = DriverLayerP;
 
-  LocalTimeRadio = HWHplC;
   Config = DriverLayerP;
 
   PacketTransmitPower = DriverLayerP.PacketTransmitPower;
@@ -114,8 +112,6 @@ implementation {
   DriverLayerP.SpiBlock    -> HWHplC;
 
   Tasklet = DriverLayerP.Tasklet;
-
-  DriverLayerP.LocalTime-> HWHplC.LocalTimeRadio;
 
   components Si446xCmdC;
   DriverLayerP.Si446xCmd         -> Si446xCmdC;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Eric B. Decker
+ * Copyright (c) 2015, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -907,10 +907,9 @@ typedef struct {
 } rps_t;
 
 typedef struct {
-  uint16_t              p_dump_start;   /* 16 bit raw (platform) us timestamp */
-  uint32_t              l_dump_start;   /* 32 bit us TRadio Localtime timestamp */
-  uint32_t              l_dump_end;     /* 32 bit us TRadio Localtime timestamp */
-  uint32_t              l_delta;        /* how long did dump take */
+  uint32_t              dump_start;   /* 32 bit us TRadio Localtime timestamp */
+  uint32_t              dump_end;     /* 32 bit us TRadio Localtime timestamp */
+  uint32_t              delta;        /* how long did dump take */
 
   uint8_t               CTS_pin;
   uint8_t               IRQN_pin;

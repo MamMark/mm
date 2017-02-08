@@ -1,5 +1,6 @@
 /**
- * Copyright @ 2016-2017 Dan Maltbie
+ * Copyright (c) 2016-2017 Dan Maltbie
+ * Copyright (c) 2017,Eric B. Decker
  * @author Dan Maltbie
  * All rights reserved.
  */
@@ -209,8 +210,6 @@ module Si446xCmdP {
     interface Si446xCmd;
   }
   uses {
-    interface LocalTime<TRadio>;
-
     interface FastSpiByte;
     interface SpiByte;
     interface SpiBlock;
@@ -402,7 +401,7 @@ implementation {
 
     modem = pend[2];                    /* trace actual values */
     rssi  = pend[3];
-    rpp->ts = call LocalTime.get();
+    rpp->ts = call Platform.usecsRaw();
     rpp->cts   = cts;
     rpp->irqn  = irqn;
     rpp->csn   = csn;
@@ -455,7 +454,7 @@ implementation {
    * 
    */
   void ll_si446x_send_cmd(const uint8_t *c, uint16_t cl) {
-    uint16_t      t0, t1;
+    uint32_t      t0, t1;
     cmd_timing_t *ctp;
     uint8_t       cmd;
     bool          done;
@@ -515,7 +514,7 @@ implementation {
    */
   void ll_si446x_get_reply(uint8_t *r, uint16_t l, uint8_t cmd) {
     uint8_t rcts;
-    uint16_t t0, t1;
+    uint32_t t0, t1;
     cmd_timing_t *ctp;
 
     ctp = &cmd_timings[cmd];
@@ -554,7 +553,7 @@ implementation {
    * perform combined send_cmd and get_reply operations.
    */
   void ll_si446x_cmd_reply(const uint8_t *cp, uint16_t cl, uint8_t *rp, uint16_t rl) {
-    uint16_t t0, t1;
+    uint32_t t0, t1;
     cmd_timing_t *ctp;
 
     ctp = &cmd_timings[cp[0]];
@@ -738,7 +737,7 @@ implementation {
     cmd_timing_t *ctp, *ctp_ff;
     uint8_t group, index, length;
     uint8_t  *w, wl;                    /* working */
-    uint16_t t0, t1, tot0;
+    uint32_t t0, t1, tot0;
 
     ll_si446x_trace(T_RC_DUMP_PROPS, 0, 0);
     ctp_ff = &cmd_timings[0xff];
@@ -812,8 +811,7 @@ implementation {
 
     ll_si446x_trace(T_RC_DRF_ALL, 0, 0);
     SI446X_ATOMIC {
-      rd.p_dump_start = call Platform.usecsRaw();
-      rd.l_dump_start = call LocalTime.get();
+      rd.dump_start = call Platform.usecsRaw();
 
       /* do CSN before we reset the SPI port */
       rd.CSN_pin     = call HW.si446x_csn();
@@ -870,8 +868,8 @@ implementation {
       nop();
       ll_si446x_dump_properties();
       nop();
-      rd.l_dump_end = call LocalTime.get();
-      rd.l_delta =  rd.l_dump_end - rd.l_dump_start;
+      rd.dump_end = call Platform.usecsRaw();
+      rd.delta =  rd.dump_end - rd.dump_start;
     }
   }
 
@@ -883,7 +881,8 @@ implementation {
    * wait for the radio chip to report that it is ready for the next command.
    */
   bool ll_wait_for_cts() {
-    uint16_t t0, t1;
+    uint32_t t0, t1;
+
     t0 = call Platform.usecsRaw();
     t1 = t0;
     while (!ll_si446x_get_cts()) {
@@ -1209,7 +1208,7 @@ implementation {
    * throw an FIFO Underflow exception.
    */
   async command void Si446xCmd.read_rx_fifo(uint8_t *data, uint8_t length) {
-    uint16_t t0, t1;
+    uint32_t t0, t1;
 
     SI446X_ATOMIC {
       t0 = call Platform.usecsRaw();
@@ -1364,7 +1363,7 @@ implementation {
    * FIFO Overflow exception.
    */
   async command void Si446xCmd.write_tx_fifo(uint8_t *data, uint8_t length) {
-    uint16_t t0, t1;
+    uint32_t t0, t1;
 
     SI446X_ATOMIC {
       t0 = call Platform.usecsRaw();
