@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Eric B. Decker
+ * Copyright (c) 2015, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,6 +57,8 @@ implementation {
   async command void    HW.si446x_clr_cs()          { SI446X_CSN = 1; }
   async command void    HW.si446x_set_low_tx_pwr()  { }
   async command void    HW.si446x_set_high_tx_pwr() { }
+  async command uint16_t HW.si446x_cap_val()         { return TA0CCR3;  }
+  async command uint16_t HW.si446x_cap_control()     { return TA0CCTL3; }
 
   async command void    HW.si446x_enableInterrupt() {
     atomic {

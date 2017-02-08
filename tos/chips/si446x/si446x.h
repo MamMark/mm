@@ -915,8 +915,8 @@ typedef struct {
   uint8_t               IRQN_pin;
   uint8_t               SDN_pin;
   uint8_t               CSN_pin;
-  uint8_t               ta0ccr3;
-  uint8_t               ta0cctl3;
+  uint16_t              cap_val;
+  uint16_t              cap_control;
 
   si446x_part_info_t    part_info;
   si446x_func_info_t    func_info;

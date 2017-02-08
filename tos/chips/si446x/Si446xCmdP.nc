@@ -849,8 +849,8 @@ implementation {
       t0 = call Platform.usecsRaw();
       while (call Platform.usecsRaw() - t0 < 2) ;
 
-      rd.ta0ccr3     = TA0CCR3;
-      rd.ta0cctl3    = TA0CCTL3;
+      rd.cap_val     = call HW.si446x_cap_val();
+      rd.cap_control = call HW.si446x_cap_control();
 
       nop();                              /* these should become ll_* */
       ll_si446x_cmd_reply(si446x_part_info, sizeof(si446x_part_info),

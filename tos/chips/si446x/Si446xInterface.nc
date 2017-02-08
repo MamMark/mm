@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Eric B. Decker
+ * Copyright (c) 2015, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -145,6 +145,14 @@ interface Si446xInterface {
    * put chip in high power transmit mode.
    **/
   async command void si446x_set_high_tx_pwr();
+
+
+  /**
+   * cap_val:     get register of capture hardware
+   * cap_control: get control value for capture
+   */
+  async command uint16_t si446x_cap_val();
+  async command uint16_t si446x_cap_control();
 
 
   /**
