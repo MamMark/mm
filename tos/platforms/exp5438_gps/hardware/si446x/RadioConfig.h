@@ -69,32 +69,22 @@
 /**
  * This is the timer type of the radio alarm interface
  */
-typedef TMicro   TRadio;
+typedef T32khz   TRadio;
 typedef uint16_t tradio_size;
 
 /**
  * The number of radio alarm ticks per one microsecond .
- *
- * The main exp5438 clock is at 8MHz (decimal), TA0 is used to
- * provide TMicro (DCO -> MCLK -> SMCLK -> /8 -> TA0).
- *
- * The SFD pin is on pin 8.1 which is connected to TA0.CCI1B.
- * TA0 is run off the TMicro so we use TA0 for the capture and also
- * runs the TMicro clocks.
  */
-#define RADIO_ALARM_MICROSEC    1
+#define RADIO_ALARM_MICROSEC    1/32
 
 
 /**
  * The base two logarithm of the number of radio alarm ticks per one millisecond
+ * binary milliseconds.
  *
- * Originally TinyOS defined time in terms of powers of two.  And 
- * RADIO_ALARM_MILLI_EXP expressing millisecs (actually mis, binary millisecs)
- * isn't a problem.
- *
- * 2**10 = 1024
+ * 2**5 = 32, 32 ticks in 1mis
  */
-#define RADIO_ALARM_MILLI_EXP	10
+#define RADIO_ALARM_MILLI_EXP	5
 
 
 

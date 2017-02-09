@@ -125,6 +125,6 @@ implementation {
   InterruptNIRQC.HplInterrupt -> HplMsp430InterruptC.Port14;
 #endif
 
-  components new AlarmMicro16C() as AlarmC;
+  components new Alarm32khz16C() as AlarmC;
   Alarm = AlarmC;
 }
