@@ -449,11 +449,14 @@ implementation {
    * mutual exclusion is provided using a Tasklet group.  Must be called from within
    * Tasklet.run.
    *
-   * There are 4 different sources of events that potentially can occur for this
-   * state machine, Alarms (timeouts, waiting, etc), Interrupts, User, and Task.
-   * We provide a 1 element queue for each of this sources.
+   * There are 3 different sources of events that potentially can occur for
+   * this state machine, Interrupts, User, and Task.  We provide a 1
+   * element queue for each of these sources.
    *
-   * Alarm doesn't queue via fsm_alarm_event.  Priority is Alarm > Int > User > Task.
+   * The RadioTimer implements timeouts, waiting, etc and queues through the "task"
+   * event.
+   *
+   * Priority is Int > User > Task.
    */
 
   tasklet_norace fsm_event_t fsm_int_event, fsm_user_event, fsm_task_event;
