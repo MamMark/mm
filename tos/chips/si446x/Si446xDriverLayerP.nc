@@ -262,10 +262,6 @@ module Si446xDriverLayerP {
     interface Si446xCmd;
 
     interface Resource       as SpiResource;
-    interface FastSpiByte;
-    interface SpiByte;
-    interface SpiBlock;
-
     interface PacketFlag     as TransmitPowerFlag;
     interface PacketFlag     as RSSIFlag;
     interface PacketFlag     as TimeSyncFlag;

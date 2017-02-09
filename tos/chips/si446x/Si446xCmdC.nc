@@ -11,8 +11,10 @@ configuration Si446xCmdC {
 implementation {
   components Si446xCmdP;
   Si446xCmd = Si446xCmdP;
+
   components TraceC;
   Si446xCmdP.Trace -> TraceC;
+
   components PanicC;
   Si446xCmdP.Panic -> PanicC;
 
@@ -20,9 +22,8 @@ implementation {
   Si446xCmdP.FastSpiByte -> HplSi446xC;
   Si446xCmdP.SpiByte     -> HplSi446xC;
   Si446xCmdP.SpiBlock    -> HplSi446xC;
+  Si446xCmdP.HW          -> HplSi446xC;    /* Si446xInterface (hw interface) */
 
   components PlatformC;
   Si446xCmdP.Platform    -> PlatformC;
-
-  Si446xCmdP.HW -> HplSi446xC;    /* Si446xInterface (hw interface) */
 }

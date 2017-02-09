@@ -7,7 +7,7 @@
 #include <Tasklet.h>
 
 #ifndef PACKED
-#warning PACKED not defined but used
+#define PACKED __attribute__((__packed__))
 #endif
 
 uint32_t gt0, gt1;

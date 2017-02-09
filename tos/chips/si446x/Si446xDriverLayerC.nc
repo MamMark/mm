@@ -97,13 +97,9 @@ implementation {
   PacketLinkQuality = DriverLayerP.PacketLinkQuality;
   PacketTimeStamp = DriverLayerP.PacketTimeStamp;
 
+  components HplSi446xC;
+  Alarm = HplSi446xC.Alarm;
   RadioAlarm = DriverLayerP.RadioAlarm;
-  Alarm = HWHplC.Alarm;
-
-  DriverLayerP.SpiResource -> HWHplC.SpiResource;
-  DriverLayerP.FastSpiByte -> HWHplC;
-  DriverLayerP.SpiByte     -> HWHplC;
-  DriverLayerP.SpiBlock    -> HWHplC;
 
   Tasklet = DriverLayerP.Tasklet;
 
