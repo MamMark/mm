@@ -890,7 +890,7 @@ implementation {
     volatile norace uint8_t xcts;
 
     if (!(xcts = call Si446xCmd.get_cts())) {
-      __PANIC_RADIO(9, 0, 0, 0, 0);
+      __PANIC_RADIO(9, xcts, 0, 0, 0);
     }
     start_alarm(SI446X_POWER_UP_WAIT_TIME);
     call Si446xCmd.power_up();
