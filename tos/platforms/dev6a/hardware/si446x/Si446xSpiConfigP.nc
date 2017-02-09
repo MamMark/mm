@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,46 +33,31 @@
  */
 
 /**
- * Defining the platform-independently named packet structures to be the
- * chip-specific CC1000 packet structures.
- *
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#ifndef PLATFORM_MESSAGE_H
-#define PLATFORM_MESSAGE_H
+#include "msp432usci.h"
 
-#include <Serial.h>
-#include <Si446xRadio.h>
+/*
+ * dev6a, msp432, USCI, SPI
+ * msp432 usci configuration
+ * interface to si446x chip
+ */
 
-typedef union message_header {
-  serial_header_t serial;
-  si446x_packet_header_t header;
-} message_header_t;
+const msp432_usci_config_t si446x_spi_config = {
+  ctlw0 : (EUSCI_B_CTLW0_CKPH        | EUSCI_B_CTLW0_MSB  |
+           EUSCI_B_CTLW0_MST         | EUSCI_B_CTLW0_SYNC |
+           EUSCI_B_CTLW0_SSEL__SMCLK),
+  brw   : MSP432_RADIO_DIV,     /* see platform_clk_defs */
+  mctlw : 0,                    /* Always 0 in SPI mode */
+  i2coa : 0
+};
 
-typedef union message_footer {
-  si446x_packet_footer_t footer;
-} message_footer_t;
-
-typedef struct message_metadata {
-  union {
-    serial_metadata_t serial_meta;
-    si446x_metadata_t si446x_meta;
-  };
-
-#ifdef LOW_POWER_LISTENING
-  lpl_metadata_t       lpl_meta;
-#endif
-
-  timestamp_metadata_t ts_meta;
-
- /** Packet Link Metadata */
-#ifdef PACKET_LINK
-  link_metadata_t      link_meta;
-#endif
-
-  flags_metadata_t     flags_meta;
-
-} message_metadata_t;
-
-#endif
+module Si446xSpiConfigP {
+  provides interface Msp432UsciConfigure;
+}
+implementation {
+  async command const msp432_usci_config_t *Msp432UsciConfigure.getConfiguration() {
+    return &si446x_spi_config;
+  }
+}

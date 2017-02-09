@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, Eric B. Decker
+ * Copyright (c) 2015, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,46 +33,49 @@
  */
 
 /**
- * Defining the platform-independently named packet structures to be the
- * chip-specific CC1000 packet structures.
- *
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#ifndef PLATFORM_MESSAGE_H
-#define PLATFORM_MESSAGE_H
+#include <RadioConfig.h>
 
-#include <Serial.h>
-#include <Si446xRadio.h>
+configuration HplSi446xC {
+  provides {
+    interface Si446xInterface;
 
-typedef union message_header {
-  serial_header_t serial;
-  si446x_packet_header_t header;
-} message_header_t;
+    interface SpiByte;
+    interface FastSpiByte;
+    interface SpiPacket;
+    interface SpiBlock;
 
-typedef union message_footer {
-  si446x_packet_footer_t footer;
-} message_footer_t;
+    interface Alarm<TRadio, uint16_t> as Alarm;
+  }
+}
+implementation {
+  components HplMsp432GpioC as GIO;
+  components HplMsp432PortIntP as PortInts;
+  components PanicC, PlatformC;
 
-typedef struct message_metadata {
-  union {
-    serial_metadata_t serial_meta;
-    si446x_metadata_t si446x_meta;
-  };
+  components Si446xPinsP;
+  components Si446xSpiConfigP as RadioConf;
 
-#ifdef LOW_POWER_LISTENING
-  lpl_metadata_t       lpl_meta;
-#endif
+  Si446xInterface = Si446xPinsP;
+  Si446xPinsP.RadioNIRQ -> PortInts.Int[SI446X_IRQN_PORT_PIN];
 
-  timestamp_metadata_t ts_meta;
+  /* radio port */
+  components Msp432UsciSpiB2C as RadioC;
+  RadioC.SIMO               -> GIO.UCB2SIMOxPM;
+  RadioC.SOMI               -> GIO.UCB2SOMIxPM;
+  RadioC.CLK                -> GIO.UCB2CLKxPM;
+  RadioC.Panic              -> PanicC;
+  RadioC.Platform           -> PlatformC;
+  PlatformC.PeripheralInit  -> RadioC;
+  RadioC.Msp432UsciConfigure-> RadioConf;
 
- /** Packet Link Metadata */
-#ifdef PACKET_LINK
-  link_metadata_t      link_meta;
-#endif
+  SpiByte                   = RadioC;
+  FastSpiByte               = RadioC;
+  SpiPacket                 = RadioC;
+  SpiBlock                  = RadioC;
 
-  flags_metadata_t     flags_meta;
-
-} message_metadata_t;
-
-#endif
+  components new Alarm32khz16C() as AlarmC;
+  Alarm                     = AlarmC;
+}

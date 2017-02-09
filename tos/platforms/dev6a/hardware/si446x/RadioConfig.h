@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, Eric B. Decker
+ * Copyright (c) 2015, 2016 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -8,13 +8,11 @@
  *
  * - Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- *
  * - Redistributions in binary form must reproduce the above copyright
  *   notice, this list of conditions and the following disclaimer in the
  *   documentation and/or other materials provided with the
  *   distribution.
- *
- * - Neither the name of the copyright holders nor the names of
+ * - Neither the name of the copyright holder nor the names of
  *   its contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
@@ -30,49 +28,71 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author: Eric B. Decker
  */
+
+#ifndef __RADIOCONFIG_H__
+#define __RADIOCONFIG_H__
+
+#include <Timer.h>
+#include <message.h>
+
+/*
+ * Also include the platform dependent si446x definitions generated
+ *  from the SiLabs WDS program (Wireless Development Studio.
+ */
+#include "radio_config_si446x.h"
+#include "radio_platform_si446x.h"
+
+//#define LOW_POWER_LISTENING
+
+/* TODO: need to figure out correct power value */
+#ifndef SI446X_DEF_RFPOWER
+#define SI446X_DEF_RFPOWER	31
+#endif
+
+/*
+ * channel to use for FREQCTRL
+ *
+ * Freq is set by h/w at 433MHz, single channel.
+ */
+#ifndef SI446X_DEF_CHANNEL
+#define SI446X_DEF_CHANNEL	0
+#endif
+
+/* The number of microseconds a sending mote will wait for an acknowledgement */
+#ifndef SOFTWAREACK_TIMEOUT
+#define SOFTWAREACK_TIMEOUT	800
+#endif
 
 /**
- * Defining the platform-independently named packet structures to be the
- * chip-specific CC1000 packet structures.
- *
- * @author Eric B. Decker <cire831@gmail.com>
+ * This is the timer type of the radio alarm interface
  */
+typedef T32khz   TRadio;
+typedef uint16_t tradio_size;
 
-#ifndef PLATFORM_MESSAGE_H
-#define PLATFORM_MESSAGE_H
+/**
+ * The number of radio alarm ticks per one microsecond .
+ */
+#define RADIO_ALARM_MICROSEC    1/32
 
-#include <Serial.h>
-#include <Si446xRadio.h>
 
-typedef union message_header {
-  serial_header_t serial;
-  si446x_packet_header_t header;
-} message_header_t;
+/**
+ * The base two logarithm of the number of radio alarm ticks per one millisecond
+ * binary milliseconds.
+ *
+ * 2**5 = 32, 32 ticks in 1mis
+ */
+#define RADIO_ALARM_MILLI_EXP	5
 
-typedef union message_footer {
-  si446x_packet_footer_t footer;
-} message_footer_t;
 
-typedef struct message_metadata {
-  union {
-    serial_metadata_t serial_meta;
-    si446x_metadata_t si446x_meta;
-  };
 
-#ifdef LOW_POWER_LISTENING
-  lpl_metadata_t       lpl_meta;
+/**
+ * Make PACKET_LINK automaticaly enabled for Ieee154MessageC
+ */
+#if !defined(TFRAMES_ENABLED) && !defined(PACKET_LINK)
+#define PACKET_LINK
 #endif
 
-  timestamp_metadata_t ts_meta;
-
- /** Packet Link Metadata */
-#ifdef PACKET_LINK
-  link_metadata_t      link_meta;
-#endif
-
-  flags_metadata_t     flags_meta;
-
-} message_metadata_t;
-
-#endif
+#endif          //__RADIOCONFIG_H__
