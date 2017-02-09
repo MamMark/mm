@@ -736,7 +736,7 @@ implementation {
   void ll_si446x_dump_properties() {
     const dump_prop_desc_t *dpp;
     cmd_timing_t *ctp, *ctp_ff;
-    uint8_t group, index, length;
+    uint8_t group, idx, length;
     uint8_t  *w, wl;                    /* working */
     uint32_t t0, t1, tot0;
 
@@ -753,7 +753,7 @@ implementation {
     dpp = &dump_prop[0];
     while (dpp->where) {
       group = dpp->prop_id >> 8;
-      index = dpp->prop_id & 0xff;
+      idx = dpp->prop_id & 0xff;
       length = dpp->length;
       w = dpp->where;
       t0 = call Platform.usecsRaw();
@@ -777,7 +777,7 @@ implementation {
           call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
           call FastSpiByte.splitReadWrite(group);
           call FastSpiByte.splitReadWrite(wl);
-          call FastSpiByte.splitReadWrite(index);
+          call FastSpiByte.splitReadWrite(idx);
           call FastSpiByte.splitRead();
           call HW.si446x_clr_cs();
           t1 = call Platform.usecsRaw();
@@ -790,7 +790,7 @@ implementation {
         ctp->t_reply     += ctp_ff->t_reply;
         ctp->d_reply_len += ctp_ff->d_reply_len;
         length -= wl;
-        index += wl;
+        idx += wl;
         w += wl;
       }
       t1 = call Platform.usecsRaw();
@@ -1184,16 +1184,16 @@ implementation {
    * read property of radio chip
    */
   async command void Si446xCmd.read_property(uint16_t p_id, uint16_t num, uint8_t *rsp_p) {
-    uint8_t group, index;
+    uint8_t group, idx;
 
     group = p_id >> 8;
-    index = p_id & 0xff;
+    idx = p_id & 0xff;
     SI446X_ATOMIC {
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
       call FastSpiByte.splitReadWrite(group);
       call FastSpiByte.splitReadWrite(num);
-      call FastSpiByte.splitReadWrite(index);
+      call FastSpiByte.splitReadWrite(idx);
       call FastSpiByte.splitRead();
       call HW.si446x_clr_cs();
       ll_si446x_get_reply(rsp_p, num, 0xff);
