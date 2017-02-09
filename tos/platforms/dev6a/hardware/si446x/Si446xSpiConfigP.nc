@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -8,11 +8,13 @@
  *
  * - Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
+ *
  * - Redistributions in binary form must reproduce the above copyright
  *   notice, this list of conditions and the following disclaimer in the
  *   documentation and/or other materials provided with the
  *   distribution.
- * - Neither the name of the copyright holder nor the names of
+ *
+ * - Neither the name of the copyright holders nor the names of
  *   its contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
@@ -28,71 +30,34 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Eric B. Decker
  */
 
-#ifndef __RADIOCONFIG_H__
-#define __RADIOCONFIG_H__
+/**
+ * @author Eric B. Decker <cire831@gmail.com>
+ */
 
-#include <Timer.h>
-#include <message.h>
+#include "msp432usci.h"
 
 /*
- * Also include the platform dependent si446x definitions generated
- *  from the SiLabs WDS program (Wireless Development Studio.
+ * dev6a, msp432, USCI, SPI
+ * msp432 usci configuration
+ * interface to si446x chip
  */
-#include "radio_config_si446x.h"
-#include "radio_platform_si446x.h"
 
-//#define LOW_POWER_LISTENING
+const msp432_usci_config_t si446x_spi_config = {
+  ctlw0 : (EUSCI_B_CTLW0_CKPH        | EUSCI_B_CTLW0_MSB  |
+           EUSCI_B_CTLW0_MST         | EUSCI_B_CTLW0_SYNC |
+           EUSCI_B_CTLW0_SSEL__SMCLK),
+  brw   : MSP432_RADIO_DIV,     /* see platform_clk_defs */
+  mctlw : 0,                    /* Always 0 in SPI mode */
+  i2coa : 0
+};
 
-/* TODO: need to figure out correct power value */
-#ifndef SI446X_DEF_RFPOWER
-#define SI446X_DEF_RFPOWER	31
-#endif
-
-/*
- * channel to use for FREQCTRL
- *
- * Freq is set by h/w at 433MHz, single channel.
- */
-#ifndef SI446X_DEF_CHANNEL
-#define SI446X_DEF_CHANNEL	0
-#endif
-
-/* The number of microseconds a sending mote will wait for an acknowledgement */
-#ifndef SOFTWAREACK_TIMEOUT
-#define SOFTWAREACK_TIMEOUT	800
-#endif
-
-/**
- * This is the timer type of the radio alarm interface
- */
-typedef T32khz   TRadio;
-typedef uint16_t tradio_size;
-
-/**
- * The number of radio alarm ticks per one microsecond .
- */
-#define RADIO_ALARM_MICROSEC    1/32
-
-
-/**
- * The base two logarithm of the number of radio alarm ticks per one millisecond
- * binary milliseconds.
- *
- * 2**5 = 32, 32 ticks in 1mis
- */
-#define RADIO_ALARM_MILLI_EXP	5
-
-
-
-/**
- * Make PACKET_LINK automaticaly enabled for Ieee154MessageC
- */
-#if !defined(TFRAMES_ENABLED) && !defined(PACKET_LINK)
-#define PACKET_LINK
-#endif
-
-#endif          //__RADIOCONFIG_H__
+module Si446xSpiConfigP {
+  provides interface Msp432UsciConfigure;
+}
+implementation {
+  async command const msp432_usci_config_t *Msp432UsciConfigure.getConfiguration() {
+    return &si446x_spi_config;
+  }
+}

@@ -7,7 +7,7 @@
 #include <Tasklet.h>
 
 #ifndef PACKED
-#warning PACKED not defined but used
+#define PACKED __attribute__((__packed__))
 #endif
 
 uint32_t gt0, gt1;
@@ -20,19 +20,19 @@ module testRadioP {
     interface Init;
   } uses {
     interface Boot;
+
     interface Timer<TMilli> as rcTimer;
     interface Timer<TMilli> as txTimer;
-    //    interface Timer<TMilli> as pgTimer;
     interface LocalTime<TMilli>;
+
     interface Leds;
     interface Panic;
     interface Random;
+
     interface RadioState;
     interface RadioPacket;
     interface RadioSend;
     interface RadioReceive;
-//    interface RadioCCA;
-//    interface RadioAlarm;
   }
 }
 
@@ -449,14 +449,5 @@ implementation {
   }
 
 
-  async event void Panic.hook() {
-#ifdef notdef
-    dump_radio();
-    call CSN.set();
-    call CSN.clr();
-    call CSN.set();
-    drs(TRUE);
-    nop();
-#endif
-  }
+  async event void Panic.hook() { }
 }

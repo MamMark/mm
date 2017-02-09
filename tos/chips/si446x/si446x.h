@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Eric B. Decker
+ * Copyright (c) 2015, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,6 +53,8 @@
  */
 
 /*
+ * Units used with RadioAlarm need to be TRadio, which in our case is T32khz.
+ *
  * When the chip is brought out of Shutdown (SDN = 1 = > 0), it takes max
  * of 6ms before it can accept commands.  One should also check the value
  * of CTS to make sure the chip is indeed ready to accept commands.
@@ -60,8 +62,10 @@
  * Pieces of documentation say max is 5ms for the POR but the si4468 data
  * sheet says 6ms.  We use that instead.  We have observed actual time for
  * POR is 985 us.
+ *
+ * units are T32khz.   7ms = n/32768 ==> n = 230
  */
-#define SI446X_POR_WAIT_TIME    7000
+#define SI446X_POR_WAIT_TIME    230
 
 /*
  * After turning the chip on, one must issue the POWER_UP command to complete
@@ -72,15 +76,20 @@
  * If it isn't, we panic.
  *
  * It is unclear from AN633 whether the 15ms is actually the POR time (5ms)
- * and 6..10ms for the POWER_UP.  We've observed 15-16 ms.
+ * and 6..10ms for the POWER_UP.  We've observed 15-16 ms.  Units are T32khz
+ *
+ * 16.5ms * 32.768 = 540
  */
-#define SI446X_POWER_UP_WAIT_TIME       16500
+#define SI446X_POWER_UP_WAIT_TIME       541
 
 /*
  * max time we look for CTS to come back from command (us). The max we've
  * observed is 95uS.  Power_Up however takes 15ms so we don't use this
  * timeout with that command.
+ *
  * maximum time to wait for a tx/rx command to complete. failsafe timer.
+ *
+ * units are usecs, used with Platform.usecsRaw()
  */
 #define SI446X_CTS_TIMEOUT                    500
 
@@ -89,9 +98,11 @@
  * (protect against false starts)
  * TX_TIMEOUT = time to wait for packet transmission to complete
  * RX_TIMEOUT = time to wait for packet reception to complete
+ *
+ * Units T32khz.  100ms * 32.768 = 3277
  */
-#define SI446X_TX_TIMEOUT                   100000
-#define SI446X_RX_TIMEOUT                   100000
+#define SI446X_TX_TIMEOUT                   3277
+#define SI446X_RX_TIMEOUT                   3277
 
 /*
  * initial RSSI_THRESH (threshold) for rssi comparisons.  Stuffed into
@@ -907,17 +918,16 @@ typedef struct {
 } rps_t;
 
 typedef struct {
-  uint16_t              p_dump_start;   /* 16 bit raw (platform) us timestamp */
-  uint32_t              l_dump_start;   /* 32 bit us TRadio Localtime timestamp */
-  uint32_t              l_dump_end;     /* 32 bit us TRadio Localtime timestamp */
-  uint32_t              l_delta;        /* how long did dump take */
+  uint32_t              dump_start;   /* 32 bit us TRadio Localtime timestamp */
+  uint32_t              dump_end;     /* 32 bit us TRadio Localtime timestamp */
+  uint32_t              delta;        /* how long did dump take */
 
   uint8_t               CTS_pin;
   uint8_t               IRQN_pin;
   uint8_t               SDN_pin;
   uint8_t               CSN_pin;
-  uint8_t               ta0ccr3;
-  uint8_t               ta0cctl3;
+  uint16_t              cap_val;
+  uint16_t              cap_control;
 
   si446x_part_info_t    part_info;
   si446x_func_info_t    func_info;

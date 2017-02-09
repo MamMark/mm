@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Eric B. Decker, Dan J. Maltbie
+ * Copyright (c) 2015, 2016-2017 Eric B. Decker, Dan J. Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -242,8 +242,6 @@ enum {
 
 module Si446xDriverLayerP {
   provides {
-    interface Init as SoftwareInit @exactlyonce();
-
     interface RadioState;
     interface RadioSend;
     interface RadioReceive;
@@ -258,14 +256,8 @@ module Si446xDriverLayerP {
     interface PacketAcknowledgements;
   }
   uses {
-    interface LocalTime<TRadio>;
     interface Si446xDriverConfig as Config;
     interface Si446xCmd;
-
-    interface Resource       as SpiResource;
-    interface FastSpiByte;
-    interface SpiByte;
-    interface SpiBlock;
 
     interface PacketFlag     as TransmitPowerFlag;
     interface PacketFlag     as RSSIFlag;
@@ -396,7 +388,7 @@ implementation {
   // used to record the state transition machine operation
   // each stage represents a record of the FSM stage execution
   typedef struct {
-    uint32_t               start;
+    uint32_t               ts_start;
     uint16_t               elapsed;
     uint16_t               ph;
     uint16_t               modem;
@@ -450,11 +442,14 @@ implementation {
    * mutual exclusion is provided using a Tasklet group.  Must be called from within
    * Tasklet.run.
    *
-   * There are 4 different sources of events that potentially can occur for this
-   * state machine, Alarms (timeouts, waiting, etc), Interrupts, User, and Task.
-   * We provide a 1 element queue for each of this sources.
+   * There are 3 different sources of events that potentially can occur for
+   * this state machine, Interrupts, User, and Task.  We provide a 1
+   * element queue for each of these sources.
    *
-   * Alarm doesn't queue via fsm_alarm_event.  Priority is Alarm > Int > User > Task.
+   * The RadioTimer implements timeouts, waiting, etc and queues through the "task"
+   * event.
+   *
+   * Priority is Int > User > Task.
    */
 
   tasklet_norace fsm_event_t fsm_int_event, fsm_user_event, fsm_task_event;
@@ -506,7 +501,7 @@ implementation {
 
   void fsm_trace_start(fsm_event_t ev, fsm_state_t cs) {
     call Si446xCmd.trace(T_DL_TRANS_ST, ev, cs);
-    fsm_trace_array[fsm_tc].start  = call LocalTime.get();
+    fsm_trace_array[fsm_tc].ts_start  = call Platform.usecsRaw();
     fsm_trace_array[fsm_tc].ev = ev;
     fsm_trace_array[fsm_tc].cs = cs;
     fsm_trace_array[fsm_tc].ac = 0;
@@ -522,8 +517,7 @@ implementation {
   }
 
   void fsm_trace_end(fsm_result_t ns) {
-    nop(); 
-    fsm_trace_array[fsm_tc].elapsed = call LocalTime.get() - fsm_trace_array[fsm_tc].start;
+    fsm_trace_array[fsm_tc].elapsed = call Platform.usecsRaw() - fsm_trace_array[fsm_tc].ts_start;
     fsm_trace_array[fsm_tc].ns = ns.s;
     fsm_trace_array[fsm_tc].ne = ns.e;
     fsm_trace_array[fsm_tc].al_e = call RadioAlarm.isFree();
@@ -546,7 +540,6 @@ implementation {
     if (fsm_active)
       __PANIC_RADIO(82, ev, fsm_global_current_state,  1, 1);
 
-    nop();
     do {
       fsm_active++; // keep track of number of iterations of internal events
       ns.s = S_SDN;
@@ -594,7 +587,6 @@ implementation {
     // record identified. state machine is lost.
     if (!t)
       __PANIC_RADIO(84, ev, fsm_global_current_state, ns.s, ns.e);
-    nop();
     fsm_active = FALSE;
     // signal completions
     if (global_ioc.rc_signal)
@@ -654,36 +646,6 @@ implementation {
   si446x_metadata_t *getMeta(message_t *msg) {
     return &(((message_metadata_t *)&(msg->metadata))->si446x_meta);
   }
-
-
-  /**************************************************************************/
-
-  /* ----------------- INIT ----------------- */
-
-  command error_t SoftwareInit.init() {
-    error_t err;
-    /*
-     * We need the SPI bus for initialization and SoftwareInit
-     * is called early in the boot up process.  Because of this
-     * only immediateRequest should be used.  Other pieces of the
-     * system (like the arbiter fifos) have not been initialized
-     * yet.  immediateRequest does not use those pieces.
-     *
-     * If one has minimal ports available full arbitration can be used
-     * to share the port.  If no arbitration is needed simple changes
-     * can be made to eliminate the overhead of arbitration.
-     */
-    err = call SpiResource.immediateRequest();
-    if (err) {
-      __PANIC_RADIO(8, err, 0, 0, 0);
-      return err;
-    }
-    call Si446xCmd.clr_cs();
-    return SUCCESS;
-  }
-
-
-  event void SpiResource.granted() { }
 
 
   /**************************************************************************/
@@ -787,9 +749,6 @@ implementation {
     iter_now = call Platform.usecsRaw();
     config_task_time = iter_now - config_start_time;
     config_list_iter = 0;
-
-    nop();
-    nop();
 
     // invoke driver state machine with completion notification event
     fsm_task_queue(E_CONFIG_DONE);
@@ -931,7 +890,7 @@ implementation {
     volatile norace uint8_t xcts;
 
     if (!(xcts = call Si446xCmd.get_cts())) {
-      __PANIC_RADIO(9, 0, 0, 0, 0);
+      __PANIC_RADIO(9, xcts, 0, 0, 0);
     }
     start_alarm(SI446X_POWER_UP_WAIT_TIME);
     call Si446xCmd.power_up();
@@ -989,6 +948,7 @@ implementation {
 
   fsm_result_t a_standby(fsm_transition_t *t) {
     stop_alarm();
+    call Si446xCmd.disableInterrupt();
     call Si446xCmd.change_state(RC_SLEEP, TRUE);   // instruct chip to go to standby state
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
@@ -1028,7 +988,6 @@ implementation {
     call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
     call Si446xCmd.ll_clr_ints(0xff, 0xff, 0xff);  // clear all interrupts
     call Si446xCmd.start_rx();
-    nop();
     return fsm_results(t->next_state, E_NONE);
   }
 
@@ -1096,12 +1055,10 @@ implementation {
     if (!global_ioc.pTxMsg) {            // should have something to send
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
-    nop();
     call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
     call Si446xCmd.ll_clr_ints(SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
 			       SI446X_MODEM_RX_CLEAR_MASK,
 			       SI446X_CHIP_RX_CLEAR_MASK);
-    nop();
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
     pkt_len = *dp + 1;              // length of data field is first byte of msg
     call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, SI446X_FIFO_FLUSH_TX);
@@ -1110,7 +1067,6 @@ implementation {
     // find size to fill fifo max(pkt_len, tx_ff_free)
     global_ioc.tx_ff_index = (pkt_len < tx_ff_free) ? pkt_len : tx_ff_free;
     call Si446xCmd.write_tx_fifo(dp, global_ioc.tx_ff_index);
-    nop();
     call Si446xCmd.start_tx(pkt_len);
     start_alarm(SI446X_TX_TIMEOUT);
     return fsm_results(t->next_state, E_NONE);
@@ -1198,11 +1154,8 @@ implementation {
     stop_alarm();
     dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
     pkt_len = call Si446xCmd.get_packet_info() + 1;        // include len byte
-    nop();
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
-    nop();
     call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
-    nop();
     if (pkt_len != (global_ioc.rx_ff_index + rx_len))
       __PANIC_RADIO(11, pkt_len, rx_len, (parg_t) dp, 0);
     // check to see if upper layer wants the packet
@@ -1424,7 +1377,7 @@ implementation {
 
 
   typedef struct int_trace {
-    uint32_t               time;
+    uint32_t               time_stamp;
     uint16_t               delta;
     Si446x_idevice_state_t ds;
     uint8_t                ph_pend;
@@ -1443,13 +1396,13 @@ implementation {
     fsm_trace_array[fsm_tc].chip = isp->chip_pend;
     fsm_trace_array[fsm_tc].ds = call Si446xCmd.fast_device_state();
     fsm_trace_array[fsm_tc].rssi = call Si446xCmd.fast_latched_rssi();
-    int_trace_array[int_tc].time = call LocalTime.get();
+    int_trace_array[int_tc].time_stamp = call Platform.usecsRaw();
     int_trace_array[int_tc].ph_pend = isp->ph_pend;
     int_trace_array[int_tc].modem_pend = isp->modem_pend;
     int_trace_array[int_tc].chip_pend = isp->chip_pend;
     int_trace_array[fsm_tc].ds = call Si446xCmd.fast_device_state();
-    int_trace_array[fsm_tc].delta = int_trace_array[int_tc].time - int_trace_prev_time;
-    int_trace_prev_time =  int_trace_array[int_tc].time;
+    int_trace_array[fsm_tc].delta = int_trace_array[int_tc].time_stamp - int_trace_prev_time;
+    int_trace_prev_time =  int_trace_array[int_tc].time_stamp;
     int_tp = int_tc;
     if (++int_tc >= NELEMS(int_trace_array))
       int_tc = 0;
@@ -1507,11 +1460,8 @@ implementation {
    * order the Tasklet.runs are invoked in.
    */
   tasklet_async event void RadioAlarm.fired() {
-    nop();
-    nop();
     stateAlarm_active = FALSE;
     fsm_task_queue(E_WAIT_DONE);
-    //    fsm_change_state(E_WAIT_DONE);
   }
 
 
@@ -1521,9 +1471,6 @@ implementation {
    */
   tasklet_async event void Tasklet.run() {
     fsm_event_t ev;
-
-    nop();
-    nop();
 
     while (TRUE) {
       if (fsm_int_event) {
@@ -1720,13 +1667,11 @@ implementation {
 
   async event void Panic.hook() {
     call Si446xCmd.dump_radio();
-    nop();
 #ifdef notdef
     call CSN.set();
     call CSN.clr();
     call CSN.set();
     drs(TRUE);
-    nop();
 #endif
   }
 

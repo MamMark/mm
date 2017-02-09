@@ -36,70 +36,41 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#include <hardware.h>
-#include <panic.h>
-#include <si446x.h>
-
-#ifndef PANIC_RADIO
-
-enum {
-  __panic_radio = unique(UQ_PANIC_SUBSYS)
-};
-
-#define PANIC_RADIO __panic_radio
-#endif
+#include "hardware.h"
+#include "platform_pin_defs.h"
 
 module Si446xPinsP {
-  provides {
-    interface Si446xInterface as HW;
-    interface Init;
-  }
-  uses {
-    interface GpioInterrupt  as RadioNIRQ;
-    interface Resource       as SpiResource;
-    interface Panic;
-  }
+  provides interface Si446xInterface as HW;
+  uses interface HplMsp432PortInt as RadioNIRQ;
 }
 implementation {
-
-#define __PANIC_RADIO(where, w, x, y, z) do {           \
-    call Panic.panic(PANIC_RADIO, where, w, x, y, z);   \
-  } while (0)
-
-  command error_t Init.init() {
-    error_t err;
-
-    err = call SpiResource.immediateRequest();
-    if (err) {
-      __PANIC_RADIO(8, err, 0, 0, 0);
-      return err;
-    }
-    call HW.si446x_clr_cs();
-    return SUCCESS;
-  }
-
-  event void SpiResource.granted() { }
-
   async command uint8_t  HW.si446x_cts()             { return SI446X_CTS_P; }
   async command uint8_t  HW.si446x_irqn()            { return SI446X_IRQN_P; }
   async command uint8_t  HW.si446x_sdn()             { return SI446X_SDN_IN; }
   async command uint8_t  HW.si446x_csn()             { return SI446X_CSN_IN; }
-  async command void     HW.si446x_shutdown()        { SI446X_SDN = 1; }
-  async command void     HW.si446x_unshutdown()      { SI446X_SDN = 0; }
+  async command void     HW.si446x_shutdown()        { SI446X_SHUTDOWN; }
+  async command void     HW.si446x_unshutdown()      { SI446X_UNSHUT; }
   async command void     HW.si446x_set_cs()          { SI446X_CSN = 0; }
   async command void     HW.si446x_clr_cs()          { SI446X_CSN = 1; }
   async command void     HW.si446x_set_low_tx_pwr()  { }
   async command void     HW.si446x_set_high_tx_pwr() { }
-  async command uint16_t HW.si446x_cap_val()         { return TA0CCR3;  }
-  async command uint16_t HW.si446x_cap_control()     { return TA0CCTL3; }
+  async command uint16_t HW.si446x_cap_val()         { return 0; }
+  async command uint16_t HW.si446x_cap_control()     { return 0 ;}
 
-  async command void    HW.si446x_enableInterrupt() {
+  async command void HW.si446x_enableInterrupt() {
+    /*
+     * playing with the edge could generate an IFG which would trigger an
+     * interrupt.  Clear after playing with the edge.
+     */
     atomic {
-      call RadioNIRQ.enableFallingEdge();
+      call RadioNIRQ.disable();
+      call RadioNIRQ.edgeFalling();
+      call RadioNIRQ.clear();
+      call RadioNIRQ.enable();
     }
   }
 
-  async command void    HW.si446x_disableInterrupt() {
+  async command void HW.si446x_disableInterrupt() {
     atomic {
       call RadioNIRQ.disable();
     }
@@ -108,6 +79,4 @@ implementation {
   async event void RadioNIRQ.fired() {
     signal HW.si446x_interrupt();
   }
-
-  async event void Panic.hook() { }
 }

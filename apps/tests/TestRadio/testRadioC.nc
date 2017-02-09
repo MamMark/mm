@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Eric B. Decker
+ * Copyright (c) 2015, 2017 Eric B. Decker
  * All rights reserved.
  */
 
@@ -15,12 +15,10 @@ implementation {
 
   components new TimerMilliC() as Timer0;
   testRadioP.rcTimer -> Timer0;
+
   components new TimerMilliC() as Timer1;
   testRadioP.txTimer -> Timer1;
-  /*
-  components new TimerMilliC() as Timer2;
-  testRadioP.pgTimer -> Timer2;
-  */
+
   components LocalTimeMilliC;
   testRadioP.LocalTime -> LocalTimeMilliC;
 
@@ -30,15 +28,13 @@ implementation {
   components LedsC;
   testRadioP.Leds -> LedsC;
 
-//  components Si446xRadioC;
   components new TaskletC();
-  Si446xDriverLayerC.Tasklet -> TaskletC;
   components new RadioAlarmC();
-  Si446xDriverLayerC.RadioAlarm -> RadioAlarmC.RadioAlarm[unique(UQ_RADIO_ALARM)];
   Si446xDriverLayerC.Tasklet -> TaskletC;
+
+  Si446xDriverLayerC.RadioAlarm -> RadioAlarmC.RadioAlarm[unique(UQ_RADIO_ALARM)];
   RadioAlarmC.Alarm -> Si446xDriverLayerC;
   RadioAlarmC.Tasklet -> TaskletC;
-//
 
 // -------- MetadataFlags
   components new MetadataFlagsLayerC();

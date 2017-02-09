@@ -55,6 +55,10 @@
  * SMCLK is always DCOCLK/2.  SMCLK/(TA_ID * TA_EX) should be around 1MHz/1MiHz.
  * SD's are clocked at SMCLK/2 or SMCLK (if SMCLK < 12MHz)
  * GPS UART baud is 1228800 (ORG gps doc gives 0.07% error)
+ *
+ * SDs can typically be clocked up to 25MHz.
+ * Radio (si4468) up to 10MHz.
+ * Mems
  */
 
 #define T32_DIV_1   TIMER32_CONTROL_PRESCALE_0
@@ -72,6 +76,8 @@
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
 #define MSP432_SD_DIV      1
+#define MSP432_RADIO_DIV   1
+#define MSP432_MEMS_DIV    1
 #undef  USECS_BINARY
 
 #elif MSP432_CLK == 33554432
@@ -85,6 +91,8 @@
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 2
 #define MSP432_SD_DIV      1
+#define MSP432_RADIO_DIV   1
+#define MSP432_MEMS_DIV    1
 #define USECS_BINARY       1
 
 #elif MSP432_CLK == 24000000
@@ -98,6 +106,8 @@
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 4
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
 #define MSP432_SD_DIV      1
+#define MSP432_RADIO_DIV   1
+#define MSP432_MEMS_DIV    1
 #undef  USECS_BINARY
 
 #elif MSP432_CLK == 16777216
@@ -110,6 +120,8 @@
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 8
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 1
 #define MSP432_SD_DIV      1
+#define MSP432_RADIO_DIV   1
+#define MSP432_MEMS_DIV    1
 #define USECS_BINARY       1
 
 #elif MSP432_CLK == 10000000
@@ -123,6 +135,8 @@
 #define MSP432_TA_ID   TIMER_A_CTL_ID__ ## 1
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 5
 #define MSP432_SD_DIV      1
+#define MSP432_RADIO_DIV   1
+#define MSP432_MEMS_DIV    1
 #undef  USECS_BINARY
 
 #else

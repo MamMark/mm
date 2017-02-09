@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Eric B. Decker
+ * Copyright (c) 2015, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,6 @@ configuration Si446xDriverLayerC {
     interface PacketField<uint8_t> as PacketLinkQuality;
     //interface PacketField<uint8_t> as AckReceived;
 
-    interface LocalTime<TRadio> as LocalTimeRadio;
     interface Alarm<TRadio, tradio_size>;
     interface PacketAcknowledgements;
   }
@@ -69,11 +68,7 @@ configuration Si446xDriverLayerC {
 }
 
 implementation {
-  components Si446xDriverLayerP as DriverLayerP,
-	     MainC,
-             HplSi446xC as HWHplC;
-
-  MainC.SoftwareInit -> DriverLayerP.SoftwareInit;
+  components Si446xDriverLayerP as DriverLayerP;
 
   RadioState = DriverLayerP;
   RadioSend = DriverLayerP;
@@ -82,7 +77,6 @@ implementation {
   RadioPacket = DriverLayerP;
   PacketAcknowledgements = DriverLayerP;
 
-  LocalTimeRadio = HWHplC;
   Config = DriverLayerP;
 
   PacketTransmitPower = DriverLayerP.PacketTransmitPower;
@@ -94,28 +88,16 @@ implementation {
   PacketTimeSyncOffset = DriverLayerP.PacketTimeSyncOffset;
   DriverLayerP.TimeSyncFlag = TimeSyncFlag;
 
-/*
-  AckReceived = DriverLayerP.AckReceived;
-  components new CC2520MetadataFlagC() as AckFlagC;
-  DriverLayerP.AckFlag -> AckFlagC;
-*/
-
   AckReceivedFlag = DriverLayerP.AckReceivedFlag;
 
   PacketLinkQuality = DriverLayerP.PacketLinkQuality;
   PacketTimeStamp = DriverLayerP.PacketTimeStamp;
 
+  components HplSi446xC;
+  Alarm = HplSi446xC.Alarm;
   RadioAlarm = DriverLayerP.RadioAlarm;
-  Alarm = HWHplC.Alarm;
-
-  DriverLayerP.SpiResource -> HWHplC.SpiResource;
-  DriverLayerP.FastSpiByte -> HWHplC;
-  DriverLayerP.SpiByte     -> HWHplC;
-  DriverLayerP.SpiBlock    -> HWHplC;
 
   Tasklet = DriverLayerP.Tasklet;
-
-  DriverLayerP.LocalTime-> HWHplC.LocalTimeRadio;
 
   components Si446xCmdC;
   DriverLayerP.Si446xCmd         -> Si446xCmdC;

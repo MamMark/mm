@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Eric B. Decker
+ * Copyright (c) 2015, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,10 +47,7 @@ configuration HplSi446xC {
     interface SpiPacket;
     interface SpiBlock;
 
-    interface Resource as SpiResource;
-
     interface Alarm<TRadio, uint16_t> as Alarm;
-    interface LocalTime<TRadio> as LocalTimeRadio;
   }
 }
 implementation {
@@ -58,6 +55,11 @@ implementation {
   components Si446xPinsP;
   components HplMsp430InterruptC;
   components new Msp430InterruptC() as RadioInterruptC;
+  components PanicC, PlatformC;
+
+  PlatformC.PeripheralInit -> Si446xPinsP;
+  Si446xPinsP.Panic        -> PanicC;
+
   Si446xInterface = Si446xPinsP;
   RadioInterruptC.HplInterrupt -> HplMsp430InterruptC.Port14;
   Si446xPinsP.RadioNIRQ -> RadioInterruptC;
@@ -66,11 +68,12 @@ implementation {
   /* see exp5438_gps/hardware/usci/PlatformUsciMapC.nc for pin mappage */
 
   components new Msp430UsciSpiA3C() as SpiC;
-  SpiResource = SpiC;
   SpiByte     = SpiC;
   FastSpiByte = SpiC;
   SpiPacket   = SpiC;
   SpiBlock    = SpiC;
+
+  Si446xPinsP.SpiResource -> SpiC;
 
   components Si446xSpiConfigP;
   Si446xSpiConfigP.Msp430UsciConfigure <- SpiC;
@@ -126,9 +129,6 @@ implementation {
   InterruptNIRQC.HplInterrupt -> HplMsp430InterruptC.Port14;
 #endif
 
-  components new AlarmMicro16C() as AlarmC;
+  components new Alarm32khz16C() as AlarmC;
   Alarm = AlarmC;
-
-  components LocalTimeMicroC;
-  LocalTimeRadio = LocalTimeMicroC.LocalTime;
 }
