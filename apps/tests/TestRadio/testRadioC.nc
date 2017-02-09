@@ -29,10 +29,10 @@ implementation {
   testRadioP.Leds -> LedsC;
 
   components new TaskletC();
-  Si446xDriverLayerC.Tasklet -> TaskletC;
   components new RadioAlarmC();
-  Si446xDriverLayerC.RadioAlarm -> RadioAlarmC.RadioAlarm[unique(UQ_RADIO_ALARM)];
   Si446xDriverLayerC.Tasklet -> TaskletC;
+
+  Si446xDriverLayerC.RadioAlarm -> RadioAlarmC.RadioAlarm[unique(UQ_RADIO_ALARM)];
   RadioAlarmC.Alarm -> Si446xDriverLayerC;
   RadioAlarmC.Tasklet -> TaskletC;
 
