@@ -242,8 +242,6 @@ enum {
 
 module Si446xDriverLayerP {
   provides {
-    interface Init as SoftwareInit @exactlyonce();
-
     interface RadioState;
     interface RadioSend;
     interface RadioReceive;
@@ -261,7 +259,6 @@ module Si446xDriverLayerP {
     interface Si446xDriverConfig as Config;
     interface Si446xCmd;
 
-    interface Resource       as SpiResource;
     interface PacketFlag     as TransmitPowerFlag;
     interface PacketFlag     as RSSIFlag;
     interface PacketFlag     as TimeSyncFlag;
@@ -649,36 +646,6 @@ implementation {
   si446x_metadata_t *getMeta(message_t *msg) {
     return &(((message_metadata_t *)&(msg->metadata))->si446x_meta);
   }
-
-
-  /**************************************************************************/
-
-  /* ----------------- INIT ----------------- */
-
-  command error_t SoftwareInit.init() {
-    error_t err;
-    /*
-     * We need the SPI bus for initialization and SoftwareInit
-     * is called early in the boot up process.  Because of this
-     * only immediateRequest should be used.  Other pieces of the
-     * system (like the arbiter fifos) have not been initialized
-     * yet.  immediateRequest does not use those pieces.
-     *
-     * If one has minimal ports available full arbitration can be used
-     * to share the port.  If no arbitration is needed simple changes
-     * can be made to eliminate the overhead of arbitration.
-     */
-    err = call SpiResource.immediateRequest();
-    if (err) {
-      __PANIC_RADIO(8, err, 0, 0, 0);
-      return err;
-    }
-    call Si446xCmd.clr_cs();
-    return SUCCESS;
-  }
-
-
-  event void SpiResource.granted() { }
 
 
   /**************************************************************************/

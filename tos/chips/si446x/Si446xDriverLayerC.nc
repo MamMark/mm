@@ -68,11 +68,7 @@ configuration Si446xDriverLayerC {
 }
 
 implementation {
-  components Si446xDriverLayerP as DriverLayerP,
-	     MainC,
-             HplSi446xC as HWHplC;
-
-  MainC.SoftwareInit -> DriverLayerP.SoftwareInit;
+  components Si446xDriverLayerP as DriverLayerP;
 
   RadioState = DriverLayerP;
   RadioSend = DriverLayerP;

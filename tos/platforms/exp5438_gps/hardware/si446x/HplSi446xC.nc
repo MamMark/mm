@@ -47,8 +47,6 @@ configuration HplSi446xC {
     interface SpiPacket;
     interface SpiBlock;
 
-    interface Resource as SpiResource;
-
     interface Alarm<TRadio, uint16_t> as Alarm;
   }
 }
@@ -57,6 +55,11 @@ implementation {
   components Si446xPinsP;
   components HplMsp430InterruptC;
   components new Msp430InterruptC() as RadioInterruptC;
+  components PanicC, PlatformC;
+
+  PlatformC.PeripheralInit -> Si446xPinsP;
+  Si446xPinsP.Panic        -> PanicC;
+
   Si446xInterface = Si446xPinsP;
   RadioInterruptC.HplInterrupt -> HplMsp430InterruptC.Port14;
   Si446xPinsP.RadioNIRQ -> RadioInterruptC;
@@ -65,11 +68,12 @@ implementation {
   /* see exp5438_gps/hardware/usci/PlatformUsciMapC.nc for pin mappage */
 
   components new Msp430UsciSpiA3C() as SpiC;
-  SpiResource = SpiC;
   SpiByte     = SpiC;
   FastSpiByte = SpiC;
   SpiPacket   = SpiC;
   SpiBlock    = SpiC;
+
+  Si446xPinsP.SpiResource -> SpiC;
 
   components Si446xSpiConfigP;
   Si446xSpiConfigP.Msp430UsciConfigure <- SpiC;

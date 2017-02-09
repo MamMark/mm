@@ -36,17 +36,50 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#include "hardware.h"
+#include <hardware.h>
+#include <panic.h>
+#include <si446x.h>
+
+#ifndef PANIC_RADIO
+
+enum {
+  __panic_radio = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_RADIO __panic_radio
+#endif
 
 module Si446xPinsP {
   provides {
     interface Si446xInterface as HW;
+    interface Init;
   }
   uses {
     interface GpioInterrupt  as RadioNIRQ;
+    interface Resource       as SpiResource;
+    interface Panic;
   }
 }
 implementation {
+
+#define __PANIC_RADIO(where, w, x, y, z) do {           \
+    call Panic.panic(PANIC_RADIO, where, w, x, y, z);   \
+  } while (0)
+
+  command error_t Init.init() {
+    error_t err;
+
+    err = call SpiResource.immediateRequest();
+    if (err) {
+      __PANIC_RADIO(8, err, 0, 0, 0);
+      return err;
+    }
+    call HW.si446x_clr_cs();
+    return SUCCESS;
+  }
+
+  event void SpiResource.granted() { }
+
   async command uint8_t  HW.si446x_cts()             { return SI446X_CTS_P; }
   async command uint8_t  HW.si446x_irqn()            { return SI446X_IRQN_P; }
   async command uint8_t  HW.si446x_sdn()             { return SI446X_SDN_IN; }
@@ -75,4 +108,6 @@ implementation {
   async event void RadioNIRQ.fired() {
     signal HW.si446x_interrupt();
   }
+
+  async event void Panic.hook() { }
 }
