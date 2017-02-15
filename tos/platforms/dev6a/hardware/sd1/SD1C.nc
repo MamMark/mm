@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Eric B. Decker
+ * Copyright (c) 2010, 2016-2017 Eric B. Decker, Carl Davis, Daniel Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,42 +31,60 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @author Eric B. Decker <cire831@gmail.com>
+ * @author Eric B. Decker
+ * @author Carl Davis
+ *
+ * Configuration/wiring for SDsp (SD, split phase, event driven)
+ *
+ * read, write, and erase are for clients.
+ *
+ * SD_Arb provides an arbitrated interface for clients.  This is wired into
+ * Msp430UsciShareB0P and is used as a dedicated SPI device.  We wire the
+ * SDsp default owner code into Msp430UsciShareB0P so it can pwr the SD
+ * up and down as it is used by clients.
+ *
+ * Wire ResourceDefaultOwner so the DefaultOwner handles power up/down.
+ * When no clients are using the resource, the default owner gets it and
+ * powers down the SD.
  */
 
-#include <msp432usci.h>
-#include <platform_clk_defs.h>
-
-module UsciConfP {
+configuration SD1C {
   provides {
-    interface Msp432UsciConfigure as GpsConf;
+    interface SDread[uint8_t cid];
+    interface SDwrite[uint8_t cid];
+    interface SDerase[uint8_t cid];
+    interface SDsa;
+    interface SDraw;
   }
+  uses interface ResourceDefaultOwner;          /* power control */
 }
+
 implementation {
+  components new SDspP() as SDdvrP;
 
-  /* currently set up for a GPS, Antenova, UART @ 9600, MCLK 16Mi, SMCLK 8Mi */
-  /* for 1228800, brw 6, brs 0xbf */
+  SDread   = SDdvrP;
+  SDwrite  = SDdvrP;
+  SDerase  = SDdvrP;
+  SDsa     = SDdvrP;
+  SDraw    = SDdvrP;
 
-  const msp432_usci_config_t gps_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
-    brw   : 873,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0xee << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
+  ResourceDefaultOwner = SDdvrP;
 
-#ifdef notdef
-  /* currently set up for a GPS, Antenova, UART @ 4800, MCLK 32Mi, SMCLK 16Mi */
-  const msp432_usci_config_t gps_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
-    brw   : 1747,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0xb5 << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-#endif
+  components MainC;
+  MainC.SoftwareInit -> SDdvrP;
 
-  async command const msp432_usci_config_t *GpsConf.getConfiguration() {
-    return &gps_config;
-  }
+  components PanicC;
+  SDdvrP.Panic -> PanicC;
+
+  components new TimerMilliC() as SDTimer;
+  SDdvrP.SDtimer -> SDTimer;
+
+  components HplSD1C as HW;
+  SDdvrP.HW -> HW;
+
+  components LocalTimeMilliC;
+  SDdvrP.lt -> LocalTimeMilliC;
+
+  components PlatformC;
+  SDdvrP.Platform    -> PlatformC;
 }

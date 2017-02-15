@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Eric B. Decker
+ * Copyright 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,38 +32,21 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * @author Eric B. Decker <cire831@gmail.com>
- */
+#ifndef SD1_RESOURCE
+#define SD1_RESOURCE     "SD1.Resource"
+#endif
 
-#include "hardware.h"
-
-configuration PlatformC {
+configuration SD1_ArbP {
   provides {
-    interface Init as PlatformInit;
-    interface Platform;
-    interface BootParams;
+    interface Resource[uint8_t id];
+    interface ResourceRequested[uint8_t id];
   }
-  uses interface Init as PeripheralInit;
 }
-
 implementation {
-  components PlatformP, StackC;
-  Platform = PlatformP;
-  PlatformInit = PlatformP;
-  PeripheralInit = PlatformP.PeripheralInit;
-  BootParams = PlatformP;
+  components new FcfsArbiterC(SD1_RESOURCE) as ArbiterC;
+  Resource             = ArbiterC;
+  ResourceRequested    = ArbiterC;
 
-  PlatformP.Stack -> StackC;
-
-  components PlatformLedsC;
-  PlatformP.PlatformLeds -> PlatformLedsC;
-
-  /* pull in other modules we want */
-  components PlatformPinsC;
-  components T32BlinkC;         /* initial blinky light */
-                                /* from T32_2 interrupt */
-
-  /* clocks are initilized by startup */
-
+  components SD1C as SD;
+  SD.ResourceDefaultOwner -> ArbiterC;
 }

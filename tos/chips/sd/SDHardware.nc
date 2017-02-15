@@ -70,15 +70,35 @@
  *  sd_clr_cs
  *
  *  SPI interface:
- *    sd_sclk
+ *    sd_sclk           h/w interface, particular port
  *    sd_miso
  *    sd_mosi
  *
+ *    spi_check_clean
+ *    spi_put
+ *    spi_get
+ *
  * @author Eric B. Decker <cire831@gmail.com>
- * March, 2016
  */
  
 interface SDHardware {
+  /*
+   * SPI interface
+   *
+   * void spi_check_clean()
+   *    check spi hardware for assumed start condition for idle spi bus
+   *    panics if any checks fail.
+   *
+   * uint8_t spi_put(uint8_t byte)
+   *    output byte, return returned byte.
+   *
+   * uint8_t spi_get()
+   *    send dummy byte on spi, return returned byte.
+   */
+
+  async command void    spi_check_clean();
+  async command uint8_t spi_put(uint8_t tx_byte);
+  async command uint8_t spi_get();
 
   async command void sd_spi_enable();
   async command void sd_spi_disable();

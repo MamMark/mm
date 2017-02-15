@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Eric B. Decker
+ * Copyright (c) 2010, 2016-2017 Eric B. Decker, Carl Davis, Daniel Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,32 +30,61 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-#include "msp432usci.h"
-
-/*
- * Only instantiate those we need.  Individual port users do their
- * own.  See SD.
  *
- * @author Eric B. Decker <cire831@gmail.com>
+ * @author Eric B. Decker
+ * @author Carl Davis
+ *
+ * Configuration/wiring for SDsp (SD, split phase, event driven)
+ *
+ * read, write, and erase are for clients.
+ *
+ * SD_Arb provides an arbitrated interface for clients.  This is wired into
+ * Msp430UsciShareB0P and is used as a dedicated SPI device.  We wire the
+ * SDsp default owner code into Msp430UsciShareB0P so it can pwr the SD
+ * up and down as it is used by clients.
+ *
+ * Wire ResourceDefaultOwner so the DefaultOwner handles power up/down.
+ * When no clients are using the resource, the default owner gets it and
+ * powers down the SD.
  */
 
-configuration PlatformUsciMapC {
-} implementation {
-  components HplMsp432GpioC as GIO;
-  components PanicC, PlatformC;
+configuration SD0C {
+  provides {
+    interface SDread[uint8_t cid];
+    interface SDwrite[uint8_t cid];
+    interface SDerase[uint8_t cid];
+    interface SDsa;
+    interface SDraw;
+  }
+  uses interface ResourceDefaultOwner;          /* power control */
+}
 
-  components UsciConfP as Conf;
+implementation {
+  components new SDspP() as SDdvrP;
 
-#ifdef notdef
-  /* gps port */
-  components Msp432UsciUartA0C as Gps;
-  Gps.TXD                      -> GIO.UCA0TXD;
-  Gps.RXD                      -> GIO.UCA0RXD;
-  Gps.Panic                    -> PanicC;
-  Gps.Platform                 -> PlatformC;
-  PlatformC.PeripheralInit     -> Gps;
-  Gps                          -> Conf.GpsConf;
-#endif
+  SDread   = SDdvrP;
+  SDwrite  = SDdvrP;
+  SDerase  = SDdvrP;
+  SDsa     = SDdvrP;
+  SDraw    = SDdvrP;
+
+  ResourceDefaultOwner = SDdvrP;
+
+  components MainC;
+  MainC.SoftwareInit -> SDdvrP;
+
+  components PanicC;
+  SDdvrP.Panic -> PanicC;
+
+  components new TimerMilliC() as SDTimer;
+  SDdvrP.SDtimer -> SDTimer;
+
+  components HplSD0C as HW;
+  SDdvrP.HW -> HW;
+
+  components LocalTimeMilliC;
+  SDdvrP.lt -> LocalTimeMilliC;
+
+  components PlatformC;
+  SDdvrP.Platform    -> PlatformC;
 }

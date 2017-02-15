@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Eric B. Decker
+ * Copyright (c) 2010, 2016-2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,40 +30,57 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * SD_ArbC provides an provides an arbitrated interface to the SD.
+ * Originally, we piggy-backed on the UCSI/SPI arbiter.  And explicitly
+ * tweak the UCSI when the SD gets powered up/down.  However, this made
+ * the driver cognizant of what h/w the SD is hanging off (ie. msp430
+ * ucsi dependent).
+ *
+ * Mulitple clients are supported with  automatic power up, reset, and
+ * power down when no further requests are pending.
  */
 
-/**
- * @author Eric B. Decker <cire831@gmail.com>
+
+/*
+ * SD1_ArbC pulls in SD1_ArbP which has the arbiter.  We can't pull ArbP
+ * into ArbC because FcfsArbiterC is generic and needs to be a singleton.
+ *
+ * SD1C is the exported SD port wired to a particular SPI port and
+ * connected to the actual driver.
+ *
+ * Wire ResourceDefaultOwner so the DefaultOwner handles power up/down.
+ * When no clients are using the resource, the default owner gets it and
+ * powers down the SD.
  */
 
-#include "hardware.h"
+#ifndef SD1_RESOURCE
+#define SD1_RESOURCE     "SD1.Resource"
+#endif
 
-configuration PlatformC {
+generic configuration SD1_ArbC() {
   provides {
-    interface Init as PlatformInit;
-    interface Platform;
-    interface BootParams;
+    interface SDread;
+    interface SDwrite;
+    interface SDerase;
+
+    interface Resource;
+    interface ResourceRequested;
   }
-  uses interface Init as PeripheralInit;
 }
 
 implementation {
-  components PlatformP, StackC;
-  Platform = PlatformP;
-  PlatformInit = PlatformP;
-  PeripheralInit = PlatformP.PeripheralInit;
-  BootParams = PlatformP;
+  enum {
+    CLIENT_ID = unique(SD1_RESOURCE),
+  };
 
-  PlatformP.Stack -> StackC;
+  components SD1_ArbP as ArbP;
+  components SD1C as SD;
 
-  components PlatformLedsC;
-  PlatformP.PlatformLeds -> PlatformLedsC;
+  Resource                 = ArbP.Resource[CLIENT_ID];
+  ResourceRequested        = ArbP.ResourceRequested[CLIENT_ID];
 
-  /* pull in other modules we want */
-  components PlatformPinsC;
-  components T32BlinkC;         /* initial blinky light */
-                                /* from T32_2 interrupt */
-
-  /* clocks are initilized by startup */
-
+  SDread  = SD.SDread[CLIENT_ID];
+  SDwrite = SD.SDwrite[CLIENT_ID];
+  SDerase = SD.SDerase[CLIENT_ID];
 }

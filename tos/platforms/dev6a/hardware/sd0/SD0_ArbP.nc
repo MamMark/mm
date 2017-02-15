@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016 Eric B. Decker, Carl Davis, Daniel Maltbie
+ * Copyright 2016-2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,61 +30,23 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @author Eric B. Decker
- * @author Carl Davis
- *
- * Configuration/wiring for SDsp (SD, split phase, event driven)
- *
- * read, write, and erase are for clients.
- *
- * SD_Arb provides an arbitrated interface for clients.  This is wired into
- * Msp430UsciShareB0P and is used as a dedicated SPI device.  We wire the
- * SDsp default owner code into Msp430UsciShareB0P so it can pwr the SD
- * up and down as it is used by clients.
- *
- * Wire ResourceDefaultOwner so the DefaultOwner handles power up/down.
- * When no clients are using the resource, the default owner gets it and
- * powers down the SD.
  */
 
-configuration SD0C {
+#ifndef SD0_RESOURCE
+#define SD0_RESOURCE     "SD0.Resource"
+#endif
+
+configuration SD0_ArbP {
   provides {
-    interface SDread[uint8_t cid];
-    interface SDwrite[uint8_t cid];
-    interface SDerase[uint8_t cid];
-    interface SDsa;
-    interface SDraw;
+    interface Resource[uint8_t id];
+    interface ResourceRequested[uint8_t id];
   }
-  uses interface ResourceDefaultOwner;          /* power control */
 }
-
 implementation {
-  components SDspP as SDdvrP;
+  components new FcfsArbiterC(SD0_RESOURCE) as ArbiterC;
+  Resource             = ArbiterC;
+  ResourceRequested    = ArbiterC;
 
-  SDread   = SDdvrP;
-  SDwrite  = SDdvrP;
-  SDerase  = SDdvrP;
-  SDsa     = SDdvrP;
-  SDraw    = SDdvrP;
-
-  ResourceDefaultOwner = SDdvrP;
-
-  components MainC;
-  MainC.SoftwareInit -> SDdvrP;
-
-  components PanicC;
-  SDdvrP.Panic -> PanicC;
-
-  components new TimerMilliC() as SDTimer;
-  SDdvrP.SDtimer -> SDTimer;
-
-  components HplSD0C as HW;
-  SDdvrP.HW -> HW;
-
-  components LocalTimeMilliC;
-  SDdvrP.lt -> LocalTimeMilliC;
-
-  components PlatformC;
-  SDdvrP.Platform    -> PlatformC;
+  components SD0C as SD;
+  SD.ResourceDefaultOwner -> ArbiterC;
 }
