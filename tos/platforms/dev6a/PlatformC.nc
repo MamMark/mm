@@ -59,9 +59,8 @@ implementation {
   components PlatformLedsC;
   PlatformP.PlatformLeds -> PlatformLedsC;
 
-  components PlatformUsciMapC;
+  /* pull in other modules we want */
   components PlatformPinsC;
-
   components T32BlinkC;         /* initial blinky light */
                                 /* from T32_2 interrupt */
 
