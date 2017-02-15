@@ -60,9 +60,15 @@ implementation {
   MainC.SoftwareInit -> GPSMsgBufP;
   GPSReceive = GPSMsgBufP;
 
+  /*
+   * HW is a singleton interface (ie. non-generic).  If you wire this
+   * twice, all event are fanned out.  Be careful when you do this.
+   * ie.  TestGps used HW to muck with the h/w.  And it has empty
+   * event to handle the fan out.
+   */
   components HplGPS0C;
   Gsd4eUActP.HW -> HplGPS0C;
-  HW = HplGPS0C;  // !!! wired twice, be careful to share this singleton interface
+  HW = HplGPS0C;
 
   components LocalTimeMilliC;
   Gsd4eUP.LocalTime -> LocalTimeMilliC;

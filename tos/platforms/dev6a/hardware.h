@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Eric B. Decker
+ * Copyright (c) 2016, 2017 Eric B. Decker, Dan J. Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -154,45 +154,46 @@
  *    module is m for m1 (sel1 0 sel0 1), same as msp430 module
  *              m2 for sel1 1, sel0 0, and m3 for 11.
  *
- * A0: gps (antenova, sirfIV) UART (dma overlap with AES triggers, DMA ch 0, 1)
+ * A0: mems             (dma overlap with AES triggers, DMA ch 0, 1)
  * A1: SD1 (SPI)
- * A2:
+ * A2: gps (antenova, sirfIV) UART
+ *     gps_tx is on 7.5 (mapped), gps_rx is on 7.7 (mapped).
  * A3: do not use (not on bga)
- * B0: (dma overlap with AES triggers, DMA ch 0, 1)
- * B1:
+ * B0: tmp, i2c         (dma overlap with AES triggers, DMA ch 0, 1)
+ * B1: adc
  * B2: Si4468 radio (SPI)
  * B3: SD0 (SPI)
  *
  * Port: (0x4000_4C00)
- * port 1.0	0pO	LED1           		port 7.0	0mO     SMCLK
- *  00 I .1	1pIr	PB1            		 60   .1	0pI
- *  02 O .2	0pI	gps_tx (A0)     BSLRXD   62   .2	0pI
- *       .3     1pO	gps_rx (A0)     BSLTXD        .3	0pI
+ * port 1.0	0pO	LED1           		port 7.0	0pO     sd1_clk  (A1, pm)
+ *  00 I .1	1pIr	PB1            		 60   .1	0pI     sd1_somi (A1, pm)
+ *  02 O .2	0pI	                BSLRXD   62   .2	0pO     sd1_simo (A1, pm)
+ *       .3     1pO	                BSLTXD        .3	0pI     gps_tm (ta1.1, pm)
  *       .4	1pIr	dock_attn PB2   BSLSTE        .4	0pI
- *       .5	0mO     master_clk      BSLCLK        .5	0pI
- *       .6	0mO	master_simo     BSLSIMO       .6	0pI
- *       .7	0mI	master_somi     BSLSOMI       .7	0pI
+ *       .5	0pI     gps_cts         BSLCLK        .5	0pI
+ *       .6	0pI	                BSLSIMO       .6	0pI
+ *       .7	0pI                     BSLSOMI       .7	0pI
  *
  * port 2.0	0pO	dock_led (LED2_RED)     port 8.0	0mO     TA1.0 (OUT0) (m2)
- *  01   .1	0pO	sd1_clk  (LED2_GREEN)    61 I .1	0pI
- *  03   .2	0pO	sd1_somi (LED2_BLUE)     63 O .2	0pI
- *       .3	0pI     sd1_simo                      .3	0pI
- *       .4	0pI	si446x_cts                    .4	0pI
- *       .5	0pI	                              .5	0pO     tell_exception
+ *  01   .1	0pO	         (LED2_GREEN)    61 I .1	0pI
+ *  03   .2	0pO	         (LED2_BLUE)     63 O .2	0pI
+ *       .3	0pI	si446x_cts                    .3	0pI
+ *       .4	0pI	                              .4	0pI
+ *       .5	0mO	SMCLK (pm)                    .5	0pO     tell_exception
  *       .6	0pI	                              .6	0pO     tell
  *       .7	0pI	                              .7	0pI
  *
- * port 3.0	1pO	gps_cts (gps_csn)       port 9.0	0pI
- *  20   .1	0pI	      A2                 80 I .1	0pI
- *  22   .2	0pI	URXD (A2)                82 O .2	0pI
- *       .3	1pO	UTXD (A2)                     .3	0pI
- *       .4	0pI                                   .4	0pI
- *       .5	0mO	si446x_clk      slave_clk     .5	0pI
- *       .6	0mO	si446x_simo     slave_simo    .6	0pI
- *       .7	0mI     si446x_somi     slave_somi    .7	0pI
+ * port 3.0	1pO	                        port 9.0	0pI
+ *  20   .1	0pI	[unstabbed, nc] A2       80 I .1	0pI
+ *  22   .2	0pI	gps_tx (A2)   URXD       82 O .2	0pI
+ *       .3	1pO	gps_rx (A2)   UTXD            .3	0pI
+ *       .4	0pI     [unstabbed, nc]               .4	1pO     sd1_csn
+ *       .5	0mO	si446x_clk  (B2) slave_clk    .5	0pI     [unstabbed]
+ *       .6	0mO	si446x_simo (B2) slave_simo   .6	0pI     [unstabbed]
+ *       .7	0mI     si446x_somi (B2) slave_somi   .7	0pI
  *
  * port  4.0	0pO	gps_on_off               port 10.0	1pO     sd0_csn
- *  21    .1	0pI	gps_tm                   81 I  .1	0pO     sd0_clk
+ *  21    .1	0pI	                         81 I  .1	0pO     sd0_clk
  *  23    .2	0mO	ACLK                     83 O  .2	0pO     sd0_simo
  *        .3	0mO	MCLK/RTC                       .3	0pI     sd0_somi
  *        .4	0mO	HSMCLK                         .4	0pI
@@ -213,8 +214,8 @@
  *  41 I  .1	0pI     gps_awake               120 I  .1       0pO     LFXOUT (32KiHz)
  *  43 O  .2	0pI                             122 O  .2       0pI     HFXOUT (48MHz)
  *        .3	0pI                                    .3       0pI     HFXIN  (48MHz)
- *        .4	0mI                                    .4       0pI     TDI
- *        .5	0mI                                    .5       0pI     TDO/SWO
+ *        .4	0pI                                    .4       0pI     TDI
+ *        .5	0pI                                    .5       0pI     TDO/SWO
  *        .6	0pI     Capture, C1.1
  *        .7	0pI     Capture, C1.0
  */

@@ -37,16 +37,6 @@
 #ifndef __PLATFORM_PIN_DEFS__
 #define __PLATFORM_PIN_DEFS__
 
-/*
- * For master/slave:  (master_spi.c)
- *
- * 1.5 CLK  <--->  1.5
- * 1.6 SIMO <--->  1.6
- * 1.7 SOMI <--->  1.7
- * 2.6 masterRdy   2.6
- * 2.7 slaveRdy    2.7
- */
-
 /* gps -gsd4e/org */
 
 #define GSD4E_AWAKE_PORT    P6
@@ -54,8 +44,8 @@
 #define GSD4E_AWAKE_BIT     (1 << GSD4E_AWAKE_PIN)
 #define GSD4E_AWAKE_P       (GSD4E_AWAKE_PORT->IN & GSD4E_AWAKE_BIT)
 
-#define GSD4E_CTS_PORT      P3
-#define GSD4E_CTS_PIN       0
+#define GSD4E_CTS_PORT      P1
+#define GSD4E_CTS_PIN       5
 #define GSD4E_CTS           BITBAND_PERI(GSD4E_CTS_PORT->OUT, GSD4E_CTS_PIN)
 
 #define GSD4E_ONOFF_PORT    P4
@@ -73,17 +63,17 @@
 #define GSD4E_RTS_BIT       (1 << GSD4E_RTS_PIN)
 #define GSD4E_RTS_P         (GSD4E_RTS_PORT->IN & GSD4E_RTS_BIT)
 
-#define GSD4E_TM_PORT       P4
-#define GSD4E_TM_PIN        1
+#define GSD4E_TM_PORT       P7
+#define GSD4E_TM_PIN        3
 #define GSD4E_TM_BIT        (1 << GSD4E_TM_PIN)
 #define GSD4E_TM_P          (GSD4E_TM_PORT->IN & GSD4E_TM_BIT)
 
-#define GSD4E_PINS_MODULE     do { P1->SEL0 |=  0x0c; } while (0)
-#define GSD4E_PINS_NON_MODULE do { P1->SEL0 &= ~0x0c; } while (0)
+#define GSD4E_PINS_MODULE     do { P3->SEL0 |=  0x0c; } while (0)
+#define GSD4E_PINS_NON_MODULE do { P3->SEL0 &= ~0x0c; } while (0)
 
 /* radio - si446x - (B2) */
 #define SI446X_CTS_PORT     P2
-#define SI446X_CTS_PIN      4
+#define SI446X_CTS_PIN      3
 #define SI446X_CTS_BIT      (1 << SI446X_CTS_PIN)
 #define SI446X_CTS_P        (SI446X_CTS_PORT->IN & SI446X_CTS_BIT)
 

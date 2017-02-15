@@ -78,7 +78,9 @@
  * Sending is similar.  If we are in high-speed mode then bytes will be
  * egressing at ~8us/byte.  Doesn't make sense to run this off interrupts,
  * hence the run to completion.  Run to completion transmission is started
- * using send_immediate().
+ * using send_immediate().  However, at low speeds this is very dangerous
+ * because the run to completion locks others out and take too long.  Gag.
+ * So it has been removed.
  *
  * Alternatively, the hw driver can use dma to run the transmission, it
  * knows what the fixed size of the message it so this meshes well.  A dma

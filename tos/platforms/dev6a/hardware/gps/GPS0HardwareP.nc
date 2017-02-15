@@ -141,7 +141,7 @@ implementation {
   }
 
   async command void HW.gps_set_reset() {
-    GSD4E_CTS = 1;
+    GSD4E_CTS = 1;              /* say we want UART mode */
     GSD4E_RESETN_OUTPUT;
     GSD4E_RESETN = 0;
   }

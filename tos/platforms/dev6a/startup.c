@@ -288,6 +288,20 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
 
 
 /*
+ * __map_ports: change port mapping as needed.
+ */
+void __map_ports() {
+  PMAP->KEYID = PMAP_KEYID_VAL;
+  P2MAP->PMAP_REG[5] = PMAP_SMCLK;
+  P7MAP->PMAP_REG[0] = PMAP_UCA1CLK;
+  P7MAP->PMAP_REG[1] = PMAP_UCA1SOMI;
+  P7MAP->PMAP_REG[2] = PMAP_UCA1SIMO;
+  P7MAP->PMAP_REG[3] = PMAP_TA1CCR1A;
+  PMAP->KEYID = 0;              /* lock port mapper */
+}
+
+
+/*
  * Exception/Interrupt system initilization
  *
  * o enable all faults to go to their respective handlers
@@ -317,19 +331,24 @@ void __watchdog_init() {
 void __pins_init() {
 
   /*
-   * see hardware.h for initial values
+   * see hardware.h for initial values and changed mappings
    */
+//  __map_ports();              /* done early for now */
+
   PA->OUT = 0;                  /* zero all 10 port registers */
   PB->OUT = 0;
   PC->OUT = 0;
   PD->OUT = 0;
-  PE->OUT = 0x0100;             /* wacking P10/P9 */
-
+  PE->OUT = 0x0110;             /* wacking P10/P9 */
+                                /* P10.0 sd0_csn, P9.4 sd1_csn */
   P1->OUT = 0x1a;               /* P1.1/P1.4 need pull up */
-  P1->DIR = 0x69;
+  P1->DIR = 0x09;
   P1->REN = 0x12;
 
-  P2->DIR = 0x07;
+  /* smclk and LED2 pieces */
+  P2->DIR  = 0x27;
+  P2->SEL0 = 0x20;
+  P2->SEL1 = 0x00;
 
   /* gps is on P3, P4, and P6 */
   P3->OUT = 0x09;
@@ -338,13 +357,13 @@ void __pins_init() {
   /*
    * We bring the clocks out so we can watch them.
    *
-   * gps_on_off and gps_tm are here too.
+   * gps_on_off is here too.
    *
+   * P4.0 gps_on_off
    * P4.2 ACLK
    * P4.3 MCLK
    *      RTCCLK
    * P4.4 HSMCLK
-   * P7.0 PM_SMCLK
    *
    * 7 6 5 4 3 2 1 0
    * 0 0 0 1 1 1 0 0
@@ -353,25 +372,27 @@ void __pins_init() {
   P4->SEL0 = 0x1C;
   P4->SEL1 = 0x00;
 
-  P7->DIR  = 0x01;              /* smclk */
-  P7->SEL0 = 0x01;
-  P7->SEL1 = 0x00;
-
   /* si446x_sdn = 1, si446x_csn = 1 */
   P5->OUT  = 0x05;
   P5->DIR  = 0x05;
 
   /*
-   * gps_resetn and gps_awake are here too
+   * gps_resetn and gps_awake are here.
    *
    * on boot, leave reset as an input, let it float.
    * this lets the gps continue to do what it is doing.
    * If we need to reset it, the gps driver will do it.
    */
   P6->OUT = 0x01;               /* gps_resetn deasserted */
-  P6->DIR = 0x20;               /* gps_resetn input */
 
-  /* P7 done above, SMCLK */
+  /*
+   * SD1 is on P7.{0,1,2} and sd1_csn is P9.4
+   * we want sd1_csn to be 1 to deassert CS
+   */
+  P9->OUT = 0x10;               /* deassert SD1_CSN */
+  P9->DIR = 0x10;
+
+  P7->DIR = 0x05;               /* make just 7.0 and .2 outs */
 
   /*
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
@@ -855,6 +876,9 @@ void __Reset() {
   uint32_t *from;
   uint32_t *to;
 
+  /* we do this early because of SMCLK.  Later can move into pins_init */
+  __map_ports();                /* change P2, P3, P7 mapping */
+
   /*
    * send clocks out for debugging.
    *
@@ -863,13 +887,15 @@ void __Reset() {
    * 4.4 HSMCLK
    * 7.0 SMCLK
    */
+  P4->OUT  = 0;                 /* make sure gps_on_of doesn't wiggle */
   P4->SEL0 = 0x1C;
   P4->SEL1 = 0x00;
-  P4->DIR  = 0x1C;
+  P4->DIR  = 0x1D;
 
-  P7->SEL0 = 0x01;              /* smclk */
-  P7->SEL1 = 0x00;
-  P7->DIR  = 0x01;
+  P2->OUT  = 0;
+  P2->SEL0 = 0x20;              /* smclk */
+  P2->SEL1 = 0x00;
+  P2->DIR  = 0x27;
 
   /*
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
@@ -880,10 +906,16 @@ void __Reset() {
   P8->SEL1 = 1;
 
   /*
-   * After reset all pins are input.  For the SD switch
+   * After reset all pins are input.  For the SDs, switch
    * to pull ups and pull downs while initilizing.
-   * 10.0 csn hold high, 10.1-10.3 hold low
+   * 9.4 csn hold high, 7.0-7.2 hold low (sd1)
+   * 10.0 csn hold high, 10.1-10.3 hold low (sd0)
    */
+  P9->OUT  = 0x10;              /* 9.4 pull up, csn */
+  P9->REN  = 0x10;
+  P7->OUT  = 0x00;
+  P7->REN  = 0x07;
+
   P10->OUT = 0x1;               /* 10.0 is pull up, others pull down */
   P10->REN = 0xf;               /* on the way up. */
 

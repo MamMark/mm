@@ -42,7 +42,7 @@ configuration HplGPS0C {
   }
 }
 implementation {
-  components Msp432UsciA0P as UsciP;
+  components Msp432UsciA2P as UsciP;
   components GPS0HardwareP  as GpsHwP;
 
   Gsd4eUHardware = GpsHwP;
