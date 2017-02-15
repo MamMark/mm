@@ -107,25 +107,59 @@
 #define SI446X_CSN          BITBAND_PERI(SI446X_CSN_PORT->OUT, SI446X_CSN_PIN)
 
 
-/* micro SD */
-#define SD_CSN          BITBAND_PERI(P10->OUT,0)
+/* micro SDs */
+#define SD0_CSN_PORT        P10
+#define SD0_CSN_PIN         0
+#define SD0_CSN             BITBAND_PERI(SD0_CSN_PORT->OUT, SD0_CSN_PIN)
 
-#define SD_ACCESS_SENSE_BIT     0x08
-#define SD_ACCESS_SENSE_N       FALSE
-#define SD_ACCESS_ENA_N
-#define SD_PWR_ENA
-
-#define SD_PINS_INPUT  do { P10->SEL0 = 0; } while (0)
+#define SD0_ACCESS_SENSE_BIT     0x08
+#define SD0_ACCESS_SENSE_N       FALSE
+#define SD0_ACCESS_ENA_N
+#define SD0_PWR_ENA
 
 /*
- * SD_PINS_SPI will connect the 3 spi lines on the SD to the SPI.
+ * see hardware.h for what port is assigned to SD0 for SPI.
+ * The DMA channels used depend on this.  We need RX/TX triggers
+ * and the address of what data port to hit.
+ */
+#define SD0_DMA_TX_TRIGGER MSP432_DMA_CH6_B3_TX0
+#define SD0_DMA_RX_TRIGGER MSP432_DMA_CH7_B3_RX0
+#define SD0_DMA_TX_ADDR    EUSCI_B3->TXBUF
+#define SD0_DMA_RX_ADDR    EUSCI_B3->RXBUF
+
+/*
+ * SD0_PINS_SPI will connect the 3 spi lines on SD0 to the SPI.
  * And switches the sd_csn (10.0) from input to output,  the value should be
  * a 1 which deselects the sd and tri-states.
  *
  * 10.1, CLK, 10.2-3 SDI, SDO set to SPI Module, SD_CSN switched to output
  * (assumed 1, which is CSN, CS deasserted).
+ * SD1 is on P7,0-2 and sd1_csn is P9.4
  */
-#define SD_PINS_SPI   do { P10->SEL0 = 0x0E; } while (0)
+#define SD0_PINS_INPUT  do { P10->SEL0 = 0;    } while (0)
+#define SD0_PINS_SPI    do { P10->SEL0 = 0x0E; } while (0)
+
+
+/* SD1, dock sd */
+#define SD1_CSN_PORT        P9
+#define SD1_CSN_PIN         4
+#define SD1_CSN             BITBAND_PERI(SD1_CSN_PORT->OUT, SD1_CSN_PIN)
+
+#define SD1_ACCESS_SENSE_BIT     0x08
+#define SD1_ACCESS_SENSE_N       FALSE
+#define SD1_ACCESS_ENA_N
+#define SD1_PWR_ENA
+
+#define SD1_DMA_TX_TRIGGER MSP432_DMA_CH2_A1_TX
+#define SD1_DMA_RX_TRIGGER MSP432_DMA_CH3_A1_RX
+#define SD1_DMA_TX_ADDR    EUSCI_A1->TXBUF
+#define SD1_DMA_RX_ADDR    EUSCI_A1->RXBUF
+
+/*
+ * SD1 is on P7.0-2 and sd1_csn is P9.4
+ */
+#define SD1_PINS_INPUT  do { P7->SEL0 = 0; } while (0)
+#define SD1_PINS_SPI    do { P7->SEL0 = 7; } while (0)
 
 
 #define TELL_PORT       P8

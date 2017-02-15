@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016 Eric B. Decker, Carl Davis, Daniel Maltbie
+ * Copyright (c) 2010, 2016-2017 Eric B. Decker, Carl Davis, Daniel Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

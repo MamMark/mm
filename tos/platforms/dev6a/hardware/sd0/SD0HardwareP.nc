@@ -203,8 +203,8 @@ const msp432_usci_config_t sd_spi_config = {
   async command bool HW.sd_check_access_state() { return TRUE; }
 
   async command void HW.sd_on() {
-    SD_CSN = 1;				// make sure tristated
-    SD_PINS_SPI;			// switch pins over
+    SD0_CSN = 1;                // make sure tristated
+    SD0_PINS_SPI;               // switch pins over
   }
 
   /*
@@ -212,14 +212,14 @@ const msp432_usci_config_t sd_spi_config = {
    * chip prior to powering it off.
    */
   async command void HW.sd_off() {
-    SD_CSN = 1;                 /* tri-state by deselecting */
-    SD_PINS_INPUT;		/* pins in proper state */
+    SD0_CSN = 1;                /* tri-state by deselecting */
+    SD0_PINS_INPUT;		/* pins in proper state */
   }
 
   async command bool HW.isSDPowered() { return TRUE; }
 
-  async command void    HW.sd_set_cs()          { SD_CSN = 0; }
-  async command void    HW.sd_clr_cs()          { SD_CSN = 1; }
+  async command void    HW.sd_set_cs()          { SD0_CSN = 0; }
+  async command void    HW.sd_clr_cs()          { SD0_CSN = 1; }
 
 
   async command void HW.sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length) {
@@ -244,8 +244,8 @@ const msp432_usci_config_t sd_spi_config = {
     rcvptr = rcvptr ? rcvptr : recv_dump;
 
     call DmaRX.dma_set_priority(1);             /* run RX with high priority */
-    call DmaRX.dma_start_channel(MSP432_DMA_CH7_B3_RX0, length,
-        rcvptr, (void *) &(EUSCI_B3->RXBUF), control);
+    call DmaRX.dma_start_channel(SD0_DMA_RX_TRIGGER, length,
+        rcvptr, (void *) &(SD0_DMA_RX_ADDR), control);
 
     /*
      * Set up the TX side
@@ -263,8 +263,8 @@ const msp432_usci_config_t sd_spi_config = {
     }
 
     call DmaTX.dma_set_priority(0);             /* run TX with normal priority */
-    call DmaTX.dma_start_channel(MSP432_DMA_CH6_B3_TX0, length,
-        (void*) &(EUSCI_B3->TXBUF), sndptr, control);
+    call DmaTX.dma_start_channel(SD0_DMA_TX_TRIGGER, length,
+        (void*) &(SD0_DMA_TX_ADDR), sndptr, control);
   }
 
 

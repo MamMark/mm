@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Eric B. Decker
+ * Copyright (c) 2016-2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,21 +32,30 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SD0_RESOURCE
-#define SD0_RESOURCE     "SD0.Resource"
-#endif
+/**
+ * @author Eric B. Decker <cire831@gmail.com>
+ */
 
-configuration SD0_ArbP {
+configuration HplSD1C {
   provides {
-    interface Resource[uint8_t id];
-    interface ResourceRequested[uint8_t id];
+    interface SDHardware;
   }
 }
 implementation {
-  components new FcfsArbiterC(SD0_RESOURCE) as ArbiterC;
-  Resource             = ArbiterC;
-  ResourceRequested    = ArbiterC;
+  components Msp432UsciA1P as UsciP;
+  components SD1HardwareP  as SDHWP;
+  components Msp432DmaC    as DMAC;
 
-  components SD0C as SD;
-  SD.ResourceDefaultOwner -> ArbiterC;
+  SDHardware = SDHWP;
+  SDHWP.Usci      -> UsciP;
+  SDHWP.Interrupt -> UsciP;
+  SDHWP.DmaTX     -> DMAC.Dma[2];
+  SDHWP.DmaRX     -> DMAC.Dma[3];
+
+  components PanicC, PlatformC;
+  SDHWP.Panic    -> PanicC;
+  SDHWP.Platform -> PlatformC;
+
+  PlatformC.PeripheralInit -> DMAC;
+  PlatformC.PeripheralInit -> SDHWP;
 }
