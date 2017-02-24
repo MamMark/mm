@@ -36,8 +36,17 @@
 
 #include <hardware.h>
 #include <panic.h>
+#include <platform_panic.h>
 #include <msp432.h>
 #include <msp432dma.h>
+
+#ifndef PANIC_SD
+enum {
+  __pcode_sd = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_SD __pcode_sd
+#endif
 
 module SD1HardwareP {
   provides {

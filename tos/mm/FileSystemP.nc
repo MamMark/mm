@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010 - Eric B. Decker, Carl Davis
+ * Copyright (c) 2017, Eric B. Decker
  * All rights reserved.
  *
  * FileSystem.nc - simple raw area file system based on
@@ -22,10 +23,10 @@
 
 #include "file_system.h"
 #include "ms_loc.h"
-#include "panic.h"
 #include "mm_byteswap.h"
 #include "sd.h"
-
+#include <panic.h>
+#include <platform_panic.h>
 
 uint32_t w_t0, w_diff;
 
@@ -47,6 +48,15 @@ typedef enum {
   FSS_START,				/* read first block, chk empty */
   FSS_SCAN,				/* scanning for 1st blank */
 } fs_state_t;
+
+
+#ifndef PANIC_FS
+enum {
+  __pcode_fs = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_FS __pcode_fs
+#endif
 
 
 module FileSystemP {

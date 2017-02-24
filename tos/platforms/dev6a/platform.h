@@ -30,7 +30,8 @@
 
 #define SI446x_HW_CTS
 
-#include "platform_panic.h"
+#include <panic.h>
+#include <platform_panic.h>
 
 /*
  * define PLATFORM_TAn_ASYNC TRUE if the timer is being clocked

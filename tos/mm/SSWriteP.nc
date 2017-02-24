@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010 - Eric B. Decker
+ * Copyright (c) 2008, 2010, 2017 - Eric B. Decker
  * All rights reserved.
  *
  * Stream Storage Write - write sequential blocks to a contiguous data
@@ -30,9 +30,19 @@
  */
 
 #include <panic.h>
+#include <platform_panic.h>
 #include "stream_storage.h"
 
 uint32_t w_t0, w_diff;
+
+#ifndef PANIC_SS
+enum {
+  __pcode_ss = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_SS __pcode_ss
+#endif
+
 
 module SSWriteP {
   provides {

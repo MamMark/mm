@@ -20,20 +20,20 @@
  */
 
 enum {
-#ifdef notdef
-  PANIC_ADC,
-  PANIC_MISC,
-  PANIC_COMM,
-  PANIC_MS,
-  PANIC_SS,
-  PANIC_SS_RECOV,
-#endif
-  PANIC_GPS = PANIC_HC_START,		/* 0x10, see panic.h */
+  __pcode_gps = __pcode_HC_START,		/* 0x10, see panic.h */
 
 #ifdef notdef
-  PANIC_SNS,
-  PANIC_PWR,
+  __pcode_adc,
+  __pcode_misc,
+  __pcode_comm,
+  __pcode_ms,
+  __pcode_ss,
+  __pcode_ss_recov,
+  __pcode_sns,
+  __pcode_pwr,
 #endif
 };
+
+#define PANIC_GPS __pcode_gps
 
 #endif /* __PLATFORM_PANIC_H__ */

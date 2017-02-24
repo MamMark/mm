@@ -36,11 +36,20 @@
 
 #include <hardware.h>
 #include <panic.h>
+#include <platform_panic.h>
 #include <msp432.h>
 #include <platform_clk_defs.h>
 
 #if (MSP432_CLK != 16777216)
 #warning MSP432_CLK other than 16777216
+#endif
+
+#ifndef PANIC_GPS
+enum {
+  __pcode_gps = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_GPS __pcode_gps
 #endif
 
 module GPS0HardwareP {
