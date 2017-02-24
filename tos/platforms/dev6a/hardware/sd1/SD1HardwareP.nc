@@ -68,11 +68,11 @@ implementation {
 #define SPI_PARANOID
 
 #define sd_panic(where, arg, arg1) do { \
-    call Panic.panic(PANIC_MS, where, arg, arg1, 0, 0); \
+    call Panic.panic(PANIC_SD, where, arg, arg1, 0, 0); \
   } while (0)
 
 #define  sd_warn(where, arg)      do { \
-    call  Panic.warn(PANIC_MS, where, arg, 0, 0, 0); \
+    call  Panic.warn(PANIC_SD, where, arg, 0, 0, 0); \
   } while (0)
 
   uint8_t idle_byte = 0xff;

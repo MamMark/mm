@@ -185,11 +185,11 @@ implementation {
   void sd_cmd_crc();
 
 
-#define sd_panic(where, arg) do { call Panic.panic(PANIC_MS, where, arg, 0, 0, 0); } while (0)
-#define  sd_warn(where, arg) do { call  Panic.warn(PANIC_MS, where, arg, 0, 0, 0); } while (0)
+#define sd_panic(where, arg) do { call Panic.panic(PANIC_SD, where, arg, 0, 0, 0); } while (0)
+#define  sd_warn(where, arg) do { call  Panic.warn(PANIC_SD, where, arg, 0, 0, 0); } while (0)
 
   void sd_panic_idle(uint8_t where, parg_t arg) {
-    call Panic.panic(PANIC_MS, where, arg, 0, 0, 0);
+    call Panic.panic(PANIC_SD, where, arg, 0, 0, 0);
     sdc.sd_state = SDS_IDLE;
     sdc.cur_cid = CID_NONE;
   }
@@ -446,7 +446,7 @@ implementation {
 	w_t = call lt.get();
 	w_diff = w_t - op_t0_ms;
 	rsp = call HW.spi_get();
-	call Panic.panic(PANIC_MS, 30, sdc.sd_state, w_diff, 0, 0);
+	call Panic.panic(PANIC_SD, 38, sdc.sd_state, w_diff, 0, 0);
 	rsp = call HW.spi_get();
 	return;
 
@@ -621,7 +621,7 @@ implementation {
       call HW.spi_get();
 
       /* The card returned an error, or timed out. */
-      call Panic.panic(PANIC_MS, 33, tmp, sd_read_tok_count, 0, 0);
+      call Panic.panic(PANIC_SD, 43, tmp, sd_read_tok_count, 0, 0);
       cid = sdc.cur_cid;			/* remember for signaling */
       sdc.sd_state = SDS_IDLE;
       sdc.cur_cid = CID_NONE;
@@ -643,7 +643,7 @@ implementation {
     }
 
     if (tmp != SD_START_TOK)
-      call Panic.panic(PANIC_MS, 34, tmp, sd_read_tok_count, 0, 0);
+      call Panic.panic(PANIC_SD, 44, tmp, sd_read_tok_count, 0, 0);
 
     /*
      * read the block (512 bytes) and include the crc (2 bytes)
@@ -791,7 +791,7 @@ implementation {
       max_write_time_ms = last_write_time_ms;
 
     if (last_write_time_ms > SD_WRITE_WARN_THRESHOLD) {
-      call Panic.warn(PANIC_MS, 128, sdc.blk_start, last_write_time_ms, 0, 0);
+      call Panic.warn(PANIC_SD, 50, sdc.blk_start, last_write_time_ms, 0, 0);
     }
     cid = sdc.cur_cid;
     sdc.sd_state = SDS_IDLE;
@@ -814,7 +814,7 @@ implementation {
     tmp = call HW.spi_get();
     if ((tmp & 0x1F) != 0x05) {
       i = sd_read_status();
-      call Panic.panic(PANIC_MS, 40, tmp, i, 0, 0);
+      call Panic.panic(PANIC_SD, 51, tmp, i, 0, 0);
       cid = sdc.cur_cid;		/* remember for signals */
       sdc.cur_cid = CID_NONE;
       sdc.sd_state = SDS_IDLE;
@@ -1091,7 +1091,7 @@ implementation {
       if (((tmp & MSK_TOK_DATAERROR) == 0) ||
           (sd_read_tok_count >= SD_READ_TOK_MAX)) {
 	call HW.spi_get();               /* let SD finish, clock one more */
-        call Panic.panic(PANIC_MS, 49, tmp, sd_read_tok_count, 0, blk_id);
+        call Panic.panic(PANIC_SD, 60, tmp, sd_read_tok_count, 0, blk_id);
 	return;
       }
 
@@ -1101,7 +1101,7 @@ implementation {
     } while ((sd_read_tok_count < SD_READ_TOK_MAX) || (tmp == 0xFF));
 
     if (tmp != SD_START_TOK) {
-      call Panic.panic(PANIC_MS, 50, tmp, sd_read_tok_count, 0, blk_id);
+      call Panic.panic(PANIC_SD, 61, tmp, sd_read_tok_count, 0, blk_id);
       return;
     }
 
@@ -1149,7 +1149,7 @@ implementation {
     tmp = call HW.spi_get();
     if ((tmp & 0x1F) != 0x05) {
       t = sd_read_status();
-      call Panic.panic(PANIC_MS, 53, tmp, t, 0, blk_id);
+      call Panic.panic(PANIC_SD, 64, tmp, t, 0, blk_id);
       return;
     }
 
@@ -1181,7 +1181,7 @@ implementation {
 
       if ((t = call Platform.usecsRaw()) < last_time) {
 	if (++time_wraps > 6)
-	  call Panic.panic(PANIC_MS, 54, time_wraps, t, blk_id, 0);
+	  call Panic.panic(PANIC_SD, 65, time_wraps, t, blk_id, 0);
       }
       last_time = t;
     } while (1);
@@ -1189,7 +1189,7 @@ implementation {
     call HW.sd_clr_cs();		/* deassert. */
     t = sd_read_status();
     if (t)
-      call Panic.panic(PANIC_MS, 55, tmp, t, blk_id, 0);
+      call Panic.panic(PANIC_SD, 66, tmp, t, blk_id, 0);
   }
 
 

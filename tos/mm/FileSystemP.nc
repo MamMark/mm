@@ -159,10 +159,10 @@ implementation {
   }
 
 
-#define fs_panic(where, arg) do { call Panic.panic(PANIC_MS, where, arg, 0, 0, 0); } while (0)
+#define fs_panic(where, arg) do { call Panic.panic(PANIC_FS, where, arg, 0, 0, 0); } while (0)
 
   void fs_panic_idle(uint8_t where, parg_t arg) {
-    call Panic.panic(PANIC_MS, where, arg, 0, 0, 0);
+    call Panic.panic(PANIC_FS, where, arg, 0, 0, 0);
     fs_state = FSS_IDLE;
   }
 
@@ -201,7 +201,7 @@ implementation {
 
     dp = fs_buf;
     if (err || dp == NULL || dp != read_buf) {
-      call Panic.panic(PANIC_MS, 4, err, (parg_t) dp, (parg_t) read_buf, 0);
+      call Panic.panic(PANIC_FS, 4, err, (parg_t) dp, (parg_t) read_buf, 0);
       return;
     }
 
