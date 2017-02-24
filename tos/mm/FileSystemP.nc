@@ -207,13 +207,13 @@ implementation {
 
     switch(fs_state) {
       default:
-	  fs_panic_idle(13, fs_state);
+	  fs_panic_idle(5, fs_state);
 	  return;
 
       case FSS_ZERO:
 	dbl = (void *) ((uint8_t *) dp + DBLK_LOC_OFFSET);
 	if ((err = check_dblk_loc(dbl))) {
-	  fs_panic_idle(5, err);
+	  fs_panic_idle(6, err);
 	  return;
 	}
 
@@ -226,7 +226,7 @@ implementation {
 
 	fs_state = FSS_START;
 	if ((err = call SDread.read(fsc.dblk_start, dp))) {
-	  fs_panic_idle(6, err);
+	  fs_panic_idle(7, err);
 	  return;
 	}
 	return;
@@ -246,7 +246,7 @@ implementation {
 
 	fs_state = FSS_SCAN;
 	if ((err = call SDread.read(cur_blk, dp)))
-	  fs_panic_idle(7, err);
+	  fs_panic_idle(8, err);
 	return;
 
       case FSS_SCAN:
@@ -265,7 +265,7 @@ implementation {
 	    fsc.dblk_nxt = cur_blk;
 	    break;              /* break out of switch, we be done */
 	  }
-	  fs_panic_idle(8, (parg_t) cur_blk);
+	  fs_panic_idle(9, (parg_t) cur_blk);
 	  return;
 	}
 
@@ -276,7 +276,7 @@ implementation {
 	if (cur_blk == lower)
 	  cur_blk = lower = upper;
 	if ((err = call SDread.read(cur_blk, dp)))
-	  fs_panic_idle(9, err);
+	  fs_panic_idle(10, err);
 	return;
     }
 
@@ -311,7 +311,7 @@ implementation {
       case FS_AREA_CONFIG:	return fsc.config_start;
       case FS_AREA_TYPED_DATA:	return fsc.dblk_start;
       default:
-	fs_panic(10, which);
+	fs_panic(11, which);
 	return 0;
     }
   }
@@ -323,7 +323,7 @@ implementation {
       case FS_AREA_CONFIG:	return fsc.config_end;
       case FS_AREA_TYPED_DATA:	return fsc.dblk_end;
       default:
-	fs_panic(10, which);
+	fs_panic(12, which);
 	return 0;
     }
   }
@@ -333,7 +333,7 @@ implementation {
     switch (area_type) {
       case FS_AREA_TYPED_DATA:	return fsc.dblk_nxt;
       default:
-	fs_panic(11, area_type);
+	fs_panic(13, area_type);
 	return 0;
     }
   }
@@ -341,7 +341,7 @@ implementation {
 
   command uint32_t FS.adv_nxt_blk(uint8_t area_type) {
     if (area_type != FS_AREA_TYPED_DATA) {
-      fs_panic(12, area_type);
+      fs_panic(14, area_type);
       return 0;
     }
     if (fsc.dblk_nxt) {

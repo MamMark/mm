@@ -200,7 +200,7 @@ implementation {
 
     tmp = call HW.spi_get();
     if (tmp != 0xff) {
-      sd_warn(23, tmp);
+      sd_warn(32, tmp);
     }
   }
 
@@ -239,12 +239,12 @@ implementation {
     } while ((tmp == 0xff) && (i < SD_CMD_TIMEOUT));
 
     if (i >= SD_CMD_TIMEOUT) {
-      sd_panic(25, i);
+      sd_panic(33, i);
       return;
     }
     rsp = tmp;
     if (rsp & ~MSK_IDLE)
-      sd_panic(26, rsp);
+      sd_panic(34, rsp);
   }
 
 
@@ -293,7 +293,7 @@ implementation {
 
     /* Just bail if we never got a response */
     if (i >= SD_CMD_TIMEOUT) {
-      sd_panic(27, tmp);
+      sd_panic(35, tmp);
       return 0xf0;
     }
     return rsp;
@@ -388,7 +388,7 @@ implementation {
     uint8_t   rsp;
 
     if (sdc.sd_state != SDS_OFF_TO_ON) {
-      sd_panic_idle(28, sdc.sd_state);
+      sd_panic_idle(36, sdc.sd_state);
       return;
     }
 
@@ -416,7 +416,7 @@ implementation {
     last_pwr_on_first_cmd_us = call Platform.usecsRaw() - sd_pwr_on_time_us;
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
-      sd_panic_idle(29, rsp);
+      sd_panic_idle(37, rsp);
       return;
     }
 
@@ -459,14 +459,14 @@ implementation {
 	cmd->cmd = SD_GO_OP;            // Send ACMD41
 	rsp = sd_send_acmd();
 	if (rsp & ~MSK_IDLE) {		/* any other bits set? */
-	  sd_panic_idle(31, rsp);
+	  sd_panic_idle(39, rsp);
 	  return;
 	}
 
 	if (rsp & MSK_IDLE) {
 	  /* idle bit still set, means card is still in reset */
 	  if (++sd_go_op_count >= SD_GO_OP_MAX) {
-	    sd_panic_idle(32, sd_go_op_count);			// We maxed the tries, panic and fail
+	    sd_panic_idle(40, sd_go_op_count);			// We maxed the tries, panic and fail
 	    return;
 	  }
 	  call SDtimer.startOneShot(GO_OP_POLL_TIME);
@@ -533,7 +533,7 @@ implementation {
 
   async event void ResourceDefaultOwner.requested() {
     if (sdc.sd_state != SDS_OFF) {
-      sd_panic(33, 0);
+      sd_panic(41, 0);
     }
     sdc.sd_state = SDS_OFF_TO_ON;
     post sd_pwr_up_task();
@@ -541,7 +541,7 @@ implementation {
 
 
   async event void ResourceDefaultOwner.immediateRequested() {
-    sd_panic(34, 0);
+    sd_panic(42, 0);
   }
 
 
@@ -673,7 +673,7 @@ implementation {
 
     crc = (sdc.data_ptr[512] << 8) | sdc.data_ptr[513];
     if (sd_check_crc(sdc.data_ptr, crc)) {
-      sd_panic_idle(35, crc);
+      sd_panic_idle(45, crc);
       signal SDread.readDone[cid](sdc.blk_start, sdc.data_ptr, FAIL);
       return;
     }
@@ -689,7 +689,7 @@ implementation {
      * we got a better handle on the transaction sequence of the SD.
      */
     if (sdc.data_ptr[0] == 0xfe)
-      sd_warn(36, sdc.data_ptr[0]);
+      sd_warn(46, sdc.data_ptr[0]);
 
     last_read_time_us = call Platform.usecsRaw() - op_t0_us;
     if (last_read_time_us > max_read_time_us)
@@ -721,7 +721,7 @@ implementation {
     uint8_t   rsp;
 
     if (sdc.sd_state != SDS_IDLE) {
-      sd_panic_idle(37, sdc.sd_state);
+      sd_panic_idle(47, sdc.sd_state);
       return EBUSY;
     }
 
@@ -740,7 +740,7 @@ implementation {
     cmd->arg = (sdc.blk_start << SD_BLOCKSIZE_NBITS);
 
     if ((rsp = sd_send_command())) {
-      sd_panic_idle(38, rsp);
+      sd_panic_idle(48, rsp);
       return FAIL;
     }
 
@@ -780,7 +780,7 @@ implementation {
 
     i = sd_read_status();
     if (i)
-      sd_panic(39, i);
+      sd_panic(49, i);
 
     last_write_time_us = call Platform.usecsRaw() - op_t0_us;
     if (last_write_time_us > max_write_time_us)
@@ -840,7 +840,7 @@ implementation {
     uint8_t   rsp;
 
     if (sdc.sd_state != SDS_IDLE) {
-      sd_panic_idle(41, sdc.sd_state);
+      sd_panic_idle(52, sdc.sd_state);
       return EBUSY;
     }
 
@@ -859,7 +859,7 @@ implementation {
 
     cmd->cmd = SD_WRITE_BLOCK;
     if ((rsp = sd_send_command())) {
-      sd_panic_idle(42, rsp);
+      sd_panic_idle(53, rsp);
       return FAIL;
     }
 
@@ -928,7 +928,7 @@ implementation {
     uint8_t   rsp;
 
     if (sdc.sd_state != SDS_IDLE) {
-      sd_panic_idle(43, sdc.sd_state);
+      sd_panic_idle(54, sdc.sd_state);
       return EBUSY;
     }
 
@@ -948,20 +948,20 @@ implementation {
     cmd->arg = sdc.blk_start << SD_BLOCKSIZE_NBITS;
     cmd->cmd = SD_SET_ERASE_START;
     if ((rsp = sd_send_command())) {
-      sd_panic_idle(44, rsp);
+      sd_panic_idle(55, rsp);
       return FAIL;
     }
 
     cmd->arg = sdc.blk_end << SD_BLOCKSIZE_NBITS;
     cmd->cmd = SD_SET_ERASE_END;
     if ((rsp = sd_send_command())) {
-      sd_panic_idle(45, rsp);
+      sd_panic_idle(56, rsp);
       return FAIL;
     }
 
     cmd->cmd = SD_ERASE;
     if ((rsp = sd_send_command())) {
-      sd_panic_idle(46, rsp);
+      sd_panic_idle(57, rsp);
       return FAIL;
     }
 
@@ -1037,7 +1037,7 @@ implementation {
     cmd->arg = 0;
     rsp = sd_send_command();
     if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
-      sd_panic(47, rsp);
+      sd_panic(58, rsp);
       return;
     }
 
@@ -1055,7 +1055,7 @@ implementation {
     } while ((rsp & MSK_IDLE) && (sa_op_cnt < (SD_GO_OP_MAX * 8)));
 
     if (sa_op_cnt >= (SD_GO_OP_MAX * 8))
-      sd_panic(48, sa_op_cnt);
+      sd_panic(59, sa_op_cnt);
   }
 
 
@@ -1117,7 +1117,7 @@ implementation {
 
     crc = (buf[512] << 8) | buf[513];
     if (sd_check_crc(buf, crc)) {
-      sd_panic(51, crc);
+      sd_panic(62, crc);
       return;
     }
   }
@@ -1134,7 +1134,7 @@ implementation {
     cmd->arg = (blk_id << SD_BLOCKSIZE_NBITS);
     cmd->cmd = SD_WRITE_BLOCK;
     if ((rsp = sd_send_command()))
-      sd_panic(52, rsp);
+      sd_panic(63, rsp);
 
     call HW.sd_set_cs();
     call HW.spi_put(SD_START_TOK);
@@ -1289,7 +1289,7 @@ implementation {
 	break;
 
       default:
-	sd_panic(56, sdc.sd_state);
+	sd_panic(67, sdc.sd_state);
 	break;
     }
   }
@@ -1302,17 +1302,17 @@ implementation {
 
 
   default event void   SDread.readDone[uint8_t cid](uint32_t blk_id, uint8_t *buf, error_t error) {
-    sd_panic(57, cid);
+    sd_panic(68, cid);
   }
 
 
   default event void SDwrite.writeDone[uint8_t cid](uint32_t blk, uint8_t *buf, error_t error) {
-    sd_panic(58, cid);
+    sd_panic(69, cid);
   }
 
 
   default event void SDerase.eraseDone[uint8_t cid](uint32_t blk_start, uint32_t blk_end, error_t error) {
-    sd_panic(59, cid);
+    sd_panic(70, cid);
   }
 
   async event void Panic.hook() { }

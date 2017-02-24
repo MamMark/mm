@@ -235,7 +235,7 @@ const msp432_usci_config_t sd_spi_config = {
     uint32_t control;
 
     if (length == 0 || (rcvptr == NULL && length > SD_BUF_SIZE))
-      sd_panic(8, length, 0);
+      sd_panic(23, length, 0);
 
     /*
      * Dma.dma_start_channel checks if the requested engine is already
@@ -310,14 +310,14 @@ const msp432_usci_config_t sd_spi_config = {
        * Only take the time out panic if the DMA engine is still running!
        */
       if (((call Platform.usecsRaw() - t0) > max_timeout) && (call DmaRX.dma_enabled())) {
-	sd_panic(9, max_timeout, 0);
+	sd_panic(24, max_timeout, 0);
 	return;
       }
     }
     a = call DmaTX.dma_enabled();
     b = call DmaRX.dma_enabled();
     if (a || b)
-      sd_panic(10, a, b);
+      sd_panic(25, a, b);
     call DmaTX.dma_clear_int();
     call DmaRX.dma_clear_int();
   }
@@ -340,7 +340,7 @@ const msp432_usci_config_t sd_spi_config = {
 
 
   async event void DmaTX.dma_interrupted() {
-    sd_panic(11, 0, 0);          /* shouldn't ever see this */
+    sd_panic(26, 0, 0);          /* shouldn't ever see this */
   }
 
 
@@ -349,7 +349,7 @@ const msp432_usci_config_t sd_spi_config = {
   }
 
   async event void Interrupt.interrupted(uint8_t iv) {
-    sd_panic(12, iv, 0);        /* shouldn't every see this */
+    sd_panic(27, iv, 0);        /* shouldn't ever see this */
   }
 
   async event void Panic.hook() { }

@@ -135,15 +135,15 @@ const msp432_usci_config_t sd_spi_config = {
     tmp = call Usci.getStat();
 #ifdef SPI_PARANOID
     if (tmp & EUSCI_B_STATW_BUSY) {
-      sd_warn(16, 0);
+      sd_warn(1, 0);
     }
     if (tmp & EUSCI_B_STATW_OE) {
-      sd_warn(17, tmp);
+      sd_warn(2, tmp);
       call Usci.getRxbuf();             /* clears overrun */
     }
     if (call Usci.isRxIntrPending()) {
       tmp = call Usci.getRxbuf();
-      sd_warn(18, tmp);
+      sd_warn(3, tmp);
     }
 #else
     if (tmp & EUSCI_B_STATW_OE)
@@ -163,10 +163,10 @@ const msp432_usci_config_t sd_spi_config = {
     while ( !(call Usci.isRxIntrPending()) && i > 0)
       i--;
     if (i == 0)				/* rx timeout */
-      sd_warn(19, 0);
+      sd_warn(4, 0);
     i = call Usci.getStat();
     if (i & EUSCI_B_STATW_OE)
-      sd_warn(20, i);
+      sd_warn(5, i);
 
     return call Usci.getRxbuf();
   }
@@ -188,11 +188,11 @@ const msp432_usci_config_t sd_spi_config = {
       i--;
 
     if (i == 0)				/* rx timeout */
-      sd_warn(21, 0);
+      sd_warn(6, 0);
 
     i = call Usci.getStat();
     if (i & EUSCI_B_STATW_OE)
-      sd_warn(22, i);
+      sd_warn(7, i);
 
     byte = call Usci.getRxbuf();
     sg_ts[sg_nxt] = call Platform.usecsRaw();
