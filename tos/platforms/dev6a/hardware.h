@@ -157,7 +157,7 @@
  * A0: mems             (dma overlap with AES triggers, DMA ch 0, 1)
  * A1: SD1 (SPI)
  * A2: gps (antenova, sirfIV) UART
- *     gps_tx is on 7.5 (mapped), gps_rx is on 7.7 (mapped).
+ *     gps_tx is on 3.2, gps_rx is on 3.3.
  * A3: do not use (not on bga)
  * B0: tmp, i2c         (dma overlap with AES triggers, DMA ch 0, 1)
  * B1: adc
