@@ -149,9 +149,9 @@
  * Port definitions:
  *
  * Various codes for port settings: <value><func><dir><res>, 0pO (0 (zero), port, Output),
- *    <res> will be "r" if a pull up or pull down is used.
+ *    <res> will be "ru" for pull up and "rd" for pull down.
  *    xpI (don't care, port, Input), xmI (module input).
- *    module is m for m1 (sel1 0 sel0 1), same as msp430 module
+ *    module is m for m1 (sel1 0 sel0 1), same as msp430 settings.
  *              m2 for sel1 1, sel0 0, and m3 for 11.
  *
  * A0: mems             (dma overlap with AES triggers, DMA ch 0, 1)
