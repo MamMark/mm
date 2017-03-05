@@ -245,6 +245,7 @@ implementation {
     rsp = tmp;
     if (rsp & ~MSK_IDLE)
       sd_panic(34, rsp);
+    call HW.spi_get();          /* sandisk needs this */
   }
 
 
@@ -314,6 +315,7 @@ implementation {
 
     call HW.sd_set_cs();
     rsp = sd_raw_cmd();
+    call HW.spi_get();          /* sandisk needs this */
     call HW.sd_clr_cs();
     return rsp;
   }
@@ -333,6 +335,7 @@ implementation {
     call HW.sd_set_cs();
     sd_send_cmd55();
     rsp = sd_raw_cmd();
+    call HW.spi_get();          /* sandisk needs this */
     call HW.sd_clr_cs();
     return rsp;
   }
@@ -597,6 +600,7 @@ implementation {
     sd_cmd.arg = 0;
     rsp = sd_raw_cmd();
     stat_byte = call HW.spi_get();
+    call HW.spi_get();
     call HW.sd_clr_cs();
     return ((rsp << 8) | stat_byte);
   }
@@ -665,11 +669,11 @@ implementation {
 
     cid = sdc.cur_cid;			/* remember for signalling */
     call HW.sd_stop_dma();
-    call HW.sd_clr_cs();
 
     /* Send some extra clocks so the card can finish */
     call HW.spi_get();
     call HW.spi_get();
+    call HW.sd_clr_cs();
 
     crc = (sdc.data_ptr[512] << 8) | sdc.data_ptr[513];
     if (sd_check_crc(sdc.data_ptr, crc)) {
@@ -749,7 +753,7 @@ implementation {
      * We've seen upto 300-400 us before it says continue.
      * kick to a task to let other folks run.
      */
-    call HW.sd_set_cs();		/* rassert to continue xfer */
+    call HW.sd_set_cs();		/* reassert to continue xfer */
     sd_read_tok_count = 0;
     post sd_read_task();
     return SUCCESS;
@@ -1113,7 +1117,11 @@ implementation {
     call HW.spi_check_clean();
     call HW.sd_start_dma(NULL, buf, SD_BUF_SIZE);
     call HW.sd_wait_dma(SD_BUF_SIZE);
-    call HW.sd_clr_cs();         /* deassert the SD card */
+
+    call HW.spi_get();          /* more clocks to clear out SD */
+    call HW.spi_get();
+
+    call HW.sd_clr_cs();        /* deassert the SD card */
 
     crc = (buf[512] << 8) | buf[513];
     if (sd_check_crc(buf, crc)) {
@@ -1205,7 +1213,7 @@ implementation {
 
 
   command void SDraw.end_op() {
-    call HW.spi_get();                           /* read one */
+    call HW.spi_get();
     call HW.sd_clr_cs();
   }
 
