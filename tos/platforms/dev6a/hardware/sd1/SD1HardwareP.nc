@@ -79,9 +79,9 @@ implementation {
   uint8_t recv_dump[SD_BUF_SIZE];
 
 /*
- * The dev6a main cpu clock is 16MiHz, SMCLK (for periphs)  is clocked at 8MiHz.
- * The dev6a is a TI msp432p401r (exp-msp432p401r launch pad) dev board with
- * added mm6a peripherals.
+ * The dev6a main cpu clock is 16MiHz, SMCLK (for periphs) is clocked at
+ * 8MiHz.  The dev6a is a TI msp432p401r (exp-msp432p401r launch pad) dev
+ * board with added mm6a peripherals.
  *
  * There is documentation that says initilization on the SD
  * shouldn't be done any faster than 400 KHz to be compatible
@@ -91,21 +91,23 @@ implementation {
  *
  * Normal operation occurs at 8MiHz.  The usci on the msp432 can be run as
  * fast as SMCLK.  Currently we run at 8MiHz.  The SPI runs at SMCLK/1 to
- * maximize its performance.  Timers run at SMCLK/8 (max divisor) to get 1uis
- * ticks.  Note the SD in SPI mode is documented is various places that it can
- * clock up to 25MHz.  So we should be safe.
+ * maximize its performance.  Timers run at SMCLK/8 (max divisor) to get
+ * 1uis ticks.  Note the SD in SPI mode is documented is various places
+ * that it can clock up to 25MHz.  So we should be safe.
  *
  * Dev6a, msp432, USCI, SPI
- * phase 1, polarity 0, msb, 8 bit, master,
+ * phase 0, polarity 1, msb, 8 bit, master,
  * mode 3 pin, sync.
  *
- * Various documents (none definitive) state that SDs in SPI mode should use SPI
- * mode 0, which seems to mean Pos Pulse, latch then shift.  To get this with TI
- * SPI h/w we need PH 1, PL 0.  Note: This has worked on 3 generations of tags
- * so we are "probably" safe.
+ * Various documents (none definitive) state that SDs in SPI mode should
+ * use SPI mode 0, which seems to mean Pos Pulse, latch then shift.
  *
- * UCCKPH: 1,         data captured on rising edge
- * UCCKPL: 0,         inactive state is low
+ * However, we have observed that PL 1 (inactive high) and PH 0 works fine.
+ * Also since we have pull up resistors on all the signal lines we really
+ * want to keep the lines high when we can.
+ *
+ * UCCKPH: 0,         shift 1st edge, captured on 2nd edge
+ * UCCKPL: 1,         inactive state is high.
  * UCMSB:  1,
  * UC7BIT: 0,         8 bit
  * UCMST:  1,
@@ -115,7 +117,7 @@ implementation {
  */
 
 const msp432_usci_config_t sd_spi_config = {
-  ctlw0 : (EUSCI_B_CTLW0_CKPH        | EUSCI_B_CTLW0_MSB  |
+ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
            EUSCI_B_CTLW0_MST         | EUSCI_B_CTLW0_SYNC |
            EUSCI_B_CTLW0_SSEL__SMCLK),
   brw   : MSP432_SD_DIV,        /* see platform_clk_defs */
