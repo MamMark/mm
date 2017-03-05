@@ -165,11 +165,11 @@
  * B3: SD0 (SPI)
  *
  * Port: (0x4000_4C00)
- * port 1.0	0pO	LED1           		port 7.0	0pO     sd1_clk  (A1, pm)
- *  00 I .1	1pIr	PB1            		 60   .1	0pI     sd1_somi (A1, pm)
- *  02 O .2	0pI	                BSLRXD   62   .2	0pO     sd1_simo (A1, pm)
- *       .3     1pO	                BSLTXD        .3	0pI     gps_tm (ta1.1, pm)
- *       .4	1pIr	dock_attn PB2   BSLSTE        .4	0pI
+ * port 1.0	0pO	LED1           		port 7.0	1pIru   sd1_clk  (A1,    pm)
+ *  00 I .1	1pIru	PB1            		 60   .1	1pIru   sd1_somi (A1,    pm)
+ *  02 O .2	0pI	                BSLRXD   62   .2	1pIru   sd1_simo (A1,    pm)
+ *       .3     0pI	                BSLTXD        .3	0pI     gps_tm   (ta1.1, pm)
+ *       .4	1pIru   dock_attn PB2   BSLSTE        .4	0pI
  *       .5	0pI     gps_cts         BSLCLK        .5	0pI
  *       .6	0pI	                BSLSIMO       .6	0pI
  *       .7	0pI                     BSLSOMI       .7	0pI
@@ -183,19 +183,19 @@
  *       .6	0pI	                              .6	0pO     tell
  *       .7	0pI	                              .7	0pI
  *
- * port 3.0	1pO	                        port 9.0	0pI
+ * port 3.0	0pI	                        port 9.0	0pI
  *  20   .1	0pI	[unstabbed, nc] A2       80 I .1	0pI
  *  22   .2	0pI	gps_tx (A2)   URXD       82 O .2	0pI
  *       .3	1pO	gps_rx (A2)   UTXD            .3	0pI
- *       .4	0pI     [unstabbed, nc]               .4	1pO     sd1_csn
+ *       .4	0pI     [unstabbed, nc]               .4	1pIru   sd1_csn
  *       .5	0mO	si446x_clk  (B2) slave_clk    .5	0pI     [unstabbed]
  *       .6	0mO	si446x_simo (B2) slave_simo   .6	0pI     [unstabbed]
  *       .7	0mI     si446x_somi (B2) slave_somi   .7	0pI
  *
- * port  4.0	0pO	gps_on_off               port 10.0	1pO     sd0_csn
- *  21    .1	0pI	                         81 I  .1	0pO     sd0_clk
- *  23    .2	0mO	ACLK                     83 O  .2	0pO     sd0_simo
- *        .3	0mO	MCLK/RTC                       .3	0pI     sd0_somi
+ * port  4.0	0pO	gps_on_off               port 10.0	1pIru   sd0_csn
+ *  21    .1	0pI	                         81 I  .1	1pIru   sd0_clk
+ *  23    .2	0mO	ACLK                     83 O  .2	1pIru   sd0_simo
+ *        .3	0mO	MCLK/RTC                       .3	1pIru   sd0_somi
  *        .4	0mO	HSMCLK                         .4	0pI
  *        .5	0pI	gps_rts                        .5	0pI
  *        .6	0pI	                               .6	0pI

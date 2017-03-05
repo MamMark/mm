@@ -289,6 +289,8 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
 
 /*
  * __map_ports: change port mapping as needed.
+ *
+ * we only get one shot at this, unless we set PMAPRECFG.
  */
 void __map_ports() {
   PMAP->KEYID = PMAP_KEYID_VAL;
@@ -336,13 +338,13 @@ void __pins_init() {
 //  __map_ports();              /* done early for now */
 
   PA->OUT = 0;                  /* zero all 10 port registers */
-  PB->OUT = 0;
-  PC->OUT = 0;
-  PD->OUT = 0;
-  PE->OUT = 0x0110;             /* wacking P10/P9 */
-                                /* P10.0 sd0_csn, P9.4 sd1_csn */
-  P1->OUT = 0x1a;               /* P1.1/P1.4 need pull up */
-  P1->DIR = 0x09;
+  PB->OUT = 0;                  /* P4/P3 */
+  PC->OUT = 0;                  /* P6/P5 */
+  PD->OUT = 0;                  /* P8/P7 */
+  PE->OUT = 0;                  /* P10/P9 */
+
+  P1->OUT = 0x12;               /* P1.1/P1.4 need pull up */
+  P1->DIR = 0x01;
   P1->REN = 0x12;
 
   /* smclk and LED2 pieces */
@@ -351,8 +353,8 @@ void __pins_init() {
   P2->SEL1 = 0x00;
 
   /* gps is on P3, P4, and P6 */
-  P3->OUT = 0x09;
-  P3->DIR = 0x69;
+  P3->OUT = 0x08;
+  P3->DIR = 0x68;
 
   /*
    * We bring the clocks out so we can watch them.
@@ -384,15 +386,17 @@ void __pins_init() {
    * If we need to reset it, the gps driver will do it.
    */
   P6->OUT = 0x01;               /* gps_resetn deasserted */
+  P6->DIR = 0x01;               /* and make resetn an output */
 
   /*
    * SD1 is on P7.{0,1,2} and sd1_csn is P9.4
-   * we want sd1_csn to be 1 to deassert CS
+   * Initial state is "powered off" so make all pins be pull ups
    */
   P9->OUT = 0x10;               /* deassert SD1_CSN */
-  P9->DIR = 0x10;
+  P9->REN = 0x10;               /* pull up */
 
-  P7->DIR = 0x05;               /* make just 7.0 and .2 outs */
+  P7->OUT = 0x07;               /* clk, somi, simo, pull up */
+  P7->REN = 0x07;               /* pull up */
 
   /*
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
@@ -404,13 +408,11 @@ void __pins_init() {
   /*
    * SD0 is on P10.0 - P10.3  see hardware.h
    * on reset all pins set to xpI (port, input)
-   * CSN (P10.1) <- 1 to deassert CS
-   * CLK and SIMO drive 0.  output
-   * SOMI is an input.
+   *
+   * pull all lines up and leave as inputs.
    */
-  P10->OUT = 1;
-  P10->DIR = 0x7;
-  P10->REN = 0;
+  P10->OUT = 0x0F;
+  P10->REN = 0x0F;              /* csn, clk, simo, somi pull up */
 }
 
 
@@ -887,7 +889,7 @@ void __Reset() {
    * 4.4 HSMCLK
    * 7.0 SMCLK
    */
-  P4->OUT  = 0;                 /* make sure gps_on_of doesn't wiggle */
+  P4->OUT  = 0;                 /* make sure gps_on_off doesn't wiggle */
   P4->SEL0 = 0x1C;
   P4->SEL1 = 0x00;
   P4->DIR  = 0x1D;
@@ -901,23 +903,10 @@ void __Reset() {
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
    * t_exc (tell_exeception) is 8.5 0pO
    */
-  P8->OUT = 0;                  /* set tell up */
+  P8->OUT = 0;                  /* set tell and exc up */
   P8->DIR = 0x61;
-  P8->SEL1 = 1;
-
-  /*
-   * After reset all pins are input.  For the SDs, switch
-   * to pull ups and pull downs while initilizing.
-   * 9.4 csn hold high, 7.0-7.2 hold low (sd1)
-   * 10.0 csn hold high, 10.1-10.3 hold low (sd0)
-   */
-  P9->OUT  = 0x10;              /* 9.4 pull up, csn */
-  P9->REN  = 0x10;
-  P7->OUT  = 0x00;
-  P7->REN  = 0x07;
-
-  P10->OUT = 0x1;               /* 10.0 is pull up, others pull down */
-  P10->REN = 0xf;               /* on the way up. */
+  P8->SEL1 = 1;                 /* TA1.0 (OUT0) */
+  WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
 
   __disable_irq();
   __watchdog_init();

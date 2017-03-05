@@ -118,19 +118,32 @@
 #define SD0_DMA_RX_ADDR    EUSCI_B3->RXBUF
 
 /*
- * SD0_PINS_SPI will connect the 3 spi lines on SD0 to the SPI.
- * And switches the sd_csn (10.0) from input to output,  the value should be
- * a 1 which deselects the sd and tri-states.
+ * SD0_PINS_SPI will connect the 3 spi lines on SD0 to the SPI.  This is
+ * done by simply switching the pins to the module.  We need to disconnect
+ * the pins when we power off the SDs to avoid powering the chip via the
+ * input pins.
  *
- * 10.1, CLK, 10.2-3 SDI, SDO set to SPI Module, SD_CSN switched to output
- * (assumed 1, which is CSN, CS deasserted).
+ * We also need to switch sd_csn (10.0) from input to output, the value
+ * should be a 1 which deselects the sd and tri-states.  The output is
+ * already set to 1 (for the resistor pull up).  So simply switching from
+ * input to output is fine.
+ *
+ * We assume that sd0_csn is a 1.
+ */
+#define SD0_PINS_INPUT  do {                                \
+    BITBAND_PERI(SD0_CSN_PORT->DIR, SD0_CSN_PIN) = 0;       \
+    P10->SEL0 = 0;                                          \
+  } while (0)
+
+#define SD0_PINS_SPI    do {                                \
+    BITBAND_PERI(SD0_CSN_PORT->DIR, SD0_CSN_PIN) = 1;       \
+    P10->SEL0 = 0x0E;                                       \
+} while (0)
+
+
+/* SD1, dock sd
  * SD1 is on P7,0-2 and sd1_csn is P9.4
  */
-#define SD0_PINS_INPUT  do { P10->SEL0 = 0;    } while (0)
-#define SD0_PINS_SPI    do { P10->SEL0 = 0x0E; } while (0)
-
-
-/* SD1, dock sd */
 #define SD1_CSN_PORT        P9
 #define SD1_CSN_PIN         4
 #define SD1_CSN             BITBAND_PERI(SD1_CSN_PORT->OUT, SD1_CSN_PIN)
@@ -148,8 +161,15 @@
 /*
  * SD1 is on P7.0-2 and sd1_csn is P9.4
  */
-#define SD1_PINS_INPUT  do { P7->SEL0 = 0; } while (0)
-#define SD1_PINS_SPI    do { P7->SEL0 = 7; } while (0)
+#define SD1_PINS_INPUT  do {                                \
+    BITBAND_PERI(SD1_CSN_PORT->DIR, SD1_CSN_PIN) = 0;       \
+    P7->SEL0 = 0;                                           \
+  } while (0)
+
+#define SD1_PINS_SPI    do {                                \
+    BITBAND_PERI(SD1_CSN_PORT->DIR, SD1_CSN_PIN) = 1;       \
+    P7->SEL0 = 0x07;                                        \
+} while (0)
 
 
 #define TELL_PORT       P8
