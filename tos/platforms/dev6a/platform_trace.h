@@ -14,46 +14,22 @@ typedef enum {
   T_REQ			= 1,
   T_GRANT		= 2,
   T_REL			= 3,
+
   T_SSR			= 4,
   T_SSW			= 5,
   T_GPS			= 6,
 
-  T_GPS_DO_GRANT	= 11,
-  T_GPS_DO_DEFERRED	= 12,
-  T_GPS_RELEASING	= 13,
-  T_GPS_RELEASED	= 14,
-  T_GPS_DO_REQUESTED	= 15,
-  T_GPS_HOLD_TIME	= 16,
-  T_SSW_DELAY_TIME	= 17,
-  T_SSW_BLK_TIME	= 18,
-  T_SSW_GRP_TIME	= 19,
-
-  T_RS                  = 20,
-
-//  T_R_EXCEP,
-//  T_R_EXCEP_1,
-//  T_R_TX_FD,
-//  T_R_TX_FD_1,
-  T_R_TX_PKT,
-//  T_R_RX_FD,
-  T_R_RX_PKT,
-  T_R_RX_RECV,
-  T_R_RX_BAD_CRC,
-//  T_R_RX_OVR,
-//  T_R_RX_OVR_1,
-//  T_R_RX_LOOP,
-//  T_R_RECOVER,
-
-  T_TL                  =64,
-  T_INT_OVR,
-  T_INT_T0A0,
-  T_INT_T0A1,
-  T_INT_P1,
+  /*
+   * For debugging Arbiter 1
+   */
+  T_A1_REQ		= 1 + 0x100,
+  T_A1_GRANT,
+  T_A1_REL,
 
   /*
    * Si446xCmd trace points
    */
-  T_RC_INTERRUPT            = 0x100,
+  T_RC_INTERRUPT            = 0x20,
   T_RC_CHG_STATE,
   T_RC_CHECK_CCA,
   T_RC_CMD_REPLY,
@@ -75,18 +51,13 @@ typedef enum {
   T_RC_WAIT_CTS_F,
   T_RC_WAIT_CTS,
   T_RC_WRITE_TX_FF,
+
   /*
    * Si446xDriverLayer trace points
    */
-  T_DL_INTERRUPT            = 0x200,
+  T_DL_INTERRUPT            = 0x40,
   T_DL_TRANS_ST,
 
-  /*
-   * For debugging Arbiter 1
-   */
-  T_A1_REQ		= 1 + 0x100,
-  T_A1_GRANT,
-  T_A1_REL,
 } trace_where_t;
 
 #endif	// __PLATFORM_TRACE_H__
