@@ -127,7 +127,28 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
 
 
   command error_t Init.init() {
+    uint32_t t0, t1;
+
     call Usci.configure(&sd_spi_config, FALSE);
+
+    /*
+     * sent a first byte to force simo high.  We send, then clear the
+     * return byte out to keep the h/w clean.
+     *
+     * The eUSCI isn't connected to the h/w yet so the transmit isn't seen
+     * by the external h/w.  The cpu pins aren't connected to the eUSCI
+     * until the SD is actually turned on.  This avoids powering the SD
+     * through the I/O pins.
+     */
+    call Usci.setTxbuf(0xff);
+    t0 = call Platform.usecsRaw();
+    while (!call Usci.isRxIntrPending()) {
+      t1 = call Platform.usecsRaw();
+      if ((t1 - t0) > 1000) {
+        sd_panic(13, t0, t1);
+      }
+    }
+    call Usci.getRxbuf();
     return SUCCESS;
   }
 
@@ -351,7 +372,7 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
   }
 
   async event void Interrupt.interrupted(uint8_t iv) {
-    sd_panic(12, iv, 0);        /* shouldn't every see this */
+    sd_panic(12, iv, 0);        /* shouldn't ever see this */
   }
 
   async event void Panic.hook() { }
