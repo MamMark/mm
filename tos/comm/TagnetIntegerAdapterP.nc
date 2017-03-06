@@ -35,16 +35,16 @@
  *
  */
 
-generic configuration TagnetNamePollP (int my_id) {
+generic configuration TagnetIntegerAdapterP (int my_id, char uq_id[]) @safe() {
   uses interface     TagnetMessage  as  Super;
-  provides interface TagnetAdapter<int32_t>  as  Adapter;
+  uses interface     TagnetAdapter<int32_t> as Adapter;
 }
 implementation {
-  components new TagnetNamePollImplP(my_id) as Element;
+  components new TagnetIntegerAdapterImplP(my_id, uq_id) as Element;
   components     TagnetUtilsC;
 
-  Super          =  Element.Super;
-  Adapter        =  Element.Adapter;
+  Super           =  Element.Super;
+  Adapter         =  Element.Adapter;
   Element.TName  -> TagnetUtilsC;
   Element.THdr   -> TagnetUtilsC;
   Element.TPload -> TagnetUtilsC;

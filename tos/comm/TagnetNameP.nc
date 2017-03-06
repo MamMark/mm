@@ -96,6 +96,8 @@ implementation {
     uint8_t           *name_start    =  (uint8_t *)&msg->data[0];
     uint8_t            name_length   =  call THdr.get_name_len(msg);
 
+    nop();
+    nop();
     do {
       this_tlv = call TagnetName.this_element(msg);
       next_tlv = call TTLV.get_next_tlv(this_tlv, name_length);

@@ -73,11 +73,17 @@
 #include "TagnetTLV.h"
 
 configuration TagnetC {
-  provides interface Tagnet;
-  provides interface TagnetName;
-  provides interface TagnetPayload;
-  provides interface TagnetTLV;
-  provides interface TagnetHeader;
+  provides {
+    interface Tagnet;
+    interface TagnetAdapter<int32_t> as PollCount;
+    interface TagnetName;
+    interface TagnetPayload;
+    interface TagnetTLV;
+    interface TagnetHeader;
+  }
+  uses {
+    interface TagnetAdapter<int32_t> as InfoSensGpsPos;
+  }
 }
 implementation {
   components TagnetUtilsC;
@@ -90,20 +96,34 @@ implementation {
   components      TagnetNameRootP  as  RootVx;
 
   // instantiate each of the nodes (vertices) in the Name tree
-  components new  TagnetNameElementP(TN_TAG_ID, UQ_TN_TAG)            as TagVx;
-  components new  TagnetNameElementP(TN_POLL_ID, UQ_TN_POLL)          as PollVx;
-  components new  TagnetNameElementP(TN_POLL_NID_ID, UQ_TN_POLL_NID)  as PollNidVx;
-  components new  TagnetNamePollP   (TN_POLL_EV_ID)                   as PollEvLf;
+  components new  TagnetNameElementP   (TN_TAG_ID, UQ_TN_TAG)           as TagVx;
+
+  components new  TagnetNameElementP   (TN_POLL_ID, UQ_TN_POLL)         as PollVx;
+  components new  TagnetNameElementP   (TN_POLL_NID_ID, UQ_TN_POLL_NID) as PollNidVx;
+  components new  TagnetNamePollP      (TN_POLL_EV_ID)                  as PollEvLf;
+  components new  TagnetIntegerAdapterP(TN_POLL_CNT_ID, UQ_TN_POLL_CNT) as PollCntLf;
+
+  components new  TagnetNameElementP   (TN_INFO_ID, UQ_TN_INFO)         as InfoVx;
+  components new  TagnetNameElementP   (TN_INFO_NID_ID, UQ_TN_INFO_NID) as InfoNidVx;
+  components new  TagnetNameElementP   (TN_INFO_SENS_ID, UQ_TN_INFO_SENS) as InfoSensVx;
+  components new  TagnetNameElementP   (TN_INFO_SENS_GPS_ID, UQ_TN_INFO_SENS_GPS) as InfoSensGpsVx;
+  components new  TagnetIntegerAdapterP(TN_INFO_SENS_GPS_POS_ID, UQ_TN_INFO_SENS_GPS_POS) as InfoSensGpsPosLf;
 
   // now add the edges to complete the tree, connecting the nodes appropriately
-  Tagnet          =  RootVx.Tagnet;
-  TagVx.Super     -> RootVx.Sub[unique(UQ_TN_ROOT)];
-  PollVx.Super    -> TagVx.Sub[unique(UQ_TN_TAG)];
-  PollNidVx.Super -> PollVx.Sub[unique(UQ_TN_POLL)];
-  PollEvLf.Super  -> PollNidVx.Sub[unique(UQ_TN_POLL_NID)];
-#ifdef notdef
-  Tagnet          =  RootVx;
-  PollEvLf.Super  -> RootVx.Sub[unique(UQ_TN_ROOT)];
-#endif
+  Tagnet            =  RootVx.Tagnet;
+  TagVx.Super       -> RootVx.Sub[unique(UQ_TN_ROOT)];
 
+  PollVx.Super      -> TagVx.Sub[unique(UQ_TN_TAG)];
+  PollNidVx.Super   -> PollVx.Sub[unique(UQ_TN_POLL)];
+  PollEvLf.Super    -> PollNidVx.Sub[unique(UQ_TN_POLL_NID)];
+  PollCntLf.Super   -> PollNidVx.Sub[unique(UQ_TN_POLL_NID)];
+  PollCntLf.Adapter -> PollEvLf.Adapter;
+  PollCount         =  PollEvLf.Adapter;
+
+  InfoVx.Super      -> TagVx.Sub[unique(UQ_TN_TAG)];
+  InfoNidVx.Super   -> InfoVx.Sub[unique(UQ_TN_INFO)];
+  InfoSensVx.Super   -> InfoNidVx.Sub[unique(UQ_TN_INFO_NID)];
+  InfoSensGpsVx.Super -> InfoSensVx.Sub[unique(UQ_TN_INFO_SENS)];
+  InfoSensGpsPosLf.Super -> InfoSensGpsVx.Sub[unique(UQ_TN_INFO_SENS_GPS)];
+  InfoSensGpsPos     =  InfoSensGpsPosLf.Adapter;
 }

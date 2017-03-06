@@ -35,51 +35,38 @@
  *
  */
 
-generic module TagnetNamePollImplP(int my_id) @safe() {
-  uses interface     TagnetMessage  as  Super;
-  provides interface TagnetAdapter<int32_t>  as  Adapter;
-  uses interface     TagnetName     as  TName;
-  uses interface     TagnetHeader   as  THdr;
-  uses interface     TagnetPayload  as  TPload;
-  uses interface     TagnetTLV      as  TTLV;
+generic module TagnetIntegerAdapterImplP (int my_id, char uq_id[]) @safe() {
+  uses interface  TagnetMessage   as  Super;
+  uses interface  TagnetAdapter<int32_t> as Adapter;
+  uses interface  TagnetName      as  TName;
+  uses interface  TagnetHeader    as  THdr;
+  uses interface  TagnetPayload   as  TPload;
+  uses interface  TagnetTLV       as  TTLV;
 }
 implementation {
-  int32_t poll_count = 0;
-  
-  command bool Adapter.get_value(int32_t *t, uint8_t *l) {
-    nop();
-    nop();
-    *t = poll_count;
-    *l = sizeof(t);
-    return TRUE;
-  }
+  enum { my_adapter_id = unique(UQ_TAGNET_ADAPTER_LIST) };
 
   event bool Super.evaluate(message_t *msg) {
+    int32_t                 v = 0;
+    uint8_t                 l = 0;
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
-    tagnet_tlv_t    *help_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].help_tlv;
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
     tagnet_tlv_t    *next_tlv = call TName.next_element(msg);
 
-    nop();
-    nop();
-
     if ((next_tlv == NULL) &&                       // end of name and me == this
         (call TTLV.eq_tlv(name_tlv, this_tlv))) {
-      poll_count++;
-      call TPload.first_element(msg);
-      switch (call THdr.get_message_type(msg)) {    // process packet type
-        case TN_POLL:
-          call TPload.add_integer(msg, poll_count);  // zzz need to add the real value here
-          return TRUE;
-        case TN_HEAD:
-          call TPload.add_tlv(msg, help_tlv);
-          return TRUE;
+      call TPload.reset_payload(msg);
+      switch (call THdr.get_message_type(msg)) {      // process message type
+        case TN_GET:
+          if (call Adapter.get_value(&v, &l)) {
+            call TPload.add_integer(msg, v);
+            return TRUE;
+          }
         default:
-          call THdr.set_error(msg, TE_PKT_NO_MATCH); // not valid type, do nothing
-          return FALSE;
+          break;
       }
     }
-    return FALSE;                                  // no match, do nothing
+    return FALSE;
   }
 
   event void Super.add_name_tlv(message_t* msg) {

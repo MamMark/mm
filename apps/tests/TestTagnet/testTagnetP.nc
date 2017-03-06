@@ -15,10 +15,14 @@
 
 tagnet_tlv_t   *test_t1;
 tagnet_tlv_t   *test_t2;
+message_t      *test_msg0;
 message_t      *test_msg1;
 message_t      *test_msg2;
+message_t        my_msg0;
 message_t        my_msg1;
 message_t        my_msg2;
+
+int32_t          tn_gps_pos_count = 0;
 
 #define xHDR_LEN 25
 #define xHOPS 11
@@ -36,7 +40,7 @@ uint16_t global_node_id = 42;
 module testTagnetP {
   provides {
     interface Init;
-//    interface TagnetMessage[uint8_t id];
+    interface TagnetAdapter<int32_t>  as  InfoSensGpsPos;
   } uses {
     interface Boot;
 
@@ -134,40 +138,55 @@ implementation {
   }
 
   message_t*  __attribute__((optimize("O0"))) buildMsg(uint8_t i) {
-    volatile int          name_len = 0;
-    volatile uint8_t*     msg;
-    volatile int          n;
+     int          name_len = 0;
+     message_t*   msg;
+     uint8_t*     buf;
+     int          n;
 
     switch (i) {
+      case 0:
+        nop();
+        msg = &my_msg0;
+        call TagnetHeader.reset_header(msg);
+        call TagnetName.reset_name(msg);
+        call TagnetPayload.reset_payload(msg);
+        buf = (uint8_t *) &msg->data[0];
+        for (n = 0; n < TOSH_DATA_LENGTH; n++) {
+          buf[n] = 0xdd;
+        }
+        return msg;
+        break;
       case 1:
         nop();
-        call TagnetHeader.reset_header(&my_msg1);
-        msg = (uint8_t *) &my_msg1.data[0];
+        msg = &my_msg1;
+        call TagnetHeader.reset_header(msg);
+        buf = (uint8_t *) &msg->data[0];
         for (n = 0; n < TOSH_DATA_LENGTH; n++) {
-          msg[n] = 0xe7;
+          buf[n] = 0xdd;
         }
         name_len = call TagnetTLV.copy_tlv((tagnet_tlv_t *) &TN_BCAST_NID_TLV,
-                                            (tagnet_tlv_t *) msg,
+                                            (tagnet_tlv_t *) buf,
                                             (TOSH_DATA_LENGTH - name_len));
-        msg += name_len;
-        name_len += call TagnetTLV.copy_tlv((tagnet_tlv_t *)TN_TAG_TLV, (tagnet_tlv_t *) msg,
+        buf += name_len;
+        name_len += call TagnetTLV.copy_tlv((tagnet_tlv_t *)TN_TAG_TLV, (tagnet_tlv_t *) buf,
                                             (TOSH_DATA_LENGTH - name_len));
-        return &my_msg1;
+        return msg;
         break;
       case 2:
         nop();
-        call TagnetHeader.reset_header(&my_msg2);
-        msg = (uint8_t *) &my_msg2.data[0];
+        msg = &my_msg2;
+        call TagnetHeader.reset_header(msg);
+        buf = (uint8_t *) &msg->data[0];
         for (n = 0; n < TOSH_DATA_LENGTH; n++) {
-          msg[n] = 0;
+          buf[n] = 0xdd;
         }
         name_len += call TagnetTLV.copy_tlv((tagnet_tlv_t *) &TN_BCAST_NID_TLV,
-                                            (tagnet_tlv_t *) msg,
+                                            (tagnet_tlv_t *) buf,
                                             (TOSH_DATA_LENGTH - name_len));
-        msg += name_len;
-        name_len += call TagnetTLV.copy_tlv((tagnet_tlv_t *)TN_TAG_TLV, (tagnet_tlv_t *) msg,
+        buf += name_len;
+        name_len += call TagnetTLV.copy_tlv((tagnet_tlv_t *)TN_TAG_TLV, (tagnet_tlv_t *) buf,
                                             (TOSH_DATA_LENGTH - name_len));
-        return &my_msg2;
+        return msg;
         break;
       default:
         break;
@@ -405,45 +424,127 @@ implementation {
     }
   }
 
-  void __attribute__((optimize("O0"))) test_tagnet_message() {
+  void __attribute__((optimize("O0"))) test_tagnet_poll_ev() {
     tagnet_tlv_t    *next_tlv;
-    int              name_len = 0;
-    int              data_len = 0;
+    int              name_len;
+    int              data_len;
 
     nop();
     nop();
-    test_msg1 = buildMsg(1);
-    call TagnetHeader.reset_header(test_msg1);
-    call TagnetName.reset_name(test_msg1);
-    call TagnetPayload.reset_payload(test_msg1);
-    nop();
+    test_msg0 = buildMsg(0);
+    call TagnetHeader.set_message_type(test_msg0, TN_POLL);
+    call TagnetHeader.set_request(test_msg0);
+    call TagnetHeader.set_hops(test_msg0, 15);
     next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_TAG_ID].name_tlv;
-    name_len += call TagnetName.add_element(test_msg1, next_tlv);
+    name_len  = call TagnetName.add_element(test_msg0, next_tlv);
     next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_POLL_ID].name_tlv;
-    name_len += call TagnetName.add_element(test_msg1, next_tlv);
+    name_len += call TagnetName.add_element(test_msg0, next_tlv);
     next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_POLL_NID_ID].name_tlv;
-    name_len += call TagnetName.add_element(test_msg1, next_tlv);
+    name_len += call TagnetName.add_element(test_msg0, next_tlv);
     next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_POLL_EV_ID].name_tlv;
-    name_len += call TagnetName.add_element(test_msg1, next_tlv);
+    name_len += call TagnetName.add_element(test_msg0, next_tlv);
     nop();
-    if (call TagnetName.get_len(test_msg1) != name_len) {
-      call Panic.panic(-1, 91, (int) test_msg1, name_len, 0, 0);
+    if (call TagnetName.get_len(test_msg0) != name_len) {
+      call Panic.panic(-1, 91, (int) test_msg0, name_len, 0, 0);
     }
     nop();
-    data_len += call TagnetPayload.add_integer(test_msg1, xPLOAD_LEN);
-    data_len += call TagnetPayload.add_string(test_msg1, "tag", 3);
+    data_len  = call TagnetPayload.add_integer(test_msg0, xPLOAD_LEN);
+    data_len += call TagnetPayload.add_string(test_msg0, "tag", 3);
     nop();
-    if (call TagnetPayload.get_len(test_msg1) != data_len) {
-      call Panic.panic(-1, 92, (int) test_msg1, data_len, 0, 0);
+    if (call TagnetPayload.get_len(test_msg0) != data_len) {
+      call Panic.panic(-1, 92, (int) test_msg0, data_len, 0, 0);
     }
     nop();
-    if (call Tagnet.process_message(test_msg1)) {
-//    if (!signal TagnetMessage.evaluate[0](test_msg1)) {
-      call Panic.panic(-1, 93, (int) test_msg1, 0, 0, 0);
+    if (call Tagnet.process_message(test_msg0)) {
+      call Panic.panic(-1, 93, (int) test_msg0, 0, 0, 0);
     }
+    nop();
   }
 
-//  event void __attribute__((optimize("O0"))) Boot.booted() {
+  void __attribute__((optimize("O0"))) test_tagnet_poll_cnt() {
+    tagnet_tlv_t    *next_tlv;
+    int              name_len;
+    int              data_len;
+
+    nop();
+    nop();
+    test_msg0 = buildMsg(0);
+    call TagnetHeader.set_message_type(test_msg0, TN_GET);
+    call TagnetHeader.set_request(test_msg0);
+    call TagnetHeader.set_hops(test_msg0, 15);
+    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_TAG_ID].name_tlv;
+    name_len  = call TagnetName.add_element(test_msg0, next_tlv);
+    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_POLL_ID].name_tlv;
+    name_len += call TagnetName.add_element(test_msg0, next_tlv);
+    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_POLL_NID_ID].name_tlv;
+    name_len += call TagnetName.add_element(test_msg0, next_tlv);
+    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_POLL_CNT_ID].name_tlv;
+    name_len += call TagnetName.add_element(test_msg0, next_tlv);
+    nop();
+    if (call TagnetName.get_len(test_msg0) != name_len) {
+      call Panic.panic(-1, 94, (int) test_msg0, name_len, 0, 0);
+    }
+    nop();
+    data_len  = call TagnetPayload.add_integer(test_msg0, xPLOAD_LEN);
+    data_len += call TagnetPayload.add_string(test_msg0, "tag", 3);
+    nop();
+    if (call TagnetPayload.get_len(test_msg0) != data_len) {
+      call Panic.panic(-1, 95, (int) test_msg0, data_len, 0, 0);
+    }
+    nop();
+    if (call Tagnet.process_message(test_msg0)) {
+      call Panic.panic(-1, 96, (int) test_msg0, 0, 0, 0);
+    }
+    nop();
+  }
+
+  void __attribute__((optimize("O0"))) test_tagnet_gps_pos() {
+    tagnet_tlv_t    *next_tlv;
+    int              name_len;
+
+    nop();
+    nop();
+    test_msg0 = buildMsg(0);
+    call TagnetHeader.set_message_type(test_msg0, TN_GET);
+    call TagnetHeader.set_request(test_msg0);
+    call TagnetHeader.set_hops(test_msg0, 15);
+    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_TAG_ID].name_tlv;
+    name_len  = call TagnetName.add_element(test_msg0, next_tlv);
+    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_INFO_ID].name_tlv;
+    name_len += call TagnetName.add_element(test_msg0, next_tlv);
+    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_INFO_NID_ID].name_tlv;
+    name_len += call TagnetName.add_element(test_msg0, next_tlv);
+    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_INFO_SENS_ID].name_tlv;
+    name_len += call TagnetName.add_element(test_msg0, next_tlv);
+    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_INFO_SENS_GPS_ID].name_tlv;
+    name_len += call TagnetName.add_element(test_msg0, next_tlv);
+    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_INFO_SENS_GPS_POS_ID].name_tlv;
+    name_len += call TagnetName.add_element(test_msg0, next_tlv);
+    nop();
+    if (call TagnetName.get_len(test_msg0) != name_len) {
+      call Panic.panic(-1, 94, (int) test_msg0, name_len, 0, 0);
+    }
+    nop();
+    if (call Tagnet.process_message(test_msg0)) {
+      call Panic.panic(-1, 96, (int) test_msg0, 0, 0, 0);
+    }
+    nop();
+  }
+
+  void __attribute__((optimize("O0"))) test_tagnet_message() {
+    nop();
+    nop();
+    test_tagnet_poll_ev();
+    test_tagnet_poll_cnt();
+    test_tagnet_gps_pos();
+  }
+
+  command bool InfoSensGpsPos.get_value(int32_t *t, uint8_t *l) {
+    nop();
+    nop();
+    tn_gps_pos_count++;
+    return TRUE;
+  }
 
   event void Boot.booted() {
 
