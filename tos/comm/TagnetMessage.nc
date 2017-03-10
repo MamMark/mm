@@ -1,7 +1,40 @@
 /**
- * Copyright (c) 2017 Daniel J. Maltbie
- * All rights reserved.
+ * Interface used for connecting Tagnet name elements in the tree of
+ * named data objects.
+ *<p>
+ * Not exposed outside of the Tagnet Component and should not be
+ * accessed by users of the stack.
+ *</p>
+ *<p>
+ * Names are represented in a directed acyclical graph comprising 
+ * the structure of all possible names that the Tagnet stack 
+ * recognizes and processes. For a given name in a request message,
+ * there is a zero or one match in the tree to a leaf. Each leaf
+ * represents the named data object for which the name refers.
+ *</p>
+ *<p>
+ * A leaf provides a Tagnet TLV data typed interface that is wired
+ * into a system driver, application module, or other code component
+ * for accessing its configuration and status parameters. An
+ * optional return response may be generated as a result (e.g.,
+ * request GET) that is ready for transmission. And component can
+ * expose an set of typed data objects with a unique name reference
+ *</p>
+ *<p>
+ * The same message buffer holding the request is modified to become
+ * the response message. This preserves the name in the message and
+ * allows reuse of the payload for response parameters. The message
+ * header is updated to set the response message flag and error code
+ * as well as modify the message length to reflect changes in the
+ * payload length. Name length is not modified.
+ *</p>
  *
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
+ * @Copyright (c) 2017 Daniel J. Maltbie
+ * All rights reserved.
+ */
+/*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -31,26 +64,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @author Daniel J. Maltbie <dmaltbie@daloma.org>
- *
  */
 
 /**
- * Interface used to access the Tagnet names instantiated in this Tagnet stack.
- * The names are represented in a directed acyclical graph that matches the
- * request message name and processes the request if one-and-only-one leaf
- * in the graph is reached. A leaf provides Tagnet TLV typed interfaces that
- * are wired into the application modules for accessing configuration and
- * status parameters. An optional return response may be generated as a
- * result (e.g., request GET) that is ready for transmission.
- *
- * The same message buffer holding the request is modified to become the
- * response message. This preserves the name in the message but allows reuse
- * of the payload for response parameters. The message header is updated to
- * set the response message flag and error code as well as modify the 
- * message length to reflect changes in the payload length. Name length
- * is not modified.
- *
+
  */
 
 interface TagnetMessage {

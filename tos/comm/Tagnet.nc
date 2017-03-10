@@ -1,7 +1,21 @@
 /**
- * Copyright (c) 2017 Daniel J. Maltbie
- * All rights reserved.
+ * Primary user interface for accessing the Tagnet protocol stack.
+ *<p>
+ * The Tagnet Stack provides the handling of Tagnet request messages. This
+ * includes the following steps:
+ *</p>
+ *<ul>
+ * <li>Match the request message name with one of the names instantiated in the stack.</li>
+ * <li>If matched, then process the message action to access the named data object.</li>
+ * <li>Optionally format a response message using the same buffer as the request.</li>
+ *</ul>
  *
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
+ * @Copyright (c) 2017 Daniel J. Maltbie
+ * All rights reserved.
+ */
+/*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -30,26 +44,17 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @author Daniel J. Maltbie <dmaltbie@daloma.org>
- *
  */
 
-/**
- * Primary user interface to the Tagnet protocol stack.
- *
- * The Tagnet Stack provides the handling of Tagnet request messages, including:
- * - match the request message name with one of the names instantiated in the stack.
- * - if matched, then process the message action to access the named data object.
- * - Optionally format a response message using the same buffer as the request.
- */
+#include "message.h"
+
 interface Tagnet {
-/**
- * Process the Tagnet request message and return flag if response message needs
- * to be transmitted.
- *
- * @param   msg    pointer to message buffer containing Tagnet Request packet
- * @return         TRUE if response should be sent (in same buffer as original request)
- */
+  /**
+   * Process the Tagnet request message and return flag if response message needs
+   * to be transmitted.
+   *
+   * @param   msg    pointer to message buffer containing Tagnet Request packet
+   * @return         TRUE if response should be sent (in same buffer as original request)
+   */
   command bool  process_message(message_t *msg);
 }

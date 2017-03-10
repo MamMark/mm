@@ -1,7 +1,56 @@
 /**
- * Copyright (c) 2017 Daniel J. Maltbie
- * All rights reserved.
+ * This module provides functions for handling Tagnet TLVs
+ *<p>
+ * A Tagnet TLV consists of three fields: (1) the one byte type field,
+ * (2) a one byte length field, and (3) zero or more bytes of value.
+ * The value field is interpreted based on the type field.
+ *</p>
+ *<p>
+ * There are functions to copy, compare, and inspect TLVs as
+ * well as to convert a TLV to/from a C type. See TagnetTLV.nc
+ * for more details on these functions.
+ *</p>
+ *<p>
+ * The Tagnet TLV is defined in TagnetTLV.h and consists of three fields:
+ *</p>
+ *<dl>
+ *  <dt>type</dt> <dd>byte field defining data types, typically stored in a compressed format</dd>
+ *  <dt>length</dt> <dd>byte field specifying length of the value field</dd>
+ *  <dt>value</dt> <dd>field of zero or more bytes interpreted in context of type</dd>
+ *</dl>
+ *<p>
+ * The structure definition for the Tagnet TLV is:
+ *</p>
+ *<code>
+ * typedef struct tagnet_tlv_t {<br>
+ *   tagnet_tlv_type_t typ;<br>
+ *   uint8_t           len;<br>
+ *   uint8_t           val[];<br>
+ * } tagnet_tlv_t;<br>
+ *</code>
+ *<p>
+ * Possible Tagnet TLV types include (see TagnetTLV.h for definitive list):
+ *</p>
+ *<code>
+ * typedef enum {<br>
+ *   TN_TLV_NONE=0,<br>
+ *   TN_TLV_STRING=1,<br>
+ *   TN_TLV_INTEGER=2,<br>
+ *   TN_TLV_GPS_POS=3,<br>
+ *   TN_TLV_UTC_TIME=4,<br>
+ *   TN_TLV_NODE_ID=5,<br>
+ *   TN_TLV_NODE_NAME=6,<br>
+ *   TN_TLV_SEQ_NO=7,<br>
+ *   TN_TLV_VER_NO=8,<br>
+ *   TN_TLV_FILE=9,<br>
+ *   _TN_TLV_COUNT   // limit of enum values<br>
+ * } tagnet_tlv_type_t;<br>
+ *</code>
  *
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
+ * @Copyright (c) 2017 Daniel J. Maltbie
+ * All rights reserved.
  */
 /*
  * Redistribution and use in source and binary forms, with or without
@@ -32,9 +81,6 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @author Daniel J. Maltbie <dmaltbie@daloma.org>
- *
  */
 
 #include "TagnetTLV.h"
@@ -49,13 +95,13 @@ implementation {
     for (x = 0; x < l; x++)  d[x] =  s[x];
     return l;
   }
-  
+
   bool  _cmp_bytes(uint8_t *s, uint8_t *d, int l) {
     int      x;
     for (x = 0; x < l; x++)  if (d[x] != s[x]) return FALSE;
     return TRUE;
   }
-  
+
   command uint8_t   TagnetTLV.copy_tlv(tagnet_tlv_t *s,  tagnet_tlv_t *d, uint8_t limit) {
     uint8_t l = s->len + sizeof(tagnet_tlv_t);
     if (l > limit)
@@ -164,7 +210,7 @@ implementation {
   command int32_t   TagnetTLV.tlv_to_integer(tagnet_tlv_t *t) {
     return t->val[0];   // zzz need to fix
   }
-    
+
   command uint8_t   *TagnetTLV.tlv_to_string(tagnet_tlv_t *t, int *len) {
     uint8_t  *s = (uint8_t *)t + sizeof(tagnet_tlv_t);
     *len = t->len;

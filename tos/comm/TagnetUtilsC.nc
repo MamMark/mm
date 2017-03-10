@@ -1,5 +1,22 @@
 /**
- * Copyright (c) 2017 Daniel J. Maltbie
+ * This configuration combines several modules providing interfaces
+ * to access a Tagnet Message into a single component.
+ *<p>
+ * Typically the interfaces provided by this configuration are used within the Tagnet stack itself. But there are a few special cases where direct access to the message is required outside of the stack. Otherwise, the stack provides alternative interfaces for adapting network access to system wide data of standard C types.
+ *</p>
+ *<p>
+This includes the following modules:
+ *</p>
+ *<dl>
+ *   <dt>TagnetHeaderP</dt> <dd>module for manipulating the header in a Tagnet message</dd>
+ *   <dt>TagnetNameP</dt> <dd>module for manipulating the name in a Tagnet message</dd>
+ *   <dt>TagnetPayloadP</dt> <dd>module for manipulating the payload in a Tagnet message</dd>
+ *   <dt>TagnetTlvP</dt> <dd>module for manipulating Tagnet TLVs. Found in the name and payload fields of Tagnet message</dd>
+ *</dl>
+ *
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
+ * @Copyright (c) 2017 Daniel J. Maltbie
  * All rights reserved.
  *
  */
@@ -32,11 +49,7 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @author Daniel J. Maltbie <dmaltbie@daloma.org>
- *
  */
-
 configuration TagnetUtilsC {
   provides interface TagnetName;
   provides interface TagnetHeader;

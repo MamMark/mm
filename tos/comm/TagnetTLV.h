@@ -1,7 +1,10 @@
+#ifndef __TAGNETTLV__
+#define __TAGNETTLV__
 /**
- * Copyright @ 2017 Daniel J. Maltbie
- * All rights reserved.
+ * @author Daniel J. Maltbie (dmaltbie@daloma.org)
  *
+ * @Copyright (c) 2017 Daniel J. Maltbie
+ * All rights reserved.
  */
 /*
  * Redistribution and use in source and binary forms, with or without
@@ -33,16 +36,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @author Daniel J. Maltbie (dmaltbie@daloma.org)
  */
 
-#ifndef __TAGNETTLV__
-#define __TAGNETTLV__
-
-/*
- * Tagnet TLV Types
- */
-
+// Tagnet TLV Types
 typedef enum {
   TN_TLV_NONE=0,
   TN_TLV_STRING=1,
@@ -54,13 +50,20 @@ typedef enum {
   TN_TLV_SEQ_NO=7,
   TN_TLV_VER_NO=8,
   TN_TLV_FILE=9,
-  _TN_TLV_COUNT   // limit of  enum
+  _TN_TLV_COUNT   // limit of enum values
 } tagnet_tlv_type_t;
 
+// tagnet tlv type, len, value structure
 typedef struct tagnet_tlv_t {
   tagnet_tlv_type_t typ;
   uint8_t           len;
   uint8_t           val[];
 } tagnet_tlv_t;
+
+// 'standard' TLVs
+#define TN_NONE_TLV          "\000\000"
+#define TN_BCAST_NID_TLV     "\005\006\255\255\255\255\255\255"
+#define TN_MY_NID_TLV        "\005\006\042\042\042\042\042\042"
+#define TN_TAG_TLV           "\001\003tag"
 
 #endif

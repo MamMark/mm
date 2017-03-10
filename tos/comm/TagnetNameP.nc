@@ -1,8 +1,54 @@
 /**
- * Copyright (c) 2017 Daniel J. Maltbie
- * All rights reserved.
+ * This module provides functions for handling the Name field in a Tagnet Message
+ *<p>
+ * A Tagnet name consists of a list of Tagnet type-data-value (TLV)
+ * structures that together form a unique name for a specific data
+ * object in the Tagnet Stack. A name is found in every Tagnet Message.
+ *</p>
+ *<p>
+ * The naming scheme provides a flexible, extensible, and expressive
+ * means to refer to a wide variety of information available on the
+ * the Tag device. A name is structured in a hierarchical manner to
+ * address a specific variable, presenting a network accessible
+ * variable. Each name refers to some local information item such
+ * as reading from a sensor, device configuration and status, or
+ * state of the system. See TagnetMessage.nc for more details on
+ * message processing.
+ *</p>
+ *<p>
+ * This module uses metadata maintained in the message buffer that
+ * specifies indices (offsets) into the message that refer to
+ * various tlv types found in the name. Each time next_element(),
+ * is called, the TLV type is checked and some types get special
+ * handling.
+ *</p>
+ *<p>
+ * The message metadata includes:
+ *</p>
+ *<dl>
+ *  <dt>'this'</dt> <dd>tlv index of current tlv (starts at first and moves to next)</dd>
+ *  <dt>'node_id'</dt> <dd>index to node_id tlv found in name</dd>
+ *  <dt>'seq_no'</dt> <dd>index to seq_no tlv found in name</dd>
+ *  <dt>'gps_pos'</dt> <dd>index to gps_pos tlv found in name</dd>
+ *  <dt>'utc_time'</dt> <dd>index to utc_time found in name</dd>
+ *</dl>
+ *<p>
+ * Note that 'seq_no' is tracked by metadata, but is removed from the
+ * parsing since it is ephemeral to the name. It's used by adapters like
+ * the TagnetFileAdapter component for indexing into the object.
+ *</p>
+ *<p>
+ * Also note that typically the same buffer in which the request message
+ * was received is turned into the response message. This preserves the
+ * name and allows the header and payload to be updated.
+ *</p>
  *
- * Redistribution and use in source and binary forms, with or without
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
+ * @Copyright (c) 2017 Daniel J. Maltbie
+ * All rights reserved.
+ */
+/* Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  *
@@ -30,9 +76,6 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @author Daniel J. Maltbie <dmaltbie@daloma.org>
- *
  */
 #include "message.h"
 #include "Tagnet.h"

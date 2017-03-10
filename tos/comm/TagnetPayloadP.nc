@@ -1,7 +1,43 @@
 /**
- * Copyright (c) 2017 Daniel J. Maltbie
- * All rights reserved.
+ * This module provides functions for handling the Payload field
+ * in a Tagnet Message
+ *<p>
+ * Every message has a name, but only some have a payload. The
+ * payload is typically used to add parameters in a request
+ * message or return read results in the response.
  *
+ *</p>
+ *<p>
+ * There are functions to access the payload either as a raw
+ * byte block or as a list of TLVs. Raw bytes are used when
+ * transferring bulk data, like a binary image.
+ * With TLVs, state information is maintained in Metadata to
+ * perform getting the current and next TLV in the list. Finally,
+ * there are functions to convert C Types to TLVs and store in the
+ * payload. See TagnetPayload.nc for more details on these
+ * functions.
+ *</p>
+ *<p>
+ * Some functions provide payload length information, including
+ * length of the current payload as well as length of remaining
+ * available space in the message. Payload length is determined
+ * by current metadata state while the message buffer size is
+ * used to calculate remaining free space
+ *</p>
+ *<p>
+ * The message header fields are modified in certain cases, such
+ * as the payload type field is set when data is written into
+ * the message buffer. The message length is updated when the
+ * data is added to the payload or the payload state is reset.
+ *</p>
+ *<p>
+ * See TagnetPayload.nc for details of these functions.
+ *</p>
+ *
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
+ * @Copyright (c) 2017 Daniel J. Maltbie
+ * All rights reserved.
  */
 /*
  * Redistribution and use in source and binary forms, with or without
@@ -32,9 +68,6 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @author Daniel J. Maltbie <dmaltbie@daloma.org>
- *
  */
 
 #include "message.h"

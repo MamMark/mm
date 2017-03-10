@@ -1,7 +1,36 @@
 /**
- * Copyright (c) 2017 Daniel J. Maltbie
- * All rights reserved.
+ * This module provides functions for handling the Header field
+ * in a Tagnet Message
+ *<p>
+ * Each Tagnet message begins with the Header field. The first 
+ * byte specifies the length of the message, and is shared with
+ * the radio hardware. This is followed by two bytes for the 
+ * message control parameters, and finally a fourth byte for the
+ * length of the name.
+ *</p>
+ *<dl>
+ *  <dt>Response Flag [7:1]</dt> <dd>TRUE(1) if message is a response</dd>
+ *  <dt>Version [4:3]</dt> <dd>Currently set to 1</dd>
+ *  <dt>Payload Type [0:1]</dt> <dd>TRUE(1) if payload is a TLV list</dd>
+ *  <dt>Message Type [5:3]</dt> <dd>tagnet_msg_type_t enum value defining action to perform</dd>
+ *  <dt>Option [0</dt> <dd>For a request message, this is the hop count; for a response it is the tagnet_error_t enum error code</dd>
+ *</dl>
+ *<p>
+ * Bit field notation identifies two values: (1) a bit field
+ * starting from the right with first bit being zero and (2) the
+ * number of bits in the field counting upwards). So [7:1] is
+ * a one bit wide field in the highestmost bit position (0x80).
+ *</p>
+ *<p>
+ * Details of the Tagnet Message Header can be found in Si446xRadio.h
+ *</p>
  *
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
+ * @Copyright (c) 2017 Daniel J. Maltbie
+ * All rights reserved.
+ */
+/*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -30,9 +59,6 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @author Daniel J. Maltbie <dmaltbie@daloma.org>
- *
  */
 
 #include "message.h"
