@@ -163,18 +163,18 @@
  * B3:
  *
  * Port: (0x4000_4C00)
- * port 1.0	0pI   A1 accel_int1             port 7.0	1pI   B5 gps_cts
- *  00 I .1	0pI   B1 accel_int2              60   .1	0pI   C5 gps_tm
+ * port 1.0	0pI   A1 mag_drdy               port 7.0	1pI   B5 gps_cts
+ *  00 I .1	0pI   B1 mag_int                 60   .1	0pI   C5 gps_tm
  *  02 O .2	0pI   C4 TP31                    62   .2	0pI   B4 gps_tx
  *       .3     0pI   D4 TP27                         .3	1pO   A4 gps_rx
  *       .4	0pI   D3                              .4	1pO   J1 adc_sclk
- *       .5	1pO   C1 accel_csn                    .5	1pO   H2 adc_simo
- *       .6	0pI   D1 gyro_int1                    .6	0pO   J2 pwr_sd0_en
- *       .7	1pO   E1 gyro_csn                     .7	1pI   G3 sd0_sclk
+ *       .5	1pO   C1 mag_csn                      .5	1pO   H2 adc_simo
+ *       .6	0pI   D1 accel_csn                    .6	0pO   J2 pwr_sd0_en
+ *       .7	1pO   E1 accel_int2                   .7	1pI   G3 sd0_sclk
  *
  * port 2.0	0pI   E4 TP11                   port 8.0	0pI   H3
- *  01   .1	0pI   F1 adc_rdy                 61 I .1	0pI   G4
- *  03   .2	0pI   E3 gyro_int2               63 O
+ *  01   .1	0pI   F1 adc_rdy                 61 I .1	0pI   G4 TP12 (sd0 buff en)
+ *  03   .2	0pI   E3 accel_int1              63 O
  *       .3	0pI   F4 TP3
  *       .4	0pI   F3 sd0_somi
  *       .5	0pI   G1 adc_somi
@@ -190,23 +190,23 @@
  *       .6	1pO   J5 radio_sclk
  *       .7	0pI   H6 radio_somi
  *
- * port  4.0	0pO   H9 pwr_radio_sw
- *  21    .1	0pI   H8 radio_cts
+ * port  4.0	0pO   H9 pwr_radio_sw (voltage sel)
+ *  21    .1	0pI   H8 radio_cts    (radio gpio1)
  *  23    .2	0pO   G7 batt_sense_en
  *        .3	0pO   G8 pwr_tmp_en
  *        .4	0pO   G9 pwr_3v3_en
- *        .5	0pI   F7 
+ *        .5	0pI   F7 pwr_radio_en   (radio power switch, 1=on)
  *        .6	0pO   F8 sal_B
  *        .7	0pO   F9 sal_A
  *
- * port  5.0	0pI   E7 
+ * port  5.0	0pI   E7 pwr_gps_en   (gps and mems i/o power switch)
  *  40 I  .1	0pO   E8 pwr_vel_en
  *  42 O  .2	0pO   E9 pwr_press_en
  *        .3	0pI   D7 batt_sense A2
- *        .4	0pI   D8 mag_drdy
+ *        .4	0pI   D8 gyro_int2
  *        .5	0pO   C8 gps_on_off
- *        .6	1pO   D9 mag_csn
- *        .7	0pI   C9 mag_int
+ *        .6	1pO   D9 gyro_int1
+ *        .7	0pI   C9 gyro_csn
  *
  * port  6.0	0pI   J9 radio_gp0              port  J.0       0pIru J6 LFXIN  (32KiHz)
  *  41 I  .1	0pI   H7 radio_irq              120 I  .1       0pO   J7 LFXOUT (32KiHz)
