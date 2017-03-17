@@ -273,7 +273,7 @@ implementation {
 
   uint8_t sd_raw_cmd() {
     uint16_t  i;
-    uint8_t   tmp, rsp;
+    uint8_t   rsp;
 
     call HW.spi_check_clean();
     sd_cmd_crc();
@@ -286,15 +286,17 @@ implementation {
     /* Wait for a response.  */
     i=0;
     do {
-      tmp = call HW.spi_get();
+      rsp = call HW.spi_get();
+      if (rsp == 0x7f) {
+        sd_warn(35, tmp);
+        rsp = 0xff;
+      }
       i++;
-    } while ((tmp == 0xff) && (i < SD_CMD_TIMEOUT));
-
-    rsp = tmp;				/* response byte */
+    } while ((rsp & 0x80) && (i < SD_CMD_TIMEOUT));
 
     /* Just bail if we never got a response */
     if (i >= SD_CMD_TIMEOUT) {
-      sd_panic(35, tmp);
+      sd_panic(35, rsp);
       return 0xf0;
     }
     return rsp;
@@ -389,6 +391,7 @@ implementation {
   void sd_start_reset(void) {
     sd_cmd_t *cmd;
     uint8_t   rsp;
+    unsigned int count;
 
     if (sdc.sd_state != SDS_OFF_TO_ON) {
       sd_panic_idle(36, sdc.sd_state);
@@ -413,12 +416,21 @@ implementation {
     call HW.sd_start_dma(NULL, NULL, 10);	/* send 10 0xff to clock SD */
     call HW.sd_wait_dma(10);
 
-    /* Put the card in the idle state, non-zero return -> error */
-    cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
-    cmd->arg = 0;
+    count = 10;                 /* at most try 10 times  */
     last_pwr_on_first_cmd_us = call Platform.usecsRaw() - sd_pwr_on_time_us;
-    rsp = sd_send_command();
-    if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
+    while(count) {
+      /* Put the card in the idle state, non-zero return  -> error */
+      cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, soft      ware reset
+      cmd->arg = 0;
+      rsp = sd_send_command();
+      if (rsp == 0x01)          /* IDLE pops us out */
+        break;
+      count--;
+      if (count == 9) {
+        sd_warn(37, rsp);       /* see if we ever see this. */
+      }
+    }
+    if (rsp != 0x01) {		/* Must be in IDLE */
       sd_panic_idle(37, rsp);
       return;
     }
