@@ -78,7 +78,6 @@ implementation {
     COLLECT
   } sd_state_t;
 
-  sd_cmd_t *cmd;			// Command Structure
   uint8_t   rsp;
   sd_state_t sd_state;
 
@@ -100,8 +99,7 @@ implementation {
     uint8_t x_rsp[4];
 
     call SDraw.start_op();
-    cmd->cmd    = SD_SEND_OCR;
-    rsp         = call SDraw.raw_cmd();
+    rsp         = call SDraw.raw_cmd(SD_SEND_OCR, 0);
     ocr_data[0] = call SDraw.get();
     ocr_data[1] = call SDraw.get();
     ocr_data[2] = call SDraw.get();
@@ -132,8 +130,7 @@ implementation {
     uint8_t   indx, tmp;
 
     call SDraw.start_op();               // Chip Select Low
-    cmd->cmd = SD_SEND_CID;
-    rsp      = call SDraw.raw_cmd();     // Sends command and waits for response
+    rsp      = call SDraw.raw_cmd(SD_SEND_CID, 0);
     while (1) {
       tmp = call SDraw.get();            // Check for start token in prefix
       if (tmp == SD_START_TOK)
@@ -162,8 +159,7 @@ implementation {
     uint8_t r;
                                 // Reading CSD is same as CID above
     call SDraw.start_op();
-    cmd->cmd = SD_SEND_CSD;
-    r = call SDraw.raw_cmd();
+    r = call SDraw.raw_cmd(SD_SEND_CSD, 0);
     while (1) {
       r = call SDraw.get();
       if (r == SD_START_TOK)
@@ -186,9 +182,8 @@ implementation {
     sd_status_t *sdp;
 
     call SDraw.start_op();                 // Chip Select Low
-    cmd->cmd = SD_SEND_STATUS;
-    status_data[0] = call SDraw.raw_cmd(); // Send and wait for response
-    status_data[1] = call SDraw.get();     // Reset of R2 response
+    status_data[0] = call SDraw.raw_cmd(SD_SEND_STATUS, 0);
+    status_data[1] = call SDraw.get();     // Rest of R2 response
     call SDraw.end_op();                   // Chip Select High
     sdp = (sd_status_t *) status_data;
   }
@@ -205,11 +200,10 @@ implementation {
     uint8_t  indx;
 
     call SDraw.start_op();                    // Chip Select Low
-    cmd->cmd = SD_SEND_SCR;
-    rsp = call SDraw.raw_acmd();              // CMD55 then send and get response
+    rsp = call SDraw.raw_acmd(SD_SEND_SCR, 0);
 
     /* Determine if this acts like a data block, if so, look for a token
-     *  in the prefix.
+     *  in the prefix.   It has a start token.
      */
 
     for (indx = 0; indx < SD_SCR_LEN; indx++)
@@ -247,15 +241,10 @@ implementation {
    *
    */
   uint8_t send_cmd8() {
-    uint8_t cond[4], crc7;
+    volatile uint8_t cond[4], crc7;
 
     call SDraw.start_op();                // Chip Select Low
-
-    cmd->cmd = SD_SEND_IF_CONDITION;
-    cmd->arg = 0x000001aa;
-    cmd->crc = 0x87;
- 
-    rsp = call SDraw.raw_cmd();
+    rsp = call SDraw.raw_cmd(SD_SEND_IF_CONDITION, 0x1aa);
     if (rsp == 0) {
       cond[0] = call SDraw.get();
       cond[1] = call SDraw.get();
@@ -342,7 +331,6 @@ implementation {
         call SDResource.release();
 //        WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
         call SDsa.reset();
-        cmd = call SDraw.cmd_ptr();
 
         nop();
         call SDsa.read(0, d);
