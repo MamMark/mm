@@ -1,7 +1,7 @@
 /**
  * sd_cmd.h - low level Secure Digital storage  (definitions)
  *
- * Copyright (c) 2010 Eric B. Decker
+ * Copyright (c) 2010, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,9 +89,13 @@ typedef struct sd_cmd {
 #define MMC_GO_OP CMD1
 
 /* get simplified voltage supported, and enable SDHC
- * And now for a brief moment of whining:  Why can't
- * they name things in English or any other reasonable
- * language.  Bastard committees!
+ *
+ * And now for a brief moment of whining: Why can't they name things in
+ * English or any other reasonable language.  Bastard committees!
+ *
+ * Sending CMD8 (and if accepted) will enable HCS (Host Capacity Support)
+ * in the ACMD41 argument.  The return from ACMD41 will contain CCS
+ * (Card Capacity Status).
  */
 #define CMD8 (8 | 0x40)
 #define SD_SEND_IF_CONDITION CMD8

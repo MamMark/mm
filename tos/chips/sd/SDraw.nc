@@ -2,6 +2,7 @@
  * SD Raw access
  *
  * Copyright (c) 2010, Eric B. Decker, Carl W. Davis
+ * Copyright (c) 2017, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,9 +51,8 @@ interface SDraw {
   command void      end_op();
   command uint8_t   get();
   command void      put(uint8_t byte);
-  command sd_cmd_t *cmd_ptr();
-  command uint8_t   send_cmd();
-  command uint8_t   raw_acmd();
-  command uint8_t   raw_cmd();
+  command uint8_t   send_cmd(uint8_t cmd, uint32_t arg);
+  command uint8_t   raw_acmd(uint8_t cmd, uint32_t arg);
+  command uint8_t   raw_cmd(uint8_t cmd, uint32_t arg);
   command void      send_recv(uint8_t *tx, uint8_t *rx, uint16_t len);
 }
