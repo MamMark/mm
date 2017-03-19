@@ -190,7 +190,7 @@
  *       .4	0pI     [unstabbed, nc]               .4	1pIru   sd1_csn
  *       .5	0mO	si446x_clk  (B2) slave_clk    .5	0pI     [unstabbed]
  *       .6	0mO	si446x_simo (B2) slave_simo   .6	0pI     [unstabbed]
- *       .7	0mI     si446x_somi (B2) slave_somi   .7	0pI
+ *       .7	0mIrd   si446x_somi (B2) slave_somi   .7	0pI
  *
  * port  4.0	0pO	gps_on_off               port 10.0	1pIru   sd0_csn
  *  21    .1	0pI	                         81 I  .1	1pIru   sd0_clk

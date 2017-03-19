@@ -355,6 +355,7 @@ void __pins_init() {
   /* gps is on P3, P4, and P6 */
   P3->OUT = 0x08;
   P3->DIR = 0x68;
+  P3->REN = 0x80;
 
   /*
    * We bring the clocks out so we can watch them.
