@@ -60,6 +60,7 @@ module sdP {
     interface SDraw;
     interface SDsa;
     interface SDread;
+    interface SDwrite;
     interface Resource as SDResource;
 
     interface Collect;
@@ -71,6 +72,7 @@ implementation {
 
   typedef enum {
     READ0,
+    WRITE1,
     READ1,
     READ2,
     READ3,
@@ -308,8 +310,8 @@ implementation {
     nop();
     switch(sd_state) {
       case READ0:
-        call SDread.read(0x08000, d);
-        sd_state = READ1;
+        call SDwrite.write(0x08000, d);
+        sd_state = WRITE1;
         break;
 
       case READ1:
@@ -360,8 +362,16 @@ implementation {
         sd_state = COLLECT;
         break;
 
+      case WRITE1:
       case COLLECT: break;
     }
+  }
+
+  event void SDwrite.writeDone(uint32_t blk_id, uint8_t* buf, error_t error) {
+    nop();
+    nop();
+    call SDread.read(0x08000, d);
+    sd_state = READ1;
   }
 
   event void Timer.fired() {
