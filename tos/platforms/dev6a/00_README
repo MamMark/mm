@@ -168,3 +168,41 @@ BSL_PORTIF_CFG_UART = 0xfcfffda0,
 BSL_PORTIF_CFG_SPI = 0xf0ff9770,
 BSL_PORTIF_CFG_I2C = 0xfcffff72,
 TLV_END = 0xbd0e11d
+
+
+
+Issues with the msp432p401r and Segger Jlink:
+
+* Can not halt processor
+
+  Not sure how to duplicate this problem.  Seems to has something to do
+  with SWD, erase, and quitting.  Intermittent.  Doesn't do it everytime.
+
+** One way is with JLinkExe, swd, erase, quit
+zot (24): JLinkExe
+si swd
+device msp432p401r
+speed 1000
+erase
+q
+
+zot(25): JLinkExe
+si swd
+device msp432p401r
+speed 1000
+halt
+
+<most times this will fail>
+
+
+To recover, use swd and loadbin
+
+zot(26): JLinkExe
+si swd
+device msp432p401r
+speed 1000
+loadbin main.bin 0   <sometimes this fails too>
+r
+g
+halt
+q
