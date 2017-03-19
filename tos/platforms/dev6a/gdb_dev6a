@@ -45,8 +45,8 @@ printf "                %c       %c     %c%c%c\n", \
     ($p7->SEL0 & (1 << 2)) ? 'M' : 'p', ($p7->SEL0 & (1 << 1)) ? 'M' : 'p', \
     ($p7->SEL0 & (1 << 0)) ? 'M' : 'p'
 __p_usci $uca1 1 0 0d17
-#output SDspP__1__sdc
-#printf "\n"
+output SDspP__1__sdc
+printf "\n"
 end
 document sd1
 display sd1 state
