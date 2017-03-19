@@ -52,7 +52,7 @@
 
 #define SI446X_CHIP 0x4463a
 
-// #define SI446X_HW_CTS
+#define SI446X_HW_CTS
 
 /*
  * SI446X_RF_POWER_UP is a platform dependent define.  In particular, TXCO should be
