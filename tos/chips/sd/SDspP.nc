@@ -106,16 +106,8 @@ implementation {
   } sd_state_t;
 
   uint32_t w_t, w_diff;
-
-/* sdsa_majik only looked at in SDsa, ints should be off and should always be atomic */
-  norace uint32_t sdsa_majik;
-
-
   uint32_t sa_t0, sa_diff;
   uint16_t sa_t3;
-
-#define SDSA_MAJIK 0xAAAA5555
-
 
   /*
    * main SDsp control cells.   The code can handle at most one operation at a time,
@@ -129,20 +121,30 @@ implementation {
    * queuing of clients when the SD is already busy.  When the current client finishes
    * and releases the device, the arbiter will signal the next client to begin.
    *
-   * sd_state  current driver state, non-IDLE if we are busy doing something.
-   * cur_cid   client id of who has requested the activity.
+   * majik_a   protection tombstone, SD_MAJIK
+   * sdhc      T if high capacity, F -> sdsc
+   * sdsa_majik if SDSA_MAJIK, in stand alone
+   * blocks    number of 512 byte blocks on the disk
    * blk_start holds the blk id we are working on
    * blk_end   if needed holds the last block working on (like for erase)
+   * sd_state  current driver state, non-IDLE if we are busy doing something.
+   *           IDLE if powered on but not busy
+   * cur_cid   client id of who has requested the activity.
    * data_ptr  buffer pointer if needed.
+   * erase_state when erased the default state of a sector
+   * majik_b   protection tombstone, SD_MAJIK
    *
-   * if sd_state is SDS_IDLE these cells are meaningless.
+   * if sd_state is SDS_IDLE, blk_start, blk_end, cur_cid, and data_ptr are
+   * meaningless.
    */
 
 #define SD_MAJIK 0x5aa5
+#define SDSA_MAJIK 0xAAAA5555
 #define CID_NONE 0xff;
 
   norace struct {
     uint16_t   majik_a;
+    uint32_t   sdsa_majik;              /* none zero if in stand alone */
     sd_state_t sd_state;
     uint8_t    cur_cid;			/* current client */
     uint32_t   blk_start, blk_end;
@@ -936,7 +938,7 @@ implementation {
    * the SDSA_MAJIK then we are in standalone.
    */
   async command bool SDsa.inSA() {
-    if (sdsa_majik == SDSA_MAJIK)
+    if (sdc.sdsa_majik == SDSA_MAJIK)
       return TRUE;
     return FALSE;
   }
@@ -947,7 +949,7 @@ implementation {
     uint16_t sa_op_cnt;
     uint32_t t0;
 
-    sdsa_majik = SDSA_MAJIK;
+    sdc.sdsa_majik = SDSA_MAJIK;
     call HW.sd_on();
     call HW.sd_spi_enable();
 
@@ -987,7 +989,7 @@ implementation {
   async command void SDsa.off() {
     call HW.sd_spi_disable();
     call HW.sd_off();
-    sdsa_majik = 0;
+    sdc.sdsa_majik = 0;
   }
 
 
