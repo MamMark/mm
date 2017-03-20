@@ -147,13 +147,22 @@ implementation {
 #define SDSA_MAJIK 0xAAAA5555
 #define CID_NONE 0xff;
 
+  /*
+   * if blocks is 0, we haven't initialized disk params
+   *
+   * disk params (dp) gets initilized the first time we power up, typically
+   * when the FileSystem does its thing.
+   */
   norace struct {
     uint16_t   majik_a;
-    uint32_t   sdsa_majik;              /* none zero if in stand alone */
     sd_state_t sd_state;
-    uint8_t    cur_cid;			/* current client */
+    uint8_t    sdhc;                    /* dp, F: SDSC, T: SDHC */
+    uint32_t   sdsa_majik;              /* none zero if in stand alone */
+    uint32_t   blocks;                  /* dp, total blocks     */
     uint32_t   blk_start, blk_end;
+    uint8_t    cur_cid;			/* current client */
     uint8_t    *data_ptr;
+    uint16_t   erase_state;             /* dp, F: 0, T: 0xff    */
     uint16_t   majik_b;
   } sdc;
 
@@ -456,14 +465,77 @@ implementation {
   }
 
 
-  /************************************************************************
+  /*
+   * sd_get_disk_params
    *
-   * Reset
+   * get certain critical disk parameters and stash in the state block
    *
-   * See SDsa for notes on reseting the SD card and powering it up.
+   * First, we want to find out how many sectors this disk has. This
+   * information is in the CSD.  SDSC uses a CSD v1, SDHC uses CSD v2.
+   *
+   * CSD ver is in the 1st 2 bits of csd[0].   csc[0] >> 6
+   *  0: csd v1, SDSC
+   *  1: csd v2, SDHC/SDXC
+   *
+   * SDSC, CSD v1
+   *    rbl (read_bl_len): =  csd[5] & 0xf
+   *    csm (c_size_mult)  = (csd[9} & 0x3) << 1 | (csd[10] & 0x80) >> 7
+   *    csize = ((csd[6] & 0x03) << 10) | (csd[7] << 2) | (csd[8] >> 6)
+   *
+   *    n = rbl + csm + 2
+   *
+   *    capacity = (csize + 1) * 2 ^ n
+   *    blocks = capacity/512
+   *
+   *    blocks = (csize + 1) * 2 ^ (n - 9)
+   *
+   * SDHC, CSD v2
+   *    rbl is fixed at 2 ^ 9 = 512
+   *    csize = ((csd[7] & 0x3f) << 16) | (csd[8] << 8) | csd[9]
+   *
+   *    capacity = (csize + 1) * 512KiB
+   *    blocks   = (csize + 1) * 1024
+   *
+   * The SCR register contains "data_status_after_erase" which indicates
+   * the state of the memory array after an erase.  We care for finding
+   * empty blocks.
+   *
+   * The last thing we get is the OCR to see if we are SDHC.  CCS bit.
    */
 
-  /*
+  void sd_get_disk_params() {
+    uint8_t buf[16], rsp;
+    uint32_t csize, rbl, csm;
+    uint32_t ocr;
+
+    if ((rsp = sd_get_vreg(buf, SD_SEND_CSD, SD_CSD_LEN))) {
+      sd_panic(99, rsp);
+    }
+    if ((buf[0] >> 6) == 1) {
+      /* CSDv2 */
+      csize = (buf[7] & 0x3f) << 16 | (buf[8] << 8) | buf[9];
+      sdc.blocks = (csize + 1) * 1024;
+    } else {
+      /* CSDv1 */
+      rbl =  buf[5] & 0xf;
+      csm = ((buf[9] & 0x3) << 1) | ((buf[10] & 0x80) >> 7);
+      csize = ((buf[6] & 0x03) << 10) | (buf[7] << 2) | (buf[8] >> 6);
+      sdc.blocks = (csize + 1) << (rbl + csm + 2 - 9);
+    }
+
+    if ((rsp = sd_get_vreg(buf, SD_SEND_SCR, SD_SCR_LEN))) {
+      sd_panic(99, rsp);
+    }
+    sdc.erase_state = buf[1] & 0x80;
+
+    ocr = sd_get_ocr();
+    if (ocr & (1 << 30))
+      sdc.sdhc = TRUE;
+  }
+
+
+  /************************************************************************
+   *
    * Reset the SD card:  start the reset sequence.
    *
    * SPI SD initialization sequence:
@@ -601,6 +673,13 @@ implementation {
 	  max_reset_time_ms = last_reset_time_ms;
 
 	last_full_reset_time_us = call Platform.usecsRaw() - sd_pwr_on_time_us;
+
+        /*
+         * if we haven't filled in the disk parameters, we have a little more
+         * work to do.  This is indicated by sdc.blocks being 0.
+         */
+        if (sdc.blocks == 0)
+          sd_get_disk_params();
 
         nop();
 	sdc.sd_state = SDS_IDLE;
@@ -1143,6 +1222,8 @@ implementation {
 
     if (rsp & MSK_IDLE)
       sd_panic(59, sa_op_cnt);
+    if (sdc.blocks == 0)
+      sd_get_disk_params();
   }
 
 
