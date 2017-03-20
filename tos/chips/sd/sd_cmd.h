@@ -1,7 +1,7 @@
 /**
  * sd_cmd.h - low level Secure Digital storage  (definitions)
  *
- * Copyright (c) 2010 Eric B. Decker
+ * Copyright (c) 2010, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,6 +71,7 @@ typedef struct sd_cmd {
    3.4V, OCR bits 20 and 21
 */
 #define MSK_OCR_33 0xC0
+#define OCR_33 (3 << 20)
 
 
 /******************************** Basic command set **************************/
@@ -89,22 +90,26 @@ typedef struct sd_cmd {
 #define MMC_GO_OP CMD1
 
 /* get simplified voltage supported, and enable SDHC
- * And now for a brief moment of whining:  Why can't
- * they name things in English or any other reasonable
- * language.  Bastard committees!
+ *
+ * And now for a brief moment of whining: Why can't they name things in
+ * English or any other reasonable language.  Bastard committees!
+ *
+ * Sending CMD8 (and if accepted) will enable HCS (Host Capacity Support)
+ * in the ACMD41 argument.  The return from ACMD41 will contain CCS
+ * (Card Capacity Status).
  */
 #define CMD8 (8 | 0x40)
 #define SD_SEND_IF_CONDITION CMD8
 
 /* Card sends the CSD, Card Specific Data
- * include CRC (2 bytes) in length
+ * includes CRC (2 bytes) in length
  */
 #define CMD9 (9 | 0x40)
 #define SD_SEND_CSD CMD9
 #define SD_CSD_LEN 18
 
 /* Card sends CID, Card Identification
- * Note, SD_CID_LEN includes a 16 bit CRC on the end.
+ * includes 2 byte CRC.
  */
 #define CMD10 (10 | 0x40)
 #define SD_SEND_CID CMD10
@@ -207,7 +212,7 @@ typedef struct sd_cmd {
 /* Get the SD card's status */
 #define ACMD13 (13 | 0x40)
 #define SD_SEND_SD_STATUS ACMD13
-#define SD_SEND_SD_STATUS_LEN 64
+#define SD_STATUS_LEN 66
 
 /* Get the number of written write blocks (Minus errors ) */
 #define ACMD22 (22 | 0x40)
@@ -228,7 +233,7 @@ typedef struct sd_cmd {
 /* Get the SD configuration register */
 #define ACMD51 (51 | 0x40)
 #define SD_SEND_SCR ACMD51
-#define SD_SCR_LEN 8
+#define SD_SCR_LEN 10
 
 
 #endif /* __SD_CMD_H__ */

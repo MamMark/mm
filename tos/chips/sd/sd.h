@@ -76,8 +76,7 @@
 #define SD_GO_OP_MAX 512
 
 /* Hardcoded timeout for commands. */
-//#define SD_CMD_TIMEOUT 1024
-#define SD_CMD_TIMEOUT 8192
+#define SD_CMD_TIMEOUT 16
 
 
 /*

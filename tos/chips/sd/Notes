@@ -1,144 +1,95 @@
 
 Notes on SDs:
 
-Resetting:
+This driver implements two mechanisms for accessing the SD.  The first
+mechanism uses tinyos constructs and is friendly to other tasks and pieces
+of code running.  The mechanism uses task polls and timer polls for seeing
+if the sd card has reached certian states.  These interfaces are
+implemented in the driver by SDread, SDwrite, and SDerase.
+
+The 2nd access mechanism does not use any TinyOS services to do its job.
+It is called StandAlone and runs to completion.  No TinyOS services are
+used and tight loops are used.  We use the underlying 1usec ticker for
+timing.  It is intended for special cases, when one can not count on TinyOS
+services working.  In particular it is used to write out crash dumps
+following a panic.  StandAlone is implemented via the interfaces SDsa and
+SDraw.
+
+
+* SDSC/SDHC/SDXC support:
+
+This driver supports both SDSC and SDHC cards.  SDXC isn't supported at this
+time because it uses the exFAT filesystem.  exFAT is significantly
+different from the FAT32 file system used on the 2G SDSC and SDHC cards.
+Further, exFAT is covered via several patents and that is problematic for
+us.
+
+
+* Differences:
+
+The CCS (card capacity status) is defined for SDHC/SDXC cards and enabled
+via sending CMD8 (SD_SEND_IF_CONDITION).  The Host then sets the HCS bit in
+ACMD41 and the SD card will return the CCS bit in the response if HC/XC
+is supported.
+
+1) Command Argument:
+   SDHC/SDXC use a 32 bit block address.
+   SDSC uses the 32 bit address as a byte address.
+
+   we always address using block addresses and shift appropriately
+
+2) Block Length:
+   SDHC/SDXC has a fixed 512 byte block length.
+   SDSC can have a variable block length.  It should be set to 512 bytes
+   via CMD16 to insure proper behaviour.  Doesn't currently seem to make
+   a difference so we don't bother.
+
+   Note: Block Length set in CMD16 is used by CMD42 (Lock) on the SDHC.
+
+3) Partial Access and Misaligned Access:
+   SDHC/SDXC does not support either partial or misaligned acceses.
+   SDSC support both but neither is used.
+
+4) Set Block Length
+   SDHC/SDXC uses fixed 512 byte blocks.
+   SDSC should set the block length to 512 bytes via CMD16 just to be sure.
+
+5) Write Protected Group
+   SDHC/SDX C do not support write-protected groups.  CMD28/29/30 fail.
+   SDSC supports these groups but we don't use them.
+
+
+* Resetting/Power On/Configuration:
 
 Resetting the SD into SPI mode consists of powering up and asserting CS while
-sending CMD0 (FORCE_IDLE, SD_RESET).  Prior to talking to the card for the 
+sending CMD0 (FORCE_IDLE, SD_RESET).  Prior to talking to the card for the
 first time there is a power up window and the SD card needs to be clocked for
 74 clocks, 1ms, and supply ramp up time (max of those).  We adhere to the 1ms
 turn on time, then send 10 bytes (80 clocks).
 
-We have two kinds of resets.  The first is the normal reset utilized by the
-normal system.  It uses tinyos constructs and is friendly to other tasks and
-pieces of code running.  The mechanism uses task polls and timer polls for
-seeing if the sd card has reached certian states.
-
-The other reset is a stand alone reset.  No tinyos services are used and
-tight loops are used.  We use the underlying 1usec ticker to do the initial
-delay followed by 10 bytes for 80 clocks.
-
 		<--- t_pwr_on
-    pwr on
-    configure
+    pwr on                      initial clock train
+    configure pins.
     pwr on delay
     csn = 1
-    n byte clocking (delay bytes)  <--- modify # of clocks
-		<--- t_to_first_cmd
-    send FORCE_IDLE (CMD_0)
-		<---  dt = TA_usec->R - t_pwr_on
+    send 10 bytes (80 clocks)
 
+    [attempt 10 times
+      send FORCE_IDLE (CMD_0)
+      look for response 0x01, make sure in idle
+    ]
 
-request SD (turn on), normal reset, release (turn off), then SDsa.reset.
+    /* 1 says 2.7-3.6V, AA is check pattern */
+    send CMD8(0x000001AA)
+    rsp
 
+    if (rsp == 0x01) {
+      /* SD ver 2+, need to query to see if HC */
+      read OCR[0-3], 0 is MSB
+      if (OCR[2] != 1 || OCR[3] != 0xAA) continue;
+    }
 
-Kingston uSD 2G
-
-SanDisk 2G
-		1st cmd		full
-Normal reset:	200 uis		53 mis	 (40 delay)
-SDsa.reset:	596 uis		2.3 mis  (256 delay)
-
-SDsa.reset:	596 uis		50 mis   (256 delay)
-
-
-uSD SanDisk 2G
-		1st cmd		full
-Normal reset:	200 uis		157 mis	 (40 delay)
-SDsa.reset:	596 uis		8 mis    (256 delay)
-
-SDsa.reset:	596 uis		154 mis   (256 delay)
-
-
-Power up sequence:  (command sequence and responses)
-Note: After sending any SPI command, the SD needs 8 more clocks to finish
-processing and to go back to sleep.  We do this when we are powering
-down.
-
-clocked at 8MHz.  1 byte time is 1 uS.
-clocked at 4MHz.  1 byte time is 2 uS.
-clocked at 1MHz.  1 byte time is 8 uS.
-
-... pwr on
-  (task)
-SDS_RESET
-CSN = 1
-send 0xff (x 40)  (takes about 112us)
-
-send_command
-  set CS, CSN = 0
-  raw_cmd()
-    sd_chk_clean
-    sd_cmd_crc, sets to 95 for CMD0 (GO_IDLE, FORCE_IDLE)
-    dma send sd_cmd, 6
-    sd_wait_dma
-    returns R1 response.
-    [param addr  erase crc  ill  erase  idle]  R1
-    [error error seq   err  cmd  reset      ]
-  sd_get(), clock 8 more bits to close transaction
-  clear CS, CSN = 1
-
-
-send_acmd
-  set CS, CSN = 0
-  sd_send_cmd55();
-    rsp = sd_raw_cmd();
-    tmp = sd_get();
-    call HW.sd_clr_cs();
-    return rsp;
-  send_command
-  sd_get(), clock 8 more bits to close transaction
-  clear CS, CSN = 1
-
-cmd: SD_FORCE_IDLE  (CMD0), arg: 0
-  0x40, 0x00, 0x00, 0x00, 0x00, 0x00
-    <- 0xff, 0x01       (R1)
-
-acmd: SD_GO_OP       (ACMD41), arg: 0
-  SD_APP_CMD, 0, 0, 0, 0, 0xff
-  55 | 0x40 (0x77), 0, 0, 0, 0, 0xff
-    <- 0xff, 0x01       (R1)
-
-  0x69, 0, 0, 0, 0, ox95    (SD_GO_OP)
-    <- 0xff, 0x01       (R1)    1st iteration, still idle
-    ++sd_go_op_count, repeat
-    delay, 4ms
-
-    repeats 3 times.
-
-
-SDsa.reset...
-  start up clocks...  256 ... 561us
-  SD_FORCE_IDLE (CMD0), send_command
-  SD_GO_OP (ACMD41)
-    129 immediate loops (~18ms)
-
-SDsa.read(0, xxx)
-
-  set CS
-  raw_cmd, READ_BLOCK
-  poll for start token, time out (was 512, bumped to 4096)
-  saw 988 iterations
-
-  read times:
-           0:       4668 us     12707
-           0:       3452 us
-  0x00008000:       1642 us     2737
-  0x00008000:       2715
-  0x00010000:       1955
-  0x00020000:       1955
-  0x00040000:       1932
-  0x00005000: w
-  0x00005000:       1561 us
-
-
-
-Start up - Reset sequence
-cmd0 0
-        ff
-        R1:01   idle
-
-cmd55 0
-        ff
-        R1:01
-        ff
+     [repeat with max 1 sec
+       send ACMD41(1UL << 30)      /* set HCS in ACMD41 args */
+     until ACMD41 returns 0 ]
+     if (timeout) bail

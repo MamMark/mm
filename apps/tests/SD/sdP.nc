@@ -60,6 +60,7 @@ module sdP {
     interface SDraw;
     interface SDsa;
     interface SDread;
+    interface SDwrite;
     interface Resource as SDResource;
 
     interface Collect;
@@ -71,6 +72,7 @@ implementation {
 
   typedef enum {
     READ0,
+    WRITE1,
     READ1,
     READ2,
     READ3,
@@ -78,42 +80,23 @@ implementation {
     COLLECT
   } sd_state_t;
 
-  sd_cmd_t *cmd;			// Command Structure
   uint8_t   rsp;
   sd_state_t sd_state;
 
-  /* CMD8 with voltage selelcted, aa as the echo back, and crc of 87 */
-  //const uint8_t cmd8[] = {
-  //  SD_GET_VOLTAGE, 0, 0, 0x01, 0xaa, 0x87,
-  //};
-    
-
   /* Setup for CMD58, Read the OCR register.  Operation Condition Register
-   *  returns R3_LEN, 5 bytes.  See Section 5.1
-   * The OCR register contains the suppored operating voltages for the 
-   *  current card. Look at bits 15 - 23.
-   *  Newer cards, SDHC has a different implementation, check the HCS bit.
-   *  See Section 7.2.1 Mode Selection and Init, and Table 7-3.
+   *  returns R3_LEN, 5 bytes (including the response byte (R1)).  See
+   *  Section 7.3.2.4 The OCR register contains the suppored operating
+   *  voltages for the current card. Look at bits 15 - 23.  Newer cards,
+   *  SDHC has a different implementation, check the HCS bit.  See Section
+   *  7.2.1 Mode Selection and Init, and Table 7-3.
    */
   void get_ocr() {
-    uint8_t ocr_data[4];
-    uint8_t x_rsp[4];
+    volatile uint32_t ocr;
 
-    call SDraw.start_op();
-    cmd->cmd    = SD_SEND_OCR;
-    rsp         = call SDraw.raw_cmd();
-    ocr_data[0] = call SDraw.get();
-    ocr_data[1] = call SDraw.get();
-    ocr_data[2] = call SDraw.get();
-    ocr_data[3] = call SDraw.get();
-    x_rsp[0]    = call SDraw.get();
-    x_rsp[1]    = call SDraw.get();
-    x_rsp[2]    = call SDraw.get();
-    x_rsp[3]    = call SDraw.get();
-    call SDraw.end_op();
+    ocr = call SDraw.ocr();
 
     /* At a very minimum, we must allow 3.3V. */
-    if ((x_rsp[2] & MSK_OCR_33) != MSK_OCR_33) {
+    if ((ocr & OCR_33) != OCR_33) {
       ROM_DEBUG_BREAK(0);
       return;
     }
@@ -121,57 +104,36 @@ implementation {
 
 
   /*
-   * Setup for CMD10, Read the CID register,  Card Identification Register
-   * response is R1_LEN, 1 byte, register contains 128 bits.  See Section 5.2
-   * The CID register contains the Mfg specific info, 128 bits wide,
-   *  contains Mfg, OEM, Prod Name, Rev, etc.
+   * Setup for CMD10, Read the CID register, Card Identification Register
+   *
+   * register contains 128 bits.  See Section 5.2 The CID register contains
+   * the Mfg specific info, 128 bits wide, contains Mfg, OEM, Prod Name,
+   * Rev, etc.
    */
   void get_cid() {
-    uint8_t   cid_data[SD_CID_LEN];
-    sd_cid_t *cidp;
-    uint8_t   indx, tmp;
+    volatile uint8_t   cid_data[SD_CID_LEN];
+    volatile sd_cid_t *cidp;
 
-    call SDraw.start_op();               // Chip Select Low
-    cmd->cmd = SD_SEND_CID;
-    rsp      = call SDraw.raw_cmd();     // Sends command and waits for response
-    while (1) {
-      tmp = call SDraw.get();            // Check for start token in prefix
-      if (tmp == SD_START_TOK)
-	break;
-    }
-    for (indx = 0; indx < SD_CID_LEN; indx++)  // Read in CID register
-      cid_data[indx] = call SDraw.get();
-    call SDraw.end_op();                       // Chip Select High
+    call SDraw.cid((uint8_t *)cid_data);
     cidp = (sd_cid_t *) cid_data;
   }
 
 
   /* Setup for CMD9, read the CSD register, Card Specific Data register
-   *  response is R1_LEN, 1 byte, register contains 128 bits.  See Section 5.3
-   * The CSD register contains data format, erro correction type, max
-   *  data access time, etc.
+   *
+   * response is R1_LEN, 1 byte, register contains 128 bits.  See Section 5.3
+   * The CSD register contains data format, error correction type, max
+   * data access time, etc.
    *
    * Access this register to find read block size READ_BL_LEN, write block 
-   *  size WRITE_BL_LEN, and erase sector size SECTOR_SIZE, etc.
+   * size WRITE_BL_LEN, and erase sector size SECTOR_SIZE, etc.
    */
   void get_csd() {
     uint8_t csd_data[SD_CSD_LEN];
     sd_csd_V1_t *csd1p;
     sd_csd_V2_t *csd2p;
-    uint8_t indx;
-    uint8_t r;
-                                // Reading CSD is same as CID above
-    call SDraw.start_op();
-    cmd->cmd = SD_SEND_CSD;
-    r = call SDraw.raw_cmd();
-    while (1) {
-      r = call SDraw.get();
-      if (r == SD_START_TOK)
-	break;
-    }
-    for (indx = 0; indx < SD_CSD_LEN; indx++)
-      csd_data[indx] = call SDraw.get();
-    call SDraw.end_op();
+
+    call SDraw.csd(csd_data);
     csd1p = (sd_csd_V1_t *) csd_data;
     csd2p = (sd_csd_V2_t *) csd_data;
   }
@@ -179,18 +141,36 @@ implementation {
 
 
   /* Setup for CMD13, send status of the card
-   *  returns R2_LEN, 2 bytes, no data block.  See Section 7.3.1.3
+   * returns R2_LEN, 2 bytes, no data block.  See Section 7.3.1.3
+   *
+   * also ask for SD_STATUS, a 512 bit block.  + 16 for CRC16
+   * We see first the CMD55, ACMD13, R2, response, then takes about
+   * 350us before we see the start token for the start of the data
+   * packet with 528 bits of the SD_STATUS data.
    */
   void get_status() {
-    uint8_t      status_data[2];
+    volatile uint8_t      status_data[2];
+    volatile uint8_t      sd_status[SD_STATUS_LEN];
     sd_status_t *sdp;
+    unsigned int indx;
 
     call SDraw.start_op();                 // Chip Select Low
-    cmd->cmd = SD_SEND_STATUS;
-    status_data[0] = call SDraw.raw_cmd(); // Send and wait for response
-    status_data[1] = call SDraw.get();     // Reset of R2 response
+    status_data[0] = call SDraw.raw_cmd(SD_SEND_STATUS, 0);
+    status_data[1] = call SDraw.get();     // Rest of R2 response
     call SDraw.end_op();                   // Chip Select High
     sdp = (sd_status_t *) status_data;
+
+    call SDraw.start_op();                 // Chip Select Low
+    status_data[0] = call SDraw.raw_acmd(SD_SEND_SD_STATUS, 0);
+    status_data[1] = call SDraw.get();     // Rest of R2 response
+    while (1) {
+      rsp = call SDraw.get();
+      if (rsp == SD_START_TOK)
+	break;
+    }
+    for (indx = 0; indx < SD_STATUS_LEN; indx++)
+      sd_status[indx] = call SDraw.get();
+    call SDraw.end_op();
   }
 
 
@@ -202,19 +182,8 @@ implementation {
   void get_scr() {
     uint8_t scr_data[SD_SCR_LEN];
     sd_scr_t *scrp;
-    uint8_t  indx;
 
-    call SDraw.start_op();                    // Chip Select Low
-    cmd->cmd = SD_SEND_SCR;
-    rsp = call SDraw.raw_acmd();              // CMD55 then send and get response
-
-    /* Determine if this acts like a data block, if so, look for a token
-     *  in the prefix.
-     */
-
-    for (indx = 0; indx < SD_SCR_LEN; indx++)
-      scr_data[indx] = call SDraw.get();
-    call SDraw.end_op();
+    call SDraw.scr(scr_data);
     scrp = (sd_scr_t *) scr_data;
   }
 
@@ -247,15 +216,10 @@ implementation {
    *
    */
   uint8_t send_cmd8() {
-    uint8_t cond[4], crc7;
+    volatile uint8_t cond[4], crc7;
 
     call SDraw.start_op();                // Chip Select Low
-
-    cmd->cmd = SD_SEND_IF_CONDITION;
-    cmd->arg = 0x000001aa;
-    cmd->crc = 0x87;
- 
-    rsp = call SDraw.raw_cmd();
+    rsp = call SDraw.raw_cmd(SD_SEND_IF_CONDITION, 0x1aa);
     if (rsp == 0) {
       cond[0] = call SDraw.get();
       cond[1] = call SDraw.get();
@@ -265,9 +229,7 @@ implementation {
 
     call SDraw.end_op();
 
-    if (cond[3] != 0xaa)                   // Check echo and voltage
-      return(FAIL);
-    if ((cond[2] && 0xf) != 0x01)
+    if ((cond[2] && 0xf) != 0x01 || (cond[3] != 0xaa))
       return(FAIL);
     return SUCCESS;
   }
@@ -291,6 +253,13 @@ implementation {
 
 #ifdef SD_TEST_STANDALONE
     call SDsa.reset();
+    get_ocr();
+    get_cid();
+    get_csd();
+    get_status();
+    get_scr();
+    call SDsa.reset();
+    nop();
     call SDsa.read(0, d);
     call SDsa.read(0x10000, d);
     call SDsa.write(0x10000, d);
@@ -306,7 +275,6 @@ implementation {
   event void SDResource.granted() {
     nop();
     nop();
-//    WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
     sd_state = READ0;
     call SDread.read(0x00000, d);
   }
@@ -319,8 +287,8 @@ implementation {
     nop();
     switch(sd_state) {
       case READ0:
-        call SDread.read(0x08000, d);
-        sd_state = READ1;
+        call SDwrite.write(0x08000, d);
+        sd_state = WRITE1;
         break;
 
       case READ1:
@@ -340,9 +308,8 @@ implementation {
 
       case READ4:
         call SDResource.release();
-//        WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
+        nop();
         call SDsa.reset();
-        cmd = call SDraw.cmd_ptr();
 
         nop();
         call SDsa.read(0, d);
@@ -361,25 +328,32 @@ implementation {
         set(0);
         nop();
         call SDsa.read(0x5000, d);
+        nop();
         send_cmd8();
         get_ocr();				// CMD58
         get_cid();				// CMD10
         get_csd();				// CMD9
         get_status();                           // CMD13
         get_scr();				// ACMD51
-//        WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
         call Timer.startPeriodic(2048);
         sd_state = COLLECT;
         break;
 
+      case WRITE1:
       case COLLECT: break;
     }
+  }
+
+  event void SDwrite.writeDone(uint32_t blk_id, uint8_t* buf, error_t error) {
+    nop();
+    nop();
+    call SDread.read(0x08000, d);
+    sd_state = READ1;
   }
 
   event void Timer.fired() {
     dt_test_nt *tp;
 
-    WIGGLE_TELL;
     nop();
     tp = (void *) d;
     tp->len     = 256;

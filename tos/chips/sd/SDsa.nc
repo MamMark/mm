@@ -2,6 +2,7 @@
  * SDsa - SD standalone (non-event) access
  *
  * Copyright (c) 2010, Eric B. Decker, Carl W. Davis
+ * Copyright (c) 2017, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +40,7 @@
 
 interface SDsa {
   async command bool inSA();
-  async command void reset();
+  async command error_t reset();
   async command void off();
   async command void read(uint32_t blk_id, uint8_t *buf);
   async command void write(uint32_t blk, uint8_t *buf);

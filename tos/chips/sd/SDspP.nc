@@ -40,6 +40,11 @@
  * Wiring to this driver should be done via an affiliated platform
  * configuration such as <platform>/hardware/sd/SD0C.nc.  See
  * tos/platforms/dev6a/hardware/sd/SD0C.nc.
+ *
+ * PLATFORM_SDSC_ONLY
+ * PLATFORM_SDHC_ONLY
+ * PLATFORM_ERASE_0
+ * PLATFORM_ERASE_1
  */
 
 #include "hardware.h"
@@ -106,16 +111,8 @@ implementation {
   } sd_state_t;
 
   uint32_t w_t, w_diff;
-
-/* sdsa_majik only looked at in SDsa, ints should be off and should always be atomic */
-  norace uint32_t sdsa_majik;
-
-
   uint32_t sa_t0, sa_diff;
   uint16_t sa_t3;
-
-#define SDSA_MAJIK 0xAAAA5555
-
 
   /*
    * main SDsp control cells.   The code can handle at most one operation at a time,
@@ -126,31 +123,48 @@ implementation {
    * in directly.  Rather it uses a state variable to control coherent access.  If
    * the driver is IDLE then it allows a client to start something new up.  It is
    * assumed that the client has gained access using the arbiter.  The arbiter is what
-   * queuing of clients when the SD is already busy.  When the current client finishes
+   * queues clients when the SD is already busy.  When the current client finishes
    * and releases the device, the arbiter will signal the next client to begin.
    *
-   * sd_state  current driver state, non-IDLE if we are busy doing something.
-   * cur_cid   client id of who has requested the activity.
+   * majik_a   protection tombstone, SD_MAJIK
+   * sdhc      T if high capacity, F -> sdsc
+   * sdsa_majik if SDSA_MAJIK, in stand alone
+   * blocks    number of 512 byte blocks on the disk
    * blk_start holds the blk id we are working on
    * blk_end   if needed holds the last block working on (like for erase)
+   * sd_state  current driver state, non-IDLE if we are busy doing something.
+   *           IDLE if powered on but not busy
+   * cur_cid   client id of who has requested the activity.
    * data_ptr  buffer pointer if needed.
+   * erase_state when erased the default state of a sector
+   * majik_b   protection tombstone, SD_MAJIK
    *
-   * if sd_state is SDS_IDLE these cells are meaningless.
+   * if sd_state is SDS_IDLE, blk_start, blk_end, cur_cid, and data_ptr are
+   * meaningless.
    */
 
 #define SD_MAJIK 0x5aa5
+#define SDSA_MAJIK 0xAAAA5555
 #define CID_NONE 0xff;
 
+  /*
+   * if blocks is 0, we haven't initialized disk params
+   *
+   * disk params (dp) gets initilized the first time we power up, typically
+   * when the FileSystem does its thing.
+   */
   norace struct {
     uint16_t   majik_a;
     sd_state_t sd_state;
-    uint8_t    cur_cid;			/* current client */
+    uint8_t    sdhc;                    /* dp, F: SDSC, T: SDHC */
+    uint32_t   sdsa_majik;              /* none zero if in stand alone */
+    uint32_t   blocks;                  /* dp, total blocks     */
     uint32_t   blk_start, blk_end;
+    uint8_t    cur_cid;			/* current client */
     uint8_t    *data_ptr;
+    uint16_t   erase_state;             /* dp, F: 0, T: 0xff    */
     uint16_t   majik_b;
   } sdc;
-
-  norace sd_cmd_t sd_cmd;
 
 
   /* instrumentation
@@ -182,9 +196,6 @@ implementation {
   uint32_t     max_erase_time_us, last_erase_time_us;
 
 
-  void sd_cmd_crc();
-
-
 #define sd_panic(where, arg) do { call Panic.panic(PANIC_SD, where, arg, 0, 0, 0); } while (0)
 #define  sd_warn(where, arg) do { call  Panic.warn(PANIC_SD, where, arg, 0, 0, 0); } while (0)
 
@@ -195,106 +206,60 @@ implementation {
   }
 
 
-  void sd_kill_first_back() {
-    uint8_t tmp;
-
-    tmp = call HW.spi_get();
-    if (tmp != 0xff) {
-      sd_warn(32, tmp);
-    }
-  }
-
-  const uint8_t cmd55[] = {
-    SD_APP_CMD, 0, 0, 0, 0, 0xff
-  };
-
-
   /*
-   * ACMDs have to be preceeded by a regular CMD55 to indicate that the next command
-   * is from a different command set.
-   *
-   * CMD55 is a complete op, meaning it does cmd, response, and needs 1 extra byte
-   * to finish clocking the SD front end.  We assume CS is already asserted.  We are
-   * part of a complete op (ACMD41 for example).
-   *
-   * This command can be issued while the card is in reset so we ignore the IDLE
-   * bit in the response.
-   */
-
-  void sd_send_cmd55() {
-    uint16_t i;
-    uint8_t  rsp, tmp;
-
-    call HW.spi_check_clean();
-    call HW.sd_start_dma((uint8_t *) cmd55, NULL, sizeof(cmd55));
-    call HW.sd_wait_dma(sizeof(cmd55));
-
-    /* throw first byte away, never the response */
-    sd_kill_first_back();
-
-    i=0;
-    do {
-      tmp = call HW.spi_get();
-      i++;
-    } while ((tmp == 0xff) && (i < SD_CMD_TIMEOUT));
-
-    if (i >= SD_CMD_TIMEOUT) {
-      sd_panic(33, i);
-      return;
-    }
-    rsp = tmp;
-    if (rsp & ~MSK_IDLE)
-      sd_panic(34, rsp);
-    call HW.spi_get();          /* sandisk needs this */
-  }
-
-
-  /* sd_raw_cmd
+   * sd_raw_cmd
    *
    * Send a command to the SD and receive a response from the SD.
    * The response is always a single byte and is the R1 response
    * as documented in the SD manual.
    *
-   * raw_cmd is always part of a cmd sequence and that the caller
-   * has asserted CS.
+   * raw_cmd is always part of a cmd sequence.  The caller is responsible
+   * for asserting CS.
    *
-   * raw_cmd does not change the SD card state in any other way
+   * raw_cmd does not change the SD card state in any other way,
    * meaning it doesn't read any more bytes from the card for other
    * types of responses.
    *
    * Does not provide any kind of transactional control meaning
-   * it doesn't send the extra clocks that are needed at the end
+   * it doesn't send any extra clocks that are needed at the end
    * of a transaction, cmd/rsp, data transfer, etc.
-   *
-   * raw_cmd is responsible for computing the cmd block crc.
    *
    * return: R1 response byte,  0 says everything is wonderful.
    */
 
-  uint8_t sd_raw_cmd() {
+  uint8_t sd_raw_cmd(uint8_t cmd, uint32_t arg) {
     uint16_t  i;
-    uint8_t   tmp, rsp;
+    uint8_t   rsp, crc;
+
+    switch (cmd) {
+      case CMD0: crc = 0x95; break;
+      case CMD8: crc = 0x87; break;
+      default:   crc = 0x55; break;
+    }
 
     call HW.spi_check_clean();
-    sd_cmd_crc();
-    call HW.sd_start_dma(&sd_cmd.cmd, NULL, 6);
-    call HW.sd_wait_dma(6);
 
-    /* throw away the first byte, never the response */
-    sd_kill_first_back();
+    call HW.spi_put(cmd);
+    call HW.spi_put((uint8_t) (arg >> 24));
+    call HW.spi_put((uint8_t) (arg >> 16));
+    call HW.spi_put((uint8_t) (arg >>  8));
+    call HW.spi_put((uint8_t) (arg >>  0));
+    call HW.spi_put(crc);
 
     /* Wait for a response.  */
     i=0;
     do {
-      tmp = call HW.spi_get();
+      rsp = call HW.spi_get();
+      if (rsp == 0x7f) {
+        sd_warn(35, rsp);
+        rsp = 0xff;
+      }
       i++;
-    } while ((tmp == 0xff) && (i < SD_CMD_TIMEOUT));
-
-    rsp = tmp;				/* response byte */
+    } while ((rsp & 0x80) && (i < SD_CMD_TIMEOUT));
 
     /* Just bail if we never got a response */
     if (i >= SD_CMD_TIMEOUT) {
-      sd_panic(35, tmp);
+      sd_panic(35, rsp);
       return 0xf0;
     }
     return rsp;
@@ -307,14 +272,12 @@ implementation {
    * send a simple command to the SD.  A simple command has an R1 response
    * and we handle it as a cmd/rsp transaction with the extra clocks at
    * the end to let the SD finish.
-   *
-   * cmd block crc computation is performed by raw_cmd.
    */
-  uint8_t sd_send_command() {
+  uint8_t sd_send_command(uint8_t cmd, uint32_t arg) {
     uint8_t rsp, tmp;
 
     call HW.sd_set_cs();
-    rsp = sd_raw_cmd();
+    rsp = sd_raw_cmd(cmd, arg);
     call HW.spi_get();          /* sandisk needs this */
     call HW.sd_clr_cs();
     return rsp;
@@ -329,15 +292,160 @@ implementation {
    *
    * closes the cmd/rsp transaction when done.
    */
-  uint8_t sd_send_acmd() {
-    uint8_t rsp, tmp;
+  uint8_t sd_send_acmd(uint8_t cmd, uint32_t arg) {
+    uint8_t rsp;
 
     call HW.sd_set_cs();
-    sd_send_cmd55();
-    rsp = sd_raw_cmd();
+    rsp = sd_raw_cmd(CMD55, 0);
+    call HW.spi_get();          /* sandisk needs this */
+    if (rsp & ~MSK_IDLE) {      /* 00 or 01 is fine, others not so much */
+      call HW.sd_clr_cs();
+      return rsp;
+    }
+    rsp = sd_raw_cmd(cmd, arg);
     call HW.spi_get();          /* sandisk needs this */
     call HW.sd_clr_cs();
     return rsp;
+  }
+
+
+  /*
+   * sd_get_block
+   *
+   * Assume a block of data is coming from the SD card.  Look for the
+   * start token then pull the number of bytes required from the SD.
+   *
+   * returns SUCCESS if all worked okay
+   *         FAIL    on error.
+   */
+
+  error_t sd_get_block(uint8_t *buf, unsigned int count) {
+    uint32_t t0;
+    uint8_t  b;
+
+    t0 = call Platform.usecsRaw();
+    while (1) {
+      b = call HW.spi_get();
+      if (b != 0xff)
+        break;
+      if (call Platform.usecsRaw() - t0 > 10000)
+        return FAIL;
+    }
+    if (b != SD_START_TOK)
+      return FAIL;
+    while (count) {
+      *(buf++) = call HW.spi_get();
+      count--;
+    }
+    return SUCCESS;
+  }
+
+
+  /*
+   * sd_get_vreg
+   *
+   * get a variable length register from the SD
+   *
+   * returns: 0         all is well
+   *          >0        return code from SD
+   */
+
+  uint8_t sd_get_vreg(uint8_t *buf, uint8_t cmd, unsigned int count) {
+    uint8_t rsp;
+
+    call HW.sd_set_cs();
+    switch(cmd) {
+      case SD_SEND_CSD:
+      case SD_SEND_CID:
+        break;
+      case SD_SEND_SCR:
+      case SD_SEND_SD_STATUS:
+        rsp = sd_raw_cmd(CMD55, 0);
+        call HW.spi_get();          /* sandisk needs this */
+        if (rsp & ~MSK_IDLE) {      /* 00 or 01 is fine, others not so much */
+          call HW.sd_clr_cs();
+          return rsp;;
+        }
+        break;
+      default:
+        call HW.spi_get();
+        call HW.sd_clr_cs();
+        return 0xff;
+    }
+    rsp = sd_raw_cmd(cmd, 0);
+    if (rsp) {                  /* oops, bail */
+      call HW.spi_get();
+      call HW.sd_clr_cs();
+      return rsp;
+    }
+    if (sd_get_block(buf, count)) {
+      call HW.spi_get();
+      call HW.sd_clr_cs();
+      return 0xff;
+    }
+    call HW.spi_get();
+    call HW.sd_clr_cs();
+    return 0;
+  }
+
+
+  /*
+   * sd_cmd8
+   *
+   * sends a CMD8 to poke the SD.  This potentially
+   * turns on SDHC support.  We also check to make sure
+   * proper voltages are supported.
+   *
+   * returns: SUCCESS   as expected
+   *          FAIL      something didn't work
+   */
+  error_t sd_cmd8() {
+    uint8_t ocr[4], rsp;
+
+    call HW.sd_set_cs();
+    rsp = sd_raw_cmd(CMD8, 0x1aa);
+    if (rsp & ~MSK_IDLE) {      /* better be 0 */
+      call HW.spi_get();
+      call HW.sd_clr_cs();
+      return SUCCESS;
+    }
+    ocr[0] = call HW.spi_get();
+    ocr[1] = call HW.spi_get();
+    ocr[2] = call HW.spi_get();
+    ocr[3] = call HW.spi_get();
+    call HW.spi_get();
+    call HW.sd_clr_cs();
+    if ((ocr[2] == 0x01) && (ocr[3] == 0xAA))
+      return SUCCESS;
+    return FAIL;
+  }
+
+
+  /*
+   * sd_get_ocr
+   *
+   * Get the Operations Conditions Register
+   */
+  uint32_t sd_get_ocr() {
+    uint32_t ocr;
+    uint8_t *op;
+    uint8_t  rsp;
+
+    call HW.sd_set_cs();
+    rsp = sd_raw_cmd(SD_SEND_OCR, 0);
+    if (rsp) {                  /* better be 0 */
+      call HW.spi_get();
+      call HW.sd_clr_cs();
+      return 0;
+    }
+    op = (uint8_t *) &ocr;
+    op[3] = call HW.spi_get();  /* be to le */
+    op[2] = call HW.spi_get();
+    op[1] = call HW.spi_get();
+    op[0] = call HW.spi_get();
+    call HW.spi_get();
+    call HW.sd_clr_cs();
+    return ocr;
   }
 
 
@@ -357,14 +465,77 @@ implementation {
   }
 
 
-  /************************************************************************
+  /*
+   * sd_get_disk_params
    *
-   * Reset
+   * get certain critical disk parameters and stash in the state block
    *
-   * See SDsa for notes on reseting the SD card and powering it up.
+   * First, we want to find out how many sectors this disk has. This
+   * information is in the CSD.  SDSC uses a CSD v1, SDHC uses CSD v2.
+   *
+   * CSD ver is in the 1st 2 bits of csd[0].   csc[0] >> 6
+   *  0: csd v1, SDSC
+   *  1: csd v2, SDHC/SDXC
+   *
+   * SDSC, CSD v1
+   *    rbl (read_bl_len): =  csd[5] & 0xf
+   *    csm (c_size_mult)  = (csd[9} & 0x3) << 1 | (csd[10] & 0x80) >> 7
+   *    csize = ((csd[6] & 0x03) << 10) | (csd[7] << 2) | (csd[8] >> 6)
+   *
+   *    n = rbl + csm + 2
+   *
+   *    capacity = (csize + 1) * 2 ^ n
+   *    blocks = capacity/512
+   *
+   *    blocks = (csize + 1) * 2 ^ (n - 9)
+   *
+   * SDHC, CSD v2
+   *    rbl is fixed at 2 ^ 9 = 512
+   *    csize = ((csd[7] & 0x3f) << 16) | (csd[8] << 8) | csd[9]
+   *
+   *    capacity = (csize + 1) * 512KiB
+   *    blocks   = (csize + 1) * 1024
+   *
+   * The SCR register contains "data_status_after_erase" which indicates
+   * the state of the memory array after an erase.  We care for finding
+   * empty blocks.
+   *
+   * The last thing we get is the OCR to see if we are SDHC.  CCS bit.
    */
 
-  /*
+  void sd_get_disk_params() {
+    uint8_t buf[16], rsp;
+    uint32_t csize, rbl, csm;
+    uint32_t ocr;
+
+    if ((rsp = sd_get_vreg(buf, SD_SEND_CSD, SD_CSD_LEN))) {
+      sd_panic(99, rsp);
+    }
+    if ((buf[0] >> 6) == 1) {
+      /* CSDv2 */
+      csize = (buf[7] & 0x3f) << 16 | (buf[8] << 8) | buf[9];
+      sdc.blocks = (csize + 1) * 1024;
+    } else {
+      /* CSDv1 */
+      rbl =  buf[5] & 0xf;
+      csm = ((buf[9] & 0x3) << 1) | ((buf[10] & 0x80) >> 7);
+      csize = ((buf[6] & 0x03) << 10) | (buf[7] << 2) | (buf[8] >> 6);
+      sdc.blocks = (csize + 1) << (rbl + csm + 2 - 9);
+    }
+
+    if ((rsp = sd_get_vreg(buf, SD_SEND_SCR, SD_SCR_LEN))) {
+      sd_panic(99, rsp);
+    }
+    sdc.erase_state = buf[1] & 0x80;
+
+    ocr = sd_get_ocr();
+    if (ocr & (1 << 30))
+      sdc.sdhc = TRUE;
+  }
+
+
+  /************************************************************************
+   *
    * Reset the SD card:  start the reset sequence.
    *
    * SPI SD initialization sequence:
@@ -387,8 +558,8 @@ implementation {
    */
 
   void sd_start_reset(void) {
-    sd_cmd_t *cmd;
     uint8_t   rsp;
+    unsigned int count;
 
     if (sdc.sd_state != SDS_OFF_TO_ON) {
       sd_panic_idle(36, sdc.sd_state);
@@ -400,12 +571,9 @@ implementation {
 
     sdc.sd_state = SDS_RESET;
     sdc.cur_cid = CID_NONE;	        /* reset is not parameterized. */
-    cmd = &sd_cmd;
 
     /*
-     * Clock out at least 74 bits of idles (0xFF is 8 bits).  That's 10 bytes. This allows
-     * the SD card to complete its power up prior to us talking to the card.
-     * see SDsa.reset for more info.
+     * Clock out at least 74 bits of idles (0xFF is 8 bits).  That's 10 bytes
      */
 
     call HW.spi_check_clean();
@@ -413,14 +581,29 @@ implementation {
     call HW.sd_start_dma(NULL, NULL, 10);	/* send 10 0xff to clock SD */
     call HW.sd_wait_dma(10);
 
-    /* Put the card in the idle state, non-zero return -> error */
-    cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
-    cmd->arg = 0;
+    count = 10;                 /* at most try 10 times  */
     last_pwr_on_first_cmd_us = call Platform.usecsRaw() - sd_pwr_on_time_us;
-    rsp = sd_send_command();
-    if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
+    while(count) {
+      /* Put the card in the idle state, non-zero return  -> error
+       *
+       * CMD0, FORCE_IDLE, is a software reset
+       */
+      rsp = sd_send_command(SD_FORCE_IDLE, 0);
+      if (rsp == 0x01)          /* IDLE pops us out */
+        break;
+      count--;
+      if (count == 9) {
+        sd_warn(37, rsp);       /* see if we ever see this. */
+      }
+    }
+    if (rsp != 0x01) {		/* Must be in IDLE */
       sd_panic_idle(37, rsp);
       return;
+    }
+
+    /* poke the SD to turn on SDHC if present */
+    if (sd_cmd8()) {
+      sd_panic(100, 0);
     }
 
     /*
@@ -437,7 +620,6 @@ implementation {
 
 
   event void SDtimer.fired() {
-    sd_cmd_t *cmd;
     uint8_t   rsp;
 
     switch (sdc.sd_state) {
@@ -458,9 +640,8 @@ implementation {
         return;
 
       case SDS_RESET:
-	cmd = &sd_cmd;
-	cmd->cmd = SD_GO_OP;            // Send ACMD41
-	rsp = sd_send_acmd();
+        /* set HCS to see what happens */
+	rsp = sd_send_acmd(SD_GO_OP, 1 << 30);
 	if (rsp & ~MSK_IDLE) {		/* any other bits set? */
 	  sd_panic_idle(39, rsp);
 	  return;
@@ -469,7 +650,7 @@ implementation {
 	if (rsp & MSK_IDLE) {
 	  /* idle bit still set, means card is still in reset */
 	  if (++sd_go_op_count >= SD_GO_OP_MAX) {
-	    sd_panic_idle(40, sd_go_op_count);			// We maxed the tries, panic and fail
+	    sd_panic_idle(40, sd_go_op_count);		/* We maxed the tries, panic and fail */
 	    return;
 	  }
 	  call SDtimer.startOneShot(GO_OP_POLL_TIME);
@@ -482,8 +663,7 @@ implementation {
 	 * If we were running with a reduced clock then this is the place to
 	 * crank it up to full speed.  We do everything at full speed so there
 	 * isn't currently any need.
-	 */
-
+         */
 	last_reset_time_us = call Platform.usecsRaw() - op_t0_us;
 	if (last_reset_time_us > max_reset_time_us)
 	  max_reset_time_us = last_reset_time_us;
@@ -494,11 +674,18 @@ implementation {
 
 	last_full_reset_time_us = call Platform.usecsRaw() - sd_pwr_on_time_us;
 
+        /*
+         * if we haven't filled in the disk parameters, we have a little more
+         * work to do.  This is indicated by sdc.blocks being 0.
+         */
+        if (sdc.blocks == 0)
+          sd_get_disk_params();
+
         nop();
 	sdc.sd_state = SDS_IDLE;
 	sdc.cur_cid = CID_NONE;
 	call ResourceDefaultOwner.release();
-	return;
+        return;
     }
   }
 
@@ -574,21 +761,8 @@ implementation {
    */
 
   void sd_compute_crc(uint8_t *data) {
-    data[512] = 0;
-    data[513] = 0;
-  }
-
-
-  /*
-   * sd_cmd_crc
-   *
-   * set the crc for the command block
-   *
-   * currently we just force 0x95 which is the crc for GO_IDLE
-   */
-
-  void sd_cmd_crc() {
-    sd_cmd.crc = 0x95;
+    data[512] = 0x55;
+    data[513] = 0x12;
   }
 
 
@@ -596,11 +770,9 @@ implementation {
     uint8_t  rsp, stat_byte;
 
     call HW.sd_set_cs();
-    sd_cmd.cmd = SD_SEND_STATUS;
-    sd_cmd.arg = 0;
-    rsp = sd_raw_cmd();
+    rsp = sd_raw_cmd(SD_SEND_STATUS, 0);
     stat_byte = call HW.spi_get();
-    call HW.spi_get();
+    call HW.spi_get();          /* sandisk needs this */
     call HW.sd_clr_cs();
     return ((rsp << 8) | stat_byte);
   }
@@ -646,8 +818,9 @@ implementation {
       return;
     }
 
-    if (tmp != SD_START_TOK)
+    if (tmp != SD_START_TOK) {
       call Panic.panic(PANIC_SD, 44, tmp, sd_read_tok_count, 0, 0);
+    }
 
     /*
      * read the block (512 bytes) and include the crc (2 bytes)
@@ -671,8 +844,7 @@ implementation {
     call HW.sd_stop_dma();
 
     /* Send some extra clocks so the card can finish */
-    call HW.spi_get();
-    call HW.spi_get();
+    call HW.spi_get();                  /* sandisk */
     call HW.sd_clr_cs();
 
     crc = (sdc.data_ptr[512] << 8) | sdc.data_ptr[513];
@@ -712,7 +884,7 @@ implementation {
   /*
    * SDread.read: read a 512 byte block from the SD
    *
-   * input:  blockaddr     block to read.  (max 23 bits)
+   * input:  blk_id        block to read.
    *         data          pointer to data buffer, assumed 514 bytes
    * output: rtn           0 call successful, err otherwise
    *
@@ -720,8 +892,7 @@ implementation {
    * will be signalled.
    */
 
-  command error_t SDread.read[uint8_t cid](uint32_t blockaddr, uint8_t *data) {
-    sd_cmd_t *cmd;
+  command error_t SDread.read[uint8_t cid](uint32_t blk_id, uint8_t *data) {
     uint8_t   rsp;
 
     if (sdc.sd_state != SDS_IDLE) {
@@ -734,16 +905,12 @@ implementation {
 
     sdc.sd_state = SDS_READ;
     sdc.cur_cid = cid;
-    sdc.blk_start = blockaddr;
+    sdc.blk_start = blk_id;
     sdc.data_ptr = data;
 
-    cmd = &sd_cmd;
-
-    /* Need to add size checking, 0 = success */
-    cmd->cmd = SD_READ_BLOCK;
-    cmd->arg = (sdc.blk_start << SD_BLOCKSIZE_NBITS);
-
-    if ((rsp = sd_send_command())) {
+    if (!sdc.sdhc)
+      blk_id = blk_id << SD_BLOCKSIZE_NBITS;
+    if ((rsp = sd_send_command(SD_READ_BLOCK, blk_id))) {
       sd_panic_idle(48, rsp);
       return FAIL;
     }
@@ -780,6 +947,7 @@ implementation {
       return;
     }
     call SDtimer.stop();		/* write busy done, kill timeout timer */
+    call HW.spi_get();                  /* extra clocking */
     call HW.sd_clr_cs();
 
     i = sd_read_status();
@@ -839,7 +1007,7 @@ implementation {
   }
 
 
-  command error_t SDwrite.write[uint8_t cid](uint32_t blockaddr, uint8_t *data) {
+  command error_t SDwrite.write[uint8_t cid](uint32_t blk_id, uint8_t *data) {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
@@ -853,16 +1021,13 @@ implementation {
 
     sdc.sd_state = SDS_WRITE;
     sdc.cur_cid = cid;
-    sdc.blk_start = blockaddr;
+    sdc.blk_start = blk_id;
     sdc.data_ptr = data;
 
-    cmd = &sd_cmd;
-
     sd_compute_crc(data);
-    cmd->arg = (sdc.blk_start << SD_BLOCKSIZE_NBITS);
-
-    cmd->cmd = SD_WRITE_BLOCK;
-    if ((rsp = sd_send_command())) {
+    if (!sdc.sdhc)
+      blk_id = blk_id << SD_BLOCKSIZE_NBITS;
+    if ((rsp = sd_send_command(SD_WRITE_BLOCK, blk_id))) {
       sd_panic_idle(53, rsp);
       return FAIL;
     }
@@ -910,6 +1075,7 @@ implementation {
       return;
     }
     call SDtimer.stop();		/* busy done, kill timeout */
+    call HW.spi_get();                  /* extra clocks */
     call HW.sd_clr_cs();		/* deassert CS */
 
     last_erase_time_us = call Platform.usecsRaw() - op_t0_us;
@@ -944,27 +1110,24 @@ implementation {
     sdc.blk_start = blk_s;
     sdc.blk_end = blk_e;
 
-    cmd = &sd_cmd;
-
     /*
      * send the start and then the end
      */
-    cmd->arg = sdc.blk_start << SD_BLOCKSIZE_NBITS;
-    cmd->cmd = SD_SET_ERASE_START;
-    if ((rsp = sd_send_command())) {
+    if (!sdc.sdhc) {
+      blk_s = blk_s << SD_BLOCKSIZE_NBITS;
+      blk_e = blk_e << SD_BLOCKSIZE_NBITS;
+    }
+    if ((rsp = sd_send_command(SD_SET_ERASE_START, blk_s))) {
       sd_panic_idle(55, rsp);
       return FAIL;
     }
 
-    cmd->arg = sdc.blk_end << SD_BLOCKSIZE_NBITS;
-    cmd->cmd = SD_SET_ERASE_END;
-    if ((rsp = sd_send_command())) {
+    if ((rsp = sd_send_command(SD_SET_ERASE_END, blk_e))) {
       sd_panic_idle(56, rsp);
       return FAIL;
     }
 
-    cmd->cmd = SD_ERASE;
-    if ((rsp = sd_send_command())) {
+    if ((rsp = sd_send_command(SD_ERASE, 0))) {
       sd_panic_idle(57, rsp);
       return FAIL;
     }
@@ -994,8 +1157,9 @@ implementation {
    *	   to bus master voltage.  doc says maximum of 1ms, 74 clocks
    *	   and supply ramp up time.  But unclear how long is the actual
    *	   minimum.
-   *	4) send FORCE_IDLE, sd_send_command also lowers CSN (low true).
-   *	5) Repeatedly send GO_OP (ACMD41) to take the SD out of idle (what
+   *	4) send FORCE_IDLE.
+   *    5) send CMD8 to tell the SD we are HC capable.
+   *	6) Repeatedly send GO_OP (ACMD41) to take the SD out of idle (what
    *	   they call reset).
    *
    *************************************************************************/
@@ -1010,19 +1174,18 @@ implementation {
    * the SDSA_MAJIK then we are in standalone.
    */
   async command bool SDsa.inSA() {
-    if (sdsa_majik == SDSA_MAJIK)
+    if (sdc.sdsa_majik == SDSA_MAJIK)
       return TRUE;
     return FALSE;
   }
 
 
-  async command void SDsa.reset() {
-    sd_cmd_t *cmd;                // Command Structure
-    uint8_t rsp;
-    uint16_t sa_op_cnt;
-    uint32_t t0;
+  async command error_t SDsa.reset() {
+    uint8_t      rsp;
+    unsigned int sa_op_cnt;
+    uint32_t     t0;
 
-    sdsa_majik = SDSA_MAJIK;
+    sdc.sdsa_majik = SDSA_MAJIK;
     call HW.sd_on();
     call HW.sd_spi_enable();
 
@@ -1036,14 +1199,22 @@ implementation {
     call HW.sd_start_dma(NULL, NULL, 10);
     call HW.sd_wait_dma(10);
 
-    cmd = &sd_cmd;
-    cmd->cmd = SD_FORCE_IDLE;		// Send CMD0, software reset
-    cmd->arg = 0;
-    rsp = sd_send_command();
-    if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
-      sd_panic(58, rsp);
-      return;
+    sa_op_cnt = 10;
+    while (sa_op_cnt) {
+      rsp = sd_send_command(SD_FORCE_IDLE, 0);
+      if (rsp == 0x01)          /* IDLE pops us out */
+        break;
+      sa_op_cnt--;
+      if (sa_op_cnt == 9) {
+        sd_warn(58, rsp);
+      }
     }
+    if (rsp != 0x01)            /* must be idle */
+      return FAIL;
+
+    /* poke the SD to turn on SDHC if present */
+    if (sd_cmd8())
+      return FAIL;
 
     /*
      * SD_GO_OP_MAX is set for normal operation which is polled every 4 or
@@ -1054,36 +1225,33 @@ implementation {
     sa_op_cnt = 0;
     do {
       sa_op_cnt++;
-      cmd->cmd = SD_GO_OP;		// Send CMD0, software reset
-      rsp = sd_send_acmd();
+      rsp = sd_send_acmd(SD_GO_OP, 1 << 30); /* tell HCS */
     } while ((rsp & MSK_IDLE) && (sa_op_cnt < (SD_GO_OP_MAX * 8)));
 
-    if (sa_op_cnt >= (SD_GO_OP_MAX * 8))
+    if (rsp & MSK_IDLE)
       sd_panic(59, sa_op_cnt);
+    if (sdc.blocks == 0)
+      sd_get_disk_params();
+    return SUCCESS;
   }
 
 
   async command void SDsa.off() {
     call HW.sd_spi_disable();
     call HW.sd_off();
-    sdsa_majik = 0;
+    sdc.sdsa_majik = 0;
   }
 
 
   async command void SDsa.read(uint32_t blk_id, uint8_t *buf) {
-    sd_cmd_t *cmd;
-    uint8_t   rsp, tmp;
-    uint16_t  crc;
-
-    cmd = &sd_cmd;
-
-    /* Need to add size checking, 0 = success */
-    cmd->cmd = SD_READ_BLOCK;
-    cmd->arg = (blk_id << SD_BLOCKSIZE_NBITS);
+    uint8_t  rsp, tmp;
+    uint16_t crc;
 
     /* send read data command */
     call HW.sd_set_cs();
-    rsp = sd_raw_cmd();                 /* clean, crc, send, get response */
+    if (!sdc.sdhc)
+      blk_id = blk_id << SD_BLOCKSIZE_NBITS;
+    rsp = sd_raw_cmd(SD_READ_BLOCK, blk_id);
 
     sd_read_tok_count = 0;
 
@@ -1119,8 +1287,6 @@ implementation {
     call HW.sd_wait_dma(SD_BUF_SIZE);
 
     call HW.spi_get();          /* more clocks to clear out SD */
-    call HW.spi_get();
-
     call HW.sd_clr_cs();        /* deassert the SD card */
 
     crc = (buf[512] << 8) | buf[513];
@@ -1132,16 +1298,13 @@ implementation {
 
 
   async command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
-    sd_cmd_t *cmd;
     uint8_t   rsp, tmp;
     uint16_t  t, last_time, time_wraps;
 
-    cmd = &sd_cmd;
     sd_compute_crc(buf);
-
-    cmd->arg = (blk_id << SD_BLOCKSIZE_NBITS);
-    cmd->cmd = SD_WRITE_BLOCK;
-    if ((rsp = sd_send_command()))
+    if (!sdc.sdhc)
+      blk_id = blk_id << SD_BLOCKSIZE_NBITS;
+    if ((rsp = sd_send_command(SD_WRITE_BLOCK, blk_id)))
       sd_panic(63, rsp);
 
     call HW.sd_set_cs();
@@ -1194,6 +1357,7 @@ implementation {
       last_time = t;
     } while (1);
 
+    call HW.spi_get();                  /* extra clocks */
     call HW.sd_clr_cs();		/* deassert. */
     t = sd_read_status();
     if (t)
@@ -1229,46 +1393,43 @@ implementation {
 
 
   /*
-   * return pointer to the global command block
-   */
-  command sd_cmd_t *SDraw.cmd_ptr() {
-    return &sd_cmd;
-  }
-
-
-  /*
    * send the command, return response (R1) for the
    * command loaded into the command block.
    *
    * This is a complete op.
    */
-  command uint8_t SDraw.send_cmd() {
-    return sd_send_command();
+  command uint8_t SDraw.send_cmd(uint8_t cmd, uint32_t arg) {
+    return sd_send_command(cmd, arg);
   }
 
 
   /*
-   * send the ACMD loaded into the command block.  It is assumed
-   * that the command in the command block is an ACMD and should
-   * be proceeded by CMD55.
+   * send the ACMD.
+   *
+   * CMD55 is sent first per protocol.  Then CMD/ARG are sent.
    *
    * This is NOT a complete op.  start_op and end_op have
    * to used to begin and end the SD op.
    */
-  command uint8_t SDraw.raw_acmd() {
-    sd_send_cmd55();
-    return sd_raw_cmd();
+  command uint8_t SDraw.raw_acmd(uint8_t cmd, uint32_t arg) {
+    uint8_t rsp;
+
+    rsp = sd_raw_cmd(CMD55, 0);
+    call HW.spi_get();          /* sandisk needs this */
+    if (rsp & MSK_IDLE)         /* 00 or 01 is fine, others not so much */
+      return rsp;
+    return sd_raw_cmd(cmd, arg);
   }
 
 
   /*
-   * send the CMD loaded into the command block.
+   * send the CMD and ARG
    *
    * This is NOT a complete op.  start_op and end_op have
    * to used to begin and end the SD op.
    */
-  command uint8_t SDraw.raw_cmd() {
-    return sd_raw_cmd();
+  command uint8_t SDraw.raw_cmd(uint8_t cmd, uint32_t arg) {
+    return sd_raw_cmd(cmd, arg);
   }
 
 
@@ -1276,6 +1437,100 @@ implementation {
     call HW.spi_check_clean();
     call HW.sd_start_dma(tx, rx, len);
     call HW.sd_wait_dma(len);
+  }
+
+
+  /*************************************************************************
+   *
+   * SDraw.blocks: return number of blocks/sectors on this SD
+   *
+   * if sdc.blocks is 0, we haven't been initialized.
+   */
+  command uint32_t  SDraw.blocks() {
+    return sdc.blocks;
+  }
+
+
+  /*
+   * SDraw.erase_state: return indicator of erased state
+   *
+   * TRUE:      card is erased to 0xff
+   * FALSE:     card is erased to 0x00
+   *
+   * sdc.blocks will be non-zero if we've gotten the disks parms
+   */
+  command bool      SDraw.erase_state() {
+    if (sdc.blocks)
+      return sdc.erase_state;
+    return FALSE;
+  }
+
+
+  /*
+   * SDraw.ocr, return the OCR (Operations Conditions Register)
+   *
+   * The OCR is 32 bits long (4 bytes).
+   *
+   * This only works if the card has been powered up and currently is
+   * IDLE (not busy).
+   */
+  command uint32_t  SDraw.ocr() {
+    if (sdc.sdsa_majik == SDSA_MAJIK || sdc.sd_state == SDS_IDLE)
+      return sd_get_ocr();
+    return 0;
+  }
+
+
+  /*
+   * SDraw.cid, return the CID (Card Identification Register)
+   *
+   * The CID is 128 bits long (16 bytes).  The buf pointer is
+   * assumed to be long enough to hold the entire register.
+   *
+   * This only works if the card has been powered up and currently is
+   * IDLE (not busy) or in StandAlone.
+   */
+  command error_t   SDraw.cid(uint8_t *buf) {
+    uint8_t rsp;
+
+    if (sdc.sdsa_majik == SDSA_MAJIK || sdc.sd_state == SDS_IDLE)
+      return sd_get_vreg(buf, SD_SEND_CID, SD_CID_LEN);
+    return FAIL;
+  }
+
+
+  /*
+   * SDraw.csd   return the Card Specific Data
+   *
+   * The CSD is 128 bits long (16 bytes + 2 CRC).  The buf pointer is
+   * assumed to be long enough to hold the entire register.
+   *
+   * This only works if the card has been powered up and currently is
+   * IDLE (not busy).  Our state, not the cards IDLE which means reset.
+   * StandAlone also works.
+   */
+  command error_t   SDraw.csd(uint8_t *buf) {
+    error_t err;
+
+    if (sdc.sdsa_majik == SDSA_MAJIK || sdc.sd_state == SDS_IDLE)
+      return sd_get_vreg(buf, SD_SEND_CSD, SD_CSD_LEN);
+    return FAIL;
+  }
+
+
+  /*
+   * SDraw.scr, return the SCR (SD Configuration Register)
+   *
+   * The SCR is 64 bits long (8 bytes, SD_SCR_LEN, includes 2 bytes of CRC).
+   * "buf" is assumed to be long enough to hold the entire register.
+   *
+   * This only works if the card has been powered up and currently is
+   * IDLE (not busy) or in StandAlone.
+   */
+  command error_t   SDraw.scr(uint8_t *buf) {
+    if (sdc.sdsa_majik == SDSA_MAJIK || sdc.sd_state == SDS_IDLE)
+      return sd_get_vreg(buf, SD_SEND_SCR, SD_SCR_LEN);
+    return FAIL;
   }
 
 
