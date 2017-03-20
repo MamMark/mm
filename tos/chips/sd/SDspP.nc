@@ -153,7 +153,7 @@ implementation {
    * disk params (dp) gets initilized the first time we power up, typically
    * when the FileSystem does its thing.
    */
-  norace volatile struct {
+  norace struct {
     uint16_t   majik_a;
     sd_state_t sd_state;
     uint8_t    sdhc;                    /* dp, F: SDSC, T: SDHC */
@@ -504,7 +504,7 @@ implementation {
    */
 
   void sd_get_disk_params() {
-    uint8_t buf[16], rsp;
+    uint8_t buf[SD_CSD_LEN], rsp;
     uint32_t csize, rbl, csm;
     uint32_t ocr;
 
