@@ -1172,10 +1172,10 @@ implementation {
   }
 
 
-  async command void SDsa.reset() {
-    uint8_t rsp;
-    uint16_t sa_op_cnt;
-    uint32_t t0;
+  async command error_t SDsa.reset() {
+    uint8_t      rsp;
+    unsigned int sa_op_cnt;
+    uint32_t     t0;
 
     sdc.sdsa_majik = SDSA_MAJIK;
     call HW.sd_on();
@@ -1202,11 +1202,11 @@ implementation {
       }
     }
     if (rsp != 0x01)            /* must be idle */
-      return;
+      return FAIL;
 
     /* poke the SD to turn on SDHC if present */
     if (sd_cmd8())
-      return;
+      return FAIL;
 
     /*
      * SD_GO_OP_MAX is set for normal operation which is polled every 4 or
@@ -1224,6 +1224,7 @@ implementation {
       sd_panic(59, sa_op_cnt);
     if (sdc.blocks == 0)
       sd_get_disk_params();
+    return SUCCESS;
   }
 
 
