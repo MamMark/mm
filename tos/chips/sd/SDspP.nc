@@ -884,7 +884,7 @@ implementation {
   /*
    * SDread.read: read a 512 byte block from the SD
    *
-   * input:  blockaddr     block to read.  (max 23 bits)
+   * input:  blk_id        block to read.
    *         data          pointer to data buffer, assumed 514 bytes
    * output: rtn           0 call successful, err otherwise
    *
@@ -892,7 +892,7 @@ implementation {
    * will be signalled.
    */
 
-  command error_t SDread.read[uint8_t cid](uint32_t blockaddr, uint8_t *data) {
+  command error_t SDread.read[uint8_t cid](uint32_t blk_id, uint8_t *data) {
     uint8_t   rsp;
 
     if (sdc.sd_state != SDS_IDLE) {
@@ -905,10 +905,12 @@ implementation {
 
     sdc.sd_state = SDS_READ;
     sdc.cur_cid = cid;
-    sdc.blk_start = blockaddr;
+    sdc.blk_start = blk_id;
     sdc.data_ptr = data;
 
-    if ((rsp = sd_send_command(SD_READ_BLOCK, blockaddr << SD_BLOCKSIZE_NBITS))) {
+    if (!sdc.sdhc)
+      blk_id = blk_id << SD_BLOCKSIZE_NBITS;
+    if ((rsp = sd_send_command(SD_READ_BLOCK, blk_id))) {
       sd_panic_idle(48, rsp);
       return FAIL;
     }
@@ -1005,7 +1007,7 @@ implementation {
   }
 
 
-  command error_t SDwrite.write[uint8_t cid](uint32_t blockaddr, uint8_t *data) {
+  command error_t SDwrite.write[uint8_t cid](uint32_t blk_id, uint8_t *data) {
     sd_cmd_t *cmd;
     uint8_t   rsp;
 
@@ -1019,11 +1021,13 @@ implementation {
 
     sdc.sd_state = SDS_WRITE;
     sdc.cur_cid = cid;
-    sdc.blk_start = blockaddr;
+    sdc.blk_start = blk_id;
     sdc.data_ptr = data;
 
     sd_compute_crc(data);
-    if ((rsp = sd_send_command(SD_WRITE_BLOCK, blockaddr << SD_BLOCKSIZE_NBITS))) {
+    if (!sdc.sdhc)
+      blk_id = blk_id << SD_BLOCKSIZE_NBITS;
+    if ((rsp = sd_send_command(SD_WRITE_BLOCK, blk_id))) {
       sd_panic_idle(53, rsp);
       return FAIL;
     }
@@ -1109,12 +1113,16 @@ implementation {
     /*
      * send the start and then the end
      */
-    if ((rsp = sd_send_command(SD_SET_ERASE_START, blk_s << SD_BLOCKSIZE_NBITS))) {
+    if (!sdc.sdhc) {
+      blk_s = blk_s << SD_BLOCKSIZE_NBITS;
+      blk_e = blk_e << SD_BLOCKSIZE_NBITS;
+    }
+    if ((rsp = sd_send_command(SD_SET_ERASE_START, blk_s))) {
       sd_panic_idle(55, rsp);
       return FAIL;
     }
 
-    if ((rsp = sd_send_command(SD_SET_ERASE_END, blk_e << SD_BLOCKSIZE_NBITS))) {
+    if ((rsp = sd_send_command(SD_SET_ERASE_END, blk_e))) {
       sd_panic_idle(56, rsp);
       return FAIL;
     }
@@ -1241,7 +1249,9 @@ implementation {
 
     /* send read data command */
     call HW.sd_set_cs();
-    rsp = sd_raw_cmd(SD_READ_BLOCK, blk_id << SD_BLOCKSIZE_NBITS);
+    if (!sdc.sdhc)
+      blk_id = blk_id << SD_BLOCKSIZE_NBITS;
+    rsp = sd_raw_cmd(SD_READ_BLOCK, blk_id);
 
     sd_read_tok_count = 0;
 
@@ -1292,7 +1302,9 @@ implementation {
     uint16_t  t, last_time, time_wraps;
 
     sd_compute_crc(buf);
-    if ((rsp = sd_send_command(SD_WRITE_BLOCK, blk_id << SD_BLOCKSIZE_NBITS)))
+    if (!sdc.sdhc)
+      blk_id = blk_id << SD_BLOCKSIZE_NBITS;
+    if ((rsp = sd_send_command(SD_WRITE_BLOCK, blk_id)))
       sd_panic(63, rsp);
 
     call HW.sd_set_cs();
