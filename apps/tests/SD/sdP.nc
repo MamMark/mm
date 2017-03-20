@@ -141,17 +141,36 @@ implementation {
 
 
   /* Setup for CMD13, send status of the card
-   *  returns R2_LEN, 2 bytes, no data block.  See Section 7.3.1.3
+   * returns R2_LEN, 2 bytes, no data block.  See Section 7.3.1.3
+   *
+   * also ask for SD_STATUS, a 512 bit block.  + 16 for CRC16
+   * We see first the CMD55, ACMD13, R2, response, then takes about
+   * 350us before we see the start token for the start of the data
+   * packet with 528 bits of the SD_STATUS data.
    */
   void get_status() {
-    uint8_t      status_data[2];
+    volatile uint8_t      status_data[2];
+    volatile uint8_t      sd_status[SD_STATUS_LEN];
     sd_status_t *sdp;
+    unsigned int indx;
 
     call SDraw.start_op();                 // Chip Select Low
     status_data[0] = call SDraw.raw_cmd(SD_SEND_STATUS, 0);
     status_data[1] = call SDraw.get();     // Rest of R2 response
     call SDraw.end_op();                   // Chip Select High
     sdp = (sd_status_t *) status_data;
+
+    call SDraw.start_op();                 // Chip Select Low
+    status_data[0] = call SDraw.raw_acmd(SD_SEND_SD_STATUS, 0);
+    status_data[1] = call SDraw.get();     // Rest of R2 response
+    while (1) {
+      rsp = call SDraw.get();
+      if (rsp == SD_START_TOK)
+	break;
+    }
+    for (indx = 0; indx < SD_STATUS_LEN; indx++)
+      sd_status[indx] = call SDraw.get();
+    call SDraw.end_op();
   }
 
 
