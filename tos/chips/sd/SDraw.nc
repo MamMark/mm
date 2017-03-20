@@ -55,4 +55,17 @@ interface SDraw {
   command uint8_t   raw_acmd(uint8_t cmd, uint32_t arg);
   command uint8_t   raw_cmd(uint8_t cmd, uint32_t arg);
   command void      send_recv(uint8_t *tx, uint8_t *rx, uint16_t len);
+
+  /*
+   * Other SD operations
+   *
+   * See SDspP for definitions
+   */
+  command uint32_t  blocks();
+  command bool      erase_state();
+
+  command uint32_t  ocr();              /*  32 bits */
+  command error_t   cid(uint8_t *buf);  /* 128 bits */
+  command error_t   csd(uint8_t *buf);  /* 128 bits */
+  command error_t   scr(uint8_t *buf);  /*  64 bits */
 }

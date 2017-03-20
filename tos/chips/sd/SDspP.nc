@@ -1429,6 +1429,100 @@ implementation {
 
   /*************************************************************************
    *
+   * SDraw.blocks: return number of blocks/sectors on this SD
+   *
+   * if sdc.blocks is 0, we haven't been initialized.
+   */
+  command uint32_t  SDraw.blocks() {
+    return sdc.blocks;
+  }
+
+
+  /*
+   * SDraw.erase_state: return indicator of erased state
+   *
+   * TRUE:      card is erased to 0xff
+   * FALSE:     card is erased to 0x00
+   *
+   * sdc.blocks will be non-zero if we've gotten the disks parms
+   */
+  command bool      SDraw.erase_state() {
+    if (sdc.blocks)
+      return sdc.erase_state;
+    return FALSE;
+  }
+
+
+  /*
+   * SDraw.ocr, return the OCR (Operations Conditions Register)
+   *
+   * The OCR is 32 bits long (4 bytes).
+   *
+   * This only works if the card has been powered up and currently is
+   * IDLE (not busy).
+   */
+  command uint32_t  SDraw.ocr() {
+    if (sdc.sdsa_majik == SDSA_MAJIK || sdc.sd_state == SDS_IDLE)
+      return sd_get_ocr();
+    return 0;
+  }
+
+
+  /*
+   * SDraw.cid, return the CID (Card Identification Register)
+   *
+   * The CID is 128 bits long (16 bytes).  The buf pointer is
+   * assumed to be long enough to hold the entire register.
+   *
+   * This only works if the card has been powered up and currently is
+   * IDLE (not busy) or in StandAlone.
+   */
+  command error_t   SDraw.cid(uint8_t *buf) {
+    uint8_t rsp;
+
+    if (sdc.sdsa_majik == SDSA_MAJIK || sdc.sd_state == SDS_IDLE)
+      return sd_get_vreg(buf, SD_SEND_CID, SD_CID_LEN);
+    return FAIL;
+  }
+
+
+  /*
+   * SDraw.csd   return the Card Specific Data
+   *
+   * The CSD is 128 bits long (16 bytes + 2 CRC).  The buf pointer is
+   * assumed to be long enough to hold the entire register.
+   *
+   * This only works if the card has been powered up and currently is
+   * IDLE (not busy).  Our state, not the cards IDLE which means reset.
+   * StandAlone also works.
+   */
+  command error_t   SDraw.csd(uint8_t *buf) {
+    error_t err;
+
+    if (sdc.sdsa_majik == SDSA_MAJIK || sdc.sd_state == SDS_IDLE)
+      return sd_get_vreg(buf, SD_SEND_CSD, SD_CSD_LEN);
+    return FAIL;
+  }
+
+
+  /*
+   * SDraw.scr, return the SCR (SD Configuration Register)
+   *
+   * The SCR is 64 bits long (8 bytes, SD_SCR_LEN, includes 2 bytes of CRC).
+   * "buf" is assumed to be long enough to hold the entire register.
+   *
+   * This only works if the card has been powered up and currently is
+   * IDLE (not busy) or in StandAlone.
+   */
+  command error_t   SDraw.scr(uint8_t *buf) {
+    if (sdc.sdsa_majik == SDSA_MAJIK || sdc.sd_state == SDS_IDLE)
+      return sd_get_vreg(buf, SD_SEND_SCR, SD_SCR_LEN);
+    return FAIL;
+  }
+
+
+  /*************************************************************************
+   *
    * DMA interaction
    *
    *************************************************************************/
