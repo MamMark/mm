@@ -501,9 +501,7 @@ implementation {
     sdc.cur_cid = CID_NONE;	        /* reset is not parameterized. */
 
     /*
-     * Clock out at least 74 bits of idles (0xFF is 8 bits).  That's 10 bytes. This allows
-     * the SD card to complete its power up prior to us talking to the card.
-     * see SDsa.reset for more info.
+     * Clock out at least 74 bits of idles (0xFF is 8 bits).  That's 10 bytes
      */
 
     call HW.spi_check_clean();
@@ -529,6 +527,11 @@ implementation {
     if (rsp != 0x01) {		/* Must be in IDLE */
       sd_panic_idle(37, rsp);
       return;
+    }
+
+    /* poke the SD to turn on SDHC if present */
+    if (sd_cmd8()) {
+      sd_panic(100, 0);
     }
 
     /*
@@ -565,7 +568,8 @@ implementation {
         return;
 
       case SDS_RESET:
-	rsp = sd_send_acmd(SD_GO_OP, 0);
+        /* set HCS to see what happens */
+	rsp = sd_send_acmd(SD_GO_OP, 1 << 30);
 	if (rsp & ~MSK_IDLE) {		/* any other bits set? */
 	  sd_panic_idle(39, rsp);
 	  return;
@@ -574,7 +578,7 @@ implementation {
 	if (rsp & MSK_IDLE) {
 	  /* idle bit still set, means card is still in reset */
 	  if (++sd_go_op_count >= SD_GO_OP_MAX) {
-	    sd_panic_idle(40, sd_go_op_count);			// We maxed the tries, panic and fail
+	    sd_panic_idle(40, sd_go_op_count);		/* We maxed the tries, panic and fail */
 	    return;
 	  }
 	  call SDtimer.startOneShot(GO_OP_POLL_TIME);
@@ -602,7 +606,7 @@ implementation {
 	sdc.sd_state = SDS_IDLE;
 	sdc.cur_cid = CID_NONE;
 	call ResourceDefaultOwner.release();
-	return;
+        return;
     }
   }
 
@@ -1066,8 +1070,9 @@ implementation {
    *	   to bus master voltage.  doc says maximum of 1ms, 74 clocks
    *	   and supply ramp up time.  But unclear how long is the actual
    *	   minimum.
-   *	4) send FORCE_IDLE, sd_send_command also lowers CSN (low true).
-   *	5) Repeatedly send GO_OP (ACMD41) to take the SD out of idle (what
+   *	4) send FORCE_IDLE.
+   *    5) send CMD8 to tell the SD we are HC capable.
+   *	6) Repeatedly send GO_OP (ACMD41) to take the SD out of idle (what
    *	   they call reset).
    *
    *************************************************************************/
@@ -1107,11 +1112,22 @@ implementation {
     call HW.sd_start_dma(NULL, NULL, 10);
     call HW.sd_wait_dma(10);
 
-    rsp = sd_send_command(SD_FORCE_IDLE, 0);
-    if (rsp & ~MSK_IDLE) {		/* ignore idle for errors */
-      sd_panic(58, rsp);
-      return;
+    sa_op_cnt = 10;
+    while (sa_op_cnt) {
+      rsp = sd_send_command(SD_FORCE_IDLE, 0);
+      if (rsp == 0x01)          /* IDLE pops us out */
+        break;
+      sa_op_cnt--;
+      if (sa_op_cnt == 9) {
+        sd_warn(58, rsp);
+      }
     }
+    if (rsp != 0x01)            /* must be idle */
+      return;
+
+    /* poke the SD to turn on SDHC if present */
+    if (sd_cmd8())
+      return;
 
     /*
      * SD_GO_OP_MAX is set for normal operation which is polled every 4 or
@@ -1122,10 +1138,10 @@ implementation {
     sa_op_cnt = 0;
     do {
       sa_op_cnt++;
-      rsp = sd_send_acmd(SD_GO_OP, 0);
+      rsp = sd_send_acmd(SD_GO_OP, 1 << 30); /* tell HCS */
     } while ((rsp & MSK_IDLE) && (sa_op_cnt < (SD_GO_OP_MAX * 8)));
 
-    if (sa_op_cnt >= (SD_GO_OP_MAX * 8))
+    if (rsp & MSK_IDLE)
       sd_panic(59, sa_op_cnt);
   }
 
