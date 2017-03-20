@@ -153,7 +153,7 @@ implementation {
    * disk params (dp) gets initilized the first time we power up, typically
    * when the FileSystem does its thing.
    */
-  norace struct {
+  norace volatile struct {
     uint16_t   majik_a;
     sd_state_t sd_state;
     uint8_t    sdhc;                    /* dp, F: SDSC, T: SDHC */
