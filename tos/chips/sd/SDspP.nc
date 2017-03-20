@@ -40,6 +40,11 @@
  * Wiring to this driver should be done via an affiliated platform
  * configuration such as <platform>/hardware/sd/SD0C.nc.  See
  * tos/platforms/dev6a/hardware/sd/SD0C.nc.
+ *
+ * PLATFORM_SDSC_ONLY
+ * PLATFORM_SDHC_ONLY
+ * PLATFORM_ERASE_0
+ * PLATFORM_ERASE_1
  */
 
 #include "hardware.h"
@@ -118,7 +123,7 @@ implementation {
    * in directly.  Rather it uses a state variable to control coherent access.  If
    * the driver is IDLE then it allows a client to start something new up.  It is
    * assumed that the client has gained access using the arbiter.  The arbiter is what
-   * queuing of clients when the SD is already busy.  When the current client finishes
+   * queues clients when the SD is already busy.  When the current client finishes
    * and releases the device, the arbiter will signal the next client to begin.
    *
    * majik_a   protection tombstone, SD_MAJIK
@@ -295,6 +300,146 @@ implementation {
   }
 
 
+  /*
+   * sd_get_block
+   *
+   * Assume a block of data is coming from the SD card.  Look for the
+   * start token then pull the number of bytes required from the SD.
+   *
+   * returns SUCCESS if all worked okay
+   *         FAIL    on error.
+   */
+
+  error_t sd_get_block(uint8_t *buf, unsigned int count) {
+    uint32_t t0;
+    uint8_t  b;
+
+    t0 = call Platform.usecsRaw();
+    while (1) {
+      b = call HW.spi_get();
+      if (b != 0xff)
+        break;
+      if (call Platform.usecsRaw() - t0 > 10000)
+        return FAIL;
+    }
+    if (b != SD_START_TOK)
+      return FAIL;
+    while (count) {
+      *(buf++) = call HW.spi_get();
+      count--;
+    }
+    return SUCCESS;
+  }
+
+
+  /*
+   * sd_get_vreg
+   *
+   * get a variable length register from the SD
+   *
+   * returns: 0         all is well
+   *          >0        return code from SD
+   */
+
+  uint8_t sd_get_vreg(uint8_t *buf, uint8_t cmd, unsigned int count) {
+    uint8_t rsp;
+
+    call HW.sd_set_cs();
+    switch(cmd) {
+      case SD_SEND_CSD:
+      case SD_SEND_CID:
+        break;
+      case SD_SEND_SCR:
+      case SD_SEND_SD_STATUS:
+        rsp = sd_raw_cmd(CMD55, 0);
+        call HW.spi_get();          /* sandisk needs this */
+        if (rsp & ~MSK_IDLE) {      /* 00 or 01 is fine, others not so much */
+          call HW.sd_clr_cs();
+          return rsp;;
+        }
+        break;
+      default:
+        call HW.spi_get();
+        call HW.sd_clr_cs();
+        return 0xff;
+    }
+    rsp = sd_raw_cmd(cmd, 0);
+    if (rsp) {                  /* oops, bail */
+      call HW.spi_get();
+      call HW.sd_clr_cs();
+      return rsp;
+    }
+    if (sd_get_block(buf, count)) {
+      call HW.spi_get();
+      call HW.sd_clr_cs();
+      return 0xff;
+    }
+    call HW.spi_get();
+    call HW.sd_clr_cs();
+    return 0;
+  }
+
+
+  /*
+   * sd_cmd8
+   *
+   * sends a CMD8 to poke the SD.  This potentially
+   * turns on SDHC support.  We also check to make sure
+   * proper voltages are supported.
+   *
+   * returns: SUCCESS   as expected
+   *          FAIL      something didn't work
+   */
+  error_t sd_cmd8() {
+    uint8_t ocr[4], rsp;
+
+    call HW.sd_set_cs();
+    rsp = sd_raw_cmd(CMD8, 0x1aa);
+    if (rsp & ~MSK_IDLE) {      /* better be 0 */
+      call HW.spi_get();
+      call HW.sd_clr_cs();
+      return SUCCESS;
+    }
+    ocr[0] = call HW.spi_get();
+    ocr[1] = call HW.spi_get();
+    ocr[2] = call HW.spi_get();
+    ocr[3] = call HW.spi_get();
+    call HW.spi_get();
+    call HW.sd_clr_cs();
+    if ((ocr[2] == 0x01) && (ocr[3] == 0xAA))
+      return SUCCESS;
+    return FAIL;
+  }
+
+
+  /*
+   * sd_get_ocr
+   *
+   * Get the Operations Conditions Register
+   */
+  uint32_t sd_get_ocr() {
+    uint32_t ocr;
+    uint8_t *op;
+    uint8_t  rsp;
+
+    call HW.sd_set_cs();
+    rsp = sd_raw_cmd(SD_SEND_OCR, 0);
+    if (rsp) {                  /* better be 0 */
+      call HW.spi_get();
+      call HW.sd_clr_cs();
+      return 0;
+    }
+    op = (uint8_t *) &ocr;
+    op[3] = call HW.spi_get();  /* be to le */
+    op[2] = call HW.spi_get();
+    op[1] = call HW.spi_get();
+    op[0] = call HW.spi_get();
+    call HW.spi_get();
+    call HW.sd_clr_cs();
+    return ocr;
+  }
+
+
   /************************************************************************
    *
    * Init
@@ -442,8 +587,7 @@ implementation {
 	 * If we were running with a reduced clock then this is the place to
 	 * crank it up to full speed.  We do everything at full speed so there
 	 * isn't currently any need.
-	 */
-
+         */
 	last_reset_time_us = call Platform.usecsRaw() - op_t0_us;
 	if (last_reset_time_us > max_reset_time_us)
 	  max_reset_time_us = last_reset_time_us;
