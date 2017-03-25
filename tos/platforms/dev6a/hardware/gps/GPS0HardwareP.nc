@@ -183,8 +183,7 @@ implementation {
 	return;
       }
     }
-    call Usci.setTxbuf(0);
-    while (!call Usci.isTxIntrPending()) {
+    while (!call Usci.isTxComplete()) {
       t1 = call Platform.usecsRaw();
       if (t1 - t0 > UART_MAX_BUSY_WAIT) {
 	gps_panic(1, t1, t0);
@@ -207,7 +206,9 @@ implementation {
 	gps_panic(1, speed, 0);
     call Usci.configure(config, FALSE);
 
-    /* Usci.configure turns off all interrupts */
+    /* Usci.configure (via reset) turns off all interrupts and
+     * cleans all IFGs out.
+     */
 
   }
 
@@ -252,6 +253,8 @@ implementation {
     /*
      * On start up UCTXIFG should be asserted, so enabling the TX interrupt
      * should cause the ISR to get invoked.
+     *
+     * The interrupt handler takes care of UCTXCPTIFG.
      */
     call Usci.enableTxIntr();
     return SUCCESS;
@@ -287,6 +290,7 @@ implementation {
         }
 
         data = m_tx_buf[m_tx_idx++];
+        call Usci.clrTxComplete();
         call Usci.setTxbuf(data);
         if (m_tx_idx >= m_tx_len) {
           buf = m_tx_buf;
