@@ -232,7 +232,7 @@ implementation {
     return SUCCESS;
   }
 
-  async command void    HW.receive_abort() {
+  async command void    HW.receive_block_stop() {
     m_rx_buf = NULL;
   }
 
@@ -257,9 +257,9 @@ implementation {
     return SUCCESS;
   }
 
-  async command void    HW.send_abort() {
-    m_tx_buf = NULL;
+  async command void    HW.send_block_stop() {
     call Usci.disableTxIntr();
+    m_tx_buf = NULL;
   }
 
   async event void Interrupt.interrupted(uint8_t iv) {
@@ -274,7 +274,7 @@ implementation {
           if (m_rx_idx >= m_rx_len) {
             buf = m_rx_buf;
             m_rx_buf = NULL;
-            signal HW.receive_done(buf, m_rx_len, SUCCESS);
+            signal HW.receive_block_done(buf, m_rx_len, SUCCESS);
           }
         } else
           signal HW.byte_avail(data);
@@ -290,9 +290,9 @@ implementation {
         call Usci.setTxbuf(data);
         if (m_tx_idx >= m_tx_len) {
           buf = m_tx_buf;
-          m_tx_buf = NULL;
           call Usci.disableTxIntr();
-          signal HW.send_done(buf, m_tx_len, SUCCESS);
+          m_tx_buf = NULL;
+          signal HW.send_block_done(buf, m_tx_len, SUCCESS);
         }
         return;
 

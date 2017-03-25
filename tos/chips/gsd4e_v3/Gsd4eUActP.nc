@@ -147,7 +147,7 @@ implementation {
       gps_check_index = 0;
     }
     gps_speed = gps_check_table[gps_check_index].speed;
-    call HW.gps_speed_di(gps_speed);               // rx interrupts are now disabled
+    call HW.gps_speed_di(gps_speed);               // change speed, disable rx ints
   }
 
   /*
@@ -512,7 +512,7 @@ implementation {
    */
   command void Act.gpsa_reset_mode() {
     call HW.gps_rx_int_disable();
-    call HW.send_abort();
+    call HW.send_block_stop();
     signal Act.gpsa_stop_rx_timer();
     signal Act.gpsa_stop_tx_timer();
     gps_reset();
@@ -540,11 +540,11 @@ implementation {
     uint8_t          *msg = gps_check_table[gps_check_index].msg;
     uint32_t          len = gps_check_table[gps_check_index].len;
 
-    call HW.send_abort();                                       // clear previous send
+    call HW.send_block_stop();                                  // clear previous send
     if (mode) add_nmea_checksum(msg);
     else      add_sirf_bin_checksum(msg);
     call HW.send_block(msg, len);
-    if (++gps_check_index >= gps_check_table_size) {        // advance the index for next time
+    if (++gps_check_index >= gps_check_table_size) {            // advance the index for next time
       gps_check_index = 0;
     }
     signal Act.gpsa_start_tx_timer(DT_GPS_SEND_CHECK_WAIT);     // time to wait for tx done
@@ -630,20 +630,14 @@ implementation {
     signal Act.gpsa_process_byte(byte);
   }
 
-  /*
-   * HW.send_done
-   */
-  async event void HW.send_done(uint8_t* ptr, uint16_t len, error_t error) {
+
+  async event void HW.send_block_done(uint8_t* ptr, uint16_t len, error_t error) {
     signal Act.gpsa_send_done(ptr, len, error);
   }
 
-  /*
-   * HW.receive_done
-   */
-  async event void HW.receive_done(uint8_t *ptr, uint16_t len, error_t err) { }
 
-  /*
-   * Panic.hook
-   */
+  async event void HW.receive_block_done(uint8_t *ptr, uint16_t len, error_t err) { }
+
+
   async event void Panic.hook() { }
 }

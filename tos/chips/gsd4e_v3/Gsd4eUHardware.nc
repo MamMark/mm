@@ -60,7 +60,15 @@
  *   gps_rx_on():       flow control, turn gps transmission on
  *
  *   send_block():      split phase.
- *   send_done():       completion on split phase
+ *   send_block_done(): completion on split phase
+ *   send_block_stop(): stop current send_block (abort)
+ *
+ *   receive_block():   same as send but for receive
+ *   receive_block_done():
+ *   receive_block_stop():
+ *
+ *   gps_rx_on():
+ *   gps_rx_off():
  *
  * This interface has been optimized for high-speed, where high-speed is
  * assumed to be something like 122880 Bbps (~8uS/byte).  On receive, the
@@ -120,12 +128,12 @@ interface Gsd4eUHardware {
 
   async event   void    byte_avail(uint8_t byte);
   async command error_t receive_block(uint8_t *ptr, uint16_t len);
-  async command void    receive_abort();
-  async event   void    receive_done(uint8_t *ptr, uint16_t len, error_t err);
-  async command void    gps_rx_off();
+  async command void    receive_block_stop();
+  async event   void    receive_block_done(uint8_t *ptr, uint16_t len, error_t err);
   async command void    gps_rx_on();
+  async command void    gps_rx_off();
 
   async command error_t send_block(uint8_t *ptr, uint16_t len);
-  async command void    send_abort();
-  async event   void    send_done(uint8_t *ptr, uint16_t len, error_t error);
+  async command void    send_block_stop();
+  async event   void    send_block_done(uint8_t *ptr, uint16_t len, error_t error);
 }
