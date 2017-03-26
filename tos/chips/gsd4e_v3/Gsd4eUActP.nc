@@ -104,7 +104,7 @@ implementation {
       while (call Platform.usecsRaw() - t0 < DT_GPS_ON_OFF_PULSE_WIDTH) {
         if (!call HW.gps_awake()) return;
       }
-      bkpt();
+      ROM_DEBUG_BREAK(0);
       return;
     }
   }
@@ -120,7 +120,7 @@ implementation {
       while (call Platform.usecsRaw() - t0 < DT_GPS_ON_OFF_PULSE_WIDTH) {
         if (call HW.gps_awake()) return;
       }
-      bkpt();
+      ROM_DEBUG_BREAK(0);
       return;
     }
   }
@@ -496,7 +496,7 @@ implementation {
    */
   command void Act.gpsa_ready() {
     nop();
-    bkpt();
+    ROM_DEBUG_BREAK(0);
   }
 
   /*
@@ -504,7 +504,7 @@ implementation {
    */
   command void Act.gpsa_recv_complete() {
     nop();
-    bkpt();
+    ROM_DEBUG_BREAK(0);
   }
 
   /*
@@ -563,7 +563,7 @@ implementation {
    */
   command void Act.gpsa_send_error() {
     nop();
-    bkpt();
+    ROM_DEBUG_BREAK(0);
   }
 
   /*
@@ -608,7 +608,7 @@ implementation {
    */
   command void Act.gpsa_start_config() {
     nop();
-    bkpt();
+    ROM_DEBUG_BREAK(0);
     call HW.gps_tx_finnish();                              // flush transmit buffer
     signal Act.gpsa_stop_tx_timer();                       // stop transmit timer
     call HW.gps_rx_int_enable();
