@@ -238,7 +238,8 @@ implementation {
    */
   command void Act.gpsa_change_speed() {
     if (--gpsa_reconfig_trys <= 0) {                         // countdown number of tries
-      gpsa_reconfig_trys = 0;
+      gps_warn(22, gpsa_reconfig_trys);
+      gpsa_reconfig_trys = MAX_GPS_RECONFIG_TRYS * gps_check_table_size;
     }
     change_check_speed();                          // change to next speed to check
     signal Act.gpsa_poke_comm();
@@ -607,7 +608,7 @@ implementation {
   command void Act.gpsa_start() {
     // to start, we assume gps is already operating which will be verified
     // in future states. for now we just need to set our eUSCI UART speed
-    gpsa_reconfig_trys = MAX_GPS_RECONFIG_TRYS;
+    gpsa_reconfig_trys = MAX_GPS_RECONFIG_TRYS * gps_check_table_size;
     gps_check_success = 0;
 //    signal Act.gpsa_poke_comm();       // handle further actions in separate task
     gps_reset();
