@@ -4,9 +4,7 @@
  * @author Eric B. Decker (cire831@gmail.com)
  * @author Daniel J. Maltbie (dmaltbie@daloma.org)
  * @date 27 May 2008
- *
- * Currently set up for the ET-312 module using the Sirf-III
- * chipset.
+ * @updated Mar 2017 for UART based GSD4e chips
  */
 
 
@@ -137,10 +135,6 @@ typedef enum {
 #define DT_GPS_OSP_WAIT_TIME            50
 #define DT_GPS_SHUTDOWN_CLEAN_TO        1000
 
-#define MAX_GPS_RECONFIG_TRYS           5
-
-#define DT_GPS_EOS_WAIT                 512
-#define DT_GPS_SEND_TIME_OUT            512
 //#define DT_GPS_FINI_WAIT       512
 #define DT_GPS_FINI_WAIT                2048
 #endif
