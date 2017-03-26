@@ -1,15 +1,26 @@
 /*
- * Copyright (c) 2017 Daniel J. Maltbie
+ * Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * @author Daniel J. Maltbie (dmaltbie@daloma.org)
  * @date 26 Jan 2017
+ * @author Eric B. Decker (cire831@gmail.com)
+ * Various modifications
  */
 
-#include "panic.h"
+#include <panic.h>
+#include <platform_panic.h>
 #include "gps.h"
 #include "sirf.h"
 #include "GPSMsgBuf.h"
+
+#ifndef PANIC_GPS
+enum {
+  __pcode_gps = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_GPS __pcode_gps
+#endif
 
 /*
  * gps_check_table: list of supported configurations

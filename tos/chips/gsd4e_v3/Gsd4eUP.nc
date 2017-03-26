@@ -12,9 +12,18 @@
  * SirfStarIV using UART and Port abstraction.
  */
 
-#include "panic.h"
+#include <panic.h>
+#include <platform_panic.h>
 #include "gps.h"
 #include "sirf.h"
+
+#ifndef PANIC_GPS
+enum {
+  __pcode_gps = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_GPS __pcode_gps
+#endif
 
 /*
  * State Machine Description

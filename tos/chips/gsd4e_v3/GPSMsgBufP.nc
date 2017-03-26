@@ -71,9 +71,18 @@
  */
 
 
-#include "panic.h"
+#include <panic.h>
+#include <platform_panic.h>
 #include "GPSMsgBuf.h"
 #include "math.h"
+
+#ifndef PANIC_GPS
+enum {
+  __pcode_gps = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_GPS __pcode_gps
+#endif
 
 module GPSMsgBufP {
   provides {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014: Eric B. Decker
+ * Copyright (c) 2008, 2014, 2017: Eric B. Decker
  * All rights reserved.
  *
  * @author Eric B. Decker (cire831@gmail.com)
@@ -26,11 +26,20 @@
  * this way and will be at most smaller than one packet.
  */
 
-#include "panic.h"
+#include <panic.h>
+#include <platform_panic.h>
 #include "typed_data.h"
 #include "sirf.h"
 #include "gps.h"
 #include "gps_msg.h"
+
+#ifndef PANIC_GPS
+enum {
+  __pcode_gps = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_GPS __pcode_gps
+#endif
 
 /*
  * GPS Message Collector states.  Where in the message is the state machine.  Used
