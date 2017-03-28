@@ -1,4 +1,26 @@
 
+mm6a: The mm6a is a major implementation of the tag using the TI MSP432
+  processor.  The MSP432 is an ARM Cortex-M4F with various TI peripherals.
+  Many of these peripherals are derived from the equivilent peripheral in
+  the msp430f5438a.
+
+  The 432 has the following advantages:
+
+  o respectable Flash (256K)
+  o more RAM (64K)
+  o flat 4GB address space
+  o ARM regularity
+  o increased processing power.
+  o full single precision floating point coprocessor.
+
+One of the problems that the ARM solves concerns addressing.  The MSP430 is
+a 16 bit architecture that was expanded to 20 bits.  But the cheif problem
+involved a hole in the address space at the top of the 16 bit address space
+(for the vectors).  Progressing on the msp430 line would have eventually
+required moving to a different tool chain (unverified).
+
+Moving to the ARM processor avoided these problems.
+
 MM5a: The MM5a is a major reimplementation using the msp430f5438a as
   the main processor.   The major benefit of the 5438 is more USCI
   ports which cuts down on the need for sharing (arbritration).
@@ -19,6 +41,9 @@ MM4: msp430f2618 variant.  Note that the 2618 has a form factor that
 
 Development Platforms:
 
+dev6a: a development platform using the MSP432 that allows building
+  various subsystems for the mm6a.
+
 exp5438_5t: a test platform based on the TI MSP-EXP430F5438 combined
   with various sensors.
 
@@ -30,7 +55,8 @@ mm5t: a test platfrom based on the TI MSP-EXP430F5438 development board
 
 
 The following is maintained for historical reference.   A difference between
-the mm4 and mm5 has not been done.   Too many differences.
+the mm4 and mm5 has not been done.   Too many differences.  Same is true
+for differences between the mm5 and the mm6.
 
 The mm3 and mm4 were very close.   The 2618 was a drop in (pin for pin) for
 the 1611 and the differences were minimal.
