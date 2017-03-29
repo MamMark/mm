@@ -1,0 +1,37 @@
+
+Buffer/Memory Management on the MM6
+
+* The problem
+
+  Data needs to flow through the system that has different sizes and with
+  different requirements for additional headers and trailers.
+
+  How to represent and pass these datums amoung the differnt entities in the
+  system whith the following characteristics:
+
+  o avoid data copies
+  o allow somewhat arbitrary headers and trailers.
+  o want to avoid buffer pools and other complicated memory management
+    systems
+  o want to use static mechanisms whenever possible.  no mallocs etc.
+
+This means that various entities need to provide space for headers that
+are needed.
+
+An incoming entity that is receiving a message can't know what other
+layers will need to add (layering).  But we can approximate/estimate
+what is going to happen (static mapping) and the initial buffering
+can provide enough space.
+
+The variable header however then is by nature non-contigous and we need
+a mechanism to represent the pieces.
+
+
+* One approach
+
+  o for input buffering, include a constrained amount of data prepended to
+    the incoming message.  Any headers need to be able to fit into this
+    prepended area.
+
+  o define an iov (list of buffer areas and lengths) that can describe
+    1st the header and then the data.
