@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2017 Daniel J. Maltbie
+ * Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * @author Daniel J. Maltbie (dmaltbie@daloma.org)
+ * @author Eric B. Decker <cire831@gmail.com>
  *
  * This module handles the logical interface to the receive buffer
  * along with the higher level interface to reference the messages
@@ -95,7 +96,7 @@ module GPSMsgBufP {
   }
 }
 implementation {
-  norace gps_buf_t                     buffer;
+  norace gps_buf_t       buffer;
   norace gps_msg_table_t msg_table[GPS_MAX_MSG_TABLE];
 
 /* utility routines */
@@ -113,15 +114,15 @@ implementation {
 /* buffer handling interface routines */
 
   async command       void  GPSBuffer.add_byte(uint8_t byte) {
-    if (!buffer.started) {                    // msg_start() not called yet
+    if (!buffer.collect_state) {                  // msg_start() not called yet
       _panic(GPSW_ADD_BYTE, byte);
       return;
     }
-    if (buffer.flushing) {                   // flushing, waiting for msg_complete()
+    if (buffer.collect_state == BC_FLUSHING) {      // flushing, waiting for msg_complete()
       return;
     }
     if (buffer.i_current >= (GPS_MAX_BUF - 1)) { // out-of-range offset
-      buffer.flushing = TRUE;
+      buffer.collect_state = BC_FLUSHING;
       return;
     }
     nop();
@@ -168,29 +169,29 @@ implementation {
 
   async command       void     GPSBuffer.msg_abort() {
     atomic {
-      buffer.started = FALSE;
+      buffer.collect_state = BC_IDLE;
       buffer.i_current = buffer.i_begin;
       buffer.checking = CHECK_OFF;
-      buffer.flushing = FALSE;
     }
   }
 
   async command       void     GPSBuffer.msg_complete() {
-    uint8_t              i;
-    gps_msg_t            *msg = 0;
+    unsigned int   i;
+    gps_msg_t      *msg;
 
-    if (!buffer.started) {
-      _panic(GPSW_MSG_COMPLETE, 1);
-      return;
-    }
-    buffer.started = FALSE;
-    if (buffer.flushing) {
-      buffer.flushing = FALSE;
-      buffer.i_current = buffer.i_begin;    // flush incomplete msg
-      return;
-    }
-    nop();
     atomic {
+      if (!buffer.collect_state) {      /* collecting? */
+        _panic(GPSW_MSG_COMPLETE, 1);   /* nope - should be */
+        return;
+      }
+      if (buffer.collect_state == BC_FLUSHING) {
+        buffer.collect_state = BC_IDLE;
+        buffer.i_current = buffer.i_begin;
+        return;
+      }
+      nop();
+      /* add completed msg to msg table */
+      msg = NULL;
       for (i = 0; i < GPS_MAX_MSG_TABLE; i++) {   // add completed msg to table
         if (msg_table[i].state == MSG_FREE) {
           msg_table[i].state = MSG_IN_USE;
@@ -201,27 +202,29 @@ implementation {
           break;
         }
       }
+      buffer.collect_state = BC_IDLE;
     }
-    if (msg)
+    if (msg) {
       signal GPSReceive.receive(msg);
-    else {    // didn't find a free entry, adjust i_current to drop the msg
-      buffer.i_current = buffer.i_begin;
-      _warn(GPSW_MSG_COMPLETE, 2);
+      return;
     }
+
+    /* no free entry in message table, drop current incoming */
+    buffer.i_current = buffer.i_begin;
+    _warn(GPSW_MSG_COMPLETE, 2);
   }
 
   async command       void     GPSBuffer.msg_start() {
-    if (buffer.started) {
+    if (buffer.collect_state) {         /* anything other than idle is wrong */
       _panic(GPSW_MSG_START, 0);
     }
     nop();
-    buffer.started = TRUE;
+    buffer.collect_state = BC_BODY;
     buffer.i_begin = (((uint32_t) &buffer.data[buffer.i_current] % 2) != 0) // force word boundary
                       ? buffer.i_current++ : buffer.i_current;
     buffer.i_current += sizeof(gps_msg_t);   // add room for typed data header
     buffer.checking = CHECK_OFF;
     buffer.checksum = 0;
-    buffer.flushing = FALSE;
   }
 
 /* message handling interface routines */
@@ -254,8 +257,7 @@ implementation {
     buffer.i_limit = 0;
     buffer.i_begin = 0;
     buffer.i_limit = 0;
-    buffer.flushing = FALSE;
-    buffer.started = FALSE;
+    buffer.collect_state = BC_IDLE;
     buffer.checking = CHECK_OFF;
     i = 0;
     for (i = 0; i < GPS_MAX_MSG_TABLE; i++) {

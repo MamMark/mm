@@ -19,6 +19,14 @@ typedef enum {
   CHECK_SIRFBIN
 } gps_checksum_t;
 
+
+typedef enum {
+  BC_IDLE = 0,
+  BC_BODY,
+  BC_FLUSHING,
+} buf_collect_state_t;
+
+
 typedef struct gps_buf_struct {
   uint16_t                    i_current;
   uint16_t                    i_begin;
@@ -26,9 +34,8 @@ typedef struct gps_buf_struct {
   uint16_t                    i_checksum;
   uint16_t                    checksum;
   gps_checksum_t              checking;
-  bool                        flushing;
-  bool                        started;
   uint8_t                     data[GPS_MAX_BUF] __attribute__ ((aligned (2)));
+  buf_collect_state_t         collect_state;
 } gps_buf_t;
 //
 
