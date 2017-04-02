@@ -14,9 +14,9 @@
 #define GPS_MAX_MSG_TABLE     20
 
 typedef enum {
-  CHECK_OFF,
+  CHECK_OFF = 0,
   CHECK_NMEA,
-  CHECK_SIRF
+  CHECK_SIRFBIN
 } gps_checksum_t;
 
 typedef struct gps_buf_struct {

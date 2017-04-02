@@ -126,11 +126,19 @@ implementation {
     }
     nop();
     buffer.data[buffer.i_current] = byte;
-    if (buffer.checking == CHECK_NMEA) {
-      buffer.checksum ^= byte; // checksum ^= *byte++
-    } else if (buffer.checking == CHECK_SIRF) {
-      buffer.checksum += byte;
-      buffer.checksum &= 32767;// (pow(2,15) - 1);
+    switch(buffer.checking) {
+      default:
+        _panic(GPSW_ADD_BYTE, byte);
+        break;
+      case CHECK_OFF:
+        break;
+      case CHECK_NMEA:
+        buffer.checksum ^= byte;
+        break;
+      case CHECK_SIRFBIN:
+        buffer.checksum += byte;
+        buffer.checksum &= 0x7fff;
+        break;
     }
     buffer.i_current++;
   }
@@ -144,7 +152,7 @@ implementation {
 
   async command       void     GPSBuffer.begin_SIRF_SUM() {
     atomic {
-      buffer.checking = CHECK_SIRF;
+      buffer.checking = CHECK_SIRFBIN;
       buffer.checksum = 0;
     }
   }
