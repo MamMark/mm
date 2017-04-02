@@ -96,7 +96,7 @@ module GPSMsgBufP {
 }
 implementation {
   norace gps_buf_t                     buffer;
-  norace gps_msg_table_t               table[GPS_MAX_MSG_TABLE];
+  norace gps_msg_table_t msg_table[GPS_MAX_MSG_TABLE];
 
 /* utility routines */
 
@@ -184,12 +184,12 @@ implementation {
     nop();
     atomic {
       for (i = 0; i < GPS_MAX_MSG_TABLE; i++) {   // add completed msg to table
-        if (table[i].state == FREE) {
-          table[i].state = IN_USE;
+        if (msg_table[i].state == MSG_FREE) {
+          msg_table[i].state = MSG_IN_USE;
           msg = (gps_msg_t *) &buffer.data[buffer.i_begin];
-          table[i].msg = msg;
-          table[i].len = buffer.i_current - buffer.i_begin;
-          msg->len = table[i].len;
+          msg_table[i].msg = msg;
+          msg_table[i].len = buffer.i_current - buffer.i_begin;
+          msg->len = msg_table[i].len;
           break;
         }
       }
@@ -224,8 +224,8 @@ implementation {
     nop();
     for (i = 0; i < GPS_MAX_MSG_TABLE; i++) {
       atomic {
-        if (table[i].msg == msg) {
-          table[i].state = FREE;
+        if (msg_table[i].msg == msg) {
+          msg_table[i].state = MSG_FREE;
           return;
         }
       }
@@ -251,11 +251,11 @@ implementation {
     buffer.checking = CHECK_OFF;
     i = 0;
     for (i = 0; i < GPS_MAX_MSG_TABLE; i++) {
-      table[i].state = FREE;
-      table[i].msg = 0;
-      table[i].len = 0;
+      msg_table[i].state = MSG_FREE;
+      msg_table[i].msg = NULL;
+      msg_table[i].len = 0;
     }
-    table[0].len = GPS_MAX_BUF;  // set first entry to hold entire buffer
+    msg_table[0].len = GPS_MAX_BUF;  // set first entry to hold entire buffer
     return SUCCESS;
   }
 

@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2017 Daniel J. Maltbie
+ * Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * @author Daniel J. Maltbie (dmaltbie@daloma.org)
- *
+ * @author Eric B. Decker <cire831@gmail.com>
  */
 
 #ifndef __GPSMSGBUF_H__
@@ -33,9 +33,9 @@ typedef struct gps_buf_struct {
 //
 
 typedef enum {
-  FREE,
-  IN_USE,
-  BUSY
+  MSG_FREE = 0,
+  MSG_IN_USE,
+  MSG_BUSY
 } gps_msg_state_t;
 
 typedef struct gps_msg_struct {
