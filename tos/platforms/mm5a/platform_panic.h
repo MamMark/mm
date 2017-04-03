@@ -26,10 +26,10 @@ enum {
   __pcode_ss_recov,
   __pcode_gps,
   __pcode_sns,
+  __pcode_comm,
 
 #ifdef notdef
   __pcode_misc,
-  __pcode_comm,
   __pcode_pwr,
 #endif
 };
@@ -37,13 +37,13 @@ enum {
 #define PANIC_ADC       __pcode_adc
 #define PANIC_MS        __pcode_ms
 #define PANIC_SS        __pcode_ss
-#define PANIC_SS        __pcode_ss_recov
+#define PANIC_SS_RECOV  __pcode_ss_recov
 #define PANIC_GPS       __pcode_gps
 #define PANIC_SNS       __pcode_sns
+#define PANIC_COMM      __pcode_comm
 
 #ifdef notdef
 #define PANIC_MISC      __pcode_misc
-#define PANIC_COMM      __pcode_comm
 #define PANIC_PWR       __pcode_pwr
 #endif
 
