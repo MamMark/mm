@@ -274,7 +274,7 @@ implementation {
    * the end to let the SD finish.
    */
   uint8_t sd_send_command(uint8_t cmd, uint32_t arg) {
-    uint8_t rsp, tmp;
+    uint8_t rsp;
 
     call HW.sd_set_cs();
     rsp = sd_raw_cmd(cmd, arg);
@@ -456,8 +456,6 @@ implementation {
    ***********************************************************************/
 
   command error_t SoftwareInit.init() {
-    error_t err;
-
     sdc.majik_a = SD_MAJIK;
     sdc.cur_cid = CID_NONE;
     sdc.majik_b = SD_MAJIK;
@@ -1008,7 +1006,6 @@ implementation {
 
 
   command error_t SDwrite.write[uint8_t cid](uint32_t blk_id, uint8_t *data) {
-    sd_cmd_t *cmd;
     uint8_t   rsp;
 
     if (sdc.sd_state != SDS_IDLE) {
@@ -1094,7 +1091,6 @@ implementation {
 
 
   command error_t SDerase.erase[uint8_t cid](uint32_t blk_s, uint32_t blk_e) {
-    sd_cmd_t *cmd;
     uint8_t   rsp;
 
     if (sdc.sd_state != SDS_IDLE) {

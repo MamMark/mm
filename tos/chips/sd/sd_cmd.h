@@ -37,13 +37,6 @@
 #ifndef __SD_CMD_H__
 #define __SD_CMD_H__
 
-typedef struct sd_cmd {
-  uint8_t     cmd;
-  nx_uint32_t arg;
-  uint8_t     crc;
-} sd_cmd_t;
-
-
 #define MSK_IDLE 0x01
 #define MSK_ERASE_RST 0x02
 #define MSK_ILL_CMD 0x04
