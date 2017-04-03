@@ -79,16 +79,17 @@ typedef enum {
  * won't fit.
  */
 
-typedef struct {
+typedef struct {                /* size 4 */
   uint16_t len;
   dtype_t  dtype;
 } dt_header_t;
 
-typedef struct {
+
+typedef struct {                /* size 8 */
   uint16_t len;
   dtype_t  dtype;
-  uint8_t  data[0];
-} dt_config_t;
+  uint32_t stamp_ms;
+} dt_header_ts_t;
 
 
 /*
@@ -127,15 +128,16 @@ typedef struct {
 
 
 typedef struct {
-  uint16_t len;                 /* size 26, 0x1A */
+  uint16_t len;                 /* size 27, 0x1A */
   dtype_t  dtype;
   uint32_t stamp_ms;
   parg_t   arg0;
   parg_t   arg1;
   parg_t   arg2;
   parg_t   arg3;
-  uint8_t  pcode;
-  uint8_t  where;
+  uint8_t  pcode;               /* from Panic.panic  */
+  uint8_t  where;               /* from Panic.panic  */
+  uint8_t  index;               /* which panic block */
 } dt_panic_t;
 
 
@@ -151,12 +153,11 @@ enum {
 
 
 typedef struct {
-  uint16_t len;                 /* size 9 + var */
+  uint16_t len;                 /* size 9 */
   dtype_t  dtype;
   uint32_t stamp_ms;
-  uint8_t  chip_type;
-  uint8_t  gps_version[0];
-} dt_gps_version_t;
+  uint8_t  chip;
+} dt_gps_t;
 
 
 /*
@@ -200,6 +201,7 @@ typedef struct {
   uint32_t hdop;                /* err *5 */
 } dt_gps_pos_t;
 
+
 typedef struct {
   uint16_t len;                 /* size 14 + var */
   dtype_t  dtype;
@@ -218,13 +220,6 @@ typedef struct {
   uint16_t mask_id;
   uint16_t data[0];
 } dt_sensor_set_t;
-
-typedef struct {
-  uint16_t len;                 /* size 8 + var */
-  dtype_t  dtype;
-  uint32_t stamp_ms;
-  uint8_t  data[0];
-} dt_test_t;
 
 
 /*
@@ -249,22 +244,6 @@ typedef struct {
   uint8_t  sec;
   uint8_t  data[0];
 } dt_note_t;
-
-
-/*
- * gps raw, message as seen from the gps.
- *
- * could be raw nmea, or raw sirfbin, dtype tells the difference
- * see above for chip definition.
- */
-
-typedef struct {
-  uint16_t len;                 /* size 9 + var */
-  dtype_t  dtype;
-  uint32_t stamp_ms;
-  uint8_t  chip;
-  uint8_t  data[0];
-} dt_gps_raw_t;
 
 
 typedef struct {
@@ -308,29 +287,20 @@ typedef struct {
 } dt_event_t;
 
 
-typedef struct {
-  uint16_t len;                 /* size 8, 0x08 */
-  dtype_t  dtype;
-  uint32_t stamp_ms;
-} dt_debug_t;
-
-
 enum {
   DT_HDR_SIZE_HEADER        = sizeof(dt_header_t),
-  DT_HDR_SIZE_CONFIG        = sizeof(dt_config_t),
+  DT_HDR_SIZE_HEADER_TS     = sizeof(dt_header_ts_t),
   DT_HDR_SIZE_SYNC          = sizeof(dt_sync_t),
   DT_HDR_SIZE_REBOOT        = sizeof(dt_reboot_t),
   DT_HDR_SIZE_PANIC         = sizeof(dt_panic_t),
+  DT_HDR_SIZE_GPS           = sizeof(dt_gps_t),
   DT_HDR_SIZE_GPS_TIME      = sizeof(dt_gps_time_t),
   DT_HDR_SIZE_GPS_POS       = sizeof(dt_gps_pos_t),
   DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_t),
   DT_HDR_SIZE_SENSOR_SET    = sizeof(dt_sensor_set_t),
-  DT_HDR_SIZE_TEST          = sizeof(dt_test_t),
   DT_HDR_SIZE_NOTE	    = sizeof(dt_note_t),
-  DT_HDR_SIZE_GPS_RAW       = sizeof(dt_gps_raw_t),
   DT_HDR_SIZE_VERSION       = sizeof(dt_version_t),
   DT_HDR_SIZE_EVENT	    = sizeof(dt_event_t),
-  DT_HDR_SIZE_DEBUG	    = sizeof(dt_debug_t),
 };
 
 
