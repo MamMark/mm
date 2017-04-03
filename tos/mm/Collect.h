@@ -87,14 +87,14 @@
 #define DC_CHKSUM_LOC 510
 
 typedef struct {
-  uint16_t majik_a;
+  uint16_t     majik_a;
+  uint16_t     remaining;
   ss_wr_buf_t *handle;
-  uint8_t *cur_buf;
-  uint8_t *cur_ptr;
-  uint16_t remaining;
-  uint16_t chksum;
-  uint16_t seq;
-  uint16_t majik_b;
+  uint8_t     *cur_buf;
+  uint8_t     *cur_ptr;
+  uint16_t     chksum;
+  uint16_t     seq;
+  uint16_t     majik_b;
 } dc_control_t;
 
 #define DC_MAJIK 0x1008
