@@ -90,6 +90,13 @@ On Power_Up, we see NIRQ go low.  We see the following:
   (rsp[1] << 8) | rsp[2] is part number, ie. 4468.  from RadioHead
   RH_RF24.cpp code.
 
+  from http://community.silabs.com/t5/Proprietary/Si446x-PART-INFO-and-FUNC-INFO-API-commands-question/td-p/153149
+
+  Part    ROMID    API Revision
+  4463    3        B1B          si44631B
+  4463    6        C2A          si44632C needs patch, do not use
+  4468    6        A2A          si44682A
+
 
 
 Packet format:
