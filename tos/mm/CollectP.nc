@@ -140,8 +140,6 @@ implementation {
   }
 
 
-  command void LogEvent.logEvent(uint8_t ev, uint16_t arg) {
-    uint8_t event_data[DT_HDR_SIZE_EVENT];
   /*
    * All data fields are assumed to be little endian on both sides, tag and
    * host side.
@@ -207,15 +205,17 @@ implementation {
   }
 
 
+  command void LogEvent.logEvent(uint16_t ev, uint16_t arg) {
+    dt_event_t  e;
     dt_event_t *ep;
 
-    ep = (dt_event_t *) event_data;
-    ep->len = DT_HDR_SIZE_EVENT;
+    ep = &e;
+    ep->len = sizeof(e);
     ep->dtype = DT_EVENT;
     ep->stamp_ms = call LocalTime.get();
     ep->ev = ev;
     ep->arg = arg;
-    call Collect.collect(event_data, DT_HDR_SIZE_EVENT);
+    call Collect.collect((void *)ep, sizeof(e), NULL, 0);
   }
 
   async event void Panic.hook() { }
