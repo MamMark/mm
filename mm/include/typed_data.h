@@ -13,7 +13,7 @@
 #define __TYPED_DATA_H__
 
 typedef enum {
-  DT_IGNORE		= 0,
+  DT_TINTRYALF		= 0,            /* next, force next sector */
   DT_CONFIG		= 1,
   DT_SYNC		= 2,
   DT_REBOOT		= 3,		/* reboot sync */
@@ -40,9 +40,11 @@ typedef enum {
 } dtype_t;
 
 
+#define DT_MAX_HEADER 64
+
 /*
- * In memory and within a SD sector, DT headers should start on a 4 byte
- * boundary (aligned(4)).  This means that all data must be padded as
+ * In memory and within a SD sector, DT headers are constrained to be 32
+ * bit aligned (aligned(4)).  This means that all data must be padded as
  * needed to make the next header start on a 4 byte boundary.
  *
  * All records (data blocks) start with 2 byte little endian length.  A 2
@@ -67,6 +69,14 @@ typedef enum {
  *
  * <something>_BLOCK_SIZE is used to say how much data the whole structure
  * needs to take.
+ *
+ * The special dtype, DT_TINTRYALF, is used to force reading/writing the
+ * next sector when a dblk header will not fit contiguously into the
+ * current sector.  The weird letters mean, This Is Not The Record You Are
+ * Looking For, a StarWars play.  It is also sort of pronounceable.  It is
+ * used by the Collector, when the header won't fit into the current disk
+ * sector.  It is only used towards the end of the sector when the header
+ * won't fit.
  */
 
 typedef struct {
