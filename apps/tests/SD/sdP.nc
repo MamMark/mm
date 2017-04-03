@@ -50,7 +50,7 @@
 #include "typed_data.h"
 
 
-uint8_t d[514] __attribute__ ((aligned (4)));
+uint8_t dxx[514] __attribute__ ((aligned (4)));
 volatile bool sd_wait = 1;
 
 
@@ -240,10 +240,10 @@ implementation {
     uint32_t *dp, val32;
 
     val32 = (val << 24 | val << 16 | val << 8 | val);
-    dp = (uint32_t *) &d;
+    dp = (uint32_t *) &dxx;
     for (i = 0; i < 514/4; i++)
       dp[i] = val32;
-    d[512] = d[513] = val;
+    dxx[512] = dxx[513] = val;
   }
 
 
@@ -260,9 +260,9 @@ implementation {
     get_scr();
     call SDsa.reset();
     nop();
-    call SDsa.read(0, d);
-    call SDsa.read(0x10000, d);
-    call SDsa.write(0x10000, d);
+    call SDsa.read(0, dxx);
+    call SDsa.read(0x10000, dxx);
+    call SDsa.write(0x10000, dxx);
     call SDsa.off();
     while(1) ;
 #endif
@@ -276,7 +276,7 @@ implementation {
     nop();
     nop();
     sd_state = READ0;
-    call SDread.read(0x00000, d);
+    call SDread.read(0x00000, dxx);
   }
 
 
@@ -287,22 +287,22 @@ implementation {
     nop();
     switch(sd_state) {
       case READ0:
-        call SDwrite.write(0x08000, d);
+        call SDwrite.write(0x08000, dxx);
         sd_state = WRITE1;
         break;
 
       case READ1:
-        call SDread.read(0x10000, d);
+        call SDread.read(0x10000, dxx);
         sd_state = READ2;
         break;
 
       case READ2:
-        call SDread.read(0x20000, d);
+        call SDread.read(0x20000, dxx);
         sd_state = READ3;
         break;
 
       case READ3:
-        call SDread.read(0x40000, d);
+        call SDread.read(0x40000, dxx);
         sd_state = READ4;
         break;
 
@@ -312,22 +312,22 @@ implementation {
         call SDsa.reset();
 
         nop();
-        call SDsa.read(0, d);
-        call SDsa.read(0, d);
+        call SDsa.read(0, dxx);
+        call SDsa.read(0, dxx);
         set(0xff);
         nop();
-        call SDsa.read(0x00000, d);
-        call SDsa.read(0x08000, d);
-        call SDsa.read(0x10000, d);
-        call SDsa.read(0x20000, d);
-        call SDsa.read(0x40000, d);
+        call SDsa.read(0x00000, dxx);
+        call SDsa.read(0x08000, dxx);
+        call SDsa.read(0x10000, dxx);
+        call SDsa.read(0x20000, dxx);
+        call SDsa.read(0x40000, dxx);
         for (i = 0; i < 514; i++)
-          d[i] = i + 1;
+          dxx[i] = i + 1;
         nop();
-        call SDsa.write(0x5000, d);
+        call SDsa.write(0x5000, dxx);
         set(0);
         nop();
-        call SDsa.read(0x5000, d);
+        call SDsa.read(0x5000, dxx);
         nop();
         send_cmd8();
         get_ocr();				// CMD58
@@ -347,7 +347,7 @@ implementation {
   event void SDwrite.writeDone(uint32_t blk_id, uint8_t* buf, error_t error) {
     nop();
     nop();
-    call SDread.read(0x08000, d);
+    call SDread.read(0x08000, dxx);
     sd_state = READ1;
   }
 
