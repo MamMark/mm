@@ -1,186 +1,189 @@
 #ifndef __SIRFBIN_MSG_H__
 #define __SIRFBIN_MSG_H__
 
+#ifndef PACKED
+#define PACKED __attribute__((__packed__))
+#endif
+
 /* MID 2, Nav Data */
-typedef nx_struct gps_nav_data {
-  nx_uint8_t   start1;
-  nx_uint8_t   start2;
-  nx_uint16_t  len;
-  nx_uint8_t   id;
-  nx_int32_t   xpos;
-  nx_int32_t   ypos;
-  nx_int32_t   zpos;
-  nx_int16_t   xvel;
-  nx_int16_t   yvel;
-  nx_int16_t   zvel;
-  nx_uint8_t   mode1;
-  nx_uint8_t   hdop;
-  nx_uint8_t   mode2;
-  nx_uint16_t  week;
-  nx_uint32_t  tow;
-  nx_uint8_t   sats;
-  nx_uint8_t   data[0];
-} gps_nav_data_nt;
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   id;
+  int32_t   xpos;
+  int32_t   ypos;
+  int32_t   zpos;
+  int16_t   xvel;
+  int16_t   yvel;
+  int16_t   zvel;
+  uint8_t   mode1;
+  uint8_t   hdop;
+  uint8_t   mode2;
+  uint16_t  week;
+  uint32_t  tow;
+  uint8_t   sats;
+  uint8_t   data[0];
+} PACKED sb_nav_data_t;
 
 /* MID 4, Tracker Data */
-typedef nx_struct gps_tracker_data {
-  nx_uint8_t   start1;
-  nx_uint8_t   start2;
-  nx_uint16_t  len;
-  nx_uint8_t   id;
-  nx_uint16_t  week;
-  nx_uint32_t  tow;
-  nx_uint8_t   chans;
-  nx_uint8_t   data[0];
-} gps_tracker_data_nt;
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   id;
+  uint16_t  week;
+  uint32_t  tow;
+  uint8_t   chans;
+  uint8_t   data[0];
+} PACKED sb_tracker_data_t;
 
 /* MID 6, s/w version */
-typedef nx_struct gps_soft_version_data {
-  nx_uint8_t   start1;
-  nx_uint8_t   start2;
-  nx_uint16_t  len;
-  nx_uint8_t   id;
-  nx_uint8_t   data[0];
-} gps_soft_version_data_nt;
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   id;
+  uint8_t   data[0];
+} PACKED sb_soft_version_data_t;
 
 /* MID 7, clock status */
-typedef nx_struct gps_clock_status_data {
-  nx_uint8_t   start1;
-  nx_uint8_t   start2;
-  nx_uint16_t  len;
-  nx_uint8_t   id;
-  nx_uint16_t  week;
-  nx_uint32_t  tow;
-  nx_uint8_t   sats;
-  nx_uint32_t  drift;
-  nx_uint32_t  bias;
-  nx_uint32_t  gpstime;
-} gps_clock_status_data_nt;
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   id;
+  uint16_t  week;
+  uint32_t  tow;
+  uint8_t   sats;
+  uint32_t  drift;
+  uint32_t  bias;
+  uint32_t  gpstime;
+} PACKED sb_clock_status_data_t;
 
 /* MID 10, error data */
-typedef nx_struct gps_error_data {
-  nx_uint8_t   start1;
-  nx_uint8_t   start2;
-  nx_uint16_t  len;
-  nx_uint8_t   id;
-  nx_uint16_t  submsg;
-  nx_uint16_t  count;
-  nx_uint8_t   data[0];
-} gps_error_data_nt;
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   id;
+  uint16_t  submsg;
+  uint16_t  count;
+  uint8_t   data[0];
+} PACKED sb_error_data_t;
 
 /* MID 14, almanac data */
-typedef nx_struct gps_almanac_status_data {
-  nx_uint8_t   start1;
-  nx_uint8_t   start2;
-  nx_uint16_t  len;
-  nx_uint8_t   id;
-  nx_uint8_t   satid;
-  nx_uint16_t  weekstatus;
-  nx_uint8_t  data[0];
-} gps_almanac_status_data_nt;
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   id;
+  uint8_t   satid;
+  uint16_t  weekstatus;
+  uint8_t  data[0];
+} PACKED sb_almanac_status_data_t;
 
 
 /* MID 28, nav lib data */
-typedef nx_struct gps_nav_lib_data {
-  nx_uint8_t   start1;
-  nx_uint8_t   start2;
-  nx_uint16_t  len;
-  nx_uint8_t   id;
-  nx_uint8_t   chan;
-  nx_uint32_t  time_tag;
-  nx_uint8_t   sat_id;
-  nx_uint64_t  soft_time;
-  nx_uint64_t  psdo_range;
-  nx_uint32_t  car_freq;
-  nx_uint64_t  car_phase;
-  nx_uint16_t  time_in_track;
-  nx_uint8_t   sync_flags;
-  nx_uint8_t   c_no_1;
-  nx_uint8_t   c_no_2;
-  nx_uint8_t   c_no_3;
-  nx_uint8_t   c_no_4;
-  nx_uint8_t   c_no_5;
-  nx_uint8_t   c_no_6;
-  nx_uint8_t   c_no_7;
-  nx_uint8_t   c_no_8;
-  nx_uint8_t   c_no_9;
-  nx_uint8_t   c_no_10;
-  nx_uint16_t  delta_range_intv;
-  nx_uint16_t  mean_delta_time_range;
-  nx_uint16_t  extrap_time;
-  nx_uint8_t   phase_err_cnt;
-  nx_uint8_t   low_pow_cnt;
-} gps_nav_lib_data_nt;
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   id;
+  uint8_t   chan;
+  uint32_t  time_tag;
+  uint8_t   sat_id;
+  uint64_t  soft_time;
+  uint64_t  psdo_range;
+  uint32_t  car_freq;
+  uint64_t  car_phase;
+  uint16_t  time_in_track;
+  uint8_t   sync_flags;
+  uint8_t   c_no_1;
+  uint8_t   c_no_2;
+  uint8_t   c_no_3;
+  uint8_t   c_no_4;
+  uint8_t   c_no_5;
+  uint8_t   c_no_6;
+  uint8_t   c_no_7;
+  uint8_t   c_no_8;
+  uint8_t   c_no_9;
+  uint8_t   c_no_10;
+  uint16_t  delta_range_intv;
+  uint16_t  mean_delta_time_range;
+  uint16_t  extrap_time;
+  uint8_t   phase_err_cnt;
+  uint8_t   low_pow_cnt;
+} PACKED sb_nav_lib_data_t;
 
 /* MID 41, geodetic data */
-typedef nx_struct gps_geodetic {
-  nx_uint8_t   start1;
-  nx_uint8_t   start2;
-  nx_uint16_t  len;
-  nx_uint8_t   id;
-  nx_uint16_t  nav_valid;
-  nx_uint16_t  nav_type;
-  nx_uint16_t  week;
-  nx_uint32_t  tow;			/* seconds x 1e3 */
-  nx_uint16_t  utc_year;
-  nx_uint8_t   utc_month;
-  nx_uint8_t   utc_day;
-  nx_uint8_t   utc_hour;
-  nx_uint8_t   utc_min;
-  nx_uint16_t  utc_sec;			/* x 1e3 (millisecs) */
-  nx_uint32_t  sat_mask;
-  nx_int32_t   lat;
-  nx_int32_t   lon;
-  nx_int32_t   alt_elipsoid;
-  nx_int32_t   alt_msl;
-  nx_uint8_t   map_datum;
-  nx_uint16_t  sog;
-  nx_uint16_t  cog;
-  nx_uint16_t  mag_var;
-  nx_int16_t   climb;
-  nx_int16_t   heading_rate;
-  nx_uint32_t  ehpe;
-  nx_uint32_t  evpe;
-  nx_uint32_t  ete;
-  nx_uint16_t  ehve;
-  nx_int32_t   clock_bias;
-  nx_int32_t   clock_bias_err;
-  nx_int32_t   clock_drift;
-  nx_int32_t   clock_drift_err;
-  nx_uint32_t  distance;
-  nx_uint16_t  distance_err;
-  nx_uint16_t  head_err;
-  nx_uint8_t   num_svs;
-  nx_uint8_t   hdop;
-  nx_uint8_t   mode;
-} gps_geodetic_nt;
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   id;
+  uint16_t  nav_valid;
+  uint16_t  nav_type;
+  uint16_t  week;
+  uint32_t  tow;			/* seconds x 1e3 */
+  uint16_t  utc_year;
+  uint8_t   utc_month;
+  uint8_t   utc_day;
+  uint8_t   utc_hour;
+  uint8_t   utc_min;
+  uint16_t  utc_sec;			/* x 1e3 (millisecs) */
+  uint32_t  sat_mask;
+  int32_t   lat;
+  int32_t   lon;
+  int32_t   alt_elipsoid;
+  int32_t   alt_msl;
+  uint8_t   map_datum;
+  uint16_t  sog;
+  uint16_t  cog;
+  uint16_t  mag_var;
+  int16_t   climb;
+  int16_t   heading_rate;
+  uint32_t  ehpe;
+  uint32_t  evpe;
+  uint32_t  ete;
+  uint16_t  ehve;
+  int32_t   clock_bias;
+  int32_t   clock_bias_err;
+  int32_t   clock_drift;
+  int32_t   clock_drift_err;
+  uint32_t  distance;
+  uint16_t  distance_err;
+  uint16_t  head_err;
+  uint8_t   num_svs;
+  uint8_t   hdop;
+  uint8_t   mode;
+} PACKED sb_geodetic_t;
 
 /* MID 52, 1PPS data */
-typedef nx_struct gps_pps_data {
-  nx_uint8_t   start1;
-  nx_uint8_t   start2;
-  nx_uint16_t  len;
-  nx_uint8_t   id;
-  nx_uint8_t   hr;
-  nx_uint8_t   min;
-  nx_uint8_t   sec;
-  nx_uint8_t   day;
-  nx_uint8_t   mo;
-  nx_uint16_t  year;
-  nx_uint16_t  utcintoff;
-  nx_uint32_t  utcfracoff;
-  nx_uint8_t   status;
-  nx_uint32_t  reserved;
-} gps_pps_data_nt;
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   mid;
+  uint8_t   hr;
+  uint8_t   min;
+  uint8_t   sec;
+  uint8_t   day;
+  uint8_t   mo;
+  uint16_t  year;
+  uint16_t  utcintoff;
+  uint32_t  utcfracoff;
+  uint8_t   status;
+  uint32_t  reserved;
+} PACKED sb_pps_data_t;
 
 
-/* MID 255, Dev Data */
-typedef nx_struct gps_dev_data {
-  nx_uint8_t   start1;
-  nx_uint8_t   start2;
-  nx_uint16_t  len;
-  nx_uint8_t   id;
-  nx_uint8_t   data[0];
-} gps_dev_data_nt;
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   mid;
+  uint8_t   data[0];
+} PACKED sb_header_t;
 
 #endif  /* __SIRFBIN_MSG_H__ */

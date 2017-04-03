@@ -352,7 +352,7 @@ implementation {
   }
 
   event void Timer.fired() {
-    dt_test_nt *tp;
+    dt_test_t *tp;
 
     nop();
     tp = (void *) d;

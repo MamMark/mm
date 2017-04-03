@@ -1,60 +1,18 @@
 /*
- * Copyright (c) 2016, Eric B. Decker
+ * Copyright (c) 2016-2017 Eric B. Decker
  * All Rights Reserved
  *
  * typed_data: definitions for typed data on Mass Storage
- * and any Data network packets.  DT, stands for data typed.
+ * and any Data network packets.  DT, stands for data, typed.
  *
- * MSP430 (using ncc/gcc): the structures are
- * set up to be 2 byte aligned (short alignment) and the structures
- * are filled in completely.  16 bit fields are positioned to be
- * aligned at 16 bit alignment.  Not sure if this matters.
+ * MSP432, structures are aligned to a 32 bit boundary (align(4)).
+ * Multibyte datums are stored native, little endian.
  */
 
 #ifndef __TYPED_DATA_H__
 #define __TYPED_DATA_H__
 
-/*
- * keep mig happy.  Each tag typed_data block can be transmitted in an
- * encapsulated AM message packet.  The AM type is AM_MM_DATA.
- */
-
-enum {
-  AM_DT_IGNORE		= 0xA1,
-  AM_DT_CONFIG		= 0xA1,
-  AM_DT_SYNC		= 0xA1,
-  AM_DT_SYNC_RESTART	= 0xA1,
-  AM_DT_REBOOT		= 0xA1,
-  AM_DT_PANIC		= 0xA1,
-  AM_DT_GPS_VERSION	= 0xA1,
-  AM_DT_GPS_TIME	= 0xA1,
-  AM_DT_GPS_POS		= 0xA1,
-  AM_DT_SENSOR_DATA	= 0xA1,
-  AM_DT_SENSOR_SET	= 0xA1,
-  AM_DT_TEST		= 0xA1,
-  AM_DT_NOTE		= 0xA1,
-  AM_DT_GPS_RAW		= 0xA1,
-  AM_GPS_NAV_DATA	= 0xA1,
-  AM_GPS_TRACKER_DATA	= 0xA1,
-  AM_GPS_SOFT_VERSION_DATA
-			= 0xA1,
-  AM_GPS_ERROR_DATA	= 0xA1,
-  AM_GPS_GEODETIC	= 0xA1,
-  AM_GPS_PPS_DATA	= 0xA1,
-  AM_GPS_CLOCK_STATUS_DATA
-			= 0xA1,
-  AM_GPS_ALMANAC_STATUS_DATA
-			= 0xA1,
-  AM_GPS_NAV_LIB_DATA   = 0xA1,
-  AM_GPS_DEV_DATA	= 0xA1,
-  AM_GPS_UNK		= 0xA1,
-  AM_DT_VERSION		= 0xA1,
-  AM_DT_EVENT		= 0xA1,
-  AM_DT_DEBUG		= 0xA1,
-};
-
-
-enum {
+typedef enum {
   DT_IGNORE		= 0,
   DT_CONFIG		= 1,
   DT_SYNC		= 2,
@@ -75,94 +33,101 @@ enum {
   /*
    * GPS_RAW is used to encapsulate data as received from the GPS.
    */
-  DT_GPS_RAW		= 15,
-  DT_GPS_NMEA_RAW	= 16,
+  DT_GPS_RAW_SIRFBIN	= 15,
+  DT_GPS_RAW_NMEA	= 16,
   DT_MAX		= 16,
-};
+  DT_16                 = 0xffff,       /* force to 2 bytes */
+} dtype_t;
 
 
 /*
- * All multibyte fields are stored in network order
- * which is big endian.
+ * In memory and within a SD sector, DT headers should start on a 4 byte
+ * boundary (aligned(4)).  This means that all data must be padded as
+ * needed to make the next header start on a 4 byte boundary.
  *
- * All records (data blocks) start with a big endian
- * 2 byte length.  Then the data type field follows
- * defining the rest of the structure.  Length is the
- * total size of the data block including header and
- * any following data.  This is to provide additional
- * redundancy and allows for skipping records if needed.
- * You still have to get lucky.
+ * All records (data blocks) start with 2 byte little endian length.  A 2
+ * byte little endian data type field (dtype) and optionally a 32 bit (4
+ * byte) time stamp since last reboot.  Units are mis (binary millisecs).
  *
- * DT_HDR_SIZE_<stuff> defines how large any header is
- * prior to variable length data.  It is used for redundancy
- * checks.
+ * Length is the total size of the data block including header and any
+ * following data.  The length does not include any padding at the end of
+ * the data block.  When skipping over records one must compensate for any
+ * potential padding.  The next header must start on an even 4 byte
+ * address.
  *
- * Many of the data blocks defined below use data[0].  This
- * indicates that data is variable in length.  When using
- * these structures the correct size must be allocated (usually
- * on the stack since we don't use malloc) and then the structure
- * is cast to a dt_<type>_nt pointer.  <something>_BLOCK_SIZE is
- * used to say how much data the whole structure needs to take.
+ * ie.  nxt = (cur + len + 3) & 0xffff_fffc
+ *
+ * DT_HDR_SIZE_<stuff> defines how large any header is prior to any
+ * variable length data.  It is used for redundancy checks.
+ *
+ * Many of the data blocks defined below use data[0].  This indicates that
+ * data is variable in length.  When using these structures the correct
+ * size must be allocated (usually on the stack since we don't use malloc)
+ * and then the structure is cast to a dt_<type>_t pointer.
+ *
+ * <something>_BLOCK_SIZE is used to say how much data the whole structure
+ * needs to take.
  */
 
-typedef nx_struct dt_ignore {
-  nx_uint16_t len;
-  nx_uint8_t  dtype;
-} dt_ignore_nt;
+typedef struct {
+  uint16_t len;
+  dtype_t  dtype;
+} dt_header_t;
 
-typedef nx_struct dt_config {
-  nx_uint16_t len;
-  nx_uint8_t  dtype;
-  nx_uint8_t  data[0];
-} dt_config_nt;
+typedef struct {
+  uint16_t len;
+  dtype_t  dtype;
+  uint8_t  data[0];
+} dt_config_t;
+
 
 /*
  * SYNCing:
  *
- * Data written to the SD card is a byte stream of typed data records.
- * If we lose a byte or somehow get out of order (lost sector etc) then
- * we be screwed.  Unless there is some mechanism for resyncing.  The
- * SYNC/REBOOT data block contains a 32 bit majik number that we
- * search for if we get out of sync.  This lets us sync back up to the
- * data stream.
+ * Data written to the SD card is a byte stream of typed data records.  If
+ * we lose a byte or somehow get out of order (lost sector etc) and we need
+ * a mechanism for resyncing.  The SYNC/REBOOT data block contains a 32 bit
+ * majik number that we search for if we get out of sync.  This lets us
+ * sync back up to the data stream.
  *
- * The same majik number is written in both data block types so we only
- * have to search for one value when resyncing.  On reboot the dtype
- * is set to REBOOT indicating the reboot.  Every N minutes
- * a sync record is written to minimize how much data is lost if we
- * need to do a resync.
+ * The same majik number is written in both the SYNC and REBOOT data blocks
+ * so we only have to search for one value when resyncing.  On reboot the
+ * dtype is set to REBOOT indicating the reboot.  Every N minutes a sync
+ * record is written to minimize how much data is lost if we need to do a
+ * resync.
  */
 
 #define SYNC_MAJIK 0xdedf00efUL
 
-typedef nx_struct dt_sync {
-  nx_uint16_t len;
-  nx_uint8_t  dtype;
-  nx_uint32_t stamp_ms;
-  nx_uint32_t sync_majik;
-} dt_sync_nt;
+typedef struct {
+  uint16_t len;                 /* size 12, 0x0C */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint32_t sync_majik;
+} dt_sync_t;
 
 
-typedef nx_struct dt_reboot {
-  nx_uint16_t len;
-  nx_uint8_t  dtype;
-  nx_uint32_t stamp_ms;
-  nx_uint32_t sync_majik;
-  nx_uint16_t boot_count;
-} dt_reboot_nt;
+typedef struct {
+  uint16_t len;                 /* size 14, 0x0E */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint32_t sync_majik;
+  uint16_t boot_count;
+} dt_reboot_t;
 
 
-typedef nx_struct dt_panic {
-  nx_uint16_t len;
-  nx_uint8_t  dtype;
-  nx_uint32_t stamp_ms;
-  nx_uint8_t  pcode;
-  nx_uint8_t  where;
-  nx_uint16_t arg0;
-  nx_uint16_t arg1;
-  nx_uint16_t arg2;
-  nx_uint16_t arg3;
-} dt_panic_nt;
+typedef struct {
+  uint16_t len;                 /* size 26, 0x1A */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  parg_t   arg0;
+  parg_t   arg1;
+  parg_t   arg2;
+  parg_t   arg3;
+  uint8_t  pcode;
+  uint8_t  where;
+} dt_panic_t;
+
 
 /*
  * gps chip types
@@ -175,13 +140,13 @@ enum {
 };
 
 
-typedef nx_struct dt_gps_version {
-  nx_uint16_t len;
-  nx_uint8_t  dtype;
-  nx_uint32_t stamp_ms;
-  nx_uint8_t  chip_type;
-  nx_uint8_t  gps_version[80];
-} dt_gps_version_nt;
+typedef struct {
+  uint16_t len;                 /* size 9 + var */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint8_t  chip_type;
+  uint8_t  gps_version[0];
+} dt_gps_version_t;
 
 
 /*
@@ -189,21 +154,21 @@ typedef nx_struct dt_gps_version {
  * For ORG4472, CHIP_GPS_ORG4472
  * M10478,      CHIP_GPS_GSD4E
  */
-typedef nx_struct dt_gps_time {
-  nx_uint16_t len;
-  nx_uint8_t  dtype;
-  nx_uint32_t stamp_ms;
-  nx_uint8_t  chip_type;
-  nx_uint8_t  num_svs;
-  nx_uint16_t utc_year;
-  nx_uint8_t  utc_month;
-  nx_uint8_t  utc_day;
-  nx_uint8_t  utc_hour;
-  nx_uint8_t  utc_min;
-  nx_uint16_t utc_millsec;
-  nx_uint32_t clock_bias;		/* m x 10^2 */
-  nx_uint32_t clock_drift;		/* m/s x 10^2 */
-} dt_gps_time_nt;
+typedef struct {
+  uint16_t len;                 /* size 26, 0x1A */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint32_t clock_bias;		/* m x 10^2 */
+  uint32_t clock_drift;		/* m/s x 10^2 */
+  uint8_t  chip_type;
+  uint8_t  num_svs;
+  uint16_t utc_year;
+  uint8_t  utc_month;
+  uint8_t  utc_day;
+  uint8_t  utc_hour;
+  uint8_t  utc_min;
+  uint16_t utc_millsec;
+} dt_gps_time_t;
 
 
 /*
@@ -211,44 +176,46 @@ typedef nx_struct dt_gps_time {
  * For ORG4472, CHIP_GPS_ORG4472
  * M10478,      CHIP_GPS_GSD4E
  */
-typedef nx_struct dt_gps_pos {
-  nx_uint16_t len;
-  nx_uint8_t  dtype;
-  nx_uint32_t stamp_ms;
-  nx_uint8_t  chip_type;
-  nx_uint16_t nav_type;
-  nx_uint8_t  num_svs;			/* number of sv in solution */
-  nx_uint32_t sats_seen;		/* bit mask, sats in solution */
-  nx_int32_t  gps_lat;			/* + North, x 10^7 degrees */
-  nx_int32_t  gps_long;			/* + East,  x 10^7 degrees */
-  nx_uint32_t ehpe;			/* estimated horz pos err, 1e2 */
-  nx_uint8_t  hdop;			/* err *5 */
-} dt_gps_pos_nt;
+typedef struct {
+  uint16_t len;                 /* size 32, 0x20 */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint8_t  chip_type;
+  uint8_t  num_svs;             /* number of sv in solution */
+  uint16_t nav_type;
+  uint32_t sats_seen;           /* bit mask, sats in solution */
+  int32_t  gps_lat;             /* + North, x 10^7 degrees */
+  int32_t  gps_long;            /* + East,  x 10^7 degrees */
+  uint32_t ehpe;                /* estimated horz pos err, 1e2 */
+  uint32_t hdop;                /* err *5 */
+} dt_gps_pos_t;
 
-typedef nx_struct dt_sensor_data {
-  nx_uint16_t len;
-  nx_uint8_t  dtype;
-  nx_uint8_t  sns_id;
-  nx_uint32_t sched_ms;
-  nx_uint32_t stamp_ms;
-  nx_uint16_t data[0];
-} dt_sensor_data_nt;
+typedef struct {
+  uint16_t len;                 /* size 14 + var */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint32_t sched_ms;
+  uint16_t sns_id;
+  uint16_t data[0];
+} dt_sensor_data_t;
 
-typedef nx_struct dt_sensor_set {
-  nx_uint16_t      len;
-  nx_uint8_t       dtype;
-  nx_uint32_t      sched_ms;
-  nx_uint32_t      stamp_ms;
-  nx_uint16_t      mask;
-  nx_uint8_t       mask_id;
-  nx_uint16_t      data[0];
-} dt_sensor_set_nt;
+typedef struct {
+  uint16_t len;                 /* size 16 + var */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint32_t sched_ms;
+  uint16_t mask;
+  uint16_t mask_id;
+  uint16_t data[0];
+} dt_sensor_set_t;
 
-typedef nx_struct dt_test {
-  nx_uint16_t   len;
-  nx_uint8_t    dtype;
-  nx_uint8_t    data[0];
-} dt_test_nt;
+typedef struct {
+  uint16_t len;                 /* size 8 + var */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint8_t  data[0];
+} dt_test_t;
+
 
 /*
  * Note
@@ -257,59 +224,46 @@ typedef nx_struct dt_test {
  * one use is when calibrating the device.  Can also be used to add notes
  * about conditions the tag is being placed in.
  *
- * Note (data in the structure) itself is a NULL terminated string.
+ * Note (data in the structure) itself is a NULL terminated string.  Len
+ * includes the null.
  */
-typedef nx_struct dt_note {
-  nx_uint16_t	     len;
-  nx_uint8_t	     dtype;
-  nx_uint16_t	     year;
-  nx_uint8_t	     month;
-  nx_uint8_t	     day;
-  nx_uint8_t	     hrs;
-  nx_uint8_t	     min;
-  nx_uint8_t	     sec;
-  nx_uint16_t	     note_len;
-  nx_uint8_t	     data[0];
-} dt_note_nt;
+typedef struct {
+  uint16_t len;                 /* size 13 + var */
+  dtype_t  dtype;
+  uint16_t note_len;
+  uint16_t year;
+  uint8_t  month;
+  uint8_t  day;
+  uint8_t  hrs;
+  uint8_t  min;
+  uint8_t  sec;
+  uint8_t  data[0];
+} dt_note_t;
+
 
 /*
+ * gps raw, message as seen from the gps.
+ *
+ * could be raw nmea, or raw sirfbin, dtype tells the difference
  * see above for chip definition.
  */
-typedef nx_struct dt_gps_raw {
-  nx_uint16_t	len;
-  nx_uint8_t	dtype;
-  nx_uint8_t	chip;
-  nx_uint32_t   stamp_ms;
-  nx_uint8_t	data[0];
-} dt_gps_raw_nt;
 
-typedef nx_struct dt_gps_nmea_raw {
-  nx_uint16_t	len;
-  nx_uint8_t	dtype;
-  nx_uint8_t	chip;
-  nx_uint32_t   stamp_ms;
-  nx_uint8_t	data[0];
-} dt_gps_nmea_raw_nt;
+typedef struct {
+  uint16_t len;                 /* size 9 + var */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint8_t  chip;
+  uint8_t  data[0];
+} dt_gps_raw_t;
 
 
-/*
- * The way the allocation works out is as follows:
- * DT overhead:	len, dtype, chip, stamp: 8 bytes
- * SirfBin overhead: start, len, chksum, stop: 8 bytes
- * max data: 91 bytes (from MID 41, Geodetic)
- *
- * total: 107 bytes.  we round up to 128.
- */
-
-#include "sirbin_msg.h"
-
-typedef nx_struct dt_version {
-  nx_uint16_t	len;
-  nx_uint8_t	dtype;
-  nx_uint8_t	major;
-  nx_uint8_t	minor;
-  nx_uint8_t	build;
-} dt_version_nt;
+typedef struct {
+  uint16_t len;                 /* size 7, 0x07 */
+  dtype_t  dtype;
+  uint8_t  major;
+  uint8_t  minor;
+  uint8_t  build;
+} dt_version_t;
 
 
 enum {
@@ -335,50 +289,50 @@ enum {
 };
 
 
-typedef nx_struct dt_event {
-  nx_uint16_t len;
-  nx_uint8_t  dtype;
-  nx_uint32_t stamp_ms;
-  nx_uint8_t  ev;
-  nx_uint16_t arg;
-} dt_event_nt;
+typedef struct {
+  uint16_t len;                 /* size 12, 0x0c */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint16_t ev;
+  uint16_t arg;
+} dt_event_t;
 
 
-typedef nx_struct dt_debug {
-  nx_uint16_t len;
-  nx_uint8_t  dtype;
-  nx_uint32_t stamp_ms;
-} dt_debug_nt;
+typedef struct {
+  uint16_t len;                 /* size 8, 0x08 */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+} dt_debug_t;
 
 
 enum {
-  DT_HDR_SIZE_IGNORE        = sizeof(dt_ignore_nt),
-  DT_HDR_SIZE_CONFIG        = sizeof(dt_config_nt),
-  DT_HDR_SIZE_SYNC          = sizeof(dt_sync_nt),
-  DT_HDR_SIZE_REBOOT        = sizeof(dt_reboot_nt),
-  DT_HDR_SIZE_PANIC         = sizeof(dt_panic_nt),
-  DT_HDR_SIZE_GPS_TIME      = sizeof(dt_gps_time_nt),
-  DT_HDR_SIZE_GPS_POS       = sizeof(dt_gps_pos_nt),
-  DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_nt),
-  DT_HDR_SIZE_SENSOR_SET    = sizeof(dt_sensor_set_nt),
-  DT_HDR_SIZE_TEST          = sizeof(dt_test_nt),
-  DT_HDR_SIZE_NOTE	    = sizeof(dt_note_nt),
-  DT_HDR_SIZE_GPS_RAW       = sizeof(dt_gps_raw_nt),
-  DT_HDR_SIZE_VERSION       = sizeof(dt_version_nt),
-  DT_HDR_SIZE_EVENT	    = sizeof(dt_event_nt),
-  DT_HDR_SIZE_DEBUG	    = sizeof(dt_debug_nt),
+  DT_HDR_SIZE_HEADER        = sizeof(dt_header_t),
+  DT_HDR_SIZE_CONFIG        = sizeof(dt_config_t),
+  DT_HDR_SIZE_SYNC          = sizeof(dt_sync_t),
+  DT_HDR_SIZE_REBOOT        = sizeof(dt_reboot_t),
+  DT_HDR_SIZE_PANIC         = sizeof(dt_panic_t),
+  DT_HDR_SIZE_GPS_TIME      = sizeof(dt_gps_time_t),
+  DT_HDR_SIZE_GPS_POS       = sizeof(dt_gps_pos_t),
+  DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_t),
+  DT_HDR_SIZE_SENSOR_SET    = sizeof(dt_sensor_set_t),
+  DT_HDR_SIZE_TEST          = sizeof(dt_test_t),
+  DT_HDR_SIZE_NOTE	    = sizeof(dt_note_t),
+  DT_HDR_SIZE_GPS_RAW       = sizeof(dt_gps_raw_t),
+  DT_HDR_SIZE_VERSION       = sizeof(dt_version_t),
+  DT_HDR_SIZE_EVENT	    = sizeof(dt_event_t),
+  DT_HDR_SIZE_DEBUG	    = sizeof(dt_debug_t),
 };
 
 
 /*
  * Payload_size is how many bytes are needed in addition to the
- * dt_sensor_data_nt struct.   Block_Size is total bytes used by
- * the dt_sensor_data_nt header and any payload.  Payloads use 2
+ * dt_sensor_data_t struct.   Block_Size is total bytes used by
+ * the dt_sensor_data_t header and any payload.  Payloads use 2
  * bytes per datam (16 bit values).  <sensor>_BLOCK_SIZE is what
  * needs to allocated. Note thet GPS position and time have no
  * payload. All fields ares specified.
  */
- 
+
 enum {
   BATT_PAYLOAD_SIZE   = 2,
   BATT_BLOCK_SIZE     = (DT_HDR_SIZE_SENSOR_DATA + BATT_PAYLOAD_SIZE),

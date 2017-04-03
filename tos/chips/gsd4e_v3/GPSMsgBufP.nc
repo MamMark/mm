@@ -304,12 +304,12 @@ uint32_t last_surfaced;
 uint32_t last_submerged;
 
 to add a collect message do this:
-    dt_gps_raw_nt *gdp;
+    dt_gps_raw_t *gdp;
     /*
      * collect raw message for debugging.  Eventually this will go away
      * or be put on a conditional.
      */
-    gdp = (dt_gps_raw_nt *) collect_msg;
+    gdp = (dt_gps_raw_t *) collect_msg;
     gdp->len = DT_HDR_SIZE_GPS_RAW + SIRF_OVERHEAD + collect_length;
     gdp->dtype = DT_GPS_RAW;
     gdp->chip  = CHIP_GPS_GSD4E;

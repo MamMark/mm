@@ -24,9 +24,9 @@ implementation {
 
   void write_version_record() {
     uint8_t vdata[DT_HDR_SIZE_VERSION];
-    dt_version_nt *vp;
+    dt_version_t *vp;
 
-    vp = (dt_version_nt *) &vdata;
+    vp = (dt_version_t *) &vdata;
     vp->len     = DT_HDR_SIZE_VERSION;
     vp->dtype   = DT_VERSION;
     vp->major   = call BootParams.getMajor();
@@ -38,9 +38,9 @@ implementation {
 
   void write_sync_record() {
     uint8_t sync_data[DT_HDR_SIZE_SYNC];
-    dt_sync_nt *sdp;
+    dt_sync_t *sdp;
 
-    sdp = (dt_sync_nt *) &sync_data;
+    sdp = (dt_sync_t *) &sync_data;
     sdp->len = DT_HDR_SIZE_SYNC;
     sdp->dtype = DT_SYNC;
     sdp->stamp_ms = call SyncTimer.getNow();
@@ -51,9 +51,9 @@ implementation {
 
   void write_reboot_record() {
     uint8_t reboot_data[DT_HDR_SIZE_REBOOT];
-    dt_reboot_nt *rbdp;
+    dt_reboot_t *rbdp;
 
-    rbdp = (dt_reboot_nt *) &reboot_data;
+    rbdp = (dt_reboot_t *) &reboot_data;
     rbdp->len = DT_HDR_SIZE_REBOOT;
     rbdp->dtype = DT_REBOOT;
     rbdp->stamp_ms = call SyncTimer.getNow();

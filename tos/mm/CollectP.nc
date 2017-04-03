@@ -87,9 +87,9 @@ implementation {
 
   command void LogEvent.logEvent(uint8_t ev, uint16_t arg) {
     uint8_t event_data[DT_HDR_SIZE_EVENT];
-    dt_event_nt *ep;
+    dt_event_t *ep;
 
-    ep = (dt_event_nt *) event_data;
+    ep = (dt_event_t *) event_data;
     ep->len = DT_HDR_SIZE_EVENT;
     ep->dtype = DT_EVENT;
     ep->stamp_ms = call LocalTime.get();
