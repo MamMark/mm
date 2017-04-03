@@ -1,4 +1,4 @@
-# Copyright 2008, Eric B. Decker
+# Copyright 2008, 2017 Eric B. Decker
 # Mam-Mark Project
 #
 # mmdump: dump/process the data file from a mammark tag.
@@ -12,7 +12,7 @@
 TARGET=mm4
 MM_PLATFORM_DIR=$(MM_ROOT)/tos/platforms/$(TARGET)
 MM_COMMON=$(MM_ROOT)/tos/platforms/mm
-TYPED_DATA=$(MM_ROOT)/tos/mm/typed_data.h
+TYPED_DATA=$(MM_ROOT)/mm/include/typed_data.h
 COMM=$(MM_ROOT)/tos/comm
 SENSORS=$(MM_ROOT)/tos/chips/sensors
 
