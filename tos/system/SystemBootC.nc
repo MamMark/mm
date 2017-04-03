@@ -57,7 +57,7 @@
  * this can be addressed later.
  */
 
-#error using tos/system/SystemBootC, should use platform SystemBootC
+#warning using tos/system/SystemBootC, should use platform SystemBootC
 
 configuration SystemBootC {
   provides interface Boot;
