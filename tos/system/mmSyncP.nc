@@ -23,43 +23,43 @@ module mmSyncP {
 implementation {
 
   void write_version_record() {
-    uint8_t vdata[DT_HDR_SIZE_VERSION];
+    dt_version_t  v;
     dt_version_t *vp;
 
-    vp = (dt_version_t *) &vdata;
-    vp->len     = DT_HDR_SIZE_VERSION;
+    vp = &v;
+    vp->len     = sizeof(v);
     vp->dtype   = DT_VERSION;
     vp->major   = call BootParams.getMajor();
     vp->minor   = call BootParams.getMinor();
     vp->build   = call BootParams.getBuild();
-    call Collect.collect(vdata, DT_HDR_SIZE_VERSION);
+    call Collect.collect((void *) vp, sizeof(dt_version_t), NULL, 0);
   }
 
 
   void write_sync_record() {
-    uint8_t sync_data[DT_HDR_SIZE_SYNC];
-    dt_sync_t *sdp;
+    dt_sync_t  s;
+    dt_sync_t *sp;
 
-    sdp = (dt_sync_t *) &sync_data;
-    sdp->len = DT_HDR_SIZE_SYNC;
-    sdp->dtype = DT_SYNC;
-    sdp->stamp_ms = call SyncTimer.getNow();
-    sdp->sync_majik = SYNC_MAJIK;
-    call Collect.collect(sync_data, DT_HDR_SIZE_SYNC);
+    sp = &s;
+    sp->len = sizeof(s);
+    sp->dtype = DT_SYNC;
+    sp->stamp_ms = call SyncTimer.getNow();
+    sp->sync_majik = SYNC_MAJIK;
+    call Collect.collect((void *) sp, sizeof(dt_sync_t), NULL, 0);
   }
 
 
   void write_reboot_record() {
-    uint8_t reboot_data[DT_HDR_SIZE_REBOOT];
-    dt_reboot_t *rbdp;
+    dt_reboot_t  r;
+    dt_reboot_t *rp;
 
-    rbdp = (dt_reboot_t *) &reboot_data;
-    rbdp->len = DT_HDR_SIZE_REBOOT;
-    rbdp->dtype = DT_REBOOT;
-    rbdp->stamp_ms = call SyncTimer.getNow();
-    rbdp->sync_majik = SYNC_MAJIK;
-    rbdp->boot_count = call BootParams.getBootCount();
-    call Collect.collect(reboot_data, DT_HDR_SIZE_REBOOT);
+    rp = &r;
+    rp->len = sizeof(r);
+    rp->dtype = DT_REBOOT;
+    rp->stamp_ms = call SyncTimer.getNow();
+    rp->sync_majik = SYNC_MAJIK;
+    rp->boot_count = call BootParams.getBootCount();
+    call Collect.collect((void *) rp, sizeof(r), NULL, 0);
   }
 
 
