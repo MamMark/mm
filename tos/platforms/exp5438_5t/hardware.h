@@ -45,6 +45,9 @@
 #include "msp430hardware.h"
 #include "mmPortRegs.h"
 
+#ifndef ROM_DEBUG_BREAK
+#define ROM_DEBUG_BREAK(x) do { nop(); } while (0)
+#endif
 
 /*
  * We are using the I2C single master driver.  Use the default configuration

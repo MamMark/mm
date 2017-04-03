@@ -40,6 +40,10 @@
 #include "msp430hardware.h"
 #include "mm4PortRegs.h"
 
+#ifndef ROM_DEBUG_BREAK
+#define ROM_DEBUG_BREAK(x) do { nop(); } while (0)
+#endif
+
 /*
  * Basic clock system has 3 or 4 RSEL bits depending on whether
  * BC2 (Basic clock 2).  We use RSEL3 to determine how wide the
