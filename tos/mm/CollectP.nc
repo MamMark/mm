@@ -85,8 +85,10 @@ implementation {
 
   void align_next() {
     unsigned int count;
+    uint8_t *ptr;
 
-    count = (unsigned int) dcc.cur_ptr & 0x03;
+    ptr = dcc.cur_ptr;
+    count = (unsigned int) ptr & 0x03;
     if (dcc.remaining == 0 || !count)   /* nothing to align */
       return;
     if (dcc.remaining < 4) {
@@ -97,20 +99,23 @@ implementation {
     /*
      * we know there are at least 5 bytes left
      * chew bytes until aligned.  1, 2, or 3 bytes
+     * actually 4 - count at this point.
      *
      * won't change checksum
      */
     switch (count) {
-      case 3: *dcc.cur_ptr++ = 0;
-      case 2: *dcc.cur_ptr++ = 0;
-      case 1: *dcc.cur_ptr++ = 0;
+      case 1: *ptr++ = 0;
+      case 2: *ptr++ = 0;
+      case 3: *ptr++ = 0;
     }
-    dcc.remaining -= count;
+    dcc.cur_ptr = ptr;
+    dcc.remaining -= (4 - count);
   }
 
 
   void copy_out(uint8_t *data, uint16_t dlen) {
-    uint16_t num_to_copy;
+    uint16_t num_to_copy, chksum;
+    uint8_t *ptr;
     unsigned int i;
 
     if (!data || !dlen)            /* nothing to do? */
@@ -128,10 +133,14 @@ implementation {
         dcc.chksum = 0;
       }
       num_to_copy = ((dlen < dcc.remaining) ? dlen : dcc.remaining);
+      chksum = dcc.chksum;
+      ptr = dcc.cur_ptr;
       for (i = 0; i < num_to_copy; i++) {
-        dcc.chksum += *data;
-        *dcc.cur_ptr++ = *data++;
+        chksum += *data;
+        *ptr++  = *data++;
       }
+      dcc.chksum = chksum;
+      dcc.cur_ptr = ptr;
       dlen -= num_to_copy;
       dcc.remaining -= num_to_copy;
       if (dcc.remaining == 0)
