@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Eric B. Decker
+ * Copyright (c) 2016-2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,9 +45,9 @@
 
 noinit uint32_t stack_size;
 
-const uint8_t _major = MAJOR;
-const uint8_t _minor = MINOR;
-const uint8_t _build = _BUILD;
+const uint8_t  _major = MAJOR;
+const uint8_t  _minor = MINOR;
+const uint16_t _build = _BUILD;
 
 
 #define BOOT_MAJIK 0x01021910
@@ -109,7 +109,7 @@ implementation {
   }
 
 
-  async command uint8_t BootParams.getBuild() {
+  async command uint16_t BootParams.getBuild() {
     return _build;
   }
 

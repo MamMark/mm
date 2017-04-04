@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Eric B. Decker
+ * Copyright (c) 2014, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -148,7 +148,7 @@ implementation {
   }
 
 
-  async command uint8_t BootParams.getBuild() {
+  async command uint16_t BootParams.getBuild() {
     return _build;
   }
 

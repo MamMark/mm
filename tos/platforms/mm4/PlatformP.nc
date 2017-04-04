@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, 2012, 2016 (c) Eric B. Decker
+ * Copyright 2010, 2012, 2016-2017 (c) Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,9 +74,9 @@ void set_stuff() {
 #endif
 
 
-const uint8_t _major = MAJOR;
-const uint8_t _minor = MINOR;
-const uint8_t _build = _BUILD;
+const uint8_t  _major = MAJOR;
+const uint8_t  _minor = MINOR;
+const uint16_t _build = _BUILD;
 
 
 #define BOOT_MAJIK 0x01021910
@@ -198,7 +198,7 @@ implementation {
   }
 
 
-  async command uint8_t BootParams.getBuild() {
+  async command uint16_t BootParams.getBuild() {
     return _build;
   }
 
@@ -210,8 +210,8 @@ implementation {
   async command void Led0.makeInput() { };
   async command bool Led0.isInput() { return FALSE; };
   async command void Led0.makeOutput() { };
-  async command bool Led0.isOutput() { return FALSE; };  
-  
+  async command bool Led0.isOutput() { return FALSE; };
+
   async command void Led1.set() { };
   async command void Led1.clr() { };
   async command void Led1.toggle() { };
@@ -219,8 +219,8 @@ implementation {
   async command void Led1.makeInput() { };
   async command bool Led1.isInput() { return FALSE; };
   async command void Led1.makeOutput() { };
-  async command bool Led1.isOutput() { return FALSE; };  
-  
+  async command bool Led1.isOutput() { return FALSE; };
+
   async command void Led2.set() { };
   async command void Led2.clr() { };
   async command void Led2.toggle() { };
@@ -228,8 +228,8 @@ implementation {
   async command void Led2.makeInput() { };
   async command bool Led2.isInput() { return FALSE; };
   async command void Led2.makeOutput() { };
-  async command bool Led2.isOutput() { return FALSE; };  
-  
+  async command bool Led2.isOutput() { return FALSE; };
+
   default command error_t LedsInit.init() { return SUCCESS; }
 
   /*
