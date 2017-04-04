@@ -258,11 +258,11 @@ typedef struct {
 
 
 typedef struct {
-  uint16_t len;                 /* size 7, 0x07 */
+  uint16_t len;                 /* size 8, 0x08 */
   dtype_t  dtype;
   uint8_t  major;
   uint8_t  minor;
-  uint8_t  build;
+  uint16_t build;
 } PACKED dt_version_t;
 
 
