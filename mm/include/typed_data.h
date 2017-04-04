@@ -7,10 +7,21 @@
  *
  * MSP432, structures are aligned to a 32 bit boundary (align(4)).
  * Multibyte datums are stored native, little endian.
+ *
+ * The exact size matters.  The ARM compiler adds padding bytes at the end
+ * of structures to round up to an even 32 bit alignment.  We get rid of
+ * these pad bytes by using PACKED.  We take pains to set up fields so we
+ * do not violate alignment restrictions.  16 bit fields on 2 byte
+ * alignment and 32 bit fields on 4 byte alignment.   Structures start on
+ * 4 byte alignment.
  */
 
 #ifndef __TYPED_DATA_H__
 #define __TYPED_DATA_H__
+
+#ifndef PACKED
+#define PACKED __attribute__((__packed__))
+#endif
 
 typedef enum {
   DT_TINTRYALF		= 0,            /* next, force next sector */
@@ -82,14 +93,14 @@ typedef enum {
 typedef struct {                /* size 4 */
   uint16_t len;
   dtype_t  dtype;
-} dt_header_t;
+} PACKED dt_header_t;
 
 
 typedef struct {                /* size 8 */
   uint16_t len;
   dtype_t  dtype;
   uint32_t stamp_ms;
-} dt_header_ts_t;
+} PACKED dt_header_ts_t;
 
 
 /*
@@ -115,7 +126,7 @@ typedef struct {
   dtype_t  dtype;
   uint32_t stamp_ms;
   uint32_t sync_majik;
-} dt_sync_t;
+} PACKED dt_sync_t;
 
 
 typedef struct {
@@ -124,7 +135,7 @@ typedef struct {
   uint32_t stamp_ms;
   uint32_t sync_majik;
   uint16_t boot_count;
-} dt_reboot_t;
+} PACKED dt_reboot_t;
 
 
 typedef struct {
@@ -138,7 +149,7 @@ typedef struct {
   uint8_t  pcode;               /* from Panic.panic  */
   uint8_t  where;               /* from Panic.panic  */
   uint8_t  index;               /* which panic block */
-} dt_panic_t;
+} PACKED dt_panic_t;
 
 
 /*
@@ -157,7 +168,7 @@ typedef struct {
   dtype_t  dtype;
   uint32_t stamp_ms;
   uint8_t  chip;
-} dt_gps_t;
+} PACKED dt_gps_t;
 
 
 /*
@@ -179,7 +190,7 @@ typedef struct {
   uint8_t  utc_hour;
   uint8_t  utc_min;
   uint16_t utc_millsec;
-} dt_gps_time_t;
+} PACKED dt_gps_time_t;
 
 
 /*
@@ -199,7 +210,7 @@ typedef struct {
   int32_t  gps_long;            /* + East,  x 10^7 degrees */
   uint32_t ehpe;                /* estimated horz pos err, 1e2 */
   uint32_t hdop;                /* err *5 */
-} dt_gps_pos_t;
+} PACKED dt_gps_pos_t;
 
 
 typedef struct {
@@ -209,7 +220,7 @@ typedef struct {
   uint32_t sched_ms;
   uint16_t sns_id;
   uint16_t data[0];
-} dt_sensor_data_t;
+} PACKED dt_sensor_data_t;
 
 typedef struct {
   uint16_t len;                 /* size 16 + var */
@@ -219,7 +230,7 @@ typedef struct {
   uint16_t mask;
   uint16_t mask_id;
   uint16_t data[0];
-} dt_sensor_set_t;
+} PACKED dt_sensor_set_t;
 
 
 /*
@@ -243,7 +254,7 @@ typedef struct {
   uint8_t  min;
   uint8_t  sec;
   uint8_t  data[0];
-} dt_note_t;
+} PACKED dt_note_t;
 
 
 typedef struct {
@@ -252,7 +263,7 @@ typedef struct {
   uint8_t  major;
   uint8_t  minor;
   uint8_t  build;
-} dt_version_t;
+} PACKED dt_version_t;
 
 
 enum {
@@ -284,7 +295,7 @@ typedef struct {
   uint32_t stamp_ms;
   uint16_t ev;
   uint16_t arg;
-} dt_event_t;
+} PACKED dt_event_t;
 
 
 enum {
