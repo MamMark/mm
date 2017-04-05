@@ -10,19 +10,6 @@ print trace_buf
 end
 
 
-#
-# GPS
-#
-
-define rg
-set (*(uint8_t*)$_gps_reset_addr)=(*(uint8_t*)$_gps_reset_addr) & $_gps_reset_bit
-set (*(uint8_t*)$_gps_reset_addr)=(*(uint8_t*)$_gps_reset_addr) | $_gps_unreset_bit
-end
-document rg
-reset gps h/w
-end
-
-
 # gps msg data display
 define gmd
 printf "gpsc_state: "
@@ -44,42 +31,6 @@ display gps message data
 end
 
 #
-# GPS chip, Gsd4e, SPI
-#
-set $_gps_reset_addr  = 0x2a2
-set $_gps_reset_bit   = 0xf8
-set $_gps_unreset_bit = 0x04
-define gps
-set $_p5in   = *(uint8_t *) 0x0240
-set $_p5out  = *(uint8_t *) 0x0242
-set $_p5dir  = *(uint8_t *) 0x0244
-set $_p11in  = *(uint8_t *) 0x02a0
-set $_p11out = *(uint8_t *) 0x02a2
-set $_p11dir = *(uint8_t *) 0x02a4
-printf "\ngps(ua3): on_off: %d  nRst: %d  CSn: %d  awake: %d\n", \
-    ($_p11out & 1), (($_p11out >> 2) & 1), (($_p5out >> 3) & 1), (($_p5in >> 2) & 1)
-printf "               %c        %c       %c         %c\n", \
-    ($_p11dir&1)?'O':'I', ($_p11dir&4)?'O':'I', ($_p5dir&8)?'O':'I', ($_p5dir&4)?'O':'I'
-set $_ub = 0x0680
-printf "A3: IE: %02x   IFG: %02x  IV: %04x\n", \
-    (*(uint8_t *)($_ub+0x1c)), (*(uint8_t *)($_ub+0x1d)), (*(uint8_t *)($_ub+0x1e))
-printf "  ctl0: %02x  ctl1: %02x  br: %02x%02x  mctl: %02x  stat: %02x  rx: %02x  tx: %02x\n\n",\
-    (*(uint8_t *)($_ub+1)), (*(uint8_t *)($_ub+0)),   (*(uint8_t *)($_ub+7)),   (*(uint8_t *)($_ub+6)),\
-    (*(uint8_t *)($_ub+8)), (*(uint8_t *)($_ub+0xa)), (*(uint8_t *)($_ub+0xc)), (*(uint8_t *)($_ub+0xe))
-printf "gpsc_state: "
-output gpsc_state
-printf "    gpsm_state: "
-output gpsm_state
-printf "    collect_state: "
-output GPSMsgP__collect_state
-printf "\n"
-end
-document gps
-display gps state
-end
-
-
-#
 # SD
 #
 
@@ -96,102 +47,39 @@ set up for doing a manual errase
 end
 
 
+define cs
+printf "majik:  %04x       %04x\n", CollectP__dcc.majik_a, CollectP__dcc.majik_b
+printf "chksum: %04x  seq: %04x\n", CollectP__dcc.chksum,  CollectP__dcc.seq
+printf "handle: %08x   %08x\n",     CollectP__dcc.handle,  CollectP__dcc.cur_buf
+printf "curptr: %08x   r: %d  (w: %d)\n", \
+    CollectP__dcc.cur_ptr, CollectP__dcc.remaining, 0d508-CollectP__dcc.remaining
+end
+document cs
+Collector State
+end
+
+
 define ss
-print SSWriteP__ssc
-printf "    alloc: %02x  in: %02x  out: %02x\n", SSWriteP__ssc.ssw_alloc, SSWriteP__ssc.ssw_in, SSWriteP__ssc.ssw_out
-printf "  buffers: [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[0]->buf, SSWriteP__ssw_p[0]->majik, SSWriteP__ssw_p[0]->stamp
-print SSWriteP__ssw_p[0]->buf_state
-printf "           [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[1]->buf, SSWriteP__ssw_p[1]->majik, SSWriteP__ssw_p[1]->stamp
-print SSWriteP__ssw_p[1]->buf_state
-printf "           [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[2]->buf, SSWriteP__ssw_p[2]->majik, SSWriteP__ssw_p[2]->stamp
-print SSWriteP__ssw_p[2]->buf_state
-printf "           [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[3]->buf, SSWriteP__ssw_p[3]->majik, SSWriteP__ssw_p[3]->stamp
-print SSWriteP__ssw_p[3]->buf_state
-printf "           [%04x] %04x  ts: %04lx ", SSWriteP__ssw_p[4]->buf, SSWriteP__ssw_p[4]->majik, SSWriteP__ssw_p[4]->stamp
-print SSWriteP__ssw_p[4]->buf_state
+printf "\n"
+printf "    majik:  %04x  %04x  state: ", SSWriteP__ssc.majik_a, SSWriteP__ssc.majik_b
+output SSWriteP__ssc.state
+printf "\n"
+printf "    alloc:  %02x  in: %02x  out: %02x  full: %02x  max: %02x\n",   \
+    SSWriteP__ssc.ssw_alloc, SSWriteP__ssc.ssw_in, SSWriteP__ssc.ssw_out, \
+    SSWriteP__ssc.ssw_num_full, SSWriteP__ssc.ssw_max_full
+printf "     dblk:  %08x  cur_hand: %08x\n", SSWriteP__ssc.dblk, SSWriteP__ssc.cur_handle
+printf "  buffers: [%08x] %04x  ts: %08lx ", SSWriteP__ssw_p[0]->buf, SSWriteP__ssw_p[0]->majik, SSWriteP__ssw_p[0]->stamp
+output SSWriteP__ssw_p[0]->buf_state
+printf "\n           [%08x] %04x  ts: %08lx ", SSWriteP__ssw_p[1]->buf, SSWriteP__ssw_p[1]->majik, SSWriteP__ssw_p[1]->stamp
+output SSWriteP__ssw_p[1]->buf_state
+printf "\n           [%08x] %04x  ts: %08lx ", SSWriteP__ssw_p[2]->buf, SSWriteP__ssw_p[2]->majik, SSWriteP__ssw_p[2]->stamp
+output SSWriteP__ssw_p[2]->buf_state
+printf "\n           [%08x] %04x  ts: %08lx ", SSWriteP__ssw_p[3]->buf, SSWriteP__ssw_p[3]->majik, SSWriteP__ssw_p[3]->stamp
+output SSWriteP__ssw_p[3]->buf_state
+printf "\n           [%08x] %04x  ts: %08lx ", SSWriteP__ssw_p[4]->buf, SSWriteP__ssw_p[4]->majik, SSWriteP__ssw_p[4]->stamp
+output SSWriteP__ssw_p[4]->buf_state
+printf "\n"
 end
 document ss
 StreamStorage state
-end
-
-
-define sd
-printf "sd:  pwr: %d  csn: %d/%c  p3d/s: %d/%d  rx: %02x  tx: %02x\n", \
-    (((*(uint8_t *)0x31) & 1) ? 0 : 1), \
-    (((*(uint8_t *)0x31) & 0x10) ? 1 : 0), (((*(uint8_t *)0x32) & 0x10) ? 'o' : 'i'), \
-    (((*(uint8_t *)0x1A) >> 1) & 7), (((*(uint8_t *)0x1B) >> 1) & 7), \
-    (*(uint8_t *)0x6e), (*(uint8_t *)0x6f)
-p/x SDspP__sd_cmd
-p SDspP__sdc
-end
-document sd
-display SD h/w state and SD driver state
-end
-
-
-#
-# Timers
-#
-
-define timers
-printf "Timer Block 0:\n  n       trip        t0        dt  shot  run\n"
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0, VirtualizeTimerC__0__m_timers[0].t0 + VirtualizeTimerC__0__m_timers[0].dt, VirtualizeTimerC__0__m_timers[0].t0, \
-	VirtualizeTimerC__0__m_timers[0].dt, VirtualizeTimerC__0__m_timers[0].isoneshot, VirtualizeTimerC__0__m_timers[0].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 1, VirtualizeTimerC__0__m_timers[1].t0 + VirtualizeTimerC__0__m_timers[1].dt, VirtualizeTimerC__0__m_timers[1].t0, \
-	VirtualizeTimerC__0__m_timers[1].dt, VirtualizeTimerC__0__m_timers[1].isoneshot, VirtualizeTimerC__0__m_timers[1].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 2, VirtualizeTimerC__0__m_timers[2].t0 + VirtualizeTimerC__0__m_timers[2].dt, VirtualizeTimerC__0__m_timers[2].t0, \
-	VirtualizeTimerC__0__m_timers[2].dt, VirtualizeTimerC__0__m_timers[2].isoneshot, VirtualizeTimerC__0__m_timers[2].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 3, VirtualizeTimerC__0__m_timers[3].t0 + VirtualizeTimerC__0__m_timers[3].dt, VirtualizeTimerC__0__m_timers[3].t0, \
-	VirtualizeTimerC__0__m_timers[3].dt, VirtualizeTimerC__0__m_timers[3].isoneshot, VirtualizeTimerC__0__m_timers[3].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 4, VirtualizeTimerC__0__m_timers[4].t0 + VirtualizeTimerC__0__m_timers[4].dt, VirtualizeTimerC__0__m_timers[4].t0, \
-	VirtualizeTimerC__0__m_timers[4].dt, VirtualizeTimerC__0__m_timers[4].isoneshot, VirtualizeTimerC__0__m_timers[4].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 5, VirtualizeTimerC__0__m_timers[5].t0 + VirtualizeTimerC__0__m_timers[5].dt, VirtualizeTimerC__0__m_timers[5].t0, \
-	VirtualizeTimerC__0__m_timers[5].dt, VirtualizeTimerC__0__m_timers[5].isoneshot, VirtualizeTimerC__0__m_timers[5].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 6, VirtualizeTimerC__0__m_timers[6].t0 + VirtualizeTimerC__0__m_timers[6].dt, VirtualizeTimerC__0__m_timers[6].t0, \
-	VirtualizeTimerC__0__m_timers[6].dt, VirtualizeTimerC__0__m_timers[6].isoneshot, VirtualizeTimerC__0__m_timers[6].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 7, VirtualizeTimerC__0__m_timers[7].t0 + VirtualizeTimerC__0__m_timers[7].dt, VirtualizeTimerC__0__m_timers[7].t0, \
-	VirtualizeTimerC__0__m_timers[7].dt, VirtualizeTimerC__0__m_timers[7].isoneshot, VirtualizeTimerC__0__m_timers[7].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 8, VirtualizeTimerC__0__m_timers[8].t0 + VirtualizeTimerC__0__m_timers[8].dt, VirtualizeTimerC__0__m_timers[8].t0, \
-	VirtualizeTimerC__0__m_timers[8].dt, VirtualizeTimerC__0__m_timers[8].isoneshot, VirtualizeTimerC__0__m_timers[8].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 9, VirtualizeTimerC__0__m_timers[9].t0 + VirtualizeTimerC__0__m_timers[9].dt, VirtualizeTimerC__0__m_timers[9].t0, \
-	VirtualizeTimerC__0__m_timers[9].dt, VirtualizeTimerC__0__m_timers[9].isoneshot, VirtualizeTimerC__0__m_timers[9].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d10, VirtualizeTimerC__0__m_timers[0d10].t0 + VirtualizeTimerC__0__m_timers[0d10].dt, VirtualizeTimerC__0__m_timers[0d10].t0, \
-	VirtualizeTimerC__0__m_timers[0d10].dt, VirtualizeTimerC__0__m_timers[0d10].isoneshot, VirtualizeTimerC__0__m_timers[0d10].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d11, VirtualizeTimerC__0__m_timers[0d11].t0 + VirtualizeTimerC__0__m_timers[0d11].dt, VirtualizeTimerC__0__m_timers[0d11].t0, \
-	VirtualizeTimerC__0__m_timers[0d11].dt, VirtualizeTimerC__0__m_timers[0d11].isoneshot, VirtualizeTimerC__0__m_timers[0d11].isrunning
-printf " %2d:  %8lx  %8lx  %8lx     %d    %d\n", 0d12, VirtualizeTimerC__0__m_timers[0d12].t0 + VirtualizeTimerC__0__m_timers[0d12].dt, VirtualizeTimerC__0__m_timers[0d12].t0, \
-	VirtualizeTimerC__0__m_timers[0d12].dt, VirtualizeTimerC__0__m_timers[0d12].isoneshot, VirtualizeTimerC__0__m_timers[0d12].isrunning
-end
-document timers
-display virtualized timers block 0
-end
-
-
-# show adc arbritration queue
-# currently for old mm4 analog adc subsystem
-#
-
-define sa
-printf "resQ:  %02x%02x\n", RoundRobinResourceQueueC__0__resQ[1], RoundRobinResourceQueueC__0__resQ[0]
-printf "adc: state: %02x, req: %02x, owner: %02x\n", AdcP__adc_state, AdcP__req_client, AdcP__adc_owner
-end
-document sa
-show adc arbritration queue
-end
-
-
-define rq
-printf "rq: %02x%02x  last: %d\n",RoundRobinResourceQueueC__0__resQ[1],RoundRobinResourceQueueC__0__resQ[0],RoundRobinResourceQueueC__0__last
-end
-document rq
-RoundRobin Resource Queue (ADC arbiter)
-end
-
-
-define tq
-printf "taskq: head: %d  tail %d\n", (uint8_t) SchedulerBasicP__m_head, (uint8_t) SchedulerBasicP__m_tail
-x/25bu SchedulerBasicP__m_next
-end
-document tq
-display task queue
 end
