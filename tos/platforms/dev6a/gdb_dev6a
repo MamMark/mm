@@ -67,3 +67,33 @@ end
 document gps
 display gps state
 end
+
+#
+# Port 6.0, gps_resetn
+#
+# set P6.0 to 1pO       BITBAND_PERI(P6->DIR, 0) = 1;  *420988a0 = 1
+# set P6.0 to 0pO       BITBAND_PERI(P6->OUT, 0) = 0;  *42098860 = 0
+# set P6.0 to 1pO       BITBAND_PERI(P6->OUT, 0) = 1;  *42098860 = 1
+#   leave at 1pO
+# set P6.0 to 1pI       BITBAND_PERI(P6->DIR, 0) = 0;  *420988a0 = 0
+#
+set $_gps_resetn     = (uint8_t *) 0x42098860
+set $_gps_resetn_dir = (uint8_t *) 0x420988a0
+
+define rg
+set *$_gps_resetn_dir = 1
+set *$_gps_resetn     = 0
+set *$_gps_resetn     = 1
+end
+document rg
+reset gps h/w
+end
+
+define rg0
+set *$_gps_resetn_dir = 1
+set *$_gps_resetn     = 0
+end
+
+define rg1
+set *$_gps_resetn     = 1
+end
