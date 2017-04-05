@@ -907,7 +907,6 @@ void __Reset() {
   P8->OUT = 0;                  /* set tell and exc up */
   P8->DIR = 0x61;
   P8->SEL1 = 1;                 /* TA1.0 (OUT0) */
-  WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
 
   __disable_irq();
   __watchdog_init();
