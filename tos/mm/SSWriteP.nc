@@ -2,6 +2,36 @@
  * Copyright (c) 2008, 2010, 2017 - Eric B. Decker
  * All rights reserved.
  *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the
+ *   distribution.
+ *
+ * - Neither the name of the copyright holders nor the names of
+ *   its contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *
  * Stream Storage Write - write sequential blocks to a contiguous data
  * area.  The area is considered a file and managed by the file system
  * such as it is.  Basically, the file system simply tells us the limits
@@ -60,7 +90,7 @@ module SSWriteP {
     interface LogEvent;
   }
 }
-  
+
 implementation {
 
   ss_wr_buf_t ssw_handles[SSW_NUM_BUFS];
@@ -111,10 +141,9 @@ implementation {
     ssc.majik_a     = SSC_MAJIK;
     ssc.majik_b     = SSC_MAJIK;
 
-    for (i = 0; i < SSW_NUM_BUFS; i++) {
-      ssw_p[i]->majik     = SS_BUF_MAJIK;
-      ssw_p[i]->buf_state = SS_BUF_STATE_FREE;
-    }
+    /* ssw_p[x]->buf_state starts in FREE (0) */
+    for (i = 0; i < SSW_NUM_BUFS; i++)
+      ssw_p[i]->majik = SS_BUF_SANE;
 
     /* no need to zero the buffer, done by start up code */
     return SUCCESS;
@@ -148,7 +177,7 @@ implementation {
 
     /* the next check also catches the null pointer */
     if (sswp != handle ||
-	handle->majik != SS_BUF_MAJIK ||
+	handle->majik != SS_BUF_SANE ||
 	handle->buf_state != SS_BUF_STATE_ALLOC) {
       call Panic.panic(PANIC_SS, 11, (parg_t) handle, handle->majik,
                        handle->buf_state, (parg_t) sswp);
@@ -184,7 +213,7 @@ implementation {
     }
 
     if (sswp->buf_state == SS_BUF_STATE_FREE) {
-      if (sswp->majik != SS_BUF_MAJIK) {
+      if (sswp->majik != SS_BUF_SANE) {
 	ss_panic(19, sswp->majik);
 	return NULL;
       }
@@ -201,7 +230,7 @@ implementation {
 
 
   command uint8_t *SSW.buf_handle_to_buf(ss_wr_buf_t *handle) {
-    if (!handle || handle->majik != SS_BUF_MAJIK ||
+    if (!handle || handle->majik != SS_BUF_SANE ||
 	handle->buf_state != SS_BUF_STATE_ALLOC) {
       ss_panic(21, (parg_t) handle);
       return NULL;

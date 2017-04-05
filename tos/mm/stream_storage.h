@@ -1,7 +1,37 @@
 /*
  * stream_storage.h - Stream Storage Interface (low level)
- * Copyright 2006, 2010 Eric B. Decker, Carl Davis
+ * Copyright (c) 2006, 2010 Eric B. Decker, Carl Davis
+ * Copyright (c) 2017, Eric B. Decker
  * Mam-Mark Project
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the
+ *   distribution.
+ *
+ * - Neither the name of the copyright holders nor the names of
+ *   its contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef _STREAM_STORAGE_H
@@ -24,7 +54,7 @@
  * SSW_GROUP defines how many buffers to group together before trying to fire up the SD
  * to write them out.   Amortizes the turn on cost over this many buffers.  Note that there
  * need to be more than this number of buffers so the collection system has something to
- * write into while the write is happening.
+ * write into while the writes are happening.
  */
 #define SSW_GROUP  3
 
@@ -62,22 +92,24 @@
  */
 
 typedef enum {
-    SS_BUF_STATE_FREE = 0x1561,
+    SS_BUF_STATE_FREE = 0,
     SS_BUF_STATE_ALLOC,
     SS_BUF_STATE_FULL,
     SS_BUF_STATE_WRITING,
     SS_BUF_STATE_DONE,
-    SS_BUF_STATE_MAX
+    SS_BUF_STATE_MAX,
+    SS_BUF_STATE_16 = 0xffff,
 } ss_buf_state_t;
 
-
-#define SS_BUF_MAJIK 0xeaf0
+typedef enum {
+  SS_BUF_SANE = 0x1af0
+} ss_buf_majik_t;
 
 typedef struct {
-    uint16_t majik;
-    ss_buf_state_t buf_state;
-    uint32_t stamp;
-    uint8_t  buf[SD_BUF_SIZE];		/* include room for CRC */
+  ss_buf_majik_t majik;
+  ss_buf_state_t buf_state;
+  uint32_t stamp;
+  uint8_t  buf[SD_BUF_SIZE] __attribute__ ((aligned (4)));    /* 514, 512 + CRC */
 } ss_wr_buf_t;
 
 
@@ -101,6 +133,7 @@ typedef enum {
   SSW_IDLE	= 0,
   SSW_REQUESTED,
   SSW_WRITING,
+  SSW_16 = 0xffff,              /* force to 16 bit enum */
 } ssw_state_t;
 
 
