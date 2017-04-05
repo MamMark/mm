@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Eric B. Decker
+ * Copyright (c) 2015-2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,10 +40,9 @@
 
 /*
  * Also include the platform dependent si446x definitions generated
- *  from the SiLabs WDS program (Wireless Development Studio.
+ * from the SiLabs WDS program (Wireless Development Studio.
  */
-#include "radio_config_si446x.h"
-#include "radio_platform_si446x.h"
+#include "radio_platform.h"
 
 //#define LOW_POWER_LISTENING
 

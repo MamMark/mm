@@ -592,12 +592,12 @@ typedef enum {
  * We collect them all here so easy to maintain.
  *
  * SI446X_CHIP is defined as a hex number in the platform file
- * platforms/<platform>/hardware/si446x/radio_config_si446x.h
+ * platforms/<platform>/hardware/si446x/radio_config_<chip>.h
  *
- * ie.  0x4463 or 0x4463a.  Note the "a" version is a working
+ * ie.  <chip> or <chip>a.  Note the "a" version is a working
  * version which has modifications from the full chip definition
  */
-#if SI446X_CHIP == 0x4463
+#if SI446X_CHIP == 0x44631B
 
 #define SI446X_GROUP00_SIZE                     0x0a
 #define SI446X_GROUP01_SIZE                     0x04
@@ -616,7 +616,7 @@ typedef enum {
 #define SI446X_GROUP50_SIZE                     0x42
 #define SI446X_GROUPF0_SIZE                     0x0
 
-#elif SI446X_CHIP == 0x4463a
+#elif SI446X_CHIP == 0x44631Ba
 
 #define SI446X_GROUP00_SIZE                     0x0a
 #define SI446X_GROUP01_SIZE                     0x04
@@ -641,7 +641,7 @@ typedef enum {
 #define SI446X_GROUP50_SIZE                     0x00
 #define SI446X_GROUPF0_SIZE                     0x00
 
-#elif SI446X_CHIP == 0x4468
+#elif SI446X_CHIP == 0x44682A
 /* definitions from Si446x/EZRadioPRO_REVC2/Si4468/revA2A/index_all.html */
 
 #define SI446X_GROUP00_SIZE                     0x0b
@@ -659,7 +659,7 @@ typedef enum {
 #define SI446X_GROUP50_SIZE                     0x42
 #define SI446X_GROUPF0_SIZE                     0x05
 
-#elif SI446X_CHIP == 0x4468a
+#elif SI446X_CHIP == 0x44682Aa
 /* RevC2, chip 4468RevA2A */
 
 #define SI446X_GROUP00_SIZE                     0x0b

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Eric B. Decker
+ * Copyright (c) 2016-2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,10 +47,12 @@
  * a TX/RX switch and need to be programmed appropriately.
  */
 
-#ifndef __RADIO_PLATFORM_SI446X_H__
-#define __RADIO_PLATFORM_SI446X_H__
+#ifndef __RADIO_PLATFORM_SI44631B_H__
+#define __RADIO_PLATFORM_SI44631B_H__
 
-#define SI446X_CHIP 0x4463a
+#include "radio_config_si44631B.h"
+
+#define SI446X_CHIP 0x44631Ba
 
 // #define SI446X_HW_CTS
 
@@ -75,7 +77,7 @@
  * Export WDS values for Static WDS configuration
  * This keeps the name space from the WDS program inside this file.
  */
-#define SI446X_WDS_CONFIG_BYTES { \
+#define SI44631B_WDS_CONFIG_BYTES { \
         0x06, RF_GLOBAL_XO_TUNE_2, \
         0x09, RF_SYNC_CONFIG_5, \
         0x10, RF_MODEM_MOD_TYPE_12, \
@@ -99,4 +101,4 @@
         0x00 \
  }
 
-#endif          // __RADIO_PLATFORM_SI446X_H__
+#endif          // __RADIO_PLATFORM_SI44631B_H__

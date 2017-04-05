@@ -11,8 +11,8 @@
  * @n http://www.silabs.com
  */
 
-#ifndef __RADIO_CONFIG_SI446X_H__
-#define __RADIO_CONFIG_SI446X_H__
+#ifndef __RADIO_CONFIG_SI44631B_H__
+#define __RADIO_CONFIG_SI44631B_H__
 
 // USER DEFINED PARAMETERS
 // Define your own parameters here
@@ -621,4 +621,4 @@
                             RADIO_CONFIGURATION_DATA_RADIO_DELAY_CNT_AFTER_RESET       \
                             }
 
-#endif /* __RADIO_CONFIG_SI446X_H__ */
+#endif /* __RADIO_CONFIG_SI44631B_H__ */

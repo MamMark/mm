@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Eric B. Decker
+ * Copyright (c) 2016-2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,12 +47,14 @@
  * a TX/RX switch and need to be programmed appropriately.
  */
 
-#ifndef __RADIO_PLATFORM_SI446X_H__
-#define __RADIO_PLATFORM_SI446X_H__
+#ifndef __RADIO_PLATFORM_SI44631B_H__
+#define __RADIO_PLATFORM_SI44631B_H__
 
-#define SI446X_CHIP 0x4463a
+#include "radio_config_si44631B.h"
 
-#define SI446X_HW_CTS
+#define SI446X_CHIP 0x44631Ba
+
+// #define SI446X_HW_CTS
 
 /*
  * SI446X_RF_POWER_UP is a platform dependent define.  In particular, TXCO should be
@@ -63,20 +65,20 @@
 
 /*
  * SI446X_RF_GPIO_CFG determines how the gpio pins are programmed.
- *
- * gp0: 0, gp1: cts, gp2: rx_state (33), gp3: tx_state (32)
- * gp2: 0, gp3: 1 -> Tx,   gp2: 1, gp3: 0 -> Rx
+ * gp0: Vcont1, gp2: Vcont2 (TR switch),  gp0 RX_STATE 33, gp2 TX_STATE 32
+ * gp1: cts (no connection), no h/w CTS, gp3: no connection.
  */
 #define SI446X_GPIO_PIN_CFG_LEN    8
-#define SI446X_RF_GPIO_PIN_CFG     0x13, 2, 8, 33, 32, 0x00, 0x00, 0x00
+#define SI446X_RF_GPIO_PIN_CFG     0x13, 0x21, 0x08, 0x20, 0x08, 0x00, 0x00, 0x00
 
 
 /*
  * Export WDS values for Static WDS configuration
  * This keeps the name space from the WDS program inside this file.
  */
-#define SI446X_WDS_CONFIG_BYTES { \
+#define SI44631B_WDS_CONFIG_BYTES { \
         0x06, RF_GLOBAL_XO_TUNE_2, \
+        0x0D, RF_PREAMBLE_TX_LENGTH_9, \
         0x09, RF_SYNC_CONFIG_5, \
         0x10, RF_MODEM_MOD_TYPE_12, \
         0x05, RF_MODEM_FREQ_DEV_0_1, \
@@ -99,4 +101,4 @@
         0x00 \
  }
 
-#endif          // __RADIO_PLATFORM_SI446X_H__
+#endif          // __RADIO_PLATFORM_SI44631B_H__
