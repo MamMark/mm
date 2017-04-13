@@ -169,6 +169,9 @@ implementation {
    */
   event void Boot.booted() {
 //    call LogEvent.logEvent(DT_EVENT_GPS_BOOT,0);
+    gpsc_change_state(GPSC_OFF, GPSW_NONE);
+    gpsc_operational = 0;
+    call GPSControl.start();
   }
 
   /*
@@ -231,6 +234,7 @@ implementation {
 
       case GPSC_CONFIGING:
         call Act.gpsa_ready();
+	signal GPSBoot.booted();
         next_state = GPSC_ON;
 	break;
 
