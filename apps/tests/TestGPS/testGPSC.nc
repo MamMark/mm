@@ -7,7 +7,9 @@ configuration testGPSC {}
 implementation {
   components MainC, testGPSP;
   MainC.SoftwareInit -> testGPSP;
-  testGPSP -> MainC.Boot;
+
+  components SystemBootC;
+  testGPSP.Boot -> SystemBootC;
 
   components PlatformC;
   components GPS0C as GpsPort;
