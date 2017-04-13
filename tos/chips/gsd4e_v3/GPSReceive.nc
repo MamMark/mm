@@ -1,4 +1,4 @@
 interface GPSReceive {
-  async event   void       receive(gps_msg_t *msg);
-  command       void       recv_done(gps_msg_t *msg);
+  async event   void       receive(uint8_t *msg, uint16_t len);
+  command       void       receive_done(uint8_t *msg, uint16_t len);
 }

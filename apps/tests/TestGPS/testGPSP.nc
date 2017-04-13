@@ -39,7 +39,7 @@ implementation {
   task void test_task() {
     nop();
     // call Collect.collect();
-    call GPSReceive.recv_done(p_msg);
+    call GPSReceive.receive_done(p_msg);
     recv_count++;
 
 #ifdef notdef
