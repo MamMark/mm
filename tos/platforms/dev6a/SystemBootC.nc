@@ -53,14 +53,14 @@ implementation {
   components FileSystemC as FS;
   components mmSyncC;
 #ifdef GPS_TEST
-  components GPSC;
+  components GPS0C;
 #endif
 
-  FS.Boot -> MainC;		// first up on the smorgasborg is FS
-  mmSyncC.Boot -> FS.OutBoot;   //        then write initial status
+  FS.Boot -> MainC;		 // first up on the smorgasborg is FS
+  mmSyncC.Boot -> FS.OutBoot;    //        then write initial boot record
 #ifdef GPS_TEST
-  GPSC.Boot -> mmSyncC.OutBoot;	//            and then GPS.
-  Boot = GPSC.OutBoot;		// bring up everyone else
+  GPS0C.Boot -> mmSyncC.OutBoot; //            and then GPS.
+  Boot = GPS0C.GPSBoot;          // bring up everyone else
 #else
   Boot = mmSyncC.OutBoot;
 #endif
