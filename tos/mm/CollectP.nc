@@ -61,11 +61,9 @@ implementation {
     return SUCCESS;
   }
 
+
   void finish_sector() {
     unsigned int i;
-
-    if (dcc.remaining == 0)     /* already finished */
-      return;
 
     /* won't change checksum */
     for (i = 0; i < dcc.remaining; i++)
@@ -124,10 +122,10 @@ implementation {
       if (dcc.cur_buf == NULL) {
         /*
          * nobody home, try to go get one.
-	 *
-	 * get_free_buf_handle either works or panics.
+         *
+         * get_free_buf_handle either works or panics.
          */
-	dcc.handle = call SSW.get_free_buf_handle();
+        dcc.handle = call SSW.get_free_buf_handle();
         dcc.cur_ptr = dcc.cur_buf = call SSW.buf_handle_to_buf(dcc.handle);
         dcc.remaining = DC_BLK_SIZE;
         dcc.chksum = 0;
@@ -143,8 +141,9 @@ implementation {
       dcc.cur_ptr = ptr;
       dlen -= num_to_copy;
       dcc.remaining -= num_to_copy;
-      if (dcc.remaining == 0)
+      if (dcc.remaining == 0) {
         finish_sector();
+      }
     }
   }
 
@@ -185,32 +184,44 @@ implementation {
         (hlen + dlen) < 4)
       call Panic.panic(PANIC_SS, 3, hlen, dlen, header->len, header->dtype);
 
-    if (dcc.remaining == 0 || dcc.remaining >= hlen) {
-      /*
-       * Either no space remains (will grab a new sector/buffer) or the
-       * header will fit in what's left.  Just push the header out followed
-       * by the data.
-       *
-       * The header will fit in the DC_BLK_SIZE bytes in the sector in what
-       * is left.  checked for max above.
-       */
-      copy_out((void *)header, hlen);
-      copy_out((void *)data,   dlen);
-      align_next();
-      return;
-    }
+    while(1) {
+      if (dcc.remaining == 0 || dcc.remaining >= hlen) {
+        /*
+         * Either no space remains (will grab a new sector/buffer) or the
+         * header will fit in what's left.  Just push the header out followed
+         * by the data.
+         *
+         * The header will fit in the DC_BLK_SIZE bytes in the sector in what
+         * is left.  checked for max above.
+         */
+        copy_out((void *)header, hlen);
+        copy_out((void *)data,   dlen);
+        align_next();
+        return;
+      }
 
-    /*
-     * there is some space remaining but the header won't fit.  We should
-     * always have at least 4 bytes remaining so should be able to laydown
-     * the DT_TINTRYALF record (2 bytes len and 2 bytes dtype).
-     */
-    if (dcc.remaining < 4)
-      call Panic.panic(PANIC_SS, 4, dcc.remaining, 0, 0, 0);
-    dt_hdr.len = 4;
-    dt_hdr.dtype = DT_TINTRYALF;
-    copy_out((void *) &dt_hdr, 4);
-    finish_sector();
+      /*
+       * there is some space remaining but the header won't fit.  We should
+       * always have at least 4 bytes remaining so should be able to laydown
+       * the DT_TINTRYALF record (2 bytes len and 2 bytes dtype).
+       */
+      if (dcc.remaining < 4)
+        call Panic.panic(PANIC_SS, 4, dcc.remaining, 0, 0, 0);
+      dt_hdr.len = 4;
+      dt_hdr.dtype = DT_TINTRYALF;
+      copy_out((void *) &dt_hdr, 4);
+
+      /*
+       * If we had exactly 4 bytes left, the DT_TINTRYALF will have filled
+       * it forcing a finish_sector, leaving no remaining bytes.  But if we
+       * still have some remaining then flush the current sector out and start
+       * fresh.
+       */
+      if (dcc.remaining)
+        finish_sector();
+
+      /* and try again in the new sector */
+    }
   }
 
 
