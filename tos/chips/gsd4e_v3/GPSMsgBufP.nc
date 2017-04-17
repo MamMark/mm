@@ -14,14 +14,26 @@
  * flexibility in the processing dynamic.  When the message has been
  * processed it is returned to the free space of the buffer.
  *
- * We implement a first-in-first-out, contiguous, strictly ordered allocation
- * and queueing discipline.  This allows us to minimize the complexity of the
- * allocation and free mechanisms when managing the memory blob.  This also
- * keeps fragmentation to a minimim.
+ * Free space in this buffer is maintained by a single free structure that
+ * remembers a data pointer and length.  It is always the space following
+ * any tail (if the queue exists) to the next boundary, either the end
+ * of the buffer or the head of the queue.
+ *
+ * Any free space at the front of the buffer can be found by head - gps_buf
+ * and is used when we wrap_free (wrap the free pointer around to the front
+ * of the buffer).
+ *
+ * We implement a first-in-first-out, contiguous, strictly ordered
+ * allocation and queueing discipline.  This defines the message queue.
+ * This allows us to minimize the complexity of the allocation and free
+ * mechanisms when managing the memory blob.  This also keeps fragmentation
+ * to a minimim.
  *
  * Messages are layed down in memory, stictly contiguous.  We do not allow
  * a message to wrap or become split in anyway.  This greatly simplifies
- * how the message is accessed by higher layer routines.
+ * how the message is accessed by higher layer routines.  This also means
+ * that all memory allocated between head and tail is strictly contiguous
+ * subject to end of buffer wrappage.
  *
  * Since message byte collection happens at interrupt level (async) and
  * data collection is a syncronous actvity (task) provisions must be made
@@ -37,7 +49,6 @@
  * Each gps_msg slot maybe in one of several states:
  *
  *   EMPTY:     available for assignment, doesn't point to a memory region
- *   FREE:      available for assignment, points to a free region of memory.
  *   FILLING:   assigned, currently being filled by incoming bytes.
  *   FULL:      assigned and complete.  In the upgoing queue.
  *   BUSY:      someone is actively messing with the msg, its the head.
@@ -46,31 +57,40 @@
  *
  *   EMPTY, completely empty:  There will be one gps_msg set to FREE pointing at the
  *     entire free space.  If there are no msgs allocated, then the entire buffer has
- *     to be free.
+ *     to be free.  free always points at gps_buf and len is GPS_BUF_SIZE.
  *
  *   M_N_1F, 1 (or more) contiguous gps_msgs.  And 1 free region.
  *     The free region can be either at the front, followed by the
  *     gps_msgs, or we can have gps_msgs (starting at the front of the buffer)
- *     followed by the free space.
+ *     followed by the free space.  free points at this region and its len
+ *     reflects either the end of the buffer or from free to head.
  *
  *   M_N_2F, 1 (or more) contiguous gps_msgs and two free regions
- *     One before the gps_msg blocks and a trailing free region.
+ *     One before the gps_msg blocks and a trailing free region.  free will
+ *     always point just beyond tail (tail->data + tail->len) and will have
+ *     a length to either EOB or to head as appropriate.
  *
- * Regardless of the state, the data structures must be capable of
- * representing the appropriate condition without losing any memory.
+ * When we have two free regions, the main free region (pointed to by free) is
+ * considered the main free region.  It is what is used when allocating new
+ * space for a message.  It immediately trails the Tail area (the last allocated
+ * message on the queue).  The other region is free space on the front of the
+ * buffer, gps_buf to head.  This area is the aux free area.
  *
- * We do this using a single set of gps_msg slots without any explicit free
- * pointers.  If a region of memory is free there is a gps_msg slot that
- * points to it set to FREE.  In the degenerate case when we have consumed
- * all gps_msg slots, then there is by definition no free memory.  No
- * memory is lost because it will be assigned to the last assigned gps_msg
- * slot.
+ * We use an explict free pointer to avoid mixing algorithms between free
+ * space constraints and msg_slot constraints.  Seperate control structures
+ * keeps the special cases needed to a minimum.
  *
- * What makes this work is the extra control cell in each gps_msg slot,
- * extra.  Extra keeps track of any additional buffer allocated to a slot.
- * In the above, example, the remaining free space will be assigned to the
- * last gps_msg slot.  Its extra cell will indicate how many additional
- * bytes have been allocated.
+ * When working towards the end of memory, some special cases must be
+ * handled.  If we have room for a message but it won't fit in the region
+ * at the end of memory we do a force_consumption of the bytes at the
+ * end, they get added to tail->extra and we wrap the free pointer.
+ * The new message gets allocated at the front of the buffer and we move
+ * on.  When the previous tail message is msg_released the extra bytes
+ * will also be removed.
+ *
+ * Note that we must check to see if the message will fit before changing
+ * any state.
+ *
  *
 **** Discussion of control variables and corner cases:
  *
@@ -79,16 +99,13 @@
  * gps_msgs: an array of strictly ordered gps_msg_t structs that point at
  *   regions in the gps_buffer memory.
  *
- * h: head index, points to an element of gps_msgs that defines the head
- *    of the fifo queue of msg_slots for slots that contain actual messages.
+ * head(h): head index, points to an element of gps_msgs that defines the head
+ *   of the fifo queue of msg_slots that contain allocated messages.  If head
+ *   is INVALID no messages are queued (queue is empty).
  *
- * t: tail index, points to the last lement of gps_msgs that defines the tail
- *    of the fifo queue.  All msg_slots between h and t are valid and point
- *    at valid messages.
- *
- * regions of the buffer are pointed to by msg_slots.  Each msg slot contains
- * a pointer to an area in the buffer, its length, possible extra allocation,
- * and the state of this gps_msg slot (see above).
+ * tail(t): tail index, points to the last element of gps_msgs that defines the tail
+ *   of the fifo queue.  All msg_slots between h and t are valid and point
+ *   at valid messages.
  *
  * messages are allocated stictly ordered (subject to wrap) and successive
  * entries in the gps_msgs array will point to messages that have arrived
@@ -99,104 +116,38 @@
  *
  * free space control:
  *
- *   f_m: free_main, this is the main free space index.  If there is any
- *        free space than this is the index of the next free block that
- *        will be used for a new msg.  It points at a msg_slot that will
- *        be (t+1)%32 if t exists.  If t does not exist, then there can
- *        be no msg_slots allocated and the entire buffer is free.
+ *   free: is a pointer into the gps_buffer.  It always points at memory
+ *     that follows the tail msg if tail is valid.  It either runs from the
+ *     end of tail to the end of the gps_buf (free region is in the rear of
+ *     the buffer) or from the end of tail to start of head (free region is
+ *     in the front of the buffer)
  *
- *        Note that at all times except for when t is invalid, f_m should
- *        be (t+1)%slots.  That is the next msg_slot that will be allocated
- *        during the next msg_start, needs to be exactly what f_m is
- *        pointing at that holds the current free region.  This preserves
- *        the strict ordering of the msg queue.
+ *   free_len: the length of the current free region.
  *
- *   f_a: free_aux.  When messages are returned to the free space, this
- *        happens to messages that are at the front of the fifo.  This free
- *        space has to be accounted for.  f_a points to a msg_slot that
- *        captures any free regions from the front of the queue.
  *
- *        Eventually, f_m will hit the end of the buffer and will need
- *        to wrap.  When this happens f_m will subsume the free memory
- *        being maintained by f_a and allocations can continue.
- *
- *        The idea is f_a captures any freeing that occurs at the front
- *        of the queue until f_m hits the discontinuity at the end of the
- *        buffer, at which time, f_m wraps back to the front and picks up
- *        the free memory that f_a has been keeping track of.
- *
- *        f_a is ONLY used when there is a free space discontinuity that
- *        f_m crosses.
- *
- * Corner/Special Cases:
+**** Corner/Special Cases:
  *
 **** Initial State:
- *   When the buffer is empty, there will be one msg_slot, set to FREE,
- *   pointing at the start of the buffer, len BUF_SIZE.
- *
- *      f_m -> msg_slot -> data     gps_buf, BUF_SIZE, 0, FREE
- *      all other msg_slots EMPTY.
- *
- *      f_a INVALID
- *      h, t INVALID
- *
- *      note: f_m can be any valid gps_msgs index.  Initially this will be 0
- *      but any idex can be used. it depends on where it f_m ends up as
- *      the queue is cycled.
+ *   When the buffer is empty, there are no entries in the msg_queue, head
+ *   will be INVALID.  Free will be set to gps_buf with a free_len of
+ *   GPS_BUF_SIZE
  *
  * Transition from 1 queue element to 0.  ie.  the last msg is released and the
- * queue length is 1.
+ * queue length is 1.  The queue may be located anywhere in memory, when the
+ * last element is released we could end up with a fragmented free space, even
+ * though all memory has now been release.
  *
- *   The msg_release will cause the gps_msgs[h] to be added to the end of the
- *   f_a region.  This then means that the f_a region should now butt up against
- *   the current f_m free region.  One can leave this discontinuity alone or
- *   one can rearrange and make f_m's msg_slot point at the beginning of memory.
+ * When the last message is released, the free space will be reset back to fully
+ * contiguous, ie. free = gps_buf, free_len = GPS_BUF_SIZE.
  *
 **** Running out of memory:
  *
- * If we run out of memory, ie. the existing msg_slots (< 32) consume all of the
- * gps buffer, then any msg_start will need to return NULL and cause the incoming
- * state machine to flush incoming bytes.
+ * Memory starvation is indicated by free_len < len (the requested length).
+ * We will always return NULL (fail) to msg_start call.  This only occurs
+ * after any potential wrap_free has occurred.  When checking to see if a
+ * message will fit we need to check the current free region as well as the
+ * potential aux region (in the front).
  *
- * This state will be indicated because f_m -> msg -> data NULL, and len 0.
- *
- * When a msg_release occurs, the msg will be added to f_a and checks will need to
- * be done to restart f_m with good data.
- *
- *
-**** Running out of msg_slots:
- *
- * If so many msgs come in such that we consume all msg_slots (buffers
- * consumed < BUF_SIZE), then msg_start will return NULL, etc.
- *
- * There can be no f_a regions because any prior movement of f_m that would
- * cause an advance of the free control would have switched over to f_a.
- * The msg_slot being used by f_a will have become available for allocation
- * (f_a INVALID).  Eventually, f_m will have run through all available msg_slots
- * except for the last one being used by f_m.
- *
- * Now the last successful msg_start occurs, the f_m slot is used for that msg
- * but there are now no longer any free msg_slots for any remaining free_space.
- * By definition at this point we no long have any free space.  We modify the
- * last msg_slot (will be the new t) to allocate all additional free space from
- * the last free msg_slot.  The additional allocation is indicated in the
- * value of 'extra'.
- *
-**** Transition from no available msg_slots to 1 msg_slot.
- *
- * When a msg_release occurs in this state we will transition from no free space
- * to being able to represent free space again.  However we may have a discontinous
- * condition that would need both a f_m index and f_a index to represent properly.
- * This is problematic since we have only released one msg_slot.
- *
- * To work around that problem, we ignore the free space that was consumed
- * by t->extra.  And only free what is being held by the msg_slot being released.
- * Eventually, the msg at T will be released and the extra memory will be returned
- * as well.  So the situation eventually corrects itself.
- *
- * In the meantime, the condition that got us into this state is considered extreme
- * and shouldn't be happening, so adding complexity to return all the memory doesn't
- * seem justified.
  *
 **** Running Off the End:
  *
@@ -205,24 +156,16 @@
  * to simplify access to the data and the current message won't fit in the
  * remaining space.
  *
- * There may be more free space in the auxilliary region f_a.  See if there
- * is enough space there (if not fail, without changing any state).  If
- * there is space in f_a then we need to consume the rest of the gps_buf
- * into the tail entry (t, via t->extra, this is a forced_consume), move
- * f_m to f_a and then allocate the new msg normally.
+ * There may be more free space in the aux region at the front.  We first
+ * check to see if a message will fit in the current region (free_len).
+ * If not check the aux_region (aux_len).  If so force_consume free_len
+ * and wrap to the aux region.
  *
 **** Freeing last used msg_slot (free space reorg)
  *
  * When the last used message is freed, the entire buffer will be free
- * space.  The state of f_m and f_a can be just about anything.  If f_a
- * is VALID that says that f_m crosses the discontinuity and this a problem.
- * If the next msg_start has a length bigger than f_m->len this will fail.
- * Normally this would cause a forced consumption of the free space in f_m.
- * But for that to work there has to be an existing Tail (T) (that is where
- * the extra gets accounted for).
- *
- * So anytime we don't have a valid tail (ie. all memory is free), we have
- * to reset the free space back to a single region with no discontinuities.
+ * space.  We want to coalesce the free space into one contiguous region
+ * again.  Set free = gps_buf and free_len = GPS_BUF_SIZE.  aux_len = 0.
  */
 
 
