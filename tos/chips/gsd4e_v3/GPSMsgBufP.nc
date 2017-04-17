@@ -206,21 +206,107 @@ implementation {
 
 
   command error_t Init.init() {
+    /* initilize the control cells for the msg queue and free space */
+    gmc.free     = gps_buf;
+    gmc.free_len = GPS_BUF_SIZE;
+    gmc.head     = MSG_NO_INDEX;        /* no msgs in queue */
+    gmc.tail     = MSG_NO_INDEX;        /* no msgs in queue */
+
+    /* all msg slots initialized to EMPTY (0) */
+
+    return SUCCESS;
+  }
+
+
+  /*
+   * wrap_free: wrap free space as needed
+   *
+   * The Free space normally lives at the end of the msg queue and
+   * ends at the edge of the gps_buffer.  If there is space at the
+   * front when we hit the end of the buffer, we want to wrap and
+   * start using that space.
+   */
+  void wrap_free() {
+    if (gmc.free_len)                   /* still space left */
       return;
+    if (gmc.aux_len == 0)               /* no space to add */
       return;
+    gmc.free = gps_buf;                 /* wrap to beginning */
+    gmc.free_len = gmc.aux_len;
+    gmc_aux_len = 0;
   }
 
 
   async command uint8_t *GPSBuffer.msg_start(uint16_t len) {
+    gps_msg_t *msg;             /* message slot we are working on */
+    uint16_t   idx;             /* index of message slot */
+
+    if (gmc.free < gps_buf || gmc.free >= gps_buf + GPS_BUF_SIZE ||
+        gmc.free_len > GPS_BUF_SIZE) {
+      gps_panic(GPSW_MSG_START, gmc.free, gmc.free_len);
+      return NULL;
     }
 
+    /*
+     * bail out early if no free space or not enough
+     */
+    if (gmc.full >= GPS_MAX_MSGS ||
+        (gmc.free_len < len && gmc.aux_len < len))
+      return NULL;
 
+    /*
+     * Look at the msg queue to see what the state of free space is.
+     * EMPTY (buffer is all FREE), !EMPTY (1 or 2 free space regions).
+     */
+    if (MSG_INDEX_INVALID(gmc.head)) {          /* no head, empty queue */
+      /* no msgs, all free space */
+      msg = &gps_msgs[0];
+      msg->data  = gmc.free;
+      msg-> len  = len;
+      msg->state = GPS_MSG_FILLING;
 
+      gmc.free = gmc.free + len;
+      gmc.free_len -= len;              /* zero is okay */
 
+      gmc.head   = 0;                   /* always 0 */
+      gmc.tail   = 0;                   /* ditto for tail */
+      gmc.full   = 1;                   /* just one */
+      if (!gmc.max_full)                /* if zero, pop it */
+        gmc.max_full = 1;
+
+      return w_msg->data;
     }
 
+    /*
+     * The msg queue is not empty.  Tail (t) points at the last puppy.
+     * We know we have 1 or 2 free regions.  free points at the one
+     * we want to try first.
+     */
+    if (len <= gmc.free_len) {
+      /* msg will fit in current free space. */
+      idx = MSG_NEXT_INDEX(gmc.tail);
+      msg = &gps_msg[idx];
+      if (msg->state) {                 /* had better be empty */
+        gps_panic(GPSW_MSG_START, (parg_t) msg, msg->state);
+        return NULL;
+      }
 
+      msg->data  = gmc.free;
+      msg->len   = len;
+      msg->state = GPS_MSG_FILLING;
+      gmc.tail   = idx;                 /* advance tail */
+
+      gmc.free = gmc.free + len;
+      gmc.free_len -= len;              /* zero is okay */
+
+      gmc.full++;                       /* one more*/
+      if (gmc.full > gmc.max_full)
+        gmc.mac_full = gmc.full;
+
+      wrap_free();                      /* wrap if needed */
+      return w_msg->data;
     }
+    return NULL;
   }
 
 
