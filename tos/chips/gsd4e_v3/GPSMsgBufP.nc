@@ -171,8 +171,9 @@
 
 #include <panic.h>
 #include <platform_panic.h>
-#include "GPSMsgBuf.h"
-#include "math.h"
+#include <gps.h>
+#include <GPSMsgBuf.h>
+
 
 #ifndef PANIC_GPS
 enum {
@@ -187,21 +188,20 @@ module GPSMsgBufP {
     interface Init;
     interface GPSBuffer;
   }
+  uses interface Panic;
 }
 implementation {
-  norace gps_buf_t       buffer;
-  norace gps_msg_table_t msg_table[GPS_MAX_MSG_TABLE];
+  uint8_t   gps_buf[GPS_BUF_SIZE];       /* underlying storage */
+  gps_msg_t gps_msgs[GPS_MAX_MSGS];      /* msg slots */
+  gmc_t     gmc;                         /* gps message control */
 
-/* utility routines */
 
-  /* warn */
-  void _warn(uint8_t where, parg_t p) {
-    call Panic.warn(PANIC_GPS, where, p, 0, 0, 0);
+  void gps_warn(uint8_t where, parg_t p0, parg_t p1) {
+    call Panic.warn(PANIC_GPS, where, p0, p1, 0, 0);
   }
 
-  /* panic */
-  void _panic(uint8_t where, parg_t p) {
-    call Panic.panic(PANIC_GPS, where, p, 0, 0, 0);
+  void gps_panic(uint8_t where, parg_t p0, parg_t p1) {
+    call Panic.panic(PANIC_GPS, where, p0, p1, 0, 0);
   }
 
 
