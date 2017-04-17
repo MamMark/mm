@@ -211,6 +211,7 @@ implementation {
   }
 
 
+  async command uint8_t *GPSBuffer.msg_start(uint16_t len) {
     }
 
 
@@ -223,11 +224,21 @@ implementation {
   }
 
 
-
+  async command void GPSBuffer.msg_abort() {
   }
 
 
+  async command void GPSBuffer.msg_complete() {
   }
+
+
+  async command uint8_t *GPSBuffer.msg_next() {
+  }
+
+
+  async command void GPSBuffer.msg_release(uint8_t *msg_data) {
+  }
+
 
   /*
    * Panic.hook
