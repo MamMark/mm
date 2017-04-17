@@ -107,7 +107,7 @@
  *
  *        Note that at all times except for when t is invalid, f_m should
  *        be (t+1)%slots.  That is the next msg_slot that will be allocated
- *        durint the next msg_start, needs to be exactly what f_m is
+ *        during the next msg_start, needs to be exactly what f_m is
  *        pointing at that holds the current free region.  This preserves
  *        the strict ordering of the msg queue.
  *
@@ -124,6 +124,9 @@
  *        of the queue until f_m hits the discontinuity at the end of the
  *        buffer, at which time, f_m wraps back to the front and picks up
  *        the free memory that f_a has been keeping track of.
+ *
+ *        f_a is ONLY used when there is a free space discontinuity that
+ *        f_m crosses.
  *
  * Corner/Special Cases:
  *
@@ -204,9 +207,22 @@
  *
  * There may be more free space in the auxilliary region f_a.  See if there
  * is enough space there (if not fail, without changing any state).  If
- * there is space in f_a then we need to consume the rest of the gps_buf into
- * the tail entry (t, via t->extra), move f_m to f_a and then allocate the
- * new msg normally.
+ * there is space in f_a then we need to consume the rest of the gps_buf
+ * into the tail entry (t, via t->extra, this is a forced_consume), move
+ * f_m to f_a and then allocate the new msg normally.
+ *
+**** Freeing last used msg_slot (free space reorg)
+ *
+ * When the last used message is freed, the entire buffer will be free
+ * space.  The state of f_m and f_a can be just about anything.  If f_a
+ * is VALID that says that f_m crosses the discontinuity and this a problem.
+ * If the next msg_start has a length bigger than f_m->len this will fail.
+ * Normally this would cause a forced consumption of the free space in f_m.
+ * But for that to work there has to be an existing Tail (T) (that is where
+ * the extra gets accounted for).
+ *
+ * So anytime we don't have a valid tail (ie. all memory is free), we have
+ * to reset the free space back to a single region with no discontinuities.
  */
 
 
