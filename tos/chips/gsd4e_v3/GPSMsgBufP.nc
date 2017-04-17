@@ -186,10 +186,6 @@ module GPSMsgBufP {
   provides {
     interface Init;
     interface GPSBuffer;
-    interface GPSReceive;
-  }
-  uses {
-    interface Panic;
   }
 }
 implementation {
@@ -208,162 +204,29 @@ implementation {
     call Panic.panic(PANIC_GPS, where, p, 0, 0, 0);
   }
 
-/* buffer handling interface routines */
 
-  async command       void  GPSBuffer.add_byte(uint8_t byte) {
-    if (!buffer.collect_state) {                  // msg_start() not called yet
-      _panic(GPSW_ADD_BYTE, byte);
-      return;
-    }
-    if (buffer.collect_state == BC_FLUSHING) {      // flushing, waiting for msg_complete()
-      return;
-    }
-    if (buffer.i_current >= (GPS_MAX_BUF - 1)) { // out-of-range offset
-      buffer.collect_state = BC_FLUSHING;
-      return;
-    }
-    nop();
-    buffer.data[buffer.i_current] = byte;
-    switch(buffer.checking) {
-      default:
-        _panic(GPSW_ADD_BYTE, byte);
-        break;
-      case CHECK_OFF:
-        break;
-      case CHECK_NMEA:
-        buffer.checksum ^= byte;
-        break;
-      case CHECK_SIRFBIN:
-        buffer.checksum += byte;
-        buffer.checksum &= 0x7fff;
-        break;
-    }
-    buffer.i_current++;
-  }
-
-  async command       void     GPSBuffer.begin_NMEA_SUM() {
-      atomic {
-        buffer.checking = CHECK_NMEA;
-        buffer.checksum = 0;
-      }
-  }
-
-  async command       void     GPSBuffer.begin_SIRF_SUM() {
-    atomic {
-      buffer.checking = CHECK_SIRFBIN;
-      buffer.checksum = 0;
-    }
-  }
-
-  async command       uint16_t     GPSBuffer.end_SUM(int8_t correction) {
-    // offset controls where to find first checksum byte in buffer
-    atomic {
-      buffer.checking = CHECK_OFF;
-      buffer.i_checksum = buffer.i_current + correction;
-  }
-  return buffer.checksum;
-  }
-
-  async command       void     GPSBuffer.msg_abort() {
-    atomic {
-      buffer.collect_state = BC_IDLE;
-      buffer.i_current = buffer.i_begin;
-      buffer.checking = CHECK_OFF;
-    }
-  }
-
-  async command       void     GPSBuffer.msg_complete() {
-    unsigned int   i;
-    gps_msg_t      *msg;
-
-    atomic {
-      if (!buffer.collect_state) {      /* collecting? */
-        _panic(GPSW_MSG_COMPLETE, 1);   /* nope - should be */
-        return;
-      }
-      if (buffer.collect_state == BC_FLUSHING) {
-        buffer.collect_state = BC_IDLE;
-        buffer.i_current = buffer.i_begin;
-        return;
-      }
-      nop();
-      /* add completed msg to msg table */
-      msg = NULL;
-      for (i = 0; i < GPS_MAX_MSG_TABLE; i++) {   // add completed msg to table
-        if (msg_table[i].state == MSG_FREE) {
-          msg_table[i].state = MSG_IN_USE;
-          msg = (gps_msg_t *) &buffer.data[buffer.i_begin];
-          msg_table[i].msg = msg;
-          msg_table[i].len = buffer.i_current - buffer.i_begin;
-          msg->len = msg_table[i].len;
-          break;
-        }
-      }
-      buffer.collect_state = BC_IDLE;
-    }
-    if (msg) {
-      signal GPSReceive.receive(msg);
-      return;
-    }
-
-    /* no free entry in message table, drop current incoming */
-    buffer.i_current = buffer.i_begin;
-    _warn(GPSW_MSG_COMPLETE, 2);
-  }
-
-  async command       void     GPSBuffer.msg_start() {
-    if (buffer.collect_state) {         /* anything other than idle is wrong */
-      _panic(GPSW_MSG_START, 0);
-    }
-    nop();
-    buffer.collect_state = BC_BODY;
-    buffer.i_begin = (((uint32_t) &buffer.data[buffer.i_current] % 2) != 0) // force word boundary
-                      ? buffer.i_current++ : buffer.i_current;
-    buffer.i_current += sizeof(gps_msg_t);   // add room for typed data header
-    buffer.checking = CHECK_OFF;
-    buffer.checksum = 0;
-  }
-
-/* message handling interface routines */
-
-  command       void       GPSReceive.recv_done(gps_msg_t *msg) {
-    uint8_t     i;
-
-    nop();
-    for (i = 0; i < GPS_MAX_MSG_TABLE; i++) {
-      atomic {
-        if (msg_table[i].msg == msg) {
-          msg_table[i].state = MSG_FREE;
-          return;
-        }
-      }
-    }
-    _panic(GPSW_SEND_DONE, 0);
-  }
-
-//  signal GPSSend.send_done(gps_msg_t *msg);
-//  command       void       GPSSend.send(gps_msg_t *msg) { }
-
-  /*
-   * Init.init: initialize module
-   */
   command error_t Init.init() {
-    uint8_t         i;
+      return;
+      return;
+  }
 
-    buffer.i_current = 0;
-    buffer.i_limit = 0;
-    buffer.i_begin = 0;
-    buffer.i_limit = 0;
-    buffer.collect_state = BC_IDLE;
-    buffer.checking = CHECK_OFF;
-    i = 0;
-    for (i = 0; i < GPS_MAX_MSG_TABLE; i++) {
-      msg_table[i].state = MSG_FREE;
-      msg_table[i].msg = NULL;
-      msg_table[i].len = 0;
+
     }
-    msg_table[0].len = GPS_MAX_BUF;  // set first entry to hold entire buffer
-    return SUCCESS;
+
+
+
+
+    }
+
+
+    }
+  }
+
+
+
+  }
+
+
   }
 
   /*
@@ -371,55 +234,3 @@ implementation {
    */
   async event void Panic.hook() { }
 }
-
-#ifdef notdef
-/*
- * GPS Message Collector states.  Where in the message is the state machine.  Used
- * when collecting messages.   Force COLLECT_START to be 0 so it gets initilized
- * by the bss initilizer and we don't have to do it.
- */
-typedef enum {                          /* looking for...  */
-  COLLECT_START = 0,                    /* start of packet */
-                                        /* must be zero    */
-  COLLECT_START_2,                      /* a2              */
-  COLLECT_LEN,                          /* 1st len byte    */
-  COLLECT_LEN_2,                        /* 2nd len byte    */
-  COLLECT_PAYLOAD,                      /* payload         */
-  COLLECT_CHK,                          /* 1st chksum byte */
-  COLLECT_CHK_2,                        /* 2nd chksum byte */
-  COLLECT_END,                          /* b0              */
-  COLLECT_END_2,                        /* b3              */
-  COLLECT_BUSY,				/* processing      */
-} collect_state_t;
-
-collect_state_t collect_state;		// message collection state, init to 0
-norace uint16_t collect_length;		// length of payload
-uint16_t        collect_cur_chksum;		// running chksum of payload
-bool            draining;                     // non-zero if simply draining.
-bool            collect_all;                  // TRUE if we collect all packets
-
-uint8_t  collect_msg[GPS_BUF_SIZE];
-uint8_t  collect_nxt;				// where we are in the buffer
-
-/*
- * Error counters
- */
-uint16_t collect_too_big;
-uint16_t collect_chksum_fail;
-uint16_t collect_proto_fail;
-uint32_t last_surfaced;
-uint32_t last_submerged;
-
-to add a collect message do this:
-    dt_gps_raw_t *gdp;
-    /*
-     * collect raw message for debugging.  Eventually this will go away
-     * or be put on a conditional.
-     */
-    gdp = (dt_gps_raw_t *) collect_msg;
-    gdp->len = DT_HDR_SIZE_GPS_RAW + SIRF_OVERHEAD + collect_length;
-    gdp->dtype = DT_GPS_RAW;
-    gdp->chip  = CHIP_GPS_GSD4E;
-    gdp->stamp_ms = call LocalTime.get();
-    call Collect.collect(collect_msg, gdp->len);
-#endif
