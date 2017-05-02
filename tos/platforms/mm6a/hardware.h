@@ -152,6 +152,7 @@
  *    xpI (don't care, port, Input), xmI (module input).
  *    module is m for m1 (sel1 0 sel0 1), same as msp430 settings.
  *              m2 for sel1 1, sel0 0, and m3 for 11.
+ *    (port, mapping), ie.  (A1, pm) says its on eUSCI-A1 and the pin is port mapped.
  *
  * A0: gps       uart   m10478  (dma overlap/AES, DMA ch 0, 1)
  *                      25wf040 external eeprom
@@ -170,13 +171,15 @@
  * port 1.0	0pI   A1 mag_drdy               port 7.0	0pI   B5 gps_cts
  *  00 I .1	0pI   B1 mag_int                 60   .1	0pI   C5 gps_tm     (PM_TA1.1)
  *  02 O .2	0pO   C4 dock_sw_led_attn  TP31  62   .2	0pI   B4 gps_tx     (PM_UCA0RXD)
- *       .3     1pO   D4 sd1_csn           TP27       .3	1pO   A4 gps_rx     (PM_UCA0TXD)
+ *       .3     0pO   D4 sd1_csn           TP27       .3	1pO   A4 gps_rx     (PM_UCA0TXD)
  *       .4	0pI   D3                              .4	1pO   J1 adc_sclk   (PM_UCB0CLK)
  *       .5	1pO   C1 mag_csn                      .5	1pO   H2 adc_simo   (PM_UCB0SIMO)
- *       .6	1pO   D1 accel_csn                    .6	0pO   J2 pwr_sd0_en
+ *       .6	1pO   D1 accel_csn                    .6	1pO   J2 pwr_sd0_en
  *       .7	0pI   E1 accel_int2                   .7	1pO   G3 sd0_sclk   (PM_UCA2CLK)
  *
- * port 2.0	1pO   E4 sd1_clk  (PM_UCA1CLK) TP11
+ * P1.2 tell,   P1.3 tell_exception   for debugging and bring up.  Both on TP on the edge.
+ *
+ * port 2.0	1pO   E4 sd1_sclk (PM_UCA1CLK) TP11
  *  01   .1	0pI   F1 adc_rdy
  *  03   .2	0pI   E3 accel_int1
  *       .3	1pO   F4 sd1_simo (PM_UCA1SIMO) TP3
@@ -198,22 +201,22 @@
  *  21    .1	0pI   H8 radio_cts    (radio gp1)
  *  23    .2	0pO   G7 batt_sense_en
  *        .3	0pO   G8 pwr_tmp_en
- *        .4	0pO   G9 pwr_3v3_en
- *        .5	0pO   F7 pwr_radio_en   (1=on)
+ *        .4	1pO   G9 pwr_3v3_en
+ *        .5	1pO   F7 pwr_radio_en   (1=on)
  *        .6	0pO   F8 sal_B
  *        .7	0pO   F9 sal_A
  *
- * port  5.0	0pO   E7 pwr_gps_mems_1V8_en   (gps pwr, mems 1V8 pwr, mems 1V8 i/o)
+ * port  5.0	1pO   E7 pwr_gps_mems_1V8_en   (gps pwr, mems 1V8 pwr, mems 1V8 i/o)
  *  40 I  .1	0pO   E8 pwr_vel_en
  *  42 O  .2	0pO   E9 pwr_press_en
  *        .3	0pI   D7 batt_sense A2
  *        .4	0pI   D8 gyro_int2              port 8.0	0pI   H3
  *        .5	0pO   C8 gps_on_off              61 I .1	0pIrd G4 dock_sd0_override  TP12
- *        .6	OpI   D9 gyro_int1               63 O
+ *        .6	0pI   D9 gyro_int1               63 O
  *        .7	1pO   C9 gyro_csn
  *
  * port  6.0	0pI   J9 radio_gp0              port  J.0       0pI   J6 LFXIN  (32KiHz)
- *  41 I  .1	0pI   H7 radio_irq              120 I  .1       0pO   J7 LFXOUT (32KiHz)
+ *  41 I  .1	0pI   H7 radio_irqn             120 I  .1       0pO   J7 LFXOUT (32KiHz)
  *  43 O  .2	0pI   A9 gps_awake              122 O  .2       1pO   A6 gps_resetn
  *        .3	1pO   B9 mems_sclk  (B1)               .3       0pI   A5 gps_rts
  *        .4	1pO   A8 mems_simo  (B1)               .4       0pI   B3
@@ -233,7 +236,7 @@
  * TP08: dock_sd0_gnd                           TP26: VS5 Ain6
  * TP09: dock_sd0_do   DAT0                     TP27: dock_sd1_csn P1.3
  * TP10: dock_sd0_rsv2 DAT1                     TP28: jtag RSTn
- * TP11: dock_sd1_clk  P2.0                     TP29: VS2 Ain3  Press
+ * TP11: dock_sd1_sclk P2.0                     TP29: VS2 Ain3  Press
  * TP12: dock_sd0_override                      TP30: VS2 Ain5  Press
  * TP13: dock_sd1_somi P3.2                     TP31: dock_sw_led_attn P1.2
  * TP14: tmp_pwr                                TP32: jtag SWO  PJ.5
