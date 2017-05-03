@@ -49,18 +49,19 @@ implementation {
 
   components HplMsp432GpioC as GpioC;
 
-  /* RED LED (LED2 RED) at P2.0 */
+  /*
+   * mm6a doesn't have any leds on board.  just wiggle pins we
+   * can see.
+   */
   components new Msp432GpioC() as Led0Impl;
-  Led0Impl -> GpioC.Port20;
+  Led0Impl -> GpioC.Port12;
   PlatformLedsP.Led0 -> Led0Impl;
 
-  /* GREEN LED (LED2 GREEN) at P2.1 */
   components new Msp432GpioC() as Led1Impl;
-  Led1Impl -> GpioC.Port21;
+  Led1Impl -> GpioC.Port13;
   PlatformLedsP.Led1 -> Led1Impl;
 
-  /* BLUE LED (LED2 BLUE) at P2.2 */
   components new Msp432GpioC() as Led2Impl;
-  Led2Impl -> GpioC.Port22;
+  Led2Impl -> GpioC.Port20;
   PlatformLedsP.Led2 -> Led2Impl;
 }
