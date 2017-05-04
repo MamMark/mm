@@ -32,6 +32,8 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <typed_data.h>
+
 interface Collect {
   command void collect(dt_header_t *header, uint16_t hlen,
                        uint8_t     *data,   uint16_t dlen);
