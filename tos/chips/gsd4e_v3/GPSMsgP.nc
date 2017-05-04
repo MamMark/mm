@@ -235,13 +235,13 @@ implementation {
   /*
    * Process a nav data packet from the Sirf3.  MID 2
    */
-  void process_navdata(gps_nav_data_nt *np) {
+  void process_navdata(gps_nav_data_t *np) {
 
 #ifdef GPS_COMM_EMIT_2
     uint8_t event_data[DT_HDR_SIZE_EVENT];
-    dt_event_nt *edp;
+    dt_event_t *edp;
 
-    edp = (dt_event_nt *) &event_data;
+    edp = (dt_event_t *) &event_data;
     edp->len = DT_HDR_SIZE_EVENT;
     edp->dtype = DT_EVENT;
     edp->stamp_ms = call LocalTime.get();
@@ -261,13 +261,13 @@ implementation {
   /*
    * Process a clock status data packet from the Sirf3.  MID 7
    */
-  void process_clockstatus(gps_clock_status_data_nt *cp) {
+  void process_clockstatus(gps_clock_status_data_t *cp) {
 
 #ifdef GPS_COMM_EMIT_7
     uint8_t event_data[DT_HDR_SIZE_EVENT];
-    dt_event_nt *edp;
+    dt_event_t *edp;
 
-    edp = (dt_event_nt *) &event_data;
+    edp = (dt_event_t *) &event_data;
     edp->len = DT_HDR_SIZE_EVENT;
     edp->dtype = DT_EVENT;
     edp->stamp_ms = call LocalTime.get();
@@ -287,10 +287,10 @@ implementation {
   /*
    * Process a Geodetic packet from the Sirf3.   MID 29
    */
-  void process_geodetic(gps_geodetic_nt *gp) {
+  void process_geodetic(gps_geodetic_t *gp) {
 #ifdef GPS_COMM_EMIT_29
     uint8_t event_data[DT_HDR_SIZE_EVENT];
-    dt_event_nt *edp;
+    dt_event_t *edp;
 #endif
 
     /*
@@ -299,15 +299,15 @@ implementation {
 
     uint8_t gps_time_block[GPS_TIME_BLOCK_SIZE];
     uint8_t gps_pos_block[GPS_POS_BLOCK_SIZE];
-    dt_gps_time_nt *timep;
-    dt_gps_pos_nt *posp;
+    dt_gps_time_t *timep;
+    dt_gps_pos_t *posp;
     uint32_t t, t1;
 
     if (!gp || gp->len != GEODETIC_LEN)
       return;
 
-    timep = (dt_gps_time_nt*)gps_time_block;
-    posp = (dt_gps_pos_nt*)gps_pos_block;
+    timep = (dt_gps_time_t *)gps_time_block;
+    posp = (dt_gps_pos_t *)gps_pos_block;
 
     timep->len = GPS_TIME_BLOCK_SIZE;
     timep->dtype = DT_GPS_TIME;
@@ -339,7 +339,7 @@ implementation {
      * Check for state change information
      */
 #ifdef GPS_COMM_EMIT_29
-    edp = (dt_event_nt *) &event_data;
+    edp = (dt_event_t *) &event_data;
     edp->len = DT_HDR_SIZE_EVENT;
     edp->dtype = DT_EVENT;
     edp->stamp_ms = call LocalTime.get();
@@ -393,15 +393,15 @@ implementation {
 
 
   task void gps_msg_task() {
-    dt_gps_raw_nt *gdp;
+    dt_gps_raw_t *gdp;
     uint8_t i, max;
-    gps_geodetic_nt *gp;
+    gps_geodetic_t *gp;
 
     /*
      * collect raw message for debugging.  Eventually this will go away
      * or be put on a conditional.
      */
-    gdp = (dt_gps_raw_nt *) collect_msg;
+    gdp = (dt_gps_raw_t *) collect_msg;
     gdp->len = DT_HDR_SIZE_GPS_RAW + SIRF_OVERHEAD + collect_length;
     gdp->dtype = DT_GPS_RAW;
     gdp->chip  = CHIP_GPS_SIRF3;
@@ -411,7 +411,7 @@ implementation {
     /*
      * Look at message and see if it is a geodetic.  If so process it
      */
-    gp = (gps_geodetic_nt *) (&collect_msg[GPS_START_OFFSET]);
+    gp = (gps_geodetic_t *) (&collect_msg[GPS_START_OFFSET]);
     if (gp->start1 != SIRF_BIN_START || gp->start2 != SIRF_BIN_START_2) {
       call Panic.warn(PANIC_GPS, 134, gp->start1, gp->start2, 0, 0);
     }

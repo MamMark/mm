@@ -352,12 +352,11 @@ implementation {
   }
 
   event void Timer.fired() {
-    dt_test_nt *tp;
+    dt_header_t t;
 
     nop();
-    tp = (void *) d;
-    tp->len     = 256;
-    tp->dtype   = DT_TEST;
-    call Collect.collect(d, 256);
+    t.len   = sizeof(dt_header_t) + 256;
+    t.dtype = DT_TEST;
+    call Collect.collect((void *) &t, sizeof(t), dxx, 256);
   }
 }
