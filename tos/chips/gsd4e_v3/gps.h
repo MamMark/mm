@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2017, Eric B. Decker, Daniel J. Maltbie
  * GPS platform defines
  *
  * @author Eric B. Decker (cire831@gmail.com)
@@ -38,9 +39,14 @@ typedef enum {
   GPSW_SEND_DONE,
   GPSW_START,
   GPSW_STOP,
-  GPSW_ADD_BYTE,
-  GPSW_MSG_COMPLETE,
+
+  GPSW_RESET_FREE,
   GPSW_MSG_START,
+  GPSW_MSG_ADD_BYTE,
+  GPSW_MSG_ABORT,
+  GPSW_MSG_COMPLETE,
+  GPSW_MSG_NEXT,
+  GPSW_MSG_RELEASE,
 } gps_where_t;
 
 #define GPS_LOG_EVENTS
@@ -147,40 +153,6 @@ typedef enum {
 #define DT_GPS_CYCLE_CHECK_WAIT         2000
 
 /*
- * DT -> Data, Typed (should have been TD for Typed Data
- * but at this point, probably more trouble than it is worth
- * to change it).
- *
- * GPS_BUF_SIZE is biggest packet (MID 41, 188 bytes observed),
- *   (where did 188 come from?  docs imply 91 bytes)
- *   SirfBin overhead (start, len, chksum, end) 8 bytes
- *   DT overhead (8 bytes).   204 rounded up to 256.
- *
- * The ORG4472/M10478 driver uses SPI which is master/slave.  Access is
- * direct and no interrupts are used.  All accesses are done from
- * syncronous (task) level.
- *
- * GPS_START_OFFSET: offset into the msg buffer where the incoming bytes
- *   should be put.  Skips over DT overhead.
- *
- * SIRF_OVERHEAD: overhead bytes not part of sirf_len.  Includes start_seq (2),
- *   payload_len (2), checksum (2), and end_seq (2).  8 total.
- *
- * GPS_OVERHEAD: space in msg buffer for overhead bytes.  Sum of DT overhead
- *   and osp packet header and trailer.  16 bytes total.
- *
- * BUF_INCOMING_SIZE is the size of the chunk used by the lowest
- *   layer to snarf serial blocks.  It is the minimum number of bytes we
- *   snarf from the gps via the uart when not doing specific osp packets.
- */
-
-#define GPS_BUF_SIZE		256
-#define GPS_START_OFFSET	8
-#define SIRF_OVERHEAD		8
-#define GPS_OVERHEAD		16
-#define BUF_INCOMING_SIZE	32
-
-/*
  * gpsr_rx_parse_state_t: states for receive byte-to-msg processing
  */
 typedef enum {
@@ -203,16 +175,5 @@ typedef enum {
   GPSR_BIN_B3,
   GPSR_OTHER,
 } gpsr_rx_parse_where_t;
-
-/*
- * control structure for incoming bytes from the gps.
- * Blocks of data from the gps are variable so we need both
- * an index and remaining counts.
- */
-typedef struct {
-  uint16_t index;			/* where the next char is */
-  uint16_t remaining;			/* how many are left */
-  uint8_t buf[BUF_INCOMING_SIZE];
-} inbuf_t;
 
 #endif /* __GPS_H__ */
