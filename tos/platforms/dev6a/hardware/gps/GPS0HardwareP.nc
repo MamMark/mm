@@ -250,6 +250,7 @@ implementation {
     m_rx_len = len;
     m_rx_idx = 0;
     m_rx_buf = ptr;
+    call HW.gps_rx_int_enable();
     return SUCCESS;
   }
 
