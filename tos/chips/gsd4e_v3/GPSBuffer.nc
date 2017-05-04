@@ -66,26 +66,21 @@ interface GPSBuffer {
   /*
    * msg_next: advance the message queue.
    *
+   * input:    ptr/len  pointer to uint16_t that will receive the
+   *                    length of the message.
    * returns:  ptr      to message data
    *                    NULL if no more messages.
+   *                    len filled in with length
    *
    * Will set the state of the head of the message queue to BUSY.
    */
-  command uint8_t *msg_next();
+  command uint8_t *msg_next(uint16_t *len);
 
   /*
    * msg_release: release a previously allocated msg.
    *
-   * input: pointer to msg_data.
-   *
    * the message needs to be the next one expected.  (strict
-   * first-in-first-out).
+   * first-in-first-out).  Assumed to be HEAD.
    */
-  command void msg_release(uint8_t *msg_data);
-
-  /*
-   * msg_available is signalled any time the message queue
-   * goes from empty to something.
-   */
-  async event void msg_available();
+  command void msg_release();
 }

@@ -17,25 +17,8 @@
 #define SIRF_BIN_B0      0xb0
 #define SIRF_BIN_B3      0xb3
 
-/*
- * BUF_SIZE is biggest packet (MID 41, 188 bytes observed),
- *   SirfBin overhead (start, len, chksum, end) 8 bytes
- *   DT overhead (8 bytes).   204 rounded up to 256.
- *
- * GPS_OVR_SIZE: size of overflow buffer.  Space for bytes coming
- *   in on interrupts while we are processing the previous msg.
- *
- * GPS_START_OFFSET: offset into the msg buffer where the incoming bytes
- *   should be put.  Skips over DT overhead.
- *
- * GPS_OVERHEAD: space in msg buffer for overhead bytes.
- */
-
-#define GPS_BUF_SIZE	  256
-#define GPS_OVR_SIZE	   32
-#define GPS_START_OFFSET    8
+/* overhead: start (2), len (2), checksum (2), end (2) */
 #define SIRF_OVERHEAD       8
-#define GPS_OVERHEAD	   16
 
 #define MID_NAVDATA	   2
 #define NAVDATA_LEN	   41
