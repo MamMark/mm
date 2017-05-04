@@ -1,54 +1,63 @@
 /*
- * Copyright (c) 2017 Daniel J. Maltbie
+ * Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * @author Daniel J. Maltbie (dmaltbie@daloma.org)
- *
+ * @author Eric B. Decker <cire831@gmail.com>
  */
 
 #ifndef __GPSMSGBUF_H__
 #define __GPSMSGBUF_H__
 
 
-#define GPS_MAX_BUF           1024
-#define GPS_MAX_MSG_TABLE     20
+#define GPS_BUF_SIZE 1024
+
+/* set to a power of 2 */
+#define GPS_MAX_MSGS 32
 
 typedef enum {
-  CHECK_OFF,
-  CHECK_NMEA,
-  CHECK_SIRF
-} gps_checksum_t;
-
-typedef struct gps_buf_struct {
-  uint16_t                    i_current;
-  uint16_t                    i_begin;
-  uint16_t                    i_limit;
-  uint16_t                    i_checksum;
-  uint16_t                    checksum;
-  gps_checksum_t              checking;
-  bool                        flushing;
-  bool                        started;
-  uint8_t                     data[GPS_MAX_BUF] __attribute__ ((aligned (2)));
-} gps_buf_t;
-//
-
-typedef enum {
-  FREE,
-  IN_USE,
-  BUSY
-} gps_msg_state_t;
-
-typedef struct gps_msg_struct {
-  uint16_t                    len;
-  uint16_t                    dt_type;
-  uint8_t                     buf[];
-} gps_msg_t __attribute__ ((aligned (1)));
-
-typedef struct gps_msg_table_struct {
-  gps_msg_t                  *msg;
-  uint16_t                    len;
-  gps_msg_state_t             state;
-} gps_msg_table_t;
+  GPS_MSG_EMPTY = 0,            /* not being used, available */
+  GPS_MSG_FILLING,              /* currently being filled in */
+  GPS_MSG_FULL,                 /* holds a message */
+  GPS_MSG_BUSY,                 /* busy, message is being processed */
+} gms_t;                        /* gps msg state */
 
 
-#endif GPSMSGBUF
+typedef struct {
+  uint8_t *data;
+  uint16_t len;
+  uint16_t extra;
+  gms_t    state;
+} gps_msg_t;
+
+
+/*
+ * Because of strict ordering, both msg slots as well as memory blocks
+ * we can have at most 3 seperate regions, 2 free and 1 full of contiguous
+ * message data.
+ *
+ * The free pointer always points just beyond tail (if it exists) until th
+ * next boundary.  Either the end of the buffer or head.
+ *
+ * If we need to wrap from the end to the front of the buffer, we can find
+ * this by taking head - gps_buf as the length.  The start is of course
+ * gps_buf.
+ */
+typedef struct {
+  uint8_t *free;                /* free pointer */
+  uint16_t free_len;            /* and its length */
+  uint16_t aux_len;             /* size of space in front */
+  uint16_t head;                /* head index of msg queue */
+  uint16_t tail;                /* tail index of msg queue */
+  uint16_t full;                /* number full */
+  uint16_t max_full;            /* how deep did it get */
+} gmc_t;                        /* gps msg control */
+
+
+#define MSG_INDEX_INVALID(x) ((x) & 0x8000)
+#define MSG_INDEX_VALID(x)   (((x) & 0x8000) == 0)
+#define MSG_NO_INDEX         (0xffff)
+
+#define MSG_NEXT_INDEX(x) (((x) + 1) & (GPS_MAX_MSGS - 1))
+
+#endif  /* __GPSMSGBUF_H__ */
