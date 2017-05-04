@@ -5,10 +5,7 @@
 
 configuration testGPSC {}
 implementation {
-  components MainC, testGPSP;
-  MainC.SoftwareInit -> testGPSP;
-
-  components SystemBootC;
+  components testGPSP, SystemBootC;
   testGPSP.Boot -> SystemBootC;
 
   components PlatformC;
@@ -16,9 +13,9 @@ implementation {
 #ifdef notdef
   testGPSP.HW -> GpsPort;
 #endif
-  testGPSP.GPSControl -> GpsPort;
+  testGPSP.GPSState   -> GpsPort;
   testGPSP.GPSReceive -> GpsPort;
-  testGPSP.Platform -> PlatformC;
+  testGPSP.Platform   -> PlatformC;
 
   components new TimerMilliC() as Timer;
   testGPSP.testTimer -> Timer;

@@ -4,23 +4,20 @@
  * All rights reserved.
  */
 
-#include "GPSMsgBuf.h"
-
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;
 
 module testGPSP {
-  provides interface Init;
   uses {
     interface Boot;
-    interface StdControl as GPSControl;
+    interface GPSState;
+    interface GPSReceive;
     interface Timer<TMilli> as testTimer;
     interface LocalTime<TMilli>;
 #ifdef notdef
     interface Gsd4eUHardware as HW;
 #endif
     interface Platform;
-    interface GPSReceive;
   }
 }
 
@@ -33,15 +30,9 @@ implementation {
   };
 
   int               state;
-  norace gps_msg_t *p_msg;
   uint32_t          recv_count;
 
   task void test_task() {
-    nop();
-    // call Collect.collect();
-    call GPSReceive.receive_done(p_msg);
-    recv_count++;
-
 #ifdef notdef
     gt0 = call LocalTime.get();
     tt0 = call Platform.usecsRaw();
@@ -56,11 +47,6 @@ implementation {
     gt1 = call LocalTime.get();
     nop();
 #endif
-  }
-
-  command error_t Init.init() {
-    recv_count = 0;
-    return SUCCESS;
   }
 
 #ifdef TESTGPSP_RESET_CAPTURE_RESET
@@ -111,7 +97,6 @@ implementation {
 #else
 
   event void Boot.booted() {
-
     call testTimer.startOneShot(0);
   }
 #endif
@@ -124,7 +109,7 @@ implementation {
     switch(state) {
       case OFF:
 	state = STARTING;
-	call GPSControl.start();
+	call GPSState.turnOn();
 	call testTimer.startOneShot(0);
 	break;
 
@@ -146,8 +131,8 @@ implementation {
     }
   }
 
-  async event   void     GPSReceive.receive(gps_msg_t *ptr) {
-    p_msg = ptr;
-    post test_task();
+  event void GPSReceive.msg_available(uint8_t *msg, uint16_t len) {
+    nop();
+    recv_count++;
   }
 }
