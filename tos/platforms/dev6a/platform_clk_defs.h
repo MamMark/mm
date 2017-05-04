@@ -54,7 +54,7 @@
  *
  * SMCLK is always DCOCLK/2.  SMCLK/(TA_ID * TA_EX) should be around 1MHz/1MiHz.
  * SD's are clocked at SMCLK/2 or SMCLK (if SMCLK < 12MHz)
- * GPS UART baud is 1228800 (ORG gps doc gives 0.07% error)
+ * GPS UART baud is determined by which config in GPSnHardwareP.
  *
  * SDs can typically be clocked up to 25MHz.
  * Radio (si4468) up to 10MHz.
