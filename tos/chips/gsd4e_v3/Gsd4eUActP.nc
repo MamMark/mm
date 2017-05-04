@@ -33,7 +33,7 @@ enum {
  * that the chip has been previously configured.
  */
 const gps_check_option_t gps_check_table[] = {
-//  {1,4800,sizeof(nmea_set_9600),nmea_set_9600},
+  {1,4800,sizeof(nmea_set_9600),nmea_set_9600},
   {1,9600,sizeof(nmea_set_9600),nmea_set_9600},
 //  {1,57600,sizeof(nmea_set_9600),nmea_set_9600},
 //  {0,9600,sizeof(sirf_set_nmea),sirf_set_nmea},
@@ -254,14 +254,14 @@ implementation {
 
     nop();
     switch(byte) {
-      case NMEA_START:                        // '$' start of EOM byte
+      case NMEA_START:                          // '$' start of EOM byte
         where = GPSR_NMEA_START;
         switch (gpsr_rx_state) {
-          case GPSR_HUNT:                          // start of NMEA msg
+          case GPSR_HUNT:                       // start of NMEA msg
             nop();
-            call GPSBuffer.msg_start();
+            call GPSBuffer.msg_start(50);
             call GPSBuffer.add_byte(byte);
-            call GPSBuffer.begin_NMEA_SUM();
+            call GPSBuffer.begin_sum(CHECK_NMEA);
             gpsr_rx_state = GPSR_NMEA;
             break;
           case GPSR_NMEA:
@@ -298,7 +298,7 @@ implementation {
           case GPSR_HUNT:
             break;
           case GPSR_NMEA:
-            call GPSBuffer.end_SUM(0);
+            call GPSBuffer.end_sum();
             call GPSBuffer.add_byte(byte); // add byte after ending checksum
             gpsr_rx_state = GPSR_NMEA_C1;
             break;
@@ -373,8 +373,8 @@ implementation {
             call GPSBuffer.add_byte(byte);
             break;
           case GPSR_SIRF_S1:                       // sirf bin msg start
-            call GPSBuffer.msg_start();
-            call GPSBuffer.begin_SIRF_SUM();
+            call GPSBuffer.msg_start(50);
+            call GPSBuffer.begin_sum(CHECK_SIRFBIN);
             gpsr_rx_state = GPSR_SIRF;
             break;
           case GPSR_SIRF_E1:
@@ -403,7 +403,7 @@ implementation {
             break;
           case GPSR_SIRF:
             call GPSBuffer.add_byte(byte);
-            call GPSBuffer.end_SUM(-2);
+            call GPSBuffer.end_sum();
             gpsr_rx_state = GPSR_SIRF_E1;
             break;
           case GPSR_SIRF_S1:
@@ -538,7 +538,7 @@ implementation {
     signal Act.gpsa_stop_tx_timer();                         // stop transmit timer
     call HW.gps_tx_finnish();                                // flush transmit buffer
     gpsr_rx_state = GPSR_HUNT;                               // reset receive msg parser
-    call GPSBuffer.msg_abort();                              // re-start msg buffer 
+    call GPSBuffer.msg_abort();                              // re-start msg buffer
     call HW.gps_rx_int_enable();                             // start listening for gps bytes
     signal Act.gpsa_start_rx_timer(DT_GPS_RECV_CHECK_WAIT);  // start receive timer
     signal Act.gpsa_start_tx_timer(DT_GPS_CYCLE_CHECK_WAIT); // start transmit timer
@@ -552,6 +552,7 @@ implementation {
     uint8_t          *msg = gps_check_table[gps_check_index].msg;
     uint32_t          len = gps_check_table[gps_check_index].len;
 
+    nop();
     call HW.send_block_stop();                                  // clear previous send
     if (mode) add_nmea_checksum(msg);
     else      add_sirf_bin_checksum(msg);

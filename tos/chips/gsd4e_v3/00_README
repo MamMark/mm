@@ -14,14 +14,15 @@ for each character as they arrive.  This greatly simplifies the flow.
 The lowest level interface is an UART port dedicated to the GPS chip,
 Gsd4eUP, U = UART.  This layer handles basic configuration, ie. protocol
 (NEMA vs. SirfBin) and baud rate.  It includes a state machine that is used
-to configure the GPS.  Configuration is responsible for powering up the gps
-chip and making sure that the chip is talking the correct protocol at the
-correct baud rate.
+to establish basic communications, configuration, and basic functions at the
+i/o level of the gps chip.
 
-Any byte processing is handled by the low level state machine, see Gsd4eUAct.
+Attached to the low level driver is a protocol module that is responsible
+for processing the data transfere protocol.  Collected messages are handed
+to a buffer slicer (MsgBuffer) that collects the messages into RAM.
 
 Backing the GPS is an area of memory called the GPS Buffer.  Any messages
-from the GPS are first collected into a piece of this memory and then
+from the GPS are first collected into a pieces of this memory and then
 handed to higher layers one message at a time.  See GPSBuffer and GPSMsgBuf
 for details.  Protocol processing is handled by the state machine, GPSAct
 and GPSBuffer as the incoming byte stream is processed into messages.
