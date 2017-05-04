@@ -153,6 +153,7 @@
  *    xpI (don't care, port, Input), xmI (module input).
  *    module is m for m1 (sel1 0 sel0 1), same as msp430 settings.
  *              m2 for sel1 1, sel0 0, and m3 for 11.
+ *    (port, mapping), ie.  (A1, pm) says its on eUSCI-A1 and the pin is port mapped.
  *
  * A0: mems             (dma overlap with AES triggers, DMA ch 0, 1)
  * A1: SD1 (SPI)
