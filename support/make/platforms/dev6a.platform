@@ -20,7 +20,7 @@ PFLAGS += -I%T/platforms/dev6a/hardware/si446x
 
 PFLAGS += -I%T/chips/si446x
 PFLAGS += -I%T/chips/sd
-PFLAGS += -I%T/chips/gsd4e_v3
+PFLAGS += -I%T/chips/gsd4e_v4
 PFLAGS += -I%T/chips/tmp1x2
 PFLAGS += -I%T/chips/lis3dh
 
