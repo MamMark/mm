@@ -94,30 +94,16 @@ implementation {
   }
 
 
-  async command uint16_t BootParams.getBootCount() {
-    return boot_count;
-  }
-
-
-  async command uint8_t BootParams.getMajor() {
-    return _major;
-  }
-
-
-  async command uint8_t BootParams.getMinor() {
-    return _minor;
-  }
-
-
-  async command uint16_t BootParams.getBuild() {
-    return _build;
-  }
+  async command uint16_t BootParams.getBootCount() { return boot_count; }
+  async command uint8_t  BootParams.getMajor()     { return _major; }
+  async command uint8_t  BootParams.getMinor()     { return _minor; }
+  async command uint16_t BootParams.getBuild()     { return _build; }
 
 
   /* T32 is a count down so negate it */
   async command uint32_t Platform.usecsRaw()       { return (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV; }
   async command uint32_t Platform.usecsRawSize()   { return 32; }
-  async command uint32_t Platform.jiffiesRaw()     { return (TIMER_A0->R); }
+  async command uint32_t Platform.jiffiesRaw()     { return (TIMER_A1->R); }
   async command uint32_t Platform.jiffiesRawSize() { return 16; }
 
 
