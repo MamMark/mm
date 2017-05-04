@@ -240,7 +240,7 @@ implementation {
     call Usci.disableRxIntr();
   }
 
-  async command error_t HW.receive_block(uint8_t *ptr, uint16_t len) {
+  async command error_t HW.gps_receive_block(uint8_t *ptr, uint16_t len) {
     if (!len || !ptr)
       return FAIL;
 
@@ -253,14 +253,14 @@ implementation {
     return SUCCESS;
   }
 
-  async command void    HW.receive_block_stop() {
+  async command void    HW.gps_receive_block_stop() {
     m_rx_buf = NULL;
   }
 
   async command void    HW.gps_rx_off() { }
   async command void    HW.gps_rx_on()  { }
 
-  async command error_t HW.send_block(uint8_t *ptr, uint16_t len) {
+  async command error_t HW.gps_send_block(uint8_t *ptr, uint16_t len) {
     if (!len || !ptr)
       return FAIL;
 
@@ -280,7 +280,7 @@ implementation {
     return SUCCESS;
   }
 
-  async command void    HW.send_block_stop() {
+  async command void    HW.gps_send_block_stop() {
     call Usci.disableTxIntr();
     m_tx_buf = NULL;
   }
@@ -297,10 +297,10 @@ implementation {
           if (m_rx_idx >= m_rx_len) {
             buf = m_rx_buf;
             m_rx_buf = NULL;
-            signal HW.receive_block_done(buf, m_rx_len, SUCCESS);
+            signal HW.gps_receive_block_done(buf, m_rx_len, SUCCESS);
           }
         } else
-          signal HW.byte_avail(data);
+          signal HW.gps_byte_avail(data);
         return;
 
       case MSP432U_IV_TXIFG:
@@ -316,7 +316,7 @@ implementation {
           buf = m_tx_buf;
           call Usci.disableTxIntr();
           m_tx_buf = NULL;
-          signal HW.send_block_done(buf, m_tx_len, SUCCESS);
+          signal HW.gps_send_block_done(buf, m_tx_len, SUCCESS);
         }
         return;
 
