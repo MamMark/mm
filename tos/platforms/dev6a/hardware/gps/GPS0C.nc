@@ -37,57 +37,64 @@
 
 configuration GPS0C {
   provides {
-    interface StdControl as GPSControl;
-    interface Boot as GPSBoot;
+    interface GPSState;
     interface GPSReceive;
-    interface Gsd4eUHardware as HW; // !!! for debugging only, be careful
+    interface Boot as GPSBoot;
+
+    /* for debugging only, be careful */
+    interface Gsd4eUHardware as HW;
   }
   uses interface Boot;
 }
 
 implementation {
-  components MainC, Gsd4eUP;
-  MainC.SoftwareInit -> Gsd4eUP;
-
-  GPSControl = Gsd4eUP;
-  GPSBoot = Gsd4eUP;
-  Boot = Gsd4eUP.Boot;
-
-  components Gsd4eUActP, GPSMsgBufP, PlatformC;
-  Gsd4eUP.Act -> Gsd4eUActP;
-  Gsd4eUActP.Platform -> PlatformC;
-  Gsd4eUActP.GPSBuffer -> GPSMsgBufP;
-  MainC.SoftwareInit -> GPSMsgBufP;
-  GPSReceive = GPSMsgBufP;
+  components MainC;
 
   /*
    * HW is a singleton interface (ie. non-generic).  If you wire this
-   * twice, all event are fanned out.  Be careful when you do this.
+   * twice, all events are fanned out.  Be careful when you do this.
    * ie.  TestGps used HW to muck with the h/w.  And it has empty
-   * event to handle the fan out.
+   * events to handle the fan out.
    */
   components HplGPS0C;
-  Gsd4eUActP.HW -> HplGPS0C;
   HW = HplGPS0C;
 
-  components LocalTimeMilliC;
-  Gsd4eUP.LocalTime -> LocalTimeMilliC;
-
-  components new TimerMilliC() as GPSRxTimer;
-  Gsd4eUP.GPSTxTimer -> GPSTxTimer;
-
+  /* low level driver, start there */
+  components Gsd4eUP;
   components new TimerMilliC() as GPSTxTimer;
-  Gsd4eUP.GPSRxTimer -> GPSRxTimer;
+  components new TimerMilliC() as GPSRxTimer;
+  components     LocalTimeMilliC;
 
-  components PanicC;
-  Gsd4eUP.Panic -> PanicC;
-  Gsd4eUActP.Panic -> PanicC;
+  GPSState = Gsd4eUP;
+  Boot     = Gsd4eUP.Boot;
+  GPSBoot  = Gsd4eUP.GPSBoot;
+
+  Gsd4eUP.HW -> HplGPS0C;
+
+  Gsd4eUP.GPSTxTimer -> GPSTxTimer;
+  Gsd4eUP.GPSRxTimer -> GPSRxTimer;
+  Gsd4eUP.LocalTime  -> LocalTimeMilliC;
+
+  components PlatformC, PanicC;
+  Gsd4eUP.Panic    -> PanicC;
+  Gsd4eUP.Platform -> PlatformC;
+
+  /* and wire in the Protocol Handler */
+  components SirfBinP, GPSMsgBufP;
+  Gsd4eUP.SirfProto  -> SirfBinP;
+  SirfBinP.GPSBuffer -> GPSMsgBufP;
+  SirfBinP.Panic     -> PanicC;
+
+  /* Buffer Slicing (MsgBuf) */
+  MainC.SoftwareInit -> GPSMsgBufP;
   GPSMsgBufP.Panic -> PanicC;
 
+  GPSReceive = GPSMsgBufP;
+
+#ifdef notdef
   components TraceC;
   Gsd4eUP.Trace -> TraceC;
 
-#ifdef notdef
   components CollectC;
   Gsd4eUP.LogEvent -> CollectC;
 #endif
