@@ -80,19 +80,19 @@ implementation {
   } sbs_t;                          /* sirfbin_state type */
 
 
-  sbs_t    sirfbin_state;        // message collection state
-  uint16_t sirfbin_left;         // payload bytes left
-  uint16_t sirfbin_chksum;	// running chksum of payload
-  uint8_t *sirfbin_ptr;          // where to stash incoming bytes
+  norace sbs_t     sirfbin_state;       // message collection state
+  norace uint16_t  sirfbin_left;        // payload bytes left
+  norace uint16_t  sirfbin_chksum;      // running chksum of payload
+  norace uint8_t  *sirfbin_ptr;         // where to stash incoming bytes
 
   /*
    * Error counters
    */
-  uint16_t sirfbin_too_big;
-  uint16_t sirfbin_no_buffer;    /* no buffer/msg available */
-  uint16_t sirfbin_max_seen;     /* max length seen */
-  uint16_t sirfbin_chksum_fail;
-  uint16_t sirfbin_proto_fail;
+  norace uint16_t sirfbin_too_big;
+  norace uint16_t sirfbin_no_buffer;    /* no buffer/msg available */
+  norace uint16_t sirfbin_max_seen;     /* max length seen */
+  norace uint16_t sirfbin_chksum_fail;
+  norace uint16_t sirfbin_proto_fail;
 
   /*
    * external world is blowing us up.  No need to tell

@@ -205,9 +205,9 @@ module GPSMsgBufP {
   uses interface Panic;
 }
 implementation {
-  uint8_t   gps_buf[GPS_BUF_SIZE];       /* underlying storage */
-  gps_msg_t gps_msgs[GPS_MAX_MSGS];      /* msg slots */
-  gmc_t     gmc;                         /* gps message control */
+         uint8_t   gps_buf[GPS_BUF_SIZE];       /* underlying storage */
+         gps_msg_t gps_msgs[GPS_MAX_MSGS];      /* msg slots */
+  norace gmc_t     gmc;                         /* gps message control */
 
 
   void gps_warn(uint8_t where, parg_t p0, parg_t p1) {

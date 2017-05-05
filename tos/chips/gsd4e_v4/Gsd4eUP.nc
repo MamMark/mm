@@ -279,7 +279,7 @@ typedef enum {
 /*
  * gpsc_state: current state of the driver state machine
  */
-gpsc_state_t	    gpsc_state;
+norace gpsc_state_t	    gpsc_state;
 
 /* instrumentation */
 uint32_t		    gpsc_boot_time;		// time it took to boot.
@@ -348,9 +348,9 @@ const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
   { 57600,  2, sizeof(sirf_115200),      sirf_115200        },
 };
 
-int32_t       gps_probe_index;   // keeps track of which table entry to use
-uint32_t      gps_probe_cycle;   // how many times through the list.
-uint32_t      gps_booting;       // system is booting.
+       int32_t  gps_probe_index;        // keeps track of which table entry to use
+       uint32_t gps_probe_cycle;        // how many times through the list.
+norace uint32_t gps_booting;            // system is booting.
 
 
 /*
@@ -399,8 +399,8 @@ implementation {
    *
    * To kill the rx_timer, set req_rx_len to 0 and post rxtimer_task.
    */
-  int16_t m_req_rx_len;          // requested rx len (for timeout)
-  int16_t m_cur_rx_len;          // cur       rx len (for timeout)
+  norace int16_t m_req_rx_len;          // requested rx len (for timeout)
+         int16_t m_cur_rx_len;          // cur       rx len (for timeout)
 
 
   void gps_warn(uint8_t where, parg_t p, parg_t p1) {
