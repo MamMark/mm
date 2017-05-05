@@ -99,21 +99,25 @@ implementation {
    * the external world that we are aborting the message.
    */
   command void GPSProto.reset() {
-    sirfbin_state = SBS_START;
-    if (sirfbin_ptr) {
-      sirfbin_ptr = NULL;
-      call GPSBuffer.msg_abort();
+    atomic {
+      sirfbin_state = SBS_START;
+      if (sirfbin_ptr) {
+        sirfbin_ptr = NULL;
+        call GPSBuffer.msg_abort();
+      }
     }
   }
 
 
   inline void sirfbin_restart() {
-    sirfbin_state = SBS_START;
-    if (sirfbin_ptr) {
-      sirfbin_ptr = NULL;
-      call GPSBuffer.msg_abort();
+    atomic {
+      sirfbin_state = SBS_START;
+      if (sirfbin_ptr) {
+        sirfbin_ptr = NULL;
+        call GPSBuffer.msg_abort();
+      }
+      signal GPSProto.msgAbort();
     }
-    signal GPSProto.msgAbort();
   }
 
 
@@ -217,13 +221,6 @@ implementation {
 	return;
     }
   }
-
-
-#ifdef notdef
-  async command bool GPSProto.atMsgBoundary() {
-    atomic return (sirfbin_state == SBS_START);
-  }
-#endif
 
   async event void Panic.hook() { }
 }
