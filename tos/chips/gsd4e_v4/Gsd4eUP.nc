@@ -727,27 +727,26 @@ implementation {
    * General State Machine timing.  Also Tx deadman timeouts.
    */
   event void GPSTxTimer.fired() {
-    gpsc_state_t cur_gps_state;
+    atomic {
+      switch (gpsc_state) {
+        default:                        /* all other states blow up */
+          gps_panic(12, gpsc_state, 0);
+          return;
 
-    atomic cur_gps_state = gpsc_state;
-    switch (cur_gps_state) {
-      default:                          /* all other states blow up */
-        gps_panic(12, cur_gps_state, 0);
-        return;
+        case GPSC_PWR_UP_WAIT:
+          gps_wakeup();                   /* wake the ARM up */
+          call GPSTxTimer.startOneShot(DT_GPS_WAKE_UP_DELAY);
+          gpsc_change_state(GPSC_PROBE_0, GPSW_TX_TIMER);
+          return;
 
-      case GPSC_PWR_UP_WAIT:
-        gps_wakeup();                   /* wake the ARM up */
-        call GPSTxTimer.startOneShot(DT_GPS_WAKE_UP_DELAY);
-        gpsc_change_state(GPSC_PROBE_0, GPSW_TX_TIMER);
-        return;
-
-      case GPSC_PROBE_0:
-        gps_probe_index = -1;            /* first sw_ver try */
-        gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_TX_TIMER);
-        call HW.gps_speed_di(GPS_TARGET_SPEED);
-        call GPSTxTimer.startOneShot(SWVER_TX_TIMEOUT);
-        call HW.gps_send_block((void *)sirf_send_sw_ver, sizeof(sirf_send_sw_ver));
-        return;
+        case GPSC_PROBE_0:
+          gps_probe_index = -1;            /* first sw_ver try */
+          gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_TX_TIMER);
+          call HW.gps_speed_di(GPS_TARGET_SPEED);
+          call GPSTxTimer.startOneShot(SWVER_TX_TIMEOUT);
+          call HW.gps_send_block((void *)sirf_send_sw_ver, sizeof(sirf_send_sw_ver));
+          return;
+      }
     }
   }
 
