@@ -31,20 +31,6 @@ typedef struct {
 } gps_msg_t;
 
 
-typedef enum {
-  CHECK_OFF = 0,
-  CHECK_NMEA,
-  CHECK_SIRFBIN
-} gct_t;                                /* gps checksum type */
-
-
-typedef enum {
-  BCS_IDLE = 0,
-  BCS_BODY,
-  BCS_FLUSHING,
-} bcs_t;                                /* buffer collect state */
-
-
 /*
  * Because of strict ordering, both msg slots as well as memory blocks
  * we can have at most 3 seperate regions, 2 free and 1 full of contiguous
@@ -67,12 +53,6 @@ typedef struct {                /* should be 28 bytes */
   uint16_t tail;                /* tail index of msg queue */
   uint16_t full;                /* number full */
   uint16_t max_full;            /* how deep did it get */
-
-  uint8_t *cur;                 /* cur spot in current message */
-  uint8_t *limit;               /* limit of current message */
-  uint16_t checksum;            /* running checksum */
-  bcs_t    bcs;                 /* buffer collection state */
-  gct_t    check_type;          /* gps checksum type */
 } gmc_t;                        /* gps msg control */
 
 

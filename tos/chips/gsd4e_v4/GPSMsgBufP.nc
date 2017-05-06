@@ -306,11 +306,6 @@ implementation {
       return NULL;
     }
 
-    if (gmc.bcs) {                      /* already collecting? */
-      gps_panic(GPSW_MSG_START, gmc.bcs, 0);
-      return NULL;
-    }
-
     /*
      * bail out early if no free space or not enough slots
      */
@@ -328,11 +323,6 @@ implementation {
       msg->data  = gmc.free;
       msg-> len  = len;
       msg->state = GPS_MSG_FILLING;
-
-      gmc.cur    = gmc.free;
-      gmc.limit  = gmc.free + len;
-      gmc.bcs    = BCS_BODY;
-      gmc.check_type = CHECK_OFF;
 
       gmc.free  = gmc.free + len;
       gmc.free_len -= len;              /* zero is okay */
@@ -406,10 +396,6 @@ implementation {
       msg->state = GPS_MSG_FILLING;
       gmc.tail   = idx;                 /* advance tail */
 
-      gmc.cur    = gmc.free;
-      gmc.limit  = gmc.free + len;
-      gmc.bcs    = BCS_BODY;
-
       gmc.free = gmc.free + len;
       gmc.free_len -= len;              /* zero is okay */
 
@@ -448,7 +434,6 @@ implementation {
       return;
     }
     msg->state = GPS_MSG_EMPTY;         /* no longer in use */
-    gmc.bcs = BCS_IDLE;                 /* not collecting */
     if (gmc.head == gmc.tail) {         /* only entry? */
       gmc.head = MSG_NO_INDEX;
       gmc.tail = MSG_NO_INDEX;
@@ -554,14 +539,7 @@ implementation {
       return;
     }
 
-    /* if flushing abort the message. */
-    if (gmc.bcs == BCS_FLUSHING) {
-      call GPSBuffer.msg_abort();
-      return;
-    }
-
     msg->state = GPS_MSG_FULL;
-    gmc.bcs = BCS_IDLE;                 /* not collecting */
     if (gmc.tail == gmc.head)
       post gps_receive_task();          /* start processing the queue */
   }
