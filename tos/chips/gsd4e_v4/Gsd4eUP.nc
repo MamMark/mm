@@ -287,11 +287,12 @@ uint32_t		    gpsc_cycle_time;		// time last cycle took
 uint32_t		    gpsc_max_cycle;		// longest cycle time.
 uint32_t		    t_gps_first_char;
 
+norace uint16_t g_idx;                  /* index into gbuf */
+
 #ifdef GPS_EAVESDROP
 #define GPS_EAVES_SIZE 2048
 
-uint8_t  gbuf[GPS_EAVES_SIZE];
-uint16_t g_idx;
+norace uint8_t  gbuf[GPS_EAVES_SIZE];
 #endif
 
 #ifdef GPS_LOG_EVENTS
@@ -846,6 +847,11 @@ implementation {
 
 
   async event void HW.gps_byte_avail(uint8_t byte) {
+#ifdef GPS_EAVESDROP
+    gbuf[g_idx++] = byte;
+    if (g_idx >= GPS_EAVES_SIZE)
+      g_idx = 0;
+#endif
     call SirfProto.byteAvail(byte);
   }
 
