@@ -548,18 +548,20 @@ implementation {
   command uint8_t *GPSBuffer.msg_next(uint16_t *len) {
     gps_msg_t *msg;             /* message slot we are working on */
 
-    if (MSG_INDEX_INVALID(gmc.head)) {  /* oht oh */
-      gps_panic(GPSW_MSG_NEXT, gmc.head, 0);
-      return NULL;
+    atomic {
+      if (MSG_INDEX_INVALID(gmc.head)) {  /* oht oh */
+        gps_panic(GPSW_MSG_NEXT, gmc.head, 0);
+        return NULL;
+      }
+      msg = &gps_msgs[gmc.head];
+      if (msg->state != GPS_MSG_FULL) {   /* oht oh */
+        gps_panic(GPSW_MSG_NEXT, (parg_t) msg, msg->state);
+        return NULL;
+      }
+      msg->state = GPS_MSG_BUSY;
+      *len = msg->len;
+      return msg->data;
     }
-    msg = &gps_msgs[gmc.head];
-    if (msg->state != GPS_MSG_FULL) {   /* oht oh */
-      gps_panic(GPSW_MSG_NEXT, (parg_t) msg, msg->state);
-      return NULL;
-    }
-    msg->state = GPS_MSG_BUSY;
-    *len = msg->len;
-    return msg->data;
   }
 
 
@@ -571,49 +573,51 @@ implementation {
   command void GPSBuffer.msg_release() {
     gps_msg_t *msg;             /* message slot we are working on */
 
-    if (MSG_INDEX_INVALID(gmc.head)) {  /* oht oh */
-      gps_panic(GPSW_MSG_RELEASE, gmc.head, 0);
-      return;
-    }
-    msg = &gps_msgs[gmc.head];
     if (!msg->state) {                  /* oht oh - EMPTY bad, sad */
-      gps_panic(GPSW_MSG_RELEASE, (parg_t) msg, msg->state);
-      return;
-    }
-    msg->state = GPS_MSG_EMPTY;
-    if (gmc.head == gmc.tail) {
-      /* releasing entire buffer */
-      gmc.head     = MSG_NO_INDEX;
-      gmc.tail     = MSG_NO_INDEX;
-      gmc.full     = 0;
-      msg->extra   = 0;
-      reset_free();
-      return;
-    }
+    atomic {
+      if (MSG_INDEX_INVALID(gmc.head)) {  /* oht oh */
+        gps_panic(GPSW_MSG_RELEASE, gmc.head, 0);
+        return;
+      }
+      msg = &gps_msgs[gmc.head];
+        gps_panic(GPSW_MSG_RELEASE, (parg_t) msg, msg->state);
+        return;
+      }
+      msg->state = GPS_MSG_EMPTY;
+      if (gmc.head == gmc.tail) {
+        /* releasing entire buffer */
+        gmc.head     = MSG_NO_INDEX;
+        gmc.tail     = MSG_NO_INDEX;
+        gmc.full     = 0;
+        msg->extra   = 0;
+        reset_free();
+        return;
+      }
 
-    if (gmc.free > msg->data) {
+      if (gmc.free > msg->data) {
+        /*
+         * free pointer is behind the head so is in the back of the buffer
+         * need to account for any released data in the aux region
+         */
+        gmc.aux_len += msg->len + msg->extra;
+        msg->extra = 0;
+        gmc.head = MSG_NEXT_INDEX(gmc.head);
+        gmc.full--;
+        return;
+      }
+
       /*
-       * free pointer is behind the head so is in the back of the buffer
-       * need to account for any released data in the aux region
+       * must be free < head
+       *
+       * free space is in front of head moving towards head.
+       * no aux.  add the space from head to the free space.
        */
-      gmc.aux_len += msg->len + msg->extra;
+      gmc.free_len += msg->len + msg->extra;
       msg->extra = 0;
       gmc.head = MSG_NEXT_INDEX(gmc.head);
       gmc.full--;
       return;
     }
-
-    /*
-     * must be free < head
-     *
-     * free space is in front of head moving towards head.
-     * no aux.  add the space from head to the free space
-     */
-    gmc.free_len += msg->len + msg->extra;
-    msg->extra = 0;
-    gmc.head = MSG_NEXT_INDEX(gmc.head);
-    gmc.full--;
-    return;
   }
 
 
