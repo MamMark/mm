@@ -321,11 +321,15 @@ implementation {
       /* no msgs, all free space */
       msg = &gps_msgs[0];
       msg->data  = gmc.free;
-      msg-> len  = len;
+      msg->len   = len;
       msg->state = GPS_MSG_FILLING;
 
       gmc.free  = gmc.free + len;
       gmc.free_len -= len;              /* zero is okay */
+
+      gmc.allocated = len;
+      if (gmc.allocated > gmc.max_allocated)
+        gmc.max_allocated = gmc.allocated;
 
       gmc.head   = 0;                   /* always 0 */
       gmc.tail   = 0;                   /* ditto for tail */
@@ -374,6 +378,9 @@ implementation {
       msg = &gps_msgs[gmc.tail];
       msg->extra = gmc.free_len;
       gmc.free_len = 0;
+      gmc.allocated += msg->extra;      /* put extra into allocated too */
+      if (gmc.allocated > gmc.max_allocated)
+        gmc.max_allocated = gmc.allocated;
       wrap_free();                      /* modifies gmc.free_len */
     }
 
@@ -398,6 +405,9 @@ implementation {
 
       gmc.free = gmc.free + len;
       gmc.free_len -= len;              /* zero is okay */
+      gmc.allocated += len;
+      if (gmc.allocated > gmc.max_allocated)
+        gmc.max_allocated = gmc.allocated;
 
       gmc.full++;                       /* one more*/
       if (gmc.full > gmc.max_full)
@@ -436,6 +446,7 @@ implementation {
       gmc.head = MSG_NO_INDEX;
       gmc.tail = MSG_NO_INDEX;
       gmc.full = 0;
+      gmc.allocated = 0;
       reset_free();
       return;
     }
@@ -469,9 +480,11 @@ implementation {
        * move all the data on tail into the new free region.
        *
        * msg is set to tail above, and its state set to EMPTY.
+       * extra has to be 0.
        */
       gmc.aux_len = gmc.free_len;
       gmc.free = msg->data;
+      gmc.allocated -= msg->len;
       gmc.free_len = msg->len;
       gmc.tail = MSG_PREV_INDEX(gmc.tail);
       gmc.full--;
@@ -496,10 +509,12 @@ implementation {
        * and free_len = tail->extra.  Nuke tail->extra.
        */
       gmc.aux_len = msg->len + gmc.free_len;
+      gmc.allocated -= msg->len;
       gmc.tail = MSG_PREV_INDEX(gmc.tail);
       msg = &gps_msgs[gmc.tail];
       gmc.free = msg->data + msg->len;
       gmc.free_len = msg->extra;
+      gmc.allocated -= msg->extra;
       gmc.full--;
       msg->extra = 0;
       return;
@@ -515,6 +530,7 @@ implementation {
      */
     gmc.free = msg->data;
     gmc.free_len += msg->len;
+    gmc.allocated -= msg->len;
     return;
   }
 
@@ -588,6 +604,7 @@ implementation {
         gmc.head     = MSG_NO_INDEX;
         gmc.tail     = MSG_NO_INDEX;
         gmc.full     = 0;
+        gmc.allocated= 0;
         msg->extra   = 0;
         reset_free();
         return;
@@ -599,6 +616,7 @@ implementation {
          * need to account for any released data in the aux region
          */
         gmc.aux_len += msg->len + msg->extra;
+        gmc.allocated -= (msg->len + msg->extra);
         msg->extra = 0;
         gmc.head = MSG_NEXT_INDEX(gmc.head);
         gmc.full--;
@@ -612,6 +630,7 @@ implementation {
        * no aux.  add the space from head to the free space.
        */
       gmc.free_len += msg->len + msg->extra;
+      gmc.allocated -= (msg->len + msg->extra);
       msg->extra = 0;
       gmc.head = MSG_NEXT_INDEX(gmc.head);
       gmc.full--;

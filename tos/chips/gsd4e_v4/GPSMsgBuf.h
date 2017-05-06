@@ -53,6 +53,8 @@ typedef struct {                /* should be 28 bytes */
   uint16_t tail;                /* tail index of msg queue */
   uint16_t full;                /* number full */
   uint16_t max_full;            /* how deep did it get */
+  uint16_t allocated;           /* current memory allocated */
+  uint16_t max_allocated;       /* largest memory ever allocated */
 } gmc_t;                        /* gps msg control */
 
 
