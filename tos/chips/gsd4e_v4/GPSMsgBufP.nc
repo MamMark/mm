@@ -339,11 +339,11 @@ implementation {
     }
 
     /*
-     * make sure that tail->state is FULL.  Need to complete previous
-     * message before doing another start.
+     * make sure that tail->state is FULL (BUSY counts as FULL).  Need to
+     * complete previous message before doing another start.
      */
     msg = &gps_msgs[gmc.tail];
-    if (msg->state != GPS_MSG_FULL) {
+    if (msg->state != GPS_MSG_FULL && msg->state != GPS_MSG_BUSY) {
       gps_panic(GPSW_MSG_START, gmc.tail, msg->state);
     }
 
@@ -418,8 +418,6 @@ implementation {
    *
    * current message is defined to be Tail.  It must be in
    * FILLING state.
-   *
-   * shouldn't ever have any extra.  FILLING state.
    */
   async command void GPSBuffer.msg_abort() {
     gps_msg_t *msg;             /* message slot we are working on */
@@ -573,13 +571,14 @@ implementation {
   command void GPSBuffer.msg_release() {
     gps_msg_t *msg;             /* message slot we are working on */
 
-    if (!msg->state) {                  /* oht oh - EMPTY bad, sad */
     atomic {
       if (MSG_INDEX_INVALID(gmc.head)) {  /* oht oh */
         gps_panic(GPSW_MSG_RELEASE, gmc.head, 0);
         return;
       }
       msg = &gps_msgs[gmc.head];
+      /* oht oh - only FULL or BUSY can be released */
+      if (msg->state != GPS_MSG_BUSY && msg->state != GPS_MSG_FULL) {
         gps_panic(GPSW_MSG_RELEASE, (parg_t) msg, msg->state);
         return;
       }
