@@ -638,6 +638,7 @@ implementation {
     }
   }
 
+  default event void GPSReceive.msg_available(uint8_t *msg, uint16_t len) { }
 
   /*
    * Panic.hook
