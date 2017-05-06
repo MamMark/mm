@@ -68,8 +68,8 @@
 #define GSD4E_TM_BIT        (1 << GSD4E_TM_PIN)
 #define GSD4E_TM_P          (GSD4E_TM_PORT->IN & GSD4E_TM_BIT)
 
-#define GSD4E_PINS_MODULE     do { P3->SEL0 |=  0x0c; } while (0)
-#define GSD4E_PINS_NON_MODULE do { P3->SEL0 &= ~0x0c; } while (0)
+#define GSD4E_PINS_MODULE   do { P3->SEL0 |=  0x0c; } while (0)
+#define GSD4E_PINS_PORT     do { P3->SEL0 &= ~0x0c; } while (0)
 
 /* radio - si446x - (B2) */
 #define SI446X_CTS_PORT     P2
@@ -130,7 +130,7 @@
  *
  * We assume that sd0_csn is a 1.
  */
-#define SD0_PINS_INPUT  do {                                \
+#define SD0_PINS_PORT  do {                                 \
     BITBAND_PERI(SD0_CSN_PORT->DIR, SD0_CSN_PIN) = 0;       \
     P10->SEL0 = 0;                                          \
   } while (0)
@@ -161,7 +161,7 @@
 /*
  * SD1 is on P7.0-2 and sd1_csn is P9.4
  */
-#define SD1_PINS_INPUT  do {                                \
+#define SD1_PINS_PORT  do {                                 \
     BITBAND_PERI(SD1_CSN_PORT->DIR, SD1_CSN_PIN) = 0;       \
     P7->SEL0 = 0;                                           \
   } while (0)

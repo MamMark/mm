@@ -245,7 +245,7 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
    */
   async command void HW.sd_off() {
     SD0_CSN = 1;                /* tri-state by deselecting */
-    SD0_PINS_INPUT;		/* pins in proper state */
+    SD0_PINS_PORT;		/* pins in proper state */
   }
 
   async command bool HW.isSDPowered() { return TRUE; }

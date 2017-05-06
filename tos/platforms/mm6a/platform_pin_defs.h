@@ -68,8 +68,8 @@
 #define GSD4E_TM_BIT        (1 << GSD4E_TM_PIN)
 #define GSD4E_TM_P          (GSD4E_TM_PORT->IN & GSD4E_TM_BIT)
 
-#define GSD4E_PINS_MODULE     do { P7->SEL0 |=  0x0c; } while (0)
-#define GSD4E_PINS_NON_MODULE do { P7->SEL0 &= ~0x0c; } while (0)
+#define GSD4E_PINS_MODULE   do { P7->SEL0 |=  0x0c; } while (0)
+#define GSD4E_PINS_PORT     do { P7->SEL0 &= ~0x0c; } while (0)
 
 /* radio - si446x - (B2) */
 #define SI446X_CTS_PORT     P4

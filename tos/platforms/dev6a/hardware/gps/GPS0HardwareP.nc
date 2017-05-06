@@ -187,7 +187,7 @@ implementation {
   }
 
   async command void HW.gps_pwr_off() {
-    GSD4E_PINS_NON_MODULE;		/* disconnect from the UART */
+    GSD4E_PINS_PORT;                    /* disconnect from the UART */
   }
 
   async command void HW.gps_tx_finnish() {
