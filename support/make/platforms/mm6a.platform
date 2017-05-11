@@ -11,8 +11,6 @@ PFLAGS += -I%T/mm
 PFLAGS += -I%T/system/panic_simple
 
 PFLAGS += -I%T/platforms/mm6a/hardware/
-PFLAGS += -I%T/platforms/mm6a/hardware/startup
-
 PFLAGS += -I%T/platforms/mm6a/hardware/sd0
 PFLAGS += -I%T/platforms/mm6a/hardware/sd1
 PFLAGS += -I%T/platforms/mm6a/hardware/gps
