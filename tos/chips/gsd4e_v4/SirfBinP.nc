@@ -81,9 +81,11 @@ implementation {
 
 
   norace sbs_t     sirfbin_state;       // message collection state
+  norace sbs_t     sirfbin_state_prev;  // debugging
   norace uint16_t  sirfbin_left;        // payload bytes left
   norace uint16_t  sirfbin_chksum;      // running chksum of payload
   norace uint8_t  *sirfbin_ptr;         // where to stash incoming bytes
+  norace uint8_t  *sirfbin_ptr_prev;    // for debugging
 
   /*
    * Error counters
@@ -100,8 +102,10 @@ implementation {
    */
   command void GPSProto.reset() {
     atomic {
+      sirfbin_state_prev = sirfbin_state;
       sirfbin_state = SBS_START;
       if (sirfbin_ptr) {
+        sirfbin_ptr_prev = sirfbin_ptr;
         sirfbin_ptr = NULL;
         call GPSBuffer.msg_abort();
       }
@@ -111,8 +115,10 @@ implementation {
 
   inline void sirfbin_restart() {
     atomic {
+      sirfbin_state_prev = sirfbin_state;
       sirfbin_state = SBS_START;
       if (sirfbin_ptr) {
+        sirfbin_ptr_prev = sirfbin_ptr;
         sirfbin_ptr = NULL;
         call GPSBuffer.msg_abort();
       }
@@ -156,6 +162,7 @@ implementation {
 	  return;
 	}
         sirfbin_ptr = call GPSBuffer.msg_start(sirfbin_left + SIRFBIN_OVERHEAD);
+        sirfbin_ptr_prev = sirfbin_ptr;
         if (!sirfbin_ptr) {
           sirfbin_no_buffer++;
           sirfbin_restart();
