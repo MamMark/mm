@@ -190,7 +190,20 @@ implementation {
     GSD4E_PINS_PORT;                    /* disconnect from the UART */
   }
 
-  async command void HW.gps_tx_finnish() {
+  /*
+   * gps_tx_finnish: wait for tx to finish
+   *
+   * input: byte_delay (in us) for last byte to leave
+   *
+   * tx_finnish first makes sure that the TXBUF is empty.  ie. that the
+   * byte in TXBUF has actually been transferred into the shift register
+   * and is on its way out.
+   *
+   * Then if byte_delay is set it will delay some more.  byte_delay is
+   * a value used to let the last byte actually leave the shift register.
+   * This is used prior to changing communications configurations.
+   */
+  async command void HW.gps_tx_finnish(uint32_t byte_delay) {
     uint32_t t0, t1;
 
     t0 = call Platform.usecsRaw();
@@ -201,12 +214,11 @@ implementation {
 	return;
       }
     }
-    while (!call Usci.isTxComplete()) {
+    t0 = call Platform.usecsRaw();
+    while (1) {
       t1 = call Platform.usecsRaw();
-      if (t1 - t0 > UART_MAX_BUSY_WAIT) {
-	gps_panic(1, t1, t0);
+      if (t1 - t0 > byte_delay)
         return;
-      }
     }
   }
 

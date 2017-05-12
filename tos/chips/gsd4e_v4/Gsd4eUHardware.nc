@@ -119,7 +119,7 @@ interface Gsd4eUHardware {
    */
   async command void gps_speed_di(uint32_t speed);
 
-  async command void gps_tx_finnish();
+  async command void gps_tx_finnish(uint32_t byte_delay);
   async command void gps_rx_int_enable();
   async command void gps_rx_int_disable();
 
