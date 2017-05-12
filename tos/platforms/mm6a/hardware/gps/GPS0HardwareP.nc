@@ -235,7 +235,7 @@ implementation {
       default:          gps_panic(2, speed, 0);          break;
     }
     if (!config)
-	gps_panic(1, speed, 0);
+	gps_panic(3, speed, 0);
     call Usci.configure(config, FALSE);
 
     /* Usci.configure (via reset) turns off all interrupts and
@@ -319,6 +319,7 @@ implementation {
       case MSP432U_IV_TXIFG:
         if (m_tx_buf == NULL) {
           call Usci.disableTxIntr();
+          gps_panic(4, iv, 0);
           return;
         }
 
@@ -334,6 +335,7 @@ implementation {
         return;
 
       default:
+        gps_panic(5, iv, 0);
         break;
     }
   }
