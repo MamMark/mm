@@ -287,6 +287,8 @@ uint32_t		    gpsc_cycle_time;		// time last cycle took
 uint32_t		    gpsc_max_cycle;		// longest cycle time.
 uint32_t		    t_gps_first_char;
 
+#ifdef GPS_LOG_EVENTS
+
 norace uint16_t g_idx;                  /* index into gbuf */
 
 #ifdef GPS_EAVESDROP
@@ -294,8 +296,6 @@ norace uint16_t g_idx;                  /* index into gbuf */
 
 norace uint8_t  gbuf[GPS_EAVES_SIZE];
 #endif
-
-#ifdef GPS_LOG_EVENTS
 
 typedef struct {
   uint32_t     ts;
