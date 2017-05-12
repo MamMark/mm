@@ -1,0 +1,196 @@
+NMEA
+
+Startup messages:
+
+0.452832        $PSRF150,1*3E[0D][0A]
+
+1.55657         $GPGGA,,,,,,0,00,,,M,0.0,M,,0000*48[0D][0A]
+1.64137         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+1.71013         $GPRMC,,V,,,,,,,,,,N*53[0D][0A]
+
+2.55689         $GPGGA,,,,,,0,00,,,M,0.0,M,,0000*48[0D][0A]
+2.64169         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+2.71045         $GPRMC,,V,,,,,,,,,,N*53[0D][0A]
+
+3.55616         $GPGGA,,,,,,0,00,,,M,0.0,M,,0000*48[0D][0A]
+3.64096         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+3.70972         $GPRMC,,V,,,,,,,,,,N*53[0D][0A]
+
+4.55481         $GPGGA,,,,,,0,00,,,M,0.0,M,,0000*48[0D][0A]
+4.63961         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+4.70836         $GPRMC,,V,,,,,,,,,,N*53[0D][0A]
+
+5.55634         $GPGGA,,,,,,0,00,,,M,0.0,M,,0000*48[0D][0A]
+5.64114         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+5.7099          $GPGSV,3,1,12,01,00,000,,02,00,000,,03,00,000,,04,00,000,*7C[0D][0A]
+5.85199         $GPGSV,3,2,12,05,00,000,,06,00,000,,07,00,000,,08,00,000,*77[0D][0A]
+5.99411         $GPGSV,3,3,12,09,00,000,,10,00,000,,11,00,000,,12,00,000,*71[0D][0A]
+6.13621         $GPRMC,,V,,,,,,,,,,N*53[0D][0A]
+
+25.5684         $GPGGA,,,,,,0,00,,,M,0.0,M,,0000*48[0D][0A]
+25.6532         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+25.722          $GPGSV,3,1,12,05,00,000,14,01,00,000,,02,00,000,,03,00,000,*78[0D][0A]
+25.8687         $GPGSV,3,2,12,04,00,000,,06,00,000,,07,00,000,,08,00,000,*76[0D][0A]
+26.0108         $GPGSV,3,3,12,09,00,000,,10,00,000,,11,00,000,,12,00,000,*71[0D][0A]
+26.1529         $GPRMC,,V,,,,,,,,,,N*53[0D][0A]
+
+
+0.335752        $GPGGA,023509.639,,,,,0,00,,,M,0.0,M,,0000*57[0D][0A]
+0.443472        $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+0.51223         $GPRMC,023509.639,V,,,,,,,260317,,,N*4D[0D][0A]
+
+1.33607         $GPGGA,023510.639,,,,,0,00,,,M,0.0,M,,0000*5F[0D][0A]
+1.44378         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+1.51254         $GPGSV,3,1,12,03,67,080,,17,64,312,,22,44,057,,19,42,308,*71[0D][0A]
+1.65464         $GPGSV,3,2,12,28,41,212,,01,38,066,,57,33,072,,06,25,268,*75[0D][0A]
+1.79674         $GPGSV,3,3,12,11,25,092,,23,18,132,,14,07,034,,09,01,164,*70[0D][0A]
+1.93883         $GPRMC,023510.639,V,,,,,,,260317,,,N*45[0D][0A]
+
+2.33617         $GPGGA,023511.639,,,,,0,00,,,M,0.0,M,,0000*5E[0D][0A]
+2.44389         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+2.51265         $GPRMC,023511.639,V,,,,,,,260317,,,N*44[0D][0A]
+
+3.3369          $GPGGA,023512.639,,,,,0,00,,,M,0.0,M,,0000*5D[0D][0A]
+3.44462         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+3.51338         $GPRMC,023512.639,V,,,,,,,260317,,,N*47[0D][0A]
+
+4.3368          $GPGGA,023513.639,,,,,0,00,,,M,0.0,M,,0000*5C[0D][0A]
+4.44451         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+4.51327         $GPRMC,023513.639,V,,,,,,,260317,,,N*46[0D][0A]
+
+5.33669         $GPGGA,023514.639,,,,,0,00,,,M,0.0,M,,0000*5B[0D][0A]
+5.44441         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+5.51317         $GPRMC,023514.639,V,,,,,,,260317,,,N*41[0D][0A]
+
+6.33638         $GPGGA,023515.639,,,,,0,00,,,M,0.0,M,,0000*5A[0D][0A]
+6.4441          $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+6.51285         $GPGSV,3,1,12,03,67,080,,17,64,312,,22,44,057,,19,42,308,*71[0D][0A]
+6.65495         $GPGSV,3,2,12,28,41,212,,01,38,066,,57,33,072,,06,25,268,*75[0D][0A]
+6.79705         $GPGSV,3,3,12,11,25,092,,23,18,132,,14,07,034,,09,01,164,*70[0D][0A]
+6.93915         $GPRMC,023515.639,V,,,,,,,260317,,,N*40[0D][0A]
+
+7.33711         $GPGGA,023516.639,,,,,0,00,,,M,0.0,M,,0000*59[0D][0A]
+7.44481         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+7.51358         $GPRMC,023516.639,V,,,,,,,260317,,,N*43[0D][0A]
+
+8.33721         $GPGGA,023517.639,,,,,0,00,,,M,0.0,M,,0000*58[0D][0A]
+8.44493         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+8.51369         $GPRMC,023517.639,V,,,,,,,260317,,,N*42[0D][0A]
+
+9.3371          $GPGGA,023518.639,,,,,0,00,,,M,0.0,M,,0000*57[0D][0A]
+9.44482         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+9.51358         $GPRMC,023518.639,V,,,,,,,260317,,,N*4D[0D][0A]
+
+10.3374         $GPGGA,023519.639,,,,,0,00,,,M,0.0,M,,0000*56[0D][0A]
+10.4451         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+10.5139         $GPRMC,023519.639,V,,,,,,,260317,,,N*4C[0D][0A]
+
+11.3375         $GPGGA,023520.639,,,,,0,00,,,M,0.0,M,,0000*5C[0D][0A]
+11.4452         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+11.514          $GPGSV,3,1,12,03,67,080,,17,64,312,,22,44,057,,19,42,308,*71[0D][0A]
+11.6561         $GPGSV,3,2,12,28,41,212,,01,38,066,,57,33,072,,06,25,268,*75[0D][0A]
+11.7982         $GPGSV,3,3,12,11,25,092,,23,18,132,,14,07,034,,09,01,164,*70[0D][0A]
+11.9403         $GPRMC,023520.639,V,,,,,,,260317,,,N*46[0D][0A]
+
+12.3378         $GPGGA,023521.639,,,,,0,00,,,M,0.0,M,,0000*5D[0D][0A]
+12.4455         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
+12.5143         $GPRMC,023521.639,V,,,,,,,260317,,,N*47[0D][0A]
+
+
+SirfBin aka OSP
+
+Input
+0x80    128     factory reset
+0x81	129	Switch to NMEA
+0x84	132	Poll SW Version  (-> 6)
+0x90	144	Poll Clock (-> 7)
+0x98	152	Poll Nav Parameter (-> 19)
+0xa6	166	Message Rate
+0xa8	168	Poll Command Parmeters (-> 43)
+		queries for 128, 133, 136, 137, 138, 139, 140, 143, and 151.
+
+		0x80 128 Initialize Data Source		0x85 133 DGPS Source
+		0x88 136 Mode Control			0x89 137 DOP Mask
+		0x8a 138 DGPS Control			0x8b 139 Elevation Mask
+		0x8c 140 Power Mask			0x8f 143 Static Navigation
+		0x97 151 Set TricklePower
+
+0xcd,10	205,16	Shutdown
+0xd4,7	212,7	osp revision request
+0xd6    214     hw_response
+0xe9    233     pwr_mode
+
+
+Output
+0x02	2	(1Hz)	Measure Navigation Data Out (meters)
+0x04	4	(1Hz)	Measured Tracker Data
+0x06	6		Software Version String
+0x07	7	(1Hz)	Clock Status Data
+0x09	9	(1Hz)	CPU Throughput
+0x0b	11		Command Acknowledgment
+0x0c	12		Command Negative Acknowledgment
+0x12	18		OkToSend, val 1 ok, 0 shutup
+0x13	19		Nav Parameters
+0x29	41	(1Hz)	Geodetic Data
+0x2b	43		Queue Command Parameters (from 168)
+0x32	50	(1Hz)	SBAS Parameters
+0x33,1  51,1            unknown
+0x33,6  51,6            Tracker Load Status Report
+0x38    56, 42          extended ephemeris, SIF Status
+0x41,c0 65, 192         GPIO State Output
+0x46,7	70,7		OSP Revision
+0x47	71		Hardware Configuration Request
+0x4b,1	75,1		ACK/NACK/Error Notification
+0x5c,1	92,1		CW Output
+0x5c,2	92,2		CW Mitigation
+0x5d,1	93,1		TCXO Learning Clock Model Data Base
+0x5d,2	93,2		TCXO Learning Temperature Table
+0x5d,12 93,18           Temp Value Output
+0xe1    225, 6          statistics channel
+
+
+
+
+Start Up messages:  Antenova M10478 (Gsd4e)
+
+
+
+Start Up messages:  ORG4472 (Gsd4e ?????   unknown revision).
+  ms	Start up (default) messages:
+ 102	0x12	18	OkToSend, val 1 ok, 0 shutup
+ 104	0x47	71	Hardware Configuration Request
+ 107	0x06	6	Software Version String
+ 109	0x0b,84	11,132	Command Ack
+
+1127	0x29	41	Geodetic Navigation Data
+1132	0x04	4	Measured Tracker Data
+1140	0x02	2	Measure Navigation Data Out
+1143	0x09	9	CPU Throughput
+1143	0x07	7	Clock Status Data
+1144	0x32	50	SBAS Parameters
+1146	0x5d,01	93,1	TCXO Learning Clock Model Data Base
+1146	0x5d,02	93,2	TCXO Learning Temperature Table
+
+2149	0x29	41
+2154	0x04	4
+2162	0x02	2
+2165	0x09	9
+2165	0x07	7
+2166	0x32	50
+
+3184	0x29	41
+3189	0x04	4
+3198	0x02	2
+3199	0x09	9
+3200	0x07	7
+3202	0x32	50
+
+4205	0x29	41
+4209	0x04	4
+4218	0x02	2
+4220	0x09	9
+4221	0x07	7
+4222	0x32	50
+
+5226	0x29	41
+5230	0x04	4
