@@ -1,4 +1,4 @@
-define radio
+define hw_radio
 printf "\nradio(ub2): cts: %d  irqN: %d  sdn: %d  csN: %d   siok\n", \
     (($p2->IN >> 4) & 1),  (($p5->IN >> 1) & 1), \
     (($p5->OUT >> 0) & 1), (($p5->OUT >> 2) & 1)
@@ -9,8 +9,8 @@ printf "                 %c        %c       %c       %c    %c%c%c\n", \
     ($p3->SEL0 & (1 << 5)) ? 'M' : 'p'
 __p_usci $ucb2 2 1 0d22
 end
-document radio
-display radio state
+document hw_radio
+display radio hardware state
 end
 
 define cts
@@ -52,7 +52,7 @@ document sd1
 display sd1 state
 end
 
-define gps
+define hw_gps
 printf "\ngps(ua2): on_off: %d  nRst: %d  awake: %d    grt\n", \
     ($p4->OUT & 1), ($p6->OUT & 1), (($p6->IN >> 1) & 1)
 printf "                  %c        %c         %c     %c%c\n", \
@@ -61,11 +61,8 @@ printf "                  %c        %c         %c     %c%c\n", \
     ($p3->SEL0 & (1 << 3)) ? 'M' : 'p', ($p3->SEL0 & (1 << 2)) ? 'M' : 'p'
 __p_usci $uca2 2 0 0d18
 end
-document gps
-display gps state
-end
-document gps
-display gps state
+document hw_gps
+display gps hardware state
 end
 
 #
