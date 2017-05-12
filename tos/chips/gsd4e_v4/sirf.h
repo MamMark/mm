@@ -156,6 +156,25 @@ const uint8_t nmea_57600[] = {
   '\r', '\n'				// terminator
 };
 
+const uint8_t nmea_sw_ver[] = {
+  '$', 'P', 'S', 'R', 'F',		// header
+  '1', '2', '5',        		// sw_ver MID
+  '*', '2', '1',
+  '\r', '\n'				// terminator
+};
+
+const uint8_t nmea_sirf_9600[] = {
+  '$', 'P', 'S', 'R', 'F',		// header
+  '1', '0', '0', ',',			// set serial port MID
+  '0', ',',				// protocol 0 SirfBinary, 1 - NEMA
+  '9', '6', '0', '0', ',',		// baud rate
+  '8', ',',				// 8 data bits
+  '1', ',',				// 1 stop bit
+  '0',					// no parity
+  '*', '0', 'C',			// checksum
+  '\r', '\n'				// terminator
+};
+
 const uint8_t nmea_sirf_57600[] = {
   '$', 'P', 'S', 'R', 'F',		// header
   '1', '0', '0', ',',			// set serial port MID
