@@ -299,6 +299,7 @@ norace uint8_t  gbuf[GPS_EAVES_SIZE];
 
 typedef struct {
   uint32_t     ts;
+  uint32_t     rate;
   gpsc_state_t gc_state;
   gps_where_t  where;
   uint16_t     g_idx;
@@ -352,6 +353,7 @@ const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
        int32_t  gps_probe_index;        // keeps track of which table entry to use
        uint32_t gps_probe_cycle;        // how many times through the list.
 norace uint32_t gps_booting;            // system is booting.
+       uint32_t gps_cur_rate;           // current baud rate
 
 
 /*
@@ -423,6 +425,7 @@ implementation {
       if (g_nev >= GPS_MAX_EVENTS)
 	g_nev = 0;
       g_evs[idx].ts = call LocalTime.get();
+      g_evs[idx].rate = gps_cur_rate;
       g_evs[idx].gc_state = next_state;
       g_evs[idx].where = where;
       g_evs[idx].g_idx = g_idx;
@@ -606,6 +609,7 @@ implementation {
           time_out = len * DT_GPS_BYTE_TIME * to_mod * 4 + 500000;
           time_out /= 1000000;
           if (!time_out) time_out = 2;    /* at least 2ms */
+          gps_cur_rate = speed;
           gpsc_change_state(GPSC_CHK_TX_WAIT, GPSW_GPS_TASK);
 
           /* start deadman timer, change speed, and send the puppie */
@@ -742,6 +746,7 @@ implementation {
 
         case GPSC_PROBE_0:
           gps_probe_index = -1;            /* first sw_ver try */
+          gps_cur_rate = GPS_TARGET_SPEED;
           gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_TX_TIMER);
           call HW.gps_speed_di(GPS_TARGET_SPEED);
           call GPSTxTimer.startOneShot(SWVER_TX_TIMEOUT);
