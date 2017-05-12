@@ -218,6 +218,8 @@ implementation {
 	  sirfbin_restart();
 	  return;
 	}
+        sirfbin_ptr = 0;
+        sirfbin_state = SBS_START;
         signal GPSProto.msgEnd();
         call GPSBuffer.msg_complete();
 	return;
