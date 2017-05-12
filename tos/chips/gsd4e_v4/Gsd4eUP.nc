@@ -483,7 +483,7 @@ implementation {
     if (call HW.gps_awake()) {
       toggle_gps_on_off();
       t0 = call Platform.usecsRaw();
-      while (call Platform.usecsRaw() - t0 < DT_GPS_ON_OFF_WIDTH) {
+      while (call Platform.usecsRaw() - t0 < DT_GPS_ON_OFF_WIDTH_US) {
         if (!call HW.gps_awake()) return;
       }
       gps_panic(8, 1, 0);

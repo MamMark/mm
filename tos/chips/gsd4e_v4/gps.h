@@ -37,9 +37,9 @@
 /* ms units */
 #define DT_GPS_PWR_UP_DELAY     1024
 #define DT_GPS_WAKE_UP_DELAY    103
-#define DT_GPS_ON_OFF_WIDTH     105
 
 #define DT_GPS_RESET_PULSE_WIDTH_US 105
+#define DT_GPS_ON_OFF_WIDTH_US      105
 
 /*
  * TX and RX LIMITs.
