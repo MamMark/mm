@@ -284,10 +284,11 @@ implementation {
     m_tx_idx = 0;
     m_tx_buf = ptr;
     /*
-     * On start up UCTXIFG should be asserted, so enabling the TX interrupt
-     * should cause the ISR to get invoked.
+     * There may be a pending send still in progress, the tail end.
+     * If that is the case then TXIFG won't be asserted.  It will assert
+     * when TXBUF goes empty and then we can start up this send.
      *
-     * The interrupt handler takes care of UCTXCPTIFG.
+     * So just enable the interrupt and let it fly.
      */
     call Usci.enableTxIntr();
     return SUCCESS;
@@ -298,6 +299,25 @@ implementation {
     m_tx_buf = NULL;
   }
 
+  /*
+   * WARNING: there is a nasty interaction between the Interrupt system
+   * and how the TXIFG works on the eUSCI.  On the way in via interrupt
+   * reading the eUSCI->IV register to get the IV clears the highest
+   * IFG as well as generates the IV value.  This clears the TXIFG.
+   *
+   * So if this is the last byte that we are transmitting and we want
+   * to turn off the TX interrupt driven system, we now have no TXIFG
+   * indicating that the TXBUF is empty.  So how does one start the system
+   * back up on the next transmit?  You can try to replace it by
+   * writing IFG but that has implications on other parts of the eUSCI
+   * race conditions etc.  So we turn off interrupts when the last byte
+   * is written to the TXBUF (TXIFG goes down) and signal completion.
+   *
+   * If we then need to reconfigure and need to make sure that all the
+   * bytes have been transmitted, one may need to take up to 2 byte
+   * times before complete, one for the byte in the shift register and
+   * one for the last byte written.
+   */
   async event void Interrupt.interrupted(uint8_t iv) {
     uint8_t data;
     uint8_t *buf;
@@ -318,13 +338,16 @@ implementation {
 
       case MSP432U_IV_TXIFG:
         if (m_tx_buf == NULL) {
+          /*
+           * this will have the problem of TXIFG being down.
+           * just panic to call attention to the issue.
+           */
           call Usci.disableTxIntr();
           gps_panic(4, iv, 0);
           return;
         }
 
         data = m_tx_buf[m_tx_idx++];
-        call Usci.clrTxComplete();
         call Usci.setTxbuf(data);
         if (m_tx_idx >= m_tx_len) {
           buf = m_tx_buf;
