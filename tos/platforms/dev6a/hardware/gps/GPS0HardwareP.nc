@@ -40,6 +40,11 @@
 #include <msp432.h>
 #include <platform_clk_defs.h>
 
+/*
+ * The eUSCI for the UART is always clocked by SMCLK which is DCOCLK/2.  So
+ * if MSP432_CLK is 16777216 (16MiHz) the SMCLK is 8MiHz, 8388608 Hz.
+ */
+
 #if (MSP432_CLK != 16777216)
 #warning MSP432_CLK other than 16777216
 #endif
@@ -79,6 +84,7 @@ implementation {
     call  Panic.warn(PANIC_GPS, where, arg, 0, 0, 0); \
   } while (0)
 
+
   /* Baud rate divisor equations
    *
    * N.Frac = BRCLK / bps
@@ -89,8 +95,6 @@ implementation {
    * (see table on page 736 of SLAU356E - Revised Dec 2016)
    */
 
-
-  /* BRCLK is SMCLK, assumed to be 8MiHz */
   const msp432_usci_config_t gps_4800_config = {
     ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
     brw   : 1747,
@@ -100,7 +104,16 @@ implementation {
   };
 
 
-  /* BRCLK is SMCLK, assumed to be 8MiHz */
+  const msp432_usci_config_t gps_115200_config = {
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
+    brw   : 72,
+    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
+            (0xee << EUSCI_A_MCTLW_BRS_OFS),
+    i2coa : 0
+  };
+
+
+#ifdef notdef
   const msp432_usci_config_t gps_9600_config = {
     ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
     brw   : 873,
@@ -119,20 +132,20 @@ implementation {
   };
 
 
-  const msp432_usci_config_t gps_115200_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
-    brw   : 72,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0xee << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-
-
   const msp432_usci_config_t gps_307200_config = {
     ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
     brw   : 27,
     mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
             (0x25 << EUSCI_A_MCTLW_BRS_OFS),
+    i2coa : 0
+  };
+
+
+  const msp432_usci_config_t gps_921600_config = {
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
+    brw   : 9,
+    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
+            (0x08 << EUSCI_A_MCTLW_BRS_OFS),
     i2coa : 0
   };
 
@@ -144,6 +157,8 @@ implementation {
             (0xbf << EUSCI_A_MCTLW_BRS_OFS),
     i2coa : 0
   };
+#endif
+
 
   norace uint8_t *m_tx_buf;
   norace uint16_t m_tx_len;
@@ -227,12 +242,16 @@ implementation {
 
     switch(speed) {
       case    4800:     config =    &gps_4800_config;    break;
+      case  115200:     config =  &gps_115200_config;    break;
+      default:          gps_panic(2, speed, 0);          break;
+
+#ifdef notdef
       case    9600:     config =    &gps_9600_config;    break;
       case   57600:     config =   &gps_57600_config;    break;
-      case  115200:     config =  &gps_115200_config;    break;
       case  307200:     config =  &gps_307200_config;    break;
+      case  921600:     config =  &gps_921600_config;    break;
       case 1228800:     config = &gps_1228800_config;    break;
-      default:          gps_panic(2, speed, 0);          break;
+#endif
     }
     if (!config)
 	gps_panic(3, speed, 0);
