@@ -339,15 +339,12 @@ uint8_t g_nev;			// next gps event
  * for record keeping.
  */
 
-#define GPT_MAX_INDEX 4
+#define GPT_MAX_INDEX 1
 
 /* FIXME: is this in rom like we expect? */
 const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
 /*   rate mod             len                msg   */
   {  4800, 24, sizeof(nmea_sirf_115200), nmea_sirf_115200   },
-  {  9600, 12, sizeof(nmea_sirf_115200), nmea_sirf_115200   },
-  { 57600,  2, sizeof(nmea_sirf_115200), nmea_sirf_115200   },
-  { 57600,  2, sizeof(sirf_115200),      sirf_115200        },
 };
 
        int32_t  gps_probe_index;        // keeps track of which table entry to use
