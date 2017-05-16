@@ -375,8 +375,8 @@ const uint8_t sirf_nmea_4800[] = {
 
 typedef struct {
   const uint32_t  speed;                // baud rate, bps
-  const uint32_t  to_modifier;          // time out modifier
-  const uint32_t  len;                  // len of config msg
+  const uint16_t  to_modifier;          // time out modifier
+  const uint16_t  len;                  // len of config msg
   const uint8_t  *msg;                  // pointer to config msg
 } gps_probe_entry_t;
 
