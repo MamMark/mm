@@ -563,12 +563,10 @@ implementation {
     gps_msg_t *msg;             /* message slot we are working on */
 
     atomic {
-      if (MSG_INDEX_INVALID(gmc.head)) {  /* oht oh */
-        gps_panic(GPSW_MSG_NEXT, gmc.head, 0);
+      if (MSG_INDEX_INVALID(gmc.head))          /* empty queue */
         return NULL;
-      }
       msg = &gps_msgs[gmc.head];
-      if (msg->state != GPS_MSG_FULL) {   /* oht oh */
+      if (msg->state != GPS_MSG_FULL) {         /* oht oh */
         gps_panic(GPSW_MSG_NEXT, (parg_t) msg, msg->state);
         return NULL;
       }
