@@ -192,10 +192,10 @@ enum {
  *
  * *** TimeOut Values
  *
- * In varous places we fire up timer to make sure we don't hang.  We use
- * various timeout deadman or rx window values to set these timers to.
- * These values are computed based on what baud rate we are running and
- * how long the message is.
+ * In varous places we fire up timers to make sure we don't hang.  We use
+ * various timeout deadman or rx window values to set these timers.  These
+ * values are computed based on what baud rate we are running and how long
+ * the message is.
  *
  * We express these timeout values in terms of the target baud.  For example
  * when we are using messages out of the probe_table, there is a to_mod,
@@ -205,8 +205,9 @@ enum {
  *
  *    T_t = (len * byte_time * to_mod + 500000)/1000000
  *
- * len is length in bytes, byte_time is byte_time in nano secs and to_mod
- * is the ratio of target/actual, ie.  115200/4800 = ~24 for 4800 baud.
+ * len is length in bytes, byte_time is a single byte transit time in nano
+ * secs at the target baud rate, and to_mod is the ratio of target/actual,
+ * ie.  115200/4800 = ~24 for 4800 baud.  Assuming target baud is 115200.
  *
  * The calculated transit time for a 28 byte message at 4800 baud (to_mod 24),
  * with a target byte time (115200) of 86805, would be:
@@ -227,11 +228,6 @@ enum {
  * Rather than complicate the actual computation, we simply modify
  * the byte_time.  If byte_time is specified in binary time that will also be
  * the units of the result.
- *
- * Currently, the only timers used are deadman timers to detect faults and
- * things not working.  As such it really isn't that important to get the right
- * value dialed in as long as the timeout value is long enough.  So we use fixed
- * large values when in any state other.
  */
 
 typedef enum {
@@ -690,7 +686,7 @@ implementation {
    * of the TO in bytes of the last fired up timer operation.  Req will
    * indicate what the current request is, 0 to turn it off.
    *
-   * We currently just always .use MAX_RX_TIMEOUT because it is easier
+   * We currently just always use MAX_RX_TIMEOUT because it is easier
    * and doesn't involve any calculations.  It is a deadman timer so we
    * really don't care.  If we later decide to tune this down the calculation
    * is:   (see gps.h)

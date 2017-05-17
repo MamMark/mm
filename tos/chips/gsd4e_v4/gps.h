@@ -25,21 +25,53 @@
  * ON_OFF toggle.  See GSD4eUP.nc for additional details.
  *
  * PWR_UP_DELAY:    time from pwr_on to ON_OFF okay.
- * WAKE_UP_DELAY:   time from ON_OFF to ARM boot
+ * WAKE_UP_DELAY:   time from ON_OFF to ARM boot (minimum)
  *
  * When the gps chip is in hibernate the ARM7 is shutdown.  When we toggle
  * ON_OFF, it takes some time for the ARM7 to come back.  WAKE_UP_DELAY is
  * the time we know about when first powering the chip up before the ARM7
  * is booted.  We don't know what this time looks like when the gps chip is
  * sleeping (hibernating) rather then powering up.
+ *
+ * After the gps chip is powered up or if reset, ON_OFF must be toggled to
+ * bring the chip out of sleep.  This starts the WAKE_UP_DELAY window.  We
+ * set this window large enough (200ms) so that the gps's Ok_To_Send
+ * message falls completely inside this window.
+ *
+ * During this window, we look for the OTS packet.  (ie. rx interrupts are
+ * on an the Protocol state machine will receive bytes).  If we see the OTS
+ * packet correctly we will transition to FINI_WAIT and declare comm is
+ * working.  So if the chip is configured properly (for comm) we will very
+ * early on sense this and transition to the ON state.
+ *
+ * However, if we time out looking for the OTS packet, we will first send a
+ * couple of PEEK messages.  We use a PEEK packet to force the chip to
+ * respond.  Peek is the smallest message that forces a response.
+ *
+ * If the PEEKs don't work, we then send successive comm configuration
+ * messages, each followed by a PEEK at the target baud rate.  We guess at
+ * different GPS configurations.  Each guess sends a configuration message
+ * at the guessed baud rate.  The configuration message commands the gps to
+ * change to our desired target baud.  Each configuration message is
+ * followed by a PEEK at the target baud to see if it worked.
  */
 
 /* ms units */
 #define DT_GPS_PWR_UP_DELAY     1024
-#define DT_GPS_WAKE_UP_DELAY    103
+#define DT_GPS_WAKE_UP_DELAY    205
 
 #define DT_GPS_RESET_PULSE_WIDTH_US 105
 #define DT_GPS_ON_OFF_WIDTH_US      105
+
+/*
+ * TA_WAIT
+ *
+ * Turn Around Wait.  When we change the communications configuration
+ * ie. baud rate, protocol, we give the gps chip sufficient time to
+ * turn around and get ready.  If this time gets too short, things
+ * no workie.
+ */
+#define DT_GPS_TA_WAIT 24
 
 /*
  * TX and RX LIMITs.
@@ -74,6 +106,12 @@
  * to keep things simple (and to avoid doing calculations that don't
  * matter).
  *
+ * Due to some hardware issues, gps_send_block returns with two bytes on
+ * the h/w in the process of being transmitted.  RX timeout starts timing
+ * on return from gps_send_block.  Therefore RX timeouts need to take into
+ * account the extra two byte times.  This two byte times will be at
+ * whatever baud rate is currently selected.
+ *
  * When receiving messages from the GPS we never want to hang.  For example
  * if we lose bytes in the middle of a message the SirfBin Proto engine
  * won't see enough bytes.  If a new message shows up it will blow up
@@ -87,21 +125,25 @@
  *     where length = SIRFBIN_MAX_MSG
  *
  * so for a 200 byte max message we get: 17ms or 18mis.  If we roughly
- * triple this we get around 50ms/mis.  That should work.
+ * triple this we get around 50ms (52mis).  That should work.
+ *
+ * We use the PEEK command to force a response.  PEEK_TX_TIMEOUT is
+ * calculated using the size of the PEEK command (20 bytes).
  *
  * Similarily the SWVER_TX_TIMEOUT is calculated using the size of the
  * sw_ver message (this is the request, not the response).  Len 10.
  * transmitted at the target baud, T_t of such a short message is less
  * than 1ms so we just bump it up to 4.
  *
- * SWVER_TX_TIMEOUT = (10 * byte_time * 4 + 500000)/1e6
- * SWVER_RX_TIMEOUT = (88 * byte_time * 4 + 500000)/1e6
- *
- * SWVER_RX_TIMEOUT is ~32ms.   We just use MAX_RX_TIMEOUT.  close enough.
+ * (115200 target)
+ * SWVER_TX_TRANSIT = (10 * byte_time + 500000)/1e6 = ~1ms  (.87ms)
+ *  PEEK_TX_TRANSIT = (20 * byte_time + 500000)/1e6 = ~2mis (1.7ms)
+ * PEEK_RSP_TRANSIT = (19 * byte_time + 500000)/1e6 = ~2mis (1.7ms) ***
  */
 
-#define MAX_RX_TIMEOUT   50
-#define SWVER_TX_TIMEOUT  4
+#define DT_GPS_MIN_TX_TIMEOUT   5
+#define DT_GPS_PEEK_RSP_TIMEOUT 52
+#define DT_GPS_MAX_RX_TIMEOUT   52
 
 /*
  * All times unless otherwise noted are in decimal time (us and
