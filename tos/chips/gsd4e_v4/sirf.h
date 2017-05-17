@@ -243,7 +243,7 @@ const uint8_t nmea_sirf_115200[] = {
   '8', ',',				// 8 data bits
   '1', ',',				// 1 stop bit
   '0',					// no parity
-  '*', '0', '5',			// checksum
+  '*', '0', '4',			// checksum
   '\r', '\n'				// terminator
 };
 
@@ -255,7 +255,7 @@ const uint8_t nmea_sirf_307200[] = {
   '8', ',',				// 8 data bits
   '1', ',',				// 1 stop bit
   '0',					// no parity
-  '*', '0', '4',			// checksum
+  '*', '0', '5',			// checksum
   '\r', '\n'				// terminator
 };
 
@@ -364,7 +364,7 @@ const uint8_t sirf_nmea_4800[] = {
   1, 1,				// RMC
   0, 1,				// VTG
   0, 1,				// MSS
-  0, 0,				// Unused
+  0, 0,				// EPE
   0, 1,				// ZDA
   0, 0,				// Unused
   0x12, 0xc0,			// Baud rate (4800) (big endian)
