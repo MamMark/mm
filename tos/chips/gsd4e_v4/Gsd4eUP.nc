@@ -147,7 +147,6 @@ enum {
  *
  * FAIL             gps has failed.
  * OFF              gps power is off?  Or we rebooted.
- * HIBERNATE        sleeping.
  *
  * PWR_UP_WAIT:     delay waiting for initial power on window
  *
@@ -166,10 +165,14 @@ enum {
  *                  configuration).  The tx_timer is a deadman and shouldn't
  *                  go off.  Proper termination is via HW.gps_send_block_done.
  *
+ * CHK_TA_WAIT:     After the config change message is sent we delay a turn
+ *                  around time to give the gps time to actually change its
+ *                  configuration.
+ *
  * CHK_TX1_WAIT:    We may have to force a response from the gps to see if
  *                  the configuration worked.  TX1_WAIT is active while
- *                  we are sending this message.  tx_timer should not
- *                  expire.
+ *                  we are sending this probe.  tx_timer should not
+ *                  expire (deadman for transmit).
  *
  * CHK_RX_WAIT:     Waiting to receive the response from the probe.  If
  *                  rx_timer expires we assume the probe didn't work and
@@ -178,6 +181,14 @@ enum {
  * CHK_FINI_WAIT:   msgStart from the protocol engine will transition us
  *                  into FINI_WAIT where we are waiting for the message
  *                  to finish being received.
+ *
+ * CHK_TX_SWVER:    send request for SW_VER to be sent.  This state
+ *                  initiates the transmission.
+ *
+ * CHK_SWVER_WAIT:  deadman wait for the SW_VER req transmission to
+ *                  complete.
+ *
+ * HIBERNATE        sleeping but configured.
  *
  * ON:              After the proper configuration is established, we
  *                  finish in ON.  At Msg boundary.
@@ -233,25 +244,29 @@ enum {
 typedef enum {
   GPSC_OFF  = 0,                        /* pwr is off */
   GPSC_FAIL = 1,
-  GPSC_HIBERNATE,
+  GPSC_RESET_WAIT,                      /* reset dwell */
 
   GPSC_PWR_UP_WAIT,                     /* power up delay */
   GPSC_PROBE_0,
   GPSC_PROBE_CYCLE,
 
-  /* PROBE_x1 is a psudo state.  PROBE_CYCLE alwasy drops
-     immediately into it.  never actually gets set */
-  GPSC_PROBE_x1,
+  /* PROBE_x1 is a psudo state.  PROBE_CYCLE always drops
+   * immediately into it.  never actually gets set
+   */
+  GPSC_PROBE_x1,                        // place holder
 
   GPSC_CHK_TX_WAIT,
+  GPSC_CHK_TA_WAIT,                     /* turn around, changing comm */
   GPSC_CHK_TX1_WAIT,
   GPSC_CHK_RX_WAIT,
   GPSC_CHK_FINI_WAIT,
+  GPSC_CHK_TX_SWVER,
+  GPSC_CHK_SWVER_WAIT,
 
-  GPSC_RESET_WAIT,                      /* reset dwell */
+  GPSC_CONFIG,                          // place holder
+  GPSC_CONFIG_WAIT,                     // place holder
 
-  GPSC_CONFIG,
-  GPSC_CONFIG_WAIT,
+  GPSC_HIBERNATE,                       // place holder
 
   GPSC_ON,                              // at msg boundary
   GPSC_ON_RX,                           // in receive
@@ -265,10 +280,15 @@ typedef enum {
   GPSW_TURNON,
   GPSW_TURNOFF,
   GPSW_STANDBY,
-  GPSW_GPS_TASK,
+  GPSW_SEND_BLOCK_TASK,
+  GPSW_PROBE_TASK,
+  GPSW_SWVER_TASK,
+  GPSW_TIMER_TASK,
   GPSW_TX_TIMER,
   GPSW_RX_TIMER,
-  GPSW_PROTO,
+  GPSW_PROTO_START,
+  GPSW_PROTO_ABORT,
+  GPSW_PROTO_END,
 } gps_where_t;
 
 
@@ -313,9 +333,13 @@ uint8_t g_nev;			// next gps event
  *
  * The probe_table holds various comm configuration messages.
  *
- * Initially we assume the GPS is at SB-<target>.  We set our h/w to the
- * target baud and throw a send_sw_ver at the gps chip to see if we are
- * communicating properly.  This corresponds to probe_index -1.
+ * Initially we assume the GPS is at SB-<target>.  After reset or power on,
+ * we set the UART h/w to <target> and wait for WAKE_UP_DELAY to see the
+ * Ok_To_Send (OTS).  If seen the state machine cycles and we eventually
+ * transition to ON.
+ *
+ * If we expire the WAKE_UP_DELAY then we throw a probe (peek_0) at the
+ * gps to force a response.  This corresponds to probe_index -1.
  *
  * But if that doesn't work we go to probe_index 0 and start with
  * the first entry in the table to see if we can find a configuration
@@ -325,7 +349,9 @@ uint8_t g_nev;			// next gps event
  * to work.
  *
  * Entries in the probe_table are configurations that might correspond to
- * how the gps chip is configured.
+ * how the gps chip is configured.  After each configuration is sent we
+ * reconfigure the h/w to our <target> and send a probe (peek_0) to elicit
+ * a response.
  *
  * If we run through the entire probe_table without success, we reset
  * the GPS and try again.  If that fails we give up.
@@ -345,13 +371,10 @@ const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
 
        int32_t  gps_probe_index;        // keeps track of which table entry to use
        uint32_t gps_probe_cycle;        // how many times through the list.
-norace uint32_t gps_booting;            // system is booting.
+       uint32_t gps_booting;            // system is booting.
        uint32_t gps_cur_rate;           // current baud rate
 
 
-/*
- * Gsd4eUP - module implementation
- */
 module Gsd4eUP {
   provides {
     interface GPSState;
@@ -390,10 +413,10 @@ implementation {
    *
    * The interrupt level can change state and can request that the RxTimer
    * be modified.  When this is needed, the interrupt level will fill in
-   * req_rx_len and post rxtimer_task.  cur_rx_len indicates what we were
+   * req_rx_len and post timer_task.  cur_rx_len indicates what we were
    * last set to.
    *
-   * To kill the rx_timer, set req_rx_len to 0 and post rxtimer_task.
+   * To kill the rx_timer, set req_rx_len to 0 and post timer_task.
    */
   norace int16_t m_req_rx_len;          // requested rx len (for timeout)
          int16_t m_cur_rx_len;          // cur       rx len (for timeout)
@@ -556,24 +579,90 @@ implementation {
 
 
   /*
-   * gps_task
+   * send_block_task
    *
-   * handles events from the async HW level like HW.gps_send_done and we
-   * need to do processing at the task level.
-   *
-   * handles sequencing COMM checking/probing.
+   * handle gps_send_block completions.  gps_send_block_done happens at
+   * interrupt level but many completion actions need to be performed
+   * from task level.  This task handles that.
    */
-  task void gps_task() {
-    const uint8_t *msg;
-    uint32_t       speed, len, to_mod, time_out;
-
+  task void send_block_task() {
     atomic {
       switch(gpsc_state) {
         default:
           gps_panic(11, gpsc_state, 0);
           return;
 
+        case GPSC_CHK_TX_WAIT:
+          /*
+           * config change went out okay.  wait for the gps chip
+           * to actually process it.  ie.  turn around.
+           */
+          call GPSTxTimer.startOneShot(DT_GPS_TA_WAIT);
+          gpsc_change_state(GPSC_CHK_TA_WAIT, GPSW_SEND_BLOCK_TASK);
+          return;
+
+        case GPSC_CHK_TX1_WAIT:
+          /*
+           * probe (peek_0) has gone out
+           * now if the comm config string worked we will now be at
+           * SB-<target> and no longer need any timeout modifiers.
+           *
+           * wait for the probe response (see gps.h)
+           */
+          call GPSTxTimer.stop();
+          call GPSRxTimer.startOneShot(DT_GPS_PEEK_RSP_TIMEOUT);
+          m_cur_rx_len = SIRFBIN_PEEK_RSP_LEN;
+          gpsc_change_state(GPSC_CHK_RX_WAIT, GPSW_SEND_BLOCK_TASK);
+          call HW.gps_rx_int_enable();        /* turn on rx system */
+          return;
+
+        case GPSC_CHK_SWVER_WAIT:
+          call GPSTxTimer.stop();       /* kill deadman */
+
+          /* for now we go to ON and post gps_task again.  this is a place holder
+           * and will probably change to invoke various configuration stuff.
+           */
+          gpsc_change_state(GPSC_ON, GPSW_SEND_BLOCK_TASK);
+          if (gps_booting) {
+            gps_booting = 0;
+            signal GPSBoot.booted();
+          }
+          return;
+
+        case GPSC_ON_TX:
+          call GPSTxTimer.stop();
+          gpsc_change_state(GPSC_ON, GPSW_SEND_BLOCK_TASK);
+          /* signal out to the caller that started up the GPSSend.send */
+          return;
+
+        case GPSC_ON_RX_TX:
+          call GPSTxTimer.stop();
+          gpsc_change_state(GPSC_ON_RX, GPSW_SEND_BLOCK_TASK);
+          /* signal out to the caller that started up the GPSSend.send */
+          return;
+      }
+    }
+  }
+
+
+  /*
+   * probe_task
+   *
+   * handles manipulation of probe cycles.
+   */
+  task void probe_task() {
+    const uint8_t *msg;
+    uint32_t       speed, len, to_mod, time_out;
+
+    atomic {
+      switch(gpsc_state) {
+        default:
+          gps_panic(12, gpsc_state, 0);
+          return;
+
         case GPSC_PROBE_CYCLE:
+          call GPSRxTimer.stop();       /* always stop the rx timer */
+
           /* starting a new cycle. */
           gps_probe_index++;
           if (gps_probe_index >= GPT_MAX_INDEX) {
@@ -582,11 +671,12 @@ implementation {
             gps_probe_cycle++;
             if (gps_probe_cycle >= 2) {
               /* last cycle we hit reset but still didn't find anything */
-              gps_panic(11, gpsc_state, 0);
+              gps_panic(12, gpsc_state, 0);
               return;
             }
             /* okay, 1st cycle didn't work, kick reset and try again */
-            gps_warn(11, gpsc_state, 0);
+//          gps_warn(12, gpsc_state, 0);
+            WIGGLE_TELL; WIGGLE_TELL;
             gps_reset();
             call GPSTxTimer.startOneShot(DT_GPS_PWR_UP_DELAY);
             gpsc_change_state(GPSC_PWR_UP_WAIT, GPSW_RX_TIMER);
@@ -603,67 +693,12 @@ implementation {
           time_out /= 1000000;
           if (!time_out) time_out = 2;    /* at least 2ms */
           gps_cur_rate = speed;
-          gpsc_change_state(GPSC_CHK_TX_WAIT, GPSW_GPS_TASK);
+          gpsc_change_state(GPSC_CHK_TX_WAIT, GPSW_PROBE_TASK);
 
           /* start deadman timer, change speed, and send the puppie */
           call GPSTxTimer.startOneShot(time_out);
           call HW.gps_speed_di(speed);
           call HW.gps_send_block((void *) msg, len);
-          return;
-
-        case GPSC_CHK_TX_WAIT:
-          /*
-           * first part went, the configuration change
-           * so now send out the send_sw_ver to force a response
-           *
-           * send_sw_ver always goes out at the target speed.
-           */
-          gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_GPS_TASK);
-          call HW.gps_tx_finnish();
-          call HW.gps_speed_di(GPS_TARGET_SPEED);
-
-          /* start deadman timer, and send sw_ver */
-          call GPSTxTimer.startOneShot(SWVER_TX_TIMEOUT);
-          call HW.gps_send_block((void *) sirf_send_sw_ver, sizeof(sirf_send_sw_ver));
-          return;
-
-        case GPSC_CHK_TX1_WAIT:
-          /*
-           * send_sw_ver has gone out
-           * now if the comm config string worked we will now be at
-           * SB-<target> and no longer need any timeout modifiers.
-           *
-           * wait for the maximal sized sw_ver string, (80 chars + overhead)
-           * times 4 (to give a big window, its a deadman remember).  We
-           * just use MAX_RX_TIMEOUT.
-           */
-          call GPSTxTimer.stop();
-          call GPSRxTimer.startOneShot(MAX_RX_TIMEOUT);
-          m_cur_rx_len = SIRFBIN_MAX_SW_VER;
-          gpsc_change_state(GPSC_CHK_RX_WAIT, GPSW_GPS_TASK);
-          call HW.gps_rx_int_enable();        /* turn on rx system */
-          return;
-
-        case GPSC_ON:
-        case GPSC_ON_RX:
-          if (gps_booting) {
-            gps_booting = 0;
-            signal GPSBoot.booted();
-          }
-          return;
-
-        case GPSC_ON_TX:
-          /* here because got a HW.gps_send_block_done */
-          gpsc_change_state(GPSC_ON, GPSW_GPS_TASK);
-          call GPSTxTimer.stop();
-          /* signal out to the caller that started up the GPSSend.send */
-          return;
-
-        case GPSC_ON_RX_TX:
-          /* here because got a HW.gps_send_block_done */
-          gpsc_change_state(GPSC_ON_RX, GPSW_GPS_TASK);
-          call GPSTxTimer.stop();
-          /* signal out to the caller that started up the GPSSend.send */
           return;
       }
     }
@@ -671,9 +706,49 @@ implementation {
 
 
   /*
-   * handle setting the deadman rx timer
+   * swver_task
    *
-   * we use a Do The Right Thing algorithm.
+   * handles issueing a send sw_ver request at the tail end of
+   * comm probe.  We want to store the current sw version of
+   * the gps chip.  We do this every power on (POR) or reset
+   * which occurs when we bring the gps up (leaving OFF state).
+   */
+  task void swver_task() {
+    atomic {
+      switch(gpsc_state) {
+        default:
+          gps_panic(13, gpsc_state, 0);
+          return;
+
+        case GPSC_CHK_TX_SWVER:
+          /*
+           * GPSProto.msgEnd (interrupt level) invoked us.  It has a
+           * rx deadman running.  Kill it.
+           */
+          call GPSRxTimer.stop();
+
+          /*
+           * send out a sw_ver request to capture the sw_ver of the gps
+           * chipset.  Fire up a Tx deadman for the transmit.  The receive
+           * will just come in and get captured without any checking.
+           */
+          call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
+          gpsc_change_state(GPSC_CHK_SWVER_WAIT, GPSW_SWVER_TASK);
+          call HW.gps_send_block((void *)sirf_sw_ver, sizeof(sirf_sw_ver));
+          return;
+      }
+    }
+  }
+
+
+  /*
+   * timer_task: handle various timer modifications
+   *
+   * Protocol state manipulation occurs at interrupt level and thus
+   * can't manipulate timers which are strictly task level.  timer_task
+   * handles requests from the interrupt level for timer manipulation.
+   *
+   * For RxTimer modifications, we use a Do The Right Thing algorithm.
    *
    * we do not enforce strict timer discipline.  That is we don't care if
    * the rxtimer is still running from its last usage.  This is because
@@ -693,12 +768,14 @@ implementation {
    *
    *   to = (len * DT_GPS_BYTE_TIME * MODIFIER + 500000) / 1e6
    */
-  task void rxtimer_task() {
+  task void timer_task() {
     atomic {                            /* don't change out from under */
       switch(gpsc_state) {
-        default:                        /* ignore other states */
+        default:
+          gps_panic(14, gpsc_state, 0);
           return;
 
+        case GPSC_CHK_FINI_WAIT:
         case GPSC_ON:
         case GPSC_ON_RX:
         case GPSC_ON_TX:
@@ -712,7 +789,7 @@ implementation {
           }
           m_cur_rx_len = m_req_rx_len;
           m_req_rx_len = -1;
-          call GPSRxTimer.startOneShot(MAX_RX_TIMEOUT);
+          call GPSRxTimer.startOneShot(DT_GPS_MAX_RX_TIMEOUT);
           return;
       }
     }
@@ -728,22 +805,36 @@ implementation {
     atomic {
       switch (gpsc_state) {
         default:                        /* all other states blow up */
-          gps_panic(12, gpsc_state, 0);
+          gps_panic(15, gpsc_state, 0);
           return;
 
         case GPSC_PWR_UP_WAIT:
+          gps_cur_rate = GPS_TARGET_SPEED;
+          call HW.gps_speed_di(GPS_TARGET_SPEED);
           gps_wakeup();                   /* wake the ARM up */
-          call GPSTxTimer.startOneShot(DT_GPS_WAKE_UP_DELAY);
+          call GPSRxTimer.startOneShot(DT_GPS_WAKE_UP_DELAY);
           gpsc_change_state(GPSC_PROBE_0, GPSW_TX_TIMER);
+          call HW.gps_rx_int_enable();        /* turn on rx system */
           return;
 
-        case GPSC_PROBE_0:
-          gps_probe_index = -1;            /* first sw_ver try */
+        case GPSC_CHK_TA_WAIT:
+          /*
+           * We've waited long enough for the gps chip to process the
+           * configuration, now send a peek to poke the gps chip
+           * (force communications).
+           *
+           * sirf_peek_0 always goes out at the target speed.
+           *
+           * We don't need to do a HW.gps_tx_finnish because we have waited
+           * long enough in TA_WAIT.  This always gives the UART enough
+           * time to finish sending the previous message before we change
+           * the baud rate on the HW.
+           */
           gps_cur_rate = GPS_TARGET_SPEED;
           gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_TX_TIMER);
           call HW.gps_speed_di(GPS_TARGET_SPEED);
-          call GPSTxTimer.startOneShot(SWVER_TX_TIMEOUT);
-          call HW.gps_send_block((void *)sirf_send_sw_ver, sizeof(sirf_send_sw_ver));
+          call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
+          call HW.gps_send_block((void *)sirf_peek_0, sizeof(sirf_peek_0));
           return;
       }
     }
@@ -758,14 +849,21 @@ implementation {
       m_cur_rx_len = -1;                /* no cur running */
       switch (gpsc_state) {
         default:
-          gps_panic(14, gpsc_state, 0);
+          gps_panic(16, gpsc_state, 0);
+          return;
+
+        case GPSC_PROBE_0:
+          gps_probe_index = -1;            /* first peek try */
+          gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_RX_TIMER);
+          call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
+          call HW.gps_send_block((void *)sirf_peek_0, sizeof(sirf_peek_0));
           return;
 
         case GPSC_CHK_RX_WAIT:
         case GPSC_CHK_FINI_WAIT:
           call HW.gps_rx_int_disable();
           gpsc_change_state(GPSC_PROBE_CYCLE, GPSW_RX_TIMER);
-          post gps_task();
+          post probe_task();
           return;
 
         case GPSC_ON_RX:
@@ -789,15 +887,18 @@ implementation {
       default:
         gps_panic(17, gpsc_state, 0);
         return;
+
       case GPSC_CHK_RX_WAIT:
-        gpsc_change_state(GPSC_CHK_FINI_WAIT, GPSW_PROTO);
+        gpsc_change_state(GPSC_CHK_FINI_WAIT, GPSW_PROTO_START);
         return;
-      case GPSC_ON:    next_state = GPSC_ON_RX;    break;
-      case GPSC_ON_TX: next_state = GPSC_ON_RX_TX; break;
+
+      case GPSC_PROBE_0: next_state = GPSC_CHK_FINI_WAIT; break;
+      case GPSC_ON:      next_state = GPSC_ON_RX;         break;
+      case GPSC_ON_TX:   next_state = GPSC_ON_RX_TX;      break;
     }
     m_req_rx_len = len;                 /* request rx timeout start */
-    post rxtimer_task();
-    gpsc_change_state(next_state, GPSW_PROTO);
+    post timer_task();
+    gpsc_change_state(next_state, GPSW_PROTO_START);
   }
 
 
@@ -808,39 +909,41 @@ implementation {
       default:
         gps_panic(18, gpsc_state, 0);
         return;
+
       case GPSC_CHK_FINI_WAIT:
         call HW.gps_rx_int_disable();
-        gpsc_change_state(GPSC_PROBE_CYCLE, GPSW_PROTO);
-        post gps_task();
+        gpsc_change_state(GPSC_PROBE_CYCLE, GPSW_PROTO_ABORT);
+        post probe_task();
         return;
+
       case GPSC_ON_RX:    next_state = GPSC_ON;    break;
       case GPSC_ON_RX_TX: next_state = GPSC_ON_TX; break;
     }
     m_req_rx_len = 0;                   /* request a cancel */
-    post rxtimer_task();
-    gpsc_change_state(next_state, GPSW_PROTO);
+    post timer_task();
+    gpsc_change_state(next_state, GPSW_PROTO_ABORT);
   }
 
 
   async event void SirfProto.msgEnd() {
     gpsc_state_t next_state;
 
-    m_req_rx_len = 0;                   /* request a cancel */
-    post rxtimer_task();
     switch(gpsc_state) {
       default:
         gps_panic(19, gpsc_state, 0);
         return;
-      case GPSC_CHK_FINI_WAIT:
-        if (gps_booting)
-          post gps_task();              /* do a little bit extra */
 
-        /* fall through */
+      case GPSC_CHK_FINI_WAIT:
+        gpsc_change_state(GPSC_CHK_TX_SWVER, GPSW_PROTO_END);
+        post swver_task();
+        return;
 
       case GPSC_ON_RX:    next_state = GPSC_ON;    break;
       case GPSC_ON_RX_TX: next_state = GPSC_ON_RX; break;
     }
-    gpsc_change_state(next_state, GPSW_PROTO);
+    m_req_rx_len = 0;                   /* request a cancel */
+    post timer_task();
+    gpsc_change_state(next_state, GPSW_PROTO_END);
   }
 
 
@@ -855,7 +958,7 @@ implementation {
 
 
   async event void HW.gps_send_block_done(uint8_t *ptr, uint16_t len, error_t error) {
-    post gps_task();
+    post send_block_task();
   }
 
   async event void HW.gps_receive_block_done(uint8_t *ptr, uint16_t len, error_t error) { }
