@@ -65,6 +65,9 @@
 #define SIRFBIN_MAX_MSG         200
 #define SIRFBIN_MAX_SW_VER      88
 
+/* actual size of expected PEEK response */
+#define SIRFBIN_PEEK_RSP_LEN    32
+
 #ifdef notdef
 /*
  * Boot up sequence commands:
@@ -259,7 +262,7 @@ const uint8_t nmea_sirf_307200[] = {
   '\r', '\n'				// terminator
 };
 
-const uint8_t sirf_send_sw_ver[] = {
+const uint8_t sirf_sw_ver[] = {
   0xa0, 0xa2,
   0x00, 0x02,
   132,				// send sw ver (0x84)
@@ -350,6 +353,18 @@ const uint8_t sirf_1228800[] = {
   0x00, 0x00,                   // no parity, pad
   0x01, 0x61,
   0xb0, 0xb3,
+};
+
+const uint8_t sirf_peek_0[] = {
+  0xa0, 0xa2,			// start seq
+  0x00, 0x0c,			// length 12
+  178, 3,			// peek/poke
+  0,                            // type, peek
+  4,                            // 4 bytes
+  0, 0, 0, 0,                   // addr 0
+  0, 0, 0, 0,                   // dummy data
+  0x00, 0xb9,			// checksum
+  0xb0, 0xb3			// end seq
 };
 
 const uint8_t sirf_nmea_4800[] = {
