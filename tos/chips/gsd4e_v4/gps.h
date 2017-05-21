@@ -25,7 +25,9 @@
  * ON_OFF toggle.  See GSD4eUP.nc for additional details.
  *
  * PWR_UP_DELAY:    time from pwr_on to ON_OFF okay.
- * WAKE_UP_DELAY:   time from ON_OFF to ARM boot (minimum)
+ * WAKE_UP_DELAY:   time from ON_OFF to ARM boot (minimum).  We use this
+ *                  window to look for a message that indicates we are
+ *                  communicating properly.  ie.  at all.
  *
  * When the gps chip is in hibernate the ARM7 is shutdown.  When we toggle
  * ON_OFF, it takes some time for the ARM7 to come back.  WAKE_UP_DELAY is
@@ -35,25 +37,21 @@
  *
  * After the gps chip is powered up or if reset, ON_OFF must be toggled to
  * bring the chip out of sleep.  This starts the WAKE_UP_DELAY window.  We
- * set this window large enough (200ms) so that the gps's Ok_To_Send
+ * set this window large enough (200ms) so that the gps's Ok_To_Send (OTS)
  * message falls completely inside this window.
  *
  * During this window, we look for the OTS packet.  (ie. rx interrupts are
- * on an the Protocol state machine will receive bytes).  If we see the OTS
- * packet correctly we will transition to FINI_WAIT and declare comm is
- * working.  So if the chip is configured properly (for comm) we will very
- * early on sense this and transition to the ON state.
+ * on and the Protocol state machine will receive bytes).  If we see the
+ * start of the OTS packet, we transition to MSG_WAIT to wait for the
+ * remainder of the packet.  Once received, we then send a SWVER request
+ * and transition to ON.
  *
- * However, if we time out looking for the OTS packet, we will first send a
- * couple of PEEK messages.  We use a PEEK packet to force the chip to
- * respond.  Peek is the smallest message that forces a response.
+ * However, if the OTS window times out, we send a PEEK packet.  The PEEK
+ * packet is a minimal packet that elicits a response.
  *
- * If the PEEKs don't work, we then send successive comm configuration
- * messages, each followed by a PEEK at the target baud rate.  We guess at
- * different GPS configurations.  Each guess sends a configuration message
- * at the guessed baud rate.  The configuration message commands the gps to
- * change to our desired target baud.  Each configuration message is
- * followed by a PEEK at the target baud to see if it worked.
+ * If the PEEK times out, we send successive comm configuration messages
+ * from the probe_table to attempt a comm reconfiguration.  Each
+ * configuration message is followed by a PEEK at the target baud rate.
  */
 
 /* ms units */

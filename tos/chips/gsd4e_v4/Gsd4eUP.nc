@@ -604,8 +604,8 @@ implementation {
         case GPSC_CHK_TX1_WAIT:
           /*
            * probe (peek_0) has gone out
-           * now if the comm config string worked we will now be at
-           * SB-<target> and no longer need any timeout modifiers.
+           * now if the comm config string worked we are still at
+           * SB-<target> and do not need a timeout modifier.
            *
            * wait for the probe response (see gps.h)
            */
