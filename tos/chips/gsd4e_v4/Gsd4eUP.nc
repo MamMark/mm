@@ -178,8 +178,8 @@ enum {
  *                  rx_timer expires we assume the probe didn't work and
  *                  we cycle to a different configuration.
  *
- * CHK_FINI_WAIT:   msgStart from the protocol engine will transition us
- *                  into FINI_WAIT where we are waiting for the message
+ * CHK_MSG_WAIT:    msgStart from the protocol engine will transition us
+ *                  into MSG_WAIT where we are waiting for the message
  *                  to finish being received.
  *
  * CHK_TX_SWVER:    send request for SW_VER to be sent.  This state
@@ -259,7 +259,7 @@ typedef enum {
   GPSC_CHK_TA_WAIT,                     /* turn around, changing comm */
   GPSC_CHK_TX1_WAIT,
   GPSC_CHK_RX_WAIT,
-  GPSC_CHK_FINI_WAIT,
+  GPSC_CHK_MSG_WAIT,
   GPSC_CHK_TX_SWVER,
   GPSC_CHK_SWVER_WAIT,
 
@@ -775,7 +775,7 @@ implementation {
           gps_panic(14, gpsc_state, 0);
           return;
 
-        case GPSC_CHK_FINI_WAIT:
+        case GPSC_CHK_MSG_WAIT:
         case GPSC_ON:
         case GPSC_ON_RX:
         case GPSC_ON_TX:
@@ -860,7 +860,7 @@ implementation {
           return;
 
         case GPSC_CHK_RX_WAIT:
-        case GPSC_CHK_FINI_WAIT:
+        case GPSC_CHK_MSG_WAIT:
           call HW.gps_rx_int_disable();
           gpsc_change_state(GPSC_PROBE_CYCLE, GPSW_RX_TIMER);
           post probe_task();
@@ -889,10 +889,10 @@ implementation {
         return;
 
       case GPSC_CHK_RX_WAIT:
-        gpsc_change_state(GPSC_CHK_FINI_WAIT, GPSW_PROTO_START);
+        gpsc_change_state(GPSC_CHK_MSG_WAIT, GPSW_PROTO_START);
         return;
 
-      case GPSC_PROBE_0: next_state = GPSC_CHK_FINI_WAIT; break;
+      case GPSC_PROBE_0: next_state = GPSC_CHK_MSG_WAIT;  break;
       case GPSC_ON:      next_state = GPSC_ON_RX;         break;
       case GPSC_ON_TX:   next_state = GPSC_ON_RX_TX;      break;
     }
@@ -910,7 +910,7 @@ implementation {
         gps_panic(18, gpsc_state, 0);
         return;
 
-      case GPSC_CHK_FINI_WAIT:
+      case GPSC_CHK_MSG_WAIT:
         call HW.gps_rx_int_disable();
         gpsc_change_state(GPSC_PROBE_CYCLE, GPSW_PROTO_ABORT);
         post probe_task();
@@ -933,7 +933,7 @@ implementation {
         gps_panic(19, gpsc_state, 0);
         return;
 
-      case GPSC_CHK_FINI_WAIT:
+      case GPSC_CHK_MSG_WAIT:
         gpsc_change_state(GPSC_CHK_TX_SWVER, GPSW_PROTO_END);
         post swver_task();
         return;
