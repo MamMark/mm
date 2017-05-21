@@ -39,6 +39,7 @@
 #include <platform_panic.h>
 #include <msp432.h>
 #include <platform_clk_defs.h>
+#include <gps.h>
 
 /*
  * The eUSCI for the UART is always clocked by SMCLK which is DCOCLK/2.  So
@@ -198,7 +199,13 @@ implementation {
   }
 
   async command void HW.gps_pwr_on() {
-    GSD4E_PINS_MODULE;			/* connect from the UART */
+    uint32_t t0;
+
+    GSD4E_PINS_MODULE;			/* connect to the UART */
+    call HW.gps_set_reset();
+    t0 = call Platform.usecsRaw();
+    while (call Platform.usecsRaw() - t0 < DT_GPS_RESET_PULSE_WIDTH_US) { }
+    call HW.gps_clr_reset();
   }
 
   async command void HW.gps_pwr_off() {

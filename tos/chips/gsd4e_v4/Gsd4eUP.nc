@@ -537,7 +537,6 @@ implementation {
     t_gps_pwr_on = call LocalTime.get();
     gps_probe_cycle = 0;
     call HW.gps_pwr_on();
-    gps_reset();
     call GPSTxTimer.startOneShot(DT_GPS_PWR_UP_DELAY);
     gpsc_change_state(GPSC_PWR_UP_WAIT, GPSW_TURNON);
     return SUCCESS;
