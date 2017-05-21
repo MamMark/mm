@@ -622,6 +622,7 @@ implementation {
            * and will probably change to invoke various configuration stuff.
            */
           gpsc_change_state(GPSC_ON, GPSW_SEND_BLOCK_TASK);
+          call HW.gps_rx_int_enable();
           if (gps_booting) {
             gps_booting = 0;
             signal GPSBoot.booted();
@@ -851,8 +852,8 @@ implementation {
           gps_panic(16, gpsc_state, 0);
           return;
 
-        case GPSC_PROBE_0:
-          gps_probe_index = -1;            /* first peek try */
+        case GPSC_PROBE_0:                  /* target speed (from PWR_UP_WAIT */
+          gps_probe_index = -1;             /* first peek try */
           gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_RX_TIMER);
           call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
           call HW.gps_send_block((void *)sirf_peek_0, sizeof(sirf_peek_0));
@@ -933,6 +934,7 @@ implementation {
         return;
 
       case GPSC_CHK_MSG_WAIT:
+        call HW.gps_rx_int_disable();
         gpsc_change_state(GPSC_CHK_TX_SWVER, GPSW_PROTO_END);
         post swver_task();
         return;
