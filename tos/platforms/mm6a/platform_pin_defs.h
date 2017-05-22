@@ -37,6 +37,20 @@
 #ifndef __PLATFORM_PIN_DEFS__
 #define __PLATFORM_PIN_DEFS__
 
+/*
+ * shared power rail (1V8), gps_mems_1V8
+ *
+ * normally on.  bounched if we need a big hammer.  Will power down
+ * the gps, accel, gyro, and mag (the mems devices).  I/O pins must
+ * be disconnected (driven low or made inputs) to avoid continuing
+ * to power the device.
+ */
+
+#define GPS_MEMS_1V8_EN_PORT P5
+#define GPS_MEMS_1V8_EN_PIN  0
+#define GPS_MEMS_1V8_EN      BITBAND_PERI(GPS_MEMS_1V8_EN_PORT->OUT, GPS_MEMS_1V8_EN_PIN)
+
+
 /* gps -gsd4e/org */
 
 #define GSD4E_AWAKE_PORT    P6
