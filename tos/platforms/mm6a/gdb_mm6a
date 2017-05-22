@@ -1,4 +1,4 @@
-define radio
+define hw_radio
 printf "\nradio(ub2): cts: %d  irqN: %d  sdn: %d  csN: %d   siok\n", \
     (($p4->IN >> 1) & 1),  (($p6->IN >> 1) & 1), \
     (($p3->OUT >> 3) & 1), (($p3->OUT >> 4) & 1)
@@ -9,8 +9,8 @@ printf "                 %c        %c       %c       %c    %c%c%c\n", \
     ($p3->SEL0 & (1 << 6)) ? 'M' : 'p'
 __p_usci $ucb2 2 1 0d22
 end
-document radio
-display radio state
+document hw_radio
+display radio hardware state
 end
 
 define cts
