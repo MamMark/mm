@@ -362,9 +362,18 @@ void __pins_init() {
   P4->OUT = 0x30; P4->DIR = 0xFD;
   P5->OUT = 0x81; P5->DIR = 0xA7;
   P6->OUT = 0xD8; P6->DIR = 0xD8;
-  P7->OUT = 0xF8; P7->DIR = 0xF8;
-  P8->OUT = 0x00; P8->DIR = 0x00;
+  P7->OUT = 0xF9; P7->DIR = 0xF8;
+  P8->OUT = 0x00; P8->DIR = 0x02;
   PJ->OUT = 0x04; PJ->DIR = 0x06;
+
+  /*
+   * gps_cts has a pull up so that the gps comes up in UART mode.
+   */
+  P7->REN = 0x01;
+
+  /*
+   * need to sort out how SD0 messes with Override.
+   */
 }
 
 
@@ -836,10 +845,33 @@ void __Reset() {
    * tell is P1.2  0pO
    * t_exc (tell_exeception) is P1.3 0pO
    *
-   * There is more than one CSN in P1.  Don't mess with them, ie. leave them high.
+   * leave other pins in P1 as inputs until they are initialized properly.
    */
-  P1->OUT = 0x60; P1->DIR = 0x6C;
+  P1->OUT = 0x60; P1->DIR = 0x0C;
   WIGGLE_TELL;
+
+  /*
+   * gps/mems power rail.  For initial debugging, power up the GPS/MEMS rail
+   * and then set the I/O pins appropriately.
+   *
+   * Set P5->OUT (for the output values) but don't switch the direction off
+   * input yet.  First kick the gps/mems 1V8 rail.
+   */
+  P5->OUT = 0x81;
+  P5->DIR = 0x01;                       /* drive 1V8_en, turns on 1V8 for gps/mems */
+
+  /*
+   * now drive the chip selects for the 3 mems devices to a 1 (deselected) and
+   * drive the outputs.  gyro_csn is on P5, mag/accel_csn are on P1.
+   */
+  P5->DIR = 0xA7;
+  P1->DIR = 0x6C;
+
+  P4->OUT = 0x30;                       /* turn 3V3 ON, LDO2, and Radio_EN_1V8 */
+  P4->DIR = 0xFD;
+
+  P7->OUT = 0xF9;                       /* sd0 pwr on */
+  P7->DIR = 0xF8;                       /* amoung other things drive pwr_sd0_en 0 */
 
   __disable_irq();
   __watchdog_init();
