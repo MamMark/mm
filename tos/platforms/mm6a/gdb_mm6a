@@ -52,18 +52,46 @@ document sd1
 display sd1 state
 end
 
-define gps
-printf "\ngps(ua0): on_off: %d  nRst: %d  awake: %d    grt\n", \
-    (($p5->OUT >> 5) & 1), (($pj->OUT >> 2) & 1), (($p6->IN >> 2) & 1)
-printf "                  %c        %c         %c     %c%c\n", \
-    ($p5->DIR & (1<<5))?'O':'I', ($pj->DIR & (1<<2))?'O':'I', \
-    ($p6->DIR & (1<<2))?'O':'I', \
-    ($p7->SEL0 & (1 << 3)) ? 'M' : 'p', ($p7->SEL0 & (1 << 2)) ? 'M' : 'p'
+define hw_gps
+printf "\ngps(ua0): pwr (g/m): %d  on_off: %d  nRst: %d  awake: %d    grt\n", \
+    (($p5->OUT >> 0) & 1), (($p5->OUT >> 5) & 1), (($pj->OUT >> 2) & 1), (($p6->IN >> 2) & 1)
+printf "                     %c          %c        %c         %c     %c%c\n", \
+    ($p5->DIR & (1<<0))?'O':'I', ($p5->DIR & (1<<5))?'O':'I', ($pj->DIR & (1<<2))?'O':'I', \
+    ($p6->DIR & (1<<2))?'O':'I', ($p7->SEL0 & (1 << 3)) ? 'M' : 'p', ($p7->SEL0 & (1 << 2)) ? 'M' : 'p'
 __p_usci $uca0 0 0 0d16
 end
-document gps
-display gps state
+document hw_gps
+display gps hardware state
 end
-document gps
-display gps state
+
+#
+# Port J.2, gps_resetn
+#
+# FIXME  address is wrong.
+#
+# set PJ.2 to 1pO       BITBAND_PERI(P6->DIR, 0) = 1;  *420988a0 = 1
+# set PJ.2 to 0pO       BITBAND_PERI(P6->OUT, 0) = 0;  *42098860 = 0
+# set PJ.2 to 1pO       BITBAND_PERI(P6->OUT, 0) = 1;  *42098860 = 1
+#   leave at 1pO
+# set PJ.2 to 1pI       BITBAND_PERI(P6->DIR, 0) = 0;  *420988a0 = 0
+#
+set $_gps_resetn     = (uint8_t *) 0x42098860
+set $_gps_resetn_dir = (uint8_t *) 0x420988a0
+
+define rg
+set *$_gps_resetn_dir = 1
+set *$_gps_resetn     = 0
+set *$_gps_resetn     = 1
+end
+document rg
+reset gps h/w
+end
+
+define rg0
+set *$_gps_resetn_dir = 1
+set *$_gps_resetn     = 0
+end
+
+define rg1
+set *$_gps_resetn     = 1
 end
