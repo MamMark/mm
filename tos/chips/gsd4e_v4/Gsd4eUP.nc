@@ -357,16 +357,16 @@ uint8_t g_nev;			// next gps event
  * the GPS and try again.  If that fails we give up.
  *
  * When we have found a configuration that works, as our last bit will
- * send a SB-send_sw_ver.  We want to log the SW version of the chip
+ * send a SB-sw_ver.  We want to log the SW version of the chip
  * for record keeping.
  */
 
-#define GPT_MAX_INDEX 1
+#define GPT_MAX_INDEX 2
 
-/* FIXME: is this in rom like we expect? */
 const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
 /*   rate mod             len                msg   */
-  {  4800, 24, sizeof(nmea_sirf_115200), nmea_sirf_115200   },
+  {  4800, 24, sizeof(nmea_sirf_115200), nmea_sirf_115200 },
+  {  4800, 24, sizeof(sirf_115200),      sirf_115200      },
 };
 
        int32_t  gps_probe_index;        // keeps track of which table entry to use
@@ -893,7 +893,10 @@ implementation {
         return;
 
       case GPSC_PROBE_0: next_state = GPSC_CHK_MSG_WAIT;  break;
-      case GPSC_ON:      next_state = GPSC_ON_RX;         break;
+      case GPSC_ON:
+        nop();                          /* convenient place for a breakpoint */
+        next_state = GPSC_ON_RX;
+        break;
       case GPSC_ON_TX:   next_state = GPSC_ON_RX_TX;      break;
     }
     m_req_rx_len = len;                 /* request rx timeout start */
