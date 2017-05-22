@@ -167,8 +167,27 @@
  * B2: radio     spi    si4468
  * B3: tmp       i2c    tmp102
  *
+ * Power notes:
+ *
+ * P5.0 pwr_gps_mems_1V8_en
+ * P4.3 pwr_tmp_en (LDO1, U4)
+ * P4.4 pwr_3v3_en (LDO2, U4)
+ * P7.6 pwr_sd0_en
+ * P4.5 pwr_radio_en
+ * P4.0 pwr_radio_sw
+ * P5.1 pwr_vel_en
+ * P5.2 pwr_press_en
+ *
+ * Initially (for bring up):
+ * o pwr up gps/mems
+ * o 3V3 rail (for SD).
+ * o pwr_sd0_en 0 (pwr SD down)
+ *
+ * gps/mems power.  P5.0 controls the power switch for the gps/mems 1V8 rail.  If this is
+ * powered off all gps/mems pins should be inputs or low.
+ *
  * Port: (0x4000_4C00)
- * port 1.0	0pI   A1 mag_drdy               port 7.0	0pI   B5 gps_cts
+ * port 1.0	0pI   A1 mag_drdy               port 7.0	1pIru B5 gps_cts
  *  00 I .1	0pI   B1 mag_int                 60   .1	0pI   C5 gps_tm     (PM_TA1.1)
  *  02 O .2	0pO   C4 dock_sw_led_attn  TP31  62   .2	0pI   B4 gps_tx     (PM_UCA0RXD)
  *       .3     0pO   D4 sd1_csn           TP27       .3	1pO   A4 gps_rx     (PM_UCA0TXD)
@@ -177,7 +196,7 @@
  *       .6	1pO   D1 accel_csn                    .6	1pO   J2 pwr_sd0_en
  *       .7	0pI   E1 accel_int2                   .7	1pO   G3 sd0_sclk   (PM_UCA2CLK)
  *
- * P1.2 tell,   P1.3 tell_exception   for debugging and bring up.  Both on TP on the edge.
+ * P1.2 tell,   P1.3 tell_exception   for debugging and bring up.  Both on TPs on the edge.
  *
  * port 2.0	1pO   E4 sd1_sclk (PM_UCA1CLK) TP11
  *  01   .1	0pI   F1 adc_rdy
@@ -200,8 +219,8 @@
  * port  4.0	0pO   H9 pwr_radio_sw (vsel_1v8_3v3)
  *  21    .1	0pI   H8 radio_cts    (radio gp1)
  *  23    .2	0pO   G7 batt_sense_en
- *        .3	0pO   G8 pwr_tmp_en
- *        .4	1pO   G9 pwr_3v3_en
+ *        .3	0pO   G8 pwr_tmp_en (LDO1, U4)
+ *        .4	1pO   G9 pwr_3v3_en (LDO2, U4)
  *        .5	1pO   F7 pwr_radio_en   (1=on)
  *        .6	0pO   F8 sal_B
  *        .7	0pO   F9 sal_A
@@ -211,7 +230,7 @@
  *  42 O  .2	0pO   E9 pwr_press_en
  *        .3	0pI   D7 batt_sense A2
  *        .4	0pI   D8 gyro_int2              port 8.0	0pI   H3
- *        .5	0pO   C8 gps_on_off              61 I .1	0pIrd G4 dock_sd0_override  TP12
+ *        .5	0pO   C8 gps_on_off              61 I .1	0pO   G4 dock_sd0_override  TP12
  *        .6	0pI   D9 gyro_int1               63 O
  *        .7	1pO   C9 gyro_csn
  *
@@ -224,26 +243,66 @@
  *        .6	1pO   B8 tmp_sda    (B3)
  *        .7	1pO   B7 tmp_scl    (B3)
  *
+ *
  * External connections:
  *
- * TP01: Sal Sen                                TP19: VS4 vel_pwr
- * TP02: Sal Sen                                TP20: VS3 Ain7
- * TP03: dock_sd1_simo P2.3                     TP21: VS2 Ain2
- * TP04: dock_sd0_csn  DAT3                     TP22: VS1 gnd
- * TP05: dock_sd0_di   CMD                      TP23: jtag swdio
- * TP06: dock_sd0_pwr                           TP24: Vbatt
- * TP07: dock_sd0_sclk CLK                      TP25: VS2 Ain0
- * TP08: dock_sd0_gnd                           TP26: VS5 Ain6
- * TP09: dock_sd0_do   DAT0                     TP27: dock_sd1_csn P1.3
- * TP10: dock_sd0_rsv2 DAT1                     TP28: jtag RSTn
- * TP11: dock_sd1_sclk P2.0                     TP29: VS2 Ain3  Press
- * TP12: dock_sd0_override                      TP30: VS2 Ain5  Press
- * TP13: dock_sd1_somi P3.2                     TP31: dock_sw_led_attn P1.2
- * TP14: tmp_pwr                                TP32: jtag SWO  PJ.5
- * TP15: tmp_gnd  (gnd)                         TP33: ---
- * TP16: tmp_sda                                TP34: 1V8
- * TP17: tmp_scl                                TP35: gnd
- * TP18: jtag swclk                             TP36: dock_sd0_rsv1  DAT2
+ * DockCon (dock) - 14 pin (just to right of ADC0)
+ * pin 1 far right top side, odd numbers on top, evens on bottom.
+ *
+ * dock-01 - TP28 - jtag RSTn                   dock-02 - TP11 - dock_sd1_sclk     P2.0
+ * dock-03 - TP23 - jtag swdio                  dock-04 - TP27 - dock_sd1_csn      P1.3
+ * dock-05 - TP32 - jtag swo                    dock-06 - TP31 - dock_sw_led_attn  P1.2
+ * dock-07 - TP18 - jtag swclk                  dock-08 - TP03 - dock_sd1_simo     P2.3
+ * dock-09 - TP13 - dock_sd1_somi P3.2          dock-10 - TP12 - dock_sd0_override
+ * dock-11 - TP24 - Vbatt                       dock-12 - TP08 - gnd
+ * dock-13 - nc   - key                         dock-14 - TP34 - 1V8
+ *
+ *
+ * SD Direct Connect - 8 pin (to the right of DC connector), bottom of board
+ * pin 1 to the right
+ *
+ * sddc-01 (TP36) dock_sd0_rsv1  DAT2
+ * sddc-02 (TP04) dock_sd0_csn  DAT3
+ * sddc-03 (TP05) dock_sd0_di   CMD
+ * sddc-04 (TP06) dock_sd0_pwr
+ * sddc-05 (TP07) dock_sd0_sclk CLK
+ * sddc-06 (TP35) gnd
+ * sddc-07 (TP09) dock_sd0_do   DAT0
+ * sddc-08 (TP10) dock_sd0_rsv2 DAT1
+ *
+ * TP01: (saln-02) Sal Sen                      TP19: (alog-08) VS4 vel_pwr
+ * TP02: (saln-01) Sal Sen                      TP20: (alog-05) VS3 Ain7
+ * TP03: (dock-08) dock_sd1_simo P2.3           TP21: (alog-04) VS2 Ain2
+ * TP04: (sddc-02) dock_sd0_csn  DAT3           TP22: (alog-01) VS1 gnd
+ * TP05: (sddc-03) dock_sd0_di   CMD            TP23: (dock-03) jtag swdio
+ * TP06: (sddc-04) dock_sd0_pwr                 TP24: (dock-11) Vbatt
+ * TP07: (sddc-05) dock_sd0_sclk CLK            TP25: (alog-03) VS2 Ain0
+ * TP08: (dock-12) gnd                          TP26: (alog-06) VS5 Ain6
+ * TP09: (sddc-07) dock_sd0_do   DAT0           TP27: (dock-04) dock_sd1_csn P1.3
+ * TP10: (sddc-08) dock_sd0_rsv2 DAT1           TP28: (dock-01) jtag RSTn
+ * TP11: (dock-02) dock_sd1_sclk P2.0           TP29: (alog-07) VS2 Ain3  Press
+ * TP12: (dock-10) dock_sd0_override            TP30: (alog-02) VS2 Ain5  Press
+ * TP13: (dock-09) dock_sd1_somi P3.2           TP31: (dock-06) dock_sw_led_attn P1.2
+ * TP14: (tmpx-04) tmp_pwr                      TP32: (dock-05) jtag SWO  PJ.5
+ * TP15: (tmpx-01) tmp_gnd  (gnd)               TP33: ---
+ * TP16: (tmpx-02) tmp_sda                      TP34: (dock-14) 1V8
+ * TP17: (tmpx-03) tmp_scl                      TP35: (sddc-06) gnd
+ * TP18: (dock-07) jtag swclk                   TP36: (sddc-01) dock_sd0_rsv1  DAT2
+ *
+ *
+ * JTAG/SWD to 20 pin ARM Segger Jlink  (hardwire)
+ * Jlink Connector 20 pin (J)
+ *
+ * J-01 Vtref           dock-14 1V8             J-02 NC
+ * J-03 NC    (TRST)                            J-04 gnd
+ * J-05 NC    (TDI)
+ * J-07 SWDIO (TMS)     dock-03 swdio           J-08 gnd
+ * J-09 SWCLK (TCLK)    dock-07 swclk
+ * J-11 NC    (RTCK)
+ * J-13 SWO   (TDO)
+ * J-15 RESET (RESET)   dock-01 RSTn
+ * J-17
+ * J-19
  */
 
 // enum so components can override power saving,
