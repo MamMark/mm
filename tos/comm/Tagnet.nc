@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2017 Daniel J. Maltbie
  * All rights reserved.
  *
@@ -34,3 +34,22 @@
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  *
  */
+
+/**
+ * Primary user interface to the Tagnet protocol stack.
+ *
+ * The Tagnet Stack provides the handling of Tagnet request messages, including:
+ * - match the request message name with one of the names instantiated in the stack.
+ * - if matched, then process the message action to access the named data object.
+ * - Optionally format a response message using the same buffer as the request.
+ */
+interface Tagnet {
+/**
+ * Process the Tagnet request message and return flag if response message needs
+ * to be transmitted.
+ *
+ * @param   msg    pointer to message buffer containing Tagnet Request packet
+ * @return         TRUE if response should be sent (in same buffer as original request)
+ */
+  command bool  process_message(message_t *msg);
+}

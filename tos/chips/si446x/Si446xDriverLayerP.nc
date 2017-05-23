@@ -49,6 +49,7 @@
  *
  * Platform dependent configuration is contained in radio_config_<chip>.h and
  * radio_platform_<chip>.h, both of which live in <platform>/hardware/si446x.
+ *
  * radio_platform_<chip>.h is responsible to pull in the correct
  * radio_config_<chip>.h file.
  *
@@ -1515,13 +1516,13 @@ implementation {
 
 
   async command uint8_t RadioPacket.payloadLength(message_t *msg) {
-    return getPhyHeader(msg)->length;
+    return getPhyHeader(msg)->frame_length;
   }
 
 
   async command void RadioPacket.setPayloadLength(message_t *msg, uint8_t length) {
     // we DON'T include the CRC, which is automatically generated
-    getPhyHeader(msg)->length = length;
+    getPhyHeader(msg)->frame_length = length;
   }
 
 

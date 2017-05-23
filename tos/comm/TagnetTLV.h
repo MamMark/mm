@@ -1,7 +1,9 @@
-/*
- * Copyright (c) 2017 Daniel J. Maltbie
+/**
+ * Copyright @ 2017 Daniel J. Maltbie
  * All rights reserved.
  *
+ */
+/*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -31,6 +33,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @author Daniel J. Maltbie <dmaltbie@daloma.org>
- *
+ * @author Daniel J. Maltbie (dmaltbie@daloma.org)
  */
+
+#ifndef __TAGNETTLV__
+#define __TAGNETTLV__
+
+/*
+ * Tagnet TLV Types
+ */
+
+typedef enum {
+  TN_TLV_NONE=0,
+  TN_TLV_STRING=1,
+  TN_TLV_INTEGER=2,
+  TN_TLV_GPS_POS=3,
+  TN_TLV_UTC_TIME=4,
+  TN_TLV_NODE_ID=5,
+  TN_TLV_NODE_NAME=6,
+  TN_TLV_SEQ_NO=7,
+  TN_TLV_VER_NO=8,
+  TN_TLV_FILE=9,
+  _TN_TLV_COUNT   // limit of  enum
+} tagnet_tlv_type_t;
+
+typedef struct tagnet_tlv_t {
+  tagnet_tlv_type_t typ;
+  uint8_t           len;
+  uint8_t           val[];
+} tagnet_tlv_t;
+
+#endif

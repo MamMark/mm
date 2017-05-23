@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2017 Daniel J. Maltbie
  * All rights reserved.
  *
@@ -34,3 +34,20 @@
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  *
  */
+
+configuration TagnetNameRootP {
+  provides interface Tagnet;
+  provides interface TagnetMessage   as  Sub[uint8_t id];
+
+}
+implementation {
+  components      TagnetNameRootImplP as element;
+  components      TagnetUtilsC;
+
+  Tagnet          =  element;
+  Sub             =  element;
+  element.TName  -> TagnetUtilsC;
+  element.THdr   -> TagnetUtilsC;
+  element.TPload -> TagnetUtilsC;
+  element.TTLV   -> TagnetUtilsC;
+}

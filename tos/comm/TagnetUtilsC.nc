@@ -1,8 +1,10 @@
-/*
+/**
  * Copyright (c) 2017 Daniel J. Maltbie
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
+ */
+/*
+* Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  *
@@ -34,3 +36,28 @@
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  *
  */
+
+configuration TagnetUtilsC {
+  provides interface TagnetName;
+  provides interface TagnetHeader;
+  provides interface TagnetPayload;
+  provides interface TagnetTLV;
+}
+implementation {
+  components     TagnetNameP;
+  components     TagnetHeaderP;
+  components     TagnetPayloadP;
+  components     TagnetTlvP;
+//  components     Panic;
+
+  TagnetName            =  TagnetNameP;
+  TagnetHeader          =  TagnetHeaderP;
+  TagnetPayload         =  TagnetPayloadP;
+  TagnetTLV             =  TagnetTlvP;
+
+  TagnetNameP.THdr      -> TagnetHeaderP;
+  TagnetNameP.TTLV      -> TagnetTlvP;
+
+  TagnetPayloadP.THdr   -> TagnetHeaderP;
+  TagnetPayloadP.TTLV   -> TagnetTlvP;
+}

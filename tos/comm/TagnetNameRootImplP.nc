@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2017 Daniel J. Maltbie
  * All rights reserved.
  *
@@ -34,3 +34,46 @@
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  *
  */
+
+module TagnetNameRootImplP {
+  provides interface Tagnet;
+  provides interface TagnetMessage   as  Sub[uint8_t id];
+  uses interface     TagnetName      as  TName;
+  uses interface     TagnetHeader    as  THdr;
+  uses interface     TagnetPayload   as  TPload;
+  uses interface     TagnetTLV       as  TTLV;
+}
+implementation {
+  enum { SUB_COUNT = uniqueCount(UQ_TN_ROOT) };
+
+  command bool Tagnet.process_message(message_t *msg) {
+    uint8_t          i;
+
+#ifndef notdef
+    for (i = 0; i<SUB_COUNT; i++) {
+      call TName.first_element(msg);     // start at the beginning of the name
+      if (signal Sub.evaluate[i](msg)) {
+        if (call THdr.is_response(msg)) {
+          return TRUE;                   // got a match and response to send
+        }
+        return FALSE;                    // matched but response not set
+      }
+    }
+#endif
+    return FALSE;                        // no match, no response
+  }
+
+  command uint8_t Sub.get_full_name[uint8_t id](uint8_t *buf, uint8_t len) {
+    return len;
+  }
+
+  default event bool Sub.evaluate[uint8_t id](message_t* msg) {
+    return TRUE;
+  }
+  default event void Sub.add_name_tlv[uint8_t id](message_t *msg) {
+  }
+  default event void Sub.add_value_tlv[uint8_t id](message_t *msg) {
+  }
+  default event void Sub.add_help_tlv[uint8_t id](message_t *msg) {
+  }
+}

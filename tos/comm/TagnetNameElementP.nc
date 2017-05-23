@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2017 Daniel J. Maltbie
  * All rights reserved.
  *
@@ -34,3 +34,21 @@
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  *
  */
+
+#include "TagnetTLV.h"
+
+generic configuration TagnetNameElementP (int my_id, char uq_id[]) {
+  uses interface     TagnetMessage  as  Super;
+  provides interface TagnetMessage  as  Sub[uint8_t id];
+}
+implementation {
+  components new TagnetNameElementImplP(my_id, uq_id) as element;
+  components     TagnetUtilsC;
+
+  Super           =  element.Super;
+  Sub             =  element.Sub;
+  element.TName  -> TagnetUtilsC;
+  element.THdr   -> TagnetUtilsC;
+  element.TPload -> TagnetUtilsC;
+  element.TTLV    -> TagnetUtilsC;
+}

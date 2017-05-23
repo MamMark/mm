@@ -1,7 +1,9 @@
-/*
+/**
  * Copyright (c) 2017 Daniel J. Maltbie
  * All rights reserved.
  *
+ */
+/*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -34,3 +36,27 @@
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  *
  */
+#include "message.h"
+#include "Tagnet.h"
+#include "TagnetTLV.h"
+
+/*
+ * TagnetName -
+ */
+interface TagnetName {
+  command uint8_t           add_element(message_t* msg, tagnet_tlv_t* t);
+  command uint8_t           bytes_avail(message_t* msg);  // unused bytes in the buffer
+  command tagnet_tlv_t     *first_element(message_t *msg);
+  command tagnet_tlv_t     *get_gps_pos(message_t *msg);
+  command uint8_t           get_len(message_t* msg);      // length of name in message
+  command tagnet_tlv_t     *get_node_id(message_t *msg);
+  command tagnet_tlv_t     *get_seq_no(message_t *msg);
+  command tagnet_tlv_t     *get_utc_time(message_t *msg);
+  command tagnet_tlv_t     *next_element(message_t *msg);
+  command void              reset_name(message_t* msg);
+  command void              set_gps_pos(message_t *msg);
+  command void              set_node_id(message_t *msg);
+  command void              set_seq_no(message_t *msg);
+  command void              set_utc_time(message_t *msg);
+  command tagnet_tlv_t     *this_element(message_t *msg);
+}

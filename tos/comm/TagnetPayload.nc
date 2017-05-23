@@ -1,7 +1,9 @@
-/*
+/**
  * Copyright (c) 2017 Daniel J. Maltbie
  * All rights reserved.
  *
+ */
+/*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -34,3 +36,16 @@
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  *
  */
+
+interface TagnetPayload {
+  command uint8_t           add_integer(message_t *msg,  int n);
+  command uint8_t           add_raw(message_t *msg, uint8_t *b, uint8_t length);
+  command uint8_t           add_string(message_t *msg, void *b, uint8_t length);
+  command uint8_t           add_tlv(message_t *msg, tagnet_tlv_t *t);
+  command uint8_t           bytes_avail(message_t* msg);  // unused bytes in the buffer
+  command tagnet_tlv_t     *first_element(message_t *msg);
+  command uint8_t           get_len(message_t* msg);      // length of payload in message
+  command tagnet_tlv_t     *next_element(message_t *msg);
+  command void              reset_payload(message_t* msg);
+  command tagnet_tlv_t     *this_element(message_t *msg);
+}
