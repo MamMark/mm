@@ -206,7 +206,7 @@ enum {
 
 module GPSMsgBufP {
   provides {
-    interface Init;
+    interface Init @exactlyonce();
     interface GPSBuffer;
     interface GPSReceive;
   }
