@@ -15,6 +15,9 @@
 /* set to a power of 2 */
 #define GPS_MAX_MSGS 32
 
+/* minimum memory slice, same as SIRFBIN_OVERHEAD */
+#define GPS_MIN_MSG  8
+
 typedef enum {
   GPS_MSG_EMPTY = 0,            /* not being used, available */
   GPS_MSG_FILLING,              /* currently being filled in */

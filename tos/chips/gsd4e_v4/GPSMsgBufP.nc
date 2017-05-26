@@ -318,6 +318,13 @@ implementation {
     }
 
     /*
+     * gps packets have a minimum size.  If the request is too small
+     * bail out.
+     */
+    if (len < GPS_MIN_MSG)
+      return NULL;
+
+    /*
      * bail out early if no free space or not enough slots
      */
     if (gmc.full >= GPS_MAX_MSGS ||
