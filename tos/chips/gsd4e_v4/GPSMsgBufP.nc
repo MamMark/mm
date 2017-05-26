@@ -311,7 +311,7 @@ implementation {
     gps_msg_t *msg;             /* message slot we are working on */
     uint16_t   idx;             /* index of message slot */
 
-    if (gmc.free < gps_buf || gmc.free >= gps_buf + GPS_BUF_SIZE ||
+    if (gmc.free < gps_buf || gmc.free > gps_buf + GPS_BUF_SIZE ||
         gmc.free_len > GPS_BUF_SIZE) {
       gps_panic(GPSW_MSG_START, (parg_t) gmc.free, gmc.free_len);
       return NULL;
