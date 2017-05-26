@@ -359,11 +359,11 @@ implementation {
 
       /* no msgs, all free space */
       msg = &gps_msgs[0];
-      msg->data  = gmc.free;
+      msg->data  = gps_buf;
       msg->len   = len;
       msg->state = GPS_MSG_FILLING;
 
-      gmc.free  = gmc.free + len;
+      gmc.free  = gps_buf + len;
       gmc.free_len -= len;              /* zero is okay */
 
       gmc.allocated = len;
@@ -388,6 +388,7 @@ implementation {
     msg = &gps_msgs[gmc.tail];
     if (msg->state != GPS_MSG_FULL && msg->state != GPS_MSG_BUSY) {
       gps_panic(GPSW_MSG_START, gmc.tail, msg->state);
+      return NULL;
     }
 
     /*
