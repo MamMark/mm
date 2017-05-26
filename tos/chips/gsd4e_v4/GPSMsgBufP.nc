@@ -478,6 +478,7 @@ implementation {
    */
   async command void GPSBuffer.msg_abort() {
     gps_msg_t *msg;             /* message slot we are working on */
+    uint8_t   *slice;           /* memory slice we are aborting */
 
     if (MSG_INDEX_INVALID(gmc.tail)) {  /* oht oh */
       gps_panic(GPSW_MSG_ABORT, gmc.tail, 0);
@@ -489,6 +490,8 @@ implementation {
       return;
     }
     msg->state = GPS_MSG_EMPTY;         /* no longer in use */
+    slice = msg->data;
+    msg->data = NULL;
     if (gmc.head == gmc.tail) {         /* only entry? */
       gmc.head = MSG_NO_INDEX;
       gmc.tail = MSG_NO_INDEX;
@@ -530,7 +533,7 @@ implementation {
        * extra has to be 0.
        */
       gmc.aux_len = gmc.free_len;
-      gmc.free = msg->data;
+      gmc.free = slice;
       gmc.allocated -= msg->len;
       gmc.free_len = msg->len;
       gmc.tail = MSG_PREV_INDEX(gmc.tail);
@@ -539,7 +542,7 @@ implementation {
     }
 
     /* msg set to tail above and its state to EMPTY */
-    if (msg->data == gps_buf) {
+    if (slice == gps_buf) {
       /*
        * Special Case 2: Tail->data == gps_buf
        * The Tail we are nuking was added because it wouldn't fit in the
@@ -559,7 +562,7 @@ implementation {
       gmc.allocated -= msg->len;
       gmc.tail = MSG_PREV_INDEX(gmc.tail);
       msg = &gps_msgs[gmc.tail];
-      gmc.free = msg->data + msg->len;
+      gmc.free = slice + msg->len;
       gmc.free_len = msg->extra;
       gmc.allocated -= msg->extra;
       gmc.full--;
@@ -575,7 +578,7 @@ implementation {
      *
      * msg set to tail above, and its state to EMPTY.
      */
-    gmc.free = msg->data;
+    gmc.free = slice;
     gmc.free_len += msg->len;
     gmc.allocated -= msg->len;
     return;
@@ -631,6 +634,7 @@ implementation {
    */
   command void GPSBuffer.msg_release() {
     gps_msg_t *msg;             /* message slot we are working on */
+    uint8_t   *slice;           /* slice being released */
 
     atomic {
       if (MSG_INDEX_INVALID(gmc.head)) {  /* oht oh */
@@ -644,6 +648,8 @@ implementation {
         return;
       }
       msg->state = GPS_MSG_EMPTY;
+      slice = msg->data;
+      msg->data  = NULL;                /* for observability */
       if (gmc.head == gmc.tail) {
         /* releasing entire buffer */
         gmc.head     = MSG_NO_INDEX;
@@ -655,7 +661,7 @@ implementation {
         return;
       }
 
-      if (gmc.free > msg->data) {
+      if (slice < gmc.free) {
         /*
          * slice (the head being released) is below the free pointer,
          * this means free is on the tail of the region.  (back of the
