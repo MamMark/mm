@@ -1,28 +1,54 @@
-define gps_state
-hw_gps
 
+define __print_gps_msg
+# arg0 index
+set $_msg = &GPSMsgBufP__gps_msgs[$arg0]
+printf " %02d  %08x  %03x    %03x  ", \
+    $arg0, $_msg->data, $_msg->len, $_msg->extra
+output $_msg->state
+printf "\n"
+end
+
+
+define __gps_msg_buf_state
 printf "\nGPS Msg Buf: free: %d  allocated: %d  max_alloc: %d  N_q: %d  Max_q: %d\n", \
     GPSMsgBufP__gmc.free_len, GPSMsgBufP__gmc.allocated, \
     GPSMsgBufP__gmc.max_allocated, \
     GPSMsgBufP__gmc.full, GPSMsgBufP__gmc.max_full
-output GPSMsgBufP__gmc
-printf "\n\nmsgs:\n"
-output GPSMsgBufP__gps_msgs
-printf "\n\n"
+printf "         %08x  aux: %d  head: %d  tail: %d\n", \
+    GPSMsgBufP__gmc.free, GPSMsgBufP__gmc.aux_len, \
+    GPSMsgBufP__gmc.head, GPSMsgBufP__gmc.tail
+printf "msgs:\n"
+printf "        ptr    len  extra  state\n"
+set $_i=0
+while $_i < 0d32
+    __print_gps_msg $_i
+    set $_i++
+end
+printf "\n"
+end
 
+define __gps_sirf_proto_state
 printf "SirfProto: (p) "
 output SirfBinP__sirfbin_state_prev
 printf ",  "
 output SirfBinP__sirfbin_state
 printf "\n      ptr: (p) %08x,  %08x\n", \
     SirfBinP__sirfbin_ptr_prev, SirfBinP__sirfbin_ptr
+end
 
+define __gps_driver_state
 printf "\nDriver: "
 output gpsc_state
 printf "\nevents:\n"
 output g_evs
 printf "\n\n"
+end
 
+define gps_state
+hw_gps
+__gps_msg_buf_state
+__gps_sirf_proto_state
+__gps_driver_state
 end
 document gps_state
 display gps state
