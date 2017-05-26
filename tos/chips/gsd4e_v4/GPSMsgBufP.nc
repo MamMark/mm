@@ -193,7 +193,8 @@ enum {
 #endif
 
 enum {
-  GPSW_RESET_FREE = 16,
+  GPSW_WRAP_FREE = 16,
+  GPSW_RESET_FREE,
   GPSW_MSG_START,
   GPSW_MSG_ADD_BYTE,
   GPSW_MSG_ABORT,
@@ -287,6 +288,21 @@ implementation {
       return;
     if (gmc.aux_len == 0)               /* no space to add */
       return;
+    if (MSG_INDEX_INVALID(gmc.head) ||
+        gmc.free <= gps_msgs[gmc.head].data) {
+      /*
+       * if the head is invalid, we shouldn't be wrapping at all, whole
+       * buffer is free.  That is where the msg should have gone.
+       *
+       * if free is below head, wrapped free space, then there shouldn't be
+       * anything in aux.  Continuing at this point will wipe out any
+       * message space at the front of the buffer.  blow up.
+       *
+       * We should always wrap from the end of the buffer to the front.
+       */
+      gps_panic(GPSW_WRAP_FREE, gmc.head, (parg_t) gmc.free);
+      return;
+    }
     gmc.free = gps_buf;                 /* wrap to beginning */
     gmc.free_len = gmc.aux_len;
     gmc.aux_len  = 0;
@@ -336,6 +352,11 @@ implementation {
      * EMPTY (buffer is all FREE), !EMPTY (1 or 2 free space regions).
      */
     if (MSG_INDEX_INVALID(gmc.head)) {          /* no head, empty queue */
+      if (gmc.free != gps_buf || gmc.free_len != GPS_BUF_SIZE) {
+        gps_panic(GPSW_MSG_START, (parg_t) gmc.free, (parg_t) gps_buf);
+        return NULL;
+      }
+
       /* no msgs, all free space */
       msg = &gps_msgs[0];
       msg->data  = gmc.free;
@@ -661,6 +682,14 @@ implementation {
        * this will cause real messages to get over written.  This is checked
        * in wrap_free().
        */
+      if (gmc.aux_len) {
+        /*
+         * free space is in the front of the buffer (below the head/slice)
+         * aux_len shouldn't have anything on it.  Bitch.
+         */
+        gps_panic(GPSW_MSG_RELEASE, gmc.aux_len, (parg_t) gmc.free);
+        return;
+      }
       gmc.free_len += msg->len + msg->extra;
       gmc.allocated -= (msg->len + msg->extra);
       msg->extra = 0;
