@@ -17,11 +17,17 @@
  * Free space in this buffer is maintained by a single free structure that
  * remembers a data pointer and length.  It is always the space following
  * any tail (if the queue exists) to the next boundary, either the end
- * of the buffer or the head of the queue.
+ * of the buffer or to the head of the queue.
  *
- * Any free space at the front of the buffer can be found by head - gps_buf
- * and is used when we wrap_free (wrap the free pointer around to the front
- * of the buffer).
+ * Typically, free space will be at the tail of the buffer (bottom, higher
+ * addresses).  This will continue until the free space at the tail no longer
+ * can fit new messages.
+ *
+ * While free space exists at the tail of the buffer, any msg_releases will
+ * be added to the free space at the front of the buffer.  This free space
+ * always starts at gps_buf and any auxilliary size is maintained in aux_len.
+ * Thusly, aux_len = gps_msgs[gmc.head].data - gps_buf, if free space is
+ * at the rear of the buffer.
  *
  * We implement a first-in-first-out, contiguous, strictly ordered
  * allocation and queueing discipline.  This defines the message queue.
@@ -144,11 +150,12 @@
  *
 **** Running out of memory:
  *
- * Memory starvation is indicated by free_len < len (the requested length).
- * We will always return NULL (fail) to msg_start call.  This only occurs
- * after any potential wrap_free has occurred.  When checking to see if a
- * message will fit we need to check the current free region as well as the
- * potential aux region (in the front).
+ * Memory starvation is indicated by free_len < len (the requested length)
+ * and aux_len < len.  We will always return NULL (fail) to a msg_start
+ * call.  This only occurs after any potential wrap_free has occurred.
+ *
+ * When checking to see if a message will fit we need to check the current
+ * free region as well as the potential aux region (in the front).
  *
  *
 **** Running Off the End:
@@ -266,10 +273,14 @@ implementation {
   /*
    * wrap_free: wrap free space as needed
    *
-   * The Free space normally lives at the end of the msg queue and
-   * ends at the edge of the gps_buffer.  If there is space at the
-   * front when we hit the end of the buffer, we want to wrap and
+   * The Free space normally lives at the end of the msg queue and ends at
+   * the boundary of gps_buf (gps_buf + GPS_BUF_SIZE).  If there is space
+   * at the front when we hit the end of the buffer, we want to wrap and
    * start using that space.
+   *
+   * However, under no circumstances should aux_len ever be non-zero if the
+   * free space is in the front part of the buffer.  That would cause
+   * problems.
    */
   void wrap_free() {
     if (gmc.free_len)                   /* still space left */
@@ -374,6 +385,9 @@ implementation {
        * zero free and wrap it.  That puts us onto the front free region.
        * Then we can just fall through into the next if and let
        * the regular advance take over.
+       *
+       * Note: since aux_len is non-zero, we have to have free space in the
+       * tail of the buffer
        */
       msg = &gps_msgs[gmc.tail];
       msg->extra = gmc.free_len;
@@ -387,7 +401,11 @@ implementation {
     /*
      * The msg queue is not empty.  Tail (t) points at the last puppy.
      * We know we have 1 or 2 free regions.  free points at the one
-     * we want to try first.
+     * we want to try first.  If we have 2 regions, free is the tail
+     * and aux_len says the front one is active too.
+     *
+     * note: if we wrapped above, aux_len will be zero (back to 1 active
+     * region, in the front).  We won't wrap again.
      */
     if (len <= gmc.free_len) {
       /* msg will fit in current free space. */
@@ -610,8 +628,11 @@ implementation {
 
       if (gmc.free > msg->data) {
         /*
-         * free pointer is behind the head so is in the back of the buffer
-         * need to account for any released data in the aux region
+         * slice (the head being released) is below the free pointer,
+         * this means free is on the tail of the region.  (back of the
+         * buffer).
+         *
+         * The release needs to get added to the aux region.
          */
         gmc.aux_len += msg->len + msg->extra;
         gmc.allocated -= (msg->len + msg->extra);
@@ -622,10 +643,16 @@ implementation {
       }
 
       /*
-       * must be free < head
+       * must be free < slice (head)
        *
-       * free space is in front of head moving towards head.
-       * no aux.  add the space from head to the free space.
+       * free space is in front of the slice (head).  no aux.  add the
+       * space from head/slice to the free space.
+       *
+       * Note: It is possible to have the free pointer in the front of the
+       * buffer with zero length, ie. free is empty (aux should also be empty).
+       * It is important not to wrap and assign free to the front of the buffer,
+       * this will cause real messages to get over written.  This is checked
+       * in wrap_free().
        */
       gmc.free_len += msg->len + msg->extra;
       gmc.allocated -= (msg->len + msg->extra);
