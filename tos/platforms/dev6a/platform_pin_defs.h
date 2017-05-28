@@ -194,11 +194,11 @@
 
 #define WIGGLE_PARAM(x) do {                                    \
     uint32_t t0, i;                                             \
-    WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;                         \
+    WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;                         \
     t0 = USECS_VAL; while ((USECS_VAL - t0) < WIGGLE_DELAY) ;   \
-    for (i = 0; i < x; i++) WIGGLE_EXC;                 \
+    for (i = 0; i < x; i++) WIGGLE_TELL;                 \
     t0 = USECS_VAL; while ((USECS_VAL - t0) < WIGGLE_DELAY) ;   \
-    WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; } while(0)
+    WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL; } while(0)
 
 
 #endif    /* __PLATFORM_PIN_DEFS__ */
