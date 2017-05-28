@@ -45,11 +45,29 @@ printf "\n\n"
 end
 
 define gps_state
-hw_gps
 __gps_msg_buf_state
 __gps_sirf_proto_state
 __gps_driver_state
+hw_gps
 end
 document gps_state
 display gps state
+end
+
+define mb
+__gps_msg_buf_state
+end
+
+define gx
+printf "GPS Msg Buf: free: %d  allocated: %d  max_alloc: %d  N_q: %d  Max_q: %d\n", \
+    GPSMsgBufP__gmc.free_len, GPSMsgBufP__gmc.allocated, \
+    GPSMsgBufP__gmc.max_allocated, \
+    GPSMsgBufP__gmc.full, GPSMsgBufP__gmc.max_full
+printf "         %08x  aux: %d  head: %d  tail: %d\n", \
+    GPSMsgBufP__gmc.free, GPSMsgBufP__gmc.aux_len, \
+    GPSMsgBufP__gmc.head, GPSMsgBufP__gmc.tail
+end
+
+define gmc
+print GPSMsgBufP__gmc
 end
