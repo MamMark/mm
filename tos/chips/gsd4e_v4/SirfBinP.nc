@@ -86,6 +86,8 @@ implementation {
   norace uint16_t  sirfbin_chksum;      // running chksum of payload
   norace uint8_t  *sirfbin_ptr;         // where to stash incoming bytes
   norace uint8_t  *sirfbin_ptr_prev;    // for debugging
+  norace uint8_t   sirfbin_restart_where; // where did the restart happen
+
 
   /*
    * Error counters
@@ -113,8 +115,9 @@ implementation {
   }
 
 
-  inline void sirfbin_restart() {
+  inline void sirfbin_restart(uint32_t where) {
     atomic {
+      sirfbin_restart_where = where;
       sirfbin_state_prev = sirfbin_state;
       sirfbin_state = SBS_START;
       if (sirfbin_ptr) {
@@ -141,7 +144,7 @@ implementation {
 	if (byte == SIRFBIN_A0)                 // got start again.  stay, good dog
 	  return;
 	if (byte != SIRFBIN_A2) {		// not what we want.  restart
-	  sirfbin_restart();
+	  sirfbin_restart(1);
 	  return;
 	}
 	sirfbin_state = SBS_LEN;
@@ -158,14 +161,15 @@ implementation {
           sirfbin_max_seen = sirfbin_left;
 	if (sirfbin_left >= SIRFBIN_MAX_MSG) {
 	  sirfbin_too_big++;
-	  sirfbin_restart();
+          bkpt();
+	  sirfbin_restart(2);
 	  return;
 	}
         sirfbin_ptr = call GPSBuffer.msg_start(sirfbin_left + SIRFBIN_OVERHEAD);
         sirfbin_ptr_prev = sirfbin_ptr;
         if (!sirfbin_ptr) {
           sirfbin_no_buffer++;
-          sirfbin_restart();
+          sirfbin_restart(3);
           return;
         }
         signal GPSProto.msgStart(sirfbin_left + SIRFBIN_OVERHEAD);
@@ -195,7 +199,7 @@ implementation {
 	chksum = sirfbin_ptr[-2] << 8 | byte;
 	if (chksum != sirfbin_chksum) {
 	  sirfbin_chksum_fail++;
-	  sirfbin_restart();
+	  sirfbin_restart(4);
 	  return;
 	}
 	sirfbin_state = SBS_END;
@@ -205,7 +209,7 @@ implementation {
         *sirfbin_ptr++ = byte;
 	if (byte != SIRFBIN_B0) {
 	  sirfbin_proto_fail++;
-	  sirfbin_restart();
+	  sirfbin_restart(5);
 	  return;
 	}
 	sirfbin_state = SBS_END_2;
@@ -215,7 +219,7 @@ implementation {
         *sirfbin_ptr++ = byte;
 	if (byte != SIRFBIN_B3) {
 	  sirfbin_proto_fail++;
-	  sirfbin_restart();
+	  sirfbin_restart(6);
 	  return;
 	}
         sirfbin_ptr = 0;
@@ -226,7 +230,7 @@ implementation {
 
       default:
 	call Panic.warn(PANIC_GPS, 135, sirfbin_state, 0, 0, 0);
-	sirfbin_restart();
+	sirfbin_restart(7);
 	return;
     }
   }
