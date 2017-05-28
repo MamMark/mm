@@ -1,3 +1,6 @@
+
+printf "\n***\n*** DEV6A gdb\n***\n\n"
+
 define hw_radio
 printf "\nradio(ub2): cts: %d  irqN: %d  sdn: %d  csN: %d   siok\n", \
     (($p2->IN >> 4) & 1),  (($p5->IN >> 1) & 1), \
