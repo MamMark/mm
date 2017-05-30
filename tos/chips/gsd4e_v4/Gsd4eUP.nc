@@ -905,7 +905,7 @@ implementation {
   }
 
 
-  async event void SirfProto.msgAbort() {
+  async event void SirfProto.msgAbort(uint16_t reason) {
     gpsc_state_t next_state;
 
     switch(gpsc_state) {

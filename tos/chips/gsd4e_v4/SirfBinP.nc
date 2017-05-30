@@ -115,7 +115,7 @@ implementation {
   }
 
 
-  inline void sirfbin_restart(uint32_t where) {
+  inline void sirfbin_restart(uint16_t where) {
     atomic {
       sirfbin_restart_where = where;
       sirfbin_state_prev = sirfbin_state;
@@ -125,7 +125,7 @@ implementation {
         sirfbin_ptr = NULL;
         call GPSBuffer.msg_abort();
       }
-      signal GPSProto.msgAbort();
+      signal GPSProto.msgAbort(where);
     }
   }
 

@@ -63,7 +63,7 @@ interface GPSProto {
    *
    * turn off any underlying timeout
    */
-  async event void msgAbort();
+  async event void msgAbort(uint16_t reason);
 
   /*
    * msgEnd: signal the current message is complete
