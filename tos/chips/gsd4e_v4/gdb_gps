@@ -71,3 +71,11 @@ end
 define gmc
 print GPSMsgBufP__gmc
 end
+
+define gps_stats
+printf " \nsirf proto stats: too_big  no_buffer  max_seen  chksum   proto\n"
+printf "     %11d  %7d  %9d  %8d  %6d   %5d\n", recv_count,    \
+    SirfBinP__sirfbin_too_big,  SirfBinP__sirfbin_no_buffer,   \
+    SirfBinP__sirfbin_max_seen, SirfBinP__sirfbin_chksum_fail, \
+    SirfBinP__sirfbin_proto_fail
+end
