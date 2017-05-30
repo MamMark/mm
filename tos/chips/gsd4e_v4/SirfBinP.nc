@@ -86,7 +86,6 @@ implementation {
   norace uint16_t  sirfbin_chksum;      // running chksum of payload
   norace uint8_t  *sirfbin_ptr;         // where to stash incoming bytes
   norace uint8_t  *sirfbin_ptr_prev;    // for debugging
-  norace uint8_t   sirfbin_restart_where; // where did the restart happen
 
 
   /*
@@ -117,7 +116,6 @@ implementation {
 
   inline void sirfbin_restart(uint16_t where) {
     atomic {
-      sirfbin_restart_where = where;
       sirfbin_state_prev = sirfbin_state;
       sirfbin_state = SBS_START;
       if (sirfbin_ptr) {

@@ -292,6 +292,14 @@ typedef enum {
 } gps_where_t;
 
 
+typedef enum {
+  GPSE_NONE = 0,
+  GPSE_STATE,                           /* state change */
+  GPSE_ABORT,                           /* protocol abort */
+  GPSE_SPEED,                           /* speed change */
+} gps_event_t;
+
+
 /*
  * gpsc_state: current state of the driver state machine
  */
@@ -315,15 +323,15 @@ norace uint8_t  gbuf[GPS_EAVES_SIZE];
 
 typedef struct {
   uint32_t     ts;
-  uint32_t     rate;
+  gps_event_t  ev;
   gpsc_state_t gc_state;
-  gps_where_t  where;
+  uint32_t     arg;
   uint16_t     g_idx;
-} gps_event_t;
+} gps_ev_t;
 
 #define GPS_MAX_EVENTS 32
 
-gps_event_t g_evs[GPS_MAX_EVENTS];
+gps_ev_t g_evs[GPS_MAX_EVENTS];
 uint8_t g_nev;			// next gps event
 
 #endif   // GPS_LOG_EVENTS
@@ -372,7 +380,6 @@ const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
        int32_t  gps_probe_index;        // keeps track of which table entry to use
        uint32_t gps_probe_cycle;        // how many times through the list.
        uint32_t gps_booting;            // system is booting.
-       uint32_t gps_cur_rate;           // current baud rate
 
 
 module Gsd4eUP {
@@ -431,8 +438,8 @@ implementation {
   }
 
 
-  /* log state */
-  void gpsc_log_state(gpsc_state_t next_state, gps_where_t where) {
+  /* gps log event */
+  void gpsc_log_event(gps_event_t ev, uint32_t arg) {
 #ifdef GPS_LOG_EVENTS
     uint8_t idx;
 
@@ -441,9 +448,9 @@ implementation {
       if (g_nev >= GPS_MAX_EVENTS)
 	g_nev = 0;
       g_evs[idx].ts = call LocalTime.get();
-      g_evs[idx].rate = gps_cur_rate;
-      g_evs[idx].gc_state = next_state;
-      g_evs[idx].where = where;
+      g_evs[idx].ev = ev;
+      g_evs[idx].gc_state = gpsc_state;
+      g_evs[idx].arg = arg;
       g_evs[idx].g_idx = g_idx;
     }
 #endif
@@ -509,8 +516,8 @@ implementation {
 
 
   void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
-    gpsc_log_state(next_state, where);
     gpsc_state = next_state;
+    gpsc_log_event(GPSE_STATE, where);
   }
 
 
@@ -692,12 +699,12 @@ implementation {
           time_out = len * DT_GPS_BYTE_TIME * to_mod * 4 + 500000;
           time_out /= 1000000;
           if (!time_out) time_out = 2;    /* at least 2ms */
-          gps_cur_rate = speed;
-          gpsc_change_state(GPSC_CHK_TX_WAIT, GPSW_PROBE_TASK);
 
           /* start deadman timer, change speed, and send the puppie */
-          call GPSTxTimer.startOneShot(time_out);
+          gpsc_change_state(GPSC_CHK_TX_WAIT, GPSW_PROBE_TASK);
+          gpsc_log_event(GPSE_SPEED, speed);
           call HW.gps_speed_di(speed);
+          call GPSTxTimer.startOneShot(time_out);
           call HW.gps_send_block((void *) msg, len);
           return;
       }
@@ -809,11 +816,11 @@ implementation {
           return;
 
         case GPSC_PWR_UP_WAIT:
-          gps_cur_rate = GPS_TARGET_SPEED;
+          gpsc_change_state(GPSC_PROBE_0, GPSW_TX_TIMER);
+          gpsc_log_event(GPSE_SPEED, GPS_TARGET_SPEED);
           call HW.gps_speed_di(GPS_TARGET_SPEED);
           gps_wakeup();                   /* wake the ARM up */
           call GPSRxTimer.startOneShot(DT_GPS_WAKE_UP_DELAY);
-          gpsc_change_state(GPSC_PROBE_0, GPSW_TX_TIMER);
           call HW.gps_rx_int_enable();        /* turn on rx system */
           return;
 
@@ -830,8 +837,8 @@ implementation {
            * time to finish sending the previous message before we change
            * the baud rate on the HW.
            */
-          gps_cur_rate = GPS_TARGET_SPEED;
           gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_TX_TIMER);
+          gpsc_log_event(GPSE_SPEED, GPS_TARGET_SPEED);
           call HW.gps_speed_di(GPS_TARGET_SPEED);
           call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
           call HW.gps_send_block((void *)sirf_peek_0, sizeof(sirf_peek_0));
@@ -908,6 +915,7 @@ implementation {
   async event void SirfProto.msgAbort(uint16_t reason) {
     gpsc_state_t next_state;
 
+    gpsc_log_event(GPSE_ABORT, reason);
     switch(gpsc_state) {
       default:
         gps_panic(18, gpsc_state, 0);
