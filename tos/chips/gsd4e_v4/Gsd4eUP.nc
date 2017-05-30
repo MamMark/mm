@@ -924,6 +924,17 @@ implementation {
         post probe_task();
         return;
 
+        /*
+         * both ON and ON_TX ignore SirfProto.msgAborts Something went
+         * wrong on receive with the start of the packet.  Didn't get far
+         * enough to generate the msgStart.  So just ignore it
+         */
+      case GPSC_ON:                     /* ignore */
+      case GPSC_ON_TX:    return;
+
+        /*
+         * something went wrong after we got the msgStart.
+         */
       case GPSC_ON_RX:    next_state = GPSC_ON;    break;
       case GPSC_ON_RX_TX: next_state = GPSC_ON_TX; break;
     }
