@@ -17,16 +17,18 @@ implementation {
   task void test_task() {
     uint8_t *buf;
 
-    bkpt();
     while (1) {
       if (last_size == 0)
         last_size = 10;
       buf = call GPSBuffer.msg_start(last_size);
+      nop();
       if (!buf) {
-        bkpt();
         post test_task();
         return;
       }
+      call GPSBuffer.msg_abort();
+      nop();
+      buf = call GPSBuffer.msg_start(last_size);
       buf[0] = last_size         & 0xff;
       buf[1] = (last_size >>  8) & 0xff;
       buf[2] = (last_size >> 16) & 0xff;
