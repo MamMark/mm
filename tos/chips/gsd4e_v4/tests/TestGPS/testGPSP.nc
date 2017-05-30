@@ -6,6 +6,7 @@
 
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;
+uint32_t recv_count;
 
 module testGPSP {
   uses {
@@ -30,7 +31,6 @@ implementation {
   };
 
   int               state;
-  uint32_t          recv_count;
 
   task void test_task() {
 #ifdef notdef
