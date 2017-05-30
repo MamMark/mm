@@ -193,14 +193,24 @@ enum {
 #endif
 
 enum {
-  GPSW_WRAP_FREE = 16,
-  GPSW_RESET_FREE,
+  GPSW_RESET_FREE = 16,
   GPSW_MSG_START,
+  GPSW_MSG_START_1,
+  GPSW_MSG_START_2,
+  GPSW_MSG_START_3,
+  GPSW_MSG_START_4,
+  GPSW_MSG_START_5,
+  GPSW_MSG_START_6,
   GPSW_MSG_ADD_BYTE,
   GPSW_MSG_ABORT,
+  GPSW_MSG_ABORT_1,
+  GPSW_MSG_ABORT_2,
   GPSW_MSG_COMPLETE,
+  GPSW_MSG_COMPLETE_1,
   GPSW_MSG_NEXT,
-  GPSW_MSG_RELEASE
+  GPSW_MSG_RELEASE,
+  GPSW_MSG_RELEASE_1,
+  GPSW_MSG_RELEASE_2,
 };
 
 
@@ -313,8 +323,8 @@ implementation {
    * reset_free: reset free space to pristine state.
    */
   void reset_free() {
-    if (MSG_INDEX_VALID(gmc.head)) {
-        gps_panic(GPSW_RESET_FREE, gmc.head, 0);
+    if (MSG_INDEX_VALID(gmc.head) || MSG_INDEX_VALID(gmc.tail)) {
+        gps_panic(GPSW_RESET_FREE, gmc.head, gmc.tail);
         return;
     }
     gmc.free     = gps_buf;
@@ -351,9 +361,9 @@ implementation {
      * Look at the msg queue to see what the state of free space is.
      * EMPTY (buffer is all FREE), !EMPTY (1 or 2 free space regions).
      */
-    if (MSG_INDEX_INVALID(gmc.head)) {          /* no head, empty queue */
+    if (MSG_INDEX_EMPTY(gmc.head) && MSG_INDEX_EMPTY(gmc.tail)) {
       if (gmc.free != gps_buf || gmc.free_len != GPS_BUF_SIZE) {
-        gps_panic(GPSW_MSG_START, (parg_t) gmc.free, (parg_t) gps_buf);
+        gps_panic(GPSW_MSG_START_1, (parg_t) gmc.free, (parg_t) gps_buf);
         return NULL;
       }
 
@@ -381,13 +391,18 @@ implementation {
       return msg->data;
     }
 
+    if (MSG_INDEX_INVALID(gmc.head) || MSG_INDEX_INVALID(gmc.tail)) {
+      gps_panic(GPSW_MSG_START_2, gmc.tail, 0);
+      return NULL;
+    }
+
     /*
      * make sure that tail->state is FULL (BUSY counts as FULL).  Need to
      * complete previous message before doing another start.
      */
     msg = &gps_msgs[gmc.tail];
     if (msg->state != GPS_MSG_FULL && msg->state != GPS_MSG_BUSY) {
-      gps_panic(GPSW_MSG_START, gmc.tail, msg->state);
+      gps_panic(GPSW_MSG_START_3, gmc.tail, msg->state);
       return NULL;
     }
 
@@ -441,7 +456,7 @@ implementation {
       idx = MSG_NEXT_INDEX(gmc.tail);
       msg = &gps_msgs[idx];
       if (msg->state) {                 /* had better be empty */
-        gps_panic(GPSW_MSG_START, (parg_t) msg, msg->state);
+        gps_panic(GPSW_MSG_START_5, (parg_t) msg, msg->state);
         return NULL;
       }
 
@@ -465,7 +480,7 @@ implementation {
     }
 
     /* shouldn't be here, ever */
-    gps_panic(GPSW_MSG_START, gmc.free_len, gmc.aux_len);
+    gps_panic(GPSW_MSG_START_6, gmc.free_len, gmc.aux_len);
     return NULL;
   }
 
@@ -486,7 +501,7 @@ implementation {
     }
     msg = &gps_msgs[gmc.tail];
     if (msg->state != GPS_MSG_FILLING) { /* oht oh */
-      gps_panic(GPSW_MSG_ABORT, (parg_t) msg, msg->state);
+      gps_panic(GPSW_MSG_ABORT_1, (parg_t) msg, msg->state);
       return;
     }
     msg->state = GPS_MSG_EMPTY;         /* no longer in use */
@@ -599,7 +614,7 @@ implementation {
     }
     msg = &gps_msgs[gmc.tail];
     if (msg->state != GPS_MSG_FILLING) { /* oht oh */
-      gps_panic(GPSW_MSG_COMPLETE, (parg_t) msg, msg->state);
+      gps_panic(GPSW_MSG_COMPLETE_1, (parg_t) msg, msg->state);
       return;
     }
 
@@ -637,14 +652,15 @@ implementation {
     uint8_t   *slice;           /* slice being released */
 
     atomic {
-      if (MSG_INDEX_INVALID(gmc.head)) {  /* oht oh */
+      if (MSG_INDEX_INVALID(gmc.head) ||
+          MSG_INDEX_INVALID(gmc.tail)) {  /* oht oh */
         gps_panic(GPSW_MSG_RELEASE, gmc.head, 0);
         return;
       }
       msg = &gps_msgs[gmc.head];
       /* oht oh - only FULL or BUSY can be released */
       if (msg->state != GPS_MSG_BUSY && msg->state != GPS_MSG_FULL) {
-        gps_panic(GPSW_MSG_RELEASE, (parg_t) msg, msg->state);
+        gps_panic(GPSW_MSG_RELEASE_1, (parg_t) msg, msg->state);
         return;
       }
       msg->state = GPS_MSG_EMPTY;
@@ -694,7 +710,7 @@ implementation {
          * free space is in the front of the buffer (below the head/slice)
          * aux_len shouldn't have anything on it.  Bitch.
          */
-        gps_panic(GPSW_MSG_RELEASE, gmc.aux_len, (parg_t) gmc.free);
+        gps_panic(GPSW_MSG_RELEASE_2, gmc.aux_len, (parg_t) gmc.free);
         return;
       }
       gmc.free_len += msg->len + msg->extra;

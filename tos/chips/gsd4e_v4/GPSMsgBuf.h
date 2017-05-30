@@ -62,8 +62,10 @@ typedef struct {                /* should be 28 bytes */
 
 
 #define MSG_NO_INDEX         (0xffff)
-#define MSG_INDEX_INVALID(x) ((x) & 0x8000)
-#define MSG_INDEX_VALID(x)   (((x) & 0x8000) == 0)
+
+#define MSG_INDEX_EMPTY(x)    ((x) == ((uint16_t) -1))
+#define MSG_INDEX_INVALID(x)  ((x) & (~(GPS_MAX_MSGS - 1)))
+#define MSG_INDEX_VALID(x)   (((x) & (~(GPS_MAX_MSGS - 1))) == 0)
 
 #define MSG_PREV_INDEX(x) (((x) - 1) & (GPS_MAX_MSGS - 1))
 #define MSG_NEXT_INDEX(x) (((x) + 1) & (GPS_MAX_MSGS - 1))
