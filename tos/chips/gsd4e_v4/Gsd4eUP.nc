@@ -900,10 +900,7 @@ implementation {
         return;
 
       case GPSC_PROBE_0: next_state = GPSC_CHK_MSG_WAIT;  break;
-      case GPSC_ON:
-        nop();                          /* convenient place for a breakpoint */
-        next_state = GPSC_ON_RX;
-        break;
+      case GPSC_ON:      next_state = GPSC_ON_RX;         break;
       case GPSC_ON_TX:   next_state = GPSC_ON_RX_TX;      break;
     }
     m_req_rx_len = len;                 /* request rx timeout start */
