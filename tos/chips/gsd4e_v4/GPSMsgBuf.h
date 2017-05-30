@@ -13,7 +13,7 @@
 #define GPS_BUF_SIZE 1024
 
 /* set to a power of 2 */
-#define GPS_MAX_MSGS 32
+#define GPS_MAX_MSGS 16
 
 /* minimum memory slice, same as SIRFBIN_OVERHEAD */
 #define GPS_MIN_MSG  8

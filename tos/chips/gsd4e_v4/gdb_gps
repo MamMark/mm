@@ -20,7 +20,7 @@ printf "         %08x  aux: %d  head: %d  tail: %d\n", \
 printf "msgs:\n"
 printf "        ptr    len  extra  state\n"
 set $_i=0
-while $_i < 0d32
+while $_i < 0d16
     __print_gps_msg $_i
     set $_i++
 end
