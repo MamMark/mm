@@ -135,6 +135,7 @@ implementation {
       case SBS_START:
 	if (byte != SIRFBIN_A0)
 	  return;
+        sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_START_2;
 	return;
 
@@ -145,11 +146,13 @@ implementation {
 	  sirfbin_restart(1);
 	  return;
 	}
+        sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_LEN;
 	return;
 
       case SBS_LEN:
 	sirfbin_left = byte << 8;		// data fields are big endian
+        sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_LEN_2;
 	return;
 
@@ -163,14 +166,15 @@ implementation {
 	  sirfbin_restart(2);
 	  return;
 	}
-        sirfbin_ptr = call GPSBuffer.msg_start(sirfbin_left + SIRFBIN_OVERHEAD);
         sirfbin_ptr_prev = sirfbin_ptr;
+        sirfbin_ptr = call GPSBuffer.msg_start(sirfbin_left + SIRFBIN_OVERHEAD);
         if (!sirfbin_ptr) {
           sirfbin_no_buffer++;
           sirfbin_restart(3);
           return;
         }
         signal GPSProto.msgStart(sirfbin_left + SIRFBIN_OVERHEAD);
+        sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_PAYLOAD;
         sirfbin_chksum = 0;
         *sirfbin_ptr++ = SIRFBIN_A0;
@@ -183,12 +187,15 @@ implementation {
         *sirfbin_ptr++ = byte;
 	sirfbin_chksum += byte;
 	sirfbin_left--;
-	if (sirfbin_left == 0)
+	if (sirfbin_left == 0) {
+          sirfbin_state_prev = sirfbin_state;
 	  sirfbin_state = SBS_CHK;
+        }
 	return;
 
       case SBS_CHK:
         *sirfbin_ptr++ = byte;
+        sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_CHK_2;
 	return;
 
@@ -200,6 +207,7 @@ implementation {
 	  sirfbin_restart(4);
 	  return;
 	}
+        sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_END;
 	return;
 
@@ -210,6 +218,7 @@ implementation {
 	  sirfbin_restart(5);
 	  return;
 	}
+        sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_END_2;
 	return;
 
@@ -220,7 +229,9 @@ implementation {
 	  sirfbin_restart(6);
 	  return;
 	}
-        sirfbin_ptr = 0;
+        sirfbin_ptr_prev = sirfbin_ptr;
+        sirfbin_ptr = NULL;
+        sirfbin_state_prev = sirfbin_state;
         sirfbin_state = SBS_START;
         signal GPSProto.msgEnd();
         call GPSBuffer.msg_complete();
