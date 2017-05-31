@@ -537,9 +537,9 @@ implementation {
    */
   command error_t GPSState.turnOn() {
     if (gpsc_state != GPSC_OFF) {
-      gps_warn(9, gpsc_state, 0);
-      return FAIL;
+      return EALREADY;
     }
+
 //    call LogEvent.logEvent(DT_EVENT_GPS_START, 0);
     t_gps_pwr_on = call LocalTime.get();
     gps_probe_cycle = 0;
