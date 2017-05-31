@@ -35,7 +35,7 @@ implementation {
 
   components TraceC, CollectC;
   SS_P.Trace    -> TraceC;
-  SS_P.LogEvent -> CollectC;
+  SS_P.CollectEvent -> CollectC;
 
   components FileSystemC as FS;
   SS_P.FS -> FS;

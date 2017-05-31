@@ -407,7 +407,7 @@ module Gsd4eUP {
     interface Panic;
     interface Platform;
 //  interface Trace;
-//  interface LogEvent;
+//  interface CollectEvent;
   }
 }
 implementation {
@@ -525,7 +525,7 @@ implementation {
    * Boot.booted:
    */
   event void Boot.booted() {
-//    call LogEvent.logEvent(DT_EVENT_GPS_BOOT,0);
+//    call CollectEvent.logEvent(DT_EVENT_GPS_BOOT,0);
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
     gps_booting = 1;
     call GPSState.turnOn();
@@ -540,7 +540,7 @@ implementation {
       return EALREADY;
     }
 
-//    call LogEvent.logEvent(DT_EVENT_GPS_START, 0);
+//    call CollectEvent.logEvent(DT_EVENT_GPS_START, 0);
     t_gps_pwr_on = call LocalTime.get();
     gps_probe_cycle = 0;
     call HW.gps_pwr_on();

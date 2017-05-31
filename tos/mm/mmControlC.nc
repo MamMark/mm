@@ -24,7 +24,7 @@ implementation {
   mmControlP.Panic -> PanicC;
 
   components CollectC;
-  mmControlP.LogEvent -> CollectC;
+  mmControlP.CollectEvent -> CollectC;
 
 #ifdef FAKE_SURFACE
   components new TimerMilliC() as SurfaceTimer;

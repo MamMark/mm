@@ -43,7 +43,7 @@ module CollectP {
   provides {
     interface Collect;
     interface Init;
-    interface LogEvent;
+    interface CollectEvent;
   }
   uses {
     interface SSWrite as SSW;
@@ -225,7 +225,7 @@ implementation {
   }
 
 
-  command void LogEvent.logEvent(uint16_t ev, uint16_t arg) {
+  command void CollectEvent.logEvent(uint16_t ev, uint16_t arg) {
     dt_event_t  e;
     dt_event_t *ep;
 

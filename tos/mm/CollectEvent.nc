@@ -32,8 +32,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logevent.h"
-
-interface LogEvent {
+interface CollectEvent {
   command void logEvent(uint16_t ev, uint16_t arg);
 }

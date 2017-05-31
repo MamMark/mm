@@ -87,7 +87,7 @@ module SSWriteP {
     interface Panic;
     interface LocalTime<TMilli>;
     interface Trace;
-    interface LogEvent;
+    interface CollectEvent;
   }
 }
 

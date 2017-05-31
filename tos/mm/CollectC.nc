@@ -6,7 +6,7 @@
 configuration CollectC {
   provides {
     interface Collect;
-    interface LogEvent;
+    interface CollectEvent;
   }
 }
 
@@ -14,7 +14,7 @@ implementation {
   components MainC, CollectP;
   MainC.SoftwareInit -> CollectP;
   Collect = CollectP;
-  LogEvent = CollectP;
+  CollectEvent = CollectP;
 
   components SSWriteC;
   CollectP.SSW -> SSWriteC;

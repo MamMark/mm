@@ -96,6 +96,6 @@ implementation {
   Gsd4eUP.Trace -> TraceC;
 
   components CollectC;
-  Gsd4eUP.LogEvent -> CollectC;
+  Gsd4eUP.CollectEvent -> CollectC;
 #endif
 }
