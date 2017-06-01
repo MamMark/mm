@@ -396,4 +396,18 @@ typedef struct {
 } gps_probe_entry_t;
 
 
+/*
+ * Instrumentation, Stats
+ */
+typedef struct {
+  uint32_t starts;                    /* number of packets started */
+  uint32_t complete;                  /* number completed successfully */
+  uint16_t too_big;                   /* too large, aborted */
+  uint16_t no_buffer;                 /* no buffer/msg available */
+  uint16_t max_seen;                  /* max length seen */
+  uint16_t chksum_fail;               /* bad checksum */
+  uint16_t proto_fail;                /* proto abort */
+  uint16_t rx_timeout;                /* receive timeout */
+} sirfbin_stat_t;
+
 #endif	/* __SIRF_H__ */

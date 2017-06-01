@@ -73,9 +73,10 @@ print GPSMsgBufP__gmc
 end
 
 define gps_stats
-printf " \nsirf proto stats: too_big  no_buffer  max_seen  chksum   proto\n"
-printf "     %11d  %7d  %9d  %8d  %6d   %5d\n", recv_count,    \
-    SirfBinP__sirfbin_too_big,  SirfBinP__sirfbin_no_buffer,   \
-    SirfBinP__sirfbin_max_seen, SirfBinP__sirfbin_chksum_fail, \
-    SirfBinP__sirfbin_proto_fail
+printf " \n sirf proto stats:  too_big  no_buffer  max_seen   chksum    proto   rx_timeouts\n"
+printf "%8d/%-8d  %8d   %8d  %8d %8d %8d      %8d\n",                        \
+    SirfBinP__sirfbin_stats.complete,   SirfBinP__sirfbin_stats.starts,      \
+    SirfBinP__sirfbin_stats.too_big,    SirfBinP__sirfbin_stats.no_buffer,   \
+    SirfBinP__sirfbin_stats.max_seen,   SirfBinP__sirfbin_stats.chksum_fail, \
+    SirfBinP__sirfbin_stats.proto_fail, SirfBinP__sirfbin_stats.rx_timeout
 end

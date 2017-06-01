@@ -89,20 +89,21 @@ implementation {
 
 
   /*
-   * Error counters
+   * Instrumentation, Stats
    */
-  norace uint16_t sirfbin_too_big;
-  norace uint16_t sirfbin_no_buffer;    /* no buffer/msg available */
-  norace uint16_t sirfbin_max_seen;     /* max length seen */
-  norace uint16_t sirfbin_chksum_fail;
-  norace uint16_t sirfbin_proto_fail;
+  norace sirfbin_stat_t sirfbin_stats;
+
 
   /*
    * external world is blowing us up.  No need to tell
    * the external world that we are aborting the message.
+   *
+   * Only reason the outside world aborts/resets is because the
+   * receive timed out.
    */
   command void GPSProto.reset() {
     atomic {
+      sirfbin_stats.rx_timeout++;
       sirfbin_state_prev = sirfbin_state;
       sirfbin_state = SBS_START;
       if (sirfbin_ptr) {
@@ -148,6 +149,7 @@ implementation {
 	}
         sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_LEN;
+        sirfbin_stats.starts++;
 	return;
 
       case SBS_LEN:
@@ -158,10 +160,10 @@ implementation {
 
       case SBS_LEN_2:
 	sirfbin_left |= byte;
-        if (sirfbin_left > sirfbin_max_seen)
-          sirfbin_max_seen = sirfbin_left;
+        if (sirfbin_left > sirfbin_stats.max_seen)
+          sirfbin_stats.max_seen = sirfbin_left;
 	if (sirfbin_left >= SIRFBIN_MAX_MSG) {
-	  sirfbin_too_big++;
+	  sirfbin_stats.too_big++;
           bkpt();
 	  sirfbin_restart(2);
 	  return;
@@ -169,7 +171,7 @@ implementation {
         sirfbin_ptr_prev = sirfbin_ptr;
         sirfbin_ptr = call GPSBuffer.msg_start(sirfbin_left + SIRFBIN_OVERHEAD);
         if (!sirfbin_ptr) {
-          sirfbin_no_buffer++;
+          sirfbin_stats.no_buffer++;
           sirfbin_restart(3);
           return;
         }
@@ -203,7 +205,7 @@ implementation {
         *sirfbin_ptr++ = byte;
 	chksum = sirfbin_ptr[-2] << 8 | byte;
 	if (chksum != sirfbin_chksum) {
-	  sirfbin_chksum_fail++;
+	  sirfbin_stats.chksum_fail++;
 	  sirfbin_restart(4);
 	  return;
 	}
@@ -214,7 +216,7 @@ implementation {
       case SBS_END:
         *sirfbin_ptr++ = byte;
 	if (byte != SIRFBIN_B0) {
-	  sirfbin_proto_fail++;
+	  sirfbin_stats.proto_fail++;
 	  sirfbin_restart(5);
 	  return;
 	}
@@ -225,7 +227,7 @@ implementation {
       case SBS_END_2:
         *sirfbin_ptr++ = byte;
 	if (byte != SIRFBIN_B3) {
-	  sirfbin_proto_fail++;
+	  sirfbin_stats.proto_fail++;
 	  sirfbin_restart(6);
 	  return;
 	}
@@ -233,6 +235,7 @@ implementation {
         sirfbin_ptr = NULL;
         sirfbin_state_prev = sirfbin_state;
         sirfbin_state = SBS_START;
+        sirfbin_stats.complete++;
         signal GPSProto.msgEnd();
         call GPSBuffer.msg_complete();
 	return;
