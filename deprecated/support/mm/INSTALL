@@ -1,0 +1,27 @@
+MM Network Utilities
+====================
+
+These programs allow very simple, very early, communication with
+a tag running an AM based network stack.
+
+
+Prerequisites:
+--------------
+
+netlib:  gh:tp-freeforall/prod(tp-master)/support/sdk/c/netlib
+sf:      gh:tp-freeforall/prod(tp-master)/support/sdk/c/netlib
+motenet: gh:tp-freeforall/prod(tp-master)/support/sdk/c/motenet
+
+Compiling from source
+---------------------
+
+If you don't want GNU readline support, you can invoke make with:
+
+    make WITHOUT_READLINE=1
+
+After compiling, install the binary and manual page by running (as
+root):
+
+    make install
+
+Type "mspdebug --help" for usage instructions.
