@@ -30,6 +30,8 @@ typedef struct {
   uint8_t *data;
   uint16_t len;
   uint16_t extra;
+  uint32_t arrival_ms;          /* arrival time of message */
+  uint32_t mark_j;              /* time mark in jiffies */
   gms_t    state;
 } gps_msg_t;
 

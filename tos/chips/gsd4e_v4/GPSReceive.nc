@@ -40,16 +40,24 @@
  *
  * output to the signal handler:
  *
- *   msg:  pointer to the raw gps message.
- *   len:  length of said message.
+ *   msg:        pointer to the raw gps message.
+ *   len:        length of said message.
+ *   arrival_ms: arrival time of the message in system ms
+ *   mark_j:     time mark stamp if any in system jiffies
  *
  * The message format will be specified by whatever protocol is
- * currently being used by the GPS chip.
+ * currently being used by the GPS chip.  Typically SirfBin.
  *
  * The message lives for the duration of the signal call out and upon return
- * the message will be processed by the GPS sublayer.
+ * the message will be consumed by the GPS sublayer.
  */
 
 interface GPSReceive {
-  event void msg_available(uint8_t *msg, uint16_t len);
+  /*
+   * msg_available
+   *
+   * will be signaled when a new message is available for processing.
+   */
+  event   void     msg_available(uint8_t *msg, uint16_t len,
+                                 uint32_t arrival_ms, uint32_t mark_j);
 }

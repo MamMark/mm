@@ -68,13 +68,15 @@ interface GPSBuffer {
    *
    * input:    ptr/len  pointer to uint16_t that will receive the
    *                    length of the message.
+   *           arrival/mark timestamps describing when the message arrived
+   *
    * returns:  ptr      to message data
    *                    NULL if no more messages.
    *                    len filled in with length
    *
    * Will set the state of the head of the message queue to BUSY.
    */
-  command uint8_t *msg_next(uint16_t *len);
+  command uint8_t *msg_next(uint16_t *len, uint32_t *arrival, uint32_t *mark);
 
   /*
    * msg_release: release a previously allocated msg.

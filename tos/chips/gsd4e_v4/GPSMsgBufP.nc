@@ -225,7 +225,10 @@ module GPSMsgBufP {
     interface GPSBuffer;
     interface GPSReceive;
   }
-  uses interface Panic;
+  uses {
+    interface LocalTime<TMilli>;
+    interface Panic;
+  }
 }
 implementation {
          uint8_t   gps_buf[GPS_BUF_SIZE];       /* underlying storage */
@@ -275,12 +278,13 @@ implementation {
   task void gps_receive_task() {
     uint8_t *msg;
     uint16_t len;
+    uint32_t arrival, mark;
 
     while (1) {
-      msg = call GPSBuffer.msg_next(&len);
+      msg = call GPSBuffer.msg_next(&len, &arrival, &mark);
       if (!msg)
         break;
-      signal GPSReceive.msg_available(msg, len);
+      signal GPSReceive.msg_available(msg, len, arrival, mark);
       call GPSBuffer.msg_release();
     }
   }
@@ -339,6 +343,7 @@ implementation {
       msg->data  = gps_buf;
       msg->len   = len;
       msg->state = GPS_MSG_FILLING;
+      msg->arrival_ms = call LocalTime.get();
 
       gmc.free  = gps_buf + len;
       gmc.free_len -= len;              /* zero is okay */
@@ -573,7 +578,8 @@ implementation {
   }
 
 
-  command uint8_t *GPSBuffer.msg_next(uint16_t *len) {
+  command uint8_t *GPSBuffer.msg_next(uint16_t *len,
+        uint32_t *arrival, uint32_t *mark) {
     gps_msg_t *msg;             /* message slot we are working on */
 
     atomic {
@@ -586,6 +592,8 @@ implementation {
       }
       msg->state = GPS_MSG_BUSY;
       *len = msg->len;
+      *arrival = msg->arrival_ms;
+      *mark    = msg->mark_j;
       return msg->data;
     }
   }
@@ -665,7 +673,10 @@ implementation {
     }
   }
 
-  default event void GPSReceive.msg_available(uint8_t *msg, uint16_t len) { }
+
+  default event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
+        uint32_t arrival_ms, uint32_t mark_j) { }
+
 
   /*
    * Panic.hook

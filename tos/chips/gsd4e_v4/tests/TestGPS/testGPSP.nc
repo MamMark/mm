@@ -131,7 +131,8 @@ implementation {
     }
   }
 
-  event void GPSReceive.msg_available(uint8_t *msg, uint16_t len) {
+  event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
+        uint32_t arrival_ms, uint32_t mark_j) {
     nop();
     recv_count++;
   }
