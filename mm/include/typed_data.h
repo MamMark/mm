@@ -72,10 +72,9 @@ typedef enum {
  * DT_HDR_SIZE_<stuff> defines how large any header is prior to any
  * variable length data.  It is used for redundancy checks.
  *
- * Many of the data blocks defined below use data[0].  This indicates that
- * data is variable in length.  When using these structures the correct
- * size must be allocated (usually on the stack since we don't use malloc)
- * and then the structure is cast to a dt_<type>_t pointer.
+ * Many data blocks will be followed by variable length data.  The len
+ * field in the data block header includes both the header length as
+ * well as the variable length data.
  *
  * <something>_BLOCK_SIZE is used to say how much data the whole structure
  * needs to take.
@@ -213,7 +212,6 @@ typedef struct {
   uint32_t stamp_ms;
   uint32_t sched_ms;
   uint16_t sns_id;
-  uint16_t data[0];
 } PACKED dt_sensor_data_t;
 
 typedef struct {
@@ -223,7 +221,6 @@ typedef struct {
   uint32_t sched_ms;
   uint16_t mask;
   uint16_t mask_id;
-  uint16_t data[0];
 } PACKED dt_sensor_set_t;
 
 
@@ -247,7 +244,6 @@ typedef struct {
   uint8_t  hrs;
   uint8_t  min;
   uint8_t  sec;
-  uint8_t  data[0];
 } PACKED dt_note_t;
 
 
