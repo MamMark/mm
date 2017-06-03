@@ -45,8 +45,7 @@ typedef enum {
    * GPS_RAW is used to encapsulate data as received from the GPS.
    */
   DT_GPS_RAW_SIRFBIN	= 15,
-  DT_GPS_RAW_NMEA	= 16,
-  DT_MAX		= 16,
+  DT_MAX		= 15,
   DT_16                 = 0xffff,       /* force to 2 bytes */
 } dtype_t;
 
@@ -157,23 +156,20 @@ typedef struct {
  */
 
 enum {
-  CHIP_GPS_SIRF3   = 1,
-  CHIP_GPS_ORG4472 = 2,
-  CHIP_GPS_GSD4E   = 3,
+  CHIP_GPS_GSD4E   = 1,
 };
 
 
 typedef struct {
-  uint16_t len;                 /* size 9 */
+  uint16_t len;                 /* size 13 */
   dtype_t  dtype;
-  uint32_t stamp_ms;
+  uint32_t stamp_ms;            /* time stamp in ms */
+  uint32_t mark_j;              /* mark stamp in jiffies */
   uint8_t  chip;
 } PACKED dt_gps_t;
 
 
 /*
- * For Sirf3,   chip_type CHIP_GPS_SIRF3
- * For ORG4472, CHIP_GPS_ORG4472
  * M10478,      CHIP_GPS_GSD4E
  */
 typedef struct {
@@ -194,8 +190,6 @@ typedef struct {
 
 
 /*
- * For Sirf3, chip_type CHIP_GPS_SIRF3
- * For ORG4472, CHIP_GPS_ORG4472
  * M10478,      CHIP_GPS_GSD4E
  */
 typedef struct {
