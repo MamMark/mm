@@ -64,6 +64,7 @@ implementation {
   components new TimerMilliC() as GPSTxTimer;
   components new TimerMilliC() as GPSRxTimer;
   components     LocalTimeMilliC;
+  components     CollectC;
 
   GPSState = Gsd4eUP;
   Boot     = Gsd4eUP.Boot;
@@ -74,6 +75,7 @@ implementation {
   Gsd4eUP.GPSTxTimer -> GPSTxTimer;
   Gsd4eUP.GPSRxTimer -> GPSRxTimer;
   Gsd4eUP.LocalTime  -> LocalTimeMilliC;
+  Gsd4eUP.CollectEvent -> CollectC;
 
   components PlatformC, PanicC;
   Gsd4eUP.Panic    -> PanicC;
@@ -87,6 +89,7 @@ implementation {
 
   /* Buffer Slicing (MsgBuf) */
   MainC.SoftwareInit -> GPSMsgBufP;
+  GPSMsgBufP.LocalTime -> LocalTimeMilliC;
   GPSMsgBufP.Panic -> PanicC;
 
   GPSReceive = GPSMsgBufP;
@@ -94,8 +97,5 @@ implementation {
 #ifdef notdef
   components TraceC;
   Gsd4eUP.Trace -> TraceC;
-
-  components CollectC;
-  Gsd4eUP.CollectEvent -> CollectC;
 #endif
 }

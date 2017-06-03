@@ -45,6 +45,7 @@
 #include <platform_panic.h>
 #include <gps.h>
 #include <sirf.h>
+#include <typed_data.h>
 
 #ifndef PANIC_GPS
 enum {
@@ -309,7 +310,7 @@ norace gpsc_state_t	    gpsc_state;
 uint32_t		    gpsc_boot_time;		// time it took to boot.
 uint32_t		    gpsc_cycle_time;		// time last cycle took
 uint32_t		    gpsc_max_cycle;		// longest cycle time.
-uint32_t		    t_gps_first_char;
+norace uint32_t		    t_gps_first_char;
 
 #ifdef GPS_LOG_EVENTS
 
@@ -584,6 +585,11 @@ implementation {
   }
 
 
+  task void collect_task() {
+    call CollectEvent.logEvent(DT_EVENT_GPS_FIRST, t_gps_first_char, t_gps_first_char - t_gps_pwr_on);
+  }
+
+
   /*
    * send_block_task
    *
@@ -632,6 +638,8 @@ implementation {
           call HW.gps_rx_int_enable();
           if (gps_booting) {
             gps_booting = 0;
+            gpsc_boot_time = call LocalTime.get() - t_gps_pwr_on;
+            call CollectEvent.logEvent(DT_EVENT_GPS_BOOT_TIME, t_gps_pwr_on, gpsc_boot_time);
             signal GPSBoot.booted();
           }
           return;
@@ -969,6 +977,10 @@ implementation {
 
   async event void HW.gps_byte_avail(uint8_t byte) {
 #ifdef GPS_EAVESDROP
+    if (!t_gps_first_char) {
+      t_gps_first_char = call LocalTime.get();
+      post collect_task();
+    }
     gbuf[g_idx++] = byte;
     if (g_idx >= GPS_EAVES_SIZE)
       g_idx = 0;
