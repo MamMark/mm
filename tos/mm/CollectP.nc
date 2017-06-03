@@ -179,7 +179,7 @@ implementation {
     if ((uint32_t) header & 0x3 || (uint32_t) dcc.cur_ptr & 0x03 || dcc.remaining > DC_BLK_SIZE)
       call Panic.panic(PANIC_SS, 2, (parg_t) header, (parg_t) dcc.cur_ptr, dcc.remaining, 0);
     if (header->len != (hlen + dlen) ||
-        header->dtype >= DT_MAX      ||
+        header->dtype > DT_MAX       ||
         hlen > DT_MAX_HEADER         ||
         (hlen + dlen) < 4)
       call Panic.panic(PANIC_SS, 3, hlen, dlen, header->len, header->dtype);
