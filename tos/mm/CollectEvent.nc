@@ -33,5 +33,5 @@
  */
 
 interface CollectEvent {
-  command void logEvent(uint16_t ev, uint16_t arg);
+  command void logEvent(uint16_t ev, uint32_t arg0, uint32_t arg1);
 }

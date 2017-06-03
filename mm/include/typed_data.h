@@ -262,6 +262,7 @@ enum {
   DT_EVENT_DOCKED,
   DT_EVENT_UNDOCKED,
   DT_EVENT_GPS_BOOT,
+  DT_EVENT_GPS_BOOT_TIME,
   DT_EVENT_GPS_RECONFIG,
   DT_EVENT_GPS_START,
   DT_EVENT_GPS_OFF,
@@ -271,7 +272,6 @@ enum {
   DT_EVENT_GPS_SATS_7,
   DT_EVENT_GPS_SATS_29,
   DT_EVENT_GPSCM_STATE,
-  DT_EVENT_GPS_BOOT_TIME,
   DT_EVENT_GPS_CYCLE_TIME,
   DT_EVENT_SSW_DELAY_TIME,
   DT_EVENT_SSW_BLK_TIME,
@@ -280,11 +280,12 @@ enum {
 
 
 typedef struct {
-  uint16_t len;                 /* size 12, 0x0c */
+  uint16_t len;                 /* size 18, 0x12 */
   dtype_t  dtype;
   uint32_t stamp_ms;
+  uint32_t arg0;
+  uint32_t arg1;
   uint16_t ev;
-  uint16_t arg;
 } PACKED dt_event_t;
 
 
