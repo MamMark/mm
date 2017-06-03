@@ -10,26 +10,6 @@ print trace_buf
 end
 
 
-# gps msg data display
-define gmd
-printf "gpsc_state: "
-print gpsc_state
-printf "msg_collect_state: "
-print GPSMsgP__collect_state
-printf "left: %d, collect_length 0x%x,  cur_chksum: 0x%04x\n", GPSMsgP__collect_left, GPSMsgP__collect_length, GPSMsgP__collect_cur_chksum
-printf "collect_nxt:  0x%02x  on_overflow: %d\n", GPSMsgP__collect_nxt, GPSMsgP__on_overflow
-printf "Msg State: "
-print gpsm_state
-printf "\nbuffer:\n"
-x/32xb GPSMsgP__collect_msg
-printf "overflow:\n"
-x/16xb GPSMsgP__collect_overflow
-printf "\nerrors: ovrfull: %d  ovrmax: %d  too_big: %d  chk fail: %d  proto fail: %d\n", GPSMsgP__collect_overflow_full, GPSMsgP__collect_overflow_max, GPSMsgP__collect_too_big, GPSMsgP__collect_chksum_fail, GPSMsgP__collect_proto_fail
-end
-document gmd
-display gps message data
-end
-
 #
 # SD
 #
@@ -48,6 +28,7 @@ end
 
 
 define cs
+printf "\n"
 printf "majik:  %04x       %04x\n", CollectP__dcc.majik_a, CollectP__dcc.majik_b
 printf "chksum: %04x  seq: %04x\n", CollectP__dcc.chksum,  CollectP__dcc.seq
 printf "handle: %08x   %08x\n",     CollectP__dcc.handle,  CollectP__dcc.cur_buf
@@ -59,7 +40,16 @@ Collector State
 end
 
 
+define __print_ss_entry
+# arg0 index
+set $_entry = SSWriteP__ssw_p[$arg0]
+printf "\n           [%08x] %04x  ts: %08lx ", &$_entry->buf, $_entry->majik, $_entry->stamp
+output $_entry->buf_state
+end
+
 define ss
+printf "\n"
+print SSWriteP__ssc
 printf "\n"
 printf "    majik:  %04x  %04x  state: ", SSWriteP__ssc.majik_a, SSWriteP__ssc.majik_b
 output SSWriteP__ssc.state
@@ -68,16 +58,12 @@ printf "    alloc:  %02x  in: %02x  out: %02x  full: %02x  max: %02x\n",   \
     SSWriteP__ssc.ssw_alloc, SSWriteP__ssc.ssw_in, SSWriteP__ssc.ssw_out, \
     SSWriteP__ssc.ssw_num_full, SSWriteP__ssc.ssw_max_full
 printf "     dblk:  %08x  cur_hand: %08x\n", SSWriteP__ssc.dblk, SSWriteP__ssc.cur_handle
-printf "  buffers: [%08x] %04x  ts: %08lx ", SSWriteP__ssw_p[0]->buf, SSWriteP__ssw_p[0]->majik, SSWriteP__ssw_p[0]->stamp
-output SSWriteP__ssw_p[0]->buf_state
-printf "\n           [%08x] %04x  ts: %08lx ", SSWriteP__ssw_p[1]->buf, SSWriteP__ssw_p[1]->majik, SSWriteP__ssw_p[1]->stamp
-output SSWriteP__ssw_p[1]->buf_state
-printf "\n           [%08x] %04x  ts: %08lx ", SSWriteP__ssw_p[2]->buf, SSWriteP__ssw_p[2]->majik, SSWriteP__ssw_p[2]->stamp
-output SSWriteP__ssw_p[2]->buf_state
-printf "\n           [%08x] %04x  ts: %08lx ", SSWriteP__ssw_p[3]->buf, SSWriteP__ssw_p[3]->majik, SSWriteP__ssw_p[3]->stamp
-output SSWriteP__ssw_p[3]->buf_state
-printf "\n           [%08x] %04x  ts: %08lx ", SSWriteP__ssw_p[4]->buf, SSWriteP__ssw_p[4]->majik, SSWriteP__ssw_p[4]->stamp
-output SSWriteP__ssw_p[4]->buf_state
+printf "  buffers:"
+set $_i=0
+while $_i < 0d5
+    __print_ss_entry $_i
+    set $_i++
+end
 printf "\n"
 end
 document ss
