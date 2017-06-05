@@ -42,7 +42,7 @@ implementation {
 
   command bool Lis3dh.xyzDataAvail() {
     uint8_t status;
-    
+
     nop();
     nop();
     nop();

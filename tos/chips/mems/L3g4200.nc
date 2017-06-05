@@ -5,7 +5,7 @@ interface L3g4200 {
    * @return SUCCESS Device ID is available in id argument
    *
    *         EOFF Device is not powered on or selected
-   * 
+   *
    */
   command error_t whoAmI(uint8_t *id);
 

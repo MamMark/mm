@@ -2,7 +2,7 @@
  * lis3mdl.h
  */
 
-/* 
+/*
  * Register with ID value. Validate SPI xfer by reading this
  * register: Value should equal WHO_I_AM.
  */

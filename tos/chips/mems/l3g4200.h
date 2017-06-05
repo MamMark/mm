@@ -2,7 +2,7 @@
  * l3g4200.h
  */
 
-/* 
+/*
  * Register with ID value. Validate SPI xfer by reading this
  * register: Value should equal WHO_I_AM.
  */
@@ -154,4 +154,3 @@
 #define INT1_THS_ZL      0x37
 
 #define INT1_DURATION    0x38
-

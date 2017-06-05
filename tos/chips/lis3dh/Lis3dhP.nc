@@ -101,7 +101,7 @@ implementation {
     //mSPITxBuf[1] = (LIS3L01DQ_CTRL_REG1_PD(1) | LIS3L01DQ_CTRL_REG1_XEN | LIS3L01DQ_CTRL_REG1_YEN | LIS3L01DQ_CTRL_REG1_ZEN);
 
     // new
-    //    tx[0] = (CTRL_REG1 << 2);  // datasheet, p. 23  (careful:  not the same as the LIS3L02)                          
+    //    tx[0] = (CTRL_REG1 << 2);  // datasheet, p. 23  (careful:  not the same as the LIS3L02)
     //  tx[1] = XEN | YEN | ZEN;
 
     //call CSN.clr(); // CS LOW
@@ -135,7 +135,7 @@ implementation {
     call CSN.set();			/* deassert */
     return SUCCESS;
   }
-  
+
   command error_t Lis3dh.getReg(uint8_t regAddr) {
     if((regAddr < 0x07) || (regAddr > 0x3D))
       return EINVAL;
@@ -169,7 +169,7 @@ implementation {
     call CSN.set();		// deassert CS
     return SUCCESS;
 
-#ifdef notdef 
+#ifdef notdef
     P10OUT &= ~(0x80);
     i = 0;
     while (!(UCA3IFG & UCTXIFG)) ;
@@ -206,7 +206,7 @@ implementation {
     switch (mState) {
     case STATE_GETREG:
       mState = STATE_IDLE;
-  
+
       sprintf(abuf, "txBuf[0] = %x  rxBuf[0] = %x  len=%d error=%d", txBuf[0], rxBuf[0], len, error);
 
 

@@ -38,8 +38,8 @@
 interface SDerase {
   /**
    * SD erase, split phase.
-   * @return 
-   *   <li>SUCCESS if the request was accepted, 
+   * @return
+   *   <li>SUCCESS if the request was accepted,
    *   <li>EINVAL  if the parameters are invalid
    *   <li>EBUSY   if a request is already being processed.
    *

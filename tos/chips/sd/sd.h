@@ -128,7 +128,7 @@
  * to all other elements.
  * 32 bits(4 bytes)
  */
-typedef struct { 
+typedef struct {
     uint32_t resvd1          :4;
     uint32_t v16_17          :1;
     uint32_t v17_18          :1;
@@ -154,7 +154,7 @@ typedef struct {
 } sd_ocr_t;
 
 
-/* CID Card Identification Register 
+/* CID Card Identification Register
  * 16 bytes
  * contains a unique card identification number
  * cannot be changed
@@ -180,7 +180,7 @@ typedef struct {
  */
 typedef struct {
     uint8_t alwaysONE        :1;
-    uint8_t crc7             :7;   
+    uint8_t crc7             :7;
 
     uint8_t rsvd1            :2;
     uint8_t file_format      :2;
@@ -190,10 +190,10 @@ typedef struct {
     uint8_t file_form_grp    :1;
 
     uint8_t rsvd2            :5;
-    uint8_t wt_blk_partial   :1;   
+    uint8_t wt_blk_partial   :1;
     uint8_t wt_blk_len       :4;
 
-    uint8_t wt_spd_fact      :3;          
+    uint8_t wt_spd_fact      :3;
 
     uint8_t rsvd3            :2;
 
@@ -201,7 +201,7 @@ typedef struct {
     uint8_t wt_grp_size      :7;
 
     uint8_t erase_sect_size  :7;
-    uint8_t erase_blk_enable :1;   
+    uint8_t erase_blk_enable :1;
 
     uint8_t csize_mult       :3;
 
@@ -212,7 +212,7 @@ typedef struct {
     uint8_t vdd_min_rd_curr  :3;
 
     uint8_t csize_low        :4;
-    uint8_t csize_high; 
+    uint8_t csize_high;
 
     uint8_t rsvd4            :2;
 
@@ -233,7 +233,7 @@ typedef struct {
 
     uint8_t rsvd5            :6;
     uint8_t csd_struct       :2;
-    
+
 } sd_csd_V1_t;
 
 
@@ -245,7 +245,7 @@ typedef struct {
  */
 typedef struct {
     uint8_t alwaysONE        :1;
-    uint8_t crc7             :7;   
+    uint8_t crc7             :7;
 
     uint8_t rsvd1            :2;
     uint8_t file_format      :2;
@@ -255,10 +255,10 @@ typedef struct {
     uint8_t file_form_grp    :1;
 
     uint8_t rsvd2            :5;
-    uint8_t wt_blk_partial   :1;   
+    uint8_t wt_blk_partial   :1;
     uint8_t wt_blk_len       :4;
 
-    uint8_t wt_spd_fact      :3;          
+    uint8_t wt_spd_fact      :3;
 
     uint8_t rsvd3            :2;
 
@@ -266,12 +266,12 @@ typedef struct {
     uint8_t wt_grp_size      :7;
 
     uint8_t erase_sect_size  :7;
-    uint8_t erase_blk_enable :1;   
-  
+    uint8_t erase_blk_enable :1;
+
     uint8_t rsvd4            :1;
 
     uint8_t csize_low        :6;
-    uint8_t csize_high[2]; 
+    uint8_t csize_high[2];
 
     uint8_t rsvd5            :6;
 
@@ -296,7 +296,7 @@ typedef struct {
 } sd_csd_V2_t;
 
 
-/* SD Card Configuration Register (64 bits)contains information 
+/* SD Card Configuration Register (64 bits)contains information
  * on the cards special features.
  *
  *
@@ -325,14 +325,14 @@ typedef struct {
     uint16_t wp_erase_skip    :1;
     uint16_t error            :1;
     uint16_t cc_error         :1;
-    uint16_t card_ecc_fail    :1; 
+    uint16_t card_ecc_fail    :1;
     uint16_t wp_violation     :1;
     uint16_t erase_param      :1;
     uint16_t out_rge_csd_ovrwt:1;
     uint16_t idle_state       :1;
     uint16_t erase_rst        :1;
     uint16_t illeg_com        :1;
-    uint16_t com_crc_err      :1;    
+    uint16_t com_crc_err      :1;
     uint16_t erase_seq_err    :1;
     uint16_t address_err      :1;
     uint16_t param_err        :1;

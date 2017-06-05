@@ -44,7 +44,7 @@ implementation {
   components Tmp1x2P;
   Read = Tmp1x2P.ReadTemp;
 
-  components new Msp430UsciI2CB2C() as I2C;  
+  components new Msp430UsciI2CB2C() as I2C;
   Tmp1x2P.Resource -> I2C;
   Tmp1x2P.I2CReg   -> I2C;
   Tmp1x2P.I2C      -> I2C;

@@ -33,11 +33,11 @@
  */
 
 /**
- * Interface for the LIS3DH Accelerometer.  
+ * Interface for the LIS3DH Accelerometer.
  *
  * Definitions for regAddrs are in lis3dh.h
  * See the lis3dh datasheet for the possible 'val' values.  The README in this
- * directory has more details.  
+ * directory has more details.
  */
 
 interface Lis3dh {

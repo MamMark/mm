@@ -14,7 +14,7 @@ implementation {
 
   components MainC;
   MemsP.Init <- MainC.SoftwareInit;
-  
+
   components HplMsp430GeneralIOC;
   MemsP.CSN -> HplMsp430GeneralIOC.Port46;
 

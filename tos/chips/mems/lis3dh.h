@@ -24,7 +24,7 @@
 
 #define INT_COUNTER_REG  0x0e
 
-/* 
+/*
  * Register with ID value. Validate SPI xfer by reading this
  * register: Value should equal WHO_I_AM.
  */
@@ -206,5 +206,3 @@
 #define TIME_LIMIT       0x3b
 #define TIME_LATENCY     0x3c
 #define TIME_WINDOW      0x3d
-
-

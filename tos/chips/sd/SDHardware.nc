@@ -33,7 +33,7 @@
  *
  * lp = local processor
  */
-        
+
 /**
  * Defines the interface to a generic uSD card using SPI.
  *
@@ -80,7 +80,7 @@
  *
  * @author Eric B. Decker <cire831@gmail.com>
  */
- 
+
 interface SDHardware {
   /*
    * SPI interface
