@@ -34,7 +34,7 @@
 
 /*
 This is a test application for the Tmp1x2 + I2C driver.
-*/ 
+*/
 
 configuration TestTmp1x2C {
 }
@@ -46,8 +46,8 @@ implementation {
   App.HW -> HW;
 
   components new Tmp1x2C() as TempSensor;
-  App.TempSensor -> TempSensor; 
-  
+  App.TempSensor -> TempSensor;
+
   components new TimerMilliC() as Timer;
   App.TestTimer -> Timer;
 }
