@@ -1,0 +1,173 @@
+
+TinyOS needs a port abstraction and/or architecture.
+
+* What is a Port?
+
+A port is a hardware interface provided by the platform.  It is inherently
+platform specific.  The naming is platform specific.  For example, a
+platform may provide two SD port, SD0 and SD1.  Likewise, two temperature
+sensors could be provided as TmpP (temp platform) and TmpX (temp external).
+
+
+* Port/Driver Architecture and Interface
+
+A port provides the abstraction and defines the actual interface of the
+underlying hardware that a given driver needs to implement its functions.
+
+A driver will need a particular definition for what it needs when talking
+to the hardware used to implement the underlying hardware design.  For
+example the gsd4e_v4 driver defines what its hardware interface looks like
+in Gsd4eUHardware.nc.  This defines what pins need to be manipulated along
+with what data movement and access look like.
+
+The platform then needs to provide a Port that provides that interface.  This
+involves providing the appropriate hardware linkages and which particular
+hardware port is connected to the hardware the driver is connected to.
+
+
+* Port Instantiation
+
+How are these ports implemented and made available by a platform?
+
+A platform has the following structure:
+
+tos/platforms/
+    <platform name>/
+        hardware/
+            <port name>
+            <port class>
+
+ie.  tos/platforms/dev6a/hardware/gps           gps port
+     tos/platforms/dev6a/hardware/tmp           tmp class/1 or more tmp ports
+     tos/platforms/dev6a/hardware/sd0           sd0 port
+     tos/platforms/dev6a/hardware/sd1           2nd instance, sd1 port
+     tos/platforms/dev6a/hardware/si446x        si4468 radio port
+
+
+** Files
+
+<Port><n>C      highest level that exports the Port interface
+                actual interface is dependent on what the port is.
+
+Hpl<Port><n>C   Hardware Presentation
+                collects the different pieces of the port's h/w and
+                presents it.
+
+<Port><n>HardwareP
+                any implementation code needed to implement the port's h/w
+                interface.
+
+
+* GPS example:
+
+A singleton GPS port provided as GPS0.
+
+(tos/chips/gsd4e_v4)
+(tos/platforms/dev6a/hardware/gps)
+
+GPS0C:  top level of GPS driver stack.
+    GPSState    provides mechanism for turning GPS on off, control state
+                gps requests, gps power management requests
+    GPSReceive  mechanism for passing received gps messages to rest
+                of the system.
+
+    instantiates the driver Gsd4eUP (tos/chips/gsd4e_v4)
+
+    connects driver to h/w port (HplGPS0C).
+
+    connects components of GPS driver stack.
+           GPS0C
+        ------------
+         GPSMsgBufP     buffer management (slice)
+        ------------
+          SirfBinP      protocol module
+        ------------
+           Gsd4eUP      low level driver
+        ------------
+          HplGPS0C      h/w port (Gsd4eUHardware)
+
+HplGPS0C
+    combines the low level interface (GPS0HardwareP) with the actual
+    assignment of physical port (ie. which eUSCI) for the gps h/w.
+
+    instantiates which Msp432Usci<port> with GPS0HardwareP.
+    wires eUSCI to GPS0HardwareP.
+
+    initialization linkage (PeripheralInit)
+
+GPS0HardwareP
+    provides initialization code for start up.  (PeripheralInit)
+
+    implements low level h/w interface as defined in Gsd4eUHardware.
+    pin manipulation
+
+    implements configuration code for eUSCI port
+    implements interface for changing baud rates
+
+    interrupt linkage
+
+
+* SD example
+
+A replicated SD implementation.
+
+(tos/chips/sd)
+(tos/platforms/dev6a/hardware/sd{0,1})
+
+A given SD chip can be accessed by multiple clients.  The entire driver is
+controlled by a top level arbiter, SD0_ArbC.  Power for the SD is controlled
+by the Arbiter via ResourceDefaultOwner (RDO).  No clients, the SD is turned
+off.
+
+SD0_ArbC        top level arbiter and exporter of parameterized SD interface
+                export parametized SD interface for SD0C.
+
+SD0_ArbP        instantiates the Arbiter.  Handles Arbiter wiring.
+                wires driver instance (SD0C) for ResourceDefaultOwner
+
+SD0C            exports the SD port.
+                instantiates the driver, SDspP.
+
+                connects driver to hardware port (HplSD0C)
+
+HplSD0C         assigns actual eUSCI
+                instantiates hardware port (SD0HardwareP)
+                assigns DMA channels for use based on which eUSCI is used.
+                DMA linkage
+                interrupt linkage
+
+                initialization linkage (PeripheralInit)
+
+SD0HardwareP    implements hardware port interface (SDHardware)
+
+                eUSCI configuration block
+
+                dma linkage implementation
+
+
+* Tmp example
+
+The mm6a has an I2C bus dedicated to two temperature sensors, an onboard
+TmpP (platform), and and external (TmpX).  Both are implemented by a
+singleton (non-replicated) driver that uses device (sensor) addresses to
+determine which sensor is being talked to.
+
+Normally the bus isn't powered and once powered the sensors take 26ms to
+35ms before the first reading is available.
+
+We use an arbiter at a low level to arbitrate the bus as well as power
+to the sensors.  The driver arbitrates on behalf of a given device and the
+ResourceDefaultOwner (via the Arbiter) controls turning power off and on.
+
+(tos/chips/tmp1x2/Tmp1x2P)      driver
+(tos/platforms/dev6a/hardware/tmp)
+
+TmpP            top level, exports underlying h/w
+TmpX            wires to appropriate interface depending on device addr
+                wires to HplTmpC for access to eUSCI assigned to port.
+                wires to HplTmpC for access to the bus arbiter.
+
+HplTmpC         configures Arbiter (Fcfs)
+                assigns eUSCI to be used by port
+
+TmpHardwareP    implementation of ResourceDefaultOwner
