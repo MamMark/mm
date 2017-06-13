@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015 Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,19 +33,21 @@
  */
 
 /*
- * Read the temperature from a tmp1x2 digital thermometer.
- * See the README for a description of the value returned.
+ * See TmpPC for explanation of what's up with this driver port
  */
 
-generic configuration Tmp1x2C() {
-  provides interface Read<uint16_t>;
+configuration TmpXC {
+  provides interface SimpleSensor<uint16_t>;
 }
-implementation {
-  components Tmp1x2P;
-  Read = Tmp1x2P.ReadTemp;
 
-  components new Msp430UsciI2CB2C() as I2C;
-  Tmp1x2P.Resource -> I2C;
-  Tmp1x2P.I2CReg   -> I2C;
-  Tmp1x2P.I2C      -> I2C;
+implementation {
+
+  /* see TmpPC */
+  enum {
+    TMP_CLIENT = 1,
+    TMP_ADDR   = 0x49,
+  };
+
+  components HplTmpC;
+  SimpleSensor = HplTmpC.SimpleSensor[TMP_ADDR];
 }

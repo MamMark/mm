@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017 Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,40 +32,40 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include "Timer.h"
+/*
+ * Top level of the Tmp Port
+ *
+ * The tmp driver provides a parameterized singleton interface.  There
+ * is a single driver that handles all of the temperature sensors.  The
+ * parameter is the device address of the sensor.  ie.  0x48 for
+ * TmpP and 0x49 for TmpX.  The address depends on how the tmp1x2 is
+ * physically wired.
+ *
+ * The driver uses the dev_addr to address the sensor on the I2C bus and
+ * uses a mapping between dev_addr and an appropriate client id (cid)
+ * for accessing the resource.  Both dev_addrs and cids are unique.
+ *
+ * Access to the bus and power to the sensors is controlled by the
+ * arbiter's ResourceDefaultOwner.
+ *
+ * The sensors are typically turned off and there is only one pwr
+ * bit that controls power to all sensors on the bus.  This power
+ * bit is controlled by the ResourceDefaultOwner wired into the
+ * arbiter.  Power will be turned on as long as there is at least
+ * one client using the bus.
+ */
 
-uint32_t state;
-
-module TestTmp1x2P {
-  uses {
-    interface Boot;
-    interface SimpleSensor<uint16_t> as TempSensor;
-    interface SimpleSensor<uint16_t> as X;
-    interface Timer<TMilli> as  TestTimer;
-  }
+configuration TmpPC {
+  provides interface SimpleSensor<uint16_t>;
 }
+
 implementation {
-  event void Boot.booted() {
-    call TestTimer.startPeriodic(1024);         /* about 1/min */
-  }
 
-  event void TestTimer.fired() {
-    if ((state & 1) == 0) {
-      call TempSensor.isPresent();
-      call TempSensor.read();
-    } else {
-      call X.isPresent();
-      call X.read();
-    }
-    state++;
-  }
+  enum {
+    TMP_CLIENT = 0,
+    TMP_ADDR   = 0x48,
+  };
 
-  event void TempSensor.readDone(error_t error, uint16_t data) {
-    nop();
-  }
-
-  event void X.readDone(error_t error, uint16_t data) {
-    nop();
-  }
+  components HplTmpC;
+  SimpleSensor = HplTmpC.SimpleSensor[TMP_ADDR];
 }

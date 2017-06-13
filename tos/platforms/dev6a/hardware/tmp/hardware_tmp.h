@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017 Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,40 +32,19 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include "Timer.h"
+/*
+ * Define constants that denote various platform/hardware strappings
+ * and configuration for the Tmp bus.
+ */
 
-uint32_t state;
+#ifndef __HARDWARE_TMP_H__
+#define __HARDWARE_TMP_H__
 
-module TestTmp1x2P {
-  uses {
-    interface Boot;
-    interface SimpleSensor<uint16_t> as TempSensor;
-    interface SimpleSensor<uint16_t> as X;
-    interface Timer<TMilli> as  TestTimer;
-  }
-}
-implementation {
-  event void Boot.booted() {
-    call TestTimer.startPeriodic(1024);         /* about 1/min */
-  }
+#define HW_TMP_MAX_SENSORS 2
 
-  event void TestTimer.fired() {
-    if ((state & 1) == 0) {
-      call TempSensor.isPresent();
-      call TempSensor.read();
-    } else {
-      call X.isPresent();
-      call X.read();
-    }
-    state++;
-  }
+#define HW_TMP_DEV_48_CID 0
+#define HW_TMP_DEV_49_CID 1
+#define HW_TMP_DEV_4A_CID 2
+#define HW_TMP_DEV_4B_CID 3
 
-  event void TempSensor.readDone(error_t error, uint16_t data) {
-    nop();
-  }
-
-  event void X.readDone(error_t error, uint16_t data) {
-    nop();
-  }
-}
+#endif          // __HARDWARE_TMP_H__

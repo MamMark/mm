@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015 Eric B. Decker
+ * Copyright (c) 2012, 2015, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,20 +33,20 @@
  */
 
 /*
-This is a test application for the Tmp1x2 + I2C driver.
-*/
+ * This is a test application for the Tmp1x2 + I2C driver.
+ */
 
 configuration TestTmp1x2C {
 }
 implementation {
-  components MainC, TestTmp1x2P as App;
-  App.Boot -> MainC.Boot;
+  components SystemBootC, TestTmp1x2P as App;
+  App.Boot -> SystemBootC.Boot;
 
-  components Hpl_MM_hwC as HW;
-  App.HW -> HW;
+  components TmpPC;
+  App.TempSensor -> TmpPC;
 
-  components new Tmp1x2C() as TempSensor;
-  App.TempSensor -> TempSensor;
+  components TmpXC;
+  App.X -> TmpXC;
 
   components new TimerMilliC() as Timer;
   App.TestTimer -> Timer;

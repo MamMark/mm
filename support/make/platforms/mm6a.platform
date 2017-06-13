@@ -15,6 +15,7 @@ PFLAGS += -I%T/platforms/mm6a/hardware/sd0
 PFLAGS += -I%T/platforms/mm6a/hardware/sd1
 PFLAGS += -I%T/platforms/mm6a/hardware/gps
 PFLAGS += -I%T/platforms/mm6a/hardware/si446x
+PFLAGS += -I%T/platforms/mm6a/hardware/tmp
 
 PFLAGS += -I%T/chips/si446x
 PFLAGS += -I%T/chips/sd

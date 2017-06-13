@@ -17,6 +17,12 @@
 #define TMP1X2_THIGH	3
 
 /*
+ * delay from power on to first conversion should be available
+ * In ms.
+ */
+#define TMP1X2_PWR_ON_DELAY 35
+
+/*
  * config register bits
  */
 #define TMP1X2_CONFIG_ONESHOT	0x8000
@@ -29,7 +35,7 @@
 #define TMP1X2_CONFIG_FAULT_6	0x1800
 #define TMP1X2_CONFIG_POLARITY	0x0400
 #define TMP1X2_CONFIG_TM	0x0200
-#define TMP1X2_CONFIG_OFF	0x0100
+#define TMP1X2_CONFIG_SD	0x0100
 
 /* byte 2, lsb */
 #define TMP1X2_CONFIG_8HZ	0x00c0

@@ -5,10 +5,23 @@ driver supports both.  The tmp112 has an extended range.
 
 From the tmp102/tmp112 datasheet:
 
-When successful, the driver will return a word of data.  Depending on the
-tmp102 configuration, the first 12 or 13 bits of that word will contain
-a temperature value in Celsius degrees in the driver format.  One LSB corresponds
-to 0.0625 degrees, which is 1/16 degree.
+A resource arbiter control access to the bus and controls power to any tmp
+sensors that are attached.
+
+When a sensor is accessed, first a Resource.request must be done to a) turn
+on the power and b) gain control of the I2C bus.
+
+TMP sensors need 26 to 35 ms to do a conversion and this is true from when
+power is first brought up.  Until the first conversion occurs, the sensor
+will return 0 deg C.  So we have to wait.
+
+Once granted, we read 16 bits from register 0 to get the temperature.
+Afterwards we shut the sensor down (via SD) to minimize power until the bus
+is turned off again.
+
+Depending on the tmp102 configuration, the first 12 or 13 bits of the 16
+bits will contain a temperature value in Celsius.  One LSB corresponds to
+0.0625 degrees, which is 1/16 degree.
 
 In 12 bit mode, the first byte contains a whole number of degrees and
 the first four bits of the second byte contain a fractional degree.

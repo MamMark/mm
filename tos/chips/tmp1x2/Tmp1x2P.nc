@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015 Eric B. Decker
+ * Copyright (c) 2012, 2015, 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,177 +35,98 @@
 #include <TinyError.h>
 #include "tmp1x2.h"
 
-norace uint8_t xbuf[32];
+/*
+ * Driver for the TI tmp102 and tmp112.  Supports 1 or more of these
+ * devices on a single I2C bus.
+ *
+ * We use I2CReg to access the small simple registers in the sensor.
+ * I2CReg always runs to completion.  However, typically the power to the
+ * bus is off and one needs to wait 26-35 ms before the first tmp sample is
+ * done after power has come up.  This is handled by the Arbiter and
+ * ResourceDefaultOwner (RDO).  When the Resource.granted signal occurs,
+ * the first tmp sample has been completed in theory.
+ *
+ * SimpleSensor uses a device addr (dev_addr).  This gets mapped to the
+ * appropriate client_id for use in the Resource arbitration system.  The
+ * mapping between cid and sensor address is shown below.
+ *
+ * The return value from the Read (readDone) is 16 bits.  We run in 12
+ * bit mode (not extended (EM)).  This gives us +/- 128 degrees C.  Each
+ * bit is 0.0625 degrees C.  The 12 bits are left aligned into 16 bits.
+ *
+ * We typically run the I2C bus at 400KHz which gives us a 20us byte time.
+ * It just doesn't make any sense to run this with interrupts.  That is why
+ * we use the I2CReg interface which runs to completion.
+ */
 
 module Tmp1x2P {
-  provides interface Read<uint16_t> as ReadTemp;
+
+  /*
+   * dev_addr is as follows:
+   *
+   * cid = client id, devaddr = device addr
+   *
+   * cid    devaddr
+   *   0    0x48        1001000 for ADD0 connected to ground
+   *   1    0x49        1001001 for ADD0 connected to V+
+   *   2    0x4a        1001010 for ADD0 connected to SDA
+   *   3    0x4b        1001011 for ADD0 connected to SCL
+   */
+
+  provides interface SimpleSensor<uint16_t>[uint8_t dev_addr];
   uses {
-    interface Resource;
     interface I2CReg;
-    interface I2CPacket<TI2CBasicAddr> as I2C;
+    interface Resource[uint8_t cid];
   }
 }
 implementation {
-  norace uint8_t state;
 
-#define DEVID	0x48	// use 0x48 = 1001000 for ADD0 connected to ground
-			//     0x49 = 1001001 for ADD0 connected to V+
-			//     0x4a = 1001010 for ADD0 connected to SDA
-			//     0x4b = 1001011 for ADD0 connected to SCL
+/*
+ * CONFIG gets shoved at the config register after we are done taking a
+ * reading.  It will shut the Tmp sensor down.  This is the lowest
+ * power state until the default owner pulls power.
+ */
 
-#define CONFIG (TMP1X2_CONFIG_RES_3 | TMP1X2_CONFIG_FAULT_1 \
-	| TMP1X2_CONFIG_4HZ   | TMP1X2_CONFIG_EM)
+#define CONFIG (TMP1X2_CONFIG_RES_3 | TMP1X2_CONFIG_SD | \
+                TMP1X2_CONFIG_4HZ | TMP1X2_CONFIG_AL)
 
+#define TMP_ADDR_BASE 0x48
+#define DEV_ADDR(cid) ((cid) + TMP_ADDR_BASE)
+#define CID(dev_addr) ((dev_addr) - TMP_ADDR_BASE)
 
-  task void signalDone() {
-    uint16_t d, *p;
+  command bool SimpleSensor.isPresent[uint8_t dev_addr]() {
+    bool rtn;
 
-    TOGGLE_TELL;
-    TOGGLE_TELL;
-    TOGGLE_TELL;
-    TOGGLE_TELL;
-    TOGGLE_TELL;
-    p = (uint16_t *) xbuf;
-    d = *p;
-    signal ReadTemp.readDone(SUCCESS, d);
-  }
-
-
-  command error_t ReadTemp.read() {
-    return call Resource.request();
-  }
-
-
-  event void Resource.granted() {
-    state = 0;
-    xbuf[0] = 2;			/* T_low register */
-    xbuf[1] = 0x1a;
-    xbuf[2] = 0xa1;
-    nop();
-    TOGGLE_TELL;
-    TOGGLE_TELL;
-    call I2C.write(I2C_START, DEVID, 1, xbuf);
-  }
-
-
-  async event void I2C.writeDone(error_t error, uint16_t addr, uint8_t length, uint8_t* data) {
-    nop();
-    switch (state) {
-      case 0:
-	state = 1;
-	call I2C.read(I2C_RESTART | I2C_STOP, DEVID, 2, &xbuf[1]);
-	break;
-
-      case 2:
-	state = 3;
-	call I2C.read(I2C_RESTART | I2C_STOP, DEVID, 2, &xbuf[1]);
-	break;
-
-      case 4:
-	state = 5;
-	call I2C.read(I2C_START | I2C_STOP, DEVID, 2, xbuf);
-	break;
-
-      case 99:
-	state = 99;
-	post signalDone();
-	break;
-
-      case 1:
-      case 3:
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-      default:
-	break;
+    if (call Resource.immediateRequest[CID(dev_addr)]()) {
+      /*
+       * if immediate request fails can't get the bus
+       * just FAIL.
+       */
+      return 0;                         /* say no one home */
     }
+    rtn = call I2CReg.slave_present(dev_addr);
+    call Resource.release[CID(dev_addr)]();
+    return rtn;
   }
 
 
-  async event void I2C.readDone(error_t error, uint16_t addr, uint8_t length, uint8_t* data) {
-    nop();
-    switch (state) {
-      case 1:
-	state = 2;
-	xbuf[0] = 0;
-	call I2C.write(I2C_START, DEVID, 1, xbuf);
-	break;
-
-      case 3:
-	state = 4;
-	xbuf[0] = 2;
-	call I2C.write(I2C_START | I2C_STOP, DEVID, 1, xbuf);
-	break;
-
-      case 5:
-	state = 99;
-	call I2C.read(I2C_START | I2C_STOP, DEVID, 2, xbuf);
-	break;
-
-      case 99:
-	state = 99;
-	post signalDone();
-	break;
-
-      case 0:
-      case 2:
-      case 4:
-      case 7:
-      default:
-	break;
-    }
+  command error_t SimpleSensor.read[uint8_t dev_addr]() {
+    return call Resource.request[CID(dev_addr)]();
   }
 
 
-#ifdef notdef
-  event void Resource.granted() {
+  event void Resource.granted[uint8_t cid]() {
     uint16_t d;
+    error_t rtn;
 
-    xbuf[0] = 0x1a;
-    xbuf[1] = 0x2a;
-    xbuf[2] = 0x3a;
-    xbuf[3] = 0x11;
-    xbuf[4] = 0x22;
-    xbuf[5] = 0x33;
-    xbuf[0] = 1;
-    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 0, xbuf);
-    nop();
-    xbuf[0] = 2;
-    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 1, NULL);
-    nop();
-    xbuf[0] = 3;
-    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 1, xbuf);
-    nop();
-    xbuf[0] = 4;
-    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 2, xbuf);
-    nop();
-    xbuf[0] = 5;
-    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 3, xbuf);
-    nop();
-    xbuf[0] = 6;
-    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 4, xbuf);
-    nop();
-    xbuf[0] = 7;
-    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 5, xbuf);
-    nop();
-    xbuf[0] = 8;
-    call I2CReg.reg_writeBlock(DEVID, TMP1X2_TEMP, 6, xbuf);
-    nop();
-
-#ifdef notdef
-    call I2CReg.reg_read16(DEVID,  TMP1X2_TEMP,   &d);
-    call I2CReg.reg_read16(DEVID,  TMP1X2_CONFIG, &d);
-
-    call I2CReg.reg_write16(DEVID, TMP1X2_CONFIG, CONFIG);
-    call I2CReg.reg_read16(DEVID,  TMP1X2_CONFIG, &d);
-
-    call I2CReg.reg_read16(DEVID, TMP1X2_TEMP, &d);
-    nop();
-#endif
-
-    signal ReadTemp.readDone(SUCCESS, d);
+    rtn = call I2CReg.reg_read16(DEV_ADDR(cid), TMP1X2_TEMP, &d);
+    signal SimpleSensor.readDone[DEV_ADDR(cid)](rtn, d);
   }
-#endif
+
+  default event void SimpleSensor.readDone[uint8_t dev_addr] (error_t error, uint16_t data) { }
+
+  default async command error_t Resource.request[uint8_t cid]()          { return FAIL; }
+  default async command error_t Resource.immediateRequest[uint8_t cid]() { return FAIL; }
+  default async command error_t Resource.release[uint8_t cid]()          { return FAIL; }
 
 }

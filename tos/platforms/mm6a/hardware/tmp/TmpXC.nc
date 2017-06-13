@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017 Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,40 +32,22 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include "Timer.h"
+/*
+ * See TmpPC for explanation of what's up with this driver port
+ */
 
-uint32_t state;
-
-module TestTmp1x2P {
-  uses {
-    interface Boot;
-    interface SimpleSensor<uint16_t> as TempSensor;
-    interface SimpleSensor<uint16_t> as X;
-    interface Timer<TMilli> as  TestTimer;
-  }
+configuration TmpXC {
+  provides interface SimpleSensor<uint16_t>;
 }
+
 implementation {
-  event void Boot.booted() {
-    call TestTimer.startPeriodic(1024);         /* about 1/min */
-  }
 
-  event void TestTimer.fired() {
-    if ((state & 1) == 0) {
-      call TempSensor.isPresent();
-      call TempSensor.read();
-    } else {
-      call X.isPresent();
-      call X.read();
-    }
-    state++;
-  }
+  /* see TmpPC */
+  enum {
+    TMP_CLIENT = 1,
+    TMP_ADDR   = 0x49,
+  };
 
-  event void TempSensor.readDone(error_t error, uint16_t data) {
-    nop();
-  }
-
-  event void X.readDone(error_t error, uint16_t data) {
-    nop();
-  }
+  components HplTmpC;
+  SimpleSensor = HplTmpC.SimpleSensor[TMP_ADDR];
 }
