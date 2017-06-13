@@ -38,7 +38,6 @@
 #include <panic.h>
 #include <platform_panic.h>
 #include <msp432.h>
-#include <platform_clk_defs.h>
 
 /*
  * The eUSCI for the UART is always clocked by SMCLK which is DCOCLK/2.  So

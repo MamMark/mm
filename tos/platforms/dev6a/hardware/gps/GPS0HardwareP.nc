@@ -38,7 +38,6 @@
 #include <panic.h>
 #include <platform_panic.h>
 #include <msp432.h>
-#include <platform_clk_defs.h>
 #include <gps.h>
 
 /*

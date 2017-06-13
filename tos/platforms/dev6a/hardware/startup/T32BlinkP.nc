@@ -1,9 +1,10 @@
+
+#include <hardware.h>
+
 module T32BlinkP {
   uses interface Boot;
 }
 implementation {
-
-#include <platform_clk_defs.h>
 
 #define T32_ENABLE TIMER32_CONTROL_ENABLE
 #define T32_32BITS TIMER32_CONTROL_SIZE

@@ -40,7 +40,6 @@
 
 #include "hardware.h"
 #include "cpu_stack.h"
-#include "platform_clk_defs.h"
 #include "platform_version.h"
 
 noinit uint32_t stack_size;

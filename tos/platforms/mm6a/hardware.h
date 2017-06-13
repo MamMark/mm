@@ -56,6 +56,9 @@
  */
 #include <msp432.h>
 #include <msp432_nesc.h>
+#include <platform_clk_defs.h>
+#include <platform_pin_defs.h>
+
 
 #if !defined(__MSP432P401R__)
 #warning Expected Processor __MSP432P401R__, not found
@@ -310,7 +313,5 @@
 enum {
   TOS_SLEEP_NONE = MSP432_POWER_ACTIVE,
 };
-
-#include <platform_pin_defs.h>
 
 #endif // __HARDWARE_H__
