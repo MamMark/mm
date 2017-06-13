@@ -59,6 +59,14 @@
  * SDs can typically be clocked up to 25MHz.
  * Radio (si4468) up to 10MHz.
  * Mems
+ *
+ * Peripheral divisors.  These determine divisors buried in configuration structures
+ * that are fed to the eUSCI hardware.
+ *
+ * SD_DIV       spi bus running the SD hard drive.
+ * RADIO_DIV    spi bus running the radio chip
+ * MEMS_DIV     spi bus running to the mems sensors.
+ * TMP_DIV      used for the i2c bus running the tmpP and tmpX temp sensors
  */
 
 #define T32_DIV_1   TIMER32_CONTROL_PRESCALE_0
@@ -78,6 +86,7 @@
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
 #define MSP432_MEMS_DIV    1
+#define MSP432_TMP_DIV     60
 #undef  USECS_BINARY
 
 #elif MSP432_CLK == 33554432
@@ -93,6 +102,7 @@
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
 #define MSP432_MEMS_DIV    1
+#define MSP432_TMP_DIV     42
 #define USECS_BINARY       1
 
 #elif MSP432_CLK == 24000000
@@ -108,6 +118,7 @@
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
 #define MSP432_MEMS_DIV    1
+#define MSP432_TMP_DIV     30
 #undef  USECS_BINARY
 
 #elif MSP432_CLK == 16777216
@@ -122,6 +133,7 @@
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
 #define MSP432_MEMS_DIV    1
+#define MSP432_TMP_DIV     21
 #define USECS_BINARY       1
 
 #elif MSP432_CLK == 10000000
@@ -137,6 +149,7 @@
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
 #define MSP432_MEMS_DIV    1
+#define MSP432_TMP_DIV     13
 #undef  USECS_BINARY
 
 #else
