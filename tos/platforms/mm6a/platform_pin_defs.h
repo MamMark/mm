@@ -194,6 +194,45 @@
 } while (0)
 
 
+/*
+ * TMP bus consists of two tmp sensors off of an I2C eUSCI.
+ * when the TMP bus is powered down we want to set the bus
+ * pins (SCL and SDA) to inputs.
+ *
+ * On initialization the pins are initially set to inputs
+ * and then kicked over to the module when the i2c bus
+ * is powered up.
+ */
+
+#define TMP_SDA_PORT    P6
+#define TMP_SDA_PIN     6
+#define TMP_SCL_PORT    P6
+#define TMP_SCL_PIN     7
+#define TMP_PWR_PORT    P4
+#define TMP_PWR_PIN     3
+
+#define TMP_PINS_PORT   do { \
+    BITBAND_PERI(TMP_SDA_PORT->SEL0, TMP_SDA_PIN) = 0; \
+    BITBAND_PERI(TMP_SCL_PORT->SEL0, TMP_SCL_PIN) = 0; \
+} while (0)
+
+
+#define TMP_PINS_I2C    do { \
+    BITBAND_PERI(TMP_SDA_PORT->SEL0, TMP_SDA_PIN) = 1; \
+    BITBAND_PERI(TMP_SCL_PORT->SEL0, TMP_SCL_PIN) = 1; \
+} while (0)
+
+
+/* nothing to do always powered on */
+#define TMP_I2C_PWR_ON  do { \
+    BITBAND_PERI(TMP_PWR_PORT->OUT, TMP_PWR_PIN) = 1; \
+} while (0)
+
+#define TMP_I2C_PWR_OFF do { \
+    BITBAND_PERI(TMP_PWR_PORT->OUT, TMP_PWR_PIN) = 0; \
+} while (0)
+
+
 #define TELL_PORT       P1
 #define TELL_PIN        2
 #define TELL_BIT        (1 << TELL_PIN)

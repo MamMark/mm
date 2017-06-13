@@ -867,11 +867,11 @@ void __Reset() {
   P5->DIR = 0xA7;
   P1->DIR = 0x6C;
 
-  P4->OUT = 0x30;                       /* turn 3V3 ON, LDO2, and Radio_EN_1V8 */
+  P4->OUT = 0x30;                       /* turn 3V3 ON, LDO2, and pwr Radio 1V8 */
   P4->DIR = 0xFD;
 
   P7->OUT = 0xF9;                       /* sd0 pwr on */
-  P7->DIR = 0xF8;                       /* amoung other things drive pwr_sd0_en 0 */
+  P7->DIR = 0xF8;                       /* among other things drive pwr_sd0_en 1 */
 
   __disable_irq();
   __watchdog_init();

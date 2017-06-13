@@ -175,8 +175,8 @@
  *       .3     0pI	                BSLTXD        .3	0pI     gps_tm   (ta1.1, pm)
  *       .4	1pIru   dock_attn PB2   BSLSTE        .4	0pI
  *       .5	0pI     gps_cts         BSLCLK        .5	0pI
- *       .6	0pI	                BSLSIMO       .6	0pI
- *       .7	0pI                     BSLSOMI       .7	0pI
+ *       .6	0pI	tmp_sda         BSLSIMO       .6	0pI
+ *       .7	0pI     tmp_scl         BSLSOMI       .7	0pI
  *
  * port 2.0	0pO	dock_led (LED2_RED)     port 8.0	0mO     TA1.0 (OUT0) (m2)
  *  01   .1	0pO	         (LED2_GREEN)    61 I .1	0pI
