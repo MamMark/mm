@@ -42,10 +42,8 @@ implementation {
   components SystemBootC, TestTmp1x2P as App;
   App.Boot -> SystemBootC.Boot;
 
-  components TmpPC;
-  App.TempSensor -> TmpPC;
-
-  components TmpXC;
+  components TmpPC, TmpXC;
+  App.P -> TmpPC;
   App.X -> TmpXC;
 
   components new TimerMilliC() as Timer;

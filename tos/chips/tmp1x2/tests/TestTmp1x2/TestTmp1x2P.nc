@@ -40,7 +40,7 @@ uint32_t state;
 module TestTmp1x2P {
   uses {
     interface Boot;
-    interface SimpleSensor<uint16_t> as TempSensor;
+    interface SimpleSensor<uint16_t> as P;
     interface SimpleSensor<uint16_t> as X;
     interface Timer<TMilli> as  TestTimer;
   }
@@ -52,8 +52,8 @@ implementation {
 
   event void TestTimer.fired() {
     if ((state & 1) == 0) {
-      call TempSensor.isPresent();
-      call TempSensor.read();
+      call P.isPresent();
+      call P.read();
     } else {
       call X.isPresent();
       call X.read();
@@ -61,7 +61,7 @@ implementation {
     state++;
   }
 
-  event void TempSensor.readDone(error_t error, uint16_t data) {
+  event void P.readDone(error_t error, uint16_t data) {
     nop();
   }
 
