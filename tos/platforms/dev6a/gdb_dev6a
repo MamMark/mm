@@ -1,6 +1,14 @@
 
 printf "\n***\n*** DEV6A gdb\n***\n\n"
 
+define hw_pwr
+printf "gm_1v8:  %d    3v3:    %d    radio_pwr: %d    vel_pwr:   %d\n", \
+    1, 1, 1, 1
+printf "tmp_pwr: %d    sd_pwr: %d    radio_sel: %d    press_pwr: %d\n, \
+    1, 1, 0, 1
+printf "scl:     %d\n", (($p1->IN >> 7) & 1)
+end
+
 define hw_radio
 printf "\nradio(ub2): cts: %d  irqN: %d  sdn: %d  csN: %d   siok\n", \
     (($p2->IN >> 4) & 1),  (($p5->IN >> 1) & 1), \
@@ -96,4 +104,19 @@ end
 
 define rg1
 set *$_gps_resetn     = 1
+end
+
+#
+# tmp i2c bus
+# tmp(ub0): pwr: 1    sdk
+#                O     MM
+#
+define hw_tmp
+printf "\ntmp(ub0): pwr: %d    sdk\n", 1
+printf "               %c     %c%c\n", 'O', \
+    ($p1->SEL0 & (1 << 6)) ? 'M' : 'p', ($p1->SEL0 & (1 << 7)) ? 'M' : 'p'
+__p_usci $ucb0 0 1 0d20
+end
+document hw_tmp
+display tmp i2c bus hardware state
 end

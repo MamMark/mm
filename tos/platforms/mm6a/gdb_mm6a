@@ -1,6 +1,16 @@
 
 printf "\n***\n*** MM6A gdb\n***\n\n"
 
+define hw_pwr
+printf "gm_1v8:  %d    3v3:    %d    radio_pwr: %d    vel_pwr:   %d\n", \
+    (($p5->OUT >> 0) & 1), (($p4->OUT >> 4) & 1), (($p4->OUT >> 5) & 1),  \
+    (($p5->OUT >> 1) & 1)
+printf "tmp_pwr: %d    sd_pwr: %d    radio_3V3: %d    press_pwr: %d\n", \
+    (($p4->OUT >> 3) & 1), (($p7->OUT >> 6) & 1), (($p4->OUT >> 0) & 1),  \
+    (($p5->OUT >> 2) & 1)
+printf "scl:     %d\n", (($p6->IN >> 7) & 1)
+end
+
 define hw_radio
 printf "\nradio(ub2): pwr: %d  sw: %d  cts: %d  irqN: %d  sdn: %d  csN: %d   siok\n", \
     (($p4->OUT >> 5) & 1), ($p4->OUT & 1), (($p4->IN >> 1) & 1),  \
@@ -98,4 +108,21 @@ end
 
 define rg1
 set *$_gps_resetn     = 1
+end
+
+#
+# tmp i2c bus
+# tmp(ub3): pwr: 1    sdk
+#                O     MM
+#
+define hw_tmp
+printf "\ntmp(ub3): pwr: %d    scl: %d    sdk\n", \
+    (($p4->OUT >> 3) & 1), (($p6->IN >> 7) & 1)
+printf "               %c         %c     %c%c\n\n", \
+    ($p4->DIR & (1<<3))?'O':'I', ($p6->DIR & (1<<7))?'O':'I', \
+    ($p6->SEL1 & (1 << 6)) ? 'M' : 'p', ($p6->SEL1 & (1 << 7)) ? 'M' : 'p'
+__p_usci $ucb3 3 1 0d23
+end
+document hw_tmp
+display tmp i2c bus hardware state
 end
