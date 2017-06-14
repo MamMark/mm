@@ -71,12 +71,23 @@
  *   gps_rx_off():
  *
  * This interface has been optimized for high-speed, where high-speed is
- * assumed to be something like 122880 Bbps (~8uS/byte).  On receive, the
+ * assumed to be something like 1228800 bps (~8uS/byte).  On receive, the
  * driver hands the incoming byte to the upper layer where simple
  * processing is performed, on return it is probable that another byte will
  * have arrived.  This continues until there is a gap in the incoming
  * stream.  If flow control is implemented, this can be used to force a
  * gap.
+ *
+ * We however, run the gps in UART mode at 115200.  The problem is interbyte
+ * times.  At 1228800, the interbyte time is ~8us.  Which effectively means
+ * when receiving a gps packet the processor is doing nothing else.  Further
+ * the overhead of the interrupt exacerbates the cost of doing each byte.
+ * This gets worse given that the gps can spit out multiple packets back to
+ * back.
+ *
+ * Things are more balanced at 115200 bps which has an interbyte time of
+ * ~87us.  Which gives the cpu time to get other work done.  This includes
+ * being able to process in some fashion the incoming packets.
  *
  * The upper level needs to be able to deal with a burst of packets and we
  * will tune the buffering to accommodate the typical conditions.  The hw
@@ -90,11 +101,21 @@
  * because the run to completion locks others out and take too long.  Gag.
  * So it has been removed.
  *
+ * Running at 115200 the sending occurs at 1 byte every ~87us which also
+ * gives the processor time to process other things that need to be done.
+ *
  * Alternatively, the hw driver can use dma to run the transmission, it
  * knows what the fixed size of the message it so this meshes well.  A dma
  * based split phase transmission is started using send_block() and
  * completes with the signal gps_send_block_done(); A block transmission
  * can be aborted using gps_send_block_stop();
+ *
+ * We run at 115200.  Its a good choice.  The downside is potentially
+ * we may have to keep the gps up longer while communicating.  The
+ * intent though is to run the gps using Micro Power Mode (MPM) where
+ * the GPS controls when it is running and when it is sleeping.  How
+ * long we stay up for communications becomes somewhat moot because
+ * we do not control power so have no say in the decision.
  *
  * @author Eric B. Decker <cire831@gmail.com>
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
