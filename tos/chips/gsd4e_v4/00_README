@@ -1,6 +1,6 @@
 
 This is a tinyos driver for a UART based Antenova M10478 GPS subsystem,
-based on the Sirf IV GSD4e chipset.
+based on the Sirf IV GSD4e chipset.  M10478_12MD-0050-2-PS.pdf
 
 We use the UART interface due to simplicity.  The SPI while having faster
 clocking has issues due to master/slave and no mechanism for data available
@@ -73,6 +73,10 @@ gps_nRTS [22]
 gps_nCTS [23]
 gps_RX   [21]
 gps_TX   [20]
+
+For the gps module to boot into UART mode, one must pull gps_nCTS high
+(pull up) and leave gps_nRTS floating.  The gps chip will boot into
+UART mode NMEA-4800.
 
 
 Message format:

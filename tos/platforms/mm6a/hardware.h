@@ -190,7 +190,7 @@
  * powered off all gps/mems pins should be inputs or low.
  *
  * Port: (0x4000_4C00)
- * port 1.0	0pI   A1 mag_drdy               port 7.0	1pIru B5 gps_cts
+ * port 1.0	0pI   A1 mag_drdy               port 7.0	1pIru B5 gps_cts(*)
  *  00 I .1	0pI   B1 mag_int                 60   .1	0pI   C5 gps_tm     (PM_TA1.1)
  *  02 O .2	0pO   C4 dock_sw_led_attn  TP31  62   .2	0pI   B4 gps_tx     (PM_UCA0RXD)
  *       .3     0pO   D4 sd1_csn           TP27       .3	1pO   A4 gps_rx     (PM_UCA0TXD)
@@ -240,12 +240,15 @@
  * port  6.0	0pI   J9 radio_gp0              port  J.0       0pI   J6 LFXIN  (32KiHz)
  *  41 I  .1	0pI   H7 radio_irqn             120 I  .1       0pO   J7 LFXOUT (32KiHz)
  *  43 O  .2	0pI   A9 gps_awake              122 O  .2       1pO   A6 gps_resetn
- *        .3	1pO   B9 mems_sclk  (B1)               .3       0pI   A5 gps_rts
+ *        .3	1pO   B9 mems_sclk  (B1)               .3       0pI   A5 gps_rts(*)
  *        .4	1pO   A8 mems_simo  (B1)               .4       0pI   B3
  *        .5	0pI   A7 mems_somi  (B1)               .5       0pI   A3 SWO
  *        .6	0pI   B8 tmp_sda(**)(B3)
  *        .7	0pI   B7 tmp_scl(**)(B3)
  *
+ * (*): gps_cts, gps_rts: The gps chip (the antenova M10478) needs gps_cts pulled high
+ *      and gps_rts floating to come up in UART mode.  The mm6a implements this by
+ *      using an internal pull up on gps_cts and leaves gps_rts as an input.
  *
  * (**) P6.6, 7: I2C SDA/SCL should not get any internal pull ups or pull downs.
  *      They are externally connected to pull ups connected to the 1V8_H bus

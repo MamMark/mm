@@ -174,7 +174,7 @@
  *  02 O .2	0pI	                BSLRXD   62   .2	1pIru   sd1_simo (A1,    pm)
  *       .3     0pI	                BSLTXD        .3	0pI     gps_tm   (ta1.1, pm)
  *       .4	1pIru   dock_attn PB2   BSLSTE        .4	0pI
- *       .5	0pI     gps_cts         BSLCLK        .5	0pI
+ *       .5	0pI     gps_cts(*)      BSLCLK        .5	0pI
  *       .6	0pI	tmp_sda         BSLSIMO       .6	0pI
  *       .7	0pI     tmp_scl         BSLSOMI       .7	0pI
  *
@@ -201,7 +201,7 @@
  *  23    .2	0mO	ACLK                     83 O  .2	1pIru   sd0_simo
  *        .3	0mO	MCLK/RTC                       .3	1pIru   sd0_somi
  *        .4	0mO	HSMCLK                         .4	0pI
- *        .5	0pI	gps_rts                        .5	0pI
+ *        .5	0pI	gps_rts(*)                     .5	0pI
  *        .6	0pI	                               .6	0pI
  *        .7	0pI	                               .7	0pI
  *
@@ -222,6 +222,10 @@
  *        .5	0pI                                    .5       0pI     TDO/SWO
  *        .6	0pI     Capture, C1.1
  *        .7	0pI     Capture, C1.0
+ *
+ * (*): gps_cts, gps_rts: The gps chip (gsd4e, sirfStar IV) needs gps_cts pulled high
+ *      and gps_rts floating to come up in UART mode.  The dev6a uses a 3V3 gps
+ *      module that has this physically wired on the board.
  */
 
 // enum so components can override power saving,
