@@ -739,7 +739,12 @@ implementation {
 	cp = (void *) config_prop_ptr;
 	continue;
       }
-      call Si446xCmd.send_config(cp, size);
+      nop();
+      // power up and frr control are handled elsewhere
+      if (!( (cp[0] == SI446X_CMD_POWER_UP) ||
+            ((cp[0] == SI446X_CMD_SET_PROPERTY) && (cp[1] == 2 /* FRR_CTL */))) ) {
+        call Si446xCmd.send_config(cp, size);
+      }
       cp += size;
       config_task_records++;
     }
