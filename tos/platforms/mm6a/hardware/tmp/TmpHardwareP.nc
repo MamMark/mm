@@ -43,6 +43,7 @@ module TmpHardwareP {
     interface ResourceDefaultOwner;
     interface Timer<TMilli>;
     interface HplMsp432Usci    as Usci;
+    interface Platform;
   }
 }
 implementation {

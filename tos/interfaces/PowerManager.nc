@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, 2017 Eric B. Decker
+ * Copyright (c) 2017 <your name here>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,23 +33,9 @@
  */
 
 /*
- * This is a test application for the Tmp1x2 + I2C driver.
+ * Interface to a Power Manager module
  */
 
-configuration TestTmp1x2C {
-}
-implementation {
-  components SystemBootC, TestTmp1x2P as App;
-  App.Boot -> SystemBootC.Boot;
-
-  components TmpPC, TmpXC;
-  App.P -> TmpPC;
-  App.X -> TmpXC;
-
-  components new TimerMilliC() as Timer;
-  App.TestTimer -> Timer;
-
-  components PowerManagerC;
-  App.PowerManager -> PowerManagerC;
-  App.Resource     -> TmpPC;
+interface PowerManager {
+  async command bool battery_connected();
 }

@@ -16,6 +16,7 @@ PFLAGS += -I%T/platforms/dev6a/hardware/startup
 PFLAGS += -I%T/platforms/dev6a/hardware/sd0
 PFLAGS += -I%T/platforms/dev6a/hardware/sd1
 PFLAGS += -I%T/platforms/dev6a/hardware/gps
+PFLAGS += -I%T/platforms/mm6a/hardware/pwr_mgr
 PFLAGS += -I%T/platforms/dev6a/hardware/si446x
 PFLAGS += -I%T/platforms/dev6a/hardware/tmp
 

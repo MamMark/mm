@@ -57,6 +57,7 @@
 
 configuration TmpPC {
   provides interface SimpleSensor<uint16_t>;
+  provides interface Resource;
 }
 
 implementation {
@@ -68,4 +69,5 @@ implementation {
 
   components HplTmpC;
   SimpleSensor = HplTmpC.SimpleSensor[TMP_ADDR];
+  Resource     = HplTmpC.Resource[TMP_CLIENT];
 }

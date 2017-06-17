@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, 2017 Eric B. Decker
+ * Copyright (c) 2017 <your name here>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,24 +32,59 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * This is a test application for the Tmp1x2 + I2C driver.
- */
-
-configuration TestTmp1x2C {
+module PowerManagerP {
+  provides interface PowerManager;
+  uses interface Platform;
 }
 implementation {
-  components SystemBootC, TestTmp1x2P as App;
-  App.Boot -> SystemBootC.Boot;
+  /*
+   * On the mm6a batt_con from the harvester isn't connected.
+   *
+   * Instead we look at tmp_scl.  If power is on this line should be
+   * pulled up.  We do the following:
+   *
+   * o remember previous state,
+   *     tmp_pwr_en
+   *     Module state of tmp_scl and tmp_sda
+   * o make tmp_scl an input
+   * o turn tmp_pwr_en on
+   * o check tmp_scl    if 1 -> battery is connect
+   * o                  if 0 -> not connected.
+   * o restore previous state.
+   *
+   * we wait up to 256 usecs before giving up.  When turning pwr on
+   * (OFF to ON on LDO1 tmp_pwr) it is charging a cap through a resistor
+   * this takes some time.
+   *
+   * We assume that SCL and SDA are by default set to be inputs when in
+   * Port mode.  This is done in pins_init in startup.c.
+   *
+   * comment about use of immediateRequest vs. bare
+   */
+  async command bool PowerManager.battery_connected() {
+    uint8_t  previous_pwr, previous_module;
+    uint8_t  rtn;
+    uint32_t t0;
 
-  components TmpPC, TmpXC;
-  App.P -> TmpPC;
-  App.X -> TmpXC;
+    if (TMP_GET_SCL)
+      return 1;
 
-  components new TimerMilliC() as Timer;
-  App.TestTimer -> Timer;
-
-  components PowerManagerC;
-  App.PowerManager -> PowerManagerC;
-  App.Resource     -> TmpPC;
+    rtn = 0;
+    previous_pwr    = TMP_GET_PWR_STATE;
+    previous_module = TMP_GET_SCL_MODULE_STATE;
+    TMP_PINS_PORT;
+    TMP_I2C_PWR_ON;
+    t0 = call Platform.usecsRaw();
+    while (1) {
+      if (TMP_GET_SCL) {
+        rtn = 1;
+        break;
+      }
+      if (call Platform.usecsRaw() - t0 > 256)
+        break;
+    }
+    if (previous_pwr == 0) TMP_I2C_PWR_OFF;
+    if (previous_module)   TMP_PINS_MODULE;
+    return rtn;
+  }
 }

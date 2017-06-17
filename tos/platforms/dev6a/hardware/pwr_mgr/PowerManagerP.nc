@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, 2017 Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,24 +32,34 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * This is a test application for the Tmp1x2 + I2C driver.
- */
-
-configuration TestTmp1x2C {
+module PowerManagerP {
+  provides interface PowerManager;
 }
 implementation {
-  components SystemBootC, TestTmp1x2P as App;
-  App.Boot -> SystemBootC.Boot;
+  /*
+   * On the dev6a there isn't a harvester nor anyway to turn
+   * power off to the tmp sensor bus.  Always on.
+   *
+   * o remember previous state,
+   *     tmp_pwr_en
+   *     Module state of tmp_scl and tmp_sda
+   * o make tmp_scl an input
+   * o turn tmp_pwr_en on
+   * o check tmp_scl    if 1 -> battery is connect   (always should rtn 1)
+   * o                  if 0 -> not connected.
+   * o restore previous state.
+   */
+  async command bool PowerManager.battery_connected() {
+    uint8_t previous_pwr, previous_module;
+    uint8_t rtn;
 
-  components TmpPC, TmpXC;
-  App.P -> TmpPC;
-  App.X -> TmpXC;
-
-  components new TimerMilliC() as Timer;
-  App.TestTimer -> Timer;
-
-  components PowerManagerC;
-  App.PowerManager -> PowerManagerC;
-  App.Resource     -> TmpPC;
+    previous_pwr    = TMP_GET_PWR_STATE;
+    previous_module = TMP_GET_SCL_MODULE_STATE;
+    TMP_I2C_PWR_ON;
+    TMP_PINS_PORT;
+    rtn = TMP_GET_SCL;
+    if (previous_module)   TMP_PINS_MODULE;
+    if (previous_pwr == 0) TMP_I2C_PWR_OFF;
+    return FALSE;
+  }
 }

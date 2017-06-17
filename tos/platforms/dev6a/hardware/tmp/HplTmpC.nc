@@ -49,6 +49,7 @@
 
 configuration HplTmpC {
   provides {
+    interface Resource[uint8_t cid];
     interface SimpleSensor<uint16_t>[uint8_t dev_addr];
   }
 }
@@ -60,6 +61,7 @@ implementation {
   components new ArbiterP(HW_TMP_MAX_SENSORS)           as ArbiterP;
   MainC.SoftwareInit -> QueueC;
   ArbiterP.Queue     -> QueueC;
+  Resource = ArbiterP;
 
 #ifdef TRACE_RESOURCE
   components TraceC;

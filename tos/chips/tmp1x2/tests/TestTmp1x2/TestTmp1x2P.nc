@@ -43,6 +43,8 @@ module TestTmp1x2P {
     interface SimpleSensor<uint16_t> as P;
     interface SimpleSensor<uint16_t> as X;
     interface Timer<TMilli> as  TestTimer;
+    interface PowerManager;
+    interface Resource;
   }
 }
 implementation {
@@ -51,6 +53,11 @@ implementation {
   }
 
   event void TestTimer.fired() {
+    nop();
+    call PowerManager.battery_connected();
+    call Resource.immediateRequest();
+    call PowerManager.battery_connected();
+    call Resource.release();
     if ((state & 1) == 0) {
       call P.isPresent();
       call P.read();
@@ -68,4 +75,6 @@ implementation {
   event void X.readDone(error_t error, uint16_t data) {
     nop();
   }
+
+  event void Resource.granted() { }
 }
