@@ -177,7 +177,7 @@
  * P4.4 pwr_3v3_en (LDO2, U4)
  * P7.6 pwr_sd0_en
  * P4.5 pwr_radio_en
- * P4.0 pwr_radio_sw
+ * P4.0 pwr_radio_3V3
  * P5.1 pwr_vel_en
  * P5.2 pwr_press_en
  *
@@ -219,7 +219,7 @@
  *       .6	1pO   J5 radio_sclk  (PM_UCB2CLK)
  *       .7	0pI   H6 radio_somi  (PM_UCB2SOMI)
  *
- * port  4.0	0pO   H9 pwr_radio_sw (vsel_1v8_3v3)
+ * port  4.0	0pO   H9 pwr_radio_3V3 (vsel_1v8_3v3), 1 says 3V3, 0 1V8
  *  21    .1	0pI   H8 radio_cts    (radio gp1)
  *  23    .2	0pO   G7 batt_sense_en
  *        .3	0pO   G8 pwr_tmp_en (LDO1, U4)
