@@ -85,9 +85,6 @@ const msp432_usci_config_t tmp_i2c_config = {
 
   /*
    * ResourceDefaultOwner.granted: power down the TMP bus.
-   *
-   * reconfigure connections to the TMP bus as input to avoid powering any
-   * chips and power off.
    */
 
   async event void ResourceDefaultOwner.granted() {
@@ -110,7 +107,7 @@ const msp432_usci_config_t tmp_i2c_config = {
    */
   async event void ResourceDefaultOwner.requested() {
     TMP_I2C_PWR_ON;
-    TMP_PINS_I2C;
+    TMP_PINS_MODULE;
     post tmp_timer_task();
   }
 
@@ -118,9 +115,25 @@ const msp432_usci_config_t tmp_i2c_config = {
     call ResourceDefaultOwner.release();
   }
 
+
+  /*
+   * takes some time to power the i2c bus up.  charging a cap
+   */
   async event void ResourceDefaultOwner.immediateRequested() {
+    uint32_t t0;
+
     TMP_I2C_PWR_ON;
-    TMP_PINS_I2C;
-    call ResourceDefaultOwner.release();
+    t0 = call Platform.usecsRaw();
+    while (1) {
+      if (TMP_GET_SCL) {
+        TMP_PINS_MODULE;
+        call ResourceDefaultOwner.release();
+        return;
+      }
+      if (call Platform.usecsRaw() - t0 > 256) {
+        TMP_I2C_PWR_OFF;
+        return;
+      }
+    }
   }
 }

@@ -186,6 +186,8 @@
 #define TMP_SDA_PIN     6
 #define TMP_SCL_PORT    P1
 #define TMP_SCL_PIN     7
+#define TMP_PWR_PORT
+#define TMP_PWR_PIN
 
 #define TMP_PINS_PORT   do { \
     BITBAND_PERI(TMP_SDA_PORT->SEL0, TMP_SDA_PIN) = 0; \
@@ -193,11 +195,20 @@
 } while (0)
 
 
-#define TMP_PINS_I2C    do { \
+#define TMP_PINS_MODULE do { \
     BITBAND_PERI(TMP_SDA_PORT->SEL0, TMP_SDA_PIN) = 1; \
     BITBAND_PERI(TMP_SCL_PORT->SEL0, TMP_SCL_PIN) = 1; \
 } while (0)
 
+
+/*
+ * always return SCL as being high.  This tells battery_connected that
+ * the battery is indeed up.   This is to fake out battery_connected
+ * and why we don't actually read SCL.
+ */
+#define TMP_GET_SCL_MODULE_STATE BITBAND_PERI(TMP_SCL_PORT->SEL0, TMP_SCL_PIN)
+#define TMP_GET_SCL              (1)
+#define TMP_GET_PWR_STATE        (1)
 
 /* nothing to do always powered on */
 #define TMP_I2C_PWR_ON  do { \

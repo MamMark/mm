@@ -228,6 +228,7 @@
     BITBAND_PERI(TMP_PWR_PORT->OUT, TMP_PWR_PIN) = 1; \
 } while (0)
 
+
 #define TMP_I2C_PWR_OFF do { \
     BITBAND_PERI(TMP_PWR_PORT->OUT, TMP_PWR_PIN) = 0; \
 } while (0)

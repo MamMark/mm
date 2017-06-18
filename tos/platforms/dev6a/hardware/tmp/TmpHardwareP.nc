@@ -110,7 +110,7 @@ const msp432_usci_config_t tmp_i2c_config = {
    */
   async event void ResourceDefaultOwner.requested() {
     TMP_I2C_PWR_ON;
-    TMP_PINS_I2C;
+    TMP_PINS_MODULE;
     post tmp_timer_task();
   }
 
@@ -120,7 +120,7 @@ const msp432_usci_config_t tmp_i2c_config = {
 
   async event void ResourceDefaultOwner.immediateRequested() {
     TMP_I2C_PWR_ON;
-    TMP_PINS_I2C;
+    TMP_PINS_MODULE;
     call ResourceDefaultOwner.release();
   }
 }

@@ -361,7 +361,7 @@ void __pins_init() {
   P3->OUT = 0x7B; P3->DIR = 0x7B;
   P4->OUT = 0x30; P4->DIR = 0xFD;
   P5->OUT = 0x81; P5->DIR = 0xA7;
-  P6->OUT = 0xD8; P6->DIR = 0xD8;
+  P6->OUT = 0x18; P6->DIR = 0x18;
   P7->OUT = 0xF9; P7->DIR = 0xF8;
   P8->OUT = 0x00; P8->DIR = 0x02;
   PJ->OUT = 0x04; PJ->DIR = 0x06;

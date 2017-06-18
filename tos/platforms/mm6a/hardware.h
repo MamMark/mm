@@ -243,9 +243,13 @@
  *        .3	1pO   B9 mems_sclk  (B1)               .3       0pI   A5 gps_rts
  *        .4	1pO   A8 mems_simo  (B1)               .4       0pI   B3
  *        .5	0pI   A7 mems_somi  (B1)               .5       0pI   A3 SWO
- *        .6	0pI   B8 tmp_sda    (B3)
- *        .7	0pI   B7 tmp_scl    (B3)
+ *        .6	0pI   B8 tmp_sda(**)(B3)
+ *        .7	0pI   B7 tmp_scl(**)(B3)
  *
+ *
+ * (**) P6.6, 7: I2C SDA/SCL should not get any internal pull ups or pull downs.
+ *      They are externally connected to pull ups connected to the 1V8_H bus
+ *      from the harvester.  They will be pull downs when _H power is off (Harvester).
  *
  * External connections:
  *
