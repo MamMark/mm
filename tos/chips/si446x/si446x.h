@@ -276,18 +276,18 @@
  *
  * Units T32khz.  100ms * 32.768 = 3277
  */
-#define SI446X_TX_TIMEOUT                   3277
-#define SI446X_RX_TIMEOUT                   3277
+#define SI446X_TX_TIMEOUT                   32768
+#define SI446X_RX_TIMEOUT                   32768
 
 /*
  * initial RSSI_THRESH (threshold) for rssi comparisons.  Stuffed into
  * MODEM_RSSI_THRESH (p204a).  RSSIs below this value will cause an
  * incoming packet to not be received (probably not a packet or signal
  * strength too low.
- */ 
+ */
 #define SI446X_INITIAL_RSSI_THRESH      0x20
 
-/* 
+/*
  * size of TX fifo when empty
  */
 #define SI446X_EMPTY_TX_LEN             64
