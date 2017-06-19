@@ -1327,6 +1327,28 @@ implementation {
    * Clear the flag in the pending information to denote handled.
    */
   fsm_event_t get_next_interrupt_event(volatile si446x_int_state_t *isp) {
+    if (isp->ph_pend & SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY) {
+      isp->ph_pend ^= SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY;
+      return E_TX_THRESH;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
+      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_SENT;
+      return E_PACKET_SENT;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
+      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
+      return E_RX_THRESH;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
+      isp->ph_pend ^= SI446X_PH_STATUS_CRC_ERROR;
+      // ignore the rx complete & thresh flags since crc error will drive state change
+      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL + SI446X_PH_STATUS_PACKET_RX;
+      return E_CRC_ERROR;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_RX) {
+      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_RX;
+      return E_PACKET_RX;
+    }
     if (isp->modem_pend & SI446X_MODEM_STATUS_INVALID_SYNC) {
       isp->modem_pend ^= SI446X_MODEM_STATUS_INVALID_SYNC;
       return E_INVALID_SYNC;
@@ -1339,32 +1361,6 @@ implementation {
       isp->modem_pend ^= SI446X_MODEM_STATUS_SYNC_DETECT;
       return E_SYNC_DETECT;
     }
-    if (isp->ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
-      isp->ph_pend ^= SI446X_PH_STATUS_CRC_ERROR;
-      // ignore the rx complete & thresh flags since crc error will drive state change
-      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL + SI446X_PH_STATUS_PACKET_RX;
-      return E_CRC_ERROR;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_RX) {
-      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_RX;
-      return E_PACKET_RX;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
-      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_SENT;
-      return E_PACKET_SENT;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
-      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
-      return E_RX_THRESH;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
-      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
-      return E_RX_THRESH;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY) {
-      isp->ph_pend ^= SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY;
-      return E_TX_THRESH;
-    }
     if (isp->chip_pend & SI446X_CHIP_STATUS_CMD_ERROR) {
 #ifdef notdef
       // should read chip status to get command error info
@@ -1374,13 +1370,17 @@ implementation {
       isp->chip_pend ^= SI446X_CHIP_STATUS_CMD_ERROR;
       return E_NONE;
     }
+    if (isp->modem_pend & SI446X_MODEM_STATUS_RSSI) {
+      isp->modem_pend ^= SI446X_MODEM_STATUS_RSSI;
+      return E_NONE;
+    }
 
     if (isp->ph_pend || isp->modem_pend || isp->chip_pend) {
       /* missed something */
       isp->ph_pend = 0;
-      isp->modem_pend = 0; 
+      isp->modem_pend = 0;
       isp->chip_pend = 0;
-      //      __PANIC_RADIO(19, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
+      //__PANIC_RADIO(19, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
     }
     return E_NONE;
   }
@@ -1421,28 +1421,29 @@ implementation {
   /*
    * process_interrupt
    *
-   * called from the tasklet, this routine processes all of the chip
+   * Called from the tasklet, this routine processes all of the chip
    * interrupt pending conditions.
-   * a single hardware interrupt can have pending information on multiple
+   * A single hardware interrupt can have pending information on multiple
    * chip related conditions.
-   * after clearing chip interrupt pending flags an additional check
+   * After clearing chip interrupt pending flags an additional check
    * occurs to prevent race condition with NIRQ changes when clearing
    * pending flags and missing a pending condition.
    */
   volatile norace si446x_int_state_t cur_int_state;
+  volatile norace si446x_int_clr_t   cur_int_clear;
   norace uint8_t radio_pend[4];
 
   void process_interrupt() {
     fsm_event_t ev;
-    volatile si446x_int_state_t *isp;
+    volatile si446x_int_state_t  *isp  =  &cur_int_state;
 
-    isp = &cur_int_state;
     while (TRUE) {
       call Si446xCmd.fast_all(radio_pend);
       call Si446xCmd.trace_radio_pend(radio_pend);
-      call Si446xCmd.ll_getclr_ints(isp);
-      if (!isp->ph_pend & !isp->modem_pend & !isp->chip_pend)
+      call Si446xCmd.ll_getclr_ints(NULL,isp);
+      if (!isp->ph_pend && !isp->modem_pend && !isp->chip_pend)
 	break;
+      // process only events of interest
       isp->ph_pend    &= SI446X_PH_INTEREST;
       isp->modem_pend &= SI446X_MODEM_INTEREST;
       isp->chip_pend  &= SI446X_CHIP_INTEREST;
