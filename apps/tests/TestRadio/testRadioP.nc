@@ -69,25 +69,19 @@ implementation {
   typedef struct test_msg {
     uint8_t       len;
     uint8_t       seq;
+    uint8_t       pa;
+    uint8_t       rssi;
     uint16_t      addr;
     test_mode_t   mode;
     uint8_t       data[0];
   } PACKED test_msg_t;
 
-  volatile uint8_t  txMsgBuffer[128] = {127, 1, 1, 1, 1, 1, \
-                                       'H', 'e', 'l', '1', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       'H', 'e', 'l', '2', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       'H', 'e', 'l', '3', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       'H', 'e', 'l', '4', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       'H', 'e', 'l', '5', 'o', 'H', 'e', 'l', 'l', 'o', \
-                                       'H', 'e', 'l', '6', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       'H', 'e', 'l', '7', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       'H', 'e', 'l', '8', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       'H', 'e', 'l', '9', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       'H', 'e', '0', 'l', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       'H', 'e', '1', 'l', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       'H', 'e', '2', 'l', 'o', 'H', 'e', 'l', 'l', 'o', \
-				       '!', 0 };
+  #define MSG_BUF_SIZE 256
+  volatile uint8_t  txMsgBuffer[MSG_BUF_SIZE];
+//    =   {"\x72\x1\x1\x1\x1\x1\x1\x1 123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345!789012345!128"};
+//  012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+//            1         2         3         4         5         6         7         8         9         0         1         2
+
   message_t       * pTosTxMsg = (message_t *) txMsgBuffer;
   test_msg_t      * pTxMsg = (test_msg_t *) txMsgBuffer;
   volatile uint8_t  pgMsgBuffer[256];
@@ -107,7 +101,13 @@ implementation {
     uint16_t        addr;
   } rc_t;
 
-  norace rc_t     rc;
+  norace rc_t     rc = {0,0,0,0,1000,2000,2000,60,11};
+  // rc.delay   = 1000;        // set timeout between radio checks
+  // rc.stby_delay = 2000;     // set timeout to wait in off mode
+  // rc.off_delay = 2000;      // set timeout to wait in standby mode
+  // rc.off_modulo  = 60;      // power cycle radio after every nth check
+  // rc.stby_modulo = 11;      // standby power radio after every nth check
+  // rc.addr    = TOS_NODE_ID;
 
   typedef struct {
     uint32_t        iterations;
@@ -122,7 +122,10 @@ implementation {
     bool            paused;
   } tx_t;
 
-  norace tx_t       tx;
+  norace tx_t       tx = {0,1000,0,0,0,0,128,RUN,0,0};
+  // tx.mode    = RUN;         // enable transmission
+  // tx.delay   = 1000;         // set timeout between transmssions
+  // tx.size    = 128
 
   typedef struct {
     uint32_t        iterations;
@@ -132,7 +135,8 @@ implementation {
     test_mode_t     mode;
   } rx_t;
 
-  norace rx_t     rx;
+  norace rx_t     rx = {0,0,0,0,RUN};
+  // rx.mode    = RUN;         // enable reception
 
   typedef struct {
     uint32_t        iterations;
@@ -179,7 +183,8 @@ implementation {
     if ((tx.mode == RUN) || (tx.mode == PING)) {
       pTxMsg->addr = rc.addr;
       pTxMsg->mode = tx.mode;
-      pTxMsg->seq = (uint8_t) ++tx.iterations; 
+      pTxMsg->seq = (uint8_t) ++tx.iterations;
+      pTxMsg->len = tx.size;
       error = call RadioSend.send(pTosTxMsg);
     } else if (pg.mode == PONG) {
       error = call RadioSend.send(pTosPgMsg);
@@ -246,7 +251,7 @@ implementation {
 
   tasklet_async event void RadioSend.ready() {
     nop();
-    if (!(tx.mode == DISABLED)) 
+    if (!(tx.mode == DISABLED))
       tx_check_waiting();
   }
 
@@ -431,19 +436,14 @@ implementation {
   }
 
   event void Boot.booted() {
+    uint32_t   x;
+
     nop();
     nop();
-    tx.mode    = RUN;         // enable transmission
-    rx.mode    = RUN;         // enable reception
-    pg.mode    = DISABLED;
-    tx.delay   = 100;         // set timeout between transmssions
-    rc.delay   = 1000;        // set timeout between radio checks
-    rc.stby_delay = 2000;     // set timeout to wait in off mode
-    rc.off_delay = 2000;      // set timeout to wait in standby mode
-    rc.off_modulo  = 60;      // power cycle radio after every nth check
-    rc.stby_modulo = 11;      // standby power radio after every nth check
-    //    rc.addr    = call Random.rand16() % 128; // pick a random value for link addr
     rc.addr    = TOS_NODE_ID;
+    for (x = 0; x < MSG_BUF_SIZE; x++) {
+      txMsgBuffer[x] = x;
+    }
     nop();
     call rcTimer.startOneShot(0);
   }
