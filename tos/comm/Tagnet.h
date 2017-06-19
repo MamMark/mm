@@ -37,7 +37,7 @@
 #ifndef __TAGNET_H__
 #define __TAGNET_H__
 
-#include "tagnetTLV.h"
+#include "TagnetTLV.h"
 
 typedef enum {
   TN_POLL                = 0,
