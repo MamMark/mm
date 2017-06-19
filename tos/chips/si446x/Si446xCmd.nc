@@ -222,18 +222,6 @@ interface Si446xCmd {
   async command void          start_rx_short();
 
   /**
-   * Read the radio pending status, using fast registers.
-   *
-   * #param     pend          pointer to buffer for returning the FFR values read
-   */
-  async command void          trace_radio_pend(uint8_t *pend);
-
-  /**
-   * Power on the radio chip.
-   */
-  async command void          unshutdown();
-
-  /**
    * Transition the radio chip to the transmit state.
    *
    * @param    data           total length of packet to send.
@@ -248,6 +236,18 @@ interface Si446xCmd {
    * @param    r1             argument 1
    */
   async command void          trace(trace_where_t where, uint16_t r0, uint16_t r1);
+
+  /**
+   * Read the radio pending status, using fast registers.
+   *
+   * @param     pend          pointer to buffer for returning the FFR values read
+   */
+  async command void          trace_radio_pend(uint8_t *pend);
+
+  /**
+   * Power on the radio chip.
+   */
+  async command void          unshutdown();
 
   /**
    * Write data into the radio chip transmit fifo.

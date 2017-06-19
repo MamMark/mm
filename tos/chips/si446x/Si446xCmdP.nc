@@ -227,7 +227,6 @@ const uint8_t start_rx_cmd[] = {
   0,                                  /* channel */
   0,                                  /* start immediate */
   0, 0,                               /* len, use variable length */
-  //  RC_RX,                              /* rxtimeout, stay, good boy */
   0,                                  /* rxtimeout, stay, good boy */
   0,                                  /* rxvalid */
   0,                                  /* rxinvalid */
@@ -236,7 +235,8 @@ const uint8_t start_rx_cmd[] = {
 /*
  * FRR_CTL_A_MODE (p0200)
  *
- * frr is set manually right after POWER_UP
+ * frr is set manually right after POWER_UP, will not be changed by any
+ * subsequent radio configuration.
  *
  * A: device state
  * B: PH_PEND
@@ -251,7 +251,6 @@ const uint8_t start_rx_cmd[] = {
 const uint8_t si446x_frr_config[] = { 0x11, 0x02, 0x04, 0x00,
 				      0x09, 0x04, 0x06, 0x0a
                                     };
-
 
 /**************************************************************************/
 
