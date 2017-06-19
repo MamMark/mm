@@ -54,8 +54,8 @@ implementation {
   components mmSyncC;
   components GPS0C;
 
-  FS.Boot -> MainC;                     // first up on the smorgasborg is FS
-  mmSyncC.Boot -> FS.OutBoot;           //        then write initial status
-  GPS0C.Boot -> mmSyncC.OutBoot;        //            and then GPS.
-  Boot = GPS0C.GPSBoot;                 // bring up everyone else
+  FS.Boot -> MainC;		 // first up on the smorgasborg is FS
+  mmSyncC.Boot -> FS.OutBoot;    //        then write initial boot record
+  GPS0C.Boot -> mmSyncC.OutBoot; //            and then GPS.
+  Boot = GPS0C.GPSBoot;          // bring up everyone else
 }
