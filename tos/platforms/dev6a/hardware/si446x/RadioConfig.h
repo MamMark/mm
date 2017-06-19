@@ -39,10 +39,13 @@
 #include <message.h>
 
 /*
- * Also include the platform dependent si446x definitions generated
- * from the SiLabs WDS program (Wireless Development Studio.
+ * Include the WDS generated, platform dependent, and device driver
+ * required configuration definitions for the Si446x radio.
  */
-#include "radio_platform.h"
+#include "Si446xConfigPlatform.h"
+#include "Si446xConfigWDS.h"
+#include "Si446xConfigDevice.h"
+
 
 //#define LOW_POWER_LISTENING
 
