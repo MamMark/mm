@@ -498,11 +498,10 @@ implementation {
    * fsm_trace related global variables and update routines. records state
    * machine execution details.
    */
-  tasklet_norace fsm_stage_info_t fsm_trace_array[40];
-  tasklet_norace uint8_t fsm_tp, fsm_tc;
-
-  //  uint8_t si446x_fast_latched_rssi();
-  //  uint8_t si446x_fast_device_state();
+#define FSM_MAX_TRACE   40
+  tasklet_norace fsm_stage_info_t fsm_trace_array[FSM_MAX_TRACE];
+  tasklet_norace uint16_t fsm_tp, fsm_tc, fsm_count;
+  const uint16_t fsm_max =  FSM_MAX_TRACE;
 
   void fsm_trace_start(fsm_event_t ev, fsm_state_t cs) {
     call Si446xCmd.trace(T_DL_TRANS_ST, ev, cs);
@@ -526,9 +525,11 @@ implementation {
     fsm_trace_array[fsm_tc].ns = ns.s;
     fsm_trace_array[fsm_tc].ne = ns.e;
     fsm_trace_array[fsm_tc].al_e = call RadioAlarm.isFree();
-    fsm_tp=fsm_tc;
-    if (++fsm_tc >= NELEMS(fsm_trace_array))
+    fsm_tp = fsm_tc;
+    if (++fsm_tc >= fsm_max)   //  >= NELEMS(fsm_trace_array))
       fsm_tc = 0;
+    fsm_count++;
+    fsm_trace_array[fsm_tc].ts_start = 0;
   }
 
   task void cmd_done_task();
@@ -1407,12 +1408,13 @@ implementation {
     fsm_trace_array[fsm_tc].chip = isp->chip_pend;
     fsm_trace_array[fsm_tc].ds = call Si446xCmd.fast_device_state();
     fsm_trace_array[fsm_tc].rssi = call Si446xCmd.fast_latched_rssi();
+
     int_trace_array[int_tc].time_stamp = call Platform.usecsRaw();
     int_trace_array[int_tc].ph_pend = isp->ph_pend;
     int_trace_array[int_tc].modem_pend = isp->modem_pend;
     int_trace_array[int_tc].chip_pend = isp->chip_pend;
-    int_trace_array[fsm_tc].ds = call Si446xCmd.fast_device_state();
-    int_trace_array[fsm_tc].delta = int_trace_array[int_tc].time_stamp - int_trace_prev_time;
+    int_trace_array[int_tc].ds = fsm_trace_array[fsm_tc].ds;
+    int_trace_array[int_tc].delta = int_trace_array[int_tc].time_stamp - int_trace_prev_time;
     int_trace_prev_time =  int_trace_array[int_tc].time_stamp;
     int_tp = int_tc;
     if (++int_tc >= NELEMS(int_trace_array))

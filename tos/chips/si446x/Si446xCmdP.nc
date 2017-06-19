@@ -109,26 +109,40 @@ const uint8_t si446x_local_config[] = {
 norace uint16_t rps_next, rps_prev;
 norace rps_t    rps[RPS_MAX];
 
-/* specify which radio parameters to dump
+/* SPI trace buffer
  */
-const dump_prop_desc_t dump_prop[] = {
-  { 0x0000, (void *) &rd.gr00_global,   SI446X_GROUP00_SIZE },
-  { 0x0100, (void *) &rd.gr01_int,      SI446X_GROUP01_SIZE },
-  { 0x0200, (void *) &rd.gr02_frr,      SI446X_GROUP02_SIZE },
-  { 0x1000, (void *) &rd.gr10_preamble, SI446X_GROUP10_SIZE },
-  { 0x1100, (void *) &rd.gr11_sync,     SI446X_GROUP11_SIZE },
-  { 0x1200, (void *) &rd.gr12_pkt,      SI446X_GROUP12_SIZE },
+#define SPI_TRACE_MAX 200
+norace   uint16_t           g_radio_spi_trace_next,
+                            g_radio_spi_trace_prev,
+                            g_radio_spi_trace_count;
+norace   spi_trace_desc_t   g_radio_spi_trace[SPI_TRACE_MAX];
+const    uint16_t           g_radio_spi_trace_max = SPI_TRACE_MAX;
+
+/* radio configuration/status dump
+ */
+norace radio_dump_t g_radio_dump;
+
+
+/* specify which radio property groups to dump
+ */
+const dump_prop_desc_t g_dump_group_list[] = {
+  { 0x0000, (void *) &g_radio_dump.GLOBAL,         SI446X_GROUP00_SIZE },
+  { 0x0100, (void *) &g_radio_dump.INT_CTL,        SI446X_GROUP01_SIZE },
+  { 0x0200, (void *) &g_radio_dump.FRR_CTL,        SI446X_GROUP02_SIZE },
+  { 0x1000, (void *) &g_radio_dump.PREAMBLE,       SI446X_GROUP10_SIZE },
+  { 0x1100, (void *) &g_radio_dump.SYNC,           SI446X_GROUP11_SIZE },
+  { 0x1200, (void *) &g_radio_dump.PKT,            SI446X_GROUP12_SIZE },
 #ifdef SI446X_GROUP12a_SIZE
-  { 0x1221, (void *) &rd.gr12a_pkt,     SI446X_GROUP12a_SIZE },
+  { 0x1221, (void *) &g_radio_dump.gr12a_pkt,      SI446X_GROUP12a_SIZE },
 #endif
-  { 0x2000, (void *) &rd.gr20_modem,    SI446X_GROUP20_SIZE },
-  { 0x2100, (void *) &rd.gr21_modem,    SI446X_GROUP21_SIZE },
-  { 0x2200, (void *) &rd.gr22_pa,       SI446X_GROUP22_SIZE },
-  { 0x2300, (void *) &rd.gr23_synth,    SI446X_GROUP23_SIZE },
-  { 0x3000, (void *) &rd.gr30_match,    SI446X_GROUP30_SIZE },
-  { 0x4000, (void *) &rd.gr40_freq_ctl, SI446X_GROUP40_SIZE },
-  { 0x5000, (void *) &rd.gr50_hop,      SI446X_GROUP50_SIZE },
-  { 0xF000, (void *) &rd.grF0_pti,      SI446X_GROUPF0_SIZE },
+  { 0x2000, (void *) &g_radio_dump.MODEM,          SI446X_GROUP20_SIZE },
+  { 0x2100, (void *) &g_radio_dump.MODEM_CHFLT,    SI446X_GROUP21_SIZE },
+  { 0x2200, (void *) &g_radio_dump.PAx,             SI446X_GROUP22_SIZE },
+  { 0x2300, (void *) &g_radio_dump.SYNTH,          SI446X_GROUP23_SIZE },
+  { 0x3000, (void *) &g_radio_dump.MATCH,         SI446X_GROUP30_SIZE },
+  { 0x4000, (void *) &g_radio_dump.FREQ_CTL,       SI446X_GROUP40_SIZE },
+  { 0x5000, (void *) &g_radio_dump.RX_HOP,        SI446X_GROUP50_SIZE },
+//  { 0xF000, (void *) &g_radio_dump.grF0_pti,      SI446X_GROUPF0_SIZE },
   { 0, NULL, 0 },
 };
 
@@ -275,6 +289,39 @@ implementation {
   uint8_t si446x_cca_threshold = SI446X_INITIAL_RSSI_THRESH;
 
 
+
+  /**************************************************************************/
+  /*
+   * Trace Radio SPI bus transfer event
+   */
+  void ll_si446x_spi_trace(spi_trace_record_t op, uint8_t id, uint8_t *b, uint8_t l) {
+    spi_trace_desc_t    *rspi;
+    uint16_t            x;
+
+    atomic {
+      if ((op == SPI_REC_UNDEFINED) || (op >= SPI_REC_LAST)) {
+        __PANIC_RADIO(20, op, id, l, 0);
+      }
+      rspi = &g_radio_spi_trace[g_radio_spi_trace_next];
+      rspi->timestamp = call Platform.usecsRaw();
+      rspi->op = op;
+      rspi->struct_id = id;
+      rspi->length = l;
+      if (l > SPI_TRACE_BUF_MAX) l = SPI_TRACE_BUF_MAX;
+      for (x = 0; x < l; x++)
+        rspi->buf[x] = b[x];
+      g_radio_spi_trace_prev = g_radio_spi_trace_next;
+      if (++g_radio_spi_trace_next >= g_radio_spi_trace_max) {
+        g_radio_spi_trace_next = 0;
+      }
+      g_radio_spi_trace_count++;
+      rspi = &g_radio_spi_trace[g_radio_spi_trace_next];
+      rspi->timestamp = 0;
+      rspi->op = SPI_REC_UNDEFINED;
+    }
+  }
+
+
   /**************************************************************************/
   /*
    * ll_si446x_trace
@@ -286,7 +333,7 @@ implementation {
 #define TRACE_TALK     4
 #define TRACE_SHOUT    8
 
-  void ll_si446x_trace(trace_where_t where, uint16_t r0, uint16_t r1) {
+  void ll_si446x_trace(trace_where_t where, uint32_t r0, uint32_t r1) {
     uint8_t    level;
 
     switch (where) {
@@ -393,6 +440,7 @@ implementation {
       result = call FastSpiByte.splitRead();
       call HW.si446x_clr_cs();
     }
+    ll_si446x_spi_trace(SPI_REC_READ_FRR, 0, &result, 1);
     return result;
   }
 
@@ -470,6 +518,7 @@ implementation {
       p[3] = call FastSpiByte.splitRead();
       call HW.si446x_clr_cs();
     }
+    ll_si446x_spi_trace(SPI_REC_READ_FRR, 0, p, 4);
   }
 
 
@@ -523,8 +572,10 @@ implementation {
           done = TRUE;
         }
       }
-      if (done)
+      if (done) {
+        ll_si446x_spi_trace(SPI_REC_SEND_CMD, c[0], (void *)c, cl);
         break;
+      }
 
       /*
        * oops.  if we get here someone grabbed the channel (mr. interrupt)
@@ -573,6 +624,7 @@ implementation {
     t1 = call Platform.usecsRaw();
     ctp->t_reply = t1 - t0;
     ctp->d_reply_len = l + 2;
+    ll_si446x_spi_trace(SPI_REC_GET_REPLY, cmd, r, l);
     ll_si446x_trace(T_RC_GET_REPLY, cmd, t1-t0);
   }
 
@@ -756,7 +808,7 @@ implementation {
       }
     }
     t1 = call Platform.usecsRaw();
-    dpp = &dump_prop[0];
+    dpp = &g_dump_group_list[0];
     while (dpp->where) {
       group = dpp->prop_id >> 8;
       idx = dpp->prop_id & 0xff;
@@ -790,7 +842,7 @@ implementation {
           ctp->t_cmd0 += t1 - t0;
           ctp->d_len0 += 4;
 
-          ll_si446x_get_reply(w, wl, 0xff);
+          ll_si446x_get_reply(w, wl, group);
         }
         ctp->t_cts_r     += ctp_ff->t_cts_r;
         ctp->t_reply     += ctp_ff->t_reply;
@@ -818,13 +870,13 @@ implementation {
 
     ll_si446x_trace(T_RC_DRF_ALL, 0, 0);
     SI446X_ATOMIC {
-      rd.dump_start = call Platform.usecsRaw();
+      g_radio_dump.dump_start = call Platform.usecsRaw();
 
       /* do CSN before we reset the SPI port */
-      rd.CSN_pin     = call HW.si446x_csn();
-      rd.CTS_pin     = call HW.si446x_cts();
-      rd.IRQN_pin    = call HW.si446x_irqn();
-      rd.SDN_pin     = call HW.si446x_sdn();
+      g_radio_dump.CSN_pin     = call HW.si446x_csn();
+      g_radio_dump.CTS_pin     = call HW.si446x_cts();
+      g_radio_dump.IRQN_pin    = call HW.si446x_irqn();
+      g_radio_dump.SDN_pin     = call HW.si446x_sdn();
 
       /*
        * make sure we don't violate the CS hold time of 80ns.  We use
@@ -842,48 +894,48 @@ implementation {
       t0 = call Platform.usecsRaw();
       while (call Platform.usecsRaw() - t0 < 2) ;
 
-      rd.cap_val     = call HW.si446x_cap_val();
-      rd.cap_control = call HW.si446x_cap_control();
+      g_radio_dump.cap_val     = call HW.si446x_cap_val();
+      g_radio_dump.cap_control = call HW.si446x_cap_control();
 
       ll_si446x_cmd_reply(si446x_part_info, sizeof(si446x_part_info),
-                          (void *) &rd.part_info, SI446X_PART_INFO_REPLY_SIZE);
+                          (void *) &g_radio_dump.part_info, SI446X_PART_INFO_REPLY_SIZE);
 
       ll_si446x_cmd_reply(si446x_func_info, sizeof(si446x_func_info),
-                          (void *) &rd.func_info, SI446X_FUNC_INFO_REPLY_SIZE);
+                          (void *) &g_radio_dump.func_info, SI446X_FUNC_INFO_REPLY_SIZE);
 
       ll_si446x_cmd_reply(si446x_gpio_cfg_nc, sizeof(si446x_gpio_cfg_nc),
-                          (void *) &rd.gpio_cfg, SI446X_GPIO_CFG_REPLY_SIZE);
+                          (void *) &g_radio_dump.gpio_cfg, SI446X_GPIO_CFG_REPLY_SIZE);
 
       ll_si446x_cmd_reply(si446x_fifo_info_nc, sizeof(si446x_fifo_info_nc),
                           rsp, SI446X_FIFO_INFO_REPLY_SIZE);
-      rd.rxfifocnt  = rsp[0];
-      rd.txfifofree = rsp[1];
+      g_radio_dump.rxfifocnt  = rsp[0];
+      g_radio_dump.txfifofree = rsp[1];
 
       ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                          (void *) &rd.ph_status, SI446X_PH_STATUS_REPLY_SIZE);
+                          (void *) &g_radio_dump.ph_status, SI446X_PH_STATUS_REPLY_SIZE);
 
       ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                          (void *) &rd.modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
+                          (void *) &g_radio_dump.modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
 
       ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                          (void *) &rd.chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
+                          (void *) &g_radio_dump.chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
 
       ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
-                          (void *) &rd.int_state, SI446X_INT_STATUS_REPLY_SIZE);
+                          (void *) &g_radio_dump.int_state, SI446X_INT_STATUS_REPLY_SIZE);
 
       ll_si446x_cmd_reply(si446x_device_state, sizeof(si446x_device_state),
                           rsp, SI446X_DEVICE_STATE_REPLY_SIZE);
-      rd.device_state = rsp[0];
-      rd.channel      = rsp[1];
+      g_radio_dump.device_state = rsp[0];
+      g_radio_dump.channel      = rsp[1];
 
-      ll_si446x_read_fast_status(rd.frr);
+      ll_si446x_read_fast_status(g_radio_dump.frr);
 
       ll_si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc),
-                          (void *) &rd.packet_info_len, SI446X_PACKET_INFO_REPLY_SIZE);
+                          (void *) &g_radio_dump.packet_info_len, SI446X_PACKET_INFO_REPLY_SIZE);
 
       ll_si446x_dump_properties();
-      rd.dump_end = call Platform.usecsRaw();
-      rd.delta =  rd.dump_end - rd.dump_start;
+      g_radio_dump.dump_end = call Platform.usecsRaw();
+      g_radio_dump.delta =  g_radio_dump.dump_end - g_radio_dump.dump_start;
     }
   }
 
@@ -923,11 +975,12 @@ implementation {
    * HW.interrupt
    */
   async event void HW.si446x_interrupt() {
+    uint8_t        status[4];
+
+    ll_si446x_read_fast_status(status);
     ll_si446x_trace(T_RC_INTERRUPT,
-		    (ll_si446x_read_frr(SI446X_GET_DEVICE_STATE) << 8)
-		    | ll_si446x_read_frr(SI446X_GET_PH_PEND),
-		    (ll_si446x_read_frr(SI446X_GET_MODEM_PEND) << 8)
-		    | ll_si446x_read_frr(SI446X_GET_LATCHED_RSSI)
+		    (status[0] << 8) | status[1],
+		    (status[2] << 8) | status[3]
 		    );
     signal Si446xCmd.interrupt();
   }
@@ -1251,7 +1304,8 @@ implementation {
       t1 = call Platform.usecsRaw();
     }
     t1 -= t0;
-    ll_si446x_trace(T_RC_READ_RX_FF, 0, 0);
+    ll_si446x_spi_trace(SPI_REC_RX_FIFO, 0, data, length);
+    ll_si446x_trace(T_RC_READ_RX_FF, t1, length);
   }
 
 
@@ -1402,6 +1456,7 @@ implementation {
       t1 = call Platform.usecsRaw();
       t1 -= t0;
     }
+    ll_si446x_spi_trace(SPI_REC_TX_FIFO, 0, data, length);
     ll_si446x_trace(T_RC_WRITE_TX_FF, 0, 0);
   }
 

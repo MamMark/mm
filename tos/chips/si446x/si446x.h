@@ -976,11 +976,11 @@ typedef struct {
   uint8_t               packet_info_len[2];
 
   /* properties */
-  uint8_t               gr00_global[SI446X_GROUP00_SIZE];
-  uint8_t               gr01_int[SI446X_GROUP01_SIZE];
-  uint8_t               gr02_frr[SI446X_GROUP02_SIZE];
-  uint8_t               gr10_preamble[SI446X_GROUP10_SIZE];
-  uint8_t               gr11_sync[SI446X_GROUP11_SIZE];
+  uint8_t               GLOBAL[SI446X_GROUP00_SIZE];
+  uint8_t               INT_CTL[SI446X_GROUP01_SIZE];
+  uint8_t               FRR_CTL[SI446X_GROUP02_SIZE];
+  uint8_t               PREAMBLE[SI446X_GROUP10_SIZE];
+  uint8_t               SYNC[SI446X_GROUP11_SIZE];
 
   /*
    * group12 defines various properties about packets including
@@ -991,27 +991,44 @@ typedef struct {
    * GROUP12a_SIZE to minimize how many Packet properites we add to the
    * radio dump.  Group12a starts at 0x1221, PKT_RX_FIELD_1_LENGTH.
    */
-  uint8_t               gr12_pkt[SI446X_GROUP12_SIZE];
+  uint8_t               PKT[SI446X_GROUP12_SIZE];
 #ifdef SI446X_GROUP12a_SIZE
   uint8_t               gr12a_pkt[SI446X_GROUP12a_SIZE];
 #endif
-  uint8_t               gr20_modem[SI446X_GROUP20_SIZE];
-  uint8_t               gr21_modem[SI446X_GROUP21_SIZE];
-  uint8_t               gr22_pa[SI446X_GROUP22_SIZE];
-  uint8_t               gr23_synth[SI446X_GROUP23_SIZE];
-  uint8_t               gr30_match[SI446X_GROUP30_SIZE];
-  uint8_t               gr40_freq_ctl[SI446X_GROUP40_SIZE];
-  uint8_t               gr50_hop[SI446X_GROUP50_SIZE];
-  uint8_t               grF0_pti[SI446X_GROUPF0_SIZE];
+  uint8_t               MODEM[SI446X_GROUP20_SIZE];
+  uint8_t               MODEM_CHFLT[SI446X_GROUP21_SIZE];
+  uint8_t               PAx[SI446X_GROUP22_SIZE];
+  uint8_t               SYNTH[SI446X_GROUP23_SIZE];
+  uint8_t               MATCH[SI446X_GROUP30_SIZE];
+  uint8_t               FREQ_CTL[SI446X_GROUP40_SIZE];
+  uint8_t               RX_HOP[SI446X_GROUP50_SIZE];
+//  uint8_t              grF0_pti[SI446X_GROUPF0_SIZE];
 } radio_dump_t;
-
-norace radio_dump_t rd;
 
 typedef struct {
   uint16_t  prop_id;
   uint8_t  *where;
   uint8_t   length;
 } dump_prop_desc_t;
+
+typedef enum {
+  SPI_REC_UNDEFINED   = 0,
+  SPI_REC_READ_FRR    = 1,
+  SPI_REC_SEND_CMD    = 2,
+  SPI_REC_GET_REPLY   = 3,
+  SPI_REC_RX_FIFO     = 4,
+  SPI_REC_TX_FIFO     = 5,
+  SPI_REC_LAST
+} spi_trace_record_t;
+
+#define SPI_TRACE_BUF_MAX  16
+typedef struct {
+  uint32_t              timestamp;
+  spi_trace_record_t    op;
+  uint8_t               struct_id;
+  uint8_t               length;
+  uint8_t               buf[SPI_TRACE_BUF_MAX];
+} spi_trace_desc_t;
 
 /*
  * global frr state info and constants for accessing
