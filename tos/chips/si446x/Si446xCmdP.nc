@@ -1139,10 +1139,16 @@ implementation {
    * return the list of config lists to be used to configure the 446x chip.
    * since configuration is a long process (around 10ms), the list is processed
    * by the a separate task managed by the driver.
+   *
+   * Both si446x_wds_config and si446x_device_config are simple byte arrays
+   * containing a sequence of Pascal-like strings (pstrings). Each pstring
+   * starts with the string length followed by the command, followed by
+   * command bytes.  The array is terminated by a zero length.
    */
-  const uint8_t *config_list[] = {si44631B_wds_config, si446x_local_config, NULL};
+  const uint8_t *config_list[] = {si446x_wds_config, si446x_device_config, NULL};
 
   async command uint8_t ** Si446xCmd.get_config_lists() {
+    nop();
     return (uint8_t **) config_list;
   }
 
