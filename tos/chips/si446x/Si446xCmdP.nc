@@ -601,39 +601,6 @@ implementation {
 
 
   /**************************************************************************/
-#ifdef notdef
-  /*
-   * ll_si446x_getclr_all_state
-   *
-   * get/clr all chip state.
-   * clr all pendings and return previous state in *allp.
-   * we grab and clear each of the individual blocks then grab int_status
-   * without doing any additional clears.
-   *
-   * This is debug code for observing most of the chip state.
-   */
-
-  void ll_si446x_getclr_all_state(volatile si446x_chip_all_t *allp) {
-    uint8_t pends[4];
-
-    ll_si446x_cmd_reply(si446x_int_clr, sizeof(si446x_int_clr),
-                        (void *) &allp->ints, SI446X_INT_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                        (void *) &allp->ph, SI446X_PH_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                        (void *) &allp->modem, SI446X_MODEM_STATUS_REPLY_SIZE);
-    ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                        (void *) &allp->chip, SI446X_CHIP_STATUS_REPLY_SIZE);
-    pends[DEVICE_STATE] = ll_si446x_read_frr(SI446X_GET_DEVICE_STATE);
-    pends[PH_STATUS]    = allp->ph.pend;
-    pends[MODEM_STATUS] = allp->modem.pend;
-    pends[LATCHED_RSSI] = allp->modem.latched_rssi;
-    ll_si446x_trace_radio_pend(pends);
-  }
-#endif
-
-
-  /**************************************************************************/
   /*
    * get current chip state -> *allp
    *
@@ -1190,23 +1157,34 @@ implementation {
    * clear chip interrupt pending status.
    * alternately method reads current status as well.
    */
-  async command void Si446xCmd.ll_clr_ints(uint8_t ph_clr, uint8_t modem_clr, uint8_t chip_clr) {
-    uint8_t              cmd[4];
+  async command void Si446xCmd.ll_clr_ints(uint8_t ph_clr,
+                                           uint8_t modem_clr,
+                                           uint8_t chip_clr) {
+    si446x_int_clr_t         cmd;
 
-    cmd[0] = SI446X_CMD_GET_INT_STATUS;
-    cmd[1] = ph_clr;
-    cmd[2] = modem_clr;
-    cmd[3] = chip_clr;
-
-    ll_si446x_send_cmd(cmd, 4);
+    cmd.cmd = SI446X_CMD_GET_INT_STATUS;
+    cmd.ph_pend = ph_clr;
+    cmd.modem_pend = modem_clr;
+    cmd.chip_pend = chip_clr;
+    ll_si446x_send_cmd((void *) &cmd, sizeof(cmd));
   }
   /*
    * get/clr interrupt state
    * clr all pendings and return previous state in *intp
    */
-  async command void Si446xCmd.ll_getclr_ints(volatile si446x_int_state_t *intp) {
-    ll_si446x_cmd_reply(si446x_int_clr, sizeof(si446x_int_clr),
-                        (void *) intp, SI446X_INT_STATUS_REPLY_SIZE);
+  async command void Si446xCmd.ll_getclr_ints(volatile si446x_int_clr_t   *int_clr_p,
+                                              volatile si446x_int_state_t *int_stat_p) {
+    si446x_int_clr_t          cmd;
+    uint8_t                   clen = sizeof(si446x_int_clr_t);
+
+    // if null clr ptr, then clear everything by sending just command
+    if (!int_clr_p) {
+      int_clr_p = &cmd;
+      clen = 1;
+    }
+    int_clr_p->cmd = SI446X_CMD_GET_INT_STATUS;
+    ll_si446x_cmd_reply((void *) int_clr_p, clen,
+                        (void *) int_stat_p, sizeof(si446x_int_state_t));
   }
 
 

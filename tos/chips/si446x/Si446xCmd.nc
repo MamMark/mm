@@ -156,7 +156,8 @@ interface Si446xCmd {
    *
    * #param     intp          pointer to buffer for interrupt pending results
    */
-  async command void          ll_getclr_ints(volatile si446x_int_state_t *intp);
+  async command void          ll_getclr_ints(volatile si446x_int_clr_t *int_clr_p,
+                                             volatile si446x_int_state_t *int_stat_p);
 
   /**
    * Turn radio chip power on.

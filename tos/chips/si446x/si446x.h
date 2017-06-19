@@ -900,6 +900,13 @@ typedef struct {
 } si446x_int_state_t;                   /* INT_STATUS, 0x20 */
 
 typedef struct {
+  uint8_t cmd;
+  uint8_t ph_pend;
+  uint8_t modem_pend;
+  uint8_t chip_pend;
+} si446x_int_clr_t;                     /* INT_STATUS, clear flags */
+
+typedef struct {
   uint8_t pend;
   uint8_t status;
 } si446x_ph_status_t;                   /* PH_STATUS, 0x21 */

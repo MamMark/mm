@@ -1066,19 +1066,20 @@ implementation {
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
     call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
-    call Si446xCmd.ll_clr_ints(SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
-			       SI446X_MODEM_RX_CLEAR_MASK,
-			       SI446X_CHIP_RX_CLEAR_MASK);
+    call Si446xCmd.ll_clr_ints(~SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
+			       ~SI446X_MODEM_RX_CLEAR_MASK,
+			       ~SI446X_CHIP_RX_CLEAR_MASK);
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
     pkt_len = *dp + 1;              // length of data field is first byte of msg
     call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, SI446X_FIFO_FLUSH_TX);
     if (tx_ff_free != SI446X_EMPTY_TX_LEN)   // fifo should be empty
-      __PANIC_RADIO(6, tx_ff_free, pkt_len, (parg_t) dp, 0);
+      __PANIC_RADIO(6, tx_ff_free, pkt_len, 0, (parg_t) dp);
     // find size to fill fifo max(pkt_len, tx_ff_free)
     global_ioc.tx_ff_index = (pkt_len < tx_ff_free) ? pkt_len : tx_ff_free;
     call Si446xCmd.write_tx_fifo(dp, global_ioc.tx_ff_index);
     call Si446xCmd.start_tx(pkt_len);
     start_alarm(SI446X_TX_TIMEOUT);
+
     return fsm_results(t->next_state, E_NONE);
   }
 
