@@ -34,6 +34,7 @@
 
 module PowerManagerP {
   provides interface PowerManager;
+  uses     interface Platform;
 }
 implementation {
   /*
@@ -50,16 +51,29 @@ implementation {
    * o restore previous state.
    */
   async command bool PowerManager.battery_connected() {
-    uint8_t previous_pwr, previous_module;
-    uint8_t rtn;
+    uint8_t  previous_pwr, previous_module;
+    uint8_t  rtn;
+    uint32_t t0;
 
+    if (TMP_GET_SCL)
+      return 1;
+
+    rtn = 0;
     previous_pwr    = TMP_GET_PWR_STATE;
     previous_module = TMP_GET_SCL_MODULE_STATE;
-    TMP_I2C_PWR_ON;
     TMP_PINS_PORT;
-    rtn = TMP_GET_SCL;
-    if (previous_module)   TMP_PINS_MODULE;
+    TMP_I2C_PWR_ON;
+    t0 = call Platform.usecsRaw();
+    while (1) {
+      if (TMP_GET_SCL) {
+        rtn = 1;
+        break;
+      }
+      if (call Platform.usecsRaw() - t0 > 256)
+        break;
+    }
     if (previous_pwr == 0) TMP_I2C_PWR_OFF;
-    return FALSE;
+    if (previous_module)   TMP_PINS_MODULE;
+    return rtn;
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 <your name here>
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,11 +30,20 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @author: Eric B. Decker <cire831@gmail.com>
  */
 
 module PowerManagerP {
-  provides interface PowerManager;
-  uses interface Platform;
+  provides {
+    interface PowerManager;
+    interface Boot as LowPowerBoot;     /* outgoing */
+    interface Boot as NormalPowerBoot;  /* outgoing */
+  }
+  uses {
+    interface Boot;
+    interface Platform;
+  }
 }
 implementation {
   /*
@@ -59,7 +68,19 @@ implementation {
    * We assume that SCL and SDA are by default set to be inputs when in
    * Port mode.  This is done in pins_init in startup.c.
    *
-   * comment about use of immediateRequest vs. bare
+   * This routine can be called either bare or from within an
+   * immediateRequest/Release block.
+   *
+   * On startup, battery_connected is called to determine our startup
+   * mode.  This can be a bare call, no one else is running.
+   *
+   * Another use for base is when we Panic.  One of Panic's jobs is to
+   * write out system state to mass storage.  However if we are in
+   * low power mode we don't want to do this.  Bare call.
+   *
+   * The immediateRequest call is used if one needs to check power mode
+   * while the system is running.  The immediateRequest (if it succeeds)
+   * will lock out other users so they interfer with the status check.
    */
   async command bool PowerManager.battery_connected() {
     uint8_t  previous_pwr, previous_module;
@@ -87,4 +108,21 @@ implementation {
     if (previous_module)   TMP_PINS_MODULE;
     return rtn;
   }
+
+
+  /*
+   * Gets signalled on Main boot.  check to see what power
+   * mode we are in currently.  If low power then signal
+   * LowPowerBoot.  Otherwise signal NormalPowerBoot.
+   */
+  event void Boot.booted() {
+    if (call PowerManager.battery_connected())
+      signal NormalPowerBoot.booted();
+    else
+      signal LowPowerBoot.booted();
+    return;
+  }
+
+  default event void LowPowerBoot.booted() { }
+
 }

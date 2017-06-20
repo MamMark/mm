@@ -52,21 +52,11 @@
  */
 
 configuration PowerManagerC {
-  provides {
-    interface PowerManager;
-    interface Boot as LowPowerBoot;     /* outgoing */
-    interface Boot as NormalPowerBoot;  /* outgoing */
-  }
-  uses {
-    interface Boot;                     /* incoming */
-  }
+  provides interface PowerManager;
 }
 implementation {
   components PowerManagerP;
   PowerManager    = PowerManagerP;
-  Boot            = PowerManagerP.Boot;
-  LowPowerBoot    = PowerManagerP.LowPowerBoot;
-  NormalPowerBoot = PowerManagerP.NormalPowerBoot;
 
   components PlatformC;
   PowerManagerP.Platform -> PlatformC;

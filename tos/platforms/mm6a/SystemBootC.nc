@@ -36,26 +36,45 @@
  * Sequence the bootup.  Components that should fire up when the
  * system is completely booted should wire to SystemBootC.Boot.
  *
+ * 0) Check for Low Power
+ *    low power -> start the low power boot chain
+ *    normal power -> start the normal boot chain
+ *
+ * Normal chain
  * 1) Bring up the SD/StreamStorage, FileSystem
  * 3) Collect initial status information (Restart and Version)  mmSync
  * 4) Bring up the GPS.  (GPS assumes SS is up)
+ *
+ * Low power chain
+ * not yet defined.
  */
 
+/*
+ * Signals Boot.booted for normal power up
+ * Signals BootLow.booted for low power start up.
+ */
 configuration SystemBootC {
   provides interface Boot;
-  uses interface Init as SoftwareInit;
+  provides interface Boot as BootLow;
+  uses interface Init     as SoftwareInit;
 }
-
 implementation {
   components MainC;
   SoftwareInit = MainC.SoftwareInit;
 
-  components FileSystemC as FS;
+  components PowerManagerC;
+  components FileSystemC;
   components mmSyncC;
   components GPS0C;
 
-  FS.Boot -> MainC;                     // first up on the smorgasborg is FS
-  mmSyncC.Boot -> FS.OutBoot;           //        then write initial status
+  PowerManagerC.Boot -> MainC;          // first check for power state
+
+  /* Low Power Chain */
+  BootLow = PowerManagerC.LowPowerBoot;
+
+  /* Normal Power Chain */
+  FileSystemC.Boot -> PowerManagerC.NormalPowerBoot; // start up file system
+  mmSyncC.Boot -> FileSystemC.OutBoot;  //        then write initial status
   GPS0C.Boot -> mmSyncC.OutBoot;        //            and then GPS.
   Boot = GPS0C.GPSBoot;                 // bring up everyone else
 }
