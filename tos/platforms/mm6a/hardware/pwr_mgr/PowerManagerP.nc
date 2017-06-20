@@ -43,6 +43,7 @@ module PowerManagerP {
   uses {
     interface Boot;
     interface Platform;
+    interface Panic;
   }
 }
 implementation {
@@ -123,6 +124,9 @@ implementation {
     return;
   }
 
-  default event void LowPowerBoot.booted() { }
+  default event void LowPowerBoot.booted() {
+    call Panic.panic(PANIC_PWR, 1, 0, 0, 0, 0);
+  }
 
+  async event void Panic.hook() { }
 }

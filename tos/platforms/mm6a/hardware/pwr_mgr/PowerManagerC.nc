@@ -68,6 +68,7 @@ implementation {
   LowPowerBoot    = PowerManagerP.LowPowerBoot;
   NormalPowerBoot = PowerManagerP.NormalPowerBoot;
 
-  components PlatformC;
+  components PlatformC, PanicC;
   PowerManagerP.Platform -> PlatformC;
+  PowerManagerP.Panic    -> PanicC;
 }
