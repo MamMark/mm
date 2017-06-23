@@ -33,7 +33,7 @@
  */
 
 /**
- * Define the interface to Gsd4e GPS chips using the Port Abstractionish.
+ * Define the interface to Gsd4e GPS chips using Port Abstractionish.
  *
  * Following pins can be manipulated:
  *

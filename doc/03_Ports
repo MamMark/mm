@@ -1,11 +1,12 @@
 
+
 TinyOS needs a port abstraction and/or architecture.
 
 * What is a Port?
 
 A port is a hardware interface provided by the platform.  It is inherently
 platform specific.  The naming is platform specific.  For example, a
-platform may provide two SD port, SD0 and SD1.  Likewise, two temperature
+platform may provide two SD ports, SD0 and SD1.  Likewise, two temperature
 sensors could be provided as TmpP (temp platform) and TmpX (temp external).
 
 
@@ -13,16 +14,19 @@ sensors could be provided as TmpP (temp platform) and TmpX (temp external).
 
 A port provides the abstraction and defines the actual interface of the
 underlying hardware that a given driver needs to implement its functions.
+Typically, a given driver will specify what it needs from its port via
+an interface description.  For example, the gps driver, gsd4e_v4, defines
+its hardware interface in the file Gsd4eUHardware.nc (which is an inteface
+specification).
 
 A driver will need a particular definition for what it needs when talking
-to the hardware used to implement the underlying hardware design.  For
-example the gsd4e_v4 driver defines what its hardware interface looks like
-in Gsd4eUHardware.nc.  This defines what pins need to be manipulated along
-with what data movement and access look like.
+to the hardware used to implement the underlying hardware design.  A
+interface description will define what pins need to be manipulated along
+with data movement and access.
 
-The platform then needs to provide a Port that provides that interface.  This
-involves providing the appropriate hardware linkages and which particular
-hardware port is connected to the hardware the driver is connected to.
+A platform then provides this interface via a Port.  The Port will define
+how each of the defined parts is implemented and what underlying hardware
+is actually assigned to the interface instance.
 
 
 * Port Instantiation
@@ -48,6 +52,7 @@ ie.  tos/platforms/dev6a/hardware/gps           gps port
 
 <Port><n>C      highest level that exports the Port interface
                 actual interface is dependent on what the port is.
+                <Port> is the name of the port, ie. GPS0.
 
 Hpl<Port><n>C   Hardware Presentation
                 collects the different pieces of the port's h/w and
@@ -62,13 +67,13 @@ Hpl<Port><n>C   Hardware Presentation
 
 A singleton GPS port provided as GPS0.
 
-(tos/chips/gsd4e_v4)
-(tos/platforms/dev6a/hardware/gps)
+(tos/chips/gsd4e_v4)                    the driver
+(tos/platforms/dev6a/hardware/gps)      the Port instantiation
 
 GPS0C:  top level of GPS driver stack.
-    GPSState    provides mechanism for turning GPS on off, control state
+    GPSState    provides a mechanism for turning GPS on off, control state
                 gps requests, gps power management requests
-    GPSReceive  mechanism for passing received gps messages to rest
+    GPSReceive  mechanism for passing received gps messages to upper layers
                 of the system.
 
     instantiates the driver Gsd4eUP (tos/chips/gsd4e_v4)
@@ -111,8 +116,8 @@ GPS0HardwareP
 
 A replicated SD implementation.
 
-(tos/chips/sd)
-(tos/platforms/dev6a/hardware/sd{0,1})
+(tos/chips/sd)                          driver
+(tos/platforms/dev6a/hardware/sd{0,1})  ports
 
 A given SD chip can be accessed by multiple clients.  The entire driver is
 controlled by a top level arbiter, SD0_ArbC.  Power for the SD is controlled
@@ -159,8 +164,8 @@ We use an arbiter at a low level to arbitrate the bus as well as power
 to the sensors.  The driver arbitrates on behalf of a given device and the
 ResourceDefaultOwner (via the Arbiter) controls turning power off and on.
 
-(tos/chips/tmp1x2/Tmp1x2P)      driver
-(tos/platforms/dev6a/hardware/tmp)
+(tos/chips/tmp1x2/Tmp1x2P)              driver
+(tos/platforms/dev6a/hardware/tmp)      port (2 ports)
 
 TmpP            top level, exports underlying h/w
 TmpX            wires to appropriate interface depending on device addr
