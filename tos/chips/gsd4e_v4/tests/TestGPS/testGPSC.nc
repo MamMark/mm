@@ -6,7 +6,7 @@
 configuration testGPSC {}
 implementation {
   components testGPSP, SystemBootC;
-  testGPSP.Boot -> SystemBootC;
+  testGPSP.Boot -> SystemBootC.Boot;
 
   components PlatformC;
   components GPS0C as GpsPort;

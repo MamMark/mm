@@ -9,6 +9,7 @@ uint16_t tt0, tt1;
 uint32_t recv_count;
 
 module testGPSP {
+  provides interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXYZ;
   uses {
     interface Boot;
     interface GPSState;
@@ -31,6 +32,7 @@ implementation {
   };
 
   int               state;
+  uint32_t          m_x, m_y, m_z;
 
   task void test_task() {
 #ifdef notdef
@@ -131,9 +133,21 @@ implementation {
     }
   }
 
+
+  command bool InfoSensGpsXYZ.get_value(tagnet_gps_xyz_t *t, uint8_t *l) {
+    t->gps_x = m_x;
+    t->gps_y = m_y;
+    t->gps_z = m_z;
+    *l = TN_GPS_XYZ_LEN;
+  }
+
+
   event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
         uint32_t arrival_ms, uint32_t mark_j) {
     nop();
     recv_count++;
+    m_x = recv_count;
+    m_y = m_x + 1;
+    m_z = m_y + 1;
   }
 }
