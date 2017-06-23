@@ -43,7 +43,7 @@ typedef enum {
   TN_TLV_NONE       = 0,
   TN_TLV_STRING     = 1,
   TN_TLV_INTEGER    = 2,
-  TN_TLV_GPS_POS    = 3,
+  TN_TLV_GPS_XYZ    = 3,
   TN_TLV_UTC_TIME   = 4,
   TN_TLV_NODE_ID    = 5,
   TN_TLV_NODE_NAME  = 6,
@@ -84,7 +84,7 @@ typedef enum {
   TN_INFO_NID_ID,
   TN_INFO_SENS_ID,
   TN_INFO_SENS_GPS_ID,
-  TN_INFO_SENS_GPS_POS_ID,
+  TN_INFO_SENS_GPS_XYZ_ID,
 
   TN_LAST_ID
 } tn_ids_t;
@@ -118,7 +118,7 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   {TN_INFO_NID_ID,TN_BCAST_NID_TLV,"\1\13info_nid help",UQ_TN_INFO_NID},
   {TN_INFO_SENS_ID,"\001\004sens","\001\011sensor help",UQ_TN_INFO_SENS},
   {TN_INFO_SENS_GPS_ID,"\001\003gps","\001\013sens_gps help",UQ_TN_INFO_SENS_GPS},
-  {TN_INFO_SENS_GPS_POS_ID,"\001\003pos","\001\017sens_gps_pos help",UQ_TN_INFO_SENS_GPS_POS},
+  {TN_INFO_SENS_GPS_POS_ID,"\001\003pos","\001\017sens_gps_xyz help",UQ_TN_INFO_SENS_GPS_XYZ},
 };
 
 /*
@@ -139,5 +139,15 @@ void tn_trace_rec(tn_ids_t id, uint8_t loc) {
   tn_trace_array[tn_trace_index].loc = loc;
   if (tn_trace_index < TN_TRACE_PARSE_ARRAY_SIZE) tn_trace_index++;
 }
+
+
+typedef struct {
+  uint32_t gps_x;
+  uint32_t gps_y;
+  uint32_t gps_z;
+} tagnet_gps_xyz_t;
+
+#define TN_GPS_XYZ_LEN (sizeof(tagnet_gps_xyz_t))
+
 
 #endif

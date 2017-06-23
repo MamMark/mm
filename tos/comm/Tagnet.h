@@ -81,12 +81,12 @@ typedef struct tagnet_payload_meta_t {
 #define UQ_TN_POLL_CNT          "UQ_TN_POLL_CNT"
 #define UQ_TN_SENS              "UQ_TN_SENS"
 #define UQ_TN_SENS_GPS          "UQ_TN_SENS_GPS"
-#define UQ_TN_SENS_GPS_POS      "UQ_TN_SENS_GPS_POS"
+#define UQ_TN_SENS_GPS_XYZ      "UQ_TN_SENS_GPS_XYZ"
 #define UQ_TN_INFO              "UQ_TN_INFO"
 #define UQ_TN_INFO_NID          "UQ_TN_INFO_NID"
 #define UQ_TN_INFO_SENS         "UQ_TN_INFO_SENS"
 #define UQ_TN_INFO_SENS_GPS     "UQ_TN_INFO_SENS_GPS"
-#define UQ_TN_INFO_SENS_GPS_POS "UQ_TN_INFO_SENS_GPS_POS"
+#define UQ_TN_INFO_SENS_GPS_XYZ "UQ_TN_INFO_SENS_GPS_XYZ"
 
 #define UQ_TAGNET_ADAPTER_LIST  "UQ_TAGNET_ADAPTER_LIST"
 

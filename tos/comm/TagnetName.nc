@@ -71,12 +71,12 @@ interface TagnetName {
    */
   command tagnet_tlv_t*    first_element(message_t *msg);
   /**
-   * Get pointer to gps_pos tlv in name
+   * Get pointer to gps_xyz tlv in name
    *
    * @param   msg           pointer to message buffer containing the name
-   * @return  tagnet_tlv_t  pointer to gps position tlv
+   * @return  tagnet_tlv_t  pointer to gps xyz position tlv
    */
-  command tagnet_tlv_t*    get_gps_pos(message_t *msg);
+  command tagnet_tlv_t*    get_gps_xyz(message_t *msg);
   /**
    * Get length of name in message
    *
@@ -120,11 +120,11 @@ interface TagnetName {
    */
   command void              reset_name(message_t* msg);
   /**
-   * Set index of gps_pos to current 'this' tlv
+   * Set index of gps_xyz to current 'this' tlv
    *
    * @param   msg           pointer to message buffer containing the name
    */
-  command void              set_gps_pos(message_t *msg);
+  command void              set_gps_xyz(message_t *msg);
   /**
    * Set index of node_id tlv to current 'this' tlv
    *

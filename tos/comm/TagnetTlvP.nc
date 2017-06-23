@@ -36,7 +36,7 @@
  *   TN_TLV_NONE=0,<br>
  *   TN_TLV_STRING=1,<br>
  *   TN_TLV_INTEGER=2,<br>
- *   TN_TLV_GPS_POS=3,<br>
+ *   TN_TLV_GPS_XYZ=3,<br>
  *   TN_TLV_UTC_TIME=4,<br>
  *   TN_TLV_NODE_ID=5,<br>
  *   TN_TLV_NODE_NAME=6,<br>
@@ -193,7 +193,7 @@ implementation {
     switch (t->typ) {
       case TN_TLV_OFFSET:
       case TN_TLV_NODE_ID:
-      case TN_TLV_GPS_POS:
+      case TN_TLV_GPS_XYZ:
       case TN_TLV_UTC_TIME:
         return TRUE;
       default:

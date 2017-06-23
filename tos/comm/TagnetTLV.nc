@@ -117,7 +117,7 @@ interface TagnetTLV {
    * Represent the tlv in a human readable format. For instance, non-printable
    * characters in a string are made printable. Integers are represented as
    * ascii numbers. Other fields have representations appropriate to their type,
-   * like gps_pos and utc_time.
+   * like gps_xyz and utc_time.
    *
    * @param   t             pointer of tlv to represent
    * @param   b             pointer to buffer where to place the ascii representation

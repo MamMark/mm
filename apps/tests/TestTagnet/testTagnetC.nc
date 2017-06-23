@@ -19,7 +19,7 @@ implementation {
   testTagnetP.TagnetPayload -> TagnetC;
   testTagnetP.TagnetTLV -> TagnetC;
   testTagnetP.TagnetHeader -> TagnetC;
-  TagnetC.InfoSensGpsPos -> testTagnetP;
+  TagnetC.InfoSensGpsXYZ -> testTagnetP;
 
 //  components new  TagnetNamePollP   (TN_POLL_EV_ID)   as PollEvLf;
 //  PollEvLf.Super -> testTagnetP.TagnetMessage[unique(UQ_TN_ROOT)];

@@ -119,7 +119,7 @@ configuration TagnetC {
     interface TagnetHeader;
   }
   uses {
-    interface TagnetAdapter<int32_t> as InfoSensGpsPos;
+    interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXYZ;
   }
 }
 implementation {
@@ -156,12 +156,12 @@ implementation {
   components new         TagnetNameElementP   (TN_INFO_NID_ID, UQ_TN_INFO_NID) as InfoNidVx;
   components new         TagnetNameElementP   (TN_INFO_SENS_ID, UQ_TN_INFO_SENS) as InfoSensVx;
   components new         TagnetNameElementP   (TN_INFO_SENS_GPS_ID, UQ_TN_INFO_SENS_GPS) as InfoSensGpsVx;
-  components new         TagnetIntegerAdapterP(TN_INFO_SENS_GPS_POS_ID, UQ_TN_INFO_SENS_GPS_POS) as InfoSensGpsPosLf;
+  components new         TagnetIntegerAdapterP(TN_INFO_SENS_GPS_XYZ_ID, UQ_TN_INFO_SENS_GPS_XYZ) as InfoSensGpsXyzLf;
   InfoVx.Super        -> TagVx.Sub[unique(UQ_TN_TAG)];
   InfoNidVx.Super     -> InfoVx.Sub[unique(UQ_TN_INFO)];
   InfoSensVx.Super    -> InfoNidVx.Sub[unique(UQ_TN_INFO_NID)];
   InfoSensGpsVx.Super -> InfoSensVx.Sub[unique(UQ_TN_INFO_SENS)];
-  InfoSensGpsPosLf.Super -> InfoSensGpsVx.Sub[unique(UQ_TN_INFO_SENS_GPS)];
-  InfoSensGpsPos      =  InfoSensGpsPosLf.Adapter;
+  InfoSensGpsXyzLf.Super -> InfoSensGpsVx.Sub[unique(UQ_TN_INFO_SENS_GPS)];
+  InfoSensGpsXyz      =  InfoSensGpsXyzLf.Adapter;
 
 }

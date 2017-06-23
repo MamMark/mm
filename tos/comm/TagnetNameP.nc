@@ -29,7 +29,7 @@
  *  <dt>'this'</dt> <dd>tlv index of current tlv (starts at first and moves to next)</dd>
  *  <dt>'node_id'</dt> <dd>index to node_id tlv found in name</dd>
  *  <dt>'seq_no'</dt> <dd>index to seq_no tlv found in name</dd>
- *  <dt>'gps_pos'</dt> <dd>index to gps_pos tlv found in name</dd>
+ *  <dt>'gps_xyz'</dt> <dd>index to gps_xyz tlv found in name</dd>
  *  <dt>'utc_time'</dt> <dd>index to utc_time found in name</dd>
  *</dl>
  *<p>
@@ -113,8 +113,8 @@ implementation {
     return call TagnetName.this_element(msg);
   }
 
-  command tagnet_tlv_t  *TagnetName.get_gps_pos(message_t *msg) {
-    return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->gps_pos)] );
+  command tagnet_tlv_t  *TagnetName.get_gps_xyz(message_t *msg) {
+    return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->gps_xyz)] );
   }
 
   command uint8_t    TagnetName.get_len(message_t* msg) {
@@ -162,8 +162,8 @@ implementation {
           getMeta(msg)->node_id = getMeta(msg)->this;
           return next_tlv;
 
-        case TN_TLV_GPS_POS:            // gps_pos, mark location
-          getMeta(msg)->gps_pos = getMeta(msg)->this;
+        case TN_TLV_GPS_XYZ:            // gps_xyz, mark location
+          getMeta(msg)->gps_xyz = getMeta(msg)->this;
           return next_tlv;
 
         case TN_TLV_UTC_TIME:           // utc_time, mark location
@@ -185,8 +185,8 @@ implementation {
     call THdr.set_name_len(msg, 0);
   }
 
-  command void    TagnetName.set_gps_pos(message_t *msg) {
-    getMeta(msg)->gps_pos = getMeta(msg)->this;
+  command void    TagnetName.set_gps_xyz(message_t *msg) {
+    getMeta(msg)->gps_xyz = getMeta(msg)->this;
   }
 
   command void     TagnetName.set_node_id(message_t *msg) {

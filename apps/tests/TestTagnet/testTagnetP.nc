@@ -23,7 +23,7 @@ message_t        my_msg0;
 message_t        my_msg1;
 message_t        my_msg2;
 
-int32_t          tn_gps_pos_count = 0;
+int32_t          tn_gps_xyz_count = 0;
 
 #define xHDR_LEN 25
 #define xHOPS 11
@@ -42,7 +42,7 @@ uint16_t global_node_id = 42;
 module testTagnetP {
   provides {
     interface Init;
-    interface TagnetAdapter<int32_t>  as  InfoSensGpsPos;
+    interface TagnetAdapter<tagnet_gps_xyz_t>  as  InfoSensGpsXYZ;
   } uses {
     interface Boot;
 
@@ -500,7 +500,7 @@ implementation {
     nop();
   }
 
-  void TN_TEST_DBG test_tagnet_gps_pos() {
+  void __attribute__((optimize("O0"))) test_tagnet_gps_xyz() {
     tagnet_tlv_t    *next_tlv;
     int              name_len;
 
@@ -520,7 +520,7 @@ implementation {
     name_len += call TagnetName.add_element(test_msg0, next_tlv);
     next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_INFO_SENS_GPS_ID].name_tlv;
     name_len += call TagnetName.add_element(test_msg0, next_tlv);
-    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_INFO_SENS_GPS_POS_ID].name_tlv;
+    next_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[TN_INFO_SENS_GPS_XYZ_ID].name_tlv;
     name_len += call TagnetName.add_element(test_msg0, next_tlv);
     nop();
     if (call TagnetName.get_len(test_msg0) != name_len) {
@@ -538,13 +538,13 @@ implementation {
     nop();
     test_tagnet_poll_ev();
     test_tagnet_poll_cnt();
-    test_tagnet_gps_pos();
+    test_tagnet_gps_xyz();
   }
 
-  command bool InfoSensGpsPos.get_value(int32_t *t, uint8_t *l) {
+  command bool InfoSensGpsXYZ.get_value(tagnet_gps_xyz_t *t, uint8_t *l) {
     nop();
     nop();
-    tn_gps_pos_count++;
+    tn_gps_xyz_count++;
     return TRUE;
   }
 

@@ -202,7 +202,7 @@ error_code     =  Enum( 'OK'=0 | 'NO_ROUTE'=1 | 'TOO_MANY_HOPS'=2
 
 tlv_list       =  tlv | tlv + tlv_list
 tlv            =  tlv_type + tlv_length + tlv_value
-tlv_type       =  Enum( 'NONE'=0, 'STRING'=1 | 'INTEGER'=2 | 'GPS_POS'=3
+tlv_type       =  Enum( 'NONE'=0, 'STRING'=1 | 'INTEGER'=2 | 'GPS_XYZ=3
                   | 'UTC_TIME'=4 | 'NODE_ID'=5 | 'NODE_NAME'=6
                   | 'SEQ_NO'=7, 'VER_NO'=8 | 'FILE'=9 | '_COUNT'=10 )
 tlv_length     =  0..254
