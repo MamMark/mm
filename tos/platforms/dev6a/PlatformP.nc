@@ -105,6 +105,22 @@ implementation {
   async command uint32_t Platform.jiffiesRaw()     { return (TIMER_A1->R); }
   async command uint32_t Platform.jiffiesRawSize() { return 16; }
 
+  async command bool     Platform.set_unaligned_traps(bool set_on) {
+    bool unaligned_on;
+
+    atomic {
+      unaligned_on = FALSE;
+      if (SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk)
+        unaligned_on = TRUE;
+      if (set_on)
+        SCB->CCR |= SCB_CCR_UNALIGN_TRP_Msk;
+      else
+        SCB->CCR &= ~(SCB_CCR_UNALIGN_TRP_Msk);
+      __ISB();
+    }
+    return unaligned_on;
+  }
+
 
   /***************** Defaults ***************/
   default command error_t PeripheralInit.init() {
