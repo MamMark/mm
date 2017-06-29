@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015,2017 Eric B. Decker, Daniel J. Maltbie
+ * Copyright (c) 2015 Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  */
 
@@ -34,6 +35,9 @@ uint32_t gt0, gt1;
 uint16_t tt0, tt1;
 
 uint16_t global_node_id = 42;
+
+#define TN_TEST_DBG
+//#define TN_TEST_DBG __attribute__((optimize("O0")))
 
 module testTagnetP {
   provides {
@@ -135,7 +139,7 @@ implementation {
     return SUCCESS;
   }
 
-  message_t*  __attribute__((optimize("O0"))) buildMsg(uint8_t i) {
+  message_t*  TN_TEST_DBG buildMsg(uint8_t i) {
      int          name_len = 0;
      message_t*   msg;
      uint8_t*     buf;
@@ -193,7 +197,7 @@ implementation {
   }
 
 
-  void __attribute__((optimize("O0"))) test_tagnet_header() {
+  void TN_TEST_DBG test_tagnet_header() {
 
     test_msg1 = buildMsg(1);
     nop();
@@ -260,7 +264,7 @@ implementation {
 // bytes_available(test_msg1)
   }
 
-  void __attribute__((optimize("O0"))) test_tagnet_tlv() {
+  void TN_TEST_DBG test_tagnet_tlv() {
     int             max      =  TOSH_DATA_LENGTH;
     uint8_t         tlv64[]  =  {TN_TLV_INTEGER,1,64};
     uint8_t         my_tlv_b[10] = {0,0,0,0,0,0,0,0,0,0};
@@ -333,7 +337,7 @@ implementation {
     nop();
   }
 
-  void __attribute__((optimize("O0"))) test_tagnet_name() {
+  void TN_TEST_DBG test_tagnet_name() {
     tagnet_tlv_t    *first_tlv;
     tagnet_tlv_t    *next_tlv;
     int              len;
@@ -382,7 +386,7 @@ implementation {
     nop();
   }
 
-  void __attribute__((optimize("O0"))) test_tagnet_payload() {
+  void TN_TEST_DBG test_tagnet_payload() {
     tagnet_tlv_t    *first_tlv;
     tagnet_tlv_t    *next_tlv;
     int              name_len, data_len;
@@ -422,7 +426,7 @@ implementation {
     }
   }
 
-  void __attribute__((optimize("O0"))) test_tagnet_poll_ev() {
+  void TN_TEST_DBG test_tagnet_poll_ev() {
     tagnet_tlv_t    *next_tlv;
     int              name_len;
     int              data_len;
@@ -459,7 +463,7 @@ implementation {
     nop();
   }
 
-  void __attribute__((optimize("O0"))) test_tagnet_poll_cnt() {
+  void TN_TEST_DBG test_tagnet_poll_cnt() {
     tagnet_tlv_t    *next_tlv;
     int              name_len;
     int              data_len;
@@ -496,7 +500,7 @@ implementation {
     nop();
   }
 
-  void __attribute__((optimize("O0"))) test_tagnet_gps_pos() {
+  void TN_TEST_DBG test_tagnet_gps_pos() {
     tagnet_tlv_t    *next_tlv;
     int              name_len;
 
@@ -529,7 +533,7 @@ implementation {
     nop();
   }
 
-  void __attribute__((optimize("O0"))) test_tagnet_message() {
+  void TN_TEST_DBG test_tagnet_message() {
     nop();
     nop();
     test_tagnet_poll_ev();

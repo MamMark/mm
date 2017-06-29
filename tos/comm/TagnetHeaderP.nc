@@ -87,7 +87,7 @@ implementation {
     return sizeof(si446x_packet_header_t);
   }
 
-  command __attribute__((optimize("O0"))) uint8_t  TagnetHeader.get_hops(message_t *msg) {
+  command uint8_t  TagnetHeader.get_hops(message_t *msg) {
     return ((getHdr(msg)->tn_h2 & TN_H2_OPTION_M) >> TN_H2_OPTION_B);
   }
 
@@ -97,7 +97,7 @@ implementation {
     return n;
   }
 
-  command __attribute__((optimize("O0"))) tagnet_msg_type_t  TagnetHeader.get_message_type(message_t* msg) {
+  command tagnet_msg_type_t  TagnetHeader.get_message_type(message_t* msg) {
     return ((tagnet_msg_type_t) ((getHdr(msg)->tn_h2 & TN_H2_MTYPE_M) >> TN_H2_MTYPE_B));
   }
 
@@ -139,7 +139,7 @@ implementation {
       | (getHdr(msg)->tn_h2 & ~TN_H2_OPTION_M);
   }
 
-  command __attribute__((optimize("O0"))) void   TagnetHeader.set_hops(message_t *msg, uint8_t count) {
+  command  void   TagnetHeader.set_hops(message_t *msg, uint8_t count) {
     getHdr(msg)->tn_h2 = ((count << TN_H2_OPTION_B) & TN_H2_OPTION_M)
       | (getHdr(msg)->tn_h2 & ~TN_H2_OPTION_M);
   }
@@ -148,7 +148,7 @@ implementation {
     getHdr(msg)->frame_length = len;
   }
 
-  command  __attribute__((optimize("O0"))) void TagnetHeader.set_message_type(message_t *msg, tagnet_msg_type_t m_type) {
+  command void TagnetHeader.set_message_type(message_t *msg, tagnet_msg_type_t m_type) {
     getHdr(msg)->tn_h2 = ((m_type << TN_H2_MTYPE_B) & TN_H2_MTYPE_M)
       | (getHdr(msg)->tn_h2 & ~TN_H2_MTYPE_M);
   }

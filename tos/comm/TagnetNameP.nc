@@ -134,6 +134,7 @@ implementation {
   }
 
   command tagnet_tlv_t   *TagnetName.next_element(message_t *msg) {
+//  command __attribute__((optimize("O0"))) tagnet_tlv_t   *TagnetName.next_element(message_t *msg) {
     tagnet_tlv_t      *this_tlv;
     tagnet_tlv_t      *next_tlv;
     uint8_t           *name_start    =  (uint8_t *)&msg->data[0];

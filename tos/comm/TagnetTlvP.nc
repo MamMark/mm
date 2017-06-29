@@ -134,6 +134,7 @@ implementation {
   }
 
   command tagnet_tlv_t  *TagnetTLV.get_next_tlv(tagnet_tlv_t *t, uint8_t limit) {
+//  command __attribute__((optimize("O0"))) tagnet_tlv_t  *TagnetTLV.get_next_tlv(tagnet_tlv_t *t, uint8_t limit) {
     tagnet_tlv_t      *next_tlv;
     int                nx;
 

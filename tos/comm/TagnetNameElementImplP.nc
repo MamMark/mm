@@ -50,6 +50,7 @@ implementation {
   enum { SUB_COUNT = uniqueCount(uq_id) };
 
   event bool Super.evaluate(message_t *msg) {
+//  event __attribute__((optimize("O0"))) bool Super.evaluate(message_t *msg) {
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t    *help_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].help_tlv;
     tagnet_tlv_t    *this_tlv;

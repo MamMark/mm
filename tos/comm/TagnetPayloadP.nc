@@ -74,7 +74,8 @@
 #include "Tagnet.h"
 #include "TagnetTLV.h"
 
-#define TN_PLOAD_DBG __attribute__((optimize("O0")))
+#define TN_PLOAD_DBG
+//#define TN_PLOAD_DBG __attribute__((optimize("O0")))
 
 module TagnetPayloadP {
   provides interface TagnetPayload;
