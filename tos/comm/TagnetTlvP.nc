@@ -167,10 +167,25 @@ implementation {
   }
 
   command uint8_t  TagnetTLV.integer_to_tlv(int32_t i,  tagnet_tlv_t *t, uint8_t limit) {
+    int32_t    c = 0;
+    bool       first = TRUE;
+    int32_t    x;
+    uint8_t    v;
+
+    // assert n.to_bytes(length, 'big') == bytes( (n >> i*8) & 0xff for i in reversed(range(length)))
+    nop();
     t->typ = TN_TLV_INTEGER;
-    t->len = 1;
-    t->val[0] = i;
-    return (sizeof(tagnet_tlv_t) + 1);
+    for (x = 3; x >= 0; x = x-1) {
+      v = (uint8_t) (i >> (x*8));
+      if (v || !first) {
+        t->val[c++] = v;
+        first = FALSE;
+      }
+    }
+    if (c == 0) t->val[c++] = 0;
+    t->len = c;
+    nop();
+    return SIZEOF_TLV(t);
   }
 
   command bool   TagnetTLV.is_special_tlv(tagnet_tlv_t *t) {
