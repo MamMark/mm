@@ -143,14 +143,13 @@ implementation {
     nop();
     nop();
     do {
+      nop();
       this_tlv = call TagnetName.this_element(msg);
       next_tlv = call TTLV.get_next_tlv(this_tlv, name_length);
-      if ((next_tlv == NULL)
-          || (call TTLV.get_len(next_tlv) > call TagnetName.bytes_avail(msg))
-          || (((int)next_tlv) >= ((int)&msg->data[name_length]))
-          || ((uint8_t *)next_tlv  < (uint8_t *)this_tlv)) {
-//        panic_warn();
-        return NULL;
+      if ( (next_tlv == NULL)
+            || ((void *)next_tlv < (void *)this_tlv)
+            || ((void *)next_tlv >= (void *)&msg->data[name_length]) ) {
+          return NULL;
       }
 
       getMeta(msg)->this = (int) next_tlv - (int) name_start; // advance 'this' index to 'next' in list
