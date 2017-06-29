@@ -103,7 +103,7 @@ implementation {
   }
 
   command uint8_t   TagnetTLV.copy_tlv(tagnet_tlv_t *s,  tagnet_tlv_t *d, uint8_t limit) {
-    uint8_t l = s->len + sizeof(tagnet_tlv_t);
+    uint8_t l = SIZEOF_TLV(s);
     if (l > limit)
       return 0;
     return _copy_bytes((uint8_t *) s, (uint8_t *) d, l);
@@ -114,7 +114,7 @@ implementation {
 //      panic_warn();
       return FALSE;
     }
-    return (_cmp_bytes((uint8_t *)s, (uint8_t *)t, s->len + sizeof(tagnet_tlv_t)));
+    return (_cmp_bytes((uint8_t *)s, (uint8_t *)t, SIZEOF_TLV(s)));
   }
 
   command uint8_t   TagnetTLV.get_len(tagnet_tlv_t *t) {
@@ -122,7 +122,7 @@ implementation {
 //      panic_warn();
       return 0;
     }
-    return t->len + sizeof(tagnet_tlv_t);
+    return SIZEOF_TLV(t);
   }
 
   command uint8_t   TagnetTLV.get_len_v(tagnet_tlv_t *t) {
@@ -144,7 +144,7 @@ implementation {
 //      panic_warn();
       return NULL;
     }
-    nx = t->len + sizeof(tagnet_tlv_t);
+    nx = SIZEOF_TLV(t);
     if (nx < limit) {
       nx += (int) t;
       next_tlv = (tagnet_tlv_t *) nx;
@@ -203,7 +203,7 @@ implementation {
       _copy_bytes(s, (uint8_t *)&t->val[0], length);
       t->len = length;
       t->typ = TN_TLV_STRING;
-      return length + sizeof(tagnet_tlv_t);
+      return SIZEOF_TLV(t);
     }
     return 0;
   }
