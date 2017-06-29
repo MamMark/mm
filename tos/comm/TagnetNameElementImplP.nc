@@ -81,21 +81,25 @@ implementation {
               signal Sub.add_name_tlv[i](msg);
               signal Sub.add_value_tlv[i](msg);
             }
+            tn_trace_rec(my_id, 1);
             return TRUE;
           case TN_HEAD:
             call TPload.add_tlv(msg, help_tlv);
+            tn_trace_rec(my_id, 2);
             return TRUE;
           default:
             break;
         }
       } else {                                         // else check subordinates
         for (i=0; i<SUB_COUNT; i++) {
+          tn_trace_rec(my_id, 3);
           if (signal Sub.evaluate[i](msg)) {         // subordinate matched, done
             return TRUE;
           }
         }
       }
     }
+    tn_trace_rec(my_id, 255);
     call THdr.set_error(msg, TE_PKT_NO_MATCH);      // not valid type, do nothing
     return FALSE;                                   // no match, do nothing
   }

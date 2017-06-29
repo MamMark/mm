@@ -49,9 +49,12 @@ implementation {
   command bool Tagnet.process_message(message_t *msg) {
     uint8_t          i;
 
-#ifndef notdef
+    for (i = 0; i < TN_TRACE_PARSE_ARRAY_SIZE; i++) tn_trace_array[i].id = TN_ROOT_ID;
+    tn_trace_index = 1;
+
     for (i = 0; i<SUB_COUNT; i++) {
       call TName.first_element(msg);     // start at the beginning of the name
+      nop();
       if (signal Sub.evaluate[i](msg)) {
         if (call THdr.is_response(msg)) {
           return TRUE;                   // got a match and response to send
@@ -59,7 +62,6 @@ implementation {
         return FALSE;                    // matched but response not set
       }
     }
-#endif
     return FALSE;                        // no match, no response
   }
 

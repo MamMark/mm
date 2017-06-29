@@ -70,15 +70,18 @@ implementation {
       switch (call THdr.get_message_type(msg)) {    // process packet type
         case TN_POLL:
           call TPload.add_integer(msg, poll_count);  // zzz need to add the real value here
+          tn_trace_rec(my_id, 1);
           return TRUE;
         case TN_HEAD:
           call TPload.add_tlv(msg, help_tlv);
+          tn_trace_rec(my_id, 2);
           return TRUE;
         default:
           call THdr.set_error(msg, TE_PKT_NO_MATCH); // not valid type, do nothing
           return FALSE;
       }
     }
+    tn_trace_rec(my_id, 255);
     return FALSE;                                  // no match, do nothing
   }
 
