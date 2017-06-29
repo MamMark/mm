@@ -906,9 +906,9 @@ implementation {
       __PANIC_RADIO(5, 0, 0, 0, 0);
     }
     call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
-    call Si446xCmd.ll_clr_ints(~SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
-			       ~SI446X_MODEM_RX_CLEAR_MASK,
-			       ~SI446X_CHIP_RX_CLEAR_MASK);
+    call Si446xCmd.ll_clr_ints((uint8_t)~SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
+			       (uint8_t)~SI446X_MODEM_RX_CLEAR_MASK,
+			       (uint8_t)~SI446X_CHIP_RX_CLEAR_MASK);
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
     pkt_len = *dp + 1;              // length of data field is first byte of msg
     call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, SI446X_FIFO_FLUSH_TX);
