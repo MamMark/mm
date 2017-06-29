@@ -47,7 +47,6 @@
 #include <Tagnet.h>
 
 typedef union message_header {
-  serial_header_t         serial;
   si446x_packet_header_t  header;
 } message_header_t;
 
@@ -57,11 +56,10 @@ typedef union message_footer {
 
 typedef struct message_metadata {
   union {
-    serial_metadata_t     serial_meta;
     si446x_metadata_t     si446x_meta;
   };
 
-  timestamp_metadata_t    ts_meta;
+//  timestamp_metadata_t    ts_meta;
 
   flags_metadata_t        flags_meta;
 
