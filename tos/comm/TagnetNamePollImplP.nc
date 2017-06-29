@@ -50,7 +50,7 @@ implementation {
     nop();
     nop();
     *t = poll_count;
-    *l = sizeof(t);
+    *l = sizeof(int32_t);
     return TRUE;
   }
 
