@@ -155,7 +155,7 @@ implementation {
 
       getMeta(msg)->this = (int) next_tlv - (int) name_start; // advance 'this' index to 'next' in list
       switch (call TTLV.get_tlv_type(next_tlv)) {       // some tlvs get special handling
-        case TN_TLV_SEQ_NO:             // seq_no, mark location and skip to next tlv
+        case TN_TLV_OFFSET:             // seq_no, mark location and skip to next tlv
           getMeta(msg)->seq_no = getMeta(msg)->this;
           break;
 

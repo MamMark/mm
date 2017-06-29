@@ -40,16 +40,17 @@
 
 // Tagnet TLV Types
 typedef enum {
-  TN_TLV_NONE=0,
-  TN_TLV_STRING=1,
-  TN_TLV_INTEGER=2,
-  TN_TLV_GPS_POS=3,
-  TN_TLV_UTC_TIME=4,
-  TN_TLV_NODE_ID=5,
-  TN_TLV_NODE_NAME=6,
-  TN_TLV_SEQ_NO=7,
-  TN_TLV_VER_NO=8,
-  TN_TLV_FILE=9,
+  TN_TLV_NONE       = 0,
+  TN_TLV_STRING     = 1,
+  TN_TLV_INTEGER    = 2,
+  TN_TLV_GPS_POS    = 3,
+  TN_TLV_UTC_TIME   = 4,
+  TN_TLV_NODE_ID    = 5,
+  TN_TLV_NODE_NAME  = 6,
+  TN_TLV_OFFSET     = 7,
+  TN_TLV_SIZE       = 8,
+  TN_TLV_EOF        = 9,
+  TN_TLV_VERSION    = 10,
   _TN_TLV_COUNT   // limit of enum values
 } tagnet_tlv_type_t;
 

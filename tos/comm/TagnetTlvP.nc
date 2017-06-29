@@ -40,9 +40,10 @@
  *   TN_TLV_UTC_TIME=4,<br>
  *   TN_TLV_NODE_ID=5,<br>
  *   TN_TLV_NODE_NAME=6,<br>
- *   TN_TLV_SEQ_NO=7,<br>
- *   TN_TLV_VER_NO=8,<br>
- *   TN_TLV_FILE=9,<br>
+ *   TN_TLV_OFFSET=7,<br>
+ *   TN_TLV_SIZE=8,<br>
+ *   TN_TLV_EOF=9,<br>
+ *   TN_TLV_VERSION=10,<br>
  *   _TN_TLV_COUNT   // limit of enum values<br>
  * } tagnet_tlv_type_t;<br>
  *</code>
@@ -190,7 +191,7 @@ implementation {
 
   command bool   TagnetTLV.is_special_tlv(tagnet_tlv_t *t) {
     switch (t->typ) {
-      case TN_TLV_SEQ_NO:
+      case TN_TLV_OFFSET:
       case TN_TLV_NODE_ID:
       case TN_TLV_GPS_POS:
       case TN_TLV_UTC_TIME:
