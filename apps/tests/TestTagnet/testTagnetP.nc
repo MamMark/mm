@@ -30,8 +30,6 @@ int32_t          tn_gps_pos_count = 0;
 #define xNAME_LEN 71
 #define xPLOAD_LEN 23
 
-#define SIZEOF_TLV(t) (t[1] + sizeof(tagnet_tlv_t))
-
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;
 

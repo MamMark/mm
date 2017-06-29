@@ -66,4 +66,6 @@ typedef struct tagnet_tlv_t {
 #define TN_MY_NID_TLV        "\005\006\042\042\042\042\042\042"
 #define TN_TAG_TLV           "\001\003tag"
 
+#define SIZEOF_TLV(t) (t->len + sizeof(tagnet_tlv_t))
+
 #endif
