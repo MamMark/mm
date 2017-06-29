@@ -130,7 +130,7 @@ typedef nx_struct si446x_packet_t {
 
 
 #ifndef TOSH_DATA_LENGTH
-#define TOSH_DATA_LENGTH 120
+#define TOSH_DATA_LENGTH 250
 #endif
 
 /**
