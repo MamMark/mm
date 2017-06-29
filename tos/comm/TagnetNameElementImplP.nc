@@ -81,10 +81,12 @@ implementation {
               signal Sub.add_name_tlv[i](msg);
               signal Sub.add_value_tlv[i](msg);
             }
+            call THdr.set_response(msg);
             tn_trace_rec(my_id, 1);
             return TRUE;
           case TN_HEAD:
             call TPload.add_tlv(msg, help_tlv);
+            call THdr.set_response(msg);
             tn_trace_rec(my_id, 2);
             return TRUE;
           default:

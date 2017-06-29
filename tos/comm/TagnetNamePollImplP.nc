@@ -66,22 +66,24 @@ implementation {
     if ((next_tlv == NULL) &&                       // end of name and me == this
         (call TTLV.eq_tlv(name_tlv, this_tlv))) {
       poll_count++;
-      call TPload.first_element(msg);
+      call TPload.reset_payload(msg);
       switch (call THdr.get_message_type(msg)) {    // process packet type
         case TN_POLL:
           call TPload.add_integer(msg, poll_count);  // zzz need to add the real value here
+          call THdr.set_response(msg);
           tn_trace_rec(my_id, 1);
           return TRUE;
         case TN_HEAD:
           call TPload.add_tlv(msg, help_tlv);
+          call THdr.set_response(msg);
           tn_trace_rec(my_id, 2);
           return TRUE;
         default:
-          call THdr.set_error(msg, TE_PKT_NO_MATCH); // not valid type, do nothing
-          return FALSE;
+          break;
       }
     }
     tn_trace_rec(my_id, 255);
+    call THdr.set_error(msg, TE_PKT_NO_MATCH);
     return FALSE;                                  // no match, do nothing
   }
 
