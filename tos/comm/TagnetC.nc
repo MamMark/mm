@@ -129,38 +129,39 @@ implementation {
   TagnetTLV = TagnetUtilsC;
   TagnetHeader = TagnetUtilsC;
 
-  // root of Name tree, provides external interface
-  components      TagnetNameRootP  as  RootVx;
+  // instantiate root of Name tree, provides the TagNet API
+  components             TagnetNameRootP  as  RootVx;
+  Tagnet              =  RootVx.Tagnet;
+  components new         TagnetNameElementP   (TN_TAG_ID, UQ_TN_TAG)           as TagVx;
+  TagVx.Super         -> RootVx.Sub[unique(UQ_TN_ROOT)];
 
-  // instantiate each of the nodes (vertices) in the Name tree
-  components new  TagnetNameElementP   (TN_TAG_ID, UQ_TN_TAG)           as TagVx;
+  // instantiate object pathname for the TagNet poll event
+  // note this object is used by TagNet Master protocol to determine status of this node
+  // number of times polled is exposed as an integer adapter for use as a counter
+  components new         TagnetNameElementP   (TN_POLL_ID, UQ_TN_POLL)         as PollVx;
+  components new         TagnetNameElementP   (TN_POLL_NID_ID, UQ_TN_POLL_NID) as PollNidVx;
+  components new         TagnetNamePollP      (TN_POLL_EV_ID)                  as PollEvLf;
+  PollVx.Super        -> TagVx.Sub[unique(UQ_TN_TAG)];
+  PollNidVx.Super     -> PollVx.Sub[unique(UQ_TN_POLL)];
+  PollEvLf.Super      -> PollNidVx.Sub[unique(UQ_TN_POLL_NID)];
+  PollCount           =  PollEvLf.Adapter;
 
-  components new  TagnetNameElementP   (TN_POLL_ID, UQ_TN_POLL)         as PollVx;
-  components new  TagnetNameElementP   (TN_POLL_NID_ID, UQ_TN_POLL_NID) as PollNidVx;
-  components new  TagnetNamePollP      (TN_POLL_EV_ID)                  as PollEvLf;
-  components new  TagnetIntegerAdapterP(TN_POLL_CNT_ID, UQ_TN_POLL_CNT) as PollCntLf;
+  // instantiate object pathname for the TagNet poll statistics counter and wire to poll event
+  components new         TagnetIntegerAdapterP(TN_POLL_CNT_ID, UQ_TN_POLL_CNT) as PollCntLf;
+  PollCntLf.Super     -> PollNidVx.Sub[unique(UQ_TN_POLL_NID)];
+  PollCntLf.Adapter   -> PollEvLf;
 
-  components new  TagnetNameElementP   (TN_INFO_ID, UQ_TN_INFO)         as InfoVx;
-  components new  TagnetNameElementP   (TN_INFO_NID_ID, UQ_TN_INFO_NID) as InfoNidVx;
-  components new  TagnetNameElementP   (TN_INFO_SENS_ID, UQ_TN_INFO_SENS) as InfoSensVx;
-  components new  TagnetNameElementP   (TN_INFO_SENS_GPS_ID, UQ_TN_INFO_SENS_GPS) as InfoSensGpsVx;
-  components new  TagnetIntegerAdapterP(TN_INFO_SENS_GPS_POS_ID, UQ_TN_INFO_SENS_GPS_POS) as InfoSensGpsPosLf;
-
-  // now add the edges to complete the tree, connecting the nodes appropriately
-  Tagnet            =  RootVx.Tagnet;
-  TagVx.Super       -> RootVx.Sub[unique(UQ_TN_ROOT)];
-
-  PollVx.Super      -> TagVx.Sub[unique(UQ_TN_TAG)];
-  PollNidVx.Super   -> PollVx.Sub[unique(UQ_TN_POLL)];
-  PollEvLf.Super    -> PollNidVx.Sub[unique(UQ_TN_POLL_NID)];
-  PollCntLf.Super   -> PollNidVx.Sub[unique(UQ_TN_POLL_NID)];
-  PollCntLf.Adapter -> PollEvLf.Adapter;
-  PollCount         =  PollEvLf.Adapter;
-
-  InfoVx.Super      -> TagVx.Sub[unique(UQ_TN_TAG)];
-  InfoNidVx.Super   -> InfoVx.Sub[unique(UQ_TN_INFO)];
-  InfoSensVx.Super   -> InfoNidVx.Sub[unique(UQ_TN_INFO_NID)];
+  // instantiate object pathname for the TagNet GPS XYZ position
+  components new         TagnetNameElementP   (TN_INFO_ID, UQ_TN_INFO)         as InfoVx;
+  components new         TagnetNameElementP   (TN_INFO_NID_ID, UQ_TN_INFO_NID) as InfoNidVx;
+  components new         TagnetNameElementP   (TN_INFO_SENS_ID, UQ_TN_INFO_SENS) as InfoSensVx;
+  components new         TagnetNameElementP   (TN_INFO_SENS_GPS_ID, UQ_TN_INFO_SENS_GPS) as InfoSensGpsVx;
+  components new         TagnetIntegerAdapterP(TN_INFO_SENS_GPS_POS_ID, UQ_TN_INFO_SENS_GPS_POS) as InfoSensGpsPosLf;
+  InfoVx.Super        -> TagVx.Sub[unique(UQ_TN_TAG)];
+  InfoNidVx.Super     -> InfoVx.Sub[unique(UQ_TN_INFO)];
+  InfoSensVx.Super    -> InfoNidVx.Sub[unique(UQ_TN_INFO_NID)];
   InfoSensGpsVx.Super -> InfoSensVx.Sub[unique(UQ_TN_INFO_SENS)];
   InfoSensGpsPosLf.Super -> InfoSensGpsVx.Sub[unique(UQ_TN_INFO_SENS_GPS)];
-  InfoSensGpsPos     =  InfoSensGpsPosLf.Adapter;
+  InfoSensGpsPos      =  InfoSensGpsPosLf.Adapter;
+
 }
