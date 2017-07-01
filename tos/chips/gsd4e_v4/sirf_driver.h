@@ -32,41 +32,16 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Misc defines and constants for the sirf chipset.
- */
-
-#ifndef __SIRF_H__
-#define __SIRF_H__
-
-#define NMEA_START       '$'
-#define NMEA_END         '*'
-
-#define SIRFBIN_A0      0xa0
-#define SIRFBIN_A2      0xa2
-#define SIRFBIN_B0      0xb0
-#define SIRFBIN_B3      0xb3
-
-/* overhead: start (2), len (2), checksum (2), end (2) */
-#define SIRFBIN_OVERHEAD   8
-
-#define MID_NAVDATA	   2
-#define NAVDATA_LEN	   41
-#define MID_CLOCKSTATUS	   7
-#define CLOCKSTATUS_LEN	   20
-#define MID_GEODETIC	   41
-#define GEODETIC_LEN	   91
-
-/*
- * max size (sirfbin length) message we will receive
  *
- * If we are eavesdropping then we want to see everything
- * and the largest we have seen is MID 4 (len 0xbc, 188 + 8)
- * 196, we round up to 200.
+ * Internal definitions that the sirf (gsd4e) driver needs for various
+ * control functions.
  */
-#define SIRFBIN_MAX_MSG         200
-#define SIRFBIN_MAX_SW_VER      88
 
-/* actual size of expected PEEK response */
-#define SIRFBIN_PEEK_RSP_LEN    32
+#ifndef __SIRF_DRIVER_H__
+#define __SIRF_DRIVER_H__
+
+/* get external definitions */
+#include <sirf_msg.h>
 
 #ifdef notdef
 /*
@@ -410,4 +385,4 @@ typedef struct {
   uint16_t rx_timeout;                /* receive timeout */
 } sirfbin_stat_t;
 
-#endif	/* __SIRF_H__ */
+#endif	/* __SIRF_DRIVER_H__ */

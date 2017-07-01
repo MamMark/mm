@@ -44,7 +44,7 @@
 #include <panic.h>
 #include <platform_panic.h>
 #include <gps.h>
-#include <sirf.h>
+#include <sirf_driver.h>
 #include <typed_data.h>
 
 #ifndef PANIC_GPS

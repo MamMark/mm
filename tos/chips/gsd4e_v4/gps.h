@@ -116,7 +116,7 @@
  * properly.  But if no message shows up, then we want to time it out.  We
  * use MAX_RX_TIMEOUT to put an upper bound on this timeout.
  *
- * See sirf.h for SIRFBIN_MAX_MSG.   The transit time for a max gps msg is
+ * See sirf_msg.h for SIRFBIN_MAX_MSG.   The transit time for a max gps msg is
  * then:
  *
  *     T_t = (length * DT_GPS_BYTE_TIME + 500000) / 1000000

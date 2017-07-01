@@ -21,8 +21,8 @@ correct baud rate.
 Any byte processing is handled by the low level state machine, see Gsd4eUP and
 the protocol engine SirfBinP.
 
-Largest expected packet received is no larger than 200 bytes (See sirf.h).
-This comes from MID 4 (len 0xbc, 188 + 8 overhead, 196).
+Largest expected packet received is no larger than 200 bytes (See
+sirf_driver.h).  This comes from MID 4 (len 0xbc, 188 + 8 overhead, 196).
 
 Backing the GPS is an area of memory called the GPS Buffer.  Any messages
 from the GPS are first collected into a piece of this memory and then

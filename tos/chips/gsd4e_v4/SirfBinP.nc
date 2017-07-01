@@ -41,7 +41,7 @@
 
 #include <panic.h>
 #include <platform_panic.h>
-#include <sirf.h>
+#include <sirf_driver.h>
 
 #ifndef PANIC_GPS
 enum {
