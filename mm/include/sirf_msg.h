@@ -57,8 +57,12 @@
 
 #define MID_NAVDATA	   2
 #define NAVDATA_LEN	   41
+
+#define MID_SWVER          6
+
 #define MID_CLOCKSTATUS	   7
 #define CLOCKSTATUS_LEN	   20
+
 #define MID_GEODETIC	   41
 #define GEODETIC_LEN	   91
 
@@ -76,29 +80,83 @@
 #define SIRFBIN_PEEK_RSP_LEN    32
 
 
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   mid;
+  uint8_t   data[0];
+} PACKED sb_header_t;
+
+
 /* MID 2, Nav Data */
 typedef struct {
   uint8_t   start1;
   uint8_t   start2;
   uint16_t  len;
-  int32_t   xpos;
-  int32_t   ypos;
-  int32_t   zpos;
-  int16_t   xvel;
-  int16_t   yvel;
-  int16_t   zvel;
-  uint8_t   mode1;
-  uint8_t   hdop;
-  uint8_t   mode2;
-  uint16_t  week;
-  uint32_t  tow;
-  uint8_t   sats;
   uint8_t   mid;
+  int32_t   xpos;                       /* meters  */
+  int32_t   ypos;                       /* meters  */
+  int32_t   zpos;                       /* meters  */
+  int16_t   xvel;                       /* m/s * 8 */
+  int16_t   yvel;                       /* m/s * 8 */
+  int16_t   zvel;                       /* m/s * 8 */
+  uint8_t   mode1;                      /* see below */
+  uint8_t   hdop;                       /* * 5 */
+  uint8_t   mode2;                      /* see below */
+  uint16_t  week;                       /* gps week, 10 lsb, don't use */
+  uint32_t  tow;                        /* *100, time of week */
+  uint8_t   nsats;                      /* SVs in fix */
   uint8_t   data[0];
 
   /* ch1 PRN - ch12 PRN - pseudo-random noise values */
 
 } PACKED sb_nav_data_t;
+
+
+/* MODE1, bit map */
+
+#define SB_NAV_M1_PMODE_MASK            0x07
+#define SB_NAV_M1_TPMODE_MASK           0x08
+#define SB_NAV_M1_ALTMODE_MASK          0x30
+#define SB_NAV_M1_DOPMASK_MASK          0x40
+#define SB_NAV_M1_DGPS_MASK             0x80
+
+/* Position Mode */
+#define SB_NAV_M1_PMODE_NONE            0
+#define SB_NAV_M1_PMODE_SV1KF           1
+#define SB_NAV_M1_PMODE_SV2KF           2
+#define SB_NAV_M1_PMODE_SV3KF           3
+#define SB_NAV_M1_PMODE_SVODKF          4
+#define SB_NAV_M1_PMODE_2D              5
+#define SB_NAV_M1_PMODE_3D              6
+#define SB_NAV_M1_PMODE_DR              7
+
+/* TricklePower Mode */
+#define SB_NAV_M1_TPMODE_FULL           0x00
+#define SB_NAV_M1_TPMODE_TRICKLE        0x08
+
+/* Altitude Mode */
+#define SB_NAV_M1_ALTMODE_NONE          0x00
+#define SB_NAV_M1_ALTMODE_KFHOLD        0x10
+#define SB_NAV_M1_ALTMODE_USERHOLD      0x20
+#define SB_NAV_M1_ALTMODE_ALWAYS        0x30
+
+/* Dilution of Precision */
+#define SB_NAV_M1_DOPMASK_OK            0x00
+#define SB_NAV_M1_DOPMASK_EXCEEDED      0x40
+
+/* Differential GPS */
+#define SB_NAV_M1_DGPS_NONE             0x00
+#define SB_NAV_M1_DGPS_APPLIED          0x80
+
+
+/* MODE2, bit map */
+/* for the time being, we don't care about M2 */
+#define SB_NAV_M2_SOL_VALIDATED         0x02
+#define SB_NAV_M2_VEL_INVALID           0x10
+#define SB_NAV_M2_ALTHOLD_DISABLED      0x20
+
 
 /* MID 4, Tracker Data */
 typedef struct {
@@ -106,8 +164,8 @@ typedef struct {
   uint8_t   start2;
   uint16_t  len;
   uint8_t   mid;
-  uint16_t  week;
-  uint32_t  tow;
+  uint16_t  week;                       /* modulo 1024 */
+  uint32_t  tow;                        /* time * 100 (ms) */
   uint8_t   chans;
   uint8_t   data[0];
 
@@ -115,6 +173,7 @@ typedef struct {
    *   SVid, Az, El, State, C/NO 1:10
    */
 } PACKED sb_tracker_data_t;
+
 
 /* MID 6, s/w version */
 typedef struct {
@@ -125,18 +184,19 @@ typedef struct {
   uint8_t   data[0];
 } PACKED sb_soft_version_data_t;
 
+
 /* MID 7, clock status */
 typedef struct {
   uint8_t   start1;
   uint8_t   start2;
   uint16_t  len;
   uint8_t   mid;
-  uint16_t  week;
-  uint32_t  tow;
-  uint8_t   sats;
+  uint16_t  week_x;                     /* extended week */
+  uint32_t  tow;                        /* tow * 100 */
+  uint8_t   nsats;
   uint32_t  drift;
   uint32_t  bias;
-  uint32_t  gpstime;
+  uint32_t  esttime_ms;                 /* ms, @ start of measurement */
 } PACKED sb_clock_status_data_t;
 
 /* MID 10, error data */
@@ -172,7 +232,7 @@ typedef struct {
   uint32_t  time_tag;
   uint8_t   sat_id;
   uint64_t  soft_time;
-  uint64_t  psdo_range;
+  uint64_t  pseudo_range;
   uint32_t  car_freq;
   uint64_t  car_phase;
   uint16_t  time_in_track;
@@ -194,30 +254,31 @@ typedef struct {
   uint8_t   low_pow_cnt;
 } PACKED sb_nav_lib_data_t;
 
+
 /* MID 41, geodetic data */
 typedef struct {
   uint8_t   start1;
   uint8_t   start2;
   uint16_t  len;
   uint8_t   mid;
-  uint16_t  nav_valid;
+  uint16_t  nav_valid;                  /* bit mask */
   uint16_t  nav_type;
-  uint16_t  week;
+  uint16_t  week_x;                     /* extended */
   uint32_t  tow;			/* seconds x 1e3 */
   uint16_t  utc_year;
   uint8_t   utc_month;
   uint8_t   utc_day;
   uint8_t   utc_hour;
   uint8_t   utc_min;
-  uint16_t  utc_sec;			/* x 1e3 (millisecs) */
+  uint16_t  utc_ms;			/* x 1e3 (millisecs) */
   uint32_t  sat_mask;
   int32_t   lat;
   int32_t   lon;
-  int32_t   alt_elipsoid;
-  int32_t   alt_msl;
+  int32_t   alt_elipsoid;               /* m * 100 */
+  int32_t   alt_msl;                    /* m * 100 */
   uint8_t   map_datum;
-  uint16_t  sog;
-  uint16_t  cog;
+  uint16_t  sog;                        /* m/s * 100 */
+  uint16_t  cog;                        /* deg cw from N_t * 100 */
   uint16_t  mag_var;
   int16_t   climb;
   int16_t   heading_rate;
@@ -232,10 +293,11 @@ typedef struct {
   uint32_t  distance;
   uint16_t  distance_err;
   uint16_t  head_err;
-  uint8_t   num_svs;
+  uint8_t   nsats;                      /* num_svs, num sat vehicles */
   uint8_t   hdop;
-  uint8_t   mode;
+  uint8_t   additional_mode;
 } PACKED sb_geodetic_t;
+
 
 /* MID 52, 1PPS data */
 typedef struct {
@@ -249,19 +311,16 @@ typedef struct {
   uint8_t   day;
   uint8_t   mo;
   uint16_t  year;
-  uint16_t  utcintoff;
-  uint32_t  utcfracoff;
+  int16_t   utcintoff;                  /* secs */
+  uint32_t  utcfracoff;                 /* nanosecs, * 10^9 */
   uint8_t   status;
   uint32_t  reserved;
 } PACKED sb_pps_data_t;
 
+#define SB_PPS_STATUS_VALID  1
+#define SB_PPS_STATUS_UTC    2
+#define SB_PPS_STATUS_UTCGPS 4
+#define SB_PPS_STATUS_UTCGPS 4
 
-typedef struct {
-  uint8_t   start1;
-  uint8_t   start2;
-  uint16_t  len;
-  uint8_t   mid;
-  uint8_t   data[0];
-} PACKED sb_header_t;
 
 #endif  /* __SIRF_MSG_H__ */

@@ -150,26 +150,79 @@ typedef struct {
 } PACKED dt_panic_t;
 
 
+typedef struct {
+  uint16_t len;                 /* size 8, 0x08 */
+  dtype_t  dtype;
+  uint8_t  major;
+  uint8_t  minor;
+  uint16_t build;
+} PACKED dt_version_t;
+
+
+enum {
+  DT_EVENT_SURFACED         = 1,
+  DT_EVENT_SUBMERGED        = 2,
+  DT_EVENT_DOCKED           = 3,
+  DT_EVENT_UNDOCKED         = 4,
+  DT_EVENT_GPS_BOOT         = 5,
+  DT_EVENT_GPS_BOOT_TIME    = 6,
+  DT_EVENT_GPS_RECONFIG     = 7,
+  DT_EVENT_GPS_START        = 8,
+  DT_EVENT_GPS_OFF          = 9,
+  DT_EVENT_GPS_FAST         = 10,
+  DT_EVENT_GPS_FIRST        = 11,
+  DT_EVENT_GPS_SATS_2       = 12,
+  DT_EVENT_GPS_SATS_7       = 13,
+  DT_EVENT_GPS_SATS_29      = 14,
+  DT_EVENT_GPSCM_STATE      = 15,
+  DT_EVENT_GPS_CYCLE_TIME   = 16,
+  DT_EVENT_SSW_DELAY_TIME   = 17,
+  DT_EVENT_SSW_BLK_TIME     = 18,
+  DT_EVENT_SSW_GRP_TIME     = 19,
+};
+
+
+typedef struct {
+  uint16_t len;                 /* size 18, 0x12 */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint32_t arg0;
+  uint32_t arg1;
+  uint16_t ev;
+} PACKED dt_event_t;
+
+
 /*
- * gps chip types
+ * General GPS dt header.
+ *
+ * Used by:
+ *
+ *   DT_GPS_VERSION
+ *   DT_GPS_RAW_SIRFBIN
+ *
+ * Note: at one point we thought that we would be able to access the
+ * GPS data directly (multi-byte fields).  But we are little endian
+ * and the GPS protocol is big-endian.  Buttom line, is we don't worry
+ * about alignment when dealing with Raw packets.  The decode has to
+ * marshal the data to mess with the big endianess.
+ */
+typedef struct {
+  uint16_t len;                 /* size 13 + var */
+  dtype_t  dtype;
+  uint32_t stamp_ms;            /* time stamp in ms */
+  uint32_t mark_us;             /* mark stamp in usecs (dec) */
+  uint8_t  chip_id;
+} PACKED dt_gps_t;
+
+
+/*
+ * gps chip ids
  */
 
 enum {
   CHIP_GPS_GSD4E   = 1,
 };
 
-
-typedef struct {
-  uint16_t len;                 /* size 13 */
-  dtype_t  dtype;
-  uint32_t stamp_ms;            /* time stamp in ms */
-  uint32_t mark_us;             /* mark stamp in usecs (dec) */
-  uint8_t  chip;
-} PACKED dt_gps_t;
-
-
-/*
- * M10478,      CHIP_GPS_GSD4E
  */
 typedef struct {
   uint16_t len;                 /* size 26, 0x1A */
@@ -214,6 +267,7 @@ typedef struct {
   uint16_t sns_id;
 } PACKED dt_sensor_data_t;
 
+
 typedef struct {
   uint16_t len;                 /* size 16 + var */
   dtype_t  dtype;
@@ -246,47 +300,6 @@ typedef struct {
   uint8_t  sec;
 } PACKED dt_note_t;
 
-
-typedef struct {
-  uint16_t len;                 /* size 8, 0x08 */
-  dtype_t  dtype;
-  uint8_t  major;
-  uint8_t  minor;
-  uint16_t build;
-} PACKED dt_version_t;
-
-
-enum {
-  DT_EVENT_SURFACED = 1,
-  DT_EVENT_SUBMERGED,
-  DT_EVENT_DOCKED,
-  DT_EVENT_UNDOCKED,
-  DT_EVENT_GPS_BOOT,
-  DT_EVENT_GPS_BOOT_TIME,
-  DT_EVENT_GPS_RECONFIG,
-  DT_EVENT_GPS_START,
-  DT_EVENT_GPS_OFF,
-  DT_EVENT_GPS_FAST,
-  DT_EVENT_GPS_FIRST,
-  DT_EVENT_GPS_SATS_2,
-  DT_EVENT_GPS_SATS_7,
-  DT_EVENT_GPS_SATS_29,
-  DT_EVENT_GPSCM_STATE,
-  DT_EVENT_GPS_CYCLE_TIME,
-  DT_EVENT_SSW_DELAY_TIME,
-  DT_EVENT_SSW_BLK_TIME,
-  DT_EVENT_SSW_GRP_TIME,
-};
-
-
-typedef struct {
-  uint16_t len;                 /* size 18, 0x12 */
-  dtype_t  dtype;
-  uint32_t stamp_ms;
-  uint32_t arg0;
-  uint32_t arg1;
-  uint16_t ev;
-} PACKED dt_event_t;
 
 
 enum {
