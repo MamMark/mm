@@ -1,0 +1,43 @@
+#!/bin/bash
+# -*- mode: sh -*-
+#
+# Copy various gdb rc files to set up a dev6a and mm6a debugging environment.
+#
+# you should be in the top level of the application you are setting up for debugging.
+# you must have the following defined in your environment:
+#
+# TINYOS_ROOT_DIR:  points to core tinyos source tree
+# MM_ROOT:          points to core MamMark source tree
+#
+# then simply run ${MM_ROOT}/tools/copy_gdb
+
+if [[ ! -v TINYOS_ROOT_DIR || ! -v MM_ROOT ]]; then
+    echo -e "\n*** TINYOS_ROOT_DIR and MM_ROOT environment variables need to be defined.\n"
+    exit 1
+fi
+
+if [[ -e .gdbinit ]]; then
+    echo -e "\n*** .gdbinit already exists, delete if you really want to copy in new files.\n"
+    exit 2
+fi
+
+echo -e "\nset -o verbose"
+set -o verbose
+
+TP_DIR=${TINYOS_ROOT_DIR}/tos/chips/msp432/99_gdb
+MM_PLAT=${MM_ROOT}/tos/platforms
+MM_CHIP=${MM_ROOT}/tos/chips
+
+cp ${TP_DIR}/gdbinit    .gdbinit
+cp ${TP_DIR}/gdb_msp432 .gdb_msp432
+
+cp ${MM_ROOT}/tos/mm/gdb_mm    .gdb_mm
+cp ${MM_CHIP}/gsd4e_v4/gdb_gps .gdb_gps
+cp ${MM_PLAT}/mm6a/gdb_mm6a    .gdb_mm6a
+cp ${MM_PLAT}/dev6a/gdb_dev6a  .gdb_dev6a
+
+set +o verbose
+
+echo -e "\n6 files copied.  You will need to edit .gdbinit."
+echo -e "    perhaps add:\n"
+echo -e "    .gdb_mm\n    .gdb_gps\n    .gdb_<platform>\n"
