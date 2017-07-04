@@ -34,6 +34,36 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
+/*
+ * Clocking Overview:
+ *
+ * There is a 32KiHz crystal connected to LFXT (XT1).  This provides a
+ * stable fairly accurate clocking source that drives the main 1mis ticker
+ * (Tmilli).  It is connected to the TA1 16 bit timer.  This is the clock
+ * that is used when the main system is sleeping.  It is also used for
+ * various h/w timestamping functions (like the GPS TM timestamp).
+ *
+ * It ticks in jiffies.  1 jiffy = 1/32768 = 30.52 us.
+ *
+ * The 32KiHz crystal also drives the Real Time Clock (RTC).  The RTC is
+ * clock from BCLK which we configure to be driven by LFXTCLK.  The RTC
+ * has compensation for crystal offset error and crystal temperature drift
+ * so can be different than TA1 above.
+ *
+ * The main CPU and other systems are driven by DCOCLK.  DCOCLK is a tuneable
+ * clock driven by internal msp432 clocking circuits.  The frequency we are
+ * using is set by the define MSP432_CLK below.
+ *
+ * There is an ARM Timer32 module that is driven by DCOCLK.  We use it to
+ * provide a 1us ticker when the main DCOCLK is running.  Note that when
+ * the main system is sleeping this clock will NOT be running.
+ *
+ * SMCLK is always DCOCLK/2.  This a h/w limitation.  The peripheral clocks
+ * are limited to DCOCLK/2 when DCOCLK is a maximum.  We just play it safe
+ * and use DCOCLK/2.  SMCLK is used to drive all the peripherals and timers.
+ * (not TA1 which is driven by LFXTCLK).
+ */
+
 #ifndef __PLATFORM_CLK_DEFS__
 #define __PLATFORM_CLK_DEFS__
 
