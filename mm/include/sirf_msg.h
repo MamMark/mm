@@ -81,7 +81,6 @@ typedef struct {
   uint8_t   start1;
   uint8_t   start2;
   uint16_t  len;
-  uint8_t   id;
   int32_t   xpos;
   int32_t   ypos;
   int32_t   zpos;
@@ -94,7 +93,11 @@ typedef struct {
   uint16_t  week;
   uint32_t  tow;
   uint8_t   sats;
+  uint8_t   mid;
   uint8_t   data[0];
+
+  /* ch1 PRN - ch12 PRN - pseudo-random noise values */
+
 } PACKED sb_nav_data_t;
 
 /* MID 4, Tracker Data */
@@ -102,11 +105,15 @@ typedef struct {
   uint8_t   start1;
   uint8_t   start2;
   uint16_t  len;
-  uint8_t   id;
+  uint8_t   mid;
   uint16_t  week;
   uint32_t  tow;
   uint8_t   chans;
   uint8_t   data[0];
+
+  /* for each chan:
+   *   SVid, Az, El, State, C/NO 1:10
+   */
 } PACKED sb_tracker_data_t;
 
 /* MID 6, s/w version */
@@ -114,7 +121,7 @@ typedef struct {
   uint8_t   start1;
   uint8_t   start2;
   uint16_t  len;
-  uint8_t   id;
+  uint8_t   mid;
   uint8_t   data[0];
 } PACKED sb_soft_version_data_t;
 
@@ -123,7 +130,7 @@ typedef struct {
   uint8_t   start1;
   uint8_t   start2;
   uint16_t  len;
-  uint8_t   id;
+  uint8_t   mid;
   uint16_t  week;
   uint32_t  tow;
   uint8_t   sats;
@@ -137,7 +144,7 @@ typedef struct {
   uint8_t   start1;
   uint8_t   start2;
   uint16_t  len;
-  uint8_t   id;
+  uint8_t   mid;
   uint16_t  submsg;
   uint16_t  count;
   uint8_t   data[0];
@@ -148,7 +155,7 @@ typedef struct {
   uint8_t   start1;
   uint8_t   start2;
   uint16_t  len;
-  uint8_t   id;
+  uint8_t   mid;
   uint8_t   satid;
   uint16_t  weekstatus;
   uint8_t  data[0];
@@ -160,7 +167,7 @@ typedef struct {
   uint8_t   start1;
   uint8_t   start2;
   uint16_t  len;
-  uint8_t   id;
+  uint8_t   mid;
   uint8_t   chan;
   uint32_t  time_tag;
   uint8_t   sat_id;
@@ -192,7 +199,7 @@ typedef struct {
   uint8_t   start1;
   uint8_t   start2;
   uint16_t  len;
-  uint8_t   id;
+  uint8_t   mid;
   uint16_t  nav_valid;
   uint16_t  nav_type;
   uint16_t  week;
