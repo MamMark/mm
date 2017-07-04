@@ -23,8 +23,9 @@ implementation {
   components PanicC;
   GPSmonitorP.Panic -> PanicC;
 
-#ifdef GPS_COLLECT_RAW
   components CollectC;
+  GPSmonitorP.CollectEvent -> CollectC;
+#ifdef GPS_COLLECT_RAW
   GPSmonitorP.Collect -> CollectC;
 #endif
 }
