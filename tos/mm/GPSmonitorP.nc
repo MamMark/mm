@@ -34,11 +34,26 @@
 
 #include <TagnetTLV.h>
 
-uint32_t recv_count;
+#ifndef GPS_COLLECT_RAW
+#define GPS_COLLECT_RAW
+#endif
+
+#ifndef PANIC_GPS
+enum {
+  __pcode_gps = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_GPS __pcode_gps
+#endif
+
 
 module GPSmonitorP {
   provides interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXYZ;
-  uses     interface GPSReceive;
+  uses {
+    interface GPSReceive;
+    interface Collect;
+    interface Panic;
+  }
 }
 implementation {
 
@@ -54,12 +69,28 @@ implementation {
 
   event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
         uint32_t arrival_ms, uint32_t mark_j) {
+    sb_header_t *sbp;
 
-    nop();
-    recv_count++;
-    m_x = recv_count;
-    m_y = m_x + 1;
-    m_z = m_y + 1;
+    sbp = (void *) msg;
+    if (sbp->start1 != SIRFBIN_A0 || sbp->start2 != SIRFBIN_A2) {
+      call Panic.warn(PANIC_GPS, 134, sbp->start1, sbp->start2, 0, 0);
+      return;
+    }
+
+#ifdef GPS_COLLECT_RAW
+    { dt_gps_t hdr;
+
+      hdr.len      = sizeof(hdr) + len;
+      hdr.dtype    = DT_GPS_RAW_SIRFBIN;
+      hdr.stamp_ms = arrival_ms;
+      hdr.mark_j   = mark_j;
+      hdr.chip     = CHIP_GPS_GSD4E;
+      nop();
+      call Collect.collect((void *) &hdr, sizeof(hdr), msg, len);
+    }
+#endif
   }
-}
 
+  async event void Panic.hook() { }
+
+}
