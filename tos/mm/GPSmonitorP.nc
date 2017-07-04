@@ -83,7 +83,7 @@ implementation {
       hdr.len      = sizeof(hdr) + len;
       hdr.dtype    = DT_GPS_RAW_SIRFBIN;
       hdr.stamp_ms = arrival_ms;
-      hdr.mark_j   = mark_j;
+      hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
       hdr.chip     = CHIP_GPS_GSD4E;
       nop();
       call Collect.collect((void *) &hdr, sizeof(hdr), msg, len);

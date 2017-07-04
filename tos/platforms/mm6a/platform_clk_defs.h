@@ -188,4 +188,12 @@
 
 #define USECS_VAL       (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV
 
+/*
+ * to convert Jiffies to usecs (decimal).
+ *
+ *   T_us = (T_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US
+ */
+#define MULT_JIFFIES_TO_US 30518
+#define DIV_JIFFIES_TO_US  1000
+
 #endif    /* __PLATFORM_CLK_DEFS__ */

@@ -163,7 +163,7 @@ typedef struct {
   uint16_t len;                 /* size 13 */
   dtype_t  dtype;
   uint32_t stamp_ms;            /* time stamp in ms */
-  uint32_t mark_j;              /* mark stamp in jiffies */
+  uint32_t mark_us;             /* mark stamp in usecs (dec) */
   uint8_t  chip;
 } PACKED dt_gps_t;
 
