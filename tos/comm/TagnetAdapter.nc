@@ -43,7 +43,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "TagnetTLV.h"
+#include <TagnetTLV.h>
 
 interface TagnetAdapter<tagnet_adapter_type>
 {

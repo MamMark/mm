@@ -1,12 +1,7 @@
-#ifndef __TAGNETTLV__
-#define __TAGNETTLV__
 /**
- * @author Daniel J. Maltbie (dmaltbie@daloma.org)
- *
- * @Copyright (c) 2017 Daniel J. Maltbie
+ * Copyright (c) 2017 Daniel J. Maltbie
  * All rights reserved.
- */
-/*
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -36,7 +31,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ * @author Daniel J. Maltbie (dmaltbie@daloma.org)
+ *
  */
+
+#ifndef __TAGNETTLV_H__
+#define __TAGNETTLV_H__
+
+#include <Tagnet.h>
 
 // Tagnet TLV Types
 typedef enum {
@@ -149,5 +151,4 @@ typedef struct {
 
 #define TN_GPS_XYZ_LEN (sizeof(tagnet_gps_xyz_t))
 
-
-#endif
+#endif   /* __TAGNETTLV_H__ */
