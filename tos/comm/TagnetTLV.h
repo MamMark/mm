@@ -118,7 +118,7 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   {TN_INFO_NID_ID,TN_BCAST_NID_TLV,"\1\13info_nid help",UQ_TN_INFO_NID},
   {TN_INFO_SENS_ID,"\001\004sens","\001\011sensor help",UQ_TN_INFO_SENS},
   {TN_INFO_SENS_GPS_ID,"\001\003gps","\001\013sens_gps help",UQ_TN_INFO_SENS_GPS},
-  {TN_INFO_SENS_GPS_POS_ID,"\001\003pos","\001\017sens_gps_xyz help",UQ_TN_INFO_SENS_GPS_XYZ},
+  {TN_INFO_SENS_GPS_XYZ_ID,"\001\003pos","\001\017sens_gps_xyz help",UQ_TN_INFO_SENS_GPS_XYZ},
 };
 
 /*
