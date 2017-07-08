@@ -39,6 +39,7 @@ PFLAGS += -I%T/chips/msp432/usci/i2c-sm
 PFLAGS += -I%T/lib/timer
 PFLAGS += -I%T/lib/serial
 
+PFLAGS += -I%T/comm
 PFLAGS += -I%T/lib/rfxlink/layers
 PFLAGS += -I%T/lib/rfxlink/util
 

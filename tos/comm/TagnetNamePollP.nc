@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2015-2016, Eric B. Decker
+/**
+ * Copyright (c) 2017 Daniel J. Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,42 +30,23 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/**
- * Defining the platform-independently named packet structures to be the
- * chip-specific CC1000 packet structures.
  *
- * @author Eric B. Decker <cire831@gmail.com>
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
  */
 
-#ifndef PLATFORM_MESSAGE_H
-#define PLATFORM_MESSAGE_H
+generic configuration TagnetNamePollP (int my_id) {
+  uses interface     TagnetMessage  as  Super;
+  provides interface TagnetAdapter<int32_t>  as  Adapter;
+}
+implementation {
+  components new TagnetNamePollImplP(my_id) as Element;
+  components     TagnetUtilsC;
 
-#include <Serial.h>
-#include <Si446xRadio.h>
-#include <Tagnet.h>
-
-typedef union message_header {
-  si446x_packet_header_t  header;
-} message_header_t;
-
-typedef union message_footer {
-  si446x_packet_footer_t  footer;
-} message_footer_t;
-
-typedef struct message_metadata {
-  union {
-    si446x_metadata_t     si446x_meta;
-  };
-
-//  timestamp_metadata_t    ts_meta;
-
-  flags_metadata_t        flags_meta;
-
-  tagnet_name_meta_t      tn_name_meta;
-  tagnet_payload_meta_t   tn_payload_meta;
-
-} message_metadata_t;
-
-#endif
+  Super          =  Element.Super;
+  Adapter        =  Element.Adapter;
+  Element.TName  -> TagnetUtilsC;
+  Element.THdr   -> TagnetUtilsC;
+  Element.TPload -> TagnetUtilsC;
+  Element.TTLV   -> TagnetUtilsC;
+}

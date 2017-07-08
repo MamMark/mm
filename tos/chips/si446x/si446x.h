@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017 Eric B. Decker
+ * Copyright (c) 2015, 2017 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Eric B. Decker <cire831@gmail.com>
+ * Author: Daniel J. Maltbie <dmaltbie@daloma.org>
  *
  * Basic h/w chip definitions for the si446x radio chip.
  */
@@ -51,6 +52,180 @@
  * The si4468 only shows up in the REVC2A_A2A_API definitions.  So that
  * is what we are using.
  */
+
+/*
+ * Si446x Radio hardware and programming interface description:
+ *
+ * physical pins: NIRQ, IN_SLEEP(gpio0), CTS (gpio1), CSN (aka NSEL),
+ *                SDN (shutdown)
+ * SPI pins:      SCLK, MISO (SO), MOSI (SI).
+ *
+ * HplSi446xC provides the H/W Presentation which includes the SPI
+ * to use and access routines for the above physical pins.  HplSi446xC
+ * is provided by the platform.
+ *
+ * Chips supported are the si44631B and si44682A, denoted as <chip>.
+ *
+ * See README.MD in tos/platforms/<platform>/hardware/si446x for details
+ * on radio configuration. Briefly, there are three parts to the radio
+ * configuration:
+ *  -  WDS generated, configuration from TI WDS program
+ *  -  Platform specific, configuration unique to the platform
+ *  -  Driver specific, configuration unique to the driver
+ *
+ * All three configurations are provided by RadioConfig.h file in
+ * tos/platforms/<platform>/hardware/si446x.
+ *
+ *
+ * Power States:
+ *
+ * h/w state    registers       transition      power
+ *              preserved       to TX/RX        consumption
+ *
+ * Shutdown     n               15ms            30nA
+ * Standby      y               440us           40nA
+ * Sleep        y               440us           740nA
+ * SPI Active   y               340us           1.35mA
+ * Ready        y               100us           1.8mA
+ * TX Tune      y               58us  -> TX     7.8mA
+ * RX Tune      y               60us  -> RX     7.6mA
+ * TX State     y               100uS -> RX     18mA @ +10dBm
+ * RX State     y               100uS -> TX     10.9 or 13.7 mA
+ *
+ * This is a low power implementation.  We trade off a factor of 4 time
+ * cost for 2 orders of magnitude power savings.  We want to spend
+ * most of our time in Standby at 40 nA which costs 440uS to go into
+ * a TX or RX state.
+ *
+ * When the radio chip is powered on, the following steps are taken:
+ *
+ * 1) Take chip out of shutdown, SDN = 0.
+ *    (SDN 1 must be held for 10uS for proper shutdown, not a problem)
+ *
+ *    POR takes 6ms.  CTS (gp1 will go 1 at end of POR)
+ *
+ * 2) send POWER_UP command.
+ *    POWER_UP takes something like 15ms.  We've measured it around 15.8ms
+ *    and the timeout is set to 16.5ms.
+ * 3) program h/w state.
+ * 4) Chip goes to Standby state.
+ * 5) Start initial RX.
+ * 6) signal Turn_On complete and hang in STATE_RX.
+ *
+ * This puts the driver into RX s/w state (match h/w rx state).
+ *
+ * When we talk to the chip via SPI, the chip automatically transitions
+ * to SPI Active state.  After talking to the chip, we must take care
+ * to transition the chip back to Standby to take advantage of the low
+ * current consumption.
+ *
+ *
+ * Basic Packet operations
+ *
+ * The radio chip can actively be doing only one thing at a time, either
+ * transmitting or receiving.  It is not Hear-Self.
+ *
+ * Packet Format:
+ *
+ * We don't do 802.15.4, rather we do a simple custom packet format:
+ *
+ *    len   proto   nm_l   data    FCS
+ *     1      2      1      n       2
+ *
+ *    len is set to n+5.  On transmit, the control block says to send
+ *    n+6.  The FCS covers proto through the end of data but does not
+ *    include length (len).
+ *
+ *    If longer packets than 256 bytes are needed, then len can be increased
+ *    to 2 bytes by configuration changes.
+ *
+ * CRC:  CRC is controlled by various cells.
+ *
+ *   (1200) PKT_CRC_CONFIG seed and which Polynominal
+ *   (1210) PKT_FIELD_1_CRC_CONFIG determine how CRC is handled for the fields
+ *   (1214) PKT_FIELD_2_CRC_CONFIG
+ *   (1234) PKT_RX_FIELD_5_CRC_CONFIG
+ *          etc.
+ *   CRC_START, CRC_SEND, CHECK_CRC, CRC_ENABLE per field.
+ *
+ *   On TX, if Len specified in START_TX control block, then F1 controls CRC
+ *   If Len 0 (RX and TX) then fields are controlled by Field specs
+ *
+ * Split FIFO.    64/64 bytes.    controlled by (0003) GLOBAL_CONFIG:FIFO_MODE
+ * Unified FIFO.  129 bytes.      alternative mode, not used in this driver
+ *
+ * TX:
+ *
+ * 1) Fields.  Only one field is used for TX.  The START_TX control
+ *    block explicitly includes the packet size to transmit.  F1
+ *    controls what happens on TX when the control block has a non-zero
+ *    size.  (1206) PKT_CONFIG1:PH_FIELD_SPLIT (1).
+ *
+ *    (120D) PKT_FIELD_1 (tx_field), (len) 0001
+ *    (120f) PKT_FIELD_1_CONFIG: 04, PN_START
+ *    (1210) PKT_FIELD_1_CRC_CONFIG: a2 START | SEND | ENABLE
+ *    (1211) PKT_FIELD_2_LEN: 0x0000  (turn off others)
+ *
+ * 2) Single packet transmit only.  No pipeline support
+ *    (another packet is not sent until the first has been signalled
+ *    complete).   Only one packet may be in the TxFifo at a time.  If
+ *    another TX attempt is made while a transmit is still active, it is
+ *    rejected with EBUSY.
+ *
+ * 3) Typically, tx packets are ack'd and reception of the ack (rx cycle)
+ *    must complete before the next packet gets transmitted.  This is
+ *    because the ACK is part of the Channel assignment.   ACK's don't
+ *    do CCA but assume the channel is available.  The timing budget for
+ *    the transmitted packet is supposed to include the time it takes for
+ *    the ACK as well.  This sequencing is handled by the upper layers (not
+ *    the driver).
+ *
+ * 4) A START_TX is done.
+ *
+ * 5) CCA, Clear Channel Assessment.
+ *    (204a) MODEM_RSSI_THRESH: is used to set the RSSI threshold.  Above this
+ *    value indicates channel is busy.
+ *
+ *    MODEM_RSSI_CONTROL
+ *
+ *    GPIO pin (value 27/37).  37 isn't usable because it gets cleared when SYNC
+ *    has been detected.  27 causes the pin to be a real time comparison between
+ *    CR (current RSSI) and MRT (Modem_RSSI_Thres (p104a).
+ *
+ *    Latched_RSSI may be compared against this threshold and if below the chip
+ *    proceeds to the specified START_RX:NEXT_STATE1:RXTIMEOUT_STATE and generates
+ *    a PREAMBLE_INVALID interrupt.  What does this have to do with CCA?  Well,
+ *    the latched value if > MRT will indicate we are currently receiving a packet
+ *    (maybe for us, maybe not), but regardless the "wire" is busy.
+ *
+ * 6) It is possible that the transmission is deferred because the channel
+ *    is busy.   See above.
+ *
+ * 7) Deferred TX packets may be tried again by the upper layer.  A deferred
+ *    packet is indicated by an EBUSY return.
+ *
+ * 8) Timestamping.
+ *    GPIO0 can be set to SYNC_WORD_DETECT but only works for RX.
+ *    We don't do it.  TimeSync needs timing for TX packets and time stamping RX packets
+ *    isn't that useful.
+ *
+ *
+ * RX:
+ *
+ * 1) Receives start when a START_RX is commanded via control block.
+ *
+ * 2) One packet can be received at a time.  After the data is in the FIFO (or
+ *    moves through the FIFO, the chip transitions to RX (but not armed).  That
+ *    avoids another RX_TUNE cycle.  Another packet won't be looked for until
+ *    another START_RX is done.
+ *
+ * 3) Fields.  START_RX is called with a length of 0 so all processing is via
+ *    the PKT_RX_FIELDs.  Field_1 is set to len 0001 CRC_START, CRC_ENABLE.
+ *    Field_2 is set to len 128 (max length), CHECK_CRC, CRC_ENABLE.
+ *
+ *
+ */
+
 
 /*
  * Units used with RadioAlarm need to be TRadio, which in our case is T32khz.
@@ -101,18 +276,18 @@
  *
  * Units T32khz.  100ms * 32.768 = 3277
  */
-#define SI446X_TX_TIMEOUT                   3277
-#define SI446X_RX_TIMEOUT                   3277
+#define SI446X_TX_TIMEOUT                   32768
+#define SI446X_RX_TIMEOUT                   32768
 
 /*
  * initial RSSI_THRESH (threshold) for rssi comparisons.  Stuffed into
  * MODEM_RSSI_THRESH (p204a).  RSSIs below this value will cause an
  * incoming packet to not be received (probably not a packet or signal
  * strength too low.
- */ 
+ */
 #define SI446X_INITIAL_RSSI_THRESH      0x20
 
-/* 
+/*
  * size of TX fifo when empty
  */
 #define SI446X_EMPTY_TX_LEN             64
@@ -229,6 +404,40 @@
  * might be requested.  ie. previous interrupt state.
  */
 #define SI446X_INT_NO_CLEAR                   0xff
+
+/* interrupt enable (p0100)
+ * enable selected interrupts
+ */
+// Interest bits set to one will enable interrupt
+#define SI446X_PH_INTEREST              SI446X_PH_STATUS_PACKET_SENT | \
+                                        SI446X_PH_STATUS_PACKET_RX | \
+                                        SI446X_PH_STATUS_CRC_ERROR | \
+                                        SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY | \
+                                        SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL
+
+#define SI446X_MODEM_INTEREST           SI446X_MODEM_STATUS_INVALID_SYNC | \
+                                        SI446X_MODEM_STATUS_RSSI | \
+                                        SI446X_MODEM_STATUS_PREAMBLE_DETECT | \
+                                        SI446X_MODEM_STATUS_SYNC_DETECT
+
+#define SI446X_CHIP_INTEREST            0
+
+#define SI446X_PH_RX_CLEAR_MASK         (SI446X_PH_STATUS_FILTER_MATCH | \
+                                        SI446X_PH_STATUS_FILTER_MISS | \
+                                        SI446X_PH_STATUS_PACKET_RX | \
+                                        SI446X_PH_STATUS_CRC_ERROR | \
+                                         SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL)
+
+#define SI446X_MODEM_RX_CLEAR_MASK      (SI446X_MODEM_STATUS_POSTAMBLE_DETECT | \
+                                        SI446X_MODEM_STATUS_INVALID_SYNC | \
+                                        SI446X_MODEM_STATUS_RSSI_JUMP | \
+                                        SI446X_MODEM_STATUS_RSSI | \
+                                        SI446X_MODEM_STATUS_INVALID_PREAMBLE | \
+                                        SI446X_MODEM_STATUS_PREAMBLE_DETECT | \
+                                           SI446X_MODEM_STATUS_SYNC_DETECT)
+
+#define SI446X_CHIP_RX_CLEAR_MASK       (SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR | \
+                                           SI446X_CHIP_STATUS_CMD_ERROR)
 
 //#define SI446X_CMD_GET_PH_STATUS              0x21
 #define SI446X_PH_STATUS_REPLY_SIZE           2
@@ -360,32 +569,32 @@ typedef enum {
 #define SI446X_PROP_PKT_RX_THRESHOLD                 0x120c
 
 #define SI446X_PROP_PKT_FIELD_1_LENGTH               0x120d
-#define   SI446X_PROP_PKT_FIELD_1_LENGTH_12_8          0x120d
-#define   SI446X_PROP_PKT_FIELD_1_LENGTH_7_0           0x120e
+#define SI446X_PROP_PKT_FIELD_1_LENGTH_12_8          0x120d
+#define SI446X_PROP_PKT_FIELD_1_LENGTH_7_0           0x120e
 #define SI446X_PROP_PKT_FIELD_1_CONFIG               0x120f
 #define SI446X_PROP_PKT_FIELD_1_CRC_CONFIG           0x1210
 
 #define SI446X_PROP_PKT_FIELD_2_LENGTH               0x1211
-#define   SI446X_PROP_PKT_FIELD_2_LENGTH_12_8          0x1211
-#define   SI446X_PROP_PKT_FIELD_2_LENGTH_7_0           0x1212
+#define SI446X_PROP_PKT_FIELD_2_LENGTH_12_8          0x1211
+#define SI446X_PROP_PKT_FIELD_2_LENGTH_7_0           0x1212
 #define SI446X_PROP_PKT_FIELD_2_CONFIG               0x1213
 #define SI446X_PROP_PKT_FIELD_2_CRC_CONFIG           0x1214
 
 #define SI446X_PROP_PKT_FIELD_3_LENGTH               0x120d
-#define   SI446X_PROP_PKT_FIELD_3_LENGTH_12_8          0x1215
-#define   SI446X_PROP_PKT_FIELD_3_LENGTH_7_0           0x1216
+#define SI446X_PROP_PKT_FIELD_3_LENGTH_12_8          0x1215
+#define SI446X_PROP_PKT_FIELD_3_LENGTH_7_0           0x1216
 #define SI446X_PROP_PKT_FIELD_3_CONFIG               0x1217
 #define SI446X_PROP_PKT_FIELD_3_CRC_CONFIG           0x1218
 
 #define SI446X_PROP_PKT_FIELD_4_LENGTH               0x120d
-#define   SI446X_PROP_PKT_FIELD_4_LENGTH_12_8          0x1219
-#define   SI446X_PROP_PKT_FIELD_4_LENGTH_7_0           0x121a
+#define SI446X_PROP_PKT_FIELD_4_LENGTH_12_8          0x1219
+#define SI446X_PROP_PKT_FIELD_4_LENGTH_7_0           0x121a
 #define SI446X_PROP_PKT_FIELD_4_CONFIG               0x121b
 #define SI446X_PROP_PKT_FIELD_4_CRC_CONFIG           0x121c
 
 #define SI446X_PROP_PKT_FIELD_5_LENGTH               0x120d
-#define   SI446X_PROP_PKT_FIELD_5_LENGTH_12_8          0x121d
-#define   SI446X_PROP_PKT_FIELD_5_LENGTH_7_0           0x121e
+#define SI446X_PROP_PKT_FIELD_5_LENGTH_12_8          0x121d
+#define SI446X_PROP_PKT_FIELD_5_LENGTH_7_0           0x121e
 #define SI446X_PROP_PKT_FIELD_5_CONFIG               0x121f
 #define SI446X_PROP_PKT_FIELD_5_CRC_CONFIG           0x1220
 
@@ -701,11 +910,6 @@ typedef enum {
 #define SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY            0x02
 #define SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL             0x01
 
-// bits set to one enable interrupt
-//#define SI446X_PH_INTEREST                       0x39
-#define SI446X_PH_INTEREST                       0xff
-#define SI446X_PH_RX_CLEAR_MASK                  SI446X_PH_STATUS_FILTER_MATCH |SI446X_PH_STATUS_FILTER_MISS | SI446X_PH_STATUS_PACKET_RX | SI446X_PH_STATUS_CRC_ERROR | SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL
-
 #define SI446X_MODEM_STATUS_POSTAMBLE_DETECT             0x40
 #define SI446X_MODEM_STATUS_INVALID_SYNC                 0x20
 #define SI446X_MODEM_STATUS_RSSI_JUMP                    0x10
@@ -714,11 +918,6 @@ typedef enum {
 #define SI446X_MODEM_STATUS_PREAMBLE_DETECT              0x02
 #define SI446X_MODEM_STATUS_SYNC_DETECT                  0x01
 
-// bits set to one enable interrupt
-//#define SI446X_MODEM_INTEREST                    0x23
-#define SI446X_MODEM_INTEREST                    0xff
-#define SI446X_MODEM_RX_CLEAR_MASK               SI446X_MODEM_STATUS_POSTAMBLE_DETECT | SI446X_MODEM_STATUS_INVALID_SYNC | SI446X_MODEM_STATUS_RSSI_JUMP | SI446X_MODEM_STATUS_RSSI | SI446X_MODEM_STATUS_INVALID_PREAMBLE | SI446X_MODEM_STATUS_PREAMBLE_DETECT | SI446X_MODEM_STATUS_SYNC_DETECT
-
 #define SI446X_CHIP_STATUS_CAL                           0x40
 #define SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR         0x20
 #define SI446X_CHIP_STATUS_STATE_CHANGE                  0x10
@@ -726,11 +925,6 @@ typedef enum {
 #define SI446X_CHIP_STATUS_CHIP_READY                    0x04
 #define SI446X_CHIP_STATUS_LOW_BATT                      0x02
 #define SI446X_CHIP_STATUS_WUT                           0x01
-
-// bits set to one enable interrupt
-//#define SI446X_CHIP_INTEREST                     0x08
-#define SI446X_CHIP_INTEREST                     0xff
-#define SI446X_CHIP_RX_CLEAR_MASK                SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR | SI446X_CHIP_STATUS_CMD_ERROR
 
 //#define SI446X_PROP_FRR_CTL_A_MODE                   0x0200
 //#define SI446X_PROP_FRR_CTL_B_MODE                   0x0201
@@ -881,6 +1075,13 @@ typedef struct {
 } si446x_int_state_t;                   /* INT_STATUS, 0x20 */
 
 typedef struct {
+  uint8_t cmd;
+  uint8_t ph_pend;
+  uint8_t modem_pend;
+  uint8_t chip_pend;
+} si446x_int_clr_t;                     /* INT_STATUS, clear flags */
+
+typedef struct {
   uint8_t pend;
   uint8_t status;
 } si446x_ph_status_t;                   /* PH_STATUS, 0x21 */
@@ -950,11 +1151,11 @@ typedef struct {
   uint8_t               packet_info_len[2];
 
   /* properties */
-  uint8_t               gr00_global[SI446X_GROUP00_SIZE];
-  uint8_t               gr01_int[SI446X_GROUP01_SIZE];
-  uint8_t               gr02_frr[SI446X_GROUP02_SIZE];
-  uint8_t               gr10_preamble[SI446X_GROUP10_SIZE];
-  uint8_t               gr11_sync[SI446X_GROUP11_SIZE];
+  uint8_t               GLOBAL[SI446X_GROUP00_SIZE];
+  uint8_t               INT_CTL[SI446X_GROUP01_SIZE];
+  uint8_t               FRR_CTL[SI446X_GROUP02_SIZE];
+  uint8_t               PREAMBLE[SI446X_GROUP10_SIZE];
+  uint8_t               SYNC[SI446X_GROUP11_SIZE];
 
   /*
    * group12 defines various properties about packets including
@@ -965,27 +1166,44 @@ typedef struct {
    * GROUP12a_SIZE to minimize how many Packet properites we add to the
    * radio dump.  Group12a starts at 0x1221, PKT_RX_FIELD_1_LENGTH.
    */
-  uint8_t               gr12_pkt[SI446X_GROUP12_SIZE];
+  uint8_t               PKT[SI446X_GROUP12_SIZE];
 #ifdef SI446X_GROUP12a_SIZE
   uint8_t               gr12a_pkt[SI446X_GROUP12a_SIZE];
 #endif
-  uint8_t               gr20_modem[SI446X_GROUP20_SIZE];
-  uint8_t               gr21_modem[SI446X_GROUP21_SIZE];
-  uint8_t               gr22_pa[SI446X_GROUP22_SIZE];
-  uint8_t               gr23_synth[SI446X_GROUP23_SIZE];
-  uint8_t               gr30_match[SI446X_GROUP30_SIZE];
-  uint8_t               gr40_freq_ctl[SI446X_GROUP40_SIZE];
-  uint8_t               gr50_hop[SI446X_GROUP50_SIZE];
-  uint8_t               grF0_pti[SI446X_GROUPF0_SIZE];
+  uint8_t               MODEM[SI446X_GROUP20_SIZE];
+  uint8_t               MODEM_CHFLT[SI446X_GROUP21_SIZE];
+  uint8_t               PAx[SI446X_GROUP22_SIZE];
+  uint8_t               SYNTH[SI446X_GROUP23_SIZE];
+  uint8_t               MATCH[SI446X_GROUP30_SIZE];
+  uint8_t               FREQ_CTL[SI446X_GROUP40_SIZE];
+  uint8_t               RX_HOP[SI446X_GROUP50_SIZE];
+//  uint8_t              grF0_pti[SI446X_GROUPF0_SIZE];
 } radio_dump_t;
-
-norace radio_dump_t rd;
 
 typedef struct {
   uint16_t  prop_id;
   uint8_t  *where;
   uint8_t   length;
 } dump_prop_desc_t;
+
+typedef enum {
+  SPI_REC_UNDEFINED   = 0,
+  SPI_REC_READ_FRR    = 1,
+  SPI_REC_SEND_CMD    = 2,
+  SPI_REC_GET_REPLY   = 3,
+  SPI_REC_RX_FIFO     = 4,
+  SPI_REC_TX_FIFO     = 5,
+  SPI_REC_LAST
+} spi_trace_record_t;
+
+#define SPI_TRACE_BUF_MAX  16
+typedef struct {
+  uint32_t              timestamp;
+  spi_trace_record_t    op;
+  uint8_t               struct_id;
+  uint8_t               length;
+  uint8_t               buf[SPI_TRACE_BUF_MAX];
+} spi_trace_desc_t;
 
 /*
  * global frr state info and constants for accessing

@@ -10,3 +10,4 @@ support/utils/mkdblk/mkdblk
 _Build
 TAGS
 tos/chips/si446x/FSM.*
+.DS_Store

@@ -1,5 +1,8 @@
+#ifndef __SI446X_CONFIG_PLATFORM_H__
+#define __SI446X_CONFIG_PLATFORM_H__
+
 /*
- * Copyright (c) 2016-2017 Eric B. Decker
+ * Copyright (c) 2016-2017 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,11 +34,16 @@
  *
  * Author: Eric B. Decker
  * Date: 1/15/2016
+ * Author: Daniel J. Maltbie <dmaltbie@daloma.org>
+ * Date: 5/20/2017
  *
+ */
+
+/*
  * <chip> refers to the exact chip being supported.  Looks like there
  * are too many behavioural differences between the 4463 and 4468.
  * So <chip> may be si44631B or si44682A.  Chip revs also seem to make
- * a significant difference.
+ * a significant difference. All operations performed as 4463 commands.
  *
  * Where we've identified definitions that do work across both chips, we
  * have kept the nomenclature of SI446X_...
@@ -55,58 +63,34 @@
  * a TX/RX switch and need to be programmed appropriately.
  */
 
-#ifndef __RADIO_PLATFORM_SI44631B_H__
-#define __RADIO_PLATFORM_SI44631B_H__
-
-#include "radio_config_si44631B.h"
-
-#define SI446X_CHIP 0x44631Ba
+/* Select the chip type to modify si446x.h definitions
+ */
+#define SI446X_CHIP 0x44631B
+#include "si446x.h"
 
 #define SI446X_HW_CTS
 
 /*
- * SI446X_RF_POWER_UP is a platform dependent define.  In particular, TXCO should be
- * set to 1 if we are using an external Xtal.  VERIFY   TODO.
+ * SI446X_RF_POWER_UP
+ *
+ * Configure the oscillator frequency for 30 MHz
+ * TXCO should be set to 1 if we are using an external Xtal.  VERIFY   TODO.
  */
 #define SI446X_RF_POWER_UP 0x02, 0x01, 0x00, 0x01, 0xC9, 0xC3, 0x80
 
-
 /*
- * SI446X_RF_GPIO_CFG determines how the gpio pins are programmed.
+ * SI446X_RF_GPIO_CFG
  *
- * gp0: 0, gp1: cts, gp2: rx_state (33), gp3: tx_state (32)
- * gp2: 0, gp3: 1 -> Tx,   gp2: 1, gp3: 0 -> Rx
+ * Specify how the gpio pins are programmed.
+ *
+ * gp0: in_sleep (28),  asleep: gp0=0
+ * gp1: cts(8), clear: gp1=1
+ * gp2: rx_state (33), gp3: tx_state (32)
+ *      Transmit: gp2=0, gp3=1
+ *      Receive:  gp2=1, gp3=0
  */
 #define SI446X_GPIO_PIN_CFG_LEN    8
-#define SI446X_RF_GPIO_PIN_CFG     0x13, 2, 8, 33, 32, 0x00, 0x00, 0x00
+#define SI446X_RF_GPIO_PIN_CFG     0x13, 28, 8, 33, 32, 0x00, 0x00, 0x00
 
 
-/*
- * Export WDS values for Static WDS configuration
- * This keeps the name space from the WDS program inside this file.
- */
-#define SI44631B_WDS_CONFIG_BYTES { \
-        0x06, RF_GLOBAL_XO_TUNE_2, \
-        0x09, RF_SYNC_CONFIG_5, \
-        0x10, RF_MODEM_MOD_TYPE_12, \
-        0x05, RF_MODEM_FREQ_DEV_0_1, \
-        0x0C, RF_MODEM_TX_RAMP_DELAY_8, \
-        0x0D, RF_MODEM_BCR_OSR_1_9, \
-        0x0B, RF_MODEM_AFC_GEAR_7, \
-        0x05, RF_MODEM_AGC_CONTROL_1, \
-        0x0D, RF_MODEM_AGC_WINDOW_SIZE_9, \
-        0x0D, RF_MODEM_OOK_CNT1_9, \
-        0x05, RF_MODEM_RSSI_CONTROL_1, \
-        0x05, RF_MODEM_RSSI_COMP_1, \
-        0x05, RF_MODEM_CLKGEN_BAND_1, \
-        0x10, RF_MODEM_CHFLT_RX1_CHFLT_COE13_7_0_12, \
-        0x10, RF_MODEM_CHFLT_RX1_CHFLT_COE1_7_0_12, \
-        0x10, RF_MODEM_CHFLT_RX2_CHFLT_COE7_7_0_12, \
-        0x08, RF_PA_MODE_4, \
-        0x0B, RF_SYNTH_PFDCP_CPFF_7, \
-        0x10, RF_MATCH_VALUE_1_12, \
-        0x0C, RF_FREQ_CONTROL_INTE_8, \
-        0x00 \
- }
-
-#endif          // __RADIO_PLATFORM_SI44631B_H__
+#endif  /* __SI446X_CONFIG_PLATFORM_H__ */

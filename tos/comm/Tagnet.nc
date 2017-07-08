@@ -1,7 +1,21 @@
-/*
- * Copyright (c) 2015-2016, Eric B. Decker
- * All rights reserved.
+/**
+ * Primary user interface for accessing the Tagnet protocol stack.
+ *<p>
+ * The Tagnet Stack provides the handling of Tagnet request messages. This
+ * includes the following steps:
+ *</p>
+ *<ul>
+ * <li>Match the request message name with one of the names instantiated in the stack.</li>
+ * <li>If matched, then process the message action to access the named data object.</li>
+ * <li>Optionally format a response message using the same buffer as the request.</li>
+ *</ul>
  *
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
+ * @Copyright (c) 2017 Daniel J. Maltbie
+ * All rights reserved.
+ */
+/*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -32,40 +46,15 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * Defining the platform-independently named packet structures to be the
- * chip-specific CC1000 packet structures.
- *
- * @author Eric B. Decker <cire831@gmail.com>
- */
+#include "message.h"
 
-#ifndef PLATFORM_MESSAGE_H
-#define PLATFORM_MESSAGE_H
-
-#include <Serial.h>
-#include <Si446xRadio.h>
-#include <Tagnet.h>
-
-typedef union message_header {
-  si446x_packet_header_t  header;
-} message_header_t;
-
-typedef union message_footer {
-  si446x_packet_footer_t  footer;
-} message_footer_t;
-
-typedef struct message_metadata {
-  union {
-    si446x_metadata_t     si446x_meta;
-  };
-
-//  timestamp_metadata_t    ts_meta;
-
-  flags_metadata_t        flags_meta;
-
-  tagnet_name_meta_t      tn_name_meta;
-  tagnet_payload_meta_t   tn_payload_meta;
-
-} message_metadata_t;
-
-#endif
+interface Tagnet {
+  /**
+   * Process the Tagnet request message and return flag if response message needs
+   * to be transmitted.
+   *
+   * @param   msg    pointer to message buffer containing Tagnet Request packet
+   * @return         TRUE if response should be sent (in same buffer as original request)
+   */
+  command bool  process_message(message_t *msg);
+}

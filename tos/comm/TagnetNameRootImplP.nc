@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2015-2016, Eric B. Decker
+/**
+ * Copyright (c) 2017 Daniel J. Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,42 +30,52 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/**
- * Defining the platform-independently named packet structures to be the
- * chip-specific CC1000 packet structures.
  *
- * @author Eric B. Decker <cire831@gmail.com>
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
  */
 
-#ifndef PLATFORM_MESSAGE_H
-#define PLATFORM_MESSAGE_H
+module TagnetNameRootImplP {
+  provides interface Tagnet;
+  provides interface TagnetMessage   as  Sub[uint8_t id];
+  uses interface     TagnetName      as  TName;
+  uses interface     TagnetHeader    as  THdr;
+  uses interface     TagnetPayload   as  TPload;
+  uses interface     TagnetTLV       as  TTLV;
+}
+implementation {
+  enum { SUB_COUNT = uniqueCount(UQ_TN_ROOT) };
 
-#include <Serial.h>
-#include <Si446xRadio.h>
-#include <Tagnet.h>
+  command bool Tagnet.process_message(message_t *msg) {
+    uint8_t          i;
 
-typedef union message_header {
-  si446x_packet_header_t  header;
-} message_header_t;
+    for (i = 0; i < TN_TRACE_PARSE_ARRAY_SIZE; i++) tn_trace_array[i].id = TN_ROOT_ID;
+    tn_trace_index = 1;
 
-typedef union message_footer {
-  si446x_packet_footer_t  footer;
-} message_footer_t;
+    for (i = 0; i<SUB_COUNT; i++) {
+      call TName.first_element(msg);     // start at the beginning of the name
+      nop();
+      if (signal Sub.evaluate[i](msg)) {
+        if (call THdr.is_response(msg)) {
+          return TRUE;                   // got a match and response to send
+        }
+        return FALSE;                    // matched but response not set
+      }
+    }
+    return FALSE;                        // no match, no response
+  }
 
-typedef struct message_metadata {
-  union {
-    si446x_metadata_t     si446x_meta;
-  };
+  command uint8_t Sub.get_full_name[uint8_t id](uint8_t *buf, uint8_t len) {
+    return len;
+  }
 
-//  timestamp_metadata_t    ts_meta;
-
-  flags_metadata_t        flags_meta;
-
-  tagnet_name_meta_t      tn_name_meta;
-  tagnet_payload_meta_t   tn_payload_meta;
-
-} message_metadata_t;
-
-#endif
+  default event bool Sub.evaluate[uint8_t id](message_t* msg) {
+    return TRUE;
+  }
+  default event void Sub.add_name_tlv[uint8_t id](message_t *msg) {
+  }
+  default event void Sub.add_value_tlv[uint8_t id](message_t *msg) {
+  }
+  default event void Sub.add_help_tlv[uint8_t id](message_t *msg) {
+  }
+}

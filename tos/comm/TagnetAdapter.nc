@@ -1,7 +1,18 @@
-/*
- * Copyright (c) 2015-2016, Eric B. Decker
- * All rights reserved.
+/**
+ *<p>
+ * This is a generic interface used by the Tagnet stack to access
+ * native C data types.  All of the network specific details are handled
+ * by the stack, including conversion from a Native C format to the
+ * network internal compact tlv format. The types of adapters supported
+ *  is defined by the Tagnet TLV types.
+ *</p>
  *
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
+ * @Copyright (c) 2017 Daniel J. Maltbie
+ * All rights reserved.
+ */
+/*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -32,40 +43,18 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * Defining the platform-independently named packet structures to be the
- * chip-specific CC1000 packet structures.
- *
- * @author Eric B. Decker <cire831@gmail.com>
- */
+#include "TagnetTLV.h"
 
-#ifndef PLATFORM_MESSAGE_H
-#define PLATFORM_MESSAGE_H
-
-#include <Serial.h>
-#include <Si446xRadio.h>
-#include <Tagnet.h>
-
-typedef union message_header {
-  si446x_packet_header_t  header;
-} message_header_t;
-
-typedef union message_footer {
-  si446x_packet_footer_t  footer;
-} message_footer_t;
-
-typedef struct message_metadata {
-  union {
-    si446x_metadata_t     si446x_meta;
-  };
-
-//  timestamp_metadata_t    ts_meta;
-
-  flags_metadata_t        flags_meta;
-
-  tagnet_name_meta_t      tn_name_meta;
-  tagnet_payload_meta_t   tn_payload_meta;
-
-} message_metadata_t;
-
-#endif
+interface TagnetAdapter<tagnet_adapter_type>
+{
+  /**
+   * Get the value of the Tagnet named data object. The interface is
+   * parameterized by the type of value that can be accessed. Examples
+   * are integer, string, utc_time.
+   *
+   * @param   'tagnet_adapter_type *t'   pointer to an instance of adapter type
+   * @param   'uint8_t             *len' pointer to length available/used
+   * @return  'bool'                     TRUE if value is valid
+   */
+  command bool get_value(tagnet_adapter_type *t, uint8_t *len);
+}

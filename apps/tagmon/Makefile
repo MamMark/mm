@@ -1,4 +1,4 @@
-COMPONENT=testRadioC
+COMPONENT=TagnetMonitorC
 
 OPTFLAGS = -ggdb -Os -fnesc-no-inline
 CFLAGS += -DTOSH_DATA_LENGTH=250

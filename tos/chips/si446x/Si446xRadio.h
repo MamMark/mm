@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, Eric B. Decker
+ * Copyright (c) 2015-2016, 2017  Eric B. Decker, Daniel J.Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,96 +32,80 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Eric B. Decker <cire831@gmail.com>
+ * Author: Daniel J. Maltbie <dmaltbie>
  */
 
 #ifndef __SI446XRADIO_H__
 #define __SI446XRADIO_H__
 
+#include <MetadataFlagsLayer.h>
+#include <TimeStampingLayer.h>
+
+#ifdef notdef
 #include <RadioConfig.h>
 #include <TinyosNetworkLayer.h>
 #include <Ieee154PacketLayer.h>
 #include <ActiveMessageLayer.h>
-#include <MetadataFlagsLayer.h>
 #include <Si446xDriverLayer.h>
-#include <TimeStampingLayer.h>
 #include <LowPowerListeningLayer.h>
 #include <PacketLinkLayer.h>
+#endif
 
 #if defined(TFRAMES_ENABLED) && defined(IEEE154FRAMES_ENABLED)
 #error "Both TFRAMES and IEEE154FRAMES enabled!"
 #endif
 
+#define UQ_SI446X_METADATA_FLAGS "UQ_SI446X_METADATA_FLAGS"
+#define UQ_SI446X_RADIO_ALARM    "UQ_SI446X_RADIO_ALARM"
 
 /**
- * SI446X header definition.
+ * SI446X packet definition.
  *
- * The si446x family of chips are very flexible.  We default to
- * a simple 802.15.4 like packet format for compatibility with existing
- * TinyOS 802.15.4 stacks.
- * 
- * An I-frame (interoperability frame) header has an extra network 
- * byte specified by 6LowPAN
- * 
- * Length = length of the header + payload of the packet, minus the size
- *   of the length byte itself (1).  This is what allows for variable 
- *   length packets.
- * 
- * FCF = Frame Control Field, defined in the 802.15.4 specs and the
- *   SI446X datasheet.
- *
- * DSN = Data Sequence Number, a number incremented for each packet sent
- *   by a particular node.  This is used in acknowledging that packet, 
- *   and also filtering out duplicate packets.
- *
- * DestPan = The destination PAN (personal area network) ID, so your 
- *   network can sit side by side with another TinyOS network and not
- *   interfere.
- * 
- * Dest = The destination address of this packet. 0xFFFF is the broadcast
- *   address.
- *
- * Src = The local node ID that generated the message.
- * 
- * Network = The TinyOS network ID, for interoperability with other types
- *   of 802.15.4 networks. 
- * 
- * Type = TinyOS AM type.  When you create a new AMSenderC(AM_MYMSG), 
- *   the AM_MYMSG definition is the type of packet.
- * 
- * TOSH_DATA_LENGTH defaults to 28, it represents the maximum size of 
- * the payload portion of the packet, and is specified in the 
- * tos/types/message.h file.
- *
- * All of these fields will be filled in automatically by the radio stack 
- * when you attempt to send a message.
  */
 
 /*
- * si446x_packet_header contains first the PHR (PHY Hdr), Length
- * and then the MPDU header (ieee154).   The ieee154 header
- * is actually a simple 802.15.4 header that only has 16 bit
- * addresses and a dpan (compressed PAN id).
+ * si446x_packet_header contains first the PHR (PHY Hdr), which consists of
+ * the frame_length, counting all of the MPDU bytes in the transmission.
+ * The CRC at the end of the frame is not included in the frame_length.
  *
- * depending on defines we may also have a network byte as
- * an am_type ("am").
+ * The rest of the packet header consists of the Tagnet fixed field,
+ * providing basic Tagnet message information.
+ *
+ * The packet header length total is 4 bytes.
+ *
+ * packet  = frame_length
+ *         + response_flag[1] + version[3] + padding[3] + payload_type[1]
+ *         + packet_type[3] + options[5]
+ *         + name_length
+ *         + rest_of_packet
+ *         + crc
  */
 
 typedef nx_struct si446x_packet_header {
-  nxle_uint8_t            length;
-  ieee154_simple_header_t ieee154;
-
-#ifndef TFRAMES_ENABLED
-  network_header_t        network;
-#endif
-#ifndef IEEE154FRAMES_ENABLED
-  activemessage_header_t  am_type;
-#endif
+  nxle_uint8_t            frame_length;
+  nxle_uint8_t            tn_h1;
+  nxle_uint8_t            tn_h2;
+  nxle_uint8_t            name_length;
 } si446x_packet_header_t;
+
+#define TN_H1_RSP_F_M      0x80  // (h1)[7:1] response flag
+#define TN_H1_RSP_F_B      7
+
+#define TN_H1_VERS_M       0x70  // (h1)[4:3] version
+#define TN_H1_VERS_B       4
+
+#define TN_H1_PL_TYPE_M    0x01  // (h1)[0:1] payload type
+#define TN_H1_PL_TYPE_B    0
+
+#define TN_H2_MTYPE_M      0xE0  // (h2)[5:3] message type
+#define TN_H2_MTYPE_B      5
+
+#define TN_H2_OPTION_M     0x1F  // (h2)[0:5] option
+#define TN_H2_OPTION_B     0
 
 
 typedef nx_struct si446x_packet_footer {
-  // the time stamp is not recorded here, time stamped messages cannot have max length
-  // which means what?
+  nx_uint8_t  placeholder;
 } si446x_packet_footer_t;
 
 /**
@@ -146,7 +130,7 @@ typedef nx_struct si446x_packet_t {
 
 
 #ifndef TOSH_DATA_LENGTH
-#define TOSH_DATA_LENGTH 28
+#define TOSH_DATA_LENGTH 250
 #endif
 
 /**
@@ -156,15 +140,6 @@ typedef nx_struct si446x_packet_t {
 #ifndef RECEIVE_HISTORY_SIZE
 #define RECEIVE_HISTORY_SIZE 4
 #endif
-
-
-/** 
- * The 6LowPAN NALP ID for a TinyOS network is 63 (TEP 125).
- */
-#ifndef TINYOS_6LOWPAN_NETWORK_ID
-#define TINYOS_6LOWPAN_NETWORK_ID 0x3f
-#endif
-
 
 enum {
   // size of the header not including the length byte
