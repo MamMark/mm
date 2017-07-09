@@ -14,6 +14,9 @@
  * do not violate alignment restrictions.  16 bit fields on 2 byte
  * alignment and 32 bit fields on 4 byte alignment.   Structures start on
  * 4 byte alignment.
+ *
+ * PACKED only eliminates padding within the data fields.  The next
+ * dt struct will be aligned on a 32 bit boundary.
  */
 
 #ifndef __TYPED_DATA_H__
@@ -55,15 +58,17 @@ typedef enum {
 /*
  * In memory and within a SD sector, DT headers are constrained to be 32
  * bit aligned (aligned(4)).  This means that all data must be padded as
- * needed to make the next header start on a 4 byte boundary.
+ * needed to make the next dt header start on a 4 byte boundary.
  *
- * All records (data blocks) start with 2 byte little endian length.  A 2
- * byte little endian data type field (dtype) and optionally a 32 bit (4
- * byte) time stamp since last reboot.  Units are mis (binary millisecs).
+ * All records (data blocks, dt headers) start with 2 byte little endian
+ * length.  A 2 byte little endian data type field (dtype) and optionally a
+ * 32 bit (4 byte) time stamp since last reboot.  Units are ms (we haven't
+ * decided yet on whether to make them binary or decimal millisecs).
  *
  * Length is the total size of the data block including header and any
  * following data.  The length does not include any padding at the end of
- * the data block.  When skipping over records one must compensate for any
+ * the data block (this would be to make sure the next dt header is quad
+ * byte aligned).  When skipping over records one must compensate for any
  * potential padding.  The next header must start on an even 4 byte
  * address.
  *
@@ -72,20 +77,21 @@ typedef enum {
  * DT_HDR_SIZE_<stuff> defines how large any header is prior to any
  * variable length data.  It is used for redundancy checks.
  *
- * Many data blocks will be followed by variable length data.  The len
+ * Many dt headers will be followed by variable length data.  The len
  * field in the data block header includes both the header length as
- * well as the variable length data.
+ * well as the variable length data.  There is no padding between the
+ * dt header and where the data starts.  There is no assumption made
+ * about the alignment of the data.
  *
  * <something>_BLOCK_SIZE is used to say how much data the whole structure
  * needs to take.
  *
  * The special dtype, DT_TINTRYALF, is used to force reading/writing the
- * next sector when a dblk header will not fit contiguously into the
- * current sector.  The weird letters mean, This Is Not The Record You Are
- * Looking For, a StarWars play.  It is also sort of pronounceable.  It is
- * used by the Collector, when the header won't fit into the current disk
- * sector.  It is only used towards the end of the sector when the header
- * won't fit.
+ * next sector when a dt header will not fit contiguously into the current
+ * sector.  The weird letters mean, This Is Not The Record You Are Looking
+ * For, a StarWars play.  It is also sort of pronounceable.  It is used by
+ * the Collector, when the header won't fit into the current disk sector.
+ * It is only used towards the end of the sector when the header won't fit.
  */
 
 typedef struct {                /* size 4 */
