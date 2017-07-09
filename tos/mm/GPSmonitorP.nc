@@ -44,10 +44,6 @@
 #include <TagnetTLV.h>
 #include <sirf_msg.h>
 
-#ifndef GPS_COLLECT_RAW
-#define GPS_COLLECT_RAW
-#endif
-
 #ifndef PANIC_GPS
 enum {
   __pcode_gps = unique(UQ_PANIC_SUBSYS)
@@ -307,6 +303,7 @@ implementation {
   event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
         uint32_t arrival_ms, uint32_t mark_j) {
     sb_header_t *sbp;
+    dt_gps_t hdr;
 
     sbp = (void *) msg;
     if (sbp->start1 != SIRFBIN_A0 || sbp->start2 != SIRFBIN_A2) {
@@ -314,18 +311,12 @@ implementation {
       return;
     }
 
-#ifdef GPS_COLLECT_RAW
-    {
-      dt_gps_t hdr;
-
-      hdr.len      = sizeof(hdr) + len;
-      hdr.dtype    = DT_GPS_RAW_SIRFBIN;
-      hdr.stamp_ms = arrival_ms;
-      hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
-      hdr.chip_id  = CHIP_GPS_GSD4E;
-      call Collect.collect((void *) &hdr, sizeof(hdr), msg, len);
-    }
-#endif
+    hdr.len      = sizeof(hdr) + len;
+    hdr.dtype    = DT_GPS_RAW_SIRFBIN;
+    hdr.stamp_ms = arrival_ms;
+    hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
+    hdr.chip_id  = CHIP_GPS_GSD4E;
+    call Collect.collect((void *) &hdr, sizeof(hdr), msg, len);
 
     switch (sbp->mid) {
       case MID_NAVDATA:
