@@ -229,40 +229,51 @@ enum {
   CHIP_GPS_GSD4E   = 1,
 };
 
- */
-typedef struct {
-  uint16_t len;                 /* size 26, 0x1A */
-  dtype_t  dtype;
-  uint32_t stamp_ms;
-  uint32_t clock_bias;		/* m x 10^2 */
-  uint32_t clock_drift;		/* m/s x 10^2 */
-  uint8_t  chip_type;
-  uint8_t  num_svs;
-  uint16_t utc_year;
-  uint8_t  utc_month;
-  uint8_t  utc_day;
-  uint8_t  utc_hour;
-  uint8_t  utc_min;
-  uint16_t utc_millsec;
-} PACKED dt_gps_time_t;
-
 
 /*
- * M10478,      CHIP_GPS_GSD4E
+ * GPS TIME, M10478, CHIP_GPS_GSD4E
+ * copied from a sb_geo packet.
  */
 typedef struct {
   uint16_t len;                 /* size 32, 0x20 */
   dtype_t  dtype;
   uint32_t stamp_ms;
-  uint8_t  chip_type;
-  uint8_t  num_svs;             /* number of sv in solution */
-  uint16_t nav_type;
-  uint32_t sats_seen;           /* bit mask, sats in solution */
+  uint32_t tow;
+  uint16_t week_x;
+  uint8_t  nsats;
+  uint8_t  chip_id;
+  uint32_t clock_bias;		/* m x 10^2 */
+  uint32_t clock_drift;		/* m/s x 10^2 */
+  uint16_t utc_year;
+  uint8_t  utc_month;
+  uint8_t  utc_day;
+  uint8_t  utc_hour;
+  uint8_t  utc_min;
+  uint16_t utc_ms;              /* * 1000, ms */
+} PACKED dt_gps_time_t;
+
+
+/*
+ * GPS GEO POSITION, M10478, CHIP_GPS_GSD4E
+ * copied in from a sb_geo packet.
+ */
+typedef struct {
+  uint16_t len;                 /* size 34, 0x22 */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint32_t tow;
+  uint16_t week_x;
+  uint8_t  nsats;               /* number of sv in solution */
+  uint8_t  chip_id;
   int32_t  gps_lat;             /* + North, x 10^7 degrees */
   int32_t  gps_long;            /* + East,  x 10^7 degrees */
   uint32_t ehpe;                /* estimated horz pos err, 1e2 */
   uint32_t hdop;                /* err *5 */
-} PACKED dt_gps_pos_t;
+  uint32_t sat_mask;            /* bit mask, sats in solution */
+  uint16_t nav_valid;           /* bit mask */
+  uint16_t nav_type;            /* bit mask */
+} PACKED dt_gps_geo_t;
+
 
 
 typedef struct {
@@ -307,21 +318,21 @@ typedef struct {
 } PACKED dt_note_t;
 
 
-
 enum {
   DT_HDR_SIZE_HEADER        = sizeof(dt_header_t),
   DT_HDR_SIZE_HEADER_TS     = sizeof(dt_header_ts_t),
   DT_HDR_SIZE_SYNC          = sizeof(dt_sync_t),
   DT_HDR_SIZE_REBOOT        = sizeof(dt_reboot_t),
   DT_HDR_SIZE_PANIC         = sizeof(dt_panic_t),
+  DT_HDR_SIZE_VERSION       = sizeof(dt_version_t),
+  DT_HDR_SIZE_EVENT         = sizeof(dt_event_t),
+
   DT_HDR_SIZE_GPS           = sizeof(dt_gps_t),
   DT_HDR_SIZE_GPS_TIME      = sizeof(dt_gps_time_t),
-  DT_HDR_SIZE_GPS_POS       = sizeof(dt_gps_pos_t),
+  DT_HDR_SIZE_GPS_GEO       = sizeof(dt_gps_geo_t),
   DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_t),
   DT_HDR_SIZE_SENSOR_SET    = sizeof(dt_sensor_set_t),
   DT_HDR_SIZE_NOTE	    = sizeof(dt_note_t),
-  DT_HDR_SIZE_VERSION       = sizeof(dt_version_t),
-  DT_HDR_SIZE_EVENT	    = sizeof(dt_event_t),
 };
 
 
@@ -362,8 +373,8 @@ enum {
   GPS_TIME_PAYLOAD_SIZE   = 0,
   GPS_TIME_BLOCK_SIZE     = (DT_HDR_SIZE_GPS_TIME + GPS_TIME_PAYLOAD_SIZE),
 
-  GPS_POS_PAYLOAD_SIZE    = 0,
-  GPS_POS_BLOCK_SIZE      = (DT_HDR_SIZE_GPS_POS + GPS_POS_PAYLOAD_SIZE),
+  GPS_GEO_PAYLOAD_SIZE    = 0,
+  GPS_GEO_BLOCK_SIZE      = (DT_HDR_SIZE_GPS_GEO + GPS_GEO_PAYLOAD_SIZE),
 };
 
 #endif  /* __TYPED_DATA_H__ */
