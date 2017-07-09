@@ -128,20 +128,23 @@ enum {
  * operational baud rate, 115200 initially but could be higher if we need
  * the performance.
  *
- * When doing a COMM_CHECK sequence, we first start with a SB-<target> message.
- * We follow this configuration message up by sending a SB-SendSWVer message
- * which always elicits a response.  We also want to grab the current version
- * of what chip we are running.  (done).
+ * When we transition out of OFF, we power up (wait), wiggle ON/OFF to turn
+ * the gps on (wait), set <target> baud and listen.  If everything is
+ * configured properly (typical case), we should get an OK-TO-SEND (OTS).
+ * This will transition us to a working state without reconfiguring the GPS.
+ * or the UART h/w we are using.
  *
- * If the initial COMM_CHECK doesn't work (it gets a RX timeout), we then
- * proceed to send configuration messages at different baud rates for predicted
- * modes the gps chip may be in.  These configuration messages, assume the
- * GPS chip is in a particular comm configuration and will change the config
- * to SB-<target>.
+ * If this first listen (PROBE_0) times out, then we have to try various
+ * configurations.  This occurs via PROBE_CYCLE through CHK_RX_WAIT.  After
+ * sending a reconfigure command (and setting the appropriate baud rate),
+ * we force a response from the GPS using a PEEK command.  We basically
+ * tell the GPS ARM to send us the 4 bytes at address 0 (the restart
+ * vector?).  This is the lowest overhead mechanism to force a response
+ * from the GPS.
  *
- * If a configuration message results in an immediate response then we
- * leave it at that.  Otherwise we also send a SB-SendSWVer to make
- * sure we can hear the GPS after setting the new configuration.
+ * The final step when bringing the GPS chip out of power off is to elicit
+ * the version of sw that is running.  SB-SendSWVer.  This gets captured
+ * by the GPSmonitor.
  *
  *
  * *** State Machine Description
@@ -151,8 +154,10 @@ enum {
  *
  * PWR_UP_WAIT:     delay waiting for initial power on window
  *
- * PROBE_0:         wakeup wait, then send sw_ver at target baud to elicit
- *                  a packet from the gps.
+ * PROBE_0:         wakeup wait, wait for a potential OTS (ok-to-send).
+ *                  Receiving OTS will cause a MsgStart which transitions
+ *                  the state machine.  If we timeout send a Probe (peek)
+ *                  in case we missed the OTS for some reason.
  *
  * PROBE_CYCLE:     start a new probe cycle, send the next configuration we
  *                  want to try.  If we've run out, try doing them all again
@@ -162,22 +167,24 @@ enum {
  *                  actually sets the new speed and sends the config.
  *
  * CHK_TX_WAIT:     We are actively transmitting (via tx interrtups) the
- *                  current probe (which trys to change the comm
- *                  configuration).  The tx_timer is a deadman and shouldn't
- *                  go off.  Proper termination is via HW.gps_send_block_done.
+ *                  current configuration.  The tx_timer is a deadman and
+ *                  shouldn't go off.  Proper termination is via
+ *                  HW.gps_send_block_done.
  *
  * CHK_TA_WAIT:     After the config change message is sent we delay a turn
  *                  around time to give the gps time to actually change its
  *                  configuration.
  *
- * CHK_TX1_WAIT:    We may have to force a response from the gps to see if
+ * CHK_TX1_WAIT:    We want to force a response from the gps to see if
  *                  the configuration worked.  TX1_WAIT is active while
- *                  we are sending this probe.  tx_timer should not
+ *                  we are sending this probe (peek).  tx_timer should not
  *                  expire (deadman for transmit).
  *
  * CHK_RX_WAIT:     Waiting to receive the response from the probe.  If
  *                  rx_timer expires we assume the probe didn't work and
- *                  we cycle to a different configuration.
+ *                  we cycle to a different configuration.  If the probe
+ *                  times out back to PROBE_CYCLE to try the next
+ *                  configuration.
  *
  * CHK_MSG_WAIT:    msgStart from the protocol engine will transition us
  *                  into MSG_WAIT where we are waiting for the message
