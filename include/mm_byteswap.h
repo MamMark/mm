@@ -1,4 +1,3 @@
-/* $Id: mm_byteswap.h,v 1.4 2006/07/11 03:56:26 cire Exp $ */
 /*
  * Conversion from/to little-endian byte order. (no-op on i386/i486)
  *
@@ -6,20 +5,29 @@
  * BE = big-endian, c: 16 = short (16 bits), 32 = long (32 bits)
  */
 
+/* swap addr */
+#define _sa(v) ((uint8_t *)&(v))
+
 #ifdef _BIG_ENDIAN
-#define swap16(v) ((((v) & 0xff) << 8) | (((v) & 0xff00) >> 8))
-#define swap32(v) ( ( ( (v) & 0xff) << 24) | (((v) & 0xff00) << 8) | \
-		    ( ( (v) & 0xff0000) >> 8) | (((v) & 0xff000000) >> 24))
 
+#define CF_LE_16(v) ((_sa(v)[1] <<  8) | _sa(v)[0])
+#define CF_LE_32(v) ((_sa(v)[3] << 24) | (_sa(v)[2] << 16) | (_sa(v)[1] << 8) | _sa(v)[0])
+#define CT_LE_16(v) CF_LE_16(v)
+#define CT_LE_32(v) CF_LE_32(v)
 
-#define CF_LE_16(v) swap16(v)
-#define CF_LE_32(v) swap32(v)
-#define CT_LE_16(v) swap16(v)
-#define CT_LE_32(v) swap32(v)
-
+#define CF_BE_16(v) (v)
+#define CF_BE_32(v) (v)
+#define CT_BE_16(v) (v)
+#define CT_BE_32(v) (v)
 #else
+
 #define CF_LE_16(v) (v)
 #define CF_LE_32(v) (v)
 #define CT_LE_16(v) (v)
 #define CT_LE_32(v) (v)
-#endif	/* BIG_ENDIAN */
+
+#define CF_BE_16(v) ((_sa(v)[0] <<  8) | _sa(v)[1])
+#define CF_BE_32(v) ((_sa(v)[0] << 24) | (_sa(v)[1] << 16) | (_sa(v)[2] << 8) | _sa(v)[3])
+#define CT_BE_16(v) CF_BE_16(v)
+#define CT_BE_32(v) CF_BE_32(v)
+#endif	/* _BIG_ENDIAN */
