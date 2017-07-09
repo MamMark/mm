@@ -38,17 +38,18 @@ typedef enum {
 
   DT_GPS_VERSION        = 8,
   DT_GPS_TIME		= 9,
-  DT_GPS_POS		= 10,
-  DT_SENSOR_DATA	= 11,
-  DT_SENSOR_SET		= 12,
-  DT_TEST		= 13,
-  DT_NOTE		= 14,
+  DT_GPS_GEO		= 10,
+  DT_GPS_XYZ            = 11,
+  DT_SENSOR_DATA	= 12,
+  DT_SENSOR_SET		= 13,
+  DT_TEST		= 14,
+  DT_NOTE		= 15,
 
   /*
    * GPS_RAW is used to encapsulate data as received from the GPS.
    */
-  DT_GPS_RAW_SIRFBIN	= 15,
-  DT_MAX		= 15,
+  DT_GPS_RAW_SIRFBIN	= 16,
+  DT_MAX		= 16,
   DT_16                 = 0xffff,       /* force to 2 bytes */
 } dtype_t;
 
@@ -275,6 +276,24 @@ typedef struct {
 } PACKED dt_gps_geo_t;
 
 
+/*
+ * GPS XYZ ECEF POSITION, M10478, CHIP_GPS_GSD4E
+ */
+typedef struct {
+  uint16_t len;                 /* size 30, 0x1E */
+  dtype_t  dtype;
+  uint32_t stamp_ms;
+  uint32_t tow;                 /* time of week * 100 */
+  uint16_t week;                /* 10 bit week */
+  uint8_t  nsats;               /* num sats in solution */
+  uint8_t  chip_id;
+  int32_t  x;                   /* m */
+  int32_t  y;                   /* m */
+  int32_t  z;                   /* m */
+  uint8_t  hdop;                /* err * 5 */
+  uint8_t  mode1;               /* solution mode */
+} PACKED dt_gps_xyz_t;
+
 
 typedef struct {
   uint16_t len;                 /* size 14 + var */
@@ -330,6 +349,7 @@ enum {
   DT_HDR_SIZE_GPS           = sizeof(dt_gps_t),
   DT_HDR_SIZE_GPS_TIME      = sizeof(dt_gps_time_t),
   DT_HDR_SIZE_GPS_GEO       = sizeof(dt_gps_geo_t),
+  DT_HDR_SIZE_GPS_XYZ       = sizeof(dt_gps_xyz_t),
   DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_t),
   DT_HDR_SIZE_SENSOR_SET    = sizeof(dt_sensor_set_t),
   DT_HDR_SIZE_NOTE	    = sizeof(dt_note_t),
@@ -375,6 +395,9 @@ enum {
 
   GPS_GEO_PAYLOAD_SIZE    = 0,
   GPS_GEO_BLOCK_SIZE      = (DT_HDR_SIZE_GPS_GEO + GPS_GEO_PAYLOAD_SIZE),
+
+  GPS_XYZ_PAYLOAD_SIZE    = 0,
+  GPS_XYZ_BLOCK_SIZE      = (DT_HDR_SIZE_GPS_XYZ + GPS_XYZ_PAYLOAD_SIZE),
 };
 
 #endif  /* __TYPED_DATA_H__ */
