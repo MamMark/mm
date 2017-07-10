@@ -170,8 +170,6 @@ implementation {
    */
   void process_navdata(sb_nav_data_t *np, uint32_t arrival_ms) {
     uint8_t pmode;
-    uint8_t data[GPS_XYZ_BLOCK_SIZE];
-    dt_gps_xyz_t *dxp;
     gps_xyz_t    *mxp;
 
     nop();
@@ -187,21 +185,16 @@ implementation {
        * determined >= 5 sat fix.
        */
       nop();
-      dxp  = (void *) data;
       mxp = &m_xyz;
-      mxp->ts    = dxp->stamp_ms = arrival_ms;
-      mxp->tow   = dxp->tow      = CF_BE_32(np->tow);
-      mxp->week  = dxp->week     = CF_BE_16(np->week);
-      mxp->x     = dxp->x        = CF_BE_32(np->xpos);
-      mxp->y     = dxp->y        = CF_BE_32(np->ypos);
-      mxp->z     = dxp->z        = CF_BE_32(np->zpos);
-      mxp->mode1 = dxp->mode1    = np->mode1;
-      mxp->hdop  = dxp->hdop     = np->hdop;
-      mxp->nsats = dxp->nsats    = np->nsats;
-
-      dxp->len = GPS_XYZ_BLOCK_SIZE;
-      dxp->dtype = DT_GPS_XYZ;
-      call Collect.collect((void *) dxp, sizeof(*dxp), NULL, 0);
+      mxp->ts    = arrival_ms;
+      mxp->tow   = CF_BE_32(np->tow);
+      mxp->week  = CF_BE_16(np->week);
+      mxp->x     = CF_BE_32(np->xpos);
+      mxp->y     = CF_BE_32(np->ypos);
+      mxp->z     = CF_BE_32(np->zpos);
+      mxp->mode1 = np->mode1;
+      mxp->hdop  = np->hdop;
+      mxp->nsats = np->nsats;
     }
   }
 
@@ -235,10 +228,7 @@ implementation {
    * Extract time and position data out of the geodetic gps packet
    */
   void process_geodetic(sb_geodetic_t *gp, uint32_t arrival_ms) {
-    uint8_t data[GPS_GEO_BLOCK_SIZE];   /* bigger of GEO or TIME */
-    dt_gps_time_t *dtp;
     gps_time_t    *mtp;
-    dt_gps_geo_t  *dgp;
     gps_geo_t     *mgp;
 
     if (!gp || gp->len != GEODETIC_LEN)
@@ -247,55 +237,37 @@ implementation {
     call CollectEvent.logEvent(DT_EVENT_GPS_SATS_29, gp->nsats, gp->nav_valid);
 
     if (gp->nav_valid == 0) {
-      dtp = (dt_gps_time_t *)data;
       mtp = &m_time;
 
-      dtp->len       = GPS_TIME_BLOCK_SIZE;
-      dtp->dtype     = DT_GPS_TIME;
-      dtp->chip_id   = CHIP_GPS_GSD4E;
+      mtp->ts        = arrival_ms;
+      mtp->tow       = CF_BE_32(gp->tow);
+      mtp->week_x    = CF_BE_16(gp->week_x);
+      mtp->nsats     = gp->nsats;
 
-      dtp->stamp_ms  = mtp->ts        = arrival_ms;
-      dtp->tow       = mtp->tow       = CF_BE_32(gp->tow);
-      dtp->week_x    = mtp->week_x    = CF_BE_16(gp->week_x);
-      dtp->nsats     = mtp->nsats     = gp->nsats;
+      mtp->utc_year  = CF_BE_16(gp->utc_year);
+      mtp->utc_month = gp->utc_month;
+      mtp->utc_day   = gp->utc_day;
+      mtp->utc_hour  = gp->utc_hour;
+      mtp->utc_min   = gp->utc_min;
+      mtp->utc_ms    = CF_BE_16(gp->utc_ms);
 
-      dtp->utc_year  = mtp->utc_year  = CF_BE_16(gp->utc_year);
-      dtp->utc_month = mtp->utc_month = gp->utc_month;
-      dtp->utc_day   = mtp->utc_day   = gp->utc_day;
-      dtp->utc_hour  = mtp->utc_hour  = gp->utc_hour;
-      dtp->utc_min   = mtp->utc_min   = gp->utc_min;
-      dtp->utc_ms    = mtp->utc_ms    = CF_BE_16(gp->utc_ms);
-
-      dtp->clock_bias  = CF_BE_32(gp->clock_bias);
-      dtp->clock_drift = CF_BE_32(gp->clock_drift);
-      call Collect.collect((void *)dtp, GPS_TIME_BLOCK_SIZE, NULL, 0);
-
-      dgp = (dt_gps_geo_t *)data;
       mgp = &m_geo;
-
-      dgp->len       = GPS_GEO_BLOCK_SIZE;
-      dgp->dtype     = DT_GPS_GEO;
-      dgp->stamp_ms  = mgp->ts        = arrival_ms;
-      dgp->tow       = mgp->tow       = CF_BE_32(gp->tow);
-      dgp->week_x    = mgp->week_x    = CF_BE_16(gp->week_x);
-      dgp->nsats     = mgp->nsats     = gp->nsats;
-      dgp->chip_id   = CHIP_GPS_GSD4E;
-
-      dgp->gps_lat   = mgp->lat       = CF_BE_32(gp->lat);
-      dgp->gps_long  = mgp->lon       = CF_BE_32(gp->lon);
-      dgp->ehpe      = mgp->ehpe      = CF_BE_32(gp->ehpe);
-      dgp->hdop      = mgp->hdop      = gp->hdop;
-      dgp->sat_mask  = mgp->sat_mask  = CF_BE_32(gp->sat_mask);
-      dgp->nav_valid = mgp->nav_valid = CF_BE_16(gp->nav_valid);
-      dgp->nav_type  = mgp->nav_type  = CF_BE_16(gp->nav_type);
-      call Collect.collect((void *)dgp, GPS_GEO_BLOCK_SIZE, NULL, 0);
-
+      mgp->ts        = arrival_ms;
+      mgp->tow       = CF_BE_32(gp->tow);
+      mgp->week_x    = CF_BE_16(gp->week_x);
+      mgp->nsats     = gp->nsats;
+      mgp->lat       = CF_BE_32(gp->lat);
+      mgp->lon       = CF_BE_32(gp->lon);
+      mgp->ehpe      = CF_BE_32(gp->ehpe);
+      mgp->hdop      = gp->hdop;
+      mgp->sat_mask  = CF_BE_32(gp->sat_mask);
+      mgp->nav_valid = CF_BE_16(gp->nav_valid);
+      mgp->nav_type  = CF_BE_16(gp->nav_type);
+      mgp->alt_ell   = CF_BE_32(gp->alt_elipsoid);
+      mgp->alt_msl   = CF_BE_32(gp->alt_msl);
+      mgp->sog       = CF_BE_16(gp->sog);
+      mgp->cog       = CF_BE_16(gp->cog);
       mgp->additional_mode = gp->additional_mode;
-      mgp->alt_ell = CF_BE_32(gp->alt_elipsoid);
-      mgp->alt_msl = CF_BE_32(gp->alt_msl);
-      mgp->sog     = CF_BE_16(gp->sog);
-      mgp->cog     = CF_BE_16(gp->cog);
-      /* other stuff */
     }
   }
 
