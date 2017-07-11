@@ -58,16 +58,19 @@
  *   508 ---   2 byte le seq number
  *   510 ---   2 byte le checksum
  *
- * The current implementation will put whole typed_data blocks (dblks) into
- * a sector.  In other words, dblks will not be split across sectors, the
- * whole thing has to fit.
+ * The current implementation has split typed_data headers and data.  A
+ * header is required to fit contiguously into a sector and can not be
+ * split across a sector boundary.
  *
- * If a dblk does not fit, a DT_TINTRYALF record will be laid down which
- * tells the system to go to the next block.  Since we always keep dblks
- * aligned to 32 bits even in the sector buffer we have either perfectly
- * fit or we have at least one 32 bit area left.  The DT_TINTRYALF dblk is
- * exactly 32 bits long, 2 byte len (value 4) and 2 byte dtype
- * DT_TINTRYALF.
+ * Data associated with a given header however can be split across sector
+ * boundaries but is limited to DC_MAX_LEN.
+ *
+ * If a header will not fit into the current sector, a DT_TINTRYALF record
+ * will be laid down which tells the system to go to the next block.  Since
+ * we always keep dblk headers aligned to 32 bits even in the sector buffer
+ * we have either perfectly fit or we have at least one 32 bit area left.
+ * The DT_TINTRYALF dblk is exactly 32 bits long, 2 byte len (value 4) and
+ * 2 byte dtype DT_TINTRYALF.
  *
  * The rationale for only putting whole dblk records into a sector is to
  * optimize access.  Both writing and reading.  The Tag is a highly
