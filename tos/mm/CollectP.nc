@@ -184,6 +184,9 @@ implementation {
         (hlen + dlen) < 4)
       call Panic.panic(PANIC_SS, 3, hlen, dlen, header->len, header->dtype);
 
+    if (!data || dlen > DC_MAX_DLEN)
+      call Panic.panic(PANIC_SS, 1, data, dlen, 0, 0);
+
     while(1) {
       if (dcc.remaining == 0 || dcc.remaining >= hlen) {
         /*

@@ -88,6 +88,7 @@
 #define DC_BLK_SIZE   508
 #define DC_SEQ_LOC    508
 #define DC_CHKSUM_LOC 510
+#define DC_MAX_DLEN   1024
 
 typedef struct {
   uint16_t     majik_a;
