@@ -177,7 +177,7 @@ implementation {
     if (!np || CF_BE_16(np->len) != NAVDATA_LEN)
       return;
 
-    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_2, np->nsats, np->mode1);
+    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_2, np->nsats, np->mode1, 0, 0);
     pmode = np->mode1 & SB_NAV_M1_PMODE_MASK;
     if (pmode >= SB_NAV_M1_PMODE_SV2KF && pmode <= SB_NAV_M1_PMODE_SVODKF) {
       /*
@@ -234,7 +234,7 @@ implementation {
     if (!gp || gp->len != GEODETIC_LEN)
       return;
 
-    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_29, gp->nsats, gp->nav_valid);
+    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_29, gp->nsats, gp->nav_valid, 0, 0);
 
     if (gp->nav_valid == 0) {
       mtp = &m_time;

@@ -96,7 +96,7 @@ implementation {
 	    m_surfaced = FALSE;
 //	    call Panic.brk(0x1024);
 	    nop();
-	    call CollectEvent.logEvent(DT_EVENT_SUBMERGED,0);
+	    call CollectEvent.logEvent(DT_EVENT_SUBMERGED, 0, 0, 0, 0);
 #ifdef GPS_TEST
 	    signal Surface.submerged();
 #endif
@@ -106,7 +106,7 @@ implementation {
 	    m_surfaced = TRUE;
 //	    call Panic.brk(0x1025);
 	    nop();
-	    call CollectEvent.logEvent(DT_EVENT_SURFACED, 0);
+	    call CollectEvent.logEvent(DT_EVENT_SURFACED, 0, 0, 0, 0);
 #ifdef GPS_TEST
 	    signal Surface.surfaced();
 #endif

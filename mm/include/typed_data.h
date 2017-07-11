@@ -195,6 +195,8 @@ typedef struct {
   uint32_t stamp_ms;
   uint32_t arg0;
   uint32_t arg1;
+  uint32_t arg2;
+  uint32_t arg3;
   uint16_t ev;
 } PACKED dt_event_t;
 

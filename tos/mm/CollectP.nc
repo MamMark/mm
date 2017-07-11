@@ -225,7 +225,8 @@ implementation {
   }
 
 
-  command void CollectEvent.logEvent(uint16_t ev, uint32_t arg0, uint32_t arg1) {
+  command void CollectEvent.logEvent(uint16_t ev, uint32_t arg0, uint32_t arg1,
+                                                  uint32_t arg2, uint32_t arg3) {
     dt_event_t  e;
     dt_event_t *ep;
 
@@ -235,6 +236,8 @@ implementation {
     ep->stamp_ms = call LocalTime.get();
     ep->arg0 = arg0;
     ep->arg1 = arg1;
+    ep->arg2 = arg2;
+    ep->arg3 = arg3;
     ep->ev = ev;
     call Collect.collect((void *)ep, sizeof(e), NULL, 0);
   }
