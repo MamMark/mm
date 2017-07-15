@@ -123,7 +123,7 @@ implementation {
   inline void sirfbin_restart_abort(uint16_t where) {
     atomic {
       sirfbin_reset();
-      signal GPSProto.msgAbort(where);
+      signal GPSProto.protoAbort(where);
     }
   }
 

@@ -54,18 +54,19 @@ interface GPSProto {
   async command void byteAvail(uint8_t byte);
 
   /*
+   * protoAbort: signal that there has been a problem any where in the
+   * packet.
+   *
+   * turn off any underlying timeout
+   */
+  async event void protoAbort(uint16_t reason);
+
+  /*
    * msgStart: signal that a new message has started.
    *
    * intent is to allow deadman timing to detect hung receivers
    */
   async event void msgStart(uint16_t len);
-
-  /*
-   * msgAbort: signal that the current receive has been aborted
-   *
-   * turn off any underlying timeout
-   */
-  async event void msgAbort(uint16_t reason);
 
   /*
    * msgEnd: signal the current message is complete

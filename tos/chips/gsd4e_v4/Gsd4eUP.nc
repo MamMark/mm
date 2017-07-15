@@ -940,7 +940,7 @@ implementation {
   }
 
 
-  void driver_msgAbort(uint16_t reason) {
+  void driver_protoAbort(uint16_t reason) {
     gpsc_state_t next_state;
 
     gpsc_log_event(GPSE_ABORT, reason);
@@ -956,11 +956,12 @@ implementation {
         return;
 
         /*
-         * both ON and ON_TX ignore SirfProto.msgAborts Something went
-         * wrong on receive with the start of the packet.  Didn't get far
+         * during various states we ignore the protoAbort.  Didn't get far
          * enough to generate the msgStart.  So just ignore it
          */
-      case GPSC_ON:                     /* ignore */
+      case GPSC_PROBE_0:                /* ignore */
+      case GPSC_CHK_RX_WAIT:
+      case GPSC_ON:
       case GPSC_ON_TX:    return;
 
         /*
@@ -975,8 +976,8 @@ implementation {
   }
 
 
-  async event void SirfProto.msgAbort(uint16_t reason) {
-    driver_msgAbort(reason);
+  async event void SirfProto.protoAbort(uint16_t reason) {
+    driver_protoAbort(reason);
   }
 
 
@@ -1013,24 +1014,7 @@ implementation {
     m_last_rx_error = errors;
     post collect_rx_errors();
     call SirfProto.rx_error();
-    switch(gpsc_state) {
-      default:
-        gps_panic(20, gpsc_state, errors);
-        return;
-
-      /* ignore */
-      case GPSC_PROBE_0:
-      case GPSC_CHK_RX_WAIT:
-      case GPSC_ON:
-      case GPSC_ON_TX:
-        return;
-
-      case GPSC_CHK_MSG_WAIT:
-      case GPSC_ON_RX:
-      case GPSC_ON_RX_TX:
-        driver_msgAbort(0);
-        return;
-    }
+    driver_protoAbort(0);
   }
 
 
