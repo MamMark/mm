@@ -233,13 +233,16 @@ implementation {
   void process_geodetic(sb_geodetic_t *gp, uint32_t arrival_ms) {
     gps_time_t    *mtp;
     gps_geo_t     *mgp;
+    uint16_t       nav_valid, nav_type;
 
-    if (!gp || gp->len != GEODETIC_LEN)
+    if (!gp || CF_BE_16(gp->len) != GEODETIC_LEN)
       return;
 
-    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_29, gp->nsats, gp->nav_valid, 0, 0);
+    nav_valid = CF_BE_16(gp->nav_valid);
+    nav_type  = CF_BE_16(gp->nav_type);
+    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_29, gp->nsats, nav_valid, nav_type, 0);
 
-    if (gp->nav_valid == 0) {
+    if (nav_valid == 0) {
       mtp = &m_time;
 
       mtp->ts        = arrival_ms;
