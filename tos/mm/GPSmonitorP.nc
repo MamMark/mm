@@ -195,6 +195,7 @@ implementation {
       mxp->mode1 = np->mode1;
       mxp->hdop  = np->hdop;
       mxp->nsats = np->nsats;
+      call CollectEvent.logEvent(DT_EVENT_GPS_XYZ, mxp->x, mxp->y, mxp->z, 0);
     }
   }
 
@@ -252,6 +253,10 @@ implementation {
       mtp->utc_hour  = gp->utc_hour;
       mtp->utc_min   = gp->utc_min;
       mtp->utc_ms    = CF_BE_16(gp->utc_ms);
+      call CollectEvent.logEvent(DT_EVENT_GPS_TIME,
+        (mtp->utc_year << 16) | (mtp->utc_month << 8) | (mtp->utc_day),
+        (mtp->utc_hour << 8) | (mtp->utc_min),
+        mtp->utc_ms, 0);
 
       mgp = &m_geo;
       mgp->ts        = arrival_ms;
@@ -270,6 +275,7 @@ implementation {
       mgp->sog       = CF_BE_16(gp->sog);
       mgp->cog       = CF_BE_16(gp->cog);
       mgp->additional_mode = gp->additional_mode;
+      call CollectEvent.logEvent(DT_EVENT_GPS_GEO, mgp->lat, mgp->lon, mgp->week_x, mgp->tow);
     }
   }
 
