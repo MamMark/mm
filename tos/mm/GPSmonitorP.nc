@@ -204,16 +204,18 @@ implementation {
    */
   void process_swver(sb_soft_version_data_t *svp, uint32_t arrival_ms) {
     dt_gps_t gps_block;
+    uint16_t dlen;
 
     nop();
     nop();
     if (!svp) return;
-    gps_block.len = svp->len - 1 + sizeof(gps_block);
+    dlen = CF_BE_16(svp->len) - 1;
+    gps_block.len = dlen + sizeof(gps_block);
     gps_block.dtype = DT_GPS_VERSION;
     gps_block.stamp_ms = arrival_ms;
     gps_block.mark_us  = 0;
     gps_block.chip_id = CHIP_GPS_GSD4E;
-    call Collect.collect((void *) &gps_block, sizeof(gps_block), svp->data, svp->len - 1);
+    call Collect.collect((void *) &gps_block, sizeof(gps_block), svp->data, dlen);
   }
 
 
