@@ -128,21 +128,6 @@ implementation {
   }
 
 
-  /*
-   * external world is blowing us up.  No need to tell
-   * the external world that we are aborting the message.
-   *
-   * External blow ups include, "reset", "rx_timeout", and
-   * "rx_error".
-   */
-  command void GPSProto.reset() {
-    atomic {
-      sirfbin_stats.resets++;
-      sirfbin_reset();
-    }
-  }
-
-
   command void GPSProto.rx_timeout() {
     atomic {
       sirfbin_stats.rx_timeouts++;

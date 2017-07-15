@@ -36,14 +36,6 @@
 
 interface GPSProto {
   /*
-   * reset: reset the protocol
-   *
-   * resets the protocol module back to its pristine state.
-   * releases any resources that it might have obtained.
-   */
-        command void reset();
-
-  /*
    * rx_timeout: an rx_timeout has occurred.
    */
         command void rx_timeout();

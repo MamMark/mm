@@ -905,12 +905,12 @@ implementation {
           return;
 
         case GPSC_ON_RX:
-          call SirfProto.reset();
+          call SirfProto.rx_timeout();
           gpsc_change_state(GPSC_ON, GPSW_RX_TIMER);
           return;
 
         case GPSC_ON_RX_TX:
-          call SirfProto.reset();
+          call SirfProto.rx_timeout();
           gpsc_change_state(GPSC_ON_TX, GPSW_RX_TIMER);
           return;
       }
