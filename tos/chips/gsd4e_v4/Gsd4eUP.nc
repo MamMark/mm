@@ -940,6 +940,29 @@ implementation {
   }
 
 
+  async event void SirfProto.msgEnd() {
+    gpsc_state_t next_state;
+
+    switch(gpsc_state) {
+      default:
+        gps_panic(19, gpsc_state, 0);
+        return;
+
+      case GPSC_CHK_MSG_WAIT:
+        call HW.gps_rx_int_disable();
+        gpsc_change_state(GPSC_CHK_TX_SWVER, GPSW_PROTO_END);
+        post swver_task();
+        return;
+
+      case GPSC_ON_RX:    next_state = GPSC_ON;    break;
+      case GPSC_ON_RX_TX: next_state = GPSC_ON_RX; break;
+    }
+    m_req_rx_len = 0;                   /* request a cancel */
+    post timer_task();
+    gpsc_change_state(next_state, GPSW_PROTO_END);
+  }
+
+
   void driver_protoAbort(uint16_t reason) {
     gpsc_state_t next_state;
 
@@ -978,29 +1001,6 @@ implementation {
 
   async event void SirfProto.protoAbort(uint16_t reason) {
     driver_protoAbort(reason);
-  }
-
-
-  async event void SirfProto.msgEnd() {
-    gpsc_state_t next_state;
-
-    switch(gpsc_state) {
-      default:
-        gps_panic(19, gpsc_state, 0);
-        return;
-
-      case GPSC_CHK_MSG_WAIT:
-        call HW.gps_rx_int_disable();
-        gpsc_change_state(GPSC_CHK_TX_SWVER, GPSW_PROTO_END);
-        post swver_task();
-        return;
-
-      case GPSC_ON_RX:    next_state = GPSC_ON;    break;
-      case GPSC_ON_RX_TX: next_state = GPSC_ON_RX; break;
-    }
-    m_req_rx_len = 0;                   /* request a cancel */
-    post timer_task();
-    gpsc_change_state(next_state, GPSW_PROTO_END);
   }
 
 
