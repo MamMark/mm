@@ -436,6 +436,9 @@ implementation {
   norace int16_t m_req_rx_len;          // requested rx len (for timeout)
          int16_t m_cur_rx_len;          // cur       rx len (for timeout)
 
+  norace uint32_t m_rx_errors;          // rx errors from the h/w
+  norace uint16_t m_last_rx_error;      // last rx_stat we saw, could be overwritten
+
 
   void gps_warn(uint8_t where, parg_t p, parg_t p1) {
     call Panic.warn(PANIC_GPS, where, p, p1, 0, 0);
@@ -595,6 +598,16 @@ implementation {
   task void collect_task() {
     call CollectEvent.logEvent(DT_EVENT_GPS_FIRST, t_gps_first_char,
                                t_gps_first_char - t_gps_pwr_on, 0, 0);
+  }
+
+
+  task void collect_rx_errors() {
+    atomic {
+      if (m_last_rx_error) {
+        call CollectEvent.logEvent(DT_EVENT_GPS_RX_ERR, m_last_rx_error, m_rx_errors, gpsc_state, 0);
+        m_last_rx_error = 0;
+      }
+    }
   }
 
 
@@ -876,7 +889,8 @@ implementation {
           gps_panic(16, gpsc_state, 0);
           return;
 
-        case GPSC_PROBE_0:                  /* target speed (from PWR_UP_WAIT */
+        case GPSC_PROBE_0:                  /* target speed (from PWR_UP_WAIT) */
+          call HW.gps_rx_int_disable();
           gps_probe_index = -1;             /* first peek try */
           gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_RX_TIMER);
           call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
@@ -926,7 +940,7 @@ implementation {
   }
 
 
-  async event void SirfProto.msgAbort(uint16_t reason) {
+  void driver_msgAbort(uint16_t reason) {
     gpsc_state_t next_state;
 
     gpsc_log_event(GPSE_ABORT, reason);
@@ -961,6 +975,11 @@ implementation {
   }
 
 
+  async event void SirfProto.msgAbort(uint16_t reason) {
+    driver_msgAbort(reason);
+  }
+
+
   async event void SirfProto.msgEnd() {
     gpsc_state_t next_state;
 
@@ -981,6 +1000,37 @@ implementation {
     m_req_rx_len = 0;                   /* request a cancel */
     post timer_task();
     gpsc_change_state(next_state, GPSW_PROTO_END);
+  }
+
+
+  /*
+   * underlying h/w layer is telling us there is an rx error.
+   *
+   * Signaller is responsible for clearing it.
+   */
+  async event void HW.gps_rx_err(uint16_t errors) {
+    m_rx_errors++;
+    m_last_rx_error = errors;
+    post collect_rx_errors();
+    call SirfProto.rx_error();
+    switch(gpsc_state) {
+      default:
+        gps_panic(20, gpsc_state, errors);
+        return;
+
+      /* ignore */
+      case GPSC_PROBE_0:
+      case GPSC_CHK_RX_WAIT:
+      case GPSC_ON:
+      case GPSC_ON_TX:
+        return;
+
+      case GPSC_CHK_MSG_WAIT:
+      case GPSC_ON_RX:
+      case GPSC_ON_RX_TX:
+        driver_msgAbort(0);
+        return;
+    }
   }
 
 

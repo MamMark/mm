@@ -93,38 +93,73 @@ implementation {
    */
   norace sirfbin_stat_t sirfbin_stats;
 
+  /*
+   * sirfbin_reset: reset sirfbin proto state
+   *
+   * Does not tell the outside world that anything
+   * has happened via GPSProto.msgAbort.
+   */
+  inline void sirfbin_reset() {
+    sirfbin_state_prev = sirfbin_state;
+    sirfbin_state = SBS_START;
+    if (sirfbin_ptr) {
+      sirfbin_ptr_prev = sirfbin_ptr;
+      sirfbin_ptr = NULL;
+      call GPSBuffer.msg_abort();
+    }
+  }
+
+
+  /*
+   * sirfbin_restart_abort: reset and tell interested parties (typically
+   * the driver layer).
+   *
+   * First reset the sirfbin protocol state and tell interested parties
+   * that the current message is being aborted.
+   *
+   * Restart_Aborts get generated internally from the Proto
+   * engine.
+   */
+  inline void sirfbin_restart_abort(uint16_t where) {
+    atomic {
+      sirfbin_reset();
+      signal GPSProto.msgAbort(where);
+    }
+  }
+
 
   /*
    * external world is blowing us up.  No need to tell
    * the external world that we are aborting the message.
    *
-   * Only reason the outside world aborts/resets is because the
-   * receive timed out.
+   * External blow ups include, "reset", "rx_timeout", and
+   * "rx_error".
    */
   command void GPSProto.reset() {
     atomic {
-      sirfbin_stats.rx_timeout++;
-      sirfbin_state_prev = sirfbin_state;
-      sirfbin_state = SBS_START;
-      if (sirfbin_ptr) {
-        sirfbin_ptr_prev = sirfbin_ptr;
-        sirfbin_ptr = NULL;
-        call GPSBuffer.msg_abort();
-      }
+      sirfbin_stats.resets++;
+      sirfbin_reset();
     }
   }
 
 
-  inline void sirfbin_restart(uint16_t where) {
+  command void GPSProto.rx_timeout() {
     atomic {
-      sirfbin_state_prev = sirfbin_state;
-      sirfbin_state = SBS_START;
-      if (sirfbin_ptr) {
-        sirfbin_ptr_prev = sirfbin_ptr;
-        sirfbin_ptr = NULL;
-        call GPSBuffer.msg_abort();
-      }
-      signal GPSProto.msgAbort(where);
+      sirfbin_stats.rx_timeouts++;
+      sirfbin_reset();
+    }
+  }
+
+
+  /*
+   * An rx_error occurred.  The underlying comm h/w isn't happy
+   * Also throw a GPSProto.msgAbort to do reasonable things with
+   * the underlying driver state machine.
+   */
+  async command void GPSProto.rx_error() {
+    atomic {
+      sirfbin_stats.rx_errors++;
+      sirfbin_reset();
     }
   }
 
@@ -144,7 +179,7 @@ implementation {
 	if (byte == SIRFBIN_A0)                 // got start again.  stay, good dog
 	  return;
 	if (byte != SIRFBIN_A2) {		// not what we want.  restart
-	  sirfbin_restart(1);
+	  sirfbin_restart_abort(1);
 	  return;
 	}
         sirfbin_state_prev = sirfbin_state;
@@ -165,14 +200,14 @@ implementation {
 	if (sirfbin_left >= SIRFBIN_MAX_MSG) {
 	  sirfbin_stats.too_big++;
           bkpt();
-	  sirfbin_restart(2);
+	  sirfbin_restart_abort(2);
 	  return;
 	}
         sirfbin_ptr_prev = sirfbin_ptr;
         sirfbin_ptr = call GPSBuffer.msg_start(sirfbin_left + SIRFBIN_OVERHEAD);
         if (!sirfbin_ptr) {
           sirfbin_stats.no_buffer++;
-          sirfbin_restart(3);
+          sirfbin_restart_abort(3);
           return;
         }
         signal GPSProto.msgStart(sirfbin_left + SIRFBIN_OVERHEAD);
@@ -206,7 +241,7 @@ implementation {
 	chksum = sirfbin_ptr[-2] << 8 | byte;
 	if (chksum != sirfbin_chksum) {
 	  sirfbin_stats.chksum_fail++;
-	  sirfbin_restart(4);
+	  sirfbin_restart_abort(4);
 	  return;
 	}
         sirfbin_state_prev = sirfbin_state;
@@ -217,7 +252,7 @@ implementation {
         *sirfbin_ptr++ = byte;
 	if (byte != SIRFBIN_B0) {
 	  sirfbin_stats.proto_fail++;
-	  sirfbin_restart(5);
+	  sirfbin_restart_abort(5);
 	  return;
 	}
         sirfbin_state_prev = sirfbin_state;
@@ -228,7 +263,7 @@ implementation {
         *sirfbin_ptr++ = byte;
 	if (byte != SIRFBIN_B3) {
 	  sirfbin_stats.proto_fail++;
-	  sirfbin_restart(6);
+	  sirfbin_restart_abort(6);
 	  return;
 	}
         sirfbin_ptr_prev = sirfbin_ptr;
@@ -242,7 +277,7 @@ implementation {
 
       default:
 	call Panic.warn(PANIC_GPS, 135, sirfbin_state, 0, 0, 0);
-	sirfbin_restart(7);
+	sirfbin_restart_abort(7);
 	return;
     }
   }

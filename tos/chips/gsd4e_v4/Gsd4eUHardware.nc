@@ -141,8 +141,13 @@ interface Gsd4eUHardware {
   async command void gps_speed_di(uint32_t speed);
 
   async command void gps_tx_finnish(uint32_t byte_delay);
+
+  /* rx_int_enable makes sure that any rx_errors have been cleared. */
   async command void gps_rx_int_enable();
   async command void gps_rx_int_disable();
+
+  async command void gps_clear_rx_errs();
+  async event   void gps_rx_err(uint16_t errors);
 
   /*
    * Data transfer

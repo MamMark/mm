@@ -44,6 +44,16 @@ interface GPSProto {
         command void reset();
 
   /*
+   * rx_timeout: an rx_timeout has occurred.
+   */
+        command void rx_timeout();
+
+  /*
+   * rx_error: an rx_error has occurred.
+   */
+  async command void rx_error();
+
+  /*
    * byteAvail: a new byte is available
    *
    * the underlying hw has a new byte that is being handed to the

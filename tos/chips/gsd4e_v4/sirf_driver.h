@@ -373,6 +373,9 @@ typedef struct {
 
 /*
  * Instrumentation, Stats
+ *
+ * rx_errors: gets popped when either an rx_timeout, or any rx error,
+ * rx_error includes FramingError, ParityError, and OverrunError.
  */
 typedef struct {
   uint32_t starts;                    /* number of packets started */
@@ -382,7 +385,9 @@ typedef struct {
   uint16_t max_seen;                  /* max length seen */
   uint16_t chksum_fail;               /* bad checksum */
   uint16_t proto_fail;                /* proto abort */
-  uint16_t rx_timeout;                /* receive timeout */
+  uint16_t rx_errors;                 /* rx_error, comm h/w not happy */
+  uint16_t rx_timeouts;               /* number of rx timeouts */
+  uint16_t resets;                    /* number of simple resets */
 } sirfbin_stat_t;
 
 #endif	/* __SIRF_DRIVER_H__ */
