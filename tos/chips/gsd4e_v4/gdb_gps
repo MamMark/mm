@@ -45,6 +45,7 @@ printf "\n\n"
 end
 
 define gps_state
+__gps_stats
 __gps_msg_buf_state
 __gps_sirf_proto_state
 __gps_driver_state
@@ -72,11 +73,16 @@ define gmc
 print GPSMsgBufP__gmc
 end
 
-define gps_stats
-printf " \n sirf proto stats:  too_big  no_buffer  max_seen   chksum    proto   rx_timeouts\n"
-printf "%8d/%-8d  %8d   %8d  %8d %8d %8d      %8d\n",                        \
+define __gps_stats
+printf " \n sirf proto stats:  too_big  no_buffer  max_seen   chksum    proto      rsts      errs  timeouts\n"
+printf "%8d/%-8d  %8d   %8d  %8d %8d %8d  %8d  %8d  %8d\n",                  \
     SirfBinP__sirfbin_stats.complete,   SirfBinP__sirfbin_stats.starts,      \
     SirfBinP__sirfbin_stats.too_big,    SirfBinP__sirfbin_stats.no_buffer,   \
     SirfBinP__sirfbin_stats.max_seen,   SirfBinP__sirfbin_stats.chksum_fail, \
-    SirfBinP__sirfbin_stats.proto_fail, SirfBinP__sirfbin_stats.rx_timeout
+    SirfBinP__sirfbin_stats.proto_fail, SirfBinP__sirfbin_stats.resets,      \
+    SirfBinP__sirfbin_stats.rx_errors,  SirfBinP__sirfbin_stats.rx_timeouts
+end
+
+define gs
+gps_state
 end
