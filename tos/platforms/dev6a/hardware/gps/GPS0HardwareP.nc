@@ -407,6 +407,9 @@ implementation {
         }
         return;
 
+      case MSP432U_IV_NONE:
+        break;
+
       default:
         gps_panic(5, iv, 0);
         break;
