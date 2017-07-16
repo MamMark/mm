@@ -586,6 +586,8 @@ implementation {
       if (MSG_INDEX_INVALID(gmc.head))          /* empty queue */
         return NULL;
       msg = &gps_msgs[gmc.head];
+      if (msg->state == GPS_MSG_FILLING)        /* not ready yet */
+        return NULL;
       if (msg->state != GPS_MSG_FULL) {         /* oht oh */
         gps_panic(GPSW_MSG_NEXT, (parg_t) msg, msg->state);
         return NULL;
