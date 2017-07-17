@@ -267,12 +267,26 @@ implementation {
 
   }
 
+  /*
+   * enable the rx interrupt.
+   *
+   * prior to enabling check for any rx errors and clear them if present
+   */
   async command void HW.gps_rx_int_enable() {
+    uint16_t stat_word;
+
+    stat_word = call Usci.getStat();
+    if (stat_word & EUSCI_A_STATW_RXERR)
+      call Usci.getRxbuf();
     call Usci.enableRxIntr();
   }
 
   async command void HW.gps_rx_int_disable() {
     call Usci.disableRxIntr();
+  }
+
+  async command void HW.gps_clear_rx_errs() {
+    call Usci.getRxbuf();
   }
 
   async command error_t HW.gps_receive_block(uint8_t *ptr, uint16_t len) {
@@ -342,11 +356,22 @@ implementation {
    * one for the last byte written.
    */
   async event void Interrupt.interrupted(uint8_t iv) {
+    uint16_t stat_word;
     uint8_t data;
     uint8_t *buf;
 
     switch(iv) {
       case MSP432U_IV_RXIFG:
+        /*
+         * first check for any rx errors.  If an rx error has messsed with
+         * the stream we want to tell the protocol engine and blow things
+         * up.  The next char however could be part of a good stream.
+         */
+        stat_word = call Usci.getStat();
+        if (stat_word & EUSCI_A_STATW_RXERR)
+          signal HW.gps_rx_err(stat_word);
+
+        /* if there was an rx_err, the read of RxBuf will clear it */
         data = call Usci.getRxbuf();
         if (m_rx_buf) {
           m_rx_buf[m_rx_idx++] = data;
