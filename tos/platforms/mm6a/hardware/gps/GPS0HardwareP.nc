@@ -197,6 +197,11 @@ implementation {
   }
 
   async command void HW.gps_pwr_on() {
+    /*
+     * for now we assume that startup has turned on power and it is
+     * left on.  The mm6a powers the GPS and the MEMS bus by the
+     * same 1V8 switch off the main 1V8 rail.
+     */
     GSD4E_PINS_MODULE;			/* connect from the UART */
   }
 

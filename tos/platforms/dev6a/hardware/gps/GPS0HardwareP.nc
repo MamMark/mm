@@ -38,6 +38,8 @@
 #include <panic.h>
 #include <platform_panic.h>
 #include <msp432.h>
+
+/* see gps_pwr_on for why we include gps.h */
 #include <gps.h>
 
 /*
@@ -201,6 +203,8 @@ implementation {
     uint32_t t0;
 
     GSD4E_PINS_MODULE;			/* connect to the UART */
+
+    /* we simulate a power on by hitting reset */
     call HW.gps_set_reset();
     t0 = call Platform.usecsRaw();
     while (call Platform.usecsRaw() - t0 < DT_GPS_RESET_PULSE_WIDTH_US) { }
