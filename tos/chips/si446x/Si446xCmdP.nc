@@ -110,7 +110,7 @@ norace uint8_t radio_pend1[4];
 
 /* temporary buffer for response to send.cmd()
  */
-norace uint8_t      rsp[16];
+norace uint8_t      radio_rsp[16];
 
 /* array of timing measurements for each possible chip command and property.
  * contains the value measured when last used
@@ -515,7 +515,7 @@ implementation {
           ctp->t_cts0 = t1 - t0;
           t0 = t1;
           call HW.si446x_set_cs();
-          call SpiBlock.transfer((void *) c, rsp, cl);
+          call SpiBlock.transfer((void *) c, radio_rsp, cl);
           call HW.si446x_clr_cs();
           t1 = call Platform.usecsRaw();
           done = TRUE;
@@ -856,9 +856,9 @@ implementation {
                           (void *) &g_radio_dump.gpio_cfg, SI446X_GPIO_CFG_REPLY_SIZE);
 
       ll_si446x_cmd_reply(si446x_fifo_info_nc, sizeof(si446x_fifo_info_nc),
-                          rsp, SI446X_FIFO_INFO_REPLY_SIZE);
-      g_radio_dump.rxfifocnt  = rsp[0];
-      g_radio_dump.txfifofree = rsp[1];
+                          radio_rsp, SI446X_FIFO_INFO_REPLY_SIZE);
+      g_radio_dump.rxfifocnt  = radio_rsp[0];
+      g_radio_dump.txfifofree = radio_rsp[1];
 
       ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
                           (void *) &g_radio_dump.ph_status, SI446X_PH_STATUS_REPLY_SIZE);
@@ -873,9 +873,9 @@ implementation {
                           (void *) &g_radio_dump.int_state, SI446X_INT_STATUS_REPLY_SIZE);
 
       ll_si446x_cmd_reply(si446x_device_state, sizeof(si446x_device_state),
-                          rsp, SI446X_DEVICE_STATE_REPLY_SIZE);
-      g_radio_dump.device_state = rsp[0];
-      g_radio_dump.channel      = rsp[1];
+                          radio_rsp, SI446X_DEVICE_STATE_REPLY_SIZE);
+      g_radio_dump.device_state = radio_rsp[0];
+      g_radio_dump.channel      = radio_rsp[1];
 
       ll_si446x_read_fast_status(g_radio_dump.frr);
 
@@ -1145,9 +1145,9 @@ implementation {
    * we do not override and fields length (that's just weird).
    */
   async command uint16_t Si446xCmd.get_packet_info() {
-    ll_si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc), rsp, 2);
-    ll_si446x_trace(T_RC_GET_PKT_INF, rsp[0], rsp[1]);
-    return rsp[0] << 8 | rsp[1];
+    ll_si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc), radio_rsp, 2);
+    ll_si446x_trace(T_RC_GET_PKT_INF, radio_rsp[0], radio_rsp[1]);
+    return radio_rsp[0] << 8 | radio_rsp[1];
   }
 
 
