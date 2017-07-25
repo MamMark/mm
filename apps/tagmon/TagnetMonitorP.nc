@@ -15,7 +15,6 @@ uint16_t global_node_id = 42;
 module TagnetMonitorP {
   provides {
     interface Init;
-    interface TagnetAdapter<int32_t>  as  InfoSensGpsPos;
   } uses {
     interface Boot;
     interface TagnetName;
@@ -135,10 +134,6 @@ implementation {
   event void txTimer.fired() {
     nop();
     nop();
-  }
-
-  command bool InfoSensGpsPos.get_value(int32_t *t, uint8_t *len) {
-    return TRUE;
   }
 
   /*

@@ -7,13 +7,13 @@
 #include <TagnetTLV.h>
 
 configuration GPSmonitorC {
-  provides interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXYZ;
+  provides interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
   uses     interface GPSReceive;
 }
 
 implementation {
   components GPSmonitorP;
-  InfoSensGpsXYZ = GPSmonitorP;
+  InfoSensGpsXyz = GPSmonitorP;
   GPSReceive     = GPSmonitorP;
 
   components PanicC;

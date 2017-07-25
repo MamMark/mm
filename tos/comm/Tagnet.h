@@ -65,7 +65,7 @@ typedef struct tagnet_name_meta_t {
   uint8_t     seq_no;
   uint8_t     utc_time;
   uint8_t     node_id;
-  uint8_t     gps_pos;
+  uint8_t     gps_xyz;
 } tagnet_name_meta_t;
 
 typedef struct tagnet_payload_meta_t {

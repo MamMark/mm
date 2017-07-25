@@ -49,12 +49,21 @@
 
 interface TagnetPayload {
   /**
+   * Adds an gps_xyz value to the payload (wrapping it in a tlv). Sets the
+   * payload type to list of tlvs
+   *
+   * @param   msg           pointer to message buffer containing the payload
+   * @param   xyz           pointer to gps_xyz to be added to payload as tlv
+   * @return  uint8_t       amount added to the payload (length of tlv)
+   */
+  command uint8_t           add_gps_xyz(message_t *msg, tagnet_gps_xyz_t *xyz);
+  /**
    * Adds an integer value to the payload (wrapping it in a tlv). Sets the
    * payload type to list of tlvs
    *
    * @param   msg           pointer to message buffer containing the payload
    * @param   n             integer to be added to the payload as a tlv
-   * @return  uint8_t       amount added to the name (length of tlv)
+   * @return  uint8_t       amount added to the payload (length of tlv)
    */
   command uint8_t           add_integer(message_t *msg,  int n);
   /**
@@ -62,23 +71,24 @@ interface TagnetPayload {
    *
    * @param   msg           pointer to message buffer containing the payload
    * @param   n             integer to be added to the payload as a tlv
-   * @return  uint8_t       amount added to the name (length of tlv)
+   * @return  uint8_t       amount added to the payload (length of tlv)
    */
   command uint8_t           add_raw(message_t *msg, uint8_t *b, uint8_t length);
   /**
-   * Adds a string to the payload (wrapping it in a tlv)
+   * Adds a string to the payload (wrapping it in a tlv). Sets the
+   * payload type to list of tlvs
    *
    * @param   msg           pointer to message buffer containing the payload
-   * @param   n             integer to be added to the payload as a tlv
-   * @return  uint8_t       amount added to the name (length of tlv)
+   * @param   b             bytestring to be added to the payload as a tlv
+   * @return  uint8_t       amount added to the payload (length of tlv)
    */
   command uint8_t           add_string(message_t *msg, void *b, uint8_t length);
   /**
    * Adds a tlv to the payload, (copies it)
    *
    * @param   msg           pointer to message buffer containing the payload
-   * @param   n             integer to be added to the payload as a tlv
-   * @return  uint8_t       amount added to the name (length of tlv)
+   * @param   t             tlv to be added to the payload
+   * @return  uint8_t       amount added to the payload (length of tlv)
    */
   command uint8_t           add_tlv(message_t *msg, tagnet_tlv_t *t);
   /**

@@ -4,7 +4,7 @@
  */
 
 configuration testGPSC {
-  provides interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXYZ;
+  provides interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
 }
 implementation {
   components testGPSP, SystemBootC;
@@ -20,7 +20,7 @@ implementation {
 
   components GPSmonitorC;
   GPSmonitorC.GPSReceive -> GpsPort;
-  InfoSensGpsXYZ = GPSmonitorC;
+  InfoSensGpsXyz = GPSmonitorC;
 
   components new TimerMilliC() as Timer;
   testGPSP.testTimer -> Timer;

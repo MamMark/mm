@@ -140,7 +140,7 @@ typedef struct {
 
 
 module GPSmonitorP {
-  provides interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXYZ;
+  provides interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
   uses {
     interface GPSReceive;
     interface Collect;
@@ -157,11 +157,12 @@ implementation {
   gps_1pps_t m_pps;
 
 
-  command bool InfoSensGpsXYZ.get_value(tagnet_gps_xyz_t *t, uint8_t *l) {
+  command bool InfoSensGpsXyz.get_value(tagnet_gps_xyz_t *t, uint8_t *l) {
     t->gps_x = m_xyz.x;
     t->gps_y = m_xyz.y;
     t->gps_z = m_xyz.z;
     *l = TN_GPS_XYZ_LEN;
+    return 1;
   }
 
 

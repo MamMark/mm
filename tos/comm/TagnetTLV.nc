@@ -98,6 +98,15 @@ interface TagnetTLV {
    */
   command tagnet_tlv_type_t get_tlv_type(tagnet_tlv_t *t);
   /**
+   * Convert gps_xyz value into a Tagnet TLV and store in destination location
+   *
+   * @param   xyz           gps_xyz value to store in the tlv
+   * @param   t             pointer of tlv to use as destination location
+   * @param   limit         maximum bytes available at destination tlv
+   * @return  uint8_t       number of bytes stored in destination
+   */
+  command uint8_t           gps_xyz_to_tlv(tagnet_gps_xyz_t *xyz, tagnet_tlv_t *t, uint8_t limit);
+  /**
    * Convert integer value into a Tagnet TLV and store in destination location
    *
    * @param   i             integer value to store in the tlv

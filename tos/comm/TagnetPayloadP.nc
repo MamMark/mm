@@ -88,6 +88,18 @@ implementation {
     return (tagnet_name_meta_t *) &(((message_metadata_t *)&(msg->metadata))->tn_payload_meta);
   }
 
+  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_gps_xyz(message_t *msg, tagnet_gps_xyz_t *xyz) {
+    tagnet_tlv_t     *tv;
+    int               added;
+
+    tv = call TagnetPayload.this_element(msg);
+    added = call TTLV.gps_xyz_to_tlv(xyz, tv, call TagnetPayload.bytes_avail(msg));
+    call THdr.set_pload_type_tlv(msg);
+    call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
+    getMeta(msg)->this += added;
+    return added;
+  }
+
   command uint8_t TN_PLOAD_DBG  TagnetPayload.add_integer(message_t *msg, int n) {
     tagnet_tlv_t     *tv;
     int               added;

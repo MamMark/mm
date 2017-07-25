@@ -42,7 +42,7 @@ uint16_t global_node_id = 42;
 module testTagnetP {
   provides {
     interface Init;
-    interface TagnetAdapter<tagnet_gps_xyz_t>  as  InfoSensGpsXYZ;
+    interface TagnetAdapter<tagnet_gps_xyz_t>  as  InfoSensGpsXyz;
   } uses {
     interface Boot;
 

@@ -167,6 +167,20 @@ implementation {
     return t->typ;
   }
 
+  command uint8_t  TagnetTLV.gps_xyz_to_tlv(tagnet_gps_xyz_t *xyz,  tagnet_tlv_t *t, uint8_t limit) {
+    int32_t    x;
+    uint8_t   *v = (void *) xyz;
+
+    nop();
+    t->typ = TN_TLV_GPS_XYZ;
+    t->len = TN_GPS_XYZ_LEN;
+    for (x = 0; x < TN_GPS_XYZ_LEN; x++) {
+      if (x >= limit) break;
+      t->val[x] = v[x];
+    }
+    return (x == TN_GPS_XYZ_LEN) ? SIZEOF_TLV(t) : 0;
+  }
+
   command uint8_t  TagnetTLV.integer_to_tlv(int32_t i,  tagnet_tlv_t *t, uint8_t limit) {
     int32_t    c = 0;
     bool       first = TRUE;
