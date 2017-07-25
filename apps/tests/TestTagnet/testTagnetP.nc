@@ -306,7 +306,7 @@ implementation {
     test_str_len = call TagnetTLV.string_to_tlv((uint8_t *)&TN_TAG_TLV[2],
                                                 TN_TAG_TLV[1], my_tlv,
                                                 sizeof(my_tlv_b));
-    if (test_str_len != SIZEOF_TLV(TN_TAG_TLV)) {
+    if (test_str_len != SIZEOF_TLV(((tagnet_tlv_t *)&TN_TAG_TLV))) {
       call Panic.panic(-1, 8, (int) my_tlv, test_str_len, 0, 0);
     }
     nop();
@@ -353,7 +353,8 @@ implementation {
     len += call TagnetName.add_element(test_msg1, (tagnet_tlv_t *) &TN_BCAST_NID_TLV);
     call TagnetHeader.set_name_len(test_msg1, len);
     if (call TagnetHeader.get_name_len(test_msg1)
-        !=  (SIZEOF_TLV(TN_TAG_TLV) + SIZEOF_TLV(TN_BCAST_NID_TLV))) {
+        !=  (SIZEOF_TLV(((tagnet_tlv_t *)&TN_TAG_TLV))
+             + SIZEOF_TLV(((tagnet_tlv_t *)TN_BCAST_NID_TLV)))) {
       call Panic.panic(-1, 31, (int) test_msg1, 0, 0, 0);
     }
     nop();
@@ -372,7 +373,8 @@ implementation {
     }
     nop();
     if (call TagnetHeader.get_name_len(test_msg1)
-        !=  (SIZEOF_TLV(TN_TAG_TLV) + SIZEOF_TLV(TN_BCAST_NID_TLV))) {
+        !=  (SIZEOF_TLV(((tagnet_tlv_t *)&TN_TAG_TLV))
+             + SIZEOF_TLV(((tagnet_tlv_t *)TN_BCAST_NID_TLV)))) {
       call Panic.panic(-1, 35, (int) test_msg1, 0, 0, 0);
     }
     nop();
