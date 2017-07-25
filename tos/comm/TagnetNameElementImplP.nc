@@ -70,10 +70,13 @@ implementation {
     } else if (call TTLV.eq_tlv(name_tlv, this_tlv)) {
       matched = TRUE;                                         // else me == this
     }
+    tn_trace_rec(my_id, 1);
     if (matched) {                        // further processing if name matched
       next_tlv = call TName.next_element(msg);
       if (next_tlv == NULL) {                   // end of name, execute request
+        call THdr.set_response(msg);
         call TPload.reset_payload(msg);
+        call THdr.set_error(msg, TE_PKT_OK);
         switch (call THdr.get_message_type(msg)) {      // process message type
           case TN_GET:
             call TPload.add_integer(msg, SUB_COUNT);
@@ -81,13 +84,11 @@ implementation {
               signal Sub.add_name_tlv[i](msg);
               signal Sub.add_value_tlv[i](msg);
             }
-            call THdr.set_response(msg);
-            tn_trace_rec(my_id, 1);
+            tn_trace_rec(my_id, 2);
             return TRUE;
           case TN_HEAD:
             call TPload.add_tlv(msg, help_tlv);
-            call THdr.set_response(msg);
-            tn_trace_rec(my_id, 2);
+            tn_trace_rec(my_id, 3);
             return TRUE;
           default:
             break;
@@ -101,8 +102,8 @@ implementation {
         }
       }
     }
+    call THdr.set_error(msg, TE_PKT_NO_MATCH);
     tn_trace_rec(my_id, 255);
-    call THdr.set_error(msg, TE_PKT_NO_MATCH);      // not valid type, do nothing
     return FALSE;                                   // no match, do nothing
   }
 
