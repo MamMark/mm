@@ -84,7 +84,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "TagnetTLV.h"
+#include <TagnetTLV.h>
 
 module TagnetTlvP {
   provides interface TagnetTLV;

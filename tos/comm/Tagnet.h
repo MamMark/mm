@@ -50,7 +50,7 @@ typedef enum {
 } tagnet_msg_type_t;
 
 typedef enum {
-  TE_PACKET_OK           = 0,
+  TE_PKT_OK              = 0,
   TE_NO_ROUTE,
   TE_TOO_MANY_HOPS,
   TE_MTU_EXCEEDED,
