@@ -91,9 +91,14 @@ implementation {
   }
 
   event void Super.add_value_tlv(message_t* msg) {
-    uint8_t       s;
+    int32_t                 v;
+    uint8_t                 l;
+    int                     s;
 
-    s = call TPload.add_integer(msg, 0);
+    if (call Adapter.get_value(&v, &l)) {
+      call TPload.add_integer(msg, v);
+      s = call TPload.add_integer(msg, v);
+    }
     if (s) {
       call TPload.next_element(msg);
     } else {
@@ -102,7 +107,7 @@ implementation {
   }
 
   event void Super.add_help_tlv(message_t* msg) {
-    uint8_t       s;
+    int                     s;
     tagnet_tlv_t    *help_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].help_tlv;
 
     s = call TPload.add_tlv(msg, help_tlv);
