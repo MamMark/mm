@@ -88,6 +88,8 @@ module SSWriteP {
     interface LocalTime<TMilli>;
     interface Trace;
     interface CollectEvent;
+    interface SysReboot;
+    interface SDsa;
   }
 }
 
@@ -400,6 +402,38 @@ implementation {
     ssc.state = SSW_IDLE;
     if (call SDResource.release())
       ss_panic(28, 0);
+  }
+
+
+  /* flush any pending SSW buffers
+   *
+   * we take pains not to tweak memory too much.
+   */
+  async event void SysReboot.shutdown_flush() {
+    error_t rtn;
+    ss_wr_buf_t *handle;
+    uint8_t num_full, idx;
+    uint32_t dblk;
+
+    rtn = call SDsa.reset();            /* make sure on and in a reasonable state */
+    if (rtn)                            /* well that didn't work, just bail out */
+      return;
+    idx = ssc.ssw_out;
+    num_full = ssc.ssw_num_full;
+    dblk = call FS.get_nxt_blk(FS_AREA_TYPED_DATA);
+    while (num_full) {
+      handle = ssw_p[idx];
+      if (dblk == 0)                    /* any unexpected, just bail */
+        return;
+      if (handle->buf_state != SS_BUF_STATE_FULL)
+        return;
+      call SDsa.write(dblk, handle->buf);
+      idx++;
+      if (idx >= SSW_NUM_BUFS)
+        idx = 0;
+      dblk = call FS.adv_nxt_blk(FS_AREA_TYPED_DATA);
+      num_full--;
+    }
   }
 
 
