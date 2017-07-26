@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,40 +30,33 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/**
+ *
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-#include "hardware.h"
+/*
+ * Definitions for Platform Resets
+ */
 
-configuration PlatformC {
-  provides {
-    interface Init as PlatformInit;
-    interface Platform;
-    interface BootParams;
-    interface SysReboot;
-  }
-  uses interface Init as PeripheralInit;
-}
+#ifndef __PLATFORM_RESET_DEFS_H__
+#define __PLATFORM_RESET_DEFS_H__
 
-implementation {
-  components PlatformP, StackC;
-  Platform = PlatformP;
-  PlatformInit = PlatformP;
-  PeripheralInit = PlatformP.PeripheralInit;
-  BootParams = PlatformP;
-  SysReboot  = PlatformP;
+#include <sysreboot.h>
 
-  PlatformP.Stack -> StackC;
+enum {
+  SYSREBOOT_OW_REQUEST = SYSREBOOT_EXTEND,
+};
 
-  components PlatformLedsC;
-  PlatformP.PlatformLeds -> PlatformLedsC;
+#define PRD_RESET_KEY   RSTCTL_RESETREQ_RSTKEY_VAL
+#define PRD_RESET_HARD  RSTCTL_RESET_REQ_HARD_REQ
+#define PRD_RESET_SOFT  RSTCTL_RESET_REQ_SOFT_REQ
 
-  /* pull in other modules we want */
-  components PlatformPinsC;
+#define PRD_RESET_OW_REQ RSTCTL_HARDRESET_STAT_SRC4
 
-  /* clocks are initilized by startup */
+#define PRD_PSS_VCCDET  RSTCTL_PSSRESET_STAT_VCCDET
+#define PRD_PSS_SVSH    RSTCTL_PSSRESET_STAT_SVSMH
+#define PRD_PSS_BGREF   RSTCTL_PSSRESET_STAT_BGREF
 
-}
+#define PRD_CS_DCOR_SHT RSTCTL_CSRESET_STAT_DCOR_SHT
+
+#endif    /* __PLATFORM_RESET_DEFS_H__ */

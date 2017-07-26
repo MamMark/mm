@@ -41,6 +41,7 @@
 #include "hardware.h"
 #include "cpu_stack.h"
 #include "platform_version.h"
+#include "platform_reset_defs.h"
 
 noinit uint32_t stack_size;
 
@@ -59,6 +60,7 @@ module PlatformP {
     interface Init;
     interface Platform;
     interface BootParams;
+    interface SysReboot;
   }
   uses {
     interface Init as PlatformPins;
@@ -97,6 +99,48 @@ implementation {
   async command uint8_t  BootParams.getMajor()     { return _major; }
   async command uint8_t  BootParams.getMinor()     { return _minor; }
   async command uint16_t BootParams.getBuild()     { return _build; }
+
+  async command error_t  SysReboot.reboot(sysreboot_t reboot_type) {
+    switch (reboot_type) {
+      case SYSREBOOT_REBOOT:
+        SYSCTL->REBOOT_CTL = (PRD_RESET_KEY | SYSCTL_REBOOT_CTL_REBOOT);
+        break;
+      case SYSREBOOT_POR:
+        SYSCTL_Boot->RESET_REQ = (PRD_RESET_KEY | SYSCTL_RESET_REQ_POR);
+        break;
+      case SYSREBOOT_HARD:
+        RSTCTL->RESET_REQ = (PRD_RESET_KEY | PRD_RESET_HARD);
+        break;
+      case SYSREBOOT_SOFT:
+        RSTCTL->RESET_REQ = (PRD_RESET_KEY | PRD_RESET_SOFT);
+        break;
+      case SYSREBOOT_OW_REQUEST:
+        RSTCTL->HARDRESET_SET = PRD_RESET_OW_REQ;
+        break;
+      default:
+        return FAIL;
+    }
+    return SUCCESS;
+  }
+
+
+  async command void SysReboot.clear(sysreboot_t reboot_type) {
+    switch (reboot_type) {
+      default:
+        return;
+      case SYSREBOOT_REBOOT:
+        RSTCTL->REBOOTRESET_CLR = RSTCTL_REBOOTRESET_CLR_CLR;
+        return;
+      case SYSREBOOT_OW_REQUEST:
+        RSTCTL->HARDRESET_CLR = PRD_RESET_OW_REQ;
+        return;
+    }
+  }
+
+
+  async command void SysReboot.flush() {
+    signal SysReboot.shutdown_flush();
+  }
 
 
   /* T32 is a count down so negate it */
