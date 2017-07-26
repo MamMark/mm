@@ -4,6 +4,16 @@ Installing a development environment for the MamMark tag.
 
 State:
 
+2017-07-20
+    Ubuntu 16.04, T2 (TinyProd) github:tp-freeforall/prod(tp-master),
+    MM github:MamMark/mm(master)
+    ARM toolchain, gcc 4.9.3, gdb 7.8.0 (32 bit), python support
+    J-link (Segger)
+    TI ARM tools (msp432)
+    CCS 7.2
+
+    VM support.
+
 2014-09-14
     Ubuntu 14.04, T2 (TinyProd) github:tp-freeforall/prod(tp-master),
     MM github:MamMark/mm(master)
@@ -24,6 +34,12 @@ directory.  ie.  ~/mm.
 
 Most commands are entered from a terminal window.
 
+
+**************************************************************************************
+
+Installing using the Vagrant box.
+
+<This needs to get filled in please>
 
 **************************************************************************************
 
