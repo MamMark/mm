@@ -1,0 +1,70 @@
+
+CPU Operating Modes:
+
+AM      Active Mode     All clocks, devices running.
+        AM_LDO_VCORE0   AM_DCDC_VCORE0          12/24MHz
+        AM_LDO_VCORE1   AM_DCDC_VCORE1          24/48MHz
+LPM0    SLEEP           processor is halted.
+LPM3    DEEPSLEEP       only 32KiHz LFXT allowed to function.
+        only RTC and WDT can be clocking.  No timers.
+        retains peripheral state.
+LPM3.5  all peripherals except RTC and WDT are disabled and powered down.
+        no peripheral state is retained.  Bank0/SRAM is retained and
+        device I/O pin states are latched and retained.
+LPM4    no clocks
+LPM4.5  no clocks.  Same as 3.5 and no SRAM or peripheral register
+        data is not retained.  VCORE is OFF.
+
+We use AM (ON), LPM0 (SLEEP), and LPM3 (DEEPSLEEP).
+
+When going into DEEPSLEEP, one must set SCR.SLEEPDEEP to a 1 before
+executing the WFE or WFI.
+
+
+Current consumption, LDO-Based LPM0 Modes
+2.2V, 16MHz Vcore0/1, 32MHz Vcore1, 48MHz Vcore1
+     590/735 640/820     965/1160    1235/1450
+
+LPM0 is where the CPU sleeps.  ==> 16MiHz.
+
+DCDC-Based LPM0 Modes
+2.2V, 16MHz Vcore0/1, 32MHz Vcore1, 48MHz Vcore1
+     485/600 555/710     810/970     1020/1200
+
+LF LPM0
+2.2V, MCLK, HSMCLK, SMCLK, sourced by REFO @ 128KHz
+I_lpm0_lf_vcore0 58-94uA, max 180uA
+I_lpm0_lf_vcore1 60-104uA, max 220uA
+
+===> seems to argue for switching to LF when going to sleep
+
+
+Transition Timing
+
+- t_off_amldo0, power off to AM_LDO_VCORE0, 6ms
+- t_amldo0_amldo1, AM_LDO_VCORE0 to AM_LDO_VCORE1,  300-350s
+- t_amldo1_amldo0, AM_LDO_VCORE1 to AM_LDO_VCORE0,    4-5s
+- t_amldo0_amdcdc0, AM_LDO_VCORE0 to AM_DCDC_VCORE0, 20-30s
+- t_amdcdc0_amldo0, AM_DCDC_VCORE0 to AM_LDO_VCORE0, 10-15s
+- t_amldo1_amdcdc1, AM_LDO_VCORE1 to AM_DCDC_VCORE1, 20-30s
+
+- t_amldo0_lpm30, AM_LDO_VCORE0 to LPM3_VCORE0,      22-24s
+- t_lpm30_amldo0, LPM3_VCORE0 to AM_LDO_VCORE0,       8-9s
+- t_amldo1_lpm31, AM_LDO_VCORE1 to LPM3_VCORE1,      21-23s
+- t_lpm31_amldo1, LPM3_VCORE1 to AM_LDO_VCORE1,       8s
+
+
+Power Supply System (PSS)
+
+- 1.65V required for start-up
+- Pwr On/Off via VCCDET
+- SVSMH/Vcc, Supply Voltage Superviser and Monitor High Side.
+- Power-fail indicators via RSTCTL registers.
+- SVSMH can be turned off for low power situations
+- SVSMH can interrupt (what we should do) or cause a reset.
+- SVSMHTH bits set the threshold.  (has hysteresis)
+
+Power Control Manager (PCM)
+
+
+Reset Controller (RSTCTL)

@@ -1,0 +1,48 @@
+
+The MSP432 provides for the following classes of reset:
+
+** Class 0 - Power On/Off Reset (POR)
+
+-
+
+- depending on source of the reset, different wake-up latencies may be
+  experienced.
+- May be initiated by PSS, PCM, RSTn pin, CS if DCO xR short fault or
+  via the debug port (JTAG).
+- loses connectivity with the debug port.
+- latency from release of device POR to release of hard reset - 15-25 secs
+
+
+** Class 1 - Reboot Reset
+
+- identical to PORT but doesn't power cycle the device.
+- leaves the debug port if any connected.
+
+
+** Class 2 - Hard Reset
+
+- resets all modules that are set up or modified by the application
+- all peripherals and nondebug logic of the CM4
+- latency from release of hard reset to release of soft reset - 25 MCLK (@3MHz)
+
+- sources:
+
+  o (0) SYSRESETREQ
+  o (1) WDT_A Timeout (may be mapped to either Soft or Hard reset)
+  o (2) WDT_A Password violation
+  o (3) FLCTL
+  o (4) OverWatch request
+  o (14) CS  - will these ever show up?
+  o (15) PCM - will these ever show up?
+
+** Class 3 - Soft Reset
+
+- reset only the execution component of the system (ie. Core) and WDT_A
+- does NOT reset any peripherals and system components.
+- latency from release of soft reset to first CPU instruction fetch - 5 MCLK (@3MHz)
+
+- sources:
+
+  o (0) CPU Lockup
+  o (1) WDT_A Timeout
+  o (2) WDT_A Password violation
