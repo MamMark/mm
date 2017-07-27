@@ -1,0 +1,189 @@
+
+Panic and CrashDumps
+
+The Tag implements a Panic/CrashDump facility.  This allows the s/w to
+detect inconsistencies in the execution.  Unhandled exceptions also
+makes use of this facility.
+
+When a Panic or Crash occurs, the Tag s/w will write machine state and
+any other information needed to describe the crash to a special area
+on the Tag's uSD.
+
+sector = 512 bytes
+
+
+* Work Items
+
+o eval what gdb needs
+o eval what processor crash dump needs to look like
+o eval CrashCatcher (https://github.com/adamgreen/CrashCatcher)
+o eval CrashDebug   (https://github.com/adamgreen/CrashDebug)
+o eval breakpad     (https://chromium.googlesource.com/breakpad/breakpad)
+o define PanicBlock
+o define Panic Manager
+
+* Panic Blocks
+
+A Panic block is a single collection of all the information collected
+about the machine state for a single crash.
+
+A block includes the following information:
+
+a) cpu state:
+
+   main cpu registers:
+        R0-R15, 16 x 4 bytes = 64 bytes
+        sp_process, sp_main
+        xPSR
+
+   fpu registers: 32 x 4 bytes (32 fpu registers) if floating point is
+   active.
+
+b) System Peripherals
+
+   ITM          Instrumentation Trace Macrocell
+   DWT          Data Watchpoint and Trace
+   FPB          Flashpatch and Breakpoint
+   SCS          System Control Space
+                MPU  - Memory Protection Unit
+                NVIC - Nested Vectored Interrupt Controller
+   TPIU         Trace Point Interface Unit
+   ETM          Embedded Trace Macrocell
+   ROMTABLE
+
+b) I/O state: (0x40000000)
+
+(These need to be verified.  length)
+(**** currently not used)
+
+Periph          Base             length
+Timer_A0        0x4000_0000      48 (0x30)
+Timer_A1        0x4000_0400      48 (0x30)
+Timer_A2        0x4000_0800      48 (0x30)
+Timer_A3        0x4000_0C00      48 (0x30)
+eUSCI_A0        0x4000_1000      32 (0x20)
+eUSCI_A1        0x4000_1400      32 (0x20)
+eUSCI_A2        0x4000_1800      32 (0x20)
+eUSCI_A3        0x4000_1C00      32 (0x20)
+eUSCI_B0        0x4000_2000      48 (0x30)
+eUSCI_B1        0x4000_2400      48 (0x30)
+eUSCI_B2        0x4000_2800      48 (0x30)
+eUSCI_B3        0x4000_2C00      48 (0x30)
+REF_A           0x4000_3000       2
+Comp_E0         0x4000_3400      16 (0x10)  ****
+Comp_E1         0x4000_3800      16 (0x10)  ****
+AES246          0x4000_3C00      16 (0x10)
+CRC32           0x4000_4000      32 (0x20)
+RTC_C           0x4000_4000      32 (0x20)
+WDT_A           0x4000_4400       2
+Port            0x4000_4c00     160 (0xA0)
+ PJ             0x4000_4D20      18 (0x12)
+PortMap         0x4000_5000      64 (0x40)
+Cap_0           0x4000_540E       2         ****
+Cap_1           0x4000_580E       2         ****
+Timer32         0x4000_C000      64 (0x40)
+DMA             0x4000_E000      48 (0x30)
+                0x4000_E100      32 (0x20)
+                0x4000_F000      80 (0x50)
+PCM             0x4001_0000      20 (0x14)
+CS              0x4001_0400     104 (0x68)
+PSS             0x4001_0800      64 (0x40)
+FLCTL           0x4001_1000                 needs eval
+ADC14           0x4001_2000     344 (0x158) needs eval
+
+
+c) Private Peripheral Bus
+
+RSTCTL          0xE004_2000      72 (0x48)
+SYSCTL          0xE004_3000      52 (0x34)
+SYSCTL_Boot     0xE004_4000      28 (0x1c)
+
+
+c) RAM.  The msp432 has 64K of RAM.  (128 sectors)
+
+
+Panic Information: (x) number of bytes
+  pcode (1), where (1), arg0-arg3 (4 x 4)
+
+CPU Registers:
+  16 main registers, 16 x 4 bytes
+    R0-R7
+    R8-R12
+    SP
+    LR
+    PC
+  SP_main (MSP) (4), SP_process (PSP) (4)
+  xPSR          (4)
+  PRIMASK
+  FAULTMASK
+  BASEPRI
+  CONTROL
+
+  fpu registers: 32 x 4 bytes (32 fpu registers)
+    FPSCR
+
+RAM: 64Kbytes (128 sectors)
+
+
+Exception Stack Frame:
+
+  no FP (non-FP state)
+    ...
+    (aligner)
+    xPSR
+    PC
+    LR
+    R12
+    R3
+    R2
+    R1
+    R0
+
+  FP (FP state)
+    ...
+    (aligner)
+    FPSCR (64 bits)
+    S15
+     .
+     .
+     .
+    S0
+    xPSR
+    PC
+    LR
+    R12
+    R3
+    R2
+    R1
+    R0
+
+
+EXC_RTN: Exception Return
+    0xFFFF_FFE1         Return to Handler mode
+                        uses FP state from MSP
+                        uses MSP after return
+
+    0xFFFF_FFE9         Return to Thread mode
+                        uses FP state from MSP
+                        uses MSP after return
+
+    0xFFFF_FFED         return to Thread mode
+                        uses FP state from PSP
+                        uses PSP after return
+
+    0xFFFF_FFF1         return to Handler mode
+                        uses non-FP state from MSP
+                        uses MSP after return
+
+    0xFFFF_FFF9         return to Thread mode
+                        uses non-FP state from MSP
+                        uses MSP after return
+
+    0xFFFF_FFFD         return to Thread mode
+                        uses non-FP state from PSP
+                        uses PSP after return
+
+    bit 4       bit 3       bit 2           bit 1       bit 0
+    FP state    return mode return stack    reserved    Process state
+    FP/nFP      H/T         M/P             must be 0   ARM/Thumb (set to 1)
+     0/1        0/1         0/1             0             0/1
