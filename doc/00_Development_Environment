@@ -4,13 +4,13 @@ Installing a development environment for the MamMark tag.
 
 State:
 
-2017-07-20
+2017-08-01
     Ubuntu 16.04, T2 (TinyProd) github:tp-freeforall/prod(tp-master),
     MM github:MamMark/mm(master)
     ARM toolchain, gcc 4.9.3, gdb 7.8.0 (32 bit), python support
-    J-link (Segger)
+    J-link (Segger), V6.16j (6.16.10)
     TI ARM tools (msp432)
-    CCS 7.2
+      simplelink_msp432_sdk_1_40_01_00
 
     VM support.
 
@@ -37,37 +37,43 @@ Most commands are entered from a terminal window.
 
 **************************************************************************************
 
-Installing using the Vagrant box.
-
-<This needs to get filled in please>
-
-**************************************************************************************
-
 0) Overview.
 
 MamMark code is built using two trees.
 
-    I)  Modified TinyOS trunk.  Adds support for msp430f5438a.  MM core changes.
-    II) Main MM trunk.  Main body of MM code.
+    I)  Modified TinyOS trunk.  Adds support for advanced processors.  MM core changes.
+    II) Main MM trunk.  Main body of MamMark code.
 
 The following parts are essential to building MM images:
 
 a) Set up a development environment.  (Ubuntu or Debian based)
-b) mspgcc (LTS-20110716) toolchain (gcc 4.6.3)
+   o Stand alone, manual install
+   o Vagrant box, VM based install
+b) appropriate toolchain
+   mspgcc (LTS-20110716) toolchain (gcc 4.6.3) for msp430 based motes
+   arm toolchain for msp432 based motes
 c) two trees are used and environment is set to include both trees.
-d) Jtag pod is connected to /dev/ttyUSB0 (v2)
-e) Serial (Dock) port is connected to /dev/ttyUSB1
+d) Jtag pod
 
 **************************************************************************************
 
-1) Development Environment Installation
+1a) Development Environment Installation.   Manual Installation
 
 https://github.com/tp-freeforall/prod/blob/tp-master/00b_Development_Environment
+
+
+1b) Vagrant Installation.
+
+https://github.com/tp-freeforall/prod/blob/tp-master/00g_Development_Environment_VM
 
 
 **************************************************************************************
 
 2) Pull main tinyos tree, gh:tp-freeforall/prod(tp-master)
+
+Starting from the home directory of where ever you are.  ie. On a Manual Installation
+in your top directory.  On a VM installation, you need to be in your top directory
+within the VM.
 
 cd ~/mm
 mkdir t2_cur
