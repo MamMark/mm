@@ -1,0 +1,214 @@
+
+The Dock is a field deployable device intended to make infield transfer of
+data on and off the MM series tags.  A mm6a tag plugs into the dock.  A
+full sized SD or uSD with adapter can also be plugged into the appropriate
+slot (DOCK_SD1).  The user then has several simple commands that can cause
+the tag/dock to transfer data.  It is intended to be simple and robust for
+field work.
+
+The Dock interface to the local processor is severely limited due to pin I/O
+constrainsts.  There is a 4 wire SPI interface for access to the DOCK_SD
+(SD1) and two additional IOs, dock_io_0 (connected to S0) and dock_io_1
+(connected to S1).
+
+The Dock has the following User Interface elements:
+
+o two 3 position switches, S0 and S1.  The normal position is no connection
+  (N).  Up corresponds to 1 and Down to 0.  So a switch state could be
+  for example S0N/S1N, S0U/S1NC, S0D/S1D.
+
+o 4 Leds, D1-D4.  D1 and D2 are controlled by S0/dock_io_0.  Similarily
+  D3 and D4 are controlled by S1/dock_io_1.
+
+
+Operation:
+
+S0C and S1C are the common connectors on each switch.  The voltage at this
+node can be controlled by either the switch or the processor pin.  The
+switch takes priority.  The switch can be in one of three positions, no
+connection (NC, N), grounded (D), or connected to V+ (U).
+
+The processor pins, dock_io_0 and _1, are also connected to S0C and S1C.
+These pins can be used to sense the state of a switch (U, D, or N) and
+can also effect the state of the LEDs.
+
+
+Sensing a switch position:
+
+To sense a switch the processor pin must be an input.  We then observe the
+following result:
+
+    switch      Port      Sense
+              Resistor
+      NC         PU         1
+      NC         PD         0   -> NC (-1)
+      UP         PU         1
+      UP         PD         1   -> UP (1)
+     DOWN        PU         0
+     DOWN        PD         0   -> DOWN (0)
+
+
+LED Operation:
+
+There are four LEDS, D1/D2 associated with S0 and dock_io_0 and D3/D4
+associated with S1 and dock_io_1.  For a given pair we can have 3 different
+states, upper on, both off, and lower on.  Just like the switch we can
+describe the LED that is on when the switch is in the upper position as
+the upper LED.
+
+    S0D -> D1 lit (D1 is L0D)
+    S0U -> D2 lit (D2 is L0U)
+    S1D -> D3 lit (D3 is L1D)
+    S1U -> D4 lit (D4 is L1U)
+
+
+In addition to the switches, the LEDs can be controlled by the state
+of dock_io_0 and dock_io_1 (pins coming from the local processor).  If
+the processor wants to illuminate L1U it can switch dock_io_1 to
+output and drive it to a 1.   This will illuminate L1U (unless S1 is
+in the down position).  Switches always override what the processor
+is outputting.
+
+
+Switch/LED arrangement:
+
+    L0U (D2)    L1U (D4)
+
+
+      U           U
+    S0 N        S1 N
+      D           D
+
+
+    L0D (D1)    L1D (D3)
+
+
+LED signalling:
+
+We use various patterns using the LEDs to signify different kinds
+of feedback to the user.
+
+o Basic acknowledge, LED_CIRCLE_CW.   This is a clockwise circle,
+flashing each LED long enough so it looks like a rotating circle
+is occuring.
+
+o Flash.  All four LEDS are turned on effectively at the same time.
+  Since we can't turn on both L0U and L0D at the same time.  We use
+  visual persistence to make it look like all 4 LEDs are being turned
+  on at the same time.
+
+  Flash-2 means,  Flash, slight pause, Flash.
+
+o Pause.  All LEDs off for an appropriate period of time.
+
+
+Entering Dock Mode:
+
+Dock Mode is an operational mode of the LocalProcessor (the msp432 on the
+mm6a h/w).  Simply plugging the tag h/w into the dock does not notify the
+LocalProcessor to enter dock mode.
+
+Dock mode can be entered from either LowPowerMode (Chirp) or from
+NormalPowerMode.  This occurs when S0 is thrown into S0U.  This will
+generate an interrupt on dock_io_0.  This interrupt handler will then
+generate a system_quiesce signal that should eventually result in
+entering Dock Mode.
+
+Hold S0U for count of 5.   L0U will be on.
+
+Enter Dock Mode.  Acknowledge Dock Mode to User.  Circle.
+
+User releases S0U.  LP finishes Circle.
+
+
+Offload:  The user wishes to copy all data on the tag up to a blank
+SD in the DOCK_SD socket.
+
+User inserts a blank SD card into DOCK_SD.
+
+User holds both switches up (S0U/S1U) for count of 5.
+  Ack, Circle. Pause.
+
+LP checks SD1.
+
+   no device present (ie. failed initilization)   -> Flash-5
+   device present, too small, etc.                -> Flash-5
+   device present, not erased (something in MBR)  -> Flash-3
+   device present, erased                         -> Flash-1
+
+   user can proceed from Flash-3 or Flash-1.
+
+
+Command Abort:  User holds S0U (S0U/S1N) for count of 5.
+
+Proceed:  User holds S0U/S1U for count of 5.
+
+Ack: Circle.
+
+
+if SD1 is not erased.  Erase SD1, give progress indicator.
+
+Flash-2 to indicate starting copy.
+
+LP starts copy.  We want a progress indicator.  Slow circle.
+
+Completion of the copy.  LP indicates completion by Circle,
+Pause, Status, Pause ...  repeat.
+
+Status will be Flash-2 for success.   Flash-5 for failure.
+
+User acknowledges completion with S0U.  Circle.
+
+
+Onload: The user wishes to copy a properly formatted SD from
+SD1 to the onboard SD.
+
+User puts properly formatted SD into DOCK_SD.
+
+User holds both switches down (S0D/S1D) for count of 5.
+Circle acknowledge.
+
+Error check: wrong size, no SD1 device  -> Flash-5
+
+Flash-1 asking to proceed.
+
+Proceed: S0D/S1D for count of 5.  Ack with Circle.
+Abort:   S0U count of 5, circle ack.
+
+User commands proceed by S0D/S1D for count of 5.
+circle ack.
+
+progress indicator.
+
+Same completion as Offload.
+
+
+
+Leaving Dock Mode:
+
+Simply unplugging the tag from the dock will NOT cause the LP to leave
+dock mode.
+
+Plan B method:  Anytime in dock mode we will have a background timer
+running.  When this timer expires, we will leave dock mode.
+
+Plan A: User commands leaving dock mode via S0D/S1N for count of 5,
+circle ack.  Leave dock mode.
+
+
+Command Summary:
+
+S0U/S1U:        Offload copy up from tag to SD1
+S0D/S1D:        Onload  copy down from SD1 to tag.
+S0D/S1U:        Excute a run script.
+S0D/S1N:        Undock.
+
+
+LED Summary:
+
+Circle:         acknowledge
+Flash-1:        ok to proceed, user confirmation required.
+Flash-2:        success
+Flash-3:        warning, ok to proceed
+Flash-5:        error, not ok to proceed.
+Slow:           slow circle, progress indicator
