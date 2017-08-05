@@ -1,0 +1,118 @@
+
+# to launch msp432-gdb
+# M-x gdb
+# arm-none-eabi-gdb-py -i=mi -iex "target remote localhost:2331" main.exe
+
+# (setq make-command ". ~/.environment_bash; make dev6a")
+# (setq gud-gdb-command-name "arm-none-eabi-gdb-py -i=mi -iex \\"target remote localhost:2331\\" main.exe")
+#
+# 2331 is Jlink
+# 55000 is TI's gdb-agent-console, gag
+
+set remoteaddresssize 32
+set remotetimeout 999999
+
+set mem inaccessible-by-default off
+
+#
+# gdb_msp432:   cpu definitions
+# gdb_dev6a:    platform definitions, pick either dev6a or mm6a
+# gdb_mm6a:
+# gdb_gps:      definitions for the gps subsystem
+# gdb_mm:       definitions for various mm subsystems
+
+add-symbol-file symbols_hw 0
+source ../../.gdb_msp432
+source ../../.gdb_dev6a
+#source ../../.gdb_mm6a
+source ../../.gdb_gps
+source ../../.gdb_mm
+
+
+set disassemble-next-line on
+
+x/i $pc
+set pri ele 0
+
+define npc
+disassem/r $pc,+0d32
+end
+document npc
+display next (n) instructions from $pc
+end
+
+define new
+load
+mon reset
+end
+document new
+load new image, same executable
+then reset
+end
+
+define pc
+# arg0 increment to increase PC by
+set $pc=$pc+$arg0
+end
+document pc
+adjust current PC by the passed in argument.
+ie. pc 2   yields new pc of pc+2
+end
+
+define tq
+printf "taskq: head: %d  tail %d\n", SchedulerBasicP__m_head, SchedulerBasicP__m_tail
+output/d SchedulerBasicP__m_next
+printf "\n"
+end
+document tq
+display task queue
+end
+
+define __p_timers
+# arg0: num_timers, arg1: pointer to first timer
+set $_num_timers = $arg0
+set $_tptr = $arg1
+set $_idx = 0
+printf "    t   state       t0           dt\n"
+while $_idx < $_num_timers
+  printf "    %2d    %c%c  %8x(x)  %8x(x)\n", $_idx, \
+    ($_tptr[$_idx]->isoneshot ? 'O' : 'o'), \
+    ($_tptr[$_idx]->isrunning ? 'R' : 'r'), \
+    $_tptr[$_idx]->t0, $_tptr[$_idx]->dt
+  set $_idx++
+end
+end
+
+define timers
+set $_upper=TransformCounterC__0__m_upper << 0d11
+set $_lower = $ta1->R >> 5
+printf "\n       TA1->R: %04x  CCR[0]: %04x    (%04x)    t_milli: %08x\n", \
+  $ta1->R, $ta1->CCR[0], ($ta1->CCR[0])>>5, $_upper | $_lower
+printf "Alarm[0]:  t0: %04x      dt: %04x    Counter[0]: upper: %04x\n\n", \
+  TransformAlarmC__0__m_t0, TransformAlarmC__0__m_dt, TransformCounterC__0__m_upper
+__p_timers VirtualizeTimerC__0__NUM_TIMERS  &VirtualizeTimerC__0__m_timers[0]
+end
+
+define gg
+set gg_wait=0
+c
+end
+document gg
+go, set gg_wait to 0 and continue
+end
+
+#b RealMainP.nc:86
+#b RealMainP.nc:92
+#b SchedulerBasicP.nc:159
+#b SchedulerBasicP.nc:163
+#b VirtualizeTimerC.nc:92
+#dis
+
+b PanicP.nc:79
+comm
+printf "\n\n*** Panic: %d(d), w: %d(d), a: %04x %04x %04x %04x\n", \
+        PanicP___p,  PanicP___w, \
+        PanicP___a0, PanicP___a1, PanicP___a2, PanicP___a3
+end
+
+b main
