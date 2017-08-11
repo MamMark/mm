@@ -160,7 +160,8 @@ typedef struct {
 typedef struct {
   uint16_t    len;              /* size 8, 0x08 */
   dtype_t     dtype;
-  image_ver_t verid;
+  image_ver_t ver_id;
+  hw_ver_t    hw_ver;
 } PACKED dt_version_t;
 
 

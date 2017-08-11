@@ -55,10 +55,16 @@ typedef struct {                        /* little endian order  */
 } image_ver_t;
 
 typedef struct {
+  uint8_t  hw_model;
+  uint8_t  hw_rev;
+} hw_ver_t;
+
+typedef struct {
   uint32_t    majik;
   uint32_t    checksum;
   uint32_t    image_length;
-  image_ver_t verid;
+  image_ver_t ver_id;
+  hw_ver_t    hw_ver;
 } image_info_t;
 
 #endif  /* __IMAGE_INFO_H__ */

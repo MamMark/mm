@@ -29,7 +29,8 @@ implementation {
     vp = &v;
     vp->len     = sizeof(v);
     vp->dtype   = DT_VERSION;
-    vp->verid   = image_info.verid;
+    vp->ver_id  = image_info.ver_id;
+    vp->hw_ver  = image_info.hw_ver;
     call Collect.collect((void *) vp, sizeof(dt_version_t), NULL, 0);
   }
 
