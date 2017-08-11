@@ -140,21 +140,19 @@ SECTIONS {
 
     __etext = .;
 
-/*
- * OverWatch Control Block lives at the base of RAM
- * However this tickles a bug in the Linker that
- * causes a huge gap in the in the resultant binary.
- * so right now this is commented out.
- */
+    /*
+     * OverWatch Control Block lives at the base of RAM
+     * However this tickles a bug in the Linker that
+     * causes a huge gap in the in the resultant binary.
+     * so right now this is commented out.
+     */
 
-/*
     PROVIDE (_overwatch_data_base = ORIGIN(REGION_DATA));
-    .overwatch_data (_overwatch_data_base) : AT (_overwatch_data_base) {
+    .overwatch_data (_overwatch_data_base) (NOLOAD) : AT (_overwatch_data_base) {
         __overwatch_data_start__ = .;
         KEEP (*(.overwatch_data))
         __overwatch_data_end__ = .;
     } > REGION_DATA
-*/
 
     .data : ALIGN(4) {
         . = ALIGN (4);
