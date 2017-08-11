@@ -6,8 +6,8 @@
 TARGET = mm6a
 PLATFORM_DIR = $(MM_ROOT)/tos/platforms/$(TARGET)
 
+# currently golden is default, use "nib" on make to switch
 LINKERFILE ?= $(PLATFORM_DIR)/linker_golden_0k.lds
-#LINKERFILE ?= $(PLATFORM_DIR)/linker_nib_128k.lds
 
 BUILD_NUM_FILE = $(PLATFORM_DIR)/_Build
 BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)); else echo 0; fi)
