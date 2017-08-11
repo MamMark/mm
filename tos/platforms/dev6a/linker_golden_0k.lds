@@ -79,7 +79,7 @@ SECTIONS {
      * we hardcode where the image_meta starts.
      */
 
-    PROVIDE (_image_meta_base = 0x140);
+    PROVIDE (_image_meta_base = ORIGIN(REGION_TEXT) + 0x140);
     .image_meta (_image_meta_base) : AT (_image_meta_base) {
         __image_meta_start__ = .;
         KEEP (*(.image_meta))
