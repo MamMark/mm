@@ -131,6 +131,7 @@ typedef struct {
   dtype_t  dtype;
   uint32_t stamp_ms;
   uint32_t sync_majik;
+  uint32_t time_cycle;          /* time cycle */
 } PACKED dt_sync_t;
 
 
@@ -139,6 +140,7 @@ typedef struct {
   dtype_t  dtype;
   uint32_t stamp_ms;
   uint32_t sync_majik;
+  uint32_t time_cycle;          /* time cycle */
   uint16_t boot_count;
 } PACKED dt_reboot_t;
 

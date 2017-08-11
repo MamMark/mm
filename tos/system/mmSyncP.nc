@@ -44,6 +44,7 @@ implementation {
     sp->dtype = DT_SYNC;
     sp->stamp_ms = call SyncTimer.getNow();
     sp->sync_majik = SYNC_MAJIK;
+    sp->time_cycle = 0;                 /* for now only time_cycle 0 */
     call Collect.collect((void *) sp, sizeof(dt_sync_t), NULL, 0);
   }
 
@@ -57,6 +58,7 @@ implementation {
     rp->dtype = DT_REBOOT;
     rp->stamp_ms = call SyncTimer.getNow();
     rp->sync_majik = SYNC_MAJIK;
+    rp->time_cycle = 0;                 /* for now only time_cycle 0 */
     rp->boot_count = call BootParams.getBootCount();
     call Collect.collect((void *) rp, sizeof(r), NULL, 0);
   }
