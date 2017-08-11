@@ -29,9 +29,7 @@ implementation {
     vp = &v;
     vp->len     = sizeof(v);
     vp->dtype   = DT_VERSION;
-    vp->major   = call BootParams.getMajor();
-    vp->minor   = call BootParams.getMinor();
-    vp->build   = call BootParams.getBuild();
+    vp->verid   = image_info.verid;
     call Collect.collect((void *) vp, sizeof(dt_version_t), NULL, 0);
   }
 

@@ -44,6 +44,8 @@
 #include <platform.h>
 #include <platform_clk_defs.h>
 #include <platform_pin_defs.h>
+#include <platform_version.h>
+#include <image_info.h>
 
 #ifndef nop
 #define nop() __asm volatile("nop")
@@ -72,6 +74,17 @@ extern uint32_t __data_end__;
 extern uint32_t __bss_start__;
 extern uint32_t __bss_end__;
 extern uint32_t __StackTop__;
+extern uint32_t __image_length__;
+
+
+const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
+  .majik        = IMAGE_META_MAJIK,
+  .checksum     = 0xAFBEADDE,           /* big endian 0xDEADBEAF, readable as bytes */
+  .image_length = (uint32_t) &__image_length__,
+  .verid       = { .major = MAJOR, .minor = MINOR, .build = _BUILD }
+};
+
+
 
 
 int  main();                    /* main() symbol defined in RealMainP */

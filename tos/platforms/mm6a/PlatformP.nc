@@ -38,16 +38,15 @@
  * @author Eric B. Decker
  */
 
-#include "hardware.h"
-#include "cpu_stack.h"
-#include "platform_version.h"
-#include "platform_reset_defs.h"
+#include <hardware.h>
+#include <cpu_stack.h>
+#include <platform_reset_defs.h>
+#include <platform_version.h>
+#include <image_info.h>
 
 noinit uint32_t stack_size;
 
-const uint8_t  _major = MAJOR;
-const uint8_t  _minor = MINOR;
-const uint16_t _build = _BUILD;
+extern image_info_t image_info;
 
 
 #define BOOT_MAJIK 0x01021910
@@ -96,9 +95,9 @@ implementation {
 
 
   async command uint16_t BootParams.getBootCount() { return boot_count; }
-  async command uint8_t  BootParams.getMajor()     { return _major; }
-  async command uint8_t  BootParams.getMinor()     { return _minor; }
-  async command uint16_t BootParams.getBuild()     { return _build; }
+  async command uint8_t  BootParams.getMajor()     { return MAJOR;  }
+  async command uint8_t  BootParams.getMinor()     { return MINOR;  }
+  async command uint16_t BootParams.getBuild()     { return _BUILD; }
 
   async command error_t  SysReboot.reboot(sysreboot_t reboot_type) {
     switch (reboot_type) {
