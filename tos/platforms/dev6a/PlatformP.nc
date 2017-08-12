@@ -46,8 +46,6 @@
 
 noinit uint32_t stack_size;
 
-extern image_info_t image_info;
-
 #define BOOT_MAJIK 0x01021910
 #define FUBAR_MAX 0xffff
 noinit uint32_t boot_majik;

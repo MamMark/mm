@@ -9,6 +9,8 @@
  */
 #define SYNC_PERIOD (1UL * 60 * 1024)
 
+extern image_info_t image_info;
+
 module mmSyncP {
   provides interface Boot as OutBoot;
   uses {
