@@ -35,8 +35,7 @@
 #ifndef __IMAGE_INFO_H__
 #define __IMAGE_INFO_H__
 
-#define IMAGE_META_MAJIK  0x5A595959
-
+#define IMAGE_INFO_SIG  0x5A595959
 
 /*
  * IMAGE_META_OFFSET is the offset into the image where
@@ -60,7 +59,7 @@ typedef struct {
 } hw_ver_t;
 
 typedef struct {
-  uint32_t    majik;
+  uint32_t    sig;
   uint32_t    checksum;
   uint32_t    image_length;
   image_ver_t ver_id;

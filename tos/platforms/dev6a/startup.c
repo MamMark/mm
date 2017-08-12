@@ -78,7 +78,7 @@ extern uint32_t __image_length__;
 
 
 const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
-  .majik        = IMAGE_META_MAJIK,
+  .sig          = IMAGE_INFO_SIG,
   .checksum     = 0xAFBEADDE,           /* big endian 0xDEADBEAF, readable as bytes */
   .image_length = (uint32_t) &__image_length__,
   .ver_id       = { .major = MAJOR, .minor = MINOR, .build = _BUILD },
