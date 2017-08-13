@@ -5,15 +5,15 @@
 # ROOT_DIR should be same as $(MM_ROOT)
 #
 
-F_DIR   = ../fat
-ROOT_DIR   = ../../..
+F_DIR    = ../fat
+ROOT_DIR = ../../..
 
 INSTALL_DIR = /usr/local/bin
 
 SOURCE  = mkdblk.c ms_unix.c ms_util.c util.c $(F_DIR)/fatxfc.c
 OBJECTS = mkdblk.o fatxfc.o ms_unix.o ms_util.o util.o
 
-CFLAGS += -g -Wall -O0 -I../include -I../fat -I. -I$(ROOT_DIR)/include
+CFLAGS += -g -Wall -O0 -I../fat -I. -I$(ROOT_DIR)/include
 VPATH = $(F_DIR)
 
 all: mkdblk
@@ -43,7 +43,7 @@ install: mkdblk
 
 ### Dependencies
 mkdblk.o: mkdblk.c ../../../include/mm_types.h \
- ../../../include/mm_byteswap.h ../include/fat_fs.h ../fat/fatxfc.h ms.h \
+ ../../../include/mm_byteswap.h ../fat/fat_fs.h ../fat/fatxfc.h ms.h \
  ../../../include/ms_loc.h
 ms_unix.o: ms_unix.c ../../../include/mm_types.h \
  ../../../include/mm_byteswap.h ms.h ../../../include/ms_loc.h ms_util.h
@@ -51,5 +51,5 @@ ms_util.o: ms_util.c ../../../include/mm_types.h \
  ../../../include/mm_byteswap.h ms.h ../../../include/ms_loc.h ms_util.h
 util.o: util.c ../../../include/mm_types.h util.h
 fatxfc.o: ../fat/fatxfc.c ../../../include/mm_types.h \
- ../../../include/mm_byteswap.h ../include/fat_fs.h ../fat/fatxfc.h ms.h \
+ ../../../include/mm_byteswap.h ../fat/fat_fs.h ../fat/fatxfc.h ms.h \
  ../../../include/ms_loc.h util.h
