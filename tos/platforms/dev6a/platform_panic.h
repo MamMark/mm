@@ -12,8 +12,15 @@
  * KERN:	core kernal  (in panic.h)
  * TIMING:      timing system panic
  * ADC:		Analog Digital Conversion subsystem (AdcP.nc)
+ * SD:          Disk
+ * FS:          File System
+ * SS:          Stream Storage
+ * SS_RECOV:    Stream Storage recovery mode ???
+ * GPS:         GPS subsystem
  * MISC:
  * COMM:	communications subsystem
+ * SNS:         SeNsor Subsystem (SNS)
+ * IM:          image manager
  */
 
 enum panic_codes {
@@ -27,6 +34,8 @@ enum panic_codes {
   __pcode_misc,
   __pcode_comm,
   __pcode_sns,
+  __pcode_pwr,
+  __pcode_im,
 };
 
 #define PANIC_TIMING    __pcode_timing
@@ -39,5 +48,7 @@ enum panic_codes {
 #define PANIC_MISC      __pcode_misc
 #define PANIC_COMM      __pcode_comm
 #define PANIC_SNS       __pcode_sns
+#define PANIC_PWR       __pcode_pwr
+#define PANIC_IM        __pcode_im
 
 #endif /* __PLATFORM_PANIC_H__ */
