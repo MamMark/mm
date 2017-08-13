@@ -20,6 +20,8 @@
  * dblk_end:    last block id of where to write data collected.
  * dblk_nxt:	current block to write.  If we are writing, this is the
  *		block being written.  This is the next blk for the Typed Data stream.
+ * image_start: block id of where images start, blk_id of image_root
+ * image_end:   ending block_id for image area.
  */
 
 typedef struct {
@@ -31,6 +33,8 @@ typedef struct {
     uint32_t dblk_start;	/* blk id, don't go in front */
     uint32_t dblk_end;		/* blk id, don't go beyond*/
     uint32_t dblk_nxt;		/* blk id, next to write */
+    uint32_t image_start;	/* blk id of image area */
+    uint32_t image_end;
     uint16_t majik_b;
 } fs_control_t;
 
@@ -41,6 +45,7 @@ enum {
   FS_AREA_PANIC       = 0,
   FS_AREA_CONFIG      = 1,
   FS_AREA_TYPED_DATA  = 2,
+  FS_AREA_IMAGE       = 3,
 };
 
 #endif /* _FILE_SYSTEM_H */

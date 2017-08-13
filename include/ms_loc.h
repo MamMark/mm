@@ -46,6 +46,8 @@ typedef struct {
   uint32_t config_end;
   uint32_t dblk_start;
   uint32_t dblk_end;
+  uint32_t image_start;
+  uint32_t image_end;
   uint16_t dblk_chksum;
 } dblk_loc_t;
 
