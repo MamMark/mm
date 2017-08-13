@@ -24,14 +24,15 @@ fi
 echo -e "\nset -o verbose"
 set -o verbose
 
-TP_DIR=${TINYOS_ROOT_DIR}/tos/chips/msp432/99_gdb
+TP_GDB=${TINYOS_ROOT_DIR}/tos/chips/msp432/99_gdb
+MM_GDB=${MM_ROOT}/tools/00_gdb
 MM_PLAT=${MM_ROOT}/tos/platforms
 MM_CHIP=${MM_ROOT}/tos/chips
 
-cp ${TP_DIR}/gdbinit    .gdbinit
-cp ${TP_DIR}/gdb_msp432 .gdb_msp432
+cp ${MM_GDB}/gdbinit           .gdbinit
+cp ${MM_GDB}/gdb_mm            .gdb_mm
+cp ${TP_GDB}/gdb_msp432        .gdb_msp432
 
-cp ${MM_ROOT}/tos/mm/gdb_mm    .gdb_mm
 cp ${MM_CHIP}/gsd4e_v4/gdb_gps .gdb_gps
 cp ${MM_PLAT}/mm6a/gdb_mm6a    .gdb_mm6a
 cp ${MM_PLAT}/dev6a/gdb_dev6a  .gdb_dev6a
