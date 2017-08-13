@@ -93,3 +93,16 @@ turn on time, then send 10 bytes (80 clocks).
        send ACMD41(1UL << 30)      /* set HCS in ACMD41 args */
      until ACMD41 returns 0 ]
      if (timeout) bail
+
+
+SanDisk 2G:
+  CSD: 002600325f5a83ae fefbcfff928040df 9fc5
+  CID:
+
+  Blocks: 3af000 -> 1,977,614,336   1.842 GiB (1.98 GB)
+  Erase_State: 0
+
+SanDisk 4G:
+
+Kensington 2G:
+
