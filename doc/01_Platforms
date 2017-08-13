@@ -12,6 +12,7 @@ mm6a: The mm6a is a major implementation of the tag using the TI MSP432
   o ARM regularity
   o increased processing power.
   o full single precision floating point coprocessor.
+  o AES256 encryption h/w accelerator
 
 One of the problems that the ARM solves concerns addressing.  The MSP430 is
 a 16 bit architecture that was expanded to 20 bits.  But the cheif problem
@@ -101,7 +102,7 @@ tmp_on:  p3.4 -> p3.0
 
               -> p3.4 (gps_txd)
 	      -> p3.5 (gps_rxd)
-	     
+
 adc_sdi: p3.5 -> p6.6 (adc_sdi)
 
 ser_txd: p3.6 -> p3.6 (dock_txd)
