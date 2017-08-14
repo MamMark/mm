@@ -111,6 +111,7 @@ SECTIONS {
 
     .text : {
         . = ALIGN(4);
+        __text_start__ = .;
         KEEP (*(.text))
         *(.text.*)
         KEEP (*(.ctors))
@@ -139,6 +140,8 @@ SECTIONS {
     } > REGION_ARM_EXTAB AT> REGION_ARM_EXTAB
 
     __etext = .;
+    __text_end__ = .;
+
 
     /*
      * OverWatch Control Block lives at the base of RAM
