@@ -86,31 +86,34 @@ typedef enum  {
   OW_REQ_NIB            = 5,
 } ow_request_t;
 
-/*
- * INIT       OWT will first initialize the ow_control_block
- *            to its default (all zeros) state. OWT will then
- *            verify that the SD image marked as active is
- *            currently loaded in the NIB. If not, OWT will
- *            install the active image into the NIB and reboot
- *            of if there is no active image in SD, then copy
- *            current NID to SD and mark as active.
- * INSTALL    OWT will install the SD image marked as active into
- *            the NIB and reboot.
- * EJECT      OWT will change the currently active image to
- *            failed, set the SD image marked backup as active
- *            and install. If no backup is found in the SD, then
- *            boot Golden.
- */
-typedef enum  {
-  INIT               = 0,   //   [default]
-  INSTALL            = 1,
-  EJECT              = 2,
-} owt_action_t;
 
 /*
- * ow_failure_code_t
+ * OWT implements the following actions.  For various reasons
+ * these actions must be handled using TinyOS code.
  *
+ * ACT_INIT     The OW control block reinialized and we must
+ *              determine what is a reasonable boot state.
+ *              This information is out on the SD and we need
+ *              to ask the ImageManager for the current state.
+ *
+ * ACT_INSTALL  OWT will install the SD image marked as active into
+ *              the NIB and reboot.
+ *
+ * ACT_EJECT      The currently executing image (must be NIB) has had
+ *              too many problems.  Mark it as ejected, and make the
+ *              Backup Image (if present) as the new active.  (Will
+ *              need to be installed.
+ *
+ *              If not backup is available, then run the Golden
+ *              image.
  */
+typedef enum  {
+  OWT_ACT_INIT          = 0,            //   [default]
+  OWT_ACT_INSTALL       = 1,
+  OWT_ACT_EJECT         = 2,
+} owt_action_t;
+
+
 typedef enum {
   OWE_OK             = 0,
   OWE_PANIC,
