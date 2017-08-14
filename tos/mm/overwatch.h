@@ -64,23 +64,26 @@ typedef enum {
 /*
  * ow_request_t
  *
- * The Overwatcher low level code responds to these requests:
+ * When a running image needs to make a request of Overwatch
+ * these are the possible requests that can be made.
  *
- * INSTALL    Install new code image into the NIB (Bank 1).
- *            Image is marked as active in the Image Directory.
- * REBOOT     Reboot the current ow_boot_mode, test for too
- *            many boot failures and fall back accordingly.
- * BOOT_OWT   Boot into the Overwatch TinyOS Action Handler.
- * BOOT_GOLD  Boot into the Golden image (bank 0).
- * BOOT_NIB   Boot into the Normal Image Block (bank 1).
+ * REQ_INSTALL  Install new code image into the NIB (Bank 1).
+ *              Image is marked as active in the Image Directory.
+ *
+ * REQ_REBOOT   Reboot the current ow_boot_mode, test for too
+ *              many boot failures and fall back accordingly.
+ *
+ * REQ_OWT      Boot into the Overwatch TinyOS application.
+ * REQ_GOLD     Boot into the Golden image (bank 0).
+ * REQ_NIB      Boot into the Normal Image Block (bank 1).
  */
 typedef enum  {
-  NONE               = 0,   //   [default]
-  INSTALL            = 1,
-  REBOOT             = 2,
-  BOOT_OWT           = 3,
-  BOOT_GOLD          = 4,
-  BOOT_NIB           = 5,
+  OW_REQ_NONE           = 0,            //   [default]
+  OW_REQ_INSTALL        = 1,
+  OW_REQ_REBOOT         = 2,
+  OW_REQ_OWT            = 3,
+  OW_REQ_GOLD           = 4,
+  OW_REQ_NIB            = 5,
 } ow_request_t;
 
 /*
