@@ -35,6 +35,8 @@
 #include <image_mgr.h>
 #include <overwatch.h>
 
+/* move interface descriptions over to the implementation */
+
 interface Overwatch {
   /**
    * Install
@@ -71,4 +73,10 @@ interface Overwatch {
    * @param   reason        failure reason, most likely a panic or unhandled interrupt
    */
   command void Fail(ow_reboot_reason_t reason);
+
+  command ow_reboot_reason_t getRebootReason();
+
+  command uint32_t getElapsedUpper();
+  command uint32_t getElapsedLower();
+  command uint32_t getBootcount();
 }
