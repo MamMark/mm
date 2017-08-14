@@ -157,6 +157,10 @@ SECTIONS {
         __overwatch_data_end__ = .;
     } > REGION_DATA
 
+    .noinit (NOLOAD) : {
+        KEEP (*(.noinit))
+     } > REGION_DATA
+
     .data : ALIGN(4) {
         . = ALIGN (4);
         __data_load__  = LOADADDR (.data);
