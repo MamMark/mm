@@ -40,21 +40,26 @@
  *
  * The Overwatcher supports three possible bootable instances:
  *
- * NIB        Normal Information Block (Bank 1).
+ * NIB        Normal Image Block (Bank 1).
  *            The installable application code is in bank 1 of
- *            Flash, where the "normal" TinyOS program runs.
+ *            Flash (upper 128K)
+ *
  * OWT        Overwatcher TinyOS.
- *            This is a restricted path of the Golden image,
- *            with limitted peripherals running).
- * GOLD       Factory installed "Golden" image of TinyOS
- *            application code. Handles Chirp mode?
- *            This is the normal initialization of Golden.
+ *            The Golden Image implementing the Overwatch
+ *            functionality.  OWT is OverWatch Tinyos.  It is
+ *            a specialized application and support infrastructure
+ *            for implementing Overwatch functionality.
+ *
+ * GOLD       Factory installed "Golden" image of the Tag
+ *            application code.  Handles Chirp mode?
+ *            When all else fails this is the image we run.
  */
 typedef enum {
-  OWT                = 0,    //  [default]
-  GOLD               = 1,
-  NIB                = 2,
+  OW_BOOT_OWT   = 0,                    //  [default]
+  OW_BOOT_GOLD  = 1,
+  OW_BOOT_NIB   = 2,
 } ow_boot_mode_t;
+
 
 /*
  * ow_request_t
