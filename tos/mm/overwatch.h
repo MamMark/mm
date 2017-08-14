@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Daniel J. Maltbie
+ * Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,20 +35,110 @@
 #ifndef __OVERWATCH_H__
 #define __OVERWATCH_H__
 
-#define OW_SIG 0xFABAFABA
+/*
+ * ow_boot_mode_t
+ *
+ * The Overwatcher supports three possible bootable instances:
+ *
+ * NIB        Normal Information Block (Bank 1).
+ *            The installable application code is in bank 1 of
+ *            Flash, where the "normal" TinyOS program runs.
+ * OWT        Overwatcher TinyOS.
+ *            This is a restricted path of the Golden image,
+ *            with limitted peripherals running).
+ * GOLD       Factory installed "Golden" image of TinyOS
+ *            application code. Handles Chirp mode?
+ *            This is the normal initialization of Golden.
+ */
+typedef enum {
+  OWT                = 0,    //  [default]
+  GOLD               = 1,
+  NIB                = 2,
+} ow_boot_mode_t;
 
+/*
+ * ow_request_t
+ *
+ * The Overwatcher low level code responds to these requests:
+ *
+ * INSTALL    Install new code image into the NIB (Bank 1).
+ *            Image is marked as active in the Image Directory.
+ * REBOOT     Reboot the current ow_boot_mode, test for too
+ *            many boot failures and fall back accordingly.
+ * BOOT_OWT   Boot into the Overwatch TinyOS Action Handler.
+ * BOOT_GOLD  Boot into the Golden image (bank 0).
+ * BOOT_NIB   Boot into the Normal Image Block (bank 1).
+ */
+typedef enum  {
+  NONE               = 0,   //   [default]
+  INSTALL            = 1,
+  REBOOT             = 2,
+  BOOT_OWT           = 3,
+  BOOT_GOLD          = 4,
+  BOOT_NIB           = 5,
+} ow_request_t;
+
+/*
+ * INIT       OWT will first initialize the ow_control_block
+ *            to its default (all zeros) state. OWT will then
+ *            verify that the SD image marked as active is
+ *            currently loaded in the NIB. If not, OWT will
+ *            install the active image into the NIB and reboot
+ *            of if there is no active image in SD, then copy
+ *            current NID to SD and mark as active.
+ * INSTALL    OWT will install the SD image marked as active into
+ *            the NIB and reboot.
+ * EJECT      OWT will change the currently active image to
+ *            failed, set the SD image marked backup as active
+ *            and install. If no backup is found in the SD, then
+ *            boot Golden.
+ */
+typedef enum  {
+  INIT               = 0,   //   [default]
+  INSTALL            = 1,
+  EJECT              = 2,
+} owt_action_t;
+
+/*
+ * ow_failure_code_t
+ *
+ */
+typedef enum {
+  OWE_OK             = 0,
+  OWE_PANIC,
+  OWE_HARD_FAULT,
+} ow_reboot_reasion_t;
+
+/*
+ * ow_control_block_t
+ *
+ * 
+ */
 typedef struct {
-  uint32_t ow_sig;
-  uint32_t cycle;
-  uint32_t time;
-  uint8_t  ow_req;
-  uint8_t  reboot_reason;
-  uint8_t  ow_from_nib;
-
-  uint8_t  ow_boot_mode;
-  uint8_t  owt_action;
+  uint32_t           ow_sig;
+  uint32_t           cycle;
+  uint32_t           time;
+  ow_request_t       ow_req;
+  ow_reboot_reasion_t reboot_reason;
+  uint8_t            ow_from_nib;
+  ow_boot_mode_t     ow_boot_mode;
+  owt_action_t       owt_action;
 } ow_control_block_t;
 
+/*
+ * OW_SIG
+ *
+ * Used to verify ow_control_block has been initialized.
+ * First initialized upon Power-On Reset or when memory
+ * corruption has been detected.
+ */
+#define OW_SIG 0xFABAFABA
+
+/*
+ * The ow_control_block lives in a well-defined section of SRAM and
+ * is outside of any areas initialized by the operating system.
+ *
+ */
 ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
 
 #endif  /* __OVERWATCH_H__ */
