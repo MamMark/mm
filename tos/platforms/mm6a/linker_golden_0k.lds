@@ -145,12 +145,11 @@ SECTIONS {
 
 
     /*
-     * OverWatch Control Block lives at the base of RAM
-     * However this tickles a bug in the Linker that
-     * causes a huge gap in the in the resultant binary.
-     * so right now this is commented out.
+     * OverWatch Control Block lives at the base of RAM.
+     *
+     * overwatch_data must be NOLOAD to prevent objcopy from filling
+     * a very large gap with zeros.
      */
-
     PROVIDE (_overwatch_data_base = ORIGIN(REGION_DATA));
     .overwatch_data (_overwatch_data_base) (NOLOAD) : AT (_overwatch_data_base) {
         __overwatch_data_start__ = .;
