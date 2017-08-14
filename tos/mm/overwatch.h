@@ -132,16 +132,30 @@ typedef struct {
   ow_request_t       ow_req;
   ow_reboot_reasion_t reboot_reason;
   uint8_t            ow_from_nib;
+
   ow_boot_mode_t     ow_boot_mode;
   owt_action_t       owt_action;
+
+  /*
+   * Persistent storage.
+   *
+   * Overwatch keeps track of some system parameters.
+   * This is persistent in that it survives across reboots.
+   * However it is not nonvolitle ram and doesn't survice
+   * across power fails.
+   */
+
+  uint32_t      elapsed_lower;
+  uint32_t      elapsed_upper;
+  uint32_t      reboot_counts;
 } ow_control_block_t;
+
 
 /*
  * OW_SIG
  *
- * Used to verify ow_control_block has been initialized.
- * First initialized upon Power-On Reset or when memory
- * corruption has been detected.
+ * Used to identify that the ow_control_block has been
+ * prooperly initialized and can be found.
  */
 #define OW_SIG 0xFABAFABA
 
