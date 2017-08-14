@@ -120,10 +120,9 @@ typedef enum {
   OWE_HARD_FAULT,
 } ow_reboot_reasion_t;
 
+
 /*
  * ow_control_block_t
- *
- * 
  */
 typedef struct {
   uint32_t           ow_sig;
@@ -163,7 +162,10 @@ typedef struct {
  * The ow_control_block lives in a well-defined section of SRAM and
  * is outside of any areas initialized by the operating system.
  *
+ * ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
+ *
+ * Needs to be instantiated in the OverWatchP.nc implementation.  Not inside
+ * an implemention block but rather outside.
  */
-ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
 
 #endif  /* __OVERWATCH_H__ */
