@@ -123,9 +123,18 @@ implementation {
    *
    * Check the Dblk Locator for validity.
    *
-   * First, we look for the magic number in the majik spot
-   * Second, we need the checksum to match.  Checksum is computed over
-   * the entire dblk_loc structure.
+   * First check is for the signature.  No sig, no play.
+   * Second, we need the checksum to match.
+   *
+   * Original checksum was over sig through dblk_end.  We maintain
+   * this checksum for backward compatibility for the time being.
+   * We've also added image_start and image_end.  dblk_chksum_i
+   * continues the running chksum over the entire dblk locator.
+   *
+   * If dblk_chksum is good but dblk_chksum_i fails then zero
+   * out the image_start and image_end.
+   *
+   * If the chksum is good, then we sum to zero.
    *
    * i: *dbl	dblk locator structure pointer
    *
@@ -133,6 +142,7 @@ implementation {
    *		1  if no dblk found
    *		2  if dblk checksum failed
    *		3  bad value in dblk
+   *            4  dblk_chksum_i failed, zero image cells
    */
 
   uint16_t check_dblk_loc(dblk_loc_t *dbl) {
@@ -141,20 +151,34 @@ implementation {
 
     if (dbl->sig != CT_LE_32(TAG_DBLK_SIG))
       return(1);
-    if (dbl->panic_start == 0 || dbl->panic_end == 0 ||
+    if (dbl->panic_start  == 0 || dbl->panic_end  == 0 ||
 	dbl->config_start == 0 || dbl->config_end == 0 ||
-	dbl->dblk_start == 0 || dbl->dblk_end == 0)
+	dbl->dblk_start == 0   || dbl->dblk_end   == 0)
       return(3);
     if (dbl->panic_start > dbl->panic_end ||
 	dbl->config_start > dbl->config_end ||
 	dbl->dblk_start > dbl->dblk_end)
       return(3);
     p = (void *) dbl;
+    i = 0;
     sum = 0;
-    for (i = 0; i < DBLK_LOC_SIZE_SHORTS; i++)
+    while (1) {
       sum += CF_LE_16(p[i]);
+      i++;
+      if ( (uint32_t) &p[i] > (uint32_t) &dbl->dblk_chksum)
+        break;
+    }
     if (sum)
       return(2);
+
+    while (1) {
+      sum += CF_LE_16(p[i]);
+      i++;
+      if ( (uint32_t) &p[i] > (uint32_t) &dbl->dblk_chksum_i)
+        break;
+    }
+    if (sum)
+      return(4);
     return(0);
   }
 
@@ -223,6 +247,13 @@ implementation {
 	fsc.config_end   = CF_LE_32(dbl->config_end);
 	fsc.dblk_start   = CF_LE_32(dbl->dblk_start);
 	fsc.dblk_end     = CF_LE_32(dbl->dblk_end);
+        if (err == 4) {
+          fsc.image_start = 0;
+          fsc.image_end   = 0;
+        } else {
+          fsc.image_start = CF_LE_32(dbl->image_start);
+          fsc.image_end   = CF_LE_32(dbl->image_end);
+        }
 
 	fs_state = FSS_START;
 	if ((err = call SDread.read(fsc.dblk_start, dp))) {
