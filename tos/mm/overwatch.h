@@ -164,8 +164,8 @@ typedef struct {
  *
  * ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
  *
- * Needs to be instantiated in the OverWatchP.nc implementation.  Not inside
- * an implemention block but rather outside.
+ * typically the ow_control_block will reside in OverWatchP.  Outside the implementation
+ * block as it needs to be found by other modules and the startup code.
  */
 
 #endif  /* __OVERWATCH_H__ */

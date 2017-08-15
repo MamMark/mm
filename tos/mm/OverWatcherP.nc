@@ -35,6 +35,10 @@
 #include <sd.h>
 #include <image_info.h>
 #include <image_mgr.h>
+#include <overwatch.h>
+
+ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
+
 
 /*
  * OverWatcherP
@@ -110,7 +114,7 @@ implementation {
    */
   command void Overwatch.ForceBoot(ow_boot_mode_t boot_mode) {
   }
-  
+
   /*
    * Fail - Request reboot of current running image
    *
@@ -126,4 +130,3 @@ implementation {
    */
   command void Overwatch.Fail(ow_reboot_reason_t reason) {
   }
-  
