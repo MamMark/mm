@@ -90,9 +90,13 @@ implementation {
    * should be added downstream on GoldBooted.
    */
   event void Boot.booted() {
-    if (VTOR == Bank0) {
-      if (ow_control_block.owt_boot_mode == GOLD)
-        signal OwBooted.booted();
+    /*
+     * VTOR being 0 tells us we are running in the OW bank
+     * anything else and we are running from the NIB space.
+     */
+    if (VTOR == 0) {
+      if (ow_control_block.owt_boot_mode == OW_BOOT_GOLD)
+        signal OwGoldBoot.booted();
       // else initialize for OWT processing
     }
     // else initialize for NIB
