@@ -43,8 +43,26 @@ ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")))
 /*
  * OverWatcherP
  *
- * This is the TinyOS module providing the Overwatch interface. The Overwatcher Low Level, which is the initial code that runs as part of startup.c, communicates the action to be performed by this module, including initialization of the ow_control_block, installing new software into Flash, counting failures and detecting failure limits exceeded.
+ * This is the TinyOS module providing the primary Overwatch TinyOS
+ * functionality.  Minimal low level functions are provided by OWL
+ * (OverWatch Lowlevel) but those are kept to a minimum.  Higher level
+ * functionality is provided by OWT (OverWatch Tinyos) and that
+ * functionality is provided by this module.
  *
+ * OWL runs very early in the initial startup code (startup.c) after a full
+ * PowerOn Reset (POR) occurs.  (the critical trigger is the zeroing of VTOR,
+ * Vector Table Offset Register).  OWL is responsible for very early dispatch
+ * when that is called for.  Dispatch determines if the NIB should be run
+ * and if so loads the NIB SP and NIB Reset Vector.
+ *
+ * OWT is responsbile for implementing the actions requested via the
+ * owt_action control cell.  This includes the following functions:
+ *
+ * ACT_INIT
+ * ACT_INSTALL
+ * ACT_EJECT
+ *
+ * If no action is requested, we will boot the golden image.
  */
 
 module OverWatcherP {
