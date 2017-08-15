@@ -1768,3 +1768,53 @@ x/2048xb gbuf
 0x240a:	0x00	0x00	0x00	0x00	0x00	0xe3	0x00	0x42
 0x2412:	0xd5	0x3f	0x00	0x00	0x00	0x00	0x00	0x1a
 0x241a:	0xa6	0x07	0x00	0x00	0x00	0x00	0x00	0x00
+
+5c,1
+5c,2
+29,0
+4,
+2,
+9,
+5d,12
+33,
+41,c0
+
+5c,1
+5c,2
+-- 4ms gap
+29,
+4,
+2,
+9,
+5d,12
+33
+41
+
+comm configure
+gps_init(sb115)
+<-ots(1)
+->poll_software_ver
+<-software_rsp
+->mpm(0)
+<-hardware_config_req
+--(72ms) gap
+<-Power_mode_response()
+<-MPM_enable_response: 00 06 5a 02 00 e0 00 00 [01 3c]
+                          MPM pending, >100m, RTC not calibrated
+...still outputs the default set before shutting down
+5c,1
+5c,2
+29,
+4,
+2,
+9
+5d
+33
+41,c0
+5d,1
+5d,2
+<-ots(0)
+--1ms gap
+AWAKE drops
+
+...40min+ no change in state
