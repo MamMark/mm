@@ -122,6 +122,16 @@ typedef enum {
 
 
 /*
+ * OW_SIG
+ *
+ * Used to identify that the ow_control_block has been properly
+ * initialized.  If the sig is valid we assume it is sane.  If we want to
+ * be extra paranoid we can checksum it.  But that is a pain.
+ */
+#define OW_SIG 0xFABAFABA
+
+
+/*
  * ow_control_block_t
  */
 typedef struct {
@@ -152,16 +162,8 @@ typedef struct {
 
 
 /*
- * OW_SIG
- *
- * Used to identify that the ow_control_block has been
- * prooperly initialized and can be found.
- */
-#define OW_SIG 0xFABAFABA
-
-/*
  * The ow_control_block lives in a well-defined section of SRAM and
- * is outside of any areas initialized by the operating system.
+ * is outside of any areas utilized by any of the typical software modules.
  *
  * ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
  *
