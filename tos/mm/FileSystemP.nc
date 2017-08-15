@@ -236,7 +236,8 @@ implementation {
 
       case FSS_ZERO:
 	dbl = (void *) ((uint8_t *) dp + DBLK_LOC_OFFSET);
-	if ((err = check_dblk_loc(dbl))) {
+        err = check_dblk_loc(dbl);
+        if (err && err != 4) {
 	  fs_panic_idle(6, err);
 	  return;
 	}
