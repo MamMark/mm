@@ -125,6 +125,9 @@ implementation {
     im_lower = call FS.area_start(FS_AREA_IMAGE);
     im_upper = call FS.area_end(FS_AREA_IMAGE);
     dir_blk  = im_lower;
+    if (!dir_blk) {
+      im_panic(0, err);
+    }
     im_state = IMS_READ_DIR;
     if ((err = call SDResource.request()))
       im_panic(1, err);
