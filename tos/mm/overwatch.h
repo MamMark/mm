@@ -129,7 +129,8 @@ typedef struct {
   uint32_t           cycle;
   uint32_t           time;
   ow_request_t       ow_req;
-  ow_reboot_reasion_t reboot_reason;
+  ow_reboot_reasion_t
+                     reboot_reason;
   uint8_t            ow_from_nib;
 
   ow_boot_mode_t     ow_boot_mode;
