@@ -68,10 +68,11 @@ ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")))
 module OverWatcherP {
   provides {
     interface         Overwatch;
-    interface Boot as OwBooted;           /* outBoot */
+    interface Boot as OwGoldBoot;       /* outBoot, Gold mode */
+    interface Boot as OwOwtBoot;        /* outBoot, OWT mode  */
   }
   uses {
-    interface         Boot;               /* inBoot */
+    interface         Boot;             /* inBoot */
   }
 }
 implementation {
