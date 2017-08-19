@@ -34,18 +34,17 @@
  * @author Eric B. Decker
  * @author Carl Davis
  *
- * Configuration/wiring for SDsp (SD, split phase, event driven)
+ * SDnC instantiates the driver SDsp, (SD, split phase, event driven) and
+ * connects it to the hardware port for the platform.
  *
- * read, write, and erase are for clients.
+ * read, write, and erase are for clients.  SDsa is SD stand alone which
+ * is used if the system crashes/panics.
  *
- * SD_Arb provides an arbitrated interface for clients.  This is wired into
- * Msp430UsciShareB0P and is used as a dedicated SPI device.  We wire the
- * SDsp default owner code into Msp430UsciShareB0P so it can pwr the SD
- * up and down as it is used by clients.
- *
- * Wire ResourceDefaultOwner so the DefaultOwner handles power up/down.
- * When no clients are using the resource, the default owner gets it and
- * powers down the SD.
+ * SD_Arb provides an arbitrated interface for clients.  The port the
+ * hardware is attached to is specified via HplSDnC (Hardware presentation
+ * layer, SD, unit n).  ResourceDefaultOwner (RDO) from the Arbiter must be
+ * wired into RDO of the driver.  RDO is responsible for powering up and
+ * down the SD.  The SD is powered down when no clients are using it.
  */
 
 configuration SD0C {
