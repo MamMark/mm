@@ -22,6 +22,8 @@
 #ifndef __TYPED_DATA_H__
 #define __TYPED_DATA_H__
 
+#include <image_info.h>
+
 #ifndef PACKED
 #define PACKED __attribute__((__packed__))
 #endif

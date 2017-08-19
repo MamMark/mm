@@ -42,12 +42,8 @@
 #include <cpu_stack.h>
 #include <platform_reset_defs.h>
 #include <platform_version.h>
-#include <image_info.h>
 
 noinit uint32_t stack_size;
-
-extern image_info_t image_info;
-
 
 #define BOOT_MAJIK 0x01021910
 #define FUBAR_MAX 0xffff
