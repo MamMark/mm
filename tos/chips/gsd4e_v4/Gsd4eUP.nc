@@ -297,6 +297,7 @@ typedef enum {
   GPSW_PROTO_START,
   GPSW_PROTO_ABORT,
   GPSW_PROTO_END,
+  GPSW_TX_SEND,
 } gps_where_t;
 
 
@@ -393,6 +394,7 @@ const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
 module Gsd4eUP {
   provides {
     interface GPSState;
+    interface GPSTransmit;
     interface Boot as GPSBoot;          /* outBoot */
   }
   uses {
@@ -611,6 +613,57 @@ implementation {
   }
 
 
+  uint16_t m_tx_len;
+
+  command error_t GPSTransmit.send(uint8_t *ptr, uint16_t len) {
+    gpsc_state_t next_state;
+    error_t err;
+    uint32_t time_out;
+
+    if (m_tx_len)
+      return EBUSY;
+    atomic {
+      if (gpsc_state < GPSC_ON)
+        return ERETRY;
+
+      switch (gpsc_state) {
+        default:
+          gps_panic(9, gpsc_state, 0);
+          return FAIL;
+
+        case GPSC_ON:       next_state = GPSC_ON_TX;    break;
+        case GPSC_ON_RX:    next_state = GPSC_ON_RX_TX; break;
+      }
+      m_tx_len = len;
+      gpsc_change_state(next_state, GPSW_TX_SEND);
+    }
+    time_out = len * DT_GPS_BYTE_TIME * 4 + 500000;
+    time_out /= 1000000;
+    call GPSTxTimer.startOneShot(time_out);
+    err = call HW.gps_send_block((void *) ptr, len);
+    if (err) {
+      gps_panic(10, err, 0);
+      return FAIL;
+    }
+    return SUCCESS;
+  }
+
+
+  default event void GPSTransmit.send_done() { }
+
+
+  task void send_block_task();
+
+  command void GPSTransmit.send_stop() {
+    call HW.gps_send_block_stop();
+    m_tx_len = 0;
+    atomic {
+      if (gpsc_state > GPSC_ON_RX)
+        post send_block_task();
+    }
+  }
+
+
   /*
    * send_block_task
    *
@@ -669,13 +722,21 @@ implementation {
         case GPSC_ON_TX:
           call GPSTxTimer.stop();
           gpsc_change_state(GPSC_ON, GPSW_SEND_BLOCK_TASK);
-          /* signal out to the caller that started up the GPSSend.send */
+
+          /* signal out to the caller that started up the GPSTransmit.send */
+          if (m_tx_len)
+            signal GPSTransmit.send_done();
+          m_tx_len = 0;
           return;
 
         case GPSC_ON_RX_TX:
           call GPSTxTimer.stop();
           gpsc_change_state(GPSC_ON_RX, GPSW_SEND_BLOCK_TASK);
+
           /* signal out to the caller that started up the GPSSend.send */
+          if (m_tx_len)
+            signal GPSTransmit.send_done();
+          m_tx_len = 0;
           return;
       }
     }

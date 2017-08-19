@@ -39,6 +39,7 @@ configuration GPS0C {
   provides {
     interface GPSState;
     interface GPSReceive;
+    interface GPSTransmit;
     interface Boot as GPSBoot;
 
     /* for debugging only, be careful */
@@ -93,6 +94,7 @@ implementation {
   GPSMsgBufP.Panic -> PanicC;
 
   GPSReceive = GPSMsgBufP;
+  GPSTransmit = Gsd4eUP;
 
 #ifdef notdef
   components TraceC;
