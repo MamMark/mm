@@ -10,15 +10,15 @@ ROOT_DIR = ../../..
 
 INSTALL_DIR = /usr/local/bin
 
-SOURCE  = mkdblk.c ms_unix.c ms_util.c util.c $(F_DIR)/fatxfc.c
-OBJECTS = mkdblk.o fatxfc.o ms_unix.o ms_util.o util.o
+SOURCE  = tagfmtsd.c ms_unix.c ms_util.c util.c $(F_DIR)/fatxfc.c
+OBJECTS = tagfmtsd.o fatxfc.o ms_unix.o ms_util.o util.o
 
 CFLAGS += -g -Wall -O0 -I../fat -I. -I$(ROOT_DIR)/include
 VPATH = $(F_DIR)
 
-all: mkdblk
+all: tagfmtsd
 
-mkdblk: $(OBJECTS)
+tagfmtsd: $(OBJECTS)
 	$(CC) -o $@ $(LDFLAGS) $^
 
 .c.o:
@@ -38,11 +38,11 @@ dep:
 	$(CPP) $(CFLAGS) -MM $(SOURCE) $(S_FAT) >>tmp_make
 	mv tmp_make Makefile
 
-install: mkdblk
-	install -t $(INSTALL_DIR) mkdblk
+install: tagfmtsd
+	install -t $(INSTALL_DIR) tagfmtsd
 
 ### Dependencies
-mkdblk.o: mkdblk.c ../../../include/mm_types.h \
+tagfmtsd.o: tagfmtsd.c ../../../include/mm_types.h \
  ../../../include/mm_byteswap.h ../fat/fat_fs.h ../fat/fatxfc.h ms.h \
  ../../../include/ms_loc.h
 ms_unix.o: ms_unix.c ../../../include/mm_types.h \

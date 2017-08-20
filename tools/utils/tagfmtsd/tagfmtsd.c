@@ -1,6 +1,6 @@
 /*
- * mkdblk - create dblk structures on mass storage
- * Copyright 2006-2008, 2010 Eric B. Decker
+ * tagfmtsd - create dblk structures on mass storage
+ * Copyright 2006-2008, 2010, 2017 Eric B. Decker
  * Mam-Mark Project
  *
  * typical usage: (format SD media on the Tag)
@@ -21,7 +21,7 @@
 #include "ms.h"
 
 
-#define VERSION "mkdblk: (mam_mark, TinyOS_2) v3.1.1  2016/02/12\n"
+#define VERSION "tagfmtsd: v3.9.1  2017/08/14\n"
 
 int debug	= 0,
     verbose	= 0,
