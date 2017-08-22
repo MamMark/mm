@@ -1,5 +1,5 @@
 /**
- * Copyright @ 2008, 2010 Eric B. Decker
+ * Copyright @ 2008, 2010, 2017 Eric B. Decker
  * @author Eric B. Decker
  * @date 5/14/2010
  *
@@ -37,6 +37,6 @@ implementation {
   SS_P.Trace    -> TraceC;
   SS_P.CollectEvent -> CollectC;
 
-  components FileSystemC as FS;
-  SS_P.FS -> FS;
+  components DblkManagerC;
+  SS_P.DblkManager -> DblkManagerC;
 }

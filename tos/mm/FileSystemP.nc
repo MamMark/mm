@@ -21,14 +21,12 @@
  * need to be supported for post processing data).
  */
 
-#include "file_system.h"
-#include "ms_loc.h"
-#include "mm_byteswap.h"
-#include "sd.h"
+#include <file_system.h>
+#include <fs_loc.h>
+#include <mm_byteswap.h>
+#include <sd.h>
 #include <panic.h>
 #include <platform_panic.h>
-
-uint32_t w_t0, w_diff;
 
 #ifdef ENABLE_ERASE
 #ifdef ALWAYS_ERASE
@@ -45,8 +43,6 @@ typedef enum {
   FSS_IDLE = 0,				/* doing nothing */
   FSS_REQUEST,				/* resource requested */
   FSS_ZERO,				/* reading block zero */
-  FSS_START,				/* read first block, chk empty */
-  FSS_SCAN,				/* scanning for 1st blank */
 } fs_state_t;
 
 
@@ -61,8 +57,7 @@ enum {
 
 module FileSystemP {
   provides {
-    interface Init;
-    interface Boot as OutBoot;		/* signals OutBoot */
+    interface Boot as FSBooted;		/* outgoing booted signal */
     interface FileSystem as FS;
   }
   uses {
@@ -71,123 +66,66 @@ module FileSystemP {
     interface SSWrite as SSW;
     interface Resource as SDResource;
     interface Panic;
-
-#ifdef ENABLE_ERASE
-    interface SDerase;
-#endif
-
   }
 }
 
 implementation {
 
-  fs_control_t fsc;
+  fs_loc_t     fs_loc;
   fs_state_t   fs_state;
   uint8_t     *fs_buf;
-  uint32_t     lower, cur_blk, upper;
 
 
-  /*
-   * on boot, the data area is zero'd so most of the fsc structure
-   * gets zero'd.
-   */
-  command error_t Init.init() {
-    fsc.majik_a     = FSC_MAJIK;
-    fsc.majik_b     = FSC_MAJIK;
-    return SUCCESS;
+  void fs_panic(uint8_t where, parg_t arg0) {
+    call Panic.panic(PANIC_FS, where, arg0, 0, 0, 0);
+  }
+
+  void fs_panic_idle(uint8_t where, parg_t arg0) {
+    call Panic.panic(PANIC_FS, where, arg0, 0, 0, 0);
+    fs_state = FSS_IDLE;
   }
 
 
   /*
-   * blk_empty
+   * check_fs_loc
    *
-   * check if a Stream storage data block is empty.
-   * Currently, an empty (erased SD data block) looks like
-   * it is zeroed.  So we look for all data being zero.
-   */
-
-  int blk_empty(uint8_t *buf) {
-    uint16_t i;
-    uint16_t *ptr;
-
-    ptr = (void *) buf;
-    for (i = 0; i < SD_BLOCKSIZE/2; i++)
-      if (ptr[i])
-	return(0);
-    return(1);
-  }
-
-
-  /*
-   * check_dblk_loc
-   *
-   * Check the Dblk Locator for validity.
+   * Check the FS Locator for validity.
    *
    * First check is for the signature.  No sig, no play.
    * Second, we need the checksum to match.
    *
-   * Original checksum was over sig through dblk_end.  We maintain
-   * this checksum for backward compatibility for the time being.
-   * We've also added image_start and image_end.  dblk_chksum_i
-   * continues the running chksum over the entire dblk locator.
-   *
-   * If dblk_chksum is good but dblk_chksum_i fails then zero
-   * out the image_start and image_end.
-   *
    * If the chksum is good, then we sum to zero.
    *
-   * i: *dbl	dblk locator structure pointer
+   * i: *fsl	fs locator structure pointer
    *
-   * o: rtn	0  if dblk valid
-   *		1  if no dblk found
-   *		2  if dblk checksum failed
-   *		3  bad value in dblk
-   *            4  dblk_chksum_i failed, zero image cells
+   * o: rtn	0  if locator valid
+   *		1  if no locator found
+   *		2  if locator checksum failed
+   *		3  bad value in locator
    */
 
-  uint16_t check_dblk_loc(dblk_loc_t *dbl) {
+  uint16_t check_fs_loc(fs_loc_t *fsl) {
     uint16_t *p;
     uint16_t sum, i;
 
-    if (dbl->sig != CT_LE_32(TAG_DBLK_SIG))
-      return(1);
-    if (dbl->panic_start  == 0 || dbl->panic_end  == 0 ||
-	dbl->config_start == 0 || dbl->config_end == 0 ||
-	dbl->dblk_start == 0   || dbl->dblk_end   == 0)
-      return(3);
-    if (dbl->panic_start > dbl->panic_end ||
-	dbl->config_start > dbl->config_end ||
-	dbl->dblk_start > dbl->dblk_end)
-      return(3);
-    p = (void *) dbl;
+    if (fsl->loc_sig   != CF_LE_32(FS_LOC_SIG) ||
+        fsl->loc_sig_a != CF_LE_32(FS_LOC_SIG))
+      return 1;
+    for (i = 0; i < FS_AREA_MAX; i++) {
+      if (!(fsl->locators[i].start) || !(fsl->locators[i].end))
+        return 3;
+      if ((fsl->locators[i].start  > fsl->locators[i].end))
+        return 3;
+    }
+
+    p = (void *) fsl;
     i = 0;
     sum = 0;
-    while (1) {
+    for (i = 0; i < FS_LOC_SIZE_SHORTS; i++)
       sum += CF_LE_16(p[i]);
-      i++;
-      if ( (uint32_t) &p[i] > (uint32_t) &dbl->dblk_chksum)
-        break;
-    }
     if (sum)
-      return(2);
-
-    while (1) {
-      sum += CF_LE_16(p[i]);
-      i++;
-      if ( (uint32_t) &p[i] > (uint32_t) &dbl->dblk_chksum_i)
-        break;
-    }
-    if (sum)
-      return(4);
+      return 2;
     return(0);
-  }
-
-
-#define fs_panic(where, arg) do { call Panic.panic(PANIC_FS, where, arg, 0, 0, 0); } while (0)
-
-  void fs_panic_idle(uint8_t where, parg_t arg) {
-    call Panic.panic(PANIC_FS, where, arg, 0, 0, 0);
-    fs_state = FSS_IDLE;
   }
 
 
@@ -214,14 +152,12 @@ implementation {
       fs_panic_idle(3, err);
       return;
     }
-    return;
   }
 
 
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
-    dblk_loc_t *dbl;
-    uint8_t    *dp;
-    bool        empty;
+    fs_loc_t *fsl;
+    uint8_t  *dp;
 
     dp = fs_buf;
     if (err || dp == NULL || dp != read_buf) {
@@ -235,153 +171,45 @@ implementation {
 	  return;
 
       case FSS_ZERO:
-	dbl = (void *) ((uint8_t *) dp + DBLK_LOC_OFFSET);
-        err = check_dblk_loc(dbl);
-        if (err && err != 4) {
+	fsl = (void *) ((uint8_t *) dp + FS_LOC_OFFSET);
+        err = check_fs_loc(fsl);
+        if (err) {
 	  fs_panic_idle(6, err);
 	  return;
 	}
 
-	fsc.panic_start  = CF_LE_32(dbl->panic_start);
-	fsc.panic_end    = CF_LE_32(dbl->panic_end);
-	fsc.config_start = CF_LE_32(dbl->config_start);
-	fsc.config_end   = CF_LE_32(dbl->config_end);
-	fsc.dblk_start   = CF_LE_32(dbl->dblk_start);
-	fsc.dblk_end     = CF_LE_32(dbl->dblk_end);
-        if (err == 4) {
-          fsc.image_start = 0;
-          fsc.image_end   = 0;
-        } else {
-          fsc.image_start = CF_LE_32(dbl->image_start);
-          fsc.image_end   = CF_LE_32(dbl->image_end);
-        }
-
-	fs_state = FSS_START;
-	if ((err = call SDread.read(fsc.dblk_start, dp))) {
-	  fs_panic_idle(7, err);
-	  return;
-	}
-	return;
-
-      case FSS_START:
-	if (blk_empty(dp)) {
-	  fsc.dblk_nxt = fsc.dblk_start;
-	  break;
-	}
-
-	lower = fsc.dblk_start;
-	upper = fsc.dblk_end;
-
-	cur_blk = (upper - lower)/2 + lower;
-	if (cur_blk == lower)
-	  cur_blk = lower = upper;
-
-	fs_state = FSS_SCAN;
-	if ((err = call SDread.read(cur_blk, dp)))
-	  fs_panic_idle(8, err);
-	return;
-
-      case FSS_SCAN:
-	empty = blk_empty(dp);
-	if (empty)
-	  upper = cur_blk;
-	else
-	  lower = cur_blk;
-
-	if (lower >= upper) {
-	  /*
-	   * we've looked at all the blocks.  Check the state of the last block looked at
-	   * if empty we be good.  Otherwise no available storage.
-	   */
-	  if (empty) {
-	    fsc.dblk_nxt = cur_blk;
-	    break;              /* break out of switch, we be done */
-	  }
-	  fs_panic_idle(9, (parg_t) cur_blk);
-	  return;
-	}
-
-	/*
-	 * haven't looked at all the blocks.  try again
-	 */
-	cur_blk = (upper - lower)/2 + lower;
-	if (cur_blk == lower)
-	  cur_blk = lower = upper;
-	if ((err = call SDread.read(cur_blk, dp)))
-	  fs_panic_idle(10, err);
-	return;
+        memcpy(&fs_loc, fsl, sizeof(fs_loc_t));
+        break;
     }
 
-
-#ifdef ENABLE_ERASE
-    if (do_erase) {
-      erase_start = fsc.dblk_start;
-      erase_end = fsc.dblk_end;
-      call SDerase.erase(erase_start, erase_end);
-      return;
-    }
-#endif
-
     fs_state = FSS_IDLE;
-    call SDResource.release();
-    signal OutBoot.booted();
-  }
 
-
-#ifdef ENABLE_ERASE
-  event void SDerase.eraseDone(uint32_t blk_start, uint32_t blk_end, error_t error) {
-    fs_state = FSS_IDLE;
+    /*
+     * signal OutBoot first, then release the SD
+     *
+     * If the next module in the sequenced boot chain wants to
+     * use the SD it will issue a request, which will queue them up.
+     * Then when we release, it will get the SD without powering the
+     * SD down.
+     */
+    signal FSBooted.booted();
     call SDResource.release();
-    signal OutBoot.booted();
   }
-#endif
 
 
   command uint32_t FS.area_start(uint8_t which) {
-    switch (which) {
-      case FS_AREA_PANIC:	return fsc.panic_start;
-      case FS_AREA_CONFIG:	return fsc.config_start;
-      case FS_AREA_TYPED_DATA:	return fsc.dblk_start;
-      default:
-	fs_panic(11, which);
-	return 0;
-    }
+    if (which < FS_AREA_MAX)
+      return fs_loc.locators[which].start;
+    fs_panic(7, which);
+    return 0;
   }
 
 
   command uint32_t FS.area_end(uint8_t which) {
-    switch (which) {
-      case FS_AREA_PANIC:	return fsc.panic_end;
-      case FS_AREA_CONFIG:	return fsc.config_end;
-      case FS_AREA_TYPED_DATA:	return fsc.dblk_end;
-      default:
-	fs_panic(12, which);
-	return 0;
-    }
-  }
-
-
-  command uint32_t FS.get_nxt_blk(uint8_t area_type) {
-    switch (area_type) {
-      case FS_AREA_TYPED_DATA:	return fsc.dblk_nxt;
-      default:
-	fs_panic(13, area_type);
-	return 0;
-    }
-  }
-
-
-  command uint32_t FS.adv_nxt_blk(uint8_t area_type) {
-    if (area_type != FS_AREA_TYPED_DATA) {
-      fs_panic(14, area_type);
-      return 0;
-    }
-    if (fsc.dblk_nxt) {
-      fsc.dblk_nxt++;
-      if (fsc.dblk_nxt > fsc.dblk_end)
-	fsc.dblk_nxt = 0;
-    }
-    return fsc.dblk_nxt;
+    if (which < FS_AREA_MAX)
+      return fs_loc.locators[which].end;
+    fs_panic(8, which);
+    return 0;
   }
 
   async event void Panic.hook() { }

@@ -18,7 +18,7 @@ implementation {
   OutBoot = mmSyncP;
   Boot = mmSyncP.Boot;
   SysBoot = mmSyncP.SysBoot;
-  
+
   components PlatformC;
   mmSyncP.BootParams -> PlatformC;
 

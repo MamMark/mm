@@ -14,7 +14,7 @@
 configuration FileSystemC {
   provides {
     interface FileSystem as FS;
-    interface Boot as OutBoot;		/* out Booted signal */
+    interface Boot as FSBooted;		/* out Booted signal */
   }
   uses {
     interface Boot;			/* incoming signal */
@@ -22,13 +22,12 @@ configuration FileSystemC {
 }
 
 implementation {
-  components FileSystemP as FS_P, MainC;
-  MainC.SoftwareInit -> FS_P;
+  components FileSystemP as FS_P;
 
   /* exports, imports */
-  FS      = FS_P;
-  OutBoot = FS_P;
-  Boot    = FS_P;
+  FS       = FS_P;
+  FSBooted = FS_P;
+  Boot     = FS_P;
 
   components new SD0_ArbC() as SD, SSWriteC;
 

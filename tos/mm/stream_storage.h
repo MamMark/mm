@@ -34,8 +34,8 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STREAM_STORAGE_H
-#define _STREAM_STORAGE_H
+#ifndef __STREAM_STORAGE_H__
+#define __STREAM_STORAGE_H__
 
 #include "sd.h"
 
@@ -155,4 +155,4 @@ typedef struct {
 
 #define SSC_MAJIK 0x9191
 
-#endif /* _STREAM_STORAGE_H */
+#endif /* __STREAM_STORAGE_H__ */

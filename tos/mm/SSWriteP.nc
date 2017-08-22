@@ -82,7 +82,7 @@ module SSWriteP {
   }
   uses {
     interface SDwrite;
-    interface FileSystem as FS;
+    interface DblkManager;
     interface Resource as SDResource;
     interface Panic;
     interface LocalTime<TMilli>;
@@ -300,7 +300,7 @@ implementation {
      * non-zero, request the h/w.
      */
 
-    if ((ssc.dblk = call FS.get_nxt_blk(FS_AREA_TYPED_DATA)) == 0) {
+    if ((ssc.dblk = call DblkManager.get_nxt_blk()) == 0) {
       /*
        * shut down.  always just free any incoming buffers.
        */
@@ -369,7 +369,7 @@ implementation {
       ssc.ssw_out = 0;
     ssc.cur_handle = ssw_p[ssc.ssw_out];		/* point to nxt buf */
     ssc.ssw_num_full--;
-    if ((ssc.dblk = call FS.adv_nxt_blk(FS_AREA_TYPED_DATA)) == 0) {
+    if ((ssc.dblk = call DblkManager.adv_nxt_blk()) == 0) {
       /*
        * adv_nxt_blk returning 0 says we ran off the end of
        * the file system area.
@@ -420,7 +420,7 @@ implementation {
       return;
     idx = ssc.ssw_out;
     num_full = ssc.ssw_num_full;
-    dblk = call FS.get_nxt_blk(FS_AREA_TYPED_DATA);
+    dblk = call DblkManager.get_nxt_blk();
     while (num_full) {
       handle = ssw_p[idx];
       if (dblk == 0)                    /* any unexpected, just bail */
@@ -431,7 +431,7 @@ implementation {
       idx++;
       if (idx >= SSW_NUM_BUFS)
         idx = 0;
-      dblk = call FS.adv_nxt_blk(FS_AREA_TYPED_DATA);
+      dblk = call DblkManager.adv_nxt_blk();
       num_full--;
     }
   }

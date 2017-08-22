@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
@@ -30,34 +30,46 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @author Eric B. Decker <cire831@gmail.com>
- *
- * Sequence the bootup.  Components that should fire up when the
- * system is completely booted should wire to SystemBootC.Boot.
- *
- * 1) Bring up the SD/StreamStorage, FileSystem
- * 3) Collect initial status information (Restart and Version)  mmSync
- * 4) Bring up the GPS.  (GPS assumes SS is up)
  */
 
-configuration SystemBootC {
-  provides interface Boot;
-  uses interface Init as SoftwareInit;
+/*
+ * @author Eric B. Decker
+ * @date: August 20, 2017
+ *
+ * Configuration wiring for DblkManager.  See DblkManagerP for more details
+ * on what DblkManager does.
+ */
+
+configuration DblkManagerC {
+  provides {
+    interface DblkManager;
+    interface Boot as DMBooted;		/* out Booted signal */
+  }
+  uses {
+    interface Boot;			/* incoming signal */
+  }
 }
 
 implementation {
-  components MainC;
-  SoftwareInit = MainC.SoftwareInit;
+  components DblkManagerP  as DMP;
 
-  components FileSystemC as FS;
-  components DblkManagerC as DMC;
-  components mmSyncC;
-  components GPS0C;
+  /* exports, imports */
+  DblkManager = DMP;
+  DMBooted    = DMP;
+  Boot        = DMP;
 
-  FS.Boot -> MainC;		 // first up on the smorgasborg is FS
-  DMC.Boot -> FS.FSBooted;       //    fire up Data Region
-  mmSyncC.Boot -> DMC.DMBooted;  //        then write initial boot record
-  GPS0C.Boot -> mmSyncC.OutBoot; //            and then GPS.
-  Boot = GPS0C.GPSBoot;          // bring up everyone else
+  components new SD0_ArbC() as SD, SSWriteC;
+  components FileSystemC;
+
+  DMP.SSW        -> SSWriteC;
+  DMP.SDResource -> SD;
+  DMP.SDread     -> SD;
+  DMP.FileSystem -> FileSystemC;
+
+#ifdef ENABLE_ERASE
+  DMP.SDerase    -> SD;
+#endif
+
+  components PanicC;
+  DMP.Panic -> PanicC;
 }
