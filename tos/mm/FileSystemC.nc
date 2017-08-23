@@ -9,7 +9,7 @@
  * more details on what FileSystem does.
  */
 
-#include "file_system.h"
+#include <fs_loc.h>
 
 configuration FileSystemC {
   provides {

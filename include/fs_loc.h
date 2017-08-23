@@ -73,6 +73,23 @@ typedef struct {
   uint16_t loc_chksum;
 } fs_loc_t;
 
+/*
+ * File System Locator Indicies
+ *
+ * Each locator is referenced by its index (fs_loc_indicies) and holds
+ * a start and end address.
+ *
+ * ie.  PANIC has fsc.loc[FS_AREA_PANIC].loc_start and loc_end.
+ */
+
+enum fs_loc_indicies {
+  FS_LOC_PANIC       = 0,
+  FS_LOC_CONFIG      = 1,
+  FS_LOC_DBLK        = 2,
+  FS_LOC_IMAGE       = 3,
+  FS_LOC_MAX         = 4,
+};
+
 #define FS_LOC_SIZE_SHORTS  (sizeof(fs_loc_t)/2)
 
 #define PANIC0_SECTOR UINT32_C(2)

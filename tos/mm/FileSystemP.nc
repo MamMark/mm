@@ -21,7 +21,6 @@
  * need to be supported for post processing data).
  */
 
-#include <file_system.h>
 #include <fs_loc.h>
 #include <mm_byteswap.h>
 #include <sd.h>
@@ -111,7 +110,7 @@ implementation {
     if (fsl->loc_sig   != CF_LE_32(FS_LOC_SIG) ||
         fsl->loc_sig_a != CF_LE_32(FS_LOC_SIG))
       return 1;
-    for (i = 0; i < FS_AREA_MAX; i++) {
+    for (i = 0; i < FS_LOC_MAX; i++) {
       if (!(fsl->locators[i].start) || !(fsl->locators[i].end))
         return 3;
       if ((fsl->locators[i].start  > fsl->locators[i].end))
@@ -198,7 +197,7 @@ implementation {
 
 
   command uint32_t FS.area_start(uint8_t which) {
-    if (which < FS_AREA_MAX)
+    if (which < FS_LOC_MAX)
       return fs_loc.locators[which].start;
     fs_panic(7, which);
     return 0;
@@ -206,7 +205,7 @@ implementation {
 
 
   command uint32_t FS.area_end(uint8_t which) {
-    if (which < FS_AREA_MAX)
+    if (which < FS_LOC_MAX)
       return fs_loc.locators[which].end;
     fs_panic(8, which);
     return 0;

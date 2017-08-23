@@ -109,8 +109,8 @@ implementation {
   event void Boot.booted() {
     error_t err;
 
-    lower = call FileSystem.area_start(FS_AREA_DBLK);
-    upper = call FileSystem.area_end(FS_AREA_DBLK);
+    lower = call FileSystem.area_start(FS_LOC_DBLK);
+    upper = call FileSystem.area_end(FS_LOC_DBLK);
     if (!lower || !upper || upper < lower) {
       dm_panic(1, lower, upper);
       return;
