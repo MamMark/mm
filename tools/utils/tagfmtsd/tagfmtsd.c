@@ -21,10 +21,10 @@
 #include <ms.h>
 
 
-#define VERSION "tagfmtsd: v3.9.1  2017/08/14\n"
 extern fs_loc_t loc;
 
 
+#define VERSION "tagfmtsd: v3.9.1  2017/08/24\n"
 
 int debug	= 0,
     verbose	= 0,
