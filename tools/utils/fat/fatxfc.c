@@ -427,7 +427,7 @@ fx_init(void) {
 	      start == 0 ||				/* can't start at 0 */
 	      size == 0)				/* zero means nothing, bail */
 	    return(FX_NO_PARTITION);
-	
+
 	assert(! ms_read_blk(start, fx_buf));
 	bs = fx_buf;
 	if (CF_LE_16(bs->sig) != BOOT_SIG)
@@ -616,7 +616,7 @@ fx_find_file(char *name, char *ext, u32_t *start, u32_t *end) {
  2) check that size is < current size
  3) check that a new empty entry can be found.
 
- 
+
  */
 
 fx_rtn
@@ -813,36 +813,26 @@ fx_create_contig(char *name, char *ext, u32_t size, u32_t *s, u32_t *e) {
 
 
 fx_rtn
-fx_write_locator(u32_t pstart, u32_t pend, u32_t cstart, u32_t cend, u32_t dstart, u32_t dend) {
+fx_write_locator(fs_loc_t *fsl) {
     boot_sector_t *bs;
-    dblk_loc_t *dbl;
-    uint16_t   *p, i, sum;
+    uint8_t       *dest;
+    uint16_t      *p, i, sum;
 
     assert(fx_buf);
     assert(!ms_read_blk(0, fx_buf));
     bs = fx_buf;
     if (bs->sig != CT_LE_16(BOOT_SIG))
 	return(FX_BAD_BOOT_SIG);
-    dbl = fx_buf + DBLK_LOC_OFFSET;
-    dbl->sig = CT_LE_32(TAG_DBLK_SIG);
-    dbl->panic_start = CT_LE_32(pstart);
-    msc.panic_start = pstart;
-    dbl->panic_end   = CT_LE_32(pend);
-    msc.panic_end = pend;
-    dbl->config_start = CT_LE_32(cstart);
-    msc.config_start = cstart;
-    dbl->config_end   = CT_LE_32(cend);
-    msc.config_end = cend;
-    dbl->dblk_start   = CT_LE_32(dstart);
-    msc.dblk_start = dstart;
-    dbl->dblk_end     = CT_LE_32(dend);
-    msc.dblk_end = dend;
-    dbl->dblk_chksum  = 0;
-    p = (void *) dbl;
+    dest = fx_buf + FS_LOC_OFFSET;
+    fsl->loc_sig   = CT_LE_32(FS_LOC_SIG);
+    fsl->loc_sig_a = CT_LE_32(FS_LOC_SIG);
+    fsl->loc_chksum  = 0;
+    p = (void *) fsl;
     sum = 0;
-    for (i = 0; i < DBLK_LOC_SIZE_SHORTS; i++)
+    for (i = 0; i < FS_LOC_SIZE_SHORTS; i++)
 	sum += CF_LE_16(p[i]);
-    dbl->dblk_chksum = CT_LE_16((uint16_t) (0 - sum));
+    fsl->loc_chksum = CT_LE_16((uint16_t) (0 - sum));
+    memcpy(dest, fsl, sizeof(fs_loc_t));
     assert(!ms_write_blk(0, fx_buf));
 
     /* see if there is a backup at sector 6, just assume it is so */
@@ -850,20 +840,8 @@ fx_write_locator(u32_t pstart, u32_t pend, u32_t cstart, u32_t cend, u32_t dstar
     bs = fx_buf;
     if (bs->sig != CT_LE_16(BOOT_SIG))		/* if not, its okay */
 	return(FX_OK);
-    dbl = fx_buf + DBLK_LOC_OFFSET;
-    dbl->sig = CT_LE_32(TAG_DBLK_SIG);
-    dbl->panic_start = CT_LE_32(pstart);
-    dbl->panic_end   = CT_LE_32(pend);
-    dbl->config_start = CT_LE_32(cstart);
-    dbl->config_end   = CT_LE_32(cend);
-    dbl->dblk_start   = CT_LE_32(dstart);
-    dbl->dblk_end     = CT_LE_32(dend);
-    dbl->dblk_chksum  = 0;
-    p = (void *) dbl;
-    sum = 0;
-    for (i = 0; i < DBLK_LOC_SIZE_SHORTS; i++)
-	sum += CF_LE_16(p[i]);
-    dbl->dblk_chksum = CT_LE_16((uint16_t) (0 - sum));
+    dest = fx_buf + FS_LOC_OFFSET;
+    memcpy(dest, fsl, sizeof(fs_loc_t));
     assert(!ms_write_blk(6, fx_buf));
     return(FX_OK);
 }

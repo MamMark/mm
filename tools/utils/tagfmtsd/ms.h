@@ -204,7 +204,9 @@ typedef enum {
  * extern reference to msc for unix utilities.
  */
 
-extern ms_control_t msc;
+extern fs_loc_t     loc;
+extern uint32_t     msc_dblk_nxt;
+extern uint32_t     msc_panic0_blk;
 extern panic0_hdr_t p0c;
 
 extern ms_rtn ms_init(char *device_name);
