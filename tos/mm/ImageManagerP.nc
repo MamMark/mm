@@ -110,12 +110,12 @@ implementation {
   uint16_t    im_available;             /* remaining bytes in above */
 
 
-  void im_warn(uint8_t where, parg_t p, parg_t p1) {
-    call Panic.warn(PANIC_IM, where, p, p1, 0, 0);
+  void im_warn(uint8_t where, parg_t p0, parg_t p1) {
+    call Panic.warn(PANIC_IM, where, p0, p1, 0, 0);
   }
 
-  void im_panic(uint8_t where, parg_t p, parg_t p1) {
-    call Panic.panic(PANIC_IM, where, p, p1, 0, 0);
+  void im_panic(uint8_t where, parg_t p0, parg_t p1) {
+    call Panic.panic(PANIC_IM, where, p0, p1, 0, 0);
   }
 
 
@@ -126,11 +126,11 @@ implementation {
     im_upper = call FS.area_end(FS_AREA_IMAGE);
     dir_blk  = im_lower;
     if (!dir_blk) {
-      im_panic(0, err);
+      im_panic(1, err, 0);
     }
     im_state = IMS_READ_DIR;
     if ((err = call SDResource.request()))
-      im_panic(1, err);
+      im_panic(2, err, 0);
     return;
   }
 
@@ -213,12 +213,12 @@ implementation {
 
     switch(im_state) {
       default:
-        im_panic(2, im_state);
+        im_panic(3, im_state, 0);
         return;
 
       case IMS_READ_DIR:
         if ((err = call SDread.read(dir_blk, im_wrk_buf))) {
-          im_panic(3, err);
+          im_panic(4, err, 0);
           return;
         }
         return;
@@ -236,12 +236,12 @@ implementation {
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
     switch(im_state) {
       default:
-        im_panic(2, im_state);
+        im_panic(5, im_state, 0);
         return;
 
       case IMS_READ_DIR:
         if (err) {
-          im_panic(4, err);
+          im_panic(6, err, 0);
           return;
         }
 
