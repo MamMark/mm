@@ -83,7 +83,7 @@ display_info(void) {
       fprintf(stderr, "panic0:    p: %-8x %-8x  (nxt) %-8x\n",
 	      p0c.panic_start, p0c.panic_end,  p0c.panic_nxt);
     else
-      fprintf(stderr, "panic0:    no panic0 block\n");
+      fprintf(stderr, "panic0:   no panic0 block\n");
 
     de = f32_get_de("PANIC001", "   ", &rds);
     if (de) {
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 	      fprintf(stderr, "-c not implemented yet, defaults to 8192\n");
 	      break;
 	  case 'd':
-	      fprintf(stderr, "-d not implemented yet, defaults to 0 (rest of partition\n");
+	      fprintf(stderr, "-d not implemented yet, defaults to 0 (rest of partition)\n");
 	      break;
 	  case 'D':
 	      debug++;
@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
 	      usage(argv[0]);
 	      break;
 	  case 'p':
-	      fprintf(stderr, "-c not implemented yet, defaults to 128k\n");
+	      fprintf(stderr, "-p not implemented yet, defaults to 128k\n");
 	      break;
 	  case 'v':
 	      verbose++;
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
     fx_hard_init();
     err = ms_init(argv[optind]);
     if (err == MS_READONLY) {
-      fprintf(stderr, "mkdblk: %s is read only\n", argv[optind]);
+      fprintf(stderr, "tagfmtsd: %s is read only\n", argv[optind]);
       err = MS_OK;
       do_write = 0;
     }
@@ -238,11 +238,6 @@ int main(int argc, char **argv) {
     if (!do_fs_loc && !do_panic0)
       fprintf(stderr, "*** no changes written\n");
 
-    err = fx_set_buf(NULL);
-    if (err) {
-	fprintf(stderr, "fx_set_buf: %s (0x%x)\n", fx_dsp_err(err), err);
-	exit(1);
-    }
     return(0);
 }
 

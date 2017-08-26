@@ -123,7 +123,7 @@ implementation {
       sum += CF_LE_16(p[i]);
     if (sum)
       return 2;
-    return(0);
+    return 0;
   }
 
 
