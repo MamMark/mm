@@ -30,8 +30,15 @@ int debug	= 0,
     verbose	= 0,
     do_write	= 0;
 
+/*
+ * all sizes in bytes.
+ *
+ * image_size is set to include all image slots (at 128KiB each) and
+ * the directory sector (512 bytes).
+ */
 uint32_t config_size = 8*1024,
 	 panic_size  = 128*1024,
+         img_slots   = 4,
 	 dblk_size   = 0;
 
 
@@ -49,6 +56,7 @@ static void usage(char *name) {
     fprintf(stderr, "  -d <size>    set dblk size\n");
     fprintf(stderr, "  -h           this usage\n");
     fprintf(stderr, "  --help\n");
+    fprintf(stderr, "  -i <n slots> set number of image slots (n x 128KiB\n");
     fprintf(stderr, "  -p <size>    set panic size\n\n");
     fprintf(stderr, "  -D           increment debugging level\n");
     fprintf(stderr, "  -v           verbose mode (increment)\n");
@@ -99,6 +107,13 @@ display_info(void) {
                 fx_clu2sec(rds),  CF_LE_32(de->size), CF_LE_32(de->size));
     } else
 	fprintf(stderr, "CNFG0001: not found\n");
+    de = f32_get_de("IMAGE001", "   ", &rds);
+    if (de) {
+	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
+	fprintf(stderr, "IMAGE001:  start  0x%04x  size: %10u (0x%x)\n",
+		fx_clu2sec(rds), CF_LE_32(de->size), CF_LE_32(de->size));
+    } else
+	fprintf(stderr, "IMAGE001: not found\n");
     de = f32_get_de("DBLK0001", "   ", &rds);
     if (de) {
 	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
@@ -113,10 +128,10 @@ int main(int argc, char **argv) {
     int     c;
     int     err;
     uint8_t buf[MS_BUF_SIZE];
-    u32_t   pstart, pend, cstart, cend, dstart, dend;
-    int     do_dblk_loc, do_panic0;
+    u32_t   image_size;
+    int     do_fs_loc, do_panic0;
 
-    while ((c = getopt_long(argc,argv,"c:d:p:DhvVw", longopts, NULL)) != EOF)
+    while ((c = getopt_long(argc,argv,"c:d:i:p:DhvVw", longopts, NULL)) != EOF)
 	switch (c) {
 	  case 'c':
 	      fprintf(stderr, "-c not implemented yet, defaults to 8192\n");
@@ -129,6 +144,9 @@ int main(int argc, char **argv) {
 	      break;
 	  case 'h':
 	      usage(argv[0]);
+	      break;
+	  case 'i':
+	      fprintf(stderr, "-i not implemented yet, defaults to 4 slots, 128k each\n");
 	      break;
 	  case 'p':
 	      fprintf(stderr, "-p not implemented yet, defaults to 128k\n");
