@@ -12,7 +12,7 @@
 #ifndef _MS_H
 #define _MS_H
 
-#include "ms_loc.h"
+#include <fs_loc.h>
 
 /* needs to agree with SECTOR_SIZE and SD_BLOCKSIZE
    MS_BUF_SIZE includes CRC bytes.

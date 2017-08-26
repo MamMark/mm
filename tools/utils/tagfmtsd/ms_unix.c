@@ -10,8 +10,8 @@
  */
 
 
-#include "mm_types.h"
-#include "mm_byteswap.h"
+#include <mm_types.h>
+#include <mm_byteswap.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,9 +21,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "ms.h"
-#include "ms_util.h"
-#include "ms_loc.h"
+#include <ms.h>
+#include <ms_util.h>
+#include <fs_loc.h>
+
 
 static int fd = -1;
 

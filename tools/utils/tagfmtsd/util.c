@@ -9,8 +9,8 @@
 #include <stdarg.h>
 #include <assert.h>
 #include <ctype.h>
-#include "mm_types.h"
-#include "util.h"
+#include <mm_types.h>
+#include <util.h>
 
 
 /* case insensitive compare of the 2 chars

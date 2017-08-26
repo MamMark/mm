@@ -6,19 +6,19 @@
  * typical usage: (format SD media on the Tag)
  *
  * vfat format:     mkdosfs -F 32 -I -n"TagTest" -v /dev/sdb
- * create locators: mkdblk -w /dev/sdb
+ * create locators: tagfmtsd -w /dev/sdb
  */
 
-#include "mm_types.h"
+#include <mm_types.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
 
-#include "mm_byteswap.h"
-#include "fat_fs.h"
-#include "fatxfc.h"
-#include "ms.h"
+#include <mm_byteswap.h>
+#include <fat_fs.h>
+#include <fatxfc.h>
+#include <ms.h>
 
 
 #define VERSION "tagfmtsd: v3.9.1  2017/08/14\n"

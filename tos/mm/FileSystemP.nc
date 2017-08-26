@@ -22,7 +22,6 @@
  */
 
 #include <fs_loc.h>
-#include <mm_byteswap.h>
 #include <sd.h>
 #include <panic.h>
 #include <platform_panic.h>

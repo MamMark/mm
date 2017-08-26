@@ -1,15 +1,14 @@
-/* $Id: ms_util.c,v 1.7 2007/07/22 18:23:14 cire Exp $
- *
+/*
  * ms_util.c - Mass Storage Interface - common utility routines
- * Copyright 2006, Eric B. Decker
+ * Copyright 2006, 2017 Eric B. Decker
  * Mam-Mark Project
  */
 
-#include "mm_types.h"
-#include "mm_byteswap.h"
-#include "ms.h"
-#include "ms_loc.h"
-#include "ms_util.h"
+#include <mm_types.h>
+#include <mm_byteswap.h>
+#include <ms.h>
+#include <fs_loc.h>
+#include <ms_util.h>
 
 
 /*

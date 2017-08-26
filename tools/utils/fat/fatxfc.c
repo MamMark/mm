@@ -99,7 +99,7 @@
  */
 
 
-#include "mm_types.h"
+#include <mm_types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -107,10 +107,9 @@
 #include <fat_fs.h>
 #include <string.h>
 
-#include "fatxfc.h"
-#include "ms.h"
-#include "util.h"
-#include "ms_loc.h"
+#include <fatxfc.h>
+#include <ms.h>
+#include <util.h>
 
 
 extern int debug;
