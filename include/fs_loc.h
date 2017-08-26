@@ -52,7 +52,7 @@
 #define FS_LOC_SECTOR 0
 
 #define FS_LOC_SIG    0xdeedbeaf
-#define FS_LOC_OFFSET 0x01a8
+#define FS_LOC_OFFSET 0x0140
 
 typedef struct {
   uint32_t start;
