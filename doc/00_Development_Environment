@@ -222,21 +222,21 @@ T2_MM git repositories:
 9) Dealing with SD media for use by the tag.
 
   When you insert the media it will be mounted as a device (not file system).
-  You need to figure out where the device got mounted, ie. /dev/sdb (which
+  You need to figure out where the device got mounted, ie. /dev/sdc (which
   is what we assume in the examples below).
 
   To see how a SD is partitioned:
 
-      gdisk -l /dev/sdb
-      fdisk -l /dev/sdb
+      gdisk -l /dev/sdc
+      fdisk -l /dev/sdc
 
   fdisk is used to MBR partitions and we need a MBR partition with a FAT32 file system.
 
-  fdisk -l /dev/sdb
+  fdisk -l /dev/sdc
 
   fdisk -l /dev/sdc
 
-Disk /dev/sdb: 1977 MB, 1977614336 bytes
+Disk /dev/sdc: 1977 MB, 1977614336 bytes
 64 heads, 63 sectors/track, 957 cylinders, total 3862528 sectors
 Units = sectors of 1 * 512 = 512 bytes
 Sector size (logical/physical): 512 bytes / 512 bytes
@@ -244,22 +244,22 @@ I/O size (minimum/optimal): 512 bytes / 512 bytes
 Disk identifier: 0x00000000
 
    Device Boot      Start         End      Blocks   Id  System
-/dev/sdb1             135     3858623     1929244+   6  FAT16
+/dev/sdc1             135     3858623     1929244+   6  FAT16
 
 
   format
-	mkdosfs -F 32 -I -n"TagTest" -v /dev/sdb
+	mkdosfs -F 32 -I -n"TagTest" -v /dev/sdc
 
   check
-	fsck /dev/sdb
+	fsck /dev/sdc
 
   build
-	mkdblk -w /dev/sdb
+	tagfmtsd -w /dev/sdc
 
   check
-	fsck /dev/sdb
+	fsck /dev/sdc
 
   correct
-	fsck -a /dev/sdb
-	fsck    /dev/sdb
-	eject   /dev/sdb
+	fsck -a /dev/sdc
+	fsck    /dev/sdc
+	eject   /dev/sdc
