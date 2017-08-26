@@ -8,11 +8,11 @@
 #ifndef _MS_UTIL_H
 #define _MS_UTIL_H
 
-#include "ms_loc.h"
+#include <fs_loc.h>
 
 extern int msu_blk_empty(uint8_t *buf);
 extern char *msu_check_string(int d);
-extern int msu_check_dblk_loc(dblk_loc_t *dbl);
+extern int msu_check_fs_loc(fs_loc_t *fsl);
 extern int msu_check_panic0_blk(panic0_hdr_t *php);
 
 #endif /* _MS_UTIL_H */

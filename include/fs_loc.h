@@ -52,7 +52,7 @@
 #define FS_LOC_SECTOR 0
 
 #define FS_LOC_SIG    0xdeedbeaf
-#define FS_LOC_OFFSET 0x01a8
+#define FS_LOC_OFFSET 0x0140
 
 typedef struct {
   uint32_t start;
@@ -85,8 +85,8 @@ typedef struct {
 enum fs_loc_indicies {
   FS_LOC_PANIC       = 0,
   FS_LOC_CONFIG      = 1,
-  FS_LOC_DBLK        = 2,
-  FS_LOC_IMAGE       = 3,
+  FS_LOC_IMAGE       = 2,
+  FS_LOC_DBLK        = 3,
   FS_LOC_MAX         = 4,
 };
 

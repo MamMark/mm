@@ -43,13 +43,13 @@ install: tagfmtsd
 
 ### Dependencies
 tagfmtsd.o: tagfmtsd.c ../../../include/mm_types.h \
- ../../../include/mm_byteswap.h ../fat/fat_fs.h ../fat/fatxfc.h ms.h \
- ../../../include/ms_loc.h
+ ../../../include/mm_byteswap.h ../fat/fat_fs.h ../fat/fatxfc.h \
+ ../../../include/fs_loc.h ms.h
 ms_unix.o: ms_unix.c ../../../include/mm_types.h \
- ../../../include/mm_byteswap.h ms.h ../../../include/ms_loc.h ms_util.h
+ ../../../include/mm_byteswap.h ms.h ../../../include/fs_loc.h ms_util.h
 ms_util.o: ms_util.c ../../../include/mm_types.h \
- ../../../include/mm_byteswap.h ms.h ../../../include/ms_loc.h ms_util.h
+ ../../../include/mm_byteswap.h ms.h ../../../include/fs_loc.h ms_util.h
 util.o: util.c ../../../include/mm_types.h util.h
 fatxfc.o: ../fat/fatxfc.c ../../../include/mm_types.h \
- ../../../include/mm_byteswap.h ../fat/fat_fs.h ../fat/fatxfc.h ms.h \
- ../../../include/ms_loc.h util.h
+ ../../../include/mm_byteswap.h ../fat/fat_fs.h ../fat/fatxfc.h \
+ ../../../include/fs_loc.h ms.h util.h

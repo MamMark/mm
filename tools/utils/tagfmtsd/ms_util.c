@@ -1,15 +1,14 @@
-/* $Id: ms_util.c,v 1.7 2007/07/22 18:23:14 cire Exp $
- *
+/*
  * ms_util.c - Mass Storage Interface - common utility routines
- * Copyright 2006, Eric B. Decker
+ * Copyright 2006, 2017 Eric B. Decker
  * Mam-Mark Project
  */
 
-#include "mm_types.h"
-#include "mm_byteswap.h"
-#include "ms.h"
-#include "ms_loc.h"
-#include "ms_util.h"
+#include <mm_types.h>
+#include <mm_byteswap.h>
+#include <ms.h>
+#include <fs_loc.h>
+#include <ms_util.h>
 
 
 /*
@@ -53,44 +52,44 @@ msu_check_string(int d) {
 
 
 /*
- * msu_check_dblk_loc
+ * msu_check_fs_loc
  *
- * Check the Dblk Locator for validity.
+ * Check the file system locator block for validity.
  *
  * First, we look for the magic number in the majik spot
  * Second, we need the checksum to match.  Checksum is computed over
- * the entire dblk_loc structure.
+ * the entire fs_loc structure.
  *
- * i: *dbl	dblk locator structure pointer
+ * i: *fsl	fs locator structure pointer
  *
  * o: rtn	0  if dblk valid
  *		1  if no dblk found
- *		2  if dblk checksum failed
+ *		2  if fs_loc checksum failed
  *		3  bad value in dblk
  */
 
 int
-msu_check_dblk_loc(dblk_loc_t *dbl) {
+msu_check_fs_loc(fs_loc_t *fsl) {
     uint16_t *p;
     uint16_t sum, i;
 
-    if (dbl->sig != CT_LE_32(TAG_DBLK_SIG))
-	return(1);
-    if (dbl->panic_start == 0 || dbl->panic_end == 0 ||
-	  dbl->config_start == 0 || dbl->config_end == 0 ||
-	  dbl->dblk_start == 0 || dbl->dblk_end == 0)
-	return(3);
-    if (dbl->panic_start > dbl->panic_end ||
-	  dbl->config_start > dbl->config_end ||
-	  dbl->dblk_start > dbl->dblk_end)
-	return(3);
-    p = (void *) dbl;
+    if (fsl->loc_sig != FS_LOC_SIG || fsl->loc_sig_a != FS_LOC_SIG)
+	return 1;
+    for (i = 0; i < FS_LOC_MAX; i++) {
+      if (!(fsl->locators[i].start) || !(fsl->locators[i].end))
+        return 3;
+      if ((fsl->locators[i].start  > fsl->locators[i].end))
+        return 3;
+    }
+
+    p = (void *) fsl;
+    i = 0;
     sum = 0;
-    for (i = 0; i < DBLK_LOC_SIZE_SHORTS; i++)
-	sum += CF_LE_16(p[i]);
+    for (i = 0; i < FS_LOC_SIZE_SHORTS; i++)
+      sum += p[i];
     if (sum)
-	return(2);
-    return(0);
+      return 2;
+    return 0;
 }
 
 

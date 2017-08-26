@@ -18,7 +18,7 @@
 
 #define DE_PER_BLK (SECTOR_SIZE/sizeof(fat_dir_entry_t))
 
-#define FAT32_CPB	(SECTOR_SIZE/sizeof(unsigned long))
+#define FAT32_CPB	(SECTOR_SIZE/sizeof(uint32_t))
 #define FAT32_CPB_BITS	7
 #define FAT32_CPB_MASK	0x7f
 
@@ -121,7 +121,7 @@ typedef struct {
     partition_t p3;
     partition_t p4;
     uint16_t sig;			/* should be last 2 bytes */
-} PACKED mbr_t;    
+} PACKED mbr_t;
 
 
 typedef struct {
@@ -140,7 +140,7 @@ typedef struct {
     __u16	heads;			/* number of heads */
     __u32	hidden;			/* hidden sectors (unused) */
     __u32	total_sect;		/* number of sectors (if sectors == 0) */
-    
+
     /* The following fields are only used by FAT32 */
     __u32	fat32_length;		/* sectors/FAT */
     __u16	flags;			/* bit 8: fat mirroring, low 4: active fat */

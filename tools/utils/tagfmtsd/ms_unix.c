@@ -10,8 +10,8 @@
  */
 
 
-#include "mm_types.h"
-#include "mm_byteswap.h"
+#include <mm_types.h>
+#include <mm_byteswap.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,9 +21,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "ms.h"
-#include "ms_util.h"
-#include "ms_loc.h"
+#include <ms.h>
+#include <ms_util.h>
+#include <fs_loc.h>
+
 
 static int fd = -1;
 
@@ -35,10 +36,13 @@ extern __off64_t lseek64(int __fd, __off64_t __offset, int __whence);
 #endif
 
 
-ms_control_t msc;			/* mass storage control */
-panic0_hdr_t p0c;			/* panic0 control */
-ms_handle_t ms_handles[MS_NUM_BUFS];
+fs_loc_t loc;
+uint32_t msc_dblk_nxt;                  /* 1st empty dblk */
 
+uint32_t     msc_panic0_blk;            /* panic control block, where it lives */
+panic0_hdr_t p0c;			/* panic0 control */
+
+uint8_t ms_buf[MS_BUF_SIZE];
 
 extern int verbose;
 extern int debug;
@@ -46,16 +50,19 @@ extern int debug;
 int
 check_panic0_values(panic0_hdr_t *p) {
   int rtn;
+  uint32_t start, end;
 
   rtn = 0;
-  if (msc.panic_start != p->panic_start) {
+  start = loc.locators[FS_LOC_PANIC].start;
+  end   = loc.locators[FS_LOC_PANIC].end;
+  if (start != p->panic_start) {
     fprintf(stderr, "*** panic0 mismatch: (start) %x/%x\n",
-	    msc.panic_start, p->panic_start);
+	    start, p->panic_start);
     rtn = 1;
   }
-  if (msc.panic_end != p->panic_end) {
+  if (end != p->panic_end) {
     fprintf(stderr, "*** panic0 mismatch: (end) %x/%x\n",
-	    msc.panic_end, p->panic_end);
+	    end, p->panic_end);
     rtn = 1;
   }
   return rtn;
@@ -64,12 +71,12 @@ check_panic0_values(panic0_hdr_t *p) {
 
 ms_rtn
 ms_init(char *device_name) {
-    dblk_loc_t *dbl;
+    fs_loc_t  *fsl;
     panic0_hdr_t *php;
     uint32_t   blk, lower, upper;
-    int empty;
-    uint8_t *dp;
-    ms_rtn rtn;
+    int        empty;
+    uint8_t   *dp;
+    ms_rtn     rtn;
 
     assert(device_name);
     rtn = MS_OK;
@@ -91,30 +98,28 @@ ms_init(char *device_name) {
 	rtn = MS_READONLY;
     }
 
-    msc.panic_start = msc.panic_end = 0;
-    msc.config_start = msc.config_end = 0;
-    msc.dblk_start = msc.dblk_end = 0;
-    msc.dblk_nxt = 0;
-    msc.panic0_blk = 0;			/* indicates not found */
-    p0c.panic_nxt  = 0;
+    /*
+     * locator (loc) is initilized to zeros by the bss zero
+     * ditto for other globals.
+     */
 
-    dp = ms_handles[0].buf;
+    dp = ms_buf;
     if (verbose || debug)
       fprintf(stderr, "*** reading MBR (sector 0)\n");
     ms_read_blk_fail(0, dp);
 
-    dbl = (void *) dp + DBLK_LOC_OFFSET;
-    empty = msu_check_dblk_loc(dbl);
-    fprintf(stderr, "dblk_loc:  %s (%d)\n", msu_check_string(empty), empty);
+    fsl = (void *) dp + FS_LOC_OFFSET;
+    empty = msu_check_fs_loc(fsl);
+    fprintf(stderr, "fs_loc:  %s (%d)\n", msu_check_string(empty), empty);
+
+    /*
+     * if non-zero says the fs_loc has a problem.  That is okay since we
+     * maybe creating one.
+     */
     if (empty)
       return rtn;
 
-    msc.panic_start  = CF_LE_32(dbl->panic_start);
-    msc.panic_end    = CF_LE_32(dbl->panic_end);
-    msc.config_start = CF_LE_32(dbl->config_start);
-    msc.config_end   = CF_LE_32(dbl->config_end);
-    msc.dblk_start   = CF_LE_32(dbl->dblk_start);
-    msc.dblk_end     = CF_LE_32(dbl->dblk_end);
+    memcpy(&loc, fsl, sizeof(fs_loc_t));
 
     /*
      * see if there is a valid panic0 block.  The data in the block
@@ -144,50 +149,62 @@ ms_init(char *device_name) {
       p0c.sig_b       = CF_LE_32(php->sig_b);
       p0c.chksum      = CF_LE_32(php->chksum);
       empty = check_panic0_values(&p0c);
-      if (!empty)
-	msc.panic0_blk  = PANIC0_SECTOR;	/* flag it as being present */
+      if (empty)
+	msc_panic0_blk = 0;                     /* non-zero says sometings wrong */
       else
-	msc.panic0_blk = 0;
+	msc_panic0_blk  = PANIC0_SECTOR;	/* flag it as being present */
     }
 
     /*
-     * Scan the rest of the dblk (using binary search) looking
-     * for where the next block will start.  ie.  look for 1st
-     * empty sector.
+     * Scan the rest of the dblk (using binary search) looking for where
+     * the next block will start.  ie.  look for 1st empty sector.
+     *
+     * Note: first sector of the DBLK area is reserved for the DBLK directory.
      */
-    ms_read_blk_fail(msc.dblk_start, dp);
-    if (msu_blk_empty(dp)) {
-	msc.dblk_nxt = msc.dblk_start;
-	return rtn;
-    }
-    lower = msc.dblk_start;
-    upper = msc.dblk_end;
+    lower = loc.locators[FS_LOC_DBLK].start + 1;
+    upper = loc.locators[FS_LOC_DBLK].end;
     empty = 0;
-    while (lower != upper) {
+    blk = lower;
+    ms_read_blk_fail(blk, dp);
+    empty = msu_blk_empty(dp);
+    if (!empty) {
+      /*
+       * if the 1st block isn't empty then we need to scan for the first
+       * empty block.  We use a binary search
+       */
+      while (lower != upper) {
 	blk = (upper - lower)/2 + lower;
 	if (blk == lower)
-	    blk = lower = upper;
+          blk = lower = upper;
 	ms_read_blk_fail(blk, dp);
 	if (msu_blk_empty(dp)) {
-	    upper = blk;
-	    empty = 1;
+          upper = blk;
+          empty = 1;
 	} else {
-	    lower = blk;
-	    empty = 0;
+          lower = blk;
+          empty = 0;
 	}
+      }
     }
     if (empty)
-	msc.dblk_nxt = blk;
+	msc_dblk_nxt = blk;
     if (verbose || debug) {
-      fprintf(stderr, "dblk_loc:  p:   s: %-8x   e: %-8x\n",
-	      msc.panic_start, msc.panic_end);
-      fprintf(stderr, "           c:   s: %-8x   e: %-8x\n",
-	      msc.config_start, msc.config_end);
-      fprintf(stderr, "           d:   s: %-8x   e: %-8x   n: %-8x\n",
-		msc.dblk_start, msc.dblk_end, msc.dblk_nxt);
-      if (msc.dblk_nxt == 0)
+      fprintf(stderr, "fs_loc:  p:   s: %-8x   e: %x\n",
+	      loc.locators[FS_LOC_PANIC].start,
+              loc.locators[FS_LOC_PANIC].end);
+      fprintf(stderr, "         c:   s: %-8x   e: %x\n",
+	      loc.locators[FS_LOC_CONFIG].start,
+              loc.locators[FS_LOC_CONFIG].end);
+      fprintf(stderr, "         i:   s: %-8x   e: %x\n",
+	      loc.locators[FS_LOC_IMAGE].start,
+              loc.locators[FS_LOC_IMAGE].end);
+      fprintf(stderr, "         d:   s: %-8x   e: %-8x   n: %x\n",
+	      loc.locators[FS_LOC_DBLK].start,
+              loc.locators[FS_LOC_DBLK].end,
+              msc_dblk_nxt);
+      if (msc_dblk_nxt == 0)
 	fprintf(stderr, "*** dblk_nxt not set ***\n");
-      fprintf(stderr, "panic0:    p:   s: %-8x   e: %-8x   n: %-8x\n",
+      fprintf(stderr, "panic0:  p:   s: %-8x   e: %-8x   n: %x\n",
 	      p0c.panic_start, p0c.panic_end, p0c.panic_nxt);
     }
     return rtn;
@@ -233,7 +250,7 @@ ms_read_blk_fail(uint32_t blk_id, void *buf) {
     return(err);
 }
 
-    
+
 ms_rtn
 ms_read8(uint32_t blk_id, void *buf) {
     loff_t off, pos;
@@ -242,25 +259,25 @@ ms_read8(uint32_t blk_id, void *buf) {
     off = blk_id * MS_BLOCK_SIZE;
     pos = lseek64(fd, off, SEEK_SET);
     if (pos == -1) {
-	fprintf(stderr, "ms_read_blk: seek fail: %s (%d)\n",
+	fprintf(stderr, "ms_read8: seek fail: %s (%d)\n",
 		strerror(errno), errno);
 	return(MS_READ_FAIL);
     }
     got = read(fd, buf, 8);
     if (got == -1) {
-	fprintf(stderr, "ms_read4: read fail: %s (%d)\n",
+	fprintf(stderr, "ms_read8: read fail: %s (%d)\n",
 		strerror(errno), errno);
 	return(MS_READ_FAIL);
     }
-    if (got != MS_BLOCK_SIZE) {
-	fprintf(stderr, "ms_read4: read too short, req: %d, got: %d\n",
+    if (got != 8) {
+	fprintf(stderr, "ms_read8: read too short, req: %d, got: %d\n",
 		8, got);
 	return(MS_READ_TOO_SHORT);
     }
     return(MS_OK);
 }
 
-    
+
 ms_rtn
 ms_write_blk(uint32_t blk_id, void *buf) {
     loff_t off, pos;
