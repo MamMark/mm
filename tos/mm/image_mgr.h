@@ -51,12 +51,15 @@
 #include <image_info.h>
 #include <sd.h>
 
+/* maximum size image in each slot */
+#define IMAGE_SIZE      (128 * 1024)
+
 /*
  * Each image is a maximum of 128KiB, which is exactly
- * 128KiB * (1 sector / 512B) (1024B/KiB) = 256 sectors
+ * 128KiB * (1 sector / 512B) * (1024B/Ki) = 256 sectors
  */
-#define IMAGE_SIZE         (128 * 1024)
 #define IMAGE_SIZE_SECTORS ((IMAGE_SIZE) / (SD_BLOCKSIZE))
+
 
 /* number of maximum images we support */
 #define IMAGE_DIR_SLOTS 4
