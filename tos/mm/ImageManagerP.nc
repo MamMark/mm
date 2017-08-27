@@ -55,15 +55,24 @@ enum {
  * for interacting with the SD.  Used to collect (marshal) incoming
  * data for writing to the SD.
  *
- * cur_slot_blk (csb): The block in the allocated slot that we are working
+ * im_filling_slot_blk (fsb): The block in the allocated slot that we are working
  * with.
  *
  * *** State Machine Description
  *
- * IDLE         no active activity.  Free for next operation.
- *              IMWB and CSB are meaningless.
- *
- * ALLOC
+ * IDLE                no active activity.  Free for next operation.
+ *                     IMWB and FSB are meaningless.
+ * FILL_WAITING        filling buffer.  IMWB and FSB active.
+ * FILL_REQ_SD         req SD for IMWB flush.
+ * FILL_WRITING        writing buffer (IMWB) to SD.
+ * FILL_LAST_REQ_SD    req SD for last buffer write.
+ * FILL_LAST_WRITE     finishing write of last buffer (partial).
+ * FILL_SYNC_REQ_SD    req SD to write directory to finish new image.
+ * FILL_SYNC_WRITE     write directory to update image finish.
+ * DELETE_SYNC_REQ_SD  req SD for directory flush for delete.
+ * DELETE_SYNC_WRITE   Flush directory cache for new empty entry
+ * DELETE_COMPLETE     ????
+ * DSA_DIR
  */
 
 typedef enum {
@@ -98,21 +107,24 @@ implementation {
   im_state_t  im_state;                 /* current manager state */
 
   /*
+   * Image directory cache is a copy of the directory from the Image Area
+   * on the SD.
+   *
+   * It holds changes made to the directory prior to being committed.
+   */
+  image_dir_cache_t im_dir_cache;
+
+  /*
    * control cells used when filling a slot
    */
-  uint32_t    filling_slot_blk;        /* where on the sd we are writing */
-  uint32_t    filling_slot_blk_limit;  /* upper limit of current slot */
-  image_dir_entry_t filling_slot_p;    /* directory slot being filled */
+  uint32_t  im_filling_blk;             /* sector num of next write on SD */
+  uint32_t  im_filling_blk_limit;       /* sector num of next write on SD */
 
-  uint32_t    dir_blk;                  /* where the directory lives */
-  image_dir_t im_dir;                   /* directory cache */
-
-  uint32_t    im_lower, im_upper;       /* limits of the image space */
-
-  uint8_t     im_wrk_buf[SD_BUF_SIZE];  /* working buffer. */
-  uint8_t    *im_buf_ptr;               /* pntr into above buffer */
-  uint16_t    im_available;             /* remaining bytes in above */
-
+  uint8_t   im_wrk_buf[SD_BUF_SIZE];    /* working buffer. */
+  uint8_t  *im_buf_ptr;                 /* pntr into above buffer */
+  uint16_t  im_bytes_remaining;         /* remaining bytes in above */
+  uint16_t  im_filling_slot_id;         /* index of the slot being filled */
+  image_dir_entry_t *im_filling_slot_p;
 
   void im_warn(uint8_t where, parg_t p0, parg_t p1) {
     call Panic.warn(PANIC_IM, where, p0, p1, 0, 0);
@@ -248,16 +260,14 @@ implementation {
         im_panic(7, im_state, 0);
         return FAIL;
     }
-    if (!verify_IM_dir()) {
-      im_panic(8, im_state, 0);
-      return FAIL;
-    }
-
+    verify_IM_dir();
     im_bytes_remaining = SD_BLOCKSIZE;
     im_buf_ptr = &im_wrk_buf[0];
-    rtn = allocate_slot();
-    if (rtn == SUCCESS)
-      im_state = IMS_FILL_WAITING;
+    rtn = allocate_slot(ver_id, &x);
+    if (!rtn) return rtn;
+    im_dir_cache.next_write_blk = im_dir_cache.dir.slots[x].s0;
+    im_dir_cache.limit_write_blk = IM_SLOT_LAST_SEC(x);
+    im_state = IMS_FILL_WAITING;
     return rtn;
   }
 
