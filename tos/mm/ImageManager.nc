@@ -42,15 +42,15 @@ interface ImageManager {
   event   void     write_continue();
 
   command error_t finish(image_ver_t ver_id);
-  event   void    finish_complete(error_t err);
+  event   void    finish_complete();
 
   command error_t delete(image_ver_t ver_id);
-  event   void    delete_complete(error_t err);
+  event   void    delete_complete();
 
   command error_t dir_set_active(image_ver_t ver_id);
-  event   void    dir_set_active_complete(error_t err);
+  event   void    dir_set_active_complete();
 
-  command error_t check_fit(uint32_t len);
+  command bool check_fit(uint32_t len);
 
   command image_dir_entry_t *dir_get_active();
   command image_dir_entry_t *dir_get_dir(uint8_t idx);
