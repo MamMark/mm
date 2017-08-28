@@ -22,6 +22,8 @@
 #ifndef __TYPED_DATA_H__
 #define __TYPED_DATA_H__
 
+#include <stdint.h>
+#include <panic.h>
 #include <image_info.h>
 
 #ifndef PACKED
