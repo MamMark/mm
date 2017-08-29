@@ -43,6 +43,8 @@
 
 #include <TagnetTLV.h>
 #include <sirf_msg.h>
+#include <mm_byteswap.h>
+
 
 #ifndef PANIC_GPS
 enum {

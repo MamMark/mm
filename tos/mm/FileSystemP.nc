@@ -106,8 +106,7 @@ implementation {
     uint16_t *p;
     uint16_t sum, i;
 
-    if (fsl->loc_sig   != CF_LE_32(FS_LOC_SIG) ||
-        fsl->loc_sig_a != CF_LE_32(FS_LOC_SIG))
+    if (fsl->loc_sig != FS_LOC_SIG || fsl->loc_sig_a != FS_LOC_SIG)
       return 1;
     for (i = 0; i < FS_LOC_MAX; i++) {
       if (!(fsl->locators[i].start) || !(fsl->locators[i].end))
@@ -120,7 +119,7 @@ implementation {
     i = 0;
     sum = 0;
     for (i = 0; i < FS_LOC_SIZE_SHORTS; i++)
-      sum += CF_LE_16(p[i]);
+      sum += p[i];
     if (sum)
       return 2;
     return 0;
