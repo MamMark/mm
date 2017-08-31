@@ -4,20 +4,15 @@
  */
 
 configuration mmSyncC {
-  provides interface Boot as OutBoot;
-  uses {
-    interface Boot;
-    interface Boot as SysBoot;
-  }
+  provides interface Boot as Booted;    /* out boot */
+  uses     interface Boot;              /* in  boot */
 }
-
 implementation {
   components SystemBootC, mmSyncP;
   mmSyncP.SysBoot -> SystemBootC.Boot;
 
-  OutBoot = mmSyncP;
-  Boot = mmSyncP.Boot;
-  SysBoot = mmSyncP.SysBoot;
+  Booted = mmSyncP;
+  Boot   = mmSyncP.Boot;
 
   components PlatformC;
   mmSyncP.BootParams -> PlatformC;

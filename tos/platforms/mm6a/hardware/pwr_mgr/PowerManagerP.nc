@@ -38,7 +38,7 @@ module PowerManagerP {
   provides {
     interface PowerManager;
     interface Boot as LowPowerBoot;     /* outgoing */
-    interface Boot as NormalPowerBoot;  /* outgoing */
+    interface Boot as OKPowerBoot;      /* outgoing */
   }
   uses {
     interface Boot;
@@ -114,11 +114,11 @@ implementation {
   /*
    * Gets signalled on Main boot.  check to see what power
    * mode we are in currently.  If low power then signal
-   * LowPowerBoot.  Otherwise signal NormalPowerBoot.
+   * LowPowerBoot.  Otherwise signal OKPowerBoot.
    */
   event void Boot.booted() {
     if (call PowerManager.battery_connected())
-      signal NormalPowerBoot.booted();
+      signal OKPowerBoot.booted();
     else
       signal LowPowerBoot.booted();
     return;

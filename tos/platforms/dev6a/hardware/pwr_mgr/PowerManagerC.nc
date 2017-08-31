@@ -42,22 +42,33 @@
  * PowerManager.battery_connected: checks to see if the battery is
  *   connected.  Harvester interface.
  *
- * PowerManagerC.Boot: incoming boot.booted signal typically wired
- *   to MainC.Boot.booted.  Gets control when system initialization
- *   has completed..  Not SystemBoot.
+ * PowerManagerC.Boot: incoming boot.booted signal typically wired to
+ *   MainC.Boot.booted.  Gets control when basic system initialization has
+ *   completed..  Not SystemBoot.
  *
- * LowPowerBoot:    not enough power to run all subsystems.  come up
- *                  in low power mode.
- * NormalPowerBoot: normal boot.  all subsystems should work.
+ * LowPowerBoot: not enough power to run all subsystems.  come up
+ *               in low power mode.
+ * OKPowerBoot:  power is ok, normal boot.  all subsystems should work.
  */
 
 configuration PowerManagerC {
-  provides interface PowerManager;
+  provides {
+    interface PowerManager;
+    interface Boot as LowPowerBoot;     /* outgoing */
+    interface Boot as OKPowerBoot;      /* outgoing */
+  }
+  uses {
+    interface Boot;                     /* incoming */
+  }
 }
 implementation {
   components PowerManagerP;
   PowerManager    = PowerManagerP;
+  Boot            = PowerManagerP.Boot;
+  LowPowerBoot    = PowerManagerP.LowPowerBoot;
+  OKPowerBoot     = PowerManagerP.OKPowerBoot;
 
-  components PlatformC;
+  components PlatformC, PanicC;
   PowerManagerP.Platform -> PlatformC;
+  PowerManagerP.Panic    -> PanicC;
 }

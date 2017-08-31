@@ -42,21 +42,18 @@
 
 configuration DblkManagerC {
   provides {
-    interface DblkManager;
-    interface Boot as DMBooted;		/* out Booted signal */
+    interface Boot        as Booted;    /* out Booted signal */
+    interface DblkManager as DM;
   }
-  uses {
-    interface Boot;			/* incoming signal */
-  }
+  uses interface Boot;			/* incoming signal */
 }
-
 implementation {
   components DblkManagerP  as DMP;
 
   /* exports, imports */
-  DblkManager = DMP;
-  DMBooted    = DMP;
-  Boot        = DMP;
+  DM     = DMP;
+  Booted = DMP;
+  Boot   = DMP;
 
   components new SD0_ArbC() as SD, SSWriteC;
   components FileSystemC;

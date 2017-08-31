@@ -38,12 +38,14 @@
  *
  * 0) Check for Low Power
  *    low power -> start the low power boot chain
- *    normal power -> start the normal boot chain
+ *    ok power -> start the normal boot chain
  *
- * Normal chain
+ * OK Power chain
  * 1) Bring up the SD/StreamStorage, FileSystem
- * 3) Collect initial status information (Restart and Version)  mmSync
- * 4) Bring up the GPS.  (GPS assumes SS is up)
+ * 2) Bring up ImageManager (image = code image), needed by OW
+ * 3) Invoke OverWatch (OW) to check for actions. (not NIB)
+ * 4) Post Restart/Reboot record.  (mmSync)
+ * 5) Bring up the GPS.  (GPS assumes SS is up)
  *
  * Low power chain
  * not yet defined.
@@ -62,19 +64,23 @@ implementation {
   components MainC;
   SoftwareInit = MainC.SoftwareInit;
 
-  components PowerManagerC;
-  components FileSystemC;
-  components mmSyncC;
-  components GPS0C;
+  components PowerManagerC as PM;
+  components FileSystemC   as FS;
+  components ImageManagerC as IM;
+  components DblkManagerC  as DM;
+  components mmSyncC       as SYNC;
+  components GPS0C         as GPS;
 
-  PowerManagerC.Boot -> MainC;          // first check for power state
+  PM.Boot -> MainC;                     // first check for power state
 
   /* Low Power Chain */
-  BootLow = PowerManagerC.LowPowerBoot;
+  BootLow = PM.LowPowerBoot;
 
   /* Normal Power Chain */
-  FileSystemC.Boot -> PowerManagerC.NormalPowerBoot; // start up file system
-  mmSyncC.Boot -> FileSystemC.OutBoot;  //        then write initial status
-  GPS0C.Boot -> mmSyncC.OutBoot;        //            and then GPS.
-  Boot = GPS0C.GPSBoot;                 // bring up everyone else
+  FS.Boot   -> PM.OKPowerBoot;
+  IM.Boot   -> FS.Booted;
+  DM.Boot   -> IM.Booted;
+  SYNC.Boot -> DM.Booted;
+  GPS.Boot  -> SYNC.Booted;
+  Boot      =  GPS.Booted;
 }

@@ -13,31 +13,24 @@
 
 configuration FileSystemC {
   provides {
+    interface Boot       as Booted;     /* out Booted signal */
     interface FileSystem as FS;
-    interface Boot as FSBooted;		/* out Booted signal */
   }
-  uses {
-    interface Boot;			/* incoming signal */
-  }
+  uses interface Boot;			/* incoming signal */
 }
-
 implementation {
   components FileSystemP as FS_P;
 
   /* exports, imports */
-  FS       = FS_P;
-  FSBooted = FS_P;
-  Boot     = FS_P;
+  FS     = FS_P;
+  Booted = FS_P;
+  Boot   = FS_P;
 
   components new SD0_ArbC() as SD, SSWriteC;
 
   FS_P.SSW        -> SSWriteC;
   FS_P.SDResource -> SD;
   FS_P.SDread     -> SD;
-
-#ifdef ENABLE_ERASE
-  FS_P.SDerase    -> SD;
-#endif
 
   components PanicC;
   FS_P.Panic -> PanicC;

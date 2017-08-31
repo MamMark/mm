@@ -46,11 +46,11 @@ enum {
 
 module DblkManagerP {
   provides {
-    interface Boot as DMBooted;		/* signals OutBoot */
+    interface Boot        as Booted;    /* signals OutBoot */
     interface DblkManager;
   }
   uses {
-    interface Boot;			/* incoming booted signal */
+    interface Boot;			/* incoming boot signal */
     interface FileSystem;
     interface SDread;
     interface SSWrite as SSW;
@@ -233,7 +233,7 @@ implementation {
      * Then when we release, it will get the SD without powering the
      * SD down.
      */
-    signal DMBooted.booted();
+    signal Booted.booted();
     call SDResource.release();
   }
 
@@ -243,7 +243,7 @@ implementation {
     dm_state = DMS_IDLE;
     dmc.dblk_nxt = dmc.dblk_lower + 1;
 
-    signal OutBoot.booted();
+    signal Booted.booted();
     call SDResource.release();
   }
 #endif

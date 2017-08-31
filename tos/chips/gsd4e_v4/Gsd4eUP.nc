@@ -395,10 +395,10 @@ module Gsd4eUP {
   provides {
     interface GPSState;
     interface GPSTransmit;
-    interface Boot as GPSBoot;          /* outBoot */
+    interface Boot as Booted;           /* out Boot */
   }
   uses {
-    interface Boot;
+    interface Boot;                     /* in boot */
     interface Gsd4eUHardware as HW;
 
     /*
@@ -535,7 +535,7 @@ implementation {
 
 
   /*
-   * Boot.booted:
+   * Boot.booted:  Incoming Boot.booted signal.  Start initialization
    */
   event void Boot.booted() {
     call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, 0, 0, 0, 0);
@@ -715,7 +715,7 @@ implementation {
             gpsc_boot_time = call LocalTime.get() - t_gps_pwr_on;
             call CollectEvent.logEvent(DT_EVENT_GPS_BOOT_TIME,
                                        t_gps_pwr_on, gpsc_boot_time, 0, 0);
-            signal GPSBoot.booted();
+            signal Booted.booted();
           }
           return;
 

@@ -30,11 +30,21 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @author: Eric B. Decker <cire831@gmail.com>
  */
 
 module PowerManagerP {
-  provides interface PowerManager;
-  uses     interface Platform;
+  provides {
+    interface PowerManager;
+    interface Boot as LowPowerBoot;     /* outgoing */
+    interface Boot as OKPowerBoot;      /* outgoing */
+  }
+  uses {
+    interface Boot;
+    interface Platform;
+    interface Panic;
+  }
 }
 implementation {
   /*
@@ -76,4 +86,24 @@ implementation {
     if (previous_module)   TMP_PINS_MODULE;
     return rtn;
   }
+
+
+  /*
+   * Gets signalled on Main boot.  check to see what power
+   * mode we are in currently.  If low power then signal
+   * LowPowerBoot.  Otherwise signal OKPowerBoot.
+   */
+  event void Boot.booted() {
+    if (call PowerManager.battery_connected())
+      signal OKPowerBoot.booted();
+    else
+      signal LowPowerBoot.booted();
+    return;
+  }
+
+  default event void LowPowerBoot.booted() {
+    call Panic.panic(PANIC_PWR, 1, 0, 0, 0, 0);
+  }
+
+  async event void Panic.hook() { }
 }

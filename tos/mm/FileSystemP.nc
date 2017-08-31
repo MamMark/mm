@@ -55,13 +55,13 @@ enum {
 
 module FileSystemP {
   provides {
-    interface Boot as FSBooted;		/* outgoing booted signal */
+    interface Boot       as Booted;     /* outgoing booted signal */
     interface FileSystem as FS;
   }
   uses {
     interface Boot;			/* incoming booted signal */
     interface SDread;
-    interface SSWrite as SSW;
+    interface SSWrite  as SSW;
     interface Resource as SDResource;
     interface Panic;
   }
@@ -183,14 +183,14 @@ implementation {
     fs_state = FSS_IDLE;
 
     /*
-     * signal OutBoot first, then release the SD
+     * signal Booted first, then release the SD
      *
      * If the next module in the sequenced boot chain wants to
      * use the SD it will issue a request, which will queue them up.
      * Then when we release, it will get the SD without powering the
      * SD down.
      */
-    signal FSBooted.booted();
+    signal Booted.booted();
     call SDResource.release();
   }
 

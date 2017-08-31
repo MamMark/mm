@@ -45,19 +45,20 @@ configuration SystemBootC {
   provides interface Boot;
   uses interface Init as SoftwareInit;
 }
-
 implementation {
   components MainC;
   SoftwareInit = MainC.SoftwareInit;
 
-  components FileSystemC as FS;
-  components DblkManagerC as DMC;
-  components mmSyncC;
-  components GPS0C;
+  components FileSystemC   as FS;
+  components ImageManagerC as IM;
+  components DblkManagerC  as DM;
+  components mmSyncC       as SYNC;
+  components GPS0C         as GPS;
 
-  FS.Boot -> MainC;		 // first up on the smorgasborg is FS
-  DMC.Boot -> FS.FSBooted;       //    fire up Data Region
-  mmSyncC.Boot -> DMC.DMBooted;  //        then write initial boot record
-  GPS0C.Boot -> mmSyncC.OutBoot; //            and then GPS.
-  Boot = GPS0C.GPSBoot;          // bring up everyone else
+  FS.Boot   -> MainC;
+  IM.Boot   -> FS.Booted;
+  DM.Boot   -> IM.Booted;
+  SYNC.Boot -> DM.Booted;
+  GPS.Boot  -> SYNC.Booted;
+  Boot      =  GPS.Booted;
 }

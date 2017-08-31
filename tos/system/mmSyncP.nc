@@ -12,10 +12,10 @@
 extern image_info_t image_info;
 
 module mmSyncP {
-  provides interface Boot as OutBoot;
+  provides interface Boot as Booted;    /* out boot */
   uses {
-    interface Boot;
-    interface Boot as SysBoot;
+    interface Boot;                     /* in boot in sequence */
+    interface Boot as SysBoot;          /* use at end of System Boot initilization */
     interface BootParams;
     interface Timer<TMilli> as SyncTimer;
     interface Collect;
@@ -73,7 +73,7 @@ implementation {
     write_reboot_record();
     write_version_record();
     nop();
-    signal OutBoot.booted();
+    signal Booted.booted();
   }
 
 
