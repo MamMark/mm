@@ -79,7 +79,8 @@ extern uint32_t __image_length__;
 
 const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   .sig          = IMAGE_INFO_SIG,
-  .checksum     = 0xAFBEADDE,           /* big endian 0xDEADBEAF, readable as bytes */
+  .vector_chk   = 0xAFBEADDE,
+  .image_chk    = 0xAFBEADDE,
   .image_length = (uint32_t) &__image_length__,
   .ver_id       = { .major = MAJOR, .minor = MINOR, .build = _BUILD },
   .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV }

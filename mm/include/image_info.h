@@ -59,9 +59,10 @@ typedef struct {
 } hw_ver_t;
 
 typedef struct {
-  uint32_t    sig;
-  uint32_t    checksum;
-  uint32_t    image_length;
+  uint32_t    sig;                      /* must be IMAGE_INFO_SIG to be valid */
+  uint32_t    vector_chk;               /* simple checksum over vector table */
+  uint32_t    image_chk;                /* simple checksum over entire image */
+  uint32_t    image_length;             /* byte length of entire image */
   image_ver_t ver_id;
   hw_ver_t    hw_ver;
 } image_info_t;
