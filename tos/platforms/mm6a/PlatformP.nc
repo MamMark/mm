@@ -42,6 +42,7 @@
 #include <cpu_stack.h>
 #include <platform_reset_defs.h>
 #include <platform_version.h>
+#include <sysreboot.h>
 
 noinit uint32_t stack_size;
 
