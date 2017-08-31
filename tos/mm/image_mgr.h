@@ -114,7 +114,7 @@ typedef struct {                /* Dir Slot structure   */
  * Integrity of the directory is enhanced using two signatures and a checksum
  * over the entire directory structure.
  *
- * The checksum is Checksum32 (see module).
+ * The checksum is a simple 32 bit wide checksum.
  */
 
 typedef struct {                /* Image Directory */
