@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2017 Daniel Maltbie, Eric B. Decker
+/**
+ * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,51 +32,32 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <image_mgr.h>
+/*
+ * @author Eric B. Decker
+ *
+ * Configuration wiring for OverWatch.  See OverWatchP for more details on
+ * what OverWatch does.
+ */
+
 #include <overwatch.h>
 
-/* move interface descriptions over to the implementation */
+configuration OverWatchC {
+  provides {
+    interface Boot as Booted;		/* out Booted signal */
+    interface OverWatch as OW;
+  }
+  uses interface Boot;			/* incoming signal */
+}
 
-interface OverWatch {
-  /**
-   * Install
-   *
-   * Request the Overwatcher to load a new active image. The
-   * new image should already have been written to the SD and the
-   * directory entry marked as active. Otherwise, it will effectively
-   * reboot the system.
-   *
-   */
-  command error_t Install();
+implementation {
+  components OverWatchP as OW_P;
+  OW     = OW_P;
+  Booted = OW_P;
+  Boot   = OW_P;
 
-  /**
-   * ForceBoot
-   *
-   * This will force the Overwatcher to boot the system into the
-   * specified boot instance (OWT, GOLD, NIB).
-   *
-   * @param   boot_mode     which image instance to boot into
-   * @return  error_t
-   */
-  command error_t ForceBoot(ow_boot_mode_t boot_mode);
+  components ImageManagerC as IM_C;
+  OW_P.IM -> IM_C;
 
-  /**
-   * Fail
-   *
-   * Request the Overwatcher handle a runtime failure of the provided
-   * reboot reason type. Overwatcher will determine if the currently
-   * running instance has exceeded a failure threshold (too many
-   * failures per unit of time) and cause a fall back to the backup
-   * (previously active) mage. If no backup image is available then
-   * Overwatch will start Golden.
-   *
-   * @param   reason        failure reason, most likely a panic or unhandled interrupt
-   */
-  command void Fail(ow_reboot_reason_t reason);
-
-  command ow_reboot_reason_t getRebootReason();
-
-  command uint32_t getElapsedUpper();
-  command uint32_t getElapsedLower();
-  command uint32_t getBootcount();
+  components PanicC;
+  OW_P.Panic -> PanicC;
 }

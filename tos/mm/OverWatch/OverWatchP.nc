@@ -65,14 +65,15 @@ ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")))
  * If no action is requested, we will boot the golden image.
  */
 
-module OverWatcherP {
+module OverWatchP {
   provides {
-    interface         Overwatch;
-    interface Boot as OwGoldBoot;       /* outBoot, Gold mode */
-    interface Boot as OwOwtBoot;        /* outBoot, OWT mode  */
+    interface Boot as Booted;           /* outBoot */
+    interface OverWatch;
   }
   uses {
     interface         Boot;             /* inBoot */
+    interface         ImageManager as IM;
+    interface         Panic;
   }
 }
 implementation {
@@ -91,16 +92,7 @@ implementation {
    * should be added downstream on GoldBooted.
    */
   event void Boot.booted() {
-    /*
-     * VTOR being 0 tells us we are running in the OW bank
-     * anything else and we are running from the NIB space.
-     */
-    if (VTOR == 0) {
-      if (ow_control_block.owt_boot_mode == OW_BOOT_GOLD)
-        signal OwGoldBoot.booted();
-      // else initialize for OWT processing
-    }
-    // else initialize for NIB
+    signal Booted.booted();
   }
 
   /*
