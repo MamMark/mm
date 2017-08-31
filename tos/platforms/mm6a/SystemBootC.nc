@@ -53,7 +53,6 @@
 
 /*
  * Signals Boot.booted for normal power up
- * Signals BootLow.booted for low power start up.
  */
 configuration SystemBootC {
   provides interface Boot;
@@ -67,6 +66,7 @@ implementation {
   components PowerManagerC as PM;
   components FileSystemC   as FS;
   components ImageManagerC as IM;
+  components OverWatchC    as OW;
   components DblkManagerC  as DM;
   components mmSyncC       as SYNC;
   components GPS0C         as GPS;
@@ -79,7 +79,17 @@ implementation {
   /* Normal Power Chain */
   FS.Boot   -> PM.OKPowerBoot;
   IM.Boot   -> FS.Booted;
-  DM.Boot   -> IM.Booted;
+  OW.Boot   -> IM.Booted;
+
+  /*
+   * Note: If OWT (OverWatch TinyOS) determines that it has something to
+   * do it will set up and then exit without signalling OW.Booted.  This
+   * will let the OWT functions do their thing.
+   *
+   * If OWT isn't invoked then OW will signal Booted to let the normal
+   * boot sequence to occur.
+   */
+  DM.Boot   -> OW.Booted;
   SYNC.Boot -> DM.Booted;
   GPS.Boot  -> SYNC.Booted;
   Boot      =  GPS.Booted;

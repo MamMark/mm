@@ -36,9 +36,14 @@
  * Sequence the bootup.  Components that should fire up when the
  * system is completely booted should wire to SystemBootC.Boot.
  *
- * 1) Bring up the SD/StreamStorage, FileSystem
- * 3) Collect initial status information (Restart and Version)  mmSync
- * 4) Bring up the GPS.  (GPS assumes SS is up)
+ * Boot order
+ *
+ * 1) FileSystem (will turn SD on)
+ * 2) ImageManager.
+ * 3) OverWatch (for OWT functions)
+ * 4) DblkManager (determine where new data should be written)
+ * 5) Sync, write out a reboot record
+ * 6) GPS
  */
 
 configuration SystemBootC {
@@ -51,13 +56,24 @@ implementation {
 
   components FileSystemC   as FS;
   components ImageManagerC as IM;
+  components OverWatchC    as OW;
   components DblkManagerC  as DM;
   components mmSyncC       as SYNC;
   components GPS0C         as GPS;
 
   FS.Boot   -> MainC;
   IM.Boot   -> FS.Booted;
-  DM.Boot   -> IM.Booted;
+  OW.Boot   -> IM.Booted;
+
+  /*
+   * Note: If OWT (OverWatch TinyOS) determines that it has something to
+   * do it will set up and then exit without signalling OW.Booted.  This
+   * will let the OWT functions do their thing.
+   *
+   * If OWT isn't invoked then OW will signal Booted to let the normal
+   * boot sequence to occur.
+   */
+  DM.Boot   -> OW.Booted;
   SYNC.Boot -> DM.Booted;
   GPS.Boot  -> SYNC.Booted;
   Boot      =  GPS.Booted;
