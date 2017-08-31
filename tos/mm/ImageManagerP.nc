@@ -95,15 +95,15 @@ typedef enum {
 
 module ImageManagerP {
   provides {
-    interface ImageManager;
-    interface FileSystem as FS;
-    interface Boot as IMBooted;         /* outBoot */
+    interface Boot         as Booted;   /* outBoot */
+    interface ImageManager as IM;
   }
   uses {
     interface Boot;                     /* inBoot */
+    interface FileSystem   as FS;
+    interface Resource as SDResource;   /* SD we are managing */
     interface SDread;
     interface SDwrite;
-    interface Resource as SDResource;   /* SD we are managing */
     interface Panic;
   }
 }
@@ -677,7 +677,7 @@ implementation {
 
         im_state = IMS_IDLE;
         call SDResource.release();
-        signal IMBooted.booted();
+        signal Booted.booted();
         return;
 
       case IMS_FILL_WAITING:
