@@ -490,6 +490,9 @@ implementation {
   }
 
 
+  command error_t IM.dir_eject_active() { }
+
+
   /*
    *
    * finish: Writes any remaining bytes of data in the image working buffer to the disk. Marks image as valid.
