@@ -35,14 +35,18 @@
 /*
  * Definitions of what the Image Manager Directory Entry looks like
  *
- * The image manager (IMgr) has a limited number of image slots
- * that hold Tag images that can be loaded into the NIB region
- * for execution.
+ * The image manager (IM) controls a finite number of image slots
+ * that hold Tag images.  Each image is a candidate to be loaded into
+ * the NIB region for execution.
  *
- * The directory keeps track of what slots are used and what
- * image is loaded into that slot.
+ * The directory keeps track of what slots are used and what image is
+ * loaded into that slot.  It also keeps track of what the active and
+ * backup images are.  The Active is what is currently loaded into the
+ * NIB, while the backup is a previously executing image that will be
+ * loaded if the Active fails.
  *
- * Images are named by its ver_id.
+ * Images are named by its ver_id.  There can be at most one image
+ * loaded with a given ver_id.
  */
 
 #ifndef __IMAGE_MGR_H__
@@ -79,11 +83,11 @@
 
 typedef enum {
   SLOT_EMPTY = 0,
-  SLOT_FILLING,
-  SLOT_VALID,
-  SLOT_BACKUP,
-  SLOT_ACTIVE,
-  SLOT_EJECTED,
+  SLOT_FILLING,                         /* slot is being written */
+  SLOT_VALID,                           /* image is valid */
+  SLOT_BACKUP,                          /* image is valid and the backup */
+  SLOT_ACTIVE,                          /* image is valid and the active */
+  SLOT_EJECTED,                         /* image has failed and was ejected */
 } slot_state_t;
 
 
