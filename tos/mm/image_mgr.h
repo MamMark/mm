@@ -76,7 +76,7 @@
 #define IM_SLOT_SEC(x) (((IMAGE_SIZE_SECTORS * (x)) + 1) + IM_DIR_SEC)
 
 /* IM_SLOT_LAST_SEC is the last sector of the image on SD for slot (x) */
-#define IM_SLOT_LAST_SEC(x) (IM_SLOT_SEC(x) + IMAGE_SIZE_SECTORS)
+#define IM_SLOT_LAST_SEC(x) (IM_SLOT_SEC(x) + IMAGE_SIZE_SECTORS - 1)
 
 /* IM_SLOT_PTR is the pointer to the first byte of a slot (x) */
 #define IM_SLOT_PTR(x) ((IM_SLOT_SEC(x)) * (SD_BLOCKSIZE))
