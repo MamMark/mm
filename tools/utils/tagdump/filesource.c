@@ -7,17 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <message.h>
-#include "am_types.h"
+#include <typed_data.h>
 #include "filesource.h"
-#include "serialprotocol.h"
-#include "serialpacket.h"
-#include "DtSensorDataMsg.h"
-#include "DtSyncMsg.h"
-#include "DtRebootMsg.h"
-#include "gDTConstants.h"
-#include "gSensorIDs.h"
-#include "sync.h"
 
 /*
  * Number of empty sectors that will cause the dump to stop.
@@ -52,11 +43,14 @@ typedef enum {
 } gs_rtn_t;
 
 
+#ifdef notdef
 /*
  * sns_payload_len: allows an easy conversion from sensor id
  * to how many bytes in the payload.
  */
 extern uint8_t sns_payload_len[MM_NUM_SENSORS];
+#endif
+
 
 /*
  * Get Sector
@@ -208,7 +202,7 @@ get_sector(int fd, uint8_t *dbuff) {
  *
  * To avoid problems with alignment and endianess we use the message library.
  */
- 
+
 void
 resync(int fd, int ignore_cur, uint8_t *dbuff) {
   tmsg_t *msg;
@@ -347,43 +341,39 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
   gs_rtn_t rtn;
   tmsg_t *msg;
   uint16_t cur_dblk_len;
-  uint8_t cur_dtype, sns_id;
-  uint8_t hdr[3], *dptr;
+  uint16_t cur_dtype;
+  uint8_t  sns_id;
+  uint8_t *dptr;
+  dt_header_ts_t *hdr;
 
   *len = 0;
   restart = 0;
 
   for (;;) {
     /*
-     * get first two bytes.  This should be the length.
-     * big endian order.
+     * Read in the header (length and dtype).  Data is
+     * little endian order.  We assume our native order is
+     * also little endian.
      *
      * EOF is okay at the first byte.  Otherwise funny.
      *
      * If at anytime we get a GS_RESYNC indication we need to
-     * restart at the beginning of collecting the dblock.
+     * restart at the beginning of collecting the dblk.
      */
-    if ((rtn = get_next_sector_byte(fd, &hdr[0]))) {
-      if (rtn == GS_RESYNC)
-	continue;
-      return rtn;
+    dptr = (void *) bp;
+    hdr  = (void *) bp;
+    for (i = 0; i < 4; i++) {
+      if ((rtn = get_next_sector_byte(fd, &dptr[i]))) {
+        if (rtn == GS_RESYNC)
+          break;
+        return rtn;
+      }
     }
+    if (rtn == GS_RESYNC)
+      continue;
 
-    if ((rtn = get_next_sector_byte(fd, &hdr[1]))) {
-      if (rtn == GS_RESYNC)
-	continue;
-      return rtn;
-    }
-
-    cur_dblk_len = (hdr[0] << 8) + hdr[1];
-
-    if ((rtn = get_next_sector_byte(fd, &hdr[2]))) {
-      if (rtn == GS_RESYNC)
-	continue;
-      return rtn;
-    }
-
-    cur_dtype = hdr[2];
+    cur_dblk_len = hdr->len;
+    cur_dtype    = hdr->dtype;
 
     if(cur_dtype >= DT_MAX || cur_dblk_len < 3) {
       fprintf(stderr, "*** bad dblk header: type %d, len %d (on dblk fetch, no data)\n",
@@ -402,18 +392,22 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
       fprintf(stderr, "*** new_tmsg failed (null)\n");
       exit(2);
     }
+
+#ifdef notdef
     spacket_header_dispatch_set(msg, SERIAL_TOS_SERIAL_ACTIVE_MESSAGE_ID);
     spacket_header_dest_set(msg, 0xffff);
     spacket_header_src_set(msg, 0);
     spacket_header_length_set(msg, cur_dblk_len);
     spacket_header_group_set(msg, 0);
     spacket_header_type_set(msg, AM_MM_DT);	/* data, typed */
+#endif
+
     dptr = bp + spacket_data_offset(0);
     dptr[0] = hdr[0];
     dptr[1] = hdr[1];
     dptr[2] = hdr[2];
 
-    for (i = 3; i < cur_dblk_len; i++) {
+    for (i = 4; i < cur_dblk_len; i++) {
       if ((rtn = get_next_sector_byte(fd, &dptr[i]))) {
 	free_tmsg(msg);
 	if (rtn == GS_RESYNC) {
@@ -482,6 +476,7 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
       rtn = GS_OK;
       break;
 
+#ifdef notdef
     case DT_SENSOR_DATA:
       sns_id = dt_sensor_data_sns_id_get(msg);
       if (sns_id < 1 || sns_id >= MM_NUM_SENSORS) {
@@ -496,6 +491,7 @@ get_next_dblk(int fd, uint8_t *bp, int *len) {
       } else
 	rtn = GS_OK;
       break;
+#endif
 
 #ifdef notdef
     case DT_SENSOR_SET:
@@ -568,9 +564,9 @@ open_file_source(const char *file) {
  * max is max dblk (64K) + serial header size.  We fake the serial header
  * so need to provide room for it.
  */
-static uint8_t cur_dblk[64 * 1024 + SPACKET_SIZE];
+static uint8_t cur_dblk[64 * 1024];
 
-void *read_file_packet(int fd, int *len) {
+dt_header_t *read_file_dblk(int fd, int *len) {
   int l;
   void *packet;
   gs_rtn_t rtn;
@@ -587,12 +583,6 @@ void *read_file_packet(int fd, int *len) {
 	break;
     }
   }
-  packet = malloc(l);
-  if (!packet) {
-    fprintf(stderr, "*** malloc failed\n");
-    return NULL;
-  }
-  memcpy(packet, cur_dblk, l);
   *len = l;
-  return packet;
+  return (dt_header_t *) cur_dblk;
 }

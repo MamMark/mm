@@ -14,7 +14,7 @@ int open_file_source(const char *filename);
    Returns: the packet read (in newly allocated memory), and *len is
      set to the packet length
 */
-void *read_file_packet(int fd, int *len);
+dt_header_t *read_file_dblk(int fd, int *len);
 
 #ifdef __cplusplus
 }

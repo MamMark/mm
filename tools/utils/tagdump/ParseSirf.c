@@ -7,29 +7,11 @@
 #include <string.h>
 #include <time.h>
 
-#include <serialsource.h>
-#include <sfsource.h>
-#include <message.h>
 #include "filesource.h"
-#include "serialpacket.h"
-#include "serialprotocol.h"
 
-#include "gDTConstants.h"
 #include "ParseSirf.h"
-#include "GpsNavDataMsg.h"
-#include "GpsTrackerDataMsg.h"
-#include "GpsGeodeticDataMsg.h"
-#include "GpsDevDataMsg.h"
-#include "GpsSoftVersMsg.h"
-#include "GpsClockStatusMsg.h"
-#include "GpsPpsMsg.h"
-#include "GpsAlmanacStatusMsg.h"
-#include "DtGpsRawMsg.h"
-#include "GpsErrorMsg.h"
-#include "GpsUnkMsg.h"
-#include "GpsNavLibDataMsg.h"
 
-//From mmdump.c
+//From tagdump.c
 extern int debug,
            verbose,
            write_data;
@@ -63,7 +45,7 @@ parseSirf(tmsg_t *msg) {
       break;
     case 5:			// Raw Tracker Data
       parseRawTracker(msg);
-      break; 
+      break;
     case 6:			// Software Vers.
       parseSoftVers(msg);
       break;
@@ -102,12 +84,12 @@ parseSirf(tmsg_t *msg) {
       break;
     case 52:			//1 PPS Time
       parsePps(msg);
-      break; 
+      break;
     case 255:			//Development Data
       parseDevData(msg);
       break;
     default:
-      parseUnkMsg(msg);      
+      parseUnkMsg(msg);
       break;
   }
 }
@@ -137,7 +119,7 @@ parseNavData(tmsg_t *msg) {
   mode1 = gps_nav_data_mode1_get(msg);
   hdop = gps_nav_data_hdop_get(msg);
   mode2 = gps_nav_data_mode2_get(msg);
-  
+
   week = gps_nav_data_week_get(msg);
   tow = ((double)gps_nav_data_tow_get(msg))/100;
 
@@ -170,7 +152,7 @@ parseNavData(tmsg_t *msg) {
       break;
     case(6):
       fprintf(stderr,"3-D soln.  ");
-      break;  
+      break;
     case(7):
       fprintf(stderr,"DR soln.  ");
       break;
@@ -320,7 +302,7 @@ parseClockStat(tmsg_t *msg) {
   uint8_t   sats;
   uint32_t  drift;
   uint32_t  bias;
-  double    gpstime; 
+  double    gpstime;
 
   week = gps_clock_status_data_week_get(msg);
   tow = ((double)gps_clock_status_data_tow_get(msg))/100;
@@ -410,7 +392,7 @@ parseNavLibDataMeas(tmsg_t *msg) {
   mean_c_no = mean_c_no/10;
 
   fprintf(stderr, "sirf nav lib data measurements\n");
-  fprintf(stderr, "Sat ID: %d Mean C/No: %f\n", sat_id, mean_c_no); 
+  fprintf(stderr, "Sat ID: %d Mean C/No: %f\n", sat_id, mean_c_no);
   fprintf(stderr, "Channel: %d Time-in-track(ms): %d\n", chan, time_in_track);
 
   fprintf(stderr, "Integration Time(ms): ");
@@ -621,9 +603,9 @@ parsePps(tmsg_t *msg) {
   uint8_t  day;
   uint8_t  hr;
   uint8_t  min;
-  uint8_t  sec; 
+  uint8_t  sec;
   uint8_t  status;
-    
+
   year = gps_pps_data_year_get(msg);
   mo = gps_pps_data_mo_get(msg);
   day = gps_pps_data_day_get(msg);
