@@ -583,8 +583,8 @@ implementation {
           *im_buf_ptr++ = buf[x];
         }
         if (bytes_left) {
-          if (im_dir_cache.next_write_blk > im_dir_cache.dir.slots[im_filling_slot_id].end_blk)
-            im_panic(27, im_dir_cache.next_write_blk, im_filling_slot_id);
+          if (filling_slot_blk > filling_slot_blk_limit)
+            im_panic(27, filling_slot_blk, filling_slot_blk_limit);
 
           im_state = IMS_FILL_REQ_SD;
           call SDResource.request();
