@@ -58,6 +58,6 @@ implementation {
   components ImageManagerC as IM_C;
   OW_P.IM -> IM_C;
 
-  components PanicC;
-  OW_P.Panic -> PanicC;
+  components PlatformC;
+  OW_P.SysReboot -> PlatformC;
 }

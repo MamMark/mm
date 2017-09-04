@@ -73,7 +73,7 @@ module OverWatchP {
   uses {
     interface         Boot;             /* inBoot */
     interface         ImageManager as IM;
-    interface         Panic;
+    interface         SysReboot;
   }
 }
 implementation {

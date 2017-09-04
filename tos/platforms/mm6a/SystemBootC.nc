@@ -86,6 +86,9 @@ implementation {
    * do it will set up and then exit without signalling OW.Booted.  This
    * will let the OWT functions do their thing.
    *
+   * When OWT is finished, it will always reboot into a different operating
+   * mode.
+   *
    * If OWT isn't invoked then OW will signal Booted to let the normal
    * boot sequence to occur.
    */
