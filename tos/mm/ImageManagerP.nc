@@ -55,8 +55,22 @@ enum {
  * for interacting with the SD.  Used to collect (marshal) incoming
  * data for writing to the SD.
  *
- * im_filling_slot_blk (fsb): The block in the allocated slot that we are working
- * with.
+ * Image Manager Control Block:  The imcb collects all reasonable state
+ *   information about what the ImageManager is currently doing.
+ *
+ *   region_start_blk:  where the ImageManager's region starts and end.  Do
+ *   region_end_blk     not go outside these bounds.
+ *
+ *   filling_blk:       When writing a slot, filling_blk is the next block that
+ *   filling_limit_blk: will be written.  limit_blk is the limit of the slot
+ *                      do not exceed.
+ *
+ *   filling_slot_p:    pointer to the current slot we are filling.
+ *
+ *   buf_ptr:           When filling, buf_ptr keeps track of where in the
+ *                      IMWB we currently are working.
+ *   bytes_remaining:   how much space is remaining before filling the IMWB.
+ *
  *
  * *** State Machine Description
  *
@@ -93,6 +107,24 @@ typedef enum {
 } im_state_t;
 
 
+typedef struct {
+  uint32_t region_start_blk;            /* start/end region limits from  */
+  uint32_t region_end_blk;              /* file system                   */
+
+  image_dir_t dir;                      /* directory cache */
+
+  uint32_t filling_blk;                 /* filling, next block to write  */
+  uint32_t filling_limit_blk;           /* filling, limit of the slot    */
+
+  image_dir_slot_t *filling_slot_p;    /* filling, pnt to slot being filled */
+
+  uint8_t  *buf_ptr;                    /* filling, pntr into IMWB       */
+  uint16_t  bytes_remaining;            /* filling, bytes left in IMWB   */
+
+  im_state_t im_state;                  /* current state */
+} imcb_t;                               /* ImageManager Control Block (imcb) */
+
+
 module ImageManagerP {
   provides {
     interface Boot         as Booted;   /* outBoot */
@@ -108,34 +140,17 @@ module ImageManagerP {
   }
 }
 implementation {
-
-  im_state_t  im_state;                 /* current manager state */
+  /*
+   * IMWB: ImageManager Working Buffer, this buffer is used
+   * to accumulate incoming bytes when writing an image to a slot.
+   */
+  uint8_t     im_wrk_buf[SD_BUF_SIZE] __attribute__((aligned(4)));
 
   /*
-   * Image directory cache is a copy of the directory from the Image Area
-   * on the SD.
-   *
-   * It holds changes made to the directory prior to being committed.
+   * control cells, imcb, ImageManager Control Block
    */
-  image_dir_cache_t im_dir_cache;
+  imcb_t imcb;
 
-  /*
-   * control cells used when filling a slot
-   */
-  uint32_t    filling_slot_blk;         /* where on the sd we are writing */
-  uint32_t    filling_slot_blk_limit;   /* upper limit of current slot */
-
-  uint8_t     im_wrk_buf[SD_BUF_SIZE];  /* working buffer. */
-  uint8_t    *im_buf_ptr;               /* pntr into above buffer */
-  uint16_t    im_bytes_remaining;       /* remaining bytes in above */
-  image_dir_entry_t                     /* directory slot being filled */
-             *im_filling_slot_p;
-
-  uint8_t   im_wrk_buf[SD_BUF_SIZE];    /* working buffer. */
-  uint8_t  *im_buf_ptr;                 /* pntr into above buffer */
-  uint16_t  im_bytes_remaining;         /* remaining bytes in above */
-  uint16_t  im_filling_slot_id;         /* index of the slot being filled */
-  image_dir_entry_t *im_filling_slot_p;
 
   void im_warn(uint8_t where, parg_t p0, parg_t p1) {
     call Panic.warn(PANIC_IM, where, p0, p1, 0, 0);

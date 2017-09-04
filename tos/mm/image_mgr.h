@@ -124,13 +124,4 @@ typedef struct {                /* Image Directory */
   uint32_t          chksum;
 } image_dir_t;
 
-
-typedef struct {                /* cache, superset of directory */
-  image_dir_t dir;              /* dir cache */
-  uint32_t    start_blk;        /* start/end region limits from */
-  uint32_t    end_blk;          /* file system */
-  uint32_t    next_write_blk;   /* cur slot being write, block to write */
-  uint32_t    limit_write_blk;  /* cur slot limit */
-} image_dir_cache_t;
-
 #endif  /* __IMAGE_MGR_H__ */
