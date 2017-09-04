@@ -849,6 +849,8 @@ void timer_check() {
 #endif
 
 
+extern void owl_startup();
+
 void start() __attribute__((alias("__Reset")));
 void __Reset() {
   uint32_t *from;
@@ -890,6 +892,8 @@ void __Reset() {
   __watchdog_init();
   __pins_init();
   __map_ports();
+
+//  owl_startup();                        /* see if overwatch wants to do something */
 
   __system_init();
 

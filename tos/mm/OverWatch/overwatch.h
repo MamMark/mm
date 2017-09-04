@@ -36,27 +36,53 @@
 #define __OVERWATCH_H__
 
 /*
+ * return codes for owl_startup
+ */
+
+typedef enum {
+  OWLS_CONTINUE = 0,
+  OWLS_REBOOT,
+  OWLS_BOOT_NIB,
+} owls_rtn_t;
+
+
+/*
+ * definintions for NIB access
+ *
+ * NIB_BASE:    where the NIB image starts
+ * NIB_INFO:    where the NIB's image_info block starts
+ * NIB_VEC_COUNT: count of how many vectors need to be summed when verifing
+ *              the NIBs vector table.  Each entry is 4 bytes wide.
+ */
+
+#define NIB_BASE        0x00020000
+#define NIB_INFO        (NIB_BASE + 0x140)
+#define NIB_VEC_COUNT   (64 + 14 + 2)
+
+
+/*
  * ow_boot_mode_t
  *
- * The Overwatcher supports three possible bootable instances:
- *
- * NIB        Normal Image Block (Bank 1).
- *            The installable application code is in bank 1 of
- *            Flash (upper 128K)
- *
- * OWT        Overwatcher TinyOS.
- *            The Golden Image implementing the Overwatch
- *            functionality.  OWT is OverWatch Tinyos.  It is
- *            a specialized application and support infrastructure
- *            for implementing Overwatch functionality.
+ * The OverWatcher supports three possible bootable instances:
  *
  * GOLD       Factory installed "Golden" image of the Tag
  *            application code.  Handles Chirp mode?
  *            When all else fails this is the image we run.
+ *
+ * OWT        OverWatch TinyOS.
+ *            The Golden Image implementing the OverWatch
+ *            functionality.  OWT is OverWatch Tinyos.  It is
+ *            a specialized application and support infrastructure
+ *            for implementing OverWatch functionality.
+ *
+ * NIB        Normal Image Block (Bank 1).
+ *            The installable application code is in bank 1 of
+ *            Flash (upper 128K)
  */
+
 typedef enum {
-  OW_BOOT_OWT   = 0,                    //  [default]
-  OW_BOOT_GOLD  = 1,
+  OW_BOOT_GOLD  = 0,
+  OW_BOOT_OWT   = 1,
   OW_BOOT_NIB   = 2,
 } ow_boot_mode_t;
 
@@ -64,26 +90,22 @@ typedef enum {
 /*
  * ow_request_t
  *
- * When a running image needs to make a request of Overwatch
+ * When a running image needs to make a request of OverWatch
  * these are the possible requests that can be made.
+ *
+ * REQ_BOOT     boot according to boot_mode
  *
  * REQ_INSTALL  Install new code image into the NIB (Bank 1).
  *              Image is marked as active in the Image Directory.
  *
- * REQ_REBOOT   Reboot the current ow_boot_mode, test for too
- *              many boot failures and fall back accordingly.
- *
- * REQ_OWT      Boot into the Overwatch TinyOS application.
- * REQ_GOLD     Boot into the Golden image (bank 0).
- * REQ_NIB      Boot into the Normal Image Block (bank 1).
+ * REQ_REBOOT   Running image crashed.  Reboot the current ow_boot_mode,
+ *               test for too many boot failures and fall back accordingly.
  */
+
 typedef enum  {
-  OW_REQ_NONE           = 0,            //   [default]
+  OW_REQ_BOOT           = 0,            /* just boot, see ow_boot_mode */
   OW_REQ_INSTALL        = 1,
-  OW_REQ_REBOOT         = 2,
-  OW_REQ_OWT            = 3,
-  OW_REQ_GOLD           = 4,
-  OW_REQ_NIB            = 5,
+  OW_REQ_REBOOT         = 2,            /* crash, rebooting */
 } ow_request_t;
 
 
@@ -91,34 +113,39 @@ typedef enum  {
  * OWT implements the following actions.  For various reasons
  * these actions must be handled using TinyOS code.
  *
- * ACT_INIT     The OW control block reinialized and we must
- *              determine what is a reasonable boot state.
- *              This information is out on the SD and we need
- *              to ask the ImageManager for the current state.
+ * ACT_INIT     The OW control block has been reinitialized and we must
+ *              determine what is our current boot state.  This information
+ *              is out on the SD so we need to ask the ImageManager for the
+ *              current state.
  *
  * ACT_INSTALL  OWT will install the SD image marked as active into
  *              the NIB and reboot.
  *
- * ACT_EJECT      The currently executing image (must be NIB) has had
- *              too many problems.  Mark it as ejected, and make the
+ * ACT_EJECT    The currently executing image (it must be the NIB) has
+ *              had too many problems.  Mark it as ejected, and make the
  *              Backup Image (if present) as the new active.  (Will
  *              need to be installed.
  *
- *              If not backup is available, then run the Golden
- *              image.
+ *              If no backup is available, then run the Golden image.
  */
+
 typedef enum  {
-  OWT_ACT_INIT          = 0,            //   [default]
-  OWT_ACT_INSTALL       = 1,
-  OWT_ACT_EJECT         = 2,
+  OWT_ACT_NONE = 0,
+  OWT_ACT_INIT,
+  OWT_ACT_INSTALL,
+  OWT_ACT_EJECT,
 } owt_action_t;
 
 
+/* Reboot reasons */
 typedef enum {
-  OWE_OK             = 0,
-  OWE_PANIC,
-  OWE_HARD_FAULT,
-} ow_reboot_reasion_t;
+  ORR_NONE              = 0,
+  ORR_FAIL,                             /* catch all for the time being */
+  ORR_PWR_FAIL,                         /* lost the control block, full pwr fail */
+  ORR_PANIC,
+  ORR_HARD_FAULT,
+  ORR_BAD_OWT_ACT,
+} ow_reboot_reason_t;
 
 
 /*
@@ -135,29 +162,43 @@ typedef enum {
  * ow_control_block_t
  */
 typedef struct {
-  uint32_t           ow_sig;
-  uint32_t           cycle;
-  uint32_t           time;
-  ow_request_t       ow_req;
-  ow_reboot_reasion_t
-                     reboot_reason;
-  uint8_t            ow_from_nib;
+  uint32_t           ow_sig_a;
+  uint32_t           cycle;             /* req input, time since last boot */
+  uint32_t           time;              /* req input, time since last boot */
+  ow_request_t       ow_req;            /* req input */
+  ow_reboot_reason_t reboot_reason;     /* req input */
+  uint8_t            ow_from_nib;       /* input */
 
-  ow_boot_mode_t     ow_boot_mode;
-  owt_action_t       owt_action;
+  ow_boot_mode_t     ow_boot_mode;      /* control knob */
+  owt_action_t       owt_action;        /* input to OWT, further actions */
+
+  uint32_t           strange;           /* strange shit */
+  uint32_t           vec_chk_fail;
+  uint32_t           image_chk_fail;
+
+  uint32_t           ow_sig_b;
 
   /*
    * Persistent storage.
    *
-   * Overwatch keeps track of some system parameters.
+   * OverWatch keeps track of some system parameters.
    * This is persistent in that it survives across reboots.
-   * However it is not nonvolitle ram and doesn't survice
+   * However it is not nonvolitle ram and doesn't survive
    * across power fails.
+   *
+   * "elapsed" cells keep a running total of how long we have been
+   * up since last full pwr cycle (full means we lost RAM).
+   *
+   *   elapsed_upper is essentially cycle
+   *   elapsed_lower is the lower 32 bits of ms time.
    */
 
   uint32_t      elapsed_lower;
   uint32_t      elapsed_upper;
-  uint32_t      reboot_counts;
+  uint32_t      reboot_count;
+  ow_reboot_reason_t
+                last_reboot_reason;
+  uint32_t      ow_sig_c;
 } ow_control_block_t;
 
 

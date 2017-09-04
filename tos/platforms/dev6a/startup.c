@@ -44,8 +44,10 @@
 #include <platform.h>
 #include <platform_clk_defs.h>
 #include <platform_pin_defs.h>
+#include <platform_reset_defs.h>
 #include <platform_version.h>
 #include <image_info.h>
+#include <overwatch.h>
 
 #ifndef nop
 #define nop() __asm volatile("nop")
@@ -79,8 +81,8 @@ extern uint32_t __image_length__;
 
 const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   .sig          = IMAGE_INFO_SIG,
-  .vector_chk   = 0xAFBEADDE,        /*  */
-  .image_chk    = 0xAFBEADDE,         /* big endian 0xDEADBEAF, readable as bytes */
+  .vector_chk   = 0xAFBEADDE,         /* 32 bit checksum over the vector table */
+  .image_chk    = 0xAFBEADDE,         /* 32 bit checksum over full image size. */
   .image_length = (uint32_t) &__image_length__,
   .ver_id       = { .major = MAJOR, .minor = MINOR, .build = _BUILD },
   .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV }
@@ -895,10 +897,42 @@ void timer_check() {
 }
 
 
+extern owls_rtn_t owl_startup();
+
+void owl_finish(uint32_t base, owls_rtn_t rtn) {
+  switch (rtn) {
+    case OWLS_REBOOT:
+      SYSCTL->REBOOT_CTL = (PRD_RESET_KEY | SYSCTL_REBOOT_CTL_REBOOT);
+      break;
+
+    case OWLS_BOOT_NIB:
+      __asm__ volatile (
+        "  ldr sp, [r0] \n"
+        "  ldr pc, [r0, #4] \n" );
+      break;
+
+    case OWLS_CONTINUE:
+      return;
+  }
+}
+
+
 void start() __attribute__((alias("__Reset")));
 void __Reset() {
   uint32_t *from;
   uint32_t *to;
+  owls_rtn_t owls_rtn;
+
+  /* make sure interrupts are disabled */
+  __disable_irq();
+
+  /* and make sure we have an appropriate VTOR.  GoldenOW uses 0x0000000
+   * while NIB images use 0x00020000.  __vectors should always have the
+   * correct value.
+   */
+  __DSB(); __ISB();
+  SCB->VTOR = (uint32_t) &__vectors;
+  __DSB(); __ISB();
 
   /* we do this early because of SMCLK.  Later can move into pins_init */
   __map_ports();                /* change P2, P3, P7 mapping */
@@ -929,9 +963,17 @@ void __Reset() {
   P8->DIR = 0x61;
   P8->SEL1 = 1;                 /* TA1.0 (OUT0) */
 
-  __disable_irq();
+//  __disable_irq();
   __watchdog_init();
   __pins_init();
+
+  /*
+   * invoke overwatch low level to see how we should proceed.
+   */
+  if (SCB->VTOR == 0) {
+    owls_rtn = owl_startup();
+    owl_finish(NIB_BASE, owls_rtn);
+  }
 
   __system_init();
 
