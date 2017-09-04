@@ -557,7 +557,7 @@ implementation {
    * return: error_t
    */
 
-  command error_t IM.finish(image_ver_t ver_id) {
+  command error_t IM.finish() {
     error_t err;
 
     verify_IM_dir();

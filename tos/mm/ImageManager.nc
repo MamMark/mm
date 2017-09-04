@@ -41,7 +41,7 @@ interface ImageManager {
   command uint32_t write(uint8_t *buf, uint32_t len);
   event   void     write_continue();
 
-  command error_t finish(image_ver_t ver_id);
+  command error_t finish();
   event   void    finish_complete();
 
   command error_t delete(image_ver_t ver_id);
