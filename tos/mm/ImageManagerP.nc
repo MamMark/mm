@@ -276,6 +276,17 @@ implementation {
    * cells are reasonable.
    *
    * If not, panic.
+   *
+   * needs to check:
+   *
+   * change name to verify_IM
+   * check state within bounds
+   * valid control structures.
+   * signatures
+   * checksum
+   * at most one active
+   * at most one backup
+   * buf_ptr NULL or within bounds
    */
   void verify_IM_dir() { }
 
