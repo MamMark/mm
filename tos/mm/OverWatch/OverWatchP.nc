@@ -41,13 +41,144 @@ ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")))
 
 
 /*
- * OverWatcherP
+ * 32 bit checksum.
  *
- * This is the TinyOS module providing the primary Overwatch TinyOS
- * functionality.  Minimal low level functions are provided by OWL
- * (OverWatch Lowlevel) but those are kept to a minimum.  Higher level
- * functionality is provided by OWT (OverWatch Tinyos) and that
- * functionality is provided by this module.
+ * perform a 32 bit wide Little endian checksum.  Yields a 32 bit result.
+ *
+ * Accesses are done 32 bits wide.  Since little endian, the fetch will
+ * reverse the byte order from a strict byte access ordering.
+ *
+ * Buffer is required to be aligned to a 4 byte (32 bit) alignment.  If not
+ * will return 0.
+ *
+ * Additional references will be 4 bytes wide (aligned), will be fetched
+ * and byte swapped (ie. addr 4 will give us 7-6-5-4) and added to the sum.
+ *
+ * There may be some left over remanents.  Let's say we are at address
+ * 0x100 with 2 bytes remaining.  We fetch 0x100, 103-102-101-100.  But we
+ * only want 101 and 100 to be included in the sum.  So we AND the result
+ * with 0x0000FFFF.
+ *
+ * This routine is written for 32 bit processors that have a memory system
+ * optimized for 32 bit accesses.
+ *
+ * Initial alignment is forced to be aligned because dealing with startup
+ * unaligned conditions is a royal pain and isn't needed in most cases.
+ *
+ */
+
+uint32_t checksum32(uint8_t *buf, uint32_t len) {
+  uint32_t  sum;
+  uint32_t *ptr;
+  uint32_t  last;
+  uint32_t  mask;
+
+  if ((uintptr_t) buf & 3)
+    bkpt();
+
+  if (!len || !buf || ((uintptr_t) buf) & 3)
+    return 0;
+
+  ptr = (void *) buf;
+  while (len > 3) {
+    sum += *ptr++;
+    len -= 4;
+  }
+  if (len) {
+    /*
+     * ptr points at the long word that holds the remnant
+     * ptr will still be aligned.
+     *
+     * 103-102-101-100: 0x000000FF 0x0000FFFF 0x00FFFFFF
+     * remaining len             1       2        3
+     */
+    last = *ptr;
+    mask = 0xffffffff >> ((4-len) * 8);
+    sum += (last & mask);
+  }
+  return sum;
+}
+
+
+/*
+ * good_nib_vectors: verify nib vectors
+ *
+ * Quick verification of some sense of reasonableness before launching
+ * the NIB  image.
+ *
+ * 1) Verify the signature of the image_info block.
+ * 2) extract the vector checksum, vector_chk
+ * 3) calculate vector across the vector table.
+ * 4) add vector_chk.  result should be zero.
+ */
+bool good_nib_vectors() {
+  image_info_t *iip;
+  uint32_t      vec_sum;
+  uint32_t     *vecs;
+  int           i;
+
+  iip  = (image_info_t *) NIB_INFO;
+  if (iip->sig != IMAGE_INFO_SIG)
+    return FALSE;
+  vec_sum = 0;
+  vecs = (uint32_t *) NIB_BASE;
+  for (i = 0; i < NIB_VEC_COUNT; i++)
+    vec_sum += vecs[i];
+  vec_sum += iip->vector_chk;
+  if (vec_sum) {
+    ow_control_block.vec_chk_fail++;
+    return FALSE;
+  }
+  return TRUE;
+}
+
+
+/*
+ * good_nib_flash: verify nib flash
+ *
+ * Check the NIB image.  Verify its checksum.
+ *
+ * 1) Verify the signature of the image_info block.
+ * 2) extract the image size from the structure.  This is in bytes.
+ * 3) calculate the checksum across the entire image.
+ *
+ * The checksum is calulated using 32 bit wide accesses.  The last
+ * access may not be evenly aligned (32 bit alignment).  The last
+ * access will be anded to remove any extra bytes.  They are set to
+ * zero.  Keep in mind that the last access is fetching 32 bits
+ * and it is little endian.  The mask must compensate.
+ *
+ * The checksum must result in zero to pass.
+ */
+bool good_nib_flash() {
+  image_info_t *iip;
+  uint32_t      image_sum;
+  uint32_t     *image;
+  uint32_t      i, count, left;
+  uint32_t      last;
+
+  iip  = (image_info_t *) NIB_INFO;
+  if (iip->sig != IMAGE_INFO_SIG)
+    return FALSE;
+  image_sum = 0;
+  image = (uint32_t *) NIB_BASE;
+  count = iip->image_length;
+  left  = count & 0x3;
+  count = count >> 2;
+  for (i = 0; i < count; i++)
+    image_sum += image[i];
+  if (left) {
+    last = image[i];
+    last &= (0xffffffff << (left * 8));
+    image_sum += last;
+  }
+  if (image_sum) {
+    ow_control_block.image_chk_fail++;
+    return FALSE;
+  }
+  return TRUE;
+}
+
  *
  * OWL runs very early in the initial startup code (startup.c) after a full
  * PowerOn Reset (POR) occurs.  (the critical trigger is the zeroing of VTOR,
