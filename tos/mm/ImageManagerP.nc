@@ -93,6 +93,7 @@ typedef enum {
   IMS_IDLE                      = 0,
   IMS_INIT_REQ_SD,
   IMS_INIT_READ_DIR,
+  IMS_INIT_SYNC_WRITE,
   IMS_FILL_WAITING,
   IMS_FILL_REQ_SD,
   IMS_FILL_WRITING,
@@ -103,7 +104,7 @@ typedef enum {
   IMS_DELETE_SYNC_REQ_SD,
   IMS_DELETE_SYNC_WRITE,
   IMS_DELETE_COMPLETE,
-  IMS_DSA_DIR,                          /* dir_set_active, writing directory state */
+  IMS_DSA_DIR,
 } im_state_t;
 
 
@@ -688,6 +689,24 @@ implementation {
          * check for all zeroes.  If so then it is part of the
          * initial scenerio and needs to be initialized.
          */
+        dir = &imcb.dir;
+        if (chk_zero(im_wrk_buf, SD_BLOCKSIZE)) {
+          dir->dir_sig   = IMAGE_DIR_SIG;
+          dir->dir_sig_a = IMAGE_DIR_SIG;
+          for (i = 0; i < IMAGE_DIR_SLOTS; i++)
+            dir->slots[i].start_sec =
+              imcb.region_start_blk + ((IMAGE_SIZE_SECTORS * i) + 1);
+          chksum = checksum8((void *) dir, sizeof(*dir));
+          dir->chksum = 0 - chksum;
+
+          chksum = checksum8((void *) dir, sizeof(*dir));
+
+          memcpy(im_wrk_buf, dir, sizeof(*dir));
+          imcb.im_state = IMS_INIT_SYNC_WRITE;
+          err = call SDwrite.write(imcb.region_start_blk, im_wrk_buf);
+          if (err)
+            im_panic(4, err, 0);
+          return;
         }
 
         /* verify sig and checksum */
@@ -721,6 +740,11 @@ implementation {
         im_panic(33, imcb.im_state, 0);
         return;
 
+      case IMS_INIT_SYNC_WRITE:
+        imcb.im_state = IMS_IDLE;
+        call SDResource.release();
+        signal Booted.booted();
+        return;
 
       case IMS_FILL_WRITING:
         imcb.im_state = IMS_FILL_WAITING;
