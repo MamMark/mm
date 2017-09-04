@@ -69,18 +69,6 @@
 #define IMAGE_DIR_SLOTS 4
 #define IMAGE_DIR_SIG   0x17254172
 
-/* IM_DIR_SEC is the sector number  where the IM directory lives */
-#define IM_DIR_SEC im_dir_cache.start_blk
-
-/* IM_SLOT_SEC is the sector where the image lives on SD for slot (x) */
-#define IM_SLOT_SEC(x) (((IMAGE_SIZE_SECTORS * (x)) + 1) + IM_DIR_SEC)
-
-/* IM_SLOT_LAST_SEC is the last sector of the image on SD for slot (x) */
-#define IM_SLOT_LAST_SEC(x) (IM_SLOT_SEC(x) + IMAGE_SIZE_SECTORS - 1)
-
-/* IM_SLOT_PTR is the pointer to the first byte of a slot (x) */
-#define IM_SLOT_PTR(x) ((IM_SLOT_SEC(x)) * (SD_BLOCKSIZE))
-
 typedef enum {
   SLOT_EMPTY = 0,
   SLOT_FILLING,                         /* slot is being written */
