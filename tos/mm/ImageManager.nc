@@ -38,7 +38,7 @@ interface ImageManager {
   command error_t alloc(image_ver_t ver_id);
   command error_t alloc_abort(image_ver_t ver_id);
 
-  command uint16_t write(uint8_t *buf, uint16_t len, error_t err);
+  command uint32_t write(uint8_t *buf, uint32_t len);
   event   void     write_continue();
 
   command error_t finish(image_ver_t ver_id);

@@ -608,9 +608,9 @@ implementation {
    * ImageManager.write(...).
    */
 
-  command uint16_t IM.write(uint8_t *buf, uint16_t len, error_t err) {
-    uint16_t copy_len;
-    uint16_t bytes_left;
+  command uint32_t IM.write(uint8_t *buf, uint32_t len) {
+    uint32_t copy_len;
+    uint32_t bytes_left;
 
     verify_IM_dir();
     if (imcb.im_state != IMS_FILL_WAITING) {
