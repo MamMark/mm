@@ -92,8 +92,8 @@ typedef enum {
 
 
 /*
- * Directory Entry: each directory slot is controlled by one
- * directory entry.
+ * Directory Slot: each directory slot is controlled by one
+ * directory slot entry.
  *
  * ver_id: the unique name for the image in this slot.
  * s0:     the start absolute blk id where the slot starts.
@@ -103,7 +103,7 @@ typedef struct {                /* Dir Slot structure   */
   uint32_t     s0;              /* starting slot sector */
   image_ver_t  ver_id;
   slot_state_t slot_state;
-} image_dir_entry_t;
+} image_dir_slot_t;
 
 
 /*
@@ -119,7 +119,7 @@ typedef struct {                /* Dir Slot structure   */
 
 typedef struct {                /* Image Directory */
   uint32_t          dir_sig;
-  image_dir_entry_t slots[IMAGE_DIR_SLOTS];
+  image_dir_slot_t  slots[IMAGE_DIR_SLOTS];
   uint32_t          dir_sig_a;
   uint32_t          chksum;
 } image_dir_t;

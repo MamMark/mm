@@ -55,7 +55,7 @@ interface ImageManager {
 
   command bool check_fit(uint32_t len);
 
-  command image_dir_entry_t *dir_get_active();
-  command image_dir_entry_t *dir_get_dir(uint8_t idx);
-  command image_dir_entry_t *dir_find_ver(image_ver_t ver_id);
+  command image_dir_slot_t *dir_get_active();
+  command image_dir_slot_t *dir_get_dir(uint8_t idx);
+  command image_dir_slot_t *dir_find_ver(image_ver_t ver_id);
 }
