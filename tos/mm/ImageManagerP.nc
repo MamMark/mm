@@ -384,14 +384,19 @@ implementation {
    * output: none
    * return: error_t    SUCCESS,  all good.  slot marked empty
    *                    FAIL,     no alloc in progress (panic)
+   *
+   * alloc_abort can only be called in IMS_FILL_WAITING.  This
+   * means if IM.write ever returns non-zero, one MUST wait
+   * for a IM.write_complete before calling alloc_abort.
+   *
+   * Needs to be looked at.  FIX ME.
    */
 
   command error_t IM.alloc_abort(image_ver_t ver_id) {
     image_dir_slot_t * slot_p;
 
     verify_IM_dir();
-    if (imcb.im_state < IMS_FILL_WAITING &&
-        imcb.im_state > IMS_FILL_SYNC_WRITE) {
+    if (imcb.im_state != IMS_FILL_WAITING) {
       im_panic(10, imcb.im_state, 0);
       return FAIL;
     }
