@@ -30,6 +30,19 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * 0) review statemachine vs. implementation
+ * 1) directory checksum
+ * 2) verify_IM
+ * 3) alloc_abort (current or more robust)
+ *    no need to change.  current is fine.
+ * 4) dir_set_active dir sync
+ * 5) dir_set_backup
+ * 6) dir_eject_active
+ * 7) delete active scenerio vs eject
+ *    no need.  no delete active or inactivate needed.
+ *
+ * Unit testing.
  */
 
 #include <panic.h>
@@ -488,7 +501,6 @@ implementation {
 
 
   /*
-   *
    * dir_get_dir: Returns a pointer to the dir slot indexed by idx
    *
    * input:  idx
@@ -512,10 +524,6 @@ implementation {
    * output: none
    * return: error_t
    *
-   * needs to check for ver existence.
-   * needs to find current active.
-   * switch current active to backup
-   * set ver entry to ACTIVE
    * start a cache flush
    */
 
