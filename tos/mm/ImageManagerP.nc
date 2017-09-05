@@ -85,7 +85,6 @@ enum {
  * FILL_SYNC_WRITE     write directory to update image finish.
  * DELETE_SYNC_REQ_SD  req SD for directory flush for delete.
  * DELETE_SYNC_WRITE   Flush directory cache for new empty entry
- * DELETE_COMPLETE     ????
  * DSA_DIR
  */
 
@@ -94,16 +93,17 @@ typedef enum {
   IMS_INIT_REQ_SD,
   IMS_INIT_READ_DIR,
   IMS_INIT_SYNC_WRITE,
+
   IMS_FILL_WAITING,
   IMS_FILL_REQ_SD,
   IMS_FILL_WRITING,
+
   IMS_FILL_LAST_REQ_SD,
   IMS_FILL_LAST_WRITE,
   IMS_FILL_SYNC_REQ_SD,
   IMS_FILL_SYNC_WRITE,
   IMS_DELETE_SYNC_REQ_SD,
   IMS_DELETE_SYNC_WRITE,
-  IMS_DELETE_COMPLETE,
   IMS_DSA_DIR,
 } im_state_t;
 
