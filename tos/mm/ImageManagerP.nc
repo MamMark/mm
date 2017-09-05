@@ -557,6 +557,16 @@ implementation {
   }
 
 
+  /*
+   * dir_set_backup: set the specified image to BACKUP
+   *
+   * Image has to be present and VALID.  Will not change any other state
+   * to BACKUP.
+   *
+   * Forces a dir sync.
+   */
+  command error_t IM.dir_set_backup(image_ver_t ver_id) { }
+
   command error_t IM.dir_eject_active() { }
 
 
@@ -805,6 +815,7 @@ implementation {
   default event void IM.finish_complete()           { bkpt(); }
   default event void IM.delete_complete()           { bkpt(); }
   default event void IM.dir_set_active_complete()   { bkpt(); }
+  default event void IM.dir_set_backup_complete()   { bkpt(); }
   default event void IM.dir_eject_active_complete() { bkpt(); }
 
   async event void Panic.hook() { }

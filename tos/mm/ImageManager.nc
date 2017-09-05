@@ -50,6 +50,9 @@ interface ImageManager {
   command error_t dir_set_active(image_ver_t ver_id);
   event   void    dir_set_active_complete();
 
+  command error_t dir_set_backup(image_ver_t ver_id);
+  event   void    dir_set_backup_complete();
+
   command error_t dir_eject_active();
   event   void    dir_eject_active_complete();
 
