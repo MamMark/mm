@@ -571,11 +571,13 @@ implementation {
 
 
   /*
+   * finish: an image is finished.
    *
-   * finish: Writes any remaining bytes of data in the image working buffer to the disk. Marks image as valid.
-   * Commits image data to image directory.
+   * o make sure any remainging data is written to the slot from the working buffer.
+   * o Mark image as valid.
+   * o sync the directory.
    *
-   * input: buf, len
+   * input:  none
    * output: none
    * return: error_t
    */
