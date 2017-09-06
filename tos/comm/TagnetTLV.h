@@ -88,6 +88,20 @@ typedef enum {
   TN_INFO_SENS_GPS_ID,
   TN_INFO_SENS_GPS_XYZ_ID,
 
+  TN_SD_ID,
+  TN_SD_NID_ID,
+  TN_SD_DEV_0_ID,
+  TN_SD_DEV_0_IMG_ID,
+
+  TN_SYS_ID,
+  TN_SYS_NID_ID,
+  TN_SYS_BOOT_ID,
+  TN_SYS_BOOT_SWITCH_ID,
+  TN_SYS_BOOT_ACTIVE_ID,
+  TN_SYS_BOOT_BACKUP_ID,
+  TN_SYS_BOOT_GOLDEN_ID,
+  TN_SYS_BOOT_NIB_ID,
+
   TN_LAST_ID
 } tn_ids_t;
 
@@ -121,6 +135,20 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   {TN_INFO_SENS_ID,"\001\004sens","\001\011sensor help",UQ_TN_INFO_SENS},
   {TN_INFO_SENS_GPS_ID,"\001\003gps","\001\013sens_gps help",UQ_TN_INFO_SENS_GPS},
   {TN_INFO_SENS_GPS_XYZ_ID,"\001\003xyz","\001\017sens_gps_xyz help",UQ_TN_INFO_SENS_GPS_XYZ},
+
+  {TN_SD_ID,"\001\002sd","\001\007sd help",UQ_TN_SD},
+  {TN_SD_NID_ID,TN_BCAST_NID_TLV,"\1\11sd_nid help",UQ_TN_SD_NID},
+  {TN_SD_DEV_0_ID,"\002\001\000","\001\009sd_0 help",UQ_TN_SD_DEV_0},
+  {TN_SD_DEV_0_IMG_ID,"\001\003img","\001\014sd_0_img help",UQ_TN_SD_DEV_0_IMG},
+
+  {TN_SYS_ID,"\001\002sys","\001\008sys help",UQ_TN_SYS},
+  {TN_SYS_NID_ID,TN_BCAST_NID_TLV,"\1\12sys_nid help",UQ_TN_SYS_NID},
+  {TN_SYS_BOOT_ID,"\001\004\boot","\001\013sys_boot help",UQ_TN_SYS_BOOT},
+  {TN_SYS_BOOT_SWITCH_ID,"\001\002sw","\001\016boot_switch help",UQ_TN_SYS_BOOT_SWITCH},
+  {TN_SYS_BOOT_ACTIVE_ID,"\001\002sw","\001\016boot_active help",UQ_TN_SYS_BOOT_ACTIVE},
+  {TN_SYS_BOOT_BACKUP_ID,"\001\002sw","\001\016boot_backup help",UQ_TN_SYS_BOOT_BACKUP},
+  {TN_SYS_BOOT_GOLDEN_ID,"\001\002sw","\001\016boot_golden help",UQ_TN_SYS_BOOT_GOLDEN},
+  {TN_SYS_BOOT_NIB_ID,   "\001\002sw","\001\013boot_nib help",   UQ_TN_SYS_BOOT_NIB},
 };
 
 /*
