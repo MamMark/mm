@@ -1,0 +1,25 @@
+
+Checksum performance:
+
+Simple Checksum.sum32_aligned
+Simple Checksum.sum8
+
+units some form of uSecs, T32 timer, main DCO 16MiHz
+
+                (unoptimized)           (unrolled x 32)
+                Flash   SRAM            Flash   SRAM
+
+    8KiB, 32    1924    1540            969     585
+    8KiB, 8     5634    4098
+
+    16KiB       3844    3076            1930    1161
+    16KiB       11265   8194
+
+    32KiB       7684    6158            3849    2314
+    32KiB       22529   16386
+
+    64KiB       15364   12292           7689    4618
+    64KiB       45068   32770
+
+    128KiB      30724                   15370
+    128KiB      114700
