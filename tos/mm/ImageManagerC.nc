@@ -63,6 +63,9 @@ implementation {
   IM_P.SDread     -> SD;
   IM_P.SDwrite    -> SD;
 
+  components ChecksumM;
+  IM_P.Checksum -> ChecksumM;
+
   components PanicC;
   IM_P.Panic -> PanicC;
 }

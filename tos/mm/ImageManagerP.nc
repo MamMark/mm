@@ -148,6 +148,7 @@ module ImageManagerP {
     interface Boot;                     /* inBoot */
     interface FileSystem   as FS;
     interface Resource as SDResource;   /* SD we are managing */
+    interface Checksum;
     interface SDread;
     interface SDwrite;
     interface Panic;
@@ -688,8 +689,8 @@ implementation {
 
 
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
+    uint32_t checksum;
     image_dir_t *dir;
-    uint32_t chksum;
     int i;
 
     switch (imcb.im_state) {
@@ -716,11 +717,9 @@ implementation {
           for (i = 0; i < IMAGE_DIR_SLOTS; i++)
             dir->slots[i].start_sec =
               imcb.region_start_blk + ((IMAGE_SIZE_SECTORS * i) + 1);
-          chksum = checksum8((void *) dir, sizeof(*dir));
-          dir->chksum = 0 - chksum;
-
-          chksum = checksum8((void *) dir, sizeof(*dir));
-
+          checksum = call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
+          dir->chksum = 0 - checksum;
+          checksum = call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
           memcpy(im_wrk_buf, dir, sizeof(*dir));
           imcb.im_state = IMS_INIT_SYNC_WRITE;
           err = call SDwrite.write(imcb.region_start_blk, im_wrk_buf);
