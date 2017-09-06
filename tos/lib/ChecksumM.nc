@@ -33,22 +33,6 @@
  */
 
 /*
- * Various checksum routines
- */
-
-uint32_t __checksum8(uint8_t *buf, uint32_t len) {
-  uint32_t  sum;
-
-  sum = 0;
-  while (len) {
-    sum += *buf++;
-    len--;
-  }
-  return sum;
-}
-
-
-/*
  * __checksum32_aligned: 32 bit checksum, aligned buffer
  *
  * perform a 32 bit wide Little endian checksum.  Yields a 32 bit result.
@@ -87,11 +71,23 @@ uint32_t __checksum32_aligned(uint8_t *buf, uint32_t len) {
   if ((uintptr_t) buf & 3)
     bkpt();
 
-  if (!len || !buf || ((uintptr_t) buf) & 3)
+  if (!len || ((uintptr_t) buf) & 3)
     return 0;
 
   sum = 0;
   ptr = (void *) buf;
+
+  while (len > 32) {
+    sum += *ptr++;                      /* 4 */
+    sum += *ptr++;                      /* 8 */
+    sum += *ptr++;                      /* 12 */
+    sum += *ptr++;                      /* 16 */
+    sum += *ptr++;                      /* 20 */
+    sum += *ptr++;                      /* 24 */
+    sum += *ptr++;                      /* 28 */
+    sum += *ptr++;                      /* 32 */
+    len -= 32;
+  }
   while (len > 3) {
     sum += *ptr++;
     len -= 4;
@@ -116,11 +112,6 @@ module ChecksumM {
   provides interface Checksum;
 }
 implementation {
-  command uint32_t Checksum.sum8(uint8_t *buf, uint32_t len) {
-    return __checksum8(buf, len);
-  }
-
-
   command uint32_t Checksum.sum32_aligned(uint8_t *buf, uint32_t len) {
     return __checksum32_aligned(buf, len);
   }

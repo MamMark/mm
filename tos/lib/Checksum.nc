@@ -37,6 +37,5 @@
  */
 
 interface Checksum {
-  command uint32_t sum8(uint8_t *buf, uint32_t len);
   command uint32_t sum32_aligned(uint8_t *buf, uint32_t len);
 }
