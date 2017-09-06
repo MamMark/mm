@@ -175,22 +175,6 @@ implementation {
   }
 
 
-  uint32_t checksum8(uint8_t *buf, uint32_t len) {
-    uint32_t  sum;
-
-    if (!len || !buf) {
-      bkpt();
-      return 0;
-    }
-
-    while (len) {
-      sum += *buf++;
-      len--;
-    }
-    return sum;
-  }
-
-
   /*
    * check for a zero buffer.
    *

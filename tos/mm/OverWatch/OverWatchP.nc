@@ -41,66 +41,6 @@ ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")))
 
 
 /*
- * 32 bit checksum.
- *
- * perform a 32 bit wide Little endian checksum.  Yields a 32 bit result.
- *
- * Accesses are done 32 bits wide.  Since little endian, the fetch will
- * reverse the byte order from a strict byte access ordering.
- *
- * Buffer is required to be aligned to a 4 byte (32 bit) alignment.  If not
- * will return 0.
- *
- * Additional references will be 4 bytes wide (aligned), will be fetched
- * and byte swapped (ie. addr 4 will give us 7-6-5-4) and added to the sum.
- *
- * There may be some left over remanents.  Let's say we are at address
- * 0x100 with 2 bytes remaining.  We fetch 0x100, 103-102-101-100.  But we
- * only want 101 and 100 to be included in the sum.  So we AND the result
- * with 0x0000FFFF.
- *
- * This routine is written for 32 bit processors that have a memory system
- * optimized for 32 bit accesses.
- *
- * Initial alignment is forced to be aligned because dealing with startup
- * unaligned conditions is a royal pain and isn't needed in most cases.
- *
- */
-
-uint32_t checksum32(uint8_t *buf, uint32_t len) {
-  uint32_t  sum;
-  uint32_t *ptr;
-  uint32_t  last;
-  uint32_t  mask;
-
-  if ((uintptr_t) buf & 3)
-    bkpt();
-
-  if (!len || !buf || ((uintptr_t) buf) & 3)
-    return 0;
-
-  ptr = (void *) buf;
-  while (len > 3) {
-    sum += *ptr++;
-    len -= 4;
-  }
-  if (len) {
-    /*
-     * ptr points at the long word that holds the remnant
-     * ptr will still be aligned.
-     *
-     * 103-102-101-100: 0x000000FF 0x0000FFFF 0x00FFFFFF
-     * remaining len             1       2        3
-     */
-    last = *ptr;
-    mask = 0xffffffff >> ((4-len) * 8);
-    sum += (last & mask);
-  }
-  return sum;
-}
-
-
-/*
  * good_nib_vectors: verify nib vectors
  *
  * Quick verification of some sense of reasonableness before launching
