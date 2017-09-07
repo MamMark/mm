@@ -122,6 +122,10 @@ typedef enum {
 } im_state_t;
 
 
+/*
+ * filling_slot_p and buf_ptr will be NULL when not in a FILLING meta state
+ * will be valid while in a FILLING meta state
+ */
 typedef struct {
   uint32_t region_start_blk;            /* start/end region limits from  */
   uint32_t region_end_blk;              /* file system                   */
@@ -573,6 +577,8 @@ implementation {
       return FAIL;
     }
     dealloc_slot(ver_id);
+    imcb.buf_ptr = NULL;
+    imcb.filling_slot_p = NULL;
     imcb.im_state = IMS_IDLE;
     return SUCCESS;
   }
@@ -953,6 +959,8 @@ implementation {
 
       case IMS_FILL_SYNC_WRITE:
         imcb.im_state = IMS_IDLE;
+        imcb.buf_ptr = NULL;
+        imcb.filling_slot_p = NULL;
         call SDResource.release();
         signal IM.finish_complete();
         return;
