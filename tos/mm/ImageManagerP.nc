@@ -647,6 +647,11 @@ implementation {
   }
 
 
+  command bool IM.dir_coherent() {
+    return imcb.im_state == IMS_IDLE;
+  }
+
+
   /*
    * dir_get_active: return the dir entry for the current active image if any.
    *
