@@ -287,13 +287,13 @@ implementation {
    * at most one backup
    * buf_ptr NULL or within bounds
    */
-  void verify_IM_dir() { }
+  void verify_IM() {
 
 
   void write_dir_cache() {
     error_t err;
 
-    verify_IM_dir();
+    verify_IM();
     memcpy(im_wrk_buf, &imcb.dir, sizeof(imcb.dir));
     if ((err = call SDwrite.write(imcb.region_start_blk, im_wrk_buf))) {
       im_panic(3, err, 0);
@@ -357,7 +357,7 @@ implementation {
 
     /*
      * first make sure we don't already know about this version.
-     * dir_find_ver also does a verify_IM_dir.
+     * dir_find_ver also does a verify_IM.
      */
     if (call IM.dir_find_ver(ver_id))
       return EALREADY;
@@ -394,7 +394,7 @@ implementation {
   command error_t IM.alloc_abort(image_ver_t ver_id) {
     image_dir_slot_t * slot_p;
 
-    verify_IM_dir();
+    verify_IM();
     if (imcb.im_state != IMS_FILL_WAITING) {
       im_panic(10, imcb.im_state, 0);
       return FAIL;
@@ -432,7 +432,7 @@ implementation {
   command error_t IM.delete(image_ver_t ver_id) {
     image_dir_slot_t *slot_p;
 
-    verify_IM_dir();
+    verify_IM();
     if (imcb.im_state != IMS_IDLE) {
       im_panic(13, imcb.im_state, 0);
       return FAIL;
@@ -459,7 +459,7 @@ implementation {
    */
 
   command image_dir_slot_t *IM.dir_find_ver(image_ver_t ver_id) {
-    verify_IM_dir();
+    verify_IM();
     return dir_find_ver(ver_id);
   }
 
@@ -477,7 +477,7 @@ implementation {
     image_dir_t *dir;
     int i;
 
-    verify_IM_dir();
+    verify_IM();
     dir = &imcb.dir;
     for (i = 0; i < IMAGE_DIR_SLOTS; i++)
       if (dir->slots[i].slot_state == SLOT_ACTIVE)
@@ -495,7 +495,7 @@ implementation {
    */
 
   command image_dir_slot_t *IM.dir_get_dir(uint8_t idx) {
-    verify_IM_dir();
+    verify_IM();
     if (idx >= IMAGE_DIR_SLOTS)
       return NULL;
     return &imcb.dir.slots[idx];
@@ -516,7 +516,7 @@ implementation {
   command error_t IM.dir_set_active(image_ver_t ver_id) {
     image_dir_slot_t *newp, *activep;
 
-    verify_IM_dir();
+    verify_IM();
     if (imcb.im_state != IMS_IDLE) {
       im_panic(22, imcb.im_state, 0);
       return FAIL;
@@ -571,7 +571,7 @@ implementation {
   command error_t IM.finish() {
     error_t err;
 
-    verify_IM_dir();
+    verify_IM();
     if (imcb.im_state != IMS_FILL_WAITING) {
       im_panic(24, imcb.im_state, 0);
       return FAIL;
@@ -623,7 +623,7 @@ implementation {
     uint32_t copy_len;
     uint32_t bytes_left;
 
-    verify_IM_dir();
+    verify_IM();
     if (imcb.im_state != IMS_FILL_WAITING) {
       im_panic(25, imcb.im_state, 0);
       return 0;
@@ -731,7 +731,7 @@ implementation {
 
         /* verify sig and checksum */
         memcpy(dir, im_wrk_buf, sizeof(*dir));
-        verify_IM_dir();
+        verify_IM();
 
         imcb.im_state = IMS_IDLE;
         call SDResource.release();
