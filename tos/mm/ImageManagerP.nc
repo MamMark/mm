@@ -118,6 +118,7 @@ typedef enum {
   IMS_DELETE_SYNC_REQ_SD,
   IMS_DELETE_SYNC_WRITE,
   IMS_DSA_DIR,
+  IMS_MAX
 } im_state_t;
 
 

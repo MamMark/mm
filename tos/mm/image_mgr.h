@@ -76,6 +76,7 @@ typedef enum {
   SLOT_BACKUP,                          /* image is valid and the backup */
   SLOT_ACTIVE,                          /* image is valid and the active */
   SLOT_EJECTED,                         /* image has failed and was ejected */
+  SLOT_MAX
 } slot_state_t;
 
 
