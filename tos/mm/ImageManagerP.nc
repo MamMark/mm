@@ -74,6 +74,7 @@ enum {
  *   region_start_blk:  where the ImageManager's region starts and end.  Do
  *   region_end_blk     not go outside these bounds.
  *
+ *   dir                directory cache, ram copy of IM dir
  *   filling_blk:       When writing a slot, filling_blk is the next block that
  *   filling_limit_blk: will be written.  limit_blk is the limit of the slot
  *                      do not exceed.
@@ -83,6 +84,7 @@ enum {
  *   buf_ptr:           When filling, buf_ptr keeps track of where in the
  *                      IMWB we currently are working.
  *   bytes_remaining:   how much space is remaining before filling the IMWB.
+ *   im_state:          current state of the ImageManager
  *
  *
  * *** State Machine Description
@@ -163,6 +165,8 @@ implementation {
   /*
    * IMWB: ImageManager Working Buffer, this buffer is used
    * to accumulate incoming bytes when writing an image to a slot.
+   *
+   * The IMWB is aligned to allow quad word aligned access, ie chk_zero.
    */
   uint8_t     im_wrk_buf[SD_BUF_SIZE] __attribute__((aligned(4)));
 
