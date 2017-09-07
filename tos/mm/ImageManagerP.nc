@@ -109,14 +109,14 @@ typedef enum {
   IMS_INIT_READ_DIR,
   IMS_INIT_SYNC_WRITE,
 
-  IMS_FILL_WAITING,
-  IMS_FILL_REQ_SD,
-  IMS_FILL_WRITING,
+  IMS_FILL_WAITING,             /* filling states through FILL_SYNC_WRITE */
+  IMS_FILL_REQ_SD,              /* these are grouped together as the      */
+  IMS_FILL_WRITING,             /* FILLING meta state                     */
 
   IMS_FILL_LAST_REQ_SD,
   IMS_FILL_LAST_WRITE,
   IMS_FILL_SYNC_REQ_SD,
-  IMS_FILL_SYNC_WRITE,
+  IMS_FILL_SYNC_WRITE,          /* end of filling states */
   IMS_DELETE_SYNC_REQ_SD,
   IMS_DELETE_SYNC_WRITE,
   IMS_DSA_DIR,
