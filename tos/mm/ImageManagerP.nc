@@ -276,18 +276,191 @@ implementation {
    *
    * If not, panic.
    *
-   * needs to check:
-   *
-   * change name to verify_IM
-   * check state within bounds
-   * valid control structures.
-   * signatures
-   * checksum
-   * at most one active
-   * at most one backup
    * buf_ptr NULL or within bounds
    */
   void verify_IM() {
+    uint32_t checksum;
+    image_dir_t *dir;
+    image_dir_slot_t *slot_p;
+    parg_t panic_val;
+    uint32_t slot_start, slot_end;
+    int i;
+    int active_count;
+    int backup_count;
+    bool fsp_found;
+    bool bail;
+
+    bail = FALSE;
+    panic_val = 0;
+
+    do {
+
+      /*
+       * validate control structures
+       *
+       * 1) check IM state
+       * 2) check region bounds
+       * 3) directory scan
+       *    . signature
+       *    . checksum
+       *    . entry state
+       *    . start_sec valid for slot and within bounds
+       *    . find filling_slot_p if any
+       *    . count active and backup if any
+       * 4) check for correct number of active and backups
+       * 5) If Filling
+       *    . check filling_slot_p reasonable (see dir scan)
+       *    . buf_ptr, bytes_remaining
+       *    . filling_blk, filling_limit_blk point into valid slot
+       * 6) If not filling
+       *    fsp_found (should be FALSE)
+       *    buf_ptr and filling_slot_p should be NULL
+       */
+
+      /* Check IM state within bounds */
+      if (imcb.im_state < IMS_IDLE ||
+          imcb.im_state >= IMS_MAX) {
+        panic_val = 1;
+        break;
+      }
+
+      /* region start / end block check */
+      if (imcb.region_start_blk != call FS.area_start(FS_LOC_IMAGE)
+          || imcb.region_end_blk != call FS.area_end(FS_LOC_IMAGE)) {
+        panic_val = 2;
+        break;
+      }
+
+      /*
+       * do directory checks first.
+       */
+      dir = &imcb.dir;
+
+      /* Check the directory signatures */
+      if (dir->dir_sig != IMAGE_DIR_SIG
+          || dir->dir_sig_a != IMAGE_DIR_SIG) {
+        panic_val = 3;
+        break;
+      }
+
+      /* Check the checksum, should return 0 if dir is valid */
+      checksum = call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
+      if (checksum) {
+        panic_val = 4;
+        break;
+      }
+
+      fsp_found = FALSE;
+      active_count = 0;
+      backup_count = 0;
+      for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
+        /*
+         * Check slot state
+         * Check FSP Match
+         * Check start sec
+         */
+        slot_p = &imcb.dir.slots[i];
+        if (slot_p->slot_state < SLOT_EMPTY ||
+            slot_p->slot_state >= SLOT_MAX) {
+          panic_val = 5;
+          bail = TRUE;
+          break;
+        }
+        if (slot_p->slot_state == SLOT_ACTIVE)
+          active_count++;
+        if (slot_p->slot_state == SLOT_BACKUP)
+          backup_count++;
+
+        /* check for filling_slot_p presence */
+        if (slot_p == imcb.filling_slot_p) {
+          fsp_found = TRUE;
+          if (slot_p->slot_state != SLOT_FILLING) {
+            panic_val = 6;
+            bail = TRUE;
+            break;
+          }
+          slot_start = slot_p->start_sec;
+          slot_end   = slot_p->start_sec + IMAGE_SIZE - 1;
+        }
+        if (slot_p->start_sec != (imcb.region_start_blk + ((IMAGE_SIZE_SECTORS * i) + 1))) {
+          panic_val = 7;
+          bail = TRUE;
+          break;
+        }
+        if (slot_p->start_sec < imcb.region_start_blk ||
+            slot_p->start_sec > imcb.region_end_blk) {
+          panic_val = 8;
+          bail = TRUE;
+          break;
+        }
+      }
+      if (bail = TRUE)
+        break;
+
+      /*
+       * directory scan complete
+       *
+       * how many active/backups found
+       */
+      if (active_count > 1 || backup_count > 1) {
+          panic_val = 9;
+          break;
+      }
+
+      if (imcb.im_state >= IMS_FILL_WAITING &&
+          imcb.im_state <= IMS_FILL_SYNC_WRITE) {
+        /*
+         * In a FILLING state, do FILLING checks
+         */
+        if (!fsp_found) {
+          panic_val = 10;
+          break;
+        }
+
+        /*
+         * Check filling_blk, filling_limit_blk
+         * the slot block is defined by filling_slot_p->start_sec
+         * and filling_limit_blk is calculated from start_sec.
+         *
+         * slot_start and end are set above and are the limits we
+         * check against.
+         */
+
+        if (imcb.filling_blk < slot_start ||
+            imcb.filling_blk > slot_end   ||
+            imcb.filling_limit_blk < slot_start ||
+            imcb.filling_limit_blk > slot_end ||
+            imcb.filling_blk > imcb.filling_limit_blk) {
+          panic_val = 11;
+          break;
+        }
+
+        /*
+         * filling so buf_ptr must be either within bounds of the
+         * IMWB or just beyond (im_wrk_buf[SD_BUF_SIZE])
+         */
+        if (imcb.buf_ptr < im_wrk_buf ||
+            imcb.buf_ptr > &im_wrk_buf[SD_BUF_SIZE]) {
+          panic_val = 12;
+          break;
+        }
+
+      } else {
+        /*
+         * not filling, verify reasonableness
+         *
+         * fsp_found should be FALSE
+         * buf_ptr and filling_slot_p should both be NULL
+         */
+        if (fsp_found || imcb.buf_ptr || imcb.filling_slot_p) {
+          panic_val = 13;
+          break;
+        }
+      }
+    } while (0);
+    if (panic_val)
+      im_panic(2, panic_val, imcb.im_state, 0);
+  }
 
 
   void write_dir_cache() {
@@ -635,8 +808,8 @@ implementation {
       bytes_left = 0;
     } else {
       copy_len = imcb.bytes_remaining;
-      bytes_left = len - copy_len;
       imcb.bytes_remaining = 0;
+      bytes_left = len - copy_len;
     }
 
     memcpy(imcb.buf_ptr, buf, copy_len);
