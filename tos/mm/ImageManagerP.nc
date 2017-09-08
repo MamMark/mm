@@ -333,8 +333,8 @@ implementation {
       }
 
       /* region start / end block check */
-      if (imcb.region_start_blk != call FS.area_start(FS_LOC_IMAGE)
-          || imcb.region_end_blk != call FS.area_end(FS_LOC_IMAGE)) {
+      if (imcb.region_start_blk != call FS.area_start(FS_LOC_IMAGE) ||
+          imcb.region_end_blk != call FS.area_end(FS_LOC_IMAGE)) {
         panic_val = 2;
         break;
       }
@@ -345,8 +345,8 @@ implementation {
       dir = &imcb.dir;
 
       /* Check the directory signatures */
-      if (dir->dir_sig != IMAGE_DIR_SIG
-          || dir->dir_sig_a != IMAGE_DIR_SIG) {
+      if (dir->dir_sig != IMAGE_DIR_SIG ||
+          dir->dir_sig_a != IMAGE_DIR_SIG) {
         panic_val = 3;
         break;
       }
@@ -402,7 +402,7 @@ implementation {
           break;
         }
       }
-      if (bail = TRUE)
+      if (bail)
         break;
 
       /*
@@ -467,7 +467,7 @@ implementation {
       }
     } while (0);
     if (panic_val)
-      im_panic(2, panic_val, imcb.im_state, 0);
+      im_panic(2, panic_val, imcb.im_state);
   }
 
 
