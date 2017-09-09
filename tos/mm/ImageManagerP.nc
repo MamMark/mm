@@ -568,23 +568,30 @@ implementation {
    */
 
   command error_t IM.delete(image_ver_t ver_id) {
-    image_dir_slot_t *slot_p;
+    image_dir_t *dir;
+    image_dir_slot_t *sp;
+    error_t err;
 
-    verify_IM();
     if (imcb.im_state != IMS_IDLE) {
       im_panic(13, imcb.im_state, 0);
       return FAIL;
     }
 
-    slot_p  = call IM.dir_find_ver(ver_id);
-    if (!slot_p) {
+    /* dir_find_ver does the call to verify_IM */
+    sp  = call IM.dir_find_ver(ver_id);
+    if (!sp) {
       im_panic(14, imcb.im_state, 0);
       return FAIL;
     }
-    slot_p->slot_state = SLOT_EMPTY;
+    sp->slot_state = SLOT_EMPTY;
+    dir = &imcb.dir;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
     imcb.im_state = IMS_DELETE_SYNC_REQ_SD;
-    call SDResource.request();
+    err = call SDResource.request();
+    if (err) {
+      im_panic(15, err, 0);
+      return FAIL;
+    }
     return SUCCESS;
   }
 
@@ -669,24 +676,32 @@ implementation {
    */
 
   command error_t IM.dir_set_active(image_ver_t ver_id) {
+    image_dir_t *dir;
     image_dir_slot_t *newp, *activep;
 
-    verify_IM();
     if (imcb.im_state != IMS_IDLE) {
       im_panic(22, imcb.im_state, 0);
       return FAIL;
     }
 
+    /* dir_find_ver does the call to verify_IM */
     newp = call IM.dir_find_ver(ver_id);
+
+    /*
+     * the image being proposed for the new active needs to exist
+     * and must be in the VALID state.
+     */
     if ((!newp) || (newp->slot_state != SLOT_VALID)) {
-      im_panic(23, imcb.im_state, 0);
+      im_panic(23, imcb.im_state, (parg_t) newp);
       return FAIL;
     }
+
+    /* If we have an active, switch it to backup */
     activep = call IM.dir_get_active();
-    /* If we have an active, switch to backup */
     if (activep)
       activep->slot_state = SLOT_BACKUP;
     newp->slot_state = SLOT_ACTIVE;
+    dir = &imcb.dir;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
 
     /*
@@ -723,19 +738,16 @@ implementation {
 
   command error_t IM.finish() {
     error_t err;
+    image_dir_t *dir;
 
-    verify_IM();
     if (imcb.im_state != IMS_FILL_WAITING) {
       im_panic(24, imcb.im_state, 0);
       return FAIL;
     }
+    verify_IM();
     imcb.filling_slot_p->slot_state = SLOT_VALID;
+    dir = &imcb.dir;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
-    err = call SDResource.request();
-    if (err) {
-      im_panic(24, err, 0);
-      return FAIL;
-    }
 
     /*
      * if there are no bytes in the IMWB then immediately transition
@@ -744,6 +756,11 @@ implementation {
     if (imcb.bytes_remaining == SD_BLOCKSIZE)
       imcb.im_state = IMS_FILL_SYNC_REQ_SD;
     else imcb.im_state = IMS_FILL_LAST_REQ_SD;
+    err = call SDResource.request();
+    if (err) {
+      im_panic(24, err, 0);
+      return FAIL;
+    }
     return SUCCESS;
   }
 
@@ -775,13 +792,14 @@ implementation {
   command uint32_t IM.write(uint8_t *buf, uint32_t len) {
     uint32_t copy_len;
     uint32_t bytes_left;
+    error_t  err;
 
-    verify_IM();
     if (imcb.im_state != IMS_FILL_WAITING) {
       im_panic(25, imcb.im_state, 0);
       return 0;
     }
 
+    verify_IM();
     if (len <= imcb.bytes_remaining) {
       copy_len = len;
       imcb.bytes_remaining -= len;
@@ -796,7 +814,11 @@ implementation {
     imcb.buf_ptr += copy_len;
     if (bytes_left) {
       imcb.im_state = IMS_FILL_REQ_SD;
-      call SDResource.request();
+      err = call SDResource.request();
+      if (err) {
+        im_panic(26, err, 0);
+        return FAIL;
+      }
     }
     return bytes_left;
   }
@@ -846,6 +868,7 @@ implementation {
     uint32_t checksum;
     image_dir_t *dir;
     int i;
+    error_t err;
 
     switch (imcb.im_state) {
       default:
@@ -889,7 +912,11 @@ implementation {
       case IMS_FILL_WAITING:
         imcb.filling_slot_p->slot_state = SLOT_VALID;
         dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
-        call SDResource.request();
+        err = call SDResource.request();
+        if (err) {
+          im_panic(32, err, 0);
+          return FAIL;
+        }
 
         /*
          * If the buffer is empty, then just sync the directory
