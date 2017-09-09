@@ -469,7 +469,7 @@ implementation {
 
   command error_t IM.alloc(image_ver_t ver_id) {
     image_dir_t *dir;
-    image_dir_slot_t *sp, *ep;
+    image_dir_slot_t *sp, *ep;          /* slot ptr, empty ptr */
     imcb_t *imcp;
     int i;
 
@@ -867,65 +867,44 @@ implementation {
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
     image_dir_t *dir;
     int i;
-    error_t err;
 
     dir = &imcb.dir;
-    switch (imcb.im_state) {
-      default:
-        im_panic(30, imcb.im_state, 0);
-        return;
-
-      case IMS_INIT_READ_DIR:
-        if (err) {
-          im_panic(31, err, 0);
-          return;
-        }
-
-        /*
-         * we just completed reading the directory sector.
-         *
-         * check for all zeroes.  If so then it is part of the
-         * initial scenerio and needs to be initialized.
-         */
-        if (chk_zero(im_wrk_buf, SD_BLOCKSIZE)) {
-          dir->dir_sig   = IMAGE_DIR_SIG;
-          dir->dir_sig_a = IMAGE_DIR_SIG;
-          for (i = 0; i < IMAGE_DIR_SLOTS; i++)
-            dir->slots[i].start_sec =
-              imcb.region_start_blk + ((IMAGE_SIZE_SECTORS * i) + 1);
-
-          dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
-          imcb.im_state = IMS_INIT_SYNC_WRITE;
-          write_dir_cache();
-          return;
-        }
-
-        memcpy(dir, im_wrk_buf, sizeof(*dir));
-        verify_IM();
-
-        imcb.im_state = IMS_IDLE;
-        call SDResource.release();
-        signal Booted.booted();
-        return;
-
-      case IMS_FILL_WAITING:
-        imcb.filling_slot_p->slot_state = SLOT_VALID;
-        dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
-        err = call SDResource.request();
-        if (err) {
-          im_panic(32, err, 0);
-          return FAIL;
-        }
-
-        /*
-         * If the buffer is empty, then just sync the directory
-         * Otherwise first write out the last block of the slot
-         */
-        if (imcb.bytes_remaining == SD_BLOCKSIZE)
-             imcb.im_state = IMS_FILL_SYNC_REQ_SD;
-        else imcb.im_state = IMS_FILL_LAST_REQ_SD;
-        return;
+    if (imcb.im_state != IMS_INIT_READ_DIR) {
+      im_panic(30, imcb.im_state, err);
+      return;
     }
+
+    /*
+     * we just completed reading the directory sector.
+     *
+     * check for all zeroes.  If so we need to initialize the
+     * directory to empty with proper start_sec fields.
+     */
+    nop();
+    if (chk_zero(im_wrk_buf, SD_BLOCKSIZE)) {
+      dir->dir_sig   = IMAGE_DIR_SIG;
+      dir->dir_sig_a = IMAGE_DIR_SIG;
+      for (i = 0; i < IMAGE_DIR_SLOTS; i++)
+        dir->slots[i].start_sec =
+          imcb.region_start_blk + ((IMAGE_SIZE_SECTORS * i) + 1);
+
+      dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
+      imcb.im_state = IMS_INIT_SYNC_WRITE;
+      write_dir_cache();
+      return;
+    }
+
+    /*
+     * non-zero directory sectory, read in the directory and
+     * check for validity.
+     */
+    memcpy(dir, im_wrk_buf, sizeof(*dir));
+    verify_IM();
+
+    imcb.im_state = IMS_IDLE;
+    call SDResource.release();
+    signal Booted.booted();
+    return;
   }
 
 
