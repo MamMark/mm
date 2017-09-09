@@ -416,8 +416,7 @@ implementation {
     error_t err;
 
     verify_IM();
-    memcpy(im_wrk_buf, &imcb.dir, sizeof(imcb.dir));
-    if ((err = call SDwrite.write(imcb.region_start_blk, im_wrk_buf))) {
+    if ((err = call SDwrite.write(imcb.region_start_blk, (void *) &imcb.dir))) {
       im_panic(3, err, 0);
       return;
     }
