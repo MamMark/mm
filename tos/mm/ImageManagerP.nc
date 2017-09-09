@@ -238,6 +238,7 @@ implementation {
 
     slot_p->slot_state = SLOT_FILLING;
     slot_p->ver_id = ver_id;
+    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
     return slot_p;
   }
 
@@ -274,6 +275,7 @@ implementation {
       return FAIL;
     }
     slot_p->slot_state = SLOT_EMPTY;
+    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
     return SUCCESS;
   }
 
@@ -627,6 +629,7 @@ implementation {
       return FAIL;
     }
     slot_p->slot_state = SLOT_EMPTY;
+    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
     imcb.im_state = IMS_DELETE_SYNC_REQ_SD;
     call SDResource.request();
     return SUCCESS;
@@ -723,6 +726,7 @@ implementation {
       activep->slot_state = SLOT_BACKUP;
     }
     newp->slot_state = SLOT_ACTIVE;
+    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
 
     /*
      * directory has been updated.  Fire up a dir flush
@@ -765,7 +769,7 @@ implementation {
       return FAIL;
     }
     imcb.filling_slot_p->slot_state = SLOT_VALID;
-
+    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
     err = call SDResource.request();
     if (err) {
       im_panic(24, err, 0);
@@ -906,18 +910,13 @@ implementation {
           for (i = 0; i < IMAGE_DIR_SLOTS; i++)
             dir->slots[i].start_sec =
               imcb.region_start_blk + ((IMAGE_SIZE_SECTORS * i) + 1);
-          checksum = call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
-          dir->chksum = 0 - checksum;
-          checksum = call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
-          memcpy(im_wrk_buf, dir, sizeof(*dir));
+
+          dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
           imcb.im_state = IMS_INIT_SYNC_WRITE;
-          err = call SDwrite.write(imcb.region_start_blk, im_wrk_buf);
-          if (err)
-            im_panic(4, err, 0);
+          write_dir_cache();
           return;
         }
 
-        /* verify sig and checksum */
         memcpy(dir, im_wrk_buf, sizeof(*dir));
         verify_IM();
 
@@ -928,6 +927,7 @@ implementation {
 
       case IMS_FILL_WAITING:
         imcb.filling_slot_p->slot_state = SLOT_VALID;
+        dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
         call SDResource.request();
 
         /*
