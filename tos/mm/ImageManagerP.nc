@@ -32,15 +32,9 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * 0) review statemachine vs. implementation
- * 1) directory checksum
- * 2) verify_IM
- * 3) alloc_abort (current or more robust)
- *    no need to change.  current is fine.
  * 4) dir_set_active dir sync
  * 5) dir_set_backup
  * 6) dir_eject_active
- * 7) delete active scenerio vs eject
- *    no need.  no delete active or inactivate needed.
  *
  * Unit testing.
  */
