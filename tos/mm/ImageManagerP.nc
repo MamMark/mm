@@ -251,21 +251,6 @@ implementation {
   }
 
 
-  image_dir_slot_t *dir_find_ver(image_ver_t ver_id) {
-    image_dir_t *dir;
-    image_dir_slot_t *slot_p;
-    int i;
-
-    dir = &imcb.dir;
-    for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
-      slot_p = &dir->slots[i];
-      if (cmp_ver_id(&(slot_p->ver_id), &ver_id))
-        return slot_p;
-    }
-    return NULL;
-  }
-
-
   /*
    * verify that the current state of Image Manager control
    * cells are reasonable.
@@ -631,8 +616,19 @@ implementation {
    */
 
   command image_dir_slot_t *IM.dir_find_ver(image_ver_t ver_id) {
+    image_dir_t *dir;
+    image_dir_slot_t *sp;
+    int i;
+
+    dir = &imcb.dir;
     verify_IM();
-    return dir_find_ver(ver_id);
+    for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
+      sp = &dir->slots[i];
+      if ((sp->slot_state >= SLOT_VALID) &&
+          cmp_ver_id(&(sp->ver_id), &ver_id))
+        return sp;
+    }
+    return NULL;
   }
 
 
