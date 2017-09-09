@@ -719,12 +719,9 @@ implementation {
       return FAIL;
     }
     activep = call IM.dir_get_active();
-    if (activep) {
-      /*
-       * got one, we have to switch it to backup
-       */
+    /* If we have an active, switch to backup */
+    if (activep)
       activep->slot_state = SLOT_BACKUP;
-    }
     newp->slot_state = SLOT_ACTIVE;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
 
