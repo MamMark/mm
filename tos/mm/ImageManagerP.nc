@@ -113,7 +113,12 @@ typedef enum {
   IMS_FILL_SYNC_WRITE,          /* end of filling states */
   IMS_DELETE_SYNC_REQ_SD,
   IMS_DELETE_SYNC_WRITE,
-  IMS_DSA_DIR,
+  IMS_DSA_SYNC_REQ_SD,          /* dir_set_active */
+  IMS_DSA_SYNC_WRITE,
+  IMS_DSB_SYNC_REQ_SD,          /* dir_set_backup */
+  IMS_DSB_SYNC_WRITE,
+  IMS_EJECT_SYNC_REQ_SD,        /* dir_eject_active */
+  IMS_EJECT_SYNC_WRITE,
   IMS_MAX
 } im_state_t;
 
@@ -131,7 +136,7 @@ typedef struct {
   uint32_t filling_blk;                 /* filling, next block to write  */
   uint32_t filling_limit_blk;           /* filling, limit of the slot    */
 
-  image_dir_slot_t *filling_slot_p;    /* filling, pnt to slot being filled */
+  image_dir_slot_t *filling_slot_p;     /* filling, pnt to slot being filled */
 
   uint8_t  *buf_ptr;                    /* filling, pntr into IMWB       */
   uint16_t  bytes_remaining;            /* filling, bytes left in IMWB   */
