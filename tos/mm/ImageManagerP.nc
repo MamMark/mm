@@ -211,38 +211,6 @@ implementation {
   }
 
 
-  /*
-   * Allocate a Dir Slot for an Image
-   *
-   * input:     ver_id  name of image the slot will be allocated for
-   * return:    pointer to the slot allocated.
-   *            NULL if the slot can not be allocated.  (no space)
-   *
-   * We assume that the directory has already been checked for duplicates.
-   */
-  image_dir_slot_t *allocate_slot(image_ver_t ver_id) {
-    image_dir_t *dir;
-    image_dir_slot_t *slot_p;
-    int i;
-
-    slot_p = NULL;
-    dir = &imcb.dir;
-    for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
-      if (dir->slots[i].slot_state == SLOT_EMPTY) {
-        slot_p = &dir->slots[i];
-        break;
-      }
-    }
-    if (!slot_p)
-      return NULL;
-
-    slot_p->slot_state = SLOT_FILLING;
-    slot_p->ver_id = ver_id;
-    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
-    return slot_p;
-  }
-
-
   bool cmp_ver_id(image_ver_t *ver0, image_ver_t *ver1) {
     if (ver0->major != ver1->major) return FALSE;
     if (ver0->minor != ver1->minor) return FALSE;
@@ -500,8 +468,10 @@ implementation {
    */
 
   command error_t IM.alloc(image_ver_t ver_id) {
-    image_dir_slot_t *slot_p;
+    image_dir_t *dir;
+    image_dir_slot_t *sp, *ep;
     imcb_t *imcp;
+    int i;
 
     imcp = &imcb;
     if (imcp->im_state != IMS_IDLE) {
@@ -509,19 +479,31 @@ implementation {
         return FAIL;
     }
 
-    /*
-     * first make sure we don't already know about this version.
-     * dir_find_ver also does a verify_IM.
-     */
-    if (call IM.dir_find_ver(ver_id))
-      return EALREADY;
-    slot_p = allocate_slot(ver_id);
-    if (!slot_p)
-      return ENOMEM;
+    ep = NULL;
+    dir = &imcb.dir;
+    verify_IM();
 
-    imcp->filling_blk = slot_p->start_sec;
-    imcp->filling_limit_blk = imcp->filling_blk + IMAGE_SIZE_SECTORS - 1;
-    imcp->filling_slot_p = slot_p;
+    /*
+     * scan the directory looking for the ver_id (only if VALID or above).
+     * Also find the first empty slot.
+     */
+    for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
+      sp = &dir->slots[i];
+      if ((sp->slot_state >= SLOT_VALID) &&
+          cmp_ver_id(&(sp->ver_id), &ver_id))
+        return EALREADY;
+      if (!ep && sp->slot_state == SLOT_EMPTY)
+        ep = sp;
+    }
+    if (!ep)
+      return ENOMEM;
+    ep->slot_state = SLOT_FILLING;
+    ep->ver_id = ver_id;
+    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
+
+    imcp->filling_blk = ep->start_sec;
+    imcp->filling_limit_blk = ep->start_sec + IMAGE_SIZE_SECTORS - 1;
+    imcp->filling_slot_p = ep;
 
     imcp->buf_ptr = &im_wrk_buf[0];
     imcp->bytes_remaining = SD_BLOCKSIZE;
