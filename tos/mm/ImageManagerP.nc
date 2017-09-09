@@ -241,6 +241,7 @@ implementation {
 
     bail = FALSE;
     panic_val = 0;
+    slot_start = slot_end = 0;          /* shut compiler up */
 
     do {
 
@@ -865,11 +866,11 @@ implementation {
 
 
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
-    uint32_t checksum;
     image_dir_t *dir;
     int i;
     error_t err;
 
+    dir = &imcb.dir;
     switch (imcb.im_state) {
       default:
         im_panic(30, imcb.im_state, 0);
@@ -887,7 +888,6 @@ implementation {
          * check for all zeroes.  If so then it is part of the
          * initial scenerio and needs to be initialized.
          */
-        dir = &imcb.dir;
         if (chk_zero(im_wrk_buf, SD_BLOCKSIZE)) {
           dir->dir_sig   = IMAGE_DIR_SIG;
           dir->dir_sig_a = IMAGE_DIR_SIG;
