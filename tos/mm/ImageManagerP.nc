@@ -266,20 +266,6 @@ implementation {
   }
 
 
-  error_t dealloc_slot(image_ver_t ver_id) {
-    image_dir_slot_t * slot_p;
-
-    slot_p = call IM.dir_find_ver(ver_id);
-    if ((!slot_p) || (slot_p->slot_state != SLOT_FILLING)) {
-      im_panic(1, imcb.im_state, slot_p->slot_state);
-      return FAIL;
-    }
-    slot_p->slot_state = SLOT_EMPTY;
-    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
-    return SUCCESS;
-  }
-
-
   /*
    * verify that the current state of Image Manager control
    * cells are reasonable.
@@ -562,7 +548,7 @@ implementation {
   /*
    * Alloc_abort: abort a current Alloc.
    *
-   * input:  ver_id     version we think was allocated
+   * input:  none
    * output: none
    * return: error_t    SUCCESS,  all good.  slot marked empty
    *                    FAIL,     no alloc in progress (panic)
@@ -570,22 +556,22 @@ implementation {
    * alloc_abort can only be called in IMS_FILL_WAITING.  This
    * means if IM.write ever returns non-zero, one MUST wait
    * for a IM.write_complete before calling alloc_abort.
-   *
-   * Needs to be looked at.  FIX ME.
    */
 
-  command error_t IM.alloc_abort(image_ver_t ver_id) {
-    image_dir_slot_t * slot_p;
+  command error_t IM.alloc_abort() {
+    image_dir_t *dir;
 
-    verify_IM();
     if (imcb.im_state != IMS_FILL_WAITING) {
       im_panic(10, imcb.im_state, 0);
       return FAIL;
     }
-    dealloc_slot(ver_id);
+    verify_IM();
+    imcb.filling_slot_p->slot_state = SLOT_EMPTY;
     imcb.buf_ptr = NULL;
     imcb.filling_slot_p = NULL;
     imcb.im_state = IMS_IDLE;
+    dir = &imcb.dir;
+    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
     return SUCCESS;
   }
 
