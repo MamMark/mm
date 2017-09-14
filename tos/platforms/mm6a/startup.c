@@ -44,8 +44,10 @@
 #include <platform.h>
 #include <platform_clk_defs.h>
 #include <platform_pin_defs.h>
+#include <platform_reset_defs.h>
 #include <platform_version.h>
 #include <image_info.h>
+#include <overwatch.h>
 
 #ifndef nop
 #define nop() __asm volatile("nop")
@@ -74,14 +76,24 @@ extern uint32_t __data_end__;
 extern uint32_t __bss_start__;
 extern uint32_t __bss_end__;
 extern uint32_t __StackTop__;
+
+extern uint32_t __image_start__;
 extern uint32_t __image_length__;
+extern uint32_t __vector_sum__;
+extern uint32_t __image_sum__;
 
 
+/*
+ * image_chk is over the whole image, including the vector_chk field.
+ * first calculate the vector sum, modify the binary with the result.
+ * then calculate the image sum.
+ */
 const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   .sig          = IMAGE_INFO_SIG,
-  .vector_chk   = 0xAFBEADDE,
-  .image_chk    = 0xAFBEADDE,
-  .image_length = (uint32_t) &__image_length__,
+  .image_start  = (uint32_t) &__image_start__,  /* 32 bit load address of binary         */
+  .image_length = (uint32_t) &__image_length__, /* how big in bytes                      */
+  .vector_chk   = (uint32_t) &__vector_sum__,   /* 32 bit checksum over the vector table */
+  .image_chk    = (uint32_t) &__image_sum__,    /* 32 bit checksum over full image size. */
   .ver_id       = { .major = MAJOR, .minor = MINOR, .build = _BUILD },
   .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV }
 };

@@ -1,1 +1,2 @@
+$(info building NIB image, load addr 0x0002_0000)
 LINKERFILE = $(PLATFORM_DIR)/linker_nib_128k.lds

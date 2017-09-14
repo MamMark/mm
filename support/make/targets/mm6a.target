@@ -8,6 +8,7 @@ PLATFORM_DIR = $(MM_ROOT)/tos/platforms/$(TARGET)
 
 # currently golden is default, use "nib" on make to switch
 LINKERFILE ?= $(PLATFORM_DIR)/linker_golden_0k.lds
+LDFLAGS += -Wl,--defsym=__vector_sum__=0 -Wl,--defsym=__image_sum__=0
 
 BUILD_NUM_FILE = $(PLATFORM_DIR)/_Build
 BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)); else echo 0; fi)

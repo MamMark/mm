@@ -35,7 +35,7 @@
 #ifndef __IMAGE_INFO_H__
 #define __IMAGE_INFO_H__
 
-#define IMAGE_INFO_SIG  0x5A595959
+#define IMAGE_INFO_SIG  0x33275401
 
 /*
  * IMAGE_META_OFFSET is the offset into the image where
@@ -54,15 +54,16 @@ typedef struct {                        /* little endian order  */
 } image_ver_t;
 
 typedef struct {
-  uint8_t  hw_model;
   uint8_t  hw_rev;
+  uint8_t  hw_model;
 } hw_ver_t;
 
 typedef struct {
   uint32_t    sig;                      /* must be IMAGE_INFO_SIG to be valid */
-  uint32_t    vector_chk;               /* simple checksum over vector table */
-  uint32_t    image_chk;                /* simple checksum over entire image */
-  uint32_t    image_length;             /* byte length of entire image */
+  uint32_t    image_start;              /* where this binary loads            */
+  uint32_t    image_length;             /* byte length of entire image        */
+  uint32_t    vector_chk;               /* simple checksum over vector table  */
+  uint32_t    image_chk;                /* simple checksum over entire image  */
   image_ver_t ver_id;
   hw_ver_t    hw_ver;
 } image_info_t;
