@@ -98,6 +98,7 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV }
 };
 
+ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
 
 int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
@@ -910,6 +911,12 @@ void timer_check() {
 extern owls_rtn_t owl_startup();
 
 void owl_finish(uint32_t base, owls_rtn_t rtn) {
+  /*
+   * make a copy of the HardReset register.  We can't do this earlier
+   * because the control block may not initilized.  This happens
+   * in owl_startup.  They will also zero the block if needed.
+   */
+  ow_control_block.hard_reset = RSTCTL->HARDRESET_STAT;
   switch (rtn) {
     case OWLS_REBOOT:
       SYSCTL->REBOOT_CTL = (PRD_RESET_KEY | SYSCTL_REBOOT_CTL_REBOOT);
@@ -973,7 +980,6 @@ void __Reset() {
   P8->DIR = 0x61;
   P8->SEL1 = 1;                 /* TA1.0 (OUT0) */
 
-//  __disable_irq();
   __watchdog_init();
   __pins_init();
 

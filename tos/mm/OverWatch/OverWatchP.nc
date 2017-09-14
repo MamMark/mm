@@ -37,8 +37,7 @@
 #include <image_mgr.h>
 #include <overwatch.h>
 
-ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
-
+extern ow_control_block_t ow_control_block;
 
 /*
  * good_nib_vectors: verify nib vectors

@@ -98,6 +98,7 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV }
 };
 
+ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
 
 int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
@@ -860,13 +861,48 @@ void timer_check() {
 
 #endif
 
+extern owls_rtn_t owl_startup();
 
-extern void owl_startup();
+void owl_finish(uint32_t base, owls_rtn_t rtn) {
+  /*
+   * make a copy of the HardReset register.  We can't do this earlier
+   * because the control block may not initilized.  This happens
+   * in owl_startup.  They will also zero the block if needed.
+   */
+  ow_control_block.hard_reset = RSTCTL->HARDRESET_STAT;
+  switch (rtn) {
+    case OWLS_REBOOT:
+      SYSCTL->REBOOT_CTL = (PRD_RESET_KEY | SYSCTL_REBOOT_CTL_REBOOT);
+      break;
+
+    case OWLS_BOOT_NIB:
+      __asm__ volatile (
+        "  ldr sp, [r0] \n"
+        "  ldr pc, [r0, #4] \n" );
+      break;
+
+    case OWLS_CONTINUE:
+      return;
+  }
+}
+
 
 void start() __attribute__((alias("__Reset")));
 void __Reset() {
   uint32_t *from;
   uint32_t *to;
+  owls_rtn_t owls_rtn;
+
+  /* make sure interrupts are disabled */
+  __disable_irq();
+
+  /* and make sure we have an appropriate VTOR.  GoldenOW uses 0x0000000
+   * while NIB images use 0x00020000.  __vectors should always have the
+   * correct value.
+   */
+  __DSB(); __ISB();
+  SCB->VTOR = (uint32_t) &__vectors;
+  __DSB(); __ISB();
 
   /*
    * tell is P1.2  0pO
@@ -900,12 +936,17 @@ void __Reset() {
   P7->OUT = 0xF9;                       /* sd0 pwr on */
   P7->DIR = 0xF8;                       /* among other things drive pwr_sd0_en 1 */
 
-  __disable_irq();
   __watchdog_init();
   __pins_init();
   __map_ports();
 
-//  owl_startup();                        /* see if overwatch wants to do something */
+  /*
+   * invoke overwatch low level to see how we should proceed.
+   */
+  if (SCB->VTOR == 0) {
+    owls_rtn = owl_startup();
+    owl_finish(NIB_BASE, owls_rtn);
+  }
 
   __system_init();
 
