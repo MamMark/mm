@@ -58,6 +58,7 @@ typedef enum {
 #define NIB_BASE        0x00020000
 #define NIB_INFO        (NIB_BASE + 0x140)
 #define NIB_VEC_COUNT   (64 + 14 + 2)
+#define NIB_VEC_BYTES   (NIB_VEC_COUNT * 4)
 
 
 /*
@@ -106,6 +107,7 @@ typedef enum  {
   OW_REQ_BOOT           = 0,            /* just boot, see ow_boot_mode */
   OW_REQ_INSTALL        = 1,
   OW_REQ_REBOOT         = 2,            /* crash, rebooting */
+  OW_REQ_NIB_REBOOT     = 3,            /* reboot from NIB */
 } ow_request_t;
 
 
@@ -166,18 +168,19 @@ typedef struct {
   uint32_t           cycle;             /* req input, time since last boot */
   uint32_t           time;              /* req input, time since last boot */
   uint32_t           hard_reset;
+  uint32_t           reboot_count;      /* how many times rebooted */
+
   ow_request_t       ow_req;            /* req input */
   ow_reboot_reason_t reboot_reason;     /* req input */
-  uint8_t            ow_from_nib;       /* input */
 
   ow_boot_mode_t     ow_boot_mode;      /* control knob */
   owt_action_t       owt_action;        /* input to OWT, further actions */
 
+  uint32_t           ow_sig_b;
+
   uint32_t           strange;           /* strange shit */
   uint32_t           vec_chk_fail;
   uint32_t           image_chk_fail;
-
-  uint32_t           ow_sig_b;
 
   /*
    * Persistent storage.
@@ -194,12 +197,10 @@ typedef struct {
    *   elapsed_lower is the lower 32 bits of ms time.
    */
 
-  uint32_t      elapsed_lower;
-  uint32_t      elapsed_upper;
-  uint32_t      reboot_count;
-  ow_reboot_reason_t
-                last_reboot_reason;
-  uint32_t      ow_sig_c;
+  uint32_t           elapsed_lower;
+  uint32_t           elapsed_upper;
+
+  uint32_t           ow_sig_c;
 } ow_control_block_t;
 
 

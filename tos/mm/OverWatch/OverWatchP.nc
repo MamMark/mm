@@ -112,8 +112,10 @@ bool good_nib_flash() {
  */
 owls_rtn_t owl_startup() @C() @spontaneous() {
   ow_control_block_t *owcp;
+  bool from_nib;
 
   owcp = &ow_control_block;
+  from_nib = FALSE;
 
   /*
    * first check to see if the control block seems intact.
@@ -133,9 +135,9 @@ owls_rtn_t owl_startup() @C() @spontaneous() {
 
     memset(owcp, 0, sizeof(*owcp));
     owcp->ow_sig_a = owcp->ow_sig_b = owcp->ow_sig_c = OW_SIG;
-    owcp->last_reboot_reason = ORR_PWR_FAIL;
-    owcp->ow_boot_mode = OW_BOOT_OWT;
-    owcp->owt_action   = OWT_ACT_INIT;
+    owcp->reboot_reason = ORR_PWR_FAIL;
+    owcp->ow_boot_mode  = OW_BOOT_OWT;
+    owcp->owt_action    = OWT_ACT_INIT;
     return OWLS_CONTINUE;
   }
 
@@ -195,9 +197,11 @@ owls_rtn_t owl_startup() @C() @spontaneous() {
       owcp->owt_action = OWT_ACT_INSTALL;
       return OWLS_CONTINUE;
 
+    case OW_REQ_NIB_REBOOT:
+      from_nib = TRUE;
+
     case OW_REQ_REBOOT:                /* crash, rebooting */
       owcp->ow_req = OW_REQ_BOOT;
-      owcp->last_reboot_reason = owcp->reboot_reason;
 
       /* this needs to be modified to handle overflow etc.  probably
        * just modify for uint64_t will do it.
@@ -206,8 +210,7 @@ owls_rtn_t owl_startup() @C() @spontaneous() {
       owcp->elapsed_upper += owcp->cycle;
       owcp->reboot_count++;
 
-      if (owcp->ow_from_nib) {
-        owcp->ow_from_nib = 0;
+      if (from_nib) {
         if (owcp->reboot_count > 10) {
           owcp->ow_boot_mode = OW_BOOT_OWT;
           owcp->owt_action = OWT_ACT_EJECT;
@@ -454,9 +457,6 @@ implementation {
     call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
   }
 
-  command ow_reboot_reason_t OverWatch.getRebootReason() {
-    return ow_control_block.last_reboot_reason;
-  }
 
   /*
    * getBootMode: return current boot mode from control block
@@ -466,9 +466,6 @@ implementation {
   }
 
 
-  command uint32_t OverWatch.getElapsedUpper() { return 0; }
-  command uint32_t OverWatch.getElapsedLower() { return 0; }
-  command uint32_t OverWatch.getBootcount()    { return 0; }
   command void OverWatch.clearReset() {
     ow_control_block_t *owcp;
 
@@ -478,7 +475,14 @@ implementation {
     RSTCTL->HARDRESET_CLR = 0xFFFFFFFF; /* clear all */
   }
 
+
+  command ow_control_block_t *OverWatch.getControlBlock() {
+    return &ow_control_block;
+  }
+
+
   event void IM.delete_complete() { }
+  event void IM.dir_set_backup_complete()   { }
   event void IM.dir_eject_active_complete() { }
 
   async event void SysReboot.shutdown_flush() { }

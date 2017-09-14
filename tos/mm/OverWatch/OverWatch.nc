@@ -53,8 +53,8 @@ interface OverWatch {
   /**
    * ForceBoot
    *
-   * This will force the Overwatcher to boot the system into the
-   * specified boot instance (OWT, GOLD, NIB).
+   * Request OverWatch to boot the system into the specified boot mode.
+   * (OWT, GOLD, NIB).
    *
    * @param   boot_mode     which image instance to boot into
    * @return  error_t
@@ -76,11 +76,7 @@ interface OverWatch {
    */
   command void fail(ow_reboot_reason_t reason);
 
-  command ow_reboot_reason_t getRebootReason();
-  command ow_boot_mode_t     getBootMode();
-
-  command uint32_t getElapsedUpper();
-  command uint32_t getElapsedLower();
-  command uint32_t getBootcount();
+  command ow_boot_mode_t      getBootMode();
   command void                clearReset();
+  command ow_control_block_t *getControlBlock();
 }
