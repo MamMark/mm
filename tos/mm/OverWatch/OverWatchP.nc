@@ -49,24 +49,24 @@ extern ow_control_block_t ow_control_block;
  * 2) extract the vector checksum, vector_chk
  * 3) calculate vector across the vector table.
  * 4) add vector_chk.  result should be zero.
+ *
+ * Note: if iip->vector_chk is 0, we currently assume the checksum is
+ * disabled.
  */
 bool good_nib_vectors() {
   image_info_t *iip;
   uint32_t      vec_sum;
-  uint32_t     *vecs;
-  int           i;
 
   iip  = (image_info_t *) NIB_INFO;
   if (iip->sig != IMAGE_INFO_SIG)
     return FALSE;
-  vec_sum = 0;
-  vecs = (uint32_t *) NIB_BASE;
-  for (i = 0; i < NIB_VEC_COUNT; i++)
-    vec_sum += vecs[i];
-  vec_sum += iip->vector_chk;
-  if (vec_sum) {
-    ow_control_block.vec_chk_fail++;
-    return FALSE;
+  vec_sum = __checksum32_aligned((void *) NIB_BASE, NIB_VEC_BYTES);
+  if (iip->vector_chk) {
+    vec_sum += iip->vector_chk;
+    if (vec_sum) {
+      ow_control_block.vec_chk_fail++;
+      return FALSE;
+    }
   }
   return TRUE;
 }
@@ -81,39 +81,25 @@ bool good_nib_vectors() {
  * 2) extract the image size from the structure.  This is in bytes.
  * 3) calculate the checksum across the entire image.
  *
- * The checksum is calulated using 32 bit wide accesses.  The last
- * access may not be evenly aligned (32 bit alignment).  The last
- * access will be anded to remove any extra bytes.  They are set to
- * zero.  Keep in mind that the last access is fetching 32 bits
- * and it is little endian.  The mask must compensate.
+ * The checksum is embedded and is automatically included in the
+ * sum.  The checksum must result in zero to pass.
  *
- * The checksum must result in zero to pass.
+ * Note: if iip->image_chk is 0, we currently assume the checksum is
+ * disabled.
  */
 bool good_nib_flash() {
   image_info_t *iip;
   uint32_t      image_sum;
-  uint32_t     *image;
-  uint32_t      i, count, left;
-  uint32_t      last;
 
   iip  = (image_info_t *) NIB_INFO;
   if (iip->sig != IMAGE_INFO_SIG)
     return FALSE;
-  image_sum = 0;
-  image = (uint32_t *) NIB_BASE;
-  count = iip->image_length;
-  left  = count & 0x3;
-  count = count >> 2;
-  for (i = 0; i < count; i++)
-    image_sum += image[i];
-  if (left) {
-    last = image[i];
-    last &= (0xffffffff << (left * 8));
-    image_sum += last;
-  }
-  if (image_sum) {
-    ow_control_block.image_chk_fail++;
-    return FALSE;
+  image_sum = __checksum32_aligned((void *) NIB_BASE, iip->image_length);
+  if (iip->image_chk) {
+    if (image_sum) {
+      ow_control_block.image_chk_fail++;
+      return FALSE;
+    }
   }
   return TRUE;
 }
@@ -188,8 +174,11 @@ owls_rtn_t owl_startup() @C() @spontaneous() {
            * If we are booting the NIB, we want to first check
            * the NIBs validity.  If good_nib_flash takes too long
            * we can switch to checking the vector table instead.
+           *
+           * For now we run first vectors, then we run whole
+           * NIB flash.  For testing...
            */
-          if (good_nib_flash())
+          if (good_nib_vectors() && good_nib_flash())
             return OWLS_BOOT_NIB;
 
           /*
