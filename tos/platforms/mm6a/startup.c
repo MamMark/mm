@@ -79,8 +79,6 @@ extern uint32_t __StackTop__;
 
 extern uint32_t __image_start__;
 extern uint32_t __image_length__;
-extern uint32_t __vector_sum__;
-extern uint32_t __image_sum__;
 
 
 /*
@@ -92,8 +90,8 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   .sig          = IMAGE_INFO_SIG,
   .image_start  = (uint32_t) &__image_start__,  /* 32 bit load address of binary         */
   .image_length = (uint32_t) &__image_length__, /* how big in bytes                      */
-  .vector_chk   = (uint32_t) &__vector_sum__,   /* 32 bit checksum over the vector table */
-  .image_chk    = (uint32_t) &__image_sum__,    /* 32 bit checksum over full image size. */
+  .vector_chk   = 0,                            /* 32 bit checksum over the vector table */
+  .image_chk    = 0,                            /* 32 bit checksum over full image size. */
   .ver_id       = { .major = MAJOR, .minor = MINOR, .build = _BUILD },
   .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV }
 };
