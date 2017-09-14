@@ -782,6 +782,47 @@ implementation {
   }
 
 
+  /*
+   * dir_eject_active: throw the current active out.
+   *
+   * there needs to be an active to throw out.  Move it to
+   * EJECTED state.  If there is also a BACKUP then move that
+   * to the ACTIVE state.
+   *
+   * Sync the directory.
+   */
+  command error_t IM.dir_eject_active() {
+    error_t err;
+    image_dir_t *dir;
+    image_dir_slot_t *active, *backup;
+
+    if (imcb.im_state != IMS_IDLE) {
+      im_panic(22, imcb.im_state, 0);
+      return FAIL;
+    }
+
+    verify_IM();
+    get_active_backup(&active, &backup);
+    if (!active) {
+      im_panic(23, (parg_t) active, (parg_t) backup);
+      return FAIL;
+    }
+    active->slot_state = SLOT_EJECTED;
+    if (backup)
+      backup->slot_state = SLOT_ACTIVE;
+
+    dir = &imcb.dir;
+    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
+
+    /*
+     * directory has been updated.  Fire up a dir flush
+     */
+    imcb.im_state = IMS_EJECT_SYNC_REQ_SD;
+    if ((err = call SDResource.request()))
+      im_panic(24, err, 0);
+    return SUCCESS;
+  }
+
 
   /*
    * finish: an image is finished.
@@ -929,6 +970,11 @@ implementation {
         imcb.im_state = IMS_DSB_SYNC_WRITE;
         write_dir_cache();
         return;
+
+      case  IMS_EJECT_SYNC_REQ_SD:
+        imcb.im_state = IMS_EJECT_SYNC_WRITE;
+        write_dir_cache();
+        return;
     }
   }
 
@@ -1026,6 +1072,12 @@ implementation {
         imcb.im_state = IMS_IDLE;
         call SDResource.release();
         signal IM.dir_set_backup_complete();
+        return;
+
+      case IMS_EJECT_SYNC_WRITE:
+        imcb.im_state = IMS_IDLE;
+        call SDResource.release();
+        signal IM.dir_eject_active_complete();
         return;
     }
   }
