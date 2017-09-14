@@ -145,7 +145,17 @@ typedef struct {
   uint32_t stamp_ms;
   uint32_t sync_majik;
   uint32_t time_cycle;          /* time cycle */
-  uint16_t boot_count;
+
+  uint32_t hard_reset;
+  uint32_t boot_count;
+
+  uint32_t elapsed_upper;
+  uint32_t elapsed_lower;
+
+  uint32_t strange;             /* strange shit */
+  uint32_t vec_chk_fail;
+  uint32_t image_chk_fail;
+  uint16_t reboot_reason;       /* see overwatch.h */
 } PACKED dt_reboot_t;
 
 

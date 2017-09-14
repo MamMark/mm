@@ -3,8 +3,6 @@ The MSP432 provides for the following classes of reset:
 
 ** Class 0 - Power On/Off Reset (POR)
 
--
-
 - depending on source of the reset, different wake-up latencies may be
   experienced.
 - May be initiated by PSS, PCM, RSTn pin, CS if DCO xR short fault or
@@ -46,3 +44,12 @@ The MSP432 provides for the following classes of reset:
   o (0) CPU Lockup
   o (1) WDT_A Timeout
   o (2) WDT_A Password violation
+
+
+We use HardReset for OverWatch reseting.  And capture any of the other HardReset
+sources.  This is communicated through the overwatch control block via
+hard_reset.
+
+When the system reboots after a reset any hard_resets are captured in hard_reset
+along with the indicated reboot_reason.  These are then written into the
+Reboot record recorded by the mmSync module.

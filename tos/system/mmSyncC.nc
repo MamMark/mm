@@ -14,12 +14,12 @@ implementation {
   Booted = mmSyncP;
   Boot   = mmSyncP.Boot;
 
-  components PlatformC;
-  mmSyncP.BootParams -> PlatformC;
-
   components new TimerMilliC() as SyncTimerC;
   mmSyncP.SyncTimer -> SyncTimerC;
 
   components CollectC;
   mmSyncP.Collect -> CollectC;
+
+  components OverWatchC;
+  mmSyncP.OverWatch -> OverWatchC;
 }

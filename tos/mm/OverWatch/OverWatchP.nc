@@ -481,6 +481,14 @@ implementation {
   command uint32_t OverWatch.getElapsedUpper() { return 0; }
   command uint32_t OverWatch.getElapsedLower() { return 0; }
   command uint32_t OverWatch.getBootcount()    { return 0; }
+  command void OverWatch.clearReset() {
+    ow_control_block_t *owcp;
+
+    owcp = &ow_control_block;
+    owcp->hard_reset = 0;
+    owcp->reboot_reason = 0;
+    RSTCTL->HARDRESET_CLR = 0xFFFFFFFF; /* clear all */
+  }
 
   event void IM.delete_complete() { }
   event void IM.dir_eject_active_complete() { }

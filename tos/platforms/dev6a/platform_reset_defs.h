@@ -45,6 +45,15 @@
 
 enum {
   SYSREBOOT_OW_REQUEST = SYSREBOOT_EXTEND,
+
+  /* bits from RSTCTL->HARDRESET_STAT */
+  RST_HARD_SYSRESET = RSTCTL_HARDRESET_STAT_SRC0,       /* sys reset output, core */
+  RST_HARD_WDT_TO   = RSTCTL_HARDRESET_STAT_SRC1,       /* WDT time out           */
+  RST_HARD_WDT_PWV  = RSTCTL_HARDRESET_STAT_SRC2,       /* WDT password violation */
+  RST_HARD_FLCTL    = RSTCTL_HARDRESET_STAT_SRC3,       /* Flash Controller Fault */
+  RST_HARD_OW_REQ   = RSTCTL_HARDRESET_STAT_SRC4,       /* OverWatch Request      */
+  RST_HARD_CS       = RSTCTL_HARDRESET_STAT_SRC14,      /* Clock System fault     */
+  RST_HARD_PCM      = RSTCTL_HARDRESET_STAT_SRC15,      /* Power Control fault    */
 };
 
 #define PRD_RESET_KEY   RSTCTL_RESETREQ_RSTKEY_VAL

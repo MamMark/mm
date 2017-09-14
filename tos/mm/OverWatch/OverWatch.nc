@@ -82,4 +82,5 @@ interface OverWatch {
   command uint32_t getElapsedUpper();
   command uint32_t getElapsedLower();
   command uint32_t getBootcount();
+  command void                clearReset();
 }

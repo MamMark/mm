@@ -165,6 +165,7 @@ typedef struct {
   uint32_t           ow_sig_a;
   uint32_t           cycle;             /* req input, time since last boot */
   uint32_t           time;              /* req input, time since last boot */
+  uint32_t           hard_reset;
   ow_request_t       ow_req;            /* req input */
   ow_reboot_reason_t reboot_reason;     /* req input */
   uint8_t            ow_from_nib;       /* input */

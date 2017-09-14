@@ -3,6 +3,9 @@
  * All rights reserved.
  */
 
+#include <overwatch.h>
+#include <image_info.h>
+
 /*
  * 1 min * 60 sec/min * 1024 ticks/sec
  * Tmilli is binary
@@ -16,9 +19,9 @@ module mmSyncP {
   uses {
     interface Boot;                     /* in boot in sequence */
     interface Boot as SysBoot;          /* use at end of System Boot initilization */
-    interface BootParams;
     interface Timer<TMilli> as SyncTimer;
     interface Collect;
+    interface OverWatch;
   }
 }
 
@@ -54,14 +57,28 @@ implementation {
   void write_reboot_record() {
     dt_reboot_t  r;
     dt_reboot_t *rp;
+    ow_control_block_t *owcp;
 
     rp = &r;
+    owcp = call OverWatch.getControlBlock();
     rp->len = sizeof(r);
     rp->dtype = DT_REBOOT;
     rp->stamp_ms = call SyncTimer.getNow();
     rp->sync_majik = SYNC_MAJIK;
     rp->time_cycle = 0;                 /* for now only time_cycle 0 */
-    rp->boot_count = call BootParams.getBootCount();
+
+    rp->hard_reset = owcp->hard_reset;
+    rp->boot_count = owcp->reboot_count;
+
+    rp->elapsed_upper = owcp->elapsed_upper;
+    rp->elapsed_lower = owcp->elapsed_lower;
+
+    rp->strange = owcp->strange;
+    rp->vec_chk_fail = owcp->vec_chk_fail;
+    rp->image_chk_fail = owcp->image_chk_fail;
+    rp->reboot_reason = owcp->reboot_reason;
+
+    call OverWatch.clearReset();
     call Collect.collect((void *) rp, sizeof(r), NULL, 0);
   }
 
