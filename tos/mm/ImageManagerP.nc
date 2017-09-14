@@ -1082,17 +1082,5 @@ implementation {
     }
   }
 
-  /*
-   * these should NEVER get invoked
-   *
-   * on the msp432 they will either kick the debugger or hardfault.
-   */
-  default event void IM.write_continue()            { bkpt(); }
-  default event void IM.finish_complete()           { bkpt(); }
-  default event void IM.delete_complete()           { bkpt(); }
-  default event void IM.dir_set_active_complete()   { bkpt(); }
-  default event void IM.dir_set_backup_complete()   { bkpt(); }
-  default event void IM.dir_eject_active_complete() { bkpt(); }
-
   async event void Panic.hook() { }
 }
