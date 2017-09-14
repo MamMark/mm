@@ -434,6 +434,33 @@ implementation {
   }
 
 
+  /*
+   * get_active_backup: find the active and/or backup dir slot if any
+   *
+   * input:  a, b       ptrs (pass by ref) to dir_slot ptrs
+   *                    NULL if we aren't looking for said slot
+   * output: *a, *b     updated to point at active/backup slots respectively.
+   * return: none
+   *
+   * assumes that a reasonable call of verify_IM() has occured prior to calling
+   * get_active_backup.
+   */
+  void get_active_backup(image_dir_slot_t **a, image_dir_slot_t **b) __attribute__((noinline)) {
+    image_dir_slot_t *sp;
+    int i;
+
+    if (a) *a = NULL;
+    if (b) *b = NULL;
+    for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
+      sp = &imcb.dir.slots[i];
+      if (a && sp->slot_state == SLOT_ACTIVE)
+        *a = sp;
+      if (b && sp->slot_state == SLOT_BACKUP)
+        *b = sp;
+    }
+  }
+
+
   event void Boot.booted() {
     error_t err;
 
@@ -465,7 +492,6 @@ implementation {
    *
    * Only one valid image with the name ver_id is allowed.
    */
-
   command error_t IM.alloc(image_ver_t ver_id) {
     image_dir_t *dir;
     image_dir_slot_t *sp, *ep;          /* slot ptr, empty ptr */
@@ -523,7 +549,6 @@ implementation {
    * means if IM.write ever returns non-zero, one MUST wait
    * for a IM.write_complete before calling alloc_abort.
    */
-
   command error_t IM.alloc_abort() {
     image_dir_t *dir;
 
@@ -550,7 +575,6 @@ implementation {
    * return: bool       TRUE.  image fits.
    *                    FALSE, image too big for slot
    */
-
   command bool IM.check_fit(uint32_t len) {
     if (len <= IMAGE_SIZE) return TRUE;
     im_panic(11, imcb.im_state, len);
@@ -626,24 +650,18 @@ implementation {
 
 
   /*
-   * dir_get_active: return the dir entry for the current active image if any.
+   * dir_get_active: find current active if any
    *
    * input:  none
-   * output: none
    * return: ptr        slot entry for current active.
    *                    NULL if no active image
    */
-
   command image_dir_slot_t *IM.dir_get_active() {
-    image_dir_t *dir;
-    int i;
+    image_dir_slot_t *ap;
 
     verify_IM();
-    dir = &imcb.dir;
-    for (i = 0; i < IMAGE_DIR_SLOTS; i++)
-      if (dir->slots[i].slot_state == SLOT_ACTIVE)
-        return &dir->slots[i];
-    return NULL;
+    get_active_backup(&ap, NULL);
+    return ap;
   }
 
 
