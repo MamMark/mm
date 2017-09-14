@@ -691,10 +691,10 @@ implementation {
    *
    * start a cache flush
    */
-
   command error_t IM.dir_set_active(image_ver_t ver_id) {
+    error_t err;
     image_dir_t *dir;
-    image_dir_slot_t *newp, *activep;
+    image_dir_slot_t *newp, *active;
 
     if (imcb.im_state != IMS_IDLE) {
       im_panic(22, imcb.im_state, 0);
@@ -714,9 +714,10 @@ implementation {
     }
 
     /* If we have an active, switch it to backup */
-    activep = call IM.dir_get_active();
-    if (activep)
-      activep->slot_state = SLOT_BACKUP;
+    get_active_backup(&active, NULL);
+    if (active)
+      active->slot_state = SLOT_BACKUP;
+
     newp->slot_state = SLOT_ACTIVE;
     dir = &imcb.dir;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
@@ -724,6 +725,9 @@ implementation {
     /*
      * directory has been updated.  Fire up a dir flush
      */
+    imcb.im_state = IMS_DSA_SYNC_REQ_SD;
+    if ((err = call SDResource.request()))
+      im_panic(24, err, 0);
     return SUCCESS;
   }
 
@@ -877,6 +881,11 @@ implementation {
         imcb.im_state = IMS_DELETE_SYNC_WRITE;
         write_dir_cache();
         return;
+
+      case  IMS_DSA_SYNC_REQ_SD:
+        imcb.im_state = IMS_DSA_SYNC_WRITE;
+        write_dir_cache();
+        return;
     }
   }
 
@@ -961,6 +970,13 @@ implementation {
         imcb.im_state = IMS_IDLE;
         call SDResource.release();
         signal IM.delete_complete();
+        return;
+
+      case IMS_DSA_SYNC_WRITE:
+        imcb.im_state = IMS_IDLE;
+        call SDResource.release();
+        signal Booted.booted();         /* this is wrong */
+        signal IM.dir_set_active_complete();
         return;
     }
   }
