@@ -78,6 +78,13 @@ implementation {
    */
   DM.Boot   -> OW.Booted;
   SYNC.Boot -> DM.Booted;
+
+  /*
+   * Logging to Data Area can't happen until after SYNC.
+   * If Panic tries to put stuff into the Data Area (ie. Panic.warn)
+   * it can't do this until after SYNC.
+   */
+
   GPS.Boot  -> SYNC.Booted;
   Boot      =  GPS.Booted;
 }

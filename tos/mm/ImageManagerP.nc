@@ -94,7 +94,12 @@ enum {
  * FILL_SYNC_WRITE     write directory to update image finish.
  * DELETE_SYNC_REQ_SD  req SD for directory flush for delete.
  * DELETE_SYNC_WRITE   Flush directory cache for new empty entry
- * DSA_DIR
+ * DSA_SYNC_REQ_SD
+ * DSA_SYNC_WRITE
+ * DSB_SYNC_REQ_SD
+ * DSB_SYNC_WRITE
+ * EJECT_SYNC_REQ_SD
+ * EJECT_SYNC_WRITE
  */
 
 typedef enum {
@@ -105,13 +110,13 @@ typedef enum {
 
   IMS_FILL_WAITING,             /* filling states through FILL_SYNC_WRITE */
   IMS_FILL_REQ_SD,              /* these are grouped together as the      */
-  IMS_FILL_WRITING,             /* FILLING meta state                     */
+  IMS_FILL_WRITING,             /* FILLING meta states                    */
 
-  IMS_FILL_LAST_REQ_SD,
+  IMS_FILL_LAST_REQ_SD,         /* flush last buffer */
   IMS_FILL_LAST_WRITE,
-  IMS_FILL_SYNC_REQ_SD,
+  IMS_FILL_SYNC_REQ_SD,         /* sync directory entry */
   IMS_FILL_SYNC_WRITE,          /* end of filling states */
-  IMS_DELETE_SYNC_REQ_SD,
+  IMS_DELETE_SYNC_REQ_SD,       /* delete, set to EMPTY */
   IMS_DELETE_SYNC_WRITE,
   IMS_DSA_SYNC_REQ_SD,          /* dir_set_active */
   IMS_DSA_SYNC_WRITE,
@@ -585,11 +590,11 @@ implementation {
   /*
    * Delete: Sets the state of an image  to "empty", marking the slot  available for another image.
    *
-   * input: ver_id
-   * output: none
+   * input:  ver_id
    * return: error_t
+   *
+   * will launch a Dir sync, completion signaled via delete_complete
    */
-
   command error_t IM.delete(image_ver_t ver_id) {
     image_dir_t *dir;
     image_dir_slot_t *sp;
@@ -622,11 +627,9 @@ implementation {
   /*
    * dir_find_ver: Returns a pointer to the slot for given image version.
    *
-   * input: ver_id
-   * output: none
+   * input:  ver_id
    * return: dir_find_ver(ver_id)
    */
-
   command image_dir_slot_t *IM.dir_find_ver(image_ver_t ver_id) {
     image_dir_t *dir;
     image_dir_slot_t *sp;
@@ -644,6 +647,12 @@ implementation {
   }
 
 
+  /*
+   * dir_coherent: indicates if the Dir on disk is coherent
+   *
+   * returns TRUE if in memory cache reflects the state of the on SD
+   * directory.  No updates are pending.
+   */
   command bool IM.dir_coherent() {
     return imcb.im_state == IMS_IDLE;
   }
@@ -669,10 +678,8 @@ implementation {
    * dir_get_dir: Returns a pointer to the dir slot indexed by idx
    *
    * input:  idx
-   * output: image_dir_slot_t
-   * return:
+   * return: image_dir_slot_t * slot found
    */
-
   command image_dir_slot_t *IM.dir_get_dir(uint8_t idx) {
     verify_IM();
     if (idx >= IMAGE_DIR_SLOTS)
@@ -827,7 +834,7 @@ implementation {
   /*
    * finish: an image is finished.
    *
-   * o make sure any remainging data is written to the slot from the working buffer.
+   * o make sure any remaining data is written to the slot from the working buffer.
    * o Mark image as valid.
    * o sync the directory.
    *
@@ -888,7 +895,6 @@ implementation {
    * signal.  It can then resend the remaining bytes using another call to
    * ImageManager.write(...).
    */
-
   command uint32_t IM.write(uint8_t *buf, uint32_t len) {
     uint32_t copy_len;
     uint32_t bytes_left;
@@ -961,17 +967,17 @@ implementation {
         write_dir_cache();
         return;
 
-      case  IMS_DSA_SYNC_REQ_SD:
+      case IMS_DSA_SYNC_REQ_SD:
         imcb.im_state = IMS_DSA_SYNC_WRITE;
         write_dir_cache();
         return;
 
-      case  IMS_DSB_SYNC_REQ_SD:
+      case IMS_DSB_SYNC_REQ_SD:
         imcb.im_state = IMS_DSB_SYNC_WRITE;
         write_dir_cache();
         return;
 
-      case  IMS_EJECT_SYNC_REQ_SD:
+      case IMS_EJECT_SYNC_REQ_SD:
         imcb.im_state = IMS_EJECT_SYNC_WRITE;
         write_dir_cache();
         return;
