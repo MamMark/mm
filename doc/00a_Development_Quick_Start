@@ -1,0 +1,83 @@
+
+Debian/Ubuntu
+
+2017-09-11
+    Ubuntu 16.04, T2 (TinyProd) github:tp-freeforall/prod(tp-master),
+    ARM toolchain, gcc 4.9.3, gdb 7.8.0 (32 bit), python support
+    J-link (Segger), V6.16j (6.16.10)
+
+    T2 (TinyProd) github:tp-freeforall/prod(tp-master),
+    mspdebug JTAG debugging.   4.6.3 based msp430 toolchain
+    Toolchain from http://tinyprod.net/repos/debian (msp430)
+
+**************************************************************************************
+
+1) Host OS Install.
+
+We assume that Ubuntu/Debian has been installed.
+
+sudo -s
+apt-get install build-essential stow automake autoconf libtool libc6-dev
+apt-get install git-core git-daemon-run git-doc git-email git-gui gitk gitmagic
+apt-get install openssh-client openssh-server
+apt-get install python3 python3-serial python python-serial
+exit
+
+
+2) add the TinyProd signing key
+
+wget -O - http://tinyprod.net/repos/debian/tinyprod.key | sudo apt-key add -
+
+
+3) update repositories
+
+sudo -s
+#
+# teach dpkg/apt-get/aptitude about where to find the tinyprod tools repository
+#
+echo "deb http://tinyprod.net/repos/debian wheezy    main" >> /etc/apt/sources.list.d/tinyprod-debian.list
+apt-get update
+exit
+
+
+4) MSP432 toolset: Install the TinyOS toolset (msp432)
+
+4a) Install nesc and tinyos-tools-devel
+
+  sudo apt-get install nesc tinyos-tools-devel
+
+4b) Install ARM toolchain.  TinyOS for the msp432 requires the
+    gcc-arm-none-eabi-4_9-2015q3 toolchain.  Later toolchains break something.
+
+    ARM_TOOLS_URL=https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update/+download/gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
+    wget -nv -O gcc-arm-none-eabi.tar.bz2 $ARM_TOOLS_URL
+
+    echo "*** Installing ARM toolchain"
+    tar xf /home/vagrant/installs/gcc-arm-none-eabi.tar.bz2 -C /usr
+
+
+    this will install the arm toolchain into /usr/gcc-arm-none-eabi-4_9-2015q3.  Your path
+    should include /usr/gcc-arm-none-eabi-4_9-2015q3/bin
+
+**************************************************************************************
+
+5) Tree checkout
+
+   TinyOS 2.x tree checkout  (tp-freeforall/prod)
+   MamMark tree
+
+    mkdir w ; cd ~/w
+    git clone -v https://github.com/tp-freeforall/prod.git
+    git clone -v https://github.com/MamMark/mm.git
+
+**************************************************************************************
+
+6) Set up build environment settings
+
+   export TINYOS_ROOT_DIR=${HOME}/w/prod
+   export TINYOS_ROOT_DIR_ADDITIONAL=${HOME}/w/mm
+
+7) Do a test compile.
+
+   cd ~/w/prod/apps/Blink
+   make exp_msp432
