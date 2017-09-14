@@ -740,9 +740,47 @@ implementation {
    *
    * Forces a dir sync.
    */
-  command error_t IM.dir_set_backup(image_ver_t ver_id) { }
+  command error_t IM.dir_set_backup(image_ver_t ver_id) {
+    error_t err;
+    image_dir_t *dir;
+    image_dir_slot_t *newp, *ap;
 
-  command error_t IM.dir_eject_active() { }
+    if (imcb.im_state != IMS_IDLE) {
+      im_panic(22, imcb.im_state, 0);
+      return FAIL;
+    }
+
+    /* dir_find_ver does the call to verify_IM */
+    newp = call IM.dir_find_ver(ver_id);
+
+    /*
+     * setting backup, make sure we have an active
+     * It doesn't make sense to have a BACKUP and no ACTIVE
+     * yell and scream.  This is a sanity check.
+     */
+    get_active_backup(&ap, NULL);
+
+    /*
+     * the image requested to set as  backup needs to exist
+     * and must be in the VALID state.
+     */
+    if (!ap || !newp || (newp->slot_state != SLOT_VALID)) {
+      im_panic(23, (parg_t) newp, (parg_t) ap);
+      return FAIL;
+    }
+    newp->slot_state = SLOT_BACKUP;
+    dir = &imcb.dir;
+    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
+
+    /*
+     * directory has been updated.  Fire up a dir flush
+     */
+    imcb.im_state = IMS_DSB_SYNC_REQ_SD;
+    if ((err = call SDResource.request()))
+      im_panic(24, err, 0);
+    return SUCCESS;
+  }
+
 
 
   /*
@@ -886,6 +924,11 @@ implementation {
         imcb.im_state = IMS_DSA_SYNC_WRITE;
         write_dir_cache();
         return;
+
+      case  IMS_DSB_SYNC_REQ_SD:
+        imcb.im_state = IMS_DSB_SYNC_WRITE;
+        write_dir_cache();
+        return;
     }
   }
 
@@ -977,6 +1020,12 @@ implementation {
         call SDResource.release();
         signal Booted.booted();         /* this is wrong */
         signal IM.dir_set_active_complete();
+        return;
+
+      case  IMS_DSB_SYNC_WRITE:
+        imcb.im_state = IMS_IDLE;
+        call SDResource.release();
+        signal IM.dir_set_backup_complete();
         return;
     }
   }
