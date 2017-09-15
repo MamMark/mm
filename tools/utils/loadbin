@@ -19,8 +19,8 @@
 # ie.  loadbin -t nib dev6a
 #        target = dev6a, type = /nib, loadaddr = 0x00020000
 
-VERSION=0.1.0
-USAGE="usage: loadbin -hvV [-s sn ] [-t {golden|nib}] target"
+VERSION=0.1.2
+USAGE="usage: loadbin -hvgnV [-s sn ] [-t {golden|nib}] target"
 
 TYPE=
 SERIALNUM=
@@ -28,7 +28,7 @@ LOADADDR=0x00000000
 VERBOSE=
 
 # --- Option processing --------------------------------------------
-while getopts ":vhqs:t:" optname
+while getopts ":vgnVhqs:t:" optname
 do
     case "$optname" in
         "V")
@@ -53,6 +53,13 @@ do
         "s")
             SERIALNUM=$OPTARG
             ;;
+        "g")
+            TYPE=/golden
+            ;;
+        "n")
+            TYPE=/nib
+            LOADADDR=0x00020000
+            ;;
         "t")
             case $OPTARG in
                 "golden" | "g" | "gold" )
@@ -76,6 +83,12 @@ do
 done
 
 shift $(($OPTIND - 1))
+if [ $# -ne 1 ]; then
+    echo "*** must specify target"
+    echo $USAGE
+    exit 1
+fi
+
 TARGET=$1
 DESTDIR=build/${TARGET}${TYPE}
 CMDFILE=${DESTDIR}/jlink.cmd
@@ -103,15 +116,15 @@ h
 loadfile ${DESTDIR}/main.bin,${LOADADDR}
 q
 EOF
+
 if [ "z$VERBOSE" = "zt" ] ; then
-    JLinkExe ${SNSWITCH} -commandfile ${CMDFILE} > ${LOGFILE}
-    RET_VAL=$?
-    cat ${LOGFILE}
+    JLinkExe ${SNSWITCH} -commandfile ${CMDFILE} | tee ${LOGFILE}
+    RET_VAL=${PIPESTATUS[0]}
 else
     JLinkExe ${SNSWITCH} -commandfile ${CMDFILE} > ${LOGFILE}
     RET_VAL=$?
 fi
 if [ $RET_VAL -ne 0 ] ; then
-    echo "*** download failed"
+    echo "*** download failed.  See ${LOGFILE} for details."
     echo
 fi
