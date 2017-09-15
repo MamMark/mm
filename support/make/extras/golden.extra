@@ -1,2 +1,5 @@
-$(info building Golden image, load addr 0x0000_0000)
 LINKERFILE = $(PLATFORM_DIR)/linker_golden_0k.lds
+TOSMAKE_BUILD_DIR = build/$(TARGET)/golden
+
+$(info building Golden image, load addr 0x0000_0000)
+$(info build_dir: $(TOSMAKE_BUILD_DIR))

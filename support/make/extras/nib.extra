@@ -1,2 +1,5 @@
-$(info building NIB image, load addr 0x0002_0000)
 LINKERFILE = $(PLATFORM_DIR)/linker_nib_128k.lds
+TOSMAKE_BUILD_DIR = build/$(TARGET)/nib
+
+$(info building NIB image, load addr 0x0002_0000)
+$(info build_dir: $(TOSMAKE_BUILD_DIR))

@@ -4,6 +4,9 @@ Installing a development environment for the MamMark tag.
 
 State:
 
+2017-09-12
+    add binary loading (JLinkExe, loadbin)
+
 2017-08-01
     Ubuntu 16.04, T2 (TinyProd) github:tp-freeforall/prod(tp-master),
     MM github:MamMark/mm(master)
@@ -263,3 +266,20 @@ Disk identifier: 0x00000000
 	fsck -a /dev/sdc
 	fsck    /dev/sdc
 	eject   /dev/sdc
+
+
+10) Loading binary images.
+
+using the extra files, golden.extra nd nib.extra, we can build files that have
+been prepared for the golden and nib banks.  These will be put into
+build/<target>/golden and build/<target>/nib.
+
+The utility, loadbin, (tools/utils/loadbin, typically installed in /usr/local/bin)
+can then be used to download the main.bin from the appropriate directory to
+the target chip via a Segger JLink JTAG pod.
+
+ie.
+
+    loadbin dev6a
+    loadbin -t golden dev6a
+    loadbin -t nib dev6a
