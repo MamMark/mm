@@ -1,0 +1,117 @@
+#!/bin/bash
+# ------------------------------------------------------------------
+# loadbin: load a binary MamMark image
+# Copyright (c) 2017 Eric B. Decker
+# ------------------------------------------------------------------
+#
+# To install:
+#
+#     sudo install loadbin /usr/local/bin
+#
+# Usage examples:
+#
+# ie.  loadbin dev6a
+#        target = dev6a, type = none, loadaddr = 0
+#
+# ie.  loadbin -t golden dev6a
+#        target = dev6a, type = /golden, loadaddr = 0
+#
+# ie.  loadbin -t nib dev6a
+#        target = dev6a, type = /nib, loadaddr = 0x00020000
+
+VERSION=0.1.0
+USAGE="usage: loadbin -hvV [-s sn ] [-t {golden|nib}] target"
+
+TYPE=
+SERIALNUM=
+LOADADDR=0x00000000
+VERBOSE=
+
+# --- Option processing --------------------------------------------
+while getopts ":vhqs:t:" optname
+do
+    case "$optname" in
+        "V")
+            echo "version $VERSION"
+            exit 0;
+            ;;
+        "h")
+            echo $USAGE
+            exit 0;
+            ;;
+        "?")
+            echo "*** unknown option $OPTARG"
+            exit 0;
+            ;;
+        ":")
+            echo "*** need argument for option $OPTARG"
+            exit 0;
+            ;;
+        "v")
+            VERBOSE=t
+            ;;
+        "s")
+            SERIALNUM=$OPTARG
+            ;;
+        "t")
+            case $OPTARG in
+                "golden" | "g" | "gold" )
+                    TYPE=/golden
+                    ;;
+                "nib" | "n" )
+                    TYPE=/nib
+                    LOADADDR=0x00020000
+                    ;;
+                *)
+                    echo "*** bad type, need \"golden\" or \"nib\""
+                    exit 0;
+                    ;;
+            esac
+            ;;
+        *)
+            echo "*** unknown error while processing options"
+            exit 0;
+            ;;
+    esac
+done
+
+shift $(($OPTIND - 1))
+TARGET=$1
+DESTDIR=build/${TARGET}${TYPE}
+CMDFILE=${DESTDIR}/jlink.cmd
+LOGFILE=${DESTDIR}/jlink.log
+
+echo
+echo "*** loading:  ${DESTDIR}/main.bin  @ ${LOADADDR}"
+echo "*** log file: ${LOGFILE}"
+if [ "x$SERIALNUM" = "x" ] ; then SNSWITCH=
+else
+    SNSWITCH="-selectemubysn ${SERIALNUM}"
+    echo "*** using jtag pod ${SERIALNUM}"
+fi
+echo
+
+cat > ${CMDFILE} <<EOF
+// si jtag
+// JTAGConf -1,-1
+exitonerror 1
+si swd
+speed auto
+device msp432p401r
+r
+h
+loadfile ${DESTDIR}/main.bin,${LOADADDR}
+q
+EOF
+if [ "z$VERBOSE" = "zt" ] ; then
+    JLinkExe ${SNSWITCH} -commandfile ${CMDFILE} > ${LOGFILE}
+    RET_VAL=$?
+    cat ${LOGFILE}
+else
+    JLinkExe ${SNSWITCH} -commandfile ${CMDFILE} > ${LOGFILE}
+    RET_VAL=$?
+fi
+if [ $RET_VAL -ne 0 ] ; then
+    echo "*** download failed"
+    echo
+fi
