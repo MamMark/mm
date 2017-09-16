@@ -69,3 +69,19 @@ end
 document ss
 StreamStorage state
 end
+
+
+define im
+printf "\n"
+print ImageManagerP__imcb
+printf "\n"
+printf "buf_ptr:  %08x, remaining: %04x (%d)\n", ImageManagerP__imcb.buf_ptr, \
+        ImageManagerP__imcb.bytes_remaining, ImageManagerP__imcb.bytes_remaining,
+printf "IM state: "
+output ImageManagerP__imcb.im_state
+printf "\n"
+end
+document im
+ImageManager State
+end
+
