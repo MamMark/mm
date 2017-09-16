@@ -16,17 +16,6 @@
 #include <panic.h>
 #include <platform_panic.h>
 
-#ifdef ENABLE_ERASE
-#ifdef ALWAYS_ERASE
-bool     do_erase = 1;
-#else
-bool     do_erase = 0;
-#endif
-uint32_t erase_start;
-uint32_t erase_end;
-#endif
-
-
 typedef enum {
   DMS_IDLE = 0,				/* doing nothing */
   DMS_REQUEST,				/* resource requested */
@@ -56,11 +45,6 @@ module DblkManagerP {
     interface SSWrite as SSW;
     interface Resource as SDResource;
     interface Panic;
-
-#ifdef ENABLE_ERASE
-    interface SDerase;
-#endif
-
   }
 }
 
@@ -79,6 +63,7 @@ implementation {
   dm_state_t   dm_state;
   uint8_t     *dm_buf;
   uint32_t     lower, cur_blk, upper;
+  bool         do_erase = 0;
 
 
   void dm_panic(uint8_t where, parg_t p0, parg_t p1) {
@@ -108,6 +93,18 @@ implementation {
 
   event void Boot.booted() {
     error_t err;
+
+#ifdef DBLK_ERASE_ENABLE
+    /*
+     * FS.erase is split phase and will grab the SD,  We will wait on the
+     * erase when we request.  The FS/erase will complete and then we
+     * will get the grant.
+     */
+    if (do_erase) {
+      do_erase = 0;
+      call FileSystem.erase(FS_LOC_DBLK);
+    }
+#endif
 
     lower = call FileSystem.area_start(FS_LOC_DBLK);
     upper = call FileSystem.area_end(FS_LOC_DBLK);
@@ -212,17 +209,6 @@ implementation {
 	return;
     }
 
-
-#ifdef ENABLE_ERASE
-    if (do_erase) {
-      erase_start = dmc.dblk_lower;
-      erase_end   = dmc.dblk_upper;
-      nop();
-      call SDerase.erase(erase_start, erase_end);
-      return;
-    }
-#endif
-
     dm_state = DMS_IDLE;
 
     /*
@@ -238,17 +224,6 @@ implementation {
   }
 
 
-#ifdef ENABLE_ERASE
-  event void SDerase.eraseDone(uint32_t blk_start, uint32_t blk_end, error_t error) {
-    dm_state = DMS_IDLE;
-    dmc.dblk_nxt = dmc.dblk_lower + 1;
-
-    signal Booted.booted();
-    call SDResource.release();
-  }
-#endif
-
-
   command uint32_t DblkManager.get_nxt_blk() {
     return dmc.dblk_nxt;
   }
@@ -262,6 +237,8 @@ implementation {
     }
     return dmc.dblk_nxt;
   }
+
+  event void FileSystem.eraseDone(uint8_t which) { }
 
   async event void Panic.hook() { }
 }

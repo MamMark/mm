@@ -63,10 +63,6 @@ implementation {
   DMP.SDread     -> SD;
   DMP.FileSystem -> FileSystemC;
 
-#ifdef ENABLE_ERASE
-  DMP.SDerase    -> SD;
-#endif
-
   components PanicC;
   DMP.Panic -> PanicC;
 }

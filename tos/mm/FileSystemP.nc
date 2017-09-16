@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2010 - Eric B. Decker, Carl Davis
  * Copyright (c) 2017, Eric B. Decker
+ * Copyright (c) 2010 - Eric B. Decker, Carl Davis
  * All rights reserved.
  *
  * FileSystem.nc - simple raw area file system based on
@@ -26,22 +26,21 @@
 #include <panic.h>
 #include <platform_panic.h>
 
-#ifdef ENABLE_ERASE
-#ifdef ALWAYS_ERASE
-bool     do_erase = 1;
-#else
-bool     do_erase = 0;
-#endif
-uint32_t erase_start;
-uint32_t erase_end;
-#endif
-
+/*
+ * See fs_loc.h for definitions of FS_LOC to which region
+ * we are talking about.
+ */
 
 typedef enum {
-  FSS_IDLE = 0,				/* doing nothing */
-  FSS_REQUEST,				/* resource requested */
-  FSS_ZERO,				/* reading block zero */
+  FSS_IDLE = 0,				/* doing nothing       */
+  FSS_ZERO_REQ,				/* resource requested  */
+  FSS_ZERO,				/* reading block zero  */
+  FSS_ERASE_REQ,			/* resource requested  */
+  FSS_ERASE,                            /* working on an erase */
 } fs_state_t;
+
+
+//#define FS_ENABLE_ERASE               /* don't enable yet, doesn't work yet */
 
 
 #ifndef PANIC_FS
@@ -61,6 +60,7 @@ module FileSystemP {
   uses {
     interface Boot;			/* incoming booted signal */
     interface SDread;
+    interface SDerase;
     interface SSWrite  as SSW;
     interface Resource as SDResource;
     interface Panic;
@@ -72,7 +72,7 @@ implementation {
   fs_loc_t     fs_loc;
   fs_state_t   fs_state;
   uint8_t     *fs_buf;
-
+  uint8_t      fs_which;
 
   void fs_panic(uint8_t where, parg_t arg0) {
     call Panic.panic(PANIC_FS, where, arg0, 0, 0, 0);
@@ -126,71 +126,54 @@ implementation {
   }
 
 
+  void do_erase() {
+#ifdef FS_ENABLE_ERASE
+    error_t err;
+
+    fs_state = FSS_ERASE;
+    err = call SDerase.erase(fs_loc.locators[fs_which].start,
+                             fs_loc.locators[fs_which].end);
+    if (err) {
+      fs_panic_idle(4, err);
+      return;
+    }
+#endif
+  }
+
+
   event void Boot.booted() {
     error_t err;
 
-    fs_state = FSS_REQUEST;
+    fs_state = FSS_ZERO_REQ;
     if ((err = call SDResource.request()))
       fs_panic_idle(1, err);
     return;
   }
 
 
-  event void SDResource.granted() {
+  command error_t FS.erase(uint8_t which) {
+#ifdef FS_ENABLE_ERASE
     error_t err;
 
-    if (fs_state != FSS_REQUEST) {
-      fs_panic_idle(2, fs_state);
-      return;
+    if (fs_state != FSS_IDLE) {
+      fs_panic(9, fs_state);
+      return EBUSY;
     }
-    fs_state = FSS_ZERO;
-    fs_buf = call SSW.get_temp_buf();
-    if ((err = call SDread.read(0, fs_buf))) {
-      fs_panic_idle(3, err);
-      return;
+    if (which >= FS_LOC_MAX) {
+      fs_panic(8, which);
+      return FAIL;
     }
-  }
-
-
-  event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
-    fs_loc_t *fsl;
-    uint8_t  *dp;
-
-    dp = fs_buf;
-    if (err || dp == NULL || dp != read_buf) {
-      call Panic.panic(PANIC_FS, 4, err, (parg_t) dp, (parg_t) read_buf, 0);
-      return;
+    fs_which = which;
+    fs_state = FSS_ERASE_REQ;
+    err = call SDResource.request();
+    if (err) {
+      fs_panic(9, err);
+      return FAIL;
     }
-
-    switch(fs_state) {
-      default:
-	  fs_panic_idle(5, fs_state);
-	  return;
-
-      case FSS_ZERO:
-	fsl = (void *) ((uint8_t *) dp + FS_LOC_OFFSET);
-        err = check_fs_loc(fsl);
-        if (err) {
-	  fs_panic_idle(6, err);
-	  return;
-	}
-
-        memcpy(&fs_loc, fsl, sizeof(fs_loc_t));
-        break;
-    }
-
-    fs_state = FSS_IDLE;
-
-    /*
-     * signal Booted first, then release the SD
-     *
-     * If the next module in the sequenced boot chain wants to
-     * use the SD it will issue a request, which will queue them up.
-     * Then when we release, it will get the SD without powering the
-     * SD down.
-     */
-    signal Booted.booted();
-    call SDResource.release();
+    return err;
+#else
+    return SUCCESS;
+#endif
   }
 
 
@@ -208,6 +191,85 @@ implementation {
     fs_panic(8, which);
     return 0;
   }
+
+
+  event void SDResource.granted() {
+    error_t err;
+
+    switch (fs_state) {
+      default:
+        fs_panic_idle(2, fs_state);
+        return;
+
+      case FSS_ZERO_REQ:
+        fs_state = FSS_ZERO;
+        fs_buf = call SSW.get_temp_buf();
+        if ((err = call SDread.read(0, fs_buf))) {
+          fs_panic_idle(3, err);
+          return;
+        }
+        return;
+
+      case FSS_ERASE_REQ:
+        do_erase();
+        return;
+    }
+  }
+
+
+  event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
+    fs_loc_t *fsl;
+    uint8_t  *dp;
+
+    dp = fs_buf;
+    if (err || dp == NULL || dp != read_buf) {
+      call Panic.panic(PANIC_FS, 4, err, (parg_t) dp, (parg_t) read_buf, 0);
+      return;
+    }
+
+    if (fs_state != FSS_ZERO) {
+      fs_panic_idle(5, fs_state);
+      return;
+    }
+
+    fsl = (void *) ((uint8_t *) dp + FS_LOC_OFFSET);
+    err = check_fs_loc(fsl);
+    if (err) {
+      fs_panic_idle(6, err);
+      return;
+    }
+
+    memcpy(&fs_loc, fsl, sizeof(fs_loc_t));
+    fs_state = FSS_IDLE;
+
+    /*
+     * signal Booted first, then release the SD
+     *
+     * If the next module in the sequenced boot chain wants to
+     * use the SD it will issue a request, which will queue them up.
+     * Then when we release, it will get the SD without powering the
+     * SD down.
+     *
+     * We may also be doing an Erase, in which case our state will no
+     * longer be IDLE.  Only release if IDLE.
+     */
+    signal Booted.booted();
+    if (fs_state == FSS_IDLE)
+      call SDResource.release();
+  }
+
+
+  event void SDerase.eraseDone(uint32_t blk_start, uint32_t blk_end, error_t err) {
+#ifdef FS_ENABLE_ERASE
+    if (err || fs_state != FSS_ERASE) {
+      call Panic.panic(PANIC_FS, 4, err, fs_state, 0, 0);
+      return;
+    }
+#endif
+    fs_state = FSS_IDLE;
+    signal FS.eraseDone(fs_which);
+  }
+
 
   async event void Panic.hook() { }
 }

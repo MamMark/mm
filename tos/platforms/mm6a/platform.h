@@ -29,6 +29,9 @@
 //#define TRACE_USE_PLATFORM
 //#define MEMINIT_STOP
 
+#define IM_ERASE_ENABLE
+#define DBLK_ERASE_ENABLE
+
 #define SI446x_HW_CTS
 
 #include <panic.h>

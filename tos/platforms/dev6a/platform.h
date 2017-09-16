@@ -28,6 +28,9 @@
 #define MEMINIT_STOP
 #define PANIC_WIGGLE
 
+#define IM_ERASE_ENABLE
+#define DBLK_ERASE_ENABLE
+
 #define SI446x_HW_CTS
 
 #include <panic.h>

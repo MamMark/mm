@@ -31,6 +31,7 @@ implementation {
   FS_P.SSW        -> SSWriteC;
   FS_P.SDResource -> SD;
   FS_P.SDread     -> SD;
+  FS_P.SDerase    -> SD;
 
   components PanicC;
   FS_P.Panic -> PanicC;

@@ -178,6 +178,7 @@ implementation {
    * control cells, imcb, ImageManager Control Block
    */
   imcb_t imcb;
+  bool   do_erase = 0;
 
 
   void im_warn(uint8_t where, parg_t p0, parg_t p1) {
@@ -468,6 +469,18 @@ implementation {
 
   event void Boot.booted() {
     error_t err;
+
+#ifdef IM_ERASE_ENABLE
+    /*
+     * FS.erase is split phase and will grab the SD,  We will wait on the
+     * erase when we request.  The FS/erase will complete and then we
+     * will get the grant.
+     */
+    if (do_erase) {
+      do_erase = 0;
+      call FS.erase(FS_LOC_IMAGE);
+    }
+#endif
 
     imcb.region_start_blk = call FS.area_start(FS_LOC_IMAGE);
     imcb.region_end_blk   = call FS.area_end(FS_LOC_IMAGE);
@@ -1087,6 +1100,8 @@ implementation {
         return;
     }
   }
+
+  event void FS.eraseDone(uint8_t which) { }
 
   async event void Panic.hook() { }
 }
