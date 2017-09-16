@@ -186,7 +186,7 @@
 #error MSP432_CLK has an unrecognized speed
 #endif
 
-#define USECS_VAL       (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV
+#define USECS_VAL       ((0UL)-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV
 
 /*
  * to convert Jiffies to usecs (decimal).
