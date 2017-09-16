@@ -868,6 +868,8 @@ implementation {
     error_t err;
     image_dir_t *dir;
 
+    nop();
+    nop();
     if (imcb.im_state != IMS_FILL_WAITING) {
       im_panic(22, imcb.im_state, 0);
       return FAIL;
@@ -957,6 +959,8 @@ implementation {
   event void SDResource.granted() {
     error_t err;
 
+    nop();
+    nop();
     switch(imcb.im_state) {
       default:
         im_panic(26, imcb.im_state, 0);
@@ -964,6 +968,7 @@ implementation {
 
       case IMS_INIT_REQ_SD:
         imcb.im_state = IMS_INIT_READ_DIR;
+        nop();
         err = call SDread.read(imcb.region_start_blk, im_wrk_buf);
         if (err) {
           im_panic(27, err, 0);
@@ -1013,6 +1018,8 @@ implementation {
     image_dir_t *dir;
     int i;
 
+    nop();
+    nop();
     dir = &imcb.dir;
     if (imcb.im_state != IMS_INIT_READ_DIR) {
       im_panic(28, imcb.im_state, err);
@@ -1054,6 +1061,9 @@ implementation {
 
 
   event void SDwrite.writeDone(uint32_t blk, uint8_t *buf, error_t error) {
+
+    nop();
+    nop();
     switch(imcb.im_state) {
       default:
         im_panic(29, imcb.im_state, 0);
