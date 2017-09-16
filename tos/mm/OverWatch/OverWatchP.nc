@@ -60,8 +60,8 @@ bool good_nib_vectors() {
   iip  = (image_info_t *) NIB_INFO;
   if (iip->sig != IMAGE_INFO_SIG)
     return FALSE;
-  vec_sum = __checksum32_aligned((void *) NIB_BASE, NIB_VEC_BYTES);
   if (iip->vector_chk) {
+    vec_sum = __checksum32_aligned((void *) NIB_BASE, NIB_VEC_BYTES);
     vec_sum += iip->vector_chk;
     if (vec_sum) {
       ow_control_block.vec_chk_fail++;
@@ -94,8 +94,8 @@ bool good_nib_flash() {
   iip  = (image_info_t *) NIB_INFO;
   if (iip->sig != IMAGE_INFO_SIG)
     return FALSE;
-  image_sum = __checksum32_aligned((void *) NIB_BASE, iip->image_length);
   if (iip->image_chk) {
+    image_sum = __checksum32_aligned((void *) NIB_BASE, iip->image_length);
     if (image_sum) {
       ow_control_block.image_chk_fail++;
       return FALSE;
