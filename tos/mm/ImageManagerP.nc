@@ -416,7 +416,7 @@ implementation {
       }
     } while (0);
     if (panic_val)
-      im_panic(2, panic_val, imcb.im_state);
+      im_panic(1, panic_val, imcb.im_state);
   }
 
 
@@ -425,7 +425,7 @@ implementation {
 
     verify_IM();
     if ((err = call SDwrite.write(imcb.region_start_blk, (void *) &imcb.dir))) {
-      im_panic(3, err, 0);
+      im_panic(2, err, 0);
       return;
     }
   }
@@ -573,7 +573,7 @@ implementation {
     image_dir_t *dir;
 
     if (imcb.im_state != IMS_FILL_WAITING) {
-      im_panic(10, imcb.im_state, 0);
+      im_panic(8, imcb.im_state, 0);
       return FAIL;
     }
     verify_IM();
@@ -597,7 +597,7 @@ implementation {
    */
   command bool IM.check_fit(uint32_t len) {
     if (len <= IMAGE_SIZE) return TRUE;
-    im_panic(11, imcb.im_state, len);
+    im_panic(9, imcb.im_state, len);
     return FALSE;
   }
 
@@ -616,14 +616,14 @@ implementation {
     error_t err;
 
     if (imcb.im_state != IMS_IDLE) {
-      im_panic(13, imcb.im_state, 0);
+      im_panic(10, imcb.im_state, 0);
       return FAIL;
     }
 
     /* dir_find_ver does the call to verify_IM */
     sp  = call IM.dir_find_ver(ver_id);
     if (!sp) {
-      im_panic(14, imcb.im_state, 0);
+      im_panic(11, imcb.im_state, 0);
       return FAIL;
     }
     sp->slot_state = SLOT_EMPTY;
@@ -632,7 +632,7 @@ implementation {
     imcb.im_state = IMS_DELETE_SYNC_REQ_SD;
     err = call SDResource.request();
     if (err) {
-      im_panic(15, err, 0);
+      im_panic(12, err, 0);
       return FAIL;
     }
     return SUCCESS;
@@ -719,7 +719,7 @@ implementation {
     image_dir_slot_t *newp, *active;
 
     if (imcb.im_state != IMS_IDLE) {
-      im_panic(22, imcb.im_state, 0);
+      im_panic(13, imcb.im_state, 0);
       return FAIL;
     }
 
@@ -731,7 +731,7 @@ implementation {
      * and must be in the VALID state.
      */
     if ((!newp) || (newp->slot_state != SLOT_VALID)) {
-      im_panic(23, imcb.im_state, (parg_t) newp);
+      im_panic(14, imcb.im_state, (parg_t) newp);
       return FAIL;
     }
 
@@ -749,7 +749,7 @@ implementation {
      */
     imcb.im_state = IMS_DSA_SYNC_REQ_SD;
     if ((err = call SDResource.request()))
-      im_panic(24, err, 0);
+      im_panic(15, err, 0);
     return SUCCESS;
   }
 
@@ -768,7 +768,7 @@ implementation {
     image_dir_slot_t *newp, *ap;
 
     if (imcb.im_state != IMS_IDLE) {
-      im_panic(22, imcb.im_state, 0);
+      im_panic(16, imcb.im_state, 0);
       return FAIL;
     }
 
@@ -787,11 +787,12 @@ implementation {
      * and must be in the VALID state.
      */
     if (!ap || !newp || (newp->slot_state != SLOT_VALID)) {
-      im_panic(23, (parg_t) newp, (parg_t) ap);
+      im_panic(17, (parg_t) newp, (parg_t) ap);
       return FAIL;
     }
     newp->slot_state = SLOT_BACKUP;
     dir = &imcb.dir;
+    dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
 
     /*
@@ -799,7 +800,7 @@ implementation {
      */
     imcb.im_state = IMS_DSB_SYNC_REQ_SD;
     if ((err = call SDResource.request()))
-      im_panic(24, err, 0);
+      im_panic(18, err, 0);
     return SUCCESS;
   }
 
@@ -819,14 +820,14 @@ implementation {
     image_dir_slot_t *active, *backup;
 
     if (imcb.im_state != IMS_IDLE) {
-      im_panic(22, imcb.im_state, 0);
+      im_panic(19, imcb.im_state, 0);
       return FAIL;
     }
 
     verify_IM();
     get_active_backup(&active, &backup);
     if (!active) {
-      im_panic(23, (parg_t) active, (parg_t) backup);
+      im_panic(20, (parg_t) active, (parg_t) backup);
       return FAIL;
     }
     active->slot_state = SLOT_EJECTED;
@@ -841,7 +842,7 @@ implementation {
      */
     imcb.im_state = IMS_EJECT_SYNC_REQ_SD;
     if ((err = call SDResource.request()))
-      im_panic(24, err, 0);
+      im_panic(21, err, 0);
     return SUCCESS;
   }
 
@@ -863,7 +864,7 @@ implementation {
     image_dir_t *dir;
 
     if (imcb.im_state != IMS_FILL_WAITING) {
-      im_panic(24, imcb.im_state, 0);
+      im_panic(22, imcb.im_state, 0);
       return FAIL;
     }
     verify_IM();
@@ -880,7 +881,7 @@ implementation {
     else imcb.im_state = IMS_FILL_LAST_REQ_SD;
     err = call SDResource.request();
     if (err) {
-      im_panic(24, err, 0);
+      im_panic(23, err, 0);
       return FAIL;
     }
     return SUCCESS;
@@ -916,7 +917,7 @@ implementation {
     error_t  err;
 
     if (imcb.im_state != IMS_FILL_WAITING) {
-      im_panic(25, imcb.im_state, 0);
+      im_panic(24, imcb.im_state, 0);
       return 0;
     }
 
@@ -937,7 +938,7 @@ implementation {
       imcb.im_state = IMS_FILL_REQ_SD;
       err = call SDResource.request();
       if (err) {
-        im_panic(26, err, 0);
+        im_panic(25, err, 0);
         return FAIL;
       }
     }
@@ -950,14 +951,14 @@ implementation {
 
     switch(imcb.im_state) {
       default:
-        im_panic(28, imcb.im_state, 0);
+        im_panic(26, imcb.im_state, 0);
         return;
 
       case IMS_INIT_REQ_SD:
         imcb.im_state = IMS_INIT_READ_DIR;
         err = call SDread.read(imcb.region_start_blk, im_wrk_buf);
         if (err) {
-          im_panic(29, err, 0);
+          im_panic(27, err, 0);
           return;
         }
         return;
@@ -1006,7 +1007,7 @@ implementation {
 
     dir = &imcb.dir;
     if (imcb.im_state != IMS_INIT_READ_DIR) {
-      im_panic(30, imcb.im_state, err);
+      im_panic(28, imcb.im_state, err);
       return;
     }
 
@@ -1035,7 +1036,7 @@ implementation {
      * check for validity.
      */
     memcpy(dir, im_wrk_buf, sizeof(*dir));
-    verify_IM();
+    verify_IM();                        /* verify the directory */
 
     imcb.im_state = IMS_IDLE;
     call SDResource.release();
@@ -1047,7 +1048,7 @@ implementation {
   event void SDwrite.writeDone(uint32_t blk, uint8_t *buf, error_t error) {
     switch(imcb.im_state) {
       default:
-        im_panic(33, imcb.im_state, 0);
+        im_panic(29, imcb.im_state, 0);
         return;
 
       case IMS_INIT_SYNC_WRITE:
