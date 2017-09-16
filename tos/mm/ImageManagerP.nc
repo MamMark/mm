@@ -874,6 +874,8 @@ implementation {
     }
     verify_IM();
     imcb.filling_slot_p->slot_state = SLOT_VALID;
+    imcb.filling_slot_p = NULL;
+
     dir = &imcb.dir;
     dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
@@ -1066,6 +1068,8 @@ implementation {
       case IMS_FILL_WRITING:
         imcb.im_state = IMS_FILL_WAITING;
         imcb.filling_blk++;
+        imcb.buf_ptr = &im_wrk_buf[0];
+        imcb.bytes_remaining = SD_BLOCKSIZE;
         call SDResource.release();
         signal IM.write_continue();
         return;
