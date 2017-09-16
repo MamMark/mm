@@ -114,8 +114,10 @@ typedef enum {
 
   IMS_FILL_LAST_REQ_SD,         /* flush last buffer */
   IMS_FILL_LAST_WRITE,
+
   IMS_FILL_SYNC_REQ_SD,         /* sync directory entry */
-  IMS_FILL_SYNC_WRITE,          /* end of filling states */
+  IMS_FILL_SYNC_WRITE,
+
   IMS_DELETE_SYNC_REQ_SD,       /* delete, set to EMPTY */
   IMS_DELETE_SYNC_WRITE,
   IMS_DSA_SYNC_REQ_SD,          /* dir_set_active */
@@ -362,8 +364,8 @@ implementation {
           break;
       }
 
-      if (imcb.im_state >= IMS_FILL_WAITING &&
-          imcb.im_state <= IMS_FILL_SYNC_WRITE) {
+      if (imcb.im_state >=  IMS_FILL_WAITING &&
+          imcb.im_state <=  IMS_FILL_WRITING) {
         /*
          * In a FILLING state, do FILLING checks
          */
