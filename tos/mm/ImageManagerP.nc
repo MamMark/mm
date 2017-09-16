@@ -544,6 +544,7 @@ implementation {
       return ENOMEM;
     ep->slot_state = SLOT_FILLING;
     ep->ver_id = ver_id;
+    dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
 
     imcp->filling_blk = ep->start_sec;
@@ -582,6 +583,7 @@ implementation {
     imcb.filling_slot_p = NULL;
     imcb.im_state = IMS_IDLE;
     dir = &imcb.dir;
+    dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
     return SUCCESS;
   }
@@ -628,6 +630,7 @@ implementation {
     }
     sp->slot_state = SLOT_EMPTY;
     dir = &imcb.dir;
+    dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
     imcb.im_state = IMS_DELETE_SYNC_REQ_SD;
     err = call SDResource.request();
@@ -742,6 +745,7 @@ implementation {
 
     newp->slot_state = SLOT_ACTIVE;
     dir = &imcb.dir;
+    dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
 
     /*
@@ -835,6 +839,7 @@ implementation {
       backup->slot_state = SLOT_ACTIVE;
 
     dir = &imcb.dir;
+    dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
 
     /*
@@ -870,6 +875,7 @@ implementation {
     verify_IM();
     imcb.filling_slot_p->slot_state = SLOT_VALID;
     dir = &imcb.dir;
+    dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
 
     /*
@@ -1017,7 +1023,6 @@ implementation {
      * check for all zeroes.  If so we need to initialize the
      * directory to empty with proper start_sec fields.
      */
-    nop();
     if (chk_zero(im_wrk_buf, SD_BLOCKSIZE)) {
       dir->dir_sig   = IMAGE_DIR_SIG;
       dir->dir_sig_a = IMAGE_DIR_SIG;
@@ -1025,6 +1030,7 @@ implementation {
         dir->slots[i].start_sec =
           imcb.region_start_blk + ((IMAGE_SIZE_SECTORS * i) + 1);
 
+      dir->chksum = 0;
       dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
       imcb.im_state = IMS_INIT_SYNC_WRITE;
       write_dir_cache();
