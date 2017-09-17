@@ -303,7 +303,6 @@ implementation {
         return;
 
       case OWT_ACT_INIT:
-        owcp->owt_action = OWT_ACT_NONE;
         /*
          * 1) get IM.active -> ver
          * 2) check NIB for valid  -> no match
@@ -369,7 +368,6 @@ implementation {
         return;
 
       case OWT_ACT_INSTALL:
-        owcp->owt_action = OWT_ACT_NONE;
         /*
          * 1) get IM.active -> none strange
          *    ver and s0
@@ -382,8 +380,8 @@ implementation {
          * 4) verify checksum -> abort strange
          * 5) OW.force_boot(NIB)
          */
+
       case OWT_ACT_EJECT:
-        owcp->owt_action = OWT_ACT_NONE;
         /*
          * IM.eject
          * <- eject complete
