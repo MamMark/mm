@@ -485,7 +485,8 @@ implementation {
     owcp->cycle = 0;
     owcp->time = 1000;                  /* just pretend for now */
     owcp->reboot_reason = reason;
-    owcp->ow_req = OW_REQ_REBOOT;
+    if (SCB->VTOR) owcp->ow_req = OW_REQ_NIB_REBOOT;
+    else           owcp->ow_req = OW_REQ_REBOOT;
     call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
   }
 
