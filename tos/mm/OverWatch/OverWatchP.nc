@@ -297,9 +297,7 @@ implementation {
     switch (owcp->owt_action) {
       case OWT_ACT_NONE:
         owcp->strange++;
-        owcp->ow_boot_mode  = OW_BOOT_GOLD;
-        owcp->reboot_reason = ORR_BAD_OWT_ACT;
-        call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
+        call OverWatch.force_boot(OW_BOOT_GOLD);
         return;
 
       case OWT_ACT_INIT:
