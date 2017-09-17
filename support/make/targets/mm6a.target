@@ -17,6 +17,8 @@ PFLAGS += -D_BUILD=$(BUILD_NUM)
 PFLAGS += -I$(MM_ROOT)/include
 PFLAGS += -I$(MM_ROOT)/mm/include
 
+OPTFLAGS += -ggdb
+
 include $(PLATFORM_DIR)/Makefile.platform
 $(call TOSMake_include_platform,mm6a)
 $(call TOSMake_include_make_platform,msp432)
