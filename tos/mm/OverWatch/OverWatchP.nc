@@ -268,6 +268,7 @@ implementation {
 
   uint8_t *owt_ptr;
   uint32_t owt_len;
+  uint32_t owt_len_to_send = 128;
 
   /*
    * Boot.booted - check booting mode for Golden, else OWT
@@ -357,6 +358,23 @@ implementation {
           owt_ptr += (owt_len - remaining);
           owt_len = remaining;
           return;
+
+#ifdef notdef
+          while (owt_len) {
+            remaining = call IM.write(owt_ptr, owt_len_to_send);
+            if (remaining) {
+              owt_ptr += (owt_len_to_send - remaining);
+              owt_len -= (owt_len_to_send - remaining);
+              return;
+            }
+            owt_len -= owt_len_to_send;
+            owt_ptr += owt_len_to_send;
+            if (owt_len_to_send > owt_len)
+              owt_len_to_send = owt_len;
+          }
+          call IM.finish();
+          return;
+#endif
         }
 
         /*
@@ -394,6 +412,8 @@ implementation {
   event void IM.write_continue() {
     uint32_t remaining;
 
+    nop();
+    nop();
     remaining = call IM.write(owt_ptr, owt_len);
     if (!remaining) {
       call IM.finish();
@@ -401,6 +421,24 @@ implementation {
     }
     owt_ptr += (owt_len - remaining);
     owt_len = remaining;
+    return;
+
+#ifdef notdef
+    while (owt_len) {
+      remaining = call IM.write(owt_ptr, owt_len_to_send);
+      if (remaining) {
+        owt_ptr += (owt_len_to_send - remaining);
+        owt_len -= (owt_len_to_send - remaining);
+        return;
+      }
+      owt_len -= owt_len_to_send;
+      owt_ptr += owt_len_to_send;
+      if (owt_len_to_send > owt_len)
+        owt_len_to_send = owt_len;
+    }
+    call IM.finish();
+    return;
+#endif
   }
 
 
