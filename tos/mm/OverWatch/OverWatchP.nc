@@ -285,7 +285,7 @@ implementation {
   event void Boot.booted() {
     ow_control_block_t *owcp;
     image_dir_slot_t   *active;
-    image_info_t       *info;
+    image_info_t       *iip;
     uint32_t remaining;
     error_t err;
 
@@ -314,14 +314,44 @@ implementation {
          */
         active = call IM.dir_get_active();
         if (!active) {
-          info = (void *) NIB_INFO;
-          err = call IM.alloc(info->ver_id);
-          if (err) {
+          /*
+           * no active, we need to rectify that.
+           *
+           * We need to check the NIB to see if it is valid
+           * We can check the image_chksum for validity.
+           * Note, 0 says checksums aren't turned on, ignore
+           * them.
+           *
+           * If the NIB is bad, then just boot GOLD.
+           */
+          if (!good_nib_flash()) {
+            owcp->strange++;
+            call OverWatch.force_boot(OW_BOOT_GOLD);
+            /* shouldn't return from the above */
+            return;
+          }
+
+          /*
+           * good NIB, no active, copy the NIB into an image
+           * slot using the ImageManager.  Verify it will fit.
+           */
+          iip = (void *) NIB_INFO;
+          if (!call IM.check_fit(iip->image_length)) {
+            owcp->strange++;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
           }
-          owt_ptr = (void *) NIB_BASE;
+          err = call IM.alloc(iip->ver_id);
+          if (err) {
+            owcp->strange++;
+            call OverWatch.force_boot(OW_BOOT_GOLD);
+            return;
+          }
+          nop();
+          owt_ptr = (void *) iip->image_start;
+//            owt_len = iip->image_length;
           owt_len = 128 * 1024;
+
           remaining = call IM.write(owt_ptr, owt_len);
           if (!remaining) {
             call IM.finish();
@@ -331,6 +361,12 @@ implementation {
           owt_len = remaining;
           return;
         }
+
+        /*
+         * We have a active, check the NIB and see if it
+         * matches what the ImageManager thinks is the ACTIVE.
+         */
+        return;
 
       case OWT_ACT_INSTALL:
         owcp->owt_action = OWT_ACT_NONE;
@@ -373,15 +409,15 @@ implementation {
 
 
   event void IM.finish_complete() {
-    image_info_t *info;
+    image_info_t *iip;
 
-    info = (void *) NIB_INFO;
-    call IM.dir_set_active(info->ver_id);
+    iip = (void *) NIB_INFO;
+    call IM.dir_set_active(iip->ver_id);
   }
 
 
   event void IM.dir_set_active_complete() {
-    call OverWatch.force_boot(OW_BOOT_NIB);
+    call OverWatch.install();
   }
 
 
