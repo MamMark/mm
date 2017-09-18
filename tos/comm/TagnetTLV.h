@@ -97,13 +97,13 @@ typedef enum {
   TN_SYS_ID,
   TN_SYS_NID_ID,
   TN_SYS_BOOT_ID,
-  TN_SYS_BOOT_SWITCH_ID,
   TN_SYS_BOOT_ACTIVE_ID,
   TN_SYS_BOOT_BACKUP_ID,
   TN_SYS_BOOT_GOLDEN_ID,
   TN_SYS_BOOT_NIB_ID,
 
-  TN_LAST_ID
+  TN_LAST_ID,
+  TN_MAX_ID = 65000,  // force two byte enum size
 } tn_ids_t;
 
 /* structure used to hold configuration values for each of the elements
@@ -145,11 +145,10 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   {TN_SYS_ID,"\001\002sys","\001\008sys help",UQ_TN_SYS},
   {TN_SYS_NID_ID,TN_BCAST_NID_TLV,"\1\12sys_nid help",UQ_TN_SYS_NID},
   {TN_SYS_BOOT_ID,"\001\004\boot","\001\013sys_boot help",UQ_TN_SYS_BOOT},
-  {TN_SYS_BOOT_SWITCH_ID,"\001\002sw","\001\016boot_switch help",UQ_TN_SYS_BOOT_SWITCH},
-  {TN_SYS_BOOT_ACTIVE_ID,"\001\002sw","\001\016boot_active help",UQ_TN_SYS_BOOT_ACTIVE},
-  {TN_SYS_BOOT_BACKUP_ID,"\001\002sw","\001\016boot_backup help",UQ_TN_SYS_BOOT_BACKUP},
-  {TN_SYS_BOOT_GOLDEN_ID,"\001\002sw","\001\016boot_golden help",UQ_TN_SYS_BOOT_GOLDEN},
-  {TN_SYS_BOOT_NIB_ID,   "\001\002sw","\001\013boot_nib help",   UQ_TN_SYS_BOOT_NIB},
+  {TN_SYS_BOOT_ACTIVE_ID,"\001\003act","\001\016boot_active help",UQ_TN_SYS_BOOT_ACTIVE},
+  {TN_SYS_BOOT_BACKUP_ID,"\001\003bkp","\001\016boot_backup help",UQ_TN_SYS_BOOT_BACKUP},
+  {TN_SYS_BOOT_GOLDEN_ID,"\001\003gld","\001\016boot_golden help",UQ_TN_SYS_BOOT_GOLDEN},
+  {TN_SYS_BOOT_NIB_ID,   "\001\003nib","\001\013boot_nib help",   UQ_TN_SYS_BOOT_NIB},
 };
 
 /*

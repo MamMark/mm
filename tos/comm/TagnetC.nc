@@ -120,11 +120,6 @@ configuration TagnetC {
   }
   uses {
     interface TagnetAdapter<tagnet_gps_xyz_t>  as InfoSensGpsXyz;
-    interface TagnetAdapter<tagnet_sys_boot_t> as SysBootSwitch;
-    interface TagnetAdapter<tagnet_sys_boot_t> as SysBootActive;
-    interface TagnetAdapter<tagnet_sys_boot_t> as SysBootBackup;
-    interface TagnetAdapter<tagnet_sys_boot_t> as SysBootGolden;
-    interface TagnetAdapter<tagnet_sys_boot_t> as SysBootNib;
   }
 }
 implementation {
@@ -141,8 +136,7 @@ implementation {
   TagVx.Super         -> RootVx.Sub[unique(UQ_TN_ROOT)];
 
   // instantiate object pathname for the TagNet poll event
-  // -/tag-----/poll----/<nid>----/ev----poll_ev_leaf
-  //                          \---/cnt---poll_cnt_leaf.adapter
+  // -/tag-----/poll----/<nid>----/ev----PollEvLf
   // note this object is used by TagNet Master protocol to determine status of this node
   // number of times polled is exposed as an integer adapter for use as a counter
   components new         TagnetNameElementP   (TN_POLL_ID, UQ_TN_POLL)         as PollVx;
@@ -154,6 +148,7 @@ implementation {
   PollCount           =  PollEvLf.Adapter;
 
   // instantiate object pathname for the TagNet poll statistics counter
+  // -/tag-----/poll----/<nid>----/cnt---PollEvLf.adapter
   // currently wire directly to poll event
   components new         TagnetIntegerAdapterP(TN_POLL_CNT_ID, UQ_TN_POLL_CNT) as PollCntLf;
   PollCntLf.Super     -> PollNidVx.Sub[unique(UQ_TN_POLL_NID)];
@@ -180,37 +175,32 @@ implementation {
   components new         TagnetNameElementP   (TN_SD_ID, UQ_TN_SD)         as SdVx;
   components new         TagnetNameElementP   (TN_SD_NID_ID, UQ_TN_SD_NID) as SdNidVx;
   components new         TagnetNameElementP   (TN_SD_DEV_0_ID, UQ_TN_SD_DEV_0) as SdDev0Vx;
-  components new         TagnetImageAdapterP  (TN_SD_DEV_0_IMG_ID, UQ_TN_SD_DEV_0_IMG) as SdDev0ImgLf;
+  components new         TagnetImageAdapterP  (TN_SD_DEV_0_IMG_ID) as SdDev0ImgLf;
   SdVx.Super          -> TagVx.Sub[unique(UQ_TN_TAG)];
   SdNidVx.Super       -> SdVx.Sub[unique(UQ_TN_SD)];
   SdDev0Vx.Super      -> SdNidVx.Sub[unique(UQ_TN_SD_NID)];
-  SdDev0ImgVx.Super   -> SdDev0Vx.Sub[unique(UQ_TN_SD_DEV)];
-  SdDev0ImgLf.Super   -> SdDev0ImgVx.Sub[unique(UQ_TN_SD_DEV_IMG)];
+  SdDev0ImgLf.Super   -> SdDev0Vx.Sub[unique(UQ_TN_SD_DEV_0)];
 
   // instantiate object pathname for TagNet System Boot Control
   // -/tag-----/sys-----/<nid>----/boot----/active
-  //                                   \---/@switch
+  //                                   \---/backup
   //                                   \---/nib
   //                                   \---/golden
   components new         TagnetNameElementP   (TN_SYS_ID, UQ_TN_SYS)         as SysVx;
   components new         TagnetNameElementP   (TN_SYS_NID_ID, UQ_TN_SYS_NID) as SysNidVx;
   components new         TagnetNameElementP   (TN_SYS_BOOT_ID, UQ_TN_SYS_BOOT) as SysBootVx;
-  components new         TagnetBootAdapterP   (TN_SYS_BOOT_SWITCH_ID, UQ_TN_SYS_BOOT_SWITCH) as SysBootSwitchLf;
-  components new         TagnetBootAdapterP   (TN_SYS_BOOT_ACTIVE_ID, UQ_TN_SYS_BOOT_ACTIVE) as SysBootActiveLf;
-  components new         TagnetBootAdapterP   (TN_SYS_BOOT_BACKUP_ID, UQ_TN_SYS_BOOT_BACKUP) as SysBootBackupLf;
-  components new         TagnetBootAdapterP   (TN_SYS_BOOT_GOLDEN_ID, UQ_TN_SYS_BOOT_GOLDEN) as SysBootGoldenLf;
-  components new         TagnetBootAdapterP   (TN_SYS_BOOT_NIB_ID, UQ_TN_SYS_BOOT_NIB)       as SysBootNibLf;
+  components new         TagnetActiveAdapterP (TN_SYS_BOOT_ACTIVE_ID) as SysBootActiveLf;
+  components new         TagnetActiveAdapterP (TN_SYS_BOOT_BACKUP_ID) as SysBootBackupLf;
+  components new         TagnetActiveAdapterP (TN_SYS_BOOT_GOLDEN_ID) as SysBootGoldenLf;
+  components new         TagnetActiveAdapterP (TN_SYS_BOOT_NIB_ID)    as SysBootNibLf;
+//  components new         TagnetBackupAdapterP (TN_SYS_BOOT_BACKUP_ID) as SysBootBackupLf;
+//  components new         TagnetGoldenAdapterP (TN_SYS_BOOT_GOLDEN_ID) as SysBootGoldenLf;
+//  components new         TagnetNibAdapterP    (TN_SYS_BOOT_NIB_ID)    as SysBootNibLf;
   SysVx.Super         -> TagVx.Sub[unique(UQ_TN_TAG)];
   SysNidVx.Super      -> SysVx.Sub[unique(UQ_TN_SYS)];
   SysBootVx.Super     -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
-  SysBootSwitchLf.Super-> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
-  SysBootSwitch       =  SysBootSwitchLf;
   SysBootActiveLf.Super-> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
-  SysBootActive       =  SysBootActiveLf;
   SysBootBackupLf.Super-> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
-  SysBootBackup       =  SysBootBackupLf;
   SysBootGoldenLf.Super-> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
-  SysBootGolden       =  SysBootGoldenLf;
   SysBootNibLf.Super  -> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
-  SysBootNib          =  SysBootNibLf;
 }
