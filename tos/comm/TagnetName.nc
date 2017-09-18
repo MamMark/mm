@@ -2,7 +2,7 @@
  * This interface provides functions to access the Name field in
  * a Tagnet message.
  *<p>
- * These functions include accessors to examine an individual 
+ * These functions include accessors to examine an individual
  * name element (a TLV), find special elements in the name,
  * and build a name.
  *</p>
