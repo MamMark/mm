@@ -173,24 +173,23 @@ implementation {
     uint8_t   *v = (void *) xyz;
 
     nop();
-    t->typ = TN_TLV_GPS_XYZ;
-    t->len = TN_GPS_XYZ_LEN;
-    for (x = 0; x < TN_GPS_XYZ_LEN; x++) {
-      if (x >= limit) break;
-      t->val[x] = v[x];
+    if ((t) && ((sizeof(tagnet_gps_xyz_t) + sizeof(tagnet_tlv_t)) < limit)) {
+      t->typ = TN_TLV_GPS_XYZ;
+      t->len = TN_GPS_XYZ_LEN;
+      for (x = 0; x < TN_GPS_XYZ_LEN; x++) {
+        if (x >= limit) break;
+        t->val[x] = v[x];
+      }
+      return (x == TN_GPS_XYZ_LEN) ? SIZEOF_TLV(t) : 0;
     }
-    return (x == TN_GPS_XYZ_LEN) ? SIZEOF_TLV(t) : 0;
+    return 0;
   }
 
-  command uint8_t  TagnetTLV.integer_to_tlv(int32_t i,  tagnet_tlv_t *t, uint8_t limit) {
+  void int2tlv(int32_t i, tagnet_tlv_t *t, uint8_t limit) {
     int32_t    c = 0;
     bool       first = TRUE;
     int32_t    x;
     uint8_t    v;
-
-    // assert n.to_bytes(length, 'big') == bytes( (n >> i*8) & 0xff for i in reversed(range(length)))
-    nop();
-    t->typ = TN_TLV_INTEGER;
     for (x = 3; x >= 0; x = x-1) {
       v = (uint8_t) (i >> (x*8));
       if (v || !first) {
@@ -252,7 +251,7 @@ implementation {
 
   command uint8_t   TagnetTLV.string_to_tlv(uint8_t *s, uint8_t length,
                                                     tagnet_tlv_t *t, uint8_t limit) {
-    if ((length + sizeof(tagnet_tlv_t)) < limit) {
+    if ((t) && ((length + sizeof(tagnet_tlv_t)) < limit)) {
       _copy_bytes(s, (uint8_t *)&t->val[0], length);
       t->len = length;
       t->typ = TN_TLV_STRING;

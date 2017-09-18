@@ -113,9 +113,9 @@ implementation {
     return added;
   }
 
-  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_integer(message_t *msg, int n) {
+  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_integer(message_t *msg, int32_t n) {
     tagnet_tlv_t     *tv;
-    int               added;
+    int32_t           added;
 
     tv = call TagnetPayload.this_element(msg);
     added = call TTLV.integer_to_tlv(n, tv, call TagnetPayload.bytes_avail(msg));

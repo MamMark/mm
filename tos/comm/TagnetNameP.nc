@@ -114,6 +114,7 @@ implementation {
   }
 
   command tagnet_tlv_t  *TagnetName.get_gps_xyz(message_t *msg) {
+    if (!getMeta(msg)->gps_xyz) return NULL;
     return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->gps_xyz)] );
   }
 

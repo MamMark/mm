@@ -73,6 +73,9 @@ interface TagnetName {
   /**
    * Get pointer to gps_xyz tlv in name
    *
+   * This is a special TLV in that its location is remembered but
+   * parsing returns it as the next name TLV to process.
+   *
    * @param   msg           pointer to message buffer containing the name
    * @return  tagnet_tlv_t  pointer to gps xyz position tlv
    */
