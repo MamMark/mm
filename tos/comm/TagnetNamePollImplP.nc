@@ -44,8 +44,10 @@ generic module TagnetNamePollImplP(int my_id) @safe() {
   uses interface     TagnetTLV      as  TTLV;
 }
 implementation {
+  enum { my_adapter_id = unique(UQ_TAGNET_ADAPTER_LIST) };
+
   int32_t poll_count = 0;
-  
+
   command bool Adapter.get_value(int32_t *t, uint8_t *l) {
     nop();
     nop();
@@ -63,7 +65,7 @@ implementation {
     nop();
     nop();
 
-    call THdr.set_response(msg);
+    call THdr.set_response(msg); // zzz need to move inside name match
     if ((next_tlv == NULL) &&                       // end of name and me == this
         (call TTLV.eq_tlv(name_tlv, this_tlv))) {
       tn_trace_rec(my_id, 1);
