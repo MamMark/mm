@@ -181,7 +181,7 @@ implementation {
 
   tasklet_norace global_io_context_t  global_ioc;
   tasklet_norace uint8_t              rxMsgBuffer[sizeof(message_t)];
-  tasklet_norace uint8_t              rxMsgBufferGuard[] = "DEADBEF";
+  tasklet_norace uint8_t              rxMsgBufferGuard[] = "DEADBEAF";
 
 
 /**************************************************************************/

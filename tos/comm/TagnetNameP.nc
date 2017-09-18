@@ -77,9 +77,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "message.h"
-#include "Tagnet.h"
-#include "TagnetTLV.h"
+#include <message.h>
+#include <Tagnet.h>
+#include <TagnetTLV.h>
 
 module TagnetNameP {
   provides interface   TagnetName;

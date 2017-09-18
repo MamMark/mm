@@ -35,8 +35,8 @@
  *
  */
 
-#include "Tagnet.h"
-#include "TagnetTLV.h"
+#include <Tagnet.h>
+#include <TagnetTLV.h>
 
 generic module TagnetNameElementImplP(int my_id, char uq_id[]) @safe() {
   uses interface     TagnetMessage  as  Super;
