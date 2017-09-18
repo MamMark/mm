@@ -57,12 +57,15 @@ typedef enum {
   TE_UNSUPPORTED,
   TE_BAD_MESSAGE,
   TE_FAILED,
-  TE_PKT_NO_MATCH
+  TE_PKT_NO_MATCH,
+  TE_BUSY,
 } tagnet_error_t;
 
 typedef struct tagnet_name_meta_t {
   uint8_t     this;
-  uint8_t     seq_no;
+  uint8_t     offset;
+  uint8_t     version;
+  uint8_t     size;
   uint8_t     utc_time;
   uint8_t     node_id;
   uint8_t     gps_xyz;

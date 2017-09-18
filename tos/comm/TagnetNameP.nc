@@ -122,14 +122,27 @@ implementation {
   }
 
   command tagnet_tlv_t   *TagnetName.get_node_id(message_t *msg) {
+    if (getMeta(msg)->node_id == 0) return NULL;
     return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->node_id)] );
   }
 
-  command tagnet_tlv_t     *TagnetName.get_seq_no(message_t *msg) {
-    return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->seq_no)] );
+  command tagnet_tlv_t     *TagnetName.get_offset(message_t *msg) {
+    if (getMeta(msg)->offset == 0) return NULL;
+    return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->offset)] );
+  }
+
+  command tagnet_tlv_t     *TagnetName.get_version(message_t *msg) {
+    if (getMeta(msg)->version == 0) return NULL;
+    return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->version)] );
+  }
+
+  command tagnet_tlv_t     *TagnetName.get_size(message_t *msg) {
+    if (getMeta(msg)->size == 0) return NULL;
+    return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->size)] );
   }
 
   command tagnet_tlv_t     *TagnetName.get_utc_time(message_t *msg) {
+    if (getMeta(msg)->utc_time == 0) return NULL;
     return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->utc_time)] );
   }
 
@@ -154,20 +167,29 @@ implementation {
 
       getMeta(msg)->this = (int) next_tlv - (int) name_start; // advance 'this' index to 'next' in list
       switch (call TTLV.get_tlv_type(next_tlv)) {       // some tlvs get special handling
-        case TN_TLV_OFFSET:             // seq_no, mark location and skip to next tlv
-          getMeta(msg)->seq_no = getMeta(msg)->this;
-          break;
 
-        case TN_TLV_NODE_ID:            // node_id, mark location
-          getMeta(msg)->node_id = getMeta(msg)->this;
+        case TN_TLV_OFFSET:   // byte offset, mark location
+          call TagnetName.set_offset(msg);
           return next_tlv;
 
-        case TN_TLV_GPS_XYZ:            // gps_xyz, mark location
-          getMeta(msg)->gps_xyz = getMeta(msg)->this;
+        case TN_TLV_SIZE:     // amount to get, mark location
+          call TagnetName.set_size(msg);
           return next_tlv;
 
-        case TN_TLV_UTC_TIME:           // utc_time, mark location
-          getMeta(msg)->utc_time = getMeta(msg)->this;
+        case TN_TLV_VERSION:  // version, mark location
+          call TagnetName.set_version(msg);
+          return next_tlv;
+
+        case TN_TLV_NODE_ID:  // node_id, mark location
+          call TagnetName.set_node_id(msg);
+          return next_tlv;
+
+        case TN_TLV_GPS_XYZ:  // gps_xyz, mark location
+          call TagnetName.set_gps_xyz(msg);
+          return next_tlv;
+
+        case TN_TLV_UTC_TIME: // utc_time, mark location
+          call TagnetName.set_utc_time(msg);
           return next_tlv;
 
         case TN_TLV_NONE:
@@ -193,8 +215,16 @@ implementation {
     getMeta(msg)->node_id = getMeta(msg)->this;
   }
 
-  command void    TagnetName.set_seq_no(message_t *msg) {
-    getMeta(msg)->seq_no = getMeta(msg)->this;
+  command void    TagnetName.set_offset(message_t *msg) {
+    getMeta(msg)->offset = getMeta(msg)->this;
+  }
+
+  command void    TagnetName.set_size(message_t *msg) {
+    getMeta(msg)->size = getMeta(msg)->this;
+  }
+
+  command void    TagnetName.set_version(message_t *msg) {
+    getMeta(msg)->version = getMeta(msg)->this;
   }
 
   command void    TagnetName.set_utc_time(message_t *msg) {

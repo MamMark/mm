@@ -88,6 +88,19 @@ implementation {
     return (tagnet_name_meta_t *) &(((message_metadata_t *)&(msg->metadata))->tn_payload_meta);
   }
 
+  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_eof(message_t *msg) {
+    tagnet_tlv_t     *tv;
+    int32_t           added = 2;
+
+    tv = call TagnetPayload.this_element(msg);
+    tv->typ = TN_TLV_EOF;
+    tv->len = 0;
+    call THdr.set_pload_type_tlv(msg);
+    call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
+    getMeta(msg)->this += added;
+    return added;
+  }
+
   command uint8_t TN_PLOAD_DBG  TagnetPayload.add_gps_xyz(message_t *msg, tagnet_gps_xyz_t *xyz) {
     tagnet_tlv_t     *tv;
     int               added;
@@ -106,6 +119,18 @@ implementation {
 
     tv = call TagnetPayload.this_element(msg);
     added = call TTLV.integer_to_tlv(n, tv, call TagnetPayload.bytes_avail(msg));
+    call THdr.set_pload_type_tlv(msg);
+    call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
+    getMeta(msg)->this += added;
+    return added;
+  }
+
+  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_offset(message_t *msg, int32_t n) {
+    tagnet_tlv_t     *tv;
+    int32_t           added;
+
+    tv = call TagnetPayload.this_element(msg);
+    added = call TTLV.offset_to_tlv(n, tv, call TagnetPayload.bytes_avail(msg));
     call THdr.set_pload_type_tlv(msg);
     call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
     getMeta(msg)->this += added;
@@ -153,6 +178,19 @@ implementation {
     getMeta(msg)->this += added;
     return added;
  }
+
+  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_version(message_t *msg, image_ver_t *v) {
+    tagnet_tlv_t     *tv = call TagnetPayload.this_element(msg);
+    int               added;
+
+    added = call TTLV.version_to_tlv(v, tv, call TagnetPayload.bytes_avail(msg));
+    if (added) {
+      call THdr.set_pload_type_tlv(msg);
+      call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
+      getMeta(msg)->this += added;
+    }
+    return added;
+  }
 
   command uint8_t  TN_PLOAD_DBG  TagnetPayload.bytes_avail(message_t* msg) {
     return (sizeof(msg->data) - call THdr.get_name_len(msg) - getMeta(msg)->this);

@@ -47,7 +47,16 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <image_info.h>
+
 interface TagnetPayload {
+  /**
+   * Adds an eof value to the payload. Sets the payload type to list of tlvs
+   *
+   * @param   msg           pointer to message buffer containing the payload
+   * @return  uint8_t       amount added to the payload (length of tlv)
+   */
+  command uint8_t           add_eof(message_t *msg);
   /**
    * Adds an gps_xyz value to the payload (wrapping it in a tlv). Sets the
    * payload type to list of tlvs
@@ -65,7 +74,16 @@ interface TagnetPayload {
    * @param   n             integer to be added to the payload as a tlv
    * @return  uint8_t       amount added to the payload (length of tlv)
    */
-  command uint8_t           add_integer(message_t *msg,  int n);
+  command uint8_t           add_integer(message_t *msg,  int32_t n);
+  /**
+   * Adds a file offset value to the payload (wrapping it in a tlv). Sets the
+   * payload type to list of tlvs
+   *
+   * @param   msg           pointer to message buffer containing the payload
+   * @param   n             offset to be added to the payload as a tlv
+   * @return  uint8_t       amount added to the payload (length of tlv)
+   */
+  command uint8_t           add_offset(message_t *msg,  int32_t n);
   /**
    * Adds raw bytes to the payload (overwrites any other data in the payload)
    *
@@ -91,6 +109,14 @@ interface TagnetPayload {
    * @return  uint8_t       amount added to the payload (length of tlv)
    */
   command uint8_t           add_tlv(message_t *msg, tagnet_tlv_t *t);
+  /**
+   * Adds a version to the payload, (copies it)
+   *
+   * @param   msg           pointer to message buffer containing the payload
+   * @param   v             pointer to version to be added to the payload
+   * @return  uint8_t       amount added to the payload (length of tlv)
+   */
+  command uint8_t           add_version(message_t *msg, image_ver_t *v);
   /**
    * Returns the amount of free space in the message buffer, accounting for any
    * name and payload data previously added to the message.

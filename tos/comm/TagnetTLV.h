@@ -53,6 +53,7 @@ typedef enum {
   TN_TLV_SIZE       = 8,
   TN_TLV_EOF        = 9,
   TN_TLV_VERSION    = 10,
+  TN_TLV_BLK        = 11,
   _TN_TLV_COUNT   // limit of enum values
 } tagnet_tlv_type_t;
 
