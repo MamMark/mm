@@ -828,8 +828,8 @@ void __system_init(void) {
   __core_clk_init();
   BITBAND_PERI(P1->OUT, 0) = 0;
 
-  __ta_init(TIMER_A0, TA_SMCLK_ID, MSP432_TA_EX);       /* Tmicro */
-  __ta_init(TIMER_A1, TA_ACLK1,  TIMER_A_EX0_IDEX__1);  /* Tmilli */
+  __ta_init(TIMER_A0, TA_SMCLK_ID, MSP432_TA_EX);         /* Tmicro */
+  __ta_init(TIMER_A1, TA_ACLK1,    TIMER_A_EX0_IDEX__1);  /* Tmilli */
   __rtc_init();
   __start_timers();
 }
@@ -852,6 +852,8 @@ void __system_init(void) {
  * experiment with configurable/permanent ROM_DEBUG_BREAK:
  *      https://answers.launchpad.net/gcc-arm-embedded/+question/248410
  */
+
+#ifdef notdef
 
 uint32_t deltas[256];
 uint32_t next_delta;
@@ -905,6 +907,7 @@ void timer_check() {
   }
 }
 
+#endif
 
 /* see tos/mm/OverWatch/OverWatchP.nc */
 extern void owl_startup();
