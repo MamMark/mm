@@ -40,7 +40,7 @@ typedef enum {
 } fs_state_t;
 
 
-//#define FS_ENABLE_ERASE               /* don't enable yet, doesn't work yet */
+#define FS_ENABLE_ERASE               /* don't enable yet, doesn't work yet */
 
 
 #ifndef PANIC_FS
@@ -165,6 +165,10 @@ implementation {
     }
     fs_which = which;
     fs_state = FSS_ERASE_REQ;
+    if (call SDResource.isOwner()) {
+      do_erase();
+      return SUCCESS;
+    }
     err = call SDResource.request();
     if (err) {
       fs_panic(9, err);
@@ -265,9 +269,10 @@ implementation {
       call Panic.panic(PANIC_FS, 4, err, fs_state, 0, 0);
       return;
     }
-#endif
     fs_state = FSS_IDLE;
     signal FS.eraseDone(fs_which);
+    call SDResource.release();
+#endif
   }
 
 
