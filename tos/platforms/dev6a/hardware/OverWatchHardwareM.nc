@@ -134,4 +134,18 @@ implementation {
       return;
     launch(iip->image_start);
   }
+
+
+  /*
+   * getImageBase: return base address of executing image.
+   *
+   * We simply use the VTOR.  The vectors for msp432 based platforms
+   * get placed at the beginning of the image which has to be
+   * properly aligned for Vector tables.  (see hardware documentation
+   * for SCB->VTOR restrictions.  (This gets enforced by the
+   * linker).
+   */
+  command uint32_t OWhw.getImageBase() {
+    return SCB->VTOR;
+  }
 }

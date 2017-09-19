@@ -57,4 +57,11 @@ interface OverWatchHardware {
    * if it fails just return.
    */
   command void boot_image(image_info_t *iip);
+
+  /*
+   * getImageBase: return base address of the image
+   *
+   * Where did the current executing image load.?
+   */
+  command uint32_t getImageBase();
 }

@@ -70,7 +70,9 @@ implementation {
 
     rp->reset_status = owcp->reset_status;
     rp->reset_others = owcp->reset_others;
-    rp->boot_count = owcp->reboot_count;
+    rp->from_base    = owcp->from_base;
+    rp->cur_base     = call OverWatch.getImageBase();
+    rp->boot_count   = owcp->reboot_count;
 
     rp->elapsed_upper = owcp->elapsed_upper;
     rp->elapsed_lower = owcp->elapsed_lower;

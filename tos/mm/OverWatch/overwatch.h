@@ -95,8 +95,7 @@ typedef enum {
 typedef enum  {
   OW_REQ_BOOT           = 0,            /* just boot, see ow_boot_mode */
   OW_REQ_INSTALL        = 1,
-  OW_REQ_REBOOT         = 2,            /* crash, rebooting */
-  OW_REQ_NIB_REBOOT     = 3,            /* reboot from NIB */
+  OW_REQ_FAIL           = 2,            /* crash, rebooting */
 } ow_request_t;
 
 
@@ -147,6 +146,7 @@ typedef enum {
  * be extra paranoid we can checksum it.  But that is a pain.
  */
 #define OW_SIG 0xFABAFABA
+#define OW_BASE_UNK 0xFFFFFFFF
 
 
 /*
@@ -158,6 +158,7 @@ typedef struct {
   uint32_t           time;              /* req input, time since last boot */
   uint32_t           reset_status;      /* recognized stati                */
   uint32_t           reset_others;      /* unindentified other stati       */
+  uint32_t           from_base;         /* base address of where from      */
   uint32_t           reboot_count;      /* how many times rebooted         */
 
   ow_request_t       ow_req;            /* req input */

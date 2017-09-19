@@ -156,6 +156,25 @@ implementation {
   }
 
 
+  void init_owcb(ow_control_block_t *owcp) {
+    memset(owcp, 0, sizeof(*owcp));
+    owcp->ow_sig_a = owcp->ow_sig_b = owcp->ow_sig_c = OW_SIG;
+    owcp->reboot_reason = ORR_OWCB_CLOBBER;
+    owcp->from_base     = OW_BASE_UNK;          /* mark as unknown */
+    owcp->reset_status  = call OWhw.getResetStatus();
+    owcp->reset_others  = call OWhw.getResetOthers();
+  }
+
+
+  bool valid_owcb(ow_control_block_t *owcp) {
+    if (owcp->ow_sig_a == OW_SIG &&
+        owcp->ow_sig_b == OW_SIG &&
+        owcp->ow_sig_c == OW_SIG)
+      return TRUE;
+    return FALSE;
+  }
+
+
   /*
    * handle startup conditions for OverWatch.  Called from startup code
    *
@@ -164,25 +183,34 @@ implementation {
   void owl_startup() @C() @spontaneous() {
     image_info_t       *iip;
     ow_control_block_t *owcp;
-    bool                from_nib;
 
     /*
      * if non-zero VTOR we are running as the NIB then simply return.
      * OverWatch is a Base region function only.
+     *
+     * ImageBase 0?  -> yes then golden
+     *                  no  then other, ie.  NIB  (normal image block)
      */
-    if (SCB->VTOR)
-      return;
-
     owcp = &ow_control_block;
-    from_nib = FALSE;
+    if (call OWhw.getImageBase()) {                     /* from NIB? */
+      if (!valid_owcb(owcp)) {
+        /*
+         * PANIC
+         *
+         * but for now reinit and strange it.
+         */
+        init_owcb(owcp);
+        owcp->strange++;
+        owcp->strange_loc = 0x101;
+        call OverWatch.force_boot(OW_BOOT_GOLD);
+      }
+      return;
+    }
 
     /*
      * first check to see if the control block seems intact.
      */
-    if (owcp->ow_sig_a != OW_SIG ||
-        owcp->ow_sig_b != OW_SIG ||
-        owcp->ow_sig_c != OW_SIG) {
-
+    if (!valid_owcb(owcp)) {
       /*
        * oops.  The control block has been slammed.  We need to fire up OWT
        * so we can ask the ImageManager to figure out what exactly we should
@@ -191,14 +219,9 @@ implementation {
        * 1) reinitialize the control block
        * 2) invoke OWT for OWT_INIT
        */
-
-      memset(owcp, 0, sizeof(*owcp));
-      owcp->ow_sig_a = owcp->ow_sig_b = owcp->ow_sig_c = OW_SIG;
-      owcp->reboot_reason = ORR_PWR_FAIL;
+      init_owcb(owcp);
       owcp->ow_boot_mode  = OW_BOOT_OWT;
       owcp->owt_action    = OWT_ACT_INIT;
-      owcp->reset_status  = call OWhw.getResetStatus();
-      owcp->reset_others  = call OWhw.getResetOthers();
       return;
     }
     owcp->reset_status  = call OWhw.getResetStatus();
@@ -273,10 +296,7 @@ implementation {
         owcp->owt_action = OWT_ACT_INSTALL;
         return;
 
-      case OW_REQ_NIB_REBOOT:
-        from_nib = TRUE;
-
-      case OW_REQ_REBOOT:                /* crash, rebooting */
+      case OW_REQ_FAIL:                 /* crash, rebooting */
         owcp->ow_req = OW_REQ_BOOT;
 
         /*
@@ -522,6 +542,7 @@ implementation {
 
     owcp = &ow_control_block;
     owcp->ow_req = OW_REQ_INSTALL;
+    owcp->from_base = call OWhw.getImageBase();
     call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
   }
 
@@ -543,6 +564,7 @@ implementation {
     owcp->ow_req = OW_REQ_BOOT;
     owcp->ow_boot_mode = boot_mode;
     owcp->reboot_reason = ORR_FORCED_MODE;
+    owcp->from_base = call OWhw.getImageBase();
     call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
   }
 
@@ -568,8 +590,8 @@ implementation {
     owcp->cycle = 0;
     owcp->time = 1000;                  /* just pretend for now */
     owcp->reboot_reason = reason;
-    if (SCB->VTOR) owcp->ow_req = OW_REQ_NIB_REBOOT;
-    else           owcp->ow_req = OW_REQ_REBOOT;
+    owcp->from_base = call OWhw.getImageBase();
+    owcp->ow_req = OW_REQ_FAIL;
     call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
   }
 
@@ -589,11 +611,17 @@ implementation {
     owcp->reset_status  = 0;
     owcp->reset_others  = 0;
     owcp->reboot_reason = 0;
+    owcp->from_base     = OW_BASE_UNK;
   }
 
 
   command ow_control_block_t *OverWatch.getControlBlock() {
     return &ow_control_block;
+  }
+
+
+  command uint32_t OverWatch.getImageBase() {
+    return call OWhw.getImageBase();
   }
 
 

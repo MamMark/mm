@@ -157,6 +157,8 @@ typedef struct {
 
   uint32_t reset_status;
   uint32_t reset_others;
+  uint32_t from_base;           /* from owcb.from_base */
+  uint32_t cur_base;            /* current base        */
   uint32_t boot_count;
 
   uint32_t elapsed_upper;

@@ -79,4 +79,6 @@ interface OverWatch {
   command ow_boot_mode_t      getBootMode();
   command void                clearReset();
   command ow_control_block_t *getControlBlock();
+
+  command uint32_t            getImageBase();
 }
