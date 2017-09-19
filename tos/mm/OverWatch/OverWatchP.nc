@@ -237,6 +237,10 @@ implementation {
          * kill sig and reboot
          * serious oht oh.  sigs are okay but ow_req is out of bounds.
          */
+        owcp->strange++;
+        owcp->strange_loc = 1;
+        call OverWatch.force_boot(OW_BOOT_GOLD);
+        return;
         return;
 
       case OW_REQ_BOOT:
@@ -247,14 +251,12 @@ implementation {
           default:
             /*
              * oops.  things are screwed up.  no where to go.
-             * so just fix it.
+             * so just fix it so something runs.
              */
             owcp->strange++;
-            owcp->strange_loc = 1;
+            owcp->strange_loc = 2;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
-
-            /* fall through */
 
           case OW_BOOT_GOLD:
           case OW_BOOT_OWT:
@@ -265,9 +267,6 @@ implementation {
              * If we are booting the NIB, we want to first check
              * the NIBs validity.  If good_nib_flash takes too long
              * we can switch to checking the vector table instead.
-             *
-             * For now we run first vectors, then we run whole
-             * NIB flash.  For testing...
              */
             iip  = (image_info_t *) NIB_INFO;
             if (good_nib_vectors(iip) && good_nib_flash(iip)) {
@@ -276,7 +275,7 @@ implementation {
                */
               call OWhw.boot_image(iip);
               owcp->strange++;
-              owcp->strange_loc = 2;
+              owcp->strange_loc = 3;
               call OverWatch.force_boot(OW_BOOT_GOLD);
               return;                   /* shouldn't get here. */
             }
@@ -285,7 +284,7 @@ implementation {
              * oops.  nib didn't check out.  shitty NIB checksum.
              */
             owcp->strange++;
-            owcp->strange_loc = 3;
+            owcp->strange_loc = 4;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
         }
@@ -317,11 +316,11 @@ implementation {
           }
           iip  = (image_info_t *) NIB_INFO;
           call OWhw.boot_image(iip);
-          owcp->strange++;
-          owcp->strange_loc = 4;
           call OverWatch.force_boot(OW_BOOT_GOLD);
           return;                   /* shouldn't get here. */
         }
+        owcp->strange++;
+        owcp->strange_loc = 5;
     }
   }
 
@@ -354,7 +353,7 @@ implementation {
     switch (owcp->owt_action) {
       case OWT_ACT_NONE:
         owcp->strange++;
-        owcp->strange_loc = 5;
+        owcp->strange_loc = 6;
         call OverWatch.force_boot(OW_BOOT_GOLD);
         return;
 
@@ -382,7 +381,7 @@ implementation {
           iip = (void *) NIB_INFO;
           if (!good_nib_vectors(iip) || !good_nib_flash(iip)) {
             owcp->strange++;
-            owcp->strange_loc = 6;
+            owcp->strange_loc = 7;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             /* shouldn't return from the above */
             return;
@@ -394,14 +393,14 @@ implementation {
            */
           if (!call IM.check_fit(iip->image_length)) {
             owcp->strange++;
-            owcp->strange_loc = 7;
+            owcp->strange_loc = 8;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
           }
           err = call IM.alloc(iip->ver_id);
           if (err) {
             owcp->strange++;
-            owcp->strange_loc = 8;
+            owcp->strange_loc = 9;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
           }
