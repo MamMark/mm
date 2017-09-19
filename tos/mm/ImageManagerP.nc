@@ -876,7 +876,7 @@ implementation {
     }
     verify_IM();
     imcb.filling_slot_p->slot_state = SLOT_VALID;
-    imcb.filling_slot_p = NULL;
+    imcb.filling_slot_p = NULL;         /* not filling anymore */
 
     dir = &imcb.dir;
     dir->chksum = 0;
@@ -889,6 +889,9 @@ implementation {
     if (imcb.bytes_remaining == SD_BLOCKSIZE)
       imcb.im_state = IMS_FILL_SYNC_REQ_SD;
     else imcb.im_state = IMS_FILL_LAST_REQ_SD;
+
+    /* do after state change */
+    imcb.buf_ptr = NULL;                /* not filling anymore */
     err = call SDResource.request();
     if (err) {
       im_panic(23, err, 0);
