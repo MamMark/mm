@@ -131,10 +131,9 @@ typedef enum  {
 typedef enum {
   ORR_NONE              = 0,
   ORR_FAIL,                             /* catch all for the time being */
-  ORR_PWR_FAIL,                         /* lost the control block, full pwr fail */
+  ORR_OWCB_CLOBBER,                     /* lost the control block, full pwr fail */
   ORR_FORCED_MODE,                      /* forced boot mode */
   ORR_PANIC,
-  ORR_HARD_FAULT,
 } ow_reboot_reason_t;
 
 
@@ -145,7 +144,7 @@ typedef enum {
  * initialized.  If the sig is valid we assume it is sane.  If we want to
  * be extra paranoid we can checksum it.  But that is a pain.
  */
-#define OW_SIG 0xFABAFABA
+#define OW_SIG      0xFABAFABA
 #define OW_BASE_UNK 0xFFFFFFFF
 
 
