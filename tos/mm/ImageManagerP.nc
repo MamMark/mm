@@ -1054,8 +1054,8 @@ implementation {
     verify_IM();                        /* verify the directory */
 
     imcb.im_state = IMS_IDLE;
-    call SDResource.release();
     signal Booted.booted();
+    call SDResource.release();
     return;
   }
 
@@ -1071,8 +1071,8 @@ implementation {
 
       case IMS_INIT_SYNC_WRITE:
         imcb.im_state = IMS_IDLE;
-        call SDResource.release();
         signal Booted.booted();
+        call SDResource.release();
         return;
 
       case IMS_FILL_WRITING:
@@ -1080,8 +1080,8 @@ implementation {
         imcb.filling_blk++;
         imcb.buf_ptr = &im_wrk_buf[0];
         imcb.bytes_remaining = SD_BLOCKSIZE;
-        call SDResource.release();
         signal IM.write_continue();
+        call SDResource.release();
         return;
 
       case IMS_FILL_LAST_WRITE:
@@ -1093,33 +1093,33 @@ implementation {
         imcb.im_state = IMS_IDLE;
         imcb.buf_ptr = NULL;
         imcb.filling_slot_p = NULL;
-        call SDResource.release();
         signal IM.finish_complete();
+        call SDResource.release();
         return;
 
       case IMS_DELETE_SYNC_WRITE:
         imcb.im_state = IMS_IDLE;
-        call SDResource.release();
         signal IM.delete_complete();
+        call SDResource.release();
         return;
 
       case IMS_DSA_SYNC_WRITE:
         imcb.im_state = IMS_IDLE;
-        call SDResource.release();
         signal Booted.booted();         /* this is wrong */
         signal IM.dir_set_active_complete();
+        call SDResource.release();
         return;
 
       case  IMS_DSB_SYNC_WRITE:
         imcb.im_state = IMS_IDLE;
-        call SDResource.release();
         signal IM.dir_set_backup_complete();
+        call SDResource.release();
         return;
 
       case IMS_EJECT_SYNC_WRITE:
         imcb.im_state = IMS_IDLE;
-        call SDResource.release();
         signal IM.dir_eject_active_complete();
+        call SDResource.release();
         return;
     }
   }
