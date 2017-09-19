@@ -121,7 +121,14 @@ typedef struct{
   bool               checksum_good;// calculated correct checksum
 } ia_cb_t;
 ia_cb_t             ia_cb = { FALSE, FALSE, 0, 0};
-uint8_t             ia_buf[sizeof(message_t)];
+
+/*
+ * need enough buffer to hold vector table, image info, plus another message
+ * worth of data. this allows validation of image info before image manager
+ * allocation.
+ */
+#define IA_BUF_SIZE (sizeof(message_t) + IMAGE_META_OFFSET + sizeof(image_info_t))
+uint8_t             ia_buf[IA_BUF_SIZE] __attribute__((aligned(4)));
 
 generic module TagnetImageAdapterImplP(int my_id) @safe() {
   uses interface     TagnetMessage  as  Super;
@@ -150,7 +157,8 @@ implementation {
     return FALSE;
   }
 
-  bool do_reject(message_t *msg, error_t err) { // respond to msg with busy error
+  /* respond to msg with error */
+  bool do_reject(message_t *msg, tagnet_error_t err) {
     call THdr.set_response(msg);
     call THdr.set_error(msg, err);
     call TPload.reset_payload(msg);
@@ -254,7 +262,7 @@ implementation {
         case TN_PUT:
           tn_trace_rec(my_id, 5);
           // check to see if still writing data from previous PUT
-          if (ia_cb.e_buf)
+          if ((ia_cb.in_progress) && (ia_cb.e_buf))
             return do_reject(msg, TE_BUSY);
 
           // must be version in name
@@ -267,7 +275,7 @@ implementation {
           if ((offset_tlv) && (call TTLV.get_tlv_type(offset_tlv) == TN_TLV_OFFSET))
             offset = call TTLV.tlv_to_integer(offset_tlv);
 
-          // get payload variables (data length and pointer) or eof flag
+          // get payload variables (data length and pointer) and/or eof flag
           if (call THdr.is_pload_type_raw(msg)) { // msg contains raw data in payload
             dlen = call TPload.get_len(msg);
             dptr = (uint8_t *) eof_tlv;
@@ -277,44 +285,66 @@ implementation {
             dptr = call TTLV.tlv_to_string(eof_tlv, &dlen);
             eof_tlv = NULL;
           } else if (call TTLV.get_tlv_type(eof_tlv) != TN_TLV_EOF) {
-            return do_reject(msg, TE_BUSY);  // no data or eof found
+            return do_reject(msg, TE_BUSY);   // no data or eof found
           }
-          if (!eof_tlv)                           // if not already found <eof>
+          if (!eof_tlv)                       // if not already found <eof>
             eof_tlv = call TPload.next_element(msg); // look after data block
           if ((eof_tlv) && (call TTLV.get_tlv_type(eof_tlv) == TN_TLV_EOF))
-            ia_cb.eof = TRUE;                     // eof found
+            ia_cb.eof = TRUE;                 // eof found
 
-          // continue processing if more data and expected offset matches
+          // continue processing PUT msgs if in progress
           tn_trace_rec(my_id, 6);
           if (ia_cb.in_progress) {
             if ((offset_tlv) && (ia_cb.offset == offset))
+              return do_write(msg, dptr, dlen); /* expected offset matches */
+            else
+              break;                          // ignore
+          }
+
+          // look for new image load request
+          if ((offset_tlv) && (offset != 0)) { // continue accumulating
+            /* make sure this PUT for same version */
+            if (!image_cmp_ver_id(version, &ia_cb.version)) {
+              break;                          // ignore msg if mismatch
+            }
+          } else {                            // start accumulating
+            image_copy_ver_id(version, &ia_cb.version);
+            ia_cb.e_buf = 0;
+          }
+
+          if (dptr) {                     // copy msg data to ia_buf
+            for (i = 0; i < dlen; i++) {
+              ia_buf[ia_cb.e_buf + i] = dptr[i];
+            }
+            ia_cb.e_buf += dlen;
+          }
+
+          // check to see if enough data received to verify image info
+          if (ia_cb.e_buf > (IMAGE_META_OFFSET + sizeof(image_info_t))) {
+            tn_trace_rec(my_id, 6);
+            dptr = ia_buf;
+            dlen = ia_cb.e_buf;
+            // reset e_buf to force startover if fail to begin image load
+            ia_cb.e_buf = 0;
+
+            // look for valid image info
+            if (!get_info(version, dptr, dlen))
+              return do_reject(msg, TE_BAD_MESSAGE);
+
+            // allocate new image and write first data
+            if ((err = call IM.alloc(ia_cb.version)) == 0) {
+              ia_cb.in_progress = TRUE;       // mark image load now in progress
+              if ((eof_tlv) && (call TTLV.get_tlv_type(eof_tlv) == TN_TLV_EOF))
+                ia_cb.eof = TRUE;             // eof found (really short file!)
+              else
+                ia_cb.eof = FALSE;            // start of image load, init eof
               return do_write(msg, dptr, dlen);
-            else
-              break;  // no response
+            }
+            return do_reject(msg, TE_BAD_MESSAGE);  // failed allocate
           }
-
-          // looking for first PUT request
-          // must have offset =0 or none
-          if ((offset_tlv) && (offset != 0))
+          if (ia_cb.eof)                      // eof already, image too short
             return do_reject(msg, TE_BAD_MESSAGE);
-
-          // looking for valid image info
-          if (!get_info(version, dptr, dlen))
-            return do_reject(msg, TE_BUSY);
-
-          // allocate new image and write first data
-          tn_trace_rec(my_id, 6);
-          if ((err = call IM.alloc(ia_cb.version)) == 0) {
-            ia_cb.in_progress = TRUE;       // mark image load now in progress
-            if ((eof_tlv) && (call TTLV.get_tlv_type(eof_tlv) == TN_TLV_EOF))
-              ia_cb.eof = TRUE;             // eof found (really short file!)
-            else
-              ia_cb.eof = FALSE;            // start of image load, not eof
-            ia_cb.s_buf = ia_cb.e_buf = 0;   // make sure zero
-            return do_write(msg, dptr, dlen);
-          } else {
-            return do_reject(msg, TE_BAD_MESSAGE);  // no data or eof found
-          }
+          return do_write(msg, NULL, 0);      // just acknowledge PUT
 
           nop();
           break;
