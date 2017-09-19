@@ -85,3 +85,17 @@ document im
 ImageManager State
 end
 
+
+define arb0
+printf "Arb0:  arb_id: %d  def_owner: %d  owner: %d  reqId: %d\n", \
+    ArbiterP__0__arbiter_id, ArbiterP__0__default_owner_id, \
+    ArbiterP__0__resId, ArbiterP__0__reqResId
+output ArbiterP__0__state
+printf "  h: %d  t: %d  q: ", FcfsResourceQueueC__0__qHead, \
+    FcfsResourceQueueC__0__qTail
+output/x FcfsResourceQueueC__0__resQ
+printf "\n"
+end
+document arb0
+display Arbiter 0 State
+end
