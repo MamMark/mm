@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2017 Eric B. Decker
  * All rights reserved.
  *
@@ -33,36 +33,28 @@
  */
 
 /*
- * @author Eric B. Decker
- *
- * Configuration wiring for OverWatch.  See OverWatchP for more details on
- * what OverWatch does.
+ * OverWatch to underlying hardware interface
  */
 
-#include <overwatch.h>
+interface OverWatchHardware {
+  /*
+   * return a compacted Reset Status from the hardware.
+   * clears any understood bits from the hardware.
+   *
+   * this is used for reporting status after a reset/reboot.
+   * layout is h/w dependent.  See tos/<platform>/hardware/OWHardwareM.nc
+   *
+   * ResetOther is used for obtaining any other reset status bits that
+   * we currently don't recognize (listed as reserved when this code was
+   * written).  Should always be reported as 0.
+   */
+  command uint32_t getResetStatus();
+  command uint32_t getResetOthers();
 
-configuration OverWatchC {
-  provides {
-    interface Boot as Booted;		/* out Booted signal */
-    interface OverWatch as OW;
-  }
-  uses interface Boot;			/* incoming signal */
-}
-
-implementation {
-  components OverWatchP as OW_P;
-  OW     = OW_P;
-  Booted = OW_P;
-  Boot   = OW_P;
-
-  components ChecksumM;
-  components ImageManagerC as IM_C;
-  components OverWatchHardwareM;
-  OW_P.Checksum -> ChecksumM;
-  OW_P.OWhw     -> OverWatchHardwareM;
-  OW_P.IM       -> IM_C;
-
-  components PlatformC;
-  OW_P.SysReboot -> PlatformC;
-  OW_P.Platform  -> PlatformC;
+  /*
+   * launch an image, typically a NIB region.
+   *
+   * if it fails just return.
+   */
+  command void boot_image(image_info_t *iip);
 }

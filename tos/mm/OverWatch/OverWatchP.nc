@@ -36,192 +36,9 @@
 #include <image_info.h>
 #include <image_mgr.h>
 #include <overwatch.h>
+#include <owhardware.h>
 
 extern ow_control_block_t ow_control_block;
-
-/*
- * good_nib_vectors: verify nib vectors
- *
- * Quick verification of some sense of reasonableness before launching
- * the NIB  image.
- *
- * 1) Verify the signature of the image_info block.
- * 2) extract the vector checksum, vector_chk
- * 3) calculate vector across the vector table.
- * 4) add vector_chk.  result should be zero.
- *
- * Note: if iip->vector_chk is 0, we currently assume the checksum is
- * disabled.
- */
-bool good_nib_vectors() {
-  image_info_t *iip;
-  uint32_t      vec_sum;
-
-  iip  = (image_info_t *) NIB_INFO;
-  if (iip->sig != IMAGE_INFO_SIG)
-    return FALSE;
-  if (iip->vector_chk) {
-    vec_sum = __checksum32_aligned((void *) NIB_BASE, NIB_VEC_BYTES);
-    vec_sum += iip->vector_chk;
-    if (vec_sum) {
-      ow_control_block.vec_chk_fail++;
-      return FALSE;
-    }
-  }
-  return TRUE;
-}
-
-
-/*
- * good_nib_flash: verify nib flash
- *
- * Check the NIB image.  Verify its checksum.
- *
- * 1) Verify the signature of the image_info block.
- * 2) extract the image size from the structure.  This is in bytes.
- * 3) calculate the checksum across the entire image.
- *
- * The checksum is embedded and is automatically included in the
- * sum.  The checksum must result in zero to pass.
- *
- * Note: if iip->image_chk is 0, we currently assume the checksum is
- * disabled.
- */
-bool good_nib_flash() {
-  image_info_t *iip;
-  uint32_t      image_sum;
-
-  iip  = (image_info_t *) NIB_INFO;
-  if (iip->sig != IMAGE_INFO_SIG)
-    return FALSE;
-  if (iip->image_chk) {
-    image_sum = __checksum32_aligned((void *) NIB_BASE, iip->image_length);
-    if (image_sum) {
-      ow_control_block.image_chk_fail++;
-      return FALSE;
-    }
-  }
-  return TRUE;
-}
-
-
-/*
- * handle startup conditions for OverWatch
- *
- * Only gets called if we are runnint in low Flash.  ie GoldenOW
- */
-owls_rtn_t owl_startup() @C() @spontaneous() {
-  ow_control_block_t *owcp;
-  bool from_nib;
-
-  owcp = &ow_control_block;
-  from_nib = FALSE;
-
-  /*
-   * first check to see if the control block seems intact.
-   */
-  if (owcp->ow_sig_a != OW_SIG ||
-      owcp->ow_sig_b != OW_SIG ||
-      owcp->ow_sig_c != OW_SIG) {
-
-    /*
-     * oops.  The control block has been slammed.  We need to fire up OWT
-     * so we can ask the ImageManager to figure out what exactly we should
-     * do.
-     *
-     * 1) reinitialize the control block
-     * 2) invoke OWT for OWT_INIT
-     */
-
-    memset(owcp, 0, sizeof(*owcp));
-    owcp->ow_sig_a = owcp->ow_sig_b = owcp->ow_sig_c = OW_SIG;
-    owcp->reboot_reason = ORR_PWR_FAIL;
-    owcp->ow_boot_mode  = OW_BOOT_OWT;
-    owcp->owt_action    = OWT_ACT_INIT;
-    return OWLS_CONTINUE;
-  }
-
-  /*
-   * control block is valid, normal start up.
-   * See if there are any requests
-   */
-  switch (owcp->ow_req) {
-    default:
-      /*
-       * kill sig and reboot
-       */
-      return OWLS_CONTINUE;
-
-    case OW_REQ_BOOT:
-      /*
-       * Use ow_boot_mode to determine where we are going.
-       */
-      switch (owcp->ow_boot_mode) {
-        default:
-          /*
-           * oops.  things are screwed up.  no where to go.
-           * so just fix it.
-           */
-          owcp->ow_boot_mode = OW_BOOT_GOLD;
-          owcp->strange++;
-
-          /* fall through */
-
-        case OW_BOOT_GOLD:
-        case OW_BOOT_OWT:
-          return OWLS_CONTINUE;
-
-        case OW_BOOT_NIB:
-          /*
-           * If we are booting the NIB, we want to first check
-           * the NIBs validity.  If good_nib_flash takes too long
-           * we can switch to checking the vector table instead.
-           *
-           * For now we run first vectors, then we run whole
-           * NIB flash.  For testing...
-           */
-          if (good_nib_vectors() && good_nib_flash())
-            return OWLS_BOOT_NIB;
-
-          /*
-           * oops.  nib didn't check out.
-           */
-          owcp->strange++;
-          owcp->ow_boot_mode = OW_BOOT_GOLD;
-          return OWLS_CONTINUE;
-      }
-
-    case OW_REQ_INSTALL:
-      owcp->ow_req = OW_REQ_BOOT;
-      owcp->ow_boot_mode = OW_BOOT_OWT;
-      owcp->owt_action = OWT_ACT_INSTALL;
-      return OWLS_CONTINUE;
-
-    case OW_REQ_NIB_REBOOT:
-      from_nib = TRUE;
-
-    case OW_REQ_REBOOT:                /* crash, rebooting */
-      owcp->ow_req = OW_REQ_BOOT;
-
-      /* this needs to be modified to handle overflow etc.  probably
-       * just modify for uint64_t will do it.
-       */
-      owcp->elapsed_lower += owcp->time;
-      owcp->elapsed_upper += owcp->cycle;
-      owcp->reboot_count++;
-
-      if (from_nib) {
-        if (owcp->reboot_count > 10) {
-          owcp->ow_boot_mode = OW_BOOT_OWT;
-          owcp->owt_action = OWT_ACT_EJECT;
-          return OWLS_CONTINUE;
-        }
-        return OWLS_BOOT_NIB;
-      }
-      return OWLS_CONTINUE;
-  }
-}
-
 
 /*
  * OverWatchP
@@ -253,15 +70,20 @@ owls_rtn_t owl_startup() @C() @spontaneous() {
  * control block.
  */
 
+volatile uint32_t t0, t1, d0;;
+
 module OverWatchP {
   provides {
     interface Boot as Booted;           /* outBoot */
     interface OverWatch;
   }
   uses {
-    interface         Boot;             /* inBoot */
-    interface         ImageManager as IM;
-    interface         SysReboot;
+    interface Boot;                     /* inBoot */
+    interface SysReboot;
+    interface Checksum;
+    interface ImageManager as IM;
+    interface OverWatchHardware as OWhw;
+    interface Platform;
   }
 }
 implementation {
@@ -269,6 +91,220 @@ implementation {
   uint8_t *owt_ptr;
   uint32_t owt_len;
   uint32_t owt_len_to_send = 128;
+
+  /*
+   * good_nib_vectors: verify nib vectors
+   *
+   * Quick verification of some sense of reasonableness before launching
+   * the NIB  image.
+   *
+   * 1) Verify the signature of the image_info block.
+   * 2) extract the vector checksum, vector_chk
+   * 3) calculate vector across the vector table.
+   * 4) add vector_chk.  result should be zero.
+   *
+   * Note: if iip->vector_chk is 0, we currently assume the checksum is
+   * disabled.
+   */
+  bool good_nib_vectors(image_info_t *iip) {
+    uint32_t vec_sum;
+
+    if (iip->sig != IMAGE_INFO_SIG)
+      return FALSE;
+    if (iip->vector_chk) {
+      vec_sum = call Checksum.sum32_aligned((void *) NIB_BASE,
+                                            NIB_VEC_BYTES);
+      vec_sum += iip->vector_chk;
+      if (vec_sum) {
+        ow_control_block.vec_chk_fail++;
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+
+  /*
+   * good_nib_flash: verify nib flash
+   *
+   * Check the NIB image.  Verify its checksum.
+   *
+   * 1) Verify the signature of the image_info block.
+   * 2) extract the image size from the structure.  This is in bytes.
+   * 3) calculate the checksum across the entire image.
+   *
+   * The checksum is embedded and is automatically included in the
+   * sum.  The checksum must result in zero to pass.
+   *
+   * Note: if iip->image_chk is 0, we currently assume the checksum is
+   * disabled.
+   */
+  bool good_nib_flash(image_info_t *iip) {
+    uint32_t image_sum;
+
+    if (iip->sig != IMAGE_INFO_SIG)
+      return FALSE;
+    if (iip->image_chk) {
+      image_sum = call Checksum.sum32_aligned((void *) NIB_BASE,
+                                              iip->image_length);
+      if (image_sum) {
+        ow_control_block.image_chk_fail++;
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+
+  /*
+   * handle startup conditions for OverWatch.  Called from startup code
+   *
+   * We prevent name mangling so we can call it from startup.
+   */
+  void owl_startup() @C() @spontaneous() {
+    image_info_t       *iip;
+    ow_control_block_t *owcp;
+    bool                from_nib;
+
+    /*
+     * if non-zero VTOR we are running as the NIB then simply return.
+     * OverWatch is a Base region function only.
+     */
+    if (SCB->VTOR)
+      return;
+
+    owcp = &ow_control_block;
+    from_nib = FALSE;
+
+    /*
+     * first check to see if the control block seems intact.
+     */
+    if (owcp->ow_sig_a != OW_SIG ||
+        owcp->ow_sig_b != OW_SIG ||
+        owcp->ow_sig_c != OW_SIG) {
+
+      /*
+       * oops.  The control block has been slammed.  We need to fire up OWT
+       * so we can ask the ImageManager to figure out what exactly we should
+       * do.
+       *
+       * 1) reinitialize the control block
+       * 2) invoke OWT for OWT_INIT
+       */
+
+      memset(owcp, 0, sizeof(*owcp));
+      owcp->ow_sig_a = owcp->ow_sig_b = owcp->ow_sig_c = OW_SIG;
+      owcp->reboot_reason = ORR_PWR_FAIL;
+      owcp->ow_boot_mode  = OW_BOOT_OWT;
+      owcp->owt_action    = OWT_ACT_INIT;
+      owcp->reset_status  = call OWhw.getResetStatus();
+      owcp->reset_others  = call OWhw.getResetOthers();
+      return;
+    }
+    owcp->reset_status  = call OWhw.getResetStatus();
+    owcp->reset_others  = call OWhw.getResetOthers();
+
+    /*
+     * control block is valid, normal start up.
+     * See if there are any requests
+     */
+    switch (owcp->ow_req) {
+      default:
+        /*
+         * kill sig and reboot
+         * serious oht oh.  sigs are okay but ow_req is out of bounds.
+         */
+        return;
+
+      case OW_REQ_BOOT:
+        /*
+         * Use ow_boot_mode to determine where we are going.
+         */
+        switch (owcp->ow_boot_mode) {
+          default:
+            /*
+             * oops.  things are screwed up.  no where to go.
+             * so just fix it.
+             */
+            owcp->strange++;
+            owcp->strange_loc = 1;
+            call OverWatch.force_boot(OW_BOOT_GOLD);
+            return;
+
+            /* fall through */
+
+          case OW_BOOT_GOLD:
+          case OW_BOOT_OWT:
+            return;
+
+          case OW_BOOT_NIB:
+            /*
+             * If we are booting the NIB, we want to first check
+             * the NIBs validity.  If good_nib_flash takes too long
+             * we can switch to checking the vector table instead.
+             *
+             * For now we run first vectors, then we run whole
+             * NIB flash.  For testing...
+             */
+            iip  = (image_info_t *) NIB_INFO;
+            if (good_nib_vectors(iip) && good_nib_flash(iip)) {
+              /*
+               * if it returns, boot GOLD
+               */
+              call OWhw.boot_image(iip);
+              owcp->strange++;
+              owcp->strange_loc = 2;
+              call OverWatch.force_boot(OW_BOOT_GOLD);
+              return;                   /* shouldn't get here. */
+            }
+
+            /*
+             * oops.  nib didn't check out.  shitty NIB checksum.
+             */
+            owcp->strange++;
+            owcp->strange_loc = 3;
+            call OverWatch.force_boot(OW_BOOT_GOLD);
+            return;
+        }
+
+      case OW_REQ_INSTALL:
+        owcp->ow_req = OW_REQ_BOOT;
+        owcp->ow_boot_mode = OW_BOOT_OWT;
+        owcp->owt_action = OWT_ACT_INSTALL;
+        return;
+
+      case OW_REQ_NIB_REBOOT:
+        from_nib = TRUE;
+
+      case OW_REQ_REBOOT:                /* crash, rebooting */
+        owcp->ow_req = OW_REQ_BOOT;
+
+        /*
+         * this needs to be modified to handle overflow etc.  probably
+         * just modify for uint64_t will do it.
+         */
+        owcp->elapsed_lower += owcp->time;
+        owcp->elapsed_upper += owcp->cycle;
+        owcp->reboot_count++;
+
+        if (from_nib) {
+          if (owcp->reboot_count > 10) {
+            owcp->ow_boot_mode = OW_BOOT_OWT;
+            owcp->owt_action = OWT_ACT_EJECT;
+
+            /* continue boot, normal */
+            return;
+          }
+          iip  = (image_info_t *) NIB_INFO;
+          call OWhw.boot_image(iip);
+          owcp->strange++;
+          owcp->strange_loc = 4;
+          call OverWatch.force_boot(OW_BOOT_GOLD);
+          return;                   /* shouldn't get here. */
+        }
+    }
+  }
+
 
   /*
    * Boot.booted - check booting mode for Golden, else OWT
@@ -298,6 +334,7 @@ implementation {
     switch (owcp->owt_action) {
       case OWT_ACT_NONE:
         owcp->strange++;
+        owcp->strange_loc = 5;
         call OverWatch.force_boot(OW_BOOT_GOLD);
         return;
 
@@ -322,8 +359,10 @@ implementation {
            *
            * If the NIB is bad, then just boot GOLD.
            */
-          if (!good_nib_flash()) {
+          iip = (void *) NIB_INFO;
+          if (!good_nib_vectors(iip) || !good_nib_flash(iip)) {
             owcp->strange++;
+            owcp->strange_loc = 6;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             /* shouldn't return from the above */
             return;
@@ -333,19 +372,21 @@ implementation {
            * good NIB, no active, copy the NIB into an image
            * slot using the ImageManager.  Verify it will fit.
            */
-          iip = (void *) NIB_INFO;
           if (!call IM.check_fit(iip->image_length)) {
             owcp->strange++;
+            owcp->strange_loc = 7;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
           }
           err = call IM.alloc(iip->ver_id);
           if (err) {
             owcp->strange++;
+            owcp->strange_loc = 8;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
           }
           nop();
+          t0 = call Platform.usecsRaw();
           owt_ptr = (void *) iip->image_start;
 //            owt_len = iip->image_length;
           owt_len = 128 * 1024;
@@ -445,6 +486,9 @@ implementation {
   event void IM.finish_complete() {
     image_info_t *iip;
 
+    t1 = call Platform.usecsRaw();
+    d0 = t1 - t0;
+    nop();
     iip = (void *) NIB_INFO;
     call IM.dir_set_active(iip->ver_id);
   }
@@ -498,6 +542,7 @@ implementation {
     owcp = &ow_control_block;
     owcp->ow_req = OW_REQ_BOOT;
     owcp->ow_boot_mode = boot_mode;
+    owcp->reboot_reason = ORR_FORCED_MODE;
     call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
   }
 
@@ -541,9 +586,9 @@ implementation {
     ow_control_block_t *owcp;
 
     owcp = &ow_control_block;
-    owcp->hard_reset = 0;
+    owcp->reset_status  = 0;
+    owcp->reset_others  = 0;
     owcp->reboot_reason = 0;
-    RSTCTL->HARDRESET_CLR = 0xFFFFFFFF; /* clear all */
   }
 
 

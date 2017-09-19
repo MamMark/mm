@@ -859,37 +859,14 @@ void timer_check() {
 
 #endif
 
-extern owls_rtn_t owl_startup();
-
-void owl_finish(uint32_t base, owls_rtn_t rtn) {
-  /*
-   * make a copy of the HardReset register.  We can't do this earlier
-   * because the control block may not initilized.  This happens
-   * in owl_startup.  They will also zero the block if needed.
-   */
-  ow_control_block.hard_reset = RSTCTL->HARDRESET_STAT;
-  switch (rtn) {
-    case OWLS_REBOOT:
-      SYSCTL->REBOOT_CTL = (PRD_RESET_KEY | SYSCTL_REBOOT_CTL_REBOOT);
-      break;
-
-    case OWLS_BOOT_NIB:
-      __asm__ volatile (
-        "  ldr sp, [r0] \n"
-        "  ldr pc, [r0, #4] \n" );
-      break;
-
-    case OWLS_CONTINUE:
-      return;
-  }
-}
+/* see tos/mm/OverWatch/OverWatchP.nc */
+extern void owl_startup();
 
 
 void start() __attribute__((alias("__Reset")));
 void __Reset() {
   uint32_t *from;
   uint32_t *to;
-  owls_rtn_t owls_rtn;
 
   /* make sure interrupts are disabled */
   __disable_irq();
@@ -940,11 +917,11 @@ void __Reset() {
 
   /*
    * invoke overwatch low level to see how we should proceed.
+   * this gets invoked regardless of Gold or Nib space.
+   *
+   * Will return if we should continue the normal boot.
    */
-  if (SCB->VTOR == 0) {
-    owls_rtn = owl_startup();
-    owl_finish(NIB_BASE, owls_rtn);
-  }
+  owl_startup();
 
   __system_init();
 
