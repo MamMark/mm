@@ -30,6 +30,14 @@
 #define PACKED __attribute__((__packed__))
 #endif
 
+/*
+ * identify what revision of the typed_data.h we are using for this build
+ *
+ * split into two subfields, major and minor.  Major 0 is development of
+ * some flavor.  Releases start at Major 1.
+ */
+#define DT_H_REVISION   0x00000001
+
 typedef enum {
   DT_TINTRYALF		= 0,            /* next, force next sector */
   DT_CONFIG		= 1,
@@ -145,6 +153,7 @@ typedef struct {
   uint32_t stamp_ms;
   uint32_t sync_majik;
   uint32_t time_cycle;          /* time cycle */
+  uint32_t dt_h_revision;       /* version identifier of typed_data */
 
   uint32_t reset_status;
   uint32_t reset_others;

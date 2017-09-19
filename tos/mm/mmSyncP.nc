@@ -66,6 +66,7 @@ implementation {
     rp->stamp_ms = call SyncTimer.getNow();
     rp->sync_majik = SYNC_MAJIK;
     rp->time_cycle = 0;                 /* for now only time_cycle 0 */
+    rp->dt_h_revision = DT_H_REVISION;  /* flag which version of typed_data we are using */
 
     rp->reset_status = owcp->reset_status;
     rp->reset_others = owcp->reset_others;
