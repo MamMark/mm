@@ -70,7 +70,7 @@ extern ow_control_block_t ow_control_block;
  * control block.
  */
 
-volatile uint32_t t0, t1, d0;;
+volatile uint32_t ow_t0, ow_t1, ow_d0;
 
 module OverWatchP {
   provides {
@@ -405,7 +405,7 @@ implementation {
             return;
           }
           nop();
-          t0 = call Platform.usecsRaw();
+          ow_t0 = call Platform.usecsRaw();
           owt_ptr = (void *) iip->image_start;
 //            owt_len = iip->image_length;
           owt_len = 128 * 1024;
@@ -505,8 +505,8 @@ implementation {
   event void IM.finish_complete() {
     image_info_t *iip;
 
-    t1 = call Platform.usecsRaw();
-    d0 = t1 - t0;
+    ow_t1 = call Platform.usecsRaw();
+    ow_d0 = ow_t1 - ow_t0;
     nop();
     iip = (void *) NIB_INFO;
     call IM.dir_set_active(iip->ver_id);
