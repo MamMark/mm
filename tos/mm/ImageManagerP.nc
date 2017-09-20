@@ -237,6 +237,8 @@ implementation {
    * set NULL anytime we are NOT filling.
    */
   void validate_slot() {
+    image_dir_t *dir;
+
     imcb.filling_slot_p->slot_state = SLOT_VALID;
     imcb.filling_slot_p = NULL;         /* not filling anymore */
     imcb.buf_ptr = NULL;                /* not filling anymore */
@@ -886,7 +888,6 @@ implementation {
 
   command error_t IM.finish() {
     error_t err;
-    image_dir_t *dir;
 
     nop();
     nop();
