@@ -36,7 +36,7 @@
 #include <image_info.h>
 #include <image_mgr.h>
 #include <overwatch.h>
-#include <owhardware.h>
+#include <overwatch_hw.h>
 
 extern ow_control_block_t ow_control_block;
 

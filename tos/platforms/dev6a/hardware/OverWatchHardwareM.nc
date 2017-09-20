@@ -36,6 +36,8 @@
 
 extern ow_control_block_t ow_control_block;
 
+#include <overwatch_hw.h>
+
 module OverWatchHardwareM {
   provides interface OverWatchHardware as OWhw;
 }

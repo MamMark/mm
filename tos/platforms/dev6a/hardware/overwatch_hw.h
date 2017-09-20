@@ -34,6 +34,10 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
+#ifndef __OVERWATCH_HW_H__
+#define __OVERWATCH_HW_H__
+
+
 /*
  * Defines for various OverWatch HW interface things.
  */
@@ -106,3 +110,5 @@ enum {
 
   RST_DCORSHT   = 0x00008000,           /* dco ext resistor fault    */
 };
+
+#endif // __OVERWATCH_HW_H__
