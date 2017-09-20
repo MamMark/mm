@@ -227,6 +227,26 @@ implementation {
 
 
   /*
+   * validate_slot:
+   *
+   * o mark working slot (fsp) to VALID, we are done with it
+   * o update working control variables (no longer filling)
+   * o update dir checksum
+   *
+   * the working control variables, fsp and buf_ptr need to be
+   * set NULL anytime we are NOT filling.
+   */
+  void validate_slot() {
+    imcb.filling_slot_p->slot_state = SLOT_VALID;
+    imcb.filling_slot_p = NULL;         /* not filling anymore */
+    imcb.buf_ptr = NULL;                /* not filling anymore */
+
+    dir = &imcb.dir;
+    dir->chksum = 0;
+    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
+  }
+
+  /*
    * verify that the current state of Image Manager control
    * cells are reasonable.
    *
@@ -875,23 +895,17 @@ implementation {
       return FAIL;
     }
     verify_IM();
-    imcb.filling_slot_p->slot_state = SLOT_VALID;
-    imcb.filling_slot_p = NULL;         /* not filling anymore */
-
-    dir = &imcb.dir;
-    dir->chksum = 0;
-    dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
 
     /*
      * if there are no bytes in the IMWB then immediately transition
      * to writing/syncing the dir cache to the directory.
      */
-    if (imcb.bytes_remaining == SD_BLOCKSIZE)
+    if (imcb.bytes_remaining == SD_BLOCKSIZE) {
       imcb.im_state = IMS_FILL_SYNC_REQ_SD;
+      validate_slot();
+    }
     else imcb.im_state = IMS_FILL_LAST_REQ_SD;
 
-    /* do after state change */
-    imcb.buf_ptr = NULL;                /* not filling anymore */
     err = call SDResource.request();
     if (err) {
       im_panic(23, err, 0);
@@ -1089,13 +1103,12 @@ implementation {
 
       case IMS_FILL_LAST_WRITE:
         imcb.im_state = IMS_FILL_SYNC_WRITE;
+        validate_slot();
         write_dir_cache();
         return;
 
       case IMS_FILL_SYNC_WRITE:
         imcb.im_state = IMS_IDLE;
-        imcb.buf_ptr = NULL;
-        imcb.filling_slot_p = NULL;
         signal IM.finish_complete();
         call SDResource.release();
         return;
