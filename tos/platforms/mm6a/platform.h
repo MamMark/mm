@@ -26,9 +26,10 @@
 #define PANIC_WIGGLE
 
 //#define TRACE_MICRO
-//#define TRACE_USE_PLATFORM
+#define TRACE_USE_PLATFORM
 //#define MEMINIT_STOP
 
+#define TRACE_RESOURCE
 #define IM_ERASE_ENABLE
 #define DBLK_ERASE_ENABLE
 
