@@ -514,6 +514,7 @@ implementation {
 
 
   event void IM.dir_set_active_complete() {
+    nop();
     call OverWatch.install();
   }
 

@@ -712,11 +712,13 @@ implementation {
            */
           gpsc_change_state(GPSC_ON, GPSW_SEND_BLOCK_TASK);
           call HW.gps_rx_int_enable();
+          nop();
           if (gps_booting) {
             gps_booting = 0;
             gpsc_boot_time = call LocalTime.get() - t_gps_pwr_on;
             call CollectEvent.logEvent(DT_EVENT_GPS_BOOT_TIME,
                                        t_gps_pwr_on, gpsc_boot_time, 0, 0);
+            nop();
             signal Booted.booted();
           }
           return;
@@ -913,6 +915,7 @@ implementation {
           gpsc_log_event(GPSE_SPEED, GPS_TARGET_SPEED);
           call HW.gps_speed_di(GPS_TARGET_SPEED);
           gps_wakeup();                   /* wake the ARM up */
+          nop();
           call GPSRxTimer.startOneShot(DT_GPS_WAKE_UP_DELAY);
           call HW.gps_rx_int_enable();        /* turn on rx system */
           return;

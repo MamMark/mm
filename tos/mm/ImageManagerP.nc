@@ -986,7 +986,6 @@ implementation {
 
       case IMS_INIT_REQ_SD:
         imcb.im_state = IMS_INIT_READ_DIR;
-        nop();
         err = call SDread.read(imcb.region_start_blk, im_wrk_buf);
         if (err) {
           im_panic(27, err, 0);
@@ -1122,6 +1121,7 @@ implementation {
 
       case IMS_DSA_SYNC_WRITE:
         imcb.im_state = IMS_IDLE;
+        nop();
         signal Booted.booted();         /* this is wrong */
         signal IM.dir_set_active_complete();
         call SDResource.release();

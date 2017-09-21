@@ -921,6 +921,7 @@ void __Reset() {
    *
    * Will return if we should continue the normal boot.
    */
+  nop();
   owl_startup();
 
   __system_init();

@@ -128,6 +128,8 @@ implementation {
   event void SDResource.granted() {
     error_t err;
 
+    nop();
+    nop();
     if (dm_state != DMS_REQUEST) {
       dm_panic(2, dm_state, 0);
       return;
@@ -150,6 +152,8 @@ implementation {
     uint8_t    *dp;
     bool        empty;
 
+    nop();
+    nop();
     dp = dm_buf;
     if (err || dp == NULL || dp != read_buf) {
       call Panic.panic(PANIC_DM, 5, err, (parg_t) dp, (parg_t) read_buf, 0);
@@ -219,6 +223,7 @@ implementation {
      * Then when we release, it will get the SD without powering the
      * SD down.
      */
+    nop();
     signal Booted.booted();
     call SDResource.release();
   }
