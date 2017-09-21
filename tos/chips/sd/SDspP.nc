@@ -1243,6 +1243,8 @@ implementation {
     uint8_t  rsp, tmp;
     uint16_t crc;
 
+    (void) rsp;
+
     /* send read data command */
     call HW.sd_set_cs();
     if (!sdc.sdhc)
