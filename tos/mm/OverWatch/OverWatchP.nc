@@ -306,21 +306,23 @@ implementation {
         owcp->elapsed_upper += owcp->cycle;
         owcp->reboot_count++;
 
-        if (from_nib) {
-          if (owcp->reboot_count > 10) {
-            owcp->ow_boot_mode = OW_BOOT_OWT;
-            owcp->owt_action = OWT_ACT_EJECT;
+        if (owcp->from_base == 0)               /* from GOLD, no special eject checks  */
+          return;
+        if (owcp->from_base == OW_BASE_UNK)     /* if unknown no special checks, weird */
+          return;
+        if (owcp->reboot_count > 10) {
+          owcp->ow_boot_mode = OW_BOOT_OWT;
+          owcp->owt_action = OWT_ACT_EJECT;
 
-            /* continue boot, normal */
-            return;
-          }
-          iip  = (image_info_t *) NIB_INFO;
-          call OWhw.boot_image(iip);
-          call OverWatch.force_boot(OW_BOOT_GOLD);
-          return;                   /* shouldn't get here. */
+          /* boot into OWT */
+          return;
         }
+        iip  = (image_info_t *) NIB_INFO;
+        call OWhw.boot_image(iip);
         owcp->strange++;
         owcp->strange_loc = 5;
+        call OverWatch.force_boot(OW_BOOT_GOLD);
+        return;                   /* shouldn't get here. */
     }
   }
 
