@@ -1165,7 +1165,6 @@ implementation {
       case IMS_DSA_SYNC_WRITE:
         imcb.im_state = IMS_IDLE;
         nop();
-        signal Booted.booted();         /* this is wrong */
         signal IM.dir_set_active_complete();
         call SDResource.release();
         return;
