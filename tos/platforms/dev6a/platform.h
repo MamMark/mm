@@ -30,6 +30,7 @@
 //#define MEMINIT_STOP
 
 #define TRACE_RESOURCE
+#define FS_ENABLE_ERASE
 #define IM_ERASE_ENABLE
 #define DBLK_ERASE_ENABLE
 
