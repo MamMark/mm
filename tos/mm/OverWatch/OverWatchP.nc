@@ -81,9 +81,12 @@ module OverWatchP {
     interface Boot;                     /* inBoot */
     interface SysReboot;
     interface Checksum;
+    interface SSWrite  as SSW;
+    interface SDsa;                     /* standalone */
     interface ImageManager as IM;
     interface OverWatchHardware as OWhw;
     interface Platform;
+
   }
 }
 implementation {

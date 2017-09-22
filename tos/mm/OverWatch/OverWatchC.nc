@@ -55,6 +55,10 @@ implementation {
   Booted = OW_P;
   Boot   = OW_P;
 
+  components SD0C, SSWriteC;
+  OW_P.SSW  -> SSWriteC;
+  OW_P.SDsa -> SD0C;
+
   components ChecksumM;
   components ImageManagerC as IM_C;
   components OverWatchHardwareM;
