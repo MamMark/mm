@@ -108,6 +108,10 @@ end
 #b VirtualizeTimerC.nc:92
 #dis
 
+b SchedulerBasicP.nc:163
+b VirtualizeTimerC.nc:92
+dis 1 2
+
 b PanicP.nc:79
 comm
 printf "\n\n*** Panic: %d(d), w: %d(d), a: %04x %04x %04x %04x\n", \
