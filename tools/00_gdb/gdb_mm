@@ -71,9 +71,28 @@ StreamStorage state
 end
 
 
+define __print_dir_entry
+# arg0 index
+set $_slotp = &ImageManagerP__imcb.dir.slots[$arg0]
+printf "  %d:  %x.%x.%03x  (%d.%d.%04d) %08x  ", $arg0, \
+    $_slotp->ver_id.major, $_slotp->ver_id.minor, $_slotp->ver_id.build, \
+    $_slotp->ver_id.major, $_slotp->ver_id.minor, $_slotp->ver_id.build, \
+    $_slotp->start_sec
+output $_slotp->slot_state
+printf "\n"
+end
+
 define im
 printf "\n"
 print ImageManagerP__imcb
+printf "\n"
+printf "dir       sig: %08x   %08x  chksum: %08x\n", \
+    ImageManagerP__imcb.dir.dir_sig, ImageManagerP__imcb.dir.dir_sig_a, \
+    ImageManagerP__imcb.dir.chksum
+__print_dir_entry 0
+__print_dir_entry 1
+__print_dir_entry 2
+__print_dir_entry 3
 printf "\n"
 printf "buf_ptr:  %08x, remaining: %04x (%d)\n", ImageManagerP__imcb.buf_ptr, \
         ImageManagerP__imcb.bytes_remaining, ImageManagerP__imcb.bytes_remaining,

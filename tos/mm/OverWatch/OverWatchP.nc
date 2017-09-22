@@ -471,6 +471,10 @@ implementation {
   }
 
 
+  /*
+   * part of OWT_INIT.  NIB -> IM (SD)
+   * rest of system not running
+   */
   event void IM.write_continue() {
     uint32_t remaining;
 
@@ -504,6 +508,10 @@ implementation {
   }
 
 
+  /*
+   * part of OWT_INIT.  NIB -> IM (SD)
+   * rest of system not running
+   */
   event void IM.finish_complete() {
     image_info_t *iip;
 
@@ -515,6 +523,10 @@ implementation {
   }
 
 
+  /*
+   * part of OWT_INIT.  NIB -> IM (SD)
+   * rest of system not running
+   */
   event void IM.dir_set_active_complete() {
     nop();
     call OverWatch.install();
