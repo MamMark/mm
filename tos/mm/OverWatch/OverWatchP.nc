@@ -207,6 +207,9 @@ implementation {
       return;
     }
 
+    /* protect whole falsh, god we are paranoid. */
+    call OWhw.flashProtectAll();
+
     /*
      * first check to see if the control block seems intact.
      */
@@ -338,7 +341,7 @@ implementation {
    * OWT operating mode expects that the boot initialization
    * chain executed prior is the minimal set of drivers and
    * modules required. Any additional drivers and modules
-   * should be added downstream on GoldBooted.
+   * should be added downstream on OverWatchC.Booted
    */
   event void Boot.booted() {
     ow_control_block_t *owcp;
@@ -346,12 +349,21 @@ implementation {
     image_info_t       *iip;
     uint32_t remaining;
     error_t err;
+    bool    bad_vecs, bad_image;
+
+    uint32_t cur_sector, faddr, flen;
+    uint8_t  *buf;
 
     owcp = &ow_control_block;
     if (owcp->ow_boot_mode != OW_BOOT_OWT) {
       signal Booted.booted();
       return;
     }
+    active = call IM.dir_get_active();
+    iip = (void *) NIB_INFO;
+    bad_vecs  = !good_nib_vectors(iip);
+    bad_image = (bad_vecs ? bad_vecs : !good_nib_flash(iip));
+
     switch (owcp->owt_action) {
       case OWT_ACT_NONE:
         owcp->strange++;
@@ -368,7 +380,6 @@ implementation {
          *
          * no match,
          */
-        active = call IM.dir_get_active();
         if (!active) {
           /*
            * no active, we need to rectify that.
@@ -380,12 +391,10 @@ implementation {
            *
            * If the NIB is bad, then just boot GOLD.
            */
-          iip = (void *) NIB_INFO;
-          if (!good_nib_vectors(iip) || !good_nib_flash(iip)) {
+          if (bad_vecs || bad_image) {
             owcp->strange++;
             owcp->strange_loc = 7;
             call OverWatch.force_boot(OW_BOOT_GOLD);
-            /* shouldn't return from the above */
             return;
           }
 
@@ -443,6 +452,15 @@ implementation {
          * We have a active, check the NIB and see if it
          * matches what the ImageManager thinks is the ACTIVE.
          */
+        if (bad_image ||
+            !call IM.verEqual(&(active->ver_id), &(iip->ver_id))) {
+          call OverWatch.install();
+          return;
+        }
+        /*
+         * good image and the right version.  Just boot it.
+         */
+        call OverWatch.force_boot(OW_BOOT_NIB);
         return;
 
       case OWT_ACT_INSTALL:
@@ -458,6 +476,48 @@ implementation {
          * 4) verify checksum -> abort strange
          * 5) OW.force_boot(NIB)
          */
+        if (!active) {
+            owcp->strange++;
+            owcp->strange_loc = 10;
+            call OverWatch.force_boot(OW_BOOT_GOLD);
+        }
+        nop();
+        __nesc_disable_interrupt();
+        buf = call SSW.get_temp_buf();
+        cur_sector = active->start_sec;
+        call SDsa.read(cur_sector, buf);
+        iip = (image_info_t *) (buf + IMAGE_META_OFFSET);
+
+        /* check
+         *
+         * info sig
+         * ver_id match
+         * vector sum
+         * image_start
+         * start + size reasonable
+         */
+        faddr = iip->image_start;
+        flen  = iip->image_length;
+        if (call OWhw.flashErase((void *) faddr, flen)) {
+          owcp->strange++;
+          owcp->strange_loc = 11;
+          call OverWatch.force_boot(OW_BOOT_GOLD);
+        }
+        while (flen > 512) {
+          call OWhw.flashProgram(buf, (void *) faddr, 512);
+          faddr += 512;
+          flen  -= 512;
+          cur_sector++;
+          if (!flen)
+            break;
+          call SDsa.read(cur_sector, buf);
+        }
+        if (flen)
+          call OWhw.flashProgram(buf, (void *) faddr, flen);
+        nop();
+        call OWhw.flashProtectAll();
+        call OverWatch.force_boot(OW_BOOT_NIB);
+        return;
 
       case OWT_ACT_EJECT:
         /*
@@ -481,12 +541,10 @@ implementation {
     nop();
     nop();
     remaining = call IM.write(owt_ptr, owt_len);
-    if (!remaining) {
-      call IM.finish();
-      return;
-    }
     owt_ptr += (owt_len - remaining);
     owt_len = remaining;
+    if (!remaining)
+      call IM.finish();
     return;
 
 #ifdef notdef
@@ -529,6 +587,7 @@ implementation {
    */
   event void IM.dir_set_active_complete() {
     nop();
+    call OverWatch.force_boot(OW_BOOT_NIB);
     call OverWatch.install();
   }
 
