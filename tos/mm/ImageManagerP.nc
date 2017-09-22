@@ -627,6 +627,19 @@ implementation {
 
 
   /*
+   * verEqual: compare two version structs  (EQUAL)
+   *
+   * input:  ver0       image_ver_t ver0, version
+   *         ver1       ditto
+   * return: bool       TRUE.  versions are not equal
+   *                    FALSE, versions are equal
+   */
+  command bool IM.verEqual(image_ver_t *ver0, image_ver_t *ver1) {
+    return cmp_ver_id(ver0, ver1);
+  }
+
+
+  /*
    * Delete: Sets the state of an image  to "empty", marking the slot  available for another image.
    *
    * input:  ver_id
