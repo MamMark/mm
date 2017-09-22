@@ -57,7 +57,7 @@ implementation {
    * Exchanged with radio driver every receive call.
    */
   norace volatile uint8_t     tagMsgBuffer[sizeof(message_t)];
-  norace volatile uint8_t     tagMsgBufferGuard[] = "DEADBEF";
+  norace volatile uint8_t     tagMsgBufferGuard[] = "DEADBEAF";
   norace message_t          * pTagMsg = (message_t *) tagMsgBuffer;
   norace volatile uint8_t     tagMsgBusy, tagMsgSending;
   norace volatile uint32_t    tagmon_timeout  = 1024 * 100; // binary microseconds

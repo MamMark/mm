@@ -8,7 +8,8 @@
 #include "Tagnet.h"
 
 configuration TagnetMonitorC {}
-implementation {  components MainC;
+implementation {
+  components MainC;
   components SystemBootC;
   components TagnetMonitorP;
   MainC.SoftwareInit            -> TagnetMonitorP;

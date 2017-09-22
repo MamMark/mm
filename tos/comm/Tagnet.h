@@ -57,12 +57,15 @@ typedef enum {
   TE_UNSUPPORTED,
   TE_BAD_MESSAGE,
   TE_FAILED,
-  TE_PKT_NO_MATCH
+  TE_PKT_NO_MATCH,
+  TE_BUSY,
 } tagnet_error_t;
 
 typedef struct tagnet_name_meta_t {
   uint8_t     this;
-  uint8_t     seq_no;
+  uint8_t     offset;
+  uint8_t     version;
+  uint8_t     size;
   uint8_t     utc_time;
   uint8_t     node_id;
   uint8_t     gps_xyz;
@@ -87,6 +90,17 @@ typedef struct tagnet_payload_meta_t {
 #define UQ_TN_INFO_SENS         "UQ_TN_INFO_SENS"
 #define UQ_TN_INFO_SENS_GPS     "UQ_TN_INFO_SENS_GPS"
 #define UQ_TN_INFO_SENS_GPS_XYZ "UQ_TN_INFO_SENS_GPS_XYZ"
+#define UQ_TN_SD                "UQ_TN_SD"
+#define UQ_TN_SD_NID            "UQ_TN_SD_NID"
+#define UQ_TN_SD_DEV_0          "UQ_TN_SD_DEV_0"
+#define UQ_TN_SD_DEV_0_IMG      "UQ_TN_SD_DEV_0_IMG"
+#define UQ_TN_SYS               "UQ_TN_SYS"
+#define UQ_TN_SYS_NID           "UQ_TN_SYS_NID"
+#define UQ_TN_SYS_BOOT          "UQ_TN_SYS_BOOT"
+#define UQ_TN_SYS_BOOT_ACTIVE   "UQ_TN_SYS_BOOT_ACTIVE"
+#define UQ_TN_SYS_BOOT_BACKUP   "UQ_TN_SYS_BOOT_BACKUP"
+#define UQ_TN_SYS_BOOT_GOLDEN   "UQ_TN_SYS_BOOT_GOLDEN"
+#define UQ_TN_SYS_BOOT_NIB      "UQ_TN_SYS_BOOT_NIB"
 
 #define UQ_TAGNET_ADAPTER_LIST  "UQ_TAGNET_ADAPTER_LIST"
 

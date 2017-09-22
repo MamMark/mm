@@ -106,8 +106,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "Tagnet.h"
-#include "TagnetTLV.h"
+#include <Tagnet.h>
+#include <TagnetTLV.h>
 
 configuration TagnetC {
   provides {
@@ -119,7 +119,7 @@ configuration TagnetC {
     interface TagnetHeader;
   }
   uses {
-    interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
+    interface TagnetAdapter<tagnet_gps_xyz_t>  as InfoSensGpsXyz;
   }
 }
 implementation {
@@ -136,6 +136,7 @@ implementation {
   TagVx.Super         -> RootVx.Sub[unique(UQ_TN_ROOT)];
 
   // instantiate object pathname for the TagNet poll event
+  // -/tag-----/poll----/<nid>----/ev----PollEvLf
   // note this object is used by TagNet Master protocol to determine status of this node
   // number of times polled is exposed as an integer adapter for use as a counter
   components new         TagnetNameElementP   (TN_POLL_ID, UQ_TN_POLL)         as PollVx;
@@ -146,12 +147,15 @@ implementation {
   PollEvLf.Super      -> PollNidVx.Sub[unique(UQ_TN_POLL_NID)];
   PollCount           =  PollEvLf.Adapter;
 
-  // instantiate object pathname for the TagNet poll statistics counter and wire to poll event
+  // instantiate object pathname for the TagNet poll statistics counter
+  // -/tag-----/poll----/<nid>----/cnt---PollEvLf.adapter
+  // currently wire directly to poll event
   components new         TagnetIntegerAdapterP(TN_POLL_CNT_ID, UQ_TN_POLL_CNT) as PollCntLf;
   PollCntLf.Super     -> PollNidVx.Sub[unique(UQ_TN_POLL_NID)];
   PollCntLf.Adapter   -> PollEvLf;
 
   // instantiate object pathname for the TagNet GPS XYZ position
+  // -/tag-----/info----/<nid>----/sens----/gps----gps_xyz.adapter
   components new         TagnetNameElementP   (TN_INFO_ID, UQ_TN_INFO)         as InfoVx;
   components new         TagnetNameElementP   (TN_INFO_NID_ID, UQ_TN_INFO_NID) as InfoNidVx;
   components new         TagnetNameElementP   (TN_INFO_SENS_ID, UQ_TN_INFO_SENS) as InfoSensVx;
@@ -164,4 +168,39 @@ implementation {
   InfoSensGpsXyzLf.Super -> InfoSensGpsVx.Sub[unique(UQ_TN_INFO_SENS_GPS)];
   InfoSensGpsXyz      =  InfoSensGpsXyzLf.Adapter;
 
+  // instantiate object pathname for the TagNet Software Image Repository
+  // -/tag-----/sd------/<nid>----/<int=0>--/img---sd_image.adapter
+  //                                     \--/conf--sd_image.adapter
+  //                                     \--/rules-sd_image.adapter
+  components new         TagnetNameElementP   (TN_SD_ID, UQ_TN_SD)         as SdVx;
+  components new         TagnetNameElementP   (TN_SD_NID_ID, UQ_TN_SD_NID) as SdNidVx;
+  components new         TagnetNameElementP   (TN_SD_DEV_0_ID, UQ_TN_SD_DEV_0) as SdDev0Vx;
+  components new         TagnetImageAdapterP  (TN_SD_DEV_0_IMG_ID) as SdDev0ImgLf;
+  SdVx.Super          -> TagVx.Sub[unique(UQ_TN_TAG)];
+  SdNidVx.Super       -> SdVx.Sub[unique(UQ_TN_SD)];
+  SdDev0Vx.Super      -> SdNidVx.Sub[unique(UQ_TN_SD_NID)];
+  SdDev0ImgLf.Super   -> SdDev0Vx.Sub[unique(UQ_TN_SD_DEV_0)];
+
+  // instantiate object pathname for TagNet System Boot Control
+  // -/tag-----/sys-----/<nid>----/boot----/active
+  //                                   \---/backup
+  //                                   \---/nib
+  //                                   \---/golden
+  components new         TagnetNameElementP   (TN_SYS_ID, UQ_TN_SYS)         as SysVx;
+  components new         TagnetNameElementP   (TN_SYS_NID_ID, UQ_TN_SYS_NID) as SysNidVx;
+  components new         TagnetNameElementP   (TN_SYS_BOOT_ID, UQ_TN_SYS_BOOT) as SysBootVx;
+  components new         TagnetActiveAdapterP (TN_SYS_BOOT_ACTIVE_ID) as SysBootActiveLf;
+  components new         TagnetActiveAdapterP (TN_SYS_BOOT_BACKUP_ID) as SysBootBackupLf;
+  components new         TagnetActiveAdapterP (TN_SYS_BOOT_GOLDEN_ID) as SysBootGoldenLf;
+  components new         TagnetActiveAdapterP (TN_SYS_BOOT_NIB_ID)    as SysBootNibLf;
+//  components new         TagnetBackupAdapterP (TN_SYS_BOOT_BACKUP_ID) as SysBootBackupLf;
+//  components new         TagnetGoldenAdapterP (TN_SYS_BOOT_GOLDEN_ID) as SysBootGoldenLf;
+//  components new         TagnetNibAdapterP    (TN_SYS_BOOT_NIB_ID)    as SysBootNibLf;
+  SysVx.Super         -> TagVx.Sub[unique(UQ_TN_TAG)];
+  SysNidVx.Super      -> SysVx.Sub[unique(UQ_TN_SYS)];
+  SysBootVx.Super     -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
+  SysBootActiveLf.Super-> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
+  SysBootBackupLf.Super-> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
+  SysBootGoldenLf.Super-> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
+  SysBootNibLf.Super  -> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
 }

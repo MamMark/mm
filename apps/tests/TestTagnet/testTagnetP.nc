@@ -543,7 +543,7 @@ implementation {
     test_tagnet_gps_xyz();
   }
 
-  command bool InfoSensGpsXYZ.get_value(tagnet_gps_xyz_t *t, uint8_t *l) {
+  command bool InfoSensGpsXyz.get_value(tagnet_gps_xyz_t *t, uint8_t *l) {
     nop();
     nop();
     tn_gps_xyz_count++;
