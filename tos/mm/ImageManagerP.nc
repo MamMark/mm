@@ -219,9 +219,14 @@ implementation {
 
 
   bool cmp_ver_id(image_ver_t *ver0, image_ver_t *ver1) {
-    if (ver0->major != ver1->major) return FALSE;
-    if (ver0->minor != ver1->minor) return FALSE;
-    if (ver0->build != ver1->build) return FALSE;
+    uint8_t *s, *d;
+
+    s = (void *) ver0;
+    d = (void *) ver1;
+    if (*s++ != *d++) return FALSE;
+    if (*s++ != *d++) return FALSE;
+    if (*s++ != *d++) return FALSE;
+    if (*s++ != *d++) return FALSE;
     return TRUE;
   }
 
@@ -636,6 +641,31 @@ implementation {
    */
   command bool IM.verEqual(image_ver_t *ver0, image_ver_t *ver1) {
     return cmp_ver_id(ver0, ver1);
+  }
+
+
+  command void IM.setVer(image_ver_t *src, image_ver_t *dst) {
+    uint8_t *s, *d;
+
+    s = (void *) src;
+    d = (void *) dst;
+    *d++ = *s++;
+    *d++ = *s++;
+    *d++ = *s++;
+    *d++ = *s++;
+  }
+
+
+  command uint8_t IM.slotStateLetter(slot_state_t state) {
+    switch (state) {
+      case SLOT_EMPTY:          return 'x';
+      case SLOT_FILLING:        return 'f';
+      case SLOT_VALID:          return 'v';
+      case SLOT_BACKUP:         return 'b';
+      case SLOT_ACTIVE:         return 'a';
+      case SLOT_EJECTED:        return 'e';
+      default:                  return '?';
+    }
   }
 
 

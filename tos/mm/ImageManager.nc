@@ -56,8 +56,10 @@ interface ImageManager {
   command error_t dir_eject_active();
   event   void    dir_eject_active_complete();
 
-  command bool check_fit(uint32_t len);
-  command bool verEqual(image_ver_t *ver0, image_ver_t *ver1);
+  command bool    check_fit(uint32_t len);
+  command bool    verEqual(image_ver_t *ver0, image_ver_t *ver1);
+  command void    setVer(image_ver_t *src, image_ver_t *dst);
+  command uint8_t slotStateLetter(slot_state_t state);
 
   command image_dir_slot_t *dir_get_active();
   command image_dir_slot_t *dir_get_dir(uint8_t idx);
