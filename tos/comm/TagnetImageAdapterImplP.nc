@@ -148,8 +148,8 @@ implementation {
 
     if ((dptr) && (dlen > (IMAGE_META_OFFSET + sizeof(image_info_t))))
       infop = (image_info_t *) &dptr[IMAGE_META_OFFSET];
-    if ((infop) && (image_cmp_ver_id(&infop->ver_id, version))) { // sanity check
-      image_copy_ver_id(version, &ia_cb.version);
+    if ((infop) && (call IM.verEqual(&infop->ver_id, version))) { // sanity check
+      call IM.setVer(version, &ia_cb.version);
       ia_cb.img_len = infop->image_length;   // save for later
       ia_cb.img_chk = infop->image_chk;
       return TRUE;
@@ -240,7 +240,7 @@ implementation {
               version = call TTLV.tlv_to_version(version_tlv);
               dirp = call IM.dir_find_ver(*version); // get image info for specific version
               if (dirp) {
-                ste[0] = image_dir_state_letter(dirp->slot_state);
+                ste[0] = call IM.slotStateLetter(dirp->slot_state);
                 call TPload.add_string(msg, &ste, 1);
               }
             } else {                                // get image info for all versions
@@ -249,7 +249,7 @@ implementation {
                 if (!dirp)
                   break;
                 call TPload.add_version(msg, &dirp->ver_id);
-                ste[0] = image_dir_state_letter(dirp->slot_state);
+                ste[0] = call IM.slotStateLetter(dirp->slot_state);
                 call TPload.add_string(msg, &ste[0], 1);
               }
             }
@@ -304,11 +304,11 @@ implementation {
           // look for new image load request
           if ((offset_tlv) && (offset != 0)) { // continue accumulating
             /* make sure this PUT for same version */
-            if (!image_cmp_ver_id(version, &ia_cb.version)) {
+            if (!call IM.verEqual(version, &ia_cb.version)) {
               break;                          // ignore msg if mismatch
             }
           } else {                            // start accumulating
-            image_copy_ver_id(version, &ia_cb.version);
+            call IM.setVer(version, &ia_cb.version);
             ia_cb.e_buf = 0;
           }
 

@@ -79,7 +79,7 @@ implementation {
           dirp = call IM.dir_get_active();
           if (dirp) {
             call TPload.add_version(msg, &dirp->ver_id);
-            ste[0] = image_dir_state_letter(dirp->slot_state);
+            ste[0] = call IM.slotStateLetter(dirp->slot_state);
             call TPload.add_string(msg, &ste[0], 1);
           }
           return TRUE;
@@ -121,7 +121,7 @@ implementation {
     dirp = call IM.dir_get_active();
     if (dirp) {
       call TPload.add_version(msg, &dirp->ver_id);
-      ste[0] = image_dir_state_letter(dirp->slot_state);
+      ste[0] = call IM.slotStateLetter(dirp->slot_state);
       call TPload.add_string(msg, &ste[0], 1);
     }
   }
