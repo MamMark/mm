@@ -49,6 +49,12 @@
 #include <image_info.h>
 #include <overwatch.h>
 
+//#define __MSP432_DVRLIB_ROM__
+#include <rom.h>
+#include <rom_map.h>
+#include "flash.h"
+
+
 #ifndef nop
 #define nop() __asm volatile("nop")
 #endif
@@ -964,4 +970,18 @@ void __Reset() {
   while (1) {
     ROM_DEBUG_BREAK(0);
   }
+}
+
+
+/*
+ * Flash access routines.  Linkages to either ROM or TI flash code
+ */
+
+bool __flash_performMassErase() {
+  return MAP_FlashCtl_performMassErase();
+}
+
+
+bool __flash_programMemory(void* src, void* dest, uint32_t length) {
+  return MAP_FlashCtl_programMemory(src, dest, length);
 }

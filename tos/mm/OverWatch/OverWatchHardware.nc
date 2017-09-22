@@ -64,4 +64,15 @@ interface OverWatchHardware {
    * Where did the current executing image load.?
    */
   command uint32_t getImageBase();
+
+  /*
+   * flash access.
+   */
+  command error_t flashProtectAll();
+
+  /* erase flash */
+  command error_t flashErase(uint8_t *start, uint32_t len);
+
+  /* program flash */
+  command error_t flashProgram(uint8_t *src, uint8_t *fdest, uint32_t len);
 }
