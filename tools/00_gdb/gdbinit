@@ -16,15 +16,22 @@ set mem inaccessible-by-default off
 
 #
 # gdb_msp432:   cpu definitions
-# gdb_dev6a:    platform definitions, pick either dev6a or mm6a
-# gdb_mm6a:
+# gdb_target:   (gdb_dev6a, gdb_mm6a, link appropriately, see below)
 # gdb_gps:      definitions for the gps subsystem
 # gdb_mm:       definitions for various mm subsystems
 
+#
+# down in the build/<target> directory one needs the following symbolic
+# links to ../../.gdbinit and ../../.gdb_<target>:
+#
+#     ln -s ../../.gdbinit
+#     ln -s ../../.gdb_<target .gdb_target
+#
+# these are created automatically by the build system.
+#
 add-symbol-file symbols_hw 0
 source ../../.gdb_msp432
-source ../../.gdb_dev6a
-#source ../../.gdb_mm6a
+source .gdb_target
 source ../../.gdb_gps
 source ../../.gdb_mm
 
