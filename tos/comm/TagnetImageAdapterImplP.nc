@@ -272,7 +272,6 @@ implementation {
           version = call TTLV.tlv_to_version(version_tlv);
 
           // look for optional offset in name
-          offset_tlv = NULL;
           if ((offset_tlv) && (call TTLV.get_tlv_type(offset_tlv) == TN_TLV_OFFSET))
             offset = call TTLV.tlv_to_integer(offset_tlv);
 
@@ -345,7 +344,7 @@ implementation {
           }
           if (ia_cb.eof)                      // eof already, image too short
             return do_reject(msg, TE_BAD_MESSAGE);
-          return do_write(msg, NULL, 0);      // just acknowledge PUT
+          return do_write(msg, NULL, dlen);         // just acknowledge PUT
 
           nop();
           break;
