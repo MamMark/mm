@@ -64,7 +64,8 @@ implementation {
   components OverWatchHardwareM;
   OW_P.Checksum -> ChecksumM;
   OW_P.OWhw     -> OverWatchHardwareM;
-  OW_P.IM       -> IM_C;
+  OW_P.IM       -> IM_C.IM[unique("image_manager_clients")];
+  OW_P.IMD      -> IM_C;
 
   components PlatformC;
   OW_P.SysReboot -> PlatformC;

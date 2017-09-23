@@ -137,6 +137,7 @@ generic module TagnetImageAdapterImplP(int my_id) @safe() {
   uses interface     TagnetPayload  as  TPload;
   uses interface     TagnetTLV      as  TTLV;
   uses interface     ImageManager   as  IM;
+  uses interface   ImageManagerData as  IMD;
 }
 implementation {
   enum { my_adapter_id = unique(UQ_TAGNET_ADAPTER_LIST) };
@@ -148,8 +149,8 @@ implementation {
 
     if ((dptr) && (dlen > (IMAGE_META_OFFSET + sizeof(image_info_t))))
       infop = (image_info_t *) &dptr[IMAGE_META_OFFSET];
-    if ((infop) && (call IM.verEqual(&infop->ver_id, version))) { // sanity check
-      call IM.setVer(version, &ia_cb.version);
+    if ((infop) && (call IMD.verEqual(&infop->ver_id, version))) { // sanity check
+      call IMD.setVer(version, &ia_cb.version);
       ia_cb.img_len = infop->image_length;   // save for later
       ia_cb.img_chk = infop->image_chk;
       return TRUE;
@@ -216,7 +217,7 @@ implementation {
     tagnet_tlv_t    *version_tlv = call TName.next_element(msg);
     image_ver_t     *version;
     tagnet_tlv_t    *offset_tlv = call TName.next_element(msg);
-    uint32_t         offset;
+    uint32_t         offset = 0;
     tagnet_tlv_t    *eof_tlv = call TPload.first_element(msg);
     uint8_t          dlen = 0;
     uint8_t         *dptr = NULL;
@@ -232,24 +233,24 @@ implementation {
       switch (call THdr.get_message_type(msg)) {    // process packet type
         case TN_GET:
           tn_trace_rec(my_id, 2);
-          if (call IM.dir_coherent()) {            // image manager directory is stable
+          if (call IMD.dir_coherent()) {            // image manager directory is stable
             call TPload.reset_payload(msg);
             call THdr.set_response(msg);
             call THdr.set_error(msg, TE_PKT_OK);
             if ((version_tlv) && (call TTLV.get_tlv_type(version_tlv) != TN_TLV_VERSION)) {
               version = call TTLV.tlv_to_version(version_tlv);
-              dirp = call IM.dir_find_ver(*version); // get image info for specific version
+              dirp = call IMD.dir_find_ver(version); // get image info for specific version
               if (dirp) {
-                ste[0] = call IM.slotStateLetter(dirp->slot_state);
+                ste[0] = call IMD.slotStateLetter(dirp->slot_state);
                 call TPload.add_string(msg, &ste, 1);
               }
             } else {                                // get image info for all versions
               for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
-                dirp = call IM.dir_get_dir(i);
+                dirp = call IMD.dir_get_dir(i);
                 if (!dirp)
                   break;
                 call TPload.add_version(msg, &dirp->ver_id);
-                ste[0] = call IM.slotStateLetter(dirp->slot_state);
+                ste[0] = call IMD.slotStateLetter(dirp->slot_state);
                 call TPload.add_string(msg, &ste[0], 1);
               }
             }
@@ -304,11 +305,11 @@ implementation {
           // look for new image load request
           if ((offset_tlv) && (offset != 0)) { // continue accumulating
             /* make sure this PUT for same version */
-            if (!call IM.verEqual(version, &ia_cb.version)) {
+            if (!call IMD.verEqual(version, &ia_cb.version)) {
               break;                          // ignore msg if mismatch
             }
           } else {                            // start accumulating
-            call IM.setVer(version, &ia_cb.version);
+            call IMD.setVer(version, &ia_cb.version);
             ia_cb.e_buf = 0;
           }
 
@@ -332,7 +333,7 @@ implementation {
               return do_reject(msg, TE_BAD_MESSAGE);
 
             // allocate new image and write first data
-            if ((err = call IM.alloc(ia_cb.version)) == 0) {
+            if ((err = call IM.alloc(&ia_cb.version)) == 0) {
               ia_cb.in_progress = TRUE;       // mark image load now in progress
               if ((eof_tlv) && (call TTLV.get_tlv_type(eof_tlv) == TN_TLV_EOF))
                 ia_cb.eof = TRUE;             // eof found (really short file!)

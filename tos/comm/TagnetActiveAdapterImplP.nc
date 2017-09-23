@@ -45,6 +45,7 @@ generic module TagnetActiveAdapterImplP (int my_id) @safe() {
   uses interface  TagnetPayload   as  TPload;
   uses interface  TagnetTLV       as  TTLV;
   uses interface  ImageManager    as  IM;
+  uses interface ImageManagerData as  IMD;
   uses interface  OverWatch       as  OW;
 }
 implementation {
@@ -69,17 +70,17 @@ implementation {
           tn_trace_rec(my_id, 2);
           if ((next_tlv) && (call TTLV.get_tlv_type(next_tlv) != TN_TLV_VERSION)) {
             verp = call TTLV.tlv_to_version(next_tlv);
-            call IM.dir_set_active(*verp);
+            call IM.dir_set_active(verp);
           } else
             call THdr.set_error(msg, TE_UNSUPPORTED);
           return TRUE;
 
         case TN_GET:
           tn_trace_rec(my_id, 3);
-          dirp = call IM.dir_get_active();
+          dirp = call IMD.dir_get_active();
           if (dirp) {
             call TPload.add_version(msg, &dirp->ver_id);
-            ste[0] = call IM.slotStateLetter(dirp->slot_state);
+            ste[0] = call IMD.slotStateLetter(dirp->slot_state);
             call TPload.add_string(msg, &ste[0], 1);
           }
           return TRUE;
@@ -118,10 +119,10 @@ implementation {
     image_dir_slot_t    *dirp;
     uint8_t            ste[1];
 
-    dirp = call IM.dir_get_active();
+    dirp = call IMD.dir_get_active();
     if (dirp) {
       call TPload.add_version(msg, &dirp->ver_id);
-      ste[0] = call IM.slotStateLetter(dirp->slot_state);
+      ste[0] = call IMD.slotStateLetter(dirp->slot_state);
       call TPload.add_string(msg, &ste[0], 1);
     }
   }

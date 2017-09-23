@@ -48,5 +48,6 @@ implementation {
   Element.THdr   -> TagnetUtilsC;
   Element.TPload -> TagnetUtilsC;
   Element.TTLV   -> TagnetUtilsC;
-  Element.IM     -> ImageManagerC;
+  Element.IM     -> ImageManagerC.IM[unique("image_manager_clients")];
+  Element.IMD    -> ImageManagerC;
 }

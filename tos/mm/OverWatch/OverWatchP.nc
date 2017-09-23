@@ -83,7 +83,8 @@ module OverWatchP {
     interface Checksum;
     interface SSWrite  as SSW;
     interface SDsa;                     /* standalone */
-    interface ImageManager as IM;
+    interface ImageManager      as IM;
+    interface ImageManagerData  as IMD;
     interface OverWatchHardware as OWhw;
     interface Platform;
 
@@ -365,7 +366,7 @@ implementation {
       signal Booted.booted();
       return;
     }
-    active = call IM.dir_get_active();
+    active = call IMD.dir_get_active();
     iip = (void *) NIB_INFO;
     bad_vecs  = !good_nib_vectors(iip);
     bad_image = (bad_vecs ? bad_vecs : !good_nib_flash(iip));
@@ -408,13 +409,13 @@ implementation {
            * good NIB, no active, copy the NIB into an image
            * slot using the ImageManager.  Verify it will fit.
            */
-          if (!call IM.check_fit(iip->image_length)) {
+          if (!call IMD.check_fit(iip->image_length)) {
             owcp->strange++;
             owcp->strange_loc = 8;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
           }
-          err = call IM.alloc(iip->ver_id);
+          err = call IM.alloc(&iip->ver_id);
           if (err) {
             owcp->strange++;
             owcp->strange_loc = 9;
@@ -459,7 +460,7 @@ implementation {
          * matches what the ImageManager thinks is the ACTIVE.
          */
         if (bad_image ||
-            !call IM.verEqual(&(active->ver_id), &(iip->ver_id))) {
+            !call IMD.verEqual(&(active->ver_id), &(iip->ver_id))) {
           call OverWatch.install();
           return;
         }
@@ -583,7 +584,7 @@ implementation {
     ow_d0 = ow_t1 - ow_t0;
     nop();
     iip = (void *) NIB_INFO;
-    call IM.dir_set_active(iip->ver_id);
+    call IM.dir_set_active(&iip->ver_id);
   }
 
 
