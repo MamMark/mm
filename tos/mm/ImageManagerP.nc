@@ -133,6 +133,11 @@ typedef enum {
 /*
  * filling_slot_p and buf_ptr will be NULL when not in a FILLING meta state
  * will be valid while in a FILLING meta state
+ *
+ * IM is parameterized to make sure that the completion signalling goes to
+ * the right place and only the right place (duh).  cid becomes valid on the
+ * transition from IMS_IDLE to any other state.  It is meaningless if im_state
+ * is IMS_IDLE.  We don't use an inactive value for cid.
  */
 typedef struct {
   uint32_t region_start_blk;            /* start/end region limits from  */
@@ -149,13 +154,15 @@ typedef struct {
   uint16_t  bytes_remaining;            /* filling, bytes left in IMWB   */
 
   im_state_t im_state;                  /* current state */
+  uint8_t    cid;                       /* client id */
 } imcb_t;                               /* ImageManager Control Block (imcb) */
 
 
 module ImageManagerP {
   provides {
-    interface Boot         as Booted;   /* outBoot */
-    interface ImageManager as IM;
+    interface ImageManager     as IM[uint8_t cid];
+    interface ImageManagerData as IMData;
+    interface Boot             as Booted;   /* outBoot */
   }
   uses {
     interface Boot;                     /* inBoot */
@@ -218,11 +225,11 @@ implementation {
   }
 
 
-  bool cmp_ver_id(image_ver_t *ver0, image_ver_t *ver1) {
+  bool cmp_ver_id(image_ver_t *ver0p, image_ver_t *ver1p) {
     uint8_t *s, *d;
 
-    s = (void *) ver0;
-    d = (void *) ver1;
+    s = (void *) ver0p;
+    d = (void *) ver1p;
     if (*s++ != *d++) return FALSE;
     if (*s++ != *d++) return FALSE;
     if (*s++ != *d++) return FALSE;
@@ -480,7 +487,7 @@ implementation {
    * assumes that a reasonable call of verify_IM() has occured prior to calling
    * get_active_backup.
    */
-  void get_active_backup(image_dir_slot_t **a, image_dir_slot_t **b) __attribute__((noinline)) {
+  void get_active_backup(image_dir_slot_t **a, image_dir_slot_t **b) {
     image_dir_slot_t *sp;
     int i;
 
@@ -526,6 +533,140 @@ implementation {
   }
 
 
+  image_dir_slot_t *dir_find_ver(image_ver_t *verp) {
+    image_dir_t *dir;
+    image_dir_slot_t *sp;
+    int i;
+
+    dir = &imcb.dir;
+    verify_IM();
+    for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
+      sp = &dir->slots[i];
+      if ((sp->slot_state >= SLOT_VALID) &&
+          cmp_ver_id(&(sp->ver_id), verp))
+        return sp;
+    }
+    return NULL;
+  }
+
+
+  /***************************************************************************
+   * ImageManageData access
+   * not parameterized.
+   *
+   **************************************************************************/
+
+  /*
+   * Check_fit: Verifies that request length will fit image slot.
+   *
+   * input:  len        length of image being pushed to SD
+   * output: none
+   * return: bool       TRUE.  image fits.
+   *                    FALSE, image too big for slot
+   */
+  command bool IMData.check_fit(uint32_t len) {
+    if (len < IMAGE_MIN_SIZE) return FALSE;
+    if (len > IMAGE_SIZE)     return FALSE;
+    return TRUE;
+  }
+
+
+  /*
+   * verEqual: compare two version structs  (EQUAL)
+   *
+   * input:  ver0       image_ver_t *ver0p, version
+   *         ver1       ditto
+   * return: bool       TRUE.  versions are not equal
+   *                    FALSE, versions are equal
+   */
+  command bool IMData.verEqual(image_ver_t *ver0p, image_ver_t *ver1p) {
+    return cmp_ver_id(ver0p, ver1p);
+  }
+
+
+  command void IMData.setVer(image_ver_t *srcp, image_ver_t *dstp) {
+    uint8_t *s, *d;
+
+    s = (void *) srcp;
+    d = (void *) dstp;
+    *d++ = *s++;
+    *d++ = *s++;
+    *d++ = *s++;
+    *d++ = *s++;
+  }
+
+
+  command uint8_t IMData.slotStateLetter(slot_state_t state) {
+    switch (state) {
+      case SLOT_EMPTY:          return 'x';
+      case SLOT_FILLING:        return 'f';
+      case SLOT_VALID:          return 'v';
+      case SLOT_BACKUP:         return 'b';
+      case SLOT_ACTIVE:         return 'a';
+      case SLOT_EJECTED:        return 'e';
+      default:                  return '?';
+    }
+  }
+
+
+  /*
+   * dir_get_active: find current active if any
+   *
+   * input:  none
+   * return: ptr        slot entry for current active.
+   *                    NULL if no active image
+   */
+  command image_dir_slot_t *IMData.dir_get_active() {
+    image_dir_slot_t *ap;
+
+    verify_IM();
+    get_active_backup(&ap, NULL);
+    return ap;
+  }
+
+
+  /*
+   * dir_get_dir: Returns a pointer to the dir slot indexed by idx
+   *
+   * input:  idx
+   * return: image_dir_slot_t * slot found
+   */
+  command image_dir_slot_t *IMData.dir_get_dir(uint8_t idx) {
+    verify_IM();
+    if (idx >= IMAGE_DIR_SLOTS)
+      return NULL;
+    return &imcb.dir.slots[idx];
+  }
+
+
+  /*
+   * dir_find_ver: Returns a pointer to the slot for given image version.
+   *
+   * input:  ver_id
+   * return: dir_find_ver(ver_id)
+   */
+  command image_dir_slot_t *IMData.dir_find_ver(image_ver_t *ver_id) {
+    return dir_find_ver(ver_id);
+  }
+
+
+  /*
+   * dir_coherent: indicates if the Dir on disk is coherent
+   *
+   * returns TRUE if in memory cache reflects the state of the on SD
+   * directory.  No updates are pending.
+   */
+  command bool IMData.dir_coherent() {
+    return imcb.im_state == IMS_IDLE;
+  }
+
+
+  /***************************************************************************
+   * ImageManager access
+   * parameterized.  Uses client id (cid).
+   *
+   **************************************************************************/
+
   /*
    * Alloc: Allocate an empty slot for an incoming image
    *
@@ -539,7 +680,7 @@ implementation {
    *
    * Only one valid image with the name ver_id is allowed.
    */
-  command error_t IM.alloc(image_ver_t ver_id) {
+  command error_t IM.alloc[uint8_t cid](image_ver_t *verp) {
     image_dir_t *dir;
     image_dir_slot_t *sp, *ep;          /* slot ptr, empty ptr */
     imcb_t *imcp;
@@ -562,7 +703,7 @@ implementation {
     for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
       sp = &dir->slots[i];
       if ((sp->slot_state >= SLOT_VALID) &&
-          cmp_ver_id(&(sp->ver_id), &ver_id))
+          cmp_ver_id(&(sp->ver_id), verp))
         return EALREADY;
       if (!ep && sp->slot_state == SLOT_EMPTY)
         ep = sp;
@@ -570,7 +711,7 @@ implementation {
     if (!ep)
       return ENOMEM;
     ep->slot_state = SLOT_FILLING;
-    ep->ver_id = ver_id;
+    ep->ver_id = *verp;
     dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
 
@@ -580,6 +721,7 @@ implementation {
 
     imcp->buf_ptr = &im_wrk_buf[0];
     imcp->bytes_remaining = SD_BLOCKSIZE;
+    imcp->cid = cid;
     imcp->im_state = IMS_FILL_WAITING;
     return SUCCESS;
   }
@@ -597,10 +739,11 @@ implementation {
    * means if IM.write ever returns non-zero, one MUST wait
    * for a IM.write_complete before calling alloc_abort.
    */
-  command error_t IM.alloc_abort() {
+  command error_t IM.alloc_abort[uint8_t cid]() {
     image_dir_t *dir;
 
-    if (imcb.im_state != IMS_FILL_WAITING) {
+    if (imcb.im_state != IMS_FILL_WAITING ||
+        imcb.cid != cid) {
       im_panic(8, imcb.im_state, 0);
       return FAIL;
     }
@@ -609,63 +752,11 @@ implementation {
     imcb.buf_ptr = NULL;
     imcb.filling_slot_p = NULL;
     imcb.im_state = IMS_IDLE;
+    imcb.cid      = -1;
     dir = &imcb.dir;
     dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
     return SUCCESS;
-  }
-
-
-  /*
-   * Check_fit: Verifies that request length will fit image slot.
-   *
-   * input:  len        length of image being pushed to SD
-   * output: none
-   * return: bool       TRUE.  image fits.
-   *                    FALSE, image too big for slot
-   */
-  command bool IM.check_fit(uint32_t len) {
-    if (len <= IMAGE_SIZE) return TRUE;
-    im_panic(9, imcb.im_state, len);
-    return FALSE;
-  }
-
-
-  /*
-   * verEqual: compare two version structs  (EQUAL)
-   *
-   * input:  ver0       image_ver_t ver0, version
-   *         ver1       ditto
-   * return: bool       TRUE.  versions are not equal
-   *                    FALSE, versions are equal
-   */
-  command bool IM.verEqual(image_ver_t *ver0, image_ver_t *ver1) {
-    return cmp_ver_id(ver0, ver1);
-  }
-
-
-  command void IM.setVer(image_ver_t *src, image_ver_t *dst) {
-    uint8_t *s, *d;
-
-    s = (void *) src;
-    d = (void *) dst;
-    *d++ = *s++;
-    *d++ = *s++;
-    *d++ = *s++;
-    *d++ = *s++;
-  }
-
-
-  command uint8_t IM.slotStateLetter(slot_state_t state) {
-    switch (state) {
-      case SLOT_EMPTY:          return 'x';
-      case SLOT_FILLING:        return 'f';
-      case SLOT_VALID:          return 'v';
-      case SLOT_BACKUP:         return 'b';
-      case SLOT_ACTIVE:         return 'a';
-      case SLOT_EJECTED:        return 'e';
-      default:                  return '?';
-    }
   }
 
 
@@ -677,7 +768,7 @@ implementation {
    *
    * will launch a Dir sync, completion signaled via delete_complete
    */
-  command error_t IM.delete(image_ver_t ver_id) {
+  command error_t IM.delete[uint8_t cid](image_ver_t *verp) {
     image_dir_t *dir;
     image_dir_slot_t *sp;
     error_t err;
@@ -688,7 +779,7 @@ implementation {
     }
 
     /* dir_find_ver does the call to verify_IM */
-    sp  = call IM.dir_find_ver(ver_id);
+    sp  = dir_find_ver(verp);
     if (!sp) {
       im_panic(11, imcb.im_state, 0);
       return FAIL;
@@ -698,76 +789,13 @@ implementation {
     dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
     imcb.im_state = IMS_DELETE_SYNC_REQ_SD;
+    imcb.cid = cid;
     err = call SDResource.request();
     if (err) {
       im_panic(12, err, 0);
       return FAIL;
     }
     return SUCCESS;
-  }
-
-
-  /*
-   * dir_find_ver: Returns a pointer to the slot for given image version.
-   *
-   * input:  ver_id
-   * return: dir_find_ver(ver_id)
-   */
-  command image_dir_slot_t *IM.dir_find_ver(image_ver_t ver_id) {
-    image_dir_t *dir;
-    image_dir_slot_t *sp;
-    int i;
-
-    dir = &imcb.dir;
-    verify_IM();
-    for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
-      sp = &dir->slots[i];
-      if ((sp->slot_state >= SLOT_VALID) &&
-          cmp_ver_id(&(sp->ver_id), &ver_id))
-        return sp;
-    }
-    return NULL;
-  }
-
-
-  /*
-   * dir_coherent: indicates if the Dir on disk is coherent
-   *
-   * returns TRUE if in memory cache reflects the state of the on SD
-   * directory.  No updates are pending.
-   */
-  command bool IM.dir_coherent() {
-    return imcb.im_state == IMS_IDLE;
-  }
-
-
-  /*
-   * dir_get_active: find current active if any
-   *
-   * input:  none
-   * return: ptr        slot entry for current active.
-   *                    NULL if no active image
-   */
-  command image_dir_slot_t *IM.dir_get_active() {
-    image_dir_slot_t *ap;
-
-    verify_IM();
-    get_active_backup(&ap, NULL);
-    return ap;
-  }
-
-
-  /*
-   * dir_get_dir: Returns a pointer to the dir slot indexed by idx
-   *
-   * input:  idx
-   * return: image_dir_slot_t * slot found
-   */
-  command image_dir_slot_t *IM.dir_get_dir(uint8_t idx) {
-    verify_IM();
-    if (idx >= IMAGE_DIR_SLOTS)
-      return NULL;
-    return &imcb.dir.slots[idx];
   }
 
 
@@ -781,7 +809,7 @@ implementation {
    *
    * start a cache flush
    */
-  command error_t IM.dir_set_active(image_ver_t ver_id) {
+  command error_t IM.dir_set_active[uint8_t cid](image_ver_t *verp) {
     error_t err;
     image_dir_t *dir;
     image_dir_slot_t *newp, *active;
@@ -792,7 +820,7 @@ implementation {
     }
 
     /* dir_find_ver does the call to verify_IM */
-    newp = call IM.dir_find_ver(ver_id);
+    newp = dir_find_ver(verp);
 
     /*
      * the image being proposed for the new active needs to exist
@@ -817,6 +845,7 @@ implementation {
      * directory has been updated.  Fire up a dir flush
      */
     imcb.im_state = IMS_DSA_SYNC_REQ_SD;
+    imcb.cid = cid;
     if ((err = call SDResource.request()))
       im_panic(15, err, 0);
     return SUCCESS;
@@ -831,7 +860,7 @@ implementation {
    *
    * Forces a dir sync.
    */
-  command error_t IM.dir_set_backup(image_ver_t ver_id) {
+  command error_t IM.dir_set_backup[uint8_t cid](image_ver_t *verp) {
     error_t err;
     image_dir_t *dir;
     image_dir_slot_t *newp, *ap;
@@ -842,7 +871,7 @@ implementation {
     }
 
     /* dir_find_ver does the call to verify_IM */
-    newp = call IM.dir_find_ver(ver_id);
+    newp = dir_find_ver(verp);
 
     /*
      * setting backup, make sure we have an active
@@ -868,6 +897,7 @@ implementation {
      * directory has been updated.  Fire up a dir flush
      */
     imcb.im_state = IMS_DSB_SYNC_REQ_SD;
+    imcb.cid = cid;
     if ((err = call SDResource.request()))
       im_panic(18, err, 0);
     return SUCCESS;
@@ -883,7 +913,7 @@ implementation {
    *
    * Sync the directory.
    */
-  command error_t IM.dir_eject_active() {
+  command error_t IM.dir_eject_active[uint8_t cid]() {
     error_t err;
     image_dir_t *dir;
     image_dir_slot_t *active, *backup;
@@ -911,6 +941,7 @@ implementation {
      * directory has been updated.  Fire up a dir flush
      */
     imcb.im_state = IMS_EJECT_SYNC_REQ_SD;
+    imcb.cid = cid;
     if ((err = call SDResource.request()))
       im_panic(21, err, 0);
     return SUCCESS;
@@ -929,7 +960,7 @@ implementation {
    * return: error_t
    */
 
-  command error_t IM.finish() {
+  command error_t IM.finish[uint8_t cid]() {
     error_t err;
 
     nop();
@@ -997,7 +1028,7 @@ implementation {
    * signal.  It can then resend the remaining bytes using another call to
    * ImageManager.write(...).
    */
-  command uint32_t IM.write(uint8_t *buf, uint32_t len) {
+  command uint32_t IM.write[uint8_t cid](uint8_t *buf, uint32_t len) {
     uint32_t copy_len;
     uint32_t bytes_left;
     error_t  err;
@@ -1129,6 +1160,7 @@ implementation {
     verify_IM();                        /* verify the directory */
 
     imcb.im_state = IMS_IDLE;
+    imcb.cid      = -1;
     signal Booted.booted();
     call SDResource.release();
     return;
@@ -1136,6 +1168,7 @@ implementation {
 
 
   event void SDwrite.writeDone(uint32_t blk, uint8_t *buf, error_t error) {
+    uint8_t pcid;
 
     nop();
     nop();
@@ -1145,6 +1178,7 @@ implementation {
         return;
 
       case IMS_INIT_SYNC_WRITE:
+        imcb.cid      = -1;
         imcb.im_state = IMS_IDLE;
         signal Booted.booted();
         call SDResource.release();
@@ -1155,7 +1189,7 @@ implementation {
         imcb.filling_blk++;
         imcb.buf_ptr = &im_wrk_buf[0];
         imcb.bytes_remaining = SD_BLOCKSIZE;
-        signal IM.write_continue();
+        signal IM.write_continue[imcb.cid]();
         call SDResource.release();
         return;
 
@@ -1166,37 +1200,54 @@ implementation {
         return;
 
       case IMS_FILL_SYNC_WRITE:
+        pcid = imcb.cid;
+        imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
-        signal IM.finish_complete();
+        signal IM.finish_complete[pcid]();
         call SDResource.release();
         return;
 
       case IMS_DELETE_SYNC_WRITE:
+        pcid = imcb.cid;
+        imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
-        signal IM.delete_complete();
+        signal IM.delete_complete[pcid]();
         call SDResource.release();
         return;
 
       case IMS_DSA_SYNC_WRITE:
+        pcid = imcb.cid;
+        imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
         nop();
-        signal IM.dir_set_active_complete();
+        signal IM.dir_set_active_complete[pcid]();
         call SDResource.release();
         return;
 
       case  IMS_DSB_SYNC_WRITE:
+        pcid = imcb.cid;
+        imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
-        signal IM.dir_set_backup_complete();
+        signal IM.dir_set_backup_complete[pcid]();
         call SDResource.release();
         return;
 
       case IMS_EJECT_SYNC_WRITE:
+        pcid = imcb.cid;
+        imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
-        signal IM.dir_eject_active_complete();
+        signal IM.dir_eject_active_complete[pcid]();
         call SDResource.release();
         return;
     }
   }
+
+  default event void IM.write_continue[uint8_t cid]() { }
+  default event void IM.finish_complete[uint8_t cid]() { }
+  default event void IM.delete_complete[uint8_t cid]() { }
+  default event void IM.dir_set_active_complete[uint8_t cid]() { }
+  default event void IM.dir_set_backup_complete[uint8_t cid]() { }
+  default event void IM.dir_eject_active_complete[uint8_t cid]() { }
 
   event void FS.eraseDone(uint8_t which) { }
 

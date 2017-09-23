@@ -34,25 +34,15 @@
 
 #include <image_mgr.h>
 
-interface ImageManager {
-  command error_t alloc(image_ver_t *ver_id);
-  command error_t alloc_abort();
+interface ImageManagerData {
+  command bool    check_fit(uint32_t len);
+  command bool    verEqual(image_ver_t *ver0, image_ver_t *ver1);
+  command void    setVer(image_ver_t *src, image_ver_t *dst);
+  command uint8_t slotStateLetter(slot_state_t state);
 
-  command uint32_t write(uint8_t *buf, uint32_t len);
-  event   void     write_continue();
+  command image_dir_slot_t *dir_get_active();
+  command image_dir_slot_t *dir_get_dir(uint8_t idx);
+  command image_dir_slot_t *dir_find_ver(image_ver_t *ver_id);
 
-  command error_t finish();
-  event   void    finish_complete();
-
-  command error_t delete(image_ver_t *ver_id);
-  event   void    delete_complete();
-
-  command error_t dir_set_active(image_ver_t *ver_id);
-  event   void    dir_set_active_complete();
-
-  command error_t dir_set_backup(image_ver_t *ver_id);
-  event   void    dir_set_backup_complete();
-
-  command error_t dir_eject_active();
-  event   void    dir_eject_active_complete();
+  command bool dir_coherent();
 }

@@ -44,14 +44,16 @@
 
 configuration ImageManagerC {
   provides {
-    interface Boot         as Booted;   /* out Booted signal */
-    interface ImageManager as IM;
+    interface  Boot            as Booted;   /* out Booted signal */
+    interface  ImageManager    as IM[uint8_t cid];
+    interface ImageManagerData as IMD;
   }
   uses interface Boot;			/* incoming signal */
 }
 implementation {
   components ImageManagerP as IM_P;
   IM     = IM_P;
+  IMD    = IM_P;
   Booted = IM_P;
   Boot   = IM_P;
 
