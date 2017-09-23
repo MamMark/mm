@@ -129,7 +129,7 @@ implementation {
     error_t err;
 
     nop();
-    nop();
+    nop();                              /* BRK */
     if (dm_state != DMS_REQUEST) {
       dm_panic(2, dm_state, 0);
       return;
@@ -153,7 +153,7 @@ implementation {
     bool        empty;
 
     nop();
-    nop();
+    nop();                              /* BRK */
     dp = dm_buf;
     if (err || dp == NULL || dp != read_buf) {
       call Panic.panic(PANIC_DM, 5, err, (parg_t) dp, (parg_t) read_buf, 0);
@@ -223,7 +223,7 @@ implementation {
      * Then when we release, it will get the SD without powering the
      * SD down.
      */
-    nop();
+    nop();                              /* BRK */
     signal Booted.booted();
     call SDResource.release();
   }

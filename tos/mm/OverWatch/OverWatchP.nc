@@ -422,7 +422,7 @@ implementation {
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
           }
-          nop();
+          nop();                        /* BRK */
           ow_t0 = call Platform.usecsRaw();
           owt_ptr = (void *) iip->image_start;
 //            owt_len = iip->image_length;
@@ -488,7 +488,7 @@ implementation {
             owcp->strange_loc = 10;
             call OverWatch.force_boot(OW_BOOT_GOLD);
         }
-        nop();
+        nop();                          /* BRK */
         __nesc_disable_interrupt();
         buf = call SSW.get_temp_buf();
         cur_sector = active->start_sec;
@@ -521,7 +521,7 @@ implementation {
         }
         if (flen)
           call OWhw.flashProgram(buf, (void *) faddr, flen);
-        nop();
+        nop();                          /* BRK */
         call OWhw.flashProtectAll();
         call OverWatch.force_boot(OW_BOOT_NIB);
         return;
@@ -546,7 +546,7 @@ implementation {
     uint32_t remaining;
 
     nop();
-    nop();
+    nop();                              /* BRK */
     remaining = call IM.write(owt_ptr, owt_len);
     owt_ptr += (owt_len - remaining);
     owt_len = remaining;
@@ -582,7 +582,7 @@ implementation {
 
     ow_t1 = call Platform.usecsRaw();
     ow_d0 = ow_t1 - ow_t0;
-    nop();
+    nop();                              /* BRK */
     iip = (void *) NIB_INFO;
     call IM.dir_set_active(&iip->ver_id);
   }
@@ -593,7 +593,7 @@ implementation {
    * rest of system not running
    */
   event void IM.dir_set_active_complete() {
-    nop();
+    nop();                              /* BRK */
     call OverWatch.force_boot(OW_BOOT_NIB);
     call OverWatch.install();
   }

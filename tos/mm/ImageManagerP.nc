@@ -512,6 +512,7 @@ implementation {
      * erase when we request.  The FS/erase will complete and then we
      * will get the grant.
      */
+    nop();                              /* BRK */
     if (do_erase) {
       do_erase = 0;
       call FS.erase(FS_LOC_IMAGE);
@@ -964,7 +965,7 @@ implementation {
     error_t err;
 
     nop();
-    nop();
+    nop();                              /* BRK */
     if (imcb.im_state != IMS_FILL_WAITING) {
       im_panic(22, imcb.im_state, 0);
       return FAIL;
@@ -1067,7 +1068,7 @@ implementation {
     error_t err;
 
     nop();
-    nop();
+    nop();                              /* BRK */
     switch(imcb.im_state) {
       default:
         im_panic(26, imcb.im_state, 0);
@@ -1125,7 +1126,7 @@ implementation {
     int i;
 
     nop();
-    nop();
+    nop();                              /* BRK */
     dir = &imcb.dir;
     if (imcb.im_state != IMS_INIT_READ_DIR) {
       im_panic(28, imcb.im_state, err);
@@ -1171,7 +1172,7 @@ implementation {
     uint8_t pcid;
 
     nop();
-    nop();
+    nop();                              /* BRK */
     switch(imcb.im_state) {
       default:
         im_panic(29, imcb.im_state, 0);
@@ -1216,10 +1217,10 @@ implementation {
         return;
 
       case IMS_DSA_SYNC_WRITE:
+        nop();                          /* BRK */
         pcid = imcb.cid;
         imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
-        nop();
         signal IM.dir_set_active_complete[pcid]();
         call SDResource.release();
         return;

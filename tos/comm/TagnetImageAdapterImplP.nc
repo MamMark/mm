@@ -227,7 +227,7 @@ implementation {
     int              i;
 
     nop();
-    nop();
+    nop();                                      /* BRK */
     if (call TTLV.eq_tlv(name_tlv, this_tlv)) {     //  me == this
       tn_trace_rec(my_id, 1);
       switch (call THdr.get_message_type(msg)) {    // process packet type
@@ -320,6 +320,7 @@ implementation {
           }
 
           // check to see if enough data received to verify image info
+          nop();                        /* BRK */
           if (ia_cb.e_buf >= IMAGE_MIN_SIZE) {
             tn_trace_rec(my_id, 6);
             dptr = ia_buf;
@@ -346,7 +347,7 @@ implementation {
             return do_reject(msg, TE_BAD_MESSAGE);
           return do_write(msg, NULL, dlen);         // just acknowledge PUT
 
-          nop();
+          nop();                        /* BRK */
           break;
 
         case TN_HEAD:
