@@ -46,6 +46,7 @@
  * change.
  */
 #define IMAGE_META_OFFSET 0x140
+#define IMAGE_MIN_SIZE    (IMAGE_META_OFFSET + sizeof(image_info_t))
 
 typedef struct {                        /* little endian order  */
   uint16_t build;                       /* that's native for us */

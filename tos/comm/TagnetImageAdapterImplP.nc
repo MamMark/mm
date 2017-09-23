@@ -320,7 +320,7 @@ implementation {
           }
 
           // check to see if enough data received to verify image info
-          if (ia_cb.e_buf > (IMAGE_META_OFFSET + sizeof(image_info_t))) {
+          if (ia_cb.e_buf >= IMAGE_MIN_SIZE) {
             tn_trace_rec(my_id, 6);
             dptr = ia_buf;
             dlen = ia_cb.e_buf;

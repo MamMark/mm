@@ -134,6 +134,7 @@ implementation {
    *
    * 1) Verify the signature of the image_info block.
    * 2) extract the image size from the structure.  This is in bytes.
+   *    Must be >= IMAGE_MIN_SIZE
    * 3) calculate the checksum across the entire image.
    *
    * The checksum is embedded and is automatically included in the
@@ -146,6 +147,8 @@ implementation {
     uint32_t image_sum;
 
     if (iip->sig != IMAGE_INFO_SIG)
+      return FALSE;
+    if (iip->image_length < IMAGE_MIN_SIZE)
       return FALSE;
     if (iip->image_chk) {
       image_sum = call Checksum.sum32_aligned((void *) NIB_BASE,

@@ -941,6 +941,21 @@ implementation {
     verify_IM();
 
     /*
+     * we need to enforce the minimum size constraint.  The minimum
+     * is the vector table + image_info.
+     *
+     * This only applies if we are on the first sector.  Otherwise we have
+     * of course written enough data
+     */
+    if (imcb.filling_blk == imcb.filling_slot_p->start_sec) {
+      /* on first sector of the slot.  If we are below IMAGE_MIN_SIZE
+       * blow it up
+       */
+      if (SD_BLOCKSIZE - imcb.bytes_remaining < IMAGE_MIN_SIZE)
+        im_panic(23, SD_BLOCKSIZE - imcb.bytes_remaining, 0);
+    }
+
+    /*
      * if there are no bytes in the IMWB then immediately transition
      * to writing/syncing the dir cache to the directory.
      */
