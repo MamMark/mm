@@ -76,7 +76,7 @@ implementation {
   }
 
   command uint8_t   TagnetHeader.bytes_avail(message_t* msg) {
-    return sizeof(msg->data) - getHdr(msg)->frame_length - sizeof(si446x_packet_header_t);
+    return sizeof(msg->data);
   }
 
   command tagnet_error_t    TagnetHeader.get_error(message_t *msg) {
@@ -92,9 +92,7 @@ implementation {
   }
 
   command uint8_t   TagnetHeader.get_message_len(message_t* msg) {
-    uint8_t   n = getHdr(msg)->frame_length;
-    nop();
-    return n;
+    return getHdr(msg)->frame_length;
   }
 
   command tagnet_msg_type_t  TagnetHeader.get_message_type(message_t* msg) {
