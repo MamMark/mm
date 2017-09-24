@@ -883,6 +883,11 @@ implementation {
     }
     dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
     call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, 0);
+    if (rx_len == 0)
+      __PANIC_RADIO(10, 1, 0, 0, 0);       /* oops,  0 fucks us up */
+
+    /* FIX ME: do you need to validate rx_len at this point? */
+
     call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
     global_ioc.rx_ff_index += rx_len;
     return fsm_results(t->next_state, E_NONE);
@@ -1013,9 +1018,10 @@ implementation {
     dp = (uint8_t *) hp;
     pkt_len = call Si446xCmd.get_packet_info() + 1;        // include len byte
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
+
+    /* FIX ME.  you know why */
+
     call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
-    if (pkt_len != (global_ioc.rx_ff_index + rx_len))
-      __PANIC_RADIO(11, pkt_len, rx_len, (parg_t) dp, 0);
 
     /*
      * first byte?  this is the length and SiLabs seems to think this is the
@@ -1025,6 +1031,10 @@ implementation {
      * dp already points at the phyHeader.
      */
     hp->frame_length += 1;
+    if (pkt_len != (global_ioc.rx_ff_index + rx_len) ||
+        pkt_len != hp->frame_length) {
+      __PANIC_RADIO(11, pkt_len, rx_len, (parg_t) dp, hp->frame_length);
+    }
     global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
     global_ioc.rx_reports++;
     global_ioc.rx_ff_index += rx_len;
