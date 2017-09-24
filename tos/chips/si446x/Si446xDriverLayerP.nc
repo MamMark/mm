@@ -884,11 +884,6 @@ implementation {
     dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
     call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, 0);
     call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
-    if ((global_ioc.rx_ff_index == 0) && (!signal RadioReceive.header(global_ioc.pRxMsg))) {
-      // proceed with a_rx_on action to start receiving again
-      stop_alarm();
-      return a_rx_on(t);
-    }
     global_ioc.rx_ff_index += rx_len;
     return fsm_results(t->next_state, E_NONE);
   }
@@ -1011,13 +1006,8 @@ implementation {
     call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
     if (pkt_len != (global_ioc.rx_ff_index + rx_len))
       __PANIC_RADIO(11, pkt_len, rx_len, (parg_t) dp, 0);
-    // check to see if upper layer wants the packet
-    // if index > 0 then receive.header() was successful in a_rx_drain_ff()
-    // else this is short packet and completed already, so still need to check
-    if ((global_ioc.rx_ff_index > 0) || (signal RadioReceive.header(global_ioc.pRxMsg))) {
-      global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
-      global_ioc.rx_reports++;
-    }
+    global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
+    global_ioc.rx_reports++;
     global_ioc.rx_ff_index += rx_len;
     global_ioc.rx_packets++;
     // proceed with a_rx_on action to start receiving again
