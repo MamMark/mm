@@ -907,7 +907,8 @@ implementation {
                                (uint8_t)~SI446X_MODEM_RX_CLEAR_MASK,
                                (uint8_t)~SI446X_CHIP_RX_CLEAR_MASK);
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
-    pkt_len = *dp + 1;              // length of data field is first byte of msg
+    pkt_len = *dp;                  // length of data field is first byte of msg
+    (*dp)--;                        // h/w expects one less, stoopid h/w
     call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, SI446X_FIFO_FLUSH_TX);
     if (tx_ff_free != SI446X_EMPTY_TX_LEN)   // fifo should be empty
       __PANIC_RADIO(6, tx_ff_free, pkt_len, 0, (parg_t) dp);
@@ -933,6 +934,13 @@ implementation {
     uint16_t        chk_len, pkt_len, tx_ff_free, rx_len;
 
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
+
+    /*
+     * WARNING WARNING WARNING.  At this point we have already started
+     * transmitting the packet and have modified the frame_size cell to
+     * make the h/w happy.  Thusly it will be one less than we started
+     * with at the high layer.
+     */
     pkt_len = *dp + 1;              // length of data field is first byte of msg
     chk_len = pkt_len - global_ioc.tx_ff_index;
     if (chk_len > 0) {
@@ -994,18 +1002,29 @@ implementation {
 
   fsm_result_t a_rx_cmp(fsm_transition_t *t) {
     uint8_t        *dp;
+    si446x_packet_header_t *hp;
     uint16_t        pkt_len, tx_len, rx_len;
 
     if (!global_ioc.pRxMsg) {            // should have somewhere to receive
       __PANIC_RADIO(10, 0, 0, 0, 0);
     }
     stop_alarm();
-    dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
+    hp = getPhyHeader(global_ioc.pRxMsg);
+    dp = (uint8_t *) hp;
     pkt_len = call Si446xCmd.get_packet_info() + 1;        // include len byte
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
     call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
     if (pkt_len != (global_ioc.rx_ff_index + rx_len))
       __PANIC_RADIO(11, pkt_len, rx_len, (parg_t) dp, 0);
+
+    /*
+     * first byte?  this is the length and SiLabs seems to think this is the
+     * length of the following bytes and doesn't include the length itself.
+     * Brooookkkkeeennnn.   fix the first byte which is the frame length.
+     *
+     * dp already points at the phyHeader.
+     */
+    hp->frame_length += 1;
     global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
     global_ioc.rx_reports++;
     global_ioc.rx_ff_index += rx_len;

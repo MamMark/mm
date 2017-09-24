@@ -231,8 +231,8 @@ implementation {
 
   command void TN_PLOAD_DBG  TagnetPayload.reset_payload(message_t *msg) {
     getMeta(msg)->this = 0;
-    call THdr.set_message_len(msg, (call THdr.get_header_len(msg) - 1)
-                                      + call THdr.get_name_len(msg));
+    call THdr.set_message_len(msg,
+        call THdr.get_header_len(msg) + call THdr.get_name_len(msg));
   }
 
   command tagnet_tlv_t* TN_PLOAD_DBG TagnetPayload.this_element(message_t *msg) {
