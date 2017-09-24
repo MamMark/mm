@@ -112,7 +112,7 @@ typedef struct{
   bool               in_progress;  // currently receiving an image
   bool               eof;          // eof tlv detected
   uint8_t            s_buf;        // index of next byte to write
-  uint8_t            e_buf;        // index of last byte to write
+  uint16_t           e_buf;        // index of last byte to write
   image_ver_t        version;      // version of image being loaded
   uint32_t           offset;       // current offset expected
   uint32_t           img_len;      // length of image being loaded
@@ -120,12 +120,14 @@ typedef struct{
   uint32_t           img_offset;   // byte offset for next write
   bool               checksum_good;// calculated correct checksum
 } ia_cb_t;
-ia_cb_t             ia_cb = { FALSE, FALSE, 0, 0};
+
+/* initializes to zero which is also FALSE */
+ia_cb_t             ia_cb;
 
 /*
- * need enough buffer to hold vector table, image info, plus another message
- * worth of data. this allows validation of image info before image manager
- * allocation.
+ * need enough buffer to hold vector table, image info, and any other data
+ * that came through with the last piece of image info.  full message_t is a
+ * little bit of overkill but not by much.
  */
 #define IA_BUF_SIZE (sizeof(message_t) + IMAGE_META_OFFSET + sizeof(image_info_t))
 uint8_t             ia_buf[IA_BUF_SIZE] __attribute__((aligned(4)));
@@ -173,6 +175,7 @@ implementation {
 
     tn_trace_rec(my_id, 9);
     call THdr.set_error(msg, TE_PKT_OK);
+    ia_cb.offset += dlen;                   // next byte offset to expect
     if (dptr) {
       dleft = call IM.write(dptr, dlen);    // initiate write to IM
       if (dleft) {                          // copy leftovers to ia_buf
@@ -183,7 +186,6 @@ implementation {
         }
         tn_trace_rec(my_id, 10);
       }
-      ia_cb.offset += dlen;                 // next byte offset to expect
     }
     if (ia_cb.eof) {
       ia_cb.checksum_good = verify_checksum();
