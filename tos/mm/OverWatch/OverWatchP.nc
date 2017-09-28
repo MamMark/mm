@@ -251,7 +251,6 @@ implementation {
         owcp->strange_loc = 1;
         call OverWatch.force_boot(OW_BOOT_GOLD);
         return;
-        return;
 
       case OW_REQ_BOOT:
         /*
@@ -401,6 +400,7 @@ implementation {
           if (bad_vecs || bad_image) {
             owcp->strange++;
             owcp->strange_loc = 7;
+            owcp->owt_action = OWT_ACT_NONE;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
           }
@@ -412,6 +412,7 @@ implementation {
           if (!call IMD.check_fit(iip->image_length)) {
             owcp->strange++;
             owcp->strange_loc = 8;
+            owcp->owt_action = OWT_ACT_NONE;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
           }
@@ -419,6 +420,7 @@ implementation {
           if (err) {
             owcp->strange++;
             owcp->strange_loc = 9;
+            owcp->owt_action = OWT_ACT_NONE;
             call OverWatch.force_boot(OW_BOOT_GOLD);
             return;
           }
@@ -461,12 +463,15 @@ implementation {
          */
         if (bad_image ||
             !call IMD.verEqual(&(active->ver_id), &(iip->ver_id))) {
+          owcp->owt_action = OWT_ACT_NONE;
           call OverWatch.install();
           return;
         }
         /*
          * good image and the right version.  Just boot it.
+         * checksum is good.
          */
+        owcp->owt_action = OWT_ACT_NONE;
         call OverWatch.force_boot(OW_BOOT_NIB);
         return;
 
@@ -486,6 +491,7 @@ implementation {
         if (!active) {
             owcp->strange++;
             owcp->strange_loc = 10;
+            owcp->owt_action = OWT_ACT_NONE;
             call OverWatch.force_boot(OW_BOOT_GOLD);
         }
         nop();                          /* BRK */
@@ -508,6 +514,7 @@ implementation {
         if (call OWhw.flashErase((void *) faddr, flen)) {
           owcp->strange++;
           owcp->strange_loc = 11;
+          owcp->owt_action = OWT_ACT_NONE;
           call OverWatch.force_boot(OW_BOOT_GOLD);
         }
         while (flen > 512) {
@@ -523,6 +530,7 @@ implementation {
           call OWhw.flashProgram(buf, (void *) faddr, flen);
         nop();                          /* BRK */
         call OWhw.flashProtectAll();
+        owcp->owt_action = OWT_ACT_NONE;
         call OverWatch.force_boot(OW_BOOT_NIB);
         return;
 
@@ -594,8 +602,8 @@ implementation {
    */
   event void IM.dir_set_active_complete() {
     nop();                              /* BRK */
+    ow_control_block.owt_action = OWT_ACT_NONE;
     call OverWatch.force_boot(OW_BOOT_NIB);
-    call OverWatch.install();
   }
 
 
