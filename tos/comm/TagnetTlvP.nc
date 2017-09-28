@@ -212,7 +212,7 @@ implementation {
     bool       first = TRUE;
     int32_t    x;
     uint8_t    v;
-    for (x = 3; x >= 0; x = x-1) {
+    for (x = sizeof(int)-1; x >= 0; x--) {
       v = (uint8_t) (i >> (x*8));
       if (v || !first) {
         t->val[c++] = v;
