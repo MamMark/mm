@@ -146,25 +146,22 @@ implementation {
     return t->len;
   }
 
-  command tagnet_tlv_t  *TagnetTLV.get_next_tlv(tagnet_tlv_t *t, uint8_t limit) {
-//  command __attribute__((optimize("O0"))) tagnet_tlv_t  *TagnetTLV.get_next_tlv(tagnet_tlv_t *t, uint8_t limit) {
-    tagnet_tlv_t      *next_tlv;
-    int                nx;
+  command
+//    __attribute__((optimize("O0")))
+    tagnet_tlv_t  *TagnetTLV.get_next_tlv(tagnet_tlv_t *t, uint8_t limit) {
+    tagnet_tlv_t  *next_tlv;
+    uint8_t        nx;
 
-    if ((t->len == 0) || (t->typ == TN_TLV_NONE))
-      return NULL;
-    if (t->typ >= _TN_TLV_COUNT) {
-//      panic_warn();
-      return NULL;
-    }
+    if ((t->len == 0) || (t->typ == TN_TLV_NONE) || t->typ >= _TN_TLV_COUNT)
+      tn_panic(5, (parg_t) t, t->typ, t->len, 0);
+
     nx = SIZEOF_TLV(t);
     if (nx < limit) {
-      nx += (int) t;
-      next_tlv = (tagnet_tlv_t *) nx;
-      if ((next_tlv->len > 0)
-          && (next_tlv->len < (limit - sizeof(tagnet_tlv_t)))
-            && (next_tlv->typ != TN_TLV_NONE)
-              && (next_tlv->typ < _TN_TLV_COUNT)) {
+      next_tlv = (void *) ((uintptr_t) t + nx);
+      if ((next_tlv->len > 0)                &&
+          (next_tlv->len <= (limit - nx))    &&
+          (next_tlv->typ != TN_TLV_NONE)     &&
+          (next_tlv->typ < _TN_TLV_COUNT)) {
         return next_tlv;
       }
     }
@@ -250,6 +247,7 @@ implementation {
     }
     return FALSE; // shouldn't get here
   }
+
 
   command int   TagnetTLV.repr_tlv(tagnet_tlv_t *t,  uint8_t *b, uint8_t limit) {
     switch (t->typ) {
