@@ -111,7 +111,7 @@
 typedef struct{
   bool               in_progress;  // currently receiving an image
   bool               eof;          // eof tlv detected
-  uint8_t            s_buf;        // index of next byte to write
+  uint16_t           s_buf;        // index of next byte to write
   uint16_t           e_buf;        // index of last byte to write
   image_ver_t        version;      // version of image being loaded
   uint32_t           offset;       // current offset expected
@@ -223,10 +223,11 @@ implementation {
     tagnet_tlv_t    *offset_tlv = call TName.next_element(msg);
     uint32_t         offset = 0;
     tagnet_tlv_t    *eof_tlv = call TPload.first_element(msg);
-    uint8_t          dlen = 0;
+    uint16_t         dlen = 0;
+    uint8_t          blen;              /* used when we need a 8 bit length */
     uint8_t         *dptr = NULL;
     error_t          err;
-    uint8_t          ste[1];
+    uint8_t          ste[1];    /* just to be clear, a very small array :-) */
     image_dir_slot_t *dirp;
     int              i;
 
@@ -285,8 +286,8 @@ implementation {
             dptr = (uint8_t *) eof_tlv;
             eof_tlv = NULL;
           } else if (call TTLV.get_tlv_type(eof_tlv) == TN_TLV_BLK) {
-            dlen = 0;
-            dptr = call TTLV.tlv_to_string(eof_tlv, &dlen);
+            dptr = call TTLV.tlv_to_string(eof_tlv, &blen);
+            dlen = blen;
             eof_tlv = NULL;
           } else if (call TTLV.get_tlv_type(eof_tlv) != TN_TLV_EOF) {
             return do_reject(msg, TE_BUSY);   // no data or eof found
@@ -322,7 +323,7 @@ implementation {
             tn_trace_rec(my_id, 8);
           }
 
-          if (dptr) {                     // copy msg data to ia_buf
+          if (dptr && dlen) {                 // copy msg data to ia_buf
             for (i = 0; i < dlen; i++) {
               ia_buf[ia_cb.e_buf + i] = dptr[i];
             }
