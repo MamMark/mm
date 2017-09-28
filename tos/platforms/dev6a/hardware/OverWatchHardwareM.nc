@@ -34,9 +34,10 @@
  * @author Eric B. Decker <cire831@gmail.com>
  */
 
-extern ow_control_block_t ow_control_block;
-
+#include <overwatch.h>
 #include <overwatch_hw.h>
+
+extern ow_control_block_t ow_control_block;
 
 extern bool __flash_performMassErase();
 extern bool __flash_programMemory(void* src, void* dest, uint32_t length);
@@ -138,6 +139,24 @@ implementation {
     if (iip->sig != IMAGE_INFO_SIG)
       return;
     launch(iip->image_start);
+  }
+
+
+  /*
+   * fake_reset: debugging reset issues, don't reset
+   *
+   * Do basic reset functions
+   *
+   * force VTOR to 0
+   * grab SP from 0
+   * grab PC from 4
+   */
+  async command void OWhw.fake_reset() {
+    __disable_irq();
+    __DSB(); __ISB();
+    SCB->VTOR = 0;
+    __DSB(); __ISB();
+    launch(0);
   }
 
 

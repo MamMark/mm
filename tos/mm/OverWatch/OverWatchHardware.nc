@@ -36,6 +36,8 @@
  * OverWatch to underlying hardware interface
  */
 
+#include <image_info.h>
+
 interface OverWatchHardware {
   /*
    * return a compacted Reset Status from the hardware.
@@ -57,6 +59,16 @@ interface OverWatchHardware {
    * if it fails just return.
    */
   command void boot_image(image_info_t *iip);
+
+  /*
+   * fake_reset: simulate a reset
+   *
+   * fake_reset is used when we don't want to do the real reset
+   * but rather we do want some of the functionality.
+   *
+   * typically used when debugging reset problems.
+   */
+  async command void fake_reset();
 
   /*
    * getImageBase: return base address of the image

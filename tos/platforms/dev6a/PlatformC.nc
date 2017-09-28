@@ -56,6 +56,9 @@ implementation {
 
   PlatformP.Stack -> StackC;
 
+  components OverWatchHardwareM;
+  PlatformP.OWhw -> OverWatchHardwareM;
+
   components PlatformLedsC;
   PlatformP.PlatformLeds -> PlatformLedsC;
 
