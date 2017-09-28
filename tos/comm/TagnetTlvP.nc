@@ -86,11 +86,30 @@
  */
 
 #include <TagnetTLV.h>
+#include <platform_panic.h>
+
+#ifndef PANIC_TAGNET
+enum {
+  __pcode_tagnet = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_TAGNET __pcode_tagnet
+#endif
 
 module TagnetTlvP {
   provides interface TagnetTLV;
+  uses     interface Panic;
 }
 implementation {
+
+#define tn_panic(where, arg0, arg1, arg2, arg3) \
+  do { call Panic.panic(PANIC_TAGNET, where, arg0, arg1, arg2, arg3); } \
+  while (0)
+
+#define tn_warn(where, arg0, arg1, arg2, arg3) \
+  do { call Panic.warn(PANIC_TAGNET, where, arg0, arg1, arg2, arg3); } \
+  while (0)
+
 
   uint8_t _copy_bytes(uint8_t *s, uint8_t *d, uint8_t l) {
     uint8_t x = l;
@@ -116,33 +135,28 @@ implementation {
     uint8_t l = SIZEOF_TLV(s);
 
     if (l > limit)
-      return 0;
+      tn_panic(1, l, limit, 0, 0);
     return _copy_bytes((uint8_t *) s, (uint8_t *) d, l);
   }
 
 
   command bool   TagnetTLV.eq_tlv(tagnet_tlv_t *s, tagnet_tlv_t *t) {
-    if ((s->typ >= _TN_TLV_COUNT) || (t->typ >= _TN_TLV_COUNT)) {
-//      panic_warn();
-      return FALSE;
-    }
+    if ((s->typ >= _TN_TLV_COUNT) || (t->typ >= _TN_TLV_COUNT))
+      tn_panic(2, (parg_t) s, s->typ, (parg_t) t, t->typ);
+    nop();                              /* BRK */
     return (_cmp_bytes((uint8_t *)s, (uint8_t *)t, SIZEOF_TLV(s)));
   }
 
 
   command uint8_t   TagnetTLV.get_len(tagnet_tlv_t *t) {
-    if (t->typ >= _TN_TLV_COUNT) {
-//      panic_warn();
-      return 0;
-    }
+    if (t->typ >= _TN_TLV_COUNT)
+      tn_panic(3, (parg_t) t, t->typ, t->len, 0);
     return SIZEOF_TLV(t);
   }
 
   command uint8_t   TagnetTLV.get_len_v(tagnet_tlv_t *t) {
-    if (t->typ >= _TN_TLV_COUNT) {
-//      panic_warn();
-      return 0;
-    }
+    if (t->typ >= _TN_TLV_COUNT)
+      tn_panic(4, (parg_t) t, t->typ, t->len, 0);
     return t->len;
   }
 
@@ -170,10 +184,8 @@ implementation {
 
 
   command tagnet_tlv_type_t TagnetTLV.get_tlv_type(tagnet_tlv_t *t) {
-    if (t->typ >= _TN_TLV_COUNT) {
-//      panic_warn();
-      return TN_TLV_NONE;
-    }
+    if (t->typ >= _TN_TLV_COUNT)
+      tn_panic(6, (parg_t) t, t->typ, t->len, 0);
     return t->typ;
   }
 
@@ -211,8 +223,8 @@ implementation {
     t->len = c;
   }
 
-  command uint8_t  TagnetTLV.integer_to_tlv(int32_t i,  tagnet_tlv_t *t, uint8_t limit) {
 
+  command uint8_t  TagnetTLV.integer_to_tlv(int32_t i,  tagnet_tlv_t *t, uint8_t limit) {
     // assert n.to_bytes(length, 'big') == bytes( (n >> i*8) & 0xff for i in reversed(range(length)))
     if ((t) && ((sizeof(int32_t) + sizeof(tagnet_tlv_t)) < limit)) {
       int2tlv(i, t, limit);
@@ -222,8 +234,8 @@ implementation {
     return 0;
   }
 
-  command uint8_t  TagnetTLV.offset_to_tlv(int32_t i, tagnet_tlv_t *t, uint8_t limit) {
 
+  command uint8_t  TagnetTLV.offset_to_tlv(int32_t i, tagnet_tlv_t *t, uint8_t limit) {
     // assert n.to_bytes(length, 'big') == bytes( (n >> i*8) & 0xff for i in reversed(range(length)))
     if ((t) && ((sizeof(int32_t) + sizeof(tagnet_tlv_t)) < limit)) {
       int2tlv(i, t, limit);
@@ -275,8 +287,10 @@ implementation {
     uint8_t        x;
     int32_t        v = 0;
 
-    if ((t) && (t->typ == y) && (t->len <= sizeof(v))) {
-      for (x = t->len; x >= 0; x=x-1) {
+    if (!t || t->typ != y || t->len > sizeof(uint32_t))
+      tn_panic(7, (parg_t) t, t->typ, t->len, y);
+    if ((t) && (t->typ == y) && (t->len <= 4)) {
+      for (x = 0; x < t->len; x++) {
         v = t->val[x] + (v << 8);
       }
     }
@@ -311,7 +325,7 @@ implementation {
     image_ver_t    *dest;
 
     if ((!t) || ((sizeof(image_ver_t) + sizeof(tagnet_tlv_t)) > limit))
-      return 0;
+      tn_panic(8, (parg_t) t, t->typ, t->len, limit);
     dest = (image_ver_t *)&t->val;
     dest->major = v->major;
     dest->minor = v->minor;
@@ -321,4 +335,5 @@ implementation {
     return SIZEOF_TLV(t);
   }
 
+  async event void Panic.hook() { }
 }
