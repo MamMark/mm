@@ -499,7 +499,12 @@ void __debug_init() {
   SCnSCB->ACTLR |= SCnSCB_ACTLR_DISOOFP_Pos |
     SCnSCB_ACTLR_DISDEFWBUF_Msk;
 
-#ifdef notdef
+  /*
+   * By default we stop all the clocks we can to the peripherals
+   * when in the debugger.  This helps to avoid inadvertant timeouts
+   * when debugging.
+   */
+
   SYSCTL->PERIHALT_CTL =
     SYSCTL_PERIHALT_CTL_HALT_T16_0      |       /* TA0 TMicro */
     SYSCTL_PERIHALT_CTL_HALT_T16_1      |       /* TA1 TMilli */
@@ -518,7 +523,7 @@ void __debug_init() {
     SYSCTL_PERIHALT_CTL_HALT_WDT        |
     SYSCTL_PERIHALT_CTL_HALT_DMA
     ;
-#endif
+
 }
 
 void __ram_init() {
