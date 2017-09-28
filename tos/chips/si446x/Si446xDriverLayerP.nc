@@ -1187,30 +1187,22 @@ implementation {
    * Check to see if any more interrupts are in the pending information
    * and return associated FSM event to be processed.
    * Clear the flag in the pending information to denote handled.
+   *
+   * Interrupt Priority:
+   *
+   * invalid_sync  - reset rx
+   *
+   * preamble_detect
+   * sync_detect
+   *
+   * rx_thresh
+   * tx_thresh
+   * packet_rx
+   * packet_sent
+   *
+   * crc_error
    */
   fsm_event_t get_next_interrupt_event(volatile si446x_int_state_t *isp) {
-    if (isp->ph_pend & SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY) {
-      isp->ph_pend ^= SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY;
-      return E_TX_THRESH;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
-      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_SENT;
-      return E_PACKET_SENT;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
-      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
-      return E_RX_THRESH;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
-      isp->ph_pend ^= SI446X_PH_STATUS_CRC_ERROR;
-      // ignore the rx complete & thresh flags since crc error will drive state change
-      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL + SI446X_PH_STATUS_PACKET_RX;
-      return E_CRC_ERROR;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_RX) {
-      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_RX;
-      return E_PACKET_RX;
-    }
     if (isp->modem_pend & SI446X_MODEM_STATUS_INVALID_SYNC) {
       isp->modem_pend ^= SI446X_MODEM_STATUS_INVALID_SYNC;
       return E_INVALID_SYNC;
@@ -1222,6 +1214,28 @@ implementation {
     if (isp->modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
       isp->modem_pend ^= SI446X_MODEM_STATUS_SYNC_DETECT;
       return E_SYNC_DETECT;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
+      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
+      return E_RX_THRESH;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY) {
+      isp->ph_pend ^= SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY;
+      return E_TX_THRESH;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_RX) {
+      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_RX;
+      return E_PACKET_RX;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
+      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_SENT;
+      return E_PACKET_SENT;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
+      isp->ph_pend ^= SI446X_PH_STATUS_CRC_ERROR;
+      // ignore the rx complete & thresh flags since crc error will drive state change
+      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL + SI446X_PH_STATUS_PACKET_RX;
+      return E_CRC_ERROR;
     }
     if (isp->chip_pend & SI446X_CHIP_STATUS_CMD_ERROR) {
 #ifdef notdef
