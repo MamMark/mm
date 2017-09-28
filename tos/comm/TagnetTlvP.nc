@@ -92,15 +92,22 @@ module TagnetTlvP {
 }
 implementation {
 
-  int  _copy_bytes(uint8_t *s, uint8_t *d, int l) {
-    int      x;
-    for (x = 0; x < l; x++)  d[x] =  s[x];
+  uint8_t _copy_bytes(uint8_t *s, uint8_t *d, uint8_t l) {
+    uint8_t x = l;
+
+    while (x) {
+      *d++ = *s++;
+      x--;
+    }
     return l;
   }
 
-  bool  _cmp_bytes(uint8_t *s, uint8_t *d, int l) {
-    int      x;
-    for (x = 0; x < l; x++)  if (d[x] != s[x]) return FALSE;
+
+  bool  _cmp_bytes(uint8_t *s, uint8_t *d, uint8_t l) {
+    while (l) {
+      if (*d++ != *s++) return FALSE;
+      l--;
+    }
     return TRUE;
   }
 
