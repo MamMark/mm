@@ -100,6 +100,7 @@ implementation {
      * erase when we request.  The FS/erase will complete and then we
      * will get the grant.
      */
+    nop();                              /* BRK */
     if (do_erase) {
       do_erase = 0;
       call FileSystem.erase(FS_LOC_DBLK);

@@ -173,10 +173,12 @@ implementation {
     uint32_t         dleft;
     int              i;
 
-    tn_trace_rec(my_id, 9);
+    tn_trace_rec(my_id, 20);
     call THdr.set_error(msg, TE_PKT_OK);
     ia_cb.offset += dlen;                   // next byte offset to expect
     if (dptr) {
+      nop();                                /* BRK */
+      tn_trace_rec(my_id, 21);
       dleft = call IM.write(dptr, dlen);    // initiate write to IM
       if (dleft) {                          // copy leftovers to ia_buf
         ia_cb.s_buf = 0;
@@ -184,22 +186,23 @@ implementation {
         for (i = 0; i < dleft; i++) {
           ia_buf[i] = dptr[dlen-dleft+i];
         }
-        tn_trace_rec(my_id, 10);
+        tn_trace_rec(my_id, 22);
       }
     }
     if (ia_cb.eof) {
+      tn_trace_rec(my_id, 23);
       ia_cb.checksum_good = verify_checksum();
       if (ia_cb.checksum_good) {
         if (ia_cb.e_buf == 0)
           call IM.finish();                 // finish if no data pending
-        tn_trace_rec(my_id, 11);
+        tn_trace_rec(my_id, 24);
       } else {
         call IM.alloc_abort();          // abort is immediate, change state
         ia_cb.in_progress = FALSE;
         ia_cb.eof = FALSE;
         ia_cb.s_buf = ia_cb.e_buf = 0;
         call THdr.set_error(msg, TE_FAILED);
-        tn_trace_rec(my_id, 12);
+        tn_trace_rec(my_id, 25);
       }
     }
     call THdr.set_response(msg);
@@ -207,7 +210,7 @@ implementation {
     call TPload.add_offset(msg, ia_cb.offset);
     if (ia_cb.eof)
       call TPload.add_eof(msg);
-    tn_trace_rec(my_id, 13);
+    tn_trace_rec(my_id, 0xef);
     return TRUE;
   }
 
@@ -297,9 +300,10 @@ implementation {
           // continue processing PUT msgs if in progress
           tn_trace_rec(my_id, 6);
           if (ia_cb.in_progress) {
-            if ((offset_tlv) && (ia_cb.offset == offset))
+            if ((offset_tlv) && (ia_cb.offset == offset)) {
+              nop();                          /* BRK */
               return do_write(msg, dptr, dlen); /* expected offset matches */
-            else
+            } else
               break;                          // ignore
           }
 
@@ -307,11 +311,14 @@ implementation {
           if ((offset_tlv) && (offset != 0)) { // continue accumulating
             /* make sure this PUT for same version */
             if (!call IMD.verEqual(version, &ia_cb.version)) {
+              tn_trace_rec(my_id, 7);
               break;                          // ignore msg if mismatch
             }
           } else {                            // start accumulating
+            nop();                            /* BRK */
             call IMD.setVer(version, &ia_cb.version);
             ia_cb.e_buf = 0;
+            tn_trace_rec(my_id, 8);
           }
 
           if (dptr) {                     // copy msg data to ia_buf
@@ -325,7 +332,7 @@ implementation {
           nop();                        /* BRK */
           if (ia_cb.e_buf >= IMAGE_MIN_SIZE) {
             nop();                      /* BRK */
-            tn_trace_rec(my_id, 6);
+            tn_trace_rec(my_id, 9);
             dptr = ia_buf;
             dlen = ia_cb.e_buf;
             // reset e_buf to force startover if fail to begin image load
@@ -344,6 +351,7 @@ implementation {
                 ia_cb.eof = FALSE;            // start of image load, init eof
               return do_write(msg, dptr, dlen);
             }
+          tn_trace_rec(my_id, 10);
             return do_reject(msg, TE_BAD_MESSAGE);  // failed allocate
           }
           if (ia_cb.eof)                      // eof already, image too short

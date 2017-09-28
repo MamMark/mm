@@ -51,7 +51,7 @@ implementation {
 
     for (i = 0; i < TN_TRACE_PARSE_ARRAY_SIZE; i++) tn_trace_array[i].id = TN_ROOT_ID;
     tn_trace_index = 1;
-
+    nop();                               /* BRK */
     for (i = 0; i<SUB_COUNT; i++) {
       call TName.first_element(msg);     // start at the beginning of the name
       nop();

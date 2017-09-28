@@ -111,12 +111,15 @@ implementation {
     return TRUE;
   }
 
+
   command uint8_t   TagnetTLV.copy_tlv(tagnet_tlv_t *s,  tagnet_tlv_t *d, uint8_t limit) {
     uint8_t l = SIZEOF_TLV(s);
+
     if (l > limit)
       return 0;
     return _copy_bytes((uint8_t *) s, (uint8_t *) d, l);
   }
+
 
   command bool   TagnetTLV.eq_tlv(tagnet_tlv_t *s, tagnet_tlv_t *t) {
     if ((s->typ >= _TN_TLV_COUNT) || (t->typ >= _TN_TLV_COUNT)) {
@@ -125,6 +128,7 @@ implementation {
     }
     return (_cmp_bytes((uint8_t *)s, (uint8_t *)t, SIZEOF_TLV(s)));
   }
+
 
   command uint8_t   TagnetTLV.get_len(tagnet_tlv_t *t) {
     if (t->typ >= _TN_TLV_COUNT) {
@@ -167,6 +171,7 @@ implementation {
     return NULL;
   }
 
+
   command tagnet_tlv_type_t TagnetTLV.get_tlv_type(tagnet_tlv_t *t) {
     if (t->typ >= _TN_TLV_COUNT) {
 //      panic_warn();
@@ -175,11 +180,12 @@ implementation {
     return t->typ;
   }
 
+
   command uint8_t  TagnetTLV.gps_xyz_to_tlv(tagnet_gps_xyz_t *xyz,  tagnet_tlv_t *t, uint8_t limit) {
     int32_t    x;
     uint8_t   *v = (void *) xyz;
 
-    nop();
+    nop();                              /* BRK */
     if ((t) && ((sizeof(tagnet_gps_xyz_t) + sizeof(tagnet_tlv_t)) < limit)) {
       t->typ = TN_TLV_GPS_XYZ;
       t->len = TN_GPS_XYZ_LEN;
