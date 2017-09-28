@@ -16,7 +16,7 @@ set mem inaccessible-by-default off
 
 #
 # gdb_msp432:   cpu definitions
-# gdb_target:   (gdb_dev6a, gdb_mm6a, link appropriately, see below)
+# gdb_target:   platform definitions, automatic
 # gdb_gps:      definitions for the gps subsystem
 # gdb_mm:       definitions for various mm subsystems
 
@@ -39,7 +39,6 @@ source ../../.gdb_mm
 set disassemble-next-line on
 
 x/i $pc
-set pri ele 0
 
 define npc
 disassem/r $pc,+0d32
