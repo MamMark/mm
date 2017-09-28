@@ -183,6 +183,22 @@ implementation {
 
 
   /*
+   * stash as strange, and reboot into GOLD
+   *
+   * does NOT return, ever!
+   */
+  void strange2gold(uint32_t loc) {
+    ow_control_block_t *owcp;
+
+    owcp = &ow_control_block;
+    owcp->strange++;
+    owcp->strange_loc = loc;
+    call OverWatch.force_boot(OW_BOOT_GOLD);
+    /* no return */
+  }
+
+
+  /*
    * handle startup conditions for OverWatch.  Called from startup code
    *
    * We prevent name mangling so we can call it from startup.
@@ -207,9 +223,8 @@ implementation {
          * but for now reinit and strange it.
          */
         init_owcb(owcp);
-        owcp->strange++;
-        owcp->strange_loc = 0x101;
-        call OverWatch.force_boot(OW_BOOT_GOLD);
+        strange2gold(0x101);
+        /* no return */
       }
       return;
     }
@@ -247,9 +262,7 @@ implementation {
          * kill sig and reboot
          * serious oht oh.  sigs are okay but ow_req is out of bounds.
          */
-        owcp->strange++;
-        owcp->strange_loc = 1;
-        call OverWatch.force_boot(OW_BOOT_GOLD);
+        strange2gold(1);
         return;
 
       case OW_REQ_BOOT:
@@ -262,9 +275,7 @@ implementation {
              * oops.  things are screwed up.  no where to go.
              * so just fix it so something runs.
              */
-            owcp->strange++;
-            owcp->strange_loc = 2;
-            call OverWatch.force_boot(OW_BOOT_GOLD);
+            strange2gold(2);
             return;
 
           case OW_BOOT_GOLD:
@@ -283,18 +294,14 @@ implementation {
                * if it returns, boot GOLD
                */
               call OWhw.boot_image(iip);
-              owcp->strange++;
-              owcp->strange_loc = 3;
-              call OverWatch.force_boot(OW_BOOT_GOLD);
+              strange2gold(3);
               return;                   /* shouldn't get here. */
             }
 
             /*
              * oops.  nib didn't check out.  shitty NIB checksum.
              */
-            owcp->strange++;
-            owcp->strange_loc = 4;
-            call OverWatch.force_boot(OW_BOOT_GOLD);
+            strange2gold(4);
             return;
         }
 
@@ -328,10 +335,8 @@ implementation {
         }
         iip  = (image_info_t *) NIB_INFO;
         call OWhw.boot_image(iip);
-        owcp->strange++;
-        owcp->strange_loc = 5;
-        call OverWatch.force_boot(OW_BOOT_GOLD);
-        return;                   /* shouldn't get here. */
+        strange2gold(5);
+        /* no return */
     }
   }
 
@@ -372,9 +377,7 @@ implementation {
 
     switch (owcp->owt_action) {
       case OWT_ACT_NONE:
-        owcp->strange++;
-        owcp->strange_loc = 6;
-        call OverWatch.force_boot(OW_BOOT_GOLD);
+        strange2gold(6);                /* no return */
         return;
 
       case OWT_ACT_INIT:
@@ -397,11 +400,9 @@ implementation {
            *
            * If the NIB is bad, then just boot GOLD.
            */
-          if (bad_vecs || bad_image) {
-            owcp->strange++;
-            owcp->strange_loc = 7;
+          if (bad_image) {
             owcp->owt_action = OWT_ACT_NONE;
-            call OverWatch.force_boot(OW_BOOT_GOLD);
+            strange2gold(7);            /* no return */
             return;
           }
 
@@ -410,19 +411,15 @@ implementation {
            * slot using the ImageManager.  Verify it will fit.
            */
           if (!call IMD.check_fit(iip->image_length)) {
-            owcp->strange++;
-            owcp->strange_loc = 8;
             owcp->owt_action = OWT_ACT_NONE;
-            call OverWatch.force_boot(OW_BOOT_GOLD);
-            return;
+            strange2gold(8);
+            /* no return */
           }
           err = call IM.alloc(&iip->ver_id);
           if (err) {
-            owcp->strange++;
-            owcp->strange_loc = 9;
             owcp->owt_action = OWT_ACT_NONE;
-            call OverWatch.force_boot(OW_BOOT_GOLD);
-            return;
+            strange2gold(9);
+            /* no return */
           }
           nop();                        /* BRK */
           ow_t0 = call Platform.usecsRaw();
@@ -489,11 +486,11 @@ implementation {
          * 5) OW.force_boot(NIB)
          */
         if (!active) {
-            owcp->strange++;
-            owcp->strange_loc = 10;
-            owcp->owt_action = OWT_ACT_NONE;
-            call OverWatch.force_boot(OW_BOOT_GOLD);
+          owcp->owt_action = OWT_ACT_NONE;
+          strange2gold(10);
+          /* no return */
         }
+
         nop();                          /* BRK */
         __nesc_disable_interrupt();
         buf = call SSW.get_temp_buf();
@@ -512,11 +509,11 @@ implementation {
         faddr = iip->image_start;
         flen  = iip->image_length;
         if (call OWhw.flashErase((void *) faddr, flen)) {
-          owcp->strange++;
-          owcp->strange_loc = 11;
           owcp->owt_action = OWT_ACT_NONE;
-          call OverWatch.force_boot(OW_BOOT_GOLD);
+          strange2gold(11);
+          /* no return */
         }
+
         while (flen > 512) {
           call OWhw.flashProgram(buf, (void *) faddr, 512);
           faddr += 512;
