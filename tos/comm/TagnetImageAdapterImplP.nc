@@ -117,7 +117,6 @@ typedef struct{
   uint32_t           offset;       // current offset expected
   uint32_t           img_len;      // length of image being loaded
   uint32_t           img_chk;      // checksum of image being loaded
-  uint32_t           img_offset;   // byte offset for next write
   bool               checksum_good;// calculated correct checksum
 } ia_cb_t;
 
@@ -278,7 +277,7 @@ implementation {
 
           // look for optional offset in name
           if ((offset_tlv) && (call TTLV.get_tlv_type(offset_tlv) == TN_TLV_OFFSET))
-            offset = call TTLV.tlv_to_integer(offset_tlv);
+            offset = call TTLV.tlv_to_offset(offset_tlv);
 
           // get payload variables (data length and pointer) and/or eof flag
           if (call THdr.is_pload_type_raw(msg)) { // msg contains raw data in payload
@@ -308,6 +307,7 @@ implementation {
           }
 
           // look for new image load request
+          // offset=0 or no offset_tlv means start again from beginning
           if ((offset_tlv) && (offset != 0)) { // continue accumulating
             /* make sure this PUT for same version */
             if (!call IMD.verEqual(version, &ia_cb.version)) {
@@ -318,6 +318,7 @@ implementation {
             nop();                            /* BRK */
             call IMD.setVer(version, &ia_cb.version);
             ia_cb.e_buf = 0;
+            ia_cb.offset = 0;
             tn_trace_rec(my_id, 8);
           }
 
