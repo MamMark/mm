@@ -127,8 +127,8 @@ implementation {
 
   void launch(uint32_t base) {
     __asm__ volatile (
-      "  ldr sp, [r0] \n"
-      "  ldr pc, [r0, #4] \n" );
+      "  ldr sp, [%0] \n"
+      "  ldr pc, [%0, #4] \n" : : "r" (base) );
   }
 
 
