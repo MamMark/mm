@@ -123,13 +123,13 @@ class RadioGroups (gdb.Command):
 
     def invoke (self, args, from_tty):
         rd = gdb.parse_and_eval('g_radio_dump')
-        for grp, _ in radio_group_ids.encoding.iteritems():
+        for grp, _ in radio_config_group_ids.encoding.iteritems():
             if (args) and (grp not in args): continue
             bgrp = 'PAx' if (grp == 'PA') else grp
-            str = radio_group_structs[radio_group_ids.build(grp)]
+            str = radio_config_groups[radio_config_group_ids.build(grp)]
             r_a, r_s = get_spi_buf_repr(rd[bgrp], str.sizeof)
             print grp, bgrp, str, r_s
-            print radio_display_funcs[str](str, r_a)
+            print radio_display_structs[str](str, r_a)
 
 
 RadioGroups ()
