@@ -411,6 +411,8 @@ implementation {
         case A_RX_CMP:      ns = a_rx_cmp(t);      break;
         case A_RX_CNT_CRC:  ns = a_rx_cnt_crc(t);  break;
         case A_RX_DRAIN_FF: ns = a_rx_drain_ff(t); break;
+        case A_RX_FETCH_FF: ns = a_rx_fetch_ff(t); break;
+        case A_RX_FLUSH:    ns = a_rx_flush(t);    break;
         case A_RX_START:    ns = a_rx_start(t);    break;
         case A_RX_TIMEOUT:  ns = a_rx_timeout(t);  break;
         case A_STANDBY:     ns = a_standby(t);     break;
@@ -851,13 +853,13 @@ implementation {
   fsm_result_t a_rx_start(fsm_transition_t *t) {
     uint8_t        rssi;
 
+    if (!(global_ioc.pRxMsg))
+      __PANIC_RADIO(11, 0, 0, 0, 0);
     global_ioc.rx_ff_index = 0;
-    if (global_ioc.pRxMsg) {
-      rssi = call Si446xCmd.fast_latched_rssi();
-      call PacketRSSI.set(global_ioc.pRxMsg, rssi);
-      call PacketLinkQuality.set(global_ioc.pRxMsg, rssi);
-    }
     global_ioc.rx_packets++;
+    rssi = call Si446xCmd.fast_latched_rssi();
+    call PacketRSSI.set(global_ioc.pRxMsg, rssi);
+    call PacketLinkQuality.set(global_ioc.pRxMsg, rssi);
     start_alarm(SI446X_RX_TIMEOUT);
     return fsm_results(t->next_state, E_NONE);
   }
@@ -865,31 +867,72 @@ implementation {
 
   /**************************************************************************/
   /*
+   * pull_rx(): pull the rx fifo into the buffer.
+   */
+  void pull_rx() {
+    uint8_t  *dp;
+    uint16_t  tx_len, rx_len;
+    uint16_t  max_delta;
+
+    dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
+    if (!dp) {                          // should have somewhere to receive
+      __PANIC_RADIO(10, 0, 0, 0, 0);
+    }
+    max_delta = sizeof(global_ioc.pRxMsg->header) + sizeof(global_ioc.pRxMsg->data);
+    call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
+    if (rx_len == 0 || global_ioc.rx_ff_index + rx_len >= max_delta) {
+      call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
+      __PANIC_RADIO(10, global_ioc.rx_ff_index, rx_len, tx_len, (parg_t) dp);
+    }
+    call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
+    global_ioc.rx_ff_index += rx_len;
+  }
+
+
+  /**************************************************************************/
+  /*
    * a_rx_drain_ff
    *
-   * Use the rx_fifo_almost_full to indicate that more data is ready to
-   * be received. Also, check when the packet header is in the buffer
-   * and return a peek at this to the app through the .header() event.
-   * Also, add RSSI to the packet metadata.
+   * bad dog.
+   *
+   * draining and tossing the received data.  We place it in the
+   * active receive buffer so we can see it.  Doesn't go up the stack.
    */
 
   fsm_result_t a_rx_drain_ff(fsm_transition_t *t) {
-    uint8_t        *dp;
-    uint16_t        tx_ff_free, rx_len;
+    /* currently same as fetch */
+    return a_rx_fetch_ff(t);
+  }
 
-    if (!global_ioc.pRxMsg) {            // should have somewhere to receive
-      __PANIC_RADIO(10, 0, 0, 0, 0);
-    }
-    dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
-    call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, 0);
-    if (rx_len == 0)
-      __PANIC_RADIO(10, 1, 0, 0, 0);       /* oops,  0 fucks us up */
 
-    /* FIX ME: do you need to validate rx_len at this point? */
+  /**************************************************************************/
+  /*
+   * a_rx_fetch_ff
+   *
+   * good dog.
+   */
 
-    call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
-    global_ioc.rx_ff_index += rx_len;
+  fsm_result_t a_rx_fetch_ff(fsm_transition_t *t) {
+    pull_rx();
     return fsm_results(t->next_state, E_NONE);
+  }
+
+
+  /**************************************************************************/
+  /*
+   * a_rx_flush
+   *
+   * current receive has blown up in some spectacular fashion.
+   * terminate with extreme prejudice
+   */
+  fsm_result_t a_rx_flush(fsm_transition_t *t) {
+    uint16_t rx_len, tx_len;
+
+    stop_alarm();
+    call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
+    if (rx_len)                         /* something else to grab */
+      pull_rx();                        /* checks for null pRxMsg */
+    return a_rx_on(t);
   }
 
 
@@ -903,14 +946,11 @@ implementation {
     uint8_t        *dp;
     uint16_t        pkt_len, tx_ff_free, rx_len;
 
-    if (!global_ioc.pTxMsg) {            // should have something to send
-      __PANIC_RADIO(5, 0, 0, 0, 0);
-    }
-    call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
-    call Si446xCmd.ll_clr_ints((uint8_t)~SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
-                               (uint8_t)~SI446X_MODEM_RX_CLEAR_MASK,
-                               (uint8_t)~SI446X_CHIP_RX_CLEAR_MASK);
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
+    if (!dp || !(*dp))                  /* make sure reasonable to send */
+      __PANIC_RADIO(5, 0, 0, 0, 0);
+
+    call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
     pkt_len = *dp;                  // length of data field is first byte of msg
     (*dp)--;                        // h/w expects one less, stoopid h/w
     call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, SI446X_FIFO_FLUSH_TX);
@@ -935,24 +975,32 @@ implementation {
    */
   fsm_result_t a_tx_fill_ff(fsm_transition_t *t) {
     uint8_t        *dp;
-    uint16_t        chk_len, pkt_len, tx_ff_free, rx_len;
+    uint16_t        pkt_len, tx_ff_free, rx_len, max_delta;
+    int16_t         chk_len;
 
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
 
-    /*
-     * WARNING WARNING WARNING.  At this point we have already started
-     * transmitting the packet and have modified the frame_size cell to
-     * make the h/w happy.  Thusly it will be one less than we started
-     * with at the high layer.
-     */
-    pkt_len = *dp + 1;              // length of data field is first byte of msg
-    chk_len = pkt_len - global_ioc.tx_ff_index;
+    if (dp) {
+      /*
+       * WARNING WARNING WARNING.  At this point we have already started
+       * transmitting the packet and have modified the frame_size cell to
+       * make the h/w happy.  Thusly it will be one less than we started
+       * with at the high layer.
+       */
+      pkt_len = *dp + 1;              // length of data field is first byte of msg
+      chk_len = pkt_len - global_ioc.tx_ff_index;
+    }
+    max_delta = sizeof(global_ioc.pTxMsg->header) + sizeof(global_ioc.pTxMsg->data);
+    if (!dp || chk_len < 0)
+      __PANIC_RADIO(7, chk_len, pkt_len, global_ioc.tx_ff_index, (parg_t) dp);
     if (chk_len > 0) {
       call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, 0);
       if (tx_ff_free == SI446X_EMPTY_TX_LEN)   // too late if fifo is already empty
         __PANIC_RADIO(7, tx_ff_free, pkt_len, global_ioc.tx_ff_index, (parg_t) dp);
-      // find size to fill fifo max(chk_len, tx_ff_free)
+      // find size to fill fifo min(chk_len, tx_ff_free)
       chk_len = (chk_len < tx_ff_free) ? chk_len : tx_ff_free;
+      if (global_ioc.tx_ff_index + chk_len >= max_delta)
+        __PANIC_RADIO(7, global_ioc.tx_ff_index, chk_len, tx_ff_free, (parg_t) dp);
       call Si446xCmd.write_tx_fifo(dp + global_ioc.tx_ff_index, chk_len);
       global_ioc.tx_ff_index += chk_len;
     }
@@ -964,14 +1012,7 @@ implementation {
 
   fsm_result_t a_rx_cnt_crc(fsm_transition_t *t) {
     global_ioc.rx_bad_crcs++;
-    call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
-    // force radio chip to sleep. this is a workaround (see SI446x errata)
-    call Si446xCmd.change_state(RC_SLEEP, TRUE);
-    call Si446xCmd.ll_clr_ints(SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
-                               SI446X_MODEM_RX_CLEAR_MASK,
-                               SI446X_CHIP_RX_CLEAR_MASK);
-    stop_alarm();
-    return a_rx_on(t);
+    return fsm_results(t->next_state, E_NONE);
   }
 
 
@@ -1004,40 +1045,37 @@ implementation {
   /**************************************************************************/
 
   fsm_result_t a_rx_cmp(fsm_transition_t *t) {
-    uint8_t        *dp;
+    uint16_t        pkt_len, rx_len, tx_len;
     si446x_packet_header_t *hp;
-    uint16_t        pkt_len, tx_len, rx_len;
 
-    if (!global_ioc.pRxMsg) {            // should have somewhere to receive
-      __PANIC_RADIO(10, 0, 0, 0, 0);
-    }
     stop_alarm();
-    hp = getPhyHeader(global_ioc.pRxMsg);
-    dp = (uint8_t *) hp;
+
+    /*
+     * get pkt_len before any other state changes, we don't know
+     * if it matters or not.  but haven't explored it.
+     */
     pkt_len = call Si446xCmd.get_packet_info() + 1;        // include len byte
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
-
-    /* FIX ME.  you know why */
-
-    call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
+    if (rx_len)                         /* something else to grab */
+      pull_rx();                        /* checks for null pRxMsg */
 
     /*
      * first byte?  this is the length and SiLabs seems to think this is the
      * length of the following bytes and doesn't include the length itself.
      * Brooookkkkeeennnn.   fix the first byte which is the frame length.
-     *
-     * dp already points at the phyHeader.
      */
+    hp = getPhyHeader(global_ioc.pRxMsg);
+    if (!hp)
+      __PANIC_RADIO(11, 0, 0, 0, 0);
     hp->frame_length += 1;
-    if (pkt_len != (global_ioc.rx_ff_index + rx_len) ||
+    if (pkt_len != global_ioc.rx_ff_index ||
         pkt_len != hp->frame_length) {
-      __PANIC_RADIO(11, pkt_len, rx_len, (parg_t) dp, hp->frame_length);
+      __PANIC_RADIO(11, pkt_len, global_ioc.rx_ff_index, hp->frame_length, (parg_t) hp);
     }
+
     global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
     global_ioc.rx_reports++;
-    global_ioc.rx_ff_index += rx_len;
-    // proceed with a_rx_on action to start receiving again
-    return a_rx_on(t);
+    return a_rx_on(t);                  /* start receiving again */
   }
 
 
@@ -1049,10 +1087,13 @@ implementation {
     stop_alarm();
     global_ioc.tx_packets++;
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
-//    RADIO_ASSERT( tx_len == max(64/129)? );
+    if (tx_len != SI446X_EMPTY_TX_LEN)
+      __PANIC_RADIO(10, rx_len, tx_len, 0, 0);
+
     // set conditions for returning send done after FSM completes
     global_ioc.tx_signal = TRUE;
     global_ioc.tx_error = SUCCESS;
+
     /* proceed with a_rx_on action to start receiving again */
     return a_rx_on(t);
   }

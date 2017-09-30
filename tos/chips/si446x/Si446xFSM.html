@@ -5,7 +5,7 @@
 <TABLE border="1">
 <TR>
 	<TH valign="bottom" rowspan="2">Events</TH>
-	<TH colspan="8" halign="center">States</TH>
+	<TH colspan="9" halign="center">States</TH>
 </TR>
 <TR>
 	<TH>SDN</TH>
@@ -16,12 +16,14 @@
 	<TH>TX_ACTIVE</TH>
 	<TH>STANDBY</TH>
 	<TH>PWR_UP_W</TH>
+	<TH>CRC_FLUSH</TH>
 </TR>
 <TR>
 	<TD> CONFIG_DONE</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD>RX_ON<BR>ready</TD>
+	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
@@ -34,7 +36,8 @@
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
-	<TD>RX_ON<BR>rx_cnt_crc</TD>
+	<TD>CRC_FLUSH<BR>rx_cnt_crc</TD>
+	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
@@ -49,6 +52,7 @@
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
+	<TD align="Center">-</TD>
 </TR>
 <TR>
 	<TD> PACKET_RX</TD>
@@ -60,6 +64,7 @@
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
+	<TD>RX_ON<BR>rx_flush</TD>
 </TR>
 <TR>
 	<TD> PACKET_SENT</TD>
@@ -71,14 +76,16 @@
 	<TD>RX_ON<BR>tx_cmp</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
+	<TD align="Center">-</TD>
 </TR>
 <TR>
 	<TD> PREAMBLE_DETECT</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
-	<TD>RX_ON<BR>nop</TD>
-	<TD>RX_ACTIVE<BR>nop</TD>
+	<TD>RX_ACTIVE<BR>rx_start</TD>
+	<TD align="Center">-</TD>
+	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
@@ -89,10 +96,11 @@
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
-	<TD>RX_ACTIVE<BR>rx_drain_ff</TD>
+	<TD>RX_ACTIVE<BR>rx_fetch_ff</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
+	<TD>CRC_FLUSH<BR>rx_drain_ff</TD>
 </TR>
 <TR>
 	<TD> STANDBY</TD>
@@ -104,13 +112,15 @@
 	<TD>STANDBY<BR>standby</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
+	<TD align="Center">-</TD>
 </TR>
 <TR>
 	<TD> SYNC_DETECT</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
-	<TD>RX_ACTIVE<BR>rx_start</TD>
+	<TD align="Center">-</TD>
+	<TD>RX_ACTIVE<BR>nop</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
@@ -126,6 +136,7 @@
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
+	<TD align="Center">-</TD>
 </TR>
 <TR>
 	<TD> TURNOFF</TD>
@@ -136,6 +147,7 @@
 	<TD>SDN<BR>pwr_dn</TD>
 	<TD>SDN<BR>pwr_dn</TD>
 	<TD>SDN<BR>pwr_dn</TD>
+	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 </TR>
 <TR>
@@ -148,6 +160,7 @@
 	<TD align="Center">-</TD>
 	<TD>RX_ON<BR>ready</TD>
 	<TD align="Center">-</TD>
+	<TD align="Center">-</TD>
 </TR>
 <TR>
 	<TD> TX_THRESH</TD>
@@ -157,6 +170,7 @@
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD>TX_ACTIVE<BR>tx_fill_ff</TD>
+	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 	<TD align="Center">-</TD>
 </TR>
@@ -170,5 +184,6 @@
 	<TD>RX_ON<BR>tx_timeout</TD>
 	<TD align="Center">-</TD>
 	<TD>CONFIG_W<BR>config</TD>
+	<TD>RX_ON<BR>rx_timeout</TD>
 </TR>
 </TABLE>
