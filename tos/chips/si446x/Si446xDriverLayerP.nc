@@ -484,10 +484,6 @@ implementation {
   /**************************************************************************/
 
   si446x_packet_header_t *getPhyHeader(message_t *msg) {
-    // NEEDS WORK
-    //    return (si446x_packet_header_t *) ((uint8_t *) msg + offset);
-    //    return ((void *) &msg->data - sizeof(si446x_packet_header_t));
-    //    return ((void *) msg + call Config.headerOffset(msg));
     return ((void *) msg);
   }
 
@@ -982,7 +978,6 @@ implementation {
  /**************************************************************************/
   fsm_result_t a_rx_timeout(fsm_transition_t *t) {
     global_ioc.rx_timeouts++;
-    //    call Si446xCmd.change_state(RC_SLEEP, FALSE);
     return a_rx_on(t);
   }
 
@@ -1583,10 +1578,4 @@ implementation {
   default async command uint32_t Platform.jiffiesRawSize() { return 0; }
 #endif
 
-#ifndef REQUIRE_PANIC
-  default async command void Panic.panic(uint8_t pcode, uint8_t where,
-        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3) { }
-  default async command void  Panic.warn(uint8_t pcode, uint8_t where,
-        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3) { }
-#endif
 }
