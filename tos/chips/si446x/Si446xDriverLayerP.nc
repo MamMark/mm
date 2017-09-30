@@ -159,24 +159,24 @@ implementation {
   typedef struct global_io_context {
     message_t                       * pRxMsg;          // msg driver owns
     message_t                       * pTxMsg;          // msg driver owns
-    uint8_t                           tx_ff_index;     // msg offset for fifo write
-    uint8_t                           rx_ff_index;     // msg offset for fifo read
-    bool                              rc_signal;       // signal command complete
-    bool                              tx_signal;       // signal transmit complete
-    error_t                           tx_error;        // last tx error
+    uint32_t                          rc_readys;
     uint32_t                          tx_packets;
-    uint16_t                          tx_timeouts;
     uint32_t                          tx_reports;
-    uint32_t                          tx_readys;
     uint32_t                          rx_packets;
-    uint16_t                          rx_bad_crcs;
     uint32_t                          rx_reports;
+    uint16_t                          tx_timeouts;
+    uint16_t                          rx_bad_crcs;
     uint16_t                          rx_timeouts;
     uint16_t                          rx_inv_syncs;
     uint16_t                          nops;
     uint16_t                          unshuts;
     uint8_t                           channel;         // current channel setting
     uint8_t                           tx_power;        // current power setting
+    uint8_t                           tx_ff_index;     // msg offset for fifo write
+    uint8_t                           rx_ff_index;     // msg offset for fifo read
+    bool                              rc_signal;       // signal command complete
+    bool                              tx_signal;       // signal transmit complete
+    error_t                           tx_error;        // last tx error
   } global_io_context_t;
 
   tasklet_norace global_io_context_t  global_ioc;
@@ -635,7 +635,7 @@ implementation {
     }
     if ((dvr_cmd == CMD_NONE) && (fsm_get_state() == S_RX_ON)) {
       signal RadioSend.ready();
-      global_ioc.tx_readys++;
+      global_ioc.rc_readys++;
     }
   }
 
@@ -656,7 +656,7 @@ implementation {
     }
     if ((dvr_cmd == CMD_NONE) && (fsm_get_state() == S_RX_ON)) {
       signal RadioSend.ready();
-      global_ioc.tx_readys++;
+      global_ioc.rc_readys++;
     }
   }
 
@@ -859,6 +859,7 @@ implementation {
       call PacketRSSI.set(global_ioc.pRxMsg, rssi);
       call PacketLinkQuality.set(global_ioc.pRxMsg, rssi);
     }
+    global_ioc.rx_packets++;
     start_alarm(SI446X_RX_TIMEOUT);
     return fsm_results(t->next_state, E_NONE);
   }
@@ -1038,7 +1039,6 @@ implementation {
     global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
     global_ioc.rx_reports++;
     global_ioc.rx_ff_index += rx_len;
-    global_ioc.rx_packets++;
     // proceed with a_rx_on action to start receiving again
     return a_rx_on(t);
   }
