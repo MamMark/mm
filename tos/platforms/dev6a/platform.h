@@ -36,6 +36,21 @@
 
 #define SI446x_HW_CTS
 
+/*
+ * TagNet uses a single byte length at the start of its header.  This is
+ * also what the si446x radio expects.  However, the radio length doesn't
+ * include the frame_length.  Above the phy layer we use the frame_length
+ * to indicate the full length of the packet.  So the maximum phy length
+ * can be 0xFE giving a full packet length of 0xFF.
+ *
+ * We simply use 250 because it is a nice round number (go figure).  We
+ * then have 250 bytes of payload, 4 bytes of header, yielding 254 bytes.
+ * Which on the wire looks like a length of 0xFD.  But above the PHY layer
+ * looks like 0xFE.
+ */
+#define TOSH_DATA_LENGTH 250
+#define GPS_EAVESDROP
+
 #include <panic.h>
 #include <platform_panic.h>
 
