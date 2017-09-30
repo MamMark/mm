@@ -880,7 +880,7 @@ implementation {
     }
     max_delta = sizeof(global_ioc.pRxMsg->header) + sizeof(global_ioc.pRxMsg->data);
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
-    if (rx_len == 0 || global_ioc.rx_ff_index + rx_len >= max_delta) {
+    if (rx_len == 0 || global_ioc.rx_ff_index + rx_len > max_delta) {
       call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
       __PANIC_RADIO(10, global_ioc.rx_ff_index, rx_len, tx_len, (parg_t) dp);
     }
@@ -999,7 +999,7 @@ implementation {
         __PANIC_RADIO(7, tx_ff_free, pkt_len, global_ioc.tx_ff_index, (parg_t) dp);
       // find size to fill fifo min(chk_len, tx_ff_free)
       chk_len = (chk_len < tx_ff_free) ? chk_len : tx_ff_free;
-      if (global_ioc.tx_ff_index + chk_len >= max_delta)
+      if (global_ioc.tx_ff_index + chk_len > max_delta)
         __PANIC_RADIO(7, global_ioc.tx_ff_index, chk_len, tx_ff_free, (parg_t) dp);
       call Si446xCmd.write_tx_fifo(dp + global_ioc.tx_ff_index, chk_len);
       global_ioc.tx_ff_index += chk_len;
