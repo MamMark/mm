@@ -99,6 +99,9 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   .vector_chk   = 0,                            /* 32 bit checksum over the vector table */
   .image_chk    = 0,                            /* 32 bit checksum over full image size. */
   .ver_id       = { .major = MAJOR, .minor = MINOR, .build = _BUILD },
+  .descriptor0  = { 0 },
+  .descriptor1  = { 0 },
+  .stamp_date   = { 0 },
   .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV }
 };
 

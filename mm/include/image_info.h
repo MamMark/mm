@@ -59,6 +59,9 @@ typedef struct {
   uint8_t  hw_model;
 } hw_ver_t;
 
+#define IMAGE_DESCRIPTOR_MAX 44
+#define ID_MAX               44
+
 typedef struct {
   uint32_t    sig;                      /* must be IMAGE_INFO_SIG to be valid */
   uint32_t    image_start;              /* where this binary loads            */
@@ -66,7 +69,37 @@ typedef struct {
   uint32_t    vector_chk;               /* simple checksum over vector table  */
   uint32_t    image_chk;                /* simple checksum over entire image  */
   image_ver_t ver_id;
-  hw_ver_t    hw_ver;
+  uint8_t     descriptor0[ID_MAX];      /* main tree descriptor */
+  uint8_t     descriptor1[ID_MAX];      /* aux  tree descriptor */
+  uint8_t     stamp_date[30];           /* build time stamp */
+  hw_ver_t    hw_ver;                   /* and last 2 bytes */
 } image_info_t;
+
+/*
+ * stamp_date is a null terminated string that contains the date (UTC)
+ * of when this image was built (actally when the tag_finish program was
+ * run).  Tag_finish is used to set the checksums, stamp_date, and the
+ * git descriptors.
+ *
+ * stamp_date gets filled in with "date -u".
+ *
+ * descriptor{0,1} are descriptor strings that identify the code base used to
+ * build this image.
+ *
+ * each descriptor is generated using:
+ *
+ *      git describe --all --long --dirty
+ *
+ * sha information is abbreviated to 7 digits (default).  This should work
+ * for both the MamMark as well as the Prod/tinyos-main repositories.  There
+ * is enough additional information to enable finding where on the tree this
+ * code base was built from.
+ *
+ * If the descriptor becomes larger that ID_MAX then one can lose characters
+ * from the front of the string, typically <name>/ can be removed safely.
+ *
+ * The descriptors should be null terminated and this null counts as one of
+ * the characters in ID_MAX.
+ */
 
 #endif  /* __IMAGE_INFO_H__ */
