@@ -1,6 +1,7 @@
 Oops
 *.[oa]
 *.lst
+*.pyc
 *~
 .gdb*
 build
