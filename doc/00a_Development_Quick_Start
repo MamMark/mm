@@ -49,11 +49,14 @@ exit
 4b) Install ARM toolchain.  TinyOS for the msp432 requires the
     gcc-arm-none-eabi-4_9-2015q3 toolchain.  Later toolchains break something.
 
+    cd ~
+    mkdir installs
+    cd installs
     ARM_TOOLS_URL=https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update/+download/gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
     wget -nv -O gcc-arm-none-eabi.tar.bz2 $ARM_TOOLS_URL
 
     echo "*** Installing ARM toolchain"
-    tar xf /home/vagrant/installs/gcc-arm-none-eabi.tar.bz2 -C /usr
+    sudo tar xf ~/installs/gcc-arm-none-eabi.tar.bz2 -C /usr
 
 
     this will install the arm toolchain into /usr/gcc-arm-none-eabi-4_9-2015q3.  Your path
@@ -81,3 +84,10 @@ exit
 
    cd ~/w/prod/apps/Blink
    make exp_msp432
+
+8) Install Segger Jlink
+
+    SUPPORT_ARCHIVE=http://tinyprod.net/dev-archive
+    JLINK_DEB=${SUPPORT_ARCHIVE}/JLink_Linux_V616j_x86_64.deb
+    wget -nv -O jlink.deb ${JLINK_DEB}
+    dpkg -i jlink.deb
