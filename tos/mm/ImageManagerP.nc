@@ -1046,6 +1046,8 @@ implementation {
     uint32_t bytes_left;
     error_t  err;
 
+    if (!len)                           /* nothing to do? */
+      return 0;                         /* we consumed nothing, go figure */
     if (imcb.im_state != IMS_FILL_WAITING) {
       im_panic(24, imcb.im_state, 0);
       return 0;
