@@ -167,45 +167,77 @@ implementation {
     return TRUE;
   }
 
-  /* handle moving data from msg to image manager and  responding to msg */
+
+  /*
+   * do_write: hand data from the IA (image_adapter) to the IM (image_manager).
+   *
+   * input: msg         pointer to the incoming msg, we will modify this
+   *                    msg for the reply.  Will be updated with new_offset
+   *        dptr        pointer to incoming bytes that need to be moved to
+   *                    the IM.
+   *        dlen        how many bytes.
+   *
+   * dptr may be NULL, from the ia_buf, or from the incoming message.
+   *
+   *    NULL:   still accumulating the first block of data.  We need enough to
+   *            look at the image_info.  Just let the source know we have gotten
+   *            the bytes we have seen so far.
+   *
+   *    ia_buf: dptr points into the ia_buf.  Either we are working on writing
+   *            the first block of data.  Or we are doing a partial (a incoming
+   *            message wasn't completely consumed by the IM, and the remainder
+   *            is in the ia_buf).
+   *
+   *    msg:    dptr points into the incoming message buffer.  New data that
+   *            needs to be consumed.
+   *
+   */
   bool do_write(message_t *msg, uint8_t *dptr, uint32_t dlen) {
     uint32_t         dleft;
     int              i;
 
     tn_trace_rec(my_id, 20);
     call THdr.set_error(msg, TE_PKT_OK);
-    ia_cb.offset += dlen;                   // next byte offset to expect
+    dleft = 0;
     if (dptr) {
       nop();                                /* BRK */
       tn_trace_rec(my_id, 21);
       dleft = call IM.write(dptr, dlen);    // initiate write to IM
       if (dleft) {                          // copy leftovers to ia_buf
-        ia_cb.s_buf = 0;
-        ia_cb.e_buf = dleft;
-        for (i = 0; i < dleft; i++) {
-          ia_buf[i] = dptr[dlen-dleft+i];
+        /*
+         * only copy if we need to save what is coming from the incoming msg
+         * it didn't get copied all the way out.  so must wait for the
+         * write_complete before finishing the consumption of the incoming
+         * bytes.  In the meantime, we must stash the remaining bytes
+         * in ia_buf until then.
+         */
+        if (dptr >= ia_buf && dptr < &ia_buf[sizeof(ia_buf)]) {
+          ia_cb.s_buf = dlen - dleft;
+          ia_cb.e_buf = dlen;
+        } else {
+          /*
+           * left over bytes from the incoming message, save them
+           * in ia_buf for the write_continue.
+           */
+          ia_cb.s_buf = 0;
+          ia_cb.e_buf = dleft;
+          for (i = 0; i < dleft; i++)
+            ia_buf[i] = dptr[dlen-dleft+i];
         }
         tn_trace_rec(my_id, 22);
       }
     }
-    if (ia_cb.eof) {
+
+    /*
+     * dleft is zero, all of the last pieces have gone out to IM.
+     */
+    if (ia_cb.eof && !dleft) {
       tn_trace_rec(my_id, 23);
-      ia_cb.checksum_good = verify_checksum();
-      if (ia_cb.checksum_good) {
-        if (ia_cb.e_buf == 0)
-          call IM.finish();                 // finish if no data pending
-        tn_trace_rec(my_id, 24);
-      } else {
-        call IM.alloc_abort();          // abort is immediate, change state
-        ia_cb.in_progress = FALSE;
-        ia_cb.eof = FALSE;
-        ia_cb.s_buf = ia_cb.e_buf = 0;
-        call THdr.set_error(msg, TE_FAILED);
-        tn_trace_rec(my_id, 25);
-      }
+      call IM.finish();                 // finish if no data pending
     }
     call THdr.set_response(msg);
     call TPload.reset_payload(msg);
+    nop();                              /* BRK */
     call TPload.add_offset(msg, ia_cb.offset);
     if (ia_cb.eof)
       call TPload.add_eof(msg);
@@ -281,6 +313,7 @@ implementation {
             offset = call TTLV.tlv_to_offset(offset_tlv);
 
           // get payload variables (data length and pointer) and/or eof flag
+          nop();                                  /* BRK */
           if (call THdr.is_pload_type_raw(msg)) { // msg contains raw data in payload
             dlen = call TPload.get_len(msg);
             dptr = (uint8_t *) eof_tlv;
@@ -301,8 +334,10 @@ implementation {
           tn_trace_rec(my_id, 6);
           if (ia_cb.in_progress) {
             if ((offset_tlv) && (ia_cb.offset == offset)) {
+              /* expected offset matches */
               nop();                          /* BRK */
-              return do_write(msg, dptr, dlen); /* expected offset matches */
+              ia_cb.offset += dlen;           /* consume new incoming */
+              return do_write(msg, dptr, dlen);
             } else
               break;                          // ignore
           }
@@ -324,9 +359,8 @@ implementation {
           }
 
           if (dptr && dlen) {                 // copy msg data to ia_buf
-            for (i = 0; i < dlen; i++) {
+            for (i = 0; i < dlen; i++)
               ia_buf[ia_cb.e_buf + i] = dptr[i];
-            }
             ia_cb.e_buf += dlen;
           }
 
@@ -344,6 +378,8 @@ implementation {
             if (!get_info(version, dptr, dlen))
               return do_reject(msg, TE_BAD_MESSAGE);
 
+            // verify checksum, do_reject()
+
             // allocate new image and write first data
             if ((err = call IM.alloc(&ia_cb.version)) == 0) {
               ia_cb.in_progress = TRUE;       // mark image load now in progress
@@ -351,13 +387,17 @@ implementation {
                 ia_cb.eof = TRUE;             // eof found (really short file!)
               else
                 ia_cb.eof = FALSE;            // start of image load, init eof
+              ia_cb.offset = dlen;
               return do_write(msg, dptr, dlen);
             }
-          tn_trace_rec(my_id, 10);
+            tn_trace_rec(my_id, 10);
             return do_reject(msg, TE_BAD_MESSAGE);  // failed allocate
           }
+
+          /* still less than IMAGE_MIN_SIZE, just accumulate */
           if (ia_cb.eof)                      // eof already, image too short
             return do_reject(msg, TE_BAD_MESSAGE);
+          ia_cb.offset = ia_cb.e_buf;               // always what we've seen so far
           return do_write(msg, NULL, dlen);         // just acknowledge PUT
 
         case TN_HEAD:
@@ -398,12 +438,11 @@ implementation {
     dleft = call IM.write(&ia_buf[ia_cb.s_buf], ia_cb.e_buf - ia_cb.s_buf);
     if (dleft) {
       ia_cb.s_buf = ia_cb.e_buf - dleft;
-    } else {
-      ia_cb.s_buf = ia_cb.e_buf = 0;
+      return;
     }
-    if ((dleft == 0) && ia_cb.eof && ia_cb.checksum_good) {
+    ia_cb.s_buf = ia_cb.e_buf = 0;
+    if ((dleft == 0) && ia_cb.eof)
       call IM.finish();
-    }
   }
 
   event void Super.add_name_tlv(message_t* msg) {
