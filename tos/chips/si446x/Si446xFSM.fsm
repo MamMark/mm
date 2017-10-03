@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <!DOCTYPE qfsmproject SYSTEM 'qfsm.dtd'>
 <qfsmproject version="0.54" author="Qfsm">
-  <machine nummooreout="0" transfontitalic="0" draw_it="1" statefontsize="10" transfont="Ubuntu" statefontitalic="0" author="" description="" version="1.0" name="FSM" arrowtype="1" numbits="4" statefontweight="75" statefont="Ubuntu" numin="0" transfontsize="9" transfontweight="63" type="2" numout="0" initialstate="4">
+  <machine nummooreout="0" transfontitalic="0" draw_it="1" statefontsize="10" transfont="Ubuntu" statefontitalic="0" author="" description="" version="1.1" name="Si446x_FSM" arrowtype="3" numbits="4" statefontweight="75" statefont="Ubuntu" numin="0" transfontsize="9" transfontweight="63" type="2" numout="0" initialstate="4">
     <outputnames_moore></outputnames_moore>
     <inputnames></inputnames>
     <outputnames></outputnames>
@@ -10,7 +10,7 @@
     <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="229" code="0" xpos="674" linewidth="1">POR_W</state>
     <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="225" code="3" xpos="1314" linewidth="1">CONFIG_W</state>
     <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="504.0000000000001" code="1" xpos="1555" linewidth="1">RX_ON</state>
-    <state pencolor="0" exit_actions="" radius="53" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="1071.44" code="5" xpos="1413.92" linewidth="1">RX_ACTIVE</state>
+    <state pencolor="0" exit_actions="" radius="53" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="1063" code="5" xpos="1410" linewidth="1">RX_ACTIVE</state>
     <state pencolor="0" exit_actions="" radius="53" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="642.48" code="6" xpos="977.12" linewidth="1">TX_ACTIVE</state>
     <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="380" code="7" xpos="830.08" linewidth="1">STANDBY</state>
     <state pencolor="0" exit_actions="" radius="55" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="138.4" code="2" xpos="1014.32" linewidth="1">PWR_UP_W</state>
@@ -57,65 +57,71 @@
       <inputs default="0" any="0" invert="0">TRANSMIT</inputs>
       <outputs>tx_start</outputs>
     </transition>
-    <transition c1x="1589.979594868224" c2y="464.6481952359215" c1y="308.8429670743157" description="" straight="0" type="2" ypos="458.8292571460406" endx="1599.508354053397" xpos="1576.438376571501" endy="481.2182876091921" c2x="1701.468210882008">
-      <from>1</from>
-      <to>1</to>
-      <inputs default="0" any="0" invert="0">INVALID_SYNC</inputs>
-      <outputs>clear_sync</outputs>
-    </transition>
-    <transition c1x="1816.254590455929" c2y="1088.332851128001" c1y="695.9619609492327" description="" straight="0" type="2" ypos="527.9426065340286" endx="1466.91726888591" xpos="1598.894778645719" endy="1070.901956661057" c2x="1605.774914031462">
+    <transition c1x="1875.527596243146" c2y="1094.892851128001" c1y="602.4666151238503" description="" straight="0" type="2" ypos="495.5046541746176" endx="1462.99726888591" xpos="1604.273005787217" endy="1062.461956661057" c2x="1719.854914031462">
       <from>1</from>
       <to>5</to>
       <inputs default="0" any="0" invert="0">PREAMBLE_DETECT</inputs>
       <outputs>rx_start</outputs>
     </transition>
-    <transition c1x="1622.346561289739" c2y="1211.381623991596" c1y="1057.499660927366" description="" straight="0" type="2" ypos="1100.40278120356" endx="1435.929765722825" xpos="1458.306454070524" endy="1119.121278439401" c2x="1536.799224781302">
-      <from>5</from>
-      <to>5</to>
+    <transition c1x="1606.67597881951" c2y="474.5265296519735" c1y="318.1374801123342" description="" straight="0" type="2" ypos="462.0778191849682" endx="1597.452830188679" xpos="1582.249417529771" endy="477.5849056603774" c2x="1760.332054969981">
+      <from>1</from>
+      <to>1</to>
       <inputs default="0" any="0" invert="0">SYNC_DETECT</inputs>
-      <outputs>nop</outputs>
+      <outputs>flush_rx_fifo</outputs>
     </transition>
-    <transition c1x="858.3120607797821" c2y="934.1614213658867" c1y="1052.064626784418" description="" straight="0" type="2" ypos="1091.123705846768" endx="426.2738293300083" xpos="1364.710735383081" endy="587.9192841793134" c2x="580.1475885112225">
+    <transition c1x="1453.097730052809" c2y="397.7714431801771" c1y="270.0472655453543" description="" straight="0" type="2" ypos="454.6803038083929" endx="1602.530272824549" xpos="1563.219949365268" endy="488.479910914433" c2x="2055.859795606531">
+      <from>1</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">INVALID_SYNC</inputs>
+      <outputs>clear_sync</outputs>
+    </transition>
+    <transition c1x="854.392060779782" c2y="934.1614213658867" c1y="1043.624626784418" description="" straight="0" type="2" ypos="1082.683705846768" endx="426.2738293300083" xpos="1360.790735383081" endy="587.9192841793134" c2x="580.1475885112225">
       <from>5</from>
       <to>4</to>
       <inputs default="0" any="0" invert="0">TURNOFF</inputs>
       <outputs>pwr_dn</outputs>
     </transition>
-    <transition c1x="1382.051778612501" c2y="980.6159473008482" c1y="902.4093746829208" description="" straight="0" type="2" ypos="1018.513255045377" endx="1183.093872851975" xpos="1416.705618155506" endy="908.7086051226186" c2x="1275.820650887035">
-      <from>5</from>
-      <to>8</to>
-      <inputs default="0" any="0" invert="0">CRC_ERROR</inputs>
-      <outputs>rx_cnt_crc</outputs>
-    </transition>
-    <transition c1x="1190.056577173727" c2y="953.262498481198" c1y="1048.751389366778" description="" straight="0" type="2" ypos="1047.737679438502" endx="1398.17547271028" xpos="1366.515358877004" endy="1020.832590854469" c2x="1299.135329538891">
-      <from>5</from>
-      <to>5</to>
-      <inputs default="0" any="0" invert="0">INVALID_SYNC</inputs>
-      <outputs>clear_sync</outputs>
-    </transition>
-    <transition c1x="649.5320556509159" c2y="656.7318059184749" c1y="1047.32060502323" description="" straight="0" type="2" ypos="1066.367242447855" endx="808.8346431493065" xpos="1361.163321457685" endy="425.2618472036514" c2x="728.867785835555">
+    <transition c1x="645.6120556509159" c2y="656.7318059184749" c1y="1038.88060502323" description="" straight="0" type="2" ypos="1057.927242447855" endx="808.8346431493065" xpos="1357.243321457685" endy="425.2618472036514" c2x="728.867785835555">
       <from>5</from>
       <to>7</to>
       <inputs default="0" any="0" invert="0">STANDBY</inputs>
       <outputs>standby</outputs>
     </transition>
-    <transition c1x="1435.609639588346" c2y="1151.619807908166" c1y="1222.416342344673" description="" straight="0" type="2" ypos="1123.823699975483" endx="1375.994567088318" xpos="1421.979030765459" endy="1108.462446413784" c2x="1300.12438212289">
+    <transition c1x="1431.689639588346" c2y="1143.179807908166" c1y="1213.976342344673" description="" straight="0" type="2" ypos="1115.383699975483" endx="1372.074567088318" xpos="1418.059030765459" endy="1100.022446413784" c2x="1296.20438212289">
       <from>5</from>
       <to>5</to>
       <inputs default="0" any="0" invert="0">RX_THRESH</inputs>
       <outputs>rx_fetch_ff</outputs>
     </transition>
-    <transition c1x="1395.566483690078" c2y="655.5033199199632" c1y="899.1621045454176" description="" straight="0" type="2" ypos="1023.089714720023" endx="1542.873218748183" xpos="1435.628291350194" endy="552.5071250072666" c2x="1489.182314918125">
+    <transition c1x="1461.646483690078" c2y="620.2042360576662" c1y="883.7221045454176" description="" straight="0" type="2" ypos="1014.649714720023" endx="1565.476454436544" xpos="1431.708291350194" endy="552.8901207038706" c2x="1671.754706843277">
       <from>5</from>
       <to>1</to>
       <inputs default="0" any="0" invert="0">PACKET_RX</inputs>
       <outputs>rx_cmp</outputs>
     </transition>
-    <transition c1x="1488.181709921381" c2y="728.1931878618237" c1y="987.8630595580614" description="" straight="0" type="2" ypos="1035.376091733534" endx="1555.000003846154" xpos="1452.758055056194" endy="553.9999999999999" c2x="1578.257534280036">
+    <transition c1x="1588.261709921381" c2y="581.9931948428258" c1y="1049.423059558061" description="" straight="0" type="2" ypos="1026.936091733534" endx="1589.905006806477" xpos="1448.838055056194" endy="539.8000069810021" c2x="1726.162541086513">
       <from>5</from>
       <to>1</to>
       <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
       <outputs>rx_timeout</outputs>
+    </transition>
+    <transition c1x="1336.334606711651" c2y="980.6159473008482" c1y="912.1375735944109" description="" straight="0" type="2" ypos="1029.16819891149" endx="1183.093872851975" xpos="1369.20282809915" endy="908.7086051226186" c2x="1275.820650887035">
+      <from>5</from>
+      <to>8</to>
+      <inputs default="0" any="0" invert="0">CRC_ERROR</inputs>
+      <outputs>rx_cnt_crc</outputs>
+    </transition>
+    <transition c1x="1620.982900039555" c2y="1236.146185629708" c1y="1042.30305913041" description="" straight="0" type="2" ypos="1084.243398203045" endx="1440.697978006027" xpos="1458.556338749816" endy="1106.204561638112" c2x="1507.577202787329">
+      <from>5</from>
+      <to>5</to>
+      <inputs default="0" any="0" invert="0">SYNC_DETECT</inputs>
+      <outputs>nop</outputs>
+    </transition>
+    <transition c1x="1353.904354847258" c2y="685.7645854724493" c1y="878.970163357962" description="" straight="0" type="2" ypos="1010.603201621001" endx="1547.760040994141" xpos="1402.026574159717" endy="553.4730532067052" c2x="1499.089563776123">
+      <from>5</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">INVALID_SYNC</inputs>
+      <outputs>clear_sync</outputs>
     </transition>
     <transition c1x="1223.996242290185" c2y="587.1463487171754" c1y="545.8237434689077" description="" straight="0" type="2" ypos="622.7016065138779" endx="1508.332719689847" xpos="1026.291283805775" endy="521.9489539654435" c2x="1288.204480990016">
       <from>6</from>

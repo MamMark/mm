@@ -979,6 +979,8 @@ implementation {
     int16_t         chk_len;
 
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
+    pkt_len = 0;
+    chk_len = 0;
 
     if (dp) {
       /*
@@ -1024,10 +1026,16 @@ implementation {
 
 
  /**************************************************************************/
-  fsm_result_t a_clear_sync(fsm_transition_t *t) {
-    global_ioc.rx_inv_syncs++;
+  fsm_result_t a_flush_rx_fifo(fsm_transition_t *t) {
     call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
     return a_rx_on(t);
+  }
+
+
+ /**************************************************************************/
+  fsm_result_t a_clear_sync(fsm_transition_t *t) {
+    global_ioc.rx_inv_syncs++;
+    return a_flush_rx_fifo(t);
   }
 
 

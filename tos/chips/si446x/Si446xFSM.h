@@ -35,6 +35,7 @@ typedef enum {
   A_BREAK = 0,
   A_CLEAR_SYNC,
   A_CONFIG,
+  A_FLUSH_RX_FIFO,
   A_NOP,
   A_PWR_DN,
   A_PWR_UP,
@@ -83,6 +84,7 @@ const fsm_transition_t fsm_e_wait_done[];
 
 fsm_result_t a_clear_sync(fsm_transition_t *t);
 fsm_result_t a_config(fsm_transition_t *t);
+fsm_result_t a_flush_rx_fifo(fsm_transition_t *t);
 fsm_result_t a_nop(fsm_transition_t *t);
 fsm_result_t a_pwr_dn(fsm_transition_t *t);
 fsm_result_t a_pwr_up(fsm_transition_t *t);
@@ -108,7 +110,7 @@ const fsm_transition_t fsm_e_tx_thresh[] = {
 
 const fsm_transition_t fsm_e_invalid_sync[] = {
   {S_RX_ON, A_CLEAR_SYNC, S_RX_ON},
-  {S_RX_ACTIVE, A_CLEAR_SYNC, S_RX_ACTIVE},
+  {S_RX_ACTIVE, A_CLEAR_SYNC, S_RX_ON},
   { S_DEFAULT, A_BREAK, S_DEFAULT },
 };
 
@@ -178,6 +180,7 @@ const fsm_transition_t fsm_e_preamble_detect[] = {
 };
 
 const fsm_transition_t fsm_e_sync_detect[] = {
+  {S_RX_ON, A_FLUSH_RX_FIFO, S_RX_ON},
   {S_RX_ACTIVE, A_NOP, S_RX_ACTIVE},
   { S_DEFAULT, A_BREAK, S_DEFAULT },
 };
