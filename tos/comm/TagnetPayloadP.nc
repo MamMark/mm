@@ -214,6 +214,8 @@ implementation {
     uint8_t      *pload_start = (uint8_t *) &msg->data[call THdr.get_name_len(msg)];
     uint8_t      *p;
 
+    if (call THdr.is_pload_type_raw(msg))
+      return NULL;
     this_tlv = call TagnetPayload.this_element(msg);
     next_tlv = call TTLV.get_next_tlv(this_tlv, call TagnetPayload.bytes_avail(msg));
     if (next_tlv == NULL)
