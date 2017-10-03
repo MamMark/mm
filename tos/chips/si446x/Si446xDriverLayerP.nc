@@ -1256,13 +1256,13 @@ implementation {
    * crc_error
    */
   fsm_event_t get_next_interrupt_event(volatile si446x_int_state_t *isp) {
-    if (isp->modem_pend & SI446X_MODEM_STATUS_INVALID_SYNC) {
-      isp->modem_pend ^= SI446X_MODEM_STATUS_INVALID_SYNC;
-      return E_INVALID_SYNC;
-    }
     if (isp->modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
       isp->modem_pend ^= SI446X_MODEM_STATUS_PREAMBLE_DETECT;
       return E_PREAMBLE_DETECT;
+    }
+    if (isp->modem_pend & SI446X_MODEM_STATUS_INVALID_SYNC) {
+      isp->modem_pend ^= SI446X_MODEM_STATUS_INVALID_SYNC;
+      return E_INVALID_SYNC;
     }
     if (isp->modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
       isp->modem_pend ^= SI446X_MODEM_STATUS_SYNC_DETECT;
