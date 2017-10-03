@@ -1,4 +1,9 @@
-The Si446x Driver uses a finite state machine (FSM) to control all major actions in the component. The state machine is embodied in c-code data structures that are created by a code generator taking a FSM definition as input and outputing the Si446xFSM.h file. In addtion to the primary structures used by the FSM, some helper structures are auto-generated, such as the forward declarations for all action functions.
+The Si446x Driver uses a finite state machine (FSM) to control all major
+actions in the component. The state machine is embodied in c-code data
+structures that are created by a code generator taking a FSM definition as
+input and outputing the Si446xFSM.h file. In addtion to the primary
+structures used by the FSM, some helper structures are auto-generated, such
+as the forward declarations for all action functions.
 
 Below is the graphical representation of the Si446x Driver Finite State Machine.
 
@@ -6,7 +11,12 @@ Below is the graphical representation of the Si446x Driver Finite State Machine.
 
 PROCESS TO CREATE runtime code
 
-The process steps required to produce the Si446xFSM.h file includes the precursor state machine representation file used by the QFSM graphical finite state machine editor. This Si446xFSM.fsm file is in XML format that QFSM knows how to handle. QFSM allows a human to edit, or change, the finite state machine through a graphical user interface and save the appropriate file formats needed for building the target program.
+The process steps required to produce the Si446xFSM.h file includes the
+precursor state machine representation file used by the QFSM graphical
+finite state machine editor. This Si446xFSM.fsm file is in XML format that
+QFSM knows how to handle. QFSM allows a human to edit, or change, the
+finite state machine through a graphical user interface and save the
+appropriate file formats needed for building the target program.
 
 Here are the steps required to update the FSM:
 
@@ -36,7 +46,11 @@ IMPORTANT ARTIFACTS that are saved in git
 
 FINITE STATE TABLE input format
 
-The intermediate state machine format that is input to the fsmc.py code generator is the ASCII plain text formatted file exported from QFSM. It contains a set of records describing the event/state,action,next_state relationships. These names are used to create the enumerations and function names provided in the Si446xFSM.h file and used by Si446xDriverLayerP.
+The intermediate state machine format that is input to the fsmc.py code
+generator is the ASCII plain text formatted file exported from QFSM. It
+contains a set of records describing the event/state,action,next_state
+relationships. These names are used to create the enumerations and function
+names provided in the Si446xFSM.h file and used by Si446xDriverLayerP.
 
 ```
 "Events/States";"SDN";"POR_W";"CONFIG_W";"RX_ON";"RX_ACTIVE";"TX_ACTIVE";"STANDBY";"PWR_UP_W";"CRC_FLUSH"
@@ -59,7 +73,12 @@ The intermediate state machine format that is input to the fsmc.py code generato
 
 FSM CODE GENERATOR
 
-The process of converting the graphical representation of the state machine into a set of c-code definitions is performed by the FSM code generator in the utilities file fsmc.py. This program takes the nominal state table input definition found in Si446xFSM.txt, which was produced by the QFSM program, into the Si446xFSM.h file with the c-code state machine definitions.
+The process of converting the graphical representation of the state machine
+into a set of c-code definitions is performed by the FSM code generator in
+the utilities file fsmc.py. This program takes the nominal state table
+input definition found in Si446xFSM.txt, which was produced by the QFSM
+program, into the Si446xFSM.h file with the c-code state machine
+definitions.
 
 The workflow by file is:
 
@@ -71,7 +90,9 @@ invokation:
 
     python2 <path to fsmc.py>/fsmc.py  --c-mode -i Si446xFSMn.txt -o Si446xFSM.h
 
-Since some of this workflow is manual, some care must be taken with handling intermediate files. Right now some intermediate artifacts are included in the git repository.
+Since some of this workflow is manual, some care must be taken with
+handling intermediate files. Right now some intermediate artifacts are
+included in the git repository.
 
 
 Needed tools:
@@ -90,7 +111,10 @@ email: qfsm@duffner-net.de
 
 Qfsm is a graphical editor for finite state machines written in C++ using the graphical toolkit Qt.
 
-Finite state machines are a model to describe complex objects or systems in terms of the states they may be in. In practice they are used to design integrated circuits or to create regular expressions, scanners or other program code.
+Finite state machines are a model to describe complex objects or systems in
+terms of the states they may be in. In practice they are used to design
+integrated circuits or to create regular expressions, scanners or other
+program code.
 
 Features of Qfsm are:
 
