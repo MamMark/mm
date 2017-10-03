@@ -724,7 +724,7 @@ implementation {
     if (!ep)
       return ENOMEM;
     ep->slot_state = SLOT_FILLING;
-    ep->ver_id = *verp;
+    call IMData.setVer(verp, &ep->ver_id);
     dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
 
