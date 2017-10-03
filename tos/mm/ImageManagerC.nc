@@ -68,6 +68,9 @@ implementation {
   components ChecksumM;
   IM_P.Checksum -> ChecksumM;
 
+  components PlatformC;
+  IM_P.Platform -> PlatformC;
+
   components PanicC;
   IM_P.Panic -> PanicC;
 }

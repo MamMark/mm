@@ -171,6 +171,7 @@ module ImageManagerP {
     interface Checksum;
     interface SDread;
     interface SDwrite;
+    interface Platform;
     interface Panic;
   }
 }
@@ -500,6 +501,17 @@ implementation {
       if (b && sp->slot_state == SLOT_BACKUP)
         *b = sp;
     }
+  }
+
+
+  void *memcpy_ua(void *dest, const void *src, size_t n) {
+    bool on;
+    void *p;
+
+    on = call Platform.set_unaligned_traps(FALSE);
+    p = memcpy(dest, src, n);
+    call Platform.set_unaligned_traps(on);
+    return p;
   }
 
 
@@ -1050,7 +1062,7 @@ implementation {
       bytes_left = len - copy_len;
     }
 
-    memcpy(imcb.buf_ptr, buf, copy_len);
+    memcpy_ua(imcb.buf_ptr, buf, copy_len);
     imcb.buf_ptr += copy_len;
     if (bytes_left) {
       imcb.im_state = IMS_FILL_REQ_SD;
@@ -1157,7 +1169,7 @@ implementation {
      * non-zero directory sectory, read in the directory and
      * check for validity.
      */
-    memcpy(dir, im_wrk_buf, sizeof(*dir));
+    memcpy_ua(dir, im_wrk_buf, sizeof(*dir));
     verify_IM();                        /* verify the directory */
 
     imcb.im_state = IMS_IDLE;
