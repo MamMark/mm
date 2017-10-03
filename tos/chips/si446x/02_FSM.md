@@ -88,7 +88,7 @@ The workflow by file is:
 
 invokation:
 
-    python2 <path to fsmc.py>/fsmc.py  --c-mode -i Si446xFSMn.txt -o Si446xFSM.h
+    python2 <path to fsmc.py>/fsmc.py  --c-mode -i Si446xFSM.txt -o Si446xFSM.h
 
 Since some of this workflow is manual, some care must be taken with
 handling intermediate files. Right now some intermediate artifacts are
