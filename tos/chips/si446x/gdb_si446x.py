@@ -1,6 +1,22 @@
 from si446xdef import *
 from binascii import hexlify
 
+# Setup required to use this module
+#
+# add the following python packages
+#   sudo pip install future
+#   sudo pip install construct==2.5.2
+#
+# then copy files into gdb directory
+#
+# /usr/gcc-arm-none-eabi-4_9-2015q3/arm-none-eabi/share/gdb/
+# gdb_si446x.py
+# si446xdef.py
+#
+
+# convert byte array into hexlify'd string
+#  with space between every two bytes (4 hex chars)
+#
 def get_spi_hex_helper(rb):
     r_s  = bytearray()
     x    = 0
@@ -13,12 +29,13 @@ def get_spi_hex_helper(rb):
         x += r
     return r_s
 
+#
 def get_cmd_structs(cmd):
-    for k,v in radio_cmd_ids.encoding.iteritems():
+    for k,v in radio_config_cmd_ids.encoding.iteritems():
         if (v == cmd):
             try:
-                cid = radio_cmd_ids.build(k)
-                return radio_command_structs[cid]
+                cid = radio_config_cmd_ids.build(k)
+                return radio_status_commands[cid]
             except:
                 return (None, None)
     return (None, None)
@@ -38,7 +55,7 @@ def get_spi_trace_row_repr(i):
     st = bytearray()
     row = 'g_radio_spi_trace[' + hex(i) + ']'
     rt = gdb.parse_and_eval(row)
-    if (rt['timestamp'] == 0) or (rt['op'] == 0) and (rt['op'] >= 6):
+    if (rt['timestamp'] == 0) or (rt['op'] == 0) or (rt['op'] >= 6):
         return st
     st += '{}  '.format(str(i))
     rt_b_a, rt_b_s = get_spi_buf_repr(rt['buf'], rt['length'])
@@ -46,12 +63,12 @@ def get_spi_trace_row_repr(i):
     st += '{}  '.format(str(rt['timestamp']))
     print(rt['op'])
     if (rt['op'] == 2) and (c_str):    # SEND_CMD
-        st += '{}  {}  {}'.format(c_str.name, rt_b_s, radio_display_funcs[c_str](c_str, rt_b_a))
+        st += '{}  {}  {}'.format(c_str.name, rt_b_s, radio_display_structs[c_str](c_str, rt_b_a))
     elif (rt['op'] == 3) and (r_str):  # GET_REPLY
-        st += '{}  {}  {}'.format(r_str.name, rt_b_s, radio_display_funcs[r_str](r_str, bytearray('\xff') + rt_b_a))
+        st += '{}  {}  {}'.format(r_str.name, rt_b_s, radio_display_structs[r_str](r_str, bytearray('\xff') + rt_b_a))
     elif (rt['op'] == 1):  # READ_FRR
         r_str = fast_frr_s
-        tt = radio_display_funcs[r_str](r_str, rt_b_a)
+        tt = radio_display_structs[r_str](r_str, rt_b_a)
         st += '{}  {}  {}'.format(r_str.name, rt_b_s, tt)
     else:
         ba = bytearray()
