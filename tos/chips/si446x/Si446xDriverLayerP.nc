@@ -168,6 +168,7 @@ implementation {
     uint16_t                          rx_bad_crcs;
     uint16_t                          rx_timeouts;
     uint16_t                          rx_inv_syncs;
+    uint16_t                          rx_errors;
     uint16_t                          nops;
     uint16_t                          unshuts;
     uint8_t                           channel;         // current channel setting
@@ -1078,7 +1079,13 @@ implementation {
     hp->frame_length += 1;
     if (pkt_len != global_ioc.rx_ff_index ||
         pkt_len != hp->frame_length) {
-      __PANIC_RADIO(11, pkt_len, global_ioc.rx_ff_index, hp->frame_length, (parg_t) hp);
+      /*
+       * something weird happened.  We finished receiving but it is too
+       * short.  Lost something in the middle.  Lost interrupt?
+       * Overrun?
+       */
+      global_ioc.rx_errors++;
+      return a_rx_on(t);
     }
 
     global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
