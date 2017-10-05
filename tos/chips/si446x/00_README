@@ -1,6 +1,8 @@
 This is the driver for the Silcon Labs si446x family of chips.  In
 particular the si4468.  Should also work with the si4463.
 
+*** This driver is half-duplex only.  See performance section below.
+
 The h/w interface consists of a SPI port and the following signals
 CTS (clear to send, GPIO1 default configuration), IRQN (radio interrupts),
 SDN (shutdown), and CSN (chip select, aka NSEL).
@@ -98,6 +100,31 @@ On Power_Up, we see NIRQ go low.  We see the following:
   4468    6        A2A          si44682A
 
 
+
+
+Perfomance:
+
+How fast can one transmit?  How fast can on receive?
+
+First, the TagNet protocol is inherently CMD/REPLY.  There are no back to
+back packets.  Further, the si446x chips do not have the hardware to support
+this behaviour in any fashion.
+
+For example: back to back receives.   The FIFO will have the current packet (x)
+we are receiving when the PACKET_RX occurs.  The last byte will be in the FIFO.
+There is a small window during which we need to remove all bytes from the FIFO
+for x prior to another packets coming in.
+
+Assume we have stalled and are not removing bytes from the FIFO.  We will see
+PACKET_RX for x, then we will see PREAMBLE_DETECT, and SYNC_DETECT.  And the
+hw will start stuffing more bytes into the FIFO.  Further, all three interrupts
+will be collected and we have no idea of the order of arrival.
+
+This just doesn't work and we don't support back to back packets.
+
+
+*** CRAP CRAP CRAP CRAP ****
+*** deprecated.  replaced by TagNet packet format ***
 
 Packet format:
 
@@ -228,15 +255,39 @@ time in microseconds for the random CSMA/CA algorithm. See the SI443XRadioP.nc.
 
 *** Interrupts
 
-    get_int_status:
+Interrupts are presented via INT_STATUS (0x20) (which returns and clear all interrupts).
+Presented as:
 
-    get_modem_status:
+    INT_STATUS: CHIP_INT, MODEM_INT, PH_INT   (not very usefull)
+    PH_INT:     Filter_Match, Filter_Miss, Packet_Sent, Packet_RX, CRC_ERR, ALT_CRC,
+                TX_FIFO_ALMOST_EMPTY, RX_FIFO_ALMOST_FULL
+    MODEM_INT:  RSSI_LATCH, POSTAMBLE_DETECT, INV_SYNC, RSSI_JUMP, RSSI, INV_PREAMBLE,
+                PREAMBLE_DETECT, SYNC_DETECT
+    CHIP_INT:   CAL, FIFO_OU_RUN, STATE_CHANGE, CMD_ERR, CHIP_READY, LOW_BAT, WUT
 
-    get_ph_status:
+Interrupts we currently care about:
 
-    get_chip_status:
+    PACKET_SENT
+    PACKET_RX
+    CRC_ERR
+    TX_FIFO_ALMOST_EMPTY
+    RX_FIFO_ALMOST_FULL
+    INV_SYNC
+    PREAMBLE_DETECT
+    SYNC_DETECT
+    FIFO_OU_RUN
 
+    CMD_ERR               - PANIC, shouldn't happen
 
+    POSTAMBLE_DETECT    - - currently don't care
+    RSSI_JUMP           ? - maybe, not currently
+    RSSI                - - we latch rssi at sync_detect
+    INV_PREAMBLE        - - autocycle back to hunt
+    CAL                 ?
+    STATE_CHANGE        -
+    CHIP_RDY            -
+    LOW BAT             - - huh?
+    WUT                 - - currently not used.  duty cycling?
 
 
 s/w vs h/w cts: h/w cts is the way to go, here is why.  s/w cts accesses the SPI bus via READ_CMD_BUFF
