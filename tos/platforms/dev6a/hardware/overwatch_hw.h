@@ -48,8 +48,11 @@
  * ResetStatus is a mutated status made up of various h/w
  * reset/reboot status registers.
  *
- * OW_bits are bits on the h/w
+ * OW_bits  are bits on the h/w
+ * RST_bits are what are presented from the
+ * OverWatchHW.getResetStatus() call.
  */
+
 
 enum {
 
@@ -108,7 +111,8 @@ enum {
 /* RSTCTL->CSRESET_STAT */
 #define OW_CS_DCORSHT_BIT       0x00000001
 
-  RST_DCORSHT   = 0x00008000,           /* dco ext resistor fault    */
+  RST_DCOSHORT  = 0x00008000,           /* dco ext resistor fault    */
+  RST_DCOOPEN   = 0x00010000,           /* dco ext resistor open     */
 };
 
 #endif // __OVERWATCH_HW_H__
