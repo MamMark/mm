@@ -20,7 +20,6 @@
  * SS_RECOV:    Stream Storage recovery mode ???
  * GPS:         GPS subsystem
  * MISC:
- * COMM:	communications subsystem
  * SNS:         SeNsor Subsystem (SNS)
  */
 
@@ -35,9 +34,9 @@ enum panic_codes {
   __pcode_ss_recov,
   __pcode_gps,
   __pcode_misc,
-  __pcode_comm,
   __pcode_sns,
   __pcode_pwr,
+  __pcode_radio,
   __pcode_tagnet,
 };
 
@@ -51,9 +50,9 @@ enum panic_codes {
 #define PANIC_SS_RECOV  __pcode_ss_recov
 #define PANIC_GPS       __pcode_gps
 #define PANIC_MISC      __pcode_misc
-#define PANIC_COMM      __pcode_comm
 #define PANIC_SNS       __pcode_sns
 #define PANIC_PWR       __pcode_pwr
+#define PANIC_RADIO     __pcode_radio
 #define PANIC_TAGNET    __pcode_tagnet
 
 #endif /* __PLATFORM_PANIC_H__ */
