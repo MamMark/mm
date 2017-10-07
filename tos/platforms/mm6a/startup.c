@@ -880,8 +880,6 @@ void timer_check() {
 /* see tos/mm/OverWatch/OverWatchP.nc */
 extern void owl_startup();
 
-volatile uint32_t reset_gate;
-
 void start() __attribute__((alias("__Reset")));
 void __Reset() {
   uint32_t *from;
