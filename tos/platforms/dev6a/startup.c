@@ -109,7 +109,7 @@ ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")))
 
 int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
-void __system_init();
+void __system_init(bool disable_dcor);
 
 #ifdef MEMINIT_STOP
 #define MEMINIT_MAGIC0 0x1061
@@ -717,8 +717,9 @@ void __t32_init() {
 
 uint32_t lfxt_startup_time;
 
-void __core_clk_init() {
+void __core_clk_init(bool disable_dcor) {
   uint32_t timeout;
+  uint32_t control;
 
   /*
    * only change from internal res to external when dco in dcorsel_1.
@@ -726,10 +727,13 @@ void __core_clk_init() {
    * it stays set and we no longer care about changing it (because
    * it always stays 1).
    *
-   * hitting the clocks here looks like it take 8.5us to switch.
+   * hitting the clocks here looks like it takes 8.5us to switch.
    */
-  CS->KEY = CS_KEY_VAL;
-  CS->CTL0 = CLK_DCORSEL | CS_CTL0_DCORES | CLK_DCOTUNE;
+  control  = CLK_DCORSEL | CLK_DCOTUNE;
+  if (!disable_dcor) control |= CS_CTL0_DCORES;
+
+  CS->KEY  = CS_KEY_VAL;
+  CS->CTL0 = control;
   CS->CTL1 = CS_CTL1_SELS__DCOCLK  | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
              CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 |
              CS_CTL1_SELM__DCOCLK  | CS_CTL1_DIVM__1;
@@ -831,7 +835,7 @@ void __start_timers() {
  * rawJiffies<- TA1 <- ACLK/1 (32KiHz) 16 bits wide
  */
 
-void __system_init(void) {
+void __system_init(bool disable_dcor) {
   __exception_init();
   __debug_init();
   __ram_init();
@@ -839,7 +843,7 @@ void __system_init(void) {
   __flash_init();
 
   BITBAND_PERI(P1->OUT, 0) = 1;
-  __core_clk_init();
+  __core_clk_init(disable_dcor);
   BITBAND_PERI(P1->OUT, 0) = 0;
 
   __ta_init(TIMER_A0, TA_SMCLK_ID, MSP432_TA_EX);         /* Tmicro */
@@ -926,11 +930,11 @@ void timer_check() {
 /* see tos/mm/OverWatch/OverWatchP.nc */
 extern void owl_startup();
 
-
 void start() __attribute__((alias("__Reset")));
 void __Reset() {
   uint32_t *from;
   uint32_t *to;
+  bool      disable_dcor;
 
   /* make sure interrupts are disabled */
   __disable_irq();
@@ -976,15 +980,27 @@ void __Reset() {
   __pins_init();
 
   /*
-   * invoke overwatch low level to see how we should proceed.
-   * this gets invoked regardless of Gold or Nib space.
+   * invoke overwatch low level to see how we should proceed.  this gets
+   * invoked regardless of Gold or Nib space.
    *
    * Will return if we should continue the normal boot.
+   *
+   * owl (overwatch lowlevel) is responsible for management of the
+   * ow_control_block.  Included is retrieving the current status of the
+   * reset system.  This is also where information about a possible DCO
+   * short shows up.
+   *
+   * owl_startup() will clean out any pending reset status bits so we
+   * need to look to see if the DCOR is shorted first.  If it is shorted
+   * it will reset the processor.
+   *
+   * If the short bit is set, disable the DCOR.
    */
+  disable_dcor = RSTCTL->CSRESET_STAT & RSTCTL_CSRESET_STAT_DCOR_SHT;
   nop();
   owl_startup();
 
-  __system_init();
+  __system_init(disable_dcor);
 
 //  timer_check();
 
