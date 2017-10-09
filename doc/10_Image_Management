@@ -1,8 +1,9 @@
 
-Checksum performance:
 
-Simple Checksum.sum32_aligned
-Simple Checksum.sum8
+8. Checksum performance:
+
+(32) Simple Checksum.sum32_aligned
+(8)  Simple Checksum.sum8
 
 units some form of uSecs, T32 timer, main DCO 16MiHz
 
@@ -23,3 +24,13 @@ units some form of uSecs, T32 timer, main DCO 16MiHz
 
     128KiB      30724                   15370
     128KiB      114700
+
+
+Note: We currently use a 32 bit checksum for performance to verify the
+entire image.  It performance is good enough (ie. fast enough) for now.
+
+Included in the image is the image_info and its contents is verified by the
+image checksum.
+
+If we need to go to a faster method, ie. vector check, the image_info is no
+longer verified by the checksum and we will need to revisit this.
