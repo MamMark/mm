@@ -9,6 +9,10 @@ When a Panic or Crash occurs, the Tag s/w will write machine state and
 any other information needed to describe the crash to a special area
 on the Tag's uSD.
 
+We make use of the work done by Adam Green on CrashCatcher/CrashDebug.
+(see https://github.com/adamgreen/Crash{Catcher,Debug}).  We use a modified
+format that includes Panic information and image_info.
+
 sector = 512 bytes
 
 
@@ -28,6 +32,12 @@ A Panic block is a single collection of all the information collected
 about the machine state for a single crash.
 
 A block includes the following information:
+
+-1) Panic information, Subsystem, Where, a0-3.
+
+0) image_info for image running.  Do we want image_info for both
+   gold and nib?   Or just the image running.  Image running is
+   probably sufficient.
 
 a) cpu state:
 
@@ -229,4 +239,36 @@ FPCA  - Floating Point Context Active
 
 In Handler mode, processor is always privileged and always on the MSP.
 
+
+Panic Block:
+
+A single instance of full machine state.  Needs to include Panic Info,
+Image Info, and machine state.
+
+Panic Info: Subsystem, Where, Arg0 ...  Arg3
+                1        1     4   4  4  4
+
+time stamp?
+
+Image_Info for running image (from image running)
+
+CPU state:  (CrashCatcher/Debug format)
+  4    signature
+  4    flags
+ 16    R0 - R3
+ 32    R4 - R11
+  4    R12
+  4    SP
+  4    LR
+  4    PC
+  4    PSR
+       [floating point], if FPCA == 1 (in flags)
+       32 x 4 bytes (128 bytes)
+
+[Memory Regions]
+64K RAM
+
+Peripherals
+
+FaultStatusRegisters
 
