@@ -114,7 +114,13 @@ implementation {
     RSTCTL->CSRESET_CLR = 1;
     others |= cur & ~(OW_CS_DCORSHT_BIT);
 
-    if (cur & OW_CS_DCORSHT_BIT)      gather |= RST_DCORSHT;
+    if (cur & OW_CS_DCORSHT_BIT)      gather |= RST_DCOSHORT;
+
+    cur = CS->IFG;
+    CS->CLRIFG = (CS_IFG_DCOR_OPNIFG | CS_IFG_DCOR_SHTIFG);
+
+    if (cur & CS_IFG_DCOR_OPNIFG)     gather |= RST_DCOOPEN;
+    if (cur & CS_IFG_DCOR_SHTIFG)     gather |= RST_DCOSHORT;
 
     return gather;
   }
