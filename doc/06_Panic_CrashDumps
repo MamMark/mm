@@ -143,7 +143,7 @@ Exception Stack Frame:
     ...
     (aligner)
     FPSCR (64 bits)
-    S15
+    S15                 S16-S31 are callee saved
      .
      .
      .
@@ -156,6 +156,18 @@ Exception Stack Frame:
     R2
     R1
     R0
+
+
+xPSR: 31 30 29 28 27  26-25 24 23-20 19-16 15-10  9    8-0
+       N  V  C  V  Q ICI/IT  T         GE  ICI/IT S  exception
+
+APSR:  N  V  C  V  Q                   GE
+IPSR:                                               exception
+EPSR:                ICI/IT  T             ICI/IT
+
+S = 1 if stack adjusted for alignment.  On exception entry if SCB->CCR.STKALIGN is
+set, make sure that on entry the stack is 8-byte aligned.  If a pad word was added
+then bit 9 of the xPSR will be set.
 
 
 EXC_RTN: Exception Return
@@ -183,7 +195,38 @@ EXC_RTN: Exception Return
                         uses non-FP state from PSP
                         uses PSP after return
 
+Exception return bits fields:
     bit 4       bit 3       bit 2           bit 1       bit 0
     FP state    return mode return stack    reserved    Process state
     FP/nFP      H/T         M/P             must be 0   ARM/Thumb (set to 1)
      0/1        0/1         0/1             0             0/1
+
+bit 4: Stack Frame Type.
+       1 - 8 words
+       0 - 26 words.
+
+bit 3: Return Mode
+       1 - return to Thread Mode.
+       0 - return to Handler Mode.
+
+bit 2: Return Stack.
+       1 - return with PSP
+       0 - return with MSP
+
+bit 1: must be 0
+
+bit 0: must be 1, Thumb only.
+
+
+CONTROL register: 31-3 2 1 0
+                       | | +- nPriv
+                       | + -- SPSEL
+                       +----- FPCA
+
+nPriv - privileged level, thread priv level, 0 privileged in Thread mode.
+SPSEL - stack selecte, 0 - MSP, 1 - PSP
+FPCA  - Floating Point Context Active
+
+In Handler mode, processor is always privileged and always on the MSP.
+
+
