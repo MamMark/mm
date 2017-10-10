@@ -7,12 +7,14 @@ from binascii import hexlify
 #   sudo pip install future
 #   sudo pip install construct==2.5.2
 #
-# then copy files into gdb directory
+# copy gdb_si446x.py to <app>/.gdb_si446x.py
+# and add "source ../../.gdb_si446x.py" to the <app>/.gdbinit file.
 #
-# /usr/gcc-arm-none-eabi-4_9-2015q3/arm-none-eabi/share/gdb/
-# gdb_si446x.py
-# si446xdef.py
-#
+# also copy si446xdef.py into the gdb data directory
+#    "/usr/gcc-arm-none-eabi-4_9-2015q3/arm-none-eabi/share/gdb/python"
+#    this install should happen on a TagNet tree install.
+#    or add this copy into the mm/tools/00_gdb/copy_gdb which will check
+#    for correct source and permissions.
 
 # convert byte array into hexlify'd string
 #  with space between every two bytes (4 hex chars)
@@ -29,7 +31,6 @@ def get_spi_hex_helper(rb):
         x += r
     return r_s
 
-#
 def get_cmd_structs(cmd):
     for k,v in radio_config_cmd_ids.encoding.iteritems():
         if (v == cmd):
