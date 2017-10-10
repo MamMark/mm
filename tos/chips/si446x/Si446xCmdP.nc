@@ -244,7 +244,7 @@ implementation {
   /*
    * Trace Radio SPI bus transfer event
    */
-  void ll_si446x_spi_trace(spi_trace_record_t op, uint8_t id, uint8_t *b, uint8_t l) {
+  void ll_si446x_spi_trace(spi_trace_record_t op, uint8_t id, uint8_t *b, uint16_t l) {
     spi_trace_desc_t    *rspi;
     uint16_t            x;
 
