@@ -953,11 +953,11 @@ implementation {
 
     cmd[0] = SI446X_CMD_CHANGE_STATE;
     cmd[1] = state;                          // new state
-    ro = ll_si446x_read_frr(SI446X_GET_DEVICE_STATE);
+    ro = call Si446xCmd.fast_device_state();
     ll_si446x_send_cmd(cmd, sizeof(cmd));
     if (wait)
       ll_wait_for_cts();           // wait for command to complete
-    rn = ll_si446x_read_frr(SI446X_GET_DEVICE_STATE);
+    rn = call Si446xCmd.fast_device_state();
     ll_si446x_trace(T_RC_CHG_STATE, ro, rn);
     return rn;
   }
