@@ -585,7 +585,6 @@ implementation {
         cp = (void *) config_prop_ptr;
         continue;
       }
-      nop();
       // power up and frr control are handled elsewhere
       if (!( (cp[0] == SI446X_CMD_POWER_UP) ||
             ((cp[0] == SI446X_CMD_SET_PROPERTY) && (cp[1] == 2 /* FRR_CTL */))) ) {
@@ -875,7 +874,7 @@ implementation {
    */
   void pull_rx() {
     uint8_t  *dp;
-    uint16_t  tx_len, rx_len;
+    uint16_t  tx_len, rx_len, x, y;
     uint16_t  max_delta;
 
     dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
@@ -885,9 +884,10 @@ implementation {
     max_delta = sizeof(global_ioc.pRxMsg->header) + sizeof(global_ioc.pRxMsg->data);
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
     if (rx_len == 0 || global_ioc.rx_ff_index + rx_len > max_delta) {
-      call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
-      __PANIC_RADIO(10, global_ioc.rx_ff_index, rx_len, tx_len, (parg_t) dp);
+      call Si446xCmd.fifo_info(&x, &y, 0);
+      __PANIC_RADIO(10, global_ioc.rx_ff_index, rx_len, ((uint32_t) x) << 16 | y, (parg_t) dp);
     }
+
     call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
     global_ioc.rx_ff_index += rx_len;
   }
