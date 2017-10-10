@@ -11,6 +11,18 @@ o review getclr_int_status
 o review exceptions again.  and exception gdb command
 
 
+
+- Anomalies
+
+o From Base Station, we send 0x50 01 - 0x4f  (short 1 byte)
+  we receive the first chunk (rx_thresh is 0x19 (25)) and we pause (nop)
+  we see rx_len (fifo_info) of 0x19, we then read fifo_info again and we
+  see rx_len of 0x50 (80 bytes).  Eh?
+
+  when we read all 0x50 we see 0x50 01 - 0x4f (which is what was sent and
+  appears to be in the FIFO).
+
+
 - Receive timing
 
   how long does SpiBlock.transfer actually take.  What is the
