@@ -1294,19 +1294,26 @@ implementation {
    *
    * Interrupt Priority:
    *
-   * invalid_sync  - reset rx
-   *
    * preamble_detect
+   * invalid_sync
    * sync_detect
+   * crc_error
+   * fifo_over/underrun (fifo_ou_run)
    *
    * rx_thresh
    * tx_thresh
    * packet_rx
    * packet_sent
    *
-   * crc_error
    */
   fsm_event_t get_next_interrupt_event(volatile si446x_int_state_t *isp) {
+
+    /*
+     * CMD_ERR
+     */
+    if (isp->chip_pend & SI446X_CHIP_STATUS_CMD_ERROR)
+      __PANIC_RADIO(18, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
+
     if (isp->modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
       isp->modem_pend ^= SI446X_MODEM_STATUS_PREAMBLE_DETECT;
       return E_PREAMBLE_DETECT;
@@ -1321,9 +1328,11 @@ implementation {
     }
     if (isp->ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
       isp->ph_pend ^= SI446X_PH_STATUS_CRC_ERROR;
-//      // ignore the rx complete & thresh flags since crc error will drive state change
-//      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL + SI446X_PH_STATUS_PACKET_RX;
       return E_CRC_ERROR;
+    }
+    if (isp->chip_pend & SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR) {
+      isp->chip_pend ^= SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR;
+      return E_FIFO_OU_RUN;
     }
     if (isp->ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
       isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
@@ -1340,15 +1349,6 @@ implementation {
     if (isp->ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
       isp->ph_pend ^= SI446X_PH_STATUS_PACKET_SENT;
       return E_PACKET_SENT;
-    }
-    if (isp->chip_pend & SI446X_CHIP_STATUS_CMD_ERROR) {
-#ifdef notdef
-      // should read chip status to get command error info
-      call Si446xCmd.dump_radio();
-      __PANIC_RADIO(18, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
-#endif
-      isp->chip_pend ^= SI446X_CHIP_STATUS_CMD_ERROR;
-      return E_NONE;
     }
     if (isp->modem_pend & SI446X_MODEM_STATUS_RSSI) {
       isp->modem_pend ^= SI446X_MODEM_STATUS_RSSI;
