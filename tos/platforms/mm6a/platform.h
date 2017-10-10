@@ -48,7 +48,7 @@
  * Which on the wire looks like a length of 0xFD.  But above the PHY layer
  * looks like 0xFE.
  */
-#define TOSH_DATA_LENGTH=250
+#define TOSH_DATA_LENGTH 250
 #define GPS_EAVESDROP
 
 #include <panic.h>
