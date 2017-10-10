@@ -946,7 +946,7 @@ implementation {
    * @return    final state achieved
    */
 
-  async command Si446x_device_state_t Si446xCmd.change_state(Si446x_device_state_t state, bool wait) {
+  async command si446x_device_state_t Si446xCmd.change_state(si446x_device_state_t state, bool wait) {
     uint8_t cmd[2];
     uint8_t ro, rn;
 

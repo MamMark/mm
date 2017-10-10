@@ -26,7 +26,7 @@ interface Si446xCmd {
    * @param     state         desired radio chip state
    * @param     wait          true if need to wait for command processing to complete
    */
-  async command Si446x_device_state_t change_state(Si446x_device_state_t state, bool wait);
+  async command si446x_device_state_t change_state(si446x_device_state_t state, bool wait);
 
   /**
    * Perform Clear Channel Assessment.

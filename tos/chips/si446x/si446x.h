@@ -471,7 +471,7 @@ typedef enum {
 	_RX_TUNE_   = 6,
 	_TRANSMIT   = 7,
 	_RECEIVE_   = 8,
-} Si446x_idevice_state_t;
+} si446x_idevice_state_t;
 
 typedef enum {
 	RC_NO_STATE   = 0,
@@ -483,7 +483,7 @@ typedef enum {
 	RC_RX_TUNE    = 6,
 	RC_TRANSMIT   = 7,
 	RC_RECEIVE    = 8,
-} Si446x_device_state_t;
+} si446x_device_state_t;
 
 //#define SI446X_CMD_READ_BUFF                  0x44
 #define SI446X_REPLY_CTS                      0xff
@@ -1111,7 +1111,7 @@ typedef struct {
   uint8_t  cts;
   uint8_t  irqn;
   uint8_t  csn;
-  Si446x_device_state_t  ds;
+  si446x_device_state_t  ds;
   uint8_t  ph;
   uint8_t  modem;
   uint8_t  rssi;

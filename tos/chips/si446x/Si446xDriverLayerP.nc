@@ -240,7 +240,7 @@ implementation {
     uint16_t               ph;
     uint16_t               modem;
     uint16_t               chip;
-    Si446x_device_state_t  ds;
+    si446x_device_state_t  ds;
     uint16_t               rssi;
     fsm_event_t            ev;
     fsm_state_t            cs;
@@ -1318,7 +1318,7 @@ implementation {
   typedef struct int_trace {
     uint32_t               time_stamp;
     uint16_t               delta;
-    Si446x_idevice_state_t ds;
+    si446x_idevice_state_t ds;
     uint8_t                ph_pend;
     uint8_t                modem_pend;
     uint8_t                chip_pend;
