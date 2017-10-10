@@ -149,7 +149,34 @@ class RadioGroups (gdb.Command):
             print grp, bgrp, str, r_s
             print radio_display_structs[str](str, r_a)
 
+class RadioContext (gdb.Command):
+    """ Dump out radio context, error counters etc."""
+    def __init__ (self):
+        super (RadioContext, self).__init__("radiocontext", gdb.COMMAND_USER)
 
-RadioGroups ()
-RadioSPI ()
-RadioFSM ()
+    def invoke (self, args, from_tty):
+        rd = gdb.parse_and_eval('Si446xDriverLayerP__global_ioc')
+        st = "pRxMsg:\t\t{}\tpTxMsg:\t\t{}".format(rd['pRxMsg'], rd['pTxMsg'])
+        print st
+        print "rc_readys:\t\t" + str(rd['rc_readys'])
+        print "tx_packets:\t\t" + str(rd['tx_packets'])
+        print "tx_reports:\t\t" + str(rd['tx_reports'])
+        print "tx_timeouts:\t\t" + str(rd['tx_timeouts'])
+        print "tx_underruns:\t\t" + str(rd['tx_underruns'])
+        print
+        print "rx_packets:\t\t" + str(rd['rx_packets'])
+        print "rx_reports:\t\t" + str(rd['rx_reports'])
+        print "rx_bad_crcs:\t\t" + str(rd['rx_bad_crcs'])
+        print "rx_timeouts:\t\t" + str(rd['rx_timeouts'])
+        print "rx_inv_syncs:\t\t" + str(rd['rx_inv_syncs'])
+        print "rx_errors:\t\t" + str(rd['rx_errors'])
+        print
+        print "rx_overruns:\t\t" + str(rd['rx_overruns'])
+        print "rx_active_overruns:\t\t" + str(rd['rx_active_overruns'])
+        print "rx_crc_overruns:\t\t" + str(rd['rx_crc_overruns'])
+        print "rx_crc_packet_rx:\t\t" + str(rd['rx_crc_packet_rx'])
+
+RadioGroups()
+RadioSPI()
+RadioFSM()
+RadioContext()
