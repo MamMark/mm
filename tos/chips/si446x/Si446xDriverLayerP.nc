@@ -164,11 +164,21 @@ implementation {
     uint32_t                          tx_reports;
     uint32_t                          rx_packets;
     uint32_t                          rx_reports;
+
     uint16_t                          tx_timeouts;
-    uint16_t                          rx_bad_crcs;
+    uint16_t                          tx_underruns;    // tx active, fifo underrun, oops
+
+    uint16_t                          rx_bad_crcs;     /* active to crc_flush */
     uint16_t                          rx_timeouts;
     uint16_t                          rx_inv_syncs;
     uint16_t                          rx_errors;
+
+    uint16_t                          rx_overruns;     // inbound overuns, hw
+    uint16_t                          rx_active_overruns; // active fifo overrun
+    uint16_t                          rx_crc_overruns;    // crc_flush fifo overrun
+
+    uint16_t                          rx_crc_packet_rx;   // crc_flush packet_rx, weird
+
     uint16_t                          nops;
     uint16_t                          unshuts;
     uint8_t                           channel;         // current channel setting
@@ -932,6 +942,7 @@ implementation {
   fsm_result_t a_rx_flush(fsm_transition_t *t) {
     uint16_t rx_len, tx_len;
 
+    global_ioc.rx_crc_packet_rx++;
     stop_alarm();
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
     if (rx_len)                         /* something else to grab */
