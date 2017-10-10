@@ -1,3 +1,16 @@
+
+o try out unified fifo
+o RSSI_LATCH int set when RSSI exceeds MODEM_RSSI_THRESH prop.  What to use it for?
+o how do we program RSSI_LATCH?
+o really need chip_pend in interrupt tracing
+
+o add check for reasonable device_state in a_rx_on.
+  check device state (must be READY) before we do a start_rx
+o review getclr_int_status
+
+o review exceptions again.  and exception gdb command
+
+
 - Receive timing
 
   how long does SpiBlock.transfer actually take.  What is the
