@@ -1,10 +1,10 @@
 
 # to launch msp432-gdb
 # M-x gdb
-# arm-none-eabi-gdb-py -i=mi -iex "target remote localhost:2331" main.exe
+# arm-none-eabi-gdb-py -i=mi -iex "target remote localhost:2331" -cd build/<target>/ main.exe
 
 # (setq make-command ". ~/.environment_bash; make dev6a")
-# (setq gud-gdb-command-name "arm-none-eabi-gdb-py -i=mi -iex \\"target remote localhost:2331\\" main.exe")
+# (setq gud-gdb-command-name "arm-none-eabi-gdb-py -i=mi -iex \\"target remote localhost:2331\\" -cd build/dev6a/ main.exe")
 #
 # 2331 is Jlink
 # 55000 is TI's gdb-agent-console, gag
