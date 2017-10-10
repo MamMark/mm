@@ -17,6 +17,7 @@ typedef enum {
   E_NONE = 0,
   E_CONFIG_DONE,
   E_CRC_ERROR,
+  E_FIFO_OU_RUN,
   E_INVALID_SYNC,
   E_PACKET_RX,
   E_PACKET_SENT,
@@ -35,7 +36,6 @@ typedef enum {
   A_BREAK = 0,
   A_CLEAR_SYNC,
   A_CONFIG,
-  A_FLUSH_RX_FIFO,
   A_NOP,
   A_PWR_DN,
   A_PWR_UP,
@@ -45,6 +45,7 @@ typedef enum {
   A_RX_DRAIN_FF,
   A_RX_FETCH_FF,
   A_RX_FLUSH,
+  A_RX_OVERRUN_RESET,
   A_RX_START,
   A_RX_TIMEOUT,
   A_STANDBY,
@@ -52,6 +53,7 @@ typedef enum {
   A_TX_FILL_FF,
   A_TX_START,
   A_TX_TIMEOUT,
+  A_TX_UNDERRUN_RESET,
   A_UNSHUT,
 } fsm_action_t;
 
@@ -69,6 +71,7 @@ typedef struct {
 const fsm_transition_t fsm_e_0nop[];
 const fsm_transition_t fsm_e_config_done[];
 const fsm_transition_t fsm_e_crc_error[];
+const fsm_transition_t fsm_e_fifo_ou_run[];
 const fsm_transition_t fsm_e_invalid_sync[];
 const fsm_transition_t fsm_e_packet_rx[];
 const fsm_transition_t fsm_e_packet_sent[];
@@ -84,7 +87,6 @@ const fsm_transition_t fsm_e_wait_done[];
 
 fsm_result_t a_clear_sync(fsm_transition_t *t);
 fsm_result_t a_config(fsm_transition_t *t);
-fsm_result_t a_flush_rx_fifo(fsm_transition_t *t);
 fsm_result_t a_nop(fsm_transition_t *t);
 fsm_result_t a_pwr_dn(fsm_transition_t *t);
 fsm_result_t a_pwr_up(fsm_transition_t *t);
@@ -94,6 +96,7 @@ fsm_result_t a_rx_cnt_crc(fsm_transition_t *t);
 fsm_result_t a_rx_drain_ff(fsm_transition_t *t);
 fsm_result_t a_rx_fetch_ff(fsm_transition_t *t);
 fsm_result_t a_rx_flush(fsm_transition_t *t);
+fsm_result_t a_rx_overrun_reset(fsm_transition_t *t);
 fsm_result_t a_rx_start(fsm_transition_t *t);
 fsm_result_t a_rx_timeout(fsm_transition_t *t);
 fsm_result_t a_standby(fsm_transition_t *t);
@@ -101,6 +104,7 @@ fsm_result_t a_tx_cmp(fsm_transition_t *t);
 fsm_result_t a_tx_fill_ff(fsm_transition_t *t);
 fsm_result_t a_tx_start(fsm_transition_t *t);
 fsm_result_t a_tx_timeout(fsm_transition_t *t);
+fsm_result_t a_tx_underrun_reset(fsm_transition_t *t);
 fsm_result_t a_unshut(fsm_transition_t *t);
 
 const fsm_transition_t fsm_e_tx_thresh[] = {
@@ -109,7 +113,6 @@ const fsm_transition_t fsm_e_tx_thresh[] = {
 };
 
 const fsm_transition_t fsm_e_invalid_sync[] = {
-  {S_RX_ON, A_CLEAR_SYNC, S_RX_ON},
   {S_RX_ACTIVE, A_CLEAR_SYNC, S_RX_ON},
   { S_DEFAULT, A_BREAK, S_DEFAULT },
 };
@@ -133,6 +136,13 @@ const fsm_transition_t fsm_e_packet_sent[] = {
 
 const fsm_transition_t fsm_e_transmit[] = {
   {S_RX_ON, A_TX_START, S_TX_ACTIVE},
+  { S_DEFAULT, A_BREAK, S_DEFAULT },
+};
+
+const fsm_transition_t fsm_e_fifo_ou_run[] = {
+  {S_RX_ACTIVE, A_RX_OVERRUN_RESET, S_RX_ON},
+  {S_TX_ACTIVE, A_TX_UNDERRUN_RESET, S_RX_ON},
+  {S_CRC_FLUSH, A_RX_OVERRUN_RESET, S_RX_ON},
   { S_DEFAULT, A_BREAK, S_DEFAULT },
 };
 
@@ -180,7 +190,6 @@ const fsm_transition_t fsm_e_preamble_detect[] = {
 };
 
 const fsm_transition_t fsm_e_sync_detect[] = {
-  {S_RX_ON, A_FLUSH_RX_FIFO, S_RX_ON},
   {S_RX_ACTIVE, A_NOP, S_RX_ACTIVE},
   { S_DEFAULT, A_BREAK, S_DEFAULT },
 };
@@ -194,4 +203,4 @@ const fsm_transition_t fsm_e_turnoff[] = {
 };
 
 const fsm_transition_t *fsm_events_group[] = {
-fsm_e_0nop,  fsm_e_config_done,  fsm_e_crc_error,  fsm_e_invalid_sync,  fsm_e_packet_rx,  fsm_e_packet_sent,  fsm_e_preamble_detect,  fsm_e_rx_thresh,  fsm_e_standby,  fsm_e_sync_detect,  fsm_e_transmit,  fsm_e_turnoff,  fsm_e_turnon,  fsm_e_tx_thresh,  fsm_e_wait_done,  };
+fsm_e_0nop,  fsm_e_config_done,  fsm_e_crc_error,  fsm_e_fifo_ou_run,  fsm_e_invalid_sync,  fsm_e_packet_rx,  fsm_e_packet_sent,  fsm_e_preamble_detect,  fsm_e_rx_thresh,  fsm_e_standby,  fsm_e_sync_detect,  fsm_e_transmit,  fsm_e_turnoff,  fsm_e_turnon,  fsm_e_tx_thresh,  fsm_e_wait_done,  };

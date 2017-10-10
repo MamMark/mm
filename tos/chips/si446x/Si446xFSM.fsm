@@ -1,193 +1,199 @@
 <?xml version='1.0'?>
 <!DOCTYPE qfsmproject SYSTEM 'qfsm.dtd'>
 <qfsmproject version="0.54" author="Qfsm">
-  <machine nummooreout="0" transfontitalic="0" draw_it="1" statefontsize="10" transfont="Ubuntu" statefontitalic="0" author="" description="" version="1.1" name="Si446x_FSM" arrowtype="3" numbits="4" statefontweight="75" statefont="Ubuntu" numin="0" transfontsize="9" transfontweight="63" type="2" numout="0" initialstate="4">
+  <machine nummooreout="0" transfontitalic="0" draw_it="1" statefontsize="10" transfont="Ubuntu" statefontitalic="0" author="" description="" version="1.2" name="Si446x_FSM" arrowtype="4" numbits="4" statefontweight="75" statefont="Ubuntu" numin="0" transfontsize="9" transfontweight="63" type="2" numout="0" initialstate="4">
     <outputnames_moore></outputnames_moore>
     <inputnames></inputnames>
     <outputnames></outputnames>
     <itransition ypos="540" endx="362" xpos="302" endy="540"/>
     <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="540" code="4" xpos="412" linewidth="1">SDN</state>
     <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="229" code="0" xpos="674" linewidth="1">POR_W</state>
-    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="225" code="3" xpos="1314" linewidth="1">CONFIG_W</state>
-    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="504.0000000000001" code="1" xpos="1555" linewidth="1">RX_ON</state>
-    <state pencolor="0" exit_actions="" radius="53" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="1063" code="5" xpos="1410" linewidth="1">RX_ACTIVE</state>
-    <state pencolor="0" exit_actions="" radius="53" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="642.48" code="6" xpos="977.12" linewidth="1">TX_ACTIVE</state>
-    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="380" code="7" xpos="830.08" linewidth="1">STANDBY</state>
-    <state pencolor="0" exit_actions="" radius="55" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="138.4" code="2" xpos="1014.32" linewidth="1">PWR_UP_W</state>
-    <state pencolor="0" exit_actions="" radius="53" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="874" code="8" xpos="1143.04" linewidth="1">CRC_FLUSH</state>
+    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="88" code="3" xpos="1505" linewidth="1">CONFIG_W</state>
+    <state pencolor="0" exit_actions="" radius="100" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="391" code="1" xpos="1789" linewidth="1">RX_ON</state>
+    <state pencolor="0" exit_actions="" radius="60" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="1159.166666666667" code="5" xpos="1914.166666666667" linewidth="1">RX_ACTIVE</state>
+    <state pencolor="0" exit_actions="" radius="53" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="607" code="6" xpos="935" linewidth="1">TX_ACTIVE</state>
+    <state pencolor="0" exit_actions="" radius="50" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="387" code="7" xpos="764.08" linewidth="1">STANDBY</state>
+    <state pencolor="0" exit_actions="" radius="55" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="81" code="2" xpos="971" linewidth="1">PWR_UP_W</state>
+    <state pencolor="0" exit_actions="" radius="53" description="" finalstate="0" entry_actions="" moore_outputs="" ypos="881" code="8" xpos="1665" linewidth="1">CRC_FLUSH</state>
     <transition c1x="397.016563623803" c2y="314.2753460216857" c1y="388.6906651277133" description="" straight="0" type="2" ypos="490.6803038083928" endx="631.5471698113207" xpos="403.7800506347322" endy="255.4150943396226" c2x="543.8965175913133">
       <from>4</from>
       <to>0</to>
       <inputs default="0" any="0" invert="0">TURNON</inputs>
       <outputs>unshut</outputs>
     </transition>
-    <transition c1x="673.600069469504" c2y="500.7654118340602" c1y="543.9480748027264" description="" straight="0" type="2" ypos="554.2197509185654" endx="785.2934497994124" xpos="459.9353594313629" endy="402.2298205375178" c2x="616.5975555752165">
+    <transition c1x="588.3880562207128" c2y="416.5597973312003" c1y="546.8897741248829" description="" straight="0" type="2" ypos="554.2197509185654" endx="719.2934497994124" xpos="459.9353594313629" endy="409.2298205375178" c2x="630.8407530100626">
       <from>4</from>
       <to>7</to>
       <inputs default="0" any="0" invert="0">STANDBY</inputs>
       <outputs>config</outputs>
     </transition>
-    <transition c1x="801.6936841411664" c2y="129.822823192226" c1y="158.3051673129101" description="" straight="0" type="2" ypos="208.215736457334" endx="959.3803254096589" xpos="719.4754262100864" endy="135.8247027535778" c2x="841.5188467023643">
+    <transition c1x="801.6936841411664" c2y="169.502454670775" c1y="158.3051673129101" description="" straight="0" type="2" ypos="208.215736457334" endx="923.7079890887596" xpos="719.4754262100864" endy="109.079631478549" c2x="850.9068357911239">
       <from>0</from>
       <to>2</to>
       <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
       <outputs>pwr_up</outputs>
     </transition>
-    <transition c1x="1459.294590023198" c2y="336.0569524207091" c1y="297.8814108113646" description="" straight="0" type="2" ypos="237.1934920342661" endx="1548.922940477375" xpos="1362.490398554872" endy="454.3706805652297" c2x="1497.944170544828">
+    <transition c1x="1679.123994245801" c2y="225.5074051613137" c1y="122.4374279498562" description="" straight="0" type="2" ypos="101.7360563948689" endx="1798.4809092628" xpos="1553.076197382041" endy="291.4504527406048" c2x="1754.425079807628">
       <from>3</from>
       <to>1</to>
       <inputs default="0" any="0" invert="0">CONFIG_DONE</inputs>
       <outputs>ready</outputs>
     </transition>
-    <transition c1x="1115.167176133304" c2y="208.48545387099" c1y="193.0074521630502" description="" straight="0" type="2" ypos="458.6908430002367" endx="444.3824210047771" xpos="1533.855726733444" endy="501.9030341120271" c2x="738.2951232212033">
+    <transition c1x="1725.560045074264" c2y="132.48545387099" c1y="132.8937366241689" description="" straight="0" type="2" ypos="294.8862844611188" endx="444.3824210047771" xpos="1761.39286894096" endy="501.9030341120271" c2x="619.2951232212033">
       <from>1</from>
       <to>4</to>
       <inputs default="0" any="0" invert="0">TURNOFF</inputs>
       <outputs>pwr_dn</outputs>
     </transition>
-    <transition c1x="1293.41014590721" c2y="439.5654905339743" c1y="466.8874341074595" description="" straight="1" type="2" ypos="494.2093776809447" endx="868.2945741753946" xpos="1505.967931773118" endy="412.2435469604891" c2x="1080.852360041302">
+    <transition c1x="1537.456333853" c2y="255.570581146939" c1y="215.7830452517471" description="" straight="0" type="2" ypos="326.5527943973761" endx="812.5070466211251" xpos="1712.537213691802" endy="374.5572850408209" c2x="1053.882500635322">
       <from>1</from>
       <to>7</to>
       <inputs default="0" any="0" invert="0">STANDBY</inputs>
       <outputs>standby</outputs>
     </transition>
-    <transition c1x="1273.717620463198" c2y="512.420717832489" c1y="506.070391367864" description="" straight="0" type="2" ypos="508.7645444695727" endx="1012.519216314195" xpos="1505.227526523213" endy="603.0351589641832" c2x="1172.523678559187">
+    <transition c1x="1518.315937221009" c2y="270.9437632214061" c1y="312.8352120952339" description="" straight="0" type="2" ypos="352.76482072737" endx="947.614402243805" xpos="1696.598316757811" endy="555.5230453889171" c2x="1056.138080802992">
       <from>1</from>
       <to>6</to>
       <inputs default="0" any="0" invert="0">TRANSMIT</inputs>
       <outputs>tx_start</outputs>
     </transition>
-    <transition c1x="1875.527596243146" c2y="1094.892851128001" c1y="602.4666151238503" description="" straight="0" type="2" ypos="495.5046541746176" endx="1462.99726888591" xpos="1604.273005787217" endy="1062.461956661057" c2x="1719.854914031462">
+    <transition c1x="2286.673842178886" c2y="1009.337814667908" c1y="445.5335084249375" description="" straight="0" type="2" ypos="373.6006144273011" endx="1973.647952626064" xpos="1887.47467380851" endy="1151.294143524982" c2x="2180.739662540101">
       <from>1</from>
       <to>5</to>
       <inputs default="0" any="0" invert="0">PREAMBLE_DETECT</inputs>
       <outputs>rx_start</outputs>
     </transition>
-    <transition c1x="1606.67597881951" c2y="474.5265296519735" c1y="318.1374801123342" description="" straight="0" type="2" ypos="462.0778191849682" endx="1597.452830188679" xpos="1582.249417529771" endy="477.5849056603774" c2x="1760.332054969981">
-      <from>1</from>
-      <to>1</to>
-      <inputs default="0" any="0" invert="0">SYNC_DETECT</inputs>
-      <outputs>flush_rx_fifo</outputs>
-    </transition>
-    <transition c1x="1453.097730052809" c2y="397.7714431801771" c1y="270.0472655453543" description="" straight="0" type="2" ypos="454.6803038083929" endx="1602.530272824549" xpos="1563.219949365268" endy="488.479910914433" c2x="2055.859795606531">
-      <from>1</from>
-      <to>1</to>
-      <inputs default="0" any="0" invert="0">INVALID_SYNC</inputs>
-      <outputs>clear_sync</outputs>
-    </transition>
-    <transition c1x="854.392060779782" c2y="934.1614213658867" c1y="1043.624626784418" description="" straight="0" type="2" ypos="1082.683705846768" endx="426.2738293300083" xpos="1360.790735383081" endy="587.9192841793134" c2x="580.1475885112225">
-      <from>5</from>
-      <to>4</to>
-      <inputs default="0" any="0" invert="0">TURNOFF</inputs>
-      <outputs>pwr_dn</outputs>
-    </transition>
-    <transition c1x="645.6120556509159" c2y="656.7318059184749" c1y="1038.88060502323" description="" straight="0" type="2" ypos="1057.927242447855" endx="808.8346431493065" xpos="1357.243321457685" endy="425.2618472036514" c2x="728.867785835555">
-      <from>5</from>
-      <to>7</to>
-      <inputs default="0" any="0" invert="0">STANDBY</inputs>
-      <outputs>standby</outputs>
-    </transition>
-    <transition c1x="1431.689639588346" c2y="1143.179807908166" c1y="1213.976342344673" description="" straight="0" type="2" ypos="1115.383699975483" endx="1372.074567088318" xpos="1418.059030765459" endy="1100.022446413784" c2x="1296.20438212289">
-      <from>5</from>
-      <to>5</to>
-      <inputs default="0" any="0" invert="0">RX_THRESH</inputs>
-      <outputs>rx_fetch_ff</outputs>
-    </transition>
-    <transition c1x="1461.646483690078" c2y="620.2042360576662" c1y="883.7221045454176" description="" straight="0" type="2" ypos="1014.649714720023" endx="1565.476454436544" xpos="1431.708291350194" endy="552.8901207038706" c2x="1671.754706843277">
-      <from>5</from>
-      <to>1</to>
-      <inputs default="0" any="0" invert="0">PACKET_RX</inputs>
-      <outputs>rx_cmp</outputs>
-    </transition>
-    <transition c1x="1588.261709921381" c2y="581.9931948428258" c1y="1049.423059558061" description="" straight="0" type="2" ypos="1026.936091733534" endx="1589.905006806477" xpos="1448.838055056194" endy="539.8000069810021" c2x="1726.162541086513">
-      <from>5</from>
-      <to>1</to>
-      <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
-      <outputs>rx_timeout</outputs>
-    </transition>
-    <transition c1x="1336.334606711651" c2y="980.6159473008482" c1y="912.1375735944109" description="" straight="0" type="2" ypos="1029.16819891149" endx="1183.093872851975" xpos="1369.20282809915" endy="908.7086051226186" c2x="1275.820650887035">
-      <from>5</from>
-      <to>8</to>
-      <inputs default="0" any="0" invert="0">CRC_ERROR</inputs>
-      <outputs>rx_cnt_crc</outputs>
-    </transition>
-    <transition c1x="1620.982900039555" c2y="1236.146185629708" c1y="1042.30305913041" description="" straight="0" type="2" ypos="1084.243398203045" endx="1440.697978006027" xpos="1458.556338749816" endy="1106.204561638112" c2x="1507.577202787329">
+    <transition c1x="2131.562668050537" c2y="1335.118584134513" c1y="1141.275457635215" description="" straight="0" type="2" ypos="1183.21579670785" endx="1951.277746017009" xpos="1969.136106760798" endy="1205.176960142917" c2x="2018.156970798311">
       <from>5</from>
       <to>5</to>
       <inputs default="0" any="0" invert="0">SYNC_DETECT</inputs>
       <outputs>nop</outputs>
     </transition>
-    <transition c1x="1353.904354847258" c2y="685.7645854724493" c1y="878.970163357962" description="" straight="0" type="2" ypos="1010.603201621001" endx="1547.760040994141" xpos="1402.026574159717" endy="553.4730532067052" c2x="1499.089563776123">
+    <transition c1x="2066.005347376931" c2y="445.2126740195627" c1y="935.772661676796" description="" straight="0" type="2" ypos="1104.240785125264" endx="1886.576475790566" xpos="1938.315114585732" endy="412.8822158908353" c2x="2040.454529425513">
+      <from>5</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
+      <outputs>rx_timeout</outputs>
+    </transition>
+    <transition c1x="1864.355294542418" c2y="699.9306078104506" c1y="972.8334916160183" description="" straight="0" type="2" ypos="1105.14572949615" endx="1805.439898730536" xpos="1888.05654703425" endy="489.6393923832144" c2x="1848.157169582655">
       <from>5</from>
       <to>1</to>
       <inputs default="0" any="0" invert="0">INVALID_SYNC</inputs>
       <outputs>clear_sync</outputs>
     </transition>
-    <transition c1x="1223.996242290185" c2y="587.1463487171754" c1y="545.8237434689077" description="" straight="0" type="2" ypos="622.7016065138779" endx="1508.332719689847" xpos="1026.291283805775" endy="521.9489539654435" c2x="1288.204480990016">
-      <from>6</from>
+    <transition c1x="1958.18478628594" c2y="618.0887436268163" c1y="906.0858441736107" description="" straight="0" type="2" ypos="1099.191855584653" endx="1869.856295579407" xpos="1912.428266345449" endy="449.8409675751132" c2x="1952.016948391231">
+      <from>5</from>
       <to>1</to>
-      <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
-      <outputs>tx_timeout</outputs>
+      <inputs default="0" any="0" invert="0">PACKET_RX</inputs>
+      <outputs>rx_cmp</outputs>
     </transition>
-    <transition c1x="914.7870023859948" c2y="483.8172588933732" c1y="540.9416802019382" description="" straight="1" type="2" ypos="598.0661015105032" endx="847.9623633303521" xpos="948.1993219138161" endy="426.6928375848082" c2x="881.3746828581734">
+    <transition c1x="1759.607486988472" c2y="876.3577258057135" c1y="1098.494056837604" description="" straight="0" type="2" ypos="1126.285091228014" endx="1717.627441089204" xpos="1863.978998891882" endy="887.2731526685038" c2x="1846.794631259564">
+      <from>5</from>
+      <to>8</to>
+      <inputs default="0" any="0" invert="0">CRC_ERROR</inputs>
+      <outputs>rx_cnt_crc</outputs>
+    </transition>
+    <transition c1x="1996.253522274788" c2y="1295.45311673389" c1y="1331.560575688222" description="" straight="0" type="2" ypos="1212.832298126662" endx="1888.405139322575" xpos="1940.999482396664" endy="1213.35470694217" c2x="1808.173921735242">
+      <from>5</from>
+      <to>5</to>
+      <inputs default="0" any="0" invert="0">RX_THRESH</inputs>
+      <outputs>rx_fetch_ff</outputs>
+    </transition>
+    <transition c1x="1562.564533161758" c2y="934.1614213658867" c1y="1274.07931987348" description="" straight="0" type="2" ypos="1203.288026422395" endx="426.2738293300083" xpos="1873.505805715309" endy="587.9192841793134" c2x="580.1475885112225">
+      <from>5</from>
+      <to>4</to>
+      <inputs default="0" any="0" invert="0">TURNOFF</inputs>
+      <outputs>pwr_dn</outputs>
+    </transition>
+    <transition c1x="1374.389667930732" c2y="657.2689764610833" c1y="1247.828360744579" description="" straight="0" type="2" ypos="1182.599657478037" endx="732.8374118225249" xpos="1858.931759754151" endy="426.0371705426084" c2x="568.2051976580798">
+      <from>5</from>
+      <to>7</to>
+      <inputs default="0" any="0" invert="0">STANDBY</inputs>
+      <outputs>standby</outputs>
+    </transition>
+    <transition c1x="1186.611180378409" c2y="549.5672770292988" c1y="1047.938075353757" description="" straight="0" type="2" ypos="1156.442207011548" endx="1701.67643262713" xpos="1854.228554254049" endy="439.7298120381744" c2x="1314.460473169436">
+      <from>5</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">FIFO_OU_RUN</inputs>
+      <outputs>rx_overrun_reset</outputs>
+    </transition>
+    <transition c1x="843.1875509194429" c2y="452.2374047707037" c1y="531.9117531406034" description="" straight="0" type="2" ypos="562.5861015105032" endx="804.4040089306965" xpos="906.0793219138161" endy="416.5630564008039" c2x="858.2957799250697">
       <from>6</from>
       <to>7</to>
       <inputs default="0" any="0" invert="0">STANDBY</inputs>
       <outputs>standby</outputs>
     </transition>
-    <transition c1x="723.8934360163083" c2y="700.5200784000244" c1y="618.6947396159642" description="" straight="0" type="2" ypos="649.2053712984994" endx="446.7710713758028" xpos="924.5484356244051" endy="575.9301070883296" c2x="585.9301614203928">
+    <transition c1x="681.7734360163083" c2y="700.5200784000244" c1y="583.2147396159642" description="" straight="0" type="2" ypos="613.7253712984993" endx="446.7710713758028" xpos="882.4284356244051" endy="575.9301070883296" c2x="585.9301614203928">
       <from>6</from>
       <to>4</to>
       <inputs default="0" any="0" invert="0">TURNOFF</inputs>
       <outputs>pwr_dn</outputs>
     </transition>
-    <transition c1x="1215.206191180151" c2y="607.5905516841675" c1y="650.4746129633362" description="" straight="0" type="2" ypos="657.4197429694715" endx="1516.033477792016" xpos="1027.970802156958" endy="535.3306582601563" c2x="1346.792946831854">
-      <from>6</from>
-      <to>1</to>
-      <inputs default="0" any="0" invert="0">PACKET_SENT</inputs>
-      <outputs>tx_cmp</outputs>
-    </transition>
-    <transition c1x="1048.84256258829" c2y="748.1847533503673" c1y="754.4839017881468" description="" straight="1" type="2" ypos="692.9896481715722" endx="956.9521637372484" xpos="993.1753866843497" endy="691.492838935108" c2x="896.4013211261604">
+    <transition c1x="1006.72256258829" c2y="712.7047533503672" c1y="719.0039017881468" description="" straight="1" type="2" ypos="657.5096481715722" endx="914.8321637372484" xpos="951.0553866843497" endy="656.012838935108" c2x="854.2813211261605">
       <from>6</from>
       <to>6</to>
       <inputs default="0" any="0" invert="0">TX_THRESH</inputs>
       <outputs>tx_fill_ff</outputs>
     </transition>
-    <transition c1x="1091.723242499997" c2y="415.2443635398886" c1y="335.6885951881782" description="" straight="0" type="2" ypos="381.4357961607218" endx="1515.532389131184" xpos="880.0593806422695" endy="473.302969324254" c2x="1297.83949348891">
-      <from>7</from>
+    <transition c1x="1176.376806513838" c2y="361.7064499866396" c1y="306.3621713358062" description="" straight="0" type="2" ypos="567.5384278668986" endx="1690.360607616786" xpos="970.380564223653" endy="374.5601012694643" c2x="1532.565088606802">
+      <from>6</from>
       <to>1</to>
-      <inputs default="0" any="0" invert="0">TURNON</inputs>
-      <outputs>ready</outputs>
+      <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
+      <outputs>tx_timeout</outputs>
     </transition>
-    <transition c1x="580.4413794122402" c2y="438.6684337361912" c1y="384.1616141065496" description="" straight="0" type="2" ypos="366.7667832083256" endx="461.080132377507" xpos="781.8629700899719" endy="530.453241083677" c2x="612.0109064898718">
+    <transition c1x="1165.734152180803" c2y="429.3244813614036" c1y="480.4803711663243" description="" straight="0" type="2" ypos="613.447419172914" endx="1694.757225451875" xpos="987.6063759064314" endy="424.4409845170765" c2x="1577.98290271059">
+      <from>6</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">FIFO_OU_RUN</inputs>
+      <outputs>tx_underrun_reset</outputs>
+    </transition>
+    <transition c1x="1163.031314021373" c2y="395.8659054662754" c1y="382.7371218075685" description="" straight="0" type="2" ypos="583.2565741958687" endx="1689.684939567712" xpos="982.3840662151711" endy="402.6841247567397" c2x="1567.947119839141">
+      <from>6</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">PACKET_SENT</inputs>
+      <outputs>tx_cmp</outputs>
+    </transition>
+    <transition c1x="590.9353575191503" c2y="439.2244217918932" c1y="400.9956025001094" description="" straight="0" type="2" ypos="373.7667832083256" endx="461.080132377507" xpos="715.8629700899719" endy="530.453241083677" c2x="591.0077449483287">
       <from>7</from>
       <to>4</to>
       <inputs default="0" any="0" invert="0">TURNOFF</inputs>
       <outputs>pwr_dn</outputs>
     </transition>
-    <transition c1x="1188.20468004267" c2y="141.1583387273879" c1y="132.8132155840684" description="" straight="0" type="2" ypos="137.3217758786055" endx="1270.760552669496" xpos="1069.30943019112" endy="199.8932241306748" c2x="1168.417923617827">
+    <transition c1x="939.2614915292024" c2y="195.5475772134123" c1y="186.532901520859" description="" straight="0" type="2" ypos="349.8443063326807" endx="1731.331680240135" xpos="797.5382490292055" endy="309.3032136735238" c2x="1672.171173729045">
+      <from>7</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">TURNON</inputs>
+      <outputs>ready</outputs>
+    </transition>
+    <transition c1x="1140.933730818043" c2y="41.79529483680509" c1y="37.82245249983606" description="" straight="0" type="2" ypos="59.33443857814578" endx="1456.761808938113" xpos="1021.552976650993" endy="74.84412971039457" c2x="1344.268709871843">
       <from>2</from>
       <to>3</to>
       <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
       <outputs>config</outputs>
     </transition>
-    <transition c1x="989.4738680424855" c2y="783.3040958125526" c1y="938.391558591748" description="" straight="0" type="2" ypos="906.7836591355568" endx="1118.731925252177" xpos="1101.395892449428" endy="826.9031051760923" c2x="992.5078419181543">
+    <transition c1x="1534.350356139086" c2y="814.5832725731867" c1y="1051.512601286559" description="" straight="0" type="2" ypos="913.7836591355568" endx="1612.025832929716" xpos="1623.355892449428" endy="879.3454235558186" c2x="1438.669111941313">
       <from>8</from>
       <to>8</to>
       <inputs default="0" any="0" invert="0">RX_THRESH</inputs>
       <outputs>rx_drain_ff</outputs>
     </transition>
-    <transition c1x="1132.569562007221" c2y="634.6137237412378" c1y="699.2716386510225" description="" straight="0" type="2" ypos="821.1992488256288" endx="1515.956559527848" xpos="1147.631369667337" endy="535.2347523777212" c2x="1397.738306408428">
+    <transition c1x="1649.776146344781" c2y="576.9526446837749" c1y="781.2103931935557" description="" straight="0" type="2" ypos="828.4602507310061" endx="1753.514431812943" xpos="1671.969558576499" endy="484.4921090276699" c2x="1609.930499259339">
       <from>8</from>
       <to>1</to>
       <inputs default="0" any="0" invert="0">PACKET_RX</inputs>
       <outputs>rx_flush</outputs>
     </transition>
-    <transition c1x="1266.304802159875" c2y="758.9640419740209" c1y="641.8881812512559" description="" straight="0" type="2" ypos="832.4012134267284" endx="1527.519174926186" xpos="1175.881147294688" endy="545.7708541121971" c2x="1440.776705360068">
+    <transition c1x="1799.903554551639" c2y="641.6354961881477" c1y="808.6933790640918" description="" straight="0" type="2" ypos="844.5965250672594" endx="1784.804015626723" xpos="1703.519956033481" endy="490.91192979389" c2x="1703.857835363186">
       <from>8</from>
       <to>1</to>
       <inputs default="0" any="0" invert="0">WAIT_DONE</inputs>
       <outputs>rx_timeout</outputs>
+    </transition>
+    <transition c1x="1459.879350381882" c2y="549.1330519239643" c1y="682.0582697192052" description="" straight="0" type="2" ypos="847.7515344927498" endx="1719.306585635993" xpos="1623.726042818586" endy="462.7135133310792" c2x="1553.096381440172">
+      <from>8</from>
+      <to>1</to>
+      <inputs default="0" any="0" invert="0">FIFO_OU_RUN</inputs>
+      <outputs>rx_overrun_reset</outputs>
     </transition>
   </machine>
 </qfsmproject>

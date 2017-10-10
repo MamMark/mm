@@ -64,13 +64,17 @@
  */
 #define SI446X_INT_CTL_ENABLE_4_LEN     8
 #define SI446X_INT_CTL_ENABLE_4         0x11, 0x01, 0x04, 0x00,  \
-                                        SI446X_INT_STATUS_MODEM_INT_STATUS  \
-                                            + SI446X_INT_STATUS_PH_INT_STATUS,   \
-                                        SI446X_PH_INTEREST, \
-                                        SI446X_MODEM_INTEREST, \
+                                        SI446X_INT_STATUS_CHIP_INT_STATUS        \
+                                            | SI446X_INT_STATUS_MODEM_INT_STATUS \
+                                            | SI446X_INT_STATUS_PH_INT_STATUS,   \
+                                        SI446X_PH_INTEREST,                      \
+                                        SI446X_MODEM_INTEREST,                   \
                                         SI446X_CHIP_INTEREST
 
 /*
+
+start check here
+
  * PREAMBLE: (p1000+)
  *
  * TX_LENGTH:   8 bytes (64bits)

@@ -386,7 +386,7 @@ implementation {
     fsm_result_t ns;
 
     if (fsm_active)
-      __PANIC_RADIO(82, ev, fsm_global_current_state,  1, 1);
+      __PANIC_RADIO(82, ev, fsm_global_current_state, fsm_active, 1);
 
     do {
       fsm_active++; // keep track of number of iterations of internal events
@@ -414,6 +414,8 @@ implementation {
         case A_RX_DRAIN_FF: ns = a_rx_drain_ff(t); break;
         case A_RX_FETCH_FF: ns = a_rx_fetch_ff(t); break;
         case A_RX_FLUSH:    ns = a_rx_flush(t);    break;
+        case A_RX_OVERRUN_RESET:  ns = a_rx_overrun_reset(t);  break;
+        case A_TX_UNDERRUN_RESET: ns = a_tx_underrun_reset(t); break;
         case A_RX_START:    ns = a_rx_start(t);    break;
         case A_RX_TIMEOUT:  ns = a_rx_timeout(t);  break;
         case A_STANDBY:     ns = a_standby(t);     break;
@@ -439,7 +441,8 @@ implementation {
       ev = ns.e;
     } while (ev);
 
-    fsm_active = FALSE;
+    fsm_active = 0;                     /* done with any cascade */
+
     // signal completions
     if (global_ioc.rc_signal)
       post cmd_done_task();
@@ -1027,7 +1030,7 @@ implementation {
 
 
  /**************************************************************************/
-  fsm_result_t a_flush_rx_fifo(fsm_transition_t *t) {
+  fsm_result_t a_reset_rx_fifo(fsm_transition_t *t) {
     call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
     return a_rx_on(t);
   }
@@ -1036,7 +1039,7 @@ implementation {
  /**************************************************************************/
   fsm_result_t a_clear_sync(fsm_transition_t *t) {
     global_ioc.rx_inv_syncs++;
-    return a_flush_rx_fifo(t);
+    return a_reset_rx_fifo(t);
   }
 
 
@@ -1050,6 +1053,44 @@ implementation {
     return a_rx_on(t);
   }
 
+
+  /**************************************************************************/
+  /*
+   * over_under_reset - clean up after an over/underrun error
+   */
+  fsm_result_t over_under_reset(fsm_transition_t *t) {
+    si446x_device_state_t  new_state;
+    uint32_t               t0, t1;
+
+    /* quiesce radio */
+    t0 = call Platform.usecsRaw();
+    new_state = call Si446xCmd.change_state(RC_READY, TRUE);
+    t1 = call Platform.usecsRaw();
+    if (new_state != RC_READY)
+      __PANIC_RADIO(4, t0, t1, t1-t0, 0);
+    t1 -= t0;
+    nop();                               /* BRK */
+    return a_rx_on(t);
+  }
+
+  /**************************************************************************/
+
+  fsm_result_t a_rx_overrun_reset(fsm_transition_t *t) {
+    global_ioc.rx_overruns++;
+    switch (t->current_state) {
+      case S_CRC_FLUSH: global_ioc.rx_crc_overruns++;    break;
+      case S_RX_ACTIVE: global_ioc.rx_active_overruns++; break;
+      default: break;
+    }
+    return over_under_reset(t);
+  }
+
+  /**************************************************************************/
+
+  fsm_result_t a_tx_underrun_reset(fsm_transition_t *t) {
+    global_ioc.tx_underruns++;
+    return over_under_reset(t);
+  }
 
   /**************************************************************************/
 
@@ -1087,7 +1128,6 @@ implementation {
       global_ioc.rx_errors++;
       return a_rx_on(t);
     }
-
     global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
     global_ioc.rx_reports++;
     return a_rx_on(t);                  /* start receiving again */
@@ -1306,10 +1346,10 @@ implementation {
 
     if (isp->ph_pend || isp->modem_pend || isp->chip_pend) {
       /* missed something */
+      __PANIC_RADIO(19, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
       isp->ph_pend = 0;
       isp->modem_pend = 0;
       isp->chip_pend = 0;
-      //__PANIC_RADIO(19, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
     }
     return E_NONE;
   }
