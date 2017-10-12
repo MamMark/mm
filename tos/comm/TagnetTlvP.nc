@@ -325,14 +325,14 @@ implementation {
   }
 
   command uint8_t   TagnetTLV.version_to_tlv(image_ver_t *v, tagnet_tlv_t *t, uint8_t limit) {
-    image_ver_t    *dest;
+    uint8_t         i;
+    uint8_t        *vb = (uint8_t *) v;
 
     if ((!t) || ((sizeof(image_ver_t) + sizeof(tagnet_tlv_t)) > limit))
       tn_panic(8, (parg_t) t, t->typ, t->len, limit);
-    dest = (image_ver_t *)&t->val;
-    dest->major = v->major;
-    dest->minor = v->minor;
-    dest->build = v->build;
+    for (i = 0; i <  sizeof(image_ver_t); i++) {
+      t->val[i]= vb[i];
+    }
     t->typ = TN_TLV_VERSION;
     t->len = sizeof(image_ver_t);
     return SIZEOF_TLV(t);
