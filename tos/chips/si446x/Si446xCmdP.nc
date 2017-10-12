@@ -87,11 +87,11 @@ const dump_prop_desc_t g_dump_group_list[] = {
 #endif
   { 0x2000, (void *) &g_radio_dump.MODEM,          SI446X_GROUP20_SIZE },
   { 0x2100, (void *) &g_radio_dump.MODEM_CHFLT,    SI446X_GROUP21_SIZE },
-  { 0x2200, (void *) &g_radio_dump.PAx,             SI446X_GROUP22_SIZE },
+  { 0x2200, (void *) &g_radio_dump.PAx,            SI446X_GROUP22_SIZE },
   { 0x2300, (void *) &g_radio_dump.SYNTH,          SI446X_GROUP23_SIZE },
-  { 0x3000, (void *) &g_radio_dump.MATCH,         SI446X_GROUP30_SIZE },
-  { 0x4000, (void *) &g_radio_dump.FREQ_CTL,       SI446X_GROUP40_SIZE },
-  { 0x5000, (void *) &g_radio_dump.RX_HOP,        SI446X_GROUP50_SIZE },
+  { 0x3000, (void *) &g_radio_dump.MATCH,          SI446X_GROUP30_SIZE },
+  { 0x4000, (void *) &g_radio_dump.FREQ_CONTROL,   SI446X_GROUP40_SIZE },
+  { 0x5000, (void *) &g_radio_dump.RX_HOP,         SI446X_GROUP50_SIZE },
 //  { 0xF000, (void *) &g_radio_dump.grF0_pti,      SI446X_GROUPF0_SIZE },
   { 0, NULL, 0 },
 };
