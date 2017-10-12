@@ -34,10 +34,10 @@
  * Author: Daniel J. Maltbie <dmaltbie@daloma.org>
  */
 
-#include "trace.h"
-#include "panic.h"
+#include <trace.h>
+#include <panic.h>
 #include <si446x.h>
-#include "RadioConfig.h"
+#include <RadioConfig.h>
 
 #ifndef PANIC_RADIO
 enum {
@@ -200,7 +200,7 @@ const uint8_t start_rx_cmd[] = {
  * or when SYNC is detected.
  */
 const uint8_t si446x_frr_config[] = { 0x11, 0x02, 0x04, 0x00,
-				      0x09, 0x04, 0x06, 0x0a
+                                      0x09, 0x04, 0x06, 0x0a
                                     };
 
 /**************************************************************************/
@@ -222,8 +222,8 @@ module Si446xCmdP {
   }
 }
 implementation {
-#define __PANIC_RADIO(where, w, x, y, z) do {		  \
-    call Panic.panic(PANIC_RADIO, where, w, x, y, z);	  \
+#define __PANIC_RADIO(where, w, x, y, z) do {             \
+    call Panic.panic(PANIC_RADIO, where, w, x, y, z);     \
   } while (0);
 
   /**************************************************************************/
@@ -906,13 +906,13 @@ implementation {
       ll_si446x_read_fast_status(radio_pend);
       if ((t1-t0) > SI446X_CTS_TIMEOUT) {
         ll_si446x_read_fast_status(radio_pend1);
-	ll_si446x_trace(T_RC_WAIT_CTS_F, radio_pend1[0], t1-t0);
+        ll_si446x_trace(T_RC_WAIT_CTS_F, radio_pend1[0], t1-t0);
 #ifdef notdef
         ll_si446x_drf();
-	__PANIC_RADIO(24, t1, t0, t1-t0, 0);
+        __PANIC_RADIO(24, t1, t0, t1-t0, 0);
 #endif
         ll_si446x_read_fast_status(radio_pend);
-	return FALSE;
+        return FALSE;
       }
     }
     ll_si446x_read_fast_status(radio_pend);
@@ -929,9 +929,9 @@ implementation {
 
     ll_si446x_read_fast_status(status);
     ll_si446x_trace(T_RC_INTERRUPT,
-		    (status[0] << 8) | status[1],
-		    (status[2] << 8) | status[3]
-		    );
+                    (status[0] << 8) | status[1],
+                    (status[2] << 8) | status[3]
+                    );
     signal Si446xCmd.interrupt();
   }
 
