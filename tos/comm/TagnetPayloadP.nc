@@ -198,7 +198,10 @@ implementation {
 
   command tagnet_tlv_t* TN_PLOAD_DBG  TagnetPayload.first_element(message_t *msg) {
     memset(getMeta(msg),0,sizeof(tagnet_payload_meta_t));
-    return (tagnet_tlv_t *) (&msg->data[call THdr.get_name_len(msg)]);
+    if (call TagnetPayload.get_len(msg))
+      return (tagnet_tlv_t *) (&msg->data[call THdr.get_name_len(msg)]);
+    else
+      return NULL;
   }
 
   command uint8_t TN_PLOAD_DBG  TagnetPayload.get_len(message_t* msg) {
