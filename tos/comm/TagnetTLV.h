@@ -142,9 +142,9 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   {TN_SD_DEV_0_ID,"\002\001\000","\001\009sd_0 help",UQ_TN_SD_DEV_0},
   {TN_SD_DEV_0_IMG_ID,"\001\003img","\001\014sd_0_img help",UQ_TN_SD_DEV_0_IMG},
 
-  {TN_SYS_ID,"\001\002sys","\001\008sys help",UQ_TN_SYS},
+  {TN_SYS_ID,"\001\003sys","\001\008sys help",UQ_TN_SYS},
   {TN_SYS_NID_ID,TN_BCAST_NID_TLV,"\1\12sys_nid help",UQ_TN_SYS_NID},
-  {TN_SYS_BOOT_ID,"\001\004\boot","\001\013sys_boot help",UQ_TN_SYS_BOOT},
+  {TN_SYS_BOOT_ID,"\001\004boot","\001\013sys_boot help",UQ_TN_SYS_BOOT},
   {TN_SYS_BOOT_ACTIVE_ID,"\001\003act","\001\016boot_active help",UQ_TN_SYS_BOOT_ACTIVE},
   {TN_SYS_BOOT_BACKUP_ID,"\001\003bkp","\001\016boot_backup help",UQ_TN_SYS_BOOT_BACKUP},
   {TN_SYS_BOOT_GOLDEN_ID,"\001\003gld","\001\016boot_golden help",UQ_TN_SYS_BOOT_GOLDEN},
