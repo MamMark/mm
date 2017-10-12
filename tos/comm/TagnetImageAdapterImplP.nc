@@ -274,10 +274,11 @@ implementation {
             call TPload.reset_payload(msg);
             call THdr.set_response(msg);
             call THdr.set_error(msg, TE_PKT_OK);
-            if ((version_tlv) && (call TTLV.get_tlv_type(version_tlv) != TN_TLV_VERSION)) {
+            if ((version_tlv) && (call TTLV.get_tlv_type(version_tlv) == TN_TLV_VERSION)) {
               version = call TTLV.tlv_to_version(version_tlv);
               dirp = call IMD.dir_find_ver(version); // get image info for specific version
               if (dirp) {
+                call TPload.add_version(msg, &dirp->ver_id);
                 ste[0] = call IMD.slotStateLetter(dirp->slot_state);
                 call TPload.add_string(msg, &ste, 1);
               }
