@@ -299,6 +299,31 @@ implementation {
             return do_reject(msg, TE_BUSY);
           break;
 
+        case TN_DELETE:
+          tn_trace_rec(my_id, 22);
+          if (call IMD.dir_coherent()) {            // image manager directory is stable
+            call TPload.reset_payload(msg);
+            call THdr.set_response(msg);
+            call THdr.set_error(msg, TE_PKT_OK);
+            if ((version_tlv) && (call TTLV.get_tlv_type(version_tlv) == TN_TLV_VERSION)) {
+              version = call TTLV.tlv_to_version(version_tlv);
+              dirp = call IMD.dir_find_ver(version); // get image info for specific version
+              if (dirp) {
+                call TPload.add_version(msg, &dirp->ver_id);
+                ste[0] = call IMD.slotStateLetter(dirp->slot_state);
+                call TPload.add_string(msg, &ste, 1);
+              }
+              if (call IM.delete(version) == SUCCESS) {         // delete this version
+                tn_trace_rec(my_id, 23);
+                return TRUE;
+              }
+            }
+            tn_trace_rec(my_id, 24);
+            return do_reject(msg, TE_UNSUPPORTED);
+          } else
+            return do_reject(msg, TE_BUSY);
+          break;
+
         case TN_PUT:
           tn_trace_rec(my_id, 5);
           // check to see if still writing data from previous PUT
@@ -344,8 +369,14 @@ implementation {
               break;                          // ignore
           }
 
-          // look for new image load request
-          // offset=0 or no offset_tlv means start again from beginning
+          /* look for new image load request
+           * offset=0 or no offset_tlv means start again from beginning
+           * The image_info header needs to be examined for version,
+           * length and checksum. The header is embedded in the image
+           * data and located at byte 0x140 in the image. Note that data
+           * from multiple messages may need to be accumulated before
+           * the image_info structure can be examined.
+           */
           if ((offset_tlv) && (offset != 0)) { // continue accumulating
             /* make sure this PUT for same version */
             if (!call IMD.verEqual(version, &ia_cb.version)) {
@@ -370,7 +401,7 @@ implementation {
           nop();                        /* BRK */
           if (ia_cb.e_buf >= IMAGE_MIN_SIZE) {
             nop();                      /* BRK */
-            tn_trace_rec(my_id, 9);
+            tn_trace_rec(my_id, 7);
             dptr = ia_buf;
             dlen = ia_cb.e_buf;
             // reset e_buf to force startover if fail to begin image load
@@ -401,13 +432,14 @@ implementation {
             return do_reject(msg, TE_BAD_MESSAGE);
           ia_cb.offset = ia_cb.e_buf;               // always what we've seen so far
           return do_write(msg, NULL, dlen);         // just acknowledge PUT
+          break;
 
         case TN_HEAD:
           call THdr.set_response(msg);
           call THdr.set_error(msg, TE_PKT_OK);
           call TPload.reset_payload(msg);
           call TPload.add_tlv(msg, help_tlv);
-          tn_trace_rec(my_id, 14);
+          tn_trace_rec(my_id, 9);
           return TRUE;
 
         default:
