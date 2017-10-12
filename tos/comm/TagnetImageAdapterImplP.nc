@@ -283,6 +283,7 @@ implementation {
                 call TPload.add_string(msg, &ste, 1);
               }
             } else {                                // get image info for all versions
+              nop();                                /* BRK */
               for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
                 dirp = call IMD.dir_get_dir(i);
                 if (!dirp)
