@@ -68,11 +68,12 @@ implementation {
 
         case TN_PUT:
           tn_trace_rec(my_id, 2);
-          if ((next_tlv) && (call TTLV.get_tlv_type(next_tlv) != TN_TLV_VERSION)) {
+          if ((next_tlv) && (call TTLV.get_tlv_type(next_tlv) == TN_TLV_VERSION)) {
             verp = call TTLV.tlv_to_version(next_tlv);
-            call IM.dir_set_active(verp);
-          } else
-            call THdr.set_error(msg, TE_UNSUPPORTED);
+            if (call IM.dir_set_active(verp) == SUCCESS)
+              return TRUE;
+          }
+          call THdr.set_error(msg, TE_UNSUPPORTED);
           return TRUE;
 
         case TN_GET:
