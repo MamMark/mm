@@ -1177,7 +1177,7 @@ typedef struct {
   uint8_t               PAx[SI446X_GROUP22_SIZE];
   uint8_t               SYNTH[SI446X_GROUP23_SIZE];
   uint8_t               MATCH[SI446X_GROUP30_SIZE];
-  uint8_t               FREQ_CTL[SI446X_GROUP40_SIZE];
+  uint8_t               FREQ_CONTROL[SI446X_GROUP40_SIZE];
   uint8_t               RX_HOP[SI446X_GROUP50_SIZE];
 //  uint8_t              grF0_pti[SI446X_GROUPF0_SIZE];
 } radio_dump_t;
