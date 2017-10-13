@@ -393,10 +393,15 @@ implementation {
        * directory scan complete
        *
        * how many active/backups found
+       * if we have a backup we had better have an active too.
        */
       if (active_count > 1 || backup_count > 1) {
-          panic_val = 9;
-          break;
+        panic_val = 9;
+        break;
+      }
+      if (backup_count && !active_count) {
+        panic_val = 14;
+        break;
       }
 
       if (imcb.im_state >=  IMS_FILL_WAITING &&
