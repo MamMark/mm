@@ -781,6 +781,10 @@ implementation {
    * input:  ver_id
    * return: error_t
    *
+   * we do not allow the ACTIVE to be deleted.  One needs to activate a
+   * different image.  Then one can delete this one.  ACTIVE always
+   * indicates what is loaded into the NIB.  This is normal operation.
+   *
    * will launch a Dir sync, completion signaled via delete_complete
    */
   command error_t IM.delete[uint8_t cid](image_ver_t *verp) {
@@ -793,10 +797,12 @@ implementation {
 
     /* dir_find_ver does the call to verify_IM */
     sp  = dir_find_ver(verp);
-    if (!sp) {
-      im_panic(11, imcb.im_state, 0);
-      return FAIL;
-    }
+    if (!sp)
+      return EINVAL;                      /* not found */
+
+    if (sp->slot_state == SLOT_ACTIVE)
+      return EINVAL;
+
     sp->slot_state = SLOT_EMPTY;
     dir = &imcb.dir;
     dir->chksum = 0;
