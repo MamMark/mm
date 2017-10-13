@@ -997,7 +997,7 @@ void __Reset() {
    * If the short bit is set, disable the DCOR.
    */
   disable_dcor = RSTCTL->CSRESET_STAT & RSTCTL_CSRESET_STAT_DCOR_SHT;
-  nop();
+  ROM_DEBUG_BREAK(0);
   owl_startup();
 
   __system_init(disable_dcor);
