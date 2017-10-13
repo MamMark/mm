@@ -818,19 +818,23 @@ implementation {
 
 
   /*
-   * dir_set_active: Verifies that one image in directory is set as valid,
-   *                 Sets the image state to Active for given ver_id.
+   * dir_set_active: marks a VALID or BACKUP image as ACTIVE.
    *
    * input: ver_id
    * output: none
    * return: error_t
+   *
+   * One can set to ACTIVE a BACKUP or a VALID.  If the BACKUP is being
+   * set to ACTIVE, then the current ACTIVE gets downgraded to VALID.  This
+   * is like EJECT but we keep the potentially good image around.  It is
+   * technically not a failure.
    *
    * start a cache flush
    */
   command error_t IM.dir_set_active[uint8_t cid](image_ver_t *verp) {
     error_t err;
     image_dir_t *dir;
-    image_dir_slot_t *newp, *active;
+    image_dir_slot_t *newp, *active, *backup;
 
     if (imcb.im_state != IMS_IDLE)
       im_panic(13, imcb.im_state, 0);
@@ -842,15 +846,36 @@ implementation {
      * the image being proposed for the new active needs to exist
      * and must be in the VALID state.
      */
-    if ((!newp) || (newp->slot_state != SLOT_VALID)) {
-      im_panic(14, imcb.im_state, (parg_t) newp);
+    if (!newp)
       return FAIL;
+
+    switch (newp->slot_state) {
+      default:
+        return FAIL;
+
+      case SLOT_ACTIVE:
+        return EALREADY;
+
+      case SLOT_VALID:
+      case SLOT_BACKUP:
+        break;
     }
 
-    /* If we have an active, switch it to backup */
-    get_active_backup(&active, NULL);
-    if (active)
-      active->slot_state = SLOT_BACKUP;
+    get_active_backup(&active, &backup);
+    if (newp->slot_state == SLOT_BACKUP) {
+      /*
+       * activating the previous BACKUP, make the current ACTIVE
+       * got to VALID.  We don't set it to BACKUP because that doesn't
+       * make sense to swap like that.
+       */
+      active->slot_state = SLOT_VALID;
+    } else {
+      /* If we have an active, switch it to backup */
+      if (active)
+        active->slot_state = SLOT_BACKUP;
+      if (backup)
+        backup->slot_state = SLOT_VALID;
+    }
 
     newp->slot_state = SLOT_ACTIVE;
     dir = &imcb.dir;
