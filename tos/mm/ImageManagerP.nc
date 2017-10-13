@@ -899,34 +899,39 @@ implementation {
    * Image has to be present and VALID.  Will not change any other state
    * to BACKUP.
    *
+   * If there is currently a BACKUP it will be changed to VALID.
+   *
    * Forces a dir sync.
    */
   command error_t IM.dir_set_backup[uint8_t cid](image_ver_t *verp) {
     error_t err;
     image_dir_t *dir;
-    image_dir_slot_t *newp, *ap;
+    image_dir_slot_t *newp, *active, *backup;
 
     if (imcb.im_state != IMS_IDLE)
       im_panic(16, imcb.im_state, 0);
 
     /* dir_find_ver does the call to verify_IM */
     newp = dir_find_ver(verp);
+    if (!newp || newp->slot_state != SLOT_VALID)                          /* not found */
+      return EINVAL;
 
     /*
      * setting backup, make sure we have an active
      * It doesn't make sense to have a BACKUP and no ACTIVE
      * yell and scream.  This is a sanity check.
      */
-    get_active_backup(&ap, NULL);
+    get_active_backup(&active, &backup);
 
     /*
      * the image requested to set as  backup needs to exist
      * and must be in the VALID state.
      */
-    if (!ap || !newp || (newp->slot_state != SLOT_VALID)) {
-      im_panic(17, (parg_t) newp, (parg_t) ap);
+    if (!active)                        /* state of machine not right. */
       return FAIL;
-    }
+
+    if (backup)
+      backup->slot_state = SLOT_VALID;
     newp->slot_state = SLOT_BACKUP;
     dir = &imcb.dir;
     dir->chksum = 0;
