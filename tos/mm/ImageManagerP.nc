@@ -705,10 +705,8 @@ implementation {
     int i;
 
     imcp = &imcb;
-    if (imcp->im_state != IMS_IDLE) {
+    if (imcp->im_state != IMS_IDLE)
         im_panic(7, imcp->im_state, 0);
-        return FAIL;
-    }
 
     ep = NULL;
     dir = &imcb.dir;
@@ -760,12 +758,11 @@ implementation {
   command error_t IM.alloc_abort[uint8_t cid]() {
     image_dir_t *dir;
 
-    if (imcb.im_state != IMS_FILL_WAITING ||
-        imcb.cid != cid) {
+    if (imcb.im_state != IMS_FILL_WAITING || imcb.cid != cid)
       im_panic(8, imcb.im_state, 0);
-      return FAIL;
-    }
+
     verify_IM();
+
     imcb.filling_slot_p->slot_state = SLOT_EMPTY;
     imcb.buf_ptr = NULL;
     imcb.filling_slot_p = NULL;
@@ -791,10 +788,8 @@ implementation {
     image_dir_slot_t *sp;
     error_t err;
 
-    if (imcb.im_state != IMS_IDLE) {
+    if (imcb.im_state != IMS_IDLE)
       im_panic(10, imcb.im_state, 0);
-      return FAIL;
-    }
 
     /* dir_find_ver does the call to verify_IM */
     sp  = dir_find_ver(verp);
@@ -809,10 +804,9 @@ implementation {
     imcb.im_state = IMS_DELETE_SYNC_REQ_SD;
     imcb.cid = cid;
     err = call SDResource.request();
-    if (err) {
+    if (err)
       im_panic(12, err, 0);
-      return FAIL;
-    }
+
     return SUCCESS;
   }
 
@@ -832,10 +826,8 @@ implementation {
     image_dir_t *dir;
     image_dir_slot_t *newp, *active;
 
-    if (imcb.im_state != IMS_IDLE) {
+    if (imcb.im_state != IMS_IDLE)
       im_panic(13, imcb.im_state, 0);
-      return FAIL;
-    }
 
     /* dir_find_ver does the call to verify_IM */
     newp = dir_find_ver(verp);
@@ -883,10 +875,8 @@ implementation {
     image_dir_t *dir;
     image_dir_slot_t *newp, *ap;
 
-    if (imcb.im_state != IMS_IDLE) {
+    if (imcb.im_state != IMS_IDLE)
       im_panic(16, imcb.im_state, 0);
-      return FAIL;
-    }
 
     /* dir_find_ver does the call to verify_IM */
     newp = dir_find_ver(verp);
@@ -918,6 +908,7 @@ implementation {
     imcb.cid = cid;
     if ((err = call SDResource.request()))
       im_panic(18, err, 0);
+
     return SUCCESS;
   }
 
@@ -936,17 +927,21 @@ implementation {
     image_dir_t *dir;
     image_dir_slot_t *active, *backup;
 
-    if (imcb.im_state != IMS_IDLE) {
+    if (imcb.im_state != IMS_IDLE)
       im_panic(19, imcb.im_state, 0);
-      return FAIL;
-    }
 
     verify_IM();
     get_active_backup(&active, &backup);
-    if (!active) {
+
+    /*
+     * weird state, why are we ejecting a NIB when there isn't
+     * an ACTIVE.  Shouldn't be here.  Also how do we recover?
+     *
+     * FIXME
+     */
+    if (!active)
       im_panic(20, (parg_t) active, (parg_t) backup);
-      return FAIL;
-    }
+
     active->slot_state = SLOT_EJECTED;
     if (backup)
       backup->slot_state = SLOT_ACTIVE;
@@ -983,10 +978,9 @@ implementation {
 
     nop();
     nop();                              /* BRK */
-    if (imcb.im_state != IMS_FILL_WAITING) {
+    if (imcb.im_state != IMS_FILL_WAITING)
       im_panic(22, imcb.im_state, 0);
-      return FAIL;
-    }
+
     verify_IM();
 
     /*
@@ -1015,10 +1009,9 @@ implementation {
     else imcb.im_state = IMS_FILL_LAST_REQ_SD;
 
     err = call SDResource.request();
-    if (err) {
+    if (err)
       im_panic(23, err, 0);
-      return FAIL;
-    }
+
     return SUCCESS;
   }
 
@@ -1053,12 +1046,11 @@ implementation {
 
     if (!len)                           /* nothing to do? */
       return 0;                         /* we consumed nothing, go figure */
-    if (imcb.im_state != IMS_FILL_WAITING) {
+    if (imcb.im_state != IMS_FILL_WAITING)
       im_panic(24, imcb.im_state, 0);
-      return 0;
-    }
 
     verify_IM();
+
     if (len <= imcb.bytes_remaining) {
       copy_len = len;
       imcb.bytes_remaining -= len;
@@ -1074,10 +1066,8 @@ implementation {
     if (bytes_left) {
       imcb.im_state = IMS_FILL_REQ_SD;
       err = call SDResource.request();
-      if (err) {
+      if (err)
         im_panic(25, err, 0);
-        return FAIL;
-      }
     }
     return bytes_left;
   }
@@ -1147,10 +1137,8 @@ implementation {
     nop();
     nop();                              /* BRK */
     dir = &imcb.dir;
-    if (imcb.im_state != IMS_INIT_READ_DIR) {
+    if (imcb.im_state != IMS_INIT_READ_DIR)
       im_panic(28, imcb.im_state, err);
-      return;
-    }
 
     /*
      * we just completed reading the directory sector.
@@ -1179,6 +1167,7 @@ implementation {
     memcpy_ua(dir, im_wrk_buf, sizeof(*dir));
     verify_IM();                        /* verify the directory */
 
+    nop();                              /* BRK */
     imcb.im_state = IMS_IDLE;
     imcb.cid      = -1;
     signal Booted.booted();
