@@ -184,7 +184,7 @@ implementation {
           sirfbin_stats.max_seen = sirfbin_left;
 	if (sirfbin_left >= SIRFBIN_MAX_MSG) {
 	  sirfbin_stats.too_big++;
-          bkpt();
+          ROM_DEBUG_BREAK(0);
 	  sirfbin_restart_abort(2);
 	  return;
 	}
