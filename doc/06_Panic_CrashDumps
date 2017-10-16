@@ -11,7 +11,8 @@ on the Tag's uSD.
 
 We make use of the work done by Adam Green on CrashCatcher/CrashDebug.
 (see https://github.com/adamgreen/Crash{Catcher,Debug}).  We use a modified
-format that includes Panic information and image_info.
+format that includes Panic information, image_info, crash state, ram dump,
+i/o state, and Flash crumbs.
 
 sector = 512 bytes
 
@@ -19,12 +20,11 @@ sector = 512 bytes
 * Work Items
 
 o eval what gdb needs
-o eval what processor crash dump needs to look like
 o eval CrashCatcher (https://github.com/adamgreen/CrashCatcher)
 o eval CrashDebug   (https://github.com/adamgreen/CrashDebug)
 o eval breakpad     (https://chromium.googlesource.com/breakpad/breakpad)
-o define PanicBlock
 o define Panic Manager
+
 
 * Panic Blocks
 
@@ -33,35 +33,96 @@ about the machine state for a single crash.
 
 A block includes the following information:
 
--1) Panic information, Subsystem, Where, a0-3.
+1) Panic information, Subsystem, Where, a0-3.  and time stamp
+2) image_info for image running.
+3) crash state: (captured information from the Panic or Exception crash)
 
-0) image_info for image running.  Do we want image_info for both
-   gold and nib?   Or just the image running.  Image running is
-   probably sufficient.
+   cpu registers
+   fpu registers (if active)
+   Fault State
 
-a) cpu state:
+4) Main Memory - 64K (128 sectors)
+5) I/O state
 
-   main cpu registers:
-        R0-R15, 16 x 4 bytes = 64 bytes
-        sp_process, sp_main
-        xPSR
+   <base address>
+   <length>
+   ...
+   <base address>
+   <length>
+   ...
 
-   fpu registers: 32 x 4 bytes (32 fpu registers) if floating point is
-   active.
+6) Flash Crumbs
 
-b) System Peripherals
 
-   ITM          Instrumentation Trace Macrocell
-   DWT          Data Watchpoint and Trace
-   FPB          Flashpatch and Breakpoint
-   SCS          System Control Space
-                MPU  - Memory Protection Unit
-                NVIC - Nested Vectored Interrupt Controller
-   TPIU         Trace Point Interface Unit
-   ETM          Embedded Trace Macrocell
-   ROMTABLE
+Panic Block:
 
-b) I/O state: (0x40000000)
+A single instance of full machine state.  Needs to include Panic Info,
+Image Info, machine state, fault state, RAM, Select I/O, Flash Crumbs.
+
+Panic Info:  (32 bytes)
+    4  <sig>
+    4  time stamp
+    4  cycle
+    1  subsys
+    1  where
+    2  pad
+    4  arg0
+    4  arg1
+    4  arg2
+    4  arg3
+
+Image_Info for running image (from image running)
+  144  bytes
+
+CPU state:  (CrashCatcher/Debug format)  236 bytes
+  4    signature
+  4    flags
+ 52    R0 - R12
+  4    SP
+  4    LR
+  4    PC
+  4    PSR
+  4    xPSR
+       [floating point], valid if flags & 1
+       fpcsr
+       32 x 4 bytes (128 bytes)
+ 24    fault registers, 6 x 4
+       SHCSR, CFSR, HFSR, DFSR, MMFAR, BFAR
+
+Total of above: 412
+
+
+Additional Information:
+
+  4    sig
+  4    RAM_start                sector start of RAM, 128 sectors, 64K bytes
+  4    IO_start                 sector start of I/O section
+  4    FCrumb_start             sector start of Flash Crumbs, 4K bytes
+
+
+[Memory Region]
+64K RAM   128 sectors
+
+Peripherals:
+    basic format
+
+    4  base address             (defines which peripheral too)
+    4  length
+       ...
+    4  base address
+    4  length
+       ...
+
+Flash Crumbs:
+  4096 bytes (8 sectors)
+
+
+Total Panic Block size:
+  home block + RAM + i/o + flash crumbs
+      1        128   ?     8
+
+
+o I/O state.
 
 (These need to be verified.  length)
 (**** currently not used)
@@ -103,41 +164,15 @@ FLCTL           0x4001_1000                 needs eval  **
 ADC14           0x4001_2000     344 (0x158) needs eval  **
 
 
-c) Private Peripheral Bus
-   we need more,  look at these.
+o Private Peripheral Bus
+  we need more,  look at these.
 
 RSTCTL          0xE004_2000      72 (0x48)
 SYSCTL          0xE004_3000      52 (0x34)
 SYSCTL_Boot     0xE004_4000      28 (0x1c)
 
 
-c) RAM.  The msp432 has 64K of RAM.  (128 sectors)
-
-
-Panic Information: (x) number of bytes
-  pcode (1), where (1), arg0-arg3 (4 x 4)
-
-CPU Registers:
-  16 main registers, 16 x 4 bytes
-    R0-R7
-    R8-R12
-    SP
-    LR
-    PC
-  SP_main (MSP) (4), SP_process (PSP) (4)
-  xPSR          (4)
-  PRIMASK
-  FAULTMASK
-  BASEPRI
-  CONTROL
-
-  fpu registers: 32 x 4 bytes (32 fpu registers)
-    FPSCR
-
-RAM: 64Kbytes (128 sectors)
-
-
-Exception Stack Frame:
+o Exception Stack Frame:
 
   no FP (non-FP state)
     ...
@@ -156,7 +191,7 @@ Exception Stack Frame:
     (aligner)
     FPSCR (64 bits)
     S15                 S16-S31 are callee saved
-     .
+     .                  uppers
      .
      .
     S0
@@ -230,6 +265,8 @@ bit 1: must be 0
 bit 0: must be 1, Thumb only.
 
 
+o Control register
+
 CONTROL register: 31-3 2 1 0
                        | | +- nPriv
                        | + -- SPSEL
@@ -242,35 +279,8 @@ FPCA  - Floating Point Context Active
 In Handler mode, processor is always privileged and always on the MSP.
 
 
-Panic Block:
 
-A single instance of full machine state.  Needs to include Panic Info,
-Image Info, and machine state.
 
-Panic Info: Subsystem, Where, Arg0 ...  Arg3
-                1        1     4   4  4  4
+Questions:
 
-time stamp?
-
-Image_Info for running image (from image running)
-
-CPU state:  (CrashCatcher/Debug format)
-  4    signature
-  4    flags
- 16    R0 - R3
- 32    R4 - R11
-  4    R12
-  4    SP
-  4    LR
-  4    PC
-  4    PSR
-       [floating point], if FPCA == 1 (in flags)
-       32 x 4 bytes (128 bytes)
-
-[Memory Regions]
-64K RAM
-
-Peripherals
-
-FaultStatusRegisters
-
+PRIMASK, FAULTMASK, BASEPRI, CONTROL
