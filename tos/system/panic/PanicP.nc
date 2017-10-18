@@ -18,6 +18,9 @@
 #include <platform.h>
 #include <panic.h>
 #include <panic_regions.h>
+#include <sd.h>
+
+#define buf_len 512
 
 #ifdef PANIC_GATE
 uint32_t g_panic_gate;
@@ -116,8 +119,54 @@ implementation {
 
   // io_desc needs to be defined.  basically an array region descriptor.
   void collect_io(const panic_region_t *io_desc, uint8_t *buf, uint32_t io_sector) {
-  }
 
+    const panic_region_t *cur_reg = io_desc; /* current region */
+    uint8_t              *base    = cur_reg->base_addr;
+    uint32_t              io_len  = cur_reg->len;
+    uint32_t              e_size  = cur_reg->element_size;
+
+    uint8_t *buf_ptr = buf;
+    uint32_t buf_bytes_left = SD_BLOCKSIZE;
+
+    uint32_t cur_sec = io_sector;
+
+    while (base != (uint8_t *) 0xFFFFFFFF) {
+
+      while (io_len > 0) {
+
+        if (io_len > buf_bytes_left) {
+          memcpy(buf_ptr, base, buf_bytes_left);
+
+          call SDsa.write(cur_sec, buf);
+
+          cur_sec++;
+          buf_ptr = buf;
+          buf_bytes_left = SD_BLOCKSIZE;
+          base += buf_bytes_left;
+          io_len -= buf_bytes_left;
+        } else if (io_len == buf_bytes_left) {
+            memcpy(buf_ptr, base, io_len);
+            call SDsa.write(cur_sec, buf);
+
+            buf_ptr = buf;
+            buf_bytes_left = SD_BLOCKSIZE;
+            cur_reg++;
+            base = cur_reg->base_addr;
+            io_len = cur_reg->len;
+        } else { /* io_len < buf_bytes_left */
+          memcpy(buf_ptr, base, io_len);
+
+          buf_ptr += io_len;
+          buf_bytes_left -= io_len;
+          cur_reg++;
+          base = cur_reg->base_addr;
+          io_len = cur_reg->len;
+        }
+      }
+    }
+    if (buf_ptr != buf)
+      call SDsa.write(cur_sec, buf);
+  }
 
   async command void Panic.warn(uint8_t pcode, uint8_t where,
         parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
