@@ -20,8 +20,6 @@
 #include <panic_regions.h>
 #include <sd.h>
 
-#define buf_len 512
-
 #ifdef PANIC_GATE
 uint32_t g_panic_gate;
 #endif
@@ -47,6 +45,9 @@ uint32_t g_panic_gate;
 #define MAYBE_SAVE_SR_AND_DINT	do {} while (0)
 #endif
 #endif
+
+
+uint8_t test_buf[512];
 
 
 module PanicP {
@@ -200,7 +201,7 @@ implementation {
     panic_sec = call FS.area_start(FS_LOC_PANIC);
 
     collect_ram(&ram_region, panic_sec);
-    collect_io(0, 0, 0);
+    collect_io(&io_regions[0], test_buf, panic_sec);
     ROM_DEBUG_BREAK(0xf0);
 
 #ifdef PANIC_GATE
