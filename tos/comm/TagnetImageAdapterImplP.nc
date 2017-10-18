@@ -297,12 +297,14 @@ implementation {
             }
             tn_trace_rec(my_id, 3);
             return TRUE;
-          } else
+          } else {
+            tn_trace_rec(my_id, 4);
             return do_reject(msg, TE_BUSY);
+          }
           break;
 
         case TN_DELETE:
-          tn_trace_rec(my_id, 22);
+          tn_trace_rec(my_id, 5);
           if (call IMD.dir_coherent()) {            // image manager directory is stable
             call TPload.reset_payload(msg);
             call THdr.set_response(msg);
@@ -316,18 +318,18 @@ implementation {
                 call TPload.add_string(msg, &ste, 1);
               }
               if (call IM.delete(version) == SUCCESS) {         // delete this version
-                tn_trace_rec(my_id, 23);
+                tn_trace_rec(my_id, 6);
                 return TRUE;
               }
             }
-            tn_trace_rec(my_id, 24);
+            tn_trace_rec(my_id, 7);
             return do_reject(msg, TE_UNSUPPORTED);
           } else
             return do_reject(msg, TE_BUSY);
           break;
 
         case TN_PUT:
-          tn_trace_rec(my_id, 5);
+          tn_trace_rec(my_id, 8);
           // check to see if still writing data from previous PUT
           if ((ia_cb.in_progress) && (ia_cb.e_buf))
             return do_reject(msg, TE_BUSY);
@@ -360,7 +362,7 @@ implementation {
             ia_cb.eof = TRUE;                 // eof found
 
           // continue processing PUT msgs if in progress
-          tn_trace_rec(my_id, 6);
+          tn_trace_rec(my_id, 9);
           if (ia_cb.in_progress) {
             if ((offset_tlv) && (ia_cb.offset == offset)) {
               /* expected offset matches */
@@ -382,7 +384,7 @@ implementation {
           if ((offset_tlv) && (offset != 0)) { // continue accumulating
             /* make sure this PUT for same version */
             if (!call IMD.verEqual(version, &ia_cb.version)) {
-              tn_trace_rec(my_id, 7);
+              tn_trace_rec(my_id, 10);
               break;                          // ignore msg if mismatch
             }
           } else {                            // start accumulating
@@ -390,7 +392,7 @@ implementation {
             call IMD.setVer(version, &ia_cb.version);
             ia_cb.e_buf = 0;
             ia_cb.offset = 0;
-            tn_trace_rec(my_id, 8);
+            tn_trace_rec(my_id, 11);
           }
 
           if (dptr && dlen) {                 // copy msg data to ia_buf
@@ -401,19 +403,21 @@ implementation {
 
           // check to see if enough data received to verify image info
           nop();                        /* BRK */
+          tn_trace_rec(my_id, 12);
           if (ia_cb.e_buf >= IMAGE_MIN_SIZE) {
             nop();                      /* BRK */
-            tn_trace_rec(my_id, 7);
             dptr = ia_buf;
             dlen = ia_cb.e_buf;
             // reset e_buf to force startover if fail to begin image load
             ia_cb.e_buf = 0;
 
             // look for valid image info
-            if (!get_info(version, dptr, dlen))
+            if (!get_info(version, dptr, dlen)) {
+              tn_trace_rec(my_id, 13);
               return do_reject(msg, TE_BAD_MESSAGE);
+            }
 
-            // verify checksum, do_reject()
+            // zzz verify checksum, do_reject()
 
             // allocate new image and write first data
             if ((err = call IM.alloc(&ia_cb.version)) == 0) {
@@ -425,13 +429,15 @@ implementation {
               ia_cb.offset = dlen;
               return do_write(msg, dptr, dlen);
             }
-            tn_trace_rec(my_id, 10);
+            tn_trace_rec(my_id, 14);
             return do_reject(msg, TE_BAD_MESSAGE);  // failed allocate
           }
 
           /* still less than IMAGE_MIN_SIZE, just accumulate */
-          if (ia_cb.eof)                      // eof already, image too short
+          if (ia_cb.eof) {                     // eof already, image too short
+            tn_trace_rec(my_id, 15);
             return do_reject(msg, TE_BAD_MESSAGE);
+          }
           ia_cb.offset = ia_cb.e_buf;               // always what we've seen so far
           return do_write(msg, NULL, dlen);         // just acknowledge PUT
           break;
@@ -441,7 +447,7 @@ implementation {
           call THdr.set_error(msg, TE_PKT_OK);
           call TPload.reset_payload(msg);
           call TPload.add_tlv(msg, help_tlv);
-          tn_trace_rec(my_id, 9);
+          tn_trace_rec(my_id, 16);
           return TRUE;
 
         default:
