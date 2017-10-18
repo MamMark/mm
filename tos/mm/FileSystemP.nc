@@ -181,7 +181,7 @@ implementation {
   }
 
 
-  command uint32_t FS.area_start(uint8_t which) {
+  async command uint32_t FS.area_start(uint8_t which) {
     if (which < FS_LOC_MAX)
       return fs_loc.locators[which].start;
     fs_panic(7, which);
@@ -189,7 +189,7 @@ implementation {
   }
 
 
-  command uint32_t FS.area_end(uint8_t which) {
+  async command uint32_t FS.area_end(uint8_t which) {
     if (which < FS_LOC_MAX)
       return fs_loc.locators[which].end;
     fs_panic(8, which);

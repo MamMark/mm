@@ -47,7 +47,7 @@ interface OverWatch {
    * reboot the system.
    *
    */
-  command void install();
+  async command void install();
 
 
   /**
@@ -59,7 +59,7 @@ interface OverWatch {
    * @param   boot_mode     which image instance to boot into
    * @return  error_t
    */
-  command void force_boot(ow_boot_mode_t boot_mode);
+  async command void force_boot(ow_boot_mode_t boot_mode);
 
 
   /**
@@ -74,11 +74,11 @@ interface OverWatch {
    *
    * @param   reason        failure reason, most likely a panic or unhandled interrupt
    */
-  command void fail(ow_reboot_reason_t reason);
+  async command void fail(ow_reboot_reason_t reason);
 
-  command ow_boot_mode_t      getBootMode();
-  command void                clearReset();
-  command ow_control_block_t *getControlBlock();
+  async command ow_boot_mode_t      getBootMode();
+  async command void                clearReset();
+  async command ow_control_block_t *getControlBlock();
 
-  command uint32_t            getImageBase();
+  async command uint32_t            getImageBase();
 }

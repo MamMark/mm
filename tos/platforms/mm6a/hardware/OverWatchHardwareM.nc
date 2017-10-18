@@ -56,7 +56,7 @@ implementation {
    * getResetStatus must be run prior to getting a valid value for
    * getResetOther.
    */
-  command uint32_t OWhw.getResetStatus() {
+  async command uint32_t OWhw.getResetStatus() {
     uint32_t cur, gather;
 
     cur    = RSTCTL->HARDRESET_STAT;
@@ -126,7 +126,7 @@ implementation {
   }
 
 
-  command uint32_t OWhw.getResetOthers() {
+  async command uint32_t OWhw.getResetOthers() {
     return others;
   }
 
@@ -141,7 +141,7 @@ implementation {
   /*
    * returns FAIL if we can't launch
    */
-  command void OWhw.boot_image(image_info_t *iip) {
+  async command void OWhw.boot_image(image_info_t *iip) {
     if (iip->sig != IMAGE_INFO_SIG)
       return;
     launch(iip->image_start);
@@ -175,7 +175,7 @@ implementation {
    * for SCB->VTOR restrictions.  (This gets enforced by the
    * linker).
    */
-  command uint32_t OWhw.getImageBase() {
+  async command uint32_t OWhw.getImageBase() {
     return SCB->VTOR;
   }
 
@@ -184,7 +184,7 @@ implementation {
    * Flash interaction code
    */
 
-  command error_t OWhw.flashProtectAll() {
+  async command error_t OWhw.flashProtectAll() {
     FLCTL->BANK0_MAIN_WEPROT = 0xffffffff;
     FLCTL->BANK1_MAIN_WEPROT = 0xffffffff;
     return SUCCESS;
@@ -247,7 +247,7 @@ implementation {
   }
 
 
-  command error_t OWhw.flashErase(uint8_t *fdest, uint32_t len) {
+  async command error_t OWhw.flashErase(uint8_t *fdest, uint32_t len) {
     uint32_t sec_mask;
 
     sec_mask = getSectorMask(fdest, len);
@@ -262,7 +262,7 @@ implementation {
   }
 
 
-  command error_t OWhw.flashProgram(uint8_t *src, uint8_t *fdest,
+  async command error_t OWhw.flashProgram(uint8_t *src, uint8_t *fdest,
                                     uint32_t len) {
     if (((uint32_t) fdest < 0x00020000) ||
         (((uint32_t) fdest  + len - 1) > 0x0003fffff))

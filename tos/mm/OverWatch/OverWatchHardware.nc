@@ -50,15 +50,15 @@ interface OverWatchHardware {
    * we currently don't recognize (listed as reserved when this code was
    * written).  Should always be reported as 0.
    */
-  command uint32_t getResetStatus();
-  command uint32_t getResetOthers();
+  async command uint32_t getResetStatus();
+  async command uint32_t getResetOthers();
 
   /*
    * launch an image, typically a NIB region.
    *
    * if it fails just return.
    */
-  command void boot_image(image_info_t *iip);
+  async command void boot_image(image_info_t *iip);
 
   /*
    * fake_reset: simulate a reset
@@ -75,16 +75,16 @@ interface OverWatchHardware {
    *
    * Where did the current executing image load.?
    */
-  command uint32_t getImageBase();
+  async command uint32_t getImageBase();
 
   /*
    * flash access.
    */
-  command error_t flashProtectAll();
+  async command error_t flashProtectAll();
 
   /* erase flash */
-  command error_t flashErase(uint8_t *start, uint32_t len);
+  async command error_t flashErase(uint8_t *start, uint32_t len);
 
   /* program flash */
-  command error_t flashProgram(uint8_t *src, uint8_t *fdest, uint32_t len);
+  async command error_t flashProgram(uint8_t *src, uint8_t *fdest, uint32_t len);
 }

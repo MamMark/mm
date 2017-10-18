@@ -622,7 +622,7 @@ implementation {
    * valid to the ImageManager and it will be set active.
    */
 
-  command void OverWatch.install() {
+  async command void OverWatch.install() {
     ow_control_block_t *owcp;
 
     owcp = &ow_control_block;
@@ -642,7 +642,7 @@ implementation {
    * The NIB contains the current Active image (in bank 1)
    * found in the SD storage.
    */
-  command void OverWatch.force_boot(ow_boot_mode_t boot_mode) {
+  async command void OverWatch.force_boot(ow_boot_mode_t boot_mode) {
     ow_control_block_t *owcp;
 
     owcp = &ow_control_block;
@@ -668,7 +668,7 @@ implementation {
    * The reasons for failure include various exceptions as
    * well as panic().
    */
-  command void OverWatch.fail(ow_reboot_reason_t reason) {
+  async command void OverWatch.fail(ow_reboot_reason_t reason) {
     ow_control_block_t *owcp;
 
     owcp = &ow_control_block;
@@ -684,12 +684,12 @@ implementation {
   /*
    * getBootMode: return current boot mode from control block
    */
-  command ow_boot_mode_t OverWatch.getBootMode() {
+  async command ow_boot_mode_t OverWatch.getBootMode() {
     return ow_control_block.ow_boot_mode;
   }
 
 
-  command void OverWatch.clearReset() {
+  async command void OverWatch.clearReset() {
     ow_control_block_t *owcp;
 
     owcp = &ow_control_block;
@@ -700,12 +700,12 @@ implementation {
   }
 
 
-  command ow_control_block_t *OverWatch.getControlBlock() {
+  async command ow_control_block_t *OverWatch.getControlBlock() {
     return &ow_control_block;
   }
 
 
-  command uint32_t OverWatch.getImageBase() {
+  async command uint32_t OverWatch.getImageBase() {
     return call OWhw.getImageBase();
   }
 

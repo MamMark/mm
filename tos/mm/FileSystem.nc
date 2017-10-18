@@ -15,8 +15,8 @@ interface FileSystem {
   /*
    * return area start and end
    */
-  command uint32_t area_start(uint8_t which);
-  command uint32_t area_end(uint8_t which);
+  async command uint32_t area_start(uint8_t which);
+  async command uint32_t area_end(uint8_t which);
 
   /* erase a region, split phase */
   command error_t  erase(uint8_t which);
