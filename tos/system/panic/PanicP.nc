@@ -79,9 +79,6 @@ implementation {
 
     nop();                              /* BRK */
     ROM_DEBUG_BREAK(0xf0);
-    while(1) {
-      nop();
-    }
   }
 #else
   void debug_break(parg_t arg)  __attribute__ ((noinline)) {
