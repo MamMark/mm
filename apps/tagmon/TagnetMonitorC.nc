@@ -27,6 +27,14 @@ implementation {
   GPSmonitorC.GPSReceive        -> GpsPort;
   TagnetC.InfoSensGpsXyz        -> GPSmonitorC;
 
+  components TagnetSysExecC;
+  TagnetC.SysActive             -> TagnetSysExecC.SysActive;
+  TagnetC.SysBackup             -> TagnetSysExecC.SysBackup;
+  TagnetC.SysGolden             -> TagnetSysExecC.SysGolden;
+  TagnetC.SysNIB                -> TagnetSysExecC.SysNIB;
+  TagnetC.SysRunning            -> TagnetSysExecC.SysRunning;
+  TagnetC.SysReboot             -> TagnetSysExecC.SysReboot;
+
   components new TimerMilliC()  as Timer0;
   TagnetMonitorP.rcTimer        -> Timer0;
   components new TimerMilliC()  as Timer1;

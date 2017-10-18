@@ -120,6 +120,12 @@ configuration TagnetC {
   }
   uses {
     interface TagnetAdapter<tagnet_gps_xyz_t>  as InfoSensGpsXyz;
+    interface TagnetSysExecAdapter             as SysActive;
+    interface TagnetSysExecAdapter             as SysBackup;
+    interface TagnetSysExecAdapter             as SysGolden;
+    interface TagnetSysExecAdapter             as SysNIB;
+    interface TagnetSysExecAdapter             as SysRunning;
+    interface TagnetSysExecAdapter             as SysReboot;
   }
 }
 implementation {
@@ -182,25 +188,33 @@ implementation {
   SdDev0ImgLf.Super   -> SdDev0Vx.Sub[unique(UQ_TN_SD_DEV_0)];
 
   // instantiate object pathname for TagNet System Boot Control
-  // -/tag-----/sys-----/<nid>----/boot----/active
-  //                                   \---/backup
-  //                                   \---/nib
-  //                                   \---/golden
-  components new         TagnetNameElementP   (TN_SYS_ID, UQ_TN_SYS)         as SysVx;
-  components new         TagnetNameElementP   (TN_SYS_NID_ID, UQ_TN_SYS_NID) as SysNidVx;
-  components new         TagnetNameElementP   (TN_SYS_BOOT_ID, UQ_TN_SYS_BOOT) as SysBootVx;
-  components new         TagnetActiveAdapterP (TN_SYS_BOOT_ACTIVE_ID) as SysBootActiveLf;
-  components new         TagnetActiveAdapterP (TN_SYS_BOOT_BACKUP_ID) as SysBootBackupLf;
-  components new         TagnetActiveAdapterP (TN_SYS_BOOT_GOLDEN_ID) as SysBootGoldenLf;
-  components new         TagnetActiveAdapterP (TN_SYS_BOOT_NIB_ID)    as SysBootNibLf;
-//  components new         TagnetBackupAdapterP (TN_SYS_BOOT_BACKUP_ID) as SysBootBackupLf;
-//  components new         TagnetGoldenAdapterP (TN_SYS_BOOT_GOLDEN_ID) as SysBootGoldenLf;
-//  components new         TagnetNibAdapterP    (TN_SYS_BOOT_NIB_ID)    as SysBootNibLf;
+  // -/tag-----/sys-----/<nid>----/----/active
+  //                               \---/backup
+  //                               \---/golden
+  //                               \---/nib
+  //                               \---/running
+  //                               \---/reboot
+  components new         TagnetNameElementP    (TN_SYS_ID, UQ_TN_SYS)         as SysVx;
+  components new         TagnetNameElementP    (TN_SYS_NID_ID, UQ_TN_SYS_NID) as SysNidVx;
+  components new         TagnetSysExecAdapterP (TN_SYS_ACTIVE_ID) as SysActiveLf;
+  components new         TagnetSysExecAdapterP (TN_SYS_BACKUP_ID) as SysBackupLf;
+  components new         TagnetSysExecAdapterP (TN_SYS_GOLDEN_ID) as SysGoldenLf;
+  components new         TagnetSysExecAdapterP (TN_SYS_NIB_ID)    as SysNibLf;
+  components new         TagnetSysExecAdapterP (TN_SYS_RUNNING_ID) as SysRunningLf;
+  components new         TagnetSysExecAdapterP (TN_SYS_REBOOT_ID) as SysRebootLf;
   SysVx.Super         -> TagVx.Sub[unique(UQ_TN_TAG)];
   SysNidVx.Super      -> SysVx.Sub[unique(UQ_TN_SYS)];
-  SysBootVx.Super     -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
-  SysBootActiveLf.Super-> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
-  SysBootBackupLf.Super-> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
-  SysBootGoldenLf.Super-> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
-  SysBootNibLf.Super  -> SysBootVx.Sub[unique(UQ_TN_SYS_BOOT)];
+  SysActiveLf.Super   -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
+  SysBackupLf.Super   -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
+  SysGoldenLf.Super   -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
+  SysNibLf.Super      -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
+  SysRunningLf.Super  -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
+  SysRebootLf.Super   -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
+  SysActive            = SysActiveLf.Adapter;
+  SysBackup            = SysBackupLf.Adapter;
+  SysGolden            = SysGoldenLf.Adapter;
+  SysNIB               = SysNibLf.Adapter;
+  SysRunning           = SysRunningLf.Adapter;
+  SysReboot            = SysRebootLf.Adapter;
+
 }

@@ -35,18 +35,18 @@
  *
  */
 
-generic configuration TagnetIntegerAdapterP (int my_id, char uq_id[]) @safe() {
+generic configuration TagnetSysExecAdapterP (int my_id) @safe() {
   uses interface     TagnetMessage  as  Super;
-  uses interface     TagnetAdapter<int32_t> as Adapter;
+  uses interface     TagnetSysExecAdapter as Adapter;
 }
 implementation {
-  components new TagnetIntegerAdapterImplP(my_id, uq_id) as Element;
+  components new TagnetSysExecAdapterImplP(my_id) as Element;
   components     TagnetUtilsC;
 
   Super           =  Element.Super;
-  Adapter         =  Element.Adapter;
   Element.TName  -> TagnetUtilsC;
   Element.THdr   -> TagnetUtilsC;
   Element.TPload -> TagnetUtilsC;
   Element.TTLV   -> TagnetUtilsC;
+  Adapter         = Element.Adapter;
 }

@@ -34,23 +34,26 @@
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  *
  */
-
-generic configuration TagnetActiveAdapterP (int my_id) @safe() {
-  uses interface     TagnetMessage  as  Super;
+configuration TagnetSysExecC {
+  provides interface  TagnetSysExecAdapter  as  SysActive;
+  provides interface  TagnetSysExecAdapter  as  SysBackup;
+  provides interface  TagnetSysExecAdapter  as  SysGolden;
+  provides interface  TagnetSysExecAdapter  as  SysNIB;
+  provides interface  TagnetSysExecAdapter  as  SysRunning;
+  provides interface  TagnetSysExecAdapter  as  SysReboot;
 }
 implementation {
-  components new TagnetActiveAdapterImplP(my_id) as Element;
-  components     TagnetUtilsC;
-  components     ImageManagerC;
-  components     OverWatchC;
+  components          TagnetSysExecP        as  Element;
+  components          ImageManagerC;
+  components          OverWatchC;
 
-  Super           =  Element.Super;
-  Element.TName  -> TagnetUtilsC;
-  Element.THdr   -> TagnetUtilsC;
-  Element.TPload -> TagnetUtilsC;
-  Element.TTLV   -> TagnetUtilsC;
-  Element.IM     -> ImageManagerC.IM[unique("image_manager_clients")];
-  Element.IMD    -> ImageManagerC;
-  Element.OW     -> OverWatchC;
-
+  SysActive           =  Element.SysActive;
+  SysBackup           =  Element.SysBackup;
+  SysGolden           =  Element.SysGolden;
+  SysNIB              =  Element.SysNIB;
+  SysRunning          =  Element.SysRunning;
+  SysReboot           =  Element.SysReboot;
+  Element.IM         ->  ImageManagerC.IM[unique("image_manager_clients")];
+  Element.IMD        ->  ImageManagerC;
+  Element.OW         ->  OverWatchC;
 }
