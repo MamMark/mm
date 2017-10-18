@@ -166,11 +166,10 @@ implementation {
     tagnet_tlv_t  *next_tlv;
     uint8_t        nx;
 
-//    if ((t->len == 0) || (t->typ == TN_TLV_NONE) || t->typ >= _TN_TLV_COUNT)
-    if (t->typ >= _TN_TLV_COUNT)
-      tn_panic(5, (parg_t) t, t->typ, t->len, 0);
     if (t->len == 0 || t->typ == TN_TLV_NONE)
       return NULL;
+    if (t->typ >= _TN_TLV_COUNT)
+      tn_panic(5, (parg_t) t, t->typ, t->len, 0);
 
     nx = SIZEOF_TLV(t);
     if (nx < limit) {
