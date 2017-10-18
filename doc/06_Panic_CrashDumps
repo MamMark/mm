@@ -46,12 +46,14 @@ A block includes the following information:
 
    <base address>
    <length>
+   <element_size>
    ...
    <base address>
    <length>
+   <element_size>
    ...
 
-6) Flash Crumbs
+6) Flash Crumbs (4KB, 8 sectors)
 
 
 Panic Block:
@@ -92,7 +94,7 @@ CPU state:  (CrashCatcher/Debug format)  236 bytes
 Total of above: 412
 
 
-Additional Information:
+Additional Information: (included in block0)
 
   4    sig
   4    RAM_start                sector start of RAM, 128 sectors, 64K bytes
@@ -108,9 +110,11 @@ Peripherals:
 
     4  base address             (defines which peripheral too)
     4  length
+    4  element size
        ...
     4  base address
     4  length
+    4  element size
        ...
 
 Flash Crumbs:
@@ -155,7 +159,7 @@ Cap_0           0x4000_540E       2         ****
 Cap_1           0x4000_580E       2         ****
 Timer32         0x4000_C000      64 (0x40)              **
 DMA             0x4000_E000      48 (0x30)              **
-                0x4000_E100      32 (0x20)              **
+                0x4000_E100      32 (0x20)                   ???
                 0x4000_F000      80 (0x50)              **
 PCM             0x4001_0000      20 (0x14)              **
 CS              0x4001_0400     104 (0x68)              **
