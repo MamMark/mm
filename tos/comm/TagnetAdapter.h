@@ -35,42 +35,32 @@
  *
  */
 
-#ifndef __TAGNETTLV_H__
-#define __TAGNETTLV_H__
+#ifndef __TAGNETADAPTER_H__
+#define __TAGNETADAPTER_H__
 
 #include <Tagnet.h>
-#include <TagnetAdapter.h>
+#include <image_info.h>
+#include <image_mgr.h>
 
-// Tagnet TLV Types
-typedef enum {
-  TN_TLV_NONE       = 0,
-  TN_TLV_STRING     = 1,
-  TN_TLV_INTEGER    = 2,
-  TN_TLV_GPS_XYZ    = 3,
-  TN_TLV_UTC_TIME   = 4,
-  TN_TLV_NODE_ID    = 5,
-  TN_TLV_NODE_NAME  = 6,
-  TN_TLV_OFFSET     = 7,
-  TN_TLV_SIZE       = 8,
-  TN_TLV_EOF        = 9,
-  TN_TLV_VERSION    = 10,
-  TN_TLV_BLK        = 11,
-  _TN_TLV_COUNT   // limit of enum values
-} tagnet_tlv_type_t;
+/*
+ * GPS Position and Time Information
+ */
+typedef struct {
+  uint32_t                gps_x;
+  uint32_t                gps_y;
+  uint32_t                gps_z;
+} tagnet_gps_xyz_t;
 
-// tagnet tlv type, len, value structure
-typedef struct tagnet_tlv_t {
-  tagnet_tlv_type_t typ;
-  uint8_t           len;
-  uint8_t           val[];
-} tagnet_tlv_t;
+#define TN_GPS_XYZ_LEN (sizeof(tagnet_gps_xyz_t))
 
-// 'standard' TLVs
-#define TN_NONE_TLV          "\000\000"
-#define TN_BCAST_NID_TLV     "\005\006\xff\xff\xff\xff\xff\xff"
-#define TN_MY_NID_TLV        "\005\006\x42\x42\x42\x42\x42\x42"
-#define TN_TAG_TLV           "\001\003tag"
+/*
+ * System Execution Control & Status
+ */
+typedef struct {
+  image_ver_t             ver_id;
+  slot_state_t            state;
+} tagnet_sys_exec_t;
 
-#define SIZEOF_TLV(t) (t->len + sizeof(tagnet_tlv_t))
+#define TN_SYS_EXEC_LEN (sizeof(tagnet_sys_exec_t))
 
-#endif   /* __TAGNETTLV_H__ */
+#endif   /* __TAGNETADAPTER_H__ */
