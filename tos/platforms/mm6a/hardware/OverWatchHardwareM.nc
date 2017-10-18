@@ -47,7 +47,7 @@ module OverWatchHardwareM {
 }
 implementation {
 
-  uint32_t others;
+  norace uint32_t others;
 
   /*
    * return a single 32 bit quantity that indicates the reset/reboot
