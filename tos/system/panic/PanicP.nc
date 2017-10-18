@@ -17,6 +17,7 @@
 
 #include <platform.h>
 #include <panic.h>
+#include <panic_regions.h>
 
 #ifdef   PANIC_WIGGLE
 #ifndef  WIGGLE_EXC
@@ -94,13 +95,11 @@ implementation {
   }
 #endif
 
-  const region_desc_t ram_region = { (void *) SRAM_BASE, 64 * 1024, 1};
-
   // use a region descriptor to define the ram.
-  void collect_ram(const region_desc_t *ram_desc, uint32_t start_sec) {
+  void collect_ram(const panic_region_t *ram_desc, uint32_t start_sec) {
     uint32_t cur_sec = start_sec;
     uint32_t len = ram_desc->len;
-    uint8_t *base = ram_desc->base;
+    uint8_t *base = ram_desc->base_addr;
 
     while (len > 0) {
       call SDsa.write(cur_sec, base);
@@ -111,7 +110,7 @@ implementation {
   }
 
   // io_desc needs to be defined.  basically an array region descriptor.
-  void collect_io(region_desc_t *io_desc, uint8_t *buf, uint32_t io_sector) {
+  void collect_io(const panic_region_t *io_desc, uint8_t *buf, uint32_t io_sector) {
   }
 
 
