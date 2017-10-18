@@ -39,6 +39,9 @@
 #ifndef __PANIC_REGIONS_H__
 #define __PANIC_REGIONS_H__
 
+/* end of regions */
+#define PR_EOR ((void *) 0xffffffff)
+
 typedef struct {
   void    *base_addr;
   uint32_t len;
@@ -68,7 +71,7 @@ const panic_region_t io_regions[] = {
   { (void *) &(TIMER32_2->LOAD), 28, 4 },
   { (void *) &(DMA_Channel->DEVICE_CFG), sizeof(DMA_Channel_Type), 1 },
   { (void *) &(DMA_Control->STAT), sizeof(DMA_Control_Type), 1 },
-  { (void *) 0xffffffff, 0, 1 }
+  {          PR_EOR, 0, 1 }
 };
 
 #endif /* __PANIC_REGIONS_H__ */
