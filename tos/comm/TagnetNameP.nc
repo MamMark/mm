@@ -236,4 +236,14 @@ implementation {
     return (tagnet_tlv_t *) &msg->data[getMeta(msg)->this];
   }
 
+  command bool              TagnetName.is_last_element(message_t *msg) {
+    tagnet_tlv_t       *this_tlv = call TagnetName.this_element(msg);
+    uint16_t            name_consumed;
+
+    name_consumed = getMeta(msg)->this + SIZEOF_TLV(this_tlv);
+    if (name_consumed >= call THdr.get_name_len(msg))
+      return TRUE;
+    return FALSE;
+  }
+
 }

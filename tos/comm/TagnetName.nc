@@ -141,6 +141,13 @@ interface TagnetName {
    * Get the next tlv in the name
    *
    * @param   msg           pointer to message buffer containing the name
+   * @return  bool          TRUE if this is the last element of name
+   */
+  command bool              is_last_element(message_t *msg);
+  /**
+   * Get the next tlv in the name
+   *
+   * @param   msg           pointer to message buffer containing the name
    * @return  tagnet_tlv_t  pointer to next tlv element in name
    */
   command tagnet_tlv_t*     next_element(message_t *msg);

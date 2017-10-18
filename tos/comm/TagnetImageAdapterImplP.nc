@@ -250,9 +250,9 @@ implementation {
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t    *help_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].help_tlv;
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
-    tagnet_tlv_t    *version_tlv = call TName.next_element(msg);
+    tagnet_tlv_t    *version_tlv;
     image_ver_t     *version;
-    tagnet_tlv_t    *offset_tlv = call TName.next_element(msg);
+    tagnet_tlv_t    *offset_tlv;
     uint32_t         offset = 0;
     tagnet_tlv_t    *eof_tlv = call TPload.first_element(msg);
     uint16_t         dlen = 0;
@@ -266,6 +266,8 @@ implementation {
     nop();
     nop();                                          /* BRK */
     if (call TTLV.eq_tlv(name_tlv, this_tlv)) {     //  me == this
+      version_tlv = call TName.next_element(msg);
+      offset_tlv = call TName.next_element(msg);
       tn_trace_rec(my_id, 1);
       switch (call THdr.get_message_type(msg)) {    // process packet type
         case TN_GET:
