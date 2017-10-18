@@ -19,6 +19,10 @@
 #include <panic.h>
 #include <panic_regions.h>
 
+#ifdef PANIC_GATE
+uint32_t g_panic_gate;
+#endif
+
 #ifdef   PANIC_WIGGLE
 #ifndef  WIGGLE_EXC
 #warning WIGGLE_EXC not defined, using default nothingness
@@ -52,6 +56,7 @@ module PanicP {
     interface SDsa;                     /* standalone */
     interface Platform;
     interface FileSystem as FS;
+    interface OverWatch;
   }
 }
 
@@ -163,7 +168,15 @@ implementation {
 
     collect_ram(&ram_region, panic_sec);
     collect_io(0, 0, 0);
-    ROM_DEBUG_BREAK(1);
+    ROM_DEBUG_BREAK(0xf0);
+
+#ifdef PANIC_GATE
+    while (g_panic_gate != 0xdeadbeaf) {
+      nop();
+    }
+#endif
+    call OverWatch.fail(ORR_PANIC);
+    /* shouldn't return */
     while (1) {
       nop();
     }

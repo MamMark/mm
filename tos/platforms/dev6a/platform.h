@@ -24,6 +24,7 @@
 #define REQUIRE_PANIC
 #define HANDLER_FAULT_WAIT
 #define PANIC_WIGGLE
+#define PANIC_GATE
 
 //#define TRACE_MICRO
 #define TRACE_USE_PLATFORM

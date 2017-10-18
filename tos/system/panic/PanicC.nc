@@ -18,6 +18,9 @@ implementation {
   components FileSystemC as FS;
   PanicP.FS -> FS;
 
+  components OverWatchC;
+  PanicP.OverWatch -> OverWatchC;
+
   components SD0C, SSWriteC;
   PanicP.SSW  -> SSWriteC;
   PanicP.SDsa -> SD0C;
