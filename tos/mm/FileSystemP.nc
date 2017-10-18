@@ -162,7 +162,7 @@ implementation {
       fs_panic(9, err);
     return err;
 #else
-    return SUCCESS;
+    return FAIL;
 #endif
   }
 
