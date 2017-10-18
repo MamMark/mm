@@ -133,6 +133,7 @@ typedef enum {
   ORR_FAIL,                             /* catch all for the time being */
   ORR_OWCB_CLOBBER,                     /* lost the control block, full pwr fail */
   ORR_FORCED_MODE,                      /* forced boot mode */
+  ORR_USER_REQUEST,                     /* user requested reboot */
   ORR_PANIC,
 } ow_reboot_reason_t;
 
