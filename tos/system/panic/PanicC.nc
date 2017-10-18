@@ -14,4 +14,11 @@ implementation {
   Panic = PanicP;
   PanicP.Platform -> PlatformC;
   MainC.SoftwareInit -> PanicP;
+
+  components FileSystemC as FS;
+  PanicP.FS -> FS;
+
+  components SD0C, SSWriteC;
+  PanicP.SSW  -> SSWriteC;
+  PanicP.SDsa -> SD0C;
 }

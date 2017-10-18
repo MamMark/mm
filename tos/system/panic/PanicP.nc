@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2013, 2016-2017 Eric B. Decker
+ * Copyright (c) 2017 Miles Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * This module provides a full Panic implementation.
@@ -14,7 +15,8 @@
  * line with information about what panic occurred.
  */
 
-#include "panic.h"
+#include <platform.h>
+#include <panic.h>
 
 #ifdef   PANIC_WIGGLE
 #ifndef  WIGGLE_EXC
@@ -44,7 +46,12 @@ module PanicP {
     interface Panic;
     interface Init;
   }
-  uses interface Platform;
+  uses {
+    interface SSWrite  as SSW;
+    interface SDsa;                     /* standalone */
+    interface Platform;
+    interface FileSystem as FS;
+  }
 }
 
 implementation {
@@ -87,6 +94,26 @@ implementation {
   }
 #endif
 
+  const region_desc_t ram_region = { (void *) SRAM_BASE, 64 * 1024, 1};
+
+  // use a region descriptor to define the ram.
+  void collect_ram(const region_desc_t *ram_desc, uint32_t start_sec) {
+    uint32_t cur_sec = start_sec;
+    uint32_t len = ram_desc->len;
+    uint8_t *base = ram_desc->base;
+
+    while (len > 0) {
+      call SDsa.write(cur_sec, base);
+      base += 512;
+      len  -= 512;
+      cur_sec++;
+    }
+  }
+
+  // io_desc needs to be defined.  basically an array region descriptor.
+  void collect_io(region_desc_t *io_desc, uint8_t *buf, uint32_t io_sector) {
+  }
+
 
   async command void Panic.warn(uint8_t pcode, uint8_t where,
         parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
@@ -111,6 +138,9 @@ implementation {
   async command void Panic.panic(uint8_t pcode, uint8_t where,
         parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
         __attribute__ ((noinline)) {
+
+    uint32_t panic_sec;
+
     _p = pcode; _w = where;
     _a0 = arg0; _a1 = arg1;
     _a2 = arg2; _a3 = arg3;
@@ -123,6 +153,17 @@ implementation {
       signal Panic.hook();
     } else
       m_in_panic |= 0x80;               /* flag a double */
+
+    /*
+     * for debugging,
+     *
+     * we want to call FS get regionstart for PANIC for a sector
+     * call SSW.get_tmp_buf for a buffer
+     */
+    panic_sec = call FS.area_start(FS_LOC_PANIC);
+
+    collect_ram(&ram_region, panic_sec);
+    collect_io(0, 0, 0);
     ROM_DEBUG_BREAK(1);
     while (1) {
       nop();
@@ -136,6 +177,8 @@ implementation {
     return SUCCESS;
   }
 
+
+  event void FS.eraseDone(uint8_t which) { }
 
   default async event void Panic.hook() { }
 }

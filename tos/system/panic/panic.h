@@ -56,4 +56,12 @@ typedef unsigned int parg_t;
 #define PANIC_INFO_SIG
 #define PANIC_CPU_SIG
 
+typedef struct {
+  uint8_t  *base;
+  uint32_t  len;
+  uint32_t  element_size;  /* 1 - byte, 2 - ushort, 4 - ulong  */
+} region_desc_t;
+
+
+
 #endif /* __PANIC_H__ */
