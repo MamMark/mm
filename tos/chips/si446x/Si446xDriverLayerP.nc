@@ -350,7 +350,7 @@ implementation {
    * fsm_trace related global variables and update routines. records state
    * machine execution details.
    */
-#define FSM_MAX_TRACE   40
+#define FSM_MAX_TRACE   120
   tasklet_norace fsm_stage_info_t fsm_trace_array[FSM_MAX_TRACE];
   tasklet_norace uint16_t fsm_tp, fsm_tc, fsm_count;
   const uint16_t fsm_max =  FSM_MAX_TRACE;
