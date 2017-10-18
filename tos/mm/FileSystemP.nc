@@ -78,11 +78,6 @@ implementation {
     call Panic.panic(PANIC_FS, where, arg0, 0, 0, 0);
   }
 
-  void fs_panic_idle(uint8_t where, parg_t arg0) {
-    call Panic.panic(PANIC_FS, where, arg0, 0, 0, 0);
-    fs_state = FSS_IDLE;
-  }
-
 
   /*
    * check_fs_loc
@@ -133,10 +128,8 @@ implementation {
     fs_state = FSS_ERASE;
     err = call SDerase.erase(fs_loc.locators[fs_which].start,
                              fs_loc.locators[fs_which].end);
-    if (err) {
-      fs_panic_idle(4, err);
-      return;
-    }
+    if (err)
+      fs_panic(4, err);
 #endif
   }
 
@@ -146,7 +139,7 @@ implementation {
 
     fs_state = FSS_ZERO_REQ;
     if ((err = call SDResource.request()))
-      fs_panic_idle(1, err);
+      fs_panic(1, err);
     return;
   }
 
@@ -155,14 +148,9 @@ implementation {
 #ifdef FS_ENABLE_ERASE
     error_t err;
 
-    if (fs_state != FSS_IDLE) {
-      fs_panic(9, fs_state);
-      return EBUSY;
-    }
-    if (which >= FS_LOC_MAX) {
-      fs_panic(8, which);
-      return FAIL;
-    }
+    if (fs_state != FSS_IDLE || which >= FS_LOC_MAX)
+      call Panic.panic(PANIC_FS, 8, fs_state, which, 0, 0);
+
     fs_which = which;
     fs_state = FSS_ERASE_REQ;
     if (call SDResource.isOwner()) {
@@ -170,10 +158,8 @@ implementation {
       return SUCCESS;
     }
     err = call SDResource.request();
-    if (err) {
+    if (err)
       fs_panic(9, err);
-      return FAIL;
-    }
     return err;
 #else
     return SUCCESS;
@@ -202,16 +188,14 @@ implementation {
 
     switch (fs_state) {
       default:
-        fs_panic_idle(2, fs_state);
+        fs_panic(2, fs_state);
         return;
 
       case FSS_ZERO_REQ:
         fs_state = FSS_ZERO;
         fs_buf = call SSW.get_temp_buf();
-        if ((err = call SDread.read(0, fs_buf))) {
-          fs_panic_idle(3, err);
-          return;
-        }
+        if ((err = call SDread.read(0, fs_buf)))
+          fs_panic(3, err);
         return;
 
       case FSS_ERASE_REQ:
@@ -226,22 +210,16 @@ implementation {
     uint8_t  *dp;
 
     dp = fs_buf;
-    if (err || dp == NULL || dp != read_buf) {
+    if (err || dp == NULL || dp != read_buf)
       call Panic.panic(PANIC_FS, 4, err, (parg_t) dp, (parg_t) read_buf, 0);
-      return;
-    }
 
-    if (fs_state != FSS_ZERO) {
-      fs_panic_idle(5, fs_state);
-      return;
-    }
+    if (fs_state != FSS_ZERO)
+      fs_panic(5, fs_state);
 
     fsl = (void *) ((uint8_t *) dp + FS_LOC_OFFSET);
     err = check_fs_loc(fsl);
-    if (err) {
-      fs_panic_idle(6, err);
-      return;
-    }
+    if (err)
+      fs_panic(6, err);
 
     memcpy(&fs_loc, fsl, sizeof(fs_loc_t));
     fs_state = FSS_IDLE;
