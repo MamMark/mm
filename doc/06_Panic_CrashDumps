@@ -123,10 +123,12 @@ Flash Crumbs:
 
 Total Panic Block size:
   home block + RAM + i/o + flash crumbs
-      1        128   ?     8
+      1        128   4     8           = 141 (round up to 150 sectors)
 
 
 o I/O state.
+
+  Estimated size: ~ 932 bytes ==> 1024 bytes with overhead.  4 sectors
 
 (These need to be verified.  length)
 (**** currently not used)

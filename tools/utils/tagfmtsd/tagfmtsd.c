@@ -88,12 +88,6 @@ display_info(void) {
             loc.locators[FS_LOC_DBLK].end,
             msc_dblk_nxt);
 
-    if (p0c.panic_start)
-      fprintf(stderr, "panic0:    p: %-8x %-8x  (nxt) %-8x\n",
-	      p0c.panic_start, p0c.panic_end,  p0c.panic_nxt);
-    else
-      fprintf(stderr, "panic0:   no panic0 block\n");
-
     de = f32_get_de("PANIC001", "   ", &rds);
     if (de) {
 	rds = (CF_LE_16(de->starthi) << 16) | CF_LE_16(de->start);
@@ -130,7 +124,7 @@ int main(int argc, char **argv) {
     int     err;
     uint8_t buf[MS_BUF_SIZE];
     u32_t   image_size;
-    int     do_fs_loc, do_panic0;
+    int     do_fs_loc;
 
     while ((c = getopt_long(argc,argv,"c:d:i:p:DhvVw", longopts, NULL)) != EOF)
 	switch (c) {
@@ -197,7 +191,6 @@ int main(int argc, char **argv) {
 	exit(0);
     }
     do_fs_loc = 1;
-    do_panic0   = !msc_panic0_blk;
     err = fx_create_contig("PANIC001", "   ", panic_size,
                            &loc.locators[FS_LOC_PANIC].start,
                            &loc.locators[FS_LOC_PANIC].end);
@@ -248,22 +241,11 @@ int main(int argc, char **argv) {
 	fprintf(stderr, "fx_write_locator: %s (0x%x)\n", fx_dsp_err(err), err);
 	exit(1);
       }
-      do_panic0 = 1;			/* always write if we wrote the dblk locator */
-    }
-
-    if (do_panic0) {
-      fprintf(stderr, "*** writing PANIC0 blk\n");
-      err = fx_write_panic0(loc.locators[FS_LOC_PANIC].start,
-                            loc.locators[FS_LOC_PANIC].end);
-      if (err) {
-	fprintf(stderr, "fx_write_panic: %s (0x%x)\n", fx_dsp_err(err), err);
-	exit(1);
-      }
     }
 
     display_info();
 
-    if (!do_fs_loc && !do_panic0)
+    if (!do_fs_loc)
       fprintf(stderr, "*** no changes written\n");
 
     return(0);

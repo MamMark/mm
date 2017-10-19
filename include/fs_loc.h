@@ -92,31 +92,7 @@ enum fs_loc_indicies {
 
 #define FS_LOC_SIZE_SHORTS  (sizeof(fs_loc_t)/2)
 
-#define PANIC0_SECTOR UINT32_C(2)
-#define PANIC0_MAJIK  UINT32_C(0x23626223)
-#define PANIC0_SIZE_SHORTS 13
-
 #define FUBAR_REALLY_REALLY_FUBARD UINT32_C(0x08313108)
-
-
-/*
- * Panic0 block, stored little endian order
- */
-typedef struct {
-  uint32_t sig_a;			/* tombstone */
-  uint32_t panic_start;			/* abs blk id */
-  uint32_t panic_nxt;			/* abs blk id */
-  uint32_t panic_end;			/* abs blk id */
-  uint32_t fubar;			/* fell off bottom */
-  uint32_t sig_b;			/* tombstone */
-  uint16_t chksum;
-
-  /* end of actual panic0 struct */
-
-  uint16_t pad[16];
-  uint32_t really_really_fubard_sig;    /* special wartage */
-  uint32_t sig_c;
-} panic0_hdr_t;
 
 
 #endif /* __FS_LOC_H__ */

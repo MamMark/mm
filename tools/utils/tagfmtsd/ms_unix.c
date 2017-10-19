@@ -5,8 +5,6 @@
  *
  * Low level interface for Unix based boxes.
  * Tested on Linux and Mac OS X.
- *
- * Sep 2010, added support for Panic0 (sector 2) block.
  */
 
 
@@ -39,40 +37,14 @@ extern __off64_t lseek64(int __fd, __off64_t __offset, int __whence);
 fs_loc_t loc;
 uint32_t msc_dblk_nxt;                  /* 1st empty dblk */
 
-uint32_t     msc_panic0_blk;            /* panic control block, where it lives */
-panic0_hdr_t p0c;			/* panic0 control */
-
 uint8_t ms_buf[MS_BUF_SIZE];
 
 extern int verbose;
 extern int debug;
 
-int
-check_panic0_values(panic0_hdr_t *p) {
-  int rtn;
-  uint32_t start, end;
-
-  rtn = 0;
-  start = loc.locators[FS_LOC_PANIC].start;
-  end   = loc.locators[FS_LOC_PANIC].end;
-  if (start != p->panic_start) {
-    fprintf(stderr, "*** panic0 mismatch: (start) %x/%x\n",
-	    start, p->panic_start);
-    rtn = 1;
-  }
-  if (end != p->panic_end) {
-    fprintf(stderr, "*** panic0 mismatch: (end) %x/%x\n",
-	    end, p->panic_end);
-    rtn = 1;
-  }
-  return rtn;
-}
-
-
 ms_rtn
 ms_init(char *device_name) {
     fs_loc_t  *fsl;
-    panic0_hdr_t *php;
     uint32_t   blk, lower, upper;
     int        empty;
     uint8_t   *dp;
@@ -120,40 +92,6 @@ ms_init(char *device_name) {
       return rtn;
 
     memcpy(&loc, fsl, sizeof(fs_loc_t));
-
-    /*
-     * see if there is a valid panic0 block.  The data in the block
-     * must match the panic data in the dblock locator for panic.
-     * Otherwise flag no panic block.
-     */
-    if (verbose || debug)
-      fprintf(stderr, "*** reading PANIC0 (sector %u)\n", PANIC0_SECTOR);
-    ms_read_blk_fail(PANIC0_SECTOR, dp);
-    php = (void *) dp;
-    empty = msu_check_panic0_blk(php);
-    fprintf(stderr, "panic0:    %s (%d)\n", msu_check_string(empty), empty);
-
-    if (empty == 0) {
-      /*
-       * Only check the Panic0 block if we think it is present.
-       *
-       * the PANIC0 block information should agree with what is
-       * in the dblk.  Otherwise bitch and flag the panic0 block
-       * as not being present.  This will force a rewrite.
-       */
-      p0c.sig_a       = CF_LE_32(php->sig_a);
-      p0c.panic_start = CF_LE_32(php->panic_start);
-      p0c.panic_nxt   = CF_LE_32(php->panic_nxt);
-      p0c.panic_end   = CF_LE_32(php->panic_end);
-      p0c.fubar       = CF_LE_32(php->fubar);
-      p0c.sig_b       = CF_LE_32(php->sig_b);
-      p0c.chksum      = CF_LE_32(php->chksum);
-      empty = check_panic0_values(&p0c);
-      if (empty)
-	msc_panic0_blk = 0;                     /* non-zero says sometings wrong */
-      else
-	msc_panic0_blk  = PANIC0_SECTOR;	/* flag it as being present */
-    }
 
     /*
      * Scan the rest of the dblk (using binary search) looking for where
@@ -204,8 +142,6 @@ ms_init(char *device_name) {
               msc_dblk_nxt);
       if (msc_dblk_nxt == 0)
 	fprintf(stderr, "*** dblk_nxt not set ***\n");
-      fprintf(stderr, "panic0:  p:   s: %-8x   e: %-8x   n: %x\n",
-	      p0c.panic_start, p0c.panic_end, p0c.panic_nxt);
     }
     return rtn;
 }
