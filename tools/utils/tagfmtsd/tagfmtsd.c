@@ -25,7 +25,7 @@
 extern fs_loc_t loc;
 
 
-#define VERSION "tagfmtsd: v3.9.2  2017/09/10\n"
+#define VERSION "tagfmtsd: v4.0.0  2017/10/19\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -36,9 +36,14 @@ int debug	= 0,
  *
  * image_size is set to include all image slots (at 128KiB each) and
  * the directory sector (512 bytes).
+ *
+ * panic size is 16 panic blocks.  each block can be up to 150 sectors
+ * long.  150 sectors is ~75KiB.  We also need one sector for the Panic
+ * Directory sector.
  */
 uint32_t config_size = 8*1024,
-	 panic_size  = 128*1024,
+         panic_slots = 16,
+         panic_block_size = 150,
          img_slots   = 4,
 	 dblk_size   = 0;
 
@@ -124,6 +129,7 @@ int main(int argc, char **argv) {
     int     err;
     uint8_t buf[MS_BUF_SIZE];
     u32_t   image_size;
+    u32_t   panic_size;
     int     do_fs_loc;
 
     while ((c = getopt_long(argc,argv,"c:d:i:p:DhvVw", longopts, NULL)) != EOF)
@@ -191,6 +197,7 @@ int main(int argc, char **argv) {
 	exit(0);
     }
     do_fs_loc = 1;
+    panic_size = (panic_slots * panic_block_size + 1) * 512;
     err = fx_create_contig("PANIC001", "   ", panic_size,
                            &loc.locators[FS_LOC_PANIC].start,
                            &loc.locators[FS_LOC_PANIC].end);
