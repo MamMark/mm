@@ -27,11 +27,14 @@ implementation {
   Boot   = FS_P;
 
   components new SD0_ArbC() as SD, SSWriteC;
+  components     SD0C       as SDsa;
 
   FS_P.SSW        -> SSWriteC;
   FS_P.SDResource -> SD;
   FS_P.SDread     -> SD;
   FS_P.SDerase    -> SD;
+
+  FS_P.SDsa       -> SDsa;
 
   components PanicC;
   FS_P.Panic -> PanicC;

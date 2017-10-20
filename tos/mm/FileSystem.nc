@@ -21,4 +21,14 @@ interface FileSystem {
   /* erase a region, split phase */
   command error_t  erase(uint8_t which);
   event   void     eraseDone(uint8_t which);
+
+  /*
+   * standalone
+   *
+   * Force a reload of the locator block.
+   * This is a standalone version used by Panic to ensure
+   * that a good locator is loaded so it can find the
+   * panic region.
+   */
+  async command error_t  reload_locator_sa(uint8_t *buf);
 }

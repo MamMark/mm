@@ -63,6 +63,7 @@ module FileSystemP {
     interface SDerase;
     interface SSWrite  as SSW;
     interface Resource as SDResource;
+    interface SDsa;
     interface Panic;
   }
 }
@@ -183,6 +184,31 @@ implementation {
   }
 
 
+  error_t get_locator(uint8_t * buf) {
+    fs_loc_t *fsl;
+    error_t   err;
+
+    fsl = (void *) (buf + FS_LOC_OFFSET);
+    err = check_fs_loc(fsl);
+    if (err) return err;
+    memcpy(&fs_loc, fsl, sizeof(fs_loc_t));
+    return SUCCESS;
+  }
+
+
+  async command error_t FS.reload_locator_sa(uint8_t * buf) {
+    error_t err;
+
+    if (!call SDsa.inSA()) {
+      err = call SDsa.reset();
+      if (err) return err;
+    }
+    call SDsa.read(0, buf);
+    err = get_locator(buf);
+    return err;
+  }
+
+
   event void SDResource.granted() {
     error_t err;
 
@@ -193,7 +219,6 @@ implementation {
 
       case FSS_ZERO_REQ:
         fs_state = FSS_ZERO;
-        fs_buf = call SSW.get_temp_buf();
         if ((err = call SDread.read(0, fs_buf)))
           fs_panic(3, err);
         return;
@@ -206,7 +231,6 @@ implementation {
 
 
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
-    fs_loc_t *fsl;
     uint8_t  *dp;
 
     dp = fs_buf;
@@ -216,12 +240,9 @@ implementation {
     if (fs_state != FSS_ZERO)
       fs_panic(5, fs_state);
 
-    fsl = (void *) ((uint8_t *) dp + FS_LOC_OFFSET);
-    err = check_fs_loc(fsl);
+    err = get_locator(dp);
     if (err)
       fs_panic(6, err);
-
-    memcpy(&fs_loc, fsl, sizeof(fs_loc_t));
     fs_state = FSS_IDLE;
 
     /*
