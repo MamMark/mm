@@ -204,6 +204,16 @@ int main(int argc, char **argv) {
     if (err) {
 	fprintf(stderr, "fx_create_contig: PANIC001: %s (0x%x)\n", fx_dsp_err(err), err);
 	do_fs_loc = 0;
+    } else {
+      /*
+       * also need to force the directory sector (the first sector in the region) to zero.
+       */
+      memset(buf, 0, MS_BUF_SIZE);
+      err = ms_write_blk(loc.locators[FS_LOC_PANIC].start, buf);
+      if (err) {
+	fprintf(stderr, "fx_create_contig: PANIC001: could not zero dir: %s (0x%x)\n", fx_dsp_err(err), err);
+	do_fs_loc = 0;
+      }
     }
     err = fx_create_contig("CNFG0001", "   ", config_size,
                            &loc.locators[FS_LOC_CONFIG].start,
