@@ -19,10 +19,14 @@
 #include <panic.h>
 #include <panic_regions.h>
 #include <sd.h>
+#include <fs_loc.h>
 
 #ifdef PANIC_GATE
 uint32_t g_panic_gate;
 #endif
+
+/* debugging, nuke with chk_zero refactor */
+bool dir_sec_zero;                           /* inits to 0 */
 
 #ifdef   PANIC_WIGGLE
 #ifndef  WIGGLE_EXC
@@ -71,17 +75,16 @@ implementation {
   norace bool m_in_panic;       /* initialized to 0 */
 
   /* persistent state for collect_io */
-  norace uint8_t *m_buf;               /* inits to NULL */
+  norace uint8_t *m_buf;                /* inits to NULL */
   norace uint8_t *m_bptr;
-  norace uint32_t m_remaining;         /* inits to 0 */
-  norace uint32_t m_block;             /* where the block starts */
-  norace uint32_t m_panic_sec;         /* current sector being written */
+  norace uint32_t m_remaining;          /* inits to 0 */
+  norace uint32_t m_block;              /* where the block starts */
+  norace uint32_t m_panic_sec;          /* current sector being written */
 
   /* panic control, only active after a Panic happens */
-  uint32_t m_dir;               /* directory sector */
-  uint32_t m_low;               /* low  limit for blocks */
-  uint32_t m_high;              /* high limit for blocks */
-
+  norace uint32_t m_dir;                /* directory sector */
+  norace uint32_t m_low;                /* low  limit for blocks */
+  norace uint32_t m_high;               /* high limit for blocks */
 
 #ifdef PANIC_WIGGLE
   void debug_break(parg_t arg)  __attribute__ ((noinline)) {
@@ -116,14 +119,16 @@ implementation {
 
 
   void init_panic_dump() {
+    panic_dir_t *dirp;
+
     /*
      * at some point
      *
-     * get a buffer.
-     * read the locator (0)
-     * verify the locator
-     * extract panic_start and panic_end
+     * FS.reload_locator_sa() fail -> strange
+     * get panic region start/end
      * initialize the m_dir, m_low, m_high
+     *
+     * get a buffer.
      * read the dir
      * if the dir sector is zeros m_panic_sec = m_dir+1
      * else verify dir, passes m_panic_sec = next_block_start
@@ -131,20 +136,56 @@ implementation {
      *
      * initialize buffer management
      */
-    m_panic_sec = call FS.area_start(FS_LOC_PANIC);
+
     m_buf = call SSW.get_temp_buf();
-    m_bptr = m_buf;
     m_remaining = SD_BLOCKSIZE;
 
     /*
-     * we need to initilize the panic_dir and panic
-     * global state.
+     * FS.reload_locator_sa will turn on the SD
+     * we don't need to do a SDsa.reset(), its been done.
      */
-    call SDsa.reset();
+    if (call FS.reload_locator_sa(m_buf)) {
+      /*
+       * strange
+       */
+      while (1) {
+        nop();
+      }
+    }
+    m_dir       = call FS.area_start(FS_LOC_PANIC);
+    m_low       = m_dir + 1;
+    m_high      = call FS.area_end(FS_LOC_PANIC);
+    m_block     = m_low;
+    m_panic_sec = m_low;
+
+    call SDsa.read(m_dir, m_buf);
+
+    /* this will get changed to chk_zero when refactored */
+    if (!dir_sec_zero) {
+
+      /* validate dir, fails -> strange */
+
+      dirp = (void *) m_buf;
+      m_block = dirp->panic_block_sector;
+      m_panic_sec = m_block;
+    }
   }
 
 
   void update_panic_dir() {
+    panic_dir_t *dirp;
+
+    /*
+     * need to bump m_block to the next panic block if any.
+     * m_block += PANIC_BLOCK_SIZE
+     */
+    dirp                     = (panic_dir_t *) m_buf;
+    dirp->panic_dir_sig      = PANIC_DIR_SIG;
+    dirp->panic_block_sector = m_block + PANIC_BLOCK_SIZE;
+
+    /* fix checksum */
+
+    call SDsa.write(m_dir, m_buf);
     call SDsa.off();
   }
 

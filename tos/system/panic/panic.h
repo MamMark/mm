@@ -94,6 +94,15 @@ typedef unsigned int parg_t;
 #define PANIC_CRASH_SIG 0x44664352
 #define PANIC_ADDITIONS 0x44664144
 
+#define PANIC_DIR_SIG    0xDDDDB00B
+#define PANIC_BLOCK_SIZE 150
+
+typedef struct {
+  uint32_t panic_dir_sig;
+  uint32_t panic_block_sector;        /* dir - sector for next block */
+  uint32_t panic_dir_checksum;
+} panic_dir_t;
+
 typedef struct {
   uint32_t sig;
   uint32_t ts;
