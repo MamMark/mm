@@ -188,7 +188,7 @@ implementation {
    * control cells, imcb, ImageManager Control Block
    */
   imcb_t imcb;
-  bool   do_erase = 0;
+  bool   do_erase, erase_panic;
 
 
   void im_warn(uint8_t where, parg_t p0, parg_t p1) {
@@ -532,7 +532,10 @@ implementation {
     nop();                              /* BRK */
     if (do_erase) {
       do_erase = 0;
-      call FS.erase(FS_LOC_IMAGE);
+      if (erase_panic)
+        call FS.erase(FS_LOC_PANIC);
+      else
+        call FS.erase(FS_LOC_IMAGE);
     }
 #endif
 
