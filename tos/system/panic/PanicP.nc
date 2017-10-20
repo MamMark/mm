@@ -313,14 +313,19 @@ implementation {
     _a0 = arg0; _a1 = arg1;
     _a2 = arg2; _a3 = arg3;
     debug_break(1);
-    if (!m_in_panic) {
-      /*
-       * Panic.hook may call code that may cause a panic.  Don't loop
-       */
-      m_in_panic = TRUE;
-      signal Panic.hook();
-    } else
+    if (m_in_panic) {
       m_in_panic |= 0x80;               /* flag a double */
+      ROM_DEBUG_BREAK(0xf1);
+      /*
+       * Need to Strange here.
+       */
+      while (1) {
+        nop();
+      }
+    }
+
+    m_in_panic = TRUE;
+    signal Panic.hook();
 
     /*
      * initialize for writing panic information out to
