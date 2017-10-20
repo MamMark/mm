@@ -115,8 +115,6 @@ implementation {
 #endif
 
 
-  void collect_ram(const panic_region_t *ram_desc, uint32_t start_sec) {
-    uint32_t cur_sec = start_sec;
   void init_panic_dump() {
     /*
      * at some point
@@ -150,49 +148,99 @@ implementation {
     call SDsa.off();
   }
 
+
+  void collect_ram(const panic_region_t *ram_desc) {
     uint32_t len = ram_desc->len;
     uint8_t *base = ram_desc->base_addr;
 
     while (len > 0) {
-      call SDsa.write(cur_sec, base);
+      call SDsa.write(m_panic_sec, base);
+      m_panic_sec++;
       base += 512;
       len  -= 512;
-      cur_sec++;
     }
   }
 
 
-  void collect_io(const panic_region_t *io_desc, uint8_t *buf, uint32_t io_sector) {
-    uint8_t *src, *dst;
-    uint32_t s_len, d_len, copy_len;
+  /*
+   * copy the region pointed at by src into the working buffer at dest
+   * return where we left off.
+   *
+   * input: src         where we are coping from
+   *        len         how many bytes are being copied
+   *        esize       element size, granularity
+   *                    1 - byte granules
+   *                    2 - half word (16 bit) granules
+   *                    4 - word (32 bit) granules
+   *                    granuals > 1 have to be properly aligned.
+   *
+   * data moved should be properly aligned for the granual as well
+   * as have a modulo granual length.
+   */
+  void copy_region(uint8_t *src, uint32_t len, uint32_t esize)  {
+    uint8_t *dest;
+    uint32_t d_len, copy_len;
+    uint16_t *dp_16, *sp_16;
+    uint32_t *dp_32, *sp_32;
 
-    dst   = buf;
-    d_len = SD_BLOCKSIZE;
+    dest = m_bptr;
+    d_len = m_remaining;
 
-    while (io_desc->base_addr != PR_EOR) {
-      src    = io_desc->base_addr;
-      s_len  = io_desc->len;
+    /* protect len against non-granular values */
+    len = (len + (esize - 1)) & ~(esize - 1);
+    while (len > 0) {
+      copy_len = ((len < d_len) ? len : d_len);
+      switch (esize) {
+        default:
+        case 1:
+          while (copy_len) {
+            *dest++ = *src++;
+            copy_len--;
+          }
+          break;
 
-      while (s_len) {
-        copy_len = ((s_len < d_len) ? s_len : d_len);
-        memcpy(dst, src, copy_len);
-        src   += copy_len;
-        s_len -= copy_len;
-        dst   += copy_len;
-        d_len -= copy_len;
-        if (!d_len) {
-          call SDsa.write(io_sector, buf);
-          io_sector++;
-          dst = buf;
-          d_len = SD_BLOCKSIZE;
-        }
+        case 2:
+          dp_16 = (void *) dest;
+          sp_16 = (void *) src;
+          while (copy_len) {
+            *dp_16++ = *sp_16++;
+            copy_len -= 2;
+          }
+          break;
+
+        case 4:
+          dp_32 = (void *) dest;
+          sp_32 = (void *) src;
+          while (copy_len) {
+            *dp_32++ = *sp_32++;
+            copy_len -= 4;
+          }
+          break;
       }
+      src   += copy_len;
+      len   -= copy_len;
+      dest  += copy_len;
+      d_len -= copy_len;
+      if (!d_len) {
+        call SDsa.write(m_panic_sec, m_buf);
+        m_panic_sec++;
+        dest = m_buf;
+        d_len = SD_BLOCKSIZE;
+      }
+    }
+    m_bptr = dest;
+    m_remaining = d_len;
+  }
+
+
+  void collect_io(const panic_region_t *io_desc) {
+    while (io_desc->base_addr != PR_EOR) {
+      copy_region((void *)io_desc, sizeof(panic_region_t), 4);
+      copy_region(io_desc->base_addr, io_desc->len, io_desc->element_size);
       io_desc++;
     }
-    if (dst != buf) {
-      /* zero end of buf */
-      call SDsa.write(io_sector, buf);
-    }
+    if (m_remaining != SD_BLOCKSIZE)
+      call SDsa.write(m_panic_sec, m_buf);
   }
 
 
@@ -239,8 +287,8 @@ implementation {
      */
     init_panic_dump();
 
-    collect_ram(&ram_region, panic_sec);
-    collect_io(&io_regions[0], test_buf, panic_sec);
+    collect_ram(&ram_region);
+    collect_io(&io_regions[0]);
     update_panic_dir();
     ROM_DEBUG_BREAK(0xf0);
 
