@@ -47,9 +47,6 @@ uint32_t g_panic_gate;
 #endif
 
 
-uint8_t test_buf[512];
-
-
 module PanicP {
   provides {
     interface Panic;
@@ -71,7 +68,20 @@ implementation {
   norace parg_t _a0, _a1, _a2, _a3, _arg;
 
   /* if a double panic, high order bit is set */
-  norace bool m_in_panic;               /* initialized to 0 */
+  norace bool m_in_panic;       /* initialized to 0 */
+
+  /* persistent state for collect_io */
+  norace uint8_t *m_buf;               /* inits to NULL */
+  norace uint8_t *m_bptr;
+  norace uint32_t m_remaining;         /* inits to 0 */
+  norace uint32_t m_block;             /* where the block starts */
+  norace uint32_t m_panic_sec;         /* current sector being written */
+
+  /* panic control, only active after a Panic happens */
+  uint32_t m_dir;               /* directory sector */
+  uint32_t m_low;               /* low  limit for blocks */
+  uint32_t m_high;              /* high limit for blocks */
+
 
 #ifdef PANIC_WIGGLE
   void debug_break(parg_t arg)  __attribute__ ((noinline)) {
@@ -107,6 +117,39 @@ implementation {
 
   void collect_ram(const panic_region_t *ram_desc, uint32_t start_sec) {
     uint32_t cur_sec = start_sec;
+  void init_panic_dump() {
+    /*
+     * at some point
+     *
+     * get a buffer.
+     * read the locator (0)
+     * verify the locator
+     * extract panic_start and panic_end
+     * initialize the m_dir, m_low, m_high
+     * read the dir
+     * if the dir sector is zeros m_panic_sec = m_dir+1
+     * else verify dir, passes m_panic_sec = next_block_start
+     *    doesn't pass strange
+     *
+     * initialize buffer management
+     */
+    m_panic_sec = call FS.area_start(FS_LOC_PANIC);
+    m_buf = call SSW.get_temp_buf();
+    m_bptr = m_buf;
+    m_remaining = SD_BLOCKSIZE;
+
+    /*
+     * we need to initilize the panic_dir and panic
+     * global state.
+     */
+    call SDsa.reset();
+  }
+
+
+  void update_panic_dir() {
+    call SDsa.off();
+  }
+
     uint32_t len = ram_desc->len;
     uint8_t *base = ram_desc->base_addr;
 
@@ -177,8 +220,6 @@ implementation {
         parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
         __attribute__ ((noinline)) {
 
-    uint32_t panic_sec;
-
     _p = pcode; _w = where;
     _a0 = arg0; _a1 = arg1;
     _a2 = arg2; _a3 = arg3;
@@ -193,15 +234,14 @@ implementation {
       m_in_panic |= 0x80;               /* flag a double */
 
     /*
-     * for debugging,
-     *
-     * we want to call FS get regionstart for PANIC for a sector
-     * call SSW.get_tmp_buf for a buffer
+     * initialize for writing panic information out to
+     * the PANIC area.
      */
-    panic_sec = call FS.area_start(FS_LOC_PANIC);
+    init_panic_dump();
 
     collect_ram(&ram_region, panic_sec);
     collect_io(&io_regions[0], test_buf, panic_sec);
+    update_panic_dir();
     ROM_DEBUG_BREAK(0xf0);
 
 #ifdef PANIC_GATE
