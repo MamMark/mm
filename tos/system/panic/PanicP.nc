@@ -255,7 +255,7 @@ implementation {
    */
   void copy_region(uint8_t *src, uint32_t len, uint32_t esize)  {
     uint8_t *dest;
-    uint32_t d_len, copy_len;
+    uint32_t d_len, copy_len, w_len;
     uint16_t *dp_16, *sp_16;
     uint32_t *dp_32, *sp_32;
 
@@ -266,30 +266,31 @@ implementation {
     len = (len + (esize - 1)) & ~(esize - 1);
     while (len > 0) {
       copy_len = ((len < d_len) ? len : d_len);
+      w_len    = copy_len;
       switch (esize) {
         default:
         case 1:
-          while (copy_len) {
+          while (w_len) {
             *dest++ = *src++;
-            copy_len--;
+            w_len--;
           }
           break;
 
         case 2:
           dp_16 = (void *) dest;
           sp_16 = (void *) src;
-          while (copy_len) {
+          while (w_len) {
             *dp_16++ = *sp_16++;
-            copy_len -= 2;
+            w_len -= 2;
           }
           break;
 
         case 4:
           dp_32 = (void *) dest;
           sp_32 = (void *) src;
-          while (copy_len) {
+          while (w_len) {
             *dp_32++ = *sp_32++;
-            copy_len -= 4;
+            w_len -= 4;
           }
           break;
       }
