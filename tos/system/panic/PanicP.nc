@@ -371,6 +371,8 @@ implementation {
      * initialize for writing panic information out to
      * the PANIC area.
      */
+    nop();                              /* BRK */
+    ROM_DEBUG_BREAK(0xf0);
     init_panic_dump();
     collect_ram(&ram_region);
     collect_io(&io_regions[0]);
