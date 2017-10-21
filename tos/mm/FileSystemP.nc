@@ -219,6 +219,7 @@ implementation {
 
       case FSS_ZERO_REQ:
         fs_state = FSS_ZERO;
+        fs_buf = call SSW.get_temp_buf();
         if ((err = call SDread.read(0, fs_buf)))
           fs_panic(3, err);
         return;
