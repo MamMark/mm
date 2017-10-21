@@ -49,11 +49,11 @@ typedef struct {
 } panic_region_t;
 
 #define SRAM_LEN (64 * 1024)
-const panic_region_t ram_region = { (void *) SRAM_BASE, SRAM_LEN, 1 };
+const panic_region_t ram_region = { (void *) SRAM_BASE, SRAM_LEN-512, 1 };
 
 const panic_region_t io_regions[] = {
-  { (void *) TIMER_A0_BASE, 48, 1 },
-  { (void *) TIMER_A1_BASE, 48, 1 },
+  { (void *) TIMER_A0_BASE, 48, 2 },
+  { (void *) TIMER_A1_BASE, 48, 2 },
   { (void *) EUSCI_A0_BASE, 32, 1 },
   { (void *) EUSCI_A1_BASE, 32, 1 },
   { (void *) EUSCI_A2_BASE, 32, 1 },
