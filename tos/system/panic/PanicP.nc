@@ -48,6 +48,22 @@ uint32_t g_panic_gate;
 #endif
 
 
+bool chk_zero(uint8_t *buf, uint32_t len) {
+  uint32_t *p;
+
+  p = (void *) buf;
+  while (1) {
+    if (*p++) return FALSE;
+    len -= 4;
+    if (len < 3)
+      break;
+  }
+  if (!len) return TRUE;
+  if (*p & (0xffffffff >> ((4 - len) * 8)))
+    return FALSE;
+  return TRUE;
+}
+
 module PanicP {
   provides {
     interface Panic;
