@@ -25,9 +25,6 @@
 uint32_t g_panic_gate;
 #endif
 
-/* debugging, nuke with chk_zero refactor */
-bool dir_sec_zero;                           /* inits to 0 */
-
 #ifdef   PANIC_WIGGLE
 #ifndef  WIGGLE_EXC
 #warning WIGGLE_EXC not defined, using default nothingness
@@ -58,10 +55,11 @@ module PanicP {
   }
   uses {
     interface SSWrite  as SSW;
-    interface SDsa;                     /* standalone */
     interface Platform;
     interface FileSystem as FS;
     interface OverWatch;
+    interface SDsa;                     /* standalone */
+    interface SDraw;                    /* other SD aux */
   }
 }
 

@@ -22,6 +22,7 @@ implementation {
   PanicP.OverWatch -> OverWatchC;
 
   components SD0C, SSWriteC;
-  PanicP.SSW  -> SSWriteC;
-  PanicP.SDsa -> SD0C;
+  PanicP.SSW   -> SSWriteC;
+  PanicP.SDsa  -> SD0C;
+  PanicP.SDraw -> SD0C;
 }

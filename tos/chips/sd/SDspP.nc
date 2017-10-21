@@ -1465,6 +1465,21 @@ implementation {
 
 
   /*
+   * SDraw.chk_zero
+   *
+   * return:    TRUE    if block is zero
+   *            FALSE   not zero
+   */
+  command bool SDraw.chk_zero(uint8_t  *sd_buf, uint32_t len) { }
+
+
+  /*
+   * SDraw.zero_fill - fill a SD buffer with zeros
+   */
+  command bool SDraw.zero_fill(uint8_t *sd_buf, uint32_t offset) { }
+
+
+  /*
    * SDraw.ocr, return the OCR (Operations Conditions Register)
    *
    * The OCR is 32 bits long (4 bytes).
