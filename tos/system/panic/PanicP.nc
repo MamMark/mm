@@ -47,24 +47,6 @@ uint32_t g_panic_gate;
 #endif
 #endif
 
-
-bool chk_zero(uint8_t *buf, uint32_t len) {
-  uint32_t *p;
-
-  p = (void *) buf;
-  while (1) {
-    if (*p++) return FALSE;
-    len -= 4;
-    if (len < 3)
-      break;
-  }
-  if (!len) return TRUE;
-  if (*p & (0xffffffff >> ((4 - len) * 8)))
-    return FALSE;
-  return TRUE;
-}
-
-
 #define PCB_SIG 0xAAAAB00B;
 
 typedef struct {
@@ -88,7 +70,7 @@ typedef struct {
 } pcb_t;
 
 norace pcb_t pcb;              /* panic control block */
-
+norace panic_dir_t panic_dir;
 
 module PanicP {
   provides {
@@ -102,6 +84,7 @@ module PanicP {
     interface OverWatch;
     interface SDsa;                     /* standalone */
     interface SDraw;                    /* other SD aux */
+    interface Checksum;
   }
 }
 
@@ -142,6 +125,18 @@ implementation {
   }
 #endif
 
+  void update_pcb() {
+    pcb.pcb_sig   = PCB_SIG;
+    pcb.buf       = call SSW.get_temp_buf();
+    pcb.bptr      = pcb.buf;
+    pcb.remaining = SD_BLOCKSIZE;
+
+    pcb.dir       = call FS.area_start(FS_LOC_PANIC);
+    pcb.low       = pcb.dir + 1;
+    pcb.high      = call FS.area_end(FS_LOC_PANIC);
+    pcb.block     = pcb.low;
+    pcb.panic_sec = pcb.block;
+  }
 
   void init_panic_dump() {
     panic_dir_t *dirp;
@@ -162,11 +157,6 @@ implementation {
      * initialize buffer management
      */
 
-    pcb.pcb_sig   = PCB_SIG;
-    pcb.buf       = call SSW.get_temp_buf();
-    pcb.bptr      = pcb.buf;
-    pcb.remaining = SD_BLOCKSIZE;
-
     /*
      * FS.reload_locator_sa will turn on the SD
      * we don't need to do a SDsa.reset(), its been done.
@@ -179,33 +169,36 @@ implementation {
         nop();
       }
     }
-    pcb.dir       = call FS.area_start(FS_LOC_PANIC);
-    pcb.low       = pcb.dir + 1;
-    pcb.high      = call FS.area_end(FS_LOC_PANIC);
-    pcb.block     = pcb.low;
-    pcb.panic_sec = pcb.low;
+    update_pcb();
 
     call SDsa.read(pcb.dir, pcb.buf);
-    dirp = (void *) pcb.buf;
+    dirp = (panic_dir_t *) pcb.buf;
 
     /* this will get changed to chk_zero when refactored */
     /* call SDraw.chk_zero(pcb.buf, SD_BLOCKSIZE)) */
-    if (!chk_zero(pcb.buf, SD_BLOCKSIZE)) {
+    if (!call SDraw.chk_zero(pcb.buf, SD_BLOCKSIZE)) {
       /* validate dir, fails -> strange */
       if (dirp->panic_dir_sig != PANIC_DIR_SIG) {
         while (1) {
           nop();
         }
-      }
-
-      pcb.block = dirp->panic_block_sector;
-      pcb.panic_sec = pcb.block;
+        /* Otherwise we read in the dir */
+        pcb.block = dirp->panic_block_sector;
+        pcb.panic_sec = pcb.block;
+      } /*else  Directory is zeroed. continue and write out dir */
     }
-
-    /* update_pcb(); */
-
   }
 
+  void panic_write(uint32_t blk_id, uint8_t *buf) {
+      if (panic_dir.panic_dir_sig != PANIC_DIR_SIG
+          || blk_id < pcb.low
+          || blk_id  > pcb.high) {
+        while (1) {
+          nop();
+        }
+      }
+      call SDsa.write(blk_id, buf);
+    }
 
   void update_panic_dir() {
     panic_dir_t *dirp;
@@ -217,10 +210,10 @@ implementation {
     dirp                     = (panic_dir_t *) pcb.buf;
     dirp->panic_dir_sig      = PANIC_DIR_SIG;
     dirp->panic_block_sector = pcb.block + PANIC_BLOCK_SIZE;
+    dirp->panic_dir_checksum = 0;
+    dirp->panic_dir_checksum = 0 - call Checksum.sum32_aligned((void *) dirp, sizeof(*dirp));
 
-    /* fix checksum */
-
-    call SDsa.write(pcb.dir, pcb.buf);
+    panic_write(pcb.dir, pcb.buf);
     call SDsa.off();
   }
 
@@ -230,7 +223,7 @@ implementation {
     uint8_t *base = ram_desc->base_addr;
 
     while (len > 0) {
-      call SDsa.write(pcb.panic_sec, base);
+      panic_write(pcb.panic_sec, base);
       pcb.panic_sec++;
       base += 512;
       len  -= 512;
@@ -303,14 +296,15 @@ implementation {
          * current sd buffer is full, need to write it out and
          * reset the buffer pointers.
          */
-        call SDsa.write(pcb.panic_sec, pcb.buf);
+
+        panic_write(pcb.panic_sec, pcb.buf);
         pcb.panic_sec++;
         dest = pcb.buf;
         d_len = SD_BLOCKSIZE;
       }
+      pcb.bptr = dest;
+      pcb.remaining = d_len;
     }
-    pcb.bptr = dest;
-    pcb.remaining = d_len;
   }
 
 
@@ -320,8 +314,10 @@ implementation {
       copy_region(io_desc->base_addr, io_desc->len, io_desc->element_size);
       io_desc++;
     }
-    if (pcb.remaining != SD_BLOCKSIZE)
-      call SDsa.write(pcb.panic_sec, pcb.buf);
+    if (pcb.remaining != SD_BLOCKSIZE) {
+      call SDraw.zero_fill((uint8_t *)pcb.buf, SD_BLOCKSIZE - pcb.remaining);
+      panic_write(pcb.panic_sec, pcb.buf);
+    }
   }
 
 
