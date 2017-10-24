@@ -171,6 +171,7 @@ module ImageManagerP {
     interface Checksum;
     interface SDread;
     interface SDwrite;
+    interface SDraw;                    /* other SD aux */;
     interface Platform;
     interface Panic;
   }
@@ -199,33 +200,6 @@ implementation {
     call Panic.panic(PANIC_IM, where, p0, p1, 0, 0);
   }
 
-
-  /*
-   * check for a zero buffer.
-   *
-   * assumes quad-byte aligned.
-   *
-   * if tail is not quad even, then we have to adjust the
-   * last reference.    19-18-17-16, len 3, we want 0x00FFFFFF
-   */
-
-  bool chk_zero(uint8_t *buf, uint32_t len) {
-    uint32_t *p;
-
-    p = (void *) buf;
-    while (1) {
-      if (*p++) return FALSE;
-      len -= 4;
-      if (len < 3)
-        break;
-    }
-    if (!len) return TRUE;
-    if (*p & (0xffffffff >> ((4 - len) * 8)))
-      return FALSE;
-    return TRUE;
-  }
-
-
   bool cmp_ver_id(image_ver_t *ver0p, image_ver_t *ver1p) {
     uint8_t *s, *d;
 
@@ -237,7 +211,6 @@ implementation {
     if (*s++ != *d++) return FALSE;
     return TRUE;
   }
-
 
   /*
    * validate_slot:
@@ -1185,7 +1158,7 @@ implementation {
      * check for all zeroes.  If so we need to initialize the
      * directory to empty with proper start_sec fields.
      */
-    if (chk_zero(im_wrk_buf, SD_BLOCKSIZE)) {
+    if (call SDraw.chk_zero(im_wrk_buf, SD_BLOCKSIZE)) {
       dir->dir_sig   = IMAGE_DIR_SIG;
       dir->dir_sig_a = IMAGE_DIR_SIG;
       for (i = 0; i < IMAGE_DIR_SLOTS; i++)

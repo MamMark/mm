@@ -1463,20 +1463,49 @@ implementation {
     return FALSE;
   }
 
-
   /*
-   * SDraw.chk_zero
+   *    * SDraw.chk_zero
+   * check for a zero buffer.
    *
-   * return:    TRUE    if block is zero
-   *            FALSE   not zero
+   * assumes quad-byte aligned.
+   *
+   * if tail is not quad even, then we have to adjust the
+   * last reference.    19-18-17-16, len 3, we want 0x00FFFFFF
+   *
+   *    return:         TRUE    if block is zero
+   *                    FALSE   not zero
    */
-  command bool SDraw.chk_zero(uint8_t  *sd_buf, uint32_t len) { }
+  command bool SDraw.chk_zero(uint8_t  *sd_buf, uint32_t len) {
+    uint32_t *p;
+
+    p = (void *) sd_buf;
+    while (1) {
+      if (*p++) return FALSE;
+      len -= 4;
+      if (len < 3)
+        break;
+    }
+    if (!len) return TRUE;
+    if (*p & (0xffffffff >> ((4 - len) * 8)))
+      return FALSE;
+    return TRUE;
+  }
 
 
   /*
    * SDraw.zero_fill - fill a SD buffer with zeros
    */
-  command bool SDraw.zero_fill(uint8_t *sd_buf, uint32_t offset) { }
+  command bool SDraw.zero_fill(uint8_t *sd_buf, uint32_t offset) {
+    uint8_t *p;
+
+    if (offset >= SD_BLOCKSIZE) {
+      return FALSE;
+    }
+    p = (uint8_t *) sd_buf + offset;
+    while(p < (uint8_t *)(sd_buf + SD_BLOCKSIZE)) {
+      *p++ = 0;
+    } return TRUE;
+  }
 
 
   /*

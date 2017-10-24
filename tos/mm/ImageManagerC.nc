@@ -73,4 +73,7 @@ implementation {
 
   components PanicC;
   IM_P.Panic -> PanicC;
+
+  components SD0C, SSWriteC;
+  IM_P.SDraw -> SD0C;
 }

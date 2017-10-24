@@ -25,4 +25,7 @@ implementation {
   PanicP.SSW   -> SSWriteC;
   PanicP.SDsa  -> SD0C;
   PanicP.SDraw -> SD0C;
+
+  components ChecksumM;
+  PanicP.Checksum -> ChecksumM;
 }
