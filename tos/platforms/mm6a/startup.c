@@ -111,6 +111,11 @@ int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
 void __system_init(bool disable_dcor);
 
+/* see tos/mm/OverWatch/OverWatchP.nc */
+extern void owl_strange2gold(uint32_t loc);
+extern void owl_startup();
+
+
 #ifdef MEMINIT_STOP
 #define MEMINIT_MAGIC0 0x1061
 #define MEMINIT_MAGIC1 0x1062
@@ -877,8 +882,6 @@ void timer_check() {
 
 #endif
 
-/* see tos/mm/OverWatch/OverWatchP.nc */
-extern void owl_startup();
 
 void start() __attribute__((alias("__Reset")));
 void __Reset() {

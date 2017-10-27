@@ -187,7 +187,7 @@ implementation {
    *
    * does NOT return, ever!
    */
-  void strange2gold(uint32_t loc) {
+  void owl_strange2gold(uint32_t loc) @C() @spontaneous() {
     ow_control_block_t *owcp;
 
     owcp = &ow_control_block;
@@ -223,7 +223,7 @@ implementation {
          * but for now reinit and strange it.
          */
         init_owcb(owcp);
-        strange2gold(0x101);
+        owl_strange2gold(0x101);
         /* no return */
       }
       return;
@@ -262,7 +262,7 @@ implementation {
          * kill sig and reboot
          * serious oht oh.  sigs are okay but ow_req is out of bounds.
          */
-        strange2gold(1);
+        owl_strange2gold(1);
         return;
 
       case OW_REQ_BOOT:
@@ -275,7 +275,7 @@ implementation {
              * oops.  things are screwed up.  no where to go.
              * so just fix it so something runs.
              */
-            strange2gold(2);
+            owl_strange2gold(2);
             return;
 
           case OW_BOOT_GOLD:
@@ -294,14 +294,14 @@ implementation {
                * if it returns, boot GOLD
                */
               call OWhw.boot_image(iip);
-              strange2gold(3);
+              owl_strange2gold(3);
               return;                   /* shouldn't get here. */
             }
 
             /*
              * oops.  nib didn't check out.  shitty NIB checksum.
              */
-            strange2gold(4);
+            owl_strange2gold(4);
             return;
         }
 
@@ -335,7 +335,7 @@ implementation {
         }
         iip  = (image_info_t *) NIB_INFO;
         call OWhw.boot_image(iip);
-        strange2gold(5);
+        owl_strange2gold(5);
         /* no return */
     }
   }
@@ -377,7 +377,7 @@ implementation {
 
     switch (owcp->owt_action) {
       case OWT_ACT_NONE:
-        strange2gold(6);                /* no return */
+        owl_strange2gold(6);                /* no return */
         return;
 
       case OWT_ACT_INIT:
@@ -402,7 +402,7 @@ implementation {
            */
           if (bad_image) {
             owcp->owt_action = OWT_ACT_NONE;
-            strange2gold(7);            /* no return */
+            owl_strange2gold(7);            /* no return */
             return;
           }
 
@@ -412,13 +412,13 @@ implementation {
            */
           if (!call IMD.check_fit(iip->image_length)) {
             owcp->owt_action = OWT_ACT_NONE;
-            strange2gold(8);
+            owl_strange2gold(8);
             /* no return */
           }
           err = call IM.alloc(&iip->ver_id);
           if (err) {
             owcp->owt_action = OWT_ACT_NONE;
-            strange2gold(9);
+            owl_strange2gold(9);
             /* no return */
           }
           nop();                        /* BRK */
@@ -487,7 +487,7 @@ implementation {
          */
         if (!active) {
           owcp->owt_action = OWT_ACT_NONE;
-          strange2gold(10);
+          owl_strange2gold(10);
           /* no return */
         }
 
@@ -510,7 +510,7 @@ implementation {
         flen  = iip->image_length;
         if (call OWhw.flashErase((void *) faddr, flen)) {
           owcp->owt_action = OWT_ACT_NONE;
-          strange2gold(11);
+          owl_strange2gold(11);
           /* no return */
         }
 
@@ -678,6 +678,23 @@ implementation {
     owcp->from_base = call OWhw.getImageBase();
     owcp->ow_req = OW_REQ_FAIL;
     call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
+  }
+
+
+  /*
+   * strange: external interface to allow calls to strange.
+   *
+   * loc:       0x000-03f, internal
+   *            0x040-07f, misc.
+   *            0x080-0ff, panic failures (when we can't panic)
+   *            0x101,     nib detected owcb clobber
+   *            0x140-17f, nib misc
+   *            0x180-1ff, nib panic
+   */
+  async command void OverWatch.strange(uint32_t loc) {
+    if (call OverWatch.getImageBase())
+      loc += 0x100;                     /* if not gold, flag it */
+    owl_strange2gold(loc);
   }
 
 

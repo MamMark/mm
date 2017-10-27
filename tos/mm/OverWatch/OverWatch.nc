@@ -76,6 +76,8 @@ interface OverWatch {
    */
   async command void fail(ow_reboot_reason_t reason);
 
+  async command void strange(uint32_t loc);
+
   async command ow_boot_mode_t      getBootMode();
   async command void                clearReset();
   async command ow_control_block_t *getControlBlock();
