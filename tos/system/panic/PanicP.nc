@@ -161,14 +161,8 @@ implementation {
      * FS.reload_locator_sa will turn on the SD
      * we don't need to do a SDsa.reset(), its been done.
      */
-    if (call FS.reload_locator_sa(pcb.buf)) {
-      /*
-       * strange
-       */
-      while (1) {
-        nop();
-      }
-    }
+    if (call FS.reload_locator_sa(pcb.buf))
+      call OverWatch.strange(0x80);     /* no return */
     update_pcb();
 
     call SDsa.read(pcb.dir, pcb.buf);
@@ -179,9 +173,8 @@ implementation {
     if (!call SDraw.chk_zero(pcb.buf, SD_BLOCKSIZE)) {
       /* validate dir, fails -> strange */
       if (dirp->panic_dir_sig != PANIC_DIR_SIG) {
-        while (1) {
-          nop();
-        }
+        call OverWatch.strange(0x81);
+
         /* Otherwise we read in the dir */
         pcb.block = dirp->panic_block_sector;
         pcb.panic_sec = pcb.block;
@@ -193,9 +186,7 @@ implementation {
       if (panic_dir.panic_dir_sig != PANIC_DIR_SIG
           || blk_id < pcb.low
           || blk_id  > pcb.high) {
-        while (1) {
-          nop();
-        }
+        call OverWatch.strange(0x82);
       }
       call SDsa.write(blk_id, buf);
     }
@@ -350,14 +341,9 @@ implementation {
     _a2 = arg2; _a3 = arg3;
     debug_break(1);
     if (pcb.in_panic) {
-      pcb.in_panic |= 0x80;               /* flag a double */
+      pcb.in_panic |= 0x80;             /* flag a double */
       ROM_DEBUG_BREAK(0xf1);
-      /*
-       * Need to Strange here.
-       */
-      while (1) {
-        nop();
-      }
+      call OverWatch.strange(0x83);     /* no return */
     }
 
     pcb.in_panic = TRUE;
@@ -382,9 +368,7 @@ implementation {
 #endif
     call OverWatch.fail(ORR_PANIC);
     /* shouldn't return */
-    while (1) {
-      nop();
-    }
+    call OverWatch.strange(0x84);       /* no return */
   }
 
 
