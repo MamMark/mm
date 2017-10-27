@@ -40,6 +40,12 @@
 
 extern ow_control_block_t ow_control_block;
 
+#ifdef CATCH_STRANGE
+volatile uint32_t catch_strange;        /* set to 0 on init */
+                                        /* set to deadbeaf to continue from */
+                                        /* a strange */
+#endif
+
 /*
  * OverWatchP
  *
@@ -193,6 +199,12 @@ implementation {
     owcp = &ow_control_block;
     owcp->strange++;
     owcp->strange_loc = loc;
+    ROM_DEBUG_BREAK(0xF2);
+#ifdef CATCH_STRANGE
+    while (catch_strange != 0xdeadbeaf) {
+      nop();
+    }
+#endif
     call OverWatch.force_boot(OW_BOOT_GOLD);
     /* no return */
   }
