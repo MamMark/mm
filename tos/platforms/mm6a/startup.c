@@ -718,7 +718,8 @@ void __core_clk_init(bool disable_dcor) {
     if (--timeout == 0) {
       CS->IFG;
       CS->STAT;
-      ROM_DEBUG_BREAK(0);       /* panic?  what to do, what to do */
+      ROM_DEBUG_BREAK(0);
+      owl_strange2gold(0x1000);
     }
     BITBAND_PERI(CS->CLRIFG,CS_CLRIFG_CLR_LFXTIFG_OFS) = 1;
   }

@@ -54,8 +54,7 @@ implementation {
   event void Boot.booted() {
     uint32_t nxt, t0;
 
-//    ROM_DEBUG_BREAK(0);
-
+    ROM_DEBUG_BREAK(0);
     nop();
     nop();
     call HW.gps_pwr_on();
