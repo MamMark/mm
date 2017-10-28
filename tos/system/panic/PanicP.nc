@@ -47,7 +47,7 @@ uint32_t g_panic_gate;
 #endif
 #endif
 
-#define PCB_SIG 0xAAAAB00B;
+#define PCB_SIG 0xAAAAB00B
 
 typedef struct {
   uint32_t pcb_sig;
@@ -57,7 +57,6 @@ typedef struct {
 
   /* persistent state for collect_io */
   uint8_t *buf;                /* inits to NULL */
-  uint8_t *bptr;
   uint32_t remaining;          /* inits to 0 */
   uint32_t block;              /* where the block starts */
   uint32_t panic_sec;          /* current sector being written */
@@ -66,11 +65,9 @@ typedef struct {
   uint32_t dir;                /* directory sector */
   uint32_t low;                /* low  limit for blocks */
   uint32_t high;               /* high limit for blocks */
-  uint32_t pcb_sum;            /* checksum */
 } pcb_t;
 
 norace pcb_t pcb;              /* panic control block */
-norace panic_dir_t panic_dir;
 
 module PanicP {
   provides {
@@ -125,18 +122,6 @@ implementation {
   }
 #endif
 
-  void update_pcb() {
-    pcb.pcb_sig   = PCB_SIG;
-    pcb.buf       = call SSW.get_temp_buf();
-    pcb.bptr      = pcb.buf;
-    pcb.remaining = SD_BLOCKSIZE;
-
-    pcb.dir       = call FS.area_start(FS_LOC_PANIC);
-    pcb.low       = pcb.dir + 1;
-    pcb.high      = call FS.area_end(FS_LOC_PANIC);
-    pcb.block     = pcb.low;
-    pcb.panic_sec = pcb.block;
-  }
 
   void init_panic_dump() {
     panic_dir_t *dirp;
@@ -160,36 +145,55 @@ implementation {
     /*
      * FS.reload_locator_sa will turn on the SD
      * we don't need to do a SDsa.reset(), its been done.
+     *
+     * pcb.in_panic is already set to TRUE in Panic.panic
      */
+    pcb.pcb_sig   = PCB_SIG;
+    pcb.buf       = call SSW.get_temp_buf();
+    pcb.remaining = SD_BLOCKSIZE;
+
     if (call FS.reload_locator_sa(pcb.buf))
       call OverWatch.strange(0x80);     /* no return */
-    update_pcb();
+
+    /* Initialize pcb with sector addresses */
+    pcb.dir       = call FS.area_start(FS_LOC_PANIC);
+    pcb.low       = pcb.dir + 1;
+    pcb.high      = call FS.area_end(FS_LOC_PANIC);
+    pcb.block     = pcb.low;
+    pcb.panic_sec = pcb.block;
 
     call SDsa.read(pcb.dir, pcb.buf);
     dirp = (panic_dir_t *) pcb.buf;
 
-    /* this will get changed to chk_zero when refactored */
-    /* call SDraw.chk_zero(pcb.buf, SD_BLOCKSIZE)) */
     if (!call SDraw.chk_zero(pcb.buf, SD_BLOCKSIZE)) {
-      /* validate dir, fails -> strange */
-      if (dirp->panic_dir_sig != PANIC_DIR_SIG) {
+      if (call Checksum.sum32_aligned((void *) dirp, sizeof(*dirp))
+          || dirp->panic_dir_sig != PANIC_DIR_SIG)
         call OverWatch.strange(0x81);
 
-        /* Otherwise we read in the dir */
-        pcb.block = dirp->panic_block_sector;
-        pcb.panic_sec = pcb.block;
-      } /*else  Directory is zeroed. continue and write out dir */
+      /*
+       * if the dir sector has something in it and it passes the validity
+       * checks then use the sector value in it as the starting point for
+       * the next panic block.
+       */
+      pcb.block = dirp->panic_block_sector;
+      pcb.panic_sec = pcb.block;
     }
+
+    /*
+     * If the Dir sector is zero, then we simply use the initial values
+     * set above, pcb.low.
+     */
   }
 
+
   void panic_write(uint32_t blk_id, uint8_t *buf) {
-      if (panic_dir.panic_dir_sig != PANIC_DIR_SIG
-          || blk_id < pcb.low
-          || blk_id  > pcb.high) {
-        call OverWatch.strange(0x82);
-      }
-      call SDsa.write(blk_id, buf);
-    }
+    if (pcb.pcb_sig != PCB_SIG
+        || blk_id < pcb.dir
+        || blk_id  > pcb.high)
+      call OverWatch.strange(0x82);
+    call SDsa.write(blk_id, buf);
+  }
+
 
   void update_panic_dir() {
     panic_dir_t *dirp;
@@ -243,7 +247,7 @@ implementation {
     uint16_t *dp_16, *sp_16;
     uint32_t *dp_32, *sp_32;
 
-    dest = pcb.bptr;
+    dest = pcb.buf;
     d_len = pcb.remaining;
 
     /* protect len against non-granular values */
@@ -287,13 +291,12 @@ implementation {
          * current sd buffer is full, need to write it out and
          * reset the buffer pointers.
          */
-
         panic_write(pcb.panic_sec, pcb.buf);
         pcb.panic_sec++;
         dest = pcb.buf;
         d_len = SD_BLOCKSIZE;
       }
-      pcb.bptr = dest;
+      pcb.buf = dest;
       pcb.remaining = d_len;
     }
   }
@@ -353,7 +356,6 @@ implementation {
      * initialize for writing panic information out to
      * the PANIC area.
      */
-    nop();                              /* BRK */
     ROM_DEBUG_BREAK(0xf0);
     init_panic_dump();
     collect_ram(&ram_region);
