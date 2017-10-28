@@ -1469,8 +1469,9 @@ implementation {
     return FALSE;
   }
 
+
   /*
-   *    * SDraw.chk_zero
+   * SDraw.chk_zero
    * check for a zero buffer.
    *
    * assumes quad-byte aligned.
@@ -1488,7 +1489,7 @@ implementation {
     while (1) {
       if (*p++) return FALSE;
       len -= 4;
-      if (len < 3)
+      if (len < 4)
         break;
     }
     if (!len) return TRUE;
@@ -1500,6 +1501,9 @@ implementation {
 
   /*
    * SDraw.zero_fill - fill a SD buffer with zeros
+   *
+   * input: sd_buf   a buffer assumed to be one sector long
+   *        offset   where in the buffer to start zero filling
    */
   command bool SDraw.zero_fill(uint8_t *sd_buf, uint32_t offset) {
     uint8_t *p;
