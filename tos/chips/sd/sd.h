@@ -46,10 +46,14 @@
 #define SD_BLOCKSIZE_NBITS 9
 
 /*
- * all data transfers to/from the SD include a 2 byte crc which is
- * assumed to be included in any buffers passed into the SD driver.
+ * all data transfers to/from the SD include a 2 byte crc.
+ * This CRC is handled outside of the buffer traffic itself.
+ *
+ * We currently do not know what byte order the CRC is transmitted in
+ * didn't find it in the spec.  We currently don't check it and when
+ * writing we fake it.  This will have to be sorted out (obviously) if we
+ * turn CRCs on.
  */
-#define SD_BUF_SIZE 514
 
 /*
  * read.read launches a read and then polls the SD card

@@ -183,7 +183,7 @@ implementation {
    *
    * The IMWB is aligned to allow quad word aligned access, ie chk_zero.
    */
-  uint8_t     im_wrk_buf[SD_BUF_SIZE] __attribute__((aligned(4)));
+  uint8_t     im_wrk_buf[SD_BLOCKSIZE] __attribute__((aligned(4)));
 
   /*
    * control cells, imcb, ImageManager Control Block
@@ -407,10 +407,10 @@ implementation {
 
         /*
          * filling so buf_ptr must be either within bounds of the
-         * IMWB or just beyond (im_wrk_buf[SD_BUF_SIZE])
+         * IMWB or just beyond (im_wrk_buf[SD_BLOCKSIZE])
          */
         if (imcb.buf_ptr < im_wrk_buf ||
-            imcb.buf_ptr > &im_wrk_buf[SD_BUF_SIZE]) {
+            imcb.buf_ptr > &im_wrk_buf[SD_BLOCKSIZE]) {
           panic_val = 12;
           break;
         }

@@ -735,12 +735,13 @@ implementation {
   /*
    * sd_check_crc
    *
-   * i: data	pointer to a 512 byte + 2 bytes of CRC at end (512, 513)
+   * i: data	pointer to a 512 byte buffer
+   *    crc     crc to check against.
    *
    * o: rtn	0 (SUCCESS) if crc is okay
    *		1 (FAIL) crc didn't check.
    *
-   * SD_BLOCKSIZE is the size of the buffer (includes crc at the end)
+   * SD_BLOCKSIZE is the size of the buffer and the sector (512)
    */
 
   int sd_check_crc(uint8_t *data, uint16_t crc) {
@@ -748,18 +749,15 @@ implementation {
   }
 
 
-  /* sd_compute_crc
+  /*
+   * sd_compute_crc
    *
-   * append a crc computed over the data buffer pointed at by data
-   *
-   * i: data	ptr to 512 bytes of data (with 2 additional bytes available
-   *		at the end for the crc (total size 514).
-   * o: none
+   * i: data	ptr to 512 bytes of data
+   * o: returns 16 bit CRC.
    */
 
-  void sd_compute_crc(uint8_t *data) {
-    data[512] = 0x55;
-    data[513] = 0x12;
+  uint16_t sd_compute_crc(uint8_t *data) {
+    return 0x5512;
   }
 
 
@@ -815,14 +813,16 @@ implementation {
     }
 
     /*
-     * read the block (512 bytes) and include the crc (2 bytes)
+     * read the block (512 bytes).  Any crc (2 bytes) will be handled after the
+     * dma completes.
+     *
      * we fire up the dma, turn on a timer to do a timeout, and
      * enable the dma interrupt to generate a h/w event when complete.
      */
     sdc.sd_state = SDS_READ_DMA;
     call HW.spi_check_clean();
     call HW.sd_dma_enable_int();
-    call HW.sd_start_dma(NULL, sdc.data_ptr, SD_BUF_SIZE);
+    call HW.sd_start_dma(NULL, sdc.data_ptr, SD_BLOCKSIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
     return;
   }
@@ -835,11 +835,15 @@ implementation {
     cid = sdc.cur_cid;			/* remember for signalling */
     call HW.sd_stop_dma();
 
+    /*
+     * crc should be next two bytes in.
+     */
+    crc = (call HW.spi_get() << 8) | call HW.spi_get();
+
     /* Send some extra clocks so the card can finish */
     call HW.spi_get();                  /* sandisk */
     call HW.sd_clr_cs();
 
-    crc = (sdc.data_ptr[512] << 8) | sdc.data_ptr[513];
     if (sd_check_crc(sdc.data_ptr, crc)) {
       sd_panic_idle(45, crc);           /* no return */
       return;
@@ -966,10 +970,14 @@ implementation {
 
   void sd_write_dma_handler() {
     uint8_t  tmp;
-    uint16_t i;
-    uint8_t  cid;
+    uint16_t i, crc;
 
     call HW.sd_stop_dma();
+
+    /* crc is the next two bytes out, big endian */
+    crc = sd_compute_crc(sdc.data_ptr);
+    call HW.spi_put((crc >> 8) & 0xff);
+    call HW.spi_put(crc & 0xff);
 
     /*
      * After the data block is accepted the SD sends a data response token
@@ -1011,7 +1019,6 @@ implementation {
     sdc.blk_start = blk_id;
     sdc.data_ptr = data;
 
-    sd_compute_crc(data);
     if (!sdc.sdhc)
       blk_id = blk_id << SD_BLOCKSIZE_NBITS;
     if ((rsp = sd_send_command(SD_WRITE_BLOCK, blk_id))) {
@@ -1028,14 +1035,16 @@ implementation {
     call HW.spi_put(SD_START_TOK);
 
     /*
-     * send the sector data, include the 2 crc bytes
+     * send the sector data, crc bytes (2) will be sent after the
+     * data is sent.
+     *
      * start the dma, enable a time out to monitor the h/w
      * and enable the dma h/w interrupt to generate the h/w event.
      */
     sdc.sd_state = SDS_WRITE_DMA;
     call HW.spi_check_clean();
     call HW.sd_dma_enable_int();
-    call HW.sd_start_dma(data, NULL, SD_BUF_SIZE);
+    call HW.sd_start_dma(data, NULL, SD_BLOCKSIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
     return SUCCESS;
   }
@@ -1252,7 +1261,7 @@ implementation {
           (sd_read_tok_count >= SD_READ_TOK_MAX)) {
 	call HW.spi_get();               /* let SD finish, clock one more */
         call Panic.panic(PANIC_SD, 60, tmp, sd_read_tok_count, 0, blk_id);
-	return;
+        return;
       }
 
       if (tmp != 0xFF)
@@ -1271,13 +1280,15 @@ implementation {
      * enable the dma interrupt to generate a h/w event when complete.
      */
     call HW.spi_check_clean();
-    call HW.sd_start_dma(NULL, buf, SD_BUF_SIZE);
-    call HW.sd_wait_dma(SD_BUF_SIZE);
+    call HW.sd_start_dma(NULL, buf, SD_BLOCKSIZE);
+    call HW.sd_wait_dma(SD_BLOCKSIZE);
+
+    /* next two bytes are the CRC, big endian */
+    crc = (call HW.spi_get() << 8) | call HW.spi_get();
 
     call HW.spi_get();          /* more clocks to clear out SD */
     call HW.sd_clr_cs();        /* deassert the SD card */
 
-    crc = (buf[512] << 8) | buf[513];
     if (sd_check_crc(buf, crc)) {
       sd_panic(62, crc);
       return;
@@ -1288,8 +1299,9 @@ implementation {
   async command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
     uint8_t   rsp, tmp;
     uint16_t  t, last_time, time_wraps;
+    uint16_t  crc;
 
-    sd_compute_crc(buf);
+    crc = sd_compute_crc(buf);
     if (!sdc.sdhc)
       blk_id = blk_id << SD_BLOCKSIZE_NBITS;
     if ((rsp = sd_send_command(SD_WRITE_BLOCK, blk_id)))
@@ -1298,8 +1310,12 @@ implementation {
     call HW.sd_set_cs();
     call HW.spi_put(SD_START_TOK);
     call HW.spi_check_clean();
-    call HW.sd_start_dma(buf, NULL, SD_BUF_SIZE);
-    call HW.sd_wait_dma(SD_BUF_SIZE);
+    call HW.sd_start_dma(buf, NULL, SD_BLOCKSIZE);
+    call HW.sd_wait_dma(SD_BLOCKSIZE);
+
+    /* next two bytes is the CRC */
+    call HW.spi_put((crc >> 8) & 0xff);
+    call HW.spi_put(crc & 0xff);
 
     /*
      * After the data block is accepted the SD sends a data response token

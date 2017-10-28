@@ -39,15 +39,8 @@
 
 #include "sd.h"
 
-/* needs to agree with SECTOR_SIZE and SD_BLOCKSIZE
-   yeah it is stupid and ugly
-
-   Actual buffers are SD_BUF_SIZE which is 512 + 2 which includes
-   space for the SD crc.  Use SD_BUF_SIZE.
-
-   Clients should only know about SS_BLOCK_SIZE.
-*/
-#define SS_BLOCK_SIZE 512
+/* Clients should only know about SS_BLOCK_SIZE. */
+#define SS_BLOCK_SIZE (SD_BLOCKSIZE)
 #define SSW_NUM_BUFS   5
 
 /*
@@ -109,7 +102,7 @@ typedef struct {
   ss_buf_majik_t majik;
   ss_buf_state_t buf_state;
   uint32_t stamp;
-  uint8_t  buf[SD_BUF_SIZE] __attribute__ ((aligned (4)));    /* 514, 512 + CRC */
+  uint8_t  buf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));     /* 512 */
 } ss_wr_buf_t;
 
 

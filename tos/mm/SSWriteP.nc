@@ -126,7 +126,7 @@ implementation {
     while (ssc.cur_handle->buf_state == SS_BUF_STATE_FULL) {
       ssc.cur_handle->stamp = call LocalTime.get();
       ssc.cur_handle->buf_state = SS_BUF_STATE_FREE;
-      memset(ssc.cur_handle->buf, 0, SD_BUF_SIZE);
+      memset(ssc.cur_handle->buf, 0, SD_BLOCKSIZE);
       ssc.ssw_out++;
       if (ssc.ssw_out >= SSW_NUM_BUFS)
 	ssc.ssw_out = 0;
@@ -363,7 +363,7 @@ implementation {
 
     ssc.cur_handle->stamp = call LocalTime.get();
     ssc.cur_handle->buf_state = SS_BUF_STATE_FREE;
-    memset(ssc.cur_handle->buf, 0, SD_BUF_SIZE);
+    memset(ssc.cur_handle->buf, 0, SD_BLOCKSIZE);
     ssc.ssw_out++;
     if (ssc.ssw_out >= SSW_NUM_BUFS)
       ssc.ssw_out = 0;

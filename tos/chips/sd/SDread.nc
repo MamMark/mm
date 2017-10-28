@@ -40,7 +40,7 @@ interface SDread {
    * SD read, split phase.
    *
    * @input	blk_id:  which block to read
-   *		buf:	 where to put the data, must SD_BUF_SIZE (514).
+   *		buf:	 where to put the data, must SD_BLOCKSIZE (512).
    *
    * @return
    *   <li>SUCCESS if the request was accepted,
