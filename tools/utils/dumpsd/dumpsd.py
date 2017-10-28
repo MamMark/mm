@@ -18,7 +18,7 @@ import struct
 # - a record can be as large as 64k bytes (2**16)
 #   each record has a standard header of length and d_type (4 bytes)
 #   followed by record-specific data
-# - records 
+# - records
 #
 
 LOGICAL_SECTOR_SIZE = 512
@@ -146,6 +146,7 @@ def insert_space(st):
 # look for records and print out details for each one found
 #
 def main(source):
+    total = 0
     with open(source, 'rb') as fd:
         for rlen, rtyp, buf in gen_records(fd):
             print(rtyp, rlen, len(buf), insert_space(binascii.hexlify(buf)))
@@ -156,6 +157,8 @@ def main(source):
             dt_info = dt_rec.unpack(buf[:dt_rec.size])
             print(dtd[0])
             print(dtd[3].format(*dt_info))
+            total += rlen
+        print(fd.tell(),  total)
 
 
 if __name__ == "__main__":
