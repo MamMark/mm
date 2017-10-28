@@ -35,7 +35,7 @@ dt_descriptor_array = [
     ("DT_CONFIG", 1,
      "HH", "length:{} type:{}"),
     ("DT_SYNC", 2,
-     "HHIII", "length:{} type:{}, timestamp:{3}, majik:{4}, cycle:{5}"),
+     "HHIII", "length:{} type:{}, timestamp:{}, majik:{}, cycle:{}"),
     ("DT_REBOOT", 3,
      "HHIIIIIQIIIIH", "length:{} type:{}, timestamp:{}, majik:{}, cycle:{}, reset{}, reboot:{}, elapsed:{}, strange:{}, vector_chk:{}, image_chk:{}, reason:{}"),
     ("DT_PANIC", 4,
@@ -75,30 +75,39 @@ dt_descriptor_array = [
 #
 # The buffer will be as large as requested, which may require additional
 # sectors to be read. Any remaining data in the sector will be used
-# in the next read request.
+# in the next yield request.
 #
 def gen_data_bytes(fd):
-    offset = 0
     # skip first block
     blk = fd.read(LOGICAL_SECTOR_SIZE)
     if not blk:
         return
+    blk_struct = struct.Struct("508sHH")
+    offset = 0
+    old_seq_no = 0
     buf = bytearray()
     while (True):
-        num = yield buf
-        buf = bytearray() # clear the return buffer
-        if (num):
+        num = yield offset, buf
+        buf = bytearray() # clear the return buffer each time
+        if (num < 0):
+            offset = 0  # force a skip to next sector
+        else:
             while (num > 0):
                 if (offset == 0):
-                    blk = fd.read(LOGICAL_SECTOR_SIZE)
-                    if not blk:
+                    sect = fd.read(LOGICAL_SECTOR_SIZE)
+                    if not sect:
                         break
-                    # zzz need to check seq number for discontinuity
+                    blk, seq_no, chk_sum = blk_struct.unpack(sect)
+                    # check sequence number for discontinuity
+                    if (seq_no) and (seq_no != (old_seq_no + 1)):
+                        print(old_seq_no, seq_no)
+                        break
+                    old_seq_no = seq_no
                 limit = num if (num < (LOGICAL_BLOCK_SIZE - offset)) \
                             else LOGICAL_BLOCK_SIZE - offset
                 buf.extend(blk[offset:offset+limit])
                 offset = offset + limit \
-                            if ((offset + limit) < LOGICAL_BLOCK_SIZE) \
+                         if ((offset + limit) < LOGICAL_BLOCK_SIZE) \
                             else 0
                 num -= limit
 
@@ -113,7 +122,7 @@ def gen_records(fd):
     data_bytes.send(None) # prime the generator
     while (True):
         # read size bytes
-        hdr = data_bytes.send(dt_hdr.size)
+        offset, hdr = data_bytes.send(dt_hdr.size)
         if (not hdr) or (len(hdr) < LOGICAL_HEADER_SIZE):
             break
         rlen, rtyp = dt_hdr.unpack(hdr)
@@ -121,9 +130,13 @@ def gen_records(fd):
             break
         if (rtyp != dt_descriptor_array[rtyp][1]):
             break
-        # return record header fields plus entire record
-        pl = hdr + data_bytes.send(rlen - LOGICAL_HEADER_SIZE)
-        yield rlen, rtyp, pl
+        if (rtyp == dt_descriptor_array[0][1]): # tinytryalf
+            data_bytes.send(-1)   # skip to next sector
+            continue
+        # return record header fields plus record contents
+        offset, pl = data_bytes.send(rlen - LOGICAL_HEADER_SIZE)
+        pl = hdr + pl
+        yield rlen, rtyp, offset, pl
         if (rlen % 4):
             data_bytes.send(4 - (rlen % 4))  # skip to next word boundary
 
@@ -148,8 +161,8 @@ def insert_space(st):
 def main(source):
     total = 0
     with open(source, 'rb') as fd:
-        for rlen, rtyp, buf in gen_records(fd):
-            print(rtyp, rlen, len(buf), insert_space(binascii.hexlify(buf)))
+        for rlen, rtyp, offset, buf in gen_records(fd):
+            print(rtyp, rlen, len(buf), (fd.tell()-512)+offset, hex((fd.tell()-512)+offset), insert_space(buf))
             if (rlen < len(buf)) or (rtyp >= len(dt_descriptor_array)):
                 break
             dtd = dt_descriptor_array[rtyp]
@@ -158,6 +171,7 @@ def main(source):
             print(dtd[0])
             print(dtd[3].format(*dt_info))
             total += rlen
+            print('----')
         print(fd.tell(),  total)
 
 
