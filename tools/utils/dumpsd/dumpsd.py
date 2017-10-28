@@ -10,21 +10,25 @@ import struct
 # typed data records.
 #
 # Certain constraints on input are applied
-# - input consists of a multiple of 514 bytes (the raw block size).
-#   the last two bytes are stripped (used by SD for chksum).
-# - each raw block is further defined to contain a logical blk
-#   header of 8 bytes along with some record data.
-#   The logical header bytes are stripped.
+# - input consists of a multiple of 512 bytes (the sector size).
+# - each sector is further defined to contain a logical blk
+#   trailer of 4 bytes along with up to 508 bytes of record data.
+#   (uint16_t sequence_no, uint16_t checksum)
+#   The logical trailer bytes are stripped.
 # - a record can be as large as 64k bytes (2**16)
-#   each record has a standard header of length and d_type
+#   each record has a standard header of length and d_type (4 bytes)
 #   followed by record-specific data
+# - records 
 #
 
-#RAW_BLK_SIZE        = 514
-LOGICAL_BLK_SIZE    = 512
-LOGICAL_BUFFER_SIZE = 508
+LOGICAL_SECTOR_SIZE = 512
+LOGICAL_BLOCK_SIZE  = 508  # excludes trailer
 LOGICAL_HEADER_SIZE = 4
 
+# the dt_descriptor_array contains contains details about each record type,
+# including: name of record, id of record, struct format for unpacking,
+# and format string for printing
+#
 dt_descriptor_array = [
     ("DT_TINTRYALF", 0,
      "HH", "length:{} type:{}"),
@@ -37,9 +41,9 @@ dt_descriptor_array = [
     ("DT_PANIC", 4,
      "HHLIIIIBBB", "length:{} type:{}, timestamp:{3}, arg0:{}, arg1:{}, arg2:{}, arg3:{}, pcode:{}, where:{}, index:{}"),
     ("DT_VERSION", 5,
-     "HHBBHBB", "length:{} type:{}, major:{}, minor{}, build{}, rev:{}, model:{}"),
+     "HHBBHBB", "length:{} type:{}, major:{}, minor:{}, build:{}, rev:{}, model:{}"),
     ("DT_EVENT", 6,
-     "HHIIIIH", "length:{} type:{}, arg0:{}, arg1:{}, arg2:{}, arg3:{}, event:{}"),
+     "HHIIIIH", "length:{} type:{}, arg0:0x{:02x}, arg1:0x{:02x}, arg2:0x{:02x}, arg3:0x{:02x}, event:{}"),
     ("DT_DEBUG", 7,
      "HH", "length:{} type:{}"),
     ("DT_GPS_VERSION", 8,
@@ -63,33 +67,46 @@ dt_descriptor_array = [
   ]
 
 
-# generate data bytes from file (stripped of headers)
-# uses generator.send() to pass number of bytes to be read
+# gen_data_bytes generates data bytes from file (stripped of non-data bytes).
+#
+# Uses generator.send() to pass number of bytes to be read
+# the number of bytes to read is returned by the yield, while
+# the buffer read is returned by the yield
+#
+# The buffer will be as large as requested, which may require additional
+# sectors to be read. Any remaining data in the sector will be used
+# in the next read request.
+#
 def gen_data_bytes(fd):
     offset = 0
+    # skip first block
+    blk = fd.read(LOGICAL_SECTOR_SIZE)
+    if not blk:
+        return
+    buf = bytearray()
     while (True):
-        num = yield
-        buf = bytearray()
+        num = yield buf
+        buf = bytearray() # clear the return buffer
         if (num):
             while (num > 0):
                 if (offset == 0):
-                    #                blk = raw_blks.next()
-                    blk = fd.read(LOGICAL_BLK_SIZE)
+                    blk = fd.read(LOGICAL_SECTOR_SIZE)
                     if not blk:
                         break
-                    offset += 4
-                    # zzz need to check seq number
-                limit = num if (num < (LOGICAL_BLK_SIZE - offset)) \
-                            else LOGICAL_BLK_SIZE - offset
-                buf.append(blk[offset:offset+limit])
+                    # zzz need to check seq number for discontinuity
+                limit = num if (num < (LOGICAL_BLOCK_SIZE - offset)) \
+                            else LOGICAL_BLOCK_SIZE - offset
+                buf.extend(blk[offset:offset+limit])
                 offset = offset + limit \
-                            if ((offset + limit) < LOGICAL_BLK_SIZE) \
+                            if ((offset + limit) < LOGICAL_BLOCK_SIZE) \
                             else 0
                 num -= limit
-        yield buf
 
 
 # generate complete typed data records one at a time
+#
+# yields one record each time (len, type, data)
+#
 def gen_records(fd):
     dt_hdr = struct.Struct("HH")
     data_bytes = gen_data_bytes(fd)
@@ -97,7 +114,7 @@ def gen_records(fd):
     while (True):
         # read size bytes
         hdr = data_bytes.send(dt_hdr.size)
-        if not hdr:
+        if (not hdr) or (len(hdr) < LOGICAL_HEADER_SIZE):
             break
         rlen, rtyp = dt_hdr.unpack(hdr)
         if (rtyp > len(dt_descriptor_array)):
@@ -105,18 +122,38 @@ def gen_records(fd):
         if (rtyp != dt_descriptor_array[rtyp][1]):
             break
         # return record header fields plus entire record
-        yield rlen, rtyp, hdr + data_bytes.send(rlen)
+        pl = hdr + data_bytes.send(rlen - LOGICAL_HEADER_SIZE)
+        yield rlen, rtyp, pl
+        if (rlen % 4):
+            data_bytes.send(4 - (rlen % 4))  # skip to next word boundary
 
+def insert_space(st):
+    """
+    Convert byte array into string and insert space periodically to
+    break up long string
+    """
+    p_ds = ''
+    ix = 4
+    i = 0
+    p_s = binascii.hexlify(st)
+    while (i < (len(st) * 2)):
+        p_ds += p_s[i:i+ix] + ' '
+        i += ix
+    return p_ds
 
 # main processing loop
+#
+# look for records and print out details for each one found
+#
 def main(source):
     with open(source, 'rb') as fd:
-        for rlen, rtyp, rec in gen_records(fd):
-            print(rtype, rlen, sizeof(rec), binascii.hexlify(rec))
-            if (rlen < dt_rec.size):
+        for rlen, rtyp, buf in gen_records(fd):
+            print(rtyp, rlen, len(buf), insert_space(binascii.hexlify(buf)))
+            if (rlen < len(buf)) or (rtyp >= len(dt_descriptor_array)):
                 break
-            dt_rec = struct.Struct(dt_descriptor_array[rtyp][2])
-            dt_info = dt_rec.unpack(rec[:dt_rec.size])
+            dtd = dt_descriptor_array[rtyp]
+            dt_rec = struct.Struct(dtd[2])
+            dt_info = dt_rec.unpack(buf[:dt_rec.size])
             print(dtd[0])
             print(dtd[3].format(*dt_info))
 
