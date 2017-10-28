@@ -55,7 +55,7 @@ implementation {
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
 
     call THdr.set_response(msg);
-    if (!call TName.is_last_element(msg) &&          // end of name and me == this
+    if (call TName.is_last_element(msg) &&          // end of name and me == this
         (call TTLV.eq_tlv(name_tlv, this_tlv))) {
       tn_trace_rec(my_id, 1);
       call TPload.reset_payload(msg);
