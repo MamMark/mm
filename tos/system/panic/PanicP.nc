@@ -57,6 +57,7 @@ typedef struct {
 
   /* persistent state for collect_io */
   uint8_t *buf;                /* inits to NULL */
+  uint8_t *bptr;
   uint32_t remaining;          /* inits to 0 */
   uint32_t block;              /* where the block starts */
   uint32_t panic_sec;          /* current sector being written */
@@ -150,6 +151,7 @@ implementation {
      */
     pcb.pcb_sig   = PCB_SIG;
     pcb.buf       = call SSW.get_temp_buf();
+    pcb.bptr      = pcb.buf;
     pcb.remaining = SD_BLOCKSIZE;
 
     if (call FS.reload_locator_sa(pcb.buf))
@@ -247,7 +249,7 @@ implementation {
     uint16_t *dp_16, *sp_16;
     uint32_t *dp_32, *sp_32;
 
-    dest = pcb.buf;
+    dest = pcb.bptr;
     d_len = pcb.remaining;
 
     /* protect len against non-granular values */
@@ -296,7 +298,7 @@ implementation {
         dest = pcb.buf;
         d_len = SD_BLOCKSIZE;
       }
-      pcb.buf = dest;
+      pcb.bptr = dest;
       pcb.remaining = d_len;
     }
   }
