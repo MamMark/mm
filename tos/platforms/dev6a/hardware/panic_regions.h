@@ -49,29 +49,29 @@ typedef struct {
 } panic_region_t;
 
 #define SRAM_LEN (64 * 1024)
-const panic_region_t ram_region = { (void *) SRAM_BASE, SRAM_LEN-512, 1 };
+const panic_region_t ram_region = { (void *) SRAM_BASE, SRAM_LEN, 1 };
 
 const panic_region_t io_regions[] = {
   { (void *) TIMER_A0_BASE, 48, 2 },
   { (void *) TIMER_A1_BASE, 48, 2 },
-  { (void *) EUSCI_A0_BASE, 32, 1 },
-  { (void *) EUSCI_A1_BASE, 32, 1 },
-  { (void *) EUSCI_A2_BASE, 32, 1 },
-  { (void *) EUSCI_B0_BASE, 32, 1 },
-  { (void *) EUSCI_B1_BASE, 32, 1 },
-  { (void *) EUSCI_B2_BASE, 32, 1 },
-  { (void *) EUSCI_B3_BASE, 32, 1 },
-  { (void *) RTC_C_BASE,    32, 1 },
+  { (void *) EUSCI_A0_BASE, 32, 2 },
+  { (void *) EUSCI_A1_BASE, 32, 2 },
+  { (void *) EUSCI_A2_BASE, 32, 2 },
+  { (void *) EUSCI_B0_BASE, 32, 2 },
+  { (void *) EUSCI_B1_BASE, 32, 2 },
+  { (void *) EUSCI_B2_BASE, 32, 2 },
+  { (void *) EUSCI_B3_BASE, 32, 2 },
+  { (void *) RTC_C_BASE,    32, 2 },
   { (void *) &(WDT_A->CTL),  2, 1 },
   { (void *) &(PMAP->CTL),   2, 1 },
-  { (void *) &(P2MAP->PMAP_REG[0]), 8, 1 },
-  { (void *) &(P3MAP->PMAP_REG[0]), 8, 1 },
-  { (void *) &(P7MAP->PMAP_REG[0]), 8, 1 },
+  { (void *) &(P2MAP->PMAP_REG[0]), 8, 2 },
+  { (void *) &(P3MAP->PMAP_REG[0]), 8, 2 },
+  { (void *) &(P7MAP->PMAP_REG[0]), 8, 2 },
   { (void *) &(TIMER32_1->LOAD), 28, 4 },
   { (void *) &(TIMER32_2->LOAD), 28, 4 },
-  { (void *) &(DMA_Channel->DEVICE_CFG), sizeof(DMA_Channel_Type), 1 },
-  { (void *) &(DMA_Control->STAT), sizeof(DMA_Control_Type), 1 },
-  {          PR_EOR, 0, 1 }
+  { (void *) &(DMA_Channel->DEVICE_CFG), sizeof(DMA_Channel_Type), 4 },
+  { (void *) &(DMA_Control->STAT), sizeof(DMA_Control_Type), 4 },
+  {          PR_EOR, 0, 4 }
 };
 
 #endif /* __PANIC_REGIONS_H__ */

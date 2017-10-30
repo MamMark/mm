@@ -48,7 +48,7 @@ typedef struct {
   uint32_t element_size;
 } panic_region_t;
 
-#define SRAM_LEN (2 * 1024)
+#define SRAM_LEN (64 * 1024)
 const panic_region_t ram_region = { (void *) SRAM_BASE, SRAM_LEN, 1 };
 
 const panic_region_t io_regions[] = {
