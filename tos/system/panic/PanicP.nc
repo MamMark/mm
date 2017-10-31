@@ -138,26 +138,14 @@ implementation {
     panic_dir_t *dirp;
 
     /*
-     * at some point
-     *
-     * FS.reload_locator_sa() fail -> strange
-     * get panic region start/end
-     * initialize the dir, low, high
-     *
-     * get a buffer.
-     * read the dir
-     * if the dir sector is zeros panic_sec = dir+1
-     * else verify dir, passes panic_sec = next_block_start
-     *    doesn't pass strange
-     *
      * initialize buffer management
-     */
-
-    /*
-     * FS.reload_locator_sa will turn on the SD
-     * we don't need to do a SDsa.reset(), its been done.
      *
-     * pcb.in_panic is already set to TRUE in Panic.panic
+     * Typically, someone prior to dump will have turned on the
+     * SD.  But if not FS.reload_locator_sa() will do it.  Either
+     * way we don't need to do a SDsa.reset(), its been done.
+     *
+     * Don't mess with pcb.in_panic.  Set and/or checked on the
+     * entry to Panic.
      */
     pcb.pcb_sig   = PCB_SIG;
     pcb.buf       = call SSW.get_temp_buf();
@@ -347,7 +335,6 @@ implementation {
 
   /*
    * Panic.panic: something really bad happened.
-   * Simple version.   Do nothing allow debug break.
    */
 
   async command void Panic.panic(uint8_t pcode, uint8_t where,
@@ -386,8 +373,8 @@ implementation {
     signal Panic.hook();
 
     /*
-     * initialize for writing panic information out to
-     * the PANIC area.
+     * initialize the panic control block so we can dump any panic information
+     * out to the PANIC AREA on the SD.
      */
     ROM_DEBUG_BREAK(0xf0);
     init_panic_dump();
