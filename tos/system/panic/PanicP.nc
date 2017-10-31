@@ -221,22 +221,23 @@ implementation {
   }
 
 
-  void collect_ram(const panic_region_t *ram_desc) {
+  uint32_t collect_ram(const panic_region_t *ram_desc, uint32_t start_sec) {
     uint32_t len = ram_desc->len;
     uint8_t *base = ram_desc->base_addr;
 
     while (len > 0) {
-      panic_write(pcb.panic_sec, base);
-      pcb.panic_sec++;
+      panic_write(start_sec, base);
+      start_sec++;
       base += 512;
       len  -= 512;
     }
+    return start_sec;
   }
 
 
   /*
    * copy the region pointed at by src into the working buffer at dest
-   * return where we left off.
+   * update where we left off.
    *
    * input: src         where we are coping from
    *        len         how many bytes are being copied
@@ -310,6 +311,7 @@ implementation {
   }
 
 
+  /* uses persistent global in pcb (panic_sec) for where to write */
   void collect_io(const panic_region_t *io_desc) {
     while (io_desc->base_addr != PR_EOR) {
       copy_region((void *)io_desc, sizeof(panic_region_t), 4);
@@ -319,6 +321,7 @@ implementation {
     if (pcb.remaining != SD_BLOCKSIZE) {
       call SDraw.zero_fill((uint8_t *)pcb.buf, SD_BLOCKSIZE - pcb.remaining);
       panic_write(pcb.panic_sec, pcb.buf);
+      pcb.panic_sec++;
     }
   }
 
@@ -380,7 +383,9 @@ implementation {
      */
     ROM_DEBUG_BREAK(0xf0);
     init_panic_dump();
-    collect_ram(&ram_region);
+
+    /* first dump RAM out.  then we can do what we want in RAM */
+    collect_ram(&ram_region, pcb.block + PBLK_RAM);
     collect_io(&io_regions[0]);
     update_panic_dir();
     ROM_DEBUG_BREAK(0xf0);
