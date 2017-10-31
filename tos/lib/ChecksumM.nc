@@ -112,7 +112,7 @@ module ChecksumM {
   provides interface Checksum;
 }
 implementation {
-  command uint32_t Checksum.sum32_aligned(uint8_t *buf, uint32_t len) {
+  async command uint32_t Checksum.sum32_aligned(uint8_t *buf, uint32_t len) {
     return __checksum32_aligned(buf, len);
   }
 }
