@@ -87,6 +87,7 @@ enum {
 /* the argument type for panics */
 typedef unsigned int parg_t;
 
+#define PBLK_SIZE      150
 /*
  * Various signatures for the different pieces of Panic information
  */
@@ -95,7 +96,6 @@ typedef unsigned int parg_t;
 #define PANIC_ADDITIONS 0x44664144
 
 #define PANIC_DIR_SIG    0xDDDDB00B
-#define PANIC_BLOCK_SIZE 150
 
 typedef struct {
   uint32_t panic_dir_sig;
