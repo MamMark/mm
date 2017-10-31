@@ -1450,7 +1450,7 @@ implementation {
    *
    * if sdc.blocks is 0, we haven't been initialized.
    */
-  command uint32_t  SDraw.blocks() {
+  async command uint32_t SDraw.blocks() {
     return sdc.blocks;
   }
 
@@ -1463,7 +1463,7 @@ implementation {
    *
    * sdc.blocks will be non-zero if we've gotten the disks parms
    */
-  command bool      SDraw.erase_state() {
+  async command bool SDraw.erase_state() {
     if (sdc.blocks)
       return sdc.erase_state;
     return FALSE;
@@ -1481,8 +1481,10 @@ implementation {
    *
    *    return:         TRUE    if block is zero
    *                    FALSE   not zero
+   *
+   * async because this gets called from Panic.  interrupt safe.
    */
-  command bool SDraw.chk_zero(uint8_t  *sd_buf, uint32_t len) {
+  async command bool SDraw.chk_zero(uint8_t  *sd_buf, uint32_t len) {
     uint32_t *p;
 
     p = (void *) sd_buf;
@@ -1504,8 +1506,10 @@ implementation {
    *
    * input: sd_buf   a buffer assumed to be one sector long
    *        offset   where in the buffer to start zero filling
+   *
+   * async because called from Panic.  interrupt safe.
    */
-  command bool SDraw.zero_fill(uint8_t *sd_buf, uint32_t offset) {
+  async command bool SDraw.zero_fill(uint8_t *sd_buf, uint32_t offset) {
     uint8_t *p;
 
     if (offset >= SD_BLOCKSIZE) {
