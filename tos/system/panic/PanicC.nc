@@ -1,5 +1,6 @@
 /*
- * Copyright @ 2008, 2012 Eric B. Decker
+ * Copyright (c) 2008, 2012 Eric B. Decker
+ * Copyright (c) 2017, Eric B. Decker
  * @author Eric B. Decker
  */
 
@@ -12,7 +13,8 @@ configuration PanicC {
 implementation {
   components PanicP, MainC, PlatformC;
   Panic = PanicP;
-  PanicP.Platform -> PlatformC;
+  PanicP.Platform  -> PlatformC;
+  PanicP.SysReboot -> PlatformC;
   MainC.SoftwareInit -> PanicP;
 
   components FileSystemC as FS;

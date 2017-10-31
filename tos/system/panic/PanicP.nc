@@ -83,6 +83,7 @@ module PanicP {
     interface SDsa;                     /* standalone */
     interface SDraw;                    /* other SD aux */
     interface Checksum;
+    interface SysReboot;
   }
 }
 
@@ -357,6 +358,20 @@ implementation {
     }
 
     pcb.in_panic = TRUE;
+    ROM_DEBUG_BREAK(0xf0);
+
+    /*
+     * First flush any pending buffers out to the SD.
+     *
+     * Note: If the PANIC is from the SSW or SD subsystem don't flush the buffers.
+     */
+    if (pcode != PANIC_SD && pcode != PANIC_SS)
+      call SysReboot.flush();
+
+    /*
+     * signal any modules that a Panic is underway and if possible they should copy any
+     * device state into RAM to be copied out.
+     */
     signal Panic.hook();
 
     /*
@@ -389,6 +404,8 @@ implementation {
 
 
   event void FS.eraseDone(uint8_t which) { }
+
+  async event void SysReboot.shutdown_flush() { }
 
   default async event void Panic.hook() { }
 }
