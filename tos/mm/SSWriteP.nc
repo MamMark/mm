@@ -237,7 +237,19 @@ implementation {
   }
 
 
+  /*
+   * get_temp_buf: return one of the SSW's buffers
+   *
+   * Intended to be used while the system is single threaded by a user
+   * that needs to access the SD and needs a buffer.
+   *
+   * Typically, buffer 0 will be available.   Just use that for
+   * the time being.  Nothing more complicated than that needs
+   * to be done.
+   */
   async command uint8_t *SSW.get_temp_buf() {
+    if (ssw_p[0]->buf_state != SS_BUF_STATE_FREE)
+      ss_panic(21, ssw_p[0]->buf_state);
     return(ssw_p[0]->buf);
   }
 
