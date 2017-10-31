@@ -68,8 +68,10 @@ uint32_t __checksum32_aligned(uint8_t *buf, uint32_t len) {
   uint32_t  last;
   uint32_t  mask;
 
-  if ((uintptr_t) buf & 3)
-    bkpt();
+  if ((uintptr_t) buf & 3) {
+    ROM_DEBUG_BREAK(0);
+    return 0;
+  }
 
   if (!len || ((uintptr_t) buf) & 3)
     return 0;
