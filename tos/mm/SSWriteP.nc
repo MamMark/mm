@@ -392,7 +392,12 @@ implementation {
   }
 
 
-  /* flush any pending SSW buffers
+  /*
+   * flush any pending SSW buffers
+   *
+   * 1) flush any FULL buffers
+   * 2) If there is an ALLOC'd buffer with something in it,
+   *    also write that too.  (you like that also too?)
    *
    * we take pains not to tweak memory too much.
    */
@@ -400,20 +405,22 @@ implementation {
     error_t rtn;
     ss_wr_buf_t *handle;
     uint8_t num_full, idx;
-    uint32_t dblk;
+    uint32_t dblk, test_word;
 
     rtn = call SDsa.reset();            /* make sure on and in a reasonable state */
     if (rtn)                            /* well that didn't work, just bail out */
       return;
     idx = ssc.ssw_out;
     num_full = ssc.ssw_num_full;
+    if (num_full > SSW_NUM_BUFS)        /* too many is too weird, do nothing */
+      return;
     dblk = call DblkManager.get_nxt_blk();
     while (num_full) {
       handle = ssw_p[idx];
       if (dblk == 0)                    /* any unexpected, just bail */
         return;
       if (handle->buf_state != SS_BUF_STATE_FULL)
-        return;
+        return;                         /* that's weird, somethings wrong */
       call SDsa.write(dblk, handle->buf);
       idx++;
       if (idx >= SSW_NUM_BUFS)
@@ -421,6 +428,33 @@ implementation {
       dblk = call DblkManager.adv_nxt_blk();
       num_full--;
     }
+
+    /*
+     * We have flushed any buffers that are FULL.  We also need to flush
+     * the pending buffer that the Collector is currently filling.
+     */
+    if (idx != ssc.ssw_in)              /* should be next in from collector */
+      return;                           /* stop what we are doing, if not   */
+    handle = ssw_p[idx];
+    if (dblk == 0)                      /* if no where to go, bail */
+      return;
+    if (handle->buf_state != SS_BUF_STATE_ALLOC)
+      return;
+
+    /*
+     * The buffer was allocated which says the Collector might have put
+     * something into it.  This will be a typed data record.  First,
+     * 16 bits will be length and 2nd 16 bits will be the dtype.
+     *
+     * When buffers are returned, they are required to be zero'd out
+     * which indicates nothing here, (DT_TINTRYALF).  Nobody's home.
+     *
+     * So if we have anyting in this sector it has to have the first
+     * long word as non-zero.
+     */
+    test_word = *((uint32_t *) handle->buf);
+    if (test_word)
+      call SDsa.write(dblk, handle->buf);
   }
 
 
