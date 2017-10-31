@@ -115,6 +115,9 @@ void __system_init(bool disable_dcor);
 extern void owl_strange2gold(uint32_t loc);
 extern void owl_startup();
 
+/* see tos/system/panic/PanicP.nc */
+extern void __panic_exception_entry(uint32_t exception);
+
 
 #ifdef MEMINIT_STOP
 #define MEMINIT_MAGIC0 0x1061
@@ -134,10 +137,12 @@ volatile noinit meminit_stop_t meminit_stop;
 volatile        uint8_t handler_fault_wait;     /* set to deadbeaf to continue */
 #endif
 
-void handler_debug() {
-  uint32_t t0, i, exception;
+/*
+ * make sure only R0-R3 are used in this routine
+ */
+void handler_debug(uint32_t exception) {
+  uint32_t t0, i;
 
-  exception = __get_xPSR() & 0x1ff;
   WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;      /* 5 */
   t0 = USECS_VAL;
   while ((USECS_VAL - t0) < WIGGLE_DELAY) ;
@@ -163,27 +168,41 @@ void handler_debug() {
 }
 
 
+#ifdef notdef
+/*
+ * If we ever go to an independent HardFault_Handler this is the
+ * start.
+ */
 void HardFault_Handler() __attribute__((interrupt));
 void HardFault_Handler() {
-
-  handler_debug();
-
+  __default_handler();
   /* If set, make sure to clear:
    *
    * CFSR.MMARVALID, BFARVALID
    */
 }
+#endif
 
 void __default_handler()  __attribute__((interrupt));
-void __default_handler()  { handler_debug(); }
+void __default_handler()  {
+  uint32_t exception;
+
+  exception = __get_xPSR() & 0x1ff;
+  handler_debug(exception);
+  __panic_exception_entry(exception);
+}
 
 
 /*
  * Unless overridded, most handlers get aliased to __default_handler.
  */
 
+#ifdef notdef
+/*
+ * we no longer let others override system exception handlers
+ */
 void Nmi_Handler()        __attribute__((weak));
-//void HardFault_Handler()  __attribute__((weak));
+void HardFault_Handler()  __attribute__((weak));
 void MpuFault_Handler()   __attribute__((weak));
 void BusFault_Handler()   __attribute__((weak));
 void UsageFault_Handler() __attribute__((weak));
@@ -191,16 +210,17 @@ void SVCall_Handler()     __attribute__((weak));
 void Debug_Handler()      __attribute__((weak));
 void PendSV_Handler()     __attribute__((weak));
 void SysTick_Handler()    __attribute__((weak));
+#endif
 
-void Nmi_Handler()        { handler_debug(); }
-//void HardFault_Handler()  { handler_debug(); }
-void MpuFault_Handler()   { handler_debug(); }
-void BusFault_Handler()   { handler_debug(); }
-void UsageFault_Handler() { handler_debug(); }
-void SVCall_Handler()     { handler_debug(); }
-void Debug_Handler()      { handler_debug(); }
-void PendSV_Handler()     { handler_debug(); }
-void SysTick_Handler()    { handler_debug(); }
+void Nmi_Handler()        __attribute__((alias("__default_handler")));
+void HardFault_Handler()  __attribute__((alias("__default_handler")));
+void MpuFault_Handler()   __attribute__((alias("__default_handler")));
+void BusFault_Handler()   __attribute__((alias("__default_handler")));
+void UsageFault_Handler() __attribute__((alias("__default_handler")));
+void SVCall_Handler()     __attribute__((alias("__default_handler")));
+void Debug_Handler()      __attribute__((alias("__default_handler")));
+void PendSV_Handler()     __attribute__((alias("__default_handler")));
+void SysTick_Handler()    __attribute__((alias("__default_handler")));
 
 void PSS_Handler()        __attribute__((weak, alias("__default_handler")));
 void CS_Handler()         __attribute__((weak, alias("__default_handler")));
@@ -355,8 +375,8 @@ void __map_ports() {
  * Exception/Interrupt system initilization
  *
  * o enable all faults to go to their respective handlers
- *   mpu still hardfaults.
- *   others are caught with ROM_DEBUG_BREAK(0)
+ * o handlers by default do handler_debug and __panic_exception_entry
+ *   which then kicks Panic.
  *
  * Potential issue with PendSV.
  * http://embeddedgurus.com/state-space/2011/09/whats-the-state-of-your-cortex/
@@ -370,6 +390,7 @@ void __map_ports() {
 
 void __exception_init() {
   SCB->CCR |= (DIV0_TRAP | UNALIGN_TRAP);
+  SCB->SHCSR |= (USGFAULT_ENA | BUSFAULT_ENA | MPUFAULT_ENA);
 }
 
 

@@ -124,6 +124,11 @@ implementation {
 #endif
 
 
+  void __panic_exception_entry(uint32_t exception) @C() @spontaneous() {
+    call Panic.panic(PANIC_EXC, exception, 0, 0, 0, 0);
+  }
+
+
   void init_panic_dump() {
     panic_dir_t *dirp;
 
