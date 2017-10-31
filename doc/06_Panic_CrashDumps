@@ -17,13 +17,13 @@ i/o state, and Flash crumbs.
 sector = 512 bytes
 
 
-* Work Items
+* Work Items (*** done)
 
 o eval what gdb needs
-o eval CrashCatcher (https://github.com/adamgreen/CrashCatcher)
+o *** eval CrashCatcher (https://github.com/adamgreen/CrashCatcher)
 o eval CrashDebug   (https://github.com/adamgreen/CrashDebug)
 o eval breakpad     (https://chromium.googlesource.com/breakpad/breakpad)
-o define Panic Manager
+o *** define Panic Manager
 
 
 * Panic Blocks
@@ -59,12 +59,14 @@ A block includes the following information:
 Panic Block:
 
 A single instance of full machine state.  Needs to include Panic Info,
-Image Info, machine state, fault state, RAM, Select I/O, Flash Crumbs.
+Image Info, Crash_State (cpu regs, fpu regs, fault state), RAM, Select I/O,
+Flash Crumbs.
 
-Panic Info:  (32 bytes)
+Panic Info:  (36 bytes)
     4  <sig>
     4  time stamp
     4  cycle
+    4  boot_count
     1  subsys
     1  where
     2  pad
@@ -91,7 +93,7 @@ CPU state:  (CrashCatcher/Debug format)  236 bytes
  24    fault registers, 6 x 4
        SHCSR, CFSR, HFSR, DFSR, MMFAR, BFAR
 
-Total of above: 412
+Total of above: 416
 
 
 Additional Information: (included in block0)
@@ -176,6 +178,17 @@ o Private Peripheral Bus
 RSTCTL          0xE004_2000      72 (0x48)
 SYSCTL          0xE004_3000      52 (0x34)
 SYSCTL_Boot     0xE004_4000      28 (0x1c)
+
+
+o Correlating Panics to the DataStream.
+
+When we Panic we will write out a Panic block which includes both the
+boot_count and a current 64 bit xT (eXternal Time, xT0) time stamp
+(currently place held by cycle and time_stamp).
+
+When we reboot, boot_count will be incremented by one, and a Reboot_Sync
+record will be written out to the DataStream.  This record will also have
+the current xT (xT_1 > xT_0) and the boot_count.
 
 
 o Exception Stack Frame:
