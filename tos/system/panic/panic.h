@@ -87,7 +87,34 @@ enum {
 /* the argument type for panics */
 typedef unsigned int parg_t;
 
+
+/*
+ * Various defines defining (go figure) what the Panic Block
+ * looks like.  All numbers in sectors.  Each sector 512 bytes.
+ *
+ * HOME_BLOCK starts at 0 and goes for HOME_SIZE
+ * RAM starts at (HOME_BLOCK + HOME_SIZE)
+ */
+
 #define PBLK_SIZE      150
+#define PBLK_HOME      0
+#define PBLK_HOME_SIZE 1
+#define PBLK_RAM       1
+#define PBLK_RAM_SIZE  (64 * 1024 / 512)
+
+/*
+ * IO sectors start after RAM and can grow up to 13 sectors
+ * given PBLK_SIZE of 150.  If IO collides with FCRUMBS you
+ * will have to bump PBLK_SIZE up.  This has to be hand
+ * checked.
+ */
+#define PBLK_IO        (PBLK_RAM + PBLK_RAM_SIZE)
+
+/* Flash Crumbs currently defined to be 4KiB (8 sectors) */
+#define PBLK_FCRUMBS   (PBLK_SIZE - PBLK_FCRUMBS_SIZE)
+#define PBLK_FCRUMBS_SIZE 8
+
+
 /*
  * Various signatures for the different pieces of Panic information
  */
