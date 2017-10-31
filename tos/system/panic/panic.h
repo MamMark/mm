@@ -124,6 +124,7 @@ typedef unsigned int parg_t;
 
 #define PANIC_DIR_SIG    0xDDDDB00B
 
+
 typedef struct {
   uint32_t panic_dir_sig;
   uint32_t panic_block_sector;        /* dir - sector for next block */
@@ -134,6 +135,7 @@ typedef struct {
   uint32_t sig;
   uint32_t ts;
   uint32_t cycle;
+  uint32_t boot_count;
   uint8_t  subsys;
   uint8_t  where;
   uint16_t pad;
@@ -161,7 +163,7 @@ typedef struct {
   uint32_t sig;
   uint32_t ram_sector;                  /* starting sector for RAM dump, 64K */
   uint32_t io_sector;                   /* starting sector for I/O dump */
-  uint32_t Fcrumb_start;                /* Flash crumbs */
+  uint32_t fcrumb_sector;               /* flash crumbs */
 } panic_additional_t;
 
 

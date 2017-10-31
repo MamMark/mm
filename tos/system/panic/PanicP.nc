@@ -47,6 +47,7 @@ uint32_t g_panic_gate;
 #endif
 #endif
 
+
 #define PCB_SIG 0xAAAAB00B
 
 typedef struct {
@@ -69,6 +70,9 @@ typedef struct {
 } pcb_t;
 
 norace pcb_t pcb;              /* panic control block */
+
+extern image_info_t image_info;
+
 
 module PanicP {
   provides {
@@ -350,6 +354,10 @@ implementation {
         parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
         __attribute__ ((noinline)) {
 
+    panic_info_t       *pip;
+    panic_additional_t *addp;
+    panic_block_0_t    *b0p;
+
     _p = pcode; _w = where;
     _a0 = arg0; _a1 = arg1;
     _a2 = arg2; _a3 = arg3;
@@ -386,6 +394,30 @@ implementation {
 
     /* first dump RAM out.  then we can do what we want in RAM */
     collect_ram(&ram_region, pcb.block + PBLK_RAM);
+
+    b0p = (panic_block_0_t *) pcb.buf;
+    pip = &b0p->panic_info;
+    pip->sig = PANIC_INFO_SIG;
+    pip->ts  = 0;
+    pip->cycle = 0;
+    pip->boot_count = 0;
+    pip->subsys = pcode;
+    pip->where  = where;
+    pip->pad    = 0;
+    pip->arg[0] = arg0;
+    pip->arg[1] = arg1;
+    pip->arg[2] = arg2;
+    pip->arg[3] = arg3;
+
+    memcpy((void *) (&b0p->image_info), (void *) (&image_info), sizeof(image_info_t));
+
+    addp                = &b0p->additional_info;
+    addp->sig           = PANIC_ADDITIONS;
+    addp->ram_sector    = pcb.block + PBLK_RAM;
+    addp->io_sector     = pcb.block + PBLK_IO;
+    addp->fcrumb_sector = pcb.block + PBLK_FCRUMBS;
+
+    pcb.panic_sec = pcb.block + PBLK_IO;
     collect_io(&io_regions[0]);
     update_panic_dir();
     ROM_DEBUG_BREAK(0xf0);
