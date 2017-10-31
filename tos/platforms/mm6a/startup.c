@@ -130,7 +130,9 @@ volatile noinit meminit_stop_t meminit_stop;
 
 #endif          /* MEMINIT_STOP */
 
-volatile        uint8_t handler_fault_wait = 1;
+#ifdef HANDLER_FAULT_WAIT
+volatile        uint8_t handler_fault_wait;     /* set to deadbeaf to continue */
+#endif
 
 void handler_debug() {
   uint32_t t0, i, exception;
@@ -153,7 +155,7 @@ void handler_debug() {
   ROM_DEBUG_BREAK(0);
 
 #ifdef HANDLER_FAULT_WAIT
-  while (handler_fault_wait) {
+  while (handler_fault_wait != 0xdeadbeaf) {
     nop();
   };
 #endif
