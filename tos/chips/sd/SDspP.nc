@@ -162,7 +162,7 @@ implementation {
     uint32_t   blk_start, blk_end;
     uint8_t    cur_cid;			/* current client */
     uint8_t    *data_ptr;
-    uint16_t   erase_state;             /* dp, F: 0, T: 0xff    */
+    uint16_t   erase_state;             /* dp, 0x00 or 0xff */
     uint16_t   majik_b;
   } sdc;
 
@@ -523,7 +523,8 @@ implementation {
 
     if ((rsp = sd_get_vreg(buf, SD_SEND_SCR, SD_SCR_LEN)))
       sd_panic(99, rsp);                /* no return */
-    sdc.erase_state = buf[1] & 0x80;
+
+    sdc.erase_state = ((buf[1] & 0x80) ? 0xff : 0x00);
 
     ocr = sd_get_ocr();
     if (ocr & (1 << 30))
@@ -1461,14 +1462,45 @@ implementation {
   /*
    * SDraw.erase_state: return indicator of erased state
    *
-   * TRUE:      card is erased to 0xff
-   * FALSE:     card is erased to 0x00
+   * 0xff:      card is erased to 0xff
+   * 0x00:      card is erased to 0x00
    *
    * sdc.blocks will be non-zero if we've gotten the disks parms
    */
-  async command bool SDraw.erase_state() {
-    if (sdc.blocks)
-      return sdc.erase_state;
+  async command uint8_t SDraw.erase_state() {
+    return sdc.erase_state;
+  }
+
+
+  /*
+   * chk_buffer
+   * checks an sd buffer for the val passed in.
+   *
+   * assumes quad-byte aligned.
+   *
+   * if tail is not quad even, then we have to adjust the
+   * last reference.    19-18-17-16, len 3, we want 0x00FFFFFF
+   *
+   * return: TRUE    if buffer is set to val
+   *         FALSE   otherwise
+   */
+  bool chk_buffer(uint8_t *sd_buf, uint8_t val) {
+    uint32_t *p, len, chk, mask;
+
+    len = SD_BLOCKSIZE;
+    chk = val << 24 | val << 16 | val << 8 | val;
+    p = (void *) sd_buf;
+    while (len > 3) {
+      if ((*p++) != chk) return FALSE;
+      len -= 4;
+      if (len < 4)
+        break;
+    }
+    if (!len) return TRUE;
+    mask = (0xffffffff >> ((4 - len) * 8));
+    chk  &= mask;
+    if ((*p & mask) == chk)
+      return TRUE;
     return FALSE;
   }
 
@@ -1479,28 +1511,25 @@ implementation {
    *
    * assumes quad-byte aligned.
    *
-   * if tail is not quad even, then we have to adjust the
-   * last reference.    19-18-17-16, len 3, we want 0x00FFFFFF
-   *
-   *    return:         TRUE    if block is zero
-   *                    FALSE   not zero
-   *
    * async because this gets called from Panic.  interrupt safe.
    */
-  async command bool SDraw.chk_zero(uint8_t  *sd_buf, uint32_t len) {
-    uint32_t *p;
+  async command bool SDraw.chk_zero(uint8_t *sd_buf) {
+    return chk_buffer(sd_buf, 0);
+  }
 
-    p = (void *) sd_buf;
-    while (1) {
-      if (*p++) return FALSE;
-      len -= 4;
-      if (len < 4)
-        break;
-    }
-    if (!len) return TRUE;
-    if (*p & (0xffffffff >> ((4 - len) * 8)))
-      return FALSE;
-    return TRUE;
+
+  /*
+   * SDraw.chk_erased
+   * checks an sd buffer for the erased condition.
+   *
+   * We are looking for SD sectors that are erased.  We read the sector
+   * into a buffer and use chk_erased to see if it is the erased value.
+   * see sdc.erase_state.
+   *
+   * assumes quad-byte aligned.
+   */
+  async command bool SDraw.chk_erased(uint8_t *sd_buf) {
+    return chk_buffer(sd_buf, sdc.erase_state);
   }
 
 
