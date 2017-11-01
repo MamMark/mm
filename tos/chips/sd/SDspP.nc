@@ -506,9 +506,9 @@ implementation {
     uint32_t csize, rbl, csm;
     uint32_t ocr;
 
-    if ((rsp = sd_get_vreg(buf, SD_SEND_CSD, SD_CSD_LEN))) {
+    if ((rsp = sd_get_vreg(buf, SD_SEND_CSD, SD_CSD_LEN)))
       sd_panic(99, rsp);                /* no return */
-    }
+
     if ((buf[0] >> 6) == 1) {
       /* CSDv2 */
       csize = (buf[7] & 0x3f) << 16 | (buf[8] << 8) | buf[9];
@@ -521,9 +521,8 @@ implementation {
       sdc.blocks = (csize + 1) << (rbl + csm + 2 - 9);
     }
 
-    if ((rsp = sd_get_vreg(buf, SD_SEND_SCR, SD_SCR_LEN))) {
+    if ((rsp = sd_get_vreg(buf, SD_SEND_SCR, SD_SCR_LEN)))
       sd_panic(99, rsp);                /* no return */
-    }
     sdc.erase_state = buf[1] & 0x80;
 
     ocr = sd_get_ocr();

@@ -1,9 +1,12 @@
 
 # to launch msp432-gdb
 # M-x gdb
-# arm-none-eabi-gdb-py -i=mi -iex "target remote localhost:2331" -cd build/<target>/ main.exe
+# arm-none-eabi-gdb-py -i=mi -iex "target extended-remote localhost:2331" -cd build/<target>/ main.exe
+#
+# previous mechanism:
+# arm-none-eabi-gdb-py -i=mi -nx -ex "target extended-remote localhost:2431" -x .gdbinit -x .gdb_mm5a build/exp_msp432/main.exe
 
-# (setq make-command ". ~/.environment_bash; make dev6a")
+# (setq make-command "make dev6a")
 # (setq gud-gdb-command-name "arm-none-eabi-gdb-py -i=mi -iex \\"target remote localhost:2331\\" -cd build/dev6a/ main.exe")
 #
 # 2331 is Jlink
@@ -34,7 +37,6 @@ source ../../.gdb_msp432
 source .gdb_target
 source ../../.gdb_gps
 source ../../.gdb_mm
-
 
 set disassemble-next-line on
 
@@ -118,7 +120,7 @@ b SchedulerBasicP.nc:163
 b VirtualizeTimerC.nc:92
 dis 1 2
 
-b PanicP.nc:79
+b PanicP.nc:121
 comm
 printf "\n\n*** Panic: %d(d), w: %d(d), a: %04x %04x %04x %04x\n", \
         PanicP___p,  PanicP___w, \

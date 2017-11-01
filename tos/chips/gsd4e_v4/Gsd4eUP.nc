@@ -718,7 +718,7 @@ implementation {
             gpsc_boot_time = call LocalTime.get() - t_gps_pwr_on;
             call CollectEvent.logEvent(DT_EVENT_GPS_BOOT_TIME,
                                        t_gps_pwr_on, gpsc_boot_time, 0, 0);
-            nop();
+            nop();                      /* BRK */
             signal Booted.booted();
           }
           return;
