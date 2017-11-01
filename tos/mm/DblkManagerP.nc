@@ -42,6 +42,7 @@ module DblkManagerP {
     interface Boot;			/* incoming boot signal */
     interface FileSystem;
     interface SDread;
+    interface SDraw;
     interface SSWrite as SSW;
     interface Resource as SDResource;
     interface Panic;
@@ -68,26 +69,6 @@ implementation {
 
   void dm_panic(uint8_t where, parg_t p0, parg_t p1) {
     call Panic.panic(PANIC_DM, where, p0, p1, 0, 0);
-  }
-
-
-  /*
-   * blk_empty
-   *
-   * check if a Stream storage data block is empty.
-   * Currently, an empty (erased SD data block) looks like
-   * it is zeroed.  So we look for all data being zero.
-   */
-
-  int blk_empty(uint8_t *buf) {
-    uint16_t i;
-    uint16_t *ptr;
-
-    ptr = (void *) buf;
-    for (i = 0; i < SD_BLOCKSIZE/2; i++)
-      if (ptr[i])
-	return(0);
-    return(1);
   }
 
 
@@ -167,8 +148,8 @@ implementation {
         return;
 
       case DMS_START:
-        /* if blk is empty, dmc.dblk_nxt is already correct. */
-	if (blk_empty(dp))
+        /* if blk is erased, dmc.dblk_nxt is already correct. */
+	if (call SDraw.chk_erased(dp))
 	  break;
 
 	lower = dmc.dblk_nxt;
@@ -184,7 +165,7 @@ implementation {
 	return;
 
       case DMS_SCAN:
-	empty = blk_empty(dp);
+	empty = call SDraw.chk_erased(dp);
 	if (empty)
 	  upper = cur_blk;
 	else
@@ -192,7 +173,7 @@ implementation {
 
 	if (lower >= upper) {
 	  /*
-	   * we've looked at all the blocks.  Check the state of the last block looked at
+
 	   * if empty we be good.  Otherwise no available storage.
 	   */
 	  if (empty) {
