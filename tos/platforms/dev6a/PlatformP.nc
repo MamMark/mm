@@ -79,7 +79,6 @@ implementation {
 
 
   async command error_t  SysReboot.reboot(sysreboot_t reboot_type) {
-    call OWhw.fake_reset();
     switch (reboot_type) {
       case SYSREBOOT_REBOOT:
         SYSCTL->REBOOT_CTL = (PRD_RESET_KEY | SYSCTL_REBOOT_CTL_REBOOT);

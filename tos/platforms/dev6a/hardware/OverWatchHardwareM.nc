@@ -140,7 +140,7 @@ implementation {
 
 
   /*
-   * returns FAIL if we can't launch
+   * returns if we can't launch
    */
   async command void OWhw.boot_image(image_info_t *iip) {
     if (iip->sig != IMAGE_INFO_SIG)
