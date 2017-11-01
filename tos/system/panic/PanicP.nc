@@ -165,7 +165,7 @@ implementation {
     call SDsa.read(pcb.dir, pcb.buf);
     dirp = (panic_dir_t *) pcb.buf;
 
-    if (!call SDraw.chk_zero(pcb.buf, SD_BLOCKSIZE)) {
+    if (!call SDraw.chk_zero(pcb.buf)) {
       if (call Checksum.sum32_aligned((void *) dirp, sizeof(*dirp))
           || dirp->panic_dir_sig != PANIC_DIR_SIG)
         call OverWatch.strange(0x81);

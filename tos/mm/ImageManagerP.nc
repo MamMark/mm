@@ -1158,7 +1158,7 @@ implementation {
      * check for all zeroes.  If so we need to initialize the
      * directory to empty with proper start_sec fields.
      */
-    if (call SDraw.chk_zero(im_wrk_buf, SD_BLOCKSIZE)) {
+    if (call SDraw.chk_zero(im_wrk_buf)) {
       dir->dir_sig   = IMAGE_DIR_SIG;
       dir->dir_sig_a = IMAGE_DIR_SIG;
       for (i = 0; i < IMAGE_DIR_SLOTS; i++)
