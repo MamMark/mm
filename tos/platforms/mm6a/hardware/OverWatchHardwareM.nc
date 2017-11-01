@@ -134,7 +134,8 @@ implementation {
   void launch(uint32_t base) {
     __asm__ volatile (
       "  ldr sp, [%0] \n"
-      "  ldr pc, [%0, #4] \n" : : "r" (base) );
+      "  ldr lr, [%0, #4] \n"
+      "  bx  lr \n" : : "r" (base) );
   }
 
 
