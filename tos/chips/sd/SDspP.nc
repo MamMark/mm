@@ -830,7 +830,7 @@ implementation {
 
   void sd_read_dma_handler() {
     uint16_t crc;
-    uint8_t  cid;
+    uint8_t  cid, old_byte;
 
     cid = sdc.cur_cid;			/* remember for signalling */
     call HW.sd_stop_dma();
@@ -859,8 +859,12 @@ implementation {
      * Haven't seen this in a while pretty sure it got cleaned up when
      * we got a better handle on the transaction sequence of the SD.
      */
-    if (sdc.data_ptr[0] == 0xfe)
-      sd_warn(46, sdc.data_ptr[0]);
+    if (sdc.data_ptr[0] == 0xfe) {
+      old_byte = sdc.data_ptr[0];
+      call SDsa.read(sdc.blk_start, sdc.data_ptr);
+      if (sdc.data_ptr[0] != 0xfe)
+        sd_warn(46, old_byte);
+    }
 
     last_read_time_us = call Platform.usecsRaw() - op_t0_us;
     if (last_read_time_us > max_read_time_us)
