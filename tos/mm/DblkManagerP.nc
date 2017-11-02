@@ -53,7 +53,7 @@ implementation {
 
 #define DM_SIG 0x5542
 
-  struct {
+norace  struct {
     uint16_t dm_sig_a;
     uint32_t dblk_lower;                /* inclusive  */
     uint32_t dblk_nxt;                  /* 0 - oht oh */
@@ -211,16 +211,18 @@ implementation {
   }
 
 
-  command uint32_t DblkManager.get_nxt_blk() {
+  async command uint32_t DblkManager.get_nxt_blk() {
     return dmc.dblk_nxt;
   }
 
 
-  command uint32_t DblkManager.adv_nxt_blk() {
-    if (dmc.dblk_nxt) {
-      dmc.dblk_nxt++;
-      if (dmc.dblk_nxt > dmc.dblk_upper)
-	dmc.dblk_nxt = 0;
+  async command uint32_t DblkManager.adv_nxt_blk() {
+    atomic {
+      if (dmc.dblk_nxt) {
+        dmc.dblk_nxt++;
+        if (dmc.dblk_nxt > dmc.dblk_upper)
+          dmc.dblk_nxt = 0;
+      }
     }
     return dmc.dblk_nxt;
   }

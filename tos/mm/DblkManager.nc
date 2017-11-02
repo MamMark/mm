@@ -6,6 +6,6 @@
  */
 
 interface DblkManager {
-  command uint32_t get_nxt_blk();
-  command uint32_t adv_nxt_blk();
+  async command uint32_t get_nxt_blk();
+  async command uint32_t adv_nxt_blk();
 }
