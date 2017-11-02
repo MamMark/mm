@@ -20,9 +20,13 @@ sector = 512 bytes
 * Work Items (*** done)
 
 o eval what gdb needs
-o *** eval CrashCatcher (https://github.com/adamgreen/CrashCatcher)
-o eval CrashDebug   (https://github.com/adamgreen/CrashDebug)
+o modify copy_region to conform to CrashDebug
+o extractor to go from PanicBlock to <name>.dbg
+  CrashInfo, Ram, I/O
 o eval breakpad     (https://chromium.googlesource.com/breakpad/breakpad)
+
+o *** eval CrashCatcher (https://github.com/adamgreen/CrashCatcher)
+o *** eval CrashDebug   (https://github.com/adamgreen/CrashDebug)
 o *** define Panic Manager
 
 
@@ -78,7 +82,7 @@ Panic Info:  (36 bytes)
 Image_Info for running image (from image running)
   144  bytes
 
-CPU state:  (CrashCatcher/Debug format)  236 bytes
+CrashInfo (CPU state):  (CrashCatcher/Debug format +)  236 bytes
   4    signature
   4    flags
  52    R0 - R12
@@ -92,6 +96,7 @@ CPU state:  (CrashCatcher/Debug format)  236 bytes
        32 x 4 bytes (128 bytes)
  24    fault registers, 6 x 4
        SHCSR, CFSR, HFSR, DFSR, MMFAR, BFAR
+       E000ED24        to              E000ED38
 
 Total of above: 416
 
