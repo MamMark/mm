@@ -49,12 +49,12 @@ interface OverWatch {
    */
   async command void install();
 
-
   /**
-   * ForceBoot
+   * force_boot
    *
    * Request OverWatch to boot the system into the specified boot mode.
-   * (OWT, GOLD, NIB).  This is also used to force a reboot.
+   * (OWT, GOLD, NIB).  This is a low level OverWatch command.  It does
+   * not cause any buffers to be flushed.
    *
    * @param   boot_mode     which image instance to boot into
    * @param   reason        why the force_boot is being done
@@ -63,6 +63,18 @@ interface OverWatch {
   async command void force_boot(ow_boot_mode_t boot_mode,
                                 ow_reboot_reason_t reason);
 
+  /**
+   * flush_boot
+   *
+   * Request a reboot of the system into the specified mode but
+   * first make sure any buffers are flushed.
+   *
+   * @param   boot_mode     which image instance to boot into
+   * @param   reason        why the force_boot is being done
+   * @return  error_t
+   */
+  async command void flush_boot(ow_boot_mode_t boot_mode,
+                                ow_reboot_reason_t reason);
 
   /**
    * Fail

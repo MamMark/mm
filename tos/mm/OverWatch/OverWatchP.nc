@@ -646,12 +646,14 @@ implementation {
 
 
   /*
-   * ForceBoot - Request boot into specific mode
+   * force_boot - Request boot into specific mode
    *
    * Request OverWatch (the Overwatcher low level) to select
    * a specific image and mode (OWT, GOLD, NIB).
+   *
    * The OWT and GOLD are part of the same image (in bank 0)
    * and are installed at the factory.
+   *
    * The NIB contains the current Active image (in bank 1)
    * found in the SD storage.
    */
@@ -665,6 +667,16 @@ implementation {
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
     call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
+  }
+
+
+  /*
+   * flush_boot - like force_boot but first flush SSW buffers.
+   */
+  async command void OverWatch.flush_boot(ow_boot_mode_t boot_mode,
+                                          ow_reboot_reason_t reason) {
+    call SysReboot.flush();
+    call OverWatch.force_boot(boot_mode, reason);
   }
 
 
