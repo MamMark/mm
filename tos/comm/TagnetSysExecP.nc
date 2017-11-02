@@ -42,6 +42,7 @@
 #include <Tagnet.h>
 #include <TagnetTLV.h>
 #include <image_info.h>
+#include <overwatch.h>
 
 module TagnetSysExecP {
   provides interface TagnetSysExecAdapter as  SysActive;
@@ -81,9 +82,15 @@ implementation {
  }
 
   command error_t    SysActive.set_version(image_ver_t *versionp) {
-    /* will cause an overwatch install when set_active_complete() is signalled */
-    activate_waiting = TRUE;
-    return call IM.dir_set_active(versionp);
+    error_t    err;
+
+    /* note that overwatch.install() is called when set_active_complete()
+     * is signalled
+     */
+    err = call IM.dir_set_active(versionp);
+    if (err == SUCCESS)
+      activate_waiting = TRUE;
+    return err;
   }
 
   /*
@@ -91,30 +98,21 @@ implementation {
    */
   command uint8_t SysBackup.get_state() {
     image_dir_slot_t*dirp;
-    uint16_t         i;
 
-    for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
-      dirp = call IMD.dir_get_dir(i);
-      if (!dirp)
-        break;
-      if (dirp->slot_state == SLOT_BACKUP)
-        return call IMD.slotStateLetter(dirp->slot_state);
+    dirp = call IMD.dir_get_backup();
+    if (dirp) {
+      return call IMD.slotStateLetter(dirp->slot_state);
     }
     return ' ';
   }
 
   command error_t SysBackup.get_version(image_ver_t *versionp) {
     image_dir_slot_t*dirp;
-    uint16_t         i;
 
-    for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
-      dirp = call IMD.dir_get_dir(i);
-      if (!dirp)
-        break;
-      if (dirp->slot_state == SLOT_BACKUP) {
-        call IMD.setVer(&dirp->ver_id, versionp);
-        return SUCCESS;
-      }
+    dirp = call IMD.dir_get_backup();
+    if (dirp) {
+      call IMD.setVer(&dirp->ver_id, versionp);
+      return SUCCESS;
     }
     return FAIL;
   }
@@ -129,13 +127,18 @@ implementation {
   command uint8_t SysGolden.get_state() { return 'G'; }
 
   command error_t SysGolden.get_version(image_ver_t *versionp) {
-    image_info_t    *infop = (void *) 0x140;
+    image_info_t    *infop = (void *) IMAGE_META_OFFSET;
     call IMD.setVer(&infop->ver_id, versionp);
     return SUCCESS;
   }
 
   command error_t SysGolden.set_version(image_ver_t *versionp) {
-    return EALREADY;            /* not allowed */
+    image_ver_t run_verp;
+    if ((call SysGolden.get_version(&run_verp) != SUCCESS) ||
+        (!call IMD.verEqual(&run_verp, versionp)))
+      return EINVAL;
+    call OW.force_boot(OW_BOOT_GOLD, ORR_USER_REQUEST);
+    return SUCCESS;
   }
 
   /*
@@ -144,13 +147,18 @@ implementation {
   command uint8_t SysNIB.get_state() { return 'N'; }
 
   command error_t SysNIB.get_version(image_ver_t *versionp) {
-    image_info_t    *infop = (void *) 0x20140;
+    image_info_t    *infop = (void *) NIB_BASE + IMAGE_META_OFFSET;
     call IMD.setVer(&infop->ver_id, versionp);
     return SUCCESS;
   }
 
   command error_t SysNIB.set_version(image_ver_t *versionp) {
-    return EALREADY;            /* not allowed */
+    image_ver_t run_verp;
+    if ((call SysNIB.get_version(&run_verp) != SUCCESS) ||
+        (!call IMD.verEqual(&run_verp, versionp)))
+      return EINVAL;
+    call OW.force_boot(OW_BOOT_NIB, ORR_USER_REQUEST);
+    return SUCCESS;
   }
 
   /*
@@ -173,8 +181,16 @@ implementation {
   }
 
   command error_t SysRunning.set_version(image_ver_t *versionp) {
+    image_ver_t run_verp;
+    if ((call SysRunning.get_version(&run_verp) != SUCCESS) ||
+        (!call IMD.verEqual(&run_verp, versionp)))
+      return EINVAL;
+    if (call OW.getImageBase())
+      call OW.force_boot(OW_BOOT_NIB, ORR_USER_REQUEST);
+    else
+      call OW.force_boot(OW_BOOT_GOLD, ORR_USER_REQUEST);
+    return FAIL;                  /* won't get here! */
   }
-
 
   event   void    IM.delete_complete() { }
 
