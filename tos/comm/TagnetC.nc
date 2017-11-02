@@ -125,7 +125,6 @@ configuration TagnetC {
     interface TagnetSysExecAdapter             as SysGolden;
     interface TagnetSysExecAdapter             as SysNIB;
     interface TagnetSysExecAdapter             as SysRunning;
-    interface TagnetSysExecAdapter             as SysReboot;
   }
 }
 implementation {
@@ -193,7 +192,6 @@ implementation {
   //                               \---/golden
   //                               \---/nib
   //                               \---/running
-  //                               \---/reboot
   components new         TagnetNameElementP    (TN_SYS_ID, UQ_TN_SYS)         as SysVx;
   components new         TagnetNameElementP    (TN_SYS_NID_ID, UQ_TN_SYS_NID) as SysNidVx;
   components new         TagnetSysExecAdapterP (TN_SYS_ACTIVE_ID) as SysActiveLf;
@@ -201,7 +199,6 @@ implementation {
   components new         TagnetSysExecAdapterP (TN_SYS_GOLDEN_ID) as SysGoldenLf;
   components new         TagnetSysExecAdapterP (TN_SYS_NIB_ID)    as SysNibLf;
   components new         TagnetSysExecAdapterP (TN_SYS_RUNNING_ID) as SysRunningLf;
-  components new         TagnetSysExecAdapterP (TN_SYS_REBOOT_ID) as SysRebootLf;
   SysVx.Super         -> TagVx.Sub[unique(UQ_TN_TAG)];
   SysNidVx.Super      -> SysVx.Sub[unique(UQ_TN_SYS)];
   SysActiveLf.Super   -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
@@ -209,12 +206,10 @@ implementation {
   SysGoldenLf.Super   -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
   SysNibLf.Super      -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
   SysRunningLf.Super  -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
-  SysRebootLf.Super   -> SysNidVx.Sub[unique(UQ_TN_SYS_NID)];
   SysActive            = SysActiveLf.Adapter;
   SysBackup            = SysBackupLf.Adapter;
   SysGolden            = SysGoldenLf.Adapter;
   SysNIB               = SysNibLf.Adapter;
   SysRunning           = SysRunningLf.Adapter;
-  SysReboot            = SysRebootLf.Adapter;
 
 }

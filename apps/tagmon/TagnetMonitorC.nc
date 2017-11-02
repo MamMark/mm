@@ -33,7 +33,6 @@ implementation {
   TagnetC.SysGolden             -> TagnetSysExecC.SysGolden;
   TagnetC.SysNIB                -> TagnetSysExecC.SysNIB;
   TagnetC.SysRunning            -> TagnetSysExecC.SysRunning;
-  TagnetC.SysReboot             -> TagnetSysExecC.SysReboot;
 
   components new TimerMilliC()  as Timer0;
   TagnetMonitorP.rcTimer        -> Timer0;

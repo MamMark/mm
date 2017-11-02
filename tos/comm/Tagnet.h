@@ -103,7 +103,6 @@ typedef struct tagnet_payload_meta_t {
 #define UQ_TN_SYS_GOLDEN        "UQ_TN_SYS_GOLDEN"
 #define UQ_TN_SYS_NIB           "UQ_TN_SYS_NIB"
 #define UQ_TN_SYS_RUNNING       "UQ_TN_SYS_RUNNING"
-#define UQ_TN_SYS_REBOOT        "UQ_TN_SYS_REBOOT"
 
 #define UQ_TAGNET_ADAPTER_LIST  "UQ_TAGNET_ADAPTER_LIST"
 
@@ -135,7 +134,6 @@ typedef enum {
   TN_SYS_GOLDEN_ID,
   TN_SYS_NIB_ID,
   TN_SYS_RUNNING_ID,
-  TN_SYS_REBOOT_ID,
 
   TN_LAST_ID,
   TN_MAX_ID = 65000,  // force two byte enum size
@@ -184,7 +182,6 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   {TN_SYS_GOLDEN_ID,  "\x01\x06golden", "\x01\x0Fsys_golden help", UQ_TN_SYS_GOLDEN},
   {TN_SYS_NIB_ID,     "\x01\x03nib",    "\x01\x0Csys_nib help",    UQ_TN_SYS_NIB},
   {TN_SYS_RUNNING_ID, "\x01\x07running","\x01\x10sys_running help",UQ_TN_SYS_RUNNING},
-  {TN_SYS_REBOOT_ID,  "\x01\x06reboot", "\x01\x0Fsys_reboot help", UQ_TN_SYS_REBOOT},
 };
 
 /*

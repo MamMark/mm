@@ -40,7 +40,6 @@ configuration TagnetSysExecC {
   provides interface  TagnetSysExecAdapter  as  SysGolden;
   provides interface  TagnetSysExecAdapter  as  SysNIB;
   provides interface  TagnetSysExecAdapter  as  SysRunning;
-  provides interface  TagnetSysExecAdapter  as  SysReboot;
 }
 implementation {
   components          TagnetSysExecP        as  Element;
@@ -52,7 +51,6 @@ implementation {
   SysGolden           =  Element.SysGolden;
   SysNIB              =  Element.SysNIB;
   SysRunning          =  Element.SysRunning;
-  SysReboot           =  Element.SysReboot;
   Element.IM         ->  ImageManagerC.IM[unique("image_manager_clients")];
   Element.IMD        ->  ImageManagerC;
   Element.OW         ->  OverWatchC;

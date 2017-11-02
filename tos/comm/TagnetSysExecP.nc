@@ -49,7 +49,6 @@ module TagnetSysExecP {
   provides interface TagnetSysExecAdapter as  SysGolden;
   provides interface TagnetSysExecAdapter as  SysNIB;
   provides interface TagnetSysExecAdapter as  SysRunning;
-  provides interface TagnetSysExecAdapter as  SysReboot;
   uses     interface ImageManager         as  IM;
   uses     interface ImageManagerData     as  IMD;
   uses     interface OverWatch            as  OW;
@@ -174,23 +173,6 @@ implementation {
   }
 
   command error_t SysRunning.set_version(image_ver_t *versionp) {
-    return EALREADY;            /* not allowed */
-  }
-
-  /*
-   * Reboot Image control
-   */
-  command uint8_t SysReboot.get_state() {
-    return call SysRunning.get_state();
-  }
-
-  command error_t SysReboot.get_version(image_ver_t *versionp) {
-    return call SysRunning.get_version(versionp);
-  }
-
-  command error_t SysReboot.set_version(image_ver_t *versionp) {
-    call OW.force_boot(OW_BOOT_NIB, ORR_USER_REQUEST);
-    return SUCCESS;             /* won't get here! */
   }
 
 
