@@ -1,5 +1,5 @@
 /**
- * Copyright @ 2008 Eric B. Decker
+ * Copyright @ 2008,2017 Eric B. Decker
  * @author Eric B. Decker
  */
 
@@ -24,4 +24,7 @@ implementation {
 
   components LocalTimeMilliC;
   CollectP.LocalTime -> LocalTimeMilliC;
+
+  components PlatformC;
+  CollectP.SysReboot -> PlatformC;
 }

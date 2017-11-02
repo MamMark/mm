@@ -48,6 +48,7 @@ module CollectP {
   uses {
     interface SSWrite as SSW;
     interface Panic;
+    interface SysReboot @atleastonce();
     interface LocalTime<TMilli>;
   }
 }
