@@ -118,3 +118,33 @@ end
 document arb0
 display Arbiter 0 State
 end
+
+
+define __print_image_info
+# arg0 ptr to image_info block
+set $__ii=(image_info_t *) $arg0
+if $__ii->sig == 0xffffffff
+    printf "empty\n"
+else
+    printf "%d.%d.%d (x %x.%x.%x)  s: 0x%05x l: %d (0x%x)  hw: m/r %d/%d\n", \
+        $__ii->ver_id.major, $__ii->ver_id.minor, $__ii->ver_id.build, \
+        $__ii->ver_id.major, $__ii->ver_id.minor, $__ii->ver_id.build, \
+        $__ii->image_start, $__ii->image_length, $__ii->image_length,  \
+        $__ii->hw_ver.hw_model, $__ii->hw_ver.hw_rev
+    printf "   0:  [%s]\n", $__ii->descriptor0
+    printf "   1:  [%s]\n", $__ii->descriptor1
+    printf "   s:  [%s]\n", $__ii->stamp_date
+end
+printf "\n"
+end
+
+define rom
+printf "\n"
+printf " nib:  "
+__print_image_info 0x20140
+printf "gold:  "
+__print_image_info 0x140
+end
+document rom
+display MM ROM (flash) state
+end
