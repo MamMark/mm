@@ -41,6 +41,7 @@ interface ImageManagerData {
   command uint8_t slotStateLetter(slot_state_t state);
 
   command image_dir_slot_t *dir_get_active();
+  command image_dir_slot_t *dir_get_backup();
   command image_dir_slot_t *dir_get_dir(uint8_t idx);
   command image_dir_slot_t *dir_find_ver(image_ver_t *ver_id);
 

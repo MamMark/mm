@@ -620,6 +620,22 @@ implementation {
 
 
   /*
+   * dir_get_backup: find current backup if any
+   *
+   * input:  none
+   * return: ptr        slot entry for current active.
+   *                    NULL if no active image
+   */
+  command image_dir_slot_t *IMData.dir_get_backup() {
+    image_dir_slot_t *bkp;
+
+    verify_IM();
+    get_active_backup(NULL, &bkp);
+    return bkp;
+  }
+
+
+  /*
    * dir_get_dir: Returns a pointer to the dir slot indexed by idx
    *
    * input:  idx
