@@ -68,7 +68,8 @@ norace volatile uint32_t catch_strange; /* set to 0 on init */
  * ACT_INSTALL
  * ACT_EJECT
  *
- * If no action is requested, we will boot the golden image.
+ * The default OW_request is OW_BOOT which will boot the image
+ * indicated by ow_boot_mode.
  *
  * WARNING: OverWatch T (OWT) runs prior to the main system being up.
  * It can not call Panic when something goes wrong.  It can only
@@ -191,7 +192,8 @@ implementation {
   /*
    * stash as strange, and reboot into GOLD
    *
-   * does NOT return, ever!
+   * does NOT return, ever!  Low level death, do NOT call
+   * SysReboot.flush().
    */
   void owl_strange2gold(uint32_t loc) @C() @spontaneous() {
     ow_control_block_t *owcp;
@@ -638,6 +640,7 @@ implementation {
   async command void OverWatch.install() {
     ow_control_block_t *owcp;
 
+    call SysReboot.flush();
     owcp = &ow_control_block;
     owcp->ow_req = OW_REQ_INSTALL;
     owcp->from_base = call OWhw.getImageBase();
@@ -690,13 +693,21 @@ implementation {
    * exceeding a failure threshold of faults per unit of time.
    * If exceeded, then low level initiates OWT to eject the
    * current Active image and replace with the Backup image.
+   *
    * If no backup, then just run Golden.
+   *
    * The reasons for failure include various exceptions as
    * well as panic().
+   *
+   * Panic uses OW.fail() to inform OW of the crash.  Panic very carefully
+   * captures the state of the machine, handles sequencing, and flushes any
+   * StreamStorage buffers.  So do NOT call SysReboot.flush() in
+   * OverWatch.fail().
    */
   async command void OverWatch.fail(ow_reboot_reason_t reason) {
     ow_control_block_t *owcp;
 
+    /* do not call SysReboot.fail() here */
     owcp = &ow_control_block;
     owcp->cycle = 0;
     owcp->time = 1000;                  /* just pretend for now */
@@ -716,6 +727,10 @@ implementation {
    *            0x101,     nib detected owcb clobber
    *            0x140-17f, nib misc
    *            0x180-1ff, nib panic
+   *
+   * OverWatch.strange() is a low level bailout when something goes wrong.
+   * Do not call SysReboot.flush() here.  If we need a flush the caller
+   * of OverWatch.strange() will need to do it.
    */
   async command void OverWatch.strange(uint32_t loc) {
     if (call OverWatch.getImageBase())
