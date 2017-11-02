@@ -137,7 +137,7 @@ implementation {
     if ((call SysGolden.get_version(&run_verp) != SUCCESS) ||
         (!call IMD.verEqual(&run_verp, versionp)))
       return EINVAL;
-    call OW.force_boot(OW_BOOT_GOLD, ORR_USER_REQUEST);
+    call OW.flush_boot(OW_BOOT_GOLD, ORR_USER_REQUEST);
     return SUCCESS;
   }
 
@@ -157,7 +157,7 @@ implementation {
     if ((call SysNIB.get_version(&run_verp) != SUCCESS) ||
         (!call IMD.verEqual(&run_verp, versionp)))
       return EINVAL;
-    call OW.force_boot(OW_BOOT_NIB, ORR_USER_REQUEST);
+    call OW.flush_boot(OW_BOOT_NIB, ORR_USER_REQUEST);
     return SUCCESS;
   }
 
@@ -182,13 +182,14 @@ implementation {
 
   command error_t SysRunning.set_version(image_ver_t *versionp) {
     image_ver_t run_verp;
+
     if ((call SysRunning.get_version(&run_verp) != SUCCESS) ||
         (!call IMD.verEqual(&run_verp, versionp)))
       return EINVAL;
     if (call OW.getImageBase())
-      call OW.force_boot(OW_BOOT_NIB, ORR_USER_REQUEST);
+      call OW.flush_boot(OW_BOOT_NIB, ORR_USER_REQUEST);
     else
-      call OW.force_boot(OW_BOOT_GOLD, ORR_USER_REQUEST);
+      call OW.flush_boot(OW_BOOT_GOLD, ORR_USER_REQUEST);
     return FAIL;                  /* won't get here! */
   }
 
