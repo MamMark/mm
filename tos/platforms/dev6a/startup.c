@@ -163,6 +163,7 @@ void handler_debug(uint32_t exception) {
   while (handler_fault_wait != 0xdeadbeaf) {
     nop();
   };
+  handler_fault_wait = 0;
 #endif
 
 }

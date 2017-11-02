@@ -41,7 +41,7 @@
 extern ow_control_block_t ow_control_block;
 
 #ifdef CATCH_STRANGE
-volatile uint32_t catch_strange;        /* set to 0 on init */
+norace volatile uint32_t catch_strange; /* set to 0 on init */
                                         /* set to deadbeaf to continue from */
                                         /* a strange */
 #endif
@@ -204,6 +204,7 @@ implementation {
     while (catch_strange != 0xdeadbeaf) {
       nop();
     }
+    catch_strange = 0;
 #endif
     call OverWatch.force_boot(OW_BOOT_GOLD, ORR_STRANGE);
     /* no return */

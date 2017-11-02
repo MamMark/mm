@@ -22,7 +22,7 @@
 #include <fs_loc.h>
 
 #ifdef PANIC_GATE
-uint32_t g_panic_gate;
+norace volatile uint32_t g_panic_gate;
 #endif
 
 #ifdef   PANIC_WIGGLE
@@ -413,6 +413,7 @@ implementation {
     while (g_panic_gate != 0xdeadbeaf) {
       nop();
     }
+    g_panic_gate = 0;
 #endif
     call OverWatch.fail(ORR_PANIC);
     /* shouldn't return */
