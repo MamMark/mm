@@ -57,6 +57,10 @@
  * out of reset.  When StreamStorage runs out of work, it will release
  * the h/w which will determine whether to turn the device off or not.
  * The device will be turned off if there are no other clients waiting.
+ *
+ * flush_all is called to push any pending buffers out to the SD.  This
+ * is called from Collect on a SysReboot.shutdown_flush and uses SDsa
+ * the stand alone (run to completion) interface to the SD driver.
  */
 
 #include <panic.h>
@@ -82,14 +86,13 @@ module SSWriteP {
   }
   uses {
     interface SDwrite;
+    interface SDsa;
     interface DblkManager;
     interface Resource as SDResource;
     interface Panic;
     interface LocalTime<TMilli>;
     interface Trace;
     interface CollectEvent;
-    interface SysReboot;
-    interface SDsa;
   }
 }
 
@@ -108,7 +111,7 @@ implementation {
 #warning "SSW_NUM_BUFS is other than 5"
 #endif
 
-  ss_control_t ssc;			 /* all global control cells */
+  norace ss_control_t ssc;              /* all global control cells */
 
 
   /*
@@ -393,26 +396,37 @@ implementation {
 
 
   /*
-   * flush any pending SSW buffers
+   * flush all pending SSW buffers
    *
    * 1) flush any FULL buffers
    * 2) If there is an ALLOC'd buffer with something in it,
    *    also write that too.  (you like that also too?)
+   *    Collect is responsible for filling in required
+   *    fields in the ALLOC'd buffer and then kicking SSW.flush_all()
    *
    * we take pains not to tweak memory too much.
    */
-  async event void SysReboot.shutdown_flush() {
-    error_t rtn;
+  async command void SSW.flush_all() {
     ss_wr_buf_t *handle;
     uint8_t num_full, idx;
     uint32_t dblk, test_word;
 
-    rtn = call SDsa.reset();            /* make sure on and in a reasonable state */
-    if (rtn)                            /* well that didn't work, just bail out */
+    /*
+     * has the control structure been initialized?
+     * nope ->  bail
+     */
+    if (ssc.majik_a != SSC_MAJIK || ssc.majik_b != SSC_MAJIK)
       return;
+    if (!call SDsa.inSA()) {
+      if (call SDsa.reset())
+        return;
+    }
+
     idx = ssc.ssw_out;
     num_full = ssc.ssw_num_full;
-    if (num_full > SSW_NUM_BUFS)        /* too many is too weird, do nothing */
+
+    /* none or too many, we be gone */
+    if (!num_full || num_full > SSW_NUM_BUFS)
       return;
     dblk = call DblkManager.get_nxt_blk();
     while (num_full) {

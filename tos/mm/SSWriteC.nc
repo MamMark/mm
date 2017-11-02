@@ -26,8 +26,10 @@ implementation {
   MainC.SoftwareInit -> SS_P;
 
   components new SD0_ArbC() as SD;
+  components SD0C;
   SS_P.SDResource -> SD;
-  SS_P.SDwrite -> SD;
+  SS_P.SDwrite    -> SD;
+  SS_P.SDsa       -> SD0C;
 
   components PanicC, LocalTimeMilliC;
   SS_P.Panic -> PanicC;

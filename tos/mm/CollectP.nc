@@ -246,6 +246,12 @@ implementation {
     call Collect.collect((void *)ep, sizeof(e), NULL, 0);
   }
 
+  async event void SysReboot.shutdown_flush() {
+    /* now tell StreamWrite to flush everything */
+    nop();                              /* BRK */
+    call SSW.flush_all();
+  }
+
   async event void Panic.hook() { }
 
 }
