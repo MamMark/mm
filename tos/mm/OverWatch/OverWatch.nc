@@ -54,25 +54,28 @@ interface OverWatch {
    * ForceBoot
    *
    * Request OverWatch to boot the system into the specified boot mode.
-   * (OWT, GOLD, NIB).
+   * (OWT, GOLD, NIB).  This is also used to force a reboot.
    *
    * @param   boot_mode     which image instance to boot into
+   * @param   reason        why the force_boot is being done
    * @return  error_t
    */
-  async command void force_boot(ow_boot_mode_t boot_mode);
+  async command void force_boot(ow_boot_mode_t boot_mode,
+                                ow_reboot_reason_t reason);
 
 
   /**
    * Fail
    *
-   * Request the Overwatcher handle a runtime failure of the provided
-   * reboot reason type. Overwatcher will determine if the currently
-   * running instance has exceeded a failure threshold (too many
-   * failures per unit of time) and cause a fall back to the backup
-   * (previously active) mage. If no backup image is available then
-   * Overwatch will start Golden.
+   * Tell OverWatch that this image has failed.
    *
-   * @param   reason        failure reason, most likely a panic or unhandled interrupt
+   * OverWatch will determine if the currently running instance has
+   * exceeded a failure threshold (too many failures per unit of time) and
+   * cause a fall back to the backup (previously active image). If no
+   * backup image is available then Overwatch will launch Golden.
+   *
+   * @param reason      failure reason, most likely a panic or unhandled
+   *                    interrupt
    */
   async command void fail(ow_reboot_reason_t reason);
 

@@ -205,7 +205,7 @@ implementation {
       nop();
     }
 #endif
-    call OverWatch.force_boot(OW_BOOT_GOLD);
+    call OverWatch.force_boot(OW_BOOT_GOLD, ORR_STRANGE);
     /* no return */
   }
 
@@ -481,7 +481,7 @@ implementation {
          * checksum is good.
          */
         owcp->owt_action = OWT_ACT_NONE;
-        call OverWatch.force_boot(OW_BOOT_NIB);
+        call OverWatch.force_boot(OW_BOOT_NIB, ORR_FORCED);
         return;
 
       case OWT_ACT_INSTALL:
@@ -540,7 +540,7 @@ implementation {
         nop();                          /* BRK */
         call OWhw.flashProtectAll();
         owcp->owt_action = OWT_ACT_NONE;
-        call OverWatch.force_boot(OW_BOOT_NIB);
+        call OverWatch.force_boot(OW_BOOT_NIB, ORR_FORCED);
         return;
 
       case OWT_ACT_EJECT:
@@ -612,7 +612,7 @@ implementation {
   event void IM.dir_set_active_complete() {
     nop();                              /* BRK */
     ow_control_block.owt_action = OWT_ACT_NONE;
-    call OverWatch.force_boot(OW_BOOT_NIB);
+    call OverWatch.force_boot(OW_BOOT_NIB, ORR_FORCED);
   }
 
 
@@ -654,13 +654,14 @@ implementation {
    * The NIB contains the current Active image (in bank 1)
    * found in the SD storage.
    */
-  async command void OverWatch.force_boot(ow_boot_mode_t boot_mode) {
+  async command void OverWatch.force_boot(ow_boot_mode_t boot_mode,
+                                          ow_reboot_reason_t reason) {
     ow_control_block_t *owcp;
 
     owcp = &ow_control_block;
     owcp->ow_req = OW_REQ_BOOT;
     owcp->ow_boot_mode = boot_mode;
-    owcp->reboot_reason = ORR_FORCED_MODE;
+    owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
     call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
   }

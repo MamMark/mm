@@ -189,7 +189,7 @@ implementation {
   }
 
   command error_t SysReboot.set_version(image_ver_t *versionp) {
-    call OW.fail(ORR_FORCED_MODE); /* force reboot */
+    call OW.force_boot(OW_BOOT_NIB, ORR_USER_REQUEST);
     return SUCCESS;             /* won't get here! */
   }
 
