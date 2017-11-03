@@ -1163,6 +1163,12 @@ implementation {
    *
    *************************************************************************/
 
+  error_t sdsa_abort(error_t rtn) {
+    call SDsa.off();
+    return rtn;
+  }
+
+
   /*
    * return TRUE if in standalone.
    *
@@ -1209,11 +1215,11 @@ implementation {
       }
     }
     if (rsp != 0x01)            /* must be idle */
-      return FAIL;
+      return sdsa_abort(FAIL);
 
     /* poke the SD to turn on SDHC if present */
     if (sd_cmd8())
-      return FAIL;
+      return sdsa_abort(FAIL);
 
     /*
      * SD_GO_OP_MAX is set for normal operation which is polled every 4 or
@@ -1246,7 +1252,7 @@ implementation {
     uint8_t  rsp, tmp;
     uint16_t crc;
 
-    (void) rsp;
+    (void) rsp;                         /* for looking a shit */
 
     /* send read data command */
     call HW.sd_set_cs();
