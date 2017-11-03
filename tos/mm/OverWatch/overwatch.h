@@ -151,10 +151,21 @@ typedef enum {
 
 
 /*
+ * OW_RPT_FLAGS (OWRF)
+ */
+
+enum {
+  OWRF_LAUNCH = 1,                      /* in process of an image launch */
+                                        /* gets cleared when reboot record is written */
+};
+
+
+/*
  * ow_control_block_t
  */
 typedef struct {
   uint32_t           ow_sig;
+  uint32_t           ow_rpt_flags;      /* reporting flags */
   uint32_t           cycle;             /* req input, time since last boot */
   uint32_t           time;              /* req input, time since last boot */
   uint32_t           reset_status;      /* recognized stati                */

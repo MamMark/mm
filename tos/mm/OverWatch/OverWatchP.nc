@@ -308,6 +308,7 @@ implementation {
               /*
                * if it returns, boot GOLD
                */
+              owcp->ow_rpt_flags |= OWRF_LAUNCH;
               call OWhw.boot_image(iip);
               owl_strange2gold(3);
               return;                   /* shouldn't get here. */
@@ -349,6 +350,7 @@ implementation {
           return;
         }
         iip  = (image_info_t *) NIB_INFO;
+        owcp->ow_rpt_flags |= OWRF_LAUNCH;
         call OWhw.boot_image(iip);
         owl_strange2gold(5);
         /* no return */
@@ -747,10 +749,20 @@ implementation {
   }
 
 
+  /*
+   * clearReset - reset ow reporting cells
+   *
+   * clearReset is used after we have gathered and
+   * stored and parameters out of the ow_control_block.
+   *
+   * basically it means the new image has booted and
+   * logged why we've rebooted.  Reset the reporting cells.
+   */
   async command void OverWatch.clearReset() {
     ow_control_block_t *owcp;
 
     owcp = &ow_control_block;
+    owcp->ow_rpt_flags  = 0;
     owcp->reset_status  = 0;
     owcp->reset_others  = 0;
     owcp->reboot_reason = 0;
