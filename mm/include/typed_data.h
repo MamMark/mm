@@ -36,32 +36,34 @@
  * split into two subfields, major and minor.  Major 0 is development of
  * some flavor.  Releases start at Major 1.
  */
-#define DT_H_REVISION   0x00000001
+#define DT_H_REVISION   0x00000002
 
 typedef enum {
   DT_TINTRYALF		= 0,            /* next, force next sector */
-  DT_CONFIG		= 1,
-  DT_SYNC		= 2,
-  DT_REBOOT		= 3,		/* reboot sync */
+  DT_REBOOT		= 1,		/* reboot sync */
+  DT_VERSION		= 2,
+  DT_SYNC		= 3,
   DT_PANIC		= 4,
-  DT_VERSION		= 5,
+  DT_FLUSH		= 5,
   DT_EVENT	        = 6,
   DT_DEBUG		= 7,
 
-  DT_GPS_VERSION        = 8,
-  DT_GPS_TIME		= 9,
-  DT_GPS_GEO		= 10,
-  DT_GPS_XYZ            = 11,
-  DT_SENSOR_DATA	= 12,
-  DT_SENSOR_SET		= 13,
-  DT_TEST		= 14,
-  DT_NOTE		= 15,
+  DT_GPS_VERSION        = 16,
+  DT_GPS_TIME		= 17,
+  DT_GPS_GEO		= 18,
+  DT_GPS_XYZ            = 19,
+  DT_SENSOR_DATA	= 20,
+  DT_SENSOR_SET		= 21,
+  DT_TEST		= 22,
+  DT_NOTE		= 23,
+  DT_CONFIG		= 24,
 
   /*
    * GPS_RAW is used to encapsulate data as received from the GPS.
    */
-  DT_GPS_RAW_SIRFBIN	= 16,
-  DT_MAX		= 16,
+  DT_GPS_RAW_SIRFBIN	= 32,
+  DT_MAX		= 32,
+
   DT_16                 = 0xffff,       /* force to 2 bytes */
 } dtype_t;
 
@@ -147,12 +149,19 @@ typedef struct {
 } PACKED dt_sync_t;
 
 
+/*
+ * reboot record
+ * various info, followed by
+ *
+ * ow_control_block
+ */
+
 typedef struct {
   uint16_t len;                 /* size 14, 0x0E */
   dtype_t  dtype;
   uint32_t stamp_ms;
-  uint32_t sync_majik;
   uint32_t time_cycle;          /* time cycle */
+  uint32_t sync_majik;
   uint32_t dt_h_revision;       /* version identifier of typed_data */
 
   uint32_t reset_status;
@@ -172,6 +181,7 @@ typedef struct {
 } PACKED dt_reboot_t;
 
 
+/* panic warn only uses this */
 typedef struct {
   uint16_t len;                 /* size 27, 0x1A */
   dtype_t  dtype;
@@ -186,9 +196,15 @@ typedef struct {
 } PACKED dt_panic_t;
 
 
+/*
+ * version record
+ *
+ * simple version information
+ * followed by the entire image_info block
+ */
 typedef struct {
-  uint16_t    len;              /* size 8, 0x08 */
-  dtype_t     dtype;
+  uint16_t    len;              /* size   10    +     144      */
+  dtype_t     dtype;            /* dt_version_t + image_info_t */
   image_ver_t ver_id;
   hw_ver_t    hw_ver;
 } PACKED dt_version_t;
@@ -315,11 +331,13 @@ typedef struct {
 enum {
   DT_HDR_SIZE_HEADER        = sizeof(dt_header_t),
   DT_HDR_SIZE_HEADER_TS     = sizeof(dt_header_ts_t),
-  DT_HDR_SIZE_SYNC          = sizeof(dt_sync_t),
   DT_HDR_SIZE_REBOOT        = sizeof(dt_reboot_t),
-  DT_HDR_SIZE_PANIC         = sizeof(dt_panic_t),
   DT_HDR_SIZE_VERSION       = sizeof(dt_version_t),
+  DT_HDR_SIZE_SYNC          = sizeof(dt_sync_t),
+  DT_HDR_SIZE_PANIC         = sizeof(dt_panic_t),
+  DT_HDR_SIZE_FLUSH         = sizeof(dt_header_t),
   DT_HDR_SIZE_EVENT         = sizeof(dt_event_t),
+
   DT_HDR_SIZE_GPS           = sizeof(dt_gps_t),
   DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_t),
   DT_HDR_SIZE_SENSOR_SET    = sizeof(dt_sensor_set_t),
