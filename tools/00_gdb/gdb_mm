@@ -148,3 +148,7 @@ end
 document rom
 display MM ROM (flash) state
 end
+
+define ow
+p ow_control_block
+end
