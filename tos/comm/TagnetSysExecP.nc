@@ -55,8 +55,6 @@ module TagnetSysExecP {
   uses     interface OverWatch            as  OW;
 }
 implementation {
-  bool    activate_waiting = FALSE;
-
   /*
    * Active Image control
    */
@@ -82,15 +80,10 @@ implementation {
  }
 
   command error_t    SysActive.set_version(image_ver_t *versionp) {
-    error_t    err;
-
     /* note that overwatch.install() is called when set_active_complete()
      * is signalled
      */
-    err = call IM.dir_set_active(versionp);
-    if (err == SUCCESS)
-      activate_waiting = TRUE;
-    return err;
+    return call IM.dir_set_active(versionp);
   }
 
   /*
@@ -198,10 +191,7 @@ implementation {
   event   void    IM.dir_eject_active_complete() { }
 
   event   void    IM.dir_set_active_complete() {
-    if (activate_waiting) {
-      activate_waiting = FALSE;
-      call OW.install();          /* won't return */
-    }
+    call OW.install();          /* won't return */
   }
 
   event   void    IM.dir_set_backup_complete() { }
