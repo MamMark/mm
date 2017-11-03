@@ -172,7 +172,7 @@ implementation {
 
   void init_owcb(ow_control_block_t *owcp) {
     memset(owcp, 0, sizeof(*owcp));
-    owcp->ow_sig_a = owcp->ow_sig_b = owcp->ow_sig_c = OW_SIG;
+    owcp->ow_sig        = owcp->ow_sig_b = owcp->ow_sig_c = OW_SIG;
     owcp->reboot_reason = ORR_OWCB_CLOBBER;
     owcp->from_base     = OW_BASE_UNK;          /* mark as unknown */
     owcp->reset_status  = call OWhw.getResetStatus();
@@ -181,7 +181,7 @@ implementation {
 
 
   bool valid_owcb(ow_control_block_t *owcp) {
-    if (owcp->ow_sig_a == OW_SIG &&
+    if (owcp->ow_sig   == OW_SIG &&
         owcp->ow_sig_b == OW_SIG &&
         owcp->ow_sig_c == OW_SIG)
       return TRUE;
@@ -244,7 +244,7 @@ implementation {
       return;
     }
 
-    /* protect whole falsh, god we are paranoid. */
+    /* protect whole flash, god we are paranoid. */
     call OWhw.flashProtectAll();
 
     /*

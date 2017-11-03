@@ -154,7 +154,7 @@ typedef enum {
  * ow_control_block_t
  */
 typedef struct {
-  uint32_t           ow_sig_a;
+  uint32_t           ow_sig;
   uint32_t           cycle;             /* req input, time since last boot */
   uint32_t           time;              /* req input, time since last boot */
   uint32_t           reset_status;      /* recognized stati                */
