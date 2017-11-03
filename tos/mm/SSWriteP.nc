@@ -409,7 +409,7 @@ implementation {
   async command void SSW.flush_all() {
     ss_wr_buf_t *handle;
     uint8_t num_full, idx;
-    uint32_t dblk, test_word;
+    uint32_t dblk;
 
     /*
      * has the control structure been initialized?
@@ -425,15 +425,16 @@ implementation {
     idx = ssc.ssw_out;
     num_full = ssc.ssw_num_full;
 
-    /* none or too many, we be gone */
-    if (!num_full || num_full > SSW_NUM_BUFS)
+    /* too many, we be gone */
+    if (num_full > SSW_NUM_BUFS)
       return;
     dblk = call DblkManager.get_nxt_blk();
     while (num_full) {
       handle = ssw_p[idx];
       if (dblk == 0)                    /* any unexpected, just bail */
         return;
-      if (handle->buf_state != SS_BUF_STATE_FULL)
+      if (handle->majik != SS_BUF_SANE ||
+          handle->buf_state != SS_BUF_STATE_FULL)
         return;                         /* that's weird, somethings wrong */
       call SDsa.write(dblk, handle->buf);
       idx++;
@@ -445,30 +446,22 @@ implementation {
 
     /*
      * We have flushed any buffers that are FULL.  We also need to flush
-     * the pending buffer that the Collector is currently filling.
+     * the pending buffer that the Collector is currently filling if any.
      */
     if (idx != ssc.ssw_in)              /* should be next in from collector */
       return;                           /* stop what we are doing, if not   */
     handle = ssw_p[idx];
     if (dblk == 0)                      /* if no where to go, bail */
       return;
-    if (handle->buf_state != SS_BUF_STATE_ALLOC)
+    if (handle->majik != SS_BUF_SANE ||
+        handle->buf_state != SS_BUF_STATE_ALLOC)
       return;
 
     /*
-     * The buffer was allocated which says the Collector might have put
-     * something into it.  This will be a typed data record.  First,
-     * 16 bits will be length and 2nd 16 bits will be the dtype.
-     *
-     * When buffers are returned, they are required to be zero'd out
-     * which indicates nothing here, (DT_TINTRYALF).  Nobody's home.
-     *
-     * So if we have anyting in this sector it has to have the first
-     * long word as non-zero.
+     * If the buffer is ALLOC'd then the Collector has gotten it and has
+     * definitely put something into it.  Just write it out.
      */
-    test_word = *((uint32_t *) handle->buf);
-    if (test_word)
-      call SDsa.write(dblk, handle->buf);
+    call SDsa.write(dblk, handle->buf);
   }
 
 
