@@ -14,19 +14,6 @@ end
 # SD
 #
 
-define erase
-ena 2
-mon reset
-c
-set do_erase=1
-printf "do_erase: %d\n", do_erase
-dis 2
-end
-document erase
-set up for doing a manual errase
-end
-
-
 define cs
 printf "\n"
 printf "majik:  %04x       %04x\n", CollectP__dcc.majik_a, CollectP__dcc.majik_b
