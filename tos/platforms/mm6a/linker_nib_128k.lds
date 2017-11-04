@@ -189,9 +189,15 @@ SECTIONS {
         KEEP (*(.heap))
     } > REGION_HEAP AT> REGION_HEAP
 
-    __stack_start__ = .;
+    .crash_stack  (NOLOAD) : ALIGN(8) {
+        __crash_stack_start__ = .;
+        KEEP(*(.crash_stack))
+     } > REGION_STACK AT> REGION_STACK
+     __crash_stack_top__ = .;
+
 
     .stack (NOLOAD) : ALIGN(8) {
+        __stack_start__ = .;
         KEEP(*(.stack))
     } > REGION_STACK AT> REGION_STACK
 

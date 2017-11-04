@@ -38,6 +38,8 @@
 
 #define SI446x_HW_CTS
 
+#define CRASH_STACK_BYTES 256
+
 /*
  * TagNet uses a single byte length at the start of its header.  This is
  * also what the si446x radio expects.  However, the radio length doesn't

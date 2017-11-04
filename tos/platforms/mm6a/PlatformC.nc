@@ -48,13 +48,11 @@ configuration PlatformC {
 }
 
 implementation {
-  components PlatformP, StackC;
+  components PlatformP;
   Platform = PlatformP;
   PlatformInit = PlatformP;
   PeripheralInit = PlatformP.PeripheralInit;
   SysReboot  = PlatformP;
-
-  PlatformP.Stack -> StackC;
 
   components OverWatchHardwareM;
   PlatformP.OWhw -> OverWatchHardwareM;

@@ -39,12 +39,9 @@
  */
 
 #include <hardware.h>
-#include <cpu_stack.h>
 #include <platform_reset_defs.h>
 #include <platform_version.h>
 #include <sysreboot.h>
-
-noinit uint32_t stack_size;
 
 #define BOOT_MAJIK 0x01021910
 #define FUBAR_MAX 0xffff
@@ -62,16 +59,12 @@ module PlatformP {
     interface Init as PlatformLeds;
     interface Init as PlatformClock;
     interface Init as PeripheralInit;
-    interface Stack;
     interface OverWatchHardware as OWhw;
   }
 }
 
 implementation {
   command error_t Init.init() {
-//    call Stack.init();
-//    stack_size = call Stack.size();
-
     call PlatformLeds.init();   // Initializes the Leds
     call PeripheralInit.init();
     return SUCCESS;

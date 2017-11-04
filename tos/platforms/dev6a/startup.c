@@ -48,6 +48,7 @@
 #include <platform_version.h>
 #include <image_info.h>
 #include <overwatch.h>
+#include <cpu_stack.h>
 
 //#define __MSP432_DVRLIB_ROM__
 #include <rom.h>
@@ -81,6 +82,9 @@ extern uint32_t __data_start__;
 extern uint32_t __data_end__;
 extern uint32_t __bss_start__;
 extern uint32_t __bss_end__;
+extern uint32_t __crash_stack_start__;
+extern uint32_t __crash_stack_top__;
+extern uint32_t __stack_start__;
 extern uint32_t __StackTop__;
 
 extern uint32_t __image_start__;
@@ -105,7 +109,11 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV }
 };
 
+/* see OverWatchP.nc for details */
 ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
+
+/* Crash stack is used by unhandled Exception/Fault and Panic */
+uint8_t crash_stack[CRASH_STACK_BYTES] __attribute__ ((section(".crash_stack")));
 
 int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
@@ -963,6 +971,7 @@ void __Reset() {
   uint32_t *from;
   uint32_t *to;
   bool      disable_dcor;
+  register void *stkptr asm("sp");
 
   /* make sure interrupts are disabled */
   __disable_irq();
@@ -1052,17 +1061,35 @@ void __Reset() {
   }
 #endif
 
+  /*
+   * initialize both the crash_stack and normal stack.
+   *
+   * we set the entire areas to STACK_UNUSED and the last word of the stack
+   * to be STACK_GUARD.  This is actually the first word of the area since
+   * the stacks grow downward.
+   *
+   * If GUARD ever gets written on that is bad.
+   */
+
+  to    = &__crash_stack_start__;
+  *to++ = STACK_GUARD;
+  while (to < &__crash_stack_top__)
+    *to++ = STACK_UNUSED;
+
+  to    = &__stack_start__;
+  *to++ = STACK_GUARD;
+  while (to < (uint32_t *) stkptr)
+    *to++ = STACK_UNUSED;
+
   from = &__data_load__;
   to   = &__data_start__;;
-  while (to < &__data_end__) {
+  while (to < &__data_end__)
     *to++ = *from++;
-  }
 
   // Fill BSS data with 0
   to = &__bss_start__;
-  while (to < &__bss_end__) {
+  while (to < &__bss_end__)
     *to++ = 0;
-  }
 
   main();
   while (1) {
