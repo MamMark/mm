@@ -72,6 +72,8 @@ typedef struct {
 norace pcb_t pcb;              /* panic control block */
 
 extern image_info_t image_info;
+extern uint32_t     __crash_stack_top__;
+
 typedef struct {
   uint32_t a0;                          /* arguments */
   uint32_t a1;
@@ -342,14 +344,7 @@ implementation {
   }
 
 
-  /*
-   * Panic.panic: something really bad happened.
-   */
-
-  async command void Panic.panic(uint8_t pcode, uint8_t where,
-        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
-        __attribute__ ((noinline)) {
-
+  void panic_main(uint32_t *old_sp) @C() @spontaneous() {
     panic_args_t       *pap;            /* panic args stash, working */
     panic_info_t       *pip;            /* panic info in panic_block */
     panic_additional_t *addp;           /* additional in panic_block */
@@ -432,6 +427,28 @@ implementation {
     call OverWatch.fail(ORR_PANIC);
     /* shouldn't return */
     call OverWatch.strange(0x84);       /* no return */
+  }
+
+
+  static void launch_panic(void *new_stack)
+      __attribute__((naked)) {
+    __asm__ volatile
+      ( "mov r1, sp \n"
+        "mov sp, r0 \n"
+        "mov r0, r1 \n"
+        "b panic_main \n"
+        : : : "memory");
+  }
+
+
+  /*
+   * Panic.panic: something really bad happened.
+   */
+  async command void Panic.panic(uint8_t pcode, uint8_t where,
+        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
+      __attribute__ ((naked, noinline)) {
+    __asm__ volatile ( "push {r0-r3} \n" : : : "memory");
+    launch_panic(&__crash_stack_top__);
   }
 
 
