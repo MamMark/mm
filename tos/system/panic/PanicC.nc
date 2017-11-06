@@ -11,11 +11,10 @@ configuration PanicC {
 }
 
 implementation {
-  components PanicP, MainC, PlatformC;
+  components PanicP, PlatformC;
   Panic = PanicP;
   PanicP.Platform  -> PlatformC;
   PanicP.SysReboot -> PlatformC;
-  MainC.SoftwareInit -> PanicP;
 
   components FileSystemC as FS;
   PanicP.FS -> FS;

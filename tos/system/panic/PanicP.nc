@@ -33,20 +33,6 @@ norace volatile uint32_t g_panic_gate;
 #endif
 #endif
 
-#ifdef notdef
-#ifdef PANIC_DINT
-#define MAYBE_SAVE_SR_AND_DINT	do {	\
-    if (save_sr_free) {			\
-      save_sr = READ_SR;		\
-      save_sr_free = FALSE;		\
-    }					\
-    dint();				\
-} while (0);
-#else
-#define MAYBE_SAVE_SR_AND_DINT	do {} while (0)
-#endif
-#endif
-
 
 #define PCB_SIG 0xAAAAB00B
 
@@ -74,6 +60,7 @@ norace pcb_t pcb;              /* panic control block */
 extern image_info_t image_info;
 extern uint32_t     __crash_stack_top__;
 
+
 typedef struct {
   uint32_t a0;                          /* arguments */
   uint32_t a1;
@@ -87,10 +74,7 @@ panic_args_t _panic_args;
 
 
 module PanicP {
-  provides {
-    interface Panic;
-    interface Init;
-  }
+  provides interface Panic;
   uses {
     interface SSWrite  as SSW;
     interface Platform;
@@ -104,9 +88,6 @@ module PanicP {
 }
 
 implementation {
-  parg_t save_sr;
-  bool save_sr_free;
-
 #ifdef PANIC_WIGGLE
   void debug_break(parg_t arg)  __attribute__ ((noinline)) {
     uint32_t t0;
@@ -339,7 +320,6 @@ implementation {
     pap->a0    = arg0;  pap->a1    = arg1;
     pap->a2    = arg2;  pap->a3    = arg3;
 
-//    MAYBE_SAVE_SR_AND_DINT;
     debug_break(0);
   }
 
@@ -449,13 +429,6 @@ implementation {
       __attribute__ ((naked, noinline)) {
     __asm__ volatile ( "push {r0-r3} \n" : : : "memory");
     launch_panic(&__crash_stack_top__);
-  }
-
-
-  command error_t Init.init() {
-    save_sr_free = TRUE;
-    save_sr = 0xffff;
-    return SUCCESS;
   }
 
 
