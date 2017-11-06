@@ -118,12 +118,13 @@ implementation {
     while ((call Platform.usecsRaw() - t0) < WIGGLE_DELAY) ;
     WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;     /* 4 */
 
-    nop();                              /* BRK */
+    nop();                              /* the other place */
     ROM_DEBUG_BREAK(0xf0);
   }
 #else
   void debug_break(parg_t arg)  __attribute__ ((noinline)) {
     _arg = arg;
+    nop();                              /* BRK */
     ROM_DEBUG_BREAK(0xf0);
   }
 #endif
