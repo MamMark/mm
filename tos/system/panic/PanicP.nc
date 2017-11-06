@@ -72,6 +72,16 @@ typedef struct {
 norace pcb_t pcb;              /* panic control block */
 
 extern image_info_t image_info;
+typedef struct {
+  uint32_t a0;                          /* arguments */
+  uint32_t a1;
+  uint32_t a2;
+  uint32_t a3;
+  uint8_t  pcode;                       /* subsys */
+  uint8_t  where;
+} panic_args_t;                         /* panic args stash */
+
+panic_args_t _panic_args;
 
 
 module PanicP {
@@ -94,25 +104,22 @@ module PanicP {
 implementation {
   parg_t save_sr;
   bool save_sr_free;
-  norace uint8_t _p, _w;
-  norace parg_t _a0, _a1, _a2, _a3, _arg;
 
 #ifdef PANIC_WIGGLE
   void debug_break(parg_t arg)  __attribute__ ((noinline)) {
     uint32_t t0;
     uint32_t i;
 
-    _arg = arg;
     WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;     /* 4 */
     t0 = call Platform.usecsRaw();
     while ((call Platform.usecsRaw() - t0) < WIGGLE_DELAY) ;
 
-    for (i = 0; i < _p; i++)
+    for (i = 0; i < _panic_args.pcode; i++)
       WIGGLE_EXC;
     t0 = call Platform.usecsRaw();
     while ((call Platform.usecsRaw() - t0) < WIGGLE_DELAY) ;
 
-    for (i = 0; i < _w; i++)
+    for (i = 0; i < _panic_args.where; i++)
       WIGGLE_EXC;
     t0 = call Platform.usecsRaw();
     while ((call Platform.usecsRaw() - t0) < WIGGLE_DELAY) ;
@@ -123,7 +130,6 @@ implementation {
   }
 #else
   void debug_break(parg_t arg)  __attribute__ ((noinline)) {
-    _arg = arg;
     nop();                              /* BRK */
     ROM_DEBUG_BREAK(0xf0);
   }
@@ -323,11 +329,13 @@ implementation {
         parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
         __attribute__ ((noinline)) {
 
+    panic_args_t *pap = &_panic_args;
+
     pcode |= PANIC_WARN_FLAG;
 
-    _p = pcode; _w = where;
-    _a0 = arg0; _a1 = arg1;
-    _a2 = arg2; _a3 = arg3;
+    pap->pcode = pcode; pap->where = where;
+    pap->a0    = arg0;  pap->a1    = arg1;
+    pap->a2    = arg2;  pap->a3    = arg3;
 
 //    MAYBE_SAVE_SR_AND_DINT;
     debug_break(0);
@@ -342,13 +350,18 @@ implementation {
         parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
         __attribute__ ((noinline)) {
 
-    panic_info_t       *pip;
-    panic_additional_t *addp;
-    panic_block_0_t    *b0p;
+    panic_args_t       *pap;            /* panic args stash, working */
+    panic_info_t       *pip;            /* panic info in panic_block */
+    panic_additional_t *addp;           /* additional in panic_block */
+    panic_block_0_t    *b0p;            /* panic_block 0 pointer */
 
-    _p = pcode; _w = where;
-    _a0 = arg0; _a1 = arg1;
-    _a2 = arg2; _a3 = arg3;
+    pap = &_panic_args;
+    pap->pcode = old_sp[0];
+    pap->where = old_sp[1];
+    pap->a0    = old_sp[2];
+    pap->a1    = old_sp[3];
+    pap->a2    = old_sp[4];
+    pap->a3    = old_sp[5];
     debug_break(1);
     if (pcb.in_panic) {
       pcb.in_panic |= 0x80;             /* flag a double */
@@ -364,7 +377,7 @@ implementation {
      *
      * Note: If the PANIC is from the SSW or SD subsystem don't flush the buffers.
      */
-    if (pcode != PANIC_SD && pcode != PANIC_SS)
+    if (pap->pcode != PANIC_SD && pap->pcode != PANIC_SS)
       call SysReboot.flush();
 
     /*
@@ -389,13 +402,13 @@ implementation {
     pip->ts  = 0;
     pip->cycle = 0;
     pip->boot_count = 0;
-    pip->subsys = pcode;
-    pip->where  = where;
+    pip->subsys = pap->pcode;
+    pip->where  = pap->where;
     pip->pad    = 0;
-    pip->arg[0] = arg0;
-    pip->arg[1] = arg1;
-    pip->arg[2] = arg2;
-    pip->arg[3] = arg3;
+    pip->arg[0] = pap->a0;
+    pip->arg[1] = pap->a1;
+    pip->arg[2] = pap->a2;
+    pip->arg[3] = pap->a3;
 
     memcpy((void *) (&b0p->image_info), (void *) (&image_info), sizeof(image_info_t));
 

@@ -123,8 +123,8 @@ dis 1 2
 b PanicP.nc:121
 comm
 printf "\n\n*** Panic: %d(d), w: %d(d), a: %04x %04x %04x %04x\n", \
-        PanicP___p,  PanicP___w, \
-        PanicP___a0, PanicP___a1, PanicP___a2, PanicP___a3
+        _panic_args.pcode,  _panic_args.where, \
+        _panic_args.a0,     _panic_args._a1, _panic_args._a2, _panic_args._a3
 end
 
 b main
