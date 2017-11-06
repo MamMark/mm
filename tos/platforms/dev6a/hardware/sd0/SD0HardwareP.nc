@@ -268,7 +268,7 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
     /*
      * set the receiver up first.
      *
-     * if rcvptr is NULL we pull into recv_dump (514, big enough),  DSTINC always 8
+     * if rcvptr is NULL we pull into recv_dump (512, big enough),  DSTINC always 8
      * SRCINC is always NONE (coming from the port).
      */
     control = UDMA_CHCTL_DSTINC_8 | UDMA_CHCTL_SRCINC_NONE |
