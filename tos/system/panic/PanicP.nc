@@ -124,19 +124,20 @@ implementation {
   }
 
 
+  /*
+   * init_panic_dump
+   * initialize panic buffer management
+   *
+   * Typically, someone (SSW) prior to dump will have turned on the
+   * SD.  But if not FS.reload_locator_sa() will do it.  Either
+   * way we don't need to do a SDsa.reset(), its been done.
+   *
+   * Don't mess with pcb.in_panic.  Set and/or checked on the
+   * entry to Panic.
+   */
   void init_panic_dump() {
     panic_dir_t *dirp;
 
-    /*
-     * initialize buffer management
-     *
-     * Typically, someone prior to dump will have turned on the
-     * SD.  But if not FS.reload_locator_sa() will do it.  Either
-     * way we don't need to do a SDsa.reset(), its been done.
-     *
-     * Don't mess with pcb.in_panic.  Set and/or checked on the
-     * entry to Panic.
-     */
     pcb.pcb_sig   = PCB_SIG;
     pcb.buf       = call SSW.get_temp_buf();
     pcb.bptr      = pcb.buf;
