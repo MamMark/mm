@@ -157,6 +157,12 @@ SECTIONS {
         __overwatch_data_end__ = .;
     } > REGION_DATA
 
+    .crash_regs (NOLOAD) : ALIGN(4) {
+        __crash_regs_start__ = .;
+        KEEP (*(.crash_regs))
+        __crash_regs_end__ = .;
+    } > REGION_DATA
+
     .noinit (NOLOAD) : {
         KEEP (*(.noinit))
      } > REGION_DATA
