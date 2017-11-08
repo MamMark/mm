@@ -170,8 +170,10 @@ typedef struct {
 typedef struct {
   panic_info_t          panic_info;
   image_info_t          image_info;
-  crash_info_t          crash_info;
   panic_additional_t    additional_info;
+  uint32_t              pad[1];
+  crash_info_t          crash_info;
+  /* ram header */
 } panic_block_0_t;                      /* initial sector of a panic block */
 
 
