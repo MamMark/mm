@@ -411,12 +411,28 @@ implementation {
   }
 
 
-  static void launch_panic(void *new_stack)
+  /*
+   * launch the mainline of panic.
+   *
+   * r0 (new_stack): is the address we want for the crash stack
+   * r1 (cur_lr):    the lr we want to force ourselves to use
+   *                 from our caller.
+   *
+   * using cur_lr effectively makes the call to launch_panic
+   * become a jump to launch_panic.  It doesn't actualy show
+   * up on the backtrace.
+   *
+   * keeping the call sequence together by maintaining the previous
+   * value of lr make it so we can do a valid backtrace even from
+   * the new crash stack.  YUM!
+   */
+  static void launch_panic(void *new_stack, uint32_t cur_lr)
       __attribute__((naked)) {
     __asm__ volatile
-      ( "mov r1, sp \n"
+      ( "mov r2, sp \n"
         "mov sp, r0 \n"
-        "mov r0, r1 \n"
+        "mov r0, r2 \n"
+        "mov lr, r1 \n"
         "b panic_main \n"
         : : : "memory");
   }
@@ -424,12 +440,24 @@ implementation {
 
   /*
    * Panic.panic: something really bad happened.
+   * switch to crash_stack
+   *
+   * we have to pass in the new stack to get around a linker/asm
+   * issue.  But first we save the other 4 parameters on the
+   * current stack.  This keeps all 6 of panic's parameters
+   * togther but also frees up r0-r3 as scratch.
+   *
+   * we pass in the address of the stack pointer we want to use
+   * as well as the current lr.  This means we can preserve the
+   * stack linkage and gdb doesn't get lost.
    */
   async command void Panic.panic(uint8_t pcode, uint8_t where,
         parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
       __attribute__ ((naked, noinline)) {
+    register uint32_t cur_lr asm ("lr");
+
     __asm__ volatile ( "push {r0-r3} \n" : : : "memory");
-    launch_panic(&__crash_stack_top__);
+    launch_panic(&__crash_stack_top__, cur_lr);
   }
 
 
