@@ -123,6 +123,7 @@ typedef unsigned int parg_t;
 #define PANIC_ADDITIONS 0x44664144
 
 #define PANIC_DIR_SIG    0xDDDDB00B
+#define CRASH_INFO_SIG   0x63430200
 
 
 typedef struct {
@@ -130,6 +131,11 @@ typedef struct {
   uint32_t panic_block_sector;        /* dir - sector for next block */
   uint32_t panic_dir_checksum;
 } panic_dir_t;
+
+typedef struct {
+  uint32_t start;
+  uint32_t end;
+} cc_header_t;
 
 typedef struct {
   uint32_t sig;
@@ -174,6 +180,7 @@ typedef struct {
   uint32_t              pad[1];
   crash_info_t          crash_info;
   /* ram header */
+  cc_header_t           ram_header;
 } panic_block_0_t;                      /* initial sector of a panic block */
 
 

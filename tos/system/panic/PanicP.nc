@@ -36,6 +36,9 @@ norace volatile uint32_t g_panic_gate;
 
 #define PCB_SIG 0xAAAAB00B
 
+#define CRASH_CATCHER_STACK_WORD_COUNT 100
+
+
 typedef struct {
   uint32_t pcb_sig;
 
@@ -59,7 +62,7 @@ norace pcb_t pcb;              /* panic control block */
 
 extern image_info_t image_info;
 extern uint32_t     __crash_stack_top__;
-
+extern uint32_t crash_regs[];
 
 typedef struct {
   uint32_t a0;                          /* arguments */
@@ -71,7 +74,8 @@ typedef struct {
 } panic_args_t;                         /* panic args stash */
 
 panic_args_t _panic_args;
-
+panic_block_0_t _panic_block_0;
+panic_block_0_t *b0p = &_panic_block_0;
 
 module PanicP {
   provides interface Panic;
@@ -117,7 +121,6 @@ implementation {
     ROM_DEBUG_BREAK(0xf0);
   }
 #endif
-
 
   void __panic_exception_entry(uint32_t exception) @C() @spontaneous() {
     call Panic.panic(PANIC_EXC, exception, 0, 0, 0, 0);
@@ -208,6 +211,9 @@ implementation {
     uint32_t len = ram_desc->len;
     uint8_t *base = ram_desc->base_addr;
 
+    b0p->ram_header.start = (uint32_t)ram_desc->base_addr;
+    b0p->ram_header.end = ((uint32_t)ram_desc->base_addr + ram_desc->len);
+
     while (len > 0) {
       panic_write(start_sec, base);
       start_sec++;
@@ -296,8 +302,13 @@ implementation {
 
   /* uses persistent global in pcb (panic_sec) for where to write */
   void collect_io(const panic_region_t *io_desc) {
+    cc_header_t header;
+
     while (io_desc->base_addr != PR_EOR) {
-      copy_region((void *)io_desc, sizeof(panic_region_t), 4);
+      header.start = (uint32_t)io_desc->base_addr;
+      header.end = ((uint32_t)io_desc->base_addr + io_desc->len);
+
+      copy_region((void *)&header, sizeof(cc_header_t), 4);
       copy_region(io_desc->base_addr, io_desc->len, io_desc->element_size);
       io_desc++;
     }
@@ -329,7 +340,28 @@ implementation {
     panic_args_t       *pap;            /* panic args stash, working */
     panic_info_t       *pip;            /* panic info in panic_block */
     panic_additional_t *addp;           /* additional in panic_block */
-    panic_block_0_t    *b0p;            /* panic_block 0 pointer */
+    crash_info_t       *pac;            /* crash_info in panic_block */
+
+    uint32_t w_len = 24;
+    uint32_t *sp_32 = (uint32_t *)0xE000ED24; /* Fault regs base address */
+    uint32_t *dp_32;
+    uint32_t i;
+    pac = &b0p->crash_info;
+
+    #define MAX_REGS 13
+    i = 0;
+    while(i <= MAX_REGS) {
+    pac->bxRegs[i] = crash_regs[i];
+    i++;
+    }
+
+    pac->sig = CRASH_INFO_SIG;
+    pac->flags = 0;
+    dp_32 = pac->fault_regs;
+
+    while (w_len) {
+      *dp_32++ = *sp_32++;
+      w_len -= 4; }
 
     pap = &_panic_args;
     pap->pcode = old_sp[0];
@@ -413,6 +445,8 @@ implementation {
 
   static void launch_panic(void *new_stack)
       __attribute__((naked)) {
+    nop();                              /* BRK */
+    ROM_DEBUG_BREAK(0xf0);
     __asm__ volatile
       ( "mov r1, sp \n"
         "mov sp, r0 \n"
@@ -428,7 +462,11 @@ implementation {
   async command void Panic.panic(uint8_t pcode, uint8_t where,
         parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
       __attribute__ ((naked, noinline)) {
-    __asm__ volatile ( "push {r0-r3} \n" : : : "memory");
+       nop();                              /* BRK */
+       ROM_DEBUG_BREAK(0xf0);
+    __asm__ volatile
+      ("bl Panic_SaveRegisters \n"
+       "push {r0-r3} \n" : : : "memory");
     launch_panic(&__crash_stack_top__);
   }
 

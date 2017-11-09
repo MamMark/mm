@@ -113,7 +113,7 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
 ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
 
 /* space to save registers during crash processing */
-uint8_t crash_regs[CRASH_REGS_BYTES]   __attribute__ ((section(".crash_regs")));
+uint32_t crash_regs[CRASH_REGS_BYTES]   __attribute__ ((section(".crash_regs")));
 
 /* Crash stack is used by unhandled Exception/Fault and Panic */
 uint8_t crash_stack[CRASH_STACK_BYTES] __attribute__ ((section(".crash_stack")));
