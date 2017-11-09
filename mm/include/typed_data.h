@@ -6,17 +6,16 @@
  * and any Data network packets.  DT, stands for data, typed.
  *
  * MSP432, structures are aligned to a 32 bit boundary (align(4)).
- * Multibyte datums are stored native, little endian.
+ * Multibyte datums are stored native, little endian.  All headers
+ * are required to be an even multiple of 32 bits.  quad granular.
  *
  * The exact size matters.  The ARM compiler adds padding bytes at the end
- * of structures to round up to an even 32 bit alignment.  We get rid of
- * these pad bytes by using PACKED.  We take pains to set up fields so we
- * do not violate alignment restrictions.  16 bit fields on 2 byte
- * alignment and 32 bit fields on 4 byte alignment.   Structures start on
- * 4 byte alignment.
+ * of structures to round up to an even 32 bit alignment.  We take pains to
+ * set up fields so we do not violate alignment restrictions.  16 bit
+ * fields on 2 byte alignment and 32 bit fields on 4 byte alignment.
+ * Structures start on 4 byte alignment.
  *
- * PACKED only eliminates padding within the data fields.  The next
- * dt struct will be aligned on a 32 bit boundary.
+ * The next dt struct will always be aligned on the next 32 bit boundary.
  */
 
 #ifndef __TYPED_DATA_H__
@@ -25,6 +24,7 @@
 #include <stdint.h>
 #include <panic.h>
 #include <image_info.h>
+#include <overwatch.h>
 
 #ifndef PACKED
 #define PACKED __attribute__((__packed__))
@@ -136,6 +136,9 @@ typedef struct {                /* size 8 */
  * dtype is set to REBOOT indicating the reboot.  Every N minutes a sync
  * record is written to minimize how much data is lost if we need to do a
  * resync.
+ *
+ * The reboot record also has the current ow_control_block written after
+ * it.  This will give us the current values about why we rebooted.
  */
 
 #define SYNC_MAJIK 0xdedf00efUL
@@ -144,8 +147,8 @@ typedef struct {
   uint16_t len;                 /* size 12, 0x0C */
   dtype_t  dtype;
   uint32_t stamp_ms;
-  uint32_t sync_majik;
   uint32_t time_cycle;          /* time cycle */
+  uint32_t sync_majik;
 } PACKED dt_sync_t;
 
 
@@ -163,22 +166,12 @@ typedef struct {
   uint32_t time_cycle;          /* time cycle */
   uint32_t sync_majik;
   uint32_t dt_h_revision;       /* version identifier of typed_data */
-
-  uint32_t reset_status;
-  uint32_t reset_others;
-  uint32_t from_base;           /* from owcb.from_base */
-  uint32_t cur_base;            /* current base        */
-  uint32_t boot_count;
-
-  uint32_t elapsed_upper;
-  uint32_t elapsed_lower;
-
-  uint32_t strange;             /* strange shit */
-  uint32_t strange_loc;         /* reported strange location */
-  uint32_t vec_chk_fail;
-  uint32_t image_chk_fail;
-  uint16_t reboot_reason;       /* see overwatch.h */
 } PACKED dt_reboot_t;
+
+typedef struct {
+  dt_reboot_t dt_reboot;
+  ow_control_block_t dt_owcb;
+} PACKED dt_dump_reboot_t;
 
 
 /* panic warn only uses this */
@@ -192,7 +185,7 @@ typedef struct {
   parg_t   arg3;
   uint8_t  pcode;               /* from Panic.panic  */
   uint8_t  where;               /* from Panic.panic  */
-  uint8_t  index;               /* which panic block */
+  uint8_t  pad[2];              /* need to be quad granular */
 } PACKED dt_panic_t;
 
 
@@ -205,12 +198,16 @@ typedef struct {
 typedef struct {
   uint16_t    len;              /* size   10    +     144      */
   dtype_t     dtype;            /* dt_version_t + image_info_t */
-  image_ver_t ver_id;
-  hw_ver_t    hw_ver;
+  uint32_t    base;             /* base address of this image */
 } PACKED dt_version_t;
 
+typedef struct {
+  dt_version_t dt_ver;
+  image_info_t dt_image_info;
+} dt_dump_version_t;
 
-enum {
+
+typedef enum {
   DT_EVENT_SURFACED         = 1,
   DT_EVENT_SUBMERGED        = 2,
   DT_EVENT_DOCKED           = 3,
@@ -233,7 +230,8 @@ enum {
   DT_EVENT_SSW_DELAY_TIME   = 20,
   DT_EVENT_SSW_BLK_TIME     = 21,
   DT_EVENT_SSW_GRP_TIME     = 22,
-};
+  DT_EVENT_16               = 0xffff,
+} dt_event_id_t;
 
 
 typedef struct {
@@ -244,8 +242,18 @@ typedef struct {
   uint32_t arg1;
   uint32_t arg2;
   uint32_t arg3;
-  uint16_t ev;
+  dt_event_id_t ev;
+  uint8_t  pad[2];              /* quad granular */
 } PACKED dt_event_t;
+
+
+/*
+ * gps chip ids
+ */
+
+typedef enum {
+  CHIP_GPS_GSD4E   = 1,
+} gps_chip_id_t;
 
 
 /*
@@ -273,17 +281,9 @@ typedef struct {
   dtype_t  dtype;
   uint32_t stamp_ms;            /* time stamp in ms */
   uint32_t mark_us;             /* mark stamp in usecs (dec) */
-  uint8_t  chip_id;
+  gps_chip_id_t chip_id;
+  uint8_t  pad[3];              /* quad granular */
 } PACKED dt_gps_t;
-
-
-/*
- * gps chip ids
- */
-
-enum {
-  CHIP_GPS_GSD4E   = 1,
-};
 
 
 typedef struct {
@@ -292,6 +292,7 @@ typedef struct {
   uint32_t stamp_ms;
   uint32_t sched_ms;
   uint16_t sns_id;
+  uint8_t  pad[2];              /* quad granular */
 } PACKED dt_sensor_data_t;
 
 

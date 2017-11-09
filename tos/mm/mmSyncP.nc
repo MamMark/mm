@@ -13,6 +13,7 @@
 #define SYNC_PERIOD (1UL * 60 * 1024)
 
 extern image_info_t image_info;
+extern ow_control_block_t ow_control_block;
 
 module mmSyncP {
   provides interface Boot as Booted;    /* out boot */
@@ -32,11 +33,11 @@ implementation {
     dt_version_t *vp;
 
     vp = &v;
-    vp->len     = sizeof(v);
+    vp->len     = sizeof(v) + sizeof(image_info_t);
     vp->dtype   = DT_VERSION;
-    vp->ver_id  = image_info.ver_id;
-    vp->hw_ver  = image_info.hw_ver;
-    call Collect.collect((void *) vp, sizeof(dt_version_t), NULL, 0);
+    vp->base    = call OverWatch.getImageBase();
+    call Collect.collect((void *) vp, sizeof(dt_version_t),
+                         (void *) &image_info, sizeof(image_info_t));
   }
 
 
@@ -57,34 +58,18 @@ implementation {
   void write_reboot_record() {
     dt_reboot_t  r;
     dt_reboot_t *rp;
-    ow_control_block_t *owcp;
 
     rp = &r;
-    owcp = call OverWatch.getControlBlock();
-    rp->len = sizeof(r);
+    rp->len = sizeof(r) + sizeof(ow_control_block_t);
     rp->dtype = DT_REBOOT;
     rp->stamp_ms = call SyncTimer.getNow();
-    rp->sync_majik = SYNC_MAJIK;
     rp->time_cycle = 0;                 /* for now only time_cycle 0 */
-    rp->dt_h_revision = DT_H_REVISION;  /* flag which version of typed_data we are using */
-
-    rp->reset_status = owcp->reset_status;
-    rp->reset_others = owcp->reset_others;
-    rp->from_base    = owcp->from_base;
-    rp->cur_base     = call OverWatch.getImageBase();
-    rp->boot_count   = owcp->reboot_count;
-
-    rp->elapsed_upper = owcp->elapsed_upper;
-    rp->elapsed_lower = owcp->elapsed_lower;
-
-    rp->strange     = owcp->strange;
-    rp->strange_loc = owcp->strange_loc;
-    rp->vec_chk_fail = owcp->vec_chk_fail;
-    rp->image_chk_fail = owcp->image_chk_fail;
-    rp->reboot_reason = owcp->reboot_reason;
-
+    rp->sync_majik = SYNC_MAJIK;
+    rp->dt_h_revision = DT_H_REVISION;  /* which version of typed_data */
+    call Collect.collect((void *) rp, sizeof(r),
+                         (void *) &ow_control_block,
+                         sizeof(ow_control_block_t));
     call OverWatch.clearReset();        /* clears owcb copies */
-    call Collect.collect((void *) rp, sizeof(r), NULL, 0);
   }
 
 
@@ -94,7 +79,7 @@ implementation {
   event void Boot.booted() {
     write_reboot_record();
     write_version_record();
-    nop();
+    nop();                              /* BRK */
     signal Booted.booted();
   }
 
