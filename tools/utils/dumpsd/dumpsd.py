@@ -98,9 +98,17 @@ class aggie(OrderedDict):
 hdr_len  = atom(('H', '{}'))
 hdr_type = atom(('H', '{}'))
 hdr_xt   = atom(('I', '0x{:04x}'))
+arg_obj  = atom(('I', '0x{:04x}'))
+byte_obj = atom(('B', '{}'))
 
 hdr_obj    = aggie(OrderedDict([('len', hdr_len), ('type', hdr_type)]))
 hdr_xt_obj = aggie(OrderedDict([('len', hdr_len), ('type', hdr_type), ('xt', hdr_xt)]))
+
+
+def print_hdr(obj):
+    rtype = obj['hdr']['type'].val
+    print('{:8} ({:2}) {:6} -- '.format(
+        '', rtype, dt_records[rtype][2])),
 
 
 def print_hdr_xt(obj):
@@ -109,6 +117,40 @@ def print_hdr_xt(obj):
         obj['hdr']['xt'].val,
         rtype, dt_records[rtype][2])),
 
+
+# TINTRYALF: this is not the record you are looking for.  next sector.
+
+simple_hdr      = aggie(OrderedDict([('hdr', hdr_obj)]))
+simple_hdr_xt   = aggie(OrderedDict([('hdr', hdr_xt_obj)]))
+
+tintryalf_obj   = simple_hdr
+
+cycle_obj       = atom(('I', '{:08x}'))
+majik_obj       = atom(('I', '{:08x}'))
+dt_rev_obj      = atom(('I', '{:08x}'))
+reboot_obj      = aggie(OrderedDict([('hdr',    hdr_xt_obj),
+                                     ('cycle',  cycle_obj),
+                                     ('majik',  majik_obj),
+                                     ('dt_rev', dt_rev_obj)]))
+
+base_obj        = atom(('I', '{:08x}'))
+version_obj     = aggie(OrderedDict([('hdr',    hdr_obj),
+                                     ('base',   base_obj)]))
+
+sync_obj        = aggie(OrderedDict([('hdr',    hdr_xt_obj),
+                                     ('cycle',  cycle_obj),
+                                     ('majik',  majik_obj)]))
+
+panic_obj       = aggie(OrderedDict([('hdr',    hdr_xt_obj),
+                                     ('arg0',   arg_obj),
+                                     ('arg1',   arg_obj),
+                                     ('arg2',   arg_obj),
+                                     ('arg3',   arg_obj),
+                                     ('pcode',  byte_obj),
+                                     ('where',  byte_obj)]))
+
+# FLUSH: flush remainder of sector due to SysReboot.flush()
+flush_obj       = simple_hdr
 
 # EVENT
 
@@ -137,37 +179,66 @@ event_names = {
     22: "SSW_GRP_TIME",
 }
 
-event_arg   = atom(('I', '0x{:04x}'))
-event_event = atom(('H', '{}'))
-event_obj   = aggie(OrderedDict([('hdr', hdr_xt_obj),
-                                 ('arg0', event_arg),
-                                 ('arg1', event_arg),
-                                 ('arg2', event_arg),
-                                 ('arg3', event_arg),
-                                 ('event', event_event)]))
+event_event     = atom(('H', '{}'))
+event_obj       = aggie(OrderedDict([('hdr',   hdr_xt_obj),
+                                     ('arg0',  arg_obj),
+                                     ('arg1',  arg_obj),
+                                     ('arg2',  arg_obj),
+                                     ('arg3',  arg_obj),
+                                     ('event', event_event)]))
+
+debug_obj       = simple_hdr
+
+gps_ver_obj     = simple_hdr_xt
+gps_time_obj    = simple_hdr_xt
+gps_geo_obj     = simple_hdr_xt
+gps_xyz_obj     = simple_hdr_xt
+
+sen_data_obj    = simple_hdr_xt
+sen_set_obj     = simple_hdr_xt
+test_obj        = simple_hdr
+note_obj        = simple_hdr
+config_obj      = simple_hdr
+
+gps_raw_obj     = simple_hdr_xt
 
 
 def decode_tintryalf(buf, obj):
-    pass
+    obj.set(buf)
+    print_hdr(obj)
+    print
 
 def decode_reboot(buf, obj):
-    pass
+    obj.set(buf)
+    print(obj)
+    print_hdr_xt(obj)
+    print
 
 def decode_version(buf, obj):
-    pass
+    obj.set(buf)
+    print(obj)
+    print_hdr(obj)
+    print
 
 def decode_sync(buf, obj):
-    pass
+    obj.set(buf)
+    print(obj)
+    print_hdr_xt(obj)
+    print
 
 def decode_panic(buf, obj):
-    pass
+    obj.set(buf)
+    print(obj)
+    print_hdr_xt(obj)
+    print
 
 def decode_flush(buf, obj):
-    pass
-
+    obj.set(buf)
+    print(obj)
+    print_hdr(obj)
+    print
 
 def decode_event(buf, event_obj):
-    print('=============')
     event_obj.set(buf)
     print(event_obj)
     print_hdr_xt(event_obj)
@@ -178,29 +249,48 @@ def decode_event(buf, event_obj):
         event_obj['arg1'].val,
         event_obj['arg2'].val,
         event_obj['arg3'].val))
-    print('=============')
-
 
 def decode_debug(buf, obj):
-    pass
+    obj.set(buf)
+    print(obj)
+    print_hdr(obj)
+    print
 
 def decode_gps_version(buf, obj):
-    pass
+    obj.set(buf)
+    print(obj)
+    print_hdr_xt(obj)
+    print
 
 def decode_gps_time(buf, obj):
-    pass
+    obj.set(buf)
+    print(obj)
+    print_hdr_xt(obj)
+    print
 
 def decode_gps_geo(buf, obj):
-    pass
+    obj.set(buf)
+    print(obj)
+    print_hdr_xt(obj)
+    print
 
 def decode_gps_xyz(buf, obj):
-    pass
+    obj.set(buf)
+    print(obj)
+    print_hdr_xt(obj)
+    print
 
 def decode_sensor_data(buf, obj):
-    pass
+    obj.set(buf)
+    print(obj)
+    print_hdr_xt(obj)
+    print
 
 def decode_sensor_set(buf, obj):
-    pass
+    obj.set(buf)
+    print(obj)
+    print_hdr_xt(obj)
+    print
 
 def decode_test(buf, obj):
     pass
@@ -211,8 +301,11 @@ def decode_note(buf, obj):
 def decode_config(buf, obj):
     pass
 
-def decode_gps_raw_sirfbin(buf, obj):
-    pass
+def decode_gps_raw(buf, obj):
+    obj.set(buf)
+    print(obj)
+    print_hdr_xt(obj)
+    print
 
 
 # dt_records
@@ -221,24 +314,24 @@ def decode_gps_raw_sirfbin(buf, obj):
 # dict key is the record id.
 #
 dt_records = {
-     0: (decode_tintryalf,          None,           "TINTRYALF"),
-     1: (decode_reboot,             None,           "REBOOT"),
-     2: (decode_version,            None,           "VERSION"),
-     3: (decode_sync,               None,           "SYNC"),
-     4: (decode_panic,              None,           "PANIC"),
-     5: (decode_flush,              None,           "FLUSH"),
+     0: (decode_tintryalf,          tintryalf_obj,  "TINTRYALF"),
+     1: (decode_reboot,             reboot_obj,     "REBOOT"),
+     2: (decode_version,            version_obj,    "VERSION"),
+     3: (decode_sync,               sync_obj,       "SYNC"),
+     4: (decode_panic,              panic_obj,      "PANIC"),
+     5: (decode_flush,              flush_obj,      "FLUSH"),
      6: (decode_event,              event_obj,      "EVENT"),
-     7: (decode_debug,              None,           "DEBUG"),
-    16: (decode_gps_version,        None,           "GPS_VERSION"),
-    17: (decode_gps_time,           None,           "GPS_TIME"),
-    18: (decode_gps_geo,            None,           "GPS_GEO"),
-    19: (decode_gps_xyz,            None,           "GPS_XYZ"),
-    20: (decode_sensor_data,        None,           "SENSOR_DATA"),
-    21: (decode_sensor_set,         None,           "SENSOR_SET"),
-    22: (decode_test,               None,           "TEST"),
-    23: (decode_note,               None,           "NOTE"),
-    24: (decode_config,             None,           "CONFIG"),
-    32: (decode_gps_raw_sirfbin,    None,           "GPS_RAW"),
+     7: (decode_debug,              debug_obj,      "DEBUG"),
+    16: (decode_gps_version,        gps_ver_obj,    "GPS_VERSION"),
+    17: (decode_gps_time,           gps_time_obj,   "GPS_TIME"),
+    18: (decode_gps_geo,            gps_geo_obj,    "GPS_GEO"),
+    19: (decode_gps_xyz,            gps_xyz_obj,    "GPS_XYZ"),
+    20: (decode_sensor_data,        sen_data_obj,   "SENSOR_DATA"),
+    21: (decode_sensor_set,         sen_set_obj,    "SENSOR_SET"),
+    22: (decode_test,               test_obj,       "TEST"),
+    23: (decode_note,               note_obj,       "NOTE"),
+    24: (decode_config,             config_obj,     "CONFIG"),
+    32: (decode_gps_raw,            gps_raw_obj,    "GPS_RAW"),
   }
 
 
