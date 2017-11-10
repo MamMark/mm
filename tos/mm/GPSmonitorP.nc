@@ -198,7 +198,8 @@ implementation {
       mxp->mode1 = np->mode1;
       mxp->hdop  = np->hdop;
       mxp->nsats = np->nsats;
-      call CollectEvent.logEvent(DT_EVENT_GPS_XYZ, mxp->x, mxp->y, mxp->z, 0);
+      call CollectEvent.logEvent(DT_EVENT_GPS_XYZ, mxp->x, mxp->y,
+                                 mxp->z, mxp->nsats);
     }
   }
 
