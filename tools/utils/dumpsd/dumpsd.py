@@ -4,7 +4,7 @@ import os
 import sys
 import binascii
 import struct
-
+import argparse
 from collections import OrderedDict
 
 
@@ -543,13 +543,13 @@ def buf_str(buf):
 #
 # look for records and print out details for each one found
 #
-def main(source):
+def dump(args):
     total = 0
-    with open(source, 'rb') as fd:
-        for rlen, rtype, offset, buf in gen_records(fd):
+    with open(args.input, 'rb') as infile:
+        for rlen, rtype, offset, buf in gen_records(infile):
             print("type: {}, len: {}, next: {} ({})".format(
-                rtype, rlen, (fd.tell()-512)+offset,
-                hex((fd.tell()-512)+offset)))
+                rtype, rlen, (infile.tell()-512)+offset,
+                hex((infile.tell()-512)+offset)))
             bs = buf_str(buf)
             stride = 16         # how many bytes per line
                                 # 3 chars per byte
@@ -569,10 +569,43 @@ def main(source):
             total += rlen
             print('----')
 
-        print(fd.tell(),  total)
+        print(infile.tell(),  total)
 
 
 if __name__ == "__main__":
     # filename = input('Please enter source file name: ')
     filename = 'data.log'
-    main(filename)
+    parser = argparse.ArgumentParser(
+        description='Pretty print content of Tag Data logfile')
+    parser.add_argument('input',
+                        help='output file')
+    parser.add_argument('--version',
+                        action='version',
+                        version='%(prog)s 0.0.0')
+    parser.add_argument('-o', '--output',
+                        type=argparse.FileType('w'),
+                        help='this is an option')
+    parser.add_argument("--rtypes",
+                        type=str,
+                        help="output records matching types in list")
+    parser.add_argument("--start",
+                        type=int,
+                        help="include records with time greater than start")
+    parser.add_argument("--end",
+                        type=int,
+                        help="include records with time before the end")
+    parser.add_argument('-v', '--verbosity',
+                        action='count',
+                        default=0,
+                        help="increase output verbosity")
+    args = parser.parse_args()
+    if args.rtypes:
+        print(args.rtypes)
+        for rtype_str in args.rtypes.split(' '):
+            print(rtype_str)
+            for dt_n, dt_val in dt_records.iteritems():
+                print(dt_val)
+                if (dt_val[2] == rtype_str):
+                    print(rtype_str)
+#    dump(args)
+    print(args)
