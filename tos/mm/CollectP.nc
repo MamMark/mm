@@ -191,8 +191,8 @@ implementation {
    * immediately follows the dblk header as long as there is space.  Data
    * can flow into as many sectors as needed following the dblk header.
    */
-  command void Collect.collect(dt_header_t *header, uint16_t hlen,
-                               uint8_t     *data,   uint16_t dlen) {
+  command void Collect.collect_nots(dt_header_t *header, uint16_t hlen,
+                                    uint8_t     *data,   uint16_t dlen) {
     dt_header_t dt_hdr;
 
     if (dcc.majik_a != DC_MAJIK || dcc.majik_b != DC_MAJIK)
@@ -249,6 +249,13 @@ implementation {
   }
 
 
+  command void Collect.collect(dt_header_t *header, uint16_t hlen,
+                               uint8_t     *data,   uint16_t dlen) {
+    header->stamp_ms = call LocalTime.get();
+    call Collect.collect_nots(header, hlen, data, dlen);
+  }
+
+
   command void CollectEvent.logEvent(uint16_t ev, uint32_t arg0, uint32_t arg1,
                                                   uint32_t arg2, uint32_t arg3) {
     dt_event_t  e;
@@ -257,7 +264,6 @@ implementation {
     ep = &e;
     ep->len = sizeof(e);
     ep->dtype = DT_EVENT;
-    ep->stamp_ms = call LocalTime.get();
     ep->arg0 = arg0;
     ep->arg1 = arg1;
     ep->arg2 = arg2;

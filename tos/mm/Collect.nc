@@ -37,4 +37,8 @@
 interface Collect {
   command void collect(dt_header_t *header, uint16_t hlen,
                        uint8_t     *data,   uint16_t dlen);
+
+  /* collect no timestamp.  Timestamp is filled by caller */
+  command void collect_nots(dt_header_t *header, uint16_t hlen,
+                            uint8_t     *data,   uint16_t dlen);
 }

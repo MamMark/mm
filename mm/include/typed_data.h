@@ -109,17 +109,11 @@ typedef enum {
  * It is only used towards the end of the sector when the header won't fit.
  */
 
-typedef struct {                /* size 4 */
-  uint16_t len;
-  dtype_t  dtype;
-} PACKED dt_header_t;
-
-
 typedef struct {                /* size 8 */
   uint16_t len;
   dtype_t  dtype;
   uint32_t stamp_ms;
-} PACKED dt_header_ts_t;
+} PACKED dt_header_t;
 
 
 /*
@@ -198,6 +192,7 @@ typedef struct {
 typedef struct {
   uint16_t    len;              /* size   10    +     144      */
   dtype_t     dtype;            /* dt_version_t + image_info_t */
+  uint32_t    stamp_ms;
   uint32_t    base;             /* base address of this image */
 } PACKED dt_version_t;
 
@@ -319,6 +314,7 @@ typedef struct {
 typedef struct {
   uint16_t len;                 /* size 13 + var */
   dtype_t  dtype;
+  uint32_t stamp_ms;
   uint16_t note_len;
   uint16_t year;
   uint8_t  month;
@@ -326,12 +322,12 @@ typedef struct {
   uint8_t  hrs;
   uint8_t  min;
   uint8_t  sec;
+  uint8_t  pad[3];
 } PACKED dt_note_t;
 
 
 enum {
   DT_HDR_SIZE_HEADER        = sizeof(dt_header_t),
-  DT_HDR_SIZE_HEADER_TS     = sizeof(dt_header_ts_t),
   DT_HDR_SIZE_REBOOT        = sizeof(dt_reboot_t),
   DT_HDR_SIZE_VERSION       = sizeof(dt_version_t),
   DT_HDR_SIZE_SYNC          = sizeof(dt_sync_t),
