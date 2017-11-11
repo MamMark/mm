@@ -273,6 +273,8 @@ def gps_geo_decoder(buf, obj):
     obj.set(buf)
     print(obj)
 
+mid_count = {}
+
 mid_table = {
 #  mid   decoder, object,  name
      2: (gps_nav_decoder,   gps_nav_obj,   "NAV_DATA"),
@@ -408,6 +410,10 @@ def decode_gps_raw(buf, obj):
     print(obj)
     print_hdr(obj)
     mid = obj['gps_hdr']['mid'].val
+    try:
+        mid_count[mid] += 1
+    except KeyError:
+        mid_count[mid] = 1
     print_gps_hdr(obj, mid)
     if mid in mid_table and mid_table[mid][0]:
         mid_table[mid][0](buf[consumed:], mid_table[mid][1])
@@ -419,6 +425,9 @@ def decode_gps_raw(buf, obj):
 # dictionary of all data_typed records we understand
 # dict key is the record id.
 #
+
+dt_count = {}
+
 dt_records = {
 # dt decoder obj name
      0: (decode_tintryalf,      dt_tintryalf_obj,  "TINTRYALF"),
@@ -549,6 +558,10 @@ def dump(args):
                 idx += (stride * 3)
                 if idx < len(bs):       # if more then print counter
                     print('{:04x}: '.format(idx/3)),
+            try:
+                dt_count[rtype] += 1
+            except KeyError:
+                dt_count[rtype] = 1
             if (rtype in dt_records):
                 decode = dt_records[rtype][0]
                 obj    = dt_records[rtype][1]
@@ -559,6 +572,9 @@ def dump(args):
             print('----')
 
         print(infile.tell(),  total)
+        print
+        print('mids: ', mid_count)
+        print('dts:  ', dt_count)
 
 
 if __name__ == "__main__":
