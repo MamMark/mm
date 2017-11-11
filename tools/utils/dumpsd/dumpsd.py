@@ -490,37 +490,41 @@ def dump_buf(buf):
 # in the next yield request.
 #
 def gen_data_bytes(fd):
-    # skip first block
+    # skip first block, directory block (reserved)
     blk = fd.read(LOGICAL_SECTOR_SIZE)
     if not blk:
         return
     blk_struct = struct.Struct("508sHH")
-    offset = 0
+    file_offset = 0
+    offset = 512                        # consumed first sector, dir
     old_seq_no = 0
     buf = bytearray()
     while (True):
-        num = yield offset, buf
-        buf = bytearray() # clear the return buffer each time
+        num = yield file_offset, buf
+
+        # starting byte is file_offset, and one sector has been read
+        file_offset = offset + (fd.tell() - 512)
+        buf = bytearray()               # clear the return buffer each time
         if (num < 0):
-            offset = 0  # force a skip to next sector
+            offset = 508                # consume the rest, next sector
         else:
             while (num > 0):
-                if (offset == 0):
+                if (offset >= 508):     # nothing left
                     sect = fd.read(LOGICAL_SECTOR_SIZE)
+                    offset = 0
                     if not sect:
                         break
                     blk, seq_no, chk_sum = blk_struct.unpack(sect)
                     # check sequence number for discontinuity
                     if (seq_no) and (seq_no != (old_seq_no + 1)):
-                        print(old_seq_no, seq_no)
+                        print('*** oops, seq mismatch: old: {}, cur: {}'.format(
+                            old_seq_no, seq_no))
                         break
                     old_seq_no = seq_no
                 limit = num if (num < (LOGICAL_BLOCK_SIZE - offset)) \
                             else LOGICAL_BLOCK_SIZE - offset
                 buf.extend(blk[offset:offset+limit])
-                offset = offset + limit \
-                         if ((offset + limit) < LOGICAL_BLOCK_SIZE) \
-                            else 0
+                offset += limit
                 num -= limit
 
 
@@ -542,14 +546,15 @@ def gen_records(fd):
         hdr_offset, hdr = data_bytes.send(short_hdr.size)
         if (not hdr) or (len(hdr) < short_hdr.size):
             break
-        rlen, rtyp = dt_hdr.unpack(hdr)
-        if (rtyp == 0): # tinytryalf
-            data_bytes.send(-1)   # skip to next sector
+        rlen, rtyp = short_hdr.unpack(hdr)
+        if (rtyp == 0):                 # tintryalf
+            data_bytes.send(-1)         # skip to next sector
             continue
+
         # return record header fields plus record contents
-        offset, pl = data_bytes.send(rlen - LOGICAL_HEADER_SIZE)
+        offset, pl = data_bytes.send(rlen - short_hdr.size)
         pl = hdr + pl
-        yield rlen, rtyp, offset, pl
+        yield hdr_offset, rlen, rtyp, pl
         if (rlen % 4):
             data_bytes.send(4 - (rlen % 4))  # skip to next word boundary
 
