@@ -27,7 +27,6 @@ from collections import OrderedDict
 
 LOGICAL_SECTOR_SIZE = 512
 LOGICAL_BLOCK_SIZE  = 508  # excludes trailer
-LOGICAL_HEADER_SIZE = 4
 
 
 class atom(object):
@@ -95,22 +94,13 @@ class aggie(OrderedDict):
         return consumed
 
 
-# hdr objects at native, little endian
-hdr_obj         = aggie(OrderedDict([('len',  atom(('H', '{}'))),
-                                     ('type', atom(('H', '{}')))]))
-
-hdr_xt_obj      = aggie(OrderedDict([('len',  atom(('H', '{}'))),
-                                     ('type', atom(('H', '{}'))),
-                                     ('xt',   atom(('I', '0x{:04x}')))]))
-
+# hdr object at native, little endian
+hdr_obj = aggie(OrderedDict([
+    ('len',  atom(('H', '{}'))),
+    ('type', atom(('H', '{}'))),
+    ('xt',   atom(('I', '0x{:04x}')))]))
 
 def print_hdr(obj):
-    rtype = obj['hdr']['type'].val
-    print('{:8} ({:2}) {:6} -- '.format(
-        '', rtype, dt_records[rtype][2])),
-
-
-def print_hdr_xt(obj):
     rtype = obj['hdr']['type'].val
     print('{:08x} ({:2}) {:6} -- '.format(
         obj['hdr']['xt'].val,
@@ -119,14 +109,12 @@ def print_hdr_xt(obj):
 
 # all dt parts are native and little endian
 #
-# TINTRYALF: this is not the record you are looking for.  next sector.
+# TINTRYALF (0)) is not a data type but a special case that
+# kicks us to the next sector.  This Is Not The Record You Are Looking For
 
 dt_simple_hdr   = aggie(OrderedDict([('hdr', hdr_obj)]))
-dt_simple_hdr_xt= aggie(OrderedDict([('hdr', hdr_xt_obj)]))
 
-dt_tintryalf_obj= dt_simple_hdr
-
-dt_reboot_obj   = aggie(OrderedDict([('hdr',    hdr_xt_obj),
+dt_reboot_obj   = aggie(OrderedDict([('hdr',    hdr_obj),
                                      ('cycle',  atom(('I', '{:08x}'))),
                                      ('majik',  atom(('I', '{:08x}'))),
                                      ('dt_rev', atom(('I', '{:08x}')))]))
@@ -134,11 +122,11 @@ dt_reboot_obj   = aggie(OrderedDict([('hdr',    hdr_xt_obj),
 dt_version_obj  = aggie(OrderedDict([('hdr',    hdr_obj),
                                      ('base',   atom(('I', '{:08x}')))]))
 
-dt_sync_obj     = aggie(OrderedDict([('hdr',    hdr_xt_obj),
+dt_sync_obj     = aggie(OrderedDict([('hdr',    hdr_obj),
                                      ('cycle',  atom(('I', '{:08x}'))),
                                      ('majik',  atom(('I', '{:08x}')))]))
 
-dt_panic_obj    = aggie(OrderedDict([('hdr',    hdr_xt_obj),
+dt_panic_obj    = aggie(OrderedDict([('hdr',    hdr_obj),
                                      ('arg0',   atom(('I', '0x{:04x}'))),
                                      ('arg1',   atom(('I', '0x{:04x}'))),
                                      ('arg2',   atom(('I', '0x{:04x}'))),
@@ -179,7 +167,7 @@ event_names = {
 }
 
 dt_event_obj    = aggie(OrderedDict([
-    ('hdr',   hdr_xt_obj),
+    ('hdr',   hdr_obj),
     ('arg0',  atom(('I', '0x{:04x}'))),
     ('arg1',  atom(('I', '0x{:04x}'))),
     ('arg2',  atom(('I', '0x{:04x}'))),
@@ -189,13 +177,13 @@ dt_event_obj    = aggie(OrderedDict([
 
 dt_debug_obj    = dt_simple_hdr
 
-dt_gps_ver_obj  = dt_simple_hdr_xt
-dt_gps_time_obj = dt_simple_hdr_xt
-dt_gps_geo_obj  = dt_simple_hdr_xt
-dt_gps_xyz_obj  = dt_simple_hdr_xt
+dt_gps_ver_obj  = dt_simple_hdr
+dt_gps_time_obj = dt_simple_hdr
+dt_gps_geo_obj  = dt_simple_hdr
+dt_gps_xyz_obj  = dt_simple_hdr
 
-dt_sen_data_obj = dt_simple_hdr_xt
-dt_sen_set_obj  = dt_simple_hdr_xt
+dt_sen_data_obj = dt_simple_hdr
+dt_sen_set_obj  = dt_simple_hdr
 dt_test_obj     = dt_simple_hdr
 dt_note_obj     = dt_simple_hdr
 dt_config_obj   = dt_simple_hdr
@@ -230,7 +218,8 @@ def gps_swver_decoder(buf, obj):
     len1 = obj['str1_len'].val
     str0 = buf[consumed:consumed+len0-1]
     str1 = buf[consumed+len0:consumed+len0+len1-1]
-    print('\n  <{}>  <{}>'.format(str0, str1)),
+    print('\n  --<{}>--  --<{}>--'.format(str0, str1)),
+
 
 # OkToSend
 gps_ots_obj = atom(('B', '{}'))
@@ -309,22 +298,17 @@ gps_hdr_obj     = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
                                      ('mid',     atom(('B', '0x{:02x}')))]))
 
 # dt, native, little endian
-dt_gps_raw_obj  = aggie(OrderedDict([('hdr',     hdr_xt_obj),
+dt_gps_raw_obj  = aggie(OrderedDict([('hdr',     hdr_obj),
                                      ('mark',    atom(('>I', '0x{:04x}'))),
                                      ('chip',    atom(('B', '0x{:02x}'))),
                                      ('pad',     atom(('BBB', '{}'))),
                                      ('gps_hdr', gps_hdr_obj)]))
 
 
-def decode_tintryalf(buf, obj):
-    obj.set(buf)
-    print_hdr(obj)
-    print
-
 def decode_reboot(buf, obj):
     obj.set(buf)
     print(obj)
-    print_hdr_xt(obj)
+    print_hdr(obj)
     print
 
 def decode_version(buf, obj):
@@ -336,13 +320,13 @@ def decode_version(buf, obj):
 def decode_sync(buf, obj):
     obj.set(buf)
     print(obj)
-    print_hdr_xt(obj)
+    print_hdr(obj)
     print
 
 def decode_panic(buf, obj):
     obj.set(buf)
     print(obj)
-    print_hdr_xt(obj)
+    print_hdr(obj)
     print
 
 def decode_flush(buf, obj):
@@ -354,7 +338,7 @@ def decode_flush(buf, obj):
 def decode_event(buf, event_obj):
     event_obj.set(buf)
     print(event_obj)
-    print_hdr_xt(event_obj)
+    print_hdr(event_obj)
     event = event_obj['event'].val
     print('({:2}) {:10} 0x{:04x}  0x{:04x}  0x{:04x}  0x{:04x}'.format(
         event, event_names[event],
@@ -372,37 +356,37 @@ def decode_debug(buf, obj):
 def decode_gps_version(buf, obj):
     obj.set(buf)
     print(obj)
-    print_hdr_xt(obj)
+    print_hdr(obj)
     print
 
 def decode_gps_time(buf, obj):
     obj.set(buf)
     print(obj)
-    print_hdr_xt(obj)
+    print_hdr(obj)
     print
 
 def decode_gps_geo(buf, obj):
     obj.set(buf)
     print(obj)
-    print_hdr_xt(obj)
+    print_hdr(obj)
     print
 
 def decode_gps_xyz(buf, obj):
     obj.set(buf)
     print(obj)
-    print_hdr_xt(obj)
+    print_hdr(obj)
     print
 
 def decode_sensor_data(buf, obj):
     obj.set(buf)
     print(obj)
-    print_hdr_xt(obj)
+    print_hdr(obj)
     print
 
 def decode_sensor_set(buf, obj):
     obj.set(buf)
     print(obj)
-    print_hdr_xt(obj)
+    print_hdr(obj)
     print
 
 def decode_test(buf, obj):
@@ -422,7 +406,7 @@ def print_gps_hdr(obj, mid):
 def decode_gps_raw(buf, obj):
     consumed = obj.set(buf)
     print(obj)
-    print_hdr_xt(obj)
+    print_hdr(obj)
     mid = obj['gps_hdr']['mid'].val
     print_gps_hdr(obj, mid)
     if mid in mid_table and mid_table[mid][0]:
@@ -508,13 +492,18 @@ def gen_data_bytes(fd):
 # yields one record each time (len, type, data)
 #
 def gen_records(fd):
-    dt_hdr = struct.Struct("HH")
+
+    # short hdr is the record_len and dtype.  Doesn't include the timestamp
+    # TINTRYALF (0) is not technically a dtype but rather a special case
+    # that is only 4 bytes long.  That way it always fits.
+
+    short_hdr = struct.Struct("HH")
     data_bytes = gen_data_bytes(fd)
-    data_bytes.send(None) # prime the generator
+    data_bytes.send(None)               # prime the generator
     while (True):
         # read size bytes
-        offset, hdr = data_bytes.send(dt_hdr.size)
-        if (not hdr) or (len(hdr) < LOGICAL_HEADER_SIZE):
+        hdr_offset, hdr = data_bytes.send(short_hdr.size)
+        if (not hdr) or (len(hdr) < short_hdr.size):
             break
         rlen, rtyp = dt_hdr.unpack(hdr)
         if (rtyp == 0): # tinytryalf
