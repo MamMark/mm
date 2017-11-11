@@ -559,9 +559,13 @@ def gen_records(fd):
         # return record header fields plus record contents
         offset, pl = data_bytes.send(rlen - short_hdr.size)
         pl = hdr + pl
+        if len(pl) < rlen:
+            print('*** oops.  too short')
+            dump_buf(pl)
+            break
         yield hdr_offset, rlen, rtyp, pl
         if (rlen % 4):
-            data_bytes.send(4 - (rlen % 4))  # skip to next word boundary
+            data_bytes.send(4 - (rlen % 4)) # skip to next word boundary
 
 
 # main processing loop
@@ -582,9 +586,12 @@ def dump(args):
             if (rtype in dt_records):
                 decode = dt_records[rtype][0]
                 obj    = dt_records[rtype][1]
-                decode(buf, obj)
+                try:
+                    decode(buf, obj)
+                except struct.error:
+                    print('struct error: (dt: 0x{:02x})'.format(rtype))
             else:
-                print('unknown (0x{:02x})'.format(rtype))
+                print('*** unknown dtype (dt: 0x{:02x})'.format(rtype))
             total += rlen
             print('----')
 
