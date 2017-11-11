@@ -210,6 +210,34 @@ def gps_nav_decoder(buf, obj):
     obj.set(buf)
     print(obj)
 
+gps_navtrk_obj  = aggie(OrderedDict([
+    ('week10', atom(('>H', '{}'))),
+    ('tow',    atom(('>I', '{}'))),
+    ('chans',  atom(('B',  '{}')))]))
+
+gps_navtrk_chan = aggie([('sv_id',    atom(('B',  '{:2}'))),
+                         ('sv_az23',  atom(('B',  '{:3}'))),
+                         ('sv_el2',   atom(('B',  '{:3}'))),
+                         ('state',    atom(('>H', '0x{:04x}'))),
+                         ('cno0',     atom(('B',  '{}'))),
+                         ('cno1',     atom(('B',  '{}'))),
+                         ('cno2',     atom(('B',  '{}'))),
+                         ('cno3',     atom(('B',  '{}'))),
+                         ('cno4',     atom(('B',  '{}'))),
+                         ('cno5',     atom(('B',  '{}'))),
+                         ('cno6',     atom(('B',  '{}'))),
+                         ('cno7',     atom(('B',  '{}'))),
+                         ('cno8',     atom(('B',  '{}'))),
+                         ('cno9',     atom(('B',  '{}')))])
+
+def gps_navtrk_decoder(buf,obj):
+    consumed = obj.set(buf)
+    print(obj)
+    chans = obj['chans'].val
+    for n in range(chans):
+        consumed += gps_navtrk_chan.set(buf[consumed:])
+        print(gps_navtrk_chan)
+
 gps_swver_obj   = aggie(OrderedDict([('str0_len', atom(('B', '{}'))),
                                      ('str1_len', atom(('B', '{}')))]))
 def gps_swver_decoder(buf, obj):
@@ -220,6 +248,18 @@ def gps_swver_decoder(buf, obj):
     str1 = buf[consumed+len0:consumed+len0+len1-1]
     print('\n  --<{}>--  --<{}>--'.format(str0, str1)),
 
+gps_vis_obj     = aggie([('vis_sats', atom(('B',  '{}')))])
+gps_vis_azel    = aggie([('sv_id',    atom(('B',  '{}'))),
+                         ('sv_az',    atom(('>h', '{}'))),
+                         ('sv_el',    atom(('>h', '{}')))])
+
+def gps_vis_decoder(buf, obj):
+    consumed = obj.set(buf)
+    print(obj)
+    num_sats = obj['vis_sats'].val
+    for n in range(num_sats):
+        consumed += gps_vis_azel.set(buf[consumed:])
+        print(gps_vis_azel)
 
 # OkToSend
 gps_ots_obj = atom(('B', '{}'))
