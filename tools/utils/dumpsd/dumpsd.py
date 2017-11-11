@@ -276,22 +276,25 @@ def gps_geo_decoder(buf, obj):
 mid_count = {}
 
 mid_table = {
-#  mid   decoder, object,  name
-     2: (gps_nav_decoder,   gps_nav_obj,   "NAV_DATA"),
-     4: (None, None, "nav_track"),
-     6: (gps_swver_decoder, gps_swver_obj, "SW_VER"),
-     7: (None, None, "CLK_STAT"),
-     9: (None, None, "cpu thruput"),
-    11: (None, None, "ACK"),
-    18: (gps_ots_decoder,   gps_ots_obj,   "OkToSend"),
-    41: (gps_geo_decoder,   gps_geo_obj,   "GEO_DATA"),
-    51: (None, None, "unk_51"),
-    56: (None, None, "ext_ephemeris"),
-    65: (None, None, "gpio"),
-    71: (None, None, "hw_config_req"),
-    88: (None, None, "unk_88"),
-    92: (None, None, "cw_data"),
-    93: (None, None, "TCXO learning"),
+#  mid    decoder               object          name
+     2: ( gps_nav_decoder,      gps_nav_obj,    "NAV_DATA"),
+     4: ( gps_navtrk_decoder,   gps_navtrk_obj, "NAV_TRACK"),
+     6: ( gps_swver_decoder,    gps_swver_obj,  "SW_VER"),
+     7: ( None,                 None,           "CLK_STAT"),
+     9: ( None,                 None,           "cpu thruput"),
+    11: ( None,                 None,           "ACK"),
+    13: ( gps_vis_decoder,      gps_vis_obj,    "VIS_LIST"),
+    18: ( gps_ots_decoder,      gps_ots_obj,    "OkToSend"),
+#    28: ( gps_navlib_decoder,   gps_navlib_obj, "NAV_LIB"),
+    28: ( None,                 None,           "NAV_LIB"),
+    41: ( gps_geo_decoder,      gps_geo_obj,    "GEO_DATA"),
+    51: ( None,                 None,           "unk_51"),
+    56: ( None,                 None,           "ext_ephemeris"),
+    65: ( None,                 None,           "gpio"),
+    71: ( None,                 None,           "hw_config_req"),
+    88: ( None,                 None,           "unk_88"),
+    92: ( None,                 None,           "cw_data"),
+    93: ( None,                 None,           "TCXO learning"),
 }
 
 # gps piece, big endian
@@ -415,8 +418,11 @@ def decode_gps_raw(buf, obj):
     except KeyError:
         mid_count[mid] = 1
     print_gps_hdr(obj, mid)
-    if mid in mid_table and mid_table[mid][0]:
-        mid_table[mid][0](buf[consumed:], mid_table[mid][1])
+    if mid in mid_table:
+        decoder    = mid_table[mid][0]
+        decode_obj = mid_table[mid][1]
+        if decoder:
+            decoder(buf[consumed:], decode_obj)
     print
 
 
@@ -429,8 +435,7 @@ def decode_gps_raw(buf, obj):
 dt_count = {}
 
 dt_records = {
-# dt decoder obj name
-     0: (decode_tintryalf,      dt_tintryalf_obj,  "TINTRYALF"),
+#   dt   decoder                obj                 name
      1: (decode_reboot,         dt_reboot_obj,     "REBOOT"),
      2: (decode_version,        dt_version_obj,    "VERSION"),
      3: (decode_sync,           dt_sync_obj,       "SYNC"),
