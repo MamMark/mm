@@ -451,6 +451,34 @@ dt_records = {
   }
 
 
+def buf_str(buf):
+    """
+    Convert buffer into its display bytes
+    """
+    i    = 0
+    p_ds = ''
+    p_s  = binascii.hexlify(buf)
+    while (i < (len(p_s))):
+        p_ds += p_s[i:i+2] + ' '
+        i += 2
+    return p_ds
+
+
+def dump_buf(buf):
+    bs = buf_str(buf)
+    stride = 16         # how many bytes per line
+
+    # 3 chars per byte
+    idx = 0
+    print('buf:  '),
+    while(idx < len(bs)):
+        max_loc = min(len(bs), idx + (stride * 3))
+        print(bs[idx:max_loc])
+        idx += (stride * 3)
+        if idx < len(bs):              # if more then print counter
+            print('{:04x}: '.format(idx/3)),
+
+
 # gen_data_bytes generates data bytes from file (stripped of non-data bytes).
 #
 # Uses generator.send() to pass number of bytes to be read
@@ -525,17 +553,6 @@ def gen_records(fd):
         if (rlen % 4):
             data_bytes.send(4 - (rlen % 4))  # skip to next word boundary
 
-def buf_str(buf):
-    """
-    Convert buffer into its display bytes
-    """
-    i    = 0
-    p_ds = ''
-    p_s  = binascii.hexlify(buf)
-    while (i < (len(p_s))):
-        p_ds += p_s[i:i+2] + ' '
-        i += 2
-    return p_ds
 
 # main processing loop
 #
@@ -544,20 +561,10 @@ def buf_str(buf):
 def dump(args):
     total = 0
     with open(args.input, 'rb') as infile:
-        for rlen, rtype, offset, buf in gen_records(infile):
-            print("type: {}, len: {}, next: {} ({})".format(
-                rtype, rlen, (infile.tell()-512)+offset,
-                hex((infile.tell()-512)+offset)))
-            bs = buf_str(buf)
-            stride = 16         # how many bytes per line
-                                # 3 chars per byte
-            idx = 0
-            print('buf:  '),
-            while(idx < len(bs)):
-                print(bs[idx:idx + (stride * 3)])
-                idx += (stride * 3)
-                if idx < len(bs):       # if more then print counter
-                    print('{:04x}: '.format(idx/3)),
+        for hdr_offset, rlen, rtype, buf in gen_records(infile):
+            print("@{} ({}): type: {}, len: {}".format(
+                hdr_offset, hex(hdr_offset), rtype, rlen))
+            dump_buf(buf)
             try:
                 dt_count[rtype] += 1
             except KeyError:
@@ -612,5 +619,5 @@ if __name__ == "__main__":
                 print(dt_val)
                 if (dt_val[2] == rtype_str):
                     print(rtype_str)
-#    dump(args)
-    print(args)
+    dump(args)
+#    print(args)
