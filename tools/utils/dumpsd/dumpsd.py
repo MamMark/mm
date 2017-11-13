@@ -34,7 +34,7 @@ from collections import OrderedDict
 DT_H_REVISION       = 0x00000003
 
 LOGICAL_SECTOR_SIZE = 512
-LOGICAL_BLOCK_SIZE  = 508  # excludes trailer
+LOGICAL_BLOCK_SIZE  = 508       # excludes trailer
 
 
 class atom(object):
@@ -108,17 +108,16 @@ hdr_obj = aggie(OrderedDict([
     ('type', atom(('H', '{}'))),
     ('xt',   atom(('I', '0x{:04x}')))]))
 
+
 def print_hdr(obj):
     rtype = obj['hdr']['type'].val
-    print('{:08x} ({:2}) {:6} -- '.format(
+    # gratuitous space shows up after the print, sigh
+    print('{:08x} ({:2}) {:6} --'.format(
         obj['hdr']['xt'].val,
         rtype, dt_records[rtype][2])),
 
 
 # all dt parts are native and little endian
-#
-# TINTRYALF (0)) is not a data type but a special case that
-# kicks us to the next sector.  This Is Not The Record You Are Looking For
 
 dt_simple_hdr   = aggie(OrderedDict([('hdr', hdr_obj)]))
 
@@ -334,7 +333,6 @@ mid_table = {
     11: ( None,                 None,           "ACK"),
     13: ( gps_vis_decoder,      gps_vis_obj,    "VIS_LIST"),
     18: ( gps_ots_decoder,      gps_ots_obj,    "OkToSend"),
-#    28: ( gps_navlib_decoder,   gps_navlib_obj, "NAV_LIB"),
     28: ( None,                 None,           "NAV_LIB"),
     41: ( gps_geo_decoder,      gps_geo_obj,    "GEO_DATA"),
     51: ( None,                 None,           "unk_51"),
@@ -548,32 +546,57 @@ def dump_buf(buf):
 # sectors to be read. Any remaining data in the sector will be used
 # in the next yield request.
 #
+# sect: space for holding a full LOGICAL_SECTOR
+# blk:  we split sect apart into 508 bytes (blk), seq_no,and chk_sum
+# buf:  is the marshalling buffer where we collect all the data
+#       that has been asked for.
+#
+# file_offset, buf = data_bytes.send(req_len)
+#
+# input:  num  (req_len) how much we want to get back
+# output: file_offset: file relative position of first byte returned
+#         buf:         buffer of bytes being returned.
+#
 def gen_data_bytes(fd):
+    blk_str = str(LOGICAL_BLOCK_SIZE)
+    blk_str += 'sHH'
+    blk_struct = struct.Struct(blk_str)
+
     # skip first block, directory block (reserved)
-    blk = fd.read(LOGICAL_SECTOR_SIZE)
-    if not blk:
+    sect = fd.read(LOGICAL_SECTOR_SIZE)
+    if not sect:
         return
-    blk_struct = struct.Struct("508sHH")
+    blk, seq_no, chk_sum = blk_struct.unpack(sect)
+
     file_offset = 0
-    offset = 512                        # consumed first sector, dir
+    offset = LOGICAL_SECTOR_SIZE        # consumed first sector, dir
+    seq_no  = 0
+    chk_sum = 0
     old_seq_no = 0
     buf = bytearray()
     while (True):
         num = yield file_offset, buf
 
         # starting byte is file_offset, and one sector has been read
-        file_offset = offset + (fd.tell() - 512)
+        file_offset = offset + (fd.tell() - LOGICAL_SECTOR_SIZE)
         buf = bytearray()               # clear the return buffer each time
+        #
+        # special case, they fed us -1 saying kick to next sector we need
+        # to use LOGICAL_SECTOR_SIZE (512) here because we immediately wrap
+        # around back to the yield which says we are starting a new sector
+        # (gets read below).
+        #
         if (num < 0):
-            offset = 508                # consume the rest, next sector
+            offset = LOGICAL_SECTOR_SIZE     # consume the rest, next sector
         else:
             while (num > 0):
-                if (offset >= 508):     # nothing left
+                if (offset >= len(blk)):     # nothing left
                     sect = fd.read(LOGICAL_SECTOR_SIZE)
                     offset = 0
                     if not sect:
                         break
                     blk, seq_no, chk_sum = blk_struct.unpack(sect)
+
                     # check sequence number for discontinuity
                     if (seq_no) and (seq_no != (old_seq_no + 1)):
                         print('*** oops, seq mismatch: old: {}, cur: {}'.format(
@@ -584,6 +607,7 @@ def gen_data_bytes(fd):
                             else LOGICAL_BLOCK_SIZE - offset
                 buf.extend(blk[offset:offset+limit])
                 offset += limit
+                if offset >= len(blk): offset = LOGICAL_SECTOR_SIZE
                 num -= limit
 
 
