@@ -48,12 +48,13 @@ module CollectP {
   uses {
     interface SSWrite as SSW;
     interface Panic;
+    interface SysReboot @atleastonce();
     interface LocalTime<TMilli>;
   }
 }
 
 implementation {
-  dc_control_t dcc;
+  norace dc_control_t dcc;
 
   command error_t Init.init() {
     dcc.majik_a = DC_MAJIK;
@@ -62,18 +63,38 @@ implementation {
   }
 
 
+  /*
+   * finish_sector
+   *
+   * o add the sequence number into the checksum
+   * o write the sequence number at 508
+   * o write checksum at 510
+   *
+   * Note: SSW keeps buffers in the 0 state, on initialization, when
+   * flushed, and when SDwrite.writeDone() is called.  We don't need
+   * to zero out the rest of the buffer.  Should already be zeros.
+   */
   void finish_sector() {
-    unsigned int i;
+    uint16_t *p;
 
-    /* won't change checksum */
-    for (i = 0; i < dcc.remaining; i++)
-      *dcc.cur_ptr++ = 0;       /* zero out the rest */
+    nop();                              /* BRK */
     dcc.remaining = 0;
     dcc.chksum += (dcc.seq & 0xff);
     dcc.chksum += (dcc.seq >> 8);
-    (*(uint16_t *) dcc.cur_ptr) = dcc.seq++;
-    dcc.cur_ptr += 2;
-    (*(uint16_t *) dcc.cur_ptr) = dcc.chksum;
+    p = (void *) (dcc.cur_buf + DC_SEQ_LOC);
+    *p++ = dcc.seq++;
+    *p++ = dcc.chksum;
+  }
+
+
+  /*
+   * normal finish
+   *
+   * first finish the sector then hand it off to SSW
+   * reinitialize the control cells to no buffer here.
+   */
+  void normal_finish() {
+    finish_sector();
     call SSW.buffer_full(dcc.handle);
     dcc.handle = NULL;
     dcc.cur_buf = NULL;
@@ -90,7 +111,7 @@ implementation {
     if (dcc.remaining == 0 || !count)   /* nothing to align */
       return;
     if (dcc.remaining < 4) {
-      finish_sector();
+      normal_finish();
       return;
     }
 
@@ -142,7 +163,7 @@ implementation {
       dlen -= num_to_copy;
       dcc.remaining -= num_to_copy;
       if (dcc.remaining == 0) {
-        finish_sector();
+        normal_finish();
       }
     }
   }
@@ -216,12 +237,12 @@ implementation {
 
       /*
        * If we had exactly 4 bytes left, the DT_TINTRYALF will have filled
-       * it forcing a finish_sector, leaving no remaining bytes.  But if we
+       * it forcing a normal_finish, leaving no remaining bytes.  But if we
        * still have some remaining then flush the current sector out and start
        * fresh.
        */
       if (dcc.remaining)
-        finish_sector();
+        normal_finish();
 
       /* and try again in the new sector */
     }
@@ -243,6 +264,38 @@ implementation {
     ep->arg3 = arg3;
     ep->ev = ev;
     call Collect.collect((void *)ep, sizeof(e), NULL, 0);
+  }
+
+  async event void SysReboot.shutdown_flush() {
+    uint16_t *p;
+
+    /* now tell StreamWrite to flush everything */
+    nop();                              /* BRK */
+
+    /*
+     * current buffer says we have a buffer in progress.  Its ALLOC'd.  We
+     * need to finish it off and then write it out along with any others
+     * that are pending.
+     */
+    if (dcc.cur_buf) {
+      /*
+       * have a current buffer.  If we have space then add
+       * a FLUSH record.  Only takes up a simple header, 4 bytes
+       *
+       * this tells what happened if possible.
+       */
+      if (dcc.remaining >= 4) {
+        p = (void *) dcc.cur_ptr;
+        *p++ = 4;                       /* length of 4 */
+        *p++ = DT_FLUSH;                /* and the type */
+        dcc.chksum += 4;
+        dcc.chksum += DT_FLUSH;
+        dcc.cur_ptr = (void *) p;
+        dcc.remaining -= 4;
+      }
+      finish_sector();
+    }
+    call SSW.flush_all();
   }
 
   async event void Panic.hook() { }

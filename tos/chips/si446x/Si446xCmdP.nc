@@ -34,10 +34,10 @@
  * Author: Daniel J. Maltbie <dmaltbie@daloma.org>
  */
 
-#include "trace.h"
-#include "panic.h"
+#include <trace.h>
+#include <panic.h>
 #include <si446x.h>
-#include "RadioConfig.h"
+#include <RadioConfig.h>
 
 #ifndef PANIC_RADIO
 enum {
@@ -87,11 +87,11 @@ const dump_prop_desc_t g_dump_group_list[] = {
 #endif
   { 0x2000, (void *) &g_radio_dump.MODEM,          SI446X_GROUP20_SIZE },
   { 0x2100, (void *) &g_radio_dump.MODEM_CHFLT,    SI446X_GROUP21_SIZE },
-  { 0x2200, (void *) &g_radio_dump.PAx,             SI446X_GROUP22_SIZE },
+  { 0x2200, (void *) &g_radio_dump.PAx,            SI446X_GROUP22_SIZE },
   { 0x2300, (void *) &g_radio_dump.SYNTH,          SI446X_GROUP23_SIZE },
-  { 0x3000, (void *) &g_radio_dump.MATCH,         SI446X_GROUP30_SIZE },
-  { 0x4000, (void *) &g_radio_dump.FREQ_CTL,       SI446X_GROUP40_SIZE },
-  { 0x5000, (void *) &g_radio_dump.RX_HOP,        SI446X_GROUP50_SIZE },
+  { 0x3000, (void *) &g_radio_dump.MATCH,          SI446X_GROUP30_SIZE },
+  { 0x4000, (void *) &g_radio_dump.FREQ_CONTROL,   SI446X_GROUP40_SIZE },
+  { 0x5000, (void *) &g_radio_dump.RX_HOP,         SI446X_GROUP50_SIZE },
 //  { 0xF000, (void *) &g_radio_dump.grF0_pti,      SI446X_GROUPF0_SIZE },
   { 0, NULL, 0 },
 };
@@ -177,9 +177,10 @@ const uint8_t start_rx_cmd[] = {
   0,                                  /* channel */
   0,                                  /* start immediate */
   0, 0,                               /* len, use variable length */
-  0,                                  /* rxtimeout, stay, good boy */
-  0,                                  /* rxvalid */
-  0,                                  /* rxinvalid */
+//  0, 0, 0,
+  RC_NO_CHANGE,                       /* rxtimeout, stay, good boy */
+  RC_READY,                           /* rxvalid */
+  RC_READY,                           /* rxinvalid */
 };
 
 /*
@@ -199,7 +200,7 @@ const uint8_t start_rx_cmd[] = {
  * or when SYNC is detected.
  */
 const uint8_t si446x_frr_config[] = { 0x11, 0x02, 0x04, 0x00,
-				      0x09, 0x04, 0x06, 0x0a
+                                      0x09, 0x04, 0x06, 0x0a
                                     };
 
 /**************************************************************************/
@@ -221,8 +222,8 @@ module Si446xCmdP {
   }
 }
 implementation {
-#define __PANIC_RADIO(where, w, x, y, z) do {		  \
-    call Panic.panic(PANIC_RADIO, where, w, x, y, z);	  \
+#define __PANIC_RADIO(where, w, x, y, z) do {             \
+    call Panic.panic(PANIC_RADIO, where, w, x, y, z);     \
   } while (0);
 
   /**************************************************************************/
@@ -243,7 +244,7 @@ implementation {
   /*
    * Trace Radio SPI bus transfer event
    */
-  void ll_si446x_spi_trace(spi_trace_record_t op, uint8_t id, uint8_t *b, uint8_t l) {
+  void ll_si446x_spi_trace(spi_trace_record_t op, uint8_t id, uint8_t *b, uint16_t l) {
     spi_trace_desc_t    *rspi;
     uint16_t            x;
 
@@ -905,13 +906,13 @@ implementation {
       ll_si446x_read_fast_status(radio_pend);
       if ((t1-t0) > SI446X_CTS_TIMEOUT) {
         ll_si446x_read_fast_status(radio_pend1);
-	ll_si446x_trace(T_RC_WAIT_CTS_F, radio_pend1[0], t1-t0);
+        ll_si446x_trace(T_RC_WAIT_CTS_F, radio_pend1[0], t1-t0);
 #ifdef notdef
         ll_si446x_drf();
-	__PANIC_RADIO(24, t1, t0, t1-t0, 0);
+        __PANIC_RADIO(24, t1, t0, t1-t0, 0);
 #endif
         ll_si446x_read_fast_status(radio_pend);
-	return FALSE;
+        return FALSE;
       }
     }
     ll_si446x_read_fast_status(radio_pend);
@@ -928,9 +929,9 @@ implementation {
 
     ll_si446x_read_fast_status(status);
     ll_si446x_trace(T_RC_INTERRUPT,
-		    (status[0] << 8) | status[1],
-		    (status[2] << 8) | status[3]
-		    );
+                    (status[0] << 8) | status[1],
+                    (status[2] << 8) | status[3]
+                    );
     signal Si446xCmd.interrupt();
   }
 
@@ -946,17 +947,17 @@ implementation {
    * @return    final state achieved
    */
 
-  async command Si446x_device_state_t Si446xCmd.change_state(Si446x_device_state_t state, bool wait) {
+  async command si446x_device_state_t Si446xCmd.change_state(si446x_device_state_t state, bool wait) {
     uint8_t cmd[2];
     uint8_t ro, rn;
 
     cmd[0] = SI446X_CMD_CHANGE_STATE;
     cmd[1] = state;                          // new state
-    ro = ll_si446x_read_frr(SI446X_GET_DEVICE_STATE);
+    ro = call Si446xCmd.fast_device_state();
     ll_si446x_send_cmd(cmd, sizeof(cmd));
     if (wait)
       ll_wait_for_cts();           // wait for command to complete
-    rn = ll_si446x_read_frr(SI446X_GET_DEVICE_STATE);
+    rn = call Si446xCmd.fast_device_state();
     ll_si446x_trace(T_RC_CHG_STATE, ro, rn);
     return rn;
   }

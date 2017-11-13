@@ -16,17 +16,6 @@
 #include <panic.h>
 #include <platform_panic.h>
 
-#ifdef ENABLE_ERASE
-#ifdef ALWAYS_ERASE
-bool     do_erase = 1;
-#else
-bool     do_erase = 0;
-#endif
-uint32_t erase_start;
-uint32_t erase_end;
-#endif
-
-
 typedef enum {
   DMS_IDLE = 0,				/* doing nothing */
   DMS_REQUEST,				/* resource requested */
@@ -53,14 +42,10 @@ module DblkManagerP {
     interface Boot;			/* incoming boot signal */
     interface FileSystem;
     interface SDread;
+    interface SDraw;
     interface SSWrite as SSW;
     interface Resource as SDResource;
     interface Panic;
-
-#ifdef ENABLE_ERASE
-    interface SDerase;
-#endif
-
   }
 }
 
@@ -68,7 +53,7 @@ implementation {
 
 #define DM_SIG 0x5542
 
-  struct {
+norace  struct {
     uint16_t dm_sig_a;
     uint32_t dblk_lower;                /* inclusive  */
     uint32_t dblk_nxt;                  /* 0 - oht oh */
@@ -79,6 +64,7 @@ implementation {
   dm_state_t   dm_state;
   uint8_t     *dm_buf;
   uint32_t     lower, cur_blk, upper;
+  bool         do_erase = 0;
 
 
   void dm_panic(uint8_t where, parg_t p0, parg_t p1) {
@@ -86,28 +72,21 @@ implementation {
   }
 
 
-  /*
-   * blk_empty
-   *
-   * check if a Stream storage data block is empty.
-   * Currently, an empty (erased SD data block) looks like
-   * it is zeroed.  So we look for all data being zero.
-   */
-
-  int blk_empty(uint8_t *buf) {
-    uint16_t i;
-    uint16_t *ptr;
-
-    ptr = (void *) buf;
-    for (i = 0; i < SD_BLOCKSIZE/2; i++)
-      if (ptr[i])
-	return(0);
-    return(1);
-  }
-
-
   event void Boot.booted() {
     error_t err;
+
+#ifdef DBLK_ERASE_ENABLE
+    /*
+     * FS.erase is split phase and will grab the SD,  We will wait on the
+     * erase when we request.  The FS/erase will complete and then we
+     * will get the grant.
+     */
+    nop();                              /* BRK */
+    if (do_erase) {
+      do_erase = 0;
+      call FileSystem.erase(FS_LOC_DBLK);
+    }
+#endif
 
     lower = call FileSystem.area_start(FS_LOC_DBLK);
     upper = call FileSystem.area_end(FS_LOC_DBLK);
@@ -131,6 +110,8 @@ implementation {
   event void SDResource.granted() {
     error_t err;
 
+    nop();
+    nop();                              /* BRK */
     if (dm_state != DMS_REQUEST) {
       dm_panic(2, dm_state, 0);
       return;
@@ -153,6 +134,8 @@ implementation {
     uint8_t    *dp;
     bool        empty;
 
+    nop();
+    nop();                              /* BRK */
     dp = dm_buf;
     if (err || dp == NULL || dp != read_buf) {
       call Panic.panic(PANIC_DM, 5, err, (parg_t) dp, (parg_t) read_buf, 0);
@@ -165,8 +148,8 @@ implementation {
         return;
 
       case DMS_START:
-        /* if blk is empty, dmc.dblk_nxt is already correct. */
-	if (blk_empty(dp))
+        /* if blk is erased, dmc.dblk_nxt is already correct. */
+	if (call SDraw.chk_erased(dp))
 	  break;
 
 	lower = dmc.dblk_nxt;
@@ -182,7 +165,7 @@ implementation {
 	return;
 
       case DMS_SCAN:
-	empty = blk_empty(dp);
+	empty = call SDraw.chk_erased(dp);
 	if (empty)
 	  upper = cur_blk;
 	else
@@ -190,7 +173,7 @@ implementation {
 
 	if (lower >= upper) {
 	  /*
-	   * we've looked at all the blocks.  Check the state of the last block looked at
+
 	   * if empty we be good.  Otherwise no available storage.
 	   */
 	  if (empty) {
@@ -212,17 +195,6 @@ implementation {
 	return;
     }
 
-
-#ifdef ENABLE_ERASE
-    if (do_erase) {
-      erase_start = dmc.dblk_lower;
-      erase_end   = dmc.dblk_upper;
-      nop();
-      call SDerase.erase(erase_start, erase_end);
-      return;
-    }
-#endif
-
     dm_state = DMS_IDLE;
 
     /*
@@ -233,35 +205,29 @@ implementation {
      * Then when we release, it will get the SD without powering the
      * SD down.
      */
+    nop();                              /* BRK */
     signal Booted.booted();
     call SDResource.release();
   }
 
 
-#ifdef ENABLE_ERASE
-  event void SDerase.eraseDone(uint32_t blk_start, uint32_t blk_end, error_t error) {
-    dm_state = DMS_IDLE;
-    dmc.dblk_nxt = dmc.dblk_lower + 1;
-
-    signal Booted.booted();
-    call SDResource.release();
-  }
-#endif
-
-
-  command uint32_t DblkManager.get_nxt_blk() {
+  async command uint32_t DblkManager.get_nxt_blk() {
     return dmc.dblk_nxt;
   }
 
 
-  command uint32_t DblkManager.adv_nxt_blk() {
-    if (dmc.dblk_nxt) {
-      dmc.dblk_nxt++;
-      if (dmc.dblk_nxt > dmc.dblk_upper)
-	dmc.dblk_nxt = 0;
+  async command uint32_t DblkManager.adv_nxt_blk() {
+    atomic {
+      if (dmc.dblk_nxt) {
+        dmc.dblk_nxt++;
+        if (dmc.dblk_nxt > dmc.dblk_upper)
+          dmc.dblk_nxt = 0;
+      }
     }
     return dmc.dblk_nxt;
   }
+
+  event void FileSystem.eraseDone(uint8_t which) { }
 
   async event void Panic.hook() { }
 }

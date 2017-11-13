@@ -66,19 +66,24 @@ implementation {
     rp->stamp_ms = call SyncTimer.getNow();
     rp->sync_majik = SYNC_MAJIK;
     rp->time_cycle = 0;                 /* for now only time_cycle 0 */
+    rp->dt_h_revision = DT_H_REVISION;  /* flag which version of typed_data we are using */
 
-    rp->hard_reset = owcp->hard_reset;
-    rp->boot_count = owcp->reboot_count;
+    rp->reset_status = owcp->reset_status;
+    rp->reset_others = owcp->reset_others;
+    rp->from_base    = owcp->from_base;
+    rp->cur_base     = call OverWatch.getImageBase();
+    rp->boot_count   = owcp->reboot_count;
 
     rp->elapsed_upper = owcp->elapsed_upper;
     rp->elapsed_lower = owcp->elapsed_lower;
 
-    rp->strange = owcp->strange;
+    rp->strange     = owcp->strange;
+    rp->strange_loc = owcp->strange_loc;
     rp->vec_chk_fail = owcp->vec_chk_fail;
     rp->image_chk_fail = owcp->image_chk_fail;
     rp->reboot_reason = owcp->reboot_reason;
 
-    call OverWatch.clearReset();
+    call OverWatch.clearReset();        /* clears owcb copies */
     call Collect.collect((void *) rp, sizeof(r), NULL, 0);
   }
 

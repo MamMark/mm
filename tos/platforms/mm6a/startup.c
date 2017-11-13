@@ -48,6 +48,13 @@
 #include <platform_version.h>
 #include <image_info.h>
 #include <overwatch.h>
+#include <cpu_stack.h>
+
+//#define __MSP432_DVRLIB_ROM__
+#include <rom.h>
+#include <rom_map.h>
+#include "flash.h"
+
 
 #ifndef nop
 #define nop() __asm volatile("nop")
@@ -75,6 +82,9 @@ extern uint32_t __data_start__;
 extern uint32_t __data_end__;
 extern uint32_t __bss_start__;
 extern uint32_t __bss_end__;
+extern uint32_t __crash_stack_start__;
+extern uint32_t __crash_stack_top__;
+extern uint32_t __stack_start__;
 extern uint32_t __StackTop__;
 
 extern uint32_t __image_start__;
@@ -93,14 +103,32 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   .vector_chk   = 0,                            /* 32 bit checksum over the vector table */
   .image_chk    = 0,                            /* 32 bit checksum over full image size. */
   .ver_id       = { .major = MAJOR, .minor = MINOR, .build = _BUILD },
+  .descriptor0  = { 0 },
+  .descriptor1  = { 0 },
+  .stamp_date   = { 0 },
   .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV }
 };
 
+/* see OverWatchP.nc for details */
 ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
+
+/* space to save registers during crash processing */
+uint32_t crash_regs[CRASH_REGS_BYTES]   __attribute__ ((section(".crash_regs")));
+
+/* Crash stack is used by unhandled Exception/Fault and Panic */
+uint8_t crash_stack[CRASH_STACK_BYTES] __attribute__ ((section(".crash_stack")));
 
 int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
-void __system_init();
+void __system_init(bool disable_dcor);
+
+/* see tos/mm/OverWatch/OverWatchP.nc */
+extern void owl_strange2gold(uint32_t loc);
+extern void owl_startup();
+
+/* see tos/system/panic/PanicP.nc */
+extern void __panic_exception_entry(uint32_t exception);
+
 
 #ifdef MEMINIT_STOP
 #define MEMINIT_MAGIC0 0x1061
@@ -116,12 +144,16 @@ volatile noinit meminit_stop_t meminit_stop;
 
 #endif          /* MEMINIT_STOP */
 
-volatile        uint8_t handler_fault_wait = 1;
+#ifdef HANDLER_FAULT_WAIT
+volatile        uint8_t handler_fault_wait;     /* set to deadbeaf to continue */
+#endif
 
-void handler_debug() {
-  uint32_t t0, i, exception;
+/*
+ * make sure only R0-R3 are used in this routine
+ */
+void handler_debug(uint32_t exception) {
+  uint32_t t0, i;
 
-  exception = __get_xPSR() & 0x1ff;
   WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;      /* 5 */
   t0 = USECS_VAL;
   while ((USECS_VAL - t0) < WIGGLE_DELAY) ;
@@ -139,35 +171,50 @@ void handler_debug() {
   ROM_DEBUG_BREAK(0);
 
 #ifdef HANDLER_FAULT_WAIT
-  while (handler_fault_wait) {
+  while (handler_fault_wait != 0xdeadbeaf) {
     nop();
   };
+  handler_fault_wait = 0;
 #endif
 
 }
 
 
+#ifdef notdef
+/*
+ * If we ever go to an independent HardFault_Handler this is the
+ * start.
+ */
 void HardFault_Handler() __attribute__((interrupt));
 void HardFault_Handler() {
-
-  handler_debug();
-
+  __default_handler();
   /* If set, make sure to clear:
    *
    * CFSR.MMARVALID, BFARVALID
    */
 }
+#endif
 
 void __default_handler()  __attribute__((interrupt));
-void __default_handler()  { handler_debug(); }
+void __default_handler()  {
+  uint32_t exception;
+
+  exception = __get_xPSR() & 0x1ff;
+  handler_debug(exception);
+  __panic_exception_entry(exception);
+}
 
 
 /*
  * Unless overridded, most handlers get aliased to __default_handler.
  */
 
+#ifdef notdef
+/*
+ * we no longer let others override system exception handlers
+ */
 void Nmi_Handler()        __attribute__((weak));
-//void HardFault_Handler()  __attribute__((weak));
+void HardFault_Handler()  __attribute__((weak));
 void MpuFault_Handler()   __attribute__((weak));
 void BusFault_Handler()   __attribute__((weak));
 void UsageFault_Handler() __attribute__((weak));
@@ -175,16 +222,17 @@ void SVCall_Handler()     __attribute__((weak));
 void Debug_Handler()      __attribute__((weak));
 void PendSV_Handler()     __attribute__((weak));
 void SysTick_Handler()    __attribute__((weak));
+#endif
 
-void Nmi_Handler()        { handler_debug(); }
-//void HardFault_Handler()  { handler_debug(); }
-void MpuFault_Handler()   { handler_debug(); }
-void BusFault_Handler()   { handler_debug(); }
-void UsageFault_Handler() { handler_debug(); }
-void SVCall_Handler()     { handler_debug(); }
-void Debug_Handler()      { handler_debug(); }
-void PendSV_Handler()     { handler_debug(); }
-void SysTick_Handler()    { handler_debug(); }
+void Nmi_Handler()        __attribute__((alias("__default_handler")));
+void HardFault_Handler()  __attribute__((alias("__default_handler")));
+void MpuFault_Handler()   __attribute__((alias("__default_handler")));
+void BusFault_Handler()   __attribute__((alias("__default_handler")));
+void UsageFault_Handler() __attribute__((alias("__default_handler")));
+void SVCall_Handler()     __attribute__((alias("__default_handler")));
+void Debug_Handler()      __attribute__((alias("__default_handler")));
+void PendSV_Handler()     __attribute__((alias("__default_handler")));
+void SysTick_Handler()    __attribute__((alias("__default_handler")));
 
 void PSS_Handler()        __attribute__((weak, alias("__default_handler")));
 void CS_Handler()         __attribute__((weak, alias("__default_handler")));
@@ -353,8 +401,8 @@ void __map_ports() {
  * Exception/Interrupt system initilization
  *
  * o enable all faults to go to their respective handlers
- *   mpu still hardfaults.
- *   others are caught with ROM_DEBUG_BREAK(0)
+ * o handlers by default do handler_debug and __panic_exception_entry
+ *   which then kicks Panic.
  *
  * Potential issue with PendSV.
  * http://embeddedgurus.com/state-space/2011/09/whats-the-state-of-your-cortex/
@@ -368,6 +416,7 @@ void __map_ports() {
 
 void __exception_init() {
   SCB->CCR |= (DIV0_TRAP | UNALIGN_TRAP);
+  SCB->SHCSR |= (USGFAULT_ENA | BUSFAULT_ENA | MPUFAULT_ENA);
 }
 
 
@@ -445,7 +494,12 @@ void __debug_init() {
   SCnSCB->ACTLR |= SCnSCB_ACTLR_DISOOFP_Pos |
     SCnSCB_ACTLR_DISDEFWBUF_Msk;
 
-#ifdef notdef
+  /*
+   * By default we stop all the clocks we can to the peripherals
+   * when in the debugger.  This helps to avoid inadvertant timeouts
+   * when debugging.
+   */
+
   SYSCTL->PERIHALT_CTL =
     SYSCTL_PERIHALT_CTL_HALT_T16_0      |       /* TA0 TMicro */
     SYSCTL_PERIHALT_CTL_HALT_T16_1      |       /* TA1 TMilli */
@@ -464,7 +518,7 @@ void __debug_init() {
     SYSCTL_PERIHALT_CTL_HALT_WDT        |
     SYSCTL_PERIHALT_CTL_HALT_DMA
     ;
-#endif
+
 }
 
 void __ram_init() {
@@ -655,8 +709,9 @@ void __t32_init() {
 
 uint32_t lfxt_startup_time;
 
-void __core_clk_init() {
+void __core_clk_init(bool disable_dcor) {
   uint32_t timeout;
+  uint32_t control;
 
   /*
    * only change from internal res to external when dco in dcorsel_1.
@@ -664,10 +719,13 @@ void __core_clk_init() {
    * it stays set and we no longer care about changing it (because
    * it always stays 1).
    *
-   * hitting the clocks here looks like it take 8.5us to switch.
+   * hitting the clocks here looks like it takes 8.5us to switch.
    */
-  CS->KEY = CS_KEY_VAL;
-  CS->CTL0 = CLK_DCORSEL | CS_CTL0_DCORES | CLK_DCOTUNE;
+  control  = CLK_DCORSEL | CLK_DCOTUNE;
+  if (!disable_dcor) control |= CS_CTL0_DCORES;
+
+  CS->KEY  = CS_KEY_VAL;
+  CS->CTL0 = control;
   CS->CTL1 = CS_CTL1_SELS__DCOCLK  | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
              CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 |
              CS_CTL1_SELM__DCOCLK  | CS_CTL1_DIVM__1;
@@ -695,7 +753,8 @@ void __core_clk_init() {
     if (--timeout == 0) {
       CS->IFG;
       CS->STAT;
-      ROM_DEBUG_BREAK(0);       /* panic?  what to do, what to do */
+      ROM_DEBUG_BREAK(0);
+      owl_strange2gold(0x1000);
     }
     BITBAND_PERI(CS->CLRIFG,CS_CLRIFG_CLR_LFXTIFG_OFS) = 1;
   }
@@ -769,14 +828,14 @@ void __start_timers() {
  * rawJiffies<- TA1 <- ACLK/1 (32KiHz) 16 bits wide
  */
 
-void __system_init(void) {
+void __system_init(bool disable_dcor) {
   __exception_init();
   __debug_init();
   __ram_init();
   __pwr_init();
   __flash_init();
 
-  __core_clk_init();
+  __core_clk_init(disable_dcor);
 
   __ta_init(TIMER_A0, TA_SMCLK_ID, MSP432_TA_EX);         /* Tmicro */
   __ta_init(TIMER_A1, TA_ACLK1,    TIMER_A_EX0_IDEX__1);  /* Tmilli */
@@ -859,37 +918,13 @@ void timer_check() {
 
 #endif
 
-extern owls_rtn_t owl_startup();
-
-void owl_finish(uint32_t base, owls_rtn_t rtn) {
-  /*
-   * make a copy of the HardReset register.  We can't do this earlier
-   * because the control block may not initilized.  This happens
-   * in owl_startup.  They will also zero the block if needed.
-   */
-  ow_control_block.hard_reset = RSTCTL->HARDRESET_STAT;
-  switch (rtn) {
-    case OWLS_REBOOT:
-      SYSCTL->REBOOT_CTL = (PRD_RESET_KEY | SYSCTL_REBOOT_CTL_REBOOT);
-      break;
-
-    case OWLS_BOOT_NIB:
-      __asm__ volatile (
-        "  ldr sp, [r0] \n"
-        "  ldr pc, [r0, #4] \n" );
-      break;
-
-    case OWLS_CONTINUE:
-      return;
-  }
-}
-
 
 void start() __attribute__((alias("__Reset")));
 void __Reset() {
   uint32_t *from;
   uint32_t *to;
-  owls_rtn_t owls_rtn;
+  bool      disable_dcor;
+  register void *stkptr asm("sp");
 
   /* make sure interrupts are disabled */
   __disable_irq();
@@ -939,14 +974,27 @@ void __Reset() {
   __map_ports();
 
   /*
-   * invoke overwatch low level to see how we should proceed.
+   * invoke overwatch low level to see how we should proceed.  this gets
+   * invoked regardless of Gold or Nib space.
+   *
+   * Will return if we should continue the normal boot.
+   *
+   * owl (overwatch lowlevel) is responsible for management of the
+   * ow_control_block.  Included is retrieving the current status of the
+   * reset system.  This is also where information about a possible DCO
+   * short shows up.
+   *
+   * owl_startup() will clean out any pending reset status bits so we
+   * need to look to see if the DCOR is shorted first.  If it is shorted
+   * it will reset the processor.
+   *
+   * If the short bit is set, disable the DCOR.
    */
-  if (SCB->VTOR == 0) {
-    owls_rtn = owl_startup();
-    owl_finish(NIB_BASE, owls_rtn);
-  }
+  disable_dcor = RSTCTL->CSRESET_STAT & RSTCTL_CSRESET_STAT_DCOR_SHT;
+  ROM_DEBUG_BREAK(0);
+  owl_startup();
 
-  __system_init();
+  __system_init(disable_dcor);
 
 //  timer_check();
 
@@ -970,20 +1018,52 @@ void __Reset() {
   }
 #endif
 
+  /*
+   * initialize both the crash_stack and normal stack.
+   *
+   * we set the entire areas to STACK_UNUSED and the last word of the stack
+   * to be STACK_GUARD.  This is actually the first word of the area since
+   * the stacks grow downward.
+   *
+   * If GUARD ever gets written on that is bad.
+   */
+
+  to    = &__crash_stack_start__;
+  *to++ = STACK_GUARD;
+  while (to < &__crash_stack_top__)
+    *to++ = STACK_UNUSED;
+
+  to    = &__stack_start__;
+  *to++ = STACK_GUARD;
+  while (to < (uint32_t *) stkptr)
+    *to++ = STACK_UNUSED;
+
   from = &__data_load__;
   to   = &__data_start__;;
-  while (to < &__data_end__) {
+  while (to < &__data_end__)
     *to++ = *from++;
-  }
 
   // Fill BSS data with 0
   to = &__bss_start__;
-  while (to < &__bss_end__) {
+  while (to < &__bss_end__)
     *to++ = 0;
-  }
 
   main();
   while (1) {
     ROM_DEBUG_BREAK(0);
   }
+}
+
+
+/*
+ * Flash access routines.  Linkages to either ROM or TI flash code
+ */
+
+bool __flash_performMassErase() {
+  return MAP_FlashCtl_performMassErase();
+}
+
+
+bool __flash_programMemory(void* src, void* dest, uint32_t length) {
+  return MAP_FlashCtl_programMemory(src, dest, length);
 }

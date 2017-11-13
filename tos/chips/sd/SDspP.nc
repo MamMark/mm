@@ -92,7 +92,7 @@ implementation {
  * to the SD card again.  We let other things happen in the system.
  * Units are in millisecs (TMilli).
  *
- * Note:POLL_TIME of 1 gives us about 750us.
+ * Note: POLL_TIME of 1 gives us about 750us.
  */
 #define GO_OP_POLL_TIME 10
 
@@ -162,7 +162,7 @@ implementation {
     uint32_t   blk_start, blk_end;
     uint8_t    cur_cid;			/* current client */
     uint8_t    *data_ptr;
-    uint16_t   erase_state;             /* dp, F: 0, T: 0xff    */
+    uint16_t   erase_state;             /* dp, 0x00 or 0xff */
     uint16_t   majik_b;
   } sdc;
 
@@ -506,9 +506,9 @@ implementation {
     uint32_t csize, rbl, csm;
     uint32_t ocr;
 
-    if ((rsp = sd_get_vreg(buf, SD_SEND_CSD, SD_CSD_LEN))) {
-      sd_panic(99, rsp);
-    }
+    if ((rsp = sd_get_vreg(buf, SD_SEND_CSD, SD_CSD_LEN)))
+      sd_panic(99, rsp);                /* no return */
+
     if ((buf[0] >> 6) == 1) {
       /* CSDv2 */
       csize = (buf[7] & 0x3f) << 16 | (buf[8] << 8) | buf[9];
@@ -521,10 +521,10 @@ implementation {
       sdc.blocks = (csize + 1) << (rbl + csm + 2 - 9);
     }
 
-    if ((rsp = sd_get_vreg(buf, SD_SEND_SCR, SD_SCR_LEN))) {
-      sd_panic(99, rsp);
-    }
-    sdc.erase_state = buf[1] & 0x80;
+    if ((rsp = sd_get_vreg(buf, SD_SEND_SCR, SD_SCR_LEN)))
+      sd_panic(99, rsp);                /* no return */
+
+    sdc.erase_state = ((buf[1] & 0x80) ? 0xff : 0x00);
 
     ocr = sd_get_ocr();
     if (ocr & (1 << 30))
@@ -629,8 +629,7 @@ implementation {
 	w_t = call lt.get();
 	w_diff = w_t - op_t0_ms;
 	rsp = call HW.spi_get();
-	call Panic.panic(PANIC_SD, 38, sdc.sd_state, w_diff, 0, 0);
-	rsp = call HW.spi_get();
+	call Panic.panic(PANIC_SD, 38, sdc.sd_state, w_diff, 0, 0); /* no rtn */
 	return;
 
       case SDS_OFF_TO_ON:
@@ -736,12 +735,13 @@ implementation {
   /*
    * sd_check_crc
    *
-   * i: data	pointer to a 512 byte + 2 bytes of CRC at end (512, 513)
+   * i: data	pointer to a 512 byte buffer
+   *    crc     crc to check against.
    *
    * o: rtn	0 (SUCCESS) if crc is okay
    *		1 (FAIL) crc didn't check.
    *
-   * SD_BLOCKSIZE is the size of the buffer (includes crc at the end)
+   * SD_BLOCKSIZE is the size of the buffer and the sector (512)
    */
 
   int sd_check_crc(uint8_t *data, uint16_t crc) {
@@ -749,18 +749,15 @@ implementation {
   }
 
 
-  /* sd_compute_crc
+  /*
+   * sd_compute_crc
    *
-   * append a crc computed over the data buffer pointed at by data
-   *
-   * i: data	ptr to 512 bytes of data (with 2 additional bytes available
-   *		at the end for the crc (total size 514).
-   * o: none
+   * i: data	ptr to 512 bytes of data
+   * o: returns 16 bit CRC.
    */
 
-  void sd_compute_crc(uint8_t *data) {
-    data[512] = 0x55;
-    data[513] = 0x12;
+  uint16_t sd_compute_crc(uint8_t *data) {
+    return 0x5512;
   }
 
 
@@ -784,7 +781,6 @@ implementation {
 
   task void sd_read_task() {
     uint8_t tmp;
-    uint8_t cid;
 
     /* Wait for the token */
     sd_read_tok_count++;
@@ -795,11 +791,7 @@ implementation {
       call HW.spi_get();
 
       /* The card returned an error, or timed out. */
-      call Panic.panic(PANIC_SD, 43, tmp, sd_read_tok_count, 0, 0);
-      cid = sdc.cur_cid;			/* remember for signaling */
-      sdc.sd_state = SDS_IDLE;
-      sdc.cur_cid = CID_NONE;
-      signal SDread.readDone[cid](sdc.blk_start, sdc.data_ptr, FAIL);
+      call Panic.panic(PANIC_SD, 43, tmp, sd_read_tok_count, 0, 0); /* no return */
       return;
     }
 
@@ -821,14 +813,16 @@ implementation {
     }
 
     /*
-     * read the block (512 bytes) and include the crc (2 bytes)
+     * read the block (512 bytes).  Any crc (2 bytes) will be handled after the
+     * dma completes.
+     *
      * we fire up the dma, turn on a timer to do a timeout, and
      * enable the dma interrupt to generate a h/w event when complete.
      */
     sdc.sd_state = SDS_READ_DMA;
     call HW.spi_check_clean();
     call HW.sd_dma_enable_int();
-    call HW.sd_start_dma(NULL, sdc.data_ptr, SD_BUF_SIZE);
+    call HW.sd_start_dma(NULL, sdc.data_ptr, SD_BLOCKSIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
     return;
   }
@@ -836,19 +830,22 @@ implementation {
 
   void sd_read_dma_handler() {
     uint16_t crc;
-    uint8_t  cid;
+    uint8_t  cid, old_byte;
 
     cid = sdc.cur_cid;			/* remember for signalling */
     call HW.sd_stop_dma();
+
+    /*
+     * crc should be next two bytes in.
+     */
+    crc = (call HW.spi_get() << 8) | call HW.spi_get();
 
     /* Send some extra clocks so the card can finish */
     call HW.spi_get();                  /* sandisk */
     call HW.sd_clr_cs();
 
-    crc = (sdc.data_ptr[512] << 8) | sdc.data_ptr[513];
     if (sd_check_crc(sdc.data_ptr, crc)) {
-      sd_panic_idle(45, crc);
-      signal SDread.readDone[cid](sdc.blk_start, sdc.data_ptr, FAIL);
+      sd_panic_idle(45, crc);           /* no return */
       return;
     }
 
@@ -862,8 +859,12 @@ implementation {
      * Haven't seen this in a while pretty sure it got cleaned up when
      * we got a better handle on the transaction sequence of the SD.
      */
-    if (sdc.data_ptr[0] == 0xfe)
-      sd_warn(46, sdc.data_ptr[0]);
+    if (sdc.data_ptr[0] == 0xfe) {
+      old_byte = sdc.data_ptr[0];
+      call SDsa.read(sdc.blk_start, sdc.data_ptr);
+      if (sdc.data_ptr[0] != 0xfe)
+        sd_warn(46, old_byte);
+    }
 
     last_read_time_us = call Platform.usecsRaw() - op_t0_us;
     if (last_read_time_us > max_read_time_us)
@@ -962,6 +963,7 @@ implementation {
 
     if (last_write_time_ms > SD_WRITE_WARN_THRESHOLD) {
       call Panic.warn(PANIC_SD, 50, sdc.blk_start, last_write_time_ms, 0, 0);
+      /* no return */
     }
     cid = sdc.cur_cid;
     sdc.sd_state = SDS_IDLE;
@@ -972,10 +974,14 @@ implementation {
 
   void sd_write_dma_handler() {
     uint8_t  tmp;
-    uint16_t i;
-    uint8_t  cid;
+    uint16_t i, crc;
 
     call HW.sd_stop_dma();
+
+    /* crc is the next two bytes out, big endian */
+    crc = sd_compute_crc(sdc.data_ptr);
+    call HW.spi_put((crc >> 8) & 0xff);
+    call HW.spi_put(crc & 0xff);
 
     /*
      * After the data block is accepted the SD sends a data response token
@@ -984,11 +990,7 @@ implementation {
     tmp = call HW.spi_get();
     if ((tmp & 0x1F) != 0x05) {
       i = sd_read_status();
-      call Panic.panic(PANIC_SD, 51, tmp, i, 0, 0);
-      cid = sdc.cur_cid;		/* remember for signals */
-      sdc.cur_cid = CID_NONE;
-      sdc.sd_state = SDS_IDLE;
-      signal SDwrite.writeDone[cid](sdc.blk_start, sdc.data_ptr, FAIL);
+      call Panic.panic(PANIC_SD, 51, tmp, i, 0, 0);     /* no return */
       return;
     }
 
@@ -1021,7 +1023,6 @@ implementation {
     sdc.blk_start = blk_id;
     sdc.data_ptr = data;
 
-    sd_compute_crc(data);
     if (!sdc.sdhc)
       blk_id = blk_id << SD_BLOCKSIZE_NBITS;
     if ((rsp = sd_send_command(SD_WRITE_BLOCK, blk_id))) {
@@ -1038,14 +1039,16 @@ implementation {
     call HW.spi_put(SD_START_TOK);
 
     /*
-     * send the sector data, include the 2 crc bytes
+     * send the sector data, crc bytes (2) will be sent after the
+     * data is sent.
+     *
      * start the dma, enable a time out to monitor the h/w
      * and enable the dma h/w interrupt to generate the h/w event.
      */
     sdc.sd_state = SDS_WRITE_DMA;
     call HW.spi_check_clean();
     call HW.sd_dma_enable_int();
-    call HW.sd_start_dma(data, NULL, SD_BUF_SIZE);
+    call HW.sd_start_dma(data, NULL, SD_BLOCKSIZE);
     call SDtimer.startOneShot(SD_SECTOR_XFER_TIMEOUT);
     return SUCCESS;
   }
@@ -1160,6 +1163,12 @@ implementation {
    *
    *************************************************************************/
 
+  error_t sdsa_abort(error_t rtn) {
+    call SDsa.off();
+    return rtn;
+  }
+
+
   /*
    * return TRUE if in standalone.
    *
@@ -1206,11 +1215,11 @@ implementation {
       }
     }
     if (rsp != 0x01)            /* must be idle */
-      return FAIL;
+      return sdsa_abort(FAIL);
 
     /* poke the SD to turn on SDHC if present */
     if (sd_cmd8())
-      return FAIL;
+      return sdsa_abort(FAIL);
 
     /*
      * SD_GO_OP_MAX is set for normal operation which is polled every 4 or
@@ -1243,6 +1252,8 @@ implementation {
     uint8_t  rsp, tmp;
     uint16_t crc;
 
+    (void) rsp;                         /* for looking a shit */
+
     /* send read data command */
     call HW.sd_set_cs();
     if (!sdc.sdhc)
@@ -1260,7 +1271,7 @@ implementation {
           (sd_read_tok_count >= SD_READ_TOK_MAX)) {
 	call HW.spi_get();               /* let SD finish, clock one more */
         call Panic.panic(PANIC_SD, 60, tmp, sd_read_tok_count, 0, blk_id);
-	return;
+        return;
       }
 
       if (tmp != 0xFF)
@@ -1279,13 +1290,15 @@ implementation {
      * enable the dma interrupt to generate a h/w event when complete.
      */
     call HW.spi_check_clean();
-    call HW.sd_start_dma(NULL, buf, SD_BUF_SIZE);
-    call HW.sd_wait_dma(SD_BUF_SIZE);
+    call HW.sd_start_dma(NULL, buf, SD_BLOCKSIZE);
+    call HW.sd_wait_dma(SD_BLOCKSIZE);
+
+    /* next two bytes are the CRC, big endian */
+    crc = (call HW.spi_get() << 8) | call HW.spi_get();
 
     call HW.spi_get();          /* more clocks to clear out SD */
     call HW.sd_clr_cs();        /* deassert the SD card */
 
-    crc = (buf[512] << 8) | buf[513];
     if (sd_check_crc(buf, crc)) {
       sd_panic(62, crc);
       return;
@@ -1296,18 +1309,23 @@ implementation {
   async command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
     uint8_t   rsp, tmp;
     uint16_t  t, last_time, time_wraps;
+    uint16_t  crc;
 
-    sd_compute_crc(buf);
+    crc = sd_compute_crc(buf);
     if (!sdc.sdhc)
       blk_id = blk_id << SD_BLOCKSIZE_NBITS;
     if ((rsp = sd_send_command(SD_WRITE_BLOCK, blk_id)))
-      sd_panic(63, rsp);
+      sd_panic(63, rsp);                /* no return */
 
     call HW.sd_set_cs();
     call HW.spi_put(SD_START_TOK);
     call HW.spi_check_clean();
-    call HW.sd_start_dma(buf, NULL, SD_BUF_SIZE);
-    call HW.sd_wait_dma(SD_BUF_SIZE);
+    call HW.sd_start_dma(buf, NULL, SD_BLOCKSIZE);
+    call HW.sd_wait_dma(SD_BLOCKSIZE);
+
+    /* next two bytes is the CRC */
+    call HW.spi_put((crc >> 8) & 0xff);
+    call HW.spi_put(crc & 0xff);
 
     /*
      * After the data block is accepted the SD sends a data response token
@@ -1442,7 +1460,7 @@ implementation {
    *
    * if sdc.blocks is 0, we haven't been initialized.
    */
-  command uint32_t  SDraw.blocks() {
+  async command uint32_t SDraw.blocks() {
     return sdc.blocks;
   }
 
@@ -1450,15 +1468,95 @@ implementation {
   /*
    * SDraw.erase_state: return indicator of erased state
    *
-   * TRUE:      card is erased to 0xff
-   * FALSE:     card is erased to 0x00
+   * 0xff:      card is erased to 0xff
+   * 0x00:      card is erased to 0x00
    *
    * sdc.blocks will be non-zero if we've gotten the disks parms
    */
-  command bool      SDraw.erase_state() {
-    if (sdc.blocks)
-      return sdc.erase_state;
+  async command uint8_t SDraw.erase_state() {
+    return sdc.erase_state;
+  }
+
+
+  /*
+   * chk_buffer
+   * checks an sd buffer for the val passed in.
+   *
+   * assumes quad-byte aligned.
+   *
+   * if tail is not quad even, then we have to adjust the
+   * last reference.    19-18-17-16, len 3, we want 0x00FFFFFF
+   *
+   * return: TRUE    if buffer is set to val
+   *         FALSE   otherwise
+   */
+  bool chk_buffer(uint8_t *sd_buf, uint8_t val) {
+    uint32_t *p, len, chk, mask;
+
+    len = SD_BLOCKSIZE;
+    chk = val << 24 | val << 16 | val << 8 | val;
+    p = (void *) sd_buf;
+    while (len > 3) {
+      if ((*p++) != chk) return FALSE;
+      len -= 4;
+      if (len < 4)
+        break;
+    }
+    if (!len) return TRUE;
+    mask = (0xffffffff >> ((4 - len) * 8));
+    chk  &= mask;
+    if ((*p & mask) == chk)
+      return TRUE;
     return FALSE;
+  }
+
+
+  /*
+   * SDraw.chk_zero
+   * check for a zero buffer.
+   *
+   * assumes quad-byte aligned.
+   *
+   * async because this gets called from Panic.  interrupt safe.
+   */
+  async command bool SDraw.chk_zero(uint8_t *sd_buf) {
+    return chk_buffer(sd_buf, 0);
+  }
+
+
+  /*
+   * SDraw.chk_erased
+   * checks an sd buffer for the erased condition.
+   *
+   * We are looking for SD sectors that are erased.  We read the sector
+   * into a buffer and use chk_erased to see if it is the erased value.
+   * see sdc.erase_state.
+   *
+   * assumes quad-byte aligned.
+   */
+  async command bool SDraw.chk_erased(uint8_t *sd_buf) {
+    return chk_buffer(sd_buf, sdc.erase_state);
+  }
+
+
+  /*
+   * SDraw.zero_fill - fill a SD buffer with zeros
+   *
+   * input: sd_buf   a buffer assumed to be one sector long
+   *        offset   where in the buffer to start zero filling
+   *
+   * async because called from Panic.  interrupt safe.
+   */
+  async command bool SDraw.zero_fill(uint8_t *sd_buf, uint32_t offset) {
+    uint8_t *p;
+
+    if (offset >= SD_BLOCKSIZE) {
+      return FALSE;
+    }
+    p = (uint8_t *) sd_buf + offset;
+    while(p < (uint8_t *)(sd_buf + SD_BLOCKSIZE)) {
+      *p++ = 0;
+    } return TRUE;
   }
 
 

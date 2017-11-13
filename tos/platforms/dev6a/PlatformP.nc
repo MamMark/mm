@@ -39,12 +39,9 @@
  */
 
 #include <hardware.h>
-#include <cpu_stack.h>
 #include <platform_reset_defs.h>
 #include <platform_version.h>
 #include <sysreboot.h>
-
-noinit uint32_t stack_size;
 
 #define BOOT_MAJIK 0x01021910
 #define FUBAR_MAX 0xffff
@@ -55,7 +52,6 @@ module PlatformP {
   provides {
     interface Init;
     interface Platform;
-    interface BootParams;
     interface SysReboot;
   }
   uses {
@@ -63,38 +59,17 @@ module PlatformP {
     interface Init as PlatformLeds;
     interface Init as PlatformClock;
     interface Init as PeripheralInit;
-    interface Stack;
+    interface OverWatchHardware as OWhw;
   }
 }
 
 implementation {
   command error_t Init.init() {
-
-    /*
-     * check to see if memory is okay.   The boot_majik cell tells the story.
-     * If it isn't okay we lost RAM, reinitilize boot_count.
-     */
-
-    if (boot_majik != BOOT_MAJIK) {
-      boot_majik = BOOT_MAJIK;
-      boot_count = 0;
-    }
-    if (boot_count != FUBAR_MAX)
-      boot_count++;
-
-//    call Stack.init();
-//    stack_size = call Stack.size();
-
     call PlatformLeds.init();   // Initializes the Leds
     call PeripheralInit.init();
     return SUCCESS;
   }
 
-
-  async command uint16_t BootParams.getBootCount() { return boot_count; }
-  async command uint8_t  BootParams.getMajor()     { return MAJOR;  }
-  async command uint8_t  BootParams.getMinor()     { return MINOR;  }
-  async command uint16_t BootParams.getBuild()     { return _BUILD; }
 
   async command error_t  SysReboot.reboot(sysreboot_t reboot_type) {
     switch (reboot_type) {

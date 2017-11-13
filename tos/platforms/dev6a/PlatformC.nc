@@ -42,21 +42,20 @@ configuration PlatformC {
   provides {
     interface Init as PlatformInit;
     interface Platform;
-    interface BootParams;
     interface SysReboot;
   }
   uses interface Init as PeripheralInit;
 }
 
 implementation {
-  components PlatformP, StackC;
+  components PlatformP;
   Platform = PlatformP;
   PlatformInit = PlatformP;
   PeripheralInit = PlatformP.PeripheralInit;
-  BootParams = PlatformP;
   SysReboot  = PlatformP;
 
-  PlatformP.Stack -> StackC;
+  components OverWatchHardwareM;
+  PlatformP.OWhw -> OverWatchHardwareM;
 
   components PlatformLedsC;
   PlatformP.PlatformLeds -> PlatformLedsC;

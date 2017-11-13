@@ -1,8 +1,177 @@
 
-Checksum performance:
+ImageManager and Image Management
 
-Simple Checksum.sum32_aligned
-Simple Checksum.sum8
+1. Purpose
+
+The ImageManager is responsible for managing the Image Region.  This region
+holds some number of Tag executables, pure binaries that can be loaded into
+the NIB region of the Tag's main processor flash.
+
+Images are currently sized at 128KiB maximum.  This is half of the flash
+area of the current cpu.  This is also much larger that the available RAM
+on the processor.  Before starting an update of the flash it is imperative
+to verify the integrity of the image.  This implies that one needs to see
+the entire image and have it available for access prior to actually
+programming the on-chip flash.  In other words we need to have some place
+to stash the entire image before programming the flash with it.  The
+ImageManager provides such a place for said stashage.
+
+Images are explicitly simple binary images extracted from the more
+complicated ELF output executables produced by the toolchain.  They are
+an exact binary representation of the binary data needed to run the
+executable.  The file extension ".bin" is used for these images.
+
+
+ImageManager is the on board entity responsbile for the following:
+
+o management of the space and ancilliary structures needed for said management.
+o maintenance of the IM directory.  which slots are full etc.
+o allocation and writing of a slot
+o ejection of an active image
+o deletion of a slot
+o maintanence of Active/Backup slots.
+
+
+2. Resources
+
+ImageManager resources live exclusively within the Image Region.  This
+region can be obtained by a call to FileSystem.area_{start,end}(FS_LOC_IMAGE).
+FS_LOC_IMAGE indicates we want the information for the Image region.
+
+These calls will return with the absolute sector numbers for the Image region.
+One should never ever write outside of these start/end bounds.
+
+The ImageManager directory is the first block (sector) of the Image Region.  It
+contains protection information and n directory slots.  Each slot contains the
+version identifier, the starting sector, and the state of the slot.
+
+
+3. Organization
+
+The image region is layed out thusly:
+
+
+       +---------------------+
+       |      Directory      |  <---- start
+       |                     |
+       |                     |
+       |                     |
+       +---------------------+
+       |       Slot 0        |        start + 1 + S_n * 256
+       |                     |        S_n = 0
+       |                     |
+       |                     |
+       +---------------------+
+       |       Slot 1        |        start + 1 + S_n * 256
+       |                     |        S_n = 1
+       |                     |
+       |                     |
+       +---------------------+
+       |       Slot 2        |        start + 1 + S_n * 256
+       |                     |        S_n = 2
+       |                     |
+       |                     |
+       +---------------------+
+       |       Slot 3        |        start + 1 + S_n * 256
+       |                     |        S_n = 3
+       |                     |
+       |                     |  <---- end
+       +---------------------+
+
+
+Each slot can hold one maximally sized image.  (currently 128KiB,
+128 * 1024 Bytes).  This translates into 256 512 Byte sectors.
+
+
+4. Image Naming
+
+Images are identified by a unique version number (manually managed).  This
+version identifier is composed of 3 parts, a major (1 byte), a minor (1
+byte), and buildnum (2 bytes).  Routines are provided by ImageManager for
+accessing and manipulating this object type.
+
+If two images have the same ver_id, then it is imperative that these images
+are exact copies of each other.  If one sums their binary values the result
+should be exactly the same.  It is up to the development community to
+guarantee that this condition is met.  The ImageManager and all associated
+software assumes that the two images with the same ver_id are indeed the
+same images.  (Note, checksums of various flavors, including on image
+checksums (see section 5) can be used to differentiate two images that
+inadvertantly named the same ver_id).
+
+
+5. Hardware Version
+
+An image is built for a particular instantiation.  The image is marked
+with the h/w model and h/w revision (model most significant) for which
+this image is built.
+
+
+6. Image Validity
+
+There are two simple checksums associated with an image, a vector checksum
+(vector_chk) and an image checksum (image_chk).
+
+Both checksums assume the image starts on a quad aligned boundary (they do)
+and any residual bytes at the end are padded with zeros to the next quad
+boundary.  The checksum is a simple quad addition with no overflow.  The
+resultant sum should be zero.
+
+The vector sum is the sum over the initial vector table which is at the
+start of the image (required).  This area is exactly 140 bytes long and
+is determined explicitly by the processor being used.  The result has to
+be added to vec_sum from the image info (see section 6).  This result
+must be 0 for a valid image.
+
+The vector sum is provided for a simple and quick validity check when
+either quickness or enough of the image isn't available.
+
+The image sum is performed over the entire image and must yield 0 if the
+image is valid.  The image check digits, image_sum, are already included in
+the image.
+
+
+7. Image Identification
+
+A binary image by itself typically does not provide any information about
+what the image contains.  With Tag images, we correct this deficit by
+embedding identifying information with in the image.
+
+This information includes the following:
+
+o signature, image_info_sig, identifies that this is image_info
+
+o image_start, load address of the image.  Where in the address space of
+  the processor should this image be loaded.
+
+o image_length, how long in bytes is this image.  Needed for both writing
+  the image as well as computing the checksum.
+
+o vector_chk, image_chk: checksums over the vector table and the entire
+  image.  See below for comments on the checksum algorithm.
+
+o ver_id.  The version identifier of this image.  This is the name of
+  the image and is considered unique.
+
+o descriptor0.  An ID_MAX (44) byte string that describes the tip of the
+  main tree.  The main tree is currently gh:tp-freeforall/prod(tp-master).
+  null terminated.
+
+o descriptor1.  An ID_MAX (44) byte string that describes the tip of the
+  aux tree.  This is the main MamMark tree and is currently
+  gh:MamMark/mm(master).  null terminated.
+
+o stamp_date: a 30 byte null terminated string which is the build data
+  when this image was built.
+
+o hw_ver.  A two byte, Model and Revision that identifies the h/w this
+  image is built for.
+
+
+8. Checksum performance:
+
+(32) Simple Checksum.sum32_aligned
+(8)  Simple Checksum.sum8
 
 units some form of uSecs, T32 timer, main DCO 16MiHz
 
@@ -23,3 +192,13 @@ units some form of uSecs, T32 timer, main DCO 16MiHz
 
     128KiB      30724                   15370
     128KiB      114700
+
+
+Note: We currently use a 32 bit checksum for performance to verify the
+entire image.  It performance is good enough (ie. fast enough) for now.
+
+Included in the image is the image_info and its contents is verified by the
+image checksum.
+
+If we need to go to a faster method, ie. vector check, the image_info is no
+longer verified by the checksum and we will need to revisit this.

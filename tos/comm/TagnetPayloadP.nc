@@ -88,6 +88,19 @@ implementation {
     return (tagnet_name_meta_t *) &(((message_metadata_t *)&(msg->metadata))->tn_payload_meta);
   }
 
+  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_eof(message_t *msg) {
+    tagnet_tlv_t     *tv;
+    int32_t           added = 2;
+
+    tv = call TagnetPayload.this_element(msg);
+    tv->typ = TN_TLV_EOF;
+    tv->len = 0;
+    call THdr.set_pload_type_tlv(msg);
+    call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
+    getMeta(msg)->this += added;
+    return added;
+  }
+
   command uint8_t TN_PLOAD_DBG  TagnetPayload.add_gps_xyz(message_t *msg, tagnet_gps_xyz_t *xyz) {
     tagnet_tlv_t     *tv;
     int               added;
@@ -100,12 +113,24 @@ implementation {
     return added;
   }
 
-  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_integer(message_t *msg, int n) {
+  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_integer(message_t *msg, int32_t n) {
     tagnet_tlv_t     *tv;
-    int               added;
+    int32_t           added;
 
     tv = call TagnetPayload.this_element(msg);
     added = call TTLV.integer_to_tlv(n, tv, call TagnetPayload.bytes_avail(msg));
+    call THdr.set_pload_type_tlv(msg);
+    call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
+    getMeta(msg)->this += added;
+    return added;
+  }
+
+  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_offset(message_t *msg, int32_t n) {
+    tagnet_tlv_t     *tv;
+    int32_t           added;
+
+    tv = call TagnetPayload.this_element(msg);
+    added = call TTLV.offset_to_tlv(n, tv, call TagnetPayload.bytes_avail(msg));
     call THdr.set_pload_type_tlv(msg);
     call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
     getMeta(msg)->this += added;
@@ -154,13 +179,29 @@ implementation {
     return added;
  }
 
+  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_version(message_t *msg, image_ver_t *v) {
+    tagnet_tlv_t     *tv = call TagnetPayload.this_element(msg);
+    int               added;
+
+    added = call TTLV.version_to_tlv(v, tv, call TagnetPayload.bytes_avail(msg));
+    if (added) {
+      call THdr.set_pload_type_tlv(msg);
+      call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
+      getMeta(msg)->this += added;
+    }
+    return added;
+  }
+
   command uint8_t  TN_PLOAD_DBG  TagnetPayload.bytes_avail(message_t* msg) {
     return (sizeof(msg->data) - call THdr.get_name_len(msg) - getMeta(msg)->this);
   }
 
   command tagnet_tlv_t* TN_PLOAD_DBG  TagnetPayload.first_element(message_t *msg) {
     memset(getMeta(msg),0,sizeof(tagnet_payload_meta_t));
-    return (tagnet_tlv_t *) (&msg->data[call THdr.get_name_len(msg)]);
+    if (call TagnetPayload.get_len(msg))
+      return (tagnet_tlv_t *) (&msg->data[call THdr.get_name_len(msg)]);
+    else
+      return NULL;
   }
 
   command uint8_t TN_PLOAD_DBG  TagnetPayload.get_len(message_t* msg) {
@@ -176,6 +217,8 @@ implementation {
     uint8_t      *pload_start = (uint8_t *) &msg->data[call THdr.get_name_len(msg)];
     uint8_t      *p;
 
+    if (call THdr.is_pload_type_raw(msg))
+      return NULL;
     this_tlv = call TagnetPayload.this_element(msg);
     next_tlv = call TTLV.get_next_tlv(this_tlv, call TagnetPayload.bytes_avail(msg));
     if (next_tlv == NULL)
@@ -193,8 +236,8 @@ implementation {
 
   command void TN_PLOAD_DBG  TagnetPayload.reset_payload(message_t *msg) {
     getMeta(msg)->this = 0;
-    call THdr.set_message_len(msg, (call THdr.get_header_len(msg) - 1)
-                                      + call THdr.get_name_len(msg));
+    call THdr.set_message_len(msg,
+        call THdr.get_header_len(msg) + call THdr.get_name_len(msg));
   }
 
   command tagnet_tlv_t* TN_PLOAD_DBG TagnetPayload.this_element(message_t *msg) {

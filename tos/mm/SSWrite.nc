@@ -24,7 +24,7 @@ interface SSWrite {
    * Convert a stream buf_handle to its underlying buffer.
    *
    * @param buf_handle address of a ss_buf_handle (stream storage buf_handle).
-   * @return 
+   * @return
    *   <li>NULL   if bad buf_handle or buffer not allocated.
    *   <li>buffer if good buf_handle.
    */
@@ -37,6 +37,9 @@ interface SSWrite {
    * that this occurs while booting and before SSWrite is active.
    *
    * This routine should not be used after the boot sequence completes.
+   * Temp buffers can also be used after we've crashed.
+   *
+   * The important thing is the system is single threaded.
    */
   async command uint8_t *get_temp_buf();
 
@@ -44,18 +47,26 @@ interface SSWrite {
   /**
    * request a new buffer from the Stream Storage system.
    *
-   * @return 
+   * @return
    *   <li>NULL   if no buffer available.
    *   <li>buf_handle if buffer available.  Buffer marked allocated.
    */
   command ss_wr_buf_t* get_free_buf_handle();
 
   /**
-   * call when the buffer objectified by buf_handle has been
-   * filled and should be flushed.  The handle is then returned to the
-   * free pool.  Do not use after calling buffer_full.
+   * call when the buffer objectified by buf_handle has been filled and
+   * should be flushed.  The handle is then returned to the free pool.  Do
+   * not use the buffer or the buffer handle after calling buffer_full.
    *
    * @param buf_handle address of the ss_buf_handle ready to be flushed.
-   */  
+   */
   command void buffer_full(ss_wr_buf_t *buf_handle);
+
+  /**
+   * call when Collect has been kicked by a SysReboot.shutdown_flush to
+   * force SSW to flush to disk any pending buffers.
+   *
+   * Needs to be async, called from the Panic context.
+   */
+  async command void flush_all();
 }

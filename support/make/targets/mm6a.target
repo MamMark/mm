@@ -17,9 +17,12 @@ PFLAGS += -D_BUILD=$(BUILD_NUM)
 PFLAGS += -I$(MM_ROOT)/include
 PFLAGS += -I$(MM_ROOT)/mm/include
 
+OPTFLAGS += -ggdb
+
 include $(PLATFORM_DIR)/Makefile.platform
 $(call TOSMake_include_platform,mm6a)
 $(call TOSMake_include_make_platform,msp432)
+UPSTAIRS ?= ../..
 
 build_num: FORCE
 	@if [ ! -f $(BUILD_NUM_FILE) ] ; then echo -1 > $(BUILD_NUM_FILE); fi
@@ -27,4 +30,6 @@ build_num: FORCE
 	@printf "BUILD: %d (0x%x)\n" $(BUILD_NUM) $(BUILD_NUM)
 
 mm6a: build_num $(BUILD_DEPS)
+	ln -fs $(UPSTAIRS)/.gdbinit $(TOSMAKE_BUILD_DIR)/.gdbinit
+	ln -fs $(UPSTAIRS)/.gdb_$(TARGET) $(TOSMAKE_BUILD_DIR)/.gdb_target
 	@:

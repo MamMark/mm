@@ -116,6 +116,15 @@ interface TagnetTLV {
    */
   command uint8_t           integer_to_tlv(int32_t i, tagnet_tlv_t *t, uint8_t limit);
   /**
+   * Convert file offset value into a Tagnet TLV and store in destination location
+   *
+   * @param   i             integer value to store in the tlv
+   * @param   t             pointer of tlv to use as destination location
+   * @param   limit         maximum bytes available at destination tlv
+   * @return  uint8_t       number of bytes stored in destination
+   */
+  command uint8_t           offset_to_tlv(int32_t i, tagnet_tlv_t *t, uint8_t limit);
+  /**
    * Determine if this tlv needs to be handled specially
    *
    * @param   t            pointer of tlv to check
@@ -152,11 +161,34 @@ interface TagnetTLV {
    */
   command int32_t           tlv_to_integer(tagnet_tlv_t *t);
   /**
-   * Convert tlv to string. tlv must be an integer tlv tagnet type
+   * Convert tlv to file offset (int32). tlv must be an offset tlv tagnet type
+   *
+   * @param   t             pointer of tlv to convert
+   * @return  uint8_t       integer value from tlv. zero if can't be converted
+   */
+  command int32_t           tlv_to_offset(tagnet_tlv_t *t);
+  /**
+   * Convert tlv to string. tlv must be a string or data_block tlv tagnet type
    *
    * @param   t             pointer of tlv to convert
    * @param   len           pointer to int for returning length of string
-   * @return  uint8_t       pointer to string
+   * @return  uint8_t       pointer to string  (limited access to life of msg)
    */
-  command uint8_t          *tlv_to_string(tagnet_tlv_t *t, int *len);
+  command uint8_t          *tlv_to_string(tagnet_tlv_t *t, uint8_t *len);
+  /**
+   * Convert tlv to version. tlv must be a version tlv tagnet type
+   *
+   * @param   t             pointer of tlv to convert
+   * @return  image_ver_t   pointer to version (limited access to life of msg)
+   */
+  command image_ver_t      *tlv_to_version(tagnet_tlv_t *t);
+  /**
+   * Convert software version value into a Tagnet TLV and store in destination location
+   *
+   * @param   v             software version value to store in the tlv
+   * @param   t             pointer of tlv to use as destination location
+   * @param   limit         maximum bytes available at destination tlv
+   * @return  uint8_t       number of bytes stored in destination
+   */
+  command uint8_t           version_to_tlv(image_ver_t *v, tagnet_tlv_t *t, uint8_t limit);
 }

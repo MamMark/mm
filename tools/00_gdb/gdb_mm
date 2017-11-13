@@ -14,19 +14,6 @@ end
 # SD
 #
 
-define erase
-ena 2
-mon reset
-c
-set do_erase=1
-printf "do_erase: %d\n", do_erase
-dis 2
-end
-document erase
-set up for doing a manual errase
-end
-
-
 define cs
 printf "\n"
 printf "majik:  %04x       %04x\n", CollectP__dcc.majik_a, CollectP__dcc.majik_b
@@ -68,4 +55,87 @@ printf "\n"
 end
 document ss
 StreamStorage state
+end
+
+
+define __print_dir_entry
+# arg0 index
+set $_slotp = &ImageManagerP__imcb.dir.slots[$arg0]
+printf "  %d:  %x.%x.%03x  (%d.%d.%04d) %08x  ", $arg0, \
+    $_slotp->ver_id.major, $_slotp->ver_id.minor, $_slotp->ver_id.build, \
+    $_slotp->ver_id.major, $_slotp->ver_id.minor, $_slotp->ver_id.build, \
+    $_slotp->start_sec
+output $_slotp->slot_state
+printf "\n"
+end
+
+define im
+printf "\n"
+print ImageManagerP__imcb
+printf "\n"
+printf "dir       sig: %08x   %08x  chksum: %08x\n", \
+    ImageManagerP__imcb.dir.dir_sig, ImageManagerP__imcb.dir.dir_sig_a, \
+    ImageManagerP__imcb.dir.chksum
+__print_dir_entry 0
+__print_dir_entry 1
+__print_dir_entry 2
+__print_dir_entry 3
+printf "\n"
+printf "buf_ptr:  %08x, remaining: %04x (%d)\n", ImageManagerP__imcb.buf_ptr, \
+        ImageManagerP__imcb.bytes_remaining, ImageManagerP__imcb.bytes_remaining,
+printf "IM state: "
+output ImageManagerP__imcb.im_state
+printf "\n"
+end
+document im
+ImageManager State
+end
+
+
+define arb0
+printf "Arb0:  arb_id: %d  def_owner: %d  owner: %d  reqId: %d\n", \
+    ArbiterP__0__arbiter_id, ArbiterP__0__default_owner_id, \
+    ArbiterP__0__resId, ArbiterP__0__reqResId
+output ArbiterP__0__state
+printf "  h: %d  t: %d  q: ", FcfsResourceQueueC__0__qHead, \
+    FcfsResourceQueueC__0__qTail
+output/x FcfsResourceQueueC__0__resQ
+printf "\n"
+end
+document arb0
+display Arbiter 0 State
+end
+
+
+define __print_image_info
+# arg0 ptr to image_info block
+set $__ii=(image_info_t *) $arg0
+if $__ii->sig == 0xffffffff
+    printf "empty\n"
+else
+    printf "%d.%d.%d (x %x.%x.%x)  s: 0x%05x l: %d (0x%x)  hw: m/r %d/%d\n", \
+        $__ii->ver_id.major, $__ii->ver_id.minor, $__ii->ver_id.build, \
+        $__ii->ver_id.major, $__ii->ver_id.minor, $__ii->ver_id.build, \
+        $__ii->image_start, $__ii->image_length, $__ii->image_length,  \
+        $__ii->hw_ver.hw_model, $__ii->hw_ver.hw_rev
+    printf "   0:  [%s]\n", $__ii->descriptor0
+    printf "   1:  [%s]\n", $__ii->descriptor1
+    printf "   s:  [%s]\n", $__ii->stamp_date
+end
+printf "\n"
+end
+
+define rom
+printf "\n"
+printf " nib:  "
+__print_image_info 0x20140
+printf "gold:  "
+__print_image_info 0x140
+end
+document rom
+display MM ROM (flash) state
+end
+
+define ow
+p ow_control_block
 end

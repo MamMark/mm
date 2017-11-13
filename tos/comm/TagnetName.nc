@@ -2,7 +2,7 @@
  * This interface provides functions to access the Name field in
  * a Tagnet message.
  *<p>
- * These functions include accessors to examine an individual 
+ * These functions include accessors to examine an individual
  * name element (a TLV), find special elements in the name,
  * and build a name.
  *</p>
@@ -73,6 +73,9 @@ interface TagnetName {
   /**
    * Get pointer to gps_xyz tlv in name
    *
+   * This is a special TLV in that its location is remembered but
+   * parsing returns it as the next name TLV to process.
+   *
    * @param   msg           pointer to message buffer containing the name
    * @return  tagnet_tlv_t  pointer to gps xyz position tlv
    */
@@ -87,27 +90,62 @@ interface TagnetName {
   /**
    * Get pointer to node_id tlv in name
    *
+   * This is a special TLV in that its location is remembered but
+   * parsing returns it as the next name TLV to process.
+   *
    * @param   msg           pointer to message buffer containing the name
    * @return  tagnet_tlv_t  pointer to node_id tlv
    */
   command tagnet_tlv_t*     get_node_id(message_t *msg);
   /**
-   * Get pointer to seq_no (sequence number) tlv in name
+   * Get pointer to byte offset tlv in name
+   *
+   * This is a special TLV in that it is "consumed" when parsing the
+   * name. That is, its location is remembered and parsing continues.
    *
    * @param   msg           pointer to message buffer containing the name
-   * @return  tagnet_tlv_t  pointer to seq_no tlv
+   * @return  tagnet_tlv_t  pointer to offset tlv
    */
-  command tagnet_tlv_t*     get_seq_no(message_t *msg);
+  command tagnet_tlv_t*     get_offset(message_t *msg);
+  /**
+   * Get pointer to size tlv in name
+   *
+   * This is a special TLV in that it is "consumed" when parsing the
+   * name. That is, its location is remembered and parsing continues.
+   *
+   * @param   msg           pointer to message buffer containing the name
+   * @return  tagnet_tlv_t  pointer to size tlv
+   */
+  command tagnet_tlv_t*     get_size(message_t *msg);
+  /**
+   * Get pointer to version tlv in name
+   *
+   * This is a special TLV in that it is "consumed" when parsing the
+   * name. That is, its location is remembered and parsing continues.
+   *
+   * @param   msg           pointer to message buffer containing the name
+   * @return  tagnet_tlv_t  pointer to version tlv
+   */
+  command tagnet_tlv_t*     get_version(message_t *msg);
   /**
    * Get pointer to utc_time tlv in name
+   *
+   * This is a special TLV in that its location is remembered but
+   * parsing returns it as the next name TLV to process.
    *
    * @param   msg           pointer to message buffer containing the name
    * @return  tagnet_tlv_t  pointer to utc_time tlv
    */
   command tagnet_tlv_t*     get_utc_time(message_t *msg);
   /**
-   * Advance current 'this' tlv index to the next tlv in name and
-   * process any special tlv types
+   * Get the next tlv in the name
+   *
+   * @param   msg           pointer to message buffer containing the name
+   * @return  bool          TRUE if this is the last element of name
+   */
+  command bool              is_last_element(message_t *msg);
+  /**
+   * Get the next tlv in the name
    *
    * @param   msg           pointer to message buffer containing the name
    * @return  tagnet_tlv_t  pointer to next tlv element in name
@@ -132,11 +170,23 @@ interface TagnetName {
    */
   command void              set_node_id(message_t *msg);
   /**
-   * Set index of seq_no tlv to current 'this' tlv
+   * Set index of offset tlv to current 'this' tlv
    *
    * @param   msg           pointer to message buffer containing the name
    */
-  command void              set_seq_no(message_t *msg);
+  command void              set_offset(message_t *msg);
+  /**
+   * Set index of size tlv to current 'this' tlv
+   *
+   * @param   msg           pointer to message buffer containing the name
+   */
+  command void              set_size(message_t *msg);
+  /**
+   * Set index of version tlv to current 'this' tlv
+   *
+   * @param   msg           pointer to message buffer containing the name
+   */
+  command void              set_version(message_t *msg);
   /**
    * Set index of utc_time tlv to current 'this' tlv
    *

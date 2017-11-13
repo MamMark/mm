@@ -55,9 +55,19 @@ implementation {
   Booted = OW_P;
   Boot   = OW_P;
 
+  components SD0C, SSWriteC;
+  OW_P.SSW  -> SSWriteC;
+  OW_P.SDsa -> SD0C;
+
+  components ChecksumM;
   components ImageManagerC as IM_C;
-  OW_P.IM -> IM_C;
+  components OverWatchHardwareM;
+  OW_P.Checksum -> ChecksumM;
+  OW_P.OWhw     -> OverWatchHardwareM;
+  OW_P.IM       -> IM_C.IM[unique("image_manager_clients")];
+  OW_P.IMD      -> IM_C;
 
   components PlatformC;
   OW_P.SysReboot -> PlatformC;
+  OW_P.Platform  -> PlatformC;
 }

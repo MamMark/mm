@@ -8,7 +8,8 @@
 #include "Tagnet.h"
 
 configuration TagnetMonitorC {}
-implementation {  components MainC;
+implementation {
+  components MainC;
   components SystemBootC;
   components TagnetMonitorP;
   MainC.SoftwareInit            -> TagnetMonitorP;
@@ -25,6 +26,13 @@ implementation {  components MainC;
   components GPSmonitorC;
   GPSmonitorC.GPSReceive        -> GpsPort;
   TagnetC.InfoSensGpsXyz        -> GPSmonitorC;
+
+  components TagnetSysExecC;
+  TagnetC.SysActive             -> TagnetSysExecC.SysActive;
+  TagnetC.SysBackup             -> TagnetSysExecC.SysBackup;
+  TagnetC.SysGolden             -> TagnetSysExecC.SysGolden;
+  TagnetC.SysNIB                -> TagnetSysExecC.SysNIB;
+  TagnetC.SysRunning            -> TagnetSysExecC.SysRunning;
 
   components new TimerMilliC()  as Timer0;
   TagnetMonitorP.rcTimer        -> Timer0;

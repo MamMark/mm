@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2010 - Eric B. Decker, Carl Davis
  * Copyright (c) 2017, Eric B. Decker
+ * Copyright (c) 2010 - Eric B. Decker, Carl Davis
  * All rights reserved.
  *
  * FileSystem.nc - simple raw area file system based on
@@ -26,22 +26,21 @@
 #include <panic.h>
 #include <platform_panic.h>
 
-#ifdef ENABLE_ERASE
-#ifdef ALWAYS_ERASE
-bool     do_erase = 1;
-#else
-bool     do_erase = 0;
-#endif
-uint32_t erase_start;
-uint32_t erase_end;
-#endif
-
+/*
+ * See fs_loc.h for definitions of FS_LOC to which region
+ * we are talking about.
+ */
 
 typedef enum {
-  FSS_IDLE = 0,				/* doing nothing */
-  FSS_REQUEST,				/* resource requested */
-  FSS_ZERO,				/* reading block zero */
+  FSS_IDLE = 0,				/* doing nothing       */
+  FSS_ZERO_REQ,				/* resource requested  */
+  FSS_ZERO,				/* reading block zero  */
+  FSS_ERASE_REQ,			/* resource requested  */
+  FSS_ERASE,                            /* working on an erase */
 } fs_state_t;
+
+
+#define FS_ENABLE_ERASE               /* don't enable yet, doesn't work yet */
 
 
 #ifndef PANIC_FS
@@ -61,8 +60,10 @@ module FileSystemP {
   uses {
     interface Boot;			/* incoming booted signal */
     interface SDread;
+    interface SDerase;
     interface SSWrite  as SSW;
     interface Resource as SDResource;
+    interface SDsa;
     interface Panic;
   }
 }
@@ -72,15 +73,10 @@ implementation {
   fs_loc_t     fs_loc;
   fs_state_t   fs_state;
   uint8_t     *fs_buf;
-
+  uint8_t      fs_which;
 
   void fs_panic(uint8_t where, parg_t arg0) {
     call Panic.panic(PANIC_FS, where, arg0, 0, 0, 0);
-  }
-
-  void fs_panic_idle(uint8_t where, parg_t arg0) {
-    call Panic.panic(PANIC_FS, where, arg0, 0, 0, 0);
-    fs_state = FSS_IDLE;
   }
 
 
@@ -126,59 +122,128 @@ implementation {
   }
 
 
+  void do_erase() {
+#ifdef FS_ENABLE_ERASE
+    error_t err;
+
+    fs_state = FSS_ERASE;
+    err = call SDerase.erase(fs_loc.locators[fs_which].start,
+                             fs_loc.locators[fs_which].end);
+    if (err)
+      fs_panic(4, err);
+#endif
+  }
+
+
   event void Boot.booted() {
     error_t err;
 
-    fs_state = FSS_REQUEST;
+    fs_state = FSS_ZERO_REQ;
     if ((err = call SDResource.request()))
-      fs_panic_idle(1, err);
+      fs_panic(1, err);
     return;
+  }
+
+
+  command error_t FS.erase(uint8_t which) {
+#ifdef FS_ENABLE_ERASE
+    error_t err;
+
+    if (fs_state != FSS_IDLE || which >= FS_LOC_MAX)
+      call Panic.panic(PANIC_FS, 8, fs_state, which, 0, 0);
+
+    fs_which = which;
+    fs_state = FSS_ERASE_REQ;
+    if (call SDResource.isOwner()) {
+      do_erase();
+      return SUCCESS;
+    }
+    err = call SDResource.request();
+    if (err)
+      fs_panic(9, err);
+    return err;
+#else
+    return FAIL;
+#endif
+  }
+
+
+  async command uint32_t FS.area_start(uint8_t which) {
+    if (which < FS_LOC_MAX)
+      return fs_loc.locators[which].start;
+    fs_panic(7, which);
+    return 0;
+  }
+
+
+  async command uint32_t FS.area_end(uint8_t which) {
+    if (which < FS_LOC_MAX)
+      return fs_loc.locators[which].end;
+    fs_panic(8, which);
+    return 0;
+  }
+
+
+  error_t get_locator(uint8_t * buf) {
+    fs_loc_t *fsl;
+    error_t   err;
+
+    fsl = (void *) (buf + FS_LOC_OFFSET);
+    err = check_fs_loc(fsl);
+    if (err) return err;
+    memcpy(&fs_loc, fsl, sizeof(fs_loc_t));
+    return SUCCESS;
+  }
+
+
+  async command error_t FS.reload_locator_sa(uint8_t * buf) {
+    error_t err;
+
+    if (!call SDsa.inSA()) {
+      err = call SDsa.reset();
+      if (err) return err;
+    }
+    call SDsa.read(0, buf);
+    err = get_locator(buf);
+    return err;
   }
 
 
   event void SDResource.granted() {
     error_t err;
 
-    if (fs_state != FSS_REQUEST) {
-      fs_panic_idle(2, fs_state);
-      return;
-    }
-    fs_state = FSS_ZERO;
-    fs_buf = call SSW.get_temp_buf();
-    if ((err = call SDread.read(0, fs_buf))) {
-      fs_panic_idle(3, err);
-      return;
+    switch (fs_state) {
+      default:
+        fs_panic(2, fs_state);
+        return;
+
+      case FSS_ZERO_REQ:
+        fs_state = FSS_ZERO;
+        fs_buf = call SSW.get_temp_buf();
+        if ((err = call SDread.read(0, fs_buf)))
+          fs_panic(3, err);
+        return;
+
+      case FSS_ERASE_REQ:
+        do_erase();
+        return;
     }
   }
 
 
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
-    fs_loc_t *fsl;
     uint8_t  *dp;
 
     dp = fs_buf;
-    if (err || dp == NULL || dp != read_buf) {
+    if (err || dp == NULL || dp != read_buf)
       call Panic.panic(PANIC_FS, 4, err, (parg_t) dp, (parg_t) read_buf, 0);
-      return;
-    }
 
-    switch(fs_state) {
-      default:
-	  fs_panic_idle(5, fs_state);
-	  return;
+    if (fs_state != FSS_ZERO)
+      fs_panic(5, fs_state);
 
-      case FSS_ZERO:
-	fsl = (void *) ((uint8_t *) dp + FS_LOC_OFFSET);
-        err = check_fs_loc(fsl);
-        if (err) {
-	  fs_panic_idle(6, err);
-	  return;
-	}
-
-        memcpy(&fs_loc, fsl, sizeof(fs_loc_t));
-        break;
-    }
-
+    err = get_locator(dp);
+    if (err)
+      fs_panic(6, err);
     fs_state = FSS_IDLE;
 
     /*
@@ -188,26 +253,28 @@ implementation {
      * use the SD it will issue a request, which will queue them up.
      * Then when we release, it will get the SD without powering the
      * SD down.
+     *
+     * We may also be doing an Erase, in which case our state will no
+     * longer be IDLE.  Only release if IDLE.
      */
     signal Booted.booted();
+    if (fs_state == FSS_IDLE)
+      call SDResource.release();
+  }
+
+
+  event void SDerase.eraseDone(uint32_t blk_start, uint32_t blk_end, error_t err) {
+#ifdef FS_ENABLE_ERASE
+    if (err || fs_state != FSS_ERASE) {
+      call Panic.panic(PANIC_FS, 4, err, fs_state, 0, 0);
+      return;
+    }
+    fs_state = FSS_IDLE;
+    signal FS.eraseDone(fs_which);
     call SDResource.release();
+#endif
   }
 
-
-  command uint32_t FS.area_start(uint8_t which) {
-    if (which < FS_LOC_MAX)
-      return fs_loc.locators[which].start;
-    fs_panic(7, which);
-    return 0;
-  }
-
-
-  command uint32_t FS.area_end(uint8_t which) {
-    if (which < FS_LOC_MAX)
-      return fs_loc.locators[which].end;
-    fs_panic(8, which);
-    return 0;
-  }
 
   async event void Panic.hook() { }
 }

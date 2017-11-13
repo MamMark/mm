@@ -56,16 +56,13 @@ implementation {
   Boot   = DMP;
 
   components new SD0_ArbC() as SD, SSWriteC;
-  components FileSystemC;
+  components FileSystemC, SD0C;
 
   DMP.SSW        -> SSWriteC;
   DMP.SDResource -> SD;
   DMP.SDread     -> SD;
+  DMP.SDraw      -> SD0C;
   DMP.FileSystem -> FileSystemC;
-
-#ifdef ENABLE_ERASE
-  DMP.SDerase    -> SD;
-#endif
 
   components PanicC;
   DMP.Panic -> PanicC;

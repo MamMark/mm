@@ -47,36 +47,55 @@ interface OverWatch {
    * reboot the system.
    *
    */
-  command void install();
-
+  async command void install();
 
   /**
-   * ForceBoot
+   * force_boot
    *
    * Request OverWatch to boot the system into the specified boot mode.
-   * (OWT, GOLD, NIB).
+   * (OWT, GOLD, NIB).  This is a low level OverWatch command.  It does
+   * not cause any buffers to be flushed.
    *
    * @param   boot_mode     which image instance to boot into
+   * @param   reason        why the force_boot is being done
    * @return  error_t
    */
-  command void force_boot(ow_boot_mode_t boot_mode);
+  async command void force_boot(ow_boot_mode_t boot_mode,
+                                ow_reboot_reason_t reason);
 
+  /**
+   * flush_boot
+   *
+   * Request a reboot of the system into the specified mode but
+   * first make sure any buffers are flushed.
+   *
+   * @param   boot_mode     which image instance to boot into
+   * @param   reason        why the force_boot is being done
+   * @return  error_t
+   */
+  async command void flush_boot(ow_boot_mode_t boot_mode,
+                                ow_reboot_reason_t reason);
 
   /**
    * Fail
    *
-   * Request the Overwatcher handle a runtime failure of the provided
-   * reboot reason type. Overwatcher will determine if the currently
-   * running instance has exceeded a failure threshold (too many
-   * failures per unit of time) and cause a fall back to the backup
-   * (previously active) mage. If no backup image is available then
-   * Overwatch will start Golden.
+   * Tell OverWatch that this image has failed.
    *
-   * @param   reason        failure reason, most likely a panic or unhandled interrupt
+   * OverWatch will determine if the currently running instance has
+   * exceeded a failure threshold (too many failures per unit of time) and
+   * cause a fall back to the backup (previously active image). If no
+   * backup image is available then Overwatch will launch Golden.
+   *
+   * @param reason      failure reason, most likely a panic or unhandled
+   *                    interrupt
    */
-  command void fail(ow_reboot_reason_t reason);
+  async command void fail(ow_reboot_reason_t reason);
 
-  command ow_boot_mode_t      getBootMode();
-  command void                clearReset();
-  command ow_control_block_t *getControlBlock();
+  async command void strange(uint32_t loc);
+
+  async command ow_boot_mode_t      getBootMode();
+  async command void                clearReset();
+  async command ow_control_block_t *getControlBlock();
+
+  async command uint32_t            getImageBase();
 }

@@ -61,8 +61,11 @@ interface SDraw {
    *
    * See SDspP for definitions
    */
-  command uint32_t  blocks();
-  command bool      erase_state();
+  async command uint32_t  blocks();
+  async command bool      erase_state();
+  async command bool      chk_zero(uint8_t  *sd_buf);
+  async command bool      chk_erased(uint8_t  *sd_buf);
+  async command bool      zero_fill(uint8_t *sd_buf, uint32_t offset);
 
   command uint32_t  ocr();              /*  32 bits */
   command error_t   cid(uint8_t *buf);  /* 128 bits */

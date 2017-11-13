@@ -57,6 +57,10 @@
  * out of reset.  When StreamStorage runs out of work, it will release
  * the h/w which will determine whether to turn the device off or not.
  * The device will be turned off if there are no other clients waiting.
+ *
+ * flush_all is called to push any pending buffers out to the SD.  This
+ * is called from Collect on a SysReboot.shutdown_flush and uses SDsa
+ * the stand alone (run to completion) interface to the SD driver.
  */
 
 #include <panic.h>
@@ -82,14 +86,13 @@ module SSWriteP {
   }
   uses {
     interface SDwrite;
+    interface SDsa;
     interface DblkManager;
     interface Resource as SDResource;
     interface Panic;
     interface LocalTime<TMilli>;
     interface Trace;
     interface CollectEvent;
-    interface SysReboot;
-    interface SDsa;
   }
 }
 
@@ -108,7 +111,7 @@ implementation {
 #warning "SSW_NUM_BUFS is other than 5"
 #endif
 
-  ss_control_t ssc;			 /* all global control cells */
+  norace ss_control_t ssc;              /* all global control cells */
 
 
   /*
@@ -126,7 +129,7 @@ implementation {
     while (ssc.cur_handle->buf_state == SS_BUF_STATE_FULL) {
       ssc.cur_handle->stamp = call LocalTime.get();
       ssc.cur_handle->buf_state = SS_BUF_STATE_FREE;
-      memset(ssc.cur_handle->buf, 0, SD_BUF_SIZE);
+      memset(ssc.cur_handle->buf, 0, SD_BLOCKSIZE);
       ssc.ssw_out++;
       if (ssc.ssw_out >= SSW_NUM_BUFS)
 	ssc.ssw_out = 0;
@@ -209,16 +212,13 @@ implementation {
 	ssc.majik_a != SSC_MAJIK ||
 	ssc.majik_b != SSC_MAJIK ||
 	sswp->buf_state < SS_BUF_STATE_FREE ||
-	sswp->buf_state >= SS_BUF_STATE_MAX) {
+	sswp->buf_state >= SS_BUF_STATE_MAX)
       ss_panic(18, ssc.ssw_alloc);
-      return NULL;
-    }
 
     if (sswp->buf_state == SS_BUF_STATE_FREE) {
-      if (sswp->majik != SS_BUF_SANE) {
+      if (sswp->majik != SS_BUF_SANE)
 	ss_panic(19, sswp->majik);
-	return NULL;
-      }
+
       sswp->stamp = call LocalTime.get();
       sswp->buf_state = SS_BUF_STATE_ALLOC;
       ssc.ssw_alloc++;
@@ -233,15 +233,26 @@ implementation {
 
   command uint8_t *SSW.buf_handle_to_buf(ss_wr_buf_t *handle) {
     if (!handle || handle->majik != SS_BUF_SANE ||
-	handle->buf_state != SS_BUF_STATE_ALLOC) {
+	handle->buf_state != SS_BUF_STATE_ALLOC)
       ss_panic(21, (parg_t) handle);
-      return NULL;
-    }
+
     return handle->buf;
   }
 
 
+  /*
+   * get_temp_buf: return one of the SSW's buffers
+   *
+   * Intended to be used while the system is single threaded by a user
+   * that needs to access the SD and needs a buffer.
+   *
+   * Typically, buffer 0 will be available.   Just use that for
+   * the time being.  Nothing more complicated than that needs
+   * to be done.
+   */
   async command uint8_t *SSW.get_temp_buf() {
+    if (ssw_p[0]->buf_state != SS_BUF_STATE_FREE)
+      ss_panic(21, ssw_p[0]->buf_state);
     return(ssw_p[0]->buf);
   }
 
@@ -274,16 +285,12 @@ implementation {
     /*
      * This task should only get kicked if not doing anything
      */
-    if (ssc.state != SSW_IDLE || ssc.ssw_num_full < SSW_GROUP) {
+    if (ssc.state != SSW_IDLE || ssc.ssw_num_full < SSW_GROUP)
       call Panic.panic(PANIC_SS, 22, ssc.state, ssc.ssw_num_full, 0, 0);
-      return;
-    }
 
     ssc.cur_handle = ssw_p[ssc.ssw_out];
-    if (ssc.cur_handle->buf_state != SS_BUF_STATE_FULL) {
+    if (ssc.cur_handle->buf_state != SS_BUF_STATE_FULL)
       ss_panic(23, ssc.cur_handle->buf_state);
-      return;
-    }
 
     /*
      * When running a simple sensor regime (all 1 sec, mag/accel 51mis) and writing out
@@ -313,33 +320,22 @@ implementation {
      */
     ssw_delay_start = call LocalTime.get();
     ssc.state = SSW_REQUESTED;
-    err = call SDResource.request();		 // this will also turn on the hardware when granted.
-    if (err) {
+
+    /* SDResource.request will all turn on the SD h/w when granted */
+    if ((err = call SDResource.request()))
       ss_panic(24, err);
-      return;
-    }
   }
 
 
   event void SDResource.granted() {
     error_t  err;
 
-    if (ssc.cur_handle->buf_state != SS_BUF_STATE_FULL) {
+    if (ssc.cur_handle->buf_state != SS_BUF_STATE_FULL)
       call Panic.panic(PANIC_SS, 25, (parg_t) ssc.cur_handle,
                        (parg_t) ssc.cur_handle->buf_state, 0, 0);
-      return;
-    }
 
-    if (ssc.dblk == 0) {
-      /*
-       * shouldn't be here.
-       */
+    if (ssc.dblk == 0)                  /* shouldn't have asked if no where to write */
       ss_panic(26, ssc.state);
-      ssc.state = SSW_IDLE;
-      if (call SDResource.release())
-	ss_panic(27, 0);
-      return;
-    }
 
     w_t0 = call LocalTime.get();
     ssw_write_grp_start = w_t0;
@@ -347,23 +343,19 @@ implementation {
     ssc.cur_handle->buf_state = SS_BUF_STATE_WRITING;
     ssc.state = SSW_WRITING;
     err = call SDwrite.write(ssc.dblk, ssc.cur_handle->buf);
-    if (err) {
+    if (err)
       ss_panic(27, err);
-      return;
-    }
   }
 
 
   event void SDwrite.writeDone(uint32_t blk, uint8_t *buf, error_t err) {
 
-    if (err || blk != ssc.dblk || ssc.cur_handle->buf_state != SS_BUF_STATE_WRITING) {
+    if (err || blk != ssc.dblk || ssc.cur_handle->buf_state != SS_BUF_STATE_WRITING)
       call Panic.panic(PANIC_SS, 28, err, blk, ssc.dblk, ssc.cur_handle->buf_state);
-      return;
-    }
 
     ssc.cur_handle->stamp = call LocalTime.get();
     ssc.cur_handle->buf_state = SS_BUF_STATE_FREE;
-    memset(ssc.cur_handle->buf, 0, SD_BUF_SIZE);
+    memset(ssc.cur_handle->buf, 0, SD_BLOCKSIZE);
     ssc.ssw_out++;
     if (ssc.ssw_out >= SSW_NUM_BUFS)
       ssc.ssw_out = 0;
@@ -390,10 +382,8 @@ implementation {
       ssc.cur_handle->stamp = call LocalTime.get();
       ssc.cur_handle->buf_state = SS_BUF_STATE_WRITING;
       err = call SDwrite.write(ssc.dblk, ssc.cur_handle->buf);
-      if (err) {
+      if (err)
 	ss_panic(27, err);
-	return;
-      }
       return;
     }
     w_t0 = call LocalTime.get();
@@ -405,28 +395,47 @@ implementation {
   }
 
 
-  /* flush any pending SSW buffers
+  /*
+   * flush all pending SSW buffers
+   *
+   * 1) flush any FULL buffers
+   * 2) If there is an ALLOC'd buffer with something in it,
+   *    also write that too.  (you like that also too?)
+   *    Collect is responsible for filling in required
+   *    fields in the ALLOC'd buffer and then kicking SSW.flush_all()
    *
    * we take pains not to tweak memory too much.
    */
-  async event void SysReboot.shutdown_flush() {
-    error_t rtn;
+  async command void SSW.flush_all() {
     ss_wr_buf_t *handle;
     uint8_t num_full, idx;
     uint32_t dblk;
 
-    rtn = call SDsa.reset();            /* make sure on and in a reasonable state */
-    if (rtn)                            /* well that didn't work, just bail out */
+    /*
+     * has the control structure been initialized?
+     * nope ->  bail
+     */
+    if (ssc.majik_a != SSC_MAJIK || ssc.majik_b != SSC_MAJIK)
       return;
+    if (!call SDsa.inSA()) {
+      if (call SDsa.reset())
+        return;
+    }
+
     idx = ssc.ssw_out;
     num_full = ssc.ssw_num_full;
+
+    /* too many, we be gone */
+    if (num_full > SSW_NUM_BUFS)
+      return;
     dblk = call DblkManager.get_nxt_blk();
     while (num_full) {
       handle = ssw_p[idx];
       if (dblk == 0)                    /* any unexpected, just bail */
         return;
-      if (handle->buf_state != SS_BUF_STATE_FULL)
-        return;
+      if (handle->majik != SS_BUF_SANE ||
+          handle->buf_state != SS_BUF_STATE_FULL)
+        return;                         /* that's weird, somethings wrong */
       call SDsa.write(dblk, handle->buf);
       idx++;
       if (idx >= SSW_NUM_BUFS)
@@ -434,6 +443,25 @@ implementation {
       dblk = call DblkManager.adv_nxt_blk();
       num_full--;
     }
+
+    /*
+     * We have flushed any buffers that are FULL.  We also need to flush
+     * the pending buffer that the Collector is currently filling if any.
+     */
+    if (idx != ssc.ssw_in)              /* should be next in from collector */
+      return;                           /* stop what we are doing, if not   */
+    handle = ssw_p[idx];
+    if (dblk == 0)                      /* if no where to go, bail */
+      return;
+    if (handle->majik != SS_BUF_SANE ||
+        handle->buf_state != SS_BUF_STATE_ALLOC)
+      return;
+
+    /*
+     * If the buffer is ALLOC'd then the Collector has gotten it and has
+     * definitely put something into it.  Just write it out.
+     */
+    call SDsa.write(dblk, handle->buf);
   }
 
 

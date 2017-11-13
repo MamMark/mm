@@ -106,6 +106,15 @@ implementation {
   };
 
 
+  const msp432_usci_config_t gps_9600_config = {
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
+    brw   : 873,
+    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
+            (0xee << EUSCI_A_MCTLW_BRS_OFS),
+    i2coa : 0
+  };
+
+
   const msp432_usci_config_t gps_115200_config = {
     ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
     brw   : 72,
@@ -116,15 +125,6 @@ implementation {
 
 
 #ifdef notdef
-  const msp432_usci_config_t gps_9600_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
-    brw   : 873,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0xee << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-
-
   const msp432_usci_config_t gps_57600_config = {
     ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
     brw   : 145,
@@ -252,11 +252,11 @@ implementation {
 
     switch(speed) {
       case    4800:     config =    &gps_4800_config;    break;
+      case    9600:     config =    &gps_9600_config;    break;
       case  115200:     config =  &gps_115200_config;    break;
       default:          gps_panic(2, speed, 0);          break;
 
 #ifdef notdef
-      case    9600:     config =    &gps_9600_config;    break;
       case   57600:     config =   &gps_57600_config;    break;
       case  307200:     config =  &gps_307200_config;    break;
       case  921600:     config =  &gps_921600_config;    break;

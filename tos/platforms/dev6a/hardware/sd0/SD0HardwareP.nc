@@ -76,7 +76,7 @@ implementation {
   } while (0)
 
   uint8_t idle_byte = 0xff;
-  uint8_t recv_dump[SD_BUF_SIZE];
+  uint8_t recv_dump[SD_BLOCKSIZE];
 
 /*
  * The dev6a main cpu clock is 16MiHz, SMCLK (for periphs) is clocked at
@@ -257,7 +257,7 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
   async command void HW.sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length) {
     uint32_t control;
 
-    if (length == 0 || (rcvptr == NULL && length > SD_BUF_SIZE))
+    if (length == 0 || (rcvptr == NULL && length > SD_BLOCKSIZE))
       sd_panic(8, length, 0);
 
     /*
@@ -268,7 +268,7 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
     /*
      * set the receiver up first.
      *
-     * if rcvptr is NULL we pull into recv_dump (514, big enough),  DSTINC always 8
+     * if rcvptr is NULL we pull into recv_dump (512, big enough),  DSTINC always 8
      * SRCINC is always NONE (coming from the port).
      */
     control = UDMA_CHCTL_DSTINC_8 | UDMA_CHCTL_SRCINC_NONE |

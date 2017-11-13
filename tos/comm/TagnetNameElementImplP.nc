@@ -35,8 +35,8 @@
  *
  */
 
-#include "Tagnet.h"
-#include "TagnetTLV.h"
+#include <Tagnet.h>
+#include <TagnetTLV.h>
 
 generic module TagnetNameElementImplP(int my_id, char uq_id[]) @safe() {
   uses interface     TagnetMessage  as  Super;
@@ -57,7 +57,9 @@ implementation {
     tagnet_tlv_t    *next_tlv;
     uint8_t          matched = FALSE;
     int              i;
-    
+
+    nop();
+    nop();                      /* BRK */
     this_tlv = call TName.this_element(msg);
     if (call TTLV.get_tlv_type(this_tlv) == TN_TLV_NODE_ID) { // node_id is special
       if (call TTLV.eq_tlv(name_tlv, this_tlv)                // if   me == this

@@ -36,17 +36,6 @@
 #define __OVERWATCH_H__
 
 /*
- * return codes for owl_startup
- */
-
-typedef enum {
-  OWLS_CONTINUE = 0,
-  OWLS_REBOOT,
-  OWLS_BOOT_NIB,
-} owls_rtn_t;
-
-
-/*
  * definintions for NIB access
  *
  * NIB_BASE:    where the NIB image starts
@@ -106,8 +95,7 @@ typedef enum {
 typedef enum  {
   OW_REQ_BOOT           = 0,            /* just boot, see ow_boot_mode */
   OW_REQ_INSTALL        = 1,
-  OW_REQ_REBOOT         = 2,            /* crash, rebooting */
-  OW_REQ_NIB_REBOOT     = 3,            /* reboot from NIB */
+  OW_REQ_FAIL           = 2,            /* crash, rebooting */
 } ow_request_t;
 
 
@@ -143,10 +131,11 @@ typedef enum  {
 typedef enum {
   ORR_NONE              = 0,
   ORR_FAIL,                             /* catch all for the time being */
-  ORR_PWR_FAIL,                         /* lost the control block, full pwr fail */
+  ORR_OWCB_CLOBBER,                     /* lost the control block, full pwr fail */
+  ORR_STRANGE,                          /* low level strangness */
+  ORR_FORCED,                           /* forced boot mode */
+  ORR_USER_REQUEST,                     /* user requested reboot */
   ORR_PANIC,
-  ORR_HARD_FAULT,
-  ORR_BAD_OWT_ACT,
 } ow_reboot_reason_t;
 
 
@@ -157,18 +146,32 @@ typedef enum {
  * initialized.  If the sig is valid we assume it is sane.  If we want to
  * be extra paranoid we can checksum it.  But that is a pain.
  */
-#define OW_SIG 0xFABAFABA
+#define OW_SIG      0xFABAFABA
+#define OW_BASE_UNK 0xFFFFFFFF
+
+
+/*
+ * OW_RPT_FLAGS (OWRF)
+ */
+
+enum {
+  OWRF_LAUNCH = 1,                      /* in process of an image launch */
+                                        /* gets cleared when reboot record is written */
+};
 
 
 /*
  * ow_control_block_t
  */
 typedef struct {
-  uint32_t           ow_sig_a;
+  uint32_t           ow_sig;
+  uint32_t           ow_rpt_flags;      /* reporting flags */
   uint32_t           cycle;             /* req input, time since last boot */
   uint32_t           time;              /* req input, time since last boot */
-  uint32_t           hard_reset;
-  uint32_t           reboot_count;      /* how many times rebooted */
+  uint32_t           reset_status;      /* recognized stati                */
+  uint32_t           reset_others;      /* unindentified other stati       */
+  uint32_t           from_base;         /* base address of where from      */
+  uint32_t           reboot_count;      /* how many times rebooted         */
 
   ow_request_t       ow_req;            /* req input */
   ow_reboot_reason_t reboot_reason;     /* req input */
@@ -179,6 +182,7 @@ typedef struct {
   uint32_t           ow_sig_b;
 
   uint32_t           strange;           /* strange shit */
+  uint32_t           strange_loc;
   uint32_t           vec_chk_fail;
   uint32_t           image_chk_fail;
 

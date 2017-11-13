@@ -57,7 +57,7 @@ implementation {
    * Exchanged with radio driver every receive call.
    */
   norace volatile uint8_t     tagMsgBuffer[sizeof(message_t)];
-  norace volatile uint8_t     tagMsgBufferGuard[] = "DEADBEF";
+  norace volatile uint8_t     tagMsgBufferGuard[] = "DEADBEAF";
   norace message_t          * pTagMsg = (message_t *) tagMsgBuffer;
   norace volatile uint8_t     tagMsgBusy, tagMsgSending;
   norace volatile uint32_t    tagmon_timeout  = 1024 * 100; // binary microseconds
@@ -105,7 +105,7 @@ implementation {
   tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
     message_t    * pNextMsg;
     nop();
-    nop();
+    nop();                     /* BRK */
     if (tagMsgBusy) {     // busy, ignore received msg by returning it
       return msg;
     }
@@ -146,7 +146,7 @@ implementation {
   event void Boot.booted() {
    error_t     error;
     nop();
-    nop();
+    nop();                      /* BRK */
     error = call RadioState.turnOn();
     if (error != 0) {
       call Panic.panic(-1, 194, (uint32_t) error, 0, 0, 0);

@@ -409,35 +409,36 @@
  * enable selected interrupts
  */
 // Interest bits set to one will enable interrupt
-#define SI446X_PH_INTEREST              SI446X_PH_STATUS_PACKET_SENT | \
+#define SI446X_PH_INTEREST             (SI446X_PH_STATUS_PACKET_SENT | \
                                         SI446X_PH_STATUS_PACKET_RX | \
                                         SI446X_PH_STATUS_CRC_ERROR | \
                                         SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY | \
-                                        SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL
+                                        SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL)
 
-#define SI446X_MODEM_INTEREST           SI446X_MODEM_STATUS_INVALID_SYNC | \
-                                        SI446X_MODEM_STATUS_RSSI | \
+#define SI446X_MODEM_INTEREST          (SI446X_MODEM_STATUS_INVALID_SYNC | \
                                         SI446X_MODEM_STATUS_PREAMBLE_DETECT | \
-                                        SI446X_MODEM_STATUS_SYNC_DETECT
+                                        SI446X_MODEM_STATUS_SYNC_DETECT)
 
-#define SI446X_CHIP_INTEREST            0
+#define SI446X_CHIP_INTEREST           (SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR | \
+                                        SI446X_CHIP_STATUS_CMD_ERROR)
 
-#define SI446X_PH_RX_CLEAR_MASK         (SI446X_PH_STATUS_FILTER_MATCH | \
+#define SI446X_PH_RX_CLEAR_MASK        (SI446X_PH_STATUS_FILTER_MATCH | \
                                         SI446X_PH_STATUS_FILTER_MISS | \
                                         SI446X_PH_STATUS_PACKET_RX | \
                                         SI446X_PH_STATUS_CRC_ERROR | \
-                                         SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL)
+                                        SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL)
 
-#define SI446X_MODEM_RX_CLEAR_MASK      (SI446X_MODEM_STATUS_POSTAMBLE_DETECT | \
+#define SI446X_MODEM_RX_CLEAR_MASK     (SI446X_MODEM_STATUS_POSTAMBLE_DETECT | \
                                         SI446X_MODEM_STATUS_INVALID_SYNC | \
                                         SI446X_MODEM_STATUS_RSSI_JUMP | \
                                         SI446X_MODEM_STATUS_RSSI | \
                                         SI446X_MODEM_STATUS_INVALID_PREAMBLE | \
                                         SI446X_MODEM_STATUS_PREAMBLE_DETECT | \
-                                           SI446X_MODEM_STATUS_SYNC_DETECT)
+                                        SI446X_MODEM_STATUS_SYNC_DETECT)
 
 #define SI446X_CHIP_RX_CLEAR_MASK       (SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR | \
-                                           SI446X_CHIP_STATUS_CMD_ERROR)
+                                         SI446X_CHIP_STATUS_STATE_CHANGE | \
+                                         SI446X_CHIP_STATUS_CMD_ERROR)
 
 //#define SI446X_CMD_GET_PH_STATUS              0x21
 #define SI446X_PH_STATUS_REPLY_SIZE           2
@@ -462,28 +463,29 @@
 #define SI446X_DEVICE_STATE_REPLY_SIZE          2
 
 typedef enum {
-	_NO_STATE   = 0,
-	_SLEEP___   = 1,
-	_SPI_ACT_   = 2,
-	_READY___   = 3,
-	_READYA__   = 4,
-	_TX_TUNE_   = 5,
-	_RX_TUNE_   = 6,
-	_TRANSMIT   = 7,
-	_RECEIVE_   = 8,
-} Si446x_idevice_state_t;
+        _NO_STATE   = 0,
+        _SLEEP___   = 1,
+        _SPI_ACT_   = 2,
+        _READY___   = 3,
+        _READYA__   = 4,
+        _TX_TUNE_   = 5,
+        _RX_TUNE_   = 6,
+        _TRANSMIT   = 7,
+        _RECEIVE_   = 8,
+} si446x_idevice_state_t;
 
 typedef enum {
-	RC_NO_STATE   = 0,
-	RC_SLEEP      = 1,
-	RC_SPI_ACT    = 2,
-	RC_READY      = 3,
-	RC_READYA     = 4,
-	RC_TX_TUNE    = 5,
-	RC_RX_TUNE    = 6,
-	RC_TRANSMIT   = 7,
-	RC_RECEIVE    = 8,
-} Si446x_device_state_t;
+        RC_NO_CHANGE  = 0,
+        RC_NO_STATE   = 0,
+        RC_SLEEP      = 1,
+        RC_SPI_ACT    = 2,
+        RC_READY      = 3,
+        RC_READYA     = 4,
+        RC_TX_TUNE    = 5,
+        RC_RX_TUNE    = 6,
+        RC_TRANSMIT   = 7,
+        RC_RECEIVE    = 8,
+} si446x_device_state_t;
 
 //#define SI446X_CMD_READ_BUFF                  0x44
 #define SI446X_REPLY_CTS                      0xff
@@ -1111,7 +1113,7 @@ typedef struct {
   uint8_t  cts;
   uint8_t  irqn;
   uint8_t  csn;
-  Si446x_device_state_t  ds;
+  si446x_device_state_t  ds;
   uint8_t  ph;
   uint8_t  modem;
   uint8_t  rssi;
@@ -1175,7 +1177,7 @@ typedef struct {
   uint8_t               PAx[SI446X_GROUP22_SIZE];
   uint8_t               SYNTH[SI446X_GROUP23_SIZE];
   uint8_t               MATCH[SI446X_GROUP30_SIZE];
-  uint8_t               FREQ_CTL[SI446X_GROUP40_SIZE];
+  uint8_t               FREQ_CONTROL[SI446X_GROUP40_SIZE];
   uint8_t               RX_HOP[SI446X_GROUP50_SIZE];
 //  uint8_t              grF0_pti[SI446X_GROUPF0_SIZE];
 } radio_dump_t;

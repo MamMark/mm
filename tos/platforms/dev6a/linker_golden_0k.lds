@@ -157,6 +157,12 @@ SECTIONS {
         __overwatch_data_end__ = .;
     } > REGION_DATA
 
+    .crash_regs (NOLOAD) : ALIGN(4) {
+        __crash_regs_start__ = .;
+        KEEP (*(.crash_regs))
+        __crash_regs_end__ = .;
+    } > REGION_DATA
+
     .noinit (NOLOAD) : {
         KEEP (*(.noinit))
      } > REGION_DATA
@@ -190,9 +196,15 @@ SECTIONS {
         KEEP (*(.heap))
     } > REGION_HEAP AT> REGION_HEAP
 
-    __stack_start__ = .;
+    .crash_stack  (NOLOAD) : ALIGN(8) {
+        __crash_stack_start__ = .;
+        KEEP(*(.crash_stack))
+     } > REGION_STACK AT> REGION_STACK
+     __crash_stack_top__ = .;
+
 
     .stack (NOLOAD) : ALIGN(8) {
+        __stack_start__ = .;
         KEEP(*(.stack))
     } > REGION_STACK AT> REGION_STACK
 

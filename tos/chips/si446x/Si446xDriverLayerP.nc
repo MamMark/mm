@@ -148,7 +148,7 @@ implementation {
 #define LOW_PRIORITY 0
 
 #define __PANIC_RADIO(where, w, x, y, z) do {               \
-	call Panic.panic(PANIC_RADIO, where, w, x, y, z);   \
+        call Panic.panic(PANIC_RADIO, where, w, x, y, z);   \
   } while (0)
 
 
@@ -159,29 +159,40 @@ implementation {
   typedef struct global_io_context {
     message_t                       * pRxMsg;          // msg driver owns
     message_t                       * pTxMsg;          // msg driver owns
+    uint32_t                          rc_readys;
+    uint32_t                          tx_packets;
+    uint32_t                          tx_reports;
+    uint32_t                          rx_packets;
+    uint32_t                          rx_reports;
+
+    uint16_t                          tx_timeouts;
+    uint16_t                          tx_underruns;    // tx active, fifo underrun, oops
+
+    uint16_t                          rx_bad_crcs;     /* active to crc_flush */
+    uint16_t                          rx_timeouts;
+    uint16_t                          rx_inv_syncs;
+    uint16_t                          rx_errors;
+
+    uint16_t                          rx_overruns;     // inbound overuns, hw
+    uint16_t                          rx_active_overruns; // active fifo overrun
+    uint16_t                          rx_crc_overruns;    // crc_flush fifo overrun
+
+    uint16_t                          rx_crc_packet_rx;   // crc_flush packet_rx, weird
+
+    uint16_t                          nops;
+    uint16_t                          unshuts;
+    uint8_t                           channel;         // current channel setting
+    uint8_t                           tx_power;        // current power setting
     uint8_t                           tx_ff_index;     // msg offset for fifo write
     uint8_t                           rx_ff_index;     // msg offset for fifo read
     bool                              rc_signal;       // signal command complete
     bool                              tx_signal;       // signal transmit complete
     error_t                           tx_error;        // last tx error
-    uint32_t                          tx_packets;
-    uint16_t                          tx_timeouts;
-    uint32_t                          tx_reports;
-    uint32_t                          tx_readys;
-    uint32_t                          rx_packets;
-    uint16_t                          rx_bad_crcs;
-    uint32_t                          rx_reports;
-    uint16_t                          rx_timeouts;
-    uint16_t                          rx_inv_syncs;
-    uint16_t                          nops;
-    uint16_t                          unshuts;
-    uint8_t                           channel;         // current channel setting
-    uint8_t                           tx_power;        // current power setting
   } global_io_context_t;
 
   tasklet_norace global_io_context_t  global_ioc;
   tasklet_norace uint8_t              rxMsgBuffer[sizeof(message_t)];
-  tasklet_norace uint8_t              rxMsgBufferGuard[] = "DEADBEF";
+  tasklet_norace uint8_t              rxMsgBufferGuard[] = "DEADBEAF";
 
 
 /**************************************************************************/
@@ -239,7 +250,7 @@ implementation {
     uint16_t               ph;
     uint16_t               modem;
     uint16_t               chip;
-    Si446x_device_state_t  ds;
+    si446x_device_state_t  ds;
     uint16_t               rssi;
     fsm_event_t            ev;
     fsm_state_t            cs;
@@ -269,12 +280,12 @@ implementation {
     for (ev_list = (fsm_transition_t *) fsm_events_group[ev];
          ev_list && (ev_list->action != A_BREAK); ev_list++) {
       if ((ev_list->current_state == st) || (ev_list->current_state == S_DEFAULT)) {
-	trans = ev_list;
-	break;
+        trans = ev_list;
+        break;
       }
     }
     if (trans == NULL)
-      __PANIC_RADIO(81, ev, st, (parg_t) trans, 0);
+      __PANIC_RADIO(81, ev, st, 0, 0);
     return trans;
   }
 
@@ -339,7 +350,7 @@ implementation {
    * fsm_trace related global variables and update routines. records state
    * machine execution details.
    */
-#define FSM_MAX_TRACE   40
+#define FSM_MAX_TRACE   120
   tasklet_norace fsm_stage_info_t fsm_trace_array[FSM_MAX_TRACE];
   tasklet_norace uint16_t fsm_tp, fsm_tc, fsm_count;
   const uint16_t fsm_max =  FSM_MAX_TRACE;
@@ -385,56 +396,63 @@ implementation {
     fsm_result_t ns;
 
     if (fsm_active)
-      __PANIC_RADIO(82, ev, fsm_global_current_state,  1, 1);
+      __PANIC_RADIO(82, ev, fsm_global_current_state, fsm_active, 1);
 
     do {
       fsm_active++; // keep track of number of iterations of internal events
       ns.s = S_SDN;
       ns.e = E_NONE;
       fsm_trace_start(ev, fsm_global_current_state);
-      // select transition record based on event and current state
-      if ((t = fsm_select_transition(ev, fsm_global_current_state))) {
-	// this list must match with actions defined by FSM
-	switch (fsm_trace_action(t->action)) {
-	case A_CLEAR_SYNC:  ns = a_clear_sync(t);  break;
-	case A_CONFIG:      ns = a_config(t);      break;
-	case A_NOP:	    ns = a_nop(t);         break;
-	case A_PWR_DN:	    ns = a_pwr_dn(t);      break;
-	case A_PWR_UP:      ns = a_pwr_up(t);      break;
-	case A_READY:	    ns = a_ready(t);       break;
-	case A_RX_CMP:      ns = a_rx_cmp(t);      break;
-	case A_RX_CNT_CRC:  ns = a_rx_cnt_crc(t);  break;
-	case A_RX_DRAIN_FF: ns = a_rx_drain_ff(t); break;
-	case A_RX_START:    ns = a_rx_start(t);    break;
-	case A_RX_TIMEOUT:  ns = a_rx_timeout(t);  break;
-	case A_STANDBY:	    ns = a_standby(t);     break;
-	case A_TX_CMP:      ns = a_tx_cmp(t);      break;
-	case A_TX_FILL_FF:  ns = a_tx_fill_ff(t);  break;
-	case A_TX_START:    ns = a_tx_start(t);    break;
-	case A_TX_TIMEOUT:  ns = a_tx_timeout(t);  break;
-	case A_UNSHUT:	    ns = a_unshut(t);      break;
-	case A_BREAK:
-	default:            t = NULL;              break;
-	}
-	fsm_trace_end(ns);
-	// update new state, (keep current if default or unknown)
-	if ((t) && (ns.s < S_DEFAULT)) {
-	  fsm_global_current_state = ns.s;
-	}
+
+      /*
+       * select transition record based on event and current state
+       * fsm_select_transition will not return NULL, will panic
+       * if no transition.
+       */
+      t = fsm_select_transition(ev, fsm_global_current_state);
+
+      // this list must match with actions defined by FSM
+      switch (fsm_trace_action(t->action)) {
+        case A_CLEAR_SYNC:  ns = a_clear_sync(t);  break;
+        case A_CONFIG:      ns = a_config(t);      break;
+        case A_NOP:         ns = a_nop(t);         break;
+        case A_PWR_DN:      ns = a_pwr_dn(t);      break;
+        case A_PWR_UP:      ns = a_pwr_up(t);      break;
+        case A_READY:       ns = a_ready(t);       break;
+        case A_RX_CMP:      ns = a_rx_cmp(t);      break;
+        case A_RX_CNT_CRC:  ns = a_rx_cnt_crc(t);  break;
+        case A_RX_DRAIN_FF: ns = a_rx_drain_ff(t); break;
+        case A_RX_FETCH_FF: ns = a_rx_fetch_ff(t); break;
+        case A_RX_FLUSH:    ns = a_rx_flush(t);    break;
+        case A_RX_OVERRUN_RESET:  ns = a_rx_overrun_reset(t);  break;
+        case A_TX_UNDERRUN_RESET: ns = a_tx_underrun_reset(t); break;
+        case A_RX_START:    ns = a_rx_start(t);    break;
+        case A_RX_TIMEOUT:  ns = a_rx_timeout(t);  break;
+        case A_STANDBY:     ns = a_standby(t);     break;
+        case A_TX_CMP:      ns = a_tx_cmp(t);      break;
+        case A_TX_FILL_FF:  ns = a_tx_fill_ff(t);  break;
+        case A_TX_START:    ns = a_tx_start(t);    break;
+        case A_TX_TIMEOUT:  ns = a_tx_timeout(t);  break;
+        case A_UNSHUT:      ns = a_unshut(t);      break;
+        case A_BREAK:
+        default:            t = NULL;              break;
       }
+      fsm_trace_end(ns);
+      // update new state, (keep current if default or unknown)
+      if (ns.s < S_DEFAULT)
+        fsm_global_current_state = ns.s;
+
       // protect against infinite loop errors, no more than 3
       // consequtive events are allowed to be generated by
       // action processing
       if (fsm_active > 3)
-	__PANIC_RADIO(83, ev, fsm_global_current_state, ns.s, ns.e);
+        __PANIC_RADIO(83, ev, fsm_global_current_state, ns.s, ns.e);
       // process new event generated by previous action, if any
       ev = ns.e;
     } while (ev);
-    // if t = null, then break detected, no action found, or no transition
-    // record identified. state machine is lost.
-    if (!t)
-      __PANIC_RADIO(84, ev, fsm_global_current_state, ns.s, ns.e);
-    fsm_active = FALSE;
+
+    fsm_active = 0;                     /* done with any cascade */
+
     // signal completions
     if (global_ioc.rc_signal)
       post cmd_done_task();
@@ -482,10 +500,6 @@ implementation {
   /**************************************************************************/
 
   si446x_packet_header_t *getPhyHeader(message_t *msg) {
-    // NEEDS WORK
-    //    return (si446x_packet_header_t *) ((uint8_t *) msg + offset);
-    //    return ((void *) &msg->data - sizeof(si446x_packet_header_t));
-    //    return ((void *) msg + call Config.headerOffset(msg));
     return ((void *) msg);
   }
 
@@ -566,22 +580,21 @@ implementation {
       /* check to see if we've spent too much time */
       iter_now = call Platform.usecsRaw();
       if ((iter_now - iter_start) > 1000) {
-	config_prop_ptr = cp;
-	break;
+        config_prop_ptr = cp;
+        break;
       }
 
       // process next command in list
       size = *cp++;
       if (size > 16) {
-	__PANIC_RADIO(91, config_list_iter, (parg_t) config_prop_ptr, size, 0);
+        __PANIC_RADIO(91, config_list_iter, (parg_t) config_prop_ptr, size, 0);
       }
       if (size == 0) {
-	config_list_iter++;
-	config_prop_ptr = (uint8_t *) config_list[config_list_iter];
-	cp = (void *) config_prop_ptr;
-	continue;
+        config_list_iter++;
+        config_prop_ptr = (uint8_t *) config_list[config_list_iter];
+        cp = (void *) config_prop_ptr;
+        continue;
       }
-      nop();
       // power up and frr control are handled elsewhere
       if (!( (cp[0] == SI446X_CMD_POWER_UP) ||
             ((cp[0] == SI446X_CMD_SET_PROPERTY) && (cp[1] == 2 /* FRR_CTL */))) ) {
@@ -591,7 +604,7 @@ implementation {
       config_task_records++;
     }
 
-    if (cp) { 			/* still more to do, post, let others run */
+    if (cp) {                   /* still more to do, post, let others run */
       config_task_posts++;
       post load_config_task();
       return;
@@ -620,22 +633,22 @@ implementation {
       case CMD_TURNON:
       case CMD_TURNOFF:
       case CMD_STANDBY:
-	signal RadioState.done();
-	dvr_cmd = CMD_NONE;
-	break;
+        signal RadioState.done();
+        dvr_cmd = CMD_NONE;
+        break;
       case CMD_CCA:
-	signal RadioCCA.done(call Si446xCmd.check_CCA() ? SUCCESS : EBUSY);
-	dvr_cmd = CMD_NONE;
-	break;
+        signal RadioCCA.done(call Si446xCmd.check_CCA() ? SUCCESS : EBUSY);
+        dvr_cmd = CMD_NONE;
+        break;
       default:
-	dvr_cmd = CMD_NONE;
-	break;
+        dvr_cmd = CMD_NONE;
+        break;
       }
       global_ioc.rc_signal = FALSE;
     }
     if ((dvr_cmd == CMD_NONE) && (fsm_get_state() == S_RX_ON)) {
       signal RadioSend.ready();
-      global_ioc.tx_readys++;
+      global_ioc.rc_readys++;
     }
   }
 
@@ -656,7 +669,7 @@ implementation {
     }
     if ((dvr_cmd == CMD_NONE) && (fsm_get_state() == S_RX_ON)) {
       signal RadioSend.ready();
-      global_ioc.tx_readys++;
+      global_ioc.rc_readys++;
     }
   }
 
@@ -853,12 +866,13 @@ implementation {
   fsm_result_t a_rx_start(fsm_transition_t *t) {
     uint8_t        rssi;
 
+    if (!(global_ioc.pRxMsg))
+      __PANIC_RADIO(11, 0, 0, 0, 0);
     global_ioc.rx_ff_index = 0;
-    if (global_ioc.pRxMsg) {
-      rssi = call Si446xCmd.fast_latched_rssi();
-      call PacketRSSI.set(global_ioc.pRxMsg, rssi);
-      call PacketLinkQuality.set(global_ioc.pRxMsg, rssi);
-    }
+    global_ioc.rx_packets++;
+    rssi = call Si446xCmd.fast_latched_rssi();
+    call PacketRSSI.set(global_ioc.pRxMsg, rssi);
+    call PacketLinkQuality.set(global_ioc.pRxMsg, rssi);
     start_alarm(SI446X_RX_TIMEOUT);
     return fsm_results(t->next_state, E_NONE);
   }
@@ -866,31 +880,74 @@ implementation {
 
   /**************************************************************************/
   /*
+   * pull_rx(): pull the rx fifo into the buffer.
+   */
+  void pull_rx() {
+    uint8_t  *dp;
+    uint16_t  tx_len, rx_len, x, y;
+    uint16_t  max_delta;
+
+    dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
+    if (!dp) {                          // should have somewhere to receive
+      __PANIC_RADIO(10, 0, 0, 0, 0);
+    }
+    max_delta = sizeof(global_ioc.pRxMsg->header) + sizeof(global_ioc.pRxMsg->data);
+    call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
+    if (rx_len == 0 || global_ioc.rx_ff_index + rx_len > max_delta) {
+      call Si446xCmd.fifo_info(&x, &y, 0);
+      __PANIC_RADIO(10, global_ioc.rx_ff_index, rx_len, ((uint32_t) x) << 16 | y, (parg_t) dp);
+    }
+
+    call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
+    global_ioc.rx_ff_index += rx_len;
+  }
+
+
+  /**************************************************************************/
+  /*
    * a_rx_drain_ff
    *
-   * Use the rx_fifo_almost_full to indicate that more data is ready to
-   * be received. Also, check when the packet header is in the buffer
-   * and return a peek at this to the app through the .header() event.
-   * Also, add RSSI to the packet metadata.
+   * bad dog.
+   *
+   * draining and tossing the received data.  We place it in the
+   * active receive buffer so we can see it.  Doesn't go up the stack.
    */
 
   fsm_result_t a_rx_drain_ff(fsm_transition_t *t) {
-    uint8_t        *dp;
-    uint16_t        tx_ff_free, rx_len;
+    /* currently same as fetch */
+    return a_rx_fetch_ff(t);
+  }
 
-    if (!global_ioc.pRxMsg) {            // should have somewhere to receive
-      __PANIC_RADIO(10, 0, 0, 0, 0);
-    }
-    dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
-    call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, 0);
-    call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
-    if ((global_ioc.rx_ff_index == 0) && (!signal RadioReceive.header(global_ioc.pRxMsg))) {
-      // proceed with a_rx_on action to start receiving again
-      stop_alarm();
-      return a_rx_on(t);
-    }
-    global_ioc.rx_ff_index += rx_len;
+
+  /**************************************************************************/
+  /*
+   * a_rx_fetch_ff
+   *
+   * good dog.
+   */
+
+  fsm_result_t a_rx_fetch_ff(fsm_transition_t *t) {
+    pull_rx();
     return fsm_results(t->next_state, E_NONE);
+  }
+
+
+  /**************************************************************************/
+  /*
+   * a_rx_flush
+   *
+   * current receive has blown up in some spectacular fashion.
+   * terminate with extreme prejudice
+   */
+  fsm_result_t a_rx_flush(fsm_transition_t *t) {
+    uint16_t rx_len, tx_len;
+
+    global_ioc.rx_crc_packet_rx++;
+    stop_alarm();
+    call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
+    if (rx_len)                         /* something else to grab */
+      pull_rx();                        /* checks for null pRxMsg */
+    return a_rx_on(t);
   }
 
 
@@ -904,15 +961,13 @@ implementation {
     uint8_t        *dp;
     uint16_t        pkt_len, tx_ff_free, rx_len;
 
-    if (!global_ioc.pTxMsg) {            // should have something to send
-      __PANIC_RADIO(5, 0, 0, 0, 0);
-    }
-    call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
-    call Si446xCmd.ll_clr_ints((uint8_t)~SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
-			       (uint8_t)~SI446X_MODEM_RX_CLEAR_MASK,
-			       (uint8_t)~SI446X_CHIP_RX_CLEAR_MASK);
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
-    pkt_len = *dp + 1;              // length of data field is first byte of msg
+    if (!dp || !(*dp))                  /* make sure reasonable to send */
+      __PANIC_RADIO(5, 0, 0, 0, 0);
+
+    call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
+    pkt_len = *dp;                  // length of data field is first byte of msg
+    (*dp)--;                        // h/w expects one less, stoopid h/w
     call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, SI446X_FIFO_FLUSH_TX);
     if (tx_ff_free != SI446X_EMPTY_TX_LEN)   // fifo should be empty
       __PANIC_RADIO(6, tx_ff_free, pkt_len, 0, (parg_t) dp);
@@ -935,17 +990,34 @@ implementation {
    */
   fsm_result_t a_tx_fill_ff(fsm_transition_t *t) {
     uint8_t        *dp;
-    uint16_t        chk_len, pkt_len, tx_ff_free, rx_len;
+    uint16_t        pkt_len, tx_ff_free, rx_len, max_delta;
+    int16_t         chk_len;
 
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
-    pkt_len = *dp + 1;              // length of data field is first byte of msg
-    chk_len = pkt_len - global_ioc.tx_ff_index;
+    pkt_len = 0;
+    chk_len = 0;
+
+    if (dp) {
+      /*
+       * WARNING WARNING WARNING.  At this point we have already started
+       * transmitting the packet and have modified the frame_size cell to
+       * make the h/w happy.  Thusly it will be one less than we started
+       * with at the high layer.
+       */
+      pkt_len = *dp + 1;              // length of data field is first byte of msg
+      chk_len = pkt_len - global_ioc.tx_ff_index;
+    }
+    max_delta = sizeof(global_ioc.pTxMsg->header) + sizeof(global_ioc.pTxMsg->data);
+    if (!dp || chk_len < 0)
+      __PANIC_RADIO(7, chk_len, pkt_len, global_ioc.tx_ff_index, (parg_t) dp);
     if (chk_len > 0) {
       call Si446xCmd.fifo_info(&rx_len, &tx_ff_free, 0);
       if (tx_ff_free == SI446X_EMPTY_TX_LEN)   // too late if fifo is already empty
-	__PANIC_RADIO(7, tx_ff_free, pkt_len, global_ioc.tx_ff_index, (parg_t) dp);
-      // find size to fill fifo max(chk_len, tx_ff_free)
+        __PANIC_RADIO(7, tx_ff_free, pkt_len, global_ioc.tx_ff_index, (parg_t) dp);
+      // find size to fill fifo min(chk_len, tx_ff_free)
       chk_len = (chk_len < tx_ff_free) ? chk_len : tx_ff_free;
+      if (global_ioc.tx_ff_index + chk_len > max_delta)
+        __PANIC_RADIO(7, global_ioc.tx_ff_index, chk_len, tx_ff_free, (parg_t) dp);
       call Si446xCmd.write_tx_fifo(dp + global_ioc.tx_ff_index, chk_len);
       global_ioc.tx_ff_index += chk_len;
     }
@@ -956,22 +1028,43 @@ implementation {
  /**************************************************************************/
 
   fsm_result_t a_rx_cnt_crc(fsm_transition_t *t) {
+    uint16_t rx_len, tx_len;
+    si446x_int_state_t istate;
+    si446x_int_clr_t   int_clr;
+    uint32_t t0, t1;
+    si446x_device_state_t new_state;
+
+    new_state = call Si446xCmd.fast_device_state();
+    call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
+    int_clr.ph_pend = 0xff;
+    int_clr.modem_pend = 0xff;
+    int_clr.chip_pend = 0xff;
+    call Si446xCmd.ll_getclr_ints(&int_clr, &istate);
+    t0 = call Platform.usecsRaw();
+    new_state = call Si446xCmd.change_state(RC_READY, TRUE);
+    t1 = call Platform.usecsRaw();
+
+    call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
+    call Si446xCmd.ll_clr_ints(0xff, 0xff, 0xff);  // clear all interrupts
+    call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
+    call Si446xCmd.ll_getclr_ints(&int_clr, &istate);
+    nop();                              /* BRK */
+
     global_ioc.rx_bad_crcs++;
-    call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
-    // force radio chip to sleep. this is a workaround (see SI446x errata)
-    call Si446xCmd.change_state(RC_SLEEP, TRUE);
-    call Si446xCmd.ll_clr_ints(SI446X_PH_RX_CLEAR_MASK, // clear the receive interrupts
-			       SI446X_MODEM_RX_CLEAR_MASK,
-			       SI446X_CHIP_RX_CLEAR_MASK);
-    stop_alarm();
-    return a_rx_on(t);
+    return fsm_results(t->next_state, E_NONE);
   }
 
 
  /**************************************************************************/
   fsm_result_t a_rx_timeout(fsm_transition_t *t) {
     global_ioc.rx_timeouts++;
-    //    call Si446xCmd.change_state(RC_SLEEP, FALSE);
+    return a_rx_on(t);
+  }
+
+
+ /**************************************************************************/
+  fsm_result_t a_reset_rx_fifo(fsm_transition_t *t) {
+    call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
     return a_rx_on(t);
   }
 
@@ -979,8 +1072,7 @@ implementation {
  /**************************************************************************/
   fsm_result_t a_clear_sync(fsm_transition_t *t) {
     global_ioc.rx_inv_syncs++;
-    call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX);
-    return a_rx_on(t);
+    return a_reset_rx_fifo(t);
   }
 
 
@@ -996,32 +1088,82 @@ implementation {
 
 
   /**************************************************************************/
+  /*
+   * over_under_reset - clean up after an over/underrun error
+   */
+  fsm_result_t over_under_reset(fsm_transition_t *t) {
+    si446x_device_state_t  new_state;
+    uint32_t               t0, t1;
+
+    /* quiesce radio */
+    t0 = call Platform.usecsRaw();
+    new_state = call Si446xCmd.change_state(RC_READY, TRUE);
+    t1 = call Platform.usecsRaw();
+    if (new_state != RC_READY)
+      __PANIC_RADIO(4, t0, t1, t1-t0, 0);
+    t1 -= t0;
+    nop();                               /* BRK */
+    return a_rx_on(t);
+  }
+
+  /**************************************************************************/
+
+  fsm_result_t a_rx_overrun_reset(fsm_transition_t *t) {
+    global_ioc.rx_overruns++;
+    switch (t->current_state) {
+      case S_CRC_FLUSH: global_ioc.rx_crc_overruns++;    break;
+      case S_RX_ACTIVE: global_ioc.rx_active_overruns++; break;
+      default: break;
+    }
+    return over_under_reset(t);
+  }
+
+  /**************************************************************************/
+
+  fsm_result_t a_tx_underrun_reset(fsm_transition_t *t) {
+    global_ioc.tx_underruns++;
+    return over_under_reset(t);
+  }
+
+  /**************************************************************************/
 
   fsm_result_t a_rx_cmp(fsm_transition_t *t) {
-    uint8_t        *dp;
-    uint16_t        pkt_len, tx_len, rx_len;
+    uint16_t        pkt_len, rx_len, tx_len;
+    si446x_packet_header_t *hp;
 
-    if (!global_ioc.pRxMsg) {            // should have somewhere to receive
-      __PANIC_RADIO(10, 0, 0, 0, 0);
-    }
     stop_alarm();
-    dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
+
+    /*
+     * get pkt_len before any other state changes, we don't know
+     * if it matters or not.  but haven't explored it.
+     */
     pkt_len = call Si446xCmd.get_packet_info() + 1;        // include len byte
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
-    call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
-    if (pkt_len != (global_ioc.rx_ff_index + rx_len))
-      __PANIC_RADIO(11, pkt_len, rx_len, (parg_t) dp, 0);
-    // check to see if upper layer wants the packet
-    // if index > 0 then receive.header() was successful in a_rx_drain_ff()
-    // else this is short packet and completed already, so still need to check
-    if ((global_ioc.rx_ff_index > 0) || (signal RadioReceive.header(global_ioc.pRxMsg))) {
-      global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
-      global_ioc.rx_reports++;
+    if (rx_len)                         /* something else to grab */
+      pull_rx();                        /* checks for null pRxMsg */
+
+    /*
+     * first byte?  this is the length and SiLabs seems to think this is the
+     * length of the following bytes and doesn't include the length itself.
+     * Brooookkkkeeennnn.   fix the first byte which is the frame length.
+     */
+    hp = getPhyHeader(global_ioc.pRxMsg);
+    if (!hp)
+      __PANIC_RADIO(11, 0, 0, 0, 0);
+    hp->frame_length += 1;
+    if (pkt_len != global_ioc.rx_ff_index ||
+        pkt_len != hp->frame_length) {
+      /*
+       * something weird happened.  We finished receiving but it is too
+       * short.  Lost something in the middle.  Lost interrupt?
+       * Overrun?
+       */
+      global_ioc.rx_errors++;
+      return a_rx_on(t);
     }
-    global_ioc.rx_ff_index += rx_len;
-    global_ioc.rx_packets++;
-    // proceed with a_rx_on action to start receiving again
-    return a_rx_on(t);
+    global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
+    global_ioc.rx_reports++;
+    return a_rx_on(t);                  /* start receiving again */
   }
 
 
@@ -1033,10 +1175,13 @@ implementation {
     stop_alarm();
     global_ioc.tx_packets++;
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
-//    RADIO_ASSERT( tx_len == max(64/129)? );
+    if (tx_len != SI446X_EMPTY_TX_LEN)
+      __PANIC_RADIO(10, rx_len, tx_len, 0, 0);
+
     // set conditions for returning send done after FSM completes
     global_ioc.tx_signal = TRUE;
     global_ioc.tx_error = SUCCESS;
+
     /* proceed with a_rx_on action to start receiving again */
     return a_rx_on(t);
   }
@@ -1168,50 +1313,64 @@ implementation {
    * Check to see if any more interrupts are in the pending information
    * and return associated FSM event to be processed.
    * Clear the flag in the pending information to denote handled.
+   *
+   * Interrupt Priority:
+   *
+   * preamble_detect
+   * invalid_sync
+   * sync_detect
+   * crc_error
+   * fifo_over/underrun (fifo_ou_run)
+   *
+   * rx_thresh
+   * tx_thresh
+   * packet_rx
+   * packet_sent
+   *
    */
   fsm_event_t get_next_interrupt_event(volatile si446x_int_state_t *isp) {
-    if (isp->ph_pend & SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY) {
-      isp->ph_pend ^= SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY;
-      return E_TX_THRESH;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
-      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_SENT;
-      return E_PACKET_SENT;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
-      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
-      return E_RX_THRESH;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
-      isp->ph_pend ^= SI446X_PH_STATUS_CRC_ERROR;
-      // ignore the rx complete & thresh flags since crc error will drive state change
-      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL + SI446X_PH_STATUS_PACKET_RX;
-      return E_CRC_ERROR;
-    }
-    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_RX) {
-      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_RX;
-      return E_PACKET_RX;
+
+    /*
+     * CMD_ERR
+     */
+    if (isp->chip_pend & SI446X_CHIP_STATUS_CMD_ERROR)
+      __PANIC_RADIO(18, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
+
+    if (isp->modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
+      isp->modem_pend ^= SI446X_MODEM_STATUS_PREAMBLE_DETECT;
+      return E_PREAMBLE_DETECT;
     }
     if (isp->modem_pend & SI446X_MODEM_STATUS_INVALID_SYNC) {
       isp->modem_pend ^= SI446X_MODEM_STATUS_INVALID_SYNC;
       return E_INVALID_SYNC;
     }
-    if (isp->modem_pend & SI446X_MODEM_STATUS_PREAMBLE_DETECT) {
-      isp->modem_pend ^= SI446X_MODEM_STATUS_PREAMBLE_DETECT;
-      return E_PREAMBLE_DETECT;
-    }
     if (isp->modem_pend & SI446X_MODEM_STATUS_SYNC_DETECT) {
       isp->modem_pend ^= SI446X_MODEM_STATUS_SYNC_DETECT;
       return E_SYNC_DETECT;
     }
-    if (isp->chip_pend & SI446X_CHIP_STATUS_CMD_ERROR) {
-#ifdef notdef
-      // should read chip status to get command error info
-      call Si446xCmd.dump_radio();
-      __PANIC_RADIO(18, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
-#endif
-      isp->chip_pend ^= SI446X_CHIP_STATUS_CMD_ERROR;
-      return E_NONE;
+    if (isp->ph_pend & SI446X_PH_STATUS_CRC_ERROR) {
+      isp->ph_pend ^= SI446X_PH_STATUS_CRC_ERROR;
+      return E_CRC_ERROR;
+    }
+    if (isp->chip_pend & SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR) {
+      isp->chip_pend ^= SI446X_CHIP_STATUS_FIFO_UNDER_OVER_ERROR;
+      return E_FIFO_OU_RUN;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL) {
+      isp->ph_pend ^= SI446X_PH_STATUS_RX_FIFO_ALMOST_FULL;
+      return E_RX_THRESH;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY) {
+      isp->ph_pend ^= SI446X_PH_STATUS_TX_FIFO_ALMOST_EMPTY;
+      return E_TX_THRESH;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_RX) {
+      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_RX;
+      return E_PACKET_RX;
+    }
+    if (isp->ph_pend & SI446X_PH_STATUS_PACKET_SENT) {
+      isp->ph_pend ^= SI446X_PH_STATUS_PACKET_SENT;
+      return E_PACKET_SENT;
     }
     if (isp->modem_pend & SI446X_MODEM_STATUS_RSSI) {
       isp->modem_pend ^= SI446X_MODEM_STATUS_RSSI;
@@ -1220,10 +1379,10 @@ implementation {
 
     if (isp->ph_pend || isp->modem_pend || isp->chip_pend) {
       /* missed something */
+      __PANIC_RADIO(19, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
       isp->ph_pend = 0;
       isp->modem_pend = 0;
       isp->chip_pend = 0;
-      //__PANIC_RADIO(19, isp->ph_pend, isp->modem_pend, isp->chip_pend, 0);
     }
     return E_NONE;
   }
@@ -1232,7 +1391,7 @@ implementation {
   typedef struct int_trace {
     uint32_t               time_stamp;
     uint16_t               delta;
-    Si446x_idevice_state_t ds;
+    si446x_idevice_state_t ds;
     uint8_t                ph_pend;
     uint8_t                modem_pend;
     uint8_t                chip_pend;
@@ -1286,16 +1445,16 @@ implementation {
       call Si446xCmd.trace_radio_pend(radio_pend);
       call Si446xCmd.ll_getclr_ints(NULL,isp);
       if (!isp->ph_pend && !isp->modem_pend && !isp->chip_pend)
-	break;
+        break;
       // process only events of interest
       isp->ph_pend    &= SI446X_PH_INTEREST;
       isp->modem_pend &= SI446X_MODEM_INTEREST;
       isp->chip_pend  &= SI446X_CHIP_INTEREST;
       while ((isp->ph_pend | isp->modem_pend | isp->chip_pend)) {
-	interrupt_trace(isp);
-	if ((ev = get_next_interrupt_event(isp))) {
-	  fsm_change_state(ev);
-	}
+        interrupt_trace(isp);
+        if ((ev = get_next_interrupt_event(isp))) {
+          fsm_change_state(ev);
+        }
       }
     }
   }
@@ -1329,9 +1488,9 @@ implementation {
 
     while (TRUE) {
       if (fsm_int_event) {
-	fsm_int_event = E_NONE;
-	process_interrupt(); // may process multiple pending events
-	continue;
+        fsm_int_event = E_NONE;
+        process_interrupt(); // may process multiple pending events
+        continue;
       }
       if (fsm_user_event) {
         ev = fsm_user_event;
@@ -1548,10 +1707,4 @@ implementation {
   default async command uint32_t Platform.jiffiesRawSize() { return 0; }
 #endif
 
-#ifndef REQUIRE_PANIC
-  default async command void Panic.panic(uint8_t pcode, uint8_t where,
-        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3) { }
-  default async command void  Panic.warn(uint8_t pcode, uint8_t where,
-        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3) { }
-#endif
 }

@@ -9,18 +9,26 @@ When a Panic or Crash occurs, the Tag s/w will write machine state and
 any other information needed to describe the crash to a special area
 on the Tag's uSD.
 
+We make use of the work done by Adam Green on CrashCatcher/CrashDebug.
+(see https://github.com/adamgreen/Crash{Catcher,Debug}).  We use a modified
+format that includes Panic information, image_info, crash state, ram dump,
+i/o state, and Flash crumbs.
+
 sector = 512 bytes
 
 
-* Work Items
+* Work Items (*** done)
 
 o eval what gdb needs
-o eval what processor crash dump needs to look like
-o eval CrashCatcher (https://github.com/adamgreen/CrashCatcher)
-o eval CrashDebug   (https://github.com/adamgreen/CrashDebug)
+o modify copy_region to conform to CrashDebug
+o extractor to go from PanicBlock to <name>.dbg
+  CrashInfo, Ram, I/O
 o eval breakpad     (https://chromium.googlesource.com/breakpad/breakpad)
-o define PanicBlock
-o define Panic Manager
+
+o *** eval CrashCatcher (https://github.com/adamgreen/CrashCatcher)
+o *** eval CrashDebug   (https://github.com/adamgreen/CrashDebug)
+o *** define Panic Manager
+
 
 * Panic Blocks
 
@@ -29,103 +37,166 @@ about the machine state for a single crash.
 
 A block includes the following information:
 
-a) cpu state:
+1) Panic information, Subsystem, Where, a0-3.  and time stamp
+2) image_info for image running.
+3) crash state: (captured information from the Panic or Exception crash)
 
-   main cpu registers:
-        R0-R15, 16 x 4 bytes = 64 bytes
-        sp_process, sp_main
-        xPSR
+   cpu registers
+   fpu registers (if active)
+   Fault State
 
-   fpu registers: 32 x 4 bytes (32 fpu registers) if floating point is
-   active.
+4) Main Memory - 64K (128 sectors)
+5) I/O state
 
-b) System Peripherals
+   <base address>
+   <length>
+   <element_size>
+   ...
+   <base address>
+   <length>
+   <element_size>
+   ...
 
-   ITM          Instrumentation Trace Macrocell
-   DWT          Data Watchpoint and Trace
-   FPB          Flashpatch and Breakpoint
-   SCS          System Control Space
-                MPU  - Memory Protection Unit
-                NVIC - Nested Vectored Interrupt Controller
-   TPIU         Trace Point Interface Unit
-   ETM          Embedded Trace Macrocell
-   ROMTABLE
+6) Flash Crumbs (4KB, 8 sectors)
 
-b) I/O state: (0x40000000)
+
+Panic Block:
+
+A single instance of full machine state.  Needs to include Panic Info,
+Image Info, Crash_State (cpu regs, fpu regs, fault state), RAM, Select I/O,
+Flash Crumbs.
+
+Panic Info:  (36 bytes)
+    4  <sig>
+    4  time stamp
+    4  cycle
+    4  boot_count
+    1  subsys
+    1  where
+    2  pad
+    4  arg0
+    4  arg1
+    4  arg2
+    4  arg3
+
+Image_Info for running image (from image running)
+  144  bytes
+
+CrashInfo (CPU state):  (CrashCatcher/Debug format +)  236 bytes
+  4    signature
+  4    flags
+ 52    R0 - R12
+  4    SP
+  4    LR
+  4    PC
+  4    PSR
+  4    xPSR
+       [floating point], valid if flags & 1
+       fpcsr
+       32 x 4 bytes (128 bytes)
+ 24    fault registers, 6 x 4
+       SHCSR, CFSR, HFSR, DFSR, MMFAR, BFAR
+       E000ED24        to              E000ED38
+
+Total of above: 416
+
+
+Additional Information: (included in block0)
+
+  4    sig
+  4    RAM_start                sector start of RAM, 128 sectors, 64K bytes
+  4    IO_start                 sector start of I/O section
+  4    FCrumb_start             sector start of Flash Crumbs, 4K bytes
+
+
+[Memory Region]
+64K RAM   128 sectors
+
+Peripherals:
+    basic format
+
+    4  base address             (defines which peripheral too)
+    4  length
+    4  element size
+       ...
+    4  base address
+    4  length
+    4  element size
+       ...
+
+Flash Crumbs:
+  4096 bytes (8 sectors)
+
+
+Total Panic Block size:
+  home block + RAM + i/o + flash crumbs
+      1        128   4     8           = 141 (round up to 150 sectors)
+
+
+o I/O state.
+
+  Estimated size: ~ 932 bytes ==> 1024 bytes with overhead.  4 sectors
 
 (These need to be verified.  length)
 (**** currently not used)
+(**)  do first.
 
 Periph          Base             length
-Timer_A0        0x4000_0000      48 (0x30)
-Timer_A1        0x4000_0400      48 (0x30)
+Timer_A0        0x4000_0000      48 (0x30)              **
+Timer_A1        0x4000_0400      48 (0x30)              **
 Timer_A2        0x4000_0800      48 (0x30)
 Timer_A3        0x4000_0C00      48 (0x30)
-eUSCI_A0        0x4000_1000      32 (0x20)
-eUSCI_A1        0x4000_1400      32 (0x20)
-eUSCI_A2        0x4000_1800      32 (0x20)
+eUSCI_A0        0x4000_1000      32 (0x20)              **
+eUSCI_A1        0x4000_1400      32 (0x20)              **
+eUSCI_A2        0x4000_1800      32 (0x20)              **
 eUSCI_A3        0x4000_1C00      32 (0x20)
-eUSCI_B0        0x4000_2000      48 (0x30)
-eUSCI_B1        0x4000_2400      48 (0x30)
-eUSCI_B2        0x4000_2800      48 (0x30)
-eUSCI_B3        0x4000_2C00      48 (0x30)
-REF_A           0x4000_3000       2
+eUSCI_B0        0x4000_2000      48 (0x30)              **
+eUSCI_B1        0x4000_2400      48 (0x30)              **
+eUSCI_B2        0x4000_2800      48 (0x30)              **
+eUSCI_B3        0x4000_2C00      48 (0x30)              **
+REF_A           0x4000_3000       2         ****
 Comp_E0         0x4000_3400      16 (0x10)  ****
 Comp_E1         0x4000_3800      16 (0x10)  ****
 AES246          0x4000_3C00      16 (0x10)
 CRC32           0x4000_4000      32 (0x20)
-RTC_C           0x4000_4000      32 (0x20)
-WDT_A           0x4000_4400       2
-Port            0x4000_4c00     160 (0xA0)
- PJ             0x4000_4D20      18 (0x12)
-PortMap         0x4000_5000      64 (0x40)
+RTC_C           0x4000_4000      32 (0x20)              **
+WDT_A           0x4000_4400       2                     **
+Port            0x4000_4c00     160 (0xA0)              **
+ PJ             0x4000_4D20      18 (0x12)              **
+PortMap         0x4000_5000      64 (0x40)              **
 Cap_0           0x4000_540E       2         ****
 Cap_1           0x4000_580E       2         ****
-Timer32         0x4000_C000      64 (0x40)
-DMA             0x4000_E000      48 (0x30)
-                0x4000_E100      32 (0x20)
-                0x4000_F000      80 (0x50)
-PCM             0x4001_0000      20 (0x14)
-CS              0x4001_0400     104 (0x68)
-PSS             0x4001_0800      64 (0x40)
-FLCTL           0x4001_1000                 needs eval
-ADC14           0x4001_2000     344 (0x158) needs eval
+Timer32         0x4000_C000      64 (0x40)              **
+DMA             0x4000_E000      48 (0x30)              **
+                0x4000_E100      32 (0x20)                   ???
+                0x4000_F000      80 (0x50)              **
+PCM             0x4001_0000      20 (0x14)              **
+CS              0x4001_0400     104 (0x68)              **
+PSS             0x4001_0800      64 (0x40)              **
+FLCTL           0x4001_1000                 needs eval  **
+ADC14           0x4001_2000     344 (0x158) needs eval  **
 
 
-c) Private Peripheral Bus
+o Private Peripheral Bus
+  we need more,  look at these.
 
 RSTCTL          0xE004_2000      72 (0x48)
 SYSCTL          0xE004_3000      52 (0x34)
 SYSCTL_Boot     0xE004_4000      28 (0x1c)
 
 
-c) RAM.  The msp432 has 64K of RAM.  (128 sectors)
+o Correlating Panics to the DataStream.
+
+When we Panic we will write out a Panic block which includes both the
+boot_count and a current 64 bit xT (eXternal Time, xT0) time stamp
+(currently place held by cycle and time_stamp).
+
+When we reboot, boot_count will be incremented by one, and a Reboot_Sync
+record will be written out to the DataStream.  This record will also have
+the current xT (xT_1 > xT_0) and the boot_count.
 
 
-Panic Information: (x) number of bytes
-  pcode (1), where (1), arg0-arg3 (4 x 4)
-
-CPU Registers:
-  16 main registers, 16 x 4 bytes
-    R0-R7
-    R8-R12
-    SP
-    LR
-    PC
-  SP_main (MSP) (4), SP_process (PSP) (4)
-  xPSR          (4)
-  PRIMASK
-  FAULTMASK
-  BASEPRI
-  CONTROL
-
-  fpu registers: 32 x 4 bytes (32 fpu registers)
-    FPSCR
-
-RAM: 64Kbytes (128 sectors)
-
-
-Exception Stack Frame:
+o Exception Stack Frame:
 
   no FP (non-FP state)
     ...
@@ -143,8 +214,8 @@ Exception Stack Frame:
     ...
     (aligner)
     FPSCR (64 bits)
-    S15
-     .
+    S15                 S16-S31 are callee saved
+     .                  uppers
      .
      .
     S0
@@ -156,6 +227,18 @@ Exception Stack Frame:
     R2
     R1
     R0
+
+
+xPSR: 31 30 29 28 27  26-25 24 23-20 19-16 15-10  9    8-0
+       N  V  C  V  Q ICI/IT  T         GE  ICI/IT S  exception
+
+APSR:  N  V  C  V  Q                   GE
+IPSR:                                               exception
+EPSR:                ICI/IT  T             ICI/IT
+
+S = 1 if stack adjusted for alignment.  On exception entry if SCB->CCR.STKALIGN is
+set, make sure that on entry the stack is 8-byte aligned.  If a pad word was added
+then bit 9 of the xPSR will be set.
 
 
 EXC_RTN: Exception Return
@@ -183,7 +266,45 @@ EXC_RTN: Exception Return
                         uses non-FP state from PSP
                         uses PSP after return
 
+Exception return bits fields:
     bit 4       bit 3       bit 2           bit 1       bit 0
     FP state    return mode return stack    reserved    Process state
     FP/nFP      H/T         M/P             must be 0   ARM/Thumb (set to 1)
      0/1        0/1         0/1             0             0/1
+
+bit 4: Stack Frame Type.
+       1 - 8 words
+       0 - 26 words.
+
+bit 3: Return Mode
+       1 - return to Thread Mode.
+       0 - return to Handler Mode.
+
+bit 2: Return Stack.
+       1 - return with PSP
+       0 - return with MSP
+
+bit 1: must be 0
+
+bit 0: must be 1, Thumb only.
+
+
+o Control register
+
+CONTROL register: 31-3 2 1 0
+                       | | +- nPriv
+                       | + -- SPSEL
+                       +----- FPCA
+
+nPriv - privileged level, thread priv level, 0 privileged in Thread mode.
+SPSEL - stack selecte, 0 - MSP, 1 - PSP
+FPCA  - Floating Point Context Active
+
+In Handler mode, processor is always privileged and always on the MSP.
+
+
+
+
+Questions:
+
+PRIMASK, FAULTMASK, BASEPRI, CONTROL

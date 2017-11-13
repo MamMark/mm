@@ -53,7 +53,6 @@ extern fx_rtn fx_cap_dblk(char *name, char *ext, char *n_name, char *n_ext, u32_
 			  fat_dir_entry_t **rtn_de);
 extern fx_rtn fx_create_contig(char *name, char *ext, u32_t size, u32_t *start, u32_t *end);
 extern fx_rtn fx_write_locator(fs_loc_t *fsl);
-extern fx_rtn fx_write_panic0(u32_t pstart, u32_t pend);
 extern char * fx_dsp_err(fx_rtn err);
 
 #ifdef FX_DEBUG

@@ -76,7 +76,7 @@ implementation {
   } while (0)
 
   uint8_t idle_byte = 0xff;
-  uint8_t recv_dump[SD_BUF_SIZE];
+  uint8_t recv_dump[SD_BLOCKSIZE];
 
 /*
  * The mm6a main cpu clock is 16MiHz, SMCLK (for periphs) is clocked at
@@ -256,7 +256,7 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
   async command void HW.sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length) {
     uint32_t control;
 
-    if (length == 0 || (rcvptr == NULL && length > SD_BUF_SIZE))
+    if (length == 0 || (rcvptr == NULL && length > SD_BLOCKSIZE))
       sd_panic(23, length, 0);
 
     /*

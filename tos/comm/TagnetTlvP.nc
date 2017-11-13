@@ -44,6 +44,7 @@
  *   TN_TLV_SIZE=8,<br>
  *   TN_TLV_EOF=9,<br>
  *   TN_TLV_VERSION=10,<br>
+ *   TN_TLV_BLK=11,<br>
  *   _TN_TLV_COUNT   // limit of enum values<br>
  * } tagnet_tlv_type_t;<br>
  *</code>
@@ -85,112 +86,135 @@
  */
 
 #include <TagnetTLV.h>
+#include <platform_panic.h>
+
+#ifndef PANIC_TAGNET
+enum {
+  __pcode_tagnet = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_TAGNET __pcode_tagnet
+#endif
 
 module TagnetTlvP {
   provides interface TagnetTLV;
+  uses     interface Panic;
 }
 implementation {
 
-  int  _copy_bytes(uint8_t *s, uint8_t *d, int l) {
-    int      x;
-    for (x = 0; x < l; x++)  d[x] =  s[x];
+#define tn_panic(where, arg0, arg1, arg2, arg3) \
+  do { call Panic.panic(PANIC_TAGNET, where, arg0, arg1, arg2, arg3); } \
+  while (0)
+
+#define tn_warn(where, arg0, arg1, arg2, arg3) \
+  do { call Panic.warn(PANIC_TAGNET, where, arg0, arg1, arg2, arg3); } \
+  while (0)
+
+
+  uint8_t _copy_bytes(uint8_t *s, uint8_t *d, uint8_t l) {
+    uint8_t x = l;
+
+    while (x) {
+      *d++ = *s++;
+      x--;
+    }
     return l;
   }
 
-  bool  _cmp_bytes(uint8_t *s, uint8_t *d, int l) {
-    int      x;
-    for (x = 0; x < l; x++)  if (d[x] != s[x]) return FALSE;
+
+  bool  _cmp_bytes(uint8_t *s, uint8_t *d, uint8_t l) {
+    while (l) {
+      if (*d++ != *s++) return FALSE;
+      l--;
+    }
     return TRUE;
   }
 
+
   command uint8_t   TagnetTLV.copy_tlv(tagnet_tlv_t *s,  tagnet_tlv_t *d, uint8_t limit) {
     uint8_t l = SIZEOF_TLV(s);
+
     if (l > limit)
-      return 0;
+      tn_panic(1, l, limit, 0, 0);
     return _copy_bytes((uint8_t *) s, (uint8_t *) d, l);
   }
 
+
   command bool   TagnetTLV.eq_tlv(tagnet_tlv_t *s, tagnet_tlv_t *t) {
-    if ((s->typ >= _TN_TLV_COUNT) || (t->typ >= _TN_TLV_COUNT)) {
-//      panic_warn();
-      return FALSE;
-    }
+    if ((s->typ >= _TN_TLV_COUNT) || (t->typ >= _TN_TLV_COUNT))
+      tn_panic(2, (parg_t) s, s->typ, (parg_t) t, t->typ);
+    nop();                              /* BRK */
     return (_cmp_bytes((uint8_t *)s, (uint8_t *)t, SIZEOF_TLV(s)));
   }
 
+
   command uint8_t   TagnetTLV.get_len(tagnet_tlv_t *t) {
-    if (t->typ >= _TN_TLV_COUNT) {
-//      panic_warn();
-      return 0;
-    }
+    if (t->typ >= _TN_TLV_COUNT)
+      tn_panic(3, (parg_t) t, t->typ, t->len, 0);
     return SIZEOF_TLV(t);
   }
 
   command uint8_t   TagnetTLV.get_len_v(tagnet_tlv_t *t) {
-    if (t->typ >= _TN_TLV_COUNT) {
-//      panic_warn();
-      return 0;
-    }
+    if (t->typ >= _TN_TLV_COUNT)
+      tn_panic(4, (parg_t) t, t->typ, t->len, 0);
     return t->len;
   }
 
-  command tagnet_tlv_t  *TagnetTLV.get_next_tlv(tagnet_tlv_t *t, uint8_t limit) {
-//  command __attribute__((optimize("O0"))) tagnet_tlv_t  *TagnetTLV.get_next_tlv(tagnet_tlv_t *t, uint8_t limit) {
-    tagnet_tlv_t      *next_tlv;
-    int                nx;
+  command
+//    __attribute__((optimize("O0")))
+    tagnet_tlv_t  *TagnetTLV.get_next_tlv(tagnet_tlv_t *t, uint8_t limit) {
+    tagnet_tlv_t  *next_tlv;
+    uint8_t        nx;
 
-    if ((t->len == 0) || (t->typ == TN_TLV_NONE))
+    if (t->len == 0 || t->typ == TN_TLV_NONE)
       return NULL;
-    if (t->typ >= _TN_TLV_COUNT) {
-//      panic_warn();
-      return NULL;
-    }
+    if (t->typ >= _TN_TLV_COUNT)
+      tn_panic(5, (parg_t) t, t->typ, t->len, 0);
+
     nx = SIZEOF_TLV(t);
     if (nx < limit) {
-      nx += (int) t;
-      next_tlv = (tagnet_tlv_t *) nx;
-      if ((next_tlv->len > 0)
-          && (next_tlv->len < (limit - sizeof(tagnet_tlv_t)))
-            && (next_tlv->typ != TN_TLV_NONE)
-              && (next_tlv->typ < _TN_TLV_COUNT)) {
+      next_tlv = (void *) ((uintptr_t) t + nx);
+      if ((next_tlv->len > 0)                &&
+          (next_tlv->len <= (limit - nx))    &&
+          (next_tlv->typ != TN_TLV_NONE)     &&
+          (next_tlv->typ < _TN_TLV_COUNT)) {
         return next_tlv;
       }
     }
     return NULL;
   }
 
+
   command tagnet_tlv_type_t TagnetTLV.get_tlv_type(tagnet_tlv_t *t) {
-    if (t->typ >= _TN_TLV_COUNT) {
-//      panic_warn();
-      return TN_TLV_NONE;
-    }
+    if (t->typ >= _TN_TLV_COUNT)
+      tn_panic(6, (parg_t) t, t->typ, t->len, 0);
     return t->typ;
   }
+
 
   command uint8_t  TagnetTLV.gps_xyz_to_tlv(tagnet_gps_xyz_t *xyz,  tagnet_tlv_t *t, uint8_t limit) {
     int32_t    x;
     uint8_t   *v = (void *) xyz;
 
-    nop();
-    t->typ = TN_TLV_GPS_XYZ;
-    t->len = TN_GPS_XYZ_LEN;
-    for (x = 0; x < TN_GPS_XYZ_LEN; x++) {
-      if (x >= limit) break;
-      t->val[x] = v[x];
+    nop();                              /* BRK */
+    if ((t) && ((sizeof(tagnet_gps_xyz_t) + sizeof(tagnet_tlv_t)) < limit)) {
+      t->typ = TN_TLV_GPS_XYZ;
+      t->len = TN_GPS_XYZ_LEN;
+      for (x = 0; x < TN_GPS_XYZ_LEN; x++) {
+        if (x >= limit) break;
+        t->val[x] = v[x];
+      }
+      return (x == TN_GPS_XYZ_LEN) ? SIZEOF_TLV(t) : 0;
     }
-    return (x == TN_GPS_XYZ_LEN) ? SIZEOF_TLV(t) : 0;
+    return 0;
   }
 
-  command uint8_t  TagnetTLV.integer_to_tlv(int32_t i,  tagnet_tlv_t *t, uint8_t limit) {
+  void int2tlv(int32_t i, tagnet_tlv_t *t, uint8_t limit) {
     int32_t    c = 0;
     bool       first = TRUE;
     int32_t    x;
     uint8_t    v;
-
-    // assert n.to_bytes(length, 'big') == bytes( (n >> i*8) & 0xff for i in reversed(range(length)))
-    nop();
-    t->typ = TN_TLV_INTEGER;
-    for (x = 3; x >= 0; x = x-1) {
+    for (x = sizeof(int)-1; x >= 0; x--) {
       v = (uint8_t) (i >> (x*8));
       if (v || !first) {
         t->val[c++] = v;
@@ -199,12 +223,34 @@ implementation {
     }
     if (c == 0) t->val[c++] = 0;
     t->len = c;
-    nop();
-    return SIZEOF_TLV(t);
+  }
+
+
+  command uint8_t  TagnetTLV.integer_to_tlv(int32_t i,  tagnet_tlv_t *t, uint8_t limit) {
+    // assert n.to_bytes(length, 'big') == bytes( (n >> i*8) & 0xff for i in reversed(range(length)))
+    if ((t) && ((sizeof(int32_t) + sizeof(tagnet_tlv_t)) < limit)) {
+      int2tlv(i, t, limit);
+      t->typ = TN_TLV_INTEGER;
+      return SIZEOF_TLV(t);
+    }
+    return 0;
+  }
+
+
+  command uint8_t  TagnetTLV.offset_to_tlv(int32_t i, tagnet_tlv_t *t, uint8_t limit) {
+    // assert n.to_bytes(length, 'big') == bytes( (n >> i*8) & 0xff for i in reversed(range(length)))
+    if ((t) && ((sizeof(int32_t) + sizeof(tagnet_tlv_t)) < limit)) {
+      int2tlv(i, t, limit);
+      t->typ = TN_TLV_OFFSET;
+      return SIZEOF_TLV(t);
+    }
+    return 0;
   }
 
   command bool   TagnetTLV.is_special_tlv(tagnet_tlv_t *t) {
     switch (t->typ) {
+      case TN_TLV_VERSION:
+      case TN_TLV_SIZE:
       case TN_TLV_OFFSET:
       case TN_TLV_NODE_ID:
       case TN_TLV_GPS_XYZ:
@@ -215,6 +261,7 @@ implementation {
     }
     return FALSE; // shouldn't get here
   }
+
 
   command int   TagnetTLV.repr_tlv(tagnet_tlv_t *t,  uint8_t *b, uint8_t limit) {
     switch (t->typ) {
@@ -229,7 +276,7 @@ implementation {
 
   command uint8_t   TagnetTLV.string_to_tlv(uint8_t *s, uint8_t length,
                                                     tagnet_tlv_t *t, uint8_t limit) {
-    if ((length + sizeof(tagnet_tlv_t)) < limit) {
+    if ((t) && ((length + sizeof(tagnet_tlv_t)) < limit)) {
       _copy_bytes(s, (uint8_t *)&t->val[0], length);
       t->len = length;
       t->typ = TN_TLV_STRING;
@@ -238,14 +285,57 @@ implementation {
     return 0;
   }
 
+  int32_t tlv2int(tagnet_tlv_t *t, tagnet_tlv_type_t y) {
+    uint8_t        x;
+    int32_t        v = 0;
+
+    if (!t || t->typ != y || t->len > sizeof(uint32_t))
+      tn_panic(7, (parg_t) t, t->typ, t->len, y);
+    if ((t) && (t->typ == y) && (t->len <= 4)) {
+      for (x = 0; x < t->len; x++) {
+        v = t->val[x] + (v << 8);
+      }
+    }
+    return v;
+  }
+
   command int32_t   TagnetTLV.tlv_to_integer(tagnet_tlv_t *t) {
-    return t->val[0];   // zzz need to fix
+    return tlv2int(t, TN_TLV_INTEGER);
   }
 
-  command uint8_t   *TagnetTLV.tlv_to_string(tagnet_tlv_t *t, int *len) {
-    uint8_t  *s = (uint8_t *)t + sizeof(tagnet_tlv_t);
-    *len = t->len;
-    return s;
+  command int32_t   TagnetTLV.tlv_to_offset(tagnet_tlv_t *t) {
+    return tlv2int(t, TN_TLV_OFFSET);
   }
 
+  command uint8_t   *TagnetTLV.tlv_to_string(tagnet_tlv_t *t, uint8_t *len) {
+    if ((t) && (t->typ == TN_TLV_STRING)) {
+      uint8_t  *s = (uint8_t *) &t->val;
+      *len = t->len;
+      return s;
+    }
+    return NULL;
+  }
+
+  command image_ver_t   *TagnetTLV.tlv_to_version(tagnet_tlv_t *t) {
+    if ((t) && (t->typ == TN_TLV_VERSION)) {
+      return (image_ver_t *) &t->val;
+    }
+    return NULL;
+  }
+
+  command uint8_t   TagnetTLV.version_to_tlv(image_ver_t *v, tagnet_tlv_t *t, uint8_t limit) {
+    uint8_t         i;
+    uint8_t        *vb = (uint8_t *) v;
+
+    if ((!t) || ((sizeof(image_ver_t) + sizeof(tagnet_tlv_t)) > limit))
+      tn_panic(8, (parg_t) t, t->typ, t->len, limit);
+    for (i = 0; i <  sizeof(image_ver_t); i++) {
+      t->val[i]= vb[i];
+    }
+    t->typ = TN_TLV_VERSION;
+    t->len = sizeof(image_ver_t);
+    return SIZEOF_TLV(t);
+  }
+
+  async event void Panic.hook() { }
 }
