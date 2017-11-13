@@ -416,6 +416,9 @@ def decode_reboot(buf, obj):
                       owcb_obj['vec_chk_fail'].val,  owcb_obj['image_chk_fail'].val))
     print(rbt4.format(owcb_obj['elapsed_lower'].val, owcb_obj['elapsed_upper'].val))
 
+    if dt_rev != DT_H_REVISION:
+        print('*** version mismatch, expected 0x{:08x}, got 0x{:08x}'.format(
+            DT_H_REVISION, dt_rev))
 
 def decode_version(buf, obj):
     obj.set(buf)
