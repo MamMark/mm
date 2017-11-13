@@ -748,7 +748,7 @@ if __name__ == "__main__":
         description='Pretty print content of Tag Data logfile')
     parser.add_argument('input',
                         help='output file')
-    parser.add_argument('--version',
+    parser.add_argument('-V', '--version',
                         action='version',
                         version='%(prog)s 0.0.0')
     parser.add_argument('-o', '--output',
@@ -757,12 +757,18 @@ if __name__ == "__main__":
     parser.add_argument("--rtypes",
                         type=str,
                         help="output records matching types in list")
-    parser.add_argument("--start",
+    parser.add_argument("--start_sector",
                         type=int,
-                        help="include records with time greater than start")
-    parser.add_argument("--end",
+                        help="begin with START_SECTOR")
+    parser.add_argument("--end_sector",
                         type=int,
-                        help="include records with time before the end")
+                        help="sector to stop with.")
+    parser.add_argument("--start_time",
+                        type=int,
+                        help="include records with datetime greater than START_TIME")
+    parser.add_argument("--end_time",
+                        type=int,
+                        help="stop with records after END_TIME")
     parser.add_argument('-v', '--verbosity',
                         action='count',
                         default=0,
