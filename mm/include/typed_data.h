@@ -46,6 +46,7 @@
 #include <panic.h>
 #include <image_info.h>
 #include <overwatch.h>
+#include <datetime.h>
 
 #ifndef PACKED
 #define PACKED __attribute__((__packed__))
@@ -119,11 +120,16 @@ typedef enum {
  * It is only used towards the end of the sector when a header won't fit.
  */
 
+typedef struct {                /* only for TINTRYALF */
+  uint16_t len;
+  dtype_t  dtype;
+} PACKED dt_short_header_t;
+
+
 typedef struct {                /* size 12 */
   uint16_t len;
   dtype_t  dtype;
-  uint32_t stamp_ms;
-  uint32_t time_cycle;
+  uint64_t systime;
 } PACKED dt_header_t;
 
 
@@ -143,8 +149,11 @@ typedef struct {                /* size 12 */
  * will be written after some amount of time and after so many records or
  * sectors have been written.  Which ever comes first.
  *
- * The reboot record also has the current ow_control_block written after
- * it.  This will give us the current values about why we rebooted.
+ * SYNC_MAJIK is layed down in both REBOOT and SYNC records.  It is the
+ * majik looked for when we are resyncing.  It must always be at the same
+ * offset from the start of the record.  Once SYNC_MAJIK is found we can
+ * backup by that amount to find the start of the record and presto, back
+ * in sync.
  */
 
 #define SYNC_MAJIK 0xdedf00efUL
@@ -157,9 +166,9 @@ typedef struct {                /* size 12 */
 typedef struct {
   uint16_t len;                 /* size 20 */
   dtype_t  dtype;
-  uint32_t stamp_ms;
-  uint32_t time_cycle;
+  uint64_t systime;
   uint32_t sync_majik;
+  time_tpc_t datetpc;           /* temporenc current dateTime */
   uint32_t dt_h_revision;       /* version identifier of typed_data */
 } PACKED dt_reboot_t;
 
@@ -178,8 +187,7 @@ typedef struct {
 typedef struct {
   uint16_t    len;              /* size   16    +     144      */
   dtype_t     dtype;            /* dt_version_t + image_info_t */
-  uint32_t    stamp_ms;
-  uint32_t    time_cycle;
+  uint64_t    systime;
   uint32_t    base;             /* base address of this image */
 } PACKED dt_version_t;
 
@@ -190,11 +198,11 @@ typedef struct {
 
 
 typedef struct {
-  uint16_t len;                 /* size 16 */
-  dtype_t  dtype;
-  uint32_t stamp_ms;
-  uint32_t time_cycle;
-  uint32_t sync_majik;
+  uint16_t   len;               /* size 12, 0x0C */
+  dtype_t    dtype;
+  uint64_t   systime;
+  uint32_t   sync_majik;
+  time_tpc_t datetpc;           /* temporenc current dateTime */
 } PACKED dt_sync_t;
 
 
@@ -230,8 +238,7 @@ typedef enum {
 typedef struct {
   uint16_t len;                 /* size 32 */
   dtype_t  dtype;
-  uint32_t stamp_ms;
-  uint32_t time_cycle;
+  uint64_t systime;
   dt_event_id_t ev;             /* event, see above */
   uint8_t  ss;                  /* PANIC warn, subsys */
   uint8_t  w;                   /* PANIC warn, where  */
@@ -268,8 +275,7 @@ typedef enum {
 typedef struct {
   uint16_t len;                 /* size 20 + var */
   dtype_t  dtype;
-  uint32_t stamp_ms;            /* time stamp in ms */
-  uint32_t time_cycle;
+  uint64_t systime;
   uint32_t mark_us;             /* mark stamp in usecs */
   gps_chip_id_t chip_id;
   uint8_t  dir;                 /* dir, 0 rx from gps, 1 - tx to gps */
@@ -288,8 +294,7 @@ typedef struct {
 typedef struct {
   uint16_t len;                 /* size 20 + var */
   dtype_t  dtype;
-  uint32_t stamp_ms;
-  uint32_t time_cycle;
+  uint64_t systime;
   uint32_t sched_delta;
   uint16_t sns_id;
   uint8_t  pad[2];              /* quad granular */
@@ -299,8 +304,7 @@ typedef struct {
 typedef struct {
   uint16_t len;                 /* size 20 + var */
   dtype_t  dtype;
-  uint32_t stamp_ms;
-  uint32_t time_cycle;
+  uint64_t systime;
   uint32_t sched_delta;
   uint16_t mask;
   uint16_t mask_id;
@@ -320,8 +324,7 @@ typedef struct {
 typedef struct {
   uint16_t len;                 /* size 24 + var */
   dtype_t  dtype;
-  uint32_t stamp_ms;
-  uint32_t time_cycle;
+  uint64_t systime;
   uint16_t note_len;
   uint16_t year;
   uint8_t  month;

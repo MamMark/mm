@@ -264,7 +264,7 @@ implementation {
 
   command void Collect.collect(dt_header_t *header, uint16_t hlen,
                                uint8_t     *data,   uint16_t dlen) {
-    header->stamp_ms = call LocalTime.get();
+    header->systime = call LocalTime.get();
     call Collect.collect_nots(header, hlen, data, dlen);
   }
 
@@ -313,7 +313,7 @@ implementation {
       if (dcc.remaining >= sizeof(dt_sync_t)) {
         sp->len        = sizeof(dt_sync_t);
         sp->dtype      = DT_SYNC;
-        sp->stamp_st   = call LocalTime.get();
+        sp->systime    = call LocalTime.get();
         sp->sync_majik = SYNC_MAJIK;
         /* fill in datetpc, get the current datetime */
 

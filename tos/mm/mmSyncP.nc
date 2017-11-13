@@ -49,7 +49,6 @@ implementation {
     sp->len = sizeof(s);
     sp->dtype = DT_SYNC;
     sp->sync_majik = SYNC_MAJIK;
-    sp->time_cycle = 0;                 /* for now only time_cycle 0 */
     call Collect.collect((void *) sp, sizeof(dt_sync_t), NULL, 0);
   }
 
@@ -61,7 +60,6 @@ implementation {
     rp = &r;
     rp->len = sizeof(r) + sizeof(ow_control_block_t);
     rp->dtype = DT_REBOOT;
-    rp->time_cycle = 0;                 /* for now only time_cycle 0 */
     rp->sync_majik = SYNC_MAJIK;
     rp->dt_h_revision = DT_H_REVISION;  /* which version of typed_data */
     call Collect.collect((void *) rp, sizeof(r),

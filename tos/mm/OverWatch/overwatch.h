@@ -134,6 +134,7 @@ typedef enum {
   ORR_OWCB_CLOBBER,                     /* lost the control block, full pwr fail */
   ORR_STRANGE,                          /* low level strangness */
   ORR_FORCED,                           /* forced boot mode */
+  ORR_TIME_SKEW,                        /* rebooted because too much time skew */
   ORR_USER_REQUEST,                     /* user requested reboot */
   ORR_PANIC,
 } ow_reboot_reason_t;

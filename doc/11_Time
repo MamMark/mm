@@ -1,0 +1,70 @@
+
+* sysTime
+** 64 bit ms internal time since last reboot.
+
+* dateTime
+** RTC format, expanded time format.
+*** Y.M.D.H.M.S.J
+
+RTC:
+
+  Y_H           (Y_H << 8) | Y_L
+  Y_L
+  MON           1:12
+  DAY           1:31
+  HOUR          0:23
+  MIN           0:59
+  SEC           0:59
+  RT1PS         0:0x7fff        (RT1PS & 0x7fff) << 8 | RT0PS
+  RT0PS         0:0xffff
+
+  DOW           0:6
+
+
+  Y.MON.DAY.HOUR.MIN.SEC.PS
+  2  1   1   1    1   1  2
+
+
+  Y                             2
+  MON   0 - 11                      4 bits
+  DAY   0 - 31                      5 bits
+  HOUR  0 - 23                      5 bits
+  MIN   0 - 59                      6 bits
+  SEC   0 - 59                      6 bits
+  J     0 - 0x7fff                 15 bits
+
+
+Where do we use datetime vs. systime
+
+datetime is used to establish a correlator between outside (dateTime) and
+inside (sysTime) time.  This occurs on sync records (both reboots and syncs).
+sync and reboot records have both internal systime and datetime.
+
+Sync and Reboot records gives us the one to one relationship between current
+dateTime (as represented by the RTC hardware) and the internal system time
+(sysTime, Tmilli, etc).
+
+typed_data records typically are using 64 bit sysTime for time stamping.  Using
+both sysTime from the data block and a known last dateTime we can determine
+the real dateTime of the data block.
+
+sysTime exists because it is just so much easier to deal with than the
+encoded dateTime.
+
+
+Time Skew.
+
+On first power on we don't have any RTC time.  It needs to be initialized.
+We read the SD to find the last known time.  We use this as a starting point
+for the RTC.
+
+Later, we can obtain time from the network or from the GPS.  Network time is
+not as good as GPS but still allowed.  GPS time is the best.
+
+This presents the issue of some appreciable time skew when we change datetime
+to match what we've just picked up.  We only allow forward time movement.
+
+If the RTC gets ahead of new time, we hold the RTC to slew it.  We should
+limit this to something reasonable.
+
+If the skew gets too nasty then we will reboot the box with a forced ORR_TIME_SKEW.

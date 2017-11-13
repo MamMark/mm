@@ -217,7 +217,7 @@ implementation {
     dlen = CF_BE_16(svp->len) - 1;
     gps_block.len = dlen + sizeof(gps_block);
     gps_block.dtype = DT_GPS_VERSION;
-    gps_block.stamp_ms = arrival_ms;
+    gps_block.systime = arrival_ms;
     gps_block.mark_us  = 0;
     gps_block.chip_id = CHIP_GPS_GSD4E;
     gps_block.dir = GPS_DIR_RX;         /* rx from gps */
@@ -302,7 +302,7 @@ implementation {
 
     hdr.len      = sizeof(hdr) + len;
     hdr.dtype    = DT_GPS_RAW_SIRFBIN;
-    hdr.stamp_ms = arrival_ms;
+    hdr.systime  = arrival_ms;
     hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
     hdr.chip_id  = CHIP_GPS_GSD4E;
     hdr.dir      = GPS_DIR_RX;
