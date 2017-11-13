@@ -132,10 +132,31 @@ implementation {
   }
 
 
-  void copy_out(uint8_t *data, uint16_t dlen) {
+  /*
+   * returns amount actually copied
+   */
+  static uint16_t copy_block_out(uint8_t *data, uint16_t dlen) {
+    uint8_t  *ptr;
     uint16_t num_to_copy, chksum;
-    uint8_t *ptr;
     unsigned int i;
+
+    num_to_copy = ((dlen < dcc.remaining) ? dlen : dcc.remaining);
+    chksum = dcc.chksum;
+    ptr = dcc.cur_ptr;
+    for (i = 0; i < num_to_copy; i++) {
+      chksum += *data;
+      *ptr++  = *data++;
+    }
+    dcc.chksum = chksum;
+    dcc.cur_ptr = ptr;
+    dlen -= num_to_copy;
+    dcc.remaining -= num_to_copy;
+    return num_to_copy;
+  }
+
+
+  void copy_out(uint8_t *data, uint16_t dlen) {
+    uint16_t num_copied;
 
     if (!data || !dlen)            /* nothing to do? */
       return;
@@ -151,17 +172,9 @@ implementation {
         dcc.remaining = DC_BLK_SIZE;
         dcc.chksum = 0;
       }
-      num_to_copy = ((dlen < dcc.remaining) ? dlen : dcc.remaining);
-      chksum = dcc.chksum;
-      ptr = dcc.cur_ptr;
-      for (i = 0; i < num_to_copy; i++) {
-        chksum += *data;
-        *ptr++  = *data++;
-      }
-      dcc.chksum = chksum;
-      dcc.cur_ptr = ptr;
-      dlen -= num_to_copy;
-      dcc.remaining -= num_to_copy;
+      num_copied = copy_block_out(data, dlen);
+      data += num_copied;
+      dlen -= num_copied;
       if (dcc.remaining == 0) {
         normal_finish();
       }
@@ -273,16 +286,23 @@ implementation {
   }
 
   async event void SysReboot.shutdown_flush() {
-    uint16_t *p;
+    dt_sync_t  s;
+    dt_sync_t *sp;
 
-    /* now tell StreamWrite to flush everything */
     nop();                              /* BRK */
 
     /*
-     * current buffer says we have a buffer in progress.  Its ALLOC'd.  We
-     * need to finish it off and then write it out along with any others
-     * that are pending.
+     * tell StreamWrite to flush everything
+     *
+     * but first... current buffer says we have a buffer in progress.  Its
+     * ALLOC'd.  We need to finish it off and then write it out along with
+     * any others that are pending.
+     *
+     * But wait, there's more....   First if there is room put one last
+     * sync record down that records what we currently think current datetime
+     * is.  Yeah!
      */
+    sp = &s;
     if (dcc.cur_buf) {
       /*
        * have a current buffer.  If we have space then add
@@ -290,14 +310,15 @@ implementation {
        *
        * this tells what happened if possible.
        */
-      if (dcc.remaining >= 4) {
-        p = (void *) dcc.cur_ptr;
-        *p++ = 4;                       /* length of 4 */
-        *p++ = DT_FLUSH;                /* and the type */
-        dcc.chksum += 4;
-        dcc.chksum += DT_FLUSH;
-        dcc.cur_ptr = (void *) p;
-        dcc.remaining -= 4;
+      if (dcc.remaining >= sizeof(dt_sync_t)) {
+        sp->len        = sizeof(dt_sync_t);
+        sp->dtype      = DT_SYNC;
+        sp->stamp_st   = call LocalTime.get();
+        sp->sync_majik = SYNC_MAJIK;
+        /* fill in datetpc, get the current datetime */
+
+        /* we know it will fit, because of earlier checks above */
+        copy_block_out((void *) sp, sizeof(dt_sync_t));
       }
       finish_sector();
     }

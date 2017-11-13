@@ -57,16 +57,15 @@
  * split into two subfields, major and minor.  Major 0 is development of
  * some flavor.  Releases start at Major 1.  Major 1 looks like 00010000.
  */
-#define DT_H_REVISION   0x00000005
+#define DT_H_REVISION   0x00000004
 
 typedef enum {
   DT_TINTRYALF		= 0,            /* next, force next sector */
   DT_REBOOT		= 1,		/* reboot sync */
   DT_VERSION		= 2,
   DT_SYNC		= 3,
-  DT_FLUSH		= 4,
-  DT_EVENT	        = 5,
-  DT_DEBUG		= 6,
+  DT_EVENT	        = 4,
+  DT_DEBUG		= 5,
 
   DT_GPS_VERSION        = 16,
   DT_GPS_TIME		= 17,
@@ -339,7 +338,6 @@ enum {
   DT_HDR_SIZE_REBOOT        = sizeof(dt_reboot_t),
   DT_HDR_SIZE_VERSION       = sizeof(dt_version_t),
   DT_HDR_SIZE_SYNC          = sizeof(dt_sync_t),
-  DT_HDR_SIZE_FLUSH         = sizeof(dt_header_t),
   DT_HDR_SIZE_EVENT         = sizeof(dt_event_t),
 
   DT_HDR_SIZE_GPS           = sizeof(dt_gps_t),
