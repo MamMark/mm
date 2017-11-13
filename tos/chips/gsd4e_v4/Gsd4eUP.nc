@@ -592,6 +592,7 @@ implementation {
       gps_warn(10, gpsc_state, 0);
       return FAIL;
     }
+    call CollectEvent.logEvent(DT_EVENT_GPS_OFF, 0, 0, 0, 0);
     call HW.gps_rx_int_disable();
     call HW.gps_send_block_stop();
     call HW.gps_receive_block_stop();
@@ -614,6 +615,7 @@ implementation {
     call GPSRxTimer.stop();
     m_cur_rx_len = m_req_rx_len = -1;
     gpsc_change_state(GPSC_HIBERNATE, GPSW_STANDBY);
+    call CollectEvent.logEvent(DT_EVENT_GPS_OFF, 0, 0, 0, 0);
     return SUCCESS;
   }
 
@@ -627,7 +629,8 @@ implementation {
   task void collect_rx_errors() {
     atomic {
       if (m_last_rx_error) {
-        call CollectEvent.logEvent(DT_EVENT_GPS_RX_ERR, m_last_rx_error, m_rx_errors, gpsc_state, 0);
+        call CollectEvent.logEvent(DT_EVENT_GPS_RX_ERR, m_last_rx_error,
+                                   m_rx_errors, gpsc_state, 0);
         m_last_rx_error = 0;
       }
     }
