@@ -173,11 +173,11 @@ typedef struct {
   uint32_t           from_base;         /* base address of where from      */
   uint32_t           reboot_count;      /* how many times rebooted         */
 
-  ow_request_t       ow_req;            /* req input */
-  ow_reboot_reason_t reboot_reason;     /* req input */
+  ow_request_t       ow_req;            /* B - req input */
+  ow_reboot_reason_t reboot_reason;     /* B - req input */
 
-  ow_boot_mode_t     ow_boot_mode;      /* control knob */
-  owt_action_t       owt_action;        /* input to OWT, further actions */
+  ow_boot_mode_t     ow_boot_mode;      /* B - control knob */
+  owt_action_t       owt_action;        /* B - input to OWT, further actions */
 
   uint32_t           ow_sig_b;
 
