@@ -126,8 +126,39 @@ dt_reboot_obj   = aggie(OrderedDict([('hdr',    hdr_obj),
                                      ('majik',  atom(('I', '{:08x}'))),
                                      ('dt_rev', atom(('I', '{:08x}')))]))
 
+#
+# reboot is followed by the ow_control_block
+# We want to decode that as well.  native order, little endian.
+# see OverWatch/overwatch.h.
+#
+owcb_obj        = aggie(OrderedDict([
+    ('ow_sig',          atom(('I', '0x{:08x}'))),
+    ('rpt',             atom(('I', '0x{:08x}'))),
+    ('cycle',           atom(('I', '0x{:08x}'))),
+    ('time',            atom(('I', '0x{:08x}'))),
+    ('reset_status',    atom(('I', '0x{:08x}'))),
+    ('reset_others',    atom(('I', '0x{:08x}'))),
+    ('from_base',       atom(('I', '0x{:08x}'))),
+    ('reboot_count',    atom(('I', '{}'))),
+    ('ow_req',          atom(('B', '{}'))),
+    ('reboot_reason',   atom(('B', '{}'))),
+    ('ow_boot_mode',    atom(('B', '{}'))),
+    ('owt_action',      atom(('B', '{}'))),
+    ('ow_sig_b',        atom(('I', '0x{:08x}'))),
+    ('strange',         atom(('I', '{}'))),
+    ('strange_loc',     atom(('I', '0x{:04x}'))),
+    ('vec_chk_fail',    atom(('I', '{}'))),
+    ('image_chk_fail',  atom(('I', '{}'))),
+    ('elapsed_lower',   atom(('I', '0x{:08x}'))),
+    ('elapsed_upper',   atom(('I', '0x{:08x}'))),
+    ('ow_sig_c',        atom(('I', '0x{:08x}')))
+]))
+
+
 dt_version_obj  = aggie(OrderedDict([('hdr',    hdr_obj),
                                      ('base',   atom(('I', '{:08x}')))]))
+
+
 
 dt_sync_obj     = aggie(OrderedDict([('hdr',    hdr_obj),
                                      ('cycle',  atom(('I', '{:08x}'))),
@@ -358,11 +389,33 @@ dt_gps_raw_obj  = aggie(OrderedDict([('hdr',     hdr_obj),
                                      ('gps_hdr', gps_hdr_obj)]))
 
 
+rbt0 = '  rpt:           0x{:08x}, cycle:        0x{:08x}, time:      0x{:08x}'
+rbt1 = '  reset_status:  0x{:08x}, reset_others: 0x{:08x}, from_base: 0x{:08x}'
+rbt2 = '  reboot_count: {:2}, ow_req: {:3}, reboot_reason: {}, ow_boot_mode: {}, owt_action: {}'
+rbt3 = '  strange:     {:3}, loc: 0x{:04x}, vec_chk_fail: {}, image_chk_fail: {}'
+rbt4 = '  elapsed_lower: 0x{:08x}, elapsed_upper: 0x{:08x}'
+
 def decode_reboot(buf, obj):
-    obj.set(buf)
+    consumed = obj.set(buf)
+    dt_rev = obj['dt_rev'].val
     print(obj)
     print_hdr(obj)
-    print
+    consumed = owcb_obj.set(buf[consumed:])
+    print('ow_sig: 0x{:08x}, ow_sig_b: 0x{:08x}, ow_sig_c: {:08x}'.format(
+        owcb_obj['ow_sig'].val,
+        owcb_obj['ow_sig_b'].val,
+        owcb_obj['ow_sig_c'].val))
+    print(rbt0.format(owcb_obj['rpt'].val, owcb_obj['cycle'].val,
+                      owcb_obj['time'].val))
+    print(rbt1.format(owcb_obj['reset_status'].val,  owcb_obj['reset_others'].val,
+                      owcb_obj['from_base'].val))
+    print(rbt2.format(owcb_obj['reboot_count'].val,  owcb_obj['ow_req'].val,
+                      owcb_obj['reboot_reason'].val, owcb_obj['ow_boot_mode'].val,
+                      owcb_obj['owt_action'].val))
+    print(rbt3.format(owcb_obj['strange'].val,       owcb_obj['strange_loc'].val,
+                      owcb_obj['vec_chk_fail'].val,  owcb_obj['image_chk_fail'].val))
+    print(rbt4.format(owcb_obj['elapsed_lower'].val, owcb_obj['elapsed_upper'].val))
+
 
 def decode_version(buf, obj):
     obj.set(buf)
