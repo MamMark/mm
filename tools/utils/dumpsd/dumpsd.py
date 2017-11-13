@@ -25,6 +25,14 @@ from collections import OrderedDict
 # - records
 #
 
+#
+# This program needs to understand the format of the DBlk data stream.
+# The format of a particular instance is described by typed_data.h.
+# The define DT_H_REVISION in typed_data.h indicates which version.
+# Matching is a good thing.  We won't abort but will bitch if we mismatch.
+
+DT_H_REVISION       = 0x00000003
+
 LOGICAL_SECTOR_SIZE = 512
 LOGICAL_BLOCK_SIZE  = 508  # excludes trailer
 
@@ -345,8 +353,9 @@ gps_hdr_obj     = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
 # dt, native, little endian
 dt_gps_raw_obj  = aggie(OrderedDict([('hdr',     hdr_obj),
                                      ('mark',    atom(('>I', '0x{:04x}'))),
-                                     ('chip',    atom(('B', '0x{:02x}'))),
-                                     ('pad',     atom(('BBB', '{}'))),
+                                     ('chip',    atom(('B',  '0x{:02x}'))),
+                                     ('dir',     atom(('B',  '{}'))),
+                                     ('pad',     atom(('BB', '{}'))),
                                      ('gps_hdr', gps_hdr_obj)]))
 
 
@@ -444,9 +453,12 @@ def decode_config(buf, obj):
     pass
 
 def print_gps_hdr(obj, mid):
+    dir = obj['dir'].val
+    dir_str = 'rx' if dir == 0 \
+         else 'tx'
     if mid in mid_table: mid_name = mid_table[mid][2]
     else:                mid_name = "unk"
-    print('MID: {:2} ({:02x}) {:10}'.format(mid, mid, mid_name)),
+    print('MID: {:2} ({:02x}) <{:2}> {:10} '.format(mid, mid, dir_str, mid_name)),
 
 def decode_gps_raw(buf, obj):
     consumed = obj.set(buf)
@@ -464,6 +476,7 @@ def decode_gps_raw(buf, obj):
         if decoder:
             decoder(buf[consumed:], decode_obj)
     print
+    pass                                # BRK
 
 
 # dt_records

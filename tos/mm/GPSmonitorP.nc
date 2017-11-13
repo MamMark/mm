@@ -220,6 +220,7 @@ implementation {
     gps_block.stamp_ms = arrival_ms;
     gps_block.mark_us  = 0;
     gps_block.chip_id = CHIP_GPS_GSD4E;
+    gps_block.dir = GPS_DIR_RX;         /* rx from gps */
     call Collect.collect_nots((void *) &gps_block, sizeof(gps_block),
                               svp->data, dlen);
   }
@@ -304,6 +305,7 @@ implementation {
     hdr.stamp_ms = arrival_ms;
     hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
     hdr.chip_id  = CHIP_GPS_GSD4E;
+    hdr.dir      = GPS_DIR_RX;
     call Collect.collect_nots((void *) &hdr, sizeof(hdr), msg, len);
 
     switch (sbp->mid) {

@@ -40,12 +40,12 @@ configuration GPS0C {
     interface GPSState;
     interface GPSReceive;
     interface GPSTransmit;
-    interface Boot as Booted;
+    interface Boot           as Booted; /* out boot */
 
     /* for debugging only, be careful */
     interface Gsd4eUHardware as HW;
   }
-  uses interface Boot;
+  uses interface Boot;                  /* in boot */
 }
 
 implementation {
@@ -76,6 +76,7 @@ implementation {
   Gsd4eUP.GPSTxTimer -> GPSTxTimer;
   Gsd4eUP.GPSRxTimer -> GPSRxTimer;
   Gsd4eUP.LocalTime  -> LocalTimeMilliC;
+  Gsd4eUP.Collect      -> CollectC;
   Gsd4eUP.CollectEvent -> CollectC;
 
   components PlatformC, PanicC;

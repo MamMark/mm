@@ -36,7 +36,7 @@
  * split into two subfields, major and minor.  Major 0 is development of
  * some flavor.  Releases start at Major 1.
  */
-#define DT_H_REVISION   0x00000002
+#define DT_H_REVISION   0x00000003
 
 typedef enum {
   DT_TINTRYALF		= 0,            /* next, force next sector */
@@ -277,8 +277,17 @@ typedef struct {
   uint32_t stamp_ms;            /* time stamp in ms */
   uint32_t mark_us;             /* mark stamp in usecs (dec) */
   gps_chip_id_t chip_id;
-  uint8_t  pad[3];              /* quad granular */
+  uint8_t  dir;                 /* dir, 0 rx from gps, 1 - tx to gps */
+  uint8_t  pad[2];              /* quad granular */
 } PACKED dt_gps_t;
+
+/* direction setting in dir in dt_gps_t
+ *
+ * DIR_RX: packet received from the GPS chip
+ * DIR_TX: packet sent to the GPS chip
+ */
+#define GPS_DIR_RX 0
+#define GPS_DIR_TX 1
 
 
 typedef struct {

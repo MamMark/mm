@@ -418,6 +418,7 @@ module Gsd4eUP {
 
     interface Panic;
     interface Platform;
+    interface Collect;
     interface CollectEvent;
 //  interface Trace;
   }
@@ -450,6 +451,24 @@ implementation {
 
   void gps_panic(uint8_t where, parg_t p, parg_t p1) {
     call Panic.panic(PANIC_GPS, where, p, p1, 0, 0);
+  }
+
+
+  /* collect_gps_pak
+   *
+   * add a gps packet to the data stream.  Debugging etc.
+   */
+  static void collect_gps_pak(uint8_t *pak, uint16_t len, uint8_t dir) {
+    dt_gps_t hdr;
+
+    hdr.len      = sizeof(hdr) + len;
+    hdr.dtype    = DT_GPS_RAW_SIRFBIN;
+    hdr.mark_us  = 0;
+    hdr.chip_id  = CHIP_GPS_GSD4E;
+    hdr.dir      = dir;
+
+    /* time stamp added by Collect */
+    call Collect.collect((void *) &hdr, sizeof(hdr), pak, len);
   }
 
 
@@ -642,6 +661,7 @@ implementation {
     time_out = len * DT_GPS_BYTE_TIME * 4 + 500000;
     time_out /= 1000000;
     call GPSTxTimer.startOneShot(time_out);
+    collect_gps_pak((void *) ptr, len, GPS_DIR_TX);
     err = call HW.gps_send_block((void *) ptr, len);
     if (err) {
       gps_panic(10, err, 0);
@@ -800,6 +820,7 @@ implementation {
           gpsc_log_event(GPSE_SPEED, speed);
           call HW.gps_speed_di(speed);
           call GPSTxTimer.startOneShot(time_out);
+          collect_gps_pak((void *) msg, len, GPS_DIR_TX);
           call HW.gps_send_block((void *) msg, len);
           return;
       }
@@ -836,7 +857,9 @@ implementation {
            */
           call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
           gpsc_change_state(GPSC_CHK_SWVER_WAIT, GPSW_SWVER_TASK);
-          call HW.gps_send_block((void *)sirf_sw_ver, sizeof(sirf_sw_ver));
+          collect_gps_pak((void *) sirf_sw_ver, sizeof(sirf_sw_ver),
+                          GPS_DIR_TX);
+          call HW.gps_send_block((void *) sirf_sw_ver, sizeof(sirf_sw_ver));
           return;
       }
     }
@@ -937,7 +960,9 @@ implementation {
           gpsc_log_event(GPSE_SPEED, GPS_TARGET_SPEED);
           call HW.gps_speed_di(GPS_TARGET_SPEED);
           call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
-          call HW.gps_send_block((void *)sirf_peek_0, sizeof(sirf_peek_0));
+          collect_gps_pak((void *) sirf_peek_0, sizeof(sirf_peek_0),
+                          GPS_DIR_TX);
+          call HW.gps_send_block((void *) sirf_peek_0, sizeof(sirf_peek_0));
           return;
       }
     }
@@ -960,7 +985,9 @@ implementation {
           gps_probe_index = -1;             /* first peek try */
           gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_RX_TIMER);
           call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
-          call HW.gps_send_block((void *)sirf_peek_0, sizeof(sirf_peek_0));
+          collect_gps_pak((void *) sirf_peek_0, sizeof(sirf_peek_0),
+                          GPS_DIR_TX);
+          call HW.gps_send_block((void *) sirf_peek_0, sizeof(sirf_peek_0));
           return;
 
         case GPSC_CHK_RX_WAIT:

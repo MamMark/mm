@@ -76,6 +76,7 @@ implementation {
   Gsd4eUP.GPSTxTimer -> GPSTxTimer;
   Gsd4eUP.GPSRxTimer -> GPSRxTimer;
   Gsd4eUP.LocalTime  -> LocalTimeMilliC;
+  Gsd4eUP.Collect      -> CollectC;
   Gsd4eUP.CollectEvent -> CollectC;
 
   components PlatformC, PanicC;
