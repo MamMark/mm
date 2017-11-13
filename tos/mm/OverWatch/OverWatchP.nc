@@ -241,6 +241,8 @@ implementation {
         owl_strange2gold(0x101);
         /* no return */
       }
+      /* turn off the LAUNCH bit */
+      owcp->ow_rpt_flags &= ~(OWRF_LAUNCH);
       return;
     }
 
