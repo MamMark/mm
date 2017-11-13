@@ -618,8 +618,13 @@ def gen_data_bytes(fd):
 def gen_records(fd):
 
     # short hdr is the record_len and dtype.  Doesn't include the timestamp
-    # TINTRYALF (0) is not technically a dtype but rather a special case
-    # that is only 4 bytes long.  That way it always fits.
+    #
+    #
+    # TINTRYALF (0)) is not a data type but a special case that
+    # kicks us to the next sector.  This Is Not The Record You Are Looking For
+    #
+    # TINTRYALF is only 4 bytes long (len, dtype, no timestamp) and as such
+    # will ALWAYS fit in any space that is left in the sector buffer.
 
     short_hdr = struct.Struct("HH")
     data_bytes = gen_data_bytes(fd)
@@ -631,6 +636,7 @@ def gen_records(fd):
             break
         rlen, rtyp = short_hdr.unpack(hdr)
         if (rtyp == 0):                 # tintryalf
+            print('*** tintryalf advance (next sector)')
             data_bytes.send(-1)         # skip to next sector
             continue
 
