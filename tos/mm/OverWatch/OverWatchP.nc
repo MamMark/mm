@@ -393,7 +393,7 @@ implementation {
     iip = (void *) NIB_INFO;
     bad_vecs  = !good_nib_vectors(iip);
     bad_image = (bad_vecs ? bad_vecs : !good_nib_flash(iip));
-
+    nop();                                  /* BRK */
     switch (owcp->owt_action) {
       case OWT_ACT_NONE:
         owl_strange2gold(6);                /* no return */
