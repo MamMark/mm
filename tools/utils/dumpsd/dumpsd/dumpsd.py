@@ -572,28 +572,64 @@ def dump_buf(buf):
             print('{:04x}: '.format(idx/3)),
 
 
-# gen_data_bytes generates data bytes from file (stripped of non-data bytes).
-#
-# Uses generator.send() to pass number of bytes to be read
-# the number of bytes to read is returned by the yield, while
-# the buffer read is returned by the yield
-#
-# The buffer will be as large as requested, which may require additional
-# sectors to be read. Any remaining data in the sector will be used
-# in the next yield request.
-#
-# sect: space for holding a full LOGICAL_SECTOR
-# blk:  we split sect apart into 508 bytes (blk), seq_no,and chk_sum
-# buf:  is the marshalling buffer where we collect all the data
-#       that has been asked for.
-#
-# file_offset, buf = data_bytes.send(req_len)
-#
-# input:  num  (req_len) how much we want to get back
-# output: file_offset: file relative position of first byte returned
-#         buf:         buffer of bytes being returned.
-#
+class byte_reader(object):
+    """
+    Provide basic byte read capabilities for dt record file
+
+    Acts like a byte reader but also understands how to resync in
+    file when upper layer reports a tinytryalf or synchronization error
+    like sequence number mismatch and invalid checksum.
+    In the case of a sequence number mismatch, will start searching
+    for a sync record from the current file position.
+    In the case of a checksum mismatch, will skip to the next logical
+    sector in the file before beginning the search for the sync record.
+    """
+    def __init__(self, fd):
+        """
+        initialize the byte reader
+
+        save the file descriptor and seek to beginning of file
+        """
+        self.fd = fd
+        fd.seek(0)
+
+    def resync(self, skip=False):
+        """
+        reposition file after finding a valid sync record
+
+        if skip is True then first seek to next logical sector
+        boundary before finding sync record
+        """
+        pass
+    def next(self):
+        """
+        reposition file to next sector
+        """
+        pass
+
 def gen_data_bytes(fd):
+    """
+    gen_data_bytes generates data bytes from file (stripped of non-data bytes).
+
+    Uses generator.send() to pass number of bytes to be read
+        the number of bytes to read is to the yield, while
+        the buffer read is returned by the yield
+
+    The buffer will be as large as requested, which may require additional
+    sectors to be read. Any remaining data in the sector will be used
+    in the next yield operation.
+
+    sect: space for holding a full LOGICAL_SECTOR
+        blk:  we split sect apart into 508 bytes (blk), seq_no, and chk_sum
+        buf:  is the marshalling buffer where we collect all the data
+              that has been asked for.
+
+    file_offset, buf = data_bytes.send(req_len)
+
+    input:  num is how many bytes to read from file
+    output: file_offset: file position of first byte read from file
+                    buf: buffer of bytes read from file
+    """
     blk_str = str(LOGICAL_BLOCK_SIZE)
     blk_str += 'sHH'
     blk_struct = struct.Struct(blk_str)
@@ -611,7 +647,7 @@ def gen_data_bytes(fd):
     old_seq_no = 0
     buf = bytearray()
     while (True):
-        num = yield file_offset, buf
+        num = yield file_offset, buf    # yield
 
         # starting byte is file_offset, and one sector has been read
         file_offset = offset + (fd.tell() - LOGICAL_SECTOR_SIZE)
@@ -647,21 +683,22 @@ def gen_data_bytes(fd):
                 num -= limit
 
 
-# generate complete typed data records one at a time
-#
-# yields one record each time (len, type, data)
-#
 def gen_records(fd):
+    """
+    Generate valid typed-data records one at a time until no more bytes
+    to read from the input file.
 
-    # short hdr is the record_len and dtype.  Doesn't include the timestamp
-    #
-    #
-    # TINTRYALF (0)) is not a data type but a special case that
-    # kicks us to the next sector.  This Is Not The Record You Are Looking For
-    #
-    # TINTRYALF is only 4 bytes long (len, dtype, no timestamp) and as such
-    # will ALWAYS fit in any space that is left in the sector buffer.
+    Yields one record each time (len, type, data)
 
+    Every record starts with a short hdr, consisting of the record length
+    and dtype.  Doesn't include the timestamp.
+
+    TINTRYALF (0) "This Is Not The Record You Are Looking For"
+    Not a data type but a special case that kicks us to the next sector.
+
+    TINTRYALF is only 4 bytes long (len, dtype, no timestamp) and as such
+    will ALWAYS fit in any space that is left in the sector buffer.
+    """
     short_hdr = struct.Struct("HH")
     data_bytes = gen_data_bytes(fd)
     data_bytes.send(None)               # prime the generator
@@ -683,84 +720,52 @@ def gen_records(fd):
             print('*** oops.  too short')
             dump_buf(pl)
             break
-        yield hdr_offset, rlen, rtyp, pl
+        yield hdr_offset, rlen, rtyp, pl    # yield
         if (rlen % 4):
             data_bytes.send(4 - (rlen % 4)) # skip to next word boundary
 
 
-# main processing loop
-#
-# look for records and print out details for each one found
-#
 def dump(args):
-    total = 0
-    with open(args.input, 'rb') as infile:
-        for hdr_offset, rlen, rtype, buf in gen_records(infile):
-            print("@{} ({}): type: {}, len: {}".format(
-                hdr_offset, hex(hdr_offset), rtype, rlen))
-            dump_buf(buf)
-            try:
-                dt_count[rtype] += 1
-            except KeyError:
-                dt_count[rtype] = 1
-            if (rtype in dt_records):
-                decode = dt_records[rtype][0]
-                obj    = dt_records[rtype][1]
-                try:
-                    decode(buf, obj)
-                except struct.error:
-                    print('struct error: (dt: 0x{:02x})'.format(rtype))
-            else:
-                print('*** unknown dtype (dt: 0x{:02x})'.format(rtype))
-            total += rlen
-            print('----')
+    """
+    Reads records and prints out details
 
-        print(infile.tell(),  total)
-        print
-        print('mids: ', mid_count)
-        print('dts:  ', dt_count)
+    A dt-specific decoder is selected for each type of record which
+    determines the output
+
+    The input 'args' contains a list of the user input parameters that
+    determine which records to print, including: start, end, type
+
+    Summary information is output after all records have been processed,
+    including: number of records output, counts for each record type,
+    and dt-specific decoder summary
+    """
+    total = 0
+    infile = args.input
+    for hdr_offset, rlen, rtype, buf in gen_records(infile):
+        print("@{} ({}): type: {}, len: {}".format(
+                hdr_offset, hex(hdr_offset), rtype, rlen))
+        dump_buf(buf)
+        try:
+            dt_count[rtype] += 1
+        except KeyError:
+            dt_count[rtype] = 1
+        if (rtype in dt_records):
+            decode = dt_records[rtype][0]
+            obj    = dt_records[rtype][1]
+            try:
+                decode(buf, obj)
+            except struct.error:
+                print('struct error: (dt: 0x{:02x})'.format(rtype))
+        else:
+            print('*** unknown dtype (dt: 0x{:02x})'.format(rtype))
+        total += rlen
+        print('----')
+
+    print(infile.tell(),  total)
+    print
+    print('mids: ', mid_count)
+    print('dts:  ', dt_count)
 
 
 if __name__ == "__main__":
-    # filename = input('Please enter source file name: ')
-    filename = 'data.log'
-    parser = argparse.ArgumentParser(
-        description='Pretty print content of Tag Data logfile')
-    parser.add_argument('input',
-                        help='output file')
-    parser.add_argument('-V', '--version',
-                        action='version',
-                        version='%(prog)s 0.0.0')
-    parser.add_argument('-o', '--output',
-                        type=argparse.FileType('w'),
-                        help='this is an option')
-    parser.add_argument("--rtypes",
-                        type=str,
-                        help="output records matching types in list")
-    parser.add_argument("--start_sector",
-                        type=int,
-                        help="begin with START_SECTOR")
-    parser.add_argument("--end_sector",
-                        type=int,
-                        help="sector to stop with.")
-    parser.add_argument("--start_time",
-                        type=int,
-                        help="include records with datetime greater than START_TIME")
-    parser.add_argument("--end_time",
-                        type=int,
-                        help="stop with records after END_TIME")
-    parser.add_argument('-v', '--verbosity',
-                        action='count',
-                        default=0,
-                        help="increase output verbosity")
-    args = parser.parse_args()
-    if args.rtypes:
-        print(args.rtypes)
-        for rtype_str in args.rtypes.split(' '):
-            print(rtype_str)
-            for dt_n, dt_val in dt_records.iteritems():
-                print(dt_val)
-                if (dt_val[2] == rtype_str):
-                    print(rtype_str)
-    dump(args)
-#    print(args)
+    pass

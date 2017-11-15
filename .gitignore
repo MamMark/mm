@@ -3,6 +3,8 @@ Oops
 *.lst
 *.pyc
 *~
+*.sav
+*egg-info
 .gdb*
 build
 build/*/.gdbinit
