@@ -229,7 +229,7 @@ implementation {
      * ImageBase 0?  -> yes then golden
      *                  no  then other, ie.  NIB  (normal image block)
      */
-    owcp = &ow_control_block;
+    owcp = &ow_control_block;  owcp->ow_boot_mode = OW_BOOT_GOLD;
     if (call OWhw.getImageBase()) {                     /* from NIB? */
       if (!valid_owcb(owcp)) {
         /*
@@ -262,7 +262,7 @@ implementation {
        * 2) invoke OWT for OWT_INIT
        */
       init_owcb(owcp);
-      owcp->ow_boot_mode  = OW_BOOT_OWT;
+      owcp->ow_boot_mode  = OW_BOOT_GOLD;       /* OW_BOOT_OWT; */
       owcp->owt_action    = OWT_ACT_INIT;
       return;
     }
