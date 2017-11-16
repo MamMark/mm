@@ -31,7 +31,7 @@ from collections import OrderedDict
 # The define DT_H_REVISION in typed_data.h indicates which version.
 # Matching is a good thing.  We won't abort but will bitch if we mismatch.
 
-DT_H_REVISION       = 0x00000003
+DT_H_REVISION       = 0x00000005
 
 LOGICAL_SECTOR_SIZE = 512
 LOGICAL_BLOCK_SIZE  = 508       # excludes trailer
@@ -106,14 +106,14 @@ class aggie(OrderedDict):
 hdr_obj = aggie(OrderedDict([
     ('len',  atom(('H', '{}'))),
     ('type', atom(('H', '{}'))),
-    ('xt',   atom(('I', '0x{:04x}')))]))
+    ('st',   atom(('Q', '0x{:08x}')))]))
 
 
 def print_hdr(obj):
     rtype = obj['hdr']['type'].val
     # gratuitous space shows up after the print, sigh
     print('{:08x} ({:2}) {:6} --'.format(
-        obj['hdr']['xt'].val,
+        obj['hdr']['st'].val,
         rtype, dt_records[rtype][2])),
 
 
@@ -122,7 +122,6 @@ def print_hdr(obj):
 dt_simple_hdr   = aggie(OrderedDict([('hdr', hdr_obj)]))
 
 dt_reboot_obj   = aggie(OrderedDict([('hdr',    hdr_obj),
-                                     ('cycle',  atom(('I', '{:08x}'))),
                                      ('majik',  atom(('I', '{:08x}'))),
                                      ('dt_rev', atom(('I', '{:08x}')))]))
 
@@ -134,8 +133,7 @@ dt_reboot_obj   = aggie(OrderedDict([('hdr',    hdr_obj),
 owcb_obj        = aggie(OrderedDict([
     ('ow_sig',          atom(('I', '0x{:08x}'))),
     ('rpt',             atom(('I', '0x{:08x}'))),
-    ('cycle',           atom(('I', '0x{:08x}'))),
-    ('time',            atom(('I', '0x{:08x}'))),
+    ('st',              atom(('Q', '0x{:08x}'))),
     ('reset_status',    atom(('I', '0x{:08x}'))),
     ('reset_others',    atom(('I', '0x{:08x}'))),
     ('from_base',       atom(('I', '0x{:08x}'))),
@@ -149,8 +147,7 @@ owcb_obj        = aggie(OrderedDict([
     ('strange_loc',     atom(('I', '0x{:04x}'))),
     ('vec_chk_fail',    atom(('I', '{}'))),
     ('image_chk_fail',  atom(('I', '{}'))),
-    ('elapsed_lower',   atom(('I', '0x{:08x}'))),
-    ('elapsed_upper',   atom(('I', '0x{:08x}'))),
+    ('elapsed',         atom(('Q', '0x{:08x}'))),
     ('ow_sig_c',        atom(('I', '0x{:08x}')))
 ]))
 
@@ -161,17 +158,7 @@ dt_version_obj  = aggie(OrderedDict([('hdr',    hdr_obj),
 
 
 dt_sync_obj     = aggie(OrderedDict([('hdr',    hdr_obj),
-                                     ('cycle',  atom(('I', '{:08x}'))),
                                      ('majik',  atom(('I', '{:08x}')))]))
-
-dt_panic_obj    = aggie(OrderedDict([('hdr',    hdr_obj),
-                                     ('arg0',   atom(('I', '0x{:04x}'))),
-                                     ('arg1',   atom(('I', '0x{:04x}'))),
-                                     ('arg2',   atom(('I', '0x{:04x}'))),
-                                     ('arg3',   atom(('I', '0x{:04x}'))),
-                                     ('pcode',  atom(('B', '0x{:02x}'))),
-                                     ('where',  atom(('B', '0x{:02x}'))),
-                                     ('pad',    atom(('BB', '{}'     )))]))
 
 
 # FLUSH: flush remainder of sector due to SysReboot.flush()
@@ -207,12 +194,13 @@ event_names = {
 
 dt_event_obj    = aggie(OrderedDict([
     ('hdr',   hdr_obj),
+    ('event', atom(('H', '{}'))),
+    ('ss',    atom(('B', '{}'))),
+    ('w',     atom(('B', '{}'))),
     ('arg0',  atom(('I', '0x{:04x}'))),
     ('arg1',  atom(('I', '0x{:04x}'))),
     ('arg2',  atom(('I', '0x{:04x}'))),
-    ('arg3',  atom(('I', '0x{:04x}'))),
-    ('event', atom(('H', '{}'))),
-    ('pad',   atom(('BB','{}')))]))
+    ('arg3',  atom(('I', '0x{:04x}')))]))
 
 dt_debug_obj    = dt_simple_hdr
 
@@ -389,11 +377,11 @@ dt_gps_raw_obj  = aggie(OrderedDict([('hdr',     hdr_obj),
                                      ('gps_hdr', gps_hdr_obj)]))
 
 
-rbt0 = '  rpt:           0x{:08x}, cycle:        0x{:08x}, time:      0x{:08x}'
+rbt0 = '  rpt:           0x{:08x}, st:        0x{:08x}'
 rbt1 = '  reset_status:  0x{:08x}, reset_others: 0x{:08x}, from_base: 0x{:08x}'
 rbt2 = '  reboot_count: {:2}, ow_req: {:3}, reboot_reason: {}, ow_boot_mode: {}, owt_action: {}'
 rbt3 = '  strange:     {:3}, loc: 0x{:04x}, vec_chk_fail: {}, image_chk_fail: {}'
-rbt4 = '  elapsed_lower: 0x{:08x}, elapsed_upper: 0x{:08x}'
+rbt4 = '  elapsed:       0x{:08x}'
 
 def decode_reboot(buf, obj):
     consumed = obj.set(buf)
@@ -405,8 +393,7 @@ def decode_reboot(buf, obj):
         owcb_obj['ow_sig'].val,
         owcb_obj['ow_sig_b'].val,
         owcb_obj['ow_sig_c'].val))
-    print(rbt0.format(owcb_obj['rpt'].val, owcb_obj['cycle'].val,
-                      owcb_obj['time'].val))
+    print(rbt0.format(owcb_obj['rpt'].val, owcb_obj['st'].val))
     print(rbt1.format(owcb_obj['reset_status'].val,  owcb_obj['reset_others'].val,
                       owcb_obj['from_base'].val))
     print(rbt2.format(owcb_obj['reboot_count'].val,  owcb_obj['ow_req'].val,
@@ -414,7 +401,7 @@ def decode_reboot(buf, obj):
                       owcb_obj['owt_action'].val))
     print(rbt3.format(owcb_obj['strange'].val,       owcb_obj['strange_loc'].val,
                       owcb_obj['vec_chk_fail'].val,  owcb_obj['image_chk_fail'].val))
-    print(rbt4.format(owcb_obj['elapsed_lower'].val, owcb_obj['elapsed_upper'].val))
+    print(rbt4.format(owcb_obj['elapsed'].val))
 
     if dt_rev != DT_H_REVISION:
         print('*** version mismatch, expected 0x{:08x}, got 0x{:08x}'.format(
@@ -427,12 +414,6 @@ def decode_version(buf, obj):
     print
 
 def decode_sync(buf, obj):
-    obj.set(buf)
-    print(obj)
-    print_hdr(obj)
-    print
-
-def decode_panic(buf, obj):
     obj.set(buf)
     print(obj)
     print_hdr(obj)
@@ -547,10 +528,9 @@ dt_records = {
      1: (decode_reboot,         dt_reboot_obj,     "REBOOT"),
      2: (decode_version,        dt_version_obj,    "VERSION"),
      3: (decode_sync,           dt_sync_obj,       "SYNC"),
-     4: (decode_panic,          dt_panic_obj,      "PANIC"),
-     5: (decode_flush,          dt_flush_obj,      "FLUSH"),
-     6: (decode_event,          dt_event_obj,      "EVENT"),
-     7: (decode_debug,          dt_debug_obj,      "DEBUG"),
+     4: (decode_flush,          dt_flush_obj,      "FLUSH"),
+     5: (decode_event,          dt_event_obj,      "EVENT"),
+     6: (decode_debug,          dt_debug_obj,      "DEBUG"),
     16: (decode_gps_version,    dt_gps_ver_obj,    "GPS_VERSION"),
     17: (decode_gps_time,       dt_gps_time_obj,   "GPS_TIME"),
     18: (decode_gps_geo,        dt_gps_geo_obj,    "GPS_GEO"),
