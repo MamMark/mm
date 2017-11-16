@@ -7,7 +7,7 @@ from __init__ import main
 parser = argparse.ArgumentParser(
         description='Pretty print content of Tag Data logfile')
 parser.add_argument('input',
-                    type=argparse.FileType('r'),
+                    type=argparse.FileType('rb'),
                     help='output file')
 parser.add_argument('-V', '--version',
                     action='version',
