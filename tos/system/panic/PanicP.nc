@@ -70,6 +70,7 @@ typedef struct {
   uint8_t  where;
 } panic_args_t;                         /* panic args stash */
 
+bool _panic_args_warn_busy;
 panic_args_t _panic_args;
 
 
@@ -84,6 +85,7 @@ module PanicP {
     interface SDraw;                    /* other SD aux */
     interface Checksum;
     interface SysReboot;
+    interface Collect;
   }
 }
 
@@ -309,19 +311,56 @@ implementation {
   }
 
 
-  async command void Panic.warn(uint8_t pcode, uint8_t where,
-        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
-        __attribute__ ((noinline)) {
-
+  task void panic_warn_task() {
+    dt_event_t    ev;
+    dt_event_t   *evp;
     panic_args_t *pap = &_panic_args;
 
-    pcode |= PANIC_WARN_FLAG;
+    evp        = &ev;
+    evp->len   = sizeof(ev);
+    evp->dtype = DT_EVENT;
+    evp->ev    = DT_EVENT_PANIC_WARN;
+    evp->ss    = pap->pcode;            /* subsystem */
+    evp->w     = pap->where;
+    evp->arg0  = pap->a0;
+    evp->arg1  = pap->a1;
+    evp->arg2  = pap->a2;
+    evp->arg3  = pap->a3;
+    call Collect.collect((void *) evp, sizeof(ev), NULL, 0);
+    atomic _panic_args_warn_busy = FALSE;
+  }
 
-    pap->pcode = pcode; pap->where = where;
-    pap->a0    = arg0;  pap->a1    = arg1;
-    pap->a2    = arg2;  pap->a3    = arg3;
 
-    debug_break(0);
+  /*
+   * Panic.warn: log a Panic Warn event
+   *
+   * Collect.collect is task level so we can't call it directly but
+   * we want to be able to call Panic.warn where ever.
+   *
+   * So we use the global _panic_args to stash the panic arguments (busy
+   * is indicated by _panic_args_warn_busy).  After the panic_warn_task
+   * runs and the event has been logged, it will free the block.
+   *
+   * If a full on Panic occurs while the panic warn is still using the
+   * block, well it just doesn't matter.  The Panic will override the
+   * warning.  It will also take the system out and then will reboot.
+   */
+  async command void Panic.warn(uint8_t pcode, uint8_t where,
+          parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
+      __attribute__ ((noinline)) {
+    panic_args_t *pap = &_panic_args;
+
+    atomic {
+      if (_panic_args_warn_busy)
+        return;
+      _panic_args_warn_busy = TRUE;
+      pap->pcode = pcode; pap->where = where;
+      pap->a0    = arg0;  pap->a1    = arg1;
+      pap->a2    = arg2;  pap->a3    = arg3;
+    }
+
+    post panic_warn_task();
+    nop();                              /* BRK */
   }
 
 

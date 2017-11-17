@@ -125,6 +125,7 @@ event_names = {
     21: "SSW_DELAY_TIME",
     22: "SSW_BLK_TIME",
     23: "SSW_GRP_TIME",
+    24: "PANIC_WARN",
 }
 
 dt_event_obj    = aggie(OrderedDict([

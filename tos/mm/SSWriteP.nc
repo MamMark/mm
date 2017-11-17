@@ -120,10 +120,7 @@ implementation {
   uint32_t ssw_delay_start;		// how long are we held off?
   uint32_t ssw_write_grp_start;		// when we start the write of the group.
 
-
 #define ss_panic(where, arg) do { call Panic.panic(PANIC_SS, where, arg, 0, 0, 0); } while (0)
-#define  ss_warn(where, arg) do { call  Panic.warn(PANIC_SS, where, arg, 0, 0, 0); } while (0)
-
 
   void flush_buffers(void) {
     while (ssc.cur_handle->buf_state == SS_BUF_STATE_FULL) {

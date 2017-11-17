@@ -50,8 +50,6 @@
 
 #include <image_info.h>
 
-#define PANIC_WARN_FLAG 0x80
-
 /*
  * pcodes are used to denote what subsystem failed.  See
  * (main tree) tos/interfaces/Panic.nc for more details.

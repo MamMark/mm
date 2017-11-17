@@ -223,6 +223,7 @@ typedef enum {
   DT_EVENT_SSW_DELAY_TIME   = 21,
   DT_EVENT_SSW_BLK_TIME     = 22,
   DT_EVENT_SSW_GRP_TIME     = 23,
+  DT_EVENT_PANIC_WARN       = 24,
   DT_EVENT_16               = 0xffff,
 } dt_event_id_t;
 

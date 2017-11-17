@@ -191,11 +191,6 @@ implementation {
   imcb_t imcb;
   bool   do_erase, erase_panic;
 
-
-  void im_warn(uint8_t where, parg_t p0, parg_t p1) {
-    call Panic.warn(PANIC_IM, where, p0, p1, 0, 0);
-  }
-
   void im_panic(uint8_t where, parg_t p0, parg_t p1) {
     call Panic.panic(PANIC_IM, where, p0, p1, 0, 0);
   }

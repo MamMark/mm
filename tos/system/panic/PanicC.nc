@@ -16,6 +16,9 @@ implementation {
   PanicP.Platform  -> PlatformC;
   PanicP.SysReboot -> PlatformC;
 
+  components CollectC;
+  PanicP.Collect -> CollectC;
+
   components FileSystemC as FS;
   PanicP.FS -> FS;
 
