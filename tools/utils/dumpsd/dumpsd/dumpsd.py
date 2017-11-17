@@ -9,20 +9,6 @@ from collections import OrderedDict
 
 from decode_base import *
 
-# hdr object at native, little endian
-hdr_obj = aggie(OrderedDict([
-    ('len',  atom(('H', '{}'))),
-    ('type', atom(('H', '{}'))),
-    ('xt',   atom(('I', '0x{:04x}')))]))
-
-
-def print_hdr(obj):
-    rtype = obj['hdr']['type'].val
-    # gratuitous space shows up after the print, sigh
-    print('{:08x} ({:2}) {:6} --'.format(
-        obj['hdr']['xt'].val,
-        rtype, dt_records[rtype][2])),
-
 ####
 #
 # This program reads an input source file and parses out the
@@ -52,6 +38,21 @@ LOGICAL_SECTOR_SIZE = 512
 LOGICAL_BLOCK_SIZE  = 508       # excludes trailer
 
 # all dt parts are native and little endian
+
+# hdr object at native, little endian
+hdr_obj = aggie(OrderedDict([
+    ('len',  atom(('H', '{}'))),
+    ('type', atom(('H', '{}'))),
+    ('st',   atom(('Q', '0x{:08x}')))]))
+
+
+def print_hdr(obj):
+    rtype = obj['hdr']['type'].val
+    # gratuitous space shows up after the print, sigh
+    print('{:08x} ({:2}) {:6} --'.format(
+        obj['hdr']['st'].val,
+        rtype, dt_records[rtype][2])),
+
 
 dt_simple_hdr   = aggie(OrderedDict([('hdr', hdr_obj)]))
 
@@ -297,7 +298,7 @@ mid_table = {
     93: ( None,                 None,           "TCXO learning"),
 }
 
-# gps piece, big endian
+# gps piece, big endian, follows dt_gps_raw_obj
 gps_hdr_obj     = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
                                      ('len',     atom(('>H', '0x{:04x}'))),
                                      ('mid',     atom(('B', '0x{:02x}')))]))
@@ -580,8 +581,8 @@ class bytes_reader(object):
             buf = bytearray(self.fd.read(self.short_sync_struct.size))
             if (len(buf) == self.short_sync_struct.size):
                 rlen, rtype, timestamp, sig = self.short_sync_struct.unpack(buf)
-                if (rlen == self.sync_struct.size) && \
-                   (rtype == dt_index("SYNC")) && \
+                if (rlen == self.sync_struct.size) and \
+                   (rtype == dt_index("SYNC")) and \
                    (sig == deadf00f):
                     self.fd.seek(-self.sync_struct.size,1)
                     return self.fd.tell()      # backup and return position
@@ -592,7 +593,7 @@ class bytes_reader(object):
         if (skip):
             self.skip_sector()
         while (True):
-            self.align_next_boundary(i_struct.size) # force word boundary
+            self.align_next_boundary(self.fd.tell(), i_struct.size) # force word boundary
             buf = bytearray(self.fd.read(self.i_struct.size))
             if (len(buf) == self.i_struct_size):
                 sig = self.i_struct(buf)
@@ -716,13 +717,13 @@ def gen_records(fd):
     short_hdr = struct.Struct("HH")
     data_bytes = gen_data_bytes(fd)
 
-    def get_hdr(self):
+    def get_short_hdr(self):
         rtype = -1
         rlen = 0
         offset, hdr = data_bytes.send(short_hdr.size)
         if (offset > 0):
             rlen, rtype = short_hdr.unpack(hdr)
-        return offset, hdr, rlen, rype
+        return offset, hdr, rlen, rtype
 
     def get_body(self, rlen):
         offset, body = data_bytes.send(rlen - self.short_hdr.size)
@@ -734,8 +735,7 @@ def gen_records(fd):
 
     data_bytes.send(None)               # prime the generator
     while (True):
-        rec = None
-        rec_offset, hdr, rlen, rtype = self.get_hdr()
+        rec_offset, hdr, rlen, rtype = self.get_short_hdr()
         if (rec_offset == -1):           # EOF
             break
         if (rec_offset == 0):            # bad read
