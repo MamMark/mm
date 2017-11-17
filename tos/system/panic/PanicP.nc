@@ -91,6 +91,9 @@ module PanicP {
 
 implementation {
 #ifdef PANIC_WIGGLE
+  /*
+   * deprecated.  Only useful on the dev6a.
+   */
   void debug_break(parg_t arg)  __attribute__ ((noinline)) {
     uint32_t t0;
     uint32_t i;
