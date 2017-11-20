@@ -21,6 +21,9 @@ parser.add_argument('-f', '--first_sector',
 parser.add_argument('-l', '--last_sector',
                     type=int,
                     help='sector to stop with.')
+parser.add_argument('-j', '--jump',
+                    type=int,
+                    help='set input file position')
 # not working yet
 parser.add_argument('-s', '--start_time',
                     type=int,

@@ -691,7 +691,11 @@ def dump(args):
     verbosity = args.verbosity if (args.verbosity) else 1
 
     # skip first block, it's the directory block (reserved)
-    chunks.next_sector_pos(infile)
+    if (args.jump):
+        infile.seek(args.jump)
+        chunks.resync(infile)
+    else:
+        chunks.next_sector_pos(infile)
     # extract record from input file and output decoded results
     for hdr_offset, rlen, rtype, buf in gen_records(infile):
         if (args.last_sector) \
