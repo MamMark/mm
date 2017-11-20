@@ -459,6 +459,7 @@ def decode_gps_raw(buf, obj):
 # dict key is the record id.
 #
 
+dt_total = 0
 dt_count = {}
 
 dt_records = {
@@ -480,12 +481,6 @@ dt_records = {
     24: (decode_config,         dt_config_obj,     "CONFIG"),
     32: (decode_gps_raw,        dt_gps_raw_obj,    "GPS_RAW"),
   }
-
-def dt_index(name):
-    for k,v in dt_records.iteritems():
-        if (k == name):
-            return v[2]
-    return ""
 
 def buf_str(buf):
     """
@@ -622,10 +617,9 @@ def gen_records(fd):
             if (rtype == 0) and (rlen == 0): # EOF
                 rec_offset =  -1
                 break
-# zzz is the format wrong for tintryalf? seeing
-#     the fields swapped (rlen <> rtype)
+# zzz is the format wrong for tintryalf?
+# seeing the fields swapped (rlen <> rtype)
             if (rtype == 0) or (rlen == 0):  # tintryalf
-                print('*** tintryalf advance (next sector) 0x{:x}'.format(rec_offset))
                 chunks.next_sector_pos(fd)
                 rec_offset = 0
                 continue
@@ -668,31 +662,75 @@ def dump(args):
     including: number of records output, counts for each record type,
     and dt-specific decoder summary
     """
-    total = 0
-    # skip first block, it's the directory block (reserved)
-    infile = args.input
-    chunks.next_sector_pos(infile)
-
-    for hdr_offset, rlen, rtype, buf in gen_records(infile):
+    def count_dt(rtype):
+        """
+        increment counter in dict of rtypes, create new entry if needed
+        """
+        global dt_total
+        dt_total += 1
         try:
             dt_count[rtype] += 1
         except KeyError:
             dt_count[rtype] = 1
-        print("@{} ({}): type: {}, len: {}".format(
+
+    def print_record_details(vb):
+        if (vb >= 1):
+            print("@{} ({}): type: {}, len: {}".format(
                 hdr_offset, hex(hdr_offset), rtype, rlen))
-        dump_buf(buf)
-        decode = dt_records[rtype][0]
-        obj    = dt_records[rtype][1]
+        if (vb >=2):
+            dump_buf(buf)
+
+    def dt_by_index(name):
+        for k,v in dt_records.iteritems():
+            if (k == name):
+                return v[2]
+        return ""
+
+    total_bytes_processed = 0
+    infile = args.input
+    verbosity = args.verbosity if (args.verbosity) else 1
+
+    # skip first block, it's the directory block (reserved)
+    chunks.next_sector_pos(infile)
+    # extract record from input file and output decoded results
+    for hdr_offset, rlen, rtype, buf in gen_records(infile):
+        if (args.last_sector) \
+           and (hdr_offset/LOGICAL_SECTOR_SIZE >= args.last_sector):
+            break                      # past last sector of interest
+        if (args.first_sector) \
+           and (hdr_offset/LOGICAL_SECTOR_SIZE < args.first_sector):
+            continue                   # before 1st sector of interest
+        if (args.rtypes) \
+           and (dt_by_index(rtype) not in args.rtypes):
+            continue                   # not an rtype of interest
+        print_record_details(verbosity)
+        decode = dt_records[rtype][0]  # dt function
+        obj    = dt_records[rtype][1]  # dt object
         try:
             decode(buf, obj)
         except struct.error:
-            print('decode error: (dt: 0x{:02x})'.format(rtype))
-        total += rlen
+            if (verbosity > 0):
+                print('decode error: (dt: 0x{:x}, len: {})'.format(
+                    rtype,
+                    rlen))
+        total_bytes_processed += rlen
+        count_dt(rtype)
 
-    print(infile.tell(),  total)
     print
-    print('mids: ', mid_count)
-    print('dts:  ', dt_count)
+    print('end of processing @{}[sector:{}],  processed: {} records, {} bytes'.format(
+        infile.tell(),
+        infile.tell()/LOGICAL_SECTOR_SIZE,
+        dt_total,
+        total_bytes_processed))
+    print
+    print('mids: {}'.format(mid_count))
+    print('dts:  {}'.format(dt_count))
+    if (verbosity > 2):
+        for off, buf in chunks.chunk4b_offsets:
+            print('chunk@0x{:x}, len({}): {}'.format(
+                off,
+                len(buf),
+                binascii.hexlify(buf)))
 
 
 if __name__ == "__main__":
