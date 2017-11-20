@@ -19,13 +19,13 @@ except ImportError:
 setup(
     name             = 'dumpsd',
     version          = get_version(),
-    url              = 'https://github.com/mammark/mm/tools/dumpsd',
+    url              = 'https://github.com/mammark/mm/tools/utils/dumpsd',
     author           = 'Dan Maltbie',
     author_email     = 'dmaltbie@daloma.org',
-    licence_file     = 'LICENCE.txt',
-    licence          = 'MIT',
-    install_requires = ['click',
-    ],
-    provides         = ['dumpsd'],
+    license_file     = 'LICENCE.txt',
+    license          = 'MIT',
     packages         = ['dumpsd'],
+    entry_points     = {
+        'console_scripts': ['dumpsdcli=dumpsd.dumpsdcli:main'],
+    }
 )
