@@ -9,6 +9,8 @@ from collections import OrderedDict
 
 from decode_base import *
 
+import chunks
+
 ####
 #
 # This program reads an input source file and parses out the
@@ -513,99 +515,6 @@ def dump_buf(buf):
             print('{:04x}: '.format(idx/3)),
 
 
-class bytes_reader(object):
-    """
-    Provide basic byte read capabilities for dt record file
-
-    Acts like a byte reader but also understands how to resync in
-    file when upper layer reports a tinytryalf or synchronization error
-    like sequence number mismatch and invalid checksum.
-    In the case of a sequence number mismatch, will start searching
-    for a sync record from the current file position.
-    In the case of a checksum mismatch, will skip to the next logical
-    sector in the file before beginning the search for the sync record.
-    """
-    def __init__(self, fd):
-        """
-        initialize the byte reader
-
-        save the file descriptor and seek to beginning of file
-        """
-        self.fd = fd
-        self.fd.seek(0)
-        self.i_struct = struct.Struct('I')
-        self.sync_struct = struct.Struct('HHQI')
-        self.short_sync_struct = struct.Struct('HHQI')
-
-    def align_next_boundary(self, offset, size):
-        offset = int(((offset/size) + 1) * size)
-        self.fd.seek(offset)
-        return offset
-
-    def read(self, rlen):
-        """
-        return buffer of bytes requested from data file
-
-        Can be zero to rlen in length
-        """
-        return bytearray(fd.read(rlen))
-
-    def seek(self, position, which=0):
-        return self.fd.seek(position, which)
-
-    def skip_sector(self):
-        """
-        reposition file to next sector
-        """
-        return self.align_next_boundary(LOGICAL_SECTOR_SIZE)
-
-    def tell(self):
-        return self.fd.tell()
-
-    def resync(self, skip=False):
-        """
-        reposition file after finding a valid sync record
-
-        if skip is True then first seek to next logical sector
-        boundary before looking for sync record
-
-        if no sync record is found, then return -1 for EOF
-        else return offset in file at beginning of sync record
-        """
-        deadf00f = 'deadf00f'.encode('hex')
-
-        def sync_check(self):
-            """
-            check other fields in sync record to confirm we have sync
-            """
-            self.fd.seek(-self.short_sync_struct.size,1)
-            buf = bytearray(self.fd.read(self.short_sync_struct.size))
-            if (len(buf) == self.short_sync_struct.size):
-                rlen, rtype, timestamp, sig = self.short_sync_struct.unpack(buf)
-                if (rlen == self.sync_struct.size) and \
-                   (rtype == dt_index("SYNC")) and \
-                   (sig == deadf00f):
-                    self.fd.seek(-self.sync_struct.size,1)
-                    return self.fd.tell()      # backup and return position
-                else:
-                    return 0              # indicate check failed
-            return -1                     # indicate end of file
-
-        if (skip):
-            self.skip_sector()
-        while (True):
-            self.align_next_boundary(self.fd.tell(), i_struct.size) # force word boundary
-            buf = bytearray(self.fd.read(self.i_struct.size))
-            if (len(buf) == self.i_struct_size):
-                sig = self.i_struct(buf)
-                if (sig == deadf00f):              # look for signature
-                    offset = self.sync_check()     # do deeper check
-                    if offset == 0:
-                        continue
-                return offset
-            return -1
-
-
 def gen_data_bytes(fd):
     """
     gen_data_bytes generates data bytes from file (stripped of non-data bytes).
@@ -634,22 +543,6 @@ def gen_data_bytes(fd):
         0   bad read, try again
        -1   end of file, nothing more to read
     """
-    def get_next_block():
-        sect = fd.read(LOGICAL_SECTOR_SIZE)
-        index = 0
-        if (not sect) or \
-           (len(sect) < LOGICAL_SECTOR_SIZE):   # EOF
-            offset = -1
-        return index, *blk_struct.unpack(sect)
-
-    def in_sequence(sn, so):
-        if (sn) and (sn == (so + 1)):
-            return True
-        return False
-
-    def valid_chksum():
-        return True
-
     # define logical block structure (always read full block)
     blk_str     = str(LOGICAL_BLOCK_SIZE) + 'sHH'
     blk_struct  = struct.Struct(blk_str)
@@ -657,11 +550,6 @@ def gen_data_bytes(fd):
     # variables to keep track of input block state between yields
     blk         = None
     index       = LOGICAL_SECTOR_SIZE
-
-    # variables to validate sequence number and checksum
-    seq_no      = 0
-    old_seq_no  = 0
-    chk_sum     = 0
 
     # output variables
     buf         = bytearray()
@@ -671,32 +559,19 @@ def gen_data_bytes(fd):
         num = yield file_offset, buf    # yield
 
         # starting byte is file_offset, and one sector has been read
-        file_offset = index + (fd.tell() - LOGICAL_SECTOR_SIZE)
+        file_offset = 0
         buf = bytearray()               # clear the return buffer each time
         while (num > 0):
-            if (index >= LOGICAL_BLOCK_SIZE):  # nothing left in this block
-                index, blk, seq_no, chksum = get_next_block()
-                # check sequence number for discontinuity
-                if not in_sequence(seq_no, old_seq_no):
-                    print('*** oops, seq mismatch: old: {}, cur: {}'.format(
-                        old_seq_no, seq_no))
-                    fd.resync()
-                    index = fd.tell() % LOGICAL_SECTOR_SIZE
-                    file_offset = 0     # indicates bad read
-                    break
-                old_seq_no = seq_no
-                if not valid_checksum():
-                    print('*** oh oh, bad checksum: {}'.format(chksum))
-                    fd.resync(skip=True)
-                    index = fd.tell() % LOGICAL_SECTOR_SIZE
-                    file_offset = 0     # indicates bad read
-                    break
-            limit = num if (num < (LOGICAL_BLOCK_SIZE - index)) \
-                    else LOGICAL_BLOCK_SIZE - index
-            buf.extend(blk[offset:offset+limit])
-            index += limit
-            if index >= len(blk): index = LOGICAL_SECTOR_SIZE
-            num -= limit
+            offset, chunk = chunks.get_chunk(fd, num)
+            if (offset == 0):
+                continue                # bad chunk, try again
+            if (offset == -1):
+                file_offset = -1        # end of file
+                break
+            if (file_offset == 0):      # first chunk, set start of
+                file_offset = offset
+            buf.extend(chunk)
+            num -= len(chunk)
 
 
 def gen_records(fd):
@@ -717,8 +592,9 @@ def gen_records(fd):
     """
     short_hdr = struct.Struct("HH")
     data_bytes = gen_data_bytes(fd)
+    data_bytes.send(None)               # prime the bytes generator
 
-    def get_short_hdr(self):
+    def get_short_hdr():
         rtype = -1
         rlen = 0
         offset, hdr = data_bytes.send(short_hdr.size)
@@ -726,42 +602,56 @@ def gen_records(fd):
             rlen, rtype = short_hdr.unpack(hdr)
         return offset, hdr, rlen, rtype
 
-    def get_body(self, rlen):
-        offset, body = data_bytes.send(rlen - self.short_hdr.size)
+    def get_body(rlen):
+        offset, body = data_bytes.send(rlen - short_hdr.size)
         if (offset > 0):
-            if (self.short_hdr.size + len(body)) < rlen):
+            if ((short_hdr.size + len(body)) < rlen):
                 print('*** oops. rec too short')
                 dump_buf(hdr + body[:64])
         return offset, body
 
-    data_bytes.send(None)               # prime the generator
     while (True):
-        rec_offset, hdr, rlen, rtype = self.get_short_hdr()
-        if (rec_offset == -1):           # EOF
-            break
-        if (rec_offset == 0):            # bad read
-            continue
-        if (rtype == 0):                 # tintryalf
-            print('*** tintryalf advance (next sector)')
-            fd.skip_sector()
-            continue
-        try:
-            dt_records[rtype]            # see if type is known
-        except:
-            # zzz may want to detect excessively long record
-            fd.seek(hdr_offset + rlen)
-            continue
-        offset, body = get_body(rlen)
-        if (offset == -1):               # EOF
-            break
-        if (offset == 0):                # bad read
-            continue
+        rec_offset = 0
+        while (rec_offset == 0):
+            rec_offset, hdr, rlen, rtype = get_short_hdr()
+            if (rec_offset == -1):           # EOF
+                break
+            if (rec_offset == 0):            # bad read
+                chunks.resync(fd)
+                continue
+            if (rtype == 0) and (rlen == 0): # EOF
+                rec_offset =  -1
+                break
+# zzz is the format wrong for tintryalf? seeing
+#     the fields swapped (rlen <> rtype)
+            if (rtype == 0) or (rlen == 0):  # tintryalf
+                print('*** tintryalf advance (next sector) 0x{:x}'.format(rec_offset))
+                chunks.next_sector_pos(fd)
+                rec_offset = 0
+                continue
+            try:
+                dt_records[rtype]            # see if type is known
+            except:
+                chunks.resync(fd)
+                rec_offset = 0
+                continue
+            offset, body = get_body(rlen)
+            if (offset == -1):               # EOF
+                rec_offset = -1
+                break
+            if (offset == 0):                # bad read
+                chunks.resync(fd)
+                rec_offset = 0
+                continue
 
         # zzz additional per record checking here
 
+        if (rec_offset == -1):                # EOF
+            break
         # return header fields plus record contents
         yield rec_offset, rlen, rtype, hdr + body    # yield
-        fd.align_next_boundary(short_hdr.size)
+        if (fd.tell()%4):
+            chunks.next_word_pos(fd)       # skip any padding
 
 
 def dump(args):
@@ -779,12 +669,15 @@ def dump(args):
     and dt-specific decoder summary
     """
     total = 0
-    # instantiate reader for the input file
     # skip first block, it's the directory block (reserved)
-    infile = bytes_reader(args.input)
-    infile.skip_sector()
+    infile = args.input
+    chunks.next_sector_pos(infile)
 
     for hdr_offset, rlen, rtype, buf in gen_records(infile):
+        try:
+            dt_count[rtype] += 1
+        except KeyError:
+            dt_count[rtype] = 1
         print("@{} ({}): type: {}, len: {}".format(
                 hdr_offset, hex(hdr_offset), rtype, rlen))
         dump_buf(buf)
