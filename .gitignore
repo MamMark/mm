@@ -1,4 +1,4 @@
-Oops
+[Oo]ops
 *.[oa]
 *.lst
 *.pyc
@@ -6,8 +6,8 @@ Oops
 *.sav
 *egg-info
 .gdb*
-build
-build/*/.gdbinit
+dist/
+build/
 doc/nesdoc
 support/utils/mkdblk/mkdblk
 _Build
