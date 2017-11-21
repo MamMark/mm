@@ -96,8 +96,10 @@ typedef enum {
  * needed to make the next dt header start on a 4 byte boundary.
  *
  * All records (data blocks, dt headers) start with a 2 byte little endian
- * length,.a 2 byte little endian data type field (dtype) and a 64 bit
- * (little endian) systime (internal time, since last reboot) stamp.
+ * length, a 2 byte little endian data type field (dtype), a 4 byte little
+ * endian record number, and a 64 bit little endian systime (internal time,
+ * since last reboot) stamp.  The double quad systime needs to be double
+ * quad aligned.
  *
  * A following dt_header is required to be quad aligned.  There will 0-3
  * pad bytes following a record.  Length does not include these pad bytes.
@@ -120,15 +122,16 @@ typedef enum {
  * It is only used towards the end of the sector when a header won't fit.
  */
 
-typedef struct {                /* only for TINTRYALF */
+typedef struct {                /* size 4, only for TINTRYALF */
   uint16_t len;
   dtype_t  dtype;
 } PACKED dt_short_header_t;
 
 
-typedef struct {                /* size 12 */
+typedef struct {                /* size 16 */
   uint16_t len;
   dtype_t  dtype;
+  uint32_t recnum;
   uint64_t systime;
 } PACKED dt_header_t;
 
@@ -164,8 +167,9 @@ typedef struct {                /* size 12 */
  */
 
 typedef struct {
-  uint16_t len;                 /* size 20 */
+  uint16_t len;                 /* size 32 */
   dtype_t  dtype;
+  uint32_t recnum;
   uint64_t systime;
   uint32_t sync_majik;
   time_tpc_t datetpc;           /* temporenc current dateTime */
@@ -185,8 +189,9 @@ typedef struct {
  * followed by the entire image_info block
  */
 typedef struct {
-  uint16_t    len;              /* size   16    +     144      */
+  uint16_t    len;              /* size   20    +     144      */
   dtype_t     dtype;            /* dt_version_t + image_info_t */
+  uint32_t    recnum;
   uint64_t    systime;
   uint32_t    base;             /* base address of this image */
 } PACKED dt_version_t;
@@ -198,8 +203,9 @@ typedef struct {
 
 
 typedef struct {
-  uint16_t   len;               /* size 12, 0x0C */
+  uint16_t   len;               /* size 28 */
   dtype_t    dtype;
+  uint32_t   recnum;
   uint64_t   systime;
   uint32_t   sync_majik;
   time_tpc_t datetpc;           /* temporenc current dateTime */
@@ -236,8 +242,9 @@ typedef enum {
 
 
 typedef struct {
-  uint16_t len;                 /* size 32 */
+  uint16_t len;                 /* size 36 */
   dtype_t  dtype;
+  uint32_t recnum;
   uint64_t systime;
   dt_event_id_t ev;             /* event, see above */
   uint8_t  ss;                  /* PANIC warn, subsys */
@@ -273,8 +280,9 @@ typedef enum {
  * marshal the data to mess with the big endianess.
  */
 typedef struct {
-  uint16_t len;                 /* size 20 + var */
+  uint16_t len;                 /* size 24 + var */
   dtype_t  dtype;
+  uint32_t recnum;
   uint64_t systime;
   uint32_t mark_us;             /* mark stamp in usecs */
   gps_chip_id_t chip_id;
@@ -292,8 +300,9 @@ typedef struct {
 
 
 typedef struct {
-  uint16_t len;                 /* size 20 + var */
+  uint16_t len;                 /* size 24 + var */
   dtype_t  dtype;
+  uint32_t recnum;
   uint64_t systime;
   uint32_t sched_delta;
   uint16_t sns_id;
@@ -302,8 +311,9 @@ typedef struct {
 
 
 typedef struct {
-  uint16_t len;                 /* size 20 + var */
+  uint16_t len;                 /* size 24 + var */
   dtype_t  dtype;
+  uint32_t recnum;
   uint64_t systime;
   uint32_t sched_delta;
   uint16_t mask;
@@ -322,8 +332,9 @@ typedef struct {
  * includes the null.
  */
 typedef struct {
-  uint16_t len;                 /* size 24 + var */
+  uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
+  uint32_t recnum;
   uint64_t systime;
   uint16_t note_len;
   uint16_t year;

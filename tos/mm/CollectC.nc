@@ -16,6 +16,9 @@ implementation {
   Collect = CollectP;
   CollectEvent = CollectP;
 
+  components DblkManagerC;
+  CollectP.DblkManager -> DblkManagerC;
+
   components SSWriteC;
   CollectP.SSW -> SSWriteC;
 

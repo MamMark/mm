@@ -51,14 +51,15 @@ module DblkManagerP {
 
 implementation {
 
-#define DM_SIG 0x5542
+#define DM_SIG 0x55422455
 
-norace  struct {
-    uint16_t dm_sig_a;
+norace struct {
+    uint32_t dm_sig_a;
     uint32_t dblk_lower;                /* inclusive  */
     uint32_t dblk_nxt;                  /* 0 - oht oh */
     uint32_t dblk_upper;                /* inclusive  */
-    uint16_t dm_sig_b;
+    uint32_t cur_recnum;                /* current record number */
+    uint32_t dm_sig_b;
   } dmc;
 
   dm_state_t   dm_state;
@@ -100,6 +101,7 @@ norace  struct {
     dmc.dblk_lower = lower;
     dmc.dblk_nxt   = lower + 1;
     dmc.dblk_upper = upper;
+    dmc.cur_recnum = (uint32_t) -1;
     dm_state = DMS_REQUEST;
     if ((err = call SDResource.request()))
       dm_panic(2, err, 0);
@@ -226,6 +228,13 @@ norace  struct {
     }
     return dmc.dblk_nxt;
   }
+
+
+  async command uint32_t DblkManager.get_nxt_recnum() {
+    dmc.cur_recnum++;
+    return dmc.cur_recnum;
+  }
+
 
   event void FileSystem.eraseDone(uint8_t which) { }
 
