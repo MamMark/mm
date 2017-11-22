@@ -2,7 +2,7 @@ DESCRIPTION = 'Dump the Tag Data logfile contents in readable format'
 
 import os, re
 def get_version():
-    VERSIONFILE = os.path.join('dumpsd', '__init__.py')
+    VERSIONFILE = os.path.join('tagdump', '__init__.py')
     initfile_lines = open(VERSIONFILE, 'rt').readlines()
     VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
     for line in initfile_lines:
@@ -17,15 +17,15 @@ except ImportError:
     from distutils.core import setup
 
 setup(
-    name             = 'dumpsd',
+    name             = 'tagdump',
     version          = get_version(),
-    url              = 'https://github.com/mammark/mm/tools/utils/dumpsd',
+    url              = 'https://github.com/mammark/mm/tools/utils/tagdump',
     author           = 'Dan Maltbie',
     author_email     = 'dmaltbie@daloma.org',
     license_file     = 'LICENCE.txt',
     license          = 'MIT',
-    packages         = ['dumpsd'],
+    packages         = ['tagdump'],
     entry_points     = {
-        'console_scripts': ['dumpsdcli=dumpsd.dumpsdcli:main'],
+        'console_scripts': ['tagdump=tagdump.__main__:main'],
     }
 )
