@@ -12,11 +12,17 @@ class atom(object):
         self.s_str = a_tuple[0]
         self.s_rec = struct.Struct(self.s_str)
         self.p_str = a_tuple[1]
+        if (len(a_tuple) > 2):
+            self.f_str = a_tuple[2]
+        else:
+            self.f_str = None
 
     def __len__(self):
         return self.s_rec.size
 
     def __repr__(self):
+        if callable(self.f_str):
+            return self.p_str.format(self.f_str(self.val))
         return self.p_str.format(self.val)
 
     def set(self, buf):
