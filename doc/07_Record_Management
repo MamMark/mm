@@ -1,0 +1,47 @@
+
+Record Managment
+
+Definitions:
+
+alignment:      initial byte alignment for a multibyte datum or structure
+                can be half-word, word/quad, double-quad aligned.
+granualrity:    ending alignment for a multibyte datum or structure.
+byte:           8 bit quantity
+half-word:      16 bit quantity, 2 bytes.
+word:           32 bit quantity
+quad:           32 bit quantity, alias of word.  4 bytes.
+quad alignment: the datum or structure is aligned on a quad word (low two bits 0)
+quad granular:  the structure or datum ends evenly aligned wrt the next quad.
+
+dblk:           short for data block.
+data block:     another name for a record.
+typed_data:     yet another name for a record.
+file_offset:    absolute byte offset of a record from the start of the DBLK file.
+blk_id:         absolute sector/block id of a 512 byte sector on the SD.
+sector:         512 byte data block used to talk to the SD.
+SD:             Secure Digital device that is the effective mass storage device.
+
+
+SysTime:
+DateTime:
+
+
+Restrictions:
+
+o record headers (dt_header_t)
+** quad alignment.  All record headers are required to start with quad alignment.
+** quad granularity.  All record headers are required to be a multiple of 4 bytes.
+** all record headers must fit contiguously in a sector's remaining available space.
+
+o Time
+** Datetime is monotonically increasing since file inception.
+** Systime is monotonically increasing since last REBOOT.
+
+
+DBLK directory
+
+o File Inception.  When a tagsd is formatted, the DBLK file is created.  The creation
+  data is inserted into the DBLK directory.  It provides the base for monotonically
+  increasing datetime.
+o File limits.  blk_low, blk_high.  Blk_ids.  These are needed for converting from
+  absolute sector numbers to file offsets relative to the beginning of the file.
