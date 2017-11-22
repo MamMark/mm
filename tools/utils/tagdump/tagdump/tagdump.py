@@ -42,11 +42,20 @@ LOGICAL_BLOCK_SIZE  = 508       # excludes trailer
 # all dt parts are native and little endian
 
 # hdr object at native, little endian
-hdr_obj = aggie(OrderedDict([
-    ('len',  atom(('H', '{}'))),
-    ('type', atom(('H', '{}'))),
-    ('st',   atom(('Q', '0x{:08x}')))]))
+dt_hdr_obj = aggie(OrderedDict([
+    ('len',     atom(('H', '{}'))),
+    ('type',    atom(('H', '{}'))),
+    ('recnum',  atom(('I', '{}'))),
+    ('st',      atom(('Q', '0x{:x}')))]))
 
+datetime_obj = aggie(OrderedDict([
+    ('jiffies', atom(('I', '{}'))),
+    ('yr',      atom(('H', '{}'))),
+    ('mon',     atom(('B', '{}'))),
+    ('day',     atom(('B', '{}'))),
+    ('hr',      atom(('B', '{}'))),
+    ('min',     atom(('B', '{}'))),
+    ('sec',     atom(('B', '{}')))]))
 
 def print_hdr(obj):
     rtype = obj['hdr']['type'].val
@@ -56,11 +65,14 @@ def print_hdr(obj):
         rtype, dt_records[rtype][2])),
 
 
-dt_simple_hdr   = aggie(OrderedDict([('hdr', hdr_obj)]))
+dt_simple_hdr   = aggie(OrderedDict([('hdr', dt_hdr_obj)]))
 
-dt_reboot_obj   = aggie(OrderedDict([('hdr',    hdr_obj),
-                                     ('majik',  atom(('I', '{:08x}'))),
-                                     ('dt_rev', atom(('I', '{:08x}')))]))
+dt_reboot_obj   = aggie(OrderedDict([
+    ('hdr',     dt_hdr_obj),
+    ('majik',   atom(('I', '{:08x}'))),
+    ('prev',    atom(('I', '{:08x}'))),
+    ('datetpc', atom(('8s', '{}', binascii.hexlify))),
+    ('dt_rev',  atom(('I', '{:08x}')))]))
 
 #
 # reboot is followed by the ow_control_block
@@ -70,7 +82,8 @@ dt_reboot_obj   = aggie(OrderedDict([('hdr',    hdr_obj),
 owcb_obj        = aggie(OrderedDict([
     ('ow_sig',          atom(('I', '0x{:08x}'))),
     ('rpt',             atom(('I', '0x{:08x}'))),
-    ('st',              atom(('Q', '0x{:08x}'))),
+    ('time',            atom(('I', '0x{:08x}'))),
+    ('cycle',           atom(('I', '0x{:08x}'))),
     ('reset_status',    atom(('I', '0x{:08x}'))),
     ('reset_others',    atom(('I', '0x{:08x}'))),
     ('from_base',       atom(('I', '0x{:08x}'))),
@@ -84,18 +97,46 @@ owcb_obj        = aggie(OrderedDict([
     ('strange_loc',     atom(('I', '0x{:04x}'))),
     ('vec_chk_fail',    atom(('I', '{}'))),
     ('image_chk_fail',  atom(('I', '{}'))),
-    ('elapsed',         atom(('Q', '0x{:08x}'))),
+    ('elapsed_upper',   atom(('I', '0x{:08x}'))),
+    ('elapsed_lower',   atom(('I', '0x{:08x}'))),
     ('ow_sig_c',        atom(('I', '0x{:08x}')))
 ]))
 
 
-dt_version_obj  = aggie(OrderedDict([('hdr',    hdr_obj),
-                                     ('base',   atom(('I', '{:08x}')))]))
+dt_version_obj  = aggie(OrderedDict([
+    ('hdr',       dt_hdr_obj),
+    ('base',      atom(('I', '{:08x}')))]))
 
 
+hw_version_obj      = aggie(OrderedDict([
+    ('rev',       atom(('B', '{:x}'))),
+    ('model',     atom(('B', '{:x}')))]))
 
-dt_sync_obj     = aggie(OrderedDict([('hdr',    hdr_obj),
-                                     ('majik',  atom(('I', '{:08x}')))]))
+
+image_version_obj   = aggie(OrderedDict([
+    ('build',     atom(('H', '{:x}'))),
+    ('minor',     atom(('B', '{:x}'))),
+    ('major',     atom(('B', '{:x}')))]))
+
+
+image_info_obj  = aggie(OrderedDict([
+    ('sig',       atom(('I', '0x{:08x}'))),
+    ('im_start',  atom(('I', '0x{:08x}'))),
+    ('im_end',    atom(('I', '0x{:08x}'))),
+    ('vect_chk',  atom(('I', '0x{:08x}'))),
+    ('im_chk',    atom(('I', '0x{:08x}'))),
+    ('ver_id',    image_version_obj),
+    ('desc0',     atom(('44s', '0x{:x}'))),
+    ('desc1',     atom(('44s', '0x{:x}'))),
+    ('build_date',atom(('30s', '0x{:x}'))),
+    ('hw_ver',    hw_version_obj)]))
+
+
+dt_sync_obj     = aggie(OrderedDict([
+    ('hdr',       dt_hdr_obj),
+    ('majik',     atom(('I', '{:08x}'))),
+    ('prev_sync', atom(('I', '{:x}'))),
+    ('datetpc',   atom(('8s', '{}', binascii.hexlify)))]))
 
 
 # FLUSH: flush remainder of sector due to SysReboot.flush()
@@ -131,7 +172,7 @@ event_names = {
 }
 
 dt_event_obj    = aggie(OrderedDict([
-    ('hdr',   hdr_obj),
+    ('hdr',   dt_hdr_obj),
     ('event', atom(('H', '{}'))),
     ('ss',    atom(('B', '{}'))),
     ('w',     atom(('B', '{}'))),
@@ -307,7 +348,7 @@ gps_hdr_obj     = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
                                      ('mid',     atom(('B', '0x{:02x}')))]))
 
 # dt, native, little endian
-dt_gps_raw_obj  = aggie(OrderedDict([('hdr',     hdr_obj),
+dt_gps_raw_obj  = aggie(OrderedDict([('hdr',     dt_hdr_obj),
                                      ('mark',    atom(('>I', '0x{:04x}'))),
                                      ('chip',    atom(('B',  '0x{:02x}'))),
                                      ('dir',     atom(('B',  '{}'))),
