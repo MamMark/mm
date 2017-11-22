@@ -58,7 +58,7 @@
  * split into two subfields, major and minor.  Major 0 is development of
  * some flavor.  Releases start at Major 1.  Major 1 looks like 00010000.
  */
-#define DT_H_REVISION   0x00000004
+#define DT_H_REVISION   0x00000006
 
 typedef enum {
   DT_TINTRYALF		= 0,            /* next, force next sector */
@@ -172,6 +172,7 @@ typedef struct {
   uint32_t recnum;
   uint64_t systime;
   uint32_t sync_majik;
+  uint32_t prev_sync;           /* file offset */
   time_tpc_t datetpc;           /* temporenc current dateTime */
   uint32_t dt_h_revision;       /* version identifier of typed_data */
 } PACKED dt_reboot_t;
@@ -208,6 +209,7 @@ typedef struct {
   uint32_t   recnum;
   uint64_t   systime;
   uint32_t   sync_majik;
+  uint32_t   prev_sync;         /* file offset */
   time_tpc_t datetpc;           /* temporenc current dateTime */
 } PACKED dt_sync_t;
 
