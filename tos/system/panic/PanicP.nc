@@ -20,6 +20,7 @@
 #include <panic_regions.h>
 #include <sd.h>
 #include <fs_loc.h>
+#include <overwatch.h>
 
 #ifdef PANIC_GATE
 norace volatile uint32_t g_panic_gate;
@@ -416,9 +417,11 @@ implementation {
     collect_ram(&ram_region, pcb.block + PBLK_RAM);
 
     b0p = (panic_block_0_t *) pcb.buf;
+    /* fill in panic info */
+    owcp = call OverWatch.getControlBlock();
     pip = &b0p->panic_info;
     pip->sig = PANIC_INFO_SIG;
-    pip->boot_count = 0;
+    pip->boot_count = owcp->reboot_count;
     pip->systime    = call LocalTime.get();
     pip->subsys = pap->pcode;
     pip->where  = pap->where;
