@@ -51,6 +51,11 @@ typedef struct {
 #define SRAM_LEN (64 * 1024)
 const panic_region_t ram_region = { (void *) SRAM_BASE, SRAM_LEN, 1 };
 
+
+#define FAULT_REGS_BASE     0xE000ED24
+#define FAULT_REGS_COUNT    6
+#define FAULT_REGS_SIZE     4
+
 const panic_region_t io_regions[] = {
   { (void *) TIMER_A0_BASE, 48, 2 },
   { (void *) TIMER_A1_BASE, 48, 2 },
@@ -71,6 +76,8 @@ const panic_region_t io_regions[] = {
   { (void *) &(TIMER32_2->LOAD), 28, 4 },
   { (void *) &(DMA_Channel->DEVICE_CFG), sizeof(DMA_Channel_Type), 4 },
   { (void *) &(DMA_Control->STAT), sizeof(DMA_Control_Type), 4 },
+  { (void *) FAULT_REGS_BASE, (FAULT_REGS_COUNT * FAULT_REGS_SIZE),
+                FAULT_REGS_SIZE },
   {          PR_EOR, 0, 4 }
 };
 
