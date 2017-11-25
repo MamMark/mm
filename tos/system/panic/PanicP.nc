@@ -85,6 +85,7 @@ module PanicP {
     interface SDraw;                    /* other SD aux */
     interface Checksum;
     interface SysReboot;
+    interface LocalTime<TMilli>;
     interface Collect;
   }
 }
@@ -417,9 +418,8 @@ implementation {
     b0p = (panic_block_0_t *) pcb.buf;
     pip = &b0p->panic_info;
     pip->sig = PANIC_INFO_SIG;
-    pip->ts  = 0;
-    pip->cycle = 0;
     pip->boot_count = 0;
+    pip->systime    = call LocalTime.get();
     pip->subsys = pap->pcode;
     pip->where  = pap->where;
     pip->pad    = 0;

@@ -131,9 +131,8 @@ typedef struct {
 
 typedef struct {
   uint32_t sig;
-  uint32_t ts;
-  uint32_t cycle;
   uint32_t boot_count;
+  uint64_t systime;
   uint8_t  subsys;
   uint8_t  where;
   uint16_t pad;
