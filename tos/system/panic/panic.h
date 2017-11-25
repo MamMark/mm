@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017 Eric B. Decker, Miles Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -100,6 +100,7 @@ typedef unsigned int parg_t;
 #define PBLK_RAM       1
 #define PBLK_RAM_SIZE  (64 * 1024 / 512)
 
+
 /*
  * IO sectors start after RAM and can grow up to 13 sectors
  * given PBLK_SIZE of 150.  If IO collides with FCRUMBS you
@@ -113,15 +114,7 @@ typedef unsigned int parg_t;
 #define PBLK_FCRUMBS_SIZE 8
 
 
-/*
- * Various signatures for the different pieces of Panic information
- */
-#define PANIC_INFO_SIG  0x44665041
-#define PANIC_CRASH_SIG 0x44664352
-#define PANIC_ADDITIONS 0x44664144
-
 #define PANIC_DIR_SIG    0xDDDDB00B
-
 
 typedef struct {
   uint32_t panic_dir_sig;
@@ -135,6 +128,8 @@ typedef struct {
 } cc_region_header_t;
 
 
+#define PANIC_INFO_SIG  0x44665041
+
 typedef struct {
   uint32_t sig;
   uint32_t boot_count;
@@ -145,25 +140,71 @@ typedef struct {
   uint32_t arg[4];
 } panic_info_t;
 
+
 /* see mm/include/image_info.h for IMAGE_INFO */
 
-/* bx - before exception, ax - after exception */
-typedef struct {
-  uint32_t sig;
-  uint32_t flags;
-  uint32_t bxRegs[13];
-  uint32_t bxSP;
-  uint32_t bxLR;
-  uint32_t bxPC;
-  uint32_t bxPSR;                   /* Before eXception processor status */
-  uint32_t axPSR;                   /* After eXception processor status */
-  uint32_t fpscr;                   /* floating point status/control reg */
-  uint32_t fpRegs[32];              /* floating point registers */
-  uint32_t fault_regs[6];           /* SHCSR CFSR HFSR DFSR MMFAR BFAR */
-} crash_info_t;
+
+/*
+ * Crash Info is part of what is needed by CrashDebug
+ * to analyze the Panic.
+ *
+ * The combination of CrashInfo, RAM, and IO make up what needs
+ * to be fed to CrashDebug.
+ *
+ * CrashInfo is two parts, the first part is additional information
+ * that we save.  The second part is what CrashCatcher needs to feed
+ * to CrashDebug.  It starts at cc_sig on.
+ *
+ * We make sure that CrashCatcherInfo, RamHeader, RAM, and IO are all
+ * contiguous so that the extractor can pull from the resultant
+ * file easily and feed it to CrashDebug.
+ *
+ * If CrashInfo changes, the alignment_pad in the panic_block_0
+ * structure needs to be evaluated such that the crash_info and
+ * ram_header align perfectly on the end of the sector buffer.
+ *
+ * bx - before exception
+ * ax - after exception
+ */
+
+#define CRASH_INFO_SIG          0x4349B00B
+#define CRASH_CATCHER_SIG       0x63430200
+#define FLAGS_FP_PRESENT        (1 << 0)
+
+/*
+ * STACK_ADJUST is the modifier to tweak the captured SP value to
+ * point at the top of the stack when the fault occured.
+ *
+ * It modifies old_sp and includes the exception frame (r0-r3, r12,
+ * LR, PC, PSR), 8 words and we add PRIMASK, BASEPRI, FAULTMASK, and
+ * CONTROL.  Another 4 words for a total of 12 words.
+ */
+#define STACK_ADJUST            (12 * 4)
 
 typedef struct {
-  uint32_t sig;
+  uint32_t ci_sig;                      /* crash info signature */
+  uint32_t primask;
+  uint32_t basepri;
+  uint32_t faultmask;
+  uint32_t control;
+  uint32_t axLR;
+  uint32_t cc_sig;                      /* crash catcher sig */
+  uint32_t flags;
+  uint32_t bxRegs[13];                  /* R0 - R12 */
+  uint32_t bxSP;                        /* incoming stack pointer        */
+  uint32_t bxLR;                        /* incoming Link Register        */
+  uint32_t bxPC;
+  uint32_t bxPSR;                       /* BX Processor Status           */
+  uint32_t axPSR;                       /* AX Processor Status           */
+  uint32_t fpRegs[32];                  /* floating point registers      */
+  uint32_t fpscr;                       /* floating point status/control */
+} crash_info_t;
+
+
+#define PANIC_ADDITIONS 0x44664144
+
+typedef struct {
+  uint32_t sig;                         /* panic_additions sig */
   uint32_t ram_sector;                  /* starting sector for RAM dump, 64K */
   uint32_t io_sector;                   /* starting sector for I/O dump */
   uint32_t fcrumb_sector;               /* flash crumbs */

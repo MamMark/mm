@@ -123,9 +123,6 @@ void __system_init(bool disable_dcor);
 extern void owl_strange2gold(uint32_t loc);
 extern void owl_startup();
 
-/* see tos/system/panic/PanicP.nc */
-extern void __panic_exception_entry(uint32_t exception);
-
 
 #ifdef MEMINIT_STOP
 #define MEMINIT_MAGIC0 0x1061
@@ -189,13 +186,23 @@ void HardFault_Handler() {
 }
 #endif
 
-void __default_handler()  __attribute__((interrupt));
-void __default_handler()  {
-  uint32_t exception;
 
-  exception = __get_xPSR() & 0x1ff;
-  handler_debug(exception);
-  __panic_exception_entry(exception);
+/* see tos/system/panic/PanicP.nc */
+extern void __launch_panic_exception(void *new_stack, uint32_t cur_lr);
+
+void __default_handler()  __attribute__((interrupt, naked));
+void __default_handler()  {
+  register uint32_t cur_lr asm("lr");
+
+  __asm__ volatile (
+    "mrs   r0, primask      \n"       /* get int enable             */
+    "cpsid i                \n"       /* disable normal interrupts  */
+    "mrs   r1, basepri      \n"       /* get basepri                */
+    "mrs   r2, faultmask    \n"       /* fault mask                 */
+    "mrs   r3, control      \n"       /* and finally the CONTROL    */
+    "push  {r0-r3}          \n"       /* and save on old stack      */
+    : : : "cc", "memory");
+  __launch_panic_exception(&__crash_stack_top__, cur_lr);
 }
 
 
