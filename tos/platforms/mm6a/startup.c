@@ -142,12 +142,9 @@ volatile noinit meminit_stop_t meminit_stop;
 #endif          /* MEMINIT_STOP */
 
 #ifdef HANDLER_FAULT_WAIT
-volatile        uint8_t handler_fault_wait;     /* set to deadbeaf to continue */
+volatile uint32_t handler_fault_wait;   /* set to deadbeaf to continue */
 #endif
 
-/*
- * make sure only R0-R3 are used in this routine
- */
 void handler_debug(uint32_t exception) {
   uint32_t t0, i;
 
