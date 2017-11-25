@@ -162,7 +162,7 @@ void handler_debug(uint32_t exception) {
   t0 = USECS_VAL;
   while ((USECS_VAL - t0) < WIGGLE_DELAY) ;
 
-  ROM_DEBUG_BREAK(0);
+  ROM_DEBUG_BREAK(0xE0);
 
 #ifdef HANDLER_FAULT_WAIT
   while (handler_fault_wait != 0xdeadbeaf) {
@@ -795,7 +795,7 @@ void __core_clk_init(bool disable_dcor) {
     if (--timeout == 0) {
       CS->IFG;
       CS->STAT;
-      ROM_DEBUG_BREAK(0);
+      ROM_DEBUG_BREAK(0xFF);
       owl_strange2gold(0x1000);
     }
     BITBAND_PERI(CS->CLRIFG,CS_CLRIFG_CLR_LFXTIFG_OFS) = 1;
