@@ -130,6 +130,12 @@ typedef struct {
 } panic_dir_t;
 
 typedef struct {
+  uint32_t start;
+  uint32_t end;
+} cc_region_header_t;
+
+
+typedef struct {
   uint32_t sig;
   uint32_t boot_count;
   uint64_t systime;

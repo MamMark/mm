@@ -303,8 +303,13 @@ implementation {
 
   /* uses persistent global in pcb (panic_sec) for where to write */
   void collect_io(const panic_region_t *io_desc) {
+    cc_region_header_t header;
+
     while (io_desc->base_addr != PR_EOR) {
-      copy_region((void *)io_desc, sizeof(panic_region_t), 4);
+      header.start = (uint32_t)io_desc->base_addr;
+      header.end = ((uint32_t)io_desc->base_addr + io_desc->len);
+
+      copy_region((void *)&header, sizeof(cc_region_header_t), 4);
       copy_region(io_desc->base_addr, io_desc->len, io_desc->element_size);
       io_desc++;
     }
