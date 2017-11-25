@@ -113,7 +113,7 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
 ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
 
 /* Crash stack is used by unhandled Exception/Fault and Panic */
-uint8_t crash_stack[CRASH_STACK_BYTES] __attribute__ ((section(".crash_stack")));
+uint32_t crash_stack[CRASH_STACK_WORDS] __attribute__ ((section(".crash_stack")));
 
 int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
