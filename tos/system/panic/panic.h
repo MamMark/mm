@@ -215,9 +215,19 @@ typedef struct {
   panic_info_t          panic_info;
   image_info_t          image_info;
   panic_additional_t    additional_info;
-  uint32_t              pad[1];
+
+  /*
+   * set alignment_pad such that crash_info/ram_header are physically
+   * at the end of panic_block_0.
+   */
+  uint32_t              alignment_pad[18];
+
+  /*
+   * crash_info and ram_header need to be contiguous and need to
+   * be at the end of the panic_block_0.
+   */
   crash_info_t          crash_info;
-  /* ram header */
+  cc_region_header_t    ram_header;
 } panic_block_0_t;                      /* initial sector of a panic block */
 
 
