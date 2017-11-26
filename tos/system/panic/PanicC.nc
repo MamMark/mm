@@ -16,6 +16,8 @@ implementation {
   PanicP.Platform  -> PlatformC;
   PanicP.SysReboot -> PlatformC;
 
+  components PanicHelperP;
+
   components CollectC;
   PanicP.Collect -> CollectC;
 
