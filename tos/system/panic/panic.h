@@ -229,9 +229,12 @@ typedef struct {
 
   /*
    * set alignment_pad such that crash_info/ram_header are physically
-   * at the end of panic_block_0.
+   * at the end of panic_block_0.  You have to check the alignment of
+   * ram_header.  We have seen the compiler pad out the structure at
+   * the end and this will give a size of 512 (0x200) but ram_header
+   * won't be physically at the end.
    */
-  uint32_t              alignment_pad[18];
+  uint32_t              alignment_pad[14];
 
   /*
    * crash_info and ram_header need to be contiguous and need to
