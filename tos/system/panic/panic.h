@@ -118,7 +118,15 @@ typedef unsigned int parg_t;
 
 typedef struct {
   uint32_t panic_dir_sig;
-  uint32_t panic_block_sector;        /* dir - sector for next block */
+  /*
+   * dir is the 1st sector of the PANIC file, high is the inclusive
+   * upper limit.  block_sector absolute block num of the next panic
+   * block to write.  If block_sector is 0, the PANIC file is full
+   */
+  uint32_t panic_dir;                   /* limits of panic file, absolute */
+  uint32_t panic_high;                  /* upper limit, inclusive         */
+  uint32_t panic_block_sector;          /* where next panic block         */
+  uint32_t panic_block_size;            /* size of each panic block       */
   uint32_t panic_dir_checksum;
 } panic_dir_t;
 
