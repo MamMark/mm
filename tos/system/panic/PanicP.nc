@@ -544,12 +544,8 @@ implementation {
     }
     pcs = (panic_crash_stack_t *) (pap->cs_regs_sp);
     cip->axPSR        = pcs->axPSR;
-
-    /*
-     * we ignore the MSP and PSP, that has already been taken care of
-     * via the _panic_args->{old_sp,cs_regs_sp}.  That is the entry code
-     * takes care of sorting out which stack is which and who is on who
-     */
+    cip->PSP          = pcs->PSP;
+    cip->MSP          = pcs->MSP;
     cip->bxRegs[4]    = pcs->r4;
     cip->bxRegs[5]    = pcs->r5;
     cip->bxRegs[6]    = pcs->r6;
@@ -558,6 +554,9 @@ implementation {
     cip->bxRegs[9]    = pcs->r9;
     cip->bxRegs[10]   = pcs->r10;
     cip->bxRegs[11]   = pcs->r11;
+    cip->axLR         = pcs->axLR;
+
+    nop();                              /* BRK */
 
     /* copy fpRegs and fpscr to buffer */
     collect_fp(cip);

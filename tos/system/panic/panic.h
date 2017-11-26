@@ -183,11 +183,13 @@ typedef struct {
 
 typedef struct {
   uint32_t ci_sig;                      /* crash info signature */
+  uint32_t axLR;
+  uint32_t MSP;
+  uint32_t PSP;
   uint32_t primask;
   uint32_t basepri;
   uint32_t faultmask;
   uint32_t control;
-  uint32_t axLR;
   uint32_t cc_sig;                      /* crash catcher sig */
   uint32_t flags;
   uint32_t bxRegs[13];                  /* R0 - R12 */
