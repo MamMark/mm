@@ -583,6 +583,7 @@ implementation {
     addp                = &b0p->additional_info;
     addp->sig           = PANIC_ADDITIONS;
     addp->ram_sector    = pcb.block + PBLK_RAM;
+    addp->ram_size      = PBLK_RAM_SIZE * 512;
     addp->io_sector     = pcb.block + PBLK_IO;
     addp->fcrumb_sector = pcb.block + PBLK_FCRUMBS;
 
