@@ -112,11 +112,8 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
 /* see OverWatchP.nc for details */
 ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
 
-/* space to save registers during crash processing */
-uint8_t crash_regs[CRASH_REGS_BYTES]   __attribute__ ((section(".crash_regs")));
-
 /* Crash stack is used by unhandled Exception/Fault and Panic */
-uint8_t crash_stack[CRASH_STACK_BYTES] __attribute__ ((section(".crash_stack")));
+uint32_t crash_stack[CRASH_STACK_WORDS] __attribute__ ((section(".crash_stack")));
 
 int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
@@ -125,9 +122,6 @@ void __system_init(bool disable_dcor);
 /* see tos/mm/OverWatch/OverWatchP.nc */
 extern void owl_strange2gold(uint32_t loc);
 extern void owl_startup();
-
-/* see tos/system/panic/PanicP.nc */
-extern void __panic_exception_entry(uint32_t exception);
 
 
 #ifdef MEMINIT_STOP
@@ -145,12 +139,9 @@ volatile noinit meminit_stop_t meminit_stop;
 #endif          /* MEMINIT_STOP */
 
 #ifdef HANDLER_FAULT_WAIT
-volatile        uint8_t handler_fault_wait;     /* set to deadbeaf to continue */
+volatile uint32_t handler_fault_wait;   /* set to deadbeaf to continue */
 #endif
 
-/*
- * make sure only R0-R3 are used in this routine
- */
 void handler_debug(uint32_t exception) {
   uint32_t t0, i;
 
@@ -168,7 +159,7 @@ void handler_debug(uint32_t exception) {
   t0 = USECS_VAL;
   while ((USECS_VAL - t0) < WIGGLE_DELAY) ;
 
-  ROM_DEBUG_BREAK(0);
+  ROM_DEBUG_BREAK(0xE0);
 
 #ifdef HANDLER_FAULT_WAIT
   while (handler_fault_wait != 0xdeadbeaf) {
@@ -195,13 +186,23 @@ void HardFault_Handler() {
 }
 #endif
 
-void __default_handler()  __attribute__((interrupt));
-void __default_handler()  {
-  uint32_t exception;
 
-  exception = __get_xPSR() & 0x1ff;
-  handler_debug(exception);
-  __panic_exception_entry(exception);
+/* see tos/system/panic/PanicP.nc */
+extern void __launch_panic_exception(void *new_stack, uint32_t cur_lr);
+
+void __default_handler()  __attribute__((interrupt, naked));
+void __default_handler()  {
+  register uint32_t cur_lr asm("lr");
+
+  __asm__ volatile (
+    "mrs   r0, primask      \n"       /* get int enable             */
+    "cpsid i                \n"       /* disable normal interrupts  */
+    "mrs   r1, basepri      \n"       /* get basepri                */
+    "mrs   r2, faultmask    \n"       /* fault mask                 */
+    "mrs   r3, control      \n"       /* and finally the CONTROL    */
+    "push  {r0-r3}          \n"       /* and save on old stack      */
+    : : : "cc", "memory");
+  __launch_panic_exception(&__crash_stack_top__, cur_lr);
 }
 
 
@@ -801,7 +802,7 @@ void __core_clk_init(bool disable_dcor) {
     if (--timeout == 0) {
       CS->IFG;
       CS->STAT;
-      ROM_DEBUG_BREAK(0);
+      ROM_DEBUG_BREAK(0xFF);
       owl_strange2gold(0x1000);
     }
     BITBAND_PERI(CS->CLRIFG,CS_CLRIFG_CLR_LFXTIFG_OFS) = 1;

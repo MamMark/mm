@@ -14,20 +14,147 @@ We make use of the work done by Adam Green on CrashCatcher/CrashDebug.
 format that includes Panic information, image_info, crash state, ram dump,
 i/o state, and Flash crumbs.
 
-sector = 512 bytes
 
+sector = 512 bytes
 
 * Work Items (*** done)
 
 o eval what gdb needs
-o modify copy_region to conform to CrashDebug
 o extractor to go from PanicBlock to <name>.dbg
   CrashInfo, Ram, I/O
 o eval breakpad     (https://chromium.googlesource.com/breakpad/breakpad)
 
+o *** modify copy_region to conform to CrashDebug
 o *** eval CrashCatcher (https://github.com/adamgreen/CrashCatcher)
 o *** eval CrashDebug   (https://github.com/adamgreen/CrashDebug)
 o *** define Panic Manager
+
+
+* Preservation of State:
+
+When a Panic or Exception occurs we want to preserve the state at the
+time of the fault.  This is diagramed below.  On entry to the panic
+subsystem (panic_main) there are two pointers passed in, old_stack and
+crash_stack.
+
+A minimal amount of information is saved on the old_stack and then we
+switch to a new crash_stack that we know we can rely on.
+
+** Panic entry:
+
+    r0        0x15                  <-- panic code (subsystem)
+    r1        0x5                   <-- where
+    r2        0x5                   <-- panic arg0
+    r3        0x0                   <-- panic arg1
+    r4        0xf000
+    r5        0x0
+    r6        0x0
+    r7        0x2000fed8
+    r8        0x0
+    r9        0x0
+    r10       0x0
+    r11       0x0
+    r12       0x20002538
+    sp        0x2000fed0            <- SP from fail (same as MSP)
+    lr        0x533f                <- caller of Panic, bxLR
+    pc        0x7c4                 <- save as bxPC in Panic
+    xpsr      0x21000000            <- bxPSR
+    msp       0x2000fed0            <- bxSP
+    psp       0x0
+    primask   0x0
+    basepri   0x0
+    faultmask 0x0
+    control   0x0
+
+                panic_arg2      panic_arg3
+  0x2000fed0:	0x00000000	0x00000000	0x2000fee0	0x00000000
+  0x2000fee0:	0x00000005	0x15050005	0x2000fef8	0x0000530d
+  0x2000fef0:	0x00000000	0x00000000	0x00000000	0x00000000
+  0x2000ff00:	0x00000005	0x050084bb	0x2000ff10	0x000084bb
+
+
+** Entry to panic_main:
+
+  old_stack (old_sp)
+                primask         basepri         faultmask       control
+  0x2000fea0:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0 - pcode      r1 - where      r2 - arg0       r3 - arg1
+  0x2000feb0:	0x00000015	0x00000005	0x00000005	0x00000000
+                r12             bxLR            bxPC            bxPSR
+  0x2000fec0:	0x20002538	0x0000533f	0x000007c4	0x20000000
+                panic_arg2      panic_arg3
+  0x2000fed0:	0x00000000	0x00000000	0x2000fee0	0x00000000
+
+
+  crash_stack:
+                axPSR           PSP             MSP             r4
+  0x20003a70	0x20000000	0x00000000	0x20003aa0	0x0000f000
+                r5              r6              r7              r8
+  0x20003a80	0x00000000	0x00000000	0x2000fed8	0x00000000
+                r9              r10             r11             axLR
+  0x20003a90	0x00000000	0x00000000	0x00000000	0x00000011
+  0x20003aa0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+
+** Exception/Fault entry:
+
+   @ sdiv/0  -> will generate div0 fault (usage)
+    r0        0x5
+    r1        0x0
+    r2        0x0
+    r3        0x200026c0
+    r4        0x0
+    r5        0x20002509
+    r6        0x20003154
+    r7        0x0
+    r8        0x0
+    r9        0x0
+    r10       0x0
+    r11       0x0
+    r12       0x20002534
+    sp        0x2000ff60
+    lr        0x593
+    pc        0x3122
+    xpsr      0x21000000
+    msp       0x2000ff60
+    psp       0x0
+    primask   0x0
+    basepri   0x0
+    faultmask 0x0
+    control   0x0
+
+  0x2000ff60:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+  0x2000ff70:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+  0x2000ff80:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+  0x2000ff90:	0x00000007	0x22062a1c	0x00000001	0x000046a9
+
+
+** Entry to panic_main:
+
+  old_stack:
+                primask         basepri         faultmask       control
+  0x2000ff30:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0              r1              r2              r3
+  0x2000ff40:	0x00000005	0x00000000	0x00000000	0x200026c0
+                r12             bxLR            bxPC            bxPSR
+  0x2000ff50:	0x20002534	0x00000593	0x00003122	0x21000000
+  0x2000ff60:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+  crash_stack:
+                axPSR           PSP             MSP             r4
+  0x20003a80	0x20000006	0x00000000	0x20003ab0	0x00000000
+                r5              r6              r7              r8
+  0x20003a90	0x20002509	0x20003154	0x00000000	0x00000000
+                r9              r10             r11             axLR
+  0x20003aa0	0x00000000	0x00000000	0x00000000	0xfffffff9
+  0x20003ab0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+there is a control cell (panic_args) that holds the actual Panic argument
+information.  In the case of an Exception/Fault, panic_args.pcode is set
+to PANIC_EXC and where is set to the exception number.
 
 
 * Panic Blocks
@@ -37,16 +164,22 @@ about the machine state for a single crash.
 
 A block includes the following information:
 
+Block 0 (initial sector of a panic block)
 1) Panic information, Subsystem, Where, a0-3.  and time stamp
 2) image_info for image running.
-3) crash state: (captured information from the Panic or Exception crash)
+3) AdditionalInfo
+4) crash state: (captured information from the Panic or Exception crash)
 
    cpu registers
    fpu registers (if active)
    Fault State
+5) RAM region header
 
-4) Main Memory - 64K (128 sectors)
-5) I/O state
+Block 1+
+6) Main Memory - 64K (128 sectors)
+
+Block 129+
+7) I/O state
 
    <base address>
    <length>
@@ -57,7 +190,7 @@ A block includes the following information:
    <element_size>
    ...
 
-6) Flash Crumbs (4KB, 8 sectors)
+8) Flash Crumbs (4KB, 8 sectors)
 
 
 Panic Block:
@@ -68,9 +201,8 @@ Flash Crumbs.
 
 Panic Info:  (36 bytes)
     4  <sig>
-    4  time stamp
-    4  cycle
     4  boot_count
+    8  time stamp
     1  subsys
     1  where
     2  pad
@@ -82,8 +214,24 @@ Panic Info:  (36 bytes)
 Image_Info for running image (from image running)
   144  bytes
 
-CrashInfo (CPU state):  (CrashCatcher/Debug format +)  236 bytes
-  4    signature
+
+Additional Info: sector numbers of the location of different
+pieces of the Panic Block.
+
+    4  sig
+    4  ram_sector
+    4  io_sector
+    4  fcrumb_sector
+
+
+CrashInfo (CPU state):  (CrashCatcher/Debug format + additional)  260 bytes
+  4    crash_info_signature
+  4    primask
+  4    basepri
+  4    faultmask
+  4    control
+  4    axLR
+  4    crash_catcher_signature
   4    flags
  52    R0 - R12
   4    SP
@@ -98,15 +246,17 @@ CrashInfo (CPU state):  (CrashCatcher/Debug format +)  236 bytes
        SHCSR, CFSR, HFSR, DFSR, MMFAR, BFAR
        E000ED24        to              E000ED38
 
-Total of above: 416
+Total of above: 440
 
 
-Additional Information: (included in block0)
+The Panic 0 Block is laid down to simplify extraction for CrashDebug.  We
+want the CrashCatcher Info, RAM, and IO to be contiguous.  We do this by
+placing PanicInfo, ImageInfo, and AdditionalInfo at the front of the Panic 0
+Block, followed by sufficient padding to make the CrashInfo and a Ram Region
+header line up at the end of the Panic0 Block.
 
-  4    sig
-  4    RAM_start                sector start of RAM, 128 sectors, 64K bytes
-  4    IO_start                 sector start of I/O section
-  4    FCrumb_start             sector start of Flash Crumbs, 4K bytes
+Since the Panic 0 Block is immediately followed by the RAM region itself this
+all looks proper for CrashDebug.
 
 
 [Memory Region]
@@ -301,10 +451,3 @@ SPSEL - stack selecte, 0 - MSP, 1 - PSP
 FPCA  - Floating Point Context Active
 
 In Handler mode, processor is always privileged and always on the MSP.
-
-
-
-
-Questions:
-
-PRIMASK, FAULTMASK, BASEPRI, CONTROL

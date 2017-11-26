@@ -22,6 +22,9 @@ implementation {
   components FileSystemC as FS;
   PanicP.FS -> FS;
 
+  components LocalTimeMilliC;
+  PanicP.LocalTime -> LocalTimeMilliC;
+
   components OverWatchC;
   PanicP.OverWatch -> OverWatchC;
 

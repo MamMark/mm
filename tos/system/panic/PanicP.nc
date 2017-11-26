@@ -20,6 +20,7 @@
 #include <panic_regions.h>
 #include <sd.h>
 #include <fs_loc.h>
+#include <overwatch.h>
 
 #ifdef PANIC_GATE
 norace volatile uint32_t g_panic_gate;
@@ -35,12 +36,13 @@ norace volatile uint32_t g_panic_gate;
 
 
 #define PCB_SIG 0xAAAAB00B
+#define PANIC_IN_PANIC 0xdeddb00b
 
+/* internal structure for controlling panic */
 typedef struct {
   uint32_t pcb_sig;
-
-  /* if a double panic, high order bit is set */
-  uint32_t in_panic;           /* initialized to 0 */
+  uint32_t in_panic;           /* initialized to 0          */
+                               /* set to 0xdeddb00b in panic*/
 
   /* persistent state for collect_io */
   uint8_t *buf;                /* inits to NULL */
@@ -55,24 +57,94 @@ typedef struct {
   uint32_t high;               /* high limit for blocks */
 } pcb_t;
 
-norace pcb_t pcb;              /* panic control block */
 
-extern image_info_t image_info;
-extern uint32_t     __crash_stack_top__;
-
-
+/*
+ * structure to hold panic arguments as well as misc control registers
+ * captured on the way into Panic.
+ *
+ * All entries on the stack are words so we make everything words as well.
+ *
+ * If we have a stack collision (ie. the main stack has overflowed into the
+ * crash_stack) these entries will just be set to 0 (done on initilization
+ * on first boot).  And pcode will be set to -1 (0xffffffff).
+ */
 typedef struct {
+  uint32_t pcode;                       /* subsys */
+  uint32_t where;
   uint32_t a0;                          /* arguments */
   uint32_t a1;
   uint32_t a2;
   uint32_t a3;
-  uint8_t  pcode;                       /* subsys */
-  uint8_t  where;
-} panic_args_t;                         /* panic args stash */
+  uint32_t *old_sp;                     /* failee stack pointer  */
+  uint32_t *cs_regs_sp;                 /* crash stack reg save */
+} panic_args_t;
+
+
+/*
+ * what the old_stack looks like on entry to __panic_panic_entry
+ */
+typedef struct {
+  uint32_t primask;
+  uint32_t basepri;
+  uint32_t faultmask;
+  uint32_t control;
+  uint32_t pcode;                       /* r0, subsys     */
+  uint32_t where;                       /* r1             */
+  uint32_t a0;                          /* r2, arguments  */
+  uint32_t a1;                          /* r3             */
+  uint32_t r12;
+  uint32_t bxLR;
+  uint32_t bxPC;
+  uint32_t bxPSR;
+  uint32_t a2;
+  uint32_t a3;
+} panic_old_stack_t;
+
+
+/*
+ * what the old_stack looks like on entry to __panic_exception_entry
+ */
+typedef struct {
+  uint32_t primask;
+  uint32_t basepri;
+  uint32_t faultmask;
+  uint32_t control;
+  uint32_t r0;
+  uint32_t r1;
+  uint32_t r2;
+  uint32_t r3;
+  uint32_t r12;
+  uint32_t bxLR;
+  uint32_t bxPC;
+  uint32_t bxPSR;
+} exc_old_stack_t;
+
+
+/*
+ * what the crash_stack looks like on entry to __panic_main
+ */
+typedef struct {
+  uint32_t axPSR;
+  uint32_t PSP;
+  uint32_t MSP;
+  uint32_t r4;
+  uint32_t r5;
+  uint32_t r6;
+  uint32_t r7;
+  uint32_t r8;
+  uint32_t r9;
+  uint32_t r10;
+  uint32_t r11;
+  uint32_t axLR;
+} panic_crash_stack_t;
+
+
+extern image_info_t image_info;
+extern uint32_t     __crash_stack_top__;
 
 bool _panic_args_warn_busy;
 panic_args_t _panic_args;
-
+norace pcb_t pcb;                               /* panic control block */
 
 module PanicP {
   provides interface Panic;
@@ -85,6 +157,7 @@ module PanicP {
     interface SDraw;                    /* other SD aux */
     interface Checksum;
     interface SysReboot;
+    interface LocalTime<TMilli>;
     interface Collect;
   }
 }
@@ -122,11 +195,6 @@ implementation {
     ROM_DEBUG_BREAK(0xf0);
   }
 #endif
-
-
-  void __panic_exception_entry(uint32_t exception) @C() @spontaneous() {
-    call Panic.panic(PANIC_EXC, exception, 0, 0, 0, 0);
-  }
 
 
   /*
@@ -200,12 +268,25 @@ implementation {
      */
     dirp                     = (panic_dir_t *) pcb.buf;
     dirp->panic_dir_sig      = PANIC_DIR_SIG;
+    dirp->panic_dir          = pcb.dir;
+    dirp->panic_high         = pcb.high;
     dirp->panic_block_sector = pcb.block + PBLK_SIZE;
+    dirp->panic_block_size   = PBLK_SIZE;
     dirp->panic_dir_checksum = 0;
     dirp->panic_dir_checksum = 0 - call Checksum.sum32_aligned((void *) dirp, sizeof(*dirp));
 
     panic_write(pcb.dir, pcb.buf);
     call SDsa.off();
+  }
+
+
+  void collect_fp(crash_info_t *cip) {
+    uint32_t i = 0;
+
+    while (i < 32) {
+      cip->fpRegs[i] = 0;
+      i++;
+    }
   }
 
 
@@ -301,8 +382,13 @@ implementation {
 
   /* uses persistent global in pcb (panic_sec) for where to write */
   void collect_io(const panic_region_t *io_desc) {
+    cc_region_header_t header;
+
     while (io_desc->base_addr != PR_EOR) {
-      copy_region((void *)io_desc, sizeof(panic_region_t), 4);
+      header.start = (uint32_t)io_desc->base_addr;
+      header.end = ((uint32_t)io_desc->base_addr + io_desc->len);
+
+      copy_region((void *)&header, sizeof(cc_region_header_t), 4);
       copy_region(io_desc->base_addr, io_desc->len, io_desc->element_size);
       io_desc++;
     }
@@ -351,6 +437,7 @@ implementation {
   async command void Panic.warn(uint8_t pcode, uint8_t where,
           parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
       __attribute__ ((noinline)) {
+
     panic_args_t *pap = &_panic_args;
 
     atomic {
@@ -367,28 +454,149 @@ implementation {
   }
 
 
-  void panic_main(uint32_t *old_sp) @C() @spontaneous() {
-    panic_args_t       *pap;            /* panic args stash, working */
-    panic_info_t       *pip;            /* panic info in panic_block */
-    panic_additional_t *addp;           /* additional in panic_block */
-    panic_block_0_t    *b0p;            /* panic_block 0 pointer */
+  /*
+   * main portion of panic_main (hem, should we name it something else :-)
+   *
+   * special entry code has been executed that sets up the _panic_args structure
+   * which saves various registers and critical state.
+   *
+   * This is not reentrant.  On entry, we check for already being in Panic and
+   * if so we strange out.  Basically this says the Panic failed.
+   */
+  void __panic_main()  @C() @spontaneous() {
+    panic_args_t        *pap;           /* panic args, working values   */
+    exc_old_stack_t     *eos;           /* pointer to failee saved regs */
+    panic_old_stack_t   *pos;           /* pointer to failee saved regs */
+    panic_crash_stack_t *pcs;           /* pointer to crash stack saved */
+
+    panic_block_0_t     *b0p;           /* panic block 0 in panic block */
+    panic_info_t        *pip;           /* panic info in panic_block    */
+    panic_additional_t  *addp;          /* additional in panic_block    */
+    crash_info_t        *cip;           /* crash_info in panic_block    */
+    ow_control_block_t  *owcp;          /* overwatch control block ptr  */
+
+    /*
+     * first check to see if we are already in Panic.  There are three
+     * cases: (we look at pcb.in_panic)
+     *
+     *  0 - not in panic.  set to PANIC_IN_PANIC and continue
+     *
+     *  PANIC_IN_PANIC (0xdeddb00b) - oops.  Strange out.
+     *
+     *  other value - oops Strange out.  Some one is tweaking the pcb.
+     *       Bad.  Sad.
+     */
+    switch (pcb.in_panic) {
+      default:
+        call OverWatch.strange(0x83);     /* no return */
+      case PANIC_IN_PANIC:
+        call OverWatch.strange(0x84);     /* no return */
+      case 0:
+        /* fall through */
+    }
+    pcb.in_panic = PANIC_IN_PANIC;
+
+    debug_break(0);
+
+    /*
+     * initialize the panic control block so we can dump any panic information
+     * out to the PANIC AREA on the SD.
+     */
+
+    init_panic_dump();
+
+    b0p = (panic_block_0_t *) pcb.buf;
+
+    /* fill in crash_info */
+    cip = &b0p->crash_info;
+    cip->ci_sig = CRASH_INFO_SIG;
+    cip->cc_sig = CRASH_CATCHER_SIG;
+    cip->flags  = 0;
 
     pap = &_panic_args;
-    pap->pcode = old_sp[0];
-    pap->where = old_sp[1];
-    pap->a0    = old_sp[2];
-    pap->a1    = old_sp[3];
-    pap->a2    = old_sp[4];
-    pap->a3    = old_sp[5];
-    debug_break(1);
-    if (pcb.in_panic) {
-      pcb.in_panic |= 0x80;             /* flag a double */
-      ROM_DEBUG_BREAK(0xf1);
-      call OverWatch.strange(0x83);     /* no return */
+    if (pap->pcode == PANIC_EXC) {
+      eos = (exc_old_stack_t *)(pap->old_sp);
+      cip->primask    = eos->primask;
+      cip->basepri    = eos->basepri;
+      cip->faultmask  = eos->faultmask;
+      cip->control    = eos->control;
+      cip->bxRegs[0]  = eos->r0;
+      cip->bxRegs[1]  = eos->r1;
+      cip->bxRegs[2]  = eos->r2;
+      cip->bxRegs[3]  = eos->r3;
+      cip->bxRegs[12] = eos->r12;
+      cip->bxSP       = (uint32_t) pap->old_sp + STACK_ADJUST;
+      cip->bxLR       = eos->bxLR;
+      cip->bxPC       = eos->bxPC;
+      cip->bxPSR      = eos->bxPSR;
+    } else {
+      pos = (panic_old_stack_t *)(pap->old_sp);
+      cip->primask    = pos->primask;
+      cip->basepri    = pos->basepri;
+      cip->faultmask  = pos->faultmask;
+      cip->control    = pos->control;
+      cip->bxRegs[0]  = pos->pcode;
+      cip->bxRegs[1]  = pos->where;
+      cip->bxRegs[2]  = pos->a0;
+      cip->bxRegs[3]  = pos->a1;
+      cip->bxRegs[12] = pos->r12;
+      cip->bxSP       = (uint32_t) pap->old_sp + STACK_ADJUST;
+      cip->bxLR       = pos->bxLR;
+      cip->bxPC       = pos->bxPC;
+      cip->bxPSR      = pos->bxPSR;
     }
+    pcs = (panic_crash_stack_t *) (pap->cs_regs_sp);
+    cip->axPSR        = pcs->axPSR;
+    cip->PSP          = pcs->PSP;
+    cip->MSP          = pcs->MSP;
+    cip->bxRegs[4]    = pcs->r4;
+    cip->bxRegs[5]    = pcs->r5;
+    cip->bxRegs[6]    = pcs->r6;
+    cip->bxRegs[7]    = pcs->r7;
+    cip->bxRegs[8]    = pcs->r8;
+    cip->bxRegs[9]    = pcs->r9;
+    cip->bxRegs[10]   = pcs->r10;
+    cip->bxRegs[11]   = pcs->r11;
+    cip->axLR         = pcs->axLR;
 
-    pcb.in_panic = TRUE;
-    ROM_DEBUG_BREAK(0xf0);
+    nop();                              /* BRK */
+
+    /* copy fpRegs and fpscr to buffer */
+    collect_fp(cip);
+    cip->fpscr = 0;
+
+    /* fill in panic info */
+    owcp = call OverWatch.getControlBlock();
+    pip = &b0p->panic_info;
+    pip->sig = PANIC_INFO_SIG;
+    pip->boot_count = owcp->reboot_count;
+    pip->systime    = call LocalTime.get();
+    pip->subsys = pap->pcode;
+    pip->where  = pap->where;
+    pip->pad    = 0;
+    pip->arg[0] = pap->a0;
+    pip->arg[1] = pap->a1;
+    pip->arg[2] = pap->a2;
+    pip->arg[3] = pap->a3;
+
+    /* fill in additional info */
+    addp                = &b0p->additional_info;
+    addp->sig           = PANIC_ADDITIONS;
+    addp->ram_sector    = pcb.block + PBLK_RAM;
+    addp->ram_size      = PBLK_RAM_SIZE * 512;
+    addp->io_sector     = pcb.block + PBLK_IO;
+    addp->fcrumb_sector = pcb.block + PBLK_FCRUMBS;
+
+    /* fill in image info */
+    memcpy((void *) (&b0p->image_info), (void *) (&image_info), sizeof(image_info_t));
+
+    /* fill in ram_header */
+    b0p->ram_header.start = (uint32_t) (ram_region.base_addr);
+    b0p->ram_header.end   = (uint32_t) (ram_region.base_addr + ram_region.len);
+
+    /* flush panic_block_0 buffer */
+    panic_write(pcb.panic_sec, pcb.buf);
+    pcb.panic_sec++;
 
     /*
      * First flush any pending buffers out to the SD.
@@ -404,37 +612,8 @@ implementation {
      */
     signal Panic.hook();
 
-    /*
-     * initialize the panic control block so we can dump any panic information
-     * out to the PANIC AREA on the SD.
-     */
-    ROM_DEBUG_BREAK(0xf0);
-    init_panic_dump();
-
     /* first dump RAM out.  then we can do what we want in RAM */
     collect_ram(&ram_region, pcb.block + PBLK_RAM);
-
-    b0p = (panic_block_0_t *) pcb.buf;
-    pip = &b0p->panic_info;
-    pip->sig = PANIC_INFO_SIG;
-    pip->ts  = 0;
-    pip->cycle = 0;
-    pip->boot_count = 0;
-    pip->subsys = pap->pcode;
-    pip->where  = pap->where;
-    pip->pad    = 0;
-    pip->arg[0] = pap->a0;
-    pip->arg[1] = pap->a1;
-    pip->arg[2] = pap->a2;
-    pip->arg[3] = pap->a3;
-
-    memcpy((void *) (&b0p->image_info), (void *) (&image_info), sizeof(image_info_t));
-
-    addp                = &b0p->additional_info;
-    addp->sig           = PANIC_ADDITIONS;
-    addp->ram_sector    = pcb.block + PBLK_RAM;
-    addp->io_sector     = pcb.block + PBLK_IO;
-    addp->fcrumb_sector = pcb.block + PBLK_FCRUMBS;
 
     pcb.panic_sec = pcb.block + PBLK_IO;
     collect_io(&io_regions[0]);
@@ -449,34 +628,87 @@ implementation {
 #endif
     call OverWatch.fail(ORR_PANIC);
     /* shouldn't return */
-    call OverWatch.strange(0x84);       /* no return */
+    call OverWatch.strange(0x85);       /* no return */
+  }
+
+
+  void __panic_panic_entry(uint32_t *old_sp, uint32_t *crash_sp)
+      @C() @spontaneous() {
+
+    panic_args_t       *pap;            /* panic args, stash working */
+    panic_old_stack_t  *pos;
+
+    /*
+     * The crash_stack is immediately below the main stack.  If the main
+     * stack has overflowed the registers we have saved on the crash_stack
+     * will have wiped any values we thought we were saving on the old_stack
+     * Detect this condition and leave the panic_args as zero.  We set
+     * pcode to -1 to indicate something really bogus has occurred.
+     */
+
+    pap = &_panic_args;
+
+    pap->old_sp       = old_sp;
+    pap->cs_regs_sp   = crash_sp;
+    pos               = (panic_old_stack_t *) old_sp;
+
+    if (old_sp < &__crash_stack_top__)
+      pap->pcode      = -1;             /* say really bogus. */
+    else {
+      pap->pcode     = pos->pcode;
+      pap->where     = pos->where;
+      pap->a0        = pos->a0;
+      pap->a1        = pos->a1;
+      pap->a2        = pos->a2;
+      pap->a3        = pos->a3;
+    }
+    __panic_main();
   }
 
 
   /*
-   * launch the mainline of panic.
+   * linkage to __panic_panic_entry
+   * switch to new stack and preserve state
    *
    * r0 (new_stack): is the address we want for the crash stack
-   * r1 (cur_lr):    the lr we want to force ourselves to use
-   *                 from our caller.
+   *    this is a workaround to set the stack to a fixed location.
    *
-   * using cur_lr effectively makes the call to launch_panic
-   * become a jump to launch_panic.  It doesn't actualy show
-   * up on the backtrace.
+   * we want to make the crash_stack hold the same stuff as what an
+   * panic_exec_entry does.  Namely:
    *
-   * keeping the call sequence together by maintaining the previous
-   * value of lr make it so we can do a valid backtrace even from
-   * the new crash stack.  YUM!
+   *  top of crash_stack:
+   *    axLR    <- we need to fake this.  See below.
+   *    r11
+   *    r10
+   *    r9
+   *    r8
+   *    r7
+   *    r6
+   *    r5
+   *    r4
+   *    msp
+   *    psp
+   *    axPSR   <- from current xPSR.
+   *
+   * the axLR is set to indicate 8 words, handler, MSP.  0x00000011
+   * we do NOT pretend to be an EXC_RTN that would be ugly.
    */
-  static void launch_panic(void *new_stack, uint32_t cur_lr)
-      __attribute__((naked)) {
-    __asm__ volatile
-      ( "mov r2, sp \n"
-        "mov sp, r0 \n"
-        "mov r0, r2 \n"
-        "mov lr, r1 \n"
-        "b panic_main \n"
-        : : : "memory");
+
+  void __launch_panic_panic(void *new_stack)
+      __attribute__((naked, noinline)) @C() @spontaneous() {
+
+    __asm__ volatile (
+      "mov  r1, sp       \n"            /* save old_stack           */
+      "mov  sp, r0       \n"            /* switch to new stack      */
+      "mov  r0, r1       \n"            /* arg0 for panic_entry     */
+      "mrs  r1, XPSR     \n"            /* save the axPSR           */
+      "mrs  r2, PSP      \n"
+      "mrs  r3, MSP      \n"
+      "mov  lr, %[flr]   \n"
+      "push {r1-r11, lr} \n"            /* save remaining registers */
+      "mov  r1, sp       \n"            /* cur crash_stack          */
+      "b    __panic_panic_entry \n"
+      : : [flr]"I"(0x11) : "cc", "memory", "sp");
   }
 
 
@@ -484,22 +716,128 @@ implementation {
    * Panic.panic: something really bad happened.
    * switch to crash_stack
    *
-   * we have to pass in the new stack to get around a linker/asm
-   * issue.  But first we save the other 4 parameters on the
-   * current stack.  This keeps all 6 of panic's parameters
-   * togther but also frees up r0-r3 as scratch.
+   * We push more stuff on the stack to first get scratch registers we can
+   * use to save state.  Also we do it so the old_stack looks like what
+   * and exception lays down.  This makes the extraction code the same.
    *
-   * we pass in the address of the stack pointer we want to use
-   * as well as the current lr.  This means we can preserve the
-   * stack linkage and gdb doesn't get lost.
+   * The panic_panic extraction code has to know where all the Panic
+   * parameters live.  We also have to do a dance to grab the xPSR.
+   *
+   * We also nab the special registers, PRIMASK, BASEPRI, FAULTMASK, and
+   * CONTROL.
+   *
+   * we then use __launch_panic_panic with the address of the stack pointer.
+   * This is to work around problems with setting the SP directly.
+   * (compiler/assembler ate my code).
+   *
+   * Hopefully, this preserves the stack linkage and gdb doesn't get lost.
+   * This sometimes works.  And other times doesn't depends on the
+   * optimization and how much gdb knows from the ELF file.
    */
   async command void Panic.panic(uint8_t pcode, uint8_t where,
-        parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
+          parg_t arg0, parg_t arg1, parg_t arg2, parg_t arg3)
       __attribute__ ((naked, noinline)) {
-    register uint32_t cur_lr asm ("lr");
 
-    __asm__ volatile ( "push {r0-r3} \n" : : : "memory");
-    launch_panic(&__crash_stack_top__, cur_lr);
+    __asm__ volatile (
+      /*
+       * we want the following which will eventually look like an
+       * exception frame.
+       *
+       * offset from SP (after we save)
+       *  28    bxPSR           need space for this
+       *  24    bxPC            need space for this
+       *  20    bxLR
+       *  16    bxR12
+       *  12    bxR3
+       *   8    bxR2
+       *   4    bxR1
+       *   0    bxR0
+       *
+       * space for the xPSR and save r0-r3, r12, lr, pc which
+       * is what an exception frame looks like.
+       */
+      "push  {r0-r1}          \n"       /* need space for xPSR and PC */
+      "push  {r0-r3, r12, lr} \n"       /* first save and get scratch */
+
+      "mrs   r0, primask      \n"       /* get int enable             */
+      "cpsid i                \n"       /* disable normal interrupts  */
+
+      "mov   lr, pc           \n"       /* capture a reasonable PC    */
+      "sub   lr, lr, #16      \n"       /* adjust to pnt at start     */
+      "mrs   r1, XPSR         \n"       /* nab XPSR and put it where  */
+      "str   r1, [SP, #28]    \n"       /* it belongs                 */
+      "str   lr, [SP, #24]    \n"       /* stash PC where it belongs  */
+
+      "mrs   r1, basepri      \n"       /* get basepri                */
+      "mrs   r2, faultmask    \n"       /* fault mask                 */
+      "mrs   r3, control      \n"       /* and finally the CONTROL    */
+      "push  {r0-r3}          \n"       /* and save on old stack      */
+      : : : "cc", "memory");
+    __launch_panic_panic(&__crash_stack_top__);
+  }
+
+
+  void __panic_exception_entry(uint32_t *old_sp, uint32_t *crash_sp)
+      @C() @spontaneous() {
+
+    panic_args_t        *pap;           /* panic args ptr    (pap) */
+    panic_crash_stack_t *pcs;           /* panic crash stack (pcs) */
+
+    /*
+     * The crash_stack is immediately below the main stack.  If the main
+     * stack has overflowed the registers we have saved on the crash_stack
+     * will have wiped any values we thought we were saving on the old_stack
+     * Detect this condition and leave the panic_args as zero.  We set
+     * pcode to -1 to indicate something really bogus has occurred.
+     */
+    pap = &_panic_args;
+    pap->old_sp       = old_sp;
+    pap->cs_regs_sp   = crash_sp;
+    pcs = (panic_crash_stack_t *) crash_sp;
+
+    if (old_sp < &__crash_stack_top__)
+      pap->pcode      = -1;             /* say really bogus, OUCH. */
+    else {
+      pap->pcode     = PANIC_EXC;
+      pap->where     = pcs->axPSR & 0x1ff;
+      pap->a0        = 0;
+      pap->a1        = 0;
+      pap->a2        = 0;
+      pap->a3        = 0;
+    }
+    __panic_main();
+  }
+
+
+  /* debug code in startup.c (platform) */
+  extern void handler_debug(uint32_t exception) @C();
+
+  void __launch_panic_exception(void *new_stack, uint32_t cur_lr)
+      __attribute__((naked, noinline)) @C() @spontaneous() {
+
+    __asm__ volatile (
+      "mov  lr, r1       \n"            /* restore axLR             */
+      "mov  r1, sp       \n"            /* save old_stack           */
+      "mov  sp, r0       \n"            /* switch to new stack      */
+      "mov  r0, r1       \n"            /* arg0 for panic_entry     */
+      "mrs  r1, XPSR     \n"            /* save the axPSR           */
+      "mrs  r2, PSP      \n"
+      "mrs  r3, MSP      \n"
+      "push {r1-r11, lr} \n"            /* save remaining registers */
+      "mov  r1, sp       \n"            /* cur crash_stack          */
+      : : : "cc", "memory", "sp");
+
+    __asm__ volatile (
+      "push {r0-r3, lr}     \n"         /* save for call, debug     */
+      "mrs  r0, XPSR        \n"         /* get the exception again  */
+      "ubfx r0, r0, #0, #9  \n"         /* extract exception        */
+      "bl   handler_debug   \n"         /* debug                    */
+      "pop  {r0-r3, lr}     \n"
+      : : : "cc", "memory");
+
+    __asm__ volatile (
+      "b    __panic_exception_entry \n"
+      : : : "cc", "memory");
   }
 
 
