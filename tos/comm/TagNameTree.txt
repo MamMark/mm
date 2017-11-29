@@ -1,0 +1,220 @@
+root
++-- tag
+    |-- info
+    |   +-- <node_id:>
+    |       +-- sens
+    |           +-- gps
+    |               +-- xyz
+    |-- poll
+    |   +-- <node_id:>
+    |       |-- cnt
+    |       +-- ev
+    |-- sd
+    |   +-- <node_id:>
+    |       +-- 0
+    |           +-- img
+    +-- sys
+        +-- <node_id:>
+            |-- active
+            |-- backup
+            |-- golden
+            |-- nib
+            +-- running
+root
++-- tag
+    |-- info
+    |   +-- <node_id:>
+    |       +-- sens
+    |           +-- gps
+    |               +-- xyz
+    |-- poll
+    |   +-- <node_id:>
+    |       |-- cnt
+    |       +-- ev
+    |-- sd
+    |   +-- <node_id:>
+    |       +-- 0
+    |           +-- img
+    +-- sys
+        +-- <node_id:>
+            |-- active
+            |-- backup
+            |-- golden
+            |-- nib
+            +-- running
+root
++-- tag
+    |-- info
+    |   +-- <node_id:>
+    |       +-- sens
+    |           +-- gps
+    |               +-- xyz
+    |-- poll
+    |   +-- <node_id:>
+    |       |-- cnt
+    |       +-- ev
+    |-- sd
+    |   +-- <node_id:>
+    |       +-- 0
+    |           +-- img
+    +-- sys
+        +-- <node_id:>
+            |-- active
+            |-- backup
+            |-- golden
+            |-- nib
+            +-- running
+root
++-- tag
+    |-- info
+    |   +-- <node_id:>
+    |       +-- sens
+    |           +-- gps
+    |               +-- xyz
+    |-- poll
+    |   +-- <node_id:>
+    |       |-- cnt
+    |       +-- ev
+    |-- sd
+    |   +-- <node_id:>
+    |       +-- 0
+    |           +-- img
+    +-- sys
+        +-- <node_id:>
+            |-- active
+            |-- backup
+            |-- golden
+            |-- nib
+            +-- running
+root
++-- tag
+    |-- info
+    |   +-- <node_id:>
+    |       +-- sens
+    |           +-- gps
+    |               +-- xyz
+    |-- poll
+    |   +-- <node_id:>
+    |       |-- cnt
+    |       +-- ev
+    |-- sd
+    |   +-- <node_id:>
+    |       +-- 0
+    |           +-- img
+    +-- sys
+        +-- <node_id:>
+            |-- active
+            |-- backup
+            |-- golden
+            |-- nib
+            +-- running
+root
++-- tag
+    |-- info
+    |   +-- <node_id:>
+    |       +-- sens
+    |           +-- gps
+    |               +-- xyz
+    |-- poll
+    |   +-- <node_id:>
+    |       |-- cnt
+    |       +-- ev
+    |-- sd
+    |   +-- <node_id:>
+    |       +-- 0
+    |           +-- img
+    +-- sys
+        +-- <node_id:>
+            |-- active
+            |-- backup
+            |-- golden
+            |-- nib
+            +-- running
+root
++-- tag
+    |-- info
+    |   +-- <node_id:>
+    |       +-- sens
+    |           +-- gps
+    |               +-- xyz
+    |-- poll
+    |   +-- <node_id:>
+    |       |-- cnt
+    |       +-- ev
+    |-- sd
+    |   +-- <node_id:>
+    |       +-- 0
+    |           +-- img
+    +-- sys
+        +-- <node_id:>
+            |-- active
+            |-- backup
+            |-- golden
+            |-- nib
+            +-- running
+root
++-- tag
+    |-- info
+    |   +-- <node_id:>
+    |       +-- sens
+    |           +-- gps
+    |               +-- xyz
+    |-- poll
+    |   +-- <node_id:>
+    |       |-- cnt
+    |       +-- ev
+    |-- sd
+    |   +-- <node_id:>
+    |       +-- 0
+    |           +-- img
+    +-- sys
+        +-- <node_id:>
+            |-- active
+            |-- backup
+            |-- golden
+            |-- nib
+            +-- running
+root
++-- tag
+    |-- info
+    |   +-- <node_id:>
+    |       +-- sens
+    |           +-- gps
+    |               +-- xyz
+    |-- poll
+    |   +-- <node_id:>
+    |       |-- cnt
+    |       +-- ev
+    |-- sd
+    |   +-- <node_id:>
+    |       +-- 0
+    |           +-- img
+    +-- sys
+        +-- <node_id:>
+            |-- active
+            |-- backup
+            |-- golden
+            |-- nib
+            +-- running
+root
++-- tag
+    |-- info
+    |   +-- <node_id:>
+    |       +-- sens
+    |           +-- gps
+    |               +-- xyz
+    |-- poll
+    |   +-- <node_id:>
+    |       |-- cnt
+    |       +-- ev
+    |-- sd
+    |   +-- <node_id:>
+    |       +-- 0
+    |           +-- img
+    +-- sys
+        +-- <node_id:>
+            |-- active
+            |-- backup
+            |-- golden
+            |-- nib
+            +-- running
