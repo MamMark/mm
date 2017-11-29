@@ -37,7 +37,7 @@
 
 #include <TagnetTLV.h>
 
-generic module TagnetIntegerAdapterImplP (int my_id, char uq_id[]) @safe() {
+generic module TagnetIntegerAdapterImplP (int my_id) @safe() {
   uses interface  TagnetMessage   as  Super;
   uses interface  TagnetAdapter<int32_t> as Adapter;
   uses interface  TagnetName      as  TName;
