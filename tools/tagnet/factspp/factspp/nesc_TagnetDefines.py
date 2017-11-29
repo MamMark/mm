@@ -1,6 +1,8 @@
 from tagtlv import tlv_types, TagTlv
 import re
 
+# s = eval('tlv_types.'+gs[0].upper()+'.value')
+
 def nesc_fmt_TagnetDefines(args, _tree):
      """
      Write output file containing all of the component instantiations
@@ -15,18 +17,31 @@ def nesc_fmt_TagnetDefines(args, _tree):
      def ThisModuleID(node):
           return "tn_{}_Vx".format(node.identifier)
 
+     def printable_tlv(tlv):
+          rt = ''
+          for a in tlv.build():
+               rt += '\\' + oct(a) if (a) else '\\00'
+          return rt
+
      def ThisNameTlv(node):
-          # r'<([a-zA-Z]+?):(.*)>' '<nid:000000>' => groups('nid','000000')
-          exp=re.compile(r'<([a-zA-Z]+?):(.*)>')
-          gs = match_list.match(line).groups()
-          # extract values from pattern matched
-          if (gs[0].upper() == 'NID'):
-               tlv_str = TagTlv(tlv_types.NODE_ID,
-          # s = eval('tlv_types.'+gs[0].upper()+'.value')
-          return '\\' \
-               + oct(1) + '\\' \
-               + oct(len(node.tag)) \
-               + node.tag
+          if node.tag.startswith('<'):
+               # r'<([a-zA-Z]+?):(.*)>' '<nid:000000>' => groups('nid','000000')
+               exp=re.compile(r'<([a-zA-Z]+?):(.*)>')
+               gs = exp.match(node.tag).groups()
+               # extract values from pattern matched
+               if (gs[0].upper() == 'NODEID'):
+                    return printable_tlv(TagTlv(tlv_types.NODE_ID, gs[1]))
+               else:
+                    return None
+          elif node.tag.isdigit():
+               return printable_tlv(TagTlv(int(node.tag)))
+          else:
+               tlv = TagTlv(str(node.tag))
+               return '\\' \
+                    + oct(tlv_types.STRING.value) \
+                    + '\\' \
+                    + oct(len(node.tag)) \
+                    + str(node.tag) \
 
      def ThisHelpTlv(node):
           # 1=int(tlv_types.STRING.value)
@@ -34,7 +49,8 @@ def nesc_fmt_TagnetDefines(args, _tree):
           return '\\' \
                + oct(int(tlv_types.STRING.value)) \
                + '\\' \
-               + oct(len(help_str)) + help_str
+               + oct(len(help_str)) \
+               + help_str
 
 
      # write out the NesC include file for enums and descriptor information
