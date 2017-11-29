@@ -1,4 +1,5 @@
 from __future__ import print_function   # python3 print function
+# NOT THE MAIN SOURCE: see repo [danome]:Tagnet/tagnet/tagnet/tagtlv.py
 from builtins import *                  # python3 types
 import os, sys, types, platform
 from os.path import normpath, commonprefix
@@ -8,14 +9,12 @@ from struct import pack, unpack
 from datetime import datetime
 from uuid import getnode as get_mac
 import copy
-
 import unittest
-
-# NOT THE MAIN SOURCE: see repo [danome]:Tagnet/tagnet/tagnet/tagtlv.py
-
-
-#from tagdef import *
 import enum
+
+# only make these names public
+#
+__all__ = ['TagTlvList', 'TagTlv', 'tlv_types']
 
 # Fundamental Types of TLV objects
 #

@@ -34,6 +34,10 @@ implementation {
   TagnetC.SysNIB                -> TagnetSysExecC.SysNIB;
   TagnetC.SysRunning            -> TagnetSysExecC.SysRunning;
 
+  components TagnetPollExecC;
+  TagnetC.PollCount             -> TagnetPollExecC.PollCount;
+  TagnetC.PollEvent             -> TagnetPollExecC.PollEvent;
+
   components new TimerMilliC()  as Timer0;
   TagnetMonitorP.rcTimer        -> Timer0;
   components new TimerMilliC()  as Timer1;

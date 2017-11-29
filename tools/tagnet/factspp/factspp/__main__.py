@@ -13,20 +13,22 @@ from __init__ import __version__ as VERSION
 
 
 def main():
-    global  __version__
     parser = argparse.ArgumentParser(
         description='Tagnet Name Preprocessor')
     parser.add_argument('input',
-                        type=argparse.FileType('rb'),
+                        type=argparse.FileType('r'),
                         help='input file')
     parser.add_argument('-V', '--version',
                         action='version',
                         version='%(prog)s ' + VERSION)
+    parser.add_argument('-o', '--output',
+                        help='path to store output files')
     parser.add_argument('-v', '--verbosity',
                         action='count',
                         default=0,
-                        help="increase output verbosity")
+                        help='increase output verbosity')
     args = parser.parse_args()
+    print(args)
     preprocessor(args)
 
 main()
