@@ -50,7 +50,12 @@
 #include <overwatch.h>
 #include <cpu_stack.h>
 
-//#define __MSP432_DVRLIB_ROM__
+/*
+ * all DriverLib calls go to ROM.  Any Flash calls absolutely must
+ * go to the ROM copy of DriverLib.  Flash timing in the Flash
+ * DriverLib calls don't work correctly when executing out of Flash.
+ */
+#define __MSP432_DVRLIB_ROM__
 #include <rom.h>
 #include <rom_map.h>
 #include "flash.h"
@@ -1103,14 +1108,17 @@ void __Reset() {
 
 
 /*
- * Flash access routines.  Linkages to either ROM or TI flash code
+ * Flash access routines.
+ *
+ * All Flash must run out of RAM or out of ROM.  Running out of Flash
+ * causes timing problems.
  */
 
 bool __flash_performMassErase() {
-  return MAP_FlashCtl_performMassErase();
+  return ROM_FlashCtl_performMassErase();
 }
 
 
 bool __flash_programMemory(void* src, void* dest, uint32_t length) {
-  return MAP_FlashCtl_programMemory(src, dest, length);
+  return ROM_FlashCtl_programMemory(src, dest, length);
 }

@@ -48,7 +48,7 @@
 #define __HARDWARE_H__
 
 #define NO_MSP_CLASSIC_DEFINES
-//#define __MSP432_DVRLIB_ROM__
+#define __MSP432_DVRLIB_ROM__
 
 /*
  * msp432.h will pull in the right chip header using DEVICE.
