@@ -139,9 +139,6 @@ implementation {
   }
 
 
-  /*
-   * returns if we can't launch
-   */
   async command void OWhw.boot_image(image_info_t *iip) {
     if (iip->sig != IMAGE_INFO_SIG)
       return;
@@ -197,8 +194,12 @@ implementation {
    * msp432.  We assume a sector is 4096 (12 bits).  The sector
    * is with respect to the start of the bank.
    *
-   * o We only use bank 1, 128K starting at 0x0002000.
-   * o the buffer must be inside of bank 1, inclusive.
+   * o bank parameter indicates which bank we are messing with.
+   * o bank 0 is 0x0000_0000 to 0x0001_FFFF (128K)
+   * o        only upper 8K is allowed.
+   * o bank 1 is 0x0002_0000 to 0x0003_FFFF (128K)
+   *          all of bank 1 is allowed.
+   * o buffer must be wholly inside the bank.
    *
    * We mask off the upper 15 bits leaving the lower 17 bits.  12
    * bits make up the 4Ki.  leaving the upper 5 bits for sector
@@ -227,16 +228,32 @@ implementation {
    *     2**S_t | (((2 ** S_t) - 1) & ~((2**S_s) - 1))
    *        a                b                 c
    *
+   * returns 0 if any of our checks fail.
    */
-  uint32_t getSectorMask(uint8_t *start, uint32_t len) {
+  uint32_t getSectorMask(uint32_t bank, uint8_t *start, uint32_t len) {
     uint32_t s_s, s_t, a_s, a_t;
     uint32_t sec_mask, a, b, c;
 
     a_s = (uint32_t) start;
     a_t = a_s + len - 1;
 
-    if ((a_s < 0x00020000) || (a_t > 0x0003fffff))
-      return 0;
+    switch (bank) {
+      default:
+        return 0;
+
+      case 0:
+        /* only allow upper 8K of bank 0 */
+        if (a_s < (0x00020000 - (8 * 1024)) || a_s >= 0x00020000)
+          return 0;
+        if (a_t >= 0x00020000)
+          return 0;
+        break;
+
+      case 1:
+        if ((a_s < 0x00020000) || (a_t >= 0x00040000))
+          return 0;
+        break;
+    }
 
     s_s = (a_s & 0x1ffff) >> 12;
     s_t = (a_t & 0x1ffff) >> 12;
@@ -250,26 +267,55 @@ implementation {
 
   async command error_t OWhw.flashErase(uint8_t *fdest, uint32_t len) {
     uint32_t sec_mask;
+    uint32_t *chk, *limit;
+    uint32_t bank;
 
-    sec_mask = getSectorMask(fdest, len);
+    bank = 1;
+    if ((uint32_t) fdest < 0x00020000)
+      bank = 0;
+    sec_mask = getSectorMask(bank, fdest, len);
     if (!sec_mask)
-      return SUCCESS;
+      return FAIL;
 
     /* turn off write/erase protection for listed banks */
-    FLCTL->BANK1_MAIN_WEPROT = ~sec_mask;
-    if (__flash_performMassErase())
+    if (bank == 0)
+      FLCTL->BANK0_MAIN_WEPROT = ~sec_mask;
+    else
+      FLCTL->BANK1_MAIN_WEPROT = ~sec_mask;
+    if (__flash_performMassErase()) {
+      chk   = (uint32_t *) fdest;
+      limit = (uint32_t *) ((uint32_t) (fdest + len) & ~3);
+      while (chk < limit) {
+        if (*chk++ != 0xFFFFFFFF) {
+          ROM_DEBUG_BREAK(0x10);
+          return FAIL;
+        }
+      }
       return SUCCESS;
+    }
     return FAIL;
   }
 
 
   async command error_t OWhw.flashProgram(uint8_t *src, uint8_t *fdest,
                                     uint32_t len) {
-    if (((uint32_t) fdest < 0x00020000) ||
-        (((uint32_t) fdest  + len - 1) > 0x0003fffff))
+    uint32_t *chk, *s, *limit;
+
+    if (((uint32_t) fdest < 0x0001E000) ||
+        (((uint32_t) fdest  + len) >= 0x00040000))
       return FAIL;
-    if (__flash_programMemory(src, fdest, len))
+    if (__flash_programMemory(src, fdest, len)) {
+      s     = (uint32_t *) src;
+      chk   = (uint32_t *) fdest;
+      limit = (uint32_t *) ((uint32_t) (fdest + len) & ~3);
+      while (chk < limit) {
+        if (*chk++ != *s++) {
+          ROM_DEBUG_BREAK(0x10);
+          return FAIL;
+        }
+      }
       return SUCCESS;
+    }
     return FAIL;
   }
 }
