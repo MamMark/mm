@@ -222,7 +222,7 @@ implementation {
     if (dlen > DC_MAX_DLEN)
       call Panic.panic(PANIC_SS, 1, (parg_t) data, dlen, 0, 0);
 
-    header->recnum = call DblkManager.get_nxt_recnum();
+    header->recnum = call DblkManager.adv_cur_recnum();
     while(1) {
       if (dcc.remaining == 0 || dcc.remaining >= hlen) {
         /*

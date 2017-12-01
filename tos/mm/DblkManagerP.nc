@@ -53,11 +53,24 @@ implementation {
 
 #define DM_SIG 0x55422455
 
-norace struct {
+  norace struct {
     uint32_t dm_sig_a;
+
+    /*
+     * dblk_lower is where the directory lives.
+     * data starts at lower+1 when that sector has been written.
+     *
+     * file offsets are file relative so the first record in the
+     *   first data sector is at file offset 0x200 which lives in
+     *   absolute sector (fo / 512) + lower.
+     */
     uint32_t dblk_lower;                /* inclusive  */
-    uint32_t dblk_nxt;                  /* 0 - oht oh */
+                                        /* lower is where dir is */
+    /* next blk_id to write */
+    uint32_t dblk_nxt;                  /* 0 means full          */
     uint32_t dblk_upper;                /* inclusive  */
+
+    /* last record number used */
     uint32_t cur_recnum;                /* current record number */
     uint32_t dm_sig_b;
   } dmc;
@@ -175,7 +188,6 @@ norace struct {
 
 	if (lower >= upper) {
 	  /*
-
 	   * if empty we be good.  Otherwise no available storage.
 	   */
 	  if (empty) {
@@ -213,12 +225,12 @@ norace struct {
   }
 
 
-  async command uint32_t DblkManager.get_nxt_blk() {
+  async command uint32_t DblkManager.get_dblk_nxt() {
     return dmc.dblk_nxt;
   }
 
 
-  async command uint32_t DblkManager.adv_nxt_blk() {
+  async command uint32_t DblkManager.adv_dblk_nxt() {
     atomic {
       if (dmc.dblk_nxt) {
         dmc.dblk_nxt++;
@@ -230,7 +242,12 @@ norace struct {
   }
 
 
-  async command uint32_t DblkManager.get_nxt_recnum() {
+  async command uint32_t DblkManager.get_cur_recnum() {
+    return dmc.cur_recnum;
+  }
+
+
+  async command uint32_t DblkManager.adv_cur_recnum() {
     dmc.cur_recnum++;
     return dmc.cur_recnum;
   }
