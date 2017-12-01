@@ -102,7 +102,7 @@ extern uint32_t __image_length__;
  * then calculate the image sum.
  */
 const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
-  .sig          = IMAGE_INFO_SIG,
+  .ii_sig       = IMAGE_INFO_SIG,
   .image_start  = (uint32_t) &__image_start__,  /* 32 bit load address of binary         */
   .image_length = (uint32_t) &__image_length__, /* how big in bytes                      */
   .vector_chk   = 0,                            /* 32 bit checksum over the vector table */

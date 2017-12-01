@@ -120,7 +120,7 @@ implementation {
   bool good_nib_vectors(image_info_t *iip) {
     uint32_t vec_sum;
 
-    if (iip->sig != IMAGE_INFO_SIG)
+    if (iip->ii_sig != IMAGE_INFO_SIG)
       return FALSE;
     if (iip->vector_chk) {
       vec_sum = call Checksum.sum32_aligned((void *) NIB_BASE,
@@ -154,7 +154,7 @@ implementation {
   bool good_nib_flash(image_info_t *iip) {
     uint32_t image_sum;
 
-    if (iip->sig != IMAGE_INFO_SIG)
+    if (iip->ii_sig != IMAGE_INFO_SIG)
       return FALSE;
     if (iip->image_length < IMAGE_MIN_SIZE)
       return FALSE;

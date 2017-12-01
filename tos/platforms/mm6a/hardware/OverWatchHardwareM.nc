@@ -140,7 +140,7 @@ implementation {
 
 
   async command void OWhw.boot_image(image_info_t *iip) {
-    if (iip->sig != IMAGE_INFO_SIG)
+    if (iip->ii_sig != IMAGE_INFO_SIG)
       return;
     launch(iip->image_start);
   }

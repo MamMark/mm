@@ -268,8 +268,8 @@ implementation {
      */
     dirp                     = (panic_dir_t *) pcb.buf;
     dirp->panic_dir_sig      = PANIC_DIR_SIG;
-    dirp->panic_dir          = pcb.dir;
-    dirp->panic_high         = pcb.high;
+    dirp->panic_dir_sector   = pcb.dir;
+    dirp->panic_high_sector  = pcb.high;
     dirp->panic_block_sector = pcb.block + PBLK_SIZE;
     dirp->panic_block_size   = PBLK_SIZE;
     dirp->panic_dir_checksum = 0;
@@ -568,7 +568,7 @@ implementation {
     /* fill in panic info */
     owcp = call OverWatch.getControlBlock();
     pip = &b0p->panic_info;
-    pip->sig = PANIC_INFO_SIG;
+    pip->pi_sig     = PANIC_INFO_SIG;
     pip->boot_count = owcp->reboot_count;
     pip->systime    = call LocalTime.get();
     pip->subsys = pap->pcode;
@@ -581,7 +581,7 @@ implementation {
 
     /* fill in additional info */
     addp                = &b0p->additional_info;
-    addp->sig           = PANIC_ADDITIONS;
+    addp->ai_sig        = PANIC_ADDITIONS;
     addp->ram_sector    = pcb.block + PBLK_RAM;
     addp->ram_size      = PBLK_RAM_SIZE * 512;
     addp->io_sector     = pcb.block + PBLK_IO;

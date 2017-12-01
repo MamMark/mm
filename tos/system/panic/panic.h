@@ -123,8 +123,8 @@ typedef struct {
    * upper limit.  block_sector absolute block num of the next panic
    * block to write.  If block_sector is 0, the PANIC file is full
    */
-  uint32_t panic_dir;                   /* limits of panic file, absolute */
-  uint32_t panic_high;                  /* upper limit, inclusive         */
+  uint32_t panic_dir_sector;            /* limits of panic file, absolute */
+  uint32_t panic_high_sector;           /* upper limit, inclusive         */
   uint32_t panic_block_sector;          /* where next panic block         */
   uint32_t panic_block_size;            /* size of each panic block       */
   uint32_t panic_dir_checksum;
@@ -139,7 +139,7 @@ typedef struct {
 #define PANIC_INFO_SIG  0x44665041
 
 typedef struct {
-  uint32_t sig;
+  uint32_t pi_sig;
   uint32_t boot_count;
   uint64_t systime;
   uint8_t  subsys;
@@ -214,7 +214,7 @@ typedef struct {
 #define PANIC_ADDITIONS 0x44664144
 
 typedef struct {
-  uint32_t sig;                         /* panic_additions sig */
+  uint32_t ai_sig;                      /* panic_additions sig */
   uint32_t ram_sector;                  /* starting sector for RAM dump, 64K */
   uint32_t ram_size;                    /* in bytes */
   uint32_t io_sector;                   /* starting sector for I/O dump */
