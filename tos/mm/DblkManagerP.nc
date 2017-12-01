@@ -17,10 +17,10 @@
 #include <platform_panic.h>
 
 typedef enum {
-  DMS_IDLE = 0,				/* doing nothing */
-  DMS_REQUEST,				/* resource requested */
-  DMS_START,				/* read first block, chk empty */
-  DMS_SCAN,				/* scanning for 1st blank */
+  DMS_IDLE = 0,                         /* doing nothing */
+  DMS_REQUEST,                          /* resource requested */
+  DMS_START,                            /* read first block, chk empty */
+  DMS_SCAN,                             /* scanning for 1st blank */
 } dm_state_t;
 
 
@@ -39,7 +39,7 @@ module DblkManagerP {
     interface DblkManager;
   }
   uses {
-    interface Boot;			/* incoming boot signal */
+    interface Boot;                     /* incoming boot signal */
     interface FileSystem;
     interface SDread;
     interface SDraw;
@@ -164,49 +164,49 @@ implementation {
 
       case DMS_START:
         /* if blk is erased, dmc.dblk_nxt is already correct. */
-	if (call SDraw.chk_erased(dp))
-	  break;
+        if (call SDraw.chk_erased(dp))
+          break;
 
-	lower = dmc.dblk_nxt;
-	upper = dmc.dblk_upper;
+        lower = dmc.dblk_nxt;
+        upper = dmc.dblk_upper;
 
-	cur_blk = (upper - lower)/2 + lower;
-	if (cur_blk == lower)
-	  cur_blk = lower = upper;
+        cur_blk = (upper - lower)/2 + lower;
+        if (cur_blk == lower)
+          cur_blk = lower = upper;
 
-	dm_state = DMS_SCAN;
-	if ((err = call SDread.read(cur_blk, dp)))
-	  dm_panic(7, err, 0);
-	return;
+        dm_state = DMS_SCAN;
+        if ((err = call SDread.read(cur_blk, dp)))
+          dm_panic(7, err, 0);
+        return;
 
       case DMS_SCAN:
-	empty = call SDraw.chk_erased(dp);
-	if (empty)
-	  upper = cur_blk;
-	else
-	  lower = cur_blk;
+        empty = call SDraw.chk_erased(dp);
+        if (empty)
+          upper = cur_blk;
+        else
+          lower = cur_blk;
 
-	if (lower >= upper) {
-	  /*
-	   * if empty we be good.  Otherwise no available storage.
-	   */
-	  if (empty) {
-	    dmc.dblk_nxt = cur_blk;
-	    break;              /* break out of switch, we be done */
-	  }
-	  dm_panic(8, (parg_t) cur_blk, 0);
-	  return;
-	}
+        if (lower >= upper) {
+          /*
+           * if empty we be good.  Otherwise no available storage.
+           */
+          if (empty) {
+            dmc.dblk_nxt = cur_blk;
+            break;              /* break out of switch, we be done */
+          }
+          dm_panic(8, (parg_t) cur_blk, 0);
+          return;
+        }
 
-	/*
-	 * haven't looked at all the blocks.  try again
-	 */
-	cur_blk = (upper - lower)/2 + lower;
-	if (cur_blk == lower)
-	  cur_blk = lower = upper;
-	if ((err = call SDread.read(cur_blk, dp)))
-	  dm_panic(10, err, 0);
-	return;
+        /*
+         * haven't looked at all the blocks.  try again
+         */
+        cur_blk = (upper - lower)/2 + lower;
+        if (cur_blk == lower)
+          cur_blk = lower = upper;
+        if ((err = call SDread.read(cur_blk, dp)))
+          dm_panic(10, err, 0);
+        return;
     }
 
     dm_state = DMS_IDLE;

@@ -117,8 +117,8 @@ implementation {
   /*
    * instrumentation for measuring how long things take.
    */
-  uint32_t ssw_delay_start;		// how long are we held off?
-  uint32_t ssw_write_grp_start;		// when we start the write of the group.
+  uint32_t ssw_delay_start;             // how long are we held off?
+  uint32_t ssw_write_grp_start;         // when we start the write of the group.
 
 #define ss_panic(where, arg) do { call Panic.panic(PANIC_SS, where, arg, 0, 0, 0); } while (0)
 
@@ -129,7 +129,7 @@ implementation {
       memset(ssc.cur_handle->buf, 0, SD_BLOCKSIZE);
       ssc.ssw_out++;
       if (ssc.ssw_out >= SSW_NUM_BUFS)
-	ssc.ssw_out = 0;
+        ssc.ssw_out = 0;
       ssc.ssw_num_full--;
       ssc.cur_handle = ssw_p[ssc.ssw_out];
     }
@@ -179,8 +179,8 @@ implementation {
 
     /* the next check also catches the null pointer */
     if (sswp != handle ||
-	handle->majik != SS_BUF_SANE ||
-	handle->buf_state != SS_BUF_STATE_ALLOC) {
+        handle->majik != SS_BUF_SANE ||
+        handle->buf_state != SS_BUF_STATE_ALLOC) {
       call Panic.panic(PANIC_SS, 11, (parg_t) handle, handle->majik,
                        handle->buf_state, (parg_t) sswp);
     }
@@ -206,21 +206,21 @@ implementation {
 
     sswp = ssw_p[ssc.ssw_alloc];
     if (ssc.ssw_alloc >= SSW_NUM_BUFS ||
-	ssc.majik_a != SSC_MAJIK ||
-	ssc.majik_b != SSC_MAJIK ||
-	sswp->buf_state < SS_BUF_STATE_FREE ||
-	sswp->buf_state >= SS_BUF_STATE_MAX)
+        ssc.majik_a != SSC_MAJIK ||
+        ssc.majik_b != SSC_MAJIK ||
+        sswp->buf_state < SS_BUF_STATE_FREE ||
+        sswp->buf_state >= SS_BUF_STATE_MAX)
       ss_panic(18, ssc.ssw_alloc);
 
     if (sswp->buf_state == SS_BUF_STATE_FREE) {
       if (sswp->majik != SS_BUF_SANE)
-	ss_panic(19, sswp->majik);
+        ss_panic(19, sswp->majik);
 
       sswp->stamp = call LocalTime.get();
       sswp->buf_state = SS_BUF_STATE_ALLOC;
       ssc.ssw_alloc++;
       if (ssc.ssw_alloc >= SSW_NUM_BUFS)
-	ssc.ssw_alloc = 0;
+        ssc.ssw_alloc = 0;
       return sswp;
     }
     ss_panic(20, -1);
@@ -230,7 +230,7 @@ implementation {
 
   command uint8_t *SSW.buf_handle_to_buf(ss_wr_buf_t *handle) {
     if (!handle || handle->majik != SS_BUF_SANE ||
-	handle->buf_state != SS_BUF_STATE_ALLOC)
+        handle->buf_state != SS_BUF_STATE_ALLOC)
       ss_panic(21, (parg_t) handle);
 
     return handle->buf;
@@ -356,7 +356,7 @@ implementation {
     ssc.ssw_out++;
     if (ssc.ssw_out >= SSW_NUM_BUFS)
       ssc.ssw_out = 0;
-    ssc.cur_handle = ssw_p[ssc.ssw_out];		/* point to nxt buf */
+    ssc.cur_handle = ssw_p[ssc.ssw_out];                /* point to nxt buf */
     ssc.ssw_num_full--;
     signal SS.dblk_advanced(blk);                       /* tell what we last did */
     if ((ssc.dblk = call DblkManager.adv_dblk_nxt()) == 0) {
@@ -368,7 +368,7 @@ implementation {
       flush_buffers();
       ssc.state = SSW_IDLE;
       if (call SDResource.release())
-	ss_panic(29, 0);
+        ss_panic(29, 0);
       return;
     }
 
@@ -381,7 +381,7 @@ implementation {
       ssc.cur_handle->buf_state = SS_BUF_STATE_WRITING;
       err = call SDwrite.write(ssc.dblk, ssc.cur_handle->buf);
       if (err)
-	ss_panic(27, err);
+        ss_panic(27, err);
       return;
     }
     w_t0 = call LocalTime.get();
