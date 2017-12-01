@@ -7,6 +7,9 @@
  */
 
 interface DblkManager {
+  /* return start of the DBLK file, abs sector blk_id */
+  async command uint32_t get_dblk_low();
+
   /* return the next abs blk_id that will be written next */
   async command uint32_t get_dblk_nxt();
 

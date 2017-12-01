@@ -5,6 +5,11 @@
 
 interface StreamStorage {
   /**
+   * return absolute blk_id of the start of the DBLK file
+   */
+  command uint32_t get_dblk_low();
+
+  /**
    * The event "dblk_stream_full" is signaled when the assigned area
    * for data block storage is full.  Typically this will cause the
    * sensing system to shut down and put the tag into a low power

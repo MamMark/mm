@@ -225,6 +225,11 @@ implementation {
   }
 
 
+  async command uint32_t DblkManager.get_dblk_low() {
+    return dmc.dblk_lower;
+  }
+
+
   async command uint32_t DblkManager.get_dblk_nxt() {
     return dmc.dblk_nxt;
   }
