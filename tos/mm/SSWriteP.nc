@@ -81,8 +81,8 @@ enum {
 module SSWriteP {
   provides {
     interface Init;
-    interface SSWrite as SSW;
-    interface SSFull  as SSF;
+    interface SSWrite       as SSW;
+    interface StreamStorage as SS;
   }
   uses {
     interface SDwrite;
@@ -359,11 +359,12 @@ implementation {
     ssc.cur_handle = ssw_p[ssc.ssw_out];		/* point to nxt buf */
     ssc.ssw_num_full--;
     if ((ssc.dblk = call DblkManager.adv_nxt_blk()) == 0) {
+    signal SS.dblk_advanced(blk);                       /* tell what we last did */
       /*
        * adv_nxt_blk returning 0 says we ran off the end of
        * the file system area.
        */
-      signal SSF.dblk_stream_full();
+      signal SS.dblk_stream_full();
       flush_buffers();
       ssc.state = SSW_IDLE;
       if (call SDResource.release())
@@ -438,6 +439,11 @@ implementation {
       if (idx >= SSW_NUM_BUFS)
         idx = 0;
       dblk = call DblkManager.adv_nxt_blk();
+      /*
+       * flush_all is a shutdown/reboot kind of thing.  We don't signal
+       * SS.dblk_advanced(last);
+       */
+
       num_full--;
     }
 
@@ -462,7 +468,8 @@ implementation {
   }
 
 
-  default event void SSF.dblk_stream_full() { }
+  default event void SS.dblk_stream_full()          { }
+  default event void SS.dblk_advanced(uint32_t last) { }
 
   async event void Panic.hook() { }
 }

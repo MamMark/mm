@@ -6,7 +6,7 @@
  * Configuration wiring for stream storage write (SSWrite).  See
  * SSWriteP for more details on how stream storage works.
  *
- * Stream storage is split phase and interfaces to a split phase
+ * StreamStorageWrite is split phase and interfaces to a split phase
  * SD mass storage driver.
  */
 
@@ -14,31 +14,31 @@
 
 configuration SSWriteC {
   provides {
-    interface SSWrite as SSW;
-    interface SSFull  as SSF;
+    interface SSWrite       as SSW;
+    interface StreamStorage as SS;
   }
 }
 
 implementation {
-  components SSWriteP as SS_P, MainC;
-  SSW = SS_P;
-  SSF = SS_P;
-  MainC.SoftwareInit -> SS_P;
+  components SSWriteP as SSW_P, MainC;
+  SSW = SSW_P;
+  SS  = SSW_P;
+  MainC.SoftwareInit -> SSW_P;
 
   components new SD0_ArbC() as SD;
   components SD0C;
-  SS_P.SDResource -> SD;
-  SS_P.SDwrite    -> SD;
-  SS_P.SDsa       -> SD0C;
+  SSW_P.SDResource -> SD;
+  SSW_P.SDwrite    -> SD;
+  SSW_P.SDsa       -> SD0C;
 
   components PanicC, LocalTimeMilliC;
-  SS_P.Panic -> PanicC;
-  SS_P.LocalTime -> LocalTimeMilliC;
+  SSW_P.Panic      -> PanicC;
+  SSW_P.LocalTime  -> LocalTimeMilliC;
 
   components TraceC, CollectC;
-  SS_P.Trace    -> TraceC;
-  SS_P.CollectEvent -> CollectC;
+  SSW_P.Trace        -> TraceC;
+  SSW_P.CollectEvent -> CollectC;
 
   components DblkManagerC;
-  SS_P.DblkManager -> DblkManagerC;
+  SSW_P.DblkManager -> DblkManagerC;
 }
