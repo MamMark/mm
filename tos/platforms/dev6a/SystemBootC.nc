@@ -85,6 +85,10 @@ implementation {
    * it can't do this until after SYNC.
    */
 
+#ifdef DISABLE_GPS_SYSBOOT
+  Boot      =  SYNC.Booted;
+#else
   GPS.Boot  -> SYNC.Booted;
   Boot      =  GPS.Booted;
+#endif
 }
