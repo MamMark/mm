@@ -613,19 +613,22 @@ void __pwr_init() {
 #define __FW_0 FLCTL_BANK0_RDCTL_WAIT_0
 #define __FW_1 FLCTL_BANK0_RDCTL_WAIT_1
 #define __FW_2 FLCTL_BANK0_RDCTL_WAIT_2
+#define __FW_3 FLCTL_BANK0_RDCTL_WAIT_3
 
 #ifndef MSP432_FLASH_WAIT
-#warning MSP432_FLASH_WAIT not defined, defaulting to 0
-#define __FW __FW_0
+#warning MSP432_FLASH_WAIT not defined, defaulting to 2
+#define __FW __FW_2
 #elif (MSP432_FLASH_WAIT == 0)
 #define __FW __FW_0
 #elif (MSP432_FLASH_WAIT == 1)
 #define __FW __FW_1
 #elif (MSP432_FLASH_WAIT == 2)
 #define __FW __FW_2
+#elif (MSP432_FLASH_WAIT == 3)
+#define __FW __FW_3
 #else
-#warning MSP432_FLASH_WAIT bad value, defaulting to 0
-#define __FW __FW_0
+#warning MSP432_FLASH_WAIT bad value, defaulting to 2
+#define __FW __FW_2
 #endif
 
 void __flash_init() {
