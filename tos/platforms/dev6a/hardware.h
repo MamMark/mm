@@ -168,49 +168,55 @@
  * B2: Si4468 radio (SPI)
  * B3: SD0 (SPI)
  *
+ * mems hack: put mems bus on sd1 A1
+ *    7.0 sd1_clk /mems_clk
+ *    7.1 sd1_somi/mems_somi
+ *    7.2 sd1_simo/mems_simo
+ *    9.4 sd1_csn /accel_csn
+ *
  * Port: (0x4000_4C00)
- * port 1.0	0pO	LED1           		port 7.0	1pIru   sd1_clk  (A1,    pm)
- *  00 I .1	1pIru	PB1            		 60   .1	1pIru   sd1_somi (A1,    pm)
- *  02 O .2	0pI	                BSLRXD   62   .2	1pIru   sd1_simo (A1,    pm)
- *       .3     0pI	                BSLTXD        .3	0pI     gps_tm   (ta1.1, pm)
+ * port 1.0	0pO	LED1                    port 7.0	1pIru   sd1_clk  (A1,    pm)
+ *  00 I .1	1pIru	PB1                      60   .1	1pIru   sd1_somi (A1,    pm)
+ *  02 O .2	0pI                     BSLRXD   62   .2	1pIru   sd1_simo (A1,    pm)
+ *       .3     0pI                     BSLTXD        .3	0pI     gps_tm   (ta1.1, pm)
  *       .4	1pIru   dock_attn PB2   BSLSTE        .4	0pI
  *       .5	0pI     gps_cts(*)      BSLCLK        .5	0pI
  *       .6	0pI	tmp_sda         BSLSIMO       .6	0pI
  *       .7	0pI     tmp_scl         BSLSOMI       .7	0pI
  *
  * port 2.0	0pO	dock_led (LED2_RED)     port 8.0	0mO     TA1.0 (OUT0) (m2)
- *  01   .1	0pO	         (LED2_GREEN)    61 I .1	0pI
- *  03   .2	0pO	         (LED2_BLUE)     63 O .2	0pI
+ *  01   .1	0pO              (LED2_GREEN)    61 I .1	0pI
+ *  03   .2	0pO              (LED2_BLUE)     63 O .2	0pI
  *       .3	0pI	si446x_cts                    .3	0pI
- *       .4	0pI	                              .4	0pI
+ *       .4	0pI                                   .4	0pI
  *       .5	0mO	SMCLK (pm)                    .5	0pO     tell_exception
- *       .6	0pI	                              .6	0pO     tell
- *       .7	0pI	                              .7	0pI
+ *       .6	0pI                                   .6	0pO     tell
+ *       .7	0pI                                   .7	0pI
  *
- * port 3.0	0pI	                        port 9.0	0pI
+ * port 3.0	0pI                             port 9.0	0pI
  *  20   .1	0pI	[unstabbed, nc] A2       80 I .1	0pI
  *  22   .2	0pI	gps_tx (A2)   URXD       82 O .2	0pI
  *       .3	1pO	gps_rx (A2)   UTXD            .3	0pI
- *       .4	0pI     [unstabbed, nc]               .4	1pIru   sd1_csn
+ *       .4	0pI     [unstabbed, nc]               .4	1pIru   sd1_csn/accel_csn
  *       .5	0mO	si446x_clk  (B2) slave_clk    .5	0pI     [unstabbed]
  *       .6	0mO	si446x_simo (B2) slave_simo   .6	0pI     [unstabbed]
  *       .7	0mIrd   si446x_somi (B2) slave_somi   .7	0pI
  *
  * port  4.0	0pO	gps_on_off               port 10.0	1pIru   sd0_csn
- *  21    .1	0pI	                         81 I  .1	1pIru   sd0_clk
+ *  21    .1	0pI                              81 I  .1	1pIru   sd0_clk
  *  23    .2	0mO	ACLK                     83 O  .2	1pIru   sd0_simo
  *        .3	0mO	MCLK/RTC                       .3	1pIru   sd0_somi
  *        .4	0mO	HSMCLK                         .4	0pI
  *        .5	0pI	gps_rts(*)                     .5	0pI
- *        .6	0pI	                               .6	0pI
- *        .7	0pI	                               .7	0pI
+ *        .6	0pI                                    .6	0pI
+ *        .7	0pI                                    .7	0pI
  *
  * port  5.0	1pO     si446x_sdn
  *  40 I  .1	0pI     si446x_irqn
  *  42 O  .2	1pO     si446x_csn
  *        .3	0pI
- *        .4	0pI
- *        .5	0pI
+ *        .4	0pI     accel_int1
+ *        .5	0pI     accel_int2
  *        .6	0pI
  *        .7	0pI
  *
