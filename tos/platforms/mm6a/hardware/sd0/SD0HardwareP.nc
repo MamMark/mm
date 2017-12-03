@@ -236,16 +236,17 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
 
   async command void HW.sd_on() {
     SD0_CSN = 1;                // make sure tristated
-    SD0_PINS_SPI;               // switch pins over
+    SD0_PWR_ENA = SD0_PWR_ENA_ON;
   }
 
   /*
-   * turn sd_off and switch pins back to port (1pI) so we don't power the
-   * chip prior to powering it off.
+   * turn sd_off.  note powering down the SD side of the translators.
+   * we can leave the Ports set up the way it works normally.  There
+   * is no need to switch to Port.
    */
   async command void HW.sd_off() {
     SD0_CSN = 1;                /* tri-state by deselecting */
-    SD0_PINS_PORT;		/* pins in proper state */
+    SD0_PWR_ENA = SD0_PWR_ENA_OFF;
   }
 
   async command bool HW.isSDPowered() { return TRUE; }

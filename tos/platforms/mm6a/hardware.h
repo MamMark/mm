@@ -196,8 +196,8 @@
  *       .3     0pO   D4 sd1_csn           TP27       .3	1pO   A4 gps_rx     (PM_UCA0TXD)
  *       .4	0pI   D3                              .4	1pO   J1 adc_sclk   (PM_UCB0CLK)
  *       .5	1pO   C1 mag_csn                      .5	1pO   H2 adc_simo   (PM_UCB0SIMO)
- *       .6	1pO   D1 accel_csn                    .6	1pO   J2 pwr_sd0_en
- *       .7	0pI   E1 accel_int2                   .7	1pO   G3 sd0_sclk   (PM_UCA2CLK)
+ *       .6	1pO   D1 accel_csn                    .6        0pO   J2 pwr_sd0_en
+ *       .7	0pI   E1 accel_int2                   .7	1mO   G3 sd0_sclk   (PM_UCA2CLK)
  *
  * P1.2 tell,   P1.3 tell_exception   for debugging and bring up.  Both on TPs on the edge.
  *
@@ -205,12 +205,12 @@
  *  01   .1	0pI   F1 adc_rdy
  *  03   .2	0pI   E3 accel_int1
  *       .3	1pO   F4 sd1_simo (PM_UCA1SIMO) TP3
- *       .4	0pI   F3 sd0_somi (PM_UCA2SOMI)
+ *       .4	0mI   F3 sd0_somi (PM_UCA2SOMI)
  *       .5	0pI   G1 adc_somi (PM_UCB0SOMI)
  *       .6	0pO   G2 adc_start
  *       .7	1pO   H1 adc_csn
  *
- * port 3.0	1pO   J3 sd0_simo    (PM_UCA2SIMO)
+ * port 3.0	1mO   J3 sd0_simo    (PM_UCA2SIMO)
  *  20   .1	1pO   H4 sd0_csn
  *  22   .2	0pI   G5 sd1_somi    (PM_UCA1SOMI) TP13
  *       .3	1pO   J4 radio_sdn

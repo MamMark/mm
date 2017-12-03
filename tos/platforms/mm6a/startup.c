@@ -437,11 +437,14 @@ void __watchdog_init() {
 void __pins_init() {
   P1->OUT = 0x60; P1->DIR = 0x6C;
   P2->OUT = 0x89; P2->DIR = 0xC9;
+  P2->SEL0= 0x10; P2->SEL1= 0x00;
   P3->OUT = 0x7B; P3->DIR = 0x7B;
+  P3->SEL0= 0x01; P3->SEL1= 0x00;
   P4->OUT = 0x30; P4->DIR = 0xFD;
   P5->OUT = 0x81; P5->DIR = 0xA7;
   P6->OUT = 0x18; P6->DIR = 0x18;
-  P7->OUT = 0xF9; P7->DIR = 0xF8;
+  P7->OUT = 0xB9; P7->DIR = 0xF8;
+  P7->SEL0= 0x80; P7->SEL1= 0x00;
   P8->OUT = 0x00; P8->DIR = 0x02;
   PJ->OUT = 0x04; PJ->DIR = 0x06;
 
@@ -971,9 +974,6 @@ void __Reset() {
 
   P4->OUT = 0x30;                       /* turn 3V3 ON, LDO2, and pwr Radio 1V8 */
   P4->DIR = 0xFD;
-
-  P7->OUT = 0xF9;                       /* sd0 pwr on */
-  P7->DIR = 0xF8;                       /* among other things drive pwr_sd0_en 1 */
 
   __watchdog_init();
   __pins_init();

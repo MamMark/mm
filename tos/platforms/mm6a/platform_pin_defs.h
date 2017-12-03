@@ -119,7 +119,13 @@
 #define SD0_ACCESS_SENSE_BIT     0x08
 #define SD0_ACCESS_SENSE_N       FALSE
 #define SD0_ACCESS_ENA_N
-#define SD0_PWR_ENA
+
+/* high true, setting a 1 turns the power on, 0 turns it off. */
+#define SD0_PWR_ENA_PORT    P7
+#define SD0_PWR_ENA_PIN     6
+#define SD0_PWR_ENA_ON      1
+#define SD0_PWR_ENA_OFF     0
+#define SD0_PWR_ENA         BITBAND_PERI(SD0_PWR_ENA_PORT->OUT, SD0_PWR_ENA_PIN)
 
 /*
  * see hardware.h for what port is assigned to SD0 for SPI.
@@ -132,18 +138,13 @@
 #define SD0_DMA_RX_ADDR    EUSCI_A2->RXBUF
 
 /*
- * SD0_PINS_SPI will connect the 3 spi lines on SD0 to the SPI.  This is
- * done by simply switching the pins to the module.  We need to disconnect
- * the pins when we power off the SDs to avoid powering the chip via the
- * input pins.  FIXME this needs to be revisited.
- *
- * We also need to switch sd_csn (3.1) from input to output, the value
- * should be a 1 which deselects the sd and tri-states.  The output is
- * already set to 1 (for the resistor pull up).  So simply switching from
- * input to output is fine.  FIXME this needs to be revisited.
- *
- * We assume that the value of sd0_csn (pin value, POUT) is a 1.
+ * SD0 is run at 3V3 and its I/Os are translated to 1V8 levels.  The
+ * translator 1V8 side is always powered and holds any signals at
+ * a reasonable level.  This means that we don't need to change the
+ * state of pins connected to SD0.
  */
+
+/* deprecated */
 #define SD0_PINS_PORT  do {                                 \
     BITBAND_PERI(SD0_CSN_PORT->DIR, SD0_CSN_PIN) = 0;       \
     BITBAND_PERI(P2->SEL0, 4) = 0;                          \
@@ -151,6 +152,7 @@
     BITBAND_PERI(P7->SEL0, 7) = 0;                          \
   } while (0)
 
+/* deprecated */
 #define SD0_PINS_SPI    do {                                \
     BITBAND_PERI(SD0_CSN_PORT->DIR, SD0_CSN_PIN) = 1;       \
     BITBAND_PERI(P2->SEL0, 4) = 1;                          \
