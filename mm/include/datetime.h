@@ -36,18 +36,14 @@
 #define __DATETIME_H__
 
 typedef struct {                        /* little endian order  */
-  uint32_t	jiffies;                /* 16 bit jiffies (32KiHz) */
+  uint16_t	jiffies;                /* 16 bit jiffies (32KiHz) */
   uint16_t	yr;
-  uint8_t	mon;
-  uint8_t	day;                    /* day of month not dow */
-  uint8_t	hr;
-  uint8_t	min;
-  uint8_t	sec;
+  uint8_t	mon;                    /* 1-12 */
+  uint8_t	day;                    /* 1-31 */
+  uint8_t	hr;                     /* 0-23 */
+  uint8_t	min;                    /* 0-59 */
+  uint8_t	sec;                    /* 0-59 */
+  uint8_t       dow;                    /* day of week, 0-6, 0 sunday */
 } datetime_t;
-
-
-typedef struct {                        /* converted datetime to temporenc    */
-  uint8_t data[8];                      /* should always be less than 9 bytes */
-} time_tpc_t;
 
 #endif  /* __DATETIME_H__ */

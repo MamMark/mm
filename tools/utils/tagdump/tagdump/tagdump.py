@@ -34,14 +34,14 @@ import chunks
 # The define DT_H_REVISION in typed_data.h indicates which version.
 # Matching is a good thing.  We won't abort but will bitch if we mismatch.
 
-DT_H_REVISION       = 0x00000005
+DT_H_REVISION       = 0x00000006
 
 LOGICAL_SECTOR_SIZE = 512
 LOGICAL_BLOCK_SIZE  = 508       # excludes trailer
 
 # all dt parts are native and little endian
 
-# hdr object at native, little endian
+# hdr object dt, native, little endian
 dt_hdr_obj = aggie(OrderedDict([
     ('len',     atom(('H', '{}'))),
     ('type',    atom(('H', '{}'))),
@@ -49,13 +49,14 @@ dt_hdr_obj = aggie(OrderedDict([
     ('st',      atom(('Q', '0x{:x}')))]))
 
 datetime_obj = aggie(OrderedDict([
-    ('jiffies', atom(('I', '{}'))),
+    ('jiffies', atom(('H', '{}'))),
     ('yr',      atom(('H', '{}'))),
     ('mon',     atom(('B', '{}'))),
     ('day',     atom(('B', '{}'))),
     ('hr',      atom(('B', '{}'))),
     ('min',     atom(('B', '{}'))),
-    ('sec',     atom(('B', '{}')))]))
+    ('sec',     atom(('B', '{}'))),
+    ('dow',     atom(('B', '{}')))]))
 
 def print_hdr(obj):
     rtype = obj['hdr']['type'].val
@@ -615,7 +616,13 @@ def gen_records(fd):
     Generate valid typed-data records one at a time until no more bytes
     to read from the input file.
 
-    Yields one record each time (len, type, data)
+    Yields one record each time (len, type, data).
+
+    Input:   infile:     file we are reading from
+    Output:  hdr_offset: byte offset of the record
+             rlen:       record length
+             rtype:      record type
+             buf:        byte buffer with entire record
 
     Every record starts with a short hdr, consisting of the record length
     and dtype.  Doesn't include the timestamp.

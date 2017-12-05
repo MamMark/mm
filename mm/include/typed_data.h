@@ -167,14 +167,15 @@ typedef struct {                /* size 16 */
  */
 
 typedef struct {
-  uint16_t len;                 /* size 32 */
+  uint16_t len;                 /* size 40 */
   dtype_t  dtype;
   uint32_t recnum;
-  uint64_t systime;
+  uint64_t systime;             /* 2quad alignment */
   uint32_t sync_majik;
   uint32_t prev_sync;           /* file offset */
-  time_tpc_t datetpc;           /* temporenc current dateTime */
   uint32_t dt_h_revision;       /* version identifier of typed_data */
+  datetime_t datetime;          /* 10 bytes */
+  uint8_t  pad[2];              /* 2 bytes of pad, even quad */
 } PACKED dt_reboot_t;
 
 typedef struct {
@@ -204,13 +205,13 @@ typedef struct {
 
 
 typedef struct {
-  uint16_t   len;               /* size 28 */
+  uint16_t   len;               /* size 34 */
   dtype_t    dtype;
   uint32_t   recnum;
   uint64_t   systime;
   uint32_t   sync_majik;
   uint32_t   prev_sync;         /* file offset */
-  time_tpc_t datetpc;           /* temporenc current dateTime */
+  datetime_t datetime;          /* 10 bytes */
 } PACKED dt_sync_t;
 
 

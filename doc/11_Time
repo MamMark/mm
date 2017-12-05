@@ -4,7 +4,7 @@
 
 * dateTime
 ** RTC format, expanded time format.
-*** Y.M.D.H.M.S.J
+*** Y.M.D.H.M.S.J.DOW
 
 RTC:
 
@@ -12,26 +12,30 @@ RTC:
   Y_L
   MON           1:12
   DAY           1:31
+  DOW           0:6             (0 sunday)
   HOUR          0:23
   MIN           0:59
   SEC           0:59
-  RT1PS         0:0x7fff        (RT1PS & 0x7fff) << 8 | RT0PS
-  RT0PS         0:0xffff
+  RT1PS         0:0x7f          (RT1PS & 0x7f) << 8 | RT0PS
+  RT0PS         0:0xff
 
-  DOW           0:6
-
-
-  Y.MON.DAY.HOUR.MIN.SEC.PS
-  2  1   1   1    1   1  2
+  Y.MON.DAY.HOUR.MIN.SEC.PS.DOW
+  2  1   1   1    1   1  2  1   10 bytes
 
 
   Y                             2
-  MON   0 - 11                      4 bits
-  DAY   0 - 31                      5 bits
+  MON   1 - 12                      4 bits
+  DAY   1 - 31                      5 bits
   HOUR  0 - 23                      5 bits
   MIN   0 - 59                      6 bits
   SEC   0 - 59                      6 bits
   J     0 - 0x7fff                 15 bits
+  DOW   0 - 6                       3 bits
+
+
+The above can be compacted into a total of 8 bytes but then becomes
+unreadable and has to be decoded/encoded.  So for now we will eat the 10
+bytes.
 
 
 Where do we use datetime vs. systime
@@ -56,7 +60,8 @@ Time Skew.
 
 On first power on we don't have any RTC time.  It needs to be initialized.
 We read the SD to find the last known time.  We use this as a starting point
-for the RTC.
+for the RTC.  This can come from last SYNC found or in case of last resort
+from the Incept Time written in the DBLK directory when formatted.
 
 Later, we can obtain time from the network or from the GPS.  Network time is
 not as good as GPS but still allowed.  GPS time is the best.
