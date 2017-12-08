@@ -27,11 +27,15 @@ setup(
     install_requires = ['future',
                         'treelib',
                         'temporenc',
-                        'enum',
+                        'enum34',
     ],
     provides         = ['factspp'],
     packages         = ['factspp'],
+    package_data     = {
+        'factspp.': ['template.*'],
+        'factspp.': ['*.tsv'],
+    },
     entry_points     = {
-        'console_scripts': ['factsapp=factspp.__main__:main'],
-    }
+        'console_scripts': ['factspp=factspp.__main__:main'],
+    },
 )
