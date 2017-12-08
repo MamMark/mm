@@ -1032,16 +1032,15 @@ implementation {
     si446x_int_state_t istate;
     si446x_int_clr_t   int_clr;
     uint32_t t0, t1;
-    si446x_device_state_t new_state;
 
-    new_state = call Si446xCmd.fast_device_state();
+    call Si446xCmd.fast_device_state();
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
     int_clr.ph_pend = 0xff;
     int_clr.modem_pend = 0xff;
     int_clr.chip_pend = 0xff;
     call Si446xCmd.ll_getclr_ints(&int_clr, &istate);
     t0 = call Platform.usecsRaw();
-    new_state = call Si446xCmd.change_state(RC_READY, TRUE);
+    call Si446xCmd.change_state(RC_READY, TRUE);
     t1 = call Platform.usecsRaw();
 
     call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
@@ -1049,7 +1048,7 @@ implementation {
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
     call Si446xCmd.ll_getclr_ints(&int_clr, &istate);
     nop();                              /* BRK */
-
+    t1 -= t0;
     global_ioc.rx_bad_crcs++;
     return fsm_results(t->next_state, E_NONE);
   }
