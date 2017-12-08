@@ -51,12 +51,38 @@
 
 interface TagnetPayload {
   /**
+   * Adds a block of bytes (byte string) to the payload (wrapping
+   * it in a tlv). Sets the payload type to list of tlvs
+   *
+   * @param   msg           pointer to message buffer containing the payload
+   * @param   b             bytestring to be added to the payload as a tlv
+   * @return  uint8_t       amount added to the payload (length of tlv)
+   */
+  command uint8_t           add_block(message_t *msg, void *b, uint8_t length);
+  /**
+   * Adds a retry delay value (millisec) to the payload (wrapping it in a
+   * tlv). Sets the payload type to list of tlvs
+   *
+   * @param   msg           pointer to message buffer containing the payload
+   * @param   n             delay to be added to the payload as a tlv
+   * @return  uint8_t       amount added to the payload (length of tlv)
+   */
+  command uint8_t           add_delay(message_t *msg,  uint32_t n);
+  /**
    * Adds an eof value to the payload. Sets the payload type to list of tlvs
    *
    * @param   msg           pointer to message buffer containing the payload
    * @return  uint8_t       amount added to the payload (length of tlv)
    */
   command uint8_t           add_eof(message_t *msg);
+  /**
+   * Adds an app error value to the payload. Sets the payload type to list of tlvs
+   *
+   * @param   msg           pointer to message buffer containing the payload
+   * @param   err           app error code to be added to the payload as a tlv
+   * @return  uint8_t       amount added to the payload (length of tlv)
+   */
+  command uint8_t           add_error(message_t *msg, int32_t err);
   /**
    * Adds an gps_xyz value to the payload (wrapping it in a tlv). Sets the
    * payload type to list of tlvs
@@ -101,6 +127,15 @@ interface TagnetPayload {
    * @return  uint8_t       amount added to the payload (length of tlv)
    */
   command uint8_t           add_string(message_t *msg, void *b, uint8_t length);
+  /**
+   * Adds an size value to the payload (wrapping it in a tlv). Sets the
+   * payload type to list of tlvs
+   *
+   * @param   msg           pointer to message buffer containing the payload
+   * @param   n             size value to be added to the payload as a tlv
+   * @return  uint8_t       amount added to the payload (length of tlv)
+   */
+  command uint8_t           add_size(message_t *msg,  int32_t n);
   /**
    * Adds a tlv to the payload, (copies it)
    *

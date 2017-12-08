@@ -75,6 +75,12 @@ implementation {
     switch (call THdr.get_message_type(msg)) {    // process packet type
       case TN_POLL:
         this_tlv = call TPload.first_element(msg);
+        if ((this_tlv) && (call TTLV.get_tlv_type(this_tlv) == TN_TLV_INTEGER)) {
+        d = call TTLV.tlv_to_integer(this_tlv);
+        if (d) {
+          nop();
+        }
+      }
         // zzz get request parameters from payload
         call TPload.reset_payload(msg);
         call THdr.set_error(msg, TE_PKT_OK);

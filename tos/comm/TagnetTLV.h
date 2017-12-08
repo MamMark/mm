@@ -55,6 +55,12 @@ typedef enum {
   TN_TLV_EOF        = 9,
   TN_TLV_VERSION    = 10,
   TN_TLV_BLK        = 11,
+  TN_TLV_RECNUM     = 12,
+  TN_TLV_RECCNT     = 13,
+  TN_TLV_DELAY      = 14,
+  TN_TLV_ERROR      = 15,
+  TN_TLV_APP1       = 20,
+  TN_TLV_APP2       = 21,
   _TN_TLV_COUNT   // limit of enum values
 } tagnet_tlv_type_t;
 

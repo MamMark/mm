@@ -63,7 +63,7 @@ implementation {
         case TN_POLL:
         case TN_GET:
           tn_trace_rec(my_id, 2);
-          if (call Adapter.get_value(msg, &l)) {
+          if (call Adapter.get_value(msg, &ln)) {
             return TRUE;
           }
           break;

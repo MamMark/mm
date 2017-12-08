@@ -48,6 +48,16 @@
 
 interface TagnetTLV {
   /**
+   * Convert a byte array into the tlv
+   *
+   * @param   s             pointer to byte array to be copied
+   * @param   length        number of bytes to copy from source
+   * @param   t             pointer of where to place the copy
+   * @param   limit         maximum bytes available at destination buffer
+   * @return  uint32_t      length of new tlv
+   */
+  command uint32_t           block_to_tlv(uint8_t *s, uint32_t length, tagnet_tlv_t *t, uint32_t limit);
+  /**
    * Copy a tlv to another location. The copy length is determined from
    * the source tlv. A limit parameter is also passed to determine if
    * the destination is not large enough to hold the source tlv
@@ -59,27 +69,45 @@ interface TagnetTLV {
    */
   command uint32_t          copy_tlv(tagnet_tlv_t *t, tagnet_tlv_t *d, uint32_t limit);
   /**
+   * Convert delay value into a Tagnet TLV and store in destination location
+   *
+   * @param   i             integer value to store in the tlv
+   * @param   t             pointer of tlv to use as destination location
+   * @param   limit         maximum bytes available at destination tlv
+   * @return  uint32_t      number of bytes stored in destination
+   */
+  command uint32_t          delay_to_tlv(int32_t i, tagnet_tlv_t *t, uint32_t limit);
+  /**
    * Check to see if two tlvs match. All fields are compared
    *
-   * @param   s             point to first tlv
-   * @param   t             point to second tlv
+   * @param   s            point to first tlv
+   * @param   t            point to second tlv
    * @return  bool         TRUE if tlvs exactly match
    */
-  command bool              eq_tlv(tagnet_tlv_t *s, tagnet_tlv_t *t);
+  command bool             eq_tlv(tagnet_tlv_t *s, tagnet_tlv_t *t);
+  /**
+   * Convert error value into a Tagnet TLV and store in destination location
+   *
+   * @param   err           error value to store in the tlv
+   * @param   t             pointer of tlv to use as destination location
+   * @param   limit         maximum bytes available at destination tlv
+   * @return  uint32_t      number of bytes stored in destination
+   */
+  command uint32_t          error_to_tlv(int32_t err, tagnet_tlv_t *t, uint32_t limit);
   /**
    * Get length of entire tlv, including all three fields
    *
    * @param   t             pointer to tlv
-   * @return  uint8_t       total tlv length
+   * @return  uint32_t      total tlv length
    */
-  command uint8_t           get_len(tagnet_tlv_t *t);
+  command uint32_t          get_len(tagnet_tlv_t *t);
   /**
    * Get length of the tlv val field only
    *
    * @param   t             pointer to tlv
-   * @return  uint8_t       value of tlv length field
+   * @return  uint32_t      value of tlv length field
    */
-  command uint8_t           get_len_v(tagnet_tlv_t *t);
+  command uint32_t          get_len_v(tagnet_tlv_t *t);
   /**
    * Get pointer to the next tlv. This is determined by advancing the pointer
    * to the input tlv by adding its length and the fixed header size. Various
@@ -125,6 +153,15 @@ interface TagnetTLV {
    */
   command uint32_t          offset_to_tlv(int32_t i, tagnet_tlv_t *t, uint32_t limit);
   /**
+   * Convert file size value into a Tagnet TLV and store in destination location
+   *
+   * @param   i             integer value to store in the tlv
+   * @param   t             pointer of tlv to use as destination location
+   * @param   limit         maximum bytes available at destination tlv
+   * @return  uint32_t      number of bytes stored in destination
+   */
+  command uint32_t          size_to_tlv(int32_t i, tagnet_tlv_t *t, uint32_t limit);
+  /**
    * Determine if this tlv needs to be handled specially
    *
    * @param   t            pointer of tlv to check
@@ -153,6 +190,26 @@ interface TagnetTLV {
    * @return  uint32_t      length of new tlv
    */
   command uint32_t           string_to_tlv(uint8_t *s, uint32_t length, tagnet_tlv_t *t, uint32_t limit);
+  /**
+   * Convert tlv to block. tlv must be a data_block tlv tagnet type
+   *
+   * @param   t             pointer of tlv to convert
+   * @param   len           pointer to int for returning length of string
+   * @return  uint8_t*      pointer to string  (limited access to life of msg)
+   */
+  command uint8_t          *tlv_to_block(tagnet_tlv_t *t, uint32_t *len);
+  /**
+   * Convert tlv to delay value (ms). tlv must be an delay tlv tagnet type
+   *
+   * @param   t             pointer of tlv to convert
+   * @return  uint32_t      integer value from tlv. zero if can't be converted
+   */
+  command int32_t           tlv_to_delay(tagnet_tlv_t *t);
+  /**
+   * Convert tlv to integer. tlv must be an integer tlv tagnet type
+   *
+   * @param   t             pointer of tlv to convert
+   * @return  int32_t       integer value from tlv. zero if can't be converted
    */
   command int32_t           tlv_to_error(tagnet_tlv_t *t);
   /**
@@ -170,7 +227,14 @@ interface TagnetTLV {
    */
   command int32_t           tlv_to_offset(tagnet_tlv_t *t);
   /**
-   * Convert tlv to string. tlv must be a string or data_block tlv tagnet type
+   * Convert tlv to file size (int32). tlv must be a size tlv tagnet type
+   *
+   * @param   t             pointer of tlv to convert
+   * @return  uint32_t      integer value from tlv. zero if can't be converted
+   */
+  command int32_t           tlv_to_size(tagnet_tlv_t *t);
+  /**
+   * Convert tlv to string. tlv must be a string tlv tagnet type
    *
    * @param   t             pointer of tlv to convert
    * @param   len           pointer to int for returning length of string

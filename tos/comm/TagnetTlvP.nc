@@ -299,8 +299,12 @@ implementation {
       case TN_TLV_SIZE:
       case TN_TLV_OFFSET:
       case TN_TLV_NODE_ID:
+      case TN_TLV_NODE_NAME:
       case TN_TLV_GPS_XYZ:
       case TN_TLV_UTC_TIME:
+      case TN_TLV_RECNUM:
+      case TN_TLV_RECCNT:
+      case TN_TLV_ERROR:
         return TRUE;
       default:
         return FALSE;
