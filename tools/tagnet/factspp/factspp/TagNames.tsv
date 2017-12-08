@@ -2,7 +2,7 @@ ignore	GET	PUT	HEAD	DEL	Request Params	Response Params	Adapter Component	Interfa
 	x		 		<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	PollEvent	uses	"tag"	"poll"	<nodeid:010203040506>	"ev"		
 	x		 			<int>	TagnetIntegerAdapterP	TagnetAdapter	int32_t	PollCount	uses	"tag"	"poll"	<nodeid:010203040506>	"cnt"		
 	x		 			<gps_xyz>	TagnetGpsXyzAdapterP	TagnetAdapter	tagnet_gps_xyz_t	InfoSensGpsXyz	uses	"tag"	"info"	<nodeid:010203040506>	"sens"	"gps"	"xyz"
-x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetDataLogAdapterP					"tag"	"sd"	<nodeid:010203040506>	0	"data"	
+	x	x	x	x	<iota>, <count>	<iota>, <count>, <block>, <error>	TagnetDblkByteAdapterP	TagnetAdapter	tagnet_dblk_bytes_t	DblkBytes	uses	"tag"	"sd"	<nodeid:010203040506>	0	"dblk"	0
 	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetImageAdapterP					"tag"	"sd"	<nodeid:010203040506>	0	"img"	
 x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetRuleSetsAdapterP					"tag"	"sd"	<nodeid:010203040506>	0	"rules"	
 x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetConfigAdapterP					"tag"	"sd"	<nodeid:010203040506>	0	"config"	

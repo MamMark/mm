@@ -38,6 +38,9 @@ implementation {
   TagnetC.PollCount             -> TagnetPollExecC.PollCount;
   TagnetC.PollEvent             -> TagnetPollExecC.PollEvent;
 
+  components DblkByteStorageC;
+  TagnetC.DblkBytes             -> DblkByteStorageC.DblkBytes;
+
   components new TimerMilliC()  as Timer0;
   TagnetMonitorP.rcTimer        -> Timer0;
   components new TimerMilliC()  as Timer1;

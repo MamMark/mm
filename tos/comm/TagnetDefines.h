@@ -1,18 +1,20 @@
 // THIS IS AN AUTO-GENERATED FILE, DO NOT EDIT
 
 typedef enum {                   //      (parent) name
-  TN_20_ID              =    20, //  (<nodeid:010203040506>) nib
-  TN_21_ID              =    21, //  (<nodeid:010203040506>) running
+  TN_22_ID              =    22, //  (<nodeid:010203040506>) nib
+  TN_20_ID              =    20, //  (<nodeid:010203040506>) backup
+  TN_21_ID              =    21, //  (<nodeid:010203040506>) golden
   TN_11_ID              =    11, //  (   tag    ) sd
   TN_10_ID              =    10, //  (   gps    ) xyz
   TN_13_ID              =    13, //  (<nodeid:010203040506>) 0
   TN_12_ID              =    12, //  (    sd    ) <nodeid:010203040506>
-  TN_15_ID              =    15, //  (   tag    ) sys
-  TN_14_ID              =    14, //  (    0     ) img
-  TN_17_ID              =    17, //  (<nodeid:010203040506>) active
-  TN_16_ID              =    16, //  (   sys    ) <nodeid:010203040506>
-  TN_19_ID              =    19, //  (<nodeid:010203040506>) golden
-  TN_18_ID              =    18, //  (<nodeid:010203040506>) backup
+  TN_15_ID              =    15, //  (   dblk   ) 0
+  TN_14_ID              =    14, //  (    0     ) dblk
+  TN_17_ID              =    17, //  (   tag    ) sys
+  TN_16_ID              =    16, //  (    0     ) img
+  TN_19_ID              =    19, //  (<nodeid:010203040506>) active
+  TN_18_ID              =    18, //  (   sys    ) <nodeid:010203040506>
+  TN_23_ID              =    23, //  (<nodeid:010203040506>) running
   TN_1_ID               =     1, //  (   root   ) tag
   TN_0_ID               =     0, //  (    _     ) root
   TN_3_ID               =     3, //  (   poll   ) <nodeid:010203040506>
@@ -23,11 +25,12 @@ typedef enum {                   //      (parent) name
   TN_6_ID               =     6, //  (   tag    ) info
   TN_9_ID               =     9, //  (   sens   ) gps
   TN_8_ID               =     8, //  (<nodeid:010203040506>) sens
-  TN_LAST_ID            =    22,
+  TN_LAST_ID            =    24,
   TN_ROOT_ID            =     0,
   TN_MAX_ID             =  65000,
 } tn_ids_t;
 
+#define  TN_22_UQ                "TN_22_UQ"
 #define  TN_20_UQ                "TN_20_UQ"
 #define  TN_21_UQ                "TN_21_UQ"
 #define  TN_11_UQ                "TN_11_UQ"
@@ -40,6 +43,7 @@ typedef enum {                   //      (parent) name
 #define  TN_16_UQ                "TN_16_UQ"
 #define  TN_19_UQ                "TN_19_UQ"
 #define  TN_18_UQ                "TN_18_UQ"
+#define  TN_23_UQ                "TN_23_UQ"
 #define  TN_1_UQ                 "TN_1_UQ"
 #define  TN_0_UQ                 "TN_0_UQ"
 #define  TN_3_UQ                 "TN_3_UQ"
@@ -77,13 +81,15 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   { TN_11_ID, "\01\02sd", "\01\04help", TN_11_UQ },
   { TN_12_ID, "\05\06\01\02\03\04\05\06", "\01\04help", TN_12_UQ },
   { TN_13_ID, "\02\01\00", "\01\04help", TN_13_UQ },
-  { TN_14_ID, "\01\03img", "\01\04help", TN_14_UQ },
-  { TN_15_ID, "\01\03sys", "\01\04help", TN_15_UQ },
-  { TN_16_ID, "\05\06\01\02\03\04\05\06", "\01\04help", TN_16_UQ },
-  { TN_17_ID, "\01\06active", "\01\04help", TN_17_UQ },
-  { TN_18_ID, "\01\06backup", "\01\04help", TN_18_UQ },
-  { TN_19_ID, "\01\06golden", "\01\04help", TN_19_UQ },
-  { TN_20_ID, "\01\03nib", "\01\04help", TN_20_UQ },
-  { TN_21_ID, "\01\07running", "\01\04help", TN_21_UQ },
+  { TN_14_ID, "\01\04dblk", "\01\04help", TN_14_UQ },
+  { TN_15_ID, "\02\01\00", "\01\04help", TN_15_UQ },
+  { TN_16_ID, "\01\03img", "\01\04help", TN_16_UQ },
+  { TN_17_ID, "\01\03sys", "\01\04help", TN_17_UQ },
+  { TN_18_ID, "\05\06\01\02\03\04\05\06", "\01\04help", TN_18_UQ },
+  { TN_19_ID, "\01\06active", "\01\04help", TN_19_UQ },
+  { TN_20_ID, "\01\06backup", "\01\04help", TN_20_UQ },
+  { TN_21_ID, "\01\06golden", "\01\04help", TN_21_UQ },
+  { TN_22_ID, "\01\03nib", "\01\04help", TN_22_UQ },
+  { TN_23_ID, "\01\07running", "\01\04help", TN_23_UQ },
 };
 

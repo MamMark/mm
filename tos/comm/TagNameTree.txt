@@ -240,3 +240,27 @@ root
             |-- golden
             |-- nib
             +-- running
+root
++-- tag
+    |-- info
+    |   +-- <nodeid:010203040506>
+    |       +-- sens
+    |           +-- gps
+    |               +-- xyz
+    |-- poll
+    |   +-- <nodeid:010203040506>
+    |       |-- cnt
+    |       +-- ev
+    |-- sd
+    |   +-- <nodeid:010203040506>
+    |       +-- 0
+    |           |-- dblk
+    |           |   +-- 0
+    |           +-- img
+    +-- sys
+        +-- <nodeid:010203040506>
+            |-- active
+            |-- backup
+            |-- golden
+            |-- nib
+            +-- running

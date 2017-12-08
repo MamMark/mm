@@ -71,6 +71,12 @@ typedef enum {
   TE_BUSY,
 } tagnet_error_t;
 
+typedef enum {
+  TN_E_APP_OK            =  0,
+  TN_E_APP_EOF           =  1,
+  TN_E_APP_BIS           =  2,
+} tagnet_app_err_t;
+
 typedef struct tagnet_name_meta_t {
   uint8_t     this;
   uint8_t     offset;
