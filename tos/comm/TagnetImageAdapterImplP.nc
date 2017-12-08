@@ -255,8 +255,7 @@ implementation {
     tagnet_tlv_t    *offset_tlv;
     uint32_t         offset = 0;
     tagnet_tlv_t    *eof_tlv = call TPload.first_element(msg);
-    uint16_t         dlen = 0;
-    uint8_t          blen;              /* used when we need a 8 bit length */
+    uint32_t         dlen = 0;
     uint8_t         *dptr = NULL;
     error_t          err;
     uint8_t          ste[1];    /* just to be clear, a very small array :-) */
@@ -350,8 +349,7 @@ implementation {
             dptr = (uint8_t *) eof_tlv;
             eof_tlv = NULL;
           } else if (call TTLV.get_tlv_type(eof_tlv) == TN_TLV_BLK) {
-            dptr = call TTLV.tlv_to_string(eof_tlv, &blen);
-            dlen = blen;
+            dptr = call TTLV.tlv_to_string(eof_tlv, &dlen);
             eof_tlv = NULL;
           } else if (call TTLV.get_tlv_type(eof_tlv) != TN_TLV_EOF) {
             return do_reject(msg, TE_BUSY);   // no data or eof found

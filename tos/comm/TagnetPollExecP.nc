@@ -57,7 +57,7 @@ module TagnetPollExecP {
 implementation {
   int32_t poll_count = 0;
 
-  command bool PollCount.get_value(int32_t *t, uint8_t *l) {
+  command bool PollCount.get_value(int32_t *t, uint32_t *l) {
     nop();
     nop();
     *t = poll_count;
@@ -65,8 +65,9 @@ implementation {
     return TRUE;
   }
 
-  command bool PollEvent.get_value(message_t *msg, uint8_t *l) {
+  command bool PollEvent.get_value(message_t *msg, uint32_t *l) {
     tagnet_tlv_t    *this_tlv;
+    int32_t          d;
     nop();
     nop();
     call THdr.set_response(msg); // zzz need to move inside name match

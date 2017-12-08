@@ -53,8 +53,8 @@ interface TagnetAdapter<tagnet_adapter_type>
    * are integer, string, utc_time.
    *
    * @param   'tagnet_adapter_type *t'   pointer to an instance of adapter type
-   * @param   'uint8_t             *len' pointer to length available/used
+   * @param   'uint32_t            *len' pointer to length available/used
    * @return  'bool'                     TRUE if value is valid
    */
-  command bool get_value(tagnet_adapter_type *t, uint8_t *len);
+  command bool get_value(tagnet_adapter_type *t, uint32_t *len);
 }

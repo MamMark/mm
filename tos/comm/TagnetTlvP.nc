@@ -111,8 +111,8 @@ implementation {
   while (0)
 
 
-  uint8_t _copy_bytes(uint8_t *s, uint8_t *d, uint8_t l) {
-    uint8_t x = l;
+  uint32_t _copy_bytes(uint8_t *s, uint8_t *d, uint32_t l) {
+    uint32_t x = l;
 
     while (x) {
       *d++ = *s++;
@@ -122,7 +122,7 @@ implementation {
   }
 
 
-  bool  _cmp_bytes(uint8_t *s, uint8_t *d, uint8_t l) {
+  bool  _cmp_bytes(uint8_t *s, uint8_t *d, uint32_t l) {
     while (l) {
       if (*d++ != *s++) return FALSE;
       l--;
@@ -131,8 +131,69 @@ implementation {
   }
 
 
-  command uint8_t   TagnetTLV.copy_tlv(tagnet_tlv_t *s,  tagnet_tlv_t *d, uint8_t limit) {
-    uint8_t l = SIZEOF_TLV(s);
+  uint32_t str2tlv(tagnet_tlv_type_t ttype, uint8_t *s, uint32_t length, tagnet_tlv_t *t, uint32_t limit) {
+    if ((t) && ((length + sizeof(tagnet_tlv_t)) < limit)) {
+      _copy_bytes(s, (uint8_t *)&t->val[0], length);
+      t->len = length;
+      t->typ = ttype;
+      return SIZEOF_TLV(t);
+    }
+    return 0;
+  }
+
+
+  uint8_t *tlv2str(tagnet_tlv_type_t ttype, tagnet_tlv_t *t, uint32_t *len) {
+    if ((t) && (t->typ == ttype)) {
+      uint8_t  *s = (uint8_t *) &t->val;
+      *len = t->len;
+      return s;
+    }
+    return NULL;
+  }
+
+  uint32_t int2tlv(tagnet_tlv_type_t ttype, int32_t i, tagnet_tlv_t *t, uint32_t limit) {
+    int32_t    c = 0;
+    bool       first = TRUE;
+    int32_t    x;
+    uint8_t    v;
+    if ((t) && ((sizeof(int32_t) + sizeof(tagnet_tlv_t)) < limit)) {
+      for (x = sizeof(int)-1; x >= 0; x--) {
+        v = (uint8_t) (i >> (x*8));
+        if (v || !first) {
+          t->val[c++] = v;
+          first = FALSE;
+        }
+      }
+      if (c == 0) t->val[c++] = 0;
+      t->len = c;
+      t->typ = ttype;
+      return SIZEOF_TLV(t);
+    }
+    return 0;
+  }
+
+    int32_t tlv2int(tagnet_tlv_type_t ttype, tagnet_tlv_t *t) {
+    uint8_t        x;
+    int32_t        v = 0;
+
+    if (!t || t->typ != ttype || t->len > sizeof(uint32_t))
+      tn_panic(7, (parg_t) t, t->typ, t->len, ttype);
+    if ((t) && (t->typ == ttype) && (t->len <= 4)) {
+      for (x = 0; x < t->len; x++) {
+        v = t->val[x] + (v << 8);
+      }
+    }
+    return v;
+  }
+
+
+  command uint32_t   TagnetTLV.block_to_tlv(uint8_t *s, uint32_t length,
+                                                    tagnet_tlv_t *t, uint32_t limit) {
+    return str2tlv(TN_TLV_BLK, s, length, t, limit);
+  }
+
+  command uint32_t   TagnetTLV.copy_tlv(tagnet_tlv_t *s,  tagnet_tlv_t *d, uint32_t limit) {
+    uint32_t l = SIZEOF_TLV(s);
 
     if (l > limit)
       tn_panic(1, l, limit, 0, 0);
@@ -148,13 +209,13 @@ implementation {
   }
 
 
-  command uint8_t   TagnetTLV.get_len(tagnet_tlv_t *t) {
+  command uint32_t   TagnetTLV.get_len(tagnet_tlv_t *t) {
     if (t->typ >= _TN_TLV_COUNT)
       tn_panic(3, (parg_t) t, t->typ, t->len, 0);
     return SIZEOF_TLV(t);
   }
 
-  command uint8_t   TagnetTLV.get_len_v(tagnet_tlv_t *t) {
+  command uint32_t   TagnetTLV.get_len_v(tagnet_tlv_t *t) {
     if (t->typ >= _TN_TLV_COUNT)
       tn_panic(4, (parg_t) t, t->typ, t->len, 0);
     return t->len;
@@ -162,9 +223,9 @@ implementation {
 
   command
 //    __attribute__((optimize("O0")))
-    tagnet_tlv_t  *TagnetTLV.get_next_tlv(tagnet_tlv_t *t, uint8_t limit) {
+    tagnet_tlv_t  *TagnetTLV.get_next_tlv(tagnet_tlv_t *t, uint32_t limit) {
     tagnet_tlv_t  *next_tlv;
-    uint8_t        nx;
+    uint32_t        nx;
 
     if (t->len == 0 || t->typ == TN_TLV_NONE)
       return NULL;
@@ -192,7 +253,7 @@ implementation {
   }
 
 
-  command uint8_t  TagnetTLV.gps_xyz_to_tlv(tagnet_gps_xyz_t *xyz,  tagnet_tlv_t *t, uint8_t limit) {
+  command uint32_t  TagnetTLV.gps_xyz_to_tlv(tagnet_gps_xyz_t *xyz,  tagnet_tlv_t *t, uint32_t limit) {
     int32_t    x;
     uint8_t   *v = (void *) xyz;
 
@@ -209,42 +270,27 @@ implementation {
     return 0;
   }
 
-  void int2tlv(int32_t i, tagnet_tlv_t *t, uint8_t limit) {
-    int32_t    c = 0;
-    bool       first = TRUE;
-    int32_t    x;
-    uint8_t    v;
-    for (x = sizeof(int)-1; x >= 0; x--) {
-      v = (uint8_t) (i >> (x*8));
-      if (v || !first) {
-        t->val[c++] = v;
-        first = FALSE;
-      }
-    }
-    if (c == 0) t->val[c++] = 0;
-    t->len = c;
+  command uint32_t  TagnetTLV.delay_to_tlv(int32_t i,  tagnet_tlv_t *t, uint32_t limit) {
+    return int2tlv(TN_TLV_DELAY, i, t, limit);
   }
 
 
-  command uint8_t  TagnetTLV.integer_to_tlv(int32_t i,  tagnet_tlv_t *t, uint8_t limit) {
-    // assert n.to_bytes(length, 'big') == bytes( (n >> i*8) & 0xff for i in reversed(range(length)))
-    if ((t) && ((sizeof(int32_t) + sizeof(tagnet_tlv_t)) < limit)) {
-      int2tlv(i, t, limit);
-      t->typ = TN_TLV_INTEGER;
-      return SIZEOF_TLV(t);
-    }
-    return 0;
+  command uint32_t  TagnetTLV.error_to_tlv(int32_t err,  tagnet_tlv_t *t, uint32_t limit) {
+    return int2tlv(TN_TLV_ERROR, err, t, limit);
   }
 
 
-  command uint8_t  TagnetTLV.offset_to_tlv(int32_t i, tagnet_tlv_t *t, uint8_t limit) {
-    // assert n.to_bytes(length, 'big') == bytes( (n >> i*8) & 0xff for i in reversed(range(length)))
-    if ((t) && ((sizeof(int32_t) + sizeof(tagnet_tlv_t)) < limit)) {
-      int2tlv(i, t, limit);
-      t->typ = TN_TLV_OFFSET;
-      return SIZEOF_TLV(t);
-    }
-    return 0;
+  command uint32_t  TagnetTLV.integer_to_tlv(int32_t i,  tagnet_tlv_t *t, uint32_t limit) {
+    return int2tlv(TN_TLV_INTEGER, i, t, limit);
+  }
+
+
+  command uint32_t  TagnetTLV.offset_to_tlv(int32_t i, tagnet_tlv_t *t, uint32_t limit) {
+    return int2tlv(TN_TLV_OFFSET, i, t, limit);
+  }
+
+  command uint32_t  TagnetTLV.size_to_tlv(int32_t i, tagnet_tlv_t *t, uint32_t limit) {
+    return int2tlv(TN_TLV_SIZE, i, t, limit);
   }
 
   command bool   TagnetTLV.is_special_tlv(tagnet_tlv_t *t) {
@@ -263,7 +309,7 @@ implementation {
   }
 
 
-  command int   TagnetTLV.repr_tlv(tagnet_tlv_t *t,  uint8_t *b, uint8_t limit) {
+  command int   TagnetTLV.repr_tlv(tagnet_tlv_t *t,  uint8_t *b, uint32_t limit) {
     switch (t->typ) {
       case TN_TLV_STRING:
         if (t->len > limit) return -1;
@@ -274,46 +320,37 @@ implementation {
     return -1;   // shouldn't get here
   }
 
-  command uint8_t   TagnetTLV.string_to_tlv(uint8_t *s, uint8_t length,
-                                                    tagnet_tlv_t *t, uint8_t limit) {
-    if ((t) && ((length + sizeof(tagnet_tlv_t)) < limit)) {
-      _copy_bytes(s, (uint8_t *)&t->val[0], length);
-      t->len = length;
-      t->typ = TN_TLV_STRING;
-      return SIZEOF_TLV(t);
-    }
-    return 0;
+  command uint32_t   TagnetTLV.string_to_tlv(uint8_t *s, uint32_t length,
+                                                    tagnet_tlv_t *t, uint32_t limit) {
+    return str2tlv(TN_TLV_STRING, s, length, t, limit);
   }
 
-  int32_t tlv2int(tagnet_tlv_t *t, tagnet_tlv_type_t y) {
-    uint8_t        x;
-    int32_t        v = 0;
+  command uint8_t   *TagnetTLV.tlv_to_block(tagnet_tlv_t *t, uint32_t *len) {
+    return tlv2str(TN_TLV_BLK, t, len);
+  }
 
-    if (!t || t->typ != y || t->len > sizeof(uint32_t))
-      tn_panic(7, (parg_t) t, t->typ, t->len, y);
-    if ((t) && (t->typ == y) && (t->len <= 4)) {
-      for (x = 0; x < t->len; x++) {
-        v = t->val[x] + (v << 8);
-      }
-    }
-    return v;
+  command int32_t   TagnetTLV.tlv_to_delay(tagnet_tlv_t *t) {
+    return tlv2int(TN_TLV_DELAY, t);
+  }
+
+  command int32_t   TagnetTLV.tlv_to_error(tagnet_tlv_t *t) {
+    return tlv2int(TN_TLV_ERROR, t);
   }
 
   command int32_t   TagnetTLV.tlv_to_integer(tagnet_tlv_t *t) {
-    return tlv2int(t, TN_TLV_INTEGER);
+    return tlv2int(TN_TLV_INTEGER, t);
   }
 
   command int32_t   TagnetTLV.tlv_to_offset(tagnet_tlv_t *t) {
-    return tlv2int(t, TN_TLV_OFFSET);
+    return tlv2int(TN_TLV_OFFSET, t);
   }
 
-  command uint8_t   *TagnetTLV.tlv_to_string(tagnet_tlv_t *t, uint8_t *len) {
-    if ((t) && (t->typ == TN_TLV_STRING)) {
-      uint8_t  *s = (uint8_t *) &t->val;
-      *len = t->len;
-      return s;
-    }
-    return NULL;
+  command int32_t   TagnetTLV.tlv_to_size(tagnet_tlv_t *t) {
+    return tlv2int(TN_TLV_SIZE, t);
+  }
+
+  command uint8_t   *TagnetTLV.tlv_to_string(tagnet_tlv_t *t, uint32_t *len) {
+    return tlv2str(TN_TLV_STRING, t, len);
   }
 
   command image_ver_t   *TagnetTLV.tlv_to_version(tagnet_tlv_t *t) {
@@ -323,7 +360,7 @@ implementation {
     return NULL;
   }
 
-  command uint8_t   TagnetTLV.version_to_tlv(image_ver_t *v, tagnet_tlv_t *t, uint8_t limit) {
+  command uint32_t   TagnetTLV.version_to_tlv(image_ver_t *v, tagnet_tlv_t *t, uint32_t limit) {
     uint8_t         i;
     uint8_t        *vb = (uint8_t *) v;
 

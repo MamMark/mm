@@ -49,8 +49,7 @@ implementation {
   enum { my_adapter_id = unique(UQ_TAGNET_ADAPTER_LIST) };
 
   event bool Super.evaluate(message_t *msg) {
-    int32_t                 v = 0;
-    uint8_t                 l = 0;
+    uint32_t               ln = 0;
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t    *help_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].help_tlv;
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
@@ -94,7 +93,7 @@ implementation {
   }
 
   event void Super.add_value_tlv(message_t* msg) {
-    uint8_t                 l = call TPload.get_len(msg);
+    uint32_t                 l = call TPload.get_len(msg);
 
     call Adapter.get_value(msg, &l);
   }

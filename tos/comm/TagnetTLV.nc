@@ -57,7 +57,7 @@ interface TagnetTLV {
    * @param   limit         maximum bytes available at destination tlv
    * @return  uint8_t       total number of bytes copied
    */
-  command uint8_t           copy_tlv(tagnet_tlv_t *t, tagnet_tlv_t *d, uint8_t limit);
+  command uint32_t          copy_tlv(tagnet_tlv_t *t, tagnet_tlv_t *d, uint32_t limit);
   /**
    * Check to see if two tlvs match. All fields are compared
    *
@@ -89,7 +89,7 @@ interface TagnetTLV {
    * @param   limit         limit to how far tlv pointer can be advanced
    * @return  tagnet_tlv_t  pointer to next tlv. NULL if no valid tlv found or beyond limit
    */
-  command tagnet_tlv_t     *get_next_tlv(tagnet_tlv_t *t, uint8_t limit);
+  command tagnet_tlv_t     *get_next_tlv(tagnet_tlv_t *t, uint32_t limit);
   /**
    * Get the type of a tlv
    *
@@ -103,27 +103,27 @@ interface TagnetTLV {
    * @param   xyz           gps_xyz value to store in the tlv
    * @param   t             pointer of tlv to use as destination location
    * @param   limit         maximum bytes available at destination tlv
-   * @return  uint8_t       number of bytes stored in destination
+   * @return  uint32_t      number of bytes stored in destination
    */
-  command uint8_t           gps_xyz_to_tlv(tagnet_gps_xyz_t *xyz, tagnet_tlv_t *t, uint8_t limit);
+  command uint32_t          gps_xyz_to_tlv(tagnet_gps_xyz_t *xyz, tagnet_tlv_t *t, uint32_t limit);
   /**
    * Convert integer value into a Tagnet TLV and store in destination location
    *
    * @param   i             integer value to store in the tlv
    * @param   t             pointer of tlv to use as destination location
    * @param   limit         maximum bytes available at destination tlv
-   * @return  uint8_t       number of bytes stored in destination
+   * @return  uint32_t      number of bytes stored in destination
    */
-  command uint8_t           integer_to_tlv(int32_t i, tagnet_tlv_t *t, uint8_t limit);
+  command uint32_t          integer_to_tlv(int32_t i, tagnet_tlv_t *t, uint32_t limit);
   /**
    * Convert file offset value into a Tagnet TLV and store in destination location
    *
    * @param   i             integer value to store in the tlv
    * @param   t             pointer of tlv to use as destination location
    * @param   limit         maximum bytes available at destination tlv
-   * @return  uint8_t       number of bytes stored in destination
+   * @return  uint32_t      number of bytes stored in destination
    */
-  command uint8_t           offset_to_tlv(int32_t i, tagnet_tlv_t *t, uint8_t limit);
+  command uint32_t          offset_to_tlv(int32_t i, tagnet_tlv_t *t, uint32_t limit);
   /**
    * Determine if this tlv needs to be handled specially
    *
@@ -140,9 +140,9 @@ interface TagnetTLV {
    * @param   t             pointer of tlv to represent
    * @param   b             pointer to buffer where to place the ascii representation
    * @param   limit         maximum bytes available at destination buffer
-   * @return  uint8_t       length of new tlv
+   * @return  uint32_t      length of new tlv
    */
-  command int               repr_tlv(tagnet_tlv_t *t,  uint8_t *b, uint8_t limit);
+  command int               repr_tlv(tagnet_tlv_t *t,  uint8_t *b, uint32_t limit);
   /**
    * Copy the string to the tlv
    *
@@ -150,21 +150,23 @@ interface TagnetTLV {
    * @param   length        number of bytes to copy from source
    * @param   t             pointer of where to place the copy
    * @param   limit         maximum bytes available at destination buffer
-   * @return  uint8_t       length of new tlv
+   * @return  uint32_t      length of new tlv
    */
-  command uint8_t           string_to_tlv(uint8_t *s, uint8_t length, tagnet_tlv_t *t, uint8_t limit);
+  command uint32_t           string_to_tlv(uint8_t *s, uint32_t length, tagnet_tlv_t *t, uint32_t limit);
+   */
+  command int32_t           tlv_to_error(tagnet_tlv_t *t);
   /**
    * Convert tlv to integer. tlv must be an integer tlv tagnet type
    *
    * @param   t             pointer of tlv to convert
-   * @return  uint8_t       integer value from tlv. zero if can't be converted
+   * @return  int32_t       integer value from tlv. zero if can't be converted
    */
   command int32_t           tlv_to_integer(tagnet_tlv_t *t);
   /**
    * Convert tlv to file offset (int32). tlv must be an offset tlv tagnet type
    *
    * @param   t             pointer of tlv to convert
-   * @return  uint8_t       integer value from tlv. zero if can't be converted
+   * @return  uint32_t      integer value from tlv. zero if can't be converted
    */
   command int32_t           tlv_to_offset(tagnet_tlv_t *t);
   /**
@@ -172,9 +174,9 @@ interface TagnetTLV {
    *
    * @param   t             pointer of tlv to convert
    * @param   len           pointer to int for returning length of string
-   * @return  uint8_t       pointer to string  (limited access to life of msg)
+   * @return  uint8_t*      pointer to string  (limited access to life of msg)
    */
-  command uint8_t          *tlv_to_string(tagnet_tlv_t *t, uint8_t *len);
+  command uint8_t          *tlv_to_string(tagnet_tlv_t *t, uint32_t *len);
   /**
    * Convert tlv to version. tlv must be a version tlv tagnet type
    *
@@ -188,7 +190,7 @@ interface TagnetTLV {
    * @param   v             software version value to store in the tlv
    * @param   t             pointer of tlv to use as destination location
    * @param   limit         maximum bytes available at destination tlv
-   * @return  uint8_t       number of bytes stored in destination
+   * @return  uint32_t      number of bytes stored in destination
    */
-  command uint8_t           version_to_tlv(image_ver_t *v, tagnet_tlv_t *t, uint8_t limit);
+  command uint32_t          version_to_tlv(image_ver_t *v, tagnet_tlv_t *t, uint32_t limit);
 }

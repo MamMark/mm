@@ -159,7 +159,7 @@ implementation {
   gps_1pps_t m_pps;
 
 
-  command bool InfoSensGpsXyz.get_value(tagnet_gps_xyz_t *t, uint8_t *l) {
+  command bool InfoSensGpsXyz.get_value(tagnet_gps_xyz_t *t, uint32_t *l) {
     t->gps_x = m_xyz.x;
     t->gps_y = m_xyz.y;
     t->gps_z = m_xyz.z;

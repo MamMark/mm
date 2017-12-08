@@ -50,7 +50,7 @@ implementation {
 
   event bool Super.evaluate(message_t *msg) {
     int32_t                 v = 0;
-    uint8_t                 l = 0;
+    uint32_t                l = 0;
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
 
@@ -91,7 +91,7 @@ implementation {
 
   event void Super.add_value_tlv(message_t* msg) {
     int32_t                 v;
-    uint8_t                 l;
+    uint32_t                l;
     int                     s;
 
     if (call Adapter.get_value(&v, &l)) {
