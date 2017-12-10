@@ -1,16 +1,16 @@
 
-module MemsAppP {
+module MemsTestP {
   uses interface Boot;
   uses interface Panic;
-  
+
   uses interface Timer<TMilli> as AccelTimer;
   uses interface Lis3dh as Accel;
   uses interface SplitControl as AccelControl;
-  
+
   uses interface Timer<TMilli> as GyroTimer;
   uses interface L3g4200 as Gyro;
   uses interface SplitControl as GyroControl;
-  
+
   uses interface Timer<TMilli> as MagTimer;
   uses interface Lis3mdl as Mag;
   uses interface SplitControl as MagControl;
@@ -35,7 +35,7 @@ implementation {
   mems_sample_t m_accelSamples[SAMPLE_COUNT];
   mems_sample_t m_gyroSamples[SAMPLE_COUNT];
   mems_sample_t m_magSamples[SAMPLE_COUNT];
-  
+
   event void Boot.booted() {
     call AccelControl.start();
     call GyroControl.start();
@@ -84,7 +84,7 @@ implementation {
     nop();
     id = 0;
     call Gyro.whoAmI(&id);
-    dbg("MemsAppP", "Gyro id = %x\n", id);
+    dbg("MemsTestP", "Gyro id = %x\n", id);
     if (id != 0xd3) {
       call Panic.panic(PANIC_SNS, 2, id, 0, 0, 0);
     } else if (call Gyro.config100Hz() == SUCCESS) {
@@ -118,7 +118,7 @@ implementation {
     nop();
     id = 0;
     call Mag.whoAmI(&id);
-    dbg("MemsAppP", "Mag id = %u\n", id);
+    dbg("MemsTestP", "Mag id = %u\n", id);
     if (id != 0x3d) {
       call Panic.panic(PANIC_SNS, 3, id, 0, 0, 0);
     } else if (call Mag.config10Hz() == SUCCESS) {

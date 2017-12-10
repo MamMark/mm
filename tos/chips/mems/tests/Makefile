@@ -1,3 +1,3 @@
-COMPONENT=MemsAppC
+COMPONENT=MemsTestC
 TINYOS_ROOT_DIR?=../..
 include $(TINYOS_ROOT_DIR)/Makefile.include
