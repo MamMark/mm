@@ -5,15 +5,14 @@ module MemsTestP {
 
   uses interface Timer<TMilli> as AccelTimer;
   uses interface Lis3dh as Accel;
-  uses interface SplitControl as AccelControl;
 
+#ifdef notdef
   uses interface Timer<TMilli> as GyroTimer;
   uses interface L3g4200 as Gyro;
-  uses interface SplitControl as GyroControl;
 
   uses interface Timer<TMilli> as MagTimer;
   uses interface Lis3mdl as Mag;
-  uses interface SplitControl as MagControl;
+#endif
 }
 implementation {
   typedef struct {
@@ -37,28 +36,25 @@ implementation {
   mems_sample_t m_magSamples[SAMPLE_COUNT];
 
   event void Boot.booted() {
-    call AccelControl.start();
-    call GyroControl.start();
-    call MagControl.start();
+    uint8_t id;
+
+    id = call Accel.whoAmI();
+    call Accel.config1Hz();
+    call AccelTimer.startPeriodic(500);
+
+#ifdef notdef
+    id = call Gyro.whoAmI();
+    call Gyro.config100Hz();
+    call GyroTimer.startPeriodic(1000);
+
+    id = call Mag.whoAmI();
+    call Mag.config10Hz();
+    call MagTimer.startPeriodic(1000);
+#endif
   }
 
-  event void AccelControl.startDone(error_t error) {
-    uint8_t id;
-    nop();
-    nop();
-    nop();
-    id = 0;
-    call Accel.whoAmI(&id);
-    if (id != 0x33) {
-      call Panic.panic(PANIC_SNS, 1, id, 0, 0, 0);
-    } else if (call Accel.config1Hz() == SUCCESS) {
-      call AccelTimer.startPeriodic(500);
-    }
-  }
 
   event void AccelTimer.fired() {
-    nop();
-    nop();
     nop();
     if (call Accel.xyzDataAvail()) {
       call Accel.readSample((uint8_t *)(&m_accelSamples[m_accelSampleCount]),
@@ -67,34 +63,12 @@ implementation {
     }
     if (m_accelSampleCount >= SAMPLE_COUNT) {
       call AccelTimer.stop();
-      call AccelControl.stop();
     }
   }
 
-  event void AccelControl.stopDone(error_t error) {
-    nop();
-    nop();
-    nop();
-  }
 
-  event void GyroControl.startDone(error_t error) {
-    uint8_t id;
-    nop();
-    nop();
-    nop();
-    id = 0;
-    call Gyro.whoAmI(&id);
-    dbg("MemsTestP", "Gyro id = %x\n", id);
-    if (id != 0xd3) {
-      call Panic.panic(PANIC_SNS, 2, id, 0, 0, 0);
-    } else if (call Gyro.config100Hz() == SUCCESS) {
-      call GyroTimer.startPeriodic(1000);
-    }
-  }
-
+#ifdef notdef
   event void GyroTimer.fired() {
-    nop();
-    nop();
     nop();
     if (call Gyro.xyzDataAvail()) {
       call Gyro.readSample((uint8_t *)(&m_gyroSamples[m_gyroSampleCount]),
@@ -103,32 +77,11 @@ implementation {
     }
     if (m_gyroSampleCount >= SAMPLE_COUNT) {
       call GyroTimer.stop();
-      call GyroControl.stop();
     }
   }
 
-  event void GyroControl.stopDone(error_t error) {
-    nop();
-  }
-
-  event void MagControl.startDone(error_t error) {
-    uint8_t id;
-    nop();
-    nop();
-    nop();
-    id = 0;
-    call Mag.whoAmI(&id);
-    dbg("MemsTestP", "Mag id = %u\n", id);
-    if (id != 0x3d) {
-      call Panic.panic(PANIC_SNS, 3, id, 0, 0, 0);
-    } else if (call Mag.config10Hz() == SUCCESS) {
-      call MagTimer.startPeriodic(1000);
-    }
-  }
 
   event void MagTimer.fired() {
-    nop();
-    nop();
     nop();
     if (call Mag.xyzDataAvail()) {
       call Mag.readSample((uint8_t *)(&m_magSamples[m_magSampleCount]),
@@ -137,13 +90,9 @@ implementation {
     }
     if (m_magSampleCount >= SAMPLE_COUNT) {
       call MagTimer.stop();
-      call MagControl.stop();
     }
   }
-
-  event void MagControl.stopDone(error_t error) {
-    nop();
-  }
+#endif
 
   async event void Panic.hook() { }
 }

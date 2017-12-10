@@ -1,29 +1,25 @@
 configuration MemsTestC {
 }
 implementation {
-  components MemsTestP, MainC;
-  MemsTestP.Boot -> MainC.Boot;
-
-  components new TimerMilliC() as AccelTimer;
-  MemsTestP.AccelTimer -> AccelTimer;
+  components MemsTestP, SystemBootC;
+  MemsTestP.Boot -> SystemBootC.Boot;
 
   components Lis3dhC as Accel;
-  MemsTestP.Accel -> Accel;
-  MemsTestP.AccelControl -> Accel;
+  components new TimerMilliC() as AccelTimer;
+  MemsTestP.Accel      -> Accel;
+  MemsTestP.AccelTimer -> AccelTimer;
 
-  components new TimerMilliC() as GyroTimer;
-  MemsTestP.GyroTimer -> GyroTimer;
-
+#ifdef notdef
   components L3g4200C as Gyro;
-  MemsTestP.Gyro -> Gyro;
-  MemsTestP.GyroControl -> Gyro;
-
-  components new TimerMilliC() as MagTimer;
-  MemsTestP.MagTimer -> MagTimer;
+  components new TimerMilliC() as GyroTimer;
+  MemsTestP.Gyro       -> Gyro;
+  MemsTestP.GyroTimer  -> GyroTimer;
 
   components Lis3mdlC as Mag;
+  components new TimerMilliC() as MagTimer;
   MemsTestP.Mag -> Mag;
-  MemsTestP.MagControl -> Mag;
+  MemsTestP.MagTimer -> MagTimer;
+#endif
 
   components PanicC;
   MemsTestP.Panic -> PanicC;
