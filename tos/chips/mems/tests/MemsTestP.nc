@@ -36,9 +36,7 @@ implementation {
   mems_sample_t m_magSamples[SAMPLE_COUNT];
 
   event void Boot.booted() {
-    uint8_t id;
-
-    id = call Accel.whoAmI();
+    m_magSampleCount = call Accel.whoAmI();
     call Accel.config1Hz();
     call AccelTimer.startPeriodic(500);
 
