@@ -148,21 +148,6 @@ volatile uint32_t handler_fault_wait;   /* set to deadbeaf to continue */
 #endif
 
 void handler_debug(uint32_t exception) {
-  uint32_t t0, i;
-
-  WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;      /* 5 */
-  t0 = USECS_VAL;
-  while ((USECS_VAL - t0) < WIGGLE_DELAY) ;
-
-  for (i = 0; i < exception; i++)
-    WIGGLE_EXC;
-
-  t0 = USECS_VAL;
-  while ((USECS_VAL - t0) < WIGGLE_DELAY) ;
-  WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;      /* 5 */
-
-  t0 = USECS_VAL;
-  while ((USECS_VAL - t0) < WIGGLE_DELAY) ;
 
   ROM_DEBUG_BREAK(0xE0);
 
@@ -956,7 +941,6 @@ void __Reset() {
    * leave other pins in P1 as inputs until they are initialized properly.
    */
   P1->OUT = 0x60; P1->DIR = 0x0C;
-  WIGGLE_TELL;
 
   /*
    * gps/mems power rail.  For initial debugging, power up the GPS/MEMS rail

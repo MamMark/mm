@@ -16,9 +16,6 @@
  *                      busy wait.
  * MEMINIT_STOP:        cause memory initilization to not be done (hangs)
  *                      so one can poke around at memory.
- * PANIC_WIGGLE:        enable panic code to emit pcode and where on the
- *                      exception wiggle line. (deprecated, only makes
- *                      sense on the dev6)
  */
 
 #define REQUIRE_PLATFORM

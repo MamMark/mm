@@ -11,8 +11,6 @@
  *
  * See doc/06_Panic_CrashDumps for more details.
  *
- * PANIC_WIGGLE: enables code to wiggle the EXC (exception) signal
- * line with information about what panic occurred.
  */
 
 #include <platform.h>
@@ -25,15 +23,6 @@
 #ifdef PANIC_GATE
 norace volatile uint32_t g_panic_gate;
 #endif
-
-#ifdef   PANIC_WIGGLE
-#ifndef  WIGGLE_EXC
-#warning WIGGLE_EXC not defined, using default nothingness
-#define  WIGGLE_EXC do{} while (0)
-#define  WIGGLE_DELAY 1
-#endif
-#endif
-
 
 #define PCB_SIG 0xAAAAB00B
 #define PANIC_IN_PANIC 0xdeddb00b
@@ -163,40 +152,6 @@ module PanicP {
 }
 
 implementation {
-#ifdef PANIC_WIGGLE
-  /*
-   * deprecated.  Only useful on the dev6a.
-   */
-  void debug_break(parg_t arg)  __attribute__ ((noinline)) {
-    uint32_t t0;
-    uint32_t i;
-
-    WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;     /* 4 */
-    t0 = call Platform.usecsRaw();
-    while ((call Platform.usecsRaw() - t0) < WIGGLE_DELAY) ;
-
-    for (i = 0; i < _panic_args.pcode; i++)
-      WIGGLE_EXC;
-    t0 = call Platform.usecsRaw();
-    while ((call Platform.usecsRaw() - t0) < WIGGLE_DELAY) ;
-
-    for (i = 0; i < _panic_args.where; i++)
-      WIGGLE_EXC;
-    t0 = call Platform.usecsRaw();
-    while ((call Platform.usecsRaw() - t0) < WIGGLE_DELAY) ;
-    WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;     /* 4 */
-
-    nop();                              /* the other place */
-    ROM_DEBUG_BREAK(0xf0);
-  }
-#else
-  void debug_break(parg_t arg)  __attribute__ ((noinline)) {
-    nop();                              /* BRK */
-    ROM_DEBUG_BREAK(0xf0);
-  }
-#endif
-
-
   /*
    * init_panic_dump
    * initialize panic buffer management
@@ -496,8 +451,6 @@ implementation {
     }
     pcb.in_panic = PANIC_IN_PANIC;
 
-    debug_break(0);
-
     /*
      * initialize the panic control block so we can dump any panic information
      * out to the PANIC AREA on the SD.
@@ -671,6 +624,9 @@ implementation {
    * use __panic_entry to save what is required and switch to
    * a new stack.
    *
+   * __panic_entry is platform dependent assembly code located in
+   * tos/chips/msp432/PanicHelperP.nc
+   *
    * return from the assembly language is via __panic_panic_entry
    */
 
@@ -686,7 +642,12 @@ implementation {
      *
      * optimized code can use a C call but unoptimized replaces this
      * with a bl which messes with the LR register.
+     *
+     * The NOP below is where we put a breakpoint to catch panics.  This
+     * allows us to step up the stack to the failure.  Later we will have
+     * switched to a different stack which then makes backtraces problematic.
      */
+    nop();                              /* BRK */
     __asm__ volatile ("b __panic_entry \n");
 
     /* returns via __panic_panic_entry */

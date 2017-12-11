@@ -801,7 +801,6 @@ implementation {
             }
             /* okay, 1st cycle didn't work, kick reset and try again */
 //          gps_warn(12, gpsc_state, 0);
-            WIGGLE_TELL; WIGGLE_TELL;
             gps_reset();
             call GPSTxTimer.startOneShot(DT_GPS_PWR_UP_DELAY);
             gpsc_change_state(GPSC_PWR_UP_WAIT, GPSW_RX_TIMER);

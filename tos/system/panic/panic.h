@@ -92,6 +92,8 @@ typedef unsigned int parg_t;
  *
  * HOME_BLOCK starts at 0 and goes for HOME_SIZE
  * RAM starts at (HOME_BLOCK + HOME_SIZE)
+ *
+ * See doc/06_Panic_CrashDumps for how the 150 was arrived at.
  */
 
 #define PBLK_SIZE      150
