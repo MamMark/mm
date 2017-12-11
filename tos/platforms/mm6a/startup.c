@@ -58,6 +58,8 @@
 #define __MSP432_DVRLIB_ROM__
 #include <rom.h>
 #include <rom_map.h>
+
+/* TI flash include */
 #include "flash.h"
 
 
@@ -157,7 +159,6 @@ void handler_debug(uint32_t exception) {
   };
   handler_fault_wait = 0;
 #endif
-
 }
 
 

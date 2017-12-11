@@ -31,7 +31,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-        
+
 /**
  * Define the interface to the Silicon Labs si446x family of radios.
  *
@@ -73,7 +73,7 @@
  * @author Eric B. Decker <cire831@gmail.com>
  * December, 2015
  */
- 
+
 interface Si446xInterface {
 
   /**

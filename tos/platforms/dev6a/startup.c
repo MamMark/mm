@@ -58,6 +58,8 @@
 #define __MSP432_DVRLIB_ROM__
 #include <rom.h>
 #include <rom_map.h>
+
+/* TI flash include */
 #include "flash.h"
 
 
@@ -157,7 +159,6 @@ void handler_debug(uint32_t exception) {
   };
   handler_fault_wait = 0;
 #endif
-
 }
 
 
@@ -337,7 +338,7 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
  * a function mapper.  One of the reasons it is initially confusing.
  */
 void __map_ports() {
-  PMAP->KEYID = PMAP_KEYID_VAL;
+  PMAP->KEYID        = PMAP_KEYID_VAL;
   P2MAP->PMAP_REG[5] = PMAP_SMCLK;
   P7MAP->PMAP_REG[0] = PMAP_UCA1CLK;
   P7MAP->PMAP_REG[1] = PMAP_UCA1SOMI;

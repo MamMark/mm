@@ -125,6 +125,7 @@ implementation {
   }
 
   default event void LowPowerBoot.booted() {
+    nop();                              /* BRK */
     call Panic.panic(PANIC_PWR, 1, 0, 0, 0, 0);
   }
 
