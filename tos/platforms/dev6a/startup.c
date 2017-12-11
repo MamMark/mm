@@ -437,13 +437,18 @@ void __pins_init() {
 
   /*
    * SD1 is on P7.{0,1,2} and sd1_csn is P9.4
+   * We have also put the lis331 accel breakout on A1 at P7.{0,1,2}.
    * Initial state is "powered off" so make all pins be pull ups
+   *
+   * We have also put the lis331 accel breakout on A1 at P7.{0,1,2}.
+   * This code implements the lis331.
    */
-  P9->OUT = 0x10;               /* deassert SD1_CSN */
-  P9->REN = 0x10;               /* pull up */
+  P9->OUT = 0x10;               /* deassert accel_csn */
+  P9->DIR = 0x10;               /* drive output       */
 
-  P7->OUT = 0x07;               /* clk, somi, simo, pull up */
-  P7->REN = 0x07;               /* pull up */
+  P7->OUT  = 0x01;              /* clk 1, reset others to 0s */
+  P7->SEL0 = 0x07;              /* hand over to SPI module   */
+  P7->DIR  = 0x05;              /* not really needed.        */
 
   /*
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O

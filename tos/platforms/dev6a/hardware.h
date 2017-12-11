@@ -47,6 +47,8 @@
 #ifndef __HARDWARE_H__
 #define __HARDWARE_H__
 
+#warning DEV6A/LIS331 varient
+
 #define NO_MSP_CLASSIC_DEFINES
 #define __MSP432_DVRLIB_ROM__
 
@@ -159,7 +161,7 @@
  *    (port, mapping), ie.  (A1, pm) says its on eUSCI-A1 and the pin is port mapped.
  *
  * A0: mems             (dma overlap with AES triggers, DMA ch 0, 1)
- * A1: SD1 (SPI)
+ * A1: SD1 (SPI)/mems
  * A2: gps (antenova, sirfIV) UART
  *     gps_tx is on 3.2, gps_rx is on 3.3.
  * A3: do not use (not on bga)
@@ -172,12 +174,14 @@
  *    7.0 sd1_clk /mems_clk
  *    7.1 sd1_somi/mems_somi
  *    7.2 sd1_simo/mems_simo
- *    9.4 sd1_csn /accel_csn
+ *    9.4 sd1_csn /accel_csn    mems_id: 0
+ *                 gyro_csn     mems_id: 1
+ *                 mag_csn      mems_id: 2
  *
  * Port: (0x4000_4C00)
- * port 1.0	0pO	LED1                    port 7.0	1pIru   sd1_clk  (A1,    pm)
- *  00 I .1	1pIru	PB1                      60   .1	1pIru   sd1_somi (A1,    pm)
- *  02 O .2	0pI                     BSLRXD   62   .2	1pIru   sd1_simo (A1,    pm)
+ * port 1.0	0pO	LED1                    port 7.0	1mO     sd1_clk  (A1,    pm)
+ *  00 I .1	1pIru	PB1                      60   .1	0mI     sd1_somi (A1,    pm)
+ *  02 O .2	0pI                     BSLRXD   62   .2	0mO     sd1_simo (A1,    pm)
  *       .3     0pI                     BSLTXD        .3	0pI     gps_tm   (ta1.1, pm)
  *       .4	1pIru   dock_attn PB2   BSLSTE        .4	0pI
  *       .5	0pI     gps_cts(*)      BSLCLK        .5	0pI
@@ -197,7 +201,7 @@
  *  20   .1	0pI	[unstabbed, nc] A2       80 I .1	0pI
  *  22   .2	0pI	gps_tx (A2)   URXD       82 O .2	0pI
  *       .3	1pO	gps_rx (A2)   UTXD            .3	0pI
- *       .4	0pI     [unstabbed, nc]               .4	1pIru   sd1_csn/accel_csn
+ *       .4	0pI     [unstabbed, nc]               .4	1pO     sd1_csn/accel_csn
  *       .5	0mO	si446x_clk  (B2) slave_clk    .5	0pI     [unstabbed]
  *       .6	0mO	si446x_simo (B2) slave_simo   .6	0pI     [unstabbed]
  *       .7	0mIrd   si446x_somi (B2) slave_somi   .7	0pI

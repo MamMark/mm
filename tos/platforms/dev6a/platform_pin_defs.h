@@ -37,6 +37,18 @@
 #ifndef __PLATFORM_PIN_DEFS__
 #define __PLATFORM_PIN_DEFS__
 
+/*
+ * Mems Bus, UCB1, SPI
+ */
+#define MEMS0_ID_ACCEL 0
+
+#define MEMS0_ACCEL_CSN_PORT     P9
+#define MEMS0_ACCEL_CSN_PIN      4
+#define MEMS0_ACCEL_CSN_BIT      (1 << MEMS0_ACCEL_CSN_PIN)
+#define MEMS0_ACCEL_CSN_IN       (MEMS0_ACCEL_CSN_PORT->IN & MEMS0_ACCEL_CSN_BIT)
+#define MEMS0_ACCEL_CSN          BITBAND_PERI(MEMS0_ACCEL_CSN_PORT->OUT, MEMS0_ACCEL_CSN_PIN)
+
+
 /* gps -gsd4e/org */
 
 #define GSD4E_AWAKE_PORT    P6
@@ -171,6 +183,15 @@
     P7->SEL0 = 0x07;                                        \
 } while (0)
 
+
+/*
+ * the LIS331 accel breakout board is on the same pins
+ * as SD1.  P7.0-2 and accel_csn is P9.4.  int1 is 5.4
+ * and int2 is 5.5
+ */
+#define LIS331_CSN_PORT P9
+#define LIS331_CSN_PIN  4
+#define LIS331_CSN      BITBAND_PERI(LIS331_CSN_PORT->OUT, LIS331_CSN_PIN)
 
 /*
  * TMP bus consists of two tmp sensors off of an I2C eUSCI.
