@@ -161,22 +161,6 @@ void handler_debug(uint32_t exception) {
 }
 
 
-#ifdef notdef
-/*
- * If we ever go to an independent HardFault_Handler this is the
- * start.
- */
-void HardFault_Handler() __attribute__((interrupt));
-void HardFault_Handler() {
-  __default_handler();
-  /* If set, make sure to clear:
-   *
-   * CFSR.MMARVALID, BFARVALID
-   */
-}
-#endif
-
-
 /* see tos/system/panic/PanicP.nc */
 extern void __launch_panic_exception(void *new_stack, uint32_t cur_lr);
 
@@ -198,22 +182,11 @@ void __default_handler()  {
 
 /*
  * Unless overridded, most handlers get aliased to __default_handler.
+ *
+ * NMI, HardFault, MpuFault, BusFault, UsageFault, SVCall, Debug,
+ * PendSV, and SysTick are not allowed to be reassigned so are
+ * not aliased to "weak".
  */
-
-#ifdef notdef
-/*
- * we no longer let others override system exception handlers
- */
-void Nmi_Handler()        __attribute__((weak));
-void HardFault_Handler()  __attribute__((weak));
-void MpuFault_Handler()   __attribute__((weak));
-void BusFault_Handler()   __attribute__((weak));
-void UsageFault_Handler() __attribute__((weak));
-void SVCall_Handler()     __attribute__((weak));
-void Debug_Handler()      __attribute__((weak));
-void PendSV_Handler()     __attribute__((weak));
-void SysTick_Handler()    __attribute__((weak));
-#endif
 
 void Nmi_Handler()        __attribute__((alias("__default_handler")));
 void HardFault_Handler()  __attribute__((alias("__default_handler")));
