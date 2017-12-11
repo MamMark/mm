@@ -1,0 +1,779 @@
+
+Panic Entry notes.
+
+End Results:
+
+Panic unoptimized
+
+old_stack (old_sp)
+                primask         basepri         faultmask       control
+0x2000fea0:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0 - pcode      r1 - where      r2 - a0         r3 - a1
+0x2000feb0:	0x00000015	0x00000005	0x00000000	0x00000000
+                r12             bxLR            bxPC            bxPSR
+0x2000fec0:	0x20002534	0x00003cab	0x000007c4	0x20000000
+                a2              a3
+0x2000fed0:	0x00000000	0x00000000	0x2000fee0	0x00000000
+
+
+crash_stack:
+                axPSR           PSP             MSP             r4
+0x20003a80	0x20000000	0x00000000	0x20003ab0	0x0000f000
+                r5              r6              r7              r8
+0x20003a90	0x00000000	0x00000000	0x2000fed8	0x00000000
+                r9              r10             r11             axLR
+0x20003aa0	0x00000000	0x00000000	0x00000000	0x00000011
+0x20003ab0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+============================
+
+Panic optimized
+
+old_stack (old_sp)
+                primask         basepri         faultmask       control
+0x2000ff18:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0 - pcode      r1 - w          r2 - a0         r3 - a1
+0x2000ff28:	0x00000015	0x00000005	0x00000000	0x00000000
+                r12             bxLR            bxPC            bxPSR
+0x2000ff38:	0x20002534	0x000014f9	0x00000a68	0x20000000
+                a2              a3
+0x2000ff48:	0x00000000	0x00000000	0x00000000	0x00000000
+
+
+crash_stack:
+                axPSR           PSP             MSP             r4
+0x20003a80	0x20000000	0x00000000	0x20003ab0	0x00000000
+                r5              r6              r7              r8
+0x20003a90	0x00000005	0x20003154	0x00000000	0x00000000
+                r9              r10             r11             axLR
+0x20003aa0	0x00000000	0x00000000	0x00000000	0x00000011
+0x20003ab0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+============================
+
+Exception Unoptimized
+
+
+old_stack:
+                primask         basepri         faultmask       control
+0x2000fee0:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0              r1              r2              r3
+0x2000fef0:	0x00000000	0x20002838	0x00000005	0x00000000
+                r12             bxLR            bxPC            bxPSR
+0x2000ff00:	0x20002534	0x00007565	0x00007574	0x61000000
+0x2000ff10:	0x2000ff18	0x200026bc	0x2000ff20	0x00007565
+
+
+crash_stack:
+                axPSR           PSP             MSP             r4
+0x20003a70	0x60000006	0x00000000	0x20003aa0	0x0000f000
+                r5              r6              r7              r8
+0x20003a80	0x00000000	0x00000000	0x2000ff10	0x00000000
+                r9              r10             r11             axLR
+0x20003a90	0x00000000	0x00000000	0x00000000	0xfffffff9
+0x20003aa0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+============================
+
+Exception Optimized
+
+old_stack:
+                primask         basepri         faultmask       control
+0x2000ff30:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0              r1              r2              r3
+0x2000ff40:	0x00000005	0x00000000	0x00000000	0x200026c0
+                r12             bxLR            bxPC            bxPSR
+0x2000ff50:	0x20002534	0x00000593	0x00003122	0x21000000
+0x2000ff60:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+crash_stack:
+                axPSR           PSP             MSP             r4
+0x20003a80	0x20000006	0x00000000	0x20003ab0	0x00000000
+                r5              r6              r7              r8
+0x20003a90	0x20002509	0x20003154	0x00000000	0x00000000
+                r9              r10             r11             axLR
+0x20003aa0	0x00000000	0x00000000	0x00000000	0xfffffff9
+0x20003ab0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+************
+
+Panic Processing
+
+0x8e9 dev6 - unoptimized
+entry to Panic.panic from ImageManager, im_panic(5, 0, 0)
+  call Panic.panic(PANIC_IM, where, p0, p1, 0, 0);
+  after entry to Panic.panic
+
+(this is what needs to be preserved)
+r0        0x15                  21 PANIC_IM pcode
+r1        0x5                   5  w
+r2        0x5                   0  a0
+r3        0x0                   0  a1
+r4        0xf000
+r5        0x0
+r6        0x0
+r7        0x2000fed8
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002538
+sp        0x2000fed0            <- SP from fail (same as MSP)
+lr        0x533f                <- caller of Panic, bxLR
+pc        0x7c4                 <- save as bxPC
+xpsr      0x21000000            <- bxPSR
+msp       0x2000fed0            <- bxSP, SP from fail
+psp       0x0
+primask   0x0
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+0x2000fed0:	0x00000000	0x00000000	0x2000fee0	0x00000000
+0x2000fee0:	0x00000005	0x15050005	0x2000fef8	0x0000530d
+0x2000fef0:	0x00000000	0x00000000	0x00000000	0x00000000
+0x2000ff00:	0x00000005	0x050084bb	0x2000ff10	0x000084bb
+
+
+@ entry to launch_panic_panic
+r0        0x20003aa0            <- new_stack (crash_stack_top)
+r1        0x0                      scratch
+r2        0x0                      scratch
+r3        0x0                      scratch
+r4        0xf000
+r5        0x0
+r6        0x0
+r7        0x2000fed8
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002538               scratch
+sp        0x2000fea0            <- bxSP (old_sp), SP from fail
+lr        0x7f5                    scratch
+pc        0x7f8
+xpsr      0x21000000            <- axPSR
+msp       0x2000fea0
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+                primask         basepri         faultmask       control
+0x2000fea0:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0 - ss         r1 - w          r2 - a0         r3 - a1
+0x2000feb0:	0x00000015	0x00000005	0x00000005	0x00000000
+                r12             lr              bxPC            bxPSR
+0x2000fec0:	0x20002538	0x0000533f	0x000007c4	0x20000000
+0x2000fed0:	0x00000000	0x00000000	0x2000fee0	0x00000000
+
+
+before save all registers (push {r1-r11, lr})
+will go onto crash_stack
+
+r0        0x2000fea0            old_sp
+r1        0x20000000            axPSR
+r2        0x0                   PSP
+r3        0x20003aa0            MSP
+r4        0xf000                     preserve
+r5        0x0                        preserve
+r6        0x0                        preserve
+r7        0x2000fed8                 preserve
+r8        0x0                        preserve
+r9        0x0                        preserve
+r10       0x0                        preserve
+r11       0x0                        preserve
+r12       0x20002538                 preserve
+sp        0x20003aa0            <- crash_stack_top
+lr        0x11                       preserve
+pc        0x80e
+xpsr      0x21000000
+msp       0x20003aa0
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+0x20003aa0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+0x20003ab0:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+0x20003ac0:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+0x20003ad0:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+@__panic_panic_entry
+r0        0x2000fea0            <- old_sp
+r1        0x20003a70            <- crash_sp
+r2        0x0
+r3        0x20003aa0
+r4        0xf000
+r5        0x0
+r6        0x0
+r7        0x2000fed8
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002538
+sp        0x20003a70
+lr        0x11
+pc        0x990c
+xpsr      0x21000000
+msp       0x20003a70
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+
+old_stack (old_sp)
+                primask         basepri         faultmask       control
+0x2000fea0:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0 - pcode      r1 - where      r2 - a0         r3 - a1
+0x2000feb0:	0x00000015	0x00000005	0x00000005	0x00000000
+                r12             bxLR            bxPC            bxPSR
+0x2000fec0:	0x20002538	0x0000533f	0x000007c4	0x20000000
+                a2              a3
+0x2000fed0:	0x00000000	0x00000000	0x2000fee0	0x00000000
+
+
+crash_stack:
+                axPSR           PSP             MSP             r4
+0x20003a70	0x20000000	0x00000000	0x20003aa0	0x0000f000
+                r5              r6              r7              r8
+0x20003a80	0x00000000	0x00000000	0x2000fed8	0x00000000
+                r9              r10             r11             axLR
+0x20003a90	0x00000000	0x00000000	0x00000000	0x00000011
+0x20003aa0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+******************
+
+0x8ea dev6 - optimized
+entry to Panic.panic from ImageManager, im_panic(5, 0, 0)
+  call Panic.panic(PANIC_IM, where, p0, p1, 0, 0);
+  after entry to Panic.panic
+
+(this is what needs to be preserved)
+r0        0x15                  21 PANIC_IM pcode
+r1        0x5                   5  w
+r2        0x5                   5  a0
+r3        0x0                   0  a1
+r4        0x5
+r5        0x5
+r6        0x20003148
+r7        0x0
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002538
+sp        0x2000ff60            <- SP from fail (same as MSP)
+lr        0x1525                <- caller of Panic, bxLR
+pc        0xabc                 <- save as bxPC
+xpsr      0x21000000            <- bxPSR
+msp       0x2000ff60            <- bxSP, SP from fail
+psp       0x0
+primask   0x0
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+                a2              a3
+0x2000ff60:	0x00000000	0x00000000	0x00000000	0x00000001
+0x2000ff70:	0x2000250a	0x00003179	0x7a7a5115	0x7a7a5115
+0x2000ff80:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+0x2000ff90:	0x00000007	0x2206289c	0x00000001	0x00004629
+
+
+@ entry to launch_panic_panic
+r0        0x20003aa0            <- new_stack (crash_stack_top)
+r1        0x0                      scratch
+r2        0x0                      scratch
+r3        0x0                      scratch
+r4        0x0
+r5        0x0
+r6        0x20003148
+r7        0x0
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002538               scratch
+sp        0x2000ff30            <- bxSP (old_sp), SP from fail
+lr        0xabc                    scratch
+pc        0xa9c
+xpsr      0x21000000            <- axPSR
+msp       0x2000ff30
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+                primask         basepri         faultmask       control
+0x2000ff30:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0 - ss         r1 - w          r2 - a0         r3 - a1
+0x2000ff40:	0x00000015	0x00000005	0x00000005	0x00000000
+                r12             bxLR            bxPC            bxPSR
+0x2000ff50:	0x20002538	0x00001525	0x00000abc	0x20000000
+                a2              a3
+0x2000ff60:	0x00000000	0x00000000	0x00000000	0x00000001
+
+
+before save all registers (push {r1-r11, lr})
+will go onto crash_stack
+
+r0        0x2000ff30            old_sp
+r1        0x20000000            axPSR
+r2        0x0                   PSP
+r3        0x20003aa0            MSP
+r4        0x5                        preserve
+r5        0x5                        preserve
+r6        0x20003148                 preserve
+r7        0x0                        preserve
+r8        0x0                        preserve
+r9        0x0                        preserve
+r10       0x0                        preserve
+r11       0x0                        preserve
+r12       0x20002538                 preserve
+sp        0x20003aa0            <- crash_stack_top
+lr        0x11                       preserve
+pc        0xab2
+xpsr      0x21000000
+msp       0x20003aa0
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+0x20003aa0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+0x20003ab0:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+0x20003ac0:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+0x20003ad0:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+@__panic_panic_entry
+r0        0x2000ff30            <- old_sp
+r1        0x20003a70            <- crash_sp
+r2        0x0
+r3        0x20003aa0
+r4        0x5
+r5        0x5
+r6        0x20003148
+r7        0x0
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002538
+sp        0x20003a70
+lr        0x11
+pc        0x41d8
+xpsr      0x21000000
+msp       0x20003a70
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+
+old_stack (old_sp)
+                primask         basepri         faultmask       control
+0x2000ff30:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0 - pcode      r1 - w          r2 - a0         r3 - a1
+0x2000ff40:	0x00000015	0x00000005	0x00000005	0x00000000
+                r12             bxLR            bxPC            bxPSR
+0x2000ff50:	0x20002538	0x00001525	0x00000abc	0x20000000
+                a2              a3
+0x2000ff60:	0x00000000	0x00000000	0x00000000	0x00000001
+
+crash_stack:
+                axPSR           PSP             MSP             r4
+0x20003a70	0x20000000	0x00000000	0x20003aa0	0x00000005
+                r5              r6              r7              r8
+0x20003a80	0x00000005	0x20003148	0x00000000	0x00000000
+                r9              r10             r11             axLR
+0x20003a90	0x00000000	0x00000000	0x00000000	0x00000011
+0x20003aa0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+*******************
+
+Exception Processing
+
+0x8de dev6 - unoptimized
+@sdiv prior to div0 exception
+
+(this is what needs to be preserved)
+r0        0x0
+r1        0x20002838
+r2        0x5
+r3        0x0
+r4        0xf000
+r5        0x0
+r6        0x0
+r7        0x2000ff10
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002534
+sp        0x2000ff10
+lr        0x7565
+pc        0x7574
+xpsr      0x61000000
+msp       0x2000ff10
+psp       0x0
+primask   0x0
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+0x2000ff10:	0x2000ff18	0x200026bc	0x2000ff20	0x00007565
+0x2000ff20:	0x2000ff30	0x0000744f	0x0000004d	0x00000000
+0x2000ff30:	0x00000000	0x0000004d	0x200026bc	0x00000000
+0x2000ff40:	0x2000ff48	0x200026bc	0x00000000	0x0000f000
+
+
+@ entry to default_handler
+entry to default_handler - div0 exception (usage_fault)
+r0        0x0
+r1        0x20002838
+r2        0x5
+r3        0x0
+r4        0xf000
+r5        0x0
+r6        0x0
+r7        0x2000ff10
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002534
+sp        0x2000fef0
+lr        0xfffffff9
+pc        0xc278
+xpsr      0x61000006
+msp       0x2000fef0            <-- this is what CC .s captures
+psp       0x0
+primask   0x0
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+                r0              r1              r2              r3
+0x2000fef0:	0x00000000	0x20002838	0x00000005	0x00000000
+                r12             bxLR            bxPC            bxPSR
+0x2000ff00:	0x20002534	0x00007565	0x00007574	0x61000000
+0x2000ff10:	0x2000ff18	0x200026bc	0x2000ff20	0x00007565
+0x2000ff20:	0x2000ff30	0x0000744f	0x0000004d	0x00000000
+
+
+@ entry to lanuch_panic_exception
+r0        0x20003aa0            <-- crash_stack_top
+r1        0xfffffff9            <-- axLR
+r2        0x0
+r3        0xfffffff9
+r4        0xf000
+r5        0x0
+r6        0x0
+r7        0x2000ff10
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002534
+sp        0x2000fee0
+lr        0xc28b
+pc        0x9818
+xpsr      0x61000006
+msp       0x2000fee0
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+                primask         basepri         faultmask       control
+0x2000fee0:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0              r1              r2              r3
+0x2000fef0:	0x00000000	0x20002838	0x00000005	0x00000000
+                r12             bxLR            bxPC            bxPSR
+0x2000ff00:	0x20002534	0x00007565	0x00007574	0x61000000
+0x2000ff10:	0x2000ff18	0x200026bc	0x2000ff20	0x00007565
+
+
+@ at start of handler_debug code set up
+r0        0x2000fee0            <-- old_sp
+r1        0x20003a70            <-- crash_stack
+r2        0x0
+r3        0x20003aa0
+r4        0xf000
+r5        0x0
+r6        0x0
+r7        0x2000ff10
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002534
+sp        0x20003a70
+lr        0xfffffff9
+pc        0x9832
+xpsr      0x61000006
+msp       0x20003a70
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+
+crash_stack:
+                axPSR           PSP             MSP             r4
+0x20003a70	0x60000006	0x00000000	0x20003aa0	0x0000f000
+                r5              r6              r7              r8
+0x20003a80	0x00000000	0x00000000	0x2000ff10	0x00000000
+                r9              r10             r11             axLR
+0x20003a90	0x00000000	0x00000000	0x00000000	0xfffffff9
+0x20003aa0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+@ exit and restore following handler_debug call
+r0        0x2000fee0            <-- old_sp
+r1        0x20003a70            <-- crash_stack
+r2        0x0
+r3        0x20003aa0
+r4        0xf000
+r5        0x0
+r6        0x0
+r7        0x2000ff10
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002534
+sp        0x20003a70
+lr        0xfffffff9
+pc        0x97ac
+xpsr      0x1000006
+msp       0x20003a70
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+
+old_stack:
+                primask         basepri         faultmask       control
+0x2000fee0:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0              r1              r2              r3
+0x2000fef0:	0x00000000	0x20002838	0x00000005	0x00000000
+                r12             bxLR            bxPC            bxPSR
+0x2000ff00:	0x20002534	0x00007565	0x00007574	0x61000000
+0x2000ff10:	0x2000ff18	0x200026bc	0x2000ff20	0x00007565
+
+
+crash_stack:
+                axPSR           PSP             MSP             r4
+0x20003a70	0x60000006	0x00000000	0x20003aa0	0x0000f000
+                r5              r6              r7              r8
+0x20003a80	0x00000000	0x00000000	0x2000ff10	0x00000000
+                r9              r10             r11             axLR
+0x20003a90	0x00000000	0x00000000	0x00000000	0xfffffff9
+0x20003aa0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+*******************
+
+0x8ec dev6 - optimized
+entry to default_handler - div0 exception (usage_fault)
+
+(this is what needs to be preserved)
+r0        0x5
+r1        0x0
+r2        0x0
+r3        0x200026b4
+r4        0x0
+r5        0x2000250a
+r6        0x20003148
+r7        0x0
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002538
+sp        0x2000ff78
+lr        0x5cf
+pc        0x3170
+xpsr      0x21000000
+msp       0x2000ff78
+psp       0x0
+primask   0x0
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+0x2000ff78:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+0x2000ff88:	0x7a7a5115	0x7a7a5115	0x00000007	0x2206289c
+0x2000ff98:	0x00000001	0x0000462d	0x00000000	0x00000001
+0x2000ffa8:	0x40004c20	0x2000ffc0	0x00000000	0x00000001
+
+
+@ entry to default_handler
+r0        0x5
+r1        0x0
+r2        0x0
+r3        0x200026b4
+r4        0x0
+r5        0x2000250a
+r6        0x20003148
+r7        0x0
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002538
+sp        0x2000ff58
+lr        0xfffffff9
+pc        0x4d74
+xpsr      0x21000006
+msp       0x2000ff58
+psp       0x0
+primask   0x0
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+                r0              r1              r2              r3
+0x2000ff58:	0x00000005	0x00000000	0x00000000	0x200026b4
+                r12             bxLR            bxPC            bxPSR
+0x2000ff68:	0x20002538	0x000005cf	0x00003170	0x21000000
+0x2000ff78:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+0x2000ff88:	0x7a7a5115	0x7a7a5115	0x00000007	0x2206289c
+
+
+@ entry to lanuch_panic_exception
+r0        0x20003aa0            <-- crash_stack_top
+r1        0xfffffff9            <-- axLR
+r2        0x0
+r3        0x0
+r4        0x0
+r5        0x2000250a
+r6        0x20003148
+r7        0x0
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002538
+sp        0x2000ff48
+lr        0x4d91
+pc        0x4250
+xpsr      0x21000006
+msp       0x2000ff48
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+
+                primask         basepri         faultmask       control
+0x2000ff48:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0              r1              r2              r3
+0x2000ff58:	0x00000005	0x00000000	0x00000000	0x200026b4
+                r12             bxLR            bxPC            bxPSR
+0x2000ff68:	0x20002538	0x000005cf	0x00003170	0x21000000
+0x2000ff78:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+@ at start of handler_debug code set up
+r0        0x2000ff48            <-- old_sp
+r1        0x20003a70            <-- crash_stack
+r2        0x0
+r3        0x20003aa0
+r4        0x0
+r5        0x2000250a
+r6        0x20003148
+r7        0x0
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002538
+sp        0x20003a70
+lr        0xfffffff9
+pc        0x426a
+xpsr      0x21000006
+msp       0x20003a70
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+
+                axPSR           PSP             MSP             r4
+0x20003a70	0x20000006	0x00000000	0x20003aa0	0x00000000
+                r5              r6              r7              r8
+0x20003a80	0x2000250a	0x20003148	0x00000000	0x00000000
+                r9              r10             r11             axLR
+0x20003a90	0x00000000	0x00000000	0x00000000	0xfffffff9
+0x20003aa0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+@ exit and restore following handler_debug call
+r0        0x2000ff48            <-- old_sp
+r1        0x20003a70            <-- crash_stack
+r2        0x0
+r3        0x20003aa0
+r4        0x0
+r5        0x2000250a
+r6        0x20003148
+r7        0x0
+r8        0x0
+r9        0x0
+r10       0x0
+r11       0x0
+r12       0x20002538
+sp        0x20003a70
+lr        0xfffffff9
+pc        0x427c
+xpsr      0x81000006
+msp       0x20003a70
+psp       0x0
+primask   0x1
+basepri   0x0
+faultmask 0x0
+control   0x0
+
+
+old_stack:
+                primask         basepri         faultmask       control
+0x2000ff48:	0x00000000	0x00000000	0x00000000	0x00000000
+                r0              r1              r2              r3
+0x2000ff58:	0x00000005	0x00000000	0x00000000	0x200026b4
+                r12             bxLR            bxPC            bxPSR
+0x2000ff68:	0x20002538	0x000005cf	0x00003170	0x21000000
+0x2000ff78:	0x7a7a5115	0x7a7a5115	0x7a7a5115	0x7a7a5115
+
+
+crash_stack:
+                axPSR           PSP             MSP             r4
+0x20003a70	0x20000006	0x00000000	0x20003aa0	0x00000000
+                r5              r6              r7              r8
+0x20003a80	0x2000250a	0x20003148	0x00000000	0x00000000
+                r9              r10             r11             axLR
+0x20003a90	0x00000000	0x00000000	0x00000000	0xfffffff9
+0x20003aa0:	0x91919191	0x7a7a5115	0x7a7a5115	0x7a7a5115
