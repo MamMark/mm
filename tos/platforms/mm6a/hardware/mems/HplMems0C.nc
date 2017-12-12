@@ -63,6 +63,4 @@ implementation {
   Mems0PinsP.Panic         -> PanicC;
 
   SpiReg = MemsDvr;
-
-  PlatformC.PeripheralInit -> SpiC;
 }
