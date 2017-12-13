@@ -1,10 +1,8 @@
 configuration MemsTestC {
 }
 implementation {
-//  components MemsTestP, SystemBootC;
-//  MemsTestP.Boot -> SystemBootC.Boot;
-  components MemsTestP, MainC, SystemBootC;
-  MemsTestP.Boot -> MainC.Boot;
+  components MemsTestP, SystemBootC;
+  MemsTestP.Boot -> SystemBootC.Boot;
 
   components Lis3dhC as Accel;
   components new TimerMilliC() as AccelTimer;
