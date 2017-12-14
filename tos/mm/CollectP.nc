@@ -223,6 +223,7 @@ implementation {
       call Panic.panic(PANIC_SS, 1, (parg_t) data, dlen, 0, 0);
 
     header->recnum = call DblkManager.adv_cur_recnum();
+    nop();                              /* BRK */
     while(1) {
       if (dcc.remaining == 0 || dcc.remaining >= hlen) {
         /*
