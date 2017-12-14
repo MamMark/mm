@@ -800,7 +800,7 @@ implementation {
               return;
             }
             /* okay, 1st cycle didn't work, kick reset and try again */
-//          gps_warn(12, gpsc_state, 0);
+            gps_warn(12, gpsc_state, 0);
             gps_reset();
             call GPSTxTimer.startOneShot(DT_GPS_PWR_UP_DELAY);
             gpsc_change_state(GPSC_PWR_UP_WAIT, GPSW_RX_TIMER);
