@@ -1,0 +1,32 @@
+
+Requirements
+o each sensor to be able to provide last value for Radio access
+o how to determine age of value retrieved
+o ability to signal in some fashion that new data is available.
+
+Questions:
+o How and where to represent the sensor set
+o what are the sensor ids and sensor names.
+o how to make the regime dynamic?  Do we need dynamic or static (compiled in).
+
+lowest level
+
+sensor ids.   need to map these ids into something a user can use in some fashion.
+
+regime: a set of sensors and associated periods.  Periods in ms granularity.
+
+
+How to handle interrupt events from various sensors.
+
+How to handle smart sensors?
+
+
+
+Thoughts:
+
+o Regime simply states which sensors are active.
+
+o Each active sensor has some kind of configuration object that describes things about
+  how the sensor should be configured.
+
+o Stupid sensors (simple sensors) indicate what period and what data it provides.
