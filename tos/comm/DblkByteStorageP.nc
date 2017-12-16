@@ -1,0 +1,89 @@
+/**
+ * This module handles Byte access to the Dblk storage files
+ *
+ *<p>
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ *
+ * @Copyright (c) 2017 Daniel J. Maltbie
+ * All rights reserved.
+ *</p>
+ */
+/* Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the
+ *   distribution.
+ *
+ * - Neither the name of the copyright holders nor the names of
+ *   its contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+#include <TinyError.h>
+#include <message.h>
+#include <Tagnet.h>
+#include <TagnetAdapter.h>
+
+module DblkByteStorageP {
+  provides {
+    interface TagnetAdapter<tagnet_dblk_bytes_t>  as DblkBytes;
+  }
+  uses {
+    interface DblkMapFile  as DMF;
+    interface Boot;
+    interface Panic;
+  }
+}
+implementation {
+
+  command bool DblkBytes.get_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
+    error_t    err;
+
+    nop();
+    nop();                      /* BRK */
+    err = call DMF.seek(db->file, db->iota, 0);
+    if (err == SUCCESS) {
+      err = call DMF.map(db->file, &db->block, len);
+    }
+    if (err == SUCCESS) {
+      db->iota   = call DMF.tell(db->file);
+      db->count -= *len;
+      db->error  = SUCCESS;
+      return TRUE;
+    }
+    db->iota = call DMF.tell(db->file);
+    db->count = 0;
+    db->error = err;
+    return FALSE;
+  }
+
+  event void DMF.mapped(uint8_t fd, uint32_t file_pos) {
+    nop();
+    nop();                            /* BRK */
+  }
+
+  async event void Panic.hook() { }
+
+  event void Boot.booted() {
+    nop();
+    nop();                            /* BRK */
+  }
+}
