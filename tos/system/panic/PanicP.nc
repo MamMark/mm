@@ -135,6 +135,8 @@ bool _panic_args_warn_busy;
 panic_args_t _panic_args;
 norace pcb_t pcb;                               /* panic control block */
 
+uint8_t  panic_buf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
+
 module PanicP {
   provides interface Panic;
   uses {
@@ -167,7 +169,7 @@ implementation {
     panic_dir_t *dirp;
 
     pcb.pcb_sig   = PCB_SIG;
-    pcb.buf       = call SSW.get_temp_buf();
+    pcb.buf       = panic_buf;
     pcb.bptr      = pcb.buf;
     pcb.remaining = SD_BLOCKSIZE;
 
