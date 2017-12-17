@@ -169,6 +169,7 @@ void __default_handler()  __attribute__((interrupt, naked));
 void __default_handler()  {
   register uint32_t cur_lr asm("lr");
 
+  nop();                                /* BRK */
   __asm__ volatile (
     "mrs   r0, primask      \n"       /* get int enable             */
     "cpsid i                \n"       /* disable normal interrupts  */
