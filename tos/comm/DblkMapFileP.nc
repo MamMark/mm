@@ -152,6 +152,10 @@ implementation {
     eof_sector = last;
   }
 
+  command uint32_t DblkMapFile.filesize(uint8_t fd) {
+    return (eof_sector * SD_BLOCKSIZE);
+  }
+
   event void SS.dblk_stream_full() { }
 
   async event void Panic.hook() { }

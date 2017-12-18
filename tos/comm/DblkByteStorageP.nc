@@ -59,15 +59,27 @@ implementation {
 
     nop();
     nop();                      /* BRK */
-    err = call DMF.seek(db->file, db->iota, 0);
-    if (err == SUCCESS) {
-      err = call DMF.map(db->file, &db->block, len);
-    }
-    if (err == SUCCESS) {
-      db->iota   = call DMF.tell(db->file);
-      db->count -= *len;
-      db->error  = SUCCESS;
-      return TRUE;
+    switch (db->action) {
+      case DBLK_GET_DATA:
+        err = call DMF.seek(db->file, db->iota, 0);
+        if (err == SUCCESS) {
+          err = call DMF.map(db->file, &db->block, len);
+        }
+        if (err == SUCCESS) {
+          db->iota   = call DMF.tell(db->file);
+          db->count -= *len;
+          db->error  = SUCCESS;
+          return TRUE;
+        }
+        break;
+      case  DBLK_GET_ATTR:
+        db->iota   = call DMF.tell(db->file);
+        db->count  = call DMF.filesize(db->file);
+        return TRUE;
+        break;
+      default:
+        err = EINVAL;
+        break;
     }
     db->iota = call DMF.tell(db->file);
     db->count = 0;

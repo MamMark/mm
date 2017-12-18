@@ -102,4 +102,11 @@ interface DblkMapFile
    * @param   'uint32_t file_pos' new file memory mapped
    */
   event void mapped(uint8_t fd, uint32_t file_pos);
+  /**
+   * return size of file in bytes
+   *
+   * @param   'uint8_t   fd'   file number to access
+   * @return  'uint32_t'       file size in bytes
+   */
+  command uint32_t filesize(uint8_t fd);
 }

@@ -62,20 +62,21 @@ implementation {
     nop();                       /* BRK */
     if ((call TTLV.get_tlv_type(file_tlv) == TN_TLV_INTEGER)) {//  this == fileno
       tn_trace_rec(my_id, 1);
-      db.file = call TTLV.tlv_to_integer(file_tlv);           // zzz not used yet
-      iota_tlv  = call TName.next_element(msg);
-      if ((iota_tlv) && (call TTLV.get_tlv_type(iota_tlv) == TN_TLV_OFFSET)) {
-        db.iota = call TTLV.tlv_to_offset(iota_tlv);
-      }
-      count_tlv = call TName.next_element(msg);
-      if ((count_tlv) && (call TTLV.get_tlv_type(count_tlv) == TN_TLV_SIZE)) {
-        db.count = call TTLV.tlv_to_size(count_tlv);
-      }
-      call TPload.reset_payload(msg);                // params have been extracted
-      call THdr.set_response(msg);
-      call THdr.set_error(msg, TE_PKT_OK);
       switch (call THdr.get_message_type(msg)) {     // process message type
         case TN_GET:
+          db.action = DBLK_GET_DATA;
+          db.file = call TTLV.tlv_to_integer(file_tlv);           // zzz not used yet
+          iota_tlv  = call TName.next_element(msg);
+          if ((iota_tlv) && (call TTLV.get_tlv_type(iota_tlv) == TN_TLV_OFFSET)) {
+            db.iota = call TTLV.tlv_to_offset(iota_tlv);
+          }
+          count_tlv = call TName.next_element(msg);
+          if ((count_tlv) && (call TTLV.get_tlv_type(count_tlv) == TN_TLV_SIZE)) {
+            db.count = call TTLV.tlv_to_size(count_tlv);
+          }
+          call TPload.reset_payload(msg);                // params have been extracted
+          call THdr.set_response(msg);
+          call THdr.set_error(msg, TE_PKT_OK);
           tn_trace_rec(my_id, 2);
           usable = call TPload.bytes_avail(msg);
           usable -=  (4 * 6);                        // reserve four integers for rtn vars
@@ -87,6 +88,23 @@ implementation {
             if (db.error) call TPload.add_error(msg, db.error);
             if (db.delay) call TPload.add_delay(msg, db.delay);
             if ( ln > 0 ) call TPload.add_block(msg, db.block, ln);
+            return TRUE;
+          }
+          if (db.error) {
+            if (db.iota) call TPload.add_offset(msg, db.iota);
+            call TPload.add_error(msg, db.error);
+            return TRUE;
+          }
+          break;
+        case TN_HEAD:
+          // return current size of dblk region as well as the last update time
+          call TPload.reset_payload(msg);                // no params
+          call THdr.set_response(msg);
+          call THdr.set_error(msg, TE_PKT_OK);
+          db.action = DBLK_GET_ATTR;
+          if (call Adapter.get_value(&db, &ln)) {
+            call TPload.add_offset(msg, db.iota);
+            call TPload.add_size(msg, db.count);
             return TRUE;
           }
           if (db.error) {
