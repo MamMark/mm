@@ -357,6 +357,7 @@ implementation {
     nop();
     t.len   = sizeof(dt_header_t) + 256;
     t.dtype = DT_TEST;
+    t.pad   = 0;
     call Collect.collect((void *) &t, sizeof(t), dxx, 256);
   }
 }

@@ -366,12 +366,13 @@ implementation {
     evp->len   = sizeof(ev);
     evp->dtype = DT_EVENT;
     evp->ev    = DT_EVENT_PANIC_WARN;
-    evp->pcode = pap->pcode;            /* pcode/subsystem */
-    evp->w     = pap->where;
     evp->arg0  = pap->a0;
     evp->arg1  = pap->a1;
     evp->arg2  = pap->a2;
     evp->arg3  = pap->a3;
+    evp->pcode = pap->pcode;            /* pcode/subsystem */
+    evp->w     = pap->where;
+    evp->pad   = 0;
     call Collect.collect((void *) evp, sizeof(ev), NULL, 0);
     atomic _panic_args_warn_busy = FALSE;
   }

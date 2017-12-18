@@ -36,6 +36,7 @@ implementation {
     vp->len     = sizeof(v) + sizeof(image_info_t);
     vp->dtype   = DT_VERSION;
     vp->base    = call OverWatch.getImageBase();
+    vp->pad     = 0;
     call Collect.collect((void *) vp, sizeof(dt_version_t),
                          (void *) &image_info, sizeof(image_info_t));
   }
@@ -49,6 +50,7 @@ implementation {
     sp->len = sizeof(s);
     sp->dtype = DT_SYNC;
     sp->sync_majik = SYNC_MAJIK;
+    sp->pad0 = sp->pad1 = 0;
     call Collect.collect((void *) sp, sizeof(dt_sync_t), NULL, 0);
   }
 
@@ -62,6 +64,7 @@ implementation {
     rp->dtype = DT_REBOOT;
     rp->sync_majik = SYNC_MAJIK;
     rp->dt_h_revision = DT_H_REVISION;  /* which version of typed_data */
+    rp->pad0 = rp->pad1 = 0;
     call Collect.collect((void *) rp, sizeof(r),
                          (void *) &ow_control_block,
                          sizeof(ow_control_block_t));

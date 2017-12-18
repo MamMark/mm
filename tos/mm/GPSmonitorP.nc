@@ -212,7 +212,6 @@ implementation {
     uint16_t dlen;
 
     nop();
-    nop();
     if (!svp) return;
     dlen = CF_BE_16(svp->len) - 1;
     gps_block.len = dlen + sizeof(gps_block);

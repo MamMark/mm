@@ -36,8 +36,69 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Collect.h"
-#include "typed_data.h"
+/*
+ * Collect/RecSum: Record Checksum Implementation
+ *
+ * Collect records and kick them to Stream Storage.
+ *
+ * Originally, we provided for data integrity by a single checksum
+ * and a sequence number on each sector.  This however, requires
+ * a three level implementation to recover split records.
+ *
+ * Replacing this with a per record checksum results in both the sector
+ * checksum and sequence number disappearing.  This greatly simplifies
+ * the software implementation and collapses the layers into one.
+ *
+ * See typed_data.h for details on how the headers are layed out.
+ *
+ * Mass Storage block size is 512.  If this changes the tag is severly
+ * bolloxed as this number is spread a number of different places.  Fucked
+ * but true.  Collect uses the entire underlying sector.  This is
+ * SD_BLOCKSIZE.  There is no point in abstracting this at the
+ * StreamStorage layer.  SD block size permeats too many places.  And it
+ * doesn't change.
+ *
+ * The current implementation has split typed_data headers and data.  A
+ * header is required to fit contiguously into a sector and can not be
+ * split across a sector boundary.
+ *
+ * Data associated with a given header however can be split across sector
+ * boundaries but is limited to DT_MAX_DLEN.  (defined in typed_data.h).
+ *
+ * If a header will not fit into the current sector, a DT_TINTRYALF record
+ * will be laid down which tells the system to go to the next block.  Dblk
+ * headers are kept quad aligned (32 bits alignment) in both memory as well
+ * as in the sector buffer and will always be able to fit.  The
+ * DT_TINTRYALF dblk is exactly 32 bits long, 2 byte len and 2 byte dtype
+ * DT_TINTRYALF.
+ *
+ * The rationale for only putting whole dblk records into a sector is to
+ * optimize access.  Both writing and reading.  The Tag is a highly
+ * constrained, very limited resource computing system.  As such we want to
+ * make both writing as well as reading to be reasonably efficient and that
+ * means minimizing special cases, like when we run off the end of a sector.
+ *
+ * By organizing how dblk records layout in memory and how they lay out on
+ * disk sectors, we should be able to minimize how much additonal overhead
+ * is caused by misalignment problems as well as minimize special cases.
+ *
+ * That's the design philosophy anyway.
+ */
+
+#include <typed_data.h>
+#include <sd.h>
+
+
+typedef struct {
+  uint16_t     majik_a;
+  uint16_t     remaining;
+  ss_wr_buf_t *handle;
+  uint8_t     *cur_buf;
+  uint8_t     *cur_ptr;
+  uint16_t     majik_b;
+} dc_control_t;
+
+#define DC_MAJIK 0x1008
 
 module CollectP {
   provides {
@@ -67,39 +128,19 @@ implementation {
   /*
    * finish_sector
    *
-   * o add the sequence number into the checksum
-   * o write the sequence number at 508
-   * o write checksum at 510
+   * sector is finished, zero dcc.remaining which will force getting
+   * another buffer when we have more bytes to write out.
    *
-   * Note: SSW keeps buffers in the 0 state, on initialization, when
-   * flushed, and when SDwrite.writeDone() is called.  We don't need
-   * to zero out the rest of the buffer.  Should already be zeros.
+   * Hand the current buffer off to the writer then reinitialize the
+   * control cells to no buffer here.
    */
   void finish_sector() {
-    uint16_t *p;
-
     nop();                              /* BRK */
-    dcc.remaining = 0;
-    dcc.chksum += (dcc.seq & 0xff);
-    dcc.chksum += (dcc.seq >> 8);
-    p = (void *) (dcc.cur_buf + DC_SEQ_LOC);
-    *p++ = dcc.seq++;
-    *p++ = dcc.chksum;
-  }
-
-
-  /*
-   * normal finish
-   *
-   * first finish the sector then hand it off to SSW
-   * reinitialize the control cells to no buffer here.
-   */
-  void normal_finish() {
-    finish_sector();
     call SSW.buffer_full(dcc.handle);
-    dcc.handle = NULL;
-    dcc.cur_buf = NULL;
-    dcc.cur_ptr = NULL;
+    dcc.remaining = 0;
+    dcc.handle    = NULL;
+    dcc.cur_buf   = NULL;
+    dcc.cur_ptr   = NULL;
   }
 
 
@@ -112,7 +153,7 @@ implementation {
     if (dcc.remaining == 0 || !count)   /* nothing to align */
       return;
     if (dcc.remaining < 4) {
-      normal_finish();
+      finish_sector();
       return;
     }
 
@@ -138,19 +179,14 @@ implementation {
    */
   static uint16_t copy_block_out(uint8_t *data, uint16_t dlen) {
     uint8_t  *ptr;
-    uint16_t num_to_copy, chksum;
+    uint16_t num_to_copy;
     unsigned int i;
 
     num_to_copy = ((dlen < dcc.remaining) ? dlen : dcc.remaining);
-    chksum = dcc.chksum;
     ptr = dcc.cur_ptr;
-    for (i = 0; i < num_to_copy; i++) {
-      chksum += *data;
+    for (i = 0; i < num_to_copy; i++)
       *ptr++  = *data++;
-    }
-    dcc.chksum = chksum;
     dcc.cur_ptr = ptr;
-    dlen -= num_to_copy;
     dcc.remaining -= num_to_copy;
     return num_to_copy;
   }
@@ -170,15 +206,13 @@ implementation {
          */
         dcc.handle = call SSW.get_free_buf_handle();
         dcc.cur_ptr = dcc.cur_buf = call SSW.buf_handle_to_buf(dcc.handle);
-        dcc.remaining = DC_BLK_SIZE;
-        dcc.chksum = 0;
+        dcc.remaining = SD_BLOCKSIZE;
       }
       num_copied = copy_block_out(data, dlen);
       data += num_copied;
       dlen -= num_copied;
-      if (dcc.remaining == 0) {
-        normal_finish();
-      }
+      if (dcc.remaining == 0)
+        finish_sector();
     }
   }
 
@@ -188,8 +222,9 @@ implementation {
    * host side.
    *
    * header is constrained to be 32 bit aligned (a(4)).  The size of header
-   * is not constrained and may be any size.  data is not constrained and
-   * will be copied immediately after the header (contiguous).
+   * must be less than DT_MAX_HEADER (+ 1) and data length must be less than
+   * DT_MAX_DLEN (+ 1).  Data is immediately copied after the header (its
+   * contiguous).
    *
    * hlen is the actual size of the header, dlen is the actual size of the
    * data.  hlen + dlen should match what is laid down in header->len.
@@ -208,10 +243,13 @@ implementation {
   command void Collect.collect_nots(dt_header_t *header, uint16_t hlen,
                                     uint8_t     *data,   uint16_t dlen) {
     dt_header_t dt_hdr;
+    uint16_t    chksum;
+    uint32_t    i;
 
     if (dcc.majik_a != DC_MAJIK || dcc.majik_b != DC_MAJIK)
       call Panic.panic(PANIC_SS, 1, dcc.majik_a, dcc.majik_b, 0, 0);
-    if ((uint32_t) header & 0x3 || (uint32_t) dcc.cur_ptr & 0x03 || dcc.remaining > DC_BLK_SIZE)
+    if ((uint32_t) header & 0x3 || (uint32_t) dcc.cur_ptr & 0x03 ||
+        dcc.remaining > SD_BLOCKSIZE)
       call Panic.panic(PANIC_SS, 2, (parg_t) header, (parg_t) dcc.cur_ptr, dcc.remaining, 0);
     if (header->len != (hlen + dlen) ||
         header->dtype > DT_MAX       ||
@@ -219,20 +257,36 @@ implementation {
         (hlen + dlen) < 4)
       call Panic.panic(PANIC_SS, 3, hlen, dlen, header->len, header->dtype);
 
-    if (dlen > DC_MAX_DLEN)
+    if (dlen > DT_MAX_DLEN)
       call Panic.panic(PANIC_SS, 1, (parg_t) data, dlen, 0, 0);
 
     header->recnum = call DblkManager.adv_cur_recnum();
+
+    /*
+     * our caller is responsible for filling in any pad fields, typically 0.
+     *
+     * we need to compute the record chksum over all bytes of the header and
+     * all bytes of the data area.  Additions to the chksum are done byte by
+     * byte.  This has to be done before dumping any of the data and added
+     * to the header (recsum).
+     */
+    chksum = 0;
+    header->recsum = 0;
+    for (i = 0; i < hlen; i++)
+      chksum += ((uint8_t *) header)[i];
+    for (i = 0; i < dlen; i++)
+      chksum += data[i];
+    header->recsum = (uint16_t) (0-chksum);
     nop();                              /* BRK */
     while(1) {
       if (dcc.remaining == 0 || dcc.remaining >= hlen) {
         /*
          * Either no space remains (will grab a new sector/buffer) or the
-         * header will fit in what's left.  Just push the header out followed
-         * by the data.
+         * header will fit in what's left.  Just push the header out
+         * followed by the data.
          *
-         * The header will fit in the DC_BLK_SIZE bytes in the sector in what
-         * is left.  checked for max above.
+         * The header will fit in the SD_BLOCKSIZE bytes in the sector in
+         * what is left.  checked for max above.
          */
         copy_out((void *)header, hlen);
         copy_out((void *)data,   dlen);
@@ -253,12 +307,12 @@ implementation {
 
       /*
        * If we had exactly 4 bytes left, the DT_TINTRYALF will have filled
-       * it forcing a normal_finish, leaving no remaining bytes.  But if we
-       * still have some remaining then flush the current sector out and start
-       * fresh.
+       * the rest of the buffer resulting in a finish_sector, (no
+       * remaining bytes).  But if we still have some remaining then flush
+       * the current sector out and start fresh.
        */
       if (dcc.remaining)
-        normal_finish();
+        finish_sector();
 
       /* and try again in the new sector */
     }
@@ -280,13 +334,17 @@ implementation {
     ep = &e;
     ep->len = sizeof(e);
     ep->dtype = DT_EVENT;
+    ep->ev   = ev;
     ep->arg0 = arg0;
     ep->arg1 = arg1;
     ep->arg2 = arg2;
     ep->arg3 = arg3;
-    ep->ev = ev;
+    ep->pcode= 0;
+    ep->w    = 0;
+    ep->pad  = 0;
     call Collect.collect((void *)ep, sizeof(e), NULL, 0);
   }
+
 
   async event void SysReboot.shutdown_flush() {
     dt_sync_t  s;
@@ -295,35 +353,31 @@ implementation {
     nop();                              /* BRK */
 
     /*
-     * tell StreamWrite to flush everything
+     * The Stream Writer has been yanked and told to flush any pending
+     * buffers.  Most are FULL and SSW will handle those.  But Collect
+     * may still have one ALLOC'd..
      *
-     * but first... current buffer says we have a buffer in progress.  Its
-     * ALLOC'd.  We need to finish it off and then write it out along with
-     * any others that are pending.
-     *
-     * But wait, there's more....   First if there is room put one last
-     * sync record down that records what we currently think current datetime
-     * is.  Yeah!
+     * The buffer is ready to go as is.  But if we have room put one last
+     * sync record down that records what we currently think current
+     * datetime is.  Yeah!
      */
     sp = &s;
     if (dcc.cur_buf) {
       /*
        * have a current buffer.  If we have space then add
-       * a FLUSH record.  Only takes up a simple header, 4 bytes
-       *
-       * this tells what happened if possible.
+       * a SYNC record, which will include a time corellator.
        */
       if (dcc.remaining >= sizeof(dt_sync_t)) {
         sp->len        = sizeof(dt_sync_t);
         sp->dtype      = DT_SYNC;
         sp->systime    = call LocalTime.get();
         sp->sync_majik = SYNC_MAJIK;
-        /* fill in datetpc, get the current datetime */
+        sp->pad0       = sp->pad1       = 0;
 
-        /* we know it will fit, because of earlier checks above */
+        /* fill in datetime */
         copy_block_out((void *) sp, sizeof(dt_sync_t));
       }
-      finish_sector();
+      dcc.remaining = 0;
     }
     call SSW.flush_all();
   }

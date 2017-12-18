@@ -141,7 +141,7 @@ typedef struct {                /* size 4, only for TINTRYALF */
 } PACKED dt_short_header_t;
 
 
-typedef struct {                /* size 18 */
+typedef struct {                /* size 20 */
   uint16_t len;
   dtype_t  dtype;
   uint32_t recnum;
@@ -182,8 +182,8 @@ typedef struct {                /* size 18 */
  */
 
 typedef struct {
-  uint16_t len;                 /* size 42 */
-  dtype_t  dtype;
+  uint16_t len;                 /* size 44 +    68      */
+  dtype_t  dtype;               /* reboot  + ow_control */
   uint32_t recnum;
   uint64_t systime;             /* 2quad alignment */
   uint16_t recsum;              /* part of header */
@@ -213,7 +213,7 @@ typedef struct {
   uint32_t    recnum;
   uint64_t    systime;
   uint16_t    recsum;           /* part of header */
-  uint16_t    pad0;
+  uint16_t    pad;
   uint32_t    base;             /* base address of this image */
 } PACKED dt_version_t;          /* quad granular */
 
@@ -267,7 +267,7 @@ typedef enum {
 
 
 typedef struct {
-  uint16_t len;                 /* size 38 */
+  uint16_t len;                 /* size 40 */
   dtype_t  dtype;
   uint32_t recnum;
   uint64_t systime;
@@ -279,6 +279,7 @@ typedef struct {
   uint32_t arg3;
   uint8_t  pcode;               /* PANIC warn, pcode, subsys */
   uint8_t  w;                   /* PANIC warn, where  */
+  uint16_t pad;                 /* quad align */
 } PACKED dt_event_t;
 
 
