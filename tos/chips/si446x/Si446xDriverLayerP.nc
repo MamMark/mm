@@ -1679,13 +1679,23 @@ implementation {
   /**************************************************************************/
 
   async event void Panic.hook() {
+    switch(fsm_global_current_state) {
+      default:
+      case S_SDN:
+      case S_POR_W:
+      case S_PWR_UP_W:
+        return;
+
+        /* reasonable states just fall through */
+      case S_CONFIG_W:
+      case S_CRC_FLUSH:
+      case S_RX_ACTIVE:
+      case S_RX_ON:
+      case S_STANDBY:
+      case S_TX_ACTIVE:
+      case S_DEFAULT:
+    }
     call Si446xCmd.dump_radio();
-#ifdef notdef
-    call CSN.set();
-    call CSN.clr();
-    call CSN.set();
-    drs(TRUE);
-#endif
   }
 
 

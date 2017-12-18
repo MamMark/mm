@@ -1410,13 +1410,7 @@ implementation {
     ll_si446x_trace(T_RC_WRITE_TX_FF, 0, 0);
   }
 
-
-  /**************************************************************************/
-  /*
-   * Panic.hook
-   *
-   * handles collection of useful informtion when a panic occurs.
-   */
+  /* CmdP doesn't handle the Panic.hook,  see DriverLayerP. */
   async event void Panic.hook() { }
 
 }
