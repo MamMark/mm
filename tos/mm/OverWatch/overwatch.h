@@ -156,8 +156,10 @@ typedef enum {
  */
 
 enum {
-  OWRF_LAUNCH = 1,                      /* in process of an image launch */
+  OWRF_LAUNCH  = 1,                     /* in process of an image launch */
                                         /* gets cleared when reboot record is written */
+  OWRF_LOW_PWR = 2,                     /* in low power mode, no sd, no 3V3 rail      */
+  OWRF_SD_FAIL = 4,                     /* failed in SD code, no panic captured       */
 };
 
 
