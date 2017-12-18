@@ -1,4 +1,3 @@
-
 # to launch msp432-gdb
 # M-x gdb
 # arm-none-eabi-gdb-py -i=mi -iex "target extended-remote localhost:2331" -cd build/<target>/ main.exe
@@ -36,6 +35,7 @@ add-symbol-file symbols_hw 0
 source ../../.gdb_msp432
 source .gdb_target
 source ../../.gdb_gps
+source ../../.gdb_si446x.py
 source ../../.gdb_mm
 
 set disassemble-next-line on
@@ -120,7 +120,7 @@ b SchedulerBasicP.nc:163
 b VirtualizeTimerC.nc:92
 dis 1 2
 
-b PanicP.nc:648
+b PanicP.nc:652
 comm
 printf "\n\n*** Panic: %d(d), w: %d(d), a: %04x %04x %04x %04x\n", \
         pcode, where, arg0, arg1, arg2, arg3

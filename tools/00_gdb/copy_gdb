@@ -34,6 +34,7 @@ cp ${MM_GDB}/gdb_mm            .gdb_mm
 cp ${TP_GDB}/gdb_msp432        .gdb_msp432
 
 cp ${MM_CHIP}/gsd4e_v4/gdb_gps .gdb_gps
+cp ${MM_CHIP}/si446x/gdb_si446x.py .gdb_si446x.py
 cp ${MM_PLAT}/mm6a/gdb_mm6a    .gdb_mm6a
 cp ${MM_PLAT}/dev6a/gdb_dev6a  .gdb_dev6a
 
