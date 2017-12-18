@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Eric B. Decker
+ * Copyright (c) 2016-2017 Eric B. Decker, Daniel J. Maltbie
  * All Rights Reserved
  *
  * typed_data: definitions for typed data on Mass Storage and any Data
@@ -24,16 +24,24 @@
  * The exact size matters.  The ARM compiler adds padding bytes at the end
  * of structures to round up to an even 32 bit alignment.  We take pains to
  * set up fields so we do not violate alignment restrictions.  16 bit
- * fields on 2 byte alignment and 32 bit fields on 4 byte alignment.
- * Structures start on 4 byte alignment.  All structures should be padded
- * as necessary to an even quad alignment (quad granular).
+ * fields on 2 byte alignment (half word aligned) and 32 bit fields on 4
+ * byte alignment (quad).  Structures start on 4 byte alignment.  All
+ * structures should be padded as necessary to an even quad alignment (quad
+ * granular).  Each Dblk header is also required to be quad granular (even
+ * muliple of 4 bytes).  This allows any data following the header to start
+ * on a quad alignment.
  *
  * A dt header can be followed by data.  This payload immediately follows
- * the header and can cross sector boundaries.  There are no alignment
- * constraints on the payload.  A dt header is not required to have a
- * payload.  The len field in the header is inclusive of both the header
- * and any data following.  If there is no payload, the len field simply
- * indicates how long the header is and must be the same as sizeof(header).
+ * the header and can cross sector boundaries.  The data area starts on a
+ * quad alignment.  There are no constraints on the data area length.  A dt
+ * header is not required to have a payload.  The len field in the header
+ * is inclusive of both the header and any data following.  If there is no
+ * payload, the len field simply indicates how long the header is and must
+ * be the same as sizeof(header).
+ *
+ * Each record also includes a record checksum.  This is a 16 bit little
+ * endian sum over all bytes of the header as well as all bytes of the
+ * data.  The sum is calculated over individual bytes.
  *
  * Following the header and any potential payload, the next dt header
  * will be aligned onto the next quad alignment.
@@ -58,14 +66,14 @@
  * split into two subfields, major and minor.  Major 0 is development of
  * some flavor.  Releases start at Major 1.  Major 1 looks like 00010000.
  */
-#define DT_H_REVISION   0x00000006
+#define DT_H_REVISION   0x00000007
 
 typedef enum {
   DT_TINTRYALF		= 0,            /* next, force next sector */
   DT_REBOOT		= 1,		/* reboot sync */
   DT_VERSION		= 2,
   DT_SYNC		= 3,
-  DT_EVENT	        = 4,
+  DT_EVENT              = 4,
   DT_DEBUG		= 5,
 
   DT_GPS_VERSION        = 16,
@@ -89,17 +97,22 @@ typedef enum {
 
 
 #define DT_MAX_HEADER 80
+#define DT_MAX_DLEN   1024
 
 /*
  * In memory and within a SD sector, DT headers are constrained to be 32
  * bit aligned (aligned(4)).  This means that all data must be padded as
  * needed to make the next dt header start on a 4 byte boundary.
+ * Additionally, headers are quad granular as well.  This allows the
+ * data layout to also start out quad aligned.
  *
  * All records (data blocks, dt headers) start with a 2 byte little endian
  * length, a 2 byte little endian data type field (dtype), a 4 byte little
  * endian record number, and a 64 bit little endian systime (internal time,
  * since last reboot) stamp.  The double quad systime needs to be double
- * quad aligned.
+ * quad aligned.  The header also includes a record checksum (recsum).
+ * This is a 16 bit little endian checksum over individual bytes in both
+ * the header and data areas.
  *
  * A following dt_header is required to be quad aligned.  There will 0-3
  * pad bytes following a record.  Length does not include these pad bytes.
@@ -128,11 +141,13 @@ typedef struct {                /* size 4, only for TINTRYALF */
 } PACKED dt_short_header_t;
 
 
-typedef struct {                /* size 16 */
+typedef struct {                /* size 18 */
   uint16_t len;
   dtype_t  dtype;
   uint32_t recnum;
   uint64_t systime;
+  uint16_t recsum;
+  uint16_t pad;                 /* quad aligned */
 } PACKED dt_header_t;
 
 
@@ -167,15 +182,17 @@ typedef struct {                /* size 16 */
  */
 
 typedef struct {
-  uint16_t len;                 /* size 40 */
+  uint16_t len;                 /* size 42 */
   dtype_t  dtype;
   uint32_t recnum;
   uint64_t systime;             /* 2quad alignment */
+  uint16_t recsum;              /* part of header */
+  uint16_t pad0;
   uint32_t sync_majik;
   uint32_t prev_sync;           /* file offset */
   uint32_t dt_h_revision;       /* version identifier of typed_data */
   datetime_t datetime;          /* 10 bytes */
-  uint8_t  pad[2];              /* 2 bytes of pad, even quad */
+  uint16_t  pad1;               /* quad aligned for owcb */
 } PACKED dt_reboot_t;
 
 typedef struct {
@@ -191,12 +208,14 @@ typedef struct {
  * followed by the entire image_info block
  */
 typedef struct {
-  uint16_t    len;              /* size   20    +     144      */
+  uint16_t    len;              /* size   24    +     144      */
   dtype_t     dtype;            /* dt_version_t + image_info_t */
   uint32_t    recnum;
   uint64_t    systime;
+  uint16_t    recsum;           /* part of header */
+  uint16_t    pad0;
   uint32_t    base;             /* base address of this image */
-} PACKED dt_version_t;
+} PACKED dt_version_t;          /* quad granular */
 
 typedef struct {
   dt_version_t dt_ver;
@@ -205,14 +224,17 @@ typedef struct {
 
 
 typedef struct {
-  uint16_t   len;               /* size 34 */
+  uint16_t   len;               /* size 40 */
   dtype_t    dtype;
   uint32_t   recnum;
   uint64_t   systime;
+  uint16_t   recsum;            /* part of header */
+  uint16_t   pad0;
   uint32_t   sync_majik;
   uint32_t   prev_sync;         /* file offset */
   datetime_t datetime;          /* 10 bytes */
-} PACKED dt_sync_t;
+  uint16_t   pad1;
+} PACKED dt_sync_t;             /* quad granular */
 
 
 typedef enum {
@@ -245,17 +267,18 @@ typedef enum {
 
 
 typedef struct {
-  uint16_t len;                 /* size 36 */
+  uint16_t len;                 /* size 38 */
   dtype_t  dtype;
   uint32_t recnum;
   uint64_t systime;
+  uint16_t recsum;              /* part of header */
   dt_event_id_t ev;             /* event, see above */
-  uint8_t  ss;                  /* PANIC warn, subsys */
-  uint8_t  w;                   /* PANIC warn, where  */
   uint32_t arg0;
   uint32_t arg1;
   uint32_t arg2;
   uint32_t arg3;
+  uint8_t  pcode;               /* PANIC warn, pcode, subsys */
+  uint8_t  w;                   /* PANIC warn, where  */
 } PACKED dt_event_t;
 
 
@@ -287,10 +310,10 @@ typedef struct {
   dtype_t  dtype;
   uint32_t recnum;
   uint64_t systime;
-  uint32_t mark_us;             /* mark stamp in usecs */
+  uint16_t recsum;              /* part of header */
   gps_chip_id_t chip_id;
   uint8_t  dir;                 /* dir, 0 rx from gps, 1 - tx to gps */
-  uint8_t  pad[2];              /* quad granular */
+  uint32_t mark_us;             /* mark stamp in usecs */
 } PACKED dt_gps_t;
 
 /* direction setting in dir in dt_gps_t
@@ -307,20 +330,22 @@ typedef struct {
   dtype_t  dtype;
   uint32_t recnum;
   uint64_t systime;
-  uint32_t sched_delta;
+  uint16_t recsum;              /* part of header */
   uint16_t sns_id;
-  uint8_t  pad[2];              /* quad granular */
+  uint32_t sched_delta;
 } PACKED dt_sensor_data_t;
 
 
 typedef struct {
-  uint16_t len;                 /* size 24 + var */
+  uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
   uint32_t recnum;
   uint64_t systime;
-  uint32_t sched_delta;
+  uint16_t recsum;              /* part of header */
   uint16_t mask;
+  uint32_t sched_delta;
   uint16_t mask_id;
+  uint16_t pad;                 /* quad alignment */
 } PACKED dt_sensor_set_t;
 
 
@@ -339,6 +364,7 @@ typedef struct {
   dtype_t  dtype;
   uint32_t recnum;
   uint64_t systime;
+  uint16_t recsum;              /* part of header */
   uint16_t note_len;
   uint16_t year;
   uint8_t  month;
@@ -346,7 +372,7 @@ typedef struct {
   uint8_t  hrs;
   uint8_t  min;
   uint8_t  sec;
-  uint8_t  pad[3];
+  uint8_t  pad;
 } PACKED dt_note_t;
 
 
@@ -360,7 +386,7 @@ enum {
   DT_HDR_SIZE_GPS           = sizeof(dt_gps_t),
   DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_t),
   DT_HDR_SIZE_SENSOR_SET    = sizeof(dt_sensor_set_t),
-  DT_HDR_SIZE_NOTE	    = sizeof(dt_note_t),
+  DT_HDR_SIZE_NOTE          = sizeof(dt_note_t),
 };
 
 

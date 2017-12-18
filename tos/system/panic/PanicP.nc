@@ -366,7 +366,7 @@ implementation {
     evp->len   = sizeof(ev);
     evp->dtype = DT_EVENT;
     evp->ev    = DT_EVENT_PANIC_WARN;
-    evp->ss    = pap->pcode;            /* subsystem */
+    evp->pcode = pap->pcode;            /* pcode/subsystem */
     evp->w     = pap->where;
     evp->arg0  = pap->a0;
     evp->arg1  = pap->a1;

@@ -39,8 +39,7 @@
 
 #include "sd.h"
 
-/* Clients should only know about SS_BLOCK_SIZE. */
-#define SS_BLOCK_SIZE (SD_BLOCKSIZE)
+/* number of buffers that StreamStorage is using */
 #define SSW_NUM_BUFS   5
 
 /*
