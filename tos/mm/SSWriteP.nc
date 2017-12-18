@@ -210,11 +210,11 @@ implementation {
         ssc.majik_b != SSC_MAJIK ||
         sswp->buf_state < SS_BUF_STATE_FREE ||
         sswp->buf_state >= SS_BUF_STATE_MAX)
-      ss_panic(18, ssc.ssw_alloc);
+      ss_panic(13, ssc.ssw_alloc);
 
     if (sswp->buf_state == SS_BUF_STATE_FREE) {
       if (sswp->majik != SS_BUF_SANE)
-        ss_panic(19, sswp->majik);
+        ss_panic(14, sswp->majik);
 
       sswp->stamp = call LocalTime.get();
       sswp->buf_state = SS_BUF_STATE_ALLOC;
@@ -223,7 +223,7 @@ implementation {
         ssc.ssw_alloc = 0;
       return sswp;
     }
-    ss_panic(20, -1);
+    ss_panic(15, -1);
     return NULL;
   }
 
@@ -231,7 +231,7 @@ implementation {
   command uint8_t *SSW.buf_handle_to_buf(ss_wr_buf_t *handle) {
     if (!handle || handle->majik != SS_BUF_SANE ||
         handle->buf_state != SS_BUF_STATE_ALLOC)
-      ss_panic(21, (parg_t) handle);
+      ss_panic(16, (parg_t) handle);
 
     return handle->buf;
   }
@@ -249,7 +249,7 @@ implementation {
     for (i = 0; i < SSW_NUM_BUFS; i++)
       if (ssw_p[i]->buf_state == SS_BUF_STATE_FREE)
         return ssw_p[i]->buf;
-    ss_panic(21, i);
+    ss_panic(17, i);
     return NULL;
   }
 
@@ -283,11 +283,11 @@ implementation {
      * This task should only get kicked if not doing anything
      */
     if (ssc.state != SSW_IDLE || ssc.ssw_num_full < SSW_GROUP)
-      call Panic.panic(PANIC_SS, 22, ssc.state, ssc.ssw_num_full, 0, 0);
+      call Panic.panic(PANIC_SS, 18, ssc.state, ssc.ssw_num_full, 0, 0);
 
     ssc.cur_handle = ssw_p[ssc.ssw_out];
     if (ssc.cur_handle->buf_state != SS_BUF_STATE_FULL)
-      ss_panic(23, ssc.cur_handle->buf_state);
+      ss_panic(19, ssc.cur_handle->buf_state);
 
     /*
      * When running a simple sensor regime (all 1 sec, mag/accel 51mis) and writing out
@@ -320,7 +320,7 @@ implementation {
 
     /* SDResource.request will all turn on the SD h/w when granted */
     if ((err = call SDResource.request()))
-      ss_panic(24, err);
+      ss_panic(20, err);
   }
 
 
@@ -328,11 +328,11 @@ implementation {
     error_t  err;
 
     if (ssc.cur_handle->buf_state != SS_BUF_STATE_FULL)
-      call Panic.panic(PANIC_SS, 25, (parg_t) ssc.cur_handle,
+      call Panic.panic(PANIC_SS, 21, (parg_t) ssc.cur_handle,
                        (parg_t) ssc.cur_handle->buf_state, 0, 0);
 
     if (ssc.dblk == 0)                  /* shouldn't have asked if no where to write */
-      ss_panic(26, ssc.state);
+      ss_panic(22, ssc.state);
 
     w_t0 = call LocalTime.get();
     ssw_write_grp_start = w_t0;
@@ -341,14 +341,14 @@ implementation {
     ssc.state = SSW_WRITING;
     err = call SDwrite.write(ssc.dblk, ssc.cur_handle->buf);
     if (err)
-      ss_panic(27, err);
+      ss_panic(23, err);
   }
 
 
   event void SDwrite.writeDone(uint32_t blk, uint8_t *buf, error_t err) {
 
     if (err || blk != ssc.dblk || ssc.cur_handle->buf_state != SS_BUF_STATE_WRITING)
-      call Panic.panic(PANIC_SS, 28, err, blk, ssc.dblk, ssc.cur_handle->buf_state);
+      call Panic.panic(PANIC_SS, 24, err, blk, ssc.dblk, ssc.cur_handle->buf_state);
 
     ssc.cur_handle->stamp = call LocalTime.get();
     ssc.cur_handle->buf_state = SS_BUF_STATE_FREE;
@@ -368,7 +368,7 @@ implementation {
       flush_buffers();
       ssc.state = SSW_IDLE;
       if (call SDResource.release())
-        ss_panic(29, 0);
+        ss_panic(25, 0);
       return;
     }
 
@@ -381,7 +381,7 @@ implementation {
       ssc.cur_handle->buf_state = SS_BUF_STATE_WRITING;
       err = call SDwrite.write(ssc.dblk, ssc.cur_handle->buf);
       if (err)
-        ss_panic(27, err);
+        ss_panic(26, err);
       return;
     }
     w_t0 = call LocalTime.get();
@@ -389,7 +389,7 @@ implementation {
 
     ssc.state = SSW_IDLE;
     if (call SDResource.release())
-      ss_panic(28, 0);
+      ss_panic(27, 0);
   }
 
 
