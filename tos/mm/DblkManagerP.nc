@@ -114,7 +114,7 @@ implementation {
     dmc.dblk_lower = lower;
     dmc.dblk_nxt   = lower + 1;
     dmc.dblk_upper = upper;
-    dmc.cur_recnum = (uint32_t) -1;
+    dmc.cur_recnum = 0;
     dm_state = DMS_REQUEST;
     if ((err = call SDResource.request()))
       dm_panic(2, err, 0);
