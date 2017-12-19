@@ -4,26 +4,31 @@ Record Managment
 Definitions:
 
 alignment:      initial byte alignment for a multibyte datum or structure
-                can be half-word, word/quad, double-quad aligned.
+                can be half-word, word (quad), double-quad (2quad) aligned.
 granualrity:    ending alignment for a multibyte datum or structure.
+                (byte, half, quad, 2quad).
 byte:           8 bit quantity
 half-word:      16 bit quantity, 2 bytes.
 word:           32 bit quantity
 quad:           32 bit quantity, alias of word.  4 bytes.
 quad alignment: the datum or structure is aligned on a quad word (low two bits 0)
 quad granular:  the structure or datum ends evenly aligned wrt the next quad.
+2quad:          double quad aligned.
 
 dblk:           short for data block.
 data block:     another name for a record.
 typed_data:     yet another name for a record.
 file_offset:    absolute byte offset of a record from the start of the DBLK file.
-blk_id:         absolute sector/block id of a 512 byte sector on the SD.
+blk_id:         absolute sector/block id of a 512 byte sector on the SD.  absolute
+                from the start of the SD.
 sector:         512 byte data block used to talk to the SD.
 SD:             Secure Digital device that is the effective mass storage device.
 
 
-SysTime:
-DateTime:
+SysTime:        64 bit millisecond granular time since reboot.
+DateTime:       10 byte real time.  Year-Month-Day-Hour-Min-Sec-Jiffies-DOW
+                Jiffies are 15 bits of subsecond (1/32768 units, ~30.5us).
+                DOW, day of week.
 
 
 Restrictions:
