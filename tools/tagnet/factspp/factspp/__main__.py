@@ -28,7 +28,7 @@ def main():
                         default=0,
                         help='increase output verbosity')
     args = parser.parse_args()
-    print(args)
+    # zzz print(args)
     preprocessor(args)
 
 main()

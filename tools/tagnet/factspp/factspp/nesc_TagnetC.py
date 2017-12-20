@@ -94,7 +94,9 @@ def nesc_fmt_TagnetC(args, _tree):
 
      def WriteImplementation(fd):
           # write out all component instantiations of name objects
-          for node in _tree.all_nodes():
+          def nodename(node):
+               return int(node.identifier)
+          for node in sorted(_tree.all_nodes(), key=nodename):
                if node.is_leaf():
                     CompLeaf(outfd, node)
                elif node.is_root():
@@ -103,7 +105,7 @@ def nesc_fmt_TagnetC(args, _tree):
                     CompVertex(outfd, node)
           outfd.write('\n')
           # write out all wiring and interface descriptions
-          for node in _tree.all_nodes():
+          for node in sorted(_tree.all_nodes(), key=nodename):
                if node.is_leaf():
                     WireLeaf(outfd, node)
                elif node.is_root():

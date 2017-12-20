@@ -52,6 +52,8 @@ def nesc_fmt_TagnetDefines(args, _tree):
                + oct(len(help_str)) \
                + help_str
 
+     def nodename(node):
+          return int(node.identifier)
 
      # write out the NesC include file for enums and descriptor information
      #
@@ -61,7 +63,7 @@ def nesc_fmt_TagnetDefines(args, _tree):
           outfd.write('// THIS IS AN AUTO-GENERATED FILE, DO NOT EDIT\n\n')
 
           outfd.write("typedef enum {                   //      (parent) name\n")
-          for node in _tree.all_nodes():
+          for node in sorted(_tree.all_nodes(), key=nodename):
                parent = _tree[node.bpointer].tag if (node.bpointer) else '_'
                outfd.write("  {:<20}  =  {:>4}, //  ({:^10}) {:}\n".format(
                     ThisElementID(node),
@@ -83,7 +85,7 @@ def nesc_fmt_TagnetDefines(args, _tree):
           )
           outfd.write("} tn_ids_t;\n\n")
 
-          for node in _tree.all_nodes():
+          for node in sorted(_tree.all_nodes(), key=nodename):
                parent = _tree[node.bpointer].tag if (node.bpointer) else '_'
                outfd.write("#define  {:<20}    \"{}\"\n".format(
                     ThisElementUQ(node),
