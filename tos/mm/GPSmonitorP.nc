@@ -166,7 +166,9 @@ implementation {
     *l = TN_GPS_XYZ_LEN;
     return 1;
   }
-
+  command bool InfoSensGpsXyz.set_value(tagnet_gps_xyz_t *t, uint32_t *l) {
+    return FALSE;
+  }
 
   /*
    * MID 2: NAV_DATA

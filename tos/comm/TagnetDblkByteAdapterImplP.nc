@@ -52,7 +52,7 @@ implementation {
   event bool Super.evaluate(message_t *msg) {
     tagnet_dblk_bytes_t db = {0,0,1,NULL,0,0};
     uint32_t           ln        = 0;
-//    tagnet_tlv_t      *name_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
+    tagnet_tlv_t      *name_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t      *file_tlv  = call TName.this_element(msg);
     tagnet_tlv_t      *iota_tlv;
     tagnet_tlv_t      *count_tlv;
@@ -60,12 +60,12 @@ implementation {
 
     nop();
     nop();                       /* BRK */
-    if ((call TTLV.get_tlv_type(file_tlv) == TN_TLV_INTEGER)) {//  this == fileno
+    if (call TTLV.eq_tlv(name_tlv, file_tlv)) {
       tn_trace_rec(my_id, 1);
       switch (call THdr.get_message_type(msg)) {     // process message type
         case TN_GET:
           db.action = DBLK_GET_DATA;
-          db.file = call TTLV.tlv_to_integer(file_tlv);           // zzz not used yet
+          db.file = call TTLV.tlv_to_integer(file_tlv);  // zzz not used yet
           iota_tlv  = call TName.next_element(msg);
           if ((iota_tlv) && (call TTLV.get_tlv_type(iota_tlv) == TN_TLV_OFFSET)) {
             db.iota = call TTLV.tlv_to_offset(iota_tlv);
@@ -74,7 +74,7 @@ implementation {
           if ((count_tlv) && (call TTLV.get_tlv_type(count_tlv) == TN_TLV_SIZE)) {
             db.count = call TTLV.tlv_to_size(count_tlv);
           }
-          call TPload.reset_payload(msg);                // params have been extracted
+          call TPload.reset_payload(msg);            // params have been extracted
           call THdr.set_response(msg);
           call THdr.set_error(msg, TE_PKT_OK);
           tn_trace_rec(my_id, 2);
@@ -97,7 +97,8 @@ implementation {
           }
           break;
         case TN_HEAD:
-          // return current size of dblk region as well as the last update time
+          // return current size of dblk region, current file position,
+          // and last update time
           call TPload.reset_payload(msg);                // no params
           call THdr.set_response(msg);
           call THdr.set_error(msg, TE_PKT_OK);

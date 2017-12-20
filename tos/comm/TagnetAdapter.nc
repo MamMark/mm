@@ -57,4 +57,14 @@ interface TagnetAdapter<tagnet_adapter_type>
    * @return  'bool'                     TRUE if value is valid
    */
   command bool get_value(tagnet_adapter_type *t, uint32_t *len);
+  /**
+   * Set the value of the Tagnet named data object. The interface is
+   * parameterized by the type of value that can be accessed. Examples
+   * are integer, string, utc_time.
+   *
+   * @param   'tagnet_adapter_type *t'   pointer to an instance of adapter type
+   * @param   'uint32_t            *len' pointer to length available/used
+   * @return  'bool'                     TRUE if value is valid
+   */
+  command bool set_value(tagnet_adapter_type *t, uint32_t *len);
 }

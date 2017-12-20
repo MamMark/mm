@@ -1,5 +1,5 @@
 """
-__init__.py:  Rules Engine Emulator Package Initialization
+__init__.py:  TagNet Facts Preprocessor Package Initialization
 
 Perform namespace management and version identification.
 
@@ -8,4 +8,4 @@ Perform namespace management and version identification.
 
 from factspp import preprocessor
 
-__version__ = "0.0.1"
+__version__ = "0.0.3"

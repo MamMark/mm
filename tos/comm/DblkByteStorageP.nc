@@ -38,23 +38,27 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <TinyError.h>
+#include <mm_byteswap.h>
 #include <message.h>
 #include <Tagnet.h>
 #include <TagnetAdapter.h>
 
 module DblkByteStorageP {
   provides {
-    interface TagnetAdapter<tagnet_dblk_bytes_t>  as DblkBytes;
+    interface  TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk0Bytes;
+    interface  TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk1Bytes;
+    interface  TagnetAdapter<uint8_t>              as DblkNote;
   }
   uses {
     interface DblkMapFile  as DMF;
     interface Boot;
+    interface Collect;
     interface Panic;
   }
 }
 implementation {
 
-  command bool DblkBytes.get_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
+  bool GetDblkBytes(tagnet_dblk_bytes_t *db, uint32_t *len) {
     error_t    err;
 
     nop();
@@ -85,6 +89,54 @@ implementation {
     db->count = 0;
     db->error = err;
     return FALSE;
+  }
+
+  command bool Dblk0Bytes.get_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
+    db->file = 0;
+    return GetDblkBytes(db, len);
+  }
+
+  command bool Dblk0Bytes.set_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
+    return FALSE; }
+
+
+  command bool Dblk1Bytes.get_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
+    db->file = 1;
+    return GetDblkBytes(db, len);
+  }
+
+  command bool Dblk1Bytes.set_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
+    return FALSE; }
+
+
+  command bool DblkNote.get_value(uint8_t *db, uint32_t *len) {
+    return FALSE; }
+
+  command bool DblkNote.set_value(uint8_t *db, uint32_t *len) {
+    dt_note_t    note_block;
+    /*
+      uint16_t len;                 * size 28 + var *
+      dtype_t  dtype;
+      uint32_t recnum;
+      uint64_t systime;
+      uint16_t recsum;
+      uint16_t note_len;
+      uint16_t year;
+      uint8_t  month;
+      uint8_t  day;
+      uint8_t  hrs;
+      uint8_t  min;
+      uint8_t  sec;
+    */
+    uint16_t     dlen;
+
+    dlen = CF_BE_16(*len) - 1;
+    note_block.len = dlen + sizeof(note_block);
+    note_block.dtype = DT_NOTE;
+    note_block.note_len = *len;
+    call Collect.collect((void *) &note_block, sizeof(note_block),
+                         db, dlen);
+    return dlen;
   }
 
   event void DMF.mapped(uint8_t fd, uint32_t file_pos) {
