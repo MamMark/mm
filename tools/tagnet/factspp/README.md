@@ -8,28 +8,76 @@ copyright @ 2017 Dan Maltbie
 
 The Facts Preprocessor (factspp) translates input file containing TagNet FactSpace into NESC source code. It takes as input the Tagnet Names representing all facts in the Tag (in TSV record format). The Preprocessor outputs the wiring and definitions used by the Tag TinyOS program.
 
+# Naming Overview
+
+The Tagnet protocol stack provides the network oriented access
+to Tag local device information. This information consists of
+variables exposed by the underlying software and hardware.
+For instance sensors provide readings and may have settings
+that can be configured.
+
+In Tagnet, each variable in the Tag device is represented by
+a unique name. A Tagnet name is similar to a Unix file path in
+that it is constructed from a list of elements (sub-directories)
+that together identify a specific item in the system. For Tagnet,
+the name identifies a variable of a specific type (e.g, integer,
+string, file). The collection of Tagnet names represents all of
+the externally accessible variables and functions provided by
+this node using the Tagnet protocol.
+
+All of the possible names are defined in a directed acyclical
+graph, or tree, where each node in the graph represents an
+element of a name. The terminal element of the name is connected
+to an individual variable in the system. The stack provides the
+means to traverse a name in a given message through the tree and
+perform the requested operation on that element when a match
+is found.
+
+
+```
 root
-+-- tag
++-- Tag
     |-- info
-    |   +-- <node_id:>
+    |   +-- <nodeid:000000000000>
     |       +-- sens
     |           +-- gps
     |               +-- xyz
     |-- poll
-    |   +-- <node_id:>
+    |   +-- <nodeid:000000000000>
     |       |-- cnt
     |       +-- ev
     |-- sd
-    |   +-- <node_id:>
+    |   +-- <nodeid:000000000000>
     |       +-- 0
+    |           |-- dblk
+    |           |   |-- 0
+    |           |   |-- 1
+    |           |   +-- note
     |           +-- img
     +-- sys
-        +-- <node_id:>
+        +-- <nodeid:000000000000>
             |-- active
             |-- backup
             |-- golden
             |-- nib
             +-- running
+```
+
+The Tagnet protocol defines different message types for operating
+on the Tag device named variables, including reading and writing
+the variable as well as retrieving metadata associated with the
+variable.
+
+Processing a message request consists of traversing the elements
+of the name in the message according to the nodes of the tree
+until reaching the terminus of the name. The terminus can refer
+to any intermediate element in the tree or else the leaf node. In
+the case of intermediate nodes, the request operates like a
+reference to a sub-directory in a file path, whereas a match
+to a leaf node provides access to the contents of the system
+variable of the specified type. Once the terminus node is matched,
+the operation defined by the message is performed on the object
+and an optional result is returned in a response message.
 
 # INPUT
 Input file
@@ -48,8 +96,10 @@ TagnetGpsXyzAdapterP,tagnet_gps_xyz_t,InfoSensGpsXyz,<node_id:>,"tag","info",<no
     - includes TagnetWiring.h
   - TagnetDefines.h
     - included by tagnet.h
-  - tagnetnames.h
-    - included by Rules Engine
+  - TagNameTree.py
+    - Python object representation of name tree for use by other applications
+  - TagNameTree.txt
+    - ascii text representation of the name tree
 
 ## TagnetC.nc
 #### New element instantiation parameters
@@ -149,82 +199,3 @@ TagVx.Super         -> RootVx.Sub[unique(UQ_TN_ROOT)];
 # Changes to previous version
 - TagnetC.h and tagnet.h are now auto-generated files
 - added new auto-generated file tagnetnames.h
-
-/**
- * This component provides the main configuration for the Tagnet
- * protocol stack.
- *<p>
- * The Tagnet protocol stack provides the network oriented access
- * to Tag local device information. This information consists of
- * variables exposed by the underlying software and hardware.
- * For instance sensors provide readings and may have settings
- * that can be configured.
- *</p>
- *<p>
- * In Tagnet, each variable in the Tag device is represented by
- * a unique name. A Tagnet name is similar to a Unix file path in
- * that it is constructed from a list of elements (sub-directories)
- * that together identify a specific item in the system. For Tagnet,
- * the name identifies a variable of a specific type (e.g, integer,
- * string, file). The collection of Tagnet names represents all of
- * the externally accessible variables and functions provided by
- * this node using the Tagnet protocol.
- * All of the possible names are defined in a directed acyclical
- * graph, or tree, where each node in the graph represents an
- * element of a name. The terminal element of the name is connected
- * to an individual variable in the system. The stack provides the
- * means to traverse a name in a given message through the tree and
- * perform the requested operation on that element when a match
- * is found.
- *</p>
- *<p>
- * The Tagnet protocol defines different message types for operating
- * on the Tag device named variables, including reading and writing
- * the variable as well as retrieving metadata associated with the
- * variable.
- *</p>
- *<p>
- * Processing a message request consists of traversing the elements
- * of the name in the message according to the nodes of the tree
- * until reaching the terminus of the name. The terminus can refer
- * to any intermediate element in the tree or else the leaf node. In
- * the case of intermediate nodes, the request operates like a
- * reference to a sub-directory in a file path, whereas a match
- * to a leaf node provides access to the contents of the system
- * variable of the specified type. Once the terminus node is matched,
- * the operation defined by the message is performed on the object
- * and an optional result is returned in a response message.
- *</p>
- *<p>
- *</p>
- * The Tagnet stack is defined in a collection of interfaces and
- * components that operate on Tagnet messages to perform network
- * initiated operations on local system variables. Below is listed
- * the files associated with the stack.
- *<p>
- * interfaces:
- *</p>
- *<dl>
- *   <dt>Tagnet</dt> <dd>primary user methods for accessing the Tagnet stack</dd>
- *   <dt>TagnetMessage</dt> <dd>methods used to travers the name tree</dd>
- *   <dt>TagnetHeader</dt> <dd>methods for accessing a Tagnet message header</dd>
- *   <dt>TagnetName</dt> <dd>methods for acessing and evaluating a Tagnet message name</dd>
- *   <dt>TagnetPayload</dt> <dd>methods for accessing a Tagnet message payload</dd>
- *   <dt>TagnetTLV</dt> <dd>methods for parsing and building Tagnet TLVs</dd>
- *</dl>
- *<p>
- * Components:
- *</p>
- *<dl>
- *   <dt>TagnetUtilsC</dt> <dd>configuration with functions to access Tagnet messages</dd>
- *   <dt>TagnetNameElementP</dt> <dd>generic module handles intermediate elements of a name</dd>
- *   <dt>TagnetNameRootP</dt> <dd>module handles the name root starting point</dd>
- *   <dt>TagnetNamePollP</dt> <dd>generic module processes Tagnet poll request (special)</dd>
- *   <dt>TagnetIntegerAdapterP</dt> <dd>generic module for adapting local integer variable to the network TLV</dd>
- *<dl>
- *
- * @author Daniel J. Maltbie <dmaltbie@daloma.org>
- *
- * Copyright (c) 2017 Daniel J. Maltbie
- * All rights reserved.
- */
