@@ -48,12 +48,12 @@ def SaveStuff(args, _tree):
     save artifacts from processing, including the
     name tree in text format.
     """
-    try:
-        os.remove("Tree.txt")
-    except:
-        pass
     filename =  args.output+'/' if (args.output) else ''
     filename += "TagNameTree.txt"
+    try:
+        os.remove(filename)
+    except:
+        pass
     _tree.save2file(filename,line_type="ascii")
 
 def preprocessor(args):
