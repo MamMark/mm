@@ -1,4 +1,6 @@
-DESCRIPTION = 'Tagnet Name Preprocessor'
+#!/usr/bin/env python
+
+DESCRIPTION      = 'Tagnet Name Preprocessor'
 
 import os, re
 def get_version():
@@ -22,20 +24,13 @@ setup(
     url              = 'https://github.com/mammark/mm/tools/tagnet/factspp',
     author           = 'Dan Maltbie',
     author_email     = 'dmaltbie@daloma.org',
-    licence_file     = 'LICENCE.txt',
-    licence          = 'MIT',
+    license          = 'LICENCE.txt',
     install_requires = ['future',
                         'treelib',
-                        'temporenc',
                         'enum34',
     ],
     provides         = ['factspp'],
     packages         = ['factspp'],
-    package_data     = {
-        'factspp.': ['template.*'],
-        'factspp.': ['*.tsv'],
-    },
-    entry_points     = {
-        'console_scripts': ['factspp=factspp.__main__:main'],
-    },
+    package_data     = {'factspp': ['template_*.nc', '*.tsv']},
+    entry_points     = {'console_scripts': ['factspp=factspp.__main__:main']},
 )
