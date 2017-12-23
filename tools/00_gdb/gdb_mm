@@ -17,10 +17,9 @@ end
 define cs
 printf "\n"
 printf "majik:  %04x       %04x\n", CollectP__dcc.majik_a, CollectP__dcc.majik_b
-printf "chksum: %04x  seq: %04x\n", CollectP__dcc.chksum,  CollectP__dcc.seq
 printf "handle: %08x   %08x\n",     CollectP__dcc.handle,  CollectP__dcc.cur_buf
 printf "curptr: %08x   r: %d  (w: %d)\n", \
-    CollectP__dcc.cur_ptr, CollectP__dcc.remaining, 0d508-CollectP__dcc.remaining
+    CollectP__dcc.cur_ptr, CollectP__dcc.remaining, 0d512-CollectP__dcc.remaining
 end
 document cs
 Collector State

@@ -7,19 +7,7 @@
  *
  * MSP432, structures are aligned to a 32 bit boundary (align(4)).
  * Multibyte datums are stored native, little endian.  All headers are
- * required to be an even multiple of 32 bits.  quad granular.  dt_headers
- * are required to completely fit into a given sector.  This requirement
- * avoids having to marshal the dt_header bytes and allows dt_header
- * structures can be accessed directly from the sector buffer.
- *
- * If a dt_header will not fit in the remaining space in the sector buffer,
- * a special len/dtype (4 bytes) is laid down and we advance to the next
- * sector.  See TINTRYALF below.  We are always guaranteed that there will
- * be at least 4 bytes left remaining in the sector.  There will always
- * be room in the sector for the TINTRYALF.  TINTRYALF is 4 bytes which
- * doesn't look like a normal dt_header which includes additional fields.
- * However, it will always fit in the remaining space of the sector.  This
- * is why TINTRYALF is special.
+ * required to be an even multiple of 32 bits.  quad granular.
  *
  * The exact size matters.  The ARM compiler adds padding bytes at the end
  * of structures to round up to an even 32 bit alignment.  We take pains to
@@ -69,7 +57,7 @@
 #define DT_H_REVISION   0x00000007
 
 typedef enum {
-  DT_TINTRYALF		= 0,            /* next, force next sector */
+  DT_NONE		= 0,
   DT_REBOOT		= 1,		/* reboot sync */
   DT_VERSION		= 2,
   DT_SYNC		= 3,
@@ -126,24 +114,11 @@ typedef enum {
  * address.
  *
  * ie.  nxt_ptr = (cur_ptr + len + 3) & 0xffff_fffc
- *
- * The special dtype, DT_TINTRYALF, is used to force reading/writing the
- * next sector when a dt header will not fit contiguously into the current
- * sector.  The weird letters mean, This Is Not The Record You Are Looking
- * For, a StarWars play.  It is also sort of pronounceable.  It is used by
- * the Collector, when the header won't fit into the current disk sector.
- * It is only used towards the end of the sector when a header won't fit.
  */
-
-typedef struct {                /* size 4, only for TINTRYALF */
-  uint16_t len;
-  dtype_t  dtype;
-} PACKED dt_short_header_t;
-
 
 typedef struct {                /* size 20 */
   uint16_t len;
-  dtype_t  dtype;
+  dtype_t  dtype;               /* 2 bytes */
   uint32_t recnum;
   uint64_t systime;
   uint16_t recsum;

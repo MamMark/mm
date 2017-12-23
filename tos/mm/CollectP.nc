@@ -58,31 +58,8 @@
  * StreamStorage layer.  SD block size permeats too many places.  And it
  * doesn't change.
  *
- * The current implementation has split typed_data headers and data.  A
- * header is required to fit contiguously into a sector and can not be
- * split across a sector boundary.
- *
  * Data associated with a given header however can be split across sector
  * boundaries but is limited to DT_MAX_DLEN.  (defined in typed_data.h).
- *
- * If a header will not fit into the current sector, a DT_TINTRYALF record
- * will be laid down which tells the system to go to the next block.  Dblk
- * headers are kept quad aligned (32 bits alignment) in both memory as well
- * as in the sector buffer and will always be able to fit.  The
- * DT_TINTRYALF dblk is exactly 32 bits long, 2 byte len and 2 byte dtype
- * DT_TINTRYALF.
- *
- * The rationale for only putting whole dblk records into a sector is to
- * optimize access.  Both writing and reading.  The Tag is a highly
- * constrained, very limited resource computing system.  As such we want to
- * make both writing as well as reading to be reasonably efficient and that
- * means minimizing special cases, like when we run off the end of a sector.
- *
- * By organizing how dblk records layout in memory and how they lay out on
- * disk sectors, we should be able to minimize how much additonal overhead
- * is caused by misalignment problems as well as minimize special cases.
- *
- * That's the design philosophy anyway.
  */
 
 #include <typed_data.h>
@@ -242,7 +219,6 @@ implementation {
    */
   command void Collect.collect_nots(dt_header_t *header, uint16_t hlen,
                                     uint8_t     *data,   uint16_t dlen) {
-    dt_header_t dt_hdr;
     uint16_t    chksum;
     uint32_t    i;
 
@@ -276,46 +252,11 @@ implementation {
       chksum += ((uint8_t *) header)[i];
     for (i = 0; i < dlen; i++)
       chksum += data[i];
-    header->recsum = (uint16_t) (0-chksum);
+    header->recsum = (uint16_t) chksum;
     nop();                              /* BRK */
-    while(1) {
-      if (dcc.remaining == 0 || dcc.remaining >= hlen) {
-        /*
-         * Either no space remains (will grab a new sector/buffer) or the
-         * header will fit in what's left.  Just push the header out
-         * followed by the data.
-         *
-         * The header will fit in the SD_BLOCKSIZE bytes in the sector in
-         * what is left.  checked for max above.
-         */
-        copy_out((void *)header, hlen);
-        copy_out((void *)data,   dlen);
-        align_next();
-        return;
-      }
-
-      /*
-       * there is some space remaining but the header won't fit.  We should
-       * always have at least 4 bytes remaining so should be able to laydown
-       * the DT_TINTRYALF record (2 bytes len and 2 bytes dtype).
-       */
-      if (dcc.remaining < 4)
-        call Panic.panic(PANIC_SS, 4, dcc.remaining, 0, 0, 0);
-      dt_hdr.len = 4;
-      dt_hdr.dtype = DT_TINTRYALF;
-      copy_out((void *) &dt_hdr, 4);
-
-      /*
-       * If we had exactly 4 bytes left, the DT_TINTRYALF will have filled
-       * the rest of the buffer resulting in a finish_sector, (no
-       * remaining bytes).  But if we still have some remaining then flush
-       * the current sector out and start fresh.
-       */
-      if (dcc.remaining)
-        finish_sector();
-
-      /* and try again in the new sector */
-    }
+    copy_out((void *)header, hlen);
+    copy_out((void *)data,   dlen);
+    align_next();
   }
 
 
