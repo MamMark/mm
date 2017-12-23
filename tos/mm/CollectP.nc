@@ -232,7 +232,7 @@ implementation {
         (hlen + dlen) < 4)
       call Panic.panic(PANIC_SS, 3, hlen, dlen, header->len, header->dtype);
 
-    if (dlen > DT_MAX_DLEN)
+    if (hlen + dlen > DT_MAX_RLEN)
       call Panic.panic(PANIC_SS, 4, (parg_t) data, dlen, 0, 0);
 
     header->recnum = call DblkManager.adv_cur_recnum();
