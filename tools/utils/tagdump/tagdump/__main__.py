@@ -1,9 +1,8 @@
 """
-tagdump:  Pretty print the content of a Tag data logfile
+tagdump:  decode and display Tag Data Stream file
 
-@author: Dan Maltbie
+@author: Dan Maltbie/Eric B. Decker
 """
-#print('tagdump/__main__.py executed')
 
 from tagdump import dump
 from tagdumpargs import parseargs

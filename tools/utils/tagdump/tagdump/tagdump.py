@@ -1,52 +1,166 @@
 #!/usr/bin/python
+#
+# Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# - Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+#
+# - Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the
+#   distribution.
+#
+# - Neither the name of the copyright holders nor the names of
+#   its contributors may be used to endorse or promote products derived
+#   from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+# THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
 import os
 import sys
 import binascii
 import struct
 import argparse
-from collections import OrderedDict
-
-from decode_base import *
-
-import chunks
+from   collections import OrderedDict
+from   decode_base import *
 
 ####
 #
-# This program reads an input source file and parses out the
-# typed data records.
+# tagdump: dump a MamMark DBLKxxxx data stream.
 #
-# Certain constraints on input are applied
-# - input consists of a multiple of 512 bytes (the sector size).
-# - each sector is further defined to contain a logical blk
-#   trailer of 4 bytes along with up to 508 bytes of record data.
-#   (uint16_t sequence_no, uint16_t checksum)
-#   The logical trailer bytes are stripped.
-# - a record can be as large as 64k bytes (2**16)
-#   each record has a standard header of length and d_type (4 bytes)
-#   followed by record-specific data
-# - records
+# Parses the data stream and displays in human readable output.
 #
+# Each record is completely self contained including a checksum
+# that is over both the header and data portion of the record.
+# (See typed_data.h for details).
+#
+# see tagdumpargs.py for argument processing.
+#
+# usage: tagdump.py [-h] [-v] [-V] [-j JUMP]
+#                   [--rtypes RTYPES(ints)] [--rnames RNAMES(name[,...])]
+#                   [-s START_TIME] [-e END_TIME]
+#                   [-r START_REC]  [-l LAST_REC]
+#                   input
+#
+# Args:
+#
+# optional arguments:
+#   -h              show this help message and exit
+#   -V              show program's version number and exit
+#
+#   --rtypes RTYPES output records matching types in list names
+#                   comma or space seperated list of rtype ids or NAMES
+#     (args.rtypes, list of strings)
+#
+#   -j JUMP         set input file position
+#                   (args.jump, integer)
+#
+#   -s START_TIME   include records with datetime greater than START_TIME
+#   -e END_TIME     (args.{start,end}_time)
+#
+#   -r START_REC    starting/ending records to dump.
+#   -l LAST_REC     (args.{start,last}_rec, integer)
+#
+#   -v, --verbose   increase output verbosity
+#                   (args.verbose)
+#
+# positional parameters:
+#
+#   input:          file to process.  (args.input)
 
-#
+
 # This program needs to understand the format of the DBlk data stream.
 # The format of a particular instance is described by typed_data.h.
 # The define DT_H_REVISION in typed_data.h indicates which version.
 # Matching is a good thing.  We won't abort but will bitch if we mismatch.
 
-DT_H_REVISION       = 0x00000006
 
-LOGICAL_SECTOR_SIZE = 512
-LOGICAL_BLOCK_SIZE  = 508       # excludes trailer
+DT_H_REVISION           = 0x00000007
+
+#
+# global control cells
+#
+rec_low                 = 0            # inclusive
+rec_high                = 0            # inclusive
+rec_last                = 0            # last rec num looked at
+verbose                 = 0            # how chatty to be
+
+
+# 1st sector of the first is the directory
+DBLK_DIR_SIZE           = 0x200
+RLEN_MAX_SIZE           = 1024
+RESYNC_HDR_OFFSET       = 24            # how to get back to the start
+MAX_ZERO_SIGS           = 1024          # 1024 quads, 4K bytes of zero
+
+
+# global stat counters
+num_resyncs             = 0             # how often we've resync'd
+chksum_errors           = 0             # checksum errors seen
+unk_rtypes              = 0             # unknown record types
+total_records           = 0
+total_bytes             = 0
+
+# count by rectype, how many seen of each type
+dt_count = {}
+
+
+def init_globals():
+    global rec_low, rec_high, rec_last, verbose
+    global num_resyncs, chksum_errors, unk_rtypes
+    global total_records, total_bytes, dt_count
+
+    rec_low             = 0
+    rec_high            = 0
+    rec_last         = 0
+    verbose             = 0
+
+    num_resyncs         = 0             # how often we've resync'd
+    chksum_errors       = 0             # checksum errors seen
+    unk_rtypes          = 0             # unknown record types
+    total_records       = 0
+    total_bytes         = 0
+
+    dt_count            = {}
+
 
 # all dt parts are native and little endian
 
 # hdr object dt, native, little endian
+# do not include the pad byte.  Each hdr definition handles
+# the pad byte differently.
+
+dt_hdr_str    = 'HHIQH'
+dt_hdr_struct = struct.Struct(dt_hdr_str)
+dt_hdr_size   = dt_hdr_struct.size
+dt_sync_majik = 0xdedf00ef
+quad_struct   = struct.Struct('I')      # for searching for syncs
+
+DT_REBOOT     = 1
+DT_SYNC       = 3
+
 dt_hdr_obj = aggie(OrderedDict([
     ('len',     atom(('H', '{}'))),
     ('type',    atom(('H', '{}'))),
     ('recnum',  atom(('I', '{}'))),
-    ('st',      atom(('Q', '0x{:x}')))]))
+    ('st',      atom(('Q', '0x{:x}'))),
+    ('recsum',  atom(('H', '0x{:04x}')))]))
 
 datetime_obj = aggie(OrderedDict([
     ('jiffies', atom(('H', '{}'))),
@@ -59,21 +173,27 @@ datetime_obj = aggie(OrderedDict([
     ('dow',     atom(('B', '{}')))]))
 
 def print_hdr(obj):
-    rtype = obj['hdr']['type'].val
+    # rec  time     rtype name
+    # 0001 00000279 (20) REBOOT
+
+    rtype  = obj['hdr']['type'].val
+    recnum = obj['hdr']['recnum'].val
+    st     = obj['hdr']['st'].val
+
     # gratuitous space shows up after the print, sigh
-    print('{:08x} ({:2}) {:6} --'.format(
-        obj['hdr']['st'].val,
-        rtype, dt_records[rtype][2])),
+    print('{:04} {:8} ({:2}) {:6} --'.format(recnum, st,
+        rtype, dt_records[rtype][DTR_NAME]))
 
 
 dt_simple_hdr   = aggie(OrderedDict([('hdr', dt_hdr_obj)]))
 
 dt_reboot_obj   = aggie(OrderedDict([
     ('hdr',     dt_hdr_obj),
+    ('pad0',    atom(('H', '{:04x}'))),
     ('majik',   atom(('I', '{:08x}'))),
     ('prev',    atom(('I', '{:08x}'))),
-    ('datetpc', atom(('8s', '{}', binascii.hexlify))),
-    ('dt_rev',  atom(('I', '{:08x}')))]))
+    ('dt_rev',  atom(('I', '{:08x}'))),
+    ('datetime',atom(('10s', '{}', binascii.hexlify)))]))
 
 #
 # reboot is followed by the ow_control_block
@@ -106,6 +226,7 @@ owcb_obj        = aggie(OrderedDict([
 
 dt_version_obj  = aggie(OrderedDict([
     ('hdr',       dt_hdr_obj),
+    ('pad',       atom(('H', '{:04x}'))),
     ('base',      atom(('I', '{:08x}')))]))
 
 
@@ -135,9 +256,10 @@ image_info_obj  = aggie(OrderedDict([
 
 dt_sync_obj     = aggie(OrderedDict([
     ('hdr',       dt_hdr_obj),
+    ('pad0',      atom(('H', '{:04x}'))),
     ('majik',     atom(('I', '{:08x}'))),
     ('prev_sync', atom(('I', '{:x}'))),
-    ('datetpc',   atom(('8s', '{}', binascii.hexlify)))]))
+    ('datetime',  atom(('10s','{}', binascii.hexlify)))]))
 
 
 # FLUSH: flush remainder of sector due to SysReboot.flush()
@@ -175,12 +297,12 @@ event_names = {
 dt_event_obj    = aggie(OrderedDict([
     ('hdr',   dt_hdr_obj),
     ('event', atom(('H', '{}'))),
-    ('ss',    atom(('B', '{}'))),
-    ('w',     atom(('B', '{}'))),
     ('arg0',  atom(('I', '0x{:04x}'))),
     ('arg1',  atom(('I', '0x{:04x}'))),
     ('arg2',  atom(('I', '0x{:04x}'))),
-    ('arg3',  atom(('I', '0x{:04x}')))]))
+    ('arg3',  atom(('I', '0x{:04x}'))),
+    ('pcode', atom(('B', '{}'))),
+    ('w',     atom(('B', '{}')))]))
 
 dt_debug_obj    = dt_simple_hdr
 
@@ -350,10 +472,9 @@ gps_hdr_obj     = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
 
 # dt, native, little endian
 dt_gps_raw_obj  = aggie(OrderedDict([('hdr',     dt_hdr_obj),
-                                     ('mark',    atom(('>I', '0x{:04x}'))),
                                      ('chip',    atom(('B',  '0x{:02x}'))),
                                      ('dir',     atom(('B',  '{}'))),
-                                     ('pad',     atom(('BB', '{}'))),
+                                     ('mark',    atom(('>I', '0x{:04x}'))),
                                      ('gps_hdr', gps_hdr_obj)]))
 
 
@@ -501,28 +622,34 @@ def decode_gps_raw(buf, obj):
 # dict key is the record id.
 #
 
-dt_total = 0
-dt_count = {}
+# key is rtype
+# vector has (required_len, decoder, object descriptor, and name)
+#   required len will be 0 if it is variable or not checked.
+
+DTR_REQ_LEN = 0                         # required length
+DTR_DECODER = 1                         # decode said rtype
+DTR_OBJ     = 2                         # rtype obj descriptor
+DTR_NAME    = 3                         # rtype name
 
 dt_records = {
-#   dt   decoder                obj                 name
-     1: (decode_reboot,         dt_reboot_obj,     "REBOOT"),
-     2: (decode_version,        dt_version_obj,    "VERSION"),
-     3: (decode_sync,           dt_sync_obj,       "SYNC"),
-     4: (decode_flush,          dt_flush_obj,      "FLUSH"),
-     5: (decode_event,          dt_event_obj,      "EVENT"),
-     6: (decode_debug,          dt_debug_obj,      "DEBUG"),
-    16: (decode_gps_version,    dt_gps_ver_obj,    "GPS_VERSION"),
-    17: (decode_gps_time,       dt_gps_time_obj,   "GPS_TIME"),
-    18: (decode_gps_geo,        dt_gps_geo_obj,    "GPS_GEO"),
-    19: (decode_gps_xyz,        dt_gps_xyz_obj,    "GPS_XYZ"),
-    20: (decode_sensor_data,    dt_sen_data_obj,   "SENSOR_DATA"),
-    21: (decode_sensor_set,     dt_sen_set_obj,    "SENSOR_SET"),
-    22: (decode_test,           dt_test_obj,       "TEST"),
-    23: (decode_note,           dt_note_obj,       "NOTE"),
-    24: (decode_config,         dt_config_obj,     "CONFIG"),
-    32: (decode_gps_raw,        dt_gps_raw_obj,    "GPS_RAW"),
+#   dt   len  decoder                obj                 name
+     1: (112, decode_reboot,         dt_reboot_obj,     "REBOOT"),
+     2: (168, decode_version,        dt_version_obj,    "VERSION"),
+     3: ( 40, decode_sync,           dt_sync_obj,       "SYNC"),
+     4: ( 40, decode_event,          dt_event_obj,      "EVENT"),
+     5: (  0, decode_debug,          dt_debug_obj,      "DEBUG"),
+    16: (  0, decode_gps_version,    dt_gps_ver_obj,    "GPS_VERSION"),
+    17: (  0, decode_gps_time,       dt_gps_time_obj,   "GPS_TIME"),
+    18: (  0, decode_gps_geo,        dt_gps_geo_obj,    "GPS_GEO"),
+    19: (  0, decode_gps_xyz,        dt_gps_xyz_obj,    "GPS_XYZ"),
+    20: (  0, decode_sensor_data,    dt_sen_data_obj,   "SENSOR_DATA"),
+    21: (  0, decode_sensor_set,     dt_sen_set_obj,    "SENSOR_SET"),
+    22: (  0, decode_test,           dt_test_obj,       "TEST"),
+    23: (  0, decode_note,           dt_note_obj,       "NOTE"),
+    24: (  0, decode_config,         dt_config_obj,     "CONFIG"),
+    32: (  0, decode_gps_raw,        dt_gps_raw_obj,    "GPS_RAW"),
   }
+
 
 def buf_str(buf):
     """
@@ -543,7 +670,7 @@ def dump_buf(buf):
 
     # 3 chars per byte
     idx = 0
-    print('buf:  '),
+    print('rec:  '),
     while(idx < len(bs)):
         max_loc = min(len(bs), idx + (stride * 3))
         print(bs[idx:max_loc])
@@ -552,148 +679,222 @@ def dump_buf(buf):
             print('{:04x}: '.format(idx/3)),
 
 
-def gen_data_bytes(fd):
-    """
-    gen_data_bytes generates data bytes from file (stripped of non-data bytes).
+def dt_name(rtype):
+    v = dt_records.get(rtype, (0, None, None, 'unk'))
+    return v[DTR_NAME]
 
-    Uses generator.send() to pass number of bytes to be read
-        the number of bytes to read is to the yield, while
-        the buffer read is returned by the yield
 
-    The buffer will be as large as requested, which may require additional
-    sectors to be read. Any remaining data in the sector will be used
-    in the next yield operation.
+# recnum systime len type name         offset
+# 999999 0009999 999   99 xxxxxxxxxxxx @999999 (0xffffff) [0xffff]
+rec_title_str = "--- recnum  systime  len  type  name         offset"
+rec_format    = "--- {:6}  {:7}  {:3}    {:2}  {:12s} @{:6} (0x{:08x}) [0x{:04x}]"
 
-    sect: space for holding a full LOGICAL_SECTOR
-        blk:  we split sect apart into 508 bytes (blk), seq_no, and chk_sum
-        buf:  is the marshalling buffer where we collect all the data
-              that has been asked for.
+def print_record(offset, buf):
+    if (len(buf) < dt_hdr_size):
+        print('*** print_record, buf too small for a header, wanted {}, got {}'.format(
+            dt_hdr_size, len(buf)))
+    else:
+        rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack(buf[:dt_hdr_size])
+        print(rec_format.format(recnum, systime, rlen, rtype,
+            dt_name(rtype), offset, offset, recsum))
+    if (verbose > 1):
+        dump_buf(buf)
 
-    file_offset, buf = data_bytes.send(req_len)
 
-    input:  num is how many bytes to read from file
-    output: file_offset: file position of first byte read from file
-                    buf: buffer of bytes read from file
+#
+# resync the data stream to the next SYNC/REBOOT record
+#
+# we search for the SYNC_MAJIK and then back up an appropriate
+# amount (RESYNC_HDR_OFFSET).  We check for reasonable length
+# and reasonable rtype (SYNC or REBOOT).
+#
+# Once we think we have a good SYNC/REBOOT, we leave the file
+# position at the start of the SYNC/REBOOT.  And let other
+# checks needed be performed by gen_records.
+#
+# returns -1 if something went wrong
+#         offset of next record if not.
+#
+def resync(fd, offset):
+    global num_resyncs
 
-    offset can have one of three values:
-        n   file position of first byte in buf
-        0   bad read, try again
-       -1   end of file, nothing more to read
-    """
-    # define logical block structure (always read full block)
-    blk_str     = str(LOGICAL_BLOCK_SIZE) + 'sHH'
-    blk_struct  = struct.Struct(blk_str)
-
-    # variables to keep track of input block state between yields
-    blk         = None
-    index       = LOGICAL_SECTOR_SIZE
-
-    # output variables
-    buf         = bytearray()
-    file_offset = 0
-
+    if (offset & 3 != 0):
+        print('*** resync called with unaligned offset: {}'.format(offset))
+        offset = (offset / 4) * 4
+    fd.seek(offset)
+    num_resyncs += 1
+    zero_sigs = 0
     while (True):
-        num = yield file_offset, buf    # yield
+        while (True):
+            try:
+                sig = quad_struct.unpack(fd.read(quad_struct.size))[0]
+                if sig == dt_sync_majik:
+                    break
+            except struct.error:
+                print('*** failed to resync @ offset {}'.format(fd.tell()))
+                return -1
+            except IOError:
+                print('*** file io error')
+                return -1
+            except EOFError:
+                print('*** end of file')
+                return -1
+            except:
+                print('*** exception error: {}'.format(sys.exc_info()[0]))
+                raise
+            offset += quad_struct.size
+            if (sig == 0):
+                zero_sigs += 1
+                if (zero_sigs > MAX_ZERO_SIGS):
+                    print('*** resync: too many zeros, bailing')
+                    return -1
+            else:
+                zero_sigs = 0
+        fd.seek(-RESYNC_HDR_OFFSET, 1)          # back up to start of attempt
+        offset_try = fd.tell()
+        buf = bytearray(fd.read(dt_hdr_size))
+        if (len(buf) < dt_hdr_size):            # oht oh, too small, very strange
+            print('*** resync: read of dt_hdr too small')
+            return -1
 
-        # starting byte is file_offset, and one sector has been read
-        file_offset = 0
-        buf = bytearray()               # clear the return buffer each time
-        while (num > 0):
-            offset, chunk = chunks.get_chunk(fd, num)
-            if (offset == 0):
-                continue                # bad chunk, try again
-            if (offset == -1):
-                file_offset = -1        # end of file
-                break
-            if (file_offset == 0):      # first chunk, set start of
-                file_offset = offset
-            buf.extend(chunk)
-            num -= len(chunk)
+        # we want rlen and rtype, we leave recsum checking for gen_records
+        rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack(buf)
+        if ((rtype == DT_SYNC   and rlen == dt_records[DT_SYNC]  [DTR_REQ_LEN]) or
+            (rtype == DT_REBOOT and rlen == dt_records[DT_REBOOT][DTR_REQ_LEN])):
+            fd.seek(offset_try)
+            return offset_try
+
+        # not what we expected.  continue looking for SYNC_MAJIKs where we left off
+        fd.seek(offset_try + RESYNC_HDR_OFFSET)
 
 
-def gen_records(fd):
+def get_record(fd):
     """
     Generate valid typed-data records one at a time until no more bytes
     to read from the input file.
 
-    Yields one record each time (len, type, data).
+    Yields one record each time (len, type, recnum, systime, recsum, rec_buf).
 
-    Input:   infile:     file we are reading from
-    Output:  hdr_offset: byte offset of the record
+    Input:   fd:         file descriptor we are reading from
+    Output:  rec_offset: byte offset of the record from start of file
              rlen:       record length
              rtype:      record type
-             buf:        byte buffer with entire record
-
-    Every record starts with a short hdr, consisting of the record length
-    and dtype.  Doesn't include the timestamp.
-
-    TINTRYALF (0) "This Is Not The Record You Are Looking For"
-    Not a data type but a special case that kicks us to the next sector.
-
-    TINTRYALF is only 4 bytes long (len, dtype, no timestamp) and as such
-    will ALWAYS fit in any space that is left in the sector buffer.
+             recnum      record number
+             systime     time since last reboot
+             recsum      checksum ovr header and data
+             rec_buf:    byte buffer with entire record
     """
-    short_hdr = struct.Struct("HH")
-    data_bytes = gen_data_bytes(fd)
-    data_bytes.send(None)               # prime the bytes generator
 
-    def get_short_hdr():
-        rtype = -1
-        rlen = 0
-        offset, hdr = data_bytes.send(short_hdr.size)
-        if (offset > 0):
-            rlen, rtype = short_hdr.unpack(hdr)
-        return offset, hdr, rlen, rtype
+    global chksum_errors
 
-    def get_body(rlen):
-        offset, body = data_bytes.send(rlen - short_hdr.size)
-        if (offset > 0):
-            if ((short_hdr.size + len(body)) < rlen):
-                print('*** oops. rec too short')
-                dump_buf(hdr + body[:64])
-        return offset, body
+    # output variables
+    offset      = -1
+    rlen        = 0
+    rtype       = 0
+    recnum      = 0
+    systime     = 0
+    recsum      = 0
+    rec_buf     = bytearray()
+
+    last_offset = 0                     # protects against infinite resync
 
     while (True):
-        rec_offset = 0
-        while (rec_offset == 0):
-            rec_offset, hdr, rlen, rtype = get_short_hdr()
-            if (rec_offset == -1):           # EOF
+        offset = fd.tell()
+        # new records are required to start on a quad boundary
+        if (offset & 3):
+            print('*** aligning offset {} ({:08x})'.format(offset, offset))
+            offset = ((offset/4) + 1) * 4
+            fd.seek(offset)
+        if (offset == last_offset):
+            #
+            # offset/last_offset being equal says we are doing a resync
+            # and we ended back at the same record.
+            #
+            # advance our current position to just beyond the last sync we
+            # tried.  Find the next one.
+            #
+            offset += RESYNC_HDR_OFFSET
+            offset = resync(fd, offset)
+            if (offset < 0):
                 break
-            if (rec_offset == 0):            # bad read
-                chunks.resync(fd)
-                continue
-            if (rtype == 0) and (rlen == 0): # EOF
-                rec_offset =  -1
-                break
-# zzz is the format wrong for tintryalf?
-# seeing the fields swapped (rlen <> rtype)
-            if (rtype == 0) or (rlen == 0):  # tintryalf
-                chunks.next_sector_pos(fd)
-                rec_offset = 0
-                continue
-            try:
-                dt_records[rtype]            # see if type is known
-            except:
-                chunks.resync(fd)
-                rec_offset = 0
-                continue
-            offset, body = get_body(rlen)
-            if (offset == -1):               # EOF
-                rec_offset = -1
-                break
-            if (offset == 0):                # bad read
-                chunks.resync(fd)
-                rec_offset = 0
-                continue
+            continue
+        last_offset = offset
+        rec_buf = bytearray(fd.read(dt_hdr_size))
+        if (len(rec_buf) < dt_hdr_size):
+            print('*** record header read too short: wanted {}, got {}'.format(
+                dt_hdr_size, len(rec_buf)))
+            break                       # oops
+        rlen, rtype, recnum, systime, recsum = \
+                dt_hdr_struct.unpack(rec_buf)
 
-        # zzz additional per record checking here
+        if (recnum == 0):               # zero is never allowed
+            print('*** zero record number - resyncing')
+            offset = resync(fd, offset)
+            if (offset < 0):
+                break
+            continue
 
-        if (rec_offset == -1):                # EOF
-            break
-        # return header fields plus record contents
-        yield rec_offset, rlen, rtype, hdr + body    # yield
-        if (fd.tell()%4):
-            chunks.next_word_pos(fd)       # skip any padding
+        if (rlen > RLEN_MAX_SIZE):
+            print('*** record size too large: {}'.format(rlen))
+            offset = resync(fd, offset)
+            if (offset < 0):
+                break
+            continue
+
+        # now see if we have any data payload
+        # if dlen is negative, that says we are below min header size
+        dlen = rlen - dt_hdr_size
+        if (dlen < 0):                  # major oops, rlen is screwy
+            print('*** record header too short: wanted {}, got {}'.format(
+                dt_hdr_size, rlen))
+            offset = resync(fd, offset)
+            if (offset < 0):
+                break
+            continue
+
+        if (dlen > 0):
+            rec_buf.extend(bytearray(fd.read(dlen)))
+
+        if (len(rec_buf) < rlen):
+            print('*** record read too short: wanted {}, got {}'.format(
+                rlen, len(rec_buf)))
+            break                       # oops, bail
+
+        # verify checksum.
+        # sum the entire record and then remove the bytes from recsum.
+        # recsum was computed with the field being 0 and then layed down
+        # so we need to remove it before comparing.
+        chksum = sum(rec_buf)
+        chksum -= (recsum & 0xff00) >> 8
+        chksum -= (recsum & 0x00ff)
+        if (chksum != recsum):
+            chksum_errors += 1
+            print('*** checksum failure @ offset {}'.format(offset))
+            print_record(offset, rec_buf)
+            offset = resync(fd, offset)
+            if (offset < 0):
+                break
+            continue                    # try again
+        try:
+            required_len = dt_records[rtype][DTR_REQ_LEN]
+            if (required_len):
+                if (required_len != rlen):
+                    offset = resync(fd, offset)
+                    if (offset < 0):
+                        break
+                    continue            # try again
+        except KeyError:
+            pass
+
+        # life is good.  return actual record.
+        return offset, rlen, rtype, recnum, systime, recsum, rec_buf
+
+    # oops.  things blew up.  just return -1 for the offset
+    return -1, 0, 0, 0, 0, 0, ''
+
+
+def process_dir(fd):
+    fd.seek(DBLK_DIR_SIZE)
 
 
 def dump(args):
@@ -710,79 +911,96 @@ def dump(args):
     including: number of records output, counts for each record type,
     and dt-specific decoder summary
     """
+
+    global rec_low, rec_high, rec_last, verbose
+    global num_resyncs, chksum_errors, unk_rtypes
+    global total_records, total_bytes, unk_rtypes
+
+    init_globals()
+
     def count_dt(rtype):
         """
         increment counter in dict of rtypes, create new entry if needed
+        also check for existence of dt_records entry.  If not known
+        count it as unknown.
         """
-        global dt_total
-        dt_total += 1
+        try:
+            dt_records[rtype]
+        except KeyError:
+            unk_rtypes += 1
+
         try:
             dt_count[rtype] += 1
         except KeyError:
             dt_count[rtype] = 1
 
-    def print_record_details(vb):
-        if (vb >= 1):
-            print("@{} ({}): type: {}, len: {}".format(
-                hdr_offset, hex(hdr_offset), rtype, rlen))
-        if (vb >=2):
-            dump_buf(buf)
 
-    def dt_by_index(name):
-        for k,v in dt_records.iteritems():
-            if (k == name):
-                return v[2]
-        return ""
-
-    total_bytes_processed = 0
     infile = args.input
-    verbosity = args.verbosity if (args.verbosity) else 1
+    verbose = args.verbose if (args.verbose) else 1
 
-    # skip first block, it's the directory block (reserved)
+    if (args.start_rec):
+        rec_low  = args.start_rec
+    if (args.last_rec):
+        rec_high = args.last_rec
+
+    # convert any args.rtypes to upper case
+
+    # process the directory, this will leave us pointing at the first header
+    process_dir(infile)
+
     if (args.jump):
         infile.seek(args.jump)
-        chunks.resync(infile)
-    else:
-        chunks.next_sector_pos(infile)
+
+    print(rec_title_str)
+
     # extract record from input file and output decoded results
-    for hdr_offset, rlen, rtype, buf in gen_records(infile):
-        if (args.last_sector) \
-           and (hdr_offset/LOGICAL_SECTOR_SIZE >= args.last_sector):
-            break                      # past last sector of interest
-        if (args.first_sector) \
-           and (hdr_offset/LOGICAL_SECTOR_SIZE < args.first_sector):
-            continue                   # before 1st sector of interest
-        if (args.rtypes) \
-           and (dt_by_index(rtype) not in args.rtypes):
-            continue                   # not an rtype of interest
-        print_record_details(verbosity)
-        decode = dt_records[rtype][0]  # dt function
-        obj    = dt_records[rtype][1]  # dt object
+    while(True):
+        rec_offset, rlen, rtype, recnum, systime, recsum, rec_buf = \
+                get_record(infile)
+        if (rec_offset < 0):
+            break;
+
+        if (recnum < rec_last):
+            print('*** recnum went backwards.  last: {}, new: {}'.format(
+                rec_last, recnum))
+        if (rec_last and recnum > rec_last + 1):
+            print('*** record gap: ({}) records'.format(recnum - rec_last))
+        rec_last = recnum
+
+        # apply any filters (inclusion)
+        if (args.rtypes):
+            # either the number rtype must be in the search list
+            # or the name of the rtype must be in the search list
+            if ((str(rtype)       not in args.rtypes) and
+                  (dt_name(rtype) not in args.rtypes)):
+                continue                   # not an rtype of interest
+
+        # look to see if record number bounds
+        if (rec_low and recnum < rec_low):
+            continue
+        if (rec_high and recnum > rec_high):
+            break                       # all done
+
+        print_record(rec_offset, rec_buf)
+        decode = dt_records[rtype][DTR_DECODER]  # dt function
+        obj    = dt_records[rtype][DTR_OBJ]      # dt object
         try:
-            decode(buf, obj)
+            decode(rec_buf, obj)
         except struct.error:
-            if (verbosity > 0):
-                print('decode error: (dt: 0x{:x}, len: {})'.format(
-                    rtype,
-                    rlen))
-        total_bytes_processed += rlen
+            print('*** decode error: (len: {}, rtype: {} {})'.format(
+                rlen, rtype, dt_name(rtype)))
+        total_records += 1
+        total_bytes   += rlen
         count_dt(rtype)
 
     print
-    print('end of processing @{}[sector:{}],  processed: {} records, {} bytes'.format(
-        infile.tell(),
-        infile.tell()/LOGICAL_SECTOR_SIZE,
-        dt_total,
-        total_bytes_processed))
+    print('*** end of processing @{},  processed: {} records, {} bytes'.format(
+        infile.tell(), total_records, total_bytes))
+    print('*** reboots: {}, resyncs: {}, chksum_errs: {}, unk_rtypes: {}'.format(
+        dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
     print
-    print('mids: {}'.format(mid_count))
-    print('dts:  {}'.format(dt_count))
-    if (verbosity > 2):
-        for off, buf in chunks.chunk4b_offsets:
-            print('chunk@0x{:x}, len({}): {}'.format(
-                off,
-                len(buf),
-                binascii.hexlify(buf)))
+    print('mid_s: {}'.format(mid_count))
+    print('dt_s:  {}'.format(dt_count))
 
 
 if __name__ == "__main__":

@@ -1,11 +1,9 @@
 """
-tagdump:  Pretty print the content of a Tag data logfile
+tagdump:  decode and display Tag Data Stream file
 
-@author: Dan Maltbie
+@author: Dan Maltbie/Eric B. Decker
 """
-#print('tagdump/__init__.py executed')
 
-from tagdump import dump
-from chunks import *
+# from tagdump import dump
 
-__version__ = '0.1.6'
+__version__ = '0.2.0'
