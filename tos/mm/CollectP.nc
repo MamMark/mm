@@ -175,10 +175,9 @@ implementation {
     if (!data || !dlen)            /* nothing to do? */
       return;
     while (dlen > 0) {
-      if (dcc.cur_buf == NULL) {
+      if (dcc.remaining == 0) {
         /*
-         * nobody home, try to go get one.
-         *
+         * no space left, get another buffer
          * get_free_buf_handle either works or panics.
          */
         dcc.handle = call SSW.get_free_buf_handle();
