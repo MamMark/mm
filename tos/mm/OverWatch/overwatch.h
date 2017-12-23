@@ -169,8 +169,7 @@ enum {
 typedef struct {
   uint32_t           ow_sig;
   uint32_t           ow_rpt_flags;      /* reporting flags */
-  uint32_t           time;              /* req input, time since last boot */
-  uint32_t           cycle;             /* req input, time since last boot */
+  uint64_t           systime;           /* req input, time since last boot */
   uint32_t           reset_status;      /* recognized stati                */
   uint32_t           reset_others;      /* unindentified other stati       */
   uint32_t           from_base;         /* base address of where from      */
@@ -182,13 +181,6 @@ typedef struct {
   ow_boot_mode_t     ow_boot_mode;      /* B - control knob */
   owt_action_t       owt_action;        /* B - input to OWT, further actions */
 
-  uint32_t           ow_sig_b;
-
-  uint32_t           strange;           /* strange shit */
-  uint32_t           strange_loc;
-  uint32_t           vec_chk_fail;
-  uint32_t           image_chk_fail;
-
   /*
    * Persistent storage.
    *
@@ -197,15 +189,18 @@ typedef struct {
    * However it is not nonvolitle ram and doesn't survive
    * across power fails.
    *
-   * "elapsed" cells keep a running total of how long we have been
+   * "elapsed" keeps a running total of how long we have been
    * up since last full pwr cycle (full means we lost RAM).
-   *
-   *   elapsed_upper is essentially cycle
-   *   elapsed_lower is the lower 32 bits of ms time.
    */
 
-  uint32_t           elapsed_lower;
-  uint32_t           elapsed_upper;
+  uint32_t           ow_sig_b;
+
+  uint32_t           strange;           /* strange shit */
+  uint32_t           strange_loc;
+  uint32_t           vec_chk_fail;
+  uint32_t           image_chk_fail;
+
+  uint64_t           elapsed;
 
   uint32_t           ow_sig_c;
 } ow_control_block_t;

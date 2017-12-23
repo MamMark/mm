@@ -336,8 +336,7 @@ implementation {
          * this needs to be modified to handle overflow etc.  probably
          * just modify for uint64_t will do it.
          */
-        owcp->elapsed_lower += owcp->time;
-        owcp->elapsed_upper += owcp->cycle;
+        owcp->elapsed += owcp->systime;
         owcp->reboot_count++;
 
         if (owcp->from_base == 0)               /* from GOLD, no special eject checks  */
@@ -713,8 +712,7 @@ implementation {
 
     /* do not call SysReboot.fail() here */
     owcp = &ow_control_block;
-    owcp->cycle = 0;
-    owcp->time = 1000;                  /* just pretend for now */
+    owcp->systime = 1000;               /* just pretend for now */
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
     owcp->ow_req = OW_REQ_FAIL;

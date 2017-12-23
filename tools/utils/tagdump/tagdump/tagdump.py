@@ -203,8 +203,7 @@ dt_reboot_obj   = aggie(OrderedDict([
 owcb_obj        = aggie(OrderedDict([
     ('ow_sig',          atom(('I', '0x{:08x}'))),
     ('rpt',             atom(('I', '0x{:08x}'))),
-    ('time',            atom(('I', '0x{:08x}'))),
-    ('cycle',           atom(('I', '0x{:08x}'))),
+    ('st',              atom(('Q', '0x{:08x}'))),
     ('reset_status',    atom(('I', '0x{:08x}'))),
     ('reset_others',    atom(('I', '0x{:08x}'))),
     ('from_base',       atom(('I', '0x{:08x}'))),
@@ -218,8 +217,7 @@ owcb_obj        = aggie(OrderedDict([
     ('strange_loc',     atom(('I', '0x{:04x}'))),
     ('vec_chk_fail',    atom(('I', '{}'))),
     ('image_chk_fail',  atom(('I', '{}'))),
-    ('elapsed_upper',   atom(('I', '0x{:08x}'))),
-    ('elapsed_lower',   atom(('I', '0x{:08x}'))),
+    ('elapsed',         atom(('Q', '0x{:08x}'))),
     ('ow_sig_c',        atom(('I', '0x{:08x}')))
 ]))
 
