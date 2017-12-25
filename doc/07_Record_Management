@@ -11,18 +11,21 @@ byte:           8 bit quantity
 half-word:      16 bit quantity, 2 bytes.
 word:           32 bit quantity
 quad:           32 bit quantity, alias of word.  4 bytes.
-quad alignment: the datum or structure is aligned on a quad word (low two bits 0)
+quad alignment: the datum or structure is aligned on a quad word (low two
+                bits 0)
 quad granular:  the structure or datum ends evenly aligned wrt the next quad.
 2quad:          double quad aligned.
 
 dblk:           short for data block.
 data block:     another name for a record.
 typed_data:     yet another name for a record.
-file_offset:    absolute byte offset of a record from the start of the DBLK file.
-blk_id:         absolute sector/block id of a 512 byte sector on the SD.  absolute
-                from the start of the SD.
+file_offset:    absolute byte offset of a record from the start of the
+                DBLK file.
+blk_id:         absolute sector/block id of a 512 byte sector on the SD.
+                absolute from the start of the SD.
 sector:         512 byte data block used to talk to the SD.
-SD:             Secure Digital device that is the effective mass storage device.
+SD:             Secure Digital device that is the effective mass storage
+                device.
 
 
 SysTime:        64 bit millisecond granular time since reboot.
@@ -34,19 +37,78 @@ DateTime:       10 byte real time.  Year-Month-Day-Hour-Min-Sec-Jiffies-DOW
 Restrictions:
 
 o record headers (dt_header_t)
-** quad alignment.  All record headers are required to start with quad alignment.
-** quad granularity.  All record headers are required to be a multiple of 4 bytes.
-** all record headers must fit contiguously in a sector's remaining available space.
+** quad alignment.  All record headers are required to start with quad
+   alignment.
+** quad granularity.  All record headers are required to be a multiple
+   of 4 bytes.
+** all record headers must fit contiguously in a sector's remaining
+   available space.
+
+o Record Numbers
+  Strictly increasing.  Starts at 1 and increments.  Unique on a given
+  data stream.  Unique to a given set of DBLKs on a given Tag.
 
 o Time
-** Datetime is monotonically increasing since file inception.
-** Systime is monotonically increasing since last REBOOT.
+** DateTime is monotonically increasing since file inception.
+** SysTime  is monotonically increasing since last REBOOT.
+** Sync/Reboot records provides correlation between DateTime and SysTime.
 
 
 DBLK directory
 
-o File Inception.  When a tagsd is formatted, the DBLK file is created.  The creation
-  data is inserted into the DBLK directory.  It provides the base for monotonically
-  increasing datetime.
-o File limits.  blk_low, blk_high.  Blk_ids.  These are needed for converting from
-  absolute sector numbers to file offsets relative to the beginning of the file.
+o File Inception.  When a tagsd is formatted, the DBLK file is created.
+  The creation data is inserted into the DBLK directory.  It provides the
+  base for monotonically increasing datetime.
+
+o File limits.  blk_low, blk_high.  Blk_ids.  These are needed for
+  converting from absolute sector blk_ids to file offsets relative to the
+  beginning of the file.  what absolute blk_ids are used.
+
+
+Record Structure:
+
+A record consists of a header describing what this record is.  The header
+is immediately followed by optional data.  The data format is determined by
+the record type (dtype/rtype).  Headers are required to be quad aligned and
+quad granular (even number of quads).  Data thus starts quad aligned.
+
+o Basic header, same for all records
+
+  len         - (2 bytes) length of entire record, header and data
+  dtype/rtype - (2 bytes) record type
+  recnum      - (4 bytes) unique (to this Dblk stream) record numer,
+                          strictly increasing.  0 is invalid.
+  systime     - (8 bytes) 64 bit time stamp, number of milliseconds since
+                          reboot.
+  recsum      - (2 bytes) 16 bit checksum over all bytes inclusive of the
+                          header and data.  byte by byte addition.
+
+o Sync/Reboot records.  When record sync has been lost, we use sync/reboot
+  records to resynchronize the data stream.  Sync/Reboot records also provide
+  backward links.  This gives us a bound on what records live in the different
+  sync regions.
+
+  Sync/Reboot records also provide a correlation between DateTime and SysTime.
+  DateTime provides a potentially geo-syncronized timing.  And correlating
+  between SysTime (time since last reboot) and DateTime gives the relationship
+  between real time and running time upon the tag.
+
+o Initilization of DateTime and RecNum.  (DblkManager/Boot during SysBoot).
+
+  Upon reboot, we need to determine a good DateTime and the last recnum used.
+
+  o Use the Incept DateTime from the Dblk directory as an initial candidate
+    dateTime.
+
+  o Extract cur DateTime from the RTC h/w.  do validity checks.  If greater
+    than candidate DateTime, this is the new candidate.
+
+  o Find last known Sync/Reboot.  Extract DateTime, if greater than candidate
+    this is the new candidate.
+
+    Extract, recnum from the Sync/Reboot.  This is the candidate recnum.
+
+  o walk records forward to find last good record written.  Extract recnum
+    from this record.  This is the new candidate recnum.
+
+  o Candidate recnum becomes the last record number used.
