@@ -13,7 +13,6 @@ BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_N
 PFLAGS += -D_BUILD=$(BUILD_NUM)
 
 PFLAGS += -I$(MM_ROOT)/include
-PFLAGS += -I$(MM_ROOT)/mm/include
 
 # the include files for the 2618 needs to have the svsctl at 55
 # not 56 which is where the dcoctl register lives.

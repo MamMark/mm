@@ -151,7 +151,7 @@ typedef struct {
 } panic_info_t;
 
 
-/* see mm/include/image_info.h for IMAGE_INFO */
+/* see include/image_info.h for IMAGE_INFO */
 
 
 /*

@@ -9,7 +9,6 @@ TARGET = mm3
 PLATFORM_DIR = $(MM_ROOT)/tos/platforms/$(TARGET)
 
 PFLAGS += -I$(MM_ROOT)/include
-PFLAGS += -I$(MM_ROOT)/mm/include
 
 MSP_BSL ?= tos-bsl
 MSP_BSL_FLAGS = --telosb
