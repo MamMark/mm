@@ -1,4 +1,16 @@
 
+HW Model/Revision Codes:
+
+Image Info (see include/image_info.h) includes space to mark the image
+with what platform hw the image has been compiled for.  Included is a
+mechanism to indicate what h/w revision the image is for as well.
+
+Model numbers above 0xF0 indicate development hardware.
+
+Model 1         mm6a
+    240 (0xf0)  dev6a (similar to the mm6a) dev version of mm6a
+
+
 mm6a: The mm6a is a major implementation of the tag using the TI MSP432
   processor.  The MSP432 is an ARM Cortex-M4F with various TI peripherals.
   Many of these peripherals are derived from the equivilent peripheral in
