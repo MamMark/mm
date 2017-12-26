@@ -135,6 +135,7 @@ display_info(uint8_t *buf) {
         else {
           fprintf(stderr, "  DBLK_DIR: checksum ");
           p32 = (void *) buf;
+          sum = 0;
           for (i = 0; i < DBLK_DIR_QUADS; i++)
             sum += *p32++;
           if (sum) fprintf(stderr, "bad, ");
