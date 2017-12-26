@@ -57,16 +57,22 @@
  *
  * SI446X_RF_POWER_UP contains the value of TXCO which denotes whether
  * an external Xtal is connected to the radio chip.
+ * NOTE: Used explicitly by command in state machine
  *
  * SI446X_RF_GPIO_CFG contains the values used to program the GPIO pins.
  * A given board (platform) will potentially have gpio pins connected to
  * a TX/RX switch and need to be programmed appropriately.
+ * NOTE: included in the si446x_device_config string list
  */
 
 /* Select the chip type to modify si446x.h definitions
  */
 #define SI446X_CHIP 0x44631B
+#ifdef RPI_BUILD
 #include "si446x.h"
+#else
+#include <si446x.h>
+#endif
 
 #define SI446X_HW_CTS
 
