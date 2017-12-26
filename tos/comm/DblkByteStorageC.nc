@@ -40,7 +40,7 @@ configuration DblkByteStorageC {
   provides {
     interface  TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk0Bytes;
     interface  TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk1Bytes;
-    interface  TagnetAdapter<uint8_t>              as DblkNote;
+    interface  TagnetAdapter<tagnet_dblk_note_t>   as DblkNote;
   }
 }
 implementation {

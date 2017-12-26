@@ -37,7 +37,7 @@
 
 generic configuration TagnetDblkNoteAdapterP (int my_id) @safe() {
   uses interface     TagnetMessage  as  Super;
-  uses interface     TagnetAdapter<uint8_t> as Adapter;
+  uses interface     TagnetAdapter<tagnet_dblk_note_t> as Adapter;
 }
 implementation {
   components new TagnetDblkNoteAdapterImplP(my_id) as Element;

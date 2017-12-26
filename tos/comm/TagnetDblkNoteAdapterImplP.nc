@@ -40,7 +40,7 @@
 
 generic module TagnetDblkNoteAdapterImplP (int my_id) @safe() {
   uses interface  TagnetMessage           as  Super;
-  uses interface  TagnetAdapter<uint8_t>  as  Adapter;
+  uses interface  TagnetAdapter<tagnet_dblk_note_t>  as  Adapter;
   uses interface  TagnetName              as  TName;
   uses interface  TagnetHeader            as  THdr;
   uses interface  TagnetPayload           as  TPload;
@@ -50,6 +50,7 @@ implementation {
   enum { my_adapter_id = unique(UQ_TAGNET_ADAPTER_LIST) };
 
   event bool Super.evaluate(message_t *msg) {
+    tagnet_dblk_note_t      db = {0,0,0,0,0};
     uint32_t          ln       = 0;
     tagnet_tlv_t     *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t     *this_tlv = call TName.this_element(msg);
@@ -72,16 +73,33 @@ implementation {
             note = call TTLV.tlv_to_block(note_tlv, &ln);
           }
           call TPload.reset_payload(msg);
-          if (call Adapter.set_value(note, &ln)) {
-            call TPload.add_size(msg, ln);
+          db.action = DBLK_SET_DATA;
+          db.block = note;
+          if (call Adapter.set_value(&db, &ln)) {
+            call TPload.add_size(msg, db.count);
             call TPload.add_error(msg, SUCCESS);
           } else {
-            call TPload.add_size(msg, ln);
+            call TPload.add_size(msg, db.count);
             call TPload.add_error(msg, EINVAL);
           }
           call THdr.set_response(msg);
           call THdr.set_error(msg, TE_PKT_OK);
+          return TRUE;
           break;
+        case TN_HEAD:
+          call TPload.reset_payload(msg);                // no params
+          call THdr.set_response(msg);
+          call THdr.set_error(msg, TE_PKT_OK);
+          db.action = DBLK_GET_ATTR;
+          if (call Adapter.get_value(&db, &ln)) {
+            call TPload.add_size(msg, db.count);
+            call TPload.add_error(msg, db.error);
+            return TRUE;
+          }
+          if (db.error) {
+            call TPload.add_error(msg, db.error);
+            return TRUE;
+          }
         default:
           break;
       }

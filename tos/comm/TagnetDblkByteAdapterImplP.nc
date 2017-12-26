@@ -50,7 +50,7 @@ implementation {
   enum { my_adapter_id = unique(UQ_TAGNET_ADAPTER_LIST) };
 
   event bool Super.evaluate(message_t *msg) {
-    tagnet_dblk_bytes_t db = {0,0,1,NULL,0,0};
+    tagnet_dblk_bytes_t db       = {0,0,0,0,0,0,0};
     uint32_t           ln        = 0;
     tagnet_tlv_t      *name_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t      *file_tlv  = call TName.this_element(msg);

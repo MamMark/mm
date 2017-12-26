@@ -36,26 +36,23 @@ is found.
 
 ```
 root
-+-- Tag
-    |-- info
-    |   +-- <nodeid:000000000000>
-    |       +-- sens
-    |           +-- gps
-    |               +-- xyz
-    |-- poll
-    |   +-- <nodeid:000000000000>
-    |       |-- cnt
-    |       +-- ev
-    |-- sd
-    |   +-- <nodeid:000000000000>
-    |       +-- 0
-    |           |-- dblk
-    |           |   |-- 0
-    |           |   |-- 1
-    |           |   +-- note
-    |           +-- img
-    +-- sys
-        +-- <nodeid:000000000000>
++-- <nodeid:000000000000>
+    +-- tag
+        |-- info
+        |   +-- sens
+        |       +-- gps
+        |           +-- xyz
+        |-- poll
+        |   |-- cnt
+        |   +-- ev
+        |-- sd
+        |   +-- 0
+        |       |-- dblk
+        |       |   |-- 0
+        |       |   |-- 1
+        |       |   +-- note
+        |       +-- img
+        +-- sys
             |-- active
             |-- backup
             |-- golden

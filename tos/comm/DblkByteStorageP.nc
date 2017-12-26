@@ -47,7 +47,7 @@ module DblkByteStorageP {
   provides {
     interface  TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk0Bytes;
     interface  TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk1Bytes;
-    interface  TagnetAdapter<uint8_t>              as DblkNote;
+    interface  TagnetAdapter<tagnet_dblk_note_t>   as DblkNote;
   }
   uses {
     interface DblkMapFile  as DMF;
@@ -58,61 +58,90 @@ module DblkByteStorageP {
 }
 implementation {
 
+  uint32_t   dblk_notes_count = 0;
+
   bool GetDblkBytes(tagnet_dblk_bytes_t *db, uint32_t *len) {
-    error_t    err;
+    error_t    err = EINVAL;
 
     nop();
     nop();                      /* BRK */
-    switch (db->action) {
-      case DBLK_GET_DATA:
-        err = call DMF.seek(db->file, db->iota, 0);
-        if (err == SUCCESS) {
-          err = call DMF.map(db->file, &db->block, len);
-        }
-        if (err == SUCCESS) {
+    db->error  = SUCCESS;
+    if (db->file == 0) {
+      switch (db->action) {
+        case DBLK_GET_DATA:
+          err = call DMF.seek(db->file, db->iota, 0);
+          if (err == SUCCESS) {
+            err = call DMF.map(db->file, &db->block, len);
+          }
+          if (err == SUCCESS) {
+            db->iota   = call DMF.tell(db->file);
+            db->count -= *len;
+            return TRUE;
+          }
+          break;
+        case  DBLK_GET_ATTR:
           db->iota   = call DMF.tell(db->file);
-          db->count -= *len;
-          db->error  = SUCCESS;
+          db->count  = call DMF.filesize(db->file);
           return TRUE;
-        }
-        break;
-      case  DBLK_GET_ATTR:
-        db->iota   = call DMF.tell(db->file);
-        db->count  = call DMF.filesize(db->file);
-        return TRUE;
-        break;
-      default:
-        err = EINVAL;
-        break;
+          break;
+        default:
+          err = EINVAL;
+          break;
+      }
+      db->iota = call DMF.tell(db->file);
     }
-    db->iota = call DMF.tell(db->file);
     db->count = 0;
     db->error = err;
     return FALSE;
   }
 
   command bool Dblk0Bytes.get_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
-    db->file = 0;
     return GetDblkBytes(db, len);
   }
 
   command bool Dblk0Bytes.set_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
+    db->count = 0;
+    db->error = EINVAL;
+    *len = 0;
     return FALSE; }
 
 
   command bool Dblk1Bytes.get_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
-    db->file = 1;
-    return GetDblkBytes(db, len);
-  }
+    db->count = 0;
+    db->error = EINVAL;
+    *len = 0;
+    return FALSE; }
 
   command bool Dblk1Bytes.set_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
+    db->count = 0;
+    db->error = EINVAL;
+    *len = 0;
     return FALSE; }
 
 
-  command bool DblkNote.get_value(uint8_t *db, uint32_t *len) {
-    return FALSE; }
+  command bool DblkNote.get_value(tagnet_dblk_note_t *db, uint32_t *len) {
+    error_t    err = EINVAL;
 
-  command bool DblkNote.set_value(uint8_t *db, uint32_t *len) {
+    nop();
+    nop();                      /* BRK */
+    *len = 0;
+    db->count  = dblk_notes_count;
+    switch (db->action) {
+      case  DBLK_GET_ATTR:
+        db->error  = SUCCESS;
+        *len       = db->count;
+        return TRUE;
+        break;
+      default:
+        err = EINVAL;
+        break;
+    }
+    db->error = err;
+    return FALSE;
+  }
+
+  command bool DblkNote.set_value(tagnet_dblk_note_t *db, uint32_t *len) {
+    error_t      err = EINVAL;
     dt_note_t    note_block;
     /*
       uint16_t len;                 * size 28 + var *
@@ -128,15 +157,27 @@ implementation {
       uint8_t  min;
       uint8_t  sec;
     */
-    uint16_t     dlen;
-
-    dlen = CF_BE_16(*len) - 1;
-    note_block.len = dlen + sizeof(note_block);
-    note_block.dtype = DT_NOTE;
-    note_block.note_len = *len;
-    call Collect.collect((void *) &note_block, sizeof(note_block),
-                         db, dlen);
-    return dlen;
+    nop();
+    nop();                      /* BRK */
+    switch (db->action) {
+      case  DBLK_SET_DATA:
+        ++dblk_notes_count;
+        note_block.len = *len + sizeof(note_block);
+        note_block.dtype = DT_NOTE;
+        note_block.note_len = *len;
+        call Collect.collect((void *) &note_block, sizeof(note_block),
+                             db->block, *len);
+        db->error  = SUCCESS;
+        *len       = note_block.note_len;
+        db->count  = note_block.note_len;
+        return TRUE;
+        break;
+      default:
+        err = EINVAL;
+        break;
+    }
+    db->error = err;
+    return FALSE;
   }
 
   event void DMF.mapped(uint8_t fd, uint32_t file_pos) {

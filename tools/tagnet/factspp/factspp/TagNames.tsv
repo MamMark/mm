@@ -1,14 +1,19 @@
 ignore	GET	PUT	HEAD	DEL	Request Params	Response Params	Adapter Component	Interface Name	Interface Type	Interface Alternate	Direction	Tag Name					
-	x		 		<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	PollEvent	uses	"tag"	"poll"	<nodeid:010203040506>	"ev"		
-	x		 			<int>	TagnetIntegerAdapterP	TagnetAdapter	int32_t	PollCount	uses	"tag"	"poll"	<nodeid:010203040506>	"cnt"		
-	x		 			<gps_xyz>	TagnetGpsXyzAdapterP	TagnetAdapter	tagnet_gps_xyz_t	InfoSensGpsXyz	uses	"tag"	"info"	<nodeid:010203040506>	"sens"	"gps"	"xyz"
-	x	x	x	x	<iota>, <count>	<iota>, <count>, <block>, <error>	TagnetDblkByteAdapterP	TagnetAdapter	tagnet_dblk_bytes_t	DblkBytes	uses	"tag"	"sd"	<nodeid:010203040506>	0	"dblk"	0
-	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetImageAdapterP					"tag"	"sd"	<nodeid:010203040506>	0	"img"	
-x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetRuleSetsAdapterP					"tag"	"sd"	<nodeid:010203040506>	0	"rules"	
-x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetConfigAdapterP					"tag"	"sd"	<nodeid:010203040506>	0	"config"	
-x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetPanicAdapterP					"tag"	"sd"	<nodeid:010203040506>	0	"panic"	
-	x	x	 		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysActive	uses	"tag"	"sys"	<nodeid:010203040506>	"active"		
-	x	x	 		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysBackup	uses	"tag"	"sys"	<nodeid:010203040506>	"backup"		
-	x	x	 		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysGolden	uses	"tag"	"sys"	<nodeid:010203040506>	"golden"		
-	x	x	 		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysNIB	uses	"tag"	"sys"	<nodeid:010203040506>	"nib"		
-	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysRunning	uses	"tag"	"sys"	<nodeid:010203040506>	"running"		
+	x		x		<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	PollEvent	uses	<nodeid:000000000000>	tag	poll	ev		
+	x		x			<int>	TagnetIntegerAdapterP	TagnetAdapter	int32_t	PollCount	uses	<nodeid:000000000000>	tag	poll	cnt		
+	x		x			<gps_xyz>	TagnetGpsXyzAdapterP	TagnetAdapter	tagnet_gps_xyz_t	InfoSensGpsXyz	uses	<nodeid:000000000000>	tag	info	sens	gps	xyz
+	x		x		<iota>, <count>	<iota>, <count>, <block>, <error>	TagnetDblkByteAdapterP	TagnetAdapter	tagnet_dblk_bytes_t	Dblk0Bytes	uses	<nodeid:000000000000>	tag	sd	0	dblk	0
+	x		x		<iota>, <count>	<iota>, <count>, <block>, <error>	TagnetDblkByteAdapterP	TagnetAdapter	tagnet_dblk_bytes_t	Dblk1Bytes	uses	<nodeid:000000000000>	tag	sd	0	dblk	1
+		x	x			<iota>, <error>	TagnetDblkNoteAdapterP	TagnetAdapter	tagnet_dblk_note_t	DblkNote	uses	<nodeid:000000000000>	tag	sd	0	dblk	note
+	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetImageAdapterP					<nodeid:000000000000>	tag	sd	0	img	
+x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetRuleSetsAdapterP					<nodeid:000000000000>	tag	sd	0	rules	
+x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetConfigAdapterP					<nodeid:000000000000>	tag	sd	0	config	
+x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetPanicAdapterP					<nodeid:000000000000>	tag	sd	0	panic	
+	x	x	x		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysActive	uses	<nodeid:000000000000>	tag	sys	active		
+	x	x	x		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysBackup	uses	<nodeid:000000000000>	tag	sys	backup		
+	x	x	x		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysGolden	uses	<nodeid:000000000000>	tag	sys	golden		
+	x	x	x		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysNIB	uses	<nodeid:000000000000>	tag	sys	nib		
+	x	x	x		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysRunning	uses	<nodeid:000000000000>	tag	sys	running		
+x	x	x	x				TagnetTempAdapterP	TagnetAdapter	int32_t	InfoSensTemp		<nodeid:000000000000>	tag	info	sens	temp	
+x	x	x	x				TagnetBattAdapterP	TagnetAdapter	int32_t	InfoSensBatt		<nodeid:000000000000>	tag	info	sens	batt	
+x	x	x	x				TagnetSensActiveAdapterP					<nodeid:000000000000>	tag	info	sens	active	
