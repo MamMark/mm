@@ -133,19 +133,18 @@ display_info(uint8_t *buf) {
           fprintf(stderr, "could not read dblk dir: %s (0x%x)\n",
                   fx_dsp_err(err), err);
         else {
-          fprintf(stderr, "  DBLK_DIR: checksum ");
+          ddp = (void *) buf;
           p32 = (void *) buf;
           sum = 0;
           for (i = 0; i < DBLK_DIR_QUADS; i++)
             sum += *p32++;
-          if (sum) fprintf(stderr, "bad, ");
-          else     fprintf(stderr, "good, ");
-          ddp = (void *) buf;
-          fprintf(stderr, "sigs: %08x %08x\n",
-                  ddp->dblk_dir_sig, ddp->dblk_dir_sig_a);
-          fprintf(stderr, "  low: %u (0x%04x), high: %u (0x%04x)\n",
-                  ddp->dblk_low, ddp->dblk_low,
-                  ddp->dblk_high, ddp->dblk_high);
+          fprintf(stderr, "  dir:    checksum: 0x%08x (0x%08x)",
+                  ddp->chksum, sum);
+          if (sum) fprintf(stderr, "  <bad>\n");
+          else     fprintf(stderr, "  <good>\n");
+          fprintf(stderr, "  sigs:   %08x/%08x  low/high: 0x%04x/%08x\n",
+                  ddp->dblk_dir_sig, ddp->dblk_dir_sig_a,
+                  ddp->dblk_low, ddp->dblk_high);
           fprintf(stderr, "  incept: %04d/%02d/%02d-%02d:%02d:%02d (%d) GMT\n",
                   ddp->incept_date.yr,  ddp->incept_date.mon,
                   ddp->incept_date.day, ddp->incept_date.hr,
@@ -154,9 +153,7 @@ display_info(uint8_t *buf) {
         }
     } else
 	fprintf(stderr, "DBLK0001: not found\n");
-
 }
-
 
 
 /*
