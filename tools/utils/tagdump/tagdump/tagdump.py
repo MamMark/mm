@@ -242,9 +242,9 @@ image_version_obj   = aggie(OrderedDict([
 
 
 image_info_obj  = aggie(OrderedDict([
-    ('sig',       atom(('I', '0x{:08x}'))),
+    ('ii_sig',    atom(('I', '0x{:08x}'))),
     ('im_start',  atom(('I', '0x{:08x}'))),
-    ('im_end',    atom(('I', '0x{:08x}'))),
+    ('im_len',    atom(('I', '0x{:08x}'))),
     ('vect_chk',  atom(('I', '0x{:08x}'))),
     ('im_chk',    atom(('I', '0x{:08x}'))),
     ('ver_id',    image_version_obj),
