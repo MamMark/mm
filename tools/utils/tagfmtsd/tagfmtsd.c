@@ -28,11 +28,12 @@
 extern fs_loc_t loc;
 
 
-#define VERSION "tagfmtsd: v4.1.0  2017/12/24\n"
+#define VERSION "tagfmtsd: v4.1.1  2017/12/25\n"
 
 int debug	= 0,
     verbose	= 0,
-    do_write	= 0;
+    do_write	= 0,
+    force       = 0;
 
 /*
  * all sizes in bytes.
@@ -60,9 +61,10 @@ static struct option longopts[] = {
 
 static void usage(char *name) {
     fprintf(stderr, VERSION);
-    fprintf(stderr, "usage: %s [-c <config_size>] [-d <data_size>] [-p <panic size>] [-Dvw] device_file\n", name);
+    fprintf(stderr, "usage: %s [-c <config_size>] [-d <data_size>] [-p <panic size>] [-Dfvw] device_file\n", name);
     fprintf(stderr, "  -c <size>    set config size\n");
     fprintf(stderr, "  -d <size>    set dblk size\n");
+    fprintf(stderr, "  -f           force (rewrite dirs)\n");
     fprintf(stderr, "  -h           this usage\n");
     fprintf(stderr, "  --help\n");
     fprintf(stderr, "  -i <n slots> set number of image slots (n x 128KiB\n");
@@ -220,7 +222,7 @@ int main(int argc, char **argv) {
     u32_t   panic_size;
     int     do_fs_loc;
 
-    while ((c = getopt_long(argc,argv,"c:d:i:p:DhvVw", longopts, NULL)) != EOF)
+    while ((c = getopt_long(argc,argv,"c:d:i:p:DfhvVw", longopts, NULL)) != EOF)
 	switch (c) {
 	  case 'c':
 	      fprintf(stderr, "-c not implemented yet, defaults to 8192\n");
@@ -231,6 +233,9 @@ int main(int argc, char **argv) {
 	  case 'D':
 	      debug++;
 	      break;
+          case 'f':
+              force++;
+              break;
 	  case 'h':
 	      usage(argv[0]);
 	      break;
@@ -292,10 +297,13 @@ int main(int argc, char **argv) {
     if (err) {
 	fprintf(stderr, "fx_create_contig: PANIC001: %s (0x%x)\n", fx_dsp_err(err), err);
 	do_fs_loc = 0;
-    } else {
+    }
+    if (do_fs_loc || force) {
       /*
        * also need to force the directory sector (the first sector in the region) to zero.
        */
+      if (verbose)
+        fprintf(stderr, "*** zeroing PANIC directory\n");
       memset(buf, 0, MS_BUF_SIZE);
       err = ms_write_blk(loc.locators[FS_LOC_PANIC].start, buf);
       if (err) {
@@ -321,10 +329,13 @@ int main(int argc, char **argv) {
     if (err) {
 	fprintf(stderr, "fx_create_contig: IMAGE001: %s (0x%x)\n", fx_dsp_err(err), err);
 	do_fs_loc = 0;
-    } else {
+    }
+    if (do_fs_loc || force) {
       /*
        * also need to force the directory sector (the first sector in the region) to zero.
        */
+      if (verbose)
+        fprintf(stderr, "*** zeroing IMAGE directory\n");
       memset(buf, 0, MS_BUF_SIZE);
       err = ms_write_blk(loc.locators[FS_LOC_IMAGE].start, buf);
       if (err) {
@@ -338,7 +349,10 @@ int main(int argc, char **argv) {
     if (err) {
 	fprintf(stderr, "fx_create_contig: DBLK0001: %s (0x%x)\n", fx_dsp_err(err), err);
 	do_fs_loc = 0;
-    } else {
+    }
+    if (do_fs_loc || force) {
+      if (verbose)
+        fprintf(stderr, "*** writing DBLK directory\n");
       if (write_dblk_dir(buf))
         do_fs_loc = 0;
     }
@@ -354,7 +368,9 @@ int main(int argc, char **argv) {
     display_info(buf);
 
     if (!do_fs_loc)
-      fprintf(stderr, "*** no changes written\n");
+      fprintf(stderr, "*** locator not written\n");
+    if (force)
+      fprintf(stderr, "*** directories rewritten\n");
 
     return(0);
 }
