@@ -191,6 +191,8 @@ typedef struct {
    *
    * "elapsed" keeps a running total of how long we have been
    * up since last full pwr cycle (full means we lost RAM).
+   *
+   * elapsed is a 64 bit time and needs to be 2quad aligned.
    */
 
   uint32_t           ow_sig_b;

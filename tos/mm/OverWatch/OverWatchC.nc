@@ -67,6 +67,9 @@ implementation {
   OW_P.IM       -> IM_C.IM[unique("image_manager_clients")];
   OW_P.IMD      -> IM_C;
 
+  components LocalTimeMilliC;
+  OW_P.LocalTime -> LocalTimeMilliC;
+
   components PlatformC;
   OW_P.SysReboot -> PlatformC;
   OW_P.Platform  -> PlatformC;

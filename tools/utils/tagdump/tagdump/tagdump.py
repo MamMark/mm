@@ -92,7 +92,7 @@ from   decode_base import *
 # Matching is a good thing.  We won't abort but will bitch if we mismatch.
 
 
-DT_H_REVISION           = 0x00000007
+DT_H_REVISION           = 0x00000008
 
 #
 # global control cells
@@ -193,7 +193,9 @@ dt_reboot_obj   = aggie(OrderedDict([
     ('majik',   atom(('I', '{:08x}'))),
     ('prev',    atom(('I', '{:08x}'))),
     ('dt_rev',  atom(('I', '{:08x}'))),
-    ('datetime',atom(('10s', '{}', binascii.hexlify)))]))
+    ('datetime',atom(('10s', '{}', binascii.hexlify))),
+    ('pad1',    atom(('H',  {}))),
+    ('pad2',    atom(('I',  {})))]))
 
 #
 # reboot is followed by the ow_control_block

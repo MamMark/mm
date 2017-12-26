@@ -54,7 +54,7 @@
  * split into two subfields, major and minor.  Major 0 is development of
  * some flavor.  Releases start at Major 1.  Major 1 looks like 00010000.
  */
-#define DT_H_REVISION   0x00000007
+#define DT_H_REVISION   0x00000008
 
 typedef enum {
   DT_NONE		= 0,
@@ -154,10 +154,17 @@ typedef struct {                /* size 20 */
 /*
  * reboot record
  * followed by ow_control_block
+ *
+ * We have a 64 bit systime and the ow_control_block also has a 64 bit
+ * systime.  These 2quads need to be 2quad aligned to avoid problems
+ * with the python tool struct extraction.
+ *
+ * We need to pad out the reboot record to keep 2quad alignment for the
+ * following ow_control_block.
  */
 
 typedef struct {
-  uint16_t len;                 /* size 44 +    68      */
+  uint16_t len;                 /* size 48 +    68      */
   dtype_t  dtype;               /* reboot  + ow_control */
   uint32_t recnum;
   uint64_t systime;             /* 2quad alignment */
@@ -167,7 +174,8 @@ typedef struct {
   uint32_t prev_sync;           /* file offset */
   uint32_t dt_h_revision;       /* version identifier of typed_data */
   datetime_t datetime;          /* 10 bytes */
-  uint16_t  pad1;               /* quad aligned for owcb */
+  uint16_t  pad1;               /* quad aligned for owcb  */
+  uint32_t  pad2;               /* 2quad aligned for owcb */
 } PACKED dt_reboot_t;
 
 typedef struct {

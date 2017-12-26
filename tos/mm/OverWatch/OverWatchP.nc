@@ -93,6 +93,7 @@ module OverWatchP {
     interface ImageManager      as IM;
     interface ImageManagerData  as IMD;
     interface OverWatchHardware as OWhw;
+    interface LocalTime<TMilli>;
     interface Platform;
 
   }
@@ -331,11 +332,6 @@ implementation {
 
       case OW_REQ_FAIL:                 /* crash, rebooting */
         owcp->ow_req = OW_REQ_BOOT;
-
-        /*
-         * this needs to be modified to handle overflow etc.  probably
-         * just modify for uint64_t will do it.
-         */
         owcp->elapsed += owcp->systime;
         owcp->reboot_count++;
 
@@ -712,7 +708,7 @@ implementation {
 
     /* do not call SysReboot.fail() here */
     owcp = &ow_control_block;
-    owcp->systime = 1000;               /* just pretend for now */
+    owcp->systime = call LocalTime.get();
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
     owcp->ow_req = OW_REQ_FAIL;
