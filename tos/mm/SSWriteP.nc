@@ -465,6 +465,8 @@ implementation {
 
       num_full--;
     }
+    ssc.ssw_num_full = 0;
+    ssc.ssw_out = idx;
 
     /*
      * We have flushed any buffers that are FULL.  We also need to flush
