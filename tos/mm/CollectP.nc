@@ -60,6 +60,16 @@
  *
  * Data associated with a given header however can be split across sector
  * boundaries but is limited to DT_MAX_DLEN.  (defined in typed_data.h).
+ *
+ * Collect is responsible for laying down REBOOT records on the way up and
+ * SYNC records at appropriate times/events.  We primarily lay down SYNCs
+ * based on how many sectors (buffers) have been written.  In addition, as
+ * a fail safe, we also start a timer after any SYNC as been written.  If
+ * the timer expires, we lay down a SYNC.
+ *
+ * Collect is responsible for managing prev_sync file offsets.  This a
+ * combination of blk_id and byte offset within the buffer of the SYNC or
+ * REBOOT being lay'd down.
  */
 
 #include <typed_data.h>
@@ -68,12 +78,36 @@
 #include <sd.h>
 
 
+/*
+ * Data Collector (dc) control structure
+ *
+ * The data collector is the record marshaller and lays records down into
+ * the underlying SD buffers that Stream Storage (SSW) gives us.
+ *
+ * remaining:           number of bytes still remaining in current buffer
+ * handle:              keeper of the current SSW handle
+ * cur_buf:             extracted start of the buffer from the handle
+ * cur_ptr:             where in the current buffer we be
+ *
+ * cur_recnum:          last recnum used.
+ * last_sync_offset:    file offset of last REBOOT/SYNC laid down
+ * bufs_to_next_sync:   number of buffers/sectors before we do next sync
+
+ * DblkManager is responsible for keeping track of where in the Data Stream
+ * we are.
+ */
 typedef struct {
   uint16_t     majik_a;
+
   uint16_t     remaining;
   ss_wr_buf_t *handle;
   uint8_t     *cur_buf;
   uint8_t     *cur_ptr;
+
+  uint32_t     cur_recnum;
+  uint32_t     last_sync_offset;        /* file offset */
+  uint16_t     bufs_to_next_sync;
+
   uint16_t     majik_b;
 } dc_control_t;
 
@@ -85,6 +119,8 @@ typedef struct {
  * Tmilli is binary
  */
 #define SYNC_PERIOD (5UL * 60 * 1024)
+#define COLLECT_MAX_BUFS_SYNC   8
+
 extern image_info_t image_info;
 extern ow_control_block_t ow_control_block;
 
@@ -115,6 +151,36 @@ implementation {
   norace dc_control_t dcc;
 
 
+  /*
+   * update_sync_offset
+   * update the last know sync file offset.
+   */
+  void update_sync_offset() {
+    uint32_t blk_offset;
+    uint32_t buf_offset;
+
+    /* get the file offset of the current block */
+    buf_offset = 0;
+    blk_offset = call SSW.block_offset();
+    if (!blk_offset) {
+      dcc.last_sync_offset = 0;
+      return;
+    }
+
+    /*
+     * if we have a non-zero buf pointer we still have a live buffer.
+     * It hasn't been handed over to stream storage and won't be
+     * accounted for by SSW.block_offset.
+     *
+     * dcc.remaining will always tell the story and may be 0.
+     */
+    if (dcc.cur_buf)
+      buf_offset = SD_BLOCKSIZE - dcc.remaining;
+    blk_offset += buf_offset;
+    dcc.last_sync_offset = blk_offset;
+  }
+
+
   void write_version_record() {
     dt_version_t  v;
     dt_version_t *vp;
@@ -137,7 +203,9 @@ implementation {
     sp->len = sizeof(s);
     sp->dtype = DT_SYNC;
     sp->sync_majik = SYNC_MAJIK;
+    sp->prev_sync  = dcc.last_sync_offset;
     sp->pad0 = sp->pad1 = 0;
+    update_sync_offset();
     call Collect.collect((void *) sp, sizeof(dt_sync_t), NULL, 0);
   }
 
@@ -150,8 +218,10 @@ implementation {
     rp->len = sizeof(r) + sizeof(ow_control_block_t);
     rp->dtype = DT_REBOOT;
     rp->sync_majik = SYNC_MAJIK;
+    rp->prev_sync  = dcc.last_sync_offset;
     rp->dt_h_revision = DT_H_REVISION;  /* which version of typed_data */
     rp->pad0 = rp->pad1 = rp->pad2 = 0;
+    update_sync_offset();
     call Collect.collect((void *) rp, sizeof(r),
                          (void *) &ow_control_block,
                          sizeof(ow_control_block_t));
@@ -200,6 +270,7 @@ implementation {
   command error_t Init.init() {
     dcc.majik_a = DC_MAJIK;
     dcc.majik_b = DC_MAJIK;
+    dcc.bufs_to_next_sync = COLLECT_MAX_BUFS_SYNC;
     return SUCCESS;
   }
 
@@ -216,6 +287,10 @@ implementation {
   void finish_sector() {
     nop();                              /* BRK */
     call SSW.buffer_full(dcc.handle);
+    if (--dcc.bufs_to_next_sync == 0) {
+      post collect_sync_task();
+      dcc.bufs_to_next_sync = COLLECT_MAX_BUFS_SYNC;
+    }
     dcc.remaining = 0;
     dcc.handle    = NULL;
     dcc.cur_buf   = NULL;
@@ -277,7 +352,7 @@ implementation {
     if (!data || !dlen)            /* nothing to do? */
       return;
     while (dlen > 0) {
-      if (dcc.remaining == 0) {
+      if (dcc.cur_buf == NULL) {
         /*
          * no space left, get another buffer
          * get_free_buf_handle either works or panics.
@@ -337,7 +412,8 @@ implementation {
     if (hlen + dlen > DT_MAX_RLEN)
       call Panic.panic(PANIC_SS, 4, (parg_t) data, dlen, 0, 0);
 
-    header->recnum = call DblkManager.adv_cur_recnum();
+    dcc.cur_recnum++;
+    header->recnum = dcc.cur_recnum;
 
     /*
      * our caller is responsible for filling in any pad fields, typically 0.
@@ -414,7 +490,9 @@ implementation {
         sp->dtype      = DT_SYNC;
         sp->systime    = call LocalTime.get();
         sp->sync_majik = SYNC_MAJIK;
+        sp->prev_sync  = dcc.last_sync_offset;
         sp->pad0       = sp->pad1       = 0;
+        update_sync_offset();
 
         /* fill in datetime */
         copy_block_out((void *) sp, sizeof(dt_sync_t));
