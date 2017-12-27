@@ -633,7 +633,7 @@ DTR_NAME    = 3                         # rtype name
 
 dt_records = {
 #   dt   len  decoder                obj                 name
-     1: (112, decode_reboot,         dt_reboot_obj,     "REBOOT"),
+     1: (116, decode_reboot,         dt_reboot_obj,     "REBOOT"),
      2: (168, decode_version,        dt_version_obj,    "VERSION"),
      3: ( 40, decode_sync,           dt_sync_obj,       "SYNC"),
      4: ( 40, decode_event,          dt_event_obj,      "EVENT"),

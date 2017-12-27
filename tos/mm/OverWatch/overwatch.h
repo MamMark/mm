@@ -35,6 +35,10 @@
 #ifndef __OVERWATCH_H__
 #define __OVERWATCH_H__
 
+#ifndef PACKED
+#define PACKED __attribute__((__packed__))
+#endif
+
 /*
  * definintions for NIB access
  *
@@ -205,7 +209,7 @@ typedef struct {
   uint64_t           elapsed;
 
   uint32_t           ow_sig_c;
-} ow_control_block_t;
+} PACKED ow_control_block_t;
 
 
 /*
