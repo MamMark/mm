@@ -194,8 +194,8 @@ dt_reboot_obj   = aggie(OrderedDict([
     ('prev',    atom(('I', '{:08x}'))),
     ('dt_rev',  atom(('I', '{:08x}'))),
     ('datetime',atom(('10s', '{}', binascii.hexlify))),
-    ('pad1',    atom(('H',  {}))),
-    ('pad2',    atom(('I',  {})))]))
+    ('pad1',    atom(('H',  '{}'))),
+    ('pad2',    atom(('I',  '{}')))]))
 
 #
 # reboot is followed by the ow_control_block
