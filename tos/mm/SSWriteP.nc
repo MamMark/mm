@@ -238,6 +238,24 @@ implementation {
 
 
   /*
+   * block_offset
+   *
+   * if it comes back zero, then we be done, leave it zero.
+   *
+   * Otherwise, we need to include and full buffers that
+   * are pending.
+   */
+  async command uint32_t SSW.block_offset() {
+    uint32_t offset;
+
+    offset = call DblkManager.dblk_nxt_offset();
+    if (offset)
+      offset += ssc.ssw_num_full * SD_BLOCKSIZE;
+    return offset;
+  }
+
+
+  /*
    * get_temp_buf: return one of the SSW's buffers
    *
    * Intended to be used while the system is single threaded by a user

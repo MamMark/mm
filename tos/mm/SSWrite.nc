@@ -32,6 +32,18 @@ interface SSWrite {
 
 
   /*
+   * return current block offset
+   *
+   * the block offset is the file offset of tne next block being written
+   * or that will be written.  dblk_nxt + number of full buffers converted
+   * to a file offset.
+   *
+   * can be called from anywhere.
+   */
+  async command uint32_t block_offset();
+
+
+  /*
    * get_temp_buf provides a mechanism where a client can ask for space
    * controlled by SSWrite to use on a temporary basis.  It is assumed
    * that this occurs while booting and before SSWrite is active.
