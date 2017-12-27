@@ -125,10 +125,21 @@ implementation {
   void do_erase() {
 #ifdef FS_ENABLE_ERASE
     error_t err;
+    uint32_t start;
 
     fs_state = FSS_ERASE;
-    err = call SDerase.erase(fs_loc.locators[fs_which].start,
-                             fs_loc.locators[fs_which].end);
+    start = fs_loc.locators[fs_which].start;
+    switch (fs_which) {
+      default:
+      case FS_LOC_PANIC:
+      case FS_LOC_CONFIG:
+      case FS_LOC_IMAGE:
+        break;
+      case FS_LOC_DBLK:
+        start++;                        /* don't do directory */
+        break;
+    }
+    err = call SDerase.erase(start, fs_loc.locators[fs_which].end);
     if (err)
       fs_panic(4, err);
 #endif
