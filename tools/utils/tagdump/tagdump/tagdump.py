@@ -716,7 +716,8 @@ def resync(fd, offset):
     global num_resyncs
 
     if (offset & 3 != 0):
-        print('*** resync called with unaligned offset: {}'.format(offset))
+        print('*** resync called with unaligned offset: {0} (0x{0:x})'.format(
+            offset))
         offset = (offset / 4) * 4
     fd.seek(offset)
     num_resyncs += 1
@@ -728,7 +729,8 @@ def resync(fd, offset):
                 if sig == dt_sync_majik:
                     break
             except struct.error:
-                print('*** failed to resync @ offset {}'.format(fd.tell()))
+                print('*** failed to resync @ offset {0} (0x{0:x})'.format(
+                    fd.tell()))
                 return -1
             except IOError:
                 print('*** file io error')
@@ -799,7 +801,7 @@ def get_record(fd):
         offset = fd.tell()
         # new records are required to start on a quad boundary
         if (offset & 3):
-            print('*** aligning offset {} ({:08x})'.format(offset, offset))
+            print('*** aligning offset {0} (0x{0:08x})'.format(offset))
             offset = ((offset/4) + 1) * 4
             fd.seek(offset)
         if (offset == last_offset):
@@ -866,7 +868,8 @@ def get_record(fd):
         chksum -= (recsum & 0x00ff)
         if (chksum != recsum):
             chksum_errors += 1
-            print('*** checksum failure @ offset {}'.format(offset))
+            print('*** checksum failure @ offset {0} (0x{0:x})'.format(
+                offset))
             print_record(offset, rec_buf)
             offset = resync(fd, offset)
             if (offset < 0):
@@ -991,8 +994,8 @@ def dump(args):
         count_dt(rtype)
 
     print
-    print('*** end of processing @{},  processed: {} records, {} bytes'.format(
-        infile.tell(), total_records, total_bytes))
+    print('*** end of processing @{} (0x{:x}),  processed: {} records, {} bytes'.format(
+        infile.tell(), infile.tell(), total_records, total_bytes))
     print('*** reboots: {}, resyncs: {}, chksum_errs: {}, unk_rtypes: {}'.format(
         dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
     print
