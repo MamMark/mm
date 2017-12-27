@@ -40,7 +40,7 @@ Si446x radio.
       - {Si446xConfigDevice.h,si446x.h,si446xRadio.h,si446xWDS_*.h}
 
     - mm/tos/platform/{dev6a,mm6a}/hardware/si446x/
-      - {RadioConfig.h, Si446xConfigPlatform.h, Si446xConfigWDS.h}
+      - {RadioConfig.h, Si446xConfigPlatform.h}
 
 # Configuration related details:
 

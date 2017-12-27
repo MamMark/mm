@@ -9,7 +9,7 @@ Below is the graphical representation of the Si446x Driver Finite State Machine.
 
 ![Si446xDriverLayer](Si446xFSM.png)
 
-PROCESS TO CREATE runtime code
+# PROCESS TO CREATE runtime code
 
 The process steps required to produce the Si446xFSM.h file includes the
 precursor state machine representation file used by the QFSM graphical
@@ -18,7 +18,7 @@ QFSM knows how to handle. QFSM allows a human to edit, or change, the
 finite state machine through a graphical user interface and save the
 appropriate file formats needed for building the target program.
 
-Here are the steps required to update the FSM:
+## Here are the steps required to update the FSM:
 
 - Checkout revision of Si446xFSM.fsm
 - Open with Qfsm
@@ -30,7 +30,7 @@ Here are the steps required to update the FSM:
 - run the fsmc.py code generator (input .txt file)
 - make the target platform
 
-IMPORTANT ARTIFACTS that are saved in git
+## IMPORTANT ARTIFACTS that are saved in git
 
 - .fsm file contains the QFSM native file
     - Defined by a Mealy-style machine where each arc (transition) is labeled with an output action.
@@ -44,7 +44,7 @@ IMPORTANT ARTIFACTS that are saved in git
   input to fsmc.py is the .txt above.
 
 
-FINITE STATE TABLE input format
+# FINITE STATE TABLE input format
 
 The intermediate state machine format that is input to the fsmc.py code
 generator is the ASCII plain text formatted file exported from QFSM. It
@@ -72,7 +72,7 @@ names provided in the Si446xFSM.h file and used by Si446xDriverLayerP.
 ```
 
 
-FSM CODE GENERATOR
+# FSM CODE GENERATOR
 
 The process of converting the graphical representation of the state machine
 into a set of c-code definitions is performed by the FSM code generator in
@@ -87,7 +87,7 @@ The workflow by file is:
      -> .png -> .md
      -> .html
 
-invokation:
+invocation:
 
     python2 <path to fsmc.py>/fsmc.py  --c-mode -i Si446xFSM.txt -o Si446xFSM.h
 
@@ -96,12 +96,12 @@ handling intermediate files. Right now some intermediate artifacts are
 included in the git repository.
 
 
-Needed tools:
-
-o fsmc.py: gh:MamMark/mm(master)/tools/fsmc/fsmc.py
+# Needed tools:
+fsmc.py: gh:MamMark/mm(master)/tools/fsmc/fsmc.py
         (https://github.com/MamMark/mm/tree/master/tools/fsmc/fsmc.py)
 
-o QFSM
+
+# QFSM
 See the INSTALL file at the top level of the source tarball.
 
 Sourceforge.net (http://qfsm.sourceforge.net)
@@ -117,7 +117,7 @@ terms of the states they may be in. In practice they are used to design
 integrated circuits or to create regular expressions, scanners or other
 program code.
 
-Features of Qfsm are:
+## Features of Qfsm are:
 
 - Drawing, editing and printing of diagrams
 - Binary, ASCII and "free text" condition codes
@@ -132,10 +132,52 @@ Features of Qfsm are:
 - Other export formats: SCXML, vvvv Automata code
 
 You can download the source code of Qfsm 0.54 from here:
+```
 http://sourceforge.net/projects/qfsm/files/qfsm/qfsm-0.54/qfsm-0.54.0-Source.tar.bz2/download
+```
+# INSTALLATION COMMANDS
 
-QFSM RUNTIME REQUIREMENTS
+## QFSM RUNTIME REQUIREMENTS
 
-- Qt SDK version 4.8.3 [4.8.6] http://qt.nokia.com/
+- Qt SDK version 4.8.3 [4.8.6] http://qt-project.org/downloads
 - CMake 2.8 or higher [2.8.12.2] http://www.cmake.org/
 - Graphviz library 2.38.0 or higher (optional) http://www.graphviz.org/
+
+## General Install (including graphviz and cmake)
+```
+sudo apt-get -y -q install build-essential
+sudo apt-get -y -q install libfontconfig1
+sudo apt-get -y -q install mesa-common-dev
+sudo apt-get -y -q install libglu1-mesa-dev
+sudo apt-get -y -q install libgl1-mesa-dev
+sudo apt-get -y -q install graphviz
+sudo apt-get -y -q install libqt4-dev
+sudo apt-get -y -q install cmake
+```
+## QT Install
+These instructions aren't correct. QT is sold commercially as well as having an open source license. The open source is hard to find and install.
+
+Check here for instructions:
+```
+http://doc.qt.io/archives/qt-4.8/install-x11.html
+```
+Downloads are at:
+```
+http://download.qt.io/official_releases/qt/4.8/4.8.6/
+```
+Some other installation instructions that are incomplete and inaccurate but maybe instructive:
+```
+http://download.qt.io/official_releases/qt/5.10/5.10.0/single/qt-everywhere-src-5.10.0.tar.xz
+chmod +x qt-unified-linux-x64-3.0.2-1-online.run
+sudo ./qt-unified-linux-x64-3.0.2-1-online.runls /opt
+export PATH=/opt/qt4/bin:$PATH
+```
+## QFSM Install
+```
+wget http://sourceforge.net/projects/qfsm/files/qfsm/qfsm-0.54/qfsm-0.54.0-Source.tar.bz2
+tar xvf 'qfsm-0.54.0-Source.tar.bz2' --directory .
+cd qfsm-0.54.0-Source/
+cmake .
+make
+sudo make install
+```
