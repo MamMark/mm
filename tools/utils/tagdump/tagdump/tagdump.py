@@ -981,6 +981,7 @@ def dump(args):
         if (rec_high and recnum > rec_high):
             break                       # all done
 
+        count_dt(rtype)
         print_record(rec_offset, rec_buf)
         decode = dt_records[rtype][DTR_DECODER]  # dt function
         obj    = dt_records[rtype][DTR_OBJ]      # dt object
@@ -991,7 +992,6 @@ def dump(args):
                 rlen, rtype, dt_name(rtype)))
         total_records += 1
         total_bytes   += rlen
-        count_dt(rtype)
 
     print
     print('*** end of processing @{} (0x{:x}),  processed: {} records, {} bytes'.format(
