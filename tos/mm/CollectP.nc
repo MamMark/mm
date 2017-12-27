@@ -63,6 +63,8 @@
  */
 
 #include <typed_data.h>
+#include <image_info.h>
+#include <overwatch.h>
 #include <sd.h>
 
 
@@ -77,13 +79,29 @@ typedef struct {
 
 #define DC_MAJIK 0x1008
 
+
+/*
+ * 5 min * 60 sec/min * 1024 ticks/sec
+ * Tmilli is binary
+ */
+#define SYNC_PERIOD (5UL * 60 * 1024)
+extern image_info_t image_info;
+extern ow_control_block_t ow_control_block;
+
+
 module CollectP {
   provides {
+    interface Boot as Booted;           /* out boot */
     interface Collect;
     interface Init;
     interface CollectEvent;
   }
   uses {
+    interface Boot;                     /* in boot in sequence */
+    interface Boot as SysBoot;          /* use at end of System Boot initilization */
+    interface Timer<TMilli> as SyncTimer;
+    interface OverWatch;
+
     interface SSWrite as SSW;
     interface Panic;
     interface DblkManager;
@@ -93,7 +111,91 @@ module CollectP {
 }
 
 implementation {
+
   norace dc_control_t dcc;
+
+
+  void write_version_record() {
+    dt_version_t  v;
+    dt_version_t *vp;
+
+    vp = &v;
+    vp->len     = sizeof(v) + sizeof(image_info_t);
+    vp->dtype   = DT_VERSION;
+    vp->base    = call OverWatch.getImageBase();
+    vp->pad     = 0;
+    call Collect.collect((void *) vp, sizeof(dt_version_t),
+                         (void *) &image_info, sizeof(image_info_t));
+  }
+
+
+  void write_sync_record() {
+    dt_sync_t  s;
+    dt_sync_t *sp;
+
+    sp = &s;
+    sp->len = sizeof(s);
+    sp->dtype = DT_SYNC;
+    sp->sync_majik = SYNC_MAJIK;
+    sp->pad0 = sp->pad1 = 0;
+    call Collect.collect((void *) sp, sizeof(dt_sync_t), NULL, 0);
+  }
+
+
+  void write_reboot_record() {
+    dt_reboot_t  r;
+    dt_reboot_t *rp;
+
+    rp = &r;
+    rp->len = sizeof(r) + sizeof(ow_control_block_t);
+    rp->dtype = DT_REBOOT;
+    rp->sync_majik = SYNC_MAJIK;
+    rp->dt_h_revision = DT_H_REVISION;  /* which version of typed_data */
+    rp->pad0 = rp->pad1 = rp->pad2 = 0;
+    call Collect.collect((void *) rp, sizeof(r),
+                         (void *) &ow_control_block,
+                         sizeof(ow_control_block_t));
+    call OverWatch.clearReset();        /* clears owcb copies */
+  }
+
+
+  /*
+   * Always write the reboot record first.
+   *
+   * This is the very first record (REBOOT) after we've come up.
+   * This will ALWAYS be the first record written to the very
+   * first sector that DblkManager has found for where the Data
+   * Stream will restart.
+   */
+  event void Boot.booted() {
+    write_reboot_record();
+    write_version_record();
+    nop();                              /* BRK */
+    signal Booted.booted();
+  }
+
+
+  task void collect_sync_task() {
+    /*
+     * update down counters first, to avoid getting SYNCs very close
+     * together.
+     */
+    dcc.bufs_to_next_sync = COLLECT_MAX_BUFS_SYNC;
+    call SyncTimer.stop();
+    write_sync_record();
+    call SyncTimer.startOneShot(SYNC_PERIOD);
+  }
+
+
+  event void SysBoot.booted() {
+    call SyncTimer.startOneShot(SYNC_PERIOD);
+  }
+
+
+  event void SyncTimer.fired() {
+    post collect_sync_task();
+  }
+
 
   command error_t Init.init() {
     dcc.majik_a = DC_MAJIK;

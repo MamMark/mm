@@ -52,4 +52,4 @@ hard_reset.
 
 When the system reboots after a reset any hard_resets are captured in hard_reset
 along with the indicated reboot_reason.  These are then written into the
-Reboot record recorded by the mmSync module.
+Reboot record recorded by Collect on boot.

@@ -58,7 +58,7 @@ implementation {
   components ImageManagerC as IM;
   components OverWatchC    as OW;
   components DblkManagerC  as DM;
-  components mmSyncC       as SYNC;
+  components CollectC      as SYNC;
   components GPS0C         as GPS;
 
   FS.Boot   -> MainC;

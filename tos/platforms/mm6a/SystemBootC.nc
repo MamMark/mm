@@ -44,7 +44,7 @@
  * 1) Bring up the SD/StreamStorage, FileSystem
  * 2) Bring up ImageManager (image = code image), needed by OW
  * 3) Invoke OverWatch (OW) to check for actions. (not NIB)
- * 4) Post Restart/Reboot record.  (mmSync)
+ * 4) Post Restart/Reboot record.  (Collect)
  * 5) Bring up the GPS.  (GPS assumes SS is up)
  *
  * Low power chain
@@ -68,7 +68,7 @@ implementation {
   components ImageManagerC as IM;
   components OverWatchC    as OW;
   components DblkManagerC  as DM;
-  components mmSyncC       as SYNC;
+  components CollectC      as SYNC;
   components GPS0C         as GPS;
 
   PM.Boot -> MainC;                     // first check for power state

@@ -5,16 +5,29 @@
 
 configuration CollectC {
   provides {
+    interface Boot as Booted;           /* out boot */
     interface Collect;
     interface CollectEvent;
   }
+  uses     interface Boot;              /* in  boot */
 }
 
 implementation {
-  components MainC, CollectP;
+
+  components MainC, SystemBootC, CollectP;
   MainC.SoftwareInit -> CollectP;
-  Collect = CollectP;
+  CollectP.SysBoot   -> SystemBootC.Boot;
+
+  Booted       = CollectP;
+  Collect      = CollectP;
   CollectEvent = CollectP;
+  Boot         = CollectP.Boot;
+
+  components new TimerMilliC() as SyncTimerC;
+  CollectP.SyncTimer -> SyncTimerC;
+
+  components OverWatchC;
+  CollectP.OverWatch -> OverWatchC;
 
   components DblkManagerC;
   CollectP.DblkManager -> DblkManagerC;
