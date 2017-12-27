@@ -262,9 +262,6 @@ dt_sync_obj     = aggie(OrderedDict([
     ('datetime',  atom(('10s','{}', binascii.hexlify)))]))
 
 
-# FLUSH: flush remainder of sector due to SysReboot.flush()
-dt_flush_obj    = dt_simple_hdr
-
 # EVENT
 
 event_names = {
