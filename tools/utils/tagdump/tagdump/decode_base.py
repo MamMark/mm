@@ -54,11 +54,11 @@ class aggie(OrderedDict):
         s = ''
         for key, v_obj in self.iteritems():
             if len(s) != 0:
-                s += ', '
+                s += '  '
             if isinstance(v_obj, atom):
                 s += key + ': ' + v_obj.__repr__()
             elif isinstance(v_obj, aggie):
-                s += '[' + key + ': ' + v_obj.__repr__() + ']'
+                s += '[' + key + ': ' + v_obj.__repr__() + ']\n'
             else:
                 s += "oops"
         return s

@@ -182,7 +182,7 @@ def print_hdr(obj):
 
     # gratuitous space shows up after the print, sigh
     print('{:04} {:8} ({:2}) {:6} --'.format(recnum, st,
-        rtype, dt_records[rtype][DTR_NAME]))
+        rtype, dt_records[rtype][DTR_NAME])),
 
 
 dt_simple_hdr   = aggie(OrderedDict([('hdr', dt_hdr_obj)]))
