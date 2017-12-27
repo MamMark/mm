@@ -15,6 +15,7 @@
 
 #include <panic.h>
 #include <platform_panic.h>
+#include <sd.h>
 
 typedef enum {
   DMS_IDLE = 0,                         /* doing nothing */
@@ -235,6 +236,13 @@ implementation {
   }
 
 
+  async command uint32_t DblkManager.dblk_nxt_offset() {
+    if (dmc.dblk_nxt)
+      return (dmc.dblk_nxt - dmc.dblk_lower) << SD_BLOCKSIZE_NBITS;
+    return 0;
+  }
+
+
   async command uint32_t DblkManager.adv_dblk_nxt() {
     atomic {
       if (dmc.dblk_nxt) {
@@ -244,17 +252,6 @@ implementation {
       }
     }
     return dmc.dblk_nxt;
-  }
-
-
-  async command uint32_t DblkManager.get_cur_recnum() {
-    return dmc.cur_recnum;
-  }
-
-
-  async command uint32_t DblkManager.adv_cur_recnum() {
-    dmc.cur_recnum++;
-    return dmc.cur_recnum;
   }
 
 
