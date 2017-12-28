@@ -173,7 +173,7 @@ enum {
 typedef struct {
   uint32_t           ow_sig;
   uint32_t           ow_rpt_flags;      /* reporting flags */
-  uint64_t           systime;           /* req input, time since last boot */
+  uint64_t           uptime;            /* req input, time since last boot */
   uint32_t           reset_status;      /* recognized stati                */
   uint32_t           reset_others;      /* unindentified other stati       */
   uint32_t           from_base;         /* base address of where from      */

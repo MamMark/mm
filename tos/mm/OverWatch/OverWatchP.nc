@@ -332,7 +332,7 @@ implementation {
 
       case OW_REQ_FAIL:                 /* crash, rebooting */
         owcp->ow_req = OW_REQ_BOOT;
-        owcp->elapsed += owcp->systime;
+        owcp->elapsed += owcp->uptime;
         owcp->reboot_count++;
 
         if (owcp->from_base == 0)               /* from GOLD, no special eject checks  */
@@ -708,7 +708,7 @@ implementation {
 
     /* do not call SysReboot.fail() here */
     owcp = &ow_control_block;
-    owcp->systime = call LocalTime.get();
+    owcp->uptime = call LocalTime.get();
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
     owcp->ow_req = OW_REQ_FAIL;
