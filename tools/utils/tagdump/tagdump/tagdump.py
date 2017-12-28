@@ -147,35 +147,55 @@ def init_globals():
     dt_count            = {}
 
 
-rbt0 = '  rpt:           0x{:08x}, st:        0x{:08x}'
-rbt1 = '  reset_status:  0x{:08x}, reset_others: 0x{:08x}, from_base: 0x{:08x}'
-rbt2 = '  reboot_count: {:2}, ow_req: {:3}, reboot_reason: {}, ow_boot_mode: {}, owt_action: {}'
-rbt3 = '  strange:     {:3}, loc: 0x{:04x}, vec_chk_fail: {}, image_chk_fail: {}'
-rbt4 = '  elapsed:       0x{:08x}'
+rbt1a = '    REBOOT: {:7s}  f: {:4s}  c: {:4s}  m: {:4s}  boots: {}  chk_fails: {}'
+rbt1b = '    dt: 2017/12/26-01:52:40 (1) GMT  prev_sync: {} (0x{:04x})  rev: 0x{:04x}'
+
+rbt2a = '    majik:  {:08x}  sigs:   {:08x} {:08x} {:08x}'
+rbt2b = '    base: f {:08x}  cur:    {:08x}'
+rbt2c = '    rpt:    {:08x}  reset:  {:08x}   others:  {:08x}'
+rbt2d = '    reboots:    {:4}  strg:   {:8}   loc:         {:4}'
+rbt2e = '    uptime: {:8} (0x{:08x})        elapsed: {:8} (0x{:08x})'
+rbt2f = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
+rbt2g = '    vec_chk_fail: {:2}  image_chk_fail:   {:2}'
 
 def decode_reboot(buf, obj):
     consumed = obj.set(buf)
     dt_rev = obj['dt_rev'].val
-    print(obj)
-    print_hdr(obj)
-    consumed = owcb_obj.set(buf[consumed:])
-    print('ow_sig: 0x{:08x}, ow_sig_b: 0x{:08x}, ow_sig_c: {:08x}'.format(
-        owcb_obj['ow_sig'].val,
-        owcb_obj['ow_sig_b'].val,
-        owcb_obj['ow_sig_c'].val))
-    print(rbt0.format(owcb_obj['rpt'].val, owcb_obj['st'].val))
-    print(rbt1.format(owcb_obj['reset_status'].val,  owcb_obj['reset_others'].val,
-                      owcb_obj['from_base'].val))
-    print(rbt2.format(owcb_obj['reboot_count'].val,  owcb_obj['ow_req'].val,
-                      owcb_obj['reboot_reason'].val, owcb_obj['ow_boot_mode'].val,
-                      owcb_obj['owt_action'].val))
-    print(rbt3.format(owcb_obj['strange'].val,       owcb_obj['strange_loc'].val,
-                      owcb_obj['vec_chk_fail'].val,  owcb_obj['image_chk_fail'].val))
-    print(rbt4.format(owcb_obj['elapsed'].val))
-
     if dt_rev != DT_H_REVISION:
-        print('*** version mismatch, expected 0x{:08x}, got 0x{:08x}'.format(
+        print('*** version mismatch, expected 0x{:04x}, got 0x{:04x}'.format(
             DT_H_REVISION, dt_rev))
+    consumed = owcb_obj.set(buf[consumed:])
+    chk_fails = owcb_obj['vec_chk_fail'].val + owcb_obj['image_chk_fail'].val
+    if (chk_fails):                     # do we have any flash or image chk fails
+        print('*** chk fails: vec_fails: {}, image_fails: {}'.format(
+            owcb_obj['vec_chk_fail'].val, owcb_obj['image_chk_fail'].val))
+    if (verbose > 0):                   # basic record display (level 1)
+        print(rbt1a.format(
+            reboot_reason_name(owcb_obj['reboot_reason'].val),
+            base_name(owcb_obj['from_base'].val), base_name(obj['base'].val),
+            ow_boot_mode_name(owcb_obj['ow_boot_mode'].val),
+            owcb_obj['reboot_count'].val, chk_fails))
+        print(rbt1b.format(obj['prev'].val, obj['prev'].val, dt_rev))
+
+    if (verbose > 1):                   # detailed display (level 2)
+        print
+        print(rbt2a.format(obj['majik'].val, owcb_obj['ow_sig'].val,
+                   owcb_obj['ow_sig_b'].val, owcb_obj['ow_sig_c'].val))
+        print(rbt2b.format(owcb_obj['from_base'].val, obj['base'].val))
+        print(rbt2c.format(owcb_obj['rpt'].val, owcb_obj['reset_status'].val,
+              owcb_obj['reset_others'].val))
+        print(rbt2d.format(owcb_obj['reboot_count'].val,
+                           owcb_obj['strange'].val,
+                           owcb_obj['strange_loc'].val))
+        print(rbt2e.format(owcb_obj['uptime'].val, owcb_obj['uptime'].val,
+                           owcb_obj['elapsed'].val, owcb_obj['elapsed'].val))
+        print(rbt2f.format(owcb_obj['reboot_reason'].val,
+                           owcb_obj['ow_req'].val,
+                           owcb_obj['ow_boot_mode'].val,
+                           owcb_obj['owt_action'].val))
+        print(rbt2g.format(owcb_obj['vec_chk_fail'].val,
+                           owcb_obj['image_chk_fail'].val))
+
 
 def decode_version(buf, obj):
     if (verbose > 0):
