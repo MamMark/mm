@@ -32,6 +32,12 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 #
+# Vebosity;
+#
+#   0   just display basic record occurance (default)
+#   1   basic record display - more details
+#   2   detailed record display
+#   3   dump buffer/record
 
 import sys
 import binascii
@@ -129,7 +135,7 @@ def init_globals():
 
     rec_low             = 0
     rec_high            = 0
-    rec_last         = 0
+    rec_last            = 0
     verbose             = 0
 
     num_resyncs         = 0             # how often we've resync'd
@@ -172,76 +178,80 @@ def decode_reboot(buf, obj):
             DT_H_REVISION, dt_rev))
 
 def decode_version(buf, obj):
-    obj.set(buf)
-    print(obj)
-    print_hdr(obj)
-    print
+    if (verbose > 0):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
 
 def decode_sync(buf, obj):
-    obj.set(buf)
-    print(obj)
-    print_hdr(obj)
-    print
-
-def decode_flush(buf, obj):
-    obj.set(buf)
-    print(obj)
-    print_hdr(obj)
-    print
+    if (verbose > 0):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
 
 def decode_event(buf, event_obj):
     event_obj.set(buf)
-    print(event_obj)
-    print_hdr(event_obj)
     event = event_obj['event'].val
-    print('({:2}) {:10} 0x{:04x}  0x{:04x}  0x{:04x}  0x{:04x}'.format(
-        event, event_names[event],
-        event_obj['arg0'].val,
-        event_obj['arg1'].val,
-        event_obj['arg2'].val,
-        event_obj['arg3'].val))
+    if (verbose > 0):
+        print(event_obj)
+        print_hdr(event_obj)
+        print('({:2}) {:10} 0x{:04x}  0x{:04x}  0x{:04x}  0x{:04x}'.format(
+            event, event_names[event],
+            event_obj['arg0'].val,
+            event_obj['arg1'].val,
+            event_obj['arg2'].val,
+            event_obj['arg3'].val))
 
 def decode_debug(buf, obj):
-    obj.set(buf)
-    print(obj)
-    print_hdr(obj)
-    print
+    if (verbose > 0):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
 
 def decode_gps_version(buf, obj):
-    obj.set(buf)
-    print(obj)
-    print_hdr(obj)
-    print
+    if (verbose > 0):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
 
 def decode_gps_time(buf, obj):
-    obj.set(buf)
-    print(obj)
-    print_hdr(obj)
-    print
+    if (verbose > 0):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
 
 def decode_gps_geo(buf, obj):
-    obj.set(buf)
-    print(obj)
-    print_hdr(obj)
-    print
+    if (verbose > 0):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
 
 def decode_gps_xyz(buf, obj):
-    obj.set(buf)
-    print(obj)
-    print_hdr(obj)
-    print
+    if (verbose > 0):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
 
 def decode_sensor_data(buf, obj):
-    obj.set(buf)
-    print(obj)
-    print_hdr(obj)
-    print
+    if (verbose > 0):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
 
 def decode_sensor_set(buf, obj):
-    obj.set(buf)
-    print(obj)
-    print_hdr(obj)
-    print
+    if (verbose > 0):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
 
 def decode_test(buf, obj):
     pass
@@ -262,20 +272,21 @@ def print_gps_hdr(obj, mid):
 
 def decode_gps_raw(buf, obj):
     consumed = obj.set(buf)
-    print(obj)
-    print_hdr(obj)
     mid = obj['gps_hdr']['mid'].val
     try:
         mid_count[mid] += 1
     except KeyError:
         mid_count[mid] = 1
-    print_gps_hdr(obj, mid)
-    if mid in mid_table:
-        decoder    = mid_table[mid][0]
-        decode_obj = mid_table[mid][1]
-        if decoder:
-            decoder(buf[consumed:], decode_obj)
-    print
+    if (verbose > 0):
+        print(obj)
+        print_hdr(obj)
+        print_gps_hdr(obj, mid)
+        if mid in mid_table:
+            decoder    = mid_table[mid][0]
+            decode_obj = mid_table[mid][1]
+            if decoder:
+                decoder(buf[consumed:], decode_obj)
+        print
     pass                                # BRK
 
 
@@ -571,6 +582,8 @@ def get_record(fd):
             print('*** checksum failure @ offset {0} (0x{0:x})'.format(
                 offset))
             print_record(offset, rec_buf)
+            if (verbose > 2):
+                dump_buf(rec_buf, '    ')
             offset = resync(fd, offset)
             if (offset < 0):
                 break
@@ -690,6 +703,9 @@ def dump(args):
         except struct.error:
             print('*** decode error: (len: {}, rtype: {} {})'.format(
                 rlen, rtype, dt_name(rtype)))
+        if (verbose > 2):
+            print
+            dump_buf(rec_buf, '    ')
         total_records += 1
         total_bytes   += rlen
 
