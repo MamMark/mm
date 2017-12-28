@@ -636,7 +636,7 @@ def dump(args):
 
 
     infile = args.input
-    verbose = args.verbose if (args.verbose) else 1
+    verbose = args.verbose if (args.verbose) else 0
 
     if (args.start_rec):
         rec_low  = args.start_rec
