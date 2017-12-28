@@ -220,7 +220,8 @@ implementation {
     rp->sync_majik = SYNC_MAJIK;
     rp->prev_sync  = dcc.last_sync_offset;
     rp->dt_h_revision = DT_H_REVISION;  /* which version of typed_data */
-    rp->pad0 = rp->pad1 = rp->pad2 = 0;
+    rp->base = call OverWatch.getImageBase();
+    rp->pad0 = rp->pad1 = 0;
     update_sync_offset();
     call Collect.collect((void *) rp, sizeof(r),
                          (void *) &ow_control_block,

@@ -173,9 +173,9 @@ typedef struct {
   uint32_t sync_majik;
   uint32_t prev_sync;           /* file offset */
   uint32_t dt_h_revision;       /* version identifier of typed_data */
+  uint32_t base;                /* base address of booting image    */
   datetime_t datetime;          /* 10 bytes */
-  uint16_t  pad1;               /* quad aligned for owcb  */
-  uint32_t  pad2;               /* 2quad aligned for owcb */
+  uint16_t pad1;               /* quad aligned for owcb  */
 } PACKED dt_reboot_t;
 
 typedef struct {
