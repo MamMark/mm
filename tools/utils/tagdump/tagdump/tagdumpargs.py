@@ -35,6 +35,10 @@ def parseargs():
                         type=auto_int,
                         help='set input file position')
 
+    parser.add_argument('-d', '--direct_io',
+                        action='store_true',
+                        help='use direct io, not buffered by OS filesystem')
+
     # not working yet
     parser.add_argument('-s', '--start_time',
                         type=int,
@@ -62,3 +66,6 @@ def parseargs():
                         help='increase output verbosity')
 
     return parser.parse_args()
+
+if __name__ == '__main__':
+    print(parseargs())

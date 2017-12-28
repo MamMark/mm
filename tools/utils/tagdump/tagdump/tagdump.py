@@ -55,6 +55,8 @@ import core_decoders
 import gps_decoders
 import sensor_decoders
 
+from   tagfile      import TagFile
+
 ####
 #
 # tagdump: dump a MamMark DBLKxxxx data stream.
@@ -419,8 +421,8 @@ def dump(args):
         except KeyError:
             g.dt_count[rtype] = 1
 
-
-    infile = args.input
+    # create file object that handles both buffered and direct io
+    infile = TagFile(args.input, direct=args.direct_io)
     verbose = args.verbose if (args.verbose) else 0
 
     if (args.start_rec):
