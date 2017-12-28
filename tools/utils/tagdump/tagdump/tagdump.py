@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 #
 # Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
@@ -37,6 +38,7 @@ import binascii
 import struct
 import argparse
 
+from   tagdumpargs  import parseargs
 from   decode_base  import *
 from   headers_core import *
 from   headers_gps  import *
@@ -703,4 +705,4 @@ def dump(args):
 
 
 if __name__ == "__main__":
-    pass
+    dump(parseargs())
