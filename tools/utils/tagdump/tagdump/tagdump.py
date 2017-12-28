@@ -392,7 +392,7 @@ def print_record(offset, buf):
         print('*** print_record, buf too small for a header, wanted {}, got {}'.format(
             dt_hdr_size, len(buf)))
     else:
-        rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack(buf[:dt_hdr_size])
+        rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack_from(buf)
         print(rec_format.format(recnum, systime, rlen, rtype,
             dt_name(rtype), offset, offset, recsum))
     if (verbose > 1):
@@ -524,8 +524,7 @@ def get_record(fd):
             print('*** record header read too short: wanted {}, got {}'.format(
                 dt_hdr_size, len(rec_buf)))
             break                       # oops
-        rlen, rtype, recnum, systime, recsum = \
-                dt_hdr_struct.unpack(rec_buf)
+        rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack(rec_buf)
 
         if (recnum == 0):               # zero is never allowed
             print('*** zero record number - resyncing')
