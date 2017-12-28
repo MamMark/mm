@@ -402,12 +402,11 @@ def print_record(offset, buf):
     if (len(buf) < dt_hdr_size):
         print('*** print_record, buf too small for a header, wanted {}, got {}'.format(
             dt_hdr_size, len(buf)))
+        dump_buf(buf, '    ')
     else:
         rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack_from(buf)
         print(rec_format.format(recnum, systime, rlen, rtype,
             dt_name(rtype), offset, offset, recsum))
-    if (verbose > 1):
-        dump_buf(buf)
 
 
 #
@@ -513,7 +512,8 @@ def get_record(fd):
         offset = fd.tell()
         # new records are required to start on a quad boundary
         if (offset & 3):
-            print('*** aligning offset {0} (0x{0:08x})'.format(offset))
+            if verbose > 2:
+                print('*** aligning offset {0} (0x{0:08x})'.format(offset))
             offset = ((offset/4) + 1) * 4
             fd.seek(offset)
         if (offset == last_offset):
@@ -695,7 +695,7 @@ def dump(args):
             break                       # all done
 
         count_dt(rtype)
-        print_record(rec_offset, rec_buf)
+        print_record(rec_offset, rec_buf)        # BRK
         decode = dt_records[rtype][DTR_DECODER]  # dt function
         obj    = dt_records[rtype][DTR_OBJ]      # dt object
         try:
