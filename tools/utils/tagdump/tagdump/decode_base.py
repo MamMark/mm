@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
+# All rights reserved.
+#
+
 from collections import OrderedDict
 import struct
 

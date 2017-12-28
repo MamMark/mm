@@ -1,6 +1,5 @@
 """
 tagdump:  decode and display Tag Data Stream file
-
 @author: Dan Maltbie/Eric B. Decker
 """
 

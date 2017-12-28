@@ -19,10 +19,10 @@ except ImportError:
 setup(
     name             = 'tagdump',
     version          = get_version(),
-    url              = 'https://github.com/mammark/mm/tools/utils/tagdump',
-    author           = 'Dan Maltbie',
+    url              = 'https://github.com/MamMark/mm/tools/utils/tagdump',
+    author           = 'Dan Maltbie/Eric B. Decker',
     author_email     = 'dmaltbie@daloma.org',
-    license_file     = 'LICENCE.txt',
+#    license_file     = 'LICENCE.txt',
     license          = 'MIT',
     packages         = ['tagdump'],
     entry_points     = {
