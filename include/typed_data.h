@@ -54,7 +54,7 @@
  * split into two subfields, major and minor.  Major 0 is development of
  * some flavor.  Releases start at Major 1.  Major 1 looks like 00010000.
  */
-#define DT_H_REVISION   0x00000008
+#define DT_H_REVISION   0x00000009
 
 typedef enum {
   DT_NONE		= 0,

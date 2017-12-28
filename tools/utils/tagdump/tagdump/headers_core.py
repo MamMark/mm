@@ -7,7 +7,7 @@ import binascii
 import struct
 from   decode_base  import *
 
-DT_H_REVISION           = 0x00000008
+DT_H_REVISION           = 0x00000009
 
 # all dt parts are native and little endian
 
