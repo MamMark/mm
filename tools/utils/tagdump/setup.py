@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 DESCRIPTION = 'Dump the Tag Data logfile contents in readable format'
 
 import os, re
