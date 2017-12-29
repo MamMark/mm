@@ -77,9 +77,9 @@ typedef struct {
 
 /*
  * stamp_date is a null terminated string that contains the date (UTC)
- * of when this image was built (actally when the tag_finish program was
- * run).  Tag_finish is used to set the checksums, stamp_date, and the
- * git descriptors.
+ * of when this image was built (actally when the binfinish program was
+ * run).  binfinish is used to set the checksums, stamp_date, and the
+ * git descriptors of the binary image.
  *
  * stamp_date gets filled in with "date -u".
  *
