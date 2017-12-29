@@ -276,7 +276,7 @@ implementation {
   /*
    * ll_si446x_trace
    */
-  uint8_t trace_predicate;
+  uint8_t trace_predicate = 0x10;       /* no tracing */
 
 #define TRACE_MUMBLE   1
 #define TRACE_WHISPER  2
