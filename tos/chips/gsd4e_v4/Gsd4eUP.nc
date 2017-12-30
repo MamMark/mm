@@ -412,6 +412,7 @@ module Gsd4eUP {
      */
     interface Timer<TMilli> as GPSTxTimer;
     interface Timer<TMilli> as GPSRxTimer;
+    interface Timer<TMilli> as GPSRxErrorTimer;
     interface LocalTime<TMilli>;
 
     interface GPSProto as SirfProto;
@@ -442,7 +443,9 @@ implementation {
          int16_t m_cur_rx_len;          // cur       rx len (for timeout)
 
   norace uint32_t m_rx_errors;          // rx errors from the h/w
-  norace uint16_t m_last_rx_error;      // last rx_stat we saw, could be overwritten
+  norace uint32_t m_last_rpt_rx_errors; // last we reported.
+  norace uint16_t m_first_rx_error;     // first rx_stat we saw
+  norace uint32_t m_last_rx_collection; // ms time of last_rx error collection
 
 
   void gps_warn(uint8_t where, parg_t p, parg_t p1) {
@@ -626,13 +629,19 @@ implementation {
   }
 
 
+  event void GPSRxErrorTimer.fired() {
+    atomic {
+      m_first_rx_error = 0;             /* open gate */
+    }
+  }
+
+
   task void collect_rx_errors() {
     atomic {
-      if (m_last_rx_error) {
-        call CollectEvent.logEvent(DT_EVENT_GPS_RX_ERR, m_last_rx_error,
-                                   m_rx_errors, gpsc_state, 0);
-        m_last_rx_error = 0;
-      }
+      call CollectEvent.logEvent(DT_EVENT_GPS_RX_ERR, m_first_rx_error,
+                                 m_rx_errors, m_last_rpt_rx_errors, gpsc_state);
+      m_last_rpt_rx_errors = m_rx_errors;
+      call GPSRxErrorTimer.startOneShot(60000);
     }
   }
 
@@ -1106,8 +1115,10 @@ implementation {
    */
   async event void HW.gps_rx_err(uint16_t errors) {
     m_rx_errors++;
-    m_last_rx_error = errors;
-    post collect_rx_errors();
+    if (!m_first_rx_error) {
+      m_first_rx_error = errors;
+      post collect_rx_errors();
+    }
     call SirfProto.rx_error();
     driver_protoAbort(0);
   }

@@ -64,6 +64,7 @@ implementation {
   components Gsd4eUP;
   components new TimerMilliC() as GPSTxTimer;
   components new TimerMilliC() as GPSRxTimer;
+  components new TimerMilliC() as GPSRxErrorTimer;
   components     LocalTimeMilliC;
   components     CollectC;
 
@@ -75,6 +76,7 @@ implementation {
 
   Gsd4eUP.GPSTxTimer -> GPSTxTimer;
   Gsd4eUP.GPSRxTimer -> GPSRxTimer;
+  Gsd4eUP.GPSRxErrorTimer -> GPSRxErrorTimer;
   Gsd4eUP.LocalTime  -> LocalTimeMilliC;
   Gsd4eUP.Collect      -> CollectC;
   Gsd4eUP.CollectEvent -> CollectC;
