@@ -416,8 +416,8 @@ def print_hdr(obj):
 
 # recnum systime len type name         offset
 # 999999 0009999 999   99 xxxxxxxxxxxx @999999 (0xffffff) [0xffff]
-rec_title_str = "--- recnum  systime  len  type  name         offset"
-rec_format    = "--- {:6}  {:7}  {:3}    {:2}  {:12s} @{:6} (0x{:08x}) [0x{:04x}]"
+rec_title_str = "--- recnum  systime  len  type  name         offset  [chksum]"
+rec_format    = "--- {:6}  {:7}  {:3}    {:2}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
 
 def print_record(offset, buf):
     if (len(buf) < dt_hdr_size):
@@ -444,12 +444,16 @@ def print_record(offset, buf):
 # returns -1 if something went wrong
 #         offset of next record if not.
 #
+
+resync0 = '*** resync: unaligned offset: {0} (0x{0:x}) -> {1} (0x{1:x})'
+resync1 = '*** resync: (struct error) [len: {0}] @{1} (0x{1:x})'
+
 def resync(fd, offset):
     global num_resyncs
 
+    print('*** resync started @{0} (0x{0:x})'.format(offset))
     if (offset & 3 != 0):
-        print('*** resync called with unaligned offset: {0} (0x{0:x})'.format(
-            offset))
+        print(resync0.format(offset, (offset/4)*4))
         offset = (offset / 4) * 4
     fd.seek(offset)
     num_resyncs += 1
@@ -457,23 +461,24 @@ def resync(fd, offset):
     while (True):
         while (True):
             try:
-                sig = quad_struct.unpack(fd.read(quad_struct.size))[0]
+                offset = fd.tell()
+                majik_buf = fd.read(quad_struct.size)
+                sig = quad_struct.unpack(majik_buf)[0]
                 if sig == dt_sync_majik:
                     break
             except struct.error:
-                print('*** failed to resync @ offset {0} (0x{0:x})'.format(
-                    fd.tell()))
+                print(resync1.format(len(majik_buf), offset))
                 return -1
             except IOError:
-                print('*** file io error')
+                print('*** resync: file io error')
                 return -1
             except EOFError:
-                print('*** end of file')
+                print('*** resync: end of file')
                 return -1
             except:
-                print('*** exception error: {}'.format(sys.exc_info()[0]))
+                print('*** resync: exception error: {}'.format(sys.exc_info()[0]))
                 raise
-            offset += quad_struct.size
+            offset = fd.tell()
             if (sig == 0):
                 zero_sigs += 1
                 if (zero_sigs > MAX_ZERO_SIGS):
@@ -542,7 +547,8 @@ def get_record(fd):
         # new records are required to start on a quad boundary
         if (offset & 3):
             if verbose > 2:
-                print('*** aligning offset {0} (0x{0:08x})'.format(offset))
+                align0 = '*** aligning offset {0} (0x{0:x}) -> {1} (0x{1:x})'
+                print(align0.format(offset, ((offset/4) + 1) * 4))
             offset = ((offset/4) + 1) * 4
             fd.seek(offset)
         if (offset == last_offset):
@@ -566,8 +572,9 @@ def get_record(fd):
             break                       # oops
         rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack(rec_buf)
 
-        if (recnum == 0):               # zero is never allowed
-            print('*** zero record number - resyncing')
+        # check for obvious errors
+        if (rlen < dt_hdr_size):
+            print('*** record size too small: {}'.format(rlen))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
@@ -575,6 +582,13 @@ def get_record(fd):
 
         if (rlen > RLEN_MAX_SIZE):
             print('*** record size too large: {}'.format(rlen))
+            offset = resync(fd, offset)
+            if (offset < 0):
+                break
+            continue
+
+        if (recnum == 0):               # zero is never allowed
+            print('*** zero record number - resyncing')
             offset = resync(fd, offset)
             if (offset < 0):
                 break
@@ -608,8 +622,9 @@ def get_record(fd):
         chksum -= (recsum & 0x00ff)
         if (chksum != recsum):
             chksum_errors += 1
-            print('*** checksum failure @ offset {0} (0x{0:x})'.format(
-                offset))
+            chksum1 = '*** checksum failure @{0} (0x{0:x}) ' + \
+                      '[wanted: 0x{1:x}, got: 0x{2:x}]'
+            print(chksum1.format(offset, recsum, chksum))
             print_record(offset, rec_buf)
             if (verbose > 2):
                 dump_buf(rec_buf, '    ')
@@ -735,6 +750,8 @@ def dump(args):
         if (verbose > 2):
             print
             dump_buf(rec_buf, '    ')
+        if (verbose > 0):
+            print
         total_records += 1
         total_bytes   += rlen
 
