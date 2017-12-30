@@ -556,11 +556,8 @@ implementation {
 
     /*
      * First flush any pending buffers out to the SD.
-     *
-     * Note: If the PANIC is from the SSW or SD subsystem don't flush the buffers.
      */
-    if (pap->pcode != PANIC_SD && pap->pcode != PANIC_SS)
-      call SysReboot.flush();
+    call SysReboot.flush();
 
     /*
      * signal any modules that a Panic is underway and if possible they should copy any
