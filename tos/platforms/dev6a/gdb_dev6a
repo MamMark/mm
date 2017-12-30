@@ -43,6 +43,24 @@ printf "                %c       %c     %c%c%c\n", \
 __p_usci $ucb3 3 1 0d23
 output SDspP__0__sdc
 printf "\n"
+printf "Delta times:\n"
+printf "  last_full_reset_time_us:  0d%d\n", \
+       SDspP__0__last_full_reset_time_us
+printf "  last_reset_delta_ms: 0d%d/%d  _us: 0d%d/%d\n", \
+          SDspP__0__last_reset_delta_ms, SDspP__0__max_reset_time_ms, \
+          SDspP__0__last_reset_delta_us, SDspP__0__max_reset_time_us
+printf "  last_read_delta_ms: 0d%d/%d  _us: 0d%d/%d\n", \
+          SDspP__0__last_read_delta_ms, SDspP__0__max_read_time_ms,   \
+          SDspP__0__last_read_delta_us, SDspP__0__max_read_time_us
+printf "  last_write_delta_ms: 0d%d/%d  _us: 0d%d/%d\n", \
+          SDspP__0__last_write_delta_ms, SDspP__0__max_write_time_ms, \
+          SDspP__0__last_write_delta_us, SDspP__0__max_write_time_us
+printf "  last_erase_delta_ms: 0d%d/%d  _us: 0d%d/%d\n", \
+          SDspP__0__last_erase_delta_ms, SDspP__0__max_erase_time_ms, \
+          SDspP__0__last_erase_delta_us, SDspP__0__max_erase_time_us
+printf "DMA stats:\n"
+output/d SD0HardwareP__dma_stats
+printf "\n"
 end
 document sd0
 display sd0 state

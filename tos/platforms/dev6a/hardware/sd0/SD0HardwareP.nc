@@ -67,6 +67,16 @@ implementation {
 #define SPI_PUT_GET_TO 1024
 #define SPI_PARANOID
 
+  typedef struct {                      /* only for full sectors */
+    uint32_t dma_ops;
+    uint32_t min_dma_time_us;
+    uint32_t max_dma_time_us;
+    uint32_t avg_dma_time_us;
+  } dma_stats_t;
+
+  norace dma_stats_t  dma_stats;
+  norace uint32_t     dma_t0_us;
+
 #define sd_panic(where, arg, arg1) do { \
     call Panic.panic(PANIC_SD, where, arg, arg1, 0, 0); \
   } while (0)
@@ -254,6 +264,25 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
   async command void    HW.sd_clr_cs()          { SD0_CSN = 1; }
 
 
+  void calc_dma_stats() {
+    uint32_t delta;
+    uint64_t working;
+
+    delta = call Platform.usecsRaw() - dma_t0_us;
+    if (dma_stats.min_dma_time_us) {
+      if (delta < dma_stats.min_dma_time_us)
+        dma_stats.min_dma_time_us = delta;
+    } else
+      dma_stats.min_dma_time_us = delta;
+    if (delta > dma_stats.max_dma_time_us)
+      dma_stats.max_dma_time_us = delta;
+    working = dma_stats.avg_dma_time_us * (dma_stats.dma_ops - 1);
+    working += delta;
+    dma_stats.avg_dma_time_us = working / dma_stats.dma_ops;
+    dma_t0_us = 0;
+  }
+
+
   async command void HW.sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length) {
     uint32_t control;
 
@@ -295,6 +324,12 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
     }
 
     call DmaTX.dma_set_priority(0);             /* run TX with normal priority */
+    if (length == SD_BLOCKSIZE) {
+      dma_stats.dma_ops++;
+      dma_t0_us = call Platform.usecsRaw();
+      if (!dma_t0_us)                           /* zero isn't allowed */
+        dma_t0_us = call Platform.usecsRaw();   /* grab it again, should be good now */
+    }
     call DmaTX.dma_start_channel(SD0_DMA_TX_TRIGGER, length,
         (void*) &(SD0_DMA_TX_ADDR), sndptr, control);
   }
@@ -343,6 +378,8 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
       sd_panic(10, a, b);
     call DmaTX.dma_clear_int();
     call DmaRX.dma_clear_int();
+    if (dma_t0_us)                      /* nukes dma_t0_us */
+      calc_dma_stats();
   }
 
 
@@ -383,6 +420,8 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
 
 
   async event void DmaRX.dma_interrupted() {
+    if (dma_t0_us)
+      calc_dma_stats();
     signal HW.sd_dma_interrupt();
   }
 

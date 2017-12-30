@@ -183,17 +183,20 @@ implementation {
          uint32_t     last_pwr_on_first_cmd_us;
          uint32_t     last_full_reset_time_us;
 
-  uint32_t     max_reset_time_ms, last_reset_time_ms;
-  uint32_t     max_reset_time_us, last_reset_time_us;
+  norace uint32_t     last_reset_start_time_us;
+  norace uint32_t     last_reset_start_time_ms;
 
-  uint32_t     max_read_time_ms,  last_read_time_ms;
-  uint32_t     max_read_time_us,  last_read_time_us;
+  uint32_t     max_reset_time_ms, last_reset_delta_ms;
+  uint32_t     max_reset_time_us, last_reset_delta_us;
 
-  uint32_t     max_write_time_ms, last_write_time_ms;
-  uint32_t     max_write_time_us, last_write_time_us;
+  uint32_t     max_read_time_ms,  last_read_delta_ms;
+  uint32_t     max_read_time_us,  last_read_delta_us;
 
-  uint32_t     max_erase_time_ms, last_erase_time_ms;
-  uint32_t     max_erase_time_us, last_erase_time_us;
+  uint32_t     max_write_time_ms, last_write_delta_ms;
+  uint32_t     max_write_time_us, last_write_delta_us;
+
+  uint32_t     max_erase_time_ms, last_erase_delta_ms;
+  uint32_t     max_erase_time_us, last_erase_delta_us;
 
 
 #define sd_panic(where, arg) do { call Panic.panic(PANIC_SD, where, arg, 0, 0, 0); } while (0)
@@ -661,13 +664,13 @@ implementation {
 	 * crank it up to full speed.  We do everything at full speed so there
 	 * isn't currently any need.
          */
-	last_reset_time_us = call Platform.usecsRaw() - op_t0_us;
-	if (last_reset_time_us > max_reset_time_us)
-	  max_reset_time_us = last_reset_time_us;
+	last_reset_delta_us = call Platform.usecsRaw() - op_t0_us;
+	if (last_reset_delta_us > max_reset_time_us)
+	  max_reset_time_us = last_reset_delta_us;
 
-	last_reset_time_ms = call lt.get() - op_t0_ms;
-	if (last_reset_time_ms > max_reset_time_ms)
-	  max_reset_time_ms = last_reset_time_ms;
+	last_reset_delta_ms = call lt.get() - op_t0_ms;
+	if (last_reset_delta_ms > max_reset_time_ms)
+	  max_reset_time_ms = last_reset_delta_ms;
 
 	last_full_reset_time_us = call Platform.usecsRaw() - sd_pwr_on_time_us;
 
@@ -681,6 +684,8 @@ implementation {
         nop();
 	sdc.sd_state = SDS_IDLE;
 	sdc.cur_cid = CID_NONE;
+        last_reset_start_time_us = 0;
+        last_reset_start_time_ms = 0;
 	call ResourceDefaultOwner.release();
         return;
     }
@@ -722,6 +727,8 @@ implementation {
     if (sdc.sd_state != SDS_OFF) {
       sd_panic(41, 0);
     }
+    last_reset_start_time_us = call Platform.usecsRaw();
+    last_reset_start_time_ms = call lt.get();
     sdc.sd_state = SDS_OFF_TO_ON;
     post sd_pwr_up_task();
   }
@@ -868,13 +875,13 @@ implementation {
         sd_warn(46, old_byte);
     }
 
-    last_read_time_us = call Platform.usecsRaw() - op_t0_us;
-    if (last_read_time_us > max_read_time_us)
-      max_read_time_us = last_read_time_us;
+    last_read_delta_us = call Platform.usecsRaw() - op_t0_us;
+    if (last_read_delta_us > max_read_time_us)
+      max_read_time_us = last_read_delta_us;
 
-    last_read_time_ms = call lt.get() - op_t0_ms;
-    if (last_read_time_ms > max_read_time_ms)
-      max_read_time_ms = last_read_time_ms;
+    last_read_delta_ms = call lt.get() - op_t0_ms;
+    if (last_read_delta_ms > max_read_time_ms)
+      max_read_time_ms = last_read_delta_ms;
 
     sdc.sd_state = SDS_IDLE;
     sdc.cur_cid = CID_NONE;
@@ -955,16 +962,16 @@ implementation {
     if (i)
       sd_panic(49, i);
 
-    last_write_time_us = call Platform.usecsRaw() - op_t0_us;
-    if (last_write_time_us > max_write_time_us)
-      max_write_time_us = last_write_time_us;
+    last_write_delta_us = call Platform.usecsRaw() - op_t0_us;
+    if (last_write_delta_us > max_write_time_us)
+      max_write_time_us = last_write_delta_us;
 
-    last_write_time_ms = call lt.get() - op_t0_ms;
-    if (last_write_time_ms > max_write_time_ms)
-      max_write_time_ms = last_write_time_ms;
+    last_write_delta_ms = call lt.get() - op_t0_ms;
+    if (last_write_delta_ms > max_write_time_ms)
+      max_write_time_ms = last_write_delta_ms;
 
-    if (last_write_time_ms > SD_WRITE_WARN_THRESHOLD) {
-      call Panic.warn(PANIC_SD, 50, sdc.blk_start, last_write_time_ms, 0, 0);
+    if (last_write_delta_ms > SD_WRITE_WARN_THRESHOLD) {
+      call Panic.warn(PANIC_SD, 50, sdc.blk_start, last_write_delta_ms, 0, 0);
       /* no return */
     }
     cid = sdc.cur_cid;
@@ -1082,13 +1089,13 @@ implementation {
     call HW.spi_get();                  /* extra clocks */
     call HW.sd_clr_cs();		/* deassert CS */
 
-    last_erase_time_us = call Platform.usecsRaw() - op_t0_us;
-    if (last_erase_time_us > max_erase_time_us)
-      max_erase_time_us = last_erase_time_us;
+    last_erase_delta_us = call Platform.usecsRaw() - op_t0_us;
+    if (last_erase_delta_us > max_erase_time_us)
+      max_erase_time_us = last_erase_delta_us;
 
-    last_erase_time_ms = call lt.get() - op_t0_ms;
-    if (last_erase_time_ms > max_erase_time_ms)
-      max_erase_time_ms = last_erase_time_ms;
+    last_erase_delta_ms = call lt.get() - op_t0_ms;
+    if (last_erase_delta_ms > max_erase_time_ms)
+      max_erase_time_ms = last_erase_delta_ms;
 
     cid = sdc.cur_cid;
     sdc.sd_state = SDS_IDLE;
