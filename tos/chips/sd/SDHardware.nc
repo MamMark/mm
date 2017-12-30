@@ -124,7 +124,8 @@ interface SDHardware {
    */
   async command void sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length);
   async command void sd_wait_dma(uint16_t length);
-  async command void sd_stop_dma();
+  async command bool sd_dma_active();
+  async command bool sd_stop_dma();
 
   async command void sd_dma_enable_int();
   async command void sd_dma_disable_int();

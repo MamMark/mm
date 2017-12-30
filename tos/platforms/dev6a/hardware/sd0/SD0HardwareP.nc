@@ -346,9 +346,24 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
   }
 
 
-  async command void HW.sd_stop_dma() {
+  async command bool HW.sd_dma_active(){
+    uint32_t a,b;
+
+    a = call DmaTX.dma_enabled();
+    b = call DmaRX.dma_enabled();
+    return (a || b);
+  }
+
+
+  /* true says there was something to stop */
+  async command bool HW.sd_stop_dma() {
+    uint32_t a;
+
+    a = call HW.sd_dma_active();
     call DmaTX.dma_stop_channel();
     call DmaRX.dma_stop_channel();
+    dma_t0_us = 0;                      /* not watching anymore */
+    return a;                           /* the hills have eyes  */
   }
 
 
