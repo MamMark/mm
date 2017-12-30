@@ -833,6 +833,8 @@ implementation {
     uint8_t  cid, old_byte;
 
     cid = sdc.cur_cid;			/* remember for signalling */
+    if (call HW.sd_dma_active())
+      sd_panic(98, sdc.sd_state);
     call HW.sd_stop_dma();
 
     /*
@@ -976,6 +978,8 @@ implementation {
     uint8_t  tmp;
     uint16_t i, crc;
 
+    if (call HW.sd_dma_active())
+      sd_panic(99, sdc.sd_state);
     call HW.sd_stop_dma();
 
     /* crc is the next two bytes out, big endian */
