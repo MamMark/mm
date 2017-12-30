@@ -38,6 +38,7 @@
 #   1   basic record display - more details
 #   2   detailed record display
 #   3   dump buffer/record
+#   4   details of resync
 
 import sys
 import binascii
@@ -482,6 +483,8 @@ def resync(fd, offset):
                 zero_sigs = 0
         fd.seek(-RESYNC_HDR_OFFSET, 1)          # back up to start of attempt
         offset_try = fd.tell()
+        if (verbose > 3):
+            print('*** resync: found MAJIK @{0} (0x{0:x})'.format(offset))
         buf = bytearray(fd.read(dt_hdr_size))
         if (len(buf) < dt_hdr_size):            # oht oh, too small, very strange
             print('*** resync: read of dt_hdr too small')
@@ -495,6 +498,12 @@ def resync(fd, offset):
             return offset_try
 
         # not what we expected.  continue looking for SYNC_MAJIKs where we left off
+        if (verbose > 3):
+            resync2 = '*** resync: failed len/rtype @{} (0x{:x}): ' + \
+                      'len: {}, type: {}, rec: {}'
+            print(resync2.format(offset_try, offset_try, rlen, rtype, recnum))
+            print('    moving to: @{0} (0x{0:x})'.format(
+                offset_try + RESYNC_HDR_OFFSET))
         fd.seek(offset_try + RESYNC_HDR_OFFSET)
 
 
