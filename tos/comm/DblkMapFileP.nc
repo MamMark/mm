@@ -42,6 +42,19 @@
 #include <platform_panic.h>
 #include <sd.h>
 
+typedef struct {
+  uint32_t             base;         // first sector of dblk file
+  uint32_t             eof;          // last sector with valid data
+  uint32_t             cur;          // current sector in sbuf
+} dblk_map_sectors_t;
+
+typedef struct {
+  uint32_t             file_pos;     // current file position
+  dblk_map_sectors_t   sector;       // current sector number
+  bool                 sbuf_ready;   // true if sbuf has valid data
+  bool                 sbuf_reading; // true if read in progress
+} dblk_map_file_t;
+
 module DblkMapFileP {
   provides  interface DblkMapFile;
   uses      interface StreamStorage            as SS;
@@ -51,58 +64,69 @@ module DblkMapFileP {
   uses      interface Panic;
 }
 implementation {
-  uint32_t             base_sector;
-  uint32_t             eof_sector;
-  uint32_t             _file_pos;
-  bool                 sbuf_valid;
-  uint32_t             sbuf_sector;
-  uint8_t              sbuf[SD_BLOCKSIZE];
+  uint8_t              dmf_sbuf[SD_BLOCKSIZE];
+  dblk_map_file_t      dmf_cb;
 
-  bool inbounds(uint32_t pos) {
-    if ((pos / SD_BLOCKSIZE) == sbuf_sector)
-      return TRUE;
-    return FALSE;
+  void dmap_panic(uint8_t where, parg_t p0, parg_t p1) {
+    call Panic.panic(PANIC_DBLK, where, p0, p1, dmf_cb.sector.base, dmf_cb.sector.eof);
   }
 
-  uint32_t remaining(uint32_t pos) {
-    return (SD_BLOCKSIZE - (pos%SD_BLOCKSIZE));
+  uint32_t sector_of(uint32_t pos) {
+    return (pos / SD_BLOCKSIZE) + dmf_cb.sector.base;
   }
 
   uint32_t offset_of(uint32_t pos) {
     return (pos%SD_BLOCKSIZE);
   }
 
-  uint32_t which_sector(uint32_t pos) {
-    return (pos / SD_BLOCKSIZE);
+  uint32_t fpos_of(uint32_t sect) {
+    if ((sect < dmf_cb.sector.base) || (sect > dmf_cb.sector.eof)) {
+      dmap_panic(1, sect, 0);
+      return 0;
+    }
+    return ((sect - dmf_cb.sector.base) * SD_BLOCKSIZE);
+  }
+
+  bool inbounds(uint32_t pos) {
+    if (sector_of(pos) == dmf_cb.sector.cur)
+      return TRUE;
+    return FALSE;
+  }
+
+  uint32_t remaining(uint32_t pos) {
+    return (SD_BLOCKSIZE - offset_of(pos));
+  }
+
+  uint32_t eof_pos() {
+    return ((dmf_cb.sector.eof - dmf_cb.sector.base) * SD_BLOCKSIZE);
   }
 
   bool get_new_sector(uint32_t pos) {
     error_t err;
-    if ((pos / SD_BLOCKSIZE) <= eof_sector) {
-      sbuf_valid = FALSE;
-      sbuf_sector = which_sector(pos);
+    if (sector_of(pos) <= dmf_cb.sector.eof) {
+      dmf_cb.sbuf_ready = FALSE;
+      dmf_cb.sbuf_reading = FALSE;
+      dmf_cb.sector.cur = sector_of(pos);
       err = call SDResource.request();
       if (err == SUCCESS) return TRUE;
     }
     return FALSE;
   }
 
-  void fake_fill_sbuf(uint32_t val) {
-    uint32_t ix;
-    for (ix = 0; ix < sizeof(sbuf); ix++)
-      sbuf[ix] = val%256;
-  }
-
   event void SDResource.granted() {
-    if (!sbuf_valid)
-     call SDread.read(sbuf_sector + base_sector, sbuf);
+    if ((!dmf_cb.sbuf_ready) && (dmf_cb.sector.cur)) {
+      nop();
+      nop();                      /* BRK */
+      dmf_cb.sbuf_reading = TRUE;
+      call SDread.read(dmf_cb.sector.cur, dmf_sbuf);
+    }
   }
 
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
     call SDResource.release();
-//    fake_fill_sbuf(which_sector(_file_pos) + 1);
-    sbuf_valid = TRUE;
-    signal DblkMapFile.mapped(0, _file_pos);
+    dmf_cb.sbuf_ready = TRUE;
+    dmf_cb.sbuf_reading = FALSE;
+    signal DblkMapFile.mapped(0, dmf_cb.file_pos);
   }
 
   command error_t DblkMapFile.map(uint8_t fd, uint8_t **buf, uint32_t *len) {
@@ -110,15 +134,15 @@ implementation {
 
     nop();
     nop();                      /* BRK */
-    if (sbuf_valid) {
-      count = (*len > remaining(_file_pos))   \
-        ? remaining(_file_pos)                \
+    if (dmf_cb.sbuf_ready) {
+      count = (*len > remaining(dmf_cb.file_pos))   \
+        ? remaining(dmf_cb.file_pos)                \
         : *len;
-      *buf = &sbuf[offset_of(_file_pos)];
+      *buf = &dmf_sbuf[offset_of(dmf_cb.file_pos)];
       *len = count;
-      _file_pos += count;
-      if (remaining(_file_pos) == 0)
-        get_new_sector(_file_pos);
+      dmf_cb.file_pos += count;
+      if (remaining(dmf_cb.file_pos) == 0)
+        get_new_sector(dmf_cb.file_pos);
       return SUCCESS;
     }
     return EBUSY;
@@ -128,32 +152,36 @@ implementation {
 
     nop();
     nop();                      /* BRK */
-    if (pos > (eof_sector * SD_BLOCKSIZE)) {
+    if (pos > eof_pos()) {
       return EODATA;
     }
-    if (from_rear) _file_pos = (eof_sector * SD_BLOCKSIZE) - pos;
-    else           _file_pos = pos;
-    if (sbuf_valid) {
-      if (inbounds(_file_pos))
+    if (from_rear) dmf_cb.file_pos = eof_pos() - pos;
+    else           dmf_cb.file_pos = pos;
+    if (dmf_cb.sbuf_ready) {
+      if (inbounds(dmf_cb.file_pos))
         return SUCCESS;
       else
-        get_new_sector(_file_pos);
+        get_new_sector(dmf_cb.file_pos);
     }
     return EBUSY;
   }
 
   command uint32_t DblkMapFile.tell(uint8_t fd) {
-    return _file_pos;
+    return dmf_cb.file_pos;
   }
 
   default event void DblkMapFile.mapped(uint8_t fd, uint32_t file_pos) { };
 
   event void SS.dblk_advanced(uint32_t last) {
-    eof_sector = last;
+    bool was_zero = (!dmf_cb.sector.eof);
+
+    dmf_cb.sector.eof = last;
+    if (was_zero)
+      get_new_sector(dmf_cb.file_pos);  // get the first one
   }
 
   command uint32_t DblkMapFile.filesize(uint8_t fd) {
-    return (eof_sector * SD_BLOCKSIZE);
+    return ((dmf_cb.sector.eof - dmf_cb.sector.base) * SD_BLOCKSIZE);
   }
 
   event void SS.dblk_stream_full() { }
@@ -161,9 +189,11 @@ implementation {
   async event void Panic.hook() { }
 
   event void Boot.booted() {
-    base_sector = call SS.get_dblk_low();
-    eof_sector = 0;
-    _file_pos = 0;
-    get_new_sector(_file_pos);  // get the first one
+    nop();
+    nop();                      /* BRK */
+    dmf_cb.sector.base = call SS.get_dblk_low();
+    dmf_cb.sector.eof = 0;
+    dmf_cb.file_pos = 0;
+    get_new_sector(dmf_cb.file_pos);  // get the first one
   }
 }

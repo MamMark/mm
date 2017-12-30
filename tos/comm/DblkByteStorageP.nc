@@ -83,16 +83,15 @@ implementation {
           db->iota   = call DMF.tell(db->file);
           db->count  = call DMF.filesize(db->file);
           return TRUE;
-          break;
         default:
           err = EINVAL;
-          break;
       }
       db->iota = call DMF.tell(db->file);
     }
+    *len = 0;
     db->count = 0;
     db->error = err;
-    return FALSE;
+    return TRUE;
   }
 
   command bool Dblk0Bytes.get_value(tagnet_dblk_bytes_t *db, uint32_t *len) {

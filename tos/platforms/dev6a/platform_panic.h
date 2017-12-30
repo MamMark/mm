@@ -38,6 +38,7 @@ enum panic_codes {
   __pcode_pwr,
   __pcode_radio,
   __pcode_tagnet,
+  __pcode_dblk,
 };
 
 #define PANIC_TIMING    __pcode_timing
@@ -54,5 +55,6 @@ enum panic_codes {
 #define PANIC_PWR       __pcode_pwr
 #define PANIC_RADIO     __pcode_radio
 #define PANIC_TAGNET    __pcode_tagnet
+#define PANIC_DBLK      __pcode_dblk
 
 #endif /* __PLATFORM_PANIC_H__ */
