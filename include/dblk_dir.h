@@ -44,6 +44,7 @@
 
 #include <datetime.h>
 
+#define DBLK_ID_SIZE   4
 #define DBLK_DIR_SIG   0x18961492
 
 /*
@@ -53,16 +54,25 @@
  * checksum over the entire directory structure.
  *
  * The checksum is a simple 32 bit wide checksum.
+ *
+ * dblk_id is the chars DBLK identifing this as a DBLK dir.
+ * file_idx indicates which of the n possible DBLK files this
+ * DBLK is.  Each DBLK file is a contiguous number of sectors
+ * assigned to a FAT file.  Max size is 4Gbytes.  On large
+ * SDs we may have more than one.  The first one is named
+ * DBLK0001 and has file_idx 1.
  */
 
-#define DBLK_DIR_QUADS 8
+#define DBLK_DIR_QUADS 9
 
-typedef struct {                /* Image Directory */
+typedef struct {                        /* Image Directory */
+  uint8_t    dblk_id[DBLK_ID_SIZE];     /* readable string, DBLK */
   uint32_t   dblk_dir_sig;
   uint32_t   dblk_low;
   uint32_t   dblk_high;
   datetime_t incept_date;
-  uint16_t   pad;
+  uint8_t    file_idx;                  /* file idx */
+  uint8_t    pad;
   uint32_t   dblk_dir_sig_a;
   uint32_t   chksum;
 } dblk_dir_t;

@@ -28,12 +28,14 @@
 extern fs_loc_t loc;
 
 
-#define VERSION "tagfmtsd: v4.1.1  2017/12/25\n"
+#define VERSION "tagfmtsd: v4.2.0  2017/12/30\n"
 
 int debug	= 0,
     verbose	= 0,
     do_write	= 0,
     force       = 0;
+
+const uint8_t *dblk_id_str = (void *) "DBLK";
 
 /*
  * all sizes in bytes.
@@ -140,7 +142,10 @@ display_info(uint8_t *buf) {
           sum = 0;
           for (i = 0; i < DBLK_DIR_QUADS; i++)
             sum += *p32++;
-          fprintf(stderr, "  dir:    checksum: 0x%08x (0x%08x)",
+          i = strncmp((void *) dblk_id_str, (void *) ddp->dblk_id, DBLK_ID_SIZE);
+          fprintf(stderr,
+                  "  dir:    id: %s  idx: %d   checksum: 0x%08x (0x%08x)",
+                  (i ? (char *) "unk " : (char *) dblk_id_str), ddp->file_idx,
                   ddp->chksum, sum);
           if (sum) fprintf(stderr, "  <bad>\n");
           else     fprintf(stderr, "  <good>\n");
@@ -167,7 +172,7 @@ display_info(uint8_t *buf) {
  *
  * write directory out to first sector of the dblk area.
  */
-int write_dblk_dir(uint8_t *buf) {
+int write_dblk_dir(uint8_t *buf, uint8_t file_idx) {
   dblk_dir_t *ddp;
   struct tm   split_gmtime, *gmp;
   time_t      time_secs;
@@ -190,6 +195,10 @@ int write_dblk_dir(uint8_t *buf) {
 
   memset(buf, 0, MS_BUF_SIZE);
   ddp = (void *) buf;
+  ddp->dblk_id[0]       = 'D';
+  ddp->dblk_id[1]       = 'B';
+  ddp->dblk_id[2]       = 'L';
+  ddp->dblk_id[3]       = 'K';
   ddp->dblk_dir_sig     = DBLK_DIR_SIG;
   ddp->dblk_low         = loc.locators[FS_LOC_DBLK].start;
   ddp->dblk_high        = loc.locators[FS_LOC_DBLK].end;
@@ -200,6 +209,7 @@ int write_dblk_dir(uint8_t *buf) {
   ddp->incept_date.min  = gmp->tm_min;
   ddp->incept_date.sec  = gmp->tm_sec;
   ddp->incept_date.dow  = gmp->tm_wday;
+  ddp->file_idx         = file_idx;
   ddp->dblk_dir_sig_a   = DBLK_DIR_SIG;
   ddp->chksum           = 0;
   p32 = (void *) buf;
@@ -353,7 +363,7 @@ int main(int argc, char **argv) {
     if (do_fs_loc || force) {
       if (verbose)
         fprintf(stderr, "*** writing DBLK directory\n");
-      if (write_dblk_dir(buf))
+      if (write_dblk_dir(buf, 1))
         do_fs_loc = 0;
     }
     if (do_fs_loc) {
