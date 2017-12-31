@@ -117,9 +117,12 @@ typedef unsigned int parg_t;
 
 
 #define PANIC_DIR_SIG    0xDDDDB00B
+#define PANIC_ID_SIZE    4
 
 typedef struct {
+  uint8_t  panic_dir_id[PANIC_ID_SIZE]; /* PANI */
   uint32_t panic_dir_sig;
+
   /*
    * dir is the 1st sector of the PANIC file, high is the inclusive
    * upper limit.  block_sector absolute block num of the next panic

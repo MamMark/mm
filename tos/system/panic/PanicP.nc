@@ -224,6 +224,10 @@ implementation {
      * pcb.block += PBLK_SIZE
      */
     dirp                     = (panic_dir_t *) pcb.buf;
+    dirp->panic_dir_id[0]    = 'P';
+    dirp->panic_dir_id[1]    = 'A';
+    dirp->panic_dir_id[2]    = 'N';
+    dirp->panic_dir_id[3]    = 'I';
     dirp->panic_dir_sig      = PANIC_DIR_SIG;
     dirp->panic_dir_sector   = pcb.dir;
     dirp->panic_high_sector  = pcb.high;
