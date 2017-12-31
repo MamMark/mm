@@ -48,7 +48,7 @@ const uint8_t *dblk_id_str = (void *) "DBLK";
  * Directory sector.
  */
 uint32_t config_size = 8*1024,
-         panic_slots = 16,
+         panic_slots = 32,
          panic_block_size = 150,
          img_slots   = 4,
 	 dblk_size   = 0;
