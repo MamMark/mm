@@ -36,7 +36,7 @@ gps_nav_obj     = aggie(OrderedDict([
     ('tow',   atom(('>I', '{}'))),
     ('nsats', atom(('B', '{}')))]))
 
-def gps_nav_decoder(buf, obj):
+def gps_nav_decoder(level, buf, obj):
     obj.set(buf)
     print(obj)
 
@@ -60,7 +60,7 @@ gps_navtrk_chan = aggie([('sv_id',    atom(('B',  '{:2}'))),
                          ('cno8',     atom(('B',  '{}'))),
                          ('cno9',     atom(('B',  '{}')))])
 
-def gps_navtrk_decoder(buf,obj):
+def gps_navtrk_decoder(level, buf,obj):
     consumed = obj.set(buf)
     print(obj)
     chans = obj['chans'].val
@@ -70,7 +70,7 @@ def gps_navtrk_decoder(buf,obj):
 
 gps_swver_obj   = aggie(OrderedDict([('str0_len', atom(('B', '{}'))),
                                      ('str1_len', atom(('B', '{}')))]))
-def gps_swver_decoder(buf, obj):
+def gps_swver_decoder(level, buf, obj):
     consumed = obj.set(buf)
     len0 = obj['str0_len'].val
     len1 = obj['str1_len'].val
@@ -83,7 +83,7 @@ gps_vis_azel    = aggie([('sv_id',    atom(('B',  '{}'))),
                          ('sv_az',    atom(('>h', '{}'))),
                          ('sv_el',    atom(('>h', '{}')))])
 
-def gps_vis_decoder(buf, obj):
+def gps_vis_decoder(level, buf, obj):
     consumed = obj.set(buf)
     print(obj)
     num_sats = obj['vis_sats'].val
@@ -94,7 +94,7 @@ def gps_vis_decoder(buf, obj):
 # OkToSend
 gps_ots_obj = atom(('B', '{}'))
 
-def gps_ots_decoder(buf, obj):
+def gps_ots_decoder(level, buf, obj):
     obj.set(buf)
     ans = 'no'
     if obj.val: ans = 'yes'
@@ -139,7 +139,7 @@ gps_geo_obj     = aggie(OrderedDict([
     ('additional_mode',  atom(('B', '0x{:02x}'))),
 ]))
 
-def gps_geo_decoder(buf, obj):
+def gps_geo_decoder(level, buf, obj):
     obj.set(buf)
     print(obj)
 

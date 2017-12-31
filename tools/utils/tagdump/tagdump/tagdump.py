@@ -159,7 +159,7 @@ rbt2e = '    uptime: {:8} (0x{:08x})        elapsed: {:8} (0x{:08x})'
 rbt2f = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
 rbt2g = '    vec_chk_fail: {:2}  image_chk_fail:   {:2}'
 
-def decode_reboot(buf, obj):
+def decode_reboot(level, buf, obj):
     consumed = obj.set(buf)
     dt_rev = obj['dt_rev'].val
     if dt_rev != DT_H_REVISION:
@@ -170,7 +170,7 @@ def decode_reboot(buf, obj):
     if (chk_fails):                     # do we have any flash or image chk fails
         print('*** chk fails: vec_fails: {}, image_fails: {}'.format(
             owcb_obj['vec_chk_fail'].val, owcb_obj['image_chk_fail'].val))
-    if (verbose > 0):                   # basic record display (level 1)
+    if (level > 0):                   # basic record display (level 1)
         print(rbt1a.format(
             reboot_reason_name(owcb_obj['reboot_reason'].val),
             base_name(owcb_obj['from_base'].val), base_name(obj['base'].val),
@@ -178,7 +178,7 @@ def decode_reboot(buf, obj):
             owcb_obj['reboot_count'].val, chk_fails))
         print(rbt1b.format(obj['prev'].val, obj['prev'].val, dt_rev))
 
-    if (verbose > 1):                   # detailed display (level 2)
+    if (level > 1):                   # detailed display (level 2)
         print
         print(rbt2a.format(obj['majik'].val, owcb_obj['ow_sig'].val,
                    owcb_obj['ow_sig_b'].val, owcb_obj['ow_sig_c'].val))
@@ -198,24 +198,24 @@ def decode_reboot(buf, obj):
                            owcb_obj['image_chk_fail'].val))
 
 
-def decode_version(buf, obj):
-    if (verbose > 0):
+def decode_version(level, buf, obj):
+    if (level > 0):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-def decode_sync(buf, obj):
-    if (verbose > 0):
+def decode_sync(level, buf, obj):
+    if (level > 0):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-def decode_event(buf, event_obj):
+def decode_event(level, buf, event_obj):
     event_obj.set(buf)
     event = event_obj['event'].val
-    if (verbose > 0):
+    if (level > 0):
         print(event_obj)
         print_hdr(event_obj)
         print('({:2}) {:10} 0x{:04x}  0x{:04x}  0x{:04x}  0x{:04x}'.format(
@@ -225,62 +225,62 @@ def decode_event(buf, event_obj):
             event_obj['arg2'].val,
             event_obj['arg3'].val))
 
-def decode_debug(buf, obj):
-    if (verbose > 0):
+def decode_debug(level, buf, obj):
+    if (level > 0):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-def decode_gps_version(buf, obj):
-    if (verbose > 0):
+def decode_gps_version(level, buf, obj):
+    if (level > 0):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-def decode_gps_time(buf, obj):
-    if (verbose > 0):
+def decode_gps_time(level, buf, obj):
+    if (level > 0):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-def decode_gps_geo(buf, obj):
-    if (verbose > 0):
+def decode_gps_geo(level, buf, obj):
+    if (level > 0):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-def decode_gps_xyz(buf, obj):
-    if (verbose > 0):
+def decode_gps_xyz(level, buf, obj):
+    if (level > 0):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-def decode_sensor_data(buf, obj):
-    if (verbose > 0):
+def decode_sensor_data(level, buf, obj):
+    if (level > 0):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-def decode_sensor_set(buf, obj):
-    if (verbose > 0):
+def decode_sensor_set(level, buf, obj):
+    if (level > 0):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-def decode_test(buf, obj):
+def decode_test(level, buf, obj):
     pass
 
-def decode_note(buf, obj):
+def decode_note(level, buf, obj):
     pass
 
-def decode_config(buf, obj):
+def decode_config(level, buf, obj):
     pass
 
 def print_gps_hdr(obj, mid):
@@ -291,14 +291,14 @@ def print_gps_hdr(obj, mid):
     else:                mid_name = "unk"
     print('MID: {:2} ({:02x}) <{:2}> {:10} '.format(mid, mid, dir_str, mid_name)),
 
-def decode_gps_raw(buf, obj):
+def decode_gps_raw(level, buf, obj):
     consumed = obj.set(buf)
     mid = obj['gps_hdr']['mid'].val
     try:
         mid_count[mid] += 1
     except KeyError:
         mid_count[mid] = 1
-    if (verbose > 0):
+    if (level > 0):
         print(obj)
         print_hdr(obj)
         print_gps_hdr(obj, mid)
@@ -306,7 +306,7 @@ def decode_gps_raw(buf, obj):
             decoder    = mid_table[mid][0]
             decode_obj = mid_table[mid][1]
             if decoder:
-                decoder(buf[consumed:], decode_obj)
+                decoder(level, buf[consumed:], decode_obj)
         print
     pass                                # BRK
 
@@ -743,7 +743,7 @@ def dump(args):
         decode = dt_records[rtype][DTR_DECODER]  # dt function
         obj    = dt_records[rtype][DTR_OBJ]      # dt object
         try:
-            decode(rec_buf, obj)
+            decode(verbose, rec_buf, obj)
         except struct.error:
             print('*** decode error: (len: {}, rtype: {} {})'.format(
                 rlen, rtype, dt_name(rtype)))
