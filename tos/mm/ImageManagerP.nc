@@ -1170,6 +1170,10 @@ implementation {
      * directory to empty with proper start_sec fields.
      */
     if (call SDraw.chk_zero(im_wrk_buf)) {
+      dir->imgr_id[0] = 'I';
+      dir->imgr_id[1] = 'M';
+      dir->imgr_id[2] = 'G';
+      dir->imgr_id[3] = 'R';
       dir->dir_sig   = IMAGE_DIR_SIG;
       dir->dir_sig_a = IMAGE_DIR_SIG;
       for (i = 0; i < IMAGE_DIR_SLOTS; i++)

@@ -68,6 +68,7 @@
 /* number of maximum images we support */
 #define IMAGE_DIR_SLOTS 4
 #define IMAGE_DIR_SIG   0x17254172
+#define IMGR_ID_SIZE    4
 
 typedef enum {
   SLOT_EMPTY = 0,
@@ -107,6 +108,7 @@ typedef struct {                        /* Dir Slot structure   */
  */
 
 typedef struct {                /* Image Directory */
+  uint8_t           imgr_id[IMGR_ID_SIZE];      /* readable identifier */
   uint32_t          dir_sig;
   image_dir_slot_t  slots[IMAGE_DIR_SLOTS];
   uint32_t          dir_sig_a;
