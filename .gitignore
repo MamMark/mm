@@ -6,6 +6,7 @@
 *.sav
 *egg-info
 .gdb*
+.pdbrc
 dist/
 build/
 doc/nesdoc
