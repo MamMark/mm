@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 #
-# Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
+# Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,10 +45,14 @@ import binascii
 import struct
 import argparse
 
-from   tagdumpargs  import parseargs
-from   decode_base  import *
-from   headers_core import *
-from   headers_gps  import *
+import globals       as     g
+from   tagdumpargs   import parseargs
+from   misc_utils    import *
+from   core_records  import *
+
+import core_decoders
+import gps_decoders
+import sensor_decoders
 
 ####
 #
@@ -125,14 +129,10 @@ unk_rtypes              = 0             # unknown record types
 total_records           = 0
 total_bytes             = 0
 
-# count by rectype, how many seen of each type
-dt_count = {}
-
-
 def init_globals():
     global rec_low, rec_high, rec_last, verbose
     global num_resyncs, chksum_errors, unk_rtypes
-    global total_records, total_bytes, dt_count
+    global total_records, total_bytes
 
     rec_low             = 0
     rec_high            = 0
@@ -144,290 +144,6 @@ def init_globals():
     unk_rtypes          = 0             # unknown record types
     total_records       = 0
     total_bytes         = 0
-
-    dt_count            = {}
-
-
-rbt1a = '    REBOOT: {:7s}  f: {:4s}  c: {:4s}  m: {:4s}  boots: {}  chk_fails: {}'
-rbt1b = '    dt: 2017/12/26-01:52:40 (1) GMT  prev_sync: {} (0x{:04x})  rev: 0x{:04x}'
-
-rbt2a = '    majik:  {:08x}  sigs:   {:08x} {:08x} {:08x}'
-rbt2b = '    base: f {:08x}  cur:    {:08x}'
-rbt2c = '    rpt:    {:08x}  reset:  {:08x}   others:  {:08x}'
-rbt2d = '    reboots:    {:4}  strg:   {:8}   loc:         {:4}'
-rbt2e = '    uptime: {:8} (0x{:08x})        elapsed: {:8} (0x{:08x})'
-rbt2f = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
-rbt2g = '    vec_chk_fail: {:2}  image_chk_fail:   {:2}'
-
-def decode_reboot(level, buf, obj):
-    consumed = obj.set(buf)
-    dt_rev = obj['dt_rev'].val
-    if dt_rev != DT_H_REVISION:
-        print('*** version mismatch, expected 0x{:04x}, got 0x{:04x}'.format(
-            DT_H_REVISION, dt_rev))
-    consumed = owcb_obj.set(buf[consumed:])
-    chk_fails = owcb_obj['vec_chk_fail'].val + owcb_obj['image_chk_fail'].val
-    if (chk_fails):                     # do we have any flash or image chk fails
-        print('*** chk fails: vec_fails: {}, image_fails: {}'.format(
-            owcb_obj['vec_chk_fail'].val, owcb_obj['image_chk_fail'].val))
-    if (level > 0):                   # basic record display (level 1)
-        print(rbt1a.format(
-            reboot_reason_name(owcb_obj['reboot_reason'].val),
-            base_name(owcb_obj['from_base'].val), base_name(obj['base'].val),
-            ow_boot_mode_name(owcb_obj['ow_boot_mode'].val),
-            owcb_obj['reboot_count'].val, chk_fails))
-        print(rbt1b.format(obj['prev'].val, obj['prev'].val, dt_rev))
-
-    if (level > 1):                   # detailed display (level 2)
-        print
-        print(rbt2a.format(obj['majik'].val, owcb_obj['ow_sig'].val,
-                   owcb_obj['ow_sig_b'].val, owcb_obj['ow_sig_c'].val))
-        print(rbt2b.format(owcb_obj['from_base'].val, obj['base'].val))
-        print(rbt2c.format(owcb_obj['rpt'].val, owcb_obj['reset_status'].val,
-              owcb_obj['reset_others'].val))
-        print(rbt2d.format(owcb_obj['reboot_count'].val,
-                           owcb_obj['strange'].val,
-                           owcb_obj['strange_loc'].val))
-        print(rbt2e.format(owcb_obj['uptime'].val, owcb_obj['uptime'].val,
-                           owcb_obj['elapsed'].val, owcb_obj['elapsed'].val))
-        print(rbt2f.format(owcb_obj['reboot_reason'].val,
-                           owcb_obj['ow_req'].val,
-                           owcb_obj['ow_boot_mode'].val,
-                           owcb_obj['owt_action'].val))
-        print(rbt2g.format(owcb_obj['vec_chk_fail'].val,
-                           owcb_obj['image_chk_fail'].val))
-
-
-def decode_version(level, buf, obj):
-    if (level > 0):
-        obj.set(buf)
-        print(obj)
-        print_hdr(obj)
-        print
-
-def decode_sync(level, buf, obj):
-    if (level > 0):
-        obj.set(buf)
-        print(obj)
-        print_hdr(obj)
-        print
-
-def decode_event(level, buf, event_obj):
-    event_obj.set(buf)
-    event = event_obj['event'].val
-    if (level > 0):
-        print(event_obj)
-        print_hdr(event_obj)
-        print('({:2}) {:10} 0x{:04x}  0x{:04x}  0x{:04x}  0x{:04x}'.format(
-            event, event_names[event],
-            event_obj['arg0'].val,
-            event_obj['arg1'].val,
-            event_obj['arg2'].val,
-            event_obj['arg3'].val))
-
-def decode_debug(level, buf, obj):
-    if (level > 0):
-        obj.set(buf)
-        print(obj)
-        print_hdr(obj)
-        print
-
-def decode_gps_version(level, buf, obj):
-    if (level > 0):
-        obj.set(buf)
-        print(obj)
-        print_hdr(obj)
-        print
-
-def decode_gps_time(level, buf, obj):
-    if (level > 0):
-        obj.set(buf)
-        print(obj)
-        print_hdr(obj)
-        print
-
-def decode_gps_geo(level, buf, obj):
-    if (level > 0):
-        obj.set(buf)
-        print(obj)
-        print_hdr(obj)
-        print
-
-def decode_gps_xyz(level, buf, obj):
-    if (level > 0):
-        obj.set(buf)
-        print(obj)
-        print_hdr(obj)
-        print
-
-def decode_sensor_data(level, buf, obj):
-    if (level > 0):
-        obj.set(buf)
-        print(obj)
-        print_hdr(obj)
-        print
-
-def decode_sensor_set(level, buf, obj):
-    if (level > 0):
-        obj.set(buf)
-        print(obj)
-        print_hdr(obj)
-        print
-
-def decode_test(level, buf, obj):
-    pass
-
-def decode_note(level, buf, obj):
-    pass
-
-def decode_config(level, buf, obj):
-    pass
-
-def print_gps_hdr(obj, mid):
-    dir = obj['dir'].val
-    dir_str = 'rx' if dir == 0 \
-         else 'tx'
-    if mid in mid_table: mid_name = mid_table[mid][2]
-    else:                mid_name = "unk"
-    print('MID: {:2} ({:02x}) <{:2}> {:10} '.format(mid, mid, dir_str, mid_name)),
-
-def decode_gps_raw(level, buf, obj):
-    consumed = obj.set(buf)
-    mid = obj['gps_hdr']['mid'].val
-    try:
-        mid_count[mid] += 1
-    except KeyError:
-        mid_count[mid] = 1
-    if (level > 0):
-        print(obj)
-        print_hdr(obj)
-        print_gps_hdr(obj, mid)
-        if mid in mid_table:
-            decoder    = mid_table[mid][0]
-            decode_obj = mid_table[mid][1]
-            if decoder:
-                decoder(level, buf[consumed:], decode_obj)
-        print
-    pass                                # BRK
-
-
-# dt_records
-#
-# dictionary of all data_typed records we understand
-# dict key is the record id.
-#
-
-# key is rtype
-# vector has (required_len, decoder, object descriptor, and name)
-#   required len will be 0 if it is variable or not checked.
-
-DTR_REQ_LEN = 0                         # required length
-DTR_DECODER = 1                         # decode said rtype
-DTR_OBJ     = 2                         # rtype obj descriptor
-DTR_NAME    = 3                         # rtype name
-
-dt_records = {
-#   dt   len  decoder                obj                 name
-     1: (116, decode_reboot,         dt_reboot_obj,     "REBOOT"),
-     2: (168, decode_version,        dt_version_obj,    "VERSION"),
-     3: ( 40, decode_sync,           dt_sync_obj,       "SYNC"),
-     4: ( 40, decode_event,          dt_event_obj,      "EVENT"),
-     5: (  0, decode_debug,          dt_debug_obj,      "DEBUG"),
-    16: (  0, decode_gps_version,    dt_gps_ver_obj,    "GPS_VERSION"),
-    17: (  0, decode_gps_time,       dt_gps_time_obj,   "GPS_TIME"),
-    18: (  0, decode_gps_geo,        dt_gps_geo_obj,    "GPS_GEO"),
-    19: (  0, decode_gps_xyz,        dt_gps_xyz_obj,    "GPS_XYZ"),
-    20: (  0, decode_sensor_data,    dt_sen_data_obj,   "SENSOR_DATA"),
-    21: (  0, decode_sensor_set,     dt_sen_set_obj,    "SENSOR_SET"),
-    22: (  0, decode_test,           dt_test_obj,       "TEST"),
-    23: (  0, decode_note,           dt_note_obj,       "NOTE"),
-    24: (  0, decode_config,         dt_config_obj,     "CONFIG"),
-    32: (  0, decode_gps_raw,        dt_gps_raw_obj,    "GPS_RAW"),
-  }
-
-
-mid_table = {
-#  mid    decoder               object          name
-     2: ( gps_nav_decoder,      gps_nav_obj,    "NAV_DATA"),
-     4: ( gps_navtrk_decoder,   gps_navtrk_obj, "NAV_TRACK"),
-     6: ( gps_swver_decoder,    gps_swver_obj,  "SW_VER"),
-     7: ( None,                 None,           "CLK_STAT"),
-     9: ( None,                 None,           "cpu thruput"),
-    11: ( None,                 None,           "ACK"),
-    13: ( gps_vis_decoder,      gps_vis_obj,    "VIS_LIST"),
-    18: ( gps_ots_decoder,      gps_ots_obj,    "OkToSend"),
-    28: ( None,                 None,           "NAV_LIB"),
-    41: ( gps_geo_decoder,      gps_geo_obj,    "GEO_DATA"),
-    51: ( None,                 None,           "unk_51"),
-    56: ( None,                 None,           "ext_ephemeris"),
-    65: ( None,                 None,           "gpio"),
-    71: ( None,                 None,           "hw_config_req"),
-    88: ( None,                 None,           "unk_88"),
-    92: ( None,                 None,           "cw_data"),
-    93: ( None,                 None,           "TCXO learning"),
-}
-
-
-def buf_str(buf):
-    """
-    Convert buffer into its display bytes
-    """
-    i    = 0
-    p_ds = ''
-    p_s  = binascii.hexlify(buf)
-    while (i < (len(p_s))):
-        p_ds += p_s[i:i+2] + ' '
-        i += 2
-    return p_ds
-
-
-def dump_buf(buf, pre=''):
-    bs = buf_str(buf)
-    stride = 16         # how many bytes per line
-
-    # 3 chars per byte
-    idx = 0
-    print(pre + 'rec:  '),
-    while(idx < len(bs)):
-        max_loc = min(len(bs), idx + (stride * 3))
-        print(bs[idx:max_loc])
-        idx += (stride * 3)
-        if idx < len(bs):              # if more then print counter
-            print(pre + '{:04x}: '.format(idx/3)),
-
-
-def dt_name(rtype):
-    v = dt_records.get(rtype, (0, None, None, 'unk'))
-    return v[DTR_NAME]
-
-
-def print_hdr(obj):
-    # rec  time     rtype name
-    # 0001 00000279 (20) REBOOT
-
-    rtype  = obj['hdr']['type'].val
-    recnum = obj['hdr']['recnum'].val
-    st     = obj['hdr']['st'].val
-
-    # gratuitous space shows up after the print, sigh
-    print('{:04} {:8} ({:2}) {:6} --'.format(recnum, st,
-        rtype, dt_records[rtype][DTR_NAME])),
-
-
-# recnum systime len type name         offset
-# 999999 0009999 999   99 xxxxxxxxxxxx @999999 (0xffffff) [0xffff]
-rec_title_str = "--- recnum  systime  len  type  name         offset  [chksum]"
-rec_format    = "--- {:6}  {:7}  {:3}    {:2}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
-
-def print_record(offset, buf):
-    if (len(buf) < dt_hdr_size):
-        print('*** print_record, buf too small for a header, wanted {}, got {}'.format(
-            dt_hdr_size, len(buf)))
-        dump_buf(buf, '    ')
-    else:
-        rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack_from(buf)
-        print(rec_format.format(recnum, systime, rlen, rtype,
-            dt_name(rtype), offset, offset, recsum))
 
 
 #
@@ -458,6 +174,13 @@ def resync(fd, offset):
     fd.seek(offset)
     num_resyncs += 1
     zero_sigs = 0
+    v = g.dt_records.get(DT_SYNC,   (0, None, None, ''))
+    sync_len   = v[DTR_REQ_LEN]
+    v = g.dt_records.get(DT_REBOOT, (0, None, None, ''))
+    reboot_len = v[DTR_REQ_LEN]
+    if (reboot_len == 0 or sync_len == 0):
+        print('*** can NOT resync, sync or reboot record not defined.')
+        return -1
     while (True):
         while (True):
             try:
@@ -497,8 +220,8 @@ def resync(fd, offset):
 
         # we want rlen and rtype, we leave recsum checking for gen_records
         rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack(buf)
-        if ((rtype == DT_SYNC   and rlen == dt_records[DT_SYNC]  [DTR_REQ_LEN]) or
-            (rtype == DT_REBOOT and rlen == dt_records[DT_REBOOT][DTR_REQ_LEN])):
+        if ((rtype == DT_SYNC   and rlen == sync_len) or
+            (rtype == DT_REBOOT and rlen == reboot_len)):
             fd.seek(offset_try)
             return offset_try
 
@@ -633,7 +356,7 @@ def get_record(fd):
                 break
             continue                    # try again
         try:
-            required_len = dt_records[rtype][DTR_REQ_LEN]
+            required_len = g.dt_records[rtype][DTR_REQ_LEN]
             if (required_len):
                 if (required_len != rlen):
                     offset = resync(fd, offset)
@@ -671,25 +394,27 @@ def dump(args):
 
     global rec_low, rec_high, rec_last, verbose
     global num_resyncs, chksum_errors, unk_rtypes
-    global total_records, total_bytes, unk_rtypes
+    global total_records, total_bytes
 
     init_globals()
 
     def count_dt(rtype):
         """
         increment counter in dict of rtypes, create new entry if needed
-        also check for existence of dt_records entry.  If not known
+        also check for existence of g.dt_records entry.  If not known
         count it as unknown.
         """
+        global unk_rtypes
+
         try:
-            dt_records[rtype]
+            g.dt_records[rtype]
         except KeyError:
             unk_rtypes += 1
 
         try:
-            dt_count[rtype] += 1
+            g.dt_count[rtype] += 1
         except KeyError:
-            dt_count[rtype] = 1
+            g.dt_count[rtype] = 1
 
 
     infile = args.input
@@ -739,15 +464,19 @@ def dump(args):
             break                       # all done
 
         count_dt(rtype)
-        print_record(rec_offset, rec_buf)        # BRK
-        decode = dt_records[rtype][DTR_DECODER]  # dt function
-        obj    = dt_records[rtype][DTR_OBJ]      # dt object
-        try:
-            decode(verbose, rec_buf, obj)
-        except struct.error:
-            print('*** decode error: (len: {}, rtype: {} {})'.format(
-                rlen, rtype, dt_name(rtype)))
-        if (verbose > 2):
+        print_record(rec_offset, rec_buf)       # BRK
+        v = g.dt_records.get(rtype, (0, None, None, ''))
+        decode = v[DTR_DECODER]                 # dt function
+        obj    = v[DTR_OBJ]                     # dt object
+        if (decode):
+            try:
+                decode(verbose, rec_buf, obj)
+            except struct.error:
+                print('*** decode error: (len: {}, rtype: {} {})'.format(
+                    rlen, rtype, dt_name(rtype)))
+        else:
+            if (verbose >= 5):
+                print('*** no decoder installed for rtype {}'.format(rtype))
             print
             dump_buf(rec_buf, '    ')
         if (verbose > 0):
@@ -759,11 +488,10 @@ def dump(args):
     print('*** end of processing @{} (0x{:x}),  processed: {} records, {} bytes'.format(
         infile.tell(), infile.tell(), total_records, total_bytes))
     print('*** reboots: {}, resyncs: {}, chksum_errs: {}, unk_rtypes: {}'.format(
-        dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
+        g.dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
     print
-    print('mid_s: {}'.format(mid_count))
-    print('dt_s:  {}'.format(dt_count))
-
+    print('dt_s:  {}'.format(g.dt_count))
+    print('mid_s: {}'.format(g.mid_count))
 
 if __name__ == "__main__":
     dump(parseargs())

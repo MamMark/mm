@@ -1,28 +1,12 @@
 #
-# Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
+# Copyright (c) 2017-2018, Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
+# basic data type object descriptors
 
 import binascii
-import struct
 from   decode_base  import *
-
-DT_H_REVISION           = 0x00000009
-
-# all dt parts are native and little endian
-
-# hdr object dt, native, little endian
-# do not include the pad byte.  Each hdr definition handles
-# the pad byte differently.
-
-dt_hdr_str    = '<HHIQH'
-dt_hdr_struct = struct.Struct(dt_hdr_str)
-dt_hdr_size   = dt_hdr_struct.size
-dt_sync_majik = 0xdedf00ef
-quad_struct   = struct.Struct('<I')      # for searching for syncs
-
-DT_REBOOT     = 1
-DT_SYNC       = 3
+from   collections  import OrderedDict
 
 dt_hdr_obj = aggie(OrderedDict([
     ('len',     atom(('<H', '{}'))),
@@ -78,58 +62,6 @@ owcb_obj        = aggie(OrderedDict([
     ('elapsed',         atom(('<Q', '0x{:08x}'))),
     ('ow_sig_c',        atom(('<I', '0x{:08x}')))
 ]))
-
-
-ow_bases = {
-    0x00000000: "GOLD",
-    0x00020000: "NIB",
-    0xffffffff: "unset"
-}
-
-def base_name(base):
-    return ow_bases.get(base, 'unk')
-
-ow_boot_mode_strs = {
-    0:  "GOLD",
-    1:  "OWT",
-    2:  "NIB",
-}
-
-ow_req_strs = {
-    0:  "BOOT",
-    1:  "INSTALL",
-    2:  "FAIL",
-}
-
-owt_actions_strs = {
-    0: "NONE",
-    1: "INIT",
-    2: "INSTALL",
-    3: "EJECT",
-}
-
-ow_reboot_reason_strs = {
-    0:  "NONE",
-    1:  "FAIL",
-    2:  "CLOBBER",
-    3:  "STRANGE",
-    4:  "FORCED",
-    5:  "SKEW",
-    6:  "USER",
-    7:  "PANIC",
-}
-
-def ow_boot_mode_name(mode):
-    return ow_boot_mode_strs.get(mode, 'unk')
-
-def ow_req_name(req):
-    return ow_req_strs.get(req, 'unk')
-
-def owt_action_name(action):
-    return ow_action_strs.get(action, 'unk')
-
-def reboot_reason_name(reason):
-    return ow_reboot_reason_strs.get(reason, 'unk')
 
 
 dt_version_obj  = aggie(OrderedDict([
@@ -210,3 +142,6 @@ dt_event_obj    = aggie(OrderedDict([
     ('w',     atom(('<B', '{}')))]))
 
 dt_debug_obj    = dt_simple_hdr
+dt_test_obj     = dt_simple_hdr
+dt_note_obj     = dt_simple_hdr
+dt_config_obj   = dt_simple_hdr

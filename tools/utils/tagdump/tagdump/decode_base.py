@@ -3,8 +3,8 @@
 # All rights reserved.
 #
 
-from collections import OrderedDict
 import struct
+from   collections import OrderedDict
 
 class atom(object):
     '''
