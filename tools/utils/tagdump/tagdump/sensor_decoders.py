@@ -9,7 +9,7 @@ from   core_records   import *
 from   sensor_headers import *
 
 def decode_sensor_data(level, buf, obj):
-    if (level > 0):
+    if (level >= 1):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
@@ -20,7 +20,7 @@ g.dt_records[DT_SENSOR_DATA] = \
 
 
 def decode_sensor_set(level, buf, obj):
-    if (level > 0):
+    if (level >= 1):
         obj.set(buf)
         print(obj)
         print_hdr(obj)

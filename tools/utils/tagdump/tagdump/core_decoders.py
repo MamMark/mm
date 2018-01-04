@@ -87,7 +87,7 @@ def decode_reboot(level, buf, obj):
     if (chk_fails):                     # do we have any flash or image chk fails
         print('*** chk fails: vec_fails: {}, image_fails: {}'.format(
             owcb_obj['vec_chk_fail'].val, owcb_obj['image_chk_fail'].val))
-    if (level > 0):                   # basic record display (level 1)
+    if (level >= 1):                   # basic record display (level 1)
         print(rbt1a.format(
             reboot_reason_name(owcb_obj['reboot_reason'].val),
             base_name(owcb_obj['from_base'].val), base_name(obj['base'].val),
@@ -95,7 +95,7 @@ def decode_reboot(level, buf, obj):
             owcb_obj['reboot_count'].val, chk_fails))
         print(rbt1b.format(obj['prev'].val, obj['prev'].val, dt_rev))
 
-    if (level > 1):                   # detailed display (level 2)
+    if (level >= 2):                    # detailed display (level 2)
         print
         print(rbt2a.format(obj['majik'].val, owcb_obj['ow_sig'].val,
                    owcb_obj['ow_sig_b'].val, owcb_obj['ow_sig_c'].val))
@@ -123,7 +123,7 @@ g.dt_records[DT_REBOOT] = (116, decode_reboot, dt_reboot_obj, "REBOOT")
 #
 
 def decode_version(level, buf, obj):
-    if (level > 0):
+    if (level >= 1):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
@@ -138,7 +138,7 @@ g.dt_records[DT_VERSION] = (168, decode_version, dt_version_obj, "VERSION")
 #
 
 def decode_sync(level, buf, obj):
-    if (level > 0):
+    if (level >= 1):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
@@ -155,7 +155,7 @@ g.dt_records[DT_SYNC] = (40, decode_sync, dt_sync_obj, "SYNC")
 def decode_event(level, buf, event_obj):
     event_obj.set(buf)
     event = event_obj['event'].val
-    if (level > 0):
+    if (level >= 1):
         print(event_obj)
         print_hdr(event_obj)
         print('({:2}) {:10} 0x{:04x}  0x{:04x}  0x{:04x}  0x{:04x}'.format(
@@ -174,7 +174,7 @@ g.dt_records[DT_EVENT] = (40, decode_event, dt_event_obj, "EVENT")
 #
 
 def decode_debug(level, buf, obj):
-    if (level > 0):
+    if (level >= 1):
         obj.set(buf)
         print(obj)
         print_hdr(obj)

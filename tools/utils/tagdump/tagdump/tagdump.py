@@ -39,6 +39,7 @@
 #   2   detailed record display
 #   3   dump buffer/record
 #   4   details of resync
+#   5   other errors
 
 import sys
 import binascii
@@ -167,6 +168,7 @@ resync1 = '*** resync: (struct error) [len: {0}] @{1} (0x{1:x})'
 def resync(fd, offset):
     global num_resyncs
 
+    print
     print('*** resync started @{0} (0x{0:x})'.format(offset))
     if (offset & 3 != 0):
         print(resync0.format(offset, (offset/4)*4))
@@ -211,7 +213,7 @@ def resync(fd, offset):
                 zero_sigs = 0
         fd.seek(-RESYNC_HDR_OFFSET, 1)          # back up to start of attempt
         offset_try = fd.tell()
-        if (verbose > 3):
+        if (verbose >= 4):
             print('*** resync: found MAJIK @{0} (0x{0:x})'.format(offset))
         buf = bytearray(fd.read(dt_hdr_size))
         if (len(buf) < dt_hdr_size):            # oht oh, too small, very strange
@@ -226,7 +228,7 @@ def resync(fd, offset):
             return offset_try
 
         # not what we expected.  continue looking for SYNC_MAJIKs where we left off
-        if (verbose > 3):
+        if (verbose >= 4):
             resync2 = '*** resync: failed len/rtype @{} (0x{:x}): ' + \
                       'len: {}, type: {}, rec: {}'
             print(resync2.format(offset_try, offset_try, rlen, rtype, recnum))
@@ -269,7 +271,7 @@ def get_record(fd):
         offset = fd.tell()
         # new records are required to start on a quad boundary
         if (offset & 3):
-            if verbose > 2:
+            if verbose >= 5:
                 align0 = '*** aligning offset {0} (0x{0:x}) -> {1} (0x{1:x})'
                 print(align0.format(offset, ((offset/4) + 1) * 4))
             offset = ((offset/4) + 1) * 4
@@ -349,7 +351,8 @@ def get_record(fd):
                       '[wanted: 0x{1:x}, got: 0x{2:x}]'
             print(chksum1.format(offset, recsum, chksum))
             print_record(offset, rec_buf)
-            if (verbose > 2):
+            if (verbose >= 3):
+                print
                 dump_buf(rec_buf, '    ')
             offset = resync(fd, offset)
             if (offset < 0):
@@ -477,9 +480,10 @@ def dump(args):
         else:
             if (verbose >= 5):
                 print('*** no decoder installed for rtype {}'.format(rtype))
+        if (verbose >= 3):
             print
             dump_buf(rec_buf, '    ')
-        if (verbose > 0):
+        if (verbose >= 1):
             print
         total_records += 1
         total_bytes   += rlen
