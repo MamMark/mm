@@ -88,9 +88,9 @@ image_info_obj  = aggie(OrderedDict([
     ('vect_chk',  atom(('<I', '0x{:08x}'))),
     ('im_chk',    atom(('<I', '0x{:08x}'))),
     ('ver_id',    image_version_obj),
-    ('desc0',     atom(('44s', '0x{:x}'))),
-    ('desc1',     atom(('44s', '0x{:x}'))),
-    ('build_date',atom(('30s', '0x{:x}'))),
+    ('desc0',     atom(('44s', '{:s}'))),
+    ('desc1',     atom(('44s', '{:s}'))),
+    ('build_date',atom(('30s', '{:s}'))),
     ('hw_ver',    hw_version_obj)]))
 
 

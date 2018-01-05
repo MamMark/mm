@@ -467,7 +467,6 @@ def dump(args):
             break                       # all done
 
         count_dt(rtype)
-        print_record(rec_offset, rec_buf)       # BRK
         v = g.dt_records.get(rtype, (0, None, None, ''))
         decode = v[DTR_DECODER]                 # dt function
         obj    = v[DTR_OBJ]                     # dt object
@@ -482,6 +481,7 @@ def dump(args):
                 print('*** no decoder installed for rtype {}'.format(rtype))
         if (verbose >= 3):
             print
+            print_record(rec_offset, rec_buf)
             dump_buf(rec_buf, '    ')
         if (verbose >= 1):
             print

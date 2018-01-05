@@ -10,6 +10,7 @@
 
 import struct
 import globals as g
+from   misc_utils import *
 
 # dt_records
 #
@@ -117,10 +118,12 @@ def print_hdr(obj):
         rtype, dt_name(rtype))),
 
 
-# recnum systime len type name         offset
-# 999999 0009999 999   99 xxxxxxxxxxxx @999999 (0xffffff) [0xffff]
-rec_title_str = "--- recnum  systime  len  type  name         offset  [chksum]"
-rec_format    = "--- {:6}  {:7}  {:3}    {:2}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
+
+# used for identifing records that have problems.
+# offset recnum systime len type name         offset
+# 999999 999999 0009999 999   99 xxxxxxxxxxxx @999999 (0xffffff) [0xffff]
+rec_title_str = "--- offset recnum  systime  len  type  name"
+rec_format    = "{:8} {:6}  {:7}  {:3}    {:2}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
 
 def print_record(offset, buf):
     if (len(buf) < dt_hdr_size):
@@ -129,5 +132,5 @@ def print_record(offset, buf):
         dump_buf(buf, '    ')
     else:
         rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack_from(buf)
-        print(rec_format.format(recnum, systime, rlen, rtype,
+        print(rec_format.format(offset, recnum, systime, rlen, rtype,
             dt_name(rtype), offset, offset, recsum))
