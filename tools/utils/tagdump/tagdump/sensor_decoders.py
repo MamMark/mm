@@ -8,7 +8,8 @@ import globals        as     g
 from   core_records   import *
 from   sensor_headers import *
 
-def decode_sensor_data(level, buf, obj):
+def decode_sensor_data(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         print(obj)
@@ -19,7 +20,8 @@ g.dt_records[DT_SENSOR_DATA] = \
         (0, decode_sensor_data, dt_sen_data_obj, "SENSOR_DATA")
 
 
-def decode_sensor_set(level, buf, obj):
+def decode_sensor_set(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         print(obj)

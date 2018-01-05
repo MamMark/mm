@@ -473,7 +473,7 @@ def dump(args):
         obj    = v[DTR_OBJ]                     # dt object
         if (decode):
             try:
-                decode(verbose, rec_buf, obj)
+                decode(verbose, rec_offset, rec_buf, obj)
             except struct.error:
                 print('*** decode error: (len: {}, rtype: {} {})'.format(
                     rlen, rtype, dt_name(rtype)))

@@ -8,7 +8,8 @@ import globals      as     g
 from   core_records import *
 from   gps_headers  import *
 
-def decode_gps_version(level, buf, obj):
+def decode_gps_version(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         print(obj)
@@ -19,7 +20,8 @@ g.dt_records[DT_GPS_VERSION] = \
         (0, decode_gps_version, dt_gps_ver_obj, "GPS_VERSION")
 
 
-def decode_gps_time(level, buf, obj):
+def decode_gps_time(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         print(obj)
@@ -29,7 +31,8 @@ def decode_gps_time(level, buf, obj):
 g.dt_records[DT_GPS_TIME] = (0, decode_gps_time, dt_gps_time_obj, "GPS_TIME")
 
 
-def decode_gps_geo(level, buf, obj):
+def decode_gps_geo(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         print(obj)
@@ -39,7 +42,8 @@ def decode_gps_geo(level, buf, obj):
 g.dt_records[DT_GPS_GEO] = (0, decode_gps_geo, dt_gps_geo_obj, "GPS_GEO")
 
 
-def decode_gps_xyz(level, buf, obj):
+def decode_gps_xyz(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         print(obj)
@@ -49,7 +53,8 @@ def decode_gps_xyz(level, buf, obj):
 g.dt_records[DT_GPS_XYZ] = (0, decode_gps_xyz, dt_gps_xyz_obj, "GPS_XYZ")
 
 
-def gps_nav_decoder(level, buf, obj):
+def gps_nav_decoder(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         print(obj)
@@ -57,7 +62,8 @@ def gps_nav_decoder(level, buf, obj):
 g.mid_table[2] = (gps_nav_decoder, gps_nav_obj, "NAV_DATA")
 
 
-def gps_navtrk_decoder(level, buf,obj):
+def gps_navtrk_decoder(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         consumed = obj.set(buf)
         print(obj)
@@ -69,7 +75,8 @@ def gps_navtrk_decoder(level, buf,obj):
 g.mid_table[4] = (gps_navtrk_decoder, gps_navtrk_obj, "NAV_TRACK")
 
 
-def gps_swver_decoder(level, buf, obj):
+def gps_swver_decoder(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         consumed = obj.set(buf)
         len0 = obj['str0_len'].val
@@ -81,7 +88,8 @@ def gps_swver_decoder(level, buf, obj):
 g.mid_table[6] = (gps_swver_decoder, gps_swver_obj, "SW_VER")
 
 
-def gps_vis_decoder(level, buf, obj):
+def gps_vis_decoder(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         consumed = obj.set(buf)
         print(obj)
@@ -93,7 +101,8 @@ def gps_vis_decoder(level, buf, obj):
 g.mid_table[13] = (gps_vis_decoder, gps_vis_obj, "VIS_LIST")
 
 
-def gps_ots_decoder(level, buf, obj):
+def gps_ots_decoder(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         ans = 'no'
@@ -104,7 +113,8 @@ def gps_ots_decoder(level, buf, obj):
 g.mid_table[18] = (gps_ots_decoder, gps_ots_obj, "OkToSend")
 
 
-def gps_geo_decoder(level, buf, obj):
+def gps_geo_decoder(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         print(obj)
@@ -112,7 +122,8 @@ def gps_geo_decoder(level, buf, obj):
 g.mid_table[41] = (gps_geo_decoder, gps_geo_obj, "GEO_DATA")
 
 
-def gps_name_only(level, buf, obj):
+def gps_name_only(level, offset, buf, obj):
+    print_record(offset, buf)
     if (level >= 1):
         print
 
@@ -153,7 +164,8 @@ def print_gps_hdr(obj, mid):
     print('MID: {:2} ({:02x}) <{:2}> {:10} '.format(mid, mid, dir_str, mid_name)),
 
 
-def decode_gps_raw(level, buf, obj):
+def decode_gps_raw(level, offset, buf, obj):
+    print_record(offset, buf)
     consumed = obj.set(buf)
     mid = obj['gps_hdr']['mid'].val
     try:
@@ -176,7 +188,7 @@ def decode_gps_raw(level, buf, obj):
                 print
                 print('*** no decoder/obj defined for mid {}'.format(mid))
             return
-        decoder(level, buf[consumed:], decoder_obj)
+        decoder(level, offset, buf[consumed:], decoder_obj)
 
 g.dt_records[DT_GPS_RAW_SIRFBIN] = \
         (0, decode_gps_raw, dt_gps_raw_obj, "GPS_RAW")

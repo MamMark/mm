@@ -76,7 +76,7 @@ rbt2e = '    uptime: {:8} (0x{:08x})        elapsed: {:8} (0x{:08x})'
 rbt2f = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
 rbt2g = '    vec_chk_fail: {:2}  image_chk_fail:   {:2}'
 
-def decode_reboot(level, buf, obj):
+def decode_reboot(level, offset, buf, obj):
     consumed = obj.set(buf)
     dt_rev = obj['dt_rev'].val
     if dt_rev != DT_H_REVISION:
@@ -122,7 +122,7 @@ g.dt_records[DT_REBOOT] = (116, decode_reboot, dt_reboot_obj, "REBOOT")
 # VERSION decoder
 #
 
-def decode_version(level, buf, obj):
+def decode_version(level, offset, buf, obj):
     if (level >= 1):
         obj.set(buf)
         print(obj)
@@ -137,7 +137,7 @@ g.dt_records[DT_VERSION] = (168, decode_version, dt_version_obj, "VERSION")
 # SYNC decoder
 #
 
-def decode_sync(level, buf, obj):
+def decode_sync(level, offset, buf, obj):
     if (level >= 1):
         obj.set(buf)
         print(obj)
@@ -152,9 +152,12 @@ g.dt_records[DT_SYNC] = (40, decode_sync, dt_sync_obj, "SYNC")
 # EVENT decoder
 #
 
-def decode_event(level, buf, event_obj):
-    event_obj.set(buf)
-    event = event_obj['event'].val
+def decode_event(level, offset, buf, obj):
+    consumed = obj.set(buf)
+    len      = obj['hdr']['len'].val
+    type     = obj['hdr']['type'].val
+    recnum   = obj['hdr']['recnum'].val
+    st       = obj['hdr']['st'].val
     if (level >= 1):
         print(event_obj)
         print_hdr(event_obj)
@@ -173,12 +176,12 @@ g.dt_records[DT_EVENT] = (40, decode_event, dt_event_obj, "EVENT")
 # DEBUG decoder
 #
 
-def decode_debug(level, buf, obj):
     if (level >= 1):
         obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
+def decode_debug(level, offset, buf, obj):
 
 g.dt_records[DT_DEBUG] = (0, decode_debug, dt_debug_obj, "DEBUG")
 
@@ -188,8 +191,8 @@ g.dt_records[DT_DEBUG] = (0, decode_debug, dt_debug_obj, "DEBUG")
 # TEST decoder
 #
 
-def decode_test(level, buf, obj):
     pass
+def decode_test(level, offset, buf, obj):
 
 g.dt_records[DT_TEST] = (0, decode_test, dt_test_obj, "TEST")
 
@@ -199,8 +202,14 @@ g.dt_records[DT_TEST] = (0, decode_test, dt_test_obj, "TEST")
 # NOTE decoder
 #
 
-def decode_note(level, buf, obj):
     pass
+def decode_note(level, offset, buf, obj):
+    consumed = obj.set(buf)
+    obj.set(buf)
+    len      = obj['hdr']['len'].val
+    type     = obj['hdr']['type'].val
+    recnum   = obj['hdr']['recnum'].val
+    st       = obj['hdr']['st'].val
 
 g.dt_records[DT_NOTE] = (0, decode_note, dt_note_obj, "NOTE")
 
@@ -210,7 +219,6 @@ g.dt_records[DT_NOTE] = (0, decode_note, dt_note_obj, "NOTE")
 # CONFIG decoder
 #
 
-def decode_config(level, buf, obj):
-    pass
+def decode_config(level, offset, buf, obj):
 
 g.dt_records[DT_CONFIG] = (0, decode_config, dt_config_obj, "CONFIG")
