@@ -114,13 +114,6 @@ typedef struct {
 #define DC_MAJIK 0x1008
 
 
-/*
- * 5 min * 60 sec/min * 1024 ticks/sec
- * Tmilli is binary
- */
-#define SYNC_PERIOD (5UL * 60 * 1024)
-#define COLLECT_MAX_BUFS_SYNC   8
-
 extern image_info_t image_info;
 extern ow_control_block_t ow_control_block;
 
@@ -251,7 +244,7 @@ implementation {
      * update down counters first, to avoid getting SYNCs very close
      * together.
      */
-    dcc.bufs_to_next_sync = COLLECT_MAX_BUFS_SYNC;
+    dcc.bufs_to_next_sync = SYNC_MAX_SECTORS;
     call SyncTimer.stop();
     write_sync_record();
     call SyncTimer.startOneShot(SYNC_PERIOD);
@@ -271,7 +264,7 @@ implementation {
   command error_t Init.init() {
     dcc.majik_a = DC_MAJIK;
     dcc.majik_b = DC_MAJIK;
-    dcc.bufs_to_next_sync = COLLECT_MAX_BUFS_SYNC;
+    dcc.bufs_to_next_sync = SYNC_MAX_SECTORS;
     return SUCCESS;
   }
 
@@ -290,7 +283,7 @@ implementation {
     call SSW.buffer_full(dcc.handle);
     if (--dcc.bufs_to_next_sync == 0) {
       post collect_sync_task();
-      dcc.bufs_to_next_sync = COLLECT_MAX_BUFS_SYNC;
+      dcc.bufs_to_next_sync = SYNC_MAX_SECTORS;
     }
     dcc.remaining = 0;
     dcc.handle    = NULL;

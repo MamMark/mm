@@ -48,6 +48,12 @@
 #define PACKED __attribute__((__packed__))
 #endif
 
+/************************************************************************
+ *
+ * Configuration Stuff
+ *
+ ************************************************************************/
+
 /*
  * identify what revision of typed_data.h we are using for this build
  *
@@ -55,6 +61,29 @@
  * some flavor.  Releases start at Major 1.  Major 1 looks like 00010000.
  */
 #define DT_H_REVISION   0x00000009
+
+/*
+ * Sync records are used to make sure we can always find the data stream if
+ * we ever lose sync.  We lay down a sync record every SYNC_MAX_SECTORS
+ * sectors (see below) or as a fail safe after SYNC_PERIOD time goes by.
+ *
+ * SYNC_MAX_SECTORS also determines where DBlkManager starts looking
+ * for the last written SYNC on a restart.
+ */
+
+/*
+ * 5 min * 60 sec/min * 1024 ticks/sec
+ * Tmilli is binary
+ */
+#define SYNC_PERIOD         (5UL * 60 * 1024)
+#define SYNC_MAX_SECTORS    8
+
+
+/************************************************************************
+ *
+ * Data Block identifiers (dtype, record types, rtypes)
+ *
+ */
 
 typedef enum {
   DT_NONE		= 0,

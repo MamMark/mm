@@ -93,9 +93,18 @@ o Sync/Reboot records.  When record sync has been lost, we use sync/reboot
   between SysTime (time since last reboot) and DateTime gives the relationship
   between real time and running time upon the tag.
 
-o Initilization of DateTime and RecNum.  (DblkManager/Boot during SysBoot).
+  To bound how much data can be written prior to be being bounded by a SYNC
+  record we write SYNC records every N sectors (SYNC_MAX_SECTORS).
 
-  Upon reboot, we need to determine a good DateTime and the last recnum used.
+  On a restart (REBOOT), DBlkManager is responsible for finding the last
+  sync.  This is needed to preserve the back links between SYNC records
+  (prev_sync).
+
+o Initilization of DateTime, RecNum and LastSync.  (DblkManager/Boot
+  during SysBoot).
+
+  Upon reboot, we need to determine a good DateTime, the last recnum used and
+  the last sync prior to the new REBOOT record that will be laid down.
 
   o Use the Incept DateTime from the Dblk directory as an initial candidate
     dateTime.
@@ -104,7 +113,8 @@ o Initilization of DateTime and RecNum.  (DblkManager/Boot during SysBoot).
     than candidate DateTime, this is the new candidate.
 
   o Find last known Sync/Reboot.  Extract DateTime, if greater than candidate
-    this is the new candidate.
+    this is the new candidate.  last known Sync/Reboot should be with in
+    SYNC_MAX_SECTORS from the dblk_nxt found by the DblkManager on restart.
 
     Extract, recnum from the Sync/Reboot.  This is the candidate recnum.
 
