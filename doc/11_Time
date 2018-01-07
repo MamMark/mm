@@ -1,75 +1,149 @@
 
-* sysTime
-** 64 bit ms internal time since last reboot.
+* LocalTime
+** 32 bit ms internal time since last reboot.
+
+   binary time: 1024 ticks/sec.  (mis ticks)
+   2^32 = 4294967296 mis/(88473600) = ~ 48.5 days
+
+      s         m       hr        d
+   -------- * ----- * ------ * -------
+   1024 mis    60s     60 m     24 hr
+
+   decimal time: 1000 ticks/sec  (ms ticks)
+   2^32 = 4294967296 mis/(86400000) = ~ 49.7 days
+
+
+* sysTime (lt64)
+** 64 bit ms internal time since last reboot.  LocalTime (32 bit) wraps
+   after ~48.5 days.  To fix this issue we need 64 bits (next natural
+   boundary).  64 bit sysTime will wrap every ~571 million years.
+
+** 8 bytes long.
+** simple extension to LocalTime, LocalTime64 (lt64).
+** tweak low level LocalTime/Timers to provide LocalTime64 (cycle).
+** used by OverWatch when crashing, uptime, elapsed.
+
 
 * dateTime
-** RTC format, expanded time format.
-*** Y.M.D.H.M.S.J.DOW
+** 10 bytes
 
-RTC:
+** RTC format
+*** h/w format, TI RTC format.
 
-  Y_H           (Y_H << 8) | Y_L
-  Y_L
-  MON           1:12
-  DAY           1:31
-  DOW           0:6             (0 sunday)
-  HOUR          0:23
-  MIN           0:59
-  SEC           0:59
-  RT1PS         0:0x7f          (RT1PS & 0x7f) << 8 | RT0PS
-  RT0PS         0:0xff
-
-  Y.MON.DAY.HOUR.MIN.SEC.PS.DOW
-  2  1   1   1    1   1  2  1   10 bytes
+  __IO uint16_t PS;             PS1 << 8 | PS0
+  __I  uint16_t IV;             interrupt vector
+  __IO uint16_t TIM0;           MIN << 8 | SEC
+  __IO uint16_t TIM1;           DOW << 8 | HR
+  __IO uint16_t DATE;           MON << 8 | DAY
+  __IO uint16_t YEAR;
 
 
-  Y                             2
-  MON   1 - 12                      4 bits
-  DAY   1 - 31                      5 bits
-  HOUR  0 - 23                      5 bits
-  MIN   0 - 59                      6 bits
-  SEC   0 - 59                      6 bits
-  J     0 - 0x7fff                 15 bits
-  DOW   0 - 6                       3 bits
+*** dateTime Memory format
+**** see datetime.h
+
+  uint16_t	jiffies;                /* 16 bit jiffies (32KiHz) */
+  uint8_t	sec;                    /* 0-59 */
+  uint8_t	min;                    /* 0-59 */
+  uint8_t	hr;                     /* 0-23 */
+  uint8_t       dow;                    /* day of week, 0-6, 0 sunday */
+  uint8_t	day;                    /* 1-31 */
+  uint8_t	mon;                    /* 1-12 */
+  uint16_t	yr;
 
 
-The above can be compacted into a total of 8 bytes but then becomes
-unreadable and has to be decoded/encoded.  So for now we will eat the 10
-bytes.
+*** dt64
+64 bit (8 byte) time stamp that contains all the components of datetime
+without the year.  dt64 stamps are used in data block records.
 
+sysTime is 64 bits which is 8 bytes.  dateTime is 10 bytes.  Including 2
+bytes for year.  We reduce dateTime to 8 bytes (ie. 64 bits), by dropping
+the year, yielding a dt64 timestamp.  The time will wrap once a year on the
+transition from 12/31-23:59:59:0x7fff to 01/01-00:00:00:0x0000.
 
-Where do we use datetime vs. systime
+Data Blocks (typed_data, records) are time stamped using these 64 bit dt64
+time stamps.  dt64 stamps don't include the year but does fit into 8 bytes
+(64 bits).  SYNC and REBOOT records have both the dt64 stamp and a full
+dateTime stamp.  This gives a full correlator between dateTime and the dt64
+time.
 
-datetime is used to establish a correlator between outside (dateTime) and
-inside (sysTime) time.  This occurs on sync records (both reboots and syncs).
-sync and reboot records have both internal systime and datetime.
-
-Sync and Reboot records gives us the one to one relationship between current
-dateTime (as represented by the RTC hardware) and the internal system time
-(sysTime, Tmilli, etc).
-
-typed_data records typically are using 64 bit sysTime for time stamping.  Using
-both sysTime from the data block and a known last dateTime we can determine
-the real dateTime of the data block.
-
-sysTime exists because it is just so much easier to deal with than the
-encoded dateTime.
+Overwatch uses sysTime (LocalTime64) for uptime (time since last boot) and
+the accumulation of elapsedTime.  Both are in sysTime units, 64 bit ms since
+last reboot.
 
 
 Time Skew.
 
-On first power on we don't have any RTC time.  It needs to be initialized.
-We read the SD to find the last known time.  We use this as a starting point
-for the RTC.  This can come from last SYNC found or in case of last resort
-from the Incept Time written in the DBLK directory when formatted.
+When the system boots, we need to determine a good dateTime for the system
+to use.  On first power on (h/w loss of power, RTC loss), we need to have
+a reasonable value to first use.
 
-Later, we can obtain time from the network or from the GPS.  Network time is
-not as good as GPS but still allowed.  GPS time is the best.
+A fall back value is provided by the Dblk directory inceptDate.  This
+dateTime value is written when the tag SD is originally formatted.  This
+is the value that is used to initialize the RTC h/w if no other reasonable
+dateTime is found.
+
+In addition, the DblkManager, as part of its initialization, will scan
+the Dblk area for the last SYNC/REBOOT and last records that have been
+written to the Dblk area.  Once found, the combination of last SYNC/REBOOT
+and last records are used to determine a reasonable starting dateTime
+to use for initializing the RTC h/w.
+
+Once running, two other sources can provide better time, Network Time (via
+the network stack) or the GPS subsystem.  GPS synchronized time is the
+best.
 
 This presents the issue of some appreciable time skew when we change datetime
-to match what we've just picked up.  We only allow forward time movement.
+to match what we've just picked up.  Anytime the time is forced, we will
+reboot the system using a TIME_SKEW reboot reason.
 
-If the RTC gets ahead of new time, we hold the RTC to slew it.  We should
-limit this to something reasonable.
 
-If the skew gets too nasty then we will reboot the box with a forced ORR_TIME_SKEW.
+Behaviour of dt64 timestamps.
+
+dt64 (and dateTime) is composed of component fields and the dt64 stamp
+can skip values.  All times are UTC.
+
+2018/01/01-(M)-00:00:00:0x0000, start of 2018, Monday.
+  memory: 00 00 00 00 00 01 01 01 e2 07
+          jiff  s  m  h  dw d  mn year
+  dt64:   00 00 00 00 00 01 01 01
+
+32767 ticks ... 2018/01/01-(M)-00:00:00:0x7fff (M) and one tick later...
+                2018/01/01-(M)-00:00:01:0x0000 (M)
+  dt64:   ff 7f 00 00 00 01 01 01
+          00 00 01 00 00 01 01 01
+          jiff  s  m  h  dw d  mn
+
+  ff 7f 38 38 17 01 01 01 ... 2018/01/01-(M)-23:59:59:0x7fff (M)
+  00 00 00 00 00 02 02 01 ... 2018/01/02-(T)-00:00:00:0x0000 (T)
+  jiff  s  m  h  dw d  mn
+
+  ff 7f 38 38 17 06 06 01 ... 2018/01/06-(S)-23:59:59:0x7fff (S) (sat)
+  00 00 00 00 00 00 07 01 ... 2018/01/07-(S)-00:00:00:0x0000 (S) (sun)
+  ff 7f 38 38 17 03 1f 01 ... 2018/01/31-(W)-23:59:59:0x7fff (W) (wed)
+  00 00 00 00 00 04 01 02 ... 2018/02/01-(T)-00:00:00:0x0000 (T) (thu)
+
+  00 00 00 00 00 04 01 02
+  ff 7f 38 38 17 04 01 02
+  00 00 00 00 00 05 02 02
+  ff 7f 38 38 17 05 02 02
+  00 00 00 00 00 06 03 02 ... 2018/02/03-(S)-00:00:00:0x0000 (S) (sat)
+  ff 7f 38 38 17 06 03 02 ... 2018/02/03-(S)-23:59:59:0x7fff (S) (sat)
+  00 00 00 00 00 00 04 02 ... 2018/02/04-(S)-00:00:00:0x0000 (S) (sun)
+
+  ff 7f 38 38 17 05 1f 08 ... 2018/08/31-(F)-23:59:59:0x7fff (F) (fri)
+  00 00 00 00 00 06 01 09 ... 2018/09/01-(S)-00:00:00:0x0000 (S) (sat)
+
+  ff 7f 38 38 17 06 1d 0c ... 2018/12/29-(S)-23:59:59:0x7fff (S) (sat)
+  00 00 00 00 00 00 1e 0c ... 2018/12/30-(S)-00:00:00:0x0000 (S) (sun)
+  ff 7f 38 38 17 00 1e 0c ... 2018/12/30-(S)-23:59:59:0x7fff (S) (sun)
+  00 00 00 00 00 01 1f 0c ... 2018/12/31-(M)-00:00:00:0x0000 (M) (mon)
+
+  ff 7f 38 38 17 01 1f 0c ... 2018/12/31-(M)-23:59:59:0x7fff (M) (mon)
+
+  00 00 00 00 00 02 01 01 ... 2019/01/01-(T)-00:00:00:0x0000 (T) (tue)
+
+dateTime:
+  00 00 00 00 00 02 01 01 e3 07
+
+
+Do we really need day of week?  Does that buy us anything?
