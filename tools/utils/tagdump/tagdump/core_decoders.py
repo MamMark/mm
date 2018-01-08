@@ -78,8 +78,8 @@ def reboot_reason_name(reason):
 
 rbt0  = '  {:s} -> {:s}  [{:s}]  ({:d})'
 
-rbt1a = '    REBOOT: {:7s}  f: {:4s}  c: {:4s}  m: {:4s}  boots: {}  chk_fails: {}'
-rbt1b = '    dt: 2017/12/26-01:52:40 (1) GMT  prev_sync: {} (0x{:04x})  rev: 0x{:04x}'
+rbt1a = '    REBOOT: {:7s}  f: {:4s}  c: {:4s}  m: {:4s}  boots: {}   chk_fails: {}'
+rbt1b = '    dt: 2017/12/26-01:52:40 (1) GMT  prev_sync: {} (0x{:04x})  rev:  0x{:04x}'
 
 rbt2a = '    majik:  {:08x}  sigs:   {:08x} {:08x} {:08x}'
 rbt2b = '    base: f {:08x}  cur:    {:08x}'
@@ -257,8 +257,8 @@ g.dt_records[DT_SYNC] = (40, decode_sync, dt_sync_obj, "SYNC")
 def event_name(event):
     return event_names.get(event, 'unk')
 
-event0  = ' {:s} ({}) <{} 0x{:x}>'
-event1  = '    {:s}: ({}) <{} {} {} {}>  <{} {}>'
+event0  = ' {:s}  {}  {}'
+event1  = '    {:s}: ({}) <{} {} {} {}>  x({:x} {:x} {:x} {:x})'
 
 def decode_event(level, offset, buf, obj):
     consumed = obj.set(buf)
