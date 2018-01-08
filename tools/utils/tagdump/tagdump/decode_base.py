@@ -21,6 +21,7 @@ class atom(object):
             self.f_str = a_tuple[2]
         else:
             self.f_str = None
+        self.val = -1
 
     def __len__(self):
         return self.s_rec.size
