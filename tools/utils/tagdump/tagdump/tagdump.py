@@ -439,54 +439,59 @@ def dump(args):
     print(rec_title_str)
 
     # extract record from input file and output decoded results
-    while(True):
-        rec_offset, rlen, rtype, recnum, systime, recsum, rec_buf = \
-                get_record(infile)
-        if (rec_offset < 0):
-            break;
+    try:
+        while(True):
+            rec_offset, rlen, rtype, recnum, systime, recsum, rec_buf = \
+                    get_record(infile)
+            if (rec_offset < 0):
+                break;
 
-        if (recnum < rec_last):
-            print('*** recnum went backwards.  last: {}, new: {}'.format(
-                rec_last, recnum))
-        if (rec_last and recnum > rec_last + 1):
-            print('*** record gap: ({}) records'.format(recnum - rec_last))
-        rec_last = recnum
+            if (recnum < rec_last):
+                print('*** recnum went backwards.  last: {}, new: {}'.format(
+                    rec_last, recnum))
+            if (rec_last and recnum > rec_last + 1):
+                print('*** record gap: ({}) records'.format(recnum - rec_last))
+            rec_last = recnum
 
-        # apply any filters (inclusion)
-        if (args.rtypes):
-            # either the number rtype must be in the search list
-            # or the name of the rtype must be in the search list
-            if ((str(rtype)       not in args.rtypes) and
-                  (dt_name(rtype) not in args.rtypes)):
-                continue                   # not an rtype of interest
+            # apply any filters (inclusion)
+            if (args.rtypes):
+                # either the number rtype must be in the search list
+                # or the name of the rtype must be in the search list
+                if ((str(rtype)       not in args.rtypes) and
+                      (dt_name(rtype) not in args.rtypes)):
+                    continue                   # not an rtype of interest
 
-        # look to see if record number bounds
-        if (rec_low and recnum < rec_low):
-            continue
-        if (rec_high and recnum > rec_high):
-            break                       # all done
+            # look to see if record number bounds
+            if (rec_low and recnum < rec_low):
+                continue
+            if (rec_high and recnum > rec_high):
+                break                       # all done
 
-        count_dt(rtype)
-        v = g.dt_records.get(rtype, (0, None, None, ''))
-        decode = v[DTR_DECODER]                 # dt function
-        obj    = v[DTR_OBJ]                     # dt object
-        if (decode):
-            try:
-                decode(verbose, rec_offset, rec_buf, obj)
-            except struct.error:
-                print('*** decode error: (len: {}, rtype: {} {})'.format(
-                    rlen, rtype, dt_name(rtype)))
-        else:
-            if (verbose >= 5):
-                print('*** no decoder installed for rtype {}'.format(rtype))
-        if (verbose >= 3):
-            print
-            print_record(rec_offset, rec_buf)
-            dump_buf(rec_buf, '    ')
-        if (verbose >= 1):
-            print
-        total_records += 1
-        total_bytes   += rlen
+            count_dt(rtype)
+            v = g.dt_records.get(rtype, (0, None, None, ''))
+            decode = v[DTR_DECODER]                 # dt function
+            obj    = v[DTR_OBJ]                     # dt object
+            if (decode):
+                try:
+                    decode(verbose, rec_offset, rec_buf, obj)
+                except struct.error:
+                    print('*** decode error: (len: {}, rtype: {} {})'.format(
+                        rlen, rtype, dt_name(rtype)))
+            else:
+                if (verbose >= 5):
+                    print('*** no decoder installed for rtype {}'.format(rtype))
+            if (verbose >= 3):
+                print
+                print_record(rec_offset, rec_buf)
+                dump_buf(rec_buf, '    ')
+            if (verbose >= 1):
+                print
+            total_records += 1
+            total_bytes   += rlen
+    except KeyboardInterrupt:
+        print
+        print
+        print('*** user stop'),
 
     print
     print('*** end of processing @{} (0x{:x}),  processed: {} records, {} bytes'.format(
