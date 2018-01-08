@@ -28,7 +28,7 @@
 extern fs_loc_t loc;
 
 
-#define VERSION "tagfmtsd: v4.2.0  2017/12/30\n"
+#define VERSION "tagfmtsd: v4.3.0  2018/01/07\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -36,6 +36,19 @@ int debug	= 0,
     force       = 0;
 
 const uint8_t *dblk_id_str = (void *) "DBLK";
+
+const char *dow_strs[] = {
+/*  0      1      2      3      4      5      6   */
+  "sun", "mon", "tue", "wed", "thu", "fri", "sat"
+};
+
+
+const char *dow2str(uint8_t dow) {
+  if (dow > 6)
+    return "unk";
+  return dow_strs[dow];
+}
+
 
 /*
  * all sizes in bytes.
@@ -152,11 +165,10 @@ display_info(uint8_t *buf) {
           fprintf(stderr, "  sigs:   %08x/%08x  low/high: 0x%04x/%08x\n",
                   ddp->dblk_dir_sig, ddp->dblk_dir_sig_a,
                   ddp->dblk_low, ddp->dblk_high);
-          fprintf(stderr, "  incept: %04d/%02d/%02d-%02d:%02d:%02d (%d) GMT\n",
-                  ddp->incept_date.yr,  ddp->incept_date.mon,
-                  ddp->incept_date.day, ddp->incept_date.hr,
-                  ddp->incept_date.min, ddp->incept_date.sec,
-                  ddp->incept_date.dow);
+          fprintf(stderr, "  incept: %04d/%02d/%02d-(%s)-%02d:%02d:%02d UTC\n",
+              ddp->incept_date.yr,  ddp->incept_date.mon, ddp->incept_date.day,
+              dow2str(ddp->incept_date.dow), ddp->incept_date.hr,
+              ddp->incept_date.min, ddp->incept_date.sec);
         }
     } else
 	fprintf(stderr, "DBLK0001: not found\n");
