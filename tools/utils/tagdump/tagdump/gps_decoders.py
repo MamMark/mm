@@ -4,9 +4,10 @@
 #
 # Decoders for gps data types
 
-import globals      as     g
-from   core_records import *
-from   gps_headers  import *
+import globals       as     g
+from   core_records  import *
+from   gps_headers   import *
+from   core_decoders import rec0
 
 def decode_gps_version(level, offset, buf, obj):
     print_record(offset, buf)
@@ -53,8 +54,12 @@ def decode_gps_xyz(level, offset, buf, obj):
 g.dt_records[DT_GPS_XYZ] = (0, decode_gps_xyz, dt_gps_xyz_obj, "GPS_XYZ")
 
 
+########################################################################
+#
+# GPS RAW messages
+#
+
 def gps_nav_decoder(level, offset, buf, obj):
-    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         print(obj)
@@ -63,7 +68,6 @@ g.mid_table[2] = (gps_nav_decoder, gps_nav_obj, "NAV_DATA")
 
 
 def gps_navtrk_decoder(level, offset, buf, obj):
-    print_record(offset, buf)
     if (level >= 1):
         consumed = obj.set(buf)
         print(obj)
@@ -76,7 +80,6 @@ g.mid_table[4] = (gps_navtrk_decoder, gps_navtrk_obj, "NAV_TRACK")
 
 
 def gps_swver_decoder(level, offset, buf, obj):
-    print_record(offset, buf)
     if (level >= 1):
         consumed = obj.set(buf)
         len0 = obj['str0_len'].val
@@ -89,7 +92,6 @@ g.mid_table[6] = (gps_swver_decoder, gps_swver_obj, "SW_VER")
 
 
 def gps_vis_decoder(level, offset, buf, obj):
-    print_record(offset, buf)
     if (level >= 1):
         consumed = obj.set(buf)
         print(obj)
@@ -102,7 +104,6 @@ g.mid_table[13] = (gps_vis_decoder, gps_vis_obj, "VIS_LIST")
 
 
 def gps_ots_decoder(level, offset, buf, obj):
-    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         ans = 'no'
@@ -114,7 +115,6 @@ g.mid_table[18] = (gps_ots_decoder, gps_ots_obj, "OkToSend")
 
 
 def gps_geo_decoder(level, offset, buf, obj):
-    print_record(offset, buf)
     if (level >= 1):
         obj.set(buf)
         print(obj)
@@ -123,9 +123,7 @@ g.mid_table[41] = (gps_geo_decoder, gps_geo_obj, "GEO_DATA")
 
 
 def gps_name_only(level, offset, buf, obj):
-    print_record(offset, buf)
-    if (level >= 1):
-        print
+    pass
 
 
 #
@@ -155,18 +153,13 @@ g.mid_table[178] = (gps_name_only, None, "peek/poke")
 # main gps raw decoder, decodes DT_GPS_RAW_SIRFBIN
 #
 
-def print_gps_hdr(obj, mid):
-    dir = obj['dir'].val
-    dir_str = 'rx' if dir == 0 \
-         else 'tx'
-    v = g.mid_table.get(mid, (None, None, 'unk'))
-    mid_name = v[MID_NAME]
-    print('MID: {:2} ({:02x}) <{:2}> {:10} '.format(mid, mid, dir_str, mid_name)),
-
-
 def decode_gps_raw(level, offset, buf, obj):
-    print_record(offset, buf)
     consumed = obj.set(buf)
+    len      = obj['hdr']['len'].val
+    type     = obj['hdr']['type'].val
+    recnum   = obj['hdr']['recnum'].val
+    st       = obj['hdr']['st'].val
+
     mid = obj['gps_hdr']['mid'].val
     try:
         g.mid_count[mid] += 1
@@ -177,12 +170,26 @@ def decode_gps_raw(level, offset, buf, obj):
     decoder     = v[MID_DECODER]            # dt function
     decoder_obj = v[MID_OBJECT]             # dt object
 
+    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
+    dir = obj['dir'].val
+    dir_str = 'rx' if dir == 0 \
+         else 'tx'
+    v = g.mid_table.get(mid, (None, None, 'unk'))
+    mid_name = v[MID_NAME]
+
+    if (obj['gps_hdr']['start'].val != 0xa0a2):
+        index = obj.__len__() - gps_hdr_obj.__len__()
+        print('-- non-binary <{:2}>'.format(dir_str))
+        if (level >= 1):
+            print('    {:s}'.format(buf[index:])),
+        if (level >= 2):
+            dump_buf(buf, '    ')
+        return
+
+    print('-- MID: {:2} ({:02x}) <{:2}> {:10} '.format(mid, mid, dir_str, mid_name))
+
     # gps raw packet contents are displayed if level is 1 or higher
-    # no summary.
     if (level >= 1):
-        print(obj)
-        print_hdr(obj)
-        print_gps_hdr(obj, mid)
         if not decoder:
             if (level >= 5):
                 print
