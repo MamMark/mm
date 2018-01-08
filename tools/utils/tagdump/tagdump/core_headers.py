@@ -131,6 +131,9 @@ event_names = {
     24: "PANIC_WARN",
 }
 
+PANIC_WARN = 24
+
+
 dt_event_obj    = aggie(OrderedDict([
     ('hdr',   dt_hdr_obj),
     ('event', atom(('<H', '{}'))),

@@ -275,11 +275,19 @@ def decode_event(level, offset, buf, obj):
     pcode = obj['pcode'].val
     w     = obj['w'].val
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
-    print(event0.format(event_name(event), event, arg0, arg0))
 
+    if (event == PANIC_WARN):
+        # special case, print PANIC_WARNs always, full display
+        print(' {} {}/{}'.format(event_name(event), pcode, w))
+        print('    {} {} {} {}  x({:04x} {:04x} {:04x} {:04x})'.format(
+            arg0, arg1, arg2, arg3, arg0, arg1, arg2, arg3))
+        return
+
+    print(event0.format(event_name(event), arg0, arg1))
     if (level >= 1):
         print(event1.format(event_name(event), event,
-                            arg0, arg1, arg2, arg3, pcode, w))
+                            arg0, arg1, arg2, arg3,
+                            arg0, arg1, arg2, arg3))
 
 g.dt_records[DT_EVENT] = (40, decode_event, dt_event_obj, "EVENT")
 
