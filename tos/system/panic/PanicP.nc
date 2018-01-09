@@ -139,14 +139,18 @@ norace pcb_t pcb;                               /* panic control block */
 uint8_t  panic_buf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
 
 module PanicP {
-  provides interface Panic;
+  provides {
+    interface Panic;
+    interface PanicManager;
+  }
   uses {
-    interface SSWrite  as SSW;
     interface Platform;
     interface FileSystem as FS;
     interface OverWatch;
     interface SDsa;                     /* standalone */
     interface SDraw;                    /* other SD aux */
+    interface SDread;
+    interface Resource as SDResource;
     interface Checksum;
     interface SysReboot;
     interface LocalTime<TMilli>;
@@ -782,6 +786,100 @@ implementation {
     __panic_main();
   }
 
+
+  /* returns directory sector absolute blk_id */
+  command uint32_t PanicManager.getPanicBase() {
+    if (pcb.pcb_sig != PCB_SIG)
+      return 0;
+    return pcb.dir;
+  }
+
+
+  /* return upper abs blk id of panic area, inclusive */
+  command uint32_t PanicManager.getPanicLimit() {
+    if (pcb.pcb_sig != PCB_SIG)
+      return 0;
+    return pcb.high;
+  }
+
+
+  /* return current known panic index.  number of panics written */
+  command uint32_t PanicManager.getPanicIndex() {
+    if (pcb.pcb_sig != PCB_SIG)
+      return 0;
+    return block2index(pcb.block);
+  }
+
+
+  /* return largest index, indicates full */
+  command uint32_t PanicManager.getMaxPanicIndex() {
+    if (pcb.pcb_sig != PCB_SIG)
+      return 0;
+    return block2index(pcb.high + 1);
+  }
+
+
+  /* return size of each panic block in sectors */
+  command uint32_t PanicManager.getPanicSize() {
+    return PBLK_SIZE;
+  }
+
+
+  /* return absolute sector number for the start of panic <N> */
+  command uint32_t PanicManager.panicIndex2Sector(uint32_t idx) {
+    if (pcb.pcb_sig != PCB_SIG)
+      return 0;
+    return index2block(idx);
+  }
+
+
+  /*
+   * populate panic directory so we can look at it.  task level
+   *
+   * caller must catch errors.  And handler errors from the
+   * populate_dir_done signal.
+   */
+  command error_t PanicManager.populate() {
+    pcb.pcb_sig = 0;
+    return call SDResource.request();
+  }
+
+
+  event void SDResource.granted() {
+    error_t err;
+    uint32_t start;
+
+    start = call FS.area_start(FS_LOC_PANIC);
+    if ((err = call SDread.read(start, panic_buf))) {
+      call SDResource.release();
+      signal PanicManager.populateDone(err);
+    }
+  }
+
+
+  event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
+    uint32_t start, end;
+
+    if (err) {
+      call SDResource.release();
+      signal PanicManager.populateDone(err);
+      return;
+    }
+    start = call FS.area_start(FS_LOC_PANIC);
+    end   = call FS.area_end(FS_LOC_PANIC);
+    if (start != blk_id || read_buf != panic_buf) {
+      /* weirdness */
+      call SDResource.release();
+      signal PanicManager.populateDone(FAIL);
+      return;
+    }
+    call SDResource.release();
+    err = init_pcb(panic_buf, start, end);
+    signal PanicManager.populateDone(err);
+  }
+
+
+  default event void PanicManager.populateDone(error_t err) { }
 
   event void FS.eraseDone(uint8_t which) { }
 
