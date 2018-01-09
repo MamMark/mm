@@ -7,12 +7,16 @@
 #include "panic.h"
 
 configuration PanicC {
-  provides interface Panic;
+  provides {
+    interface Panic;
+    interface PanicManager;
+  }
 }
 
 implementation {
   components PanicP, PlatformC;
   Panic = PanicP;
+  PanicManager = PanicP;
   PanicP.Platform  -> PlatformC;
   PanicP.SysReboot -> PlatformC;
 
@@ -30,10 +34,15 @@ implementation {
   components OverWatchC;
   PanicP.OverWatch -> OverWatchC;
 
-  components SD0C, SSWriteC;
-  PanicP.SSW   -> SSWriteC;
-  PanicP.SDsa  -> SD0C;
-  PanicP.SDraw -> SD0C;
+  /* non-arbitrated, standalone SD used low level PANIC */
+  components SD0C;
+  PanicP.SDsa       -> SD0C;
+  PanicP.SDraw      -> SD0C;
+
+  /* arbitrated SD for use at task level */
+  components new SD0_ArbC() as SD;
+  PanicP.SDread     -> SD;
+  PanicP.SDResource -> SD;
 
   components ChecksumM;
   PanicP.Checksum -> ChecksumM;

@@ -19,6 +19,7 @@
 #include <sd.h>
 #include <fs_loc.h>
 #include <overwatch.h>
+#include <TinyError.h>
 
 #ifdef PANIC_GATE
 norace volatile uint32_t g_panic_gate;
@@ -138,14 +139,18 @@ norace pcb_t pcb;                               /* panic control block */
 uint8_t  panic_buf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
 
 module PanicP {
-  provides interface Panic;
+  provides {
+    interface Panic;
+    interface PanicManager;
+  }
   uses {
-    interface SSWrite  as SSW;
     interface Platform;
     interface FileSystem as FS;
     interface OverWatch;
     interface SDsa;                     /* standalone */
     interface SDraw;                    /* other SD aux */
+    interface SDread;
+    interface Resource as SDResource;
     interface Checksum;
     interface SysReboot;
     interface LocalTime<TMilli>;
@@ -154,6 +159,103 @@ module PanicP {
 }
 
 implementation {
+
+  /*
+   * convert an index into a proper block
+   *
+   * if too big then just say max block.
+   */
+  uint32_t index2block(uint32_t idx) {
+    uint32_t block;
+
+    block = (idx * PBLK_SIZE) + pcb.low;
+    if ((block + PBLK_SIZE) > pcb.high)
+      block = pcb.high + 1;
+    return block;
+  }
+
+
+  /*
+   * convert a block to a proper index.
+   *
+   * if too big or too small return max index saying full
+   *
+   * assumes pcb has been initialized.
+   * assumes blk_id points at first block of the Panic Block.
+   */
+  uint32_t block2index(uint32_t blk_id) {
+    uint32_t idx;
+
+    if (blk_id < pcb.low || (blk_id + PBLK_SIZE) > pcb.high)
+      blk_id = pcb.high + 1;
+    idx = (blk_id - pcb.low)/PBLK_SIZE;
+    return idx;
+  }
+
+
+  /*
+   * convert a Panic Block to a Panic file offset
+   *
+   * (block - dir) * SD_BLOCKSIZE
+   *
+   * dir < block <= high, otherwise return -1.
+   */
+  uint32_t block2offset(uint32_t blk_id) {
+
+    if (blk_id < pcb.low || blk_id > pcb.high)
+      return (uint32_t) -1;
+    return (blk_id - pcb.dir) * SD_BLOCKSIZE;
+  }
+
+
+  /*
+   * init_pcb:  set up the panic control block.
+   *
+   * buf:       a buffer that holds the directory sector and will be used
+   *            for future read/writes in the panic system.
+   * start/end: limits inclusive of the panic area.
+   *
+   * returns: SUCCESS   all good.
+   *          FAIL      directory in a weird state.
+   *          EODATA    panic area is full.  block set to end of panic area
+   */
+  error_t init_pcb(uint8_t *buf, uint32_t start, uint32_t end) {
+    panic_dir_t *dirp;
+    error_t rtn;
+
+    pcb.buf       = buf;
+    pcb.bptr      = pcb.buf;
+    pcb.remaining = SD_BLOCKSIZE;
+
+    /* Initialize pcb with sector addresses */
+    pcb.dir       = start;
+    pcb.low       = pcb.dir + 1;
+    pcb.high      = end;
+    pcb.block     = pcb.low;
+
+    rtn = SUCCESS;
+    dirp = (panic_dir_t *) buf;
+    if (!call SDraw.chk_zero(buf)) {
+      if (call Checksum.sum32_aligned((void *) dirp, sizeof(*dirp))
+          || dirp->panic_dir_sig != PANIC_DIR_SIG)
+        return FAIL;
+
+      if (dirp->panic_block_index >= dirp->panic_block_index_max) {
+        pcb.block = index2block(dirp->panic_block_index_max);
+        rtn = EODATA;
+      } else
+        pcb.block = index2block(dirp->panic_block_index);
+    }
+    /*
+     * If the Dir sector is zero, then we simply use the initial values
+     * set above, pcb.low.
+     */
+    pcb.panic_sec = pcb.block;
+    pcb.pcb_sig   = PCB_SIG;            /* validate */
+    return rtn;
+  }
+
+
   /*
    * init_panic_dump
    * initialize panic buffer management
@@ -166,44 +268,37 @@ implementation {
    * entry to Panic.
    */
   void init_panic_dump() {
-    panic_dir_t *dirp;
+    uint32_t start, end;
+    error_t  rtn;
 
-    pcb.pcb_sig   = PCB_SIG;
-    pcb.buf       = panic_buf;
-    pcb.bptr      = pcb.buf;
-    pcb.remaining = SD_BLOCKSIZE;
-
-    if (call FS.reload_locator_sa(pcb.buf))
+    if (call FS.reload_locator_sa(panic_buf))
       call OverWatch.strange(0x80);     /* no return */
 
-    /* Initialize pcb with sector addresses */
-    pcb.dir       = call FS.area_start(FS_LOC_PANIC);
-    pcb.low       = pcb.dir + 1;
-    pcb.high      = call FS.area_end(FS_LOC_PANIC);
-    pcb.block     = pcb.low;
-    pcb.panic_sec = pcb.block;
-
-    call SDsa.read(pcb.dir, pcb.buf);
-    dirp = (panic_dir_t *) pcb.buf;
-
-    if (!call SDraw.chk_zero(pcb.buf)) {
-      if (call Checksum.sum32_aligned((void *) dirp, sizeof(*dirp))
-          || dirp->panic_dir_sig != PANIC_DIR_SIG)
+    start = call FS.area_start(FS_LOC_PANIC);
+    end   = call FS.area_end(FS_LOC_PANIC);
+    call SDsa.read(start, panic_buf);
+    rtn = init_pcb(panic_buf, start, end);
+    if (rtn) {
+      if (rtn == EODATA) {
+        /*
+         * if we are good but off the end (ie. full) then reuse
+         * the last panic block
+         *
+         * we have to convert our off the end block into the
+         * max index.  back up one index and convert back to a block.
+         *
+         * this makes sure we have a good starting block number for
+         * the panic.  We can NOT simply go to the end of the PANIC
+         * area and back up PBLK_SIZE because the formatter might have
+         * put some pad sectors on the end when creating the file.
+         */
+        pcb.block = index2block(block2index(pcb.block) - 1);
+        pcb.panic_sec = pcb.block;
+      } else {                          /* otherwise, blow up */
         call OverWatch.strange(0x81);
-
-      /*
-       * if the dir sector has something in it and it passes the validity
-       * checks then use the sector value in it as the starting point for
-       * the next panic block.
-       */
-      pcb.block = dirp->panic_block_sector;
-      pcb.panic_sec = pcb.block;
+        /* no return */
+      }
     }
-
-    /*
-     * If the Dir sector is zero, then we simply use the initial values
-     * set above, pcb.low.
-     */
   }
 
 
@@ -231,7 +326,9 @@ implementation {
     dirp->panic_dir_sig      = PANIC_DIR_SIG;
     dirp->panic_dir_sector   = pcb.dir;
     dirp->panic_high_sector  = pcb.high;
-    dirp->panic_block_sector = pcb.block + PBLK_SIZE;
+    dirp->panic_block_index  = block2index(pcb.block + PBLK_SIZE);
+    dirp->panic_block_index_max
+                             = block2index(pcb.high + 1);
     dirp->panic_block_size   = PBLK_SIZE;
     dirp->panic_dir_checksum = 0;
     dirp->panic_dir_checksum = 0 - call Checksum.sum32_aligned((void *) dirp, sizeof(*dirp));
@@ -542,10 +639,10 @@ implementation {
     /* fill in additional info */
     addp                = &b0p->additional_info;
     addp->ai_sig        = PANIC_ADDITIONS;
-    addp->ram_sector    = pcb.block + PBLK_RAM;
+    addp->ram_offset    = block2offset(pcb.block + PBLK_RAM);
     addp->ram_size      = PBLK_RAM_SIZE * 512;
-    addp->io_sector     = pcb.block + PBLK_IO;
-    addp->fcrumb_sector = pcb.block + PBLK_FCRUMBS;
+    addp->io_offset     = block2offset(pcb.block + PBLK_IO);
+    addp->fcrumb_offset = block2offset(pcb.block + PBLK_FCRUMBS);
 
     /* fill in image info */
     memcpy((void *) (&b0p->image_info), (void *) (&image_info), sizeof(image_info_t));
@@ -689,6 +786,100 @@ implementation {
     __panic_main();
   }
 
+
+  /* returns directory sector absolute blk_id */
+  command uint32_t PanicManager.getPanicBase() {
+    if (pcb.pcb_sig != PCB_SIG)
+      return 0;
+    return pcb.dir;
+  }
+
+
+  /* return upper abs blk id of panic area, inclusive */
+  command uint32_t PanicManager.getPanicLimit() {
+    if (pcb.pcb_sig != PCB_SIG)
+      return 0;
+    return pcb.high;
+  }
+
+
+  /* return current known panic index.  number of panics written */
+  command uint32_t PanicManager.getPanicIndex() {
+    if (pcb.pcb_sig != PCB_SIG)
+      return 0;
+    return block2index(pcb.block);
+  }
+
+
+  /* return largest index, indicates full */
+  command uint32_t PanicManager.getMaxPanicIndex() {
+    if (pcb.pcb_sig != PCB_SIG)
+      return 0;
+    return block2index(pcb.high + 1);
+  }
+
+
+  /* return size of each panic block in sectors */
+  command uint32_t PanicManager.getPanicSize() {
+    return PBLK_SIZE;
+  }
+
+
+  /* return absolute sector number for the start of panic <N> */
+  command uint32_t PanicManager.panicIndex2Sector(uint32_t idx) {
+    if (pcb.pcb_sig != PCB_SIG)
+      return 0;
+    return index2block(idx);
+  }
+
+
+  /*
+   * populate panic directory so we can look at it.  task level
+   *
+   * caller must catch errors.  And handler errors from the
+   * populate_dir_done signal.
+   */
+  command error_t PanicManager.populate() {
+    pcb.pcb_sig = 0;
+    return call SDResource.request();
+  }
+
+
+  event void SDResource.granted() {
+    error_t err;
+    uint32_t start;
+
+    start = call FS.area_start(FS_LOC_PANIC);
+    if ((err = call SDread.read(start, panic_buf))) {
+      call SDResource.release();
+      signal PanicManager.populateDone(err);
+    }
+  }
+
+
+  event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
+    uint32_t start, end;
+
+    if (err) {
+      call SDResource.release();
+      signal PanicManager.populateDone(err);
+      return;
+    }
+    start = call FS.area_start(FS_LOC_PANIC);
+    end   = call FS.area_end(FS_LOC_PANIC);
+    if (start != blk_id || read_buf != panic_buf) {
+      /* weirdness */
+      call SDResource.release();
+      signal PanicManager.populateDone(FAIL);
+      return;
+    }
+    call SDResource.release();
+    err = init_pcb(panic_buf, start, end);
+    signal PanicManager.populateDone(err);
+  }
+
+
+  default event void PanicManager.populateDone(error_t err) { }
 
   event void FS.eraseDone(uint8_t which) { }
 
