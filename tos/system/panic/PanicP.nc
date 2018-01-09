@@ -19,6 +19,7 @@
 #include <sd.h>
 #include <fs_loc.h>
 #include <overwatch.h>
+#include <TinyError.h>
 
 #ifdef PANIC_GATE
 norace volatile uint32_t g_panic_gate;
@@ -274,6 +275,22 @@ implementation {
     call SDsa.read(start, panic_buf);
     rtn = init_pcb(panic_buf, start, end);
     if (rtn) {
+      if (rtn == EODATA) {
+        /*
+         * if we are good but off the end (ie. full) then reuse
+         * the last panic block
+         *
+         * we have to convert our off the end block into the
+         * max index.  back up one index and convert back to a block.
+         *
+         * this makes sure we have a good starting block number for
+         * the panic.  We can NOT simply go to the end of the PANIC
+         * area and back up PBLK_SIZE because the formatter might have
+         * put some pad sectors on the end when creating the file.
+         */
+        pcb.block = index2block(block2index(pcb.block) - 1);
+        pcb.panic_sec = pcb.block;
+      } else {                          /* otherwise, blow up */
         call OverWatch.strange(0x81);
         /* no return */
       }
