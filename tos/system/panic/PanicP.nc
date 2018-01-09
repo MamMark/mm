@@ -305,7 +305,9 @@ implementation {
     dirp->panic_dir_sig      = PANIC_DIR_SIG;
     dirp->panic_dir_sector   = pcb.dir;
     dirp->panic_high_sector  = pcb.high;
-    dirp->panic_block_sector = pcb.block + PBLK_SIZE;
+    dirp->panic_block_index  = block2index(pcb.block + PBLK_SIZE);
+    dirp->panic_block_index_max
+                             = block2index(pcb.high + 1);
     dirp->panic_block_size   = PBLK_SIZE;
     dirp->panic_dir_checksum = 0;
     dirp->panic_dir_checksum = 0 - call Checksum.sum32_aligned((void *) dirp, sizeof(*dirp));

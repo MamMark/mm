@@ -88,7 +88,7 @@ typedef unsigned int parg_t;
 
 /*
  * Various defines defining (go figure) what the Panic Block
- * looks like.  All numbers in sectors.  Each sector 512 bytes.
+ * looks like.  All numbers in sector units.  Each sector 512 bytes.
  *
  * HOME_BLOCK starts at 0 and goes for HOME_SIZE
  * RAM starts at (HOME_BLOCK + HOME_SIZE)
@@ -119,23 +119,40 @@ typedef unsigned int parg_t;
 #define PANIC_DIR_SIG    0xDDDDB00B
 #define PANIC_ID_SIZE    4
 
+
+/*
+ * dir_id:      human readable sig
+ *
+ * dir_sig:     directory signature, majik number.
+ *
+ * dir_sector:  1st sector of the PANIC file
+ *
+ * high_sector: inclusive upper limit of the panic area.
+ *
+ * block_index: index of the next panic block index to write.  Also the
+ *              number of panics that have been written.  (starts at 0).
+ *
+ * block_index_max: the highest index + 1.  ie.  if we have room for 32
+ *              panics, this value will be 32.  block_index shouldn't be
+ *              above this. If block_index >= max then we are full.
+ *
+ * block_size:  size of a panic block in sectors.
+ *
+ * dir_checksum:a 32 bit checksum over the entire panic dir.  Should sum
+ *              to 0.
+ */
 typedef struct {
   uint8_t  panic_dir_id[PANIC_ID_SIZE]; /* PANI */
   uint32_t panic_dir_sig;
-
-  /*
-   * dir is the 1st sector of the PANIC file, high is the inclusive
-   * upper limit.  block_sector absolute block num of the next panic
-   * block to write.  If block_sector is 0, the PANIC file is full
-   */
   uint32_t panic_dir_sector;            /* limits of panic file, absolute */
   uint32_t panic_high_sector;           /* upper limit, inclusive         */
-  uint32_t panic_block_sector;          /* where next panic block         */
+  uint32_t panic_block_index;           /* next panic block to write      */
+  uint32_t panic_block_index_max;       /* upper limit of indicies        */
   uint32_t panic_block_size;            /* size of each panic block       */
   uint32_t panic_dir_checksum;
 } panic_dir_t;
 
-typedef struct {
+typedef struct {                        /* memory addresses */
   uint32_t start;
   uint32_t end;
 } cc_region_header_t;
