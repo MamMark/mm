@@ -237,10 +237,10 @@ typedef struct {
 
 typedef struct {
   uint32_t ai_sig;                      /* panic_additions sig */
-  uint32_t ram_sector;                  /* starting sector for RAM dump, 64K */
-  uint32_t ram_size;                    /* in bytes */
-  uint32_t io_sector;                   /* starting sector for I/O dump */
-  uint32_t fcrumb_sector;               /* flash crumbs */
+  uint32_t ram_offset;                  /* starting file offset for RAM dump */
+  uint32_t ram_size;                    /* 64 KiB (bytes) */
+  uint32_t io_offset;                   /* starting file offset for I/O dump */
+  uint32_t fcrumb_offset;               /* flash crumb, file offset          */
 } panic_additional_t;
 
 

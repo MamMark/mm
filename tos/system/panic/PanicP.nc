@@ -618,10 +618,10 @@ implementation {
     /* fill in additional info */
     addp                = &b0p->additional_info;
     addp->ai_sig        = PANIC_ADDITIONS;
-    addp->ram_sector    = pcb.block + PBLK_RAM;
+    addp->ram_offset    = block2offset(pcb.block + PBLK_RAM);
     addp->ram_size      = PBLK_RAM_SIZE * 512;
-    addp->io_sector     = pcb.block + PBLK_IO;
-    addp->fcrumb_sector = pcb.block + PBLK_FCRUMBS;
+    addp->io_offset     = block2offset(pcb.block + PBLK_IO);
+    addp->fcrumb_offset = block2offset(pcb.block + PBLK_FCRUMBS);
 
     /* fill in image info */
     memcpy((void *) (&b0p->image_info), (void *) (&image_info), sizeof(image_info_t));
