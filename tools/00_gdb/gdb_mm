@@ -117,7 +117,7 @@ set $__ii=(image_info_t *) $arg0
 if $__ii->ii_sig == 0xffffffff
     printf "empty\n"
 else
-    printf "%d.%d.%d (x %x.%x.%x)  s: 0x%05x l: %d (0x%x)  hw: m/r %d/%d (0x%x/%x)\n", \
+    printf "%d.%d.%d  x(%x.%x.%x)  s: 0x%05x l: %d (0x%x)  hw: m/r %d/%d (0x%x/%x)\n", \
         $__ii->ver_id.major, $__ii->ver_id.minor, $__ii->ver_id.build, \
         $__ii->ver_id.major, $__ii->ver_id.minor, $__ii->ver_id.build, \
         $__ii->image_start, $__ii->image_length, $__ii->image_length,  \
