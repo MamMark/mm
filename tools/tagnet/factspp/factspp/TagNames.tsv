@@ -2,13 +2,12 @@ ignore	GET	PUT	HEAD	DEL	Request Params	Response Params	Adapter Component	Interfa
 	x		x		<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	PollEvent	uses	<nodeid:000000000000>	tag	poll	ev		
 	x		x			<int>	TagnetIntegerAdapterP	TagnetAdapter	int32_t	PollCount	uses	<nodeid:000000000000>	tag	poll	cnt		
 	x		x			<gps_xyz>	TagnetGpsXyzAdapterP	TagnetAdapter	tagnet_gps_xyz_t	InfoSensGpsXyz	uses	<nodeid:000000000000>	tag	info	sens	gps	xyz
-	x		x		<iota>, <count>	<iota>, <count>, <block>, <error>	TagnetDblkByteAdapterP	TagnetAdapter	tagnet_dblk_bytes_t	Dblk0Bytes	uses	<nodeid:000000000000>	tag	sd	0	dblk	0
-	x		x		<iota>, <count>	<iota>, <count>, <block>, <error>	TagnetDblkByteAdapterP	TagnetAdapter	tagnet_dblk_bytes_t	Dblk1Bytes	uses	<nodeid:000000000000>	tag	sd	0	dblk	1
+	x		x		<iota>, <count>	<iota>, <count>, <block>, <error>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	DblkBytes	uses	<nodeid:000000000000>	tag	sd	0	dblk	byte
 		x	x			<iota>, <error>	TagnetDblkNoteAdapterP	TagnetAdapter	tagnet_dblk_note_t	DblkNote	uses	<nodeid:000000000000>	tag	sd	0	dblk	note
 	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetImageAdapterP					<nodeid:000000000000>	tag	sd	0	img	
 x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetRuleSetsAdapterP					<nodeid:000000000000>	tag	sd	0	rules	
 x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetConfigAdapterP					<nodeid:000000000000>	tag	sd	0	config	
-x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetPanicAdapterP					<nodeid:000000000000>	tag	sd	0	panic	
+x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetPanicAdapterP					<nodeid:000000000000>	tag	sd	0	panic	byte
 	x	x	x		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysActive	uses	<nodeid:000000000000>	tag	sys	active		
 	x	x	x		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysBackup	uses	<nodeid:000000000000>	tag	sys	backup		
 	x	x	x		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysGolden	uses	<nodeid:000000000000>	tag	sys	golden		

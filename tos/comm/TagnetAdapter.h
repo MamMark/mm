@@ -64,11 +64,11 @@ typedef struct {
 #define TN_SYS_EXEC_LEN (sizeof(tagnet_sys_exec_t))
 
 typedef enum {
-  DBLK_GET_DATA        = 0,
-  DBLK_GET_ATTR        = 1,
-  DBLK_SET_DATA        = 2,
+  FILE_GET_DATA        = 0,
+  FILE_GET_ATTR        = 1,
+  FILE_SET_DATA        = 2,
   LAST_ACTION          = 2,
-} dblk_action_t;
+} file_action_t;
 
 typedef struct {
   uint32_t             file;
@@ -77,17 +77,17 @@ typedef struct {
   uint8_t             *block;
   int32_t              error;
   uint16_t             delay;
-  dblk_action_t        action;
-} tagnet_dblk_bytes_t;
+  file_action_t        action;
+} tagnet_file_bytes_t;
 
-#define TN_DBLK_BYTES_LEN (sizeof(tagnet_dblk_bytes_t))
+#define TN_FILE_BYTES_LEN (sizeof(tagnet_file_bytes_t))
 
 typedef struct {
   uint32_t             count;
   uint8_t             *block;
   int32_t              error;
   uint16_t             delay;
-  dblk_action_t        action;
+  file_action_t        action;
 } tagnet_dblk_note_t;
 
 #define TN_DBLK_NOTE_LEN (sizeof(tagnet_dblk_note_t))

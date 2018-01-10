@@ -38,9 +38,9 @@
 #include <Tagnet.h>
 #include <TagnetAdapter.h>
 
-generic module TagnetDblkByteAdapterImplP (int my_id) @safe() {
+generic module TagnetFileByteAdapterImplP (int my_id) @safe() {
   uses interface  TagnetMessage   as  Super;
-  uses interface  TagnetAdapter<tagnet_dblk_bytes_t> as Adapter;
+  uses interface  TagnetAdapter<tagnet_file_bytes_t> as Adapter;
   uses interface  TagnetName      as  TName;
   uses interface  TagnetHeader    as  THdr;
   uses interface  TagnetPayload   as  TPload;
@@ -49,31 +49,45 @@ generic module TagnetDblkByteAdapterImplP (int my_id) @safe() {
 implementation {
   enum { my_adapter_id = unique(UQ_TAGNET_ADAPTER_LIST) };
 
+  void get_params(tagnet_file_bytes_t *db, message_t *msg) {
+    tagnet_tlv_t    *a_tlv;
+    uint8_t          i;
+
+    for (i = 0; i < 3; i++) {
+      a_tlv  = call TName.next_element(msg);
+      if (a_tlv == NULL) break;
+
+      switch (call TTLV.get_tlv_type(a_tlv)) {
+        case TN_TLV_INTEGER:
+          db->file = call TTLV.tlv_to_integer(a_tlv);
+          break;
+        case TN_TLV_OFFSET:
+          db->iota = call TTLV.tlv_to_offset(a_tlv);
+          break;
+        case TN_TLV_SIZE:
+          db->count = call TTLV.tlv_to_size(a_tlv);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
   event bool Super.evaluate(message_t *msg) {
-    tagnet_dblk_bytes_t db       = {0,0,0,0,0,0,0};
+    tagnet_file_bytes_t db       = {0,0,0,0,0,0,0};
     uint32_t           ln        = 0;
     tagnet_tlv_t      *name_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
-    tagnet_tlv_t      *file_tlv  = call TName.this_element(msg);
-    tagnet_tlv_t      *iota_tlv;
-    tagnet_tlv_t      *count_tlv;
+    tagnet_tlv_t      *my_tlv    = call TName.this_element(msg);
     uint32_t           usable;
 
     nop();
     nop();                       /* BRK */
-    if (call TTLV.eq_tlv(name_tlv, file_tlv)) {
+    if (call TTLV.eq_tlv(name_tlv, my_tlv)) {
       tn_trace_rec(my_id, 1);
       switch (call THdr.get_message_type(msg)) {     // process message type
         case TN_GET:
-          db.action = DBLK_GET_DATA;
-          db.file = call TTLV.tlv_to_integer(file_tlv);  // zzz not used yet
-          iota_tlv  = call TName.next_element(msg);
-          if ((iota_tlv) && (call TTLV.get_tlv_type(iota_tlv) == TN_TLV_OFFSET)) {
-            db.iota = call TTLV.tlv_to_offset(iota_tlv);
-          }
-          count_tlv = call TName.next_element(msg);
-          if ((count_tlv) && (call TTLV.get_tlv_type(count_tlv) == TN_TLV_SIZE)) {
-            db.count = call TTLV.tlv_to_size(count_tlv);
-          }
+          db.action = FILE_GET_DATA;
+          get_params(&db, msg);
           call TPload.reset_payload(msg);            // params have been extracted
           call THdr.set_response(msg);
           call THdr.set_error(msg, TE_PKT_OK);
@@ -97,12 +111,12 @@ implementation {
           }
           break;
         case TN_HEAD:
-          // return current size of dblk region, current file position,
+          // return current size of file region, current file position,
           // and last update time
           call TPload.reset_payload(msg);                // no params
           call THdr.set_response(msg);
           call THdr.set_error(msg, TE_PKT_OK);
-          db.action = DBLK_GET_ATTR;
+          db.action = FILE_GET_ATTR;
           if (call Adapter.get_value(&db, &ln)) {
             call TPload.add_offset(msg, db.iota);
             call TPload.add_size(msg, db.count);
@@ -136,7 +150,7 @@ implementation {
   }
 
   event void Super.add_value_tlv(message_t* msg) {
-    tagnet_dblk_bytes_t     v;
+    tagnet_file_bytes_t     v;
     uint32_t                l;
 
     if (call Adapter.get_value(&v, &l)) {

@@ -14,17 +14,16 @@ typedef enum {                   //      (parent) name
   TN_10_ID              =    10, //  (   tag    ) sd
   TN_11_ID              =    11, //  (    sd    ) 0
   TN_12_ID              =    12, //  (    0     ) dblk
-  TN_13_ID              =    13, //  (   dblk   ) 0
-  TN_14_ID              =    14, //  (   dblk   ) 1
-  TN_15_ID              =    15, //  (   dblk   ) note
-  TN_16_ID              =    16, //  (    0     ) img
-  TN_17_ID              =    17, //  (   tag    ) sys
-  TN_18_ID              =    18, //  (   sys    ) active
-  TN_19_ID              =    19, //  (   sys    ) backup
-  TN_20_ID              =    20, //  (   sys    ) golden
-  TN_21_ID              =    21, //  (   sys    ) nib
-  TN_22_ID              =    22, //  (   sys    ) running
-  TN_LAST_ID            =    23,
+  TN_13_ID              =    13, //  (   dblk   ) byte
+  TN_14_ID              =    14, //  (   dblk   ) note
+  TN_15_ID              =    15, //  (    0     ) img
+  TN_16_ID              =    16, //  (   tag    ) sys
+  TN_17_ID              =    17, //  (   sys    ) active
+  TN_18_ID              =    18, //  (   sys    ) backup
+  TN_19_ID              =    19, //  (   sys    ) golden
+  TN_20_ID              =    20, //  (   sys    ) nib
+  TN_21_ID              =    21, //  (   sys    ) running
+  TN_LAST_ID            =    22,
   TN_ROOT_ID            =     0,
   TN_MAX_ID             =  65000,
 } tn_ids_t;
@@ -51,7 +50,6 @@ typedef enum {                   //      (parent) name
 #define  TN_19_UQ                "TN_19_UQ"
 #define  TN_20_UQ                "TN_20_UQ"
 #define  TN_21_UQ                "TN_21_UQ"
-#define  TN_22_UQ                "TN_22_UQ"
 #define UQ_TAGNET_ADAPTER_LIST  "UQ_TAGNET_ADAPTER_LIST"
 #define UQ_TN_ROOT               TN_0_UQ
 /* structure used to hold configuration values for each of the elements
@@ -78,15 +76,14 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   { TN_10_ID, "\01\02sd", "\01\04help", TN_10_UQ },
   { TN_11_ID, "\02\01\00", "\01\04help", TN_11_UQ },
   { TN_12_ID, "\01\04dblk", "\01\04help", TN_12_UQ },
-  { TN_13_ID, "\02\01\00", "\01\04help", TN_13_UQ },
-  { TN_14_ID, "\02\01\01", "\01\04help", TN_14_UQ },
-  { TN_15_ID, "\01\04note", "\01\04help", TN_15_UQ },
-  { TN_16_ID, "\01\03img", "\01\04help", TN_16_UQ },
-  { TN_17_ID, "\01\03sys", "\01\04help", TN_17_UQ },
-  { TN_18_ID, "\01\06active", "\01\04help", TN_18_UQ },
-  { TN_19_ID, "\01\06backup", "\01\04help", TN_19_UQ },
-  { TN_20_ID, "\01\06golden", "\01\04help", TN_20_UQ },
-  { TN_21_ID, "\01\03nib", "\01\04help", TN_21_UQ },
-  { TN_22_ID, "\01\07running", "\01\04help", TN_22_UQ },
+  { TN_13_ID, "\01\04byte", "\01\04help", TN_13_UQ },
+  { TN_14_ID, "\01\04note", "\01\04help", TN_14_UQ },
+  { TN_15_ID, "\01\03img", "\01\04help", TN_15_UQ },
+  { TN_16_ID, "\01\03sys", "\01\04help", TN_16_UQ },
+  { TN_17_ID, "\01\06active", "\01\04help", TN_17_UQ },
+  { TN_18_ID, "\01\06backup", "\01\04help", TN_18_UQ },
+  { TN_19_ID, "\01\06golden", "\01\04help", TN_19_UQ },
+  { TN_20_ID, "\01\03nib", "\01\04help", TN_20_UQ },
+  { TN_21_ID, "\01\07running", "\01\04help", TN_21_UQ },
 };
 

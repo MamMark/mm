@@ -35,12 +35,12 @@
  *
  */
 
-generic configuration TagnetDblkByteAdapterP (int my_id) @safe() {
+generic configuration TagnetFileByteAdapterP (int my_id) @safe() {
   uses interface     TagnetMessage  as  Super;
-  uses interface     TagnetAdapter<tagnet_dblk_bytes_t> as Adapter;
+  uses interface     TagnetAdapter<tagnet_file_bytes_t> as Adapter;
 }
 implementation {
-  components new TagnetDblkByteAdapterImplP(my_id) as Element;
+  components new TagnetFileByteAdapterImplP(my_id) as Element;
   components     TagnetUtilsC;
 
   Super           =  Element.Super;

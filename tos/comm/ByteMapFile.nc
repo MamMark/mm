@@ -45,7 +45,7 @@
 
 #include <Tagnet.h>
 
-interface DblkMapFile
+interface ByteMapFile
 {
   /**
    * returns a pointer to the buffer holding file contents referenced
@@ -79,7 +79,7 @@ interface DblkMapFile
    */
   command error_t map(uint8_t fd, uint8_t **buf, uint32_t *len);
   /**
-   * move file position of specific dblk file
+   * move file position of specific byte file
    *
    * @param   'uint8_t    fd'  file number to access
    * @param   'uint32_t  pos'  new file position requested
@@ -88,7 +88,7 @@ interface DblkMapFile
    */
   command error_t seek(uint8_t fd, uint32_t pos, bool from_rear);
   /**
-   * return current file position of specific dblk file
+   * return current file position of specific byte file
    *
    * @param   'uint8_t   fd'   file number to access
    * @return  'uint32_t'       current file position
@@ -96,7 +96,7 @@ interface DblkMapFile
   command uint32_t tell(uint8_t fd);
   /**
    * signal when a new sector has been written to
-   * specific dblk file
+   * specific byte file
    *
    * @param   'uint8_t   fd'   file number to access
    * @param   'uint32_t file_pos' new file memory mapped

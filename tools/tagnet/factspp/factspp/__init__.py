@@ -8,4 +8,4 @@ Perform namespace management and version identification.
 
 from factspp import preprocessor
 
-__version__ = "0.0.3"
+__version__ = "0.0.4"

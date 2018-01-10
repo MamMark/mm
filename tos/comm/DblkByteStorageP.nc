@@ -45,12 +45,11 @@
 
 module DblkByteStorageP {
   provides {
-    interface  TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk0Bytes;
-    interface  TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk1Bytes;
+    interface  TagnetAdapter<tagnet_file_bytes_t>  as DblkBytes;
     interface  TagnetAdapter<tagnet_dblk_note_t>   as DblkNote;
   }
   uses {
-    interface DblkMapFile  as DMF;
+    interface ByteMapFile  as DMF;
     interface Boot;
     interface Collect;
     interface Panic;
@@ -60,7 +59,7 @@ implementation {
 
   uint32_t   dblk_notes_count = 0;
 
-  bool GetDblkBytes(tagnet_dblk_bytes_t *db, uint32_t *len) {
+  bool GetDblkBytes(tagnet_file_bytes_t *db, uint32_t *len) {
     error_t    err = EINVAL;
 
     nop();
@@ -68,7 +67,7 @@ implementation {
     db->error  = SUCCESS;
     if (db->file == 0) {
       switch (db->action) {
-        case DBLK_GET_DATA:
+        case FILE_GET_DATA:
           err = call DMF.seek(db->file, db->iota, 0);
           if (err == SUCCESS) {
             err = call DMF.map(db->file, &db->block, len);
@@ -79,7 +78,7 @@ implementation {
             return TRUE;
           }
           break;
-        case  DBLK_GET_ATTR:
+        case  FILE_GET_ATTR:
           db->iota   = call DMF.tell(db->file);
           db->count  = call DMF.filesize(db->file);
           return TRUE;
@@ -94,29 +93,15 @@ implementation {
     return TRUE;
   }
 
-  command bool Dblk0Bytes.get_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
+  command bool DblkBytes.get_value(tagnet_file_bytes_t *db, uint32_t *len) {
     return GetDblkBytes(db, len);
   }
 
-  command bool Dblk0Bytes.set_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
+  command bool DblkBytes.set_value(tagnet_file_bytes_t *db, uint32_t *len) {
     db->count = 0;
     db->error = EINVAL;
     *len = 0;
     return FALSE; }
-
-
-  command bool Dblk1Bytes.get_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
-    db->count = 0;
-    db->error = EINVAL;
-    *len = 0;
-    return FALSE; }
-
-  command bool Dblk1Bytes.set_value(tagnet_dblk_bytes_t *db, uint32_t *len) {
-    db->count = 0;
-    db->error = EINVAL;
-    *len = 0;
-    return FALSE; }
-
 
   command bool DblkNote.get_value(tagnet_dblk_note_t *db, uint32_t *len) {
     error_t    err = EINVAL;
@@ -126,7 +111,7 @@ implementation {
     *len = 0;
     db->count  = dblk_notes_count;
     switch (db->action) {
-      case  DBLK_GET_ATTR:
+      case  FILE_GET_ATTR:
         db->error  = SUCCESS;
         *len       = db->count;
         return TRUE;
@@ -159,7 +144,7 @@ implementation {
     nop();
     nop();                      /* BRK */
     switch (db->action) {
-      case  DBLK_SET_DATA:
+      case  FILE_SET_DATA:
         ++dblk_notes_count;
         note_block.len = *len + sizeof(note_block);
         note_block.dtype = DT_NOTE;

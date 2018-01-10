@@ -50,13 +50,13 @@ typedef struct {
 
 typedef struct {
   uint32_t             file_pos;     // current file position
-  dblk_map_sectors_t   sector;       // current sector number
+  dblk_map_sectors_t   sector;       // pertinent file sector numbers
   bool                 sbuf_ready;   // true if sbuf has valid data
   bool                 sbuf_reading; // true if read in progress
 } dblk_map_file_t;
 
 module DblkMapFileP {
-  provides  interface DblkMapFile;
+  provides  interface ByteMapFile              as DMF;
   uses      interface StreamStorage            as SS;
   uses      interface SDread                   as SDread;
   uses      interface Resource                 as SDResource;
@@ -64,7 +64,7 @@ module DblkMapFileP {
   uses      interface Panic;
 }
 implementation {
-  uint8_t              dmf_sbuf[SD_BLOCKSIZE];
+  uint8_t              dmf_sbuf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
   dblk_map_file_t      dmf_cb;
 
   void dmap_panic(uint8_t where, parg_t p0, parg_t p1) {
@@ -126,10 +126,10 @@ implementation {
     call SDResource.release();
     dmf_cb.sbuf_ready = TRUE;
     dmf_cb.sbuf_reading = FALSE;
-    signal DblkMapFile.mapped(0, dmf_cb.file_pos);
+    signal DMF.mapped(0, dmf_cb.file_pos);
   }
 
-  command error_t DblkMapFile.map(uint8_t fd, uint8_t **buf, uint32_t *len) {
+  command error_t DMF.map(uint8_t fd, uint8_t **buf, uint32_t *len) {
     uint32_t    count  = 0;
 
     nop();
@@ -148,7 +148,7 @@ implementation {
     return EBUSY;
   }
 
-  command error_t DblkMapFile.seek(uint8_t fd, uint32_t pos, bool from_rear) {
+  command error_t DMF.seek(uint8_t fd, uint32_t pos, bool from_rear) {
 
     nop();
     nop();                      /* BRK */
@@ -166,11 +166,11 @@ implementation {
     return EBUSY;
   }
 
-  command uint32_t DblkMapFile.tell(uint8_t fd) {
+  command uint32_t DMF.tell(uint8_t fd) {
     return dmf_cb.file_pos;
   }
 
-  default event void DblkMapFile.mapped(uint8_t fd, uint32_t file_pos) { };
+  default event void DMF.mapped(uint8_t fd, uint32_t file_pos) { };
 
   event void SS.dblk_advanced(uint32_t last) {
     bool was_zero = (!dmf_cb.sector.eof);
@@ -180,7 +180,7 @@ implementation {
       get_new_sector(dmf_cb.file_pos);  // get the first one
   }
 
-  command uint32_t DblkMapFile.filesize(uint8_t fd) {
+  command uint32_t DMF.filesize(uint8_t fd) {
     return ((dmf_cb.sector.eof - dmf_cb.sector.base) * SD_BLOCKSIZE);
   }
 

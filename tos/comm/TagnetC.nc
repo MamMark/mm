@@ -14,14 +14,13 @@ configuration TagnetC {
     interface              TagnetHeader;
   }
   uses {
-    interface      TagnetSysExecAdapter                     as SysRunning;
-    interface      TagnetSysExecAdapter                     as SysGolden;
     interface      TagnetSysExecAdapter                     as SysNIB;
-    interface             TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk0Bytes;
+    interface      TagnetSysExecAdapter                     as SysRunning;
+    interface             TagnetAdapter<tagnet_file_bytes_t>  as DblkBytes;
     interface             TagnetAdapter<tagnet_dblk_note_t>  as DblkNote;
-    interface             TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk1Bytes;
-    interface      TagnetSysExecAdapter                     as SysBackup;
     interface      TagnetSysExecAdapter                     as SysActive;
+    interface      TagnetSysExecAdapter                     as SysGolden;
+    interface      TagnetSysExecAdapter                     as SysBackup;
     interface             TagnetAdapter<int32_t>            as PollCount;
     interface             TagnetAdapter<message_t>          as PollEvent;
     interface             TagnetAdapter<tagnet_gps_xyz_t>   as InfoSensGpsXyz;
@@ -47,16 +46,15 @@ implementation {
     components new      TagnetNameElementP (TN_10_ID,TN_10_UQ) as   tn_10_Vx;
     components new      TagnetNameElementP (TN_11_ID,TN_11_UQ) as   tn_11_Vx;
     components new      TagnetNameElementP (TN_12_ID,TN_12_UQ) as   tn_12_Vx;
-    components new  TagnetDblkByteAdapterP ( TN_13_ID )        as   tn_13_Vx;
-    components new  TagnetDblkByteAdapterP ( TN_14_ID )        as   tn_14_Vx;
-    components new  TagnetDblkNoteAdapterP ( TN_15_ID )        as   tn_15_Vx;
-    components new     TagnetImageAdapterP ( TN_16_ID )        as   tn_16_Vx;
-    components new      TagnetNameElementP (TN_17_ID,TN_17_UQ) as   tn_17_Vx;
+    components new  TagnetFileByteAdapterP ( TN_13_ID )        as   tn_13_Vx;
+    components new  TagnetDblkNoteAdapterP ( TN_14_ID )        as   tn_14_Vx;
+    components new     TagnetImageAdapterP ( TN_15_ID )        as   tn_15_Vx;
+    components new      TagnetNameElementP (TN_16_ID,TN_16_UQ) as   tn_16_Vx;
+    components new   TagnetSysExecAdapterP ( TN_17_ID )        as   tn_17_Vx;
     components new   TagnetSysExecAdapterP ( TN_18_ID )        as   tn_18_Vx;
     components new   TagnetSysExecAdapterP ( TN_19_ID )        as   tn_19_Vx;
     components new   TagnetSysExecAdapterP ( TN_20_ID )        as   tn_20_Vx;
     components new   TagnetSysExecAdapterP ( TN_21_ID )        as   tn_21_Vx;
-    components new   TagnetSysExecAdapterP ( TN_22_ID )        as   tn_22_Vx;
 
     Tagnet           =     tn_0_Vx;
        tn_1_Vx.Super ->     tn_0_Vx.Sub[unique(TN_0_UQ)];
@@ -75,21 +73,19 @@ implementation {
       tn_11_Vx.Super ->    tn_10_Vx.Sub[unique(TN_10_UQ)];
       tn_12_Vx.Super ->    tn_11_Vx.Sub[unique(TN_11_UQ)];
       tn_13_Vx.Super ->    tn_12_Vx.Sub[unique(TN_12_UQ)];
-    Dblk0Bytes       =     tn_13_Vx.Adapter;
+    DblkBytes        =     tn_13_Vx.Adapter;
       tn_14_Vx.Super ->    tn_12_Vx.Sub[unique(TN_12_UQ)];
-    Dblk1Bytes       =     tn_14_Vx.Adapter;
-      tn_15_Vx.Super ->    tn_12_Vx.Sub[unique(TN_12_UQ)];
-    DblkNote         =     tn_15_Vx.Adapter;
-      tn_16_Vx.Super ->    tn_11_Vx.Sub[unique(TN_11_UQ)];
-      tn_17_Vx.Super ->     tn_2_Vx.Sub[unique(TN_2_UQ)];
-      tn_18_Vx.Super ->    tn_17_Vx.Sub[unique(TN_17_UQ)];
-    SysActive        =     tn_18_Vx.Adapter;
-      tn_19_Vx.Super ->    tn_17_Vx.Sub[unique(TN_17_UQ)];
-    SysBackup        =     tn_19_Vx.Adapter;
-      tn_20_Vx.Super ->    tn_17_Vx.Sub[unique(TN_17_UQ)];
-    SysGolden        =     tn_20_Vx.Adapter;
-      tn_21_Vx.Super ->    tn_17_Vx.Sub[unique(TN_17_UQ)];
-    SysNIB           =     tn_21_Vx.Adapter;
-      tn_22_Vx.Super ->    tn_17_Vx.Sub[unique(TN_17_UQ)];
-    SysRunning       =     tn_22_Vx.Adapter;
+    DblkNote         =     tn_14_Vx.Adapter;
+      tn_15_Vx.Super ->    tn_11_Vx.Sub[unique(TN_11_UQ)];
+      tn_16_Vx.Super ->     tn_2_Vx.Sub[unique(TN_2_UQ)];
+      tn_17_Vx.Super ->    tn_16_Vx.Sub[unique(TN_16_UQ)];
+    SysActive        =     tn_17_Vx.Adapter;
+      tn_18_Vx.Super ->    tn_16_Vx.Sub[unique(TN_16_UQ)];
+    SysBackup        =     tn_18_Vx.Adapter;
+      tn_19_Vx.Super ->    tn_16_Vx.Sub[unique(TN_16_UQ)];
+    SysGolden        =     tn_19_Vx.Adapter;
+      tn_20_Vx.Super ->    tn_16_Vx.Sub[unique(TN_16_UQ)];
+    SysNIB           =     tn_20_Vx.Adapter;
+      tn_21_Vx.Super ->    tn_16_Vx.Sub[unique(TN_16_UQ)];
+    SysRunning       =     tn_21_Vx.Adapter;
 }

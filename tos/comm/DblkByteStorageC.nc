@@ -38,8 +38,7 @@
 
 configuration DblkByteStorageC {
   provides {
-    interface  TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk0Bytes;
-    interface  TagnetAdapter<tagnet_dblk_bytes_t>  as Dblk1Bytes;
+    interface  TagnetAdapter<tagnet_file_bytes_t>  as DblkBytes;
     interface  TagnetAdapter<tagnet_dblk_note_t>   as DblkNote;
   }
 }
@@ -48,8 +47,7 @@ implementation {
   components           SystemBootC;
 
   components           DblkByteStorageP as DBS;
-  Dblk0Bytes         = DBS.Dblk0Bytes;
-  Dblk1Bytes         = DBS.Dblk1Bytes;
+  DblkBytes          = DBS.DblkBytes;
   DblkNote           = DBS.DblkNote;
   DBS.Boot          -> SystemBootC.Boot;
   DBS.Panic         -> PanicC;

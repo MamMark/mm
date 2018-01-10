@@ -73,7 +73,7 @@ implementation {
             note = call TTLV.tlv_to_block(note_tlv, &ln);
           }
           call TPload.reset_payload(msg);
-          db.action = DBLK_SET_DATA;
+          db.action = FILE_SET_DATA;
           db.block = note;
           if (call Adapter.set_value(&db, &ln)) {
             call TPload.add_size(msg, db.count);
@@ -90,7 +90,7 @@ implementation {
           call TPload.reset_payload(msg);                // no params
           call THdr.set_response(msg);
           call THdr.set_error(msg, TE_PKT_OK);
-          db.action = DBLK_GET_ATTR;
+          db.action = FILE_GET_ATTR;
           if (call Adapter.get_value(&db, &ln)) {
             call TPload.add_size(msg, db.count);
             call TPload.add_error(msg, db.error);
