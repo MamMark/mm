@@ -85,6 +85,8 @@ from   tagfile      import TagFile
 #                   comma or space seperated list of rtype ids or NAMES
 #     (args.rtypes, list of strings)
 #
+#   -d              enable direct i/o, used for tagnet connection
+#
 #   -j JUMP         set input file position
 #                   (args.jump, integer)
 #

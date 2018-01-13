@@ -31,13 +31,14 @@ def parseargs():
                         type=auto_upper,
                         help='output records matching types in list')
 
+    parser.add_argument('-d', '--direct_io',
+                        action='store_true',
+                        help='use direct io, not buffered by OS filesystem')
+
     parser.add_argument('-j', '--jump',
                         type=auto_int,
                         help='set input file position')
 
-    parser.add_argument('-d', '--direct_io',
-                        action='store_true',
-                        help='use direct io, not buffered by OS filesystem')
     parser.add_argument('-n', '--num',
                         type=int,
                         help='limit display to <num> records')
