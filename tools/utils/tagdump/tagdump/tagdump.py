@@ -83,17 +83,19 @@ from   tagfile      import TagFile
 #
 #   --rtypes RTYPES output records matching types in list names
 #                   comma or space seperated list of rtype ids or NAMES
-#     (args.rtypes, list of strings)
+#                   (args.rtypes, list of strings)
 #
 #   -D              turn on Debugging information
 #                   (args.debug, boolean)
 #
 #   -d              enable direct i/o, used for tagnet connection
+#                   (args.direct_io, boolean)
 #
 #   -j JUMP         set input file position
 #                   (args.jump, integer)
 #
 #   -n num          limit display to <num> records
+#                   (args.num, integer)
 #
 #   -s START_TIME   include records with datetime greater than START_TIME
 #   -e END_TIME     (args.{start,end}_time)
