@@ -38,6 +38,9 @@ def parseargs():
     parser.add_argument('-d', '--direct_io',
                         action='store_true',
                         help='use direct io, not buffered by OS filesystem')
+    parser.add_argument('-n', '--num',
+                        type=int,
+                        help='limit display to <num> records')
 
     # not working yet
     parser.add_argument('-s', '--start_time',

@@ -88,6 +88,8 @@ from   tagfile      import TagFile
 #   -j JUMP         set input file position
 #                   (args.jump, integer)
 #
+#   -n num          limit display to <num> records
+#
 #   -s START_TIME   include records with datetime greater than START_TIME
 #   -e END_TIME     (args.{start,end}_time)
 #
@@ -490,6 +492,8 @@ def dump(args):
                 print
             total_records += 1
             total_bytes   += rlen
+            if (args.num and total_records >= args.num):
+                break
     except KeyboardInterrupt:
         print
         print
