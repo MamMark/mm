@@ -276,7 +276,7 @@ def decode_gps_raw(level, offset, buf, obj):
             dump_buf(buf, '    ')
         return
 
-    print('-- MID: {:2} ({:02x}) <{:2}> {:10} '.format(mid, mid, dir_str, mid_name))
+    print('-- MID: {:2} ({:02x}) <{:2}> {}'.format(mid, mid, dir_str, mid_name)),
 
     # gps raw packet contents are displayed if level is 1 or higher
     if (level >= 1):
