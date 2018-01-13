@@ -108,8 +108,8 @@ def gps_ots_decoder(level, offset, buf, obj):
         obj.set(buf)
         ans = 'no'
         if obj.val: ans = 'yes'
-        ans = '  ' + ans
-        print(ans),
+        print
+        print('    OkToSend:  {:>3s}'.format(ans)),
 
 g.mid_table[18] = (gps_ots_decoder, gps_ots_obj, "OkToSend")
 
