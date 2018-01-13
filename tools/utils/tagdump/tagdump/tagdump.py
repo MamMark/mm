@@ -291,6 +291,8 @@ def get_record(fd):
             # tried.  Find the next one.
             #
             offset += RESYNC_HDR_OFFSET
+            print('*** resyncing: moving past current majik to: {0} (0x{0:x})'.format(
+                offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
