@@ -59,8 +59,7 @@ implementation {
 
     nop();
     nop();                      /* BRK */
-    if (call TName.is_last_element(msg) &&          // end of name and me == this
-        (call TTLV.eq_tlv(name_tlv, this_tlv))) {
+    if  (call TTLV.eq_tlv(name_tlv, this_tlv)) {      // this name == mine
       tn_trace_rec(my_id, 1);
       switch (call THdr.get_message_type(msg)) {      // process message type
         case TN_PUT:

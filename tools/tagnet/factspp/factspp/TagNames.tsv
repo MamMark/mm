@@ -7,7 +7,7 @@ ignore	GET	PUT	HEAD	DEL	Request Params	Response Params	Adapter Component	Interfa
 	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetImageAdapterP					<nodeid:000000000000>	tag	sd	0	img	
 x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetRuleSetsAdapterP					<nodeid:000000000000>	tag	sd	0	rules	
 x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetConfigAdapterP					<nodeid:000000000000>	tag	sd	0	config	
-x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetPanicAdapterP					<nodeid:000000000000>	tag	sd	0	panic	byte
+	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	PanicBytes	uses	<nodeid:000000000000>	tag	sd	0	panic	byte
 	x	x	x		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysActive	uses	<nodeid:000000000000>	tag	sys	active		
 	x	x	x		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysBackup	uses	<nodeid:000000000000>	tag	sys	backup		
 	x	x	x		<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysGolden	uses	<nodeid:000000000000>	tag	sys	golden		

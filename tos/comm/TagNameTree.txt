@@ -13,7 +13,9 @@ root
         |       |-- dblk
         |       |   |-- byte
         |       |   +-- note
-        |       +-- img
+        |       |-- img
+        |       +-- panic
+        |           +-- byte
         +-- sys
             |-- active
             |-- backup

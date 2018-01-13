@@ -42,6 +42,9 @@ implementation {
   TagnetC.DblkBytes             -> DblkByteStorageC.DblkBytes;
   TagnetC.DblkNote              -> DblkByteStorageC.DblkNote;
 
+  components PanicByteStorageC;
+  TagnetC.PanicBytes            -> PanicByteStorageC.PanicBytes;
+
   components new TimerMilliC()  as Timer0;
   TagnetMonitorP.rcTimer        -> Timer0;
   components new TimerMilliC()  as Timer1;
