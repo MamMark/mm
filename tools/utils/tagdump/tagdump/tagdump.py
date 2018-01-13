@@ -85,6 +85,9 @@ from   tagfile      import TagFile
 #                   comma or space seperated list of rtype ids or NAMES
 #     (args.rtypes, list of strings)
 #
+#   -D              turn on Debugging information
+#                   (args.debug, boolean)
+#
 #   -d              enable direct i/o, used for tagnet connection
 #
 #   -j JUMP         set input file position
@@ -120,6 +123,7 @@ rec_low                 = 0            # inclusive
 rec_high                = 0            # inclusive
 rec_last                = 0            # last rec num looked at
 verbose                 = 0            # how chatty to be
+debug                   = 0            # extra debug chatty
 
 
 # 1st sector of the first is the directory
@@ -137,7 +141,7 @@ total_records           = 0
 total_bytes             = 0
 
 def init_globals():
-    global rec_low, rec_high, rec_last, verbose
+    global rec_low, rec_high, rec_last, verbose, debug
     global num_resyncs, chksum_errors, unk_rtypes
     global total_records, total_bytes
 
@@ -145,6 +149,7 @@ def init_globals():
     rec_high            = 0
     rec_last            = 0
     verbose             = 0
+    debug               = 0
 
     num_resyncs         = 0             # how often we've resync'd
     chksum_errors       = 0             # checksum errors seen
@@ -277,7 +282,7 @@ def get_record(fd):
         offset = fd.tell()
         # new records are required to start on a quad boundary
         if (offset & 3):
-            if verbose >= 5:
+            if debug:
                 align0 = '*** aligning offset {0} (0x{0:x}) -> {1} (0x{1:x})'
                 print(align0.format(offset, ((offset/4) + 1) * 4))
             offset = ((offset/4) + 1) * 4
@@ -403,7 +408,7 @@ def dump(args):
     and dt-specific decoder summary
     """
 
-    global rec_low, rec_high, rec_last, verbose
+    global rec_low, rec_high, rec_last, verbose, debug
     global num_resyncs, chksum_errors, unk_rtypes
     global total_records, total_bytes
 
@@ -430,6 +435,7 @@ def dump(args):
     # create file object that handles both buffered and direct io
     infile = TagFile(args.input, direct=args.direct_io)
     verbose = args.verbose if (args.verbose) else 0
+    debug   = args.debug   if (args.debug)   else 0
 
     if (args.start_rec):
         rec_low  = args.start_rec
