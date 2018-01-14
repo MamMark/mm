@@ -4,6 +4,7 @@
 #
 # object descriptors for gps data blocks
 
+import binascii
 from   decode_base  import *
 from   collections  import OrderedDict
 from   core_headers import dt_hdr_obj
@@ -30,7 +31,8 @@ gps_nav_obj = aggie(OrderedDict([
     ('mode2', atom(('B', '0x{:02x}'))),
     ('week10',atom(('>H', '{}'))),
     ('tow',   atom(('>I', '{}'))),
-    ('nsats', atom(('B', '{}')))]))
+    ('nsats', atom(('B', '{}'))),
+    ('prns',  atom(('12s', '{}', binascii.hexlify)))]))
 
 gps_navtrk_obj = aggie(OrderedDict([
     ('week10', atom(('>H', '{}'))),

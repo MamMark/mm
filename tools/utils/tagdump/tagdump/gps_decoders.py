@@ -58,11 +58,37 @@ g.dt_records[DT_GPS_XYZ] = (0, decode_gps_xyz, dt_gps_xyz_obj, "GPS_XYZ")
 #
 # GPS RAW messages
 #
+########################################################################
+#
+# raw nav strings for output
+
+rnav1a = '    NAV_DATA: nsats: {}, x/y/z (m): {}/{}/{}  vel (m/s): {}/{}/{}'
+rnav1b = '    mode1: {:#02x}  mode2: {:#02x}  week10: {}  tow (s): {}'
+rnav1c = '    prns: {} hdop: {}'
 
 def gps_nav_decoder(level, offset, buf, obj):
+    obj.set(buf)
+    xpos        = obj['xpos'].val
+    ypos        = obj['ypos'].val
+    zpos        = obj['zpos'].val
+    xvel        = obj['xvel'].val
+    yvel        = obj['yvel'].val
+    zvel        = obj['zvel'].val
+    mode1       = obj['mode1'].val
+    hdop        = obj['hdop'].val
+    mode2       = obj['mode2'].val
+    week10      = obj['week10'].val
+    tow         = obj['tow'].val
+    nsats       = obj['nsats'].val
+
+    print(' ({})'.format(nsats))
+
     if (level >= 1):
-        obj.set(buf)
-        print(obj)
+        print(rnav1a.format(nsats, xpos, ypos, zpos,
+                            xvel/float(8), yvel/float(8), zvel/float(8)))
+        print(rnav1b.format(mode1, mode2, week10, tow/float(100)))
+        print(rnav1c.format(buf_str(obj['prns'].val),
+                            hdop/float(5)))
 
 g.mid_table[2] = (gps_nav_decoder, gps_nav_obj, "NAV_DATA")
 
@@ -113,6 +139,10 @@ def gps_ots_decoder(level, offset, buf, obj):
 
 g.mid_table[18] = (gps_ots_decoder, gps_ots_obj, "OkToSend")
 
+
+########################################################################
+#
+# raw geo strings for output
 
 rgeo1a = '    GEO_DATA: xweek: {:4} tow: {:10}s, utc: {}/{:02}/{:02}-{:02}:{:02}:{:02}.{}'
 rgeo1b = '    lat/long: {:>16s}  {:>16s}, alt(e): {:7.2f} m  alt(msl): {:7.2f} m'
