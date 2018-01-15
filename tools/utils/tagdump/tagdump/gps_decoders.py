@@ -93,14 +93,70 @@ def gps_nav_decoder(level, offset, buf, obj):
 g.mid_table[2] = (gps_nav_decoder, gps_nav_obj, "NAV_DATA")
 
 
+########################################################################
+#
+# raw nav track strings for output
+
+rnavtrk1 = '    NAV_TRACK: week10: {}  tow: {}s  chans: {}'
+rnavtrkx = '    {:2}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno (avg): {}'
+rnavtrky = '    {:2}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno/s: {}'
+rnavtrkz = '    {:2}: az: {:3}  el: {:3}  state: {:#06x}  cno/s: {}'
+
 def gps_navtrk_decoder(level, offset, buf, obj):
+    consumed = obj.set(buf)
+    week10 = obj['week10'].val
+    tow    = obj['tow'].val/float(100)
+    chans  = obj['chans'].val
+    print
     if (level >= 1):
-        consumed = obj.set(buf)
-        print(obj)
-        chans = obj['chans'].val
+        print(rnavtrk1.format(week10, tow, chans))
+        chan_list = []
+
+        # grap each channels cnos and other data
         for n in range(chans):
+            d = {}                      # get a new dict
             consumed += gps_navtrk_chan.set(buf[consumed:])
-            print(gps_navtrk_chan)
+            for k, v in gps_navtrk_chan.items():
+                d[k] = v.val
+            avg  = d['cno0'] + d['cno1'] + d['cno2']
+            avg += d['cno3'] + d['cno4'] + d['cno5']
+            avg += d['cno6'] + d['cno7'] + d['cno8']
+            avg += d['cno9']
+            avg /= float(10)
+            d['cno_avg'] = avg
+            chan_list.append(d)
+
+        for n in range(len(chan_list)):
+            if (chan_list[n]['cno_avg']):
+                print(rnavtrkx.format(chan_list[n]['sv_id'],
+                                      chan_list[n]['sv_az23']*3.0/2.0,
+                                      chan_list[n]['sv_el2']/2.0,
+                                      chan_list[n]['state'],
+                                      chan_list[n]['cno_avg']))
+    if (level >= 2):
+        print
+        for n in range(len(chan_list)):
+            cno_str = ''
+            for i in range(10):
+                cno_str += ' {:2}'.format(chan_list[n]['cno'+str(i)])
+            print(rnavtrky.format(chan_list[n]['sv_id'],
+                                  chan_list[n]['sv_az23']*3.0/2.0,
+                                  chan_list[n]['sv_el2']/2.0,
+                                  chan_list[n]['state'],
+                                  cno_str))
+    if (level >= 3):
+        print
+        print('raw:')
+        for n in range(len(chan_list)):
+            cno_str = ''
+            for i in range(10):
+                cno_str += ' {:2}'.format(chan_list[n]['cno'+str(i)])
+            print(rnavtrkz.format(chan_list[n]['sv_id'],
+                                  chan_list[n]['sv_az23'],
+                                  chan_list[n]['sv_el2'],
+                                  chan_list[n]['state'],
+                                  cno_str))
+
 
 g.mid_table[4] = (gps_navtrk_decoder, gps_navtrk_obj, "NAV_TRACK")
 
