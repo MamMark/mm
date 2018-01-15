@@ -75,6 +75,7 @@
 #include <typed_data.h>
 #include <image_info.h>
 #include <overwatch.h>
+#include <stream_storage.h>
 #include <sd.h>
 
 
@@ -364,6 +365,34 @@ implementation {
   }
 
 
+  void finish_record(dt_header_t *header, uint16_t hlen,
+                     uint8_t     *data,   uint16_t dlen) {
+    uint16_t    chksum;
+    uint32_t    i;
+
+    dcc.cur_recnum++;
+    header->recnum = dcc.cur_recnum;
+
+    /*
+     * upper layers are responsible for filling in any pad fields,
+     * typically 0.
+     *
+     * we need to compute the record chksum over all bytes of the header and
+     * all bytes of the data area.  Additions to the chksum are done byte by
+     * byte.  This has to be done before copying any of the data out and added
+     * to the header (recsum).  Duh.  In other words, we have to finish updating
+     * critical fields in the record header before coping it else where.
+     */
+    chksum = 0;
+    header->recsum = 0;
+    for (i = 0; i < hlen; i++)
+      chksum += ((uint8_t *) header)[i];
+    for (i = 0; data && i < dlen; i++)
+      chksum += data[i];
+    header->recsum = (uint16_t) chksum;
+  }
+
+
   /*
    * All data fields are assumed to be little endian on both sides, tag and
    * host side.
@@ -389,9 +418,6 @@ implementation {
    */
   command void Collect.collect_nots(dt_header_t *header, uint16_t hlen,
                                     uint8_t     *data,   uint16_t dlen) {
-    uint16_t    chksum;
-    uint32_t    i;
-
     if (dcc.majik_a != DC_MAJIK || dcc.majik_b != DC_MAJIK)
       call Panic.panic(PANIC_SS, 1, dcc.majik_a, dcc.majik_b, 0, 0);
     if ((uint32_t) header & 0x3 || (uint32_t) dcc.cur_ptr & 0x03 ||
@@ -406,24 +432,8 @@ implementation {
     if (hlen + dlen > DT_MAX_RLEN)
       call Panic.panic(PANIC_SS, 4, (parg_t) data, dlen, 0, 0);
 
-    dcc.cur_recnum++;
-    header->recnum = dcc.cur_recnum;
-
-    /*
-     * our caller is responsible for filling in any pad fields, typically 0.
-     *
-     * we need to compute the record chksum over all bytes of the header and
-     * all bytes of the data area.  Additions to the chksum are done byte by
-     * byte.  This has to be done before dumping any of the data and added
-     * to the header (recsum).
-     */
-    chksum = 0;
-    header->recsum = 0;
-    for (i = 0; i < hlen; i++)
-      chksum += ((uint8_t *) header)[i];
-    for (i = 0; i < dlen; i++)
-      chksum += data[i];
-    header->recsum = (uint16_t) chksum;
+    /* update recnum and calc the checksum */
+    finish_record(header, hlen, data, dlen);
     nop();                              /* BRK */
     copy_out((void *)header, hlen);
     copy_out((void *)data,   dlen);
@@ -465,13 +475,13 @@ implementation {
     nop();                              /* BRK */
 
     /*
-     * The Stream Writer has been yanked and told to flush any pending
-     * buffers.  Most are FULL and SSW will handle those.  But Collect
-     * may still have one ALLOC'd..
+     * System is going down.  We want SSW to flush any pending buffers.
+     * This are the FULL buffers and we will let SSW handle them.
      *
-     * The buffer is ready to go as is.  But if we have room put one last
-     * sync record down that records what we currently think current
-     * datetime is.  Yeah!
+     * However, Collect may have a pending (ALLOC'd) buffer.  The buffer is
+     * ready to go as is.  But if we have room put one last sync record
+     * down that records what we currently think current datetime is.
+     * Yeah!
      */
     sp = &s;
     if (dcc.cur_buf) {
@@ -489,6 +499,9 @@ implementation {
         update_sync_offset();
 
         /* fill in datetime */
+
+        /* add recnum and checksum the record */
+        finish_record( (void *) sp, sizeof(dt_sync_t), NULL, 0);
         copy_block_out((void *) sp, sizeof(dt_sync_t));
       }
       dcc.remaining = 0;
