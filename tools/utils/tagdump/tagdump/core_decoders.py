@@ -78,8 +78,8 @@ def reboot_reason_name(reason):
 
 rbt0  = '  {:s} -> {:s}  [{:s}]  ({:d})'
 
-rbt1a = '    REBOOT: {:7s}  f: {:4s}  c: {:4s}  m: {:4s}  boots: {}   chk_fails: {}'
-rbt1b = '    dt: 2017/12/26-01:52:40 (1) GMT  prev_sync: {} (0x{:04x})  rev:  0x{:04x}'
+rbt1a = '    REBOOT: {:7s}  f: {:5s}  c: {:5s}  m: {:5s}  boots: {}   chk_fails: {}'
+rbt1b = '    dt: 2017/12/26-(mon)-01:52:40 GMT  prev_sync: {} (0x{:04x})  rev: {:7d}'
 
 rbt2a = '    majik:  {:08x}  sigs:   {:08x} {:08x} {:08x}'
 rbt2b = '    base: f {:08x}  cur:    {:08x}'
@@ -101,7 +101,7 @@ def decode_reboot(level, offset, buf, obj):
     dt_rev   = obj['dt_rev'].val
     base     = obj['base'].val
     if dt_rev != DT_H_REVISION:
-        print('*** version mismatch, expected 0x{:04x}, got 0x{:04x}'.format(
+        print('*** version mismatch, expected {:d}, got {:d}'.format(
             DT_H_REVISION, dt_rev))
 
     consumed     = owcb_obj.set(buf[consumed:])
