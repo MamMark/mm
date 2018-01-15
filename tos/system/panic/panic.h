@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker, Miles Maltbie
+ * Copyright (c) 2017-2018 Eric B. Decker, Miles Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -163,6 +163,7 @@ typedef struct {                        /* memory addresses */
 typedef struct {
   uint32_t pi_sig;
   uint32_t boot_count;
+  uint32_t fail_count;
   uint64_t systime;
   uint8_t  subsys;
   uint8_t  where;
@@ -256,7 +257,7 @@ typedef struct {
    * the end and this will give a size of 512 (0x200) but ram_header
    * won't be physically at the end.
    */
-  uint32_t              alignment_pad[14];
+  uint32_t              alignment_pad[13];
 
   /*
    * crash_info and ram_header need to be contiguous and need to

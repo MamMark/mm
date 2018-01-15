@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
+ * Copyright (c) 2017-2018, Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -177,7 +177,7 @@ typedef struct {
   uint32_t           reset_status;      /* recognized stati                */
   uint32_t           reset_others;      /* unindentified other stati       */
   uint32_t           from_base;         /* base address of where from      */
-  uint32_t           reboot_count;      /* how many times rebooted         */
+  uint32_t           fail_count;        /* how many times nib failed       */
 
   ow_request_t       ow_req;            /* B - req input */
   ow_reboot_reason_t reboot_reason;     /* B - req input */
@@ -201,12 +201,13 @@ typedef struct {
 
   uint32_t           ow_sig_b;
 
+  uint64_t           elapsed;           /* total time since pwr on, 2quad */
+  uint32_t           reboot_count;      /* reboots since pwr came up      */
+
   uint32_t           strange;           /* strange shit */
   uint32_t           strange_loc;
   uint32_t           vec_chk_fail;
   uint32_t           image_chk_fail;
-
-  uint64_t           elapsed;
 
   uint32_t           ow_sig_c;
 } PACKED ow_control_block_t;

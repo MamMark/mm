@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Daniel J Maltbie, Eric B. Decker
+ * Copyright (c) 2017-2018 Daniel J Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -234,15 +234,17 @@ implementation {
     if (call OWhw.getImageBase()) {                     /* from NIB? */
       if (!valid_owcb(owcp)) {
         /*
-         * PANIC
-         *
-         * but for now reinit and strange it.
+         * We can't PANIC (too low level).  So strange it
+         * and reboot.  We should see the strange in the data stream.
          */
         init_owcb(owcp);
         owl_strange2gold(0x101);
         /* no return */
       }
       /* turn off the LAUNCH bit */
+      owcp->reboot_count++;
+      owcp->elapsed += owcp->uptime;
+      owcp->uptime = 0;
       owcp->ow_rpt_flags &= ~(OWRF_LAUNCH);
       return;
     }
@@ -267,6 +269,10 @@ implementation {
       owcp->owt_action    = OWT_ACT_INIT;
       return;
     }
+
+    owcp->reboot_count++;
+    owcp->elapsed += owcp->uptime;
+    owcp->uptime = 0;
     owcp->reset_status  = call OWhw.getResetStatus();
     owcp->reset_others  = call OWhw.getResetOthers();
 
@@ -332,14 +338,13 @@ implementation {
 
       case OW_REQ_FAIL:                 /* crash, rebooting */
         owcp->ow_req = OW_REQ_BOOT;
-        owcp->elapsed += owcp->uptime;
-        owcp->reboot_count++;
+        owcp->fail_count++;
 
         if (owcp->from_base == 0)               /* from GOLD, no special eject checks  */
           return;
         if (owcp->from_base == OW_BASE_UNK)     /* if unknown no special checks, weird */
           return;
-        if (owcp->reboot_count > 10) {
+        if (owcp->fail_count > 10) {
           owcp->ow_boot_mode = OW_BOOT_OWT;
           owcp->owt_action = OWT_ACT_EJECT;
 

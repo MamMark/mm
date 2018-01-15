@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012-2013, 2016-2017 Eric B. Decker
- * Copyright (c) 2017 Miles Maltbie, Eric B. Decker
+ * Copyright (c) 2017-2018 Miles Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * This module provides a full Panic implementation.
@@ -627,6 +627,7 @@ implementation {
     pip = &b0p->panic_info;
     pip->pi_sig     = PANIC_INFO_SIG;
     pip->boot_count = owcp->reboot_count;
+    pip->fail_count = owcp->fail_count;
     pip->systime    = call LocalTime.get();
     pip->subsys = pap->pcode;
     pip->where  = pap->where;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Eric B. Decker, Daniel J. Maltbie
+ * Copyright (c) 2016-2018 Eric B. Decker, Daniel J. Maltbie
  * All Rights Reserved
  *
  * typed_data: definitions for typed data on Mass Storage and any Data
@@ -56,11 +56,8 @@
 
 /*
  * identify what revision of typed_data.h we are using for this build
- *
- * split into two subfields, major and minor.  Major 0 is development of
- * some flavor.  Releases start at Major 1.  Major 1 looks like 00010000.
  */
-#define DT_H_REVISION   0x00000009
+#define DT_H_REVISION 10
 
 /*
  * Sync records are used to make sure we can always find the data stream if
