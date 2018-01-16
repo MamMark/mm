@@ -21,9 +21,9 @@
 #define REQUIRE_PLATFORM
 #define REQUIRE_PANIC
 
-#define HANDLER_FAULT_WAIT
-#define PANIC_GATE
-#define CATCH_STRANGE
+// #define HANDLER_FAULT_WAIT
+// #define PANIC_GATE
+// #define CATCH_STRANGE
 
 //#define TRACE_MICRO
 #define TRACE_USE_PLATFORM
