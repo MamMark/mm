@@ -190,7 +190,7 @@ typedef struct {                /* size 20 */
  */
 
 typedef struct {
-  uint16_t len;                 /* size 48 +    68      */
+  uint16_t len;                 /* size 48 +    72      */
   dtype_t  dtype;               /* reboot  + ow_control */
   uint32_t recnum;
   uint64_t systime;             /* 2quad alignment */
@@ -199,7 +199,8 @@ typedef struct {
   uint32_t sync_majik;
   uint32_t prev_sync;           /* file offset */
   uint32_t dt_h_revision;       /* version identifier of typed_data */
-  uint32_t base;                /* base address of booting image    */
+                                /* and associated structures        */
+  uint32_t base;                /* base address of running image    */
   datetime_t datetime;          /* 10 bytes */
   uint16_t pad1;               /* quad aligned for owcb  */
 } PACKED dt_reboot_t;

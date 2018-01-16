@@ -49,17 +49,18 @@ owcb_obj        = aggie(OrderedDict([
     ('reset_status',    atom(('<I', '0x{:08x}'))),
     ('reset_others',    atom(('<I', '0x{:08x}'))),
     ('from_base',       atom(('<I', '0x{:08x}'))),
-    ('reboot_count',    atom(('<I', '{}'))),
+    ('fail_count',      atom(('<I', '{}'))),
     ('ow_req',          atom(('<B', '{}'))),
     ('reboot_reason',   atom(('<B', '{}'))),
     ('ow_boot_mode',    atom(('<B', '{}'))),
     ('owt_action',      atom(('<B', '{}'))),
     ('ow_sig_b',        atom(('<I', '0x{:08x}'))),
+    ('elapsed',         atom(('<Q', '0x{:08x}'))),
+    ('reboot_count',    atom(('<I', '{}'))),
     ('strange',         atom(('<I', '{}'))),
     ('strange_loc',     atom(('<I', '0x{:04x}'))),
     ('vec_chk_fail',    atom(('<I', '{}'))),
     ('image_chk_fail',  atom(('<I', '{}'))),
-    ('elapsed',         atom(('<Q', '0x{:08x}'))),
     ('ow_sig_c',        atom(('<I', '0x{:08x}')))
 ]))
 
