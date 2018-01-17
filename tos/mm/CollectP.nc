@@ -375,13 +375,22 @@ implementation {
 
     /*
      * upper layers are responsible for filling in any pad fields,
-     * typically 0.
+     * typically 0.  Pad fields are don't care but are part of the record
+     * and are significant in the checksum.  We set to zero by convention.
      *
      * we need to compute the record chksum over all bytes of the header and
      * all bytes of the data area.  Additions to the chksum are done byte by
      * byte.  This has to be done before copying any of the data out and added
      * to the header (recsum).  Duh.  In other words, we have to finish updating
      * critical fields in the record header before coping it else where.
+     *
+     * Set recsum to 0.  Sum byte by byte all header and data bytes.  Then lay
+     * in the computed 16 bit result as recsum.
+     *
+     * To verify, sum all bytes.  This result will include both recsum
+     * bytes.  Remove the recsum bytes from result (as individual bytes)
+     * and compare the result to recsum itself.  See checksum verify in
+     * get_record in tagdump.py.  (tools/utils/tagdump/tagdump)
      */
     chksum = 0;
     header->recsum = 0;

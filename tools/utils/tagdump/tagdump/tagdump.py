@@ -354,9 +354,12 @@ def get_record(fd):
             break                       # oops, bail
 
         # verify checksum.
-        # sum the entire record and then remove the bytes from recsum.
+        #
+        # sum the entire record (byte by byte) and then remove the bytes from recsum.
         # recsum was computed with the field being 0 and then layed down
-        # so we need to remove it before comparing.
+        # so we need to remove it before comparing.  Recsum is 16 bits wide so can not
+        # simply be added in as part of the checksum computation.
+        #
         chksum = sum(rec_buf)
         chksum -= (recsum & 0xff00) >> 8
         chksum -= (recsum & 0x00ff)
