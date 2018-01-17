@@ -363,6 +363,7 @@ def get_record(fd):
         chksum = sum(rec_buf)
         chksum -= (recsum & 0xff00) >> 8
         chksum -= (recsum & 0x00ff)
+        chksum &= 0xffff                # force to 16 bits vs. 16 bit recsum
         if (chksum != recsum):
             chksum_errors += 1
             chksum1 = '*** checksum failure @{0} (0x{0:x}) ' + \
