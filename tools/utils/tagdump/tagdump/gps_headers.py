@@ -10,11 +10,17 @@ from   collections  import OrderedDict
 from   core_headers import dt_hdr_obj
 from   core_headers import dt_simple_hdr
 
-dt_gps_ver_obj  = dt_simple_hdr
+#
+# not implemented yet.
+# dt level decodes
+#
 dt_gps_time_obj = dt_simple_hdr
 dt_gps_geo_obj  = dt_simple_hdr
 dt_gps_xyz_obj  = dt_simple_hdr
 
+########################################################################
+#
+# Gps Raw decode messages
 #
 # warning GPS messages are big endian.  The surrounding header (the dt header
 # etc) is little endian (native order).
@@ -56,7 +62,9 @@ gps_navtrk_chan = aggie([('sv_id',    atom(('B',  '{:2}'))),
 
 gps_swver_obj   = aggie(OrderedDict([('str0_len', atom(('B', '{}'))),
                                      ('str1_len', atom(('B', '{}')))]))
+
 gps_vis_obj     = aggie([('vis_sats', atom(('B',  '{}')))])
+
 gps_vis_azel    = aggie([('sv_id',    atom(('B',  '{}'))),
                          ('sv_az',    atom(('>h', '{}'))),
                          ('sv_el',    atom(('>h', '{}')))])
@@ -102,14 +110,21 @@ gps_geo_obj = aggie(OrderedDict([
     ('additional_mode',  atom(('B', '0x{:02x}'))),
 ]))
 
-# gps piece, big endian, follows dt_gps_raw_obj
-gps_hdr_obj = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
-                                 ('len',     atom(('>H', '0x{:04x}'))),
-                                 ('mid',     atom(('B', '0x{:02x}')))]))
 
+#
 # dt, native, little endian
-dt_gps_raw_obj = aggie(OrderedDict([('hdr',     dt_hdr_obj),
+# used by DT_GPS_VERSION and DT_GPS_RAW_SIRFBIN (gps_raw)
+#
+dt_gps_hdr_obj = aggie(OrderedDict([('hdr',     dt_hdr_obj),
                                     ('chip',    atom(('B',  '0x{:02x}'))),
                                     ('dir',     atom(('B',  '{}'))),
-                                    ('mark',    atom(('>I', '0x{:04x}'))),
-                                    ('gps_hdr', gps_hdr_obj)]))
+                                    ('mark',    atom(('>I', '0x{:04x}')))]))
+
+# gps piece, big endian, follows dt_gps_raw_obj
+raw_gps_hdr_obj = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
+                                     ('len',     atom(('>H', '0x{:04x}'))),
+                                     ('mid',     atom(('B',  '0x{:02x}')))]))
+
+# dt, native, little endian
+dt_gps_raw_obj = aggie(OrderedDict([('gps_hdr',     dt_gps_hdr_obj),
+                                    ('raw_gps_hdr', raw_gps_hdr_obj)]))

@@ -9,16 +9,40 @@ from   core_records  import *
 from   gps_headers   import *
 from   core_decoders import rec0
 
+
+#
+# given a buf that contains a GPS sw ver string make printable
+#
+# the buffer looks like:
+#
+# [len0] [len1] <str0, /null> <str1, /null>
+#   B      B     -- len0 --    -- len1 --
+#
+def swver_str(buf):
+    obj = gps_swver_obj
+    consumed = obj.set(buf)
+    len0 = obj['str0_len'].val
+    len1 = obj['str1_len'].val
+    str0 = buf[consumed:consumed+len0-1]
+    str1 = buf[consumed+len0:consumed+len0+len1-1]
+    return('--<{}>--  --<{}>--'.format(str0, str1))
+
+
 def decode_gps_version(level, offset, buf, obj):
-    print_record(offset, buf)
+    consumed = obj.set(buf)
+    len      = obj['hdr']['len'].val
+    type     = obj['hdr']['type'].val
+    recnum   = obj['hdr']['recnum'].val
+    st       = obj['hdr']['st'].val
+    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
+
     if (level >= 1):
-        obj.set(buf)
-        print(obj)
-        print_hdr(obj)
         print
+        print('    {}'.format(swver_str(buf[consumed:])))
+
 
 g.dt_records[DT_GPS_VERSION] = \
-        (0, decode_gps_version, dt_gps_ver_obj, "GPS_VERSION")
+        (0, decode_gps_version, dt_gps_hdr_obj, "GPS_VERSION")
 
 
 def decode_gps_time(level, offset, buf, obj):
@@ -162,13 +186,9 @@ g.mid_table[4] = (gps_navtrk_decoder, gps_navtrk_obj, "NAV_TRACK")
 
 
 def gps_swver_decoder(level, offset, buf, obj):
+    print
     if (level >= 1):
-        consumed = obj.set(buf)
-        len0 = obj['str0_len'].val
-        len1 = obj['str1_len'].val
-        str0 = buf[consumed:consumed+len0-1]
-        str1 = buf[consumed+len0:consumed+len0+len1-1]
-        print('\n  --<{}>--  --<{}>--'.format(str0, str1)),
+        print('    {}'.format(swver_str(buf))),
 
 g.mid_table[6] = (gps_swver_decoder, gps_swver_obj, "SW_VER")
 
@@ -331,12 +351,12 @@ g.mid_table[178] = (gps_name_only, None, "peek/poke")
 
 def decode_gps_raw(level, offset, buf, obj):
     consumed = obj.set(buf)
-    len      = obj['hdr']['len'].val
-    type     = obj['hdr']['type'].val
-    recnum   = obj['hdr']['recnum'].val
-    st       = obj['hdr']['st'].val
+    len      = obj['gps_hdr']['hdr']['len'].val
+    type     = obj['gps_hdr']['hdr']['type'].val
+    recnum   = obj['gps_hdr']['hdr']['recnum'].val
+    st       = obj['gps_hdr']['hdr']['st'].val
 
-    mid = obj['gps_hdr']['mid'].val
+    mid = obj['raw_gps_hdr']['mid'].val
     try:
         g.mid_count[mid] += 1
     except KeyError:
@@ -347,14 +367,14 @@ def decode_gps_raw(level, offset, buf, obj):
     decoder_obj = v[MID_OBJECT]             # dt object
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
-    dir = obj['dir'].val
+    dir = obj['gps_hdr']['dir'].val
     dir_str = 'rx' if dir == 0 \
          else 'tx'
     v = g.mid_table.get(mid, (None, None, 'unk'))
     mid_name = v[MID_NAME]
 
-    if (obj['gps_hdr']['start'].val != 0xa0a2):
-        index = obj.__len__() - gps_hdr_obj.__len__()
+    if (obj['raw_gps_hdr']['start'].val != 0xa0a2):
+        index = len(obj) - len(raw_gps_hdr_obj)
         print('-- non-binary <{:2}>'.format(dir_str))
         if (level >= 1):
             print('    {:s}'.format(buf[index:])),
