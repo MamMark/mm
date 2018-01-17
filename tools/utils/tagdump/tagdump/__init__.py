@@ -9,5 +9,8 @@ tagdump:  decode and display Tag Data Stream file
 # 0.2.6         direct i/o for TagNet
 # 0.2.9         (rc) first release of tagdump.  gps decoders
 #               better reboot/fail instrumentation
+# 0.2.10        (rc) fix summary, fix GPS_VERSION
+#               better docs on recsum chksum computation
+#               insist that computed checksum is 16 bits
 
-__version__ = '0.2.9'
+__version__ = '0.2.10 (rc)'
