@@ -30,11 +30,11 @@ def swver_str(buf):
 
 def decode_gps_version(level, offset, buf, obj):
     consumed = obj.set(buf)
-    len      = obj['hdr']['len'].val
-    type     = obj['hdr']['type'].val
+    xlen     = obj['hdr']['len'].val
+    xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     st       = obj['hdr']['st'].val
-    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
 
     if (level >= 1):
         print
@@ -352,8 +352,8 @@ g.mid_table[178] = (gps_name_only, None, "peek/poke")
 
 def decode_gps_raw(level, offset, buf, obj):
     consumed = obj.set(buf)
-    len      = obj['gps_hdr']['hdr']['len'].val
-    type     = obj['gps_hdr']['hdr']['type'].val
+    xlen     = obj['gps_hdr']['hdr']['len'].val
+    xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
     st       = obj['gps_hdr']['hdr']['st'].val
 
@@ -367,9 +367,9 @@ def decode_gps_raw(level, offset, buf, obj):
     decoder     = v[MID_DECODER]            # dt function
     decoder_obj = v[MID_OBJECT]             # dt object
 
-    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
-    dir = obj['gps_hdr']['dir'].val
-    dir_str = 'rx' if dir == 0 \
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
+    dir_bit = obj['gps_hdr']['dir'].val
+    dir_str = 'rx' if dir_bit == 0 \
          else 'tx'
     v = g.mid_table.get(mid, (None, None, 'unk'))
     mid_name = v[MID_NAME]
