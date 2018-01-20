@@ -13,4 +13,4 @@ tagdump:  decode and display Tag Data Stream file
 #               better docs on recsum chksum computation
 #               insist that computed checksum is 16 bits
 
-__version__ = '0.2.10 (rc)'
+__version__ = '0.2.11 (rc)'

@@ -220,7 +220,8 @@ def resync(fd, offset):
             if (sig == 0):
                 zero_sigs += 1
                 if (zero_sigs > MAX_ZERO_SIGS):
-                    print('*** resync: too many zeros, bailing')
+                    print('*** resync: too many zeros ({} x 4), bailing'.format(
+                        MAX_ZERO_SIGS))
                     return -1
             else:
                 zero_sigs = 0
