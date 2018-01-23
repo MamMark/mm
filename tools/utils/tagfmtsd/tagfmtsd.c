@@ -111,10 +111,13 @@ display_info(uint8_t *buf) {
     fprintf(stderr, "         i:   s: %-8x   e: %x\n",
             loc.locators[FS_LOC_IMAGE].start,
             loc.locators[FS_LOC_IMAGE].end);
-    fprintf(stderr, "         d:   s: %-8x   e: %-8x   n: %x\n",
+    rds = 0;
+    if (msc_dblk_nxt)
+      rds = msc_dblk_nxt - loc.locators[FS_LOC_DBLK].start;
+    fprintf(stderr, "         d:   s: %-8x   e: %-8x  nxt: %x  (%d blks)\n",
             loc.locators[FS_LOC_DBLK].start,
             loc.locators[FS_LOC_DBLK].end,
-            msc_dblk_nxt);
+            msc_dblk_nxt, rds);
 
     de = f32_get_de("PANIC001", "   ", &rds);
     if (de) {

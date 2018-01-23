@@ -46,6 +46,7 @@ ms_rtn
 ms_init(char *device_name) {
     fs_loc_t  *fsl;
     uint32_t   blk, lower, upper;
+    uint32_t   blks;
     int        empty;
     uint8_t   *dp;
     ms_rtn     rtn;
@@ -136,10 +137,13 @@ ms_init(char *device_name) {
       fprintf(stderr, "         i:   s: %-8x   e: %x\n",
 	      loc.locators[FS_LOC_IMAGE].start,
               loc.locators[FS_LOC_IMAGE].end);
-      fprintf(stderr, "         d:   s: %-8x   e: %-8x   n: %x\n",
+      blks = 0;
+      if (msc_dblk_nxt)
+        blks = msc_dblk_nxt - loc.locators[FS_LOC_DBLK].start;
+      fprintf(stderr, "         d:   s: %-8x   e: %-8x  nxt: %x (%d blks)\n",
 	      loc.locators[FS_LOC_DBLK].start,
               loc.locators[FS_LOC_DBLK].end,
-              msc_dblk_nxt);
+              msc_dblk_nxt, blks);
       if (msc_dblk_nxt == 0)
 	fprintf(stderr, "*** dblk_nxt not set ***\n");
     }
