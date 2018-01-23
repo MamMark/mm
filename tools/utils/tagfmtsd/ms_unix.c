@@ -1,6 +1,25 @@
 /*
+ * Copyright 2006, 2010, 2018 Eric B. Decker
+ * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * See COPYING in the top level directory of this source tree.
+ *
+ * Contact: Eric B. Decker <cire831@gmail.com>
+ *
+ *
  * ms_unix.c - Mass Storage Interface - Unix version
- * Copyright 2006, 2010, Eric B. Decker
  * Mam-Mark Project
  *
  * Low level interface for Unix based boxes.
@@ -42,10 +61,50 @@ uint8_t ms_buf[MS_BUF_SIZE];
 extern int verbose;
 extern int debug;
 
+uint32_t
+find_dblk_nxt(uint8_t *dp) {
+  uint32_t   blk, lower, upper;
+  int        empty;
+
+  /*
+   * Scan the rest of the dblk (using binary search) looking for where
+   * the next block will start.  ie.  look for 1st empty sector.
+   *
+   * Note: first sector of the DBLK area is reserved for the DBLK directory.
+   */
+  lower = loc.locators[FS_LOC_DBLK].start + 1;
+  upper = loc.locators[FS_LOC_DBLK].end;
+  empty = 0;
+  blk = lower;
+  ms_read_blk_fail(blk, dp);
+  empty = msu_blk_empty(dp);
+  if (!empty) {
+    /*
+     * if the 1st block isn't empty then we need to scan for the first
+     * empty block.  We use a binary search
+     */
+    while (lower != upper) {
+      blk = (upper - lower)/2 + lower;
+      if (blk == lower)
+        blk = lower = upper;
+      ms_read_blk_fail(blk, dp);
+      if (msu_blk_empty(dp)) {
+        upper = blk;
+        empty = 1;
+      } else {
+        lower = blk;
+        empty = 0;
+      }
+    }
+  }
+  if (empty)
+    return blk;
+  return 0;
+}
+
 ms_rtn
 ms_init(char *device_name) {
     fs_loc_t  *fsl;
-    uint32_t   blk, lower, upper;
     uint32_t   blks;
     int        empty;
     uint8_t   *dp;
@@ -93,40 +152,7 @@ ms_init(char *device_name) {
       return rtn;
 
     memcpy(&loc, fsl, sizeof(fs_loc_t));
-
-    /*
-     * Scan the rest of the dblk (using binary search) looking for where
-     * the next block will start.  ie.  look for 1st empty sector.
-     *
-     * Note: first sector of the DBLK area is reserved for the DBLK directory.
-     */
-    lower = loc.locators[FS_LOC_DBLK].start + 1;
-    upper = loc.locators[FS_LOC_DBLK].end;
-    empty = 0;
-    blk = lower;
-    ms_read_blk_fail(blk, dp);
-    empty = msu_blk_empty(dp);
-    if (!empty) {
-      /*
-       * if the 1st block isn't empty then we need to scan for the first
-       * empty block.  We use a binary search
-       */
-      while (lower != upper) {
-	blk = (upper - lower)/2 + lower;
-	if (blk == lower)
-          blk = lower = upper;
-	ms_read_blk_fail(blk, dp);
-	if (msu_blk_empty(dp)) {
-          upper = blk;
-          empty = 1;
-	} else {
-          lower = blk;
-          empty = 0;
-	}
-      }
-    }
-    if (empty)
-	msc_dblk_nxt = blk;
+    msc_dblk_nxt = find_dblk_nxt(dp);
     if (verbose || debug) {
       fprintf(stderr, "fs_loc:  p:   s: %-8x   e: %x\n",
 	      loc.locators[FS_LOC_PANIC].start,

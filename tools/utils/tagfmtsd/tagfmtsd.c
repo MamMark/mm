@@ -1,9 +1,29 @@
 /*
- * tagfmtsd - create dblk structures on mass storage
- * Copyright 2006-2008, 2010, 2017 Eric B. Decker
+ * Copyright 2006-2008, 2010, 2017, 2018 Eric B. Decker
+ * All rights reserved.
+ *
  * Mam-Mark Project
  *
- * typical usage: (format SD media on the Tag)
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * See COPYING in the top level directory of this source tree.
+ *
+ * Contact: Eric B. Decker <cire831@gmail.com>
+ *
+ *
+ * tagfmtsd - create dblk structures on mass storage
+ *
+ * typical usage:
  *
  * vfat format:     mkdosfs -F 32 -I -n"TagTest" -v /dev/sdb
  * create locators: tagfmtsd -w /dev/sdb
@@ -28,7 +48,7 @@
 extern fs_loc_t loc;
 
 
-#define VERSION "tagfmtsd: v4.3.0  2018/01/07\n"
+#define VERSION "tagfmtsd: v4.3.1  2018/01/22\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -74,9 +94,19 @@ static struct option longopts[] = {
 };
 
 
+static void display_gpl() {
+    fprintf(stderr, "This program comes with ABSOLUTELY NO WARRANTY; for details see\n");
+    fprintf(stderr, "warranty sections in COPYING in the top level of this source tree\n\n");
+    fprintf(stderr, "This is free software, and you are welcome to redistribute it under\n");
+    fprintf(stderr, "certain conditions; see COPYING for details\n");
+}
+
+
 static void usage(char *name) {
     fprintf(stderr, VERSION);
-    fprintf(stderr, "usage: %s [-c <config_size>] [-d <data_size>] [-p <panic size>] [-Dfvw] device_file\n", name);
+    fprintf(stderr, "\n");
+    display_gpl();
+    fprintf(stderr, "\nusage: %s [-c <config_size>] [-d <data_size>] [-p <panic size>] [-Dfvw] device_file\n", name);
     fprintf(stderr, "  -c <size>    set config size\n");
     fprintf(stderr, "  -d <size>    set dblk size\n");
     fprintf(stderr, "  -f           force (rewrite dirs)\n");
@@ -275,6 +305,8 @@ int main(int argc, char **argv) {
 	      break;
 	  case 'V':
 	      fprintf(stderr, VERSION);
+              fprintf(stderr, "\n");
+              display_gpl();
 	      exit(0);
 	      break;
 	  case 'w':
@@ -390,6 +422,7 @@ int main(int argc, char **argv) {
       }
     }
 
+    msc_dblk_nxt = find_dblk_nxt(buf);
     display_info(buf);
 
     if (!do_fs_loc)
