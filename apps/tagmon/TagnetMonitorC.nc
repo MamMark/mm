@@ -26,6 +26,7 @@ implementation {
   components GPSmonitorC;
   GPSmonitorC.GPSReceive        -> GpsPort;
   TagnetC.InfoSensGpsXyz        -> GPSmonitorC;
+  TagnetC.InfoSensGpsCmd        -> GPSmonitorC;
 
   components TagnetSysExecC;
   TagnetC.SysActive             -> TagnetSysExecC.SysActive;

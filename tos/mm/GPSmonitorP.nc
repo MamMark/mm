@@ -142,8 +142,10 @@ typedef struct {
 
 
 module GPSmonitorP {
-  provides interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
-  uses {
+  provides {
+    interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
+    interface TagnetAdapter<uint8_t>          as InfoSensGpsCmd;
+  } uses {
     interface GPSReceive;
     interface Collect;
     interface CollectEvent;
@@ -167,6 +169,13 @@ implementation {
     return 1;
   }
   command bool InfoSensGpsXyz.set_value(tagnet_gps_xyz_t *t, uint32_t *l) {
+    return FALSE;
+  }
+
+  command bool InfoSensGpsCmd.get_value(uint8_t *t, uint32_t *l) {
+    return FALSE;
+  }
+  command bool InfoSensGpsCmd.set_value(uint8_t *t, uint32_t *l) {
     return FALSE;
   }
 
@@ -311,19 +320,19 @@ implementation {
 
     switch (sbp->mid) {
       case MID_NAVDATA:
-	process_navdata((void *) sbp, arrival_ms);
-	break;
+        process_navdata((void *) sbp, arrival_ms);
+        break;
       case MID_SWVER:
         process_swver((void *) sbp, arrival_ms);
         break;
       case MID_CLOCKSTATUS:
         process_clockstatus((void *) sbp, arrival_ms);
-	break;
+        break;
       case MID_GEODETIC:
         process_geodetic((void *) sbp, arrival_ms);
         break;
       default:
-	break;
+        break;
     }
   }
 

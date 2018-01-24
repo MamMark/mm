@@ -1,9 +1,10 @@
 root
-+-- <nodeid:000000000000>
++-- \'<node_id:000000000000>\'
     +-- tag
         |-- info
         |   +-- sens
         |       +-- gps
+        |           |-- cmd
         |           +-- xyz
         |-- poll
         |   |-- cnt

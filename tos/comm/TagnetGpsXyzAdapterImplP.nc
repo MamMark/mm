@@ -65,8 +65,11 @@ implementation {
           tn_trace_rec(my_id, 2);
           if (call Adapter.get_value(&v, &l)) {
             call TPload.add_gps_xyz(msg, &v);
-            return TRUE;
+          } else {
+            call TPload.add_error(msg, EINVAL);
           }
+          call THdr.set_response(msg);
+          call THdr.set_error(msg, TE_PKT_OK);
           break;
         default:
           break;

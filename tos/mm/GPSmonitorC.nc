@@ -8,12 +8,14 @@
 
 configuration GPSmonitorC {
   provides interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
+  provides interface TagnetAdapter<uint8_t>          as InfoSensGpsCmd;
   uses     interface GPSReceive;
 }
 
 implementation {
   components GPSmonitorP;
   InfoSensGpsXyz = GPSmonitorP;
+  InfoSensGpsCmd = GPSmonitorP;
   GPSReceive     = GPSmonitorP;
 
   components PanicC;
