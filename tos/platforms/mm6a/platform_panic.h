@@ -21,6 +21,9 @@
  * GPS:         GPS subsystem
  * MISC:
  * SNS:         SeNsor Subsystem (SNS)
+ * PWR:         power subsystem
+ * RADIO:       radio driver issues.
+ * TAGNET:      comm stack
  */
 
 enum panic_codes {

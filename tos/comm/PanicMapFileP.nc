@@ -71,7 +71,8 @@ implementation {
   uint8_t              pmf_sbuf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
 
   void pmap_panic(uint8_t where, parg_t p0, parg_t p1) {
-    call Panic.panic(PANIC_DBLK, where, p0, p1, pmf_cb.sector.base, pmf_cb.sector.eof);
+    call Panic.panic(PANIC_TAGNET, where, p0, p1, pmf_cb.sector.base,
+                     pmf_cb.sector.eof);
   }
 
   bool is_fd_full(uint8_t fd) {

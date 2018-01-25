@@ -70,7 +70,8 @@ implementation {
   uint8_t              dmf_sbuf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
 
   void dmap_panic(uint8_t where, parg_t p0, parg_t p1) {
-    call Panic.panic(PANIC_DBLK, where, p0, p1, dmf_cb.sector.base, dmf_cb.sector.eof);
+    call Panic.panic(PANIC_TAGNET, where, p0, p1, dmf_cb.sector.base,
+                     dmf_cb.sector.eof);
   }
 
   uint32_t sector_of(uint32_t pos) {
