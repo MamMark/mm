@@ -1,38 +1,23 @@
 /*
  * Copyright (c) 2016-2018 Eric B. Decker, Daniel J. Maltbie
- * All Rights Reserved
+ * All rights reserved.
  *
- * typed_data: definitions for typed data on Mass Storage and any Data
- * network packets.  DT, stands for data, typed.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
  *
- * MSP432, structures are aligned to a 32 bit boundary (align(4)).
- * Multibyte datums are stored native, little endian.  All headers are
- * required to be an even multiple of 32 bits.  quad granular.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * The exact size matters.  The ARM compiler adds padding bytes at the end
- * of structures to round up to an even 32 bit alignment.  We take pains to
- * set up fields so we do not violate alignment restrictions.  16 bit
- * fields on 2 byte alignment (half word aligned) and 32 bit fields on 4
- * byte alignment (quad).  Structures start on 4 byte alignment.  All
- * structures should be padded as necessary to an even quad alignment (quad
- * granular).  Each Dblk header is also required to be quad granular (even
- * muliple of 4 bytes).  This allows any data following the header to start
- * on a quad alignment.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * See COPYING in the top level directory of this source tree.
  *
- * A dt header can be followed by data.  This payload immediately follows
- * the header and can cross sector boundaries.  The data area starts on a
- * quad alignment.  There are no constraints on the data area length.  A dt
- * header is not required to have a payload.  The len field in the header
- * is inclusive of both the header and any data following.  If there is no
- * payload, the len field simply indicates how long the header is and must
- * be the same as sizeof(header).
- *
- * Each record also includes a record checksum.  This is a 16 bit little
- * endian sum over all bytes of the header as well as all bytes of the
- * data.  The sum is calculated over individual bytes.
- *
- * Following the header and any potential payload, the next dt header
- * will be aligned onto the next quad alignment.
+ * Contact: Eric B. Decker <cire831@gmail.com>
+ *          Daniel J. Maltbie <dmaltbie@danome.com>
  */
 
 #ifndef __TYPED_DATA_H__
