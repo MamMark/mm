@@ -30,7 +30,7 @@ provides the list of pstrings generated offline. The driver provides
 the pstrings it needs to operate properly (for instance which
 interrupts to enable or the packet processing for 255 byte packets.
 
-Below is the list of files that are required for configurating the
+Below is the list of files that are required for configuring the
 Si446x radio.
 
 
