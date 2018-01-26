@@ -57,7 +57,7 @@
 /*
  * identify what revision of typed_data.h we are using for this build
  */
-#define DT_H_REVISION 10
+#define DT_H_REVISION 11
 
 /*
  * Sync records are used to make sure we can always find the data stream if
@@ -190,7 +190,7 @@ typedef struct {                /* size 20 */
  */
 
 typedef struct {
-  uint16_t len;                 /* size 48 +    72      */
+  uint16_t len;                 /* size 48 +    84      */
   dtype_t  dtype;               /* reboot  + ow_control */
   uint32_t recnum;
   uint64_t systime;             /* 2quad alignment */

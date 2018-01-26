@@ -32,7 +32,7 @@ from   misc_utils import *
 # The value of DT_H_REVISION reflects the version of typed_data.h that
 # we have implemented.  Includes record definitions, headers and decoders.
 
-DT_H_REVISION           = 10
+DT_H_REVISION           = 11
 
 
 # dt_records

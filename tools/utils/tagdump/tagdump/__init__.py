@@ -12,5 +12,9 @@ tagdump:  decode and display Tag Data Stream file
 # 0.2.10        (rc) fix summary, fix GPS_VERSION
 #               better docs on recsum chksum computation
 #               insist that computed checksum is 16 bits
-
-__version__ = '0.2.11 (rc)'
+# 0.2.11        ...
+# 0.2.12        tweaks, fix gps version
+#               add owcb.faults, owcb.subsys_disable.
+#               fix definition of datetime_obj, add dt64_obj
+#
+__version__ = '0.2.11rc2'
