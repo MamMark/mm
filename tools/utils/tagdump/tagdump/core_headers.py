@@ -33,13 +33,22 @@ dt_hdr_obj = aggie(OrderedDict([
 
 datetime_obj = aggie(OrderedDict([
     ('jiffies', atom(('<H', '{}'))),
-    ('yr',      atom(('<H', '{}'))),
-    ('mon',     atom(('<B', '{}'))),
-    ('day',     atom(('<B', '{}'))),
-    ('hr',      atom(('<B', '{}'))),
-    ('min',     atom(('<B', '{}'))),
     ('sec',     atom(('<B', '{}'))),
-    ('dow',     atom(('<B', '{}')))]))
+    ('min',     atom(('<B', '{}'))),
+    ('hr',      atom(('<B', '{}'))),
+    ('dow',     atom(('<B', '{}'))),
+    ('day',     atom(('<B', '{}'))),
+    ('mon',     atom(('<B', '{}'))),
+    ('yr',      atom(('<H', '{}')))]))
+
+dt64_obj = aggie(OrderedDict([
+    ('jiffies', atom(('<H', '{}'))),
+    ('sec',     atom(('<B', '{}'))),
+    ('min',     atom(('<B', '{}'))),
+    ('hr',      atom(('<B', '{}'))),
+    ('dow',     atom(('<B', '{}'))),
+    ('day',     atom(('<B', '{}'))),
+    ('mon',     atom(('<B', '{}')))]))
 
 dt_simple_hdr   = aggie(OrderedDict([('hdr', dt_hdr_obj)]))
 
