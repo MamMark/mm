@@ -167,6 +167,12 @@ typedef struct {
   uint32_t           from_base;         /* base address of where from      */
   uint32_t           fail_count;        /* how many times nib failed       */
 
+  uint32_t           fault_mask_gold;   /* indicate faults                 */
+  uint32_t           fault_mask_nib ;   /* indicate faults                 */
+  uint32_t           subsys_disable;    /* what's turned off               */
+
+  uint32_t           ow_sig_b;
+
   ow_request_t       ow_req;            /* B - req input */
   ow_reboot_reason_t reboot_reason;     /* B - req input */
 
@@ -187,10 +193,8 @@ typedef struct {
    * elapsed is a 64 bit time and needs to be 2quad aligned.
    */
 
-  uint32_t           ow_sig_b;
-
-  uint64_t           elapsed;           /* total time since pwr on, 2quad */
   uint32_t           reboot_count;      /* reboots since pwr came up      */
+  uint64_t           elapsed;           /* total time since pwr on, 2quad */
 
   uint32_t           strange;           /* strange shit */
   uint32_t           strange_loc;

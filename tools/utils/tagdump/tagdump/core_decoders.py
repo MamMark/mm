@@ -98,13 +98,14 @@ rbt0  = '  {:s} -> {:s}  [{:s}]  ({:d}/{:d})'
 rbt1a = '    REBOOT: {:7s}  f: {:5s}  c: {:5s}  m: {:5s}  reboots: {}/{}   chk_fails: {}'
 rbt1b = '    dt: 2017/12/26-(mon)-01:52:40 GMT  prev_sync: {} (0x{:04x})  rev: {:7d}'
 
-rbt2a = '    majik:  {:08x}  sigs:   {:08x} {:08x} {:08x}'
-rbt2b = '    base: f {:08x}  cur:    {:08x}'
-rbt2c = '    rpt:    {:08x}  reset:  {:08x}   others:  {:08x}'
-rbt2d = '    reboots: {:4}  fails: {:4}  strg: {:8}  loc: {:4}'
-rbt2e = '    uptime: {:8}  elapsed: {:8}'
-rbt2f = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
-rbt2g = '    vec_chk_fail: {:2}  image_chk_fail:   {:2}'
+rbt2a = '    majik:   {:08x}  sigs:    {:08x}    {:08x}  {:08x}'
+rbt2b = '    base:  f {:08x}  cur:     {:08x}'
+rbt2c = '    rpt:     {:08x}  reset:   {:08x}      others: {:08x}'
+rbt2d = '    fault/g: {:08x}  fault/n: {:08x}  ss/disable: {:08x}'
+rbt2e = '    reboots: {:4}  fails: {:4}  strg: {:8}  loc: {:4}'
+rbt2f = '    uptime: {:8}  elapsed: {:8}'
+rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
+rbt2h = '    vec_chk_fail: {:2}  image_chk_fail:   {:2}'
 
 def decode_reboot(level, offset, buf, obj):
     consumed = obj.set(buf)
@@ -126,15 +127,22 @@ def decode_reboot(level, offset, buf, obj):
     reboot_count = owcb_obj['reboot_count'].val
     fail_count   = owcb_obj['fail_count'].val
     boot_mode    = owcb_obj['ow_boot_mode'].val
-
-    chk_fails = owcb_obj['vec_chk_fail'].val + owcb_obj['image_chk_fail'].val
-    if (chk_fails):                     # do we have any flash or image chk fails
-        print('*** chk fails: vec_fails: {}, image_fails: {}'.format(
-            owcb_obj['vec_chk_fail'].val, owcb_obj['image_chk_fail'].val))
+    fault_gold   = owcb_obj['fault_gold'].val
+    fault_nib    = owcb_obj['fault_nib'].val
+    ss_dis       = owcb_obj['subsys_disable'].val
+    chk_fails    = owcb_obj['vec_chk_fail'].val + \
+                   owcb_obj['image_chk_fail'].val
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(rbt0.format(base_name(from_base), base_name(base),
                       ow_boot_mode_name(boot_mode), reboot_count, fail_count))
+
+    if (chk_fails):                     # do we have any flash or image chk fails
+        print('*** chk fails: vec_fails: {}, image_fails: {}'.format(
+            owcb_obj['vec_chk_fail'].val, owcb_obj['image_chk_fail'].val))
+    if (fault_gold or fault_nib or ss_dis):
+        print('*** fault/g: {:08x}  fault/n: {:08x}  ss_dis: {:08x}'.format(
+            fault_gold, fault_nib, ss_dis))
 
     if (level >= 1):                   # basic record display (level 1)
         print(rbt1a.format(
@@ -151,19 +159,21 @@ def decode_reboot(level, offset, buf, obj):
         print(rbt2b.format(from_base, base))
         print(rbt2c.format(owcb_obj['rpt'].val, owcb_obj['reset_status'].val,
               owcb_obj['reset_others'].val))
-        print(rbt2d.format(reboot_count, fail_count,
+        print(rbt2d.format(fault_gold, fault_nib, ss_dis))
+        print(rbt2e.format(reboot_count, fail_count,
                            owcb_obj['strange'].val,
                            owcb_obj['strange_loc'].val))
-        print(rbt2e.format(owcb_obj['uptime'].val,
+        print(rbt2f.format(owcb_obj['uptime'].val,
                            owcb_obj['elapsed'].val))
-        print(rbt2f.format(owcb_obj['reboot_reason'].val,
+        print(rbt2g.format(owcb_obj['reboot_reason'].val,
                            owcb_obj['ow_req'].val,
                            owcb_obj['ow_boot_mode'].val,
                            owcb_obj['owt_action'].val))
-        print(rbt2g.format(owcb_obj['vec_chk_fail'].val,
+        print(rbt2h.format(owcb_obj['vec_chk_fail'].val,
                            owcb_obj['image_chk_fail'].val))
 
-g.dt_records[DT_REBOOT] = (120, decode_reboot, dt_reboot_obj, "REBOOT")
+#                          sizeof(reboot record) + sizeof(owcb)
+g.dt_records[DT_REBOOT] = (132, decode_reboot, dt_reboot_obj, "REBOOT")
 
 
 ################################################################
