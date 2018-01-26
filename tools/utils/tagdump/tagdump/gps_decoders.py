@@ -50,10 +50,8 @@ def decode_gps_version(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     st       = obj['hdr']['st'].val
-    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
-
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype)))
     if (level >= 1):
-        print
         print('    {}'.format(swver_str(buf[consumed:])))
 
 
