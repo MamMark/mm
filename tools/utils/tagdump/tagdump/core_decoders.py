@@ -186,7 +186,7 @@ def model_name(model):
 
 ver0  = ' {:s}  {:s}  hw: {:s}/{:d}'
 
-ver1a = '    VERSION: {:10s}  hw model/rev: {:x}/{:x} ({:s}/{:d})  r/i: 0x{:x}/{:x}'
+ver1a = '    VERSION: {:10s}  hw model/rev: {:x}/{:x} ({:s}/{:d})  r/i: x({:x}/{:x})'
 ver2a = '    desc0:  (p) heads/tp-master-0-g0ac8c73-dirty'
 ver2b = '    desc1:  (m) heads/recsum-0-g04de0f8-dirty'
 ver2c = '    date:   Fri Dec 29 04:05:07 UTC 2017      ib/len: 0x{:x}/{:d} (0x{:x})'

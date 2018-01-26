@@ -20,6 +20,7 @@
 #
 
 from __init__ import __version__ as VERSION
+from core_records import DT_H_REVISION as DT_REV
 import argparse
 
 
@@ -33,7 +34,7 @@ def auto_upper(x):
 
 def parseargs():
     parser = argparse.ArgumentParser(
-        description='Pretty print content of Tag Data logfile')
+        description='Print contents of Tag Data Stream.')
 
     parser.add_argument('input',
                         type=argparse.FileType('rb'),
@@ -41,7 +42,7 @@ def parseargs():
 
     parser.add_argument('-V', '--version',
                         action='version',
-                        version='%(prog)s ' + VERSION)
+                        version='%(prog)s ' + VERSION + ': dt_rev ' + str(DT_REV))
 
     parser.add_argument('--rtypes',
                         type=auto_upper,
@@ -66,7 +67,7 @@ def parseargs():
     # not working yet
     parser.add_argument('-s', '--start_time',
                         type=int,
-                        help='include records with datetime greater than START_TIME')
+                        help='include records with datetime >= than START_TIME')
 
     # not working yet
     parser.add_argument('-e', '--end_time',
