@@ -114,6 +114,8 @@ void __Reset();                 /* start up entry point */
 void __system_init(bool disable_dcor);
 
 /* see tos/mm/OverWatch/OverWatchP.nc */
+extern void owl_setFault(uint32_t fault_mask);
+extern void owl_clrFault(uint32_t fault_mask);
 extern void owl_strange2gold(uint32_t loc);
 extern void owl_startup();
 
@@ -690,6 +692,14 @@ void __core_clk_init(bool disable_dcor) {
              CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 |
              CS_CTL1_SELM__DCOCLK  | CS_CTL1_DIVM__1;
   /*
+   * We leave SELA (ACLK, 32Ki, Tmilli) and SELB (BCLK, RTC) set to their
+   * defaults, LFXT, 32Ki, external Xtal).  We also leave REFOSEL set to
+   * its default of 32Ki.  If the LFXT fails to come up, the h/w will keep
+   * sourcing both ACLK and RTC using the internal 32Ki REFO clock source.
+   * It won't be accurate but at least it will run.
+   */
+
+  /*
    * turn on the t32s running off MCLK (mclk/16 -> (1MiHz | 3MHz) so we can
    * time the turn on of the remainder of the system.
    */
@@ -708,16 +718,26 @@ void __core_clk_init(bool disable_dcor) {
 
   /* turn on LFXT and wait for the fault to go away */
   timeout = 0;
+  owl_clrFault(OW_FAULT_32K);           /* start fresh, no fault */
   BITBAND_PERI(CS->CTL2, CS_CTL2_LFXT_EN_OFS) = 1;
   while (BITBAND_PERI(CS->IFG, CS_IFG_LFXTIFG_OFS)) {
-    if (--timeout == 0) {
-      CS->IFG;
-      CS->STAT;
-      ROM_DEBUG_BREAK(0xFF);
-      owl_strange2gold(0x1000);
-    }
+    if (--timeout == 0)                 /* 4Gig counts */
+      break;
     BITBAND_PERI(CS->CLRIFG,CS_CLRIFG_CLR_LFXTIFG_OFS) = 1;
   }
+  if (BITBAND_PERI(CS->IFG, CS_IFG_LFXTIFG_OFS)) {
+    /*
+     * shoot.  The 32Ki didn't come up.  Flag it.  The switch to the internal
+     * REFOCLK backup is automatically done in H/W.  Leave the state of the
+     * CS h/w the same.  No need to change.  h/w automatically sources both
+     * ACLK and BCLK using REFOCLK.
+     */
+    CS->IFG;
+    ROM_DEBUG_BREAK(0xFF);
+    CS->STAT;
+    owl_setFault(OW_FAULT_32K);
+  } else
+    owl_clrFault(OW_FAULT_32K);
   CS->KEY = 0;                  /* lock module */
   lfxt_startup_time = (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV;
 }
@@ -949,6 +969,8 @@ void __Reset() {
   disable_dcor = RSTCTL->CSRESET_STAT & RSTCTL_CSRESET_STAT_DCOR_SHT;
   ROM_DEBUG_BREAK(0);
   owl_startup();
+  if (disable_dcor)
+    owl_setFault(OW_FAULT_DCOR);
 
   __system_init(disable_dcor);
 
