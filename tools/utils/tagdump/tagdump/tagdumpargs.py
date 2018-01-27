@@ -60,6 +60,10 @@ def parseargs():
                         type=auto_int,
                         help='set input file position')
 
+    parser.add_argument('-x', '--endpos',
+                        type=auto_int,
+                        help='set ending file position to process')
+
     parser.add_argument('-n', '--num',
                         type=int,
                         help='limit display to <num> records')

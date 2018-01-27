@@ -56,7 +56,7 @@ from   tagfile      import TagFile
 #
 # see tagdumpargs.py for argument processing.
 #
-# usage: tagdump.py [-h] [-v] [-V] [-j JUMP]
+# usage: tagdump.py [-h] [-v] [-V] [-j JUMP] [-x EndFilePos]
 #                   [--rtypes RTYPES(ints)] [--rnames RNAMES(name[,...])]
 #                   [-s START_TIME] [-e END_TIME]
 #                   [-r START_REC]  [-l LAST_REC]
@@ -80,6 +80,9 @@ from   tagfile      import TagFile
 #
 #   -j JUMP         set input file position
 #                   (args.jump, integer)
+#
+#   -x endpos       set last file position to process
+#                   (args.endpos, integer)
 #
 #   -n num          limit display to <num> records
 #                   (args.num, integer)
@@ -473,6 +476,10 @@ def dump(args):
             if (rec_low and recnum < rec_low):
                 continue
             if (rec_high and recnum > rec_high):
+                break                       # all done
+
+            # look to see if past file position bound
+            if (args.endpos and rec_offset > args.endpos):
                 break                       # all done
 
             count_dt(rtype)
