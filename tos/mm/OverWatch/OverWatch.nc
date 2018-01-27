@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Daniel Maltbie, Eric B. Decker
+ * Copyright (c) 2017-2018 Daniel Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -78,6 +78,19 @@ interface OverWatch {
    *                    interrupt
    */
   async command void fail(ow_reboot_reason_t reason);
+
+  /**
+   * Reboot
+   *
+   * Tell OverWatch to reboot.
+   *
+   * Used to force a reboot.  Overwatch will reexecute any request pending.
+   *
+   * @param reason      reboot reason, most likely ORR_LOW_PWR
+   */
+  async command void reboot(ow_reboot_reason_t reason);
+
+
 
   async command void strange(uint32_t loc);
 

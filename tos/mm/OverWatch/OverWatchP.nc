@@ -699,12 +699,34 @@ implementation {
   async command void OverWatch.fail(ow_reboot_reason_t reason) {
     ow_control_block_t *owcp;
 
-    /* do not call SysReboot.fail() here */
     owcp = &ow_control_block;
     owcp->uptime = call LocalTime.get();
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
     owcp->ow_req = OW_REQ_FAIL;
+    call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
+  }
+
+
+  /*
+   * Reboot - force a reboot with reason
+   *
+   * Will cause OverWatch to restart the system.  We leave
+   * the overwatch control cells alone, except to set the
+   * reboot reason.  This will cause Overwatch to reexecute
+   * whatever request was previously set.
+   *
+   * One use for this routine is when switching from Low Power to
+   * Normal Power.  We want to return to whatever mode we were
+   * running when we lost power.
+   */
+  async command void OverWatch.reboot(ow_reboot_reason_t reason) {
+    ow_control_block_t *owcp;
+
+    owcp = &ow_control_block;
+    owcp->uptime = call LocalTime.get();
+    owcp->reboot_reason = reason;
+    owcp->from_base = call OWhw.getImageBase();
     call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
   }
 
