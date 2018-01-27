@@ -179,6 +179,36 @@ implementation {
 
 
   /*
+   * setFault: update owcb fault mask with the indicated bits.
+   *
+   * Will or into owcb.fault_gold or fault_nib the fault bits.
+   */
+  void owl_setFault(uint32_t fault_mask) @C() @spontaneous() {
+    uint32_t *f;
+
+    f = &ow_control_block.fault_mask_gold;
+    if (call OWhw.getImageBase())
+      f = &ow_control_block.fault_mask_nib;
+    *f |= fault_mask;
+  }
+
+
+  /*
+   * clrFault: update owcb fault mask with the indicated bits.
+   *
+   * Will clear only the indicated bits from the owcb fault mask.
+   */
+  void owl_clrFault(uint32_t fault_mask) @C() @spontaneous() {
+    uint32_t *f;
+
+    f = &ow_control_block.fault_mask_gold;
+    if (call OWhw.getImageBase())
+      f = &ow_control_block.fault_mask_nib;
+    *f &= ~fault_mask;
+  }
+
+
+  /*
    * stash as strange, and reboot into GOLD
    *
    * does NOT return, ever!  Low level death, do NOT call
@@ -788,6 +818,16 @@ implementation {
 
   async command uint32_t OverWatch.getImageBase() {
     return call OWhw.getImageBase();
+  }
+
+
+  async command void OverWatch.setFault(uint32_t fault_mask) {
+    owl_setFault(fault_mask);
+  }
+
+
+  async command void OverWatch.clrFault(uint32_t fault_mask) {
+    owl_clrFault(fault_mask);
   }
 
 

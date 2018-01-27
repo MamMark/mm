@@ -99,4 +99,7 @@ interface OverWatch {
   async command ow_control_block_t *getControlBlock();
 
   async command uint32_t            getImageBase();
+
+  async command void                setFault(uint32_t fault_mask);
+  async command void                clrFault(uint32_t fault_mask);
 }
