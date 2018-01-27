@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,14 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
 
+#include <platform.h>
+#include <overwatch.h>
+
+#ifndef PWR_CHECK_TIME
+// 1024 mis/sec * 60sec/min
+#define PWR_CHECK_TIME (60 * 1024)
+#endif
+
 module PowerManagerP {
   provides {
     interface PowerManager;
@@ -26,7 +34,10 @@ module PowerManagerP {
     interface Boot as OKPowerBoot;      /* outgoing */
   }
   uses {
-    interface Boot;
+    interface Boot;                     /* incoming */
+
+    interface OverWatch;
+    interface Timer<TMilli> as PwrTimer;
     interface Platform;
     interface Panic;
   }
@@ -96,21 +107,42 @@ implementation {
   }
 
 
+  event void PwrTimer.fired() {
+    if (call PowerManager.battery_connected()) {
+      /*
+       * after power comes back up, continue with what we
+       * were doing, but start out with a clean reboot.
+       *
+       * The reboot will use what ever is in owcb.ow_req,
+       * ow_boot_mode, and owt_action.
+       *
+       * We also set the reboot reason to ORR_LOW_PWR to indicate
+       * a LOW_PWR to OK_PWR transition.
+       *
+       * The FAULT_LOW_PWR bit will get reset following snag
+       * and record via the reboot record.  See Collect.
+       */
+      call OverWatch.reboot(ORR_LOW_PWR);
+      /* no return */
+    }
+  }
+
+
   /*
    * Gets signalled on Main boot.  check to see what power
    * mode we are in currently.  If low power then signal
    * LowPowerBoot.  Otherwise signal OKPowerBoot.
    */
   event void Boot.booted() {
-    if (call PowerManager.battery_connected())
+    if (call PowerManager.battery_connected()) {
       signal OKPowerBoot.booted();
-    else
-      signal LowPowerBoot.booted();
-    return;
+      return;
+    }
+    call OverWatch.setFault(OW_FAULT_LOW_PWR);
+    call PwrTimer.startPeriodic(PWR_CHECK_TIME);
   }
 
   default event void LowPowerBoot.booted() {
-    nop();                              /* BRK */
     call Panic.panic(PANIC_PWR, 1, 0, 0, 0, 0);
   }
 

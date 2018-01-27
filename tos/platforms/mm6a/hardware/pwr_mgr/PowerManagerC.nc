@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -53,7 +53,13 @@ implementation {
   LowPowerBoot    = PowerManagerP.LowPowerBoot;
   OKPowerBoot     = PowerManagerP.OKPowerBoot;
 
+  components new TimerMilliC()  as PwrTimer;
+  PowerManagerP.PwrTimer -> PwrTimer;
+
+  components OverWatchC;
+  PowerManagerP.OverWatch -> OverWatchC;
+
   components PlatformC, PanicC;
-  PowerManagerP.Platform -> PlatformC;
-  PowerManagerP.Panic    -> PanicC;
+  PowerManagerP.Platform  -> PlatformC;
+  PowerManagerP.Panic     -> PanicC;
 }
