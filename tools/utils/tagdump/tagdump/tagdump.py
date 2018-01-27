@@ -268,6 +268,7 @@ def get_record(fd):
     systime     = 0
     recsum      = 0
     rec_buf     = bytearray()
+    align0 = '*** aligning offset {0} (0x{0:x}) -> {1} (0x{1:x}) [{2} bytes]'
 
     last_offset = 0                     # protects against infinite resync
 
@@ -275,10 +276,10 @@ def get_record(fd):
         offset = fd.tell()
         # new records are required to start on a quad boundary
         if (offset & 3):
+            new_offset = ((offset/4) + 1) * 4
             if debug:
-                align0 = '*** aligning offset {0} (0x{0:x}) -> {1} (0x{1:x})'
-                print(align0.format(offset, ((offset/4) + 1) * 4))
-            offset = ((offset/4) + 1) * 4
+                print(align0.format(offset, new_offset, new_offset - offset))
+            offset = new_offset
             fd.seek(offset)
         if (offset == last_offset):
             #
