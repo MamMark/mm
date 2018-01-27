@@ -73,6 +73,7 @@ ow_reboot_reason_strs = {
     5:  "SKEW",
     6:  "USER",
     7:  "PANIC",
+    8:  "LOWPWR",
 }
 
 def ow_boot_mode_name(mode):
