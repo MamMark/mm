@@ -16,5 +16,8 @@ tagdump:  decode and display Tag Data Stream file
 # 0.2.12        tweaks, fix gps version
 #               add owcb.faults, owcb.subsys_disable.
 #               fix definition of datetime_obj, add dt64_obj
+#               add -x for end file position bound
+#               tweak alignment message, include bytes
+#               add LOWPWR to reboot record decode
 #
-__version__ = '0.2.11rc2'
+__version__ = '0.2.12rc0'
