@@ -50,7 +50,7 @@ implementation {
 
   FS.Boot   -> MainC;
   IM.Boot   -> FS.Booted;
-  OW.Boot   -> IM.Booted;
+  OW.Boot   -> IM.Booted;               /* OWT */
 
   /*
    * Note: If OWT (OverWatch TinyOS) determines that it has something to

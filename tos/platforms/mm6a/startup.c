@@ -31,7 +31,6 @@
 #include <platform.h>
 #include <platform_clk_defs.h>
 #include <platform_pin_defs.h>
-#include <platform_reset_defs.h>
 #include <platform_version.h>
 #include <image_info.h>
 #include <overwatch.h>
@@ -505,6 +504,9 @@ void __pwr_init() {
    * we measured this at about 16us.  Basically the final
    * loop waiting for the power system to come back doesn't
    * take any time.
+   *
+   * FIXME: hard busy wait.  But what to do if it times out.  How
+   * to do timing for a timeout.  Lots of problems.  Ignore for now.
    */
   while (PCM->CTL1 & PCM_CTL1_PMR_BUSY);
   PCM->CTL0 = PCM_CTL0_KEY_VAL | AMR_VCORE;
