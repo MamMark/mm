@@ -122,13 +122,14 @@ typedef enum  {
 /* Reboot reasons */
 typedef enum {
   ORR_NONE              = 0,
-  ORR_FAIL,                             /* catch all for the time being */
+  ORR_FAIL,                             /* catch all for the time being          */
   ORR_OWCB_CLOBBER,                     /* lost the control block, full pwr fail */
-  ORR_STRANGE,                          /* low level strangness */
-  ORR_FORCED,                           /* forced boot mode */
-  ORR_TIME_SKEW,                        /* rebooted because too much time skew */
-  ORR_USER_REQUEST,                     /* user requested reboot */
-  ORR_PANIC,
+  ORR_STRANGE,                          /* low level strangness                  */
+  ORR_FORCED,                           /* forced boot mode                      */
+  ORR_TIME_SKEW,                        /* rebooted because too much time skew   */
+  ORR_USER_REQUEST,                     /* user requested reboot                 */
+  ORR_PANIC,                            /* hem, something blew up                */
+  ORR_LOW_PWR,                          /* reboot, switching from low to normal  */
 } ow_reboot_reason_t;
 
 
@@ -150,9 +151,24 @@ typedef enum {
 enum {
   OWRF_LAUNCH  = 1,                     /* in process of an image launch */
                                         /* gets cleared when reboot record is written */
-  OWRF_LOW_PWR = 2,                     /* in low power mode, no sd, no 3V3 rail      */
-  OWRF_SD_FAIL = 4,                     /* failed in SD code, no panic captured       */
 };
+
+
+/*
+ * fault bits.  Indicate various subsystems failed.
+ */
+enum {
+  OW_FAULT_DCOR    = 1,                 /* DCO calibration resistor failed            */
+  OW_FAULT_32K     = 2,                 /* main time base failed, running on backup   */
+  OW_FAULT_LOW_PWR = 4,                 /* in low power mode, no sd, no 3V3 rail      */
+};
+
+
+/*
+ * Subsystem Disable.
+ *
+ * When bit set the subsystem isn't working, don't mess with it.
+ */
 
 
 /*
@@ -166,6 +182,12 @@ typedef struct {
   uint32_t           reset_others;      /* unindentified other stati       */
   uint32_t           from_base;         /* base address of where from      */
   uint32_t           fail_count;        /* how many times nib failed       */
+
+  uint32_t           fault_mask_gold;   /* indicate faults                 */
+  uint32_t           fault_mask_nib ;   /* indicate faults                 */
+  uint32_t           subsys_disable;    /* what's turned off               */
+
+  uint32_t           ow_sig_b;
 
   ow_request_t       ow_req;            /* B - req input */
   ow_reboot_reason_t reboot_reason;     /* B - req input */
@@ -187,10 +209,8 @@ typedef struct {
    * elapsed is a 64 bit time and needs to be 2quad aligned.
    */
 
-  uint32_t           ow_sig_b;
-
-  uint64_t           elapsed;           /* total time since pwr on, 2quad */
   uint32_t           reboot_count;      /* reboots since pwr came up      */
+  uint64_t           elapsed;           /* total time since pwr on, 2quad */
 
   uint32_t           strange;           /* strange shit */
   uint32_t           strange_loc;

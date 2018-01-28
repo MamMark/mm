@@ -221,6 +221,9 @@ implementation {
                          (void *) &ow_control_block,
                          sizeof(ow_control_block_t));
     call OverWatch.clearReset();        /* clears owcb copies */
+
+    /* clear resetable faults */
+    call OverWatch.clrFault(OW_FAULT_LOW_PWR);
   }
 
 

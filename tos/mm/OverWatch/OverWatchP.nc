@@ -179,6 +179,36 @@ implementation {
 
 
   /*
+   * setFault: update owcb fault mask with the indicated bits.
+   *
+   * Will or into owcb.fault_gold or fault_nib the fault bits.
+   */
+  void owl_setFault(uint32_t fault_mask) @C() @spontaneous() {
+    uint32_t *f;
+
+    f = &ow_control_block.fault_mask_gold;
+    if (call OWhw.getImageBase())
+      f = &ow_control_block.fault_mask_nib;
+    *f |= fault_mask;
+  }
+
+
+  /*
+   * clrFault: update owcb fault mask with the indicated bits.
+   *
+   * Will clear only the indicated bits from the owcb fault mask.
+   */
+  void owl_clrFault(uint32_t fault_mask) @C() @spontaneous() {
+    uint32_t *f;
+
+    f = &ow_control_block.fault_mask_gold;
+    if (call OWhw.getImageBase())
+      f = &ow_control_block.fault_mask_nib;
+    *f &= ~fault_mask;
+  }
+
+
+  /*
    * stash as strange, and reboot into GOLD
    *
    * does NOT return, ever!  Low level death, do NOT call
@@ -699,12 +729,34 @@ implementation {
   async command void OverWatch.fail(ow_reboot_reason_t reason) {
     ow_control_block_t *owcp;
 
-    /* do not call SysReboot.fail() here */
     owcp = &ow_control_block;
     owcp->uptime = call LocalTime.get();
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
     owcp->ow_req = OW_REQ_FAIL;
+    call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
+  }
+
+
+  /*
+   * Reboot - force a reboot with reason
+   *
+   * Will cause OverWatch to restart the system.  We leave
+   * the overwatch control cells alone, except to set the
+   * reboot reason.  This will cause Overwatch to reexecute
+   * whatever request was previously set.
+   *
+   * One use for this routine is when switching from Low Power to
+   * Normal Power.  We want to return to whatever mode we were
+   * running when we lost power.
+   */
+  async command void OverWatch.reboot(ow_reboot_reason_t reason) {
+    ow_control_block_t *owcp;
+
+    owcp = &ow_control_block;
+    owcp->uptime = call LocalTime.get();
+    owcp->reboot_reason = reason;
+    owcp->from_base = call OWhw.getImageBase();
     call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
   }
 
@@ -766,6 +818,16 @@ implementation {
 
   async command uint32_t OverWatch.getImageBase() {
     return call OWhw.getImageBase();
+  }
+
+
+  async command void OverWatch.setFault(uint32_t fault_mask) {
+    owl_setFault(fault_mask);
+  }
+
+
+  async command void OverWatch.clrFault(uint32_t fault_mask) {
+    owl_clrFault(fault_mask);
   }
 
 
