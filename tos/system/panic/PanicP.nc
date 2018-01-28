@@ -750,6 +750,12 @@ implementation {
      * switched to a different stack which then makes backtraces problematic.
      */
     nop();                              /* BRK */
+#ifdef PANIC_GATE
+    while (g_panic_gate != 0xdeadbeaf) {
+      nop();
+    }
+    g_panic_gate = 0;
+#endif
     __asm__ volatile ("b __panic_entry \n");
 
     /* returns via __panic_panic_entry */
