@@ -43,6 +43,7 @@ import gps_decoders
 import sensor_decoders
 
 from   tagfile      import TagFile
+from   tagfile      import TF_SEEK_END
 
 ####
 #
@@ -80,6 +81,8 @@ from   tagfile      import TagFile
 #
 #   -j JUMP         set input file position
 #                   (args.jump, integer)
+#                   -1: goto EOF
+#                   negative number, offset from EOF.
 #
 #   -x endpos       set last file position to process
 #                   (args.endpos, integer)
@@ -446,7 +449,12 @@ def dump(args):
     process_dir(infile)
 
     if (args.jump):
-        infile.seek(args.jump)
+        if (args.jump == -1):
+            infile.seek(0, how = TF_SEEK_END)
+        elif (args.jump < 0):
+            infile.seek(args.jump, how = TF_SEEK_END)
+        else:
+            infile.seek(args.jump)
 
     print(rec_title_str)
 

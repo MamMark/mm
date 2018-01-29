@@ -19,5 +19,6 @@ tagdump:  decode and display Tag Data Stream file
 #               add -x for end file position bound
 #               tweak alignment message, include bytes
 #               add LOWPWR to reboot record decode
+#               add "-j -1" and "-j <neg>"
 #
-__version__ = '0.2.12rc0'
+__version__ = '0.2.12rc1'

@@ -58,7 +58,7 @@ def parseargs():
 
     parser.add_argument('-j', '--jump',
                         type=auto_int,
-                        help='set input file position')
+                        help='set input file position, -1 EOF, neg from EOF')
 
     parser.add_argument('-x', '--endpos',
                         type=auto_int,
