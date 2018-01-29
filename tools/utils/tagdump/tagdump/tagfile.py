@@ -22,6 +22,11 @@
 import os
 import types
 
+# NOTE: os.lseek(fd, pos, how) and file.seek(pos, whence) use os.SEEK_SET (0),
+# os.SEEK_CUR (1), and os.SEEK_END (2) for the how or whence parameter.
+
+TF_SEEK_END = os.SEEK_END
+
 class TagFile(object):
     def __init__(self, input, direct=False):
         super( TagFile, self ).__init__()
@@ -45,12 +50,12 @@ class TagFile(object):
 
     def tell(self):
         if (self.direct):
-            return os.lseek(self.fileno, 0, 1)
+            return os.lseek(self.fileno, 0, os.SEEK_CUR)
         else:
             return self.fd.tell()
 
-    def seek(self, pos, where=0):
+    def seek(self, pos, how=os.SEEK_SET):
         if (self.direct):
-            return os.lseek(self.fileno, pos, where)
+            return os.lseek(self.fileno, pos, how)
         else:
-            return self.fd.seek(pos, where)
+            return self.fd.seek(pos, how)
