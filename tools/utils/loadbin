@@ -19,7 +19,7 @@
 # ie.  loadbin -t nib dev6a
 #        target = dev6a, type = /nib, loadaddr = 0x00020000
 
-VERSION=0.1.3
+VERSION=0.1.4
 
 USAGE=$(cat <<EOF
 
@@ -119,8 +119,8 @@ fi
 echo
 
 cat > ${CMDFILE} <<EOF
-// si jtag
-// JTAGConf -1,-1
+// si jtag              commented out
+// JTAGConf -1,-1       commented out
 exitonerror 1
 si swd
 speed auto
@@ -128,6 +128,8 @@ device msp432p401r
 r
 h
 loadfile ${DESTDIR}/main.bin,${LOADADDR}
+r
+g
 q
 EOF
 
