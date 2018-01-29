@@ -176,7 +176,9 @@ implementation {
     return FALSE;
   }
   command bool InfoSensGpsCmd.set_value(uint8_t *t, uint32_t *l) {
-    return FALSE;
+    nop();
+    nop();
+    return TRUE;
   }
 
   /*
