@@ -81,6 +81,13 @@ implementation {
           call THdr.set_error(msg, TE_PKT_OK);
           return TRUE;
           break;
+        case TN_HEAD:
+          call TPload.reset_payload(msg);                // no params
+          call THdr.set_response(msg);
+          call THdr.set_error(msg, TE_PKT_OK);
+          call TPload.add_size(msg, 0);
+          call TPload.add_error(msg, SUCCESS);
+          return TRUE;
         default:
           break;
       }
