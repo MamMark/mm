@@ -124,7 +124,7 @@ debug                   = 0            # extra debug chatty
 # 1st sector of the first is the directory
 DBLK_DIR_SIZE           = 0x200
 RLEN_MAX_SIZE           = 1024
-RESYNC_HDR_OFFSET       = 24            # how to get back to the start
+RESYNC_HDR_OFFSET       = 36            # how to get back to the start
 MAX_ZERO_SIGS           = 1024          # 1024 quads, 4K bytes of zero
 
 

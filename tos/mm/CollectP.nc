@@ -208,7 +208,6 @@ implementation {
     sp->dtype = DT_SYNC;
     sp->sync_majik = SYNC_MAJIK;
     sp->prev_sync  = dcc.last_sync_offset;
-    sp->pad0 = sp->pad1 = 0;
     dcc.last_sync_offset = get_rec_offset();
     call Collect.collect((void *) sp, sizeof(dt_sync_t), NULL, 0);
   }
@@ -225,7 +224,6 @@ implementation {
     rp->prev_sync  = dcc.last_sync_offset;
     rp->dt_h_revision = DT_H_REVISION;  /* which version of typed_data */
     rp->base = call OverWatch.getImageBase();
-    rp->pad0 = rp->pad1 = 0;
     dcc.last_sync_offset = get_rec_offset();
     call Collect.collect((void *) rp, sizeof(r),
                          (void *) &ow_control_block,
@@ -544,7 +542,6 @@ implementation {
         sp->systime    = call LocalTime.get();
         sp->sync_majik = SYNC_MAJIK;
         sp->prev_sync  = dcc.last_sync_offset;
-        sp->pad0       = sp->pad1       = 0;
         dcc.last_sync_offset = get_rec_offset();
 
         /* fill in datetime */

@@ -54,13 +54,11 @@ dt_simple_hdr   = aggie(OrderedDict([('hdr', dt_hdr_obj)]))
 
 dt_reboot_obj   = aggie(OrderedDict([
     ('hdr',     dt_hdr_obj),
-    ('pad0',    atom(('<H', '{:04x}'))),
-    ('majik',   atom(('<I', '{:08x}'))),
-    ('prev',    atom(('<I', '{:08x}'))),
-    ('dt_rev',  atom(('<I', '{:08x}'))),
-    ('base',    atom(('<I', '{:08x}'))),
     ('datetime',atom(('10s', '{}', binascii.hexlify))),
-    ('pad1',    atom(('<H',  '{}')))]))
+    ('prev',    atom(('<I', '{:08x}'))),
+    ('majik',   atom(('<I', '{:08x}'))),
+    ('dt_rev',  atom(('<I', '{:08x}'))),
+    ('base',    atom(('<I', '{:08x}')))]))
 
 #
 # reboot is followed by the ow_control_block
@@ -125,10 +123,9 @@ image_info_obj  = aggie(OrderedDict([
 
 dt_sync_obj     = aggie(OrderedDict([
     ('hdr',       dt_hdr_obj),
-    ('pad0',      atom(('<H', '{:04x}'))),
-    ('majik',     atom(('<I', '{:08x}'))),
+    ('datetime',  atom(('10s','{}', binascii.hexlify))),
     ('prev_sync', atom(('<I', '{:x}'))),
-    ('datetime',  atom(('10s','{}', binascii.hexlify)))]))
+    ('majik',     atom(('<I', '{:08x}')))]))
 
 
 # EVENT

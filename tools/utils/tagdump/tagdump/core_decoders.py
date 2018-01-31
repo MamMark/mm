@@ -173,7 +173,7 @@ def decode_reboot(level, offset, buf, obj):
                            owcb_obj['image_chk_fail'].val))
 
 #                          sizeof(reboot record) + sizeof(owcb)
-g.dt_records[DT_REBOOT] = (132, decode_reboot, dt_reboot_obj, "REBOOT")
+g.dt_records[DT_REBOOT] = (128, decode_reboot, dt_reboot_obj, "REBOOT")
 
 
 ################################################################
@@ -274,7 +274,7 @@ def decode_sync(level, offset, buf, obj):
         print(sync1a.format(majik, prev, prev))
         print(sync1b.format())
 
-g.dt_records[DT_SYNC] = (40, decode_sync, dt_sync_obj, "SYNC")
+g.dt_records[DT_SYNC] = (36, decode_sync, dt_sync_obj, "SYNC")
 
 
 ################################################################

@@ -42,7 +42,7 @@
 /*
  * identify what revision of typed_data.h we are using for this build
  */
-#define DT_H_REVISION 11
+#define DT_H_REVISION 12
 
 /*
  * Sync records are used to make sure we can always find the data stream if
@@ -175,19 +175,20 @@ typedef struct {                /* size 20 */
  */
 
 typedef struct {
-  uint16_t len;                 /* size 48 +    84      */
+  uint16_t len;                 /* size 44 +    84      */
   dtype_t  dtype;               /* reboot  + ow_control */
   uint32_t recnum;
   uint64_t systime;             /* 2quad alignment */
   uint16_t recsum;              /* part of header */
-  uint16_t pad0;
-  uint32_t sync_majik;
+  datetime_t datetime;          /* 10 bytes */
   uint32_t prev_sync;           /* file offset */
+  uint32_t sync_majik;
+  /* above same as sync */
+
+  /* additional in reboot record + owcb */
   uint32_t dt_h_revision;       /* version identifier of typed_data */
                                 /* and associated structures        */
   uint32_t base;                /* base address of running image    */
-  datetime_t datetime;          /* 10 bytes */
-  uint16_t pad1;               /* quad aligned for owcb  */
 } PACKED dt_reboot_t;
 
 typedef struct {
@@ -219,16 +220,14 @@ typedef struct {
 
 
 typedef struct {
-  uint16_t   len;               /* size 40 */
+  uint16_t   len;               /* size 36 */
   dtype_t    dtype;
   uint32_t   recnum;
   uint64_t   systime;
   uint16_t   recsum;            /* part of header */
-  uint16_t   pad0;
-  uint32_t   sync_majik;
-  uint32_t   prev_sync;         /* file offset */
   datetime_t datetime;          /* 10 bytes */
-  uint16_t   pad1;
+  uint32_t   prev_sync;         /* file offset */
+  uint32_t   sync_majik;
 } PACKED dt_sync_t;             /* quad granular */
 
 
