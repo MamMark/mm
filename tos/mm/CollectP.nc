@@ -78,7 +78,6 @@
 #include <stream_storage.h>
 #include <sd.h>
 
-
 /*
  * Data Collector (dc) control structure
  *
@@ -91,6 +90,7 @@
  * cur_ptr:             where in the current buffer we be
  *
  * cur_recnum:          last recnum used.
+ * last_rec_offset:     file offset of last record laid down
  * last_sync_offset:    file offset of last REBOOT/SYNC laid down
  * bufs_to_next_sync:   number of buffers/sectors before we do next sync
 
@@ -105,7 +105,8 @@ typedef struct {
   uint8_t     *cur_buf;
   uint8_t     *cur_ptr;
 
-  uint32_t     cur_recnum;
+  uint32_t     cur_recnum;              /* last record used */
+  uint32_t     last_rec_offset;         /* file offset */
   uint32_t     last_sync_offset;        /* file offset */
   uint16_t     bufs_to_next_sync;
 
@@ -146,10 +147,16 @@ implementation {
 
 
   /*
-   * update_sync_offset
-   * update the last know sync file offset.
+   * get_rec_offset
+   * return file offset of where the next record will get laid down
+   *
+   * WARNING: this routine will return the offset of the record if it is
+   * called at a record boundary.  Since Collect is the only entity that
+   * calls this and it knows where the record boundary is thing should
+   * work correctly.  But be aware.
    */
-  void update_sync_offset() {
+
+  uint32_t get_rec_offset() {
     uint32_t blk_offset;
     uint32_t buf_offset;
 
@@ -157,8 +164,7 @@ implementation {
     buf_offset = 0;
     blk_offset = call SSW.block_offset();
     if (!blk_offset) {
-      dcc.last_sync_offset = 0;
-      return;
+      return 0;
     }
 
     /*
@@ -171,7 +177,7 @@ implementation {
     if (dcc.cur_buf)
       buf_offset = SD_BLOCKSIZE - dcc.remaining;
     blk_offset += buf_offset;
-    dcc.last_sync_offset = blk_offset;
+    return blk_offset;
   }
 
 
@@ -199,7 +205,7 @@ implementation {
     sp->sync_majik = SYNC_MAJIK;
     sp->prev_sync  = dcc.last_sync_offset;
     sp->pad0 = sp->pad1 = 0;
-    update_sync_offset();
+    dcc.last_sync_offset = get_rec_offset();
     call Collect.collect((void *) sp, sizeof(dt_sync_t), NULL, 0);
   }
 
@@ -216,7 +222,7 @@ implementation {
     rp->dt_h_revision = DT_H_REVISION;  /* which version of typed_data */
     rp->base = call OverWatch.getImageBase();
     rp->pad0 = rp->pad1 = 0;
-    update_sync_offset();
+    dcc.last_sync_offset = get_rec_offset();
     call Collect.collect((void *) rp, sizeof(r),
                          (void *) &ow_control_block,
                          sizeof(ow_control_block_t));
@@ -374,6 +380,7 @@ implementation {
     uint32_t    i;
 
     dcc.cur_recnum++;
+    dcc.last_rec_offset = get_rec_offset();
     header->recnum = dcc.cur_recnum;
 
     /*
@@ -508,7 +515,7 @@ implementation {
         sp->sync_majik = SYNC_MAJIK;
         sp->prev_sync  = dcc.last_sync_offset;
         sp->pad0       = sp->pad1       = 0;
-        update_sync_offset();
+        dcc.last_sync_offset = get_rec_offset();
 
         /* fill in datetime */
 
