@@ -126,6 +126,10 @@ module CollectP {
     interface Collect;
     interface Init;
     interface CollectEvent;
+
+    interface TagnetAdapter<uint32_t> as DblkLastRecNum;
+    interface TagnetAdapter<uint32_t> as DblkLastRecOffset;
+    interface TagnetAdapter<uint32_t> as DblkLastSyncOffset;
   }
   uses {
     interface Boot;                     /* in boot in sequence */
@@ -277,6 +281,32 @@ implementation {
     dcc.bufs_to_next_sync = SYNC_MAX_SECTORS;
     return SUCCESS;
   }
+
+
+  command bool DblkLastRecNum.get_value(uint32_t *t, uint32_t *l) {
+    *t = dcc.cur_recnum;
+    *l = 4;
+    return 1;
+  }
+
+
+  command bool DblkLastRecOffset.get_value(uint32_t *t, uint32_t *l) {
+    *t = dcc.last_rec_offset;
+    *l = 4;
+    return 1;
+  }
+
+
+  command bool DblkLastSyncOffset.get_value(uint32_t *t, uint32_t *l) {
+    *t = dcc.last_sync_offset;
+    *l = 4;
+    return 1;
+  }
+
+
+  command bool DblkLastRecNum.set_value(uint32_t *t, uint32_t *l)     { return FALSE; }
+  command bool DblkLastRecOffset.set_value(uint32_t *t, uint32_t *l)  { return FALSE; }
+  command bool DblkLastSyncOffset.set_value(uint32_t *t, uint32_t *l) { return FALSE; }
 
 
   /*
