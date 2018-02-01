@@ -201,20 +201,21 @@ def resync(fd, offset):
                 print(resync1.format(len(majik_buf), offset))
                 return -1
             except IOError:
-                print('*** resync: file io error')
+                print('*** resync: file io error @{}'.format(offset))
                 return -1
             except EOFError:
-                print('*** resync: end of file')
+                print('*** resync: end of file @{}'.format(offset))
                 return -1
             except:
-                print('*** resync: exception error: {}'.format(sys.exc_info()[0]))
+                print('*** resync: exception error: {} @{}'.format(
+                    sys.exc_info()[0], offset))
                 raise
             offset = fd.tell()
             if (sig == 0):
                 zero_sigs += 1
                 if (zero_sigs > MAX_ZERO_SIGS):
-                    print('*** resync: too many zeros ({} x 4), bailing'.format(
-                        MAX_ZERO_SIGS))
+                    print('*** resync: too many zeros ({} x 4), bailing, @{}'.format(
+                        MAX_ZERO_SIGS, offset))
                     return -1
             else:
                 zero_sigs = 0
@@ -224,7 +225,7 @@ def resync(fd, offset):
             print('*** resync: found MAJIK @{0} (0x{0:x})'.format(offset))
         buf = bytearray(fd.read(dt_hdr_size))
         if (len(buf) < dt_hdr_size):            # oht oh, too small, very strange
-            print('*** resync: read of dt_hdr too small')
+            print('*** resync: read of dt_hdr too small, @{}'.format(offset_try))
             return -1
 
         # we want rlen and rtype, we leave recsum checking for gen_records
@@ -293,7 +294,7 @@ def get_record(fd):
             # tried.  Find the next one.
             #
             offset += RESYNC_HDR_OFFSET
-            print('*** resyncing: moving past current majik to: {0} (0x{0:x})'.format(
+            print('*** resyncing: moving past current majik to: @{0} (0x{0:x})'.format(
                 offset))
             offset = resync(fd, offset)
             if (offset < 0):
@@ -302,28 +303,28 @@ def get_record(fd):
         last_offset = offset
         rec_buf = bytearray(fd.read(dt_hdr_size))
         if (len(rec_buf) < dt_hdr_size):
-            print('*** record header read too short: wanted {}, got {}'.format(
-                dt_hdr_size, len(rec_buf)))
+            print('*** record header read too short: wanted {}, got {}, @{}'.format(
+                dt_hdr_size, len(rec_buf), offset))
             break                       # oops
         rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack(rec_buf)
 
         # check for obvious errors
         if (rlen < dt_hdr_size):
-            print('*** record size too small: {}'.format(rlen))
+            print('*** record size too small: {}, @{}'.format(rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
             continue
 
         if (rlen > RLEN_MAX_SIZE):
-            print('*** record size too large: {}'.format(rlen))
+            print('*** record size too large: {}, @{}'.format(rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
             continue
 
         if (recnum == 0):               # zero is never allowed
-            print('*** zero record number - resyncing')
+            print('*** zero record number, @{} - resyncing'.format(offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
@@ -333,8 +334,8 @@ def get_record(fd):
         # if dlen is negative, that says we are below min header size
         dlen = rlen - dt_hdr_size
         if (dlen < 0):                  # major oops, rlen is screwy
-            print('*** record header too short: wanted {}, got {}'.format(
-                dt_hdr_size, rlen))
+            print('*** record header too short: wanted {}, got {}, @{}'.format(
+                dt_hdr_size, rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
@@ -344,8 +345,8 @@ def get_record(fd):
             rec_buf.extend(bytearray(fd.read(dlen)))
 
         if (len(rec_buf) < rlen):
-            print('*** record read too short: wanted {}, got {}'.format(
-                rlen, len(rec_buf)))
+            print('*** record read too short: wanted {}, got {}, @{}'.format(
+                rlen, len(rec_buf), offset))
             break                       # oops, bail
 
         # verify checksum.
@@ -467,10 +468,11 @@ def dump(args):
                 break;
 
             if (recnum < rec_last):
-                print('*** recnum went backwards.  last: {}, new: {}'.format(
-                    rec_last, recnum))
+                print('*** recnum went backwards.  last: {}, new: {}, @{}'.format(
+                    rec_last, recnum, rec_offset))
             if (rec_last and recnum > rec_last + 1):
-                print('*** record gap: ({}) records'.format(recnum - rec_last))
+                print('*** record gap: ({}) records, @{}'.format(
+                    recnum - rec_last, rec_offset))
             rec_last = recnum
 
             # apply any filters (inclusion)
@@ -499,11 +501,12 @@ def dump(args):
                 try:
                     decode(verbose, rec_offset, rec_buf, obj)
                 except struct.error:
-                    print('*** decode error: (len: {}, rtype: {} {})'.format(
-                        rlen, rtype, dt_name(rtype)))
+                    print('*** decode error: (len: {}, rtype: {} {}), @{}'.format(
+                        rlen, rtype, dt_name(rtype), rec_offset))
             else:
                 if (verbose >= 5):
-                    print('*** no decoder installed for rtype {}'.format(rtype))
+                    print('*** no decoder installed for rtype {}, @{}'.format(
+                        rtype, rec_offset))
             if (verbose >= 3):
                 print
                 print_record(rec_offset, rec_buf)

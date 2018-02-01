@@ -144,8 +144,8 @@ rec_format    = "{:8} {:6}  {:7}  {:3}    {:2}  {:12s} @{} (0x{:06x}) [0x{:04x}]
 
 def print_record(offset, buf):
     if (len(buf) < dt_hdr_size):
-        print('*** print_record, buf too small for a header, wanted {}, got {}'.format(
-            dt_hdr_size, len(buf)))
+        print('*** print_record, buf too small for a header, wanted {}, got {}, @{}'.format(
+            dt_hdr_size, len(buf), offset))
         dump_buf(buf, '    ')
     else:
         rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack_from(buf)
