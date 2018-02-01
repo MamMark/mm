@@ -20,5 +20,7 @@ tagdump:  decode and display Tag Data Stream file
 #               tweak alignment message, include bytes
 #               add LOWPWR to reboot record decode
 #               add "-j -1" and "-j <neg>"
+#               new reboot and sync layout
+#               dt_rev 12
 #
-__version__ = '0.2.12rc1'
+__version__ = '0.2.12'
