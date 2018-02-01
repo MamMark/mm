@@ -46,6 +46,11 @@ implementation {
   components PanicByteStorageC;
   TagnetC.PanicBytes            -> PanicByteStorageC.PanicBytes;
 
+  components CollectC;
+  TagnetC.DblkLastRecNum        -> CollectC.DblkLastRecNum;
+  TagnetC.DblkLastRecOffset     -> CollectC.DblkLastRecOffset;
+  TagnetC.DblkLastSyncOffset    -> CollectC.DblkLastSyncOffset;
+
   components new TimerMilliC()  as Timer0;
   TagnetMonitorP.rcTimer        -> Timer0;
   components new TimerMilliC()  as Timer1;

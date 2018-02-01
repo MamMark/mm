@@ -37,9 +37,9 @@
 
 #include <TagnetTLV.h>
 
-generic module TagnetIntegerAdapterImplP (int my_id) @safe() {
+generic module TagnetUnsignedAdapterImplP (int my_id) @safe() {
   uses interface  TagnetMessage   as  Super;
-  uses interface  TagnetAdapter<int32_t> as Adapter;
+  uses interface  TagnetAdapter<uint32_t> as Adapter;
   uses interface  TagnetName      as  TName;
   uses interface  TagnetHeader    as  THdr;
   uses interface  TagnetPayload   as  TPload;
@@ -49,13 +49,12 @@ implementation {
   enum { my_adapter_id = unique(UQ_TAGNET_ADAPTER_LIST) };
 
   event bool Super.evaluate(message_t *msg) {
-    int32_t                 v = 0;
+    uint32_t                v = 0;
     uint32_t                l = 0;
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
 
-    if (call TName.is_last_element(msg) &&          // end of name and me == this
-        (call TTLV.eq_tlv(name_tlv, this_tlv))) {
+    if (call TTLV.eq_tlv(name_tlv, this_tlv)) {
       tn_trace_rec(my_id, 1);
       call THdr.set_response(msg);
       call THdr.set_error(msg, TE_PKT_OK);
@@ -73,7 +72,11 @@ implementation {
         case TN_HEAD:
           tn_trace_rec(my_id, 3);
           call TPload.reset_payload(msg);                // no params
-          call TPload.add_size(msg, 0);
+          if (call Adapter.get_value(&v, &l)) {
+            call TPload.add_size(msg, v);
+          }  else {
+            call TPload.add_size(msg, 0);
+          }
           return TRUE;
           break;
         default:
@@ -98,7 +101,7 @@ implementation {
   }
 
   event void Super.add_value_tlv(message_t* msg) {
-    int32_t                 v;
+    uint32_t                v;
     uint32_t                l;
     int                     s;
 

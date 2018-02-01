@@ -8,6 +8,9 @@ configuration CollectC {
     interface Boot as Booted;           /* out boot */
     interface Collect;
     interface CollectEvent;
+    interface TagnetAdapter<uint32_t> as DblkLastRecNum;
+    interface TagnetAdapter<uint32_t> as DblkLastRecOffset;
+    interface TagnetAdapter<uint32_t> as DblkLastSyncOffset;
   }
   uses     interface Boot;              /* in  boot */
 }
@@ -22,6 +25,10 @@ implementation {
   Collect      = CollectP;
   CollectEvent = CollectP;
   Boot         = CollectP.Boot;
+
+  DblkLastRecNum     = CollectP.DblkLastRecNum;
+  DblkLastRecOffset  = CollectP.DblkLastRecOffset;
+  DblkLastSyncOffset = CollectP.DblkLastSyncOffset;
 
   components new TimerMilliC() as SyncTimerC;
   CollectP.SyncTimer -> SyncTimerC;

@@ -12,6 +12,9 @@ root
         |-- sd
         |   +-- 0
         |       |-- dblk
+        |       |   |-- .last_rec
+        |       |   |-- .last_sync
+        |       |   |-- .recnum
         |       |   |-- byte
         |       |   +-- note
         |       |-- img
