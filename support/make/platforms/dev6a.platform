@@ -8,6 +8,7 @@
 PFLAGS += -I%T/platforms/dev6a
 
 PFLAGS += -I%T/mm
+PFLAGS += -I%T/mm/GPS
 PFLAGS += -I%T/mm/OverWatch
 PFLAGS += -I%T/system/panic
 
