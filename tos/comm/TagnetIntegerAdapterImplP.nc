@@ -54,8 +54,7 @@ implementation {
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
 
-    if (call TName.is_last_element(msg) &&          // end of name and me == this
-        (call TTLV.eq_tlv(name_tlv, this_tlv))) {
+    if (call TTLV.eq_tlv(name_tlv, this_tlv)) {
       tn_trace_rec(my_id, 1);
       call THdr.set_response(msg);
       call THdr.set_error(msg, TE_PKT_OK);

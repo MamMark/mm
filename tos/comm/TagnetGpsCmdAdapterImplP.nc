@@ -58,7 +58,8 @@ implementation {
 
     nop();
     nop();                      /* BRK */
-    if  (call TTLV.eq_tlv(name_tlv, this_tlv)) {      // this name == mine
+    if (call TName.is_last_element(msg) &&          // end of name and me == this
+        (call TTLV.eq_tlv(name_tlv, this_tlv))) {
       tn_trace_rec(my_id, 1);
       call THdr.set_response(msg);
       call THdr.set_error(msg, TE_PKT_OK);
