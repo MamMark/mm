@@ -64,7 +64,8 @@ implementation {
           tn_trace_rec(my_id, 2);
           call TPload.reset_payload(msg);
           if (call Adapter.get_value(&v, &l)) {
-            call TPload.add_integer(msg, v);
+            call TPload.add_block(msg, (void *)&v, sizeof(v));
+            call TPload.add_eof(msg);
           } else {
             call TPload.add_error(msg, EINVAL);
           }

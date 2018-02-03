@@ -60,7 +60,20 @@ implementation {
     nop();                      /* BRK */
     if  (call TTLV.eq_tlv(name_tlv, this_tlv)) {      // this name == mine
       tn_trace_rec(my_id, 1);
+      call THdr.set_response(msg);
+      call THdr.set_error(msg, TE_PKT_OK);
       switch (call THdr.get_message_type(msg)) {      // process message type
+        case TN_GET:
+          tn_trace_rec(my_id, 2);
+          call TPload.reset_payload(msg);
+          if (call Adapter.get_value(&v, &l)) {
+            call TPload.add_block(msg, (void *)&v, sizeof(v));
+            call TPload.add_eof(msg);
+          } else {
+            call TPload.add_error(msg, EINVAL);
+          }
+          return TRUE;
+          break;
         case TN_PUT:
           tn_trace_rec(my_id, 2);
           cmd_tlv = call TPload.first_element(msg);
@@ -72,21 +85,16 @@ implementation {
           }
           call TPload.reset_payload(msg);
           if (call Adapter.set_value(cmd, &ln)) {
-            call TPload.add_error(msg, SUCCESS);
             call TPload.add_block(msg, cmd, ln);
           } else {
             call TPload.add_error(msg, EINVAL);
           }
-          call THdr.set_response(msg);
-          call THdr.set_error(msg, TE_PKT_OK);
           return TRUE;
           break;
         case TN_HEAD:
+          tn_trace_rec(my_id, 3);
           call TPload.reset_payload(msg);                // no params
-          call THdr.set_response(msg);
-          call THdr.set_error(msg, TE_PKT_OK);
           call TPload.add_size(msg, 0);
-          call TPload.add_error(msg, SUCCESS);
           return TRUE;
         default:
           break;
