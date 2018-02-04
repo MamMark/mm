@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Eric B. Decker
+ * Copyright (c) 2016-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,6 +32,21 @@ enum {
 
 #define PANIC_SD __pcode_sd
 #endif
+
+/*
+ * space to capture dma h/w state.
+ */
+typedef struct {
+  uint32_t enaset;                      /* which channels are enabled */
+  uint32_t prioset;                     /* channel priority settings  */
+  uint32_t int0;                        /* any pending interrupts?    */
+  uint32_t tx_srccfg;                   /* tx channel trigger setting */
+  uint32_t rx_srccfg;                   /* rx channel trigger setting */
+  dma_cb_t tx_cb;                       /* control block, tx          */
+  dma_cb_t rx_cb;                       /* control block, rx          */
+} sd_dma_cap_t;
+
+sd_dma_cap_t sd_dma_cap;
 
 module SD0HardwareP {
   provides {
@@ -74,9 +89,8 @@ implementation {
   uint8_t recv_dump[SD_BLOCKSIZE];
 
 /*
- * The dev6a main cpu clock is 16MiHz, SMCLK (for periphs) is clocked at
- * 8MiHz.  The dev6a is a TI msp432p401r (exp-msp432p401r launch pad) dev
- * board with added mm6a peripherals.
+ * The mm6a main cpu clock is 16MiHz, SMCLK (for periphs) is clocked at
+ * 8MiHz.
  *
  * There is documentation that says initilization on the SD
  * shouldn't be done any faster than 400 KHz to be compatible
@@ -90,7 +104,7 @@ implementation {
  * 1uis ticks.  Note the SD in SPI mode is documented is various places
  * that it can clock up to 25MHz.  So we should be safe.
  *
- * Dev6a, msp432, USCI, SPI
+ * Mm6a, msp432, USCI, SPI
  * phase 0, polarity 1, msb, 8 bit, master,
  * mode 3 pin, sync.
  *
@@ -387,6 +401,39 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
     call DmaRX.dma_stop_channel();
     dma_t0_us = 0;                      /* not watching anymore */
     return a;                           /* the hills have eyes  */
+  }
+
+
+  async command void HW.sd_capture_dma_state() {
+    dma_cb_t *cb;
+    uint8_t   tx_chan, rx_chan;
+
+    atomic {
+      /*
+       * capture:
+       * o ENASET (which channels are enabled)
+       * o Priority
+       * o interrupt pending
+       * o srccfg, configured for tx and rx
+       * o rx, tx control blocks
+       */
+      tx_chan              = call DmaTX.dma_channel();
+      rx_chan              = call DmaRX.dma_channel();
+      sd_dma_cap.enaset    = DMA_Control->ENASET;
+      sd_dma_cap.prioset   = DMA_Control->PRIOSET;
+      sd_dma_cap.int0      = DMA_Channel->INT0_SRCFLG;
+      sd_dma_cap.tx_srccfg = DMA_Channel->CH_SRCCFG[tx_chan];
+      sd_dma_cap.rx_srccfg = DMA_Channel->CH_SRCCFG[rx_chan];
+      cb = call DmaTX.dma_cb();
+      sd_dma_cap.tx_cb.src_end = cb->src_end;
+      sd_dma_cap.tx_cb.dst_end = cb->dst_end;
+      sd_dma_cap.tx_cb.control = cb->control;
+      cb = call DmaRX.dma_cb();
+      sd_dma_cap.rx_cb.src_end = cb->src_end;
+      sd_dma_cap.rx_cb.dst_end = cb->dst_end;
+      sd_dma_cap.rx_cb.control = cb->control;
+      nop();                            /* BRK */
+    }
   }
 
 

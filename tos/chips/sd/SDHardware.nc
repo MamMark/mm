@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Eric B. Decker
+ * Copyright (c) 2016-2018, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -113,6 +113,7 @@ interface SDHardware {
   async command void sd_wait_dma(uint16_t length);
   async command bool sd_dma_active();
   async command bool sd_stop_dma();
+  async command void sd_capture_dma_state();
 
   async command void sd_dma_enable_int();
   async command void sd_dma_disable_int();
