@@ -2,7 +2,7 @@
  * SDsp - low level Secure Digital storage driver
  * Split phase, event driven.
  *
- * Copyright (c) 2014, 2016-2017: Eric B. Decker
+ * Copyright (c) 2014, 2016-2018: Eric B. Decker
  * Copyright (c) 2010, Eric B. Decker, Carl Davis
  * All rights reserved.
  *
@@ -622,7 +622,10 @@ implementation {
 	w_t = call lt.get();
 	w_diff = w_t - op_t0_ms;
 	rsp = call HW.spi_get();
-	call Panic.panic(PANIC_SD, 38, sdc.sd_state, w_diff, 0, 0); /* no rtn */
+        if (sdc.sd_state == SDS_WRITE_DMA || sdc.sd_state == SDS_READ_DMA)
+          call HW.sd_capture_dma_state();
+	call Panic.panic(PANIC_SD, 38, sdc.sd_state, w_diff, 0, 0);
+        /* no rtn */
 	return;
 
       case SDS_OFF_TO_ON:
