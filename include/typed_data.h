@@ -42,7 +42,7 @@
 /*
  * identify what revision of typed_data.h we are using for this build
  */
-#define DT_H_REVISION 12
+#define DT_H_REVISION 13
 
 /*
  * Sync records are used to make sure we can always find the data stream if
@@ -236,26 +236,33 @@ typedef enum {
   DT_EVENT_SUBMERGED        = 2,
   DT_EVENT_DOCKED           = 3,
   DT_EVENT_UNDOCKED         = 4,
-  DT_EVENT_GPS_BOOT         = 5,
-  DT_EVENT_GPS_BOOT_TIME    = 6,
-  DT_EVENT_GPS_RECONFIG     = 7,
-  DT_EVENT_GPS_START        = 8,
-  DT_EVENT_GPS_OFF          = 9,
-  DT_EVENT_GPS_STANDBY      = 10,
-  DT_EVENT_GPS_FAST         = 11,
-  DT_EVENT_GPS_FIRST        = 12,
-  DT_EVENT_GPS_SATS_2       = 13,
-  DT_EVENT_GPS_SATS_7       = 14,
-  DT_EVENT_GPS_SATS_29      = 15,
-  DT_EVENT_GPS_CYCLE_TIME   = 16,
-  DT_EVENT_GPS_GEO          = 17,
-  DT_EVENT_GPS_XYZ          = 18,
-  DT_EVENT_GPS_TIME         = 19,
-  DT_EVENT_GPS_RX_ERR       = 20,
-  DT_EVENT_SSW_DELAY_TIME   = 21,
-  DT_EVENT_SSW_BLK_TIME     = 22,
-  DT_EVENT_SSW_GRP_TIME     = 23,
-  DT_EVENT_PANIC_WARN       = 24,
+
+  DT_EVENT_GPS_GEO          = 5,
+  DT_EVENT_GPS_XYZ          = 6,
+  DT_EVENT_GPS_TIME         = 7,
+
+  DT_EVENT_SSW_DELAY_TIME   = 8,
+  DT_EVENT_SSW_BLK_TIME     = 9,
+  DT_EVENT_SSW_GRP_TIME     = 10,
+  DT_EVENT_PANIC_WARN       = 11,
+
+  DT_EVENT_GPS_BOOT         = 32,
+  DT_EVENT_GPS_BOOT_TIME    = 33,
+  DT_EVENT_GPS_RECONFIG     = 34,
+  DT_EVENT_GPS_TURN_ON      = 35,
+  DT_EVENT_GPS_STANDBY      = 36,
+  DT_EVENT_GPS_TURN_OFF     = 37,
+  DT_EVENT_GPS_MPM          = 38,
+  DT_EVENT_GPS_FULL_PWR     = 39,
+  DT_EVENT_GPS_PULSE        = 40,
+  DT_EVENT_GPS_FAST         = 41,
+  DT_EVENT_GPS_FIRST        = 42,
+  DT_EVENT_GPS_SATS_2       = 43,
+  DT_EVENT_GPS_SATS_7       = 44,
+  DT_EVENT_GPS_SATS_29      = 45,
+  DT_EVENT_GPS_CYCLE_TIME   = 46,
+  DT_EVENT_GPS_RX_ERR       = 47,
+
   DT_EVENT_16               = 0xffff,
 } dt_event_id_t;
 

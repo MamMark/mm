@@ -135,29 +135,35 @@ event_names = {
      2: "SUBMERGED",
      3: "DOCKED",
      4: "UNDOCKED",
-     5: "GPS_BOOT",
-     6: "GPS_BOOT_TIME",
-     7: "GPS_RECONFIG",
-     8: "GPS_START",
-     9: "GPS_OFF",
-    10: "GPS_STANDBY",
-    11: "GPS_FAST",
-    12: "GPS_FIRST",
-    13: "GPS_SATS_2",
-    14: "GPS_SATS_7",
-    15: "GPS_SATS_29",
-    16: "GPS_CYCLE_TIME",
-    17: "GPS_GEO",
-    18: "GPS_XYZ",
-    19: "GPS_TIME",
-    20: "GPS_RX_ERR",
-    21: "SSW_DELAY_TIME",
-    22: "SSW_BLK_TIME",
-    23: "SSW_GRP_TIME",
-    24: "PANIC_WARN",
+
+     5: "GPS_GEO",
+     6: "GPS_XYZ",
+     7: "GPS_TIME",
+
+     8: "SSW_DELAY_TIME",
+     9: "SSW_BLK_TIME",
+    10: "SSW_GRP_TIME",
+    11: "PANIC_WARN",
+
+    32: "GPS_BOOT",
+    33: "GPS_BOOT_TIME",
+    34: "GPS_RECONFIG",
+    35: "GPS_START",
+    36: "GPS_OFF",
+    37: "GPS_STANDBY",
+    38: "GPS_MPM",
+    39: "GPS_FULL_PWR",
+    40: "GPS_PULSE",
+    41: "GPS_FAST",
+    42: "GPS_FIRST",
+    43: "GPS_SATS_2",
+    44: "GPS_SATS_7",
+    45: "GPS_SATS_29",
+    46: "GPS_CYCLE_TIME",
+    47: "GPS_RX_ERR",
 }
 
-PANIC_WARN = 24
+PANIC_WARN = 11
 
 
 dt_event_obj    = aggie(OrderedDict([
