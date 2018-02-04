@@ -67,11 +67,12 @@ implementation {
         case TN_GET:
           tn_trace_rec(my_id, 2);
           call TPload.reset_payload(msg);
-          if (call Adapter.get_value(&v, &l)) {
-            call TPload.add_block(msg, (void *)&v, sizeof(v));
-            call TPload.add_eof(msg);
+          cmd_tlv = call TPload.first_element(msg);
+          if (call THdr.is_pload_type_raw(msg)) {
+            cmd = (uint8_t *) cmd_tlv;
+            ln = call TPload.get_len(msg);
           } else {
-            call TPload.add_error(msg, EINVAL);
+            cmd = call TTLV.tlv_to_block(cmd_tlv, &ln);
           }
           return TRUE;
           break;
