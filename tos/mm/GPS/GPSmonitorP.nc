@@ -31,6 +31,8 @@
 #include <TagnetTLV.h>
 #include <sirf_msg.h>
 #include <mm_byteswap.h>
+#include <sirf_driver.h>
+#include <gps_cmd.h>
 
 
 #ifndef PANIC_GPS
@@ -160,6 +162,8 @@ implementation {
     *l = TN_GPS_XYZ_LEN;
     return 1;
   }
+
+
   command bool InfoSensGpsXyz.set_value(tagnet_gps_xyz_t *t, uint32_t *l) {
     return FALSE;
   }
@@ -167,11 +171,51 @@ implementation {
   command bool InfoSensGpsCmd.get_value(uint8_t *t, uint32_t *l) {
     return FALSE;
   }
+
+
   command bool InfoSensGpsCmd.set_value(uint8_t *t, uint32_t *l) {
-    nop();
-    nop();
+    gps_raw_tx_t *gp;
+
+    /* too small, ignore it */
+    if (*l < 2)
+      return TRUE;
+    gp = (void *) t;
+    switch (gp->cmd) {
+      default:
+        return TRUE;
+      case GDC_TURNON:
+        call GPSState.turnOn();
+        break;
+      case GDC_TURNOFF:
+        call GPSState.turnOff();
+        break;
+      case GDC_STANDBY:
+        call GPSState.standby();
+        break;
+      case GDC_PULSE_ON_OFF:
+        call GPSControl.pulseOnOff();
+        break;
+      case GDC_HIBERNATE:
+        call GPSControl.hibernate();
+        break;
+      case GDC_WAKE:
+        call GPSControl.wake();
+        break;
+      case GDC_SEND_MPM:
+        call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
+        break;
+      case GDC_SEND_FULL:
+        call GPSTransmit.send((void *) sirf_full_pwr, sizeof(sirf_full_pwr));
+        break;
+      case GDC_RAW_TX:
+        break;
+    }
     return TRUE;
   }
+
+
+  event void GPSTransmit.send_done() { }
+
 
   /*
    * MID 2: NAV_DATA
