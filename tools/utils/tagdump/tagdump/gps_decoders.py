@@ -357,6 +357,7 @@ g.mid_table[134] = (gps_name_only, None, "set_baud_rate")
 g.mid_table[144] = (gps_name_only, None, "poll_clk_status")
 g.mid_table[166] = (gps_name_only, None, "set_msg_rate")
 g.mid_table[178] = (gps_name_only, None, "peek/poke")
+g.mid_table[218] = (gps_name_only, None, "pwr_mode_req")
 
 
 ########################################################################
