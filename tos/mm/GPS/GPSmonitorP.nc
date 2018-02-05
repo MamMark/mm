@@ -35,6 +35,8 @@
 #include <gps_cmd.h>
 
 
+#define GPS_SIMPLE_MPM
+
 #ifndef PANIC_GPS
 enum {
   __pcode_gps = unique(UQ_PANIC_SUBSYS)
@@ -130,6 +132,13 @@ typedef struct {
 } gps_time_t;
 
 
+typedef enum mpm_state {
+  MPM_START_UP = 0,
+  MPM_PULSE,
+  MPM_ON,
+} mpm_state_t;
+
+
 module GPSmonitorP {
   provides {
     interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
@@ -154,6 +163,10 @@ implementation {
   gps_time_t m_time;
   gps_1pps_t m_pps;
 
+#ifdef GPS_SIMPLE_MPM
+  uint32_t    mpm_count;
+  mpm_state_t mpm_state;
+#endif
 
   command bool InfoSensGpsXyz.get_value(tagnet_gps_xyz_t *t, uint32_t *l) {
     t->gps_x = m_xyz.x;
@@ -297,6 +310,21 @@ implementation {
     call CollectEvent.logEvent(DT_EVENT_GPS_SATS_29, gp->nsats, nav_valid, nav_type, 0);
 
     if (nav_valid == 0) {
+
+#ifdef GPS_SIMPLE_MPM
+      switch (mpm_state) {
+        default:
+        case MPM_START_UP:
+          if (++mpm_count == 10)
+            call MonTimer.startOneShot(0);
+          break;
+
+        case MPM_ON:
+        case MPM_PULSE:
+          break;
+      }
+#endif
+
       mtp = &m_time;
 
       mtp->ts        = arrival_ms;
@@ -373,6 +401,42 @@ implementation {
         break;
     }
   }
+
+
+  event void MonTimer.fired() {
+#ifdef GPS_SIMPLE_MPM
+    switch (mpm_state) {
+      default:
+      case MPM_START_UP:
+        mpm_count = 0;
+        mpm_state = MPM_PULSE;
+        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 0, 0, 0, 0);
+        call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
+        call MonTimer.startOneShot(2*60*1024);
+        break;
+
+      case MPM_PULSE:
+        mpm_count++;
+        call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, mpm_count, 0, 0, 0);
+        call GPSControl.pulseOnOff();
+        if (mpm_count >= 10) {
+          mpm_state = MPM_ON;
+          call MonTimer.startOneShot(5*60*1024);
+          return;
+        }
+        call MonTimer.startOneShot(2*60*1024);
+        break;
+
+      case MPM_ON:
+        mpm_count = 0;
+        mpm_state = MPM_PULSE;
+        call MonTimer.startOneShot(0);
+        break;
+    }
+    return;
+#endif
+  }
+
 
   async event void Panic.hook() { }
 
