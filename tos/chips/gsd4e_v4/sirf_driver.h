@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, 2017 Eric B. Decker
+ * Copyright (c) 2008, 2010, 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -339,6 +339,25 @@ const uint8_t sirf_peek_0[] = {
   0, 0, 0, 0,                   // addr 0
   0, 0, 0, 0,                   // dummy data
   0x00, 0xb9,			// checksum
+  0xb0, 0xb3			// end seq
+};
+
+const uint8_t sirf_full_pwr[] = {
+  0xa0, 0xa2,			// start seq
+  0x00, 0x02,			// length 2
+  218, 0,			// Req Pwr Mode, Full Pwr
+  0x00, 0xda,			// checksum
+  0xb0, 0xb3			// end seq
+};
+
+const uint8_t sirf_go_mpm_0[] = {
+  0xa0, 0xa2,			// start seq
+  0x00, 0x06,			// length 6
+  218, 2,			// Req Pwr Mode, Full Pwr
+  0,                            // time_out, 0 immediate MPM
+  0,                            // control, RTC uncertainty, 250us (default)
+  0, 0,                         // reserved
+  0x00, 0xdc,			// checksum
   0xb0, 0xb3			// end seq
 };
 
