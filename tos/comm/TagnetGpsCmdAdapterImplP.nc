@@ -54,7 +54,8 @@ implementation {
     tagnet_tlv_t     *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t     *this_tlv = call TName.this_element(msg);
     tagnet_tlv_t     *cmd_tlv;
-    uint8_t          *cmd = NULL;
+    uint8_t          *cmd;
+    uint8_t          *rsp;
 
     nop();
     nop();                      /* BRK */
@@ -67,15 +68,13 @@ implementation {
         case TN_GET:
           tn_trace_rec(my_id, 2);
           call TPload.reset_payload(msg);
-          cmd_tlv = call TPload.first_element(msg);
-          if (call THdr.is_pload_type_raw(msg)) {
-            cmd = (uint8_t *) cmd_tlv;
-            ln = call TPload.get_len(msg);
-          } else {
-            cmd = call TTLV.tlv_to_block(cmd_tlv, &ln);
+          rsp = (uint8_t *) call TPload.first_element(msg);
+          ln = call TPload.bytes_avail(msg);
+          if (call Adapter.get_value(rsp, &ln)) {
+            if (!call TPload.add_raw(msg, NULL, ln))
+              call TPload.add_error(msg, EINVAL);
           }
           return TRUE;
-          break;
         case TN_PUT:
           tn_trace_rec(my_id, 2);
           cmd_tlv = call TPload.first_element(msg);
@@ -87,12 +86,11 @@ implementation {
           }
           call TPload.reset_payload(msg);
           if (call Adapter.set_value(cmd, &ln)) {
-            call TPload.add_block(msg, cmd, ln);
+            call TPload.add_error(msg, SUCCESS);
           } else {
             call TPload.add_error(msg, EINVAL);
           }
           return TRUE;
-          break;
         case TN_HEAD:
           tn_trace_rec(my_id, 3);
           call TPload.reset_payload(msg);                // no params
