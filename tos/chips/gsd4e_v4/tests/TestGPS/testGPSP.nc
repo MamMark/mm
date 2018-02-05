@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012, 2014, 2015 Eric B. Decker
- * Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
+ * Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  */
 
@@ -99,9 +99,6 @@ implementation {
 #endif
 
 
-//  event void GPSControl.startDone(error_t err) { }
-//  event void GPSControl.stopDone(error_t err) { }
-
   event void testTimer.fired() {
     switch(state) {
       case OFF:
@@ -117,13 +114,11 @@ implementation {
 
       case WAITING:
 	state = STOPPING;
-//	call GPSControl.stop();
 	call testTimer.startOneShot(1000);
 	break;
 
       case STOPPING:
 	state = OFF;
-//	call testTimer.startOneShot(1000);
 	break;
     }
   }

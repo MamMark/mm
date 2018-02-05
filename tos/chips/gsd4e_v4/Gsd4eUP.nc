@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2010 Eric B. Decker
- * Copyright (c) 2017 Eric B. Decker, Daniel J. Maltbie
+ * Copyright (c) 2017-2018 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -578,7 +578,7 @@ implementation {
     }
 
     t_gps_pwr_on = call LocalTime.get();
-    call CollectEvent.logEvent(DT_EVENT_GPS_START, t_gps_pwr_on, 0, 0, 0);
+    call CollectEvent.logEvent(DT_EVENT_GPS_TURN_ON, t_gps_pwr_on, 0, 0, 0);
     gps_probe_cycle = 0;
     call HW.gps_pwr_on();
     call GPSTxTimer.startOneShot(DT_GPS_PWR_UP_DELAY);
@@ -595,7 +595,7 @@ implementation {
       gps_warn(10, gpsc_state, 0);
       return FAIL;
     }
-    call CollectEvent.logEvent(DT_EVENT_GPS_OFF, 0, 0, 0, 0);
+    call CollectEvent.logEvent(DT_EVENT_GPS_TURN_OFF, 0, 0, 0, 0);
     call HW.gps_rx_int_disable();
     call HW.gps_send_block_stop();
     call HW.gps_receive_block_stop();
@@ -618,7 +618,7 @@ implementation {
     call GPSRxTimer.stop();
     m_cur_rx_len = m_req_rx_len = -1;
     gpsc_change_state(GPSC_HIBERNATE, GPSW_STANDBY);
-    call CollectEvent.logEvent(DT_EVENT_GPS_OFF, 0, 0, 0, 0);
+    call CollectEvent.logEvent(DT_EVENT_GPS_STANDBY, 0, 0, 0, 0);
     return SUCCESS;
   }
 
