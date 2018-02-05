@@ -111,9 +111,13 @@ interface TagnetPayload {
    */
   command uint8_t           add_offset(message_t *msg,  int32_t n);
   /**
-   * Adds raw bytes to the payload (overwrites any other data in the payload)
+   * Adds raw bytes to the payload.
+   * This overwrites any other data in the payload and set payload type.
+   * Will also copy data to msg if non-null buffer is passed in. otherwise,
+   * just sets the length and payload type.
    *
    * @param   msg           pointer to message buffer containing the payload
+   * @param   b             pointer to buffer of data (if null, then no copy)
    * @param   n             integer to be added to the payload as a tlv
    * @return  uint8_t       amount added to the payload (length of tlv)
    */
@@ -154,7 +158,8 @@ interface TagnetPayload {
   command uint8_t           add_version(message_t *msg, image_ver_t *v);
   /**
    * Returns the amount of free space in the message buffer, accounting for any
-   * name and payload data previously added to the message.
+   * name and payload data previously added to the message. This is the free
+   * buffer space remaining to hold additional data.
    *
    * @param   msg           pointer to message buffer containing the payload
    * @return  uint8_t       amount free in buffer

@@ -84,8 +84,8 @@ module TagnetPayloadP {
 }
 implementation {
 
-  tagnet_name_meta_t *getMeta(message_t *msg) {
-    return (tagnet_name_meta_t *) &(((message_metadata_t *)&(msg->metadata))->tn_payload_meta);
+  tagnet_payload_meta_t *getMeta(message_t *msg) {
+    return (tagnet_payload_meta_t *) &(((message_metadata_t *)&(msg->metadata))->tn_payload_meta);
   }
 
   command uint8_t TN_PLOAD_DBG  TagnetPayload.add_block(message_t *msg, void *d, uint8_t length) {
@@ -174,16 +174,16 @@ implementation {
   }
 
   command uint8_t   TagnetPayload.add_raw(message_t *msg, uint8_t *b, uint8_t length) {
-    tagnet_tlv_t     *this;
     uint8_t          *buf;
     int               added;
 
-    this = call TagnetPayload.first_element(msg);
     if (length > call TagnetPayload.bytes_avail(msg))
       return 0;
-    buf = (uint8_t *) this;
-    for (added = 0; added < length; added++) {
-      buf[added] = b[added];
+    if (b) {
+      buf = (uint8_t *) call TagnetPayload.first_element(msg);
+      for (added = 0; added < length; added++) {
+        buf[added] = b[added];
+      }
     }
     call THdr.set_pload_type_raw(msg);
     call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
@@ -225,7 +225,7 @@ implementation {
     call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
     getMeta(msg)->this += added;
     return added;
- }
+  }
 
   command uint8_t TN_PLOAD_DBG  TagnetPayload.add_version(message_t *msg, image_ver_t *v) {
     tagnet_tlv_t     *tv = call TagnetPayload.this_element(msg);

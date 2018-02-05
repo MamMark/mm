@@ -62,8 +62,8 @@
 
 interface TagnetHeader {
   /**
-   * Number of bytes remaining unused in the message (from end of name+payload
-   * to end of message)
+   * Number of bytes available in message, excluding message header. This is
+   * the free buffer space to hold name and payload data.
    *
    * @param   msg           pointer to message buffer containing Tagnet message
    * @return  uint8_t       number of unused bytes in message buffer
@@ -91,7 +91,7 @@ interface TagnetHeader {
    */
   command uint8_t   get_hops(message_t *msg);
   /**
-   * Get length of entire message buffer
+   * Get length of entire message buffer (includes header)
    *
    * @param   msg           pointer to message buffer containing Tagnet message
    * @return  uint8_t       length of entire message buffer
