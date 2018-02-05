@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015 Eric B. Decker
- * Copyright (c) 2017 Eric B. Decker, Daniel J. Maltbie
+ * Copyright (c) 2017-2018 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  */
 
@@ -24,9 +24,13 @@ implementation {
 
   components GPS0C              as GpsPort;
   components GPSmonitorC;
-  GPSmonitorC.GPSReceive        -> GpsPort;
   TagnetC.InfoSensGpsXyz        -> GPSmonitorC;
   TagnetC.InfoSensGpsCmd        -> GPSmonitorC;
+
+  GPSmonitorC.GPSState          -> GpsPort;
+  GPSmonitorC.GPSControl        -> GpsPort;
+  GPSmonitorC.GPSTransmit       -> GpsPort;
+  GPSmonitorC.GPSReceive        -> GpsPort;
 
   components TagnetSysExecC;
   TagnetC.SysActive             -> TagnetSysExecC.SysActive;

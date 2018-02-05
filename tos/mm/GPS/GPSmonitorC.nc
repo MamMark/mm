@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,16 +22,30 @@
 #include <TagnetTLV.h>
 
 configuration GPSmonitorC {
-  provides interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
-  provides interface TagnetAdapter<uint8_t>          as InfoSensGpsCmd;
-  uses     interface GPSReceive;
+  provides {
+    interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
+    interface TagnetAdapter<uint8_t>          as InfoSensGpsCmd;
+  }
+  uses {
+    interface GPSState;
+    interface GPSControl;
+    interface GPSTransmit;
+    interface GPSReceive;
+  }
 }
 
 implementation {
   components GPSmonitorP;
   InfoSensGpsXyz = GPSmonitorP;
   InfoSensGpsCmd = GPSmonitorP;
+
+  GPSState       = GPSmonitorP;
+  GPSControl     = GPSmonitorP;
+  GPSTransmit    = GPSmonitorP;
   GPSReceive     = GPSmonitorP;
+
+  components new TimerMilliC() as MonTimer;
+  GPSmonitorP.MonTimer -> MonTimer;
 
   components PanicC;
   GPSmonitorP.Panic -> PanicC;

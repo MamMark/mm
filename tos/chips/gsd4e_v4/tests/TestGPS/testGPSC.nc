@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, 2017 Eric B. Decker, Daniel J. Maltbie
+ * Copyright (c) 2012, 2014, 2017-2018 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  */
 
@@ -19,8 +19,12 @@ implementation {
   testGPSP.Platform   -> PlatformC;
 
   components GPSmonitorC;
-  GPSmonitorC.GPSReceive -> GpsPort;
-  InfoSensGpsXyz = GPSmonitorC;
+  GPSmonitorC.GPSState    -> GpsPort;
+  GPSmonitorC.GPSControl  -> GpsPort;
+  GPSmonitorC.GPSReceive  -> GpsPort;
+  GPSmonitorC.GPSTransmit -> GpsPort;
+
+  InfoSensGpsXyz           = GPSmonitorC;
 
   components new TimerMilliC() as Timer;
   testGPSP.testTimer -> Timer;

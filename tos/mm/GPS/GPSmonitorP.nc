@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -133,11 +133,16 @@ module GPSmonitorP {
     interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
     interface TagnetAdapter<uint8_t>          as InfoSensGpsCmd;
   } uses {
+    interface GPSState;
+    interface GPSControl;
+    interface GPSTransmit;
     interface GPSReceive;
+
     interface Collect;
     interface CollectEvent;
+
+    interface Timer<TMilli> as MonTimer;
     interface Panic;
-//    interface Platform;
   }
 }
 implementation {
