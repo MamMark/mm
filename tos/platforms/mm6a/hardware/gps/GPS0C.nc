@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker, Daniel Maltbie
+ * Copyright (c) 2017-2018 Eric B. Decker, Daniel Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,6 +23,7 @@
 configuration GPS0C {
   provides {
     interface GPSState;
+    interface GPSControl;
     interface GPSReceive;
     interface GPSTransmit;
     interface Boot           as Booted; /* out boot */
@@ -53,11 +54,13 @@ implementation {
   components     LocalTimeMilliC;
   components     CollectC;
 
-  GPSState = Gsd4eUP;
-  Boot     = Gsd4eUP.Boot;
-  Booted   = Gsd4eUP.Booted;
+  GPSState     = Gsd4eUP;
+  GPSControl   = Gsd4eUP;
 
-  Gsd4eUP.HW -> HplGPS0C;
+  Boot         = Gsd4eUP.Boot;
+  Booted       = Gsd4eUP.Booted;
+
+  Gsd4eUP.HW  -> HplGPS0C;
 
   Gsd4eUP.GPSTxTimer -> GPSTxTimer;
   Gsd4eUP.GPSRxTimer -> GPSRxTimer;
@@ -81,7 +84,7 @@ implementation {
   GPSMsgBufP.LocalTime -> LocalTimeMilliC;
   GPSMsgBufP.Panic -> PanicC;
 
-  GPSReceive = GPSMsgBufP;
+  GPSReceive  = GPSMsgBufP;
   GPSTransmit = Gsd4eUP;
 
 #ifdef notdef

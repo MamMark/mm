@@ -396,6 +396,7 @@ const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
 module Gsd4eUP {
   provides {
     interface GPSState;
+    interface GPSControl;
     interface GPSTransmit;
     interface Boot as Booted;           /* out Boot */
   }
@@ -620,6 +621,21 @@ implementation {
     gpsc_change_state(GPSC_HIBERNATE, GPSW_STANDBY);
     call CollectEvent.logEvent(DT_EVENT_GPS_STANDBY, 0, 0, 0, 0);
     return SUCCESS;
+  }
+
+
+  command void GPSControl.hibernate() {
+    gps_hibernate();
+  }
+
+
+  command void GPSControl.wake() {
+    gps_wakeup();
+  }
+
+
+  command void GPSControl.pulseOnOff() {
+    toggle_gps_on_off();
   }
 
 
