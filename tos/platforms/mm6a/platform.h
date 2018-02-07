@@ -25,6 +25,8 @@
 // #define PANIC_GATE
 // #define CATCH_STRANGE
 
+#define PWR_CHECK_TIME (10*1024)
+
 //#define TRACE_MICRO
 #define TRACE_USE_PLATFORM
 //#define MEMINIT_STOP
