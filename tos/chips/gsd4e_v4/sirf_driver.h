@@ -353,7 +353,7 @@ const uint8_t sirf_full_pwr[] = {
 const uint8_t sirf_go_mpm_0[] = {
   0xa0, 0xa2,			// start seq
   0x00, 0x06,			// length 6
-  218, 2,			// Req Pwr Mode, Full Pwr
+  218, 2,			// Req Pwr Mode, MPM
   0,                            // time_out, 0 immediate MPM
   0,                            // control, RTC uncertainty, 250us (default)
   0, 0,                         // reserved
