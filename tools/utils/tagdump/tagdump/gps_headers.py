@@ -127,6 +127,22 @@ gps_geo_obj = aggie(OrderedDict([
 ]))
 
 
+# pwr_mode_req, MID 218, has SID
+gps_pwr_mode_req_obj = aggie(OrderedDict([
+    ('sid',              atom(('B',  '{}'))),
+    ('timeout',          atom(('B',  '{}'))),
+    ('control',          atom(('B',  '{}'))),
+    ('reserved',         atom(('>H', '{}'))),
+]))
+
+# pwr_mode_rsp, MID 90, has SID
+gps_pwr_mode_rsp_obj = aggie(OrderedDict([
+    ('sid',              atom(('B', '{}'))),
+    ('error',            atom(('>H', '0x{:02x}'))),
+    ('reserved',         atom(('>H', '{}'))),
+]))
+
+
 #
 # dt, native, little endian
 # used by DT_GPS_VERSION and DT_GPS_RAW_SIRFBIN (gps_raw)
@@ -134,7 +150,7 @@ gps_geo_obj = aggie(OrderedDict([
 dt_gps_hdr_obj = aggie(OrderedDict([('hdr',     dt_hdr_obj),
                                     ('chip',    atom(('B',  '0x{:02x}'))),
                                     ('dir',     atom(('B',  '{}'))),
-                                    ('mark',    atom(('>I', '0x{:04x}')))]))
+                                    ('mark',    atom(('<I', '0x{:04x}')))]))
 
 # gps piece, big endian, follows dt_gps_raw_obj
 raw_gps_hdr_obj = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),

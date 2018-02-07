@@ -333,6 +333,33 @@ def gps_geo_decoder(level, offset, buf, obj):
 g.mid_table[41] = (gps_geo_decoder, gps_geo_obj, "GEO_DATA")
 
 
+def gps_pwr_mode_req(level, offset, buf, obj):
+    obj.set(buf)
+    sid = obj['sid'].val
+    timeout = obj['timeout'].val
+    control = obj['control'].val
+    reserved = obj['reserved'].val
+    if sid == 2:
+        print(' MPM  {} {}'.format(timeout, control))
+    else:
+        print(obj)
+
+g.mid_table[218] = (gps_pwr_mode_req, gps_pwr_mode_req_obj, "PWR_REQ")
+
+
+def gps_pwr_mode_rsp(level, offset, buf, obj):
+    obj.set(buf)
+    sid = obj['sid'].val
+    error = obj['error'].val
+    reserved = obj['reserved'].val
+    if sid == 2:
+        print(' MPM  0x{:04x}'.format(error))
+    else:
+        print(obj)
+
+g.mid_table[90]  = (gps_pwr_mode_rsp, gps_pwr_mode_rsp_obj, "PWR_RSP")
+
+
 def gps_name_only(level, offset, buf, obj):
     print
 
@@ -349,7 +376,6 @@ g.mid_table[56]  = (gps_name_only, None, "ext_ephemeris")
 g.mid_table[65]  = (gps_name_only, None, "gpio")
 g.mid_table[71]  = (gps_name_only, None, "hw_config_req")
 g.mid_table[88]  = (gps_name_only, None, "unk_88")
-g.mid_table[90]  = (gps_name_only, None, "pwr_mode_rsp")
 g.mid_table[92]  = (gps_name_only, None, "cw_data")
 g.mid_table[93]  = (gps_name_only, None, "TCXO learning")
 g.mid_table[129] = (gps_name_only, None, "set_nmea")
@@ -358,7 +384,6 @@ g.mid_table[134] = (gps_name_only, None, "set_baud_rate")
 g.mid_table[144] = (gps_name_only, None, "poll_clk_status")
 g.mid_table[166] = (gps_name_only, None, "set_msg_rate")
 g.mid_table[178] = (gps_name_only, None, "peek/poke")
-g.mid_table[218] = (gps_name_only, None, "pwr_mode_req")
 
 
 ########################################################################

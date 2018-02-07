@@ -25,5 +25,6 @@ tagdump:  decode and display Tag Data Stream file
 # 0.2.12.dev0
 # 0.2.13        reorganize EVENTS
 #               add GPS_MPM and GPS_FULL_PWR EVENTS
+#               decoders for gps_pwr_mode_req and _rsp
 #
-__version__ = '0.2.12.dev2'
+__version__ = '0.2.12.dev3'
