@@ -188,6 +188,8 @@ implementation {
 
   command bool InfoSensGpsCmd.set_value(uint8_t *t, uint32_t *l) {
     gps_raw_tx_t *gp;
+    error_t err;
+    bool    awake;
 
     /* too small, ignore it */
     if (*l < 2)
@@ -206,7 +208,13 @@ implementation {
         call GPSState.standby();
         break;
       case GDC_PULSE_ON_OFF:
+        call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, 200, 0, 0,
+                                   call GPSControl.awake());
         call GPSControl.pulseOnOff();
+        break;
+      case GDC_AWAKE_STATUS:
+        call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 200, 0, 0,
+                                   call GPSControl.awake());
         break;
       case GDC_HIBERNATE:
         call GPSControl.hibernate();
@@ -215,10 +223,14 @@ implementation {
         call GPSControl.wake();
         break;
       case GDC_SEND_MPM:
-        call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
+        awake = call GPSControl.awake();
+        err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
+        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 201, err, 0, awake);
         break;
       case GDC_SEND_FULL:
-        call GPSTransmit.send((void *) sirf_full_pwr, sizeof(sirf_full_pwr));
+        awake = call GPSControl.awake();
+        err   = call GPSTransmit.send((void *) sirf_full_pwr, sizeof(sirf_full_pwr));
+        call CollectEvent.logEvent(DT_EVENT_GPS_FULL_PWR, 202, err, 0, awake);
         break;
       case GDC_RAW_TX:
         break;

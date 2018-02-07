@@ -37,11 +37,12 @@ typedef enum gps_debug_cmds {
   GDC_TURNOFF       = 2,
   GDC_STANDBY       = 3,
   GDC_PULSE_ON_OFF  = 4,
-  GDC_HIBERNATE     = 5,
-  GDC_WAKE          = 6,
-  GDC_SEND_MPM      = 7,
-  GDC_SEND_FULL     = 8,
-  GDC_RAW_TX        = 9,
+  GDC_AWAKE_STATUS  = 5,
+  GDC_HIBERNATE     = 6,
+  GDC_WAKE          = 7,
+  GDC_SEND_MPM      = 8,
+  GDC_SEND_FULL     = 9,
+  GDC_RAW_TX        = 10,
 } gps_cmd_t;
 
 
