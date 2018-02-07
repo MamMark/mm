@@ -639,6 +639,11 @@ implementation {
   }
 
 
+  command bool GPSControl.awake() {
+    return call HW.gps_awake();
+  }
+
+
   task void collect_task() {
     call CollectEvent.logEvent(DT_EVENT_GPS_FIRST, t_gps_first_char,
                                t_gps_first_char - t_gps_pwr_on, 0, 0);

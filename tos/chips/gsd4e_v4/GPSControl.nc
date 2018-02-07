@@ -23,4 +23,5 @@ interface GPSControl {
   command void hibernate();
   command void wake();
   command void pulseOnOff();
+  command bool awake();
 }
