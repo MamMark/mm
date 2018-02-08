@@ -53,6 +53,9 @@
 #define MID_GEODETIC	   41
 #define GEODETIC_LEN	   91
 
+#define MID_PWR_MODE_RSP   90
+#define PWR_MODE_RSP_LEN   6
+
 /*
  * max size (sirfbin length) message we will receive
  *
@@ -308,6 +311,18 @@ typedef struct {
 #define SB_PPS_STATUS_UTC    2
 #define SB_PPS_STATUS_UTCGPS 4
 #define SB_PPS_STATUS_UTCGPS 4
+
+
+/* MID 90, pwr_mode_rsp data */
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   mid;
+  uint8_t   sid;
+  uint16_t  error;
+  uint16_t  reserved;
+} PACKED sb_pwr_rsp_t;
 
 
 #endif  /* __SIRF_MSG_H__ */
