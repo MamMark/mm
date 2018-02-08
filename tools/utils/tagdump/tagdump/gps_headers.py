@@ -143,6 +143,40 @@ gps_pwr_mode_rsp_obj = aggie(OrderedDict([
 ]))
 
 
+# statistics, MID 225, 6
+gps_statistics_obj    = aggie(OrderedDict([
+    ('sid',             atom(('B',  '{}'))),
+    ('ttff_reset',      atom(('>H', '{}'))),
+    ('ttff_aiding',     atom(('>H', '{}'))),
+    ('ttff_nav',        atom(('>H', '{}'))),
+    ('pae_n',           atom(('>i', '{}'))),
+    ('pae_e',           atom(('>i', '{}'))),
+    ('pae_d',           atom(('>i', '{}'))),
+    ('time_aiding_err', atom(('>i', '{}'))),
+    ('freq_aiding_err', atom(('>h', '{}'))),
+    ('pos_unc_horz',    atom(('B',  '{}'))),
+    ('pos_unc_vert',    atom(('>H', '{}'))),
+    ('time_unc',        atom(('B',  '{}'))),
+    ('freq_unc',        atom(('B',  '{}'))),
+    ('n_aided_ephem',   atom(('B',  '{}'))),
+    ('n_aided_acq',     atom(('B',  '{}'))),
+    ('nav_mode',        atom(('B',  '{}'))),
+    ('pos_mode',        atom(('B',  '{}'))),
+    ('status',          atom(('>H', '{}'))),
+    ('start_mode',      atom(('B',  '{}'))),
+    ('reserved',        atom(('B',  '{}')))
+]))
+
+
+# start_mode
+start_mode_names = {
+     0: "cold",
+     1: "warm",
+     2: "hot",
+     3: "fast",
+}
+
+
 #
 # dt, native, little endian
 # used by DT_GPS_VERSION and DT_GPS_RAW_SIRFBIN (gps_raw)

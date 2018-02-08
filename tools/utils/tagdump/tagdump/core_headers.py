@@ -129,7 +129,6 @@ dt_sync_obj     = aggie(OrderedDict([
 
 
 # EVENT
-
 event_names = {
      1: "SURFACED",
      2: "SUBMERGED",

@@ -360,6 +360,52 @@ def gps_pwr_mode_rsp(level, offset, buf, obj):
 g.mid_table[90]  = (gps_pwr_mode_rsp, gps_pwr_mode_rsp_obj, "PWR_RSP")
 
 
+rstat1a = '    STATS:  sid:    {}  ttff_reset:  {:3.1f}   ttff_aiding:  {:3.1f}      ttff_nav:  {:3.1f}'
+rstat1b = '       nav_mode: 0x{:02x}    pos_mode: 0x{:02x}   status:    0x{:04x}    start_mode: {:>4}'
+
+rstat2a = '    ttff_reset:   {:2}   ttff_aiding:    {:2}     ttff_nav:      {:2}'
+rstat2b = '    nav_mode:   0x{:02x}      pos_mode:  0x{:02x}       status:  0x{:04x}  start_mode:      {}'
+rstat2c = '    pae_n:         {}         pae_e:     {}        pae_d:       {}  time_aiding_err: {}'
+rstat2d = '    pos_unc_horz:  {}  pos_unc_vert:     {}     time_unc:       {}  freq_unc:        {}'
+rstat2e = '    n_aided_ephem: {}   n_aided_acq:     {}                        freq_aiding_err: {}'
+
+def gps_statistics(level, offset, buf, obj):
+    obj.set(buf)
+    sid             = obj['sid'].val
+    ttff_reset      = obj['ttff_reset'].val
+    ttff_aiding     = obj['ttff_aiding'].val
+    ttff_nav        = obj['ttff_nav'].val
+    pae_n           = obj['pae_n'].val
+    pae_e           = obj['pae_e'].val
+    pae_d           = obj['pae_d'].val
+    time_aiding_err = obj['time_aiding_err'].val
+    freq_aiding_err = obj['freq_aiding_err'].val
+    pos_unc_horz    = obj['pos_unc_horz'].val
+    pos_unc_vert    = obj['pos_unc_vert'].val
+    time_unc        = obj['time_unc'].val
+    freq_unc        = obj['freq_unc'].val
+    n_aided_ephem   = obj['n_aided_ephem'].val
+    n_aided_acq     = obj['n_aided_acq'].val
+    nav_mode        = obj['nav_mode'].val
+    pos_mode        = obj['pos_mode'].val
+    status          = obj['status'].val
+    start_mode      = obj['start_mode'].val
+    print('({})'.format(sid))
+    if (level >= 1):
+        print(rstat1a.format(sid, ttff_reset/10.0, ttff_aiding/10.0, ttff_nav/10.0))
+        print(rstat1b.format(nav_mode, pos_mode, status,
+                             start_mode_names.get(start_mode, 'unk')))
+    if (level >= 2):
+        print(' raw:')
+        print(rstat2a.format(ttff_reset, ttff_aiding, ttff_nav))
+        print(rstat2b.format(nav_mode, pos_mode, status, start_mode))
+        print(rstat2c.format(pae_n, pae_e, pae_d, time_aiding_err))
+        print(rstat2d.format(pos_unc_horz, pos_unc_vert, time_unc, freq_unc))
+        print(rstat2e.format(n_aided_ephem, n_aided_acq, freq_aiding_err))
+
+g.mid_table[225]  = (gps_statistics, gps_statistics_obj, "STATS")
+
+
 def gps_name_only(level, offset, buf, obj):
     print
 
