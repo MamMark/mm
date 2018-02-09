@@ -164,6 +164,10 @@ implementation {
     call THdr.set_response(msg);
     call THdr.set_error(msg, err);
     call TPload.reset_payload(msg);
+    if (err == TE_BUSY)
+      call TPload.add_error(msg, EALREADY);
+    else if (err == TE_UNSUPPORTED)
+      call TPload.add_error(msg, EINVAL);
     return TRUE;
   }
 
