@@ -30,29 +30,53 @@
 
 configuration FileSystemC {
   provides {
-    interface Boot       as Booted;     /* out Booted signal */
-    interface FileSystem as FS;
+    interface Boot        as Booted;    /* out Booted signal */
+    interface FileSystem  as FS;
+    interface ByteMapFile as DblkFileMap;
+    interface ByteMapFile as PanicFileMap;
   }
   uses interface Boot;			/* incoming signal */
 }
 implementation {
-  components FileSystemP as FS_P;
+  components FileSystemP   as FS_P;
+  components DblkMapFileP  as DMF;
+  components PanicMapFileP as PMF;
 
   /* exports, imports */
   FS     = FS_P;
   Booted = FS_P;
   Boot   = FS_P;
 
-  components new SD0_ArbC() as SD, SSWriteC;
-  components     SD0C       as SDsa;
+  DblkFileMap  = DMF.DMF;
+  PanicFileMap = PMF.ByteMapFile;
+
+  components     SSWriteC;
+  components new SD0_ArbC() as SD_FS;   /* filesystem   SD   */
+  components new SD0_ArbC() as SD_DMF;  /* DblkMapFile  SD   */
+  components new SD0_ArbC() as SD_PMF;  /* PanicMapFile SD   */
+  components     SD0C       as SDsa;    /* StandAlone for FS */
 
   FS_P.SSW        -> SSWriteC;
-  FS_P.SDResource -> SD;
-  FS_P.SDread     -> SD;
-  FS_P.SDerase    -> SD;
-
+  FS_P.SDResource -> SD_FS;
+  FS_P.SDread     -> SD_FS;
+  FS_P.SDerase    -> SD_FS;
   FS_P.SDsa       -> SDsa;
+
+  PMF.SDResource    -> SD_PMF;
+  PMF.SDread        -> SD_PMF;
+
+  DMF.SDResource    -> SD_DMF;
+  DMF.SDread        -> SD_DMF;
+
+  DMF.SS            -> SSWriteC;
 
   components PanicC;
   FS_P.Panic -> PanicC;
+  DMF.Panic         -> PanicC;
+  PMF.Panic         -> PanicC;
+  PMF.PanicManager  -> PanicC.PanicManager;
+
+  components SystemBootC;
+  DMF.Boot          -> SystemBootC.Boot;
+  PMF.Boot          -> SystemBootC.Boot;
 }

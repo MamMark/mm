@@ -42,20 +42,12 @@ configuration PanicByteStorageC {
   }
 }
 implementation {
-  components           PanicC;
-  components           SystemBootC;
-  components new       SD0_ArbC()         as SD;
-
-  components           PanicMapFileP      as PMF;
-  PMF.PanicManager  -> PanicC.PanicManager;
-  PMF.Boot          -> SystemBootC.Boot;
-  PMF.Panic         -> PanicC;
-  PMF.SDResource    -> SD;
-  PMF.SDread        -> SD;
-
+  components           PanicC, SystemBootC;
+  components           FileSystemC as FS;
   components           PanicByteStorageP  as PBS;
+
   PanicBytes         = PBS.PanicBytes;
-  PBS.ByteMapFile   -> PMF.ByteMapFile;
+  PBS.ByteMapFile   -> FS.PanicFileMap;
   PBS.Boot          -> SystemBootC.Boot;
   PBS.Panic         -> PanicC;
 

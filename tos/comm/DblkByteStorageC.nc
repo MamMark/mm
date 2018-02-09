@@ -43,10 +43,10 @@ configuration DblkByteStorageC {
   }
 }
 implementation {
-  components           PanicC;
-  components           SystemBootC;
-
+  components           PanicC, SystemBootC;
+  components           FileSystemC as FS;
   components           DblkByteStorageP as DBS;
+
   DblkBytes          = DBS.DblkBytes;
   DblkNote           = DBS.DblkNote;
   DBS.Boot          -> SystemBootC.Boot;
@@ -54,18 +54,5 @@ implementation {
 
   components           CollectC;
   DBS.Collect       -> CollectC;
-
-  components           DblkMapFileP      as DMF;
-  DBS.DMF           -> DMF;
-
-  components           SSWriteC;
-  DMF.SS            -> SSWriteC;
-  DMF.Boot          -> SystemBootC.Boot;
-  DMF.Panic         -> PanicC;
-
-  components new       SD0_ArbC() as SD;
-  DMF.SDResource    -> SD;
-  DMF.SDread        -> SD;
-//  DBS.SDwrite      -> SD;
-
+  DBS.DMF           -> FS.DblkFileMap;
 }
