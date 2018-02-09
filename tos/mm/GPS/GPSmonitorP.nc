@@ -191,8 +191,8 @@ implementation {
     error_t err;
     bool    awake;
 
-    /* too small, ignore it */
-    if (*l < 2)
+    /* too weird, too small, ignore it */
+    if (!t || !l || !*l)
       return TRUE;
     gp = (void *) t;
     switch (gp->cmd) {
