@@ -55,7 +55,7 @@ interface ByteMapFileNew {
   command error_t map(uint8_t **buf, uint32_t offset, uint32_t *len);
 
   /**
-   * signal when a the file has been extended.
+   * signal when the requested contents has been mapped into memory.
    *
    * @param   'uint8_t   *buf'      where the data lives
    * @param   'uint32_t   offset'   requested file offset mapped.
@@ -69,6 +69,13 @@ interface ByteMapFileNew {
    * @return  'uint32_t'       file size in bytes
    */
   command uint32_t filesize();
+
+  /**
+   * signal when the file grows.
+   *
+   * @param   'offset'              new eof offset
+   */
+  event   void     extended(uint32_t offset);
 
   /**
    * return commited size of file in bytes.
