@@ -97,7 +97,7 @@
  * cycle.
  * Once all data has been written and the eof tlv detected, the checksum
  * is verified. The IM.finish() is called to finalize a successful
- * checkum. The IM.abort() is called with checksum failure.
+ * checkum. The IM.alloc_abort() is called with checksum failure.
  */
 
 #include <message.h>
@@ -329,10 +329,6 @@ implementation {
 
         case TN_PUT:
           tn_trace_rec(my_id, 8);
-          // check to see if still writing data from previous PUT
-          if ((ia_cb.in_progress) && (ia_cb.e_buf))
-            return do_reject(msg, TE_BUSY);
-
           // must be version in name
           if ((!version_tlv) || (call TTLV.get_tlv_type(version_tlv) != TN_TLV_VERSION))
             return do_reject(msg, TE_BAD_MESSAGE);
@@ -341,6 +337,8 @@ implementation {
           // look for optional offset in name
           if ((offset_tlv) && (call TTLV.get_tlv_type(offset_tlv) == TN_TLV_OFFSET))
             offset = call TTLV.tlv_to_offset(offset_tlv);
+          else
+            offset = 0;
 
           // get payload variables (data length and pointer) and/or eof flag
           nop();                                  /* BRK */
@@ -358,17 +356,23 @@ implementation {
             eof_tlv = call TPload.next_element(msg); // look after data block
           if ((eof_tlv) && (call TTLV.get_tlv_type(eof_tlv) == TN_TLV_EOF))
             ia_cb.eof = TRUE;                 // eof found
+          else
+            ia_cb.eof = FALSE;
 
           // continue processing PUT msgs if in progress
           tn_trace_rec(my_id, 9);
           if (ia_cb.in_progress) {
-            if ((offset_tlv) && (ia_cb.offset == offset)) {
-              /* expected offset matches */
+            if ((ia_cb.eof) || ((offset_tlv) && (ia_cb.offset == offset))) {
+              /* end of file or expected offset matches */
               nop();                          /* BRK */
-              ia_cb.offset += dlen;           /* consume new incoming */
-              return do_write(msg, dptr, dlen);
-            } else
-              break;                          // ignore
+              if (!ia_cb.e_buf) {
+                ia_cb.offset += dlen;         /* consume new incoming */
+                return do_write(msg, dptr, dlen);
+              }
+            }
+            if ((!offset_tlv) || (offset == 0)) {
+              call IM.alloc_abort();          /* starting over */
+            }
           }
 
           /* look for new image load request
@@ -420,10 +424,6 @@ implementation {
             // allocate new image and write first data
             if ((err = call IM.alloc(&ia_cb.version)) == 0) {
               ia_cb.in_progress = TRUE;       // mark image load now in progress
-              if ((eof_tlv) && (call TTLV.get_tlv_type(eof_tlv) == TN_TLV_EOF))
-                ia_cb.eof = TRUE;             // eof found (really short file!)
-              else
-                ia_cb.eof = FALSE;            // start of image load, init eof
               ia_cb.offset = dlen;
               return do_write(msg, dptr, dlen);
             }
