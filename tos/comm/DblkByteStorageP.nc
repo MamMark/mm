@@ -58,6 +58,7 @@ module DblkByteStorageP {
 implementation {
 
   uint32_t   dblk_notes_count = 0;
+  uint32_t   dblk_offset      = 0;
 
   bool GetDblkBytes(tagnet_file_bytes_t *db, uint32_t *len) {
     error_t    err = EINVAL;
@@ -65,27 +66,22 @@ implementation {
     nop();
     nop();                      /* BRK */
     db->error  = SUCCESS;
-    if (db->file == 0) {
-      switch (db->action) {
-        case FILE_GET_DATA:
-          err = call DMF.seek(db->file, db->iota, 0);
-          if (err == SUCCESS) {
-            err = call DMF.map(db->file, &db->block, len);
-          }
-          if (err == SUCCESS) {
-            db->iota   = call DMF.tell(db->file);
-            db->count -= *len;
-            return TRUE;
-          }
-          break;
-        case  FILE_GET_ATTR:
-          db->iota   = call DMF.tell(db->file);
-          db->count  = call DMF.filesize(db->file);
+    switch (db->action) {
+      case FILE_GET_DATA:
+        err = call DMF.map(&db->block, db->iota, &len);
+        if (err == SUCCESS) {
+          db->iota     += *len;
+          db->count    -= *len;
+          dblk_offset   = db->iota;
           return TRUE;
-        default:
-          err = EINVAL;
-      }
-      db->iota = call DMF.tell(db->file);
+        }
+        break;
+      case  FILE_GET_ATTR:
+        db->iota   = call DMF.committed();
+        db->count  = call DMF.filesize();
+        return TRUE;
+      default:
+        err = EINVAL;
     }
     *len = 0;
     db->count = 0;
