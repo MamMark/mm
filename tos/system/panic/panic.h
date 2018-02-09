@@ -163,8 +163,8 @@ typedef struct {                        /* memory addresses */
 typedef struct {
   uint32_t pi_sig;
   uint32_t boot_count;
-  uint32_t fail_count;
   uint64_t systime;
+  uint32_t fail_count;
   uint8_t  subsys;
   uint8_t  where;
   uint16_t pad;
