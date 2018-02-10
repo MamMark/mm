@@ -39,7 +39,7 @@ typedef struct {
 typedef struct {
   uint32_t             file_pos;     // current file position
   panic_map_sectors_t  sector;       // pertinent file sector numbers
-  uint8_t              fileno;       // index selects which panic file
+  uint8_t              slot_idx;     // index selects which panic file
   error_t              err;          // last error encountered
   bool                 sbuf_ready;   // true if sbuf contains valid data
   bool                 sbuf_requesting; // true if sd.request in progress
@@ -64,36 +64,41 @@ implementation {
                      pmf_cb.sector.eof);
   }
 
-  bool is_fd_full(uint8_t fd) {
-    return (fd < call PanicManager.getPanicIndex());
+
+  /*
+   * return TRUE if the panic slot is not used.
+   *
+   * The Panic dir holds the next index to write.  All indicies
+   * below PanicIndex are used and have something in them.  Indicies
+   * must be below MAX but we don't check that.
+   */
+  bool is_idx_unused(uint8_t slot_idx) {
+    return (slot_idx < call PanicManager.getPanicIndex());
   }
 
-  bool is_fd_valid(uint8_t fd) {
-    return (fd < call PanicManager.getMaxPanicIndex());
-  }
 
-  uint32_t sector_of(uint8_t fd, uint32_t pos) {
+  uint32_t sector_of(uint8_t slot_idx, uint32_t pos) {
     uint32_t   sect, max_sect;
 
-    if (!is_fd_full(fd))
+    if (is_idx_unused(slot_idx))
       return 0;
     sect = pos / SD_BLOCKSIZE;
     max_sect =  call PanicManager.getPanicSize();
     if (sect >= max_sect)
       sect = max_sect - 1;
-    return (sect + call PanicManager.panicIndex2Sector(fd));
+    return (sect + call PanicManager.panicIndex2Sector(slot_idx));
   }
 
-  uint32_t offset_of(uint8_t fd, uint32_t pos) {
+  uint32_t offset_of(uint8_t slot_idx, uint32_t pos) {
     return (pos % SD_BLOCKSIZE);
   }
 
-  uint32_t fpos_of(uint8_t fd, uint32_t sect) {
+  uint32_t fpos_of(uint8_t slot_idx, uint32_t sect) {
     uint32_t  s_base, s_eof;
 
-    if (!is_fd_full(fd))
+    if (is_idx_unused(slot_idx))
       return 0;
-    s_base = call PanicManager.panicIndex2Sector(fd);
+    s_base = call PanicManager.panicIndex2Sector(slot_idx);
     s_eof  = s_base + call PanicManager.getPanicSize();
     if ((sect < s_base) || (sect > s_eof)) {
       pmap_panic(1, sect, s_base);
@@ -102,42 +107,44 @@ implementation {
     return ((sect - s_base) * SD_BLOCKSIZE);
   }
 
-  uint32_t remaining(uint8_t fd, uint32_t pos) {
-    if (!is_fd_full(fd))
+  uint32_t remaining(uint8_t slot_idx, uint32_t pos) {
+    if (is_idx_unused(slot_idx))
       return 0;
-    return (SD_BLOCKSIZE - offset_of(fd, pos));
+    return (SD_BLOCKSIZE - offset_of(slot_idx, pos));
   }
 
-  uint32_t eof_pos(uint8_t fd) {
+  uint32_t eof_pos(uint8_t slot_idx) {
     return (call PanicManager.getPanicSize() * SD_BLOCKSIZE);
   }
 
-  bool is_eof(uint8_t fd, uint32_t pos) {
-    if (pos >= eof_pos(fd))
+  bool is_eof(uint8_t slot_idx, uint32_t pos) {
+    if (pos >= eof_pos(slot_idx))
       return TRUE;
     return FALSE;
   }
 
-  bool inbounds(uint8_t fd, uint32_t pos) {
-    if (is_fd_full(fd) && !is_eof(fd, pos) &&            \
-        (sector_of(fd, pos) == pmf_cb.sector.cur))
-      return TRUE;
-    return FALSE;
+  bool inbounds(uint8_t slot_idx, uint32_t pos) {
+    /* validate reasonablness */
+    if (is_idx_unused(slot_idx))                        return FALSE;
+    if (is_eof(slot_idx, pos))                          return FALSE;
+    if (sector_of(slot_idx, pos) != pmf_cb.sector.cur)  return FALSE;
+    return TRUE;
   }
 
   bool not_ready() {
     // initialization of PanicManager is split phase, so
-    // special value of fileno signifies still waiting.
-    return (pmf_cb.fileno == 255);
+    // special value of slot_idx signifies still waiting.
+    return (pmf_cb.slot_idx == 255);
   }
 
-  bool _get_new_sector(uint8_t fd, uint32_t pos) {
+
+  bool _get_new_sector(uint8_t slot_idx, uint32_t pos) {
     // not protected. caller must ensure that SDResource request is not
     // already pending.
-    pmf_cb.fileno            = fd;
-    pmf_cb.sector.base       = sector_of(fd, 0);
-    pmf_cb.sector.eof        = sector_of(fd, eof_pos(fd));
-    pmf_cb.sector.cur        = sector_of(fd, pos);
+    pmf_cb.slot_idx          = slot_idx;
+    pmf_cb.sector.base       = sector_of(slot_idx, 0);
+    pmf_cb.sector.eof        = sector_of(slot_idx, eof_pos(slot_idx));
+    pmf_cb.sector.cur        = sector_of(slot_idx, pos);
     pmf_cb.file_pos          = pos;
 
     pmf_cb.sbuf_ready        = FALSE;
@@ -151,6 +158,7 @@ implementation {
     return FALSE;
   }
 
+
   event void SDResource.granted() {
     if ((!pmf_cb.sbuf_ready) && (pmf_cb.sector.cur)) {
       nop();
@@ -161,83 +169,85 @@ implementation {
     }
   }
 
+
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
     call SDResource.release();
     pmf_cb.sbuf_ready        = TRUE;
     pmf_cb.sbuf_requesting   = FALSE;
     pmf_cb.sbuf_reading      = FALSE;
-    signal ByteMapFile.mapped(pmf_cb.fileno, pmf_cb.file_pos);
+    signal ByteMapFile.mapped(pmf_cb.slot_idx, pmf_cb.file_pos);
   }
 
-  command error_t ByteMapFile.map(uint8_t fd, uint8_t **buf, uint32_t *len) {
+
+  command error_t ByteMapFile.map(uint8_t slot_idx, uint8_t **buf, uint32_t *len) {
     uint32_t    count  = 0;
 
     nop();
     nop();                      /* BRK */
     if (not_ready())
       return EBUSY;
-    if (!is_fd_full(fd))
+    if (is_idx_unused(slot_idx))
       return EODATA;
 
     if (pmf_cb.sbuf_ready) {
-      if (fd != pmf_cb.fileno)
+      if (slot_idx != pmf_cb.slot_idx)
         return EINVAL;          /* need to seek first */
-      count = (*len > remaining(fd, pmf_cb.file_pos)) \
-        ? remaining(fd, pmf_cb.file_pos)              \
-        : *len;
-      *buf = &pmf_sbuf[offset_of(fd, pmf_cb.file_pos)];
+      count = (*len > remaining(slot_idx, pmf_cb.file_pos))
+        ? remaining(slot_idx, pmf_cb.file_pos) : *len;
+      *buf = &pmf_sbuf[offset_of(slot_idx, pmf_cb.file_pos)];
       *len = count;
       pmf_cb.file_pos += count;
-      if (!is_eof(fd, pmf_cb.file_pos) &&                  \
-          (remaining(fd, pmf_cb.file_pos) == 0))
-        if (!_get_new_sector(fd, pmf_cb.file_pos))
+      if (!is_eof(slot_idx, pmf_cb.file_pos) &&
+          (remaining(slot_idx, pmf_cb.file_pos) == 0))
+        if (!_get_new_sector(slot_idx, pmf_cb.file_pos))
           return FAIL;
       return SUCCESS;
     }
     return EBUSY;
   }
 
-  command error_t ByteMapFile.seek(uint8_t fd, uint32_t pos, bool from_rear) {
+
+  command error_t ByteMapFile.seek(uint8_t slot_idx, uint32_t pos, bool from_rear) {
     nop();
     nop();                      /* BRK */
 
     if (not_ready())
       return EBUSY;
-    if (!is_fd_full(fd))
+    if (is_idx_unused(slot_idx))
       return EODATA;
 
-    pmf_cb.fileno = fd;
-    if (is_eof(fd, pos))
-        pos = eof_pos(fd);
+    pmf_cb.slot_idx = slot_idx;
+    if (is_eof(slot_idx, pos))
+        pos = eof_pos(slot_idx);
 
-    if (from_rear) pmf_cb.file_pos = eof_pos(fd) - pos;
+    if (from_rear) pmf_cb.file_pos = eof_pos(slot_idx) - pos;
     else           pmf_cb.file_pos = pos;
     if (pmf_cb.sbuf_ready) {
-      if (inbounds(fd, pmf_cb.file_pos))
+      if (inbounds(slot_idx, pmf_cb.file_pos))
         return SUCCESS;
       nop();                      /* BRK */
-      if (is_eof(fd, pmf_cb.file_pos))
+      if (is_eof(slot_idx, pmf_cb.file_pos))
         return EODATA;
-      if (!_get_new_sector(fd, pmf_cb.file_pos))
+      if (!_get_new_sector(slot_idx, pmf_cb.file_pos))
         return FAIL;
     }
     return EBUSY;
   }
 
-  command uint32_t ByteMapFile.tell(uint8_t fd) {
+  command uint32_t ByteMapFile.tell(uint8_t slot_idx) {
     if (not_ready())
       return 0;
-    if (fd != pmf_cb.fileno)
+    if (slot_idx != pmf_cb.slot_idx)
       return 0;
     return pmf_cb.file_pos;
   }
 
-  default event void ByteMapFile.mapped(uint8_t fd, uint32_t file_pos) { };
+  default event void ByteMapFile.mapped(uint8_t slot_idx, uint32_t file_pos) { };
 
-  command uint32_t ByteMapFile.filesize(uint8_t fd) {
+  command uint32_t ByteMapFile.filesize(uint8_t slot_idx) {
     if (not_ready())
       return 0;
-    return eof_pos(fd);
+    return eof_pos(slot_idx);
   }
 
   async event void Panic.hook() { }
@@ -252,7 +262,7 @@ implementation {
   event void Boot.booted() {
     nop();
     nop();                      /* BRK */
-    pmf_cb.fileno           = 255;
+    pmf_cb.slot_idx         = 255;
     pmf_cb.sector.base      = 0;
     pmf_cb.sector.eof       = 0;
     pmf_cb.sector.cur       = 0;
