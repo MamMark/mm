@@ -48,13 +48,14 @@ typedef struct {
 } dblk_map_file_t;
 
 module DblkMapFileP {
-  // should convert over to ByteMapFileNew */
-  provides  interface ByteMapFile              as DMF;
-  uses      interface StreamStorage            as SS;
-  uses      interface SDread                   as SDread;
-  uses      interface Resource                 as SDResource;
-  uses      interface Boot;
-  uses      interface Panic;
+  provides  interface ByteMapFileNew as DMF;
+  uses {
+    interface StreamStorage as SS;
+    interface SDread        as SDread;
+    interface Resource      as SDResource;
+    interface Boot;
+    interface Panic;
+  }
 }
 implementation {
   dblk_map_file_t dmf_cb;
@@ -137,7 +138,9 @@ implementation {
     dmf_cb.sbuf_ready      = TRUE;
     dmf_cb.sbuf_requesting = FALSE;
     dmf_cb.sbuf_reading    = FALSE;
-    signal DMF.mapped(0, dmf_cb.file_pos);
+
+    /* return original call's data so we can match if we want. */
+    signal DMF.data_avail(0, 0, 0);
   }
 
 
@@ -161,31 +164,6 @@ implementation {
     return EBUSY;
   }
 
-  command error_t DMF.seek(uint8_t fd, uint32_t pos, bool from_rear) {
-
-    nop();
-    nop();                      /* BRK */
-    if (is_eof(pos))
-        pos = eof_pos();
-
-    if (from_rear) dmf_cb.file_pos = eof_pos() - pos;
-    else           dmf_cb.file_pos = pos;
-    if (dmf_cb.sbuf_ready) {
-      if (inbounds(dmf_cb.file_pos))
-        return SUCCESS;
-      if (is_eof(dmf_cb.file_pos))
-        return EODATA;
-      if (!_get_new_sector(dmf_cb.file_pos))
-        return FAIL;
-    }
-    return EBUSY;
-  }
-
-  command uint32_t DMF.tell(uint8_t fd) {
-    return dmf_cb.file_pos;
-  }
-
-  default event void DMF.mapped(uint8_t fd, uint32_t file_pos) { };
 
   event void SS.dblk_advanced(uint32_t last) {
     bool was_zero = (!dmf_cb.sector.eof);
@@ -198,13 +176,16 @@ implementation {
       _get_new_sector(dmf_cb.file_pos);  // get the first one
   }
 
-  command uint32_t DMF.filesize(uint8_t fd) {
+
+  command uint32_t DMF.filesize(uint32_t context) {
     return ((dmf_cb.sector.eof - dmf_cb.sector.base) * SD_BLOCKSIZE);
   }
 
-  event void SS.dblk_stream_full() { }
 
-  async event void Panic.hook() { }
+  command uint32_t DMF.commitsize(uint32_t context) {
+    return 0;
+  }
+
 
   event void Boot.booted() {
     dmf_cb.sector.base      = call SS.get_dblk_low();
@@ -215,4 +196,10 @@ implementation {
     dmf_cb.sbuf_requesting  = FALSE;
     dmf_cb.sbuf_reading     = FALSE;
   }
+
+
+          event void SS.dblk_stream_full() { }
+  async   event void Panic.hook()          { }
+  default event void DMF.data_avail(uint32_t context, uint32_t offset,
+                                    uint32_t len) { }
 }

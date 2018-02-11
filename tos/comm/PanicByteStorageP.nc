@@ -42,11 +42,9 @@
 #include <TagnetAdapter.h>
 
 module PanicByteStorageP {
-  provides {
-    interface  TagnetAdapter<tagnet_file_bytes_t>  as PanicBytes;
-  }
+  provides interface  TagnetAdapter<tagnet_file_bytes_t>  as PanicBytes;
   uses {
-    interface ByteMapFile  as ByteMapFile;
+    interface ByteMapFileNew as ByteMapFile;
     interface Panic;
   }
 }
@@ -59,26 +57,18 @@ implementation {
     /* data block cells like db->count and db->iota get zero'd on the way in */
     switch (db->action) {
       case FILE_GET_DATA:
-        db->error = call ByteMapFile.seek(db->file, db->iota, 0);
+        db->error = call ByteMapFile.map(db->context, &db->block, db->iota, lenp);
         if (db->error == SUCCESS) {
-          db->error = call ByteMapFile.map(db->file, &db->block, len);
-        }
-        if (db->error == SUCCESS) {
-          db->iota   = call ByteMapFile.tell(db->file);
-          db->count -= *len;
+          db->iota  += *lenp;
+          db->count -= *lenp;
           return TRUE;
         }
         break;
       case  FILE_GET_ATTR:
-        db->iota   = call ByteMapFile.tell(db->file);
-        db->count  = call ByteMapFile.filesize(db->file);
+        db->count  = call ByteMapFile.filesize(db->context);
         return TRUE;
-      default:
-        break;
     }
-    db->iota = call ByteMapFile.tell(db->file);
-    *len = 0;
-    db->count = 0;
+    *lenp = 0;
     return TRUE;
   }
 
@@ -90,11 +80,14 @@ implementation {
   }
 
 
-  event void ByteMapFile.mapped(uint8_t fd, uint32_t file_pos) {
+  event void ByteMapFile.data_avail(uint32_t context, uint32_t offset,
+                                    uint32_t len) {
     nop();
     nop();                            /* BRK */
   }
 
 
+  event void ByteMapFile.extended(uint32_t context, uint32_t offset)  { }
+  event void ByteMapFile.committed(uint32_t context, uint32_t offset) { }
   async event void Panic.hook() { }
 }

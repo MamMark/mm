@@ -48,13 +48,14 @@ typedef struct {
 
 
 module PanicMapFileP {
-  // should convert over to ByteMapFileNew */
-  provides  interface ByteMapFile              as ByteMapFile;
-  uses      interface PanicManager             as PanicManager;
-  uses      interface SDread                   as SDread;
-  uses      interface Resource                 as SDResource;
-  uses      interface Boot;
-  uses      interface Panic;
+  provides  interface ByteMapFileNew as PMF;
+  uses {
+    interface PanicManager;
+    interface SDread;
+    interface Resource as SDResource;
+    interface Boot;
+    interface Panic;
+  }
 }
 implementation {
   panic_map_file_t     pmf_cb;
@@ -139,7 +140,7 @@ implementation {
   }
 
 
-  bool _get_new_sector(uint8_t slot_idx, uint32_t pos) {
+  bool _get_new_sector(uint32_t slot_idx, uint32_t pos) {
     // not protected. caller must ensure that SDResource request is not
     // already pending.
     pmf_cb.slot_idx          = slot_idx;
@@ -174,7 +175,7 @@ implementation {
     pmf_cb.sbuf_ready        = TRUE;
     pmf_cb.sbuf_requesting   = FALSE;
     pmf_cb.sbuf_reading      = FALSE;
-    signal ByteMapFile.mapped(pmf_cb.slot_idx, pmf_cb.file_pos);
+    signal PMF.data_avail(0, 0, 0);
   }
 
 
@@ -184,20 +185,20 @@ implementation {
 
     if (not_ready())
       return EBUSY;
-    if (is_idx_unused(slot_idx))
+    if (is_idx_unused(context))
       return EODATA;
 
     if (pmf_cb.sbuf_ready) {
-      if (slot_idx != pmf_cb.slot_idx)
+      if (context != pmf_cb.slot_idx)
         return EINVAL;          /* need to seek first */
       count = (*lenp > remaining(context, pmf_cb.file_pos))
         ? remaining(context, pmf_cb.file_pos) : *lenp;
       *bufp = &pmf_sbuf[offset_of(context, pmf_cb.file_pos)];
       *lenp = count;
       pmf_cb.file_pos += count;
-      if (!is_eof(slot_idx, pmf_cb.file_pos) &&
-          (remaining(slot_idx, pmf_cb.file_pos) == 0))
-        if (!_get_new_sector(slot_idx, pmf_cb.file_pos))
+      if (!is_eof(context, pmf_cb.file_pos) &&
+          (remaining(context, pmf_cb.file_pos) == 0))
+        if (!_get_new_sector(context, pmf_cb.file_pos))
           return FAIL;
       return SUCCESS;
     }
@@ -205,50 +206,17 @@ implementation {
   }
 
 
-  command error_t ByteMapFile.seek(uint8_t slot_idx, uint32_t pos, bool from_rear) {
-    nop();
-    nop();                      /* BRK */
-
-    if (not_ready())
-      return EBUSY;
-    if (is_idx_unused(slot_idx))
-      return EODATA;
-
-    pmf_cb.slot_idx = slot_idx;
-    if (is_eof(slot_idx, pos))
-        pos = eof_pos(slot_idx);
-
-    if (from_rear) pmf_cb.file_pos = eof_pos(slot_idx) - pos;
-    else           pmf_cb.file_pos = pos;
-    if (pmf_cb.sbuf_ready) {
-      if (inbounds(slot_idx, pmf_cb.file_pos))
-        return SUCCESS;
-      nop();                      /* BRK */
-      if (is_eof(slot_idx, pmf_cb.file_pos))
-        return EODATA;
-      if (!_get_new_sector(slot_idx, pmf_cb.file_pos))
-        return FAIL;
-    }
-    return EBUSY;
-  }
-
-  command uint32_t ByteMapFile.tell(uint8_t slot_idx) {
+  command uint32_t PMF.filesize(uint32_t context) {
     if (not_ready())
       return 0;
-    if (slot_idx != pmf_cb.slot_idx)
-      return 0;
-    return pmf_cb.file_pos;
+    return eof_pos(context);
   }
 
-  default event void ByteMapFile.mapped(uint8_t slot_idx, uint32_t file_pos) { };
 
-  command uint32_t ByteMapFile.filesize(uint8_t slot_idx) {
-    if (not_ready())
-      return 0;
-    return eof_pos(slot_idx);
+  command uint32_t PMF.commitsize(uint32_t context) {
+    return 0;
   }
 
-  async event void Panic.hook() { }
 
   event void PanicManager.populateDone(error_t err) {
     pmf_cb.err = err;
@@ -268,4 +236,8 @@ implementation {
     pmf_cb.sbuf_reading     = FALSE;
     call PanicManager.populate();
   }
+
+  async   event void Panic.hook() { }
+  default event void PMF.data_avail(uint32_t context, uint32_t offset,
+                                    uint32_t len) { };
 }

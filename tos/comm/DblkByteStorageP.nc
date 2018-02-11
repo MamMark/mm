@@ -48,7 +48,7 @@ module DblkByteStorageP {
     interface  TagnetAdapter<tagnet_dblk_note_t>   as DblkNote;
   }
   uses {
-    interface ByteMapFile  as DMF;
+    interface ByteMapFileNew as DMF;
     interface Collect;
     interface Panic;
   }
@@ -63,7 +63,7 @@ implementation {
     db->error  = SUCCESS;
     switch (db->action) {
       case FILE_GET_DATA:
-        err = call DMF.map(&db->block, db->iota, lenp);
+        err = call DMF.map(db->context, &db->block, db->iota, lenp);
         if (err == SUCCESS) {
           db->iota     += *lenp;
           db->count    -= *lenp;
@@ -71,8 +71,7 @@ implementation {
         }
         break;
       case  FILE_GET_ATTR:
-        db->iota   = call DMF.committed();
-        db->count  = call DMF.filesize();
+        db->count  = call DMF.filesize(db->context);
         return TRUE;
       default:
         err = EINVAL;
@@ -129,5 +128,7 @@ implementation {
 
   event void DMF.data_avail(uint32_t context, uint32_t offset,
                             uint32_t len) { }
+        event void DMF.extended(uint32_t context, uint32_t offset)  { }
+        event void DMF.committed(uint32_t context, uint32_t offset) { }
   async event void Panic.hook() { }
 }

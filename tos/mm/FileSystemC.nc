@@ -30,10 +30,10 @@
 
 configuration FileSystemC {
   provides {
-    interface Boot        as Booted;    /* out Booted signal */
-    interface FileSystem  as FS;
-    interface ByteMapFile as DblkFileMap;
-    interface ByteMapFile as PanicFileMap;
+    interface Boot           as Booted;    /* out Booted signal */
+    interface FileSystem     as FS;
+    interface ByteMapFileNew as DblkFileMap;
+    interface ByteMapFileNew as PanicFileMap;
   }
   uses interface Boot;			/* incoming signal */
 }
@@ -48,7 +48,7 @@ implementation {
   Boot   = FS_P;
 
   DblkFileMap  = DMF.DMF;
-  PanicFileMap = PMF.ByteMapFile;
+  PanicFileMap = PMF.PMF;
 
   components     SSWriteC;
   components new SD0_ArbC() as SD_FS;   /* filesystem   SD   */

@@ -71,10 +71,10 @@ typedef enum {
 } file_action_t;
 
 typedef struct {
-  uint32_t             file;
-  uint32_t             iota;
-  uint32_t             count;
-  uint8_t             *block;
+  uint32_t             context;         /* which thing         */
+  uint32_t             iota;            /* where/which/obj idx */
+  uint32_t             count;           /* how much            */
+  uint8_t             *block;           /* where to put/get it */
   int32_t              error;
   uint16_t             delay;
   file_action_t        action;

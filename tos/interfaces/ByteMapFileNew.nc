@@ -46,45 +46,64 @@ interface ByteMapFileNew {
    * or all of the requested region will be brought in.  When complete, a
    * mapped() signal will be used to indicate data is now available.
    *
-   * @param   'uint8_t  **buf'      pointer to buf pointer
+   * The context identifier is used to reference multiple instances within
+   * the container we are accessing.  ie. which image in the ImageManager
+   * space, or which Panic Block in the Panic Area.
+   *
+   * @param   'uint32_t   context'
+   * @param   'uint8_t  **bufp'     pointer to buf pointer
    * @param   'uint32_t   offset'   file offset looking for
-   * @param   'uint32_t  *len'      pointer to length requested/available
+   * @param   'uint32_t  *lenp'     pointer to length requested/available
    *
    * @return  'error_t'             error code
    */
-  command error_t map(uint8_t **buf, uint32_t offset, uint32_t *len);
+  command error_t map(uint32_t context, uint8_t **bufp,
+                      uint32_t offset, uint32_t *lenp);
 
   /**
    * signal when the requested contents has been mapped into memory.
    *
-   * @param   'uint8_t   *buf'      where the data lives
-   * @param   'uint32_t   offset'   requested file offset mapped.
-   * @param   'uint32_t  *len'      pointer to length available/used
+   * @param   'uint32_t   context'
+   * @param   'uint32_t   offset'   offset requested.
+   * @param   'uint32_t   len'      original len parameter
    */
-  event void mapped(uint8_t *buf, uint32_t offset, uint32_t len);
+  event void data_avail(uint32_t context, uint32_t offset, uint32_t len);
 
   /**
    * return size of file in bytes
    *
-   * @return  'uint32_t'       file size in bytes
+   * @param   'uint32_t context'
+   *
+   * @return  'uint32_t'      file size in bytes
    */
-  command uint32_t filesize();
+  command uint32_t filesize(uint32_t context);
+
+  /**
+   * commitsize: number bytes return how actually written to disk.
+   *
+   * the underlying implementation may provide caching
+   * of the file.  filesize() returns the current file
+   * size, while commitsize() returns the number of bytes
+   * that have been physically written to disk.
+   *
+   * @param   'uint32_t context'
+   * @return  'uint32_t'      file size written to disk.
+   */
+  command uint32_t commitsize(uint32_t context);
 
   /**
    * signal when the file grows.
    *
-   * @param   'offset'              new eof offset
+   * @param   'uint32_t context'
+   * @param   'uint32_t offset'  new eof offset
    */
-  event   void     extended(uint32_t offset);
+  event   void     extended(uint32_t context, uint32_t offset);
 
   /**
-   * return commited size of file in bytes.
-   * the underlying implementation may provide caching
-   * of the file.  filesize() returns the current file
-   * size, while committed() returns the number of bytes
-   * that have been physically written to disk.
+   * signal when data has been written.
    *
-   * @return  'uint32_t'       file size written to disk.
+   * @param   'uint32_t context'
+   * @param   'uint32_t offset'  new commited offset
    */
-  command uint32_t committed();
+  event   void     committed(uint32_t context, uint32_t offset);
 }

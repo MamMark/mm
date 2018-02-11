@@ -59,7 +59,7 @@ implementation {
 
       switch (call TTLV.get_tlv_type(a_tlv)) {
         case TN_TLV_INTEGER:
-          db->file = call TTLV.tlv_to_integer(a_tlv);
+          db->context = call TTLV.tlv_to_integer(a_tlv);
           break;
         case TN_TLV_OFFSET:
           db->iota = call TTLV.tlv_to_offset(a_tlv);
