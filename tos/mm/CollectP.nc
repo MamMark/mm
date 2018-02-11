@@ -1,10 +1,10 @@
 /*
- * CollectP.nc - data collector (record managment) interface
- * between data collection and mass storage.
- *
- * Copyright 2008, 2014, 2017: Eric B. Decker
+ * Copyright 2008, 2014, 2017-2018: Eric B. Decker
  * All rights reserved.
  * Mam-Mark Project
+ *
+ * CollectP.nc - data collector (record managment) interface
+ * between data collection and mass storage.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -150,25 +150,13 @@ implementation {
 
   uint32_t get_rec_offset() {
     uint32_t blk_offset;
-    uint32_t buf_offset;
 
     /* get the file offset of the current block */
-    buf_offset = 0;
     blk_offset = call SS.eof_block_offset();
     if (!blk_offset) {
       return 0;
     }
-
-    /*
-     * if we have a non-zero buf pointer we still have a live buffer.
-     * It hasn't been handed over to stream storage and won't be
-     * accounted for by SS.eof_block_offset.
-     *
-     * dcc.remaining will always tell the story and may be 0.
-     */
-    if (dcc.cur_buf)
-      buf_offset = SD_BLOCKSIZE - dcc.remaining;
-    blk_offset += buf_offset;
+    blk_offset += call Collect.buf_offset();
     return blk_offset;
   }
 
@@ -480,6 +468,28 @@ implementation {
                                uint8_t     *data,   uint16_t dlen) {
     header->systime = call LocalTime.get();
     call Collect.collect_nots(header, hlen, data, dlen);
+  }
+
+
+  /*
+   * buf_offset: return the offset into the current Alloc buffer (if any).
+   *
+   * if we have a non-zero buf pointer we still have a live buffer.
+   * It hasn't been handed over to stream storage and won't be
+   * accounted for by SS.eof_block_offset.
+   *
+   * dcc.remaining will always tell the story and may be 0.
+   *
+   * The only async locale this is called is via get_rec_offset from
+   * SysReboot.shutdown_flush().  shutdown_flush is only called
+   * on the way down (crashing) and is single threaded.  Not an issue.
+   */
+  async command uint32_t Collect.buf_offset() {
+    atomic {
+      if (dcc.cur_buf)
+        return SD_BLOCKSIZE - dcc.remaining;
+      return 0;
+    }
   }
 
 

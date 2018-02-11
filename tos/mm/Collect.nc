@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017 Eric B. Decker
+ * Copyright (c) 2008, 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,4 +28,6 @@ interface Collect {
   /* collect no timestamp.  Timestamp is filled by caller */
   command void collect_nots(dt_header_t *header, uint16_t hlen,
                             uint8_t     *data,   uint16_t dlen);
+
+  async command uint32_t buf_offset();
 }
