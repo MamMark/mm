@@ -26,6 +26,18 @@ interface StreamStorage {
   command uint32_t get_dblk_low();
 
   /**
+   * eof_block_offset(): return the offset of the block containing the eof.
+   *
+   * the block offset is the file offset of tne next block being written
+   * or that will be written.  dblk_nxt + number of full buffers converted
+   * to a file offset.  Block offsets are always modulo SD_BLOCKSIZE.
+   *
+   * can be called from anywhere.
+   */
+  async command uint32_t eof_block_offset();
+
+
+  /**
    * The event "dblk_stream_full" is signaled when the assigned area
    * for data block storage is full.  Typically this will cause the
    * sensing system to shut down and put the tag into a low power

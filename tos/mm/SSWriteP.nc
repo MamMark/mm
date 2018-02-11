@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, 2017 - Eric B. Decker
+ * Copyright (c) 2008, 2010, 2017-2018, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -226,14 +226,15 @@ implementation {
 
 
   /*
-   * block_offset
+   * eof_block_offset
    *
-   * if it comes back zero, then we be done, leave it zero.
+   * if DM.dblk_nxt_offset() comes back zero, then the stream is full
+   * and we don't have a block with the eof in it.
    *
-   * Otherwise, we need to include and full buffers that
+   * Otherwise, we need to include any full buffers that
    * are pending.
    */
-  async command uint32_t SSW.block_offset() {
+  async command uint32_t SS.eof_block_offset() {
     uint32_t offset;
 
     offset = call DblkManager.dblk_nxt_offset();

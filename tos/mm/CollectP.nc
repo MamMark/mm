@@ -125,6 +125,7 @@ module CollectP {
     interface OverWatch;
 
     interface SSWrite as SSW;
+    interface StreamStorage as SS;
     interface Panic;
     interface DblkManager;
     interface SysReboot @atleastonce();
@@ -153,7 +154,7 @@ implementation {
 
     /* get the file offset of the current block */
     buf_offset = 0;
-    blk_offset = call SSW.block_offset();
+    blk_offset = call SS.eof_block_offset();
     if (!blk_offset) {
       return 0;
     }
@@ -161,7 +162,7 @@ implementation {
     /*
      * if we have a non-zero buf pointer we still have a live buffer.
      * It hasn't been handed over to stream storage and won't be
-     * accounted for by SSW.block_offset.
+     * accounted for by SS.eof_block_offset.
      *
      * dcc.remaining will always tell the story and may be 0.
      */
@@ -542,6 +543,7 @@ implementation {
     call SSW.flush_all();
   }
 
-  async event void Panic.hook() { }
-
+        event void SS.dblk_stream_full()           { }
+        event void SS.dblk_advanced(uint32_t last) { }
+  async event void Panic.hook()                    { }
 }

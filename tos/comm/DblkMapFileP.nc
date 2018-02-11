@@ -219,7 +219,7 @@ implementation {
     nop();                      /* BRK */
     dmf_cb.sector.base      = call SS.get_dblk_low();
     dmf_cb.sector.cur       = 0;
-    dmf_cb.sector.eof       = 0;
+    dmf_cb.sector.eof       = call SS.eof_block_offset();
     dmf_cb.file_pos         = 0;
     dmf_cb.sbuf_ready       = FALSE;
     dmf_cb.sbuf_requesting  = FALSE;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008, 2017 Eric B. Decker
+ * Copyright (c) 2008, 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -57,6 +57,7 @@ implementation {
 
   components SSWriteC;
   CollectP.SSW -> SSWriteC;
+  CollectP.SS  -> SSWriteC;
 
   components PanicC;
   CollectP.Panic -> PanicC;
