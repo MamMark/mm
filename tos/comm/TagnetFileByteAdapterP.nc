@@ -43,7 +43,7 @@ implementation {
   components new TagnetFileByteAdapterImplP(my_id) as Element;
   components     TagnetUtilsC;
 
-  Super           =  Element.Super;
+  Super           = Element.Super;
   Adapter         = Element.Adapter;
   Element.TName  -> TagnetUtilsC;
   Element.THdr   -> TagnetUtilsC;

@@ -37,8 +37,9 @@ typedef struct {
   uint32_t             cur;          // current sector in sbuf
 } dblk_map_sectors_t;
 
+
 typedef struct {
-  uint32_t             file_pos;     // current file position
+  uint32_t             file_pos;     // current file offset (pos)
   dblk_map_sectors_t   sector;       // pertinent file sector numbers
   error_t              err;          // last error encountered
   bool                 sbuf_ready;   // true if sbuf has valid data
@@ -56,8 +57,8 @@ module DblkMapFileP {
   uses      interface Panic;
 }
 implementation {
-  dblk_map_file_t      dmf_cb;
-  uint8_t              dmf_sbuf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
+  dblk_map_file_t dmf_cb;
+  uint8_t         dmf_sbuf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
 
   void dmap_panic(uint8_t where, parg_t p0, parg_t p1) {
     call Panic.panic(PANIC_TAGNET, where, p0, p1, dmf_cb.sector.base,
@@ -130,6 +131,7 @@ implementation {
     call SDResource.release();
   }
 
+
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
     call SDResource.release();
     dmf_cb.sbuf_ready      = TRUE;
@@ -138,19 +140,19 @@ implementation {
     signal DMF.mapped(0, dmf_cb.file_pos);
   }
 
-  command error_t DMF.map(uint8_t fd, uint8_t **buf, uint32_t *len) {
+
+  command error_t DMF.map(uint32_t context, uint8_t **bufp,
+                          uint32_t offset, uint32_t *lenp) {
     uint32_t    count  = 0;
 
-    nop();
-    nop();                      /* BRK */
     if (dmf_cb.sbuf_ready) {
-      count = (*len > remaining(dmf_cb.file_pos))   \
+      count = (*lenp > remaining(dmf_cb.file_pos))   \
         ? remaining(dmf_cb.file_pos)                \
-        : *len;
-      *buf = &dmf_sbuf[offset_of(dmf_cb.file_pos)];
-      *len = count;
+        : *lenp;
+      *bufp = &dmf_sbuf[offset_of(dmf_cb.file_pos)];
+      *lenp = count;
       dmf_cb.file_pos += count;
-      if ((!is_eof(dmf_cb.file_pos)) &&             \
+      if ((!is_eof(dmf_cb.file_pos)) &&
           (remaining(dmf_cb.file_pos) == 0))
         if (!_get_new_sector(dmf_cb.file_pos))
           return FAIL;
@@ -205,8 +207,6 @@ implementation {
   async event void Panic.hook() { }
 
   event void Boot.booted() {
-    nop();
-    nop();                      /* BRK */
     dmf_cb.sector.base      = call SS.get_dblk_low();
     dmf_cb.sector.cur       = 0;
     dmf_cb.sector.eof       = call SS.eof_block_offset();

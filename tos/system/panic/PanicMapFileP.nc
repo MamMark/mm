@@ -37,7 +37,7 @@ typedef struct {
 } panic_map_sectors_t;
 
 typedef struct {
-  uint32_t             file_pos;     // current file position
+  uint32_t             file_pos;     // current file offset (pos)
   panic_map_sectors_t  sector;       // pertinent file sector numbers
   uint8_t              slot_idx;     // index selects which panic file
   error_t              err;          // last error encountered
@@ -45,6 +45,7 @@ typedef struct {
   bool                 sbuf_requesting; // true if sd.request in progress
   bool                 sbuf_reading; // true if sd.read in progress
 } panic_map_file_t;
+
 
 module PanicMapFileP {
   // should convert over to ByteMapFileNew */
@@ -161,8 +162,6 @@ implementation {
 
   event void SDResource.granted() {
     if ((!pmf_cb.sbuf_ready) && (pmf_cb.sector.cur)) {
-      nop();
-      nop();                      /* BRK */
       pmf_cb.sbuf_requesting = FALSE;
       pmf_cb.sbuf_reading    = TRUE;
       call SDread.read(pmf_cb.sector.cur, pmf_sbuf);
@@ -179,11 +178,10 @@ implementation {
   }
 
 
-  command error_t ByteMapFile.map(uint8_t slot_idx, uint8_t **buf, uint32_t *len) {
-    uint32_t    count  = 0;
+  command error_t PMF.map(uint32_t context, uint8_t **bufp,
+                          uint32_t offset, uint32_t *lenp) {
+    uint32_t count  = 0;
 
-    nop();
-    nop();                      /* BRK */
     if (not_ready())
       return EBUSY;
     if (is_idx_unused(slot_idx))
@@ -192,10 +190,10 @@ implementation {
     if (pmf_cb.sbuf_ready) {
       if (slot_idx != pmf_cb.slot_idx)
         return EINVAL;          /* need to seek first */
-      count = (*len > remaining(slot_idx, pmf_cb.file_pos))
-        ? remaining(slot_idx, pmf_cb.file_pos) : *len;
-      *buf = &pmf_sbuf[offset_of(slot_idx, pmf_cb.file_pos)];
-      *len = count;
+      count = (*lenp > remaining(context, pmf_cb.file_pos))
+        ? remaining(context, pmf_cb.file_pos) : *lenp;
+      *bufp = &pmf_sbuf[offset_of(context, pmf_cb.file_pos)];
+      *lenp = count;
       pmf_cb.file_pos += count;
       if (!is_eof(slot_idx, pmf_cb.file_pos) &&
           (remaining(slot_idx, pmf_cb.file_pos) == 0))
@@ -260,8 +258,6 @@ implementation {
   }
 
   event void Boot.booted() {
-    nop();
-    nop();                      /* BRK */
     pmf_cb.slot_idx         = 255;
     pmf_cb.sector.base      = 0;
     pmf_cb.sector.eof       = 0;

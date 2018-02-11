@@ -49,7 +49,6 @@ implementation {
 
   DblkBytes          = DBS.DblkBytes;
   DblkNote           = DBS.DblkNote;
-  DBS.Boot          -> SystemBootC.Boot;
   DBS.Panic         -> PanicC;
 
   components           CollectC;

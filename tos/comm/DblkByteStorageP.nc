@@ -37,9 +37,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include <TinyError.h>
-#include <mm_byteswap.h>
-#include <message.h>
 #include <Tagnet.h>
 #include <TagnetAdapter.h>
 
@@ -50,7 +49,6 @@ module DblkByteStorageP {
   }
   uses {
     interface ByteMapFile  as DMF;
-    interface Boot;
     interface Collect;
     interface Panic;
   }
@@ -58,21 +56,17 @@ module DblkByteStorageP {
 implementation {
 
   uint32_t   dblk_notes_count = 0;
-  uint32_t   dblk_offset      = 0;
 
-  bool GetDblkBytes(tagnet_file_bytes_t *db, uint32_t *len) {
-    error_t    err = EINVAL;
+  bool GetDblkBytes(tagnet_file_bytes_t *db, uint32_t *lenp) {
+    error_t err = EINVAL;
 
-    nop();
-    nop();                      /* BRK */
     db->error  = SUCCESS;
     switch (db->action) {
       case FILE_GET_DATA:
-        err = call DMF.map(&db->block, db->iota, &len);
+        err = call DMF.map(&db->block, db->iota, lenp);
         if (err == SUCCESS) {
-          db->iota     += *len;
-          db->count    -= *len;
-          dblk_offset   = db->iota;
+          db->iota     += *lenp;
+          db->count    -= *lenp;
           return TRUE;
         }
         break;
@@ -82,93 +76,58 @@ implementation {
         return TRUE;
       default:
         err = EINVAL;
+        break;
     }
-    *len = 0;
-    db->count = 0;
+    *lenp = 0;
     db->error = err;
     return TRUE;
   }
 
-  command bool DblkBytes.get_value(tagnet_file_bytes_t *db, uint32_t *len) {
-    return GetDblkBytes(db, len);
+  command bool DblkBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
+    return GetDblkBytes(db, lenp);
   }
 
-  command bool DblkBytes.set_value(tagnet_file_bytes_t *db, uint32_t *len) {
-    db->count = 0;
+  command bool DblkBytes.set_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
     db->error = EINVAL;
-    *len = 0;
+    *lenp = 0;
     return FALSE; }
 
-  command bool DblkNote.get_value(tagnet_dblk_note_t *db, uint32_t *len) {
+  command bool DblkNote.get_value(tagnet_dblk_note_t *db, uint32_t *lenp) {
     error_t    err = EINVAL;
 
-    nop();
-    nop();                      /* BRK */
-    *len = 0;
+    *lenp = 0;
     db->count  = dblk_notes_count;
-    switch (db->action) {
-      case  FILE_GET_ATTR:
+    if (db->action == FILE_GET_ATTR) {
         db->error  = SUCCESS;
-        *len       = db->count;
+        *lenp      = db->count;
         return TRUE;
-        break;
-      default:
-        err = EINVAL;
-        break;
     }
-    db->error = err;
+    db->error = EINVAL;
     return FALSE;
   }
 
-  command bool DblkNote.set_value(tagnet_dblk_note_t *db, uint32_t *len) {
+
+  command bool DblkNote.set_value(tagnet_dblk_note_t *db, uint32_t *lenp) {
     error_t      err = EINVAL;
     dt_note_t    note_block;
-    /*
-      uint16_t len;                 * size 28 + var *
-      dtype_t  dtype;
-      uint32_t recnum;
-      uint64_t systime;
-      uint16_t recsum;
-      uint16_t note_len;
-      uint16_t year;
-      uint8_t  month;
-      uint8_t  day;
-      uint8_t  hrs;
-      uint8_t  min;
-      uint8_t  sec;
-    */
-    nop();
-    nop();                      /* BRK */
-    switch (db->action) {
-      case  FILE_SET_DATA:
-        ++dblk_notes_count;
-        note_block.len = *len + sizeof(note_block);
-        note_block.dtype = DT_NOTE;
-        note_block.note_len = *len;
-        call Collect.collect((void *) &note_block, sizeof(note_block),
-                             db->block, *len);
-        db->error  = SUCCESS;
-        *len       = note_block.note_len;
-        db->count  = note_block.note_len;
-        return TRUE;
-        break;
-      default:
-        err = EINVAL;
-        break;
+
+    if (db->action == FILE_SET_DATA) {
+      ++dblk_notes_count;
+      note_block.len = *lenp + sizeof(note_block);
+      note_block.dtype = DT_NOTE;
+      note_block.note_len = *lenp;
+      call Collect.collect((void *) &note_block, sizeof(note_block),
+                           db->block, *lenp);
+      db->error  = SUCCESS;
+      db->count  = note_block.note_len;
+      return TRUE;
     }
-    db->error = err;
+    db->error = EINVAL;
     return FALSE;
   }
 
-  event void DMF.mapped(uint8_t fd, uint32_t file_pos) {
-    nop();
-    nop();                            /* BRK */
-  }
 
+  event void DMF.data_avail(uint32_t context, uint32_t offset,
+                            uint32_t len) { }
   async event void Panic.hook() { }
-
-  event void Boot.booted() {
-    nop();
-    nop();                            /* BRK */
-  }
 }

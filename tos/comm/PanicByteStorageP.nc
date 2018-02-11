@@ -38,8 +38,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <TinyError.h>
-#include <mm_byteswap.h>
-#include <message.h>
 #include <Tagnet.h>
 #include <TagnetAdapter.h>
 
@@ -49,17 +47,16 @@ module PanicByteStorageP {
   }
   uses {
     interface ByteMapFile  as ByteMapFile;
-    interface Boot;
     interface Panic;
   }
 }
 implementation {
 
-  command bool PanicBytes.get_value(tagnet_file_bytes_t *db, uint32_t *len) {
-    nop();
-    nop();                      /* BRK */
+  command bool PanicBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
+
     db->error  = EINVAL;
 
+    /* data block cells like db->count and db->iota get zero'd on the way in */
     switch (db->action) {
       case FILE_GET_DATA:
         db->error = call ByteMapFile.seek(db->file, db->iota, 0);
@@ -86,10 +83,9 @@ implementation {
   }
 
 
-  command bool PanicBytes.set_value(tagnet_file_bytes_t *db, uint32_t *len) {
-    db->count = 0;
+  command bool PanicBytes.set_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
     db->error = EINVAL;
-    *len = 0;
+    *lenp = 0;
     return FALSE;
   }
 
@@ -101,10 +97,4 @@ implementation {
 
 
   async event void Panic.hook() { }
-
-
-  event void Boot.booted() {
-    nop();
-    nop();                            /* BRK */
-  }
 }

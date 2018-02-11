@@ -48,7 +48,6 @@ implementation {
 
   PanicBytes         = PBS.PanicBytes;
   PBS.ByteMapFile   -> FS.PanicFileMap;
-  PBS.Boot          -> SystemBootC.Boot;
   PBS.Panic         -> PanicC;
 
 }
