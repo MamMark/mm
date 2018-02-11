@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008, 2010, 2017 Eric Decker
+ * Copyright (c) 2008, 2010, 2017-2018 Eric Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,9 +21,20 @@
 
 interface StreamStorage {
   /**
+   * get_dblk_low(): get the base blk_id of the Dblk Area.
+   *
    * return absolute blk_id of the start of the DBLK file
    */
   command uint32_t get_dblk_low();
+
+
+  /**
+   * get_dblk_high(): get the upper inclusive limit of the Dblk Area.
+   *
+   * return absolute blk_id of the end (inclusive) of the DBLK file
+   */
+  command uint32_t get_dblk_high();
+
 
   /**
    * eof_block_offset(): return the offset of the block containing the eof.

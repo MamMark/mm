@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Eric B. Decker
+ * Copyright (c) 2017-2018, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -246,6 +246,11 @@ implementation {
 
   async command uint32_t DblkManager.get_dblk_low() {
     return dmc.dblk_lower;
+  }
+
+
+  async command uint32_t DblkManager.get_dblk_high() {
+    return dmc.dblk_upper;
   }
 
 

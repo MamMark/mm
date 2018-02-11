@@ -483,6 +483,10 @@ implementation {
   }
 
 
+  command uint32_t SS.get_dblk_high() {
+    return call DblkManager.get_dblk_high();
+  }
+
   default event void SS.dblk_stream_full()          { }
   default event void SS.dblk_advanced(uint32_t last) { }
 
