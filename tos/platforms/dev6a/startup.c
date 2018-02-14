@@ -110,7 +110,6 @@ uint32_t crash_stack[CRASH_STACK_WORDS] __attribute__ ((section(".crash_stack"))
 
 int  main();                    /* main() symbol defined in RealMainP */
 void __Reset();                 /* start up entry point */
-void __system_init(bool disable_dcor);
 
 /* see tos/mm/OverWatch/OverWatchP.nc */
 extern void owl_setFault(uint32_t fault_mask);
@@ -171,7 +170,7 @@ void __default_handler()  {
 
 
 /*
- * Unless overridded, most handlers get aliased to __default_handler.
+ * Unless overridden, most handlers get aliased to __default_handler.
  *
  * NMI, HardFault, MpuFault, BusFault, UsageFault, SVCall, Debug,
  * PendSV, and SysTick are not allowed to be reassigned so are
@@ -315,6 +314,132 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
   __default_handler,                    // 62           78
   __default_handler                     // 63           79
 };
+
+
+/*
+ * __soft_reset: wack an h/w that we don't initialize.
+ *
+ * When the MSP432 does a POR or most RESETs it will change the state of its
+ * digital I/O pins to Input.  While the right thing to do, this creates
+ * potential problems for chips connected to the MSP432.
+ *
+ * The dev6a doesn't have power switches and regulators that are majorily
+ * effected by this problem.  This code is here for debugging purposes.
+ *
+ * To avoid these problems we use a soft_reset.  This is a software controlled
+ * reboot.  Software is responsible for poking various h/w state to return
+ * to a somewhat pristine state.
+ *
+ * we assume that a h/w SOFTREST was done and that is what got us here.
+ * A SOFTRESET will clear out the following Cortex-M4F peripherals:
+ *
+ * o FPU
+ * o MPU
+ * o NVIC
+ * o SysTick
+ * o SCB, including the VTOR (to 0)
+ * o Interrupt/Exception state
+ * o SCnSCB
+ */
+
+void __soft_reset() {
+  uint32_t i;
+
+  /*
+   * blow up any pending DMA stuff
+   */
+  DMA_Control->CFG         = 0;         /* kill master enable */
+  DMA_Control->USEBURSTCLR = (uint32_t) -1;
+  DMA_Control->REQMASKCLR  = (uint32_t) -1;
+  DMA_Control->ENACLR      = (uint32_t) -1;
+  DMA_Control->ALTCLR      = (uint32_t) -1;
+  DMA_Control->PRIOCLR     = (uint32_t) -1;
+  DMA_Control->ERRCLR      = 1;
+
+  DMA_Channel->INT1_SRCCFG = 0;         /* turn off enables   */
+  DMA_Channel->INT2_SRCCFG = 0;
+  DMA_Channel->INT3_SRCCFG = 0;
+  DMA_Channel->INT0_CLRFLG = (uint32_t) -1;
+
+  /*
+   * clean out IFGs and IEs on PORTs
+   */
+  P1->IE  = 0;
+  P1->IFG = 0;
+  P2->IE  = 0;
+  P2->IFG = 0;
+  P3->IE  = 0;
+  P3->IFG = 0;
+  P4->IE  = 0;
+  P4->IFG = 0;
+  P5->IE  = 0;
+  P5->IFG = 0;
+  P6->IE  = 0;
+  P6->IFG = 0;
+
+  /* Turn off Timer32 modules */
+  TIMER32_1->CONTROL = 0;
+  TIMER32_1->INTCLR  = 0;               /* any write clears */
+  TIMER32_2->CONTROL = 0;
+  TIMER32_2->INTCLR  = 0;               /* any write clears */
+
+  /*
+   * turn off 16 bit timers, TA0 - TA3
+   *
+   * o disable TAIE
+   * o clear   TAIFG
+   * o set control to 0
+   * o clear TAxR
+   * o clear out CCTLs (0-5)
+   * o clear out CCRs
+   * o clear out TAxEX
+   */
+  TIMER_A0->CTL = TIMER_A_CTL_CLR;
+  for (i = 0; i < 5; i++) {
+    TIMER_A0->CCTL[i] = 0;
+    TIMER_A0->CCR[i]  = 0;
+  }
+  TIMER_A0->EX0 = 0;
+
+  TIMER_A1->CTL = TIMER_A_CTL_CLR;
+  for (i = 0; i < 5; i++) {
+    TIMER_A1->CCTL[i] = 0;
+    TIMER_A1->CCR[i]  = 0;
+  }
+  TIMER_A1->EX0 = 0;
+
+  TIMER_A2->CTL = TIMER_A_CTL_CLR;
+  for (i = 0; i < 5; i++) {
+    TIMER_A2->CCTL[i] = 0;
+    TIMER_A2->CCR[i]  = 0;
+  }
+  TIMER_A2->EX0 = 0;
+
+  TIMER_A3->CTL = TIMER_A_CTL_CLR;
+  for (i = 0; i < 5; i++) {
+    TIMER_A3->CCTL[i] = 0;
+    TIMER_A3->CCR[i]  = 0;
+  }
+  TIMER_A3->EX0 = 0;
+
+  /* clean out ADC14 */
+  ADC14->CTL0 = 0;                      /* make sure ENC is 0, disabled */
+  ADC14->CTL1 = 0x30;
+  ADC14->IER0 = 0;                      /* clear any enables */
+  ADC14->IER1 = 0;
+  ADC14->CLRIFGR0 = (uint32_t) -1;      /* clear out pendings */
+  ADC14->CLRIFGR1 = (uint32_t) -1;
+
+  /* put all Usci's into reset */
+  EUSCI_A0->CTLW0 = EUSCI_A_CTLW0_SWRST;
+  EUSCI_A1->CTLW0 = EUSCI_A_CTLW0_SWRST;
+  EUSCI_A2->CTLW0 = EUSCI_A_CTLW0_SWRST;
+  EUSCI_A3->CTLW0 = EUSCI_A_CTLW0_SWRST;
+  EUSCI_B0->CTLW0 = EUSCI_B_CTLW0_SWRST;
+  EUSCI_B1->CTLW0 = EUSCI_B_CTLW0_SWRST;
+  EUSCI_B2->CTLW0 = EUSCI_B_CTLW0_SWRST;
+  EUSCI_B3->CTLW0 = EUSCI_B_CTLW0_SWRST;
+}
 
 
 /*
@@ -727,6 +852,25 @@ void __core_clk_init(bool disable_dcor) {
   uint32_t control;
 
   /*
+   * soft_reset (which we do because we dont want to bounce the I/O
+   * pins) raises issue for messing with the clocks.  We made certain
+   * reasonable assumptions which were based on a reset putting us back
+   * into a well defined specific state.
+   *
+   * Note: we can tell if we are doing soft reset by checking to see
+   * if DCORSEL (CS->CTL0) is not the power up value of 1.  We never
+   * use DCORSEL of 1 (2 - 4 MHz).
+   *
+   * We assume that if DCORSEL is != 1 we are in soft_reset and we do not
+   * need to initialize the clocks.  Use as is.
+   */
+  if ((CS->CTL0 & CS_CTL0_DCORSEL_MASK) != CS_CTL0_DCORSEL_1) {
+    /* need to restart the T32 usec timer */
+    __t32_init();                   /* rawUsecs */
+    return;
+  }
+
+  /*
    * only change from internal res to external when dco in dcorsel_1.
    * When first out of POR, DCORSEL will be 1, once we've set DCORES
    * it stays set and we no longer care about changing it (because
@@ -787,8 +931,7 @@ void __core_clk_init(bool disable_dcor) {
     ROM_DEBUG_BREAK(0xFF);
     CS->STAT;
     owl_setFault(OW_FAULT_32K);
-  } else
-    owl_clrFault(OW_FAULT_32K);
+  }
   CS->KEY = 0;                  /* lock module */
   lfxt_startup_time = (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV;
 }
@@ -809,7 +952,7 @@ void __ta_init(Timer_A_Type * tap, uint32_t clkdiv, uint32_t ex_div) {
 void __rtc_init() {
   RTC_C_Type *rtc = RTC_C;
 
-  /* write the key, and nuke any interrupt enables */
+  /* write the key, and nuke any interrupt enables and IFGs */
   rtc->CTL0 = RTC_C_KEY;
   rtc->CTL13 = RTC_C_CTL13_HOLD;
   rtc->PS = 0;
@@ -866,9 +1009,7 @@ void __system_init(bool disable_dcor) {
   __pwr_init();
   __flash_init();
 
-  BITBAND_PERI(P1->OUT, 0) = 1;
   __core_clk_init(disable_dcor);
-  BITBAND_PERI(P1->OUT, 0) = 0;
 
   __ta_init(TIMER_A0, TA_SMCLK_ID, MSP432_TA_EX);         /* Tmicro */
   __ta_init(TIMER_A1, TA_ACLK1,    TIMER_A_EX0_IDEX__1);  /* Tmilli */
@@ -1001,6 +1142,9 @@ void __Reset() {
 
   __watchdog_init();
   __pins_init();
+
+  /* reset core hardware back to reasonable state */
+  __soft_reset();               /* pretend in case we didn't do POR */
 
   /*
    * invoke overwatch low level to see how we should proceed.  this gets

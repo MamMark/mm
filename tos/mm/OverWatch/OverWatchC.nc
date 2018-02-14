@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -44,9 +44,9 @@ implementation {
 
   components ChecksumM;
   components ImageManagerC as IM_C;
-  components OverWatchHardwareM;
+  components OverWatchHardwareM as OWHW_M;
   OW_P.Checksum -> ChecksumM;
-  OW_P.OWhw     -> OverWatchHardwareM;
+  OW_P.OWhw     -> OWHW_M;
   OW_P.IM       -> IM_C.IM[unique("image_manager_clients")];
   OW_P.IMD      -> IM_C;
 
@@ -54,6 +54,6 @@ implementation {
   OW_P.LocalTime -> LocalTimeMilliC;
 
   components PlatformC;
-  OW_P.SysReboot -> PlatformC;
-  OW_P.Platform  -> PlatformC;
+  OWHW_M.SysReboot -> PlatformC;
+  OW_P.Platform    -> PlatformC;
 }

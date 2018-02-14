@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,6 +29,7 @@ extern bool __flash_programMemory(void* src, void* dest, uint32_t length);
 
 module OverWatchHardwareM {
   provides interface OverWatchHardware as OWhw;
+  uses     interface SysReboot;
 }
 implementation {
 
@@ -132,6 +133,28 @@ implementation {
 
 
   /*
+   * soft_reset: software controlled reset/reboot
+   */
+  async command void OWhw.soft_reset() {
+    /*
+     * force a soft reset.  This will reset the core and core peripherals.
+     * It will leave the I/O pin configuration alone.  Non-core peripherals
+     * will need to be reset by software.
+     */
+    call SysReboot.soft_reboot(SYSREBOOT_OW_REQUEST);
+    call OWhw.fake_reset();
+  }
+
+
+  /*
+   * hard_reset: full on hard reset
+   */
+  async command void OWhw.hard_reset() {
+    call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
+  }
+
+
+  /*
    * fake_reset: debugging reset issues, don't reset
    *
    * Do basic reset functions
@@ -146,6 +169,14 @@ implementation {
     SCB->VTOR = 0;
     __DSB(); __ISB();
     launch(0);
+  }
+
+
+  /*
+   * flush: tell reboot code to signal a flush
+   */
+  async command void OWhw.flush() {
+    call SysReboot.flush();
   }
 
 
@@ -303,4 +334,6 @@ implementation {
     }
     return FAIL;
   }
+
+  async event void SysReboot.shutdown_flush() { }
 }

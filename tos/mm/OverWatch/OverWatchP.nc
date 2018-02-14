@@ -74,7 +74,6 @@ module OverWatchP {
   }
   uses {
     interface Boot;                     /* inBoot */
-    interface SysReboot;
     interface Checksum;
     interface SSWrite  as SSW;
     interface SDsa;                     /* standalone */
@@ -83,7 +82,6 @@ module OverWatchP {
     interface OverWatchHardware as OWhw;
     interface LocalTime<TMilli>;
     interface Platform;
-
   }
 }
 implementation {
@@ -212,7 +210,7 @@ implementation {
    * stash as strange, and reboot into GOLD
    *
    * does NOT return, ever!  Low level death, do NOT call
-   * SysReboot.flush().
+   * OWhw.flush().
    */
   void owl_strange2gold(uint32_t loc) @C() @spontaneous() {
     ow_control_block_t *owcp;
@@ -662,11 +660,11 @@ implementation {
   async command void OverWatch.install() {
     ow_control_block_t *owcp;
 
-    call SysReboot.flush();
+    call OWhw.flush();
     owcp = &ow_control_block;
     owcp->ow_req = OW_REQ_INSTALL;
     owcp->from_base = call OWhw.getImageBase();
-    call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
+    call OWhw.soft_reset();
   }
 
 
@@ -691,7 +689,7 @@ implementation {
     owcp->ow_boot_mode = boot_mode;
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
-    call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
+    call OWhw.soft_reset();
   }
 
 
@@ -700,7 +698,7 @@ implementation {
    */
   async command void OverWatch.flush_boot(ow_boot_mode_t boot_mode,
                                           ow_reboot_reason_t reason) {
-    call SysReboot.flush();
+    call OWhw.flush();
     call OverWatch.force_boot(boot_mode, reason);
   }
 
@@ -723,7 +721,7 @@ implementation {
    *
    * Panic uses OW.fail() to inform OW of the crash.  Panic very carefully
    * captures the state of the machine, handles sequencing, and flushes any
-   * StreamStorage buffers.  So do NOT call SysReboot.flush() in
+   * StreamStorage buffers.  So do NOT call OWhw.flush() in
    * OverWatch.fail().
    */
   async command void OverWatch.fail(ow_reboot_reason_t reason) {
@@ -734,7 +732,7 @@ implementation {
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
     owcp->ow_req = OW_REQ_FAIL;
-    call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
+    call OWhw.soft_reset();
   }
 
 
@@ -757,7 +755,7 @@ implementation {
     owcp->uptime = call LocalTime.get();
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
-    call SysReboot.reboot(SYSREBOOT_OW_REQUEST);
+    call OWhw.soft_reset();
   }
 
 
@@ -772,7 +770,7 @@ implementation {
    *            0x180-1ff, nib panic
    *
    * OverWatch.strange() is a low level bailout when something goes wrong.
-   * Do not call SysReboot.flush() here.  If we need a flush the caller
+   * Do not call OWhw.flush() here.  If we need a flush the caller
    * of OverWatch.strange() will need to do it.
    */
   async command void OverWatch.strange(uint32_t loc) {
@@ -834,6 +832,4 @@ implementation {
   event void IM.delete_complete() { }
   event void IM.dir_set_backup_complete()   { }
   event void IM.dir_eject_active_complete() { }
-
-  async event void SysReboot.shutdown_flush() { }
 }

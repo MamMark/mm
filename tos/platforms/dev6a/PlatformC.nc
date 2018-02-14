@@ -37,9 +37,6 @@ implementation {
   PeripheralInit = PlatformP.PeripheralInit;
   SysReboot  = PlatformP;
 
-  components OverWatchHardwareM;
-  PlatformP.OWhw -> OverWatchHardwareM;
-
   components PlatformLedsC;
   PlatformP.PlatformLeds -> PlatformLedsC;
 

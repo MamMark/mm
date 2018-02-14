@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -48,14 +48,29 @@ interface OverWatchHardware {
   async command void boot_image(image_info_t *iip);
 
   /*
-   * fake_reset: simulate a reset
+   * soft_reset: software controlled reset.
+   * hard_reset: hard reset (simulated POR)
+   * fake_reset: relaunch, no reset.
+   * flush:      tell reboot that we want a flush.
    *
-   * fake_reset is used when we don't want to do the real reset
-   * but rather we do want some of the functionality.
+   * soft_reset() is used when we don't want to bounce I/O pins.
+   * software is responsible for all aspects of the reset.  This is
+   * of course an oxymoron and there are probably some h/w components
+   * that don't get reset.
    *
-   * typically used when debugging reset problems.
+   * hard_reset() should be used to do the full monty.  Full POR if possible.
+   *
+   * fake_reset() is used when we don't want to do the real reset but
+   * rather we do want some of the functionality.  Typically used when
+   * debugging reset problems.
+   *
+   * flush() signals to the underlying reboot mechanisms to signal a reset
+   * is imminent.
    */
+  async command void soft_reset();
+  async command void hard_reset();
   async command void fake_reset();
+  async command void flush();
 
   /*
    * getImageBase: return base address of the image

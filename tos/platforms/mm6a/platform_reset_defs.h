@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,12 +30,26 @@
 
 enum {
   SYSREBOOT_OW_REQUEST = SYSREBOOT_EXTEND,
+
+  /* bits from RSTCTL->HARDRESET_STAT */
+  RST_HARD_SYSRESET = RSTCTL_HARDRESET_STAT_SRC0,       /* sys reset output, core */
+  RST_HARD_WDT_TO   = RSTCTL_HARDRESET_STAT_SRC1,       /* WDT time out           */
+  RST_HARD_WDT_PWV  = RSTCTL_HARDRESET_STAT_SRC2,       /* WDT password violation */
+  RST_HARD_FLCTL    = RSTCTL_HARDRESET_STAT_SRC3,       /* Flash Controller Fault */
+  RST_HARD_OW_REQ   = RSTCTL_HARDRESET_STAT_SRC4,       /* OverWatch Request      */
+  RST_HARD_CS       = RSTCTL_HARDRESET_STAT_SRC14,      /* Clock System fault     */
+  RST_HARD_PCM      = RSTCTL_HARDRESET_STAT_SRC15,      /* Power Control fault    */
+
+  RST_SOFT_CPU_LOCK = RSTCTL_SOFTRESET_STAT_SRC0,       /* LOCKUP signal, M4 core */
+  RST_SOFT_WDT_TO   = RSTCTL_SOFTRESET_STAT_SRC1,       /* Watchdog timeout       */
+  RST_SOFT_WDT_PWV  = RSTCTL_SOFTRESET_STAT_SRC2,       /* Watchdog password viol */
 };
 
 #define PRD_RESET_KEY   RSTCTL_RESETREQ_RSTKEY_VAL
 #define PRD_RESET_HARD  RSTCTL_RESET_REQ_HARD_REQ
 #define PRD_RESET_SOFT  RSTCTL_RESET_REQ_SOFT_REQ
 
+/* also the same as RSTCTL_SOFTRESET_STAT_SRC4 */
 #define PRD_RESET_OW_REQ RSTCTL_HARDRESET_STAT_SRC4
 
 #define PRD_PSS_VCCDET  RSTCTL_PSSRESET_STAT_VCCDET

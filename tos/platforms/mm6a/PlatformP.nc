@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Eric B. Decker
+ * Copyright (c) 2016-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -40,7 +40,6 @@ module PlatformP {
     interface Init as PlatformLeds;
     interface Init as PlatformClock;
     interface Init as PeripheralInit;
-    interface OverWatchHardware as OWhw;
   }
 }
 
@@ -76,6 +75,24 @@ implementation {
   }
 
 
+  async command error_t  SysReboot.soft_reboot(sysreboot_t reboot_type) {
+    switch (reboot_type) {
+      case SYSREBOOT_REBOOT:
+      case SYSREBOOT_POR:
+      case SYSREBOOT_HARD:
+      case SYSREBOOT_SOFT:
+        RSTCTL->RESET_REQ = (PRD_RESET_KEY | PRD_RESET_SOFT);
+        break;
+      case SYSREBOOT_OW_REQUEST:
+        RSTCTL->SOFTRESET_SET = PRD_RESET_OW_REQ;
+        break;
+      default:
+        return FAIL;
+    }
+    return SUCCESS;
+  }
+
+
   async command void SysReboot.clear(sysreboot_t reboot_type) {
     switch (reboot_type) {
       default:
@@ -85,6 +102,7 @@ implementation {
         return;
       case SYSREBOOT_OW_REQUEST:
         RSTCTL->HARDRESET_CLR = PRD_RESET_OW_REQ;
+        RSTCTL->SOFTRESET_CLR = PRD_RESET_OW_REQ;
         return;
     }
   }
