@@ -138,7 +138,7 @@ volatile uint32_t handler_fault_wait;   /* set to deadbeaf to continue */
 
 void handler_debug(uint32_t exception) {
 
-  ROM_DEBUG_BREAK(0xE0);
+//  ROM_DEBUG_BREAK(0xE0);
 
 #ifdef HANDLER_FAULT_WAIT
   while (handler_fault_wait != 0xdeadbeaf) {

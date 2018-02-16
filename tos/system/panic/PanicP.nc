@@ -673,7 +673,7 @@ implementation {
     pcb.panic_sec = pcb.block + PBLK_IO;
     collect_io(&io_regions[0]);
     update_panic_dir();
-    ROM_DEBUG_BREAK(0xf0);
+//    ROM_DEBUG_BREAK(0xf0);
 
 #ifdef PANIC_GATE
     while (g_panic_gate != 0xdeadbeaf) {

@@ -218,7 +218,7 @@ implementation {
     owcp = &ow_control_block;
     owcp->strange++;
     owcp->strange_loc = loc;
-    ROM_DEBUG_BREAK(0xF2);
+//    ROM_DEBUG_BREAK(0xF2);
 #ifdef CATCH_STRANGE
     while (catch_strange != 0xdeadbeaf) {
       nop();
