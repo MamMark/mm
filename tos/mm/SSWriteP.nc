@@ -81,6 +81,7 @@ module SSWriteP {
     interface LocalTime<TMilli>;
     interface Trace;
     interface CollectEvent;
+    interface Collect;
   }
 }
 
@@ -226,20 +227,28 @@ implementation {
 
 
   /*
-   * eof_block_offset
+   * eof_offset: return file offset of current end of the stream.
    *
-   * if DM.dblk_nxt_offset() comes back zero, then the stream is full
-   * and we don't have a block with the eof in it.
+   * Dblk streaming only lays down records (dblks).  The eof_offset
+   * then is the offset of the next record to be written.
    *
-   * Otherwise, we need to include any full buffers that
-   * are pending.
+   * DM.dblk_nxt_offset() will give us the offset of where dblk_nxt
+   * currently resides.  If the stream is full, this will be 0 and
+   * we are done.
+   *
+   * We also need to account for any buffers in SSW holding data.
+   * And we need to ask Collect to see if it is currently working
+   * on a buffer.  Collect will tell us where the next record
+   * will get layed down (buf_offset).
    */
-  async command uint32_t SS.eof_block_offset() {
+  async command uint32_t SS.eof_offset() {
     uint32_t offset;
 
     offset = call DblkManager.dblk_nxt_offset();
-    if (offset)
-      offset += ssc.ssw_num_full * SD_BLOCKSIZE;
+    if (!offset)
+      return offset;                    /* 0 */
+    offset += ssc.ssw_num_full * SD_BLOCKSIZE;
+    offset += call Collect.buf_offset();
     return offset;
   }
 

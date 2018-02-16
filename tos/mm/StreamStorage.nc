@@ -37,7 +37,7 @@ interface StreamStorage {
 
 
   /**
-   * eof_block_offset(): return the offset of the block containing the eof.
+   * eof_offset(): return the offset of the eof.
    *
    * the block offset is the file offset of tne next block being written
    * or that will be written.  dblk_nxt + number of full buffers converted
@@ -45,7 +45,8 @@ interface StreamStorage {
    *
    * can be called from anywhere.
    */
-  async command uint32_t eof_block_offset();
+  async command uint32_t eof_offset();
+
 
 
   /**

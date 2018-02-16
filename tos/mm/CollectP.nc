@@ -142,22 +142,12 @@ implementation {
    * get_rec_offset
    * return file offset of where the next record will get laid down
    *
-   * WARNING: this routine will return the offset of the record if it is
-   * called at a record boundary.  Since Collect is the only entity that
-   * calls this and it knows where the record boundary is thing should
-   * work correctly.  But be aware.
+   * Collect MUST lay down records atomically before looking at any
+   * record offsets.
    */
 
   uint32_t get_rec_offset() {
-    uint32_t blk_offset;
-
-    /* get the file offset of the current block */
-    blk_offset = call SS.eof_block_offset();
-    if (!blk_offset) {
-      return 0;
-    }
-    blk_offset += call Collect.buf_offset();
-    return blk_offset;
+    return call SS.eof_offset();
   }
 
 
@@ -474,15 +464,11 @@ implementation {
   /*
    * buf_offset: return the offset into the current Alloc buffer (if any).
    *
-   * if we have a non-zero buf pointer we still have a live buffer.
-   * It hasn't been handed over to stream storage and won't be
-   * accounted for by SS.eof_block_offset.
+   * whole records get laid down, so at the time of the call to
+   * buf_offset, this should always be a record boundary offset.
    *
-   * dcc.remaining will always tell the story and may be 0.
-   *
-   * The only async locale this is called is via get_rec_offset from
-   * SysReboot.shutdown_flush().  shutdown_flush is only called
-   * on the way down (crashing) and is single threaded.  Not an issue.
+   * dcc.cur_buf being populated says a buffer is in play.  If not
+   * the buf_offset is 0.
    */
   async command uint32_t Collect.buf_offset() {
     atomic {

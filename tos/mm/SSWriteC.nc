@@ -55,6 +55,7 @@ implementation {
   components TraceC, CollectC;
   SSW_P.Trace        -> TraceC;
   SSW_P.CollectEvent -> CollectC;
+  SSW_P.Collect      -> CollectC;
 
   components DblkManagerC;
   SSW_P.DblkManager -> DblkManagerC;
