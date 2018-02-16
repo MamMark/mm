@@ -1121,6 +1121,8 @@ void __Reset() {
    * 4.3 MCLK
    * 4.4 HSMCLK
    * 7.0 SMCLK
+   *
+   * there is nothing special wrt PIN state needed for __soft_reset()
    */
   P4->OUT  = 0;                 /* make sure gps_on_off doesn't wiggle */
   P4->SEL0 = 0x1C;

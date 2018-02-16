@@ -1079,13 +1079,22 @@ void __Reset() {
    * gps/mems power rail.  Always power on the gps/mems rail, it is on
    * by default.  If someone needs to kick the gps or the mems chips in
    * the head, that happens later.
+   *
+   * If doing a soft_reset() we want to leave the GPS alone.  SD and Radio
+   * get powered down.  We power up the 3V3 power rail and leave it up.
+   *
+   * This is by design.  We set keep the state we want and the state we
+   * want when we come out of POR the same.  This simplifies things.
+   *
+   * WARNING: __pins_init() also touches the pin/port state.  Make sure we
+   * haven't undone anything we've done here.
    */
   P1->OUT = 0x60;                       /* set mems csn's to deselected */
-  P5->OUT = 0x81;
+  P5->OUT = 0x81;                       /* gps_mems_1V8_en, gyro_csn    */
   P5->DIR = 0xA7;                       /* power gps/mems first */
   P1->DIR = 0x6C;                       /* switch the csn's to outputs */
 
-  P4->OUT = 0x30;                       /* turn 3V3 ON, LDO2, and pwr Radio 1V8 */
+  P4->OUT = 0x30;                       /* turn 3V3 ON, LDO2, and radio on 1V8 */
   P4->DIR = 0xFD;
 
   __watchdog_init();
@@ -1093,7 +1102,7 @@ void __Reset() {
   __map_ports();
 
   /* reset core hardware back to reasonable state */
-  __soft_reset();                       /* pretend in case we didn't do POR */
+  __soft_reset();                       /* just do it in case we didn't do POR */
 
   /*
    * invoke overwatch low level to see how we should proceed.  this gets
