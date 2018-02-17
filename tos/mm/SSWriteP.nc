@@ -93,11 +93,16 @@ implementation {
     &ssw_handles[1],
     &ssw_handles[2],
     &ssw_handles[3],
-    &ssw_handles[4]
+    &ssw_handles[4],
+    &ssw_handles[5],
+    &ssw_handles[6],
+    &ssw_handles[7],
+    &ssw_handles[8],
+    &ssw_handles[9],
   };
 
-#if SSW_NUM_BUFS != 5
-#warning "SSW_NUM_BUFS is other than 5"
+#if SSW_NUM_BUFS != 10
+#warning "SSW_NUM_BUFS is other than 10"
 #endif
 
   norace ss_control_t ssc;              /* all global control cells */

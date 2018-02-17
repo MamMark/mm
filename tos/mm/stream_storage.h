@@ -29,7 +29,7 @@
 #include "sd.h"
 
 /* number of buffers that StreamStorage is using */
-#define SSW_NUM_BUFS   5
+#define SSW_NUM_BUFS   10
 
 /*
  * SSW_GROUP defines how many buffers to group together before trying to fire up the SD
@@ -37,7 +37,7 @@
  * need to be more than this number of buffers so the collection system has something to
  * write into while the writes are happening.
  */
-#define SSW_GROUP  3
+#define SSW_GROUP  4
 
 /*
  * Stream Storage Buffer States

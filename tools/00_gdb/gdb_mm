@@ -51,7 +51,7 @@ printf "    alloc:  %02x  in: %02x  out: %02x  full: %02x  max: %02x\n",   \
 printf "     dblk:  %08x  cur_hand: %08x\n", SSWriteP__ssc.dblk, SSWriteP__ssc.cur_handle
 printf "  buffers:"
 set $_i=0
-while $_i < 0d5
+while $_i < 0d10
     __print_ss_entry $_i
     set $_i++
 end
