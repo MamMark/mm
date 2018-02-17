@@ -48,6 +48,20 @@ interface StreamStorage {
   async command uint32_t eof_offset();
 
 
+  /**
+   * where(): determine where a given offset in the Dblk stream lives.
+   *
+   * @param   'uint32_t context'
+   * @param   'uint32_t offset'       offset to find
+   * @param   'uint32_t *lenp'        pointer to returned length
+   * @param   'uint32_t *blk_offsetp' pointer to returned blk offset
+   * @param   'uint8_t **bufp'        pointer to returned buffer
+   *
+   * @return: 'uint32_t blk_id'       absolute blk_id of found offset.
+   */
+  command uint32_t where(uint32_t context, uint32_t offset, uint32_t *lenp,
+                         uint32_t *blk_offsetp, uint8_t **bufp);
+
 
   /**
    * The event "dblk_stream_full" is signaled when the assigned area

@@ -501,6 +501,82 @@ implementation {
     return call DblkManager.get_dblk_high();
   }
 
+
+  /*
+   * StreamStorage.where(): return information where a given file
+   *    offset lives. assume we want at least one byte.
+   *
+   * input:     context
+   *            offset          the file offset we are looking for.
+   *            *lenp           pointer for length available. (output)
+   *            *blk_offsetp    pointer for offset of block returned (output)
+   *            **bufp          pointer to buffer pointer (output)
+   *
+   * output:    *lenp           length available.
+   *            *blk_offsetp    offset pointer (output)
+   *            **bufp          if in memory, where offset lives (output)
+   *
+   * return:    0               offset past eof.
+   *            blk_id          blk_id corresponding to offset requested
+   *                            if >= dblk_nxt then offset is cached.  *bufp
+   *                            set to non-null.
+   */
+
+  command uint32_t SS.where(uint32_t context, uint32_t offset, uint32_t *lenp,
+                            uint32_t *blk_offsetp, uint8_t **bufp) {
+    uint32_t dblk_low, dblk_nxt;
+    uint32_t rel_blk;                   /* relative block id    */
+    uint32_t blk_id;                    /* absolute block id    */
+    uint32_t idx;                       /* buffer index, cached */
+
+    if (!lenp || !blk_offsetp || !bufp)
+      ss_panic(28, 0);
+
+    *lenp = 0;
+    *blk_offsetp = 0;
+    *bufp = NULL;
+
+    /* past eof, just bail */
+    if (offset >= call SS.eof_offset())
+      return 0;
+
+    dblk_low = call DblkManager.get_dblk_low();
+    dblk_nxt = call DblkManager.get_dblk_nxt();
+    rel_blk  = offset >> SD_BLOCKSIZE_NBITS;
+    blk_id   = rel_blk + dblk_low;
+
+    *lenp = SD_BLOCKSIZE;
+    *blk_offsetp = rel_blk << SD_BLOCKSIZE_NBITS;
+
+    if (offset < call DblkManager.dblk_nxt_offset())
+      return blk_id;
+
+    /*
+     * not on disk, can be inside one of the full buffers or potentially in the
+     * ALLOC'd buffer that Collect is using.  If in the ALLOC buffer we will
+     * ask Collect to find out how far into the buffer it has gone and adjust
+     * the size returned accordingly.
+     *
+     * first figure out which block after the last committed block.  dblk_nxt
+     * is the block that will be written next and will be in the first out
+     * buffer in SSW.
+     *
+     * we want to find the SSW index that corresponds to the offset we are
+     * looking for.
+     */
+    idx = blk_id - dblk_nxt;            /* how many past the last commit */
+    idx += ssc.ssw_out;                 /* and figure out where in SSW   */
+    if (idx >= SSW_NUM_BUFS)            /* adjust for wrap               */
+      idx -= SSW_NUM_BUFS;
+    *bufp = ssw_handles[idx].buf;
+
+    /* full buffers (lenp set above), unless ALLOC buffer */
+    if (idx == ssc.ssw_in)              /* alloc buffer? */
+      *lenp = call Collect.buf_offset();
+    return blk_id;
+  }
+
+
   default event void SS.dblk_stream_full()          { }
   default event void SS.dblk_advanced(uint32_t last) { }
 
