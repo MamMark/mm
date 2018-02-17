@@ -48,7 +48,7 @@ enum {
   __pcode_dm = unique(UQ_PANIC_SUBSYS)
 };
 
-#define PANIC_DM __pcode_fs
+#define PANIC_DM __pcode_dm
 #endif
 
 
