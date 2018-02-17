@@ -23,28 +23,48 @@
 
 interface ByteMapFileNew {
   /**
-   * The underlying file mapping implementation provides cached access to a
-   * file that lives on a physical disk subsystem.
+   * A File/Object mapping implementation that provides cached access to
+   * objects that live on a physical disk subsystem.
    *
-   * This interface provides 3 commands and one event:
+   * This interface provides 3 commands and 3 events:
    *
-   *    map(): request a pointer to a region of the file.  mapped() will be
-   *        signaled if the data isn't immediately availablee.
+   * commands:
+   *    map(): requests a buffer pointer to a region of the file.  If the
+   *        data needs to be brought in from disk, map() will return EBUSY
+   *        and data_avail() will be signalled to indicate new data
+   *        is available.
    *    filesize(): get the current filesize.
-   *    commited(): get the current filesize that has been committed
+   *    commitsize(): get the current filesize that has been committed
    *        to disk.
+   *
+   * events:
+   *    data_avail(): indicates data has been brought in from disk and is
+   *        available.  The originating request should be initiated again.
+   *    extended(): indicates that the object has been extended.
+   *    committed(): indicates that object's data physically written to
+   *        disk has been extended.
    */
 
   /**
-   * Request that a region of the file be brought into memory.  The buffer
-   * returned is independent of the underlying file mechanisms.  It remains
-   * valid until the next map() call.
+   * Request a portion of the referenced object be brought into memory.
+   * The buffer returned is independent of any underlying file caching
+   * mechanisms.  It remains valid until the next map() call.
    *
-   * If the section requested is already cached, a pointer to that region
-   * and its length is immediately returned (potentially less than the
-   * original request).  Otherwise, an EBUSY return will be given and some
-   * or all of the requested region will be brought in.  When complete, a
-   * mapped() signal will be used to indicate data is now available.
+   * If the section requested is already cached, SUCCESS will be returned
+   * and a pointer to that region and its length is immediately returned.
+   * 'length' is potentially less than the original request, and indicates
+   * how much data in the returned buffer is valid.
+   *
+   * If any cached data can be used, that is the data that is returned.
+   *
+   * If no cached data can be used, we will need to access the underlying
+   * backing store.  map() will return EBUSY.  The needed portion will be
+   * brought in and when complete the signal data_avail() will be used to
+   * indicate that additional data is available.  The previous request must
+   * be launched again to access the new data.
+   *
+   * If the map() call can not satisfy any portion of the request, ie. past
+   * the EOF for example, EODATA will be returned.
    *
    * The context identifier is used to reference multiple instances within
    * the container we are accessing.  ie. which image in the ImageManager
@@ -56,6 +76,14 @@ interface ByteMapFileNew {
    * @param   'uint32_t  *lenp'     pointer to length requested/available
    *
    * @return  'error_t'             error code
+   *          SUCCESS               some portion of the request is immediately
+   *                                available.
+   *          EBUSY                 no data immediately available.  map() is
+   *                                obtaining the data and a data_avail()
+   *                                signal will indicate availablity of the
+   *                                data.
+   *          EODATA                The request completely likes outside the
+   *                                current bounds of the contents.
    */
   command error_t map(uint32_t context, uint8_t **bufp,
                       uint32_t offset, uint32_t *lenp);
@@ -73,21 +101,19 @@ interface ByteMapFileNew {
    * return size of file in bytes
    *
    * @param   'uint32_t context'
-   *
    * @return  'uint32_t'      file size in bytes
    */
   command uint32_t filesize(uint32_t context);
 
   /**
-   * commitsize: number bytes return how actually written to disk.
+   * commitsize: number of bytes physically written to disk.
    *
-   * the underlying implementation may provide caching
-   * of the file.  filesize() returns the current file
-   * size, while commitsize() returns the number of bytes
-   * that have been physically written to disk.
+   * the underlying implementation may provide caching of the file.
+   * filesize() returns the current file size, while commitsize() returns
+   * the number of bytes that have been physically written to disk.
    *
    * @param   'uint32_t context'
-   * @return  'uint32_t'      file size written to disk.
+   * @return  'uint32_t'      file size committed to disk.
    */
   command uint32_t commitsize(uint32_t context);
 
