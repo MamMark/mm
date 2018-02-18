@@ -37,15 +37,20 @@ interface StreamStorage {
 
 
   /**
-   * eof_offset(): return the offset of the eof.
+   * eof_offset():       return the offset of the eof.
+   * committed_offset(): return the offset of last committed data.
    *
    * the block offset is the file offset of tne next block being written
    * or that will be written.  dblk_nxt + number of full buffers converted
    * to a file offset.  Block offsets are always modulo SD_BLOCKSIZE.
    *
+   * committed_offset() will return the offset of all data that has been
+   * physically written to disk.
+   *
    * can be called from anywhere.
    */
   async command uint32_t eof_offset();
+  async command uint32_t committed_offset();
 
 
   /**

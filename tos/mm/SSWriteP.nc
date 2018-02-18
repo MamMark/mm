@@ -258,6 +258,11 @@ implementation {
   }
 
 
+  async command uint32_t SS.committed_offset() {
+    return call DblkManager.dblk_nxt_offset();
+  }
+
+
   /*
    * get_temp_buf: return one of the SSW's buffers
    *

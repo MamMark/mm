@@ -214,7 +214,7 @@ implementation {
 
 
   command uint32_t PMF.commitsize(uint32_t context) {
-    return 0;
+    return eof_pos(context);
   }
 
 
