@@ -147,18 +147,18 @@ implementation {
     nop();
     nop();                              /* BRK */
     if (dm_state != DMS_REQUEST) {
-      dm_panic(2, dm_state, 0);
+      dm_panic(3, dm_state, 0);
       return;
     }
 
     dm_state = DMS_START;
     dm_buf = call SSW.get_temp_buf();
     if (!dm_buf) {
-      dm_panic(3, (parg_t) dm_buf, 0);
+      dm_panic(4, (parg_t) dm_buf, 0);
       return;
     }
     if ((err = call SDread.read(dmc.dblk_nxt, dm_buf))) {
-      dm_panic(4, err, 0);
+      dm_panic(5, err, 0);
       return;
     }
   }
@@ -172,13 +172,13 @@ implementation {
     nop();                              /* BRK */
     dp = dm_buf;
     if (err || dp == NULL || dp != read_buf) {
-      call Panic.panic(PANIC_DM, 5, err, (parg_t) dp, (parg_t) read_buf, 0);
+      call Panic.panic(PANIC_DM, 6, err, (parg_t) dp, (parg_t) read_buf, 0);
       return;
     }
 
     switch(dm_state) {
       default:
-        dm_panic(6, dm_state, 0);
+        dm_panic(7, dm_state, 0);
         return;
 
       case DMS_START:
@@ -195,7 +195,7 @@ implementation {
 
         dm_state = DMS_SCAN;
         if ((err = call SDread.read(cur_blk, dp)))
-          dm_panic(7, err, 0);
+          dm_panic(8, err, 0);
         return;
 
       case DMS_SCAN:
@@ -213,7 +213,7 @@ implementation {
             dmc.dblk_nxt = cur_blk;
             break;              /* break out of switch, we be done */
           }
-          dm_panic(8, (parg_t) cur_blk, 0);
+          dm_panic(9, (parg_t) cur_blk, 0);
           return;
         }
 
