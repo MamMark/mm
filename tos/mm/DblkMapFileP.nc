@@ -70,7 +70,7 @@ enum {
 
 
 module DblkMapFileP {
-  provides  interface ByteMapFileNew as DMF;
+  provides  interface ByteMapFile as DMF;
   uses {
     interface StreamStorage as SS;
     interface SDread        as SDread;

@@ -48,7 +48,7 @@ typedef struct {
 
 
 module PanicMapFileP {
-  provides  interface ByteMapFileNew as PMF;
+  provides  interface ByteMapFile as PMF;
   uses {
     interface PanicManager;
     interface SDread;

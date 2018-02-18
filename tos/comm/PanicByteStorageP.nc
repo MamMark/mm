@@ -44,7 +44,7 @@
 module PanicByteStorageP {
   provides interface  TagnetAdapter<tagnet_file_bytes_t>  as PanicBytes;
   uses {
-    interface ByteMapFileNew as ByteMapFile;
+    interface ByteMapFile;
     interface Panic;
   }
 }

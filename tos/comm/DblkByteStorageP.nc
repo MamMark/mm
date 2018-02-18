@@ -48,7 +48,7 @@ module DblkByteStorageP {
     interface  TagnetAdapter<tagnet_dblk_note_t>   as DblkNote;
   }
   uses {
-    interface ByteMapFileNew as DMF;
+    interface ByteMapFile as DMF;
     interface Collect;
     interface Panic;
   }

@@ -21,7 +21,7 @@
  *          Eric B. Decker <cire831@gmail.com>
  */
 
-interface ByteMapFileNew {
+interface ByteMapFile {
   /**
    * A File/Object mapping implementation that provides cached access to
    * objects that live on a physical disk subsystem.
