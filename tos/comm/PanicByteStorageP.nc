@@ -51,11 +51,12 @@ module PanicByteStorageP {
 implementation {
 
   command bool PanicBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
-
-    db->error  = EINVAL;
-
     /* data block cells like db->count and db->iota get zero'd on the way in */
     switch (db->action) {
+      default:
+        db->error = EINVAL;
+        return FALSE;
+
       case FILE_GET_DATA:
         db->error = call ByteMapFile.map(db->context, &db->block, db->iota, lenp);
         if (db->error == SUCCESS) {
@@ -63,13 +64,13 @@ implementation {
           db->count -= *lenp;
           return TRUE;
         }
-        break;
+        *lenp = 0;
+        return TRUE;
+
       case  FILE_GET_ATTR:
         db->count  = call ByteMapFile.filesize(db->context);
         return TRUE;
     }
-    *lenp = 0;
-    return TRUE;
   }
 
 

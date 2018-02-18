@@ -58,28 +58,23 @@ implementation {
   uint32_t   dblk_notes_count = 0;
 
   bool GetDblkBytes(tagnet_file_bytes_t *db, uint32_t *lenp) {
-    error_t err = EINVAL;
-
-    db->error  = SUCCESS;
     switch (db->action) {
       case FILE_GET_DATA:
-        err = call DMF.map(db->context, &db->block, db->iota, lenp);
-        if (err == SUCCESS) {
+        db->error = call DMF.map(db->context, &db->block, db->iota, lenp);
+        if (db->error == SUCCESS) {
           db->iota     += *lenp;
           db->count    -= *lenp;
           return TRUE;
         }
-        break;
+        *lenp = 0;
+        return TRUE;
       case  FILE_GET_ATTR:
         db->count  = call DMF.filesize(db->context);
         return TRUE;
       default:
-        err = EINVAL;
-        break;
+        db->error = EINVAL;
+        return TRUE;
     }
-    *lenp = 0;
-    db->error = err;
-    return TRUE;
   }
 
   command bool DblkBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
@@ -92,14 +87,12 @@ implementation {
     return FALSE; }
 
   command bool DblkNote.get_value(tagnet_dblk_note_t *db, uint32_t *lenp) {
-    error_t    err = EINVAL;
-
     *lenp = 0;
     db->count  = dblk_notes_count;
     if (db->action == FILE_GET_ATTR) {
-        db->error  = SUCCESS;
-        *lenp      = db->count;
-        return TRUE;
+      db->error  = SUCCESS;
+      *lenp      = db->count;
+      return TRUE;
     }
     db->error = EINVAL;
     return FALSE;
@@ -107,7 +100,6 @@ implementation {
 
 
   command bool DblkNote.set_value(tagnet_dblk_note_t *db, uint32_t *lenp) {
-    error_t      err = EINVAL;
     dt_note_t    note_block;
 
     if (db->action == FILE_SET_DATA) {
