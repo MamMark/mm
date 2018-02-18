@@ -175,7 +175,7 @@ implementation {
     pmf_cb.sbuf_ready        = TRUE;
     pmf_cb.sbuf_requesting   = FALSE;
     pmf_cb.sbuf_reading      = FALSE;
-    signal PMF.data_avail(0, 0, 0);
+    signal PMF.data_avail(SUCCESS);
   }
 
 
@@ -238,6 +238,5 @@ implementation {
   }
 
   async   event void Panic.hook() { }
-  default event void PMF.data_avail(uint32_t context, uint32_t offset,
-                                    uint32_t len) { };
+  default event void PMF.data_avail(error_t err) { };
 }

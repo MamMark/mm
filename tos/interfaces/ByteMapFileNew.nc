@@ -91,11 +91,9 @@ interface ByteMapFileNew {
   /**
    * signal when the requested contents has been mapped into memory.
    *
-   * @param   'uint32_t   context'
-   * @param   'uint32_t   offset'   offset requested.
-   * @param   'uint32_t   len'      original len parameter
+   * @param   'error_t    err'      0 - all good, otherwise error
    */
-  event void data_avail(uint32_t context, uint32_t offset, uint32_t len);
+  event void data_avail(error_t err);
 
   /**
    * return size of file in bytes

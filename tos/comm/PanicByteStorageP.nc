@@ -81,13 +81,7 @@ implementation {
   }
 
 
-  event void ByteMapFile.data_avail(uint32_t context, uint32_t offset,
-                                    uint32_t len) {
-    nop();
-    nop();                            /* BRK */
-  }
-
-
+  event void ByteMapFile.data_avail(error_t err) { }
   event void ByteMapFile.extended(uint32_t context, uint32_t offset)  { }
   event void ByteMapFile.committed(uint32_t context, uint32_t offset) { }
   async event void Panic.hook() { }

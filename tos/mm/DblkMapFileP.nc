@@ -183,6 +183,5 @@ implementation {
 
           event void SS.dblk_stream_full() { }
   async   event void Panic.hook()          { }
-  default event void DMF.data_avail(uint32_t context, uint32_t offset,
-                                    uint32_t len) { }
+  default event void DMF.data_avail(error_t err)  { }
 }

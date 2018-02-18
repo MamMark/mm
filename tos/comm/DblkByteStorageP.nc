@@ -118,8 +118,7 @@ implementation {
   }
 
 
-  event void DMF.data_avail(uint32_t context, uint32_t offset,
-                            uint32_t len) { }
+  event void DMF.data_avail(error_t err) { }
         event void DMF.extended(uint32_t context, uint32_t offset)  { }
         event void DMF.committed(uint32_t context, uint32_t offset) { }
   async event void Panic.hook() { }
