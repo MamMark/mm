@@ -77,6 +77,5 @@ implementation {
   PMF.PanicManager  -> PanicC.PanicManager;
 
   components SystemBootC;
-  DMF.Boot          -> SystemBootC.Boot;
   PMF.Boot          -> SystemBootC.Boot;
 }

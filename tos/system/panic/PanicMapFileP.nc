@@ -227,13 +227,6 @@ implementation {
 
   event void Boot.booted() {
     pmf_cb.slot_idx         = 255;
-    pmf_cb.sector.base      = 0;
-    pmf_cb.sector.eof       = 0;
-    pmf_cb.sector.cur       = 0;
-    pmf_cb.file_pos         = 0;
-    pmf_cb.sbuf_ready       = FALSE;
-    pmf_cb.sbuf_requesting  = FALSE;
-    pmf_cb.sbuf_reading     = FALSE;
     call PanicManager.populate();
   }
 
