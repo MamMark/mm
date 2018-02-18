@@ -60,6 +60,15 @@ typedef struct {
   bool                 sbuf_reading; // true if sd.read in progress
 } dblk_map_cache_t;
 
+#ifndef PANIC_DM
+enum {
+  __pcode_dm = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_DM __pcode_dm
+#endif
+
+
 module DblkMapFileP {
   provides  interface ByteMapFileNew as DMF;
   uses {
@@ -75,7 +84,7 @@ implementation {
   uint8_t          dmf_sbuf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
 
   void dmap_panic(uint8_t where, parg_t p0, parg_t p1) {
-    call Panic.panic(PANIC_TAGNET, where, p0, p1, dmf_cb.sector.base,
+    call Panic.panic(PANIC_DM, where, p0, p1, dmf_cb.sector.base,
                      dmf_cb.sector.eof);
   }
 
