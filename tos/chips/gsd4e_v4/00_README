@@ -14,15 +14,16 @@ for each character as they arrive.  This greatly simplifies the flow.
 The lowest level interface is an UART port dedicated to the GPS chip,
 Gsd4eUP, U = UART.  This layer handles basic configuration, ie. protocol
 (NEMA vs. SirfBin) and baud rate.  It includes a state machine that is used
-to configure the GPS.  Configuration is responsible for powering up the gps
-chip and making sure that the chip is talking the correct protocol at the
-correct baud rate.
+to configure the GPS communications.  This state machine is responsible for
+powering up the gps chip and making sure that the chip is talking the
+correct protocol at the correct baud rate.
 
 Any byte processing is handled by the low level state machine, see Gsd4eUP and
 the protocol engine SirfBinP.
 
 Largest expected packet received is no larger than 200 bytes (See
-sirf_driver.h).  This comes from MID 4 (len 0xbc, 188 + 8 overhead, 196).
+sirf_driver.h).  This comes from MID 4 TRACKER_DATA (len 0xbc, 188 + 8
+overhead, 196).
 
 Backing the GPS is an area of memory called the GPS Buffer.  Any messages
 from the GPS are first collected into a piece of this memory and then
@@ -30,6 +31,10 @@ handed to higher layers one message at a time.  See GPSBuffer and GPSMsgBuf
 for details.  Protocol processing is handled by the state machine in
 SirfBinP.  Valid byte streams are deposited directly in the Buffer slice
 allocated by the Protocol engine using GPSBuffer.
+
+At the highest level is the GPSMonitor.  The monitor is responsible for higher
+control functions and the main state machine.  The monitor is what knows about
+the gps state (hibernate, awake, micro-power mode (mpm), etc.).
 
 
 Following control signals are used for messing with the GPS:  (org4472, pins
@@ -81,11 +86,12 @@ UART mode NMEA-4800.
 
 Message format:
 
-Idle: 0xA7, 0xB4
+Idle: 0xA7, 0xB4  (not used with UART interface).
+
 
 OSP (sirfbin): (CS-129291-DCP15, Issue 15, 15 APR 13)
 
-<A0 A2> <len (2 bytes, 15 bits)> <payload> <checksum, 2 bytes> <B0 B3>
+<A0 A2> <len (2 bytes, 15 bits)> <payload, len> <checksum, 2 bytes> <B0 B3>
 
 multibyte fields MSB first.
 
@@ -100,7 +106,7 @@ checksum: 15 bit checksum over payload.
 	checksum &= 0x7fff;
     }
 
-SirfBin overhead is <start, 2><len, 2><check, 2><end, 2> (8 bytes)
+SirfBin overhead is <start, 2><len, 2><payload, len><check, 2><end, 2> (8 bytes)
 
 
 Reset Issues:  We have observed an anomaly when reseting the gps chip.

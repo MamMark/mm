@@ -49,7 +49,8 @@ enum {
  * to the GPS has been yanked.
  *
  * Much of the documentation we use can be obtained from
- * https://www.origingps.com/wp-content/uploads/2016/07/ORG4472-Datasheet-C02-1.pdf
+ * [1] https://www.origingps.com/wp-content/uploads/2016/07/
+ *             ORG4472-Datasheet-C02-1.pdf
  *
  * The ORG4472 is another GSD4e chip that we used earlier in the
  * development process.  The Antenova M10478 is what we are using now and
@@ -58,15 +59,15 @@ enum {
  * the ORG documentation to be better.
  *
  * After power is applied, the gps chip needs to let power stabilize and
- * then will start up its RTC.  When things are good it will assert AWAKE
- * for 300us.  This is the initial AWAKE pulse (AWAKE_0).  Only after
- * AWAKE_0, are we allowed to try to talk to the chip.  Prior to this, the
- * chip will ignore us.
+ * then will start up its RTC.  See page 27 of [1].  When things are good
+ * it will assert AWAKE for 300us.  This is the initial AWAKE (aka WAKEUP)
+ * pulse (AWAKE_0).  Only after AWAKE_0, are we allowed to try to talk to
+ * the chip.  Prior to this, the chip will ignore us.
  *
  * So we want at a minimum deltaT0 (power stabilization, ~300ms) + deltaT6
- * the pulse width of AWAKE_0 (~300ms).  But there appears to be some
- * unaccounted for time between the end of deltaT0 and the rising edge of
- * AWAKE_0.  So this will have to be observed.
+ * the pulse width of AWAKE_0 (~300ms).  see table 9-1, page 28.  But there
+ * appears to be some unaccounted time between the end of deltaT0 and the
+ * rising edge of AWAKE_0.  So this will have to be observed.
  *
  * Note, many platforms have a 32Ki XTAL that needs to be brought up.  This
  * can take considerable time and this can be a good area for overlap with
@@ -77,7 +78,7 @@ enum {
  * of AWAKE_0.  Instead, We simply set PWR_UP_DELAY to be 1024.  This isn't
  * as big of a deal as it seems.  We typically sit in HIBERNATE and toggle
  * between ON and HIBERNATE.  The 1024ms delay hits when we come out of
- * power off.
+ * power off.  Once the chip is past POR we won't see the 1024ms delay.
  *
  * Once we are allowed to toggle ON_OFF following power on, there is
  * another big window during which the ARM7 onboard the GPS is starting up.
@@ -89,10 +90,6 @@ enum {
  * A0A2 0002 1201 0013 B0B3.  This message can be used to terminate any
  * pending WAKE_UP_DELAY.  This of course only works if the gps and
  * its port are configured properly.
- *
- * We currently don't have any information about the behaviour of the gps
- * chip when transitioning between HIBERNATE and ON for the different
- * operational modes.
  *
  *
  * *** Startup communications.
