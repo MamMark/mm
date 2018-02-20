@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,6 @@
  * 3) OverWatch (for OWT functions)
  * 4) DblkManager (determine where new data should be written)
  * 5) Sync, write out a reboot record
- * 6) GPS
  */
 
 configuration SystemBootC {
@@ -46,7 +45,6 @@ implementation {
   components OverWatchC    as OW;
   components DblkManagerC  as DM;
   components CollectC      as SYNC;
-  components GPS0C         as GPS;
 
   FS.Boot   -> MainC;
   IM.Boot   -> FS.Booted;
@@ -65,17 +63,5 @@ implementation {
    */
   DM.Boot   -> OW.Booted;
   SYNC.Boot -> DM.Booted;
-
-  /*
-   * Logging to Data Area can't happen until after SYNC.
-   * If Panic tries to put stuff into the Data Area (ie. Panic.warn)
-   * it can't do this until after SYNC.
-   */
-
-#ifdef DISABLE_GPS_SYSBOOT
   Boot      =  SYNC.Booted;
-#else
-  GPS.Boot  -> SYNC.Booted;
-  Boot      =  GPS.Booted;
-#endif
 }

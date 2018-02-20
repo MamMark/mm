@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,6 @@
  * 2) Bring up ImageManager (image = code image), needed by OW
  * 3) Invoke OverWatch (OW) to check for actions. (not NIB)
  * 4) Post Restart/Reboot record.  (Collect)
- * 5) Bring up the GPS.  (GPS assumes SS is up)
  *
  * Low power chain
  * not yet defined.
@@ -56,7 +55,6 @@ implementation {
   components OverWatchC    as OW;
   components DblkManagerC  as DM;
   components CollectC      as SYNC;
-  components GPS0C         as GPS;
 
   PM.Boot -> MainC;                     // first check for power state
 
@@ -81,13 +79,5 @@ implementation {
    */
   DM.Boot   -> OW.Booted;
   SYNC.Boot -> DM.Booted;
-
-  /*
-   * Logging to Data Area can't happen until after SYNC.
-   * If Panic tries to put stuff into the Data Area (ie. Panic.warn)
-   * it can't do this until after SYNC.
-   */
-
-  GPS.Boot  -> SYNC.Booted;
-  Boot      =  GPS.Booted;
+  Boot      =  SYNC.Booted;
 }

@@ -42,6 +42,9 @@ implementation {
   GPSTransmit    = GPSmonitorP;
   GPSReceive     = GPSmonitorP;
 
+  components SystemBootC;
+  GPSmonitorP.Boot -> SystemBootC.Boot;
+
   components new TimerMilliC() as MonTimer;
   GPSmonitorP.MonTimer -> MonTimer;
 

@@ -21,10 +21,21 @@
 
 /*
  * The GPSmonitor sits on top of the GPS stack and handles interactions.
+ * When first booting we need to wait for SSW to be up before starting
+ * up.  We log to the stream.
  *
  * First, it receives any packets coming from the GPS chip.  Note all
  * multibyte datums in the GPS packets are big endian.  We are little
  * endian so must compensate.
+ *
+ * *** State Machine Description (GMS_)
+ *
+ * FAIL         we gave up
+ * OFF          powered completely off
+ * BOOTING      first boot after reboot, establish comm
+ * STANDBY      in Standby
+ * MPM          running MPM cycles
+ * UP           full up, taking readings.
  */
 
 
@@ -33,6 +44,16 @@
 #include <mm_byteswap.h>
 #include <sirf_driver.h>
 #include <gps_cmd.h>
+
+
+typedef enum {
+  GMS_OFF  = 0,                         /* pwr is off */
+  GMS_FAIL = 1,
+  GMS_BOOTING,
+  GMS_STANDBY,
+  GMS_MPM,
+  GMS_UP,
+} gpsm_state_t;                         // gps monitor state
 
 
 #define GPS_SIMPLE_MPM
@@ -144,6 +165,7 @@ module GPSmonitorP {
     interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
     interface TagnetAdapter<uint8_t>          as InfoSensGpsCmd;
   } uses {
+    interface Boot;                           /* in boot */
     interface GPSControl;
     interface GPSTransmit;
     interface GPSReceive;
@@ -156,6 +178,8 @@ module GPSmonitorP {
   }
 }
 implementation {
+  gpsm_state_t gps_mon_state;
+  uint32_t     gps_boot_try;
 
   gps_xyz_t  m_xyz;
   gps_geo_t  m_geo;
@@ -166,6 +190,80 @@ implementation {
   uint32_t    mpm_count;
   mpm_state_t mpm_state;
 #endif
+
+  void gps_warn(uint8_t where, parg_t p, parg_t p1) {
+    call Panic.warn(PANIC_GPS, where, p, p1, 0, 0);
+  }
+
+  void gps_panic(uint8_t where, parg_t p, parg_t p1) {
+    call Panic.panic(PANIC_GPS, where, p, p1, 0, 0);
+  }
+
+
+  /*
+   * We are being told the system has come up.
+   * make sure we can communicate with the GPS and that it is
+   * the proper state.
+   */
+  event void Boot.booted() {
+    gps_boot_try = 1;
+    gps_mon_state = GMS_BOOTING;
+    call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gps_mon_state, gps_boot_try, 0, 0);
+    call GPSControl.turnOn();
+  }
+
+
+  event void GPSControl.gps_booted() {
+    switch (gps_mon_state) {
+      default:
+        gps_panic(1, gps_mon_state, 0);
+        return;
+      case GMS_BOOTING:
+        gps_mon_state = GMS_UP;
+        return;
+    }
+  }
+
+
+  /*
+   * event gps_boot_fail():  didn't work try again.
+   *
+   * the gps driver does a gps_reset prior to signalling.
+   *
+   * first time, just do a normal turn on.  (already tried).
+   * second time, just try again, already reset.
+   * third time, bounce power.
+   */
+  event void GPSControl.gps_boot_fail() {
+    switch (gps_mon_state) {
+      default:
+        gps_panic(2, gps_mon_state, 0);
+        return;
+      case GMS_BOOTING:
+        gps_boot_try++;
+        switch (gps_boot_try) {
+          default:
+            gps_panic(3, gps_mon_state, 0);
+            gps_mon_state = GMS_FAIL;
+            return;
+
+          case 2:
+            /* first time didn't work, hit it with a reset and try again. */
+            call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gps_mon_state, gps_boot_try, 0, 0);
+            call GPSControl.reset();
+            call GPSControl.turnOn();
+            return;
+
+          case 3:
+            call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gps_mon_state, gps_boot_try, 0, 0);
+            call GPSControl.powerOff();
+            call GPSControl.powerOn();
+            call GPSControl.turnOn();
+            return;
+        }
+    }
+  }
+
 
   command bool InfoSensGpsXyz.get_value(tagnet_gps_xyz_t *t, uint32_t *l) {
     t->gps_x = m_xyz.x;
@@ -236,9 +334,6 @@ implementation {
     }
     return TRUE;
   }
-
-
-  event void GPSTransmit.send_done() { }
 
 
   /*
@@ -449,8 +544,7 @@ implementation {
   }
 
 
-  event void GPSControl.gps_booted()    { }
-  event void GPSControl.gps_boot_fail() { }
+  event void GPSTransmit.send_done()    { }
   event void GPSControl.gps_shutdown()  { }
   event void GPSControl.standbyDone()   { }
 

@@ -25,12 +25,10 @@ configuration GPS0C {
     interface GPSControl;
     interface GPSReceive;
     interface GPSTransmit;
-    interface Boot           as Booted; /* out boot */
 
     /* for debugging only, be careful */
     interface Gsd4eUHardware as HW;
   }
-  uses interface Boot;                  /* in boot */
 }
 
 implementation {
@@ -54,9 +52,6 @@ implementation {
   components     CollectC;
 
   GPSControl   = Gsd4eUP;
-
-  Boot         = Gsd4eUP.Boot;
-  Booted       = Gsd4eUP.Booted;
 
   Gsd4eUP.HW  -> HplGPS0C;
 
