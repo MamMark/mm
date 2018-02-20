@@ -53,6 +53,8 @@
 #define MID_GEODETIC	   41
 #define GEODETIC_LEN	   91
 
+#define MID_HW_CONFIG_REQ  71
+
 #define MID_PWR_MODE_RSP   90
 #define PWR_MODE_RSP_LEN   6
 

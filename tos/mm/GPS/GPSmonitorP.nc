@@ -471,6 +471,40 @@ implementation {
   }
 
 
+  /*
+   * MID 71: H/W Config Request
+   *
+   * respond to a h/w config request.  We send an empty
+   * h/w config response.
+   */
+  void process_hw_config_req(sb_header_t *sbh, uint32_t arrival_ms) {
+    error_t err;
+
+    err   = call GPSTransmit.send((void *) sirf_hw_config_rsp, sizeof(sirf_hw_config_rsp));
+    call CollectEvent.logEvent(DT_EVENT_GPS_HW_CONFIG, err, 0, 0, 0);
+  }
+
+
+  /*
+   * MID 90: Power Mode Response
+   * response to sending a Pwr_Mode_Req, MPM or Full Power.
+   */
+  void process_pwr_rsp(sb_pwr_rsp_t *prp, uint32_t arrival_ms) {
+    uint16_t error;
+
+    /*
+     * warning: prp points to a gps buffer which is unaligned
+     * and big endian.  beware of multi-byte values.
+     */
+    error = CF_BE_16(prp->error);
+    if (mpm_pending && prp->sid == 2 && (error & 0x0010)) {
+      mpm_pending = FALSE;
+      if (mpm_state == MPM_WAIT)
+        call MonTimer.startOneShot(0); /* kick state machine */
+    }
+  }
+
+
   event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
         uint32_t arrival_ms, uint32_t mark_j) {
     sb_header_t *sbp;
@@ -503,6 +537,11 @@ implementation {
       case MID_GEODETIC:
         process_geodetic((void *) sbp, arrival_ms);
         break;
+      case MID_HW_CONFIG_REQ:
+        process_hw_config_req((void *) sbp, arrival_ms);
+        break;
+      case MID_PWR_MODE_RSP:
+        process_pwr_rsp((void *) sbp, arrival_ms);
       default:
         break;
     }

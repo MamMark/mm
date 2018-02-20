@@ -329,6 +329,28 @@ const uint8_t sirf_peek_0[] = {
   0xb0, 0xb3			// end seq
 };
 
+/*
+ * hw config byte 0x00: (bit numbering 1 based in manual)
+ *   b0: Precise Time Transfer off
+ *   b1: PTT direction  CP -> SLC (gps)
+ *   b2: Freq Transfer off
+ *   b3: Counter
+ *   b4: RTC Availablity (NO, ours, we lie)
+ *   b5: RTC for GPS (0 ext for GPS, no used)
+ *   b6: Course Time Avail (0 - no)
+ *   b7: ref clock on
+ */
+const uint8_t sirf_hw_config_rsp[] = {
+  0xa0, 0xa2,			// start seq
+  0x00, 0x08,			// length 8
+  214,  			// HW Config Response, no sid
+  0x00,                         // see above
+  0, 0, 0, 0, 0,                // nominal freq (not used).
+  0,                            // Network enhance (not used).
+  0x00, 0xd6,			// checksum
+  0xb0, 0xb3			// end seq
+};
+
 const uint8_t sirf_full_pwr[] = {
   0xa0, 0xa2,			// start seq
   0x00, 0x02,			// length 2
