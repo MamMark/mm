@@ -99,8 +99,10 @@ enum {
  * and then we could assume that the GPS can still communicate but the
  * overhead of verifing communications isn't that bad.
  *
- * If the GPS is in some other state when we turnOn (typically HIBERNATE), we
- * assume that we can already communicate properly.
+ * After a reboot, a GPSControl.turnOn() will first look at awake.  If awake
+ * we probe and see if we can talk.  This bypasses the initial power on/on_off
+ * toggle.  If we are awake and toggle on/off, depending on the mode the GPS is
+ * in, it will go to sleep.  So the state machine handles this.
  *
  * SirfBin is abbreviated SB, NMEA as NM.  When changing the comm configuration,
  * we use "Set Binary Serial Port" (MID134, 0x86) and for NMEA we use "Set
@@ -124,11 +126,6 @@ enum {
  * vector?).  This is the lowest overhead mechanism to force a response
  * from the GPS.
  *
- * The final step when bringing the GPS chip out of power off is to elicit
- * the version of sw that is running.  SB-SendSWVer.  This gets captured
- * by the GPSmonitor.
- *
- *
  * *** State Machine Description
  *
  * FAIL             gps has failed.
@@ -141,9 +138,9 @@ enum {
  *                  the state machine.  If we timeout send a Probe (peek)
  *                  in case we missed the OTS for some reason.
  *
- * PROBE_CYCLE:     start a new probe cycle, send the next configuration we
- *                  want to try.  If we've run out, try doing them all again
- *                  after resetting.
+ * PROBE_CYCLE:     start a new probe cycle, send the next configuration
+ *                  we want to try.  If we've run out, signal gps_boot_fail
+ *                  and quit.
  *
  * PROBE_x1:        psuedo state, if we haven't run out of configs to try.
  *                  actually sets the new speed and sends the config.
@@ -172,11 +169,17 @@ enum {
  *                  into MSG_WAIT where we are waiting for the message
  *                  to finish being received.
  *
- * CHK_TX_SWVER:    send request for SW_VER to be sent.  This state
- *                  initiates the transmission.
+ *                  If we time out waiting for Proto.msgEnd, we will try
+ *                  <N> times (chk_trys) to elicit a response by cycling
+ *                  back to CHK_TA_WAIT.
  *
- * CHK_SWVER_WAIT:  deadman wait for the SW_VER req transmission to
- *                  complete.
+ *                  If we have already tried too many times, we will cycle
+ *                  PROBE_CYCLE to try a different comm configuration.
+ *
+ * When the first msg has been received, we will transition out of CHK_MSG_WAIT
+ * to ON and signal gps_booted.  If the boot fails, we haven't been able to
+ * establish communication, and we signal gps_boot_fail (from PROBE_CYCLE).
+ *
  *
  * HIBERNATE        sleeping but configured.
  *
@@ -250,8 +253,6 @@ typedef enum {
   GPSC_CHK_TX1_WAIT,
   GPSC_CHK_RX_WAIT,
   GPSC_CHK_MSG_WAIT,
-  GPSC_CHK_TX_SWVER,
-  GPSC_CHK_SWVER_WAIT,
 
   GPSC_CONFIG,                          // place holder
   GPSC_CONFIG_WAIT,                     // place holder
@@ -272,8 +273,6 @@ typedef enum {
   GPSW_STANDBY,
   GPSW_SEND_BLOCK_TASK,
   GPSW_PROBE_TASK,
-  GPSW_SWVER_TASK,
-  GPSW_TIMER_TASK,
   GPSW_TX_TIMER,
   GPSW_RX_TIMER,
   GPSW_PROTO_START,
@@ -371,18 +370,15 @@ const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
 };
 
        int32_t  gps_probe_index;        // keeps track of which table entry to use
-       uint32_t gps_probe_cycle;        // how many times through the list.
-       uint32_t gps_booting;            // system is booting.
+norace uint32_t gps_chk_trys;           // remaining chk_msgs to try  CHK_MSG_WAIT
 
 
 module Gsd4eUP {
   provides {
     interface GPSControl;
     interface GPSTransmit;
-    interface Boot as Booted;           /* out Boot */
   }
   uses {
-    interface Boot;                     /* in boot */
     interface Gsd4eUHardware as HW;
 
     /*
@@ -501,7 +497,6 @@ implementation {
         if (call HW.gps_awake()) return;
       }
       gps_panic(8, 0, 0);
-      return;
     }
   }
 
@@ -541,27 +536,29 @@ implementation {
 
 
   /*
-   * Boot.booted:  Incoming Boot.booted signal.  Start initialization
-   */
-  event void Boot.booted() {
-    call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, 0, 0, 0, 0);
-    gpsc_change_state(GPSC_OFF, GPSW_NONE);
-    gps_booting = 1;
-    call GPSControl.turnOn();
-  }
-
-
-  /*
    * GPSControl.turnOn: start up the gps receiver chip
    */
   command error_t GPSControl.turnOn() {
+    bool awake;
+
     if (gpsc_state != GPSC_OFF) {
       return EALREADY;
     }
 
+    awake = call HW.gps_awake();
     t_gps_pwr_on = call LocalTime.get();
-    call CollectEvent.logEvent(DT_EVENT_GPS_TURN_ON, t_gps_pwr_on, 0, 0, 0);
-    gps_probe_cycle = 0;
+    call CollectEvent.logEvent(DT_EVENT_GPS_TURN_ON, t_gps_pwr_on, awake, 0, 0);
+    if (awake) {
+      gpsc_change_state(GPSC_PROBE_0, GPSW_TURNON);
+      call HW.gps_speed_di(GPS_TARGET_SPEED);
+      call GPSRxTimer.startOneShot(0);
+      return SUCCESS;
+    }
+
+    /*
+     * not awake, assume we came out of POR so the gps is starting up from
+     * full power on and needs more time.
+     */
     call HW.gps_pwr_on();
     call GPSTxTimer.startOneShot(DT_GPS_PWR_UP_DELAY);
     gpsc_change_state(GPSC_PWR_UP_WAIT, GPSW_TURNON);
@@ -753,25 +750,6 @@ implementation {
           call HW.gps_rx_int_enable();        /* turn on rx system */
           return;
 
-        case GPSC_CHK_SWVER_WAIT:
-          call GPSTxTimer.stop();       /* kill deadman */
-
-          /* for now we go to ON and post gps_task again.  this is a place holder
-           * and will probably change to invoke various configuration stuff.
-           */
-          gpsc_change_state(GPSC_ON, GPSW_SEND_BLOCK_TASK);
-          call HW.gps_rx_int_enable();
-          nop();
-          if (gps_booting) {
-            gps_booting = 0;
-            gpsc_boot_time = call LocalTime.get() - t_gps_pwr_on;
-            call CollectEvent.logEvent(DT_EVENT_GPS_BOOT_TIME,
-                                       t_gps_pwr_on, gpsc_boot_time, 0, 0);
-            nop();                      /* BRK */
-            signal Booted.booted();
-          }
-          return;
-
         case GPSC_ON_TX:
           call GPSTxTimer.stop();
           gpsc_change_state(GPSC_ON, GPSW_SEND_BLOCK_TASK);
@@ -817,19 +795,19 @@ implementation {
           /* starting a new cycle. */
           gps_probe_index++;
           if (gps_probe_index >= GPT_MAX_INDEX) {
-            /* well that didn't work, we tried all the entries */
-            gps_probe_index = 0;
-            gps_probe_cycle++;
-            if (gps_probe_cycle >= 2) {
-              /* last cycle we hit reset but still didn't find anything */
-              gps_panic(12, gpsc_state, 0);
-              return;
-            }
-            /* okay, 1st cycle didn't work, kick reset and try again */
-            gps_warn(12, gpsc_state, 0);
-            gps_reset();
-            call GPSTxTimer.startOneShot(DT_GPS_PWR_UP_DELAY);
-            gpsc_change_state(GPSC_PWR_UP_WAIT, GPSW_RX_TIMER);
+            /*
+             * Well that didnt work.  We have worked our way through all the
+             * entries in the probe table and nothing worked.  Leave it up to
+             * the higher layers as to what to do next.
+             *
+             * We could reset the GPS here to make sure that it isn't consuming
+             * power.  But leave it up to the higher control software.
+             */
+            gpsc_change_state(GPSC_OFF, GPSW_PROBE_TASK);
+            gpsc_boot_time = call LocalTime.get() - t_gps_pwr_on;
+            call CollectEvent.logEvent(DT_EVENT_GPS_BOOT_FAIL,
+                                       t_gps_pwr_on, gpsc_boot_time, 0, 0);
+            signal GPSControl.gps_boot_fail();
             return;
           }
 
@@ -844,6 +822,7 @@ implementation {
           if (!time_out) time_out = 2;    /* at least 2ms */
 
           /* start deadman timer, change speed, and send the puppie */
+          gps_chk_trys = GPS_CHK_MAX_TRYS;
           gpsc_change_state(GPSC_CHK_TX_WAIT, GPSW_PROBE_TASK);
           gpsc_log_event(GPSE_SPEED, speed);
           call HW.gps_speed_di(speed);
@@ -857,37 +836,32 @@ implementation {
 
 
   /*
-   * swver_task
+   * gps_signal_task
    *
-   * handles issueing a send sw_ver request at the tail end of
-   * comm probe.  We want to store the current sw version of
-   * the gps chip.  We do this every power on (POR) or reset
-   * which occurs when we bring the gps up (leaving OFF state).
+   * issue task level signals for various states.  Currently only
+   * issues a gps_booted signal.
+   *
+   * The gps_booted signal gets issued from any of the ON states and
+   * only occurs when posted.  gps_signal_task gets posted at the tail
+   * end of communications boot after receiving a good message after
+   * reconfiguring the comm h/w.
    */
-  task void swver_task() {
+  task void gps_signal_task() {
     atomic {
       switch(gpsc_state) {
         default:
           gps_panic(13, gpsc_state, 0);
           return;
 
-        case GPSC_CHK_TX_SWVER:
-          /*
-           * GPSProto.msgEnd (interrupt level) invoked us.  It has a
-           * rx deadman running.  Kill it.
-           */
-          call GPSRxTimer.stop();
-
-          /*
-           * send out a sw_ver request to capture the sw_ver of the gps
-           * chipset.  Fire up a Tx deadman for the transmit.  The receive
-           * will just come in and get captured without any checking.
-           */
-          call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
-          gpsc_change_state(GPSC_CHK_SWVER_WAIT, GPSW_SWVER_TASK);
-          collect_gps_pak((void *) sirf_sw_ver, sizeof(sirf_sw_ver),
-                          GPS_DIR_TX);
-          call HW.gps_send_block((void *) sirf_sw_ver, sizeof(sirf_sw_ver));
+        case GPSC_ON:
+        case GPSC_ON_RX:
+        case GPSC_ON_TX:
+        case GPSC_ON_RX_TX:
+          gpsc_boot_time = call LocalTime.get() - t_gps_pwr_on;
+          call CollectEvent.logEvent(DT_EVENT_GPS_BOOT_TIME,
+                                     t_gps_pwr_on, gpsc_boot_time, 0, 0);
+          nop();                        /* BRK */
+          signal GPSControl.gps_booted();
           return;
       }
     }
@@ -1011,6 +985,7 @@ implementation {
         case GPSC_PROBE_0:                  /* target speed (from PWR_UP_WAIT) */
           call HW.gps_rx_int_disable();
           gps_probe_index = -1;             /* first peek try */
+          gps_chk_trys    = GPS_CHK_MAX_TRYS;
           gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_RX_TIMER);
           call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
           collect_gps_pak((void *) sirf_peek_0, sizeof(sirf_peek_0),
@@ -1019,8 +994,28 @@ implementation {
           return;
 
         case GPSC_CHK_RX_WAIT:
+          /* never saw the start of a message, nada, probe cycle */
+          call HW.gps_rx_int_disable();
+          gpsc_change_state(GPSC_PROBE_CYCLE, GPSW_RX_TIMER);
+          post probe_task();
+          return;
+
         case GPSC_CHK_MSG_WAIT:
           call HW.gps_rx_int_disable();
+          call SirfProto.rx_timeout();          /* tell protocol state machine */
+          if (--gps_chk_trys) {
+            /*
+             * still have some trys left
+             * go into CHK_TA_WAIT and immediately force a TxTimer expire.
+             * this will effectively do a jump into the code that sends
+             * the PEEK and we will try again.
+             */
+            gpsc_change_state(GPSC_CHK_TA_WAIT, GPSW_RX_TIMER);
+            call GPSTxTimer.startOneShot(0);
+            return;
+          }
+
+          /* no trys left, blow it up, and try a different config */
           gpsc_change_state(GPSC_PROBE_CYCLE, GPSW_RX_TIMER);
           post probe_task();
           return;
@@ -1051,7 +1046,10 @@ implementation {
         gpsc_change_state(GPSC_CHK_MSG_WAIT, GPSW_PROTO_START);
         return;
 
-      case GPSC_PROBE_0: next_state = GPSC_CHK_MSG_WAIT;  break;
+      case GPSC_PROBE_0:
+        gps_chk_trys = GPS_CHK_MAX_TRYS;
+        next_state   = GPSC_CHK_MSG_WAIT;
+        break;
       case GPSC_ON:      next_state = GPSC_ON_RX;         break;
       case GPSC_ON_TX:   next_state = GPSC_ON_RX_TX;      break;
     }
@@ -1070,15 +1068,14 @@ implementation {
         return;
 
       case GPSC_CHK_MSG_WAIT:
-        call HW.gps_rx_int_disable();
-        gpsc_change_state(GPSC_CHK_TX_SWVER, GPSW_PROTO_END);
-        post swver_task();
-        return;
+        next_state = GPSC_ON;        /* rx interrupts are already on .. yum */
+        post gps_signal_task();      /* tell the upper layer we be good.    */
+        break;                       /* and kick the msg timer off          */
 
       case GPSC_ON_RX:    next_state = GPSC_ON;    break;
       case GPSC_ON_RX_TX: next_state = GPSC_ON_RX; break;
     }
-    m_req_rx_len = 0;                   /* request a cancel */
+    m_req_rx_len = 0;                /* request a cancel */
     post timer_task();
     gpsc_change_state(next_state, GPSW_PROTO_END);
   }
@@ -1167,6 +1164,4 @@ implementation {
   default event void GPSControl.gps_boot_fail() { };
   default event void GPSControl.gps_booted()    { };
   default event void GPSControl.gps_shutdown()  { };
-
-  default event void Booted.booted() { }
 }

@@ -58,8 +58,9 @@
  * During this window, we look for the OTS packet.  (ie. rx interrupts are
  * on and the Protocol state machine will receive bytes).  If we see the
  * start of the OTS packet, we transition to MSG_WAIT to wait for the
- * remainder of the packet.  Once received, we then send a SWVER request
- * and transition to ON.
+ * remainder of the packet.  Once received, we then transition to ON and
+ * generate a gps_booted signal to tell the upper layers that the GPS is
+ * up and communicating.
  *
  * However, if the OTS window times out, we send a PEEK packet.  The PEEK
  * packet is a minimal packet that elicits a response.
@@ -67,6 +68,13 @@
  * If the PEEK times out, we send successive comm configuration messages
  * from the probe_table to attempt a comm reconfiguration.  Each
  * configuration message is followed by a PEEK at the target baud rate.
+ *
+ * Once we start receiving a message (GPSProto.msgStart has been signalled)
+ * we have a RXTimer running to make sure we see the end (deadman timer).
+ * If we timeout waiting for the end, we will try GPS_CHK_MAX_TRYS times to
+ * send the PEEK and wait for the response.  We assume since we saw the
+ * start of the message that something hickuped and trying again is
+ * reasonable.
  */
 
 /* ms units */
@@ -75,6 +83,9 @@
 
 #define DT_GPS_RESET_PULSE_WIDTH_US 105
 #define DT_GPS_ON_OFF_WIDTH_US      105
+
+#define GPS_CHK_MAX_TRYS 4
+
 
 /*
  * TA_WAIT
