@@ -42,7 +42,7 @@
 /*
  * identify what revision of typed_data.h we are using for this build
  */
-#define DT_H_REVISION 14
+#define DT_H_REVISION 15
 
 /*
  * Sync records are used to make sure we can always find the data stream if
@@ -248,6 +248,8 @@ typedef enum {
 
   DT_EVENT_GPS_BOOT         = 32,
   DT_EVENT_GPS_BOOT_TIME    = 33,
+  DT_EVENT_GPS_BOOT_FAIL    = 49,
+  DT_EVENT_GPS_HW_CONFIG    = 50,
   DT_EVENT_GPS_RECONFIG     = 34,
   DT_EVENT_GPS_TURN_ON      = 35,
   DT_EVENT_GPS_STANDBY      = 36,
