@@ -71,7 +71,7 @@ A singleton GPS port provided as GPS0.
 (tos/platforms/dev6a/hardware/gps)      the Port instantiation
 
 GPS0C:  top level of GPS driver stack.
-    GPSState    provides a mechanism for turning GPS on off, control state
+    GPSControl  provides a mechanism for turning GPS on off, control state
                 gps requests, gps power management requests
     GPSReceive  mechanism for passing received gps messages to upper layers
                 of the system.

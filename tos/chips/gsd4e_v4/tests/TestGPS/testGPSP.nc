@@ -10,7 +10,7 @@ uint16_t tt0, tt1;
 module testGPSP {
   uses {
     interface Boot;
-    interface GPSState;
+    interface GPSControl;
     interface Timer<TMilli> as testTimer;
     interface LocalTime<TMilli>;
 #ifdef notdef
@@ -103,7 +103,7 @@ implementation {
     switch(state) {
       case OFF:
 	state = STARTING;
-	call GPSState.turnOn();
+	call GPSControl.turnOn();
 	call testTimer.startOneShot(0);
 	break;
 
@@ -122,4 +122,9 @@ implementation {
 	break;
     }
   }
+
+  event void GPSControl.gps_booted()    { }
+  event void GPSControl.gps_boot_fail() { }
+  event void GPSControl.gps_shutdown()  { }
+  event void GPSControl.standbyDone()   { }
 }

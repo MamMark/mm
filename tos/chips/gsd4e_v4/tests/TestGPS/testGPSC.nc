@@ -15,11 +15,10 @@ implementation {
 #ifdef notdef
   testGPSP.HW -> GpsPort;
 #endif
-  testGPSP.GPSState   -> GpsPort;
+  testGPSP.GPSControl -> GpsPort;
   testGPSP.Platform   -> PlatformC;
 
   components GPSmonitorC;
-  GPSmonitorC.GPSState    -> GpsPort;
   GPSmonitorC.GPSControl  -> GpsPort;
   GPSmonitorC.GPSReceive  -> GpsPort;
   GPSmonitorC.GPSTransmit -> GpsPort;

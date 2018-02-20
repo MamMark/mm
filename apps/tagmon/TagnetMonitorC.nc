@@ -27,7 +27,6 @@ implementation {
   TagnetC.InfoSensGpsXyz        -> GPSmonitorC;
   TagnetC.InfoSensGpsCmd        -> GPSmonitorC;
 
-  GPSmonitorC.GPSState          -> GpsPort;
   GPSmonitorC.GPSControl        -> GpsPort;
   GPSmonitorC.GPSTransmit       -> GpsPort;
   GPSmonitorC.GPSReceive        -> GpsPort;

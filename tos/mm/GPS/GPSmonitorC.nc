@@ -27,7 +27,6 @@ configuration GPSmonitorC {
     interface TagnetAdapter<uint8_t>          as InfoSensGpsCmd;
   }
   uses {
-    interface GPSState;
     interface GPSControl;
     interface GPSTransmit;
     interface GPSReceive;
@@ -39,7 +38,6 @@ implementation {
   InfoSensGpsXyz = GPSmonitorP;
   InfoSensGpsCmd = GPSmonitorP;
 
-  GPSState       = GPSmonitorP;
   GPSControl     = GPSmonitorP;
   GPSTransmit    = GPSmonitorP;
   GPSReceive     = GPSmonitorP;

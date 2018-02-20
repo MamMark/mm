@@ -20,8 +20,42 @@
  */
 
 interface GPSControl {
+  /*
+   * start the GPS up and turn ON
+   *
+   * upon completion will see either
+   *
+   *   gps_boot_fail()          didn't work
+   *   gps_booted()             comm established, and GPS is up.
+   */
+  command error_t turnOn();
+
+  /* events signalling results of turnOn (comm boot) */
+  event void gps_booted();
+  event void gps_boot_fail();
+
+  /*
+   * make the GPS shutdown.   If necessary pull RESET
+   *
+   * upon completion will see
+   */
+  command error_t turnOff();
+  event   void    gps_shutdown();
+
+  /*
+   * force the GPS into hibernate state
+   */
+  command error_t standby();
+  event   void    standbyDone();
+
+
+  /* lower level control commands */
   command void hibernate();
   command void wake();
   command void pulseOnOff();
   command bool awake();
+
+  command void reset();
+  command void powerOn();
+  command void powerOff();
 }

@@ -144,7 +144,6 @@ module GPSmonitorP {
     interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
     interface TagnetAdapter<uint8_t>          as InfoSensGpsCmd;
   } uses {
-    interface GPSState;
     interface GPSControl;
     interface GPSTransmit;
     interface GPSReceive;
@@ -199,13 +198,13 @@ implementation {
       default:
         return TRUE;
       case GDC_TURNON:
-        call GPSState.turnOn();
+        call GPSControl.turnOn();
         break;
       case GDC_TURNOFF:
-        call GPSState.turnOff();
+        call GPSControl.turnOff();
         break;
       case GDC_STANDBY:
-        call GPSState.standby();
+        call GPSControl.standby();
         break;
       case GDC_PULSE_ON_OFF:
         call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, 200, 0, 0,
@@ -450,6 +449,10 @@ implementation {
   }
 
 
-  async event void Panic.hook() { }
+  event void GPSControl.gps_booted()    { }
+  event void GPSControl.gps_boot_fail() { }
+  event void GPSControl.gps_shutdown()  { }
+  event void GPSControl.standbyDone()   { }
 
+  async event void Panic.hook()         { }
 }

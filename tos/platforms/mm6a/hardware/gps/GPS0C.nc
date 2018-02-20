@@ -22,7 +22,6 @@
 
 configuration GPS0C {
   provides {
-    interface GPSState;
     interface GPSControl;
     interface GPSReceive;
     interface GPSTransmit;
@@ -54,7 +53,6 @@ implementation {
   components     LocalTimeMilliC;
   components     CollectC;
 
-  GPSState     = Gsd4eUP;
   GPSControl   = Gsd4eUP;
 
   Boot         = Gsd4eUP.Boot;

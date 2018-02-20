@@ -380,7 +380,6 @@ const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
 
 module Gsd4eUP {
   provides {
-    interface GPSState;
     interface GPSControl;
     interface GPSTransmit;
     interface Boot as Booted;           /* out Boot */
@@ -551,14 +550,14 @@ implementation {
     call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, 0, 0, 0, 0);
     gpsc_change_state(GPSC_OFF, GPSW_NONE);
     gps_booting = 1;
-    call GPSState.turnOn();
+    call GPSControl.turnOn();
   }
 
 
   /*
-   * GPSState.turnOn: start up the gps receiver chip
+   * GPSControl.turnOn: start up the gps receiver chip
    */
-  command error_t GPSState.turnOn() {
+  command error_t GPSControl.turnOn() {
     if (gpsc_state != GPSC_OFF) {
       return EALREADY;
     }
@@ -574,9 +573,9 @@ implementation {
 
 
   /*
-   * GPSState.turnOff: Stop all GPS activity.
+   * GPSControl.turnOff: Stop all GPS activity.
    */
-  command error_t GPSState.turnOff() {
+  command error_t GPSControl.turnOff() {
     if (gpsc_state == GPSC_OFF) {
       gps_warn(10, gpsc_state, 0);
       return FAIL;
@@ -595,9 +594,9 @@ implementation {
 
 
   /*
-   * GPSState.standby: Put the GPS chip into standby.
+   * GPSControl.standby: Put the GPS chip into standby.
    */
-  command error_t GPSState.standby() {
+  command error_t GPSControl.standby() {
     gps_hibernate();
     call HW.gps_rx_int_disable();
     call GPSTxTimer.stop();
@@ -626,6 +625,21 @@ implementation {
 
   command bool GPSControl.awake() {
     return call HW.gps_awake();
+  }
+
+
+  command void GPSControl.reset() {
+    gps_reset();
+  }
+
+
+  command void GPSControl.powerOn() {
+    call HW.gps_pwr_on();
+  }
+
+
+  command void GPSControl.powerOff() {
+    call HW.gps_pwr_off();
   }
 
 
@@ -1151,6 +1165,11 @@ implementation {
   async event void HW.gps_receive_block_done(uint8_t *ptr, uint16_t len, error_t error) { }
 
   async event void Panic.hook() { }
+
+  default event void GPSControl.standbyDone()   { };
+  default event void GPSControl.gps_boot_fail() { };
+  default event void GPSControl.gps_booted()    { };
+  default event void GPSControl.gps_shutdown()  { };
 
   default event void Booted.booted() { }
 }
