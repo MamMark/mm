@@ -755,9 +755,10 @@ implementation {
           gpsc_change_state(GPSC_ON, GPSW_SEND_BLOCK_TASK);
 
           /* signal out to the caller that started up the GPSTransmit.send */
-          if (m_tx_len)
+          if (m_tx_len) {
+            m_tx_len = 0;
             signal GPSTransmit.send_done();
-          m_tx_len = 0;
+          }
           return;
 
         case GPSC_ON_RX_TX:
@@ -765,9 +766,10 @@ implementation {
           gpsc_change_state(GPSC_ON_RX, GPSW_SEND_BLOCK_TASK);
 
           /* signal out to the caller that started up the GPSSend.send */
-          if (m_tx_len)
+          if (m_tx_len) {
+            m_tx_len = 0;
             signal GPSTransmit.send_done();
-          m_tx_len = 0;
+          }
           return;
       }
     }
