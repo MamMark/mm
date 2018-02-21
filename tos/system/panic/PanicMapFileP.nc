@@ -71,11 +71,10 @@ implementation {
    * return TRUE if the panic slot is not used.
    *
    * The Panic dir holds the next index to write.  All indicies
-   * below PanicIndex are used and have something in them.  Indicies
-   * must be below MAX but we don't check that.
+   * below PanicIndex are used and have something in them.
    */
   bool is_idx_unused(uint8_t slot_idx) {
-    return (slot_idx < call PanicManager.getPanicIndex());
+    return (slot_idx >= call PanicManager.getPanicIndex());
   }
 
 
