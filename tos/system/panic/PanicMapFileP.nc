@@ -101,6 +101,8 @@ implementation {
   }
 
   uint32_t eof_pos(uint8_t slot_idx) {
+    if (is_idx_unused(slot_idx))
+        return 0;
     return (call PanicManager.getPanicSize() * SD_BLOCKSIZE);
   }
 
@@ -119,6 +121,8 @@ implementation {
   }
 
   bool _get_new_sector(uint32_t slot_idx, uint32_t pos) {
+    if (is_idx_unused(slot_idx))
+        return FALSE;
     pmf_cb.slot_idx          = slot_idx;
     pmf_cb.sector.base       = sector_of(slot_idx, 0);
     pmf_cb.sector.eof        = sector_of(slot_idx, eof_pos(slot_idx));
@@ -129,6 +133,14 @@ implementation {
     pmf_cb.sbuf_requesting   = TRUE;
     pmf_cb.sbuf_reading      = FALSE;
 
+    /*
+     * we are about to read the first sector of the panic block
+     * range check it against the panic limits.  If outside something
+     * is very wrong.  Whatever do don't hang the system.
+     */
+    if (pmf_cb.sector.cur < call PanicManager.getPanicBase() ||
+        pmf_cb.sector.cur > call PanicManager.getPanicLimit())
+      pmap_panic(2, 0, 0);              /* no return */
     pmf_cb.err = call SDResource.request();
     if (pmf_cb.err == SUCCESS)
       return TRUE;
@@ -138,11 +150,9 @@ implementation {
 
 
   event void SDResource.granted() {
-    if ((!pmf_cb.sbuf_ready) && (pmf_cb.sector.cur)) {
-      pmf_cb.sbuf_requesting = FALSE;
-      pmf_cb.sbuf_reading    = TRUE;
-      call SDread.read(pmf_cb.sector.cur, pmf_sbuf);
-    }
+    pmf_cb.sbuf_requesting = FALSE;
+    pmf_cb.sbuf_reading    = TRUE;
+    call SDread.read(pmf_cb.sector.cur, pmf_sbuf);
   }
 
 
@@ -191,6 +201,7 @@ implementation {
 
 
   event void PanicManager.populateDone(error_t err) {
+    pmf_cb.file_pos = 0;
     pmf_cb.err = err;
     if (err)
       pmap_panic(4, err, 0);
