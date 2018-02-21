@@ -94,20 +94,6 @@ implementation {
     return (pos % SD_BLOCKSIZE);
   }
 
-  uint32_t fpos_of(uint8_t slot_idx, uint32_t sect) {
-    uint32_t  s_base, s_eof;
-
-    if (is_idx_unused(slot_idx))
-      return 0;
-    s_base = call PanicManager.panicIndex2Sector(slot_idx);
-    s_eof  = s_base + call PanicManager.getPanicSize();
-    if ((sect < s_base) || (sect > s_eof)) {
-      pmap_panic(1, sect, s_base);
-      return 0;
-    }
-    return ((sect - s_base) * SD_BLOCKSIZE);
-  }
-
   uint32_t remaining(uint8_t slot_idx, uint32_t pos) {
     if (is_idx_unused(slot_idx))
       return 0;
@@ -132,16 +118,7 @@ implementation {
     return TRUE;
   }
 
-  bool not_ready() {
-    // initialization of PanicManager is split phase, so
-    // special value of slot_idx signifies still waiting.
-    return (pmf_cb.slot_idx == 255);
-  }
-
-
   bool _get_new_sector(uint32_t slot_idx, uint32_t pos) {
-    // not protected. caller must ensure that SDResource request is not
-    // already pending.
     pmf_cb.slot_idx          = slot_idx;
     pmf_cb.sector.base       = sector_of(slot_idx, 0);
     pmf_cb.sector.eof        = sector_of(slot_idx, eof_pos(slot_idx));
@@ -182,8 +159,6 @@ implementation {
                           uint32_t offset, uint32_t *lenp) {
     uint32_t count  = 0;
 
-    if (not_ready())
-      return EBUSY;
     if (is_idx_unused(context))
       return EODATA;
 
@@ -206,8 +181,6 @@ implementation {
 
 
   command uint32_t PMF.filesize(uint32_t context) {
-    if (not_ready())
-      return 0;
     return eof_pos(context);
   }
 
@@ -225,7 +198,6 @@ implementation {
   }
 
   event void Boot.booted() {
-    pmf_cb.slot_idx         = 255;
     call PanicManager.populate();
   }
 
