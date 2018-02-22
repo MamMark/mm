@@ -41,6 +41,17 @@ dt_gps_xyz_obj  = dt_simple_hdr
 # warning GPS messages are big endian.  The surrounding header (the dt header
 # etc) is little endian (native order).
 #
+
+mids_w_sids = [
+    # Output
+    48, 56, 63, 64, 65, 68, 69, 70, 72, 73, 74, 75, 77,
+    90, 91, 92, 93, 225, 233,
+
+    # Input
+    161, 172, 177, 178, 205, 211, 212, 213, 215, 216, 218, 219, 220, 221,
+    232, 233, 234 ]
+
+
 gps_nav_obj = aggie(OrderedDict([
     ('xpos',  atom(('>i', '{}'))),
     ('ypos',  atom(('>i', '{}'))),

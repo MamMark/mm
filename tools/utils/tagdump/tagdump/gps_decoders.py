@@ -446,6 +446,7 @@ def decode_gps_raw(level, offset, buf, obj):
     st       = obj['gps_hdr']['hdr']['st'].val
 
     mid = obj['raw_gps_hdr']['mid'].val
+    sid = buf[consumed]                 # if there is a sid, next byte
     try:
         g.mid_count[mid] += 1
     except KeyError:
@@ -471,7 +472,9 @@ def decode_gps_raw(level, offset, buf, obj):
             dump_buf(buf, '    ')
         return
 
-    print('-- MID: {:2} ({:02x}) <{:2}> {}'.format(mid, mid, dir_str, mid_name)),
+    sid_str = '' if mid not in mids_w_sids else '/{}'.format(sid)
+    print('-- MID: {:2}{} ({:02x}) <{:2}> {}'.format(
+        mid, sid_str, mid, dir_str, mid_name)),
 
     if not decoder:
         print
