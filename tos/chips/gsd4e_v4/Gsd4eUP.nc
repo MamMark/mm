@@ -261,6 +261,7 @@ typedef enum {
 
   GPSC_ON,                              // at msg boundary
   GPSC_ON_RX,                           // in receive
+                                        // RX_TX and TX MUST follow ON_RX
   GPSC_ON_RX_TX,                        // transmitting and receiving
   GPSC_ON_TX,                           // in middle of transmitting
 } gpsc_state_t;                         // gps control state
@@ -1075,7 +1076,7 @@ implementation {
         break;                       /* and kick the msg timer off          */
 
       case GPSC_ON_RX:    next_state = GPSC_ON;    break;
-      case GPSC_ON_RX_TX: next_state = GPSC_ON_RX; break;
+      case GPSC_ON_RX_TX: next_state = GPSC_ON_TX; break;
     }
     m_req_rx_len = 0;                /* request a cancel */
     post timer_task();
