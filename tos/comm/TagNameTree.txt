@@ -12,6 +12,7 @@ root
         |-- sd
         |   +-- 0
         |       |-- dblk
+        |       |   |-- .committed
         |       |   |-- .last_rec
         |       |   |-- .last_sync
         |       |   |-- .recnum

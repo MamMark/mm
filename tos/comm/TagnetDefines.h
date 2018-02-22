@@ -20,16 +20,17 @@ typedef enum {                   //      (parent) name
   TN_16_ID              =    16, //  (   dblk   ) .recnum
   TN_17_ID              =    17, //  (   dblk   ) .last_rec
   TN_18_ID              =    18, //  (   dblk   ) .last_sync
-  TN_19_ID              =    19, //  (    0     ) img
-  TN_20_ID              =    20, //  (    0     ) panic
-  TN_21_ID              =    21, //  (  panic   ) byte
-  TN_22_ID              =    22, //  (   tag    ) sys
-  TN_23_ID              =    23, //  (   sys    ) active
-  TN_24_ID              =    24, //  (   sys    ) backup
-  TN_25_ID              =    25, //  (   sys    ) golden
-  TN_26_ID              =    26, //  (   sys    ) nib
-  TN_27_ID              =    27, //  (   sys    ) running
-  TN_LAST_ID            =    28,
+  TN_19_ID              =    19, //  (   dblk   ) .committed
+  TN_20_ID              =    20, //  (    0     ) img
+  TN_21_ID              =    21, //  (    0     ) panic
+  TN_22_ID              =    22, //  (  panic   ) byte
+  TN_23_ID              =    23, //  (   tag    ) sys
+  TN_24_ID              =    24, //  (   sys    ) active
+  TN_25_ID              =    25, //  (   sys    ) backup
+  TN_26_ID              =    26, //  (   sys    ) golden
+  TN_27_ID              =    27, //  (   sys    ) nib
+  TN_28_ID              =    28, //  (   sys    ) running
+  TN_LAST_ID            =    29,
   TN_ROOT_ID            =     0,
   TN_MAX_ID             =  65000,
 } tn_ids_t;
@@ -62,6 +63,7 @@ typedef enum {                   //      (parent) name
 #define  TN_25_UQ                "TN_25_UQ"
 #define  TN_26_UQ                "TN_26_UQ"
 #define  TN_27_UQ                "TN_27_UQ"
+#define  TN_28_UQ                "TN_28_UQ"
 #define UQ_TAGNET_ADAPTER_LIST  "UQ_TAGNET_ADAPTER_LIST"
 #define UQ_TN_ROOT               TN_0_UQ
 /* structure used to hold configuration values for each of the elements
@@ -94,14 +96,15 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   { TN_16_ID, "\01\07.recnum", "\01\04help", TN_16_UQ },
   { TN_17_ID, "\01\011.last_rec", "\01\04help", TN_17_UQ },
   { TN_18_ID, "\01\012.last_sync", "\01\04help", TN_18_UQ },
-  { TN_19_ID, "\01\03img", "\01\04help", TN_19_UQ },
-  { TN_20_ID, "\01\05panic", "\01\04help", TN_20_UQ },
-  { TN_21_ID, "\01\04byte", "\01\04help", TN_21_UQ },
-  { TN_22_ID, "\01\03sys", "\01\04help", TN_22_UQ },
-  { TN_23_ID, "\01\06active", "\01\04help", TN_23_UQ },
-  { TN_24_ID, "\01\06backup", "\01\04help", TN_24_UQ },
-  { TN_25_ID, "\01\06golden", "\01\04help", TN_25_UQ },
-  { TN_26_ID, "\01\03nib", "\01\04help", TN_26_UQ },
-  { TN_27_ID, "\01\07running", "\01\04help", TN_27_UQ },
+  { TN_19_ID, "\01\012.committed", "\01\04help", TN_19_UQ },
+  { TN_20_ID, "\01\03img", "\01\04help", TN_20_UQ },
+  { TN_21_ID, "\01\05panic", "\01\04help", TN_21_UQ },
+  { TN_22_ID, "\01\04byte", "\01\04help", TN_22_UQ },
+  { TN_23_ID, "\01\03sys", "\01\04help", TN_23_UQ },
+  { TN_24_ID, "\01\06active", "\01\04help", TN_24_UQ },
+  { TN_25_ID, "\01\06backup", "\01\04help", TN_25_UQ },
+  { TN_26_ID, "\01\06golden", "\01\04help", TN_26_UQ },
+  { TN_27_ID, "\01\03nib", "\01\04help", TN_27_UQ },
+  { TN_28_ID, "\01\07running", "\01\04help", TN_28_UQ },
 };
 

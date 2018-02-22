@@ -53,6 +53,7 @@ implementation {
   TagnetC.DblkLastRecNum        -> CollectC.DblkLastRecNum;
   TagnetC.DblkLastRecOffset     -> CollectC.DblkLastRecOffset;
   TagnetC.DblkLastSyncOffset    -> CollectC.DblkLastSyncOffset;
+  TagnetC.DblkCommittedOffset   -> CollectC.DblkCommittedOffset;
 
   components new TimerMilliC()  as Timer0;
   TagnetMonitorP.rcTimer        -> Timer0;

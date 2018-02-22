@@ -117,6 +117,7 @@ module CollectP {
     interface TagnetAdapter<uint32_t> as DblkLastRecNum;
     interface TagnetAdapter<uint32_t> as DblkLastRecOffset;
     interface TagnetAdapter<uint32_t> as DblkLastSyncOffset;
+    interface TagnetAdapter<uint32_t> as DblkCommittedOffset;
   }
   uses {
     interface Boot;                     /* in boot in sequence */
@@ -268,9 +269,17 @@ implementation {
   }
 
 
-  command bool DblkLastRecNum.set_value(uint32_t *t, uint32_t *l)     { return FALSE; }
-  command bool DblkLastRecOffset.set_value(uint32_t *t, uint32_t *l)  { return FALSE; }
-  command bool DblkLastSyncOffset.set_value(uint32_t *t, uint32_t *l) { return FALSE; }
+  command bool DblkCommittedOffset.get_value(uint32_t *t, uint32_t *l) {
+    *t = call SS.committed_offset();
+    *l = 4;
+    return 1;
+  }
+
+
+  command bool DblkLastRecNum.set_value(uint32_t *t, uint32_t *l)      { return FALSE; }
+  command bool DblkLastRecOffset.set_value(uint32_t *t, uint32_t *l)   { return FALSE; }
+  command bool DblkLastSyncOffset.set_value(uint32_t *t, uint32_t *l)  { return FALSE; }
+  command bool DblkCommittedOffset.set_value(uint32_t *t, uint32_t *l) { return FALSE; }
 
 
   /*

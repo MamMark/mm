@@ -8,6 +8,7 @@ ignore	GET	PUT	HEAD	DEL	Request Params	Response Params	Adapter Component	Interfa
 	x		x			<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecNum	uses	\'<node_id:000000000000>\'	tag	sd	0	dblk	.recnum
 	x		x			<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecOffset	uses	\'<node_id:000000000000>\'	tag	sd	0	dblk	.last_rec
 	x		x			<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastSyncOffset	uses	\'<node_id:000000000000>\'	tag	sd	0	dblk	.last_sync
+	x		x			<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkCommittedOffset	uses	\'<node_id:000000000000>\'	tag	sd	0	dblk	.committed
 	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetImageAdapterP					\'<node_id:000000000000>\'	tag	sd	0	img	
 x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetRuleSetsAdapterP					\'<node_id:000000000000>\'	tag	sd	0	rules	
 x	x	x	x	x	<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetConfigAdapterP					\'<node_id:000000000000>\'	tag	sd	0	config	
