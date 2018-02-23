@@ -127,6 +127,150 @@ until awake drops.  Observed (usecs):
         tf:     2479    356     t_falls
 
 
+Startup Sequencing:
+
+Problem A: When the GPS has lost power, it doesn't know where it is, what time it is, or what
+sats to look for.  We have observed TTFF on the order of 10 mins while it is searching for
+sats and downloading the Almanac and ephemeri.  We want to mitigate this start up behaviour.
+
+Problem B: We want to control how much power the GPS uses while at the same time maintaining
+reasonable almanac and ephemeri.  This means we need to spend some amount of time looking
+at the sky to receive updates.  The goal is to have reasonable TTFF.
+
+The Gsd4e SirfStar IV provides Micro Power Mode that once it has enough information will
+manage turning on the device to do maintanence.  But it isn't clear from the documentation
+how to use this.
+
+Observations:  (MPM interactions)
+
+1) start up, gps reset,  no almanac, no ephemeris
+   TTFF 332161 mis -> 5.4 mins
+
+   @1444  2147 nav_track (1st) 2 sats.(15, 10)
+   @9164 13427 nav_track       2 sats (15, 10)
+   @9676 15346 geo_data gps time goes from 1662/13 secs to 1662/386730.396s
+               (14 secs in), nav_valid 5, nav_type 0
+   @13336 20485 nav_track 2 sats (15, 10)
+   @13924 21513 geo_data time looks better nav_valid 1, nav_type 0
+                xweek: 1989 tow: 386736.396s, utc: 2018/02/22-11:25:21.396
+   @148204 62223 nav_track 3 sats (15, 10, 21)
+   @149092 63254 geo_data lat/lon moves off 0 (nsats 3) nav_valid 1, nav_type 1015
+    GEO_DATA: xweek: 1989 tow: 386988.396s, utc: 2018/02/22-11:29:30.396
+    lat/long:    37.0721827(N)    121.9901645(W), alt(e):    0.00 m  alt(msl):   26.37 m
+    ehpe: 34924
+
+   @325484 340066 nav_track 6 sats (15,10,21,20,27,29)
+
+   TTFF: 332161/1024 = 324.376 s -> 5.4 mins
+   @318676 332161 geo_data lock (5) nav_valid: 0, nav_type 0204, sat_mask: 0x04184200
+    GEO_DATA: xweek: 1989 tow: 387319.401s, utc: 2018/02/22-11:35:01.401
+    lat/long:    37.0756539(N)    121.9917406(W), alt(e):  168.55 m  alt(msl):  194.92 m
+    lock    (5 sats)                                       552.99 ft            639.50 ft
+    ehpe: 5181
+
+   10 Locks:
+   @332956 349296 geo_data L (5)
+    GEO_DATA: xweek: 1989 tow:   387351.0s, utc: 2018/02/22-11:35:33.0
+    lat/long:     37.075823(N)    121.9917971(W), alt(e):  177.96 m  alt(msl):  204.32 m
+    lock    (5 sats)                                       583.86 ft            670.34 ft
+    nav_valid: 0x0000  nav_type: 0x0204
+    ehpe: 3559
+
+   @333200 349307 nav_track (5) (15,10,21,20,27)
+
+open session req
+--- @326316   3019   340990   35    32  GPS_RAW -- MID: 213/1 (d5) <tx> unk
+--- @326352   3020   340990   40     4  EVENT  GPS_MPM  1  0
+    GPS_MPM: (38) <1 0 0 4>  x(1 0 0 4)
+--- @351104   3395   371711   40     4  EVENT  GPS_MPM  100  0
+    GPS_MPM: (38) <100 0 4 4>  x(64 0 4 4)
+--- @375856   3770   402431   40     4  EVENT  GPS_MPM  100  0
+    GPS_MPM: (38) <100 0 3 4>  x(64 0 3 4)
+--- @400608   4145   433151   40     4  EVENT  GPS_MPM  100  0
+    GPS_MPM: (38) <100 0 2 4>  x(64 0 2 4)
+--- @425260   4519   463940   40     4  EVENT  GPS_MPM  100  0
+    GPS_MPM: (38) <100 0 1 4>  x(64 0 1 4)
+
+Reboot @431104
+--- @431680     10      324  220    32  GPS_RAW -- MID:  4 (04) <rx> NAV_TRACK
+    6 sats
+--- @432232     18     1340  123    32  GPS_RAW -- MID: 41 (29) <rx> GEO_DATA   L  (5)
+    GEO_DATA: xweek: 1989 tow:   387552.0s, utc: 2018/02/22-11:38:54.0
+    lat/long:    37.0760093(N)    121.9918687(W), alt(e):  190.09 m  alt(msl):  216.45 m
+    lock    (5 sats)                                       623.65 ft            710.14 ft
+    nav_valid: 0x0000  nav_type: 0x0204  xweek: 1989  tow:  387552000
+
+--- @1851372   9699  1173459  123    32  GPS_RAW -- MID: 41 (29) <rx> GEO_DATA   L  (5)
+
+  open session, no response
+--- @1851652   9704  1173471   35    32  GPS_RAW -- MID: 213/1 (d5) <tx> unk
+--- @1851688   9705  1173471   40     4  EVENT  GPS_MPM  1  0
+    GPS_MPM: (38) <1 0 0 4>  x(1 0 0 4)
+--- @1870728  10016  1204192   40     4  EVENT  GPS_MPM  100  0
+    GPS_MPM: (38) <100 0 4 4>  x(64 0 4 4)
+--- @1894892  10382  1234912   40     4  EVENT  GPS_MPM  100  0
+    GPS_MPM: (38) <100 0 3 4>  x(64 0 3 4)
+--- @1910116  10640  1265632   40     4  EVENT  GPS_MPM  100  0
+    GPS_MPM: (38) <100 0 2 4>  x(64 0 2 4)
+--- @1927952  10931  1296352   40     4  EVENT  GPS_MPM  100  0
+    GPS_MPM: (38) <100 0 1 4>  x(64 0 1 4)
+--- @1946740  11235  1327170   40     4  EVENT  GPS_MPM  199  0
+    GPS_MPM: (38) <199 0 0 4>  x(c7 0 0 4)
+
+  pwr req mpm
+--- @1946780  11236  1327170   38    32  GPS_RAW -- MID: 218/2 (da) <tx> PWR_REQ  MPM  0 0
+--- @1946820  11237  1327171   40     4  EVENT  GPS_MPM  200  0
+    GPS_MPM: (38) <200 0 0 4>  x(c8 0 0 4)
+--- @1946860  11238  1327181   38    32  GPS_RAW -- MID: 90/2 (5a) <rx> PWR_RSP  MPM  0x0010
+--- @1946900  11239  1327183   40     4  EVENT  GPS_MPM  60  2
+    GPS_MPM: (38) <60 2 3 16>  x(3c 2 3 10)
+
+
+  close session, no response.
+--- @1946940  11240  1327183   35    32  GPS_RAW -- MID: 213/2 (d5) <tx> unk
+--- @1946976  11241  1327183   40     4  EVENT  GPS_MPM  300  0
+    GPS_MPM: (38) <300 0 0 4>  x(12c 0 0 4)
+--- @1947016  11242  1327216   73    32  GPS_RAW -- MID:  2 (02) <rx> NAV_DATA  (5)
+    1357828-1327216 =  30 secs of NAV_DATA.
+
+--- @1951300  11325  1357904   40     4  EVENT  GPS_MPM  400  0
+    GPS_MPM: (38) <400 0 0 0>  x(190 0 0 0)
+--- @1951376  11327  1388624   40     4  EVENT  GPS_MPM  400  0
+    GPS_MPM: (38) <400 0 0 0>  x(190 0 0 0)
+--- @1951452  11329  1419344   40     4  EVENT  GPS_MPM  400  0
+    GPS_MPM: (38) <400 0 0 0>  x(190 0 0 0)
+--- @1951528  11331  1450069   40     4  EVENT  GPS_MPM  400  0
+    GPS_MPM: (38) <400 0 0 0>  x(190 0 0 0)
+--- @1951568  11332  1480789   40     4  EVENT  GPS_MPM  499  0
+    GPS_MPM: (38) <499 0 0 0>  x(1f3 0 0 0)
+
+Quiet for 3168068-1357828 = ~29.5 mins
+Nav_Data for 3239833-3168068 = 70 secs  ~1min
+Quiet for 5074205-3239833 = 29.86 mins
+Nav_Data for 5146155-5074205 = 70 secs  ~1min
+Quiet for 6981319-5146155 = 29.87 mins
+Nav_Data for 7052780-6981319 = 69.8 secs
+Quiet for 8853589-7052780 = 29.3 mins
+
+--- @1988072  12021  8853589   40     4  EVENT  GPS_PULSE  500  0
+--- @1988112  12022  8853688   34    32  GPS_RAW -- MID: 18 (12) <rx> OkToSend
+--- @1988148  12023  8853810   33    32  GPS_RAW -- MID: 71 (47) <rx> hw_config_req
+--- @1988184  12024  8853811   40    32  GPS_RAW -- MID: 214 (d6) <tx> hw_config_rsp
+--- @1988224  12025  8853811   40     4  EVENT  GPS_HW_CONFIG  0  0
+--- @1988264  12026  8853819   34    32  GPS_RAW -- MID: 73/1 (49) <rx> unk   - MS approx position.
+--- @1988300  12027  8854839   82    32  GPS_RAW -- MID: 92 (5c) <rx> cw_data
+--- @1988384  12028        0   52    32  GPS_RAW -- MID: 92 (5c) <rx> cw_data
+--- @1988436  12029        0  123    32  GPS_RAW -- MID: 41 (29) <rx> GEO_DATA  nl  (0)
+
+--- @1993448  12094  8859983  123    32  GPS_RAW -- MID: 41 (29) <rx> GEO_DATA  nl  (5)
+--- @2003212  12232  8873309  123    32  GPS_RAW -- MID: 41 (29) <rx> GEO_DATA   L  (5)
+
+from PULSE to Lock: 8873309-8853589 = 19.25 secs
+Another instance: 16854379-16840805 = 13.5 secs.
+24830821-24828011 = 2.7s
+32899827-32815221 = 82 secs
+
+
 Start up messages:
 
 After initial turn on, unit already in OSP mode.  We send a request for
