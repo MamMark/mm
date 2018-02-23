@@ -159,7 +159,7 @@ event_names = {
     42: "GPS_FIRST",
     43: "GPS_SATS_2",
     44: "GPS_SATS_7",
-    45: "GPS_SATS_29",
+    45: "GPS_SATS_41",
     46: "GPS_CYCLE_TIME",
     47: "GPS_RX_ERR",
     48: "GPS_AWAKE_S",

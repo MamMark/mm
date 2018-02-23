@@ -428,7 +428,7 @@ implementation {
 
     nav_valid = CF_BE_16(gp->nav_valid);
     nav_type  = CF_BE_16(gp->nav_type);
-    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_29, gp->nsats, nav_valid, nav_type, 0);
+    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_41, gp->nsats, nav_valid, nav_type, 0);
 
     if (nav_valid == 0) {
 

@@ -261,7 +261,7 @@ typedef enum {
   DT_EVENT_GPS_FIRST        = 42,
   DT_EVENT_GPS_SATS_2       = 43,
   DT_EVENT_GPS_SATS_7       = 44,
-  DT_EVENT_GPS_SATS_29      = 45,
+  DT_EVENT_GPS_SATS_41      = 45,
   DT_EVENT_GPS_CYCLE_TIME   = 46,
   DT_EVENT_GPS_RX_ERR       = 47,
   DT_EVENT_GPS_AWAKE_S      = 48,
