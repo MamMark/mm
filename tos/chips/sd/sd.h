@@ -78,7 +78,7 @@
  * we further fudge it by a factor of 8
  */
 //#define SD_SECTOR_XFER_TIMEOUT	4
-#define SD_SECTOR_XFER_TIMEOUT	(4 * 8)
+#define SD_SECTOR_XFER_TIMEOUT	(4 * 8 * 8)
 
 
 /*
