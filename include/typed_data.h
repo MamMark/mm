@@ -264,6 +264,8 @@ typedef enum {
   DT_EVENT_GPS_CYCLE_TIME   = 46,
   DT_EVENT_GPS_RX_ERR       = 47,
   DT_EVENT_GPS_AWAKE_S      = 48,
+  DT_EVENT_GPS_CMD          = 51,
+  DT_EVENT_GPS_RAW_TX       = 52,
 
   DT_EVENT_16               = 0xffff,
 } dt_event_id_t;

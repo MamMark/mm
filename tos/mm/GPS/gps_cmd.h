@@ -36,13 +36,18 @@ typedef enum gps_debug_cmds {
   GDC_TURNON        = 1,
   GDC_TURNOFF       = 2,
   GDC_STANDBY       = 3,
-  GDC_PULSE_ON_OFF  = 4,
-  GDC_AWAKE_STATUS  = 5,
-  GDC_HIBERNATE     = 6,
-  GDC_WAKE          = 7,
-  GDC_SEND_MPM      = 8,
-  GDC_SEND_FULL     = 9,
-  GDC_RAW_TX        = 10,
+  GDC_HIBERNATE     = 4,
+  GDC_WAKE          = 5,
+  GDC_PULSE_ON_OFF  = 6,
+  GDC_AWAKE_STATUS  = 7,
+  GDC_RESET         = 8,
+  GDC_POWER_ON      = 9,
+  GDC_POWER_OFF     = 10,
+  GDC_SEND_MPM      = 11,
+  GDC_SEND_FULL     = 12,
+  GDC_RAW_TX        = 13,
+  GDC_REBOOT        = 14,
+  GDC_PANIC         = 15,
 } gps_cmd_t;
 
 
@@ -59,7 +64,6 @@ typedef struct {
 
 typedef struct {
   uint8_t cmd;
-  uint16_t len;
   uint8_t  data[];
 } PACKED gps_raw_tx_t;
 

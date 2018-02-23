@@ -51,6 +51,9 @@ implementation {
   components PanicC;
   GPSmonitorP.Panic -> PanicC;
 
+  components OverWatchC;
+  GPSmonitorP.OverWatch -> OverWatchC;
+
   components CollectC;
   GPSmonitorP.CollectEvent -> CollectC;
   GPSmonitorP.Collect -> CollectC;

@@ -180,6 +180,7 @@ module GPSmonitorP {
 
     interface Timer<TMilli> as MonTimer;
     interface Panic;
+    interface OverWatch;
   }
 }
 implementation {
@@ -355,32 +356,57 @@ implementation {
       case GDC_STANDBY:
         call GPSControl.standby();
         break;
-      case GDC_PULSE_ON_OFF:
-        call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, 200, 0, 0,
-                                   call GPSControl.awake());
-        call GPSControl.pulseOnOff();
-        break;
-      case GDC_AWAKE_STATUS:
-        call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 200, 0, 0,
-                                   call GPSControl.awake());
-        break;
       case GDC_HIBERNATE:
         call GPSControl.hibernate();
         break;
       case GDC_WAKE:
         call GPSControl.wake();
         break;
+      case GDC_PULSE_ON_OFF:
+        call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, 999, 0, 0,
+                                   call GPSControl.awake());
+        call GPSControl.pulseOnOff();
+        break;
+
+      case GDC_AWAKE_STATUS:
+        call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 999, 0, 0,
+                                   call GPSControl.awake());
+        break;
+
+      case GDC_RESET:
+        call GPSControl.reset();
+        break;
+      case GDC_POWER_ON:
+        call GPSControl.powerOn();
+        break;
+      case GDC_POWER_OFF:
+        call GPSControl.powerOff();
+        break;
+
       case GDC_SEND_MPM:
         awake = call GPSControl.awake();
         err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
         call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 201, err, 0, awake);
         break;
+
       case GDC_SEND_FULL:
         awake = call GPSControl.awake();
         err   = call GPSTransmit.send((void *) sirf_full_pwr, sizeof(sirf_full_pwr));
-        call CollectEvent.logEvent(DT_EVENT_GPS_FULL_PWR, 202, err, 0, awake);
+        call CollectEvent.logEvent(DT_EVENT_GPS_FULL_PWR, 999, err, 0, awake);
         break;
+
       case GDC_RAW_TX:
+        awake = call GPSControl.awake();
+        err   = call GPSTransmit.send((void *) gp->data, sizeof(*l-1));
+        call CollectEvent.logEvent(DT_EVENT_GPS_RAW_TX, 999, err, 0, awake);
+        break;
+
+      case GDC_REBOOT:
+        call OverWatch.flush_boot(call OverWatch.getBootMode(), ORR_USER_REQUEST);
+        break;
+
+      case GDC_PANIC:
+        gps_panic(0, 0, 0);
         break;
     }
     db->count  = ++gps_cmd_count;

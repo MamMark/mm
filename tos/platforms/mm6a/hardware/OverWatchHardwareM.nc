@@ -22,7 +22,7 @@
 #include <overwatch.h>
 #include <overwatch_hw.h>
 
-extern ow_control_block_t ow_control_block;
+norace extern ow_control_block_t ow_control_block;
 
 extern bool __flash_performMassErase();
 extern bool __flash_programMemory(void* src, void* dest, uint32_t length);
