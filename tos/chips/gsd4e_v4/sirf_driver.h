@@ -329,6 +329,24 @@ const uint8_t sirf_peek_0[] = {
   0xb0, 0xb3			// end seq
 };
 
+const uint8_t sirf_open_session[] = {
+  0xa0, 0xa2,			// start seq
+  0x00, 0x03,			// length 3
+  213, 1,			// Req Session Open, sid 1
+  0x71,                         // do open vs. resume
+  0x01, 0x47,			// checksum
+  0xb0, 0xb3			// end seq
+};
+
+const uint8_t sirf_close_session[] = {
+  0xa0, 0xa2,			// start seq
+  0x00, 0x03,			// length 3
+  213, 2,			// Req Session Close, sid 2
+  0x00,                         // close not suspend
+  0x00, 0xd7,			// checksum
+  0xb0, 0xb3			// end seq
+};
+
 /*
  * hw config byte 0x00: (bit numbering 1 based in manual)
  *   b0: Precise Time Transfer off

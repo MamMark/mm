@@ -55,6 +55,8 @@
 
 #define MID_HW_CONFIG_REQ  71
 
+#define MID_SESSION_RSP    74
+
 #define MID_PWR_MODE_RSP   90
 #define PWR_MODE_RSP_LEN   6
 
@@ -313,6 +315,25 @@ typedef struct {
 #define SB_PPS_STATUS_UTC    2
 #define SB_PPS_STATUS_UTCGPS 4
 #define SB_PPS_STATUS_UTCGPS 4
+
+
+/*
+ * MID 74, Open/Close Session Status
+ *
+ * open is sid 1, close sid 2
+ * status: 0 open/close success
+ *         1 open/close failed
+ *      0x80 suspend/resume success
+ *      0x81 suspend/resume failed
+ */
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   mid;
+  uint8_t   sid;
+  uint8_t   status;
+} PACKED sb_session_rsp_t;
 
 
 /* MID 90, pwr_mode_rsp data */
