@@ -49,17 +49,23 @@ typedef struct {
 #define IMAGE_DESCRIPTOR_MAX 44
 #define ID_MAX               44
 
+/*
+ * Image description structure
+ *
+ * fields with 'b' filled in by build process (make)
+ * fields with 's' filled in by 'stamp' program after building.
+ */
 typedef struct {
-  uint32_t    ii_sig;                   /* must be IMAGE_INFO_SIG to be valid */
-  uint32_t    image_start;              /* where this binary loads            */
-  uint32_t    image_length;             /* byte length of entire image        */
-  uint32_t    vector_chk;               /* simple checksum over vector table  */
-  uint32_t    image_chk;                /* simple checksum over entire image  */
-  image_ver_t ver_id;
-  uint8_t     descriptor0[ID_MAX];      /* main tree descriptor */
-  uint8_t     descriptor1[ID_MAX];      /* aux  tree descriptor */
-  uint8_t     stamp_date[30];           /* build time stamp */
-  hw_ver_t    hw_ver;                   /* and last 2 bytes */
+  uint32_t    ii_sig;                   /*  b  must be IMAGE_INFO_SIG to be valid */
+  uint32_t    image_start;              /*  b  where this binary loads            */
+  uint32_t    image_length;             /*  b  byte length of entire image        */
+  uint32_t    vector_chk;               /*  s  simple checksum over vector table  */
+  uint32_t    image_chk;                /*  s  simple checksum over entire image  */
+  image_ver_t ver_id;                   /*  b  version string of this build       */
+  uint8_t     descriptor0[ID_MAX];      /*  s  main tree tinyos/prod descriptor   */
+  uint8_t     descriptor1[ID_MAX];      /*  s  aux  tree MamMark descriptor       */
+  uint8_t     stamp_date[30];           /*  s  build time stamp */
+  hw_ver_t    hw_ver;                   /*  b  and last 2 bytes */
 } image_info_t;
 
 /*
