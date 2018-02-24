@@ -1,2 +1,7 @@
+BUILD_TYPE=GOLDEN
 LINKERFILE = $(PLATFORM_DIR)/linker_golden_0k.lds
 TOSMAKE_BUILD_DIR = build/$(TARGET)/golden
+$(info  )
+$(info *** Building GOLDEN image)
+$(info  )
+UPSTAIRS = ../../..

@@ -28,7 +28,10 @@ build_num: FORCE
 	@echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)) > $(BUILD_NUM_FILE)
 	@printf "BUILD: %d (0x%x)\n" $(BUILD_NUM) $(BUILD_NUM)
 
-mm6a: build_num $(BUILD_DEPS)
+$(TARGET): build_num $(BUILD_DEPS)
+	@if [ "z$(BUILD_TYPE)" != "z" ] ; then \
+	    echo -e "\n*** $(BUILD_TYPE) build -> $(TOSMAKE_BUILD_DIR)\n"; \
+	    else echo -e "\n*** DEV (0k) build -> $(TOSMAKE_BUILD_DIR)\n"; fi
 	ln -fs $(UPSTAIRS)/.gdbinit $(TOSMAKE_BUILD_DIR)/.gdbinit
 	ln -fs $(UPSTAIRS)/.gdb_$(TARGET) $(TOSMAKE_BUILD_DIR)/.gdb_target
 	@:

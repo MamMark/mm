@@ -1,3 +1,7 @@
+BUILD_TYPE=NIB
 LINKERFILE = $(PLATFORM_DIR)/linker_nib_128k.lds
 TOSMAKE_BUILD_DIR = build/$(TARGET)/nib
+$(info  )
+$(info *** Building NIB image)
+$(info  )
 UPSTAIRS = ../../..
