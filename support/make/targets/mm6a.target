@@ -6,8 +6,12 @@
 TARGET = mm6a
 PLATFORM_DIR = $(MM_ROOT)/tos/platforms/$(TARGET)
 
-# currently golden is default, use "nib" on make to switch
-LINKERFILE ?= $(PLATFORM_DIR)/linker_golden_0k.lds
+# as of 0.4.x builds, the default is now NIB.
+# you have to have a good golden image loaded on your platform to work with NIBs
+# use "make <platform> golden" to build a golden in the golden dir
+# use "make <platform nib"     to build a nib    in the nib    dir
+# use "make <platform>"        to build a nib    at the top level build dir.
+LINKERFILE ?= $(PLATFORM_DIR)/linker_nib_128k.lds
 
 BUILD_NUM_FILE = $(PLATFORM_DIR)/_Build
 BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)); else echo 0; fi)
@@ -36,7 +40,7 @@ build_num: FORCE
 $(TARGET): build_num $(BUILD_DEPS)
 	@if [ "z$(BUILD_TYPE)" != "z" ] ; then \
 	    echo -e "\n*** $(BUILD_TYPE) build -> $(TOSMAKE_BUILD_DIR)\n"; \
-	    else echo -e "\n*** DEV (0k) build -> $(TOSMAKE_BUILD_DIR)\n"; fi
+	    else echo -e "\n*** DEV (NIB) build -> $(TOSMAKE_BUILD_DIR)\n"; fi
 	@echo "binfin <DEV> stamp $(TSTAMP)"
 	@binfin -I $(IDESC) -R "$(R0DESC)" -r "$(R1DESC)" -t "$(TSTAMP)" $(TOSMAKE_BUILD_DIR)/main.exe
 	ln -nfs $(UPSTAIRS) $(TOSMAKE_BUILD_DIR)/.gdb
