@@ -23,20 +23,28 @@ set mem inaccessible-by-default off
 # gdb_mm:       definitions for various mm subsystems
 
 #
-# down in the build/<target> directory one needs the following symbolic
-# links to ../../.gdbinit and ../../.gdb_<target>:
+# down in the build/<target> directory one needs symbolic
+# links to .gdbinit and .gdb_<target>:
 #
-#     ln -s ../../.gdbinit
-#     ln -s ../../.gdb_<target .gdb_target
+#     pushd build/<target>
+#     ln -nfs ../..              .gdb
+#     ln -nfs .gdb/.gdbinit      .gdbinit
+#     ln -nfs .gdb/.gdb_<target> .gdb_target
+#     popd
 #
-# these are created automatically by the build system.
+# if in a golden or nib directory you will be one more level down and
+# the symbolic links above will compensate accordingly.
 #
+# The build system automatically creates these links.  So generally you
+# don't have to worry about it.
+#
+
 add-symbol-file symbols_hw 0
-source ../../.gdb_msp432
+source .gdb/.gdb_msp432
 source .gdb_target
-source ../../.gdb_gps
-source ../../.gdb_si446x.py
-source ../../.gdb_mm
+source .gdb/.gdb_gps
+source .gdb/.gdb_si446x.py
+source .gdb/.gdb_mm
 
 set disassemble-next-line on
 
