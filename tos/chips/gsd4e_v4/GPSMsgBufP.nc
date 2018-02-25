@@ -216,7 +216,7 @@ enum {
 #endif
 
 enum {
-  GPSW_RESET_FREE = 16,
+  GPSW_RESET_FREE = 32,
   GPSW_MSG_START,
   GPSW_MSG_START_1,
   GPSW_MSG_START_2,
