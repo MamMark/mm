@@ -285,7 +285,7 @@ g.dt_records[DT_SYNC] = (36, decode_sync, dt_sync_obj, "SYNC")
 def event_name(event):
     return event_names.get(event, 'unk')
 
-event0  = ' {:s}  {}  {}'
+event0  = ' {:s} {} {} {} {}'
 event1  = '    {:s}: ({}) <{} {} {} {}>  x({:x} {:x} {:x} {:x})'
 
 def decode_event(level, offset, buf, obj):
@@ -311,7 +311,7 @@ def decode_event(level, offset, buf, obj):
             arg0, arg1, arg2, arg3, arg0, arg1, arg2, arg3))
         return
 
-    print(event0.format(event_name(event), arg0, arg1))
+    print(event0.format(event_name(event), arg0, arg1, arg2, arg3))
     if (level >= 1):
         print(event1.format(event_name(event), event,
                             arg0, arg1, arg2, arg3,
