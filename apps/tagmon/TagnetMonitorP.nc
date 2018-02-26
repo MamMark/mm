@@ -60,28 +60,16 @@ implementation {
   norace volatile uint8_t     tagMsgBufferGuard[] = "DEADBEAF";
   norace message_t          * pTagMsg = (message_t *) tagMsgBuffer;
   norace volatile uint8_t     tagMsgBusy, tagMsgSending;
-  norace volatile uint32_t    tagmon_timeout  = 1024 * 100; // binary microseconds
+  norace volatile uint32_t    tagmon_timeout  = 20; // milliseconds
 
-  void tag_delay(uint32_t delay) {
-    volatile uint32_t         t0, t1;
-
-    t0 = call Platform.usecsRaw();
-    t1 = t0;
-    while ((t1-t0) < delay) {
-      t1 = call Platform.usecsRaw();
-    }
-  }
-
-  task void tag_task() {
+  task void network_task() {
 
     nop();
     if (tagMsgBusy && !tagMsgSending) {
       if (call Tagnet.process_message(pTagMsg)) {
         nop();
-        tag_delay(tagmon_timeout);
+        call rcTimer.startOneShot(tagmon_timeout);
         nop();
-        call RadioSend.send(pTagMsg);
-        tagMsgSending = TRUE;
       } else {
         tagMsgBusy = FALSE;
       }
@@ -112,7 +100,7 @@ implementation {
     pNextMsg = pTagMsg;   // swap msg buffers, set busy, and post task
     pTagMsg = msg;
     tagMsgBusy = TRUE;
-    post tag_task();
+    post network_task();
     return pNextMsg;
   }
 
@@ -129,6 +117,8 @@ implementation {
   event void rcTimer.fired() {
     nop();
     nop();
+    call RadioSend.send(pTagMsg);
+    tagMsgSending = TRUE;
   }
 
   event void txTimer.fired() {
