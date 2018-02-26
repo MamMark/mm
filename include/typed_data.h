@@ -42,7 +42,7 @@
 /*
  * identify what revision of typed_data.h we are using for this build
  */
-#define DT_H_REVISION 15
+#define DT_H_REVISION 16
 
 /*
  * Sync records are used to make sure we can always find the data stream if
@@ -133,7 +133,6 @@ typedef struct {                /* size 20 */
   uint32_t recnum;
   uint64_t systime;
   uint16_t recsum;
-  uint16_t pad;                 /* quad aligned */
 } PACKED dt_header_t;
 
 
@@ -357,28 +356,19 @@ typedef struct {
 /*
  * Note
  *
- * arbritrary ascii string sent from the base station with a time stamp.
+ * arbritrary ascii string sent from the base station.
  * one use is when calibrating the device.  Can also be used to add notes
  * about conditions the tag is being placed in.
  *
- * Note (data in the structure) itself is a NULL terminated string.  Len
- * includes the null.
+ * Typically the note will be a NULL terminated ascii string but it is completely
+ * up to the base station as to what it sends.  Typically the NULL will be included
+ * in the length.
+ *
+ * There is nothing special about the note structure so it is simply a dt_header_t
+ * labelled as dt_note_t.
  */
-typedef struct {
-  uint16_t len;                 /* size 28 + var */
-  dtype_t  dtype;
-  uint32_t recnum;
-  uint64_t systime;
-  uint16_t recsum;              /* part of header */
-  uint16_t note_len;
-  uint16_t year;
-  uint8_t  month;
-  uint8_t  day;
-  uint8_t  hrs;
-  uint8_t  min;
-  uint8_t  sec;
-  uint8_t  pad;
-} PACKED dt_note_t;
+
+typedef dt_header_t dt_note_t;          /* size 20 + var note size */
 
 
 enum {

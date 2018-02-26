@@ -91,7 +91,7 @@ implementation {
     db->count  = dblk_notes_count;
     if (db->action == FILE_GET_ATTR) {
       db->error  = SUCCESS;
-      *lenp      = db->count;
+      *lenp      = 0;
       return TRUE;
     }
     db->error = EINVAL;
@@ -102,15 +102,24 @@ implementation {
   command bool DblkNote.set_value(tagnet_dblk_note_t *db, uint32_t *lenp) {
     dt_note_t    note_block;
 
+    if (db->count != dblk_notes_count + 1) {
+      /*
+       * if it isn't what we expect, tell the other side we are happy
+       * but don't do anything.
+       */
+      db->count = dblk_notes_count;     /* but tell which one we are actually on. */
+      db->error = SUCCESS;
+      return TRUE;
+    }
+
     if (db->action == FILE_SET_DATA) {
       ++dblk_notes_count;
       note_block.len = *lenp + sizeof(note_block);
       note_block.dtype = DT_NOTE;
-      note_block.note_len = *lenp;
       call Collect.collect((void *) &note_block, sizeof(note_block),
                            db->block, *lenp);
       db->error  = SUCCESS;
-      db->count  = note_block.note_len;
+      db->count  = dblk_notes_count;
       return TRUE;
     }
     db->error = EINVAL;
