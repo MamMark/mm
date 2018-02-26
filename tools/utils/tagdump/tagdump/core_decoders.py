@@ -365,8 +365,6 @@ g.dt_records[DT_TEST] = (0, decode_test, dt_test_obj, "TEST")
 # NOTE decoder
 #
 
-note0  = ' xxxx'
-
 def decode_note(level, offset, buf, obj):
     consumed = obj.set(buf)
     len      = obj['hdr']['len'].val
@@ -375,7 +373,7 @@ def decode_note(level, offset, buf, obj):
     st       = obj['hdr']['st'].val
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
-    print(note0.format())
+    print('{}'.format(buf[consumed:]))
 
 g.dt_records[DT_NOTE] = (0, decode_note, dt_note_obj, "NOTE")
 

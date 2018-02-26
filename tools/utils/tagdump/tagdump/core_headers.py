@@ -178,7 +178,17 @@ dt_event_obj    = aggie(OrderedDict([
     ('pcode', atom(('<B', '{}'))),
     ('w',     atom(('<B', '{}')))]))
 
+
+####
+#
+# NOTES
+#
+# A note record consists of a dt_note_t header (same as dt_header_t, a
+# simple header) followed by n bytes of note.  typically a printable
+# ascii string (yeah, localization is an issue, but not now).
+#
+dt_note_obj     = dt_simple_hdr
+
 dt_debug_obj    = dt_simple_hdr
 dt_test_obj     = dt_simple_hdr
-dt_note_obj     = dt_simple_hdr
 dt_config_obj   = dt_simple_hdr
