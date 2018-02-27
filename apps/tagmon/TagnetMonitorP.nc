@@ -5,16 +5,23 @@
 
 
 #include <Tasklet.h>
+#include <platform_panic.h>
 
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;
 
 uint16_t global_node_id = 42;
 
+#ifndef PANIC_TAGNET
+enum {
+  __pcode_tagnet = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_TAGNET __pcode_tagnet
+#endif
+
 module TagnetMonitorP {
-  provides {
-    interface Init;
-  } uses {
+  uses {
     interface Boot;
     interface TagnetName;
     interface TagnetPayload;
@@ -58,22 +65,27 @@ implementation {
   norace volatile uint8_t     tagMsgBuffer[sizeof(message_t)];
   norace volatile uint8_t     tagMsgBufferGuard[] = "DEADBEAF";
   norace message_t          * pTagMsg = (message_t *) tagMsgBuffer;
-  norace volatile uint8_t     tagMsgBusy, tagMsgSending;
-  norace volatile uint32_t    tagmon_timeout  = 20; // milliseconds
+  norace          uint8_t     tagMsgBusy, tagMsgSending;
+                  uint32_t    tagmon_timeout  = 20; // milliseconds
 
   task void network_task() {
+    if (call Tagnet.process_message(pTagMsg)) {
+      /*
+       * if the message processor returns TRUE that says the message now contains
+       * the outgoing response.  Fire the turn around timer which kicks the
+       * sender.
+       *
+       * Don't mark the current msg buffer until the sender finishes.
+       */
+      call rcTimer.startOneShot(tagmon_timeout); /* fire up turn around timer */
+      return;
+    }
 
-    nop();
-    if (tagMsgBusy && !tagMsgSending) {
-      if (call Tagnet.process_message(pTagMsg)) {
-        nop();
-        call rcTimer.startOneShot(tagmon_timeout);
-        nop();
-      } else {
-        tagMsgBusy = FALSE;
-      }
-    } else
-      call Panic.panic(-1, 193, (int) pTagMsg, 0, 0, 0);
+    /*
+     * The message processor says no return message just mark the buffer as
+     * available and be done with it.
+     */
+    tagMsgBusy = FALSE;
   }
 
   tasklet_async event void RadioSend.ready() {
@@ -82,17 +94,20 @@ implementation {
 
   tasklet_async event void RadioSend.sendDone(error_t error) {
     nop();
-    // free the msg for next receive
-    if (tagMsgBusy && tagMsgSending) {
-      tagMsgBusy = FALSE;
-      tagMsgSending = FALSE;
-    }
+    if (!tagMsgBusy)
+      call Panic.panic(PANIC_TAGNET, 191, (parg_t) pTagMsg, 0, 0, 0);
+
+    tagMsgSending = FALSE;              /* informational state */
+    tagMsgBusy    = FALSE;              /* say this buffer available */
   }
 
   tasklet_async event message_t* RadioReceive.receive(message_t *msg) {
     message_t    * pNextMsg;
     nop();
     nop();                     /* BRK */
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, 192, 0, 0, 0, 0);
+
     if (tagMsgBusy) {     // busy, ignore received msg by returning it
       return msg;
     }
@@ -127,23 +142,14 @@ implementation {
     nop();
   }
 
-  /*
-   * operating system hooks
-   */
-  command error_t Init.init() {
-    return SUCCESS;
-  }
 
   event void Boot.booted() {
-   error_t     error;
-    nop();
-    nop();                      /* BRK */
+    error_t     error;
+
     error = call RadioState.turnOn();
-    if (error != 0) {
-      call Panic.panic(-1, 194, (uint32_t) error, 0, 0, 0);
-    }
+    if (error)
+      call Panic.panic(PANIC_TAGNET, 194, (uint32_t) error, 0, 0, 0);
   }
 
-  async event void Panic.hook() {
-  }
+  async event void Panic.hook() { }
 }

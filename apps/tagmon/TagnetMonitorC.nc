@@ -12,7 +12,6 @@ implementation {
   components MainC;
   components SystemBootC;
   components TagnetMonitorP;
-  MainC.SoftwareInit            -> TagnetMonitorP;
   TagnetMonitorP.Boot           -> SystemBootC.Boot;
 
   components TagnetC;
