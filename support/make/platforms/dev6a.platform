@@ -45,6 +45,7 @@ PFLAGS += -I%T/lib/timer
 PFLAGS += -I%T/lib/serial
 
 PFLAGS += -I%T/comm
+PFLAGS += -I%T/comm/TagNames
 PFLAGS += -I%T/lib/rfxlink/layers
 PFLAGS += -I%T/lib/rfxlink/util
 
