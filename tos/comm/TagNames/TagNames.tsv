@@ -2,9 +2,9 @@ ignore	GET	PUT	HEAD	DEL	Request Params	Response Params	Adapter Component	Interfa
 	x		x		<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	PollEvent	uses	\'<node_id:000000000000>\'	tag	poll	ev		
 	x		x			<int>	TagnetIntegerAdapterP	TagnetAdapter	int32_t	PollCount	uses	\'<node_id:000000000000>\'	tag	poll	cnt		
 	x		x			<gps_xyz>	TagnetGpsXyzAdapterP	TagnetAdapter	tagnet_gps_xyz_t	InfoSensGpsXyz	uses	\'<node_id:000000000000>\'	tag	info	sens	gps	xyz
-		x	x			<error>, <iota>	TagnetGpsCmdAdapterP	TagnetAdapter	uint8_t	InfoSensGpsCmd	uses	\'<node_id:000000000000>\'	tag	info	sens	gps	cmd
+		x	x		<iota>	<error>, <iota>, <count>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_gps_cmd_t	InfoSensGpsCmd	uses	\'<node_id:000000000000>\'	tag	info	sens	gps	cmd
 	x		x		<iota>, <count>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	DblkBytes	uses	\'<node_id:000000000000>\'	tag	sd	0	dblk	byte
-		x	x			<error>, <iota>	TagnetDblkNoteAdapterP	TagnetAdapter	tagnet_dblk_note_t	DblkNote	uses	\'<node_id:000000000000>\'	tag	sd	0	dblk	note
+		x	x		<iota>	<error>, <iota>, <count>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_dblk_note_t	DblkNote	uses	\'<node_id:000000000000>\'	tag	sd	0	dblk	note
 	x		x			<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecNum	uses	\'<node_id:000000000000>\'	tag	sd	0	dblk	.recnum
 	x		x			<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecOffset	uses	\'<node_id:000000000000>\'	tag	sd	0	dblk	.last_rec
 	x		x			<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastSyncOffset	uses	\'<node_id:000000000000>\'	tag	sd	0	dblk	.last_sync

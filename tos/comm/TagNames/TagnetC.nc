@@ -19,7 +19,7 @@ configuration TagnetC {
     interface             TagnetAdapter<tagnet_file_bytes_t>  as PanicBytes;
     interface      TagnetSysExecAdapter                     as SysGolden;
     interface      TagnetSysExecAdapter                     as SysNIB;
-    interface             TagnetAdapter<uint8_t>            as InfoSensGpsCmd;
+    interface             TagnetAdapter<tagnet_gps_cmd_t>   as InfoSensGpsCmd;
     interface             TagnetAdapter<tagnet_dblk_note_t>  as DblkNote;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as DblkBytes;
     interface             TagnetAdapter<uint32_t>           as DblkLastRecOffset;
@@ -49,12 +49,12 @@ implementation {
     components new      TagnetNameElementP (TN_7_ID,TN_7_UQ)   as    tn_7_Vx;
     components new      TagnetNameElementP (TN_8_ID,TN_8_UQ)   as    tn_8_Vx;
     components new    TagnetGpsXyzAdapterP ( TN_9_ID  )        as    tn_9_Vx;
-    components new    TagnetGpsCmdAdapterP ( TN_10_ID )        as   tn_10_Vx;
+    components new  TagnetFileByteAdapterP ( TN_10_ID )        as   tn_10_Vx;
     components new      TagnetNameElementP (TN_11_ID,TN_11_UQ) as   tn_11_Vx;
     components new      TagnetNameElementP (TN_12_ID,TN_12_UQ) as   tn_12_Vx;
     components new      TagnetNameElementP (TN_13_ID,TN_13_UQ) as   tn_13_Vx;
     components new  TagnetFileByteAdapterP ( TN_14_ID )        as   tn_14_Vx;
-    components new  TagnetDblkNoteAdapterP ( TN_15_ID )        as   tn_15_Vx;
+    components new  TagnetFileByteAdapterP ( TN_15_ID )        as   tn_15_Vx;
     components new  TagnetUnsignedAdapterP ( TN_16_ID )        as   tn_16_Vx;
     components new  TagnetUnsignedAdapterP ( TN_17_ID )        as   tn_17_Vx;
     components new  TagnetUnsignedAdapterP ( TN_18_ID )        as   tn_18_Vx;

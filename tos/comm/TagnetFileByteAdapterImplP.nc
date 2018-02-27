@@ -1,5 +1,6 @@
 /**
  * Copyright (c) 2017 Daniel J. Maltbie
+ * Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,6 +33,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ * @author Eric B. Decker <cire831@gmail.com>
  *
  */
 
@@ -49,6 +51,11 @@ generic module TagnetFileByteAdapterImplP (int my_id) @safe() {
 implementation {
   enum { my_adapter_id = unique(UQ_TAGNET_ADAPTER_LIST) };
 
+  /*
+   * given an incoming msg, extract various msg parameters
+   *
+   * in particular, context, iota, and count.
+   */
   void get_params(tagnet_file_bytes_t *db, message_t *msg) {
     tagnet_tlv_t    *a_tlv;
     uint8_t          i;
@@ -73,12 +80,28 @@ implementation {
     }
   }
 
+
+  /*
+   * Using the passed in context db, extract various
+   * attributes and lay down in an outgoing msg.
+   */
+  void set_params(tagnet_file_bytes_t *db, message_t *msg, uint32_t ln) {
+    call TPload.add_offset(msg, db->iota);
+    if (db->count) call TPload.add_size(msg, db->count);
+    if (db->error) call TPload.add_error(msg, db->error);
+    if (db->delay) call TPload.add_delay(msg, db->delay);
+    if ( ln > 0 )  call TPload.add_block(msg, db->block, ln);
+  }
+
+
   event bool Super.evaluate(message_t *msg) {
     tagnet_file_bytes_t db       = {0,0,0,0,0,0,0};
     uint32_t           ln        = 0;
     tagnet_tlv_t      *name_tlv  = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t      *my_tlv    = call TName.this_element(msg);
     uint32_t           usable;
+    tagnet_tlv_t      *data_tlv;
+    uint8_t           *datap;
 
     nop();
     nop();                       /* BRK */
@@ -97,19 +120,47 @@ implementation {
           if (usable < db.count) ln = usable;        // ln = min(db.count, unused);
           else                   ln = db.count;
           if (call Adapter.get_value(&db, &ln)) {
-            call TPload.add_offset(msg, db.iota);
-            if (db.count) call TPload.add_size(msg, db.count);
-            if (db.error) call TPload.add_error(msg, db.error);
-            if (db.delay) call TPload.add_delay(msg, db.delay);
-            if ( ln > 0 ) call TPload.add_block(msg, db.block, ln);
+            set_params(&db, msg, ln);
             return TRUE;
           }
+
+          /*
+           * Adapter returned FALSE so only return response if non-zero error
+           */
           if (db.error) {
             if (db.iota) call TPload.add_offset(msg, db.iota);
             call TPload.add_error(msg, db.error);
             return TRUE;
           }
-          break;
+          break;                        /* don't respond, see below */
+
+        case TN_PUT:
+          tn_trace_rec(my_id, 2);
+          db.action = FILE_SET_DATA;
+          get_params(&db, msg);
+          data_tlv = call TPload.first_element(msg);
+          if (call THdr.is_pload_type_raw(msg)) {
+            datap = (uint8_t *) data_tlv;
+            ln = call TPload.get_len(msg);
+          } else
+            datap = call TTLV.tlv_to_block(data_tlv, &ln);
+          db.block = datap;
+          call TPload.reset_payload(msg);
+          if (call Adapter.set_value(&db, &ln)) {
+            set_params(&db, msg, ln);
+            return TRUE;
+          }
+
+          /*
+           * Adapter returned FALSE so only return response if non-zero error
+           */
+          if (db.error) {
+            if (db.iota) call TPload.add_offset(msg, db.iota);
+            call TPload.add_error(msg, db.error);
+            return TRUE;
+          }
+          break;                        /* don't respond, see below */
+
         case TN_HEAD:
           // return current size of file region, current file position,
           // and last update time
@@ -127,9 +178,9 @@ implementation {
             call TPload.add_error(msg, db.error);
             return TRUE;
           }
-          break;
+          break;                        /* don't respond, see below */
         default:
-          break;
+          break;                        /* don't respond, see below */
       }
     }
     call THdr.set_error(msg, TE_PKT_NO_MATCH);

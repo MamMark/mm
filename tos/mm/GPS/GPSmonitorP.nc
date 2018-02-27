@@ -168,7 +168,7 @@ typedef enum mpm_state {
 module GPSmonitorP {
   provides {
     interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
-    interface TagnetAdapter<uint8_t>          as InfoSensGpsCmd;
+    interface TagnetAdapter<tagnet_gps_cmd_t> as InfoSensGpsCmd;
   } uses {
     interface Boot;                           /* in boot */
     interface GPSControl;
@@ -272,6 +272,8 @@ implementation {
 
 
   command bool InfoSensGpsXyz.get_value(tagnet_gps_xyz_t *t, uint32_t *l) {
+    if (!t || !l)
+      gps_panic(0, 0, 0);
     t->gps_x = m_xyz.x;
     t->gps_y = m_xyz.y;
     t->gps_z = m_xyz.z;
@@ -281,26 +283,69 @@ implementation {
 
 
   command bool InfoSensGpsXyz.set_value(tagnet_gps_xyz_t *t, uint32_t *l) {
+    if (!t || !l)
+      gps_panic(0, 0, 0);               /* no return */
     return FALSE;
   }
 
-  command bool InfoSensGpsCmd.get_value(uint8_t *t, uint32_t *l) {
+  /*
+   * GPS CMD state.
+   *
+   * gps_cmd_count is the last cmd packet we have seen.  We won't accept
+   * the next next packet unless it is flagged with the proper iota which
+   * needs to be gps_cmd_count + 1.
+   *
+   * The current cmd_count can be obtained by asking InfoSensGpsCmd.get_value
+   * which will return gps_cmd_count (ie. the last cmd we saw)
+   */
+  uint32_t   gps_cmd_count;             /* inits to 0 */
+
+  command bool InfoSensGpsCmd.get_value(tagnet_gps_cmd_t *db, uint32_t *lenp) {
+    if (!db || !lenp)
+      gps_panic(0, 0, 0);               /* no return */
+    *lenp = 0;                          /* no actual content */
+    db->iota  = gps_cmd_count;          /* return current state */
+    db->count = gps_cmd_count;          /* seq no. for last cmd we've seen */
+    db->error  = SUCCESS;               /* default */
+    if (db->action == FILE_GET_ATTR)
+      return TRUE;
     return FALSE;
   }
 
 
-  command bool InfoSensGpsCmd.set_value(uint8_t *t, uint32_t *l) {
+  command bool InfoSensGpsCmd.set_value(tagnet_gps_cmd_t *db, uint32_t *lenp) {
     gps_raw_tx_t *gp;
     error_t err;
     bool    awake;
 
     /* too weird, too small, ignore it */
-    if (!t || !l || !*l)
+    if (!db || !lenp)
+      gps_panic(0, 0, 0);               /* no return */
+    if (!*lenp)
       return TRUE;
-    gp = (void *) t;
+    db->error = SUCCESS;                /* default, ignore */
+    if (db->action != FILE_SET_DATA)
+      return FALSE;                     /* ignore */
+
+    if (db->iota != gps_cmd_count + 1) {
+      /*
+       * if it isn't what we expect, tell the other side we are happy
+       * but don't do anything.
+       */
+      db->iota  = gps_cmd_count;        /* but tell which one we are actually on. */
+      db->count = gps_cmd_count;
+      db->error = EINVAL;
+      *lenp = 0;
+      return TRUE;
+    }
+
+    gp = (void *) db->block;
+    call CollectEvent.logEvent(DT_EVENT_GPS_CMD, gp->cmd,
+                               call GPSControl.awake(), 0, 0);
     switch (gp->cmd) {
       default:
-        return TRUE;
+      case GDC_NOP:
+        break;
       case GDC_TURNON:
         call GPSControl.turnOn();
         break;
@@ -338,6 +383,8 @@ implementation {
       case GDC_RAW_TX:
         break;
     }
+    db->count  = ++gps_cmd_count;
+    *lenp = 0;                          /* no returning payload */
     return TRUE;
   }
 

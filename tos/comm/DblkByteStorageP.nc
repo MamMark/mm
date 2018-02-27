@@ -55,9 +55,21 @@ module DblkByteStorageP {
 }
 implementation {
 
-  uint32_t   dblk_notes_count = 0;
+  /*
+   * Note state.
+   *
+   * dblk_notes_count is the last note we have seen.  We won't accept
+   * the next next note unless it is flagged with the proper iota which
+   * needs to be dblk_notes_count + 1.
+   *
+   * The current notes_count can be obtained by askin DblkNote.get_value
+   * which will return dblk_notes_count (ie. the last note we saw)
+   */
+  uint32_t   dblk_notes_count;          /* inits to 0 */
 
   bool GetDblkBytes(tagnet_file_bytes_t *db, uint32_t *lenp) {
+    if (!db || !lenp)
+      call Panic.panic(0, 0, 0, 0, 0, 0); /* null check */
     switch (db->action) {
       case FILE_GET_DATA:
         db->error = call DMF.map(db->context, &db->block, db->iota, lenp);
@@ -70,60 +82,73 @@ implementation {
         return TRUE;
       case  FILE_GET_ATTR:
         db->count  = call DMF.filesize(db->context);
+        *lenp = 0;
         return TRUE;
       default:
-        db->error = EINVAL;
-        return TRUE;
+        db->error = SUCCESS;            /* don't respond, ignore */
+        *lenp = 0;
+        return FALSE;
     }
   }
 
   command bool DblkBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
+    if (!db || !lenp)
+      call Panic.panic(0, 0, 0, 0, 0, 0);
     return GetDblkBytes(db, lenp);
   }
 
   command bool DblkBytes.set_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
-    db->error = EINVAL;
+    if (!db || !lenp)
+      call Panic.panic(0, 0, 0, 0, 0, 0);
+    db->error = SUCCESS;
     *lenp = 0;
-    return FALSE; }
+    return FALSE;
+  }
 
   command bool DblkNote.get_value(tagnet_dblk_note_t *db, uint32_t *lenp) {
-    *lenp = 0;
-    db->count  = dblk_notes_count;
-    if (db->action == FILE_GET_ATTR) {
-      db->error  = SUCCESS;
-      *lenp      = 0;
-      return TRUE;
-    }
-    db->error = EINVAL;
-    return FALSE;
+    if (!db || !lenp)
+      call Panic.panic(0, 0, 0, 0, 0, 0);
+    *lenp = 0;                          /* no actual content */
+    db->iota  = dblk_notes_count;       /* return current state */
+    db->count = dblk_notes_count;       /* which is what note we've seen */
+    db->error  = SUCCESS;               /* default */
+    if (db->action == FILE_GET_ATTR)
+      return TRUE;                      /* all good, return above  */
+    return FALSE;                       /* otherwise don't respond */
   }
 
 
   command bool DblkNote.set_value(tagnet_dblk_note_t *db, uint32_t *lenp) {
     dt_note_t    note_block;
 
-    if (db->count != dblk_notes_count + 1) {
+    if (!db || !lenp)
+      call Panic.panic(0, 0, 0, 0, 0, 0);
+    db->error = SUCCESS;                /* default, ignore */
+    if (db->action != FILE_SET_DATA) {
+      *lenp = 0;                        /* don't send any data back */
+      return FALSE;                     /* ignore */
+    }
+
+    if (db->iota != dblk_notes_count + 1) {
       /*
        * if it isn't what we expect, tell the other side we are happy
        * but don't do anything.
        */
-      db->count = dblk_notes_count;     /* but tell which one we are actually on. */
-      db->error = SUCCESS;
+      db->iota  = dblk_notes_count;     /* but tell which one we are actually on. */
+      db->count = dblk_notes_count;
+      db->error = EINVAL;
+      *lenp = 0;                        /* don't send any data back */
       return TRUE;
     }
 
-    if (db->action == FILE_SET_DATA) {
-      ++dblk_notes_count;
-      note_block.len = *lenp + sizeof(note_block);
-      note_block.dtype = DT_NOTE;
-      call Collect.collect((void *) &note_block, sizeof(note_block),
-                           db->block, *lenp);
-      db->error  = SUCCESS;
-      db->count  = dblk_notes_count;
-      return TRUE;
-    }
-    db->error = EINVAL;
-    return FALSE;
+    ++dblk_notes_count;
+    note_block.len = *lenp + sizeof(note_block);
+    note_block.dtype = DT_NOTE;
+    call Collect.collect((void *) &note_block, sizeof(note_block),
+                         db->block, *lenp);
+    db->count  = dblk_notes_count;
+    *lenp = 0;
+    return TRUE;
   }
 
 

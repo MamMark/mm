@@ -82,14 +82,10 @@ typedef struct {
 
 #define TN_FILE_BYTES_LEN (sizeof(tagnet_file_bytes_t))
 
-typedef struct {
-  uint32_t             count;
-  uint8_t             *block;
-  int32_t              error;
-  uint16_t             delay;
-  file_action_t        action;
-} tagnet_dblk_note_t;
+typedef tagnet_file_bytes_t tagnet_dblk_note_t;
+typedef tagnet_file_bytes_t tagnet_gps_cmd_t;
 
-#define TN_DBLK_NOTE_LEN (sizeof(tagnet_dblk_note_t))
+//#define TN_DBLK_NOTE_LEN (sizeof(tagnet_dblk_note_t))
+//#define TN_GPS_CMD_LEN   (sizeof(tagnet_gps_cmd_t))
 
 #endif   /* __TAGNETADAPTER_H__ */

@@ -24,7 +24,7 @@
 configuration GPSmonitorC {
   provides {
     interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
-    interface TagnetAdapter<uint8_t>          as InfoSensGpsCmd;
+    interface TagnetAdapter<tagnet_gps_cmd_t> as InfoSensGpsCmd;
   }
   uses {
     interface GPSControl;
