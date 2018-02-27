@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2015 Eric B. Decker
- * Copyright (c) 2017 Eric B. Decker, Daniel J. Maltbie
+ * Copyright (c) 2017-2018, Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  */
 
@@ -115,10 +114,12 @@ implementation {
   }
 
   event void rcTimer.fired() {
-    nop();
-    nop();
-    call RadioSend.send(pTagMsg);
+    error_t err;
+
     tagMsgSending = TRUE;
+    err = call RadioSend.send(pTagMsg);
+    if (err)
+      call Panic.panic(PANIC_TAGNET, 190, err, 0, 0, 0);
   }
 
   event void txTimer.fired() {
