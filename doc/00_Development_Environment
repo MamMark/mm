@@ -283,3 +283,16 @@ ie.
     loadbin dev6a
     loadbin -t golden dev6a
     loadbin -t nib dev6a
+
+
+11) Additional Tag Development tools
+
+- tagdump (tools/utils/tagdump)
+  sudo ./setup.py install
+
+- factspp (tools/tagnet/factspp)
+  sudo ./setup.py install
+
+- qfsm
+
+- fsmc
