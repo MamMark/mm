@@ -43,6 +43,7 @@ configuration TagnetNameRootP {
 implementation {
   components      TagnetNameRootImplP as element;
   components      TagnetUtilsC;
+  components      PanicC;
 
   Tagnet          =  element;
   Sub             =  element;
@@ -50,4 +51,5 @@ implementation {
   element.THdr   -> TagnetUtilsC;
   element.TPload -> TagnetUtilsC;
   element.TTLV   -> TagnetUtilsC;
+  element.Panic  -> PanicC;
 }

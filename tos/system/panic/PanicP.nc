@@ -730,6 +730,9 @@ implementation {
    * tos/chips/msp432/PanicHelperP.nc
    *
    * return from the assembly language is via __panic_panic_entry
+   *
+   * By convention, a Panic.panic with pcode of 0 says a null
+   * pointer test failed.
    */
 
   extern void __panic_entry() @C();

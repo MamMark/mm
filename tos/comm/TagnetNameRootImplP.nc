@@ -35,6 +35,16 @@
  *
  */
 
+#include <platform_panic.h>
+
+#ifndef PANIC_TAGNET
+enum {
+  __pcode_tagnet = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_TAGNET __pcode_tagnet
+#endif
+
 module TagnetNameRootImplP {
   provides interface Tagnet;
   provides interface TagnetMessage   as  Sub[uint8_t id];
@@ -42,6 +52,7 @@ module TagnetNameRootImplP {
   uses interface     TagnetHeader    as  THdr;
   uses interface     TagnetPayload   as  TPload;
   uses interface     TagnetTLV       as  TTLV;
+  uses interface     Panic;
 }
 implementation {
   enum { SUB_COUNT = uniqueCount(UQ_TN_ROOT) };
@@ -49,6 +60,8 @@ implementation {
   command bool Tagnet.process_message(message_t *msg) {
     uint8_t          i;
 
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, 189, 0, 0, 0, 0);       /* null trap */
     for (i = 0; i < TN_TRACE_PARSE_ARRAY_SIZE; i++) tn_trace_array[i].id = TN_ROOT_ID;
     tn_trace_index = 1;
     nop();                               /* BRK */
@@ -69,13 +82,10 @@ implementation {
     return len;
   }
 
-  default event bool Sub.evaluate[uint8_t id](message_t* msg) {
-    return TRUE;
-  }
-  default event void Sub.add_name_tlv[uint8_t id](message_t *msg) {
-  }
-  default event void Sub.add_value_tlv[uint8_t id](message_t *msg) {
-  }
-  default event void Sub.add_help_tlv[uint8_t id](message_t *msg) {
-  }
+  default event bool Sub.evaluate[uint8_t id](message_t* msg)      { return TRUE; }
+  default event void Sub.add_name_tlv[uint8_t id](message_t *msg)  { }
+  default event void Sub.add_value_tlv[uint8_t id](message_t *msg) { }
+  default event void Sub.add_help_tlv[uint8_t id](message_t *msg)  { }
+
+  async event void Panic.hook(){ }
 }
