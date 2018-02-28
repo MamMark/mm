@@ -52,10 +52,6 @@ def parseargs():
                         action='store_true',
                         help='turn on extra debugging information')
 
-    parser.add_argument('-d', '--direct_io',
-                        action='store_true',
-                        help='use direct io, not buffered by OS filesystem')
-
     parser.add_argument('-j', '--jump',
                         type=auto_int,
                         help='set input file position, -1 EOF, neg from EOF')
@@ -68,15 +64,31 @@ def parseargs():
                         type=int,
                         help='limit display to <num> records')
 
-    # not working yet
-    parser.add_argument('-s', '--start_time',
+    parser.add_argument('--net',
+                        action='store_true',
+                        help='use tag net io, (unbuffered io)')
+
+    parser.add_argument('--lsync',
+                        action='store_true',
+                        help='(net) start with last sync')
+
+    parser.add_argument('--lrec',
+                        action='store_true',
+                        help='(net) start with last record')
+
+    parser.add_argument('-s', '--sync',
                         type=int,
-                        help='include records with datetime >= than START_TIME')
+                        help='sync backward SYNC syncs')
 
     # not working yet
-    parser.add_argument('-e', '--end_time',
+    parser.add_argument('--start',
                         type=int,
-                        help='stop with records after END_TIME')
+                        help='include records with datetime >= than START')
+
+    # not working yet
+    parser.add_argument('--end',
+                        type=int,
+                        help='stop with records after END')
 
     parser.add_argument('-r', '--start_rec',
                         type=int,
@@ -86,9 +98,11 @@ def parseargs():
                         type=int,
                         help='last record to dump.')
 
-    # 0v print record details, suppress recoverable errors
-    # v  also print the record header and all errors
-    # vv also print the record buffer
+    parser.add_argument('--tail',
+                        action='store_true',
+                        help='continue reading data at EOF')
+
+    # see tagdump.py for verbosity levels
     parser.add_argument('-v', '--verbose',
                         action='count',
                         default=0,

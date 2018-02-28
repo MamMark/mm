@@ -21,6 +21,8 @@
 
 import os
 import types
+import time
+import errno
 
 # NOTE: os.lseek(fd, pos, how) and file.seek(pos, whence) use os.SEEK_SET (0),
 # os.SEEK_CUR (1), and os.SEEK_END (2) for the how or whence parameter.
@@ -28,34 +30,48 @@ import types
 TF_SEEK_END = os.SEEK_END
 
 class TagFile(object):
-    def __init__(self, input, direct=False):
+    def __init__(self, input, net_io = False):
         super( TagFile, self ).__init__()
 
         if not isinstance(input, types.FileType):
             raise IOError('not expected file type {}'.format(input))
 
-        self.direct = direct
+        self.net_io = net_io
         self.fd     = input
+        self.name   = input.name
 
-        if (self.direct):
-            self.name = input.name
+        if (self.net_io):
             self.fd.close()
             self.fileno = os.open(self.name, os.O_DIRECT | os.O_RDONLY)
 
     def read(self, cnt):
-        if (self.direct):
-            return os.read(self.fileno, cnt)
-        else:
-            return self.fd.read(cnt)
+        buf = ''
+        while True:
+            try:
+                if (self.net_io):
+                    buf += os.read(self.fileno, cnt - len(buf))
+                    if (len(buf) != cnt):
+                        continue
+                    return buf
+                else:
+                    buf += self.fd.read(cnt - len(buf))
+                    if (len(buf) != cnt):
+                        continue
+                    return buf
+            except OSError as e:
+                if e.errno == errno.ENODATA:
+                    sleep(5)
+                    continue
+                raise
 
     def tell(self):
-        if (self.direct):
+        if (self.net_io):
             return os.lseek(self.fileno, 0, os.SEEK_CUR)
         else:
             return self.fd.tell()
 
     def seek(self, pos, how=os.SEEK_SET):
-        if (self.direct):
+        if (self.net_io):
             return os.lseek(self.fileno, pos, how)
         else:
             return self.fd.seek(pos, how)

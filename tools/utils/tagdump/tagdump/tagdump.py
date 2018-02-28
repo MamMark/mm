@@ -76,9 +76,6 @@ from   tagfile      import TF_SEEK_END
 #   -D              turn on Debugging information
 #                   (args.debug, boolean)
 #
-#   -d              enable direct i/o, used for tagnet connection
-#                   (args.direct_io, boolean)
-#
 #   -j JUMP         set input file position
 #                   (args.jump, integer)
 #                   -1: goto EOF
@@ -90,11 +87,26 @@ from   tagfile      import TF_SEEK_END
 #   -n num          limit display to <num> records
 #                   (args.num, integer)
 #
-#   -s START_TIME   include records with datetime greater than START_TIME
-#   -e END_TIME     (args.{start,end}_time)
+#   --net           enable network (tagnet) i/o
+#                   (args.net, boolean)
+#
+#   --lsync         (tagnet), start with last sync
+#                   (args.lsync, boolean), implies --net
+#
+#   --lrec          (tagnet), start with last record
+#                   (args.lrec, boolean), implies --net
+#
+#   -s SYNC_DELTA   search some number of syncs backward
+#
+#   --start START_TIME
+#                   include records with datetime greater than START_TIME
+#   --end END_TIME  (args.{start,end}_time)
 #
 #   -r START_REC    starting/ending records to dump.
 #   -l LAST_REC     (args.{start,last}_rec, integer)
+#
+#   --tail          do not stop when we run out of data
+#                   monitor and get new data as it arrives.
 #
 #   -v, --verbose   increase output verbosity
 #                   (args.verbose)
@@ -435,7 +447,9 @@ def dump(args):
             g.dt_count[rtype] = 1
 
     # create file object that handles both buffered and direct io
-    infile = TagFile(args.input, direct=args.direct_io)
+    if (args.lsync or args.lrec or args.sync is not None):
+        args.net = True
+    infile  = TagFile(args.input, net_io = args.net)
     verbose = args.verbose if (args.verbose) else 0
     debug   = args.debug   if (args.debug)   else 0
 
@@ -448,6 +462,11 @@ def dump(args):
 
     # process the directory, this will leave us pointing at the first header
     process_dir(infile)
+
+    if (args.lsync):
+        pass
+    elif (args.lrec):
+        pass
 
     if (args.jump):
         if (args.jump == -1):
