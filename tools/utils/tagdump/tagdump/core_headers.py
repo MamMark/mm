@@ -168,6 +168,29 @@ event_names = {
 }
 
 PANIC_WARN = 11
+GPS_CMD    = 51
+
+
+# GPS_CMD, first arg of GPS_CMD
+gps_cmd_names = {
+       0: "NOP",
+       1: "TURNON",
+       2: "TURNOFF",
+       3: "STANDBY",
+       4: "HIBERNATE",
+       5: "WAKE",
+       6: "PULSE",
+       7: "AWAKE_STATUS",
+       8: "RESET",
+       9: "POWER_ON",
+      10: "POWER_OFF",
+      11: "SEND_MPM",
+      12: "SEND_FULL",
+      13: "RAW_TX",
+    0x80: "REBOOT",
+    0x81: "PANIC",
+    0x82: "BRICK",
+}
 
 
 dt_event_obj    = aggie(OrderedDict([

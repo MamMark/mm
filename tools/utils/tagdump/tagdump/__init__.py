@@ -22,13 +22,15 @@ tagdump:  decode and display Tag Data Stream file
 #               add "-j -1" and "-j <neg>"
 #               new reboot and sync layout
 #               dt_rev 12
-# 0.2.12.dev0-dev10
+# 0.2.12.dev0-dev11
 # 0.2.13        reorganize EVENTS
-#               add GPS_MPM and GPS_FULL_PWR EVENTS
+#               implement NOTE
+#    gps stuff: add GPS_MPM and GPS_FULL_PWR EVENTS
 #               decoders for gps_pwr_mode_req and _rsp
+#               decoder open/close session
 #               decoder for statistics mid 225,6
-#               add GPS_BOOT_FAIL
 #               add mids with sids for gps_raw
+#               add GPS_BOOT_FAIL
 #               gps cmd decoding
 #
-__version__ = '0.2.12.dev10'
+__version__ = '0.2.12.dev11'

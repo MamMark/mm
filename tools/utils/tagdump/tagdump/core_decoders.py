@@ -285,6 +285,9 @@ g.dt_records[DT_SYNC] = (36, decode_sync, dt_sync_obj, "SYNC")
 def event_name(event):
     return event_names.get(event, 'unk')
 
+def gps_cmd_name(gps_cmd):
+    return gps_cmd_names.get(gps_cmd, 'unk')
+
 event0  = ' {:s} {} {} {} {}'
 event1  = '    {:s}: ({}) <{} {} {} {}>  x({:x} {:x} {:x} {:x})'
 
@@ -309,6 +312,11 @@ def decode_event(level, offset, buf, obj):
         print(' {} {}/{}'.format(event_name(event), pcode, w))
         print('    {} {} {} {}  x({:04x} {:04x} {:04x} {:04x})'.format(
             arg0, arg1, arg2, arg3, arg0, arg1, arg2, arg3))
+        return
+
+    if (event == GPS_CMD):
+        print(' GPS_CMD ({:s}) {} {} {} {}'.format(
+            gps_cmd_name(arg0), arg0, arg1, arg2, arg3))
         return
 
     print(event0.format(event_name(event), arg0, arg1, arg2, arg3))
