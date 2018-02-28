@@ -687,6 +687,8 @@ implementation {
     }
     time_out = len * DT_GPS_BYTE_TIME * 4 + 500000;
     time_out /= 1000000;
+    if (time_out < DT_GPS_MIN_TX_TIMEOUT)
+      time_out = DT_GPS_MIN_TX_TIMEOUT;
     call GPSTxTimer.startOneShot(time_out);
     collect_gps_pak((void *) ptr, len, GPS_DIR_TX);
     err = call HW.gps_send_block((void *) ptr, len);
