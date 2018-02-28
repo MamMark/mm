@@ -146,6 +146,8 @@ implementation {
             datap = call TTLV.tlv_to_block(data_tlv, &ln);
           db.block = datap;
           call TPload.reset_payload(msg);
+          call THdr.set_response(msg);
+          call THdr.set_error(msg, TE_PKT_OK);
           if (call Adapter.set_value(&db, &ln)) {
             set_params(&db, msg, ln);
             return TRUE;
