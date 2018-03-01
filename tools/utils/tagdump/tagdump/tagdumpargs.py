@@ -68,14 +68,6 @@ def parseargs():
                         action='store_true',
                         help='use tag net io, (unbuffered io)')
 
-    parser.add_argument('--lsync',
-                        action='store_true',
-                        help='(net) start with last sync')
-
-    parser.add_argument('--lrec',
-                        action='store_true',
-                        help='(net) start with last record')
-
     parser.add_argument('-s', '--sync',
                         type=int,
                         help='sync backward SYNC syncs')

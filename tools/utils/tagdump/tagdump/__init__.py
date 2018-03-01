@@ -33,8 +33,7 @@ tagdump:  decode and display Tag Data Stream file
 #               add GPS_BOOT_FAIL
 #               gps cmd decoding
 #
-#    cmd line:  --tail,  --net
-#               --lsync, --lrec
-#               -s SYNC_DELTA
+#    cmd line:  --tail,  --net,  -r -1
+#               -s SYNC_DELTA, -s0, -s1, -s -1
 #
 __version__ = '0.2.12.dev12'

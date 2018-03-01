@@ -90,23 +90,22 @@ from   tagfile      import TF_SEEK_END
 #   --net           enable network (tagnet) i/o
 #                   (args.net, boolean)
 #
-#   --lsync         (tagnet), start with last sync
-#                   (args.lsync, boolean), implies --net
-#
-#   --lrec          (tagnet), start with last record
-#                   (args.lrec, boolean), implies --net
-#
 #   -s SYNC_DELTA   search some number of syncs backward
+#                   always implies --net, -s 0 says .last_sync
+#                   -s 1 and -s -1 both say sync one back.
+#                   (args.sync, int)
 #
 #   --start START_TIME
 #                   include records with datetime greater than START_TIME
 #   --end END_TIME  (args.{start,end}_time)
 #
 #   -r START_REC    starting/ending records to dump.
+#                   -r -1 says start with .last_rec (implies --net)
 #   -l LAST_REC     (args.{start,last}_rec, integer)
 #
-#   --tail          do not stop when we run out of data
-#                   monitor and get new data as it arrives.
+#   --tail          do not stop when we run out of data.  monitor and
+#                   get new data as it arrives.  (implies --net)
+#                   (args.tail, boolean)
 #
 #   -v, --verbose   increase output verbosity
 #                   (args.verbose)
@@ -462,11 +461,6 @@ def dump(args):
 
     # process the directory, this will leave us pointing at the first header
     process_dir(infile)
-
-    if (args.lsync):
-        pass
-    elif (args.lrec):
-        pass
 
     if (args.jump):
         if (args.jump == -1):
