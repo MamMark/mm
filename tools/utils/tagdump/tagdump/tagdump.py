@@ -445,10 +445,12 @@ def dump(args):
         except KeyError:
             g.dt_count[rtype] = 1
 
-    # create file object that handles both buffered and direct io
-    if (args.lsync or args.lrec or args.sync is not None):
+    # Any -s argument (walk syncs backward) or -r -1 (last_rec) forces net io
+    if (args.sync is not None or args.start_rec == -1 or args.tail):
         args.net = True
-    infile  = TagFile(args.input, net_io = args.net)
+
+    # create file object that handles both buffered and direct io
+    infile  = TagFile(args.input, net_io = args.net, tail = args.tail)
     verbose = args.verbose if (args.verbose) else 0
     debug   = args.debug   if (args.debug)   else 0
 

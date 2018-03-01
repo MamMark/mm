@@ -31,13 +31,14 @@ import errno
 TF_SEEK_END = os.SEEK_END
 
 class TagFile(object):
-    def __init__(self, input, net_io = False):
+    def __init__(self, input, net_io = False, tail = False):
         super( TagFile, self ).__init__()
 
         if not isinstance(input, types.FileType):
             raise IOError('not expected file type {}'.format(input))
 
         self.net_io = net_io
+        self.tail   = tail
         self.fd     = input
         self.name   = input.name
 
@@ -60,10 +61,14 @@ class TagFile(object):
                         continue
                     return buf
             except OSError as e:
-                if e.errno == errno.ENODATA:
-                    print '*** TF.read: buf len: ', len(buf)
-                    time.sleep(5)
-                    continue
+                if (e.errno == errno.ENODATA):
+                    if (self.tail):
+                        print '*** TF.read: buf len: ', len(buf)
+                        time.sleep(5)
+                        continue
+                    print '*** network data stream EOF, sorry'
+                    print '*** use --tail to wait for data at EOF'
+                    return ''
                 print '*** TF.read: unhandled OSError exception', sys.exc_info()[0]
                 raise
             except:
