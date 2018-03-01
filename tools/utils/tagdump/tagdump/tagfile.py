@@ -20,6 +20,7 @@
 
 
 import os
+import sys
 import types
 import time
 import errno
@@ -60,8 +61,13 @@ class TagFile(object):
                     return buf
             except OSError as e:
                 if e.errno == errno.ENODATA:
-                    sleep(5)
+                    print '*** TF.read: buf len: ', len(buf)
+                    time.sleep(5)
                     continue
+                print '*** TF.read: unhandled OSError exception', sys.exc_info()[0]
+                raise
+            except:
+                print '*** TF.read: unhandled exception', sys.exc_info()[0]
                 raise
 
     def tell(self):
