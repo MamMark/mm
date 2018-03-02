@@ -85,43 +85,25 @@ implementation {
     return FALSE;
   }
 
- event void Super.add_name_tlv(message_t* msg) {
-    int                     s;
+  event void Super.add_name_tlv(message_t* msg) {
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
 
-    s = call TPload.add_tlv(msg, name_tlv);
-    if (s) {
-      call TPload.next_element(msg);
-    } else {
-//      panic();
-    }
+    call TPload.add_tlv(msg, name_tlv);
   }
 
   event void Super.add_value_tlv(message_t* msg) {
     int32_t                 v;
     uint32_t                l;
-    int                     s;
 
     if (call Adapter.get_value(&v, &l)) {
       call TPload.add_integer(msg, v);
-      s = call TPload.add_integer(msg, v);
+      call TPload.add_integer(msg, v);
     }
-    if (s) {
-      call TPload.next_element(msg);
-    } else {
-//      panic();
-    }
+    // zzz else ?
   }
 
   event void Super.add_help_tlv(message_t* msg) {
-    int                     s;
     tagnet_tlv_t    *help_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].help_tlv;
-
-    s = call TPload.add_tlv(msg, help_tlv);
-    if (s) {
-      call TPload.next_element(msg);
-    } else {
-//      panic();
-    }
+    call TPload.add_tlv(msg, help_tlv);
   }
 }
