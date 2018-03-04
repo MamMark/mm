@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-DESCRIPTION = 'Dump the Tag Data logfile contents in readable format'
+DESCRIPTION = 'Utility to extract and/or dump Tag Data in a readable format'
 
 import os, re
 def get_version():
@@ -25,7 +25,7 @@ setup(
     author           = 'Dan Maltbie/Eric B. Decker',
     author_email     = 'dmaltbie@daloma.org',
 #    license_file     = 'LICENCE.txt',
-    license          = 'MIT',
+    license          = 'GPL3',
     packages         = ['tagdump'],
     entry_points     = {
         'console_scripts': ['tagdump=tagdump.__main__:main'],

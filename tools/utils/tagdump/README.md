@@ -2,9 +2,9 @@ TAGDUMP
 =======
 
 Dan Maltbie <dmaltbie@daloma.org>
-copyright @ 2017 Dan Maltbie
+copyright (c) 2017 Dan Maltbie
 
-*License*: [MIT](http://www.opensource.org/licenses/mit-license.php)
+*License*: [GPL3](https://opensource.org/licenses/GPL-3.0)
 
 This program is able to decode the record contents from a Tag data log
 file. This is a binary file with a basic structure of
@@ -32,7 +32,7 @@ The Sector is the unit of bytes used by the block storage device.  It is
 
 If a record fails sanity checks (bad rtype, incorrect length, bad record
 sum) a resync will be performed.  This involves locating the next sync or
-reboot record (looking for SYNc_MAJIK).  And then we will back up to the
+reboot record (looking for SYNC_MAJIK).  And then we will back up to the
 start of the record.
 
 INSTALL:
