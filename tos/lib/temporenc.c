@@ -19,8 +19,8 @@
 
   https://temporenc.org/
 
-  It is not, as of yet, a full implementation of temporenc 
-  however, it is being written to facilitate that if/when 
+  It is not, as of yet, a full implementation of temporenc
+  however, it is being written to facilitate that if/when
   it is needed/wanted.
 
   !!! Since MamMark is just going to use UTC for everything,
@@ -108,7 +108,7 @@ void print_rtct (RTCTime *r) {
 void print_bstrm (b_stream *b) {
   int		bytes_left = b->payld_bytes;
   uint8_t	*byte = b->payload;
-  
+
 #if (DBG_FL & 0x07)
   printf("src = %0llX, bits = %02d, bytes = %02d :", b->data_src, b->src_bits, bytes_left);
 // move to right to line up
@@ -129,7 +129,7 @@ void print_bstrm (b_stream *b) {
     printf("  ");
     bytes_left--;
   }
-    
+
   // bytes_left == payld_bytes
   byte = b->payload+bytes_left-1;
   printf(" 0x");
@@ -137,7 +137,7 @@ void print_bstrm (b_stream *b) {
     printf("%02x", *byte--);
     bytes_left--;
   }
- 
+
   printf("\n");
 
 }
@@ -169,7 +169,7 @@ int main (void) {
   // ??? How does RTC store day, time etc, how does temporenc
   // ??? We may need to subtract one from each of the values.
 
-  
+
   // Fill some time structures with data
   // maybe make an array of them
 /*
@@ -184,7 +184,7 @@ date_time_milli: 2014-10-23 10:55:45.051        (7)   0x47de9b2b7b4330
 date_time_micro: 2014-10-23 10:55:45.000044     (8)   0x57de9b2b7b4000b0
 date_time_nano:  2014-10-23 10:55:45.000000022  (9)   0x67de9b2b7b40000016
 date_time_nano:  ??:??:??.000000022             (9)   0x6fffffffffc0000016
-*/    
+*/
   RTCTime	test_times00[] = {
     {2014,                10,        23, HOUR_EMPTY, MINUTE_EMPTY, SECOND_EMPTY, PREC_M_EMPTY},
     {YEAR_EMPTY, MONTH_EMPTY, DAY_EMPTY,         10,           55,           45, PREC_M_EMPTY},
@@ -196,16 +196,16 @@ date_time_nano:  ??:??:??.000000022             (9)   0x6fffffffffc0000016
     {YEAR_EMPTY, MONTH_EMPTY, DAY_EMPTY, HOUR_EMPTY, MINUTE_EMPTY, SECOND_EMPTY, PREC_N_EMPTY},
     {0,          0,           0,         0,          0,            0,            0}
   };
-  
+
   RTCTime	test_times01[] = {
     {2016, 11, 30, 11, 59, 23, 765},
     {0000, 00, 00, 00, 00, 00, 000}
   };
- 
+
   RTCTime	test_times02[] = {
     {2016, 12, 31, 11, 59, 23, 765},
     {0000, 01, 23, 12, 34, 56, 789},
-    {4095, 01, 23, 12, 34, 56, 789},    
+    {4095, 01, 23, 12, 34, 56, 789},
     {2016, 00, 31, 11, 59, 23, 765},
     {1970, 13, 23, 12, 34, 56, 789},
     {2016, 12, 31, 11, 59, 60, 765},
@@ -392,7 +392,7 @@ pack and unpack
   ??? If we were to call pack with DTS_IDX, what would happen?
   ??? should it return an error with no precision? Or default to DTS0? or ...???
 
- tag_pack is a wrapper around temporenc_pack that hardwires the 
+ tag_pack is a wrapper around temporenc_pack that hardwires the
  subsecond clock frequency at 1KHz.
   **********************************************************************/
 
@@ -424,7 +424,7 @@ int temporenc_pack(uint32_t inp_freq, int *payld_len, int type_idx, uint8_t* pay
   DEF_UINT      no_month	= FALSE;
   DEF_UINT      no_year		= FALSE;
 
-  
+
   uint8_t	type_prec;	// 2 bits precision + 0empty 10mSec, 20uSec, 30nSec
   uint8_t	tempor_type;	// bit mask of temporenc type
 //  uint8_t	inp_prec;	// !!! tag subseconds hard wired to milliseconds
@@ -437,7 +437,7 @@ int temporenc_pack(uint32_t inp_freq, int *payld_len, int type_idx, uint8_t* pay
   uint8_t	type_bits = 0;	// tt_bitlen   number of bits used by type
   uint8_t	type_val  = 0;	// ttype_val   both type and precision
 //  int           foo;
-  
+
 //  uint8_t	t_value;
 //  ;
   uint8_t       type_value;     // 2-5 bits at start describing the type: left shifted
@@ -449,8 +449,8 @@ int temporenc_pack(uint32_t inp_freq, int *payld_len, int type_idx, uint8_t* pay
   uint8_t	subs_len;    	// subs_bits
   uint8_t	time_len;    	// time_bits
   uint8_t	date_len;	// date_bits
-  
-  
+
+
 //  uint32_t	type_val;	// 2-5 bits at start describing the type: left shifted
   uint32_t	type_part=0;	// 2-5 bits at start describing the type: right shifted
   uint32_t	date_part=0;	// 21 bits: Y12, M4, D5
@@ -492,7 +492,7 @@ int temporenc_pack(uint32_t inp_freq, int *payld_len, int type_idx, uint8_t* pay
 #endif
     return ERR_BAD_TEMPRN_TYPE;
   }
-    
+
   type_struct	= t_types + type_idx;		// point at type_num element of array &t_types[type_idx]
   fields        = type_struct->field_flags;
   type_bits     = type_struct->tt_bitlen;
@@ -500,7 +500,7 @@ int temporenc_pack(uint32_t inp_freq, int *payld_len, int type_idx, uint8_t* pay
   type_part     = type_struct->ttype_part;	// both type and precision : right shifted
   type_mask	= type_struct->tt_bitmask;
   type_bytect	= type_struct->byte_len;	// how many bytes is temporenc message
-  tempor_freq	= type_struct->freq;		// 1 / temporance subsec  
+  tempor_freq	= type_struct->freq;		// 1 / temporance subsec
   pad_len 	= type_struct->pad_bits;
   zone_len      = type_struct->zone_bits;
   subs_len      = type_struct->subs_bits;
@@ -530,7 +530,7 @@ int temporenc_pack(uint32_t inp_freq, int *payld_len, int type_idx, uint8_t* pay
   printf("tempor_freq = %0d, subsec flag = 0x%02X\n",
          tempor_freq, SUBS_FL);
 #endif
- 
+
 
   if ((subsec == PREC_N_EMPTY)||(type_prec==PREC_0)) {
     no_subsec = TRUE;
@@ -597,7 +597,7 @@ int temporenc_pack(uint32_t inp_freq, int *payld_len, int type_idx, uint8_t* pay
   // Construct each component
 
   //******************* date
-  
+
   if (fields & DATE_FL) {	// construct date component
     date_part = (year << YEAR_SHIFT) | (month << MONTH_SHIFT) | (day << DAY_SHIFT);
 #if (DBG_FL & 0x0011)
@@ -608,7 +608,7 @@ int temporenc_pack(uint32_t inp_freq, int *payld_len, int type_idx, uint8_t* pay
   }// date
 
   //******************* time
-  
+
   if (fields & TIME_FL) {	// construct time component
     time_part = (hour << HOUR_SHIFT) | (minute << MINUTE_SHIFT) | (second << SECOND_SHIFT);
 #if (DBG_FL & 0x0011)
@@ -619,7 +619,7 @@ int temporenc_pack(uint32_t inp_freq, int *payld_len, int type_idx, uint8_t* pay
   }// time
 
   //******************* subsec
-  
+
   // For this pass we will assume that subsecond precsion is in
   // milli, micro or nano seconds : 1000, 10000000, 1000000000
   // and that it can be converted by an integer multiply or divide.
@@ -629,7 +629,7 @@ int temporenc_pack(uint32_t inp_freq, int *payld_len, int type_idx, uint8_t* pay
 #if (DBG_FL & 0x0001)
     printf("type_value=%02x, no_subsec=%01x\n", type_value, no_subsec);
 #endif
-  
+
   if ((fields & SUBS_FL) && (tempor_freq)) {	// construct subsecond component
 							// should not get here if either precision == 3
     if (subsec >= inp_freq) {				// this means subsec > 1 second
@@ -657,7 +657,7 @@ int temporenc_pack(uint32_t inp_freq, int *payld_len, int type_idx, uint8_t* pay
     printf("subs_part=0x%d, tempor_freq=%d, inp_freq=%d, subsec=%d freq_ratio=%d\n",
 	   subs_part, tempor_freq, inp_freq, subsec, freq_ratio );
 #endif
-    
+
   }	// subsec
 
   //******************* timezone
@@ -829,7 +829,7 @@ int temporenc_unpack(uint32_t sys_freq, int payld_len, uint8_t* payload, RTCTime
   uint32_t	subs	= 0;	// t_time->subsec
 				// !!! no zone
 #endif    //0
-  
+
   tenc_type	*type_struct;
   b_stream      bs;
 
@@ -869,12 +869,12 @@ int temporenc_unpack(uint32_t sys_freq, int payld_len, uint8_t* payload, RTCTime
     case 0:				// 0b_00xxxxxx
       type_idx = DT_IDX;
       break;
-      
+
     case 1:				// 0b_01ppxxxx
       prec = (type_byte & 0x30)>>4;	// DTS[MUN0]
       type_idx = DTSM_IDX + prec;
       break;
-      
+
     case 2:
       if ((type_byte & 0xE0)==0x80) {	//         0b_100	DATE only
 					// type_byte & ttypes[D_IDX].ttype_mask ==
@@ -892,7 +892,7 @@ int temporenc_unpack(uint32_t sys_freq, int payld_len, uint8_t* payload, RTCTime
 	return unpack_err;
       }	// if date or time
       break;
-      
+
     case 3:				// 0b_11xxxxxx	DTZ or DTSZ  !!! ZONE is in theory unused
       if ((type_byte & 0xE0)==0xC0) {	// 0b_110xxxxx
  					// type_byte & ttypes[DTZ_IDX].ttype_mask ==
@@ -1008,7 +1008,7 @@ int temporenc_unpack(uint32_t sys_freq, int payld_len, uint8_t* payload, RTCTime
     //  parse hour, minute, second out of time_part
     t_time->sec = (int)(time_part >> SECOND_SHIFT) & SECOND_MASK;
     t_time->min = (int)(time_part >> MINUTE_SHIFT) & MINUTE_MASK;
-    t_time->hr  = (int)(time_part >> HOUR_SHIFT)   & HOUR_MASK;  
+    t_time->hr  = (int)(time_part >> HOUR_SHIFT)   & HOUR_MASK;
 #if (DBG_FL & 0x0010)
     printf("time_part = 0x%0X | ", time_part);
     print_rtct(t_time);
@@ -1061,10 +1061,3 @@ int temporenc_unpack(uint32_t sys_freq, int payld_len, uint8_t* payload, RTCTime
   return unpack_err;
 
 }
-
-
-
-
-
-
-

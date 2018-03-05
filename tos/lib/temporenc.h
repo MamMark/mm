@@ -162,7 +162,7 @@ H HHHH MMMM MMSS SSSS
 #define DAY_BITS		     5
 #define DAY_SHIFT		     0
 
-					// !!! no Day of Week defined !!!!!!!!!!!!!!!!!	
+					// !!! no Day of Week defined !!!!!!!!!!!!!!!!!
 
 #define MONTH_MAX     		    11	// Month
 #define MONTH_EMPTY   		    15
@@ -236,7 +236,7 @@ H HHHH MMMM MMSS SSSS
 #define ERR_TEMPORENC_TYPE	0x0100	// temporenc type string had an illegal value
 #define ERR_PAYLOAD_LEN		0x0200  // payload should be an even number of bytes
 
-#define ERR_NULL_PTR            0x8000  
+#define ERR_NULL_PTR            0x8000
 
 #define ERR_BAD_TEMPRN_TYPE	0x0001	// illegal combination of bits at start of payload
 
@@ -290,7 +290,7 @@ enum tenc_idx { DT_IDX, DTS_IDX, DTSM_IDX, DTSU_IDX, DTSN_IDX, DTS0_IDX,
 /*
   RTC Time does not map directly onto the driverlib RTC_C_Calendar type.
   Nor does it map onto the time structures used by temporenc
-  !!! making the structure compatible with temporence will involve 
+  !!! making the structure compatible with temporence will involve
   !!! adding fields for nanosecond, time zone, precision etc.
   !!! or converting subsec to 32 bits
   !!! currently the subsecond field only goes down to mSec
@@ -350,11 +350,3 @@ int temporenc_pack  (uint32_t inp_freq, int *payld_len, int type_idx,  uint8_t* 
 int tag_unpack                   (int payld_len, uint8_t* payload, RTCTime *t_time );
 
 int temporenc_unpack (uint32_t inp_freq, int payld_len, uint8_t* payload, RTCTime *t_time );
-
-
-
-
-
-
-
-
