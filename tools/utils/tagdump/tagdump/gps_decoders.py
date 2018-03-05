@@ -25,6 +25,7 @@ from   core_records  import *
 from   gps_headers   import *
 from   core_decoders import rec0
 
+__version__ = '0.1.0 (gd)'
 
 #
 # given a buf that contains a GPS sw ver string make printable

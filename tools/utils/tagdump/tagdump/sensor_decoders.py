@@ -24,6 +24,8 @@ import globals        as     g
 from   core_records   import *
 from   sensor_headers import *
 
+__version__ = '0.0.1 (sd)'
+
 def decode_sensor_data(level, offset, buf, obj):
     print_record(offset, buf)
     if (level >= 1):

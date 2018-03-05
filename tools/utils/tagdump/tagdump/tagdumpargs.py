@@ -18,19 +18,20 @@
 # Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
 #          Eric B. Decker <cire831@gmail.com>
 #
+# Gave up on trying to get the argparse version to print multiple version
+# strings.  Main code will display the decode/header versions if verbose
+# and tagdumpargs will display the main program version.
+#
 
 from __init__ import __version__ as VERSION
 from core_records import DT_H_REVISION as DT_REV
 import argparse
 
-
 def auto_int(x):
     return int(x, 0)
 
-
 def auto_upper(x):
     return x.upper()
-
 
 def parseargs():
     parser = argparse.ArgumentParser(

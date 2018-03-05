@@ -28,6 +28,8 @@ import struct
 import globals as g
 from   misc_utils import *
 
+__version__ = '0.1.0 (cr)'
+
 # Our definitions need to match definition in include/typed_data.h.
 # The value of DT_H_REVISION reflects the version of typed_data.h that
 # we have implemented.  Includes record definitions, headers and decoders.

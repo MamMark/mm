@@ -24,6 +24,8 @@ import binascii
 from   decode_base  import *
 from   collections  import OrderedDict
 
+__version__ = '0.1.0 (ch)'
+
 dt_hdr_obj = aggie(OrderedDict([
     ('len',     atom(('<H', '{}'))),
     ('type',    atom(('<H', '{}'))),

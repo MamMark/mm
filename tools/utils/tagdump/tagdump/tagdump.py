@@ -26,7 +26,7 @@
 #   2   detailed record display
 #   3   dump buffer/record
 #   4   details of resync
-#   5   other errors
+#   5   other errors and decoder versions
 
 import sys
 import binascii
@@ -42,8 +42,24 @@ import core_decoders
 import gps_decoders
 import sensor_decoders
 
-from   tagfile      import TagFile
-from   tagfile      import TF_SEEK_END
+from   tagfile         import TagFile
+from   tagfile         import TF_SEEK_END
+
+from   __init__        import __version__   as VERSION
+from   core_records    import DT_H_REVISION as DT_REV
+
+from   core_records    import __version__   as cr_ver
+from   decode_base     import __version__   as db_ver
+
+from   core_decoders   import __version__   as cd_ver
+from   core_headers    import __version__   as ch_ver
+from   gps_decoders    import __version__   as gd_ver
+from   gps_headers     import __version__   as gh_ver
+from   sensor_decoders import __version__   as sd_ver
+from   sensor_headers  import __version__   as sh_ver
+
+ver_str = '\ntagdump: ' + VERSION + ':  dt_rev ' + str(DT_REV)
+
 
 ####
 #
@@ -426,6 +442,15 @@ def dump(args):
     global total_records, total_bytes
 
     init_globals()
+
+    if (args.verbose and args.verbose >= 5):
+        print ver_str
+        print '  decode_base: {}  core_records: {}'.format(
+            db_ver, cr_ver)
+        print '     core:  d: {}  h: {}'.format(cd_ver, ch_ver)
+        print '     gps :  d: {}  h: {}'.format(gd_ver, gh_ver)
+        print '     sens:  d: {}  h: {}'.format(sd_ver, sh_ver)
+        print
 
     def count_dt(rtype):
         """

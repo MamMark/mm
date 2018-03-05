@@ -24,6 +24,8 @@ import globals      as     g
 from   core_records import *
 from   core_headers import *
 
+__version__ = '0.1.0 (cd)'
+
 # common format used by all records.  (rec0)
 # --- offset recnum  systime  len  type  name
 # --- 999999 999999 99999999  999    99  ssssss

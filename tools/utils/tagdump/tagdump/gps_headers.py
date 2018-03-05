@@ -26,6 +26,8 @@ from   collections  import OrderedDict
 from   core_headers import dt_hdr_obj
 from   core_headers import dt_simple_hdr
 
+__version__ = '0.1.0 (gh)'
+
 #
 # not implemented yet.
 # dt level decodes

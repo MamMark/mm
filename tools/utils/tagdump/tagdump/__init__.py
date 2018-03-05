@@ -22,7 +22,7 @@ tagdump:  decode and display Tag Data Stream file
 #               add "-j -1" and "-j <neg>"
 #               new reboot and sync layout
 #               dt_rev 12
-# 0.2.12.dev0-dev12
+# 0.2.12.dev0-dev14
 # 0.2.13        reorganize EVENTS
 #               implement NOTE
 #    gps stuff: add GPS_MPM and GPS_FULL_PWR EVENTS
@@ -35,5 +35,6 @@ tagdump:  decode and display Tag Data Stream file
 #
 #    cmd line:  --tail,  --net,  -r -1
 #               -s SYNC_DELTA, -s0, -s1, -s -1
+#               version decoders and headers
 #
-__version__ = '0.2.12.dev13'
+__version__ = '0.2.12.dev14'
