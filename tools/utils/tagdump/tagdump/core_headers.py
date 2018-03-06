@@ -167,6 +167,7 @@ event_names = {
     48: "GPS_AWAKE_S",
     51: "GPS_CMD",
     52: "GPS_RAW_TX",
+    53: "GPS_SWVER_TO",
 }
 
 PANIC_WARN = 11

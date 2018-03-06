@@ -33,6 +33,7 @@
  * FAIL         we gave up
  * OFF          powered completely off
  * BOOTING      first boot after reboot, establish comm
+ * STARTUP      initial startup messages
  * STANDBY      in Standby
  * MPM          running MPM cycles
  * UP           full up, taking readings.
@@ -50,13 +51,16 @@ typedef enum {
   GMS_OFF  = 0,                         /* pwr is off */
   GMS_FAIL = 1,
   GMS_BOOTING,
+  GMS_STARTUP,
   GMS_STANDBY,
   GMS_MPM,
   GMS_UP,
 } gpsm_state_t;                         // gps monitor state
 
 
-// #define GPS_SIMPLE_MPM
+#define GPS_MON_SW_VER_TIMEOUT  1024
+
+#define GPS_SIMPLE_MPM
 
 #ifndef PANIC_GPS
 enum {
@@ -226,7 +230,12 @@ implementation {
         gps_panic(1, gps_mon_state, 0);
         return;
       case GMS_BOOTING:
-        gps_mon_state = GMS_UP;
+        gps_mon_state = GMS_STARTUP;
+        gps_boot_try = 1;
+        call GPSTransmit.send((void *) sirf_sw_ver, sizeof(sirf_sw_ver));
+        call MonTimer.startOneShot(GPS_MON_SW_VER_TIMEOUT);
+        return;
+      case GMS_UP:                      /* for now while dicking around */
         return;
     }
   }
@@ -484,6 +493,10 @@ implementation {
     gps_block.dir = GPS_DIR_RX;         /* rx from gps */
     call Collect.collect_nots((void *) &gps_block, sizeof(gps_block),
                               svp->data, dlen);
+    if (gps_mon_state == GMS_STARTUP) {
+      gps_mon_state = GMS_UP;
+      call MonTimer.stop();
+    }
   }
 
 
@@ -716,7 +729,7 @@ implementation {
 #endif
 
 
-  event void MonTimer.fired() {
+  void mpm_cycle() {
 #ifdef GPS_SIMPLE_MPM
     error_t err;
     bool    awake;
@@ -812,6 +825,28 @@ implementation {
         return;
     }
 #endif
+  }
+
+
+  event void MonTimer.fired() {
+    switch (gps_mon_state) {
+      default:
+        return;
+      case GMS_STARTUP:
+        call CollectEvent.logEvent(DT_EVENT_GPS_SWVER_TO, gps_boot_try,
+                                   0, 0, 0);
+        gps_boot_try++;
+        if (gps_boot_try > 4) {
+          gps_mon_state = GMS_UP;
+          return;
+        }
+        call GPSTransmit.send((void *) sirf_sw_ver, sizeof(sirf_sw_ver));
+        call MonTimer.startOneShot(GPS_MON_SW_VER_TIMEOUT);
+        return;
+      case GMS_UP:
+        mpm_cycle();
+        return;
+    }
   }
 
 
