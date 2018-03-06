@@ -1,5 +1,5 @@
 /**
- * Copyright @ 2017 Dan Maltbie
+ * @Copyright @ 2017 Dan Maltbie
  * @author Dan Maltbie
  */
 
