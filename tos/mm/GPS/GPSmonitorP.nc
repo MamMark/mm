@@ -539,7 +539,7 @@ implementation {
 #ifdef GPS_SIMPLE_MPM
       if (mpm_state == MPM_START_UP) {
         mpm_count++;
-        if (mpm_count == 10)
+        if (mpm_count == 60 * 10)       /* should be about 10 mins */
           call MonTimer.startOneShot(0);
       }
 #endif
