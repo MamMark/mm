@@ -157,9 +157,18 @@ implementation {
   }
 
 
+  void owl_setFault(uint32_t fault_mask);
+
+  /*
+   * The OverWatch Control Block got clobbered.  We assume
+   * this is because we lost power and thusly RAM.
+   *
+   * Note: our debugging tools can hammer the owcb also.
+   */
   void init_owcb(ow_control_block_t *owcp) {
     memset(owcp, 0, sizeof(*owcp));
     owcp->ow_sig        = owcp->ow_sig_b = owcp->ow_sig_c = OW_SIG;
+    owl_setFault(OW_FAULT_POR);
     owcp->reboot_reason = ORR_OWCB_CLOBBER;
     owcp->from_base     = OW_BASE_UNK;          /* mark as unknown */
     owcp->reset_status  = call OWhw.getResetStatus();

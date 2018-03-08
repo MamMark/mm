@@ -161,6 +161,7 @@ enum {
   OW_FAULT_DCOR    = 1,                 /* DCO calibration resistor failed            */
   OW_FAULT_32K     = 2,                 /* main time base failed, running on backup   */
   OW_FAULT_LOW_PWR = 4,                 /* in low power mode, no sd, no 3V3 rail      */
+  OW_FAULT_POR     = 0x80000000,        /* full power on reset                        */
 };
 
 
