@@ -26,6 +26,7 @@ norace extern ow_control_block_t ow_control_block;
 
 extern bool __flash_performMassErase();
 extern bool __flash_programMemory(void* src, void* dest, uint32_t length);
+extern void __soft_reset();
 
 module OverWatchHardwareM {
   provides interface OverWatchHardware as OWhw;
@@ -177,6 +178,37 @@ implementation {
    */
   async command void OWhw.flush() {
     call SysReboot.flush();
+  }
+
+
+  /*
+   * halt: power down and stop
+   */
+  async command void OWhw.halt_and_CF() {
+    __disable_irq();
+    call SysReboot.flush();
+    __soft_reset();
+
+    P1->OUT = 0x60; P1->DIR = 0x6C;
+    P2->OUT = 0x89; P2->DIR = 0xC9;
+    P2->SEL0= 0x10; P2->SEL1= 0x00;
+    P3->OUT = 0x7B; P3->DIR = 0x7B;
+    P3->SEL0= 0x01; P3->SEL1= 0x00;
+    P4->OUT = 0x30; P4->DIR = 0xFD;
+    P5->OUT = 0x81; P5->DIR = 0xA7;
+    P6->OUT = 0x08; P6->DIR = 0x18;
+    P6->SEL0= 0x38; P6->SEL1= 0x00;
+    P7->OUT = 0xB9; P7->DIR = 0xF8;
+    P7->SEL0= 0x80; P7->SEL1= 0x00;
+    P8->OUT = 0x00; P8->DIR = 0x02;
+    PJ->OUT = 0x04; PJ->DIR = 0x06;
+    P7->REN = 0x01;
+
+    /*
+     * we can put the main cpu into LPM3.5 if needed.
+     * but let's see what LPM0 does with all our other pwr off.
+     */
+    __asm volatile ("wfe");
   }
 
 

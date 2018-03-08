@@ -829,6 +829,12 @@ implementation {
   }
 
 
+  async command void OverWatch.halt_and_CF() {
+    owl_setFault(OW_FAULT_BRICK);
+    call OWhw.halt_and_CF();
+  }
+
+
   event void IM.delete_complete() { }
   event void IM.dir_set_backup_complete()   { }
   event void IM.dir_eject_active_complete() { }

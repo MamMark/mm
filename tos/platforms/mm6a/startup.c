@@ -335,7 +335,7 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
  * reboot.  Software is responsible for poking various h/w state to return
  * to a somewhat pristine state.
  *
- * we assume that a h/w SOFTREST was done and that is what got us here.
+ * we assume that a h/w SOFTRESET was done and that is what got us here.
  * A SOFTRESET will clear out the following Cortex-M4F peripherals:
  *
  * o FPU

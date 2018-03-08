@@ -66,11 +66,15 @@ interface OverWatchHardware {
    *
    * flush() signals to the underlying reboot mechanisms to signal a reset
    * is imminent.
+   *
+   * halt_and_CF() turns off various power buses and shuts down.  Only
+   * meant for charging batteries right now.
    */
   async command void soft_reset();
   async command void hard_reset();
   async command void fake_reset();
   async command void flush();
+  async command void halt_and_CF();
 
   /*
    * getImageBase: return base address of the image

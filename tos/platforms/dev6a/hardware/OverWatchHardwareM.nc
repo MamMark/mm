@@ -26,6 +26,7 @@ norace extern ow_control_block_t ow_control_block;
 
 extern bool __flash_performMassErase();
 extern bool __flash_programMemory(void* src, void* dest, uint32_t length);
+extern void __soft_reset();
 
 module OverWatchHardwareM {
   provides interface OverWatchHardware as OWhw;
@@ -177,6 +178,24 @@ implementation {
    */
   async command void OWhw.flush() {
     call SysReboot.flush();
+  }
+
+
+  /*
+   * halt: power down and stop
+   */
+  async command void OWhw.halt_and_CF () {
+    __disable_irq();
+    call SysReboot.flush();
+    __soft_reset();
+
+    /* don't mess with the pins.  doesn't matter on the dev6a */
+
+    /*
+     * we can put the main cpu into LPM3.5 if needed.
+     * but let's see what LPM0 does with all our other pwr off.
+     */
+    __asm volatile ("wfe");
   }
 
 
