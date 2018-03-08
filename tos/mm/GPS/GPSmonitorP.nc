@@ -428,6 +428,7 @@ implementation {
         break;
 
       case GDC_BRICK:
+        call OverWatch.halt_and_CF();
         break;
     }
     db->count  = ++gps_cmd_count;
