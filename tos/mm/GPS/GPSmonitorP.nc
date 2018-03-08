@@ -466,17 +466,17 @@ implementation {
       mxp->mode1 = np->mode1;
       mxp->hdop  = np->hdop;
       mxp->nsats = np->nsats;
-      call CollectEvent.logEvent(DT_EVENT_GPS_XYZ, mxp->x, mxp->y,
-                                 mxp->z, mxp->nsats);
+      call CollectEvent.logEvent(DT_EVENT_GPS_XYZ, mxp->nsats,
+                                 mxp->x, mxp->y, mxp->z);
     }
+    call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 2,
+                               call GPSControl.awake(), 0, 0);
 #ifdef GPS_SIMPLE_MPM
     if (mpm_pending) {
       /*
        * got a message we weren't expecting.  And haven't seen the response to
        * the mpm pwr req, kick mpm again.
        */
-      call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 2, 0, 0,
-                                 call GPSControl.awake());
 #ifdef notdef
       awake = call GPSControl.awake();
       err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
@@ -581,14 +581,14 @@ implementation {
       mgp->additional_mode = gp->additional_mode;
       call CollectEvent.logEvent(DT_EVENT_GPS_GEO, mgp->lat, mgp->lon, mgp->week_x, mgp->tow);
     }
+    call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 41,
+                               call GPSControl.awake(), 0, 0);
 #ifdef GPS_SIMPLE_MPM
     if (mpm_pending) {
       /*
        * got a message we weren't expecting.  And haven't seen the response to
        * the mpm pwr req, kick mpm again.
        */
-      call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 41, 0, 0,
-                                 call GPSControl.awake());
 #ifdef notdef
       awake = call GPSControl.awake();
       err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
@@ -609,7 +609,7 @@ implementation {
     error_t err;
 
     err   = call GPSTransmit.send((void *) sirf_hw_config_rsp, sizeof(sirf_hw_config_rsp));
-    call CollectEvent.logEvent(DT_EVENT_GPS_HW_CONFIG, err, 0, 0, 0);
+    call CollectEvent.logEvent(DT_EVENT_GPS_HW_CONFIG, err, 0, 0, call GPSControl.awake());
   }
 
 
@@ -617,11 +617,11 @@ implementation {
    * MID 74: Session Open/Close Response
    */
   void process_session_rsp(sb_header_t *sbh, uint32_t arrival_ms) {
-#ifdef GPS_SIMPLE_MPM
     sb_session_rsp_t *srp;
 
     srp = (void *) sbh;
     call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 50, srp->sid, 0, 0);
+#ifdef GPS_SIMPLE_MPM
     switch (srp->sid) {
       default:
         return;
@@ -715,7 +715,7 @@ implementation {
   }
 
 
-#ifdef GPS_SIMPLE_MPP
+#ifdef GPS_SIMPLE_MPM
   bool mpm_still_pending() {
     error_t err;
     bool    awake;
