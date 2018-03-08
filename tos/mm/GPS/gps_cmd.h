@@ -46,8 +46,9 @@ typedef enum gps_debug_cmds {
   GDC_SEND_MPM      = 11,
   GDC_SEND_FULL     = 12,
   GDC_RAW_TX        = 13,
-  GDC_REBOOT        = 14,
-  GDC_PANIC         = 15,
+  GDC_REBOOT        = 0x80,
+  GDC_PANIC         = 0x81,
+  GDC_BRICK         = 0x82,
 } gps_cmd_t;
 
 
