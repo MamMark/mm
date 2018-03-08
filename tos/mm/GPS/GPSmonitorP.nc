@@ -331,11 +331,14 @@ implementation {
     /* too weird, too small, ignore it */
     if (!db || !lenp)
       gps_panic(0, 0, 0);               /* no return */
+
+    db->error = SUCCESS;                /* default, ignore */
     if (!*lenp)
       return TRUE;
-    db->error = SUCCESS;                /* default, ignore */
-    if (db->action != FILE_SET_DATA)
+    if (db->action != FILE_SET_DATA) {
+      *lenp = 0;                        /* don't send anything back */
       return FALSE;                     /* ignore */
+    }
 
     if (db->iota != gps_cmd_count + 1) {
       /*
