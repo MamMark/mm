@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Eric B. Decker, Daniel J. Maltbie
+# Copyright (c) 2018 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,20 +15,50 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # See COPYING in the top level directory of this source tree.
 #
-# Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
-#          Eric B. Decker <cire831@gmail.com>
+# Contact: Eric B. Decker <cire831@gmail.com>
 
-# core record definitions.
+# data type (data block) basic definitions
 #
 # define low level record manipulation and basic definitions for record
 # headers.
 #
 
 import struct
-import globals as g
-from   misc_utils import *
+from   misc_utils import dump_buf
 
-__version__ = '0.1.0 (cr)'
+__version__ = '0.1.0 (dt)'
+
+
+# __all__ exports commonly used definitions.  It gets used
+# when someone does a wild import of this module.
+
+__all__ = [
+    'DT_H_REVISION',
+
+    # object identifiers in each dt_record tuple
+    'DTR_REQ_LEN',
+    'DTR_DECODER',
+    'DTR_OBJ',
+    'DTR_NAME',
+
+    # dt record types
+    'DT_REBOOT',
+    'DT_VERSION',
+    'DT_SYNC',
+    'DT_EVENT',
+    'DT_DEBUG',
+    'DT_GPS_VERSION',
+    'DT_GPS_TIME',
+    'DT_GPS_GEO',
+    'DT_GPS_XYZ',
+    'DT_SENSOR_DATA',
+    'DT_SENSOR_SET',
+    'DT_TEST',
+    'DT_NOTE',
+    'DT_CONFIG',
+    'DT_GPS_RAW_SIRFBIN'
+]
+
 
 # Our definitions need to match definition in include/typed_data.h.
 # The value of DT_H_REVISION reflects the version of typed_data.h that
@@ -54,40 +84,17 @@ DT_H_REVISION           = 16
 # in the dt_records dictionary.  Each decode is required to know its
 # key and uses that to insert its vector (req_len. decode, obj, name)
 # into the dictionary.
+#
+# dt_count keeps track of what rtypes we have seen.
+#
+
+dt_records = {}
+dt_count   = {}
 
 DTR_REQ_LEN = 0                         # required length
 DTR_DECODER = 1                         # decode said rtype
 DTR_OBJ     = 2                         # rtype obj descriptor
 DTR_NAME    = 3                         # rtype name
-
-# dt_records describes what records we understand.  It lives in globals.py
-# and gets populated by the decoders.
-#
-# dt_count keeps track of what rtypes we have seen.
-#
-# dt_records = {}
-# dt_count   = {}
-
-
-# mid_table
-#
-# dictionary of all gps Message ID records we understand.  Similar
-# to dt_records but for gps messages.
-#
-# key is gps mid.  Contents is vector (decoder, obj, name).
-#
-# mid decoders when imported need to populate the table.  MID ids are
-# defined in gps_decoders.
-
-MID_DECODER = 0
-MID_OBJECT  = 1
-MID_NAME    = 2
-
-# mid_table is the dictionary describing all the gps MIDs we understand.
-# it gets populated by gps decoders.  Lives in globals.py.
-#
-# mid_table = {}
-# mid_count = {}
 
 
 # all dt parts are native and little endian
@@ -120,7 +127,7 @@ DT_GPS_RAW_SIRFBIN      = 32
 
 
 def dt_name(rtype):
-    v = g.dt_records.get(rtype, (0, None, None, 'unk'))
+    v = dt_records.get(rtype, (0, None, None, 'unk'))
     return v[DTR_NAME]
 
 

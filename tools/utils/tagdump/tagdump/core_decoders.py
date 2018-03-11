@@ -20,9 +20,10 @@
 
 # basic decoders for main data blocks
 
-import globals      as     g
-from   core_records import *
 from   core_headers import *
+from   dt_defs      import *
+import dt_defs      as     dtd
+from   dt_defs      import dt_name
 
 __version__ = '0.1.0 (cd)'
 
@@ -174,8 +175,8 @@ def decode_reboot(level, offset, buf, obj):
         print(rbt2h.format(owcb_obj['vec_chk_fail'].val,
                            owcb_obj['image_chk_fail'].val))
 
-#                          sizeof(reboot record) + sizeof(owcb)
-g.dt_records[DT_REBOOT] = (128, decode_reboot, dt_reboot_obj, "REBOOT")
+#                            128 = sizeof(reboot record) + sizeof(owcb)
+dtd.dt_records[DT_REBOOT] = (128, decode_reboot, dt_reboot_obj, "REBOOT")
 
 
 ################################################################
@@ -246,7 +247,7 @@ def decode_version(level, offset, buf, obj):
                        image_info_obj['im_len'].val))
         print(ver2d)
 
-g.dt_records[DT_VERSION] = (168, decode_version, dt_version_obj, "VERSION")
+dtd.dt_records[DT_VERSION] = (168, decode_version, dt_version_obj, "VERSION")
 
 
 ################################################################
@@ -276,7 +277,7 @@ def decode_sync(level, offset, buf, obj):
         print(sync1a.format(majik, prev, prev))
         print(sync1b.format())
 
-g.dt_records[DT_SYNC] = (36, decode_sync, dt_sync_obj, "SYNC")
+dtd.dt_records[DT_SYNC] = (36, decode_sync, dt_sync_obj, "SYNC")
 
 
 ################################################################
@@ -327,7 +328,7 @@ def decode_event(level, offset, buf, obj):
                             arg0, arg1, arg2, arg3,
                             arg0, arg1, arg2, arg3))
 
-g.dt_records[DT_EVENT] = (40, decode_event, dt_event_obj, "EVENT")
+dtd.dt_records[DT_EVENT] = (40, decode_event, dt_event_obj, "EVENT")
 
 
 ################################################################
@@ -347,7 +348,7 @@ def decode_debug(level, offset, buf, obj):
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(debug0.format())
 
-g.dt_records[DT_DEBUG] = (0, decode_debug, dt_debug_obj, "DEBUG")
+dtd.dt_records[DT_DEBUG] = (0, decode_debug, dt_debug_obj, "DEBUG")
 
 
 ################################################################
@@ -367,7 +368,7 @@ def decode_test(level, offset, buf, obj):
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(test0.format())
 
-g.dt_records[DT_TEST] = (0, decode_test, dt_test_obj, "TEST")
+dtd.dt_records[DT_TEST] = (0, decode_test, dt_test_obj, "TEST")
 
 
 ################################################################
@@ -385,7 +386,7 @@ def decode_note(level, offset, buf, obj):
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print('{}'.format(buf[consumed:]))
 
-g.dt_records[DT_NOTE] = (0, decode_note, dt_note_obj, "NOTE")
+dtd.dt_records[DT_NOTE] = (0, decode_note, dt_note_obj, "NOTE")
 
 
 ################################################################
@@ -405,4 +406,4 @@ def decode_config(level, offset, buf, obj):
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(cfg0.format())
 
-g.dt_records[DT_CONFIG] = (0, decode_config, dt_config_obj, "CONFIG")
+dtd.dt_records[DT_CONFIG] = (0, decode_config, dt_config_obj, "CONFIG")

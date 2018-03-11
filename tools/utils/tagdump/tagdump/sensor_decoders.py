@@ -20,9 +20,13 @@
 
 # sensor data blocks decoders
 
-import globals        as     g
-from   core_records   import *
+from   dt_defs        import *
+import dt_defs        as     dtd
 from   sensor_headers import *
+
+from   dt_defs        import dt_name
+from   dt_defs        import print_hdr
+from   dt_defs        import print_record
 
 __version__ = '0.0.1 (sd)'
 
@@ -34,7 +38,7 @@ def decode_sensor_data(level, offset, buf, obj):
         print_hdr(obj)
         print
 
-g.dt_records[DT_SENSOR_DATA] = \
+dtd.dt_records[DT_SENSOR_DATA] = \
         (0, decode_sensor_data, dt_sen_data_obj, "SENSOR_DATA")
 
 
@@ -46,5 +50,5 @@ def decode_sensor_set(level, offset, buf, obj):
         print_hdr(obj)
         print
 
-g.dt_records[DT_SENSOR_SET] = \
+dtd.dt_records[DT_SENSOR_SET] = \
         (0, decode_sensor_set, dt_sen_set_obj, "SENSOR_SET")

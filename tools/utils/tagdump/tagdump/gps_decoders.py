@@ -20,10 +20,19 @@
 
 # Decoders for gps data types
 
-import globals       as     g
-from   core_records  import *
+import dt_defs       as     dtd
+import sirf_defs     as     sirf
+from   dt_defs       import *
+from   sirf_defs     import *
+
 from   gps_headers   import *
 from   core_decoders import rec0
+
+from   dt_defs       import dt_name
+from   dt_defs       import print_hdr
+from   dt_defs       import print_record
+from   misc_utils    import dump_buf
+from   misc_utils    import buf_str
 
 __version__ = '0.1.0 (gd)'
 
@@ -56,7 +65,7 @@ def decode_gps_version(level, offset, buf, obj):
         print('    {}'.format(swver_str(buf[consumed:])))
 
 
-g.dt_records[DT_GPS_VERSION] = \
+dtd.dt_records[DT_GPS_VERSION] = \
         (0, decode_gps_version, dt_gps_hdr_obj, "GPS_VERSION")
 
 
@@ -68,7 +77,7 @@ def decode_gps_time(level, offset, buf, obj):
         print_hdr(obj)
         print
 
-g.dt_records[DT_GPS_TIME] = (0, decode_gps_time, dt_gps_time_obj, "GPS_TIME")
+dtd.dt_records[DT_GPS_TIME] = (0, decode_gps_time, dt_gps_time_obj, "GPS_TIME")
 
 
 def decode_gps_geo(level, offset, buf, obj):
@@ -79,7 +88,7 @@ def decode_gps_geo(level, offset, buf, obj):
         print_hdr(obj)
         print
 
-g.dt_records[DT_GPS_GEO] = (0, decode_gps_geo, dt_gps_geo_obj, "GPS_GEO")
+dtd.dt_records[DT_GPS_GEO] = (0, decode_gps_geo, dt_gps_geo_obj, "GPS_GEO")
 
 
 def decode_gps_xyz(level, offset, buf, obj):
@@ -90,7 +99,7 @@ def decode_gps_xyz(level, offset, buf, obj):
         print_hdr(obj)
         print
 
-g.dt_records[DT_GPS_XYZ] = (0, decode_gps_xyz, dt_gps_xyz_obj, "GPS_XYZ")
+dtd.dt_records[DT_GPS_XYZ] = (0, decode_gps_xyz, dt_gps_xyz_obj, "GPS_XYZ")
 
 
 ########################################################################
@@ -129,7 +138,7 @@ def gps_nav_decoder(level, offset, buf, obj):
         print(rnav1c.format(buf_str(obj['prns'].val),
                             hdop/float(5)))
 
-g.mid_table[2] = (gps_nav_decoder, gps_nav_obj, "NAV_DATA")
+sirf.mid_table[2] = (gps_nav_decoder, gps_nav_obj, "NAV_DATA")
 
 
 ########################################################################
@@ -197,7 +206,7 @@ def gps_navtrk_decoder(level, offset, buf, obj):
                                   cno_str))
 
 
-g.mid_table[4] = (gps_navtrk_decoder, gps_navtrk_obj, "NAV_TRACK")
+sirf.mid_table[4] = (gps_navtrk_decoder, gps_navtrk_obj, "NAV_TRACK")
 
 
 def gps_swver_decoder(level, offset, buf, obj):
@@ -205,7 +214,7 @@ def gps_swver_decoder(level, offset, buf, obj):
     if (level >= 1):
         print('    {}'.format(swver_str(buf))),
 
-g.mid_table[6] = (gps_swver_decoder, gps_swver_obj, "SW_VER")
+sirf.mid_table[6] = (gps_swver_decoder, gps_swver_obj, "SW_VER")
 
 
 def gps_vis_decoder(level, offset, buf, obj):
@@ -218,7 +227,7 @@ def gps_vis_decoder(level, offset, buf, obj):
             consumed += gps_vis_azel.set(buf[consumed:])
             print(gps_vis_azel)
 
-g.mid_table[13] = (gps_vis_decoder, gps_vis_obj, "VIS_LIST")
+sirf.mid_table[13] = (gps_vis_decoder, gps_vis_obj, "VIS_LIST")
 
 
 def gps_ots_decoder(level, offset, buf, obj):
@@ -229,7 +238,7 @@ def gps_ots_decoder(level, offset, buf, obj):
         if obj.val: ans = 'yes'
         print('    OkToSend:  {:>3s}'.format(ans))
 
-g.mid_table[18] = (gps_ots_decoder, gps_ots_obj, "OkToSend")
+sirf.mid_table[18] = (gps_ots_decoder, gps_ots_obj, "OkToSend")
 
 
 ########################################################################
@@ -331,7 +340,7 @@ def gps_geo_decoder(level, offset, buf, obj):
         print(rgeo2g.format(head_err, nsats, hdop, additional_mode))
 
 
-g.mid_table[41] = (gps_geo_decoder, gps_geo_obj, "GEO_DATA")
+sirf.mid_table[41] = (gps_geo_decoder, gps_geo_obj, "GEO_DATA")
 
 
 def gps_pwr_mode_req(level, offset, buf, obj):
@@ -345,7 +354,7 @@ def gps_pwr_mode_req(level, offset, buf, obj):
     else:
         print(obj)
 
-g.mid_table[218] = (gps_pwr_mode_req, gps_pwr_mode_req_obj, "PWR_REQ")
+sirf.mid_table[218] = (gps_pwr_mode_req, gps_pwr_mode_req_obj, "PWR_REQ")
 
 
 def gps_pwr_mode_rsp(level, offset, buf, obj):
@@ -358,7 +367,7 @@ def gps_pwr_mode_rsp(level, offset, buf, obj):
     else:
         print(obj)
 
-g.mid_table[90]  = (gps_pwr_mode_rsp, gps_pwr_mode_rsp_obj, "PWR_RSP")
+sirf.mid_table[90]  = (gps_pwr_mode_rsp, gps_pwr_mode_rsp_obj, "PWR_RSP")
 
 
 rstat1a = '    STATS:  sid:    {}  ttff_reset:  {:3.1f}   ttff_aiding:  {:3.1f}      ttff_nav:  {:3.1f}'
@@ -404,7 +413,7 @@ def gps_statistics(level, offset, buf, obj):
         print(rstat2d.format(pos_unc_horz, pos_unc_vert, time_unc, freq_unc))
         print(rstat2e.format(n_aided_ephem, n_aided_acq, freq_aiding_err))
 
-g.mid_table[225]  = (gps_statistics, gps_statistics_obj, "STATS")
+sirf.mid_table[225]  = (gps_statistics, gps_statistics_obj, "STATS")
 
 
 def gps_name_only(level, offset, buf, obj):
@@ -414,27 +423,27 @@ def gps_name_only(level, offset, buf, obj):
 #
 # other MIDs, just define their names.  no decoders
 #
-g.mid_table[7]   = (gps_name_only, None, "CLK_STAT")
-g.mid_table[9]   = (gps_name_only, None, "cpu thruput")
-g.mid_table[11]  = (gps_name_only, None, "ACK")
-g.mid_table[28]  = (gps_name_only, None, "NAV_LIB")
-g.mid_table[51]  = (gps_name_only, None, "unk_51")
-g.mid_table[56]  = (gps_name_only, None, "ext_ephemeris")
-g.mid_table[65]  = (gps_name_only, None, "gpio")
-g.mid_table[71]  = (gps_name_only, None, "hw_config_req")
-g.mid_table[73]  = (gps_name_only, None, "aiding_req")
-g.mid_table[88]  = (gps_name_only, None, "unk_88")
-g.mid_table[92]  = (gps_name_only, None, "cw_data")
-g.mid_table[93]  = (gps_name_only, None, "TCXO learning")
-g.mid_table[129] = (gps_name_only, None, "set_nmea")
-g.mid_table[132] = (gps_name_only, None, "send_sw_ver")
-g.mid_table[134] = (gps_name_only, None, "set_baud_rate")
-g.mid_table[144] = (gps_name_only, None, "poll_clk_status")
-g.mid_table[166] = (gps_name_only, None, "set_msg_rate")
-g.mid_table[178] = (gps_name_only, None, "peek/poke")
-g.mid_table[213] = (gps_name_only, None, "session_req")
-g.mid_table[214] = (gps_name_only, None, "hw_config_rsp")
-g.mid_table[215] = (gps_name_only, None, "aiding_rsp")
+sirf.mid_table[7]   = (gps_name_only, None, "CLK_STAT")
+sirf.mid_table[9]   = (gps_name_only, None, "cpu thruput")
+sirf.mid_table[11]  = (gps_name_only, None, "ACK")
+sirf.mid_table[28]  = (gps_name_only, None, "NAV_LIB")
+sirf.mid_table[51]  = (gps_name_only, None, "unk_51")
+sirf.mid_table[56]  = (gps_name_only, None, "ext_ephemeris")
+sirf.mid_table[65]  = (gps_name_only, None, "gpio")
+sirf.mid_table[71]  = (gps_name_only, None, "hw_config_req")
+sirf.mid_table[73]  = (gps_name_only, None, "aiding_req")
+sirf.mid_table[88]  = (gps_name_only, None, "unk_88")
+sirf.mid_table[92]  = (gps_name_only, None, "cw_data")
+sirf.mid_table[93]  = (gps_name_only, None, "TCXO learning")
+sirf.mid_table[129] = (gps_name_only, None, "set_nmea")
+sirf.mid_table[132] = (gps_name_only, None, "send_sw_ver")
+sirf.mid_table[134] = (gps_name_only, None, "set_baud_rate")
+sirf.mid_table[144] = (gps_name_only, None, "poll_clk_status")
+sirf.mid_table[166] = (gps_name_only, None, "set_msg_rate")
+sirf.mid_table[178] = (gps_name_only, None, "peek/poke")
+sirf.mid_table[213] = (gps_name_only, None, "session_req")
+sirf.mid_table[214] = (gps_name_only, None, "hw_config_rsp")
+sirf.mid_table[215] = (gps_name_only, None, "aiding_rsp")
 
 
 ########################################################################
@@ -452,11 +461,11 @@ def decode_gps_raw(level, offset, buf, obj):
     mid = obj['raw_gps_hdr']['mid'].val
     sid = buf[consumed]                 # if there is a sid, next byte
     try:
-        g.mid_count[mid] += 1
+        sirf.mid_count[mid] += 1
     except KeyError:
-        g.mid_count[mid] = 1
+        sirf.mid_count[mid] = 1
 
-    v = g.mid_table.get(mid, (None, None, ''))
+    v = sirf.mid_table.get(mid, (None, None, ''))
     decoder     = v[MID_DECODER]            # dt function
     decoder_obj = v[MID_OBJECT]             # dt object
 
@@ -464,7 +473,7 @@ def decode_gps_raw(level, offset, buf, obj):
     dir_bit = obj['gps_hdr']['dir'].val
     dir_str = 'rx' if dir_bit == 0 \
          else 'tx'
-    v = g.mid_table.get(mid, (None, None, 'unk'))
+    v = sirf.mid_table.get(mid, (None, None, 'unk'))
     mid_name = v[MID_NAME]
 
     if (obj['raw_gps_hdr']['start'].val != 0xa0a2):
@@ -487,5 +496,5 @@ def decode_gps_raw(level, offset, buf, obj):
         return
     decoder(level, offset, buf[consumed:], decoder_obj)
 
-g.dt_records[DT_GPS_RAW_SIRFBIN] = \
+dtd.dt_records[DT_GPS_RAW_SIRFBIN] = \
         (0, decode_gps_raw, dt_gps_raw_obj, "GPS_RAW")

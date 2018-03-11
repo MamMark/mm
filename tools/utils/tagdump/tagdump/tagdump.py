@@ -29,26 +29,25 @@
 #   5   other errors and decoder versions
 
 import sys
-import binascii
 import struct
 import argparse
 
-import globals       as     g
-from   tagdumpargs   import parseargs
-from   misc_utils    import *
-from   core_records  import *
+from   dt_defs       import *
+import dt_defs       as     dtd
+from   dt_defs       import print_record
 
-import core_decoders
-import gps_decoders
-import sensor_decoders
+import sirf_defs     as     sirf
+
+from   tagdumpargs   import parseargs
+from   misc_utils    import dump_buf
 
 from   tagfile         import TagFile
 from   tagfile         import TF_SEEK_END
 
 from   __init__        import __version__   as VERSION
-from   core_records    import DT_H_REVISION as DT_REV
+from   dt_defs         import DT_H_REVISION as DT_REV
 
-from   core_records    import __version__   as cr_ver
+from   dt_defs         import __version__   as dt_ver
 from   decode_base     import __version__   as db_ver
 
 from   core_decoders   import __version__   as cd_ver
@@ -209,9 +208,9 @@ def resync(fd, offset):
     fd.seek(offset)
     num_resyncs += 1
     zero_sigs = 0
-    v = g.dt_records.get(DT_SYNC,   (0, None, None, ''))
+    v = dtd.dt_records.get(DT_SYNC,   (0, None, None, ''))
     sync_len   = v[DTR_REQ_LEN]
-    v = g.dt_records.get(DT_REBOOT, (0, None, None, ''))
+    v = dtd.dt_records.get(DT_REBOOT, (0, None, None, ''))
     reboot_len = v[DTR_REQ_LEN]
     if (reboot_len == 0 or sync_len == 0):
         print('*** can NOT resync, sync or reboot record not defined.')
@@ -220,9 +219,9 @@ def resync(fd, offset):
         while (True):
             try:
                 offset = fd.tell()
-                majik_buf = fd.read(quad_struct.size)
-                sig = quad_struct.unpack(majik_buf)[0]
-                if sig == dt_sync_majik:
+                majik_buf = fd.read(dtd.quad_struct.size)
+                sig = dtd.quad_struct.unpack(majik_buf)[0]
+                if sig == dtd.dt_sync_majik:
                     break
             except struct.error:
                 print(resync1.format(len(majik_buf), offset))
@@ -250,13 +249,13 @@ def resync(fd, offset):
         offset_try = fd.tell()
         if (verbose >= 4):
             print('*** resync: found MAJIK @{0} (0x{0:x})'.format(offset))
-        buf = bytearray(fd.read(dt_hdr_size))
-        if (len(buf) < dt_hdr_size):            # oht oh, too small, very strange
+        buf = bytearray(fd.read(dtd.dt_hdr_size))
+        if (len(buf) < dtd.dt_hdr_size):            # oht oh, too small, very strange
             print('*** resync: read of dt_hdr too small, @{}'.format(offset_try))
             return -1
 
         # we want rlen and rtype, we leave recsum checking for gen_records
-        rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack(buf)
+        rlen, rtype, recnum, systime, recsum = dtd.dt_hdr_struct.unpack(buf)
         if ((rtype == DT_SYNC   and rlen == sync_len) or
             (rtype == DT_REBOOT and rlen == reboot_len)):
             fd.seek(offset_try)
@@ -328,15 +327,15 @@ def get_record(fd):
                 break
             continue
         last_offset = offset
-        rec_buf = bytearray(fd.read(dt_hdr_size))
-        if (len(rec_buf) < dt_hdr_size):
+        rec_buf = bytearray(fd.read(dtd.dt_hdr_size))
+        if (len(rec_buf) < dtd.dt_hdr_size):
             print('*** record header read too short: wanted {}, got {}, @{}'.format(
-                dt_hdr_size, len(rec_buf), offset))
+                dtd.dt_hdr_size, len(rec_buf), offset))
             break                       # oops
-        rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack(rec_buf)
+        rlen, rtype, recnum, systime, recsum = dtd.dt_hdr_struct.unpack(rec_buf)
 
         # check for obvious errors
-        if (rlen < dt_hdr_size):
+        if (rlen < dtd.dt_hdr_size):
             print('*** record size too small: {}, @{}'.format(rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
@@ -359,10 +358,10 @@ def get_record(fd):
 
         # now see if we have any data payload
         # if dlen is negative, that says we are below min header size
-        dlen = rlen - dt_hdr_size
+        dlen = rlen - dtd.dt_hdr_size
         if (dlen < 0):                  # major oops, rlen is screwy
             print('*** record header too short: wanted {}, got {}, @{}'.format(
-                dt_hdr_size, rlen, offset))
+                dtd.dt_hdr_size, rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
@@ -401,7 +400,7 @@ def get_record(fd):
                 break
             continue                    # try again
         try:
-            required_len = g.dt_records[rtype][DTR_REQ_LEN]
+            required_len = dtd.dt_records[rtype][DTR_REQ_LEN]
             if (required_len):
                 if (required_len != rlen):
                     offset = resync(fd, offset)
@@ -445,8 +444,7 @@ def dump(args):
 
     if (args.verbose and args.verbose >= 5):
         print ver_str
-        print '  decode_base: {}  core_records: {}'.format(
-            db_ver, cr_ver)
+        print '  decode_base: {}  dt_defs: {}'.format(db_ver, dt_ver)
         print '     core:  d: {}  h: {}'.format(cd_ver, ch_ver)
         print '     gps :  d: {}  h: {}'.format(gd_ver, gh_ver)
         print '     sens:  d: {}  h: {}'.format(sd_ver, sh_ver)
@@ -455,20 +453,20 @@ def dump(args):
     def count_dt(rtype):
         """
         increment counter in dict of rtypes, create new entry if needed
-        also check for existence of g.dt_records entry.  If not known
+        also check for existence of dtd.dt_records entry.  If not known
         count it as unknown.
         """
         global unk_rtypes
 
         try:
-            g.dt_records[rtype]
+            dtd.dt_records[rtype]
         except KeyError:
             unk_rtypes += 1
 
         try:
-            g.dt_count[rtype] += 1
+            dtd.dt_count[rtype] += 1
         except KeyError:
-            g.dt_count[rtype] = 1
+            dtd.dt_count[rtype] = 1
 
     # Any -s argument (walk syncs backward) or -r -1 (last_rec) forces net io
     if (args.sync is not None or args.start_rec == -1 or args.tail):
@@ -497,7 +495,7 @@ def dump(args):
         else:
             infile.seek(args.jump)
 
-    print(rec_title_str)
+    print(dtd.rec_title_str)
 
     # extract record from input file and output decoded results
     try:
@@ -534,7 +532,7 @@ def dump(args):
                 break                       # all done
 
             count_dt(rtype)
-            v = g.dt_records.get(rtype, (0, None, None, ''))
+            v = dtd.dt_records.get(rtype, (0, None, None, ''))
             decode = v[DTR_DECODER]                 # dt function
             obj    = v[DTR_OBJ]                     # dt object
             if (decode):
@@ -566,10 +564,10 @@ def dump(args):
     print('*** end of processing @{} (0x{:x}),  processed: {} records, {} bytes'.format(
         infile.tell(), infile.tell(), total_records, total_bytes))
     print('*** reboots: {}, resyncs: {}, chksum_errs: {}, unk_rtypes: {}'.format(
-        g.dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
+        dtd.dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
     print
-    print('dt_s:  {}'.format(g.dt_count))
-    print('mid_s: {}'.format(g.mid_count))
+    print('dt_s:  {}'.format(dtd.dt_count))
+    print('mid_s: {}'.format(sirf.mid_count))
 
 if __name__ == "__main__":
     dump(parseargs())
