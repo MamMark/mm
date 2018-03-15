@@ -36,13 +36,13 @@ def buf_str(buf):
     return p_ds
 
 
-def dump_buf(buf, pre=''):
+def dump_buf(buf, pre = '', desc = 'rec:  '):
     bs = buf_str(buf)
     stride = 16         # how many bytes per line
 
     # 3 chars per byte
     idx = 0
-    print(pre + 'rec:  '),
+    print(pre + desc),
     while(idx < len(bs)):
         max_loc = min(len(bs), idx + (stride * 3))
         print(bs[idx:max_loc])
