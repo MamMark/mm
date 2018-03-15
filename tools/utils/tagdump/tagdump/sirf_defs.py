@@ -37,10 +37,17 @@
 # __all__ exports commonly used definitions.  It gets used
 # when someone does a wild import of this module.
 
+import struct
+
+__version__ = '0.0.1 (sd)'
+
 __all__ = [
     'MID_DECODER',
     'MID_OBJECT',
-    'MID_NAME'
+    'MID_NAME',
+    'SIRF_MAX_PAYLOAD',
+    'SIRF_SOP_SEQ',
+    'SIRF_EOP_SEQ'
 ]
 
 mid_table = {}
@@ -49,3 +56,20 @@ mid_count = {}
 MID_DECODER = 0
 MID_OBJECT  = 1
 MID_NAME    = 2
+
+# SIRF_MAX_PAYLOAD is the maximum payload bytes we allow.
+# the protocol allows for up to 2^^11 - 1 (2047)
+
+SIRF_MAX_PAYLOAD = 2047
+
+# hdr_struct is big endian, 2 byte SOP, 2 byte len
+SIRF_SOP_SEQ    = 0xa0a2
+sirf_hdr_str    = '>HH'
+sirf_hdr_struct = struct.Struct(sirf_hdr_str)
+sirf_hdr_size   = sirf_hdr_struct.size
+
+# end_struct is big endian, 2 byte chksum, 2 byte EOP
+SIRF_EOP_SEQ    = 0xb0b3
+sirf_end_str    = '>HH'
+sirf_end_struct = struct.Struct(sirf_end_str)
+sirf_end_size   = sirf_end_struct.size
