@@ -1,3 +1,5 @@
+'''argparse definitions for tagdump options'''
+
 # Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #

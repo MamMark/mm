@@ -1,3 +1,5 @@
+'''basic definitions for sirfbin objects'''
+
 # Copyright (c) 2018 Eric B. Decker
 # All rights reserved.
 #

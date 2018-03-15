@@ -1,3 +1,5 @@
+'''data type record definitions'''
+
 # Copyright (c) 2018 Eric B. Decker
 # All rights reserved.
 #

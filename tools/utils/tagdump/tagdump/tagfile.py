@@ -1,3 +1,5 @@
+'''file or network interface for data stream data'''
+
 # Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #

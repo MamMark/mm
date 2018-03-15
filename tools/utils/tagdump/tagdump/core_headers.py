@@ -1,3 +1,5 @@
+'''Core Data Type records/objects'''
+
 # Copyright (c) 2017-2018, Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #

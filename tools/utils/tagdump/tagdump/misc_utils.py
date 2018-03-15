@@ -1,3 +1,5 @@
+'''misc utilities'''
+
 # Copyright (c) 2017-2018 Eric B. Decker, Daniel J. Maltbie
 # All rights reserved.
 #

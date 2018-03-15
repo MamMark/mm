@@ -1,3 +1,5 @@
+'''base classes for defining record objects'''
+
 # Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
