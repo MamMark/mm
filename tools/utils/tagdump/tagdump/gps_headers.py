@@ -23,18 +23,8 @@
 import binascii
 from   decode_base  import *
 from   collections  import OrderedDict
-from   core_headers import dt_hdr_obj
-from   core_headers import dt_simple_hdr
 
-__version__ = '0.1.0 (gh)'
-
-#
-# not implemented yet.
-# dt level decodes
-#
-dt_gps_time_obj = dt_simple_hdr
-dt_gps_geo_obj  = dt_simple_hdr
-dt_gps_xyz_obj  = dt_simple_hdr
+__version__ = '0.1.1 (gh)'
 
 ########################################################################
 #
@@ -190,20 +180,10 @@ start_mode_names = {
 }
 
 
-#
-# dt, native, little endian
-# used by DT_GPS_VERSION and DT_GPS_RAW_SIRFBIN (gps_raw)
-#
-dt_gps_hdr_obj = aggie(OrderedDict([('hdr',     dt_hdr_obj),
-                                    ('chip',    atom(('B',  '0x{:02x}'))),
-                                    ('dir',     atom(('B',  '{}'))),
-                                    ('mark',    atom(('<I', '0x{:04x}')))]))
-
-# gps piece, big endian, follows dt_gps_raw_obj
+# sirfbin header, big endian.
+# start: 0xa0a2
+# len:   big endian, < 2047
+# mid:   byte
 raw_gps_hdr_obj = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
                                      ('len',     atom(('>H', '0x{:04x}'))),
                                      ('mid',     atom(('B',  '0x{:02x}')))]))
-
-# dt, native, little endian
-dt_gps_raw_obj = aggie(OrderedDict([('gps_hdr',     dt_gps_hdr_obj),
-                                    ('raw_gps_hdr', raw_gps_hdr_obj)]))

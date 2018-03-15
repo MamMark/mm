@@ -21,18 +21,20 @@
 # basic decoders for main data blocks
 
 from   core_headers import *
+
 from   dt_defs      import *
 import dt_defs      as     dtd
+from   dt_defs      import rec0
 from   dt_defs      import dt_name
 
-__version__ = '0.1.0 (cd)'
+from   sirf_defs    import *
+import sirf_defs    as     sirf
 
-# common format used by all records.  (rec0)
-# --- offset recnum  systime  len  type  name
-# --- 999999 999999 99999999  999    99  ssssss
-# ---    512      1      322  116     1  REBOOT  unset -> GOLD (GOLD)
-rec0  = '--- @{:<6d} {:6d} {:8d}  {:3d}    {:2d}  {:s}'
+from   gps_decoders import swver_str
+from   gps_headers  import mids_w_sids
+from   misc_utils   import dump_buf
 
+__version__ = '0.1.1 (cd)'
 
 ################################################################
 #
@@ -351,6 +353,57 @@ def decode_debug(level, offset, buf, obj):
 dtd.dt_records[DT_DEBUG] = (0, decode_debug, dt_debug_obj, "DEBUG")
 
 
+def decode_gps_version(level, offset, buf, obj):
+    consumed = obj.set(buf)
+    xlen     = obj['hdr']['len'].val
+    xtype    = obj['hdr']['type'].val
+    recnum   = obj['hdr']['recnum'].val
+    st       = obj['hdr']['st'].val
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype)))
+    if (level >= 1):
+        print('    {}'.format(swver_str(buf[consumed:])))
+
+
+dtd.dt_records[DT_GPS_VERSION] = \
+        (0, decode_gps_version, dt_gps_hdr_obj, "GPS_VERSION")
+
+
+def decode_gps_time(level, offset, buf, obj):
+    print_record(offset, buf)
+    if (level >= 1):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
+
+dtd.dt_records[DT_GPS_TIME] = \
+        (0, decode_gps_time, dt_gps_time_obj, "GPS_TIME")
+
+
+def decode_gps_geo(level, offset, buf, obj):
+    print_record(offset, buf)
+    if (level >= 1):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
+
+dtd.dt_records[DT_GPS_GEO] = \
+        (0, decode_gps_geo, dt_gps_geo_obj, "GPS_GEO")
+
+
+def decode_gps_xyz(level, offset, buf, obj):
+    print_record(offset, buf)
+    if (level >= 1):
+        obj.set(buf)
+        print(obj)
+        print_hdr(obj)
+        print
+
+dtd.dt_records[DT_GPS_XYZ] = \
+        (0, decode_gps_xyz, dt_gps_xyz_obj, "GPS_XYZ")
+
+
 ################################################################
 #
 # TEST decoder
@@ -407,3 +460,57 @@ def decode_config(level, offset, buf, obj):
     print(cfg0.format())
 
 dtd.dt_records[DT_CONFIG] = (0, decode_config, dt_config_obj, "CONFIG")
+
+
+########################################################################
+#
+# main gps raw decoder, decodes DT_GPS_RAW_SIRFBIN
+#
+
+def decode_gps_raw(level, offset, buf, obj):
+    consumed = obj.set(buf)
+    xlen     = obj['gps_hdr']['hdr']['len'].val
+    xtype    = obj['gps_hdr']['hdr']['type'].val
+    recnum   = obj['gps_hdr']['hdr']['recnum'].val
+    st       = obj['gps_hdr']['hdr']['st'].val
+
+    mid = obj['raw_gps_hdr']['mid'].val
+    sid = buf[consumed]                 # if there is a sid, next byte
+    try:
+        sirf.mid_count[mid] += 1
+    except KeyError:
+        sirf.mid_count[mid] = 1
+
+    v = sirf.mid_table.get(mid, (None, None, ''))
+    decoder     = v[MID_DECODER]            # dt function
+    decoder_obj = v[MID_OBJECT]             # dt object
+
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
+    dir_bit = obj['gps_hdr']['dir'].val
+    dir_str = 'rx' if dir_bit == 0 \
+         else 'tx'
+    v = sirf.mid_table.get(mid, (None, None, 'unk'))
+    mid_name = v[MID_NAME]
+
+    if (obj['raw_gps_hdr']['start'].val != 0xa0a2):
+        index = len(obj) - len(raw_gps_hdr_obj)
+        print('-- non-binary <{:2}>'.format(dir_str))
+        if (level >= 1):
+            print('    {:s}'.format(buf[index:])),
+        if (level >= 2):
+            dump_buf(buf, '    ')
+        return
+
+    sid_str = '' if mid not in mids_w_sids else '/{}'.format(sid)
+    print('-- MID: {:2}{} ({:02x}) <{:2}> {}'.format(
+        mid, sid_str, mid, dir_str, mid_name)),
+
+    if not decoder:
+        print
+        if (level >= 5):
+            print('*** no decoder/obj defined for mid {}'.format(mid))
+        return
+    decoder(level, offset, buf[consumed:], decoder_obj)
+
+dtd.dt_records[DT_GPS_RAW_SIRFBIN] = \
+        (0, decode_gps_raw, dt_gps_raw_obj, "GPS_RAW")

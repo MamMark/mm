@@ -50,12 +50,20 @@ from   dt_defs         import DT_H_REVISION as DT_REV
 from   dt_defs         import __version__   as dt_ver
 from   decode_base     import __version__   as db_ver
 
+# decoder files also populate dt_records and mid_table.  These are
+# dictionaries of what packets we know about.  We need to make sure that
+# each decoder file gets evaluated in some fashion to make sure that the
+# appropriate entry has been set.
+#
+# "from ... import" does the right thing because it evaluates the entire
+# file even though it is just importing one thing.  This causes side effects
+# to occur.
+
+from   sirf_defs       import __version__   as sb_ver
 from   core_decoders   import __version__   as cd_ver
 from   core_headers    import __version__   as ch_ver
 from   gps_decoders    import __version__   as gd_ver
 from   gps_headers     import __version__   as gh_ver
-from   sensor_decoders import __version__   as sd_ver
-from   sensor_headers  import __version__   as sh_ver
 
 ver_str = '\ntagdump: ' + VERSION + ':  dt_rev ' + str(DT_REV)
 
@@ -444,10 +452,10 @@ def dump(args):
 
     if (args.verbose and args.verbose >= 5):
         print ver_str
-        print '  decode_base: {}  dt_defs: {}'.format(db_ver, dt_ver)
+        print '  decode_base: {}  dt_defs: {}  sirf_defs: {}'.format(
+            db_ver, dt_ver, sb_ver)
         print '     core:  d: {}  h: {}'.format(cd_ver, ch_ver)
         print '     gps :  d: {}  h: {}'.format(gd_ver, gh_ver)
-        print '     sens:  d: {}  h: {}'.format(sd_ver, sh_ver)
         print
 
     def count_dt(rtype):

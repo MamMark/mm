@@ -126,6 +126,13 @@ DT_CONFIG		= 24
 DT_GPS_RAW_SIRFBIN      = 32
 
 
+# common format used by all records.  (rec0)
+# --- offset recnum  systime  len  type  name
+# --- 999999 999999 99999999  999    99  ssssss
+# ---    512      1      322  116     1  REBOOT  unset -> GOLD (GOLD)
+rec0  = '--- @{:<6d} {:6d} {:8d}  {:3d}    {:2d}  {:s}'
+
+
 def dt_name(rtype):
     v = dt_records.get(rtype, (0, None, None, 'unk'))
     return v[DTR_NAME]

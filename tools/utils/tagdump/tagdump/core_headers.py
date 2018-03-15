@@ -23,8 +23,9 @@
 import binascii
 from   decode_base  import *
 from   collections  import OrderedDict
+from   gps_headers  import raw_gps_hdr_obj
 
-__version__ = '0.1.0 (ch)'
+__version__ = '0.1.1 (ch)'
 
 dt_hdr_obj = aggie(OrderedDict([
     ('len',     atom(('<H', '{}'))),
@@ -207,6 +208,26 @@ dt_event_obj    = aggie(OrderedDict([
     ('w',     atom(('<B', '{}')))]))
 
 
+#
+# not implemented yet.
+#
+dt_debug_obj    = dt_simple_hdr
+
+#
+# dt, native, little endian
+# used by DT_GPS_VERSION and DT_GPS_RAW_SIRFBIN (gps_raw)
+#
+dt_gps_hdr_obj = aggie(OrderedDict([('hdr',     dt_hdr_obj),
+                                    ('chip',    atom(('B',  '0x{:02x}'))),
+                                    ('dir',     atom(('B',  '{}'))),
+                                    ('mark',    atom(('<I', '0x{:04x}')))]))
+
+dt_gps_time_obj = dt_simple_hdr
+dt_gps_geo_obj  = dt_simple_hdr
+dt_gps_xyz_obj  = dt_simple_hdr
+
+dt_test_obj     = dt_simple_hdr
+
 ####
 #
 # NOTES
@@ -216,7 +237,8 @@ dt_event_obj    = aggie(OrderedDict([
 # ascii string (yeah, localization is an issue, but not now).
 #
 dt_note_obj     = dt_simple_hdr
-
-dt_debug_obj    = dt_simple_hdr
-dt_test_obj     = dt_simple_hdr
 dt_config_obj   = dt_simple_hdr
+
+# DT_GPS_RAW_SIRFBIN, dt, native, little endian
+dt_gps_raw_obj = aggie(OrderedDict([('gps_hdr',     dt_gps_hdr_obj),
+                                    ('raw_gps_hdr', raw_gps_hdr_obj)]))
