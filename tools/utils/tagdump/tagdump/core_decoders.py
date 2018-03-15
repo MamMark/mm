@@ -32,9 +32,10 @@ from   dt_defs      import dt_name
 from   sirf_defs    import *
 import sirf_defs    as     sirf
 
-from   gps_decoders import swver_str
-from   gps_headers  import mids_w_sids
-from   misc_utils   import dump_buf
+from   sirf_decoders import swver_str
+from   sirf_headers  import mids_w_sids
+
+from   misc_utils    import dump_buf
 
 __version__ = '0.1.1 (cd)'
 

@@ -32,8 +32,7 @@
 #
 # key is gps mid.  Contents is vector (decoder, obj, name).
 #
-# mid decoders when imported need to populate the table.  MID ids are
-# defined in gps_decoders.
+# mid decoders when imported need to populate the table.
 
 
 # __all__ exports commonly used definitions.  It gets used

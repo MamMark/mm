@@ -62,10 +62,11 @@ from   decode_base     import __version__   as db_ver
 # to occur.
 
 from   sirf_defs       import __version__   as sb_ver
+from   sirf_decoders   import __version__   as gd_ver
+from   sirf_headers    import __version__   as gh_ver
+
 from   core_decoders   import __version__   as cd_ver
 from   core_headers    import __version__   as ch_ver
-from   gps_decoders    import __version__   as gd_ver
-from   gps_headers     import __version__   as gh_ver
 
 ver_str = '\ntagdump: ' + VERSION + ':  dt_rev ' + str(DT_REV)
 

@@ -25,7 +25,7 @@
 import binascii
 from   decode_base  import *
 from   collections  import OrderedDict
-from   gps_headers  import raw_gps_hdr_obj
+from   sirf_headers import raw_gps_hdr_obj
 
 __version__ = '0.1.1 (ch)'
 

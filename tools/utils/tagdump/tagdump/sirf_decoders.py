@@ -24,8 +24,7 @@
 
 import sirf_defs     as     sirf
 from   sirf_defs     import *
-
-from   gps_headers   import *
+from   sirf_headers  import *
 
 from   misc_utils    import buf_str
 
