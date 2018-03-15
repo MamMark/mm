@@ -226,6 +226,9 @@ dt_gps_time_obj = dt_simple_hdr
 dt_gps_geo_obj  = dt_simple_hdr
 dt_gps_xyz_obj  = dt_simple_hdr
 
+dt_sen_data_obj = dt_simple_hdr
+dt_sen_set_obj  = dt_simple_hdr
+
 dt_test_obj     = dt_simple_hdr
 
 ####
