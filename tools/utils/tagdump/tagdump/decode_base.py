@@ -23,11 +23,12 @@
 import struct
 from   collections import OrderedDict
 
-__version__ = '0.1.0 (db)'
+__version__ = '0.1.1 (db)'
 
 class atom(object):
     '''
     takes 2-tuple: ('struct_string', 'default_print_format')
+    optional 3-tuple: (..., ..., formating_function)
 
     set will set the instance.attribute "val" to the value
     of the atom's decode of the buffer.

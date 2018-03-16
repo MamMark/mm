@@ -30,7 +30,7 @@
 # dictionary of all gps Message ID records we understand.  Similar
 # to dt_records but for gps messages.
 #
-# key is gps mid.  Contents is vector (decoder, obj, name).
+# key is gps mid.  Contents is vector (decoder, emitter_list, obj, name).
 #
 # mid decoders when imported need to populate the table.
 
@@ -40,12 +40,14 @@
 
 import struct
 
-__version__ = '0.0.1 (sd)'
+__version__ = '0.1.2 (sd)'
 
 __all__ = [
     'MID_DECODER',
+    'MID_EMITTERS',
     'MID_OBJECT',
     'MID_NAME',
+
     'SIRF_MAX_PAYLOAD',
     'SIRF_SOP_SEQ',
     'SIRF_EOP_SEQ'
@@ -54,9 +56,10 @@ __all__ = [
 mid_table = {}
 mid_count = {}
 
-MID_DECODER = 0
-MID_OBJECT  = 1
-MID_NAME    = 2
+MID_DECODER  = 0
+MID_EMITTERS = 1
+MID_OBJECT   = 2
+MID_NAME     = 3
 
 # SIRF_MAX_PAYLOAD is the maximum payload bytes we allow.
 # the protocol allows for up to 2^^11 - 1 (2047)

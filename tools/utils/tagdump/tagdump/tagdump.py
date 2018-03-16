@@ -219,9 +219,9 @@ def resync(fd, offset):
     fd.seek(offset)
     num_resyncs += 1
     zero_sigs = 0
-    v = dtd.dt_records.get(DT_SYNC,   (0, None, None, ''))
+    v = dtd.dt_records.get(DT_SYNC,   (0, None, None, None, ''))
     sync_len   = v[DTR_REQ_LEN]
-    v = dtd.dt_records.get(DT_REBOOT, (0, None, None, ''))
+    v = dtd.dt_records.get(DT_REBOOT, (0, None, None, None, ''))
     reboot_len = v[DTR_REQ_LEN]
     if (reboot_len == 0 or sync_len == 0):
         print('*** can NOT resync, sync or reboot record not defined.')
@@ -543,15 +543,20 @@ def dump(args):
                 break                       # all done
 
             count_dt(rtype)
-            v = dtd.dt_records.get(rtype, (0, None, None, ''))
-            decode = v[DTR_DECODER]                 # dt function
-            obj    = v[DTR_OBJ]                     # dt object
+            v = dtd.dt_records.get(rtype, (0, None, None, None, ''))
+            decode   = v[DTR_DECODER]           # dt function
+            emitters = v[DTR_EMITTERS]          # emitter list
+            obj      = v[DTR_OBJ]               # dt object
             if (decode):
                 try:
                     decode(verbose, rec_offset, rec_buf, obj)
+                    if emitters and len(emitters):
+                        for e in emitters:
+                            e(verbose, rec_offset, rec_buf, obj)
                 except struct.error:
-                    print('*** decode error: (len: {}, rtype: {} {}), @{}'.format(
-                        rlen, rtype, dt_name(rtype), rec_offset))
+                    print('*** decoder/emitter error: (len: {}, '
+                          'rtype: {} {}), @{}'.format(
+                              rlen, rtype, dt_name(rtype), rec_offset))
             else:
                 if (verbose >= 5):
                     print('*** no decoder installed for rtype {}, @{}'.format(

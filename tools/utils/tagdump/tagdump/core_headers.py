@@ -22,12 +22,13 @@
 
 # basic data type object descriptors
 
+__version__ = '0.1.2 (ch)'
+
 import binascii
 from   decode_base  import *
 from   collections  import OrderedDict
-from   sirf_headers import raw_gps_hdr_obj
-
-__version__ = '0.1.1 (ch)'
+from   sirf_headers import sirf_hdr_obj
+from   sirf_headers import sirf_swver_obj
 
 dt_hdr_obj = aggie(OrderedDict([
     ('len',     atom(('<H', '{}'))),
@@ -224,6 +225,9 @@ dt_gps_hdr_obj = aggie(OrderedDict([('hdr',     dt_hdr_obj),
                                     ('dir',     atom(('B',  '{}'))),
                                     ('mark',    atom(('<I', '0x{:04x}')))]))
 
+dt_gps_ver_obj = aggie(OrderedDict([('gps_hdr',    dt_gps_hdr_obj),
+                                    ('sirf_swver', sirf_swver_obj)]))
+
 dt_gps_time_obj = dt_simple_hdr
 dt_gps_geo_obj  = dt_simple_hdr
 dt_gps_xyz_obj  = dt_simple_hdr
@@ -245,5 +249,6 @@ dt_note_obj     = dt_simple_hdr
 dt_config_obj   = dt_simple_hdr
 
 # DT_GPS_RAW_SIRFBIN, dt, native, little endian
-dt_gps_raw_obj = aggie(OrderedDict([('gps_hdr',     dt_gps_hdr_obj),
-                                    ('raw_gps_hdr', raw_gps_hdr_obj)]))
+#  sirf data big endian.
+dt_gps_raw_obj = aggie(OrderedDict([('gps_hdr',  dt_gps_hdr_obj),
+                                    ('sirf_hdr', sirf_hdr_obj)]))

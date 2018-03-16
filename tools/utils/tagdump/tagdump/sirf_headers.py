@@ -22,20 +22,70 @@
 
 # object descriptors for gps data blocks
 
+__version__ = '0.1.2 (sh)'
+
 import binascii
 from   decode_base  import *
 from   collections  import OrderedDict
 
-__version__ = '0.1.1 (gh)'
-
-########################################################################
+####
 #
-# Gps Raw decode messages
-#
-# warning GPS messages are big endian.  The surrounding header (the dt header
-# etc) is little endian (native order).
+# Special atom class for sirf_swver
+# not a simple value.
+# format string must include two strings.  ie. '{} {}'
 #
 
+class atom_sirf_swver(object):
+    '''sirf_swver atom.  special.
+    takes 2-tuple: ('struct_string', 'default_print_format')
+
+    default_print_format must have space for two items.
+
+    optional 3-tuple: (..., ..., formating_function)
+
+    set will set the instance.attribute "val" to the value
+    of the atom's decode of the buffer.  swver.val is the 2-tuple,
+    (str0, str1).
+    '''
+    def __init__(self, a_tuple):
+        self.s_str = a_tuple[0]
+        self.s_rec = struct.Struct(self.s_str)
+        self.p_str = a_tuple[1]
+        if (len(a_tuple) > 2):
+            self.f_str = a_tuple[2]
+        else:
+            self.f_str = None
+        self.val = ('','')
+
+    def __len__(self):
+        return len(self.val[0]) + len(self.val[1]) + 2
+
+    def __repr__(self):
+        if callable(self.f_str):
+            return self.p_str.format(self.f_str(self.val))
+        return self.p_str.format(*self.val)
+
+    def set(self, buf):
+        '''set the swver val from the buffer
+
+        len0 len1 str0 str1   is what we expect.
+
+        return the number of bytes (size) consumed,
+          len(str0) + len(str1) + 2
+
+        store val as the tuple (str0, str1)
+        '''
+        len0 = buf[0]
+        len1 = buf[1]
+        self.val = ( buf[2:len0], buf[2+len0:2+len0+len1] )
+        return len(self.val[0]) + len(self.val[1]) + 2
+
+
+#########
+#
+# list of mids that have sids.
+# usage: if mid in mids_w_sids:  <mid has a sid>
+#
 mids_w_sids = [
     # Output
     48, 56, 63, 64, 65, 68, 69, 70, 72, 73, 74, 75, 77,
@@ -46,7 +96,27 @@ mids_w_sids = [
     232, 233, 234 ]
 
 
-gps_nav_obj = aggie(OrderedDict([
+#######
+#
+# sirfbin header, big endian.
+#
+# start: 0xa0a2
+# len:   big endian, < 2047
+# mid:   byte
+sirf_hdr_obj = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
+                                  ('len',     atom(('>H', '0x{:04x}'))),
+                                  ('mid',     atom(('B',  '0x{:02x}')))]))
+
+
+########################################################################
+#
+# Gps Raw decode messages
+#
+# warning GPS messages are big endian.  The surrounding header (the dt header
+# etc) is little endian (native order).
+#
+
+sirf_nav_obj = aggie(OrderedDict([
     ('xpos',  atom(('>i', '{}'))),
     ('ypos',  atom(('>i', '{}'))),
     ('zpos',  atom(('>i', '{}'))),
@@ -61,12 +131,12 @@ gps_nav_obj = aggie(OrderedDict([
     ('nsats', atom(('B', '{}'))),
     ('prns',  atom(('12s', '{}', binascii.hexlify)))]))
 
-gps_navtrk_obj = aggie(OrderedDict([
+sirf_navtrk_obj = aggie(OrderedDict([
     ('week10', atom(('>H', '{}'))),
     ('tow',    atom(('>I', '{}'))),
     ('chans',  atom(('B',  '{}')))]))
 
-gps_navtrk_chan = aggie([('sv_id',    atom(('B',  '{:2}'))),
+sirf_navtrk_chan = aggie([('sv_id',    atom(('B',  '{:2}'))),
                          ('sv_az23',  atom(('B',  '{:3}'))),
                          ('sv_el2',   atom(('B',  '{:3}'))),
                          ('state',    atom(('>H', '0x{:04x}'))),
@@ -81,19 +151,19 @@ gps_navtrk_chan = aggie([('sv_id',    atom(('B',  '{:2}'))),
                          ('cno8',     atom(('B',  '{}'))),
                          ('cno9',     atom(('B',  '{}')))])
 
-gps_swver_obj   = aggie(OrderedDict([('str0_len', atom(('B', '{}'))),
-                                     ('str1_len', atom(('B', '{}')))]))
+sirf_vis_obj     = aggie([('vis_sats', atom(('B',  '{}')))])
 
-gps_vis_obj     = aggie([('vis_sats', atom(('B',  '{}')))])
-
-gps_vis_azel    = aggie([('sv_id',    atom(('B',  '{}'))),
+sirf_vis_azel    = aggie([('sv_id',    atom(('B',  '{}'))),
                          ('sv_az',    atom(('>h', '{}'))),
                          ('sv_el',    atom(('>h', '{}')))])
 
 # OkToSend
-gps_ots_obj = atom(('B', '{}'))
+sirf_ots_obj = atom(('B', '{}'))
 
-gps_geo_obj = aggie(OrderedDict([
+# swver, its special
+sirf_swver_obj = atom_sirf_swver(('', '--<{}>--  --<{}>--'))
+
+sirf_geo_obj = aggie(OrderedDict([
     ('nav_valid',        atom(('>H', '0x{:04x}'))),
     ('nav_type',         atom(('>H', '0x{:04x}'))),
     ('week_x',           atom(('>H', '{}'))),
@@ -133,7 +203,7 @@ gps_geo_obj = aggie(OrderedDict([
 
 
 # pwr_mode_req, MID 218, has SID
-gps_pwr_mode_req_obj = aggie(OrderedDict([
+sirf_pwr_mode_req_obj = aggie(OrderedDict([
     ('sid',              atom(('B',  '{}'))),
     ('timeout',          atom(('B',  '{}'))),
     ('control',          atom(('B',  '{}'))),
@@ -141,7 +211,7 @@ gps_pwr_mode_req_obj = aggie(OrderedDict([
 ]))
 
 # pwr_mode_rsp, MID 90, has SID
-gps_pwr_mode_rsp_obj = aggie(OrderedDict([
+sirf_pwr_mode_rsp_obj = aggie(OrderedDict([
     ('sid',              atom(('B', '{}'))),
     ('error',            atom(('>H', '0x{:02x}'))),
     ('reserved',         atom(('>H', '{}'))),
@@ -149,7 +219,7 @@ gps_pwr_mode_rsp_obj = aggie(OrderedDict([
 
 
 # statistics, MID 225, 6
-gps_statistics_obj    = aggie(OrderedDict([
+sirf_statistics_obj    = aggie(OrderedDict([
     ('sid',             atom(('B',  '{}'))),
     ('ttff_reset',      atom(('>H', '{}'))),
     ('ttff_aiding',     atom(('>H', '{}'))),
@@ -171,21 +241,3 @@ gps_statistics_obj    = aggie(OrderedDict([
     ('start_mode',      atom(('B',  '{}'))),
     ('reserved',        atom(('B',  '{}')))
 ]))
-
-
-# start_mode
-start_mode_names = {
-     0: "cold",
-     1: "warm",
-     2: "hot",
-     3: "fast",
-}
-
-
-# sirfbin header, big endian.
-# start: 0xa0a2
-# len:   big endian, < 2047
-# mid:   byte
-raw_gps_hdr_obj = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
-                                     ('len',     atom(('>H', '0x{:04x}'))),
-                                     ('mid',     atom(('B',  '0x{:02x}')))]))

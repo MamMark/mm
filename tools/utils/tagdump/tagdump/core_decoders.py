@@ -22,6 +22,8 @@
 
 # basic decoders for main data blocks
 
+__version__ = '0.1.2 (cd)'
+
 from   core_headers import *
 
 from   dt_defs      import *
@@ -32,17 +34,24 @@ from   dt_defs      import dt_name
 from   sirf_defs    import *
 import sirf_defs    as     sirf
 
-from   sirf_decoders import swver_str
 from   sirf_headers  import mids_w_sids
-
+from   sirf_headers  import sirf_hdr_obj
 from   misc_utils    import dump_buf
 
-__version__ = '0.1.1 (cd)'
+def decode_default(level, offset, buf, obj):
+    return obj.set(buf)
 
 ################################################################
 #
-# REBOOT decoder
+# REBOOT decoder, dt_reboot_obj, owcb_obj
 #
+
+def decode_reboot(level, offset, buf, obj):
+    consumed  = obj.set(buf)
+    consumed += owcb_obj.set(buf[consumed:])
+    return consumed
+
+# reboot emitter support
 
 ow_bases = {
     0x00000000: "GOLD",
@@ -115,8 +124,7 @@ rbt2f = '    uptime: {:8}  elapsed: {:8}'
 rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
 rbt2h = '    vec_chk_fail: {:2}  image_chk_fail:   {:2}'
 
-def decode_reboot(level, offset, buf, obj):
-    consumed = obj.set(buf)
+def emit_reboot(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
@@ -130,7 +138,6 @@ def decode_reboot(level, offset, buf, obj):
         print('*** version mismatch, expected {:d}, got {:d}'.format(
             DT_H_REVISION, dt_rev))
 
-    consumed     = owcb_obj.set(buf[consumed:])
     from_base    = owcb_obj['from_base'].val
     reboot_count = owcb_obj['reboot_count'].val
     fail_count   = owcb_obj['fail_count'].val
@@ -181,13 +188,21 @@ def decode_reboot(level, offset, buf, obj):
                            owcb_obj['image_chk_fail'].val))
 
 #                            128 = sizeof(reboot record) + sizeof(owcb)
-dtd.dt_records[DT_REBOOT] = (128, decode_reboot, dt_reboot_obj, "REBOOT")
+dtd.dt_records[DT_REBOOT] = (128, decode_reboot, [ emit_reboot ],
+                             dt_reboot_obj, "REBOOT")
 
 
 ################################################################
 #
-# VERSION decoder
+# VERSION decoder, dt_version_obj, image_info_obj
 #
+
+def decode_version(level, offset, buf, obj):
+    consumed  = obj.set(buf)
+    consumed += image_info_obj.set(buf[consumed:])
+    return consumed
+
+# version emitter support
 
 model_strs = {
     0x01:       'mm6a',
@@ -211,15 +226,13 @@ ver2b = '    desc1:  (m) heads/recsum-0-g04de0f8-dirty'
 ver2c = '    date:   Fri Dec 29 04:05:07 UTC 2017      ib/len: 0x{:x}/{:d} (0x{:x})'
 ver2d = '    ii_sig: 0x33275401  vect_chk: 0x00000000  im_chk: 0x00000000'
 
-def decode_version(level, offset, buf, obj):
-    consumed = obj.set(buf)             # decode version header
+def emit_version(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     st       = obj['hdr']['st'].val
     base     = obj['base'].val
 
-    consumed = image_info_obj.set(buf[consumed:])
     ver_str = '{:d}.{:d}.{:d}'.format(
         image_info_obj['ver_id']['major'].val,
         image_info_obj['ver_id']['minor'].val,
@@ -252,12 +265,14 @@ def decode_version(level, offset, buf, obj):
                        image_info_obj['im_len'].val))
         print(ver2d)
 
-dtd.dt_records[DT_VERSION] = (168, decode_version, dt_version_obj, "VERSION")
+dtd.dt_records[DT_VERSION] = (168, decode_version, [ emit_version ],
+                              dt_version_obj, "VERSION")
 
 
 ################################################################
 #
-# SYNC decoder
+# SYNC emitter
+# uses decode_default with dt_sync_obj to decode
 #
 
 sync0  = '  prev: @{:d} (0x{:x})'
@@ -265,8 +280,7 @@ sync0  = '  prev: @{:d} (0x{:x})'
 sync1a = '    SYNC: majik:  0x{:x}   prev: {} (0x{:x})'
 sync1b = '          dt: 2017/12/26-01:52:40 (1) GMT'
 
-def decode_sync(level, offset, buf, obj):
-    consumed = obj.set(buf)
+def emit_sync(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
@@ -282,12 +296,14 @@ def decode_sync(level, offset, buf, obj):
         print(sync1a.format(majik, prev, prev))
         print(sync1b.format())
 
-dtd.dt_records[DT_SYNC] = (36, decode_sync, dt_sync_obj, "SYNC")
+dtd.dt_records[DT_SYNC] = (36, decode_default, [ emit_sync ],
+                           dt_sync_obj, "SYNC")
 
 
 ################################################################
 #
-# EVENT decoder
+# EVENT emitter
+# uses decode_default with dt_event_obj to decode
 #
 
 def event_name(event):
@@ -299,8 +315,7 @@ def gps_cmd_name(gps_cmd):
 event0  = ' {:s} {} {} {} {}'
 event1  = '    {:s}: ({}) <{} {} {} {}>  x({:x} {:x} {:x} {:x})'
 
-def decode_event(level, offset, buf, obj):
-    consumed = obj.set(buf)
+def emit_event(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
@@ -333,18 +348,19 @@ def decode_event(level, offset, buf, obj):
                             arg0, arg1, arg2, arg3,
                             arg0, arg1, arg2, arg3))
 
-dtd.dt_records[DT_EVENT] = (40, decode_event, dt_event_obj, "EVENT")
+dtd.dt_records[DT_EVENT] = (40, decode_default, [ emit_event ],
+                            dt_event_obj, "EVENT")
 
 
 ################################################################
 #
-# DEBUG decoder
+# DEBUG emitter
+# uses decode_default with dt_debug_obj to decode
 #
 
 debug0  = ' xxxx'
 
-def decode_debug(level, offset, buf, obj):
-    consumed = obj.set(buf)
+def emit_debug(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
@@ -353,58 +369,60 @@ def decode_debug(level, offset, buf, obj):
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(debug0.format())
 
-dtd.dt_records[DT_DEBUG] = (0, decode_debug, dt_debug_obj, "DEBUG")
+dtd.dt_records[DT_DEBUG] = (0, decode_default, [ emit_debug ],
+                            dt_debug_obj, "DEBUG")
 
 
-def decode_gps_version(level, offset, buf, obj):
-    consumed = obj.set(buf)
-    xlen     = obj['hdr']['len'].val
-    xtype    = obj['hdr']['type'].val
-    recnum   = obj['hdr']['recnum'].val
-    st       = obj['hdr']['st'].val
+################################################################
+#
+# GPS_VERSION emitter
+# uses decode_default with dt_gps_hdr_obj to decode
+#
+
+def emit_gps_version(level, offset, buf, obj):
+    xlen     = obj['gps_hdr']['hdr']['len'].val
+    xtype    = obj['gps_hdr']['hdr']['type'].val
+    recnum   = obj['gps_hdr']['hdr']['recnum'].val
+    st       = obj['gps_hdr']['hdr']['st'].val
     print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype)))
     if (level >= 1):
-        print('    {}'.format(swver_str(buf[consumed:])))
+        print('    {}'.format(obj['sirf_swver']))
+
+dtd.dt_records[DT_GPS_VERSION] = (0, decode_default, [ emit_gps_version ],
+                                  dt_gps_ver_obj, "GPS_VERSION")
 
 
-dtd.dt_records[DT_GPS_VERSION] = \
-        (0, decode_gps_version, dt_gps_hdr_obj, "GPS_VERSION")
-
-
-def decode_gps_time(level, offset, buf, obj):
+def emit_gps_time(level, offset, buf, obj):
     print_record(offset, buf)
     if (level >= 1):
-        obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-dtd.dt_records[DT_GPS_TIME] = \
-        (0, decode_gps_time, dt_gps_time_obj, "GPS_TIME")
+dtd.dt_records[DT_GPS_TIME] = (0, decode_default, [ emit_gps_time ],
+                               dt_gps_time_obj, "GPS_TIME")
 
 
-def decode_gps_geo(level, offset, buf, obj):
+def emit_gps_geo(level, offset, buf, obj):
     print_record(offset, buf)
     if (level >= 1):
-        obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-dtd.dt_records[DT_GPS_GEO] = \
-        (0, decode_gps_geo, dt_gps_geo_obj, "GPS_GEO")
+dtd.dt_records[DT_GPS_GEO] = (0, decode_default, [ emit_gps_geo ],
+                              dt_gps_geo_obj, "GPS_GEO")
 
 
-def decode_gps_xyz(level, offset, buf, obj):
+def emit_gps_xyz(level, offset, buf, obj):
     print_record(offset, buf)
     if (level >= 1):
-        obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-dtd.dt_records[DT_GPS_XYZ] = \
-        (0, decode_gps_xyz, dt_gps_xyz_obj, "GPS_XYZ")
+dtd.dt_records[DT_GPS_XYZ] = (0, decode_default, [ emit_gps_xyz ],
+                              dt_gps_xyz_obj, "GPS_XYZ")
 
 
 ################################################################
@@ -412,28 +430,26 @@ dtd.dt_records[DT_GPS_XYZ] = \
 # SENSOR/SET decoders
 #
 
-def decode_sensor_data(level, offset, buf, obj):
+def emit_sensor_data(level, offset, buf, obj):
     print_record(offset, buf)
     if (level >= 1):
-        obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-dtd.dt_records[DT_SENSOR_DATA] = \
-        (0, decode_sensor_data, dt_sen_data_obj, "SENSOR_DATA")
+dtd.dt_records[DT_SENSOR_DATA] = (0, decode_default, [ emit_sensor_data ],
+                                  dt_sen_data_obj, "SENSOR_DATA")
 
 
-def decode_sensor_set(level, offset, buf, obj):
+def emit_sensor_set(level, offset, buf, obj):
     print_record(offset, buf)
     if (level >= 1):
-        obj.set(buf)
         print(obj)
         print_hdr(obj)
         print
 
-dtd.dt_records[DT_SENSOR_SET] = \
-        (0, decode_sensor_set, dt_sen_set_obj, "SENSOR_SET")
+dtd.dt_records[DT_SENSOR_SET] = (0, decode_default, [ emit_sensor_set ],
+                                 dt_sen_set_obj, "SENSOR_SET")
 
 
 ################################################################
@@ -443,8 +459,7 @@ dtd.dt_records[DT_SENSOR_SET] = \
 
 test0  = ' xxxx'
 
-def decode_test(level, offset, buf, obj):
-    consumed = obj.set(buf)
+def emit_test(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
@@ -453,7 +468,8 @@ def decode_test(level, offset, buf, obj):
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(test0.format())
 
-dtd.dt_records[DT_TEST] = (0, decode_test, dt_test_obj, "TEST")
+dtd.dt_records[DT_TEST] = (0, decode_default, [ emit_test ],
+                           dt_test_obj, "TEST")
 
 
 ################################################################
@@ -461,17 +477,17 @@ dtd.dt_records[DT_TEST] = (0, decode_test, dt_test_obj, "TEST")
 # NOTE decoder
 #
 
-def decode_note(level, offset, buf, obj):
-    consumed = obj.set(buf)
+def emit_note(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     st       = obj['hdr']['st'].val
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
-    print('{}'.format(buf[consumed:]))
+    print('{}'.format(buf[point:]))
 
-dtd.dt_records[DT_NOTE] = (0, decode_note, dt_note_obj, "NOTE")
+dtd.dt_records[DT_NOTE] = (0, decode_default, [ emit_note ],
+                           dt_note_obj, "NOTE")
 
 
 ################################################################
@@ -481,8 +497,7 @@ dtd.dt_records[DT_NOTE] = (0, decode_note, dt_note_obj, "NOTE")
 
 cfg0  = ' xxxx'
 
-def decode_config(level, offset, buf, obj):
-    consumed = obj.set(buf)
+def emit_config(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
@@ -491,41 +506,52 @@ def decode_config(level, offset, buf, obj):
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(cfg0.format())
 
-dtd.dt_records[DT_CONFIG] = (0, decode_config, dt_config_obj, "CONFIG")
+dtd.dt_records[DT_CONFIG] = (0, decode_default, [ emit_config ],
+                             dt_config_obj, "CONFIG")
 
 
 ########################################################################
 #
 # main gps raw decoder, decodes DT_GPS_RAW_SIRFBIN
+# dt_gps_raw_obj, 2nd level decode on mid
 #
 
 def decode_gps_raw(level, offset, buf, obj):
     consumed = obj.set(buf)
-    xlen     = obj['gps_hdr']['hdr']['len'].val
-    xtype    = obj['gps_hdr']['hdr']['type'].val
-    recnum   = obj['gps_hdr']['hdr']['recnum'].val
-    st       = obj['gps_hdr']['hdr']['st'].val
 
-    mid = obj['raw_gps_hdr']['mid'].val
-    sid = buf[consumed]                 # if there is a sid, next byte
+    if obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ:
+        return consumed - len(sirf_hdr_obj)
+
+    mid      = obj['sirf_hdr']['mid'].val
+
     try:
         sirf.mid_count[mid] += 1
     except KeyError:
         sirf.mid_count[mid] = 1
 
-    v = sirf.mid_table.get(mid, (None, None, ''))
+    v = sirf.mid_table.get(mid, (None, None, None, ''))
     decoder     = v[MID_DECODER]            # dt function
     decoder_obj = v[MID_OBJECT]             # dt object
+    if not decoder:
+        print
+        if (level >= 5):
+            print('*** no decoder/obj defined for mid {}'.format(mid))
+        return consumed
+    return consumed + decoder(level, offset, buf[consumed:], decoder_obj)
+
+
+def emit_gps_raw(level, offset, buf, obj):
+    xlen     = obj['gps_hdr']['hdr']['len'].val
+    xtype    = obj['gps_hdr']['hdr']['type'].val
+    recnum   = obj['gps_hdr']['hdr']['recnum'].val
+    st       = obj['gps_hdr']['hdr']['st'].val
+    dir_bit  = obj['gps_hdr']['dir'].val
+
+    dir_str  = 'rx' if dir_bit == 0 else 'tx'
 
     print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
-    dir_bit = obj['gps_hdr']['dir'].val
-    dir_str = 'rx' if dir_bit == 0 \
-         else 'tx'
-    v = sirf.mid_table.get(mid, (None, None, 'unk'))
-    mid_name = v[MID_NAME]
-
-    if (obj['raw_gps_hdr']['start'].val != 0xa0a2):
-        index = len(obj) - len(raw_gps_hdr_obj)
+    if (obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ):
+        index = len(obj) - len(sirf_hdr_obj)
         print('-- non-binary <{:2}>'.format(dir_str))
         if (level >= 1):
             print('    {:s}'.format(buf[index:])),
@@ -533,16 +559,25 @@ def decode_gps_raw(level, offset, buf, obj):
             dump_buf(buf, '    ')
         return
 
+    mid      = obj['sirf_hdr']['mid'].val
+    sid      = buf[len(obj)]            # if there is a sid, next byte
+
+    v = sirf.mid_table.get(mid, (None, None, None, ''))
+    emitters    = v[MID_EMITTERS]           # emitter list
+    decoder_obj = v[MID_OBJECT]             # dt object
+    mid_name    = v[MID_NAME]
+
     sid_str = '' if mid not in mids_w_sids else '/{}'.format(sid)
     print('-- MID: {:2}{} ({:02x}) <{:2}> {}'.format(
         mid, sid_str, mid, dir_str, mid_name)),
 
-    if not decoder:
+    if not emitters or len(emitters) == 0:
         print
         if (level >= 5):
-            print('*** no decoder/obj defined for mid {}'.format(mid))
+            print('*** no emitters defined for mid {}'.format(mid))
         return
-    decoder(level, offset, buf[consumed:], decoder_obj)
+    for e in emitters:
+        e(level, offset, buf[len(obj):], decoder_obj)
 
-dtd.dt_records[DT_GPS_RAW_SIRFBIN] = \
-        (0, decode_gps_raw, dt_gps_raw_obj, "GPS_RAW")
+dtd.dt_records[DT_GPS_RAW_SIRFBIN] = (0, decode_gps_raw, [ emit_gps_raw ],
+                                      dt_gps_raw_obj, "GPS_RAW")

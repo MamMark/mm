@@ -28,7 +28,7 @@
 import struct
 from   misc_utils import dump_buf
 
-__version__ = '0.1.0 (dt)'
+__version__ = '0.1.2 (dt)'
 
 
 # __all__ exports commonly used definitions.  It gets used
@@ -40,6 +40,7 @@ __all__ = [
     # object identifiers in each dt_record tuple
     'DTR_REQ_LEN',
     'DTR_DECODER',
+    'DTR_EMITTERS',
     'DTR_OBJ',
     'DTR_NAME',
 
@@ -93,10 +94,11 @@ DT_H_REVISION           = 16
 dt_records = {}
 dt_count   = {}
 
-DTR_REQ_LEN = 0                         # required length
-DTR_DECODER = 1                         # decode said rtype
-DTR_OBJ     = 2                         # rtype obj descriptor
-DTR_NAME    = 3                         # rtype name
+DTR_REQ_LEN  = 0                        # required length
+DTR_DECODER  = 1                        # decode said rtype
+DTR_EMITTERS = 2                        # emitters for said record struct
+DTR_OBJ      = 3                        # rtype obj descriptor
+DTR_NAME     = 4                        # rtype name
 
 
 # all dt parts are native and little endian
@@ -136,7 +138,7 @@ rec0  = '--- @{:<6d} {:6d} {:8d}  {:3d}    {:2d}  {:s}'
 
 
 def dt_name(rtype):
-    v = dt_records.get(rtype, (0, None, None, 'unk'))
+    v = dt_records.get(rtype, (0, None, None, None, 'unk'))
     return v[DTR_NAME]
 
 

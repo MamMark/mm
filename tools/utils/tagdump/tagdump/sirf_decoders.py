@@ -20,7 +20,7 @@
 # Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
 #          Eric B. Decker <cire831@gmail.com>
 
-# Decoders for gps data types
+# Decoders for sirfbin data types
 
 import sirf_defs     as     sirf
 from   sirf_defs     import *
@@ -28,29 +28,16 @@ from   sirf_headers  import *
 
 from   misc_utils    import buf_str
 
-__version__ = '0.1.1 (gd)'
+__version__ = '0.1.2 (sd)'
 
-#
-# given a buf that contains a GPS sw ver string make printable
-#
-# the buffer looks like:
-#
-# [len0] [len1] <str0, /null> <str1, /null>
-#   B      B     -- len0 --    -- len1 --
-#
-def swver_str(buf):
-    obj = gps_swver_obj
-    consumed = obj.set(buf)
-    len0 = obj['str0_len'].val
-    len1 = obj['str1_len'].val
-    str0 = buf[consumed:consumed+len0-1]
-    str1 = buf[consumed+len0:consumed+len0+len1-1]
-    return('--<{}>--  --<{}>--'.format(str0, str1))
+
+def decode_default(level, offset, buf, obj):
+    return obj.set(buf)
 
 
 ########################################################################
 #
-# GPS RAW messages
+# SirfBin RAW messages
 #
 ########################################################################
 #
@@ -60,8 +47,7 @@ rnav1a = '    NAV_DATA: nsats: {}, x/y/z (m): {}/{}/{}  vel (m/s): {}/{}/{}'
 rnav1b = '    mode1: {:#02x}  mode2: {:#02x}  week10: {}  tow (s): {}'
 rnav1c = '    prns: {} hdop: {}'
 
-def gps_nav_decoder(level, offset, buf, obj):
-    obj.set(buf)
+def emit_sirf_nav_data(level, offset, buf, obj):
     xpos        = obj['xpos'].val
     ypos        = obj['ypos'].val
     zpos        = obj['zpos'].val
@@ -84,7 +70,8 @@ def gps_nav_decoder(level, offset, buf, obj):
         print(rnav1c.format(buf_str(obj['prns'].val),
                             hdop/float(5)))
 
-sirf.mid_table[2] = (gps_nav_decoder, gps_nav_obj, "NAV_DATA")
+sirf.mid_table[2] = (decode_default, [ emit_sirf_nav_data ],
+                     sirf_nav_obj, "NAV_DATA")
 
 
 ########################################################################
@@ -96,95 +83,136 @@ rnavtrkx = '    {:2}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno (avg): {}'
 rnavtrky = '    {:2}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno/s: {}'
 rnavtrkz = '    {:2}: az: {:3}  el: {:3}  state: {:#06x}  cno/s: {}'
 
-def gps_navtrk_decoder(level, offset, buf, obj):
+def decode_sirf_navtrk(level, offset, buf, obj):
+
+    # delete any previous navtrk channel data
+    for k in obj.iterkeys():            # BRK
+        if isinstance(k,int):
+            del obj[k]
+
     consumed = obj.set(buf)
+    chans  = obj['chans'].val
+
+    # grab each channels cnos and other data
+    for n in range(chans):
+        d = {}                      # get a new dict
+        consumed += sirf_navtrk_chan.set(buf[consumed:])
+        for k, v in sirf_navtrk_chan.items():
+            d[k] = v.val
+        avg  = d['cno0'] + d['cno1'] + d['cno2']
+        avg += d['cno3'] + d['cno4'] + d['cno5']
+        avg += d['cno6'] + d['cno7'] + d['cno8']
+        avg += d['cno9']
+        avg /= float(10)
+        d['cno_avg'] = avg
+        obj[n] = d
+    return consumed
+
+
+def emit_sirf_navtrk(level, offset, buf, obj):
     week10 = obj['week10'].val
     tow    = obj['tow'].val/float(100)
     chans  = obj['chans'].val
     print
     if (level >= 1):
         print(rnavtrk1.format(week10, tow, chans))
-        chan_list = []
-
-        # grap each channels cnos and other data
         for n in range(chans):
-            d = {}                      # get a new dict
-            consumed += gps_navtrk_chan.set(buf[consumed:])
-            for k, v in gps_navtrk_chan.items():
-                d[k] = v.val
-            avg  = d['cno0'] + d['cno1'] + d['cno2']
-            avg += d['cno3'] + d['cno4'] + d['cno5']
-            avg += d['cno6'] + d['cno7'] + d['cno8']
-            avg += d['cno9']
-            avg /= float(10)
-            d['cno_avg'] = avg
-            chan_list.append(d)
-
-        for n in range(len(chan_list)):
-            if (chan_list[n]['cno_avg']):
-                print(rnavtrkx.format(chan_list[n]['sv_id'],
-                                      chan_list[n]['sv_az23']*3.0/2.0,
-                                      chan_list[n]['sv_el2']/2.0,
-                                      chan_list[n]['state'],
-                                      chan_list[n]['cno_avg']))
+            if (obj[n]['cno_avg']):
+                print(rnavtrkx.format(obj[n]['sv_id'],
+                                      obj[n]['sv_az23']*3.0/2.0,
+                                      obj[n]['sv_el2']/2.0,
+                                      obj[n]['state'],
+                                      obj[n]['cno_avg']))
     if (level >= 2):
         print
-        for n in range(len(chan_list)):
+        for n in range(chans):
             cno_str = ''
             for i in range(10):
-                cno_str += ' {:2}'.format(chan_list[n]['cno'+str(i)])
-            print(rnavtrky.format(chan_list[n]['sv_id'],
-                                  chan_list[n]['sv_az23']*3.0/2.0,
-                                  chan_list[n]['sv_el2']/2.0,
-                                  chan_list[n]['state'],
+                cno_str += ' {:2}'.format(obj[n]['cno'+str(i)])
+            print(rnavtrky.format(obj[n]['sv_id'],
+                                  obj[n]['sv_az23']*3.0/2.0,
+                                  obj[n]['sv_el2']/2.0,
+                                  obj[n]['state'],
                                   cno_str))
     if (level >= 3):
         print
         print('raw:')
-        for n in range(len(chan_list)):
+        for n in range(chans):
             cno_str = ''
             for i in range(10):
-                cno_str += ' {:2}'.format(chan_list[n]['cno'+str(i)])
-            print(rnavtrkz.format(chan_list[n]['sv_id'],
-                                  chan_list[n]['sv_az23'],
-                                  chan_list[n]['sv_el2'],
-                                  chan_list[n]['state'],
+                cno_str += ' {:2}'.format(obj[n]['cno'+str(i)])
+            print(rnavtrkz.format(obj[n]['sv_id'],
+                                  obj[n]['sv_az23'],
+                                  obj[n]['sv_el2'],
+                                  obj[n]['state'],
                                   cno_str))
 
 
-sirf.mid_table[4] = (gps_navtrk_decoder, gps_navtrk_obj, "NAV_TRACK")
+sirf.mid_table[4] = (decode_sirf_navtrk, [ emit_sirf_navtrk ],
+                     sirf_navtrk_obj, "NAV_TRACK")
 
 
-def gps_swver_decoder(level, offset, buf, obj):
+def emit_sirf_swver(level, offset, buf, obj):
     print
     if (level >= 1):
-        print('    {}'.format(swver_str(buf))),
+        print(obj),
 
-sirf.mid_table[6] = (gps_swver_decoder, gps_swver_obj, "SW_VER")
+sirf.mid_table[6] = (decode_default, [ emit_sirf_swver ],
+                     sirf_swver_obj, "SW_VER")
 
 
-def gps_vis_decoder(level, offset, buf, obj):
-    print
-    if (level >= 1):
-        consumed = obj.set(buf)
-        print(obj)
-        num_sats = obj['vis_sats'].val
+def decode_sirf_vis(level, offset, buf, obj):
+
+    # delete any previous vis data (previous packets)
+    for k in obj.iterkeys():            # BRK
+        if isinstance(k,int):
+            del obj[k]
+
+    consumed = obj.set(buf)
+    num_sats = obj['vis_sats'].val
+
+    # for each visible satellite, the sirf_vis_azel object will have sv_id,
+    # sv_az, and sv_el.
+    #
+    # we copy the data off the object into a new dictionary and then add
+    # this dictionary onto the sirf_vis_obj using the vis_sat number
+    # (0..num_sats-1) as the key.
+
+    for n in range(num_sats):
+        d = {}                          # new dict
+        consumed += sirf_vis_azel.set(buf[consumed:])
+        for k, v in sirf_vis_azel.items():
+            d[k] = v.val
+        obj[n] = d
+    return consumed
+
+def emit_sirf_vis(level, offset, buf, obj):
+    num_sats = obj['vis_sats'].val
+    print '({})'.format(num_sats)
+    sats = ''
+    if level >= 1:
+        print('    {:<2} sats:'.format(num_sats)),
         for n in range(num_sats):
-            consumed += gps_vis_azel.set(buf[consumed:])
-            print(gps_vis_azel)
+            sats += ' {}'.format(obj[n]['sv_id'])
+        print sats
+    if level >= 2:
+        for n in range(num_sats):
+            print '      {:2}:  el {:2}   az {:3}'.format(
+                obj[n]['sv_id'], obj[n]['sv_el'], obj[n]['sv_az'])
 
-sirf.mid_table[13] = (gps_vis_decoder, gps_vis_obj, "VIS_LIST")
+sirf.mid_table[13] = (decode_sirf_vis, [ emit_sirf_vis ],
+                      sirf_vis_obj, "VIS_LIST")
 
 
-def gps_ots_decoder(level, offset, buf, obj):
+def emit_sirf_ots(level, offset, buf, obj):
     print
     if (level >= 1):
-        obj.set(buf)
         ans = 'no'
         if obj.val: ans = 'yes'
         print('    OkToSend:  {:>3s}'.format(ans))
 
-sirf.mid_table[18] = (gps_ots_decoder, gps_ots_obj, "OkToSend")
+sirf.mid_table[18] = (decode_default, [ emit_sirf_ots ],
+                      sirf_ots_obj, "OkToSend")
 
 
 ########################################################################
@@ -203,8 +231,7 @@ rgeo2e = '    evpe: {}  ete: {}  ehve: {}  clock_bias: {}  clock_bias_err: {}'
 rgeo2f = '    clock_drift: {}  clock_drift_err: {}  distance: {}  distance_err: {}'
 rgeo2g = '    head_err: {}  nsats: {}  hdop: {}  additional_mode: 0x{:02x}'
 
-def gps_geo_decoder(level, offset, buf, obj):
-    obj.set(buf)
+def emit_sirf_geo(level, offset, buf, obj):
     nav_valid   = obj['nav_valid'].val
     nav_type    = obj['nav_type'].val
     xweek       = obj['week_x'].val
@@ -286,11 +313,11 @@ def gps_geo_decoder(level, offset, buf, obj):
         print(rgeo2g.format(head_err, nsats, hdop, additional_mode))
 
 
-sirf.mid_table[41] = (gps_geo_decoder, gps_geo_obj, "GEO_DATA")
+sirf.mid_table[41] = (decode_default, [ emit_sirf_geo ],
+                      sirf_geo_obj, "GEO_DATA")
 
 
-def gps_pwr_mode_req(level, offset, buf, obj):
-    obj.set(buf)
+def emit_sirf_pwr_mode_req(level, offset, buf, obj):
     sid = obj['sid'].val
     timeout = obj['timeout'].val
     control = obj['control'].val
@@ -300,11 +327,11 @@ def gps_pwr_mode_req(level, offset, buf, obj):
     else:
         print(obj)
 
-sirf.mid_table[218] = (gps_pwr_mode_req, gps_pwr_mode_req_obj, "PWR_REQ")
+sirf.mid_table[218] = (decode_default, [ emit_sirf_pwr_mode_req ],
+                       sirf_pwr_mode_req_obj, "PWR_REQ")
 
 
-def gps_pwr_mode_rsp(level, offset, buf, obj):
-    obj.set(buf)
+def emit_sirf_pwr_mode_rsp(level, offset, buf, obj):
     sid = obj['sid'].val
     error = obj['error'].val
     reserved = obj['reserved'].val
@@ -313,7 +340,8 @@ def gps_pwr_mode_rsp(level, offset, buf, obj):
     else:
         print(obj)
 
-sirf.mid_table[90]  = (gps_pwr_mode_rsp, gps_pwr_mode_rsp_obj, "PWR_RSP")
+sirf.mid_table[90]  = (decode_default, [ emit_sirf_pwr_mode_rsp ],
+                       sirf_pwr_mode_rsp_obj, "PWR_RSP")
 
 
 rstat1a = '    STATS:  sid:    {}  ttff_reset:  {:3.1f}   ttff_aiding:  {:3.1f}      ttff_nav:  {:3.1f}'
@@ -325,8 +353,16 @@ rstat2c = '    pae_n:         {}         pae_e:     {}        pae_d:       {}  t
 rstat2d = '    pos_unc_horz:  {}  pos_unc_vert:     {}     time_unc:       {}  freq_unc:        {}'
 rstat2e = '    n_aided_ephem: {}   n_aided_acq:     {}                        freq_aiding_err: {}'
 
-def gps_statistics(level, offset, buf, obj):
-    obj.set(buf)
+# start_mode
+start_mode_names = {
+     0: "cold",
+     1: "warm",
+     2: "hot",
+     3: "fast",
+}
+
+
+def emit_sirf_statistics(level, offset, buf, obj):
     sid             = obj['sid'].val
     ttff_reset      = obj['ttff_reset'].val
     ttff_aiding     = obj['ttff_aiding'].val
@@ -359,34 +395,38 @@ def gps_statistics(level, offset, buf, obj):
         print(rstat2d.format(pos_unc_horz, pos_unc_vert, time_unc, freq_unc))
         print(rstat2e.format(n_aided_ephem, n_aided_acq, freq_aiding_err))
 
-sirf.mid_table[225]  = (gps_statistics, gps_statistics_obj, "STATS")
+sirf.mid_table[225]  = (decode_default, [ emit_sirf_statistics ],
+                        sirf_statistics_obj, "STATS")
 
 
-def gps_name_only(level, offset, buf, obj):
+def decode_null(level, offset, buf, obj):
+    return 0
+
+def emit_print(level, offset, buf, obj):
     print
 
 
 #
 # other MIDs, just define their names.  no decoders
 #
-sirf.mid_table[7]   = (gps_name_only, None, "CLK_STAT")
-sirf.mid_table[9]   = (gps_name_only, None, "cpu thruput")
-sirf.mid_table[11]  = (gps_name_only, None, "ACK")
-sirf.mid_table[28]  = (gps_name_only, None, "NAV_LIB")
-sirf.mid_table[51]  = (gps_name_only, None, "unk_51")
-sirf.mid_table[56]  = (gps_name_only, None, "ext_ephemeris")
-sirf.mid_table[65]  = (gps_name_only, None, "gpio")
-sirf.mid_table[71]  = (gps_name_only, None, "hw_config_req")
-sirf.mid_table[73]  = (gps_name_only, None, "aiding_req")
-sirf.mid_table[88]  = (gps_name_only, None, "unk_88")
-sirf.mid_table[92]  = (gps_name_only, None, "cw_data")
-sirf.mid_table[93]  = (gps_name_only, None, "TCXO learning")
-sirf.mid_table[129] = (gps_name_only, None, "set_nmea")
-sirf.mid_table[132] = (gps_name_only, None, "send_sw_ver")
-sirf.mid_table[134] = (gps_name_only, None, "set_baud_rate")
-sirf.mid_table[144] = (gps_name_only, None, "poll_clk_status")
-sirf.mid_table[166] = (gps_name_only, None, "set_msg_rate")
-sirf.mid_table[178] = (gps_name_only, None, "peek/poke")
-sirf.mid_table[213] = (gps_name_only, None, "session_req")
-sirf.mid_table[214] = (gps_name_only, None, "hw_config_rsp")
-sirf.mid_table[215] = (gps_name_only, None, "aiding_rsp")
+sirf.mid_table[7]   = (decode_null, [ emit_print ], None, "CLK_STAT")
+sirf.mid_table[9]   = (decode_null, [ emit_print ], None, "cpu thruput")
+sirf.mid_table[11]  = (decode_null, [ emit_print ], None, "ACK")
+sirf.mid_table[28]  = (decode_null, [ emit_print ], None, "NAV_LIB")
+sirf.mid_table[51]  = (decode_null, [ emit_print ], None, "unk_51")
+sirf.mid_table[56]  = (decode_null, [ emit_print ], None, "ext_ephemeris")
+sirf.mid_table[65]  = (decode_null, [ emit_print ], None, "gpio")
+sirf.mid_table[71]  = (decode_null, [ emit_print ], None, "hw_config_req")
+sirf.mid_table[73]  = (decode_null, [ emit_print ], None, "aiding_req")
+sirf.mid_table[88]  = (decode_null, [ emit_print ], None, "unk_88")
+sirf.mid_table[92]  = (decode_null, [ emit_print ], None, "cw_data")
+sirf.mid_table[93]  = (decode_null, [ emit_print ], None, "TCXO learning")
+sirf.mid_table[129] = (decode_null, [ emit_print ], None, "set_nmea")
+sirf.mid_table[132] = (decode_null, [ emit_print ], None, "send_sw_ver")
+sirf.mid_table[134] = (decode_null, [ emit_print ], None, "set_baud_rate")
+sirf.mid_table[144] = (decode_null, [ emit_print ], None, "poll_clk_status")
+sirf.mid_table[166] = (decode_null, [ emit_print ], None, "set_msg_rate")
+sirf.mid_table[178] = (decode_null, [ emit_print ], None, "peek/poke")
+sirf.mid_table[213] = (decode_null, [ emit_print ], None, "session_req")
+sirf.mid_table[214] = (decode_null, [ emit_print ], None, "hw_config_rsp")
+sirf.mid_table[215] = (decode_null, [ emit_print ], None, "aiding_rsp")
