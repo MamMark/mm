@@ -22,14 +22,14 @@ tagdump:  decode and display Tag Data Stream file
 #               add "-j -1" and "-j <neg>"
 #               new reboot and sync layout
 #               dt_rev 12
-# 0.2.12.dev0-dev15
+# 0.2.12.dev0-dev16
 # 0.2.13        reorganize EVENTS
 #               implement NOTE
 #    gps stuff: add GPS_MPM and GPS_FULL_PWR EVENTS
-#               decoders for gps_pwr_mode_req and _rsp
+#               decoders for sirf_pwr_mode_req and _rsp
 #               decoder open/close session
 #               decoder for statistics mid 225,6
-#               add mids with sids for gps_raw
+#               add mids with sids for sirf_ (raw)
 #               add GPS_BOOT_FAIL
 #               gps cmd decoding
 #
@@ -41,4 +41,19 @@ tagdump:  decode and display Tag Data Stream file
 #               kill core_records, dt stuff into dt_defs
 #               sirf stuff into sirf_defs.
 #
-__version__ = '0.2.12.dev15'
+#    refactor:  split dt level gps obj and decoders out of
+#               sirf_decoder/header.  Move into core_records where
+#               they belong.  rename gps_decoders/gps_headers to
+#               sirf_decoders/gps_headers.  More accurate.
+#
+#               move sensor data type definitions from sensor_decoders
+#               and sensor_headers into core files.  Nuke sensor files.
+#
+#    refactor:  split decode and printing code into decode and emitters.
+#    refactor:  create special atoms to handle unusual cases.  swver, etc.
+#    refactor:  make all low level sirf objs and routines, gps_ -> sirf_
+#
+#               implement sirf_vis (visible sat list).  use new
+#               decoder/emitter structure.
+#
+__version__ = '0.2.12.dev16'
