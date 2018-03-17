@@ -46,26 +46,20 @@ from   misc_utils    import dump_buf
 from   tagfile         import TagFile
 from   tagfile         import TF_SEEK_END
 
+# import configuration, which will populate decode/emitter trees.
+import tagdump_config
+
 from   __init__        import __version__   as VERSION
 from   dt_defs         import DT_H_REVISION as DT_REV
 
 from   dt_defs         import __version__   as dt_ver
 from   decode_base     import __version__   as db_ver
-
-# decoder files also populate dt_records and mid_table.  These are
-# dictionaries of what packets we know about.  We need to make sure that
-# each decoder file gets evaluated in some fashion to make sure that the
-# appropriate entry has been set.
-#
-# "from ... import" does the right thing because it evaluates the entire
-# file even though it is just importing one thing.  This causes side effects
-# to occur.
-
 from   sirf_defs       import __version__   as sb_ver
-from   sirf_decoders   import __version__   as gd_ver
-from   sirf_headers    import __version__   as gh_ver
-
+from   sirf_decoders   import __version__   as sd_ver
+from   sirf_emitters   import __version__   as se_ver
+from   sirf_headers    import __version__   as sh_ver
 from   core_decoders   import __version__   as cd_ver
+from   core_emitters   import __version__   as ce_ver
 from   core_headers    import __version__   as ch_ver
 
 ver_str = '\ntagdump: ' + VERSION + ':  dt_rev ' + str(DT_REV)
@@ -457,8 +451,8 @@ def dump(args):
         print ver_str
         print '  decode_base: {}  dt_defs: {}  sirf_defs: {}'.format(
             db_ver, dt_ver, sb_ver)
-        print '     core:  d: {}  h: {}'.format(cd_ver, ch_ver)
-        print '     gps :  d: {}  h: {}'.format(gd_ver, gh_ver)
+        print '     core:  d: {}  e: {}  h: {}'.format(cd_ver, ce_ver, ch_ver)
+        print '     sirf:  d: {}  e: {}  h: {}'.format(sd_ver, se_ver, sh_ver)
         print
 
     def count_dt(rtype):
