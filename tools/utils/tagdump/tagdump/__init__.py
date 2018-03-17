@@ -56,4 +56,7 @@ tagdump:  decode and display Tag Data Stream file
 #               implement sirf_vis (visible sat list).  use new
 #               decoder/emitter structure.
 #
-__version__ = '0.2.12.dev16'
+#    refactor:  add populate.py, split decoders and emitters into seperate
+#               files, wire together using populate.
+#
+__version__ = '0.2.12.dev17'
