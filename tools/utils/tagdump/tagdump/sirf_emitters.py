@@ -116,6 +116,10 @@ def emit_sirf_navtrk(level, offset, buf, obj):
                                   cno_str))
 
 
+def emit_sirf_swver(level, offset, buf, obj):
+    print
+    print '  {}'.format(obj)
+
 def emit_sirf_vis(level, offset, buf, obj):
     num_sats = obj['vis_sats'].val
     print '({})'.format(num_sats)

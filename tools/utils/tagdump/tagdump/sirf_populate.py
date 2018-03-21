@@ -16,7 +16,7 @@ def emit_print(level, offset, buf, obj):
 
 sirf.mid_table[2]   = (decode_default,      [ emit_sirf_nav_data ],     sirf_nav_obj,           'NavData',      'sirf_nav_obj')
 sirf.mid_table[4]   = (decode_sirf_navtrk,  [ emit_sirf_navtrk ],       sirf_navtrk_obj,        'NavTrack',     'sirf_navtrk_obj')
-sirf.mid_table[6]   = (decode_default,      [ emit_default ],           sirf_swver_obj,         'SwVer',        'sirf_swver_obj')
+sirf.mid_table[6]   = (decode_default,      [ emit_sirf_swver ],        sirf_swver_obj,         'SwVer',        'sirf_swver_obj')
 sirf.mid_table[13]  = (decode_sirf_vis,     [ emit_sirf_vis ],          sirf_vis_obj,           'VisList',      'sirf_vis_obj')
 sirf.mid_table[18]  = (decode_default,      [ emit_sirf_ots ],          sirf_ots_obj,           'OkToSend',     'sirf_ots_obj')
 sirf.mid_table[41]  = (decode_default,      [ emit_sirf_geo ],          sirf_geo_obj,           'GeoData',      'sirf_geo_obj')

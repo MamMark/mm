@@ -508,7 +508,7 @@ def dump(args):
             rec_offset, rlen, rtype, recnum, systime, recsum, rec_buf = \
                     get_record(infile)
             if (rec_offset < 0):
-                break;
+                break
 
             if (recnum < rec_last):
                 print('*** recnum went backwards.  last: {}, new: {}, @{}'.format(
@@ -549,8 +549,9 @@ def dump(args):
                             e(verbose, rec_offset, rec_buf, obj)
                 except struct.error:
                     print('*** decoder/emitter error: (len: {}, '
-                          'rtype: {} {}), @{}'.format(
-                              rlen, rtype, dt_name(rtype), rec_offset))
+                          'rtype: {} {}, expected: {}), @{}'.format(
+                              rlen, rtype, dt_name(rtype),
+                              len(obj) if obj else 0, rec_offset))
             else:
                 if (verbose >= 5):
                     print('*** no decoder installed for rtype {}, @{}'.format(
