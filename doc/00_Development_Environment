@@ -4,6 +4,9 @@ Installing a development environment for the MamMark tag.
 
 State:
 
+2018-03-21
+    Doc update.
+
 2017-09-12
     add binary loading (JLinkExe, loadbin)
 
@@ -33,7 +36,7 @@ State:
 
 This brief is written assuming that there is a common root directory,
 we'll call it mm and it is usually at the top level of a working
-directory.  ie.  ~/mm.
+directory.  ie.  ~/tag.
 
 Most commands are entered from a terminal window.
 
@@ -78,10 +81,9 @@ Starting from the home directory of where ever you are.  ie. On a Manual Install
 in your top directory.  On a VM installation, you need to be in your top directory
 within the VM.
 
-cd ~/mm
-mkdir t2_cur
-cd t2_cur
-git clone git://github.com/tp-freeforall/prod tinyos-2.x
+cd ~/tag
+git clone git://github.com/tp-freeforall/prod
+cd prod
 git checkout tp-master
 
 
@@ -99,11 +101,11 @@ Work is done on local working branches, moved to your local master branch
 and then a pull request is forwarded to MamMark/master.
 
 
-Normal user (not enabled).
+Normal user (not enabled).  Assumes top level is ~/tag.
 
-cd ~/mm
+cd ~/tag
 git clone git://github.com/MamMark/mm.git t2_mm
-cd t2_mm
+cd mm
 
 # you should be on the master branch by default.
 
@@ -112,14 +114,12 @@ cd t2_mm
 
 4) Set environment variables.
 
-MOTECOM="serial@/dev/ttyUSB1:115200"
-MM_ROOT="$HOME/mm/t2_mm"
-TINYOS_ROOT_DIR=$HOME/mm/t2_cur/tinyos-2.x
+MM_ROOT="$HOME/tag/mm"
+TINYOS_ROOT_DIR=$HOME/tag/prod
 TINYOS_ROOT_DIR_ADDITIONAL="$MM_ROOT:$TINYOS_ROOT_DIR_ADDITIONAL"
-CLASSPATH=.:$TINYOS_ROOT_DIR/support/sdk/java/tinyos.jar
 
 PYTHONPATH=$TINYOS_ROOT_DIR/support/sdk/python:$PYTHONPATH
-PYTHONPATH="/usr/local/lib/python3.1/dist-packages:$PYTHONPATH"
+# PYTHONPATH="/usr/local/lib/python3.1/dist-packages:$PYTHONPATH"
 
 export TINYOS_ROOT_DIR TINYOS_ROOT_DIR_ADDITIONAL CLASSPATH PYTHONPATH
 export LD_LIBRARY_PATH MOTECOM MM_ROOT
@@ -128,12 +128,73 @@ export LD_LIBRARY_PATH MOTECOM MM_ROOT
 **************************************************************************************
 
 
-5) Do a test compile and gdb run.  This assumes that the JTAG pod is
-   connected to /dev/ttyUSB0.
+5) Do a test compile and gdb run.
+
+   5a details use for msp432 based ARM Cortex-M4f based platforms
+      with JLink Jtag probes.
+
+   5b details older msp430 based platforms with mspdebug jtag probes.
+
+   telosb: msp430f1611 based 16 bit platform
+
+     make debugopt telosb
+
+   mm5a: msp430f5438 based 16 bit processor tag
+
+     make debugopt mm5a
+
+   mm6a: msp432p401r based ARM Cortex-M4F tag
+
+     make debugopt mm6a
+
+
+5a) msp432 base ARM Cortex-M4F with Segger JLink JTAG probes.
+
+    For mm6a hardware:
+
+    cd ~/tag/prod/apps/Blink
+
+    make debugopt mm6a
+    loadbin mm6a        # see below for alternative
+
+    When the download completes use a different window and run:
+
+      JLinkGDBServer -device msp432p401r -if swd
+
+
+    To set up your application directory for gdb debugging follow the
+    instructions in
+
+      $TINYOS_ROOT_DIR/tos/chips/msp430/99_gdb/00_README
+
+    to set up the gdb control files in their proper places (.gdbinit, .gdb_mm6a,
+    etc).
+
+    To actually run gdb on your msp432 code:  (from the application directory)
+
+      arm-none-eabi-gdb-py -i=mi -iex "target extended-remote localhost:2331" \
+          -cd build/mm6a/ main.exe
+
+    This will connect to the server started above and allow you to debug your
+    code remotely using GDB.
+
+    To load code from within GDB you can use:
+
+      load
+
+    or
+
+      load "main.exe"
+
+    To let the device run use 'c', continue.  Do not use 'run'.
+
+
+5b) Older msp430 based/mspdebug Jtag debugging probes.  This assumes that
+    the JTAG pod is connected to /dev/ttyUSB0.
 
    For mm5 hardware:
 
-   cd ~/mm/t2_mm/apps/mm
+   cd ~/tag/prod/apps/Blink
    make debugopt mm5a
    mspdebug uif -qjd /dev/ttyUSB0 "prog build/mm5a/main.exe"
 
@@ -150,9 +211,9 @@ export LD_LIBRARY_PATH MOTECOM MM_ROOT
    to set up the gdb control files in their proper places (.gdbinit, .gdb_x5,
    etc).
 
-   now if you run msp430-gdb build/mm5a/main.exe  gdb should connect to the proxy and start
-   to debug your code in the device.  To let the device run use 'c', continue.  Do not use
-   'run'.
+   now if you run msp430-gdb build/mm5a/main.exe gdb should connect to the
+   proxy and start to debug your code in the device.  To let the device run
+   use 'c', continue.  Do not use 'run'.
 
 
 **************************************************************************************
@@ -161,7 +222,7 @@ export LD_LIBRARY_PATH MOTECOM MM_ROOT
 
    If you have telosb hardware:
 
-   cd ~/mm/t2_cur/tinyos-2.x/apps/Blink
+   cd ~/mm/prod/apps/Blink
    make debugopt telosb install
 
 
@@ -169,12 +230,12 @@ export LD_LIBRARY_PATH MOTECOM MM_ROOT
 
 The main tracking repo is at:
 
-    git://github.com/tinyprod/prod.git
+    https://github.com/tinyprod/prod.git
         read-only, production orientated tracking repo.   Tracks the main TinyOS
         development repository, gh:tinyos/tinyos-main.	MM modifications to the
         T2 core are on the tp-master branch.
 
-    git://github.com/tp-freeforall/prod.git
+    https://github.com/tp-freeforall/prod.git
         read-only, development version of the tinyprod/prod repository.
         Typically used for integrating working development code.
 
@@ -188,12 +249,12 @@ The main tracking repo is at:
 7) About the T2_MM tree.
 
 The t2_mm tree is a seperate t2 based repo that has mammark unique
-code.  It is used to build firmware for the mm3 (1611 based), mm4
-(2618 based), and mm5a (5438a) tag devices.
+code.  It is used to build firmware for the mm6a (msp432, ARM Cortex-M4F based)
+tag devices.
 
-    git://github.com/MamMark/mm.git   (read only)
+    https://github.com/MamMark/mm.git   (read only)
 
-    The main branch is "master".
+    The main branch is "master".  "integration" is also interesting.
 
 
 **************************************************************************************

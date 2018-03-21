@@ -1,6 +1,9 @@
 
 Debian/Ubuntu
 
+2018-03-21
+    Doc update.
+
 2017-09-11
     Ubuntu 16.04, T2 (TinyProd) github:tp-freeforall/prod(tp-master),
     ARM toolchain, gcc 4.9.3, gdb 7.8.0 (32 bit), python support
@@ -69,7 +72,7 @@ exit
    TinyOS 2.x tree checkout  (tp-freeforall/prod)
    MamMark tree
 
-    mkdir w ; cd ~/w
+    mkdir tag ; cd ~/tag
     git clone -v https://github.com/tp-freeforall/prod.git
     git clone -v https://github.com/MamMark/mm.git
 
@@ -77,17 +80,17 @@ exit
 
 6) Set up build environment settings
 
-   export TINYOS_ROOT_DIR=${HOME}/w/prod
-   export TINYOS_ROOT_DIR_ADDITIONAL=${HOME}/w/mm
+   export TINYOS_ROOT_DIR=${HOME}/tag/prod
+   export TINYOS_ROOT_DIR_ADDITIONAL=${HOME}/tag/mm
 
 7) Do a test compile.
 
-   cd ~/w/prod/apps/Blink
+   cd ~/tag/prod/apps/Blink
    make exp_msp432
 
 8) Install Segger Jlink
 
-    SUPPORT_ARCHIVE=http://tinyprod.net/dev-archive
-    JLINK_DEB=${SUPPORT_ARCHIVE}/JLink_Linux_V616j_x86_64.deb
-    wget -nv -O jlink.deb ${JLINK_DEB}
-    dpkg -i jlink.deb
+   SUPPORT_ARCHIVE=http://tinyprod.net/dev-archive
+   JLINK_DEB=${SUPPORT_ARCHIVE}/JLink_Linux_V616j_x86_64.deb
+   wget -nv -O jlink.deb ${JLINK_DEB}
+   dpkg -i jlink.deb

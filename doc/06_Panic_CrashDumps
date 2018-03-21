@@ -237,8 +237,8 @@ CrashInfo (CPU state):  (CrashCatcher/Debug format + additional)  260 bytes
   4    SP
   4    LR
   4    PC
-  4    PSR
-  4    xPSR
+  4    PSR                      PSR prior to fault
+  4    xPSR                     xPSR, after fault (xception PSR)
        [floating point], valid if flags & 1
        fpcsr
        32 x 4 bytes (128 bytes)

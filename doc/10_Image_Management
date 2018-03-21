@@ -195,7 +195,7 @@ units some form of uSecs, T32 timer, main DCO 16MiHz
 
 
 Note: We currently use a 32 bit checksum for performance to verify the
-entire image.  It performance is good enough (ie. fast enough) for now.
+entire image.  Its performance is good enough (ie. fast enough) for now.
 
 Included in the image is the image_info and its contents is verified by the
 image checksum.
