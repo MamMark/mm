@@ -77,7 +77,7 @@ class atom_sirf_swver(object):
         '''
         len0 = buf[0]
         len1 = buf[1]
-        self.val = ( buf[2:len0], buf[2+len0:2+len0+len1] )
+        self.val = ( buf[2:len0+2], buf[2+len0:2+len0+len1] )
         return len(self.val[0]) + len(self.val[1]) + 2
 
 
