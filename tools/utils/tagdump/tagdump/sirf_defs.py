@@ -50,7 +50,13 @@ __all__ = [
 
     'SIRF_MAX_PAYLOAD',
     'SIRF_SOP_SEQ',
-    'SIRF_EOP_SEQ'
+    'SIRF_HDR_SIZE',
+
+    'SIRF_MID_OFFSET',
+    'SIRF_SID_OFFSET',
+
+    'SIRF_EOP_SEQ',
+    'SIRF_END_SIZE'
 ]
 
 # mid_table holds vectors for how to decode a sirfbin packet.
@@ -76,14 +82,18 @@ MID_NAME     = 3
 
 SIRF_MAX_PAYLOAD = 2047
 
-# hdr_struct is big endian, 2 byte SOP, 2 byte len
+# hdr_struct is big endian, 2 byte SOP, 2 byte len, 1 byte mid
 SIRF_SOP_SEQ    = 0xa0a2
 sirf_hdr_str    = '>HH'
 sirf_hdr_struct = struct.Struct(sirf_hdr_str)
-sirf_hdr_size   = sirf_hdr_struct.size
+SIRF_HDR_SIZE   = sirf_hdr_struct.size
+
+# SID if present is the next byte
+SIRF_MID_OFFSET = SIRF_HDR_SIZE
+SIRF_SID_OFFSET = SIRF_MID_OFFSET + 1
 
 # end_struct is big endian, 2 byte chksum, 2 byte EOP
 SIRF_EOP_SEQ    = 0xb0b3
 sirf_end_str    = '>HH'
 sirf_end_struct = struct.Struct(sirf_end_str)
-sirf_end_size   = sirf_end_struct.size
+SIRF_END_SIZE   = sirf_end_struct.size
