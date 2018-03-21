@@ -493,7 +493,7 @@ def emit_gps_raw(level, offset, buf, obj):
     mid_name    = v[MID_NAME]
 
     sid_str = '' if mid not in mids_w_sids else '/{}'.format(sid)
-    print('-- MID: {:2}{} ({:02x}) <{:2}> {}'.format(
+    print('-- MID: {:3}{:4} ({:02x}) <{:2}> {}'.format(
         mid, sid_str, mid, dir_str, mid_name)),
 
     if not emitters or len(emitters) == 0:
