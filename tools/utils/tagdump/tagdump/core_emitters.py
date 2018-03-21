@@ -21,7 +21,7 @@
 
 # basic emitters for main data blocks
 
-__version__ = '0.1.0 (ce)'
+__version__ = '0.2.0 (ce)'
 
 from   dt_defs      import *
 from   dt_defs      import rec0

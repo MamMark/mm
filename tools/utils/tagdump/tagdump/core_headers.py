@@ -22,7 +22,7 @@
 
 # basic data type object descriptors
 
-__version__ = '0.1.2 (ch)'
+__version__ = '0.2.0 (ch)'
 
 import binascii
 from   decode_base  import *

@@ -28,7 +28,7 @@
 import struct
 from   misc_utils import dump_buf
 
-__version__ = '0.1.2 (dt)'
+__version__ = '0.2.0 (dt)'
 
 
 # __all__ exports commonly used definitions.  It gets used

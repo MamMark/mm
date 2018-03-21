@@ -23,7 +23,9 @@
 
 from   misc_utils    import buf_str
 
-__version__ = '0.1.3 (se)'
+__version__ = '0.2.0 (se)'
+
+
 def emit_default(level, offset, buf, obj):
     print
     if (level >= 1):
@@ -306,3 +308,7 @@ def emit_sirf_statistics(level, offset, buf, obj):
         print(rstat2c.format(pae_n, pae_e, pae_d, time_aiding_err))
         print(rstat2d.format(pos_unc_horz, pos_unc_vert, time_unc, freq_unc))
         print(rstat2e.format(n_aided_ephem, n_aided_acq, freq_aiding_err))
+
+def emit_sirf_dev_data(level, offset, buf, obj):
+    print
+    print '    {}'.format(obj)

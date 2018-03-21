@@ -24,7 +24,7 @@
 from   sirf_headers  import sirf_navtrk_chan
 from   sirf_headers  import sirf_vis_azel
 
-__version__ = '0.1.3 (sd)'
+__version__ = '0.2.0 (sd)'
 
 def decode_sirf_navtrk(level, offset, buf, obj):
 

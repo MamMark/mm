@@ -23,7 +23,7 @@
 import struct
 from   collections import OrderedDict
 
-__version__ = '0.1.1 (db)'
+__version__ = '0.2.0 (db)'
 
 class atom(object):
     '''

@@ -21,11 +21,10 @@
 
 # basic decoders for main data blocks
 
-__version__ = '0.1.3 (cd)'
+__version__ = '0.2.0 (cd)'
 
 from   core_headers import owcb_obj
 from   core_headers import image_info_obj
-from   sirf_headers import mids_w_sids
 from   sirf_headers import sirf_hdr_obj
 
 from   sirf_defs    import *

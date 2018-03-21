@@ -40,7 +40,7 @@
 
 import struct
 
-__version__ = '0.1.2 (sd)'
+__version__ = '0.2.0 (sd)'
 
 __all__ = [
     'MID_DECODER',

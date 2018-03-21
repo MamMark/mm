@@ -13,6 +13,7 @@ tagdump:  decode and display Tag Data Stream file
 #               better docs on recsum chksum computation
 #               insist that computed checksum is 16 bits
 # 0.2.11        ...
+#
 # 0.2.12        tweaks, fix gps version
 #               add owcb.faults, owcb.subsys_disable.
 #               fix definition of datetime_obj, add dt64_obj
@@ -22,7 +23,7 @@ tagdump:  decode and display Tag Data Stream file
 #               add "-j -1" and "-j <neg>"
 #               new reboot and sync layout
 #               dt_rev 12
-# 0.2.12.dev0-dev16
+#
 # 0.2.13        reorganize EVENTS
 #               implement NOTE
 #    gps stuff: add GPS_MPM and GPS_FULL_PWR EVENTS
@@ -34,7 +35,7 @@ tagdump:  decode and display Tag Data Stream file
 #               gps cmd decoding
 #
 #    cmd line:  --tail,  --net,  -r -1
-#               -s SYNC_DELTA, -s0, -s1, -s -1
+#               -s SYNC_DELTA, -s0, -s1, -s -1 (place holder)
 #               version decoders and headers
 #
 #    refactor:  better organization to allow easier code sharing.
@@ -61,4 +62,4 @@ tagdump:  decode and display Tag Data Stream file
 #
 #     bug fix:  handle eof detection properly in tagfile.
 
-__version__ = '0.2.12.dev17'
+__version__ = '0.2.13'

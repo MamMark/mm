@@ -23,7 +23,7 @@ sirf.mid_table[41]  = (decode_default,      [ emit_sirf_geo ],          sirf_geo
 sirf.mid_table[90]  = (decode_default,      [ emit_sirf_pwr_mode_rsp ], sirf_pwr_mode_rsp_obj,  'PwrRsp',       'sirf_pwr_mode_rsp_obj')
 sirf.mid_table[218] = (decode_default,      [ emit_sirf_pwr_mode_req ], sirf_pwr_mode_req_obj,  'PwrReq',       'sirf_pwr_mode_req_obj')
 sirf.mid_table[225] = (decode_default,      [ emit_sirf_statistics ],   sirf_statistics_obj,    'Stats',        'sirf_statistics_obj')
-sirf.mid_table[255] = (decode_default,      [ emit_default ],           sirf_dev_data_obj,      'DevData',      'sirf_dev_data_obj')
+sirf.mid_table[255] = (decode_default,      [ emit_sirf_dev_data ],     sirf_dev_data_obj,      'DevData',      'sirf_dev_data_obj')
 
 
 #

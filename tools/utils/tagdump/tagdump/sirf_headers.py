@@ -22,7 +22,7 @@
 
 # object descriptors for gps data blocks
 
-__version__ = '0.1.2 (sh)'
+__version__ = '0.2.0 (sh)'
 
 import binascii
 from   decode_base  import *
