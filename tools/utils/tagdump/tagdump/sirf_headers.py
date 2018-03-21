@@ -27,6 +27,7 @@ __version__ = '0.1.2 (sh)'
 import binascii
 from   decode_base  import *
 from   collections  import OrderedDict
+from   sirf_defs    import SIRF_END_SIZE
 
 ####
 #
@@ -79,6 +80,52 @@ class atom_sirf_swver(object):
         len1 = buf[1]
         self.val = ( buf[2:len0+2], buf[2+len0:2+len0+len1] )
         return len(self.val[0]) + len(self.val[1]) + 2
+
+
+class atom_sirf_dev_data(object):
+    '''sirf_dev_data atom.  special.
+    takes 2-tuple: ('struct_string', 'default_print_format')
+
+    default_print_format must have space for two items.
+
+    optional 3-tuple: (..., ..., formating_function)
+
+    set will set the instance.attribute "val" to the value
+    of the atom's decode of the buffer.  dev_data.val is the
+    string from the buffer.  It is not null terminated, and
+    we want to throw away the chksum and terminator so we
+    want buf[:-SIRF_END_SIZE]
+    '''
+    def __init__(self, a_tuple):
+        self.s_str = a_tuple[0]
+        self.s_rec = struct.Struct(self.s_str)
+        self.p_str = a_tuple[1]
+        if (len(a_tuple) > 2):
+            self.f_str = a_tuple[2]
+        else:
+            self.f_str = None
+        self.val = ('','')
+
+    def __len__(self):
+        return len(self.val)
+
+    def __repr__(self):
+        if callable(self.f_str):
+            return self.p_str.format(self.f_str(self.val))
+        return self.p_str.format(self.val)
+
+    def set(self, buf):
+        '''set the dev_data val from the buffer
+
+        <string><chksum><term> is what we have in buf.
+
+        return the number of bytes (size) consumed,
+          len(string) + checksum + term
+
+        store val as the string
+        '''
+        self.val = buf[:-SIRF_END_SIZE]
+        return len(buf)
 
 
 #########
@@ -241,3 +288,11 @@ sirf_statistics_obj    = aggie(OrderedDict([
     ('start_mode',      atom(('B',  '{}'))),
     ('reserved',        atom(('B',  '{}')))
 ]))
+
+
+# dev_data, MID 255
+# following the MID is ascii data, the length of the sirfbin
+# packet tells how long this string is.  The buffer contains
+# the string followed by chksum and terminating sequence.
+
+sirf_dev_data_obj = atom_sirf_dev_data(('', '{}'))
