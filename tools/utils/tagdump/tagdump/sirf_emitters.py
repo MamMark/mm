@@ -24,6 +24,10 @@
 from   misc_utils    import buf_str
 
 __version__ = '0.1.3 (se)'
+def emit_default(level, offset, buf, obj):
+    print
+    if (level >= 1):
+        print(obj),
 
 
 ########################################################################
@@ -108,12 +112,6 @@ def emit_sirf_navtrk(level, offset, buf, obj):
                                   obj[n]['sv_el2'],
                                   obj[n]['state'],
                                   cno_str))
-
-
-def emit_sirf_swver(level, offset, buf, obj):
-    print
-    if (level >= 1):
-        print(obj),
 
 
 def emit_sirf_vis(level, offset, buf, obj):

@@ -53,6 +53,16 @@ __all__ = [
     'SIRF_EOP_SEQ'
 ]
 
+# mid_table holds vectors for how to decode a sirfbin packet.
+# each entry is keyed by Mid and contains a 4-tuple that
+# includes 0: decoder, 1: emitter list, 2: object string
+# and 3: the name of the packet.
+#
+# the mid_object is a string encoding of the object needed by the
+# mid.  When evaluated the tuple will display the name of the object
+# rather than the __repr__ of the object (decode_base), which
+# typically is some value.  What you want to see is the object name.
+
 mid_table = {}
 mid_count = {}
 

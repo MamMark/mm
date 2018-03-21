@@ -14,15 +14,15 @@ def decode_null(level, offset, buf, obj):
 def emit_print(level, offset, buf, obj):
     print
 
-sirf.mid_table[2]   = (decode_default,      [ emit_sirf_nav_data ],     sirf_nav_obj,           "NAV_DATA")
-sirf.mid_table[4]   = (decode_sirf_navtrk,  [ emit_sirf_navtrk ],       sirf_navtrk_obj,        "NAV_TRACK")
-sirf.mid_table[6]   = (decode_default,      [ emit_sirf_swver ],        sirf_swver_obj,         "SW_VER")
-sirf.mid_table[13]  = (decode_sirf_vis,     [ emit_sirf_vis ],          sirf_vis_obj,           "VIS_LIST")
-sirf.mid_table[18]  = (decode_default,      [ emit_sirf_ots ],          sirf_ots_obj,           "OkToSend")
-sirf.mid_table[41]  = (decode_default,      [ emit_sirf_geo ],          sirf_geo_obj,           "GEO_DATA")
-sirf.mid_table[90]  = (decode_default,      [ emit_sirf_pwr_mode_rsp ], sirf_pwr_mode_rsp_obj,  "PWR_RSP")
-sirf.mid_table[218] = (decode_default,      [ emit_sirf_pwr_mode_req ], sirf_pwr_mode_req_obj,  "PWR_REQ")
-sirf.mid_table[225] = (decode_default,      [ emit_sirf_statistics ],   sirf_statistics_obj,    "STATS")
+sirf.mid_table[2]   = (decode_default,      [ emit_sirf_nav_data ],     sirf_nav_obj,           'NavData',      'sirf_nav_obj')
+sirf.mid_table[4]   = (decode_sirf_navtrk,  [ emit_sirf_navtrk ],       sirf_navtrk_obj,        'NavTrack',     'sirf_navtrk_obj')
+sirf.mid_table[6]   = (decode_default,      [ emit_default ],           sirf_swver_obj,         'SwVer',        'sirf_swver_obj')
+sirf.mid_table[13]  = (decode_sirf_vis,     [ emit_sirf_vis ],          sirf_vis_obj,           'VisList',      'sirf_vis_obj')
+sirf.mid_table[18]  = (decode_default,      [ emit_sirf_ots ],          sirf_ots_obj,           'OkToSend',     'sirf_ots_obj')
+sirf.mid_table[41]  = (decode_default,      [ emit_sirf_geo ],          sirf_geo_obj,           'GeoData',      'sirf_geo_obj')
+sirf.mid_table[90]  = (decode_default,      [ emit_sirf_pwr_mode_rsp ], sirf_pwr_mode_rsp_obj,  'PwrRsp',       'sirf_pwr_mode_rsp_obj')
+sirf.mid_table[218] = (decode_default,      [ emit_sirf_pwr_mode_req ], sirf_pwr_mode_req_obj,  'PwrReq',       'sirf_pwr_mode_req_obj')
+sirf.mid_table[225] = (decode_default,      [ emit_sirf_statistics ],   sirf_statistics_obj,    'Stats',        'sirf_statistics_obj')
 
 
 #
