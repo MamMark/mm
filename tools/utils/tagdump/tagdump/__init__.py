@@ -59,4 +59,6 @@ tagdump:  decode and display Tag Data Stream file
 #    refactor:  add populate.py, split decoders and emitters into seperate
 #               files, wire together using populate.
 #
+#     bug fix:  handle eof detection properly in tagfile.
+
 __version__ = '0.2.12.dev17'

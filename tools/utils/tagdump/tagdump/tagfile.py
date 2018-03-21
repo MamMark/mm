@@ -53,22 +53,28 @@ class TagFile(object):
         while True:
             try:
                 if (self.net_io):
-                    buf += os.read(self.fileno, cnt - len(buf))
-                    if (len(buf) != cnt):
-                        continue
-                    return buf
+                    new = os.read(self.fileno, cnt - len(buf))
                 else:
-                    buf += self.fd.read(cnt - len(buf))
-                    if (len(buf) != cnt):
-                        continue
-                    return buf
+                    new = self.fd.read(cnt - len(buf))
+
+                # reading at the EOF may have already raised
+                # OSError(ENODATA).  But if it doesn't the
+                # read will return the null string, ''.  If
+                # we get that, raise the OSError ourselves.
+
+                if new == '':
+                    raise OSError(errno.ENODATA, os.strerror(errno.ENODATA))
+                buf += new
+                if (len(buf) != cnt):
+                    continue
+                return buf
             except OSError as e:
                 if (e.errno == errno.ENODATA):
                     if (self.tail):
                         print '*** TF.read: buf len: ', len(buf)
                         time.sleep(5)
                         continue
-                    print '*** network data stream EOF, sorry'
+                    print '*** data stream EOF, sorry'
                     print '*** use --tail to wait for data at EOF'
                     return ''
                 print '*** TF.read: unhandled OSError exception', sys.exc_info()[0]
