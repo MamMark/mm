@@ -61,5 +61,8 @@ tagdump:  decode and display Tag Data Stream file
 #               files, wire together using populate.
 #
 #     bug fix:  handle eof detection properly in tagfile.
+#
+# 0.2.14        force record reading to read through the next quad alignment.
+#               this plays nicely with the tagfuse sparse file system for dblk.
 
-__version__ = '0.2.13'
+__version__ = '0.2.14'

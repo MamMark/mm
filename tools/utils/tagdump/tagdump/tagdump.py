@@ -310,10 +310,11 @@ def get_record(fd):
     while (True):
         offset = fd.tell()
         # new records are required to start on a quad boundary
+        # however, we always read to the next quad alignment to help ensure
+        # that the sparse tagfuse stuff works better (fewer holes).
         if (offset & 3):
             new_offset = ((offset/4) + 1) * 4
-            if debug:
-                print(align0.format(offset, new_offset, new_offset - offset))
+            print(align0.format(offset, new_offset, new_offset - offset))
             offset = new_offset
             fd.seek(offset)
         if (offset == last_offset):
@@ -372,6 +373,16 @@ def get_record(fd):
                 break
             continue
 
+        # make sure to read bytes to the next quad alignment.  This helps
+        # to keep the tagfuse sparse file implementation happier.
+        # extra can NEVER be 0.  It can be 1, 2, 3, or 4.  4 indicates
+        # that we are already at a new quad alignment.
+        extra = 4 - ((offset + rlen) & 3)
+        if extra < 4:
+            if debug:
+                print '*** reading extra {} bytes for quad alignment'.format(extra)
+            dlen += extra
+
         if (dlen > 0):
             rec_buf.extend(bytearray(fd.read(dlen)))
 
@@ -387,7 +398,7 @@ def get_record(fd):
         # so we need to remove it before comparing.  Recsum is 16 bits wide so can not
         # simply be added in as part of the checksum computation.
         #
-        chksum = sum(rec_buf)
+        chksum = sum(rec_buf[:rlen])
         chksum -= (recsum & 0xff00) >> 8
         chksum -= (recsum & 0x00ff)
         chksum &= 0xffff                # force to 16 bits vs. 16 bit recsum
@@ -404,16 +415,14 @@ def get_record(fd):
             if (offset < 0):
                 break
             continue                    # try again
-        try:
-            required_len = dtd.dt_records[rtype][DTR_REQ_LEN]
-            if (required_len):
-                if (required_len != rlen):
-                    offset = resync(fd, offset)
-                    if (offset < 0):
-                        break
-                    continue            # try again
-        except KeyError:
-            pass
+        v = dtd.dt_records.get(rtype, (0, None, None, None, ''))
+        required_len = v[DTR_REQ_LEN]
+        if (required_len):
+            if (required_len != rlen):
+                offset = resync(fd, offset)
+                if (offset < 0):
+                    break
+                continue            # try again
 
         # life is good.  return actual record.
         return offset, rlen, rtype, recnum, systime, recsum, rec_buf
