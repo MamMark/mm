@@ -54,7 +54,7 @@ implementation {
           }
           call THdr.set_response(msg);
           call THdr.set_error(msg, TE_PKT_OK);
-          break;
+          return TRUE;
         default:
           break;
       }
