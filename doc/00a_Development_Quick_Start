@@ -21,11 +21,14 @@ We assume that Ubuntu/Debian has been installed.
 
 sudo -s
 apt-get install build-essential stow automake autoconf libtool libc6-dev
-apt-get install git-core git-daemon-run git-doc git-email git-gui gitk gitmagic
+#apt-get install git-core git-daemon-run git-doc git-email git-gui gitk gitmagic
+apt-get install git-core git-daemon-sysvinit git-doc git-email git-gui gitk gitmagic
 apt-get install openssh-client openssh-server
 apt-get install python3 python3-serial python python-serial
 exit
 
+# for Ubuntu 14.04, we use git-daemon-run. This breaks Ubuntu 16.04, which
+# needs to use git-daemon-sysvinit
 
 2) add the TinyProd signing key
 
