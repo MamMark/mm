@@ -1,6 +1,16 @@
 root
 +-- \'<node_id:000000000000>\'
     +-- tag
+        |-- .test
+        |   |-- drop
+        |   |   +-- byte
+        |   |-- echo
+        |   |   +-- byte
+        |   |-- ones
+        |   |   +-- byte
+        |   |-- rssi
+        |   +-- zero
+        |       +-- byte
         |-- info
         |   +-- sens
         |       +-- gps

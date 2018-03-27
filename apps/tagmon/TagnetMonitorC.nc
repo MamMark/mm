@@ -2,6 +2,22 @@
  * Copyright (c) 2015 Eric B. Decker
  * Copyright (c) 2017-2018 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * See COPYING in the top level directory of this source tree.
+ *
+ * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  */
 
 #include "Si446xRadio.h"
@@ -45,6 +61,12 @@ implementation {
   TagnetC.DblkBytes             -> DblkByteStorageC.DblkBytes;
   TagnetC.DblkNote              -> DblkByteStorageC.DblkNote;
 
+  components TagnetTestBytesC;
+  TagnetC.TestZeroBytes         -> TagnetTestBytesC.TestZeroBytes;
+  TagnetC.TestOnesBytes         -> TagnetTestBytesC.TestOnesBytes;
+  TagnetC.TestEchoBytes         -> TagnetTestBytesC.TestEchoBytes;
+  TagnetC.TestDropBytes         -> TagnetTestBytesC.TestDropBytes;
+
   components PanicByteStorageC;
   TagnetC.PanicBytes            -> PanicByteStorageC.PanicBytes;
 
@@ -53,6 +75,9 @@ implementation {
   TagnetC.DblkLastRecOffset     -> CollectC.DblkLastRecOffset;
   TagnetC.DblkLastSyncOffset    -> CollectC.DblkLastSyncOffset;
   TagnetC.DblkCommittedOffset   -> CollectC.DblkCommittedOffset;
+
+  components Si446xMonitorC;
+  TagnetC.RadioRSSI             -> Si446xMonitorC;
 
   components new TimerMilliC()  as Timer0;
   TagnetMonitorP.rcTimer        -> Timer0;
