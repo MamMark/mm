@@ -1,0 +1,152 @@
+
+The TagFS (Tag File System) is used to organize the different data storage
+needs on the Tag.  This includes the following data storage areas:
+
+    o Data Stream: used to store records that the tag is collecting.
+      Strictly monotonically increasing.  That is a strict data stream.
+
+    o Config: An area used to store configurations for the Tag.
+
+    o Panic: An area used to record multiple crash dumps from the Tag.
+
+    o Image: An area used to store different executable images for the Tag.
+
+    o Rules: An area to store different rule sets for the Rules Engine.
+
+The TagFS lives on a Secure Digital card.  A given Tag's SD is dedicated to
+that particular Tag (can not be removed).  The data on the Tag's SD can be
+copied to another SD on the TagDock.
+
+This document describes how the TagFS utilizes a SD and its base file
+system.
+
+
+The TagFS is designed with the following constraints:
+
+    o Simple to extract various files off the Tag's SD.  When a Tag SD is
+      plugged into a computer system; Windows, Linux, or Mac OS, we want to
+      be able to see files that are easy to then copy and process off the
+      SD.
+
+      Note: Processing still has to deal with each individual file type
+      appropriately.  ie.  DATA files are processed with an understanding
+      of what Data records (typed data) look like.
+
+    o Simple to implement on the Tag itself with out incurring significant
+      overhead from the file system itself.
+
+    o Data Streams are resilient with respect to crashes.  The File System
+      will determine where the old stream left off and restart.  This is
+      done on a sector boundary.  (the new data stream, starts on a new
+      sector boundary).
+
+    o Panics/CrashDumps are written into its own area and is restricted to
+      only that area.  When the Panic area fills up no new Panics will be
+      written to the area.
+
+
+* Basic Organization
+
+The TagFS organizes the underlying SD as several areas.  Each area is
+required to be contiguous.  (This is to simplify how much the Tag needs
+to do when manipulating the information in the area).
+
+The TagFS presents each area to a modern computer system (ie. Windows, Mac
+OS, or Linux) as a FAT file.  The user can extract the file from the SD and
+then process the data.
+
+On the Tag, each area is identified by a static index, ie. the Panic area
+is index 0.  Code on the Tag can ask the FileSystem for information about
+the given area, ie. starting and stopping block ids.
+
+An area is a contiguous block of SD data blocks and delineated by its
+starting and stopping block ids.  These are absolute sector numbers on the
+SD.  This results in the simplest access methods possible.  No directory
+update is required for most updates.  This depends on the semantics of the
+paticular area.
+
+Each area is created as a single FAT file from contiguous sectors on the SD
+media.  For this to work properly, the SD must be in a pristine state
+and formatted with an empty FAT32 file system.  The tool, tagfmtsd, is used
+to create the appropriate number of areas in the proper locations.
+
+SD media of between 2GB up to and including 32GB capacities can be used.
+We use FAT32/LBA/LFS/512B sectors (partition type 0x0C).  This FAT32
+implementation can handle a single volume of 2TiB with a maximum file size
+4 GiB - 1 bytes.
+
+64GB and larger SD volumes can be used but they have to be reformated as
+FAT32 filesystems.  The standard file system for 64GB and larger SD cards
+is exFAT which we don't support at ths time.  The downside of using FAT32
+is the largest file size is 4Gib - 1.  This only principally effects the
+DBLK file which stores data streams.
+
+
+* Area Management Policies.
+
+All areas are required to be contiguous.  That is all sectors within a
+given area are required to be contiguous.  Areas can be located any where
+on the disk.
+
+o Panic, Index 0: The Panic area contains a management (directory) sector
+  followed by zero or more Panic Blocks.  A Panic Block contains various
+  information about a crash including, what image and system state.  See
+  06_Panic_CrashDumps for more information.
+
+  The Panic Directory keeps track of where to write the next panic block.
+  It is the first sector of the Panic Area managed by the FileSystem.
+
+  More information describing the format of Panic Blocks and PanicManagement
+  can be found in 06_Panic_CrashDumps.
+
+o Config, Index 1: The config area contains configuration information for
+  this individual tag.
+
+  Currently, undefined.
+
+o Data, Index 2: This area contains typed data blocks (dblks) which are
+  records of various information that the Tag has been collecting.
+
+  The Typed_Data area is filled with variable length records that include
+  length and type.  See 07_Record_Management for more information.  On
+  Reboot and at periodic intervals a SYNC record is written to reestablish
+  record stream integrity.
+
+  Typed_Data is filled in from the start of the area towards the end.  When
+  created each Typed_Data sector is assumed to be written with zeros (the
+  empty state).  When the FileSystem is initialized, one of its first steps
+  is to find where in the Data area the last written sector is.  New data
+  gets written starting with the next sector, following a Reboot/Sync
+  record.
+
+o Image, Index 3: The image area is used to store various executable images
+  that the Tag runs.
+
+  Currently undefined.  No longer true, FIX ME.
+
+
+* Implementation
+
+** Supported SD cards
+
+The Tag supports select uSD cards in the range of 2GB to 32GB in capacity.
+Currently, only Samsung 2GB uSD and Samsung 8GB uSD SDHC and 16G  uSD SDHC
+cards are supported.  Both SD and SDHC protocols are supported.
+
+** Areas, File Names and Formatting
+
+The uSD is formated as a FAT32 file system with no partitions (a
+superblock).  (Partitions may be added at a later date).  Each Area is
+represented as a single file within the file system.  Each Area is required
+to consists of some number of contiguous sectors.
+
+Each Area is represented as a single file within the FAT32 filesystem.
+
+
+** Locating Areas
+
+Each area consists of some number of contiguous sectors with a starting and
+ending blk_id.  These starting and ending blk_ids are collected into a
+structure buried in the first sector of the disk, called the filesystem
+locator.  It is marked with a specific signature and is located at a
+particular offset within the sector.
