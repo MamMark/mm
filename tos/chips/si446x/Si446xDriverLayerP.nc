@@ -864,16 +864,14 @@ implementation {
    * detection of active packet reception
    */
   fsm_result_t a_rx_start(fsm_transition_t *t) {
-    uint8_t        rssi;
 
     if (!(global_ioc.pRxMsg))
       __PANIC_RADIO(11, 0, 0, 0, 0);
     global_ioc.rx_ff_index = 0;
     global_ioc.rx_packets++;
-    rssi = call Si446xCmd.fast_latched_rssi();
-    call PacketRSSI.set(global_ioc.pRxMsg, rssi);
-    call PacketLinkQuality.set(global_ioc.pRxMsg, rssi);
     start_alarm(SI446X_RX_TIMEOUT);
+    call PacketRSSI.set(global_ioc.pRxMsg,
+                        call Si446xCmd.fast_latched_rssi());
     return fsm_results(t->next_state, E_NONE);
   }
 
@@ -900,6 +898,11 @@ implementation {
 
     call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
     global_ioc.rx_ff_index += rx_len;
+
+    if (call PacketRSSI.get(global_ioc.pRxMsg) == 0) {
+        call PacketRSSI.set(global_ioc.pRxMsg,
+                            call Si446xCmd.fast_latched_rssi());
+      }
   }
 
 
