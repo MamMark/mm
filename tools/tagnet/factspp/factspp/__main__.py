@@ -4,7 +4,7 @@ __main__.py: invoke rules emulator as an application
 Command line parameters are parsed and passed to the
 emulator, which handles the bulk of the program.
 
-@author: Dan Maltbie, (c) 2017
+@author: Dan Maltbie, (c) 2017, 2018
 """
 import argparse
 
@@ -31,4 +31,5 @@ def main():
     # zzz print(args)
     preprocessor(args)
 
-main()
+if __name__ == '__main__':
+    main()

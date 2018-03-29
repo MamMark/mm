@@ -32,16 +32,17 @@ def DisplayStuff(args, _tree):
     by details of individual tree nodes and
     full paths of all named objects
     """
+    print('display tree')
     _tree.show(line_type="ascii")
 
-    print("leaves")
-    for node in _tree.leaves():
-        print(node)
+#    print("leaves")
+#    for node in _tree.leaves():
+#        print(node)
 
-    print("paths")
-    paths = _tree.paths_to_leaves()
-    for path in paths:
-        print([_tree[n].tag for n in path])
+#    print("paths")
+#    paths = _tree.paths_to_leaves()
+#    for path in paths:
+#        print([_tree[n].tag for n in path])
 
 def SaveStuff(args, _tree):
     """

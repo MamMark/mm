@@ -119,7 +119,6 @@ def nesc_fmt_TagnetC(args, _tree):
      filename += "TagnetC.nc"
      templatename = os.path.dirname(os.path.abspath(__file__)) + '/'
      templatename += 'template_TagnetC.nc'
-     print(filename, templatename)
      with open(filename, 'w') as outfd, \
           open(templatename, 'r') as tplate:
           # write out first part of the template file

@@ -3,7 +3,7 @@ from __future__ import print_function   # python3 print function
 from builtins import *                  # python3 types
 import os, sys, types, platform
 from os.path import normpath, commonprefix
-from temporenc import packb, unpackb
+#from temporenc import packb, unpackb
 from binascii import hexlify
 from struct import pack, unpack
 from datetime import datetime
