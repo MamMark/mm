@@ -35,7 +35,6 @@ implementation {
   event bool Super.evaluate(message_t *msg) {
     uint32_t               ln = 0;
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
-    tagnet_tlv_t    *help_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].help_tlv;
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
 
     if (call TName.is_last_element(msg) &&          // end of name and me == this
@@ -46,15 +45,17 @@ implementation {
       switch (call THdr.get_message_type(msg)) {      // process message type
         case TN_POLL:
         case TN_GET:
+        case TN_HEAD:
           tn_trace_rec(my_id, 2);
           if (call Adapter.get_value(msg, &ln)) {
             return TRUE;
           }
           break;
-        case TN_HEAD:
+        case TN_PUT:
           tn_trace_rec(my_id, 3);
-          call TPload.add_tlv(msg, help_tlv);
-          return TRUE;
+          if (call Adapter.set_value(msg, &ln)) {
+            return TRUE;
+          }
         default:
           break;
       }
