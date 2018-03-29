@@ -40,7 +40,8 @@ typedef enum {                   //      (parent) name
   TN_36_ID              =    36, //  (  .test   ) drop
   TN_37_ID              =    37, //  (   drop   ) byte
   TN_38_ID              =    38, //  (  .test   ) rssi
-  TN_LAST_ID            =    39,
+  TN_39_ID              =    39, //  (  .test   ) tx_pwr
+  TN_LAST_ID            =    40,
   TN_ROOT_ID            =     0,
   TN_MAX_ID             =  65000,
 } tn_ids_t;
@@ -84,6 +85,7 @@ typedef enum {                   //      (parent) name
 #define  TN_36_UQ                "TN_36_UQ"
 #define  TN_37_UQ                "TN_37_UQ"
 #define  TN_38_UQ                "TN_38_UQ"
+#define  TN_39_UQ                "TN_39_UQ"
 #define UQ_TAGNET_ADAPTER_LIST  "UQ_TAGNET_ADAPTER_LIST"
 #define UQ_TN_ROOT               TN_0_UQ
 /* structure used to hold configuration values for each of the elements
@@ -136,5 +138,6 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   { TN_36_ID, "\01\04drop", "\01\04help", TN_36_UQ },
   { TN_37_ID, "\01\04byte", "\01\04help", TN_37_UQ },
   { TN_38_ID, "\01\04rssi", "\01\04help", TN_38_UQ },
+  { TN_39_ID, "\01\06tx_pwr", "\01\04help", TN_39_UQ },
 };
 

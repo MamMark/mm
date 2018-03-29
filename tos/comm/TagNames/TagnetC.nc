@@ -15,6 +15,7 @@ configuration TagnetC {
   }
   uses {
     interface      TagnetSysExecAdapter                     as SysActive;
+    interface             TagnetAdapter<message_t>          as RadioTxPower;
     interface      TagnetSysExecAdapter                     as SysBackup;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as TestDropBytes;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as PanicBytes;
@@ -83,6 +84,7 @@ implementation {
     components new      TagnetNameElementP (TN_36_ID,TN_36_UQ) as   tn_36_Vx;
     components new  TagnetFileByteAdapterP ( TN_37_ID )        as   tn_37_Vx;
     components new       TagnetMsgAdapterP ( TN_38_ID )        as   tn_38_Vx;
+    components new       TagnetMsgAdapterP ( TN_39_ID )        as   tn_39_Vx;
 
     Tagnet           =     tn_0_Vx;
        tn_1_Vx.Super ->     tn_0_Vx.Sub[unique(TN_0_UQ)];
@@ -144,4 +146,6 @@ implementation {
     TestDropBytes    =     tn_37_Vx.Adapter;
       tn_38_Vx.Super ->    tn_29_Vx.Sub[unique(TN_29_UQ)];
     RadioRSSI        =     tn_38_Vx.Adapter;
+      tn_39_Vx.Super ->    tn_29_Vx.Sub[unique(TN_29_UQ)];
+    RadioTxPower     =     tn_39_Vx.Adapter;
 }

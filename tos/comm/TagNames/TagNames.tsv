@@ -26,3 +26,4 @@ x	x	x	x				TagnetSensActiveAdapterP					\'<node_id:000000000000>\'	tag	info	sens
 	x		x		<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestEchoBytes	uses	\'<node_id:000000000000>\'	tag	.test	echo	byte	
 	x		x		<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestDropBytes	uses	\'<node_id:000000000000>\'	tag	.test	drop	byte	
 	x		x		<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	RadioRSSI	uses	\'<node_id:000000000000>\'	tag	.test	rssi		
+	x	x	x		<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	RadioTxPower	uses	\'<node_id:000000000000>\'	tag	.test	tx_pwr		

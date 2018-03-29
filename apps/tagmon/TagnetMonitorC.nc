@@ -77,7 +77,8 @@ implementation {
   TagnetC.DblkCommittedOffset   -> CollectC.DblkCommittedOffset;
 
   components Si446xMonitorC;
-  TagnetC.RadioRSSI             -> Si446xMonitorC;
+  TagnetC.RadioRSSI             -> Si446xMonitorC.RadioRSSI;
+  TagnetC.RadioTxPower          -> Si446xMonitorC.RadioTxPower;
 
   components new TimerMilliC()  as Timer0;
   TagnetMonitorP.rcTimer        -> Timer0;

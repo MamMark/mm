@@ -963,10 +963,16 @@ implementation {
   fsm_result_t a_tx_start(fsm_transition_t *t) {
     uint8_t        *dp;
     uint16_t        pkt_len, tx_ff_free, rx_len;
+    uint8_t         pwr[1];
 
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
     if (!dp || !(*dp))                  /* make sure reasonable to send */
       __PANIC_RADIO(5, 0, 0, 0, 0);
+
+    if (call PacketTransmitPower.isSet(global_ioc.pTxMsg)) {
+      pwr[0] = call PacketTransmitPower.get(global_ioc.pTxMsg);
+      call Si446xCmd.set_property(SI446X_PROP_PA_PWR_LVL, pwr, 1);
+    }
 
     call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
     pkt_len = *dp;                  // length of data field is first byte of msg
