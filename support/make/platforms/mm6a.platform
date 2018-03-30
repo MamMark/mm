@@ -35,12 +35,14 @@ PFLAGS += -I%T/chips/msp432/dma
 PFLAGS += -I%T/chips/msp432/include
 PFLAGS += -I%T/chips/msp432/msp432p401/pins
 PFLAGS += -I%T/chips/msp432/driverlib
+PFLAGS += -I%T/chips/msp432/rtc
 PFLAGS += -I%T/chips/msp432/timer
 PFLAGS += -I%T/chips/msp432/usci
 PFLAGS += -I%T/chips/msp432/usci/i2c-sm
 
-PFLAGS += -I%T/lib/timer
+PFLAGS += -I%T/lib/datetime
 PFLAGS += -I%T/lib/serial
+PFLAGS += -I%T/lib/timer
 
 PFLAGS += -I%T/comm
 PFLAGS += -I%T/comm/TagNames
