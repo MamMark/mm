@@ -48,7 +48,7 @@
 extern fs_loc_t loc;
 
 
-#define VERSION "tagfmtsd: v4.3.1  2018/01/22\n"
+#define VERSION "tagfmtsd: v4.4.0  2018/03/30\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -199,9 +199,13 @@ display_info(uint8_t *buf) {
                   ddp->dblk_dir_sig, ddp->dblk_dir_sig_a,
                   ddp->dblk_low, ddp->dblk_high);
           fprintf(stderr, "  incept: %04d/%02d/%02d-(%s)-%02d:%02d:%02d UTC\n",
-              ddp->incept_date.yr,  ddp->incept_date.mon, ddp->incept_date.day,
-              dow2str(ddp->incept_date.dow), ddp->incept_date.hr,
-              ddp->incept_date.min, ddp->incept_date.sec);
+                  ddp->incept_date.year,
+                  ddp->incept_date.mon,
+                  ddp->incept_date.day,
+                  dow2str(ddp->incept_date.dow),
+                  ddp->incept_date.hr,
+                  ddp->incept_date.min,
+                  ddp->incept_date.sec);
         }
     } else
 	fprintf(stderr, "DBLK0001: not found\n");
@@ -247,13 +251,14 @@ int write_dblk_dir(uint8_t *buf, uint8_t file_idx) {
   ddp->dblk_dir_sig     = DBLK_DIR_SIG;
   ddp->dblk_low         = loc.locators[FS_LOC_DBLK].start;
   ddp->dblk_high        = loc.locators[FS_LOC_DBLK].end;
-  ddp->incept_date.yr   = gmp->tm_year;
-  ddp->incept_date.mon  = gmp->tm_mon;
-  ddp->incept_date.day  = gmp->tm_mday;
-  ddp->incept_date.hr   = gmp->tm_hour;
-  ddp->incept_date.min  = gmp->tm_min;
-  ddp->incept_date.sec  = gmp->tm_sec;
-  ddp->incept_date.dow  = gmp->tm_wday;
+  ddp->incept_date.year    = gmp->tm_year;
+  ddp->incept_date.mon     = gmp->tm_mon;
+  ddp->incept_date.day     = gmp->tm_mday;
+  ddp->incept_date.dow     = gmp->tm_wday;
+  ddp->incept_date.hr      = gmp->tm_hour;
+  ddp->incept_date.min     = gmp->tm_min;
+  ddp->incept_date.sec     = gmp->tm_sec;
+  ddp->incept_date.sub_sec = 0;
   ddp->file_idx         = file_idx;
   ddp->dblk_dir_sig_a   = DBLK_DIR_SIG;
   ddp->chksum           = 0;
