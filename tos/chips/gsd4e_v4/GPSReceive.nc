@@ -29,7 +29,7 @@
  *
  *   msg:        pointer to the raw gps message.
  *   len:        length of said message.
- *   arrival_ms: arrival time of the message in system ms
+ *   dtp:        datetime ptr to the arrival time of the message.
  *   mark_j:     time mark stamp if any in system jiffies
  *
  * The message format will be specified by whatever protocol is
@@ -39,6 +39,8 @@
  * the message will be consumed by the GPS sublayer.
  */
 
+#include <datetime.h>
+
 interface GPSReceive {
   /*
    * msg_available
@@ -46,5 +48,5 @@ interface GPSReceive {
    * will be signaled when a new message is available for processing.
    */
   event   void     msg_available(uint8_t *msg, uint16_t len,
-                                 uint32_t arrival_ms, uint32_t mark_j);
+                                 datetime_t *dtp, uint32_t mark_j);
 }

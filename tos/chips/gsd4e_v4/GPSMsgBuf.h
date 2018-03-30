@@ -20,6 +20,8 @@
  *          Daniel J. Maltbie <dmaltbie@daloma.org>
  */
 
+#include <datetime.h>
+
 #ifndef __GPSMSGBUF_H__
 #define __GPSMSGBUF_H__
 
@@ -42,10 +44,10 @@ typedef enum {
 
 typedef struct {
   uint8_t *data;
+  uint32_t mark_j;              /* time mark in jiffies */
+  datetime_t arrival_dt;        /* 10 byte datetime stamp, arrival */
   uint16_t len;
   uint16_t extra;
-  uint32_t arrival_ms;          /* arrival time of message */
-  uint32_t mark_j;              /* time mark in jiffies */
   gms_t    state;
 } gps_msg_t;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@
  */
 
 #include <GPSMsgBuf.h>
+#include <datetime.h>
 
 interface GPSBuffer {
 
@@ -56,14 +57,17 @@ interface GPSBuffer {
    * input:    ptr/len  pointer to uint16_t that will receive the
    *                    length of the message.
    *           arrival/mark timestamps describing when the message arrived
+   *                    pointer to a datetime_t ptr and pointer to uint32_t.
    *
    * returns:  ptr      to message data
    *                    NULL if no more messages.
    *                    len filled in with length
+   *                    *dtpp filled in with the ptr to the datetime stamp
+   *                    *markp filled in the mark value.
    *
    * Will set the state of the head of the message queue to BUSY.
    */
-  command uint8_t *msg_next(uint16_t *len, uint32_t *arrival, uint32_t *mark);
+  command uint8_t *msg_next(uint16_t *len, datetime_t **dtpp, uint32_t *markp);
 
   /*
    * msg_release: release a previously allocated msg.

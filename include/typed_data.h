@@ -42,7 +42,7 @@
 /*
  * identify what revision of typed_data.h we are using for this build
  */
-#define DT_H_REVISION 16
+#define DT_H_REVISION 17
 
 /*
  * Sync records are used to make sure we can always find the data stream if
@@ -107,11 +107,11 @@ typedef enum {
  *
  * All records (data blocks, dt headers) start with a 2 byte little endian
  * length, a 2 byte little endian data type field (dtype), a 4 byte little
- * endian record number, and a 64 bit little endian systime (internal time,
- * since last reboot) stamp.  The double quad systime needs to be double
- * quad aligned.  The header also includes a record checksum (recsum).
- * This is a 16 bit little endian checksum over individual bytes in both
- * the header and data areas.
+ * endian record number, and a 10 byte datetime stamp.  Datetime consists
+ * of a 64 bit lower 8 bytes of time stamp (dt64), followed by a 2 byte
+ * year.  It needs to be 2quad aligned for alignment safety.  The header
+ * also includes a record checksum (recsum).  This is a 16 bit little
+ * endian checksum over individual bytes in both the header and data areas.
  *
  * A following dt_header is required to be quad aligned.  There will 0-3
  * pad bytes following a record.  Length does not include these pad bytes.
@@ -131,7 +131,7 @@ typedef struct {                /* size 20 */
   uint16_t len;
   dtype_t  dtype;               /* 2 bytes */
   uint32_t recnum;
-  uint64_t systime;
+  datetime_t dt;                /* 10 byte datetime, 2quad */
   uint16_t recsum;
 } PACKED dt_header_t;
 
@@ -165,21 +165,16 @@ typedef struct {                /* size 20 */
  * reboot record
  * followed by ow_control_block
  *
- * We have a 64 bit systime and the ow_control_block also has a 64 bit
- * systime.  These 2quads need to be 2quad aligned to avoid problems
- * with the python tool struct extraction.
- *
  * We need to pad out the reboot record to keep 2quad alignment for the
  * following ow_control_block.
  */
 
 typedef struct {
-  uint16_t len;                 /* size 44 +    84      */
+  uint16_t len;                 /* size 36 +    84      */
   dtype_t  dtype;               /* reboot  + ow_control */
   uint32_t recnum;
-  uint64_t systime;             /* 2quad alignment */
+  datetime_t dt;                /* 10 byte datetime, 2quad align */
   uint16_t recsum;              /* part of header */
-  datetime_t datetime;          /* 10 bytes */
   uint32_t prev_sync;           /* file offset */
   uint32_t sync_majik;
   /* above same as sync */
@@ -206,9 +201,8 @@ typedef struct {
   uint16_t    len;              /* size   24    +     144      */
   dtype_t     dtype;            /* dt_version_t + image_info_t */
   uint32_t    recnum;
-  uint64_t    systime;
+  datetime_t  dt;               /* 10 byte datetime, 2quad align */
   uint16_t    recsum;           /* part of header */
-  uint16_t    pad;
   uint32_t    base;             /* base address of this image */
 } PACKED dt_version_t;          /* quad granular */
 
@@ -219,12 +213,11 @@ typedef struct {
 
 
 typedef struct {
-  uint16_t   len;               /* size 36 */
+  uint16_t   len;               /* size 28 */
   dtype_t    dtype;
   uint32_t   recnum;
-  uint64_t   systime;
+  datetime_t dt;                /* 10 byte datetime, 2quad align */
   uint16_t   recsum;            /* part of header */
-  datetime_t datetime;          /* 10 bytes */
   uint32_t   prev_sync;         /* file offset */
   uint32_t   sync_majik;
 } PACKED dt_sync_t;             /* quad granular */
@@ -276,16 +269,15 @@ typedef struct {
   uint16_t len;                 /* size 40 */
   dtype_t  dtype;
   uint32_t recnum;
-  uint64_t systime;
+  datetime_t dt;                /* 10 byte datetime, 2quad align */
   uint16_t recsum;              /* part of header */
-  dt_event_id_t ev;             /* event, see above */
+  dt_event_id_t ev;             /* 2 bytes, event, see above */
+  uint8_t  pcode;               /* PANIC warn, pcode, subsys */
+  uint8_t  w;                   /* PANIC warn, where  */
   uint32_t arg0;
   uint32_t arg1;
   uint32_t arg2;
   uint32_t arg3;
-  uint8_t  pcode;               /* PANIC warn, pcode, subsys */
-  uint8_t  w;                   /* PANIC warn, where  */
-  uint16_t pad;                 /* quad align */
 } PACKED dt_event_t;
 
 
@@ -313,14 +305,15 @@ typedef enum {
  * marshal the data to mess with the big endianess.
  */
 typedef struct {
-  uint16_t len;                 /* size 24 + var */
+  uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
   uint32_t recnum;
-  uint64_t systime;
+  datetime_t dt;                /* 10 byte datetime, 2quad align */
   uint16_t recsum;              /* part of header */
-  gps_chip_id_t chip_id;
-  uint8_t  dir;                 /* dir, 0 rx from gps, 1 - tx to gps */
   uint32_t mark_us;             /* mark stamp in usecs */
+  gps_chip_id_t chip_id;        /* 1 byte */
+  uint8_t  dir;                 /* dir, 0 rx from gps, 1 - tx to gps */
+  uint16_t pad;                 /* quad alignment */
 } PACKED dt_gps_t;
 
 /* direction setting in dir in dt_gps_t
@@ -333,13 +326,14 @@ typedef struct {
 
 
 typedef struct {
-  uint16_t len;                 /* size 24 + var */
+  uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
   uint32_t recnum;
-  uint64_t systime;
+  datetime_t dt;                /* 10 byte datetime, 2quad align */
   uint16_t recsum;              /* part of header */
-  uint16_t sns_id;
   uint32_t sched_delta;
+  uint16_t sns_id;
+  uint16_t pad;                 /* quad alignment */
 } PACKED dt_sensor_data_t;
 
 
@@ -347,12 +341,11 @@ typedef struct {
   uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
   uint32_t recnum;
-  uint64_t systime;
+  datetime_t dt;                /* 10 byte datetime, 2quad align */
   uint16_t recsum;              /* part of header */
-  uint16_t mask;
   uint32_t sched_delta;
+  uint16_t mask;
   uint16_t mask_id;
-  uint16_t pad;                 /* quad alignment */
 } PACKED dt_sensor_set_t;
 
 
