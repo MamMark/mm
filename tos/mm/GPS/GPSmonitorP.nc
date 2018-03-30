@@ -45,7 +45,7 @@
 #include <mm_byteswap.h>
 #include <sirf_driver.h>
 #include <gps_cmd.h>
-
+#include <datetime.h>
 
 typedef enum {
   GMS_OFF  = 0,                         /* pwr is off */
@@ -81,7 +81,7 @@ enum {
 
 /* from MID 2, NAV_DATA */
 typedef struct {
-  uint32_t ts;                          /* last seen time stamp */
+  datetime_t dt;                        /* datetime - last seen */
   uint32_t tow;                         /* reported time of week */
   int32_t  x;                           /* ECEF X */
   int32_t  y;                           /* ECEF Y */
@@ -95,7 +95,7 @@ typedef struct {
 
 /* from MID 7, clock status */
 typedef struct {
-  uint32_t ts;                          /* last seen time stamp */
+  datetime_t dt;                        /* datetime - last seen */
   uint32_t drift;
   uint32_t bias;
   uint32_t tow;                         /* reported time of week */
@@ -106,7 +106,7 @@ typedef struct {
 
 /* from MID 41, geodetic data */
 typedef struct {
-  uint32_t ts;                          /* last seen time stamp */
+  datetime_t dt;                        /* datetime - last seen */
   uint32_t tow;                         /* time of week, * 1000 */
   uint16_t week_x;                      /* extended week */
   uint8_t  nsats;                       /* how many sats in solution */
@@ -128,7 +128,7 @@ typedef struct {
 
 /* from mid 52, 1pps data */
 typedef struct {
-  uint32_t ts;                          /* last seen time stamp */
+  datetime_t dt;                        /* datetime - last seen */
   uint32_t mark_us;                     /* when mark was seen in usecs */
   uint16_t year;
   uint16_t utcintoff;
@@ -144,7 +144,7 @@ typedef struct {
 
 /* extracted from MID 41, Geodetic */
 typedef struct {
-  uint32_t ts;                          /* last seen time stamp */
+  datetime_t dt;                        /* datetime - last seen */
   uint32_t tow;                         /* seconds x 1e3 */
   uint16_t week_x;
   uint16_t utc_year;
@@ -181,6 +181,7 @@ module GPSmonitorP {
 
     interface Collect;
     interface CollectEvent;
+    interface DateTime;
 
     interface Timer<TMilli> as MonTimer;
     interface Panic;
@@ -440,9 +441,9 @@ implementation {
   /*
    * MID 2: NAV_DATA
    */
-  void process_navdata(sb_nav_data_t *np, uint32_t arrival_ms) {
-    uint8_t pmode;
-    gps_xyz_t    *mxp;
+  void process_navdata(sb_nav_data_t *np, datetime_t *dtp) {
+    uint8_t    pmode;
+    gps_xyz_t *mxp;
 
     nop();
     nop();
@@ -458,7 +459,7 @@ implementation {
        */
       nop();
       mxp = &m_xyz;
-      mxp->ts    = arrival_ms;
+      call DateTime.cpyTime(&mxp->dt, dtp);
       mxp->tow   = CF_BE_32(np->tow);
       mxp->week  = CF_BE_16(np->week);
       mxp->x     = CF_BE_32(np->xpos);
@@ -491,7 +492,7 @@ implementation {
   /*
    * MID 6: SW VERSION/GPS VERSION
    */
-  void process_swver(sb_soft_version_data_t *svp, uint32_t arrival_ms) {
+  void process_swver(sb_soft_version_data_t *svp, datetime_t *dtp) {
     dt_gps_t gps_block;
     uint16_t dlen;
 
@@ -500,7 +501,7 @@ implementation {
     dlen = CF_BE_16(svp->len) - 1;
     gps_block.len = dlen + sizeof(gps_block);
     gps_block.dtype = DT_GPS_VERSION;
-    gps_block.systime = arrival_ms;
+    call DateTime.cpyTime(&gps_block.dt, dtp);
     gps_block.mark_us  = 0;
     gps_block.chip_id = CHIP_GPS_GSD4E;
     gps_block.dir = GPS_DIR_RX;         /* rx from gps */
@@ -516,14 +517,14 @@ implementation {
   /*
    * MID 7: CLOCK_STATUS
    */
-  void process_clockstatus(sb_clock_status_data_t *cp, uint32_t arrival_ms) { }
+  void process_clockstatus(sb_clock_status_data_t *cp, datetime_t *dtp) { }
 
 
   /*
    * MID 41: GEODETIC_DATA
    * Extract time and position data out of the geodetic gps packet
    */
-  void process_geodetic(sb_geodetic_t *gp, uint32_t arrival_ms) {
+  void process_geodetic(sb_geodetic_t *gp, datetime_t *dtp) {
     gps_time_t    *mtp;
     gps_geo_t     *mgp;
     uint16_t       nav_valid, nav_type;
@@ -546,8 +547,7 @@ implementation {
 #endif
 
       mtp = &m_time;
-
-      mtp->ts        = arrival_ms;
+      call DateTime.cpyTime(&mtp->dt, dtp);
       mtp->tow       = CF_BE_32(gp->tow);
       mtp->week_x    = CF_BE_16(gp->week_x);
       mtp->nsats     = gp->nsats;
@@ -564,7 +564,7 @@ implementation {
         mtp->utc_ms, 0);
 
       mgp = &m_geo;
-      mgp->ts        = arrival_ms;
+      call DateTime.cpyTime(&mgp->dt, dtp);
       mgp->tow       = CF_BE_32(gp->tow);
       mgp->week_x    = CF_BE_16(gp->week_x);
       mgp->nsats     = gp->nsats;
@@ -606,7 +606,7 @@ implementation {
    * respond to a h/w config request.  We send an empty
    * h/w config response.
    */
-  void process_hw_config_req(sb_header_t *sbh, uint32_t arrival_ms) {
+  void process_hw_config_req(sb_header_t *sbh, datetime_t *dtp) {
     error_t err;
 
     err   = call GPSTransmit.send((void *) sirf_hw_config_rsp, sizeof(sirf_hw_config_rsp));
@@ -617,7 +617,7 @@ implementation {
   /*
    * MID 74: Session Open/Close Response
    */
-  void process_session_rsp(sb_header_t *sbh, uint32_t arrival_ms) {
+  void process_session_rsp(sb_header_t *sbh, datetime_t *dtp) {
     sb_session_rsp_t *srp;
 
     srp = (void *) sbh;
@@ -649,7 +649,7 @@ implementation {
    * MID 90: Power Mode Response
    * response to sending a Pwr_Mode_Req, MPM or Full Power.
    */
-  void process_pwr_rsp(sb_pwr_rsp_t *prp, uint32_t arrival_ms) {
+  void process_pwr_rsp(sb_pwr_rsp_t *prp, datetime_t *dtp) {
     uint16_t error;
 
     /*
@@ -671,7 +671,7 @@ implementation {
 
 
   event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
-        uint32_t arrival_ms, uint32_t mark_j) {
+        datetime_t *arrival_dtp, uint32_t mark_j) {
     sb_header_t *sbp;
     dt_gps_t hdr;
 
@@ -683,7 +683,7 @@ implementation {
 
     hdr.len      = sizeof(hdr) + len;
     hdr.dtype    = DT_GPS_RAW_SIRFBIN;
-    hdr.systime  = arrival_ms;
+    call DateTime.cpyTime(&hdr.dt, arrival_dtp);
     hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
     hdr.chip_id  = CHIP_GPS_GSD4E;
     hdr.dir      = GPS_DIR_RX;
@@ -691,25 +691,25 @@ implementation {
 
     switch (sbp->mid) {
       case MID_NAVDATA:
-        process_navdata((void *) sbp, arrival_ms);
+        process_navdata((void *) sbp, arrival_dtp);
         break;
       case MID_SWVER:
-        process_swver((void *) sbp, arrival_ms);
+        process_swver((void *) sbp, arrival_dtp);
         break;
       case MID_CLOCKSTATUS:
-        process_clockstatus((void *) sbp, arrival_ms);
+        process_clockstatus((void *) sbp, arrival_dtp);
         break;
       case MID_GEODETIC:
-        process_geodetic((void *) sbp, arrival_ms);
+        process_geodetic((void *) sbp, arrival_dtp);
         break;
       case MID_HW_CONFIG_REQ:
-        process_hw_config_req((void *) sbp, arrival_ms);
+        process_hw_config_req((void *) sbp, arrival_dtp);
         break;
       case MID_SESSION_RSP:
-        process_session_rsp((void *) sbp, arrival_ms);
+        process_session_rsp((void *) sbp, arrival_dtp);
         break;
       case MID_PWR_MODE_RSP:
-        process_pwr_rsp((void *) sbp, arrival_ms);
+        process_pwr_rsp((void *) sbp, arrival_dtp);
       default:
         break;
     }

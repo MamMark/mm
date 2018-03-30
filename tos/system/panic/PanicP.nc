@@ -20,6 +20,7 @@
 #include <fs_loc.h>
 #include <overwatch.h>
 #include <TinyError.h>
+#include <string.h>
 
 #ifdef PANIC_GATE
 norace volatile uint32_t g_panic_gate;
@@ -467,13 +468,12 @@ implementation {
     evp->len   = sizeof(ev);
     evp->dtype = DT_EVENT;
     evp->ev    = DT_EVENT_PANIC_WARN;
+    evp->pcode = pap->pcode;            /* pcode/subsystem */
+    evp->w     = pap->where;
     evp->arg0  = pap->a0;
     evp->arg1  = pap->a1;
     evp->arg2  = pap->a2;
     evp->arg3  = pap->a3;
-    evp->pcode = pap->pcode;            /* pcode/subsystem */
-    evp->w     = pap->where;
-    evp->pad   = 0;
     call Collect.collect((void *) evp, sizeof(ev), NULL, 0);
     atomic _panic_args_warn_busy = FALSE;
   }
@@ -628,7 +628,8 @@ implementation {
     pip->pi_sig     = PANIC_INFO_SIG;
     pip->boot_count = owcp->reboot_count;
     pip->fail_count = owcp->fail_count;
-    pip->systime    = call LocalTime.get();
+    memset(&pip->dt, 0, sizeof(pip->dt));
+    pip->dt.sub_sec = call LocalTime.get();
     pip->subsys = pap->pcode;
     pip->where  = pap->where;
     pip->pad    = 0;

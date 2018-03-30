@@ -57,4 +57,7 @@ implementation {
   components CollectC;
   GPSmonitorP.CollectEvent -> CollectC;
   GPSmonitorP.Collect -> CollectC;
+
+  components DateTimeM;
+  GPSmonitorP.DateTime -> DateTimeM;
 }

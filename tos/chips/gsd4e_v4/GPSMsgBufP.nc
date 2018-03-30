@@ -296,13 +296,14 @@ implementation {
   task void gps_receive_task() {
     uint8_t *msg;
     uint16_t len;
-    uint32_t arrival, mark;
+    datetime_t *arrival_dtp;
+    uint32_t mark;
 
     while (1) {
-      msg = call GPSBuffer.msg_next(&len, &arrival, &mark);
+      msg = call GPSBuffer.msg_next(&len, &arrival_dtp, &mark);
       if (!msg)
         break;
-      signal GPSReceive.msg_available(msg, len, arrival, mark);
+      signal GPSReceive.msg_available(msg, len, arrival_dtp, mark);
       call GPSBuffer.msg_release();
     }
   }
@@ -361,7 +362,8 @@ implementation {
       msg->data  = gps_buf;
       msg->len   = len;
       msg->state = GPS_MSG_FILLING;
-      msg->arrival_ms = call LocalTime.get();
+      memset(&msg->arrival_dt, 0, sizeof(msg->arrival_dt));
+      msg->arrival_dt.sub_sec = call LocalTime.get();
 
       gmc.free  = gps_buf + len;
       gmc.free_len -= len;              /* zero is okay */
@@ -596,8 +598,8 @@ implementation {
   }
 
 
-  command uint8_t *GPSBuffer.msg_next(uint16_t *len,
-        uint32_t *arrival, uint32_t *mark) {
+  command uint8_t *GPSBuffer.msg_next(uint16_t *lenp,
+        datetime_t **arrival_dtp, uint32_t *markp) {
     gps_msg_t *msg;             /* message slot we are working on */
 
     atomic {
@@ -611,9 +613,9 @@ implementation {
         return NULL;
       }
       msg->state = GPS_MSG_BUSY;
-      *len = msg->len;
-      *arrival = msg->arrival_ms;
-      *mark    = msg->mark_j;
+      *lenp = msg->len;
+      *arrival_dtp = &msg->arrival_dt;
+      *markp       = msg->mark_j;
       return msg->data;
     }
   }
@@ -695,7 +697,7 @@ implementation {
 
 
   default event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
-        uint32_t arrival_ms, uint32_t mark_j) { }
+        datetime_t *arrival_dtp, uint32_t mark_j) { }
 
 
   /*

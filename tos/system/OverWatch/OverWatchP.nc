@@ -737,7 +737,7 @@ implementation {
     ow_control_block_t *owcp;
 
     owcp = &ow_control_block;
-    owcp->uptime = call LocalTime.get();
+    owcp->uptime = call LocalTime.get(); /* lt64 or ltS */
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
     owcp->ow_req = OW_REQ_FAIL;

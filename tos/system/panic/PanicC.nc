@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2012 Eric B. Decker
- * Copyright (c) 2017, Eric B. Decker
+ * Copyright (c) 2017-2018, Eric B. Decker
  * @author Eric B. Decker
  */
 

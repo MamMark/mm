@@ -96,6 +96,7 @@ typedef struct {
   uint32_t     last_rec_offset;         /* file offset */
   uint32_t     last_sync_offset;        /* file offset */
   uint16_t     bufs_to_next_sync;
+  uint16_t     cur_year;
 
   uint16_t     majik_b;
 } dc_control_t;
@@ -160,7 +161,6 @@ implementation {
     vp->len     = sizeof(v) + sizeof(image_info_t);
     vp->dtype   = DT_VERSION;
     vp->base    = call OverWatch.getImageBase();
-    vp->pad     = 0;
     call Collect.collect((void *) vp, sizeof(dt_version_t),
                          (void *) &image_info, sizeof(image_info_t));
   }
@@ -213,7 +213,6 @@ implementation {
   event void Boot.booted() {
     write_reboot_record();
     write_version_record();
-    nop();                              /* BRK */
     signal Booted.booted();
   }
 
@@ -465,7 +464,8 @@ implementation {
 
   command void Collect.collect(dt_header_t *header, uint16_t hlen,
                                uint8_t     *data,   uint16_t dlen) {
-    header->systime = call LocalTime.get();
+    memset(&header->dt, 0, sizeof(header->dt));
+    header->dt.sub_sec = call LocalTime.get();
     call Collect.collect_nots(header, hlen, data, dlen);
   }
 
@@ -494,16 +494,15 @@ implementation {
     dt_event_t *ep;
 
     ep = &e;
-    ep->len = sizeof(e);
+    ep->len   = sizeof(e);
     ep->dtype = DT_EVENT;
-    ep->ev   = ev;
-    ep->arg0 = arg0;
-    ep->arg1 = arg1;
-    ep->arg2 = arg2;
-    ep->arg3 = arg3;
-    ep->pcode= 0;
-    ep->w    = 0;
-    ep->pad  = 0;
+    ep->ev    = ev;
+    ep->pcode = 0;
+    ep->w     = 0;
+    ep->arg0  = arg0;
+    ep->arg1  = arg1;
+    ep->arg2  = arg2;
+    ep->arg3  = arg3;
     call Collect.collect((void *)ep, sizeof(e), NULL, 0);
   }
 
@@ -532,12 +531,11 @@ implementation {
       if (dcc.remaining >= sizeof(dt_sync_t)) {
         sp->len        = sizeof(dt_sync_t);
         sp->dtype      = DT_SYNC;
-        sp->systime    = call LocalTime.get();
+        memset(&sp->dt, 0, sizeof(sp->dt));
+        sp->dt.sub_sec = call LocalTime.get();
         sp->sync_majik = SYNC_MAJIK;
         sp->prev_sync  = dcc.last_sync_offset;
         dcc.last_sync_offset = get_rec_offset();
-
-        /* fill in datetime */
 
         /* add recnum and checksum the record */
         finish_record( (void *) sp, sizeof(dt_sync_t), NULL, 0);
