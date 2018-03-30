@@ -49,14 +49,6 @@
 #include "flash.h"
 
 
-#ifndef nop
-#define nop() __asm volatile("nop")
-#endif
-
-#ifndef bkpt
-#define bkpt(val) __asm volatile ("bkpt "#val)
-#endif
-
 /*
  * msp432.h finds the right chip header (msp432p401r.h) which also pulls in
  * the correct cmsis header (core_cm4.h).  The variables DEVICE and

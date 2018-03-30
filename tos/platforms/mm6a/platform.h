@@ -18,6 +18,9 @@
  *                      so one can poke around at memory.
  */
 
+#ifndef __PLATFORM_H__
+#define __PLATFORM_H__
+
 #define REQUIRE_PLATFORM
 #define REQUIRE_PANIC
 
@@ -55,6 +58,12 @@
 #define TOSH_DATA_LENGTH 250
 #define GPS_EAVESDROP
 
+
+/*
+ * platform.h is one of the first files included.
+ * pull in any compiler definitions we may need.
+ */
+#include <msp432.h>
 #include <panic.h>
 #include <platform_panic.h>
 
@@ -68,3 +77,5 @@
  * TA1 is Tmilli, clocked by ACLK 32KiHz (async)
  */
 #define PLATFORM_TA1_ASYNC TRUE
+
+#endif // __PLATFORM_H__
