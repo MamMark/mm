@@ -1,5 +1,7 @@
 
 * LocalTime
+  localtime is only used for timing in the Timer system.
+
 ** 32 bit ms internal time since last reboot.
 
    binary time: 1024 ticks/sec.  (mis ticks)
@@ -14,6 +16,9 @@
 
 
 * sysTime (lt64)
+  systime is deprecated.  Was used for record timestamping.
+  superseeded by DateTime.
+
 ** 64 bit ms internal time since last reboot.  LocalTime (32 bit) wraps
    after ~48.5 days.  To fix this issue we need 64 bits (next natural
    boundary).  64 bit sysTime will wrap every ~571 million years.
@@ -25,7 +30,12 @@
 
 
 * dateTime
+  dateTime is used for all timestamping.  Anything external.
+
 ** 10 bytes
+*** two subfields.  the year (2 bytes) and the low 8 bytes.
+    the low 8 bytes is organized as a 2quad aligned (structure
+    alignment) collection of sub_sec, sec, min, hr, dow, day, mon.
 
 ** RTC format
 *** h/w format, TI RTC format.
@@ -39,9 +49,9 @@
 
 
 *** dateTime Memory format
-**** see datetime.h
+**** see datetime.h (main prod tree)
 
-  uint16_t	jiffies;                /* 16 bit jiffies (32KiHz) */
+  uint16_t	sub_sec;                /* 16 bit jiffies (32KiHz) */
   uint8_t	sec;                    /* 0-59 */
   uint8_t	min;                    /* 0-59 */
   uint8_t	hr;                     /* 0-23 */
@@ -51,20 +61,31 @@
   uint16_t	yr;
 
 
-*** dt64
-64 bit (8 byte) time stamp that contains all the components of datetime
-without the year.  dt64 stamps are used in data block records.
+Originally, we were using a 32bit systime for timestamping.  This is the
+number of ms since reboot, which wraps in ~45 days.  Need something bigger.
+The next natural boundary is 64 bits.
+
+But we want something that human's understand and is easy to process.  The
+closer we make this to the real time clock the better.
 
 sysTime is 64 bits which is 8 bytes.  dateTime is 10 bytes.  Including 2
 bytes for year.  We reduce dateTime to 8 bytes (ie. 64 bits), by dropping
 the year, yielding a dt64 timestamp.  The time will wrap once a year on the
 transition from 12/31-23:59:59:0x7fff to 01/01-00:00:00:0x0000.
 
-Data Blocks (typed_data, records) are time stamped using these 64 bit dt64
-time stamps.  dt64 stamps don't include the year but does fit into 8 bytes
-(64 bits).  SYNC and REBOOT records have both the dt64 stamp and a full
-dateTime stamp.  This gives a full correlator between dateTime and the dt64
-time.
+But this has the problem of not having the year, this is a problem waiting
+to bite us when we just happen to get the year wrong.
+
+The dt64 structure however has the nice property of being easy to copy, so
+we bury both the year and a dt64 structure inside of the datetime structure.
+We then use datetime for timestamping and always make sure the year is
+included.
+
+The has the downside of having 2 additional bytes in every record.  We can
+mitigate this later by going to a temporanc encoding with yields a full
+timestamp in 8 bytes.
+
+Data Blocks (typed_data, records) are time stamped using datetime stamps.
 
 Overwatch uses sysTime (LocalTime64) for uptime (time since last boot) and
 the accumulation of elapsedTime.  Both are in sysTime units, 64 bit ms since
@@ -104,14 +125,14 @@ can skip values.  All times are UTC.
 
 2018/01/01-(M)-00:00:00:0x0000, start of 2018, Monday.
   memory: 00 00 00 00 00 01 01 01 e2 07
-          jiff  s  m  h  dw d  mn year
+          ss    s  m  h  dw d  mn year
   dt64:   00 00 00 00 00 01 01 01
 
 32767 ticks ... 2018/01/01-(M)-00:00:00:0x7fff (M) and one tick later...
                 2018/01/01-(M)-00:00:01:0x0000 (M)
   dt64:   ff 7f 00 00 00 01 01 01
           00 00 01 00 00 01 01 01
-          jiff  s  m  h  dw d  mn
+          ss    s  m  h  dw d  mn
 
   ff 7f 38 38 17 01 01 01 ... 2018/01/01-(M)-23:59:59:0x7fff (M)
   00 00 00 00 00 02 02 01 ... 2018/01/02-(T)-00:00:00:0x0000 (T)
@@ -146,4 +167,5 @@ dateTime:
   00 00 00 00 00 02 01 01 e3 07
 
 
-Do we really need day of week?  Does that buy us anything?
+Do we really need day of week?  Does that buy us anything?  It matches
+the h/w and can also be used for alarms.

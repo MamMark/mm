@@ -28,8 +28,8 @@ SD:             Secure Digital device that is the effective mass storage
                 device.
 
 
-SysTime:        64 bit millisecond granular time since reboot.
-DateTime:       10 byte real time.  Year-Month-Day-Hour-Min-Sec-Jiffies-DOW
+dt64            8 byte, datetime without year.
+DateTime:       10 byte real time.  Year-Month-Day-DOW-Hour-Min-Sec-Jiffies
                 Jiffies are 15 bits of subsecond (1/32768 units, ~30.5us).
                 DOW, day of week.
 
@@ -50,8 +50,6 @@ o Record Numbers
 
 o Time
 ** DateTime is monotonically increasing since file inception.
-** SysTime  is monotonically increasing since last REBOOT.
-** Sync/Reboot records provides correlation between DateTime and SysTime.
 
 
 DBLK directory
@@ -78,8 +76,7 @@ o Basic header, same for all records
   dtype/rtype - (2 bytes) record type
   recnum      - (4 bytes) unique (to this Dblk stream) record numer,
                           strictly increasing.  0 is invalid.
-  systime     - (8 bytes) 64 bit time stamp, number of milliseconds since
-                          reboot.
+  datetime    - (10 bytes)
   recsum      - (2 bytes) 16 bit checksum over all bytes inclusive of the
                           header and data.  byte by byte addition.
 
@@ -87,11 +84,6 @@ o Sync/Reboot records.  When record sync has been lost, we use sync/reboot
   records to resynchronize the data stream.  Sync/Reboot records also provide
   backward links.  This gives us a bound on what records live in the different
   sync regions.
-
-  Sync/Reboot records also provide a correlation between DateTime and SysTime.
-  DateTime provides a potentially geo-syncronized timing.  And correlating
-  between SysTime (time since last reboot) and DateTime gives the relationship
-  between real time and running time upon the tag.
 
   To bound how much data can be written prior to be being bounded by a SYNC
   record we write SYNC records every N sectors (SYNC_MAX_SECTORS).
