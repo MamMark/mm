@@ -23,7 +23,7 @@
 
 from   misc_utils    import buf_str
 
-__version__ = '0.2.0 (se)'
+__version__ = '0.2.1 (se)'
 
 
 def emit_default(level, offset, buf, obj):
@@ -118,7 +118,8 @@ def emit_sirf_navtrk(level, offset, buf, obj):
 
 def emit_sirf_swver(level, offset, buf, obj):
     print
-    print '  {}'.format(obj)
+    if (level >= 1):
+        print '  {}'.format(obj)
 
 def emit_sirf_vis(level, offset, buf, obj):
     num_sats = obj['vis_sats'].val

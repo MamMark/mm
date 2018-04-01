@@ -76,5 +76,3 @@ def decode_sirf_vis(level, offset, buf, obj):
             d[k] = v.val
         obj[n] = d
     return consumed
-
-

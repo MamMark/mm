@@ -21,10 +21,11 @@
 
 # basic emitters for main data blocks
 
-__version__ = '0.2.0 (ce)'
+__version__ = '0.2.5 (ce)'
 
 from   dt_defs      import *
 from   dt_defs      import rec0
+from   dt_defs      import get_systime
 from   dt_defs      import dt_name
 from   dt_defs      import print_hdr
 from   dt_defs      import print_record
@@ -125,10 +126,11 @@ def emit_reboot(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    st       = obj['hdr']['st'].val
+    datetime = obj['hdr']['dt']
+    st       = get_systime(datetime)
 
     majik    = obj['majik'].val
-    prev     = obj['prev'].val
+    prev     = obj['prev_sync'].val
     dt_rev   = obj['dt_rev'].val
     base     = obj['base'].val
     if dt_rev != DT_H_REVISION:
@@ -162,7 +164,7 @@ def emit_reboot(level, offset, buf, obj):
             base_name(from_base), base_name(base),
             ow_boot_mode_name(owcb_obj['ow_boot_mode'].val),
             reboot_count, fail_count, chk_fails))
-        print(rbt1b.format(obj['prev'].val, obj['prev'].val, dt_rev))
+        print(rbt1b.format(prev, prev, dt_rev))
 
     if (level >= 2):                    # detailed display (level 2)
         print
@@ -218,8 +220,10 @@ def emit_version(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    st       = obj['hdr']['st'].val
+    datetime = obj['hdr']['dt']
     base     = obj['base'].val
+
+    st       = get_systime(datetime)
 
     ver_str = '{:d}.{:d}.{:d}'.format(
         image_info_obj['ver_id']['major'].val,
@@ -269,7 +273,8 @@ def emit_sync(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    st       = obj['hdr']['st'].val
+    datetime = obj['hdr']['dt']
+    st       = get_systime(datetime)
 
     majik    = obj['majik'].val
     prev     = obj['prev_sync'].val
@@ -301,7 +306,8 @@ def emit_event(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    st       = obj['hdr']['st'].val
+    datetime = obj['hdr']['dt']
+    st       = get_systime(datetime)
 
     event = obj['event'].val
     arg0  = obj['arg0'].val
@@ -343,7 +349,8 @@ def emit_debug(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    st       = obj['hdr']['st'].val
+    datetime = obj['hdr']['dt']
+    st       = get_systime(datetime)
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(debug0.format())
@@ -359,7 +366,9 @@ def emit_gps_version(level, offset, buf, obj):
     xlen     = obj['gps_hdr']['hdr']['len'].val
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
-    st       = obj['gps_hdr']['hdr']['st'].val
+    datetime = obj['gps_hdr']['hdr']['dt']
+    st       = get_systime(datetime)
+
     print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype)))
     if (level >= 1):
         print('    {}'.format(obj['sirf_swver']))
@@ -421,7 +430,8 @@ def emit_test(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    st       = obj['hdr']['st'].val
+    datetime = obj['hdr']['dt']
+    st       = get_systime(datetime)
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(test0.format())
@@ -436,7 +446,8 @@ def emit_note(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    st       = obj['hdr']['st'].val
+    datetime = obj['hdr']['dt']
+    st       = get_systime(datetime)
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print('{}'.format(buf[point:]))
@@ -453,7 +464,8 @@ def emit_config(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    st       = obj['hdr']['st'].val
+    datetime = obj['hdr']['dt']
+    st       = get_systime(datetime)
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(cfg0.format())
@@ -469,9 +481,10 @@ def emit_gps_raw(level, offset, buf, obj):
     xlen     = obj['gps_hdr']['hdr']['len'].val
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
-    st       = obj['gps_hdr']['hdr']['st'].val
-    dir_bit  = obj['gps_hdr']['dir'].val
+    datetime = obj['gps_hdr']['hdr']['dt']
+    st       = get_systime(datetime)
 
+    dir_bit  = obj['gps_hdr']['dir'].val
     dir_str  = 'rx' if dir_bit == 0 else 'tx'
 
     print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),

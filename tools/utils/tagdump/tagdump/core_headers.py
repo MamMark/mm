@@ -22,7 +22,7 @@
 
 # basic data type object descriptors
 
-__version__ = '0.2.0 (ch)'
+__version__ = '0.2.5 (ch)'
 
 import binascii
 from   decode_base  import *
@@ -30,41 +30,34 @@ from   collections  import OrderedDict
 from   sirf_headers import sirf_hdr_obj
 from   sirf_headers import sirf_swver_obj
 
-dt_hdr_obj = aggie(OrderedDict([
-    ('len',     atom(('<H', '{}'))),
-    ('type',    atom(('<H', '{}'))),
-    ('recnum',  atom(('<I', '{}'))),
-    ('st',      atom(('<Q', '0x{:x}'))),
-    ('recsum',  atom(('<H', '0x{:04x}')))]))
-
 datetime_obj = aggie(OrderedDict([
-    ('jiffies', atom(('<H', '{}'))),
+    ('sub_sec', atom(('<H', '{}'))),
     ('sec',     atom(('<B', '{}'))),
     ('min',     atom(('<B', '{}'))),
     ('hr',      atom(('<B', '{}'))),
     ('dow',     atom(('<B', '{}'))),
     ('day',     atom(('<B', '{}'))),
     ('mon',     atom(('<B', '{}'))),
-    ('yr',      atom(('<H', '{}')))]))
+    ('year',    atom(('<H', '{}'))),
+]))
 
-dt64_obj = aggie(OrderedDict([
-    ('jiffies', atom(('<H', '{}'))),
-    ('sec',     atom(('<B', '{}'))),
-    ('min',     atom(('<B', '{}'))),
-    ('hr',      atom(('<B', '{}'))),
-    ('dow',     atom(('<B', '{}'))),
-    ('day',     atom(('<B', '{}'))),
-    ('mon',     atom(('<B', '{}')))]))
+dt_hdr_obj = aggie(OrderedDict([
+    ('len',     atom(('<H', '{}'))),
+    ('type',    atom(('<H', '{}'))),
+    ('recnum',  atom(('<I', '{}'))),
+    ('dt',      datetime_obj),
+    ('recsum',  atom(('<H', '0x{:04x}'))),
+]))
 
 dt_simple_hdr   = aggie(OrderedDict([('hdr', dt_hdr_obj)]))
 
 dt_reboot_obj   = aggie(OrderedDict([
-    ('hdr',     dt_hdr_obj),
-    ('datetime',atom(('10s', '{}', binascii.hexlify))),
-    ('prev',    atom(('<I', '{:08x}'))),
-    ('majik',   atom(('<I', '{:08x}'))),
-    ('dt_rev',  atom(('<I', '{:08x}'))),
-    ('base',    atom(('<I', '{:08x}')))]))
+    ('hdr',       dt_hdr_obj),
+    ('prev_sync', atom(('<I', '{:08x}'))),
+    ('majik',     atom(('<I', '{:08x}'))),
+    ('dt_rev',    atom(('<I', '{:08x}'))),
+    ('base',      atom(('<I', '{:08x}'))),
+]))
 
 #
 # reboot is followed by the ow_control_block
@@ -74,6 +67,11 @@ dt_reboot_obj   = aggie(OrderedDict([
 owcb_obj        = aggie(OrderedDict([
     ('ow_sig',          atom(('<I', '0x{:08x}'))),
     ('rpt',             atom(('<I', '0x{:08x}'))),
+#
+# change uptime from 64 bit ms time to 32 bit secs
+# uptime and elapsed need to be changed.  Perhaps
+# boot time (datetime), calculate elapsed.
+#
     ('uptime',          atom(('<Q', '0x{:08x}'))),
     ('reset_status',    atom(('<I', '0x{:08x}'))),
     ('reset_others',    atom(('<I', '0x{:08x}'))),
@@ -88,6 +86,9 @@ owcb_obj        = aggie(OrderedDict([
     ('ow_boot_mode',    atom(('<B', '{}'))),
     ('owt_action',      atom(('<B', '{}'))),
     ('reboot_count',    atom(('<I', '{}'))),
+
+# ditto for elapsed
+
     ('elapsed',         atom(('<Q', '0x{:08x}'))),
     ('strange',         atom(('<I', '{}'))),
     ('strange_loc',     atom(('<I', '0x{:04x}'))),
@@ -99,7 +100,6 @@ owcb_obj        = aggie(OrderedDict([
 
 dt_version_obj  = aggie(OrderedDict([
     ('hdr',       dt_hdr_obj),
-    ('pad',       atom(('<H', '{:04x}'))),
     ('base',      atom(('<I', '{:08x}')))]))
 
 
@@ -129,7 +129,6 @@ image_info_obj  = aggie(OrderedDict([
 
 dt_sync_obj     = aggie(OrderedDict([
     ('hdr',       dt_hdr_obj),
-    ('datetime',  atom(('10s','{}', binascii.hexlify))),
     ('prev_sync', atom(('<I', '{:x}'))),
     ('majik',     atom(('<I', '{:08x}')))]))
 
@@ -203,12 +202,12 @@ gps_cmd_names = {
 dt_event_obj    = aggie(OrderedDict([
     ('hdr',   dt_hdr_obj),
     ('event', atom(('<H', '{}'))),
+    ('pcode', atom(('<B', '{}'))),
+    ('w',     atom(('<B', '{}'))),
     ('arg0',  atom(('<I', '0x{:04x}'))),
     ('arg1',  atom(('<I', '0x{:04x}'))),
     ('arg2',  atom(('<I', '0x{:04x}'))),
-    ('arg3',  atom(('<I', '0x{:04x}'))),
-    ('pcode', atom(('<B', '{}'))),
-    ('w',     atom(('<B', '{}')))]))
+    ('arg3',  atom(('<I', '0x{:04x}')))]))
 
 
 #
@@ -221,9 +220,10 @@ dt_debug_obj    = dt_simple_hdr
 # used by DT_GPS_VERSION and DT_GPS_RAW_SIRFBIN (gps_raw)
 #
 dt_gps_hdr_obj = aggie(OrderedDict([('hdr',     dt_hdr_obj),
+                                    ('mark',    atom(('<I', '0x{:04x}'))),
                                     ('chip',    atom(('B',  '0x{:02x}'))),
                                     ('dir',     atom(('B',  '{}'))),
-                                    ('mark',    atom(('<I', '0x{:04x}')))]))
+                                    ('pad',     atom(('<H', '{}')))]))
 
 dt_gps_ver_obj = aggie(OrderedDict([('gps_hdr',    dt_gps_hdr_obj),
                                     ('sirf_swver', sirf_swver_obj)]))

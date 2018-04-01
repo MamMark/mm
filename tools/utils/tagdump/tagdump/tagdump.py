@@ -34,20 +34,23 @@ import sys
 import struct
 import argparse
 
-from   dt_defs       import *
-import dt_defs       as     dtd
-from   dt_defs       import print_record
+from   dt_defs         import *
+import dt_defs         as     dtd
+from   dt_defs         import print_record
 
-import sirf_defs     as     sirf
+import sirf_defs       as     sirf
 
-from   tagdumpargs   import parseargs
-from   misc_utils    import dump_buf
+from   tagdumpargs     import parseargs
+from   misc_utils      import dump_buf
 
 from   tagfile         import TagFile
 from   tagfile         import TF_SEEK_END
 
 # import configuration, which will populate decode/emitter trees.
 import tagdump_config
+
+# we need a definition of the header so we can pull it in.
+from   core_headers    import dt_hdr_obj
 
 from   __init__        import __version__   as VERSION
 from   dt_defs         import DT_H_REVISION as DT_REV
@@ -140,7 +143,7 @@ ver_str = '\ntagdump: ' + VERSION + ':  dt_rev ' + str(DT_REV)
 # The define DT_H_REVISION in typed_data.h indicates which version.
 # Matching is a good thing.  We won't abort but will bitch if we mismatch.
 #
-# DT_H_REVISION is defined in headers_core.py
+# DT_H_REVISION is defined in dt_defs.py
 
 #
 # global control cells
@@ -155,7 +158,8 @@ debug                   = 0            # extra debug chatty
 # 1st sector of the first is the directory
 DBLK_DIR_SIZE           = 0x200
 RLEN_MAX_SIZE           = 1024
-RESYNC_HDR_OFFSET       = 36            # how to get back to the start
+RESYNC_HDR_OFFSET       = 28            # how to get back to the start
+                                        # or how to move past the majik
 MAX_ZERO_SIGS           = 1024          # 1024 quads, 4K bytes of zero
 
 
@@ -184,26 +188,36 @@ def init_globals():
     total_bytes         = 0
 
 
-#
 # resync the data stream to the next SYNC/REBOOT record
 #
-# we search for the SYNC_MAJIK and then back up an appropriate
-# amount (RESYNC_HDR_OFFSET).  We check for reasonable length
-# and reasonable rtype (SYNC or REBOOT).
-#
-# Once we think we have a good SYNC/REBOOT, we leave the file
-# position at the start of the SYNC/REBOOT.  And let other
-# checks needed be performed by gen_records.
-#
-# returns -1 if something went wrong
-#         offset of next record if not.
-#
+# search for the next SYNC/REBOOT record by finding the SYNC_MAJIK
+# and then back up an appropriate amount (RESYNC_HDR_OFFSET).
 
 resync0 = '*** resync: unaligned offset: {0} (0x{0:x}) -> {1} (0x{1:x})'
 resync1 = '*** resync: (struct error) [len: {0}] @{1} (0x{1:x})'
 
 def resync(fd, offset):
+    '''resync the data stream to the next SYNC/REBOOT record
+
+    search for the next SYNC/REBOOT record by finding the SYNC_MAJIK, then
+    backing up an appropriate amount (RESYNC_HDR_OFFSET).
+
+    We check for reasonable length and reasonable rtype (SYNC or REBOOT).
+
+    Once we think we have a good SYNC/REBOOT, we leave the file position at
+    the start of the SYNC/REBOOT.  And let other checks needed be performed
+    by get_record.
+
+    input:  fd          input file (fd, file descriptor)
+            offset      where to start looking for sync
+
+    output: offset      offset of next record
+                        -1 if something went wrong
+    '''
+
     global num_resyncs
+    hdr     = dt_hdr_obj
+    hdr_len = len(hdr)
 
     print
     print('*** resync started @{0} (0x{0:x})'.format(offset))
@@ -250,17 +264,24 @@ def resync(fd, offset):
                     return -1
             else:
                 zero_sigs = 0
+
+        # outer loop, found a majik, let's see if its a SYNC/REBOOT
         fd.seek(-RESYNC_HDR_OFFSET, 1)          # back up to start of attempt
         offset_try = fd.tell()
         if (verbose >= 4):
-            print('*** resync: found MAJIK @{0} (0x{0:x})'.format(offset))
-        buf = bytearray(fd.read(dtd.dt_hdr_size))
-        if (len(buf) < dtd.dt_hdr_size):            # oht oh, too small, very strange
+            print('*** resync: trying @{0} (0x{0:x}), ' \
+                  'found MAJIK @{1} (0x{1:x})'.format(
+                      offset_try, offset))
+        buf = bytearray(fd.read(hdr_len))
+        if len(buf) < hdr_len:                  # oht oh, too small, very strange
             print('*** resync: read of dt_hdr too small, @{}'.format(offset_try))
             return -1
 
-        # we want rlen and rtype, we leave recsum checking for gen_records
-        rlen, rtype, recnum, systime, recsum = dtd.dt_hdr_struct.unpack(buf)
+        # we want rlen and rtype, we leave recsum checking for get_record
+        hdr.set(buf)
+        rlen   = hdr['len'].val
+        rtype  = hdr['type'].val
+        recnum = hdr['recnum'].val
         if ((rtype == DT_SYNC   and rlen == sync_len) or
             (rtype == DT_REBOOT and rlen == reboot_len)):
             fd.seek(offset_try)
@@ -279,33 +300,34 @@ def resync(fd, offset):
 def get_record(fd):
     """
     Generate valid typed-data records one at a time until no more bytes
-    to read from the input file.
+    can be read from the input file.
 
-    Yields one record each time (len, type, recnum, systime, recsum, rec_buf).
+    Yields one record each time:
+        dt_hdr_obj: (len, type, recnum, datetime, recsum)
 
     Input:   fd:         file descriptor we are reading from
     Output:  rec_offset: byte offset of the record from start of file
-             rlen:       record length
-             rtype:      record type
-             recnum      record number
-             systime     time since last reboot
-             recsum      checksum ovr header and data
+             hdr         hdr obj (see above)
              rec_buf:    byte buffer with entire record
     """
 
     global chksum_errors
 
-    # output variables
+    # output and other vars
     offset      = -1
+    hdr         = dt_hdr_obj
+    rec_buf     = bytearray()
+
+    hdr_len     = len(hdr)              # only call it once
     rlen        = 0
     rtype       = 0
+    datetime    = hdr['dt']             # object
     recnum      = 0
-    systime     = 0
     recsum      = 0
-    rec_buf     = bytearray()
+
     align0 = '*** aligning offset {0} (0x{0:x}) -> {1} (0x{1:x}) [{2} bytes]'
 
-    last_offset = 0                     # protects against infinite resync
+    last_offset = 0                     # protects against finding same sync
 
     while (True):
         offset = fd.tell()
@@ -323,7 +345,7 @@ def get_record(fd):
             # and we ended back at the same record.
             #
             # advance our current position to just beyond the last sync we
-            # tried.  Find the next one.
+            # tried and find the next sync.
             #
             offset += RESYNC_HDR_OFFSET
             print('*** resyncing: moving past current majik to: @{0} (0x{0:x})'.format(
@@ -333,15 +355,19 @@ def get_record(fd):
                 break
             continue
         last_offset = offset
-        rec_buf = bytearray(fd.read(dtd.dt_hdr_size))
-        if (len(rec_buf) < dtd.dt_hdr_size):
+        rec_buf = bytearray(fd.read(hdr_len))
+        if len(rec_buf) < hdr_len:
             print('*** record header read too short: wanted {}, got {}, @{}'.format(
-                dtd.dt_hdr_size, len(rec_buf), offset))
+                hdr_len, len(rec_buf), offset))
             break                       # oops
-        rlen, rtype, recnum, systime, recsum = dtd.dt_hdr_struct.unpack(rec_buf)
+        hdr.set(rec_buf)
+        rlen   = hdr['len'].val
+        rtype  = hdr['type'].val
+        recnum = hdr['recnum'].val
+        recsum = hdr['recsum'].val
 
         # check for obvious errors
-        if (rlen < dtd.dt_hdr_size):
+        if (rlen < hdr_len):
             print('*** record size too small: {}, @{}'.format(rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
@@ -364,10 +390,10 @@ def get_record(fd):
 
         # now see if we have any data payload
         # if dlen is negative, that says we are below min header size
-        dlen = rlen - dtd.dt_hdr_size
+        dlen = rlen - hdr_len
         if (dlen < 0):                  # major oops, rlen is screwy
             print('*** record header too short: wanted {}, got {}, @{}'.format(
-                dtd.dt_hdr_size, rlen, offset))
+                hdr_len, rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
@@ -419,16 +445,19 @@ def get_record(fd):
         required_len = v[DTR_REQ_LEN]
         if (required_len):
             if (required_len != rlen):
+                print('*** violated required len: {}, got {}'.format(
+                    required_len, len))
+                print_record(offset, rec_buf)
                 offset = resync(fd, offset)
                 if (offset < 0):
                     break
                 continue            # try again
 
         # life is good.  return actual record.
-        return offset, rlen, rtype, recnum, systime, recsum, rec_buf
+        return offset, hdr, rec_buf
 
     # oops.  things blew up.  just return -1 for the offset
-    return -1, 0, 0, 0, 0, 0, ''
+    return -1, hdr, ''
 
 
 def process_dir(fd):
@@ -514,10 +543,15 @@ def dump(args):
     # extract record from input file and output decoded results
     try:
         while(True):
-            rec_offset, rlen, rtype, recnum, systime, recsum, rec_buf = \
-                    get_record(infile)
+            rec_offset, hdr, rec_buf = get_record(infile)
+
             if (rec_offset < 0):
                 break
+
+            # hdr was populated (.set) by get_record
+            rlen     = hdr['len'].val
+            rtype    = hdr['type'].val
+            recnum   = hdr['recnum'].val
 
             if (recnum < rec_last):
                 print('*** recnum went backwards.  last: {}, new: {}, @{}'.format(
@@ -586,8 +620,8 @@ def dump(args):
     print('*** reboots: {}, resyncs: {}, chksum_errs: {}, unk_rtypes: {}'.format(
         dtd.dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
     print
-    print('dt_s:  {}'.format(dtd.dt_count))
-    print('mid_s: {}'.format(sirf.mid_count))
+    print('rtypes: {}'.format(dtd.dt_count))
+    print('mids:   {}'.format(sirf.mid_count))
 
 if __name__ == "__main__":
     dump(parseargs())

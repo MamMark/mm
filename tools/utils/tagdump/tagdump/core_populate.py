@@ -9,11 +9,11 @@ from   core_headers  import *
 def decode_default(level, offset, buf, obj):
     return obj.set(buf)
 
-#                                      128 = sizeof(reboot record) + sizeof(owcb)
-dtd.dt_records[DT_REBOOT]           = (128, decode_reboot,  [ emit_reboot ],      dt_reboot_obj,    "REBOOT",       'dt_reboot_obj')
+#                                      120 = sizeof(reboot record) + sizeof(owcb)
+dtd.dt_records[DT_REBOOT]           = (120, decode_reboot,  [ emit_reboot ],      dt_reboot_obj,    "REBOOT",       'dt_reboot_obj')
 #                                      168 = sizeof(version record) + sizeof(image_info)
 dtd.dt_records[DT_VERSION]          = (168, decode_version, [ emit_version ],     dt_version_obj,   "VERSION",      'dt_version_obj')
-dtd.dt_records[DT_SYNC]             = ( 36, decode_default, [ emit_sync ],        dt_sync_obj,      "SYNC",         'dt_sync_obj')
+dtd.dt_records[DT_SYNC]             = ( 28, decode_default, [ emit_sync ],        dt_sync_obj,      "SYNC",         'dt_sync_obj')
 dtd.dt_records[DT_EVENT]            = ( 40, decode_default, [ emit_event ],       dt_event_obj,     "EVENT",        'dt_event_obj')
 dtd.dt_records[DT_DEBUG]            = (  0, decode_default, [ emit_debug ],       dt_debug_obj,     "DEBUG",        'dt_debug_obj')
 dtd.dt_records[DT_GPS_VERSION]      = (  0, decode_default, [ emit_gps_version ], dt_gps_ver_obj,   "GPS_VERSION",  'dt_gps_ver_obj')

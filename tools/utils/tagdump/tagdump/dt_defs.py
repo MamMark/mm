@@ -26,9 +26,10 @@
 #
 
 import struct
-from   misc_utils import dump_buf
+from   misc_utils   import dump_buf
+from   core_headers import dt_hdr_obj
 
-__version__ = '0.2.0 (dt)'
+__version__ = '0.2.5 (dt)'
 
 
 # __all__ exports commonly used definitions.  It gets used
@@ -67,7 +68,7 @@ __all__ = [
 # The value of DT_H_REVISION reflects the version of typed_data.h that
 # we have implemented.  Includes record definitions, headers and decoders.
 
-DT_H_REVISION           = 16
+DT_H_REVISION           = 17
 
 
 # dt_records
@@ -103,13 +104,9 @@ DTR_NAME     = 4                        # rtype name
 
 # all dt parts are native and little endian
 
+# headers are accessed via the dt_simple_hdr object
 # hdr object dt, native, little endian
-# do not include the pad bytes.  Each hdr definition handles
-# the pad bytes differently.
 
-dt_hdr_str    = '<HHIQH'
-dt_hdr_struct = struct.Struct(dt_hdr_str)
-dt_hdr_size   = dt_hdr_struct.size
 dt_sync_majik = 0xdedf00ef
 quad_struct   = struct.Struct('<I')      # for searching for syncs
 
@@ -131,10 +128,25 @@ DT_GPS_RAW_SIRFBIN      = 32
 
 
 # common format used by all records.  (rec0)
-# --- offset recnum  systime  len  type  name
+# --- offset recnum       dt  len  type  name
 # --- 999999 999999 99999999  999    99  ssssss
 # ---    512      1      322  116     1  REBOOT  unset -> GOLD (GOLD)
 rec0  = '--- @{:<6d} {:6d} {:8d}  {:3d}    {:2d}  {:s}'
+
+
+def get_systime(datetime):
+    '''
+    get systime from a datetime.
+
+    input:      datetime, a datetime_obj
+    output:     systime
+                min | sec | sub_sec (32 bits)
+
+    datetime is assumed to have been populated.
+    '''
+    dt = datetime
+    st = (dt['min'].val << 24) | (dt['sec'].val << 16) | dt['sub_sec'].val
+    return st
 
 
 def dt_name(rtype):
@@ -146,28 +158,36 @@ def print_hdr(obj):
     # rec  time     rtype name
     #    1 00000279 (20) REBOOT
 
-    rtype  = obj['hdr']['type'].val
-    recnum = obj['hdr']['recnum'].val
-    st     = obj['hdr']['st'].val
+    rtype    = obj['hdr']['type'].val
+    recnum   = obj['hdr']['recnum'].val
+    datetime = obj['hdr']['dt']
+    st       = get_systime(datetime)
 
     # gratuitous space shows up after the print, sigh
     print('{:4} {:8} ({:2}) {:6} --'.format(recnum, st,
         rtype, dt_name(rtype))),
 
 
-
 # used for identifing records that have problems.
-# offset recnum systime len type name         offset
-# 999999 999999 0009999 999   99 xxxxxxxxxxxx @999999 (0xffffff) [0xffff]
-rec_title_str = "--- offset  recnum  systime  len  type  name"
+# offset recnum       dt len type name         offset
+# 999999 999999  0009999 999   99 xxxxxxxxxxxx @999999 (0xffffff) [0xffff]
+rec_title_str = "--- offset  recnum       dt  len  type  name"
 rec_format    = "{:8} {:6}  {:7}  {:3}    {:2}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
 
 def print_record(offset, buf):
-    if (len(buf) < dt_hdr_size):
+    hdr = dt_hdr_obj
+    hdr_len = len(hdr)
+    if (len(buf) < hdr_len):
         print('*** print_record, buf too small for a header, wanted {}, got {}, @{}'.format(
-            dt_hdr_size, len(buf), offset))
+            hdr_len, len(buf), offset))
         dump_buf(buf, '    ')
     else:
-        rlen, rtype, recnum, systime, recsum = dt_hdr_struct.unpack_from(buf)
-        print(rec_format.format(offset, recnum, systime, rlen, rtype,
+        hdr.set(buf)
+        rlen     = hdr['len'].val
+        rtype    = hdr['type'].val
+        recnum   = hdr['recnum'].val
+        datetime = hdr['dt']
+        st       = get_systime(datetime)
+        recsum   = hdr['recsum'].val
+        print(rec_format.format(offset, recnum, st, rlen, rtype,
             dt_name(rtype), offset, offset, recsum))
