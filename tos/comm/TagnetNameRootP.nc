@@ -27,6 +27,7 @@ configuration TagnetNameRootP {
 implementation {
   components      TagnetNameRootImplP as element;
   components      TagnetUtilsC;
+  components      SystemBootC;
   components      PanicC;
 
   Tagnet          =  element;
@@ -35,5 +36,6 @@ implementation {
   element.THdr   -> TagnetUtilsC;
   element.TPload -> TagnetUtilsC;
   element.TTLV   -> TagnetUtilsC;
+  element.Boot   -> SystemBootC.Boot;
   element.Panic  -> PanicC;
 }

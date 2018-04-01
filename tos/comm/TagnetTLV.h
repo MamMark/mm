@@ -55,10 +55,13 @@ typedef struct tagnet_tlv_t {
   uint8_t           val[];
 } tagnet_tlv_t;
 
+uint8_t            nid_buf[8];
+tagnet_tlv_t      *nid_tlv = (tagnet_tlv_t *)nid_buf;
+
 // 'standard' TLVs
 #define TN_NONE_TLV          "\000\000"
 #define TN_BCAST_NID_TLV     "\005\006\xff\xff\xff\xff\xff\xff"
-#define TN_MY_NID_TLV        "\005\006\x42\x42\x42\x42\x42\x42"
+#define TN_MY_NID_TLV        nid_tlv
 #define TN_TAG_TLV           "\001\003tag"
 
 #define SIZEOF_TLV(t) (t->len + sizeof(tagnet_tlv_t))
