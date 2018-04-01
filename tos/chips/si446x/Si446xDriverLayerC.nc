@@ -33,11 +33,9 @@ configuration Si446xDriverLayerC {
     interface RadioCCA;
     interface RadioPacket;
 
-    interface PacketField<uint8_t> as PacketTransmitPower;
-    interface PacketField<uint8_t> as PacketRSSI;
-    interface PacketField<uint8_t> as PacketTimeSyncOffset;
-    interface PacketField<uint8_t> as PacketLinkQuality;
-    //interface PacketField<uint8_t> as AckReceived;
+    interface PacketField<uint8_t>  as PacketTransmitPower;
+    interface PacketField<uint8_t>  as PacketRSSI;
+    interface PacketField<uint16_t> as PacketTransmitDelay;
 
     interface Alarm<TRadio, tradio_size>;
     interface PacketAcknowledgements;
@@ -48,8 +46,6 @@ configuration Si446xDriverLayerC {
 
     interface PacketFlag as TransmitPowerFlag;
     interface PacketFlag as RSSIFlag;
-    interface PacketFlag as TimeSyncFlag;
-    interface PacketFlag as AckReceivedFlag;
     interface RadioAlarm;
     interface Tasklet;
   }
@@ -73,12 +69,7 @@ implementation {
   PacketRSSI = DriverLayerP.PacketRSSI;
   DriverLayerP.RSSIFlag = RSSIFlag;
 
-  PacketTimeSyncOffset = DriverLayerP.PacketTimeSyncOffset;
-  DriverLayerP.TimeSyncFlag = TimeSyncFlag;
-
-  AckReceivedFlag = DriverLayerP.AckReceivedFlag;
-
-  PacketLinkQuality = DriverLayerP.PacketLinkQuality;
+  PacketTransmitDelay = DriverLayerP.PacketTransmitDelay;
   PacketTimeStamp = DriverLayerP.PacketTimeStamp;
 
   components HplSi446xC;

@@ -97,8 +97,7 @@ module Si446xDriverLayerP {
 
     interface PacketField<uint8_t> as PacketTransmitPower;
     interface PacketField<uint8_t> as PacketRSSI;
-    interface PacketField<uint8_t> as PacketTimeSyncOffset;
-    interface PacketField<uint8_t> as PacketLinkQuality;
+    interface PacketField<uint16_t> as PacketTransmitDelay;
 //  interface PacketField<uint8_t> as AckReceived;
     interface PacketAcknowledgements;
   }
@@ -768,8 +767,8 @@ implementation {
   }
 
 
-  /**************************************************************************/
-  /*
+  /**************************************************************************
+   *
    * a_ready
    *
    * Make the chip ready for receive operation, including final configuration
@@ -1596,78 +1595,39 @@ implementation {
 
   /**************************************************************************/
 
-  /* ----------------- PacketTimeSyncOffset ----------------- */
+  /* ----------------- PacketTransmitDelay ----------------- */
 
-  async command bool PacketTimeSyncOffset.isSet(message_t *msg) {
-    return call TimeSyncFlag.get(msg);
-  }
-
-
-  async command uint8_t PacketTimeSyncOffset.get(message_t *msg) {
-    return call RadioPacket.headerLength(msg) + call RadioPacket.payloadLength(msg) - sizeof(timesync_absolute_t);
-  }
-
-
-  async command void PacketTimeSyncOffset.clear(message_t *msg) {
-    call TimeSyncFlag.clear(msg);
-  }
-
-
-  async command void PacketTimeSyncOffset.set(message_t *msg, uint8_t value) {
-    // we do not store the value, the time sync field is always the last 4 bytes
-    RADIO_ASSERT( call PacketTimeSyncOffset.get(msg) == value );
-    call TimeSyncFlag.set(msg);
-  }
-
-
-  /**************************************************************************/
-
-  /* ----------------- PacketLinkQuality ----------------- */
-
-  async command bool PacketLinkQuality.isSet(message_t *msg) {
+  async command bool PacketTransmitDelay.isSet(message_t *msg) {
     return TRUE;
   }
 
 
-  async command uint8_t PacketLinkQuality.get(message_t *msg) {
-    return getMeta(msg)->lqi;
+  async command uint16_t PacketTransmitDelay.get(message_t *msg) {
+    return getMeta(msg)->tx_delay;
   }
 
 
-  async command void PacketLinkQuality.clear(message_t *msg) { }
+  async command void PacketTransmitDelay.clear(message_t *msg) { }
 
 
-  async command void PacketLinkQuality.set(message_t *msg, uint8_t value) {
-    getMeta(msg)->lqi = value;
+  async command void PacketTransmitDelay.set(message_t *msg, uint16_t value) {
+    getMeta(msg)->tx_delay = value;
   }
 
-
-#ifdef notdef
-  ieee154_simple_header_t* getIeeeHeader(message_t* msg) {
-    return (ieee154_simple_header_t *) msg;
-  }
-#endif
-
+  /* ----------------- PacketAcknowledgements ----------------- */
 
   async command error_t PacketAcknowledgements.requestAck(message_t *msg) {
-    //call SoftwareAckConfig.setAckRequired(msg, TRUE);
-//    getIeeeHeader(msg)->fcf |= (1 << IEEE154_FCF_ACK_REQ);
     return SUCCESS;
   }
 
 
   async command error_t PacketAcknowledgements.noAck(message_t* msg) {
-//    getIeeeHeader(msg)->fcf &= ~(uint16_t)(1 << IEEE154_FCF_ACK_REQ);
     return SUCCESS;
   }
 
 
   async command bool PacketAcknowledgements.wasAcked(message_t* msg) {
-#ifdef SI446X_nHARDWARE_ACK
-    return call AckReceivedFlag.get(msg);
-#else
     return FALSE;
-#endif
   }
 
 

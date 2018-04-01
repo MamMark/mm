@@ -57,7 +57,7 @@ configuration Si446xRadioC {
 
     interface RadioChannel;
 
-    interface PacketField<uint8_t> as PacketLinkQuality;
+    interface PacketField<uint8_t> as PacketTransmitDelay;
     interface PacketField<uint8_t> as PacketTransmitPower;
     interface PacketField<uint8_t> as PacketRSSI;
 
@@ -276,7 +276,7 @@ implementation {
   RadioDriverLayerC.Config -> RadioP;
   RadioDriverLayerC.PacketTimeStamp -> TimeStampingLayerC;
   PacketTransmitPower = RadioDriverLayerC.PacketTransmitPower;
-  PacketLinkQuality = RadioDriverLayerC.PacketLinkQuality;
+  PacketTransmitDelay = RadioDriverLayerC.PacketTransmitDelay;
   PacketRSSI = RadioDriverLayerC.PacketRSSI;
   LocalTimeRadio = RadioDriverLayerC;
 
