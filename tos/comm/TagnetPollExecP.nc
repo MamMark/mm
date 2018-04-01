@@ -59,22 +59,38 @@ implementation {
     int32_t          d;
     nop();
     nop();
-    call THdr.set_response(msg); // zzz need to move inside name match
     poll_count++;
     switch (call THdr.get_message_type(msg)) {    // process packet type
       case TN_POLL:
+        // payload contains: time, slot_time, slot_count, node_id, node_name
         this_tlv = call TPload.first_element(msg);
-        if ((this_tlv) && (call TTLV.get_tlv_type(this_tlv) == TN_TLV_INTEGER)) {
-        d = call TTLV.tlv_to_integer(this_tlv);
-        if (d) {
+        if ((this_tlv) && (call TTLV.get_tlv_type(this_tlv) == TN_TLV_UTC_TIME)) {
           nop();
+          this_tlv = call TPload.next_element(msg);
         }
-      }
+        if ((this_tlv) && (call TTLV.get_tlv_type(this_tlv) == TN_TLV_INTEGER)) {
+          nop();
+          this_tlv = call TPload.next_element(msg);
+        }
+        if ((this_tlv) && (call TTLV.get_tlv_type(this_tlv) == TN_TLV_INTEGER)) {
+          d = call TTLV.tlv_to_integer(this_tlv);
+          if (d) {
+            nop();
+          }
+          this_tlv = call TPload.next_element(msg);
+        }
         // zzz get request parameters from payload
         call TPload.reset_payload(msg);
+        // zzz add node id, node name, position, sw version
+        call TPload.add_tlv(msg, TN_MY_NID_TLV);
+        call THdr.set_response(msg);
         call THdr.set_error(msg, TE_PKT_OK);
+        return TRUE;
+      case TN_GET:
+        call TPload.reset_payload(msg);
         call TPload.add_integer(msg, poll_count);
-        // zzz add name, position, mac address, sw version, etc
+        call THdr.set_response(msg);
+        call THdr.set_error(msg, TE_PKT_OK);
         return TRUE;
       default:
         break;

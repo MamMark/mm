@@ -1,5 +1,5 @@
 /**
- * @Copyright (c) 2017 Daniel J. Maltbie
+ * @Copyright (c) 2017, 2018 Daniel J. Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,25 +39,13 @@ implementation {
     tagnet_tlv_t    *help_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].help_tlv;
     tagnet_tlv_t    *this_tlv;
     tagnet_tlv_t    *next_tlv;
-    uint8_t          matched = FALSE;
     int              i;
 
     nop();
     nop();                      /* BRK */
-    this_tlv = call TName.this_element(msg);
-    if (call TTLV.get_tlv_type(this_tlv) == TN_TLV_NODE_ID) { // node_id is special
-      if (call TTLV.eq_tlv(name_tlv, this_tlv)                // if   me == this
-          || call TTLV.eq_tlv(name_tlv,
-                              (tagnet_tlv_t *)TN_NONE_TLV)    // or   me == none
-          || call TTLV.eq_tlv(this_tlv,
-                         (tagnet_tlv_t *)TN_BCAST_NID_TLV)) { // or this == bcast
-        matched = TRUE;
-      }
-    } else if (call TTLV.eq_tlv(name_tlv, this_tlv)) {
-      matched = TRUE;                                         // else me == this
-    }
     tn_trace_rec(my_id, 1);
-    if (matched) {                        // further processing if name matched
+    this_tlv = call TName.this_element(msg);
+    if (call TTLV.eq_tlv(name_tlv, this_tlv)) {             // if me == this
       next_tlv = call TName.next_element(msg);
       if (next_tlv == NULL) {                   // end of name, execute request
         call THdr.set_response(msg);

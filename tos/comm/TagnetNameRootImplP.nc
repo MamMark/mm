@@ -42,28 +42,55 @@ implementation {
   enum { SUB_COUNT = uniqueCount(UQ_TN_ROOT) };
 
   command bool Tagnet.process_message(message_t *msg) {
+    tagnet_tlv_t    *this_tlv;
     uint8_t          i;
 
     if (!msg)
       call Panic.panic(PANIC_TAGNET, 189, 0, 0, 0, 0);       /* null trap */
-    for (i = 0; i < TN_TRACE_PARSE_ARRAY_SIZE; i++) tn_trace_array[i].id = TN_ROOT_ID;
+
+    // start at the beginning of the name
+    this_tlv = call TName.first_element(msg);
+    // expect first TLV to be a Node Id type
+    if (call TTLV.get_tlv_type(this_tlv) != TN_TLV_NODE_ID)
+      return FALSE;
+    // Node Id in message must match one of
+    // - my node's nid
+    // - the broadcast nid
+    if (!call TTLV.eq_tlv(this_tlv,  TN_MY_NID_TLV)
+        && !call TTLV.eq_tlv(this_tlv,
+                             (tagnet_tlv_t *)TN_BCAST_NID_TLV))
+      return FALSE;
+
+    for (i = 0; i < TN_TRACE_PARSE_ARRAY_SIZE; i++)
+      tn_trace_array[i].id = TN_ROOT_ID;
     tn_trace_index = 1;
     nop();                               /* BRK */
+    call TName.next_element(msg);
+    // evaluate all subordinates for a name match
     for (i = 0; i<SUB_COUNT; i++) {
-      call TName.first_element(msg);     // start at the beginning of the name
       nop();
+      // if find a name match, then
+      //   if rsp set, then send response msg
       if (signal Sub.evaluate[i](msg)) {
         if (call THdr.is_response(msg)) {
-          return TRUE;                   // got a match and response to send
+          return TRUE;             // match, response
         }
-        return FALSE;                    // matched but response not set
+        return FALSE;              // match, no response
       }
     }
-    return FALSE;                        // no match, no response
+    return FALSE;                  // nothing matches
   }
 
-  command uint8_t Sub.get_full_name[uint8_t id](uint8_t *buf, uint8_t len) {
-    return len;
+  command uint8_t Sub.get_full_name[uint8_t id](uint8_t *buf, uint8_t limit) {
+    uint32_t i;
+
+    if (limit < sizeof(nid_buf))
+      call Panic.panic(PANIC_TAGNET, 95, 0,0,0,0);
+
+    for (i = 0; i < sizeof(nid_buf); i++) {
+      buf[i] = nid_buf[i];
+    }
+    return i;
   }
 
   default event bool Sub.evaluate[uint8_t id](message_t* msg)      { return TRUE; }
