@@ -1,5 +1,5 @@
 /**
- * @Copyright (c) 2017 Daniel J. Maltbie
+ * @Copyright (c) 2017-2018 Daniel J. Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
