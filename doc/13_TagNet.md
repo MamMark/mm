@@ -472,9 +472,26 @@ TagVx.Super         -> RootVx.Sub[unique(UQ_TN_ROOT)];
   } TN_data_t;
 ```
 
-## PREPROCESSOR STEPS
-- Read input file and build tree of
+## PREPROCESSOR Installation
+- Change to directory  mm/tools/tagnet/factspp
+- execute the following command
+```
+sudo ./setup.py install
+```
 
+## PREPROCESSOR Example
+- Edit the 'TagName Mappings' file on Google Drive in 'tag_stuff/Design Documents'
+  - Typically will just copy and edit an existing line
+- Download from Google Drive to local file `mm/tos/comm/TagNames/TagNames.tsv`
+- Change directory to `mm/tos/comm/TagNames`
+- Invoke the preprocessor with the following command
+```
+ factspp -o . TagNames.tsv
+```
+- Results found in mm/tos/comm/TagNames
+  - `TagnetC.nc`         contains all of the wiring for components in Tagnet Name tree
+  - `TagnetDefines.h`    contains defines used by the Tagnet Name components
+  - `TagNameTree.txt`    contains text drawing of the Tagnet Name tree
 
 
 ## Rules Engine
