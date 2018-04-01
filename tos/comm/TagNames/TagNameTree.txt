@@ -1,40 +1,39 @@
 root
-+-- \'<node_id:000000000000>\'
-    +-- tag
-        |-- .test
-        |   |-- drop
-        |   |   +-- byte
-        |   |-- echo
-        |   |   +-- byte
-        |   |-- ones
-        |   |   +-- byte
-        |   |-- rssi
-        |   |-- tx_pwr
-        |   +-- zero
-        |       +-- byte
-        |-- info
-        |   +-- sens
-        |       +-- gps
-        |           |-- cmd
-        |           +-- xyz
-        |-- poll
-        |   |-- cnt
-        |   +-- ev
-        |-- sd
-        |   +-- 0
-        |       |-- dblk
-        |       |   |-- .committed
-        |       |   |-- .last_rec
-        |       |   |-- .last_sync
-        |       |   |-- .recnum
-        |       |   |-- byte
-        |       |   +-- note
-        |       |-- img
-        |       +-- panic
-        |           +-- byte
-        +-- sys
-            |-- active
-            |-- backup
-            |-- golden
-            |-- nib
-            +-- running
++-- tag
+    |-- .test
+    |   |-- drop
+    |   |   +-- byte
+    |   |-- echo
+    |   |   +-- byte
+    |   |-- ones
+    |   |   +-- byte
+    |   |-- rssi
+    |   |-- tx_pwr
+    |   +-- zero
+    |       +-- byte
+    |-- info
+    |   +-- sens
+    |       +-- gps
+    |           |-- cmd
+    |           +-- xyz
+    |-- poll
+    |   |-- cnt
+    |   +-- ev
+    |-- sd
+    |   +-- 0
+    |       |-- dblk
+    |       |   |-- .committed
+    |       |   |-- .last_rec
+    |       |   |-- .last_sync
+    |       |   |-- .recnum
+    |       |   |-- byte
+    |       |   +-- note
+    |       |-- img
+    |       +-- panic
+    |           +-- byte
+    +-- sys
+        |-- active
+        |-- backup
+        |-- golden
+        |-- nib
+        +-- running
