@@ -274,7 +274,11 @@ tlv_length     =  0..254
 tlv_value      =  is one of the following based on tlv_type
   tlv_string   =  BYTE[tlv_length]
   tlv_integer  =  BYTE[tlv_length]   // scales 1..n(value)
-  tlv_datetime =  BYTE[10]           // encoded [YYYY-MM-DD HH:MM:SS.JJJJ.DOW]
+
+# potential conflict here....   rtctime_t is defined as
+#                little endian  JJJJ.SS:MM:HH:DOW:DD:MM:YYYY
+
+  tlv_rtctime  =  BYTE[10]           // encoded [YYYY-MM-DD HH:MM:SS.JJJJ.DOW]
   tlv_node_id  =  BYTE[6]
   tlv_node_name=  tlv_string
   tlv_tlv      =  tlv_list

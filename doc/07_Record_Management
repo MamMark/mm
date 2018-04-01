@@ -28,8 +28,7 @@ SD:             Secure Digital device that is the effective mass storage
                 device.
 
 
-dt64            8 byte, datetime without year.
-DateTime:       10 byte real time.  Year-Month-Day-DOW-Hour-Min-Sec-Jiffies
+RtcTime :       10 byte real time.  Year-Month-Day-DOW-Hour-Min-Sec-Jiffies
                 Jiffies are 15 bits of subsecond (1/32768 units, ~30.5us).
                 DOW, day of week.
 
@@ -49,14 +48,14 @@ o Record Numbers
   data stream.  Unique to a given set of DBLKs on a given Tag.
 
 o Time
-** DateTime is monotonically increasing since file inception.
+** RtcTime is monotonically increasing since file inception.
 
 
 DBLK directory
 
 o File Inception.  When a tagsd is formatted, the DBLK file is created.
   The creation data is inserted into the DBLK directory.  It provides the
-  base for monotonically increasing datetime.
+  base for monotonically increasing RtcTime.
 
 o File limits.  blk_low, blk_high.  Blk_ids.  These are needed for
   converting from absolute sector blk_ids to file offsets relative to the
@@ -76,7 +75,7 @@ o Basic header, same for all records
   dtype/rtype - (2 bytes) record type
   recnum      - (4 bytes) unique (to this Dblk stream) record numer,
                           strictly increasing.  0 is invalid.
-  datetime    - (10 bytes)
+  RtcTime     - (10 bytes)
   recsum      - (2 bytes) 16 bit checksum over all bytes inclusive of the
                           header and data.  byte by byte addition.
 
@@ -92,19 +91,19 @@ o Sync/Reboot records.  When record sync has been lost, we use sync/reboot
   sync.  This is needed to preserve the back links between SYNC records
   (prev_sync).
 
-o Initilization of DateTime, RecNum and LastSync.  (DblkManager/Boot
+o Initilization of RtcTime, RecNum and LastSync.  (DblkManager/Boot
   during SysBoot).
 
-  Upon reboot, we need to determine a good DateTime, the last recnum used and
+  Upon reboot, we need to determine a good RtcTime, the last recnum used and
   the last sync prior to the new REBOOT record that will be laid down.
 
-  o Use the Incept DateTime from the Dblk directory as an initial candidate
-    dateTime.
+  o Use the Incept RtcTime from the Dblk directory as an initial candidate
+    RtcTime.
 
-  o Extract cur DateTime from the RTC h/w.  do validity checks.  If greater
-    than candidate DateTime, this is the new candidate.
+  o Extract cur RtcTime from the RTC h/w.  do validity checks.  If greater
+    than candidate RtcTime, this is the new candidate.
 
-  o Find last known Sync/Reboot.  Extract DateTime, if greater than candidate
+  o Find last known Sync/Reboot.  Extract RtcTime, if greater than candidate
     this is the new candidate.  last known Sync/Reboot should be with in
     SYNC_MAX_SECTORS from the dblk_nxt found by the DblkManager on restart.
 

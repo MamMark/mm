@@ -17,7 +17,7 @@
 
 * sysTime (lt64)
   systime is deprecated.  Was used for record timestamping.
-  superseeded by DateTime.
+  superseeded by RtcTime.
 
 ** 64 bit ms internal time since last reboot.  LocalTime (32 bit) wraps
    after ~48.5 days.  To fix this issue we need 64 bits (next natural
@@ -29,8 +29,8 @@
 ** used by OverWatch when crashing, uptime, elapsed.
 
 
-* dateTime
-  dateTime is used for all timestamping.  Anything external.
+* RtcTime
+  RtcTime is used for all timestamping.  Anything external.
 
 ** 10 bytes
 *** two subfields.  the year (2 bytes) and the low 8 bytes.
@@ -48,8 +48,8 @@
   __IO uint16_t YEAR;
 
 
-*** dateTime Memory format
-**** see datetime.h (main prod tree)
+*** RtcTime Memory format
+**** see rtctime.h (main prod tree)
 
   uint16_t	sub_sec;                /* 16 bit jiffies (32KiHz) */
   uint8_t	sec;                    /* 0-59 */
@@ -68,24 +68,24 @@ The next natural boundary is 64 bits.
 But we want something that human's understand and is easy to process.  The
 closer we make this to the real time clock the better.
 
-sysTime is 64 bits which is 8 bytes.  dateTime is 10 bytes.  Including 2
-bytes for year.  We reduce dateTime to 8 bytes (ie. 64 bits), by dropping
-the year, yielding a dt64 timestamp.  The time will wrap once a year on the
+sysTime is 64 bits which is 8 bytes.  RtcTime is 10 bytes.  Including 2
+bytes for year.  We reduce RtcTime to 8 bytes (ie. 64 bits), by dropping
+the year, yielding a rt64 timestamp.  The time will wrap once a year on the
 transition from 12/31-23:59:59:0x7fff to 01/01-00:00:00:0x0000.
 
 But this has the problem of not having the year, this is a problem waiting
 to bite us when we just happen to get the year wrong.
 
-The dt64 structure however has the nice property of being easy to copy, so
-we bury both the year and a dt64 structure inside of the datetime structure.
-We then use datetime for timestamping and always make sure the year is
+The rt64 structure however has the nice property of being easy to copy, so
+we bury both the year and a rt64 structure inside of the RtcTime structure.
+We then use RtcTime for timestamping and always make sure the year is
 included.
 
 The has the downside of having 2 additional bytes in every record.  We can
 mitigate this later by going to a temporanc encoding with yields a full
 timestamp in 8 bytes.
 
-Data Blocks (typed_data, records) are time stamped using datetime stamps.
+Data Blocks (typed_data, records) are time stamped using RtcTime stamps.
 
 Overwatch uses sysTime (LocalTime64) for uptime (time since last boot) and
 the accumulation of elapsedTime.  Both are in sysTime units, 64 bit ms since
@@ -94,43 +94,43 @@ last reboot.
 
 Time Skew.
 
-When the system boots, we need to determine a good dateTime for the system
+When the system boots, we need to determine a good RtcTime for the system
 to use.  On first power on (h/w loss of power, RTC loss), we need to have
 a reasonable value to first use.
 
 A fall back value is provided by the Dblk directory inceptDate.  This
-dateTime value is written when the tag SD is originally formatted.  This
+RtcTime value is written when the tag SD is originally formatted.  This
 is the value that is used to initialize the RTC h/w if no other reasonable
-dateTime is found.
+RtcTime is found.
 
 In addition, the DblkManager, as part of its initialization, will scan
 the Dblk area for the last SYNC/REBOOT and last records that have been
 written to the Dblk area.  Once found, the combination of last SYNC/REBOOT
-and last records are used to determine a reasonable starting dateTime
+and last records are used to determine a reasonable starting RtcTime
 to use for initializing the RTC h/w.
 
 Once running, two other sources can provide better time, Network Time (via
 the network stack) or the GPS subsystem.  GPS synchronized time is the
 best.
 
-This presents the issue of some appreciable time skew when we change datetime
+This presents the issue of some appreciable time skew when we change RtcTime
 to match what we've just picked up.  Anytime the time is forced, we will
 reboot the system using a TIME_SKEW reboot reason.
 
 
-Behaviour of dt64 timestamps.
+Behaviour of rt64 timestamps.
 
-dt64 (and dateTime) is composed of component fields and the dt64 stamp
+rt64 (and RtcTime) is composed of component fields and the rt64 stamp
 can skip values.  All times are UTC.
 
 2018/01/01-(M)-00:00:00:0x0000, start of 2018, Monday.
   memory: 00 00 00 00 00 01 01 01 e2 07
           ss    s  m  h  dw d  mn year
-  dt64:   00 00 00 00 00 01 01 01
+  rt64:   00 00 00 00 00 01 01 01
 
 32767 ticks ... 2018/01/01-(M)-00:00:00:0x7fff (M) and one tick later...
                 2018/01/01-(M)-00:00:01:0x0000 (M)
-  dt64:   ff 7f 00 00 00 01 01 01
+  rt64:   ff 7f 00 00 00 01 01 01
           00 00 01 00 00 01 01 01
           ss    s  m  h  dw d  mn
 
@@ -163,7 +163,7 @@ can skip values.  All times are UTC.
 
   00 00 00 00 00 02 01 01 ... 2019/01/01-(T)-00:00:00:0x0000 (T) (tue)
 
-dateTime:
+RtcTime:
   00 00 00 00 00 02 01 01 e3 07
 
 
