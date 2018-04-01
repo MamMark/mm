@@ -63,6 +63,13 @@ tagdump:  decode and display Tag Data Stream file
 #     bug fix:  handle eof detection properly in tagfile.
 #
 # 0.2.14        force record reading to read through the next quad alignment.
-#               this plays nicely with the tagfuse sparse file system for dblk.
+#               this plays nicely with the tagfuse sparse file system for
+#               dblk.
+#
+# 0.3.0.dev0    Major Refactor.  Not backward compatable.
+#               conversion to datetime.  prototype datetime.
+#
+#               owcb, convert uptime and elapsed to 32 bit num secs needed.
+#
 
-__version__ = '0.2.14'
+__version__ = '0.3.0.dev0'
