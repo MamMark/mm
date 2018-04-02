@@ -203,7 +203,7 @@ implementation {
   event void PanicManager.populateDone(error_t err) {
     pmf_cb.file_pos = 0;
     pmf_cb.err = err;
-    if (err)
+    if (err && err != EODATA)
       pmap_panic(4, err, 0);
     _get_new_sector(0, pmf_cb.file_pos);
   }
