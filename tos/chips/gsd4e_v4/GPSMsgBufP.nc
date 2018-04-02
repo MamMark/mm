@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
+ * Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -85,6 +85,9 @@
  *   BUSY:      someone is actively messing with the msg, its the head.
  *
  * The buffer can be in one of several states:
+ *
+ * (The notation M_N indicates the contiguous block of gps_msgs (starting with
+ *  msg M through gps_msg N, ie.  head is M, tail is N).
  *
  *   EMPTY, completely empty:  There will be one gps_msg set to FREE pointing at the
  *     entire free space.  If there are no msgs allocated, then the entire buffer has
@@ -205,6 +208,7 @@
 #include <platform_panic.h>
 #include <gps.h>
 #include <GPSMsgBuf.h>
+#include <datetime.h>
 
 
 #ifndef PANIC_GPS
@@ -244,7 +248,7 @@ module GPSMsgBufP {
     interface GPSReceive;
   }
   uses {
-    interface LocalTime<TMilli>;
+    interface Rtc;
     interface Panic;
   }
 }
@@ -362,9 +366,7 @@ implementation {
       msg->data  = gps_buf;
       msg->len   = len;
       msg->state = GPS_MSG_FILLING;
-      memset(&msg->arrival_dt, 0, sizeof(msg->arrival_dt));
-      msg->arrival_dt.sub_sec = call LocalTime.get();
-
+      call Rtc.getTime(&msg->arrival_rt);
       gmc.free  = gps_buf + len;
       gmc.free_len -= len;              /* zero is okay */
 
@@ -699,9 +701,8 @@ implementation {
   default event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
         datetime_t *arrival_dtp, uint32_t mark_j) { }
 
+  async event void Rtc.currentTime(
+       rtctime_t *timep, uint32_t reason_set)  { }
 
-  /*
-   * Panic.hook
-   */
   async event void Panic.hook() { }
 }

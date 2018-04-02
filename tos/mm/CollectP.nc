@@ -125,13 +125,13 @@ module CollectP {
     interface Boot as SysBoot;          /* use at end of System Boot initilization */
     interface Timer<TMilli> as SyncTimer;
     interface OverWatch;
+    interface Rtc;
 
     interface SSWrite as SSW;
     interface StreamStorage as SS;
     interface Panic;
     interface DblkManager;
     interface SysReboot @atleastonce();
-    interface LocalTime<TMilli>;
   }
 }
 
@@ -464,8 +464,7 @@ implementation {
 
   command void Collect.collect(dt_header_t *header, uint16_t hlen,
                                uint8_t     *data,   uint16_t dlen) {
-    memset(&header->dt, 0, sizeof(header->dt));
-    header->dt.sub_sec = call LocalTime.get();
+    call Rtc.getTime(&header->rt);
     call Collect.collect_nots(header, hlen, data, dlen);
   }
 
@@ -519,7 +518,7 @@ implementation {
      *
      * However, Collect may have a pending (ALLOC'd) buffer.  The buffer is
      * ready to go as is.  But if we have room put one last sync record
-     * down that records what we currently think current datetime is.
+     * down that records what we currently think the current rtctime is.
      * Yeah!
      */
     sp = &s;
@@ -531,8 +530,7 @@ implementation {
       if (dcc.remaining >= sizeof(dt_sync_t)) {
         sp->len        = sizeof(dt_sync_t);
         sp->dtype      = DT_SYNC;
-        memset(&sp->dt, 0, sizeof(sp->dt));
-        sp->dt.sub_sec = call LocalTime.get();
+        call Rtc.getTime(&sp->rt);
         sp->sync_majik = SYNC_MAJIK;
         sp->prev_sync  = dcc.last_sync_offset;
         dcc.last_sync_offset = get_rec_offset();
@@ -548,5 +546,7 @@ implementation {
 
         event void SS.dblk_stream_full()           { }
         event void SS.dblk_advanced(uint32_t last) { }
+  async event void Rtc.currentTime(rtctime_t *timep,
+                              uint32_t reason_set) { }
   async event void Panic.hook()                    { }
 }

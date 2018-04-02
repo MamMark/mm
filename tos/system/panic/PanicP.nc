@@ -154,7 +154,7 @@ module PanicP {
     interface Resource as SDResource;
     interface Checksum;
     interface SysReboot;
-    interface LocalTime<TMilli>;
+    interface Rtc;
     interface Collect;
   }
 }
@@ -543,7 +543,7 @@ implementation {
      *  PANIC_IN_PANIC (0xdeddb00b) - oops.  Strange out.
      *
      *  other value - oops Strange out.  Some one is tweaking the pcb.
-     *       Bad.  Sad.
+     *       Bad.  Sad.  Fake Panic.
      */
     switch (pcb.in_panic) {
       default:
@@ -628,8 +628,7 @@ implementation {
     pip->pi_sig     = PANIC_INFO_SIG;
     pip->boot_count = owcp->reboot_count;
     pip->fail_count = owcp->fail_count;
-    memset(&pip->dt, 0, sizeof(pip->dt));
-    pip->dt.sub_sec = call LocalTime.get();
+    call Rtc.getTime(&pip->rt);
     pip->subsys = pap->pcode;
     pip->where  = pap->where;
     pip->pad    = 0;
@@ -892,9 +891,10 @@ implementation {
 
   default event void PanicManager.populateDone(error_t err) { }
 
-  event void FS.eraseDone(uint8_t which) { }
+        event void FS.eraseDone(uint8_t which) { }
+  async event void SysReboot.shutdown_flush()  { }
+  async event void Rtc.currentTime(
+       rtctime_t *timep, uint32_t reason_set)  { }
 
-  async event void SysReboot.shutdown_flush() { }
-
-  default async event void Panic.hook() { }
+  default async event void Panic.hook()        { }
 }

@@ -74,8 +74,8 @@ implementation {
 
   /* Buffer Slicing (MsgBuf) */
   MainC.SoftwareInit -> GPSMsgBufP;
-  GPSMsgBufP.LocalTime -> LocalTimeMilliC;
-  GPSMsgBufP.Panic -> PanicC;
+  GPSMsgBufP.Rtc     -> PlatformC;
+  GPSMsgBufP.Panic   -> PanicC;
 
   GPSReceive  = GPSMsgBufP;
   GPSTransmit = Gsd4eUP;

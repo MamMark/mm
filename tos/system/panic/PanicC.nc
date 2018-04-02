@@ -17,6 +17,7 @@ implementation {
   components PanicP, PlatformC;
   Panic = PanicP;
   PanicManager = PanicP;
+  PanicP.Rtc       -> PlatformC;
   PanicP.Platform  -> PlatformC;
   PanicP.SysReboot -> PlatformC;
 
@@ -27,9 +28,6 @@ implementation {
 
   components FileSystemC as FS;
   PanicP.FS -> FS;
-
-  components LocalTimeMilliC;
-  PanicP.LocalTime -> LocalTimeMilliC;
 
   components OverWatchC;
   PanicP.OverWatch -> OverWatchC;

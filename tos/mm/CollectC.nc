@@ -64,9 +64,7 @@ implementation {
   components PanicC;
   CollectP.Panic -> PanicC;
 
-  components LocalTimeMilliC;
-  CollectP.LocalTime -> LocalTimeMilliC;
-
   components PlatformC;
+  CollectP.Rtc       -> PlatformC;
   CollectP.SysReboot -> PlatformC;
 }
