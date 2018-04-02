@@ -515,10 +515,11 @@ def dump(args):
     if (args.sync is not None or args.start_rec == -1 or args.tail):
         args.net = True
 
-    # create file object that handles both buffered and direct io
-    infile  = TagFile(args.input, net_io = args.net, tail = args.tail)
     verbose = args.verbose if (args.verbose) else 0
     debug   = args.debug   if (args.debug)   else 0
+
+    # create file object that handles both buffered and direct io
+    infile  = TagFile(args.input, net_io = args.net, tail = args.tail, verbose = verbose)
 
     if (args.start_rec):
         rec_low  = args.start_rec

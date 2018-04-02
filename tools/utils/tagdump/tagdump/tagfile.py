@@ -33,7 +33,7 @@ import errno
 TF_SEEK_END = os.SEEK_END
 
 class TagFile(object):
-    def __init__(self, input, net_io = False, tail = False):
+    def __init__(self, input, net_io = False, tail = False, verbose = 0):
         super( TagFile, self ).__init__()
 
         if not isinstance(input, types.FileType):
@@ -41,6 +41,7 @@ class TagFile(object):
 
         self.net_io = net_io
         self.tail   = tail
+        self.verbose= verbose
         self.fd     = input
         self.name   = input.name
 
@@ -71,7 +72,8 @@ class TagFile(object):
             except OSError as e:
                 if (e.errno == errno.ENODATA):
                     if (self.tail):
-                        print '*** TF.read: buf len: ', len(buf)
+                        if self.verbose >= 5:
+                            print '*** TF.read: buf len: ', len(buf)
                         time.sleep(5)
                         continue
                     print '*** data stream EOF, sorry'
