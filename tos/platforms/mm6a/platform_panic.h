@@ -10,7 +10,7 @@
 
 /*
  * KERN:	core kernal  (in panic.h)
- * TIMING:      timing system panic
+ * TIME:        timing system panic
  * ADC:		Analog Digital Conversion subsystem (AdcP.nc)
  * SD:          Disk
  * FS:          File System
@@ -27,7 +27,7 @@
  */
 
 enum panic_codes {
-  __pcode_timing = PANIC_HC_START,		/* 0x10, see panic.h */
+  __pcode_time = PANIC_HC_START,        /* 0x10, see panic.h */
   __pcode_adc,
   __pcode_sd,
   __pcode_fs,
@@ -43,7 +43,7 @@ enum panic_codes {
   __pcode_tagnet,
 };
 
-#define PANIC_TIMING    __pcode_timing
+#define PANIC_TIME      __pcode_time
 #define PANIC_ADC       __pcode_adc
 #define PANIC_SD        __pcode_sd
 #define PANIC_FS        __pcode_fs
