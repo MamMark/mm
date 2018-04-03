@@ -25,6 +25,7 @@ configuration PlatformC {
   provides {
     interface Init as PlatformInit;
     interface Platform;
+    interface Rtc;
     interface SysReboot;
   }
   uses interface Init as PeripheralInit;
@@ -36,6 +37,9 @@ implementation {
   PlatformInit = PlatformP;
   PeripheralInit = PlatformP.PeripheralInit;
   SysReboot  = PlatformP;
+
+  components PlatformRtcC;
+  Rtc = PlatformRtcC;
 
   components PlatformLedsC;
   PlatformP.PlatformLeds -> PlatformLedsC;

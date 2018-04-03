@@ -26,6 +26,7 @@ configuration PlatformC {
     interface Init as PlatformInit;
     interface Platform;
     interface SysReboot;
+    interface Rtc;
   }
   uses interface Init as PeripheralInit;
 }
@@ -45,4 +46,9 @@ implementation {
 
   /* clocks are initilized by startup */
 
+  /*
+   * RealTime Clock Wiring
+   */
+  components PlatformRtcC;
+  Rtc      = PlatformRtcC;
 }

@@ -181,7 +181,7 @@ module GPSmonitorP {
 
     interface Collect;
     interface CollectEvent;
-    interface DateTime;
+    interface Rtc;
 
     interface Timer<TMilli> as MonTimer;
     interface Panic;
@@ -500,7 +500,7 @@ implementation {
     dlen = CF_BE_16(svp->len) - 1;
     gps_block.len = dlen + sizeof(gps_block);
     gps_block.dtype = DT_GPS_VERSION;
-    call Rtc.copyTime(&gps_block.rt, dtp);
+    call Rtc.copyTime(&gps_block.dt, dtp);
     gps_block.mark_us  = 0;
     gps_block.chip_id = CHIP_GPS_GSD4E;
     gps_block.dir = GPS_DIR_RX;         /* rx from gps */
@@ -546,7 +546,7 @@ implementation {
 #endif
 
       mtp = &m_time;
-      call Rtc.copyTime(&mtp->rt, dtp);
+      call Rtc.copyTime(&mtp->dt, dtp);
       mtp->tow       = CF_BE_32(gp->tow);
       mtp->week_x    = CF_BE_16(gp->week_x);
       mtp->nsats     = gp->nsats;
@@ -563,7 +563,7 @@ implementation {
         mtp->utc_ms, 0);
 
       mgp = &m_geo;
-      call Rtc.copyTime(&mgp->rt, dtp);
+      call Rtc.copyTime(&mgp->dt, dtp);
       mgp->tow       = CF_BE_32(gp->tow);
       mgp->week_x    = CF_BE_16(gp->week_x);
       mgp->nsats     = gp->nsats;
@@ -682,7 +682,7 @@ implementation {
 
     hdr.len      = sizeof(hdr) + len;
     hdr.dtype    = DT_GPS_RAW_SIRFBIN;
-    call Rtc.copyTime(&hdr.rt, arrival_dtp);
+    call Rtc.copyTime(&hdr.dt, arrival_dtp);
     hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
     hdr.chip_id  = CHIP_GPS_GSD4E;
     hdr.dir      = GPS_DIR_RX;
@@ -862,10 +862,10 @@ implementation {
   }
 
 
-        event void GPSTransmit.send_done()    { }
-        event void GPSControl.gps_shutdown()  { }
-        event void GPSControl.standbyDone()   { }
-  async event void Panic.hook()               { }
-  async event void Rtc.currentTime(
-       rtctime_t *timep, uint32_t reason_set) { }
+  event void GPSTransmit.send_done()    { }
+  event void GPSControl.gps_shutdown()  { }
+  event void GPSControl.standbyDone()   { }
+  event void Rtc.currentTime(rtctime_t *timep, uint32_t reason_set) { }
+
+  async event void Panic.hook()         { }
 }
