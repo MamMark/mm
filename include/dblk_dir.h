@@ -29,7 +29,7 @@
 #ifndef __DBLK_DIR_H__
 #define __DBLK_DIR_H__
 
-#include <datetime.h>
+#include <rtctime.h>
 
 #define DBLK_ID_SIZE   4
 #define DBLK_DIR_SIG   0x18961492
@@ -57,7 +57,7 @@ typedef struct {                        /* Image Directory */
   uint32_t   dblk_dir_sig;
   uint32_t   dblk_low;
   uint32_t   dblk_high;
-  datetime_t incept_date;
+  rtctime_t  incept_date;
   uint8_t    file_idx;                  /* file idx */
   uint8_t    pad;
   uint32_t   dblk_dir_sig_a;

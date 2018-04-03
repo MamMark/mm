@@ -48,7 +48,7 @@
 extern fs_loc_t loc;
 
 
-#define VERSION "tagfmtsd: v4.4.0  2018/03/30\n"
+#define VERSION "tagfmtsd: v4.4.1  2018/04/03\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -217,7 +217,7 @@ display_info(uint8_t *buf) {
  *
  * Create the directory.  Includes:
  * o start and end (low/high)
- * o incept date in datetime format.  (creation date)
+ * o incept date in rtctime format.  (creation date)
  *
  * write directory out to first sector of the dblk area.
  */
@@ -234,7 +234,7 @@ int write_dblk_dir(uint8_t *buf, uint8_t file_idx) {
     fprintf(stderr, "*** write_dblk_dir: gmtime_r failed.\n");
 
   /*
-   * modify what is returned to make it conform to what dateTime
+   * modify what is returned to make it conform to what rtcTime
    * expects.  TI RTC format.
    */
   if (gmp->tm_sec > 59)                 /* check for leap sec */
