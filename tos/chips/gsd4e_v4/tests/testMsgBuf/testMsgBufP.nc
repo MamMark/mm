@@ -1,5 +1,5 @@
 
-#include <datetime.h>
+#include <rtctime.h>
 
 uint32_t recv_count;
 uint16_t last_size;
@@ -48,7 +48,7 @@ implementation {
 
 
   event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
-                                      datetime_t *dtp, uint32_t mark) {
+                                      rtctime_t *rtp, uint32_t mark) {
     nop();
     recv_count++;
   }

@@ -208,7 +208,7 @@
 #include <platform_panic.h>
 #include <gps.h>
 #include <GPSMsgBuf.h>
-#include <datetime.h>
+#include <rtctime.h>
 
 
 #ifndef PANIC_GPS
@@ -300,14 +300,14 @@ implementation {
   task void gps_receive_task() {
     uint8_t *msg;
     uint16_t len;
-    datetime_t *arrival_dtp;
+    rtctime_t *arrival_rtp;
     uint32_t mark;
 
     while (1) {
-      msg = call GPSBuffer.msg_next(&len, &arrival_dtp, &mark);
+      msg = call GPSBuffer.msg_next(&len, &arrival_rtp, &mark);
       if (!msg)
         break;
-      signal GPSReceive.msg_available(msg, len, arrival_dtp, mark);
+      signal GPSReceive.msg_available(msg, len, arrival_rtp, mark);
       call GPSBuffer.msg_release();
     }
   }
@@ -601,7 +601,7 @@ implementation {
 
 
   command uint8_t *GPSBuffer.msg_next(uint16_t *lenp,
-        datetime_t **arrival_dtp, uint32_t *markp) {
+        rtctime_t **arrival_rtpp, uint32_t *markp) {
     gps_msg_t *msg;             /* message slot we are working on */
 
     atomic {
@@ -616,7 +616,7 @@ implementation {
       }
       msg->state = GPS_MSG_BUSY;
       *lenp = msg->len;
-      *arrival_dtp = &msg->arrival_dt;
+      *arrival_rtpp = &msg->arrival_rt;
       *markp       = msg->mark_j;
       return msg->data;
     }
@@ -699,7 +699,7 @@ implementation {
 
 
   default event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
-        datetime_t *arrival_dtp, uint32_t mark_j) { }
+        rtctime_t *arrival_rtp, uint32_t mark_j) { }
 
   async event void Rtc.currentTime(
        rtctime_t *timep, uint32_t reason_set)  { }

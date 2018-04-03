@@ -20,7 +20,7 @@
  */
 
 #include <GPSMsgBuf.h>
-#include <datetime.h>
+#include <rtctime.h>
 
 interface GPSBuffer {
 
@@ -57,17 +57,17 @@ interface GPSBuffer {
    * input:    ptr/len  pointer to uint16_t that will receive the
    *                    length of the message.
    *           arrival/mark timestamps describing when the message arrived
-   *                    pointer to a datetime_t ptr and pointer to uint32_t.
+   *                    pointer to a rtctime_t ptr and pointer to uint32_t.
    *
    * returns:  ptr      to message data
    *                    NULL if no more messages.
    *                    len filled in with length
-   *                    *dtpp filled in with the ptr to the datetime stamp
+   *                    *dtpp filled in with the ptr to the rtctime stamp
    *                    *markp filled in the mark value.
    *
    * Will set the state of the head of the message queue to BUSY.
    */
-  command uint8_t *msg_next(uint16_t *len, datetime_t **dtpp, uint32_t *markp);
+  command uint8_t *msg_next(uint16_t *len, rtctime_t **rtpp, uint32_t *markp);
 
   /*
    * msg_release: release a previously allocated msg.

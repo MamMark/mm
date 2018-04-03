@@ -27,7 +27,7 @@
 #include <panic.h>
 #include <image_info.h>
 #include <overwatch.h>
-#include <datetime.h>
+#include <rtctime.h>
 
 #ifndef PACKED
 #define PACKED __attribute__((__packed__))
@@ -107,8 +107,8 @@ typedef enum {
  *
  * All records (data blocks, dt headers) start with a 2 byte little endian
  * length, a 2 byte little endian data type field (dtype), a 4 byte little
- * endian record number, and a 10 byte datetime stamp.  Datetime consists
- * of a 64 bit lower 8 bytes of time stamp (dt64), followed by a 2 byte
+ * endian record number, and a 10 byte rtctime stamp.  RtcTime consists
+ * of a 64 bit lower 8 bytes of time stamp (rt64), followed by a 2 byte
  * year.  It needs to be 2quad aligned for alignment safety.  The header
  * also includes a record checksum (recsum).  This is a 16 bit little
  * endian checksum over individual bytes in both the header and data areas.
@@ -131,7 +131,7 @@ typedef struct {                /* size 20 */
   uint16_t len;
   dtype_t  dtype;               /* 2 bytes */
   uint32_t recnum;
-  datetime_t dt;                /* 10 byte datetime, 2quad */
+  rtctime_t rt;                 /* 10 byte rtctime, 2quad */
   uint16_t recsum;
 } PACKED dt_header_t;
 
@@ -173,7 +173,7 @@ typedef struct {
   uint16_t len;                 /* size 36 +    84      */
   dtype_t  dtype;               /* reboot  + ow_control */
   uint32_t recnum;
-  datetime_t dt;                /* 10 byte datetime, 2quad align */
+  rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
   uint32_t prev_sync;           /* file offset */
   uint32_t sync_majik;
@@ -201,7 +201,7 @@ typedef struct {
   uint16_t    len;              /* size   24    +     144      */
   dtype_t     dtype;            /* dt_version_t + image_info_t */
   uint32_t    recnum;
-  datetime_t  dt;               /* 10 byte datetime, 2quad align */
+  rtctime_t   rt;               /* 10 byte rtctime, 2quad align */
   uint16_t    recsum;           /* part of header */
   uint32_t    base;             /* base address of this image */
 } PACKED dt_version_t;          /* quad granular */
@@ -216,7 +216,7 @@ typedef struct {
   uint16_t   len;               /* size 28 */
   dtype_t    dtype;
   uint32_t   recnum;
-  datetime_t dt;                /* 10 byte datetime, 2quad align */
+  rtctime_t  rt;                /* 10 byte rtctime, 2quad align */
   uint16_t   recsum;            /* part of header */
   uint32_t   prev_sync;         /* file offset */
   uint32_t   sync_majik;
@@ -269,7 +269,7 @@ typedef struct {
   uint16_t len;                 /* size 40 */
   dtype_t  dtype;
   uint32_t recnum;
-  datetime_t dt;                /* 10 byte datetime, 2quad align */
+  rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
   dt_event_id_t ev;             /* 2 bytes, event, see above */
   uint8_t  pcode;               /* PANIC warn, pcode, subsys */
@@ -308,7 +308,7 @@ typedef struct {
   uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
   uint32_t recnum;
-  datetime_t dt;                /* 10 byte datetime, 2quad align */
+  rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
   uint32_t mark_us;             /* mark stamp in usecs */
   gps_chip_id_t chip_id;        /* 1 byte */
@@ -329,7 +329,7 @@ typedef struct {
   uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
   uint32_t recnum;
-  datetime_t dt;                /* 10 byte datetime, 2quad align */
+  rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
   uint32_t sched_delta;
   uint16_t sns_id;
@@ -341,7 +341,7 @@ typedef struct {
   uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
   uint32_t recnum;
-  datetime_t dt;                /* 10 byte datetime, 2quad align */
+  rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
   uint32_t sched_delta;
   uint16_t mask;

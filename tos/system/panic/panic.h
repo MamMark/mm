@@ -49,7 +49,7 @@
 #define __PANIC_H__
 
 #include <image_info.h>
-#include <datetime.h>
+#include <rtctime.h>
 
 /*
  * pcodes are used to denote what subsystem failed.  See
@@ -164,7 +164,7 @@ typedef struct {                        /* memory addresses */
 typedef struct {                        /* verify all structs in PIX */
   uint32_t pi_sig;
   uint32_t boot_count;
-  datetime_t dt;
+  rtctime_t rt;
   uint32_t fail_count;
   uint8_t  subsys;
   uint8_t  where;
