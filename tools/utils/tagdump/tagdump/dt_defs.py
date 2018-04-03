@@ -29,7 +29,7 @@ import struct
 from   misc_utils   import dump_buf
 from   core_headers import dt_hdr_obj
 
-__version__ = '0.2.5 (dt)'
+__version__ = '0.2.6 (dt)'
 
 
 # __all__ exports commonly used definitions.  It gets used
@@ -128,24 +128,24 @@ DT_GPS_RAW_SIRFBIN      = 32
 
 
 # common format used by all records.  (rec0)
-# --- offset recnum       dt  len  type  name
+# --- offset recnum       rt  len  type  name
 # --- 999999 999999 99999999  999    99  ssssss
 # ---    512      1      322  116     1  REBOOT  unset -> GOLD (GOLD)
 rec0  = '--- @{:<6d} {:6d} {:8d}  {:3d}    {:2d}  {:s}'
 
 
-def get_systime(datetime):
+def get_systime(rtctime):
     '''
-    get systime from a datetime.
+    get systime from a rtctime.
 
-    input:      datetime, a datetime_obj
+    input:      rtctime, a rtctime_obj
     output:     systime
                 min | sec | sub_sec (32 bits)
 
-    datetime is assumed to have been populated.
+    rtctime is assumed to have been populated.
     '''
-    dt = datetime
-    st = (dt['min'].val << 24) | (dt['sec'].val << 16) | dt['sub_sec'].val
+    rt = rtctime
+    st = (rt['min'].val << 24) | (rt['sec'].val << 16) | rt['sub_sec'].val
     return st
 
 
@@ -160,8 +160,8 @@ def print_hdr(obj):
 
     rtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    datetime = obj['hdr']['dt']
-    st       = get_systime(datetime)
+    rtctime  = obj['hdr']['rt']
+    st       = get_systime(rtctime)
 
     # gratuitous space shows up after the print, sigh
     print('{:4} {:8} ({:2}) {:6} --'.format(recnum, st,
@@ -169,9 +169,9 @@ def print_hdr(obj):
 
 
 # used for identifing records that have problems.
-# offset recnum       dt len type name         offset
+# offset recnum       rt len type name         offset
 # 999999 999999  0009999 999   99 xxxxxxxxxxxx @999999 (0xffffff) [0xffff]
-rec_title_str = "--- offset  recnum       dt  len  type  name"
+rec_title_str = "--- offset  recnum       rt  len  type  name"
 rec_format    = "{:8} {:6}  {:7}  {:3}    {:2}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
 
 def print_record(offset, buf):
@@ -186,8 +186,8 @@ def print_record(offset, buf):
         rlen     = hdr['len'].val
         rtype    = hdr['type'].val
         recnum   = hdr['recnum'].val
-        datetime = hdr['dt']
-        st       = get_systime(datetime)
+        rtctime  = hdr['rt']
+        st       = get_systime(rtctime)
         recsum   = hdr['recsum'].val
         print(rec_format.format(offset, recnum, st, rlen, rtype,
             dt_name(rtype), offset, offset, recsum))

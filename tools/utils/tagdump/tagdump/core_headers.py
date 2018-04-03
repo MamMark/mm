@@ -22,7 +22,7 @@
 
 # basic data type object descriptors
 
-__version__ = '0.2.5 (ch)'
+__version__ = '0.2.6 (ch)'
 
 import binascii
 from   decode_base  import *
@@ -30,7 +30,7 @@ from   collections  import OrderedDict
 from   sirf_headers import sirf_hdr_obj
 from   sirf_headers import sirf_swver_obj
 
-datetime_obj = aggie(OrderedDict([
+rtctime_obj = aggie(OrderedDict([
     ('sub_sec', atom(('<H', '{}'))),
     ('sec',     atom(('<B', '{}'))),
     ('min',     atom(('<B', '{}'))),
@@ -45,7 +45,7 @@ dt_hdr_obj = aggie(OrderedDict([
     ('len',     atom(('<H', '{}'))),
     ('type',    atom(('<H', '{}'))),
     ('recnum',  atom(('<I', '{}'))),
-    ('dt',      datetime_obj),
+    ('rt',      rtctime_obj),
     ('recsum',  atom(('<H', '0x{:04x}'))),
 ]))
 
@@ -70,7 +70,7 @@ owcb_obj        = aggie(OrderedDict([
 #
 # change uptime from 64 bit ms time to 32 bit secs
 # uptime and elapsed need to be changed.  Perhaps
-# boot time (datetime), calculate elapsed.
+# boot time (rtctime), calculate elapsed.
 #
     ('uptime',          atom(('<Q', '0x{:08x}'))),
     ('reset_status',    atom(('<I', '0x{:08x}'))),

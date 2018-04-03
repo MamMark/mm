@@ -78,7 +78,7 @@ def parseargs():
     # not working yet
     parser.add_argument('--start',
                         type=int,
-                        help='include records with datetime >= than START')
+                        help='include records with rtctime >= than START')
 
     # not working yet
     parser.add_argument('--end',

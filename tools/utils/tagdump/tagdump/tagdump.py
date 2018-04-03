@@ -119,7 +119,7 @@ ver_str = '\ntagdump: ' + VERSION + ':  dt_rev ' + str(DT_REV)
 #                   (args.sync, int)
 #
 #   --start START_TIME
-#                   include records with datetime greater than START_TIME
+#                   include records with rtctime greater than START_TIME
 #   --end END_TIME  (args.{start,end}_time)
 #
 #   -r START_REC    starting/ending records to dump.
@@ -303,7 +303,7 @@ def get_record(fd):
     can be read from the input file.
 
     Yields one record each time:
-        dt_hdr_obj: (len, type, recnum, datetime, recsum)
+        dt_hdr_obj: (len, type, recnum, rtctime, recsum)
 
     Input:   fd:         file descriptor we are reading from
     Output:  rec_offset: byte offset of the record from start of file
@@ -321,7 +321,7 @@ def get_record(fd):
     hdr_len     = len(hdr)              # only call it once
     rlen        = 0
     rtype       = 0
-    datetime    = hdr['dt']             # object
+    rtctime     = hdr['rt']             # object
     recnum      = 0
     recsum      = 0
 

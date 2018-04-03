@@ -21,7 +21,7 @@
 
 # basic emitters for main data blocks
 
-__version__ = '0.2.5 (ce)'
+__version__ = '0.2.6 (ce)'
 
 from   dt_defs      import *
 from   dt_defs      import rec0
@@ -126,8 +126,8 @@ def emit_reboot(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    datetime = obj['hdr']['dt']
-    st       = get_systime(datetime)
+    rtctime  = obj['hdr']['rt']
+    st       = get_systime(rtctime)
 
     majik    = obj['majik'].val
     prev     = obj['prev_sync'].val
@@ -220,10 +220,10 @@ def emit_version(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    datetime = obj['hdr']['dt']
+    rtctime  = obj['hdr']['rt']
     base     = obj['base'].val
 
-    st       = get_systime(datetime)
+    st       = get_systime(rtctime)
 
     ver_str = '{:d}.{:d}.{:d}'.format(
         image_info_obj['ver_id']['major'].val,
@@ -273,8 +273,8 @@ def emit_sync(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    datetime = obj['hdr']['dt']
-    st       = get_systime(datetime)
+    rtctime  = obj['hdr']['rt']
+    st       = get_systime(rtctime)
 
     majik    = obj['majik'].val
     prev     = obj['prev_sync'].val
@@ -306,8 +306,8 @@ def emit_event(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    datetime = obj['hdr']['dt']
-    st       = get_systime(datetime)
+    rtctime  = obj['hdr']['rt']
+    st       = get_systime(rtctime)
 
     event = obj['event'].val
     arg0  = obj['arg0'].val
@@ -349,8 +349,8 @@ def emit_debug(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    datetime = obj['hdr']['dt']
-    st       = get_systime(datetime)
+    rtctime  = obj['hdr']['rt']
+    st       = get_systime(rtctime)
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(debug0.format())
@@ -366,8 +366,8 @@ def emit_gps_version(level, offset, buf, obj):
     xlen     = obj['gps_hdr']['hdr']['len'].val
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
-    datetime = obj['gps_hdr']['hdr']['dt']
-    st       = get_systime(datetime)
+    rtctime  = obj['gps_hdr']['hdr']['rt']
+    st       = get_systime(rtctime)
 
     print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype)))
     if (level >= 1):
@@ -430,8 +430,8 @@ def emit_test(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    datetime = obj['hdr']['dt']
-    st       = get_systime(datetime)
+    rtctime  = obj['hdr']['rt']
+    st       = get_systime(rtctime)
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(test0.format())
@@ -446,8 +446,8 @@ def emit_note(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    datetime = obj['hdr']['dt']
-    st       = get_systime(datetime)
+    rtctime  = obj['hdr']['rt']
+    st       = get_systime(rtctime)
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print('{}'.format(buf[point:]))
@@ -464,8 +464,8 @@ def emit_config(level, offset, buf, obj):
     len      = obj['hdr']['len'].val
     type     = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
-    datetime = obj['hdr']['dt']
-    st       = get_systime(datetime)
+    rtctime  = obj['hdr']['rt']
+    st       = get_systime(rtctime)
 
     print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
     print(cfg0.format())
@@ -481,8 +481,8 @@ def emit_gps_raw(level, offset, buf, obj):
     xlen     = obj['gps_hdr']['hdr']['len'].val
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
-    datetime = obj['gps_hdr']['hdr']['dt']
-    st       = get_systime(datetime)
+    rtctime  = obj['gps_hdr']['hdr']['rt']
+    st       = get_systime(rtctime)
 
     dir_bit  = obj['gps_hdr']['dir'].val
     dir_str  = 'rx' if dir_bit == 0 else 'tx'
