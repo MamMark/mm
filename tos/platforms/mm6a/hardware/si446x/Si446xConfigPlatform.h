@@ -79,7 +79,7 @@
  *      Receive:  gp2=1, gp3=0
  */
 #define SI446X_GPIO_PIN_CFG_LEN    8
-#define SI446X_RF_GPIO_PIN_CFG     0x13, 28, 8, 33, 32, 0x00, 0x00, 0x00
+#define SI446X_RF_GPIO_PIN_CFG     0x13, 28, 8, 32, 33, 0x00, 0x00, 0x00
 
 
 #endif  /* __SI446X_CONFIG_PLATFORM_H__ */
