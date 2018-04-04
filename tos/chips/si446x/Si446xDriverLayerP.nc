@@ -954,8 +954,17 @@ implementation {
     if (!dp || !(*dp))                  /* make sure reasonable to send */
       __PANIC_RADIO(5, 0, 0, 0, 0);
 
+    /* set power level based on setting in message. if no setting, then
+     * use previously set value (no change)
+     */
     if (call PacketTransmitPower.isSet(global_ioc.pTxMsg)) {
       pwr[0] = call PacketTransmitPower.get(global_ioc.pTxMsg);
+      // change power rail based on high order bit
+      if (pwr[0] & 0x80) {
+        call Si446xCmd.set_pwr_3_3v();
+        pwr[0] &= 0x7f;
+      } else
+        call Si446xCmd.set_pwr_1_8v();
       call Si446xCmd.set_property(SI446X_PROP_PA_PWR_LVL, pwr, 1);
     }
 

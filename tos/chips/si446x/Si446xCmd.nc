@@ -182,10 +182,17 @@ interface Si446xCmd {
    */
   async command void          read_rx_fifo(uint8_t *data, uint8_t length);
 
+  /**
+   * Send a config string to the radio chip.
+   *
+   * @param    properties    pointer to string to send
+   * @param    length        length of properties string to send
+   */
+  async command void          send_config(const uint8_t *properties, uint16_t length);
 
   /**
    *
-   * set one or more contiguous radio chip properties 
+   * set one or more contiguous radio chip properties
    *
    * @param     prop          property index
    * @param     values        ptr to string holding values to write
@@ -194,12 +201,12 @@ interface Si446xCmd {
   async command void          set_property(uint16_t prop, uint8_t *values, uint16_t vl);
 
   /**
-   * Send a config string to the radio chip.
    *
-   * @param    properties    pointer to string to send
-   * @param    length        length of properties string to send
+   * set radio power rail to 3.3v or 1.8v
+   *
    */
-  async command void          send_config(const uint8_t *properties, uint16_t length);
+  async command void          set_pwr_3_3v();
+  async command void          set_pwr_1_8v();
 
   /**
    * Power off the radio chip.

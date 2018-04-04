@@ -1263,7 +1263,7 @@ implementation {
   /*
    * Si446xCmd.set_property
    *
-   * read one or more properties from the radio chip
+   * write one or more properties to the radio chip
    */
   async command void Si446xCmd.set_property(uint16_t prop, uint8_t *values, uint16_t vl) {
     uint8_t prop_buf[16];
@@ -1278,6 +1278,28 @@ implementation {
       prop_buf[i+4] = values[i];
     ll_si446x_send_cmd(prop_buf, vl+4);
     ll_si446x_trace(T_RC_SET_PROP, prop, (uint16_t) *values);
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.set_pwr_3_3
+   *
+   * set the radio power rail to 3.3v
+   */
+  async command void Si446xCmd.set_pwr_3_3v() {
+    call HW.si446x_set_high_tx_pwr();
+  }
+
+
+  /**************************************************************************/
+  /*
+   * Si446xCmd.set_pwr_1_8
+   *
+   * set the radio power rail to 1.8v
+   */
+  async command void Si446xCmd.set_pwr_1_8v() {
+    call HW.si446x_set_low_tx_pwr();
   }
 
 
