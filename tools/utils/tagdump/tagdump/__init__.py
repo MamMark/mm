@@ -66,11 +66,11 @@ tagdump:  decode and display Tag Data Stream file
 #               this plays nicely with the tagfuse sparse file system for
 #               dblk.
 #
-# 0.3.0.dev2    Major Refactor.  Not backward compatable.
+# 0.3.0.dev3    Major Refactor.  Not backward compatable.
 #               conversion to datetime.  prototype datetime.
 #               rename datetime to rtctime.
 #
 #               owcb, convert uptime and elapsed to 32 bit num secs needed.
 #
 
-__version__ = '0.3.0.dev2'
+__version__ = '0.3.0.dev3'

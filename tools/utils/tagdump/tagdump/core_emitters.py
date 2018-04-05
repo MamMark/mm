@@ -21,7 +21,7 @@
 
 # basic emitters for main data blocks
 
-__version__ = '0.2.6 (ce)'
+__version__ = '0.2.7 (ce)'
 
 from   dt_defs      import *
 from   dt_defs      import rec0
@@ -33,6 +33,7 @@ from   dt_defs      import print_record
 from   core_headers import owcb_obj
 from   core_headers import image_info_obj
 from   core_headers import event_names
+from   core_headers import gps_cmd_names
 from   core_headers import PANIC_WARN
 from   core_headers import GPS_CMD
 
