@@ -36,6 +36,7 @@ module TagnetNameRootImplP {
   uses interface     TagnetHeader    as  THdr;
   uses interface     TagnetPayload   as  TPload;
   uses interface     TagnetTLV       as  TTLV;
+  uses interface     PlatformNodeId;
   uses interface     Boot;
   uses interface     Panic;
 }
@@ -100,29 +101,18 @@ implementation {
   default event void Sub.add_help_tlv[uint8_t id](message_t *msg)  { }
 
   event void Boot.booted() {
-    uint32_t   i;
-  /*
-   * Initialize the Node Id using a portion of the MSP432 Random
-   * number seed found in Device Descriptor TLVs (not the same
-   * thing as Tagnet TLVs)
-   *
-   * 0x0020_1000 to 0x0020_1FFF	Device Descriptor (TLV)
-   * 0000000Dh                       TAG_RANDNUM Random Number Tag
-   *
-   * Node_Id = (6 bytes starting at 0x201120)
-   *
-   * > x/6w 0x201118
-   * 0x201118:	0x0000000d	0x00000004
-   * 0x201120:	0xe5c88b65ff0c      0x5c20
-   * 0x201128:	0xb321b7e6	0x8bb186c4
-   */
-    uint8_t *rand_seed = (uint8_t *)0x201120;
+    uint8_t     *node_id;
+    unsigned int node_len, i;
 
     nid_buf[0] = TN_TLV_NODE_ID;
-    nid_buf[1] = 6;
-    for (i = 0; i < 6; i ++)
-      nid_buf[2+i] = rand_seed[i];
+    node_id    = call PlatformNodeId.node_id(&node_len);
+
+    /* node_len should be 6 but we just assume */
+    nid_buf[1] = node_len;
+    for (i = 0; i < node_len; i ++)
+      nid_buf[2+i] = node_id[i];
   }
+
 
   async event void Panic.hook(){ }
 }
