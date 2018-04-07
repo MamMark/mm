@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Eric B. Decker
+ * Copyright (c) 2016-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,21 +25,20 @@ configuration PlatformC {
   provides {
     interface Init as PlatformInit;
     interface Platform;
-    interface Rtc;
+    interface PlatformNodeId;
     interface SysReboot;
+    interface Rtc;
   }
   uses interface Init as PeripheralInit;
 }
 
 implementation {
   components PlatformP;
-  Platform = PlatformP;
-  PlatformInit = PlatformP;
+  Platform       = PlatformP;
+  PlatformNodeId = PlatformP;
+  PlatformInit   = PlatformP;
   PeripheralInit = PlatformP.PeripheralInit;
-  SysReboot  = PlatformP;
-
-  components PlatformRtcC;
-  Rtc = PlatformRtcC;
+  SysReboot      = PlatformP;
 
   components PlatformLedsC;
   PlatformP.PlatformLeds -> PlatformLedsC;
@@ -51,4 +50,6 @@ implementation {
 
   /* clocks are initilized by startup */
 
+  components PlatformRtcC;
+  Rtc      = PlatformRtcC;
 }
