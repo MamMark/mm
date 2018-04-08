@@ -1,8 +1,8 @@
 
 Debian/Ubuntu
 
-2018-03-21
-    Doc update.
+2018-04-08
+    Doc update.  Update ARM toolchain notes.
 
 2017-09-11
     Ubuntu 16.04, T2 (TinyProd) github:tp-freeforall/prod(tp-master),
@@ -58,15 +58,27 @@ exit
     cd ~
     mkdir installs
     cd installs
-    ARM_TOOLS_URL=https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update/+download/gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
-    wget -nv -O gcc-arm-none-eabi.tar.bz2 $ARM_TOOLS_URL
+    ARM_TOOLS_BASE=https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update/+download
+    ARM_TOOLS_TAR=gcc-arm-none-eabi-4_9-2015q3-20150921-linux.tar.bz2
+    wget -nv -O gcc-arm-none-eabi.tar.bz2 $ARM_TOOLS_BASE/$ARM_TOOLS_TAR
 
     echo "*** Installing ARM toolchain"
     sudo tar xf ~/installs/gcc-arm-none-eabi.tar.bz2 -C /usr
 
-
     this will install the arm toolchain into /usr/gcc-arm-none-eabi-4_9-2015q3.  Your path
     should include /usr/gcc-arm-none-eabi-4_9-2015q3/bin
+
+4c) Install 32 bit libraries for the ARM toolchain
+
+    apt-get install -qy -V libc6:i386 libx11-6:i386 libasound2:i386         \
+        libatk1.0-0:i386 libcairo2:i386 libcups2:i386 libdbus-glib-1-2:i386 \
+        libgconf-2-4:i386 libgdk-pixbuf2.0-0:i386 libgtk-3-0:i386           \
+        libice6:i386 libncurses5:i386 libsm6:i386 liborbit2:i386            \
+        libudev1:i386 libusb-0.1-4:i386 libstdc++6:i386 libxt6:i386         \
+        libxtst6:i386 libgnomeui-0:i386 libusb-1.0-0-dev:i386               \
+        libcanberra-gtk-module:i386 gtk2-engines-murrine:i386 unzip         \
+        libpython2.7:i386
+
 
 **************************************************************************************
 
@@ -78,6 +90,12 @@ exit
     mkdir tag ; cd ~/tag
     git clone -v https://github.com/tp-freeforall/prod.git
     git clone -v https://github.com/MamMark/mm.git
+
+  You might also want the project dot files:
+
+    cd ~/tag
+    git clone -v https://github.com/MamMark/dot-files.git
+
 
 **************************************************************************************
 
@@ -97,3 +115,19 @@ exit
    JLINK_DEB=${SUPPORT_ARCHIVE}/JLink_Linux_V616j_x86_64.deb
    wget -nv -O jlink.deb ${JLINK_DEB}
    dpkg -i jlink.deb
+
+   The JLink software installs into /opt/SEGGER, however the deb package will install
+   symbolic links in /usr/bin to the appropriate location in /opt/SEGGER.
+
+9) Connect via JTag to MSP432a
+
+   JLinkGDBServer -device msp432p401r -if swd
+
+   This will fire up a gdbserver that listens by default on port 2331.
+
+10) Connect via gdb to above JLinkGDBServer
+
+    arm-none-eabi-gdb-py -i=mi -iex "target extended-remote localhost:2331" -cd build/<target>/ <binary>
+
+    where <target> is the platform you have built for and <binary> is the elf output from the toolchain,
+    typically main.exe (for tinyos builds)

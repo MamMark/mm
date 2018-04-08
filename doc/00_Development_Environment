@@ -4,8 +4,8 @@ Installing a development environment for the MamMark tag.
 
 State:
 
-2018-03-21
-    Doc update.
+2018-04-08
+    Doc update.  Update ARM toolchain notes.
 
 2017-09-12
     add binary loading (JLinkExe, loadbin)
@@ -64,8 +64,9 @@ d) Jtag pod
 **************************************************************************************
 
 1a) Development Environment Installation.   Manual Installation
+    see 00a_Development_Quick_Start and ...
 
-https://github.com/tp-freeforall/prod/blob/tp-master/00b_Development_Environment
+    https://github.com/tp-freeforall/prod/blob/tp-master/00b_Development_Environment
 
 
 1b) Vagrant Installation.
