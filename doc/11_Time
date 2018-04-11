@@ -76,20 +76,17 @@ transition from 12/31-23:59:59:0x7fff to 01/01-00:00:00:0x0000.
 But this has the problem of not having the year, this is a problem waiting
 to bite us when we just happen to get the year wrong.
 
-The rt64 structure however has the nice property of being easy to copy, so
-we bury both the year and a rt64 structure inside of the RtcTime structure.
-We then use RtcTime for timestamping and always make sure the year is
-included.
-
-The has the downside of having 2 additional bytes in every record.  We can
-mitigate this later by going to a temporanc encoding with yields a full
-timestamp in 8 bytes.
+We use all 10 bytes and when needed we look at the low 8 bytes as either a
+64 bit 2quad or 2 32 bit quads depending on what works.  Using all 10 bytes
+as a timestamping has the downside of having 2 additional bytes in every
+record.  We can mitigate this later by going to a temporanc encoding with
+yields a full timestamp in 8 bytes.
 
 Data Blocks (typed_data, records) are time stamped using RtcTime stamps.
 
-Overwatch uses sysTime (LocalTime64) for uptime (time since last boot) and
-the accumulation of elapsedTime.  Both are in sysTime units, 64 bit ms since
-last reboot.
+Overwatch uses a 32 bit (quad) for seconds of uptime (time since last boot)
+and the accumulation of elapsedTime.  Both are in LocalTimeSecs, 32 bit secs
+since last reboot.
 
 
 Time Skew.
