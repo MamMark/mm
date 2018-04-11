@@ -35,6 +35,7 @@
 #include <image_info.h>
 #include <overwatch.h>
 #include <cpu_stack.h>
+#include <rtc.h>
 
 /*
  * all DriverLib calls go to ROM.  Any Flash calls absolutely must
@@ -897,27 +898,33 @@ void __ta_init(Timer_A_Type * tap, uint32_t clkdiv, uint32_t ex_div) {
 }
 
 
-void __rtc_init() {
-  RTC_C_Type *rtc = RTC_C;
+extern void     __rtc_rtcStart();
+extern uint32_t __rtc_setTime(rtctime_t *timep);
+extern uint32_t __rtc_getTime(rtctime_t *timep);
+extern bool     __rtc_rtcValid(rtctime_t *timep);
+extern int      __rtc_compareTimes(rtctime_t *time0p, rtctime_t *time1p);
 
-  /* write the key, and nuke any interrupt enables and IFGs */
-  rtc->CTL0 = RTC_C_KEY;
-  rtc->CTL13 = RTC_C_CTL13_HOLD;
-  rtc->PS = 0;
-  rtc->TIM0 = 0;
-  rtc->TIM1 = 0;
-  rtc->DATE = 0;
-  rtc->YEAR = 0;
-  rtc->CTL0 = 0;                /* close the lock */
+void __rtc_init() {
+  rtctime_t time;
+
+  __rtc_getTime(&time);
+  if (!__rtc_rtcValid(&time)) {
+    time.year    = 1970;                /* unix epoch */
+    time.mon     = 1;                   /* no particular reason */
+    time.day     = 1;
+    time.dow     = 4;                   /* thursday */
+    time.hr      = 0;
+    time.min     = 0;
+    time.sec     = 0;
+    time.sub_sec = 0;
+    __rtc_setTime(&time);
+  }
+  TIMER_A1->R = time.sub_sec;
+  nop();
 }
 
 
 void __start_timers() {
-  /* let the RTC go */
-  RTC_C->CTL0 = RTC_C_KEY;
-  BITBAND_PERI(RTC_C->CTL13, RTC_C_CTL13_HOLD_OFS) = 0;
-  RTC_C->CTL0 = 0;                /* close the lock */
-
   /* restart the 32 bit 1MiHz tickers */
   TIMER32_1->LOAD = 0xffffffff;
   TIMER32_2->LOAD = MSP432_T32_ONE_SEC;
@@ -1041,6 +1048,11 @@ void timer_check() {
 #endif
 
 
+/*
+ * gdb when loading a new program looks for start to set its initial
+ * PC to.  We alias start to __Reset so gdb typically displays this
+ * code when this binary is loaded.
+ */
 void start() __attribute__((alias("__Reset")));
 void __Reset() {
   uint32_t *from;
@@ -1050,6 +1062,14 @@ void __Reset() {
 
   /* make sure interrupts are disabled */
   __disable_irq();
+
+  /*
+   * restart the RTC
+   *
+   * just restart the RTC, later we will check for validity and also make
+   * the Tmilli timer and the RTC sub_secs coincident.
+   */
+  __rtc_rtcStart();
 
   /* and make sure we have an appropriate VTOR.  GoldenOW uses 0x0000000
    * while NIB images use 0x00020000.  __vectors should always have the
