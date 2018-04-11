@@ -50,8 +50,8 @@ implementation {
   }
 
 
-  async command bool Rtc.rtcValid() {
-    return call Msp432Rtc.rtcValid();
+  async command bool Rtc.rtcValid(rtctime_t *time) {
+    return call Msp432Rtc.rtcValid(time);
   }
 
 
@@ -90,6 +90,11 @@ implementation {
 
   async command void Rtc.copyTime(rtctime_t *dtimep, rtctime_t *stimep) {
     call Msp432Rtc.copyTime(dtimep, stimep);
+  }
+
+
+  async command int Rtc.compareTimes(rtctime_t *time0p, rtctime_t *time1p) {
+    call Msp432Rtc.compareTimes(time0p, time1p);
   }
 
 
