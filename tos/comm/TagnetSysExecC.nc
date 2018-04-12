@@ -18,25 +18,33 @@
  *
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  */
+#include <rtc.h>
+#include <rtctime.h>
 
 configuration TagnetSysExecC {
-  provides interface  TagnetSysExecAdapter  as  SysActive;
-  provides interface  TagnetSysExecAdapter  as  SysBackup;
-  provides interface  TagnetSysExecAdapter  as  SysGolden;
-  provides interface  TagnetSysExecAdapter  as  SysNIB;
-  provides interface  TagnetSysExecAdapter  as  SysRunning;
+  provides interface  TagnetSysExecAdapter      as  SysActive;
+  provides interface  TagnetSysExecAdapter      as  SysBackup;
+  provides interface  TagnetSysExecAdapter      as  SysGolden;
+  provides interface  TagnetSysExecAdapter      as  SysNIB;
+  provides interface  TagnetSysExecAdapter      as  SysRunning;
+  provides interface  TagnetAdapter<rtctime_t>  as  SysRtcTime;
 }
 implementation {
   components          TagnetSysExecP        as  Element;
   components          ImageManagerC;
   components          OverWatchC;
+  components          PlatformRtcC;
+  components          PanicC;
 
   SysActive           =  Element.SysActive;
   SysBackup           =  Element.SysBackup;
   SysGolden           =  Element.SysGolden;
   SysNIB              =  Element.SysNIB;
   SysRunning          =  Element.SysRunning;
+  SysRtcTime          =  Element.SysRtcTime;
   Element.IM         ->  ImageManagerC.IM[unique("image_manager_clients")];
   Element.IMD        ->  ImageManagerC;
   Element.OW         ->  OverWatchC;
+  Element.Rtc        ->  PlatformRtcC;
+  Element.Panic      ->  PanicC;
 }

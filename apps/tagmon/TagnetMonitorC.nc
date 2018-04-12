@@ -22,6 +22,7 @@
 
 #include "Si446xRadio.h"
 #include "Tagnet.h"
+#include <rtctime.h>
 
 configuration TagnetMonitorC {}
 implementation {
@@ -52,6 +53,7 @@ implementation {
   TagnetC.SysGolden             -> TagnetSysExecC.SysGolden;
   TagnetC.SysNIB                -> TagnetSysExecC.SysNIB;
   TagnetC.SysRunning            -> TagnetSysExecC.SysRunning;
+  TagnetC.SysRtcTime            -> TagnetSysExecC.SysRtcTime;
 
   components TagnetPollExecC;
   TagnetC.PollCount             -> TagnetPollExecC.PollCount;

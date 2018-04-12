@@ -34,6 +34,7 @@
  */
 
 #include <image_info.h>
+#include <rtctime.h>
 
 interface TagnetPayload {
   /**
@@ -45,6 +46,15 @@ interface TagnetPayload {
    * @return  uint8_t       amount added to the payload (length of tlv)
    */
   command uint8_t           add_block(message_t *msg, void *b, uint8_t length);
+  /**
+   * Adds an rtctime value to the payload (wrapping it in a tlv). Sets the
+   * payload type to list of tlvs
+   *
+   * @param   msg           pointer to message buffer containing the payload
+   * @param   rtctime       pointer to RTC time to be added to payload as tlv
+   * @return  uint8_t       amount added to the payload (length of tlv)
+   */
+  command uint8_t           add_rtctime(message_t *msg, rtctime_t *rtcp);
   /**
    * Adds a retry delay value (millisec) to the payload (wrapping it in a
    * tlv). Sets the payload type to list of tlvs

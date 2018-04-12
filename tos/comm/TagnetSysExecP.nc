@@ -29,16 +29,20 @@
 #include <TagnetTLV.h>
 #include <image_info.h>
 #include <overwatch.h>
+#include <rtctime.h>
 
 module TagnetSysExecP {
-  provides interface TagnetSysExecAdapter as  SysActive;
-  provides interface TagnetSysExecAdapter as  SysBackup;
-  provides interface TagnetSysExecAdapter as  SysGolden;
-  provides interface TagnetSysExecAdapter as  SysNIB;
-  provides interface TagnetSysExecAdapter as  SysRunning;
-  uses     interface ImageManager         as  IM;
-  uses     interface ImageManagerData     as  IMD;
-  uses     interface OverWatch            as  OW;
+  provides interface  TagnetSysExecAdapter      as  SysActive;
+  provides interface  TagnetSysExecAdapter      as  SysBackup;
+  provides interface  TagnetSysExecAdapter      as  SysGolden;
+  provides interface  TagnetSysExecAdapter      as  SysNIB;
+  provides interface  TagnetSysExecAdapter      as  SysRunning;
+  provides interface  TagnetAdapter<rtctime_t>  as  SysRtcTime;
+  uses     interface  ImageManager              as  IM;
+  uses     interface  ImageManagerData          as  IMD;
+  uses     interface  OverWatch                 as  OW;
+  uses     interface  Rtc;
+  uses     interface  Panic;
 }
 implementation {
   /*
@@ -63,7 +67,8 @@ implementation {
       return SUCCESS;
     }
     return FAIL;
- }
+  }
+
 
   command error_t    SysActive.set_version(image_ver_t *versionp) {
     /* note that overwatch.install() is called when set_active_complete()
@@ -172,17 +177,54 @@ implementation {
     return FAIL;                  /* won't get here! */
   }
 
-  event   void    IM.delete_complete() { }
 
-  event   void    IM.dir_eject_active_complete() { }
+  /*
+   * System Rtctime control, get/set
+   */
+  command bool SysRtcTime.get_value(rtctime_t *rtp, uint32_t *lenp) {
+    error_t err;
+
+    if (!rtp || (!lenp) || (*lenp < sizeof(*rtp)))
+      call Panic.panic(PANIC_TAGNET, 11, 0, 0, 0, 0);
+
+    err = call Rtc.getTime(rtp);
+    if (err) {
+      *lenp = 0;
+      return FALSE;
+    }
+    return TRUE;
+  }
+
+
+  command bool SysRtcTime.set_value(rtctime_t *rtp, uint32_t *lenp) {
+    error_t     err;
+
+    if (!rtp || (!lenp) || (*lenp < sizeof(*rtp)))
+      call Panic.panic(PANIC_TAGNET, 12, 0, 0, 0, 0);
+
+    err = call Rtc.setTime(rtp);
+    if (err) {
+      *lenp = 0;
+      return FALSE;
+    }
+    return TRUE;
+  }
+
 
   event   void    IM.dir_set_active_complete() {
+    /*
+     * Image has now been set active, next step is to force Overwatch
+     * to install it and then reboot into it.
+     */
     call OW.install();          /* won't return */
   }
 
+
+  event   void    IM.delete_complete() { }
+  event   void    IM.dir_eject_active_complete() { }
   event   void    IM.dir_set_backup_complete() { }
-
   event   void    IM.finish_complete() {  }
-
   event   void    IM.write_continue() {  }
+  async event void Rtc.currentTime(rtctime_t *timep, uint32_t reason_set) { }
+  async event void Panic.hook() { }
 }
