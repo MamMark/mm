@@ -5,20 +5,13 @@
 
 
 #include <Tasklet.h>
-#include <platform_panic.h>
+#include <tagnet_panic.h>
 
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;
 
 uint16_t global_node_id = 42;
 
-#ifndef PANIC_TAGNET
-enum {
-  __pcode_tagnet = unique(UQ_PANIC_SUBSYS)
-};
-
-#define PANIC_TAGNET __pcode_tagnet
-#endif
 
 module TagnetMonitorP {
   uses {
@@ -95,7 +88,8 @@ implementation {
   tasklet_async event void RadioSend.sendDone(error_t error) {
     nop();
     if (!tagMsgBusy)
-      call Panic.panic(PANIC_TAGNET, 191, (parg_t) pTagMsg, 0, 0, 0);
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                       (parg_t) pTagMsg, 0, 0, 0);
 
     tagMsgSending = FALSE;              /* informational state */
     tagMsgBusy    = FALSE;              /* say this buffer available */
@@ -106,7 +100,7 @@ implementation {
     nop();
     nop();                     /* BRK */
     if (!msg)
-      call Panic.panic(PANIC_TAGNET, 192, 0, 0, 0, 0);
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
     if (tagMsgBusy) {     // busy, ignore received msg by returning it
       return msg;
@@ -148,7 +142,8 @@ implementation {
 
     error = call RadioState.turnOn();
     if (error)
-      call Panic.panic(PANIC_TAGNET, 194, (uint32_t) error, 0, 0, 0);
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                       (uint32_t) error, 0, 0, 0);
   }
 
   async event void Panic.hook() { }

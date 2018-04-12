@@ -75,15 +75,8 @@
 
 #include <TagnetTLV.h>
 #include <rtctime.h>
-#include <platform_panic.h>
+#include <tagnet_panic.h>
 
-#ifndef PANIC_TAGNET
-enum {
-  __pcode_tagnet = unique(UQ_PANIC_SUBSYS)
-};
-
-#define PANIC_TAGNET __pcode_tagnet
-#endif
 
 module TagnetTlvP {
   provides interface TagnetTLV;
@@ -166,7 +159,7 @@ implementation {
     int32_t        v = 0;
 
     if (!t || t->typ != ttype || t->len > sizeof(uint32_t))
-      tn_panic(7, (parg_t) t, t->typ, t->len, ttype);
+      tn_panic(TAGNET_AUTOWHERE, (parg_t) t, t->typ, t->len, ttype);
     if ((t) && (t->typ == ttype) && (t->len <= 4)) {
       for (x = 0; x < t->len; x++) {
         v = t->val[x] + (v << 8);
@@ -185,14 +178,14 @@ implementation {
     uint32_t l = SIZEOF_TLV(s);
 
     if (l > limit)
-      tn_panic(1, l, limit, 0, 0);
+      tn_panic(TAGNET_AUTOWHERE, l, limit, 0, 0);
     return _copy_bytes((uint8_t *) s, (uint8_t *) d, l);
   }
 
 
   command bool   TagnetTLV.eq_tlv(tagnet_tlv_t *s, tagnet_tlv_t *t) {
     if ((s->typ >= _TN_TLV_COUNT) || (t->typ >= _TN_TLV_COUNT))
-      tn_panic(2, (parg_t) s, s->typ, (parg_t) t, t->typ);
+      tn_panic(TAGNET_AUTOWHERE, (parg_t) s, s->typ, (parg_t) t, t->typ);
     nop();                              /* BRK */
     return (_cmp_bytes((uint8_t *)s, (uint8_t *)t, SIZEOF_TLV(s)));
   }
@@ -200,13 +193,13 @@ implementation {
 
   command uint32_t   TagnetTLV.get_len(tagnet_tlv_t *t) {
     if (t->typ >= _TN_TLV_COUNT)
-      tn_panic(3, (parg_t) t, t->typ, t->len, 0);
+      tn_panic(TAGNET_AUTOWHERE, (parg_t) t, t->typ, t->len, 0);
     return SIZEOF_TLV(t);
   }
 
   command uint32_t   TagnetTLV.get_len_v(tagnet_tlv_t *t) {
     if (t->typ >= _TN_TLV_COUNT)
-      tn_panic(4, (parg_t) t, t->typ, t->len, 0);
+      tn_panic(TAGNET_AUTOWHERE, (parg_t) t, t->typ, t->len, 0);
     return t->len;
   }
 
@@ -219,7 +212,7 @@ implementation {
     if (t->len == 0 || t->typ == TN_TLV_NONE)
       return NULL;
     if (t->typ >= _TN_TLV_COUNT)
-      tn_panic(5, (parg_t) t, t->typ, t->len, 0);
+      tn_panic(TAGNET_AUTOWHERE, (parg_t) t, t->typ, t->len, 0);
 
     nx = SIZEOF_TLV(t);
     if (nx < limit) {
@@ -237,7 +230,7 @@ implementation {
 
   command tagnet_tlv_type_t TagnetTLV.get_tlv_type(tagnet_tlv_t *t) {
     if (t->typ >= _TN_TLV_COUNT)
-      tn_panic(6, (parg_t) t, t->typ, t->len, 0);
+      tn_panic(TAGNET_AUTOWHERE, (parg_t) t, t->typ, t->len, 0);
     return t->typ;
   }
 
@@ -269,7 +262,7 @@ implementation {
     uint8_t        *vb;
 
     if ((!t) || ((sizeof(rtctime_t) + sizeof(tagnet_tlv_t)) > limit))
-      tn_panic(8, (parg_t) t, t->typ, t->len, limit);
+      tn_panic(TAGNET_AUTOWHERE, (parg_t) t, t->typ, t->len, limit);
     vb = (uint8_t *) v;
     for (i = 0; i < sizeof(*v); i++)
       t->val[i] = vb[i];
@@ -380,7 +373,7 @@ implementation {
     uint8_t        *vb = (uint8_t *) v;
 
     if ((!t) || ((sizeof(image_ver_t) + sizeof(tagnet_tlv_t)) > limit))
-      tn_panic(8, (parg_t) t, t->typ, t->len, limit);
+      tn_panic(TAGNET_AUTOWHERE, (parg_t) t, t->typ, t->len, limit);
     for (i = 0; i <  sizeof(image_ver_t); i++) {
       t->val[i]= vb[i];
     }

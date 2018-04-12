@@ -30,6 +30,7 @@
 #include <image_info.h>
 #include <overwatch.h>
 #include <rtctime.h>
+#include <tagnet_panic.h>
 
 module TagnetSysExecP {
   provides interface  TagnetSysExecAdapter      as  SysActive;
@@ -184,8 +185,10 @@ implementation {
   command bool SysRtcTime.get_value(rtctime_t *rtp, uint32_t *lenp) {
     error_t err;
 
+    /* does this actually optimize out? */
+    /* or does the *lenp trip up the optimizer? */
     if (!rtp || (!lenp) || (*lenp < sizeof(*rtp)))
-      call Panic.panic(PANIC_TAGNET, 11, 0, 0, 0, 0);
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
     err = call Rtc.getTime(rtp);
     if (err) {
@@ -200,7 +203,7 @@ implementation {
     error_t     err;
 
     if (!rtp || (!lenp) || (*lenp < sizeof(*rtp)))
-      call Panic.panic(PANIC_TAGNET, 12, 0, 0, 0, 0);
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
     err = call Rtc.setTime(rtp);
     if (err) {

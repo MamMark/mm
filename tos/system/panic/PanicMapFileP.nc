@@ -27,8 +27,8 @@
 
 #include <TinyError.h>
 #include <panic.h>
-#include <platform_panic.h>
 #include <sd.h>
+#include <tagnet_panic.h>
 
 typedef struct {
   uint32_t             base;         // first sector of panic file
@@ -140,7 +140,7 @@ implementation {
      */
     if (pmf_cb.sector.cur < call PanicManager.getPanicBase() ||
         pmf_cb.sector.cur > call PanicManager.getPanicLimit())
-      pmap_panic(2, 0, 0);              /* no return */
+      pmap_panic(TAGNET_AUTOWHERE, 0, 0);              /* no return */
     pmf_cb.err = call SDResource.request();
     if (pmf_cb.err == SUCCESS)
       return TRUE;
@@ -204,7 +204,7 @@ implementation {
     pmf_cb.file_pos = 0;
     pmf_cb.err = err;
     if (err && err != EODATA)
-      pmap_panic(4, err, 0);
+      pmap_panic(TAGNET_AUTOWHERE, err, 0);
     _get_new_sector(0, pmf_cb.file_pos);
   }
 

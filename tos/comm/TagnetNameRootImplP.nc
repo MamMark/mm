@@ -19,15 +19,7 @@
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>
  */
 
-#include <platform_panic.h>
-
-#ifndef PANIC_TAGNET
-enum {
-  __pcode_tagnet = unique(UQ_PANIC_SUBSYS)
-};
-
-#define PANIC_TAGNET __pcode_tagnet
-#endif
+#include <tagnet_panic.h>
 
 module TagnetNameRootImplP {
   provides interface Tagnet;
@@ -48,7 +40,8 @@ implementation {
     uint8_t          i;
 
     if (!msg)
-      call Panic.panic(PANIC_TAGNET, 189, 0, 0, 0, 0);       /* null trap */
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                       0, 0, 0, 0);       /* null trap */
 
     // start at the beginning of the name
     this_tlv = call TName.first_element(msg);
@@ -87,7 +80,7 @@ implementation {
     uint32_t i;
 
     if (limit < sizeof(nid_buf))
-      call Panic.panic(PANIC_TAGNET, 95, 0,0,0,0);
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
     for (i = 0; i < sizeof(nid_buf); i++) {
       buf[i] = nid_buf[i];
