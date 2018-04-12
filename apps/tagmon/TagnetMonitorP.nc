@@ -122,13 +122,22 @@ implementation {
     nop();
   }
 
+
   event void rcTimer.fired() {
     error_t err;
 
     tagMsgSending = TRUE;
     err = call RadioSend.send(pTagMsg);
-    if (err)
-      call Panic.panic(PANIC_TAGNET, 190, err, 0, 0, 0);
+    switch (err) {
+      case SUCCESS:
+        break;
+      case EBUSY: // collided with a receive
+        tagMsgSending = FALSE;
+        tagMsgBusy    = FALSE;
+        break;
+      default:
+        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, err, 0, 0, 0);
+    }
   }
 
   event void txTimer.fired() {
