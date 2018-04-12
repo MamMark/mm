@@ -74,13 +74,20 @@ implementation {
 
 
   command error_t    SysActive.set_version(image_ver_t *versionp) {
-    /* note that overwatch.install() is called when set_active_complete()
-     * is signalled
-     */
     if (!versionp)
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     return call IM.dir_set_active(versionp);
   }
+
+
+  event   void    IM.dir_set_active_complete() {
+    /*
+     * Image has now been set active, next step is to force Overwatch
+     * to install it and then reboot into it.
+     */
+    call OW.install();          /* won't return */
+  }
+
 
   /*
    * Backup Image control
@@ -235,15 +242,6 @@ implementation {
       return FALSE;
     }
     return TRUE;
-  }
-
-
-  event   void    IM.dir_set_active_complete() {
-    /*
-     * Image has now been set active, next step is to force Overwatch
-     * to install it and then reboot into it.
-     */
-    call OW.install();          /* won't return */
   }
 
 
