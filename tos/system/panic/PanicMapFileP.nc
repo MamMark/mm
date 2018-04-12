@@ -61,7 +61,7 @@ implementation {
   panic_map_file_t     pmf_cb;
   uint8_t              pmf_sbuf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
 
-  void pmap_panic(uint8_t where, parg_t p0, parg_t p1) {
+  inline void pmap_panic(uint8_t where, parg_t p0, parg_t p1) {
     call Panic.panic(PANIC_TAGNET, where, p0, p1, pmf_cb.sector.base,
                      pmf_cb.sector.eof);
   }

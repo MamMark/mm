@@ -84,13 +84,10 @@ module TagnetTlvP {
 }
 implementation {
 
-#define tn_panic(where, arg0, arg1, arg2, arg3) \
-  do { call Panic.panic(PANIC_TAGNET, where, arg0, arg1, arg2, arg3); } \
-  while (0)
-
-#define tn_warn(where, arg0, arg1, arg2, arg3) \
-  do { call Panic.warn(PANIC_TAGNET, where, arg0, arg1, arg2, arg3); } \
-  while (0)
+  inline void tn_panic(uint8_t where, parg_t arg0, parg_t arg1,
+                               parg_t arg2, parg_t arg3) {
+    call Panic.panic(PANIC_TAGNET, where, arg0, arg1, arg2, arg3);
+  }
 
 
   uint32_t _copy_bytes(uint8_t *s, uint8_t *d, uint32_t l) {

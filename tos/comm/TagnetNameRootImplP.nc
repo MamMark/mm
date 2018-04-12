@@ -88,11 +88,6 @@ implementation {
     return i;
   }
 
-  default event bool Sub.evaluate[uint8_t id](message_t* msg)      { return TRUE; }
-  default event void Sub.add_name_tlv[uint8_t id](message_t *msg)  { }
-  default event void Sub.add_value_tlv[uint8_t id](message_t *msg) { }
-  default event void Sub.add_help_tlv[uint8_t id](message_t *msg)  { }
-
   event void Boot.booted() {
     uint8_t     *node_id;
     unsigned int node_len, i;
@@ -106,6 +101,10 @@ implementation {
       nid_buf[2+i] = node_id[i];
   }
 
+  default event bool Sub.evaluate[uint8_t id](message_t* msg)      { return TRUE; }
+  default event void Sub.add_name_tlv[uint8_t id](message_t *msg)  { }
+  default event void Sub.add_value_tlv[uint8_t id](message_t *msg) { }
+  default event void Sub.add_help_tlv[uint8_t id](message_t *msg)  { }
 
   async event void Panic.hook(){ }
 }
