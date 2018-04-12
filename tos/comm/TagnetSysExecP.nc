@@ -62,6 +62,8 @@ implementation {
   command error_t    SysActive.get_version(image_ver_t *versionp) {
     image_dir_slot_t    *dirp;
 
+    if (!versionp)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     dirp = call IMD.dir_get_active();
     if (dirp) {
       call IMD.setVer(&dirp->ver_id, versionp);
@@ -75,6 +77,8 @@ implementation {
     /* note that overwatch.install() is called when set_active_complete()
      * is signalled
      */
+    if (!versionp)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     return call IM.dir_set_active(versionp);
   }
 
@@ -94,6 +98,8 @@ implementation {
   command error_t SysBackup.get_version(image_ver_t *versionp) {
     image_dir_slot_t*dirp;
 
+    if (!versionp)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     dirp = call IMD.dir_get_backup();
     if (dirp) {
       call IMD.setVer(&dirp->ver_id, versionp);
@@ -103,6 +109,8 @@ implementation {
   }
 
   command error_t SysBackup.set_version(image_ver_t *versionp) {
+    if (!versionp)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     return call IM.dir_set_backup(versionp);
   }
 
@@ -113,12 +121,18 @@ implementation {
 
   command error_t SysGolden.get_version(image_ver_t *versionp) {
     image_info_t    *infop = (void *) IMAGE_META_OFFSET;
+
+    if (!versionp)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     call IMD.setVer(&infop->ver_id, versionp);
     return SUCCESS;
   }
 
   command error_t SysGolden.set_version(image_ver_t *versionp) {
     image_ver_t run_verp;
+
+    if (!versionp)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     if ((call SysGolden.get_version(&run_verp) != SUCCESS) ||
         (!call IMD.verEqual(&run_verp, versionp)))
       return EINVAL;
@@ -133,12 +147,18 @@ implementation {
 
   command error_t SysNIB.get_version(image_ver_t *versionp) {
     image_info_t    *infop = (void *) NIB_BASE + IMAGE_META_OFFSET;
+
+    if (!versionp)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     call IMD.setVer(&infop->ver_id, versionp);
     return SUCCESS;
   }
 
   command error_t SysNIB.set_version(image_ver_t *versionp) {
     image_ver_t run_verp;
+
+    if (!versionp)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     if ((call SysNIB.get_version(&run_verp) != SUCCESS) ||
         (!call IMD.verEqual(&run_verp, versionp)))
       return EINVAL;
@@ -159,6 +179,8 @@ implementation {
   }
 
   command error_t SysRunning.get_version(image_ver_t *versionp) {
+    if (!versionp)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     if (call OW.getImageBase())
       return call SysNIB.get_version(versionp);
     else
@@ -168,6 +190,8 @@ implementation {
   command error_t SysRunning.set_version(image_ver_t *versionp) {
     image_ver_t run_verp;
 
+    if (!versionp)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     if ((call SysRunning.get_version(&run_verp) != SUCCESS) ||
         (!call IMD.verEqual(&run_verp, versionp)))
       return EINVAL;
