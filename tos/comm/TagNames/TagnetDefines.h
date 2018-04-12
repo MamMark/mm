@@ -29,18 +29,19 @@ typedef enum {                   //      (parent) name
   TN_25_ID              =    25, //  (   sys    ) golden
   TN_26_ID              =    26, //  (   sys    ) nib
   TN_27_ID              =    27, //  (   sys    ) running
-  TN_28_ID              =    28, //  (   tag    ) .test
-  TN_29_ID              =    29, //  (  .test   ) zero
-  TN_30_ID              =    30, //  (   zero   ) byte
-  TN_31_ID              =    31, //  (  .test   ) ones
-  TN_32_ID              =    32, //  (   ones   ) byte
-  TN_33_ID              =    33, //  (  .test   ) echo
-  TN_34_ID              =    34, //  (   echo   ) byte
-  TN_35_ID              =    35, //  (  .test   ) drop
-  TN_36_ID              =    36, //  (   drop   ) byte
-  TN_37_ID              =    37, //  (  .test   ) rssi
-  TN_38_ID              =    38, //  (  .test   ) tx_pwr
-  TN_LAST_ID            =    39,
+  TN_28_ID              =    28, //  (   sys    ) rtc
+  TN_29_ID              =    29, //  (   tag    ) .test
+  TN_30_ID              =    30, //  (  .test   ) zero
+  TN_31_ID              =    31, //  (   zero   ) byte
+  TN_32_ID              =    32, //  (  .test   ) ones
+  TN_33_ID              =    33, //  (   ones   ) byte
+  TN_34_ID              =    34, //  (  .test   ) echo
+  TN_35_ID              =    35, //  (   echo   ) byte
+  TN_36_ID              =    36, //  (  .test   ) drop
+  TN_37_ID              =    37, //  (   drop   ) byte
+  TN_38_ID              =    38, //  (  .test   ) rssi
+  TN_39_ID              =    39, //  (  .test   ) tx_pwr
+  TN_LAST_ID            =    40,
   TN_ROOT_ID            =     0,
   TN_MAX_ID             =  65000,
 } tn_ids_t;
@@ -84,6 +85,7 @@ typedef enum {                   //      (parent) name
 #define  TN_36_UQ                "TN_36_UQ"
 #define  TN_37_UQ                "TN_37_UQ"
 #define  TN_38_UQ                "TN_38_UQ"
+#define  TN_39_UQ                "TN_39_UQ"
 #define UQ_TAGNET_ADAPTER_LIST  "UQ_TAGNET_ADAPTER_LIST"
 #define UQ_TN_ROOT               TN_0_UQ
 /* structure used to hold configuration values for each of the elements
@@ -125,16 +127,17 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   { TN_25_ID, "\01\06golden", "\01\04help", TN_25_UQ },
   { TN_26_ID, "\01\03nib", "\01\04help", TN_26_UQ },
   { TN_27_ID, "\01\07running", "\01\04help", TN_27_UQ },
-  { TN_28_ID, "\01\05.test", "\01\04help", TN_28_UQ },
-  { TN_29_ID, "\01\04zero", "\01\04help", TN_29_UQ },
-  { TN_30_ID, "\01\04byte", "\01\04help", TN_30_UQ },
-  { TN_31_ID, "\01\04ones", "\01\04help", TN_31_UQ },
-  { TN_32_ID, "\01\04byte", "\01\04help", TN_32_UQ },
-  { TN_33_ID, "\01\04echo", "\01\04help", TN_33_UQ },
-  { TN_34_ID, "\01\04byte", "\01\04help", TN_34_UQ },
-  { TN_35_ID, "\01\04drop", "\01\04help", TN_35_UQ },
-  { TN_36_ID, "\01\04byte", "\01\04help", TN_36_UQ },
-  { TN_37_ID, "\01\04rssi", "\01\04help", TN_37_UQ },
-  { TN_38_ID, "\01\06tx_pwr", "\01\04help", TN_38_UQ },
+  { TN_28_ID, "\01\03rtc", "\01\04help", TN_28_UQ },
+  { TN_29_ID, "\01\05.test", "\01\04help", TN_29_UQ },
+  { TN_30_ID, "\01\04zero", "\01\04help", TN_30_UQ },
+  { TN_31_ID, "\01\04byte", "\01\04help", TN_31_UQ },
+  { TN_32_ID, "\01\04ones", "\01\04help", TN_32_UQ },
+  { TN_33_ID, "\01\04byte", "\01\04help", TN_33_UQ },
+  { TN_34_ID, "\01\04echo", "\01\04help", TN_34_UQ },
+  { TN_35_ID, "\01\04byte", "\01\04help", TN_35_UQ },
+  { TN_36_ID, "\01\04drop", "\01\04help", TN_36_UQ },
+  { TN_37_ID, "\01\04byte", "\01\04help", TN_37_UQ },
+  { TN_38_ID, "\01\04rssi", "\01\04help", TN_38_UQ },
+  { TN_39_ID, "\01\06tx_pwr", "\01\04help", TN_39_UQ },
 };
 

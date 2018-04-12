@@ -15,14 +15,12 @@ configuration TagnetC {
   }
   uses {
     interface      TagnetSysExecAdapter                     as SysBackup;
-    interface             TagnetAdapter<tagnet_file_bytes_t>  as TestZeroBytes;
-    interface      TagnetSysExecAdapter                     as SysGolden;
-    interface             TagnetAdapter<message_t>          as RadioRSSI;
-    interface      TagnetSysExecAdapter                     as SysNIB;
-    interface             TagnetAdapter<tagnet_file_bytes_t>  as TestDropBytes;
-    interface      TagnetSysExecAdapter                     as SysRunning;
     interface             TagnetAdapter<message_t>          as RadioTxPower;
-    interface             TagnetAdapter<tagnet_file_bytes_t>  as TestOnesBytes;
+    interface      TagnetSysExecAdapter                     as SysGolden;
+    interface             TagnetAdapter<tagnet_file_bytes_t>  as TestDropBytes;
+    interface      TagnetSysExecAdapter                     as SysNIB;
+    interface      TagnetSysExecAdapter                     as SysRunning;
+    interface             TagnetAdapter<message_t>          as RadioRSSI;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as PanicBytes;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as DblkBytes;
     interface             TagnetAdapter<uint32_t>           as DblkLastRecNum;
@@ -30,12 +28,15 @@ configuration TagnetC {
     interface             TagnetAdapter<uint32_t>           as DblkLastSyncOffset;
     interface             TagnetAdapter<uint32_t>           as DblkLastRecOffset;
     interface             TagnetAdapter<uint32_t>           as DblkCommittedOffset;
+    interface             TagnetAdapter<tagnet_file_bytes_t>  as TestZeroBytes;
     interface      TagnetSysExecAdapter                     as SysActive;
+    interface             TagnetAdapter<rtctime_t>          as SysRtcTime;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as TestEchoBytes;
     interface             TagnetAdapter<message_t>          as PollEvent;
     interface             TagnetAdapter<int32_t>            as PollCount;
     interface             TagnetAdapter<tagnet_gps_cmd_t>   as InfoSensGpsCmd;
     interface             TagnetAdapter<tagnet_gps_xyz_t>   as InfoSensGpsXyz;
+    interface             TagnetAdapter<tagnet_file_bytes_t>  as TestOnesBytes;
   }
 }
 implementation {
@@ -73,17 +74,18 @@ implementation {
     components new   TagnetSysExecAdapterP ( TN_25_ID )        as   tn_25_Vx;
     components new   TagnetSysExecAdapterP ( TN_26_ID )        as   tn_26_Vx;
     components new   TagnetSysExecAdapterP ( TN_27_ID )        as   tn_27_Vx;
-    components new      TagnetNameElementP (TN_28_ID,TN_28_UQ) as   tn_28_Vx;
+    components new   TagnetRtcTimeAdapterP ( TN_28_ID )        as   tn_28_Vx;
     components new      TagnetNameElementP (TN_29_ID,TN_29_UQ) as   tn_29_Vx;
-    components new  TagnetFileByteAdapterP ( TN_30_ID )        as   tn_30_Vx;
-    components new      TagnetNameElementP (TN_31_ID,TN_31_UQ) as   tn_31_Vx;
-    components new  TagnetFileByteAdapterP ( TN_32_ID )        as   tn_32_Vx;
-    components new      TagnetNameElementP (TN_33_ID,TN_33_UQ) as   tn_33_Vx;
-    components new  TagnetFileByteAdapterP ( TN_34_ID )        as   tn_34_Vx;
-    components new      TagnetNameElementP (TN_35_ID,TN_35_UQ) as   tn_35_Vx;
-    components new  TagnetFileByteAdapterP ( TN_36_ID )        as   tn_36_Vx;
-    components new       TagnetMsgAdapterP ( TN_37_ID )        as   tn_37_Vx;
+    components new      TagnetNameElementP (TN_30_ID,TN_30_UQ) as   tn_30_Vx;
+    components new  TagnetFileByteAdapterP ( TN_31_ID )        as   tn_31_Vx;
+    components new      TagnetNameElementP (TN_32_ID,TN_32_UQ) as   tn_32_Vx;
+    components new  TagnetFileByteAdapterP ( TN_33_ID )        as   tn_33_Vx;
+    components new      TagnetNameElementP (TN_34_ID,TN_34_UQ) as   tn_34_Vx;
+    components new  TagnetFileByteAdapterP ( TN_35_ID )        as   tn_35_Vx;
+    components new      TagnetNameElementP (TN_36_ID,TN_36_UQ) as   tn_36_Vx;
+    components new  TagnetFileByteAdapterP ( TN_37_ID )        as   tn_37_Vx;
     components new       TagnetMsgAdapterP ( TN_38_ID )        as   tn_38_Vx;
+    components new       TagnetMsgAdapterP ( TN_39_ID )        as   tn_39_Vx;
 
     Tagnet           =     tn_0_Vx;
        tn_1_Vx.Super ->     tn_0_Vx.Sub[unique(TN_0_UQ)];
@@ -129,21 +131,23 @@ implementation {
     SysNIB           =     tn_26_Vx.Adapter;
       tn_27_Vx.Super ->    tn_22_Vx.Sub[unique(TN_22_UQ)];
     SysRunning       =     tn_27_Vx.Adapter;
-      tn_28_Vx.Super ->     tn_1_Vx.Sub[unique(TN_1_UQ)];
-      tn_29_Vx.Super ->    tn_28_Vx.Sub[unique(TN_28_UQ)];
+      tn_28_Vx.Super ->    tn_22_Vx.Sub[unique(TN_22_UQ)];
+    SysRtcTime       =     tn_28_Vx.Adapter;
+      tn_29_Vx.Super ->     tn_1_Vx.Sub[unique(TN_1_UQ)];
       tn_30_Vx.Super ->    tn_29_Vx.Sub[unique(TN_29_UQ)];
-    TestZeroBytes    =     tn_30_Vx.Adapter;
-      tn_31_Vx.Super ->    tn_28_Vx.Sub[unique(TN_28_UQ)];
-      tn_32_Vx.Super ->    tn_31_Vx.Sub[unique(TN_31_UQ)];
-    TestOnesBytes    =     tn_32_Vx.Adapter;
-      tn_33_Vx.Super ->    tn_28_Vx.Sub[unique(TN_28_UQ)];
-      tn_34_Vx.Super ->    tn_33_Vx.Sub[unique(TN_33_UQ)];
-    TestEchoBytes    =     tn_34_Vx.Adapter;
-      tn_35_Vx.Super ->    tn_28_Vx.Sub[unique(TN_28_UQ)];
-      tn_36_Vx.Super ->    tn_35_Vx.Sub[unique(TN_35_UQ)];
-    TestDropBytes    =     tn_36_Vx.Adapter;
-      tn_37_Vx.Super ->    tn_28_Vx.Sub[unique(TN_28_UQ)];
-    RadioRSSI        =     tn_37_Vx.Adapter;
-      tn_38_Vx.Super ->    tn_28_Vx.Sub[unique(TN_28_UQ)];
-    RadioTxPower     =     tn_38_Vx.Adapter;
+      tn_31_Vx.Super ->    tn_30_Vx.Sub[unique(TN_30_UQ)];
+    TestZeroBytes    =     tn_31_Vx.Adapter;
+      tn_32_Vx.Super ->    tn_29_Vx.Sub[unique(TN_29_UQ)];
+      tn_33_Vx.Super ->    tn_32_Vx.Sub[unique(TN_32_UQ)];
+    TestOnesBytes    =     tn_33_Vx.Adapter;
+      tn_34_Vx.Super ->    tn_29_Vx.Sub[unique(TN_29_UQ)];
+      tn_35_Vx.Super ->    tn_34_Vx.Sub[unique(TN_34_UQ)];
+    TestEchoBytes    =     tn_35_Vx.Adapter;
+      tn_36_Vx.Super ->    tn_29_Vx.Sub[unique(TN_29_UQ)];
+      tn_37_Vx.Super ->    tn_36_Vx.Sub[unique(TN_36_UQ)];
+    TestDropBytes    =     tn_37_Vx.Adapter;
+      tn_38_Vx.Super ->    tn_29_Vx.Sub[unique(TN_29_UQ)];
+    RadioRSSI        =     tn_38_Vx.Adapter;
+      tn_39_Vx.Super ->    tn_29_Vx.Sub[unique(TN_29_UQ)];
+    RadioTxPower     =     tn_39_Vx.Adapter;
 }

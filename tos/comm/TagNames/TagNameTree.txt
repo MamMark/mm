@@ -36,4 +36,5 @@ root
         |-- backup
         |-- golden
         |-- nib
+        |-- rtc
         +-- running

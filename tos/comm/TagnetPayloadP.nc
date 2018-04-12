@@ -59,6 +59,7 @@
 #include "message.h"
 #include "Tagnet.h"
 #include "TagnetTLV.h"
+#include <rtctime.h>
 
 #define TN_PLOAD_DBG
 //#define TN_PLOAD_DBG __attribute__((optimize("O0")))
@@ -83,6 +84,19 @@ implementation {
     call THdr.set_pload_type_tlv(msg);
     call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
     getMeta(msg)->this += added;
+    return added;
+  }
+
+  command uint8_t TN_PLOAD_DBG  TagnetPayload.add_rtctime(message_t *msg, rtctime_t *v) {
+    tagnet_tlv_t     *tv = call TagnetPayload.this_element(msg);
+    int               added;
+
+    added = call TTLV.rtctime_to_tlv(v, tv, call TagnetPayload.bytes_avail(msg));
+    if (added) {
+      call THdr.set_pload_type_tlv(msg);
+      call THdr.set_message_len(msg, call THdr.get_message_len(msg) + added);
+      getMeta(msg)->this += added;
+    }
     return added;
   }
 

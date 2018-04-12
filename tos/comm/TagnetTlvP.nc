@@ -74,6 +74,7 @@
  */
 
 #include <TagnetTLV.h>
+#include <rtctime.h>
 #include <platform_panic.h>
 
 #ifndef PANIC_TAGNET
@@ -263,6 +264,21 @@ implementation {
   }
 
 
+  command uint32_t   TagnetTLV.rtctime_to_tlv(rtctime_t *v, tagnet_tlv_t *t, uint32_t limit) {
+    uint32_t        i;
+    uint8_t        *vb;
+
+    if ((!t) || ((sizeof(rtctime_t) + sizeof(tagnet_tlv_t)) > limit))
+      tn_panic(8, (parg_t) t, t->typ, t->len, limit);
+    vb = (uint8_t *) v;
+    for (i = 0; i < sizeof(*v); i++)
+      t->val[i] = vb[i];
+    t->typ = TN_TLV_UTC_TIME;
+    t->len = sizeof(rtctime_t);
+    return SIZEOF_TLV(t);
+  }
+
+
   command uint32_t  TagnetTLV.error_to_tlv(int32_t err,  tagnet_tlv_t *t, uint32_t limit) {
     return int2tlv(TN_TLV_ERROR, err, t, limit);
   }
@@ -323,6 +339,13 @@ implementation {
 
   command int32_t   TagnetTLV.tlv_to_delay(tagnet_tlv_t *t) {
     return tlv2int(TN_TLV_DELAY, t);
+  }
+
+  command rtctime_t   *TagnetTLV.tlv_to_rtctime(tagnet_tlv_t *t) {
+    if ((t) && (t->typ == TN_TLV_UTC_TIME)) {
+      return (rtctime_t *) &t->val;
+    }
+    return NULL;
   }
 
   command int32_t   TagnetTLV.tlv_to_error(tagnet_tlv_t *t) {

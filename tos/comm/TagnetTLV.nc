@@ -55,6 +55,15 @@ interface TagnetTLV {
    */
   command uint32_t          copy_tlv(tagnet_tlv_t *t, tagnet_tlv_t *d, uint32_t limit);
   /**
+   * Convert rtctime value into a Tagnet TLV and store in destination location
+   *
+   * @param   v             rtctime value to store in the tlv
+   * @param   t             pointer of tlv to use as destination location
+   * @param   limit         maximum bytes available at destination tlv
+   * @return  uint32_t      number of bytes stored in destination
+   */
+  command uint32_t          rtctime_to_tlv(rtctime_t *v, tagnet_tlv_t *t, uint32_t limit);
+  /**
    * Convert delay value into a Tagnet TLV and store in destination location
    *
    * @param   i             integer value to store in the tlv
@@ -191,6 +200,13 @@ interface TagnetTLV {
    * @return  uint32_t      integer value from tlv. zero if can't be converted
    */
   command int32_t           tlv_to_delay(tagnet_tlv_t *t);
+  /**
+   * Convert tlv to rtctime. tlv must be a rtctime tlv tagnet type
+   *
+   * @param   t             pointer of tlv to convert
+   * @return  rtctime_t    pointer to rtctime (limited access to life of msg)
+   */
+  command rtctime_t       *tlv_to_rtctime(tagnet_tlv_t *t);
   /**
    * Convert tlv to integer. tlv must be an integer tlv tagnet type
    *
