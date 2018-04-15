@@ -94,7 +94,7 @@ implementation {
 
 
   async command int Rtc.compareTimes(rtctime_t *time0p, rtctime_t *time1p) {
-    call Msp432Rtc.compareTimes(time0p, time1p);
+    return call Msp432Rtc.compareTimes(time0p, time1p);
   }
 
 
