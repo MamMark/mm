@@ -464,6 +464,7 @@ implementation {
       msg->state = GPS_MSG_FILLING;
       gmc.tail   = idx;                 /* advance tail */
 
+      call Rtc.getTime(&msg->arrival_rt);
       gmc.free = gmc.free + len;
       gmc.free_len -= len;              /* zero is okay */
       gmc.allocated += len;
