@@ -57,12 +57,12 @@ implementation {
   }
 
 
-  async command error_t Rtc.setTime(rtctime_t *timep) {
-    return call Msp432Rtc.setTime(timep);
+  async command void Rtc.setTime(rtctime_t *timep) {
+    call Msp432Rtc.setTime(timep);
   }
 
 
-  async command error_t Rtc.getTime(rtctime_t *timep) {
+  async command void Rtc.getTime(rtctime_t *timep) {
 #ifdef FAKE_RTC
     uint32_t   lt, check;               /* LocalTime (ms) */
     rtctime_t *rp;
@@ -84,9 +84,9 @@ implementation {
     check = rp->min + rp->sec + rp->sub_sec;
     if (!check)
       nop();                            /* BRK */
-    return SUCCESS;
+    return;
 #else
-    return call Msp432Rtc.getTime(timep);
+    call Msp432Rtc.getTime(timep);
 #endif
   }
 

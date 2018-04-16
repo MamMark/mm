@@ -1,5 +1,5 @@
 /**
- * @Copyright (c) 2017 Daniel J. Maltbie
+ * @Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  * See COPYING in the top level directory of this source tree.
  *
- * @author Daniel J. Maltbie <dmaltbie@daloma.org>
+ * @contact: Daniel J. Maltbie <dmaltbie@daloma.org>
+ *           Eric B. Decker <cire831@gmail.com>
  */
 
 /**
@@ -232,35 +233,23 @@ implementation {
    * System Rtctime control, get/set
    */
   command bool SysRtcTime.get_value(rtctime_t *rtp, uint32_t *lenp) {
-    error_t err;
-
     /* does this actually optimize out? */
     /* or does the *lenp trip up the optimizer? */
     if (!rtp || (!lenp) || (*lenp < sizeof(*rtp)))
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
-    err = call Rtc.getTime(rtp);
+    call Rtc.getTime(rtp);
     __last_grab_rtc(0, rtp);
-    if (err) {
-      *lenp = 0;
-      return FALSE;
-    }
     return TRUE;
   }
 
 
   command bool SysRtcTime.set_value(rtctime_t *rtp, uint32_t *lenp) {
-    error_t     err;
-
     if (!rtp || (!lenp) || (*lenp < sizeof(*rtp)))
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
-    err = call Rtc.setTime(rtp);
+    call Rtc.setTime(rtp);
     __last_grab_rtc(1, rtp);
-    if (err) {
-      *lenp = 0;
-      return FALSE;
-    }
     return TRUE;
   }
 
