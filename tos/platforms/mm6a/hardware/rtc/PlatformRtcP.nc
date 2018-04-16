@@ -35,8 +35,10 @@ module PlatformRtcP {
   provides interface Rtc;
   uses {
     interface Rtc as Msp432Rtc;
-    interface LocalTime<TMilli>;
     interface Panic;
+#ifdef FAKE_RTC
+    interface LocalTime<TMilli>;
+#endif
   }
 }
 implementation {
@@ -61,7 +63,8 @@ implementation {
 
 
   async command error_t Rtc.getTime(rtctime_t *timep) {
-    uint32_t   lt;                      /* LocalTime (ms) */
+#ifdef FAKE_RTC
+    uint32_t   lt, check;               /* LocalTime (ms) */
     rtctime_t *rp;
 
     if (!timep)
@@ -77,9 +80,14 @@ implementation {
     rp->min     = (lt >> 24) & 0xff;    /* top byte        */
     rp->sec     = (lt >> 16) & 0xff;    /* next byte       */
     rp->sub_sec = lt & 0xffff;          /* and low 16 bits */
-    return SUCCESS;
 
-//  return call Msp432Rtc.getTime(timep);
+    check = rp->min + rp->sec + rp->sub_sec;
+    if (!check)
+      nop();                            /* BRK */
+    return SUCCESS;
+#else
+    return call Msp432Rtc.getTime(timep);
+#endif
   }
 
 

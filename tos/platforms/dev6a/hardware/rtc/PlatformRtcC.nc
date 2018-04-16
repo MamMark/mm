@@ -28,8 +28,10 @@ implementation {
   components Msp432RtcC;
   PlatformRtcP.Msp432Rtc -> Msp432RtcC;
 
+#ifdef FAKE_RTC
   components LocalTimeMilliC;
   PlatformRtcP.LocalTime -> LocalTimeMilliC;
+#endif
 
   components PanicC;
   PlatformRtcP.Panic -> PanicC;
