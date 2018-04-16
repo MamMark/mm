@@ -32,6 +32,15 @@
 #include <rtctime.h>
 #include <tagnet_panic.h>
 
+typedef struct {
+  uint32_t dir;
+  rtctime_t time;
+} last_rtc_t;
+
+#define LAST_RTC_MAX 16
+last_rtc_t last_rtc[LAST_RTC_MAX];
+uint32_t   last_rtc_idx;
+
 module TagnetSysExecP {
   provides interface  TagnetSysExecAdapter      as  SysActive;
   provides interface  TagnetSysExecAdapter      as  SysBackup;
@@ -46,6 +55,15 @@ module TagnetSysExecP {
   uses     interface  Panic;
 }
 implementation {
+
+  void __last_grab_rtc(uint32_t dir, rtctime_t *rtp) {
+    last_rtc[last_rtc_idx].dir = dir;
+    call Rtc.copyTime(&(last_rtc[last_rtc_idx++].time), rtp);
+    if (last_rtc_idx >= LAST_RTC_MAX)
+      last_rtc_idx = 0;
+  }
+
+
   /*
    * Active Image control
    */
@@ -222,6 +240,7 @@ implementation {
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
     err = call Rtc.getTime(rtp);
+    __last_grab_rtc(0, rtp);
     if (err) {
       *lenp = 0;
       return FALSE;
@@ -237,6 +256,7 @@ implementation {
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
     err = call Rtc.setTime(rtp);
+    __last_grab_rtc(1, rtp);
     if (err) {
       *lenp = 0;
       return FALSE;
