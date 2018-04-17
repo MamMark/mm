@@ -86,12 +86,26 @@ implementation {
         call THdr.set_response(msg);
         call THdr.set_error(msg, TE_PKT_OK);
         return TRUE;
+
       case TN_GET:
         call TPload.reset_payload(msg);
         call TPload.add_integer(msg, poll_count);
         call THdr.set_response(msg);
         call THdr.set_error(msg, TE_PKT_OK);
         return TRUE;
+
+      case TN_HEAD:
+        // return current size of file region, current file position,
+        // and last update time
+        // zzz needs to be fixed up when image directory holds size
+        // and creation date
+        call TPload.reset_payload(msg);                // no params
+        call THdr.set_response(msg);
+        call THdr.set_error(msg, TE_PKT_OK);
+        call TPload.add_offset(msg, 0);
+        call TPload.add_size(msg, 0);
+        return TRUE;
+
       default:
         break;
     }
