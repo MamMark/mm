@@ -233,8 +233,6 @@ implementation {
    * System Rtctime control, get/set
    */
   command bool SysRtcTime.get_value(rtctime_t *rtp, uint32_t *lenp) {
-    /* does this actually optimize out? */
-    /* or does the *lenp trip up the optimizer? */
     if (!rtp || (!lenp) || (*lenp < sizeof(*rtp)))
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
