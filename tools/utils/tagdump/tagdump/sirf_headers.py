@@ -75,11 +75,16 @@ class atom_sirf_swver(object):
           len(str0) + len(str1) + 2
 
         store val as the tuple (str0, str1)
+        stored strings do NOT include any trailing NUL.
+        however, the consumed value returned is the actual
+        number of bytes consumed.
         '''
         len0 = buf[0]
         len1 = buf[1]
-        self.val = ( buf[2:len0+2], buf[2+len0:2+len0+len1] )
-        return len(self.val[0]) + len(self.val[1]) + 2
+        str0 = buf[2:len0+2]
+        str1 = buf[2+len0:2+len0+len1]
+        self.val = ( str0.rstrip('\0'), str1.rstrip('\0') )
+        return len(str0) + len(str1) + 2
 
 
 class atom_sirf_dev_data(object):
