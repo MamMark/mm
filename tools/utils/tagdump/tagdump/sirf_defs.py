@@ -78,7 +78,7 @@ MID_OBJECT   = 2
 MID_NAME     = 3
 
 # SIRF_MAX_PAYLOAD is the maximum payload bytes we allow.
-# the protocol allows for up to 2^^11 - 1 (2047)
+# the protocol allows for up to 2^11 - 1 (2047)
 
 SIRF_MAX_PAYLOAD = 2047
 

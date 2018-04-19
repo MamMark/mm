@@ -22,7 +22,7 @@
 
 # object descriptors for gps data blocks
 
-__version__ = '0.2.0 (sh)'
+__version__ = '0.2.1 (sh)'
 
 import binascii
 from   decode_base  import *
@@ -147,9 +147,11 @@ mids_w_sids = [
 # start: 0xa0a2
 # len:   big endian, < 2047
 # mid:   byte
-sirf_hdr_obj = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
-                                  ('len',     atom(('>H', '0x{:04x}'))),
-                                  ('mid',     atom(('B',  '0x{:02x}')))]))
+sirf_hdr_obj = aggie(OrderedDict([
+    ('start',   atom(('>H', '0x{:04x}'))),
+    ('len',     atom(('>H', '0x{:04x}'))),
+    ('mid',     atom(('B',  '0x{:02x}'))),
+]))
 
 
 ########################################################################
@@ -160,6 +162,7 @@ sirf_hdr_obj = aggie(OrderedDict([('start',   atom(('>H', '0x{:04x}'))),
 # etc) is little endian (native order).
 #
 
+# navdata (2)
 sirf_nav_obj = aggie(OrderedDict([
     ('xpos',  atom(('>i', '{}'))),
     ('ypos',  atom(('>i', '{}'))),
@@ -173,40 +176,58 @@ sirf_nav_obj = aggie(OrderedDict([
     ('week10',atom(('>H', '{}'))),
     ('tow',   atom(('>I', '{}'))),
     ('nsats', atom(('B', '{}'))),
-    ('prns',  atom(('12s', '{}', binascii.hexlify)))]))
+    ('prns',  atom(('12s', '{}', binascii.hexlify))),
+]))
 
+
+# navtrack (4)
 sirf_navtrk_obj = aggie(OrderedDict([
     ('week10', atom(('>H', '{}'))),
     ('tow',    atom(('>I', '{}'))),
-    ('chans',  atom(('B',  '{}')))]))
+    ('chans',  atom(('B',  '{}'))),
+]))
 
-sirf_navtrk_chan = aggie([('sv_id',    atom(('B',  '{:2}'))),
-                         ('sv_az23',  atom(('B',  '{:3}'))),
-                         ('sv_el2',   atom(('B',  '{:3}'))),
-                         ('state',    atom(('>H', '0x{:04x}'))),
-                         ('cno0',     atom(('B',  '{}'))),
-                         ('cno1',     atom(('B',  '{}'))),
-                         ('cno2',     atom(('B',  '{}'))),
-                         ('cno3',     atom(('B',  '{}'))),
-                         ('cno4',     atom(('B',  '{}'))),
-                         ('cno5',     atom(('B',  '{}'))),
-                         ('cno6',     atom(('B',  '{}'))),
-                         ('cno7',     atom(('B',  '{}'))),
-                         ('cno8',     atom(('B',  '{}'))),
-                         ('cno9',     atom(('B',  '{}')))])
 
-sirf_vis_obj     = aggie([('vis_sats', atom(('B',  '{}')))])
+sirf_navtrk_chan = aggie(OrderedDict([
+    ('sv_id',    atom(('B',  '{:2}'))),
+    ('sv_az23',  atom(('B',  '{:3}'))),
+    ('sv_el2',   atom(('B',  '{:3}'))),
+    ('state',    atom(('>H', '0x{:04x}'))),
+    ('cno0',     atom(('B',  '{}'))),
+    ('cno1',     atom(('B',  '{}'))),
+    ('cno2',     atom(('B',  '{}'))),
+    ('cno3',     atom(('B',  '{}'))),
+    ('cno4',     atom(('B',  '{}'))),
+    ('cno5',     atom(('B',  '{}'))),
+    ('cno6',     atom(('B',  '{}'))),
+    ('cno7',     atom(('B',  '{}'))),
+    ('cno8',     atom(('B',  '{}'))),
+    ('cno9',     atom(('B',  '{}'))),
+]))
 
-sirf_vis_azel    = aggie([('sv_id',    atom(('B',  '{}'))),
-                         ('sv_az',    atom(('>h', '{}'))),
-                         ('sv_el',    atom(('>h', '{}')))])
 
-# OkToSend
-sirf_ots_obj = atom(('B', '{}'))
-
-# swver, its special
+# swver (6), its special
 sirf_swver_obj = atom_sirf_swver(('', '--<{}>--  --<{}>--'))
 
+
+# sat vis (13)
+sirf_vis_obj     = aggie(OrderedDict([
+    ('vis_sats', atom(('B',  '{}'))),
+]))
+
+sirf_vis_azel    = aggie(OrderedDict([
+    ('sv_id',    atom(('B',  '{}'))),
+    ('sv_az',    atom(('>h', '{}'))),
+    ('sv_el',    atom(('>h', '{}'))),
+]))
+
+
+
+# OkToSend (18)
+sirf_ots_obj = atom(('B', '{}'))
+
+
+# geodata (41)
 sirf_geo_obj = aggie(OrderedDict([
     ('nav_valid',        atom(('>H', '0x{:04x}'))),
     ('nav_type',         atom(('>H', '0x{:04x}'))),
@@ -246,15 +267,9 @@ sirf_geo_obj = aggie(OrderedDict([
 ]))
 
 
-# pwr_mode_req, MID 218, has SID
-sirf_pwr_mode_req_obj = aggie(OrderedDict([
-    ('sid',              atom(('B',  '{}'))),
-    ('timeout',          atom(('B',  '{}'))),
-    ('control',          atom(('B',  '{}'))),
-    ('reserved',         atom(('>H', '{}'))),
-]))
 
-# pwr_mode_rsp, MID 90, has SID
+
+# pwr_mode_rsp (90), has SID
 sirf_pwr_mode_rsp_obj = aggie(OrderedDict([
     ('sid',              atom(('B', '{}'))),
     ('error',            atom(('>H', '0x{:02x}'))),
@@ -262,7 +277,16 @@ sirf_pwr_mode_rsp_obj = aggie(OrderedDict([
 ]))
 
 
-# statistics, MID 225, 6
+# pwr_mode_req (218), has SID
+sirf_pwr_mode_req_obj = aggie(OrderedDict([
+    ('sid',              atom(('B',  '{}'))),
+    ('timeout',          atom(('B',  '{}'))),
+    ('control',          atom(('B',  '{}'))),
+    ('reserved',         atom(('>H', '{}'))),
+]))
+
+
+# statistics (225/6)
 sirf_statistics_obj    = aggie(OrderedDict([
     ('sid',             atom(('B',  '{}'))),
     ('ttff_reset',      atom(('>H', '{}'))),
@@ -283,7 +307,7 @@ sirf_statistics_obj    = aggie(OrderedDict([
     ('pos_mode',        atom(('B',  '{}'))),
     ('status',          atom(('>H', '{}'))),
     ('start_mode',      atom(('B',  '{}'))),
-    ('reserved',        atom(('B',  '{}')))
+    ('reserved',        atom(('B',  '{}'))),
 ]))
 
 
