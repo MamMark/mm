@@ -22,8 +22,9 @@
 # emitters for sirfbin data types
 
 from   misc_utils    import buf_str
+from   misc_utils    import dump_buf
 
-__version__ = '0.2.1 (se)'
+__version__ = '0.2.2.dev0 (se)'
 
 
 def emit_default(level, offset, buf, obj):
@@ -44,6 +45,7 @@ rnav1a = '    NAV_DATA: nsats: {}, x/y/z (m): {}/{}/{}  vel (m/s): {}/{}/{}'
 rnav1b = '    mode1: {:#02x}  mode2: {:#02x}  week10: {}  tow (s): {}'
 rnav1c = '    prns: {} hdop: {}'
 
+# mid 2 navdata
 def emit_sirf_nav_data(level, offset, buf, obj):
     xpos        = obj['xpos'].val
     ypos        = obj['ypos'].val
@@ -77,6 +79,7 @@ rnavtrkx = '    {:2}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno (avg): {}'
 rnavtrky = '    {:2}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno/s: {}'
 rnavtrkz = '    {:2}: az: {:3}  el: {:3}  state: {:#06x}  cno/s: {}'
 
+# mid 4 navtrk
 def emit_sirf_navtrk(level, offset, buf, obj):
     week10 = obj['week10'].val
     tow    = obj['tow'].val/float(100)
@@ -116,10 +119,42 @@ def emit_sirf_navtrk(level, offset, buf, obj):
                                   cno_str))
 
 
+# mid 6 swver
 def emit_sirf_swver(level, offset, buf, obj):
     print
     if (level >= 1):
         print '  {}'.format(obj)
+
+# mids 11 and 12, ack/nack
+def emit_sirf_ack_nack(level, offset, buf, obj):
+    print ' ({}/{})'.format(buf[0], buf[1])
+
+
+# mid 14, almanac data
+def emit_sirf_alm_data(level, offset, buf, obj):
+    svid   = obj['sv_id'].val
+    week   = obj['alm_week_status'].val
+    data   = obj['data'].val
+    chksum = obj['checksum'].val
+    ok     = 'G' if (week & 0x3f) else 'x'
+    week = week >> 6
+    print '  {:2d}/{}'.format(svid, ok)
+    if level >= 1:
+        print '    sv: {:2d}  week: {:4d}  checksum: 0x{:04x}'.format(
+            svid, week, chksum)
+    if level >= 2:
+        print
+        dump_buf(data, '    ', 'data: ')
+
+
+# mid 15, ephemeris data
+def emit_sirf_ephem_data(level, offset, buf, obj):
+    svid   = obj['sv_id'].val
+    data   = obj['data'].val
+    print '  {}'.format(svid)
+    if level >= 2:
+        print
+        dump_buf(data, '    ', 'data: ')
 
 
 # mid 18, OkToSend
@@ -239,6 +274,23 @@ def emit_sirf_geo(level, offset, buf, obj):
         print(rgeo2e.format(evpe, ete, ehve, clock_bias, clock_bias_err))
         print(rgeo2f.format(clock_drift, clock_drift_err, distance, distance_err))
         print(rgeo2g.format(head_err, nsats, hdop, additional_mode))
+
+
+
+# mid 130, set almanac data
+def emit_sirf_alm_set(level, offset, buf, obj):
+    print
+    data   = obj['data'].val
+    if level >= 2:
+        dump_buf(data, '    ', 'data: ')
+
+
+# mid 149, set ephemeris data
+def emit_sirf_ephem_set(level, offset, buf, obj):
+    print
+    data   = obj['data'].val
+    if level >= 2:
+        dump_buf(data, '    ', 'data: ')
 
 
 def emit_sirf_pwr_mode_req(level, offset, buf, obj):

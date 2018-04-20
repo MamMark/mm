@@ -22,7 +22,7 @@
 
 # object descriptors for gps data blocks
 
-__version__ = '0.2.1 (sh)'
+__version__ = '0.2.1.dev0 (sh)'
 
 import binascii
 from   decode_base  import *
@@ -227,9 +227,63 @@ sirf_vis_azel    = aggie(OrderedDict([
 ]))
 
 
+# almanac data (14)
+sirf_alm_data_obj = aggie(OrderedDict([
+    ('sv_id',               atom(('B',   '{}'))),
+    ('alm_week_status',     atom(('>H',  '0x{:04x}'))),
+    ('data',                atom(('24s', '{}', binascii.hexlify))),
+    ('checksum',            atom(('>H',  '0x{:04x}'))),
+]))
+
+
+# ephemeris data (15)
+sirf_ephem_data_obj = aggie(OrderedDict([
+    ('sv_id',               atom(('B',   '{}'))),
+    ('data',                atom(('90s', '{}', binascii.hexlify))),
+]))
+
 
 # OkToSend (18)
 sirf_ots_obj = atom(('B', '{}'))
+
+
+# NavParams (19)
+sirf_nav_params_obj = aggie(OrderedDict([
+    ('rsvd0',               atom(('>H', '0x{:04x}'))),
+    ('pos_calc_mode',       atom(('B',  '0x{:02x}'))),
+    ('alt_hold_mode',       atom(('B',  '0x{:02x}'))),
+    ('alt_hold_src',        atom(('B',  '0x{:02x}'))),
+    ('alt_src_input',       atom(('>h', '0x{:04x}'))),
+    ('degraded_mode',       atom(('B',  '0x{:02x}'))),
+    ('degraded_timeout',    atom(('B',  '{}'))),
+    ('dr_timeout',          atom(('B',  '{}'))),
+    ('track_smooth_mode',   atom(('B',  '0x{:02x}'))),
+    ('static_nav',          atom(('B',  '0x{:02x}'))),
+    ('3sv_least',           atom(('B',  '0x{:02x}'))),
+    ('rsvd1',               atom(('>I', '0x{:04x}'))),
+    ('dop_mask_mode',       atom(('B',  '0x{:02x}'))),
+    ('nav_ele_mask',        atom(('>h', '0x{:04x}'))),
+    ('nav_pwr_mask',        atom(('B',  '{}'))),
+    ('rsvd2',               atom(('>I', '0x{:04x}'))),
+    ('dgps_source',         atom(('B',  '0x{:02x}'))),
+    ('dgps_mode',           atom(('B',  '0x{:02x}'))),
+    ('dgps_timeout',        atom(('B',  '0x{:02x}'))),
+    ('rsvd3',               atom(('>I', '0x{:04x}'))),
+    ('lp_push_2_fix',       atom(('B',  '0x{:02x}'))),
+    ('lp_on_time',          atom(('>i', '0x{:04x}'))),
+    ('lp_interval',         atom(('>i', '{}'))),
+    ('user_tasks_ena',      atom(('B',  '0x{:02x}'))),
+    ('user_task_int',       atom(('>i', '0x{:04x}'))),
+    ('lp_pwr_cycling',      atom(('B',  '0x{:02x}'))),
+    ('lp_max_acq_srch',     atom(('>I', '0x{:04x}'))),
+    ('lp_max_off_time',     atom(('>I', '0x{:04x}'))),
+    ('apm_pwr_duty',        atom(('B',  '0x{:02x}'))),
+    ('num_fixes',           atom(('>H', '0x{:04x}'))),
+    ('time_btwn_fixes',     atom(('>H', '0x{:04x}'))),
+    ('hve_max',             atom(('B',  '0x{:02x}'))),
+    ('rsp_time_max',        atom(('B',  '0x{:02x}'))),
+    ('time_acq_duty_prio',  atom(('B',  '0x{:02x}'))),
+]))
 
 
 # geodata (41)
@@ -279,6 +333,52 @@ sirf_pwr_mode_rsp_obj = aggie(OrderedDict([
     ('sid',              atom(('B', '{}'))),
     ('error',            atom(('>H', '0x{:02x}'))),
     ('reserved',         atom(('>H', '{}'))),
+]))
+
+
+# init_data_src (128)
+sirf_init_data_src_obj = aggie(OrderedDict([
+    ('ecef_x',           atom(('>i', '{}'))),
+    ('ecef_y',           atom(('>i', '{}'))),
+    ('ecef_z',           atom(('>i', '{}'))),
+    ('clock_drift',      atom(('>i', '{}'))),
+    ('tow',              atom(('>I', '{}'))),
+    ('week_x',           atom(('>H', '{}'))),
+    ('chans',            atom(('B',  '{}'))),
+    ('reset_config',     atom(('B',  '0x{:02x}'))),
+]))
+
+
+# almanac set (130)
+sirf_alm_set_obj = aggie(OrderedDict([
+    ('data',             atom(('892s', '{}', binascii.hexlify))),
+]))
+
+
+# ephemeris set (149)
+sirf_ephem_set_obj = aggie(OrderedDict([
+    ('data',             atom(('90s', '{}', binascii.hexlify))),
+]))
+
+
+# set msg rate (166)
+sirf_set_msg_rate_obj = aggie(OrderedDict([
+    ('mode',             atom(('B', '{}'))),
+    ('mid',              atom(('B', '{}'))),
+    ('rate',             atom(('B', '{}'))),
+    ('rsvd0',            atom(('B', '{}'))),
+    ('rsvd1',            atom(('B', '{}'))),
+    ('rsvd2',            atom(('B', '{}'))),
+    ('rsvd3',            atom(('B', '{}'))),
+]))
+
+
+# HW Config Response
+sirf_hw_conf_rsp_obj = aggie(OrderedDict([
+    ('hw_config',        atom(('B',  '{}'))),
+    ('nominal_upper',    atom(('B',  '{}'))),
+    ('nominal_freq',     atom(('>I', '{}'))),
+    ('nw_enhance',       atom(('B',  '{}'))),
 ]))
 
 
