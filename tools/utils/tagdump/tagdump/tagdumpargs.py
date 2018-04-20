@@ -93,6 +93,11 @@ def parseargs():
                         type=int,
                         help='last record to dump.')
 
+    parser.add_argument('-t', '--timeout',
+                        type=int,
+                        default=60,
+                        help='--tail read timeout.')
+
     parser.add_argument('--tail',
                         action='store_true',
                         help='continue reading data at EOF')

@@ -33,7 +33,27 @@ import errno
 TF_SEEK_END = os.SEEK_END
 
 class TagFile(object):
-    def __init__(self, input, net_io = False, tail = False, verbose = 0):
+    '''TagDump File Class
+
+    inputs:     input   FileType, input file stream
+                net_io  true if doing network i/o
+                tail    true if hang at the tail of input, keep trying
+                        waiting for more network i/o.  Forces net_io.
+                verbose vebosity level (see tagdump.py)
+                timeout timeout value (default 60 secs) for --tail/net_io
+
+    methods:    read    reads CNT bytes from the input stream.  If doing
+                        network i/o (net_io true) and --tail is set will
+                        repeated try for additional reads when at eof.
+
+                tell    will return current stream position in bytes.
+
+                seek    set stream position to position/whence.  Whence
+                        determines the base that is used for using position.
+    '''
+
+    def __init__(self, input, net_io = False, tail = False,
+                 verbose = 0, timeout = 60):
         super( TagFile, self ).__init__()
 
         if not isinstance(input, types.FileType):
@@ -74,7 +94,7 @@ class TagFile(object):
                     if (self.tail):
                         if self.verbose >= 5:
                             print '*** TF.read: buf len: ', len(buf)
-                        time.sleep(5)
+                        time.sleep(timeout)
                         continue
                     print '*** data stream EOF, sorry'
                     print '*** use --tail to wait for data at EOF'

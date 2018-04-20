@@ -46,7 +46,7 @@ from   misc_utils      import dump_buf
 from   tagfile         import TagFile
 from   tagfile         import TF_SEEK_END
 
-# import configuration, which will populate decode/emitter trees.
+# import configuration, which will populate decoder/emitter trees.
 import tagdump_config
 
 # we need a definition of the header so we can pull it in.
@@ -125,6 +125,9 @@ ver_str = '\ntagdump: ' + VERSION + ':  dt_rev ' + str(DT_REV)
 #   -r START_REC    starting/ending records to dump.
 #                   -r -1 says start with .last_rec (implies --net)
 #   -l LAST_REC     (args.{start,last}_rec, integer)
+#
+#   -t, --timeout TIMEOUT
+#                   set --tail timeout to TIMEOUT seconds, defaults to 60
 #
 #   --tail          do not stop when we run out of data.  monitor and
 #                   get new data as it arrives.  (implies --net)
@@ -519,14 +522,13 @@ def dump(args):
     debug   = args.debug   if (args.debug)   else 0
 
     # create file object that handles both buffered and direct io
-    infile  = TagFile(args.input, net_io = args.net, tail = args.tail, verbose = verbose)
+    infile  = TagFile(args.input, net_io = args.net, tail = args.tail,
+                      verbose = verbose, timeout = args.timeout)
 
     if (args.start_rec):
         rec_low  = args.start_rec
     if (args.last_rec):
         rec_high = args.last_rec
-
-    # convert any args.rtypes to upper case
 
     # process the directory, this will leave us pointing at the first header
     process_dir(infile)
