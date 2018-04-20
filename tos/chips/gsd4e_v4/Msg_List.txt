@@ -98,12 +98,19 @@ Startup messages:
 
 
 SirfBin aka OSP
+(directions relative to gps chip)
 
 Input
-0x80    128     factory reset
+0x80    128     factory reset (Initialize Data Source)
 0x81	129	Switch to NMEA
+0x82    130     Set Alamanac
 0x84	132	Poll SW Version  (-> 6)
+0x85    133     DGPS Source
+0x8a    138     DGPS Control
 0x90	144	Poll Clock (-> 7)
+0x92    146     Poll Almanac
+0x93    147     Poll Ephemeris
+0x95    149     Set  Ephemeris
 0x98	152	Poll Nav Parameter (-> 19)
 0xa6	166	Message Rate
 0xa8	168	Poll Command Parmeters (-> 43)
@@ -115,9 +122,16 @@ Input
 		0x8c 140 Power Mask			0x8f 143 Static Navigation
 		0x97 151 Set TricklePower
 
+0xaa    170     Set SBAS Parameters
 0xcd,10	205,16	Shutdown
 0xd4,7	212,7	osp revision request
+0xd5,1  213,1   session open
+0xd5,2  213,2   session close
 0xd6    214     hw_response
+0xde,11 222,17  ???
+0xe8,20 232,32  ee/disableSifAiding
+0xe8,fd 232,253 ee/eeStorageControl
+0xe8,fe 232,254 ee/disableCGEEpred
 0xe9    233     pwr_mode
 
 
