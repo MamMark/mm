@@ -76,7 +76,6 @@ def decode_gps_raw(level, offset, buf, obj):
     decoder     = v[MID_DECODER]            # dt function
     decoder_obj = v[MID_OBJECT]             # dt object
     if not decoder:
-        print
         if (level >= 5):
             print('*** no decoder/obj defined for mid {}'.format(mid))
         return consumed

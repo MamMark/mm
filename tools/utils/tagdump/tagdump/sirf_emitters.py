@@ -250,6 +250,7 @@ def emit_sirf_pwr_mode_req(level, offset, buf, obj):
     if sid == 2:
         print(' MPM  {} {}'.format(timeout, control))
     else:
+        print                           # clean line
         print(obj)
 
 
@@ -260,6 +261,7 @@ def emit_sirf_pwr_mode_rsp(level, offset, buf, obj):
     if sid == 2:
         print(' MPM  0x{:04x}'.format(error))
     else:
+        print                           # get clean line
         print(obj)
 
 
@@ -316,4 +318,5 @@ def emit_sirf_statistics(level, offset, buf, obj):
 
 def emit_sirf_dev_data(level, offset, buf, obj):
     print
-    print '    {}'.format(obj)
+    if (level >= 1):
+        print '    {}'.format(obj)

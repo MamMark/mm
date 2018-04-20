@@ -488,12 +488,13 @@ def emit_gps_raw(level, offset, buf, obj):
     dir_bit  = obj['gps_hdr']['dir'].val
     dir_str  = 'rx' if dir_bit == 0 else 'tx'
 
-    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
+    print(rec0.format(offset, recnum, st, xlen, xtype,
+                      dt_name(xtype))),                 # sans nl
     if (obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ):
         index = len(obj) - len(sirf_hdr_obj)
         print('-- non-binary <{:2}>'.format(dir_str))
         if (level >= 1):
-            print('    {:s}'.format(buf[index:])),
+            print('    {:s}'.format(buf[index:])),      # sans nl
         if (level >= 2):
             dump_buf(buf, '    ')
         return
@@ -508,7 +509,7 @@ def emit_gps_raw(level, offset, buf, obj):
 
     sid_str = '' if mid not in mids_w_sids else '/{}'.format(sid)
     print('-- MID: {:3}{:4} ({:02x}) <{:2}> {}'.format(
-        mid, sid_str, mid, dir_str, mid_name)),
+        mid, sid_str, mid, dir_str, mid_name)),         # sans nl
 
     if not emitters or len(emitters) == 0:
         print
