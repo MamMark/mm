@@ -121,6 +121,13 @@ def emit_sirf_swver(level, offset, buf, obj):
     if (level >= 1):
         print '  {}'.format(obj)
 
+
+# mid 18, OkToSend
+def emit_sirf_ots(level, offset, buf, obj):
+    ans = 'yes' if obj.val else 'no'
+    print ' (' + ans + ')'
+
+
 def emit_sirf_vis(level, offset, buf, obj):
     num_sats = obj['vis_sats'].val
     print '({})'.format(num_sats)
@@ -134,14 +141,6 @@ def emit_sirf_vis(level, offset, buf, obj):
         for n in range(num_sats):
             print '      {:2}:  el {:2}   az {:3}'.format(
                 obj[n]['sv_id'], obj[n]['sv_el'], obj[n]['sv_az'])
-
-
-def emit_sirf_ots(level, offset, buf, obj):
-    print
-    if (level >= 1):
-        ans = 'no'
-        if obj.val: ans = 'yes'
-        print('    OkToSend:  {:>3s}'.format(ans))
 
 
 ########################################################################
