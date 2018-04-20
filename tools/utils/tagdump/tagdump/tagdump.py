@@ -582,12 +582,12 @@ def dump(args):
 
             count_dt(rtype)
             v = dtd.dt_records.get(rtype, (0, None, None, None, ''))
-            decode   = v[DTR_DECODER]           # dt function
+            decoder  = v[DTR_DECODER]           # dt function
             emitters = v[DTR_EMITTERS]          # emitter list
             obj      = v[DTR_OBJ]               # dt object
-            if (decode):
+            if (decoder):
                 try:
-                    decode(verbose, rec_offset, rec_buf, obj)
+                    decoder(verbose, rec_offset, rec_buf, obj)
                     if emitters and len(emitters):
                         for e in emitters:
                             e(verbose, rec_offset, rec_buf, obj)
