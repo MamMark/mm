@@ -21,10 +21,12 @@
 
 # Decoders for sirfbin data types
 
+from   sirf_defs     import *
+import sirf_defs     as     sirf
 from   sirf_headers  import sirf_navtrk_chan
 from   sirf_headers  import sirf_vis_azel
 
-__version__ = '0.2.0 (sd)'
+__version__ = '0.2.1.dev0 (sd)'
 
 def decode_sirf_navtrk(level, offset, buf, obj):
 
@@ -76,3 +78,32 @@ def decode_sirf_vis(level, offset, buf, obj):
             d[k] = v.val
         obj[n] = d
     return consumed
+
+
+# process extended ephemeris packets
+# buf is pointing at the SID.
+def decode_sirf_ee(level, offset, buf, obj, table):
+    consumed = 1                        # account for sid
+    sid = buf[0]
+    v   = table.get(sid, (None, None, None, 'unk', ''))
+    decoder  = v[EE_DECODER]
+    obj      = v[EE_OBJECT]
+    sid_name = v[EE_NAME]
+    if not decoder:
+        if (level >= 5):
+            print('*** no decoder/obj defined for sid {}'.format(sid))
+        return consumed
+    try:
+        consumed = consumed + \
+                decoder(level, offset, buf[consumed:], obj)
+    except struct.error:
+        print
+        print('*** decode error: sirf_ee56: sid {} {}, @{}'.format(
+            sid, sid_name, rec_offset))
+    return consumed
+
+def decode_sirf_ee56(level, offset, buf, obj):
+    return decode_sirf_ee(level, offset, buf, obj, sirf.ee56_table)
+
+def decode_sirf_ee232(level, offset, buf, obj):
+    return decode_sirf_ee(level, offset, buf, obj, sirf.ee232_table)

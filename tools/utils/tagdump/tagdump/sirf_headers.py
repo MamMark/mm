@@ -22,7 +22,7 @@
 
 # object descriptors for gps data blocks
 
-__version__ = '0.2.1.dev0 (sh)'
+__version__ = '0.2.1.dev1 (sh)'
 
 import binascii
 from   decode_base  import *
@@ -326,6 +326,20 @@ sirf_geo_obj = aggie(OrderedDict([
 ]))
 
 
+# extEphemeris packets (56)
+# various SIDs. data follows the SID
+
+sirf_ee56_sif_obj = aggie(OrderedDict([
+    ('sifState',            atom(('B',   '{}'))),
+    ('cgeePredState',       atom(('B',   '{}'))),
+    ('sifAiding',           atom(('B',   '{}'))),
+    ('sgeeDwnLoad',         atom(('B',   '{}'))),
+    ('cgeePredTimeLeft',    atom(('>I',  '{}'))),
+    ('cgeePredPendingMask', atom(('>I',  '0x{:04x}'))),
+    ('svidCGEEpred',        atom(('B',   '{}'))),
+    ('sgeeAgeValidity',     atom(('B',   '{}'))),
+    ('cgeeAgeValidity',     atom(('32s', '{}', binascii.hexlify))),
+]))
 
 
 # pwr_mode_rsp (90), has SID

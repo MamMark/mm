@@ -40,13 +40,20 @@
 
 import struct
 
-__version__ = '0.2.0 (sd)'
+__version__ = '0.2.1.dev0 (sd)'
 
 __all__ = [
     'MID_DECODER',
     'MID_EMITTERS',
     'MID_OBJECT',
     'MID_NAME',
+    'MID_OBJ_NAME',
+
+    'EE_DECODER',
+    'EE_EMITTERS',
+    'EE_OBJECT',
+    'EE_NAME',
+    'EE_OBJ_NAME',
 
     'SIRF_MAX_PAYLOAD',
     'SIRF_SOP_SEQ',
@@ -58,6 +65,7 @@ __all__ = [
     'SIRF_EOP_SEQ',
     'SIRF_END_SIZE'
 ]
+
 
 # mid_table holds vectors for how to decode a sirfbin packet.
 # each entry is keyed by Mid and contains a 4-tuple that
@@ -76,6 +84,26 @@ MID_DECODER  = 0
 MID_EMITTERS = 1
 MID_OBJECT   = 2
 MID_NAME     = 3
+MID_OBJ_NAME = 4
+
+
+# ee{56,232}_table holds vectors for how to decode extended ephemeris
+# packets, mids 56 and 232.  EE_ defines are used to access the vectors
+# pulled from the tables.  The ee56 and ee232 tables contain the same
+# tuples.
+
+ee56_table  = {}
+ee56_count  = {}
+
+ee232_table = {}
+ee232_count = {}
+
+EE_DECODER  = 0
+EE_EMITTERS = 1
+EE_OBJECT   = 2
+EE_NAME     = 3
+EE_OBJ_NAME = 4
+
 
 # SIRF_MAX_PAYLOAD is the maximum payload bytes we allow.
 # the protocol allows for up to 2^11 - 1 (2047)
