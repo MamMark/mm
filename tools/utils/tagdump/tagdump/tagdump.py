@@ -37,6 +37,7 @@ import argparse
 from   dt_defs         import *
 import dt_defs         as     dtd
 from   dt_defs         import print_record
+from   dt_defs         import dt_name
 
 import sirf_defs       as     sirf
 
