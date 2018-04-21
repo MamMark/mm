@@ -220,7 +220,8 @@ implementation {
   event void Boot.booted() {
     gps_boot_try = 1;
     gps_mon_state = GMS_BOOTING;
-    call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gps_mon_state, gps_boot_try, 0, 0);
+    call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gps_mon_state,
+                               gps_boot_try, 0, 0);
     call GPSControl.turnOn();
   }
 
@@ -266,13 +267,15 @@ implementation {
 
           case 2:
             /* first time didn't work, hit it with a reset and try again. */
-            call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gps_mon_state, gps_boot_try, 0, 0);
+            call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gps_mon_state,
+                                       gps_boot_try, 0, 0);
             call GPSControl.reset();
             call GPSControl.turnOn();
             return;
 
           case 3:
-            call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gps_mon_state, gps_boot_try, 0, 0);
+            call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gps_mon_state,
+                                       gps_boot_try, 0, 0);
             call GPSControl.powerOff();
             call GPSControl.powerOn();
             call GPSControl.turnOn();
@@ -355,25 +358,25 @@ implementation {
 
     gp = (void *) db->block;
     call CollectEvent.logEvent(DT_EVENT_GPS_CMD, gp->cmd,
-                               call GPSControl.awake(), 0, 0);
+                               0, 0, call GPSControl.awake());
     switch (gp->cmd) {
       default:
       case GDC_NOP:
         break;
       case GDC_TURNON:
         err = call GPSControl.turnOn();
-        call CollectEvent.logEvent(DT_EVENT_GPS_CMD, gp->cmd,
-                                   call GPSControl.awake(), err, 1);
+        call CollectEvent.logEvent(DT_EVENT_GPS_CMD, gp->cmd, err, 1,
+                                   call GPSControl.awake());
         break;
       case GDC_TURNOFF:
         err = call GPSControl.turnOff();
-        call CollectEvent.logEvent(DT_EVENT_GPS_CMD, gp->cmd,
-                                   call GPSControl.awake(), err, 1);
+        call CollectEvent.logEvent(DT_EVENT_GPS_CMD, gp->cmd, err, 1,
+                                   call GPSControl.awake());
         break;
       case GDC_STANDBY:
         err = call GPSControl.standby();
-        call CollectEvent.logEvent(DT_EVENT_GPS_CMD, gp->cmd,
-                                   call GPSControl.awake(), err, 1);
+        call CollectEvent.logEvent(DT_EVENT_GPS_CMD, gp->cmd, err, 1,
+                                   call GPSControl.awake());
         break;
       case GDC_HIBERNATE:
         call GPSControl.hibernate();
@@ -382,14 +385,14 @@ implementation {
         call GPSControl.wake();
         break;
       case GDC_PULSE_ON_OFF:
-        call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, 999,
-                                   call GPSControl.awake(), 0, 0);
+        call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, 999, 0, 0,
+                                   call GPSControl.awake());
         call GPSControl.pulseOnOff();
         break;
 
       case GDC_AWAKE_STATUS:
-        call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 999,
-                                   call GPSControl.awake(), 0, 0);
+        call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 999, 0, 0,
+                                   call GPSControl.awake());
         break;
 
       case GDC_RESET:
@@ -450,7 +453,8 @@ implementation {
     if (!np || CF_BE_16(np->len) != NAVDATA_LEN)
       return;
 
-    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_2, np->nsats, np->mode1, 0, 0);
+    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_2, np->nsats, np->mode1,
+                               0, call GPSControl.awake());
     pmode = np->mode1 & SB_NAV_M1_PMODE_MASK;
     if (pmode >= SB_NAV_M1_PMODE_SV2KF && pmode <= SB_NAV_M1_PMODE_SVODKF) {
       /*
@@ -471,8 +475,6 @@ implementation {
       call CollectEvent.logEvent(DT_EVENT_GPS_XYZ, mxp->nsats,
                                  mxp->x, mxp->y, mxp->z);
     }
-    call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 2,
-                               call GPSControl.awake(), 0, 0);
 #ifdef GPS_SIMPLE_MPM
     if (mpm_pending) {
       /*
@@ -533,7 +535,8 @@ implementation {
 
     nav_valid = CF_BE_16(gp->nav_valid);
     nav_type  = CF_BE_16(gp->nav_type);
-    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_41, gp->nsats, nav_valid, nav_type, 0);
+    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_41, gp->nsats, nav_valid,
+                               nav_type, call GPSControl.awake());
 
     if (nav_valid == 0) {
 
@@ -579,10 +582,9 @@ implementation {
       mgp->sog       = CF_BE_16(gp->sog);
       mgp->cog       = CF_BE_16(gp->cog);
       mgp->additional_mode = gp->additional_mode;
-      call CollectEvent.logEvent(DT_EVENT_GPS_GEO, mgp->lat, mgp->lon, mgp->week_x, mgp->tow);
+      call CollectEvent.logEvent(DT_EVENT_GPS_GEO, mgp->lat, mgp->lon,
+                                 mgp->week_x, mgp->tow);
     }
-    call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 41,
-                               call GPSControl.awake(), 0, 0);
 #ifdef GPS_SIMPLE_MPM
     if (mpm_pending) {
       /*
@@ -608,8 +610,10 @@ implementation {
   void process_hw_config_req(sb_header_t *sbh, rtctime_t *rtp) {
     error_t err;
 
-    err   = call GPSTransmit.send((void *) sirf_hw_config_rsp, sizeof(sirf_hw_config_rsp));
-    call CollectEvent.logEvent(DT_EVENT_GPS_HW_CONFIG, err, 0, 0, call GPSControl.awake());
+    err   = call GPSTransmit.send((void *) sirf_hw_config_rsp,
+                                  sizeof(sirf_hw_config_rsp));
+    call CollectEvent.logEvent(DT_EVENT_GPS_HW_CONFIG, err, 0,
+                               0, call GPSControl.awake());
   }
 
 
@@ -620,7 +624,8 @@ implementation {
     sb_session_rsp_t *srp;
 
     srp = (void *) sbh;
-    call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 50, srp->sid, 0, 0);
+    call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 50, srp->sid,
+                               0, call GPSControl.awake());
 #ifdef GPS_SIMPLE_MPM
     switch (srp->sid) {
       default:
@@ -634,7 +639,8 @@ implementation {
 
       case 2:                                           /* close response */
         if (mpm_state == MPM_CS_WAIT) {
-          call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 55, 0, 0, call GPSControl.awake());
+          call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 55, 0, 0,
+                                     call GPSControl.awake());
           call MonTimer.startOneShot(2*60*60*1024);       /* 2hrs */
           mpm_state = MPM_SLEEPING;
         }
@@ -656,7 +662,8 @@ implementation {
      * and big endian.  beware of multi-byte values.
      */
     error = CF_BE_16(prp->error);
-    call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 60, prp->sid, 0, error);
+    call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 60, prp->sid, error,
+                               call GPSControl.awake());
 #ifdef GPS_SIMPLE_MPM
     if (mpm_pending && prp->sid == 2 && (error & 0x0010)) {
       mpm_pending = FALSE;
