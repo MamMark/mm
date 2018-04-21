@@ -62,6 +62,7 @@ class TagFile(object):
         self.net_io = net_io
         self.tail   = tail
         self.verbose= verbose
+        self.timeout= timeout
         self.fd     = input
         self.name   = input.name
 
@@ -94,7 +95,7 @@ class TagFile(object):
                     if (self.tail):
                         if self.verbose >= 5:
                             print '*** TF.read: buf len: ', len(buf)
-                        time.sleep(timeout)
+                        time.sleep(self.timeout)
                         continue
                     print '*** data stream EOF, sorry'
                     print '*** use --tail to wait for data at EOF'
