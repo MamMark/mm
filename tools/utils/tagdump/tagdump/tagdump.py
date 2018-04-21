@@ -489,7 +489,7 @@ def dump(args):
 
     init_globals()
 
-    if (args.verbose and args.verbose >= 5):
+    if (args.debug or (args.verbose and args.verbose >= 5)):
         print ver_str
         print '  decode_base: {}  dt_defs: {}  sirf_defs: {}'.format(
             db_ver, dt_ver, sb_ver)
@@ -521,6 +521,26 @@ def dump(args):
 
     verbose = args.verbose if (args.verbose) else 0
     debug   = args.debug   if (args.debug)   else 0
+
+    if debug:
+        tail_str = ' (tailing)'  if args.tail else ''
+        io_str   = 'network' if args.net  else 'local'
+        to_str   = '  timeout: {} secs'.format(args.timeout) \
+                   if args.net else ''
+        print '*** {} i/o{}{}'.format(io_str, tail_str, to_str)
+        if args.num:
+            print '*** {} records'.format(args.num)
+        print '*** verbosity: {:7}'.format(verbose)
+        start_rec = args.start if args.start else 1
+        end_rec   = args.end   if args.end   else 'end'
+        print '*** records: {:9} - {}'.format(start_rec, end_rec)
+        start_pos = args.jump if args.jump else 0
+        end_pos   = args.endpos if args.endpos else 'eof'
+        print '*** offsets: {:9} - {}'.format(start_pos, end_pos)
+        if args.rtypes:
+            print '*** restricted to rtypes: {}'.format(args.rtypes)
+        print
+
 
     # create file object that handles both buffered and direct io
     infile  = TagFile(args.input, net_io = args.net, tail = args.tail,
