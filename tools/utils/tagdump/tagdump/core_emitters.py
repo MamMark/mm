@@ -442,6 +442,9 @@ def emit_test(level, offset, buf, obj):
 #
 # NOTE decoder
 #
+# notes can have pretty much anything in them.  They may or may not
+# be terminated with a NUL.  We strip the NUL and any trailing whitespace
+#
 
 def emit_note(level, offset, buf, obj):
     xlen     = obj['hdr']['len'].val
@@ -450,8 +453,16 @@ def emit_note(level, offset, buf, obj):
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
 
+    # isolate just the note, and strip NUL and whitespace
+    # we leave any NL (newline, '\xa')
+    note     = buf[len(obj):]
+    note     = note.rstrip('\0')
+    note     = note.rstrip()
+
     print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
-    print('{}'.format(buf[point:]))
+    if (len(note) > 44):
+        print
+    print('    {}'.format(note))
 
 
 ################################################################
