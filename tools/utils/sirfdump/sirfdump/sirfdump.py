@@ -179,11 +179,11 @@ def get_record(fd):
     generate next valid sirfbin record, one at a time until no
     more bytes to read from input.
 
-    Yields one record each time (offset, len, mid, rec_buf).
+    Yields one record each time (offset, rlen, mid, rec_buf).
 
     Input:   fd:         file descriptor we are reading from
     Output:  rec_offset: byte offset of the record from start of file
-             len:        record length
+             rlen:       record length
              mid:        type of packet
              rec_buf:    byte buffer with entire record
     """

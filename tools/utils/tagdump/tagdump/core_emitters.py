@@ -124,8 +124,8 @@ rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
 rbt2h = '    vec_chk_fail: {:2}  image_chk_fail:   {:2}'
 
 def emit_reboot(level, offset, buf, obj):
-    len      = obj['hdr']['len'].val
-    type     = obj['hdr']['type'].val
+    xlen     = obj['hdr']['len'].val
+    xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
@@ -148,7 +148,7 @@ def emit_reboot(level, offset, buf, obj):
     chk_fails    = owcb_obj['vec_chk_fail'].val + \
                    owcb_obj['image_chk_fail'].val
 
-    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
     print(rbt0.format(base_name(from_base), base_name(base),
                       ow_boot_mode_name(boot_mode), reboot_count, fail_count))
 
@@ -218,8 +218,8 @@ ver2c = '    date:   Fri Dec 29 04:05:07 UTC 2017      ib/len: 0x{:x}/{:d} (0x{:
 ver2d = '    ii_sig: 0x33275401  vect_chk: 0x00000000  im_chk: 0x00000000'
 
 def emit_version(level, offset, buf, obj):
-    len      = obj['hdr']['len'].val
-    type     = obj['hdr']['type'].val
+    xlen     = obj['hdr']['len'].val
+    xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     base     = obj['base'].val
@@ -243,7 +243,7 @@ def emit_version(level, offset, buf, obj):
     build_date = image_info_obj['build_date'].val
     build_date = build_date[:build_date.index("\0")]
 
-    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
     print(ver0.format(base_name(base), ver_str, model_name(model), rev))
     if (level >= 1):
         print(ver1a.format(ver_str, model, rev, model_name(model), rev,
@@ -271,8 +271,8 @@ sync1a = '    SYNC: majik:  0x{:x}   prev: {} (0x{:x})'
 sync1b = '          dt: 2017/12/26-01:52:40 (1) GMT'
 
 def emit_sync(level, offset, buf, obj):
-    len      = obj['hdr']['len'].val
-    type     = obj['hdr']['type'].val
+    xlen     = obj['hdr']['len'].val
+    xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
@@ -280,7 +280,7 @@ def emit_sync(level, offset, buf, obj):
     majik    = obj['majik'].val
     prev     = obj['prev_sync'].val
 
-    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
     print(sync0.format(prev, prev))
 
     if (level >= 1):
@@ -304,8 +304,8 @@ event0  = ' {:s} {} {} {} {}'
 event1  = '    {:s}: ({}) <{} {} {} {}>  x({:x} {:x} {:x} {:x})'
 
 def emit_event(level, offset, buf, obj):
-    len      = obj['hdr']['len'].val
-    type     = obj['hdr']['type'].val
+    xlen     = obj['hdr']['len'].val
+    xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
@@ -317,7 +317,7 @@ def emit_event(level, offset, buf, obj):
     arg3  = obj['arg3'].val
     pcode = obj['pcode'].val
     w     = obj['w'].val
-    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
 
     if (event == PANIC_WARN):
         # special case, print PANIC_WARNs always, full display
@@ -347,13 +347,13 @@ def emit_event(level, offset, buf, obj):
 debug0  = ' xxxx'
 
 def emit_debug(level, offset, buf, obj):
-    len      = obj['hdr']['len'].val
-    type     = obj['hdr']['type'].val
+    xlen     = obj['hdr']['len'].val
+    xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
 
-    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
     print(debug0.format())
 
 
@@ -425,16 +425,16 @@ def emit_sensor_set(level, offset, buf, obj):
 # TEST decoder
 #
 
-test0  = ' xxxx'
+test0  = '    xxxx'
 
 def emit_test(level, offset, buf, obj):
-    len      = obj['hdr']['len'].val
-    type     = obj['hdr']['type'].val
+    xlen     = obj['hdr']['len'].val
+    xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
 
-    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
     print(test0.format())
 
 
@@ -444,13 +444,13 @@ def emit_test(level, offset, buf, obj):
 #
 
 def emit_note(level, offset, buf, obj):
-    len      = obj['hdr']['len'].val
-    type     = obj['hdr']['type'].val
+    xlen     = obj['hdr']['len'].val
+    xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
 
-    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
     print('{}'.format(buf[point:]))
 
 
@@ -462,13 +462,13 @@ def emit_note(level, offset, buf, obj):
 cfg0  = ' xxxx'
 
 def emit_config(level, offset, buf, obj):
-    len      = obj['hdr']['len'].val
-    type     = obj['hdr']['type'].val
+    xlen     = obj['hdr']['len'].val
+    xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
 
-    print(rec0.format(offset, recnum, st, len, type, dt_name(type))),
+    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
     print(cfg0.format())
 
 
