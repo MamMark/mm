@@ -25,8 +25,10 @@
 # and tagdumpargs will display the main program version.
 #
 
-from   __init__ import __version__ as VERSION
-from   dt_defs import DT_H_REVISION as DT_REV
+from   __future__         import print_function
+
+from   __init__ import __version__   as VERSION
+from   dt_defs  import DT_H_REVISION as DT_REV
 import argparse
 
 def auto_int(x):

@@ -21,6 +21,8 @@
 #          Eric B. Decker <cire831@gmail.com>
 
 
+from   __future__         import print_function
+
 import os
 import sys
 import types
@@ -94,16 +96,16 @@ class TagFile(object):
                 if (e.errno == errno.ENODATA):
                     if (self.tail):
                         if self.verbose >= 5:
-                            print '*** TF.read: buf len: ', len(buf)
+                            print('*** TF.read: buf len: ', len(buf))
                         time.sleep(self.timeout)
                         continue
-                    print '*** data stream EOF, sorry'
-                    print '*** use --tail to wait for data at EOF'
+                    print('*** data stream EOF, sorry')
+                    print('*** use --tail to wait for data at EOF')
                     return ''
-                print '*** TF.read: unhandled OSError exception', sys.exc_info()[0]
+                print('*** TF.read: unhandled OSError exception', sys.exc_info()[0])
                 raise
             except:
-                print '*** TF.read: unhandled exception', sys.exc_info()[0]
+                print('*** TF.read: unhandled exception', sys.exc_info()[0])
                 raise
 
     def tell(self):

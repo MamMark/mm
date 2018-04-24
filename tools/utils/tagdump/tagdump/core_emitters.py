@@ -21,6 +21,8 @@
 
 # basic emitters for main data blocks
 
+from   __future__         import print_function
+
 __version__ = '0.2.7 (ce)'
 
 from   dt_defs      import *
@@ -148,7 +150,8 @@ def emit_reboot(level, offset, buf, obj):
     chk_fails    = owcb_obj['vec_chk_fail'].val + \
                    owcb_obj['image_chk_fail'].val
 
-    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
+    print(rec0.format(offset, recnum, st, xlen, xtype,
+                      dt_name(xtype)), end = '')
     print(rbt0.format(base_name(from_base), base_name(base),
                       ow_boot_mode_name(boot_mode), reboot_count, fail_count))
 
@@ -168,7 +171,7 @@ def emit_reboot(level, offset, buf, obj):
         print(rbt1b.format(prev, prev, dt_rev))
 
     if (level >= 2):                    # detailed display (level 2)
-        print
+        print()
         print(rbt2a.format(majik, owcb_obj['ow_sig'].val,
                    owcb_obj['ow_sig_b'].val, owcb_obj['ow_sig_c'].val))
         print(rbt2b.format(from_base, base))
@@ -243,14 +246,15 @@ def emit_version(level, offset, buf, obj):
     build_date = image_info_obj['build_date'].val
     build_date = build_date[:build_date.index("\0")]
 
-    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
+    print(rec0.format(offset, recnum, st, xlen, xtype,
+                      dt_name(xtype)), end = '')
     print(ver0.format(base_name(base), ver_str, model_name(model), rev))
     if (level >= 1):
         print(ver1a.format(ver_str, model, rev, model_name(model), rev,
                            obj['base'].val, image_info_obj['im_start'].val))
 
     if (level >= 2):
-        print
+        print()
         print(ver2a)
         print(ver2b)
         print(ver2c.format(image_info_obj['im_start'].val,
@@ -280,7 +284,8 @@ def emit_sync(level, offset, buf, obj):
     majik    = obj['majik'].val
     prev     = obj['prev_sync'].val
 
-    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
+    print(rec0.format(offset, recnum, st, xlen, xtype,
+                      dt_name(xtype)), end = '')
     print(sync0.format(prev, prev))
 
     if (level >= 1):
@@ -317,8 +322,8 @@ def emit_event(level, offset, buf, obj):
     arg3  = obj['arg3'].val
     pcode = obj['pcode'].val
     w     = obj['w'].val
-    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
-
+    print(rec0.format(offset, recnum, st, xlen, xtype,
+                      dt_name(xtype)), end = '')
     if (event == PANIC_WARN):
         # special case, print PANIC_WARNs always, full display
         print(' {} {}/{}'.format(event_name(event), pcode, w))
@@ -353,7 +358,8 @@ def emit_debug(level, offset, buf, obj):
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
 
-    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
+    print(rec0.format(offset, recnum, st, xlen, xtype,
+                      dt_name(xtype)), end = '')
     print(debug0.format())
 
 
@@ -380,7 +386,7 @@ def emit_gps_time(level, offset, buf, obj):
     if (level >= 1):
         print(obj)
         print_hdr(obj)
-        print
+        print()
 
 
 def emit_gps_geo(level, offset, buf, obj):
@@ -388,7 +394,7 @@ def emit_gps_geo(level, offset, buf, obj):
     if (level >= 1):
         print(obj)
         print_hdr(obj)
-        print
+        print()
 
 
 def emit_gps_xyz(level, offset, buf, obj):
@@ -396,7 +402,7 @@ def emit_gps_xyz(level, offset, buf, obj):
     if (level >= 1):
         print(obj)
         print_hdr(obj)
-        print
+        print()
 
 
 ################################################################
@@ -409,7 +415,7 @@ def emit_sensor_data(level, offset, buf, obj):
     if (level >= 1):
         print(obj)
         print_hdr(obj)
-        print
+        print()
 
 
 def emit_sensor_set(level, offset, buf, obj):
@@ -417,7 +423,7 @@ def emit_sensor_set(level, offset, buf, obj):
     if (level >= 1):
         print(obj)
         print_hdr(obj)
-        print
+        print()
 
 
 ################################################################
@@ -434,7 +440,8 @@ def emit_test(level, offset, buf, obj):
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
 
-    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
+    print(rec0.format(offset, recnum, st, xlen, xtype,
+                      dt_name(xtype)), end = '')
     print(test0.format())
 
 
@@ -459,9 +466,10 @@ def emit_note(level, offset, buf, obj):
     note     = note.rstrip('\0')
     note     = note.rstrip()
 
-    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
+    print(rec0.format(offset, recnum, st, xlen, xtype,          # sans nl
+                      dt_name(xtype)), end = '')
     if (len(note) > 44):
-        print
+        print()
     print('    {}'.format(note))
 
 
@@ -479,7 +487,8 @@ def emit_config(level, offset, buf, obj):
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
 
-    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype))),
+    print(rec0.format(offset, recnum, st, xlen, xtype,          # sans nl
+                      dt_name(xtype)), end = '')
     print(cfg0.format())
 
 
@@ -500,12 +509,12 @@ def emit_gps_raw(level, offset, buf, obj):
     dir_str  = 'rx' if dir_bit == 0 else 'tx'
 
     print(rec0.format(offset, recnum, st, xlen, xtype,
-                      dt_name(xtype))),                 # sans nl
+                      dt_name(xtype)), end = '')
     if (obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ):
         index = len(obj) - len(sirf_hdr_obj)
         print('-- non-binary <{:2}>'.format(dir_str))
         if (level >= 1):
-            print('    {:s}'.format(buf[index:])),      # sans nl
+            print('    {:s}'.format(buf[index:]), end = '')
         if (level >= 2):
             dump_buf(buf, '    ')
         return
@@ -519,11 +528,11 @@ def emit_gps_raw(level, offset, buf, obj):
     mid_name    = v[MID_NAME]
 
     sid_str = '' if mid not in mids_w_sids else '/{}'.format(sid)
-    print('-- MID: {:3}{:4} ({:02x}) <{:2}> {}'.format(
-        mid, sid_str, mid, dir_str, mid_name)),         # sans nl
+    print(' -- MID: {:3}{:4} ({:02x}) <{:2}> {}'.format(
+        mid, sid_str, mid, dir_str, mid_name), end = '')        # sans nl
 
     if not emitters or len(emitters) == 0:
-        print
+        print()
         if (level >= 5):
             print('*** no emitters defined for mid {}'.format(mid))
         return

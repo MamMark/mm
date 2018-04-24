@@ -28,6 +28,8 @@
 #   4   details of rehunt (look for new SOP)
 #   5   other errors and decoder/header versions
 
+from   __future__               import print_function
+
 import sys
 import struct
 
@@ -313,10 +315,10 @@ def dump(args):
     init_globals()
 
     if (args.verbose and args.verbose >= 5):
-        print ver_str
-        print '  decode_base: {}  sirf_defs: {}'.format(db_ver, sb_ver)
-        print '  sirf:     d: {}  e: {}  h: {}'.format(sd_ver, se_ver, sh_ver)
-        print
+        print(ver_str)
+        print('  decode_base: {}  sirf_defs: {}'.format(db_ver, sb_ver))
+        print('  sirf:     d: {}  e: {}  h: {}'.format(sd_ver, se_ver, sh_ver))
+        print()
 
     def count_mid(mid):
         """
@@ -348,7 +350,7 @@ def dump(args):
     if (args.wide):
         wide = '                                            '
 
-    print title0.format(wide)
+    print(title0.format(wide))
 
     # extract record from input file and output decoded results
     try:
@@ -376,7 +378,7 @@ def dump(args):
 
             # first display the summary, then any additional decodes
             print(summary0.format(rec_offset, rlen, wide, mid, mid,
-                                  sid_str, mid_name)),
+                                  sid_str, mid_name), end = '')
 
             # get_record has verified that we have a proper header, tail,
             # and validated checksum.  All sirf decoders assume we are pointing
@@ -392,36 +394,37 @@ def dump(args):
                         for e in emitters:
                             e(verbose, rec_offset, buf, obj)
                 except struct.error:
-                    print
+                    print()
                     print('*** decode error: (len: {}, mid: {} {}, '
                           'expected: {}), @{}'.format(rlen, mid, mid_name,
                           len(obj) if obj else 0, rec_offset))
             else:
-                print
+                print()
                 if (verbose >= 5):
-                    print
+                    print()
                     print('*** no decoder installed for mid {} '
-                          '({:02x}), @{}'.format(mid, mid, rec_offset)),
+                          '({:02x}), @{}'.format(mid, mid, rec_offset),
+                          end = '')
             if (verbose >= 3):
-                print
+                print()
                 dump_buf(rec_buf, '    ')
             if (verbose >= 1):
-                print
+                print()
             total_records += 1
             total_bytes   += rlen
             if (args.num and total_records >= args.num):
                 break
     except KeyboardInterrupt:
-        print
-        print
-        print('*** user stop'),
+        print()
+        print()
+        print('*** user stop')
 
-    print
+    print()
     print('*** end of processing @{} (0x{:x}),  processed: {} records, {} bytes'.format(
         infile.tell(), infile.tell(), total_records, total_bytes))
     print('*** hunts: {}, chksum_errs: {}, unk_mids: {}'.format(
         num_hunt, chksum_errors, unk_mids))
-    print
+    print()
     print('mid/s: {}'.format(sirf.mid_count))
 
 if __name__ == "__main__":

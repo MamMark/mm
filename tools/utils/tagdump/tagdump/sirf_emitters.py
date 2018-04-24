@@ -22,6 +22,8 @@
 # emitters for sirfbin data types
 
 
+from   __future__         import print_function
+
 from   sirf_defs     import *
 import sirf_defs     as     sirf
 from   misc_utils    import buf_str
@@ -31,9 +33,9 @@ __version__ = '0.2.2.dev1 (se)'
 
 
 def emit_default(level, offset, buf, obj):
-    print
+    print()
     if (level >= 1):
-        print(obj),
+        print(obj, end = '')
 
 
 ########################################################################
@@ -87,7 +89,7 @@ def emit_sirf_navtrk(level, offset, buf, obj):
     week10 = obj['week10'].val
     tow    = obj['tow'].val/float(100)
     chans  = obj['chans'].val
-    print
+    print()
     if (level >= 1):
         print(rnavtrk1.format(week10, tow, chans))
         for n in range(chans):
@@ -98,7 +100,7 @@ def emit_sirf_navtrk(level, offset, buf, obj):
                                       obj[n]['state'],
                                       obj[n]['cno_avg']))
     if (level >= 2):
-        print
+        print()
         for n in range(chans):
             cno_str = ''
             for i in range(10):
@@ -109,7 +111,7 @@ def emit_sirf_navtrk(level, offset, buf, obj):
                                   obj[n]['state'],
                                   cno_str))
     if (level >= 3):
-        print
+        print()
         print('raw:')
         for n in range(chans):
             cno_str = ''
@@ -124,13 +126,13 @@ def emit_sirf_navtrk(level, offset, buf, obj):
 
 # mid 6 swver
 def emit_sirf_swver(level, offset, buf, obj):
-    print
+    print()
     if (level >= 1):
-        print '  {}'.format(obj)
+        print('    {}'.format(obj))
 
 # mids 11 and 12, ack/nack
 def emit_sirf_ack_nack(level, offset, buf, obj):
-    print ' ({}/{})'.format(buf[0], buf[1])
+    print(' ({}/{})'.format(buf[0], buf[1]))
 
 
 # mid 14, almanac data
@@ -141,12 +143,12 @@ def emit_sirf_alm_data(level, offset, buf, obj):
     chksum = obj['checksum'].val
     ok     = 'G' if (week & 0x3f) else 'x'
     week = week >> 6
-    print '  {:2d}/{}'.format(svid, ok)
+    print('  {:2d}/{}'.format(svid, ok))
     if level >= 1:
-        print '    sv: {:2d}  week: {:4d}  checksum: 0x{:04x}'.format(
-            svid, week, chksum)
+        print('    sv: {:2d}  week: {:4d}  checksum: 0x{:04x}'.format(
+            svid, week, chksum))
     if level >= 2:
-        print
+        print()
         dump_buf(data, '    ', 'data: ')
 
 
@@ -154,16 +156,16 @@ def emit_sirf_alm_data(level, offset, buf, obj):
 def emit_sirf_ephem_data(level, offset, buf, obj):
     svid   = obj['sv_id'].val
     data   = obj['data'].val
-    print '  {}'.format(svid)
+    print('  {}'.format(svid))
     if level >= 2:
-        print
+        print()
         dump_buf(data, '    ', 'data: ')
 
 
 # mid 18, OkToSend
 def emit_sirf_ots(level, offset, buf, obj):
     ans = 'yes' if obj.val else 'no'
-    print ' (' + ans + ')'
+    print(' (' + ans + ')')
 
 
 def emit_sirf_vis(level, offset, buf, obj):
@@ -253,10 +255,10 @@ def emit_sirf_geo(level, offset, buf, obj):
                 = obj['additional_mode'].val
 
     if (nav_valid & 1):
-        print(' nl'),
+        print(' nl', end = '')
         lock_str = 'nolock'
     else:
-        print('  L'),
+        print('  L', end = '')
         lock_str = 'lock'
     print(' ({})'.format(nsats))
     if (level >= 1):
@@ -267,7 +269,7 @@ def emit_sirf_geo(level, offset, buf, obj):
                             alt_e_ft, alt_msl_ft))
 
     if (level >= 2):
-        print
+        print()
         print(rgeo2a.format(nav_valid, nav_type, xweek, obj['tow'].val))
         print(rgeo2b.format(utc_year, utc_month, utc_day, utc_hour, utc_min,
                             obj['utc_ms'].val, sat_mask))
@@ -286,9 +288,9 @@ def emit_sirf_ee(level, offset, buf, obj, table):
     emitters = v[EE_EMITTERS]
     obj      = v[EE_OBJECT]
     name     = v[EE_NAME]
-    print '({})'.format(name),
+    print('({})'.format(name), end = '')
     if not emitters or len(emitters) == 0:
-        print                           # default clean line
+        print()                         # default clean line
         if (level >= 5):
             print('*** sirf_ee: no emitters defined for sid {}'.format(sid))
         return
@@ -303,14 +305,14 @@ def emit_sirf_ee232(level, offset, buf, obj):
 
 
 def emit_ee56_sif_status(level, offset, buf, obj):
-    print
+    print()
     if (level >= 1):
-        print '    {}'.format(obj)
+        print('    {}'.format(obj))
 
 
 # mid 130, set almanac data
 def emit_sirf_alm_set(level, offset, buf, obj):
-    print
+    print()
     data   = obj['data'].val
     if level >= 2:
         dump_buf(data, '    ', 'data: ')
@@ -318,7 +320,7 @@ def emit_sirf_alm_set(level, offset, buf, obj):
 
 # mid 149, set ephemeris data
 def emit_sirf_ephem_set(level, offset, buf, obj):
-    print
+    print()
     data   = obj['data'].val
     if level >= 2:
         dump_buf(data, '    ', 'data: ')
@@ -332,7 +334,7 @@ def emit_sirf_pwr_mode_req(level, offset, buf, obj):
     if sid == 2:
         print(' MPM  {} {}'.format(timeout, control))
     else:
-        print                           # clean line
+        print()                         # clean line
         print(obj)
 
 
@@ -343,7 +345,7 @@ def emit_sirf_pwr_mode_rsp(level, offset, buf, obj):
     if sid == 2:
         print(' MPM  0x{:04x}'.format(error))
     else:
-        print                           # get clean line
+        print()                         # get clean line
         print(obj)
 
 
@@ -399,6 +401,6 @@ def emit_sirf_statistics(level, offset, buf, obj):
         print(rstat2e.format(n_aided_ephem, n_aided_acq, freq_aiding_err))
 
 def emit_sirf_dev_data(level, offset, buf, obj):
-    print
+    print()
     if (level >= 1):
-        print '    {}'.format(obj)
+        print('    {}'.format(obj))

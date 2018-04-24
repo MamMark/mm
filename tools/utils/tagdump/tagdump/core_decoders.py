@@ -21,6 +21,8 @@
 
 # basic decoders for main data blocks
 
+from   __future__         import print_function
+
 __version__ = '0.2.0 (cd)'
 
 from   core_headers import owcb_obj

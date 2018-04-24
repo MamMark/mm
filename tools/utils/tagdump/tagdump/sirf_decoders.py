@@ -21,6 +21,8 @@
 
 # Decoders for sirfbin data types
 
+from   __future__         import print_function
+
 from   sirf_defs     import *
 import sirf_defs     as     sirf
 from   sirf_headers  import sirf_navtrk_chan

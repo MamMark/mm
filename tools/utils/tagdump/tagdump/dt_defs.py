@@ -25,6 +25,8 @@
 # headers.
 #
 
+from   __future__         import print_function
+
 import struct
 from   misc_utils   import dump_buf
 from   core_headers import dt_hdr_obj
@@ -162,10 +164,8 @@ def print_hdr(obj):
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     st       = get_systime(rtctime)
-
-    # gratuitous space shows up after the print, sigh
     print('{:4} {:8} ({:2}) {:6} --'.format(recnum, st,
-        rtype, dt_name(rtype))),
+        rtype, dt_name(rtype)), end = '')
 
 
 # used for identifing records that have problems.

@@ -23,6 +23,7 @@
 # Misc Utilities
 #
 
+from   __future__ import print_function
 import binascii
 
 def buf_str(buf):
@@ -44,10 +45,10 @@ def dump_buf(buf, pre = '', desc = 'rec:  '):
 
     # 3 chars per byte
     idx = 0
-    print(pre + desc),
+    print(pre + desc, end = '')
     while(idx < len(bs)):
         max_loc = min(len(bs), idx + (stride * 3))
         print(bs[idx:max_loc])
         idx += (stride * 3)
         if idx < len(bs):              # if more then print counter
-            print(pre + '{:04x}: '.format(idx/3)),
+            print(pre + '{:04x}: '.format(idx/3), end = '')

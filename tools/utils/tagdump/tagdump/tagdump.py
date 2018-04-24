@@ -30,6 +30,8 @@
 #   4   details of resync
 #   5   other errors and decoder versions
 
+from   __future__         import print_function
+
 import sys
 import struct
 import argparse
@@ -223,7 +225,7 @@ def resync(fd, offset):
     hdr     = dt_hdr_obj
     hdr_len = len(hdr)
 
-    print
+    print()
     print('*** resync started @{0} (0x{0:x})'.format(offset))
     if (offset & 3 != 0):
         print(resync0.format(offset, (offset/4)*4))
@@ -410,7 +412,7 @@ def get_record(fd):
         extra = 4 - ((offset + rlen) & 3)
         if extra < 4:
             if debug:
-                print '*** reading extra {} bytes for quad alignment'.format(extra)
+                print('*** reading extra {} bytes for quad alignment'.format(extra))
             dlen += extra
 
         if (dlen > 0):
@@ -439,7 +441,7 @@ def get_record(fd):
             print(chksum1.format(offset, recsum, chksum))
             print_record(offset, rec_buf)
             if (verbose >= 3):
-                print
+                print()
                 dump_buf(rec_buf, '    ')
             offset = resync(fd, offset)
             if (offset < 0):
@@ -490,12 +492,12 @@ def dump(args):
     init_globals()
 
     if (args.debug or (args.verbose and args.verbose >= 5)):
-        print ver_str
-        print '  decode_base: {}  dt_defs: {}  sirf_defs: {}'.format(
-            db_ver, dt_ver, sb_ver)
-        print '     core:  d: {}  e: {}  h: {}'.format(cd_ver, ce_ver, ch_ver)
-        print '     sirf:  d: {}  e: {}  h: {}'.format(sd_ver, se_ver, sh_ver)
-        print
+        print(ver_str)
+        print('  decode_base: {}  dt_defs: {}  sirf_defs: {}'.format(
+            db_ver, dt_ver, sb_ver))
+        print('     core:  d: {}  e: {}  h: {}'.format(cd_ver, ce_ver, ch_ver))
+        print('     sirf:  d: {}  e: {}  h: {}'.format(sd_ver, se_ver, sh_ver))
+        print()
 
     def count_dt(rtype):
         """
@@ -527,19 +529,19 @@ def dump(args):
         io_str   = 'network' if args.net  else 'local'
         to_str   = '  timeout: {} secs'.format(args.timeout) \
                    if args.net else ''
-        print '*** {} i/o{}{}'.format(io_str, tail_str, to_str)
+        print('*** {} i/o{}{}'.format(io_str, tail_str, to_str))
         if args.num:
-            print '*** {} records'.format(args.num)
-        print '*** verbosity: {:7}'.format(verbose)
+            print('*** {} records'.format(args.num))
+        print('*** verbosity: {:7}'.format(verbose))
         start_rec = args.start if args.start else 1
         end_rec   = args.end   if args.end   else 'end'
-        print '*** records: {:9} - {}'.format(start_rec, end_rec)
+        print('*** records: {:9} - {}'.format(start_rec, end_rec))
         start_pos = args.jump if args.jump else 0
         end_pos   = args.endpos if args.endpos else 'eof'
-        print '*** offsets: {:9} - {}'.format(start_pos, end_pos)
+        print('*** offsets: {:9} - {}'.format(start_pos, end_pos))
         if args.rtypes:
-            print '*** restricted to rtypes: {}'.format(args.rtypes)
-        print
+            print('*** restricted to rtypes: {}'.format(args.rtypes))
+        print()
 
 
     # create file object that handles both buffered and direct io
@@ -624,26 +626,26 @@ def dump(args):
                     print('*** no decoder installed for rtype {}, @{}'.format(
                         rtype, rec_offset))
             if (verbose >= 3):
-                print
+                print()
                 print_record(rec_offset, rec_buf)
                 dump_buf(rec_buf, '    ')
             if (verbose >= 1):
-                print
+                print()
             total_records += 1
             total_bytes   += rlen
             if (args.num and total_records >= args.num):
                 break
     except KeyboardInterrupt:
-        print
-        print
-        print('*** user stop'),
+        print()
+        print()
+        print('*** user stop')
 
-    print
+    print()
     print('*** end of processing @{} (0x{:x}),  processed: {} records, {} bytes'.format(
         infile.tell(), infile.tell(), total_records, total_bytes))
     print('*** reboots: {}, resyncs: {}, chksum_errs: {}, unk_rtypes: {}'.format(
         dtd.dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
-    print
+    print()
     print('rtypes: {}'.format(dtd.dt_count))
     print('mids:   {}'.format(sirf.mid_count))
 

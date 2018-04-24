@@ -18,7 +18,8 @@
 # Contact: Eric B. Decker <cire831@gmail.com>
 #
 
-from __init__ import __version__ as VERSION
+from   __future__ import print_function
+from   __init__   import __version__ as VERSION
 import argparse
 
 def auto_int(x):
