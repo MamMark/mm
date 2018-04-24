@@ -35,7 +35,7 @@ __version__ = '0.2.2.dev1 (se)'
 def emit_default(level, offset, buf, obj):
     print()
     if (level >= 1):
-        print(obj, end = '')
+        print('    {}'.format(obj))
 
 
 ########################################################################

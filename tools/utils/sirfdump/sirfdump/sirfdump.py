@@ -337,6 +337,16 @@ def dump(args):
         except KeyError:
             sirf.mid_count[mid] = 1
 
+    if debug:
+        if args.num:
+            print('*** {} records'.format(args.num))
+        print('*** verbosity: {:7}'.format(verbose))
+        start_pos = args.jump if args.jump else 0
+        end_pos   = args.endpos if args.endpos else 'eof'
+        print('*** offsets: {:9} - {}'.format(start_pos, end_pos))
+        print()
+
+
     # create file object that handles both buffered and direct io
     infile  = tf.TagFile(args.input)
 
