@@ -368,7 +368,7 @@ def dump(args):
             # first print the summary
 
             v = sirf.mid_table.get(mid, (None, None, None, 'unk'))
-            decode   = v[MID_DECODER]           # mid_table function
+            decoder  = v[MID_DECODER]           # mid_table function
             emitters = v[MID_EMITTERS]          # mid_table emitter list
             obj      = v[MID_OBJECT]
             mid_name = v[MID_NAME]              # and the name of the mid
@@ -387,10 +387,14 @@ def dump(args):
             # so we must start the decoding there as well.
 
             buf = rec_buf[SIRF_HDR_SIZE+1:]
-            if (decode):
+            if (decoder):
                 try:
-                    decode(verbose, rec_offset, buf, obj)
-                    if emitters and len(emitters):
+                    decoder(verbose, rec_offset, buf, obj)
+                    if not emitters or len(emitters) == 0:
+                        print()
+                        if (verbose >= 5):
+                            print('*** no emitters defined for mid {}'.format(mid))
+                    else:
                         for e in emitters:
                             e(verbose, rec_offset, buf, obj)
                 except struct.error:
