@@ -335,12 +335,32 @@ def emit_sirf_pwr_mode_req(level, offset, buf, obj):
         print(obj)
 
 
+# sirf_pwr_mode_rsp
+#
+# error codes in the rsp packet varies depending on which SID it is.
+# error in the object is 2 bytes and matches the MPM rsp sid (2).
+# other sids (0-1, 3-4) have a single byte response, according to
+# the limited docs we have.  But we haven't seen actual behaviour.
+
 def emit_sirf_pwr_mode_rsp(level, offset, buf, obj):
     sid = obj['sid'].val
     error = obj['error'].val
     reserved = obj['reserved'].val
     if sid == 2:
         print(' MPM  0x{:04x}'.format(error))
+        if (level >= 1):
+            err_list = []
+            if (error & 0x0010):
+                err_list.append('success')
+            if (error & 0x0020):
+                err_list.append('noKF')
+            if (error & 0x0040):
+                err_list.append('noRTC')
+            if (error & 0x0080):
+                err_list.append('hpe>')
+            if (error & 0x0100):
+                err_list.append('MPMpend')
+            print('    error: {:04x} - <{}>'.format(error, " ".join(err_list)))
     else:
         print()                         # get clean line
         print(obj)
