@@ -170,17 +170,14 @@ def emit_sirf_ots(level, offset, buf, obj):
 
 def emit_sirf_vis(level, offset, buf, obj):
     num_sats = obj['vis_sats'].val
-    print '({})'.format(num_sats)
-    sats = ''
+    print(' ({})'.format(num_sats))
+    sats = [ obj[n]['sv_id'] for n in range(num_sats) ]
     if level >= 1:
-        print('    {:<2} sats:'.format(num_sats)),
-        for n in range(num_sats):
-            sats += ' {}'.format(obj[n]['sv_id'])
-        print sats
+        print('    {:<2} sats: {}'.format(num_sats, " ".join(map(str, sats))))
     if level >= 2:
         for n in range(num_sats):
-            print '      {:2}:  el {:2}   az {:3}'.format(
-                obj[n]['sv_id'], obj[n]['sv_el'], obj[n]['sv_az'])
+            print('      {:2}:  el {:2}   az {:3}'.format(
+                obj[n]['sv_id'], obj[n]['sv_el'], obj[n]['sv_az']))
 
 
 ########################################################################
