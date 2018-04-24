@@ -6,4 +6,4 @@ sirfdump:  decode and display sirfbin messages
 # 0.0.1         Initial version
 # 0.1.0         Initial release
 
-__version__ = '0.1.0.dev0'
+__version__ = '0.1.0.dev1'

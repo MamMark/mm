@@ -71,10 +71,11 @@ tagdump:  decode and display Tag Data Stream file
 #               rename datetime to rtctime.
 #
 # 0.3.0.dev4    sirf dump work, add additional emitters
-# 0.3.0.dev6    add -t, --timeout TIMEOUT value for --tail/read timeout
+# 0.3.0.dev7    add -t, --timeout TIMEOUT value for --tail/read timeout
 #               handle extEphemeris packets (56, 232).
+#               convert print to python3 print (future)
 #
 #               owcb, convert uptime and elapsed to 32 bit num secs needed.
 #
 
-__version__ = '0.3.0.dev6'
+__version__ = '0.3.0.dev7'
