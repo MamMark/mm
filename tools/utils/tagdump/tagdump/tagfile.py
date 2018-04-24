@@ -92,7 +92,7 @@ class TagFile(object):
                 if (len(buf) != cnt):
                     continue
                 return buf
-            except OSError as e:
+            except (OSError, IOError) as e:
                 if (e.errno == errno.ENODATA):
                     if (self.tail):
                         if self.verbose >= 5:
@@ -102,7 +102,8 @@ class TagFile(object):
                     print('*** data stream EOF, sorry')
                     print('*** use --tail to wait for data at EOF')
                     return ''
-                print('*** TF.read: unhandled OSError exception', sys.exc_info()[0])
+                print('*** TF.read: unhandled OSError/IOError exception',
+                      sys.exc_info()[0])
                 raise
             except:
                 print('*** TF.read: unhandled exception', sys.exc_info()[0])
