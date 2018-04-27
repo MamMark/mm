@@ -1,0 +1,45 @@
+#
+# example tagctl_cfg
+# needs to be renamed tagctl_cfg -> .tagctl_cfg
+# tagctl looks first in ~/.tagctl_cfg (global config) and then will
+# override with settings from ./.tagctl_cfg (local config)
+#
+# root needs to point at the root of the tagfuse filesystem
+#
+# node is a static configuration pointing at the node one wants
+# to be used.  Can be overridden by local config or command line
+# switch (-s).
+#
+# Logging can be configured either via command line (--logfile <file>,
+# --loglevel) or via the configuration file.
+
+[basic]
+root = ~/tag/tag01
+node = tib5
+
+[nodes]
+tib3 = 658bc8e5205c
+tib4 = a0b696b4fb29
+tib5 = 1fbcd99fd29f
+
+[messages]
+swver         = 84 00
+peek          = b2 03 00 04 00 00 00 00 00 00 00 00
+tracker_off   = a6 00 04 00 00 00 00 00
+tracker_on    = a6 00 04 01 00 00 00 00
+tracker_poll  = a6 01 04 00 00 00 00 00
+all_off       = a6 02 00 00 00 00 00 00
+all_on        = a6 02 01 00 00 00 00 00
+nav_off       = a6 03 00 00 00 00 00 00
+nav_on        = a6 03 00 01 00 00 00 00
+debug_off     = a6 04 00 00 00 00 00 00
+debug_on      = a6 04 00 01 00 00 00 00
+nav_debug_off = a6 05 00 00 00 00 00 00
+nav_debug_on  = a6 05 00 01 00 00 00 00
+mpm0          = da 02 00 00 00 00
+mpmff         = da 02 ff 00 00 00
+mpm7f         = da 02 7f 00 00 00
+
+[logfile]
+level = DEBUG
+name  = /tmp/tagctl.log

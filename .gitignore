@@ -6,6 +6,7 @@
 *.sav
 *egg-info
 .gdb*
+.*_cfg
 .pdbrc
 dist/
 build/
