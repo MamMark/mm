@@ -68,5 +68,8 @@ implementation {
   TagnetPayloadP.THdr   -> TagnetHeaderP;
   TagnetPayloadP.TTLV   -> TagnetTlvP;
 
+  TagnetNameP.Panic     -> PanicC;
+  TagnetHeaderP.Panic   -> PanicC;
+  TagnetPayloadP.Panic  -> PanicC;
   TagnetTlvP.Panic      -> PanicC;
 }

@@ -56,10 +56,11 @@
  *</p>
  */
 
-#include "message.h"
-#include "Tagnet.h"
-#include "TagnetTLV.h"
+#include <message.h>
+#include <Tagnet.h>
+#include <TagnetTLV.h>
 #include <rtctime.h>
+#include <tagnet_panic.h>
 
 #define TN_PLOAD_DBG
 //#define TN_PLOAD_DBG __attribute__((optimize("O0")))
@@ -68,6 +69,7 @@ module TagnetPayloadP {
   provides interface TagnetPayload;
   uses     interface TagnetHeader   as  THdr;
   uses     interface TagnetTLV      as  TTLV;
+  uses     interface Panic;
 }
 implementation {
 
@@ -291,4 +293,6 @@ implementation {
   command tagnet_tlv_t* TN_PLOAD_DBG TagnetPayload.this_element(message_t *msg) {
     return (tagnet_tlv_t *) (&(msg->data[getMeta(msg)->this + call THdr.get_name_len(msg)]));
   }
+
+  async event void Panic.hook() { }
 }

@@ -764,7 +764,7 @@ implementation {
       while (length) {
         t0 = call Platform.usecsRaw();
         if (!ll_si446x_get_cts()) {
-          __PANIC_RADIO(8, 0, 0, 0, 0);
+          __PANIC_RADIO(9, 0, 0, 0, 0);
         }
         t1 = call Platform.usecsRaw();
         ctp->t_cts0 += t1 - t0;

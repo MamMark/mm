@@ -22,8 +22,8 @@
 #ifndef __RADIOCONFIG_H__
 #define __RADIOCONFIG_H__
 
-#include <Timer.h>
-#include <message.h>
+//#include <Timer.h>
+//#include <message.h>
 
 /*
  * Include the WDS generated, platform dependent, and device driver

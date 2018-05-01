@@ -69,11 +69,13 @@
 #include <message.h>
 #include <Tagnet.h>
 #include <TagnetTLV.h>
+#include <tagnet_panic.h>
 
 module TagnetNameP {
   provides interface   TagnetName;
   uses     interface   TagnetHeader   as  THdr;
   uses     interface   TagnetTLV      as  TTLV;
+  uses     interface   Panic;
 }
 implementation {
 
@@ -98,40 +100,71 @@ implementation {
   }
 
   command tagnet_tlv_t   *TagnetName.first_element(message_t *msg) {
+    tagnet_tlv_t     *ttlv;
+
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
+    ttlv = (tagnet_tlv_t *) &msg->data[getMeta(msg)->this];
+    if ((ttlv->typ >= _TN_TLV_COUNT) || \
+        (getMeta(msg)->this > call THdr.get_name_len(msg)))
+      ttlv = NULL;       // reject bad message instead of panic
+
     memset(getMeta(msg), 0, sizeof(tagnet_name_meta_t));
-    return call TagnetName.this_element(msg);
+    return ttlv;
   }
 
   command tagnet_tlv_t  *TagnetName.get_gps_xyz(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     if (!getMeta(msg)->gps_xyz) return NULL;
     return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->gps_xyz)] );
   }
 
   command uint8_t    TagnetName.get_len(message_t* msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     return call THdr.get_name_len(msg);
   }
 
   command tagnet_tlv_t   *TagnetName.get_node_id(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     if (getMeta(msg)->node_id == 0) return NULL;
     return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->node_id)] );
   }
 
   command tagnet_tlv_t     *TagnetName.get_offset(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     if (getMeta(msg)->offset == 0) return NULL;
     return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->offset)] );
   }
 
   command tagnet_tlv_t     *TagnetName.get_version(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     if (getMeta(msg)->version == 0) return NULL;
     return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->version)] );
   }
 
   command tagnet_tlv_t     *TagnetName.get_size(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     if (getMeta(msg)->size == 0) return NULL;
     return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->size)] );
   }
 
   command tagnet_tlv_t     *TagnetName.get_utc_time(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     if (getMeta(msg)->utc_time == 0) return NULL;
     return (tagnet_tlv_t *) ( &msg->data[(getMeta(msg)->utc_time)] );
   }
@@ -145,6 +178,8 @@ implementation {
 
     nop();
     nop();
+    if ((!msg) || (getMeta(msg)->this > call THdr.get_name_len(msg)))
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
     do {
       nop();
       this_tlv = call TagnetName.this_element(msg);
@@ -193,41 +228,72 @@ implementation {
   }
 
   command void   TagnetName.reset_name(message_t* msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     getMeta(msg)->this = 0;
     call THdr.set_name_len(msg, 0);
   }
 
   command void    TagnetName.set_gps_xyz(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     getMeta(msg)->gps_xyz = getMeta(msg)->this;
   }
 
   command void     TagnetName.set_node_id(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     getMeta(msg)->node_id = getMeta(msg)->this;
   }
 
   command void    TagnetName.set_offset(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     getMeta(msg)->offset = getMeta(msg)->this;
   }
 
   command void    TagnetName.set_size(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     getMeta(msg)->size = getMeta(msg)->this;
   }
 
   command void    TagnetName.set_version(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     getMeta(msg)->version = getMeta(msg)->this;
   }
 
   command void    TagnetName.set_utc_time(message_t *msg) {
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+
     getMeta(msg)->utc_time = getMeta(msg)->this;
   }
 
   command tagnet_tlv_t    *TagnetName.this_element(message_t *msg) {
-    return (tagnet_tlv_t *) &msg->data[getMeta(msg)->this];
+    tagnet_tlv_t       *ttlv;
+
+    if ((!msg) || (getMeta(msg)->this > call THdr.get_name_len(msg)))
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+    ttlv = (tagnet_tlv_t *) &msg->data[getMeta(msg)->this];
+    if (ttlv->typ >= _TN_TLV_COUNT)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+    return ttlv;
   }
 
   command bool              TagnetName.is_last_element(message_t *msg) {
     tagnet_tlv_t       *this_tlv = call TagnetName.this_element(msg);
     uint16_t            name_consumed;
+
+    if (!msg)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
     name_consumed = getMeta(msg)->this + SIZEOF_TLV(this_tlv);
     if (name_consumed >= call THdr.get_name_len(msg))
@@ -235,4 +301,5 @@ implementation {
     return FALSE;
   }
 
+  async event void Panic.hook() { }
 }

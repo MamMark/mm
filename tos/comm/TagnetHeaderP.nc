@@ -52,9 +52,11 @@
 #include "message.h"
 #include "Tagnet.h"
 #include "Si446xRadio.h"
+#include <tagnet_panic.h>
 
 module TagnetHeaderP {
   provides interface TagnetHeader;
+  uses     interface Panic;
 }
 implementation {
 
@@ -160,4 +162,6 @@ implementation {
   command void   TagnetHeader.set_response(message_t *msg) {
     getHdr(msg)->tn_h1 |= TN_H1_RSP_F_M;   // response = 1
   }
+
+  async event void Panic.hook() { }
 }
