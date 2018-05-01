@@ -625,7 +625,8 @@ implementation {
    */
   void ll_si446x_check_weird(uint8_t *status) {
     if ((status[PH_STATUS]    & 0xC0) ||
-        (status[MODEM_STATUS] & 0x50)) {
+        (status[MODEM_STATUS] & 0x40)) {
+      //        (status[MODEM_STATUS] & 0x50)) {
       ll_si446x_get_all_state(&chip_debug);
       __PANIC_RADIO(98, status[DEVICE_STATE], status[PH_STATUS],
                     status[MODEM_STATUS], 0);
