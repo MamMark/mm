@@ -1,5 +1,6 @@
 from si446xdef import *
 from binascii import hexlify
+import operator
 
 # Setup required to use this module
 #
@@ -54,7 +55,7 @@ def get_cmd_structs(cmd):
                 return (None, None)
     return (None, None)
 
-def get_spi_buf_repr(b, l):
+def get_buf_repr(b, l):
     """
     Convert the byte array input into a hex ascii string.
     Limited by length l  and size of buffer b.
@@ -65,12 +66,12 @@ def get_spi_buf_repr(b, l):
     m = l if (l < b.type.sizeof) else b.type.sizeof
     x = 0
     b_s = bytearray()
-    r_s = bytearray()
+    h_s = bytearray()
     for x in range(m):
         da = int(b[x])
         b_s.append(da)
-    if (m): r_s = get_spi_hex_helper(b_s)
-    return b_s, r_s
+    if (m): h_s = get_spi_hex_helper(b_s)
+    return b_s, h_s
 
 def get_spi_trace_row_repr(i):
     """
@@ -94,40 +95,40 @@ def get_spi_trace_row_repr(i):
     if (rt['timestamp'] == 0) or (rt['op'] == 0) or (rt['op'] >= 6):
         return st                # nothing useful in the row object
     st += '{}  '.format(str(i))
-    rt_b_a, rt_b_s = get_spi_buf_repr(rt['buf'], rt['length'])
+    rt_b, rt_h = get_buf_repr(rt['buf'], rt['length'])
     c_str, r_str = get_cmd_structs(rt['struct_id'])
     st += '{}  '.format(str(rt['timestamp']))
 #    print(rt['op'])
     if (rt['op'] == 2) and (c_str):    # SEND_CMD
         try:
-            st += '{}  {}'.format(rt_b_s, radio_display_structs[r_str](r_str, rt_b_a))
+            st += '{}  {}'.format(rt_h, radio_display_structs[r_str](r_str, rt_b))
         except:
-            st += '{} {}'.format(rt['struct_id'], rt_b_s)
+            st += '{} {}'.format(rt['struct_id'], rt_h)
         return st
     if (rt['op'] == 3) and (r_str):  # GET_REPLY
-        st += "blen:slen {}:{}, ".format(len(rt_b_a), r_str.sizeof()-1)
-        if (len(rt_b_a) == (r_str.sizeof() - 1)):
-            st += '{}  {}  {}'.format(r_str.name, rt_b_s,
-                    radio_display_structs[r_str](r_str, bytearray('\xff') + rt_b_a))
+        st += "blen:slen {}:{}, ".format(len(rt_b), r_str.sizeof()-1)
+        if (len(rt_b) == (r_str.sizeof() - 1)):
+            st += '{}  {}  {}'.format(r_str.name, rt_h,
+                    radio_display_structs[r_str](r_str, bytearray('\xff') + rt_b))
             return st
     if (rt['op'] == 1):  # READ_FRR
         r_str = fast_frr_s
-        if (len(rt_b_a) > 1):
-            tt = radio_display_structs[r_str](r_str, rt_b_a)
+        if (len(rt_b) > 1):
+            tt = radio_display_structs[r_str](r_str, rt_b)
         else:
             tt = ''
-        st += '{}  {}  {}'.format(r_str.name, rt_b_s, tt)
+        st += '{}  {}  {}'.format(r_str.name, rt_h, tt)
         return st
 
     ba = bytearray()
     ba.append(int(rt['struct_id']))
     try:
         bx = radio_config_cmd_ids.parse(ba)
-        bxa = radio_config_commands[radio_config_cmd_ids.build(bx)][1].parse(rt_b_a)
+        bxa = radio_config_commands[radio_config_cmd_ids.build(bx)][1].parse(rt_b)
     except:
         bx = hexlify(ba)
         bxa = ''
-    st += '|| {}  {}  {}  {}  {}'.format(rt['op'], bx, rt['length'], rt_b_s, bxa)
+    st += '|| {}  {}  {}  {}  {}'.format(rt['op'], bx, rt['length'], rt_h, bxa)
     return st
 
 
@@ -213,14 +214,14 @@ class RadioGroups (gdb.Command):
             if (args) and (grp not in args): continue
             bgrp = 'PAx' if (grp == 'PA') else grp
             str = radio_config_groups[radio_config_group_ids.build(grp)]
-            r_a, r_s = get_spi_buf_repr(rd[bgrp], str.sizeof)
+            r_a, r_s = get_buf_repr(rd[bgrp], str.sizeof())
             print grp, bgrp, str, r_s
             print radio_display_structs[str](str, r_a)
 
 
 class RadioContext (gdb.Command):
     """
-    Dump out radio context, error counters etc.
+    Dump out radio software context, error counters etc.
     """
     def __init__ (self):
         super (RadioContext, self).__init__("radiocontext", gdb.COMMAND_USER)
@@ -247,7 +248,47 @@ class RadioContext (gdb.Command):
         print "rx_crc_overruns:\t\t" + str(rd['rx_crc_overruns'])
         print "rx_crc_packet_rx:\t\t" + str(rd['rx_crc_packet_rx'])
 
+class RadioRaw (gdb.Command):
+    """
+    Dump out radio hardware context.
+    """
+    def __init__ (self):
+        super (RadioRaw, self).__init__("radioraw", gdb.COMMAND_USER)
+
+    def invoke (self, args, from_tty):
+        arglist = gdb.string_to_argv(args.upper())
+        print('args',arglist)
+        if 'GROUPS' in arglist:
+            print('GROUPS')
+            rd = gdb.parse_and_eval('g_radio_dump')
+            dg = {}
+            group_order = sorted(radio_config_group_ids.encoding.items(),
+                                 key=operator.itemgetter(1))
+            for grp in radio_config_group_ids.encoding.keys():
+                bgrp = 'PAx' if (grp == 'PA') else grp  # fixup construct module bug
+                buf = radio_config_groups[radio_config_group_ids.build(grp)]
+                r_a, r_s = get_buf_repr(rd[bgrp], buf.sizeof)
+                dg[radio_config_group_ids.build(grp)] = r_a
+                print(grp, radio_config_group_ids.build(grp), r_s, r_a)
+            print(dg)
+
+class RadioInfo (gdb.Command):
+    """
+    Dump out radio hardware context.
+    """
+    def __init__ (self):
+        super (RadioInfo, self).__init__("radioinfo", gdb.COMMAND_USER)
+
+    def invoke (self, args, from_tty):
+        arglist = gdb.string_to_argv(args.upper())
+        for cmd_id in ['part_info', 'func_info']:
+            info_buf = gdb.parse_and_eval('g_radio_dump.' + cmd_id)
+            print(info_buf)
+
+
 RadioGroups()
 RadioSPI()
 RadioFSM()
 RadioContext()
+RadioRaw()
+RadioInfo()
