@@ -266,7 +266,7 @@
  *
  * units are usecs, used with Platform.usecsRaw()
  */
-#define SI446X_CTS_TIMEOUT                    500
+#define SI446X_CTS_TIMEOUT                  10000
 
 /*
  * maximum times to wait for transmit and receive operations to complete
