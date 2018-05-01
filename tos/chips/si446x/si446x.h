@@ -375,6 +375,7 @@
 #define SI446X_GPIO_INVALID_PREAMBLE            25
 #define SI446X_GPIO_SYNC_DETECTED               26
 #define SI446X_GPIO_RSSI_ABOVE_CAT              27
+#define SI446X_GPIO_IN_SLEEP                    28
 #define SI446X_GPIO_TX_STATE                    32
 #define SI446X_GPIO_RX_STATE                    33
 #define SI446X_GPIO_RX_FIFO_ALMOST_FULL         34
@@ -485,6 +486,7 @@ typedef enum {
         RC_RX_TUNE    = 6,
         RC_TRANSMIT   = 7,
         RC_RECEIVE    = 8,
+        RC_IDLE       = 9, // used by Preamble Sense Mode
 } si446x_device_state_t;
 
 //#define SI446X_CMD_READ_BUFF                  0x44
@@ -1049,8 +1051,8 @@ typedef struct {
   uint8_t revext;
   uint8_t revbranch;
   uint8_t revint;
-  uint8_t reserved0;
-  uint8_t reserved1;
+  uint8_t patch17;
+  uint8_t patch7;
   uint8_t func;
 } si446x_func_info_t;                   /* FUNC_INFO, 0x10 */
 

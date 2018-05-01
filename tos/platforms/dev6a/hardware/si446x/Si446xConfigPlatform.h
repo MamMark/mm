@@ -2,7 +2,7 @@
 #define __SI446X_CONFIG_PLATFORM_H__
 
 /*
- * Copyright (c) 2016-2017 Eric B. Decker, Daniel J. Maltbie
+ * Copyright (c) 2016-2018 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,44 +34,34 @@
  * So <chip> may be si44631B or si44682A.  Chip revs also seem to make
  * a significant difference. All operations performed as 4463 commands.
  *
+ * Some features that we want to use only work with 4468, so have not
+ * fully tested backwards compatibility (such as preamble sense mode
+ * uses radio state 9, called 'idle'.
+ *
  * Where we've identified definitions that do work across both chips, we
  * have kept the nomenclature of SI446X_...
  *
  * This file pulls together any platform dependent configuration values
  * for a <chip> radio.
  *
- * In particular, it exports most of the WDS generated static values
- * from radio_config_<chip>.h as <chip>_WDS_CONFIG_BYTES.  This prevents
- * the WDS generated name space from bleeding into the driver.
- *
- * SI446X_RF_POWER_UP contains the value of TXCO which denotes whether
- * an external Xtal is connected to the radio chip.
- * NOTE: Used explicitly by command in state machine
+ * In particular, it exports the WDS generated static values from
+ * radio_config_<chip>.h as <chip>_WDS_CONFIG_BYTES.  This prevents the
+ * WDS generated name space from bleeding into the driver.
  *
  * SI446X_RF_GPIO_CFG contains the values used to program the GPIO pins.
  * A given board (platform) will potentially have gpio pins connected to
- * a TX/RX switch and need to be programmed appropriately.
+ * a TX/RX switch and need to be programmed appropriately. A CTS hardware
+ * signal is also provided by a GPIO. For debugging purposes, the sleep
+ * state is provided as well.
  * NOTE: included in the si446x_device_config string list
  */
 
 /* Select the chip type to modify si446x.h definitions
  */
-#define SI446X_CHIP 0x44631B
-#ifdef RPI_BUILD
+#define SI446X_CHIP 0x44682A
 #include "si446x.h"
-#else
-#include <si446x.h>
-#endif
 
-#define SI446X_HW_CTS
-
-/*
- * SI446X_RF_POWER_UP
- *
- * Configure the oscillator frequency for 30 MHz
- * TXCO should be set to 1 if we are using an external Xtal.  VERIFY   TODO.
- */
-#define SI446X_RF_POWER_UP 0x02, 0x01, 0x00, 0x01, 0xC9, 0xC3, 0x80
+//#define SI446X_HW_CTS
 
 /*
  * SI446X_RF_GPIO_CFG
@@ -80,12 +70,13 @@
  *
  * gp0: in_sleep (28),  asleep: gp0=0
  * gp1: cts(8), clear: gp1=1
- * gp2: rx_state (33), gp3: tx_state (32)
+ * gp2: rx_state (33), gp3: tx_state (32)   NOTE: OPPOSITE OF PROTO BOARD
  *      Transmit: gp2=0, gp3=1
  *      Receive:  gp2=1, gp3=0
+ *      NIRQ, SDO, GEN_CONFIG =0
  */
 #define SI446X_GPIO_PIN_CFG_LEN    8
-#define SI446X_RF_GPIO_PIN_CFG     0x13, 28, 8, 33, 32, 0x00, 0x00, 0x00
+#define SI446X_RF_GPIO_PIN_CFG     SI446X_CMD_GPIO_PIN_CFG, SI446X_GPIO_IN_SLEEP, SI446X_GPIO_CTS, SI446X_GPIO_RX_STATE, SI446X_GPIO_TX_STATE, 0x00, 0x00, 0x00
 
 
 #endif  /* __SI446X_CONFIG_PLATFORM_H__ */

@@ -449,10 +449,17 @@ implementation {
   /*
    * load_config_task state variables
    */
-  norace uint8_t        config_list_iter;
-  norace uint8_t       *config_prop_ptr;
-  norace uint16_t       config_task_time, config_start_time;
-  norace uint8_t        config_task_posts, config_task_records;
+  typedef struct si446x_config_state {
+    uint8_t        list_iter;
+    uint8_t       *prop_ptr;
+    uint16_t       task_time;
+    uint16_t       start_time;
+    uint16_t       task_posts;
+    uint16_t       task_records;
+    bool           power_up_found;
+  } si446x_config_state_t;
+
+  tasklet_norace si446x_config_state_t cfg_cb;
 
   /**************************************************************************/
 
@@ -527,6 +534,8 @@ implementation {
    *
    * iterates through the configuration, breaking it into 1 millisecond
    * processing periods until all configuration records are processed.
+   *
+   * State variables to control state across post events are defined above
    */
   task void load_config_task() {
     uint16_t iter_start, iter_now;
@@ -540,65 +549,76 @@ implementation {
 
     config_list = call Si446xCmd.get_config_lists();
 
-    cp = (void *) config_prop_ptr;
+    cp = (void *) cfg_cb.prop_ptr;
 
     /*
-     * config_prop_ptr will be NULL if we haven't started yet.
+     * cfg_cb.prop_ptr will be NULL if we haven't started yet.
      *
      * Don't let any other radio stuff in via suspend.
      */
     if (!cp) {
       call Tasklet.suspend();
-      config_prop_ptr = (uint8_t *) config_list[config_list_iter];
-      cp = (void *) config_prop_ptr;
-      config_task_time = 0;
-      config_task_posts = 0;
-      config_task_records = 0;
-      config_start_time = call Platform.usecsRaw();
+      cfg_cb.prop_ptr = (uint8_t *) config_list[cfg_cb.list_iter];
+      cp = (void *) cfg_cb.prop_ptr;
+      cfg_cb.task_time = 0;
+      cfg_cb.task_posts = 0;
+      cfg_cb.task_records = 0;
+      cfg_cb.start_time = call Platform.usecsRaw();
     }
 
     iter_start = call Platform.usecsRaw();
 
-    /* repeat while more config strings exist and less than one millisecond time expired */
+    /* repeat while more config strings exist and less than
+     * one millisecond time expired */
     while (cp) {
 
       /* check to see if we've spent too much time */
       iter_now = call Platform.usecsRaw();
       if ((iter_now - iter_start) > 1000) {
-        config_prop_ptr = cp;
+        cfg_cb.prop_ptr = cp;  // keep track of where we left off
         break;
       }
 
       // process next command in list
       size = *cp++;
       if (size > 16) {
-        __PANIC_RADIO(91, config_list_iter, (parg_t) config_prop_ptr, size, 0);
+        __PANIC_RADIO(91, cfg_cb.list_iter,
+                      (parg_t) cfg_cb.prop_ptr, size, 0);
       }
+      // if reached end of this list, look for next list
       if (size == 0) {
-        config_list_iter++;
-        config_prop_ptr = (uint8_t *) config_list[config_list_iter];
-        cp = (void *) config_prop_ptr;
+        cfg_cb.list_iter++;
+        cfg_cb.prop_ptr = (uint8_t *) config_list[cfg_cb.list_iter];
+        cp = (void *) cfg_cb.prop_ptr;
         continue;
       }
-      // power up and frr control are handled elsewhere
-      if (!( (cp[0] == SI446X_CMD_POWER_UP) ||
-            ((cp[0] == SI446X_CMD_SET_PROPERTY) && (cp[1] == 2 /* FRR_CTL */))) ) {
-        call Si446xCmd.send_config(cp, size);
+      // skip over records prior to and including the POWER_UP string.
+      if (cfg_cb.power_up_found) {
+        nop();
+        // don't change the frr config, will mess up hardware CTS
+        if (!((cp[0] == SI446X_CMD_SET_PROPERTY) && (cp[1] == 2 /* FRR_CTL */)))
+          call Si446xCmd.send_config(cp, size);  // send everything else
+      } else {
+        nop();
+        // power up and patch (if present) are handled by Si446xCmd.power_up()
+        if (cp[0] == SI446X_CMD_POWER_UP)
+          cfg_cb.power_up_found = TRUE;
       }
+      // move to next entry
       cp += size;
-      config_task_records++;
+      cfg_cb.task_records++;
     }
 
     if (cp) {                   /* still more to do, post, let others run */
-      config_task_posts++;
+      cfg_cb.task_posts++;
       post load_config_task();
       return;
     }
 
     // measure time to execution
     iter_now = call Platform.usecsRaw();
-    config_task_time = iter_now - config_start_time;
-    config_list_iter = 0;
+    cfg_cb.task_time = iter_now - cfg_cb.start_time;
+    cfg_cb.list_iter = 0;
 
     // invoke driver state machine with completion notification event
     fsm_task_queue(E_CONFIG_DONE);
@@ -739,6 +759,7 @@ implementation {
   fsm_result_t a_pwr_up(fsm_transition_t *t) {
     volatile norace uint8_t xcts;
 
+    nop();
     if (!(xcts = call Si446xCmd.get_cts())) {
       __PANIC_RADIO(9, xcts, 0, 0, 0);
     }

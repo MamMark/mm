@@ -113,7 +113,6 @@ norace cmd_timing_t prop_timings[256];
  */
 
 const uint8_t si446x_part_info[]     = { SI446X_CMD_PART_INFO };    /* 01 */
-const uint8_t si446x_power_up[]      = { SI446X_RF_POWER_UP };      /* 02 */
 const uint8_t si446x_func_info[]     = { SI446X_CMD_FUNC_INFO };    /* 10 */
 const uint8_t si446x_gpio_cfg_nc[]   = { SI446X_CMD_GPIO_PIN_CFG,   /* 13 */
   SI446X_GPIO_NO_CHANGE, SI446X_GPIO_NO_CHANGE,
@@ -165,8 +164,8 @@ const uint8_t start_rx_cmd[] = {
   0,                                  /* channel */
   0,                                  /* start immediate */
   0, 0,                               /* len, use variable length */
-//  0, 0, 0,
-  RC_NO_CHANGE,                       /* rxtimeout, stay, good boy */
+//  RC_NO_CHANGE,                       /* rxtimeout, stay, good boy */
+  RC_IDLE,                            /* rxtimeout, stay, Preamble Sense */
   RC_READY,                           /* rxvalid */
   RC_READY,                           /* rxinvalid */
 };
@@ -188,7 +187,10 @@ const uint8_t start_rx_cmd[] = {
  * or when SYNC is detected.
  */
 const uint8_t si446x_frr_config[] = { 0x11, 0x02, 0x04, 0x00,
-                                      0x09, 0x04, 0x06, 0x0a
+                                      SI446X_FRR_MODE_CURRENT_STATE,
+                                      SI446X_FRR_MODE_PACKET_HANDLER_INTERRUPT_PENDING,
+                                      SI446X_FRR_MODE_MODEM_INTERRUPT_PENDING,
+                                      SI446X_FRR_MODE_LATCHED_RSSI
                                     };
 
 /**************************************************************************/
@@ -1103,7 +1105,8 @@ implementation {
    * starts with the string length followed by the command, followed by
    * command bytes.  The array is terminated by a zero length.
    */
-  const uint8_t *config_list[] = {si446x_wds_config, si446x_device_config, NULL};
+  const uint8_t wds_name[] = WDS_FILENAME;
+  const uint8_t *config_list[] = {si446x_wds_config, si446x_device_config, NULL, wds_name};
 
   async command uint8_t ** Si446xCmd.get_config_lists() {
     nop();
@@ -1185,9 +1188,26 @@ implementation {
    *
    * tell the radio chip to power up
    *
+   * The wds_config file contains strings used to configure the radio. Some
+   * of these commands needs to be sent before power up, and some after.
+   * if a patch is present, it is loaded first. Once the power_up cmd string
+   * in the wds_config file has been sent, then done with power up. Remainder
+   * of the wds_config will be written later when driver loads it.
+   *
    */
   async command void Si446xCmd.power_up() {
-    ll_si446x_send_cmd(si446x_power_up, sizeof(si446x_power_up));
+    uint8_t *cp;
+    uint16_t count = 1000; // protect loop from bad config data
+
+    cp = (uint8_t *) si446x_wds_config;
+    while (cp && count--) {
+      ll_si446x_send_cmd(&cp[1], cp[0]);
+      if (cp[1] == SI446X_CMD_POWER_UP)
+        break;
+      cp += cp[0] + 1;
+    }
+    if (!count)
+      __PANIC_RADIO(10, (uint32_t) cp, 0, 0, 0);
   }
 
 
