@@ -79,11 +79,11 @@ implementation {
   command uint8_t Sub.get_full_name[uint8_t id](uint8_t *buf, uint8_t limit) {
     uint32_t i;
 
-    if (limit < sizeof(nid_buf))
+    if (limit < sizeof(global_node_id_buf))
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
-    for (i = 0; i < sizeof(nid_buf); i++) {
-      buf[i] = nid_buf[i];
+    for (i = 0; i < sizeof(global_node_id_buf); i++) {
+      buf[i] = global_node_id_buf[i];
     }
     return i;
   }
@@ -92,14 +92,29 @@ implementation {
     uint8_t     *node_id;
     unsigned int node_len, i;
 
-    nid_buf[0] = TN_TLV_NODE_ID;
+    /* Before the network can start, we need to figure the
+     * network identifier, or node_id, for this tag.  The
+     * platform provides node id for the world-wide unique
+     * TagNet network address. The node id is typically
+     * derived from hardware based unique number, such as
+     * the random number seed on the MSP432 or an Ethernet
+     * MAC address ROM.
+     *
+     * TOS_NODE_ID is set to the first two bytes of the
+     * node id because TinyOS uses it for the random number
+     * generator.
+     * zzz This should probably be done differently.
+    */
+    global_node_id_buf[0] = TN_TLV_NODE_ID;
     node_id    = call PlatformNodeId.node_id(&node_len);
 
-    /* node_len should be 6 but we just assume */
-    nid_buf[1] = node_len;
+    global_node_id_buf[1] = node_len;
     for (i = 0; i < node_len; i ++)
-      nid_buf[2+i] = node_id[i];
+      global_node_id_buf[2+i] = node_id[i];
+
+    TOS_NODE_ID = (uint16_t) *node_id;
   }
+
 
   default event bool Sub.evaluate[uint8_t id](message_t* msg)      { return TRUE; }
   default event void Sub.add_name_tlv[uint8_t id](message_t *msg)  { }

@@ -55,8 +55,8 @@ typedef struct tagnet_tlv_t {
   uint8_t           val[];
 } tagnet_tlv_t;
 
-uint8_t            nid_buf[8];
-tagnet_tlv_t      *nid_tlv = (tagnet_tlv_t *)nid_buf;
+uint8_t            global_node_id_buf[8];
+tagnet_tlv_t      *nid_tlv = (tagnet_tlv_t *)global_node_id_buf;
 
 // 'standard' TLVs
 #define TN_NONE_TLV          "\000\000"
