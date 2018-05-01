@@ -146,7 +146,8 @@ implementation {
       if (c == 0) t->val[c++] = 0;
       t->len = c;
       t->typ = ttype;
-      return SIZEOF_TLV(t);
+      if (t->typ < _TN_TLV_COUNT)
+        return SIZEOF_TLV(t);
     }
     return 0;
   }

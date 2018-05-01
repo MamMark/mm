@@ -43,10 +43,14 @@ implementation {
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
                        0, 0, 0, 0);       /* null trap */
 
-    // start at the beginning of the name
+    /* start at the beginning of the name
+     * if null ptr returned, then this is ill-formed msg,
+     * which will be ignored. Unrecognized message.
+     */
     this_tlv = call TName.first_element(msg);
     // expect first TLV to be a Node Id type
-    if (call TTLV.get_tlv_type(this_tlv) != TN_TLV_NODE_ID)
+    if ((!this_tlv) || \
+        (call TTLV.get_tlv_type(this_tlv) != TN_TLV_NODE_ID))
       return FALSE;
     // Node Id in message must match one of
     // - my node's nid
