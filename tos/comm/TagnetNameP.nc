@@ -100,18 +100,8 @@ implementation {
   }
 
   command tagnet_tlv_t   *TagnetName.first_element(message_t *msg) {
-    tagnet_tlv_t     *ttlv;
-
-    if (!msg)
-      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
-
-    ttlv = (tagnet_tlv_t *) &msg->data[getMeta(msg)->this];
-    if ((ttlv->typ >= _TN_TLV_COUNT) || \
-        (getMeta(msg)->this > call THdr.get_name_len(msg)))
-      ttlv = NULL;       // reject bad message instead of panic
-
     memset(getMeta(msg), 0, sizeof(tagnet_name_meta_t));
-    return ttlv;
+    return call TagnetName.this_element(msg);
   }
 
   command tagnet_tlv_t  *TagnetName.get_gps_xyz(message_t *msg) {
@@ -278,14 +268,7 @@ implementation {
   }
 
   command tagnet_tlv_t    *TagnetName.this_element(message_t *msg) {
-    tagnet_tlv_t       *ttlv;
-
-    if ((!msg) || (getMeta(msg)->this > call THdr.get_name_len(msg)))
-      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
-    ttlv = (tagnet_tlv_t *) &msg->data[getMeta(msg)->this];
-    if (ttlv->typ >= _TN_TLV_COUNT)
-      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
-    return ttlv;
+    return (tagnet_tlv_t *) &msg->data[getMeta(msg)->this];
   }
 
   command bool              TagnetName.is_last_element(message_t *msg) {
