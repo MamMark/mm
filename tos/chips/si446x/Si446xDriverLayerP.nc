@@ -802,7 +802,7 @@ implementation {
   fsm_result_t a_ready(fsm_transition_t *t) {
     set_channel(get_channel());
     // initialize interrupts
-    call Si446xCmd.ll_clr_ints(0xff, 0xff, 0xff);  // clear all interrupts
+    call Si446xCmd.ll_clr_ints(0, 0, 0);  // clear all interrupts
     call Si446xCmd.enableInterrupt();
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
@@ -844,6 +844,12 @@ implementation {
    * a_rx_on
    *
    * enable the receiver for the next packet
+   *
+   * 1) set the radio state to ready. this will quiesce any active IO
+   * 2) we wait for state change to complete so that we avoid any
+   *    race conditions with the remaining steps
+   * 3) clear pending interrupts of stale conditions
+   * 4) send start_rx command to radio
    */
   fsm_result_t a_rx_on(fsm_transition_t *t) {
 
@@ -856,8 +862,9 @@ implementation {
      * the fifo.
      */
     stop_alarm();
+    call Si446xCmd.change_state(RC_READY, TRUE);   // make sure in ready state
     call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-    call Si446xCmd.ll_clr_ints(0xff, 0xff, 0xff);  // clear all interrupts
+    call Si446xCmd.ll_clr_ints(0, 0, 0);  // clear all interrupts
     call Si446xCmd.start_rx();
     return fsm_results(t->next_state, E_NONE);
   }
@@ -965,6 +972,16 @@ implementation {
    * a_tx_start
    *
    * start the transmission of a packet, subsequent events will complete it
+   *
+   * the radio is prepared for transmission with the following steps:
+   * 1) set power if msg metadata has a value set
+   * 2) set the radio state to ready. this will quiesce any active IO
+   * 3) we wait for state change to complete so that we avoid any
+   *    race conditions with the remaining steps
+   * 4) clear the fifo and pending interrupts of any stale info
+   * 5) write first tranche of data to the transmit fifo
+   * 6) issue the start_tx radio command
+   * 7) start timer to avoid dead transmitter
    */
   fsm_result_t a_tx_start(fsm_transition_t *t) {
     uint8_t        *dp;
@@ -997,6 +1014,7 @@ implementation {
       __PANIC_RADIO(6, tx_ff_free, pkt_len, 0, (parg_t) dp);
     // find size to fill fifo max(pkt_len, tx_ff_free)
     global_ioc.tx_ff_index = (pkt_len < tx_ff_free) ? pkt_len : tx_ff_free;
+    call Si446xCmd.ll_clr_ints(0, 0, 0);  // clear all interrupts
     call Si446xCmd.write_tx_fifo(dp, global_ioc.tx_ff_index);
     call Si446xCmd.start_tx(pkt_len);
     start_alarm(SI446X_TX_TIMEOUT);
@@ -1068,7 +1086,7 @@ implementation {
     t1 = call Platform.usecsRaw();
 
     call Si446xCmd.fifo_info(NULL, NULL, SI446X_FIFO_FLUSH_RX | SI446X_FIFO_FLUSH_TX);
-    call Si446xCmd.ll_clr_ints(0xff, 0xff, 0xff);  // clear all interrupts
+    call Si446xCmd.ll_clr_ints(0, 0, 0);  // clear all interrupts
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
     call Si446xCmd.ll_getclr_ints(&int_clr, &istate);
     nop();                              /* BRK */

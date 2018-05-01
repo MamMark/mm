@@ -1156,12 +1156,17 @@ implementation {
                                            uint8_t modem_clr,
                                            uint8_t chip_clr) {
     si446x_int_clr_t         cmd;
+    uint8_t                  sz;
 
     cmd.cmd = SI446X_CMD_GET_INT_STATUS;
-    cmd.ph_pend = ph_clr;
-    cmd.modem_pend = modem_clr;
-    cmd.chip_pend = chip_clr;
-    ll_si446x_send_cmd((void *) &cmd, sizeof(cmd));
+    sz = 1;
+    if ((ph_clr) || (modem_clr) || (chip_clr)) {
+      cmd.ph_pend = ph_clr;
+      cmd.modem_pend = modem_clr;
+      cmd.chip_pend = chip_clr;
+      sz =  sizeof(cmd);
+    }
+    ll_si446x_send_cmd((void *) &cmd, sz);
   }
   /*
    * get/clr interrupt state
