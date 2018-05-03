@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -62,22 +62,29 @@ typedef struct {
   uint32_t    vector_chk;               /*  s  simple checksum over vector table  */
   uint32_t    image_chk;                /*  s  simple checksum over entire image  */
   image_ver_t ver_id;                   /*  b  version string of this build       */
-  uint8_t     descriptor0[ID_MAX];      /*  s  main tree tinyos/prod descriptor   */
-  uint8_t     descriptor1[ID_MAX];      /*  s  aux  tree MamMark descriptor       */
+  uint8_t     image_desc[ID_MAX];       /*  s  generic descriptor                 */
+  uint8_t     repo_desc0[ID_MAX];       /*  s  main tree tinyos/prod descriptor   */
+  uint8_t     repo_desc1[ID_MAX];       /*  s  aux  tree MamMark descriptor       */
   uint8_t     stamp_date[30];           /*  s  build time stamp */
   hw_ver_t    hw_ver;                   /*  b  and last 2 bytes */
 } image_info_t;
 
 /*
- * stamp_date is a null terminated string that contains the date (UTC)
- * of when this image was built (actally when the binfinish program was
- * run).  binfinish is used to set the checksums, stamp_date, and the
- * git descriptors of the binary image.
+ * 'binfin' (tools/utils/binfin) is used to fill in the following cells:
  *
- * stamp_date gets filled in with "date -u".
+ *      o vector_chk
+ *      o image_chk
+ *      o image_desc
+ *      o repo_desc0
+ *      o repo_desc1
+ *      o stamp_date
  *
- * descriptor{0,1} are descriptor strings that identify the code base used to
- * build this image.
+ * image_desc is a general string (null terminated) that can be used to
+ * indicate what this image is, released, development, etc.  It is an
+ * arbitrary string provided to binfin and placed into image_desc.
+ *
+ * repository{0,1} are descriptor strings that identify the code repositories
+ * used to build this image.
  *
  * each descriptor is generated using:
  *
@@ -88,11 +95,30 @@ typedef struct {
  * is enough additional information to enable finding where on the tree this
  * code base was built from.
  *
- * If the descriptor becomes larger that ID_MAX then one can lose characters
+ * If the descriptor becomes larger than ID_MAX, characters can be removed
  * from the front of the string, typically <name>/ can be removed safely.
  *
- * The descriptors should be null terminated and this null counts as one of
- * the characters in ID_MAX.
+ * Descriptors are NUL terminated.  The NUL byte is included in ID_MAX.
+ *
+ * stamp_date is a NUL terminated string that contains the date (UTC)
+ * this image was stamped by binfin.  Typically this will be when the
+ * image was built.  stamp_date gets filled in with "date -u".
+ *
+ * After filling in image_desc, repository{0,1}, and stamp_date, vector_chk
+ * is computed and image_chk is computed over the entire image size.
+ *
+ * Both vector_chk and image_chk are computed using a 32 bit aligned, 32
+ * bit wide checksum.  See tos/lib/ChecksumM.nc.  If the region being
+ * summed checks out the resultant sum will be 0.  vector_chk/image_chk
+ * must be set to make this happen.
+ *
+ * vector_chk is the sum over the first 0x140 bytes.  This is the exception
+ * vectors of the processor.
+ *
+ * image_chk is the sum over the entire image.
+ *
+ * vector_chk, image_desc, repo_desc{0,1}, and stamp_date must be filled in
+ * prior to computing the value of image_chk.
  */
 
 #endif  /* __IMAGE_INFO_H__ */

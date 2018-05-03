@@ -1,5 +1,3 @@
-'''Core Data Type records/objects'''
-
 # Copyright (c) 2017-2018, Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
@@ -20,9 +18,12 @@
 # Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
 #          Eric B. Decker <cire831@gmail.com>
 
-# basic data type object descriptors
+'''Core Data Type records/objects
 
-__version__ = '0.2.7 (ch)'
+basic data type object descriptors
+'''
+
+__version__ = '0.2.8 (ch)'
 
 import binascii
 from   decode_base  import *
@@ -126,8 +127,9 @@ image_info_obj  = aggie(OrderedDict([
     ('vect_chk',  atom(('<I', '0x{:08x}'))),
     ('im_chk',    atom(('<I', '0x{:08x}'))),
     ('ver_id',    image_version_obj),
-    ('desc0',     atom(('44s', '{:s}'))),
-    ('desc1',     atom(('44s', '{:s}'))),
+    ('image_desc',atom(('44s', '{:s}'))),
+    ('repo0',     atom(('44s', '{:s}'))),
+    ('repo1',     atom(('44s', '{:s}'))),
     ('build_date',atom(('30s', '{:s}'))),
     ('hw_ver',    hw_version_obj),
 ]))

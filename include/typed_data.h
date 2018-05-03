@@ -42,7 +42,7 @@
 /*
  * identify what revision of typed_data.h we are using for this build
  */
-#define DT_H_REVISION 17
+#define DT_H_REVISION 18
 
 /*
  * Sync records are used to make sure we can always find the data stream if

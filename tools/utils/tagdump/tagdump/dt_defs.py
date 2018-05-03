@@ -31,7 +31,7 @@ import struct
 from   misc_utils   import dump_buf
 from   core_headers import dt_hdr_obj
 
-__version__ = '0.2.6 (dt)'
+__version__ = '0.2.7 (dt)'
 
 
 # __all__ exports commonly used definitions.  It gets used
@@ -70,7 +70,7 @@ __all__ = [
 # The value of DT_H_REVISION reflects the version of typed_data.h that
 # we have implemented.  Includes record definitions, headers and decoders.
 
-DT_H_REVISION           = 17
+DT_H_REVISION           = 18
 
 
 # dt_records
