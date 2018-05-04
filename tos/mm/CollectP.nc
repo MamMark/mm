@@ -59,6 +59,7 @@
  * REBOOT being lay'd down.
  */
 
+#include <core_rev.h>
 #include <typed_data.h>
 #include <image_info.h>
 #include <overwatch.h>
@@ -189,7 +190,7 @@ implementation {
     rp->dtype = DT_REBOOT;
     rp->sync_majik = SYNC_MAJIK;
     rp->prev_sync  = dcc.last_sync_offset;
-    rp->dt_h_revision = DT_H_REVISION;  /* which version of typed_data */
+    rp->core_rev   = CORE_REV;            /* which version of core */
     rp->base = call OverWatch.getImageBase();
     dcc.last_sync_offset = get_rec_offset();
     call Collect.collect((void *) rp, sizeof(r),

@@ -23,7 +23,7 @@
 basic data type object descriptors
 '''
 
-__version__ = '0.2.8 (ch)'
+__version__ = '0.3.0 (ch)'
 
 import binascii
 from   decode_base  import *
@@ -58,7 +58,7 @@ dt_reboot_obj   = aggie(OrderedDict([
     ('hdr',       dt_hdr_obj),
     ('prev_sync', atom(('<I', '{:08x}'))),
     ('majik',     atom(('<I', '{:08x}'))),
-    ('dt_rev',    atom(('<I', '{:08x}'))),
+    ('core_rev',  atom(('<I', '{:08x}'))),
     ('base',      atom(('<I', '{:08x}'))),
 ]))
 

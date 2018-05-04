@@ -24,6 +24,7 @@
 #define __TYPED_DATA_H__
 
 #include <stdint.h>
+#include <core_rev.h>
 #include <panic.h>
 #include <image_info.h>
 #include <overwatch.h>
@@ -38,11 +39,6 @@
  * Configuration Stuff
  *
  ************************************************************************/
-
-/*
- * identify what revision of typed_data.h we are using for this build
- */
-#define DT_H_REVISION 18
 
 /*
  * Sync records are used to make sure we can always find the data stream if
@@ -180,7 +176,7 @@ typedef struct {
   /* above same as sync */
 
   /* additional in reboot record + owcb */
-  uint32_t dt_h_revision;       /* version identifier of typed_data */
+  uint32_t core_rev;            /* core_rev level                   */
                                 /* and associated structures        */
   uint32_t base;                /* base address of running image    */
 } PACKED dt_reboot_t;

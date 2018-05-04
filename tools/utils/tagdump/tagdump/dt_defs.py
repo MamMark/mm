@@ -1,5 +1,3 @@
-'''data type record definitions'''
-
 # Copyright (c) 2018 Eric B. Decker
 # All rights reserved.
 #
@@ -18,12 +16,17 @@
 # See COPYING in the top level directory of this source tree.
 #
 # Contact: Eric B. Decker <cire831@gmail.com>
-
+#
 # data type (data block) basic definitions
 #
 # define low level record manipulation and basic definitions for record
 # headers.
 #
+
+'''data type record definitions
+
+corresponds to typed_data.h
+'''
 
 from   __future__         import print_function
 
@@ -31,15 +34,13 @@ import struct
 from   misc_utils   import dump_buf
 from   core_headers import dt_hdr_obj
 
-__version__ = '0.2.7 (dt)'
+__version__ = '0.3.0 (dt)'
 
 
 # __all__ exports commonly used definitions.  It gets used
 # when someone does a wild import of this module.
 
 __all__ = [
-    'DT_H_REVISION',
-
     # object identifiers in each dt_record tuple
     'DTR_REQ_LEN',
     'DTR_DECODER',
@@ -64,13 +65,6 @@ __all__ = [
     'DT_CONFIG',
     'DT_GPS_RAW_SIRFBIN'
 ]
-
-
-# Our definitions need to match definition in include/typed_data.h.
-# The value of DT_H_REVISION reflects the version of typed_data.h that
-# we have implemented.  Includes record definitions, headers and decoders.
-
-DT_H_REVISION           = 18
 
 
 # dt_records

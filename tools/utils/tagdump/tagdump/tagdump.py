@@ -1,6 +1,3 @@
-#!/usr/bin/env python2
-'''tagdump - dump tag data stream records'''
-
 # Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
@@ -20,7 +17,7 @@
 #
 # Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
 #          Eric B. Decker <cire831@gmail.com>
-
+#
 # Vebosity;
 #
 #   0   just display basic record occurance (default)
@@ -30,12 +27,15 @@
 #   4   details of resync
 #   5   other errors and decoder versions
 
+'''tagdump - dump tag data stream records'''
+
 from   __future__         import print_function
 
 import sys
 import struct
 import argparse
 
+from   core_rev        import *         # get CORE_REV
 from   dt_defs         import *
 import dt_defs         as     dtd
 from   dt_defs         import print_record
@@ -56,7 +56,6 @@ import tagdump_config
 from   core_headers    import dt_hdr_obj
 
 from   __init__        import __version__   as VERSION
-from   dt_defs         import DT_H_REVISION as DT_REV
 
 from   dt_defs         import __version__   as dt_ver
 from   decode_base     import __version__   as db_ver
@@ -68,7 +67,7 @@ from   core_decoders   import __version__   as cd_ver
 from   core_emitters   import __version__   as ce_ver
 from   core_headers    import __version__   as ch_ver
 
-ver_str = '\ntagdump: ' + VERSION + ':  dt_rev ' + str(DT_REV)
+ver_str = '\ntagdump: ' + VERSION + ':  core_rev ' + str(CORE_REV)
 
 
 ####
@@ -144,12 +143,11 @@ ver_str = '\ntagdump: ' + VERSION + ':  dt_rev ' + str(DT_REV)
 #   input:          file to process.  (args.input)
 
 
-# This program needs to understand the format of the DBlk data stream.
-# The format of a particular instance is described by typed_data.h.
-# The define DT_H_REVISION in typed_data.h indicates which version.
-# Matching is a good thing.  We won't abort but will bitch if we mismatch.
-#
-# DT_H_REVISION is defined in dt_defs.py
+# This program needs to understand the format of the DBlk data stream.  The
+# format of a particular instance is described by typed_data.h.  The define
+# CORE_REV in core_rev.h and core_rev.py indicates the version of core
+# files being used including typed_data.h.  Matching is a good thing.  We
+# won't abort but will bitch if we mismatch.
 
 #
 # global control cells

@@ -1,5 +1,3 @@
-'''argparse definitions for tagdump options'''
-
 # Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
@@ -25,10 +23,12 @@
 # and tagdumpargs will display the main program version.
 #
 
+'''argparse definitions for tagdump options'''
+
 from   __future__         import print_function
 
 from   __init__ import __version__   as VERSION
-from   dt_defs  import DT_H_REVISION as DT_REV
+from   core_rev import *
 import argparse
 
 def auto_int(x):
@@ -47,7 +47,7 @@ def parseargs():
 
     parser.add_argument('-V', '--version',
                         action='version',
-                        version='%(prog)s ' + VERSION + ':  dt_rev ' + str(DT_REV))
+                        version='%(prog)s ' + VERSION + ':  core_rev ' + str(CORE_REV))
 
     parser.add_argument('--rtypes',
                         type=auto_upper,

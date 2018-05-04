@@ -25,6 +25,7 @@ from   __future__         import print_function
 
 __version__ = '0.2.7 (ce)'
 
+from   core_rev     import *
 from   dt_defs      import *
 from   dt_defs      import rec0
 from   dt_defs      import get_systime
@@ -36,8 +37,8 @@ from   core_headers import owcb_obj
 from   core_headers import image_info_obj
 from   core_headers import event_names
 from   core_headers import gps_cmd_names
-from   core_headers import PANIC_WARN
-from   core_headers import GPS_CMD
+from   core_headers import PANIC_WARN   # event
+from   core_headers import GPS_CMD      # event
 
 from   sirf_defs    import *
 import sirf_defs    as     sirf
@@ -133,11 +134,11 @@ def emit_reboot(level, offset, buf, obj):
 
     majik    = obj['majik'].val
     prev     = obj['prev_sync'].val
-    dt_rev   = obj['dt_rev'].val
+    core_rev = obj['core_rev'].val
     base     = obj['base'].val
-    if dt_rev != DT_H_REVISION:
+    if core_rev != CORE_REV:
         print('*** version mismatch, expected {:d}, got {:d}'.format(
-            DT_H_REVISION, dt_rev))
+            CORE_REV, core_rev))
 
     from_base    = owcb_obj['from_base'].val
     reboot_count = owcb_obj['reboot_count'].val
@@ -164,7 +165,7 @@ def emit_reboot(level, offset, buf, obj):
             base_name(from_base), base_name(base),
             ow_boot_mode_name(owcb_obj['ow_boot_mode'].val),
             reboot_count, fail_count, chk_fails))
-        print(rbt1b.format(prev, prev, dt_rev))
+        print(rbt1b.format(prev, prev, core_rev))
 
     if (level >= 2):                    # detailed display (level 2)
         print()
