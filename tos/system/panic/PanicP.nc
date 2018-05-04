@@ -627,11 +627,10 @@ implementation {
     pip = &b0p->panic_info;
     pip->pi_sig     = PANIC_INFO_SIG;
     pip->boot_count = owcp->reboot_count;
-    pip->fail_count = owcp->fail_count;
+    pip->panic_count= owcp->panic_count;
     call Rtc.getTime(&pip->rt);
-    pip->subsys = pap->pcode;
+    pip->pcode  = pap->pcode;
     pip->where  = pap->where;
-    pip->pad    = 0;
     pip->arg[0] = pap->a0;
     pip->arg[1] = pap->a1;
     pip->arg[2] = pap->a2;

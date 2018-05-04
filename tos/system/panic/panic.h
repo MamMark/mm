@@ -50,6 +50,7 @@
 
 #include <image_info.h>
 #include <rtctime.h>
+#include <platform_panic.h>
 
 /*
  * pcodes are used to denote what subsystem failed.  See
@@ -62,8 +63,12 @@
  * Automatic pcodes start at 0 and go to 15 (0xf).  There is
  * no checking for overrun with PANIC_HC_START.  Automatics
  * are generated using unique(UQ_PANIC_SUBSYS).
+ *
+ * platform_panic.h MUST define __pcode_{exc,kern,dvr} and
+ * the associated defines PANIC_{EXC,KERN,DVR}.  We check
+ * for the existence of PANIC_EXC and yell if not found.
+ * Yes, Margaret, its fatal.
  */
-#define PANIC_HC_START 16
 
 /*
  * main system hardcoded (HC) pcodes start at 0x70
@@ -73,15 +78,9 @@
  * DVR          undifferentiated driver panics
  */
 
-enum {
-  __pcode_exc  = 0x70,
-  __pcode_kern = 0x71,
-  __pcode_dvr  = 0x72,
-};
-
-#define PANIC_EXC  __pcode_exc
-#define PANIC_KERN __pcode_kern
-#define PANIC_DVR  __pcode_dvr
+#ifndef PANIC_EXC
+#error PANIC_EXC and friends need to defined in platform_panic.h
+#endif
 
 /* the argument type for panics */
 typedef unsigned int parg_t;
@@ -162,14 +161,13 @@ typedef struct {                        /* memory addresses */
 #define PANIC_INFO_SIG  0x44665041
 
 typedef struct {                        /* verify all structs in PIX */
-  uint32_t pi_sig;
-  uint32_t boot_count;
-  rtctime_t rt;
-  uint32_t fail_count;
-  uint8_t  subsys;
-  uint8_t  where;
-  uint16_t pad;
-  uint32_t arg[4];
+  uint32_t     pi_sig;
+  uint32_t     boot_count;
+  uint32_t     panic_count;
+  rtctime_t    rt;
+  panic_code_t pcode;                   /* needs to be a byte enum */
+  uint8_t      where;
+  uint32_t     arg[4];
 } panic_info_t;
 
 

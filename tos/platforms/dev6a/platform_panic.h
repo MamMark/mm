@@ -8,9 +8,11 @@
 
 #include <panic.h>
 
+#define PANIC_HC_START 16
+
 /*
  * KERN:	core kernal  (in panic.h)
- * TIME  :      timing system panic
+ * TIME:        timing system panic
  * ADC:		Analog Digital Conversion subsystem (AdcP.nc)
  * SD:          Disk
  * FS:          File System
@@ -26,7 +28,7 @@
  * TAGNET:      comm stack
  */
 
-enum panic_codes {
+typedef enum panic_codes {
   __pcode_time = PANIC_HC_START,        /* 0x10, see panic.h */
   __pcode_adc,
   __pcode_sd,
@@ -41,7 +43,12 @@ enum panic_codes {
   __pcode_pwr,
   __pcode_radio,
   __pcode_tagnet,
-};
+
+  __pcode_exc  = 0x70,
+  __pcode_kern = 0x71,
+  __pcode_dvr  = 0x72,
+
+} panic_code_t;
 
 #define PANIC_TIME      __pcode_time
 #define PANIC_ADC       __pcode_adc
@@ -57,5 +64,9 @@ enum panic_codes {
 #define PANIC_PWR       __pcode_pwr
 #define PANIC_RADIO     __pcode_radio
 #define PANIC_TAGNET    __pcode_tagnet
+
+#define PANIC_EXC  __pcode_exc
+#define PANIC_KERN __pcode_kern
+#define PANIC_DVR  __pcode_dvr
 
 #endif /* __PLATFORM_PANIC_H__ */
