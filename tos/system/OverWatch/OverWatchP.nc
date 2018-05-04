@@ -81,6 +81,7 @@ module OverWatchP {
     interface ImageManagerData  as IMD;
     interface OverWatchHardware as OWhw;
     interface LocalTime<TMilli>;
+    interface Rtc;
     interface Platform;
   }
 }
@@ -251,10 +252,10 @@ implementation {
         /* no return */
       }
       /* turn off the LAUNCH bit */
-      owcp->reboot_count++;
-      owcp->elapsed += owcp->uptime;
-      owcp->uptime = 0;
       owcp->ow_rpt_flags &= ~(OWRF_LAUNCH);
+      owcp->reboot_count++;
+      call Rtc.copyTime(&owcp->prev_boot, &owcp->boot_time);
+      call Rtc.getTime(&owcp->boot_time);
       return;
     }
 
@@ -280,8 +281,8 @@ implementation {
     }
 
     owcp->reboot_count++;
-    owcp->elapsed += owcp->uptime;
-    owcp->uptime = 0;
+    call Rtc.copyTime(&owcp->prev_boot, &owcp->boot_time);
+    call Rtc.getTime(&owcp->boot_time);
     owcp->reset_status  = call OWhw.getResetStatus();
     owcp->reset_others  = call OWhw.getResetOthers();
 
@@ -346,13 +347,13 @@ implementation {
 
       case OW_REQ_FAIL:                 /* crash, rebooting */
         owcp->ow_req = OW_REQ_BOOT;
-        owcp->fail_count++;
+        owcp->panic_count++;
 
         if (owcp->from_base == 0)               /* from GOLD, no special eject checks  */
           return;
         if (owcp->from_base == OW_BASE_UNK)     /* if unknown no special checks, weird */
           return;
-        if (owcp->fail_count > 10) {
+        if (owcp->panic_count > 10) {
           owcp->ow_boot_mode = OW_BOOT_OWT;
           owcp->owt_action = OWT_ACT_EJECT;
 
@@ -719,7 +720,6 @@ implementation {
     ow_control_block_t *owcp;
 
     owcp = &ow_control_block;
-    owcp->uptime = call LocalTime.get(); /* lt64 or ltS */
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
     owcp->ow_req = OW_REQ_FAIL;
@@ -743,7 +743,6 @@ implementation {
     ow_control_block_t *owcp;
 
     owcp = &ow_control_block;
-    owcp->uptime = call LocalTime.get();
     owcp->reboot_reason = reason;
     owcp->from_base = call OWhw.getImageBase();
     call OWhw.soft_reset();
@@ -829,4 +828,7 @@ implementation {
   event void IM.delete_complete() { }
   event void IM.dir_set_backup_complete()   { }
   event void IM.dir_eject_active_complete() { }
+
+  async event void Rtc.currentTime(
+    rtctime_t *timep, uint32_t reason_set)  { }
 }

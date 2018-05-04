@@ -198,12 +198,12 @@ typedef struct {
  * followed by the entire image_info block
  */
 typedef struct {
-  uint16_t    len;              /* size   24    +     144      */
+  uint16_t    len;              /* size   24    +     184      */
   dtype_t     dtype;            /* dt_version_t + image_info_t */
   uint32_t    recnum;
-  rtctime_t   rt;               /* 10 byte rtctime, 2quad align */
+  rtctime_t   rt;               /* 10 byte rtctime             */
   uint16_t    recsum;           /* part of header */
-  uint32_t    base;             /* base address of this image */
+  uint32_t    base;             /* base address of this image  */
 } PACKED dt_version_t;          /* quad granular */
 
 typedef struct {

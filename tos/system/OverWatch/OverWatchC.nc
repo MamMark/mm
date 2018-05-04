@@ -55,5 +55,6 @@ implementation {
 
   components PlatformC;
   OWHW_M.SysReboot -> PlatformC;
+  OW_P.Rtc         -> PlatformC;
   OW_P.Platform    -> PlatformC;
 }

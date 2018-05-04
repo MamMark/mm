@@ -70,16 +70,12 @@ dt_reboot_obj   = aggie(OrderedDict([
 owcb_obj        = aggie(OrderedDict([
     ('ow_sig',          atom(('<I', '0x{:08x}'))),
     ('rpt',             atom(('<I', '0x{:08x}'))),
-#
-# change uptime from 64 bit ms time to 32 bit secs
-# uptime and elapsed need to be changed.  Perhaps
-# boot time (rtctime), calculate elapsed.
-#
-    ('uptime',          atom(('<Q', '0x{:08x}'))),
+    ('boot_time',       rtctime_obj),
+    ('prev_boot',       rtctime_obj),
     ('reset_status',    atom(('<I', '0x{:08x}'))),
     ('reset_others',    atom(('<I', '0x{:08x}'))),
     ('from_base',       atom(('<I', '0x{:08x}'))),
-    ('fail_count',      atom(('<I', '{}'))),
+    ('panic_count',     atom(('<I', '{}'))),
     ('fault_gold',      atom(('<I', '0x{:08x}'))),
     ('fault_nib',       atom(('<I', '0x{:08x}'))),
     ('subsys_disable',  atom(('<I', '0x{:08x}'))),
@@ -89,10 +85,6 @@ owcb_obj        = aggie(OrderedDict([
     ('ow_boot_mode',    atom(('<B', '{}'))),
     ('owt_action',      atom(('<B', '{}'))),
     ('reboot_count',    atom(('<I', '{}'))),
-
-# ditto for elapsed
-
-    ('elapsed',         atom(('<Q', '0x{:08x}'))),
     ('strange',         atom(('<I', '{}'))),
     ('strange_loc',     atom(('<I', '0x{:04x}'))),
     ('chk_fails',       atom(('<I', '{}'))),

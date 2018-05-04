@@ -20,6 +20,8 @@
  *          Daniel J. Maltbie <dmaltbie@danome.com>
  */
 
+#include <rtctime.h>
+
 #ifndef __OVERWATCH_H__
 #define __OVERWATCH_H__
 
@@ -182,12 +184,13 @@ enum {
  */
 typedef struct {
   uint32_t           ow_sig;
-  uint32_t           ow_rpt_flags;      /* reporting flags */
-  uint64_t           uptime;            /* req input, time since last boot */
+  uint32_t           ow_rpt_flags;      /* reporting flags                 */
+  rtctime_t          boot_time;         /* last time booted                */
+  rtctime_t          prev_boot;         /* prev boot time                  */
   uint32_t           reset_status;      /* recognized stati                */
   uint32_t           reset_others;      /* unindentified other stati       */
   uint32_t           from_base;         /* base address of where from      */
-  uint32_t           fail_count;        /* how many times nib failed       */
+  uint32_t           panic_count;       /* how many times nib failed       */
 
   uint32_t           fault_mask_gold;   /* indicate faults                 */
   uint32_t           fault_mask_nib ;   /* indicate faults                 */
@@ -208,16 +211,9 @@ typedef struct {
    * This is persistent in that it survives across reboots.
    * However it is not nonvolitle ram and doesn't survive
    * across power fails.
-   *
-   * "elapsed" keeps a running total of how long we have been
-   * up since last full pwr cycle (full means we lost RAM).
-   *
-   * elapsed is a 64 bit time and needs to be 2quad aligned.
    */
 
   uint32_t           reboot_count;      /* reboots since pwr came up      */
-  uint64_t           elapsed;           /* total time since pwr on, 2quad */
-
   uint32_t           strange;           /* strange shit */
   uint32_t           strange_loc;       /* last reported strange */
   uint32_t           chk_fails;         /* image checksum fails */

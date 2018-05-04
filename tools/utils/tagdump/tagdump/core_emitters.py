@@ -114,14 +114,14 @@ def reboot_reason_name(reason):
 rbt0  = '  {:s} -> {:s}  [{:s}]  ({:d}/{:d})'
 
 rbt1a = '    REBOOT: {:7s}  f: {:5s}  c: {:5s}  m: {:5s}  reboots: {}/{}   chk_fails: {}'
-rbt1b = '    dt: 2017/12/26-(mon)-01:52:40 GMT  prev_sync: {} (0x{:04x})  rev: {:7d}'
+rbt1b = '    rt: 2017/12/26-(mon)-01:52:40 GMT  prev_sync: {} (0x{:04x})  rev: {:7d}'
 
 rbt2a = '    majik:   {:08x}  sigs:    {:08x}    {:08x}  {:08x}'
 rbt2b = '    base:  f {:08x}  cur:     {:08x}'
 rbt2c = '    rpt:     {:08x}  reset:   {:08x}      others: {:08x}'
 rbt2d = '    fault/g: {:08x}  fault/n: {:08x}  ss/disable: {:08x}'
 rbt2e = '    reboots: {:4}  fails: {:4}  strg: {:8}  loc: {:4}'
-rbt2f = '    uptime: {:8}  elapsed: {:8}'
+rbt2f = '    uptime: {}  boot: {}  prev: {}'
 rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
 
 def emit_reboot(level, offset, buf, obj):
@@ -177,8 +177,7 @@ def emit_reboot(level, offset, buf, obj):
         print(rbt2e.format(reboot_count, fail_count,
                            owcb_obj['strange'].val,
                            owcb_obj['strange_loc'].val))
-        print(rbt2f.format(owcb_obj['uptime'].val,
-                           owcb_obj['elapsed'].val))
+        print(rbt2f.format(0, owcb_obj['boot_time'], owcb_obj['prev_boot']))
         print(rbt2g.format(owcb_obj['reboot_reason'].val,
                            owcb_obj['ow_req'].val,
                            owcb_obj['ow_boot_mode'].val,
