@@ -94,10 +94,10 @@ If two images have the same ver_id, then it is imperative that these images
 are exact copies of each other.  If one sums their binary values the result
 should be exactly the same.  It is up to the development community to
 guarantee that this condition is met.  The ImageManager and all associated
-software assumes that the two images with the same ver_id are indeed the
+software assumes that any two images with the same ver_id are indeed the
 same images.  (Note, checksums of various flavors, including on image
 checksums (see section 5) can be used to differentiate two images that
-inadvertantly named the same ver_id).
+inadvertantly are named the same ver_id, but it is better to not go there).
 
 
 5. Hardware Version
@@ -109,26 +109,14 @@ this image is built.
 
 6. Image Validity
 
-There are two simple checksums associated with an image, a vector checksum
-(vector_chk) and an image checksum (image_chk).
+There is one checksum associated with an image, the image checksum,
+image_info.image_chk.  The checksum is over the entire image for exactly
+the number of bytes in the image, image_info.image_length.  The checksum
+is a 32 bit byte by byte checksum.  It does NOT contain image_chk.  Image_chk
+should be set to zero prior to computing the checksum over the image.
 
-Both checksums assume the image starts on a quad aligned boundary (they do)
-and any residual bytes at the end are padded with zeros to the next quad
-boundary.  The checksum is a simple quad addition with no overflow.  The
-resultant sum should be zero.
-
-The vector sum is the sum over the initial vector table which is at the
-start of the image (required).  This area is exactly 140 bytes long and
-is determined explicitly by the processor being used.  The result has to
-be added to vec_sum from the image info (see section 6).  This result
-must be 0 for a valid image.
-
-The vector sum is provided for a simple and quick validity check when
-either quickness or enough of the image isn't available.
-
-The image sum is performed over the entire image and must yield 0 if the
-image is valid.  The image check digits, image_sum, are already included in
-the image.
+The image sum is performed over the entire image.  To check, remove image_chk,
+sum all bytes in the image and compare to image_chk.
 
 
 7. Image Identification
@@ -146,9 +134,6 @@ o image_start, load address of the image.  Where in the address space of
 
 o image_length, how long in bytes is this image.  Needed for both writing
   the image as well as computing the checksum.
-
-o vector_chk, image_chk: checksums over the vector table and the entire
-  image.  See below for comments on the checksum algorithm.
 
 o ver_id.  The version identifier of this image.  This is the name of
   the image and is considered unique.
@@ -197,11 +182,8 @@ units some form of uSecs, T32 timer, main DCO 16MiHz
     128KiB      114700
 
 
-Note: We currently use a 32 bit checksum for performance to verify the
-entire image.  Its performance is good enough (ie. fast enough) for now.
-
-Included in the image is the image_info and its contents is verified by the
-image checksum.
-
-If we need to go to a faster method, ie. vector check, the image_info is no
-longer verified by the checksum and we will need to revisit this.
+Note: We currently use the 32 bit byte by byte checksum for its simplicity.
+When moving images across the network (the typical case), the image is
+effectively only available on a byte by byte basis.  The 32 bit aligned
+checksum requires alignment and access to the entire image.  This is
+problematic for the network transfer.

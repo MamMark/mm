@@ -34,6 +34,7 @@
  */
 #define IMAGE_META_OFFSET 0x140
 #define IMAGE_MIN_SIZE    (IMAGE_META_OFFSET + sizeof(image_info_t))
+#define IMAGE_MAX_SIZE    (128 * 1024)
 
 typedef struct {                        /* little endian order  */
   uint16_t build;                       /* that's native for us */
@@ -46,8 +47,8 @@ typedef struct {
   uint8_t  hw_model;
 } hw_ver_t;
 
-#define IMAGE_DESCRIPTOR_MAX 44
-#define ID_MAX               44
+#define IMG_DESC_MAX 44
+#define STAMP_MAX    30
 
 /*
  * Image description structure
@@ -59,20 +60,18 @@ typedef struct {
   uint32_t    ii_sig;                   /*  b  must be IMAGE_INFO_SIG to be valid */
   uint32_t    image_start;              /*  b  where this binary loads            */
   uint32_t    image_length;             /*  b  byte length of entire image        */
-  uint32_t    vector_chk;               /*  s  simple checksum over vector table  */
-  uint32_t    image_chk;                /*  s  simple checksum over entire image  */
   image_ver_t ver_id;                   /*  b  version string of this build       */
-  uint8_t     image_desc[ID_MAX];       /*  s  generic descriptor                 */
-  uint8_t     repo_desc0[ID_MAX];       /*  s  main tree tinyos/prod descriptor   */
-  uint8_t     repo_desc1[ID_MAX];       /*  s  aux  tree MamMark descriptor       */
-  uint8_t     stamp_date[30];           /*  s  build time stamp */
-  hw_ver_t    hw_ver;                   /*  b  and last 2 bytes */
+  uint32_t    image_chk;                /*  s  simple checksum over entire image  */
+  uint8_t     image_desc[IMG_DESC_MAX]; /*  s  generic descriptor                 */
+  uint8_t     repo_desc0[IMG_DESC_MAX]; /*  s  main tree tinyos/prod descriptor   */
+  uint8_t     repo_desc1[IMG_DESC_MAX]; /*  s  aux  tree MamMark descriptor       */
+  uint8_t     stamp_date[STAMP_MAX];    /*  s  build time stamp                   */
+  hw_ver_t    hw_ver;                   /*  b  and last 2 bytes                   */
 } image_info_t;
 
 /*
  * 'binfin' (tools/utils/binfin) is used to fill in the following cells:
  *
- *      o vector_chk
  *      o image_chk
  *      o image_desc
  *      o repo_desc0
@@ -104,20 +103,14 @@ typedef struct {
  * this image was stamped by binfin.  Typically this will be when the
  * image was built.  stamp_date gets filled in with "date -u".
  *
- * After filling in image_desc, repository{0,1}, and stamp_date, vector_chk
- * is computed and image_chk is computed over the entire image size.
+ * After filling in image_desc, repository{0,1}, and stamp_date, image_chk
+ * should be computed.  Image_chk starts as zero, and the 32 bit byte by
+ * byte checksum is computed then placed into image_chk.
  *
- * Both vector_chk and image_chk are computed using a 32 bit aligned, 32
- * bit wide checksum.  See tos/lib/ChecksumM.nc.  If the region being
- * summed checks out the resultant sum will be 0.  vector_chk/image_chk
- * must be set to make this happen.
+ * To verify the image_chk, first it must be copied out(saved), zeroed,
+ * and the checksum computed then compared against the saved value.
  *
- * vector_chk is the sum over the first 0x140 bytes.  This is the exception
- * vectors of the processor.
- *
- * image_chk is the sum over the entire image.
- *
- * vector_chk, image_desc, repo_desc{0,1}, and stamp_date must be filled in
+ * image_desc, repo_desc{0,1}, and stamp_date must be filled in
  * prior to computing the value of image_chk.
  */
 

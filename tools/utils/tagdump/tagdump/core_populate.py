@@ -11,8 +11,8 @@ def decode_default(level, offset, buf, obj):
 
 #                                      120 = sizeof(reboot record) + sizeof(owcb)
 dtd.dt_records[DT_REBOOT]           = (120, decode_reboot,  [ emit_reboot ],      dt_reboot_obj,    "REBOOT",       'dt_reboot_obj')
-#                                      168 = sizeof(version record) + sizeof(image_info)
-dtd.dt_records[DT_VERSION]          = (168, decode_version, [ emit_version ],     dt_version_obj,   "VERSION",      'dt_version_obj')
+#                                      208 = sizeof(version record) + sizeof(image_info)
+dtd.dt_records[DT_VERSION]          = (208, decode_version, [ emit_version ],     dt_version_obj,   "VERSION",      'dt_version_obj')
 dtd.dt_records[DT_SYNC]             = ( 28, decode_default, [ emit_sync ],        dt_sync_obj,      "SYNC",         'dt_sync_obj')
 dtd.dt_records[DT_EVENT]            = ( 40, decode_default, [ emit_event ],       dt_event_obj,     "EVENT",        'dt_event_obj')
 dtd.dt_records[DT_DEBUG]            = (  0, decode_default, [ emit_debug ],       dt_debug_obj,     "DEBUG",        'dt_debug_obj')

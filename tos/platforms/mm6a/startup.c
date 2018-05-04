@@ -77,17 +77,11 @@ extern uint32_t __image_start__;
 extern uint32_t __image_length__;
 
 
-/*
- * image_chk is over the whole image, including the vector_chk field.
- * first calculate the vector sum, modify the binary with the result.
- * then calculate the image sum.
- */
 const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   .ii_sig       = IMAGE_INFO_SIG,
   .image_start  = (uint32_t) &__image_start__,  /* 32 bit load address of binary         */
   .image_length = (uint32_t) &__image_length__, /* how big in bytes                      */
-  .vector_chk   = 0,                            /* 32 bit checksum over the vector table */
-  .image_chk    = 0,                            /* 32 bit checksum over full image size. */
+  .image_chk    = 0,                            /* 32 bit byte sum over full image size. */
   .ver_id       = { .major = MAJOR, .minor = MINOR, .build = _BUILD },
   .image_desc   = { 0 },
   .repo_desc0   = { 0 },

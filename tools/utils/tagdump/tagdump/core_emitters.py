@@ -123,7 +123,6 @@ rbt2d = '    fault/g: {:08x}  fault/n: {:08x}  ss/disable: {:08x}'
 rbt2e = '    reboots: {:4}  fails: {:4}  strg: {:8}  loc: {:4}'
 rbt2f = '    uptime: {:8}  elapsed: {:8}'
 rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
-rbt2h = '    vec_chk_fail: {:2}  image_chk_fail:   {:2}'
 
 def emit_reboot(level, offset, buf, obj):
     xlen     = obj['hdr']['len'].val
@@ -147,20 +146,17 @@ def emit_reboot(level, offset, buf, obj):
     fault_gold   = owcb_obj['fault_gold'].val
     fault_nib    = owcb_obj['fault_nib'].val
     ss_dis       = owcb_obj['subsys_disable'].val
-    chk_fails    = owcb_obj['vec_chk_fail'].val + \
-                   owcb_obj['image_chk_fail'].val
+    chk_fails    = owcb_obj['chk_fails'].val
 
     print(rec0.format(offset, recnum, st, xlen, xtype,
                       dt_name(xtype)), end = '')
     print(rbt0.format(base_name(from_base), base_name(base),
                       ow_boot_mode_name(boot_mode), reboot_count, fail_count))
 
-    if (chk_fails):                     # do we have any flash or image chk fails
-        print('*** chk fails: vec_fails: {}, image_fails: {}'.format(
-            owcb_obj['vec_chk_fail'].val, owcb_obj['image_chk_fail'].val))
-    if (fault_gold or fault_nib or ss_dis):
-        print('*** fault/g: {:08x}  fault/n: {:08x}  ss_dis: {:08x}'.format(
-            fault_gold, fault_nib, ss_dis))
+    # any weird failures?  Always report
+    if (chk_fails or fault_gold or fault_nib or ss_dis):
+        print('*** chkfails: {}  fault/g: {:08x}  fault/n: {:08x}  ss_dis: {:08x}'.format(
+            chk_fails, fault_gold, fault_nib, ss_dis))
 
     if (level >= 1):                   # basic record display (level 1)
         print(rbt1a.format(
@@ -187,8 +183,6 @@ def emit_reboot(level, offset, buf, obj):
                            owcb_obj['ow_req'].val,
                            owcb_obj['ow_boot_mode'].val,
                            owcb_obj['owt_action'].val))
-        print(rbt2h.format(owcb_obj['vec_chk_fail'].val,
-                           owcb_obj['image_chk_fail'].val))
 
 
 ################################################################

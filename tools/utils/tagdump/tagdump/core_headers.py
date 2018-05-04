@@ -95,8 +95,7 @@ owcb_obj        = aggie(OrderedDict([
     ('elapsed',         atom(('<Q', '0x{:08x}'))),
     ('strange',         atom(('<I', '{}'))),
     ('strange_loc',     atom(('<I', '0x{:04x}'))),
-    ('vec_chk_fail',    atom(('<I', '{}'))),
-    ('image_chk_fail',  atom(('<I', '{}'))),
+    ('chk_fails',       atom(('<I', '{}'))),
     ('ow_sig_c',        atom(('<I', '0x{:08x}')))
 ]))
 
@@ -120,17 +119,19 @@ image_version_obj   = aggie(OrderedDict([
 ]))
 
 
+IMG_DESC_MAX = 44
+STAMP_MAX    = 30
+
 image_info_obj  = aggie(OrderedDict([
     ('ii_sig',    atom(('<I', '0x{:08x}'))),
     ('im_start',  atom(('<I', '0x{:08x}'))),
     ('im_len',    atom(('<I', '0x{:08x}'))),
-    ('vect_chk',  atom(('<I', '0x{:08x}'))),
-    ('im_chk',    atom(('<I', '0x{:08x}'))),
     ('ver_id',    image_version_obj),
+    ('im_chk',    atom(('<I', '0x{:08x}'))),
     ('image_desc',atom(('44s', '{:s}'))),
     ('repo0',     atom(('44s', '{:s}'))),
     ('repo1',     atom(('44s', '{:s}'))),
-    ('build_date',atom(('30s', '{:s}'))),
+    ('stamp_date',atom(('30s', '{:s}'))),
     ('hw_ver',    hw_version_obj),
 ]))
 

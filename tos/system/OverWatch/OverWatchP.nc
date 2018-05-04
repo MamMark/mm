@@ -91,65 +91,49 @@ implementation {
   uint32_t owt_len_to_send = 128;
 
   /*
-   * good_nib_vectors: verify nib vectors
+   * check_image: verify an image
    *
-   * Quick verification of some sense of reasonableness before launching
-   * the NIB  image.
-   *
-   * 1) Verify the signature of the image_info block.
-   * 2) extract the vector checksum, vector_chk
-   * 3) calculate vector across the vector table.
-   * 4) add vector_chk.  result should be zero.
-   *
-   * Note: if iip->vector_chk is 0, we currently assume the checksum is
-   * disabled.
-   */
-  bool good_nib_vectors(image_info_t *iip) {
-    uint32_t vec_sum;
-
-    if (iip->ii_sig != IMAGE_INFO_SIG)
-      return FALSE;
-    if (iip->vector_chk) {
-      vec_sum = call Checksum.sum32_aligned((void *) NIB_BASE,
-                                            NIB_VEC_BYTES);
-      vec_sum += iip->vector_chk;
-      if (vec_sum) {
-        ow_control_block.vec_chk_fail++;
-        return FALSE;
-      }
-    }
-    return TRUE;
-  }
-
-
-  /*
-   * good_nib_flash: verify nib flash
-   *
-   * Check the NIB image.  Verify its checksum.
+   * Verify its checksum.
    *
    * 1) Verify the signature of the image_info block.
    * 2) extract the image size from the structure.  This is in bytes.
-   *    Must be >= IMAGE_MIN_SIZE
+   *    Must be >= IMAGE_MIN_SIZE and < IMAGE_MAX_SIZE.
    * 3) calculate the checksum across the entire image.
-   *
-   * The checksum is embedded and is automatically included in the
-   * sum.  The checksum must result in zero to pass.
    *
    * Note: if iip->image_chk is 0, we currently assume the checksum is
    * disabled.
    */
-  bool good_nib_flash(image_info_t *iip) {
-    uint32_t image_sum;
+  bool check_image(image_info_t *iip) {
+    uint32_t image_sum, modifier;
 
     if (iip->ii_sig != IMAGE_INFO_SIG)
       return FALSE;
     if (iip->image_length < IMAGE_MIN_SIZE)
       return FALSE;
+    if (iip->image_length >= IMAGE_MAX_SIZE)
+      return FALSE;
+    if (iip->image_start != GOLD_BASE &&
+        iip->image_start != NIB_BASE) {
+      /*
+       * that's weird, not a recognized starting address.
+       * we could panic but we aren't up yet
+       */
+        ow_control_block.chk_fails++;
+        return FALSE;
+    }
     if (iip->image_chk) {
-      image_sum = call Checksum.sum32_aligned((void *) NIB_BASE,
-                                              iip->image_length);
-      if (image_sum) {
-        ow_control_block.image_chk_fail++;
+      /*
+       * the original sum is done with image_chk set to 0.  After we
+       * sum what is in flash, we must subtract out the bytes that are
+       * in image_chk.  The result should then be the same as image_chk.
+       */
+      image_sum = iip->image_chk;
+      modifier  = ((image_sum >> 24) & 0xff) + ((image_sum >> 16) & 0xff) +
+        ((image_sum >> 8) & 0xff) + (image_sum & 0xff);
+      image_sum = call Checksum.sum8((void *) iip->image_start, iip->image_length);
+      image_sum -= modifier;
+      if (image_sum != iip->image_chk) {
+        ow_control_block.chk_fails++;
         return FALSE;
       }
     }
@@ -334,11 +318,10 @@ implementation {
           case OW_BOOT_NIB:
             /*
              * If we are booting the NIB, we want to first check
-             * the NIBs validity.  If good_nib_flash takes too long
-             * we can switch to checking the vector table instead.
+             * the NIBs validity.
              */
             iip  = (image_info_t *) NIB_INFO;
-            if (good_nib_vectors(iip) && good_nib_flash(iip)) {
+            if (check_image(iip)) {
               /*
                * if it returns, boot GOLD
                */
@@ -404,7 +387,7 @@ implementation {
     image_info_t       *iip;
     uint32_t remaining;
     error_t err;
-    bool    bad_vecs, bad_image;
+    bool    bad_image;
 
     uint32_t cur_sector, faddr, flen;
     uint8_t  *buf;
@@ -416,8 +399,7 @@ implementation {
     }
     active = call IMD.dir_get_active();
     iip = (void *) NIB_INFO;
-    bad_vecs  = !good_nib_vectors(iip);
-    bad_image = (bad_vecs ? bad_vecs : !good_nib_flash(iip));
+    bad_image = !check_image(iip);
     nop();                                  /* BRK */
     switch (owcp->owt_action) {
       case OWT_ACT_NONE:

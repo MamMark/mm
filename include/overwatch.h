@@ -28,18 +28,22 @@
 #endif
 
 /*
+ * definitions for GOLD
+ *
+ * GOLD_BASE:   where the GOLD image starts
+ * GOLD_INFO:   where the GOLD's image_info block starts
+ */
+#define GOLD_BASE       0x00000000
+#define GOLD_INFO       (GOLD_BASE + 0x140)
+
+/*
  * definintions for NIB access
  *
  * NIB_BASE:    where the NIB image starts
  * NIB_INFO:    where the NIB's image_info block starts
- * NIB_VEC_COUNT: count of how many vectors need to be summed when verifing
- *              the NIBs vector table.  Each entry is 4 bytes wide.
  */
-
 #define NIB_BASE        0x00020000
 #define NIB_INFO        (NIB_BASE + 0x140)
-#define NIB_VEC_COUNT   (64 + 14 + 2)
-#define NIB_VEC_BYTES   (NIB_VEC_COUNT * 4)
 
 
 /*
@@ -215,10 +219,9 @@ typedef struct {
   uint64_t           elapsed;           /* total time since pwr on, 2quad */
 
   uint32_t           strange;           /* strange shit */
-  uint32_t           strange_loc;
-  uint32_t           vec_chk_fail;
-  uint32_t           image_chk_fail;
-
+  uint32_t           strange_loc;       /* last reported strange */
+  uint32_t           chk_fails;         /* image checksum fails */
+                                        /* either gold or nib, just yell  */
   uint32_t           ow_sig_c;
 } PACKED ow_control_block_t;
 

@@ -131,7 +131,7 @@ typedef struct {                /* size 20 */
   uint16_t len;
   dtype_t  dtype;               /* 2 bytes */
   uint32_t recnum;
-  rtctime_t rt;                 /* 10 byte rtctime, 2quad */
+  rtctime_t rt;                 /* 10 byte rtctime */
   uint16_t recsum;
 } PACKED dt_header_t;
 
