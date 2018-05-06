@@ -419,7 +419,7 @@ implementation {
 
       case GDC_RAW_TX:
         awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) gp->data, sizeof(*lenp-1));
+        err   = call GPSTransmit.send((void *) gp->data, *lenp-1);
         call CollectEvent.logEvent(DT_EVENT_GPS_RAW_TX, 999, err, 0, awake);
         break;
 
