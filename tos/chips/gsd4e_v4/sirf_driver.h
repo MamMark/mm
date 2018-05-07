@@ -42,24 +42,24 @@
 const uint8_t sirf_send_boot[] = {
   0xa0, 0xa2,
   0x00, 0x02,
-  132,				// send sw ver (0x84)
+  132,                          // send sw ver (0x84)
   0x00,
   0x00, 0x84,
   0xb0, 0xb3,
 
   0xa0, 0xa2,
   0x00, 0x02,
-  144,				// poll clock status (0x90)
+  144,                          // poll clock status (0x90)
   0x00,
   0x00, 0x90,
   0xb0, 0xb3,
 
-  0xa0, 0xa2,			// turn on 4 (tracker data)
+  0xa0, 0xa2,                   // turn on 4 (tracker data)
   0x00, 0x08,
-  166,				// set message rate (0xa6)
-  0,				// send now
-  4,				// Tracker Data Out
-  1,				// update rate
+  166,                          // set message rate (0xa6)
+  0,                            // send now
+  4,                            // Tracker Data Out
+  1,                            // update rate, 1/sec
   0, 0, 0, 0,
   0x00, 0xab,
   0xb0, 0xb3,
@@ -72,12 +72,12 @@ const uint8_t sirf_send_boot[] = {
  */
 
 const uint8_t sirf_send_start[] = {
-  0xa0, 0xa2,			// turn on 4 (tracker data)
+  0xa0, 0xa2,                   // turn on 4 (tracker data)
   0x00, 0x08,
-  166,				// set message rate (0xa6)
-  0,				// send now
-  4,				// Tracker Data Out
-  1,				// update rate
+  166,                          // set message rate (0xa6)
+  0,                            // send now
+  4,                            // Tracker Data Out
+  1,                            // update rate
   0, 0, 0, 0,
   0x00, 0xab,
   0xb0, 0xb3,
@@ -86,142 +86,142 @@ const uint8_t sirf_send_start[] = {
 
 
 const uint8_t nmea_4800[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '1', ',',				// protocol 0 SirfBinary, 1 - NEMA
-  '4', '8', '0', '0', ',',		// baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '0', 'E',			// checksum
-  '\r', '\n'				// terminator
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '0', '0', ',',                   // set serial port MID
+  '1', ',',                             // protocol 0 SirfBinary, 1 - NEMA
+  '4', '8', '0', '0', ',',              // baud rate
+  '8', ',',                             // 8 data bits
+  '1', ',',                             // 1 stop bit
+  '0',                                  // no parity
+  '*', '0', 'E',                        // checksum
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t nmea_9600[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '1', ',',				// protocol 0 SirfBinary, 1 - NEMA
-  '9', '6', '0', '0', ',',		// baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '0', 'D',			// checksum
-  '\r', '\n'				// terminator
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '0', '0', ',',                   // set serial port MID
+  '1', ',',                             // protocol 0 SirfBinary, 1 - NEMA
+  '9', '6', '0', '0', ',',              // baud rate
+  '8', ',',                             // 8 data bits
+  '1', ',',                             // 1 stop bit
+  '0',                                  // no parity
+  '*', '0', 'D',                        // checksum
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t nmea_57600[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '1', ',',				// protocol 0 SirfBinary, 1 - NEMA
-  '5', '7', '6', '0', '0', ',',		// baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '3', '6',			// checksum
-  '\r', '\n'				// terminator
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '0', '0', ',',                   // set serial port MID
+  '1', ',',                             // protocol 0 SirfBinary, 1 - NEMA
+  '5', '7', '6', '0', '0', ',',         // baud rate
+  '8', ',',                             // 8 data bits
+  '1', ',',                             // 1 stop bit
+  '0',                                  // no parity
+  '*', '3', '6',                        // checksum
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t nmea_115200[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '1', ',',				// protocol 0 SirfBinary, 1 - NEMA
-  '1', '1', '5', '2', '0', '0', ',',	// baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '0', '5',			// checksum
-  '\r', '\n'				// terminator
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '0', '0', ',',                   // set serial port MID
+  '1', ',',                             // protocol 0 SirfBinary, 1 - NEMA
+  '1', '1', '5', '2', '0', '0', ',',    // baud rate
+  '8', ',',                             // 8 data bits
+  '1', ',',                             // 1 stop bit
+  '0',                                  // no parity
+  '*', '0', '5',                        // checksum
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t nmea_307200[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '1', ',',				// protocol 0 SirfBinary, 1 - NEMA
-  '3', '0', '7', '2', '0', '0', ',', 	// baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '0', '4',			// checksum
-  '\r', '\n'				// terminator
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '0', '0', ',',                   // set serial port MID
+  '1', ',',                             // protocol 0 SirfBinary, 1 - NEMA
+  '3', '0', '7', '2', '0', '0', ',',    // baud rate
+  '8', ',',                             // 8 data bits
+  '1', ',',                             // 1 stop bit
+  '0',                                  // no parity
+  '*', '0', '4',                        // checksum
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t nmea_921600[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '1', ',',				// protocol 0 SirfBinary, 1 - NEMA
-  '9', '2', '1', '6', '0', '0', ',', 	// baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '0', 'E',			// checksum
-  '\r', '\n'				// terminator
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '0', '0', ',',                   // set serial port MID
+  '1', ',',                             // protocol 0 SirfBinary, 1 - NEMA
+  '9', '2', '1', '6', '0', '0', ',',    // baud rate
+  '8', ',',                             // 8 data bits
+  '1', ',',                             // 1 stop bit
+  '0',                                  // no parity
+  '*', '0', 'E',                        // checksum
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t nmea_1228800[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '1', ',',				// protocol 0 SirfBinary, 1 - NEMA
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '0', '0', ',',                   // set serial port MID
+  '1', ',',                             // protocol 0 SirfBinary, 1 - NEMA
   '1', '2', '2', '8', '8', '0', '0', ',', // baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '3', '3',			// checksum
-  '\r', '\n'				// terminator
+  '8', ',',                             // 8 data bits
+  '1', ',',                             // 1 stop bit
+  '0',                                  // no parity
+  '*', '3', '3',                        // checksum
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t nmea_sw_ver[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '2', '5',        		// sw_ver MID
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '2', '5',                        // sw_ver MID
   '*', '2', '1',
-  '\r', '\n'				// terminator
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t nmea_sirf_9600[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '0', ',',				// protocol 0 SirfBinary, 1 - NEMA
-  '9', '6', '0', '0', ',',		// baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '0', 'C',			// checksum
-  '\r', '\n'				// terminator
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '0', '0', ',',                   // set serial port MID
+  '0', ',',                             // protocol 0 SirfBinary, 1 - NEMA
+  '9', '6', '0', '0', ',',              // baud rate
+  '8', ',',                             // 8 data bits
+  '1', ',',                             // 1 stop bit
+  '0',                                  // no parity
+  '*', '0', 'C',                        // checksum
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t nmea_sirf_57600[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '0', ',',				// protocol 0 SirfBinary, 1 - NEMA
-  '5', '7', '6', '0', '0', ',',		// baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '3', '7',			// checksum
-  '\r', '\n'				// terminator
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '0', '0', ',',                   // set serial port MID
+  '0', ',',                             // protocol 0 SirfBinary, 1 - NEMA
+  '5', '7', '6', '0', '0', ',',         // baud rate
+  '8', ',',                             // 8 data bits
+  '1', ',',                             // 1 stop bit
+  '0',                                  // no parity
+  '*', '3', '7',                        // checksum
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t nmea_sirf_115200[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '0', ',',				// protocol 0 SirfBinary, 1 - NEMA
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '0', '0', ',',                   // set serial port MID
+  '0', ',',                             // protocol 0 SirfBinary, 1 - NEMA
   '1', '1', '5', '2', '0', '0', ',',    // baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '0', '4',			// checksum
-  '\r', '\n'				// terminator
+  '8', ',',                             // 8 data bits
+  '1', ',',                             // 1 stop bit
+  '0',                                  // no parity
+  '*', '0', '4',                        // checksum
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t nmea_sirf_307200[] = {
-  '$', 'P', 'S', 'R', 'F',		// header
-  '1', '0', '0', ',',			// set serial port MID
-  '0', ',',				// protocol 0 SirfBinary, 1 - NEMA
+  '$', 'P', 'S', 'R', 'F',              // header
+  '1', '0', '0', ',',                   // set serial port MID
+  '0', ',',                             // protocol 0 SirfBinary, 1 - NEMA
   '3', '0', '7', '2', '0', '0', ',',    // baud rate
-  '8', ',',				// 8 data bits
-  '1', ',',				// 1 stop bit
-  '0',					// no parity
-  '*', '0', '5',			// checksum
-  '\r', '\n'				// terminator
+  '8', ',',                             // 8 data bits
+  '1', ',',                             // 1 stop bit
+  '0',                                  // no parity
+  '*', '0', '5',                        // checksum
+  '\r', '\n'                            // terminator
 };
 
 const uint8_t sirf_sw_ver[] = {
@@ -436,4 +436,4 @@ typedef struct {
   uint16_t resets;                    /* number of simple resets */
 } sirfbin_stat_t;
 
-#endif	/* __SIRF_DRIVER_H__ */
+#endif  /* __SIRF_DRIVER_H__ */
