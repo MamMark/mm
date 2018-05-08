@@ -30,9 +30,10 @@
 /* get external definitions */
 #include <sirf_msg.h>
 
-#ifdef notdef
-/*
- * Boot up sequence commands:
+
+/*************************************************************************
+ *
+ * Boot up sequences:
  *
  * 1) Send SW ver
  * 2) poll clock status
@@ -82,9 +83,349 @@ const uint8_t sirf_send_start[] = {
   0x00, 0xab,
   0xb0, 0xb3,
 };
-#endif notdef
 
 
+/*
+ * CGEE startup
+ */
+
+const uint8_t sirf_start_cgee[] = {
+
+  /* 232/253: eerom_on */
+
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x03,                   // length 3
+  232,  253,                    // ee - storage control
+  1,                            // turn on eerom
+  0x01, 0xe6,                   // checksum
+  0xb0, 0xb3,                   // end seq
+
+  /* 232/32: sgee off, cgee on */
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x04,                   // length 4
+  232,  32,                     // sif aiding enable/disable
+  1,                            // sgee disable
+  0,                            // cgee enable
+  0x01, 0x0b,                   // checksum
+  0xb0, 0xb3,                   // end seq
+
+  /* 232/254: permanently enable cgee prediction */
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x06,                   // length 6
+  232,  254,                    // ee - storage control
+  0xff, 0xff, 0xff, 0xff,       // permanently enable
+  0x05, 0xe2,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+/*************************************************************************
+ *
+ * Misc messages
+ *
+ * numerical order
+ *
+ *************************************************************************
+ */
+const uint8_t sirf_sw_ver[] = {
+  0xa0, 0xa2,
+  0x00, 0x02,
+  132,                          // send sw ver (0x84)
+  0x00,
+  0x00, 0x84,
+  0xb0, 0xb3,
+};
+
+
+const uint8_t sirf_peek_0[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x0c,                   // length 12
+  178, 3,                       // peek/poke
+  0,                            // type, peek
+  4,                            // 4 bytes
+  0, 0, 0, 0,                   // addr 0
+  0, 0, 0, 0,                   // dummy data
+  0x00, 0xb9,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+/*
+ * hw_config_rsp: respond to hw_config_req
+ *
+ * hw config byte 0x00: (bit numbering 1 based in manual)
+ *   b0: Precise Time Transfer off
+ *   b1: PTT direction  CP -> SLC (gps)
+ *   b2: Freq Transfer off
+ *   b3: Counter
+ *   b4: RTC Availablity (NO, ours, we lie)
+ *   b5: RTC for GPS (0 ext for GPS, no used)
+ *   b6: Course Time Avail (0 - no)
+ *   b7: ref clock on
+ */
+
+const uint8_t sirf_hw_config_rsp[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x08,                   // length 8
+  214,                          // HW Config Response, no sid
+  0x00,                         // see above
+  0, 0, 0, 0, 0,                // nominal freq (not used).
+  0,                            // Network enhance (not used).
+  0x00, 0xd6,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+const uint8_t sirf_msgs_all_off[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x08,                   // length 8
+  166,                          // set message rate
+  2,                            // mode 2 enable/disable all
+  0,                            // mid
+  0,                            // 0 - all off
+  0,                            // reserved
+  0,                            // reserved
+  0,                            // reserved
+  0,                            // reserved
+  0x00, 0xa8,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+/*************************************************************************
+ *
+ * waas enable
+ *
+ * dgps src, dgps control, and sbas params
+ *
+ *************************************************************************
+ */
+
+const uint8_t sirf_sbas[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x07,                   // length 7
+  133,                          // dgps source
+  1,                            // SBAS enable
+  0, 0, 0, 0,                   // beacon freq (n.u.)
+  0,                            // beacon bit rate (n.u.)
+  0x00, 0x86,                   // checksum
+  0xb0, 0xb3,                   // end seq
+
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x03,                   // length 3
+  138,                          // dgps control
+  0,                            // selection, auto
+  0xff,                         // timeout, max
+  0x00, 0xb9,                   // checksum
+  0xb0, 0xb3,                   // end seq
+
+  /*
+   * the demo program (sirfLive) outputs this message with len 5 eh?
+   * the manual (DCP15) says len 6
+   *
+   * a0 a2 00 05 aa 00 00 00 00 00 aa b0 b3          sbas params
+   *
+   * for now send both.  Look for Acks.
+   *
+   * can we actually send back to back and have them work?
+   */
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x06,                   // length 6
+  170,                          // sbas params
+  0,                            // auto mode
+  1,                            // integrity mode
+  0,                            // flag bits, none
+  0,                            // region, 0 - auto
+  0,                            // regionPrn - n. u.
+  0x00, 0xb9,                   // checksum
+  0xb0, 0xb3,                   // end seq
+
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x05,                   // length 5
+  170,                          // sbas params
+  0,                            // auto mode
+  1,                            // integrity mode
+  0,                            // flag bits, none
+  0,                            // region, 0 - auto
+  0x00, 0xb9,                   // checksum
+  0xb0, 0xb3,                   // end seq
+};
+
+
+/*************************************************************************
+ *
+ * Power management packets.
+ *
+ *************************************************************************
+ */
+const uint8_t sirf_full_pwr[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x02,                   // length 2
+  218, 0,                       // Req Pwr Mode, Full Pwr
+  0x00, 0xda,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+const uint8_t sirf_go_mpm_0[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x06,                   // length 6
+  218, 2,                       // Req Pwr Mode, MPM
+  0,                            // time_out, 0 immediate MPM
+  0,                            // control, RTC uncertainty, 250us (default)
+  0, 0,                         // reserved
+  0x00, 0xdc,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+const uint8_t sirf_go_mpm_7f[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x06,                   // length 6
+  218, 2,                       // Req Pwr Mode, MPM
+  0x7f,                         // time_out, 0 immediate MPM
+  0,                            // control, RTC uncertainty, 250us (default)
+  0, 0,                         // reserved
+  0x00, 0xdc,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+const uint8_t sirf_go_mpm_ff[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x06,                   // length 6
+  218,  2,                      // Req Pwr Mode, MPM
+  0xff,                         // time_out, 0 immediate MPM
+  0,                            // control, RTC uncertainty, 250us (default)
+  0, 0,                         // reserved
+  0x00, 0xdc,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+/*************************************************************************
+ *
+ * Extended Ephemeris Control
+ *
+ *          MID 232/<sids> (input to gps chip)
+ * response MID 56/<sids>  (output from gps chip)
+ *
+ *************************************************************************
+ */
+
+const uint8_t sirf_ee_poll_ephemeris[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x06,                   // length 6
+  232,  2,                      // ee - poll ephemeris
+  0x00, 0x00,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+/*
+ * ee age
+ * 232/25 -> 56/32 (nack)
+ *        -> 56/33 (ack) + ee age
+ */
+const uint8_t sirf_ee_age[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x06,                   // length 6
+  232,  25,                     // ee - age
+  0x00, 0x00,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+const uint8_t sirf_ee_sif_aid_cgee_only[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x04,                   // length 4
+  232,  32,                     // sif aiding enable/disable
+  1,                            // sgee disable
+  0,                            // cgee enable
+  0x01, 0x0b,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+/*
+ * get sif aiding status
+ * 232/33 -> 56/41
+ */
+const uint8_t sirf_ee_sif_aiding_status[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x06,                   // length 6
+  232,  33,                     // get sif aiding status
+  0x00, 0x00,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+/*
+ * Ext Ephem Storage Control
+ * turn eerom off/on
+ */
+const uint8_t sirf_ee_eerom_off[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x03,                   // length 3
+  232,  253,                    // ee - storage control
+  0,                            // turn off eerom
+  0x01, 0xe5,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+const uint8_t sirf_ee_eerom_on[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x03,                   // length 3
+  232,  253,                    // ee - storage control
+  1,                            // turn on eerom
+  0x01, 0xe6,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+/*
+ * cgee prediciton control
+ * enable/disable
+ */
+const uint8_t sirf_cgee_pred_enable[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x06,                   // length 6
+  232,  254,                    // ee - storage control
+  0xff, 0xff, 0xff, 0xff,       // permanently enable
+  0x05, 0xe2,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+const uint8_t sirf_cgee_pred_disable[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x06,                   // length 6
+  232,  254,                    // ee - storage control
+  0, 0, 0, 0,                   // permanently disable
+  0x01, 0xe6,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+/*
+ * Extended Ephemeris Debug
+ * 232, 255
+ * unknown control cell (4 bytes)
+ */
+
+const uint8_t sirf_ee_debug[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x06,                   // length 6
+  232,  255,                    // ee - debug
+  0xff, 0xff, 0xff, 0xff,       // debug flag
+  0x05, 0xe3,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+/*************************************************************************
+ *
+ * speed change messages
+ *
+ *************************************************************************
+ */
 const uint8_t nmea_4800[] = {
   '$', 'P', 'S', 'R', 'F',              // header
   '1', '0', '0', ',',                   // set serial port MID
@@ -224,14 +565,27 @@ const uint8_t nmea_sirf_307200[] = {
   '\r', '\n'                            // terminator
 };
 
-const uint8_t sirf_sw_ver[] = {
-  0xa0, 0xa2,
-  0x00, 0x02,
-  132,				// send sw ver (0x84)
-  0x00,
-  0x00, 0x84,
-  0xb0, 0xb3,
+
+const uint8_t sirf_nmea_4800[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x18,                   // len 24 (0x18)
+  129,                          // set nmea
+  2,                            // mode, 0 enable nmea debug, 1 disable, 2 don't change.
+  1, 1,                         // GGA 1 sec period, checksum
+  0, 1,                         // GLL
+  1, 1,                         // GSA
+  5, 1,                         // GSV (5 sec period)
+  1, 1,                         // RMC
+  0, 1,                         // VTG
+  0, 1,                         // MSS
+  0, 0,                         // EPE
+  0, 1,                         // ZDA
+  0, 0,                         // Unused
+  0x12, 0xc0,                   // Baud rate (4800) (big endian)
+  0x01, 0x65,                   // checksum [0x01, 0x65]
+  0xb0, 0xb3                    // end seq
 };
+
 
 const uint8_t sirf_4800[] = {
   0xa0, 0xa2,
@@ -317,98 +671,13 @@ const uint8_t sirf_1228800[] = {
   0xb0, 0xb3,
 };
 
-const uint8_t sirf_peek_0[] = {
-  0xa0, 0xa2,			// start seq
-  0x00, 0x0c,			// length 12
-  178, 3,			// peek/poke
-  0,                            // type, peek
-  4,                            // 4 bytes
-  0, 0, 0, 0,                   // addr 0
-  0, 0, 0, 0,                   // dummy data
-  0x00, 0xb9,			// checksum
-  0xb0, 0xb3			// end seq
-};
 
-const uint8_t sirf_open_session[] = {
-  0xa0, 0xa2,			// start seq
-  0x00, 0x03,			// length 3
-  213, 1,			// Req Session Open, sid 1
-  0x71,                         // do open vs. resume
-  0x01, 0x47,			// checksum
-  0xb0, 0xb3			// end seq
-};
-
-const uint8_t sirf_close_session[] = {
-  0xa0, 0xa2,			// start seq
-  0x00, 0x03,			// length 3
-  213, 2,			// Req Session Close, sid 2
-  0x00,                         // close not suspend
-  0x00, 0xd7,			// checksum
-  0xb0, 0xb3			// end seq
-};
-
-/*
- * hw config byte 0x00: (bit numbering 1 based in manual)
- *   b0: Precise Time Transfer off
- *   b1: PTT direction  CP -> SLC (gps)
- *   b2: Freq Transfer off
- *   b3: Counter
- *   b4: RTC Availablity (NO, ours, we lie)
- *   b5: RTC for GPS (0 ext for GPS, no used)
- *   b6: Course Time Avail (0 - no)
- *   b7: ref clock on
+/*************************************************************************
+ *
+ * Internal data structures
+ *
+ *************************************************************************
  */
-const uint8_t sirf_hw_config_rsp[] = {
-  0xa0, 0xa2,			// start seq
-  0x00, 0x08,			// length 8
-  214,  			// HW Config Response, no sid
-  0x00,                         // see above
-  0, 0, 0, 0, 0,                // nominal freq (not used).
-  0,                            // Network enhance (not used).
-  0x00, 0xd6,			// checksum
-  0xb0, 0xb3			// end seq
-};
-
-const uint8_t sirf_full_pwr[] = {
-  0xa0, 0xa2,			// start seq
-  0x00, 0x02,			// length 2
-  218, 0,			// Req Pwr Mode, Full Pwr
-  0x00, 0xda,			// checksum
-  0xb0, 0xb3			// end seq
-};
-
-const uint8_t sirf_go_mpm_0[] = {
-  0xa0, 0xa2,			// start seq
-  0x00, 0x06,			// length 6
-  218, 2,			// Req Pwr Mode, MPM
-  0,                            // time_out, 0 immediate MPM
-  0,                            // control, RTC uncertainty, 250us (default)
-  0, 0,                         // reserved
-  0x00, 0xdc,			// checksum
-  0xb0, 0xb3			// end seq
-};
-
-const uint8_t sirf_nmea_4800[] = {
-  0xa0, 0xa2,			// start seq
-  0x00, 0x18,			// len 24 (0x18)
-  129,				// set nmea
-  2,			        // mode, 0 enable nmea debug, 1 disable, 2 don't change.
-  1, 1,				// GGA 1 sec period, checksum
-  0, 1,				// GLL
-  1, 1,	                        // GSA
-  5, 1,				// GSV (5 sec period)
-  1, 1,				// RMC
-  0, 1,				// VTG
-  0, 1,				// MSS
-  0, 0,				// EPE
-  0, 1,				// ZDA
-  0, 0,				// Unused
-  0x12, 0xc0,			// Baud rate (4800) (big endian)
-  0x01, 0x65,			// checksum [0x01, 0x65]
-  0xb0, 0xb3			// end seq
-};
-
-
 typedef struct {
   const uint32_t  speed;                // baud rate, bps
   const uint16_t  to_modifier;          // time out modifier
