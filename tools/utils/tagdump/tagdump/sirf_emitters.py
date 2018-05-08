@@ -1,5 +1,3 @@
-'''emitters (default) for sirfbin packets'''
-
 # Copyright (c) 2018 Eric B. Decker
 # All rights reserved.
 #
@@ -19,8 +17,7 @@
 #
 # Contact: Eric B. Decker <cire831@gmail.com>
 
-# emitters for sirfbin data types
-
+'''emitters (default) for sirfbin packets'''
 
 from   __future__         import print_function
 
@@ -29,7 +26,7 @@ import sirf_defs     as     sirf
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.2.2.dev1 (se)'
+__version__ = '0.2.2.dev2 (se)'
 
 
 def emit_default(level, offset, buf, obj):
@@ -301,7 +298,7 @@ def emit_sirf_ee232(level, offset, buf, obj):
     emit_sirf_ee(level, offset, buf, obj, sirf.ee232_table)
 
 
-def emit_ee56_sif_status(level, offset, buf, obj):
+def emit_ee56_sifStat(level, offset, buf, obj):
     print()
     if (level >= 1):
         print('    {}'.format(obj))

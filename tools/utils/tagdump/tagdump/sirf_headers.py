@@ -1,5 +1,3 @@
-'''sirfbin protocol headers'''
-
 # Copyright (c) 2017-2018 Eric B. Decker, Daniel J. Maltbie
 # All rights reserved.
 #
@@ -22,7 +20,9 @@
 
 # object descriptors for gps data blocks
 
-__version__ = '0.2.1.dev1 (sh)'
+'''sirfbin protocol headers'''
+
+__version__ = '0.2.1.dev2 (sh)'
 
 import binascii
 from   decode_base  import *
@@ -326,10 +326,8 @@ sirf_geo_obj = aggie(OrderedDict([
 ]))
 
 
-# extEphemeris packets (56)
-# various SIDs. data follows the SID
-
-sirf_ee56_sif_obj = aggie(OrderedDict([
+# 56/42 sifStatus (sifStat)
+sirf_ee56_sifStat_obj = aggie(OrderedDict([
     ('sifState',            atom(('B',   '{}'))),
     ('cgeePredState',       atom(('B',   '{}'))),
     ('sifAiding',           atom(('B',   '{}'))),

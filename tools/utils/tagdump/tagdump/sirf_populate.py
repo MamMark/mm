@@ -17,22 +17,23 @@ sirf.ee56_table[2]    = (decode_null, None, None, 'eeIntegrity',        'none')
 sirf.ee56_table[3]    = (decode_null, None, None, 'eeStatus',           'none')
 sirf.ee56_table[4]    = (decode_null, None, None, 'eeClkBiasAdj',       'none')
 sirf.ee56_table[5]    = (decode_null, None, None, 'ee50bpsBcast',       'none')
-sirf.ee56_table[32]   = (decode_null, None, None, 'ee50bpsBcast',       'none')
+sirf.ee56_table[32]   = (decode_null, None, None, 'eeAckNack',          'none')
 sirf.ee56_table[33]   = (decode_null, None, None, 'eeAge',              'none')
 sirf.ee56_table[34]   = (decode_null, None, None, 'eeSGEEAge',          'none')
+sirf.ee56_table[41]   = (decode_null, None, None, 'eeSifAidingStatus',  'none')
 sirf.ee56_table[255]  = (decode_null, None, None, 'eeAck',              'none')
 
 sirf.ee232_table[2]   = (decode_null, None, None, 'eePollEEstatus',     'none')
 sirf.ee232_table[25]  = (decode_null, None, None, 'eeGetEEage',         'none')
-sirf.ee232_table[32]  = (decode_null, None, None, 'eeDisableSIF',       'none')
+sirf.ee232_table[32]  = (decode_null, None, None, 'eeSifAidControl',    'none')
 sirf.ee232_table[33]  = (decode_null, None, None, 'eeGetSIFaiding',     'none')
 sirf.ee232_table[253] = (decode_null, None, None, 'eeStorageControl',   'none')
-sirf.ee232_table[254] = (decode_null, None, None, 'eeDisableCGEEpred',  'none')
+sirf.ee232_table[254] = (decode_null, None, None, 'eeCGEEpredControl',  'none')
 sirf.ee232_table[255] = (decode_null, None, None, 'eeDebug',            'none')
 
 
-#                        EE_DECODER            EE_EMITTERS               EE_OBJECT                EE_NAME          EE_OBJ_NAME
-sirf.ee56_table[42]   = (decode_default,     [ emit_ee56_sif_status ],   sirf_ee56_sif_obj,      'eeSifStatus',   'sirf_ee_sif_obj')
+#                      EE_DECODER            EE_EMITTERS               EE_OBJECT                EE_NAME          EE_OBJ_NAME
+sirf.ee56_table[42] = (decode_default,     [ emit_ee56_sifStat ],      sirf_ee56_sifStat_obj,  'eeSifStat',     'sirf_ee_sifStat_obj')
 
 
 #                      MID_DECODER           MID_EMITTERS              MID_OBJECT               MID_NAME         MID_OBJ_NAME
@@ -139,6 +140,5 @@ sirf.mid_table[216] = (decode_null, None, None, 'osp ack/nack/error/reject')
 sirf.mid_table[219] = (decode_null, None, None, 'hw control input')
 sirf.mid_table[220] = (decode_null, None, None, 'cw configuration')
 sirf.mid_table[221] = (decode_null, None, None, 'tcxo learning ctrl out')
-sirf.mid_table[232] = (decode_null, None, None, 'extended ephemeris')
 sirf.mid_table[233] = (decode_null, None, None, 'grf3i status')
 sirf.mid_table[234] = (decode_null, None, None, 'sensor control input')
