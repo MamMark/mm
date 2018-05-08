@@ -53,14 +53,11 @@ typedef enum {
   GMS_BOOTING,
   GMS_STARTUP,
   GMS_STANDBY,
-  GMS_MPM,
   GMS_UP,
 } gpsm_state_t;                         // gps monitor state
 
 
 #define GPS_MON_SW_VER_TIMEOUT  1024
-
-#define GPS_SIMPLE_MPM
 
 #ifndef PANIC_GPS
 enum {
@@ -197,12 +194,6 @@ implementation {
   gps_time_t m_time;
   gps_1pps_t m_pps;
 
-#ifdef GPS_SIMPLE_MPM
-  uint32_t    mpm_count;
-  mpm_state_t mpm_state;
-  bool        mpm_pending;
-#endif
-
   void gps_warn(uint8_t where, parg_t p, parg_t p1) {
     call Panic.warn(PANIC_GPS, where, p, p1, 0, 0);
   }
@@ -236,8 +227,6 @@ implementation {
         gps_boot_try = 1;
         call GPSTransmit.send((void *) sirf_sw_ver, sizeof(sirf_sw_ver));
         call MonTimer.startOneShot(GPS_MON_SW_VER_TIMEOUT);
-        return;
-      case GMS_UP:                      /* for now while dicking around */
         return;
     }
   }
@@ -475,19 +464,6 @@ implementation {
       call CollectEvent.logEvent(DT_EVENT_GPS_XYZ, mxp->nsats,
                                  mxp->x, mxp->y, mxp->z);
     }
-#ifdef GPS_SIMPLE_MPM
-    if (mpm_pending) {
-      /*
-       * got a message we weren't expecting.  And haven't seen the response to
-       * the mpm pwr req, kick mpm again.
-       */
-#ifdef notdef
-      awake = call GPSControl.awake();
-      err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
-      call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 100, err, 0, awake);
-#endif
-    }
-#endif
   }
 
 
@@ -539,15 +515,6 @@ implementation {
                                nav_type, call GPSControl.awake());
 
     if (nav_valid == 0) {
-
-#ifdef GPS_SIMPLE_MPM
-      if (mpm_state == MPM_START_UP) {
-        mpm_count++;
-        if (mpm_count == 60 * 10)       /* should be about 10 mins */
-          call MonTimer.startOneShot(0);
-      }
-#endif
-
       mtp = &m_time;
       call Rtc.copyTime(&mtp->rt, rtp);
       mtp->tow       = CF_BE_32(gp->tow);
@@ -585,19 +552,6 @@ implementation {
       call CollectEvent.logEvent(DT_EVENT_GPS_GEO, mgp->lat, mgp->lon,
                                  mgp->week_x, mgp->tow);
     }
-#ifdef GPS_SIMPLE_MPM
-    if (mpm_pending) {
-      /*
-       * got a message we weren't expecting.  And haven't seen the response to
-       * the mpm pwr req, kick mpm again.
-       */
-#ifdef notdef
-      awake = call GPSControl.awake();
-      err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
-      call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 101, err, 0, awake);
-#endif
-    }
-#endif
   }
 
 
@@ -618,39 +572,6 @@ implementation {
 
 
   /*
-   * MID 74: Session Open/Close Response
-   */
-  void process_session_rsp(sb_header_t *sbh, rtctime_t *rtp) {
-    sb_session_rsp_t *srp;
-
-    srp = (void *) sbh;
-    call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 50, srp->sid,
-                               0, call GPSControl.awake());
-#ifdef GPS_SIMPLE_MPM
-    switch (srp->sid) {
-      default:
-        return;
-      case 1:                                           /* open  response */
-        if (mpm_state == MPM_OS_WAIT) {
-          mpm_state = MPM_SEND_MPM;
-          call MonTimer.startOneShot(0);
-        }
-        return;
-
-      case 2:                                           /* close response */
-        if (mpm_state == MPM_CS_WAIT) {
-          call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 55, 0, 0,
-                                     call GPSControl.awake());
-          call MonTimer.startOneShot(2*60*60*1024);       /* 2hrs */
-          mpm_state = MPM_SLEEPING;
-        }
-        return;
-    }
-#endif
-  }
-
-
-  /*
    * MID 90: Power Mode Response
    * response to sending a Pwr_Mode_Req, MPM or Full Power.
    */
@@ -664,15 +585,6 @@ implementation {
     error = CF_BE_16(prp->error);
     call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 60, prp->sid, error,
                                call GPSControl.awake());
-#ifdef GPS_SIMPLE_MPM
-    if (mpm_pending && prp->sid == 2 && (error & 0x0010)) {
-      mpm_pending = FALSE;
-      if (mpm_state == MPM_MPM_WAIT) {
-        mpm_state = MPM_SEND_CS;
-        call MonTimer.startOneShot(0); /* kick state machine */
-      }
-    }
-#endif
   }
 
 
@@ -711,139 +623,9 @@ implementation {
       case MID_HW_CONFIG_REQ:
         process_hw_config_req((void *) sbp, arrival_rtp);
         break;
-      case MID_SESSION_RSP:
-        process_session_rsp((void *) sbp, arrival_rtp);
-        break;
-      case MID_PWR_MODE_RSP:
-        process_pwr_rsp((void *) sbp, arrival_rtp);
       default:
         break;
     }
-  }
-
-
-#ifdef GPS_SIMPLE_MPM
-  bool mpm_still_pending() {
-    error_t err;
-    bool    awake;
-
-    if (!mpm_pending)
-      return FALSE;
-
-    /* still waiting for the pwr_rsp */
-    mpm_count--;
-    if (mpm_count) {
-      awake = call GPSControl.awake();
-      err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
-      call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 250 + mpm_state, err,
-                                 mpm_count, awake);
-      call MonTimer.startOneShot(1*60*1024);      /* 1 mins */
-      return TRUE;
-    }
-    awake = call GPSControl.awake();
-    call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 299, 0, 0, awake);
-    mpm_pending = FALSE;                          /* giving up */
-    return FALSE;
-  }
-#endif
-
-
-  void mpm_cycle() {
-#ifdef GPS_SIMPLE_MPM
-    error_t err;
-    bool    awake;
-
-    /*
-     * MPM test.  Startup:
-     *
-     * wait for 10 Locks in Geo_Data
-     * send Open Session Req,  wait 30 secs for Rsp.
-     *      rsp not seen try retrans 5 times, timeout 30 secs.
-     * send MPM pwr req
-     *      look for response, try retrans 5 times
-     * send Close Session Req.  wait 30 secs for Rsp.
-     *      rsp not seen try retrans 5 times, timeout 30 secs.
-     * sleep 2 hours
-     * pulse awake.
-     * wait 5 mins.
-     * repeat.
-     */
-    switch (mpm_state) {
-      default:
-      case MPM_START_UP:                /* got 10 fixes */
-        mpm_count = 5;                  /* try 5 times */
-        mpm_state = MPM_OS_WAIT;        /* wait for Open Session rsp */
-        awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) sirf_open_session, sizeof(sirf_open_session));
-        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 1, err, 0, awake);
-        call MonTimer.startOneShot(30*1024);            /* 30 sec timeout */
-        return;
-
-      case MPM_OS_WAIT:
-        mpm_count--;
-        awake = call GPSControl.awake();
-        if (mpm_count) {
-          err   = call GPSTransmit.send((void *) sirf_open_session, sizeof(sirf_open_session));
-          call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 100, err, mpm_count, awake);
-          call MonTimer.startOneShot(30*1024);          /* 30 secs */
-          return;
-        }
-        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 199, 0, 0, awake);
-        /* fall through if we time out. */
-
-      case MPM_SEND_MPM:
-        mpm_count = 5;
-        mpm_state = MPM_MPM_WAIT;
-        mpm_pending = TRUE;
-        awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
-        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 200, err, 0, awake);
-        call MonTimer.startOneShot(1*60*1024);          /* 1 mins */
-        return;
-
-      case MPM_MPM_WAIT:
-        if (mpm_still_pending())        /* try again, stay here */
-          return;
-        awake = call GPSControl.awake();
-        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 299, 0, 0, awake);
-
-      case MPM_SEND_CS:
-        mpm_count = 5;
-        mpm_state = MPM_CS_WAIT;        /* wait for Close Session rsp */
-        awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) sirf_close_session, sizeof(sirf_close_session));
-        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 300, err, 0, awake);
-        call MonTimer.startOneShot(30*1024);            /* 30 sec timeout */
-        return;
-
-      case MPM_CS_WAIT:
-        mpm_count--;
-        awake = call GPSControl.awake();
-        if (mpm_count) {
-          err   = call GPSTransmit.send((void *) sirf_close_session, sizeof(sirf_close_session));
-          call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 400, err, mpm_count, awake);
-          call MonTimer.startOneShot(30*1024);            /* 30 sec timeout */
-          return;
-        }
-        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 499, 0, 0, awake);
-        call MonTimer.startOneShot(2*60*60*1024);       /* 2hrs */
-        mpm_state = MPM_SLEEPING;
-        return;
-
-      case MPM_SLEEPING:
-        call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, 500, 0, 1, call GPSControl.awake());
-        call GPSControl.pulseOnOff();                   /* pulse on */
-        call MonTimer.startOneShot(5 * 60 *1024);       /* 5 min */
-        mpm_state = MPM_GETTING_FIXES;
-        return;
-
-      case MPM_GETTING_FIXES:
-        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 600, 0, 0, call GPSControl.awake());
-        mpm_state = MPM_START_UP;
-        call MonTimer.startOneShot(0);                  /* kick */
-        return;
-    }
-#endif
   }
 
 
@@ -861,9 +643,6 @@ implementation {
         }
         call GPSTransmit.send((void *) sirf_sw_ver, sizeof(sirf_sw_ver));
         call MonTimer.startOneShot(GPS_MON_SW_VER_TIMEOUT);
-        return;
-      case GMS_UP:
-        mpm_cycle();
         return;
     }
   }
