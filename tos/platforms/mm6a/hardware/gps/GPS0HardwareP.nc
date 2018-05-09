@@ -130,7 +130,7 @@ implementation {
    */
 
   const msp432_usci_config_t gps_4800_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
     brw   : 1747,
     mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
             (0xb5 << EUSCI_A_MCTLW_BRS_OFS),
@@ -139,7 +139,7 @@ implementation {
 
 
   const msp432_usci_config_t gps_9600_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
     brw   : 873,
     mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
             (0xee << EUSCI_A_MCTLW_BRS_OFS),
@@ -148,7 +148,7 @@ implementation {
 
 
   const msp432_usci_config_t gps_115200_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
     brw   : 72,
     mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
             (0xee << EUSCI_A_MCTLW_BRS_OFS),
@@ -158,7 +158,7 @@ implementation {
 
 #ifdef notdef
   const msp432_usci_config_t gps_57600_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
     brw   : 145,
     mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
             (0xb5 << EUSCI_A_MCTLW_BRS_OFS),
@@ -167,7 +167,7 @@ implementation {
 
 
   const msp432_usci_config_t gps_307200_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
     brw   : 27,
     mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
             (0x25 << EUSCI_A_MCTLW_BRS_OFS),
@@ -176,7 +176,7 @@ implementation {
 
 
   const msp432_usci_config_t gps_921600_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
     brw   : 9,
     mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
             (0x08 << EUSCI_A_MCTLW_BRS_OFS),
@@ -185,7 +185,7 @@ implementation {
 
 
   const msp432_usci_config_t gps_1228800_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK,
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
     brw   : 6,
     mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
             (0xbf << EUSCI_A_MCTLW_BRS_OFS),
