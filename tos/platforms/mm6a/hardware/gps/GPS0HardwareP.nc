@@ -41,6 +41,33 @@ enum {
 #define PANIC_GPS __pcode_gps
 #endif
 
+typedef enum {
+  GPSI_NONE = 0,
+  GPSI_RX_INT_ON,
+  GPSI_RX_INT_OFF,
+  GPSI_RX_ERR,
+  GPSI_RX,
+  GPSI_TX_INT_ON,
+  GPSI_TX_INT_OFF,
+  GPSI_TX,
+  GPSI_TX_RESTART,
+  GPSI_CAPTURE,
+} gps_int_ev_t;
+
+typedef struct {
+  uint32_t     ts;
+  gps_int_ev_t ev;
+  uint8_t      count;
+  uint8_t      stat;
+  uint8_t      byte;
+} gps_int_rec_t;
+
+#define GPS_INT_RECS_MAX 32
+
+gps_int_rec_t   gps_int_recs[GPS_INT_RECS_MAX];
+norace uint32_t gps_int_rec_idx;
+
+
 module GPS0HardwareP {
   provides {
     interface Init;
@@ -67,6 +94,29 @@ implementation {
 #define  gps_warn(where, arg)      do { \
     call  Panic.warn(PANIC_GPS, where, arg, 0, 0, 0); \
   } while (0)
+
+
+  void gps_log_int(gps_int_ev_t ev, uint8_t stat, uint8_t byte) {
+    gps_int_rec_t *gp;
+
+    if (gps_int_rec_idx > GPS_INT_RECS_MAX)
+      gps_int_rec_idx = 0;
+    gp = &gps_int_recs[gps_int_rec_idx];
+
+    if (gp->ev == ev && (ev == GPSI_RX || ev == GPSI_TX)) {
+      gp->count++;
+      return;
+    }
+    gps_int_rec_idx++;
+    if (gps_int_rec_idx > GPS_INT_RECS_MAX)
+      gps_int_rec_idx = 0;
+    gp = &gps_int_recs[gps_int_rec_idx];
+    gp->ev = ev;
+    gp->count = 1;
+    gp->stat = stat;
+    gp->byte = byte;
+    gp->ts = call Platform.usecsRaw();
+  }
 
 
   /* Baud rate divisor equations
