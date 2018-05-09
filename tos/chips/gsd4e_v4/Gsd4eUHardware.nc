@@ -49,6 +49,8 @@
  *   gps_send_block():      split phase.
  *   gps_send_block_done(): completion on split phase
  *   gps_send_block_stop(): stop current send_block (abort)
+ *   gps_restart_tx():      restart tx
+ *   gps_hw_capture():      capture USCI state (debug ONLY, destructive).
  *
  *   gps_receive_block():   same as send but for receive
  *   gps_receive_block_done():
@@ -150,4 +152,6 @@ interface Gsd4eUHardware {
   async command error_t gps_send_block(uint8_t *ptr, uint16_t len);
   async command void    gps_send_block_stop();
   async event   void    gps_send_block_done(uint8_t *ptr, uint16_t len, error_t error);
+  async command bool    gps_restart_tx();
+  async command void    gps_hw_capture();
 }

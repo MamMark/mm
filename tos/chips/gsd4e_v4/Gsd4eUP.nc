@@ -425,7 +425,11 @@ implementation {
   norace uint32_t m_last_rpt_rx_errors; // last we reported.
   norace uint16_t m_first_rx_error;     // first rx_stat we saw
   norace uint32_t m_last_rx_collection; // ms time of last_rx error collection
+         uint32_t m_lost_tx_ints;       // on_tx, time outs
+         uint32_t m_lost_tx_retries;
+         uint32_t m_tx_time_out;        // last tx timeout ued
 
+#define GPS_MAX_LOST_TX_RETRIES 5
 
   void gps_warn(uint8_t where, parg_t p, parg_t p1) {
     call Panic.warn(PANIC_GPS, where, p, p1, 0, 0);
@@ -685,10 +689,14 @@ implementation {
       m_tx_len = len;
       gpsc_change_state(next_state, GPSW_TX_SEND);
     }
+
+    /* start with full retries for tx lost interrupt backstop */
+    m_lost_tx_retries = GPS_MAX_LOST_TX_RETRIES;
     time_out = len * DT_GPS_BYTE_TIME * 4 + 500000;
     time_out /= 1000000;
     if (time_out < DT_GPS_MIN_TX_TIMEOUT)
       time_out = DT_GPS_MIN_TX_TIMEOUT;
+    m_tx_time_out = time_out;
     call GPSTxTimer.startOneShot(time_out);
     collect_gps_pak((void *) ptr, len, GPS_DIR_TX);
     err = call HW.gps_send_block((void *) ptr, len);
@@ -937,6 +945,8 @@ implementation {
     atomic {
       switch (gpsc_state) {
         default:                        /* all other states blow up */
+          call HW.gps_hw_capture();
+          nop();                        /* BRK */
           gps_panic(15, gpsc_state, 0);
           return;
 
@@ -971,6 +981,26 @@ implementation {
                           GPS_DIR_TX);
           call HW.gps_send_block((void *) sirf_peek_0, sizeof(sirf_peek_0));
           return;
+
+          /*
+           * The TxTimer went off and we are sending a message out,
+           * oops...   We have observed a lost tx interrupt, check and
+           * replace.
+           */
+        case GPSC_ON_TX:
+        case GPSC_ON_RX_TX:
+          call HW.gps_hw_capture();
+          m_lost_tx_ints++;
+          if (--m_lost_tx_retries > 0) {
+            call CollectEvent.logEvent(DT_EVENT_GPS_LOST_INT, m_lost_tx_ints,
+                                       0, 0, 0);
+            if (call HW.gps_restart_tx()) {
+              call GPSTxTimer.startOneShot(m_tx_time_out);
+              return;
+            }
+            gps_panic(15, -1, -1);
+          }
+          gps_panic(15, -1, m_lost_tx_ints);
       }
     }
   }

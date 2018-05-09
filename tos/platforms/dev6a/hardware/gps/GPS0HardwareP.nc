@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -401,6 +401,49 @@ implementation {
     gps_log_int(GPSI_TX_INT_OFF, stat_word, byte);
     call Usci.disableTxIntr();
     m_tx_buf = NULL;
+  }
+
+
+  /*
+   * capture current GPS USCI state.
+   *
+   * DESTRUCTIVE.  It pulls IV which modifies h/w state.
+   */
+  async command void    HW.gps_hw_capture() {
+    gps_log_int(GPSI_CAPTURE, call Usci.getStat(), call Usci.getIe());
+    gps_log_int(GPSI_CAPTURE, call Usci.getIfg(),  call Usci.getIv());
+  }
+
+  /*
+   * We need the following conditions to be true to restart the gps
+   * tx hw:
+   *
+   * o in the middle of doing a transmit (m_tx_buf active)
+   * o gps_usci->IE says TX is enabled.
+   *
+   * we clear TXIFG and reassert it.  We we exit we should restart
+   * the interrupt stream.
+   */
+  async command bool    HW.gps_restart_tx() {
+    atomic {
+      if (m_tx_buf == NULL)
+        return FALSE;
+      if (m_tx_idx >= m_tx_len)
+        return FALSE;
+      if ((call Usci.getIe() & EUSCI_A_IE_TXIE) == 0)
+        return FALSE;
+
+      /*
+       * replace the interrupt by clearing TXIFG and reasserting
+       */
+      gps_log_int(GPSI_TX_RESTART, 0, call Usci.getIfg());
+      call Usci.disableTxIntr();
+      call Usci.clrTxIntr();
+      call Usci.setTxIntr();
+      call Usci.enableTxIntr();
+      gps_log_int(GPSI_TX_RESTART, 0, call Usci.getIfg());
+      return TRUE;
+    }
   }
 
   /*
