@@ -310,19 +310,31 @@ implementation {
 
   /*
    * enable the rx interrupt.
-   *
    * prior to enabling check for any rx errors and clear them if present
    */
   async command void HW.gps_rx_int_enable() {
     uint16_t stat_word;
+    uint8_t  byte = 0;
 
     stat_word = call Usci.getStat();
     if (stat_word & EUSCI_A_STATW_RXERR)
-      call Usci.getRxbuf();
+      byte = call Usci.getRxbuf();
+    gps_log_int(GPSI_RX_INT_ON, stat_word, byte);
+    stat_word = call Usci.getStat();
+    if (stat_word & EUSCI_A_STATW_RXERR)
+      byte = call Usci.getRxbuf();
+    gps_log_int(GPSI_RX_INT_ON, stat_word, byte);
     call Usci.enableRxIntr();
   }
 
   async command void HW.gps_rx_int_disable() {
+    uint16_t stat_word;
+    uint8_t  byte = 0;
+
+    stat_word = call Usci.getStat();
+    if (stat_word & EUSCI_A_STATW_RXERR)
+      byte = call Usci.getRxbuf();
+    gps_log_int(GPSI_RX_INT_OFF, stat_word, byte);
     call Usci.disableRxIntr();
   }
 
@@ -352,6 +364,9 @@ implementation {
   async command void    HW.gps_rx_on()  { }
 
   async command error_t HW.gps_send_block(uint8_t *ptr, uint16_t len) {
+    uint16_t stat_word;
+    uint8_t  byte = 0;
+
     if (!len || !ptr)
       return FAIL;
 
@@ -368,11 +383,22 @@ implementation {
      *
      * So just enable the interrupt and let it fly.
      */
+    stat_word = call Usci.getStat();
+    if (stat_word & EUSCI_A_STATW_RXERR)
+      byte = call Usci.getRxbuf();
+    gps_log_int(GPSI_TX_INT_ON, stat_word, byte);
     call Usci.enableTxIntr();
     return SUCCESS;
   }
 
   async command void    HW.gps_send_block_stop() {
+    uint16_t stat_word;
+    uint8_t  byte = 0;
+
+    stat_word = call Usci.getStat();
+    if (stat_word & EUSCI_A_STATW_RXERR)
+      byte = call Usci.getRxbuf();
+    gps_log_int(GPSI_TX_INT_OFF, stat_word, byte);
     call Usci.disableTxIntr();
     m_tx_buf = NULL;
   }
@@ -409,11 +435,32 @@ implementation {
          * up.  The next char however could be part of a good stream.
          */
         stat_word = call Usci.getStat();
-        if (stat_word & EUSCI_A_STATW_RXERR)
+        if (stat_word & EUSCI_A_STATW_RXERR) {
+          data = call Usci.getRxbuf();
+          gps_log_int(GPSI_RX_ERR, stat_word, data);
           signal HW.gps_rx_err(stat_word);
+        } else
+          data = call Usci.getRxbuf();
+        stat_word = call Usci.getStat();
+        if (stat_word & EUSCI_A_STATW_RXERR) {
+          data = call Usci.getRxbuf();
+          gps_log_int(GPSI_RX, stat_word, data);
+        }
 
-        /* if there was an rx_err, the read of RxBuf will clear it */
-        data = call Usci.getRxbuf();
+        /*
+         * there is an overrun race condition that can occur.
+         * the window is between the read of Stat and the read
+         * of Rxbuf.  If another byte arrives the serializer can
+         * overrun the byte presented in RxBuf.  To detect this
+         * we have to read Stat again.
+         */
+        stat_word = call Usci.getStat();
+        if (stat_word & EUSCI_A_STATW_RXERR) {
+          data = call Usci.getRxbuf();
+          gps_log_int(GPSI_RX_ERR, stat_word, data);
+          signal HW.gps_rx_err(stat_word);
+        }
+
         if (m_rx_buf) {
           m_rx_buf[m_rx_idx++] = data;
           if (m_rx_idx >= m_rx_len) {
@@ -431,15 +478,21 @@ implementation {
            * this will have the problem of TXIFG being down.
            * just panic to call attention to the issue.
            */
+          stat_word = call Usci.getStat();
+          gps_log_int(GPSI_TX_INT_OFF, stat_word, 0);
           call Usci.disableTxIntr();
           gps_panic(4, iv, 0);
           return;
         }
 
         data = m_tx_buf[m_tx_idx++];
+        stat_word = call Usci.getStat();
+        gps_log_int(GPSI_TX, stat_word, data);
         call Usci.setTxbuf(data);
         if (m_tx_idx >= m_tx_len) {
           buf = m_tx_buf;
+          stat_word = call Usci.getStat();
+          gps_log_int(GPSI_TX_INT_OFF, stat_word, data);
           call Usci.disableTxIntr();
           m_tx_buf = NULL;
           signal HW.gps_send_block_done(buf, m_tx_len, SUCCESS);
