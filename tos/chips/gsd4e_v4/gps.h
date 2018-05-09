@@ -113,15 +113,15 @@
  * we calculate we consider this usecs * 1000 and we divide the result
  * by 1000 before using it.
  *
- * For example the byte time at 115200 is 86.805 us (86805).  If we need
+ * For example the byte time at 115200 is 86.805 us (86805ns).  If we need
  * binary time for the time outs, ie. binary msecs (mis, 1/1024 secs) then
  * we need to multiply this number by 1024/1000.
  */
 
 /*
- * DT_GPS_BYTE_TIME: a byte time at the target baud.
+ * DT_GPS_BYTE_TIME: a byte time at the target baud in nano units
  *
- * binary time, 86805 * 1024/1000 = 88889mis
+ * binary time, 86805 * 1024/1000 = 88889nis
  */
 #define DT_GPS_BYTE_TIME        88889
 

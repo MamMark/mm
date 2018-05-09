@@ -243,7 +243,7 @@ typedef enum {
   GPSC_PROBE_0,
   GPSC_PROBE_CYCLE,
 
-  /* PROBE_x1 is a psudo state.  PROBE_CYCLE always drops
+  /* PROBE_x1 is a pseudo state.  PROBE_CYCLE always drops
    * immediately into it.  never actually gets set
    */
   GPSC_PROBE_x1,                        // place holder
@@ -573,6 +573,8 @@ implementation {
 
   /*
    * GPSControl.turnOff: Stop all GPS activity.
+   *
+   * NOT DONE.  Needs eval.
    */
   command error_t GPSControl.turnOff() {
     if (gpsc_state == GPSC_OFF) {
@@ -1169,7 +1171,7 @@ implementation {
       post collect_rx_errors();
     }
     call SirfProto.rx_error();
-    driver_protoAbort(0);
+    driver_protoAbort(0);               /* 0 means rx_err */
   }
 
 
