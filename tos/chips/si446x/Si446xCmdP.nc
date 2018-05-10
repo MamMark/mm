@@ -35,6 +35,7 @@ enum {
 #define PANIC_RADIO __pcode_radio
 #endif
 
+unsigned char *wds_config_select(unsigned char *cname);
 
 /**************************************************************************/
 /*
@@ -987,9 +988,7 @@ implementation {
   /*
    * Si446xCmd.config_frr
    *
-   * send a block of configuration data to the radio.  Each block is
-   * is made up of multiple commands, (size, command data, starts with
-   * command to send), terminated by 0.
+   * configure the Fast Response Registers per the device driver needs.
    */
   async command void Si446xCmd.config_frr() {
     ll_si446x_send_cmd(si446x_frr_config, sizeof(si446x_frr_config));
@@ -1106,12 +1105,16 @@ implementation {
    * starts with the string length followed by the command, followed by
    * command bytes.  The array is terminated by a zero length.
    */
-  const uint8_t wds_name[] = WDS_FILENAME;
-  const uint8_t *config_list[] = {si446x_wds_config, si446x_device_config, NULL, wds_name};
+//  const uint8_t wds_name[] = WDS_FILENAME;
+//  const uint8_t *config_list[] = {si446x_wds_config, si446x_device_config, NULL, wds_name};
 
-  async command uint8_t ** Si446xCmd.get_config_lists() {
+norace const uint8_t *config_list[] = {NULL, si446x_device_config, NULL};
+
+  async command const uint8_t ** Si446xCmd.get_config_lists() {
     nop();
-    return (uint8_t **) config_list;
+//    return (uint8_t **) config_list;
+    config_list[0] = wds_config_select(NULL);
+    return config_list;
   }
 
 
@@ -1204,8 +1207,7 @@ implementation {
   async command void Si446xCmd.power_up() {
     uint8_t *cp;
     uint16_t count = 1000; // protect loop from bad config data
-
-    cp = (uint8_t *) si446x_wds_config;
+    cp = wds_config_select(NULL);
     while (cp && count--) {
       ll_si446x_send_cmd(&cp[1], cp[0]);
       if (cp[1] == SI446X_CMD_POWER_UP)
@@ -1280,6 +1282,7 @@ implementation {
    * send config string to the  radio chip.
    */
   async command void Si446xCmd.send_config(const uint8_t *properties, uint16_t length) {
+
     ll_si446x_send_cmd(properties, length);
     ll_si446x_read_fast_status(radio_pend);
   }

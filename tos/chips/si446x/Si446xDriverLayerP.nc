@@ -547,7 +547,7 @@ implementation {
       __PANIC_RADIO(90, fsm_get_state(), 0, 0, 0);
     }
 
-    config_list = call Si446xCmd.get_config_lists();
+    config_list = (void *) call Si446xCmd.get_config_lists();
 
     cp = (void *) cfg_cb.prop_ptr;
 
@@ -604,6 +604,7 @@ implementation {
         if (cp[0] == SI446X_CMD_POWER_UP)
           cfg_cb.power_up_found = TRUE;
       }
+
       // move to next entry
       cp += size;
       cfg_cb.task_records++;

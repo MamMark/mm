@@ -33,10 +33,16 @@
  * Include one of the pre-defined configuration files
  */
 
-#define WDS_FILENAME  "Si4468_10kb_434m_200khz"
-#include "WDS-files/Si4468_10kb_434m_200khz/src/application/radio_config.h"
-
 #ifdef not_defined
+#define WDS_FILENAME  "Si4468_10kb_433m_200khz"
+#include "WDS-files/Si4468_10kb_433m_200khz/src/application/radio_config.h"
+
+#define WDS_FILENAME  "Si446x_CustomPacketRX_wPSM"
+#include "WDS-files/Si446x_CustomPacketRX_wPSM/src/application/radio_config.h"
+
+#define WDS_FILENAME  "Si4468_10kb_433m_200khz_psm_custom"
+#include "WDS-files/Si446x_CustomPacketRX_wPSM/src/application/radio_config.h"
+
 #define WDS_FILENAME  "Si4468_100b_433m_200khz_psm"
 #include "WDS-files/Si4468_100b_433m_200khz_psm/src/application/radio_config.h"
 
@@ -60,8 +66,8 @@
 
 #define WDS_FILENAME  "Si4468_100kb_433m_200khz"
 #include "WDS-files/Si4468_100kb_433m_200khz/src/application/radio_config.h"
-#endif
 
 const uint8_t si446x_wds_config[] = RADIO_CONFIGURATION_DATA_ARRAY;
+#endif
 
 #endif          //__SI446X_CONFIG_WDS_H__
