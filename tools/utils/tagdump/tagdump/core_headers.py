@@ -191,19 +191,23 @@ gps_cmd_names = {
        1: "TURNON",
        2: "TURNOFF",
        3: "STANDBY",
-       4: "HIBERNATE",
-       5: "WAKE",
-       6: "PULSE",
-       7: "AWAKE_STATUS",
-       8: "RESET",
-       9: "POWER_ON",
-      10: "POWER_OFF",
-      11: "SEND_MPM",
-      12: "SEND_FULL",
-      13: "RAW_TX",
-    0x80: "REBOOT",
-    0x81: "PANIC",
-    0x82: "BRICK",
+       4: "POWER_ON",
+       5: "POWER_OFF",
+       6: "CYCLE",                      # gps position cycle
+
+      16: "AWAKE_STATUS",
+      17: "MPM",
+      18: "PULSE",
+      19: "RESET",
+      20: "RAW_TX",
+      21: "HIBERNATE",
+      22: "WAKE",
+
+    0x80: "CANNED",                     # place holder for canned.
+
+    0xfd: "SLEEP",
+    0xfe: "PANIC",
+    0xff: "REBOOT",
 }
 
 

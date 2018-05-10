@@ -352,31 +352,34 @@ implementation {
       default:
       case GDC_NOP:
         break;
+
       case GDC_TURNON:
         err = call GPSControl.turnOn();
         call CollectEvent.logEvent(DT_EVENT_GPS_CMD, gp->cmd, err, 1,
                                    call GPSControl.awake());
         break;
+
       case GDC_TURNOFF:
         err = call GPSControl.turnOff();
         call CollectEvent.logEvent(DT_EVENT_GPS_CMD, gp->cmd, err, 1,
                                    call GPSControl.awake());
         break;
+
       case GDC_STANDBY:
         err = call GPSControl.standby();
         call CollectEvent.logEvent(DT_EVENT_GPS_CMD, gp->cmd, err, 1,
                                    call GPSControl.awake());
         break;
-      case GDC_HIBERNATE:
-        call GPSControl.hibernate();
+
+      case GDC_POWER_ON:
+        call GPSControl.powerOn();
         break;
-      case GDC_WAKE:
-        call GPSControl.wake();
+
+      case GDC_POWER_OFF:
+        call GPSControl.powerOff();
         break;
-      case GDC_PULSE_ON_OFF:
-        call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, 999, 0, 0,
-                                   call GPSControl.awake());
-        call GPSControl.pulseOnOff();
+
+      case GDC_CYCLE:
         break;
 
       case GDC_AWAKE_STATUS:
@@ -384,26 +387,20 @@ implementation {
                                    call GPSControl.awake());
         break;
 
-      case GDC_RESET:
-        call GPSControl.reset();
-        break;
-      case GDC_POWER_ON:
-        call GPSControl.powerOn();
-        break;
-      case GDC_POWER_OFF:
-        call GPSControl.powerOff();
-        break;
-
-      case GDC_SEND_MPM:
+      case GDC_MPM:
         awake = call GPSControl.awake();
         err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
         call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 999, err, 0, awake);
         break;
 
-      case GDC_SEND_FULL:
-        awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) sirf_full_pwr, sizeof(sirf_full_pwr));
-        call CollectEvent.logEvent(DT_EVENT_GPS_FULL_PWR, 999, err, 0, awake);
+      case GDC_PULSE:
+        call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, 999, 0, 0,
+                                   call GPSControl.awake());
+        call GPSControl.pulseOnOff();
+        break;
+
+      case GDC_RESET:
+        call GPSControl.reset();
         break;
 
       case GDC_RAW_TX:
@@ -412,17 +409,29 @@ implementation {
         call CollectEvent.logEvent(DT_EVENT_GPS_RAW_TX, 999, err, 0, awake);
         break;
 
-      case GDC_REBOOT:
-        call OverWatch.flush_boot(call OverWatch.getBootMode(), ORR_USER_REQUEST);
+      case GDC_HIBERNATE:
+        call GPSControl.hibernate();
+        break;
+
+      case GDC_WAKE:
+        call GPSControl.wake();
+        break;
+
+      case GDC_CANNED:
+        break;
+
+      case GDC_SLEEP:
+        call OverWatch.halt_and_CF();
         break;
 
       case GDC_PANIC:
         gps_panic(99, 0, 0);
         break;
 
-      case GDC_BRICK:
-        call OverWatch.halt_and_CF();
+      case GDC_REBOOT:
+        call OverWatch.flush_boot(call OverWatch.getBootMode(), ORR_USER_REQUEST);
         break;
+
     }
     db->count  = ++gps_cmd_count;
     *lenp = 0;                          /* no returning payload */

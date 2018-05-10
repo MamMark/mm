@@ -36,27 +36,34 @@ typedef enum gps_debug_cmds {
   GDC_TURNON        = 1,
   GDC_TURNOFF       = 2,
   GDC_STANDBY       = 3,
-  GDC_HIBERNATE     = 4,
-  GDC_WAKE          = 5,
-  GDC_PULSE_ON_OFF  = 6,
-  GDC_AWAKE_STATUS  = 7,
-  GDC_RESET         = 8,
-  GDC_POWER_ON      = 9,
-  GDC_POWER_OFF     = 10,
-  GDC_SEND_MPM      = 11,
-  GDC_SEND_FULL     = 12,
-  GDC_RAW_TX        = 13,
-  GDC_REBOOT        = 0x80,
-  GDC_PANIC         = 0x81,
-  GDC_BRICK         = 0x82,
+  GDC_POWER_ON      = 4,
+  GDC_POWER_OFF     = 5,
+  GDC_CYCLE         = 6,
+
+  GDC_AWAKE_STATUS  = 16,
+  GDC_MPM           = 17,
+  GDC_PULSE         = 18,
+  GDC_RESET         = 19,
+  GDC_RAW_TX        = 20,
+  GDC_HIBERNATE     = 21,
+  GDC_WAKE          = 22,
+
+  /*
+   * canned messages are in the array canned_msgs
+   * indexed by cmd - 0x80 + msg idx
+   */
+  GDC_CANNED        = 0x80,
+
+  GDC_SLEEP         = 0xfd,
+  GDC_PANIC         = 0xfe,
+  GDC_REBOOT        = 0xff,
 } gps_cmd_t;
 
 
 /*
- * gps_cmd packets come across TagNet and there
- * are no alignment constraints.  they simply are
- * bytes.  Multibyte datums must be repacked before
- * used as such.
+ * gps_cmd packets come across TagNet and there are no alignment
+ * constraints.  they simply are bytes.  Multibyte datums must be repacked
+ * before used natively.
  */
 typedef struct {
   uint8_t cmd;
