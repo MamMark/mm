@@ -191,6 +191,37 @@ const uint8_t sirf_msgs_all_off[] = {
   0xb0, 0xb3                    // end seq
 };
 
+/* nuke after done messing around, testing */
+const uint8_t sirf_msgs_all_on[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x08,                   // length 8
+  166,                          // set message rate
+  2,                            // mode 2 enable/disable all
+  0,                            // mid
+  1,                            // 1 - all on, 1/sec
+  0,                            // reserved
+  0,                            // reserved
+  0,                            // reserved
+  0,                            // reserved
+  0x00, 0xa9,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+const uint8_t sirf_msgs_bad_chk[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x08,                   // length 8
+  166,                          // set message rate
+  2,                            // mode 2 enable/disable all
+  0,                            // mid
+  1,                            // 1 - all on, 1/sec
+  0,                            // reserved
+  0,                            // reserved
+  0,                            // reserved
+  0,                            // reserved
+  0x00, 0xa8,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
 /*************************************************************************
  *
  * waas enable

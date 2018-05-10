@@ -292,6 +292,7 @@ implementation {
     sirf_sw_ver,
     sirf_peek_0,
     sirf_msgs_all_off,
+    sirf_msgs_bad_chk,
     sirf_sbas,
     sirf_full_pwr,
     sirf_go_mpm_0,
