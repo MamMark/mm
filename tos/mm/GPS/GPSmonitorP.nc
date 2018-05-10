@@ -285,6 +285,29 @@ implementation {
   }
 
 
+  const uint8_t *canned_msgs[] = {
+    sirf_send_boot,
+    sirf_send_start,
+    sirf_start_cgee,
+    sirf_sw_ver,
+    sirf_peek_0,
+    sirf_msgs_all_off,
+    sirf_sbas,
+    sirf_full_pwr,
+    sirf_go_mpm_0,
+    sirf_go_mpm_7f,
+    sirf_go_mpm_ff,
+    sirf_ee_poll_ephemeris,
+    sirf_ee_age,
+    sirf_ee_sif_aid_cgee_only,
+    sirf_ee_sif_aiding_status,
+    sirf_ee_eerom_off,
+    sirf_ee_eerom_on,
+    sirf_cgee_pred_enable,
+    sirf_cgee_pred_disable,
+    sirf_ee_debug,
+  };
+
   command bool InfoSensGpsXyz.set_value(tagnet_gps_xyz_t *t, uint32_t *l) {
     if (!t || !l)
       gps_panic(0, 0, 0);               /* no return */
@@ -320,6 +343,7 @@ implementation {
     gps_raw_tx_t *gp;
     error_t err;
     bool    awake;
+    uint32_t msg;
 
     /* too weird, too small, ignore it */
     if (!db || !lenp)
@@ -418,6 +442,11 @@ implementation {
         break;
 
       case GDC_CANNED:
+        msg   = gp->cmd & 0x7f;
+        awake = call GPSControl.awake();
+        err   = call GPSTransmit.send((void *) canned_msgs[msg],
+                                      sizeof(canned_msgs[msg]));
+        call CollectEvent.logEvent(DT_EVENT_GPS_CANNED, msg, err, 0, awake);
         break;
 
       case GDC_SLEEP:
