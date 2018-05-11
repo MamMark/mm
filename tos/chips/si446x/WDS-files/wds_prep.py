@@ -42,6 +42,11 @@ The files output from this program include:
                   includes radio_config.h and si446x_patch.h.
  - the wds_configs.c file provides a single a function to select
    one config from the set included.
+
+wds_radio_configs is a list of tuples representing each of the
+configuration source trees. Each tuple consists of the byte
+array contains the configuration pstrings and a byte array for
+the name of the configuration (actually a null terminated string).
 '''
 
 DEFAULT_CONFIG_FILE =  'Si4468_10kb_433m_200khz'
@@ -69,6 +74,10 @@ uint8_t const SPECIAL_NAME_name[]   = SPECIAL_NAME_NAME;
 #
 select_code = '''
 
+/* the default configuration is the first in the list. Setting
+ * the override will select a different configuration for
+ * the default. Needs to be a valid index into wds_radio_configs[]
+ */
 int wds_default_override  = 0;
 
 int s_compare(uint8_t *s1, uint8_t *s2) {
@@ -81,9 +90,26 @@ int s_compare(uint8_t *s1, uint8_t *s2) {
     return 1;
 }
 
+int wds_set_default(int choice) {
+    /* for each config, there are two ptrs in array (2), four bytes
+     * per pointer (4), zero indexed (-1), and the last entry is null
+     * ptrs (-1)
+     */
+    int max_choice = (sizeof(wds_radio_configs) / (2 * 4)) - 2;
+    if (choice > max_choice)
+        choice = max_choice;
+    else if (choice < 0)
+        choice = wds_default_override / 2;
+    wds_default_override = choice * 2;
+    return choice;
+}
 
 const uint8_t const * const *wds_config_list() {
     return wds_radio_configs;
+}
+
+const uint8_t const *wds_default_name() {
+    return wds_radio_configs[wds_default_override+1];
 }
 
 uint8_t const *wds_config_select(uint8_t *cname) {
@@ -92,7 +118,7 @@ uint8_t const *wds_config_select(uint8_t *cname) {
 
     // defaulit is first in list
     if (!cname)
-        return wds_radio_configs[0];
+        return wds_radio_configs[wds_default_override];
 
     while (this) {
         pname = this + 1;
@@ -102,6 +128,12 @@ uint8_t const *wds_config_select(uint8_t *cname) {
     }
     return NULL;
 }
+'''
+extern_code = '''
+int wds_set_default(int level);
+const uint8_t const * const *wds_config_list();
+uint8_t const *wds_config_select(uint8_t *cname);
+const uint8_t const * const *wds_default_name();
 '''
 
 # each generated file contains this at the beginning
@@ -172,6 +204,7 @@ def process_dirs(dirlist):
         if not os.path.exists(filepath):
             # zzz print('no WDS source found',filepath)
             continue
+        # zzz
         print(adir)
         # write out the .h and .c files for each valid directory
         with open(adir+'.h','w+') as output:
@@ -223,6 +256,10 @@ def write_global_config(dirlist):
         output.write('};\n')
         output.write('\n')
         output.write(select_code)
+    with open('wds_configs.h','w+') as output:
+        output.write(comment_code)
+        output.write('\n')
+        output.write(extern_code)
     with open('Makefile.si446x', 'w+') as output:
         # output.write(comment_code)
         output.write('\n')
@@ -257,12 +294,14 @@ def make_copies(dlst):
     capture important files as part of git trees of both the tag(mammark) and
     TagNet(RPi) versions.
     '''
-    print('copying', DO_COPY)
+    # zzz print('copying', DO_COPY)
     make_dir_copy(dlst, '../mm/tos/chips/si446x/WDS-files')
     make_dir_copy(dlst, '../TagNet/si446x/si446x/radioconfig/WDS-files')
     make_one_copy('wds_prep.py', ['../mm/tos/chips/si446x/WDS-files',
                     '../TagNet/si446x/si446x/radioconfig/WDS-files'])
     make_one_copy('wds_configs.c', ['../mm/tos/platforms/mm6a/hardware/si446x',
+                    '../TagNet/si446x/si446x/radioconfig'])
+    make_one_copy('wds_configs.h', ['../mm/tos/platforms/mm6a/hardware/si446x',
                     '../TagNet/si446x/si446x/radioconfig'])
     make_one_copy('Makefile.si446x', ['../mm/tos/platforms/mm6a/hardware/si446x'])
 

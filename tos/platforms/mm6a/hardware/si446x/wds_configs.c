@@ -30,6 +30,10 @@ const uint8_t *const wds_radio_configs[] = {
 
 
 
+/* the default configuration is the first in the list. Setting
+ * the override will select a different configuration for
+ * the default. Needs to be a valid index into wds_radio_configs[]
+ */
 int wds_default_override  = 0;
 
 int s_compare(uint8_t *s1, uint8_t *s2) {
@@ -42,9 +46,26 @@ int s_compare(uint8_t *s1, uint8_t *s2) {
     return 1;
 }
 
+int wds_set_default(int choice) {
+    /* for each config, there are two ptrs in array (2), four bytes
+     * per pointer (4), zero indexed (-1), and the last entry is null
+     * ptrs (-1)
+     */
+    int max_choice = (sizeof(wds_radio_configs) / (2 * 4)) - 2;
+    if (choice > max_choice)
+        choice = max_choice;
+    else if (choice < 0)
+        choice = wds_default_override / 2;
+    wds_default_override = choice * 2;
+    return choice;
+}
 
 const uint8_t const * const *wds_config_list() {
     return wds_radio_configs;
+}
+
+const uint8_t const *wds_default_name() {
+    return wds_radio_configs[wds_default_override+1];
 }
 
 uint8_t const *wds_config_select(uint8_t *cname) {
@@ -53,7 +74,7 @@ uint8_t const *wds_config_select(uint8_t *cname) {
 
     // defaulit is first in list
     if (!cname)
-        return wds_radio_configs[0];
+        return wds_radio_configs[wds_default_override];
 
     while (this) {
         pname = this + 1;
