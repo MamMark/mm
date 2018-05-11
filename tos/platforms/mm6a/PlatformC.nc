@@ -33,7 +33,7 @@ configuration PlatformC {
 }
 
 implementation {
-  components PlatformP;
+  components PlatformP;                 /* from platforms/mm */
   Platform       = PlatformP;
   PlatformNodeId = PlatformP;
   PlatformInit   = PlatformP;

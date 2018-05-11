@@ -4,6 +4,8 @@ the 80 pin BGA msp432p401r ZXH package.
 It has custom wiring.  See <tos_root>/tos/platforms/mm6a for more
 details.
 
+*** common files shared with the dev6a are in tos/platforms/mm
+
 
 Exceptions:
 -------------

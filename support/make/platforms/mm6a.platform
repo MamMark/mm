@@ -6,14 +6,6 @@
 # use the %T expansion.
 
 PFLAGS += -I%T/platforms/mm6a
-
-PFLAGS += -I%T/mm
-PFLAGS += -I%T/mm/GPS
-PFLAGS += -I%T/system/OverWatch
-PFLAGS += -I%T/system/panic
-
-PFLAGS += -I%T/lib
-
 PFLAGS += -I%T/platforms/mm6a/hardware/
 PFLAGS += -I%T/platforms/mm6a/hardware/sd0
 PFLAGS += -I%T/platforms/mm6a/hardware/sd1
@@ -23,6 +15,15 @@ PFLAGS += -I%T/platforms/mm6a/hardware/pwr_mgr
 PFLAGS += -I%T/platforms/mm6a/hardware/rtc
 PFLAGS += -I%T/platforms/mm6a/hardware/si446x
 PFLAGS += -I%T/platforms/mm6a/hardware/tmp
+
+PFLAGS += -I%T/platforms/mm
+
+PFLAGS += -I%T/mm
+PFLAGS += -I%T/mm/GPS
+PFLAGS += -I%T/system/OverWatch
+PFLAGS += -I%T/system/panic
+
+PFLAGS += -I%T/lib
 
 PFLAGS += -I%T/chips/si446x
 PFLAGS += -I%T/chips/sd

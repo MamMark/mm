@@ -5,6 +5,8 @@ pin msp432p401r QZ package.
 It has custom wiring.  See <tos_root>/tos/platforms/dev6a for more
 details.
 
+*** common files shared with the dev6a are in tos/platforms/mm
+
 
 Exceptions:
 -------------
