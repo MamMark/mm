@@ -17,17 +17,18 @@
 #
 # Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
 #          Eric B. Decker <cire831@gmail.com>
-#
-# Vebosity;
-#
-#   0   just display basic record occurance (default)
-#   1   basic record display - more details
-#   2   detailed record display
-#   3   dump buffer/record
-#   4   details of resync
-#   5   other errors and decoder versions
 
-'''tagdump - dump tag data stream records'''
+'''tagdump - dump tag data stream records
+
+Vebosity;
+
+    0   just display basic record occurance (default)
+    1   basic record display - more details
+    2   detailed record display
+    3   dump buffer/record
+    4   details of resync
+    5   other errors and decoder versions
+'''
 
 from   __future__         import print_function
 
@@ -60,10 +61,8 @@ from   __init__        import __version__   as VERSION
 from   dt_defs         import __version__   as dt_ver
 from   decode_base     import __version__   as db_ver
 from   sirf_defs       import __version__   as sb_ver
-from   sirf_decoders   import __version__   as sd_ver
 from   sirf_emitters   import __version__   as se_ver
 from   sirf_headers    import __version__   as sh_ver
-from   core_decoders   import __version__   as cd_ver
 from   core_emitters   import __version__   as ce_ver
 from   core_headers    import __version__   as ch_ver
 
@@ -493,8 +492,8 @@ def dump(args):
         print(ver_str)
         print('  decode_base: {}  dt_defs: {}  sirf_defs: {}'.format(
             db_ver, dt_ver, sb_ver))
-        print('     core:  d: {}  e: {}  h: {}'.format(cd_ver, ce_ver, ch_ver))
-        print('     sirf:  d: {}  e: {}  h: {}'.format(sd_ver, se_ver, sh_ver))
+        print('     core:  e: {}  h: {}'.format(ce_ver, ch_ver))
+        print('     sirf:  e: {}  h: {}'.format(se_ver, sh_ver))
         print()
 
     def count_dt(rtype):

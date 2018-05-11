@@ -1,5 +1,3 @@
-'''file or network interface for data stream data'''
-
 # Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
@@ -19,6 +17,8 @@
 #
 # Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
 #          Eric B. Decker <cire831@gmail.com>
+
+'''switchable file/network interface for tag byte streams'''
 
 
 from   __future__         import print_function

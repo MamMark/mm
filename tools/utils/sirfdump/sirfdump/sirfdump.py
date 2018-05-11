@@ -1,5 +1,3 @@
-'''sirfdump: dump a sirfbin file'''
-#
 # Copyright (c) 2018 Eric B. Decker
 # All rights reserved.
 #
@@ -19,14 +17,17 @@
 #
 # Contact: Eric B. Decker <cire831@gmail.com>
 
-# Vebosity;
-#
-#   0   just display basic record, summary (default)
-#   1   basic record display - more details
-#   2   detailed record display
-#   3   dump packet buffer
-#   4   details of rehunt (look for new SOP)
-#   5   other errors and decoder/header versions
+'''sirfdump: dump a sirfbin file
+
+Vebosity;
+
+  0   just display basic record, summary (default)
+  1   basic record display - more details
+  2   detailed record display
+  3   dump packet buffer
+  4   details of rehunt (look for new SOP)
+  5   other errors and decoder/header versions
+'''
 
 from   __future__               import print_function
 
@@ -47,7 +48,6 @@ import sirfdump_config
 from   __init__                 import __version__   as VERSION
 from   tagdump.decode_base      import __version__   as db_ver
 from   tagdump.sirf_defs        import __version__   as sb_ver
-from   tagdump.sirf_decoders    import __version__   as sd_ver
 from   tagdump.sirf_emitters    import __version__   as se_ver
 from   tagdump.sirf_headers     import __version__   as sh_ver
 
@@ -317,7 +317,7 @@ def dump(args):
     if (args.verbose and args.verbose >= 5):
         print(ver_str)
         print('  decode_base: {}  sirf_defs: {}'.format(db_ver, sb_ver))
-        print('  sirf:     d: {}  e: {}  h: {}'.format(sd_ver, se_ver, sh_ver))
+        print('  sirf:     e: {}  h: {}'.format(se_ver, sh_ver))
         print()
 
     def count_mid(mid):

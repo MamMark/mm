@@ -1,9 +1,8 @@
 '''assign decoders and emitters for sirfbin mids'''
 
 import sirf_defs     as     sirf
-from   sirf_decoders import *
-from   sirf_emitters import *
 from   sirf_headers  import *
+from   sirf_emitters import *
 
 def decode_default(level, offset, buf, obj):
     return obj.set(buf)

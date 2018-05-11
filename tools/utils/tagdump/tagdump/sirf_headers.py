@@ -25,9 +25,105 @@
 __version__ = '0.2.1.dev2 (sh)'
 
 import binascii
-from   decode_base  import *
 from   collections  import OrderedDict
-from   sirf_defs    import SIRF_END_SIZE
+
+from   decode_base  import *
+from   sirf_defs    import *
+import sirf_defs    as     sirf
+
+
+########################################################################
+#
+# Sirf Decoders
+#
+########################################################################
+
+def decode_sirf_navtrk(level, offset, buf, obj):
+
+    # delete any previous navtrk channel data
+    for k in obj.iterkeys():            # BRK
+        if isinstance(k,int):
+            del obj[k]
+
+    consumed = obj.set(buf)
+    chans  = obj['chans'].val
+
+    # grab each channels cnos and other data
+    for n in range(chans):
+        d = {}                      # get a new dict
+        consumed += sirf_navtrk_chan.set(buf[consumed:])
+        for k, v in sirf_navtrk_chan.items():
+            d[k] = v.val
+        avg  = d['cno0'] + d['cno1'] + d['cno2']
+        avg += d['cno3'] + d['cno4'] + d['cno5']
+        avg += d['cno6'] + d['cno7'] + d['cno8']
+        avg += d['cno9']
+        avg /= float(10)
+        d['cno_avg'] = avg
+        obj[n] = d
+    return consumed
+
+
+def decode_sirf_vis(level, offset, buf, obj):
+
+    # delete any previous vis data (previous packets)
+    for k in obj.iterkeys():            # BRK
+        if isinstance(k,int):
+            del obj[k]
+
+    consumed = obj.set(buf)
+    num_sats = obj['vis_sats'].val
+
+    # for each visible satellite, the sirf_vis_azel object will have sv_id,
+    # sv_az, and sv_el.
+    #
+    # we copy the data off the object into a new dictionary and then add
+    # this dictionary onto the sirf_vis_obj using the vis_sat number
+    # (0..num_sats-1) as the key.
+
+    for n in range(num_sats):
+        d = {}                          # new dict
+        consumed += sirf_vis_azel.set(buf[consumed:])
+        for k, v in sirf_vis_azel.items():
+            d[k] = v.val
+        obj[n] = d
+    return consumed
+
+
+# process extended ephemeris packets
+# buf is pointing at the SID.
+def decode_sirf_ee(level, offset, buf, obj, table):
+    consumed = 1                        # account for sid
+    sid = buf[0]
+    v   = table.get(sid, (None, None, None, 'unk', ''))
+    decoder  = v[EE_DECODER]
+    obj      = v[EE_OBJECT]
+    sid_name = v[EE_NAME]
+    if not decoder:
+        if (level >= 5):
+            print('*** no decoder/obj defined for sid {}'.format(sid))
+        return consumed
+    try:
+        consumed = consumed + \
+                decoder(level, offset, buf[consumed:], obj)
+    except struct.error:
+        print
+        print('*** decode error: sirf_ee56: sid {} {}, @{}'.format(
+            sid, sid_name, rec_offset))
+    return consumed
+
+def decode_sirf_ee56(level, offset, buf, obj):
+    return decode_sirf_ee(level, offset, buf, obj, sirf.ee56_table)
+
+def decode_sirf_ee232(level, offset, buf, obj):
+    return decode_sirf_ee(level, offset, buf, obj, sirf.ee232_table)
+
+
+########################################################################
+#
+# Sirf Headers/Objects
+#
+########################################################################
 
 ####
 #

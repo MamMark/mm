@@ -2,9 +2,8 @@
 
 from   dt_defs       import *
 import dt_defs       as     dtd
-from   core_decoders import *
-from   core_emitters import *
 from   core_headers  import *
+from   core_emitters import *
 
 def decode_default(level, offset, buf, obj):
     return obj.set(buf)
