@@ -112,16 +112,16 @@ def reboot_reason_name(reason):
 # --- 999999 999999 99999999  999    99  ssssss
 # ---    512      1      322  116     1  REBOOT  NIB -> GOLD (GOLD)  (r/f)
 
-rbt0  = '  {:s} -> {:s}  [{:s}]  ({:d}/{:d})'
+rbt0  = '  {:s} -> {:s}  [{:s}]  (r {:d}/{:d} p)'
 
-rbt1a = '    REBOOT: {:7s}  f: {:5s}  c: {:5s}  m: {:5s}  reboots: {}/{}   chk_fails: {}'
+rbt1a = '    REBOOT: {:7s}  f: {:5s}  c: {:5s}  m: {:5s}  reboots/p: {}/{}   chk_fails: {}'
 rbt1b = '    rt: 2017/12/26-(mon)-01:52:40 GMT  prev_sync: {} (0x{:04x})  rev: {:7d}'
 
 rbt2a = '    majik:   {:08x}  sigs:    {:08x}    {:08x}  {:08x}'
 rbt2b = '    base:  f {:08x}  cur:     {:08x}'
 rbt2c = '    rpt:     {:08x}  reset:   {:08x}      others: {:08x}'
 rbt2d = '    fault/g: {:08x}  fault/n: {:08x}  ss/disable: {:08x}'
-rbt2e = '    reboots: {:4}  fails: {:4}  strg: {:8}  loc: {:4}'
+rbt2e = '    reboots: {:4}  panics: {:4}  strg: {:8}  loc: {:4}'
 rbt2f = '    uptime: {}  boot: {}  prev: {}'
 rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
 
@@ -140,19 +140,21 @@ def emit_reboot(level, offset, buf, obj):
         print('*** version mismatch, expected {:d}, got {:d}'.format(
             CORE_REV, core_rev))
 
+    boot_time    = owcb_obj['boot_time']
+    prev_boot    = owcb_obj['prev_boot']
     from_base    = owcb_obj['from_base'].val
-    reboot_count = owcb_obj['reboot_count'].val
-    fail_count   = owcb_obj['fail_count'].val
-    boot_mode    = owcb_obj['ow_boot_mode'].val
+    panic_count  = owcb_obj['panic_count'].val
     fault_gold   = owcb_obj['fault_gold'].val
     fault_nib    = owcb_obj['fault_nib'].val
     ss_dis       = owcb_obj['subsys_disable'].val
+    boot_mode    = owcb_obj['ow_boot_mode'].val
+    reboot_count = owcb_obj['reboot_count'].val
     chk_fails    = owcb_obj['chk_fails'].val
 
     print(rec0.format(offset, recnum, st, xlen, xtype,
                       dt_name(xtype)), end = '')
     print(rbt0.format(base_name(from_base), base_name(base),
-                      ow_boot_mode_name(boot_mode), reboot_count, fail_count))
+                      ow_boot_mode_name(boot_mode), reboot_count, panic_count))
 
     # any weird failures?  Always report
     if (chk_fails or fault_gold or fault_nib or ss_dis):
@@ -164,7 +166,7 @@ def emit_reboot(level, offset, buf, obj):
             reboot_reason_name(owcb_obj['reboot_reason'].val),
             base_name(from_base), base_name(base),
             ow_boot_mode_name(owcb_obj['ow_boot_mode'].val),
-            reboot_count, fail_count, chk_fails))
+            reboot_count, panic_count, chk_fails))
         print(rbt1b.format(prev, prev, core_rev))
 
     if (level >= 2):                    # detailed display (level 2)
@@ -175,10 +177,11 @@ def emit_reboot(level, offset, buf, obj):
         print(rbt2c.format(owcb_obj['rpt'].val, owcb_obj['reset_status'].val,
               owcb_obj['reset_others'].val))
         print(rbt2d.format(fault_gold, fault_nib, ss_dis))
-        print(rbt2e.format(reboot_count, fail_count,
+        print(rbt2e.format(reboot_count, panic_count,
                            owcb_obj['strange'].val,
                            owcb_obj['strange_loc'].val))
-        print(rbt2f.format(0, owcb_obj['boot_time'], owcb_obj['prev_boot']))
+#        print(rbt2f.format(0, owcb_obj['boot_time'], owcb_obj['prev_boot']))
+        print(rbt2f.format(0, 0, 0))
         print(rbt2g.format(owcb_obj['reboot_reason'].val,
                            owcb_obj['ow_req'].val,
                            owcb_obj['ow_boot_mode'].val,
