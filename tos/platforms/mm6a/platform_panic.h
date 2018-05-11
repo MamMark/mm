@@ -29,24 +29,31 @@
  */
 
 typedef enum panic_codes {
-  __pcode_time = PANIC_HC_START,        /* 0x10, see panic.h */
-  __pcode_adc,
-  __pcode_sd,
-  __pcode_fs,
-  __pcode_dm,
-  __pcode_im,
-  __pcode_ss,
-  __pcode_ss_recov,
-  __pcode_gps,
-  __pcode_misc,
-  __pcode_sns,
-  __pcode_pwr,
-  __pcode_radio,
-  __pcode_tagnet,
+  /*
+   * these start at PANIC_HC_START (16).  They are hardcoded to be
+   * very very explicit about it.  They get are externally visibile
+   * when things crash.
+   *
+   * DO NOT RENUMBER.  Its a pain.
+   */
+  __pcode_time          = 16,
+  __pcode_adc           = 17,
+  __pcode_sd            = 18,
+  __pcode_fs            = 19,
+  __pcode_dm            = 20,
+  __pcode_im            = 21,
+  __pcode_ss            = 22,
+  __pcode_ss_recov      = 23,
+  __pcode_gps           = 24,
+  __pcode_misc          = 25,
+  __pcode_sns           = 26,
+  __pcode_pwr           = 27,
+  __pcode_radio         = 28,
+  __pcode_tagnet        = 29,
 
-  __pcode_exc  = 0x70,
-  __pcode_kern = 0x71,
-  __pcode_dvr  = 0x72,
+  __pcode_exc           = 0x70,
+  __pcode_kern          = 0x71,
+  __pcode_dvr           = 0x72,
 
 } panic_code_t;
 
@@ -65,8 +72,8 @@ typedef enum panic_codes {
 #define PANIC_RADIO     __pcode_radio
 #define PANIC_TAGNET    __pcode_tagnet
 
-#define PANIC_EXC  __pcode_exc
-#define PANIC_KERN __pcode_kern
-#define PANIC_DVR  __pcode_dvr
+#define PANIC_EXC       __pcode_exc
+#define PANIC_KERN      __pcode_kern
+#define PANIC_DVR       __pcode_dvr
 
 #endif /* __PLATFORM_PANIC_H__ */
