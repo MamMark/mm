@@ -212,10 +212,11 @@ def model_name(model):
 ver0  = ' {:s}  {:s}  hw: {:s}/{:d}'
 
 ver1a = '    VERSION: {:10s}  hw model/rev: {:x}/{:x} ({:s}/{:d})  r/i: x({:x}/{:x})'
-ver2a = '    desc0:  (p) heads/tp-master-0-g0ac8c73-dirty'
-ver2b = '    desc1:  (m) heads/recsum-0-g04de0f8-dirty'
-ver2c = '    date:   Fri Dec 29 04:05:07 UTC 2017      ib/len: 0x{:x}/{:d} (0x{:x})'
-ver2d = '    ii_sig: 0x33275401  vect_chk: 0x00000000  im_chk: 0x00000000'
+ver2a = '    desc:       placeholder'
+ver2b = '    repo0:  (p) heads/tp-master-0-g0ac8c73-dirty'
+ver2c = '    repo1:  (m) heads/recsum-0-g04de0f8-dirty'
+ver2d = '    date:   Fri Dec 29 04:05:07 UTC 2017      ib/len: 0x{:x}/{:d} (0x{:x})'
+ver2e = '    ii_sig: 0x33275401  chksum: 0x00000000'
 
 def emit_version(level, offset, buf, obj):
     xlen     = obj['hdr']['len'].val
@@ -234,14 +235,17 @@ def emit_version(level, offset, buf, obj):
     rev   = image_info_obj['hw_ver']['rev'].val
 
     # convert description and build_date strings to something reasonable
-    desc0 = image_info_obj['desc0'].val
-    desc0 = desc0[:desc0.index("\0")]
+    desc  = image_info_obj['image_desc'].val
+    desc  = desc[:desc.index('\0')]
 
-    desc1 = image_info_obj['desc1'].val
-    desc1 = desc1[:desc1.index("\0")]
+    repo0 = image_info_obj['repo0'].val
+    repo0 = repo0[:repo0.index('\0')]
 
-    build_date = image_info_obj['build_date'].val
-    build_date = build_date[:build_date.index("\0")]
+    repo1 = image_info_obj['repo1'].val
+    repo1 = repo1[:repo1.index('\0')]
+
+    stamp_date = image_info_obj['stamp_date'].val
+    stamp_date = stamp_date[:stamp_date.index('\0')]
 
     print(rec0.format(offset, recnum, st, xlen, xtype,
                       dt_name(xtype)), end = '')
@@ -254,10 +258,11 @@ def emit_version(level, offset, buf, obj):
         print()
         print(ver2a)
         print(ver2b)
-        print(ver2c.format(image_info_obj['im_start'].val,
+        print(ver2c)
+        print(ver2d.format(image_info_obj['im_start'].val,
                        image_info_obj['im_len'].val,
                        image_info_obj['im_len'].val))
-        print(ver2d)
+        print(ver2e)
 
 
 ################################################################
