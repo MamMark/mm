@@ -34,11 +34,11 @@ from   __future__               import print_function
 import sys
 import struct
 
-from   tagdump.sirf_defs        import *
-import tagdump.sirf_defs        as     sirf
+from   tagcore                  import *
+from   tagcore.sirf_defs        import *
+import tagcore.sirf_defs        as     sirf
+from   tagcore.sirf_headers     import mids_w_sids
 import tagdump.tagfile          as     tf
-from   tagdump.misc_utils       import dump_buf
-from   tagdump.sirf_headers     import mids_w_sids
 
 from   sirfdumpargs             import parseargs
 
@@ -46,10 +46,6 @@ from   sirfdumpargs             import parseargs
 import sirfdump_config
 
 from   __init__                 import __version__   as VERSION
-from   tagdump.decode_base      import __version__   as db_ver
-from   tagdump.sirf_defs        import __version__   as sb_ver
-from   tagdump.sirf_emitters    import __version__   as se_ver
-from   tagdump.sirf_headers     import __version__   as sh_ver
 
 ver_str = '\nsirfdump: ' + VERSION
 
