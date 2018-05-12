@@ -1,5 +1,5 @@
 '''configuration for tagdump'''
 
 # import populators for core and sirf decode/emitters
-import core_populate
-import sirf_populate
+import tagcore.core_populate
+import tagcore.sirf_populate

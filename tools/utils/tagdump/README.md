@@ -2,7 +2,8 @@ TAGDUMP
 =======
 
 Dan Maltbie <dmaltbie@daloma.org>
-copyright (c) 2017 Dan Maltbie
+Eric B. Decker <cire831@gmail.com>
+copyright (c) 2017-2018 Dan Maltbie, Eric B. Decker
 
 *License*: [GPL3](https://opensource.org/licenses/GPL-3.0)
 

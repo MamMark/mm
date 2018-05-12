@@ -77,5 +77,10 @@ tagdump:  decode and display Tag Data Stream file
 #
 #               owcb, convert uptime and elapsed to 32 bit num secs needed.
 #
+# 0.4.0.dev1    Core_Rev refactor.
+#               rework image_info (remove vector_check, add image_desc)
+#               rework of owcb, boot_time, prev_boot
+#               collapse of decoders into headers
+#               refactor, create tagcore.
 
-__version__ = '0.3.0.dev7'
+__version__ = '0.4.0.dev2'

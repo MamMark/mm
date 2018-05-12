@@ -27,9 +27,9 @@
 
 from   __future__         import print_function
 
-from   __init__ import __version__   as VERSION
-from   core_rev import *
 import argparse
+from   tagcore  import *
+from   __init__ import __version__   as VERSION
 
 def auto_int(x):
     return int(x, 0)
@@ -47,7 +47,7 @@ def parseargs():
 
     parser.add_argument('-V', '--version',
                         action='version',
-                        version='%(prog)s ' + VERSION + ':  core_rev ' + str(CORE_REV))
+                        version='%(prog)s ' + VERSION + ':  core: ' + str(CORE_REV))
 
     parser.add_argument('--rtypes',
                         type=auto_upper,

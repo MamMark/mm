@@ -36,37 +36,18 @@ import sys
 import struct
 import argparse
 
-from   core_rev        import *         # get CORE_REV
-from   dt_defs         import *
-import dt_defs         as     dtd
-from   dt_defs         import print_record
-from   dt_defs         import dt_name
+from   tagcore           import *
+from   tagcore.dt_defs   import *
+import tagcore.dt_defs   as     dtd
+import tagcore.sirf_defs as     sirf
+from   tagdumpargs       import parseargs
+from   tagfile           import TagFile
+from   tagfile           import TF_SEEK_END
 
-import sirf_defs       as     sirf
+import tagdump_config                   # populate configuration
 
-from   tagdumpargs     import parseargs
-from   misc_utils      import dump_buf
-
-from   tagfile         import TagFile
-from   tagfile         import TF_SEEK_END
-
-# import configuration, which will populate decoder/emitter trees.
-import tagdump_config
-
-# we need a definition of the header so we can pull it in.
-from   core_headers    import dt_hdr_obj
-
-from   __init__        import __version__   as VERSION
-
-from   dt_defs         import __version__   as dt_ver
-from   decode_base     import __version__   as db_ver
-from   sirf_defs       import __version__   as sb_ver
-from   sirf_emitters   import __version__   as se_ver
-from   sirf_headers    import __version__   as sh_ver
-from   core_emitters   import __version__   as ce_ver
-from   core_headers    import __version__   as ch_ver
-
-ver_str = '\ntagdump: ' + VERSION + ':  core_rev ' + str(CORE_REV)
+from   __init__          import __version__   as VERSION
+ver_str = '\ntagdump: ' + VERSION + ':  core: ' + str(CORE_REV)
 
 
 ####
@@ -492,8 +473,8 @@ def dump(args):
 
     if (args.debug or (args.verbose and args.verbose >= 5)):
         print(ver_str)
-        print('  decode_base: {}  dt_defs: {}  sirf_defs: {}'.format(
-            db_ver, dt_ver, sb_ver))
+        print('  base_objs: {}  dt_defs: {}  sirf_defs: {}'.format(
+            base_ver, dt_ver, sd_ver))
         print('     core:  e: {}  h: {}'.format(ce_ver, ch_ver))
         print('     sirf:  e: {}  h: {}'.format(se_ver, sh_ver))
         print()
