@@ -27,6 +27,7 @@ setup(
 #    license_file     = 'LICENCE.txt',
     license          = 'GPL3',
     packages         = ['sirfdump'],
+    install_requires = [ 'tagcore' ],
     entry_points     = {
         'console_scripts': ['sirfdump=sirfdump.__main__:main'],
     }

@@ -27,6 +27,7 @@ setup(
 #    license_file     = 'LICENCE.txt',
     license          = 'GPL3',
     packages         = ['tagdump'],
+    install_requires = [ 'tagcore' ],
     entry_points     = {
         'console_scripts': ['tagdump=tagdump.__main__:main'],
     }

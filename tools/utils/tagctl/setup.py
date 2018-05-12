@@ -49,7 +49,7 @@ setup(
     scripts              = [],
 
     provides             = [],
-    install_requires     = [ 'cliff' ],
+    install_requires     = [ 'cliff', 'tagcore' ],
 
     namespace_packages   = [],
 #   packages             = [ 'tagctl' ],
