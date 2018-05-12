@@ -448,9 +448,11 @@ def get_record(fd):
         required_len = v[DTR_REQ_LEN]
         if (required_len):
             if (required_len != rlen):
-                print('*** violated required len: {}, got {}'.format(
-                    required_len, len))
+                print('*** len violation, required: {}, got {}'.format(
+                    required_len, rlen))
                 print_record(offset, rec_buf)
+                print()
+                dump_buf(rec_buf, '    ')
                 offset = resync(fd, offset)
                 if (offset < 0):
                     break
