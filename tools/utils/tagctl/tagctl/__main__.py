@@ -26,7 +26,7 @@ import sys
 import logging
 
 from   binascii             import hexlify
-from   tagdump.misc_utils   import buf_str
+from   tagcore              import buf_str
 
 from   ctl_config           import *
 import ctl_config           as     cfg
