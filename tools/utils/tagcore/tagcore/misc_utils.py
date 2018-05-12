@@ -1,5 +1,3 @@
-'''misc utilities'''
-
 # Copyright (c) 2017-2018 Eric B. Decker, Daniel J. Maltbie
 # All rights reserved.
 #
@@ -20,8 +18,7 @@
 # Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
 #          Eric B. Decker <cire831@gmail.com>
 
-# Misc Utilities
-#
+'''misc utilities'''
 
 from   __future__ import print_function
 import binascii

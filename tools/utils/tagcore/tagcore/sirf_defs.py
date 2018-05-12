@@ -1,5 +1,3 @@
-'''basic definitions for sirfbin objects'''
-
 # Copyright (c) 2018 Eric B. Decker
 # All rights reserved.
 #
@@ -19,11 +17,11 @@
 #
 # Contact: Eric B. Decker <cire831@gmail.com>
 
-# sirf binary protocol basic definitions
-#
-# define manipulation and basic definitions for sirfbin/OSP protocol
-# packets
-#
+'''sirf binary protocol basic definitions
+
+define manipulation and basic definitions for sirfbin/OSP protocol
+packets
+'''
 
 # mid_table
 #
@@ -40,7 +38,7 @@
 
 import struct
 
-__version__ = '0.2.1.dev0 (sd)'
+__version__ = '0.3.0.dev1'
 
 __all__ = [
     'MID_DECODER',

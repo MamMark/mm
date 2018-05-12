@@ -18,16 +18,16 @@
 # Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
 #          Eric B. Decker <cire831@gmail.com>
 
-# object descriptors for gps data blocks
+'''sirfbin protocol decoders and header objects'''
 
-'''sirfbin protocol headers'''
+from   __future__         import print_function
 
-__version__ = '0.2.1.dev2 (sh)'
+__version__ = '0.3.0.dev2'
 
 import binascii
 from   collections  import OrderedDict
 
-from   decode_base  import *
+from   base_objs    import *
 from   sirf_defs    import *
 import sirf_defs    as     sirf
 

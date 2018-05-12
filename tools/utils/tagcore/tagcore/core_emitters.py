@@ -1,5 +1,3 @@
-'''emitters (default) for core data type records'''
-
 # Copyright (c) 2018 Eric B. Decker
 # All rights reserved.
 #
@@ -19,11 +17,11 @@
 #
 # Contact: Eric B. Decker <cire831@gmail.com>
 
-# basic emitters for main data blocks
+'''basic emitters for core data type records'''
 
 from   __future__         import print_function
 
-__version__ = '0.2.7 (ce)'
+__version__ = '0.3.0.dev2'
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -43,10 +41,10 @@ from   core_headers import GPS_CMD      # event
 from   sirf_defs    import *
 import sirf_defs    as     sirf
 
-from   sirf_headers  import mids_w_sids
-from   sirf_headers  import sirf_hdr_obj
+from   sirf_headers import mids_w_sids
+from   sirf_headers import sirf_hdr_obj
 
-from   misc_utils    import dump_buf
+from   misc_utils   import dump_buf
 
 ################################################################
 #

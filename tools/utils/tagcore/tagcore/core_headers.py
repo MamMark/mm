@@ -18,18 +18,16 @@
 # Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
 #          Eric B. Decker <cire831@gmail.com>
 
-'''Core Data Type records/objects
+'''Core Data Type decoders and objects'''
 
-basic data type object descriptors
-'''
 from   __future__         import print_function
 
-__version__ = '0.3.0 (ch)'
+__version__ = '0.3.0.dev1'
 
 import binascii
 from   collections  import OrderedDict
 
-from   decode_base  import *
+from   base_objs    import *
 from   sirf_headers import sirf_hdr_obj
 from   sirf_headers import sirf_swver_obj
 

@@ -1,6 +1,4 @@
-'''base classes for defining record objects'''
-
-# Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
+# Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -20,10 +18,12 @@
 # Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
 #          Eric B. Decker <cire831@gmail.com>
 
+'''base classes for defining record objects'''
+
 import struct
 from   collections import OrderedDict
 
-__version__ = '0.2.0 (db)'
+__version__ = '0.3.0.dev1'
 
 class atom(object):
     '''

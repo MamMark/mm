@@ -16,16 +16,11 @@
 # See COPYING in the top level directory of this source tree.
 #
 # Contact: Eric B. Decker <cire831@gmail.com>
-#
-# data type (data block) basic definitions
-#
-# define low level record manipulation and basic definitions for record
-# headers.
-#
 
-'''data type record definitions
+'''data type (data block) basic definitions
 
-corresponds to typed_data.h
+define low level record manipulation and basic definitions for dblk
+stream record headers.
 '''
 
 from   __future__         import print_function
@@ -34,7 +29,7 @@ import struct
 from   misc_utils   import dump_buf
 from   core_headers import dt_hdr_obj
 
-__version__ = '0.3.0 (dt)'
+__version__ = '0.3.0.dev1'
 
 
 # __all__ exports commonly used definitions.  It gets used
@@ -63,7 +58,11 @@ __all__ = [
     'DT_TEST',
     'DT_NOTE',
     'DT_CONFIG',
-    'DT_GPS_RAW_SIRFBIN'
+    'DT_GPS_RAW_SIRFBIN',
+
+    'dt_name',
+    'print_hdr',
+    'print_record',
 ]
 
 
@@ -172,8 +171,8 @@ def print_record(offset, buf):
     hdr = dt_hdr_obj
     hdr_len = len(hdr)
     if (len(buf) < hdr_len):
-        print('*** print_record, buf too small for a header, wanted {}, got {}, @{}'.format(
-            hdr_len, len(buf), offset))
+        print('*** print_record, buf too small for a header, wanted {}, ' + \
+              'got {}, @{}'.format(hdr_len, len(buf), offset))
         dump_buf(buf, '    ')
     else:
         hdr.set(buf)
