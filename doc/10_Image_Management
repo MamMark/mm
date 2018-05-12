@@ -141,11 +141,11 @@ o ver_id.  The version identifier of this image.  This is the name of
 o image_desc.  An ID_MAX (44) byte string that contains an arbitrary
   descriptor of what this image is.
 
-o repo_desc0.  An ID_MAX (44) byte string that describes the tip of the
+o repo0_desc.  An ID_MAX (44) byte string that describes the tip of the
   main tree.  The main tree is currently gh:tp-freeforall/prod(tp-master).
   null terminated.
 
-o repo_desc1.  An ID_MAX (44) byte string that describes the tip of the
+o repo1_desc.  An ID_MAX (44) byte string that describes the tip of the
   aux tree.  This is the main MamMark tree and is currently
   gh:MamMark/mm(master).  null terminated.
 

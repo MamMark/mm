@@ -63,8 +63,8 @@ typedef struct {
   image_ver_t ver_id;                   /*  b  version string of this build       */
   uint32_t    image_chk;                /*  s  simple checksum over entire image  */
   uint8_t     image_desc[IMG_DESC_MAX]; /*  s  generic descriptor                 */
-  uint8_t     repo_desc0[IMG_DESC_MAX]; /*  s  main tree tinyos/prod descriptor   */
-  uint8_t     repo_desc1[IMG_DESC_MAX]; /*  s  aux  tree MamMark descriptor       */
+  uint8_t     repo0_desc[IMG_DESC_MAX]; /*  s  main tree tinyos/prod descriptor   */
+  uint8_t     repo1_desc[IMG_DESC_MAX]; /*  s  aux  tree MamMark descriptor       */
   uint8_t     stamp_date[STAMP_MAX];    /*  s  build time stamp                   */
   hw_ver_t    hw_ver;                   /*  b  and last 2 bytes                   */
 } image_info_t;
@@ -74,8 +74,8 @@ typedef struct {
  *
  *      o image_chk
  *      o image_desc
- *      o repo_desc0
- *      o repo_desc1
+ *      o repo0_desc
+ *      o repo1_desc
  *      o stamp_date
  *
  * image_desc is a general string (null terminated) that can be used to

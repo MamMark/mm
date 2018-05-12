@@ -84,8 +84,8 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   .image_chk    = 0,                            /* 32 bit byte sum over full image size. */
   .ver_id       = { .major = MAJOR, .minor = MINOR, .build = _BUILD },
   .image_desc   = { 0 },
-  .repo_desc0   = { 0 },
-  .repo_desc1   = { 0 },
+  .repo0_desc   = { 0 },
+  .repo1_desc   = { 0 },
   .stamp_date   = { 0 },
   .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV }
 };

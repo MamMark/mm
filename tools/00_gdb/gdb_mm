@@ -123,8 +123,9 @@ else
         $__ii->image_start, $__ii->image_length, $__ii->image_length,  \
         $__ii->hw_ver.hw_model, $__ii->hw_ver.hw_rev,                  \
         $__ii->hw_ver.hw_model, $__ii->hw_ver.hw_rev
-    printf "   0:  [%s]\n", $__ii->descriptor0
-    printf "   1:  [%s]\n", $__ii->descriptor1
+    printf "   d:  [%s]\n", $__ii->image_desc
+    printf "   0:  [%s]\n", $__ii->repo0_desc
+    printf "   1:  [%s]\n", $__ii->repo1_desc
     printf "   s:  [%s]\n", $__ii->stamp_date
 end
 printf "\n"
