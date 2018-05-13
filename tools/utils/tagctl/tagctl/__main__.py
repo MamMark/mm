@@ -81,15 +81,15 @@ class Send(Command):
         self.log.debug('send: {}'.format(parsed_args.msg))
 
         msg      = parsed_args.msg
-        base_msg = cfg.config['messages'][msg]
-        base_msg = bytearray.fromhex(base_msg)
-        len_base = len(base_msg)
-        full_msg = bytearray([0x0d, 0xa0, 0xa2])
-        full_msg.extend(bytearray([len_base & 0xff00, len_base & 0x00ff]))
-        full_msg.extend(base_msg)
-        chk = sum(base_msg)
-        full_msg.extend(bytearray([chk & 0xff00, chk & 0x00ff]))
-        full_msg.extend(bytearray([0xb0, 0xb2]))
+        mid      = cfg.config['messages'][msg]
+        mid      = bytearray.fromhex(mid)
+        len_mid  = len(mid)
+        full_msg = bytearray([gps.CMD_RAW_TX, SOP >> 8, SOP & 0xff])
+        full_msg.extend(bytearray([len_mid >> 8, len_mid & 0x00ff]))
+        full_msg.extend(mid)
+        chk = sum(mid)
+        full_msg.extend(bytearray([chk >> 8, chk & 0xff]))
+        full_msg.extend(bytearray([EOP >> 8, EOP & 0xff]))
 
         cfg.set_node_path()
         cmd_path = os.path.join(cfg.node_path, GPS_CMD_PATH)
