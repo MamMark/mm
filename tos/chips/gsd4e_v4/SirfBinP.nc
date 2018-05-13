@@ -84,6 +84,7 @@ implementation {
    * has happened via GPSProto.msgAbort.
    */
   inline void sirfbin_reset() {
+    sirfbin_stats.resets++;
     sirfbin_state_prev = sirfbin_state;
     sirfbin_state = SBS_START;
     if (sirfbin_ptr) {
@@ -138,16 +139,21 @@ implementation {
 
     switch(sirfbin_state) {
       case SBS_START:
-	if (byte != SIRFBIN_A0)
+	if (byte != SIRFBIN_A0) {
+          sirfbin_stats.ignored++;
 	  return;
+        }
         sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_START_2;
 	return;
 
       case SBS_START_2:
-	if (byte == SIRFBIN_A0)                 // got start again.  stay, good dog
+	if (byte == SIRFBIN_A0) {               // got start again.  stay, good dog
+          sirfbin_stats.ignored++;              // previous byte got ignored
 	  return;
+        }
 	if (byte != SIRFBIN_A2) {		// not what we want.  restart
+          sirfbin_stats.proto_start_fail++;     // weird, count it
 	  sirfbin_restart_abort(1);
 	  return;
 	}
@@ -164,14 +170,20 @@ implementation {
 
       case SBS_LEN_2:
 	sirfbin_left |= byte;
-        if (sirfbin_left > sirfbin_stats.max_seen)
-          sirfbin_stats.max_seen = sirfbin_left;
 	if (sirfbin_left >= SIRFBIN_MAX_MSG) {
+          if (sirfbin_left > sirfbin_stats.largest_seen)
+            /*
+             * largest_seen is the largest we have ever seen
+             * including those that are bigger then out
+             * max.
+             */
+            sirfbin_stats.largest_seen = sirfbin_left;
 	  sirfbin_stats.too_big++;
-//          ROM_DEBUG_BREAK(0);
 	  sirfbin_restart_abort(2);
 	  return;
 	}
+        if (sirfbin_left > sirfbin_stats.max_seen)
+          sirfbin_stats.max_seen = sirfbin_left;
         sirfbin_ptr_prev = sirfbin_ptr;
         sirfbin_ptr = call GPSBuffer.msg_start(sirfbin_left + SIRFBIN_OVERHEAD);
         if (!sirfbin_ptr) {
@@ -220,7 +232,7 @@ implementation {
       case SBS_END:
         *sirfbin_ptr++ = byte;
 	if (byte != SIRFBIN_B0) {
-	  sirfbin_stats.proto_fail++;
+	  sirfbin_stats.proto_end_fail++;
 	  sirfbin_restart_abort(5);
 	  return;
 	}
@@ -231,7 +243,7 @@ implementation {
       case SBS_END_2:
         *sirfbin_ptr++ = byte;
 	if (byte != SIRFBIN_B3) {
-	  sirfbin_stats.proto_fail++;
+	  sirfbin_stats.proto_end_fail++;
 	  sirfbin_restart_abort(6);
 	  return;
 	}
