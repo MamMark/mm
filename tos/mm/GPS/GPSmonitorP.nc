@@ -634,7 +634,8 @@ implementation {
 
     sbp = (void *) msg;
     if (sbp->start1 != SIRFBIN_A0 || sbp->start2 != SIRFBIN_A2) {
-      call Panic.panic(PANIC_GPS, 134, sbp->start1, sbp->start2, 0, 0);
+      call Panic.panic(PANIC_GPS, 134, sbp->start1, sbp->start2,
+                       (parg_t) msg, len);
       return;
     }
 

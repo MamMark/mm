@@ -70,6 +70,8 @@ implementation {
   norace uint16_t  sirfbin_chksum;      // running chksum of payload
   norace uint8_t  *sirfbin_ptr;         // where to stash incoming bytes
   norace uint8_t  *sirfbin_ptr_prev;    // for debugging
+  norace uint8_t  *sb_low, *sb_high;    // paranoid limits
+  norace uint8_t  *sb_start;            // paranoid where cur msg starts
 
 
   /*
@@ -191,6 +193,7 @@ implementation {
           sirfbin_restart_abort(3);
           return;
         }
+        sb_start = sirfbin_ptr;
         signal GPSProto.msgStart(sirfbin_left + SIRFBIN_OVERHEAD);
         sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_PAYLOAD;
@@ -199,25 +202,45 @@ implementation {
         *sirfbin_ptr++ = SIRFBIN_A2;
         *sirfbin_ptr++ = (sirfbin_left >> 8) & 0xff;
         *sirfbin_ptr++ = sirfbin_left & 0xff;
+        sb_low         = sirfbin_ptr;
+        sb_high        = sirfbin_ptr + sirfbin_left - 1;
 	return;
 
       case SBS_PAYLOAD:
+        if (sirfbin_ptr < sb_low || sirfbin_ptr > sb_high)
+          call Panic.panic(PANIC_GPS, 136, (parg_t) sirfbin_ptr,
+                           (parg_t) sb_low, (parg_t) sb_high, 0);
+
+        /* look for SOP corruption, we've seen the 1st 4 wacked */
+        if ((sb_start[0] != SIRFBIN_A0) || (sb_start[1] != SIRFBIN_A2))
+          call Panic.panic(PANIC_GPS, 137, (parg_t) sirfbin_ptr,
+                           (parg_t) sb_start, sb_start[0], sb_start[1]);
         *sirfbin_ptr++ = byte;
 	sirfbin_chksum += byte;
 	sirfbin_left--;
 	if (sirfbin_left == 0) {
           sirfbin_state_prev = sirfbin_state;
 	  sirfbin_state = SBS_CHK;
+          sb_low  = sb_high + 1;
+          sb_high = sb_low;
         }
 	return;
 
       case SBS_CHK:
+        if (sirfbin_ptr < sb_low || sirfbin_ptr > sb_high)
+          call Panic.panic(PANIC_GPS, 136, (parg_t) sirfbin_ptr,
+                           (parg_t) sb_low, (parg_t) sb_high, 0);
         *sirfbin_ptr++ = byte;
         sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_CHK_2;
+        sb_low  = sb_high + 1;
+        sb_high = sb_low;
 	return;
 
       case SBS_CHK_2:
+        if (sirfbin_ptr < sb_low || sirfbin_ptr > sb_high)
+          call Panic.panic(PANIC_GPS, 136, (parg_t) sirfbin_ptr,
+                           (parg_t) sb_low, (parg_t) sb_high, 0);
         *sirfbin_ptr++ = byte;
 	chksum = sirfbin_ptr[-2] << 8 | byte;
 	if (chksum != sirfbin_chksum) {
@@ -227,9 +250,14 @@ implementation {
 	}
         sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_END;
+        sb_low  = sb_high + 1;
+        sb_high = sb_low;
 	return;
 
       case SBS_END:
+        if (sirfbin_ptr < sb_low || sirfbin_ptr > sb_high)
+          call Panic.panic(PANIC_GPS, 136, (parg_t) sirfbin_ptr,
+                           (parg_t) sb_low, (parg_t) sb_high, 0);
         *sirfbin_ptr++ = byte;
 	if (byte != SIRFBIN_B0) {
 	  sirfbin_stats.proto_end_fail++;
@@ -238,9 +266,14 @@ implementation {
 	}
         sirfbin_state_prev = sirfbin_state;
 	sirfbin_state = SBS_END_2;
+        sb_low  = sb_high + 1;
+        sb_high = sb_low;
 	return;
 
       case SBS_END_2:
+        if (sirfbin_ptr < sb_low || sirfbin_ptr > sb_high)
+          call Panic.panic(PANIC_GPS, 136, (parg_t) sirfbin_ptr,
+                           (parg_t) sb_low, (parg_t) sb_high, 0);
         *sirfbin_ptr++ = byte;
 	if (byte != SIRFBIN_B3) {
 	  sirfbin_stats.proto_end_fail++;
