@@ -37,6 +37,7 @@ import struct
 import argparse
 
 from   tagcore           import *
+import tagcore.core_rev  as     vers
 from   tagcore.dt_defs   import *
 import tagcore.dt_defs   as     dtd
 import tagcore.sirf_defs as     sirf
@@ -474,9 +475,11 @@ def dump(args):
     if (args.debug or (args.verbose and args.verbose >= 5)):
         print(ver_str)
         print('  base_objs: {}  dt_defs: {}  sirf_defs: {}'.format(
-            base_ver, dt_ver, sd_ver))
-        print('     core:  e: {}  h: {}'.format(ce_ver, ch_ver))
-        print('     sirf:  e: {}  h: {}'.format(se_ver, sh_ver))
+            vers.base_ver, vers.dt_ver, vers.sd_ver))
+        print('   core:  e: {:10}  h: {:10}  panic:  h: {:10}'.format(
+            vers.ce_ver, vers.ch_ver, vers.pi_ver))
+        print('   sirf:  e: {:10}  h: {:10}'.format(
+            vers.se_ver, vers.sh_ver))
         print()
 
     def count_dt(rtype):
