@@ -27,6 +27,10 @@ import logging
 
 from   binascii             import hexlify
 from   tagcore              import buf_str
+import tagcore.gps_cmds     as     gps
+
+from   tagcore.sirf_defs    import SIRF_SOP_SEQ as SOP
+from   tagcore.sirf_defs    import SIRF_EOP_SEQ as EOP
 
 from   ctl_config           import *
 import ctl_config           as     cfg
@@ -37,55 +41,9 @@ from   cliff.command        import Command
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
-CAN = 0x80
-
 class Cmd(Command):
     log = logging.getLogger(__name__ + '.cmd')
-    gps_cmds = {
-        'nop':          0,
-        'on':           1,
-        'off':          2,
-        'standby':      3,
-        'pwron':        4,
-        'pwroff':       5,
-        'cycle':        6,
-
-        'awake':        16,
-        'mpm':          17,
-        'pulse':        18,
-        'reset':        19,
-        'tx':           20,
-        'hibernate':    21,
-        'wake':         22,
-
-        'can':          0x80,
-
-        'sleep':        0xfd,
-        'panic':        0xfe,
-        'reboot':       0xff,
-
-        0:              'nop',
-        1:              'on',
-        2:              'off',
-        3:              'standby',
-        4:              'pwron',
-        5:              'pwroff',
-        6:              'cycle',
-
-        16:             'awake',
-        17:             'mpm',
-        18:             'pulse',
-        19:             'reset',
-        20:             'tx',
-        21:             'hibernate',
-        22:             'wake',
-
-        0x80:           'can',
-
-        0xfd:           'sleep',
-        0xfe:           'panic',
-        0xff:           'reboot',
-    }
+    g_cmds = gps.gps_cmds
 
     def get_parser(self, prog_name):
         parser = super(Cmd, self).get_parser(prog_name)
@@ -102,12 +60,12 @@ class Cmd(Command):
         cmd_path = os.path.join(cfg.node_path, GPS_CMD_PATH)
         self.log.debug('node_path: {}'.format(cfg.node_path))
         self.log.debug('cmd_path:  {}'.format(cmd_path))
-        gps_cmd = self.gps_cmds.get(cmd, 0)
-        if gps_cmd == CAN: gps_cmd = 0
+        gps_cmd = self.g_cmds.get(cmd, 0)
+        if gps_cmd == gps.CMD_CAN: gps_cmd = gps.CMD_NOP
         cmd_fileno = os.open(cmd_path, os.O_DIRECT | os.O_RDWR)
         out_msg = bytearray([gps_cmd])
         os.write(cmd_fileno, out_msg)
-        gps_cmd = self.gps_cmds.get(gps_cmd, 'unk')
+        gps_cmd = self.g_cmds.get(gps_cmd, 'unk')
         print('sending cmd {} [{}]-> {}'.format(gps_cmd, hexlify(out_msg), cfg.node_str))
 
 class Send(Command):
@@ -147,53 +105,7 @@ class Send(Command):
 
 class Can(Command):
     log = logging.getLogger(__name__ + '.can')
-
-    # canned_msgs, see GPSmonitorP.nc
-    canned_msgs = {
-        'send_boot':        0,
-        'send_start':       1,
-        'start_cgee':       2,
-        'sw_ver':           3,
-        'peek':             4,
-        'all_off':          5,
-        'all_on':           6,
-        'sbas':             7,
-        'full_pwr':         8,
-        'mpm_0':            9,
-        'mpm_7f':           10,
-        'mpm_ff':           11,
-        'poll_ephem':       12,
-        'ee_age':           13,
-        'cgee_only':        14,
-        'aiding_status':    15,
-        'eerom_off':        16,
-        'eerom_on':         17,
-        'pred_enable':      18,
-        'pred_disable':     19,
-        'ee_debug':         20,
-
-        0:      'send_boot',
-        1:      'send_start',
-        2:      'start_cgee',
-        3:      'sw_ver',
-        4:      'peek',
-        5:      'all_off',
-        6:      'all_on',
-        7:      'sbas',
-        8:      'full_pwr',
-        9:      'mpm_0',
-        10:     'mpm_7f',
-        11:     'mpm_ff',
-        12:     'poll_ephem',
-        13:     'ee_age',
-        14:     'cgee_only',
-        15:     'aiding_status',
-        16:     'eerom_off',
-        17:     'eerom_on',
-        18:     'pred_enable',
-        19:     'pred_disable',
-        20:     'ee_debug',
-    }
+    can_msgs = gps.canned_msgs
 
     def get_parser(self, prog_name):
         parser = super(Can, self).get_parser(prog_name)
@@ -212,16 +124,16 @@ class Can(Command):
         cmd_path = os.path.join(cfg.node_path, GPS_CMD_PATH)
         self.log.debug('node_path: {}'.format(cfg.node_path))
         self.log.debug('cmd_path:  {}'.format(cmd_path))
-        msg_val = self.canned_msgs.get(msg, -1)
+        msg_val = self.can_msgs.get(msg, -1)
         if msg_val == -1:
             print('*** bad msg: {} {}'.format(msg_val,
-                self.canned_msgs.get(msg_val, 'unk')))
+                self.can_msgs.get(msg_val, 'unk')))
             return
         cmd_fileno = os.open(cmd_path, os.O_DIRECT | os.O_RDWR)
-        out_msg = bytearray([CAN + msg_val])
+        out_msg = bytearray([gps.CMD_CAN + msg_val])
         os.write(cmd_fileno, out_msg)
-        msg_val = self.canned_msgs.get(msg_val, 'unk')
-        print('sending canned {} [{}]-> {}'.format(msg_val,
+        msg_val = self.can_msgs.get(msg_val, 'unk')
+        print('sending can {} [{}]-> {}'.format(msg_val,
                     hexlify(out_msg), cfg.node_str))
 
 class CtlApp(App):

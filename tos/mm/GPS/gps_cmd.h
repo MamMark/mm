@@ -40,13 +40,13 @@ typedef enum gps_debug_cmds {
   GDC_POWER_OFF     = 5,
   GDC_CYCLE         = 6,
 
-  GDC_AWAKE_STATUS  = 16,
-  GDC_MPM           = 17,
-  GDC_PULSE         = 18,
-  GDC_RESET         = 19,
-  GDC_RAW_TX        = 20,
-  GDC_HIBERNATE     = 21,
-  GDC_WAKE          = 22,
+  GDC_AWAKE_STATUS  = 0x10,
+  GDC_MPM           = 0x11,
+  GDC_PULSE         = 0x12,
+  GDC_RESET         = 0x13,
+  GDC_RAW_TX        = 0x14,
+  GDC_HIBERNATE     = 0x15,
+  GDC_WAKE          = 0x16,
 
   /*
    * canned messages are in the array canned_msgs
