@@ -41,9 +41,8 @@ import tagcore.core_rev  as     vers
 from   tagcore.dt_defs   import *
 import tagcore.dt_defs   as     dtd
 import tagcore.sirf_defs as     sirf
+from   tagcore.tagfile   import *
 from   tagdumpargs       import parseargs
-from   tagfile           import TagFile
-from   tagfile           import TF_SEEK_END
 
 import tagdump_config                   # populate configuration
 

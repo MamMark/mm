@@ -3,6 +3,8 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
+__version__ = '0.4.1.dev0'
+
 # 0.2.2         DT_9 recsum
 # 0.2.3         better summary
 #               core_decoders
@@ -77,10 +79,10 @@ tagdump:  decode and display Tag Data Stream file
 #
 #               owcb, convert uptime and elapsed to 32 bit num secs needed.
 #
-# 0.4.0.dev2    Core_Rev refactor.
+# 0.4.0.dev3    Core_Rev refactor.
 #               rework image_info (remove vector_check, add image_desc)
 #               rework of owcb, boot_time, prev_boot
 #               collapse of decoders into headers
 #               refactor, create tagcore.
-
-__version__ = '0.4.0.dev3'
+#
+# 0.4.1.dev0    move tagfile to tagcore

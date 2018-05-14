@@ -47,7 +47,7 @@ def parseargs():
 
     parser.add_argument('-V', '--version',
                         action='version',
-                        version='%(prog)s ' + VERSION + ':  core: ' + str(CORE_REV))
+                        version='%(prog)s ' + VERSION + ', core: ' + str(CORE_REV))
 
     parser.add_argument('--rtypes',
                         type=auto_upper,

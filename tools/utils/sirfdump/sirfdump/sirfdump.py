@@ -38,7 +38,7 @@ from   tagcore                  import *
 from   tagcore.sirf_defs        import *
 import tagcore.sirf_defs        as     sirf
 from   tagcore.sirf_headers     import mids_w_sids
-import tagdump.tagfile          as     tf
+import tagcore.tagfile          as     tf
 
 from   sirfdumpargs             import parseargs
 

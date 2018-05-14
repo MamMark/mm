@@ -23,6 +23,11 @@
 
 from   __future__         import print_function
 
+__all__ = [
+    'TagFile',
+    'TF_SEEK_END',
+]
+
 import os
 import sys
 import types
