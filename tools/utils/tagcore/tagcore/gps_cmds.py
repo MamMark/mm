@@ -80,11 +80,11 @@ CMD_RAW_TX = gps_cmds['raw_tx']
 
 # canned_msgs, see GPSmonitorP.nc
 canned_msgs = {
-    'send_boot':        0,
-    'send_start':       1,
-    'start_cgee':       2,
-    'sw_ver':           3,
-    'peek':             4,
+    'peek':             0,
+    'send_boot':        1,
+    'send_start':       2,
+    'start_cgee':       3,
+    'sw_ver':           4,
     'all_off':          5,
     'all_on':           6,
     'sbas':             7,
@@ -102,11 +102,11 @@ canned_msgs = {
     'pred_disable':     19,
     'ee_debug':         20,
 
-    0:      'send_boot',
-    1:      'send_start',
-    2:      'start_cgee',
-    3:      'sw_ver',
-    4:      'peek',
+    0:      'peek',
+    1:      'send_boot',
+    2:      'send_start',
+    3:      'start_cgee',
+    4:      'sw_ver',
     5:      'all_off',
     6:      'all_on',
     7:      'sbas',
