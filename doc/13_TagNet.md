@@ -326,29 +326,57 @@ is found.
 
 ```
 root
-+-- <nodeid:000000000000>
-    +-- tag
-        |-- info
-        |   +-- sens
-        |       +-- gps
-        |           +-- xyz
-        |-- poll
-        |   |-- cnt
-        |   +-- ev
-        |-- sd
-        |   +-- 0
-        |       |-- dblk
-        |       |   |-- 0
-        |       |   |-- 1
-        |       |   +-- note
-        |       +-- img
-        +-- sys
-            |-- active
-            |-- backup
-            |-- golden
-            |-- nib
-            +-- running
++-- tag
+    |-- .test
+    |   |-- drop
+    |   |   +-- byte
+    |   |-- echo
+    |   |   +-- byte
+    |   |-- ones
+    |   |   +-- byte
+    |   |-- rssi
+    |   |-- tx_pwr
+    |   +-- zero
+    |       +-- byte
+    |-- info
+    |   +-- sens
+    |       +-- gps
+    |           |-- cmd
+    |           +-- xyz
+    |-- poll
+    |   |-- cnt
+    |   +-- ev
+    |-- sd
+    |   +-- 0
+    |       |-- dblk
+    |       |   |-- .committed
+    |       |   |-- .last_rec
+    |       |   |-- .last_sync
+    |       |   |-- .recnum
+    |       |   |-- byte
+    |       |   +-- note
+    |       |-- img
+    |       +-- panic
+    |           +-- byte
+    +-- sys
+        |-- active
+        |-- backup
+        |-- golden
+        |-- nib
+        |-- rtc
+        +-- running
+
 ```
+
+A FileByteAdapter is a node that implements one additional level of
+fan out, the context.  ie. The PanicByteStorage interface uses context
+to indicate which of the panic files is being addressed.  ie.  context
+0 indicates the whole container and 1 - n indicate which individual
+panic container is being addressed.
+
+In the case of Dblk, context 0 references the entire Dblk stream, and
+other values of context are ignored.  sub-containers aren't defined
+for the Dblk stream.
 
 The Tagnet protocol defines different message types for operating
 on the Tag device named variables, including reading and writing
