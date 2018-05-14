@@ -55,6 +55,7 @@ typedef enum gps_debug_cmds {
    */
   GDC_CANNED        = 0x80,
 
+  GDC_LOW           = 0xfc,
   GDC_SLEEP         = 0xfd,
   GDC_PANIC         = 0xfe,
   GDC_REBOOT        = 0xff,

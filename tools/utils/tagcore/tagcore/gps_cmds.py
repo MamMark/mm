@@ -47,6 +47,7 @@ gps_cmds = {
 
     'can':          0x80,
 
+    'low':          0xfc,
     'sleep':        0xfd,
     'panic':        0xfe,
     'reboot':       0xff,
@@ -69,6 +70,7 @@ gps_cmds = {
 
     0x80:           'can',
 
+    0xfe:           'low',
     0xfd:           'sleep',
     0xfe:           'panic',
     0xff:           'reboot',
@@ -76,6 +78,7 @@ gps_cmds = {
 
 CMD_NOP    = gps_cmds['nop']
 CMD_CAN    = gps_cmds['can']
+CMD_LOW    = gps_cmds['low']
 CMD_RAW_TX = gps_cmds['raw_tx']
 
 # canned_msgs, see GPSmonitorP.nc
