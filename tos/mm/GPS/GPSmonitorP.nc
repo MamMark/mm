@@ -443,7 +443,7 @@ implementation {
         break;
 
       case GDC_CANNED:
-        msg   = gp->cmd & 0x7f;
+        msg   = gp->data[0];
         awake = call GPSControl.awake();
         err   = call GPSTransmit.send((void *) canned_msgs[msg],
                                       sizeof(canned_msgs[msg]));

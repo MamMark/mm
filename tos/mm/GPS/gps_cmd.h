@@ -50,7 +50,8 @@ typedef enum gps_debug_cmds {
 
   /*
    * canned messages are in the array canned_msgs
-   * indexed by cmd - 0x80 + msg idx
+   * indexed by gp->data[0], 1st byte following the
+   * cmd.
    */
   GDC_CANNED        = 0x80,
 

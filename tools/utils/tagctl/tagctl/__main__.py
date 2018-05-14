@@ -130,7 +130,7 @@ class Can(Command):
                 self.can_msgs.get(msg_val, 'unk')))
             return
         cmd_fileno = os.open(cmd_path, os.O_DIRECT | os.O_RDWR)
-        out_msg = bytearray([gps.CMD_CAN + msg_val])
+        out_msg = bytearray([gps.CMD_CAN, msg_val])
         os.write(cmd_fileno, out_msg)
         msg_val = self.can_msgs.get(msg_val, 'unk')
         print('sending can {} [{}]-> {}'.format(msg_val,
