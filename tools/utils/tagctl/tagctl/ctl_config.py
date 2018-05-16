@@ -370,22 +370,22 @@ def configure(ctl_args):
     if ctl_args.root:
         root_str = ctl_args.root
     if ctl_args.node_str:
-        # select can be either a 12 digit node id
+        # node_str can be either a 12 digit node id
         # or a node name.  We check length and then try
         # converting the hex string.
         #
         # if not 12 digits then just assume that it is
         # a node name which will be looked up later.
-        if len(ctl_args.select) != 12:
-            node_str = ctl_args.select
+        if len(ctl_args.node_str) != 12:
+            node_str = ctl_args.node_str
         else:
             try:
-                node     = int(ctl_args.select, 16)
-                node_str = ctl_args.select
+                node     = int(ctl_args.node_str, 16)
+                node_str = ctl_args.node_str
             except ValueError:
                 print()
                 print('*** bad hex digits in -s arg: {}'.format(
-                    ctl_args.select))
+                    ctl_args.node_str))
                 print('*** aborting')
                 print()
                 sys.exit()
