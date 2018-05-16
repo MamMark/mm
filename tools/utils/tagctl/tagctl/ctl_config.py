@@ -69,11 +69,6 @@ Verbosity levels:
 from __future__ import print_function
 
 __all__ = [
-    'TagCtlException',
-    'TagCtlNoRootError',
-    'TagCtlRootPathError',
-    'TagCtlNoNodeError',
-    'TagCtlNodePathError',
     'GPS_CMD_PATH',
     'GPS_XYZ_PATH',
     'GPS_GEO_PATH',
@@ -85,6 +80,11 @@ __all__ = [
     'PANIC_PATH',
     'PANIC_BYTE',
 
+    'TagCtlException',
+    'TagCtlNoRootError',
+    'TagCtlRootPathError',
+    'TagCtlNoNodeError',
+    'TagCtlNodePathError',
 ]
 
 import os
