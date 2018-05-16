@@ -166,6 +166,13 @@ typedef enum mpm_state {
 } mpm_state_t;
 
 
+
+typedef struct {
+  const uint8_t *msg;
+  uint32_t       len;
+} gps_canned_t;
+
+
 module GPSmonitorP {
   provides {
     interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
@@ -285,29 +292,32 @@ implementation {
   }
 
   /* also in tagcore/gps_cmds.py  */
-  const uint8_t *canned_msgs[] = {
-    sirf_peek_0,                        /* 0 */
-    sirf_send_boot,                     /* 1 */
-    sirf_send_start,                    /* 2 */
-    sirf_start_cgee,                    /* 3 */
-    sirf_sw_ver,                        /* 4 */
-    sirf_msgs_all_off,                  /* 5 */
-    sirf_msgs_bad_chk,                  /* 6 */
-    sirf_sbas,                          /* 7 */
-    sirf_full_pwr,                      /* 8 */
-    sirf_go_mpm_0,                      /* 9 */
-    sirf_go_mpm_7f,                     /* 10 */
-    sirf_go_mpm_ff,                     /* 11 */
-    sirf_ee_poll_ephemeris,             /* 12 */
-    sirf_ee_age,                        /* 13 */
-    sirf_ee_sif_aid_cgee_only,          /* 14 */
-    sirf_ee_sif_aiding_status,          /* 15 */
-    sirf_ee_eerom_off,                  /* 16 */
-    sirf_ee_eerom_on,                   /* 17 */
-    sirf_cgee_pred_enable,              /* 18 */
-    sirf_cgee_pred_disable,             /* 19 */
-    sirf_ee_debug,                      /* 20 */
+  const gps_canned_t canned_msgs[] = {
+    { sirf_peek_0,               sizeof(sirf_peek_0)               }, /* 0 */
+    { sirf_send_boot,            sizeof(sirf_send_boot)            }, /* 1 */
+    { sirf_send_start,           sizeof(sirf_send_start)           }, /* 2 */
+    { sirf_start_cgee,           sizeof(sirf_start_cgee)           }, /* 3 */
+    { sirf_sw_ver,               sizeof(sirf_sw_ver)               }, /* 4 */
+    { sirf_msgs_all_off,         sizeof(sirf_msgs_all_off)         }, /* 5 */
+    { sirf_msgs_all_on,          sizeof(sirf_msgs_all_on)          }, /* 6 */
+    { sirf_sbas,                 sizeof(sirf_sbas)                 }, /* 7 */
+    { sirf_full_pwr,             sizeof(sirf_full_pwr)             }, /* 8 */
+    { sirf_go_mpm_0,             sizeof(sirf_go_mpm_0)             }, /* 9 */
+    { sirf_go_mpm_7f,            sizeof(sirf_go_mpm_7f)            }, /* 10 */
+    { sirf_go_mpm_ff,            sizeof(sirf_go_mpm_ff)            }, /* 11 */
+    { sirf_ee_poll_ephemeris,    sizeof(sirf_ee_poll_ephemeris)    }, /* 12 */
+    { sirf_ee_age,               sizeof(sirf_ee_age)               }, /* 13 */
+    { sirf_ee_sif_aid_cgee_only, sizeof(sirf_ee_sif_aid_cgee_only) }, /* 14 */
+    { sirf_ee_sif_aiding_status, sizeof(sirf_ee_sif_aiding_status) }, /* 15 */
+    { sirf_ee_eerom_off,         sizeof(sirf_ee_eerom_off)         }, /* 16 */
+    { sirf_ee_eerom_on,          sizeof(sirf_ee_eerom_on)          }, /* 17 */
+    { sirf_cgee_pred_enable,     sizeof(sirf_cgee_pred_enable)     }, /* 18 */
+    { sirf_cgee_pred_disable,    sizeof(sirf_cgee_pred_disable)    }, /* 19 */
+    { sirf_ee_debug,             sizeof(sirf_ee_debug)             }, /* 20 */
+    { sirf_msgs_bad_chk,         sizeof(sirf_msgs_bad_chk)         }, /* 21 */
   };
+
+#define MAX_CANNED 21
 
   command bool InfoSensGpsXyz.set_value(tagnet_gps_xyz_t *t, uint32_t *l) {
     if (!t || !l)
@@ -444,9 +454,11 @@ implementation {
 
       case GDC_CANNED:
         msg   = gp->data[0];
+        if (msg > MAX_CANNED)
+          msg = 0;
         awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) canned_msgs[msg],
-                                      sizeof(canned_msgs[msg]));
+        err   = call GPSTransmit.send((void *) canned_msgs[msg].msg,
+                                      canned_msgs[msg].len);
         call CollectEvent.logEvent(DT_EVENT_GPS_CANNED, msg, err, 0, awake);
         break;
 

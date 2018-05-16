@@ -104,6 +104,7 @@ canned_msgs = {
     'pred_enable':      18,
     'pred_disable':     19,
     'ee_debug':         20,
+    'bad_chk':          21,
 
     0:      'peek',
     1:      'send_boot',
@@ -126,5 +127,5 @@ canned_msgs = {
     18:     'pred_enable',
     19:     'pred_disable',
     20:     'ee_debug',
+    21:     'bad_chk',
 }
-
