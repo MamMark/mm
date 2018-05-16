@@ -399,6 +399,20 @@ def configure(ctl_args):
     log.debug('path: {}'.format(node_path))
 
 
+def display_section(sec_name):
+    if config.has_key(sec_name):
+        print('[{}]'.format(sec_name))
+        try:
+            for n,v in config[sec_name].iteritems():
+                print('  {:14s} = {}'.format(n,v))
+
+        # AttributeError gets thrown if no sections.
+        except AttributeError:
+            pass
+
+def display_messages():
+    display_section('messages')
+
 def set_node_path():
     global node_path
     log = logging.getLogger(__name__)

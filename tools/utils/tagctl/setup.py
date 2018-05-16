@@ -65,6 +65,7 @@ setup(
             'cmd  = tagctl.tagctl:Cmd',
             'note = tagctl.tagctl:Note',
             'send = tagctl.tagctl:Send',
+            'show = tagctl.tagctl:Show',
         ],
     },
     zip_safe             = False,

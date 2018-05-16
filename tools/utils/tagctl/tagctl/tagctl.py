@@ -109,7 +109,6 @@ class Note(Command):
         return parser
 
     def take_action(self, parsed_args):
-#        import pdb; pdb.set_trace()
         self.log.debug('args: {}'.format(parsed_args))
         self.log.debug('note: {}'.format(parsed_args.note))
 
@@ -159,6 +158,39 @@ class Send(Command):
 
         cmd_fileno = os.open(cmd_path, os.O_DIRECT | os.O_RDWR)
         os.write(cmd_fileno, full_msg)
+
+
+class Show(Command):
+    log = logging.getLogger(__name__ + '.show')
+
+    def get_parser(self, prog_name):
+        parser = super(Show, self).get_parser(prog_name)
+        parser.add_argument('what', nargs='?', default='msgs')
+        return parser
+
+    def take_action(self, parsed_args):
+        self.log.debug('args: {}'.format(parsed_args))
+        self.log.debug('show: {}'.format(parsed_args.what))
+
+        what = parsed_args.what
+        if what == 'all':
+            return
+        if what == 'summary':
+            return
+        if what == 'msgs':
+            cfg.display_messages()
+            return
+        if what == 'node':
+            try:
+                node_id = cfg.config['nodes'][cfg.node_str]
+                node_id = ' ... {}'.format(node_id)
+            except (KeyError, TypeError):
+                node_id = ''
+            print('  node: {}{}'.format(cfg.node_str, node_id))
+            return
+        if what == 'nodes':
+            return
+
 
 class CtlApp(App):
     log = logging.getLogger(__name__ + '.ctl')
