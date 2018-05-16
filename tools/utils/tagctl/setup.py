@@ -63,6 +63,7 @@ setup(
         'ctl_main': [
             'can  = tagctl.tagctl:Can',
             'cmd  = tagctl.tagctl:Cmd',
+            'note = tagctl.tagctl:Note',
             'send = tagctl.tagctl:Send',
         ],
     },

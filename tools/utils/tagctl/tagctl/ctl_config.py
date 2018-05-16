@@ -77,8 +77,14 @@ __all__ = [
     'GPS_CMD_PATH',
     'GPS_XYZ_PATH',
     'GPS_GEO_PATH',
+
     'DBLK_PATH',
+    'DBLK_BYTE',
+    'NOTE_PATH',
+
     'PANIC_PATH',
+    'PANIC_BYTE',
+
 ]
 
 import os
@@ -128,8 +134,13 @@ node_path = None
 GPS_CMD_PATH = 'tag/info/sens/gps/cmd'
 GPS_XYZ_PATH = 'tag/info/sens/gps/xyz'
 GPS_GEO_PATH = 'tag/info/sens/gps/geo'
+
 DBLK_PATH    = 'tag/sd/0/dblk'
+DBLK_BYTE    = DBLK_PATH + '/' + 'byte'
+NOTE_PATH    = DBLK_PATH + '/' + 'note'
+
 PANIC_PATH   = 'tag/sd/0/panic'
+PANIC_BYTE   = PANIC_PATH + '/' + 'byte'
 
 
 def _auto_upper(x):

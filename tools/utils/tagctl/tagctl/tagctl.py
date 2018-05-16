@@ -84,7 +84,6 @@ class Cmd(Command):
         return parser
 
     def take_action(self, parsed_args):
-#        import pdb; pdb.set_trace()
         self.log.debug('args: {}'.format(parsed_args))
         self.log.debug('cmd:  {}'.format(parsed_args.cmd))
 
@@ -100,6 +99,31 @@ class Cmd(Command):
         os.write(cmd_fileno, out_msg)
         gps_cmd = self.g_cmds.get(gps_cmd, 'unk')
         print('sending cmd {} [{}]-> {}'.format(gps_cmd, hexlify(out_msg), cfg.node_str))
+
+class Note(Command):
+    log = logging.getLogger(__name__ + '.note')
+
+    def get_parser(self, prog_name):
+        parser = super(Note, self).get_parser(prog_name)
+        parser.add_argument('note', nargs='*', default=['hi there'])
+        return parser
+
+    def take_action(self, parsed_args):
+#        import pdb; pdb.set_trace()
+        self.log.debug('args: {}'.format(parsed_args))
+        self.log.debug('note: {}'.format(parsed_args.note))
+
+        note = ' '.join(parsed_args.note)
+        cfg.set_node_path()
+        note_path = os.path.join(cfg.node_path, NOTE_PATH)
+
+        self.log.debug('node_path: {}'.format(cfg.node_path))
+        self.log.debug('note_path:  {}'.format(note_path))
+
+        print('noting [{}] -> {}'.format(note, cfg.node_str))
+
+        note_fileno = os.open(note_path, os.O_DIRECT | os.O_RDWR)
+        os.write(note_fileno, note)
 
 class Send(Command):
     log = logging.getLogger(__name__ + '.send')
