@@ -61,9 +61,9 @@ setup(
             'tagctl = tagctl.__main__:main'
         ],
         'ctl_main': [
+            'can  = tagctl.tagctl:Can',
             'cmd  = tagctl.tagctl:Cmd',
             'send = tagctl.tagctl:Send',
-            'can  = tagctl.tagctl:Can',
         ],
     },
     zip_safe             = False,

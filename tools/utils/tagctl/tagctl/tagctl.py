@@ -41,6 +41,39 @@ from   cliff.command        import Command
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
+class Can(Command):
+    log = logging.getLogger(__name__ + '.can')
+    can_msgs = gps.canned_msgs
+
+    def get_parser(self, prog_name):
+        parser = super(Can, self).get_parser(prog_name)
+        parser.add_argument('msg', nargs='?')
+        return parser
+
+    def take_action(self, parsed_args):
+        self.log.debug('args: {}'.format(parsed_args))
+        self.log.debug('can:  {}'.format(parsed_args.msg))
+
+        msg = parsed_args.msg
+        if not msg:
+            print('a msg would be nice')
+            return
+        cfg.set_node_path()
+        cmd_path = os.path.join(cfg.node_path, GPS_CMD_PATH)
+        self.log.debug('node_path: {}'.format(cfg.node_path))
+        self.log.debug('cmd_path:  {}'.format(cmd_path))
+        msg_val = self.can_msgs.get(msg, -1)
+        if msg_val == -1:
+            print('*** bad msg: {} {}'.format(msg_val,
+                self.can_msgs.get(msg_val, 'unk')))
+            return
+        cmd_fileno = os.open(cmd_path, os.O_DIRECT | os.O_RDWR)
+        out_msg = bytearray([gps.CMD_CAN, msg_val])
+        os.write(cmd_fileno, out_msg)
+        msg_val = self.can_msgs.get(msg_val, 'unk')
+        print('sending can {} [{}]-> {}'.format(msg_val,
+                    hexlify(out_msg), cfg.node_str))
+
 class Cmd(Command):
     log = logging.getLogger(__name__ + '.cmd')
     g_cmds = gps.gps_cmds
@@ -102,39 +135,6 @@ class Send(Command):
 
         cmd_fileno = os.open(cmd_path, os.O_DIRECT | os.O_RDWR)
         os.write(cmd_fileno, full_msg)
-
-class Can(Command):
-    log = logging.getLogger(__name__ + '.can')
-    can_msgs = gps.canned_msgs
-
-    def get_parser(self, prog_name):
-        parser = super(Can, self).get_parser(prog_name)
-        parser.add_argument('msg', nargs='?')
-        return parser
-
-    def take_action(self, parsed_args):
-        self.log.debug('args: {}'.format(parsed_args))
-        self.log.debug('can:  {}'.format(parsed_args.msg))
-
-        msg = parsed_args.msg
-        if not msg:
-            print('a msg would be nice')
-            return
-        cfg.set_node_path()
-        cmd_path = os.path.join(cfg.node_path, GPS_CMD_PATH)
-        self.log.debug('node_path: {}'.format(cfg.node_path))
-        self.log.debug('cmd_path:  {}'.format(cmd_path))
-        msg_val = self.can_msgs.get(msg, -1)
-        if msg_val == -1:
-            print('*** bad msg: {} {}'.format(msg_val,
-                self.can_msgs.get(msg_val, 'unk')))
-            return
-        cmd_fileno = os.open(cmd_path, os.O_DIRECT | os.O_RDWR)
-        out_msg = bytearray([gps.CMD_CAN, msg_val])
-        os.write(cmd_fileno, out_msg)
-        msg_val = self.can_msgs.get(msg_val, 'unk')
-        print('sending can {} [{}]-> {}'.format(msg_val,
-                    hexlify(out_msg), cfg.node_str))
 
 class CtlApp(App):
     log = logging.getLogger(__name__ + '.ctl')
