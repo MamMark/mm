@@ -25,11 +25,6 @@ __version__ = '0.3.0.dev2'
 
 from   core_rev     import *
 from   dt_defs      import *
-from   dt_defs      import rec0
-from   dt_defs      import get_systime
-from   dt_defs      import dt_name
-from   dt_defs      import print_hdr
-from   dt_defs      import print_record
 
 from   core_headers import owcb_obj
 from   core_headers import image_info_obj
@@ -128,7 +123,7 @@ def emit_reboot(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    st       = get_systime(rtctime)
+    brt      = rtctime_str(rtctime)
 
     majik    = obj['majik'].val
     prev     = obj['prev_sync'].val
@@ -149,7 +144,7 @@ def emit_reboot(level, offset, buf, obj):
     reboot_count = owcb_obj['reboot_count'].val
     chk_fails    = owcb_obj['chk_fails'].val
 
-    print(rec0.format(offset, recnum, st, xlen, xtype,
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     print(rbt0.format(base_name(from_base), base_name(base),
                       ow_boot_mode_name(boot_mode), reboot_count, panic_count))
@@ -203,8 +198,8 @@ def model_name(model):
     return model_strs.get(model, 'unk')
 
 
-# --- offset recnum  systime  len  type  name
-# --- 999999 999999 99999999  999    99  ssssss
+# --- offset recnum      brt  len  type  name
+# --- 999999 999999 3599.999  999    99  ssssss
 # ---    512      1      322  116     1  VERSION  NIB 0.2.63  hw: dev6a/1
 
 ver0  = ' {:s}  {:s}  hw: {:s}/{:d}'
@@ -222,8 +217,7 @@ def emit_version(level, offset, buf, obj):
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     base     = obj['base'].val
-
-    st       = get_systime(rtctime)
+    brt      = rtctime_str(rtctime)
 
     ver_str = '{:d}.{:d}.{:d}'.format(
         image_info_obj['ver_id']['major'].val,
@@ -245,7 +239,7 @@ def emit_version(level, offset, buf, obj):
     stamp_date = image_info_obj['stamp_date'].val
     stamp_date = stamp_date[:stamp_date.index('\0')]
 
-    print(rec0.format(offset, recnum, st, xlen, xtype,
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     print(ver0.format(base_name(base), ver_str, model_name(model), rev))
     if (level >= 1):
@@ -279,12 +273,12 @@ def emit_sync(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    st       = get_systime(rtctime)
+    brt      = rtctime_str(rtctime)
 
     majik    = obj['majik'].val
     prev     = obj['prev_sync'].val
 
-    print(rec0.format(offset, recnum, st, xlen, xtype,
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     print(sync0.format(prev, prev))
 
@@ -313,7 +307,7 @@ def emit_event(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    st       = get_systime(rtctime)
+    brt      = rtctime_str(rtctime)
 
     event = obj['event'].val
     arg0  = obj['arg0'].val
@@ -322,7 +316,7 @@ def emit_event(level, offset, buf, obj):
     arg3  = obj['arg3'].val
     pcode = obj['pcode'].val
     w     = obj['w'].val
-    print(rec0.format(offset, recnum, st, xlen, xtype,
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     if (event == PANIC_WARN):
         # special case, print PANIC_WARNs always, full display
@@ -356,9 +350,9 @@ def emit_debug(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    st       = get_systime(rtctime)
+    brt      = rtctime_str(rtctime)
 
-    print(rec0.format(offset, recnum, st, xlen, xtype,
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     print(debug0.format())
 
@@ -374,9 +368,9 @@ def emit_gps_version(level, offset, buf, obj):
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
     rtctime  = obj['gps_hdr']['hdr']['rt']
-    st       = get_systime(rtctime)
+    brt      = rtctime_str(rtctime)
 
-    print(rec0.format(offset, recnum, st, xlen, xtype, dt_name(xtype)))
+    print(rec0.format(offset, recnum, brt, xlen, xtype, dt_name(xtype)))
     if (level >= 1):
         print('    {}'.format(obj['sirf_swver']))
 
@@ -438,9 +432,9 @@ def emit_test(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    st       = get_systime(rtctime)
+    brt      = rtctime_str(rtctime)
 
-    print(rec0.format(offset, recnum, st, xlen, xtype,
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     print(test0.format())
 
@@ -458,14 +452,14 @@ def emit_note(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    st       = get_systime(rtctime)
+    brt      = rtctime_str(rtctime)
 
     # isolate just the note, and strip NUL and whitespace
     note     = buf[len(obj):]
     note     = note.rstrip('\0')
     note     = note.rstrip()
 
-    print(rec0.format(offset, recnum, st, xlen, xtype,          # sans nl
+    print(rec0.format(offset, recnum, brt, xlen, xtype,         # sans nl
                       dt_name(xtype)), end = '')
     if (len(note) > 44):
         print()
@@ -484,9 +478,9 @@ def emit_config(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    st       = get_systime(rtctime)
+    brt      = rtctime_str(rtctime)
 
-    print(rec0.format(offset, recnum, st, xlen, xtype,          # sans nl
+    print(rec0.format(offset, recnum, brt, xlen, xtype,         # sans nl
                       dt_name(xtype)), end = '')
     print(cfg0.format())
 
@@ -502,12 +496,12 @@ def emit_gps_raw(level, offset, buf, obj):
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
     rtctime  = obj['gps_hdr']['hdr']['rt']
-    st       = get_systime(rtctime)
+    brt      = rtctime_str(rtctime)
 
     dir_bit  = obj['gps_hdr']['dir'].val
     dir_str  = 'rx' if dir_bit == 0 else 'tx'
 
-    print(rec0.format(offset, recnum, st, xlen, xtype,
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     if (obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ):
         index = len(obj) - len(sirf_hdr_obj)

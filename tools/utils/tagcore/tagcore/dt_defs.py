@@ -17,7 +17,8 @@
 #
 # Contact: Eric B. Decker <cire831@gmail.com>
 
-'''data type (data block) basic definitions
+'''
+data type (data block) basic definitions
 
 define low level record manipulation and basic definitions for dblk
 stream record headers.
@@ -60,6 +61,8 @@ __all__ = [
     'DT_CONFIG',
     'DT_GPS_RAW_SIRFBIN',
 
+    'rec0',
+    'rtctime_str',
     'dt_name',
     'print_hdr',
     'print_record',
@@ -122,26 +125,46 @@ DT_CONFIG		= 24
 DT_GPS_RAW_SIRFBIN      = 32
 
 
+# offset    recnum     rtime    len   dt name         offset
+# 99999999 9999999  3599.999969 999   99 xxxxxxxxxxxx @999999 (0xffffff) [0xffff]
+rec_title_str = "---  offset    recnum    rtime    len  dt  name"
+
 # common format used by all records.  (rec0)
-# --- offset recnum       rt  len  type  name
-# --- 999999 999999 99999999  999    99  ssssss
-# ---    512      1      322  116     1  REBOOT  unset -> GOLD (GOLD)
-rec0  = '--- @{:<6d} {:6d} {:8d}  {:3d}    {:2d}  {:s}'
+# ---  offset    recnum    rtime    len  dt  name
+# --- @99999999 9999999 3599.999969 999  99  ssssss
+# --- @512            1 1099.105926 120   1  REBOOT  unset -> GOLD  [GOLD]  (r 3/0 p)
+
+rec0  = '--- @{:<8d} {:7d} {:>11s} {:3d}  {:2d}  {:s}'
+
+# header format when normal processing doesn't work (see print_record)
+rec_format    = "@{:<8d} {:7d} {:>11s} {:<3d}  {:2}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
 
 
-def get_systime(rtctime):
+def rtctime_str(rtctime, fmt = 'basic'):
     '''
-    get systime from a rtctime.
+    convert a rtctime into a simple 'basic' string displaying the time
+    as seconds.us since the top of the hour.
 
     input:      rtctime, a rtctime_obj
-    output:     systime
-                min | sec | sub_sec (32 bits)
+    output:     string seconds.us since the top of the hour
 
-    rtctime is assumed to have been populated.
+    ie. Thu 17 May 00:04:29 UTC 2018 9589 jiffies
+        2018-05-17-(4)-00:04:29.9589j is displayed as '269.292633'
+
+        269.292633      2018-05-17-(4)-00:04:29.9589j  (0x2575
+        298.999969      2018-05-17-(4)-00:04:58.32767j (0x7fff)
+        299.000000      2018-05-17-(4)-00:04:59.0j     (0x0000)
+        299.999969      2018-05-17-(4)-00:04:59.32767j (0x7fff)
+        300.000000      2018-05-17-(4)-00:05:00.0j     (0x0000)
+       3599.999969      2018-05-17-(4)-00:59:59.32767j (0x7fff)
+          0.000000      2018-05-17-(4)-01:00:00.0      (0x0000)
+
+    the rtctime object must be set prior to calling get_basic_rt.
     '''
     rt = rtctime
-    st = (rt['min'].val << 24) | (rt['sec'].val << 16) | rt['sub_sec'].val
-    return st
+    rt_secs  = rt['min'].val * 60 + rt['sec'].val
+    rt_subsecs = (rt['sub_sec'].val * 1000000) / 32768
+    return '{:d}.{:06d}'.format(rt_secs, rt_subsecs)
 
 
 def dt_name(rtype):
@@ -150,23 +173,18 @@ def dt_name(rtype):
 
 
 def print_hdr(obj):
-    # rec  time     rtype name
-    #    1 00000279 (20) REBOOT
+    #  rec       rtime rtype name
+    #    1 3599.999969  (20) REBOOT
 
     rtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    st       = get_systime(rtctime)
-    print('{:4} {:8} ({:2}) {:6} --'.format(recnum, st,
+    brt      = rtctime_str(rtctime)
+    print('{:4} {:>11} ({:2}) {:6} --'.format(recnum, brt,
         rtype, dt_name(rtype)), end = '')
 
 
 # used for identifing records that have problems.
-# offset recnum       rt len type name         offset
-# 999999 999999  0009999 999   99 xxxxxxxxxxxx @999999 (0xffffff) [0xffff]
-rec_title_str = "--- offset   recnum       rt  len  type  name"
-rec_format    = "{:8} {:6}  {:7}  {:3}    {:2}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
-
 def print_record(offset, buf):
     hdr = dt_hdr_obj
     hdr_len = len(hdr)
@@ -180,7 +198,7 @@ def print_record(offset, buf):
         rtype    = hdr['type'].val
         recnum   = hdr['recnum'].val
         rtctime  = hdr['rt']
-        st       = get_systime(rtctime)
+        brt      = rtctime_str(rtctime)
         recsum   = hdr['recsum'].val
-        print(rec_format.format(offset, recnum, st, rlen, rtype,
+        print(rec_format.format(offset, recnum, brt, rlen, rtype,
             dt_name(rtype), offset, offset, recsum))
