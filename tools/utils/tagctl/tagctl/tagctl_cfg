@@ -25,21 +25,72 @@ tib5 = 1fbcd99fd29f
 [messages]
 swver         = 84 00
 peek          = b2 03 00 04 00 00 00 00 00 00 00 00
-tracker_off   = a6 00 04 00 00 00 00 00
-tracker_on    = a6 00 04 01 00 00 00 00
-tracker_poll  = a6 01 04 00 00 00 00 00
+
+navdata_off   = a6 00 02 00 00 00 00 00
+navdata_on    = a6 00 02 01 00 00 00 00
+navtrack_off  = a6 00 04 00 00 00 00 00
+navtrack_on   = a6 00 04 01 00 00 00 00
+navtrack_poll = a6 01 04 00 00 00 00 00
+vis_off       = a6 00 0d 00 00 00 00 00
+vis_on        = a6 00 0d 01 00 00 00 00
+
+geo_off       = a6 00 29 00 00 00 00 00
+geo_on        = a6 00 29 01 00 00 00 00
+geo_poll      = a6 01 29 00 00 00 00 00
+
 all_off       = a6 02 00 00 00 00 00 00
-all_on        = a6 02 01 00 00 00 00 00
+all_on        = a6 02 00 01 00 00 00 00
+
 nav_off       = a6 03 00 00 00 00 00 00
 nav_on        = a6 03 00 01 00 00 00 00
+
 debug_off     = a6 04 00 00 00 00 00 00
 debug_on      = a6 04 00 01 00 00 00 00
+
 nav_debug_off = a6 05 00 00 00 00 00 00
 nav_debug_on  = a6 05 00 01 00 00 00 00
+
+gpio_off      = a6 00 41 00 00 00 00 00
+gpio_on       = a6 00 41 01 00 00 00 00
+51_off        = a6 00 33 00 00 00 00 00
+51_on         = a6 00 33 01 00 00 00 00
+cw_off        = a6 00 5c 00 00 00 00 00
+cputhru_off   = a6 00 09 00 00 00 00 00
+tcxo_off      = a6 00 5d 00 00 00 00 00
+
 mpm0          = da 02 00 00 00 00
 mpmff         = da 02 ff 00 00 00
 mpm7f         = da 02 7f 00 00 00
 
-[logfile]
-level = DEBUG
+poll_clock    = 90 00
+1pps_on       = a6 00 34 01 00 00 00 00
+
+eerom_off     = e8 fd 00
+eerom_on      = e8 fd 01
+eerom_flash   = e8 fd 02
+
+# e8 20 <sgee disable> <cgee disable>
+cgee_off      = e8 20 01 01
+cgee_on       = e8 20 01 00
+
+pred_enable   = e8 fe ff ff ff ff
+pred_disable  = e8 fe 00 00 00 00
+
+# e8 02 <sat mask - 32..1>
+ee_poll_eph   = e8 02 ff ff ff ff
+
+# e8 19 <num sats> <prn> <14*00>
+ee_age_18     = e8 19 01 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ee_age_4      = e8 19 01 01
+
+ee_status     = e8 21 00
+ee_debug      = e8 ff ff ff ff ff
+
+sbas_on       = 85 01 00 00 00 00 00
+sbas_auto     = 8a 00 ff
+sbas_param5   = aa 00 01 00 00 00
+sbas_param6   = aa 00 01 00 00 00 00
+
+[logging]
+level = WARNING
 name  = /tmp/tagctl.log
