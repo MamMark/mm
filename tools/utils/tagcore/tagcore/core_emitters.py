@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.0.dev2'
+__version__ = '0.3.1.dev0'
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -376,7 +376,7 @@ def emit_gps_version(level, offset, buf, obj):
 
 
 def emit_gps_time(level, offset, buf, obj):
-    print_record(offset, buf)
+    dump_hdr(offset, buf)
     if (level >= 1):
         print(obj)
         print_hdr(obj)
@@ -384,18 +384,18 @@ def emit_gps_time(level, offset, buf, obj):
 
 
 def emit_gps_geo(level, offset, buf, obj):
-    print_record(offset, buf)
+    dump_hdr(offset, buf)
     if (level >= 1):
         print(obj)
-        print_hdr(obj)
+        print_hdr_obj(obj)
         print()
 
 
 def emit_gps_xyz(level, offset, buf, obj):
-    print_record(offset, buf)
+    dump_hdr(offset, buf)
     if (level >= 1):
         print(obj)
-        print_hdr(obj)
+        print_hdr_obj(obj)
         print()
 
 
@@ -405,18 +405,18 @@ def emit_gps_xyz(level, offset, buf, obj):
 #
 
 def emit_sensor_data(level, offset, buf, obj):
-    print_record(offset, buf)
+    dump_hdr(offset, buf)
     if (level >= 1):
         print(obj)
-        print_hdr(obj)
+        print_hdr_obj(obj)
         print()
 
 
 def emit_sensor_set(level, offset, buf, obj):
-    print_record(offset, buf)
+    dump_hdr(offset, buf)
     if (level >= 1):
         print(obj)
-        print_hdr(obj)
+        print_hdr_obj(obj)
         print()
 
 

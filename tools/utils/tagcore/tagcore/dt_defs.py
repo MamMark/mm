@@ -21,7 +21,21 @@
 data type (data block) basic definitions
 
 define low level record manipulation and basic definitions for dblk
-stream record headers.
+stream record headers.  Includes print/display routines.
+
+Includes the following:
+
+    - dt_records.  expose dictionary of data_type records we understand.
+    - indicies to dt_record fields
+      DT_REQ_LEN, DT_DECODERS, etc.
+    - dt types, DT_REBOOT, DT_VERSION, etc.
+
+    - print/display functions
+
+      rtctime_str       convert rtctime to printable string
+      dt_name           convert a dt code to its printable name
+      dump_hdr          simple hdr display (from raw buffer)
+      print_hdr_obj     print a dt record header given its object
 '''
 
 from   __future__         import print_function
@@ -30,7 +44,7 @@ import struct
 from   misc_utils   import dump_buf
 from   core_headers import dt_hdr_obj
 
-__version__ = '0.3.0.dev1'
+__version__ = '0.3.1.dev1'
 
 
 # __all__ exports commonly used definitions.  It gets used
@@ -64,8 +78,8 @@ __all__ = [
     'rec0',
     'rtctime_str',
     'dt_name',
-    'print_hdr',
-    'print_record',
+    'dump_hdr',
+    'print_hdr_obj',
 ]
 
 
@@ -136,9 +150,6 @@ rec_title_str = "---  offset    recnum    rtime    len  dt  name"
 
 rec0  = '--- @{:<8d} {:7d} {:>11s} {:3d}  {:2d}  {:s}'
 
-# header format when normal processing doesn't work (see print_record)
-rec_format    = "@{:<8d} {:7d} {:>11s} {:<3d}  {:2}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
-
 
 def rtctime_str(rtctime, fmt = 'basic'):
     '''
@@ -172,33 +183,41 @@ def dt_name(rtype):
     return v[DTR_NAME]
 
 
-def print_hdr(obj):
-    #  rec       rtime rtype name
-    #    1 3599.999969  (20) REBOOT
 
+
+# header format when normal processing doesn't work (see print_record)
+hdr_format    = "@{:<8d} {:7d} {:>11s} {:<3d}  {:2d}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
+hdr_additonal = ' @{} (0x{:06x}) [0x{:04x}]'
+
+def dump_hdr(offset, buf):
+    '''load hdr from buf and display it.
+
+    returns:    True if we can load the header
+                False if buffer is too short.
+    '''
+
+    hdr = dt_hdr_obj
+    hdr_len = len(hdr)
+    if (len(buf) < hdr_len):
+        print('*** dump_hdr: buf too small for a header, wanted {}, ' + \
+              'got {}, @{}'.format(hdr_len, len(buf), offset))
+        return False
+    hdr.set(buf)
+    rlen     = hdr['len'].val
+    rtype    = hdr['type'].val
+    recnum   = hdr['recnum'].val
+    rtctime  = hdr['rt']
+    brt      = rtctime_str(rtctime)
+    recsum   = hdr['recsum'].val
+    print(hdr_format.format(offset, recnum, brt, rlen, rtype,
+        dt_name(rtype), offset, offset, recsum))
+    return True
+
+
+def print_hdr_obj(obj):
     rtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     brt      = rtctime_str(rtctime)
     print('{:4} {:>11} ({:2}) {:6} --'.format(recnum, brt,
         rtype, dt_name(rtype)), end = '')
-
-
-# used for identifing records that have problems.
-def print_record(offset, buf):
-    hdr = dt_hdr_obj
-    hdr_len = len(hdr)
-    if (len(buf) < hdr_len):
-        print('*** print_record, buf too small for a header, wanted {}, ' + \
-              'got {}, @{}'.format(hdr_len, len(buf), offset))
-        dump_buf(buf, '    ')
-    else:
-        hdr.set(buf)
-        rlen     = hdr['len'].val
-        rtype    = hdr['type'].val
-        recnum   = hdr['recnum'].val
-        rtctime  = hdr['rt']
-        brt      = rtctime_str(rtctime)
-        recsum   = hdr['recsum'].val
-        print(rec_format.format(offset, recnum, brt, rlen, rtype,
-            dt_name(rtype), offset, offset, recsum))

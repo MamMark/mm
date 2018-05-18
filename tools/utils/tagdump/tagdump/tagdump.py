@@ -389,7 +389,7 @@ def get_record(fd):
         # that we are already at a new quad alignment.
         extra = 4 - ((offset + rlen) & 3)
         if extra < 4:
-            if debug:
+            if debug and verbose >= 5:
                 print('*** reading extra {} bytes for quad alignment'.format(extra))
             dlen += extra
 
@@ -417,8 +417,7 @@ def get_record(fd):
             chksum1 = '*** checksum failure @{0} (0x{0:x}) ' + \
                       '[wanted: 0x{1:x}, got: 0x{2:x}]'
             print(chksum1.format(offset, recsum, chksum))
-            print_record(offset, rec_buf)
-            if (verbose >= 3):
+            if not dump_hdr(offset, rec_buf) or verbose >= 3:
                 print()
                 dump_buf(rec_buf, '    ')
             offset = resync(fd, offset)
@@ -431,7 +430,7 @@ def get_record(fd):
             if (required_len != rlen):
                 print('*** len violation, required: {}, got {}'.format(
                     required_len, rlen))
-                print_record(offset, rec_buf)
+                dump_hdr(offset, rec_buf)
                 print()
                 dump_buf(rec_buf, '    ')
                 offset = resync(fd, offset)
@@ -471,7 +470,10 @@ def dump(args):
 
     init_globals()
 
-    if (args.debug or (args.verbose and args.verbose >= 5)):
+    verbose = args.verbose if (args.verbose) else 0
+    debug   = args.debug   if (args.debug)   else 0
+
+    if debug or verbose >= 5:
         print(ver_str)
         print('  base_objs: {}  dt_defs: {}  sirf_defs: {}'.format(
             vers.base_ver, vers.dt_ver, vers.sd_ver))
@@ -502,9 +504,6 @@ def dump(args):
     # Any -s argument (walk syncs backward) or -r -1 (last_rec) forces net io
     if (args.sync is not None or args.start_rec == -1 or args.tail):
         args.net = True
-
-    verbose = args.verbose if (args.verbose) else 0
-    debug   = args.debug   if (args.debug)   else 0
 
     if debug:
         tail_str = ' (tailing)'  if args.tail else ''
@@ -604,12 +603,12 @@ def dump(args):
                               rlen, rtype, dt_name(rtype),
                               len(obj) if obj else 0, rec_offset))
             else:
-                if (verbose >= 5):
+                if debug or verbose >= 5:
                     print('*** no decoder installed for rtype {}, @{}'.format(
                         rtype, rec_offset))
             if (verbose >= 3):
                 print()
-                print_record(rec_offset, rec_buf)
+                dump_hdr(rec_offset, rec_buf)
                 dump_buf(rec_buf, '    ')
             if (verbose >= 1):
                 print()
