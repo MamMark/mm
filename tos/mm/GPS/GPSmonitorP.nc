@@ -318,6 +318,14 @@ implementation {
   };
 
 #define MAX_CANNED 21
+#define MAX_RAW_TX 64
+
+  /*
+   * The network stack pass in a buffer that has the data we want to send
+   * however, we don't own that.  So if we are transmitting the data
+   * out we need to copy it to a buffer we own so it doesn't get overwritten.
+   */
+  uint8_t raw_tx_buf[MAX_RAW_TX];
 
   command bool InfoSensGpsXyz.set_value(tagnet_gps_xyz_t *t, uint32_t *l) {
     if (!t || !l)
@@ -354,7 +362,8 @@ implementation {
     gps_raw_tx_t *gp;
     error_t err;
     bool    awake;
-    uint32_t msg;
+    uint32_t l;
+    uint8_t *src, *dst;
 
     /* too weird, too small, ignore it */
     if (!db || !lenp)
@@ -439,8 +448,17 @@ implementation {
         break;
 
       case GDC_RAW_TX:
+        l = *lenp - 1;                  /* grab the length of the message */
+        if (l > MAX_RAW_TX)             /* bail if too big */
+          break;
+        src = gp->data;
+        dst = raw_tx_buf;
+        while (l) {
+          *dst++ = *src++;
+          l--;
+        }
         awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) gp->data, *lenp-1);
+        err   = call GPSTransmit.send(raw_tx_buf, *lenp - 1);
         call CollectEvent.logEvent(DT_EVENT_GPS_RAW_TX, 999, err, 0, awake);
         break;
 

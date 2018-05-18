@@ -156,6 +156,11 @@ class Send(Command):
         print('sending {} [{}] -> {}'.format(msg, buf_str(full_msg),
                                              cfg.node_str))
 
+        # make sure we don't exceed the max the tag can accept
+        if len(full_msg) > gps.MAX_RAW_TX:
+            self.log.error('msg {} len {} too large, aborting.'.format(
+                msg, len(full_msg)))
+            return
         cmd_fileno = os.open(cmd_path, os.O_DIRECT | os.O_RDWR)
         os.write(cmd_fileno, full_msg)
 

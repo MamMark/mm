@@ -25,7 +25,7 @@ import struct
 from   misc_utils   import dump_buf
 from   core_headers import dt_hdr_obj
 
-__version__ = '0.3.0.dev1'
+__version__ = '0.3.0.dev2'
 
 # commands from tos/mm/gps/gps_cmds.h
 gps_cmds = {
@@ -80,6 +80,10 @@ CMD_NOP    = gps_cmds['nop']
 CMD_CAN    = gps_cmds['can']
 CMD_LOW    = gps_cmds['low']
 CMD_RAW_TX = gps_cmds['raw_tx']
+
+# total number of bytes, including overhead that we can send
+# using RAW_TX.  SIRF_HEADER is 8 bytes, a0 a2, len, b0, b3
+MAX_RAW_TX = 64
 
 # canned_msgs, see GPSmonitorP.nc
 canned_msgs = {
