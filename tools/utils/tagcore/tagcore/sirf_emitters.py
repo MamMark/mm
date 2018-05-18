@@ -26,7 +26,7 @@ import sirf_defs     as     sirf
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.3.0.dev0'
+__version__ = '0.3.1.dev0'
 
 
 def emit_default(level, offset, buf, obj):
@@ -320,6 +320,51 @@ def emit_sirf_ephem_set(level, offset, buf, obj):
         dump_buf(data, '    ', 'data: ')
 
 
+mode_names = {
+    0: 'single',
+    1: 'poll',
+    2: 'all',
+    3: 'def_nav',                       # 2, 4
+    4: 'debug',                         # 9, 255
+    5: 'nav_debug',                     # 7, 28, 29, 30, 31
+}
+
+
+# mid 166, setMsgRate
+def emit_sirf_set_msg_rate(level, offset, buf, obj):
+    mode = obj['mode'].val
+    mid  = obj['mid'].val
+    rate = obj['rate'].val
+
+    import pdb; pdb.set_trace()
+
+    print(' ({},{},{})'.format(mode,mid,rate))
+    mode_name = mode_names.get(mode, 'unk')
+    v = sirf.mid_table.get(mid, (None, None, None, 'unk'))
+    mid_name = v[MID_NAME]
+    rate = 'off' if rate == 0 else str(rate)
+    result = 'ick'
+    if mode_name == 'single':
+        mid_num = '  <{} ({:02x})>'.format(mid, mid)
+        result = ' '.join(['single ',    mid_name, rate, mid_num])
+    elif mode_name == 'poll':
+        mid_num = '  <{} ({:02x})>'.format(mid, mid)
+        result = ' '.join(['poll ',      mid_name, mid_num])
+    elif mode_name == 'all':
+        result = ' '.join(['all ',       rate])
+    elif mode_name == 'def_nav':
+        result = ' '.join(['def_nav ',   rate, '  <2,4>'])
+    elif mode_name == 'debug':
+        result = ' '.join(['debug ',     rate, '  <9,255>'])
+    elif mode_name == 'nav_debug':
+        result = ' '.join(['nav_debug ', rate, '  <7, 28-31>'])
+    else:
+        mid_num = '  <{} ({:02x})>'.format(mid, mid)
+        result = ' '.join([mode_name,    mid_name, rate, mid_num])
+    print('    setMsgRate: {}'.format(result))
+
+
+# mid 233/<sid>
 def emit_sirf_pwr_mode_req(level, offset, buf, obj):
     sid = obj['sid'].val
     timeout = obj['timeout'].val
