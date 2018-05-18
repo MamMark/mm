@@ -246,7 +246,7 @@ const uint8_t sirf_sbas[] = {
   138,                          // dgps control
   0,                            // selection, auto
   0xff,                         // timeout, max
-  0x00, 0xb9,                   // checksum
+  0x01, 0x89,                   // checksum
   0xb0, 0xb3,                   // end seq
 
   /*
@@ -267,7 +267,7 @@ const uint8_t sirf_sbas[] = {
   0,                            // flag bits, none
   0,                            // region, 0 - auto
   0,                            // regionPrn - n. u.
-  0x00, 0xb9,                   // checksum
+  0x00, 0xab,                   // checksum
   0xb0, 0xb3,                   // end seq
 
   0xa0, 0xa2,                   // start seq
@@ -277,7 +277,7 @@ const uint8_t sirf_sbas[] = {
   1,                            // integrity mode
   0,                            // flag bits, none
   0,                            // region, 0 - auto
-  0x00, 0xb9,                   // checksum
+  0x00, 0xab,                   // checksum
   0xb0, 0xb3,                   // end seq
 };
 
@@ -314,7 +314,7 @@ const uint8_t sirf_go_mpm_7f[] = {
   0x7f,                         // time_out, 0 immediate MPM
   0,                            // control, RTC uncertainty, 250us (default)
   0, 0,                         // reserved
-  0x00, 0xdc,                   // checksum
+  0x01, 0x5b,                   // checksum
   0xb0, 0xb3                    // end seq
 };
 
@@ -325,7 +325,7 @@ const uint8_t sirf_go_mpm_ff[] = {
   0xff,                         // time_out, 0 immediate MPM
   0,                            // control, RTC uncertainty, 250us (default)
   0, 0,                         // reserved
-  0x00, 0xdc,                   // checksum
+  0x01, 0xdb,                   // checksum
   0xb0, 0xb3                    // end seq
 };
 
@@ -344,7 +344,8 @@ const uint8_t sirf_ee_poll_ephemeris[] = {
   0xa0, 0xa2,                   // start seq
   0x00, 0x06,                   // length 6
   232,  2,                      // ee - poll ephemeris
-  0x00, 0x00,                   // checksum
+  0xff, 0xff, 0xff, 0xff,       // sat mask (only 12 lowest)
+  0x04, 0xe6,                   // checksum
   0xb0, 0xb3                    // end seq
 };
 
@@ -356,9 +357,18 @@ const uint8_t sirf_ee_poll_ephemeris[] = {
  */
 const uint8_t sirf_ee_age[] = {
   0xa0, 0xa2,                   // start seq
-  0x00, 0x06,                   // length 6
+  0x00, 0x12,                   // length 18
   232,  25,                     // ee - age
-  0x00, 0x00,                   // checksum
+  1,    1,                      // num sats, prn
+  0,                            // ephPosFlag
+  0,    0,                      // eePosAge
+  0,    0,                      // cgeePosGPSWeek
+  0,    0,                      // cgeePosTOE
+  0,                            // ephClkFlag
+  0,    0,                      // eeClkAge
+  0,    0,                      // cgeeClkGPSWeek
+  0,    0,                      // cgeeClkTOE
+  0x01, 0x03,                   // checksum
   0xb0, 0xb3                    // end seq
 };
 
@@ -369,7 +379,7 @@ const uint8_t sirf_ee_sif_aid_cgee_only[] = {
   232,  32,                     // sif aiding enable/disable
   1,                            // sgee disable
   0,                            // cgee enable
-  0x01, 0x0b,                   // checksum
+  0x01, 0x09,                   // checksum
   0xb0, 0xb3                    // end seq
 };
 
@@ -382,7 +392,8 @@ const uint8_t sirf_ee_sif_aiding_status[] = {
   0xa0, 0xa2,                   // start seq
   0x00, 0x06,                   // length 6
   232,  33,                     // get sif aiding status
-  0x00, 0x00,                   // checksum
+  0,                            // reserved
+  0x01, 0x09,                   // checksum
   0xb0, 0xb3                    // end seq
 };
 
@@ -405,8 +416,8 @@ const uint8_t sirf_ee_eerom_on[] = {
   0xa0, 0xa2,                   // start seq
   0x00, 0x03,                   // length 3
   232,  253,                    // ee - storage control
-  1,                            // turn on eerom
-  0x01, 0xe6,                   // checksum
+  2,                            // store ee to spi flash
+  0x01, 0xe7,                   // checksum
   0xb0, 0xb3                    // end seq
 };
 
