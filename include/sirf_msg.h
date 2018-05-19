@@ -53,6 +53,9 @@
 #define MID_GEODETIC	   41
 #define GEODETIC_LEN	   91
 
+#define MID_GPIO           65
+#define SID_GPIO           192
+
 #define MID_HW_CONFIG_REQ  71
 
 #define MID_SESSION_RSP    74

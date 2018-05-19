@@ -669,6 +669,20 @@ implementation {
       return;
     }
 
+    if (sbp->mid == MID_GPIO && sbp->data[0] == SID_GPIO) {
+      /*
+       * GPIO message are useless.  We tried disabling them via setMsgRate
+       * but it rejected (NACK).  So always punt them.  When we are active
+       * we see them once a second.  If we are in MPM, we don't see them
+       * at all.
+       */
+      return;
+    }
+
+    /*
+     * gps msg eavesdropping.  Log received messages to the dblk
+     * stream.   Eventually, this will be configurable.
+     */
     hdr.len      = sizeof(hdr) + len;
     hdr.dtype    = DT_GPS_RAW_SIRFBIN;
     call Rtc.copyTime(&hdr.rt, arrival_rtp);
