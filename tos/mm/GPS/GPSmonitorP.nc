@@ -471,13 +471,13 @@ implementation {
         break;
 
       case GDC_CANNED:
-        msg   = gp->data[0];
-        if (msg > MAX_CANNED)
-          msg = 0;
+        l   = gp->data[0];              /* grab the msg code */
+        if (l > MAX_CANNED)
+          l = 0;
         awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) canned_msgs[msg].msg,
-                                      canned_msgs[msg].len);
-        call CollectEvent.logEvent(DT_EVENT_GPS_CANNED, msg, err, 0, awake);
+        err   = call GPSTransmit.send((void *) canned_msgs[l].msg,
+                                      canned_msgs[l].len);
+        call CollectEvent.logEvent(DT_EVENT_GPS_CANNED, l, err, 0, awake);
         break;
 
       case GDC_SLEEP:
