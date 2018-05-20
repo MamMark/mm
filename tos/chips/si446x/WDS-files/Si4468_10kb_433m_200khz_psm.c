@@ -4,6 +4,17 @@
 */
 
 #include <stdint.h>
+
+typedef struct {
+    uint32_t        sig;
+    uint32_t        xtal_freq;
+    uint32_t        symb_sec;
+    uint32_t        freq_dev;
+    uint32_t        fhst;
+    uint32_t        rxbw;
+} wds_config_ids_t;
+
 #include "Si4468_10kb_433m_200khz_psm.h"
 uint8_t const SI4468_10KB_433M_200KHZ_PSM_config[] = SI4468_10KB_433M_200KHZ_PSM_DATA_ARRAY;
-uint8_t const SI4468_10KB_433M_200KHZ_PSM_name[]   = SI4468_10KB_433M_200KHZ_PSM_NAME;
+uint8_t const SI4468_10KB_433M_200KHZ_PSM_name[] = SI4468_10KB_433M_200KHZ_PSM_NAME;
+wds_config_ids_t const SI4468_10KB_433M_200KHZ_PSM_ids = SI4468_10KB_433M_200KHZ_PSM_IDS;

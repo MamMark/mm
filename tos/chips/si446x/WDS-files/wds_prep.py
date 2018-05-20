@@ -20,10 +20,20 @@ line is corrected to conform with Linux. The backslash used in the
 #include filename needs to be replaced with forward slash before the
 link can be followed.
 
+This program expects the following directory structure
+
+-root
+   |
+   +--- WDS_files  (WDS output files) (*wds_prep.py runs from here)
+   |
+   |--- mm/tos/chips/si446x/WDS-files   (copies)
+   |
+   +--- TagNet/si446x/si446x/radioconfig/WDS-files (copies)
+
+
 For all configuration source trees found in the WDS-files directory
 c-code files are generated that contain the information required
-by our application.
-The #include statement is replaced with the
+by our application. The #include statement is replaced with the
 contents of the referenced file.
 
 The collection of output files represent one or more
@@ -49,7 +59,7 @@ array contains the configuration pstrings and a byte array for
 the name of the configuration (actually a null terminated string).
 '''
 
-DEFAULT_CONFIG_FILE =  'Si4468_10kb_433m_200khz'
+DEFAULT_CONFIG_FILE =  'Si4468_10kb_433m_200khz_psm'
 
 
 # code to instantiate one configuration from the list
