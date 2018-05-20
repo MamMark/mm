@@ -30,6 +30,9 @@ implementation {
   components          TagnetUtilsC;
   components          ImageManagerC;
   components          OverWatchC;
+  components          CollectC;
+  components          RandomC;
+  components          Si446xDriverLayerC;
 
   PollEvent           =  Element.PollEvent;
   PollCount           =  Element.PollCount;
@@ -39,4 +42,7 @@ implementation {
   Element.TTLV       ->  TagnetUtilsC;
   Element.IMD        ->  ImageManagerC;
   Element.OW         ->  OverWatchC;
+  Element.Collect    ->  CollectC;
+  Element.Random     ->  RandomC;
+  Element.PacketTransmitDelay -> Si446xDriverLayerC.PacketTransmitDelay;
 }

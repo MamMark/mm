@@ -113,6 +113,7 @@ implementation {
   TagnetMonitorP.RadioSend      -> Si446xDriverLayerC;
   TagnetMonitorP.RadioReceive   -> Si446xDriverLayerC;
   Si446xDriverLayerC.TransmitPowerFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_SI446X_METADATA_FLAGS)];
+  Si446xDriverLayerC.TransmitDelayFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_SI446X_METADATA_FLAGS)];
   Si446xDriverLayerC.RSSIFlag   -> MetadataFlagsLayerC.PacketFlag[unique(UQ_SI446X_METADATA_FLAGS)];
 
   components PlatformC;

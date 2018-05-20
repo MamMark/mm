@@ -45,6 +45,7 @@ configuration Si446xDriverLayerC {
     interface PacketTimeStamp<TRadio, uint32_t>;
 
     interface PacketFlag as TransmitPowerFlag;
+    interface PacketFlag as TransmitDelayFlag;
     interface PacketFlag as RSSIFlag;
     interface RadioAlarm;
     interface Tasklet;
@@ -70,6 +71,8 @@ implementation {
   DriverLayerP.RSSIFlag = RSSIFlag;
 
   PacketTransmitDelay = DriverLayerP.PacketTransmitDelay;
+  DriverLayerP.TransmitDelayFlag = TransmitDelayFlag;
+
   PacketTimeStamp = DriverLayerP.PacketTimeStamp;
 
   components HplSi446xC;
@@ -98,4 +101,7 @@ implementation {
   components PanicC;
   DriverLayerP.Panic       -> PanicC;
 #endif
+
+  components new TimerMilliC()  as Timer0;
+  DriverLayerP.sendTimer   -> Timer0;
 }

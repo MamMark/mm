@@ -57,7 +57,7 @@ configuration Si446xRadioC {
 
     interface RadioChannel;
 
-    interface PacketField<uint8_t> as PacketTransmitDelay;
+    interface PacketField<uint16_t> as PacketTransmitDelay;
     interface PacketField<uint8_t> as PacketTransmitPower;
     interface PacketField<uint8_t> as PacketRSSI;
 
@@ -268,11 +268,6 @@ implementation {
 
 // -------- Driver
 
-#ifdef SI446X_HARDWARE_ACK
-  PacketAcknowledgements = RadioDriverLayerC;
-  RadioDriverLayerC.Ieee154PacketLayer -> Ieee154PacketLayerC;
-  RadioDriverLayerC.AckReceivedFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_METADATA_FLAGS)];
-#endif
   RadioDriverLayerC.Config -> RadioP;
   RadioDriverLayerC.PacketTimeStamp -> TimeStampingLayerC;
   PacketTransmitPower = RadioDriverLayerC.PacketTransmitPower;
@@ -281,8 +276,10 @@ implementation {
   LocalTimeRadio = RadioDriverLayerC;
 
   RadioDriverLayerC.TransmitPowerFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_METADATA_FLAGS)];
+  RadioDriverLayerC.TransmitDelayFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_METADATA_FLAGS)];
   RadioDriverLayerC.RSSIFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_METADATA_FLAGS)];
   RadioDriverLayerC.TimeSyncFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_METADATA_FLAGS)];
+
   RadioDriverLayerC.RadioAlarm -> RadioAlarmC.RadioAlarm[unique(UQ_RADIO_ALARM)];
   RadioDriverLayerC.Tasklet -> TaskletC;
 }

@@ -38,7 +38,7 @@
  *  <dt>type</dt> <dd>byte field defining data types, typically stored
  *  in a compressed format</dd>
  *  <dt>length</dt> <dd>byte field specifying length of the value field</dd>
- *  <dt>value</dt> <dd>field of zero or more bytes interpreted in context 
+ *  <dt>value</dt> <dd>field of zero or more bytes interpreted in context
  *  of type</dd>
  *</dl>
  *<p>
@@ -335,6 +335,20 @@ implementation {
   command rtctime_t   *TagnetTLV.tlv_to_rtctime(tagnet_tlv_t *t) {
     if ((t) && (t->typ == TN_TLV_UTC_TIME)) {
       return (rtctime_t *) &t->val;
+    }
+    return NULL;
+  }
+
+  command uint8_t   *TagnetTLV.tlv_to_node_id(tagnet_tlv_t *t) {
+    if ((t) && (t->typ == TN_TLV_NODE_ID)) {
+      return (uint8_t *) &t->val;
+    }
+    return NULL;
+  }
+
+  command uint8_t   *TagnetTLV.tlv_to_node_name(tagnet_tlv_t *t) {
+    if ((t) && (t->typ == TN_TLV_NODE_NAME)) {
+      return (uint8_t *) &t->val;
     }
     return NULL;
   }

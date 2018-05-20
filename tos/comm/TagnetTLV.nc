@@ -204,9 +204,23 @@ interface TagnetTLV {
    * Convert tlv to rtctime. tlv must be a rtctime tlv tagnet type
    *
    * @param   t             pointer of tlv to convert
-   * @return  rtctime_t    pointer to rtctime (limited access to life of msg)
+   * @return  rtctime_t     pointer to rtctime (limited access to life of msg)
    */
   command rtctime_t       *tlv_to_rtctime(tagnet_tlv_t *t);
+  /**
+   * Convert tlv to rtctime. tlv must be a rtctime tlv tagnet type
+   *
+   * @param   t             pointer of tlv to convert
+   * @return  uint8_t*      pointer to node_id (limited access to life of msg)
+   */
+  command uint8_t          *tlv_to_node_id(tagnet_tlv_t *t);
+  /**
+   * Convert tlv to node_name. tlv must be a node_name tlv tagnet type
+   *
+   * @param   t             pointer of tlv to convert
+   * @return  uint8_t*      pointer to node_name (limited access to life of msg)
+   */
+  command uint8_t          *tlv_to_node_name(tagnet_tlv_t *t);
   /**
    * Convert tlv to integer. tlv must be an integer tlv tagnet type
    *

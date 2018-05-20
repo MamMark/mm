@@ -106,11 +106,14 @@ module Si446xDriverLayerP {
     interface Si446xCmd;
 
     interface PacketFlag     as TransmitPowerFlag;
+    interface PacketFlag     as TransmitDelayFlag;
     interface PacketFlag     as RSSIFlag;
     interface PacketFlag     as TimeSyncFlag;
     interface PacketFlag     as AckReceivedFlag;
 
     interface PacketTimeStamp<TRadio, uint32_t>;
+
+    interface Timer<TMilli>  as sendTimer;
 
     interface Tasklet;
     interface RadioAlarm;
@@ -173,11 +176,20 @@ implementation {
     bool                              rc_signal;       // signal command complete
     bool                              tx_signal;       // signal transmit complete
     error_t                           tx_error;        // last tx error
+    uint8_t                           send_tries;      // flag to track send msg retry
+    uint32_t                          send_wait_time;  // send message time to wait
   } global_io_context_t;
 
   tasklet_norace global_io_context_t  global_ioc;
   tasklet_norace uint8_t              rxMsgBuffer[sizeof(message_t)];
   tasklet_norace uint8_t              rxMsgBufferGuard[] = "DEADBEAF";
+
+/* the following defines control how msg send is handled when a delay is
+ * required due to other activity that the radio driver is handling, like
+ * receiving a msg.
+ */
+#define SEND_MIN_WAIT    25
+#define SEND_MIN_TRIES    2
 
 
 /**************************************************************************/
@@ -1277,18 +1289,45 @@ implementation {
 
   /**************************************************************************/
 
+  task void send_start_task() {
+    call sendTimer.startOneShot(global_ioc.send_wait_time);
+  }
+
+
+  event void sendTimer.fired() {
+    nop();
+    nop();                                /* BRK */
+    if (global_ioc.send_tries--) {
+      if (fsm_get_state() == S_RX_ON)
+        fsm_user_queue(E_TRANSMIT);
+      else
+        call sendTimer.startOneShot(SEND_MIN_WAIT);
+      }
+    else {
+      global_ioc.tx_signal = TRUE;
+      global_ioc.tx_error  = ETIMEOUT;
+      post send_done_task();
+    }
+  }
+
   /* ----------------- RadioSend ----------------- */
 
   tasklet_async command error_t RadioSend.send(message_t *msg) {
-    if ((dvr_cmd != CMD_NONE) || (fsm_get_state() != S_RX_ON))
+    nop();
+    nop();                                /* BRK */
+    if (dvr_cmd != CMD_NONE)
       return EBUSY;
     if (global_ioc.pTxMsg)
       return EALREADY;
 
     global_ioc.pTxMsg = msg;
     global_ioc.tx_signal = FALSE;
-    global_ioc.tx_error = 0;
-    fsm_user_queue(E_TRANSMIT);
+    global_ioc.tx_error = SUCCESS;
+    global_ioc.send_tries = SEND_MIN_TRIES;
+    global_ioc.send_wait_time = SEND_MIN_WAIT;
+    if (call PacketTransmitDelay.isSet(msg))
+      global_ioc.send_wait_time = call PacketTransmitDelay.get(msg);
+    post send_start_task();
     return SUCCESS;
   }
 

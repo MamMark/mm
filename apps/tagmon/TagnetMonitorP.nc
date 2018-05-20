@@ -79,6 +79,8 @@ implementation {
                   uint32_t    tagmon_timeout  = 20; // milliseconds
 
   task void network_task() {
+    nop();
+    nop();                     /* BRK */
     if (call Tagnet.process_message(pTagMsg)) {
       /*
        * if the message processor returns TRUE that says the message now contains
@@ -87,6 +89,7 @@ implementation {
        *
        * Don't mark the current msg buffer until the sender finishes.
        */
+      nop();                     /* BRK */
       call rcTimer.startOneShot(tagmon_timeout); /* fire up turn around timer */
       return;
     }
@@ -95,6 +98,7 @@ implementation {
      * The message processor says no return message just mark the buffer as
      * available and be done with it.
      */
+    nop();                     /* BRK */
     tagMsgBusy = FALSE;
   }
 

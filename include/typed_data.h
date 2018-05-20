@@ -80,6 +80,7 @@ typedef enum {
   DT_TEST		= 22,
   DT_NOTE		= 23,
   DT_CONFIG		= 24,
+  DT_TAGNET             = 25,
 
   /*
    * GPS_RAW is used to encapsulate data as received from the GPS.
@@ -377,6 +378,17 @@ typedef struct {
 
 typedef dt_header_t dt_note_t;          /* size 20 + var note size */
 
+
+/*
+ * TAGNET
+ *
+ * A Tagnet Dtype simply encapsulate a complete Tagnet packet and stashes it
+ * in the data stream.
+ *
+ * To interpret it, one needs a tagnet parser.
+ */
+
+typedef dt_header_t dt_tagnet_t;          /* size 20 + var tagnet size */
 
 enum {
   DT_HDR_SIZE_HEADER        = sizeof(dt_header_t),
