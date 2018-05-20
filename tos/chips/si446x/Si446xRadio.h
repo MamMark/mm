@@ -88,6 +88,7 @@ typedef nx_struct si446x_packet_header {
 
 typedef nx_struct si446x_packet_footer {
   nx_uint8_t  placeholder;
+  nx_uint8_t  placeholder2;
 } si446x_packet_footer_t;
 
 /**
