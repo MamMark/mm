@@ -5,29 +5,49 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include "wds_configs.h"
 
-extern uint8_t const SI4468_10KB_433M_200KHZ_config[];
-extern uint8_t const SI4468_10KB_433M_200KHZ_name[];
-extern uint8_t const SI4468_100B_433M_200KHZ_PSM_config[];
-extern uint8_t const SI4468_100B_433M_200KHZ_PSM_name[];
-extern uint8_t const SI4468_100KB_433M_200KHZ_config[];
-extern uint8_t const SI4468_100KB_433M_200KHZ_name[];
 extern uint8_t const SI4468_10KB_433M_200KHZ_PSM_config[];
 extern uint8_t const SI4468_10KB_433M_200KHZ_PSM_name[];
+extern const wds_config_ids_t SI4468_10KB_433M_200KHZ_PSM_ids;
+extern uint8_t const SI4468_100B_433M_200KHZ_PSM_config[];
+extern uint8_t const SI4468_100B_433M_200KHZ_PSM_name[];
+extern const wds_config_ids_t SI4468_100B_433M_200KHZ_PSM_ids;
+extern uint8_t const SI4468_100KB_433M_200KHZ_config[];
+extern uint8_t const SI4468_100KB_433M_200KHZ_name[];
+extern const wds_config_ids_t SI4468_100KB_433M_200KHZ_ids;
+extern uint8_t const SI4468_10KB_433M_200KHZ_config[];
+extern uint8_t const SI4468_10KB_433M_200KHZ_name[];
+extern const wds_config_ids_t SI4468_10KB_433M_200KHZ_ids;
+extern uint8_t const SI4468_1KB_433M_200KHZ_PSM_config[];
+extern uint8_t const SI4468_1KB_433M_200KHZ_PSM_name[];
+extern const wds_config_ids_t SI4468_1KB_433M_200KHZ_PSM_ids;
+extern uint8_t const SI4468_50KB_433M_200KHZ_PSM_config[];
+extern uint8_t const SI4468_50KB_433M_200KHZ_PSM_name[];
+extern const wds_config_ids_t SI4468_50KB_433M_200KHZ_PSM_ids;
 
 // const array of const strings, required definition and syntax
 const uint8_t *const wds_radio_configs[] = {
-   SI4468_10KB_433M_200KHZ_config,
-   SI4468_10KB_433M_200KHZ_name,
-   SI4468_100B_433M_200KHZ_PSM_config,
-   SI4468_100B_433M_200KHZ_PSM_name,
-   SI4468_100KB_433M_200KHZ_config,
-   SI4468_100KB_433M_200KHZ_name,
    SI4468_10KB_433M_200KHZ_PSM_config,
    SI4468_10KB_433M_200KHZ_PSM_name,
-    NULL, NULL,
+   (uint8_t *) &SI4468_10KB_433M_200KHZ_PSM_ids,
+   SI4468_100B_433M_200KHZ_PSM_config,
+   SI4468_100B_433M_200KHZ_PSM_name,
+   (uint8_t *) &SI4468_100B_433M_200KHZ_PSM_ids,
+   SI4468_100KB_433M_200KHZ_config,
+   SI4468_100KB_433M_200KHZ_name,
+   (uint8_t *) &SI4468_100KB_433M_200KHZ_ids,
+   SI4468_10KB_433M_200KHZ_config,
+   SI4468_10KB_433M_200KHZ_name,
+   (uint8_t *) &SI4468_10KB_433M_200KHZ_ids,
+   SI4468_1KB_433M_200KHZ_PSM_config,
+   SI4468_1KB_433M_200KHZ_PSM_name,
+   (uint8_t *) &SI4468_1KB_433M_200KHZ_PSM_ids,
+   SI4468_50KB_433M_200KHZ_PSM_config,
+   SI4468_50KB_433M_200KHZ_PSM_name,
+   (uint8_t *) &SI4468_50KB_433M_200KHZ_PSM_ids,
+    NULL, NULL, NULL,
 };
-
 
 
 /* the default configuration is the first in the list. Setting
@@ -47,16 +67,16 @@ int s_compare(uint8_t *s1, uint8_t *s2) {
 }
 
 int wds_set_default(int choice) {
-    /* for each config, there are two ptrs in array (2), four bytes
+    /* for each config, there are three ptrs in array (3), four bytes
      * per pointer (4), zero indexed (-1), and the last entry is null
-     * ptrs (-1)
+     * to mark end-of-list (-1)
      */
-    int max_choice = (sizeof(wds_radio_configs) / (2 * 4)) - 2;
+    int max_choice = (sizeof(wds_radio_configs) / (3 * 4)) - 2;
     if (choice > max_choice)
         choice = max_choice;
     else if (choice < 0)
-        choice = wds_default_override / 2;
-    wds_default_override = choice * 2;
+        choice = wds_default_override / 3;
+    wds_default_override = choice * 3;
     return choice;
 }
 
@@ -66,6 +86,14 @@ const uint8_t const * const *wds_config_list() {
 
 const uint8_t const *wds_default_name() {
     return wds_radio_configs[wds_default_override+1];
+}
+
+const uint8_t const *wds_default_config() {
+    return wds_radio_configs[wds_default_override];
+}
+
+const wds_config_ids_t *wds_default_ids() {
+    return (wds_config_ids_t *) wds_radio_configs[wds_default_override+2];
 }
 
 uint8_t const *wds_config_select(uint8_t *cname) {
@@ -80,7 +108,7 @@ uint8_t const *wds_config_select(uint8_t *cname) {
         pname = this + 1;
         if (s_compare(cname, pname))
             return this;
-        this += 2;
+        this += 3;
     }
     return NULL;
 }

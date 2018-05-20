@@ -64,7 +64,8 @@ DEFAULT_CONFIG_FILE =  'Si4468_10kb_433m_200khz'
 #
 config_code = '''
 uint8_t const SPECIAL_NAME_config[] = SPECIAL_NAME_DATA_ARRAY;
-uint8_t const SPECIAL_NAME_name[]   = SPECIAL_NAME_NAME;
+uint8_t const SPECIAL_NAME_name[] = SPECIAL_NAME_NAME;
+wds_config_ids_t const SPECIAL_NAME_ids = SPECIAL_NAME_IDS;
 '''
 
 # code used to select one configuration from the compiled list
@@ -73,7 +74,6 @@ uint8_t const SPECIAL_NAME_name[]   = SPECIAL_NAME_NAME;
 # information
 #
 select_code = '''
-
 /* the default configuration is the first in the list. Setting
  * the override will select a different configuration for
  * the default. Needs to be a valid index into wds_radio_configs[]
@@ -91,16 +91,16 @@ int s_compare(uint8_t *s1, uint8_t *s2) {
 }
 
 int wds_set_default(int choice) {
-    /* for each config, there are two ptrs in array (2), four bytes
+    /* for each config, there are three ptrs in array (3), four bytes
      * per pointer (4), zero indexed (-1), and the last entry is null
-     * ptrs (-1)
+     * to mark end-of-list (-1)
      */
-    int max_choice = (sizeof(wds_radio_configs) / (2 * 4)) - 2;
+    int max_choice = (sizeof(wds_radio_configs) / (3 * 4)) - 2;
     if (choice > max_choice)
         choice = max_choice;
     else if (choice < 0)
-        choice = wds_default_override / 2;
-    wds_default_override = choice * 2;
+        choice = wds_default_override / 3;
+    wds_default_override = choice * 3;
     return choice;
 }
 
@@ -110,6 +110,14 @@ const uint8_t const * const *wds_config_list() {
 
 const uint8_t const *wds_default_name() {
     return wds_radio_configs[wds_default_override+1];
+}
+
+const uint8_t const *wds_default_config() {
+    return wds_radio_configs[wds_default_override];
+}
+
+const wds_config_ids_t *wds_default_ids() {
+    return (wds_config_ids_t *) wds_radio_configs[wds_default_override+2];
 }
 
 uint8_t const *wds_config_select(uint8_t *cname) {
@@ -124,17 +132,31 @@ uint8_t const *wds_config_select(uint8_t *cname) {
         pname = this + 1;
         if (s_compare(cname, pname))
             return this;
-        this += 2;
+        this += 3;
     }
     return NULL;
 }
 '''
 extern_code = '''
 int wds_set_default(int level);
-const uint8_t const * const *wds_config_list();
-uint8_t const *wds_config_select(uint8_t *cname);
-const uint8_t const * const *wds_default_name();
+const uint8_t const* const* wds_config_list();
+uint8_t const*              wds_config_select(uint8_t *cname);
+const uint8_t const*        wds_default_name();
+const wds_config_ids_t const* wds_default_ids();
 '''
+
+typedef_code = '''
+typedef struct {
+    uint32_t        sig;
+    uint32_t        xtal_freq;
+    uint32_t        symb_sec;
+    uint32_t        freq_dev;
+    uint32_t        fhst;
+    uint32_t        rxbw;
+} wds_config_ids_t;
+
+'''
+
 
 # each generated file contains this at the beginning
 #
@@ -172,7 +194,11 @@ def process_config_file(basename, configfile, output):
     '''
     read the input config file and for each line convert from DOS
     to Linux format and look for #include files
+
+    returns a dictionary of configration identifiers found in file
     '''
+    pattern= r"(\S+):\s+(\S+)"
+    acdc = {}
     with open(configfile,'r') as cfd:
         for cl in cfd:
             cl = cl.strip() + '\n'               # remove DOS eol
@@ -181,10 +207,18 @@ def process_config_file(basename, configfile, output):
                                         cl, output):
                     continue # don't write this line if processed
             elif cl.find('RADIO_CONFIGURATION_DATA_ARRAY') >= 0:
+                ids = '5883792'
+                for id in ['Crys_freq(Hz)', 'Rsymb(sps)', 'Fdev(Hz)', 'fhst', 'RXBW(Hz)']:
+                    ids += ', ' + acdc[id]
+                output.write('#define ' + basename.upper() + '_IDS {' + ids + '}\n')
                 output.write('#define ' + basename.upper() + '_NAME "' + basename + '"\n')
                 output.write(cl.replace('RADIO_CONFIGURATION', basename.upper()))
                 continue     # replaces previous generic name
+            elif cl.startswith('//'):
+                # add any configuration identifiers to the acdc dict
+                acdc.update(dict(re.findall(pattern, cl)))
             output.write(cl)
+    return acdc
 
 
 def process_dirs(dirlist):
@@ -209,25 +243,27 @@ def process_dirs(dirlist):
         # write out the .h and .c files for each valid directory
         with open(adir+'.h','w+') as output:
             output.write(comment_code)
-            process_config_file(adir, filepath, output)
+            config_ids = process_config_file(adir, filepath, output)
         with open(adir+'.c','w+') as output:
             output.write(comment_code)
             output.write('#include <stdint.h>\n')
+            output.write(typedef_code)
             output.write('#include "' + adir + '.h"')
             output.write(config_code.replace('SPECIAL_NAME',adir.upper()))
-        results.append(adir)
+        results.append((adir, config_ids))
     return results
 
 def sort_for_default(mydirs):
     count = 0
     base = ''
-    for adir in mydirs:
+    for atup in mydirs:
+        adir, acdc = atup
         base = os.path.basename(adir)
         if (base == DEFAULT_CONFIG_FILE):
             break
     if base:
-        mydirs.remove(base)
-        mydirs.insert(0,base)
+        mydirs.remove(atup)
+        mydirs.insert(0,atup)
     return mydirs
 
 def write_global_config(dirlist):
@@ -237,14 +273,17 @@ def write_global_config(dirlist):
         include_list = ''
         extern_list = ''
         string_list = ''
-        for dirpath in sort_for_default(dirlist):
+        for dirpath, acdc in sort_for_default(dirlist):
             dirbase = os.path.basename(dirpath)
             include_list += '#include "' + dirbase + '.h"\n'
             extern_list  += 'extern uint8_t const ' + dirbase.upper() + '_config[]' + ';\n'
             extern_list  += 'extern uint8_t const ' + dirbase.upper() + '_name[]' + ';\n'
+            extern_list  += 'extern const wds_config_ids_t ' + dirbase.upper() + '_ids' + ';\n'
             string_list  += '   ' + dirbase.upper() + '_config' + ',\n'
             string_list  += '   ' + dirbase.upper() + '_name' + ',\n'
+            string_list  += '   (uint8_t *) &' + dirbase.upper() + '_ids' + ',\n'
         output.write('#include <stdlib.h>\n')
+        output.write('#include "wds_configs.h"\n')
         #output.write(include_list)
         output.write('\n')
         output.write(extern_list)
@@ -252,28 +291,34 @@ def write_global_config(dirlist):
         output.write('// const array of const strings, required definition and syntax\n')
         output.write('const uint8_t *const wds_radio_configs[] = {\n')
         output.write(string_list)
-        output.write('    NULL, NULL,\n')
+        output.write('    NULL, NULL, NULL,\n')
         output.write('};\n')
         output.write('\n')
         output.write(select_code)
     with open('wds_configs.h','w+') as output:
         output.write(comment_code)
         output.write('\n')
+        output.write('#ifndef __WDS_CONFIG_H__\n')
+        output.write('#define __WDS_CONFIG_H__\n')
+        output.write('\n')
+        output.write(typedef_code)
+        output.write('\n')
         output.write(extern_code)
+        output.write('\n#endif /* __WDS_CONFIG_H__ */\n')
     with open('Makefile.si446x', 'w+') as output:
         # output.write(comment_code)
         output.write('\n')
         output.write(
             'TOSMAKE_ADDITIONAL_INPUTS += $(PLATFORM_DIR)/hardware/si446x/wds_configs.c\n')
         output.write('\n')
-        for dirpath in dirlist:
+        for dirpath, acdc in dirlist:
             dirbase = os.path.basename(dirpath)
             output.write(
                 'TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/' + dirbase + '.c\n')
 
 
 def make_dir_copy(dlist, dest):
-    for adir in dlist:
+    for adir, acdc in dlist:
         for ftype in ['.h','.c']:
             fname = adir + ftype
             dname = os.path.join(dest, fname)
@@ -294,15 +339,14 @@ def make_copies(dlst):
     capture important files as part of git trees of both the tag(mammark) and
     TagNet(RPi) versions.
     '''
-    # zzz print('copying', DO_COPY)
     make_dir_copy(dlst, '../mm/tos/chips/si446x/WDS-files')
     make_dir_copy(dlst, '../TagNet/si446x/si446x/radioconfig/WDS-files')
     make_one_copy('wds_prep.py', ['../mm/tos/chips/si446x/WDS-files',
-                    '../TagNet/si446x/si446x/radioconfig/WDS-files'])
+                                  '../TagNet/si446x/si446x/radioconfig/WDS-files'])
     make_one_copy('wds_configs.c', ['../mm/tos/platforms/mm6a/hardware/si446x',
-                    '../TagNet/si446x/si446x/radioconfig'])
+                                    '../TagNet/si446x/si446x/radioconfig'])
     make_one_copy('wds_configs.h', ['../mm/tos/platforms/mm6a/hardware/si446x',
-                    '../TagNet/si446x/si446x/radioconfig'])
+                                    '../TagNet/si446x/si446x/radioconfig'])
     make_one_copy('Makefile.si446x', ['../mm/tos/platforms/mm6a/hardware/si446x'])
 
 
@@ -313,7 +357,7 @@ if __name__ == '__main__':
     # of all of the separate configurations along with selector functions
     # used for runtime selection of one of the configurations processed.
     '''
-    DO_COPY=True
+    DO_COPY=True   # zzz for debug, control copy
 
     dirlist = process_dirs(os.listdir(os.path.abspath(os.path.relpath('.'))))
     if (dirlist):

@@ -29,6 +29,7 @@
 #include <TagnetTLV.h>
 #include <image_info.h>
 #include <overwatch.h>
+#include "wds_configs.h"
 
 module TagnetPollExecP {
   provides interface TagnetAdapter<int32_t>    as PollCount;

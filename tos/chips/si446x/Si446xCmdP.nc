@@ -26,6 +26,7 @@
 #include <panic.h>
 #include <si446x.h>
 #include <RadioConfig.h>
+#include <wds_configs.h>
 
 #ifndef PANIC_RADIO
 enum {
@@ -35,7 +36,7 @@ enum {
 #define PANIC_RADIO __pcode_radio
 #endif
 
-unsigned char *wds_config_select(unsigned char *cname);
+//unsigned char *wds_config_select(unsigned char *cname);
 
 /**************************************************************************/
 /*
@@ -1108,7 +1109,7 @@ implementation {
 //  const uint8_t wds_name[] = WDS_FILENAME;
 //  const uint8_t *config_list[] = {si446x_wds_config, si446x_device_config, NULL, wds_name};
 
-norace const uint8_t *config_list[] = {NULL, si446x_device_config, NULL};
+norace  uint8_t const* config_list[] = {NULL, si446x_device_config, NULL};
 
   async command const uint8_t ** Si446xCmd.get_config_lists() {
     nop();
@@ -1205,7 +1206,7 @@ norace const uint8_t *config_list[] = {NULL, si446x_device_config, NULL};
    *
    */
   async command void Si446xCmd.power_up() {
-    uint8_t *cp;
+    uint8_t const* cp;
     uint16_t count = 1000; // protect loop from bad config data
     cp = wds_config_select(NULL);
     while (cp && count--) {
