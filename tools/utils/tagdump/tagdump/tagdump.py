@@ -62,7 +62,7 @@ ver_str = '\ntagdump: ' + VERSION + ':  core: ' + str(CORE_REV)
 #
 # see tagdumpargs.py for argument processing.
 #
-# usage: tagdump.py [-h] [-v] [-V] [-j JUMP] [-x EndFilePos]
+# usage: tagdump.py [-h] [-v] [-V] [-H] [-j JUMP] [-x EndFilePos]
 #                   [--rtypes RTYPES(ints)] [--rnames RNAMES(name[,...])]
 #                   [-s START_TIME] [-e END_TIME]
 #                   [-r START_REC]  [-l LAST_REC]
@@ -73,6 +73,7 @@ ver_str = '\ntagdump: ' + VERSION + ':  core: ' + str(CORE_REV)
 # optional arguments:
 #   -h              show this help message and exit
 #   -V              show program's version number and exit
+#   -H              turn off hourly banners
 #
 #   --rtypes RTYPES output records matching types in list names
 #                   comma or space seperated list of rtype ids or NAMES
@@ -473,6 +474,7 @@ def dump(args):
 
     verbose = args.verbose if (args.verbose) else 0
     debug   = args.debug   if (args.debug)   else 0
+    dtd.cfg_print_hourly = args.hourly
 
     if debug or verbose >= 5:
         print(ver_str)

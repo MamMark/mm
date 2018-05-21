@@ -53,6 +53,10 @@ def parseargs():
                         type=auto_upper,
                         help='output records matching types in list')
 
+    parser.add_argument('-H', '--hourly',
+                        action='store_false',
+                        help='turns off hourly banners')
+
     parser.add_argument('-D', '--debug',
                         action='store_true',
                         help='turn on extra debugging information')

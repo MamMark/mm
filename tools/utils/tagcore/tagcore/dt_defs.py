@@ -33,6 +33,7 @@ Includes the following:
     - print/display functions
 
       rtctime_str       convert rtctime to printable string
+      print_hourly      hourly banner if boundary crossed
       dt_name           convert a dt code to its printable name
       dump_hdr          simple hdr display (from raw buffer)
       print_hdr_obj     print a dt record header given its object
@@ -45,6 +46,7 @@ from   core_headers import obj_dt_hdr
 
 __version__ = '0.3.1.dev1'
 
+cfg_print_hourly = True
 
 # __all__ exports commonly used definitions.  It gets used
 # when someone does a wild import of this module.
@@ -77,6 +79,7 @@ __all__ = [
 
     'rec0',
     'rtctime_str',
+    'print_hourly',
     'dt_name',
     'dump_hdr',
     'print_hdr_obj',
@@ -146,6 +149,7 @@ rec_title_str = "---  offset    recnum    rtime    len  dt  name"
 
 # common format used by all records.  (rec0)
 # ---  offset    recnum    rtime    len  dt  name
+# ---                      0.000000 2018/5/17 17:00 (Thu)
 # --- @99999999 9999999 3599.999969 999  99  ssssss
 # --- @512            1 1099.105926 120   1  REBOOT  unset -> GOLD  [GOLD]  (r 3/0 p)
 
@@ -177,6 +181,39 @@ def rtctime_str(rtctime, fmt = 'basic'):
     rt_secs  = rt['min'].val * 60 + rt['sec'].val
     rt_subsecs = (rt['sub_sec'].val * 1000000) / 32768
     return '{:d}.{:06d}'.format(rt_secs, rt_subsecs)
+
+
+last_rt = {'year': 0, 'mon': 0, 'day': 0, 'hr': 0}
+
+def set_last(rt):
+    last_rt['hr']   = rt['hr'].val
+    last_rt['day']  = rt['day'].val
+    last_rt['mon']  = rt['mon'].val
+    last_rt['year'] = rt['year'].val
+
+
+def print_hourly(rtctime):
+    '''print an hourly banner if a hour boundary has been crossed.
+
+    check to see if an hourly boundary has been crossed since the
+    last time we checked.  If so print out a hour banner.
+
+    ---                      0.000000 2018/5/17 17:00 (Thu)
+    '''
+
+    if not cfg_print_hourly: return
+    rt      = rtctime
+    lrt     = last_rt
+    pstamp  = False
+    if rt['hr'  ].val != lrt['hr'  ]: pstamp = True
+    if rt['day' ].val != lrt['day' ]: pstamp = True
+    if rt['mon' ].val != lrt['mon' ]: pstamp = True
+    if rt['year'].val != lrt['year']: pstamp = True
+    set_last(rt)
+    if pstamp:
+        print('---                      '
+              '0.{:06d} {}/{}/{} {}:00 ({}) UTC'.format(
+            0, rt['year'], rt['mon'], rt['day'], rt['hr'], rt['dow']))
 
 
 def dt_name(rtype):

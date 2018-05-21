@@ -56,7 +56,7 @@ use the followinging syntax:
 
 [messages]
       define arbitrary sirf messages that can be sent to the gps
-      development command.
+      (development command).
 
 Verbosity levels:
   0   quiet  (from -q)
