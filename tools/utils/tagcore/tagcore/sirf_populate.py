@@ -31,33 +31,33 @@ sirf.ee232_table[254] = (decode_null, None, None, 'eeCGEEpredControl',  'none')
 sirf.ee232_table[255] = (decode_null, None, None, 'eeDebug',            'none')
 
 
-#                      EE_DECODER            EE_EMITTERS               EE_OBJECT                EE_NAME          EE_OBJ_NAME
-sirf.ee56_table[42] = (decode_default,     [ emit_ee56_sifStat ],      sirf_ee56_sifStat_obj,  'eeSifStat',     'sirf_ee_sifStat_obj')
+#                      EE_DECODER            EE_EMITTERS               EE_OBJECT                   EE_NAME         EE_OBJ_NAME
+sirf.ee56_table[42] = (decode_default,     [ emit_ee56_sifStat ],      obj_sirf_ee56_sifStat(),   'eeSifStat',    'obj_sirf_ee_sifStat')
 
 
-#                      MID_DECODER           MID_EMITTERS              MID_OBJECT               MID_NAME         MID_OBJ_NAME
-sirf.mid_table[2]   = (decode_default,     [ emit_sirf_nav_data ],     sirf_nav_obj,           'navData',       'sirf_nav_obj')
-sirf.mid_table[4]   = (decode_sirf_navtrk, [ emit_sirf_navtrk ],       sirf_navtrk_obj,        'navTrack',      'sirf_navtrk_obj')
-sirf.mid_table[6]   = (decode_default,     [ emit_sirf_swver ],        sirf_swver_obj,         'swVer',         'sirf_swver_obj')
-sirf.mid_table[11]  = (decode_null,        [ emit_sirf_ack_nack ],     None,                   'ack',           'none')
-sirf.mid_table[12]  = (decode_null,        [ emit_sirf_ack_nack ],     None,                   'nack',          'none')
-sirf.mid_table[13]  = (decode_sirf_vis,    [ emit_sirf_vis ],          sirf_vis_obj,           'visList',       'sirf_vis_obj')
-sirf.mid_table[14]  = (decode_default,     [ emit_sirf_alm_data ],     sirf_alm_data_obj,      'almData',       'sirf_alm_data_obj')
-sirf.mid_table[15]  = (decode_default,     [ emit_sirf_ephem_data ],   sirf_ephem_data_obj,    'ephemData',     'sirf_ephem_data_obj')
-sirf.mid_table[18]  = (decode_default,     [ emit_sirf_ots ],          sirf_ots_obj,           'okToSend',      'sirf_ots_obj')
-sirf.mid_table[19]  = (decode_default,     [ emit_default  ],          sirf_nav_params_obj,    'navParamsRsp',  'sirf_nav_params_obj')
-sirf.mid_table[41]  = (decode_default,     [ emit_sirf_geo ],          sirf_geo_obj,           'geoData',       'sirf_geo_obj')
-sirf.mid_table[56]  = (decode_sirf_ee56,   [ emit_sirf_ee56 ],         None,                   'extEphem',      'sub-objects')
-sirf.mid_table[90]  = (decode_default,     [ emit_sirf_pwr_mode_rsp ], sirf_pwr_mode_rsp_obj,  'pwrRsp',        'sirf_pwr_mode_rsp_obj')
-sirf.mid_table[128] = (decode_default,     [ emit_default  ],          sirf_init_data_src_obj, 'initDataSrc',   'sirf_init_data_src_obj')
-sirf.mid_table[130] = (decode_default,     [ emit_sirf_alm_set ],      sirf_alm_set_obj,       'setAlmanac',    'sirf_alm_set_obj')
-sirf.mid_table[149] = (decode_default,     [ emit_sirf_ephem_set ],    sirf_ephem_set_obj,     'setEphemeris',  'sirf_ephem_set_obj')
-sirf.mid_table[166] = (decode_default,     [ emit_sirf_set_msg_rate ], sirf_set_msg_rate_obj,  'setMsgRate',    'sirf_set_msg_rate_obj')
-sirf.mid_table[214] = (decode_default,     [ emit_default  ],          sirf_hw_conf_rsp_obj,   'hwConfigRsp',   'sirf_hw_conf_rsp_obj')
-sirf.mid_table[218] = (decode_default,     [ emit_sirf_pwr_mode_req ], sirf_pwr_mode_req_obj,  'pwrReq',        'sirf_pwr_mode_req_obj')
-sirf.mid_table[225] = (decode_default,     [ emit_sirf_statistics ],   sirf_statistics_obj,    'stats',         'sirf_statistics_obj')
-sirf.mid_table[232] = (decode_sirf_ee232,  [ emit_sirf_ee232 ],        None,                   'extEphem',      'sub-objects')
-sirf.mid_table[255] = (decode_default,     [ emit_sirf_dev_data ],     sirf_dev_data_obj,      'devData',       'sirf_dev_data_obj')
+#                      MID_DECODER           MID_EMITTERS              MID_OBJECT                  MID_NAME        MID_OBJ_NAME
+sirf.mid_table[2]   = (decode_default,     [ emit_sirf_nav_data ],     obj_sirf_nav(),            'navData',      'obj_sirf_nav')
+sirf.mid_table[4]   = (decode_sirf_navtrk, [ emit_sirf_navtrk ],       obj_sirf_navtrk(),         'navTrack',     'obj_sirf_navtrk')
+sirf.mid_table[6]   = (decode_default,     [ emit_sirf_swver ],        obj_sirf_swver(),          'swVer',        'obj_sirf_swver')
+sirf.mid_table[11]  = (decode_null,        [ emit_sirf_ack_nack ],     None,                      'ack',          'none')
+sirf.mid_table[12]  = (decode_null,        [ emit_sirf_ack_nack ],     None,                      'nack',         'none')
+sirf.mid_table[13]  = (decode_sirf_vis,    [ emit_sirf_vis ],          obj_sirf_vis(),            'visList',      'obj_sirf_vis')
+sirf.mid_table[14]  = (decode_default,     [ emit_sirf_alm_data ],     obj_sirf_alm_data(),       'almData',      'obj_sirf_alm_data')
+sirf.mid_table[15]  = (decode_default,     [ emit_sirf_ephem_data ],   obj_sirf_ephem_data(),     'ephemData',    'obj_sirf_ephem_data')
+sirf.mid_table[18]  = (decode_default,     [ emit_sirf_ots ],          obj_sirf_ots(),            'okToSend',     'obj_sirf_ots')
+sirf.mid_table[19]  = (decode_default,     [ emit_default  ],          obj_sirf_nav_params(),     'navParamsRsp', 'obj_sirf_nav_params')
+sirf.mid_table[41]  = (decode_default,     [ emit_sirf_geo ],          obj_sirf_geo(),            'geoData',      'obj_sirf_geo')
+sirf.mid_table[56]  = (decode_sirf_ee56,   [ emit_sirf_ee56 ],         None,                      'extEphem',     'none, sub-objects')
+sirf.mid_table[90]  = (decode_default,     [ emit_sirf_pwr_mode_rsp ], obj_sirf_pwr_mode_rsp(),   'pwrRsp',       'obj_sirf_pwr_mode_rsp')
+sirf.mid_table[128] = (decode_default,     [ emit_default  ],          obj_sirf_init_data_src(),  'initDataSrc',  'obj_sirf_init_data_src')
+sirf.mid_table[130] = (decode_default,     [ emit_sirf_alm_set ],      obj_sirf_alm_set(),        'setAlmanac',   'obj_sirf_alm_set')
+sirf.mid_table[149] = (decode_default,     [ emit_sirf_ephem_set ],    obj_sirf_ephem_set(),      'setEphemeris', 'obj_sirf_ephem_set')
+sirf.mid_table[166] = (decode_default,     [ emit_sirf_set_msg_rate ], obj_sirf_set_msg_rate(),   'setMsgRate',   'obj_sirf_set_msg_rate')
+sirf.mid_table[214] = (decode_default,     [ emit_default  ],          obj_sirf_hw_conf_rsp(),    'hwConfigRsp',  'obj_sirf_hw_conf_rsp')
+sirf.mid_table[218] = (decode_default,     [ emit_sirf_pwr_mode_req ], obj_sirf_pwr_mode_req(),   'pwrReq',       'obj_sirf_pwr_mode_req')
+sirf.mid_table[225] = (decode_default,     [ emit_sirf_statistics ],   obj_sirf_statistics(),     'stats',        'obj_sirf_statistics')
+sirf.mid_table[232] = (decode_sirf_ee232,  [ emit_sirf_ee232 ],        None,                      'extEphem',     'none, sub-objects')
+sirf.mid_table[255] = (decode_default,     [ emit_sirf_dev_data ],     obj_sirf_dev_data(),       'devData',      'obj_sirf_dev_data')
 
 
 #
