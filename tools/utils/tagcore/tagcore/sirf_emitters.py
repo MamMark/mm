@@ -336,8 +336,6 @@ def emit_sirf_set_msg_rate(level, offset, buf, obj):
     mid  = obj['mid'].val
     rate = obj['rate'].val
 
-    import pdb; pdb.set_trace()
-
     print(' ({},{},{})'.format(mode,mid,rate))
     mode_name = mode_names.get(mode, 'unk')
     v = sirf.mid_table.get(mid, (None, None, None, 'unk'))
