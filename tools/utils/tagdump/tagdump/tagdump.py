@@ -281,6 +281,8 @@ def resync(fd, offset):
         fd.seek(offset_try + RESYNC_HDR_OFFSET)
 
 
+dt_hdr = obj_dt_hdr()
+
 def get_record(fd):
     """
     Generate valid typed-data records one at a time until no more bytes
@@ -299,13 +301,12 @@ def get_record(fd):
 
     # output and other vars
     offset      = -1
-    hdr         = dt_hdr_obj
+    hdr         = dt_hdr
     rec_buf     = bytearray()
 
     hdr_len     = len(hdr)              # only call it once
     rlen        = 0
     rtype       = 0
-    rtctime     = hdr['rt']             # object
     recnum      = 0
     recsum      = 0
 

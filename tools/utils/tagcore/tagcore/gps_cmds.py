@@ -23,7 +23,6 @@ from   __future__         import print_function
 
 import struct
 from   misc_utils   import dump_buf
-from   core_headers import dt_hdr_obj
 
 __version__ = '0.3.0.dev2'
 

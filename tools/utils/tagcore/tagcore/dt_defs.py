@@ -41,8 +41,7 @@ Includes the following:
 from   __future__         import print_function
 
 import struct
-from   misc_utils   import dump_buf
-from   core_headers import dt_hdr_obj
+from   core_headers import obj_dt_hdr
 
 __version__ = '0.3.1.dev1'
 
@@ -57,6 +56,7 @@ __all__ = [
     'DTR_EMITTERS',
     'DTR_OBJ',
     'DTR_NAME',
+    'DTR_OBJ_NAME',
 
     # dt record types
     'DT_REBOOT',
@@ -112,6 +112,7 @@ DTR_DECODER  = 1                        # decode said rtype
 DTR_EMITTERS = 2                        # emitters for said record struct
 DTR_OBJ      = 3                        # rtype obj descriptor
 DTR_NAME     = 4                        # rtype name
+DTR_OBJ_NAME = 5                        # object name
 
 
 # all dt parts are native and little endian
@@ -183,20 +184,20 @@ def dt_name(rtype):
     return v[DTR_NAME]
 
 
-
-
 # header format when normal processing doesn't work (see print_record)
 hdr_format    = "@{:<8d} {:7d} {:>11s} {:<3d}  {:2d}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
 hdr_additonal = ' @{} (0x{:06x}) [0x{:04x}]'
 
+dt_hdr = obj_dt_hdr()
+
 def dump_hdr(offset, buf):
     '''load hdr from buf and display it.
 
-    returns:    True if we can load the header
+    return:     True if we can load the header
                 False if buffer is too short.
     '''
 
-    hdr = dt_hdr_obj
+    hdr = dt_hdr
     hdr_len = len(hdr)
     if (len(buf) < hdr_len):
         print('*** dump_hdr: buf too small for a header, wanted {}, ' + \

@@ -42,37 +42,31 @@ import sirf_defs    as     sirf
 ########################################################################
 
 #
-# REBOOT decoder, dt_reboot_obj, owcb_obj
-#
-
-def decode_reboot(level, offset, buf, obj):
-    consumed  = obj.set(buf)
-    consumed += owcb_obj.set(buf[consumed:])
-    return consumed
-
-
-#
-# VERSION decoder, dt_version_obj, image_info_obj
-#
-
-def decode_version(level, offset, buf, obj):
-    consumed  = obj.set(buf)
-    consumed += image_info_obj.set(buf[consumed:])
-    return consumed
-
-
-#
 # GPS RAW decoder
 #
 # main gps raw decoder, decodes DT_GPS_RAW_SIRFBIN
 # dt_gps_raw_obj, 2nd level decode on mid
 #
+# obj must be a obj_dt_gps_raw.
+#
+# this decoder does the following:  (it is not a simple decode_default)
+#
+# o consume/process a gps_raw_hdr (dt_hdr + gps_hdr)
+# o consume/process the sirfbin hdr (SOP + LEN + MID)
+# o checks the sirfbin hdr for proper SOP.
+#
+# Not a sirfbin packet:
+# o only consume up to the beginning of the SOP
+#
+# SirfBin packet:
+# o Look mid up in mid_table
+# o consume/process the remainder of the packet using the appropriate decoder
 
 def decode_gps_raw(level, offset, buf, obj):
     consumed = obj.set(buf)
 
     if obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ:
-        return consumed - len(sirf_hdr_obj)
+        return consumed - len(obj['sirf_hdr'])
 
     mid = obj['sirf_hdr']['mid'].val
 
