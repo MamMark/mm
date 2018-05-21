@@ -3,8 +3,22 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.1.dev0'
+__version__ = '0.4.1'
 
+# 0.4.1         move tagfile to tagcore
+#               display rtctime using rtctime_str (basic_rtctime)
+#               basic time is number of microsecs since the top of the hour.
+#               add hourly time banner at the top of the hour.
+#
+# 0.4.0.dev3    CORE_REV 18
+#
+#               Core_Rev refactor.
+#               rework image_info (remove vector_check, add image_desc)
+#               rework of owcb, boot_time, prev_boot
+#               collapse of decoders into headers
+#               refactor, create tagcore.
+#
+#
 # 0.2.2         DT_9 recsum
 # 0.2.3         better summary
 #               core_decoders
@@ -79,10 +93,3 @@ __version__ = '0.4.1.dev0'
 #
 #               owcb, convert uptime and elapsed to 32 bit num secs needed.
 #
-# 0.4.0.dev3    Core_Rev refactor.
-#               rework image_info (remove vector_check, add image_desc)
-#               rework of owcb, boot_time, prev_boot
-#               collapse of decoders into headers
-#               refactor, create tagcore.
-#
-# 0.4.1.dev0    move tagfile to tagcore
