@@ -23,7 +23,7 @@
 import struct
 from   collections import OrderedDict
 
-__version__ = '0.3.0.dev1'
+__version__ = '0.3.1.dev0'
 
 class atom(object):
     '''
@@ -41,12 +41,15 @@ class atom(object):
             self.f_str = a_tuple[2]
         else:
             self.f_str = None
-        self.val = -1
+        self.val = None
 
     def __len__(self):
         return self.s_rec.size
 
     def __repr__(self):
+        if self.val == None:
+            return 'notset'
+
         if callable(self.f_str):
             return self.p_str.format(self.f_str(self.val))
         return self.p_str.format(self.val)
@@ -86,7 +89,8 @@ class aggie(OrderedDict):
             elif isinstance(v_obj, aggie):
                 s += '[' + key + ': ' + v_obj.__repr__() + ']\n'
             else:
-                s += "oops"
+                raise RuntimeError('object not aggie/atom: [{}], '
+                                   'oops!'.format(v_obj))
         return s
 
     def set(self, buf):
