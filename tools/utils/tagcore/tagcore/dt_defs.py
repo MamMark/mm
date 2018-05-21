@@ -32,6 +32,7 @@ Includes the following:
 
     - print/display functions
 
+      rec0              initial record print format
       rtctime_str       convert rtctime to printable string
       print_hourly      hourly banner if boundary crossed
       dt_name           convert a dt code to its printable name
