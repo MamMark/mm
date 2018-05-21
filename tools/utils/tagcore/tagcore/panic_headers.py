@@ -25,8 +25,8 @@ import binascii
 from   collections  import OrderedDict
 
 from   base_objs    import *
-from   core_headers import rtctime_obj
-from   core_headers import image_info_obj
+from   core_headers import obj_rtctime
+from   core_headers import obj_image_info
 
 panic_codes = {
     16: 'PANIC_Time',
@@ -57,86 +57,92 @@ CRASH_CATCHER_SIG   = 0x63430200
 PANIC_ADDITIONS     = 0x44664144
 
 
-panic_dir_obj = aggie(OrderedDict([
-    ('panic_dir_id',        atom(('4s', '{}'))),
-    ('panic_dir_sig',       atom(('<I', '{:x}'))),
-    ('panic_dir_sector',    atom(('<I', '{}'))),
-    ('panic_high_sector',   atom(('<I', '{}'))),
-    ('panic_block_index',   atom(('<I', '{}'))),
-    ('panic_block_index_max',atom(('<I', '{}'))),
-    ('panic_block_size',    atom(('<I', '{}'))),
-    ('panic_dir_checksum',  atom(('<I', '{}')))
-]))
+def obj_panic_dir():
+    return aggie(OrderedDict([
+        ('panic_dir_id',          atom(('4s', '{}'))),
+        ('panic_dir_sig',         atom(('<I', '{:x}'))),
+        ('panic_dir_sector',      atom(('<I', '{}'))),
+        ('panic_high_sector',     atom(('<I', '{}'))),
+        ('panic_block_index',     atom(('<I', '{}'))),
+        ('panic_block_index_max', atom(('<I', '{}'))),
+        ('panic_block_size',      atom(('<I', '{}'))),
+        ('panic_dir_checksum',    atom(('<I', '{}')))
+    ]))
 
 
-region_obj = aggie(OrderedDict([
-    ('start',     atom(('<I', '{}'))),
-    ('end',       atom(('<I', '{}')))
-]))
+def obj_region():
+    return aggie(OrderedDict([
+        ('start',     atom(('<I', '{}'))),
+        ('end',       atom(('<I', '{}')))
+    ]))
 
 
-panic_info_obj = aggie(OrderedDict([
-    ('pi_sig',           atom(('<I', '{:04x}'))),
-    ('boot_count',       atom(('<I', '{:2}'))),
-    ('panic_count',      atom(('<I', '{:02}'))),
-    ('rt',               rtctime_obj),
-    ('pcode',            atom(('<B', '{:02}'))),
-    ('where',            atom(('<B', '{:02}'))),
-    ('arg_0',            atom(('<I', '{:08x}'))),
-    ('arg_1',            atom(('<I', '{:08x}'))),
-    ('arg_2',            atom(('<I', '{:08x}'))),
-    ('arg_3',            atom(('<I', '{:08x}'))),
-]))
+def obj_panic_info():
+    return aggie(OrderedDict([
+        ('pi_sig',           atom(('<I', '{:04x}'))),
+        ('boot_count',       atom(('<I', '{:2}'))),
+        ('panic_count',      atom(('<I', '{:02}'))),
+        ('rt',               obj_rtctime()),
+        ('pcode',            atom(('<B', '{:02}'))),
+        ('where',            atom(('<B', '{:02}'))),
+        ('arg_0',            atom(('<I', '{:08x}'))),
+        ('arg_1',            atom(('<I', '{:08x}'))),
+        ('arg_2',            atom(('<I', '{:08x}'))),
+        ('arg_3',            atom(('<I', '{:08x}'))),
+    ]))
 
 
-crash_info_obj = aggie(OrderedDict([
-    ('ci_sig',    atom(('<I', '{}'))),
-    ('axLR',      atom(('<I', '{}'))),
-    ('MSP',       atom(('<I', '{}'))),
-    ('PSP',       atom(('<I', '{}'))),
-    ('primask',   atom(('<I', '{}'))),
-    ('basepri',   atom(('<I', '{}'))),
-    ('faultmask', atom(('<I', '{}'))),
-    ('control',   atom(('<I', '{}'))),
-    ('cc_sig',    atom(('<I', '{}'))),
-    ('flags',     atom(('<I', '{}'))),
-    ('bxReg_0',   atom(('<I', '{}'))),
-    ('bxReg_1',   atom(('<I', '{}'))),
-    ('bxReg_2',   atom(('<I', '{}'))),
-    ('bxReg_3',   atom(('<I', '{}'))),
-    ('bxReg_4',   atom(('<I', '{}'))),
-    ('bxReg_5',   atom(('<I', '{}'))),
-    ('bxReg_6',   atom(('<I', '{}'))),
-    ('bxReg_7',   atom(('<I', '{}'))),
-    ('bxReg_8',   atom(('<I', '{}'))),
-    ('bxReg_9',   atom(('<I', '{}'))),
-    ('bxReg_10',  atom(('<I', '{}'))),
-    ('bxReg_11',  atom(('<I', '{}'))),
-    ('bxReg_12',  atom(('<I', '{}'))),
-    ('bxSP',      atom(('<I', '{}'))),
-    ('bxLR',      atom(('<I', '{}'))),
-    ('bxPC',      atom(('<I', '{}'))),
-    ('bxPSR',     atom(('<I', '{}'))),
-    ('axPSR',     atom(('<I', '{}'))),
-    ('fpRegs',    atom(('<32I', '{}'))),
-    ('fpscr',     atom(('<I', '{}')))
-]))
+def obj_crash_info():
+    return aggie(OrderedDict([
+        ('ci_sig',    atom(('<I', '{}'))),
+        ('axLR',      atom(('<I', '{}'))),
+        ('MSP',       atom(('<I', '{}'))),
+        ('PSP',       atom(('<I', '{}'))),
+        ('primask',   atom(('<I', '{}'))),
+        ('basepri',   atom(('<I', '{}'))),
+        ('faultmask', atom(('<I', '{}'))),
+        ('control',   atom(('<I', '{}'))),
+        ('cc_sig',    atom(('<I', '{}'))),
+        ('flags',     atom(('<I', '{}'))),
+        ('bxReg_0',   atom(('<I', '{}'))),
+        ('bxReg_1',   atom(('<I', '{}'))),
+        ('bxReg_2',   atom(('<I', '{}'))),
+        ('bxReg_3',   atom(('<I', '{}'))),
+        ('bxReg_4',   atom(('<I', '{}'))),
+        ('bxReg_5',   atom(('<I', '{}'))),
+        ('bxReg_6',   atom(('<I', '{}'))),
+        ('bxReg_7',   atom(('<I', '{}'))),
+        ('bxReg_8',   atom(('<I', '{}'))),
+        ('bxReg_9',   atom(('<I', '{}'))),
+        ('bxReg_10',  atom(('<I', '{}'))),
+        ('bxReg_11',  atom(('<I', '{}'))),
+        ('bxReg_12',  atom(('<I', '{}'))),
+        ('bxSP',      atom(('<I', '{}'))),
+        ('bxLR',      atom(('<I', '{}'))),
+        ('bxPC',      atom(('<I', '{}'))),
+        ('bxPSR',     atom(('<I', '{}'))),
+        ('axPSR',     atom(('<I', '{}'))),
+        ('fpRegs',    atom(('<32I', '{}'))),
+        ('fpscr',     atom(('<I', '{}')))
+    ]))
 
 
-add_info_obj = aggie(OrderedDict([
-    ('ai_sig',           atom(('<I', '{}'))),
-    ('ram_sector',       atom(('<I', '{}'))),
-    ('ram_size',         atom(('<I', '{}'))),
-    ('io_sector',        atom(('<I', '{}'))),
-    ('fcrumb_sector',    atom(('<I', '{}'))),
-]))
+def obj_add_info():
+    return aggie(OrderedDict([
+        ('ai_sig',           atom(('<I', '{}'))),
+        ('ram_sector',       atom(('<I', '{}'))),
+        ('ram_size',         atom(('<I', '{}'))),
+        ('io_sector',        atom(('<I', '{}'))),
+        ('fcrumb_sector',    atom(('<I', '{}'))),
+    ]))
 
 
-panic_block_0_obj = aggie(OrderedDict([
-    ('panic_info', panic_info_obj),
-    ('image_info', image_info_obj),
-    ('add_info',   add_info_obj),
-    ('padding',    atom(('13I', '{}'))),
-    ('crash_info', crash_info_obj),
-    ('ram_header', region_obj)
-]))
+def obj_panic_block_0():
+    return aggie(OrderedDict([
+        ('panic_info', obj_panic_info()),
+        ('image_info', obj_image_info()),
+        ('add_info',   obj_add_info()),
+        ('padding',    atom(('13I', '{}'))),
+        ('crash_info', obj_crash_info()),
+        ('ram_header', obj_region())
+    ]))

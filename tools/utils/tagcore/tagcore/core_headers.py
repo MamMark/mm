@@ -28,8 +28,8 @@ import binascii
 from   collections  import OrderedDict
 
 from   base_objs    import *
-from   sirf_headers import sirf_hdr_obj
-from   sirf_headers import sirf_swver_obj
+from   sirf_headers import obj_sirf_hdr
+from   sirf_headers import obj_sirf_swver
 
 from   sirf_defs    import *
 import sirf_defs    as     sirf
@@ -97,108 +97,118 @@ def decode_gps_raw(level, offset, buf, obj):
 #
 ########################################################################
 
-rtctime_obj = aggie(OrderedDict([
-    ('sub_sec', atom(('<H', '{}'))),
-    ('sec',     atom(('<B', '{}'))),
-    ('min',     atom(('<B', '{}'))),
-    ('hr',      atom(('<B', '{}'))),
-    ('dow',     atom(('<B', '{}'))),
-    ('day',     atom(('<B', '{}'))),
-    ('mon',     atom(('<B', '{}'))),
-    ('year',    atom(('<H', '{}'))),
-]))
+def obj_rtctime():
+    return aggie(OrderedDict([
+        ('sub_sec', atom(('<H', '{}'))),
+        ('sec',     atom(('<B', '{}'))),
+        ('min',     atom(('<B', '{}'))),
+        ('hr',      atom(('<B', '{}'))),
+        ('dow',     atom(('<B', '{}'))),
+        ('day',     atom(('<B', '{}'))),
+        ('mon',     atom(('<B', '{}'))),
+        ('year',    atom(('<H', '{}'))),
+    ]))
 
-dt_hdr_obj = aggie(OrderedDict([
-    ('len',     atom(('<H', '{}'))),
-    ('type',    atom(('<H', '{}'))),
-    ('recnum',  atom(('<I', '{}'))),
-    ('rt',      rtctime_obj),
-    ('recsum',  atom(('<H', '0x{:04x}'))),
-]))
 
-dt_simple_hdr   = aggie(OrderedDict([
-    ('hdr', dt_hdr_obj),
-]))
+def obj_dt_hdr():
+    return aggie(OrderedDict([
+        ('len',     atom(('<H', '{}'))),
+        ('type',    atom(('<H', '{}'))),
+        ('recnum',  atom(('<I', '{}'))),
+        ('rt',      obj_rtctime()),
+        ('recsum',  atom(('<H', '0x{:04x}'))),
+    ]))
 
-dt_reboot_obj   = aggie(OrderedDict([
-    ('hdr',       dt_hdr_obj),
-    ('prev_sync', atom(('<I', '{:08x}'))),
-    ('majik',     atom(('<I', '{:08x}'))),
-    ('core_rev',  atom(('<I', '{:08x}'))),
-    ('base',      atom(('<I', '{:08x}'))),
-]))
+
+def obj_dt_reboot():
+    return aggie(OrderedDict([
+        ('hdr',       obj_dt_hdr()),
+        ('prev_sync', atom(('<I', '{:08x}'))),
+        ('majik',     atom(('<I', '{:08x}'))),
+        ('core_rev',  atom(('<I', '{:08x}'))),
+        ('base',      atom(('<I', '{:08x}'))),
+        ('owcb',      obj_owcb())
+    ]))
+
 
 #
 # reboot is followed by the ow_control_block
 # We want to decode that as well.  native order, little endian.
 # see OverWatch/overwatch.h.
 #
-owcb_obj        = aggie(OrderedDict([
-    ('ow_sig',          atom(('<I', '0x{:08x}'))),
-    ('rpt',             atom(('<I', '0x{:08x}'))),
-    ('boot_time',       rtctime_obj),
-    ('prev_boot',       rtctime_obj),
-    ('reset_status',    atom(('<I', '0x{:08x}'))),
-    ('reset_others',    atom(('<I', '0x{:08x}'))),
-    ('from_base',       atom(('<I', '0x{:08x}'))),
-    ('panic_count',     atom(('<I', '{}'))),
-    ('fault_gold',      atom(('<I', '0x{:08x}'))),
-    ('fault_nib',       atom(('<I', '0x{:08x}'))),
-    ('subsys_disable',  atom(('<I', '0x{:08x}'))),
-    ('ow_sig_b',        atom(('<I', '0x{:08x}'))),
-    ('ow_req',          atom(('<B', '{}'))),
-    ('reboot_reason',   atom(('<B', '{}'))),
-    ('ow_boot_mode',    atom(('<B', '{}'))),
-    ('owt_action',      atom(('<B', '{}'))),
-    ('reboot_count',    atom(('<I', '{}'))),
-    ('strange',         atom(('<I', '{}'))),
-    ('strange_loc',     atom(('<I', '0x{:04x}'))),
-    ('chk_fails',       atom(('<I', '{}'))),
-    ('ow_sig_c',        atom(('<I', '0x{:08x}')))
-]))
+def obj_owcb():
+    return aggie(OrderedDict([
+        ('ow_sig',          atom(('<I', '0x{:08x}'))),
+        ('rpt',             atom(('<I', '0x{:08x}'))),
+        ('boot_time',       obj_rtctime()),
+        ('prev_boot',       obj_rtctime()),
+        ('reset_status',    atom(('<I', '0x{:08x}'))),
+        ('reset_others',    atom(('<I', '0x{:08x}'))),
+        ('from_base',       atom(('<I', '0x{:08x}'))),
+        ('panic_count',     atom(('<I', '{}'))),
+        ('fault_gold',      atom(('<I', '0x{:08x}'))),
+        ('fault_nib',       atom(('<I', '0x{:08x}'))),
+        ('subsys_disable',  atom(('<I', '0x{:08x}'))),
+        ('ow_sig_b',        atom(('<I', '0x{:08x}'))),
+        ('ow_req',          atom(('<B', '{}'))),
+        ('reboot_reason',   atom(('<B', '{}'))),
+        ('ow_boot_mode',    atom(('<B', '{}'))),
+        ('owt_action',      atom(('<B', '{}'))),
+        ('reboot_count',    atom(('<I', '{}'))),
+        ('strange',         atom(('<I', '{}'))),
+        ('strange_loc',     atom(('<I', '0x{:04x}'))),
+        ('chk_fails',       atom(('<I', '{}'))),
+        ('ow_sig_c',        atom(('<I', '0x{:08x}')))
+    ]))
 
 
-dt_version_obj  = aggie(OrderedDict([
-    ('hdr',       dt_hdr_obj),
-    ('base',      atom(('<I', '{:08x}'))),
-]))
+def obj_dt_version():
+    return aggie(OrderedDict([
+        ('hdr',       obj_dt_hdr()),
+        ('base',      atom(('<I', '{:08x}'))),
+        ('image_info', obj_image_info())
+    ]))
 
 
-hw_version_obj      = aggie(OrderedDict([
-    ('rev',       atom(('<B', '{:x}'))),
-    ('model',     atom(('<B', '{:x}'))),
-]))
+def obj_hw_version():
+    return aggie(OrderedDict([
+        ('rev',       atom(('<B', '{:x}'))),
+        ('model',     atom(('<B', '{:x}'))),
+    ]))
 
 
-image_version_obj   = aggie(OrderedDict([
-    ('build',     atom(('<H', '{:x}'))),
-    ('minor',     atom(('<B', '{:x}'))),
-    ('major',     atom(('<B', '{:x}'))),
-]))
+def obj_image_version():
+    return aggie(OrderedDict([
+        ('build',     atom(('<H', '{:x}'))),
+        ('minor',     atom(('<B', '{:x}'))),
+        ('major',     atom(('<B', '{:x}'))),
+    ]))
 
 
 IMG_DESC_MAX = 44
 STAMP_MAX    = 30
 
-image_info_obj  = aggie(OrderedDict([
-    ('ii_sig',    atom(('<I', '0x{:08x}'))),
-    ('im_start',  atom(('<I', '0x{:08x}'))),
-    ('im_len',    atom(('<I', '0x{:08x}'))),
-    ('ver_id',    image_version_obj),
-    ('im_chk',    atom(('<I', '0x{:08x}'))),
-    ('image_desc',atom(('44s', '{:s}'))),
-    ('repo0',     atom(('44s', '{:s}'))),
-    ('repo1',     atom(('44s', '{:s}'))),
-    ('stamp_date',atom(('30s', '{:s}'))),
-    ('hw_ver',    hw_version_obj),
-]))
+def obj_image_info():
+    return aggie(OrderedDict([
+        ('ii_sig',    atom(('<I', '0x{:08x}'))),
+        ('im_start',  atom(('<I', '0x{:08x}'))),
+        ('im_len',    atom(('<I', '0x{:08x}'))),
+        ('ver_id',    obj_image_version()),
+        ('im_chk',    atom(('<I', '0x{:08x}'))),
+        ('image_desc',atom(('44s', '{:s}'))),
+        ('repo0',     atom(('44s', '{:s}'))),
+        ('repo1',     atom(('44s', '{:s}'))),
+        ('stamp_date',atom(('30s', '{:s}'))),
+        ('hw_ver',    obj_hw_version()),
+    ]))
 
 
-dt_sync_obj     = aggie(OrderedDict([
-    ('hdr',       dt_hdr_obj),
-    ('prev_sync', atom(('<I', '{:x}'))),
-    ('majik',     atom(('<I', '{:08x}'))),
-]))
+def obj_dt_sync():
+    return aggie(OrderedDict([
+        ('hdr',       obj_dt_hdr()),
+        ('prev_sync', atom(('<I', '{:x}'))),
+        ('majik',     atom(('<I', '{:08x}'))),
+    ]))
 
 
 # EVENT
@@ -273,48 +283,52 @@ gps_cmd_names = {
 }
 
 
-dt_event_obj    = aggie(OrderedDict([
-    ('hdr',   dt_hdr_obj),
-    ('event', atom(('<H', '{}'))),
-    ('pcode', atom(('<B', '{}'))),
-    ('w',     atom(('<B', '{}'))),
-    ('arg0',  atom(('<I', '0x{:04x}'))),
-    ('arg1',  atom(('<I', '0x{:04x}'))),
-    ('arg2',  atom(('<I', '0x{:04x}'))),
-    ('arg3',  atom(('<I', '0x{:04x}'))),
-]))
+def obj_dt_event():
+    return aggie(OrderedDict([
+        ('hdr',   obj_dt_hdr()),
+        ('event', atom(('<H', '{}'))),
+        ('pcode', atom(('<B', '{}'))),
+        ('w',     atom(('<B', '{}'))),
+        ('arg0',  atom(('<I', '0x{:04x}'))),
+        ('arg1',  atom(('<I', '0x{:04x}'))),
+        ('arg2',  atom(('<I', '0x{:04x}'))),
+        ('arg3',  atom(('<I', '0x{:04x}'))),
+    ]))
 
 
 #
 # not implemented yet.
 #
-dt_debug_obj    = dt_simple_hdr
+obj_dt_debug    = obj_dt_hdr
 
 #
 # dt, native, little endian
 # used by DT_GPS_VERSION and DT_GPS_RAW_SIRFBIN (gps_raw)
 #
-dt_gps_hdr_obj = aggie(OrderedDict([
-    ('hdr',     dt_hdr_obj),
-    ('mark',    atom(('<I', '0x{:04x}'))),
-    ('chip',    atom(('B',  '0x{:02x}'))),
-    ('dir',     atom(('B',  '{}'))),
-    ('pad',     atom(('<H', '{}'))),
-]))
+def obj_dt_gps_hdr():
+    return aggie(OrderedDict([
+        ('hdr',     obj_dt_hdr()),
+        ('mark',    atom(('<I', '0x{:04x}'))),
+        ('chip',    atom(('B',  '0x{:02x}'))),
+        ('dir',     atom(('B',  '{}'))),
+        ('pad',     atom(('<H', '{}'))),
+    ]))
 
-dt_gps_ver_obj = aggie(OrderedDict([
-    ('gps_hdr',    dt_gps_hdr_obj),
-    ('sirf_swver', sirf_swver_obj),
-]))
 
-dt_gps_time_obj = dt_simple_hdr
-dt_gps_geo_obj  = dt_simple_hdr
-dt_gps_xyz_obj  = dt_simple_hdr
+def obj_dt_gps_ver():
+    return aggie(OrderedDict([
+        ('gps_hdr',    obj_dt_gps_hdr()),
+        ('sirf_swver', obj_sirf_swver()),
+    ]))
 
-dt_sen_data_obj = dt_simple_hdr
-dt_sen_set_obj  = dt_simple_hdr
+obj_dt_gps_time = obj_dt_hdr
+obj_dt_gps_geo  = obj_dt_hdr
+obj_dt_gps_xyz  = obj_dt_hdr
 
-dt_test_obj     = dt_simple_hdr
+obj_dt_sen_data = obj_dt_hdr
+obj_dt_sen_set  = obj_dt_hdr
+
+obj_dt_test     = obj_dt_hdr
 
 ####
 #
@@ -324,12 +338,13 @@ dt_test_obj     = dt_simple_hdr
 # simple header) followed by n bytes of note.  typically a printable
 # ascii string (yeah, localization is an issue, but not now).
 #
-dt_note_obj     = dt_simple_hdr
-dt_config_obj   = dt_simple_hdr
+obj_dt_note     = obj_dt_hdr
+obj_dt_config   = obj_dt_hdr
 
 # DT_GPS_RAW_SIRFBIN, dt, native, little endian
 #  sirf data big endian.
-dt_gps_raw_obj = aggie(OrderedDict([
-    ('gps_hdr',  dt_gps_hdr_obj),
-    ('sirf_hdr', sirf_hdr_obj),
-]))
+def obj_dt_gps_raw():
+    return aggie(OrderedDict([
+        ('gps_hdr',  obj_dt_gps_hdr()),
+        ('sirf_hdr', obj_sirf_hdr()),
+    ]))
