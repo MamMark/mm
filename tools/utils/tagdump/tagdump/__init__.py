@@ -3,8 +3,11 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.1'
+__version__ = '0.4.2.dev0'
 
+# 0.4.2.dev0    Improvements
+#               - navtrack (number of sats > 20)
+#
 # 0.4.1         move tagfile to tagcore
 #               display rtctime using rtctime_str (basic_rtctime)
 #               basic time is number of microsecs since the top of the hour.

@@ -26,7 +26,7 @@ import sirf_defs     as     sirf
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.3.1.dev0'
+__version__ = '0.3.2.dev0'
 
 
 def emit_default(level, offset, buf, obj):
@@ -62,7 +62,7 @@ def emit_sirf_nav_data(level, offset, buf, obj):
     tow         = obj['tow'].val
     nsats       = obj['nsats'].val
 
-    print(' ({})'.format(nsats))
+    print('    [{}]'.format(nsats))
 
     if (level >= 1):
         print(rnav1a.format(nsats, xpos, ypos, zpos,
@@ -77,16 +77,22 @@ def emit_sirf_nav_data(level, offset, buf, obj):
 # raw nav track strings for output
 
 rnavtrk1 = '    NAV_TRACK: week10: {}  tow: {}s  chans: {}'
-rnavtrkx = '    {:2}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno (avg): {}'
-rnavtrky = '    {:2}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno/s: {}'
-rnavtrkz = '    {:2}: az: {:3}  el: {:3}  state: {:#06x}  cno/s: {}'
+rnavtrkx = '    {:3}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno (avg): {}'
+rnavtrky = '    {:3}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno/s: {}'
+rnavtrkz = '    {:3}: az: {:3}  el: {:3}  state: {:#06x}  cno/s: {}'
 
 # mid 4 navtrk
 def emit_sirf_navtrk(level, offset, buf, obj):
     week10 = obj['week10'].val
     tow    = obj['tow'].val/float(100)
     chans  = obj['chans'].val
-    print()
+    good_sats = 0
+    for n in range(chans):
+        if obj[n]['cno_avg']     and \
+           obj[n]['sv_id'] <= 32 and \
+           obj[n]['cno_avg'] > 20.0:
+            good_sats += 1
+    print('   [{}]'.format(good_sats))
     if (level >= 1):
         print(rnavtrk1.format(week10, tow, chans))
         for n in range(chans):
@@ -167,7 +173,7 @@ def emit_sirf_ots(level, offset, buf, obj):
 
 def emit_sirf_vis(level, offset, buf, obj):
     num_sats = obj['vis_sats'].val
-    print(' ({})'.format(num_sats))
+    print('    [{}]'.format(num_sats))
     sats = [ obj[n]['sv_id'] for n in range(num_sats) ]
     if level >= 1:
         print('    {:<2} sats: {}'.format(num_sats, " ".join(map(str, sats))))
@@ -254,7 +260,7 @@ def emit_sirf_geo(level, offset, buf, obj):
     else:
         print('  L', end = '')
         lock_str = 'lock'
-    print(' ({})'.format(nsats))
+    print(' [{}]'.format(nsats))
     if (level >= 1):
         print(rgeo1a.format(xweek, tow, utc_year, utc_month, utc_day,
                             utc_hour, utc_min, utc_sec, utc_ms))

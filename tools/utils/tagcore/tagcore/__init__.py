@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.3.1'
+__version__ = '0.3.2.dev0'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
