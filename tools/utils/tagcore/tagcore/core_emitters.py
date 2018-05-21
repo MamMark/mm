@@ -26,8 +26,6 @@ __version__ = '0.3.1.dev0'
 from   core_rev     import *
 from   dt_defs      import *
 
-from   core_headers import owcb_obj
-from   core_headers import image_info_obj
 from   core_headers import event_names
 from   core_headers import gps_cmd_names
 from   core_headers import PANIC_WARN   # event
@@ -37,13 +35,11 @@ from   sirf_defs    import *
 import sirf_defs    as     sirf
 
 from   sirf_headers import mids_w_sids
-from   sirf_headers import sirf_hdr_obj
-
 from   misc_utils   import dump_buf
 
 ################################################################
 #
-# REBOOT emitter, dt_reboot_obj, owcb_obj
+# REBOOT emitter, obj_dt_reboot, obj_owcb (in dt_reboot object)
 #
 
 # reboot emitter support
@@ -118,6 +114,7 @@ rbt2e = '    reboots: {:4}  panics: {:4}  strg: {:8}  loc: {:4}'
 rbt2f = '    uptime: {}  boot: {}  prev: {}'
 rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
 
+# obj is obj_dt_reboot (includes an obj_owcb record)
 def emit_reboot(level, offset, buf, obj):
     xlen     = obj['hdr']['len'].val
     xtype    = obj['hdr']['type'].val
@@ -133,17 +130,17 @@ def emit_reboot(level, offset, buf, obj):
         print('*** version mismatch, expected {:d}, got {:d}'.format(
             CORE_REV, core_rev))
 
-    boot_time    = owcb_obj['boot_time']
-    prev_boot    = owcb_obj['prev_boot']
-    from_base    = owcb_obj['from_base'].val
-    panic_count  = owcb_obj['panic_count'].val
-    fault_gold   = owcb_obj['fault_gold'].val
-    fault_nib    = owcb_obj['fault_nib'].val
-    ss_dis       = owcb_obj['subsys_disable'].val
-    boot_mode    = owcb_obj['ow_boot_mode'].val
-    reboot_count = owcb_obj['reboot_count'].val
-    chk_fails    = owcb_obj['chk_fails'].val
-
+    owcb         = obj['owcb']
+    boot_time    = owcb['boot_time']
+    prev_boot    = owcb['prev_boot']
+    from_base    = owcb['from_base'].val
+    panic_count  = owcb['panic_count'].val
+    fault_gold   = owcb['fault_gold'].val
+    fault_nib    = owcb['fault_nib'].val
+    ss_dis       = owcb['subsys_disable'].val
+    boot_mode    = owcb['ow_boot_mode'].val
+    reboot_count = owcb['reboot_count'].val
+    chk_fails    = owcb['chk_fails'].val
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     print(rbt0.format(base_name(from_base), base_name(base),
@@ -156,34 +153,34 @@ def emit_reboot(level, offset, buf, obj):
 
     if (level >= 1):                   # basic record display (level 1)
         print(rbt1a.format(
-            reboot_reason_name(owcb_obj['reboot_reason'].val),
+            reboot_reason_name(owcb['reboot_reason'].val),
             base_name(from_base), base_name(base),
-            ow_boot_mode_name(owcb_obj['ow_boot_mode'].val),
+            ow_boot_mode_name(owcb['ow_boot_mode'].val),
             reboot_count, panic_count, chk_fails))
         print(rbt1b.format(prev, prev, core_rev))
 
     if (level >= 2):                    # detailed display (level 2)
         print()
-        print(rbt2a.format(majik, owcb_obj['ow_sig'].val,
-                   owcb_obj['ow_sig_b'].val, owcb_obj['ow_sig_c'].val))
+        print(rbt2a.format(majik, owcb['ow_sig'].val,
+                   owcb['ow_sig_b'].val, owcb['ow_sig_c'].val))
         print(rbt2b.format(from_base, base))
-        print(rbt2c.format(owcb_obj['rpt'].val, owcb_obj['reset_status'].val,
-              owcb_obj['reset_others'].val))
+        print(rbt2c.format(owcb['rpt'].val, owcb['reset_status'].val,
+              owcb['reset_others'].val))
         print(rbt2d.format(fault_gold, fault_nib, ss_dis))
         print(rbt2e.format(reboot_count, panic_count,
-                           owcb_obj['strange'].val,
-                           owcb_obj['strange_loc'].val))
-#        print(rbt2f.format(0, owcb_obj['boot_time'], owcb_obj['prev_boot']))
+                           owcb['strange'].val,
+                           owcb['strange_loc'].val))
+#        print(rbt2f.format(0, owcb['boot_time'], owcb['prev_boot']))
         print(rbt2f.format(0, 0, 0))
-        print(rbt2g.format(owcb_obj['reboot_reason'].val,
-                           owcb_obj['ow_req'].val,
-                           owcb_obj['ow_boot_mode'].val,
-                           owcb_obj['owt_action'].val))
+        print(rbt2g.format(owcb['reboot_reason'].val,
+                           owcb['ow_req'].val,
+                           owcb['ow_boot_mode'].val,
+                           owcb['owt_action'].val))
 
 
 ################################################################
 #
-# VERSION emitter, dt_version_obj, image_info_obj
+# VERSION emitter, obj_dt_version, obj_image_info
 #
 
 # version emitter support
@@ -217,26 +214,27 @@ def emit_version(level, offset, buf, obj):
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     base     = obj['base'].val
+    ii       = obj['image_info']
     brt      = rtctime_str(rtctime)
 
     ver_str = '{:d}.{:d}.{:d}'.format(
-        image_info_obj['ver_id']['major'].val,
-        image_info_obj['ver_id']['minor'].val,
-        image_info_obj['ver_id']['build'].val)
-    model = image_info_obj['hw_ver']['model'].val
-    rev   = image_info_obj['hw_ver']['rev'].val
+        ii['ver_id']['major'].val,
+        ii['ver_id']['minor'].val,
+        ii['ver_id']['build'].val)
+    model = ii['hw_ver']['model'].val
+    rev   = ii['hw_ver']['rev'].val
 
     # convert description and build_date strings to something reasonable
-    desc  = image_info_obj['image_desc'].val
+    desc  = ii['image_desc'].val
     desc  = desc[:desc.index('\0')]
 
-    repo0 = image_info_obj['repo0'].val
+    repo0 = ii['repo0'].val
     repo0 = repo0[:repo0.index('\0')]
 
-    repo1 = image_info_obj['repo1'].val
+    repo1 = ii['repo1'].val
     repo1 = repo1[:repo1.index('\0')]
 
-    stamp_date = image_info_obj['stamp_date'].val
+    stamp_date = ii['stamp_date'].val
     stamp_date = stamp_date[:stamp_date.index('\0')]
 
     print(rec0.format(offset, recnum, brt, xlen, xtype,
@@ -244,16 +242,16 @@ def emit_version(level, offset, buf, obj):
     print(ver0.format(base_name(base), ver_str, model_name(model), rev))
     if (level >= 1):
         print(ver1a.format(ver_str, model, rev, model_name(model), rev,
-                           obj['base'].val, image_info_obj['im_start'].val))
+                           obj['base'].val, ii['im_start'].val))
 
     if (level >= 2):
         print()
         print(ver2a)
         print(ver2b)
         print(ver2c)
-        print(ver2d.format(image_info_obj['im_start'].val,
-                       image_info_obj['im_len'].val,
-                       image_info_obj['im_len'].val))
+        print(ver2d.format(ii['im_start'].val,
+                       ii['im_len'].val,
+                       ii['im_len'].val))
         print(ver2e)
 
 
@@ -340,16 +338,16 @@ def emit_event(level, offset, buf, obj):
 ################################################################
 #
 # DEBUG emitter
-# uses decode_default with dt_debug_obj to decode
+# uses decode_default with obj_dt_debug to decode
 #
 
 debug0  = ' xxxx'
 
 def emit_debug(level, offset, buf, obj):
-    xlen     = obj['hdr']['len'].val
-    xtype    = obj['hdr']['type'].val
-    recnum   = obj['hdr']['recnum'].val
-    rtctime  = obj['hdr']['rt']
+    xlen     = obj['len'].val
+    xtype    = obj['type'].val
+    recnum   = obj['recnum'].val
+    rtctime  = obj['rt']
     brt      = rtctime_str(rtctime)
 
     print(rec0.format(offset, recnum, brt, xlen, xtype,
@@ -428,10 +426,10 @@ def emit_sensor_set(level, offset, buf, obj):
 test0  = '    xxxx'
 
 def emit_test(level, offset, buf, obj):
-    xlen     = obj['hdr']['len'].val
-    xtype    = obj['hdr']['type'].val
-    recnum   = obj['hdr']['recnum'].val
-    rtctime  = obj['hdr']['rt']
+    xlen     = obj['len'].val
+    xtype    = obj['type'].val
+    recnum   = obj['recnum'].val
+    rtctime  = obj['rt']
     brt      = rtctime_str(rtctime)
 
     print(rec0.format(offset, recnum, brt, xlen, xtype,
@@ -448,10 +446,10 @@ def emit_test(level, offset, buf, obj):
 #
 
 def emit_note(level, offset, buf, obj):
-    xlen     = obj['hdr']['len'].val
-    xtype    = obj['hdr']['type'].val
-    recnum   = obj['hdr']['recnum'].val
-    rtctime  = obj['hdr']['rt']
+    xlen     = obj['len'].val
+    xtype    = obj['type'].val
+    recnum   = obj['recnum'].val
+    rtctime  = obj['rt']
     brt      = rtctime_str(rtctime)
 
     # isolate just the note, and strip NUL and whitespace
@@ -488,7 +486,7 @@ def emit_config(level, offset, buf, obj):
 ########################################################################
 #
 # main gps raw emitter, displays DT_GPS_RAW_SIRFBIN
-# dt_gps_raw_obj, 2nd level emit on mid
+# obj_dt_gps_raw, 2nd level emit on mid
 #
 
 def emit_gps_raw(level, offset, buf, obj):
@@ -504,7 +502,7 @@ def emit_gps_raw(level, offset, buf, obj):
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     if (obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ):
-        index = len(obj) - len(sirf_hdr_obj)
+        index = len(obj) - len(obj['sirf_hdr'])
         print('-- non-binary <{:2}>'.format(dir_str))
         if (level >= 1):
             print('    {:s}'.format(buf[index:]), end = '')

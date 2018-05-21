@@ -153,6 +153,8 @@ chksum_errors           = 0             # checksum errors seen
 unk_rtypes              = 0             # unknown record types
 total_records           = 0
 total_bytes             = 0
+dt_hdr                  = obj_dt_hdr()
+
 
 def init_globals():
     global rec_low, rec_high, rec_last, verbose, debug
@@ -200,7 +202,7 @@ def resync(fd, offset):
     '''
 
     global num_resyncs
-    hdr     = dt_hdr_obj
+    hdr     = dt_hdr
     hdr_len = len(hdr)
 
     print()
@@ -281,8 +283,6 @@ def resync(fd, offset):
         fd.seek(offset_try + RESYNC_HDR_OFFSET)
 
 
-dt_hdr = obj_dt_hdr()
-
 def get_record(fd):
     """
     Generate valid typed-data records one at a time until no more bytes
@@ -293,7 +293,7 @@ def get_record(fd):
 
     Input:   fd:         file descriptor we are reading from
     Output:  rec_offset: byte offset of the record from start of file
-             hdr         hdr obj (see above)
+             hdr         obj_dt_hdr (see above)
              rec_buf:    byte buffer with entire record
     """
 
