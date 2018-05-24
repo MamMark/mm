@@ -54,6 +54,10 @@ typedef enum {
   GMS_STARTUP,
   GMS_STANDBY,
   GMS_UP,
+
+  GMS_LOCK_WAIT,                        /* looking for lock */
+  GMS_MPM_WAIT,                         /* trying to go into MPM */
+  GMS_MPM,                              /* in MPM*/
 } gpsm_state_t;                         // gps monitor state
 
 
@@ -555,7 +559,7 @@ implementation {
     call Collect.collect_nots((void *) &gps_block, sizeof(gps_block),
                               svp->data, dlen);
     if (gps_mon_state == GMS_STARTUP) {
-      gps_mon_state = GMS_UP;
+      gps_mon_state = GMS_LOCK_WAIT;
       call MonTimer.stop();
     }
   }
@@ -575,6 +579,7 @@ implementation {
     gps_time_t    *mtp;
     gps_geo_t     *mgp;
     uint16_t       nav_valid, nav_type;
+    uint32_t       awake, err;
 
     if (!gp || CF_BE_16(gp->len) != GEODETIC_LEN)
       return;
@@ -621,6 +626,20 @@ implementation {
       mgp->additional_mode = gp->additional_mode;
       call CollectEvent.logEvent(DT_EVENT_GPS_GEO, mgp->lat, mgp->lon,
                                  mgp->week_x, mgp->tow);
+
+      /*
+       * got lock, go to MPM_WAIT
+       */
+      switch(gps_mon_state) {
+        default:
+          break;
+        case GMS_LOCK_WAIT:
+          awake = call GPSControl.awake();
+          err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
+          call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 100, err, 0, awake);
+          gps_mon_state = GMS_MPM_WAIT;
+          break;
+      }
     }
   }
 
@@ -647,6 +666,7 @@ implementation {
    */
   void process_pwr_rsp(sb_pwr_rsp_t *prp, rtctime_t *rtp) {
     uint16_t error;
+    uint32_t awake;
 
     /*
      * warning: prp points to a gps buffer which is unaligned
@@ -655,6 +675,45 @@ implementation {
     error = CF_BE_16(prp->error);
     call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 60, prp->sid, error,
                                call GPSControl.awake());
+    /*
+     * for now just go to MPM.  We need to check the error and
+     * handle appropriately.
+     */
+    switch(gps_mon_state) {
+      default:
+        break;
+      case GMS_MPM_WAIT:
+        awake = call GPSControl.awake();
+        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 200, error, 0, awake);
+        gps_mon_state = GMS_MPM;
+        break;
+    }
+  }
+
+
+  void process_default(sb_header_t *sbp, rtctime_t *rtp) {
+    const uint8_t *msg;
+    uint16_t       size;
+    uint32_t       awake, err;
+    uint8_t        mid;
+
+    if (!sbp || !rtp)
+      return;
+
+    mid = sbp->mid;
+    switch(mid) {
+      default:  size = 0;                    msg = NULL;         break;
+      case 9:   size = sizeof(sirf_9_off);   msg = sirf_9_off;   break;
+      case 51:  size = sizeof(sirf_51_off);  msg = sirf_51_off;  break;
+      case 92:  size = sizeof(sirf_92_off);  msg = sirf_92_off;  break;
+      case 93:  size = sizeof(sirf_93_off);  msg = sirf_93_off;  break;
+      case 225: size = sizeof(sirf_225_off); msg = sirf_225_off; break;
+    }
+    if (msg) {
+      awake = call GPSControl.awake();
+      err   = call GPSTransmit.send((void *) msg, size);
+      call CollectEvent.logEvent(DT_EVENT_GPS_MSG_OFF, mid, err, 0, awake);
+    }
   }
 
 
@@ -708,7 +767,10 @@ implementation {
       case MID_HW_CONFIG_REQ:
         process_hw_config_req((void *) sbp, arrival_rtp);
         break;
+      case MID_PWR_MODE_RSP:
+        process_pwr_rsp((void *) sbp, arrival_rtp);
       default:
+        process_default((void *) sbp, arrival_rtp);
         break;
     }
   }
