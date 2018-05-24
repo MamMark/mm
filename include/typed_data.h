@@ -258,6 +258,7 @@ typedef enum {
   DT_EVENT_GPS_SWVER_TO     = 53,
   DT_EVENT_GPS_CANNED       = 54,
   DT_EVENT_GPS_LOST_INT     = 55,
+  DT_EVENT_GPS_MSG_OFF      = 56,
 
   DT_EVENT_16               = 0xffff,
 } dt_event_id_t;

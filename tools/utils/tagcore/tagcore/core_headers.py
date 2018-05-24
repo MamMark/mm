@@ -245,6 +245,7 @@ event_names = {
     53: "GPS_SWVER_TO",
     54: "GPS_CANNED",
     55: "GPS_LOST_INT",
+    56: "GPS_MSG_OFF",
 }
 
 PANIC_WARN = 11
