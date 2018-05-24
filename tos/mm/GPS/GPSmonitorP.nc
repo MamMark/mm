@@ -307,6 +307,7 @@ implementation {
    * however, we don't own that.  So if we are transmitting the data
    * out we need to copy it to a buffer we own so it doesn't get overwritten.
    */
+  bool    raw_tx_busy;
   uint8_t raw_tx_buf[MAX_RAW_TX];
 
   command bool InfoSensGpsXyz.set_value(tagnet_gps_xyz_t *t, uint32_t *l) {
@@ -431,17 +432,26 @@ implementation {
 
       case GDC_RAW_TX:
         l = *lenp - 1;                  /* grab the length of the message */
-        if (l > MAX_RAW_TX)             /* bail if too big */
-          break;
-        src = gp->data;
-        dst = raw_tx_buf;
-        while (l) {
-          *dst++ = *src++;
-          l--;
-        }
         awake = call GPSControl.awake();
-        err   = call GPSTransmit.send(raw_tx_buf, *lenp - 1);
-        call CollectEvent.logEvent(DT_EVENT_GPS_RAW_TX, 999, err, 0, awake);
+        do {
+          if (l > MAX_RAW_TX) {           /* bail if too big */
+            err = ESIZE;
+            break;
+          }
+          if (raw_tx_busy) {
+            err = EBUSY;
+            break;
+          }
+          src = gp->data;
+          dst = raw_tx_buf;
+          while (l) {
+            *dst++ = *src++;
+            l--;
+          }
+          WIGGLE_TELL;
+          err   = call GPSTransmit.send(raw_tx_buf, *lenp - 1);
+        } while (0);
+        call CollectEvent.logEvent(DT_EVENT_GPS_RAW_TX, 999, err, l, awake);
         break;
 
       case GDC_HIBERNATE:
@@ -454,12 +464,17 @@ implementation {
 
       case GDC_CANNED:
         l   = gp->data[0];              /* grab the msg code */
-        if (l > MAX_CANNED)
-          l = 0;
         awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) canned_msgs[l].msg,
-                                      canned_msgs[l].len);
-        call CollectEvent.logEvent(DT_EVENT_GPS_CANNED, l, err, 0, awake);
+        do {
+          if (l > MAX_CANNED) {
+            err = EINVAL;
+            break;
+          }
+          WIGGLE_TELL;
+          err   = call GPSTransmit.send((void *) canned_msgs[l].msg,
+                                        canned_msgs[l].len);
+        } while (0);
+        call CollectEvent.logEvent(DT_EVENT_GPS_CANNED, l, err, l, awake);
         break;
 
       case GDC_SLEEP:
@@ -478,6 +493,10 @@ implementation {
     db->count  = ++gps_cmd_count;
     *lenp = 0;                          /* no returning payload */
     return TRUE;
+  }
+
+  event void GPSTransmit.send_done() {
+    raw_tx_busy = FALSE;
   }
 
 
@@ -714,7 +733,6 @@ implementation {
   }
 
 
-  event void GPSTransmit.send_done()    { }
   event void GPSControl.gps_shutdown()  { }
   event void GPSControl.standbyDone()   { }
 
