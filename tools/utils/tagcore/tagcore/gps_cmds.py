@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.3.0.dev2'
+__version__ = '0.3.1.dev0'
 
 # commands from tos/mm/gps/gps_cmds.h
 gps_cmds = {
@@ -87,48 +87,12 @@ MAX_RAW_TX = 64
 # canned_msgs, see GPSmonitorP.nc
 canned_msgs = {
     'peek':             0,
-    'send_boot':        1,
-    'send_start':       2,
-    'start_cgee':       3,
-    'swver':            4,
-    'all_off':          5,
-    'all_on':           6,
-    'sbas':             7,
-    'full_pwr':         8,
-    'mpm_0':            9,
-    'mpm_7f':           10,
-    'mpm_ff':           11,
-    'poll_ephem':       12,
-    'ee_age':           13,
-    'cgee_only':        14,
-    'aiding_status':    15,
-    'eerom_off':        16,
-    'eerom_on':         17,
-    'pred_enable':      18,
-    'pred_disable':     19,
-    'ee_debug':         20,
-    'bad_chk':          21,
+    'swver':            1,
+    'factory':          2,
+    'factory_clear':    3,
 
-    0:      'peek',
-    1:      'send_boot',
-    2:      'send_start',
-    3:      'start_cgee',
-    4:      'swver',
-    5:      'all_off',
-    6:      'all_on',
-    7:      'sbas',
-    8:      'full_pwr',
-    9:      'mpm_0',
-    10:     'mpm_7f',
-    11:     'mpm_ff',
-    12:     'poll_ephem',
-    13:     'ee_age',
-    14:     'cgee_only',
-    15:     'aiding_status',
-    16:     'eerom_off',
-    17:     'eerom_on',
-    18:     'pred_enable',
-    19:     'pred_disable',
-    20:     'ee_debug',
-    21:     'bad_chk',
+    0:                  'peek',
+    1:                  'swver',
+    2:                  'factory',
+    3:                  'factory_clear',
 }

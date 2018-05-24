@@ -293,31 +293,13 @@ implementation {
 
   /* also in tagcore/gps_cmds.py  */
   const gps_canned_t canned_msgs[] = {
-    { sirf_peek_0,               sizeof(sirf_peek_0)               }, /* 0 */
-    { sirf_send_boot,            sizeof(sirf_send_boot)            }, /* 1 */
-    { sirf_send_start,           sizeof(sirf_send_start)           }, /* 2 */
-    { sirf_start_cgee,           sizeof(sirf_start_cgee)           }, /* 3 */
-    { sirf_sw_ver,               sizeof(sirf_sw_ver)               }, /* 4 */
-    { sirf_msgs_all_off,         sizeof(sirf_msgs_all_off)         }, /* 5 */
-    { sirf_msgs_all_on,          sizeof(sirf_msgs_all_on)          }, /* 6 */
-    { sirf_sbas,                 sizeof(sirf_sbas)                 }, /* 7 */
-    { sirf_full_pwr,             sizeof(sirf_full_pwr)             }, /* 8 */
-    { sirf_go_mpm_0,             sizeof(sirf_go_mpm_0)             }, /* 9 */
-    { sirf_go_mpm_7f,            sizeof(sirf_go_mpm_7f)            }, /* 10 */
-    { sirf_go_mpm_ff,            sizeof(sirf_go_mpm_ff)            }, /* 11 */
-    { sirf_ee_poll_ephemeris,    sizeof(sirf_ee_poll_ephemeris)    }, /* 12 */
-    { sirf_ee_age,               sizeof(sirf_ee_age)               }, /* 13 */
-    { sirf_ee_sif_aid_cgee_only, sizeof(sirf_ee_sif_aid_cgee_only) }, /* 14 */
-    { sirf_ee_sif_aiding_status, sizeof(sirf_ee_sif_aiding_status) }, /* 15 */
-    { sirf_ee_eerom_off,         sizeof(sirf_ee_eerom_off)         }, /* 16 */
-    { sirf_ee_eerom_on,          sizeof(sirf_ee_eerom_on)          }, /* 17 */
-    { sirf_cgee_pred_enable,     sizeof(sirf_cgee_pred_enable)     }, /* 18 */
-    { sirf_cgee_pred_disable,    sizeof(sirf_cgee_pred_disable)    }, /* 19 */
-    { sirf_ee_debug,             sizeof(sirf_ee_debug)             }, /* 20 */
-    { sirf_msgs_bad_chk,         sizeof(sirf_msgs_bad_chk)         }, /* 21 */
+    { sirf_peek_0,              sizeof(sirf_peek_0)        },   /* 0 */
+    { sirf_sw_ver,              sizeof(sirf_sw_ver)        },   /* 1 */
+    { sirf_factory_reset,       sizeof(sirf_factory_reset) },   /* 2 */
+    { sirf_factory_clear,       sizeof(sirf_factory_clear) },   /* 3 */
   };
 
-#define MAX_CANNED 21
+#define MAX_CANNED 3
 #define MAX_RAW_TX 64
 
   /*
