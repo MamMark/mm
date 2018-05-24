@@ -1,3 +1,122 @@
+
+SirfBin aka OSP
+(directions relative to gps chip)
+
+Input
+0x80    128     factory reset (Initialize Data Source)
+0x81	129	Switch to NMEA
+0x82    130     Set Alamanac
+0x84	132	Poll SW Version  (-> 6)
+0x85    133     DGPS Source
+0x8a    138     DGPS Control
+0x90	144	Poll Clock (-> 7)
+0x92    146     Poll Almanac
+0x93    147     Poll Ephemeris
+0x95    149     Set  Ephemeris
+0x98	152	Poll Nav Parameter (-> 19)
+0xa6	166	Message Rate
+0xa8	168	Poll Command Parmeters (-> 43)
+		queries for 128, 133, 136, 137, 138, 139, 140, 143, and 151.
+
+		0x80 128 Initialize Data Source		0x85 133 DGPS Source
+		0x88 136 Mode Control			0x89 137 DOP Mask
+		0x8a 138 DGPS Control			0x8b 139 Elevation Mask
+		0x8c 140 Power Mask			0x8f 143 Static Navigation
+		0x97 151 Set TricklePower
+
+0xaa    170     Set SBAS Parameters
+0xcd,10	205,16	Shutdown
+0xd4,7	212,7	osp revision request
+0xd5,1  213,1   session open
+0xd5,2  213,2   session close
+0xd6    214     hw_response
+0xde,11 222,17  ???
+0xe8,20 232,32  ee/disableSifAiding
+0xe8,fd 232,253 ee/eeStorageControl
+0xe8,fe 232,254 ee/disableCGEEpred
+0xe9    233     pwr_mode
+
+
+Output
+0x02	2	(1Hz)	Measure Navigation Data Out (meters)
+0x04	4	(1Hz)	Measured Tracker Data
+0x06	6		Software Version String
+0x07	7	(1Hz)	Clock Status Data
+0x09	9	(1Hz)	CPU Throughput
+0x0b	11		Command Acknowledgment
+0x0c	12		Command Negative Acknowledgment
+0x12	18		OkToSend, val 1 ok, 0 shutup
+0x13	19		Nav Parameters
+0x1c    28              navlib measData
+0x1d    29              navlib dgpsData
+0x1e    30              navlib svState
+0x1f    31              navlib initData
+0x29	41	(1Hz)	Geodetic Data
+0x2b	43		Queue Command Parameters (from 168)
+0x32	50	(1Hz)	SBAS Parameters
+0x33,1  51,1            unknown
+0x33,6  51,6            Tracker Load Status Report
+0x38    56, 42          extended ephemeris, SIF Status
+0x41,c0 65, 192         GPIO State Output
+0x46,7	70,7		OSP Revision
+0x47	71		Hardware Configuration Request
+0x4b,1	75,1		ACK/NACK/Error Notification
+0x5c,1	92,1		CW Output
+0x5c,2	92,2		CW Mitigation
+0x5d,1	93,1		TCXO Learning Clock Model Data Base
+0x5d,2	93,2		TCXO Learning Temperature Table
+0x5d,12 93,18           Temp Value Output
+0xe1    225, 6          statistics channel
+0xff    255             debug
+
+
+
+
+Start Up messages:  Antenova M10478 (Gsd4e)
+
+
+
+Start Up messages:  ORG4472 (Gsd4e ?????   unknown revision).
+  ms	Start up (default) messages:
+ 102	0x12	18	OkToSend, val 1 ok, 0 shutup
+ 104	0x47	71	Hardware Configuration Request
+ 107	0x06	6	Software Version String
+ 109	0x0b,84	11,132	Command Ack
+
+1127	0x29	41	Geodetic Navigation Data
+1132	0x04	4	Measured Tracker Data
+1140	0x02	2	Measure Navigation Data Out
+1143	0x09	9	CPU Throughput
+1143	0x07	7	Clock Status Data
+1144	0x32	50	SBAS Parameters
+1146	0x5d,01	93,1	TCXO Learning Clock Model Data Base
+1146	0x5d,02	93,2	TCXO Learning Temperature Table
+
+2149	0x29	41
+2154	0x04	4
+2162	0x02	2
+2165	0x09	9
+2165	0x07	7
+2166	0x32	50
+
+3184	0x29	41
+3189	0x04	4
+3198	0x02	2
+3199	0x09	9
+3200	0x07	7
+3202	0x32	50
+
+4205	0x29	41
+4209	0x04	4
+4218	0x02	2
+4220	0x09	9
+4221	0x07	7
+4222	0x32	50
+
+5226	0x29	41
+5230	0x04	4
+
+
 NMEA
 
 Startup messages:
@@ -95,116 +214,3 @@ Startup messages:
 12.3378         $GPGGA,023521.639,,,,,0,00,,,M,0.0,M,,0000*5D[0D][0A]
 12.4455         $GPGSA,A,1,,,,,,,,,,,,,,,*1E[0D][0A]
 12.5143         $GPRMC,023521.639,V,,,,,,,260317,,,N*47[0D][0A]
-
-
-SirfBin aka OSP
-(directions relative to gps chip)
-
-Input
-0x80    128     factory reset (Initialize Data Source)
-0x81	129	Switch to NMEA
-0x82    130     Set Alamanac
-0x84	132	Poll SW Version  (-> 6)
-0x85    133     DGPS Source
-0x8a    138     DGPS Control
-0x90	144	Poll Clock (-> 7)
-0x92    146     Poll Almanac
-0x93    147     Poll Ephemeris
-0x95    149     Set  Ephemeris
-0x98	152	Poll Nav Parameter (-> 19)
-0xa6	166	Message Rate
-0xa8	168	Poll Command Parmeters (-> 43)
-		queries for 128, 133, 136, 137, 138, 139, 140, 143, and 151.
-
-		0x80 128 Initialize Data Source		0x85 133 DGPS Source
-		0x88 136 Mode Control			0x89 137 DOP Mask
-		0x8a 138 DGPS Control			0x8b 139 Elevation Mask
-		0x8c 140 Power Mask			0x8f 143 Static Navigation
-		0x97 151 Set TricklePower
-
-0xaa    170     Set SBAS Parameters
-0xcd,10	205,16	Shutdown
-0xd4,7	212,7	osp revision request
-0xd5,1  213,1   session open
-0xd5,2  213,2   session close
-0xd6    214     hw_response
-0xde,11 222,17  ???
-0xe8,20 232,32  ee/disableSifAiding
-0xe8,fd 232,253 ee/eeStorageControl
-0xe8,fe 232,254 ee/disableCGEEpred
-0xe9    233     pwr_mode
-
-
-Output
-0x02	2	(1Hz)	Measure Navigation Data Out (meters)
-0x04	4	(1Hz)	Measured Tracker Data
-0x06	6		Software Version String
-0x07	7	(1Hz)	Clock Status Data
-0x09	9	(1Hz)	CPU Throughput
-0x0b	11		Command Acknowledgment
-0x0c	12		Command Negative Acknowledgment
-0x12	18		OkToSend, val 1 ok, 0 shutup
-0x13	19		Nav Parameters
-0x29	41	(1Hz)	Geodetic Data
-0x2b	43		Queue Command Parameters (from 168)
-0x32	50	(1Hz)	SBAS Parameters
-0x33,1  51,1            unknown
-0x33,6  51,6            Tracker Load Status Report
-0x38    56, 42          extended ephemeris, SIF Status
-0x41,c0 65, 192         GPIO State Output
-0x46,7	70,7		OSP Revision
-0x47	71		Hardware Configuration Request
-0x4b,1	75,1		ACK/NACK/Error Notification
-0x5c,1	92,1		CW Output
-0x5c,2	92,2		CW Mitigation
-0x5d,1	93,1		TCXO Learning Clock Model Data Base
-0x5d,2	93,2		TCXO Learning Temperature Table
-0x5d,12 93,18           Temp Value Output
-0xe1    225, 6          statistics channel
-
-
-
-
-Start Up messages:  Antenova M10478 (Gsd4e)
-
-
-
-Start Up messages:  ORG4472 (Gsd4e ?????   unknown revision).
-  ms	Start up (default) messages:
- 102	0x12	18	OkToSend, val 1 ok, 0 shutup
- 104	0x47	71	Hardware Configuration Request
- 107	0x06	6	Software Version String
- 109	0x0b,84	11,132	Command Ack
-
-1127	0x29	41	Geodetic Navigation Data
-1132	0x04	4	Measured Tracker Data
-1140	0x02	2	Measure Navigation Data Out
-1143	0x09	9	CPU Throughput
-1143	0x07	7	Clock Status Data
-1144	0x32	50	SBAS Parameters
-1146	0x5d,01	93,1	TCXO Learning Clock Model Data Base
-1146	0x5d,02	93,2	TCXO Learning Temperature Table
-
-2149	0x29	41
-2154	0x04	4
-2162	0x02	2
-2165	0x09	9
-2165	0x07	7
-2166	0x32	50
-
-3184	0x29	41
-3189	0x04	4
-3198	0x02	2
-3199	0x09	9
-3200	0x07	7
-3202	0x32	50
-
-4205	0x29	41
-4209	0x04	4
-4218	0x02	2
-4220	0x09	9
-4221	0x07	7
-4222	0x32	50
-
-5226	0x29	41
-5230	0x04	4
