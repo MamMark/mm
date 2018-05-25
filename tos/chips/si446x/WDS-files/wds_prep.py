@@ -149,10 +149,10 @@ uint8_t const *wds_config_select(uint8_t *cname) {
 '''
 extern_code = '''
 int wds_set_default(int level);
-const uint8_t const* const* wds_config_list();
+uint8_t const* const* wds_config_list();
 uint8_t const*              wds_config_select(uint8_t *cname);
-const uint8_t const*        wds_default_name();
-const wds_config_ids_t const* wds_default_ids();
+uint8_t const*        wds_default_name();
+wds_config_ids_t const* wds_default_ids();
 '''
 
 typedef_code = '''
