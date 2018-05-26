@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.2.dev0'
+__version__ = '0.3.2.dev1'
 
 import binascii
 from   collections  import OrderedDict
@@ -251,32 +251,6 @@ event_names = {
 PANIC_WARN = 11
 GPS_RX_ERR = 47
 GPS_CMD    = 51
-
-
-# GPS_CMD, first arg of GPS_CMD
-gps_cmd_names = {
-       0: "NOP",
-       1: "TURNON",
-       2: "TURNOFF",
-       3: "STANDBY",
-       4: "POWER_ON",
-       5: "POWER_OFF",
-       6: "CYCLE",                      # gps position cycle
-
-      16: "AWAKE_STATUS",
-      17: "MPM",
-      18: "PULSE",
-      19: "RESET",
-      20: "RAW_TX",
-      21: "HIBERNATE",
-      22: "WAKE",
-
-    0x80: "CANNED",                     # place holder for canned.
-
-    0xfd: "SLEEP",
-    0xfe: "PANIC",
-    0xff: "REBOOT",
-}
 
 
 def obj_dt_event():

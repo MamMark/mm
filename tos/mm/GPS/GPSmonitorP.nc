@@ -44,22 +44,8 @@
 #include <sirf_msg.h>
 #include <mm_byteswap.h>
 #include <sirf_driver.h>
-#include <gps_cmd.h>
+#include <gps_mon.h>
 #include <rtctime.h>
-
-typedef enum {
-  GMS_OFF  = 0,                         /* pwr is off */
-  GMS_FAIL = 1,
-  GMS_BOOTING,
-  GMS_STARTUP,
-  GMS_STANDBY,
-  GMS_UP,
-
-  GMS_LOCK_WAIT,                        /* looking for lock */
-  GMS_MPM_WAIT,                         /* trying to go into MPM */
-  GMS_MPM,                              /* in MPM*/
-} gpsm_state_t;                         // gps monitor state
-
 
 #define GPS_MON_SW_VER_TIMEOUT  1024
 
@@ -295,7 +281,7 @@ implementation {
     return 1;
   }
 
-  /* also in tagcore/gps_cmds.py  */
+  /* also in tagcore/gps_mon.py  */
   const gps_canned_t canned_msgs[] = {
     { sirf_peek_0,              sizeof(sirf_peek_0)        },   /* 0 */
     { sirf_sw_ver,              sizeof(sirf_sw_ver)        },   /* 1 */

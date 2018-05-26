@@ -20,12 +20,11 @@
  */
 
 /*
- * gps_cmd.h: definitions for remote gps commands.
- * debugging
+ * gps_mon.h: definitions for GPSmonitor state and commands.
  */
 
-#ifndef __GPS_CMD_H__
-#define __GPS_CMD_H__
+#ifndef __GPS_MON_H__
+#define __GPS_MON_H__
 
 #ifndef PACKED
 #define PACKED __attribute__((__packed__))
@@ -74,7 +73,22 @@ typedef struct {
 
 typedef struct {
   uint8_t cmd;
-  uint8_t  data[];
+  uint8_t data[];
 } PACKED gps_raw_tx_t;
 
-#endif  /* __GPS_CMD_H__ */
+
+typedef enum {
+  GMS_OFF       = 0,                    /* pwr is off */
+  GMS_FAIL      = 1,
+  GMS_BOOTING   = 2,
+  GMS_STARTUP   = 3,
+  GMS_STANDBY   = 4,
+  GMS_UP        = 5,
+
+  GMS_LOCK_WAIT = 6,                    /* looking for lock */
+  GMS_MPM_WAIT  = 7,                    /* trying to go into MPM */
+  GMS_MPM       = 8,                    /* in MPM */
+} gpsm_state_t;                         /* gps monitor state */
+
+
+#endif  /* __GPS_MON_H__ */

@@ -21,17 +21,17 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.2.dev0'
+__version__ = '0.3.2.dev1'
 
 from   core_rev     import *
 from   dt_defs      import *
 
 from   core_headers import event_names
-from   core_headers import gps_cmd_names
 from   core_headers import PANIC_WARN   # event
 from   core_headers import GPS_RX_ERR   # event
 from   core_headers import GPS_CMD      # event
 
+from   gps_mon      import gps_cmds
 from   sirf_defs    import *
 import sirf_defs    as     sirf
 
@@ -300,7 +300,7 @@ def event_name(event):
     return event_names.get(event, 'unk')
 
 def gps_cmd_name(gps_cmd):
-    return gps_cmd_names.get(gps_cmd, 'unk')
+    return gps_cmds.get(gps_cmd, 'unk')
 
 event0  = ' {:s} {} {} {} {}'
 event1  = '    {:s}: ({}) <{} {} {} {}>  x({:x} {:x} {:x} {:x})'
