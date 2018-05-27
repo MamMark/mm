@@ -693,7 +693,6 @@ implementation {
       case 51:  size = sizeof(sirf_51_off);  msg = sirf_51_off;  break;
       case 92:  size = sizeof(sirf_92_off);  msg = sirf_92_off;  break;
       case 93:  size = sizeof(sirf_93_off);  msg = sirf_93_off;  break;
-      case 225: size = sizeof(sirf_225_off); msg = sirf_225_off; break;
     }
     if (msg) {
       awake = call GPSControl.awake();
