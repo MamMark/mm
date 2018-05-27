@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.1'
+__version__ = '0.3.2.dev0'
 
 import binascii
 from   collections  import OrderedDict
@@ -304,6 +304,106 @@ def obj_sirf_nav_params():
         ('hve_max',             atom(('B',  '0x{:02x}'))),
         ('rsp_time_max',        atom(('B',  '0x{:02x}'))),
         ('time_acq_duty_prio',  atom(('B',  '0x{:02x}'))),
+    ]))
+
+
+# NavLib measData (28)
+def obj_sirf_nl_measData():
+    return aggie(OrderedDict([
+        ('channel',             atom(( 'B', '{}'))),
+        ('timeTag',             atom(('>I', '{}'))),
+        ('satId',               atom(( 'B', '{}'))),
+        ('gpsTime',             atom(('>Q', '{}'))),
+        ('pseudo',              atom(('>Q', '{}'))),
+        ('carrier',             atom(('>I', '{}'))),
+        ('phase',               atom(('>Q', '{}'))),
+        ('timeTrack',           atom(('>H', '{}'))),
+        ('syncFlags',           atom(( 'B', '{}'))),
+        ('cno0',                atom(( 'B', '{}'))),
+        ('cno1',                atom(( 'B', '{}'))),
+        ('cno2',                atom(( 'B', '{}'))),
+        ('cno3',                atom(( 'B', '{}'))),
+        ('cno4',                atom(( 'B', '{}'))),
+        ('cno5',                atom(( 'B', '{}'))),
+        ('cno6',                atom(( 'B', '{}'))),
+        ('cno7',                atom(( 'B', '{}'))),
+        ('cno8',                atom(( 'B', '{}'))),
+        ('cno9',                atom(( 'B', '{}'))),
+        ('deltaRange',          atom(('>H', '{}'))),
+        ('meanDelta',           atom(('>H', '{}'))),
+        ('extrap',              atom(('>H', '{}'))),
+        ('phaseErr',            atom(( 'B', '{}'))),
+        ('lowPwr',              atom(( 'B', '{}'))),
+    ]))
+
+# NavLib dgpsData (29)
+def obj_sirf_nl_dgpsData():
+    return aggie(OrderedDict([
+        ('satId',               atom(('>H', '{}'))),
+        ('iod',                 atom(('>H', '{}'))),
+        ('source',              atom(( 'B', '{}'))),
+        ('pseudoCorr',          atom(('>I', '{}'))),
+        ('pseudoRateCorr',      atom(('>I', '{}'))),
+        ('corrAge',             atom(('>I', '{}'))),
+        ('reserved0',           atom(('>I', '{}'))),
+        ('reserved1',           atom(('>I', '{}'))),
+    ]))
+
+# NavLib svState (30)
+def obj_sirf_nl_svState():
+    return aggie(OrderedDict([
+        ('satId',               atom(( 'B', '{}'))),
+        ('gpsTime',             atom(('>Q', '{}'))),
+        ('posX',                atom(('>Q', '{}'))),
+        ('posY',                atom(('>Q', '{}'))),
+        ('posZ',                atom(('>Q', '{}'))),
+        ('velX',                atom(('>Q', '{}'))),
+        ('velY',                atom(('>Q', '{}'))),
+        ('velZ',                atom(('>Q', '{}'))),
+        ('clockBias',           atom(('>Q', '{}'))),
+        ('clockDrift',          atom(('>I', '{}'))),
+        ('ephemFlag',           atom(( 'B', '{}'))),
+        ('reserved0',           atom(('>I', '{}'))),
+        ('reserved1',           atom(('>I', '{}'))),
+        ('ionoDelay',           atom(('>I', '{}'))),
+    ]))
+
+
+# NavLib initData (31)
+def obj_sirf_nl_initData():
+    return aggie(OrderedDict([
+        ('rsv0',                atom(( 'B', '{}'))),
+        ('altMode',             atom(( 'B', '{}'))),
+        ('altSrc',              atom(( 'B', '{}'))),
+        ('altitude',            atom(('>I', '{}'))),
+        ('degradedMode',        atom(( 'B', '{}'))),
+        ('degradedTimeout',     atom(('>H', '{}'))),
+        ('drTimeout',           atom(('>H', '{}'))),
+        ('rsv1',                atom(('>H', '{}'))),
+        ('trkSmoothMode',       atom(( 'B', '{}'))),
+        ('rsv2',                atom(( 'B', '{}'))),
+        ('rsv3',                atom(( 'B', '{}'))),
+        ('rsv4',                atom(( 'B', '{}'))),
+        ('rsv5',                atom(( 'B', '{}'))),
+        ('dgpsSel',             atom(( 'B', '{}'))),
+        ('dgpsTimeout',         atom(('>H', '{}'))),
+        ('elevNavMask',         atom(('>H', '{}'))),
+        ('rsv6',                atom(('>H', '{}'))),
+        ('rsv7',                atom(( 'B', '{}'))),
+        ('rsv8',                atom(('>H', '{}'))),
+        ('rsv9',                atom(( 'B', '{}'))),
+        ('rsv10',               atom(('>H', '{}'))),
+        ('staticNavMode',       atom(( 'B', '{}'))),
+        ('rsv11',               atom(('>H', '{}'))),
+        ('posX',                atom(('>Q', '{}'))),
+        ('posY',                atom(('>Q', '{}'))),
+        ('posZ',                atom(('>Q', '{}'))),
+        ('posInitSrc',          atom(( 'B', '{}'))),
+        ('gpsTime',             atom(('>Q', '{}'))),
+        ('gpsWeek',             atom(('>H', '{}'))),
+        ('timeInitSrc',         atom(( 'B', '{}'))),
+        ('drift',               atom(('>Q', '{}'))),
+        ('driftInitSrc',        atom(( 'B', '{}'))),
     ]))
 
 
