@@ -11,6 +11,9 @@ def decode_null(level, offset, buf, obj):
     return 0
 
 
+#                      EE_DECODER            EE_EMITTERS               EE_OBJECT                   EE_NAME         EE_OBJ_NAME
+sirf.ee56_table[42] = (decode_default,     [ emit_ee56_sifStat ],      obj_sirf_ee56_sifStat(),   'eeSifStat',    'obj_sirf_ee_sifStat')
+
 sirf.ee56_table[1]    = (decode_null, None, None, 'eeGPSDataEphemMask', 'none')
 sirf.ee56_table[2]    = (decode_null, None, None, 'eeIntegrity',        'none')
 sirf.ee56_table[3]    = (decode_null, None, None, 'eeStatus',           'none')
@@ -30,9 +33,9 @@ sirf.ee232_table[253] = (decode_null, None, None, 'eeStorageControl',   'none')
 sirf.ee232_table[254] = (decode_null, None, None, 'eeCGEEpredControl',  'none')
 sirf.ee232_table[255] = (decode_null, None, None, 'eeDebug',            'none')
 
-
-#                      EE_DECODER            EE_EMITTERS               EE_OBJECT                   EE_NAME         EE_OBJ_NAME
-sirf.ee56_table[42] = (decode_default,     [ emit_ee56_sifStat ],      obj_sirf_ee56_sifStat(),   'eeSifStat',    'obj_sirf_ee_sifStat')
+sirf.nl64_table[1]    = (decode_null, None, None, 'auxInit',            'none')
+sirf.nl64_table[2]    = (decode_null, None, None, 'auxMeas',            'none')
+sirf.nl64_table[3]    = (decode_null, None, None, 'aidingInit',         'none')
 
 
 #                      MID_DECODER           MID_EMITTERS              MID_OBJECT                  MID_NAME        MID_OBJ_NAME
@@ -46,8 +49,15 @@ sirf.mid_table[14]  = (decode_default,     [ emit_sirf_alm_data ],     obj_sirf_
 sirf.mid_table[15]  = (decode_default,     [ emit_sirf_ephem_data ],   obj_sirf_ephem_data(),     'ephemData',    'obj_sirf_ephem_data')
 sirf.mid_table[18]  = (decode_default,     [ emit_sirf_ots ],          obj_sirf_ots(),            'okToSend',     'obj_sirf_ots')
 sirf.mid_table[19]  = (decode_default,     [ emit_default  ],          obj_sirf_nav_params(),     'navParamsRsp', 'obj_sirf_nav_params')
+
+sirf.mid_table[28]  = (decode_default,     [ emit_default ],           obj_sirf_nl_measData(),    'nl_measData',  'obj_sirf_navlib_measData')
+sirf.mid_table[29]  = (decode_default,     [ emit_default ],           obj_sirf_nl_dgpsData(),    'nl_dgpsData',  'obj_sirf_navlib_dgpsData')
+sirf.mid_table[30]  = (decode_default,     [ emit_default ],           obj_sirf_nl_svState(),     'nl_svState',   'obj_sirf_navlib_svState')
+sirf.mid_table[31]  = (decode_default,     [ emit_default ],           obj_sirf_nl_initData(),    'nl_initData',  'obj_sirf_navlib_initData')
+
 sirf.mid_table[41]  = (decode_default,     [ emit_sirf_geo ],          obj_sirf_geo(),            'geoData',      'obj_sirf_geo')
 sirf.mid_table[56]  = (decode_sirf_ee56,   [ emit_sirf_ee56 ],         None,                      'extEphem',     'none, sub-objects')
+sirf.mid_table[64]  = (decode_sirf_nl64,   [ emit_sirf_nl64 ],         None,                      'navlib msgs',  'none, sub-objects')
 sirf.mid_table[90]  = (decode_default,     [ emit_sirf_pwr_mode_rsp ], obj_sirf_pwr_mode_rsp(),   'pwrRsp',       'obj_sirf_pwr_mode_rsp')
 sirf.mid_table[128] = (decode_default,     [ emit_default  ],          obj_sirf_init_data_src(),  'initDataSrc',  'obj_sirf_init_data_src')
 sirf.mid_table[130] = (decode_default,     [ emit_sirf_alm_set ],      obj_sirf_alm_set(),        'setAlmanac',   'obj_sirf_alm_set')
@@ -64,32 +74,27 @@ sirf.mid_table[255] = (decode_default,     [ emit_sirf_dev_data ],     obj_sirf_
 # other MIDs, just define their names.  no decoders
 # default emitter is print in emit_gps_raw
 #
-sirf.mid_table[1]   = (decode_null, None, None, 'ref nav data',             'none')
+sirf.mid_table[1]   = (decode_null, None, None, 'ref navData',              'none')
 sirf.mid_table[3]   = (decode_null, None, None, 'true tracker',             'none')
-sirf.mid_table[5]   = (decode_null, None, None, 'raw tracker',              'none')
-sirf.mid_table[7]   = (decode_null, None, None, 'clk stat',                 'none')
-sirf.mid_table[8]   = (decode_null, None, None, '50 bps data',              'none')
+sirf.mid_table[5]   = (decode_null, None, None, 'rawTracker',               'none')
+sirf.mid_table[7]   = (decode_null, None, None, 'clkStat',                  'none')
+sirf.mid_table[8]   = (decode_null, None, None, '50bps data',               'none')
 sirf.mid_table[9]   = (decode_null, None, None, 'cpu thruput',              'none')
 sirf.mid_table[10]  = (decode_null, None, None, 'error id',                 'none')
-sirf.mid_table[17]  = (decode_null, None, None, 'differential corrections', 'none')
+sirf.mid_table[17]  = (decode_null, None, None, 'diff corrections',         'none')
 sirf.mid_table[27]  = (decode_null, None, None, 'dgps status format',       'none')
-sirf.mid_table[28]  = (decode_null, None, None, 'nav lib',                  'none')
-sirf.mid_table[29]  = (decode_null, None, None, 'nav lib dgps data',        'none')
-sirf.mid_table[30]  = (decode_null, None, None, 'nav lib sv state',         'none')
-sirf.mid_table[31]  = (decode_null, None, None, 'nav lib init',             'none')
-sirf.mid_table[43]  = (decode_null, None, None, 'queue cmd params',         'none')
-sirf.mid_table[45]  = (decode_null, None, None, 'dr raw data',              'none')
+sirf.mid_table[43]  = (decode_null, None, None, 'queue cmdParams',          'none')
+sirf.mid_table[45]  = (decode_null, None, None, 'dr rawData',               'none')
 sirf.mid_table[48]  = (decode_null, None, None, 'dr nav',                   'none')
 sirf.mid_table[50]  = (decode_null, None, None, 'sbas params',              'none')
 sirf.mid_table[51]  = (decode_null, None, None, 'unk_51',                   'none')
 sirf.mid_table[52]  = (decode_null, None, None, '1pps time',                'none')
-sirf.mid_table[64]  = (decode_null, None, None, 'nav lib msgs',             'none')
 sirf.mid_table[65]  = (decode_null, None, None, 'gpio',                     'none')
 sirf.mid_table[66]  = (decode_null, None, None, 'dop values',               'none')
 sirf.mid_table[68]  = (decode_null, None, None, 'meas eng',                 'none')
 sirf.mid_table[69]  = (decode_null, None, None, 'pos rsp',                  'none')
-sirf.mid_table[70]  = (decode_null, None, None, 'alm/ephem status rsp',     'none')
-sirf.mid_table[71]  = (decode_null, None, None, 'hw config req',            'none')
+sirf.mid_table[70]  = (decode_null, None, None, 'alm/ephem statusRsp',      'none')
+sirf.mid_table[71]  = (decode_null, None, None, 'hwConfig req',             'none')
 sirf.mid_table[72]  = (decode_null, None, None, 'sensor data',              'none')
 sirf.mid_table[73]  = (decode_null, None, None, 'aiding req',               'none')
 sirf.mid_table[74]  = (decode_null, None, None, 'session rsp',              'none')

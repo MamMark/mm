@@ -532,7 +532,7 @@ def decode_sirf_vis(level, offset, buf, obj):
 
 # process extended ephemeris packets
 # buf is pointing at the SID.
-def decode_sirf_ee(level, offset, buf, obj, table):
+def decode_sirf_sid_dispatch(level, offset, buf, obj, table, table_name):
     consumed = 1                        # account for sid
     sid = buf[0]
     v   = table.get(sid, (None, None, None, 'unk', ''))
@@ -548,12 +548,15 @@ def decode_sirf_ee(level, offset, buf, obj, table):
                 decoder(level, offset, buf[consumed:], obj)
     except struct.error:
         print
-        print('*** decode error: sirf_ee56: sid {} {}, @{}'.format(
+        print('*** decode error: {}: sid {} {}, @{}'.format(table_name,
             sid, sid_name, rec_offset))
     return consumed
 
 def decode_sirf_ee56(level, offset, buf, obj):
-    return decode_sirf_ee(level, offset, buf, obj, sirf.ee56_table)
+    return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee56_table, 'sirf_ee56')
 
 def decode_sirf_ee232(level, offset, buf, obj):
-    return decode_sirf_ee(level, offset, buf, obj, sirf.ee232_table)
+    return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee232_table, 'sirf_ee232')
+
+def decode_sirf_nl64(level, offset, buf, obj):
+    return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.nl64_table, 'sirf_nl64')

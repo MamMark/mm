@@ -26,7 +26,7 @@ import sirf_defs     as     sirf
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.3.2.dev0'
+__version__ = '0.3.2.dev1'
 
 
 def emit_default(level, offset, buf, obj):
@@ -281,27 +281,30 @@ def emit_sirf_geo(level, offset, buf, obj):
         print(rgeo2g.format(head_err, nsats, hdop, additional_mode))
 
 
-# extended ephemeris emissions (nocturnal)
-def emit_sirf_ee(level, offset, buf, obj, table):
+def emit_sirf_sid_dispatch(level, offset, buf, obj, table, table_name):
     sid = buf[0]
     v   = table.get(sid, (None, None, None, 'unk', ''))
     emitters = v[EE_EMITTERS]
     obj      = v[EE_OBJECT]
     name     = v[EE_NAME]
-    print('({})'.format(name), end = '')
+    print(' ({})'.format(name), end = '')
     if not emitters or len(emitters) == 0:
         print()                         # default clean line
         if (level >= 5):
-            print('*** sirf_ee: no emitters defined for sid {}'.format(sid))
+            print('*** {}: no emitters defined for sid {}'.format(
+                table_name, sid))
         return
     for e in emitters:
         e(level, offset, buf[1:], obj)  # ignore the sid
 
 def emit_sirf_ee56(level, offset, buf, obj):
-    emit_sirf_ee(level, offset, buf, obj, sirf.ee56_table)
+    emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee56_table, 'sirf_ee56')
 
 def emit_sirf_ee232(level, offset, buf, obj):
-    emit_sirf_ee(level, offset, buf, obj, sirf.ee232_table)
+    emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee232_table, 'sirf_ee232')
+
+def emit_sirf_nl64(level, offset, buf, obj):
+    emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.nl64_table, 'sirf_nl64')
 
 
 def emit_ee56_sifStat(level, offset, buf, obj):

@@ -38,7 +38,7 @@ packets
 
 import struct
 
-__version__ = '0.3.0.dev1'
+__version__ = '0.3.2.dev0'
 
 __all__ = [
     'MID_DECODER',
@@ -92,6 +92,9 @@ MID_OBJ_NAME = 4
 
 ee56_table  = {}
 ee56_count  = {}
+
+nl64_table  = {}
+nl64_count  = {}
 
 ee232_table = {}
 ee232_count = {}
