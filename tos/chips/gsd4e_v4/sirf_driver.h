@@ -106,7 +106,7 @@ const uint8_t sirf_factory_clear[] = {
   0xb0, 0xb3,
 };
 
-const uint8_t sirf_sw_ver[] = {
+const uint8_t sirf_swver[] = {
   0xa0, 0xa2,
   0x00, 0x02,
   132,                          // send sw ver (0x84)
@@ -473,7 +473,7 @@ const uint8_t sirf_ee_debug[] = {
  */
 
 const uint8_t *boot_seq[] = {
-  sirf_sw_ver,
+  sirf_swver,
   sirf_poll_clk_status,
   sirf_4_on,                            /* navtrack */
   NULL,
@@ -590,9 +590,9 @@ const uint8_t nmea_1228800[] = {
   '\r', '\n'                            // terminator
 };
 
-const uint8_t nmea_sw_ver[] = {
+const uint8_t nmea_swver[] = {
   '$', 'P', 'S', 'R', 'F',              // header
-  '1', '2', '5',                        // sw_ver MID
+  '1', '2', '5',                        // swver MID
   '*', '2', '1',
   '\r', '\n'                            // terminator
 };

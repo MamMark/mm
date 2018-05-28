@@ -47,7 +47,7 @@
 #include <gps_mon.h>
 #include <rtctime.h>
 
-#define GPS_MON_SW_VER_TIMEOUT  1024
+#define GPS_MON_SWVER_TIMEOUT  1024
 
 #ifndef PANIC_GPS
 enum {
@@ -222,8 +222,8 @@ implementation {
       case GMS_BOOTING:
         gps_mon_state = GMS_STARTUP;
         gps_boot_try = 1;
-        call GPSTransmit.send((void *) sirf_sw_ver, sizeof(sirf_sw_ver));
-        call MonTimer.startOneShot(GPS_MON_SW_VER_TIMEOUT);
+        call GPSTransmit.send((void *) sirf_swver, sizeof(sirf_swver));
+        call MonTimer.startOneShot(GPS_MON_SWVER_TIMEOUT);
         return;
     }
   }
@@ -284,7 +284,7 @@ implementation {
   /* also in tagcore/gps_mon.py  */
   const gps_canned_t canned_msgs[] = {
     { sirf_peek_0,              sizeof(sirf_peek_0)        },   /* 0 */
-    { sirf_sw_ver,              sizeof(sirf_sw_ver)        },   /* 1 */
+    { sirf_swver,               sizeof(sirf_swver)         },   /* 1 */
     { sirf_factory_reset,       sizeof(sirf_factory_reset) },   /* 2 */
     { sirf_factory_clear,       sizeof(sirf_factory_clear) },   /* 3 */
   };
@@ -773,8 +773,8 @@ implementation {
           gps_mon_state = GMS_UP;
           return;
         }
-        call GPSTransmit.send((void *) sirf_sw_ver, sizeof(sirf_sw_ver));
-        call MonTimer.startOneShot(GPS_MON_SW_VER_TIMEOUT);
+        call GPSTransmit.send((void *) sirf_swver, sizeof(sirf_swver));
+        call MonTimer.startOneShot(GPS_MON_SWVER_TIMEOUT);
         return;
     }
   }
