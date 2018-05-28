@@ -50,8 +50,17 @@
  *   panic_info.py
  *
  * If these files change CORE_REV needs to be bumped.
+ *
+ * CORE_REV has been split into a 16 bit CORE_REV and a 16 bit CORE_MINOR.
+ * CORE_REV gets popped when there are major structural changes in any of
+ * the above structural published files above.
+ *
+ * CORE_MINOR gets popped to indicate there have been minor changes.  Such
+ * as adding new events.  These will potentially show up as 'unk' which is
+ * fine.
  */
 
-#define CORE_REV 18
+#define CORE_REV   18
+#define CORE_MINOR  1
 
 #endif  /* __CORE_REV_H__ */

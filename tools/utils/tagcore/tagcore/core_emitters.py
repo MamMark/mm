@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.2.dev1'
+__version__ = '0.3.2.dev2'
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -105,7 +105,7 @@ def reboot_reason_name(reason):
 rbt0  = '  {:s} -> {:s}  [{:s}]  (r {:d}/{:d} p)'
 
 rbt1a = '    REBOOT: {:7s}  f: {:5s}  c: {:5s}  m: {:5s}  reboots/p: {}/{}   chk_fails: {}'
-rbt1b = '    rt: 2017/12/26-(mon)-01:52:40 GMT  prev_sync: {} (0x{:04x})  rev: {:7d}'
+rbt1b = '    rt: 2017/12/26-(mon)-01:52:40 GMT  prev_sync: {} (0x{:04x})  rev: {:4d}/{:d}'
 
 rbt2a = '    majik:   {:08x}  sigs:    {:08x}    {:08x}  {:08x}'
 rbt2b = '    base:  f {:08x}  cur:     {:08x}'
@@ -126,10 +126,11 @@ def emit_reboot(level, offset, buf, obj):
     majik    = obj['majik'].val
     prev     = obj['prev_sync'].val
     core_rev = obj['core_rev'].val
+    core_minor = obj['core_minor'].val
     base     = obj['base'].val
     if core_rev != CORE_REV:
-        print('*** version mismatch, expected {:d}, got {:d}'.format(
-            CORE_REV, core_rev))
+        print('*** version mismatch, expected {:d}/{:d}, got {:d}/{:d}'.format(
+            CORE_REV, CORE_MINOR, core_rev, core_minor))
 
     owcb         = obj['owcb']
     boot_time    = owcb['boot_time']
@@ -160,7 +161,7 @@ def emit_reboot(level, offset, buf, obj):
             base_name(from_base), base_name(base),
             ow_boot_mode_name(owcb['ow_boot_mode'].val),
             reboot_count, panic_count, chk_fails))
-        print(rbt1b.format(prev, prev, core_rev))
+        print(rbt1b.format(prev, prev, core_rev, core_minor))
 
     if (level >= 2):                    # detailed display (level 2)
         print()

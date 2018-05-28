@@ -176,9 +176,10 @@ typedef struct {
   /* above same as sync */
 
   /* additional in reboot record + owcb */
-  uint32_t core_rev;            /* core_rev level                   */
-                                /* and associated structures        */
-  uint32_t base;                /* base address of running image    */
+  uint16_t core_rev;            /* core_rev level                      */
+                                /* and associated structures           */
+  uint16_t core_minor;          /* things changed but not structurally */
+  uint32_t base;                /* base address of running image       */
 } PACKED dt_reboot_t;
 
 typedef struct {

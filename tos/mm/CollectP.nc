@@ -191,6 +191,7 @@ implementation {
     rp->sync_majik = SYNC_MAJIK;
     rp->prev_sync  = dcc.last_sync_offset;
     rp->core_rev   = CORE_REV;            /* which version of core */
+    rp->core_minor = CORE_MINOR;
     rp->base = call OverWatch.getImageBase();
     dcc.last_sync_offset = get_rec_offset();
     call Collect.collect((void *) rp, sizeof(r),

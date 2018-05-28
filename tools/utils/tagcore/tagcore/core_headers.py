@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.2.dev1'
+__version__ = '0.3.2.dev2'
 
 import binascii
 from   collections  import OrderedDict
@@ -119,7 +119,8 @@ def obj_dt_reboot():
         ('hdr',       obj_dt_hdr()),
         ('prev_sync', atom(('<I', '{:08x}'))),
         ('majik',     atom(('<I', '{:08x}'))),
-        ('core_rev',  atom(('<I', '{:08x}'))),
+        ('core_rev',  atom(('<H', '{:04x}'))),
+        ('core_minor',atom(('<H', '{:04x}'))),
         ('base',      atom(('<I', '{:08x}'))),
         ('owcb',      obj_owcb())
     ]))

@@ -23,9 +23,12 @@ core_rev reflects the revision level of various key core data structures
 exported.  See include/core_rev.h for a list of what files are reflected
 in this versioning.
 
+core_minor gets popped when something visible changes but doesn't impact
+the basic ability to decode.   ie.  adding new events.
 '''
 
-CORE_REV = 18
+CORE_REV   = 18
+CORE_MINOR =  1
 
 from    .base_objs      import __version__   as base_ver
 from    .dt_defs        import __version__   as dt_ver

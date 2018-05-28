@@ -47,7 +47,8 @@ from   tagdumpargs       import parseargs
 import tagdump_config                   # populate configuration
 
 from   __init__          import __version__   as VERSION
-ver_str = '\ntagdump: ' + VERSION + ':  core: ' + str(CORE_REV)
+ver_str = '\ntagdump: ' + VERSION + ':  core: ' + str(CORE_REV) + \
+          '/' + str(CORE_MINOR)
 
 
 ####
@@ -129,6 +130,8 @@ ver_str = '\ntagdump: ' + VERSION + ':  core: ' + str(CORE_REV)
 # CORE_REV in core_rev.h and core_rev.py indicates the version of core
 # files being used including typed_data.h.  Matching is a good thing.  We
 # won't abort but will bitch if we mismatch.
+#
+# CORE_MINOR indicates minor changes in published structures.
 
 #
 # global control cells
