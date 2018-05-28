@@ -231,7 +231,7 @@ event_names = {
     36: "GPS_STANDBY",
     37: "GPS_TURN_OFF",
     38: "GPS_MPM",
-    39: "GPS_FULL_PWR",
+    39: "GPS_MON_STATE",
     40: "GPS_PULSE",
     41: "GPS_FAST",
     42: "GPS_FIRST",
