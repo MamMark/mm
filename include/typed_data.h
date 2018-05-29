@@ -226,7 +226,7 @@ typedef enum {
   DT_EVENT_DOCKED           = 3,
   DT_EVENT_UNDOCKED         = 4,
 
-  DT_EVENT_GPS_MON_STATE    = 39,
+  DT_EVENT_GPS_MON_MINOR    = 39,
   DT_EVENT_GPS_RX_ERR       = 47,
   DT_EVENT_GPS_LOST_INT     = 55,
   DT_EVENT_GPS_MSG_OFF      = 56,
@@ -241,6 +241,7 @@ typedef enum {
   DT_EVENT_GPS_RAW_TX       = 52,
   DT_EVENT_GPS_SWVER_TO     = 53,
   DT_EVENT_GPS_CANNED       = 54,
+  DT_EVENT_GPS_COMM_CHECK   = 57,
 
   DT_EVENT_PANIC_WARN       = 11,
 

@@ -224,14 +224,12 @@ event_names = {
 
     32: "GPS_BOOT",
     33: "GPS_BOOT_TIME",
-    49: "GPS_BOOT_FAIL",
-    50: "GPS_HW_CONFIG",
     34: "GPS_RECONFIG",
     35: "GPS_TURN_ON",
     36: "GPS_STANDBY",
     37: "GPS_TURN_OFF",
     38: "GPS_MPM",
-    39: "GPS_MON_STATE",
+    39: "GPS_MON_MINOR",
     40: "GPS_PULSE",
     41: "GPS_FAST",
     42: "GPS_FIRST",
@@ -241,12 +239,15 @@ event_names = {
     46: "GPS_CYCLE_TIME",
     47: "GPS_RX_ERR",
     48: "GPS_AWAKE_S",
+    49: "GPS_BOOT_FAIL",
+    50: "GPS_HW_CONFIG",
     51: "GPS_CMD",
     52: "GPS_RAW_TX",
     53: "GPS_SWVER_TO",
     54: "GPS_CANNED",
     55: "GPS_LOST_INT",
     56: "GPS_MSG_OFF",
+    57: "GPS_COMM_CHECK",
 }
 
 PANIC_WARN = 11

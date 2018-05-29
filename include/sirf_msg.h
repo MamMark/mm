@@ -50,6 +50,8 @@
 #define MID_CLOCKSTATUS	   7
 #define CLOCKSTATUS_LEN	   20
 
+#define MID_OTS            18
+
 #define MID_GEODETIC	   41
 #define GEODETIC_LEN	   91
 
@@ -349,6 +351,8 @@ typedef struct {
   uint16_t  error;
   uint16_t  reserved;
 } PACKED sb_pwr_rsp_t;
+
+#define PWR_RSP_MPM_GOOD 0x0010
 
 
 #endif  /* __SIRF_MSG_H__ */

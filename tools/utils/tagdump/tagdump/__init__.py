@@ -3,10 +3,13 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.2.dev2'
+__version__ = '0.4.2.dev3'
 
-# 0.4.2.dev2    Core_Rev 18/1
+# 0.4.2.dev3    Core_Rev 18/1
 #               split Core_Rev into Core_Rev and Core_Minor
+#
+#               Implementation and display of GPSmonitor State transitions
+#               Initial GPSmonitor state machine.
 #
 #               Improvements
 #               - navtrack (number of sats > 20)

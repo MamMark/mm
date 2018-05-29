@@ -77,17 +77,41 @@ typedef struct {
 } PACKED gps_raw_tx_t;
 
 
-typedef enum {
-  GMS_OFF       = 0,                    /* pwr is off */
-  GMS_FAIL      = 1,
-  GMS_BOOTING   = 2,
-  GMS_STARTUP   = 3,
-  GMS_STANDBY   = 4,
-  GMS_UP        = 5,
+typedef enum mon_events {
+  MON_EV_NONE       = 0,
+  MON_EV_BOOT       = 1,
+  MON_EV_STARTUP    = 2,
+  MON_EV_FAIL       = 3,
+  MON_EV_TIMEOUT    = 4,
+  MON_EV_SWVER      = 5,
+  MON_EV_MSG        = 6,
+  MON_EV_OTS_NO     = 7,
+  MON_EV_OTS_YES    = 8,
+  MON_EV_LOCK_POS   = 9,
+  MON_EV_LOCK_TIME  = 10,
+  MON_EV_MPM        = 11,
+  MON_EV_MPM_ERROR  = 12,
+} mon_event_t;
 
-  GMS_LOCK_WAIT = 6,                    /* looking for lock */
-  GMS_MPM_WAIT  = 7,                    /* trying to go into MPM */
-  GMS_MPM       = 8,                    /* in MPM */
+
+typedef enum {
+  GMS_OFF           = 0,                /* fresh boot */
+  GMS_FAIL          = 1,                /* down, couldn't make it work */
+  GMS_BOOTING       = 2,                /* letting driver communicate  */
+  GMS_STARTUP       = 3,                /* config and inital swver */
+
+  GMS_COMM_CHECK    = 4,                /* can we hear? */
+
+  GMS_COLLECT_FIXES = 5,                /* gathering fixes */
+
+  GMS_LOCK_WAIT     = 6,                /* looking for lock */
+  GMS_MPM_WAIT      = 7,                /* trying to go into MPM */
+  GMS_MPM_RESTART   = 8,                /* mpm recovery, wait for shutdown */
+  GMS_MPM           = 9,                /* in MPM */
+
+  GMS_STANDBY       = 10,               /* currently not used */
+  GMS_UP            = 11,               /* currently not used */
+
 } gpsm_state_t;                         /* gps monitor state */
 
 

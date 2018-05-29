@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.3.2.dev0'
+__version__ = '0.3.2.dev1'
 
 # commands from tos/mm/gps/gps_mon.h
 gps_cmds = {
@@ -98,27 +98,39 @@ canned_msgs = {
 }
 
 
-# gps monitor states
+# gps monitor states - minor (basic)
 gps_mon_states = {
     'off':              0,
     'fail':             1,
     'booting':          2,
     'startup':          3,
-    'standby':          4,
-    'up':               5,
+
+    'comm_check':       4,
+
+    'collect_fixes':    5,
 
     'lock_wait':        6,
     'mpm_wait':         7,
-    'mpm':              8,
+    'mpm_restart':      8,
+    'mpm':              9,
+
+    'standby':          10,
+    'up':               11,
 
     0:                  'off',
     1:                  'fail',
     2:                  'booting',
     3:                  'startup',
-    4:                  'standby',
-    5:                  'up',
+
+    4:                  'comm_check',
+
+    5:                  'collect_fixes',
 
     6:                  'lock_wait',
     7:                  'mpm_wait',
-    8:                  'mpm',
+    8:                  'mpm_restart',
+    9:                  'mpm',
+
+    10:                 'standby',
+    11:                 'up',
 }
