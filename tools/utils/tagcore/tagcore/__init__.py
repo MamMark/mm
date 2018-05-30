@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.3.2.dev3'
+__version__ = '0.3.2.dev4'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,10 +18,11 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
-# 0.3.2.dev2    Event GPS_MSG_OFF
+# 0.3.2.dev4    Event GPS_MSG_OFF
 #               collapse CANNED (add factory resets/clear)
 #               add navlib decoders/emitters (28, 29, 30, 31 and 64/2)
 #               refactor ee56, ee232, and add nl64 decoders into sid_dispatch
+#               export core_ver
 #
 # 0.3.1         pull TagFile into tagcore
 #               add gps_cmds and canned messages as gps_cmds.py

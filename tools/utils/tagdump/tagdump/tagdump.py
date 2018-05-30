@@ -481,11 +481,11 @@ def dump(args):
 
     if debug or verbose >= 5:
         print(ver_str)
-        print('  base_objs: {}  dt_defs: {}  sirf_defs: {}'.format(
+        print('  base_objs: {:10}  dt_defs: {:10}  sirf_defs: {:10}'.format(
             vers.base_ver, vers.dt_ver, vers.sd_ver))
-        print('   core:  e: {:10}  h: {:10}  panic:  h: {:10}'.format(
-            vers.ce_ver, vers.ch_ver, vers.pi_ver))
-        print('   sirf:  e: {:10}  h: {:10}'.format(
+        print('   core:     {:10}  e: {:10}  h: {:10}  panic:  h: {:10}'.format(
+            vers.core_ver, vers.ce_ver, vers.ch_ver, vers.pi_ver))
+        print('   sirf:                 e: {:10}  h: {:10}'.format(
             vers.se_ver, vers.sh_ver))
         print()
 

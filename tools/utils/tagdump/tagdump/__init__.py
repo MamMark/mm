@@ -5,7 +5,7 @@ tagdump:  decode and display Tag Data Stream file
 
 __version__ = '0.4.2.dev4'
 
-# 0.4.2.dev3    Core_Rev 18/3
+# 0.4.2.dev4    Core_Rev 18/3
 #               split Core_Rev into Core_Rev and Core_Minor
 #               display mpm error always.
 #
@@ -17,6 +17,7 @@ __version__ = '0.4.2.dev4'
 #               - navtrack (number of sats > 20)
 #               - gps_rx_errs hex rx_err, delta errs
 #               - dump_hdr: add 'pre' to add error chars in front
+#               - grab and display core_ver
 #
 # 0.4.1         move tagfile to tagcore
 #               display rtctime using rtctime_str (basic_rtctime)
