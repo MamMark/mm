@@ -422,7 +422,7 @@ def get_record(fd):
             chksum1 = '*** checksum failure @{0} (0x{0:x}) ' + \
                       '[wanted: 0x{1:x}, got: 0x{2:x}]'
             print(chksum1.format(offset, recsum, chksum))
-            if not dump_hdr(offset, rec_buf) or verbose >= 3:
+            if not dump_hdr(offset, rec_buf, '*** ') or verbose >= 3:
                 print()
                 dump_buf(rec_buf, '    ')
             offset = resync(fd, offset)
@@ -435,7 +435,7 @@ def get_record(fd):
             if (required_len != rlen):
                 print('*** len violation, required: {}, got {}'.format(
                     required_len, rlen))
-                dump_hdr(offset, rec_buf)
+                dump_hdr(offset, rec_buf, '*** ')
                 print()
                 dump_buf(rec_buf, '    ')
                 offset = resync(fd, offset)
@@ -614,7 +614,7 @@ def dump(args):
                         rtype, rec_offset))
             if (verbose >= 3):
                 print()
-                dump_hdr(rec_offset, rec_buf)
+                dump_hdr(rec_offset, rec_buf, '    ')
                 dump_buf(rec_buf, '    ')
             if (verbose >= 1):
                 print()

@@ -45,7 +45,7 @@ from   __future__         import print_function
 import struct
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.3.1'
+__version__ = '0.3.2.dev0'
 
 cfg_print_hourly = True
 
@@ -223,12 +223,12 @@ def dt_name(rtype):
 
 
 # header format when normal processing doesn't work (see print_record)
-hdr_format    = "@{:<8d} {:7d} {:>11s} {:<3d}  {:2d}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
+hdr_format    = "{}@{:<8d} {:7d} {:>11s} {:<3d}  {:2d}  {:12s} @{} (0x{:06x}) [0x{:04x}]"
 hdr_additonal = ' @{} (0x{:06x}) [0x{:04x}]'
 
 dt_hdr = obj_dt_hdr()
 
-def dump_hdr(offset, buf):
+def dump_hdr(offset, buf, pre = ''):
     '''load hdr from buf and display it.
 
     return:     True if we can load the header
@@ -248,7 +248,7 @@ def dump_hdr(offset, buf):
     rtctime  = hdr['rt']
     brt      = rtctime_str(rtctime)
     recsum   = hdr['recsum'].val
-    print(hdr_format.format(offset, recnum, brt, rlen, rtype,
+    print(hdr_format.format(pre, offset, recnum, brt, rlen, rtype,
         dt_name(rtype), offset, offset, recsum))
     return True
 

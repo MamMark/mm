@@ -3,17 +3,20 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.2.dev3'
+__version__ = '0.4.2.dev4'
 
-# 0.4.2.dev3    Core_Rev 18/1
+# 0.4.2.dev3    Core_Rev 18/3
 #               split Core_Rev into Core_Rev and Core_Minor
+#               display mpm error always.
 #
 #               Implementation and display of GPSmonitor State transitions
 #               Initial GPSmonitor state machine.
+#               dump out monitor minor state changes
 #
 #               Improvements
 #               - navtrack (number of sats > 20)
 #               - gps_rx_errs hex rx_err, delta errs
+#               - dump_hdr: add 'pre' to add error chars in front
 #
 # 0.4.1         move tagfile to tagcore
 #               display rtctime using rtctime_str (basic_rtctime)
