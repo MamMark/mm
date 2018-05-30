@@ -396,20 +396,22 @@ def emit_sirf_pwr_mode_rsp(level, offset, buf, obj):
     error = obj['error'].val
     reserved = obj['reserved'].val
     if sid == 2:
-        print(' MPM  0x{:04x}'.format(error))
-        if (level >= 1):
+        if error == 0x0010: ok_str = 'ok'
+        else:               ok_str = 'oops'
+        print(' MPM {} (0x{:04x})'.format(ok_str, error))
+        if level >= 1 or error != 0x0010:
             err_list = []
-            if (error & 0x0010):
-                err_list.append('success')
-            if (error & 0x0020):
-                err_list.append('noKF')
-            if (error & 0x0040):
-                err_list.append('noRTC')
-            if (error & 0x0080):
-                err_list.append('hpe>')
-            if (error & 0x0100):
-                err_list.append('MPMpend')
-            print('    error: {:04x} - <{}>'.format(error, " ".join(err_list)))
+            if (error == 0x0000): err_list.append('none?')
+            if (error & 0x0010):  err_list.append('ok')
+            if (error & 0x0020):  err_list.append('noKF')
+            if (error & 0x0040):  err_list.append('noRTC')
+            if (error & 0x0080):  err_list.append('hpe')
+            if (error & 0x0100):  err_list.append('MPMpend')
+            if (error == 0x0010): pre = '   '
+            else:                 pre = '***'
+            if (error != 0x0010):
+                print('{} MPM response: {:04x} - <{}>'.format(pre, error,
+                                                   " ".join(err_list)))
     else:
         print()                         # get clean line
         print(obj)
