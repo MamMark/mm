@@ -129,7 +129,7 @@ def emit_reboot(level, offset, buf, obj):
     core_rev = obj['core_rev'].val
     core_minor = obj['core_minor'].val
     base     = obj['base'].val
-    if core_rev != CORE_REV:
+    if core_rev != CORE_REV or core_minor != CORE_MINOR:
         print('*** version mismatch, expected {:d}/{:d}, got {:d}/{:d}'.format(
             CORE_REV, CORE_MINOR, core_rev, core_minor))
 
