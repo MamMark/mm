@@ -250,9 +250,13 @@ event_names = {
     57: "GPS_COMM_CHECK",
 }
 
-PANIC_WARN = 11
-GPS_RX_ERR = 47
-GPS_CMD    = 51
+def event_name(event):
+    return event_names.get(event, 'unk')
+
+
+PANIC_WARN    = 11
+GPS_RX_ERR    = 47
+GPS_CMD       = 51
 
 
 def obj_dt_event():

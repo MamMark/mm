@@ -26,12 +26,13 @@ __version__ = '0.3.2.dev2'
 from   core_rev     import *
 from   dt_defs      import *
 
-from   core_headers import event_names
 from   core_headers import PANIC_WARN   # event
 from   core_headers import GPS_RX_ERR   # event
 from   core_headers import GPS_CMD      # event
+from   core_headers import event_name
 
-from   gps_mon      import gps_cmds
+from   gps_mon      import *
+
 from   sirf_defs    import *
 import sirf_defs    as     sirf
 
@@ -296,12 +297,6 @@ def emit_sync(level, offset, buf, obj):
 # EVENT emitter
 # uses decode_default with dt_event_obj to decode
 #
-
-def event_name(event):
-    return event_names.get(event, 'unk')
-
-def gps_cmd_name(gps_cmd):
-    return gps_cmds.get(gps_cmd, 'unk')
 
 event0  = ' {:s} {} {} {} {}'
 event1  = '    {:s}: ({}) <{} {} {} {}>  x({:x} {:x} {:x} {:x})'

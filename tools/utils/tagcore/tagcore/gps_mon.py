@@ -26,6 +26,10 @@ from   misc_utils   import dump_buf
 
 __version__ = '0.3.2.dev1'
 
+__all__ = [
+    'gps_cmd_name',
+]
+
 # commands from tos/mm/gps/gps_mon.h
 gps_cmds = {
     'nop':          0,
@@ -74,6 +78,11 @@ gps_cmds = {
     0xfe:           'panic',
     0xff:           'reboot',
 }
+
+def gps_cmd_name(gps_cmd):
+    if isinstance(gps_cmd, str):
+        return gps_cmds.get(gps_cmd, 0)
+    return gps_cmds.get(gps_cmd, 'unk')
 
 CMD_NOP    = gps_cmds['nop']
 CMD_CAN    = gps_cmds['can']
