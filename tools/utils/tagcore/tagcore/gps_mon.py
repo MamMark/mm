@@ -24,10 +24,12 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.3.2.dev1'
+__version__ = '0.3.2.dev2'
 
 __all__ = [
     'gps_cmd_name',
+    'gps_mon_event_name',
+    'gps_mon_minor_name',
 ]
 
 # commands from tos/mm/gps/gps_mon.h
@@ -107,6 +109,43 @@ canned_msgs = {
 }
 
 
+# gps monitor minor events
+gps_mon_events = {
+    'none':          0,
+    'boot':          1,
+    'startup':       2,
+    'fail':          3,
+    'timeout':       4,
+    'swver':         5,
+    'msg':           6,
+    'ots_no':        7,
+    'ots_yes':       8,
+    'lock_pos':      9,
+    'lock_time':     10,
+    'mpm':           11,
+    'mpm_error':     12,
+
+    0:                  'none',
+    1:                  'boot',
+    2:                  'startup',
+    3:                  'fail',
+    4:                  'timeout',
+    5:                  'swver',
+    6:                  'msg',
+    7:                  'ots_no',
+    8:                  'ots_yes',
+    9:                  'lock_pos',
+    10:                 'lock_time',
+    11:                 'mpm',
+    12:                 'mpm_error',
+}
+
+def gps_mon_event_name(mon_ev):
+    if isinstance(mon_ev, str):
+        return gps_mon_events.get(mon_ev, 0)
+    return gps_mon_events.get(mon_ev, 'unk')
+
+
 # gps monitor states - minor (basic)
 gps_mon_states = {
     'off':              0,
@@ -143,3 +182,8 @@ gps_mon_states = {
     10:                 'standby',
     11:                 'up',
 }
+
+def gps_mon_minor_name(mon_state):
+    if isinstance(mon_state, str):
+        return gps_mon_states.get(mon_state, 1)
+    return gps_mon_states.get(mon_state, 'unk')

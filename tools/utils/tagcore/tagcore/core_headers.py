@@ -255,6 +255,7 @@ def event_name(event):
 
 
 PANIC_WARN    = 11
+GPS_MON_MINOR = 39
 GPS_RX_ERR    = 47
 GPS_CMD       = 51
 
