@@ -41,10 +41,7 @@
  * COMM_CHECK   can we hear messages, used after the gps shuts down on
  *              its own (mpm failure, etc).
  *
- * COLLECT_FIXES used when we need to run for some period of time.   grabbing
- *              almanac, ephemeri, time calibration.
- *
- * LOCK_WAIT    looking for sat lock.
+ * LOCK_SEARCH  looking for sat lock.
  *
  * MPM_WAIT     mpm has been requested.  looking for response.
  *
@@ -52,6 +49,11 @@
  *              we will restart.
  *
  * MPM          running MPM cycles.
+ *
+ * COLLECT      used when we need to run for some period of time.   grabbing
+ *              almanac, ephemeri, time calibration.
+ *
+ *              behavior depends on major state.
  *
  * STANDBY      in Standby
  * UP           full up, taking readings.
@@ -77,10 +79,27 @@ enum {
 #define GPS_MON_SWVER_TO            1024
 #define GPS_MON_SHORT_COMM_TO       2048
 #define GPS_MON_LONG_COMM_TO        8192
-#define GPS_MON_MPM_TO              2048
-#define GPS_MON_MPM_RESTART_WAIT    4096
+#define GPS_MON_MPM_RSP_TO          2048
+#define GPS_MON_MPM_RESTART_WAIT    2048
+#define GPS_MON_MPM_COLLECT_TIME    (1 * 60 * 1024)
+#define GPS_MON_COLLECT             (2 * 60 * 1024)
 #define GPS_MON_WAKEUP              (5 * 60 * 1024)
 
+
+/*
+ * mpm_rsp_to   timeout for listening for mpm rsp after
+ *              mpm req sent.  If timeout assume off.
+ *
+ * mpm_restart_wait  restart window after seeing an mpm error.
+ *              time limit after seeing the error.  should see
+ *              an ots_no first but in case we don't this
+ *              timer will catch it.
+ *
+ * mpm_collect_time following an mpm error we go into collect
+ *              to let mpm stablize.
+ *
+ * mon_wakeup   when in MPM, how long to stay asleep before next fix.
+ */
 
 /*
  * Internal Storage types.
@@ -195,6 +214,8 @@ module GPSmonitorP {
 }
 implementation {
   gpsm_state_t gps_mon_state;           /* monitor basic state - minor */
+  gpsm_major_state_t
+               gps_major_state;         /* monitor major state */
   uint32_t     gps_mon_count;
   gpsm_state_t comm_check_next_state;
 
@@ -212,6 +233,13 @@ implementation {
   }
 
 
+  void mon_change_major(gpsm_major_state_t new_state, mon_event_t ev) {
+    call CollectEvent.logEvent(DT_EVENT_GPS_MON_MAJOR, gps_major_state,
+                               new_state, ev, 0);
+    gps_major_state = new_state;
+  }
+
+
   void mon_change_state(gpsm_state_t new_state, mon_event_t ev) {
     call CollectEvent.logEvent(DT_EVENT_GPS_MON_MINOR, gps_mon_state,
                                new_state, ev, 0);
@@ -222,8 +250,13 @@ implementation {
   void mon_enter_comm_check(mon_event_t ev) {
     gps_mon_count = 1;
     mon_change_state(GMS_COMM_CHECK, ev);
-    call GPSControl.pulseOnOff();
     call MonTimer.startOneShot(GPS_MON_SHORT_COMM_TO);
+  }
+
+
+  void mon_pulse_comm_check(mon_event_t ev) {
+    call GPSControl.pulseOnOff();
+    mon_enter_comm_check(ev);
   }
 
 
@@ -239,6 +272,7 @@ implementation {
    */
   event void Boot.booted() {
     gps_mon_count = 1;
+    mon_change_major(GMS_MAJOR_CYCLE, MON_EV_BOOT);
     mon_change_state(GMS_BOOTING, MON_EV_BOOT);
     call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gps_mon_state,
                                gps_mon_count, 0, 0);
@@ -513,7 +547,8 @@ implementation {
         break;
 
       case GDC_REBOOT:
-        call OverWatch.flush_boot(call OverWatch.getBootMode(), ORR_USER_REQUEST);
+        call OverWatch.flush_boot(call OverWatch.getBootMode(),
+                                  ORR_USER_REQUEST);
         break;
 
     }
@@ -541,8 +576,8 @@ implementation {
            * need to put subsystem disable here.
            */
           gps_warn(135, gps_mon_state, gps_mon_count);
-          mon_enter_comm_check(MON_EV_TIMEOUT);
           comm_check_next_state = GMS_STARTUP;
+          mon_pulse_comm_check(MON_EV_TIMEOUT);
           return;
         }
         mon_change_state(GMS_STARTUP, MON_EV_TIMEOUT);
@@ -551,8 +586,6 @@ implementation {
         return;
 
       case GMS_COMM_CHECK:
-        call CollectEvent.logEvent(DT_EVENT_GPS_COMM_CHECK,
-                                   gps_mon_count, 0, 0, 0);
         if (gps_mon_count < 5) {
           /*
            * Didn't hear anything, pulse and listen for LONG TO
@@ -564,20 +597,29 @@ implementation {
           return;
         }
         /*
-         * we tried twice.  yell and scream.
+         * we tried 5 times.  yell and scream.
          */
         mon_change_state(GMS_FAIL, MON_EV_TIMEOUT);
         gps_panic(136, gps_mon_state, gps_mon_count);
         return;
 
-      case GMS_COLLECT_FIXES:
-        mon_change_state(GMS_LOCK_WAIT, MON_EV_TIMEOUT);
-        return;
-
       case GMS_MPM:                     /* expiration of gps_sense    */
       case GMS_MPM_WAIT:                /* waiting for mpm rsp        */
       case GMS_MPM_RESTART:             /* shutdown timeout, mpm fail */
-        mon_enter_comm_check(MON_EV_TIMEOUT);
+        mon_pulse_comm_check(MON_EV_TIMEOUT);
+        return;
+
+      case GMS_COLLECT:
+        switch(gps_major_state) {
+          default:
+            gps_panic(137, gps_mon_state, gps_major_state);
+            return;
+          case GMS_MAJOR_MPM_COLLECT:
+            mon_change_major(GMS_MAJOR_CYCLE, MON_EV_TIMEOUT);
+          case GMS_MAJOR_CYCLE:
+            mon_enter_comm_check(MON_EV_TIMEOUT);
+            break;
+        }
         return;
     }
     return;
@@ -585,12 +627,12 @@ implementation {
 
   void mon_ev_swver() {
     /*
-     * Startup, 1st swver, transition to LOCK_WAIT
+     * Startup, 1st swver, transition to LOCK_SEARCH
      * Otherwise, just ignore it.
      */
     if (gps_mon_state == GMS_STARTUP) {
-      mon_change_state(GMS_LOCK_WAIT, MON_EV_SWVER);
       call MonTimer.stop();
+      mon_change_state(GMS_LOCK_SEARCH, MON_EV_SWVER);
     }
   }
 
@@ -601,8 +643,8 @@ implementation {
         swver_startup();            /* -> GMS_STARTUP */
         return;
       }
-      mon_change_state(GMS_LOCK_WAIT, MON_EV_MSG);
       call MonTimer.stop();
+      mon_change_state(GMS_LOCK_SEARCH, MON_EV_MSG);
     }
   }
 
@@ -615,17 +657,17 @@ implementation {
         comm_check_next_state = GMS_STARTUP;
         break;
 
-      case GMS_COLLECT_FIXES:
-        comm_check_next_state = GMS_COLLECT_FIXES;
-        break;
-
-      case GMS_LOCK_WAIT:
+      case GMS_LOCK_SEARCH:
       case GMS_MPM_WAIT:
       case GMS_MPM_RESTART:
       case GMS_MPM:
         break;
+
+      case GMS_COLLECT:
+        comm_check_next_state = GMS_COLLECT;
+        break;
     }
-    mon_enter_comm_check(MON_EV_OTS_NO);
+    mon_pulse_comm_check(MON_EV_OTS_NO);
   }
 
   void mon_ev_ots_yes()  { }
@@ -647,16 +689,30 @@ implementation {
          */
         return;
 
-      case GMS_LOCK_WAIT:
-        awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
-        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 100, err, 0, awake);
-        mon_change_state(GMS_MPM_WAIT, MON_EV_LOCK_TIME);
-        call MonTimer.startOneShot(GPS_MON_MPM_TO);
-        break;
+      case GMS_LOCK_SEARCH:
+        switch(gps_major_state) {
+          default:
+          case GMS_MAJOR_SATS_COLLECT:
+          case GMS_MAJOR_TIME_COLLECT:
+            gps_panic(100, gps_mon_state, gps_major_state);
+            return;
+          case GMS_MAJOR_CYCLE:
+            mon_change_state(GMS_MPM_WAIT, MON_EV_LOCK_TIME);
+            awake = call GPSControl.awake();
+            err   = call GPSTransmit.send((void *) sirf_go_mpm_0,
+                                          sizeof(sirf_go_mpm_0));
+            call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 100, err, 0, awake);
+            call MonTimer.startOneShot(GPS_MON_MPM_RSP_TO);
+            return;
+          case GMS_MAJOR_MPM_COLLECT:
+            call MonTimer.startOneShot(GPS_MON_MPM_COLLECT_TIME);
+            mon_change_state(GMS_COLLECT, MON_EV_LOCK_TIME);
+            return;
+        }
     }
   }
 
+  /* mpm attempted, and got a good response */
   void mon_ev_mpm() {
     switch(gps_mon_state) {
       default:
@@ -670,6 +726,7 @@ implementation {
     }
   }
 
+  /* bad response from mpm */
   void mon_ev_mpm_error() {
     switch(gps_mon_state) {
       default:
@@ -677,6 +734,9 @@ implementation {
         return;
 
       case GMS_MPM_WAIT:
+        /* mpm failed, let it run for a while */
+        mon_change_major(GMS_MAJOR_MPM_COLLECT, MON_EV_MPM_ERROR);
+
         call MonTimer.startOneShot(GPS_MON_MPM_RESTART_WAIT);
         mon_change_state(GMS_MPM_RESTART, MON_EV_MPM_ERROR);
         return;

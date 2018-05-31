@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.2.dev3'
+__version__ = '0.3.2.dev5'
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -29,6 +29,7 @@ from   dt_defs      import *
 from   core_headers import event_name
 from   core_headers import PANIC_WARN           # event
 from   core_headers import GPS_MON_MINOR        # event
+from   core_headers import GPS_MON_MAJOR        # event
 from   core_headers import GPS_RX_ERR           # event
 from   core_headers import GPS_CMD              # event
 
@@ -328,10 +329,17 @@ def emit_event(level, offset, buf, obj):
         return
 
     if (event == GPS_MON_MINOR):
-        print(' gps/mon (MINOR), <{}>  {} -> {}'.format(
-            gps_mon_event_name(arg2),
+        print(' gps/mon (MINOR), {:>10s}  {:>10s} -> {:<10s}'.format(
+            '<{}>'.format(gps_mon_event_name(arg2)),
             gps_mon_minor_name(arg0),
             gps_mon_minor_name(arg1)))
+        return
+
+    if (event == GPS_MON_MAJOR):
+        print(' gps/mon (MAJOR), {:>10s}  {:>10s} -> {:<10s}'.format(
+            '<{}>'.format(gps_mon_event_name(arg2)),
+            gps_mon_major_name(arg0),
+            gps_mon_major_name(arg1)))
         return
 
     if (event == GPS_CMD):

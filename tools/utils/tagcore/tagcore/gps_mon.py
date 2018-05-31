@@ -24,12 +24,13 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.3.2.dev2'
+__version__ = '0.3.2.dev4'
 
 __all__ = [
     'gps_cmd_name',
     'gps_mon_event_name',
     'gps_mon_minor_name',
+    'gps_mon_major_name',
 ]
 
 # commands from tos/mm/gps/gps_mon.h
@@ -147,7 +148,7 @@ def gps_mon_event_name(mon_ev):
 
 
 # gps monitor states - minor (basic)
-gps_mon_states = {
+gps_mon_minors = {
     'off':              0,
     'fail':             1,
     'booting':          2,
@@ -155,12 +156,12 @@ gps_mon_states = {
 
     'comm_check':       4,
 
-    'collect_fixes':    5,
+    'lock_search':      5,
+    'mpm_wait':         6,
+    'mpm_restart':      7,
+    'mpm':              8,
 
-    'lock_wait':        6,
-    'mpm_wait':         7,
-    'mpm_restart':      8,
-    'mpm':              9,
+    'collect':          9,
 
     'standby':          10,
     'up':               11,
@@ -171,19 +172,40 @@ gps_mon_states = {
     3:                  'startup',
 
     4:                  'comm_check',
+    5:                  'lock_search',
 
-    5:                  'collect_fixes',
+    6:                  'mpm_wait',
+    7:                  'mpm_restart',
+    8:                  'mpm',
 
-    6:                  'lock_wait',
-    7:                  'mpm_wait',
-    8:                  'mpm_restart',
-    9:                  'mpm',
+    9:                  'collect',
 
     10:                 'standby',
     11:                 'up',
 }
 
-def gps_mon_minor_name(mon_state):
-    if isinstance(mon_state, str):
-        return gps_mon_states.get(mon_state, 1)
-    return gps_mon_states.get(mon_state, 'unk')
+def gps_mon_minor_name(minor_state):
+    if isinstance(minor_state, str):
+        return gps_mon_minors.get(minor_state, 1)
+    return gps_mon_minors.get(minor_state, 'unk')
+
+
+# gps monitor states - major
+gps_mon_majors = {
+    'none':             0,
+    'cycle':            1,
+    'mpm_collect':      2,
+    'sats_collect':     3,
+    'time_collect':     4,
+
+    0:                  'none',
+    1:                  'cycle',
+    2:                  'mpm_collect',
+    3:                  'sats_collect',
+    4:                  'time_collect',
+}
+
+def gps_mon_major_name(major_state):
+    if isinstance(major_state, str):
+        return gps_mon_majors.get(major_state, 0)
+    return gps_mon_majors.get(major_state, 'unk')

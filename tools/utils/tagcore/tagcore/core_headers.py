@@ -247,7 +247,8 @@ event_names = {
     54: "GPS_CANNED",
     55: "GPS_LOST_INT",
     56: "GPS_MSG_OFF",
-    57: "GPS_COMM_CHECK",
+#   57: "GPS_COMM_CHECK",
+    58: "GPS_MON_MAJOR",
 }
 
 def event_name(event):
@@ -256,6 +257,7 @@ def event_name(event):
 
 PANIC_WARN    = 11
 GPS_MON_MINOR = 39
+GPS_MON_MAJOR = 58
 GPS_RX_ERR    = 47
 GPS_CMD       = 51
 

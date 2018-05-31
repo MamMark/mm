@@ -101,18 +101,29 @@ typedef enum {
   GMS_STARTUP       = 3,                /* config and inital swver */
 
   GMS_COMM_CHECK    = 4,                /* can we hear? */
+  GMS_LOCK_SEARCH   = 5,                /* looking for lock */
 
-  GMS_COLLECT_FIXES = 5,                /* gathering fixes */
+  GMS_MPM_WAIT      = 6,                /* trying to go into MPM */
+  GMS_MPM_RESTART   = 7,                /* mpm recovery, wait for shutdown */
+  GMS_MPM           = 8,                /* in MPM */
 
-  GMS_LOCK_WAIT     = 6,                /* looking for lock */
-  GMS_MPM_WAIT      = 7,                /* trying to go into MPM */
-  GMS_MPM_RESTART   = 8,                /* mpm recovery, wait for shutdown */
-  GMS_MPM           = 9,                /* in MPM */
+  GMS_COLLECT       = 9,                /* gathering fixes */
 
   GMS_STANDBY       = 10,               /* currently not used */
   GMS_UP            = 11,               /* currently not used */
+  GMS_MAX           = 11,
 
 } gpsm_state_t;                         /* gps monitor state */
+
+
+typedef enum {
+  GMS_MAJOR_NONE           = 0,         /* fresh boot */
+  GMS_MAJOR_CYCLE          = 1,         /* lock cycle */
+  GMS_MAJOR_MPM_COLLECT    = 2,         /* MPM Collection  */
+  GMS_MAJOR_SATS_COLLECT   = 3,         /* SATS Collection */
+  GMS_MAJOR_TIME_COLLECT   = 4,         /* TIME sync Collection    */
+  GMS_MAJOR_MAX            = 4,
+} gpsm_major_state_t;                   /* gps monitor major state */
 
 
 #endif  /* __GPS_MON_H__ */

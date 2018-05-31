@@ -3,9 +3,12 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.2.dev4'
+__version__ = '0.4.3.dev0'
 
-# 0.4.2.dev4    Core_Rev 18/3
+# 0.4.3.dev0    Core_Rev 18/4
+#               Implementation of GPSmonitor Major/Minor state
+#
+# 0.4.2         Core_Rev 18/3
 #               split Core_Rev into Core_Rev and Core_Minor
 #               display mpm error always.
 #
