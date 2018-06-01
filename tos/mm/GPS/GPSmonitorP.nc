@@ -218,6 +218,7 @@ implementation {
                gps_major_state;         /* monitor major state */
   uint32_t     gps_mon_count;
   gpsm_state_t comm_check_next_state;
+  uint32_t     cycle_start, cycle_count;
 
   gps_xyz_t  m_xyz;
   gps_geo_t  m_geo;
@@ -604,6 +605,9 @@ implementation {
         return;
 
       case GMS_MPM:                     /* expiration of gps_sense    */
+        cycle_start = call MonTimer.getNow();
+        cycle_count++;
+
       case GMS_MPM_WAIT:                /* waiting for mpm rsp        */
       case GMS_MPM_RESTART:             /* shutdown timeout, mpm fail */
         mon_pulse_comm_check(MON_EV_TIMEOUT);
@@ -676,7 +680,13 @@ implementation {
   void mon_ev_lock_time() {
     uint32_t awake;
     uint32_t err;
+    uint32_t elapsed;
 
+    if (cycle_start) {
+      elapsed = call MonTimer.getNow() - cycle_start;
+      call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_TIME, cycle_count, elapsed, cycle_start, 0);
+      cycle_start = 0;
+    }
     switch(gps_mon_state) {
       default:
         return;
