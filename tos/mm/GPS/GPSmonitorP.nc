@@ -81,9 +81,10 @@ enum {
 #define GPS_MON_LONG_COMM_TO        8192
 #define GPS_MON_MPM_RSP_TO          2048
 #define GPS_MON_MPM_RESTART_WAIT    2048
-#define GPS_MON_MPM_COLLECT_TIME    (1 * 60 * 1024)
-#define GPS_MON_COLLECT             (2 * 60 * 1024)
-#define GPS_MON_WAKEUP              (5 * 60 * 1024)
+
+#define GPS_MON_MPM_COLLECT_TIME    (60 * 1024)
+#define GPS_MON_CYCLE_TIME          (30 * 1024)
+#define GPS_MON_WAKEUP          (5 * 60 * 1024)
 
 
 /*
@@ -97,6 +98,9 @@ enum {
  *
  * mpm_collect_time following an mpm error we go into collect
  *              to let mpm stablize.
+ *
+ * cycle_time   time from MPM pulse to next MPM.  Window allowed
+ *              for normal cycle, looking for locks.  (uses MajorTimer)
  *
  * mon_wakeup   when in MPM, how long to stay asleep before next fix.
  */
@@ -207,7 +211,8 @@ module GPSmonitorP {
     interface CollectEvent;
     interface Rtc;
 
-    interface Timer<TMilli> as MonTimer;
+    interface Timer<TMilli> as MinorTimer;
+    interface Timer<TMilli> as MajorTimer;
     interface Panic;
     interface OverWatch;
   }
@@ -251,7 +256,7 @@ implementation {
   void mon_enter_comm_check(mon_event_t ev) {
     gps_mon_count = 1;
     mon_change_state(GMS_COMM_CHECK, ev);
-    call MonTimer.startOneShot(GPS_MON_SHORT_COMM_TO);
+    call MinorTimer.startOneShot(GPS_MON_SHORT_COMM_TO);
   }
 
 
@@ -285,7 +290,7 @@ implementation {
     mon_change_state(GMS_STARTUP, MON_EV_STARTUP);
     gps_mon_count = 1;
     call GPSTransmit.send((void *) sirf_swver, sizeof(sirf_swver));
-    call MonTimer.startOneShot(GPS_MON_SWVER_TO);
+    call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
   }
 
 
@@ -583,7 +588,7 @@ implementation {
         }
         mon_change_state(GMS_STARTUP, MON_EV_TIMEOUT);
         call GPSTransmit.send((void *) sirf_swver, sizeof(sirf_swver));
-        call MonTimer.startOneShot(GPS_MON_SWVER_TO);
+        call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
         return;
 
       case GMS_COMM_CHECK:
@@ -594,7 +599,7 @@ implementation {
           gps_mon_count++;
           mon_change_state(GMS_COMM_CHECK, MON_EV_TIMEOUT);
           call GPSControl.pulseOnOff();
-          call MonTimer.startOneShot(GPS_MON_LONG_COMM_TO);
+          call MinorTimer.startOneShot(GPS_MON_LONG_COMM_TO);
           return;
         }
         /*
@@ -605,7 +610,7 @@ implementation {
         return;
 
       case GMS_MPM:                     /* expiration of gps_sense    */
-        cycle_start = call MonTimer.getNow();
+        cycle_start = call MinorTimer.getNow();
         cycle_count++;
 
       case GMS_MPM_WAIT:                /* waiting for mpm rsp        */
@@ -635,7 +640,7 @@ implementation {
      * Otherwise, just ignore it.
      */
     if (gps_mon_state == GMS_STARTUP) {
-      call MonTimer.stop();
+      call MinorTimer.stop();
       mon_change_state(GMS_LOCK_SEARCH, MON_EV_SWVER);
     }
   }
@@ -647,7 +652,7 @@ implementation {
         swver_startup();            /* -> GMS_STARTUP */
         return;
       }
-      call MonTimer.stop();
+      call MinorTimer.stop();
       mon_change_state(GMS_LOCK_SEARCH, MON_EV_MSG);
     }
   }
@@ -683,7 +688,7 @@ implementation {
     uint32_t elapsed;
 
     if (cycle_start) {
-      elapsed = call MonTimer.getNow() - cycle_start;
+      elapsed = call MinorTimer.getNow() - cycle_start;
       call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_TIME, cycle_count, elapsed, cycle_start, 0);
       cycle_start = 0;
     }
@@ -712,10 +717,10 @@ implementation {
             err   = call GPSTransmit.send((void *) sirf_go_mpm_0,
                                           sizeof(sirf_go_mpm_0));
             call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 100, err, 0, awake);
-            call MonTimer.startOneShot(GPS_MON_MPM_RSP_TO);
+            call MinorTimer.startOneShot(GPS_MON_MPM_RSP_TO);
             return;
           case GMS_MAJOR_MPM_COLLECT:
-            call MonTimer.startOneShot(GPS_MON_MPM_COLLECT_TIME);
+            call MinorTimer.startOneShot(GPS_MON_MPM_COLLECT_TIME);
             mon_change_state(GMS_COLLECT, MON_EV_LOCK_TIME);
             return;
         }
@@ -730,7 +735,7 @@ implementation {
         return;
 
       case GMS_MPM_WAIT:
-        call MonTimer.startOneShot(GPS_MON_WAKEUP);
+        call MinorTimer.startOneShot(GPS_MON_WAKEUP);
         mon_change_state(GMS_MPM, MON_EV_MPM);
         return;
     }
@@ -747,7 +752,7 @@ implementation {
         /* mpm failed, let it run for a while */
         mon_change_major(GMS_MAJOR_MPM_COLLECT, MON_EV_MPM_ERROR);
 
-        call MonTimer.startOneShot(GPS_MON_MPM_RESTART_WAIT);
+        call MinorTimer.startOneShot(GPS_MON_MPM_RESTART_WAIT);
         mon_change_state(GMS_MPM_RESTART, MON_EV_MPM_ERROR);
         return;
     }
@@ -1041,7 +1046,7 @@ implementation {
   }
 
 
-  event void MonTimer.fired() {
+  event void MinorTimer.fired() {
     mon_event(MON_EV_TIMEOUT);
   }
 

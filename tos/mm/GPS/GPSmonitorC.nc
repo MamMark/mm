@@ -45,8 +45,10 @@ implementation {
   components SystemBootC;
   GPSmonitorP.Boot -> SystemBootC.Boot;
 
-  components new TimerMilliC() as MonTimer;
-  GPSmonitorP.MonTimer -> MonTimer;
+  components new TimerMilliC() as MinorTimer;
+  components new TimerMilliC() as MajorTimer;
+  GPSmonitorP.MinorTimer -> MinorTimer;
+  GPSmonitorP.MajorTimer -> MajorTimer;
 
   components PanicC;
   GPSmonitorP.Panic -> PanicC;

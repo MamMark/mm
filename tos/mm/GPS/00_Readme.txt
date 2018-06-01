@@ -53,7 +53,7 @@ FAIL
 BOOTING         GPSControl.gps_booted
                     -> GMS_STARTUP
                     send(swver)
-                    Timer.startOneShot(SWVER_TO)
+                    MinorT.startOneShot(SWVER_TO)
 
                 GPSControl.gps_boot_fail
                     too many tries ... -> FAIL
@@ -68,33 +68,33 @@ BOOTING         GPSControl.gps_booted
 STARTUP         SWVER seen              purpose is to make sure we know the
                                         swver on first boot.
 
-                    Timer.stop
+                    MinorT.stop
                     -> LOCK_SEARCH
 
-                Timer.fired
+                MinorT.fired
                     too many trys?:
                         pulse
-                        Timer.startOneShot(SHORT_COMM_TO)
+                        MinorT.startOneShot(SHORT_COMM_TO)
                         -> COMM_CHECK
                     trys++
                         send(swver)
-                        Timer.startOneShot(SWVER_TO)
+                        MinorT.startOneShot(SWVER_TO)
 
                 ots_no
                     comm_check_next_state = STARTUP
                     pulse
-                    Timer.startOneShot(SHORT_COMM_TO)
+                    MinorT.startOneShot(SHORT_COMM_TO)
 
 COMM_CHECK      any msg
-                    Timer.stop()
+                    MinorT.stop()
                     -> LOCK_SEARCH
 
-                Timer.fired
+                MinorT.fired
                     too many trys?
                         -> FAIL
 
                     pulse
-                    Timer.startOneShot(LONG_COMM_TO)
+                    MinorT.startOneShot(LONG_COMM_TO)
 
                 ots_no
                     can't happen.  first we will see msg which will
@@ -112,52 +112,52 @@ LOCK_SEARCH     got_lock
                     major_state:
                         CYCLE
                             send(mpm)
-                            Timer.startOneShot(MPM_TIMEOUT)
+                            MinorT.startOneShot(MPM_TIMEOUT)
                             -> MPM_WAIT
 
                         MPM_COLLECT
-                            Timer.startOneShot(MPM_COLLECT_TIME)
+                            MajorT.startOneShot(MPM_COLLECT_TIME)
                             -> COLLECT
 
                 ots_no
                     pulse (to wake up)
-                    Timer.startOneShot(SHORT_COMM_TO)
+                    MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
 
  MPM_WAIT       mpm_error (not 0010)
                     major_state = MPM_COLLECT
-                    Timer.startOneShot(GPS_MON_MPM_RESTART_WAIT)
+                    MinorT.startOneShot(GPS_MON_MPM_RESTART_WAIT)
                     -> MPM_RESTART
 
                 mpm_good
                     -> GMS_MPM
-                    Timer.startOneShot(next_wakeup)
+                    MinorT.startOneShot(next_wakeup)
 
-                Timer.fired
+                MinorT.fired
                     pulse (to wake up)
-                    Timer.startOneShot(SHORT_COMM_TO)
+                    MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
                 ots_no
                     pulse (to wake up)
-                    Timer.startOneShot(SHORT_COMM_TO)
+                    MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
 MPM_RESTART     ots_no
                     pulse (to wake up)
-                    Timer.startOneShot(SHORT_COMM_TO)
+                    MinorT.startOneShot(SHORT_COMM_TO)
                      -> COMM_CHECK
 
-                Timer.fired
+                MinorT.fired
                     pulse (to wake up)
-                    Timer.startOneShot(SHORT_COMM_TO)
+                    MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
 MPM             Timer.fired             start of a cycle.
                     cycle_start = current_time
                     pulse
-                    Timer.startOneShot(SHORT_COMM_TO)
+                    MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
                 got_lock                can happen during NavDataCycles(MPM).
@@ -165,21 +165,21 @@ MPM             Timer.fired             start of a cycle.
 
                 ots_no
                     pulse (to wake up)
-                    Timer.startOneShot(SHORT_COMM_TO)
+                    MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
-COLLECT         Timer.fired
+COLLECT         MinorT.fired
                     major_state:
                         CYCLE
                         MPM_COLLECT
                             major_state = CYCLE
-                    Timer.start(SHORT_COMM_TO)
+                    MinorT.start(SHORT_COMM_TO)
                     -> COMM_CHECK
 
                 ots_no
                     comm_check_next_state = COLLECT
                     pulse (to wake up)
-                    Timer.startOneShot(SHORT_COMM_TO)
+                    MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
                 got_lock                do we need to check things?
