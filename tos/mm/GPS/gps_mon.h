@@ -78,19 +78,20 @@ typedef struct {
 
 
 typedef enum mon_events {
-  MON_EV_NONE       = 0,
-  MON_EV_BOOT       = 1,
-  MON_EV_STARTUP    = 2,
-  MON_EV_FAIL       = 3,
-  MON_EV_TIMEOUT    = 4,
-  MON_EV_SWVER      = 5,
-  MON_EV_MSG        = 6,
-  MON_EV_OTS_NO     = 7,
-  MON_EV_OTS_YES    = 8,
-  MON_EV_LOCK_POS   = 9,
-  MON_EV_LOCK_TIME  = 10,
-  MON_EV_MPM        = 11,
-  MON_EV_MPM_ERROR  = 12,
+  MON_EV_NONE           = 0,
+  MON_EV_BOOT           = 1,
+  MON_EV_STARTUP        = 2,
+  MON_EV_FAIL           = 3,
+  MON_EV_SWVER          = 4,
+  MON_EV_MSG            = 5,
+  MON_EV_OTS_NO         = 6,
+  MON_EV_OTS_YES        = 7,
+  MON_EV_LOCK_POS       = 8,
+  MON_EV_LOCK_TIME      = 9,
+  MON_EV_MPM            = 10,
+  MON_EV_MPM_ERROR      = 11,
+  MON_EV_TIMEOUT_MINOR  = 12,
+  MON_EV_TIMEOUT_MAJOR  = 13,
 } mon_event_t;
 
 
@@ -117,10 +118,10 @@ typedef enum {
 
 
 typedef enum {
-  GMS_MAJOR_NONE           = 0,         /* fresh boot */
-  GMS_MAJOR_CYCLE          = 1,         /* lock cycle */
-  GMS_MAJOR_MPM_COLLECT    = 2,         /* MPM Collection  */
-  GMS_MAJOR_SATS_COLLECT   = 3,         /* SATS Collection */
+  GMS_MAJOR_IDLE           = 0,         /* nothing selected        */
+  GMS_MAJOR_CYCLE          = 1,         /* lock cycle              */
+  GMS_MAJOR_MPM_COLLECT    = 2,         /* MPM Collection          */
+  GMS_MAJOR_SATS_COLLECT   = 3,         /* SATS Collection         */
   GMS_MAJOR_TIME_COLLECT   = 4,         /* TIME sync Collection    */
   GMS_MAJOR_MAX            = 4,
 } gpsm_major_state_t;                   /* gps monitor major state */
