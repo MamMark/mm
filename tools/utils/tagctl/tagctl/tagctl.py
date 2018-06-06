@@ -27,7 +27,7 @@ import logging
 
 from   binascii             import hexlify
 from   tagcore              import buf_str
-import tagcore.gps_cmds     as     gps
+import tagcore.gps_mon      as     gps
 
 from   tagcore.sirf_defs    import SIRF_SOP_SEQ as SOP
 from   tagcore.sirf_defs    import SIRF_EOP_SEQ as EOP
