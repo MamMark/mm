@@ -1,4 +1,4 @@
-GPSmonitor
+GPSmonitor - v1 - State Machine
 
 The GPSmonitor is responsible for top level control of the gps subsystem.
 
@@ -8,29 +8,37 @@ weirdnesses.
 
 1) Major States
 
-Major States are invoked from LOCK_SEARCH.  What we are trying to accomplish
-determines what major state we are using and what we do next from the
-LOCK_SEARCH/ev_lock_* event.
-
 The GPSmonitor has the following major states:
+
+The major mode is determined when the MajorTimer fires.  If we have been
+asleep (currently MinorState is MPM), then we will determine the next
+MajorState based on current needs.
 
     (in order of priority)
 
-    CYCLE           simple search for lock, take the fix, and return to MPM.
-                    take fixes for about 30 secs.  this seems to keep mpm
-                    happy.
+    IDLE            no major activity selected/in progress.  Choose and
+                    start a major cycle.
+
+    CYCLE           take fixes for CYCLE_TIME.  ~30secs which seems to keep
+                    MPM happy.
+
+                    After a CYCLE completes, we will put the gps back to sleep
+                    ie. MPM.  If MPM fails (mpm_error) then we will try gather
+                    more satellite information (MPM_COLLECT).  This might help.
 
     MPM_COLLECT     Stabilizing MPM.  Collect enough fixes to help MPM
-                    stablize.  (2 mins).
+                    stablize.  (~2 mins).
 
     SATS_COLLECT    collecting almanac/ephemeri so the gps behaves better.
                     during this collection one needs to leave the gps up.
                     we turn off messages we don't want to receive while in
-                    this mode to not yank the processors chain.
+                    this mode to not yank the processor's chain.
 
                     If we don't have sufficient gps state ie. can't see
                     enough satellites with strong enough signal strength,
-                    we hang in COLLECT_SATS.
+                    we sleep in COLLECT_SATS.  We choose a long enough duty
+                    cycle to conserve power and wake up once in a while
+                    to try again.
 
                     This is where a decision can be made to give up for a
                     time if sufficient forward progress isn't possible.
@@ -45,18 +53,21 @@ The GPSmonitor has the following major states:
 2) Minor State machine...
 
 OFF             Boot.booted
+                    retry_count = 1
                     -> GMS_BOOTING
                     GPSControl.turnOn
 
 FAIL
 
 BOOTING         GPSControl.gps_booted
-                    -> GMS_STARTUP
+                    msg_count   = 0
+                    retry_count = 1
                     send(swver)
                     MinorT.startOneShot(SWVER_TO)
+                    -> CONFIG
 
                 GPSControl.gps_boot_fail
-                    too many tries ... -> FAIL
+                    too many tries ... -> FAIL  (retry_count)
                     2nd try:
                         GPSControl.reset
                         GPSControl.turnOn
@@ -65,84 +76,111 @@ BOOTING         GPSControl.gps_booted
                         GPSControl.powerOn
                         GPSControl.turnOn
 
-STARTUP         SWVER seen              purpose is to make sure we know the
+CONFIG          SWVER seen              purpose is to make sure we know the
                                         swver on first boot.
 
-                    MinorT.stop
-                    -> LOCK_SEARCH
+                    major_event(EV_STARTUP)
+                        (CYCLE, MajorTimer)
+                    MinorT.startOneShot(GPS_MON_COLLECT_DEADMAN)
+                    -> COLLECT
 
                 MinorT.fired
-                    too many trys?:
+                    retrys++
+                    too many trys?:  (retry count)
+                        give up?
+                        /* not seeing msgs, try one more time */
                         pulse
-                        MinorT.startOneShot(SHORT_COMM_TO)
-                        -> COMM_CHECK
-                    trys++
-                        send(swver)
                         MinorT.startOneShot(SWVER_TO)
+                        -> CONFIG
+                        return
+                    if (!msg_count)     not seeing any messages
+                        pulse
+                    msg_count = 0
+                    send(swver)
+                    MinorT.startOneShot(SWVER_TO)
+                    -> CONFIG
+
+                any msg
+                    msg_count++         count any msgs seen.
 
                 ots_no
-                    comm_check_next_state = STARTUP
                     pulse
-                    MinorT.startOneShot(SHORT_COMM_TO)
+                    -> CONFIG
 
 COMM_CHECK      any msg
-                    MinorT.stop()
-                    -> LOCK_SEARCH
+                    if major_state == IDLE
+                        retry_count = 1
+                        send(mpm)
+                        MinorT.startOneShot(MPM_RSP_TIMEOUT)
+                        -> MPM_WAIT
+                    else
+                        MinorTimer.startOneShot(GPS_MON_COLLECT_DEADMAN)
+                        -> COLLECT
 
                 MinorT.fired
-                    too many trys?
+                    too many trys? (retry_count)
                         -> FAIL
 
+                    retry_count++
                     pulse
                     MinorT.startOneShot(LONG_COMM_TO)
 
                 ots_no
-                    can't happen.  first we will see msg which will
-                    transition us into LOCK_SEARCH.  LOCK_SEARCH will
-                    see the ots_no and transition back to COMM_CHECK.
-
+                    pulse
+                    MinorT.startOneShot(SHORT_COMM_TO)
+                    -> COMM_CHECK
 
 will want to start a longer timer for proper duty cycle, want to watch
-navTrack to see if we have a reasonable chance Timer needs to be
-set up on entry to LOCK_SEARCH.
+navTrack to see if we have a reasonable chance. The timer needs to be
+set up on entry to COLLECT/CYCLE, etc.
 
 got_lock records current_time - cycle_start if cycle_start != 0
 
-LOCK_SEARCH     got_lock
-                    major_state:
-                        CYCLE
-                            send(mpm)
-                            MinorT.startOneShot(MPM_TIMEOUT)
-                            -> MPM_WAIT
+COLLECT         MinorT_timeout          (didn't see any messages, oops)
+                    pulse
+                    MinorT.startOneShot(SHORT_COMM_TO)
+                    -> COMM_CHECK
 
-                        MPM_COLLECT
-                            MajorT.startOneShot(MPM_COLLECT_TIME)
-                            -> COLLECT
+                msg
+                    MinorT.startOneShot(COLLECT_MSG_DEADMAN)
 
                 ots_no
                     pulse (to wake up)
                     MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
+                got_lock
+                    lock_seen = TRUE
 
- MPM_WAIT       mpm_error (not 0010)
-                    major_state = MPM_COLLECT
+                major_changed
+                   MinorT.startOneShot(SHORT_COMM_TO)
+                   -> COMM_CHECK
+
+MPM_WAIT        mpm_error (not 0010)
+                    major_event(mpm_error)
                     MinorT.startOneShot(GPS_MON_MPM_RESTART_WAIT)
                     -> MPM_RESTART
 
                 mpm_good
                     -> GMS_MPM
-                    MinorT.startOneShot(next_wakeup)
 
                 MinorT.fired
-                    pulse (to wake up)
-                    MinorT.startOneShot(SHORT_COMM_TO)
-                    -> COMM_CHECK
+                    if (retry_count > 5)
+                        fail
+                        major_event(MON_EV_MPM_ERROR)
+                        pulse
+                        MinorT.startOneStart(SHORT_COMM_TO)
+                        -> COMM_CHECK
+                    retry_count++
+                    send(mpm)
+                    MinorT.startOneShot(MPM_RSP_TIMEOUT)
+                    -> MPM_WAIT
 
                 ots_no
                     pulse (to wake up)
                     MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
+
 
 MPM_RESTART     ots_no
                     pulse (to wake up)
@@ -154,13 +192,7 @@ MPM_RESTART     ots_no
                     MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
-MPM             Timer.fired             start of a cycle.
-                    cycle_start = current_time
-                    pulse
-                    MinorT.startOneShot(SHORT_COMM_TO)
-                    -> COMM_CHECK
-
-                got_lock                can happen during NavDataCycles(MPM).
+MPM             got_lock                can happen during NavDataCycles(MPM).
                     ignore
 
                 ots_no
@@ -168,18 +200,38 @@ MPM             Timer.fired             start of a cycle.
                     MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
-COLLECT         MinorT.fired
-                    major_state:
-                        CYCLE
-                        MPM_COLLECT
-                            major_state = CYCLE
-                    MinorT.start(SHORT_COMM_TO)
-                    -> COMM_CHECK
-
-                ots_no
-                    comm_check_next_state = COLLECT
+                major_changed
+                    cycle_start = current_time
+                    lock_seen = False
                     pulse (to wake up)
                     MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
-                got_lock                do we need to check things?
+
+3) Major state transitions
+
+IDLE            Boot.booted
+                    major_state -> IDLE
+
+                EV_STARTUP
+                    major_state = CYCLE
+                    MajorTimer.startOneShot(CYCLE_TIME)
+
+                MajorTimer.fired
+                    MajorTimer.startOneShot(CYCLE_TIME)
+                    major_state = CYCLE
+                    minor_event(major_changed)
+
+                mpm_error
+                    MajorTimer.startOneShot(MPM_COLLECT_TIME)
+                    major_state = MPM_COLLECT
+
+CYCLE           MajorTimer.fired
+                    MajorTimer.startOneShot(MON_WAKEUP)
+                    major_state = IDLE          go to sleep
+                    minor_event(major_changed)
+
+MPM_COLLECT     MajorTimer.fired
+                    MajorTimer.startOneShot(MON_WAKEUP)
+                    major_state = IDLE          go to sleep
+                    minor_event(major_changed)

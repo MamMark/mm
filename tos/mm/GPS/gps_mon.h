@@ -79,10 +79,10 @@ typedef struct {
 
 typedef enum mon_events {
   MON_EV_NONE           = 0,
-  MON_EV_BOOT           = 1,
-  MON_EV_STARTUP        = 2,
-  MON_EV_FAIL           = 3,
-  MON_EV_SWVER          = 4,
+  MON_EV_FAIL           = 1,
+  MON_EV_BOOT           = 2,
+  MON_EV_SWVER          = 3,
+  MON_EV_STARTUP        = 4,
   MON_EV_MSG            = 5,
   MON_EV_OTS_NO         = 6,
   MON_EV_OTS_YES        = 7,
@@ -92,6 +92,7 @@ typedef enum mon_events {
   MON_EV_MPM_ERROR      = 11,
   MON_EV_TIMEOUT_MINOR  = 12,
   MON_EV_TIMEOUT_MAJOR  = 13,
+  MON_EV_MAJOR_CHANGED  = 14,
 } mon_event_t;
 
 
@@ -99,27 +100,24 @@ typedef enum {
   GMS_OFF           = 0,                /* fresh boot */
   GMS_FAIL          = 1,                /* down, couldn't make it work */
   GMS_BOOTING       = 2,                /* letting driver communicate  */
-  GMS_STARTUP       = 3,                /* config and inital swver */
+  GMS_CONFIG        = 3,                /* config and inital swver */
 
   GMS_COMM_CHECK    = 4,                /* can we hear? */
-  GMS_LOCK_SEARCH   = 5,                /* looking for lock */
+  GMS_COLLECT       = 5,                /* gathering fixes */
 
   GMS_MPM_WAIT      = 6,                /* trying to go into MPM */
   GMS_MPM_RESTART   = 7,                /* mpm recovery, wait for shutdown */
   GMS_MPM           = 8,                /* in MPM */
 
-  GMS_COLLECT       = 9,                /* gathering fixes */
+  GMS_STANDBY       = 9,                /* currently not used */
+  GMS_MAX           = 9,
 
-  GMS_STANDBY       = 10,               /* currently not used */
-  GMS_UP            = 11,               /* currently not used */
-  GMS_MAX           = 11,
-
-} gpsm_state_t;                         /* gps monitor state */
+} gpsm_state_t;                         /* gps monitor minor state */
 
 
 typedef enum {
-  GMS_MAJOR_IDLE           = 0,         /* nothing selected        */
-  GMS_MAJOR_CYCLE          = 1,         /* lock cycle              */
+  GMS_MAJOR_IDLE           = 0,         /* sleeping (in MPM)       */
+  GMS_MAJOR_CYCLE          = 1,         /* simple fix cycle        */
   GMS_MAJOR_MPM_COLLECT    = 2,         /* MPM Collection          */
   GMS_MAJOR_SATS_COLLECT   = 3,         /* SATS Collection         */
   GMS_MAJOR_TIME_COLLECT   = 4,         /* TIME sync Collection    */

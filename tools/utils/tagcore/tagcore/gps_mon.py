@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.3.2.dev5'
+__version__ = '0.3.2.dev6'
 
 __all__ = [
     'gps_cmd_name',
@@ -113,10 +113,10 @@ canned_msgs = {
 # gps monitor minor events
 gps_mon_events = {
     'none':          0,
-    'boot':          1,
-    'startup':       2,
-    'fail':          3,
-    'swver':         4,
+    'fail':          1,
+    'boot':          2,
+    'swver':         3,
+    'startup':       4,
     'msg':           5,
     'ots_no':        6,
     'ots_yes':       7,
@@ -126,12 +126,13 @@ gps_mon_events = {
     'mpm_error':     11,
     'timeout_minor': 12,
     'timeout_major': 13,
+    'major_changed': 14,
 
     0:                  'none',
-    1:                  'boot',
-    2:                  'startup',
-    3:                  'fail',
-    4:                  'swver',
+    1:                  'fail',
+    2:                  'boot',
+    3:                  'swver',
+    4:                  'startup',
     5:                  'msg',
     6:                  'ots_no',
     7:                  'ots_yes',
@@ -141,6 +142,7 @@ gps_mon_events = {
     11:                 'mpm_error',
     12:                 'timeout_minor',
     13:                 'timeout_major',
+    14:                 'major_changed',
 }
 
 def gps_mon_event_name(mon_ev):
@@ -154,36 +156,30 @@ gps_mon_minors = {
     'off':              0,
     'fail':             1,
     'booting':          2,
-    'startup':          3,
+    'config':           3,
 
     'comm_check':       4,
-    'lock_search':      5,
+    'collect':          5,
 
     'mpm_wait':         6,
     'mpm_restart':      7,
     'mpm':              8,
 
-    'collect':          9,
-
-    'standby':          10,
-    'up':               11,
+    'standby':          9,
 
     0:                  'off',
     1:                  'fail',
     2:                  'booting',
-    3:                  'startup',
+    3:                  'config',
 
     4:                  'comm_check',
-    5:                  'lock_search',
+    5:                  'collect',
 
     6:                  'mpm_wait',
     7:                  'mpm_restart',
     8:                  'mpm',
 
-    9:                  'collect',
-
-    10:                 'standby',
-    11:                 'up',
+    9:                  'standby',
 }
 
 def gps_mon_minor_name(minor_state):
