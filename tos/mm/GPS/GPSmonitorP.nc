@@ -857,7 +857,7 @@ implementation {
     if (cycle_start) {
       elapsed = call MinorTimer.getNow() - cycle_start;
       cycle_sum += elapsed;
-      call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_TIME, cycle_count,
+      call CollectEvent.logEvent(DT_EVENT_GPS_MTFF_TIME, cycle_count,
                                  elapsed, cycle_sum/cycle_count, 0);
       cycle_start = 0;
     }

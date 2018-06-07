@@ -237,7 +237,7 @@ typedef enum {
   DT_EVENT_GPS_BOOT         = 32,
   DT_EVENT_GPS_BOOT_TIME    = 33,
   DT_EVENT_GPS_BOOT_FAIL    = 49,
-  DT_EVENT_GPS_CYCLE_TIME   = 46,
+  DT_EVENT_GPS_MTFF_TIME    = 46,       // Mpm To First Fix (MTFF)
 
   DT_EVENT_GPS_AWAKE_S      = 48,
   DT_EVENT_GPS_CMD          = 51,
