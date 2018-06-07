@@ -27,8 +27,8 @@ core_minor gets popped when something visible changes but doesn't impact
 the basic ability to decode.   ie.  adding new events.
 '''
 
-CORE_REV   = 18
-CORE_MINOR =  6
+CORE_REV   = 19
+CORE_MINOR =  0
 
 from    .__init__       import __version__   as core_ver
 from    .base_objs      import __version__   as base_ver

@@ -38,7 +38,7 @@ packets
 
 import struct
 
-__version__ = '0.3.2.dev0'
+__version__ = '0.3.2'
 
 __all__ = [
     'MID_DECODER',

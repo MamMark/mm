@@ -26,7 +26,7 @@ import sirf_defs     as     sirf
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.3.2.dev1'
+__version__ = '0.3.2'
 
 
 def emit_default(level, offset, buf, obj):
