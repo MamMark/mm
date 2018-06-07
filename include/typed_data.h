@@ -222,56 +222,55 @@ typedef struct {
 
 
 typedef enum {
-  DT_EVENT_SURFACED         = 1,
-  DT_EVENT_SUBMERGED        = 2,
-  DT_EVENT_DOCKED           = 3,
-  DT_EVENT_UNDOCKED         = 4,
+  DT_EVENT_NONE             = 0,
 
-  DT_EVENT_GPS_MON_MINOR    = 39,
-  DT_EVENT_GPS_MON_MAJOR    = 58,
+  DT_EVENT_PANIC_WARN       = 1,
 
-  DT_EVENT_GPS_RX_ERR       = 47,
-  DT_EVENT_GPS_LOST_INT     = 55,
-  DT_EVENT_GPS_MSG_OFF      = 56,
+  DT_EVENT_GPS_GEO          = 2,
+  DT_EVENT_GPS_XYZ          = 3,
+  DT_EVENT_GPS_TIME         = 4,
+  DT_EVENT_GPS_MTFF_TIME    = 5,       // Mpm To First Fix (MTFF)
+
+  DT_EVENT_SSW_DELAY_TIME   = 6,
+  DT_EVENT_SSW_BLK_TIME     = 7,
+  DT_EVENT_SSW_GRP_TIME     = 8,
+
+  DT_EVENT_SURFACED         = 9,
+  DT_EVENT_SUBMERGED        = 10,
+  DT_EVENT_DOCKED           = 11,
+  DT_EVENT_UNDOCKED         = 12,
 
   DT_EVENT_GPS_BOOT         = 32,
   DT_EVENT_GPS_BOOT_TIME    = 33,
-  DT_EVENT_GPS_BOOT_FAIL    = 49,
-  DT_EVENT_GPS_MTFF_TIME    = 46,       // Mpm To First Fix (MTFF)
+  DT_EVENT_GPS_BOOT_FAIL    = 34,
 
-  DT_EVENT_GPS_AWAKE_S      = 48,
-  DT_EVENT_GPS_CMD          = 51,
-  DT_EVENT_GPS_RAW_TX       = 52,
-  DT_EVENT_GPS_SWVER_TO     = 53,
-  DT_EVENT_GPS_CANNED       = 54,
-//DT_EVENT_GPS_COMM_CHECK   = 57,       deprecated, remove
+  DT_EVENT_GPS_MON_MINOR    = 35,
+  DT_EVENT_GPS_MON_MAJOR    = 36,
 
-  DT_EVENT_PANIC_WARN       = 11,
+  DT_EVENT_GPS_RX_ERR       = 37,
+  DT_EVENT_GPS_LOST_INT     = 38,
+  DT_EVENT_GPS_MSG_OFF      = 39,
 
-  DT_EVENT_GPS_GEO          = 5,
-  DT_EVENT_GPS_XYZ          = 6,
-  DT_EVENT_GPS_TIME         = 7,
+  DT_EVENT_GPS_AWAKE_S      = 40,
+  DT_EVENT_GPS_CMD          = 41,
+  DT_EVENT_GPS_RAW_TX       = 42,
+  DT_EVENT_GPS_SWVER_TO     = 43,
+  DT_EVENT_GPS_CANNED       = 44,
 
-  DT_EVENT_SSW_DELAY_TIME   = 8,
-  DT_EVENT_SSW_BLK_TIME     = 9,
-  DT_EVENT_SSW_GRP_TIME     = 10,
+  DT_EVENT_GPS_HW_CONFIG    = 45,
+  DT_EVENT_GPS_RECONFIG     = 46,
 
-  DT_EVENT_GPS_HW_CONFIG    = 50,
-  DT_EVENT_GPS_RECONFIG     = 34,
+  DT_EVENT_GPS_TURN_ON      = 47,
+  DT_EVENT_GPS_STANDBY      = 48,
+  DT_EVENT_GPS_TURN_OFF     = 49,
+  DT_EVENT_GPS_MPM          = 50,
+  DT_EVENT_GPS_PULSE        = 51,
 
-  DT_EVENT_GPS_TURN_ON      = 35,
-  DT_EVENT_GPS_STANDBY      = 36,
-  DT_EVENT_GPS_TURN_OFF     = 37,
-  DT_EVENT_GPS_MPM          = 38,
-  DT_EVENT_GPS_PULSE        = 40,
-
-  DT_EVENT_GPS_FAST         = 41,
-  DT_EVENT_GPS_FIRST        = 42,
-  DT_EVENT_GPS_SATS_2       = 43,
-  DT_EVENT_GPS_SATS_7       = 44,
-  DT_EVENT_GPS_SATS_41      = 45,
-
-  /* next 59 */
+  DT_EVENT_GPS_FAST         = 64,
+  DT_EVENT_GPS_FIRST        = 65,
+  DT_EVENT_GPS_SATS_2       = 66,
+  DT_EVENT_GPS_SATS_7       = 67,
+  DT_EVENT_GPS_SATS_41      = 68,
 
   DT_EVENT_16               = 0xffff,
 } dt_event_id_t;

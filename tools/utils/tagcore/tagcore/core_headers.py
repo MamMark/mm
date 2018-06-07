@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.2.dev3'
+__version__ = '0.3.2'
 
 import binascii
 from   collections  import OrderedDict
@@ -208,58 +208,66 @@ def obj_dt_sync():
 
 # EVENT
 event_names = {
-     1: "SURFACED",
-     2: "SUBMERGED",
-     3: "DOCKED",
-     4: "UNDOCKED",
+    0:  'NONE',
 
-     5: "GPS_GEO",
-     6: "GPS_XYZ",
-     7: "GPS_TIME",
+    1:  'PANIC_WARN',
 
-     8: "SSW_DELAY_TIME",
-     9: "SSW_BLK_TIME",
-    10: "SSW_GRP_TIME",
-    11: "PANIC_WARN",
+    2:  'GPS_GEO',
+    3:  'GPS_XYZ',
+    4:  'GPS_TIME',
+    5:  'GPS_MTFF_TIME',
 
-    32: "GPS_BOOT",
-    33: "GPS_BOOT_TIME",
-    34: "GPS_RECONFIG",
-    35: "GPS_TURN_ON",
-    36: "GPS_STANDBY",
-    37: "GPS_TURN_OFF",
-    38: "GPS_MPM",
-    39: "GPS_MON_MINOR",
-    40: "GPS_PULSE",
-    41: "GPS_FAST",
-    42: "GPS_FIRST",
-    43: "GPS_SATS_2",
-    44: "GPS_SATS_7",
-    45: "GPS_SATS_41",
-    46: "GPS_MTFF_TIME",
-    47: "GPS_RX_ERR",
-    48: "GPS_AWAKE_S",
-    49: "GPS_BOOT_FAIL",
-    50: "GPS_HW_CONFIG",
-    51: "GPS_CMD",
-    52: "GPS_RAW_TX",
-    53: "GPS_SWVER_TO",
-    54: "GPS_CANNED",
-    55: "GPS_LOST_INT",
-    56: "GPS_MSG_OFF",
-#   57: "GPS_COMM_CHECK",
-    58: "GPS_MON_MAJOR",
+    6:  'SSW_DELAY_TIME',
+    7:  'SSW_BLK_TIME',
+    8:  'SSW_GRP_TIME',
+
+    9:  'SURFACED',
+    10: 'SUBMERGED',
+    11: 'DOCKED',
+    12: 'UNDOCKED',
+
+    32: 'GPS_BOOT',
+    33: 'GPS_BOOT_TIME',
+    34: 'GPS_BOOT_FAIL',
+
+    35: 'GPS_MON_MINOR',
+    36: 'GPS_MON_MAJOR',
+
+    37: 'GPS_RX_ERR',
+    38: 'GPS_LOST_INT',
+    39: 'GPS_MSG_OFF',
+
+    40: 'GPS_AWAKE_S',
+    41: 'GPS_CMD',
+    42: 'GPS_RAW_TX',
+    43: 'GPS_SWVER_TO',
+    44: 'GPS_CANNED',
+
+    45: 'GPS_HW_CONFIG',
+    46: 'GPS_RECONFIG',
+
+    47: 'GPS_TURN_ON',
+    48: 'GPS_STANDBY',
+    49: 'GPS_TURN_OFF',
+    50: 'GPS_MPM',
+    51: 'GPS_PULSE',
+
+    64: 'GPS_FAST',
+    65: 'GPS_FIRST',
+    66: 'GPS_SATS_2',
+    67: 'GPS_SATS_7',
+    68: 'GPS_SATS_41',
 }
 
 def event_name(event):
     return event_names.get(event, 'unk')
 
 
-PANIC_WARN    = 11
-GPS_MON_MINOR = 39
-GPS_MON_MAJOR = 58
-GPS_RX_ERR    = 47
-GPS_CMD       = 51
+PANIC_WARN    = 1
+GPS_MON_MINOR = 35
+GPS_MON_MAJOR = 36
+GPS_RX_ERR    = 37
+GPS_CMD       = 41
 
 
 def obj_dt_event():
