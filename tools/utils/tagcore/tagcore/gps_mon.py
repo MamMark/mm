@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.3.2.dev6'
+__version__ = '0.3.2.dev7'
 
 __all__ = [
     'gps_cmd_name',
@@ -193,14 +193,16 @@ gps_mon_majors = {
     'idle':             0,
     'cycle':            1,
     'mpm_collect':      2,
-    'sats_collect':     3,
-    'time_collect':     4,
+    'sats_startup':     3,
+    'sats_collect':     4,
+    'time_collect':     5,
 
     0:                  'idle',
     1:                  'cycle',
     2:                  'mpm_collect',
-    3:                  'sats_collect',
-    4:                  'time_collect',
+    3:                  'sats_startup',
+    4:                  'sats_collect',
+    5:                  'time_collect',
 }
 
 def gps_mon_major_name(major_state):

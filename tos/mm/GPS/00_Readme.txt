@@ -1,4 +1,4 @@
-GPSmonitor - v1 - State Machine
+GPSmonitor - v1.1 - State Machine
 
 The GPSmonitor is responsible for top level control of the gps subsystem.
 
@@ -29,6 +29,11 @@ MajorState based on current needs.
     MPM_COLLECT     Stabilizing MPM.  Collect enough fixes to help MPM
                     stablize.  (~2 mins).
 
+    SATS_STARTUP    after booting, we may or may not have lost everything
+                    (Power On Reset, POR).  SATS_STARTUP is used to get
+                    the GPS satellite state into a more reasonable state
+                    before starting normal operation.
+
     SATS_COLLECT    collecting almanac/ephemeri so the gps behaves better.
                     during this collection one needs to leave the gps up.
                     we turn off messages we don't want to receive while in
@@ -36,7 +41,7 @@ MajorState based on current needs.
 
                     If we don't have sufficient gps state ie. can't see
                     enough satellites with strong enough signal strength,
-                    we sleep in COLLECT_SATS.  We choose a long enough duty
+                    we sleep in SATS_COLLECT.  We choose a long enough duty
                     cycle to conserve power and wake up once in a while
                     to try again.
 
@@ -80,7 +85,7 @@ CONFIG          SWVER seen              purpose is to make sure we know the
                                         swver on first boot.
 
                     major_event(EV_STARTUP)
-                        (CYCLE, MajorTimer)
+                        (SATS_STARTUP, MajorTimer)
                     MinorT.startOneShot(GPS_MON_COLLECT_DEADMAN)
                     -> COLLECT
 
@@ -149,8 +154,12 @@ COLLECT         MinorT_timeout          (didn't see any messages, oops)
                     MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
-                got_lock
+                lock_pos
                     lock_seen = TRUE
+
+                lock_time
+                    lock_seen = TRUE
+                    major_event(lock_time)
 
                 major_changed
                    MinorT.startOneShot(SHORT_COMM_TO)
@@ -162,6 +171,7 @@ MPM_WAIT        mpm_error (not 0010)
                     -> MPM_RESTART
 
                 mpm_good
+                    MinorT.stop()
                     -> GMS_MPM
 
                 MinorT.fired
@@ -213,9 +223,9 @@ MPM             got_lock                can happen during NavDataCycles(MPM).
 IDLE            Boot.booted
                     major_state -> IDLE
 
-                EV_STARTUP
-                    major_state = CYCLE
-                    MajorTimer.startOneShot(CYCLE_TIME)
+                ev_startup
+                    major_state = SATS_STARTUP
+                    MajorTimer.startOneShot(SATS_STARTUP_TIME)
 
                 MajorTimer.fired
                     MajorTimer.startOneShot(CYCLE_TIME)
@@ -234,4 +244,20 @@ CYCLE           MajorTimer.fired
 MPM_COLLECT     MajorTimer.fired
                     MajorTimer.startOneShot(MON_WAKEUP)
                     major_state = IDLE          go to sleep
+                    minor_event(major_changed)
+
+SATS_STARTUP is used to collect satellite information.  It leaves
+the GPS up so it can do this.  SATS_STARTUP terminates when we
+see lock_seen (from lock_time, geo).
+
+SATS_STARTUP    MajorTimer.fired
+                    too many retrys?  ->  sleep for a while, try again.
+
+                    MajorTimer.startOneShot(SATS_STARTUP_TIME)
+                    major_state = SATS_STARTUP
+                    minor_event(major_changed)
+
+                 lock_time
+                    MajorTimer.startOneShot(CYCLE_TIME)
+                    major_state = CYCLE
                     minor_event(major_changed)

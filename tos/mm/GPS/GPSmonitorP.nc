@@ -89,10 +89,11 @@ enum {
 #define GPS_MON_MPM_RESTART_WAIT    2048
 #define GPS_MON_COLLECT_DEADMAN     4096
 
-#define GPS_MON_CYCLE_TIME          (30 * 1024)
-#define GPS_MON_MPM_COLLECT_TIME    (60 * 1024)
-#define GPS_MON_WAKEUP          (5 * 60 * 1024)
+#define GPS_MON_CYCLE_TIME          ( 1 * 30 * 1024)
+#define GPS_MON_MPM_COLLECT_TIME    ( 2 * 60 * 1024)
+#define GPS_MON_SATS_STARTUP_TIME   (10 * 60 * 1024)
 
+#define GPS_MON_WAKEUP              ( 5 * 60 * 1024)
 
 /*
  * mpm_rsp_to   timeout for listening for mpm rsp after
@@ -605,7 +606,22 @@ implementation {
         return;
 
       case GMS_MAJOR_IDLE:
+        major_change_state(GMS_MAJOR_SATS_STARTUP, MON_EV_STARTUP);
+        call MajorTimer.startOneShot(GPS_MON_SATS_STARTUP_TIME);
+        return;
+    }
+  }
+
+
+  void maj_ev_lock_time() {
+    switch(gmcb.major_state) {
+      default:                          /* ignore by default */
+        return;
+
+      case GMS_MAJOR_SATS_STARTUP:
+        major_change_state(GMS_MAJOR_CYCLE, MON_EV_LOCK_TIME);
         call MajorTimer.startOneShot(GPS_MON_CYCLE_TIME);
+        minor_event(MON_EV_MAJOR_CHANGED);
         return;
     }
   }
@@ -618,8 +634,8 @@ implementation {
         return;
 
       case GMS_MAJOR_IDLE:
-        call MajorTimer.startOneShot(GPS_MON_MPM_COLLECT_TIME);
         major_change_state(GMS_MAJOR_MPM_COLLECT, MON_EV_MPM_ERROR);
+        call MajorTimer.startOneShot(GPS_MON_MPM_COLLECT_TIME);
         return;
     }
   }
@@ -642,6 +658,12 @@ implementation {
         major_change_state(GMS_MAJOR_IDLE, MON_EV_TIMEOUT_MAJOR);
         minor_event(MON_EV_MAJOR_CHANGED);
         return;
+
+      case GMS_MAJOR_SATS_STARTUP:
+        major_change_state(GMS_MAJOR_SATS_STARTUP, MON_EV_TIMEOUT_MAJOR);
+        call MajorTimer.startOneShot(GPS_MON_SATS_STARTUP_TIME);
+        minor_event(MON_EV_MAJOR_CHANGED);
+        return;
     }
   }
 
@@ -652,6 +674,7 @@ implementation {
         gps_panic(101, gmcb.major_state, ev);
 
       case MON_EV_STARTUP:          maj_ev_startup();       return;
+      case MON_EV_LOCK_TIME:        maj_ev_lock_time();     return;
       case MON_EV_MPM_ERROR:        maj_ev_mpm_error();     return;
       case MON_EV_TIMEOUT_MAJOR:    maj_ev_timeout_major(); return;
     }
@@ -663,7 +686,7 @@ implementation {
 
     switch(gmcb.minor_state) {
       default:
-        gps_panic(101, gmcb.minor_state, 0);
+        gps_panic(101, gmcb.minor_state, gmcb.major_state);
 
       case GMS_CONFIG:
         gmcb.retry_count++;
@@ -796,11 +819,10 @@ implementation {
       case GMS_COLLECT:
         call MinorTimer.startOneShot(GPS_MON_COLLECT_DEADMAN);
         /*
-         * probably need to loose the following...
-         * will generate too many events, one per message.  so...
-         * after testing, nuke this.
+         * we could do a minor_change_state, COLLECT -> COLLECT
+         * but it is way too chatty.
          */
-        minor_change_state(GMS_COLLECT, MON_EV_MSG);
+//      minor_change_state(GMS_COLLECT, MON_EV_MSG);
         return;
     }
   }
@@ -839,6 +861,7 @@ implementation {
                                  elapsed, cycle_sum/cycle_count, 0);
       cycle_start = 0;
     }
+    major_event(MON_EV_LOCK_TIME);
   }
 
   /* mpm attempted, and got a good response */
@@ -849,6 +872,7 @@ implementation {
         return;
 
       case GMS_MPM_WAIT:
+        call MinorTimer.stop();
         minor_change_state(GMS_MPM, MON_EV_MPM);
         return;
     }
