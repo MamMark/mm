@@ -261,3 +261,66 @@ SATS_STARTUP    MajorTimer.fired
                     MajorTimer.startOneShot(CYCLE_TIME)
                     major_state = CYCLE
                     minor_event(major_changed)
+
+
+4) Startup notes - Inside.  2 story wood building
+   office @ 60310 Woodside Loop, Bend OR  ~ 8pm PDT
+
+a) on POR, the GPS loses any almanac information.
+
+b) initial sats it tries are:
+
+---                      0.000000 2018/6/7 1:00 (3) UTC
+--- @2144          28  873.913848 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [0]
+    NAV_TRACK: week10: 638  tow: 1.03s  chans: 12
+
+     20: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+     10: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+     22: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+     18: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+     31: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+     27: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+      9: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+      8: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+     19: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+     29: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+      6: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+     17: az:   0.0  el:  0.0  state: 0x0000  cno/s:   0  0  0  0  0  0  0  0  0  0
+
+c) From POR to Initial Boot (communications established)
+--- @960            6  871.679595  40   4  EVENT GPS_TURN_ON 1217 0 0 0
+--- @1192          11  873.018035  40   4  EVENT GPS_BOOT_TIME 1217 1370 0 0
+
+                       1.334 secs
+
+Baseline.  First startup after POR boot
+---                      0.000000 2018/6/7 1:00 (3) UTC
+--- @1544          17  873.889678  40   4  EVENT gps/mon (MAJOR),  <startup>        idle -> sats_startup
+
+d) Time from first POR to various NavTrack sats seen
+--- @6172          83  878.917205 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [1]  5
+--- @73624        821 1076.118499 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [2]  5, 2
+--- @122784      1402 1269.310882 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [3]  5, 2, 29
+--- @481056      5598 2604.656829 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [3]  5, 2, 29
+
+    saw 56/5 ee50bpsBcast data just before
+--- @486108      5658 2621.686218 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [4]  5, 2, 29, 21
+--- @486908      5667 2623.677124 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [5]  5, 2, 29, 21, 2
+--- @487876      5678 2626.681365 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [6]  5, 2, 29, 21, 2, 20
+--- @490148      5706 2634.688415 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [7]  5, 2, 29, 21, 2, 20, 15
+--- @493876      5749 2646.704071 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [6]  5, 25, 29, 21x, 2, 20, 15
+--- @494988      5760 2649.708435 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [5]  5, 25, 29, 21x, 2, 20, 15x
+--- @495992      5772 2654.712707 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [7]  5, 25, 29, 21, 2, 20, 15x, 26
+--- @498812      5803 2665.724395 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [6]  5, 25, 29, 21x, 2, 20, 15x, 26
+--- @506912      5901 2699.759826 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [7]  5, 25, 29, 21, 2, 20, 15x, 26, 16x
+--- @511000      5950 2710.770568 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [7]  5, 25, 29, 21, 2, 20, 15x, 26, 16x
+
+--- @514348      6000 2722.382476 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [6]  5, 25, 29, 21,  2, 20, 15x, 26x, 16x
+--- @521068      6102 2740.402648 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [7]  5, 25, 29, 21,  2, 20, 15x, 26x, 16x, 13
+--- @531556      6293 3046.625885 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [4]  5, 29, 20, 21,  25x, 2x
+--- @533416      6321 3051.731628 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [3]  5, 29, 20, 21x, 25x, 2x
+--- @540120      6423 3072.754943 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [5]  5, 29, 20, 21x, 25,  2x, 16x, 13
+--- @551040      6621 3378.629486 224  32  GPS_RAW -- MID:   4     (04) <rx> navTrack   [8]  5, 2x, 13, 25,  29,  16, 21,  20, 26
+
+d) Time from first POR boot to first lock - 1838 secs (30 mins)
+--- @511384      5954 2712.362640 127  32  GPS_RAW -- MID:  41     (29) <rx> geoData  L [5]
