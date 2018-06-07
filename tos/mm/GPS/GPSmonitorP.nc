@@ -771,6 +771,7 @@ implementation {
         return;
 
       case GMS_MPM:                     /* expiration of gps_sense    */
+        TELL = 1;
         cycle_start = call MinorTimer.getNow();
         cycle_count++;
         gmcb.lock_seen = FALSE;
@@ -873,6 +874,7 @@ implementation {
         return;
 
       case GMS_MPM_WAIT:
+        TELL = 0;
         call MinorTimer.stop();
         minor_change_state(GMS_MPM, MON_EV_MPM);
         return;
