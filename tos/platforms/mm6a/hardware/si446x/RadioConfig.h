@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 Eric B. Decker
+ * Copyright (c) 2015-2018 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
  * See COPYING in the top level directory of this source tree.
  *
  * Contact: Eric B. Decker <cire831@gmail.com>
+ *          Daniel J. Maltbie <dmaltbie@daloma.org>
  */
 
 #ifndef __RADIOCONFIG_H__
