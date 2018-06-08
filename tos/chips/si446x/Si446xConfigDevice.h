@@ -44,7 +44,8 @@
  * 0003 <- 0x70, unified fifo, empty_tx_len 129
  */
 #define SI446X_GLOBAL_CONFIG_1_LEN      5
-#define SI446X_GLOBAL_CONFIG_1          0x11, 0x00, 0x01, 0x03, 0x60
+#define SI446X_GLOBAL_CONFIG_1          0x11, 0x00, 0x01, 0x03, 0x70
+
 
 /*
  * Interrupt Control

@@ -290,7 +290,7 @@
 /*
  * size of TX fifo when empty
  */
-#define SI446X_EMPTY_TX_LEN             64
+#define SI446X_EMPTY_TX_LEN             129
 
 /*
  * Si446x Radio command identifiers

@@ -30,7 +30,6 @@
  * required configuration definitions for the Si446x radio.
  */
 #include "Si446xConfigPlatform.h"
-#include "Si446xConfigWDS.h"
 #include "Si446xConfigDevice.h"
 
 
