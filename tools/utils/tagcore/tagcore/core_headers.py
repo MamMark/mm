@@ -153,6 +153,7 @@ def obj_owcb():
         ('strange',         atom(('<I', '{}'))),
         ('strange_loc',     atom(('<I', '0x{:04x}'))),
         ('chk_fails',       atom(('<I', '{}'))),
+        ('logging_flags',   atom(('<I', '{}'))),
         ('panics_gold',     atom(('<I', '{}'))),
         ('ow_sig_c',        atom(('<I', '0x{:08x}')))
     ]))

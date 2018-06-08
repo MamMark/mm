@@ -106,4 +106,10 @@ interface OverWatch {
   async command void                halt_and_CF();
 
   async command void                incPanicCount();
+
+  async command bool                getLoggingFlag(uint32_t  logging_enum);
+  async command void                setLoggingFlag(uint32_t  logging_enum);
+  async command void                clrLoggingFlag(uint32_t  logging_enum);
+  async command void                setLoggingFlags(uint32_t logging_mask);
+  async command void                clrLoggingFlags(uint32_t logging_mask);
 }

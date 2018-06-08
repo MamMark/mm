@@ -146,6 +146,7 @@ def emit_reboot(level, offset, buf, obj):
     boot_mode    = owcb['ow_boot_mode'].val
     reboot_count = owcb['reboot_count'].val
     chk_fails    = owcb['chk_fails'].val
+    log_flags    = owcb['logging_flags'].val
     panics_gold  = owcb['panics_gold'].val
 
     print_hourly(rtctime)

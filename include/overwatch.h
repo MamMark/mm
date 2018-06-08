@@ -180,6 +180,18 @@ enum {
 
 
 /*
+ * Logging Flags
+ *
+ * Enable various logging to the Dblk Stream.
+ * bit positions in logging_flags
+ */
+
+enum {
+  OW_LOG_RAW_GPS = 0,
+  OW_LOG_TAGNET  = 1,
+};
+
+/*
  * ow_control_block_t
  */
 typedef struct {
@@ -219,6 +231,7 @@ typedef struct {
   uint32_t           chk_fails;         /* image checksum fails */
                                         /* either gold or nib, just yell  */
   /* additions - since 19/0 */
+  uint32_t           logging_flags;     /* what logging is on - temporary */
   uint32_t           panics_gold;       /* panics out of gold             */
 
   uint32_t           ow_sig_c;

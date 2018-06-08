@@ -835,6 +835,33 @@ implementation {
   }
 
 
+  async command bool OverWatch.getLoggingFlag(uint32_t log_e) {
+    return BITBAND_SRAM(ow_control_block.logging_flags, log_e);
+  }
+
+  async command void OverWatch.setLoggingFlag(uint32_t log_e) {
+    BITBAND_SRAM(ow_control_block.logging_flags, log_e) = 1;
+  }
+
+  async command void OverWatch.clrLoggingFlag(uint32_t log_e) {
+    BITBAND_SRAM(ow_control_block.logging_flags, log_e) = 0;
+  }
+
+  async command void OverWatch.setLoggingFlags(uint32_t log_m) {
+    ow_control_block_t *owcp;
+
+    owcp = &ow_control_block;
+    owcp->logging_flags |= log_m;
+  }
+
+  async command void OverWatch.clrLoggingFlags(uint32_t log_m) {
+    ow_control_block_t *owcp;
+
+    owcp = &ow_control_block;
+    owcp->logging_flags &= ~log_m;
+  }
+
+
   event void IM.delete_complete() { }
   event void IM.dir_set_backup_complete()   { }
   event void IM.dir_eject_active_complete() { }
