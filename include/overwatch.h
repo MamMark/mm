@@ -218,6 +218,9 @@ typedef struct {
   uint32_t           strange_loc;       /* last reported strange */
   uint32_t           chk_fails;         /* image checksum fails */
                                         /* either gold or nib, just yell  */
+  /* additions - since 19/0 */
+  uint32_t           panics_gold;       /* panics out of gold             */
+
   uint32_t           ow_sig_c;
 } PACKED ow_control_block_t;
 

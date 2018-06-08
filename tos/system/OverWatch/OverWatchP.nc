@@ -347,13 +347,12 @@ implementation {
 
       case OW_REQ_FAIL:                 /* crash, rebooting */
         owcp->ow_req = OW_REQ_BOOT;
-        owcp->panic_count++;
 
         if (owcp->from_base == 0)               /* from GOLD, no special eject checks  */
           return;
         if (owcp->from_base == OW_BASE_UNK)     /* if unknown no special checks, weird */
           return;
-        if (owcp->panic_count > 10) {
+        if (owcp->panic_count > 100) {
           owcp->ow_boot_mode = OW_BOOT_OWT;
           owcp->owt_action = OWT_ACT_EJECT;
 
@@ -822,6 +821,17 @@ implementation {
   async command void OverWatch.halt_and_CF() {
     owl_setFault(OW_FAULT_BRICK);
     call OWhw.halt_and_CF();
+  }
+
+
+  async command void OverWatch.incPanicCount() {
+    ow_control_block_t *owcp;
+
+    owcp = &ow_control_block;
+    if (call OWhw.getImageBase())
+      owcp->panic_count++;
+    else
+      owcp->panics_gold++;
   }
 
 

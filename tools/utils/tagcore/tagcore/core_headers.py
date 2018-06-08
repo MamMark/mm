@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev0'
+__version__ = '0.3.3.dev1'
 
 import binascii
 from   collections  import OrderedDict
@@ -153,6 +153,7 @@ def obj_owcb():
         ('strange',         atom(('<I', '{}'))),
         ('strange_loc',     atom(('<I', '0x{:04x}'))),
         ('chk_fails',       atom(('<I', '{}'))),
+        ('panics_gold',     atom(('<I', '{}'))),
         ('ow_sig_c',        atom(('<I', '0x{:08x}')))
     ]))
 

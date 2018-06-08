@@ -534,6 +534,7 @@ implementation {
     crash_info_t        *cip;           /* crash_info in panic_block    */
     ow_control_block_t  *owcp;          /* overwatch control block ptr  */
 
+    call OverWatch.incPanicCount();     /* pop appropriate panic ctr    */
     /*
      * first check to see if we are already in Panic.  There are three
      * cases: (we look at pcb.in_panic)
