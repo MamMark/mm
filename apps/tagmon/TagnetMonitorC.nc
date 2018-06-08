@@ -87,14 +87,8 @@ implementation {
   components new TimerMilliC()  as Timer1;
   TagnetMonitorP.txTimer        -> Timer1;
 
-  components LocalTimeMilliC;
-  TagnetMonitorP.LocalTime      -> LocalTimeMilliC;
-
   components RandomC;
   TagnetMonitorP.Random         -> RandomC;
-
-  components LedsC;
-  TagnetMonitorP.Leds           -> LedsC;
 
   components new TaskletC();
   Si446xDriverLayerC.Tasklet    -> TaskletC;
@@ -115,9 +109,6 @@ implementation {
   Si446xDriverLayerC.TransmitPowerFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_SI446X_METADATA_FLAGS)];
   Si446xDriverLayerC.TransmitDelayFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_SI446X_METADATA_FLAGS)];
   Si446xDriverLayerC.RSSIFlag   -> MetadataFlagsLayerC.PacketFlag[unique(UQ_SI446X_METADATA_FLAGS)];
-
-  components PlatformC;
-  TagnetMonitorP.Platform       -> PlatformC;
 
   components PanicC;
   TagnetMonitorP.Panic          -> PanicC;

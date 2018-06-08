@@ -40,16 +40,11 @@ module TagnetMonitorP {
     interface Tagnet;
     interface Timer<TMilli> as rcTimer;
     interface Timer<TMilli> as txTimer;
-    //    interface Timer<TMilli> as pgTimer;
-    interface LocalTime<TMilli>;
-    interface Leds;
     interface Panic;
     interface Random;
     interface RadioState;
-    interface RadioPacket;
     interface RadioSend;
     interface RadioReceive;
-    interface Platform;
   }
 }
 
