@@ -234,6 +234,14 @@ typedef struct {
   uint32_t           logging_flags;     /* what logging is on - temporary */
   uint32_t           panics_gold;       /* panics out of gold             */
 
+  uint16_t           pi_panic_idx;      /* which panic block */
+  uint8_t            pi_pcode;          /* panic information */
+  uint8_t            pi_where;
+  uint32_t           pi_arg0;
+  uint32_t           pi_arg1;
+  uint32_t           pi_arg2;
+  uint32_t           pi_arg3;
+
   uint32_t           ow_sig_c;
 } PACKED ow_control_block_t;
 

@@ -96,6 +96,7 @@ interface OverWatch {
 
   async command ow_boot_mode_t      getBootMode();
   async command void                clearReset();
+  async command void                clearPanicInfo();
   async command ow_control_block_t *getControlBlock();
 
   async command uint32_t            getImageBase();

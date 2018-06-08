@@ -167,7 +167,7 @@ typedef struct {                /* size 20 */
  */
 
 typedef struct {
-  uint16_t len;                 /* size 36 +    84      */
+  uint16_t len;                 /* size 36 +    112     */
   dtype_t  dtype;               /* reboot  + ow_control */
   uint32_t recnum;
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */

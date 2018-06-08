@@ -798,6 +798,26 @@ implementation {
   }
 
 
+  /*
+   * clearPanicInfo - clean out ow reporting cells for Panic
+   *
+   * clearPanicInfo is used after we have stored any panic_info
+   * following a crash.  It indicates no previous panic.
+   */
+  async command void OverWatch.clearPanicInfo() {
+    ow_control_block_t *owcp;
+
+    owcp = &ow_control_block;
+    owcp->pi_panic_idx = 0;
+    owcp->pi_pcode     = 0;
+    owcp->pi_where     = 0;
+    owcp->pi_arg0      = 0;
+    owcp->pi_arg1      = 0;
+    owcp->pi_arg2      = 0;
+    owcp->pi_arg3      = 0;
+  }
+
+
   async command ow_control_block_t *OverWatch.getControlBlock() {
     return &ow_control_block;
   }

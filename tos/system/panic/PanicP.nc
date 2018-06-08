@@ -535,6 +535,16 @@ implementation {
     ow_control_block_t  *owcp;          /* overwatch control block ptr  */
 
     call OverWatch.incPanicCount();     /* pop appropriate panic ctr    */
+    pap = &_panic_args;
+    owcp = call OverWatch.getControlBlock();
+    owcp->pi_panic_idx = -1;
+    owcp->pi_pcode = pap->pcode;
+    owcp->pi_where = pap->where;
+    owcp->pi_arg0  = pap->a0;
+    owcp->pi_arg1  = pap->a1;
+    owcp->pi_arg2  = pap->a2;
+    owcp->pi_arg3  = pap->a3;
+
     /*
      * first check to see if we are already in Panic.  There are three
      * cases: (we look at pcb.in_panic)
@@ -673,6 +683,11 @@ implementation {
     pcb.panic_sec = pcb.block + PBLK_IO;
     collect_io(&io_regions[0]);
     update_panic_dir();
+
+    /* put the index of the panic just written into the OW control block */
+    owcp = call OverWatch.getControlBlock();
+    owcp->pi_panic_idx = block2index(pcb.block);
+
 //    ROM_DEBUG_BREAK(0xf0);
 
 #ifdef PANIC_GATE
