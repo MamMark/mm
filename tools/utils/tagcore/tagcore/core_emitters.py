@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.2'
+__version__ = '0.3.3.dev0'
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -500,10 +500,10 @@ def emit_note(level, offset, buf, obj):
 cfg0  = ' xxxx'
 
 def emit_config(level, offset, buf, obj):
-    xlen     = obj['hdr']['len'].val
-    xtype    = obj['hdr']['type'].val
-    recnum   = obj['hdr']['recnum'].val
-    rtctime  = obj['hdr']['rt']
+    xlen     = obj['len'].val
+    xtype    = obj['type'].val
+    recnum   = obj['recnum'].val
+    rtctime  = obj['rt']
     brt      = rtctime_str(rtctime)
 
     print_hourly(rtctime)
@@ -559,3 +559,16 @@ def emit_gps_raw(level, offset, buf, obj):
         return
     for e in emitters:
         e(level, offset, buf[len(obj):], decoder_obj)
+
+
+def emit_tagnet(level, offset, buf, obj):
+    xlen     = obj['len'].val
+    xtype    = obj['type'].val
+    recnum   = obj['recnum'].val
+    rtctime  = obj['rt']
+    brt      = rtctime_str(rtctime)
+
+    print_hourly(rtctime)
+    print(rec0.format(offset, recnum, brt, xlen, xtype,         # sans nl
+                      dt_name(xtype)), end = '')
+    print()

@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.2'
+__version__ = '0.3.3.dev0'
 
 import binascii
 from   collections  import OrderedDict
@@ -335,3 +335,5 @@ def obj_dt_gps_raw():
         ('gps_hdr',  obj_dt_gps_hdr()),
         ('sirf_hdr', obj_sirf_hdr()),
     ]))
+
+obj_dt_tagnet   = obj_dt_hdr

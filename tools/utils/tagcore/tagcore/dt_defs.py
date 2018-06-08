@@ -45,7 +45,7 @@ from   __future__         import print_function
 import struct
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.3.2'
+__version__ = '0.3.3.dev0'
 
 cfg_print_hourly = True
 
@@ -77,6 +77,7 @@ __all__ = [
     'DT_NOTE',
     'DT_CONFIG',
     'DT_GPS_RAW_SIRFBIN',
+    'DT_TAGNET',
 
     'rec0',
     'rtctime_str',
@@ -142,6 +143,7 @@ DT_TEST                 = 22
 DT_NOTE                 = 23
 DT_CONFIG		= 24
 DT_GPS_RAW_SIRFBIN      = 32
+DT_TAGNET               = 33
 
 
 # offset    recnum     rtime    len   dt name         offset

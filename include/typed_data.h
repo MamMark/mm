@@ -80,13 +80,13 @@ typedef enum {
   DT_TEST		= 22,
   DT_NOTE		= 23,
   DT_CONFIG		= 24,
-  DT_TAGNET             = 25,
 
   /*
    * GPS_RAW is used to encapsulate data as received from the GPS.
    */
   DT_GPS_RAW_SIRFBIN	= 32,
-  DT_MAX		= 32,
+  DT_TAGNET             = 33,
+  DT_MAX		= 33,
 
   DT_16                 = 0xffff,       /* force to 2 bytes */
 } dtype_t;

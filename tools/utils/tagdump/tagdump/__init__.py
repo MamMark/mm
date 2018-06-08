@@ -3,8 +3,11 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.3'
+__version__ = '0.4.4.dev0'
 
+# 0.4.4.dev0    19/1
+#               add initial support for the TagNet data type (25)
+#
 # 0.4.3         Core_Rev 19/0
 #               reorder EVENTS
 #
@@ -38,7 +41,6 @@ __version__ = '0.4.3'
 #               rework of owcb, boot_time, prev_boot
 #               collapse of decoders into headers
 #               refactor, create tagcore.
-#
 #
 # 0.2.2         DT_9 recsum
 # 0.2.3         better summary
