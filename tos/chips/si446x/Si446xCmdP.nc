@@ -36,8 +36,6 @@ enum {
 #define PANIC_RADIO __pcode_radio
 #endif
 
-//unsigned char *wds_config_select(unsigned char *cname);
-
 /**************************************************************************/
 /*
  * chip debugging
@@ -156,10 +154,9 @@ const uint8_t start_rx_short_cmd[] = {  SI446X_CMD_START_RX };
 
 /*
  * len: 0, use variable length in packet
- * rxtimeout_state: 8, stay in rx but rearm.  We make use of the RXTIMEOUT
- *   mechanism provided with RSSI checking.  See MODEM_RSSI_THRESH (p204a).
- * rxvalid_state:   0, stay in rx but do not rearm.
- * rxinvalid_state: 0, stay in rx but do not rearm.
+ * rxtimeout_state: 10, idle state is used by preamble sense mode
+ * rxvalid_state:    6, goto ready state.
+ * rxinvalid_state:  6, goto ready state.
  */
 const uint8_t start_rx_cmd[] = {
   SI446X_CMD_START_RX,
@@ -1106,14 +1103,10 @@ implementation {
    * starts with the string length followed by the command, followed by
    * command bytes.  The array is terminated by a zero length.
    */
-//  const uint8_t wds_name[] = WDS_FILENAME;
-//  const uint8_t *config_list[] = {si446x_wds_config, si446x_device_config, NULL, wds_name};
-
 norace  uint8_t const* config_list[] = {NULL, si446x_device_config, NULL};
 
   async command const uint8_t ** Si446xCmd.get_config_lists() {
     nop();
-//    return (uint8_t **) config_list;
     config_list[0] = wds_config_select(NULL);
     return config_list;
   }
