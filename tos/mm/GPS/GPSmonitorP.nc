@@ -66,6 +66,7 @@
  */
 
 
+#include <overwatch.h>
 #include <TagnetTLV.h>
 #include <sirf_msg.h>
 #include <mm_byteswap.h>
@@ -1141,17 +1142,19 @@ implementation {
       return;
     }
 
-    /*
-     * gps msg eavesdropping.  Log received messages to the dblk
-     * stream.   Eventually, this will be configurable.
-     */
-    hdr.len      = sizeof(hdr) + len;
-    hdr.dtype    = DT_GPS_RAW_SIRFBIN;
-    call Rtc.copyTime(&hdr.rt, arrival_rtp);
-    hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
-    hdr.chip_id  = CHIP_GPS_GSD4E;
-    hdr.dir      = GPS_DIR_RX;
-    call Collect.collect_nots((void *) &hdr, sizeof(hdr), msg, len);
+    if (call OverWatch.getLoggingFlag(OW_LOG_RAW_GPS)) {
+      /*
+       * gps msg eavesdropping.  Log received messages to the dblk
+       * stream.
+       */
+      hdr.len      = sizeof(hdr) + len;
+      hdr.dtype    = DT_GPS_RAW_SIRFBIN;
+      call Rtc.copyTime(&hdr.rt, arrival_rtp);
+      hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
+      hdr.chip_id  = CHIP_GPS_GSD4E;
+      hdr.dir      = GPS_DIR_RX;
+      call Collect.collect_nots((void *) &hdr, sizeof(hdr), msg, len);
+    }
 
     minor_event(MON_EV_MSG);
 
