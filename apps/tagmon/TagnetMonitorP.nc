@@ -67,7 +67,7 @@ implementation {
    *
    * Exchanged with radio driver every receive call.
    */
-  norace volatile uint8_t     tagMsgBuffer[sizeof(message_t)];
+  norace volatile uint8_t     tagMsgBuffer[sizeof(message_t)] __attribute__ ((aligned (4)));
   norace volatile uint8_t     tagMsgBufferGuard[] = "DEADBEAF";
   norace message_t          * pTagMsg = (message_t *) tagMsgBuffer;
   norace          uint8_t     tagMsgBusy, tagMsgSending;
