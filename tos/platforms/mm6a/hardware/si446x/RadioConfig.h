@@ -22,16 +22,22 @@
 #ifndef __RADIOCONFIG_H__
 #define __RADIOCONFIG_H__
 
-//#include <Timer.h>
-//#include <message.h>
+#ifndef RPI_BUILD
+#include <Timer.h>
+#include <message.h>
+#endif
 
 /*
  * Include the WDS generated, platform dependent, and device driver
  * required configuration definitions for the Si446x radio.
  */
+#ifdef RPI_BUILD
 #include "Si446xConfigPlatform.h"
 #include "Si446xConfigDevice.h"
-
+#else
+#include <Si446xConfigPlatform.h>
+#include <Si446xConfigDevice.h>
+#endif
 
 //#define LOW_POWER_LISTENING
 
@@ -57,8 +63,10 @@
 /**
  * This is the timer type of the radio alarm interface
  */
+#ifndef RPI_BUILD
 typedef T32khz   TRadio;
 typedef uint16_t tradio_size;
+#endif
 
 /**
  * The number of radio alarm ticks per one microsecond .
