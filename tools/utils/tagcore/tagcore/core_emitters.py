@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev2'
+__version__ = '0.3.3.dev3'
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -86,7 +86,11 @@ ow_reboot_reason_strs = {
     6:  "USER",
     7:  "PANIC",
     8:  "LOWPWR",
+
+    'PANIC': 7,
 }
+
+REASON_PANIC = ow_reboot_reason_strs['PANIC']
 
 def ow_boot_mode_name(mode):
     return ow_boot_mode_strs.get(mode, 'unk')
@@ -105,16 +109,17 @@ def reboot_reason_name(reason):
 # --- 999999 999999 99999999  999    99  ssssss
 # ---    512      1      322  116     1  REBOOT  NIB -> GOLD (GOLD)  (r/f)
 
-rbt0  = '  {:s} -> {:s}  [{:s}]  (r/g/p {:d}/{:d}/{:d})'
+rbt0  = '  {:s} -> {:s}  [{:s}] <{:s}>'
 
-rbt1a = '    REBOOT: {:7s}  f: {:5s}  c: {:5s}  m: {:5s}  rbts/g/n: {}/{}/{}   chk_fails: {}'
-rbt1b = '    rt: 2017/12/26-(mon)-01:52:40 GMT  prev_sync: {} (0x{:04x})  rev: {:4d}/{:d}'
+rbt0a = '    REBOOT: {:7s}  f: {:5s}  c: {:5s}  m: {:5s}  rbts/g/n: {}/{}/{}   chk_fails: {}'
+rbt0b = '    rt: 2017/12/26-(mon)-01:52:40 GMT  prev_sync: {} (0x{:04x})  rev: {:4d}/{:d}'
+rbt_p = '    PANIC: {}  p/w: {}/{}  args: x({:04x} {:04x} {:04x} {:04x})'
 
 rbt2a = '    majik:   {:08x}  sigs:    {:08x}    {:08x}  {:08x}'
 rbt2b = '    base:  f {:08x}  cur:     {:08x}'
 rbt2c = '    rpt:     {:08x}  reset:   {:08x}      others: {:08x}'
 rbt2d = '    fault/g: {:08x}  fault/n: {:08x}  ss/disable: {:08x}'
-rbt2e = '    reboots: {:4}  panics (g/n): {:4}/{:4}  strg: {:8}  loc: {:4}'
+rbt2e = '    reboots: {:4}  panics (g/n): {:4}/{:<4}  strg: {:4}  loc: {:4}'
 rbt2f = '    uptime: {}  boot: {}  prev: {}'
 rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
 
@@ -149,25 +154,36 @@ def emit_reboot(level, offset, buf, obj):
     log_flags    = owcb['logging_flags'].val
     panics_gold  = owcb['panics_gold'].val
 
+    pi_idx       = owcb['pi_panic_idx'].val
+    pi_pcode     = owcb['pi_pcode'].val
+    pi_where     = owcb['pi_where'].val
+    pi_arg0      = owcb['pi_arg0'].val
+    pi_arg1      = owcb['pi_arg1'].val
+    pi_arg2      = owcb['pi_arg2'].val
+    pi_arg3      = owcb['pi_arg3'].val
+
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     print(rbt0.format(base_name(from_base), base_name(base),
-                      ow_boot_mode_name(boot_mode), reboot_count,
-                      panics_gold, panic_count))
+                      ow_boot_mode_name(boot_mode),
+                      reboot_reason_name(owcb['reboot_reason'].val)))
 
     # any weird failures?  Always report
     if (chk_fails or fault_gold or fault_nib or ss_dis):
         print('*** chkfails: {}  fault/g: {:08x}  fault/n: {:08x}  ss_dis: {:08x}'.format(
             chk_fails, fault_gold, fault_nib, ss_dis))
 
-    if (level >= 1):                   # basic record display (level 1)
-        print(rbt1a.format(
-            reboot_reason_name(owcb['reboot_reason'].val),
-            base_name(from_base), base_name(base),
-            ow_boot_mode_name(owcb['ow_boot_mode'].val),
-            reboot_count, panics_gold, panic_count, chk_fails))
-        print(rbt1b.format(prev, prev, core_rev, core_minor))
+    print(rbt0a.format(
+        reboot_reason_name(owcb['reboot_reason'].val),
+        base_name(from_base), base_name(base),
+        ow_boot_mode_name(owcb['ow_boot_mode'].val),
+        reboot_count, panics_gold, panic_count, chk_fails))
+    print(rbt0b.format(prev, prev, core_rev, core_minor))
+
+    if owcb['reboot_reason'].val == REASON_PANIC:
+        print(rbt_p.format(pi_idx, pi_pcode, pi_where,
+                           pi_arg0, pi_arg1, pi_arg2, pi_arg3))
 
     if (level >= 2):                    # detailed display (level 2)
         print()
