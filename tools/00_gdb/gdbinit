@@ -119,12 +119,12 @@ end
 
 #b RealMainP.nc:86
 #b RealMainP.nc:92
-#b SchedulerBasicP.nc:159
-#b SchedulerBasicP.nc:163
+#b SchedulerBasicP.nc:132
+#b SchedulerBasicP.nc:136
 #b VirtualizeTimerC.nc:92
 #dis
 
-b SchedulerBasicP.nc:163
+b SchedulerBasicP.nc:136
 b VirtualizeTimerC.nc:92
 dis 1 2
 
