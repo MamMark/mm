@@ -117,18 +117,18 @@ document gg
 go, set gg_wait to 0 and continue
 end
 
-#b RealMainP.nc:86
-#b RealMainP.nc:92
-#b SchedulerBasicP.nc:132
-#b SchedulerBasicP.nc:136
-#b VirtualizeTimerC.nc:92
+#b RealMainP.nc:100
+#b RealMainP.nc:105
+#b SchedulerBasicP.nc:221
+#b SchedulerBasicP.nc:227
+#b VirtualizeTimerImplP.nc:170
 #dis
 
-b SchedulerBasicP.nc:136
-b VirtualizeTimerC.nc:92
+b SchedulerBasicP.nc:227
+b VirtualizeTimerImplP.nc:170
 dis 1 2
 
-b PanicP.nc:755
+b PanicP.nc:770
 comm
 printf "\n\n*** Panic: %d(d), w: %d(d), a: %04x %04x %04x %04x\n", \
         pcode, where, arg0, arg1, arg2, arg3
