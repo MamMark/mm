@@ -228,7 +228,6 @@ implementation {
   uint8_t si446x_cca_threshold = SI446X_INITIAL_RSSI_THRESH;
 
 
-
   /**************************************************************************/
   /*
    * Trace Radio SPI bus transfer event
@@ -351,13 +350,12 @@ implementation {
    */
   bool ll_si446x_get_cts() {
     bool    cts_s;
-#ifdef SI446X_HW_CTS
-    cts_s = call HW.si446x_cts();
+
+    if (call Si446xCmd.is_hw_cts_enabled())
+      cts_s = call HW.si446x_cts();
+    else
+      cts_s = ll_si446x_get_sw_cts();
     return cts_s;
-#else
-    cts_s = ll_si446x_get_sw_cts();
-    return cts_s;
-#endif
   }
 
 
@@ -928,6 +926,30 @@ implementation {
 
   /**************************************************************************/
   /*
+   * Si446xCmd.enable_hw_cts
+   * Si446xCmd.disable_hw_cts
+   * is_hw_cts_enabled
+   *
+   * Enable/Disable use of the GPIO hardware pin for detecting
+   * radio chip has completed last command and is ready for a new one.
+   *
+   */
+  norace bool si446x_hw_cts_enabled;
+
+  async command void Si446xCmd.enable_hw_cts() {
+    si446x_hw_cts_enabled = TRUE;
+  }
+
+  async command void Si446xCmd.disable_hw_cts() {
+    si446x_hw_cts_enabled = FALSE;
+  }
+
+  async command bool Si446xCmd.is_hw_cts_enabled() {
+    return si446x_hw_cts_enabled;
+  }
+
+  /**************************************************************************/
+  /*
    * Si446xCmd.change_state
    *
    * Force radio chip to the specified state.
@@ -1430,6 +1452,7 @@ norace  uint8_t const* config_list[] = {NULL, si446x_device_config, NULL};
    * Si446xCmd.unshutdown
    */
   async command void         Si446xCmd.unshutdown() {
+    call Si446xCmd.disable_hw_cts();
     call HW.si446x_unshutdown();
     ll_si446x_trace(T_RC_UNSHUTDOWN, 0, 0);
   }

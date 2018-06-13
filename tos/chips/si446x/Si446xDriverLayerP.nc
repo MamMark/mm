@@ -633,6 +633,8 @@ implementation {
     cfg_cb.task_time = iter_now - cfg_cb.start_time;
     cfg_cb.list_iter = 0;
 
+    call Si446xCmd.enable_hw_cts(); // now that configuration is completed
+                                    //  we can start using hardware cts
     // invoke driver state machine with completion notification event
     fsm_task_queue(E_CONFIG_DONE);
     call Tasklet.resume();

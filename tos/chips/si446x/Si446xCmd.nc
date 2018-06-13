@@ -76,6 +76,11 @@ interface Si446xCmd {
   async command void          config_frr();
 
   /**
+   * Disable use of Hardware CTS
+   */
+  async command void          disable_hw_cts();
+
+  /**
    * Disable radio chip hardware interrupt.
    */
   async command void          disableInterrupt();
@@ -84,6 +89,11 @@ interface Si446xCmd {
    * Dump all of the current radio chip configuration.
    */
   async command void          dump_radio();
+
+  /**
+   * Enable use of Hardware CTS
+   */
+  async command void          enable_hw_cts();
 
   /**
    * Enable radio chip interrupt.
@@ -169,6 +179,11 @@ interface Si446xCmd {
    * Signal that the radio chip has asserted its hardware interrupt.
    */
   async event void            interrupt();
+
+  /**
+   * Return state of Hardware CTS usage
+   */
+  async command bool          is_hw_cts_enabled();
 
   /**
    * Clear all of the radio chip pending interrupts.
