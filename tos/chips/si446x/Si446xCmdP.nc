@@ -955,6 +955,27 @@ implementation {
 
   /**************************************************************************/
   /*
+   * Si446xCmd.goto_sleep
+   *
+   * Force radio chip into low power operation (retains registers but
+   * receiver is off).
+   *
+   */
+
+  async command void Si446xCmd.goto_sleep() {
+    uint8_t cmd[2];
+
+
+    cmd[0] = SI446X_CMD_CHANGE_STATE;
+    cmd[1] = RC_SLEEP;
+    call Si446xCmd.fast_device_state();
+    ll_si446x_send_cmd(cmd, sizeof(cmd));
+    ll_si446x_trace(T_RC_CHG_STATE, 0, 0);
+  }
+
+
+  /**************************************************************************/
+  /*
    * Si446xCmd.check_CCA
    *
    * check the 'clear channel assessment' condition. denotes if our receiver

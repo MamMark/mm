@@ -49,6 +49,13 @@ interface Si446xCmd {
   async command si446x_device_state_t change_state(si446x_device_state_t state, bool wait);
 
   /**
+   * Force radio chip into low power operation (retains registers but
+   * receiver is off).
+   *
+   */
+  async command void          goto_sleep();
+
+  /**
    * Perform Clear Channel Assessment.
    *
    * @return     true if channel is clear (no other radio transmission detected)

@@ -833,7 +833,7 @@ implementation {
   fsm_result_t a_standby(fsm_transition_t *t) {
     stop_alarm();
     call Si446xCmd.disableInterrupt();
-    call Si446xCmd.change_state(RC_SLEEP, TRUE);   // instruct chip to go to standby state
+    call Si446xCmd.goto_sleep();   // instruct chip to go to sleep
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
     return fsm_results(t->next_state, E_NONE);
