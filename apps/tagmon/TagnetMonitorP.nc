@@ -36,7 +36,7 @@ module TagnetMonitorP {
     interface TagnetHeader;
     interface Tagnet;
     interface Timer<TMilli> as rcTimer;
-    interface Timer<TMilli> as txTimer;
+    interface Timer<TMilli> as smTimer;
     interface Panic;
     interface Random;
     interface RadioState;
@@ -141,7 +141,7 @@ implementation {
     tt->major = major; tt->old_major = old_major;
     tt->minor = minor; tt->old_minor = old_minor;
     tt->timeout = rcb.sub[major].timers[minor];
-    call txTimer.startOneShot(rcb.sub[major].timers[minor]);
+    call smTimer.startOneShot(rcb.sub[major].timers[minor]);
     if (major != old_major)
       rcb.retry_counter = rcb.sub[major].max_retries;
     if (old_minor != minor) {
@@ -308,7 +308,7 @@ implementation {
   }
 
 
-  event void txTimer.fired() {
+  event void smTimer.fired() {
     nop();
     nop();                     /* BRK */
     switch (rcb.state) {

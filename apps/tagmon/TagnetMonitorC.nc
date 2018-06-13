@@ -85,7 +85,7 @@ implementation {
   components new TimerMilliC()  as Timer0;
   TagnetMonitorP.rcTimer        -> Timer0;
   components new TimerMilliC()  as Timer1;
-  TagnetMonitorP.txTimer        -> Timer1;
+  TagnetMonitorP.smTimer        -> Timer1;
 
   components RandomC;
   TagnetMonitorP.Random         -> RandomC;
