@@ -1,4 +1,3 @@
-
 #
 # This file is used to include some source files needed to build on
 # the msp432 platforms.
@@ -9,6 +8,16 @@
 #
 
 TOSMAKE_ADDITIONAL_INPUTS += $(PLATFORM_DIR)/startup.c
+
+include $(PLATFORM_DIR)/hardware/si446x/Makefile.si446x
+
+#TOSMAKE_ADDITIONAL_INPUTS += $(PLATFORM_DIR)/hardware/si446x/wds_configs.c
+#TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si4468_100b_433m_200khz_psm.c
+#TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si4468_100kb_433m_200khz.c
+#TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si4468_10kb_433m_200khz.c
+#TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si4468_10kb_433m_200khz_psm.c
+#TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si4468_10kb_434m_200khz.c
+#TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si446x_CustomPacketRX_wPSM.c
 
 # DVRLIB_DIR=$(TINYOS_OS_DIR)/chips/msp432/driverlib
 
