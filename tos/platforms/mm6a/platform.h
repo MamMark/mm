@@ -16,11 +16,17 @@
  *                      busy wait.
  * MEMINIT_STOP:        cause memory initilization to not be done (hangs)
  *                      so one can poke around at memory.
+ *
+ * TRACE_VTIMERS        set to trace virtual timers.
+ *
+ * TRACE_TASKS          set to trace task laucnches
+ * TRACE_TASKS_USECS    set to low level usec timestamp function
  */
 
 #ifndef __PLATFORM_H__
 #define __PLATFORM_H__
 
+#define GO_GATE
 #define REQUIRE_PLATFORM
 #define REQUIRE_PANIC
 
@@ -33,6 +39,12 @@
 //#define TRACE_MICRO
 #define TRACE_USE_PLATFORM
 //#define MEMINIT_STOP
+
+#define TRACE_VTIMERS
+#define TRACE_TASKS
+#define TRACE_TASKS_USECS __platform_usecs_raw()
+
+extern uint32_t __platform_usecs_raw();
 
 #define TRACE_RESOURCE
 #define FS_ENABLE_ERASE

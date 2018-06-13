@@ -50,6 +50,12 @@ implementation {
 
   /* clocks are initilized by startup */
 
+  /*
+   * RealTime Clock Wiring
+   */
   components PlatformRtcC;
   Rtc      = PlatformRtcC;
+
+  components LocalTimeMilliC;
+  PlatformP.LocalTime -> LocalTimeMilliC;
 }

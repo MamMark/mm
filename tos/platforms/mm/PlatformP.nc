@@ -41,6 +41,7 @@ module PlatformP {
     interface Init as PlatformLeds;
     interface Init as PlatformClock;
     interface Init as PeripheralInit;
+    interface LocalTime<TMilli>;
   }
 }
 
@@ -114,11 +115,17 @@ implementation {
   }
 
 
+  async command uint32_t Platform.localTime()      { return call LocalTime.get(); }
+
   /* T32 is a count down so negate it */
   async command uint32_t Platform.usecsRaw()       { return (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV; }
   async command uint32_t Platform.usecsRawSize()   { return 32; }
   async command uint32_t Platform.jiffiesRaw()     { return (TIMER_A1->R); }
   async command uint32_t Platform.jiffiesRawSize() { return 16; }
+
+  uint32_t __platform_usecs_raw() @C() @spontaneous() {
+    return (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV;
+  }
 
   async command bool     Platform.set_unaligned_traps(bool set_on) {
     bool unaligned_on;

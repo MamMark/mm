@@ -53,4 +53,7 @@ implementation {
    */
   components PlatformRtcC;
   Rtc      = PlatformRtcC;
+
+  components LocalTimeMilliC;
+  PlatformP.LocalTime -> LocalTimeMilliC;
 }
