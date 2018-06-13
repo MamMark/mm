@@ -1,0 +1,62 @@
+digraph G {
+nodesep=0.7;
+rankdir=LR;
+subgraph cluster_Off {
+fontsize=24;
+label="";
+labeljust=l;
+off [fontsize=20, label=OFF];
+}
+
+subgraph cluster_Hunt {
+fontsize=24;
+label=hunt;
+labeljust=l;
+hunt_recv [fontsize=16, label=recv];
+hunt_stby [fontsize=16, label=stby];
+hunt_recv_wait [fontsize=16, label=recv_wait];
+hunt_stby_wait [fontsize=16, label=stby_wait];
+}
+
+subgraph cluster_Lost {
+fontsize=24;
+label=lost;
+labeljust=r;
+lost_recv [fontsize=16, label=recv];
+lost_stby [fontsize=16, label=stby];
+lost_recv_wait [fontsize=16, label=recv_wait];
+lost_stby_wait [fontsize=16, label=stby_wait];
+}
+
+subgraph cluster_Base {
+fontsize=24;
+label=base;
+labeljust=r;
+base_recv [fontsize=16, label=recv];
+base_stby [fontsize=16, label=stby];
+base_recv_wait [fontsize=16, label=recv_wait];
+base_stby_wait [fontsize=16, label=stby_wait];
+}
+
+off -> base_recv_wait  [label="booted / r_on,t_start"];
+base_recv -> base_stby_wait  [label="no_rsp / r_stby,t_start"];
+base_recv -> base_stby_wait  [label="timer_expired / r_stby,t_start"];
+base_stby -> base_recv_wait  [label="timer_expired / r_on,t_start"];
+base_recv -> base_recv  [label="rsp_sent / t_start"];
+base_stby -> hunt_stby  [label="tries_exceeded / t_start"];
+base_recv_wait -> base_recv  [label="radio_done / t_start"];
+base_stby_wait -> base_stby  [label="radio_done / t_start"];
+hunt_recv -> hunt_stby_wait  [label="no_rsp / r_stby,t_start"];
+hunt_recv -> hunt_stby_wait  [label="timer_expired / r_stby,t_start"];
+hunt_stby -> hunt_recv_wait  [label="timer_expired / r_on,t_start"];
+hunt_recv -> base_recv  [label="rsp_sent / t_start"];
+hunt_stby -> lost_stby  [label="tries_exceeded / t_start"];
+hunt_recv_wait -> hunt_recv  [label="radio_done / t_start"];
+hunt_stby_wait -> hunt_stby  [label="radio_done / t_start"];
+lost_recv -> lost_stby_wait  [label="no_rsp / r_stby,t_start"];
+lost_recv -> lost_stby_wait  [label="timer_expired / r_stby,t_start"];
+lost_stby -> lost_recv_wait  [label="timer_expired / r_on,t_start"];
+lost_recv -> base_recv  [label="rsp_sent / t_start"];
+lost_recv_wait -> lost_recv  [label="radio_done / t_start"];
+lost_stby_wait -> lost_stby  [label="radio_done / t_start"];
+}

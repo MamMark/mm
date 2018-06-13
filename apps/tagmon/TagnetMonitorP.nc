@@ -27,9 +27,6 @@
 uint32_t gt0, gt1;
 uint16_t tt0, tt1;
 
-uint16_t global_node_id = 42;
-
-
 module TagnetMonitorP {
   uses {
     interface Boot;
@@ -47,21 +44,7 @@ module TagnetMonitorP {
     interface RadioReceive;
   }
 }
-
 implementation {
-  /*
-   * radio state info
-  */
-  typedef enum {
-    OFF = 0,
-    STARTING,
-    ACTIVE,
-    STOPPING,
-    STANDBY,
-  } radio_state_t;
-
-  norace radio_state_t radio_state;
-
   /*
    * message buffer
    *
@@ -72,6 +55,111 @@ implementation {
   norace message_t          * pTagMsg = (message_t *) tagMsgBuffer;
   norace          uint8_t     tagMsgBusy, tagMsgSending;
                   uint32_t    tagmon_timeout  = 20; // milliseconds
+
+  /*
+   * radio state info
+   */
+  typedef enum {
+    RS_NONE         = 0,
+    RS_BASE         = 1,
+    RS_HUNT         = 2,
+    RS_LOST         = 3,
+    RS_MAX,
+  } radio_state_t;
+
+  typedef enum {
+    SS_NONE         = 0,
+    SS_RECV         = 1,
+    SS_STANDBY      = 2,
+    SS_RECV_WAIT    = 3,
+    SS_STANDBY_WAIT = 4,
+    SS_MAX,
+  } radio_substate_t;
+
+  typedef struct {
+    radio_substate_t  state;
+    uint32_t          max_retries;
+    uint32_t          timers[SS_MAX];
+  } radio_subgraph_t;
+
+  typedef struct {
+    radio_state_t     state;
+    int32_t           retry_counter;
+    radio_subgraph_t  sub[RS_MAX];
+  } radio_graph_t;
+
+  typedef struct {
+    radio_state_t     major;
+    radio_state_t     old_major;
+    radio_substate_t  minor;
+    radio_substate_t  old_minor;
+    uint32_t          timeout;
+  } radio_trace_t;
+
+  radio_trace_t       radio_trace[10];
+  norace uint32_t     radio_trace_head;
+
+  norace radio_graph_t  rcb = {
+    RS_NONE, 5,
+    {{SS_NONE, 0, {0,    0,      0,   0,   0}},
+     {SS_NONE, 5, {0, 3000,  15000, 100, 100}},
+     {SS_NONE, 5, {0, 6000,  60000, 100, 100}},
+     {SS_NONE, 5, {0, 2000, 300000, 100, 100}}},
+  };
+
+  /*
+   * {state = TagnetMonitorP__RS_BASE, retry_counter = 0x4,
+   *    sub =
+   *    { {state = TagnetMonitorP__SS_NONE, max_retries = 0x0, timers = {0x0, 0x0, 0x0}},
+   *      {state = TagnetMonitorP__SS_STANDBY, max_retries = 0x5, timers = {0x0, 0xbb8, 0x3a98}},
+   *      {state = TagnetMonitorP__SS_NONE, max_retries = 0x5, timers = {0x0, 0x1770, 0xea60}},
+   *      {state = TagnetMonitorP__SS_NONE, max_retries = 0x5, timers = {0x0, 0x7d0, 0x493e0}}
+   *    }
+   * }
+  */
+
+  void change_radio_state(radio_state_t major, radio_substate_t minor) {
+    error_t          error = SUCCESS;
+    radio_state_t    old_major;
+    radio_substate_t old_minor;
+    radio_trace_t   *tt;
+
+    nop();
+    nop();                     /* BRK */
+    if (major == RS_NONE) major = rcb.state;
+    if ((major > sizeof(rcb.sub)/sizeof(rcb.sub[0])) ||
+        (minor > sizeof(rcb.sub[0].timers)/sizeof(rcb.sub[0].timers[0])))
+        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                         major, minor, 0, 0);
+    old_major = rcb.state;
+    old_minor = rcb.sub[major].state;
+    rcb.state = major;
+    rcb.sub[major].state = minor;
+    if (radio_trace_head >= (sizeof(radio_trace)/sizeof(radio_trace[0])))
+      radio_trace_head = 0;
+    tt = &radio_trace[radio_trace_head++];
+    tt->major = major; tt->old_major = old_major;
+    tt->minor = minor; tt->old_minor = old_minor;
+    tt->timeout = rcb.sub[major].timers[minor];
+    call txTimer.startOneShot(rcb.sub[major].timers[minor]);
+    if (major != old_major)
+      rcb.retry_counter = rcb.sub[major].max_retries;
+    if (old_minor != minor) {
+      switch(minor) {
+        case SS_RECV_WAIT:
+          error = call RadioState.turnOn();
+          break;
+        case SS_STANDBY_WAIT:
+          error = call RadioState.standby();
+          break;
+        default:
+          break;
+      }
+      if (error)
+        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                         major, minor, (uint32_t) error, 0);
+    }
+  }
 
   task void network_task() {
     nop();
@@ -85,8 +173,13 @@ implementation {
        * Don't mark the current msg buffer until the sender finishes.
        */
       nop();                     /* BRK */
-      call rcTimer.startOneShot(tagmon_timeout); /* fire up turn around timer */
-      return;
+      if (rcb.sub[rcb.state].state == SS_RECV) { // should only be in recv state
+        call rcTimer.startOneShot(tagmon_timeout); /* fire up turn around timer */
+        change_radio_state(RS_BASE, SS_RECV);    // all got to base primary state
+        return;
+      }
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                       rcb.state, rcb.sub[rcb.state].state, 0, 0);
     }
 
     /*
@@ -94,7 +187,13 @@ implementation {
      * available and be done with it.
      */
     nop();                     /* BRK */
-    tagMsgBusy = FALSE;
+    if (rcb.sub[rcb.state].state == SS_RECV) { // should only be in recv state
+      tagMsgBusy = FALSE;
+      change_radio_state(rcb.state, SS_STANDBY_WAIT);
+      return;
+    }
+    call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                     rcb.state, rcb.sub[rcb.state].state, 0, 0);
   }
 
   tasklet_async event void RadioSend.ready() {
@@ -135,13 +234,65 @@ implementation {
 
   async event void RadioState.done() {
     nop();
-    nop();
+    nop();                     /* BRK */
+    switch (rcb.state) {
+      case RS_BASE:
+        switch (rcb.sub[rcb.state].state) {
+          case SS_RECV_WAIT:
+            change_radio_state(RS_BASE, SS_RECV);
+            break;
+          case SS_STANDBY_WAIT:
+            if (--rcb.retry_counter <= 0)
+              change_radio_state(RS_HUNT, SS_STANDBY);
+            else
+              change_radio_state(RS_BASE, SS_STANDBY);
+            break;
+          default:
+            call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                             rcb.state, rcb.sub[rcb.state].state, 0, 0);
+        }
+        break;
+      case RS_HUNT:
+        switch (rcb.sub[rcb.state].state) {
+          case SS_RECV_WAIT:
+            change_radio_state(RS_HUNT, SS_RECV);
+            break;
+          case SS_STANDBY_WAIT:
+            if (--rcb.retry_counter <= 0)
+              change_radio_state(RS_LOST, SS_STANDBY);
+            else
+              change_radio_state(RS_HUNT, SS_STANDBY);
+            break;
+          default:
+            call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                             rcb.state, rcb.sub[rcb.state].state, 0, 0);
+        }
+        break;
+      case RS_LOST:
+        switch (rcb.sub[rcb.state].state) {
+          case SS_RECV_WAIT:
+            change_radio_state(RS_LOST, SS_RECV);
+            break;
+          case SS_STANDBY_WAIT:
+            change_radio_state(RS_LOST, SS_STANDBY);
+            break;
+          default:
+            call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                             rcb.state, rcb.sub[rcb.state].state, 0, 0);
+        }
+        break;
+      default:
+        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                         rcb.state, rcb.sub[rcb.state].state, 0, 0);
+        break;
+    }
   }
 
 
   event void rcTimer.fired() {
     error_t err;
-
+    nop();
+    nop();                     /* BRK */
     tagMsgSending = TRUE;
     err = call RadioSend.send(pTagMsg);
     switch (err) {
@@ -156,19 +307,60 @@ implementation {
     }
   }
 
+
   event void txTimer.fired() {
     nop();
-    nop();
+    nop();                     /* BRK */
+    switch (rcb.state) {
+      case RS_BASE:
+        switch (rcb.sub[rcb.state].state) {
+          case SS_RECV:
+            change_radio_state(RS_BASE, SS_STANDBY_WAIT);
+            break;
+          case SS_STANDBY:
+            change_radio_state(RS_BASE, SS_RECV_WAIT);
+            break;
+          default:
+            call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                             rcb.state, rcb.sub[rcb.state].state, 0, 0);
+        }
+        break;
+      case RS_HUNT:
+        switch (rcb.sub[rcb.state].state) {
+          case SS_RECV:
+            change_radio_state(RS_HUNT, SS_STANDBY_WAIT);
+            break;
+          case SS_STANDBY:
+            change_radio_state(RS_HUNT, SS_RECV_WAIT);
+            break;
+          default:
+            call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                             rcb.state, rcb.sub[rcb.state].state, 0, 0);
+        }
+        break;
+      case RS_LOST:
+        switch (rcb.sub[rcb.state].state) {
+          case SS_RECV:
+            change_radio_state(RS_LOST, SS_STANDBY_WAIT);
+            break;
+          case SS_STANDBY:
+            change_radio_state(RS_LOST, SS_RECV_WAIT);
+            break;
+          default:
+            call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                             rcb.state, rcb.sub[rcb.state].state, 0, 0);
+        }
+        break;
+      default:
+        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                         rcb.state, rcb.sub[rcb.state].state, 0, 0);
+    }
   }
 
 
   event void Boot.booted() {
-    error_t     error;
-
-    error = call RadioState.turnOn();
-    if (error)
-      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
-                       (uint32_t) error, 0, 0, 0);
+    nop();                     /* BRK */
+    change_radio_state(RS_BASE, SS_RECV_WAIT);
   }
 
   async event void Panic.hook() { }
