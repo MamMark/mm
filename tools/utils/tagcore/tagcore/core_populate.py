@@ -15,6 +15,7 @@ dtd.dt_records[DT_VERSION]          = (208, decode_default, [ emit_version ],   
 dtd.dt_records[DT_SYNC]             = ( 28, decode_default, [ emit_sync ],        obj_dt_sync(),      'SYNC',         'obj_dt_sync'     )
 dtd.dt_records[DT_EVENT]            = ( 40, decode_default, [ emit_event ],       obj_dt_event(),     'EVENT',        'obj_dt_event'    )
 dtd.dt_records[DT_DEBUG]            = (  0, decode_default, [ emit_debug ],       obj_dt_debug(),     'DEBUG',        'obj_dt_debug'    )
+dtd.dt_records[DT_SYNC_FLUSH]       = ( 28, decode_default, [ emit_sync ],        obj_dt_sync(),      'SYNC/F',       'obj_dt_sync'     )
 dtd.dt_records[DT_GPS_VERSION]      = (  0, decode_default, [ emit_gps_version ], obj_dt_gps_ver(),   'GPS_VERSION',  'obj_dt_gps_ver'  )
 dtd.dt_records[DT_GPS_TIME]         = (  0, decode_default, [ emit_gps_time ],    obj_dt_gps_time(),  'GPS_TIME',     'obj_dt_gps_time' )
 dtd.dt_records[DT_GPS_GEO]          = (  0, decode_default, [ emit_gps_geo ],     obj_dt_gps_geo(),   'GPS_GEO',      'obj_dt_gps_geo'  )

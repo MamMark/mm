@@ -70,6 +70,7 @@ typedef enum {
   DT_SYNC		= 3,
   DT_EVENT              = 4,
   DT_DEBUG		= 5,
+  DT_SYNC_FLUSH         = 6,
 
   DT_GPS_VERSION        = 16,
   DT_GPS_TIME		= 17,

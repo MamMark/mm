@@ -622,6 +622,20 @@ def dump(args):
             total_bytes   += rlen
             if (args.num and total_records >= args.num):
                 break
+            #
+            # if we have a SYNC_FLUSH then advance to the next sector
+            # boundary.  System_Flush and we should have a reboot record
+            # in the next sector.
+            #
+            if rtype == DT_SYNC_FLUSH:
+                new_offset = rec_offset + 512
+                new_offset &= 0xfffffe00
+                print()
+                print('*** SYNC_FLUSH: @{} advancing to next '
+                      'sector @{}'.format(rec_offset, new_offset))
+                print()
+                infile.seek(new_offset)
+
     except KeyboardInterrupt:
         print()
         print()

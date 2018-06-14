@@ -67,6 +67,7 @@ __all__ = [
     'DT_SYNC',
     'DT_EVENT',
     'DT_DEBUG',
+    'DT_SYNC_FLUSH',
     'DT_GPS_VERSION',
     'DT_GPS_TIME',
     'DT_GPS_GEO',
@@ -133,6 +134,7 @@ DT_VERSION              = 2
 DT_SYNC                 = 3
 DT_EVENT                = 4
 DT_DEBUG                = 5
+DT_SYNC_FLUSH           = 6
 DT_GPS_VERSION          = 16
 DT_GPS_TIME             = 17
 DT_GPS_GEO              = 18

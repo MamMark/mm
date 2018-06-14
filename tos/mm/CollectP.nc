@@ -532,7 +532,7 @@ implementation {
        */
       if (dcc.remaining >= sizeof(dt_sync_t)) {
         sp->len        = sizeof(dt_sync_t);
-        sp->dtype      = DT_SYNC;
+        sp->dtype      = DT_SYNC_FLUSH;
         call Rtc.getTime(&sp->rt);
         sp->sync_majik = SYNC_MAJIK;
         sp->prev_sync  = dcc.last_sync_offset;
