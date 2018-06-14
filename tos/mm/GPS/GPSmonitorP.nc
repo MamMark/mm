@@ -246,6 +246,9 @@ implementation {
   gps_monitor_control_t gmcb;           /* gps monitor control block */
 
   uint32_t     cycle_start, cycle_count, cycle_sum;
+  uint32_t     last_nsats_seen, last_nsats_count;
+
+#define LAST_NSATS_COUNT_INIT 10
 
   gps_xyz_t  m_xyz;
   gps_geo_t  m_geo;
@@ -273,6 +276,7 @@ implementation {
     call CollectEvent.logEvent(DT_EVENT_GPS_MON_MAJOR, gmcb.major_state,
                                new_state, ev, 0);
     gmcb.major_state = new_state;
+    last_nsats_count = 0;
   }
 
 
@@ -280,6 +284,7 @@ implementation {
     call CollectEvent.logEvent(DT_EVENT_GPS_MON_MINOR, gmcb.minor_state,
                                new_state, ev, 0);
     gmcb.minor_state = new_state;
+    last_nsats_count = 0;
   }
 
 
@@ -978,8 +983,14 @@ implementation {
     if (!np || CF_BE_16(np->len) != NAVDATA_LEN)
       return;
 
-    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_2, np->nsats, np->mode1,
-                               0, call GPSControl.awake());
+    if (last_nsats_count == 0 || np->nsats != last_nsats_seen) {
+      call CollectEvent.logEvent(DT_EVENT_GPS_SATS_2, np->nsats, np->mode1,
+                                 0, call GPSControl.awake());
+      last_nsats_seen = np->nsats;
+      last_nsats_count = LAST_NSATS_COUNT_INIT;
+    } else
+      last_nsats_count--;
+
     pmode = np->mode1 & SB_NAV_M1_PMODE_MASK;
     if (pmode >= SB_NAV_M1_PMODE_SV2KF && pmode <= SB_NAV_M1_PMODE_SVODKF) {
       /*
@@ -1059,8 +1070,13 @@ implementation {
 
     nav_valid = CF_BE_16(gp->nav_valid);
     nav_type  = CF_BE_16(gp->nav_type);
-    call CollectEvent.logEvent(DT_EVENT_GPS_SATS_41, gp->nsats, nav_valid,
-                               nav_type, call GPSControl.awake());
+    if (last_nsats_count == 0 || gp->nsats != last_nsats_seen) {
+      call CollectEvent.logEvent(DT_EVENT_GPS_SATS_41, gp->nsats, nav_valid,
+                                 nav_type, call GPSControl.awake());
+      last_nsats_seen = gp->nsats;
+      last_nsats_count = LAST_NSATS_COUNT_INIT;
+    } else
+      last_nsats_count--;
 
     if (nav_valid == 0) {
       mtp = &m_time;
