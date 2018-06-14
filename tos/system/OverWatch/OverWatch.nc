@@ -111,6 +111,10 @@ interface OverWatch {
   async command bool                getLoggingFlag(uint32_t  logging_enum);
   async command void                setLoggingFlag(uint32_t  logging_enum);
   async command void                clrLoggingFlag(uint32_t  logging_enum);
-  async command void                setLoggingFlags(uint32_t logging_mask);
-  async command void                clrLoggingFlags(uint32_t logging_mask);
+
+  async command void                setLoggingFlagsM(uint32_t logging_mask);
+  async command void                clrLoggingFlagsM(uint32_t logging_mask);
+
+  async command void                forceLoggingFlags(uint32_t logging_val);
+  async command uint32_t            getLoggingFlags();
 }

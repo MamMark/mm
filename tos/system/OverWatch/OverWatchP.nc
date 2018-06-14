@@ -867,18 +867,23 @@ implementation {
     BITBAND_SRAM(ow_control_block.logging_flags, log_e) = 0;
   }
 
-  async command void OverWatch.setLoggingFlags(uint32_t log_m) {
-    ow_control_block_t *owcp;
 
-    owcp = &ow_control_block;
+  async command void OverWatch.setLoggingFlagsM(uint32_t log_m) {
+    ow_control_block_t *owcp = &ow_control_block;
     owcp->logging_flags |= log_m;
   }
 
-  async command void OverWatch.clrLoggingFlags(uint32_t log_m) {
-    ow_control_block_t *owcp;
-
-    owcp = &ow_control_block;
+  async command void OverWatch.clrLoggingFlagsM(uint32_t log_m) {
+    ow_control_block_t *owcp = &ow_control_block;
     owcp->logging_flags &= ~log_m;
+  }
+
+  async command void OverWatch.forceLoggingFlags(uint32_t log_val) {
+      ow_control_block.logging_flags = log_val;
+  }
+
+  async command uint32_t OverWatch.getLoggingFlags() {
+    return ow_control_block.logging_flags;
   }
 
 
