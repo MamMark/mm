@@ -288,8 +288,12 @@ typedef enum {
   GPSE_STATE,                           /* state change */
   GPSE_ABORT,                           /* protocol abort */
   GPSE_SPEED,                           /* speed change */
+  GPSE_TX_POST,                         /* tx h/w int posted */
+  GPSE_TX_TIMEOUT,                      /* tx timeout */
 } gps_event_t;
 
+
+norace uint32_t send_block_done_usecs;
 
 /*
  * gpsc_state: current state of the driver state machine
@@ -313,7 +317,8 @@ norace uint8_t  gbuf[GPS_EAVES_SIZE];
 #endif
 
 typedef struct {
-  uint32_t     ts;
+  uint32_t     ts;                      /* Tmilli */
+  uint32_t     us;                      /* raw usecs, Tmicro */
   gps_event_t  ev;
   gpsc_state_t gc_state;
   uint32_t     arg;
@@ -468,6 +473,7 @@ implementation {
       if (g_nev >= GPS_MAX_EVENTS)
 	g_nev = 0;
       g_evs[idx].ts = call LocalTime.get();
+      g_evs[idx].us = call Platform.usecsRaw();
       g_evs[idx].ev = ev;
       g_evs[idx].gc_state = gpsc_state;
       g_evs[idx].arg = arg;
@@ -945,6 +951,7 @@ implementation {
    */
   event void GPSTxTimer.fired() {
     atomic {
+      gpsc_log_event(GPSE_TX_TIMEOUT, call Platform.usecsRaw());
       switch (gpsc_state) {
         default:                        /* all other states blow up */
           call HW.gps_hw_capture();
@@ -993,7 +1000,7 @@ implementation {
         case GPSC_ON_RX_TX:
           call HW.gps_hw_capture();
           m_lost_tx_ints++;
-          if (--m_lost_tx_retries > 0) {
+          if (--m_lost_tx_retries >= 0) {
             call CollectEvent.logEvent(DT_EVENT_GPS_LOST_INT, m_lost_tx_ints,
                                        0, 0, 0);
             if (call HW.gps_restart_tx()) {
@@ -1190,6 +1197,8 @@ implementation {
 
 
   async event void HW.gps_send_block_done(uint8_t *ptr, uint16_t len, error_t error) {
+    send_block_done_usecs = call Platform.usecsRaw();
+    gpsc_log_event(GPSE_TX_POST, 0);
     post send_block_task();
   }
 

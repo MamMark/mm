@@ -60,6 +60,7 @@ typedef struct {
   uint8_t      count;
   uint8_t      stat;
   uint8_t      byte;
+  uint8_t      tx_active;
 } gps_int_rec_t;
 
 #define GPS_INT_RECS_MAX 32
@@ -96,6 +97,14 @@ implementation {
   } while (0)
 
 
+  norace uint8_t *m_tx_buf;
+  norace uint16_t m_tx_len;
+
+  norace uint8_t *m_rx_buf;
+  norace uint16_t m_rx_len;
+  norace uint32_t m_tx_idx, m_rx_idx;
+
+
   void gps_log_int(gps_int_ev_t ev, uint8_t stat, uint8_t byte) {
     gps_int_rec_t *gp;
 
@@ -115,6 +124,10 @@ implementation {
     gp->count = 1;
     gp->stat = stat;
     gp->byte = byte;
+    if (m_tx_buf)
+      gp->tx_active = TRUE;
+    else
+      gp->tx_active = FALSE;
     gp->ts = call Platform.usecsRaw();
   }
 
@@ -193,13 +206,6 @@ implementation {
   };
 #endif
 
-
-  norace uint8_t *m_tx_buf;
-  norace uint16_t m_tx_len;
-
-  norace uint8_t *m_rx_buf;
-  norace uint16_t m_rx_len;
-  norace uint32_t m_tx_idx, m_rx_idx;
 
   command error_t Init.init() {
     call Usci.enableModuleInterrupt();
@@ -379,8 +385,10 @@ implementation {
      * So just enable the interrupt and let it fly.
      */
     stat_word = call Usci.getStat();
-    if (stat_word & EUSCI_A_STATW_RXERR)
+    if (stat_word & EUSCI_A_STATW_RXERR) {
       byte = call Usci.getRxbuf();
+      gps_log_int(GPSI_RX_ERR, stat_word, byte);
+    }
     gps_log_int(GPSI_TX_INT_ON, stat_word, byte);
     call Usci.enableTxIntr();
     return SUCCESS;
