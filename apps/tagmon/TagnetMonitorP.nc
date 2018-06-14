@@ -232,7 +232,7 @@ implementation {
     return TRUE;
   }
 
-  async event void RadioState.done() {
+  task void radiostate_done_task() {
     nop();
     nop();                     /* BRK */
     switch (rcb.state) {
@@ -286,6 +286,11 @@ implementation {
                          rcb.state, rcb.sub[rcb.state].state, 0, 0);
         break;
     }
+  }
+
+
+  async event void RadioState.done() {
+    post radiostate_done_task();
   }
 
 
