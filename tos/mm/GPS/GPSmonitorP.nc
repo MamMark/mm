@@ -438,12 +438,18 @@ implementation {
   }
 
 
+  void copy_data(uint8_t *dst, uint8_t *src, uint32_t l) {
+    while (l) {
+      *dst++ = *src++;
+      l--;
+    }
+  }
+
   command bool InfoSensGpsCmd.set_value(tagnet_gps_cmd_t *db, uint32_t *lenp) {
     gps_raw_tx_t *gp;
     error_t err;
     bool    awake;
     uint32_t l;
-    uint8_t *src, *dst;
 
     /* too weird, too small, ignore it */
     if (!db || !lenp)
@@ -539,12 +545,8 @@ implementation {
             err = EBUSY;
             break;
           }
-          src = gp->data;
-          dst = raw_tx_buf;
-          while (l) {
-            *dst++ = *src++;
-            l--;
-          }
+          /* raw_tx_buf <- gp->data */
+          copy_data(raw_tx_buf, gp->data, l);
           WIGGLE_TELL;
           err   = call GPSTransmit.send(raw_tx_buf, *lenp - 1);
         } while (0);
@@ -572,6 +574,50 @@ implementation {
                                         canned_msgs[l].len);
         } while (0);
         call CollectEvent.logEvent(DT_EVENT_GPS_CANNED, l, err, l, awake);
+        break;
+
+        /*********************************************************************
+         * Set overwatch logging_flags,
+         *
+         * {SET,CLR}_LOG_FLAG take a single byte number that is the enum of
+         * the flag to set or clear.
+         *
+         * {SET,CLR}_LOGGING takes a 4 byte little endian number that is used
+         * to clear or set the logging_flags.
+         *
+         * FORCE jam loads the logging_flags.
+         */
+      case GDC_SET_LOG_FLAG:
+        l = gp->data[0];                /* get the flag to set */
+        call OverWatch.setLoggingFlag(l);
+        break;
+
+      case GDC_CLR_LOG_FLAG:
+        l = gp->data[0];                /* get the flag to set */
+        call OverWatch.clrLoggingFlag(l);
+        break;
+
+      case GDC_SET_LOGGING:
+        /* first grab the 32 bit number that is the mask */
+        l = 0;
+        copy_data((void *) &l, gp->data, *lenp - 1);
+        call OverWatch.setLoggingFlagsM(l);
+        break;
+
+      case GDC_CLR_LOGGING:
+        l = 0;
+        copy_data((void *) &l, gp->data, *lenp - 1);
+        call OverWatch.clrLoggingFlagsM(l);
+        break;
+
+      case GDC_FORCE_LOGGING:
+        l = 0;
+        copy_data((void *) &l, gp->data, *lenp - 1);
+        call OverWatch.forceLoggingFlags(l);
+        break;
+
+
+      case GDC_LOW:
         break;
 
       case GDC_SLEEP:

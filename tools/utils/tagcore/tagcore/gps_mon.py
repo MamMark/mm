@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.3.2'
+__version__ = '0.3.3.dev0'
 
 __all__ = [
     'gps_cmd_name',
@@ -53,6 +53,15 @@ gps_cmds = {
 
     'can':          0x80,
 
+    'setlogflag':   0x81,
+    'clrlogflag':   0x82,
+
+    'setlogging':   0x83,
+    'clrlogging':   0x84,
+
+    'forcelogging': 0x85,
+    'getlogging':   0x86,
+
     'low':          0xfc,
     'sleep':        0xfd,
     'panic':        0xfe,
@@ -75,6 +84,15 @@ gps_cmds = {
     22:             'wake',
 
     0x80:           'can',
+
+    0x81:           'setlogflag',
+    0x82:           'clrlogflag',
+
+    0x83:           'setlogging',
+    0x84:           'clrlogging',
+
+    0x85:           'forcelogging',
+    0x86:           'getlogging',
 
     0xfe:           'low',
     0xfd:           'sleep',
