@@ -29,7 +29,8 @@
 
 #define GPS_LOG_EVENTS
 
-#define GPS_TARGET_SPEED 115200
+//#define GPS_TARGET_SPEED 115200
+#define GPS_TARGET_SPEED 9600
 
 
 /*
@@ -120,10 +121,17 @@
 
 /*
  * DT_GPS_BYTE_TIME: a byte time at the target baud in nano units
+ * 10bits @ 115200 bps
  *
  * binary time, 86805 * 1024/1000 = 88889nis
  */
-#define DT_GPS_BYTE_TIME        88889
+//#define DT_GPS_BYTE_TIME        88889
+
+/*
+ * binary time, 1041667 * 1024/1000 = 1066667nis
+ * 10bits @ 9600 bps
+ */
+#define DT_GPS_BYTE_TIME        1066667
 
 /*
  * MAX_RX_TIMEOUT is the upper limit we use under normal circumstances just
@@ -151,6 +159,8 @@
  * so for a 200 byte max message we get: 17ms or 18mis.  If we roughly
  * triple this we get around 50ms (52mis).  That should work.
  *
+ * (for 9600: 214ms * 3 = 642 ms  this is MAX_RX_TO @ 9600 baud)
+ *
  * We use the PEEK command to force a response.  PEEK_TX_TIMEOUT is
  * calculated using the size of the PEEK command (20 bytes).
  *
@@ -163,11 +173,22 @@
  * SWVER_TX_TRANSIT = (10 * byte_time + 500000)/1e6 = ~1ms  (.87ms)
  *  PEEK_TX_TRANSIT = (20 * byte_time + 500000)/1e6 = ~2mis (1.7ms)
  * PEEK_RSP_TRANSIT = (19 * byte_time + 500000)/1e6 = ~2mis (1.7ms) ***
+ *
+ * (9600 target)
+ * SWVER_TX_TRANSIT = (10 * byte_time + 500000)/1e6 = ~11ms  (.87ms)
+ *  PEEK_TX_TRANSIT = (20 * byte_time + 500000)/1e6 = ~22mis (1.7ms)
+ * PEEK_RSP_TRANSIT = (19 * byte_time + 500000)/1e6 = ~21mis (1.7ms) ***
  */
 
+/* 115200 */
+//#define DT_GPS_MIN_TX_TIMEOUT   5
+//#define DT_GPS_PEEK_RSP_TIMEOUT 52
+//#define DT_GPS_MAX_RX_TIMEOUT   52
+
+/* 9600 */
 #define DT_GPS_MIN_TX_TIMEOUT   5
-#define DT_GPS_PEEK_RSP_TIMEOUT 52
-#define DT_GPS_MAX_RX_TIMEOUT   52
+#define DT_GPS_PEEK_RSP_TIMEOUT 1024
+#define DT_GPS_MAX_RX_TIMEOUT   1024
 
 /*
  * All times unless otherwise noted are in decimal time (us and
