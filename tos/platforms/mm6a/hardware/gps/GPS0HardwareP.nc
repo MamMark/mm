@@ -478,20 +478,17 @@ implementation {
         /*
          * first check for any rx errors.  If an rx error has messsed with
          * the stream we want to tell the protocol engine and blow things
-         * up.  The next char however could be part of a good stream.
+         * up.
          */
         stat_word = call Usci.getStat();
         if (stat_word & EUSCI_A_STATW_RXERR) {
+          /* clear the error and we don't care about the data */
           data = call Usci.getRxbuf();
           gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
           signal HW.gps_rx_err(stat_word);
-        } else
-          data = call Usci.getRxbuf();
-        stat_word = call Usci.getStat();
-        if (stat_word & EUSCI_A_STATW_RXERR) {
-          data = call Usci.getRxbuf();
-          gps_log_int(GPSI_RX, stat_word, data);
+          return;
         }
+        data = call Usci.getRxbuf();
 
         /*
          * there is an overrun race condition that can occur.
@@ -505,6 +502,7 @@ implementation {
           data = call Usci.getRxbuf();
           gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
           signal HW.gps_rx_err(stat_word);
+          return;
         }
 
         if (m_rx_buf) {
