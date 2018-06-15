@@ -552,7 +552,6 @@ implementation {
           }
           /* raw_tx_buf <- gp->data */
           copy_data(raw_tx_buf, gp->data, l);
-          WIGGLE_TELL;
           err   = call GPSTransmit.send(raw_tx_buf, *lenp - 1);
         } while (0);
         call CollectEvent.logEvent(DT_EVENT_GPS_RAW_TX, 999, err, l, awake);
@@ -574,7 +573,6 @@ implementation {
             err = EINVAL;
             break;
           }
-          WIGGLE_TELL;
           err   = call GPSTransmit.send((void *) canned_msgs[l].msg,
                                         canned_msgs[l].len);
         } while (0);
