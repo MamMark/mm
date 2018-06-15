@@ -94,7 +94,7 @@ enum {
 #define GPS_MON_MPM_COLLECT_TIME    ( 2 * 60 * 1024)
 #define GPS_MON_SATS_STARTUP_TIME   (10 * 60 * 1024)
 
-#define GPS_MON_WAKEUP              ( 5 * 60 * 1024)
+#define GPS_MON_SLEEP               ( 5 * 60 * 1024)
 
 /*
  * mpm_rsp_to   timeout for listening for mpm rsp after
@@ -115,7 +115,7 @@ enum {
  *              Window allowed for normal cycle, looking for locks.
  *              (uses MajorTimer)
  *
- * mon_wakeup   when in MPM, how long to stay asleep before next fix.
+ * mon_sleep    when in MPM, how long to stay asleep before next fix.
  */
 
 /*
@@ -706,7 +706,7 @@ implementation {
 
       case GMS_MAJOR_CYCLE:
       case GMS_MAJOR_MPM_COLLECT:
-        call MajorTimer.startOneShot(GPS_MON_WAKEUP);
+        call MajorTimer.startOneShot(GPS_MON_SLEEP);
         major_change_state(GMS_MAJOR_IDLE, MON_EV_TIMEOUT_MAJOR);
         minor_event(MON_EV_MAJOR_CHANGED);
         return;
