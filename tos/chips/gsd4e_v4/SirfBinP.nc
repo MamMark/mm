@@ -136,6 +136,11 @@ implementation {
   }
 
 
+  async command void GPSProto.reset_errors() {
+      sirfbin_stats.rx_errors = 0;
+  }
+
+
   async command void GPSProto.byteAvail(uint8_t byte) {
     uint16_t chksum;
 

@@ -1093,6 +1093,7 @@ implementation {
         return;
 
       case GPSC_CHK_RX_WAIT:
+        call SirfProto.reset_errors();
         gpsc_change_state(GPSC_CHK_MSG_WAIT, GPSW_PROTO_START);
         return;
 
