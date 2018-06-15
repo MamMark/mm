@@ -314,29 +314,20 @@ implementation {
    */
   async command void HW.gps_rx_int_enable() {
     uint16_t stat_word;
-    uint8_t  byte = 0;
 
     stat_word = call Usci.getStat();
-    if (stat_word & EUSCI_A_STATW_RXERR) {
-      byte = call Usci.getRxbuf();
-      gps_log_int(GPSI_RX_INT_ON, stat_word, byte);
-      stat_word = call Usci.getStat();
-      if (stat_word & EUSCI_A_STATW_RXERR)
-        byte = call Usci.getRxbuf();
-    }
-    gps_log_int(GPSI_RX_INT_ON, stat_word, byte);
+    if (stat_word & EUSCI_A_STATW_RXERR)
+      call Usci.getRxbuf();
+    gps_log_int(GPSI_RX_INT_ON, stat_word, call Usci.getIe());
     call Usci.enableRxIntr();
   }
 
   async command void HW.gps_rx_int_disable() {
     uint16_t stat_word;
-    uint8_t  byte = 0;
 
     stat_word = call Usci.getStat();
-    if (stat_word & EUSCI_A_STATW_RXERR)
-      byte = call Usci.getRxbuf();
-    gps_log_int(GPSI_RX_INT_OFF, stat_word, byte);
-    call Usci.disableRxIntr();
+    gps_log_int(GPSI_RX_INT_OFF, stat_word, call Usci.getIe());
+     call Usci.disableRxIntr();
   }
 
   async command void HW.gps_clear_rx_errs() {
@@ -366,7 +357,6 @@ implementation {
 
   async command error_t HW.gps_send_block(uint8_t *ptr, uint16_t len) {
     uint16_t stat_word;
-    uint8_t  byte = 0;
 
     if (!len || !ptr)
       return FAIL;
@@ -385,23 +375,16 @@ implementation {
      * So just enable the interrupt and let it fly.
      */
     stat_word = call Usci.getStat();
-    if (stat_word & EUSCI_A_STATW_RXERR) {
-      byte = call Usci.getRxbuf();
-      gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
-    }
-    gps_log_int(GPSI_TX_INT_ON, stat_word, byte);
+    gps_log_int(GPSI_TX_INT_ON, stat_word, call Usci.getIe());
     call Usci.enableTxIntr();
     return SUCCESS;
   }
 
   async command void    HW.gps_send_block_stop() {
     uint16_t stat_word;
-    uint8_t  byte = 0;
 
     stat_word = call Usci.getStat();
-    if (stat_word & EUSCI_A_STATW_RXERR)
-      byte = call Usci.getRxbuf();
-    gps_log_int(GPSI_TX_INT_OFF, stat_word, byte);
+    gps_log_int(GPSI_TX_INT_OFF, stat_word, call Usci.getIe());
     call Usci.disableTxIntr();
     m_tx_buf = NULL;
   }
@@ -523,7 +506,7 @@ implementation {
            * just panic to call attention to the issue.
            */
           stat_word = call Usci.getStat();
-          gps_log_int(GPSI_TX_INT_OFF, stat_word, 0);
+          gps_log_int(GPSI_TX_INT_OFF, stat_word, call Usci.getIe());
           call Usci.disableTxIntr();
           gps_panic(4, iv, 0);
           return;
@@ -531,12 +514,12 @@ implementation {
 
         data = m_tx_buf[m_tx_idx++];
         stat_word = call Usci.getStat();
-        gps_log_int(GPSI_TX, stat_word, data);
+        gps_log_int(GPSI_TX, stat_word, call Usci.getIe());
         call Usci.setTxbuf(data);
         if (m_tx_idx >= m_tx_len) {
           buf = m_tx_buf;
           stat_word = call Usci.getStat();
-          gps_log_int(GPSI_TX_INT_OFF, stat_word, data);
+          gps_log_int(GPSI_TX_INT_OFF, stat_word, call Usci.getIe());
           call Usci.disableTxIntr();
           m_tx_buf = NULL;
           signal HW.gps_send_block_done(buf, m_tx_len, SUCCESS);
