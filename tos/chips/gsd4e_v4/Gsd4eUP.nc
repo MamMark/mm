@@ -991,7 +991,7 @@ implementation {
           gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_TX_TIMER);
           gpsc_log_event(GPSE_SPEED, GPS_TARGET_SPEED);
           call HW.gps_speed_di(GPS_TARGET_SPEED);
-          call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
+          call GPSTxTimer.startOneShot(DT_GPS_PEEK_TX_TIMEOUT);
           collect_gps_pak((void *) sirf_peek_0, sizeof(sirf_peek_0),
                           GPS_DIR_TX);
           call HW.gps_send_block((void *) sirf_peek_0, sizeof(sirf_peek_0));
@@ -1037,7 +1037,7 @@ implementation {
           gps_probe_index = -1;             /* first peek try */
           gps_chk_trys    = GPS_CHK_MAX_TRYS;
           gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_RX_TIMER);
-          call GPSTxTimer.startOneShot(DT_GPS_MIN_TX_TIMEOUT);
+          call GPSTxTimer.startOneShot(DT_GPS_PEEK_TX_TIMEOUT);
           collect_gps_pak((void *) sirf_peek_0, sizeof(sirf_peek_0),
                           GPS_DIR_TX);
           call HW.gps_send_block((void *) sirf_peek_0, sizeof(sirf_peek_0));
