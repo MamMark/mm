@@ -387,7 +387,7 @@ implementation {
     stat_word = call Usci.getStat();
     if (stat_word & EUSCI_A_STATW_RXERR) {
       byte = call Usci.getRxbuf();
-      gps_log_int(GPSI_RX_ERR, stat_word, byte);
+      gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
     }
     gps_log_int(GPSI_TX_INT_ON, stat_word, byte);
     call Usci.enableTxIntr();
@@ -483,7 +483,7 @@ implementation {
         stat_word = call Usci.getStat();
         if (stat_word & EUSCI_A_STATW_RXERR) {
           data = call Usci.getRxbuf();
-          gps_log_int(GPSI_RX_ERR, stat_word, data);
+          gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
           signal HW.gps_rx_err(stat_word);
         } else
           data = call Usci.getRxbuf();
@@ -503,7 +503,7 @@ implementation {
         stat_word = call Usci.getStat();
         if (stat_word & EUSCI_A_STATW_RXERR) {
           data = call Usci.getRxbuf();
-          gps_log_int(GPSI_RX_ERR, stat_word, data);
+          gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
           signal HW.gps_rx_err(stat_word);
         }
 
