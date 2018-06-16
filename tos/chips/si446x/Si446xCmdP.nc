@@ -55,6 +55,14 @@ enum {
 #define PANIC_RADIO __pcode_radio
 #endif
 
+// #define SI446X_ATOMIC_SPI
+
+#ifdef SI446X_ATOMIC_SPI
+#define SI446X_ATOMIC     atomic
+#else
+#define SI446X_ATOMIC
+#endif
+
 /**************************************************************************/
 /*
  * chip debugging
@@ -255,7 +263,7 @@ implementation {
     spi_trace_desc_t    *rspi;
     uint16_t            x;
 
-    atomic {
+    SI446X_ATOMIC {
       if ((op == SPI_REC_UNDEFINED) || (op >= SPI_REC_LAST)) {
         __PANIC_RADIO(20, op, id, l, 0);
       }

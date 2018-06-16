@@ -58,16 +58,6 @@
  * load_config_task, cmd_done_task, send_done_task.
  *
  */
-
-
-#define SI446X_ATOMIC_SPI
-
-#ifdef SI446X_ATOMIC_SPI
-#define SI446X_ATOMIC     atomic
-#else
-#define SI446X_ATOMIC
-#endif
-
 #ifndef PANIC_RADIO
 
 enum {
