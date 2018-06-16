@@ -231,6 +231,7 @@ typedef enum {
   DT_EVENT_GPS_XYZ          = 3,
   DT_EVENT_GPS_TIME         = 4,
   DT_EVENT_GPS_MTFF_TIME    = 5,       // Mpm To First Fix (MTFF)
+  DT_EVENT_GPS_FIRST_LOCK   = 13,      // boot to first lock
 
   DT_EVENT_SSW_DELAY_TIME   = 6,
   DT_EVENT_SSW_BLK_TIME     = 7,
@@ -240,6 +241,8 @@ typedef enum {
   DT_EVENT_SUBMERGED        = 10,
   DT_EVENT_DOCKED           = 11,
   DT_EVENT_UNDOCKED         = 12,
+
+  /***********************************/
 
   DT_EVENT_GPS_BOOT         = 32,
   DT_EVENT_GPS_BOOT_TIME    = 33,
@@ -266,6 +269,10 @@ typedef enum {
   DT_EVENT_GPS_TURN_OFF     = 49,
   DT_EVENT_GPS_MPM          = 50,
   DT_EVENT_GPS_PULSE        = 51,
+
+  DT_EVENT_GPS_TX_RESTART   = 52,
+
+  /***********************************/
 
   DT_EVENT_GPS_FAST         = 64,
   DT_EVENT_GPS_FIRST        = 65,
