@@ -332,6 +332,7 @@ implementation {
         gmcb.retry_count = 1;
         minor_change_state(GMS_CONFIG, MON_EV_STARTUP);
         call GPSTransmit.send((void *) sirf_swver, sizeof(sirf_swver));
+        cycle_start= call MajorTimer.getNow();
         call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
         return;
     }
@@ -669,6 +670,9 @@ implementation {
         return;
 
       case GMS_MAJOR_SATS_STARTUP:
+        call CollectEvent.logEvent(DT_EVENT_GPS_FIRST_LOCK,
+                call MajorTimer.getNow() - cycle_start, cycle_start, 0, 0);
+        cycle_start = 0;
         major_change_state(GMS_MAJOR_CYCLE, MON_EV_LOCK_TIME);
         call MajorTimer.startOneShot(GPS_MON_CYCLE_TIME);
         minor_event(MON_EV_MAJOR_CHANGED);
