@@ -59,7 +59,7 @@ typedef struct {
   gps_int_ev_t ev;
   uint8_t      count;
   uint8_t      stat;
-  uint8_t      byte;
+  uint8_t      arg;
   uint8_t      tx_active;
 } gps_int_rec_t;
 
@@ -105,7 +105,7 @@ implementation {
   norace uint32_t m_tx_idx, m_rx_idx;
 
 
-  void gps_log_int(gps_int_ev_t ev, uint8_t stat, uint8_t byte) {
+  void gps_log_int(gps_int_ev_t ev, uint8_t stat, uint8_t arg) {
     gps_int_rec_t *gp;
 
     if (gps_int_rec_idx > GPS_INT_RECS_MAX)
@@ -123,7 +123,7 @@ implementation {
     gp->ev = ev;
     gp->count = 1;
     gp->stat = stat;
-    gp->byte = byte;
+    gp->arg = arg;
     if (m_tx_buf)
       gp->tx_active = TRUE;
     else
