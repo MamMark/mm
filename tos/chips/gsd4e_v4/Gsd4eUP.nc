@@ -1008,8 +1008,10 @@ implementation {
           m_lost_tx_ints++;
           if (--m_lost_tx_retries >= 0) {
             call CollectEvent.logEvent(DT_EVENT_GPS_LOST_INT, m_lost_tx_ints,
-                                       0, 0, 0);
+                                       0, 0, m_lost_tx_retries);
             if (call HW.gps_restart_tx()) {
+              call CollectEvent.logEvent(DT_EVENT_GPS_TX_RESTART,
+                                         0, 0, 0, m_lost_tx_retries);
               call GPSTxTimer.startOneShot(m_tx_time_out);
               return;
             }
