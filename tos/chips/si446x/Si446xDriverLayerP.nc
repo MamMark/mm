@@ -624,7 +624,8 @@ implementation {
     cfg_cb.list_iter = 0;
 
     call Si446xCmd.enable_hw_cts(); // now that configuration is completed
-                                    //  we can start using hardware cts
+                                    // we can start using hardware cts
+    call Si446xCmd.dump_radio();    // copy group register state to ram
     // invoke driver state machine with completion notification event
     fsm_task_queue(E_CONFIG_DONE);
     call Tasklet.resume();
@@ -812,7 +813,7 @@ implementation {
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
     // snapshot radio chip internal register state
-    call Si446xCmd.dump_radio();
+    //call Si446xCmd.dump_radio();
     // proceed with a_rx_on action to start receiving
     return a_rx_on(t);
   }
