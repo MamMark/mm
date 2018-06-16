@@ -910,7 +910,7 @@ implementation {
   /*
    * pull_rx(): pull the rx fifo into the buffer.
    */
-  void pull_rx() {
+  void pull_rx(int32_t min) {
     uint8_t  *dp;
     uint16_t  tx_len, rx_len, x, y;
     uint16_t  max_delta;
@@ -921,15 +921,15 @@ implementation {
     }
     max_delta = sizeof(global_ioc.pRxMsg->header) + sizeof(global_ioc.pRxMsg->data);
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
-    if (rx_len == 0 || global_ioc.rx_ff_index + rx_len > max_delta) {
+    if ((min) && (global_ioc.rx_ff_index + rx_len > max_delta)) {
       call Si446xCmd.fifo_info(&x, &y, 0);
       __PANIC_RADIO(10, global_ioc.rx_ff_index, rx_len, ((uint32_t) x) << 16 | y, (parg_t) dp);
     }
-
-    call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
-    global_ioc.rx_ff_index += rx_len;
-
-    if (call PacketRSSI.get(global_ioc.pRxMsg) == 0) {
+    if (rx_len) {
+      call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
+      global_ioc.rx_ff_index += rx_len;
+    }
+    if (!call PacketRSSI.isSet(global_ioc.pRxMsg)) {
         call PacketRSSI.set(global_ioc.pRxMsg,
                             call Si446xCmd.fast_latched_rssi());
       }
@@ -947,8 +947,9 @@ implementation {
    */
 
   fsm_result_t a_rx_drain_ff(fsm_transition_t *t) {
-    /* currently same as fetch */
-    return a_rx_fetch_ff(t);
+    // fifo may be empty, so pulling zero bytes is ok
+    pull_rx(0);
+    return fsm_results(t->next_state, E_NONE);
   }
 
 
@@ -960,7 +961,8 @@ implementation {
    */
 
   fsm_result_t a_rx_fetch_ff(fsm_transition_t *t) {
-    pull_rx();
+    // need to pull at least one, otherwise panic
+    pull_rx(1);
     return fsm_results(t->next_state, E_NONE);
   }
 
@@ -973,13 +975,10 @@ implementation {
    * terminate with extreme prejudice
    */
   fsm_result_t a_rx_flush(fsm_transition_t *t) {
-    uint16_t rx_len, tx_len;
 
     global_ioc.rx_crc_packet_rx++;
     stop_alarm();
-    call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
-    if (rx_len)                         /* something else to grab */
-      pull_rx();                        /* checks for null pRxMsg */
+    pull_rx(0);
     return a_rx_on(t);
   }
 
@@ -1186,7 +1185,7 @@ implementation {
   /**************************************************************************/
 
   fsm_result_t a_rx_cmp(fsm_transition_t *t) {
-    uint16_t        pkt_len, rx_len, tx_len;
+    uint16_t        pkt_len;
     si446x_packet_header_t *hp;
 
     stop_alarm();
@@ -1196,9 +1195,7 @@ implementation {
      * if it matters or not.  but haven't explored it.
      */
     pkt_len = call Si446xCmd.get_packet_info() + 1;        // include len byte
-    call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
-    if (rx_len)                         /* something else to grab */
-      pull_rx();                        /* checks for null pRxMsg */
+    pull_rx(0);
 
     /*
      * first byte?  this is the length and SiLabs seems to think this is the
