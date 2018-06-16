@@ -57,8 +57,13 @@ implementation {
                   uint32_t    tagmon_timeout  = 20; // milliseconds
 
   /*
-   * radio state info
+   * Tagnet Monitor handles control of the radio to manage power
+   * and maximizing opportunities to communicate with a base station.
+   * Below are the enums and variables used to control hierarchical
+   * state machine. See <tagmonograph.png> for specifics on the
+   * state transitions.
    */
+  // major states
   typedef enum {
     RS_NONE         = 0,
     RS_BASE         = 1,
@@ -67,6 +72,7 @@ implementation {
     RS_MAX,
   } radio_state_t;
 
+  // minor states
   typedef enum {
     SS_NONE         = 0,
     SS_RECV         = 1,
@@ -76,18 +82,30 @@ implementation {
     SS_MAX,
   } radio_substate_t;
 
+  // context for a minor state (more than one)
   typedef struct {
     radio_substate_t  state;
-    uint32_t          max_retries;
-    uint32_t          timers[SS_MAX];
+    uint32_t          max_retries;    // one per major
+    uint32_t          timers[SS_MAX]; // per substate
   } radio_subgraph_t;
 
+  // context for the major state
   typedef struct {
     radio_state_t     state;
-    int32_t           retry_counter;
-    radio_subgraph_t  sub[RS_MAX];
+    int32_t           retry_counter;  // one per system
+    radio_subgraph_t  sub[RS_MAX];    // per state
   } radio_graph_t;
 
+  // main radio controller data structure.
+  norace radio_graph_t  rcb = {
+    RS_NONE, 5,
+    {{SS_NONE,     0, {0,      0,      0,   0,   0}},
+     {SS_NONE,   500, {0,    200,    300, 100, 100}},  // base
+     {SS_NONE,  5000, {0,   2000,  30000, 100, 100}},  // hunt
+     {SS_NONE,    -1, {0,   2000, 300000, 100, 100}}}, // lost
+  };
+
+  // information recorded in the fsm trace array
   typedef struct {
     radio_state_t     major;
     radio_state_t     old_major;
@@ -95,28 +113,9 @@ implementation {
     radio_substate_t  old_minor;
     uint32_t          timeout;
   } radio_trace_t;
-
   radio_trace_t       radio_trace[10];
   norace uint32_t     radio_trace_head;
 
-  norace radio_graph_t  rcb = {
-    RS_NONE, 5,
-    {{SS_NONE,    0, {0,      0,      0,   0,   0}},
-     {SS_NONE,   50, {0,   2000,   3000, 100, 100}},  // base
-     {SS_NONE,  500, {0,   2000,  30000, 100, 100}},  // hunt
-     {SS_NONE,   -1, {0,   2000, 300000, 100, 100}}}, // lost
-  };
-
-  /*
-   * {state = TagnetMonitorP__RS_BASE, retry_counter = 0x4,
-   *    sub =
-   *    { {state = TagnetMonitorP__SS_NONE, max_retries = 0x0, timers = {0x0, 0x0, 0x0}},
-   *      {state = TagnetMonitorP__SS_STANDBY, max_retries = 0x5, timers = {0x0, 0xbb8, 0x3a98}},
-   *      {state = TagnetMonitorP__SS_NONE, max_retries = 0x5, timers = {0x0, 0x1770, 0xea60}},
-   *      {state = TagnetMonitorP__SS_NONE, max_retries = 0x5, timers = {0x0, 0x7d0, 0x493e0}}
-   *    }
-   * }
-  */
 
   void change_radio_state(radio_state_t major, radio_substate_t minor) {
     error_t          error = SUCCESS;
@@ -280,6 +279,7 @@ implementation {
             change_radio_state(RS_LOST, SS_RECV);
             break;
           case SS_STANDBY_WAIT:
+            // never leaves this major state
             change_radio_state(RS_LOST, SS_STANDBY);
             break;
           default:
