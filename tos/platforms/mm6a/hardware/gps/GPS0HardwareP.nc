@@ -113,6 +113,7 @@ implementation {
     gp = &gps_int_recs[gps_int_rec_idx];
 
     if (gp->ev == ev && (ev == GPSI_RX || ev == GPSI_TX)) {
+      gp->ts = call Platform.usecsRaw();
       gp->count++;
       return;
     }
