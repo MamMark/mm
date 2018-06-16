@@ -88,7 +88,7 @@ enum {
 #define GPS_MON_LONG_COMM_TO        8192
 #define GPS_MON_MPM_RSP_TO          2048
 #define GPS_MON_MPM_RESTART_WAIT    2048
-#define GPS_MON_COLLECT_DEADMAN     4096
+#define GPS_MON_COLLECT_DEADMAN     16384
 
 #define GPS_MON_CYCLE_TIME          ( 1 * 30 * 1024)
 #define GPS_MON_MPM_COLLECT_TIME    ( 2 * 60 * 1024)
