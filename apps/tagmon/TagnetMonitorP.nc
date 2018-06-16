@@ -161,6 +161,16 @@ implementation {
     }
   }
 
+  void change_radio_state_retry(radio_state_t major, radio_substate_t minor,
+                           radio_state_t major_alt, radio_substate_t minor_alt) {
+    // move to major,minor state when -1 or positive retry count
+    if ((--rcb.retry_counter <= -1) || (rcb.retry_counter > 0))
+      change_radio_state(major, minor);
+    else // move to alternate
+      change_radio_state(major_alt, minor_alt);
+  }
+
+
   task void network_task() {
     nop();
     nop();                     /* BRK */
@@ -242,10 +252,8 @@ implementation {
             change_radio_state(RS_BASE, SS_RECV);
             break;
           case SS_STANDBY_WAIT:
-            if (--rcb.retry_counter <= 0)
-              change_radio_state(RS_HUNT, SS_STANDBY);
-            else
-              change_radio_state(RS_BASE, SS_STANDBY);
+            // stay in current major if retries left, else go to next major
+            change_radio_state_retry(RS_BASE, SS_STANDBY, RS_HUNT, SS_STANDBY);
             break;
           default:
             call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
@@ -258,10 +266,8 @@ implementation {
             change_radio_state(RS_HUNT, SS_RECV);
             break;
           case SS_STANDBY_WAIT:
-            if (--rcb.retry_counter <= 0)
-              change_radio_state(RS_LOST, SS_STANDBY);
-            else
-              change_radio_state(RS_HUNT, SS_STANDBY);
+            // stay in current major if retries left, else go to next major
+            change_radio_state_retry(RS_HUNT, SS_STANDBY, RS_LOST, SS_STANDBY);
             break;
           default:
             call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
