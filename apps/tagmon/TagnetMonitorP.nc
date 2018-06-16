@@ -122,42 +122,58 @@ implementation {
     radio_state_t    old_major;
     radio_substate_t old_minor;
     radio_trace_t   *tt;
+    uint32_t         tval;
 
     nop();
     nop();                     /* BRK */
-    if (major == RS_NONE) major = rcb.state;
+    if (major == RS_NONE) major = rcb.state; // default is current state
+    // check for range errors
     if ((major > sizeof(rcb.sub)/sizeof(rcb.sub[0])) ||
         (minor > sizeof(rcb.sub[0].timers)/sizeof(rcb.sub[0].timers[0])))
         call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
                          major, minor, 0, 0);
+    // perform radio state change when appropriate substate is (re)entered
+    // do this first because if it fails we will stay in the previous state
+    // to try again
+    tval = rcb.sub[major].timers[minor]; // get timer from wait state
+    switch(minor) {
+      case SS_RECV_WAIT:
+        error = call RadioState.turnOn();
+        break;
+      case SS_STANDBY_WAIT:
+        error = call RadioState.standby();
+        break;
+      default:
+        break;
+    }
+    // check for error, stay in same state if radio was busy,
+    // this will cause wait timer to expire and retry the request
+    if (error) {
+      if (error == EBUSY) {
+        major = rcb.state;
+        minor = rcb.sub[major].state;
+      }
+      else
+        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                         major, minor, (uint32_t) error, 0);
+    }
+    // update state variables
     old_major = rcb.state;
     old_minor = rcb.sub[major].state;
     rcb.state = major;
     rcb.sub[major].state = minor;
+    // add info to trace array
     if (radio_trace_head >= (sizeof(radio_trace)/sizeof(radio_trace[0])))
       radio_trace_head = 0;
     tt = &radio_trace[radio_trace_head++];
     tt->major = major; tt->old_major = old_major;
     tt->minor = minor; tt->old_minor = old_minor;
-    tt->timeout = rcb.sub[major].timers[minor];
-    call smTimer.startOneShot(rcb.sub[major].timers[minor]);
+    tt->timeout = tval;
+    // start timer
+    call smTimer.startOneShot(tval);
+    // reset retry counter if changing major
     if (major != old_major)
       rcb.retry_counter = rcb.sub[major].max_retries;
-    if (old_minor != minor) {
-      switch(minor) {
-        case SS_RECV_WAIT:
-          error = call RadioState.turnOn();
-          break;
-        case SS_STANDBY_WAIT:
-          error = call RadioState.standby();
-          break;
-        default:
-          break;
-      }
-      if (error)
-        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
-                         major, minor, (uint32_t) error, 0);
-    }
   }
 
   void change_radio_state_retry(radio_state_t major, radio_substate_t minor,
