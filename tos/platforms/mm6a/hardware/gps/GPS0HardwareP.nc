@@ -423,12 +423,12 @@ implementation {
       /*
        * replace the interrupt by clearing TXIFG and reasserting
        */
-      gps_log_int(GPSI_TX_RESTART, 0, call Usci.getIfg());
+      gps_log_int(GPSI_TX_RESTART, call Usci.getStat(), call Usci.getIfg());
       call Usci.disableTxIntr();
       call Usci.clrTxIntr();
       call Usci.setTxIntr();
       call Usci.enableTxIntr();
-      gps_log_int(GPSI_TX_RESTART, 0, call Usci.getIfg());
+      gps_log_int(GPSI_TX_RESTART, call Usci.getStat(), call Usci.getIfg());
       return TRUE;
     }
   }
