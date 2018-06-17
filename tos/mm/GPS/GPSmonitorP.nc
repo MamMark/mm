@@ -255,6 +255,8 @@ implementation {
   gps_time_t m_time;
   gps_1pps_t m_pps;
 
+  void major_event(mon_event_t ev);
+
   void gps_warn(uint8_t where, parg_t p, parg_t p1) {
     call Panic.warn(PANIC_GPS, where, p, p1, 0, 0);
   }
@@ -520,6 +522,11 @@ implementation {
         break;
 
       case GDC_CYCLE:
+        major_event(MON_EV_CYCLE);
+        break;
+
+      case GDC_STATE:
+        major_event(MON_EV_STATE_CHK);
         break;
 
       case GDC_AWAKE_STATUS:
@@ -726,6 +733,33 @@ implementation {
     }
   }
 
+  void maj_ev_cycle() {
+    switch(gmcb.major_state) {
+      default:
+        gps_panic(137, gmcb.major_state, MON_EV_CYCLE);
+        return;
+
+      case GMS_MAJOR_CYCLE:             /* already got one */
+        return;                         /* ignore request  */
+
+      case GMS_MAJOR_IDLE:
+      case GMS_MAJOR_SATS_STARTUP:
+      case GMS_MAJOR_MPM_COLLECT:
+      case GMS_MAJOR_TIME_COLLECT:
+        call MajorTimer.startOneShot(GPS_MON_CYCLE_TIME);
+        major_change_state(GMS_MAJOR_CYCLE, MON_EV_CYCLE);
+        minor_event(MON_EV_MAJOR_CHANGED);
+        return;
+    }
+  }
+
+
+  void maj_ev_state_chk() {
+    major_change_state(gmcb.major_state, MON_EV_STATE_CHK);
+    minor_change_state(gmcb.minor_state, MON_EV_STATE_CHK);
+  }
+
+
   void major_event(mon_event_t ev) {
     verify_gmcb();
     switch(ev) {
@@ -736,6 +770,8 @@ implementation {
       case MON_EV_LOCK_TIME:        maj_ev_lock_time();     return;
       case MON_EV_MPM_ERROR:        maj_ev_mpm_error();     return;
       case MON_EV_TIMEOUT_MAJOR:    maj_ev_timeout_major(); return;
+      case MON_EV_CYCLE:            maj_ev_cycle();         return;
+      case MON_EV_STATE_CHK:        maj_ev_state_chk();     return;
     }
   }
 

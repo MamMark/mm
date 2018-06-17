@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.3.3.dev0'
+__version__ = '0.3.3.dev1'
 
 __all__ = [
     'gps_cmd_name',
@@ -42,6 +42,7 @@ gps_cmds = {
     'pwron':        4,
     'pwroff':       5,
     'cycle':        6,
+    'state':        7,
 
     'awake':        0x10,
     'mpm':          0x11,
@@ -74,6 +75,7 @@ gps_cmds = {
     4:              'pwron',
     5:              'pwroff',
     6:              'cycle',
+    7:              'state',
 
     16:             'awake',
     17:             'mpm',
@@ -145,6 +147,8 @@ gps_mon_events = {
     'timeout_minor': 12,
     'timeout_major': 13,
     'major_changed': 14,
+    'cycle':         15,
+    'state_chk':     16,
 
     0:                  'none',
     1:                  'fail',
@@ -161,6 +165,8 @@ gps_mon_events = {
     12:                 'timeout_minor',
     13:                 'timeout_major',
     14:                 'major_changed',
+    15:                 'cycle',
+    16:                 'state_chk',
 }
 
 def gps_mon_event_name(mon_ev):

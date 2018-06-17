@@ -38,6 +38,7 @@ typedef enum gps_debug_cmds {
   GDC_POWER_ON      = 4,
   GDC_POWER_OFF     = 5,
   GDC_CYCLE         = 6,
+  GDC_STATE         = 7,
 
   GDC_AWAKE_STATUS  = 0x10,
   GDC_MPM           = 0x11,
@@ -102,6 +103,8 @@ typedef enum mon_events {
   MON_EV_TIMEOUT_MINOR  = 12,
   MON_EV_TIMEOUT_MAJOR  = 13,
   MON_EV_MAJOR_CHANGED  = 14,
+  MON_EV_CYCLE          = 15,
+  MON_EV_STATE_CHK      = 16,
 } mon_event_t;
 
 
