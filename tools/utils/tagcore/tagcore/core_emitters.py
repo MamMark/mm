@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev3'
+__version__ = '0.3.3.dev4'
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -55,7 +55,7 @@ ow_bases = {
 }
 
 def base_name(base):
-    return ow_bases.get(base, 'unk')
+    return ow_bases.get(base, 'base: {:08x}'.format(base))
 
 ow_boot_mode_strs = {
     0:  "GOLD",
@@ -93,16 +93,16 @@ ow_reboot_reason_strs = {
 REASON_PANIC = ow_reboot_reason_strs['PANIC']
 
 def ow_boot_mode_name(mode):
-    return ow_boot_mode_strs.get(mode, 'unk')
+    return ow_boot_mode_strs.get(mode, 'boot/' + str(mode))
 
 def ow_req_name(req):
-    return ow_req_strs.get(req, 'unk')
+    return ow_req_strs.get(req, 'req/' + str(req))
 
 def owt_action_name(action):
-    return ow_action_strs.get(action, 'unk')
+    return ow_action_strs.get(action, 'action/' + str(action))
 
 def reboot_reason_name(reason):
-    return ow_reboot_reason_strs.get(reason, 'unk')
+    return ow_reboot_reason_strs.get(reason, 'reason/' + str(reason))
 
 
 # --- offset recnum  systime  len  type  name
@@ -218,7 +218,7 @@ model_strs = {
 
 
 def model_name(model):
-    return model_strs.get(model, 'unk')
+    return model_strs.get(model, 'model/' + str(model))
 
 
 # --- offset recnum      brt  len  type  name

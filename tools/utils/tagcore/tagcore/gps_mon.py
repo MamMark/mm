@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.3.3.dev1'
+__version__ = '0.3.3.dev2'
 
 __all__ = [
     'gps_cmd_name',
@@ -105,7 +105,7 @@ gps_cmds = {
 def gps_cmd_name(gps_cmd):
     if isinstance(gps_cmd, str):
         return gps_cmds.get(gps_cmd, 0)
-    return gps_cmds.get(gps_cmd, 'unk')
+    return gps_cmds.get(gps_cmd, 'cmd/' + str(gps_cmd))
 
 CMD_NOP    = gps_cmds['nop']
 CMD_CAN    = gps_cmds['can']
@@ -172,7 +172,7 @@ gps_mon_events = {
 def gps_mon_event_name(mon_ev):
     if isinstance(mon_ev, str):
         return gps_mon_events.get(mon_ev, 0)
-    return gps_mon_events.get(mon_ev, 'unk')
+    return gps_mon_events.get(mon_ev, 'mon_ev/' + str(mon_ev))
 
 
 # gps monitor states - minor (basic)
@@ -209,7 +209,7 @@ gps_mon_minors = {
 def gps_mon_minor_name(minor_state):
     if isinstance(minor_state, str):
         return gps_mon_minors.get(minor_state, 1)
-    return gps_mon_minors.get(minor_state, 'unk')
+    return gps_mon_minors.get(minor_state, 'minor/' + str(minor_state))
 
 
 # gps monitor states - major
@@ -232,4 +232,4 @@ gps_mon_majors = {
 def gps_mon_major_name(major_state):
     if isinstance(major_state, str):
         return gps_mon_majors.get(major_state, 0)
-    return gps_mon_majors.get(major_state, 'unk')
+    return gps_mon_majors.get(major_state, 'major/' + str(major_state))

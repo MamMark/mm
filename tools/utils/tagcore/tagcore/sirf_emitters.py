@@ -26,7 +26,7 @@ import sirf_defs     as     sirf
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.3.2'
+__version__ = '0.3.3.dev0'
 
 
 def emit_default(level, offset, buf, obj):
@@ -283,7 +283,7 @@ def emit_sirf_geo(level, offset, buf, obj):
 
 def emit_sirf_sid_dispatch(level, offset, buf, obj, table, table_name):
     sid = buf[0]
-    v   = table.get(sid, (None, None, None, 'unk', ''))
+    v   = table.get(sid, (None, None, None, 'sid/' + str(sid), ''))
     emitters = v[EE_EMITTERS]
     obj      = v[EE_OBJECT]
     name     = v[EE_NAME]
@@ -346,8 +346,8 @@ def emit_sirf_set_msg_rate(level, offset, buf, obj):
     rate = obj['rate'].val
 
     print(' ({},{},{})'.format(mode,mid,rate))
-    mode_name = mode_names.get(mode, 'unk')
-    v = sirf.mid_table.get(mid, (None, None, None, 'unk'))
+    mode_name = mode_names.get(mode, 'mode/' + str(mode))
+    v = sirf.mid_table.get(mid, (None, None, None, 'mid/' + str(mid)))
     mid_name = v[MID_NAME]
     rate = 'off' if rate == 0 else str(rate)
     result = 'ick'
@@ -457,9 +457,11 @@ def emit_sirf_statistics(level, offset, buf, obj):
     start_mode      = obj['start_mode'].val
     print('({})'.format(sid))
     if (level >= 1):
-        print(rstat1a.format(sid, ttff_reset/10.0, ttff_aiding/10.0, ttff_nav/10.0))
+        print(rstat1a.format(sid, ttff_reset/10.0, ttff_aiding/10.0,
+                             ttff_nav/10.0))
         print(rstat1b.format(nav_mode, pos_mode, status,
-                             start_mode_names.get(start_mode, 'unk')))
+                             start_mode_names.get(start_mode,
+                                          'start/' + str(start_mode))))
     if (level >= 2):
         print(' raw:')
         print(rstat2a.format(ttff_reset, ttff_aiding, ttff_nav))

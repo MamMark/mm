@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev4'
+__version__ = '0.3.3.dev5'
 
 import binascii
 from   collections  import OrderedDict
@@ -277,7 +277,10 @@ event_names = {
 }
 
 def event_name(event):
-    return event_names.get(event, 'unk')
+    ev_name = event_names.get(event, 0)
+    if ev_name == 0:
+        ev_name = 'ev_' + str(event)
+    return ev_name
 
 
 PANIC_WARN    = 1

@@ -45,7 +45,7 @@ from   __future__         import print_function
 import struct
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.3.3.dev0'
+__version__ = '0.3.3.dev1'
 
 cfg_print_hourly = True
 
@@ -222,7 +222,7 @@ def print_hourly(rtctime):
 
 
 def dt_name(rtype):
-    v = dt_records.get(rtype, (0, None, None, None, 'unk'))
+    v = dt_records.get(rtype, (0, None, None, None, 'dt/' + str(rtype)))
     return v[DTR_NAME]
 
 

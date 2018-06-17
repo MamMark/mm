@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.2'
+__version__ = '0.3.3.dev0'
 
 import binascii
 from   collections  import OrderedDict
@@ -635,7 +635,7 @@ def decode_sirf_vis(level, offset, buf, obj):
 def decode_sirf_sid_dispatch(level, offset, buf, obj, table, table_name):
     consumed = 1                        # account for sid
     sid = buf[0]
-    v   = table.get(sid, (None, None, None, 'unk', ''))
+    v   = table.get(sid, (None, None, None, 'sid/' + str(sid), ''))
     decoder  = v[EE_DECODER]
     obj      = v[EE_OBJECT]
     sid_name = v[EE_NAME]
