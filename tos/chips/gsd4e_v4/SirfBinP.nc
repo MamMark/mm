@@ -41,6 +41,7 @@ module SirfBinP {
   }
   uses {
     interface GPSBuffer;
+    interface CollectEvent;
     interface Panic;
   }
 }
@@ -136,8 +137,30 @@ implementation {
   }
 
 
-  async command void GPSProto.reset_errors() {
-      sirfbin_stats.rx_errors = 0;
+  async command void GPSProto.resetErrors() {
+      sirfbin_stats.resets           = 0;
+      sirfbin_stats.rx_errors        = 0;
+      sirfbin_stats.rx_timeouts      = 0;
+      sirfbin_stats.chksum_fail      = 0;
+      sirfbin_stats.proto_start_fail = 0;
+      sirfbin_stats.proto_end_fail   = 0;
+  }
+
+
+  command void GPSProto.logErrors() {
+    atomic {
+      call CollectEvent.logEvent(DT_EVENT_GPS_ERR0,
+                                 sirfbin_stats.rx_errors,
+                                 sirfbin_stats.rx_timeouts,
+                                 sirfbin_stats.chksum_fail,
+                                 sirfbin_stats.no_buffer);
+      call CollectEvent.logEvent(DT_EVENT_GPS_ERR1,
+                                 sirfbin_stats.resets,
+                                 sirfbin_stats.proto_start_fail,
+                                 sirfbin_stats.proto_end_fail,
+                                 sirfbin_stats.too_big);
+      call GPSProto.resetErrors();
+    }
   }
 
 

@@ -271,6 +271,8 @@ typedef enum {
   DT_EVENT_GPS_PULSE        = 51,
 
   DT_EVENT_GPS_TX_RESTART   = 52,
+  DT_EVENT_GPS_ERR0         = 53,
+  DT_EVENT_GPS_ERR1         = 54,
 
   /***********************************/
 

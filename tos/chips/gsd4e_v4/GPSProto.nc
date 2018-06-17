@@ -32,12 +32,18 @@ interface GPSProto {
 
   /*
    * reset_errors
-   *
    * We have finished start up or other special state and we
    * want to tell the protocol module to clear any normal
    * error counters.  Typically ignored, resets, rx_errs, and timeouts.
+   *
+   * log_errors
+   * tell the module to log any errors.  right now limited to
+   *
+   * msg0: rx_errors, rx_timeouts, chksum_fail, no_buffer
+   * msg1: resets,    start_fail,  end_fail
    */
-  async command void reset_errors();
+  async command void resetErrors();
+        command void logErrors();
 
   /*
    * byteAvail: a new byte is available

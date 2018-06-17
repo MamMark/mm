@@ -58,4 +58,10 @@ interface GPSControl {
   command void reset();
   command void powerOn();
   command void powerOff();
+
+  /*
+   * log_errors
+   * log any error this module and its friends might have.
+   */
+  command void logErrors();
 }

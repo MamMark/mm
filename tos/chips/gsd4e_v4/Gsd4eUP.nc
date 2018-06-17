@@ -656,6 +656,11 @@ implementation {
   }
 
 
+  command void GPSControl.logErrors() {
+    call SirfProto.logErrors();
+  }
+
+
   task void collect_task() {
     call CollectEvent.logEvent(DT_EVENT_GPS_FIRST, t_gps_first_char,
                                t_gps_first_char - t_gps_pwr_on, 0, 0);
@@ -1095,7 +1100,6 @@ implementation {
         return;
 
       case GPSC_CHK_RX_WAIT:
-        call SirfProto.reset_errors();
         gpsc_change_state(GPSC_CHK_MSG_WAIT, GPSW_PROTO_START);
         return;
 
