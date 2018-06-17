@@ -676,16 +676,16 @@ implementation {
   }
 
 
-  void maj_ev_lock_time() {
+  void maj_ev_lock(mon_event_t ev) {
     switch(gmcb.major_state) {
       default:                          /* ignore by default */
         return;
 
       case GMS_MAJOR_SATS_STARTUP:
+        major_change_state(GMS_MAJOR_CYCLE, ev);
         call CollectEvent.logEvent(DT_EVENT_GPS_FIRST_LOCK,
                 call MajorTimer.getNow() - cycle_start, cycle_start, 0, 0);
         cycle_start = 0;
-        major_change_state(GMS_MAJOR_CYCLE, MON_EV_LOCK_TIME);
         call MajorTimer.startOneShot(GPS_MON_CYCLE_TIME);
         minor_event(MON_EV_MAJOR_CHANGED);
         return;
@@ -767,7 +767,8 @@ implementation {
         gps_panic(101, gmcb.major_state, ev);
 
       case MON_EV_STARTUP:          maj_ev_startup();       return;
-      case MON_EV_LOCK_TIME:        maj_ev_lock_time();     return;
+      case MON_EV_LOCK_POS:
+      case MON_EV_LOCK_TIME:        maj_ev_lock(ev);        return;
       case MON_EV_MPM_ERROR:        maj_ev_mpm_error();     return;
       case MON_EV_TIMEOUT_MAJOR:    maj_ev_timeout_major(); return;
       case MON_EV_CYCLE:            maj_ev_cycle();         return;
@@ -835,19 +836,21 @@ implementation {
           /*
            * haven't seen the response to the mpm request, 5 times.
            * panic/warn and kick MPM_COLLECT
+           *
+           * (not yet).
            */
           gps_warn(136, gmcb.minor_state, gmcb.major_state);
           major_event(MON_EV_MPM_ERROR);
           mon_pulse_comm_check(MON_EV_TIMEOUT_MINOR);
           return;
         }
+        minor_change_state(GMS_MPM_WAIT, MON_EV_TIMEOUT_MINOR);
         gmcb.retry_count++;
         awake = call GPSControl.awake();
         err   = call GPSTransmit.send((void *) sirf_go_mpm_0,
                                       sizeof(sirf_go_mpm_0));
         call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 100, err, 0, awake);
         call MinorTimer.startOneShot(GPS_MON_MPM_RSP_TO);
-        minor_change_state(GMS_MPM_WAIT, MON_EV_TIMEOUT_MINOR);
         return;
 
       case GMS_MPM_RESTART:             /* shutdown timeout, mpm fail */
@@ -947,20 +950,27 @@ implementation {
   }
 
   void mon_ev_ots_yes()  { }
-  void mon_ev_lock_pos() { }
 
-  void mon_ev_lock_time() {
+  void mon_ev_lock(mon_event_t ev) {
     uint32_t elapsed;
 
     gmcb.lock_seen = TRUE;
-    if (cycle_start) {
+
+    /*
+     * when looking for first lock, cycle_count will be zero
+     * (haven't actually started a cycle (happens out of MPM)).
+     *
+     * if cycle_count is 0 we are looking for first lock. (SATS_STARTUP).
+     * leave cycle_count alone and let the major state change grab it.
+     */
+    if (ev == MON_EV_LOCK_TIME && cycle_count && cycle_start) {
       elapsed = call MinorTimer.getNow() - cycle_start;
       cycle_sum += elapsed;
       call CollectEvent.logEvent(DT_EVENT_GPS_MTFF_TIME, cycle_count,
                                  elapsed, cycle_sum/cycle_count, 0);
       cycle_start = 0;
     }
-    major_event(MON_EV_LOCK_TIME);
+    major_event(ev);
   }
 
   /* mpm attempted, and got a good response */
@@ -1007,8 +1017,8 @@ implementation {
       case MON_EV_MSG:              mon_ev_msg();           return;
       case MON_EV_OTS_NO:           mon_ev_ots_no();        return;
       case MON_EV_OTS_YES:          mon_ev_ots_yes();       return;
-      case MON_EV_LOCK_POS:         mon_ev_lock_pos();      return;
-      case MON_EV_LOCK_TIME:        mon_ev_lock_time();     return;
+      case MON_EV_LOCK_POS:
+      case MON_EV_LOCK_TIME:        mon_ev_lock(ev);        return;
       case MON_EV_MPM:              mon_ev_mpm();           return;
       case MON_EV_MPM_ERROR:        mon_ev_mpm_error();     return;
       case MON_EV_TIMEOUT_MINOR:    mon_ev_timeout_minor(); return;
