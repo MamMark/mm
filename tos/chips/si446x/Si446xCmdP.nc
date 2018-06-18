@@ -22,6 +22,25 @@
  *         May 2017.
  */
 
+/****************************************************************************
+ *
+ * Si446xCmd should only be called when protected from Radio tasklets.
+ * mutual exclusion is provided by code either running at Task level or
+ * from within a Tasklet.  Multiple interrupts are protected because they
+ * invoke tasklets.  So we must make sure that interrupt code and task
+ * level code don't interfer with each other.  See below.
+ *
+ * The Radio runs its interrupts at tasklet level.  Configuration and
+ * other maintanence activities run at Task level.  Task level access
+ * should only happen in a protected RadioState which locks out tasklets.
+ *
+ * The Radio interrupt tasklet lockout happens because there won't be a fsm
+ * transition for interrupt events and this will cause a panic.
+ *
+ * Interrupts are enabled in S_RX_ON, S_RX_ACTIVE, S_TX_ACTIVE, S_CRC_FLUSH
+ */
+
+
 #include <trace.h>
 #include <panic.h>
 #include <si446x.h>

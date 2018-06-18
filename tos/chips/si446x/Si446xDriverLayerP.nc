@@ -830,11 +830,16 @@ implementation {
 
   /**************************************************************************/
 
-  /* go into standby to lower power consumption */
+  /*
+   * go into standby to lower power consumption
+   * Also nuke any potential last interrupt that might have gotten in
+   * on the way to standby.  See pwr_dn.
+   */
 
   fsm_result_t a_standby(fsm_transition_t *t) {
     stop_alarm();
     call Si446xCmd.disableInterrupt();
+    fsm_int_event = E_NONE;
     call Si446xCmd.goto_sleep();   // instruct chip to go to sleep
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
@@ -844,9 +849,15 @@ implementation {
 
   /**************************************************************************/
 
+  /*
+   * we turn off interrupt and kick fsm_int_event in case one last interrupt
+   * got in prior to the pwr_dn taking.  Once we transition to SDN, any interrupt
+   * that got in would have been fatal.  (no transition -> panic).
+   */
   fsm_result_t a_pwr_dn(fsm_transition_t *t) {
     stop_alarm();
     call Si446xCmd.disableInterrupt();
+    fsm_int_event = E_NONE;
     call Si446xCmd.shutdown();
     // set flag for returning cmd done after fsm completes
     global_ioc.rc_signal = TRUE;
@@ -1507,10 +1518,18 @@ implementation {
   /*
    * process_interrupt
    *
+   * Interrupts can only occur while interrupts are on and this can only
+   * be TRUE in the states...  S_RX_ON, S_RX_ACTIVE, S_TX_ACTIVE, and
+   * S_CRC_FLUSH.  If an interrupt occurs and is queued (fsm_int_event is
+   * non-zero), and we aren't in one of the interrupt states, there won't
+   * be a transition and the FSM will PANIC.
+   *
    * Called from the tasklet, this routine processes all of the chip
    * interrupt pending conditions.
+   *
    * A single hardware interrupt can have pending information on multiple
    * chip related conditions.
+   *
    * After clearing chip interrupt pending flags an additional check
    * occurs to prevent race condition with NIRQ changes when clearing
    * pending flags and missing a pending condition.
