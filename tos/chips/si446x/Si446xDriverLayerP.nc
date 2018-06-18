@@ -1567,6 +1567,20 @@ implementation {
   /* ----------------- RadioAlarm ----------------- */
 
   /*
+   * radio_alarm_task
+   *
+   * radio_alarm_task handles time outs when not in one of the interrupt
+   * capable states.  Namely we are doing a pwr_up or configuration.
+   * Handle all this at task level.
+   */
+  task void radio_alarm_task() {
+    if (stateAlarm_active) {
+      stateAlarm_active = FALSE;
+      fsm_task_queue(E_WAIT_DONE);
+    }
+  }
+
+  /*
    * WARNING: RadioAlarm has to be wired into the same Tasklet as the
    * FSM below.  That is what provides mutual exclusion for the state
    * machine.   See <tinyos>/tos/lib/rfxlink/util/RadioAlarmP.nc. etc.
@@ -1576,8 +1590,26 @@ implementation {
    * order the Tasklet.runs are invoked in.
    */
   tasklet_async event void RadioAlarm.fired() {
-    stateAlarm_active = FALSE;
-    fsm_task_queue(E_WAIT_DONE);
+    if (call Si446xCmd.isInterruptEnabled()) {
+      /*
+       * if we are running at interrupt level, the machine is in the
+       * interrupt driven portion.  We will handle any timeout
+       * detected at interrupt level.
+       *
+       * Otherwise, the machine is doing pwr_up/configuration kinds
+       * of operations and should run at task level.  These things
+       * can take a while.
+       */
+      stateAlarm_active = FALSE;
+      fsm_task_queue(E_WAIT_DONE);
+      return;
+    }
+
+    /*
+     * we are running non-interrupt pwr_up/configuration types of things
+     * do that from task level.
+     */
+    post radio_alarm_task();
   }
 
 
