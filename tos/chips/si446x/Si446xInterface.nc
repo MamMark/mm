@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017 Eric B. Decker
+ * Copyright (c) 2015, 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -166,16 +166,13 @@ interface Si446xInterface {
 
   /**
    * si446x_enableInterrupt
+   * si446x_disableInterrupt
+   * si446x_isInterruptEnabled
    *
    * enable any h/w interrupt associated with the radio
+   * isInterruptEnabled returns TRUE if the interrupt is enabled.
    */
   async command void si446x_enableInterrupt();
-
-
-  /**
-   * si446x_disableInterrupt
-   *
-   * disable any h/w interrupt associated with the radio
-   */
   async command void si446x_disableInterrupt();
+  async command bool si446x_isInterruptEnabled();
 }

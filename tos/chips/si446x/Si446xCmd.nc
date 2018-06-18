@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018 Daniel J Maltbie
+ * Copyright (c) 2016-2018, Daniel J Maltbie
+ * Copyright (c) 2018, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -99,6 +100,7 @@ interface Si446xCmd {
    * Enable radio chip interrupt.
    */
   async command void          enableInterrupt();
+  async command bool          isInterruptEnabled();
 
   /**
    * Get current state of the radio chip using fast read register.

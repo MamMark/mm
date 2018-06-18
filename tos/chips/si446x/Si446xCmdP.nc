@@ -1038,15 +1038,6 @@ implementation {
 
   /**************************************************************************/
   /*
-   * Si446xCmd.disbleInterrupt
-   */
-  async command void          Si446xCmd.disableInterrupt() {
-    call HW.si446x_disableInterrupt();
-    ll_si446x_trace(T_RC_DIS_INTR, 0, 0);
-  }
-
-  /**************************************************************************/
-  /*
    * Si446xCmd.dump_radio
    */
   async command void Si446xCmd.dump_radio() {
@@ -1060,10 +1051,21 @@ implementation {
   /**************************************************************************/
   /*
    * Si446xCmd.enableInterrupt
+   * Si446xCmd.disableInterrupt
+   * Si446xCmd.isInterruptEnabled
    */
-  async command void          Si446xCmd.enableInterrupt() {
+  async command void Si446xCmd.enableInterrupt() {
     call HW.si446x_enableInterrupt();
     ll_si446x_trace(T_RC_ENABLE_INT, 0, 0);
+  }
+
+  async command void Si446xCmd.disableInterrupt() {
+    call HW.si446x_disableInterrupt();
+    ll_si446x_trace(T_RC_DIS_INTR, 0, 0);
+  }
+
+  async command bool Si446xCmd.isInterruptEnabled() {
+    return call HW.si446x_isInterruptEnabled();
   }
 
 

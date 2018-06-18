@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017 Eric B. Decker
+ * Copyright (c) 2015, 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -57,6 +57,10 @@ implementation {
     atomic {
       call RadioNIRQ.disable();
     }
+  }
+
+  async command bool HW.si446x_isInterruptEnabled() {
+    return call RadioNIRQ.isEnabled();
   }
 
   async event void RadioNIRQ.fired() {
