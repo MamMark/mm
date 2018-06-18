@@ -311,7 +311,7 @@ norace uint32_t		    t_gps_first_char;
 norace uint16_t g_idx;                  /* index into gbuf */
 
 #ifdef GPS_EAVESDROP
-#define GPS_EAVES_SIZE 2048
+#define GPS_EAVES_SIZE 512
 
 norace uint8_t  gbuf[GPS_EAVES_SIZE];
 #endif
