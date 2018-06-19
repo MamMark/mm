@@ -1,8 +1,9 @@
 module PlatformPinsP {
-  provides interface Init;
+  provides interface Init as PlatformInit;
+  uses     interface Platform;
 }
 implementation {
-  command error_t Init.init() {
+  command error_t PlatformInit.init() {
     uint32_t nvic_index;
     uint32_t nvic_bitmask;
 
@@ -36,6 +37,12 @@ implementation {
           1 << (PORT5_IRQn & 0x1f) |
           1 << (PORT6_IRQn & 0x1f);
     NVIC->ISER[nvic_index] = nvic_bitmask;
+    NVIC_SetPriority(PORT1_IRQn, call Platform.getIntPriority(PORT1_IRQn));
+    NVIC_SetPriority(PORT2_IRQn, call Platform.getIntPriority(PORT2_IRQn));
+    NVIC_SetPriority(PORT3_IRQn, call Platform.getIntPriority(PORT3_IRQn));
+    NVIC_SetPriority(PORT4_IRQn, call Platform.getIntPriority(PORT4_IRQn));
+    NVIC_SetPriority(PORT5_IRQn, call Platform.getIntPriority(PORT5_IRQn));
+    NVIC_SetPriority(PORT6_IRQn, call Platform.getIntPriority(PORT6_IRQn));
 
     return SUCCESS;
   }

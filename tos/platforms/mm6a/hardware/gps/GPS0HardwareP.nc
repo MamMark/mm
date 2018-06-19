@@ -71,7 +71,7 @@ norace uint32_t gps_int_rec_idx;
 
 module GPS0HardwareP {
   provides {
-    interface Init;
+    interface Init as GPS0PlatformInit;
     interface Gsd4eUHardware as HW;
   }
   uses {
@@ -208,9 +208,9 @@ implementation {
 #endif
 
 
-  command error_t Init.init() {
-    call Usci.enableModuleInterrupt();
-    GSD4E_PINS_MODULE;			/* connect from the UART */
+  command error_t GPS0PlatformInit.init() {
+    GSD4E_PINS_MODULE;			/* connect pins to the UART */
+    call Usci.enableModuleInt();
     return SUCCESS;
   }
 

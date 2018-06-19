@@ -23,6 +23,7 @@
 #include <platform_reset_defs.h>
 #include <platform_version.h>
 #include <sysreboot.h>
+#include <platform.h>
 
 #define BOOT_MAJIK 0x01021910
 #define FUBAR_MAX 0xffff
@@ -145,6 +146,28 @@ implementation {
 
 
   /**
+   * Platform.getInterruptPriority
+   * Interrupt priority assignment
+   *
+   * The mm6a/dev6a are based on the ti msp432/cortex-4mf which have 3 bits
+   * of interrupt priority.  0 is the highest, 7 the lowest.
+   *
+   * platform.h define the IRQNs and priorities.
+   */
+  async command int Platform.getIntPriority(int irq_number) {
+    switch (irq_number) {
+      default:
+        return IRQ_DEFAULT_PRIORITY;
+
+      case GPS_IRQN:
+        return GPS_IRQ_PRIORITY;        /* gps0   */
+      case RADIO_IRQN:
+        return RADIO_IRQ_PRIORITY;      /* si446x */
+    }
+  }
+
+
+  /**
    * PlatformNodeId.node_id
    *
    * return a pointer to a 6 byte random number that we can
@@ -159,6 +182,7 @@ implementation {
       *lenp = 6;
     return (uint8_t *) &TLV->RANDOM_NUM_1;
   }
+
 
   /***************** Defaults ***************/
   default command error_t PeripheralInit.init() {

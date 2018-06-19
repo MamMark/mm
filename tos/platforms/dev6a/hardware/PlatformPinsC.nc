@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2016 Eric B. Decker
+/* Copyright (c) 2016, 2018 Eric B. Decker
  * All rights reserved.
  */
 
@@ -23,4 +22,5 @@ configuration PlatformPinsC {
   components PlatformPinsP;
 
   PlatformC.PeripheralInit      -> PlatformPinsP;
+  PlatformC.Platform            <- PlatformPinsP;
 }

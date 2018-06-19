@@ -30,6 +30,15 @@
 #define REQUIRE_PLATFORM
 #define REQUIRE_PANIC
 
+#define IRQ_DEFAULT_PRIORITY    4
+#define IRQ_LOW_PRIORITY        7
+
+#define GPS_IRQN                EUSCIA0_IRQn
+#define GPS_IRQ_PRIORITY        2
+
+#define RADIO_IRQN              EUSCIB2_IRQn
+#define RADIO_IRQ_PRIORITY      3
+
 // #define HANDLER_FAULT_WAIT
 // #define PANIC_GATE
 // #define CATCH_STRANGE
