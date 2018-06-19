@@ -253,31 +253,31 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
   TA2_N_Handler,                        // 13           29
   TA3_0_Handler,                        // 14           30
   TA3_N_Handler,                        // 15           31
-  EUSCIA0_Handler,                      // 16           32
-  EUSCIA1_Handler,                      // 17           33
-  EUSCIA2_Handler,                      // 18           34
-  EUSCIA3_Handler,                      // 19           35
-  EUSCIB0_Handler,                      // 20           36
-  EUSCIB1_Handler,                      // 21           37
-  EUSCIB2_Handler,                      // 22           38
-  EUSCIB3_Handler,                      // 23           39
-  ADC14_Handler,                        // 24           40
+  EUSCIA0_Handler,                      // 16           32      2       (40)
+  EUSCIA1_Handler,                      // 17           33          4   (80)
+  EUSCIA2_Handler,                      // 18           34          4   (80)
+  EUSCIA3_Handler,                      // 19           35          4   (80)
+  EUSCIB0_Handler,                      // 20           36          4   (80)
+  EUSCIB1_Handler,                      // 21           37          4   (80)
+  EUSCIB2_Handler,                      // 22           38        3     (60)
+  EUSCIB3_Handler,                      // 23           39          4   (80)
+  ADC14_Handler,                        // 24           40          4   (80)
   T32_INT1_Handler,                     // 25           41
-  T32_INT2_Handler,                     // 26           42          5 (a0)
+  T32_INT2_Handler,                     // 26           42
   T32_INTC_Handler,                     // 27           43
   AES_Handler,                          // 28           44
-  RTC_Handler,                          // 29           45
+  RTC_Handler,                          // 29           45          4   (80)
   DMA_ERR_Handler,                      // 30           46
   DMA_INT3_Handler,                     // 31           47
   DMA_INT2_Handler,                     // 32           48
   DMA_INT1_Handler,                     // 33           49
-  DMA_INT0_Handler,                     // 34           50
-  PORT1_Handler,                        // 35           51
-  PORT2_Handler,                        // 36           52
-  PORT3_Handler,                        // 37           53
-  PORT4_Handler,                        // 38           54
-  PORT5_Handler,                        // 39           55
-  PORT6_Handler,                        // 40           56
+  DMA_INT0_Handler,                     // 34           50          4   (80)
+  PORT1_Handler,                        // 35           51          4   (80)
+  PORT2_Handler,                        // 36           52          4   (80)
+  PORT3_Handler,                        // 37           53          4   (80)
+  PORT4_Handler,                        // 38           54          4   (80)
+  PORT5_Handler,                        // 39           55          4   (80)
+  PORT6_Handler,                        // 40           56          4   (80)
   __default_handler,                    // 41           57
   __default_handler,                    // 42           58
   __default_handler,                    // 43           59

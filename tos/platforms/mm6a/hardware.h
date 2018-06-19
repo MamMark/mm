@@ -157,6 +157,19 @@
  * B2: radio     spi    si4468
  * B3: tmp       i2c    tmp102
  *
+ *
+ * Interrupt priorities: (lower is higher), default 4
+ *
+ * GPS:         EUSCIA0         2
+ * SD0:         EUSCIA2
+ * ADC:         EUSCIB0
+ * MEMS:        EUSCIB1
+ * RADIO:       EUSCIB2           3
+ * TMP:         EUSCIB3
+ *
+ * DMA:         (SD0)
+ *
+ *
  * Power notes:
  *
  * P5.0 pwr_gps_mems_1V8_en
