@@ -118,7 +118,7 @@ implementation {
       return;
     }
     gps_int_rec_idx++;
-    if (gps_int_rec_idx > GPS_INT_RECS_MAX)
+    if (gps_int_rec_idx >= GPS_INT_RECS_MAX)
       gps_int_rec_idx = 0;
     gp = &gps_int_recs[gps_int_rec_idx];
     gp->ev = ev;
