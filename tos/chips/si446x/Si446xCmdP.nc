@@ -256,27 +256,25 @@ implementation {
     spi_trace_desc_t    *rspi;
     uint16_t            x;
 
-    {
-      if ((op == SPI_REC_UNDEFINED) || (op >= SPI_REC_LAST)) {
-        __PANIC_RADIO(20, op, id, l, 0);
-      }
-      rspi = &g_radio_spi_trace[g_radio_spi_trace_next];
-      rspi->timestamp = call Platform.usecsRaw();
-      rspi->op = op;
-      rspi->struct_id = id;
-      rspi->length = l;
-      if (l > SPI_TRACE_BUF_MAX) l = SPI_TRACE_BUF_MAX;
-      for (x = 0; x < l; x++)
-        rspi->buf[x] = b[x];
-      g_radio_spi_trace_prev = g_radio_spi_trace_next;
-      if (++g_radio_spi_trace_next >= g_radio_spi_trace_max) {
-        g_radio_spi_trace_next = 0;
-      }
-      g_radio_spi_trace_count++;
-      rspi = &g_radio_spi_trace[g_radio_spi_trace_next];
-      rspi->timestamp = 0;
-      rspi->op = SPI_REC_UNDEFINED;
+    if ((op == SPI_REC_UNDEFINED) || (op >= SPI_REC_LAST)) {
+      __PANIC_RADIO(20, op, id, l, 0);
     }
+    rspi = &g_radio_spi_trace[g_radio_spi_trace_next];
+    rspi->timestamp = call Platform.usecsRaw();
+    rspi->op = op;
+    rspi->struct_id = id;
+    rspi->length = l;
+    if (l > SPI_TRACE_BUF_MAX) l = SPI_TRACE_BUF_MAX;
+    for (x = 0; x < l; x++)
+      rspi->buf[x] = b[x];
+    g_radio_spi_trace_prev = g_radio_spi_trace_next;
+    if (++g_radio_spi_trace_next >= g_radio_spi_trace_max) {
+      g_radio_spi_trace_next = 0;
+    }
+    g_radio_spi_trace_count++;
+    rspi = &g_radio_spi_trace[g_radio_spi_trace_next];
+    rspi->timestamp = 0;
+    rspi->op = SPI_REC_UNDEFINED;
   }
 
 
@@ -347,15 +345,13 @@ implementation {
   uint8_t ll_si446x_get_sw_cts() {
     uint8_t res;
 
-    {
-      /* clear cs on entry prior to set,  make sure a reasonable state */
-      call HW.si446x_clr_cs();
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
-      call FastSpiByte.splitReadWrite(0);
-      res = call FastSpiByte.splitRead();
-      call HW.si446x_clr_cs();
-    }
+    /* clear cs on entry prior to set,  make sure a reasonable state */
+    call HW.si446x_clr_cs();
+    call HW.si446x_set_cs();
+    call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
+    call FastSpiByte.splitReadWrite(0);
+    res = call FastSpiByte.splitRead();
+    call HW.si446x_clr_cs();
     return res;
   }
 
@@ -389,14 +385,12 @@ implementation {
   uint8_t ll_si446x_read_frr(uint8_t which) {
     uint8_t result;
 
-    {
-      call HW.si446x_clr_cs();             // make sure reasonable state
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(which);  // which one is the input parameter
-      result = call FastSpiByte.splitReadWrite(0);
-      result = call FastSpiByte.splitRead();
-      call HW.si446x_clr_cs();
-    }
+    call HW.si446x_clr_cs();             // make sure reasonable state
+    call HW.si446x_set_cs();
+    call FastSpiByte.splitWrite(which);  // which one is the input parameter
+    result = call FastSpiByte.splitReadWrite(0);
+    result = call FastSpiByte.splitRead();
+    call HW.si446x_clr_cs();
     ll_si446x_spi_trace(SPI_REC_READ_FRR, 0, &result, 1);
     return result;
   }
@@ -465,16 +459,14 @@ implementation {
     uint8_t *p;
 
     p = (uint8_t *) s;
-    {
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_FRR_A);
-      call FastSpiByte.splitReadWrite(0);
-      p[0] = call FastSpiByte.splitReadWrite(0);
-      p[1] = call FastSpiByte.splitReadWrite(0);
-      p[2] = call FastSpiByte.splitReadWrite(0);
-      p[3] = call FastSpiByte.splitRead();
-      call HW.si446x_clr_cs();
-    }
+    call HW.si446x_set_cs();
+    call FastSpiByte.splitWrite(SI446X_CMD_FRR_A);
+    call FastSpiByte.splitReadWrite(0);
+    p[0] = call FastSpiByte.splitReadWrite(0);
+    p[1] = call FastSpiByte.splitReadWrite(0);
+    p[2] = call FastSpiByte.splitReadWrite(0);
+    p[3] = call FastSpiByte.splitRead();
+    call HW.si446x_clr_cs();
     ll_si446x_spi_trace(SPI_REC_READ_FRR, 0, p, 4);
   }
 
@@ -510,24 +502,22 @@ implementation {
           __PANIC_RADIO(2, t1, t0, t1-t0, done);
         }
       }
-      {
-        /*
-         * first make sure we still have CTS.  It is possible that
-         * someone (mr. interupt) got in and did something that made
-         * us busy.  Truely paranoid code but if we ever hit this
-         * window the failure is truely nasty.  And it is possible.
-         * close to 0 but not zero.
-         */
-        if (ll_si446x_get_cts()) {
-          t1 = call Platform.usecsRaw();
-          ctp->t_cts0 = t1 - t0;
-          t0 = t1;
-          call HW.si446x_set_cs();
-          call SpiBlock.transfer((void *) c, radio_rsp, cl);
-          call HW.si446x_clr_cs();
-          t1 = call Platform.usecsRaw();
-          done = TRUE;
-        }
+      /*
+       * first make sure we still have CTS.  It is possible that
+       * someone (mr. interupt) got in and did something that made
+       * us busy.  Truely paranoid code but if we ever hit this
+       * window the failure is truely nasty.  And it is possible.
+       * close to 0 but not zero.
+       */
+      if (ll_si446x_get_cts()) {
+        t1 = call Platform.usecsRaw();
+        ctp->t_cts0 = t1 - t0;
+        t0 = t1;
+        call HW.si446x_set_cs();
+        call SpiBlock.transfer((void *) c, radio_rsp, cl);
+        call HW.si446x_clr_cs();
+        t1 = call Platform.usecsRaw();
+        done = TRUE;
       }
       if (done) {
         ll_si446x_spi_trace(SPI_REC_SEND_CMD, c[0], (void *)c, cl);
@@ -567,17 +557,15 @@ implementation {
     t1 = call Platform.usecsRaw();
     ctp->t_cts_r = t1 - t0;
     t0 = t1;
-    {
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
-      call FastSpiByte.splitReadWrite(0);
-      rcts = call FastSpiByte.splitRead();
-      if (rcts != 0xff) {
-        __PANIC_RADIO(5, rcts, 0, 0, 0);
-      }
-      call SpiBlock.transfer(NULL, r, l);
-      call HW.si446x_clr_cs();
+    call HW.si446x_set_cs();
+    call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
+    call FastSpiByte.splitReadWrite(0);
+    rcts = call FastSpiByte.splitRead();
+    if (rcts != 0xff) {
+      __PANIC_RADIO(5, rcts, 0, 0, 0);
     }
+    call SpiBlock.transfer(NULL, r, l);
+    call HW.si446x_clr_cs();
     t1 = call Platform.usecsRaw();
     ctp->t_reply = t1 - t0;
     ctp->d_reply_len = l + 2;
@@ -597,13 +585,11 @@ implementation {
     cmd_timing_t *ctp;
 
     ctp = &cmd_timings[cp[0]];
-    {
-      t0 = call Platform.usecsRaw();
-      ll_si446x_send_cmd(cp, cl);
-      ll_si446x_get_reply(rp, rl, cp[0]);
-      t1 = call Platform.usecsRaw();
-      ll_si446x_read_fast_status(ctp->frr);
-    }
+    t0 = call Platform.usecsRaw();
+    ll_si446x_send_cmd(cp, cl);
+    ll_si446x_get_reply(rp, rl, cp[0]);
+    t1 = call Platform.usecsRaw();
+    ll_si446x_read_fast_status(ctp->frr);
     ctp->t_elapsed = t1 - t0;
     ll_si446x_trace(T_RC_CMD_REPLY, cp[0], t1-t0);
   }
@@ -718,19 +704,17 @@ implementation {
     call HW.si446x_clr_cs();
     t0 = call Platform.usecsRaw();
     while (call Platform.usecsRaw() - t0 < 2) ;
-    {
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_FIFO_INFO);
-      call FastSpiByte.splitReadWrite(0);
-      call FastSpiByte.splitRead();
-      /* response
-       */
-      call FastSpiByte.splitWrite(0);
-      cts = call FastSpiByte.splitReadWrite(0);           /* CTS */
-      rx_count = call FastSpiByte.splitReadWrite(0);      /* RX_FIFO_CNT */
-      tx_count = call FastSpiByte.splitRead();            /* TX_FIFO_CNT */
-      call HW.si446x_clr_cs();
-    }
+    call HW.si446x_set_cs();
+    call FastSpiByte.splitWrite(SI446X_CMD_FIFO_INFO);
+    call FastSpiByte.splitReadWrite(0);
+    call FastSpiByte.splitRead();
+    /* response
+     */
+    call FastSpiByte.splitWrite(0);
+    cts = call FastSpiByte.splitReadWrite(0);           /* CTS */
+    rx_count = call FastSpiByte.splitReadWrite(0);      /* RX_FIFO_CNT */
+    tx_count = call FastSpiByte.splitRead();            /* TX_FIFO_CNT */
+    call HW.si446x_clr_cs();
 
     /*
      * how to figure out if it is a tx or rx in the fifo.  So
@@ -788,20 +772,18 @@ implementation {
 
         wl = (length > 16) ? 16 : length;
         t0 = call Platform.usecsRaw();
-        {
-          call HW.si446x_set_cs();
-          call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
-          call FastSpiByte.splitReadWrite(group);
-          call FastSpiByte.splitReadWrite(wl);
-          call FastSpiByte.splitReadWrite(idx);
-          call FastSpiByte.splitRead();
-          call HW.si446x_clr_cs();
-          t1 = call Platform.usecsRaw();
-          ctp->t_cmd0 += t1 - t0;
-          ctp->d_len0 += 4;
+        call HW.si446x_set_cs();
+        call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
+        call FastSpiByte.splitReadWrite(group);
+        call FastSpiByte.splitReadWrite(wl);
+        call FastSpiByte.splitReadWrite(idx);
+        call FastSpiByte.splitRead();
+        call HW.si446x_clr_cs();
+        t1 = call Platform.usecsRaw();
+        ctp->t_cmd0 += t1 - t0;
+        ctp->d_len0 += 4;
 
-          ll_si446x_get_reply(w, wl, group);
-        }
+        ll_si446x_get_reply(w, wl, group);
         ctp->t_cts_r     += ctp_ff->t_cts_r;
         ctp->t_reply     += ctp_ff->t_reply;
         ctp->d_reply_len += ctp_ff->d_reply_len;
@@ -827,74 +809,72 @@ implementation {
     uint32_t t0;
 
     ll_si446x_trace(T_RC_DRF_ALL, 0, 0);
-    {
-      g_radio_dump.dump_start = call Platform.usecsRaw();
+    g_radio_dump.dump_start = call Platform.usecsRaw();
 
-      /* do CSN before we reset the SPI port */
-      g_radio_dump.CSN_pin     = call HW.si446x_csn();
-      g_radio_dump.CTS_pin     = call HW.si446x_cts();
-      g_radio_dump.IRQN_pin    = call HW.si446x_irqn();
-      g_radio_dump.SDN_pin     = call HW.si446x_sdn();
+    /* do CSN before we reset the SPI port */
+    g_radio_dump.CSN_pin     = call HW.si446x_csn();
+    g_radio_dump.CTS_pin     = call HW.si446x_cts();
+    g_radio_dump.IRQN_pin    = call HW.si446x_irqn();
+    g_radio_dump.SDN_pin     = call HW.si446x_sdn();
 
-      /*
-       * make sure we don't violate the CS hold time of 80ns.  We use
-       * 1us because we have the technology via Platform.usecsRaw.
-       */
-      call HW.si446x_clr_cs();          /* reset SPI on chip */
-      t0 = call Platform.usecsRaw();
-      while (call Platform.usecsRaw() - t0 < 2) ;
+    /*
+     * make sure we don't violate the CS hold time of 80ns.  We use
+     * 1us because we have the technology via Platform.usecsRaw.
+     */
+    call HW.si446x_clr_cs();          /* reset SPI on chip */
+    t0 = call Platform.usecsRaw();
+    while (call Platform.usecsRaw() - t0 < 2) ;
 
-      call HW.si446x_set_cs();
-      t0 = call Platform.usecsRaw();
-      while (call Platform.usecsRaw() - t0 < 2) ;
+    call HW.si446x_set_cs();
+    t0 = call Platform.usecsRaw();
+    while (call Platform.usecsRaw() - t0 < 2) ;
 
-      call HW.si446x_clr_cs();
-      t0 = call Platform.usecsRaw();
-      while (call Platform.usecsRaw() - t0 < 2) ;
+    call HW.si446x_clr_cs();
+    t0 = call Platform.usecsRaw();
+    while (call Platform.usecsRaw() - t0 < 2) ;
 
-      g_radio_dump.cap_val     = call HW.si446x_cap_val();
-      g_radio_dump.cap_control = call HW.si446x_cap_control();
+    g_radio_dump.cap_val     = call HW.si446x_cap_val();
+    g_radio_dump.cap_control = call HW.si446x_cap_control();
 
-      ll_si446x_cmd_reply(si446x_part_info, sizeof(si446x_part_info),
-                          (void *) &g_radio_dump.part_info, SI446X_PART_INFO_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_part_info, sizeof(si446x_part_info),
+                        (void *) &g_radio_dump.part_info, SI446X_PART_INFO_REPLY_SIZE);
 
-      ll_si446x_cmd_reply(si446x_func_info, sizeof(si446x_func_info),
-                          (void *) &g_radio_dump.func_info, SI446X_FUNC_INFO_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_func_info, sizeof(si446x_func_info),
+                        (void *) &g_radio_dump.func_info, SI446X_FUNC_INFO_REPLY_SIZE);
 
-      ll_si446x_cmd_reply(si446x_gpio_cfg_nc, sizeof(si446x_gpio_cfg_nc),
-                          (void *) &g_radio_dump.gpio_cfg, SI446X_GPIO_CFG_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_gpio_cfg_nc, sizeof(si446x_gpio_cfg_nc),
+                        (void *) &g_radio_dump.gpio_cfg, SI446X_GPIO_CFG_REPLY_SIZE);
 
-      ll_si446x_cmd_reply(si446x_fifo_info_nc, sizeof(si446x_fifo_info_nc),
-                          radio_rsp, SI446X_FIFO_INFO_REPLY_SIZE);
-      g_radio_dump.rxfifocnt  = radio_rsp[0];
-      g_radio_dump.txfifofree = radio_rsp[1];
+    ll_si446x_cmd_reply(si446x_fifo_info_nc, sizeof(si446x_fifo_info_nc),
+                        radio_rsp, SI446X_FIFO_INFO_REPLY_SIZE);
+    g_radio_dump.rxfifocnt  = radio_rsp[0];
+    g_radio_dump.txfifofree = radio_rsp[1];
 
-      ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
-                          (void *) &g_radio_dump.ph_status, SI446X_PH_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_ph_status_nc, sizeof(si446x_ph_status_nc),
+                        (void *) &g_radio_dump.ph_status, SI446X_PH_STATUS_REPLY_SIZE);
 
-      ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
-                          (void *) &g_radio_dump.modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_modem_status_nc, sizeof(si446x_modem_status_nc),
+                        (void *) &g_radio_dump.modem_status, SI446X_MODEM_STATUS_REPLY_SIZE);
 
-      ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
-                          (void *) &g_radio_dump.chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_chip_status_nc, sizeof(si446x_chip_status_nc),
+                        (void *) &g_radio_dump.chip_status, SI446X_CHIP_STATUS_REPLY_SIZE);
 
-      ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
-                          (void *) &g_radio_dump.int_state, SI446X_INT_STATUS_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_int_status_nc, sizeof(si446x_int_status_nc),
+                        (void *) &g_radio_dump.int_state, SI446X_INT_STATUS_REPLY_SIZE);
 
-      ll_si446x_cmd_reply(si446x_device_state, sizeof(si446x_device_state),
-                          radio_rsp, SI446X_DEVICE_STATE_REPLY_SIZE);
-      g_radio_dump.device_state = radio_rsp[0];
-      g_radio_dump.channel      = radio_rsp[1];
+    ll_si446x_cmd_reply(si446x_device_state, sizeof(si446x_device_state),
+                        radio_rsp, SI446X_DEVICE_STATE_REPLY_SIZE);
+    g_radio_dump.device_state = radio_rsp[0];
+    g_radio_dump.channel      = radio_rsp[1];
 
-      ll_si446x_read_fast_status(g_radio_dump.frr);
+    ll_si446x_read_fast_status(g_radio_dump.frr);
 
-      ll_si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc),
-                          (void *) &g_radio_dump.packet_info_len, SI446X_PACKET_INFO_REPLY_SIZE);
+    ll_si446x_cmd_reply(si446x_packet_info_nc, sizeof(si446x_packet_info_nc),
+                        (void *) &g_radio_dump.packet_info_len, SI446X_PACKET_INFO_REPLY_SIZE);
 
-      ll_si446x_dump_properties();
-      g_radio_dump.dump_end = call Platform.usecsRaw();
-      g_radio_dump.delta =  g_radio_dump.dump_end - g_radio_dump.dump_start;
-    }
+    ll_si446x_dump_properties();
+    g_radio_dump.dump_end = call Platform.usecsRaw();
+    g_radio_dump.delta =  g_radio_dump.dump_end - g_radio_dump.dump_start;
   }
 
 
@@ -1287,16 +1267,14 @@ norace  uint8_t const* config_list[] = {NULL, si446x_device_config, NULL};
 
     group = p_id >> 8;
     idx = p_id & 0xff;
-    {
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
-      call FastSpiByte.splitReadWrite(group);
-      call FastSpiByte.splitReadWrite(num);
-      call FastSpiByte.splitReadWrite(idx);
-      call FastSpiByte.splitRead();
-      call HW.si446x_clr_cs();
-      ll_si446x_get_reply(rsp_p, num, 0xff);
-    }
+    call HW.si446x_set_cs();
+    call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
+    call FastSpiByte.splitReadWrite(group);
+    call FastSpiByte.splitReadWrite(num);
+    call FastSpiByte.splitReadWrite(idx);
+    call FastSpiByte.splitRead();
+    call HW.si446x_clr_cs();
+    ll_si446x_get_reply(rsp_p, num, 0xff);
     ll_si446x_trace(T_RC_READ_PROP, p_id, (uint16_t) *rsp_p);
   }
 
@@ -1317,15 +1295,13 @@ norace  uint8_t const* config_list[] = {NULL, si446x_device_config, NULL};
   async command void Si446xCmd.read_rx_fifo(uint8_t *data, uint8_t length) {
     uint32_t t0, t1;
 
-    {
-      t0 = call Platform.usecsRaw();
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_RX_FIFO_READ);
-      call FastSpiByte.splitReadWrite(0);
-      readBlock(data, length);
-      call HW.si446x_clr_cs();
-      t1 = call Platform.usecsRaw();
-    }
+    t0 = call Platform.usecsRaw();
+    call HW.si446x_set_cs();
+    call FastSpiByte.splitWrite(SI446X_CMD_RX_FIFO_READ);
+    call FastSpiByte.splitReadWrite(0);
+    readBlock(data, length);
+    call HW.si446x_clr_cs();
+    t1 = call Platform.usecsRaw();
     t1 -= t0;
     ll_si446x_spi_trace(SPI_REC_RX_FIFO, 0, data, length);
     ll_si446x_trace(T_RC_READ_RX_FF, t1, length);
@@ -1452,7 +1428,7 @@ norace  uint8_t const* config_list[] = {NULL, si446x_device_config, NULL};
    * add entry to global trace
    */
   async command void Si446xCmd.trace(trace_where_t where, uint16_t r0, uint16_t r1) {
-  ll_si446x_trace(where, r0, r1);
+    ll_si446x_trace(where, r0, r1);
   }
 
 
@@ -1494,15 +1470,13 @@ norace  uint8_t const* config_list[] = {NULL, si446x_device_config, NULL};
   async command void Si446xCmd.write_tx_fifo(uint8_t *data, uint8_t length) {
     uint32_t t0, t1;
 
-    {
-      t0 = call Platform.usecsRaw();
-      call HW.si446x_set_cs();
-      call FastSpiByte.splitWrite(SI446X_CMD_TX_FIFO_WRITE);
-      writeBlock(data, length);
-      call HW.si446x_clr_cs();
-      t1 = call Platform.usecsRaw();
-      t1 -= t0;
-    }
+    t0 = call Platform.usecsRaw();
+    call HW.si446x_set_cs();
+    call FastSpiByte.splitWrite(SI446X_CMD_TX_FIFO_WRITE);
+    writeBlock(data, length);
+    call HW.si446x_clr_cs();
+    t1 = call Platform.usecsRaw();
+    t1 -= t0;
     ll_si446x_spi_trace(SPI_REC_TX_FIFO, 0, data, length);
     ll_si446x_trace(T_RC_WRITE_TX_FF, 0, 0);
   }
