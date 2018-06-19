@@ -7,7 +7,7 @@
 " PACKET_SENT";"-";"-";"-";"-";"-";"RX_ON tx_cmp";"-";"-";"-"
 " PREAMBLE_DETECT";"-";"-";"-";"RX_ACTIVE rx_start";"-";"-";"-";"-";"-"
 " RX_THRESH";"-";"-";"-";"-";"RX_ACTIVE rx_fetch_ff";"-";"-";"-";"CRC_FLUSH rx_drain_ff"
-" STANDBY";"STANDBY config";"-";"-";"STANDBY standby";"STANDBY standby";"STANDBY standby";"-";"-";"-"
+" STANDBY";"STANDBY config";"-";"-";"STANDBY standby";"STANDBY standby";"STANDBY standby";"-";"-";"STANDBY standby"
 " SYNC_DETECT";"-";"-";"-";"-";"RX_ACTIVE nop";"-";"-";"-";"-"
 " TRANSMIT";"-";"-";"-";"TX_ACTIVE tx_start";"-";"-";"-";"-";"-"
 " TURNOFF";"-";"-";"-";"SDN pwr_dn";"SDN pwr_dn";"SDN pwr_dn";"SDN pwr_dn";"-";"-"

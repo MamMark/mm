@@ -162,6 +162,7 @@ const fsm_transition_t fsm_e_standby[] = {
   {S_RX_ON, A_STANDBY, S_STANDBY},
   {S_RX_ACTIVE, A_STANDBY, S_STANDBY},
   {S_TX_ACTIVE, A_STANDBY, S_STANDBY},
+  {S_CRC_FLUSH, A_STANDBY, S_STANDBY},
   { S_DEFAULT, A_BREAK, S_DEFAULT },
 };
 

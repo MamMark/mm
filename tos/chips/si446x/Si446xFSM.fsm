@@ -105,17 +105,17 @@
       <inputs default="0" any="0" invert="0">TURNOFF</inputs>
       <outputs>pwr_dn</outputs>
     </transition>
-    <transition c1x="1374.389667930732" c2y="657.2689764610833" c1y="1247.828360744579" description="" straight="0" type="2" ypos="1182.599657478037" endx="732.8374118225249" xpos="1858.931759754151" endy="426.0371705426084" c2x="568.2051976580798">
-      <from>5</from>
-      <to>7</to>
-      <inputs default="0" any="0" invert="0">STANDBY</inputs>
-      <outputs>standby</outputs>
-    </transition>
     <transition c1x="1186.611180378409" c2y="549.5672770292988" c1y="1047.938075353757" description="" straight="0" type="2" ypos="1156.442207011548" endx="1701.67643262713" xpos="1854.228554254049" endy="439.7298120381744" c2x="1314.460473169436">
       <from>5</from>
       <to>1</to>
       <inputs default="0" any="0" invert="0">FIFO_OU_RUN</inputs>
       <outputs>rx_overrun_reset</outputs>
+    </transition>
+    <transition c1x="1361.505211875098" c2y="693.4827619520402" c1y="1229.402307518013" description="" straight="0" type="2" ypos="1180.573946773434" endx="729.604476212609" xpos="1858.115543944366" endy="423.2137854909569" c2x="549.8096738706888">
+      <from>5</from>
+      <to>7</to>
+      <inputs default="0" any="0" invert="0">STANDBY</inputs>
+      <outputs>standby</outputs>
     </transition>
     <transition c1x="843.1875509194429" c2y="452.2374047707037" c1y="531.9117531406034" description="" straight="0" type="2" ypos="562.5861015105032" endx="804.4040089306965" xpos="906.0793219138161" endy="416.5630564008039" c2x="858.2957799250697">
       <from>6</from>
@@ -194,6 +194,12 @@
       <to>1</to>
       <inputs default="0" any="0" invert="0">FIFO_OU_RUN</inputs>
       <outputs>rx_overrun_reset</outputs>
+    </transition>
+    <transition c1x="1779.524830179811" c2y="664.5760038721069" c1y="1388.17490408189" description="" straight="0" type="2" ypos="932.346543337311" endx="751.179182091409" xpos="1678.135162249079" endy="435.3070274110235" c2x="589.3843797494887">
+      <from>8</from>
+      <to>7</to>
+      <inputs default="0" any="0" invert="0">STANDBY</inputs>
+      <outputs>standby</outputs>
     </transition>
   </machine>
 </qfsmproject>
