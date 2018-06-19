@@ -24,10 +24,20 @@ appropriate file formats needed for building the target program.
 - Open with Qfsm
 - Use graphical interface to make changes
 - Save .fsm file
-- Export ASCII file (make sure to include asyncronous output, yields .txt)
+- Export ASCII file:
+  o make sure to include asyncronous output, yields .txt
+  o rows:events, columns: states
 - Export .png file
 - Export .html file
 - run the fsmc.py code generator (input .txt file)
+  For C code (nesc, tag):
+
+    tools/fsmc/fsmc.py -i Si446xFSM.txt -o Si446xFSM.h --c-mode
+
+  For Python code (basestation, Pi):
+
+    tools/fsmc/fsmc.py -i Si446xFSM.txt -o Si446xFSM.py --python-mode
+
 - make the target platform
 
 ## IMPORTANT ARTIFACTS that are saved in git
