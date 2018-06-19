@@ -55,13 +55,6 @@ enum {
 #define PANIC_RADIO __pcode_radio
 #endif
 
-// #define SI446X_ATOMIC_SPI
-
-#ifdef SI446X_ATOMIC_SPI
-#define SI446X_ATOMIC     atomic
-#else
-#define SI446X_ATOMIC
-#endif
 
 /**************************************************************************/
 /*
@@ -263,7 +256,7 @@ implementation {
     spi_trace_desc_t    *rspi;
     uint16_t            x;
 
-    SI446X_ATOMIC {
+    {
       if ((op == SPI_REC_UNDEFINED) || (op >= SPI_REC_LAST)) {
         __PANIC_RADIO(20, op, id, l, 0);
       }
@@ -354,7 +347,7 @@ implementation {
   uint8_t ll_si446x_get_sw_cts() {
     uint8_t res;
 
-    SI446X_ATOMIC {
+    {
       /* clear cs on entry prior to set,  make sure a reasonable state */
       call HW.si446x_clr_cs();
       call HW.si446x_set_cs();
@@ -396,7 +389,7 @@ implementation {
   uint8_t ll_si446x_read_frr(uint8_t which) {
     uint8_t result;
 
-    SI446X_ATOMIC {
+    {
       call HW.si446x_clr_cs();             // make sure reasonable state
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(which);  // which one is the input parameter
@@ -472,7 +465,7 @@ implementation {
     uint8_t *p;
 
     p = (uint8_t *) s;
-    SI446X_ATOMIC {
+    {
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(SI446X_CMD_FRR_A);
       call FastSpiByte.splitReadWrite(0);
@@ -517,7 +510,7 @@ implementation {
           __PANIC_RADIO(2, t1, t0, t1-t0, done);
         }
       }
-      SI446X_ATOMIC {
+      {
         /*
          * first make sure we still have CTS.  It is possible that
          * someone (mr. interupt) got in and did something that made
@@ -574,7 +567,7 @@ implementation {
     t1 = call Platform.usecsRaw();
     ctp->t_cts_r = t1 - t0;
     t0 = t1;
-    SI446X_ATOMIC {
+    {
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(SI446X_CMD_READ_CMD_BUFF);
       call FastSpiByte.splitReadWrite(0);
@@ -604,7 +597,7 @@ implementation {
     cmd_timing_t *ctp;
 
     ctp = &cmd_timings[cp[0]];
-    SI446X_ATOMIC {                     /* checkfor tasklet protection */
+    {
       t0 = call Platform.usecsRaw();
       ll_si446x_send_cmd(cp, cl);
       ll_si446x_get_reply(rp, rl, cp[0]);
@@ -725,7 +718,7 @@ implementation {
     call HW.si446x_clr_cs();
     t0 = call Platform.usecsRaw();
     while (call Platform.usecsRaw() - t0 < 2) ;
-    SI446X_ATOMIC {
+    {
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(SI446X_CMD_FIFO_INFO);
       call FastSpiByte.splitReadWrite(0);
@@ -795,7 +788,7 @@ implementation {
 
         wl = (length > 16) ? 16 : length;
         t0 = call Platform.usecsRaw();
-        SI446X_ATOMIC {
+        {
           call HW.si446x_set_cs();
           call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
           call FastSpiByte.splitReadWrite(group);
@@ -834,7 +827,7 @@ implementation {
     uint32_t t0;
 
     ll_si446x_trace(T_RC_DRF_ALL, 0, 0);
-    SI446X_ATOMIC {
+    {
       g_radio_dump.dump_start = call Platform.usecsRaw();
 
       /* do CSN before we reset the SPI port */
@@ -1068,9 +1061,7 @@ implementation {
    * Si446xCmd.dump_radio
    */
   async command void Si446xCmd.dump_radio() {
-    atomic {
-      ll_si446x_drf();
-    }
+    ll_si446x_drf();
     ll_si446x_trace(T_RC_DUMP_RADIO, 0, 0);
   }
 
@@ -1296,7 +1287,7 @@ norace  uint8_t const* config_list[] = {NULL, si446x_device_config, NULL};
 
     group = p_id >> 8;
     idx = p_id & 0xff;
-    SI446X_ATOMIC {
+    {
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
       call FastSpiByte.splitReadWrite(group);
@@ -1326,7 +1317,7 @@ norace  uint8_t const* config_list[] = {NULL, si446x_device_config, NULL};
   async command void Si446xCmd.read_rx_fifo(uint8_t *data, uint8_t length) {
     uint32_t t0, t1;
 
-    SI446X_ATOMIC {
+    {
       t0 = call Platform.usecsRaw();
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(SI446X_CMD_RX_FIFO_READ);
@@ -1503,7 +1494,7 @@ norace  uint8_t const* config_list[] = {NULL, si446x_device_config, NULL};
   async command void Si446xCmd.write_tx_fifo(uint8_t *data, uint8_t length) {
     uint32_t t0, t1;
 
-    SI446X_ATOMIC {
+    {
       t0 = call Platform.usecsRaw();
       call HW.si446x_set_cs();
       call FastSpiByte.splitWrite(SI446X_CMD_TX_FIFO_WRITE);
