@@ -181,7 +181,7 @@ implementation {
   }
 
 
-  command bool   TagnetTLV.eq_tlv(tagnet_tlv_t *s, tagnet_tlv_t *t) {
+  async command bool   TagnetTLV.eq_tlv(tagnet_tlv_t *s, tagnet_tlv_t *t) {
     if ((s->typ >= _TN_TLV_COUNT) || (t->typ >= _TN_TLV_COUNT))
       tn_panic(TAGNET_AUTOWHERE, (parg_t) s, s->typ, (parg_t) t, t->typ);
     nop();                              /* BRK */
@@ -226,7 +226,7 @@ implementation {
   }
 
 
-  command tagnet_tlv_type_t TagnetTLV.get_tlv_type(tagnet_tlv_t *t) {
+  async command tagnet_tlv_type_t TagnetTLV.get_tlv_type(tagnet_tlv_t *t) {
     if (t->typ >= _TN_TLV_COUNT)
       tn_panic(TAGNET_AUTOWHERE, (parg_t) t, t->typ, t->len, 0);
     return t->typ;

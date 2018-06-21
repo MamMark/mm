@@ -56,7 +56,16 @@ interface TagnetName {
    * @param   msg           pointer to message buffer containing the name
    * @return  tagnet_tlv_t  pointer to first tlv
    */
-  command tagnet_tlv_t*    first_element(message_t *msg);
+  async command tagnet_tlv_t*    first_element(message_t *msg);
+
+  /**
+   * Get pointer to current 'this' tlv
+   *
+   * @param   msg           pointer to message buffer containing the name
+   * @return  tagnet_tlv_t  pointer to first tlv
+   */
+  async command tagnet_tlv_t*     this_element(message_t *msg);
+
   /**
    * Get pointer to gps_xyz tlv in name
    *
@@ -180,11 +189,4 @@ interface TagnetName {
    * @param   msg           pointer to message buffer containing the name
    */
   command void              set_utc_time(message_t *msg);
-  /**
-   * Get pointer to current 'this' tlv
-   *
-   * @param   msg           pointer to message buffer containing the name
-   * @return  tagnet_tlv_t  pointer to first tlv
-   */
-  command tagnet_tlv_t*     this_element(message_t *msg);
 }

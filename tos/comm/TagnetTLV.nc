@@ -79,7 +79,7 @@ interface TagnetTLV {
    * @param   t            point to second tlv
    * @return  bool         TRUE if tlvs exactly match
    */
-  command bool             eq_tlv(tagnet_tlv_t *s, tagnet_tlv_t *t);
+  async command bool             eq_tlv(tagnet_tlv_t *s, tagnet_tlv_t *t);
   /**
    * Convert error value into a Tagnet TLV and store in destination location
    *
@@ -119,7 +119,7 @@ interface TagnetTLV {
    * @param   t             pointer of tlv of interest
    * @return  tagnet_tlv_type_t value of the tlv type found
    */
-  command tagnet_tlv_type_t get_tlv_type(tagnet_tlv_t *t);
+  async command tagnet_tlv_type_t get_tlv_type(tagnet_tlv_t *t);
   /**
    * Convert gps_xyz value into a Tagnet TLV and store in destination location
    *

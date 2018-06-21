@@ -99,9 +99,13 @@ implementation {
     return (sizeof(msg->data) - getMeta(msg)->this);
   }
 
-  command tagnet_tlv_t   *TagnetName.first_element(message_t *msg) {
+  async command tagnet_tlv_t *TagnetName.first_element(message_t *msg) {
     memset(getMeta(msg), 0, sizeof(tagnet_name_meta_t));
     return call TagnetName.this_element(msg);
+  }
+
+  async command tagnet_tlv_t *TagnetName.this_element(message_t *msg) {
+    return (tagnet_tlv_t *) &msg->data[getMeta(msg)->this];
   }
 
   command tagnet_tlv_t  *TagnetName.get_gps_xyz(message_t *msg) {
@@ -265,10 +269,6 @@ implementation {
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
     getMeta(msg)->utc_time = getMeta(msg)->this;
-  }
-
-  command tagnet_tlv_t    *TagnetName.this_element(message_t *msg) {
-    return (tagnet_tlv_t *) &msg->data[getMeta(msg)->this];
   }
 
   command bool              TagnetName.is_last_element(message_t *msg) {

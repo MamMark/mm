@@ -49,7 +49,7 @@ implementation {
      */
     this_tlv = call TName.first_element(msg);
     // expect first TLV to be a Node Id type
-    if ((!this_tlv) || \
+    if ((!this_tlv) ||
         (call TTLV.get_tlv_type(this_tlv) != TN_TLV_NODE_ID))
       return FALSE;
     // Node Id in message must match one of
