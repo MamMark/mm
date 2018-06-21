@@ -36,10 +36,8 @@ implementation {
 
   components TagnetC;
   TagnetMonitorP.Tagnet         -> TagnetC;
-  TagnetMonitorP.TagnetName     -> TagnetC;
-  TagnetMonitorP.TagnetPayload  -> TagnetC;
-  TagnetMonitorP.TagnetTLV      -> TagnetC;
-  TagnetMonitorP.TagnetHeader   -> TagnetC;
+  TagnetMonitorP.TName          -> TagnetC;
+  TagnetMonitorP.TTLV           -> TagnetC;
 
   components GPS0C              as GpsPort;
   components GPSmonitorC;
@@ -85,10 +83,8 @@ implementation {
   TagnetC.RadioRSSI             -> Si446xMonitorC.RadioRSSI;
   TagnetC.RadioTxPower          -> Si446xMonitorC.RadioTxPower;
 
-  components new TimerMilliC()  as Timer0;
-  TagnetMonitorP.rcTimer        -> Timer0;
-  components new TimerMilliC()  as Timer1;
-  TagnetMonitorP.smTimer        -> Timer1;
+  components new TimerMilliC()  as StateTimer;
+  TagnetMonitorP.smTimer        -> StateTimer;
 
   components RandomC;
   TagnetMonitorP.Random         -> RandomC;

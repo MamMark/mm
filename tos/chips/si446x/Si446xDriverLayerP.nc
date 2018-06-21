@@ -909,6 +909,16 @@ implementation {
   /**************************************************************************/
   /*
    * pull_rx(): pull the rx fifo into the buffer.
+   *
+   * NOTE: we could (when we have enough bytes) give the Receiver (upstairs)
+   * access to the header to see if this packet is for us (FOR_ME).  However
+   * if we bail on this packet and return to RX_ON we effectively opening up
+   * the transmit gate and if there is a pending TX it would go out.  But the
+   * packet we just punted could still be in flight.  ICK.
+   *
+   * So receive the whole packet, then have a look at the header.  This keeps
+   * the transmit gate closed until it really is good to send (after the recv
+   * completes).
    */
   void pull_rx(int32_t min) {
     uint8_t  *dp;
@@ -1216,8 +1226,17 @@ implementation {
       global_ioc.rx_errors++;
       return a_rx_on(t);
     }
-    global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
-    global_ioc.rx_reports++;
+    /*
+     * First ask upstairs (which knows things, like what our node_id is...)
+     * if it wants to accept the packet.  Doing this here, means we receive
+     * the whole packet which is important to keep the transmit gate closed.
+     *
+     * In other words, don't change this !!!!   this means you!  Yeah.   You.
+     */
+    if (signal RadioReceive.header(global_ioc.pRxMsg)) {
+      global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
+      global_ioc.rx_reports++;
+    }
     return a_rx_on(t);                  /* start receiving again */
   }
 
