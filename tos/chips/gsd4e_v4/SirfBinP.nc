@@ -200,6 +200,11 @@ implementation {
 
       case SBS_LEN_2:
 	sirfbin_left |= byte;
+        if (sirfbin_left <  SIRFBIN_MIN_MSG) {
+          sirfbin_stats.too_small++;
+          sirfbin_restart_abort(2);
+          return;
+        }
 	if (sirfbin_left >= SIRFBIN_MAX_MSG) {
           if (sirfbin_left > sirfbin_stats.largest_seen)
             /*

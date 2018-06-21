@@ -72,6 +72,7 @@
  * and the largest we have seen is MID 4 (len 0xbc, 188 + 8)
  * 196, we round up to 200.
  */
+#define SIRFBIN_MIN_MSG         1
 #define SIRFBIN_MAX_MSG         200
 #define SIRFBIN_MAX_SW_VER      88
 

@@ -777,6 +777,7 @@ typedef struct {
   uint32_t complete;                  /* number completed successfully */
   uint32_t ignored;                   /* number of bytes ignored */
   uint32_t resets;                    /* protocol resets (aborts) */
+  uint16_t too_small;                 /* too large, aborted */
   uint16_t too_big;                   /* too large, aborted */
   uint16_t no_buffer;                 /* no buffer/msg available */
   uint16_t chksum_fail;               /* bad checksum */
