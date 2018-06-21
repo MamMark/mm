@@ -240,6 +240,7 @@ module GPSmonitorP {
     interface Timer<TMilli> as MajorTimer;
     interface Panic;
     interface OverWatch;
+    interface TagnetMonitor;
   }
 }
 implementation {
@@ -527,6 +528,18 @@ implementation {
 
       case GDC_STATE:
         major_event(MON_EV_STATE_CHK);
+        break;
+
+      case GDC_MON_GO_BASE:
+        call TagnetMonitor.setBase();
+        break;
+
+      case GDC_MON_GO_HUNT:
+        call TagnetMonitor.setHunt();
+        break;
+
+      case GDC_MON_GO_LOST:
+        call TagnetMonitor.setLost();
         break;
 
       case GDC_AWAKE_STATUS:

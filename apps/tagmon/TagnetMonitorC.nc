@@ -24,11 +24,14 @@
 #include "Tagnet.h"
 #include <rtctime.h>
 
-configuration TagnetMonitorC {}
+configuration TagnetMonitorC {
+  provides interface TagnetMonitor;
+}
 implementation {
-  components MainC;
-  components SystemBootC;
   components TagnetMonitorP;
+  TagnetMonitor = TagnetMonitorP;
+
+  components SystemBootC;
   TagnetMonitorP.Boot           -> SystemBootC.Boot;
 
   components TagnetC;

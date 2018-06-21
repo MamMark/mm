@@ -39,6 +39,9 @@ typedef enum gps_debug_cmds {
   GDC_POWER_OFF     = 5,
   GDC_CYCLE         = 6,
   GDC_STATE         = 7,
+  GDC_MON_GO_BASE   = 8,
+  GDC_MON_GO_HUNT   = 9,
+  GDC_MON_GO_LOST   = 10,
 
   GDC_AWAKE_STATUS  = 0x10,
   GDC_MPM           = 0x11,

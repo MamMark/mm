@@ -20,7 +20,6 @@
  *          Daniel J. Maltbie <dmaltbie@daloma.org>
  */
 
-
 #include <Tasklet.h>
 #include <tagnet_panic.h>
 
@@ -28,6 +27,7 @@ uint32_t gt0, gt1;
 uint16_t tt0, tt1;
 
 module TagnetMonitorP {
+  provides interface TagnetMonitor;
   uses {
     interface Boot;
     interface TagnetName;
@@ -188,6 +188,18 @@ implementation {
 
   task void network_task() {
     nop();
+  command void TagnetMonitor.setBase() {
+    change_radio_state(RS_BASE, SS_RECV);
+  }
+
+  command void TagnetMonitor.setHunt() {
+    change_radio_state(RS_HUNT, SS_RECV);
+  }
+
+  command void TagnetMonitor.setLost() {
+    change_radio_state(RS_LOST, SS_RECV);
+  }
+
     nop();                     /* BRK */
     if (call Tagnet.process_message(pTagMsg)) {
       /*

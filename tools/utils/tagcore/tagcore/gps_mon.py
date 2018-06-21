@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.3.3.dev2'
+__version__ = '0.3.3.dev3'
 
 __all__ = [
     'gps_cmd_name',
@@ -43,6 +43,9 @@ gps_cmds = {
     'pwroff':       5,
     'cycle':        6,
     'state':        7,
+    'base':         8,
+    'hunt':         9,
+    'lost':         10,
 
     'awake':        0x10,
     'mpm':          0x11,
@@ -76,6 +79,9 @@ gps_cmds = {
     5:              'pwroff',
     6:              'cycle',
     7:              'state',
+    8:              'base',
+    9:              'hunt',
+    10:             'lost',
 
     16:             'awake',
     17:             'mpm',

@@ -62,4 +62,7 @@ implementation {
 
   components PlatformC;
   GPSmonitorP.Rtc -> PlatformC;
+
+  components TagnetMonitorC;
+  GPSmonitorP.TagnetMonitor -> TagnetMonitorC;
 }
