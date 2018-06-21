@@ -116,7 +116,7 @@ def main():
     g_radio.add_edge(
         pydot.Edge(
             "base_recv","base_stby_wait",
-            label="no_rsp / r_stby,t_start"))
+            label="not_forme / r_stby,t_start"))
     g_radio.add_edge(
         pydot.Edge(
             "base_recv","base_stby_wait",
@@ -128,7 +128,7 @@ def main():
     g_radio.add_edge(
         pydot.Edge(
             "base_recv","base_recv",
-            label="rsp_sent / t_start"))
+            label="forme / t_start"))
     g_radio.add_edge(
         pydot.Edge(
             "base_stby","hunt_stby",
@@ -145,7 +145,7 @@ def main():
     g_radio.add_edge(
         pydot.Edge(
             "hunt_recv","hunt_stby_wait",
-            label="no_rsp / r_stby,t_start"))
+            label="not_forme / r_stby,t_start"))
     g_radio.add_edge(
         pydot.Edge(
             "hunt_recv","hunt_stby_wait",
@@ -157,7 +157,7 @@ def main():
     g_radio.add_edge(
         pydot.Edge(
             "hunt_recv","base_recv",
-            label="rsp_sent / t_start"))
+            label="forme / t_start"))
     g_radio.add_edge(
         pydot.Edge(
             "hunt_stby","lost_stby",
@@ -174,7 +174,7 @@ def main():
     g_radio.add_edge(
         pydot.Edge(
             "lost_recv","lost_stby_wait",
-            label="no_rsp / r_stby,t_start"))
+            label="not_forme / r_stby,t_start"))
     g_radio.add_edge(
         pydot.Edge(
             "lost_recv","lost_stby_wait",
@@ -187,7 +187,7 @@ def main():
     g_radio.add_edge(
         pydot.Edge(
             "lost_recv","base_recv",
-            label="rsp_sent / t_start"))
+            label="forme / t_start"))
     g_radio.add_edge(
         pydot.Edge(
             "lost_recv_wait","lost_recv",
@@ -199,11 +199,11 @@ def main():
 
     # output:
     # write dot file, then render as png
-    fname='tagmongraph.dot'
+    fname='tagmonograph.dot'
     g_radio.write_raw(fname)
     print "wrote", fname
 
-    fname='tagmongraph.png'
+    fname='tagmonograph.png'
     g_radio.write_png(fname)
     print "wrote", fname
 

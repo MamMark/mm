@@ -39,24 +39,24 @@ base_stby_wait [fontsize=16, label=stby_wait];
 }
 
 off -> base_recv_wait  [label="booted / r_on,t_start"];
-base_recv -> base_stby_wait  [label="no_rsp / r_stby,t_start"];
+base_recv -> base_stby_wait  [label="not_forme / r_stby,t_start"];
 base_recv -> base_stby_wait  [label="timer_expired / r_stby,t_start"];
 base_stby -> base_recv_wait  [label="timer_expired / r_on,t_start"];
-base_recv -> base_recv  [label="rsp_sent / t_start"];
+base_recv -> base_recv  [label="forme / t_start"];
 base_stby -> hunt_stby  [label="tries_exceeded / t_start"];
 base_recv_wait -> base_recv  [label="radio_done / t_start"];
 base_stby_wait -> base_stby  [label="radio_done / t_start"];
-hunt_recv -> hunt_stby_wait  [label="no_rsp / r_stby,t_start"];
+hunt_recv -> hunt_stby_wait  [label="not_forme / r_stby,t_start"];
 hunt_recv -> hunt_stby_wait  [label="timer_expired / r_stby,t_start"];
 hunt_stby -> hunt_recv_wait  [label="timer_expired / r_on,t_start"];
-hunt_recv -> base_recv  [label="rsp_sent / t_start"];
+hunt_recv -> base_recv  [label="forme / t_start"];
 hunt_stby -> lost_stby  [label="tries_exceeded / t_start"];
 hunt_recv_wait -> hunt_recv  [label="radio_done / t_start"];
 hunt_stby_wait -> hunt_stby  [label="radio_done / t_start"];
-lost_recv -> lost_stby_wait  [label="no_rsp / r_stby,t_start"];
+lost_recv -> lost_stby_wait  [label="not_forme / r_stby,t_start"];
 lost_recv -> lost_stby_wait  [label="timer_expired / r_stby,t_start"];
 lost_stby -> lost_recv_wait  [label="timer_expired / r_on,t_start"];
-lost_recv -> base_recv  [label="rsp_sent / t_start"];
+lost_recv -> base_recv  [label="forme / t_start"];
 lost_recv_wait -> lost_recv  [label="radio_done / t_start"];
 lost_stby_wait -> lost_stby  [label="radio_done / t_start"];
 }
