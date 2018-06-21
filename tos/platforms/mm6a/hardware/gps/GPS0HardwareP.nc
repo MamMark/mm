@@ -63,11 +63,7 @@ typedef struct {
   uint8_t      tx_active;
 } gps_int_rec_t;
 
-#define GPS_INT_RECS_MAX 32
-
-gps_int_rec_t   gps_int_recs[GPS_INT_RECS_MAX];
-norace uint32_t gps_int_rec_idx;
-
+#define GPS_INT_RECS_MAX 128
 
 module GPS0HardwareP {
   provides {
@@ -82,6 +78,9 @@ module GPS0HardwareP {
   }
 }
 implementation {
+
+  gps_int_rec_t   gps_int_recs[GPS_INT_RECS_MAX];
+  norace uint32_t gps_int_rec_idx;
 
   enum {
     UART_MAX_BUSY_WAIT = 10000,                 /* 10ms max busy wait time */
