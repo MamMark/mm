@@ -34,11 +34,12 @@ module TagnetMonitorP {
     interface TagnetName as  TName;
     interface TagnetTLV  as  TTLV;
     interface Timer<TMilli> as smTimer;
-    interface Panic;
     interface Random;
     interface RadioState;
     interface RadioSend;
     interface RadioReceive;
+    interface Platform;
+    interface Panic;
   }
 }
 implementation {
@@ -116,16 +117,23 @@ implementation {
     }
   };
 
-  // information recorded in the fsm trace array
+  // instrumentation for radio state changes.
+
   typedef struct {
+    uint32_t          count;
+    uint32_t          ts_ms;
+    uint32_t          ts_usecs;
+    uint32_t          timeout;
     radio_state_t     major;
     radio_state_t     old_major;
     radio_substate_t  minor;
     radio_substate_t  old_minor;
-    uint32_t          timeout;
   } radio_trace_t;
-  radio_trace_t       radio_trace[10];
-  norace uint32_t     radio_trace_head;
+
+#define TAGMON_RADIO_TRACE_MAX 16
+
+  radio_trace_t       radio_trace[TAGMON_RADIO_TRACE_MAX];
+  norace uint32_t     radio_trace_cur;
 
 
   void change_radio_state(radio_state_t major, radio_substate_t minor) {
@@ -173,7 +181,7 @@ implementation {
     }
     // update state variables
     old_major = rcb.state;
-    old_minor = rcb.sub[major].state;
+    old_minor = rcb.sub[old_major].state;
     rcb.state = major;
     rcb.sub[major].state = minor;
     tval = rcb.sub[major].timers[minor]; // get timer from wait state
@@ -187,10 +195,16 @@ implementation {
       if (radio_trace_cur >= (sizeof(radio_trace)/sizeof(radio_trace[0])))
         radio_trace_cur = 0;
       tt = &radio_trace[radio_trace_cur];
+      tt->ts_ms    = call Platform.localTime();
+      tt->ts_usecs = call Platform.usecsRaw();
+      tt->count    = 1;
       tt->major = major; tt->old_major = old_major;
       tt->minor = minor; tt->old_minor = old_minor;
       tt->timeout = tval;
     } else {
+      tt->count++;
+      tt->ts_ms    = call Platform.localTime();
+      tt->ts_usecs = call Platform.usecsRaw();
     }
 
     // start timer

@@ -109,6 +109,7 @@ implementation {
   Si446xDriverLayerC.TransmitDelayFlag -> MetadataFlagsLayerC.PacketFlag[unique(UQ_SI446X_METADATA_FLAGS)];
   Si446xDriverLayerC.RSSIFlag   -> MetadataFlagsLayerC.PacketFlag[unique(UQ_SI446X_METADATA_FLAGS)];
 
-  components PanicC;
+  components PanicC, PlatformC;
   TagnetMonitorP.Panic          -> PanicC;
+  TagnetMonitorP.Platform       -> PlatformC;
 }
