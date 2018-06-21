@@ -28,6 +28,7 @@ TP_GDB=${TINYOS_ROOT_DIR}/tos/chips/msp432/99_gdb
 MM_GDB=${MM_ROOT}/tools/00_gdb
 MM_PLAT=${MM_ROOT}/tos/platforms
 MM_CHIP=${MM_ROOT}/tos/chips
+MM_TAGMON=${MM_ROOT}/apps/tagmon
 
 cp ${MM_GDB}/gdbinit           .gdbinit
 cp ${MM_GDB}/gdb_mm            .gdb_mm
@@ -37,6 +38,8 @@ cp ${MM_CHIP}/gsd4e_v4/gdb_gps .gdb_gps
 cp ${MM_CHIP}/si446x/gdb_si446x.py .gdb_si446x.py
 cp ${MM_PLAT}/mm6a/gdb_mm6a    .gdb_mm6a
 cp ${MM_PLAT}/dev6a/gdb_dev6a  .gdb_dev6a
+
+cp ${MM_TAGMON}/gdb_tagmon.py .gdb_tagmon.py
 
 set +o verbose
 
