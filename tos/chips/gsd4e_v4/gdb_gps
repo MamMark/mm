@@ -44,8 +44,10 @@ output g_evs
 printf "\n\n"
 end
 
+# requires gdb_gps_hw.py for gps_proto_stats
 define gps_state
-__gps_stats
+printf "\n"
+__gps_proto_stats
 __gps_msg_buf_state
 __gps_sirf_proto_state
 __gps_driver_state
@@ -71,20 +73,6 @@ end
 
 define gmc
 print GPSMsgBufP__gmc
-end
-
-# sirf proto stats:  ign   rst   big  nbuf  max    chk   err   t/o    proto
-#99999999/99999999 99999 99999 99999 99999  999  99999 99999 99999 99999/99999
-
-define __gps_stats
-printf "\n sirf proto stats:  ign   rst   big  nbuf  max    chk   err   t/o    proto\n"
-printf "%8d/%-8d %5d %5d %5d %5d  %3d  %5d %5d %5d %5d/%-5d\n",               \
-    SirfBinP__sirfbin_stats.complete,   SirfBinP__sirfbin_stats.starts,      \
-    SirfBinP__sirfbin_stats.ignored,    SirfBinP__sirfbin_stats.resets,      \
-    SirfBinP__sirfbin_stats.too_big,    SirfBinP__sirfbin_stats.no_buffer,   \
-    SirfBinP__sirfbin_stats.max_seen,   SirfBinP__sirfbin_stats.chksum_fail, \
-    SirfBinP__sirfbin_stats.rx_errors,  SirfBinP__sirfbin_stats.rx_timeouts, \
-    SirfBinP__sirfbin_stats.proto_start_fail, SirfBinP__sirfbin_stats.proto_end_fail
 end
 
 define gs

@@ -1181,16 +1181,18 @@ implementation {
 
   /*
    * underlying h/w layer is telling us there is an rx error.
-   *
    * Signaller is responsible for clearing it.
+   *
+   * errors have been translated from h/w specific to errors
+   * defined in gpsproto.h.   For signalling with SirfProto.rx_error.
    */
-  async event void HW.gps_rx_err(uint16_t errors) {
+  async event void HW.gps_rx_err(uint16_t gps_errors, uint16_t raw_errors) {
     m_rx_errors++;
     if (!m_first_rx_error) {
-      m_first_rx_error = errors;
+      m_first_rx_error = raw_errors;
       post collect_rx_errors();
     }
-    call SirfProto.rx_error();
+    call SirfProto.rx_error(gps_errors);
     driver_protoAbort(0);               /* 0 means rx_err */
   }
 

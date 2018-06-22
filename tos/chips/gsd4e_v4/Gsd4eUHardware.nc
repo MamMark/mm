@@ -135,8 +135,15 @@ interface Gsd4eUHardware {
   async command void gps_rx_int_enable();
   async command void gps_rx_int_disable();
 
+  /*
+   * h/w error handling.
+   * gps_rx_err signals from the underlying h/w.
+   *
+   * raw_errors, raw from the h/w (untranslated) errors.
+   * gps_errors, translated from the h/w into errors defined in gpsproto.h
+   */
+  async event   void gps_rx_err(uint16_t gps_errors, uint16_t raw_errors);
   async command void gps_clear_rx_errs();
-  async event   void gps_rx_err(uint16_t errors);
 
   /*
    * Data transfer

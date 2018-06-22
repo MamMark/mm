@@ -129,9 +129,15 @@ implementation {
    * Also throw a GPSProto.msgAbort to do reasonable things with
    * the underlying driver state machine.
    */
-  async command void GPSProto.rx_error() {
+  async command void GPSProto.rx_error(uint16_t gps_errors) {
     atomic {
       sirfbin_stats.rx_errors++;
+      if (gps_errors & GPSPROTO_RXERR_FRAMING)
+        sirfbin_stats.rx_framing++;
+      if (gps_errors & GPSPROTO_RXERR_OVERRUN)
+        sirfbin_stats.rx_overrun++;
+      if (gps_errors & GPSPROTO_RXERR_PARITY)
+        sirfbin_stats.rx_parity++;
       sirfbin_reset();
     }
   }
@@ -139,9 +145,12 @@ implementation {
 
   async command void GPSProto.resetErrors() {
       sirfbin_stats.resets           = 0;
-      sirfbin_stats.rx_errors        = 0;
-      sirfbin_stats.rx_timeouts      = 0;
       sirfbin_stats.chksum_fail      = 0;
+      sirfbin_stats.rx_timeouts      = 0;
+      sirfbin_stats.rx_errors        = 0;
+      sirfbin_stats.rx_framing       = 0;
+      sirfbin_stats.rx_overrun       = 0;
+      sirfbin_stats.rx_parity        = 0;
       sirfbin_stats.proto_start_fail = 0;
       sirfbin_stats.proto_end_fail   = 0;
   }

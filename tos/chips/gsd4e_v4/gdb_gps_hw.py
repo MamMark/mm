@@ -49,4 +49,24 @@ class GpsIntTrace(gdb.Command):
             if cur >= xmax:
                 cur = 0
 
+#sirf stats: t/o chk err frm ovr par rst  proto    </>   nbuf   ign max
+#99999/99999 999 999 999 999 999 999 999 999/999 999/999 9999 99999 999
+
+class GpsProtoStats(gdb.Command):
+    """Display the gps protocol stats."""
+    def __init__ (self):
+        super(GpsProtoStats, self).__init__("__gps_proto_stats", gdb.COMMAND_USER)
+
+    def invoke (self, args, from_tty):
+        sp = gdb.parse_and_eval('SirfBinP__sirfbin_stats')
+        print('sirf stats: t/o chk err frm ovr par rst  proto    </>   nbuf   ign max')
+        print('{:5d}/{:<5d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d}/{:<3d} {:3d}/{:<3d} {:4d} {:5d} {:3d}'.format(
+            int(sp['complete']),   int(sp['starts']),     int(sp['rx_timeouts']), int(sp['chksum_fail']),
+            int(sp['rx_errors']),  int(sp['rx_framing']), int(sp['rx_overrun']),  int(sp['rx_parity']),
+            int(sp['resets']),     int(sp['proto_start_fail']), int(sp['proto_end_fail']),
+            int(sp['too_small']),  int(sp['too_big']),          int(sp['no_buffer']),
+            int(sp['ignored']),    int(sp['max_seen'])))
+
+
 GpsIntTrace()
+GpsProtoStats()

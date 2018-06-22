@@ -24,6 +24,7 @@
 #include <platform_panic.h>
 #include <msp432.h>
 #include <platform.h>
+#include <gpsproto.h>
 
 #ifndef PANIC_GPS
 enum {
@@ -465,6 +466,23 @@ implementation {
   }
 
   /*
+   * convert a h/w rx err into a gps_rx_err for the upper layers
+   */
+  uint16_t rx_err2gps_err(uint16_t hw_rx_err) {
+    uint16_t gps_err;
+
+    gps_err = 0;
+    if (hw_rx_err & EUSCI_A_STATW_FE)
+      gps_err |= GPSPROTO_RXERR_FRAMING;
+    if (hw_rx_err & EUSCI_A_STATW_OE)
+      gps_err |= GPSPROTO_RXERR_OVERRUN;
+    if (hw_rx_err & EUSCI_A_STATW_PE)
+      gps_err |= GPSPROTO_RXERR_PARITY;
+    return gps_err;
+  }
+
+
+  /*
    * WARNING: there is a nasty interaction between the Interrupt system
    * and how the TXIFG works on the eUSCI.  On the way in via interrupt
    * reading the eUSCI->IV register to get the IV clears the highest
@@ -510,7 +528,7 @@ implementation {
           data = call Usci.getRxbuf();
           gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
           if (m_rx_active)
-            signal HW.gps_rx_err(stat_word);
+            signal HW.gps_rx_err(rx_err2gps_err(stat_word), stat_word);
           return;
         }
         data = call Usci.getRxbuf();
@@ -527,7 +545,7 @@ implementation {
           data = call Usci.getRxbuf();
           gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
           if (m_rx_active)
-            signal HW.gps_rx_err(stat_word);
+            signal HW.gps_rx_err(rx_err2gps_err(stat_word), stat_word);
           return;
         }
 

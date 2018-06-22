@@ -781,8 +781,11 @@ typedef struct {
   uint16_t too_big;                   /* too large, aborted */
   uint16_t no_buffer;                 /* no buffer/msg available */
   uint16_t chksum_fail;               /* bad checksum */
-  uint16_t rx_errors;                 /* rx_error, comm h/w not happy */
   uint16_t rx_timeouts;               /* number of rx timeouts */
+  uint16_t rx_errors;                 /* rx_error, comm h/w not happy */
+  uint16_t rx_framing;                /* framing errors */
+  uint16_t rx_overrun;                /* overrun errors */
+  uint16_t rx_parity;                 /* parity errors  */
   uint16_t proto_start_fail;          /* proto fails at start of packet */
   uint16_t proto_end_fail;            /* proto fails at end   of packet */
 

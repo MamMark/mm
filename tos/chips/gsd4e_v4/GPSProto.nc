@@ -19,6 +19,8 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
 
+#include <gpsproto.h>
+
 interface GPSProto {
   /*
    * rx_timeout: an rx_timeout has occurred.
@@ -28,7 +30,7 @@ interface GPSProto {
   /*
    * rx_error: an rx_error has occurred.
    */
-  async command void rx_error();
+  async command void rx_error(uint16_t errors);
 
   /*
    * reset_errors
