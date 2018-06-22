@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev5'
+__version__ = '0.3.3.dev6'
 
 import binascii
 from   collections  import OrderedDict
@@ -266,8 +266,6 @@ event_names = {
     51: 'GPS_PULSE',
 
     52: 'GPS_TX_RESTART',
-    53: 'GPS_ERR0',
-    54: 'GPS_ERR1',
 
     64: 'GPS_FAST',
     65: 'GPS_FIRST',
@@ -347,6 +345,37 @@ obj_dt_test     = obj_dt_hdr
 #
 obj_dt_note     = obj_dt_hdr
 obj_dt_config   = obj_dt_hdr
+
+
+####
+#
+# GPS PROTO STATS
+#
+
+def obj_dt_gps_proto_stats():
+    return aggie(OrderedDict([
+        ('hdr',                 obj_dt_hdr()),
+        ('stats',               obj_gps_proto_stats()),
+    ]))
+
+def obj_gps_proto_stats():
+    return aggie(OrderedDict([
+        ('starts',              atom(('<I', '{}'))),
+        ('complete',            atom(('<I', '{}'))),
+        ('ignored',             atom(('<I', '{}'))),
+        ('resets',              atom(('<H', '{}'))),
+        ('too_small',           atom(('<H', '{}'))),
+        ('too_big',             atom(('<H', '{}'))),
+        ('chksum_fail',         atom(('<H', '{}'))),
+        ('rx_timeouts',         atom(('<H', '{}'))),
+        ('rx_errors',           atom(('<H', '{}'))),
+        ('rx_framing',          atom(('<H', '{}'))),
+        ('rx_overrun',          atom(('<H', '{}'))),
+        ('rx_parity',           atom(('<H', '{}'))),
+        ('proto_start_fail',    atom(('<H', '{}'))),
+        ('proto_end_fail',      atom(('<H', '{}'))),
+    ]))
+
 
 # DT_GPS_RAW_SIRFBIN, dt, native, little endian
 #  sirf data big endian.

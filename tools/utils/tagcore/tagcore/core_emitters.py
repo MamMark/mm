@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev4'
+__version__ = '0.3.3.dev5'
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -529,6 +529,50 @@ def emit_config(level, offset, buf, obj):
     print(rec0.format(offset, recnum, brt, xlen, xtype,         # sans nl
                       dt_name(xtype)), end = '')
     print(cfg0.format())
+
+
+########################################################################
+#
+# GPS Proto Stats
+#
+#sirf stats: t/o chk err frm ovr par rst  proto    </>     ign
+#99999/99999 999 999 999 999 999 999 999 999/999 999/999 99999
+#
+def emit_gps_proto_stats(level, offset, buf, obj):
+    hdr      = obj['hdr']
+    xlen     = hdr['len'].val
+    xtype    = hdr['type'].val
+    recnum   = hdr['recnum'].val
+    rtctime  = hdr['rt']
+    brt      = rtctime_str(rtctime)
+
+    print_hourly(rtctime)
+    print(rec0.format(offset, recnum, brt, xlen, xtype,         # sans nl
+                      dt_name(xtype)), end = '')
+    stats               =   obj['stats']
+    starts              = stats['starts'].val
+    complete            = stats['complete'].val
+    ignored             = stats['ignored'].val
+    resets              = stats['resets'].val
+    too_small           = stats['too_small'].val
+    too_big             = stats['too_big'].val
+    chksum_fail         = stats['chksum_fail'].val
+    rx_timeouts         = stats['rx_timeouts'].val
+    rx_errors           = stats['rx_errors'].val
+    rx_framing          = stats['rx_framing'].val
+    rx_overrun          = stats['rx_overrun'].val
+    rx_parity           = stats['rx_parity'].val
+    proto_start_fail    = stats['proto_start_fail'].val
+    proto_end_fail      = stats['proto_end_fail'].val
+    print('  e: {}  r: {}  f: {}  o: {}'.format(rx_errors, resets,
+                                             rx_framing, rx_overrun))
+    if level >= 1:
+        print('    sirf stats: t/o chk err frm ovr par rst  proto    </>     ign')
+        print('    {:5d}/{:<5d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d}/{:<3d} {:3d}/{:<3d} {:5d}'.format(
+            complete,   starts,           rx_timeouts,    chksum_fail,
+            rx_errors,  rx_framing,       rx_overrun,     rx_parity,
+            resets,     proto_start_fail, proto_end_fail,
+            too_small,  too_big,          ignored))
 
 
 ########################################################################

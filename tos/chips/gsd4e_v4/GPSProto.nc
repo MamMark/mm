@@ -29,23 +29,21 @@ interface GPSProto {
 
   /*
    * rx_error: an rx_error has occurred.
+   * errors should be specified using definitions in gpsproto.h
    */
   async command void rx_error(uint16_t errors);
 
   /*
-   * reset_errors
-   * We have finished start up or other special state and we
-   * want to tell the protocol module to clear any normal
-   * error counters.  Typically ignored, resets, rx_errs, and timeouts.
+   * resetStats
+   * Stats are collected for a section of time, reported, and
+   * cleared.
    *
-   * log_errors
-   * tell the module to log any errors.  right now limited to
-   *
-   * msg0: rx_errors, rx_timeouts, chksum_fail, no_buffer
-   * msg1: resets,    start_fail,  end_fail
+   * logStats
+   * tell the module to log the currently collected stats and
+   * it will then clear the stats.
    */
-  async command void resetErrors();
-        command void logErrors();
+  async command void resetStats();
+        command void logStats();
 
   /*
    * byteAvail: a new byte is available

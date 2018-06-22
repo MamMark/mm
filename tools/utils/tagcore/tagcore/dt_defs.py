@@ -45,7 +45,7 @@ from   __future__         import print_function
 import struct
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.3.3.dev1'
+__version__ = '0.3.3.dev2'
 
 cfg_print_hourly = True
 
@@ -77,6 +77,7 @@ __all__ = [
     'DT_TEST',
     'DT_NOTE',
     'DT_CONFIG',
+    'DT_GPS_PROTO_STATS',
     'DT_GPS_RAW_SIRFBIN',
     'DT_TAGNET',
 
@@ -144,6 +145,8 @@ DT_SENSOR_SET           = 21
 DT_TEST                 = 22
 DT_NOTE                 = 23
 DT_CONFIG		= 24
+DT_GPS_PROTO_STATS      = 25
+
 DT_GPS_RAW_SIRFBIN      = 32
 DT_TAGNET               = 33
 

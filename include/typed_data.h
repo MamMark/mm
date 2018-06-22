@@ -81,6 +81,7 @@ typedef enum {
   DT_TEST		= 22,
   DT_NOTE		= 23,
   DT_CONFIG		= 24,
+  DT_GPS_PROTO_STATS    = 25,
 
   /*
    * GPS_RAW is used to encapsulate data as received from the GPS.
@@ -271,8 +272,6 @@ typedef enum {
   DT_EVENT_GPS_PULSE        = 51,
 
   DT_EVENT_GPS_TX_RESTART   = 52,
-  DT_EVENT_GPS_ERR0         = 53,
-  DT_EVENT_GPS_ERR1         = 54,
 
   /***********************************/
 
@@ -386,6 +385,34 @@ typedef struct {
  */
 
 typedef dt_header_t dt_note_t;          /* size 20 + var note size */
+
+
+/*
+ * GPS Proto Stats
+ * report instrumentation from the GPS protocol stack.
+ *
+ * The data is essentially a copy of the first part of the data in
+ * sirfbin_stat_t (sirf_driver.h).
+ *
+ * The header is a dt_header_t followed dt_gps_proto_stats_t.
+ */
+
+typedef struct {
+  uint32_t starts;                    /* number of packets started */
+  uint32_t complete;                  /* number completed successfully */
+  uint32_t ignored;                   /* number of bytes ignored */
+  uint16_t resets;                    /* protocol resets (aborts) */
+  uint16_t too_small;                 /* too large, aborted */
+  uint16_t too_big;                   /* too large, aborted */
+  uint16_t chksum_fail;               /* bad checksum */
+  uint16_t rx_timeouts;               /* number of rx timeouts */
+  uint16_t rx_errors;                 /* rx_error, comm h/w not happy */
+  uint16_t rx_framing;                /* framing errors */
+  uint16_t rx_overrun;                /* overrun errors */
+  uint16_t rx_parity;                 /* parity errors  */
+  uint16_t proto_start_fail;          /* proto fails at start of packet */
+  uint16_t proto_end_fail;            /* proto fails at end   of packet */
+} PACKED dt_gps_proto_stats_t;
 
 
 /*

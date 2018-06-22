@@ -70,7 +70,7 @@ implementation {
   components SirfBinP, GPSMsgBufP;
   Gsd4eUP.SirfProto     -> SirfBinP;
   SirfBinP.GPSBuffer    -> GPSMsgBufP;
-  SirfBinP.CollectEvent -> CollectC;
+  SirfBinP.Collect      -> CollectC;
   SirfBinP.Panic        -> PanicC;
 
   /* Buffer Slicing (MsgBuf) */

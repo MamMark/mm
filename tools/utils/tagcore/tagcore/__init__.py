@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.3.3.dev1'
+__version__ = '0.3.3.dev3'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,6 +18,16 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
+# 0.3.3.dev2    CoreRev: 19/8
+#       19/6    tagctl: major state control of TagnetMonitor
+#               better 'unk' display
+#               gps_cmds: add 'cycle' and 'state'
+#               GPS_FIRST_LOCK, GPS_TX_RESTART events
+#       19/4    Sync Flush (SYNC/F)
+#               OverWatch: panic_count and panic_gold
+#                 persistant logging_flags
+#               updated OverWatch data, add PanicCnt, reorganize
+#               simple DT_TAGNET decoder
 # 0.3.2         Core_Rev 19/0
 #               reorder EVENTS, core_rev 19/0
 #               revised gps monitor state machine (v1)

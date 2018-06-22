@@ -656,8 +656,8 @@ implementation {
   }
 
 
-  command void GPSControl.logErrors() {
-    call SirfProto.logErrors();
+  command void GPSControl.logStats() {
+    call SirfProto.logStats();
   }
 
 

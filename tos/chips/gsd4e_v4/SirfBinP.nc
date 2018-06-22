@@ -41,7 +41,7 @@ module SirfBinP {
   }
   uses {
     interface GPSBuffer;
-    interface CollectEvent;
+    interface Collect;
     interface Panic;
   }
 }
@@ -78,7 +78,8 @@ implementation {
   /*
    * Instrumentation, Stats
    */
-  norace sirfbin_stat_t sirfbin_stats;
+  norace dt_gps_proto_stats_t  sirfbin_stats;
+  norace sirfbin_other_stats_t sirfbin_other_stats;
 
   /*
    * sirfbin_reset: reset sirfbin proto state
@@ -143,8 +144,13 @@ implementation {
   }
 
 
-  async command void GPSProto.resetErrors() {
+  async command void GPSProto.resetStats() {
+      sirfbin_stats.starts           = 0;
+      sirfbin_stats.complete         = 0;
+      sirfbin_stats.ignored          = 0;
       sirfbin_stats.resets           = 0;
+      sirfbin_stats.too_small        = 0;
+      sirfbin_stats.too_big          = 0;
       sirfbin_stats.chksum_fail      = 0;
       sirfbin_stats.rx_timeouts      = 0;
       sirfbin_stats.rx_errors        = 0;
@@ -156,19 +162,17 @@ implementation {
   }
 
 
-  command void GPSProto.logErrors() {
+  command void GPSProto.logStats() {
+    dt_header_t hdr;
+    dt_header_t *hp;
+
+    hp = &hdr;
+    hp->len   = sizeof(hdr) + sizeof(sirfbin_stats);
+    hp->dtype = DT_GPS_PROTO_STATS;
     atomic {
-      call CollectEvent.logEvent(DT_EVENT_GPS_ERR0,
-                                 sirfbin_stats.rx_errors,
-                                 sirfbin_stats.rx_timeouts,
-                                 sirfbin_stats.chksum_fail,
-                                 sirfbin_stats.no_buffer);
-      call CollectEvent.logEvent(DT_EVENT_GPS_ERR1,
-                                 sirfbin_stats.resets,
-                                 sirfbin_stats.proto_start_fail,
-                                 sirfbin_stats.proto_end_fail,
-                                 sirfbin_stats.too_big);
-      call GPSProto.resetErrors();
+      call Collect.collect((void *) &hdr, sizeof(hdr),
+                 (void *) &sirfbin_stats, sizeof(sirfbin_stats));
+      call GPSProto.resetStats();
     }
   }
 
@@ -215,23 +219,23 @@ implementation {
           return;
         }
 	if (sirfbin_left >= SIRFBIN_MAX_MSG) {
-          if (sirfbin_left > sirfbin_stats.largest_seen)
+          if (sirfbin_left > sirfbin_other_stats.largest_seen)
             /*
              * largest_seen is the largest we have ever seen
-             * including those that are bigger then out
+             * including those that are bigger then our
              * max.
              */
-            sirfbin_stats.largest_seen = sirfbin_left;
+            sirfbin_other_stats.largest_seen = sirfbin_left;
 	  sirfbin_stats.too_big++;
 	  sirfbin_restart_abort(2);
 	  return;
 	}
-        if (sirfbin_left > sirfbin_stats.max_seen)
-          sirfbin_stats.max_seen = sirfbin_left;
+        if (sirfbin_left > sirfbin_other_stats.max_seen)
+          sirfbin_other_stats.max_seen = sirfbin_left;
         sirfbin_ptr_prev = sirfbin_ptr;
         sirfbin_ptr = call GPSBuffer.msg_start(sirfbin_left + SIRFBIN_OVERHEAD);
         if (!sirfbin_ptr) {
-          sirfbin_stats.no_buffer++;
+          sirfbin_other_stats.no_buffer++;
           sirfbin_restart_abort(3);
           return;
         }

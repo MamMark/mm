@@ -3,10 +3,12 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.4.dev1'
+__version__ = '0.4.4.dev2'
 
-# 0.4.4.dev1    19/5
-#               add initial support for the TagNet data type (25)
+# 0.4.4.dev1    19/8
+#               GPS_STATS
+#               FIRST_LOCK, TX_RESTART
+#               add initial support for the TagNet data type (33)
 #               support for SYNC_FLUSH
 #
 # 0.4.3         Core_Rev 19/0

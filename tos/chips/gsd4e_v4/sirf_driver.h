@@ -771,26 +771,15 @@ typedef struct {
  *
  * rx_errors: gets popped when either an rx_timeout, or any rx error,
  * rx_error includes FramingError, ParityError, and OverrunError.
+ *
+ * majority of instrumentation stats are defined by the
+ * dt_gps_proto_stats_t structure in typed_data.h.
  */
-typedef struct {
-  uint32_t starts;                    /* number of packets started */
-  uint32_t complete;                  /* number completed successfully */
-  uint32_t ignored;                   /* number of bytes ignored */
-  uint32_t resets;                    /* protocol resets (aborts) */
-  uint16_t too_small;                 /* too large, aborted */
-  uint16_t too_big;                   /* too large, aborted */
-  uint16_t no_buffer;                 /* no buffer/msg available */
-  uint16_t chksum_fail;               /* bad checksum */
-  uint16_t rx_timeouts;               /* number of rx timeouts */
-  uint16_t rx_errors;                 /* rx_error, comm h/w not happy */
-  uint16_t rx_framing;                /* framing errors */
-  uint16_t rx_overrun;                /* overrun errors */
-  uint16_t rx_parity;                 /* parity errors  */
-  uint16_t proto_start_fail;          /* proto fails at start of packet */
-  uint16_t proto_end_fail;            /* proto fails at end   of packet */
 
+typedef struct {
+  uint16_t no_buffer;                 /* no buffer/msg available */
   uint16_t max_seen;                  /* max legal seen */
   uint16_t largest_seen;              /* largest packet length seen */
-} sirfbin_stat_t;
+} sirfbin_other_stats_t;
 
 #endif  /* __SIRF_DRIVER_H__ */

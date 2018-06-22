@@ -334,7 +334,7 @@ implementation {
         gmcb.msg_count   = 0;
         gmcb.retry_count = 1;
         minor_change_state(GMS_CONFIG, MON_EV_STARTUP);
-        call GPSControl.logErrors();
+        call GPSControl.logStats();
         call GPSTransmit.send((void *) sirf_swver, sizeof(sirf_swver));
         cycle_start= call MajorTimer.getNow();
         call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
@@ -365,7 +365,7 @@ implementation {
             gps_panic(3, gmcb.minor_state, gmcb.retry_count);
             call MinorTimer.stop();
             call MajorTimer.stop();
-            call GPSControl.logErrors();
+            call GPSControl.logStats();
             minor_change_state(GMS_FAIL, MON_EV_FAIL);
             return;
 
@@ -373,7 +373,7 @@ implementation {
             /* first time didn't work, hit it with a reset and try again. */
             call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gmcb.minor_state,
                                        gmcb.retry_count, 0, 0);
-            call GPSControl.logErrors();
+            call GPSControl.logStats();
             call GPSControl.reset();
             call GPSControl.turnOn();
             return;
@@ -381,7 +381,7 @@ implementation {
           case 3:
             call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gmcb.minor_state,
                                        gmcb.retry_count, 0, 0);
-            call GPSControl.logErrors();
+            call GPSControl.logStats();
             call GPSControl.powerOff();
             call GPSControl.powerOn();
             call GPSControl.turnOn();
@@ -682,7 +682,7 @@ implementation {
 
       case GMS_MAJOR_IDLE:
         major_change_state(GMS_MAJOR_SATS_STARTUP, MON_EV_STARTUP);
-        call GPSControl.logErrors();
+        call GPSControl.logStats();
         call MajorTimer.startOneShot(GPS_MON_SATS_STARTUP_TIME);
         return;
     }
@@ -793,7 +793,7 @@ implementation {
   void mon_ev_timeout_minor() {
     uint32_t awake, err;
 
-    call GPSControl.logErrors();
+    call GPSControl.logStats();
     switch(gmcb.minor_state) {
       default:
         gps_panic(101, gmcb.minor_state, gmcb.major_state);
@@ -874,7 +874,7 @@ implementation {
   }
 
   void mon_ev_major_changed() {
-    call GPSControl.logErrors();
+    call GPSControl.logStats();
     switch(gmcb.minor_state) {
       default:
         break;

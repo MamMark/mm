@@ -60,8 +60,9 @@ interface GPSControl {
   command void powerOff();
 
   /*
-   * log_errors
-   * log any error this module and its friends might have.
+   * logStats
+   * log any statistics this module and its friends might have.
+   * it will auto clear after logging.
    */
-  command void logErrors();
+  command void logStats();
 }
