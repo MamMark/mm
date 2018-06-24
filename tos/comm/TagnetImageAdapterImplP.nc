@@ -143,15 +143,14 @@ implementation {
     return FALSE;
   }
 
-  /* respond to msg with error */
+  /*
+   * do_reject        respond to msg with error
+   */
   bool do_reject(message_t *msg, tagnet_error_t err) {
     call THdr.set_response(msg);
     call THdr.set_error(msg, err);
     call TPload.reset_payload(msg);
-    if (err == TE_BUSY)
-      call TPload.add_error(msg, EALREADY);
-    else if (err == TE_UNSUPPORTED)
-      call TPload.add_error(msg, EINVAL);
+    call TPload.add_error(msg, err);
     return TRUE;
   }
 
@@ -281,12 +280,12 @@ implementation {
                 ste[0] = call IMD.slotStateLetter(dirp->slot_state);
                 call TPload.add_string(msg, &ste[0], 1);
               }
+            return do_reject(msg, EBUSY);
             }
             tn_trace_rec(my_id, 3);
             return TRUE;
           } else {
             tn_trace_rec(my_id, 4);
-            return do_reject(msg, TE_BUSY);
           }
           break;
 
@@ -310,16 +309,18 @@ implementation {
               }
             }
             tn_trace_rec(my_id, 7);
-            return do_reject(msg, TE_UNSUPPORTED);
           } else
-            return do_reject(msg, TE_BUSY);
           break;
+            return do_reject(msg, EBUSY);
+            return do_reject(msg, EINVAL);
+          return do_reject(msg, FAIL);              // something wrong with req
 
         case TN_PUT:
           tn_trace_rec(my_id, 8);
           // must be version in name
           if ((!version_tlv) || (call TTLV.get_tlv_type(version_tlv) != TN_TLV_VERSION))
-            return do_reject(msg, TE_BAD_MESSAGE);
+            return do_reject(msg, EBUSY);
+            return do_reject(msg, EINVAL);
           version = call TTLV.tlv_to_version(version_tlv);
 
           // look for optional offset in name
@@ -338,7 +339,7 @@ implementation {
             dptr = call TTLV.tlv_to_string(eof_tlv, &dlen);
             eof_tlv = NULL;
           } else if (call TTLV.get_tlv_type(eof_tlv) != TN_TLV_EOF) {
-            return do_reject(msg, TE_BUSY);   // no data or eof found
+            return do_reject(msg, EBUSY);   // no data or eof found
           }
           if (!eof_tlv)                       // if not already found <eof>
             eof_tlv = call TPload.next_element(msg); // look after data block
@@ -404,7 +405,7 @@ implementation {
             // look for valid image info
             if (!get_info(version, dptr, dlen)) {
               tn_trace_rec(my_id, 13);
-              return do_reject(msg, TE_BAD_MESSAGE);
+              return do_reject(msg, EINVAL);
             }
 
             // zzz verify checksum, do_reject()
@@ -416,13 +417,13 @@ implementation {
               return do_write(msg, dptr, dlen);
             }
             tn_trace_rec(my_id, 14);
-            return do_reject(msg, TE_BAD_MESSAGE);  // failed allocate
+            return do_reject(msg, ENOMEM);  // failed allocate
           }
 
           /* still less than IMAGE_MIN_SIZE, just accumulate */
           if (ia_cb.eof) {                     // eof already, image too short
             tn_trace_rec(my_id, 15);
-            return do_reject(msg, TE_BAD_MESSAGE);
+            return do_reject(msg, EINVAL);
           }
           ia_cb.offset = ia_cb.e_buf;               // always what we've seen so far
           return do_write(msg, NULL, dlen);         // just acknowledge PUT
