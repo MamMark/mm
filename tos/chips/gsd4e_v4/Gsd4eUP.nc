@@ -31,6 +31,7 @@
 #include <gps.h>
 #include <sirf_driver.h>
 #include <typed_data.h>
+#include <overwatch.h>
 
 #ifndef PANIC_GPS
 enum {
@@ -411,6 +412,7 @@ module Gsd4eUP {
     interface Platform;
     interface Collect;
     interface CollectEvent;
+    interface OverWatch;
 //  interface Trace;
   }
 }
@@ -458,14 +460,16 @@ implementation {
   static void collect_gps_pak(uint8_t *pak, uint16_t len, uint8_t dir) {
     dt_gps_t hdr;
 
-    hdr.len      = sizeof(hdr) + len;
-    hdr.dtype    = DT_GPS_RAW_SIRFBIN;
-    hdr.mark_us  = 0;
-    hdr.chip_id  = CHIP_GPS_GSD4E;
-    hdr.dir      = dir;
+    if (call OverWatch.getLoggingFlag(OW_LOG_RAW_GPS)) {
+      hdr.len      = sizeof(hdr) + len;
+      hdr.dtype    = DT_GPS_RAW_SIRFBIN;
+      hdr.mark_us  = 0;
+      hdr.chip_id  = CHIP_GPS_GSD4E;
+      hdr.dir      = dir;
 
-    /* time stamp added by Collect */
-    call Collect.collect((void *) &hdr, sizeof(hdr), pak, len);
+      /* time stamp added by Collect */
+      call Collect.collect((void *) &hdr, sizeof(hdr), pak, len);
+    }
   }
 
 

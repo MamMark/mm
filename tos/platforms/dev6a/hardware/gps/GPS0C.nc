@@ -50,10 +50,12 @@ implementation {
   components new TimerMilliC() as GPSRxErrorTimer;
   components     LocalTimeMilliC;
   components     CollectC;
+  components     OverWatchC;
 
   GPSControl   = Gsd4eUP;
 
   Gsd4eUP.HW  -> HplGPS0C;
+  Gsd4eUP.OverWatch -> OverWatchC;
 
   Gsd4eUP.GPSTxTimer -> GPSTxTimer;
   Gsd4eUP.GPSRxTimer -> GPSRxTimer;
@@ -70,7 +72,7 @@ implementation {
   components SirfBinP, GPSMsgBufP;
   Gsd4eUP.SirfProto     -> SirfBinP;
   SirfBinP.GPSBuffer    -> GPSMsgBufP;
-  SirfBinP.CollectEvent -> CollectC;
+  SirfBinP.Collect      -> CollectC;
   SirfBinP.Panic        -> PanicC;
 
   /* Buffer Slicing (MsgBuf) */
