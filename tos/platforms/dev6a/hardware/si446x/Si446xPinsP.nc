@@ -59,6 +59,10 @@ implementation {
     }
   }
 
+  async command bool HW.si446x_isInterruptEnabled() {
+    return call RadioNIRQ.isEnabled();
+  }
+
   async event void RadioNIRQ.fired() {
     signal HW.si446x_interrupt();
   }

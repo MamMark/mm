@@ -23,18 +23,8 @@
 #include <panic.h>
 #include <platform_panic.h>
 #include <msp432.h>
-
-/* see gps_pwr_on for why we include gps.h */
-#include <gps.h>
-
-/*
- * The eUSCI for the UART is always clocked by SMCLK which is DCOCLK/2.  So
- * if MSP432_CLK is 16777216 (16MiHz) the SMCLK is 8MiHz, 8388608 Hz.
- */
-
-#if (MSP432_CLK != 16777216)
-#warning MSP432_CLK other than 16777216
-#endif
+#include <platform.h>
+#include <gpsproto.h>
 
 #ifndef PANIC_GPS
 enum {
@@ -43,6 +33,31 @@ enum {
 
 #define PANIC_GPS __pcode_gps
 #endif
+
+/* see gps_pwr_on for why we include gps.h */
+#include <gps.h>
+
+/*
+ * The eUSCI for the UART is always clocked by SMCLK which is DCOCLK/2.  So
+ * if MSP432_CLK is 16777216 (16MiHz) the SMCLK is 8MiHz, 8388608 Hz.
+ *
+ * The eUSCI config block values depend on getting the divisor correct so this
+ * matters.  The divisor and mctlw value are not easy (if at all possible) to
+ * calculate from the SMCLK frequency so it is at best very difficult to
+ * do this calculation in an automated fashion.  So we don't.
+ */
+
+#if (MSP432_CLK != 16777216)
+#warning MSP432_CLK other than 16777216
+#endif
+
+/*
+ * Platform configuration:
+ *
+ * Which msp432 Usci port assigned to the GPS is determined by the wiring in
+ * HplGPS0C.  This will autoselect the port and the port IRQn.  The port
+ * interrupt priority is defined in platform.h (GPS_IRQ_PRIORITY).
+ */
 
 typedef enum {
   GPSI_NONE = 0,
@@ -59,22 +74,18 @@ typedef enum {
 
 typedef struct {
   uint32_t     ts;
+  uint16_t     arg;
   gps_int_ev_t ev;
   uint8_t      count;
   uint8_t      stat;
-  uint8_t      byte;
-  uint8_t      tx_active;
+  uint8_t      tx_rx;
 } gps_int_rec_t;
 
 #define GPS_INT_RECS_MAX 32
 
-gps_int_rec_t   gps_int_recs[GPS_INT_RECS_MAX];
-norace uint32_t gps_int_rec_idx;
-
-
 module GPS0HardwareP {
   provides {
-    interface Init;
+    interface Init as GPS0PlatformInit;
     interface Gsd4eUHardware as HW;
   }
   uses {
@@ -85,6 +96,9 @@ module GPS0HardwareP {
   }
 }
 implementation {
+
+  gps_int_rec_t   gps_int_recs[GPS_INT_RECS_MAX];
+  norace uint32_t gps_int_rec_idx;
 
   enum {
     UART_MAX_BUSY_WAIT = 10000,                 /* 10ms max busy wait time */
@@ -103,34 +117,33 @@ implementation {
   norace uint8_t *m_tx_buf;
   norace uint16_t m_tx_len;
 
+  norace bool     m_rx_active;          /* true if really receiving */
   norace uint8_t *m_rx_buf;
   norace uint16_t m_rx_len;
   norace uint32_t m_tx_idx, m_rx_idx;
 
 
-  void gps_log_int(gps_int_ev_t ev, uint8_t stat, uint8_t byte) {
+  void gps_log_int(gps_int_ev_t ev, uint8_t stat, uint16_t arg) {
     gps_int_rec_t *gp;
 
-    if (gps_int_rec_idx > GPS_INT_RECS_MAX)
-      gps_int_rec_idx = 0;
     gp = &gps_int_recs[gps_int_rec_idx];
 
     if (gp->ev == ev && (ev == GPSI_RX || ev == GPSI_TX)) {
+      gp->ts = call Platform.usecsRaw();
       gp->count++;
       return;
     }
     gps_int_rec_idx++;
-    if (gps_int_rec_idx > GPS_INT_RECS_MAX)
+    if (gps_int_rec_idx >= GPS_INT_RECS_MAX)
       gps_int_rec_idx = 0;
     gp = &gps_int_recs[gps_int_rec_idx];
     gp->ev = ev;
     gp->count = 1;
     gp->stat = stat;
-    gp->byte = byte;
-    if (m_tx_buf)
-      gp->tx_active = TRUE;
-    else
-      gp->tx_active = FALSE;
+    gp->arg = arg;
+    if (m_tx_buf)    gp->tx_rx = 2;
+    else             gp->tx_rx = 0;
+    if (m_rx_active) gp->tx_rx |= 1;
     gp->ts = call Platform.usecsRaw();
   }
 
@@ -210,8 +223,8 @@ implementation {
 #endif
 
 
-  command error_t Init.init() {
-    GSD4E_PINS_MODULE;			/* connect from the UART */
+  command error_t GPS0PlatformInit.init() {
+    GSD4E_PINS_MODULE;			/* connect pins to the UART */
     call Usci.enableModuleInt();
     return SUCCESS;
   }
@@ -317,21 +330,31 @@ implementation {
    */
   async command void HW.gps_rx_int_enable() {
     uint16_t stat_word;
-    uint8_t  byte;
 
-    stat_word = call Usci.getStat();
-    if (stat_word & EUSCI_A_STATW_RXERR)
-      byte = call Usci.getRxbuf();
-    gps_log_int(GPSI_RX_INT_ON, stat_word, call Usci.getIe());
-    call Usci.enableRxIntr();
+    atomic {
+      stat_word = call Usci.getStat();
+      if (stat_word & EUSCI_A_STATW_RXERR)
+        call Usci.getRxbuf();
+      gps_log_int(GPSI_RX_INT_ON, stat_word, call Usci.getIe());
+      m_rx_active = TRUE;               /* really interested. */
+      call Usci.enableRxIntr();         /* always turn on */
+    }
   }
 
   async command void HW.gps_rx_int_disable() {
     uint16_t stat_word;
 
-    stat_word = call Usci.getStat();
-    gps_log_int(GPSI_RX_INT_OFF, stat_word, call Usci.getIe());
-     call Usci.disableRxIntr();
+    atomic {
+      stat_word = call Usci.getStat();
+      m_rx_active = FALSE;
+      if ((call Usci.getIe() & EUSCI_A_IE_TXIE) == 0) {   /* tx off? */
+        call Usci.disableRxIntr();                        /* yes, turn rx off too */
+        gps_log_int(GPSI_RX_INT_OFF, stat_word, call Usci.getIe());
+        return;
+      }
+      /* leave rx intr on for the tx side. */
+      gps_log_int(GPSI_RX_INT_OFF, stat_word, 0xff00 | call Usci.getIe());
+    }
   }
 
   async command void HW.gps_clear_rx_errs() {
@@ -378,9 +401,17 @@ implementation {
      *
      * So just enable the interrupt and let it fly.
      */
-    stat_word = call Usci.getStat();
-    gps_log_int(GPSI_TX_INT_ON, stat_word, call Usci.getIe());
-    call Usci.enableTxIntr();
+    atomic {
+      stat_word = call Usci.getStat();
+      if (stat_word & EUSCI_A_STATW_RXERR)
+        call Usci.getRxbuf();
+      gps_log_int(GPSI_TX_INT_ON, stat_word, call Usci.getIe());
+      if (!m_rx_active) {
+        gps_log_int(GPSI_RX_INT_ON, stat_word, 0xff00 | call Usci.getIe());
+        call Usci.enableRxIntr();
+      }
+      call Usci.enableTxIntr();
+    }
     return SUCCESS;
   }
 
@@ -400,8 +431,10 @@ implementation {
    * DESTRUCTIVE.  It pulls IV which modifies h/w state.
    */
   async command void    HW.gps_hw_capture() {
-    gps_log_int(GPSI_CAPTURE, call Usci.getStat(), call Usci.getIe());
-    gps_log_int(GPSI_CAPTURE, call Usci.getIfg(),  call Usci.getIv());
+    atomic {
+      gps_log_int(GPSI_CAPTURE, call Usci.getStat(), call Usci.getIe());
+      gps_log_int(GPSI_CAPTURE, call Usci.getIfg(),  call Usci.getIv());
+    }
   }
 
   /*
@@ -426,15 +459,32 @@ implementation {
       /*
        * replace the interrupt by clearing TXIFG and reasserting
        */
-      gps_log_int(GPSI_TX_RESTART, 0, call Usci.getIfg());
+      gps_log_int(GPSI_TX_RESTART, call Usci.getStat(), call Usci.getIfg());
       call Usci.disableTxIntr();
       call Usci.clrTxIntr();
       call Usci.setTxIntr();
       call Usci.enableTxIntr();
-      gps_log_int(GPSI_TX_RESTART, 0, call Usci.getIfg());
+      gps_log_int(GPSI_TX_RESTART, call Usci.getStat(), call Usci.getIfg());
       return TRUE;
     }
   }
+
+  /*
+   * convert a h/w rx err into a gps_rx_err for the upper layers
+   */
+  uint16_t rx_err2gps_err(uint16_t hw_rx_err) {
+    uint16_t gps_err;
+
+    gps_err = 0;
+    if (hw_rx_err & EUSCI_A_STATW_FE)
+      gps_err |= GPSPROTO_RXERR_FRAMING;
+    if (hw_rx_err & EUSCI_A_STATW_OE)
+      gps_err |= GPSPROTO_RXERR_OVERRUN;
+    if (hw_rx_err & EUSCI_A_STATW_PE)
+      gps_err |= GPSPROTO_RXERR_PARITY;
+    return gps_err;
+  }
+
 
   /*
    * WARNING: there is a nasty interaction between the Interrupt system
@@ -463,6 +513,15 @@ implementation {
     switch(iv) {
       case MSP432U_IV_RXIFG:
         /*
+         * if m_rx_active is FALSE we are only using the RX interrupt
+         * to catch overruns etc.  There seems to be a nasty bit of nonsense
+         * where overruns etc. are crashing the tx side.  We are losing
+         * tx interrupts.  We are only interested in logging at this point.
+         *
+         * throw any received characters away.
+         */
+
+        /*
          * first check for any rx errors.  If an rx error has messsed with
          * the stream we want to tell the protocol engine and blow things
          * up.
@@ -472,7 +531,8 @@ implementation {
           /* clear the error and we don't care about the data */
           data = call Usci.getRxbuf();
           gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
-          signal HW.gps_rx_err(stat_word);
+          if (m_rx_active)
+            signal HW.gps_rx_err(rx_err2gps_err(stat_word), stat_word);
           return;
         }
         data = call Usci.getRxbuf();
@@ -488,9 +548,13 @@ implementation {
         if (stat_word & EUSCI_A_STATW_RXERR) {
           data = call Usci.getRxbuf();
           gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
-          signal HW.gps_rx_err(stat_word);
+          if (m_rx_active)
+            signal HW.gps_rx_err(rx_err2gps_err(stat_word), stat_word);
           return;
         }
+
+        if (!m_rx_active)
+          return;
 
         if (m_rx_buf) {
           m_rx_buf[m_rx_idx++] = data;
@@ -512,6 +576,11 @@ implementation {
           stat_word = call Usci.getStat();
           gps_log_int(GPSI_TX_INT_OFF, stat_word, call Usci.getIe());
           call Usci.disableTxIntr();
+          if (!m_rx_active) {
+            gps_log_int(GPSI_RX_INT_OFF, stat_word,
+                        0xff00 | call Usci.getIe());
+            call Usci.disableRxIntr();
+          }
           gps_panic(4, iv, 0);
           return;
         }
@@ -526,6 +595,11 @@ implementation {
           gps_log_int(GPSI_TX_INT_OFF, stat_word, call Usci.getIe());
           call Usci.disableTxIntr();
           m_tx_buf = NULL;
+          if (!m_rx_active) {
+            gps_log_int(GPSI_RX_INT_OFF, stat_word,
+                        0xff00 | call Usci.getIe());
+            call Usci.disableRxIntr();
+          }
           signal HW.gps_send_block_done(buf, m_tx_len, SUCCESS);
         }
         return;
