@@ -244,9 +244,11 @@ class RadioContext (gdb.Command):
         print "rx_errors:\t\t" + str(rd['rx_errors'])
         print
         print "rx_overruns:\t\t" + str(rd['rx_overruns'])
-        print "rx_active_overruns:\t\t" + str(rd['rx_active_overruns'])
-        print "rx_crc_overruns:\t\t" + str(rd['rx_crc_overruns'])
-        print "rx_crc_packet_rx:\t\t" + str(rd['rx_crc_packet_rx'])
+        print "rx_active_overruns:\t" + str(rd['rx_active_overruns'])
+        print "rx_crc_overruns:\t" + str(rd['rx_crc_overruns'])
+        print "rx_crc_packet_rx:\t" + str(rd['rx_crc_packet_rx'])
+        print "tx_send_wait_time:\t" + str(rd['send_wait_time'])
+        print "tx_send_max_wait:\t" + str(rd['send_max_wait'])
 
 class RadioRaw (gdb.Command):
     """

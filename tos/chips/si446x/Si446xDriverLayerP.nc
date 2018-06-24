@@ -168,6 +168,7 @@ implementation {
     error_t                           tx_error;        // last tx error
     uint8_t                           send_tries;      // flag to track send msg retry
     uint32_t                          send_wait_time;  // send message time to wait
+    uint32_t                          send_max_wait;   // max wait time to send
   } global_io_context_t;
 
   tasklet_norace global_io_context_t  global_ioc;
@@ -1347,6 +1348,8 @@ implementation {
     global_ioc.send_wait_time = SEND_MIN_WAIT;
     if (call PacketTransmitDelay.isSet(msg))
       global_ioc.send_wait_time = call PacketTransmitDelay.get(msg);
+    if (global_ioc.send_wait_time > global_ioc.send_max_wait)
+      global_ioc.send_max_wait = global_ioc.send_wait_time;
     post send_start_task();
     return SUCCESS;
   }
