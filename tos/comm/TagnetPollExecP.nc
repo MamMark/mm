@@ -97,19 +97,30 @@ implementation {
     }
   }
 
+  typedef struct {
+    uint16_t num;
+    uint16_t slot;
+  } rand_trace_t;
 
-#define MIN_WAIT 25
+  rand_trace_t  rand_trace[16];
+  uint8_t       rn_idx;
 
   uint16_t  get_time_to_wait(poll_req_t *params) {
     wds_config_ids_t const* ids =   wds_default_ids();
-    uint32_t            slotnum =   0; // default first slot
+    uint16_t            slotnum =   0; // default first slot
     uint32_t           slottime =   100;
     uint32_t         us_per_bit;
 
     if (params->has_slot_count) {
       // pick random slot to occupy
-      slotnum = call Random.rand16() % params->slot_count;
+      rand_trace[rn_idx].num = call Random.rand16();
+      slotnum = rand_trace[rn_idx].num % (params->slot_count - 1);
+      rand_trace[rn_idx].slot = slotnum;
+      rn_idx++;
+      if (rn_idx >= 16) rn_idx = 0;
     }
+    if (slotnum == 0)
+      return 0; // don't send response if slot 0
     if (params->has_slot_width) {
       // convert modem data rate to microseconds per bit, then
       //use to calculate total slot time from slot bit width
@@ -117,7 +128,7 @@ implementation {
       slottime   = (params->slot_width * us_per_bit);
       slottime  /= 1000; // microsecs to millisecs
     }
-    return (slotnum * slottime) + MIN_WAIT;
+    return (slotnum * slottime);
   }
 
 
@@ -153,6 +164,8 @@ implementation {
         call TPload.add_tlv(msg, TN_MY_NID_TLV);
         // zzz node name, position, sw version
         delay = get_time_to_wait(&poll_params);
+        if (delay == 0)
+          return FALSE;
         call TPload.add_integer(msg, delay);
         call PacketTransmitDelay.set(msg, delay);
         return TRUE;
