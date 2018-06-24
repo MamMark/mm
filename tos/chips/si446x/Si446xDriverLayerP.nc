@@ -1310,20 +1310,22 @@ implementation {
 
   /**************************************************************************/
 
+  // need to handle time in a task because RadioSend.send is async call
   task void send_start_task() {
     call sendTimer.startOneShot(global_ioc.send_wait_time);
   }
 
-
   event void sendTimer.fired() {
     nop();
     nop();                                /* BRK */
+    // initiate transmit if possible, else start timer to try again
     if (global_ioc.send_tries--) {
       if (fsm_get_state() == S_RX_ON)
         fsm_user_queue(E_TRANSMIT);
       else
         call sendTimer.startOneShot(SEND_MIN_WAIT);
       }
+    // too many tries, return error to higher layer
     else {
       global_ioc.tx_signal = TRUE;
       global_ioc.tx_error  = ETIMEOUT;
