@@ -6,6 +6,7 @@
 
 from __future__ import print_function
 from binascii   import hexlify
+import re
 
 txrx_str = {
     0:  'none',
@@ -52,22 +53,43 @@ class GpsIntTrace(gdb.Command):
 #sirf stats: t/o chk err frm ovr par rst  proto    </>   nbuf   ign max
 #99999/99999 999 999 999 999 999 999 999 999/999 999/999 9999 99999 999
 
+def get_and_print_stats():
+    sp = gdb.parse_and_eval('SirfBinP__sirfbin_stats')
+    op = gdb.parse_and_eval('SirfBinP__sirfbin_other_stats')
+    print('sirf stats: t/o chk err frm ovr par rst  proto    </>   nbuf   ign max')
+    print('{:5d}/{:<5d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d}/{:<3d} {:3d}/{:<3d} {:4d} {:5d} {:3d}'.format(
+        int(sp['complete']),   int(sp['starts']),     int(sp['rx_timeouts']), int(sp['chksum_fail']),
+        int(sp['rx_errors']),  int(sp['rx_framing']), int(sp['rx_overrun']),  int(sp['rx_parity']),
+        int(sp['resets']),     int(sp['proto_start_fail']), int(sp['proto_end_fail']),
+        int(sp['too_small']),  int(sp['too_big']),          int(op['no_buffer']),
+        int(sp['ignored']),    int(op['max_seen'])))
+    return sp, op
+
 class GpsProtoStats(gdb.Command):
     """Display the gps protocol stats."""
     def __init__ (self):
         super(GpsProtoStats, self).__init__("__gps_proto_stats", gdb.COMMAND_USER)
 
     def invoke (self, args, from_tty):
-        sp = gdb.parse_and_eval('SirfBinP__sirfbin_stats')
-        op = gdb.parse_and_eval('SirfBinP__sirfbin_other_stats')
-        print('sirf stats: t/o chk err frm ovr par rst  proto    </>   nbuf   ign max')
-        print('{:5d}/{:<5d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d}/{:<3d} {:3d}/{:<3d} {:4d} {:5d} {:3d}'.format(
-            int(sp['complete']),   int(sp['starts']),     int(sp['rx_timeouts']), int(sp['chksum_fail']),
-            int(sp['rx_errors']),  int(sp['rx_framing']), int(sp['rx_overrun']),  int(sp['rx_parity']),
-            int(sp['resets']),     int(sp['proto_start_fail']), int(sp['proto_end_fail']),
-            int(sp['too_small']),  int(sp['too_big']),          int(op['no_buffer']),
-            int(sp['ignored']),    int(op['max_seen'])))
+        get_and_print_stats()
 
+
+class GpsClearStats(gdb.Command):
+    """Nuke the gps protocol stats."""
+    def __init__ (self):
+        super(GpsClearStats, self).__init__("__gps_clear_stats", gdb.COMMAND_USER)
+
+    def invoke (self, args, from_tty):
+        sp, op = get_and_print_stats()
+        print('*** clearing')
+        for nxt in re.findall('(\w*)\s*=\s*', str(sp)):
+            var = 'SirfBinP__sirfbin_stats.' + nxt
+            gdb.execute('set {}  = 0'.format(var))
+        for nxt in re.findall('(\w*)\s*=\s*', str(op)):
+            var = 'SirfBinP__sirfbin_other_stats.' + nxt
+            gdb.execute('set {}  = 0'.format(var))
+        sp, op = get_and_print_stats()
 
 GpsIntTrace()
 GpsProtoStats()
+GpsClearStats()
