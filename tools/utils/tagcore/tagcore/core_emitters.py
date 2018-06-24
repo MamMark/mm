@@ -320,8 +320,8 @@ def emit_sync(level, offset, buf, obj):
 # uses decode_default with dt_event_obj to decode
 #
 
-event0  = ' {:s} {} {} {} {}'
-event1  = '    {:s}: ({}) <{} {} {} {}>  x({:x} {:x} {:x} {:x})'
+event0  = ' {:14s} {} {} {} {}'
+event1  = '    {:14s}: ({}) <{} {} {} {}>  x({:x} {:x} {:x} {:x})'
 
 def emit_event(level, offset, buf, obj):
     xlen     = obj['hdr']['len'].val
@@ -373,7 +373,7 @@ def emit_event(level, offset, buf, obj):
         return
 
     if event == GPS_MPM_RSP:
-        print(' GPS_MPM_RSP: 0x{:04x} ({}) {} {}'.format(
+        print(' GPS_MPM_RSP    0x{:04x} ({}) {} {}'.format(
             arg0, arg1, arg2, arg3))
         return
 

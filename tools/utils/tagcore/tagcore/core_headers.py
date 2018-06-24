@@ -270,9 +270,9 @@ event_names = {
 
     64: 'GPS_FAST',
     65: 'GPS_FIRST',
-    66: 'GPS_SATS_2',
-    67: 'GPS_SATS_7',
-    68: 'GPS_SATS_41',
+    66: 'GPS_SATS/2',
+    67: 'GPS_SATS/7',
+    68: 'GPS_SATS/41',
 }
 
 def event_name(event):
