@@ -100,8 +100,18 @@ implementation {
   }
 
   async command tagnet_tlv_t *TagnetName.first_element(message_t *msg) {
+    tagnet_tlv_t    *this;
     memset(getMeta(msg), 0, sizeof(tagnet_name_meta_t));
-    return call TagnetName.this_element(msg);
+    this = call TagnetName.this_element(msg);
+    if (this) {
+      // check first tlv length against name length
+      if (this->len > call THdr.get_name_len(msg) ||
+          // check first element type is valid
+          (this->len == 0 || this->typ == TN_TLV_NONE) ||
+          (this->typ >= _TN_TLV_COUNT))
+        return NULL;
+    }
+    return this;
   }
 
   async command tagnet_tlv_t *TagnetName.this_element(message_t *msg) {
