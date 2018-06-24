@@ -179,7 +179,7 @@ implementation {
  * required due to other activity that the radio driver is handling, like
  * receiving a msg.
  */
-#define SEND_MIN_WAIT    25
+#define SEND_MIN_WAIT    45
 #define SEND_MIN_TRIES    2
 
 
@@ -1347,7 +1347,7 @@ implementation {
     global_ioc.send_tries = SEND_MIN_TRIES;
     global_ioc.send_wait_time = SEND_MIN_WAIT;
     if (call PacketTransmitDelay.isSet(msg))
-      global_ioc.send_wait_time = call PacketTransmitDelay.get(msg);
+      global_ioc.send_wait_time += call PacketTransmitDelay.get(msg);
     if (global_ioc.send_wait_time > global_ioc.send_max_wait)
       global_ioc.send_max_wait = global_ioc.send_wait_time;
     post send_start_task();
