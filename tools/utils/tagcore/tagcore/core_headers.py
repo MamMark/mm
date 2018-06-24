@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev6'
+__version__ = '0.3.3.dev7'
 
 import binascii
 from   collections  import OrderedDict
@@ -266,6 +266,7 @@ event_names = {
     51: 'GPS_PULSE',
 
     52: 'GPS_TX_RESTART',
+    53: 'GPS_MPM_RSP',
 
     64: 'GPS_FAST',
     65: 'GPS_FIRST',
@@ -286,6 +287,7 @@ GPS_MON_MINOR = 35
 GPS_MON_MAJOR = 36
 GPS_RX_ERR    = 37
 GPS_CMD       = 41
+GPS_MPM_RSP   = 53
 
 
 def obj_dt_event():

@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev5'
+__version__ = '0.3.3.dev6'
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -32,6 +32,7 @@ from   core_headers import GPS_MON_MINOR        # event
 from   core_headers import GPS_MON_MAJOR        # event
 from   core_headers import GPS_RX_ERR           # event
 from   core_headers import GPS_CMD              # event
+from   core_headers import GPS_MPM_RSP          # event
 
 from   gps_mon      import *
 
@@ -369,6 +370,11 @@ def emit_event(level, offset, buf, obj):
     if event == GPS_RX_ERR:
         print(' GPS_RX_ERR: 0x{:02x}  nerr delta: {}  state: {}'.format(
             arg0, arg1 - arg2, arg3))
+        return
+
+    if event == GPS_MPM_RSP:
+        print(' GPS_MPM_RSP: 0x{:04x} ({}) {} {}'.format(
+            arg0, arg1, arg2, arg3))
         return
 
     print(event0.format(event_name(event), arg0, arg1, arg2, arg3))

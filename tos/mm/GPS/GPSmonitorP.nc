@@ -1219,8 +1219,8 @@ implementation {
      * and big endian.  beware of multi-byte values.
      */
     error = CF_BE_16(prp->error);
-    call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 60, prp->sid, error,
-                               call GPSControl.awake());
+    call CollectEvent.logEvent(DT_EVENT_GPS_MPM_RSP, error, prp->sid,
+                               0, call GPSControl.awake());
     if (error == PWR_RSP_MPM_GOOD)
       minor_event(MON_EV_MPM);
     else

@@ -272,6 +272,7 @@ typedef enum {
   DT_EVENT_GPS_PULSE        = 51,
 
   DT_EVENT_GPS_TX_RESTART   = 52,
+  DT_EVENT_GPS_MPM_RSP      = 53,
 
   /***********************************/
 

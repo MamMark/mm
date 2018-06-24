@@ -18,7 +18,8 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
-# 0.3.3.dev2    CoreRev: 19/8
+# 0.3.3.dev3    CoreRev: 19/9
+#               make mpm responses log EVENT_MPM_RSP.
 #       19/6    tagctl: major state control of TagnetMonitor
 #               better 'unk' display
 #               gps_cmds: add 'cycle' and 'state'
