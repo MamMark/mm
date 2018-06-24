@@ -102,7 +102,7 @@ interface TagnetHeader {
    * @param   msg           pointer to message buffer containing Tagnet message
    * @return  uint8_t       length of name in message buffer
    */
-  command uint8_t   get_name_len(message_t *msg);
+  async command uint8_t   get_name_len(message_t *msg);
   /**
    * Check to see if payload type is raw bytes
    *

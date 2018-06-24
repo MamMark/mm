@@ -89,7 +89,7 @@ implementation {
     return ((tagnet_msg_type_t) ((getHdr(msg)->tn_h2 & TN_H2_MTYPE_M) >> TN_H2_MTYPE_B));
   }
 
-  command uint8_t   TagnetHeader.get_name_len(message_t* msg) {
+  async command uint8_t   TagnetHeader.get_name_len(message_t* msg) {
     return getHdr(msg)->name_length;
   }
 
