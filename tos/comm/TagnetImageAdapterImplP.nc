@@ -224,7 +224,6 @@ implementation {
     }
     call THdr.set_response(msg);
     call TPload.reset_payload(msg);
-    nop();                              /* BRK */
     call TPload.add_offset(msg, ia_cb.offset);
     if (ia_cb.eof)
       call TPload.add_eof(msg);
@@ -249,78 +248,81 @@ implementation {
     image_dir_slot_t *dirp;
     int              i;
 
-    nop();
-    nop();                                          /* BRK */
     if (call TTLV.eq_tlv(name_tlv, this_tlv)) {     //  me == this
       version_tlv = call TName.next_element(msg);
       offset_tlv = call TName.next_element(msg);
       tn_trace_rec(my_id, 1);
       switch (call THdr.get_message_type(msg)) {    // process packet type
         case TN_GET:
-          tn_trace_rec(my_id, 2);
-          if (call IMD.dir_coherent()) {            // image manager directory is stable
-            call TPload.reset_payload(msg);
-            call THdr.set_response(msg);
-            call THdr.set_error(msg, TE_PKT_OK);
-            if ((version_tlv) && (call TTLV.get_tlv_type(version_tlv) == TN_TLV_VERSION)) {
-              version = call TTLV.tlv_to_version(version_tlv);
-              dirp = call IMD.dir_find_ver(version); // get image info for specific version
-              if (dirp) {
-                call TPload.add_version(msg, &dirp->ver_id);
-                ste[0] = call IMD.slotStateLetter(dirp->slot_state);
-                call TPload.add_string(msg, &ste, 1);
-              }
-            } else {                                // get image info for all versions
-              nop();                                /* BRK */
-              for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
-                dirp = call IMD.dir_get_dir(i);
-                if (!dirp)
-                  break;
-                call TPload.add_version(msg, &dirp->ver_id);
-                ste[0] = call IMD.slotStateLetter(dirp->slot_state);
-                call TPload.add_string(msg, &ste[0], 1);
-              }
+          tn_trace_rec(my_id, 11);
+          if (!call IMD.dir_coherent()) {  // is image manager directory is stable
+            tn_trace_rec(my_id, 12);
             return do_reject(msg, EBUSY);
-            }
-            tn_trace_rec(my_id, 3);
-            return TRUE;
-          } else {
-            tn_trace_rec(my_id, 4);
           }
-          break;
+          call TPload.reset_payload(msg);
+          call THdr.set_response(msg);
+          call THdr.set_error(msg, TE_PKT_OK);
+          if ((version_tlv) &&             // get image info for specific version
+              (call TTLV.get_tlv_type(version_tlv) == TN_TLV_VERSION)) {
+            version = call TTLV.tlv_to_version(version_tlv);
+            dirp = call IMD.dir_find_ver(version);
+            if (dirp) {
+              call TPload.add_version(msg, &dirp->ver_id);
+              ste[0] = call IMD.slotStateLetter(dirp->slot_state);
+              call TPload.add_string(msg, &ste, 1);
+            }
+          } else {                                // get image info for all
+            for (i = 0; i < IMAGE_DIR_SLOTS; i++) {
+              dirp = call IMD.dir_get_dir(i);
+              if (!dirp)
+                break;
+              call TPload.add_version(msg, &dirp->ver_id);
+              ste[0] = call IMD.slotStateLetter(dirp->slot_state);
+              call TPload.add_string(msg, &ste[0], 1);
+            }
+          }
+          tn_trace_rec(my_id, 13);
+          return TRUE;
 
         case TN_DELETE:
-          tn_trace_rec(my_id, 5);
-          if (call IMD.dir_coherent()) {            // image manager directory is stable
-            call TPload.reset_payload(msg);
-            call THdr.set_response(msg);
-            call THdr.set_error(msg, TE_PKT_OK);
-            if ((version_tlv) && (call TTLV.get_tlv_type(version_tlv) == TN_TLV_VERSION)) {
-              version = call TTLV.tlv_to_version(version_tlv);
-              dirp = call IMD.dir_find_ver(version); // get image info for specific version
-              if (dirp) {
-                call TPload.add_version(msg, &dirp->ver_id);
-                ste[0] = call IMD.slotStateLetter(dirp->slot_state);
-                call TPload.add_string(msg, &ste, 1);
-              }
-              if (call IM.delete(version) == SUCCESS) {         // delete this version
-                tn_trace_rec(my_id, 6);
-                return TRUE;
-              }
-            }
-            tn_trace_rec(my_id, 7);
-          } else
-          break;
+          tn_trace_rec(my_id, 21);
+          if (!call IMD.dir_coherent()) {  // is image manager directory stable
+            tn_trace_rec(my_id, 22);
             return do_reject(msg, EBUSY);
+          }
+          if ((!version_tlv) ||               // must be version in name
+              (call TTLV.get_tlv_type(version_tlv) != TN_TLV_VERSION)) {
+            tn_trace_rec(my_id, 23);
             return do_reject(msg, EINVAL);
+          }
+          call TPload.reset_payload(msg);
+          call THdr.set_response(msg);
+          call THdr.set_error(msg, TE_PKT_OK);
+          version = call TTLV.tlv_to_version(version_tlv);
+          dirp = call IMD.dir_find_ver(version); // get image info for specific version
+          if (dirp) {
+            call TPload.add_version(msg, &dirp->ver_id);
+            ste[0] = call IMD.slotStateLetter(dirp->slot_state);
+            call TPload.add_string(msg, &ste, 1);
+          }
+          if (call IM.delete(version) == SUCCESS) { // delete this version
+            tn_trace_rec(my_id, 24);
+            return TRUE;
+          }
+          tn_trace_rec(my_id, 25);
           return do_reject(msg, FAIL);              // something wrong with req
 
         case TN_PUT:
-          tn_trace_rec(my_id, 8);
-          // must be version in name
-          if ((!version_tlv) || (call TTLV.get_tlv_type(version_tlv) != TN_TLV_VERSION))
+          tn_trace_rec(my_id, 31);
+          if (!call IMD.dir_coherent()) {           // image manager directory stable
+            tn_trace_rec(my_id, 32);
             return do_reject(msg, EBUSY);
+          }
+          if ((!version_tlv) ||                     // must be version in name
+              (call TTLV.get_tlv_type(version_tlv) != TN_TLV_VERSION)) {
+            tn_trace_rec(my_id, 33);
             return do_reject(msg, EINVAL);
+          }
           version = call TTLV.tlv_to_version(version_tlv);
 
           // look for optional offset in name
@@ -339,6 +341,7 @@ implementation {
             dptr = call TTLV.tlv_to_string(eof_tlv, &dlen);
             eof_tlv = NULL;
           } else if (call TTLV.get_tlv_type(eof_tlv) != TN_TLV_EOF) {
+            tn_trace_rec(my_id, 34);
             return do_reject(msg, EBUSY);   // no data or eof found
           }
           if (!eof_tlv)                       // if not already found <eof>
@@ -349,13 +352,13 @@ implementation {
             ia_cb.eof = FALSE;
 
           // continue processing PUT msgs if in progress
-          tn_trace_rec(my_id, 9);
           if (ia_cb.in_progress) {
             if ((ia_cb.eof) || ((offset_tlv) && (ia_cb.offset == offset))) {
               /* end of file or expected offset matches */
               nop();                          /* BRK */
               if (!ia_cb.e_buf) {
                 ia_cb.offset += dlen;         /* consume new incoming */
+                tn_trace_rec(my_id, 35);
                 return do_write(msg, dptr, dlen);
               }
             }
@@ -375,15 +378,14 @@ implementation {
           if ((offset_tlv) && (offset != 0)) { // continue accumulating
             /* make sure this PUT for same version */
             if (!call IMD.verEqual(version, &ia_cb.version)) {
-              tn_trace_rec(my_id, 10);
+              tn_trace_rec(my_id, 36);
               break;                          // ignore msg if mismatch
             }
           } else {                            // start accumulating
-            nop();                            /* BRK */
             call IMD.setVer(version, &ia_cb.version);
             ia_cb.e_buf = 0;
             ia_cb.offset = 0;
-            tn_trace_rec(my_id, 11);
+            tn_trace_rec(my_id, 37);
           }
 
           if (dptr && dlen) {                 // copy msg data to ia_buf
@@ -394,7 +396,6 @@ implementation {
 
           // check to see if enough data received to verify image info
           nop();                        /* BRK */
-          tn_trace_rec(my_id, 12);
           if (ia_cb.e_buf >= IMAGE_MIN_SIZE) {
             nop();                      /* BRK */
             dptr = ia_buf;
@@ -404,7 +405,7 @@ implementation {
 
             // look for valid image info
             if (!get_info(version, dptr, dlen)) {
-              tn_trace_rec(my_id, 13);
+              tn_trace_rec(my_id, 38);
               return do_reject(msg, EINVAL);
             }
 
@@ -414,27 +415,28 @@ implementation {
             if ((err = call IM.alloc(&ia_cb.version)) == 0) {
               ia_cb.in_progress = TRUE;       // mark image load now in progress
               ia_cb.offset = dlen;
+              tn_trace_rec(my_id, 39);
               return do_write(msg, dptr, dlen);
             }
-            tn_trace_rec(my_id, 14);
+            tn_trace_rec(my_id, 40);
             return do_reject(msg, ENOMEM);  // failed allocate
           }
 
           /* still less than IMAGE_MIN_SIZE, just accumulate */
           if (ia_cb.eof) {                     // eof already, image too short
-            tn_trace_rec(my_id, 15);
+            tn_trace_rec(my_id, 41);
             return do_reject(msg, EINVAL);
           }
           ia_cb.offset = ia_cb.e_buf;               // always what we've seen so far
+          tn_trace_rec(my_id, 42);
           return do_write(msg, NULL, dlen);         // just acknowledge PUT
-          break;
 
         case TN_HEAD:
           call THdr.set_response(msg);
           call THdr.set_error(msg, TE_PKT_OK);
           call TPload.reset_payload(msg);
           call TPload.add_tlv(msg, help_tlv);
-          tn_trace_rec(my_id, 16);
+          tn_trace_rec(my_id, 51);
           return TRUE;
 
         default:
