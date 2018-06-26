@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev10'
+__version__ = '0.3.3.dev11'
 
 import binascii
 from   collections  import OrderedDict
@@ -141,21 +141,26 @@ def obj_owcb():
         ('reset_others',    atom(('<I', '0x{:08x}'))),
         ('from_base',       atom(('<I', '0x{:08x}'))),
         ('panic_count',     atom(('<I', '{}'))),
+        ('panics_gold',     atom(('<I', '{}'))),
+
         ('fault_gold',      atom(('<I', '0x{:08x}'))),
         ('fault_nib',       atom(('<I', '0x{:08x}'))),
         ('subsys_disable',  atom(('<I', '0x{:08x}'))),
         ('protection_status', atom(('<I', '0x{:08x}'))),
+
         ('ow_sig_b',        atom(('<I', '0x{:08x}'))),
+
         ('ow_req',          atom(('<B', '{}'))),
         ('reboot_reason',   atom(('<B', '{}'))),
+
         ('ow_boot_mode',    atom(('<B', '{}'))),
         ('owt_action',      atom(('<B', '{}'))),
+
         ('reboot_count',    atom(('<I', '{}'))),
         ('strange',         atom(('<I', '{}'))),
         ('strange_loc',     atom(('<I', '0x{:04x}'))),
         ('chk_fails',       atom(('<I', '{}'))),
         ('logging_flags',   atom(('<I', '{}'))),
-        ('panics_gold',     atom(('<I', '{}'))),
 
         ('pi_panic_idx',    atom(('<H', '{}'))),
         ('pi_pcode',        atom(('<B', '{}'))),

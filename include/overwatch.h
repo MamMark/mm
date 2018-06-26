@@ -166,8 +166,11 @@ enum {
 enum {
   OW_FAULT_DCOR    = 1,                 /* DCO calibration resistor failed            */
   OW_FAULT_32K     = 2,                 /* main time base failed, running on backup   */
-  OW_FAULT_LOW_PWR = 4,                 /* in low power mode, no sd, no 3V3 rail      */
-  OW_FAULT_BRICK   = 8,                 /* intentionally bricked, save power          */
+  OW_FAULT_RTC_OSC = 4,                 /* rtc oscillator fault                       */
+
+  OW_FAULT_WDT     = 0x10000000,        /* watch dog timeout violation                */
+  OW_FAULT_BRICK   = 0x20000000,        /* intentionally bricked, save power          */
+  OW_FAULT_LOW_PWR = 0x40000000,        /* in low power mode, no sd, no 3V3 rail      */
   OW_FAULT_POR     = 0x80000000,        /* full power on reset                        */
 };
 
@@ -204,9 +207,10 @@ typedef struct {
   uint32_t           reset_others;      /* unindentified other stati       */
   uint32_t           from_base;         /* base address of where from      */
   uint32_t           panic_count;       /* how many times nib failed       */
+  uint32_t           panics_gold;       /* panics out of gold             */
 
   uint32_t           fault_mask_gold;   /* indicate faults                 */
-  uint32_t           fault_mask_nib ;   /* indicate faults                 */
+  uint32_t           fault_mask_nib;    /* indicate faults                 */
   uint32_t           subsys_disable;    /* what's turned off               */
   uint32_t           protection_status; /* protection status               */
 
@@ -232,9 +236,7 @@ typedef struct {
   uint32_t           strange_loc;       /* last reported strange */
   uint32_t           chk_fails;         /* image checksum fails */
                                         /* either gold or nib, just yell  */
-  /* additions - since 19/0 */
   uint32_t           logging_flags;     /* what logging is on - temporary */
-  uint32_t           panics_gold;       /* panics out of gold             */
 
   uint16_t           pi_panic_idx;      /* which panic block */
   uint8_t            pi_pcode;          /* panic information */
