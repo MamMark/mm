@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev9'
+__version__ = '0.3.3.dev10'
 
 import binascii
 from   collections  import OrderedDict
@@ -223,23 +223,22 @@ event_names = {
     0:  'NONE',
 
     1:  'PANIC_WARN',
+    2:  'FAULT',
 
-    2:  'GPS_GEO',
-    3:  'GPS_XYZ',
-    4:  'GPS_TIME',
-    5:  'GPS_MTFF_TIME',
+    3:  'GPS_GEO',
+    4:  'GPS_XYZ',
+    5:  'GPS_TIME',
+    6:  'GPS_MTFF_TIME',
+    7:  'GPS_FIRST_LOCK',
 
-    6:  'SSW_DELAY_TIME',
-    7:  'SSW_BLK_TIME',
-    8:  'SSW_GRP_TIME',
+    8:  'SSW_DELAY_TIME',
+    9:  'SSW_BLK_TIME',
+    10: 'SSW_GRP_TIME',
 
-    9:  'SURFACED',
-    10: 'SUBMERGED',
-    11: 'DOCKED',
-    12: 'UNDOCKED',
-
-    13: 'GPS_FIRST_LOCK',
-    14: 'FAULT',
+    11: 'SURFACED',
+    12: 'SUBMERGED',
+    13: 'DOCKED',
+    14: 'UNDOCKED',
 
     32: 'GPS_BOOT',
     33: 'GPS_BOOT_TIME',
@@ -285,7 +284,7 @@ def event_name(event):
 
 
 PANIC_WARN    = 1
-FAULT         = 14
+FAULT         = 2
 GPS_MON_MINOR = 35
 GPS_MON_MAJOR = 36
 GPS_RX_ERR    = 37

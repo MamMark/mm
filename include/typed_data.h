@@ -227,22 +227,22 @@ typedef enum {
   DT_EVENT_NONE             = 0,
 
   DT_EVENT_PANIC_WARN       = 1,
-  DT_EVENT_FAULT            = 14,
+  DT_EVENT_FAULT            = 2,
 
-  DT_EVENT_GPS_GEO          = 2,
-  DT_EVENT_GPS_XYZ          = 3,
-  DT_EVENT_GPS_TIME         = 4,
-  DT_EVENT_GPS_MTFF_TIME    = 5,       // Mpm To First Fix (MTFF)
-  DT_EVENT_GPS_FIRST_LOCK   = 13,      // boot to first lock
+  DT_EVENT_GPS_GEO          = 3,
+  DT_EVENT_GPS_XYZ          = 4,
+  DT_EVENT_GPS_TIME         = 5,
+  DT_EVENT_GPS_MTFF_TIME    = 6,       // Mpm To First Fix (MTFF)
+  DT_EVENT_GPS_FIRST_LOCK   = 7,      // boot to first lock
 
-  DT_EVENT_SSW_DELAY_TIME   = 6,
-  DT_EVENT_SSW_BLK_TIME     = 7,
-  DT_EVENT_SSW_GRP_TIME     = 8,
+  DT_EVENT_SSW_DELAY_TIME   = 8,
+  DT_EVENT_SSW_BLK_TIME     = 9,
+  DT_EVENT_SSW_GRP_TIME     = 10,
 
-  DT_EVENT_SURFACED         = 9,
-  DT_EVENT_SUBMERGED        = 10,
-  DT_EVENT_DOCKED           = 11,
-  DT_EVENT_UNDOCKED         = 12,
+  DT_EVENT_SURFACED         = 11,
+  DT_EVENT_SUBMERGED        = 12,
+  DT_EVENT_DOCKED           = 13,
+  DT_EVENT_UNDOCKED         = 14,
 
   /***********************************/
 
