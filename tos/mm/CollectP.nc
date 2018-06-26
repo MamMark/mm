@@ -216,6 +216,7 @@ implementation {
   event void Boot.booted() {
     write_reboot_record();
     write_version_record();
+    call OverWatch.checkFaults();
     signal Booted.booted();
   }
 
@@ -228,6 +229,7 @@ implementation {
     dcc.bufs_to_next_sync = SYNC_MAX_SECTORS;
     call SyncTimer.stop();
     write_sync_record();
+    call OverWatch.checkFaults();
     call SyncTimer.startOneShot(SYNC_PERIOD);
   }
 

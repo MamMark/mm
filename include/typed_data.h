@@ -227,6 +227,7 @@ typedef enum {
   DT_EVENT_NONE             = 0,
 
   DT_EVENT_PANIC_WARN       = 1,
+  DT_EVENT_FAULT            = 14,
 
   DT_EVENT_GPS_GEO          = 2,
   DT_EVENT_GPS_XYZ          = 3,

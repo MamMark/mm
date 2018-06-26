@@ -118,6 +118,15 @@ implementation {
   }
 
 
+  async command uint32_t OWhw.curFaults() {
+    uint32_t faults = 0;
+
+    if (BITBAND_PERI(CS->IFG, CS_IFG_LFXTIFG_OFS))
+      faults |= OW_FAULT_32K;
+    return faults;
+  }
+
+
   async command uint32_t OWhw.getProtStatus() {
     return SYSCTL_Boot->SYSTEM_STAT;
   }

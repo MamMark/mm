@@ -118,6 +118,20 @@ implementation {
   }
 
 
+  async command uint32_t OWhw.curFaults() {
+    uint32_t faults = 0;
+
+    if (BITBAND_PERI(CS->IFG, CS_IFG_LFXTIFG_OFS))
+      faults |= OW_FAULT_32K;
+    return faults;
+  }
+
+
+  async command uint32_t OWhw.getProtStatus() {
+    return SYSCTL_Boot->SYSTEM_STAT;
+  }
+
+
   void launch(uint32_t base) {
     __asm__ volatile (
       "  ldr sp, [%0] \n"
@@ -184,7 +198,7 @@ implementation {
   /*
    * halt: power down and stop
    */
-  async command void OWhw.halt_and_CF () {
+  async command void OWhw.halt_and_CF() {
     __disable_irq();
     call SysReboot.flush();
     __soft_reset();

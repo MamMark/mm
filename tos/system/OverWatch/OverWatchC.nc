@@ -50,8 +50,10 @@ implementation {
   OW_P.IM       -> IM_C.IM[unique("image_manager_clients")];
   OW_P.IMD      -> IM_C;
 
+  components CollectC;
   components LocalTimeMilliC;
-  OW_P.LocalTime -> LocalTimeMilliC;
+  OW_P.LocalTime    -> LocalTimeMilliC;
+  OW_P.CollectEvent -> CollectC;
 
   components PlatformC;
   OWHW_M.SysReboot -> PlatformC;

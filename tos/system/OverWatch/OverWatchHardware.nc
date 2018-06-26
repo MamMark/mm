@@ -41,6 +41,12 @@ interface OverWatchHardware {
   async command uint32_t getResetOthers();
 
   /*
+   * curFaults: return current fault mask
+   * examine the h/w and return fault bits.
+   */
+  async command uint32_t curFaults();
+
+  /*
    * getProtStatus: protection status
    */
   async command uint32_t getProtStatus();

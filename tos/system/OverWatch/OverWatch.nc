@@ -103,6 +103,7 @@ interface OverWatch {
 
   async command void                setFault(uint32_t fault_mask);
   async command void                clrFault(uint32_t fault_mask);
+        command void                checkFaults();
 
   async command void                halt_and_CF();
 

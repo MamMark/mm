@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev8'
+__version__ = '0.3.3.dev9'
 
 import binascii
 from   collections  import OrderedDict
@@ -239,6 +239,7 @@ event_names = {
     12: 'UNDOCKED',
 
     13: 'GPS_FIRST_LOCK',
+    14: 'FAULT',
 
     32: 'GPS_BOOT',
     33: 'GPS_BOOT_TIME',
@@ -284,6 +285,7 @@ def event_name(event):
 
 
 PANIC_WARN    = 1
+FAULT         = 14
 GPS_MON_MINOR = 35
 GPS_MON_MAJOR = 36
 GPS_RX_ERR    = 37

@@ -80,6 +80,7 @@ module OverWatchP {
     interface ImageManager      as IM;
     interface ImageManagerData  as IMD;
     interface OverWatchHardware as OWhw;
+    interface CollectEvent;
     interface LocalTime<TMilli>;
     interface Rtc;
     interface Platform;
@@ -836,6 +837,25 @@ implementation {
 
   async command void OverWatch.clrFault(uint32_t fault_mask) {
     owl_clrFault(fault_mask);
+  }
+
+
+  /*
+   * checkFault: check for faults.
+   * log via CollectEvent.
+   */
+  command void OverWatch.checkFaults() {
+    uint32_t faults;
+    ow_control_block_t *owcb;
+
+    owcb = &ow_control_block;
+    faults = call OWhw.curFaults();
+    owl_setFault(faults);
+    if (faults) {
+      call CollectEvent.logEvent(DT_EVENT_FAULT, faults,
+                owcb->fault_mask_gold,
+                owcb->fault_mask_nib,  0);
+    }
   }
 
 
