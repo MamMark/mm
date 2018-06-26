@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@
  * It ticks in jiffies.  1 jiffy = 1/32768 = 30.52 us.
  *
  * The 32KiHz crystal also drives the Real Time Clock (RTC).  The RTC is
- * clock from BCLK which we configure to be driven by LFXTCLK.  The RTC
+ * clocked from BCLK which we configure to be driven by LFXTCLK.  The RTC
  * has compensation for crystal offset error and crystal temperature drift
  * so can be different than TA1 above.
  *
@@ -83,6 +83,8 @@
  * MEMS_DIV     spi bus running to the mems sensors.
  * TMP_DIV      used for the i2c bus running the tmpP and tmpX temp sensors
  */
+
+#define MSP432_LFXT_DRIVE 0
 
 #define T32_DIV_1   TIMER32_CONTROL_PRESCALE_0
 #define T32_DIV_16  TIMER32_CONTROL_PRESCALE_1

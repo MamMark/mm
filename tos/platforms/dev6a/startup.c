@@ -874,6 +874,10 @@ void __core_clk_init(bool disable_dcor) {
   CS->CTL1 = CS_CTL1_SELS__DCOCLK  | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
              CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 |
              CS_CTL1_SELM__DCOCLK  | CS_CTL1_DIVM__1;
+
+  /* we want ~6-9pf for the 32Ki xtal drive */
+  CS->CTL2 = (CS->CTL2 & ~CS_CTL2_LFXTDRIVE_MASK) | MSP432_LFXT_DRIVE;
+
   /*
    * We leave SELA (ACLK, 32Ki, Tmilli) and SELB (BCLK, RTC) set to their
    * defaults, LFXT, 32Ki, external Xtal).  We also leave REFOSEL set to
