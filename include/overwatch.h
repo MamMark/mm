@@ -208,6 +208,7 @@ typedef struct {
   uint32_t           fault_mask_gold;   /* indicate faults                 */
   uint32_t           fault_mask_nib ;   /* indicate faults                 */
   uint32_t           subsys_disable;    /* what's turned off               */
+  uint32_t           protection_status; /* protection status               */
 
   uint32_t           ow_sig_b;
 

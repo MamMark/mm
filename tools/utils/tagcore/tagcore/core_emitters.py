@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev6'
+__version__ = '0.3.3.dev7'
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -119,7 +119,7 @@ rbt_p = '    PANIC: {}  p/w: {}/{}  args: x({:04x} {:04x} {:04x} {:04x})'
 rbt2a = '    majik:   {:08x}  sigs:    {:08x}    {:08x}  {:08x}'
 rbt2b = '    base:  f {:08x}  cur:     {:08x}'
 rbt2c = '    rpt:     {:08x}  reset:   {:08x}      others: {:08x}'
-rbt2d = '    fault/g: {:08x}  fault/n: {:08x}  ss/disable: {:08x}'
+rbt2d = '    fault/g: {:08x}  fault/n: {:08x}  ss/disable: {:08x}  ps: {:04x}'
 rbt2e = '    reboots: {:4}  panics (g/n): {:4}/{:<4}  strg: {:4}  loc: {:4}'
 rbt2f = '    uptime: {}  boot: {}  prev: {}'
 rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
@@ -149,6 +149,7 @@ def emit_reboot(level, offset, buf, obj):
     fault_gold   = owcb['fault_gold'].val
     fault_nib    = owcb['fault_nib'].val
     ss_dis       = owcb['subsys_disable'].val
+    proto_stat   = owcb['protection_status'].val
     boot_mode    = owcb['ow_boot_mode'].val
     reboot_count = owcb['reboot_count'].val
     chk_fails    = owcb['chk_fails'].val
@@ -193,7 +194,7 @@ def emit_reboot(level, offset, buf, obj):
         print(rbt2b.format(from_base, base))
         print(rbt2c.format(owcb['rpt'].val, owcb['reset_status'].val,
               owcb['reset_others'].val))
-        print(rbt2d.format(fault_gold, fault_nib, ss_dis))
+        print(rbt2d.format(fault_gold, fault_nib, ss_dis, proto_stat))
         print(rbt2e.format(reboot_count, panics_gold, panic_count,
                            owcb['strange'].val,
                            owcb['strange_loc'].val))

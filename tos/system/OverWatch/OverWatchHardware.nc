@@ -41,6 +41,11 @@ interface OverWatchHardware {
   async command uint32_t getResetOthers();
 
   /*
+   * getProtStatus: protection status
+   */
+  async command uint32_t getProtStatus();
+
+  /*
    * launch an image, typically a NIB region.
    *
    * if it fails just return.

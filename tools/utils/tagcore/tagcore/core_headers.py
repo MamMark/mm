@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.3.3.dev7'
+__version__ = '0.3.3.dev8'
 
 import binascii
 from   collections  import OrderedDict
@@ -144,6 +144,7 @@ def obj_owcb():
         ('fault_gold',      atom(('<I', '0x{:08x}'))),
         ('fault_nib',       atom(('<I', '0x{:08x}'))),
         ('subsys_disable',  atom(('<I', '0x{:08x}'))),
+        ('protection_status', atom(('<I', '0x{:08x}'))),
         ('ow_sig_b',        atom(('<I', '0x{:08x}'))),
         ('ow_req',          atom(('<B', '{}'))),
         ('reboot_reason',   atom(('<B', '{}'))),

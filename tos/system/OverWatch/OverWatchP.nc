@@ -285,6 +285,7 @@ implementation {
     call Rtc.getTime(&owcp->boot_time);
     owcp->reset_status  = call OWhw.getResetStatus();
     owcp->reset_others  = call OWhw.getResetOthers();
+    owcp->protection_status = call OWhw.getProtStatus();
 
     /*
      * control block is valid, normal start up.

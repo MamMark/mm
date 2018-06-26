@@ -118,6 +118,11 @@ implementation {
   }
 
 
+  async command uint32_t OWhw.getProtStatus() {
+    return SYSCTL_Boot->SYSTEM_STAT;
+  }
+
+
   void launch(uint32_t base) {
     __asm__ volatile (
       "  ldr sp, [%0] \n"
