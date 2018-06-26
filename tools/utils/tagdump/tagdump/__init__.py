@@ -3,8 +3,12 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.4.dev2'
+__version__ = '0.4.5.rc0'
 
+# 0.4.5.rc0     20/0
+#               revised overwatch_control_block
+#               - added protection_status
+#
 # 0.4.4.dev1    19/8
 #               GPS_STATS
 #               FIRST_LOCK, TX_RESTART

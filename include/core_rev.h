@@ -60,7 +60,7 @@
  * fine.
  */
 
-#define CORE_REV   19
-#define CORE_MINOR  9
+#define CORE_REV   20
+#define CORE_MINOR  0
 
 #endif  /* __CORE_REV_H__ */

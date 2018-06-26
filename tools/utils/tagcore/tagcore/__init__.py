@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.3.3.dev3'
+__version__ = '0.4.5.rc0'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,7 +18,12 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
-# 0.3.3.dev3    CoreRev: 19/9
+# 0.4.5.rc0     CoreRev: 20/0
+#               updated overwatch_control_block
+#               - protection status
+#               - updated fault flags
+# 0.3.3.dev4
+#       19/9    CoreRev: 19/9
 #               make mpm responses log EVENT_MPM_RSP.
 #       19/6    tagctl: major state control of TagnetMonitor
 #               better 'unk' display
