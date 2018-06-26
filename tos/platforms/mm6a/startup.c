@@ -766,9 +766,7 @@ void __t32_init() {
 
 #elif MSP432_DCOCLK == 16777216
 #define CLK_DCORSEL CS_CTL0_DCORSEL_3
-#define CLK_DCOTUNE 158
-//#define CLK_DCOTUNE 168
-//#define CLK_DCOTUNE 134
+#define CLK_DCOTUNE 165
 
 #elif MSP432_DCOCLK == 24000000
 #define CLK_DCORSEL CS_CTL0_DCORSEL_4
@@ -1133,7 +1131,6 @@ void __Reset() {
    * If the short bit is set, disable the DCOR.
    */
   disable_dcor = RSTCTL->CSRESET_STAT & RSTCTL_CSRESET_STAT_DCOR_SHT;
-//  ROM_DEBUG_BREAK(0);
   owl_startup();
   if (disable_dcor)
     owl_setFault(OW_FAULT_DCOR);

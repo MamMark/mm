@@ -318,7 +318,7 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
  * reboot.  Software is responsible for poking various h/w state to return
  * to a somewhat pristine state.
  *
- * we assume that a h/w SOFTREST was done and that is what got us here.
+ * we assume that a h/w SOFTRESET was done and that is what got us here.
  * A SOFTRESET will clear out the following Cortex-M4F peripherals:
  *
  * o FPU
@@ -478,13 +478,10 @@ void __watchdog_init() {
 }
 
 
+/*
+ * see hardware.h for initial values and changed mappings
+ */
 void __pins_init() {
-
-  /*
-   * see hardware.h for initial values and changed mappings
-   */
-//  __map_ports();              /* done early for now */
-
   PA->OUT = 0;                  /* zero all 10 port registers */
   PB->OUT = 0;                  /* P4/P3 */
   PC->OUT = 0;                  /* P6/P5 */
@@ -810,9 +807,7 @@ void __t32_init() {
 
 #elif MSP432_DCOCLK == 16777216
 #define CLK_DCORSEL CS_CTL0_DCORSEL_3
-#define CLK_DCOTUNE 158
-//#define CLK_DCOTUNE 168
-//#define CLK_DCOTUNE 134
+#define CLK_DCOTUNE 165
 
 #elif MSP432_DCOCLK == 24000000
 #define CLK_DCORSEL CS_CTL0_DCORSEL_4
@@ -1177,7 +1172,6 @@ void __Reset() {
    * If the short bit is set, disable the DCOR.
    */
   disable_dcor = RSTCTL->CSRESET_STAT & RSTCTL_CSRESET_STAT_DCOR_SHT;
-//  ROM_DEBUG_BREAK(0);
   owl_startup();
   if (disable_dcor)
     owl_setFault(OW_FAULT_DCOR);
