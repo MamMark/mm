@@ -18,21 +18,16 @@
  *
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
-configuration PlatformRtcC {
+configuration CoreTimeC {
   provides interface Rtc;
 }
 implementation {
-  components PlatformRtcP;
-  Rtc = PlatformRtcP;
+  components CoreTimeP;
+  Rtc = CoreTimeP;
 
   components Msp432RtcC;
-  PlatformRtcP.Msp432Rtc -> Msp432RtcC;
-
-#ifdef FAKE_RTC
-  components LocalTimeMilliC;
-  PlatformRtcP.LocalTime -> LocalTimeMilliC;
-#endif
+  CoreTimeP.Msp432Rtc -> Msp432RtcC;
 
   components PanicC;
-  PlatformRtcP.Panic -> PanicC;
+  CoreTimeP.Panic -> PanicC;
 }

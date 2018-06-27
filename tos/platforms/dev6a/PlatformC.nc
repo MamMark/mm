@@ -51,10 +51,11 @@ implementation {
   /* clocks are initilized by startup */
 
   /*
-   * RealTime Clock Wiring
+   * CoreTime Clock Wiring
+   * includes RTC and other low level time manipulation.
    */
-  components PlatformRtcC;
-  Rtc      = PlatformRtcC;
+  components CoreTimeC;
+  Rtc      = CoreTimeC;
 
   components LocalTimeMilliC;
   PlatformP.LocalTime -> LocalTimeMilliC;

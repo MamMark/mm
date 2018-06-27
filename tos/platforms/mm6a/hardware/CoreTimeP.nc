@@ -31,14 +31,11 @@ enum {
 #define PANIC_TIME __pcode_time
 #endif
 
-module PlatformRtcP {
+module CoreTimeP {
   provides interface Rtc;
   uses {
     interface Rtc as Msp432Rtc;
     interface Panic;
-#ifdef FAKE_RTC
-    interface LocalTime<TMilli>;
-#endif
   }
 }
 implementation {
@@ -63,31 +60,7 @@ implementation {
 
 
   async command void Rtc.getTime(rtctime_t *timep) {
-#ifdef FAKE_RTC
-    uint32_t   lt, check;               /* LocalTime (ms) */
-    rtctime_t *rp;
-
-    if (!timep)
-      call Panic.panic(PANIC_TIME, 0, 0, 0, 0, 0);
-
-    /*
-     * for the time being, we fake it by filling in the low 32 bits with
-     * a LocalTime (ms) stamp
-     */
-    lt = call LocalTime.get();
-    rp = timep;
-    memset(rp, 0, sizeof(*rp));
-    rp->min     = (lt >> 24) & 0xff;    /* top byte        */
-    rp->sec     = (lt >> 16) & 0xff;    /* next byte       */
-    rp->sub_sec = lt & 0xffff;          /* and low 16 bits */
-
-    check = rp->min + rp->sec + rp->sub_sec;
-    if (!check)
-      nop();                            /* BRK */
-    return;
-#else
     call Msp432Rtc.getTime(timep);
-#endif
   }
 
 
