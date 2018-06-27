@@ -26,7 +26,7 @@ generic configuration TagnetRtcTimeAdapterP (int my_id) @safe() {
 implementation {
   components new TagnetRtcTimeAdapterImplP(my_id) as Element;
   components     TagnetUtilsC;
-  components     PlatformRtcC;
+  components     PlatformC;
 
   Super           =  Element.Super;
   Adapter         =  Element.Adapter;
@@ -34,5 +34,5 @@ implementation {
   Element.THdr   ->  TagnetUtilsC;
   Element.TPload ->  TagnetUtilsC;
   Element.TTLV   ->  TagnetUtilsC;
-  Element.Rtc    ->  PlatformRtcC;
+  Element.Rtc    ->  PlatformC;
 }

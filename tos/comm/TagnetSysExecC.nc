@@ -33,7 +33,7 @@ implementation {
   components          TagnetSysExecP        as  Element;
   components          ImageManagerC;
   components          OverWatchC;
-  components          PlatformRtcC;
+  components          PlatformC;
   components          PanicC;
 
   SysActive           =  Element.SysActive;
@@ -45,6 +45,6 @@ implementation {
   Element.IM         ->  ImageManagerC.IM[unique("image_manager_clients")];
   Element.IMD        ->  ImageManagerC;
   Element.OW         ->  OverWatchC;
-  Element.Rtc        ->  PlatformRtcC;
+  Element.Rtc        ->  PlatformC;
   Element.Panic      ->  PanicC;
 }
