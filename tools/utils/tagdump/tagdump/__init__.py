@@ -3,9 +3,9 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.5.rc0'
+__version__ = '0.4.5.rc1'
 
-# 0.4.5.rc0     20/0
+# 0.4.5.rc1     20/1, fix reboot size
 #               revised overwatch_control_block
 #               - added protection_status
 #
