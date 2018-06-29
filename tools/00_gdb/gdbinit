@@ -42,9 +42,13 @@ set mem inaccessible-by-default off
 add-symbol-file symbols_hw 0
 source .gdb/.gdb_msp432
 source .gdb_target
+
 source .gdb/.gdb_gps
+source .gdb/.gdb_gps_hw.py
 source .gdb/.gdb_si446x.py
+
 source .gdb/.gdb_mm
+source .gdb/.gdb_tagmon.py
 
 set disassemble-next-line on
 

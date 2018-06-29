@@ -9,7 +9,7 @@
 # TINYOS_ROOT_DIR:  points to core tinyos source tree
 # MM_ROOT:          points to core MamMark source tree
 #
-# then simply run ${MM_ROOT}/tools/copy_gdb
+# then simply run ${MM_ROOT}/tools/00_gdb/copy_gdb
 
 if [[ ! -v TINYOS_ROOT_DIR || ! -v MM_ROOT ]]; then
     echo -e "\n*** TINYOS_ROOT_DIR and MM_ROOT environment variables need to be defined.\n"
