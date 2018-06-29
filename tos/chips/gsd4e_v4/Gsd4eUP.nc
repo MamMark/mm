@@ -370,16 +370,19 @@ uint8_t g_nev;			// next gps event
 
 const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
 /*   rate mod             len                msg   */
-#ifdef notdef
+#if GPS_TARGET_SPEED == 115200
   {  4800, 24, sizeof(nmea_sirf_115200), nmea_sirf_115200 },
   {  9600, 12, sizeof(nmea_sirf_115200), nmea_sirf_115200 },
   {  4800, 24, sizeof(sirf_115200),      sirf_115200      },
   {  9600, 12, sizeof(sirf_115200),      sirf_115200      },
-#endif
+#elif GPS_TARGET_SPEED == 9600
   {  4800, 2, sizeof(nmea_sirf_9600), nmea_sirf_9600 },
   {  9600, 1, sizeof(nmea_sirf_9600), nmea_sirf_9600 },
   {  4800, 2, sizeof(sirf_9600),      sirf_9600      },
   {  9600, 1, sizeof(sirf_9600),      sirf_9600      },
+#else
+#error GPS_TARGET_SPEED neither 115200 nor 9600
+#endif
 };
 
        int32_t  gps_probe_index;        // keeps track of which table entry to use
