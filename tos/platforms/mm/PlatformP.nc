@@ -121,7 +121,21 @@ implementation {
   /* T32 is a count down so negate it */
   async command uint32_t Platform.usecsRaw()       { return (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV; }
   async command uint32_t Platform.usecsRawSize()   { return 32; }
-  async command uint32_t Platform.jiffiesRaw()     { return (TIMER_A1->R); }
+
+  /* TA1 is async wrt the main cpu clock.  majority element time. */
+  async command uint32_t Platform.jiffiesRaw()     {
+    uint16_t t0, t1;
+
+    t0 = TIMER_A1->R; t1 = TIMER_A1->R;
+    if (t0 == t1)     return t0;
+
+    t0 = TIMER_A1->R;
+    if (t0 == t1)     return t0;
+
+    t0 = TIMER_A1->R;
+    return t0;
+  }
+
   async command uint32_t Platform.jiffiesRawSize() { return 16; }
 
   uint32_t __platform_usecs_raw() @C() @spontaneous() {
