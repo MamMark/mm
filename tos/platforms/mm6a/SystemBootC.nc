@@ -49,6 +49,7 @@ implementation {
   components MainC;
   SoftwareInit = MainC.SoftwareInit;
 
+  components CoreTimeC     as CT;
   components PowerManagerC as PM;
   components FileSystemC   as FS;
   components ImageManagerC as IM;
@@ -56,7 +57,8 @@ implementation {
   components DblkManagerC  as DM;
   components CollectC      as SYNC;
 
-  PM.Boot -> MainC;                     // first check for power state
+  CT.Boot -> MainC;                     // first start DCO sync
+  PM.Boot -> CT.Booted;                 // next check power state
 
   /* Low Power Chain */
   BootLow = PM.LowPowerBoot;

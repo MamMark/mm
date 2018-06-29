@@ -120,9 +120,13 @@ implementation {
 
   async command uint32_t OWhw.curFaults() {
     uint32_t faults = 0;
+    uint32_t cs_int;
 
-    if (BITBAND_PERI(CS->IFG, CS_IFG_LFXTIFG_OFS))
+    cs_int = CS->IFG;
+    if (cs_int &  CS_IFG_LFXTIFG)
       faults |= OW_FAULT_32K;
+    if (cs_int & (CS_IFG_DCOR_SHTIFG | CS_IFG_DCOR_OPNIFG))
+      faults |= OW_FAULT_DCOR;
     return faults;
   }
 

@@ -238,7 +238,7 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
   PendSV_Handler,                       // -2           14
   SysTick_Handler,                      // -1           15
   PSS_Handler,                          //  0           16
-  CS_Handler,                           //  1           17
+  CS_Handler,                           //  1           17    0         (00)
   PCM_Handler,                          //  2           18
   WDT_Handler,                          //  3           19
   FPU_Handler,                          //  4           20
@@ -266,7 +266,7 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
   T32_INT2_Handler,                     // 26           42            5 (a0)
   T32_INTC_Handler,                     // 27           43
   AES_Handler,                          // 28           44
-  RTC_Handler,                          // 29           45          4   (80)
+  RTC_Handler,                          // 29           45    0         (00)
   DMA_ERR_Handler,                      // 30           46
   DMA_INT3_Handler,                     // 31           47
   DMA_INT2_Handler,                     // 32           48
@@ -921,6 +921,14 @@ void __core_clk_init(bool disable_dcor) {
   }
   CS->KEY = 0;                  /* lock module */
   lfxt_startup_time = (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV;
+
+  /*
+   * also clear out any interrupts pending on the RTC needs to happen
+   * here because the RTC is dependent on the 32Ki Xtal being up or it
+   * will see an Osc Fault.
+   */
+  RTC_C->CTL0 = RTC_C_KEY | 0;
+  RTC_C->CTL0 = 0;                                   /* close lock */
 }
 
 

@@ -173,6 +173,9 @@ implementation {
       default:
         return IRQ_DEFAULT_PRIORITY;
 
+      case CS_IRQn:                     /* clock faults */
+      case RTC_C_IRQn:                  /* RTC interrupts */
+        return 0;                       /* highest priority */
       case GPS_IRQN:
         return GPS_IRQ_PRIORITY;        /* gps0   */
       case RADIO_IRQN:

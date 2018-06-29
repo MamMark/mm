@@ -19,14 +19,32 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
 configuration CoreTimeC {
-  provides interface Rtc;
+  provides {
+    interface Rtc;
+    interface CoreTime;
+    interface Boot as Booted;           /* outgoing */
+  }
+  uses {
+    interface Boot;                     /* incoming */
+  }
 }
 implementation {
   components CoreTimeP;
-  Rtc = CoreTimeP;
+  CoreTime = CoreTimeP;
+  Booted   = CoreTimeP;
+  Boot     = CoreTimeP;
 
   components Msp432RtcC;
-  CoreTimeP.Msp432Rtc -> Msp432RtcC;
+  Rtc = Msp432RtcC;
+
+  components new TimerMilliC() as CoreTimeTimerC;
+  CoreTimeP.CTimer -> CoreTimeTimerC;
+
+  components OverWatchC;
+  CoreTimeP.OverWatch -> OverWatchC;
+
+  components PlatformC;
+  CoreTimeP.Platform -> PlatformC;
 
   components PanicC;
   CoreTimeP.Panic -> PanicC;

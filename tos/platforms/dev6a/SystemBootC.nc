@@ -40,13 +40,15 @@ implementation {
   components MainC;
   SoftwareInit = MainC.SoftwareInit;
 
+  components CoreTimeC     as CT;
   components FileSystemC   as FS;
   components ImageManagerC as IM;
   components OverWatchC    as OW;
   components DblkManagerC  as DM;
   components CollectC      as SYNC;
 
-  FS.Boot   -> MainC;
+  CT.Boot   -> MainC;                   // first start DCO sync
+  FS.Boot   -> CT.Booted;
   IM.Boot   -> FS.Booted;
   OW.Boot   -> IM.Booted;               /* OWT */
 
