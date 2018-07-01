@@ -1235,6 +1235,7 @@ typedef struct {
   uint16_t t_reply;
   uint16_t d_reply_len;
   uint16_t t_elapsed;
+  uint32_t t_started;
   uint8_t  frr[4];
 } cmd_timing_t;
 

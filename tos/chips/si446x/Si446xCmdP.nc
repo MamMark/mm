@@ -493,8 +493,8 @@ implementation {
     ctp->cmd = cmd;
     done = 0;
     while (1) {
-      t0 = call Platform.usecsRaw();
-      t1 = t0;
+      ctp->t_started = call Platform.usecsRaw();
+      t0 = t1 = ctp->t_started;
       while (!ll_si446x_get_cts()) {
         t1 = call Platform.usecsRaw();
         if ((t1-t0) > SI446X_CTS_TIMEOUT) {
@@ -569,6 +569,7 @@ implementation {
     t1 = call Platform.usecsRaw();
     ctp->t_reply = t1 - t0;
     ctp->d_reply_len = l + 2;
+    ctp->t_elapsed = t1 - ctp->t_started;
     ll_si446x_spi_trace(SPI_REC_GET_REPLY, cmd, r, l);
     ll_si446x_trace(T_RC_GET_REPLY, cmd, t1-t0);
   }
@@ -581,17 +582,13 @@ implementation {
    * perform combined send_cmd and get_reply operations.
    */
   void ll_si446x_cmd_reply(const uint8_t *cp, uint16_t cl, uint8_t *rp, uint16_t rl) {
-    uint32_t t0, t1;
     cmd_timing_t *ctp;
 
     ctp = &cmd_timings[cp[0]];
-    t0 = call Platform.usecsRaw();
     ll_si446x_send_cmd(cp, cl);
     ll_si446x_get_reply(rp, rl, cp[0]);
-    t1 = call Platform.usecsRaw();
     ll_si446x_read_fast_status(ctp->frr);
-    ctp->t_elapsed = t1 - t0;
-    ll_si446x_trace(T_RC_CMD_REPLY, cp[0], t1-t0);
+    ll_si446x_trace(T_RC_CMD_REPLY, cp[0], ctp->t_elapsed);
   }
 
 
