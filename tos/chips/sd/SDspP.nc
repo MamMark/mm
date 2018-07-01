@@ -1195,6 +1195,7 @@ implementation {
     uint32_t     t0;
 
     sdc.sdsa_majik = SDSA_MAJIK;
+    call HW.init();
     call HW.sd_on();
     call HW.sd_spi_enable();
 

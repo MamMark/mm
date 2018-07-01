@@ -70,6 +70,12 @@
 
 interface SDHardware {
   /*
+   * Initilization:
+   *
+   * void init()
+   *    initilizes DMA hardware
+   *    initilizes SPI hardware/port
+   *
    * SPI interface
    *
    * void spi_check_clean()
@@ -83,6 +89,7 @@ interface SDHardware {
    *    send dummy byte on spi, return returned byte.
    */
 
+  async command void    init();
   async command void    spi_check_clean();
   async command uint8_t spi_put(uint8_t tx_byte);
   async command uint8_t spi_get();

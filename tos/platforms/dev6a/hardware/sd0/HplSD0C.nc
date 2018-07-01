@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Eric B. Decker
+ * Copyright (c) 2016-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,6 +39,6 @@ implementation {
   SDHWP.Panic    -> PanicC;
   SDHWP.Platform -> PlatformC;
 
-  PlatformC.PeripheralInit -> DMAC;
   PlatformC.PeripheralInit -> SDHWP;
+  SDHWP.DmaInit            -> DMAC;
 }

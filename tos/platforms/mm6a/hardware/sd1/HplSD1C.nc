@@ -39,6 +39,6 @@ implementation {
   SDHWP.Panic    -> PanicC;
   SDHWP.Platform -> PlatformC;
 
-  PlatformC.PeripheralInit -> DMAC;
   PlatformC.PeripheralInit -> SDHWP;
+  SDHWP.DmaInit            -> DMAC;
 }

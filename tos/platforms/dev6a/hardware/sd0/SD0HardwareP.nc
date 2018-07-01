@@ -51,11 +51,13 @@ sd_dma_cap_t sd_dma_cap;
 module SD0HardwareP {
   provides {
     interface Init;
+    interface AsyncInit;
     interface SDHardware as HW;
   }
   uses {
     interface HplMsp432Usci    as Usci;
     interface HplMsp432UsciInt as Interrupt;
+    interface AsyncInit        as DmaInit;
     interface Msp432Dma        as DmaTX;
     interface Msp432Dma        as DmaRX;
     interface Panic;
@@ -105,7 +107,7 @@ implementation {
  * 1uis ticks.  Note the SD in SPI mode is documented is various places
  * that it can clock up to 25MHz.  So we should be safe.
  *
- * Dev6a, msp432, USCI, SPI
+ * dev6a, msp432, USCI, SPI
  * phase 0, polarity 1, msb, 8 bit, master,
  * mode 3 pin, sync.
  *
@@ -136,7 +138,7 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
 };
 
 
-  command error_t Init.init() {
+  async command error_t AsyncInit.init() {
     uint32_t t0, t1;
 
     call Usci.configure(&sd_spi_config, FALSE);
@@ -161,6 +163,19 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
     call Usci.getRxbuf();
     return SUCCESS;
   }
+
+  async command void HW.init() {
+    atomic {
+      call DmaInit.init();
+      call AsyncInit.init();            /* init sd port hw */
+    }
+  }
+
+  command error_t Init.init() {         /* normal, via PeripheralInit */
+    call HW.init();
+    return SUCCESS;
+  }
+
 
   async command void HW.spi_check_clean() {
     uint8_t tmp;
