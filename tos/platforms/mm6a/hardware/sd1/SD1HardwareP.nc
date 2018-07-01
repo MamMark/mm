@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Eric B. Decker
+ * Copyright (c) 2016-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -33,14 +33,31 @@ enum {
 #define PANIC_SD __pcode_sd
 #endif
 
+/*
+ * space to capture dma h/w state.
+ */
+typedef struct {
+  uint32_t enaset;                      /* which channels are enabled */
+  uint32_t prioset;                     /* channel priority settings  */
+  uint32_t int0;                        /* any pending interrupts?    */
+  uint32_t tx_srccfg;                   /* tx channel trigger setting */
+  uint32_t rx_srccfg;                   /* rx channel trigger setting */
+  dma_cb_t tx_cb;                       /* control block, tx          */
+  dma_cb_t rx_cb;                       /* control block, rx          */
+} sd_dma_cap_t;
+
+sd_dma_cap_t sd_dma_cap;
+
 module SD1HardwareP {
   provides {
     interface Init;
+    interface AsyncInit;
     interface SDHardware as HW;
   }
   uses {
     interface HplMsp432Usci    as Usci;
     interface HplMsp432UsciInt as Interrupt;
+    interface AsyncInit        as DmaInit;
     interface Msp432Dma        as DmaTX;
     interface Msp432Dma        as DmaRX;
     interface Panic;
@@ -51,6 +68,16 @@ implementation {
 
 #define SPI_PUT_GET_TO 1024
 #define SPI_PARANOID
+
+  typedef struct {                      /* only for full sectors */
+    uint32_t dma_ops;
+    uint32_t min_dma_time_us;
+    uint32_t max_dma_time_us;
+    uint32_t avg_dma_time_us;
+  } dma_stats_t;
+
+  norace dma_stats_t  dma_stats;
+  norace uint32_t     dma_t0_us;
 
 #define sd_panic(where, arg, arg1) do { \
     call Panic.panic(PANIC_SD, where, arg, arg1, 0, 0); \
@@ -65,7 +92,7 @@ implementation {
 
 /*
  * The mm6a main cpu clock is 16MiHz, SMCLK (for periphs) is clocked at
- * 8MiHz.  The mm6a is a TI msp432p401r.
+ * 8MiHz.
  *
  * There is documentation that says initilization on the SD
  * shouldn't be done any faster than 400 KHz to be compatible
@@ -79,7 +106,7 @@ implementation {
  * 1uis ticks.  Note the SD in SPI mode is documented is various places
  * that it can clock up to 25MHz.  So we should be safe.
  *
- * Dev6a, msp432, USCI, SPI
+ * mm6a, msp432, USCI, SPI
  * phase 0, polarity 1, msb, 8 bit, master,
  * mode 3 pin, sync.
  *
@@ -110,7 +137,7 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
 };
 
 
-  command error_t Init.init() {
+  async command error_t AsyncInit.init() {
     uint32_t t0, t1;
 
     call Usci.configure(&sd_spi_config, FALSE);
@@ -129,12 +156,25 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
     while (!call Usci.isRxIntrPending()) {
       t1 = call Platform.usecsRaw();
       if ((t1 - t0) > 1000) {
-        sd_panic(28, t0, t1);
+        sd_panic(13, t0, t1);
       }
     }
     call Usci.getRxbuf();
     return SUCCESS;
   }
+
+  async command void HW.init() {
+    atomic {
+      call DmaInit.init();
+      call AsyncInit.init();              /* init sd port hw */
+    }
+  }
+
+  command error_t Init.init() {
+    call HW.init();
+    return SUCCESS;
+  }
+
 
   async command void HW.spi_check_clean() {
     uint8_t tmp;
@@ -142,15 +182,15 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
     tmp = call Usci.getStat();
 #ifdef SPI_PARANOID
     if (tmp & EUSCI_A_STATW_BUSY) {
-      sd_warn(16, 0);
+      sd_warn(1, 0);
     }
     if (tmp & EUSCI_A_STATW_OE) {
-      sd_warn(17, tmp);
+      sd_warn(2, tmp);
       call Usci.getRxbuf();             /* clears overrun */
     }
     if (call Usci.isRxIntrPending()) {
       tmp = call Usci.getRxbuf();
-      sd_warn(18, tmp);
+      sd_warn(3, tmp);
     }
 #else
     if (tmp & EUSCI_A_STATW_OE)
@@ -170,10 +210,10 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
     while ( !(call Usci.isRxIntrPending()) && i > 0)
       i--;
     if (i == 0)				/* rx timeout */
-      sd_warn(19, 0);
+      sd_warn(4, 0);
     i = call Usci.getStat();
     if (i & EUSCI_A_STATW_OE)
-      sd_warn(20, i);
+      sd_warn(5, i);
 
     return call Usci.getRxbuf();
   }
@@ -195,11 +235,11 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
       i--;
 
     if (i == 0)				/* rx timeout */
-      sd_warn(21, 0);
+      sd_warn(6, 0);
 
     i = call Usci.getStat();
     if (i & EUSCI_A_STATW_OE)
-      sd_warn(22, i);
+      sd_warn(7, i);
 
     byte = call Usci.getRxbuf();
     sg_ts[sg_nxt] = call Platform.usecsRaw();
@@ -238,11 +278,30 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
   async command void    HW.sd_clr_cs()          { SD1_CSN = 1; }
 
 
+  void calc_dma_stats() {
+    uint32_t delta;
+    uint64_t working;
+
+    delta = call Platform.usecsRaw() - dma_t0_us;
+    if (dma_stats.min_dma_time_us) {
+      if (delta < dma_stats.min_dma_time_us)
+        dma_stats.min_dma_time_us = delta;
+    } else
+      dma_stats.min_dma_time_us = delta;
+    if (delta > dma_stats.max_dma_time_us)
+      dma_stats.max_dma_time_us = delta;
+    working = dma_stats.avg_dma_time_us * (dma_stats.dma_ops - 1);
+    working += delta;
+    dma_stats.avg_dma_time_us = working / dma_stats.dma_ops;
+    dma_t0_us = 0;
+  }
+
+
   async command void HW.sd_start_dma(uint8_t *sndptr, uint8_t *rcvptr, uint16_t length) {
     uint32_t control;
 
     if (length == 0 || (rcvptr == NULL && length > SD_BLOCKSIZE))
-      sd_panic(23, length, 0);
+      sd_panic(8, length, 0);
 
     /*
      * Dma.dma_start_channel checks if the requested engine is already
@@ -252,7 +311,7 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
     /*
      * set the receiver up first.
      *
-     * if rcvptr is NULL we pull into recv_dump (514, big enough),  DSTINC always 8
+     * if rcvptr is NULL we pull into recv_dump (512, big enough),  DSTINC always 8
      * SRCINC is always NONE (coming from the port).
      */
     control = UDMA_CHCTL_DSTINC_8 | UDMA_CHCTL_SRCINC_NONE |
@@ -279,6 +338,12 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
     }
 
     call DmaTX.dma_set_priority(0);             /* run TX with normal priority */
+    if (length == SD_BLOCKSIZE) {
+      dma_stats.dma_ops++;
+      dma_t0_us = call Platform.usecsRaw();
+      if (!dma_t0_us)                           /* zero isn't allowed */
+        dma_t0_us = call Platform.usecsRaw();   /* grab it again, should be good now */
+    }
     call DmaTX.dma_start_channel(SD1_DMA_TX_TRIGGER, length,
         (void*) &(SD1_DMA_TX_ADDR), sndptr, control);
   }
@@ -317,22 +382,72 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
        * Only take the time out panic if the DMA engine is still running!
        */
       if (((call Platform.usecsRaw() - t0) > max_timeout) && (call DmaRX.dma_enabled())) {
-	sd_panic(24, max_timeout, 0);
+	sd_panic(9, max_timeout, 0);
 	return;
       }
     }
     a = call DmaTX.dma_enabled();
     b = call DmaRX.dma_enabled();
     if (a || b)
-      sd_panic(25, a, b);
+      sd_panic(10, a, b);
     call DmaTX.dma_clear_int();
     call DmaRX.dma_clear_int();
+    if (dma_t0_us)                      /* nukes dma_t0_us */
+      calc_dma_stats();
   }
 
 
-  async command void HW.sd_stop_dma() {
+  async command bool HW.sd_dma_active(){
+    uint32_t a,b;
+
+    a = call DmaTX.dma_enabled();
+    b = call DmaRX.dma_enabled();
+    return (a || b);
+  }
+
+
+  /* true says there was something to stop */
+  async command bool HW.sd_stop_dma() {
+    uint32_t a;
+
+    a = call HW.sd_dma_active();
     call DmaTX.dma_stop_channel();
     call DmaRX.dma_stop_channel();
+    dma_t0_us = 0;                      /* not watching anymore */
+    return a;                           /* the hills have eyes  */
+  }
+
+
+  async command void HW.sd_capture_dma_state() {
+    dma_cb_t *cb;
+    uint8_t   tx_chan, rx_chan;
+
+    atomic {
+      /*
+       * capture:
+       * o ENASET (which channels are enabled)
+       * o Priority
+       * o interrupt pending
+       * o srccfg, configured for tx and rx
+       * o rx, tx control blocks
+       */
+      tx_chan              = call DmaTX.dma_channel();
+      rx_chan              = call DmaRX.dma_channel();
+      sd_dma_cap.enaset    = DMA_Control->ENASET;
+      sd_dma_cap.prioset   = DMA_Control->PRIOSET;
+      sd_dma_cap.int0      = DMA_Channel->INT0_SRCFLG;
+      sd_dma_cap.tx_srccfg = DMA_Channel->CH_SRCCFG[tx_chan];
+      sd_dma_cap.rx_srccfg = DMA_Channel->CH_SRCCFG[rx_chan];
+      cb = call DmaTX.dma_cb();
+      sd_dma_cap.tx_cb.src_end = cb->src_end;
+      sd_dma_cap.tx_cb.dst_end = cb->dst_end;
+      sd_dma_cap.tx_cb.control = cb->control;
+      cb = call DmaRX.dma_cb();
+      sd_dma_cap.rx_cb.src_end = cb->src_end;
+      sd_dma_cap.rx_cb.dst_end = cb->dst_end;
+      sd_dma_cap.rx_cb.control = cb->control;
+      nop();                            /* BRK */
+    }
   }
 
 
@@ -347,16 +462,18 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
 
 
   async event void DmaTX.dma_interrupted() {
-    sd_panic(26, 0, 0);          /* shouldn't ever see this */
+    sd_panic(11, 0, 0);          /* shouldn't ever see this */
   }
 
 
   async event void DmaRX.dma_interrupted() {
+    if (dma_t0_us)
+      calc_dma_stats();
     signal HW.sd_dma_interrupt();
   }
 
   async event void Interrupt.interrupted(uint8_t iv) {
-    sd_panic(27, iv, 0);        /* shouldn't ever see this */
+    sd_panic(12, iv, 0);        /* shouldn't ever see this */
   }
 
   async event void Panic.hook() { }
