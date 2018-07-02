@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.5.rc1'
+__version__ = '0.4.5.rc2'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,7 +18,10 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
-# 0.4.5.rc1     CR: 20/1, fix reboot size
+# 0.4.5.rc2     CR: 20/2
+#               revise panic data structures.
+#
+#               CR: 20/1, fix reboot size
 #               CoreRev: 20/0
 #               updated overwatch_control_block
 #               - protection status

@@ -528,7 +528,8 @@ implementation {
     panic_old_stack_t   *pos;           /* pointer to failee saved regs */
     panic_crash_stack_t *pcs;           /* pointer to crash stack saved */
 
-    panic_block_0_t     *b0p;           /* panic block 0 in panic block */
+    panic_zero_0_t      *b0p;           /* panic zero 0 in panic block  */
+    panic_zero_1_t      *b1p;           /* panic zero 1 in panic block  */
     panic_info_t        *pip;           /* panic info in panic_block    */
     panic_additional_t  *addp;          /* additional in panic_block    */
     crash_info_t        *cip;           /* crash_info in panic_block    */
@@ -573,10 +574,44 @@ implementation {
 
     init_panic_dump();
 
-    b0p = (panic_block_0_t *) pcb.buf;
+    memset(pcb.buf, 0, SD_BLOCKSIZE);
+    b0p = (panic_zero_0_t *) pcb.buf;
+
+    /* fill in panic info */
+    pip = &b0p->panic_info;
+    pip->pi_sig     = PANIC_INFO_SIG;
+    pip->base_addr  = call OverWatch.getImageBase();
+    call Rtc.getTime(&pip->rt);
+    pip->pad        = 0;
+
+    /* fill in overwatch control block (owcb_info) */
+    owcp = call OverWatch.getControlBlock();
+    memcpy((void *) (&b0p->owcb_info), (void *) owcp,
+           sizeof(*owcp));
+
+    /* fill in image info */
+    memcpy((void *) (&b0p->image_info), (void *) (&image_info),
+           sizeof(image_info_t));
+
+    /* fill in additional info */
+    addp                = &b0p->additional_info;
+    addp->ai_sig        = PANIC_ADDITIONS;
+    addp->ram_offset    = block2offset(pcb.block + PBLK_RAM);
+    addp->ram_size      = PBLK_RAM_SIZE * 512;
+    addp->io_offset     = block2offset(pcb.block + PBLK_IO);
+    addp->fcrumb_offset = block2offset(pcb.block + PBLK_FCRUMBS);
+
+    /* flush panic_block_0 buffer */
+    panic_write(pcb.panic_sec, pcb.buf);
+    pcb.panic_sec++;
+
+    /*************************************************************/
+
+    memset(pcb.buf, 0, SD_BLOCKSIZE);
+    b1p = (panic_zero_1_t *) pcb.buf;
 
     /* fill in crash_info */
-    cip = &b0p->crash_info;
+    cip = &b1p->crash_info;
     cip->ci_sig = CRASH_INFO_SIG;
     cip->cc_sig = CRASH_CATCHER_SIG;
     cip->flags  = 0;
@@ -627,53 +662,28 @@ implementation {
     cip->bxRegs[11]   = pcs->r11;
     cip->axLR         = pcs->axLR;
 
-    nop();                              /* BRK */
-
     /* copy fpRegs and fpscr to buffer */
     collect_fp(cip);
     cip->fpscr = 0;
 
-    /* fill in panic info */
-    owcp = call OverWatch.getControlBlock();
-    pip = &b0p->panic_info;
-    pip->pi_sig     = PANIC_INFO_SIG;
-    pip->boot_count = owcp->reboot_count;
-    pip->panic_count= owcp->panic_count;
-    call Rtc.getTime(&pip->rt);
-    pip->pcode  = pap->pcode;
-    pip->where  = pap->where;
-    pip->arg[0] = pap->a0;
-    pip->arg[1] = pap->a1;
-    pip->arg[2] = pap->a2;
-    pip->arg[3] = pap->a3;
-
-    /* fill in additional info */
-    addp                = &b0p->additional_info;
-    addp->ai_sig        = PANIC_ADDITIONS;
-    addp->ram_offset    = block2offset(pcb.block + PBLK_RAM);
-    addp->ram_size      = PBLK_RAM_SIZE * 512;
-    addp->io_offset     = block2offset(pcb.block + PBLK_IO);
-    addp->fcrumb_offset = block2offset(pcb.block + PBLK_FCRUMBS);
-
-    /* fill in image info */
-    memcpy((void *) (&b0p->image_info), (void *) (&image_info), sizeof(image_info_t));
-
     /* fill in ram_header */
-    b0p->ram_header.start = (uint32_t) (ram_region.base_addr);
-    b0p->ram_header.end   = (uint32_t) (ram_region.base_addr + ram_region.len);
+    b1p->ram_header.start = (uint32_t) (ram_region.base_addr);
+    b1p->ram_header.end   = (uint32_t) (ram_region.base_addr + ram_region.len);
 
-    /* flush panic_block_0 buffer */
+    /* flush panic_block_1 buffer */
     panic_write(pcb.panic_sec, pcb.buf);
     pcb.panic_sec++;
 
+    nop();                              /* BRK */
+
     /*
-     * First flush any pending buffers out to the SD.
+     * Now flush any pending buffers out to the SD.
      */
     call SysReboot.flush();
 
     /*
-     * signal any modules that a Panic is underway and if possible they should copy any
-     * device state into RAM to be copied out.
+     * signal any modules that a Panic is underway and if possible they
+     * should copy any device state into RAM to be copied out.
      */
     signal Panic.hook();
 

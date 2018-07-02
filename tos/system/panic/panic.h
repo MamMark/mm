@@ -51,6 +51,7 @@
 #include <image_info.h>
 #include <rtctime.h>
 #include <platform_panic.h>
+#include <overwatch.h>
 
 /*
  * pcodes are used to denote what subsystem failed.  See
@@ -90,21 +91,21 @@ typedef unsigned int parg_t;
  * Various defines defining (go figure) what the Panic Block
  * looks like.  All numbers in sector units.  Each sector 512 bytes.
  *
- * HOME_BLOCK starts at 0 and goes for HOME_SIZE
- * RAM starts at (HOME_BLOCK + HOME_SIZE)
+ * ZERO_BLOCK starts at 0 and goes for ZERO_SIZE
+ * RAM starts at (ZERO_BLOCK + ZERO_SIZE)
  *
  * See doc/06_Panic_CrashDumps for how the 150 was arrived at.
  */
 
 #define PBLK_SIZE      150
-#define PBLK_HOME      0
-#define PBLK_HOME_SIZE 1
-#define PBLK_RAM       1
+#define PBLK_ZERO      0
+#define PBLK_ZERO_SIZE 2
+#define PBLK_RAM       2
 #define PBLK_RAM_SIZE  (64 * 1024 / 512)
 
 
 /*
- * IO sectors start after RAM and can grow up to 13 sectors
+ * IO sectors start after RAM and can grow up to 12 sectors
  * given PBLK_SIZE of 150.  If IO collides with FCRUMBS you
  * will have to bump PBLK_SIZE up.  This has to be hand
  * checked.
@@ -162,12 +163,9 @@ typedef struct {                        /* memory addresses */
 
 typedef struct {                        /* verify all structs in PIX */
   uint32_t     pi_sig;
-  uint32_t     boot_count;
-  uint32_t     panic_count;
-  rtctime_t    rt;
-  panic_code_t pcode;                   /* needs to be a byte enum */
-  uint8_t      where;
-  uint32_t     arg[4];
+  uint32_t     base_addr;               /* base addr of image dieing */
+  rtctime_t    rt;                      /* time of crash */
+  uint16_t     pad;                     /* even alignment */
 } panic_info_t;
 
 
@@ -246,9 +244,14 @@ typedef struct {
 
 typedef struct {
   panic_info_t          panic_info;
+  ow_control_block_t    owcb_info;
   image_info_t          image_info;
   panic_additional_t    additional_info;
+  uint32_t              alignment_pad[43]; /* pad out to 512 */
+} panic_zero_0_t;                     /* initial sector of a panic block */
 
+
+typedef struct {
   /*
    * set alignment_pad such that crash_info/ram_header are physically
    * at the end of panic_block_0.  You have to check the alignment of
@@ -256,15 +259,15 @@ typedef struct {
    * the end and this will give a size of 512 (0x200) but ram_header
    * won't be physically at the end.
    */
-  uint32_t              alignment_pad[13];
+  uint32_t              alignment_pad[65];
 
   /*
    * crash_info and ram_header need to be contiguous and need to
-   * be at the end of the panic_block_0.
+   * be at the end of the panic_zero_1.
    */
   crash_info_t          crash_info;
   cc_region_header_t    ram_header;
-} panic_block_0_t;                      /* initial sector of a panic block */
+} panic_zero_1_t;                       /* crash info and ram header. */
 
 
 #endif /* __PANIC_H__ */

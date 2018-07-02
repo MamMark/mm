@@ -164,21 +164,23 @@ about the machine state for a single crash.
 
 A block includes the following information:
 
-Block 0 (initial sector of a panic block)
-1) Panic information, Subsystem, Where, a0-3.  and time stamp
+Block 0 (Panic Zero, initial sectors of a panic block, 2 sectors)
+1) Panic information, core information about the crash.
+   (base address and timestamp of crash)
+2) Overwatch control block.  More information about the state of the
+   machine.  Includes panic information, Subsystem, Where, a0-3.
 2) image_info for image running.
 3) AdditionalInfo
 4) crash state: (captured information from the Panic or Exception crash)
-
    cpu registers
    fpu registers (if active)
    Fault State
 5) RAM region header
 
-Block 1+
+Block 2+
 6) Main Memory - 64K (128 sectors)
 
-Block 129+
+Block 130+
 7) I/O state
 
    <base address>
@@ -195,42 +197,47 @@ Block 129+
 
 Panic Block:
 
-A single instance of full machine state.  Needs to include Panic Info,
-Image Info, Crash_State (cpu regs, fpu regs, fault state), RAM, Select I/O,
-Flash Crumbs.
+A single instance of full machine state.  Needs to include OverWatch Control
+Block, Image Info, Crash_State (cpu regs, fpu regs, fault state), RAM,
+Select I/O, and Flash Crumbs.
 
-Panic Info:  (36 bytes)
-    4  <sig>
-    4  boot_count
-    8  time stamp
-    1  subsys
-    1  where
-    2  pad
-    4  arg0
-    4  arg1
-    4  arg2
-    4  arg3
+Panic Info:  (20 bytes)
+    4   <sig>
+    4   base_addr        which image is paniced
+    10  time stamp       when we died
+    2   pad
+
+OverWatchControlBlock: (116 bytes)
+  The Control Block from the running image at the time of the crash.
+
+  reboot_count, panic_count, and panics_gold have not been updated to
+  include the current crash.  This will happen later.
+
+  pi_* cells in the control block (panic_info) are updated to reflect
+  the current panic.
 
 Image_Info for running image (from image running)
-  144  bytes
-
+  184  bytes
 
 Additional Info: sector numbers of the location of different
-pieces of the Panic Block.
+pieces of the Panic Block.  (20 bytes)
 
     4  sig
     4  ram_sector
+    4  ram_size
     4  io_sector
     4  fcrumb_sector
 
 
-CrashInfo (CPU state):  (CrashCatcher/Debug format + additional)  260 bytes
+CrashInfo (CPU state):  (CrashCatcher/Debug format + additional)  244 bytes
   4    crash_info_signature
+  4    axLR
+  4    MSP
+  4    PSP
   4    primask
   4    basepri
   4    faultmask
   4    control
-  4    axLR
   4    crash_catcher_signature
   4    flags
  52    R0 - R12
@@ -242,21 +249,23 @@ CrashInfo (CPU state):  (CrashCatcher/Debug format + additional)  260 bytes
        [floating point], valid if flags & 1
        fpcsr
        32 x 4 bytes (128 bytes)
+
+Total of above: 592 (split into two sectos, 340 and 252)
+
+ currently not included.  do we need?
  24    fault registers, 6 x 4
        SHCSR, CFSR, HFSR, DFSR, MMFAR, BFAR
        E000ED24        to              E000ED38
 
-Total of above: 440
 
-
-The Panic 0 Block is laid down to simplify extraction for CrashDebug.  We
-want the CrashCatcher Info, RAM, and IO to be contiguous.  We do this by
-placing PanicInfo, ImageInfo, and AdditionalInfo at the front of the Panic 0
-Block, followed by sufficient padding to make the CrashInfo and a Ram Region
-header line up at the end of the Panic0 Block.
-
-Since the Panic 0 Block is immediately followed by the RAM region itself this
-all looks proper for CrashDebug.
+The Panic Zero Block (part 1, Zero-1) is laid down to simplify extraction
+for CrashDebug.  We want the CrashCatcher Info, RAM, and IO to be
+contiguous.  We do this by placing PanicInfo, OWCB, ImageInfo, and
+AdditionalInfo at the front of Panic Zero-0 Block.  And CrashCatcher Info
+and the Ram Header go into Panic Zero-1 Block (the following sector).
+Sufficient padding is used at the front of Panic Zero 1 to make the
+CrashInfo and Ram Header physically contiguous with the Ram Blocks that
+follow.
 
 
 [Memory Region]

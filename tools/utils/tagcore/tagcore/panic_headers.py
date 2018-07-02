@@ -19,7 +19,7 @@
 
 '''Panic headers'''
 
-__version__ = '0.4.5.rc0'
+__version__ = '0.4.5rc2'
 
 import binascii
 from   collections  import OrderedDict
@@ -27,6 +27,7 @@ from   collections  import OrderedDict
 from   base_objs    import *
 from   core_headers import obj_rtctime
 from   core_headers import obj_image_info
+from   core_headers import obj_owcb
 
 panic_codes = {
     16: 'PANIC_Time',
@@ -80,15 +81,9 @@ def obj_region():
 def obj_panic_info():
     return aggie(OrderedDict([
         ('pi_sig',           atom(('<I', '{:04x}'))),
-        ('boot_count',       atom(('<I', '{:2}'))),
-        ('panic_count',      atom(('<I', '{:02}'))),
+        ('base_addr',        atom(('<I', '{:04x}'))),
         ('rt',               obj_rtctime()),
-        ('pcode',            atom(('<B', '{:02}'))),
-        ('where',            atom(('<B', '{:02}'))),
-        ('arg_0',            atom(('<I', '{:08x}'))),
-        ('arg_1',            atom(('<I', '{:08x}'))),
-        ('arg_2',            atom(('<I', '{:08x}'))),
-        ('arg_3',            atom(('<I', '{:08x}'))),
+        ('pad',              atom(('<H', '{:02x}'))),
     ]))
 
 
@@ -130,19 +125,25 @@ def obj_crash_info():
 def obj_add_info():
     return aggie(OrderedDict([
         ('ai_sig',           atom(('<I', '{}'))),
-        ('ram_sector',       atom(('<I', '{}'))),
+        ('ram_offset',       atom(('<I', '{}'))),
         ('ram_size',         atom(('<I', '{}'))),
-        ('io_sector',        atom(('<I', '{}'))),
-        ('fcrumb_sector',    atom(('<I', '{}'))),
+        ('io_offset',        atom(('<I', '{}'))),
+        ('fcrumb_offset',    atom(('<I', '{}'))),
     ]))
 
 
-def obj_panic_block_0():
+def obj_panic_zero_0():
     return aggie(OrderedDict([
         ('panic_info', obj_panic_info()),
+        ('owcb_info',  obj_owcb()),
         ('image_info', obj_image_info()),
         ('add_info',   obj_add_info()),
-        ('padding',    atom(('13I', '{}'))),
+        ('padding',    atom(('43I', '{}'))),
+    ]))
+
+def obj_panic_zero_1():
+    return aggie(OrderedDict([
+        ('padding',    atom(('65I', '{}'))),
         ('crash_info', obj_crash_info()),
-        ('ram_header', obj_region())
+        ('ram_header', obj_region()),
     ]))
