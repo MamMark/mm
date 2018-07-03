@@ -45,7 +45,7 @@ from   __future__         import print_function
 import struct
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.5.rc0'
+__version__ = '0.4.5rc0'
 
 cfg_print_hourly = True
 

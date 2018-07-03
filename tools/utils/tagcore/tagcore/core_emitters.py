@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5.rc0'
+__version__ = '0.4.5rc0'
 
 from   core_rev     import *
 from   dt_defs      import *
