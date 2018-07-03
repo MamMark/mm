@@ -69,6 +69,14 @@
 /* Hardcoded timeout for commands. */
 #define SD_CMD_TIMEOUT 16
 
+/*
+ * hardcoded timeout for SDsa write completions
+ * ~300ms in uis units.  5*64536 uis ~= 312ms
+ * This should be similar to SD_WRITE_BUSY_TIMEOUT
+ * which is used for the nornal non-standalone case.
+ */
+#define SD_WR_TIMEOUT (5*64*1024)
+
 
 /*
  * dma xfer timeout in ms at 8MHz, 1 bit time is

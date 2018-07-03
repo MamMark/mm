@@ -1313,8 +1313,8 @@ implementation {
 
   async command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
     uint8_t   rsp, tmp;
-    uint16_t  t, last_time, time_wraps;
     uint16_t  crc;
+    uint32_t  t, last_time;
 
     crc = sd_compute_crc(buf);
     if (!sdc.sdhc)
@@ -1352,11 +1352,9 @@ implementation {
      * about going bad.
      *
      * We get usec raw time from Platform.usecsRaw().  We will timeout the
-     * write if we wrap 6 times.  This gives us at least 5 full wraps which
-     * is at least 5 * 64536 usecs (300+ ms).
+     * write if we exceed ~300ms (see SD_WR_TIMEOUT in sd.h).
      */
     last_time = call Platform.usecsRaw();
-    time_wraps = 0;
     sd_write_busy_count = 0;
 
     /*
@@ -1368,12 +1366,8 @@ implementation {
       tmp =  call HW.spi_get();
       if (tmp == 0xFF)
 	break;
-
-      if ((t = call Platform.usecsRaw()) < last_time) {
-	if (++time_wraps > 6)
-	  call Panic.panic(PANIC_SD, 65, time_wraps, t, blk_id, 0);
-      }
-      last_time = t;
+      if (((t = call Platform.usecsRaw()) - last_time) > SD_WR_TIMEOUT)
+        call Panic.panic(PANIC_SD, 65, t, last_time, 0, 0);
     } while (1);
 
     call HW.spi_get();                  /* extra clocks */

@@ -453,12 +453,12 @@ implementation {
    * load_config_task state variables
    */
   typedef struct si446x_config_state {
-    uint8_t        list_iter;
+    uint32_t       start_time;
+    uint32_t       task_time;
     uint8_t       *prop_ptr;
-    uint16_t       task_time;
-    uint16_t       start_time;
     uint16_t       task_posts;
     uint16_t       task_records;
+    uint8_t        list_iter;
     bool           power_up_found;
   } si446x_config_state_t;
 
@@ -541,7 +541,7 @@ implementation {
    * State variables to control state across post events are defined above
    */
   task void load_config_task() {
-    uint16_t iter_start, iter_now;
+    uint32_t iter_start, iter_now;
     uint16_t size;
     uint8_t *cp;
     uint8_t **config_list;

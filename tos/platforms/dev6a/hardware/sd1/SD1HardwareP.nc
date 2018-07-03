@@ -221,7 +221,7 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
 
 
 #define SG_SIZE 32
-  norace uint16_t sg_ts[SG_SIZE];       /* spi get, eaves drop */
+  norace uint32_t sg_ts[SG_SIZE];       /* spi get, eaves drop */
   norace uint8_t  sg[SG_SIZE];
   norace uint8_t  sg_nxt;
 

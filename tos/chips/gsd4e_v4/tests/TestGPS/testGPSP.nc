@@ -5,7 +5,7 @@
  */
 
 uint32_t gt0, gt1;
-uint16_t tt0, tt1;
+// uint32_t tt0, tt1;
 
 module testGPSP {
   uses {
