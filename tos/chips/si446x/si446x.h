@@ -1119,8 +1119,8 @@ typedef struct {
   uint8_t  ph;
   uint8_t  modem;
   uint8_t  rssi;
-  uint8_t  r;
-} rps_t;
+  uint8_t  r;                           /* wtf is this? */
+} rps_t;                                /* radio physical/pin state */
 
 typedef struct {
   uint32_t              dump_start;   /* 32 bit us TRadio Localtime timestamp */
@@ -1239,16 +1239,9 @@ typedef struct {
   uint8_t  frr[4];
 } cmd_timing_t;
 
- typedef struct {
-    uint8_t len;
-    uint8_t proto;
-    uint16_t da;
-    uint16_t sa;
-    uint8_t data[];
-  } ds_pkt_t;
 
-  enum {
-    FCS_SIZE     = 2,
-  };
+enum {
+  FCS_SIZE     = 2,
+};
 
 #endif          //__SI446X_H__

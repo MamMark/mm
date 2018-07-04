@@ -1817,6 +1817,7 @@ implementation {
    * default async command uint32_t Platform.usecsRaw()       { return 0; }
    * default async command uint32_t Platform.usecsRawSize()   { return 0; }
    */
+#error Si446x requires PLATFORM
 
   default async command uint32_t Platform.usecsRaw()       { return 0; }
   default async command uint32_t Platform.usecsRawSize()   { return 0; }

@@ -102,7 +102,6 @@ implementation {
 
   uint32_t w_t, w_diff;
   uint32_t sa_t0, sa_diff;
-  uint16_t sa_t3;
 
   /*
    * main SDsp control cells.   The code can handle at most one operation at a time,
@@ -935,7 +934,7 @@ implementation {
    */
 
   task void sd_write_task() {
-    uint16_t i;
+    uint16_t status;
     uint8_t  tmp;
     uint8_t  cid;
 
@@ -951,9 +950,9 @@ implementation {
     call HW.spi_get();                  /* extra clocking */
     call HW.sd_clr_cs();
 
-    i = sd_read_status();
-    if (i)
-      sd_panic(49, i);
+    status = sd_read_status();
+    if (status)
+      sd_panic(49, status);
 
     last_write_delta_us = call Platform.usecsRaw() - op_t0_us;
     if (last_write_delta_us > max_write_time_us)
@@ -976,11 +975,11 @@ implementation {
 
   void sd_write_dma_handler() {
     uint8_t  tmp;
-    uint16_t i, crc;
+    uint16_t status, crc;
 
     if (call HW.sd_dma_active())
       sd_panic(99, sdc.sd_state);
-    call HW.sd_stop_dma();
+    call HW.sd_stop_dma();              /* clean out any pending residuals */
 
     /* crc is the next two bytes out, big endian */
     crc = sd_compute_crc(sdc.data_ptr);
@@ -993,8 +992,8 @@ implementation {
      */
     tmp = call HW.spi_get();
     if ((tmp & 0x1F) != 0x05) {
-      i = sd_read_status();
-      call Panic.panic(PANIC_SD, 51, tmp, i, 0, 0);     /* no return */
+      status = sd_read_status();
+      call Panic.panic(PANIC_SD, 51, tmp, status, 0, 0);     /* no return */
       return;
     }
 
@@ -1313,8 +1312,8 @@ implementation {
 
   async command void SDsa.write(uint32_t blk_id, uint8_t *buf) {
     uint8_t   rsp, tmp;
-    uint16_t  crc;
     uint32_t  t, last_time;
+    uint16_t  crc, status;
 
     crc = sd_compute_crc(buf);
     if (!sdc.sdhc)
@@ -1338,8 +1337,8 @@ implementation {
      */
     tmp = call HW.spi_get();
     if ((tmp & 0x1F) != 0x05) {
-      t = sd_read_status();
-      call Panic.panic(PANIC_SD, 64, tmp, t, 0, blk_id);
+      status = sd_read_status();
+      call Panic.panic(PANIC_SD, 64, tmp, status, 0, blk_id);
       return;
     }
 
@@ -1364,7 +1363,7 @@ implementation {
     do {				/* count how many iterations and time */
       sd_write_busy_count++;
       tmp =  call HW.spi_get();
-      if (tmp == 0xFF)
+      if (tmp == 0xFF)                  /* wait for data line to be deasserted */
 	break;
       if (((t = call Platform.usecsRaw()) - last_time) > SD_WR_TIMEOUT)
         call Panic.panic(PANIC_SD, 65, t, last_time, 0, 0);
@@ -1372,9 +1371,9 @@ implementation {
 
     call HW.spi_get();                  /* extra clocks */
     call HW.sd_clr_cs();		/* deassert. */
-    t = sd_read_status();
-    if (t)
-      call Panic.panic(PANIC_SD, 66, tmp, t, blk_id, 0);
+    status = sd_read_status();
+    if (status)
+      call Panic.panic(PANIC_SD, 66, status, blk_id, 0, 0);
   }
 
 
