@@ -1008,15 +1008,53 @@ void __rtc_init() {
     time.sub_sec = 0;
     __rtc_setTime(&time);
   }
-  TIMER_A1->R = time.sub_sec;
-  nop();
 }
 
 
 void __start_time() {
+  uint16_t tar, count;
+
   /* restart the 32 bit 1MiHz tickers */
   TIMER32_1->LOAD = 0xffffffff;
   TIMER32_2->LOAD = MSP432_T32_ONE_SEC;
+
+  /*
+   * make (TMilli) TA1->R match RTC->PS.  We must first stop both the RTC
+   * and the Timer as they are running ASYNC to the main clock and we want
+   * to avoid any really strange effects due to ripple.
+   *
+   * First, wait for a tick boundary.  We do this by watching TA1->R and
+   * waiting for it to change.  This should be the tick edge, giving us
+   * ~30.5 usecs to copy over the PS from the RTC.  Do this after unlocking
+   * the RTC.  Minimizes what we have to do during the 30.5 us window.
+   *
+   * We have observed TA1 taking upwards of 150us to start ticking.  We
+   * look for two ticks.
+   */
+  RTC_C->CTL0 = (RTC_C->CTL0 & ~RTC_C_CTL0_KEY_MASK) | RTC_C_KEY;
+  count = 0;
+  tar = __platform_jiffiesRaw();
+  while (tar == __platform_jiffiesRaw() && ++count < 1000) ;
+
+  /* find 2nd tick. */
+  count = 0;
+  tar = __platform_jiffiesRaw();
+  while (tar == __platform_jiffiesRaw() && ++count < 1000) ;
+  if (count >= 1000) {
+    /*
+     * didn't find a ta1 tick.  very weird.
+     * at some point we should probably handle this.
+     */
+    nop();
+  }
+
+  BITBAND_PERI(RTC_C->CTL13, RTC_C_CTL13_HOLD_OFS) = 1;
+  TIMER_A1->CTL &= ~TIMER_A_CTL_MC_MASK;
+  TIMER_A1->R = RTC_C->PS;
+
+  TIMER_A1->CTL |= TA_FREERUN;
+  BITBAND_PERI(RTC_C->CTL13, RTC_C_CTL13_HOLD_OFS) = 0;
+  RTC_C->CTL0 = 0;                                          /* close lock */
 }
 
 
@@ -1044,6 +1082,9 @@ void __start_time() {
  * TMilli <-  TA1 <- ACLK/1 (32KiHz)
  * rawUsecs<- T32_1 <- MCLK/16 <- DCO/1 32 bit raw usecs
  * rawJiffies<- TA1 <- ACLK/1 (32KiHz) 16 bits wide
+ *
+ * NOTE: We have observed that it takes about 100-150us for TA1 to
+ * fire up and start ticking.  This is handled in start_time().
  */
 
 void __system_init(bool disable_dcor) {
