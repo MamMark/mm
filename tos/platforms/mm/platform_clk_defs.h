@@ -84,7 +84,12 @@
  * TMP_DIV      used for the i2c bus running the tmpP and tmpX temp sensors
  */
 
-#define MSP432_LFXT_DRIVE 0
+#ifndef MSP432_LFXT_DRIVE
+#define MSP432_LFXT_DRIVE         3
+#endif
+#ifndef MSP432_LFXT_DRIVE_INITIAL
+#define MSP432_LFXT_DRIVE_INITIAL 3
+#endif
 
 #define T32_DIV_1   TIMER32_CONTROL_PRESCALE_0
 #define T32_DIV_16  TIMER32_CONTROL_PRESCALE_1

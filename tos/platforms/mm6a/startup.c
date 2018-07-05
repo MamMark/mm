@@ -788,6 +788,16 @@ void __t32_init() {
 
 
 uint32_t lfxt_startup_time;
+#ifndef MSP432_LFXT_DRIVE_INITIAL
+#warning MSP432_LFXT_DRIVE_INITIAL not defined, defaulting to 3
+#define MSP432_LFXT_DRIVE_INITIAL 3
+#endif
+
+#ifndef MSP432_LFXT_DRIVE
+#warning MSP432_LFXT_DRIVE not defined, defaulting to 0
+#define MSP432_LFXT_DRIVE 0
+#endif
+
 
 void __core_clk_init(bool disable_dcor) {
   uint32_t timeout;
@@ -829,8 +839,7 @@ void __core_clk_init(bool disable_dcor) {
              CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 |
              CS_CTL1_SELM__DCOCLK  | CS_CTL1_DIVM__1;
 
-  /* we want ~6-9pf for the 32Ki xtal drive */
-  CS->CTL2 = (CS->CTL2 & ~CS_CTL2_LFXTDRIVE_MASK) | MSP432_LFXT_DRIVE;
+  CS->CTL2 = (CS->CTL2 & ~CS_CTL2_LFXTDRIVE_MASK) | MSP432_LFXT_DRIVE_INITIAL;
 
   /*
    * We leave SELA (ACLK, 32Ki, Tmilli) and SELB (BCLK, RTC) set to their
@@ -878,6 +887,8 @@ void __core_clk_init(bool disable_dcor) {
     CS->STAT;
     owl_setFault(OW_FAULT_32K);
   }
+  CS->CTL2 = (CS->CTL2 & ~CS_CTL2_LFXTDRIVE_MASK) | MSP432_LFXT_DRIVE;
+
   CS->KEY = 0;                  /* lock module */
   lfxt_startup_time = (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV;
 
