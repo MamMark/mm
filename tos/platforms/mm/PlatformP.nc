@@ -142,6 +142,8 @@ implementation {
 
   async command uint32_t Platform.jiffiesRawSize() { return 16; }
 
+  uint32_t __platform_jiffiesRaw() @C() @spontaneous() {
+    return call Platform.jiffiesRaw();
   }
 
 
