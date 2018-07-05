@@ -106,6 +106,19 @@ extern void owl_strange2gold(uint32_t loc);
 extern void owl_startup();
 
 
+/* Msp432RtcP.nc */
+extern void     __rtc_rtcStart();
+extern uint32_t __rtc_setTime(rtctime_t *timep);
+extern uint32_t __rtc_getTime(rtctime_t *timep);
+extern bool     __rtc_rtcValid(rtctime_t *timep);
+extern int      __rtc_compareTimes(rtctime_t *time0p, rtctime_t *time1p);
+
+
+/* PlatformP.nc */
+extern uint32_t __platform_usecsRaw();
+extern uint32_t __platform_jiffiesRaw();
+
+
 #ifdef MEMINIT_STOP
 #define MEMINIT_MAGIC0 0x1061
 #define MEMINIT_MAGIC1 0x1062
@@ -787,7 +800,6 @@ void __t32_init() {
 #endif
 
 
-uint32_t lfxt_startup_time;
 #ifndef MSP432_LFXT_DRIVE_INITIAL
 #warning MSP432_LFXT_DRIVE_INITIAL not defined, defaulting to 3
 #define MSP432_LFXT_DRIVE_INITIAL 3
@@ -798,14 +810,28 @@ uint32_t lfxt_startup_time;
 #define MSP432_LFXT_DRIVE 0
 #endif
 
+typedef struct {
+  uint32_t  rtc_refo_u;
+  uint32_t  rtc_lfxt_u;
+  uint32_t  lfxt_turnon_u;
+  rtctime_t start;
+  rtctime_t end;
+} lfxt_startup_t;
+
+noinit lfxt_startup_t lfxt_startup;
+
+
+#define SELB_REFOCLK CS_CTL1_SELB
+#define SELB_LFXTCLK 0
 
 void __core_clk_init(bool disable_dcor) {
   uint32_t timeout;
   uint32_t control;
+  uint32_t u0;
 
   /*
    * soft_reset (which we do because we dont want to bounce the I/O
-   * pins) raises issue for messing with the clocks.  We made certain
+   * pins) raises issues when messing with the clocks.  We made certain
    * reasonable assumptions which were based on a reset putting us back
    * into a well defined specific state.
    *
@@ -823,10 +849,16 @@ void __core_clk_init(bool disable_dcor) {
   }
 
   /*
-   * only change from internal res to external when dco in dcorsel_1.
+   * only change from internal res to external when dco is in dcorsel_1.
    * When first out of POR, DCORSEL will be 1, once we've set DCORES
    * it stays set and we no longer care about changing it (because
    * it always stays 1).
+   *
+   * We assume that the LFXT is down and we are on REFO (32Ki).  We
+   * want to explicitly use REFO for BCLK (RTC) and ACLK (TA1, TMilli)
+   * until the LFXT is actually up.  Probably doesn't make a difference
+   * but is ultra safe.  REFOCLK select (CS->CLKEN.REFOFSEL) defaults to
+   * 32Ki (0).
    *
    * hitting the clocks here looks like it takes 8.5us to switch.
    */
@@ -835,27 +867,53 @@ void __core_clk_init(bool disable_dcor) {
 
   CS->KEY  = CS_KEY_VAL;
   CS->CTL0 = control;
+
+  /* for now kick ACLK and BCLK to REFOCLK */
   CS->CTL1 = CS_CTL1_SELS__DCOCLK  | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
-             CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 |
+             CS_CTL1_SELA__REFOCLK | CS_CTL1_DIVA__1 | SELB_REFOCLK     |
              CS_CTL1_SELM__DCOCLK  | CS_CTL1_DIVM__1;
 
   CS->CTL2 = (CS->CTL2 & ~CS_CTL2_LFXTDRIVE_MASK) | MSP432_LFXT_DRIVE_INITIAL;
 
   /*
-   * We leave SELA (ACLK, 32Ki, Tmilli) and SELB (BCLK, RTC) set to their
-   * defaults, LFXT, 32Ki, external Xtal).  We also leave REFOSEL set to
-   * its default of 32Ki.  If the LFXT fails to come up, the h/w will keep
-   * sourcing both ACLK and RTC using the internal 32Ki REFO clock source.
-   * It won't be accurate but at least it will run.
-   */
-
-  /*
    * turn on the t32s running off MCLK (mclk/16 -> (1MiHz | 3MHz) so we can
-   * time the turn on of the remainder of the system.
+   * time how long initializing the LFXT/RTC clocks take.
    */
-  __t32_init();                   /* rawUsecs */
+  __t32_init();                   /* init rawUsecs, starts at 0 */
 
   /*
+   * It takes a little bit of time for the RTCOFIFG fault to clear
+   * We give it up to ~500uis, but we've seen typicals of 50uis.
+   *
+   * The RTCOFIFG, osc fault, is directly coupled to the LFXT osc fault,
+   * (32ki Xtal osc).  It gets kicked anytime the LFXT osc fault pops.
+   * Still takes ~50uis to clear but will come back as soon as we start
+   * messing with powering up the LFXT below.  Doesn't really hurt.
+   */
+
+  u0 = __platform_usecsRaw();
+  while (RTC_C->CTL0 & RTC_C_CTL0_OFIFG) {
+    RTC_C->CTL0 = RTC_C_KEY | 0;
+    if (__platform_usecsRaw() > 500)
+      break;
+  }
+  RTC_C->CTL0 = 0;                              /* close lock */
+  lfxt_startup.rtc_refo_u = __platform_usecsRaw() - u0;
+
+  nop();
+  u0 = __platform_usecsRaw();
+  __rtc_getTime(&lfxt_startup.start);
+
+  /*
+   * When we turn on the clocks above, we source ACLK and BLCK from REFOCLK.
+   * We will now try to turn on the LFXT sourced from an external LF XTAL.
+   *
+   * Once that is done, we switch ACLK and BCLK over to LFXTCLK which is
+   * sourced from the XTAL and should be more accurate.
+   *
+   * If the XTAL fails, the h/w will automatically switch over to REFOCLK.
+   * It won't be as accurate but at least it will still work.
+   *
    * turn on the 32Ki LFXT system by enabling the LFXIN LFXOUT pins
    * Do not tweak the SELs on PJ.4/PJ.5, they are reset to the proper
    * values for JTAG access.  If you tweak them the debug connection goes
@@ -866,7 +924,13 @@ void __core_clk_init(bool disable_dcor) {
   BITBAND_PERI(PJ->SEL1, 0) = 0;
   BITBAND_PERI(PJ->SEL1, 1) = 0;
 
-  /* turn on LFXT and wait for the fault to go away */
+  /*
+   * turn on LFXT and wait for the fault to go away
+   *
+   * NOTE: even though we have switched the RTC over to REFO above,
+   * when we touch the LFXT_EN below, the RTC will throw an RTCOF,
+   * RTC osc fault.  Just be aware.
+   */
   timeout = 0;
   owl_clrFault(OW_FAULT_32K);           /* start fresh, no fault */
   BITBAND_PERI(CS->CTL2, CS_CTL2_LFXT_EN_OFS) = 1;
@@ -887,18 +951,33 @@ void __core_clk_init(bool disable_dcor) {
     CS->STAT;
     owl_setFault(OW_FAULT_32K);
   }
+
+  /* switch ACLK and BCLK to LFXTCLK, if it failed it will be REFOCLK */
+  CS->CTL1 = CS_CTL1_SELS__DCOCLK  | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
+             CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 | SELB_LFXTCLK     |
+             CS_CTL1_SELM__DCOCLK  | CS_CTL1_DIVM__1;
+
   CS->CTL2 = (CS->CTL2 & ~CS_CTL2_LFXTDRIVE_MASK) | MSP432_LFXT_DRIVE;
 
   CS->KEY = 0;                  /* lock module */
-  lfxt_startup_time = (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV;
+  lfxt_startup.lfxt_turnon_u = __platform_usecsRaw() - u0;
+  __rtc_getTime(&lfxt_startup.end);
 
   /*
    * also clear out any interrupts pending on the RTC needs to happen
    * here because the RTC is dependent on the 32Ki Xtal being up or it
    * will see an Osc Fault.
    */
-  RTC_C->CTL0 = RTC_C_KEY | 0;
+  u0 = __platform_usecsRaw();
+  while (RTC_C->CTL0 & RTC_C_CTL0_OFIFG) {
+    RTC_C->CTL0 = RTC_C_KEY | 0;
+    if (__platform_usecsRaw() > 500)
+      break;
+  }
+
+  lfxt_startup.rtc_lfxt_u = __platform_usecsRaw() - u0;
   RTC_C->CTL0 = 0;                                   /* close lock */
+  nop();
 }
 
 
@@ -913,12 +992,6 @@ void __ta_init(Timer_A_Type * tap, uint32_t clkdiv, uint32_t ex_div) {
   tap->R = 0;
 }
 
-
-extern void     __rtc_rtcStart();
-extern uint32_t __rtc_setTime(rtctime_t *timep);
-extern uint32_t __rtc_getTime(rtctime_t *timep);
-extern bool     __rtc_rtcValid(rtctime_t *timep);
-extern int      __rtc_compareTimes(rtctime_t *time0p, rtctime_t *time1p);
 
 void __rtc_init() {
   rtctime_t time;
@@ -940,7 +1013,7 @@ void __rtc_init() {
 }
 
 
-void __start_timers() {
+void __start_time() {
   /* restart the 32 bit 1MiHz tickers */
   TIMER32_1->LOAD = 0xffffffff;
   TIMER32_2->LOAD = MSP432_T32_ONE_SEC;
@@ -979,13 +1052,11 @@ void __system_init(bool disable_dcor) {
   __ram_init();
   __pwr_init();
   __flash_init();
-
+  __rtc_init();
   __core_clk_init(disable_dcor);
-
   __ta_init(TIMER_A0, TA_SMCLK_ID, MSP432_TA_EX);         /* Tmicro */
   __ta_init(TIMER_A1, TA_ACLK1,    TIMER_A_EX0_IDEX__1);  /* Tmilli */
-  __rtc_init();
-  __start_timers();
+  __start_time();
 }
 
 
