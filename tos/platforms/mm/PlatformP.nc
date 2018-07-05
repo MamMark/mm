@@ -122,6 +122,10 @@ implementation {
   async command uint32_t Platform.usecsRaw()       { return (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV; }
   async command uint32_t Platform.usecsRawSize()   { return 32; }
 
+  uint32_t __platform_usecsRaw() @C() @spontaneous() {
+    return call Platform.usecsRaw();
+  }
+
   /* TA1 is async wrt the main cpu clock.  majority element time. */
   async command uint32_t Platform.jiffiesRaw()     {
     uint16_t t0, t1;
@@ -138,9 +142,8 @@ implementation {
 
   async command uint32_t Platform.jiffiesRawSize() { return 16; }
 
-  uint32_t __platform_usecs_raw() @C() @spontaneous() {
-    return (1-(TIMER32_1->VALUE))/MSP432_T32_USEC_DIV;
   }
+
 
   async command bool     Platform.set_unaligned_traps(bool set_on) {
     bool unaligned_on;

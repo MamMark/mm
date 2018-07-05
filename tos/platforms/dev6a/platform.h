@@ -49,9 +49,9 @@
 
 #define TRACE_VTIMERS
 #define TRACE_TASKS
-#define TRACE_TASKS_USECS __platform_usecs_raw()
+#define TRACE_TASKS_USECS __platform_usecsRaw()
 
-extern uint32_t __platform_usecs_raw();
+extern uint32_t __platform_usecsRaw();
 
 #define TRACE_RESOURCE
 #define FS_ENABLE_ERASE
