@@ -733,6 +733,7 @@ implementation {
 
       case GMS_MAJOR_CYCLE:
       case GMS_MAJOR_MPM_COLLECT:
+        gmcb.msg_count = 0;
         call MajorTimer.startOneShot(GPS_MON_SLEEP);
         major_change_state(GMS_MAJOR_IDLE, MON_EV_TIMEOUT_MAJOR);
         minor_event(MON_EV_MAJOR_CHANGED);
