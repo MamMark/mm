@@ -804,24 +804,61 @@ implementation {
         call CollectEvent.logEvent(DT_EVENT_GPS_SWVER_TO,
                                    gmcb.retry_count, 0, 0, 0);
         minor_change_state(GMS_CONFIG, MON_EV_TIMEOUT_MINOR);
-        if (gmcb.retry_count > 4) {
+        if (gmcb.retry_count > 15) {
           /* need to put subsystem disable here. */
           gps_warn(135, gmcb.minor_state, gmcb.retry_count);
           call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
-          call GPSControl.pulseOnOff();
-          return;
+          gmcb.retry_count = 0;         /* start over for now */
+          /* for now fall through. */
         }
-        if (gmcb.msg_count == 0) {
-          /* not seeing any messages */
-          call GPSControl.pulseOnOff();
-        }
+
+        /*
+         * number of weird start up cases.  For now we handle...
+         *
+         * if not seeing any messages, pulse the puppy....  Strange
+         * that we aren't seeing anything.  We were able to start up
+         * so that says that we can see stuff.
+         *
+         * if seeing messages, great.  But these messages could be
+         * from MPM mode (NAVDATAs) but if in MPM mode the stupid chip
+         * won't respond to SWVER.  awake only says turn on external
+         * rx hardware.
+         *
+         * So it seems until we do something different wrt to initial
+         * turn on, the thing to do is simply always pulse the beast.
+         *
+         * If not seeing messages (chip sleeping), should turn it on.
+         *
+         * If seeing messages and the original SWVER was dropped for
+         * some reason, the pulse will turn the chip off, we will timeout
+         * again and then turn it back on.  So if we are dropping SWVER
+         * or its response for some reason we will bounce, try again, and
+         * then bounce.
+         *
+         * If seeing messages and we are in MPM, then the chip is ignoring
+         * SWVER, pulsing will kick it out of MPM and the next SWVER
+         * should work.
+         *
+         * sigh.
+         *
+         * so for now we pulse on even retry counts, this give the SWVER
+         * a chance to actually work.  Pulsing and then sending immediately
+         * is problematic so this kludge seems reasonable.
+         */
+
+        /* always pulse */
         gmcb.msg_count = 0;
+        if ((gmcb.retry_count & 1) == 0) {      /* pulse on even */
+          call GPSControl.pulseOnOff();
+          call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, gmcb.retry_count, 0,
+                                     0, call GPSControl.awake());
+        }
         call GPSTransmit.send((void *) sirf_swver, sizeof(sirf_swver));
         call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
         return;
 
       case GMS_COMM_CHECK:
-        if (gmcb.retry_count < 5) {
+        if (gmcb.retry_count < 6) {
           /*
            * Didn't hear anything, pulse and listen for LONG TO
            */
