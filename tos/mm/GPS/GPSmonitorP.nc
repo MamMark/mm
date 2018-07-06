@@ -292,7 +292,7 @@ implementation {
 
 
   void mon_enter_comm_check(mon_event_t ev) {
-    gmcb.retry_count = 1;
+    gmcb.retry_count = 0;
     minor_change_state(GMS_COMM_CHECK, ev);
     call MinorTimer.startOneShot(GPS_MON_SHORT_COMM_TO);
   }
@@ -315,7 +315,7 @@ implementation {
    * No need for a timer here.
    */
   event void Boot.booted() {
-    gmcb.retry_count = 1;               /* first attempt */
+    gmcb.retry_count = 0;               /* haven't retried yet */
     gmcb.majik_a = gmcb.majik_b = GMCB_MAJIK;
     major_change_state(GMS_MAJOR_IDLE, MON_EV_BOOT);
     minor_change_state(GMS_BOOTING,    MON_EV_BOOT);
@@ -332,7 +332,7 @@ implementation {
         return;
       case GMS_BOOTING:
         gmcb.msg_count   = 0;
-        gmcb.retry_count = 1;
+        gmcb.retry_count = 0;
         minor_change_state(GMS_CONFIG, MON_EV_STARTUP);
         call GPSControl.logStats();
         call GPSTransmit.send((void *) sirf_swver, sizeof(sirf_swver));
@@ -369,7 +369,7 @@ implementation {
             minor_change_state(GMS_FAIL, MON_EV_FAIL);
             return;
 
-          case 2:
+          case 1:
             /* first time didn't work, hit it with a reset and try again. */
             call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gmcb.minor_state,
                                        gmcb.retry_count, 0, 0);
@@ -378,7 +378,7 @@ implementation {
             call GPSControl.turnOn();
             return;
 
-          case 3:
+          case 2:
             call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gmcb.minor_state,
                                        gmcb.retry_count, 0, 0);
             call GPSControl.logStats();
@@ -954,7 +954,7 @@ implementation {
       case GMS_COMM_CHECK:
         if (gmcb.major_state == GMS_MAJOR_IDLE) {
           minor_change_state(GMS_MPM_WAIT, MON_EV_MSG);
-          gmcb.retry_count = 1;
+          gmcb.retry_count = 0;
           awake = call GPSControl.awake();
           err   = call GPSTransmit.send((void *) sirf_go_mpm_0,
                                         sizeof(sirf_go_mpm_0));
