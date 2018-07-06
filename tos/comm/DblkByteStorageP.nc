@@ -1,5 +1,6 @@
 /**
  * @Copyright (c) 2017 Daniel J. Maltbie
+ * @Copyright (c) 2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -52,42 +53,38 @@ implementation {
    */
   uint32_t   dblk_notes_count;          /* inits to 0 */
 
-  bool GetDblkBytes(tagnet_file_bytes_t *db, uint32_t *lenp) {
+  command bool DblkBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
     if (!db || !lenp)
-      call Panic.panic(0, 0, 0, 0, 0, 0); /* null check */
+      call Panic.panic(0, 0, 0, 0, 0, 0);
     switch (db->action) {
       case FILE_GET_DATA:
         db->error = call DMF.map(db->context, &db->block, db->iota, lenp);
         if (db->error == SUCCESS) {
-          db->iota     += *lenp;
-          db->count    -= *lenp;
+          db->iota  += *lenp;
+          db->count -= *lenp;
           return TRUE;
         }
         *lenp = 0;
         return TRUE;
+
       case  FILE_GET_ATTR:
         db->count  = call DMF.filesize(db->context);
         *lenp = 0;
         return TRUE;
-      default:
-        db->error = SUCCESS;            /* don't respond, ignore */
-        *lenp = 0;
-        return FALSE;
-    }
-  }
 
-  command bool DblkBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
-    if (!db || !lenp)
-      call Panic.panic(0, 0, 0, 0, 0, 0);
-    return GetDblkBytes(db, lenp);
+      default:
+        db->error = EINVAL;
+        *lenp = 0;
+        return FALSE;                   /* don't respond, ignore */
+    }
   }
 
   command bool DblkBytes.set_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
     if (!db || !lenp)
       call Panic.panic(0, 0, 0, 0, 0, 0);
-    db->error = SUCCESS;
+    db->error = EINVAL;
     *lenp = 0;
-    return FALSE;
+    return FALSE;                       /* no return, don't respond to bs */
   }
 
   command bool DblkNote.get_value(tagnet_dblk_note_t *db, uint32_t *lenp) {
@@ -137,7 +134,7 @@ implementation {
   }
 
 
-  event void DMF.data_avail(error_t err) { }
+        event void DMF.data_avail(error_t err) { }
         event void DMF.extended(uint32_t context, uint32_t offset)  { }
         event void DMF.committed(uint32_t context, uint32_t offset) { }
   async event void Panic.hook() { }

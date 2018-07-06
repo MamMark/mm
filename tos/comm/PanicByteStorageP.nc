@@ -1,5 +1,6 @@
 /**
  * @Copyright (c) 2017 Daniel J. Maltbie
+ * @Copyright (c) 2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,7 +31,7 @@
 module PanicByteStorageP {
   provides interface  TagnetAdapter<tagnet_file_bytes_t>  as PanicBytes;
   uses {
-    interface ByteMapFile;
+    interface ByteMapFile as PMF;
     interface Panic;
   }
 }
@@ -38,13 +39,11 @@ implementation {
 
   command bool PanicBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
     /* data block cells like db->count and db->iota get zero'd on the way in */
+    if (!db || !lenp)
+      call Panic.panic(0, 0, 0, 0, 0, 0);
     switch (db->action) {
-      default:
-        db->error = EINVAL;
-        return FALSE;
-
       case FILE_GET_DATA:
-        db->error = call ByteMapFile.map(db->context, &db->block, db->iota, lenp);
+        db->error = call PMF.map(db->context, &db->block, db->iota, lenp);
         if (db->error == SUCCESS) {
           db->iota  += *lenp;
           db->count -= *lenp;
@@ -54,21 +53,29 @@ implementation {
         return TRUE;
 
       case  FILE_GET_ATTR:
-        db->count  = call ByteMapFile.filesize(db->context);
+        db->count  = call PMF.filesize(db->context);
+        *lenp = 0;
         return TRUE;
+
+      default:
+        db->error = EINVAL;            /* don't respond, ignore */
+        *lenp = 0;
+        return FALSE;
     }
   }
 
 
   command bool PanicBytes.set_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
+    if (!db || !lenp)
+      call Panic.panic(0, 0, 0, 0, 0, 0);
     db->error = EINVAL;
     *lenp = 0;
     return FALSE;
   }
 
 
-  event void ByteMapFile.data_avail(error_t err) { }
-  event void ByteMapFile.extended(uint32_t context, uint32_t offset)  { }
-  event void ByteMapFile.committed(uint32_t context, uint32_t offset) { }
+        event void PMF.data_avail(error_t err) { }
+        event void PMF.extended(uint32_t context, uint32_t offset)  { }
+        event void PMF.committed(uint32_t context, uint32_t offset) { }
   async event void Panic.hook() { }
 }

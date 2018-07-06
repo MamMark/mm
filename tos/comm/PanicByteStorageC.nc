@@ -1,5 +1,6 @@
 /**
  * @Copyright (c) 2017 Daniel J. Maltbie
+ * @Copyright (c) 2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,8 +32,7 @@ implementation {
   components           FileSystemC as FS;
   components           PanicByteStorageP  as PBS;
 
-  PanicBytes         = PBS.PanicBytes;
-  PBS.ByteMapFile   -> FS.PanicFileMap;
-  PBS.Panic         -> PanicC;
-
+  PanicBytes = PBS.PanicBytes;
+  PBS.PMF   -> FS.PanicFileMap;
+  PBS.Panic -> PanicC;
 }
