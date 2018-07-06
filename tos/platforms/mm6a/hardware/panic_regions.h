@@ -39,8 +39,14 @@ typedef struct {
 const panic_region_t ram_region = { (void *) SRAM_BASE, SRAM_LEN, 1 };
 
 
-#define FAULT_REGS_BASE     0xE000ED24
-#define FAULT_REGS_COUNT    6
+/* ICSR and VTOR */
+#define ICSR_VTOR           (&SCB->ICSR)
+#define ICSR_VTOR_COUNT     2
+#define ICSR_VTOR_SIZE      4
+
+/* Fault registers: SHCSR, CFSR, HFSR, DFSR, MMFAR, BFAR, AFSR */
+#define FAULT_REGS_BASE     (&SCB->SHCSR)
+#define FAULT_REGS_COUNT    7
 #define FAULT_REGS_SIZE     4
 
 const panic_region_t io_regions[] = {
@@ -63,6 +69,8 @@ const panic_region_t io_regions[] = {
   { (void *) &(TIMER32_2->LOAD), 28, 4 },
   { (void *) &(DMA_Channel->DEVICE_CFG), sizeof(DMA_Channel_Type), 4 },
   { (void *) &(DMA_Control->STAT), sizeof(DMA_Control_Type), 4 },
+  { (void *) ICSR_VTOR, (ICSR_VTOR_COUNT * ICSR_VTOR_SIZE),
+                ICSR_VTOR_SIZE },
   { (void *) FAULT_REGS_BASE, (FAULT_REGS_COUNT * FAULT_REGS_SIZE),
                 FAULT_REGS_SIZE },
   {          PR_EOR, 0, 4 }
