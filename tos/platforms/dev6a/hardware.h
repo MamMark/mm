@@ -45,6 +45,7 @@
  */
 #include <msp432.h>
 #include <msp432_nesc.h>
+#include <platform.h>
 #include <platform_clk_defs.h>
 #include <platform_pin_defs.h>
 

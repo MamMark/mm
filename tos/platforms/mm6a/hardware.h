@@ -43,14 +43,7 @@
  */
 #include <msp432.h>
 #include <msp432_nesc.h>
-
-/*
- * define different MSP432_LFXT_DRIVE{,_INITIAL} prior to pulling
- * in platform_clk_defs.h
- */
-#define MSP432_LFXT_DRIVE 0
-#define MSP432_LFXT_DRIVE_INITIAL 3
-
+#include <platform.h>
 #include <platform_clk_defs.h>
 #include <platform_pin_defs.h>
 

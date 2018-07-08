@@ -26,6 +26,13 @@
 #ifndef __PLATFORM_H__
 #define __PLATFORM_H__
 
+/*
+ * define different MSP432_LFXT_DRIVE{,_INITIAL} prior to pulling
+ * in platform_clk_defs.h
+ */
+#define MSP432_LFXT_DRIVE 0
+#define MSP432_LFXT_DRIVE_INITIAL 2
+
 #define GO_GATE
 #define REQUIRE_PLATFORM
 #define REQUIRE_PANIC

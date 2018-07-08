@@ -85,10 +85,12 @@
  */
 
 #ifndef MSP432_LFXT_DRIVE
-#define MSP432_LFXT_DRIVE         3
+#warning platform_clk_defs/lfxt_drive: using default value 2
+#define MSP432_LFXT_DRIVE         2
 #endif
 #ifndef MSP432_LFXT_DRIVE_INITIAL
-#define MSP432_LFXT_DRIVE_INITIAL 3
+#warning platform_clk_defs/lfxt_drive_initial: using default value 2
+#define MSP432_LFXT_DRIVE_INITIAL 2
 #endif
 
 #define T32_DIV_1   TIMER32_CONTROL_PRESCALE_0
