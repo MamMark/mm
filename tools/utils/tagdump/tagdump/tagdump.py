@@ -646,6 +646,9 @@ def dump(args):
         infile.tell(), infile.tell(), total_records, total_bytes))
     print('*** reboots: {}, resyncs: {}, chksum_errs: {}, unk_rtypes: {}'.format(
         dtd.dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
+    if chksum_errors > 0:
+        print()
+        print('****** non-zero chksum_errors: {}'.format(chksum_errors))
     print()
     print('rtypes: {}'.format(dtd.dt_count))
     print('mids:   {}'.format(sirf.mid_count))
