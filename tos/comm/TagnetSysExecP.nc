@@ -150,7 +150,7 @@ implementation {
 
     if (!versionp)
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
-    call IMD.setVer(&infop->ver_id, versionp);
+    call IMD.setVer(&infop->iib.ver_id, versionp);
     return SUCCESS;
   }
 
@@ -176,7 +176,7 @@ implementation {
 
     if (!versionp)
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
-    call IMD.setVer(&infop->ver_id, versionp);
+    call IMD.setVer(&infop->iib.ver_id, versionp);
     return SUCCESS;
   }
 

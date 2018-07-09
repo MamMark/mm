@@ -114,19 +114,23 @@ end
 define __print_image_info
 # arg0 ptr to image_info block
 set $__ii=(image_info_t *) $arg0
-if $__ii->ii_sig == 0xffffffff
+if $__ii->iib.ii_sig == 0xffffffff
     printf "empty\n"
 else
+if $__ii->iib.ii_sig != 0x33275401
+    printf "bogus\n"
+else
     printf "%d.%d.%d  x(%x.%x.%x)  s: 0x%05x l: %d (0x%x)  hw: m/r %d/%d (0x%x/%x)\n", \
-        $__ii->ver_id.major, $__ii->ver_id.minor, $__ii->ver_id.build, \
-        $__ii->ver_id.major, $__ii->ver_id.minor, $__ii->ver_id.build, \
-        $__ii->image_start, $__ii->image_length, $__ii->image_length,  \
-        $__ii->hw_ver.hw_model, $__ii->hw_ver.hw_rev,                  \
-        $__ii->hw_ver.hw_model, $__ii->hw_ver.hw_rev
-    printf "   d:  [%s]\n", $__ii->image_desc
-    printf "   0:  [%s]\n", $__ii->repo0_desc
-    printf "   1:  [%s]\n", $__ii->repo1_desc
-    printf "   s:  [%s]\n", $__ii->stamp_date
+        $__ii->iib.ver_id.major, $__ii->iib.ver_id.minor, $__ii->iib.ver_id.build, \
+        $__ii->iib.ver_id.major, $__ii->iib.ver_id.minor, $__ii->iib.ver_id.build, \
+        $__ii->iib.image_start, $__ii->iib.image_length, $__ii->iib.image_length,  \
+        $__ii->iib.hw_ver.hw_model, $__ii->iib.hw_ver.hw_rev,                  \
+        $__ii->iib.hw_ver.hw_model, $__ii->iib.hw_ver.hw_rev
+#    printf "   d:  [%s]\n", $__ii->iip.image_desc
+#    printf "   0:  [%s] [%s]\n", $__ii->iip.repo0_desc, $__ii->iip.repo0_url
+#    printf "   1:  [%s] [%s]\n", $__ii->iip.repo1_desc, $__ii->iip.repo1_url
+#    printf "   s:  [%s]\n", $__ii->iip.stamp_date
+end
 end
 printf "\n"
 end

@@ -108,14 +108,14 @@ implementation {
   bool check_image(image_info_t *iip) {
     uint32_t image_sum, modifier;
 
-    if (iip->ii_sig != IMAGE_INFO_SIG)
+    if (iip->iib.ii_sig != IMAGE_INFO_SIG)
       return FALSE;
-    if (iip->image_length < IMAGE_MIN_SIZE)
+    if (iip->iib.image_length < IMAGE_MIN_SIZE)
       return FALSE;
-    if (iip->image_length >= IMAGE_MAX_SIZE)
+    if (iip->iib.image_length >= IMAGE_MAX_SIZE)
       return FALSE;
-    if (iip->image_start != GOLD_BASE &&
-        iip->image_start != NIB_BASE) {
+    if (iip->iib.image_start != GOLD_BASE &&
+        iip->iib.image_start != NIB_BASE) {
       /*
        * that's weird, not a recognized starting address.
        * we could panic but we aren't up yet
@@ -123,18 +123,18 @@ implementation {
         ow_control_block.chk_fails++;
         return FALSE;
     }
-    if (iip->image_chk) {
+    if (iip->iib.image_chk) {
       /*
        * the original sum is done with image_chk set to 0.  After we
        * sum what is in flash, we must subtract out the bytes that are
        * in image_chk.  The result should then be the same as image_chk.
        */
-      image_sum = iip->image_chk;
+      image_sum = iip->iib.image_chk;
       modifier  = ((image_sum >> 24) & 0xff) + ((image_sum >> 16) & 0xff) +
         ((image_sum >> 8) & 0xff) + (image_sum & 0xff);
-      image_sum = call Checksum.sum8((void *) iip->image_start, iip->image_length);
+      image_sum = call Checksum.sum8((void *) iip->iib.image_start, iip->iib.image_length);
       image_sum -= modifier;
-      if (image_sum != iip->image_chk) {
+      if (image_sum != iip->iib.image_chk) {
         ow_control_block.chk_fails++;
         return FALSE;
       }
@@ -438,12 +438,12 @@ implementation {
            * good NIB, no active, copy the NIB into an image
            * slot using the ImageManager.  Verify it will fit.
            */
-          if (!call IMD.check_fit(iip->image_length)) {
+          if (!call IMD.check_fit(iip->iib.image_length)) {
             owcp->owt_action = OWT_ACT_NONE;
             owl_strange2gold(8);
             /* no return */
           }
-          err = call IM.alloc(&iip->ver_id);
+          err = call IM.alloc(&iip->iib.ver_id);
           if (err) {
             owcp->owt_action = OWT_ACT_NONE;
             owl_strange2gold(9);
@@ -451,8 +451,8 @@ implementation {
           }
           nop();                        /* BRK */
           ow_t0 = call Platform.usecsRaw();
-          owt_ptr = (void *) iip->image_start;
-//            owt_len = iip->image_length;
+          owt_ptr = (void *) iip->iib.image_start;
+//            owt_len = iip->iib.image_length;
           owt_len = 128 * 1024;
 
           remaining = call IM.write(owt_ptr, owt_len);
@@ -487,7 +487,7 @@ implementation {
          * matches what the ImageManager thinks is the ACTIVE.
          */
         if (bad_image ||
-            !call IMD.verEqual(&(active->ver_id), &(iip->ver_id))) {
+            !call IMD.verEqual(&(active->ver_id), &(iip->iib.ver_id))) {
           owcp->owt_action = OWT_ACT_NONE;
           call OverWatch.install();
           return;
@@ -534,8 +534,8 @@ implementation {
          * image_start
          * start + size reasonable
          */
-        faddr = iip->image_start;
-        flen  = iip->image_length;
+        faddr = iip->iib.image_start;
+        flen  = iip->iib.image_length;
         if (call OWhw.flashErase((void *) faddr, flen)) {
           owcp->owt_action = OWT_ACT_NONE;
           owl_strange2gold(11);
@@ -617,7 +617,7 @@ implementation {
     ow_d0 = ow_t1 - ow_t0;
     nop();                              /* BRK */
     iip = (void *) NIB_INFO;
-    call IM.dir_set_active(&iip->ver_id);
+    call IM.dir_set_active(&iip->iib.ver_id);
   }
 
 

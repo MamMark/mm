@@ -78,16 +78,20 @@ extern uint32_t __image_length__;
 
 
 const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
-  .ii_sig       = IMAGE_INFO_SIG,
-  .image_start  = (uint32_t) &__image_start__,  /* 32 bit load address of binary         */
-  .image_length = (uint32_t) &__image_length__, /* how big in bytes                      */
-  .image_chk    = 0,                            /* 32 bit byte sum over full image size. */
-  .ver_id       = { .major = MAJOR, .minor = MINOR, .build = _BUILD },
-  .image_desc   = { 0 },
-  .repo0_desc   = { 0 },
-  .repo1_desc   = { 0 },
-  .stamp_date   = { 0 },
-  .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV }
+  .iib = {
+    .ii_sig       = IMAGE_INFO_SIG,
+    .image_start  = (uint32_t) &__image_start__,  /* 32 bit load address */
+    .image_length = (uint32_t) &__image_length__, /* how big in bytes    */
+    .ver_id       = { .major = MAJOR, .minor = MINOR, .build = _BUILD },
+
+    /* 32 bit byte sum over full image size. */
+    .image_chk    = 0,
+    .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV },
+  },
+  .iip = {
+    .tlv_block_len = IMG_INFO_PLUS_SIZE,
+    .tlv_block     = { IIP_TLV_END, 0 },
+  }
 };
 
 /* see OverWatchP.nc for details */

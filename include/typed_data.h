@@ -198,7 +198,7 @@ typedef struct {
  * followed by the entire image_info block
  */
 typedef struct {
-  uint16_t    len;              /* size   24    +     184      */
+  uint16_t    len;              /* size   24    +   24 + 292   */
   dtype_t     dtype;            /* dt_version_t + image_info_t */
   uint32_t    recnum;
   rtctime_t   rt;               /* 10 byte rtctime             */

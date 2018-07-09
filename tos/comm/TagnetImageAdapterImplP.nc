@@ -112,7 +112,7 @@ ia_cb_t             ia_cb;
  * that came through with the last piece of image info.  full message_t is a
  * little bit of overkill but not by much.
  */
-#define IA_BUF_SIZE (sizeof(message_t) + IMAGE_META_OFFSET + sizeof(image_info_t))
+#define IA_BUF_SIZE (sizeof(message_t) + IMAGE_MIN_BASIC)
 uint8_t             ia_buf[IA_BUF_SIZE] __attribute__((aligned(4)));
 
 generic module TagnetImageAdapterImplP(int my_id) @safe() {
@@ -130,12 +130,14 @@ implementation {
   bool verify_checksum() { return TRUE; }
 
   bool get_info(image_ver_t *version, uint8_t *dptr, uint32_t dlen) { // get image info
-    image_info_t    *infop = NULL;
+    image_info_basic_t *infop = NULL;
 
-    if ((dptr) && (dlen > (IMAGE_META_OFFSET + sizeof(image_info_t))))
-      infop = (image_info_t *) &dptr[IMAGE_META_OFFSET];
-    if ((infop) && (call IMD.verEqual(&infop->ver_id, version))) { // sanity check
-      call IMD.setVer(version, &ia_cb.version);
+    infop = (image_info_basic_t *) &dptr[IMAGE_META_OFFSET];
+    /*
+     * verify that the image being written (the version name)
+     * is the image we are downloading (image_info_basic.ver_id)
+     */
+    if (call IMD.verEqual(&infop->ver_id, version)) {
       ia_cb.img_len = infop->image_length;   // save for later
       ia_cb.img_chk = infop->image_chk;
       return TRUE;
@@ -166,9 +168,9 @@ implementation {
    *
    * dptr may be NULL, from the ia_buf, or from the incoming message.
    *
-   *    NULL:   still accumulating the first block of data.  We need enough to
-   *            look at the image_info.  Just let the source know we have gotten
-   *            the bytes we have seen so far.
+   *    NULL:   still accumulating the first block of data.  We need enough
+   *            to look at the basic area of image_info.  Just let the
+   *            source know we have gotten the bytes we have seen so far.
    *
    *    ia_buf: dptr points into the ia_buf.  Either we are working on writing
    *            the first block of data.  Or we are doing a partial (a incoming
@@ -231,8 +233,8 @@ implementation {
     return TRUE;
   }
 
-  event __attribute__((optimize("O0"))) bool Super.evaluate(message_t *msg) {
-//  event bool Super.evaluate(message_t *msg) {
+//  event __attribute__((optimize("O0"))) bool Super.evaluate(message_t *msg) {
+  event bool Super.evaluate(message_t *msg) {
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t    *help_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].help_tlv;
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
@@ -352,6 +354,7 @@ implementation {
             ia_cb.eof = FALSE;
 
           // continue processing PUT msgs if in progress
+          // FIX ME.   check first for proper version.
           if (ia_cb.in_progress) {
             if ((ia_cb.eof) || ((offset_tlv) && (ia_cb.offset == offset))) {
               /* end of file or expected offset matches */
@@ -363,40 +366,43 @@ implementation {
               }
             }
             if ((!offset_tlv) || (offset == 0)) {
+              ia_cb.in_progress = FALSE;
               call IM.alloc_abort();          /* starting over */
             }
           }
 
           /* look for new image load request
-           * offset=0 or no offset_tlv means start again from beginning
-           * The image_info header needs to be examined for version,
+           *
+           * The image_info_basic header needs to be examined for version,
            * length and checksum. The header is embedded in the image
            * data and located at byte 0x140 in the image. Note that data
            * from multiple messages may need to be accumulated before
-           * the image_info structure can be examined.
+           * the image_info_basic structure can be examined.
+           *
+           * offset=0 or no offset_tlv means start again from beginning
            */
-          if ((offset_tlv) && (offset != 0)) { // continue accumulating
-            /* make sure this PUT for same version */
-            if (!call IMD.verEqual(version, &ia_cb.version)) {
-              tn_trace_rec(my_id, 36);
-              break;                          // ignore msg if mismatch
-            }
-          } else {                            // start accumulating
+          if (!offset_tlv || (offset == 0)) {   // starting up
             call IMD.setVer(version, &ia_cb.version);
             ia_cb.e_buf = 0;
             ia_cb.offset = 0;
             tn_trace_rec(my_id, 37);
+          } else {
+            /* make sure this PUT for same version we already started */
+            if (!call IMD.verEqual(version, &ia_cb.version)) {
+              tn_trace_rec(my_id, 36);
+              break;                          // ignore msg if mismatch
+            }
           }
 
           if (dptr && dlen) {                 // copy msg data to ia_buf
-            for (i = 0; i < dlen; i++)
+            for (i = 0; i < dlen; i++)        /* FIX ME, check for overflow */
               ia_buf[ia_cb.e_buf + i] = dptr[i];
             ia_cb.e_buf += dlen;
           }
 
           // check to see if enough data received to verify image info
           nop();                        /* BRK */
-          if (ia_cb.e_buf >= IMAGE_MIN_SIZE) {
+          if (ia_cb.e_buf >= IMAGE_MIN_BASIC) {
             nop();                      /* BRK */
             dptr = ia_buf;
             dlen = ia_cb.e_buf;
