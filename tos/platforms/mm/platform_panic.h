@@ -19,7 +19,7 @@
  * DM:          dblk manager
  * IM:          image manager
  * SS:          Stream Storage
- * SS_RECOV:    Stream Storage recovery mode ???
+ * PAN:         Misc. Panic code
  * GPS:         GPS subsystem
  * MISC:
  * SNS:         SeNsor Subsystem (SNS)
@@ -43,7 +43,7 @@ typedef enum panic_codes {
   __pcode_dm            = 20,
   __pcode_im            = 21,
   __pcode_ss            = 22,
-  __pcode_ss_recov      = 23,
+  __pcode_pan           = 23,
   __pcode_gps           = 24,
   __pcode_misc          = 25,
   __pcode_sns           = 26,
@@ -64,7 +64,7 @@ typedef enum panic_codes {
 #define PANIC_DM        __pcode_dm
 #define PANIC_IM        __pcode_im
 #define PANIC_SS        __pcode_ss
-#define PANIC_SS_RECOV  __pcode_ss_recov
+#define PANIC_PAN       __pcode_pan
 #define PANIC_GPS       __pcode_gps
 #define PANIC_MISC      __pcode_misc
 #define PANIC_SNS       __pcode_sns

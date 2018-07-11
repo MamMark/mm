@@ -37,7 +37,7 @@ panic_codes = {
     20: 'PANIC_DblkManager',
     21: 'PANIC_ImageManager',
     22: 'PANIC_StreamStorage',
-    23: 'PANIC_SS_RECOV',
+    23: 'PANIC_PAN',
     24: 'PANIC_GPS',
     25: 'PANIC_Misc',
     26: 'PANIC_Sensor',
