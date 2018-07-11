@@ -604,8 +604,8 @@ def dump(args):
                         for e in emitters:
                             e(verbose, rec_offset, rec_buf, obj)
                 except struct.error:
-                    print('*** decoder/emitter error: (len: {}, '
-                          'rtype: {} {}, expected: {}), @{}'.format(
+                    print('*** decoder/emitter struct/obj error: (len: {}, '
+                          'rtype: {} {}, wanted: {}), @{}'.format(
                               rlen, rtype, dt_name(rtype),
                               len(obj) if obj else 0, rec_offset))
             else:
