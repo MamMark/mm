@@ -30,21 +30,28 @@
 #include <sd.h>
 #include <tagnet_panic.h>
 
-typedef struct {
-  uint32_t             base;         // first sector of panic file
-  uint32_t             eof;          // last sector with valid data
-  uint32_t             cur;          // current sector in sbuf
-} panic_map_sectors_t;
+typedef enum {
+  PMFS_NOT_POP = 0,
+  PMFS_IDLE,
+  PMFS_REQ,
+  PMFS_READ,
+} pmf_state_t;
 
 typedef struct {
-  uint32_t             file_pos;     // current file offset (pos)
-  panic_map_sectors_t  sector;       // pertinent file sector numbers
-  uint8_t              slot_idx;     // index selects which panic file
-  error_t              err;          // last error encountered
-  bool                 sbuf_ready;   // true if sbuf contains valid data
-  bool                 sbuf_requesting; // true if sd.request in progress
-  bool                 sbuf_reading; // true if sd.read in progress
-} panic_map_file_t;
+  uint32_t    cache_blk_id;        // storage block id - 0 if cache invalid
+  uint32_t    fill_blk_id;         // block id coming into the cache.
+  error_t     err;
+  pmf_state_t state;
+} pmf_cb_t;
+
+
+#ifndef PANIC_PAN
+enum {
+  __pcode_pan = unique(UQ_PANIC_SUBSYS)
+};
+
+#define PANIC_PAN __pcode_pan
+#endif
 
 
 module PanicMapFileP {
@@ -58,157 +65,146 @@ module PanicMapFileP {
   }
 }
 implementation {
-  panic_map_file_t     pmf_cb;
-  uint8_t              pmf_sbuf[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
+  pmf_cb_t pmf_cb;
+  uint8_t  pmf_cache[SD_BLOCKSIZE] __attribute__ ((aligned (4)));
 
   inline void pmap_panic(uint8_t where, parg_t p0, parg_t p1) {
-    call Panic.panic(PANIC_TAGNET, where, p0, p1, pmf_cb.sector.base,
-                     pmf_cb.sector.eof);
-  }
-
-
-  /*
-   * return TRUE if the panic slot is not used.
-   *
-   * The Panic dir holds the next index to write.  All indicies
-   * below PanicIndex are used and have something in them.
-   */
-  bool is_idx_unused(uint8_t slot_idx) {
-    return (slot_idx >= call PanicManager.getPanicIndex());
-  }
-
-
-  uint32_t sector_of(uint8_t slot_idx, uint32_t pos) {
-    uint32_t   sect, max_sect;
-
-    if (is_idx_unused(slot_idx))
-      return 0;
-    sect = pos / SD_BLOCKSIZE;
-    max_sect =  call PanicManager.getPanicSize();
-    if (sect >= max_sect)
-      sect = max_sect - 1;
-    return (sect + call PanicManager.panicIndex2Sector(slot_idx));
-  }
-
-  uint32_t offset_of(uint8_t slot_idx, uint32_t pos) {
-    return (pos % SD_BLOCKSIZE);
-  }
-
-  uint32_t remaining(uint8_t slot_idx, uint32_t pos) {
-    if (is_idx_unused(slot_idx))
-      return 0;
-    return (SD_BLOCKSIZE - offset_of(slot_idx, pos));
-  }
-
-  uint32_t eof_pos(uint8_t slot_idx) {
-    if (is_idx_unused(slot_idx))
-        return 0;
-    return (call PanicManager.getPanicSize() * SD_BLOCKSIZE);
-  }
-
-  bool is_eof(uint8_t slot_idx, uint32_t pos) {
-    if (pos >= eof_pos(slot_idx))
-      return TRUE;
-    return FALSE;
-  }
-
-  bool inbounds(uint8_t slot_idx, uint32_t pos) {
-    /* validate reasonablness */
-    if (is_idx_unused(slot_idx))                        return FALSE;
-    if (is_eof(slot_idx, pos))                          return FALSE;
-    if (sector_of(slot_idx, pos) != pmf_cb.sector.cur)  return FALSE;
-    return TRUE;
-  }
-
-  bool _get_new_sector(uint32_t slot_idx, uint32_t pos) {
-    if (is_idx_unused(slot_idx))
-        return FALSE;
-    pmf_cb.slot_idx          = slot_idx;
-    pmf_cb.sector.base       = sector_of(slot_idx, 0);
-    pmf_cb.sector.eof        = sector_of(slot_idx, eof_pos(slot_idx));
-    pmf_cb.sector.cur        = sector_of(slot_idx, pos);
-    pmf_cb.file_pos          = pos;
-
-    pmf_cb.sbuf_ready        = FALSE;
-    pmf_cb.sbuf_requesting   = TRUE;
-    pmf_cb.sbuf_reading      = FALSE;
-
-    /*
-     * we are about to read the first sector of the panic block
-     * range check it against the panic limits.  If outside something
-     * is very wrong.  Whatever do don't hang the system.
-     */
-    if (pmf_cb.sector.cur < call PanicManager.getPanicBase() ||
-        pmf_cb.sector.cur > call PanicManager.getPanicLimit())
-      pmap_panic(TAGNET_AUTOWHERE, 0, 0);              /* no return */
-    pmf_cb.err = call SDResource.request();
-    if (pmf_cb.err == SUCCESS)
-      return TRUE;
-    pmf_cb.sbuf_requesting   = FALSE;
-    return FALSE;
+    call Panic.panic(PANIC_PAN, where, p0, p1, pmf_cb.cache_blk_id,
+                     pmf_cb.fill_blk_id);
   }
 
 
   event void SDResource.granted() {
-    pmf_cb.sbuf_requesting = FALSE;
-    pmf_cb.sbuf_reading    = TRUE;
-    call SDread.read(pmf_cb.sector.cur, pmf_sbuf);
+    if (pmf_cb.state != PMFS_REQ || !pmf_cb.fill_blk_id)
+      pmap_panic(1, pmf_cb.state, 0);
+    pmf_cb.state = PMFS_READ;
+    call SDread.read(pmf_cb.fill_blk_id, pmf_cache);
   }
 
 
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
+    uint32_t idx;
+
+    if (pmf_cb.state != PMFS_READ || pmf_cb.fill_blk_id != blk_id)
+      pmap_panic(2, pmf_cb.state, blk_id);
     call SDResource.release();
-    pmf_cb.sbuf_ready        = TRUE;
-    pmf_cb.sbuf_requesting   = FALSE;
-    pmf_cb.sbuf_reading      = FALSE;
+    pmf_cb.state = PMFS_IDLE;
+    pmf_cb.fill_blk_id = 0;
+    pmf_cb.cache_blk_id = blk_id;
+    if (blk_id > call PanicManager.getPanicBase()) {
+      for (idx = 0; idx < 512; idx++) {
+        if (pmf_cache[idx] != (idx & 0xff))
+          nop();                        /* BRK */
+      }
+    }
     signal PMF.data_avail(SUCCESS);
   }
 
 
   command error_t PMF.map(uint32_t context, uint8_t **bufp,
                           uint32_t offset, uint32_t *lenp) {
-    uint32_t count  = 0;
+    uint32_t req_blk;                   /* block id being requested */
+    uint32_t len_avail;                 /* how much is avail from the cache */
 
-    if (is_idx_unused(context))
-      return EODATA;
+    if (pmf_cb.state != PMFS_IDLE)
+      return EBUSY;
 
-    if (pmf_cb.sbuf_ready) {
-      if (context != pmf_cb.slot_idx)
-        return EINVAL;          /* need to seek first */
-      count = (*lenp > remaining(context, pmf_cb.file_pos))
-        ? remaining(context, pmf_cb.file_pos) : *lenp;
-      *bufp = &pmf_sbuf[offset_of(context, pmf_cb.file_pos)];
-      *lenp = count;
-      pmf_cb.file_pos += count;
-      if (!is_eof(context, pmf_cb.file_pos) &&
-          (remaining(context, pmf_cb.file_pos) == 0))
-        if (!_get_new_sector(context, pmf_cb.file_pos))
-          return FAIL;
+    if (!lenp || !bufp)                 /* nulls are very bad */
+      pmap_panic(0, 0, 0);
+
+    if (*lenp == 0) {                   /* asking for nothing? */
+      *bufp = NULL;                     /* no buffer */
+      return EINVAL;                    /* should we return SUCCESS? */
+    }
+
+    /*
+     * A request looks like a file_offset (offset) and a length (*lenp)
+     * convert the offset into its absolute blk id in the panic area
+     * and check it against what is in the cache.  We only do whole sectors
+     * so if the blk ids match we have a cache hit.
+     */
+
+    req_blk = (offset >> SD_BLOCKSIZE_NBITS) + call PanicManager.getPanicBase();
+    if (pmf_cb.cache_blk_id == req_blk) {
+      *bufp = &pmf_cache[offset % SD_BLOCKSIZE];
+
+      /* check and possibly modify how much data we can make available */
+      len_avail = SD_BLOCKSIZE - offset % SD_BLOCKSIZE;
+      if (len_avail < *lenp)
+        *lenp = len_avail;
       return SUCCESS;
     }
+
+    /* missed, go read req_blk, if it isn't past the EOF */
+    if (offset >= call PMF.filesize(context)) {
+      *bufp = NULL;
+      *lenp = 0;
+      return EODATA;
+    }
+
+    pmf_cb.cache_blk_id = 0;            /* invalidate */
+    pmf_cb.fill_blk_id  = req_blk;
+    pmf_cb.state = PMFS_REQ;
+    pmf_cb.err = call SDResource.request();
+    if (pmf_cb.err != SUCCESS)
+      pmap_panic(3, pmf_cb.err, 0);
     return EBUSY;
   }
 
 
+  /*
+   * PanicMapFile.filesize()
+   *
+   * return max file offset of any panic blocks that have been written.
+   *
+   * If no panics written, return 0.
+   *
+   * Otherwise, return number of panics written (PanicIndex) * PanicSize + Dir.
+   * PanicIndex is literally the number of panics already written.  0 indicates
+   * no panics written.
+   */
   command uint32_t PMF.filesize(uint32_t context) {
-    return eof_pos(context);
+    uint32_t idx;
+
+    /*
+     * get the next index from PanicManager that will be written
+     * NOTE: if the PCB is not populated, getPanicIndex() will return 0.
+     */
+    idx = call PanicManager.getPanicIndex();
+    if (!idx)                           /* if 0, no panics written */
+      return 0;
+
+    /*
+     * otherwise...
+     *
+     * account for the directory and all panic blocks written.  This is
+     *
+     *     SD_BLOCKSIZE * (PanicSize * idx + 1)
+     *
+     * + 1 is for the directory
+     */
+    idx = call PanicManager.getPanicSize() * idx + 1;
+    idx = idx * SD_BLOCKSIZE;
+    return idx;
   }
 
 
   command uint32_t PMF.commitsize(uint32_t context) {
-    return eof_pos(context);
+    return call PMF.filesize(context);
   }
 
 
   event void PanicManager.populateDone(error_t err) {
-    pmf_cb.file_pos = 0;
     pmf_cb.err = err;
     if (err && err != EODATA)
-      pmap_panic(TAGNET_AUTOWHERE, err, 0);
-    _get_new_sector(0, pmf_cb.file_pos);
+      pmap_panic(4, err, 0);
+    pmf_cb.state = PMFS_IDLE;
+    pmf_cb.cache_blk_id = 0;            /* no cache loaded */
+    pmf_cb.err = err;
   }
 
   event void Boot.booted() {
+    /* pmf_cb.state initial state is 0 (PMFS_NOT_POP) */
     call PanicManager.populate();
   }
 
