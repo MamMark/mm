@@ -246,9 +246,12 @@ implementation {
     if (!rtp || (!lenp) || (*lenp < sizeof(*rtp)))
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
-    call Rtc.setTime(rtp);
-    __last_grab_rtc(1, rtp);
-    return TRUE;
+    if (call Rtc.rtcValid(rtp)) {
+      call Rtc.setTime(rtp);
+      __last_grab_rtc(1, rtp);
+      return TRUE;
+    }
+    return FALSE;
   }
 
 
