@@ -3,11 +3,16 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.5.rc1'
+__version__ = '0.4.5rc3'
 
-# 0.4.5.rc1     20/1, fix reboot size
-#               revised overwatch_control_block
-#               - added protection_status
+# 0.4.5rc3    core_rev: 20/3
+#       o restructure image_info, split into image_info_basic (fixe)
+#         and image_info_plus, dynamic tlv based descriptors
+#       o PANIC_SS_RECOV -> PANIC_PAN (panic code panic)
+#       o be really really chatty when tagdump detects chksum errors
+#       o 20/1, fix reboot size
+#       o revised overwatch_control_block
+#         added protection_status
 #
 # 0.4.4.dev1    19/8
 #               GPS_STATS
