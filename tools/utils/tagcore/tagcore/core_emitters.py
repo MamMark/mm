@@ -232,9 +232,11 @@ ver0  = ' {:s}  {:s}  hw: {:s}/{:d}'
 ver1a = '    VERSION: {:10s}  hw model/rev: {:x}/{:x} ({:s}/{:d})  r/i: x({:x}/{:x})'
 ver2a = '    desc:       placeholder'
 ver2b = '    repo0:  (p) heads/tp-master-0-g0ac8c73-dirty'
+ver2b0= '                [https://github.com/tp-freeforall/prod]'
 ver2c = '    repo1:  (m) heads/recsum-0-g04de0f8-dirty'
+ver2c0= '                [https://github.com/cire831/mm]'
 ver2d = '    date:   Fri Dec 29 04:05:07 UTC 2017      ib/len: 0x{:x}/{:d} (0x{:x})'
-ver2e = '    ii_sig: 0x33275401  chksum: 0x00000000'
+ver2e = '    ii_sig: 0x{:08x}  chksum: 0x{:08x}'
 
 def emit_version(level, offset, buf, obj):
     xlen     = obj['hdr']['len'].val
@@ -246,24 +248,24 @@ def emit_version(level, offset, buf, obj):
     brt      = rtctime_str(rtctime)
 
     ver_str = '{:d}.{:d}.{:d}'.format(
-        ii['ver_id']['major'].val,
-        ii['ver_id']['minor'].val,
-        ii['ver_id']['build'].val)
-    model = ii['hw_ver']['model'].val
-    rev   = ii['hw_ver']['rev'].val
+        ii['basic']['ver_id']['major'].val,
+        ii['basic']['ver_id']['minor'].val,
+        ii['basic']['ver_id']['build'].val)
+    model = ii['basic']['hw_ver']['model'].val
+    rev   = ii['basic']['hw_ver']['rev'].val
 
     # convert description and build_date strings to something reasonable
-    desc  = ii['image_desc'].val
-    desc  = desc[:desc.index('\0')]
-
-    repo0 = ii['repo0'].val
-    repo0 = repo0[:repo0.index('\0')]
-
-    repo1 = ii['repo1'].val
-    repo1 = repo1[:repo1.index('\0')]
-
-    stamp_date = ii['stamp_date'].val
-    stamp_date = stamp_date[:stamp_date.index('\0')]
+#    desc  = ii['plus']['image_desc'].val
+#    desc  = desc[:desc.index('\0')]
+#
+#    repo0 = ii['plus']['repo0'].val
+#    repo0 = repo0[:repo0.index('\0')]
+#
+#    repo1 = ii['plus']['repo1'].val
+#    repo1 = repo1[:repo1.index('\0')]
+#
+#    stamp_date = ii['plus']['stamp_date'].val
+#    stamp_date = stamp_date[:stamp_date.index('\0')]
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
@@ -271,17 +273,20 @@ def emit_version(level, offset, buf, obj):
     print(ver0.format(base_name(base), ver_str, model_name(model), rev))
     if (level >= 1):
         print(ver1a.format(ver_str, model, rev, model_name(model), rev,
-                           obj['base'].val, ii['im_start'].val))
+                           base, ii['basic']['im_start'].val))
 
     if (level >= 2):
         print()
         print(ver2a)
         print(ver2b)
+        print(ver2b0)
         print(ver2c)
-        print(ver2d.format(ii['im_start'].val,
-                       ii['im_len'].val,
-                       ii['im_len'].val))
-        print(ver2e)
+        print(ver2c0)
+        print(ver2d.format(ii['basic']['im_start'].val,
+                       ii['basic']['im_len'].val,
+                       ii['basic']['im_len'].val))
+        print(ver2e.format(ii['basic']['ii_sig'].val,
+                           ii['basic']['im_chk'].val))
 
 
 ################################################################

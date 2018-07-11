@@ -197,21 +197,74 @@ def obj_image_version():
     ]))
 
 
-IMG_DESC_MAX = 44
-STAMP_MAX    = 30
-
 def obj_image_info():
+    return aggie(OrderedDict([
+        ('basic',     obj_image_basic()),
+        ('plus',      obj_image_plus()),
+    ]))
+
+# plus is part of image_info but first we must account
+# for any additional reserved words but using basic.basic_len
+
+def obj_image_basic():
     return aggie(OrderedDict([
         ('ii_sig',    atom(('<I', '0x{:08x}'))),
         ('im_start',  atom(('<I', '0x{:08x}'))),
         ('im_len',    atom(('<I', '0x{:08x}'))),
         ('ver_id',    obj_image_version()),
         ('im_chk',    atom(('<I', '0x{:08x}'))),
-        ('image_desc',atom(('44s', '{:s}'))),
-        ('repo0',     atom(('44s', '{:s}'))),
-        ('repo1',     atom(('44s', '{:s}'))),
-        ('stamp_date',atom(('30s', '{:s}'))),
         ('hw_ver',    obj_hw_version()),
+        ('reserved',  atom(('10s',  '{}'))),
+    ]))
+
+
+# do not recycle or reorder number.  Feel free to add.
+# one byte, max value 255, 0 says done.
+
+iip_tlv = [
+    'end',              # 0
+    'desc',             # 1
+    'repo0',            # 2
+    'repo0_url',        # 3
+    'repo1',            # 4
+    'repo1_url',        # 5
+    'date',             # 6
+]
+
+
+# obj_image_plus is built dynamically when processing
+# or creating image_info_plus tlvs.
+#
+# tlvs are aggies created dynamically when we know the size
+# of the tlv data.  We create effectively the following
+#
+#    def obj_image_plus_tlv():
+#        return aggie(OrderedDict([
+#            ('tlv_type', atom(('B', '{}'))),
+#            ('tlv_len',  atom(('B', '{}'))),
+#            ('tlv_data', atom(('Ns', '{}'))),
+#        ]))
+#
+# where 'N' is the size of the string.  To be nice to gdb/C
+# it is recommended to null terminate the string.
+#
+# This is handled by the tlv_aggie class defined in base_objs.py
+#
+# The TLV_END tlv is used to terminate the sequence of TLVs.
+# It has a length of 2 bytes, tlv_type: 0 and tlv_len: 0.
+# This consumes 2 bytes in the tlv_block.  It does not
+# have a 'tlv_data' atom.  (there isn't any data).
+#
+def obj_tlv():
+    return tlv_aggie(OrderedDict([
+        ('tlv_type', atom(('B', '{}'))),
+        ('tlv_len',  atom(('B', '{}'))),
+    ]))
+
+
+def obj_image_plus():
+    return tlv_block_aggie(obj_tlv, OrderedDict([
+        ('tlv_block_len',atom(('<H',  '{}'))),
     ]))
 
 
