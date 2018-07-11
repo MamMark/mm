@@ -22,6 +22,7 @@
 
 import struct
 from   collections import OrderedDict
+from   misc_utils  import dump_buf
 
 __version__ = '0.4.5rc0'
 
@@ -99,4 +100,57 @@ class aggie(OrderedDict):
         consumed = 0
         for key, v_obj in self.iteritems():
             consumed += v_obj.set(buf[consumed:])
+        return consumed
+
+
+class tlv_aggie(aggie):
+    '''
+    tlv_aggie: aggregation node for a tlv
+    takes one parameter an ordered dictionary defining what the
+    tlv header looks like (key -> {atom | aggie})
+
+    tlv_aggie will first create just the header, then using header
+    via set will populate the data key.
+    '''
+    def __init__(self, a_dict):
+        super(aggie, self).__init__(a_dict)
+
+    def set(self, buf):
+        '''
+        This needs to be fleshed out.  Current this does the same
+        thing as aggie.
+        '''
+        consumed = super(aggie, self).set(buf)
+        return consumed
+
+
+class tlv_block_aggie(aggie):
+    '''
+    tlv_block_aggie: aggregation node for multiple tlvs coming
+    from one block of memory.
+
+    takes two parameters:
+
+        tlv_func:    function that generates a tlv object
+        OrderedDict: the foundation on which to hang the tlvs.
+
+    A tlv_block starts with are required object 'tlv_block_len'
+    that defines a length parameter that is the size of the tlv
+    block.  Any passed in buffer must be at least this size.
+
+    The tlv_block_len object consumed in addition to the tlv_block
+    itself.
+    '''
+    def __init__(self, obj_tlv_func, a_dict):
+        super(tlv_block_aggie, self).__init__(a_dict)
+        self.tlv_func = obj_tlv_func
+
+    def set(self, buf):
+        '''
+        This needs to be fleshed out.  Current this does the same
+        thing as aggie.
+        '''
+        consumed = super(tlv_block_aggie, self).set(buf)
+        block_len = self['tlv_block_len'].val
+        consumed += block_len
         return consumed
