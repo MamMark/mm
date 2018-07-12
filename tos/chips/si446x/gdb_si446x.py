@@ -219,12 +219,12 @@ class RadioGroups (gdb.Command):
             print radio_display_structs[str](str, r_a)
 
 
-class RadioContext (gdb.Command):
+class RadioStats (gdb.Command):
     """
-    Dump out radio software context, error counters etc.
+    Dump out radio software stats, error counters etc.
     """
     def __init__ (self):
-        super (RadioContext, self).__init__("radiocontext", gdb.COMMAND_USER)
+        super (RadioStats, self).__init__("radiostats", gdb.COMMAND_USER)
 
     def invoke (self, args, from_tty):
         rd = gdb.parse_and_eval('Si446xDriverLayerP__global_ioc')
@@ -291,6 +291,6 @@ class RadioInfo (gdb.Command):
 RadioGroups()
 RadioSPI()
 RadioFSM()
-RadioContext()
+RadioStats()
 RadioRaw()
 RadioInfo()
