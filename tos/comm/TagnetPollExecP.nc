@@ -141,9 +141,9 @@ implementation {
     uint16_t       delay;
 
     nop();                            /* BRK */
-    poll_count++;
     switch (call THdr.get_message_type(msg)) {    // process packet type
       case TN_POLL:
+        poll_count++;
         dt_hdr.len = call THdr.get_message_len(msg) + sizeof(dt_hdr);
         dt_hdr.dtype = DT_TAGNET;
         call Collect.collect(&dt_hdr, sizeof(dt_hdr),
