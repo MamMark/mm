@@ -98,10 +98,14 @@ implementation {
   }
 
 
+  /*
+   * slots nums go from 1 to 645 or so
+   * delays go from 0 to at most 64534 mis
+   */
   uint16_t  get_time_to_wait(poll_req_t *params) {
     wds_config_ids_t const* ids =   wds_default_ids();
     uint16_t            slotnum;
-    uint32_t           slottime =   100;
+    uint32_t           slottime =   102; /* mis */
     uint32_t         us_per_bit;
 
     if (!params->has_slot_count || !params->has_slot_width)
@@ -115,6 +119,7 @@ implementation {
     us_per_bit = 1000000 / ids->symb_sec;
     slottime   = (params->slot_width * us_per_bit);
     slottime  /= 1000; // microsecs to millisecs
+    slottime = (slottime * 1024)/1000;        /* mis */
     return (slotnum * slottime);
   }
 
