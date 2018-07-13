@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017-2018 Eric B. Decker, Miles Maltbie
+ * Copyright (c) 2018, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -86,6 +87,57 @@
 /* the argument type for panics */
 typedef unsigned int parg_t;
 
+
+/*
+ * Panic Area Structure...
+ *
+ * The Panic Area stores panics.  Each panic is stored in one Panic Block.
+ * The 1st sector of the Panic Area is the Panic Dir, which stores
+ * information about the Panic Area (see panic_dir_t).  If the Panic Dir
+ * sector is completely empty it denotes no panics have been written and
+ * initial values will be used.
+ *
+ * Structure of a Panic Block.
+ *
+ * When a panic occurs, we want to save the current machine state, this
+ * consists of RAM (64KB), various I/O registers, and the cpu state at
+ * the time of the Panic or Exception.
+ *
+ * A Panic Block is currently limited to 150 sectors.  The Panic Block
+ * has the following format:
+ *
+ * The first two sectors contain panic headers and describe what happened
+ * (panic_hdr0 and panic_hdr1).
+ *
+ * panic_hdr0:
+ *      panic_info.pi_sig   signature identifying hdr 0
+ *      panic_info:         base address of the image
+ *                          timestamp of the panic
+ *      owcb_info:          copy of the control block at the time of the
+ *                          panic.  Panic cause information, resets, etc.
+ *      image_info:         descriptor of the image that failed
+ *      additional_info:    file offsets/size of areas in the panic block
+ *      ph0_checksum:       checksum over hdr0
+ *
+ * panic_hdr1:
+ *      ph1_sig:            signature identifying hdr 1
+ *      ph1_checksum:       checksum over hdr1
+ *      ram_checksum:       checksum over ram region
+ *      io_checksum:        checksum over i/o area
+ *      crash_info:         CrashDebug compatible machine state
+ *      ram_header:         ram area header.
+ *
+ * Following the panic header is a 128 sector region  containing the
+ * full 64K RAM contents.  It is described by the ram_header at the end
+ * of panic_hdr1.  It must be physically at the end of the sector.
+ *
+ * Following the RAM section is a 12 sector (6KB) I/O region.  Each I/O
+ * region in the I/O secton is described by region discriptor immediately
+ * preceeding the region.
+ *
+ * The last area of the Panic Block is a 4KB (8 sector) area reserved for
+ * Flash Crumbs (FCrumbs).  Currently not implemented.
+ */
 
 /*
  * Various defines defining (go figure) what the Panic Block
@@ -242,14 +294,49 @@ typedef struct {
 } panic_additional_t;
 
 
+/*
+ * Panic Header Structures.
+ * each structure is required to be exactly 512 bytes.
+ *
+ * Signatures.  Each panic header starts with an identifing signature.
+ * panic_hdr0 starts with the panic_info.pi_sig (PANIC_INFO_SIG).  And
+ * panic_hdr1 starts with ph1_sig (PANIC_HDR1_SIG).
+ *
+ * panic_hdr0 includes image_info, the plus section of image_info has been
+ * sized to make hdr0 512 bytes.
+ *
+ * ph0_checksum is a 32 bit byte checksum of all bytes in hdr0 excluding
+ * the ph0_checksum.  The checksum is computed with ph0_checksum set to 0.
+ * That ph0_checksum is an external checksum.
+ *
+ * panic_hdr1 includes the crash_info (machine state needed for CrashDebug)
+ * and the ram_header for the following RAM section.  ram_head must be
+ * physically at the end of the panic_hdr1 sector.  That is contiguous with
+ * the start of the RAM section.
+ *
+ * ram_checksum is a 32 bit byte checksum over all the bytes in the Ram
+ * section.  It is computed on the fly as the Ram sectors are written out
+ * to the panic block.
+ *
+ * io_checksum similarly is the external checksum over all i/o section bytes.
+ * this includes an i/o section headers.
+ *
+ * ph1_checksum is the external checksum over the entire panic_hdr1 sector
+ * after all other checksums have been computed.  the panic_hdr1 sector is
+ * inital written out with the checksum zero'd, then read back in, the
+ * checksums get filled in, and the final sector written out.
+ */
+
 typedef struct {
   panic_info_t          panic_info;
   ow_control_block_t    owcb_info;
-  image_info_t          image_info;
+  image_info_t          image_info;     /* for binary identification */
   panic_additional_t    additional_info;
-  uint32_t              alignment_pad[43]; /* pad out to 512 */
-} panic_zero_0_t;                     /* initial sector of a panic block */
+  uint32_t              ph0_checksum;           /* external sum   */
+} panic_hdr0_t;                /* initial sector of a panic block */
 
+
+#define PANIC_HDR1_SIG  0x44665999
 
 typedef struct {
   /*
@@ -259,7 +346,12 @@ typedef struct {
    * the end and this will give a size of 512 (0x200) but ram_header
    * won't be physically at the end.
    */
-  uint32_t              alignment_pad[65];
+  uint32_t              ph1_sig;
+  uint32_t              alignment_pad[61];
+
+  uint32_t              ph1_checksum;   /* external sum         */
+  uint32_t              ram_checksum;   /* sum over ram section */
+  uint32_t              io_checksum;    /* sum over io section  */
 
   /*
    * crash_info and ram_header need to be contiguous and need to
@@ -267,7 +359,7 @@ typedef struct {
    */
   crash_info_t          crash_info;
   cc_region_header_t    ram_header;
-} panic_zero_1_t;                       /* crash info and ram header. */
+} panic_hdr1_t;                       /* crash info and ram header. */
 
 
 #endif /* __PANIC_H__ */

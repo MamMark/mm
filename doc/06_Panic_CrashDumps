@@ -17,19 +17,6 @@ i/o state, and Flash crumbs.
 
 sector = 512 bytes
 
-* Work Items (*** done)
-
-o eval what gdb needs
-o extractor to go from PanicBlock to <name>.dbg
-  CrashInfo, Ram, I/O
-o eval breakpad     (https://chromium.googlesource.com/breakpad/breakpad)
-
-o *** modify copy_region to conform to CrashDebug
-o *** eval CrashCatcher (https://github.com/adamgreen/CrashCatcher)
-o *** eval CrashDebug   (https://github.com/adamgreen/CrashDebug)
-o *** define Panic Manager
-
-
 * Preservation of State:
 
 When a Panic or Exception occurs we want to preserve the state at the
@@ -164,7 +151,8 @@ about the machine state for a single crash.
 
 A block includes the following information:
 
-Block 0 (Panic Zero, initial sectors of a panic block, 2 sectors)
+(see tos/system/panic/panic.h)
+Block 0 (Panic Hdr 0/1, initial sectors of a panic block, 2 sectors)
 1) Panic information, core information about the crash.
    (base address and timestamp of crash)
 2) Overwatch control block.  More information about the state of the
@@ -195,77 +183,19 @@ Block 130+
 8) Flash Crumbs (4KB, 8 sectors)
 
 
-Panic Block:
+The Panic Hdrs are constructed to simplify extraction of crash
+information for CrashDebug.  CrashDebug wants to see CrashCatcher
+Info, RAM, and IO information contiguous.
 
-A single instance of full machine state.  Needs to include OverWatch Control
-Block, Image Info, Crash_State (cpu regs, fpu regs, fault state), RAM,
-Select I/O, and Flash Crumbs.
+We do this by placing additional information, PanicInfo, OWCB, ImageInfo,
+and AdditionalInfo in the first panic hdr (hdr0).
 
-Panic Info:  (20 bytes)
-    4   <sig>
-    4   base_addr        which image is paniced
-    10  time stamp       when we died
-    2   pad
+The second panic hdr (hdr1), includes various checksums, and more importantly
+the CrashCatcher information (crash_info) and the ram_header describing the
+following ram area.  Crash_info and the Ram_header are requried to be
+physically contiguous with the following ram area.
 
-OverWatchControlBlock: (116 bytes)
-  The Control Block from the running image at the time of the crash.
-
-  reboot_count, panic_count, and panics_gold have not been updated to
-  include the current crash.  This will happen later.
-
-  pi_* cells in the control block (panic_info) are updated to reflect
-  the current panic.
-
-Image_Info for running image (from image running)
-  184  bytes
-
-Additional Info: sector numbers of the location of different
-pieces of the Panic Block.  (20 bytes)
-
-    4  sig
-    4  ram_sector
-    4  ram_size
-    4  io_sector
-    4  fcrumb_sector
-
-
-CrashInfo (CPU state):  (CrashCatcher/Debug format + additional)  244 bytes
-  4    crash_info_signature
-  4    axLR
-  4    MSP
-  4    PSP
-  4    primask
-  4    basepri
-  4    faultmask
-  4    control
-  4    crash_catcher_signature
-  4    flags
- 52    R0 - R12
-  4    SP
-  4    LR
-  4    PC
-  4    PSR                      PSR prior to fault
-  4    xPSR                     xPSR, after fault (xception PSR)
-       [floating point], valid if flags & 1
-       fpcsr
-       32 x 4 bytes (128 bytes)
-
-Total of above: 592 (split into two sectos, 340 and 252)
-
- currently not included.  do we need?
- 24    fault registers, 6 x 4
-       SHCSR, CFSR, HFSR, DFSR, MMFAR, BFAR
-       E000ED24        to              E000ED38
-
-
-The Panic Zero Block (part 1, Zero-1) is laid down to simplify extraction
-for CrashDebug.  We want the CrashCatcher Info, RAM, and IO to be
-contiguous.  We do this by placing PanicInfo, OWCB, ImageInfo, and
-AdditionalInfo at the front of Panic Zero-0 Block.  And CrashCatcher Info
-and the Ram Header go into Panic Zero-1 Block (the following sector).
-Sufficient padding is used at the front of Panic Zero 1 to make the
-CrashInfo and Ram Header physically contiguous with the Ram Blocks that
-follow.
+Both hdr0 and hdr1 are constructed to be physically 512 bytes in size.
 
 
 [Memory Region]
@@ -287,9 +217,11 @@ Flash Crumbs:
   4096 bytes (8 sectors)
 
 
-Total Panic Block size:
-  home block + RAM + i/o + flash crumbs
-      1        128   4     8           = 141 (round up to 150 sectors)
+Total Panic Block size (in sectors):
+  panic hdrs + RAM + i/o + flash crumbs
+      2        128   4     8           = 142 (round up to 150 sectors)
+
+(max i/o sectors is increased from 4 to 12).
 
 
 o I/O state.
@@ -347,12 +279,12 @@ SYSCTL_Boot     0xE004_4000      28 (0x1c)
 o Correlating Panics to the DataStream.
 
 When we Panic we will write out a Panic block which includes both the
-boot_count and a current 64 bit xT (eXternal Time, xT0) time stamp
-(currently place held by cycle and time_stamp).
+boot_count and the current rtctime which exactly maps to what has been
+written to the datastream.
 
 When we reboot, boot_count will be incremented by one, and a Reboot_Sync
 record will be written out to the DataStream.  This record will also have
-the current xT (xT_1 > xT_0) and the boot_count.
+the current rtctime (which continues to run).
 
 
 o Exception Stack Frame:
