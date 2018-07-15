@@ -40,8 +40,8 @@ typedef struct {
   uint8_t *buf;                /* inits to NULL */
   uint8_t *bptr;
   uint32_t remaining;          /* inits to 0 */
-  uint32_t block;              /* where the block starts */
-  uint32_t panic_sec;          /* current sector being written */
+  uint32_t block;              /* where the block starts, abs */
+  uint32_t panic_sec;          /* current sector being written, abs */
 
   /* panic control, only active after a Panic happens */
   uint32_t dir;                /* directory sector */
@@ -324,6 +324,7 @@ implementation {
      * need to bump pcb.block to the next panic block if any.
      * pcb.block += PBLK_SIZE
      */
+    memset(pcb.buf, 0, SD_BLOCKSIZE);
     dirp                     = (panic_dir_t *) pcb.buf;
     dirp->panic_dir_id[0]    = 'P';
     dirp->panic_dir_id[1]    = 'A';
@@ -364,21 +365,40 @@ implementation {
   }
 
 
-  uint32_t collect_ram(const panic_region_t *ram_desc, uint32_t start_sec) {
-    uint32_t len = ram_desc->len;
-    uint8_t *base = ram_desc->base_addr;
-    uint32_t checksum;
+  uint32_t collect_ram(const panic_region_t *ram_desc, uint32_t delta) {
+    uint32_t  len  = ram_desc->len;
+    uint8_t  *base = ram_desc->base_addr;
+    uint32_t  blk;
 
+    blk = pcb.block + delta;
+    while (len > 0) {
+      panic_write(blk, base);
+      blk++;
+      base += SD_BLOCKSIZE;
+      len  -= SD_BLOCKSIZE;
+    }
+    return blk - pcb.block;
+  }
+
+
+  uint32_t checksum_ram(const panic_region_t *ram_desc, uint32_t delta) {
+    uint32_t  len  = ram_desc->len;
+    uint8_t  *base = ram_desc->base_addr;
+    uint32_t  checksum, sec_chk;
+    uint32_t  blk;
+
+    blk = pcb.block + delta;
     checksum = 0;
     while (len > 0) {
-      checksum += byte_checksum_buf(base, 512);
-      panic_write(start_sec, base);
-      start_sec++;
-      base += 512;
-      len  -= 512;
+      call SDsa.read(blk, pcb.buf);
+      sec_chk = byte_checksum_buf(pcb.buf, SD_BLOCKSIZE);
+      checksum += sec_chk;
+      blk++;
+      base += SD_BLOCKSIZE;             /* for reference only */
+      len  -= SD_BLOCKSIZE;
     }
     pcb.ram_checksum = checksum;
-    return start_sec;
+    return checksum;
   }
 
 
@@ -460,9 +480,10 @@ implementation {
 
 
   /* uses persistent global in pcb (panic_sec) for where to write */
-  void collect_io(const panic_region_t *io_desc) {
+  void collect_io(const panic_region_t *io_desc, uint32_t delta) {
     cc_region_header_t header;
 
+    pcb.panic_sec = pcb.block + delta;
     pcb.io_checksum = 0;
     while (io_desc->base_addr != PR_EOR) {
       header.start = (uint32_t)io_desc->base_addr;
@@ -472,6 +493,9 @@ implementation {
       copy_io_region(io_desc->base_addr, io_desc->len, io_desc->element_size);
       io_desc++;
     }
+    header.start = 0;
+    header.end   = 0;
+    copy_io_region((void *)&header, sizeof(cc_region_header_t), 4);
     if (pcb.remaining != SD_BLOCKSIZE) {
       call SDraw.zero_fill((uint8_t *)pcb.buf, SD_BLOCKSIZE - pcb.remaining);
       pcb.io_checksum += byte_checksum_buf(pcb.buf, SD_BLOCKSIZE);
@@ -599,6 +623,41 @@ implementation {
 
     init_panic_dump();
 
+    /*
+     * Very first thing write out the i/o sectors.
+     * These live after the ram sectors. and is in a fixed position.
+     *
+     * will fill in pcb.io_checksum on the fly.
+     */
+    collect_io(&io_regions[0], PBLK_IO);
+
+    /* flush any pending buffers out to the SD. */
+    call SysReboot.flush();
+
+    /*
+     * signal any modules that a Panic is underway and if possible they
+     * should copy any device state into RAM to be copied out.
+     */
+    signal Panic.hook();
+
+    /*
+     * dump RAM out.  then we can do what we want in RAM.
+     *
+     * after writing the RAM out, reread and calculate the the ram
+     * checksum.  We have to do it this way because the underlying ram can
+     * change as we are working with the software/hardware used to write
+     * out the panic.
+     *
+     * So write out what we've got to the disk, then read what has actually
+     * been written and checksum that.
+     *
+     * checksum_ram fills in pcb.ram_checksum.
+     */
+
+    collect_ram(&ram_region,  PBLK_RAM);
+    checksum_ram(&ram_region, PBLK_RAM);
+
+    /* fill in hdr0 */
     memset(pcb.buf, 0, SD_BLOCKSIZE);
     b0p = (panic_hdr0_t *) pcb.buf;
 
@@ -628,15 +687,19 @@ implementation {
     b0p->ph0_checksum   = 0;            /* external checksum */
     b0p->ph0_checksum   = byte_checksum_buf((void *) b0p, 512);
 
-    /* flush panic_block_0 buffer */
-    panic_write(pcb.panic_sec, pcb.buf);
-    pcb.panic_sec++;
+    /* flush panic_block_0 (hdr0) buffer */
+    panic_write(pcb.block + PBLK_ZERO, pcb.buf);
 
     /*************************************************************/
 
+    /* build hdr1 */
     memset(pcb.buf, 0, SD_BLOCKSIZE);
     b1p = (panic_hdr1_t *) pcb.buf;
     b1p->ph1_sig = PANIC_HDR1_SIG;
+    b1p->ph0_offset = block2offset(pcb.block);
+    b1p->ph1_offset = block2offset(pcb.block + 1);
+    b1p->ram_checksum = pcb.ram_checksum;
+    b1p->io_checksum  = pcb.io_checksum;
 
     /* fill in crash_info */
     cip = &b1p->crash_info;
@@ -698,46 +761,10 @@ implementation {
     b1p->ram_header.start = (uint32_t) (ram_region.base_addr);
     b1p->ram_header.end   = (uint32_t) (ram_region.base_addr + ram_region.len);
 
-    /*
-     * flush panic_block_1 buffer
-     * we'll come back later after we know all the checksums.
-     */
-    panic_write(pcb.panic_sec, pcb.buf);
-    pcb.panic_sec++;
-
-    nop();                              /* BRK */
-
-    /*
-     * Now flush any pending buffers out to the SD.
-     */
-    call SysReboot.flush();
-
-    /*
-     * signal any modules that a Panic is underway and if possible they
-     * should copy any device state into RAM to be copied out.
-     */
-    signal Panic.hook();
-
-    /* first dump RAM out.  then we can do what we want in RAM */
-    /* also collects the ram checksum in pcb.ram_checksum      */
-    collect_ram(&ram_region, pcb.block + PBLK_RAM);
-
-    /* collect i/o regions and pcb.io_checksum */
-    pcb.panic_sec = pcb.block + PBLK_IO;
-    collect_io(&io_regions[0]);
-
-    /* we have written all the good stuff.  We need to go back and   */
-    /* fill in the 2nd panic hdr block and then compute its checksum */
-
-    /* first read panic_hdr1 back in */
-    call SDsa.read(pcb.block + PBLK_ZERO + 1, pcb.buf);
-    b1p = (panic_hdr1_t *) pcb.buf;
-    b1p->ram_checksum = pcb.ram_checksum;
-    b1p->io_checksum  = pcb.io_checksum;
     b1p->ph1_checksum = 0;
     b1p->ph1_checksum = byte_checksum_buf((void *) b1p, 512);
 
-    /* write out the revised panic zero 1 sector */
+    /* write out panic hdr 1 sector */
     panic_write(pcb.block + PBLK_ZERO + 1, pcb.buf);
 
     update_panic_dir();

@@ -132,7 +132,7 @@ b SchedulerBasicP.nc:227
 b VirtualizeTimerImplP.nc:172
 dis 1 2
 
-b PanicP.nc:829
+b PanicP.nc:915
 comm
 printf "\n\n*** Panic: %d(d), w: %d(d), a: %04x %04x %04x %04x\n", \
         pcode, where, arg0, arg1, arg2, arg3

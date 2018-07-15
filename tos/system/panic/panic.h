@@ -121,6 +121,8 @@ typedef unsigned int parg_t;
  *
  * panic_hdr1:
  *      ph1_sig:            signature identifying hdr 1
+ *      ph0_offset:         redundant, offset verification
+ *      ph1_offset:         redundant, offset verification
  *      ph1_checksum:       checksum over hdr1
  *      ram_checksum:       checksum over ram region
  *      io_checksum:        checksum over i/o area
@@ -141,7 +143,8 @@ typedef unsigned int parg_t;
 
 /*
  * Various defines defining (go figure) what the Panic Block
- * looks like.  All numbers in sector units.  Each sector 512 bytes.
+ * looks like.  All numbers in sector units.  These are deltas
+ * from the start of the panic block.  Each sector 512 bytes.
  *
  * ZERO_BLOCK starts at 0 and goes for ZERO_SIZE
  * RAM starts at (ZERO_BLOCK + ZERO_SIZE)
@@ -347,8 +350,10 @@ typedef struct {
    * won't be physically at the end.
    */
   uint32_t              ph1_sig;
-  uint32_t              alignment_pad[61];
+  uint32_t              alignment_pad[59];
 
+  uint32_t              ph0_offset;     /* redundant offset     */
+  uint32_t              ph1_offset;     /* redundant offset     */
   uint32_t              ph1_checksum;   /* external sum         */
   uint32_t              ram_checksum;   /* sum over ram section */
   uint32_t              io_checksum;    /* sum over io section  */
