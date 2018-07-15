@@ -57,6 +57,12 @@ implementation {
     return TRUE;
   }
 
+  /*
+   * TestZeroBytes
+   *
+   * Send/receive Zeros data pattern.
+   *
+   */
   command bool TestZeroBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
     if (!db || !lenp)
       call Panic.panic(0, 0, 0, 0, 0, 0);
@@ -65,6 +71,13 @@ implementation {
         if (*lenp > sizeof(zeros))
           *lenp = sizeof(zeros);
         return update_block(db, zeros, SUCCESS, *lenp);
+      case TN_HEAD:
+        db->block = NULL;
+        db->error = SUCCESS;
+        db->iota = 0;
+        db->count = 0;
+        *lenp = 0;
+        return TRUE;
       default:
         break;
     }
@@ -98,6 +111,12 @@ implementation {
     return FALSE;
   }
 
+  /*
+   * TestOnesBytes
+   *
+   * Send/receive Ones data pattern.
+   *
+   */
   command bool TestOnesBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
     if (!db || !lenp)
       call Panic.panic(0, 0, 0, 0, 0, 0);
@@ -106,6 +125,13 @@ implementation {
         if (*lenp > sizeof(ones))
           *lenp = sizeof(ones);
         return update_block(db, ones, SUCCESS, *lenp);
+      case TN_HEAD:
+        db->block = NULL;
+        db->error = SUCCESS;
+        db->iota = 0;
+        db->count = 0;
+        *lenp = 0;
+        return TRUE;
       default:
         break;
     }
@@ -139,6 +165,12 @@ implementation {
     return FALSE;
   }
 
+  /*
+   * TestEchoBytes
+   *
+   * Send/Receive user specified data pattern.
+   *
+   */
   command bool TestEchoBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
     if (!db || !lenp)
       call Panic.panic(0, 0, 0, 0, 0, 0);
@@ -147,6 +179,13 @@ implementation {
         if (*lenp > echo_len)
           *lenp = echo_len;
         return update_block(db, echo, SUCCESS, *lenp);
+      case TN_HEAD:
+        db->block = NULL;
+        db->error = SUCCESS;
+        db->iota = 0;
+        db->count = 0;
+        *lenp = 0;
+        return TRUE;
       default:
         break;
     }
@@ -177,24 +216,35 @@ implementation {
     return FALSE;
   }
 
+  /*
+   * TestDropBytes
+   *
+   * Drop received message.
+   *
+   */
   command bool TestDropBytes.get_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
     if (!db || !lenp)
       call Panic.panic(0, 0, 0, 0, 0, 0);
+    switch (db->action) {
+      case TN_HEAD:
+        db->block = NULL;
+        db->error = SUCCESS;
+        db->iota = 0;
+        db->count = 0;
+        *lenp = 0;
+        return TRUE;
+      default:
+        break;
+    }
     db->error = SUCCESS;            /* don't respond, ignore */
     *lenp = 0;
-    return TRUE;
+    return FALSE;
   }
 
   command bool TestDropBytes.set_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
-    uint32_t idx;
-
     if (!db || !lenp)
       call Panic.panic(0, 0, 0, 0, 0, 0);
     switch (db->action) {
-      case FILE_SET_DATA:
-        idx = *lenp;
-        *lenp = 0;  // no bytes to return
-        return update_block(db, NULL, SUCCESS, idx);
       default:
         break;
     }
