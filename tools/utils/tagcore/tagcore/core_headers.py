@@ -221,15 +221,15 @@ def obj_image_basic():
 # do not recycle or reorder number.  Feel free to add.
 # one byte, max value 255, 0 says done.
 
-iip_tlv = [
-    'end',              # 0
-    'desc',             # 1
-    'repo0',            # 2
-    'repo0_url',        # 3
-    'repo1',            # 4
-    'repo1_url',        # 5
-    'date',             # 6
-]
+iip_tlv = {
+    'end'       :0,
+    'desc'      :1,
+    'repo0'     :2,
+    'repo0_url' :3,
+    'repo1'     :4,
+    'repo1_url' :5,
+    'date'      :6,
+}
 
 
 # obj_image_plus is built dynamically when processing
@@ -255,17 +255,21 @@ iip_tlv = [
 # This consumes 2 bytes in the tlv_block.  It does not
 # have a 'tlv_data' atom.  (there isn't any data).
 #
-def obj_tlv():
-    return tlv_aggie(OrderedDict([
-        ('tlv_type', atom(('B', '{}'))),
-        ('tlv_len',  atom(('B', '{}'))),
-    ]))
+
+
+def obj_image_plus_tlv():
+    return tlv_aggie(aggie(OrderedDict([
+        ('tlv_type', atom(('<B', '{}'))),
+        ('tlv_len',  atom(('<B', '{}'))),
+#        ('tlv_value',  atom(('<s', '{}'))),
+    ])))
 
 
 def obj_image_plus():
-    return tlv_block_aggie(obj_tlv, OrderedDict([
-        ('tlv_block_len',atom(('<H',  '{}'))),
-    ]))
+    return tlv_block_aggie(aggie(OrderedDict([
+        ('tlv_block_len',    atom(('<H', '{}'))),
+#        ('tlv_block',    obj_image_plus_tlv()),
+    ])))
 
 
 def obj_dt_sync():

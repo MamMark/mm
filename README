@@ -62,3 +62,9 @@ gh:tp-freeforall/prod(mm_core) and gh:MamMark/mm(master) are the
 repositories needed for the build.  See doc/00_README for instruction on
 how to set up a development environment and detailed instructions on
 obtaining the source code.
+
+*---------------------------------BINFIN----------------------------
+NOTE: binfin tool is required.  The binfin tool must be installed.  This
+    tool is supplied in this branch and is installed with:
+        cd tools/utils/binfin
+        python setup.py install
