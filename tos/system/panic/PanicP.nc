@@ -559,6 +559,65 @@ implementation {
   }
 
 
+#ifdef notdef
+  /* verify checksums */
+  void verify_panic() {
+    uint32_t expected, checksum, sec, sec_chk;
+    uint32_t ram_chk, io_chk;
+    panic_dir_t *dirp;
+    panic_hdr0_t *b0p;                  /* panic zero 0 in panic block  */
+    panic_hdr1_t *b1p;                  /* panic zero 1 in panic block  */
+
+    sec = pcb.dir;
+    call SDsa.read(sec, pcb.buf);
+    dirp = (void *) pcb.buf;
+    if (call Checksum.sum32_aligned((void *) dirp, sizeof(*dirp))) {
+      /* internal checksum, sums to 0, else blow out */
+      call Panic.panic(99, 1, 0, 0, 0, 0);
+    }
+    sec = pcb.block;
+    call SDsa.read(sec, pcb.buf);
+    b0p = (void *) pcb.buf;
+    expected = b0p->ph0_checksum;
+    b0p->ph0_checksum = 0;
+    checksum = byte_checksum_buf((void *) b0p, 512);
+    if (expected != checksum) {
+      /* external checksum */
+      call Panic.panic(99, 1, 0, 0, 0, 0);
+    }
+    sec++;
+    call SDsa.read(sec, pcb.buf);
+    b1p = (void *) pcb.buf;
+    expected = b1p->ph1_checksum;
+    b1p->ph1_checksum = 0;
+    checksum = byte_checksum_buf((void *) b1p, 512);
+    if (expected != checksum) {
+      /* external checksum */
+      call Panic.panic(99, 1, 0, 0, 0, 0);
+    }
+    ram_chk = b1p->ram_checksum;
+    io_chk  = b1p->io_checksum;
+    checksum = 0;
+    while (++sec < pcb.block + 128 + 2) {
+      call SDsa.read(sec, pcb.buf);
+      sec_chk = byte_checksum_buf(pcb.buf, 512);
+      checksum += sec_chk;
+      nop();
+    }
+    if (ram_chk != checksum) {
+      call Panic.panic(99, 1, 0, 0, 0, 0);
+    }
+    checksum = 0;
+    call SDsa.read(sec++, pcb.buf);
+    checksum += byte_checksum_buf(pcb.buf, 512);
+    call SDsa.read(sec++, pcb.buf);
+    checksum += byte_checksum_buf(pcb.buf, 512);
+    if (io_chk != checksum) {
+      call Panic.panic(99, 1, 0, 0, 0, 0);
+    }
+  }
+#endif
+
   /*
    * main portion of panic_main (hem, should we name it something else :-)
    *
