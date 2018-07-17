@@ -111,18 +111,26 @@ extern ow_control_block_t ow_control_block;
 
 module CollectP {
   provides {
+    /* externals */
     interface Boot as Booted;           /* out boot */
+    interface Boot as EndOut;           /* out boot */
     interface Collect;
-    interface Init;
     interface CollectEvent;
 
     interface TagnetAdapter<uint32_t> as DblkLastRecNum;
     interface TagnetAdapter<uint32_t> as DblkLastRecOffset;
     interface TagnetAdapter<uint32_t> as DblkLastSyncOffset;
     interface TagnetAdapter<uint32_t> as DblkCommittedOffset;
+
+    /* private */
+    interface Init;                     /* SoftwareInit */
   }
   uses {
+    /* externals */
     interface Boot;                     /* in boot in sequence */
+    interface Boot as EndIn;            /* in boot for end of SysBoot */
+
+    /* private */
     interface Boot as SysBoot;          /* use at end of System Boot initilization */
     interface Timer<TMilli> as SyncTimer;
     interface OverWatch;
@@ -219,6 +227,12 @@ implementation {
     call OverWatch.checkFaults();
     signal Collect.collectBooted();     /* tell others collect is up */
     signal Booted.booted();
+  }
+
+
+  event void EndIn.booted() {
+    call OverWatch.sysBootDone();
+    signal EndOut.booted();
   }
 
 

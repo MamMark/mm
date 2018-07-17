@@ -22,6 +22,7 @@
 configuration CollectC {
   provides {
     interface Boot as Booted;           /* out boot */
+    interface Boot as EndOut;           /* out boot */
     interface Collect;
     interface CollectEvent;
     interface TagnetAdapter<uint32_t> as DblkLastRecNum;
@@ -29,7 +30,10 @@ configuration CollectC {
     interface TagnetAdapter<uint32_t> as DblkLastSyncOffset;
     interface TagnetAdapter<uint32_t> as DblkCommittedOffset;
   }
-  uses     interface Boot;              /* in  boot */
+  uses {
+    interface Boot;                     /* in  boot */
+    interface Boot as EndIn;            /* in  boot */
+  }
 }
 
 implementation {
@@ -38,10 +42,14 @@ implementation {
   MainC.SoftwareInit -> CollectP;
   CollectP.SysBoot   -> SystemBootC.Boot;
 
-  Booted       = CollectP;
+  Booted       = CollectP.Booted;       /* outgoing, Collect done   */
+  EndOut       = CollectP.EndOut;       /* outgoing, end of SysBoot */
+
   Collect      = CollectP;
   CollectEvent = CollectP;
-  Boot         = CollectP.Boot;
+
+  Boot         = CollectP.Boot;         /* income start */
+  EndIn        = CollectP.EndIn;        /* incoming end of SysBoot */
 
   DblkLastRecNum      = CollectP.DblkLastRecNum;
   DblkLastRecOffset   = CollectP.DblkLastRecOffset;

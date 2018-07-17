@@ -65,5 +65,6 @@ implementation {
    */
   DM.Boot   -> OW.Booted;
   SYNC.Boot -> DM.Booted;
-  Boot      =  SYNC.Booted;
+  SYNC.EndIn-> SYNC.Booted;
+  Boot      =  SYNC.EndOut;
 }
