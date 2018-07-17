@@ -27,12 +27,15 @@
 #include <overwatch_hw.h>
 
 extern ow_control_block_t ow_control_block;
+extern ow_startup_times_t ow_startup_times;
+
 
 #ifdef CATCH_STRANGE
 norace volatile uint32_t catch_strange; /* set to 0 on init */
                                         /* set to deadbeaf to continue from */
                                         /* a strange */
 #endif
+
 
 /*
  * OverWatchP
@@ -220,6 +223,7 @@ implementation {
     }
     catch_strange = 0;
 #endif
+    call OverWatch.sysBootDone();
     call OverWatch.force_boot(OW_BOOT_GOLD, ORR_STRANGE);
     /* no return */
   }
@@ -486,6 +490,7 @@ implementation {
          * We have a active, check the NIB and see if it
          * matches what the ImageManager thinks is the ACTIVE.
          */
+        call OverWatch.sysBootDone();
         if (bad_image ||
             !call IMD.verEqual(&(active->ver_id), &(iip->iib.ver_id))) {
           owcp->owt_action = OWT_ACT_NONE;
@@ -555,6 +560,7 @@ implementation {
           call OWhw.flashProgram(buf, (void *) faddr, flen);
         nop();                          /* BRK */
         call OWhw.flashProtectAll();
+        call OverWatch.sysBootDone();
         owcp->owt_action = OWT_ACT_NONE;
         call OverWatch.force_boot(OW_BOOT_NIB, ORR_FORCED);
         return;
@@ -627,6 +633,7 @@ implementation {
    */
   event void IM.dir_set_active_complete() {
     nop();                              /* BRK */
+    call OverWatch.sysBootDone();
     ow_control_block.owt_action = OWT_ACT_NONE;
     call OverWatch.force_boot(OW_BOOT_NIB, ORR_FORCED);
   }
@@ -875,6 +882,15 @@ implementation {
       owcp->panics_gold++;
   }
 
+  /* end boot, start sysBoot */
+  async command void OverWatch.sysBootStart() {
+    call Rtc.getTime(&ow_startup_times.sysboot_start);
+  }
+
+  /* sysBoot done */
+  async command void OverWatch.sysBootDone() {
+    call Rtc.getTime(&ow_startup_times.sysboot_done);
+  }
 
   async command bool OverWatch.getLoggingFlag(uint32_t log_e) {
     return BITBAND_SRAM(ow_control_block.logging_flags, log_e);

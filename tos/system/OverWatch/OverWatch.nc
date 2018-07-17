@@ -109,6 +109,10 @@ interface OverWatch {
 
   async command void                incPanicCount();
 
+  /* tell overwatch to add entries to the boot up timing instrumentation */
+  async command void                sysBootStart();     /* indicate start of sysboot */
+  async command void                sysBootDone();      /* indicate end   of sysboot */
+
   async command bool                getLoggingFlag(uint32_t  logging_enum);
   async command void                setLoggingFlag(uint32_t  logging_enum);
   async command void                clrLoggingFlag(uint32_t  logging_enum);

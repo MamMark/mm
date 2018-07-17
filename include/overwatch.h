@@ -260,4 +260,20 @@ typedef struct {
  * block as it needs to be found by other modules and the startup code.
  */
 
+/*
+ * ow_startup holds boot startup instrumentation
+ */
+
+typedef struct {
+  uint32_t  rtc_refo_u;
+  uint32_t  rtc_lfxt_u;
+  uint32_t  lfxt_turnon_u;
+  rtctime_t boot_start;
+  rtctime_t lfxt_start;
+  rtctime_t lfxt_end;
+  rtctime_t sysboot_start;
+  rtctime_t sysboot_done;
+} ow_startup_times_t;
+
+
 #endif  /* __OVERWATCH_H__ */

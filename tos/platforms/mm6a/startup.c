@@ -97,6 +97,9 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
 /* see OverWatchP.nc for details */
 ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
 
+noinit ow_startup_times_t ow_startup_times;
+
+
 /* Crash stack is used by unhandled Exception/Fault and Panic */
 uint32_t crash_stack[CRASH_STACK_WORDS] __attribute__ ((section(".crash_stack")));
 
@@ -814,16 +817,6 @@ void __t32_init() {
 #define MSP432_LFXT_DRIVE 0
 #endif
 
-typedef struct {
-  uint32_t  rtc_refo_u;
-  uint32_t  rtc_lfxt_u;
-  uint32_t  lfxt_turnon_u;
-  rtctime_t start;
-  rtctime_t end;
-} lfxt_startup_t;
-
-noinit lfxt_startup_t lfxt_startup;
-
 
 #define SELB_REFOCLK CS_CTL1_SELB
 #define SELB_LFXTCLK 0
@@ -902,11 +895,11 @@ void __core_clk_init(bool disable_dcor) {
       break;
   }
   RTC_C->CTL0 = 0;                              /* close lock */
-  lfxt_startup.rtc_refo_u = __platform_usecsRaw() - u0;
+  ow_startup_times.rtc_refo_u = __platform_usecsRaw() - u0;
 
   nop();
   u0 = __platform_usecsRaw();
-  __rtc_getTime(&lfxt_startup.start);
+  __rtc_getTime(&ow_startup_times.lfxt_start);
 
   /*
    * When we turn on the clocks above, we source ACLK and BLCK from REFOCLK.
@@ -964,8 +957,8 @@ void __core_clk_init(bool disable_dcor) {
   CS->CTL2 = (CS->CTL2 & ~CS_CTL2_LFXTDRIVE_MASK) | MSP432_LFXT_DRIVE;
 
   CS->KEY = 0;                  /* lock module */
-  lfxt_startup.lfxt_turnon_u = __platform_usecsRaw() - u0;
-  __rtc_getTime(&lfxt_startup.end);
+  ow_startup_times.lfxt_turnon_u = __platform_usecsRaw() - u0;
+  __rtc_getTime(&ow_startup_times.lfxt_end);
 
   /*
    * also clear out any interrupts pending on the RTC needs to happen
@@ -979,7 +972,7 @@ void __core_clk_init(bool disable_dcor) {
       break;
   }
 
-  lfxt_startup.rtc_lfxt_u = __platform_usecsRaw() - u0;
+  ow_startup_times.rtc_lfxt_u = __platform_usecsRaw() - u0;
   RTC_C->CTL0 = 0;                                   /* close lock */
   nop();
 }
@@ -1194,6 +1187,7 @@ void __Reset() {
 
   /* make sure interrupts are disabled */
   __disable_irq();
+  __rtc_getTime(&ow_startup_times.boot_start);
 
   /*
    * restart the RTC
@@ -1246,7 +1240,7 @@ void __Reset() {
   __map_ports();
 
   /* reset core hardware back to reasonable state */
-  __soft_reset();                       /* just do it in case we didn't do POR */
+  __soft_reset();                       /* pretend in case we didn't do POR */
 
   /*
    * invoke overwatch low level to see how we should proceed.  this gets
