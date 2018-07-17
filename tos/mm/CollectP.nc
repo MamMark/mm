@@ -217,6 +217,7 @@ implementation {
     write_reboot_record();
     write_version_record();
     call OverWatch.checkFaults();
+    signal Collect.collectBooted();     /* tell others collect is up */
     signal Booted.booted();
   }
 

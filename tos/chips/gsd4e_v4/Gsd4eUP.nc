@@ -1226,6 +1226,7 @@ implementation {
 
   async event void HW.gps_receive_block_done(uint8_t *ptr, uint16_t len, error_t error) { }
 
+        event void Collect.collectBooted() { }
   async event void Panic.hook() { }
 
   default event void GPSControl.standbyDone()   { };

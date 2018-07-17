@@ -342,5 +342,6 @@ implementation {
     }
   }
 
+        event void Collect.collectBooted() { }
   async event void Panic.hook() { }
 }

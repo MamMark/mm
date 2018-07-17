@@ -30,4 +30,7 @@ interface Collect {
                             uint8_t     *data,   uint16_t dlen);
 
   async command uint32_t buf_offset();
+
+  /* signal on Boot that Collect is happy and up */
+  event void collectBooted();
 }

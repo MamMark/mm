@@ -585,5 +585,6 @@ implementation {
   default event void SS.dblk_stream_full()          { }
   default event void SS.dblk_advanced(uint32_t last) { }
 
+        event void Collect.collectBooted() { }
   async event void Panic.hook() { }
 }

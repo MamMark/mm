@@ -131,9 +131,12 @@ implementation {
     *l = sizeof(int32_t);
     return TRUE;
   }
+
+
   command bool PollCount.set_value(int32_t *t, uint32_t *l) {
     return FALSE;
   }
+
 
   command bool PollEvent.get_value(message_t *msg, uint32_t *l) {
     poll_req_t     poll_params = {0,0,0,0,0,0,0,0};
@@ -182,7 +185,12 @@ implementation {
     call THdr.set_error(msg, TE_PKT_NO_MATCH);
     return FALSE;                                  // no match, do nothing
   }
+
+
   command bool PollEvent.set_value(message_t *msg, uint32_t *l) {
     return FALSE;
   }
+
+
+  event void Collect.collectBooted() { }
 }

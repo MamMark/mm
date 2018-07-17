@@ -1366,6 +1366,7 @@ implementation {
   }
 
 
+  event void Collect.collectBooted()    { }
   event void GPSControl.gps_shutdown()  { }
   event void GPSControl.standbyDone()   { }
 
