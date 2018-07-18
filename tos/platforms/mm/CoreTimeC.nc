@@ -36,9 +36,14 @@ implementation {
 
   components Msp432RtcC;
   Rtc = Msp432RtcC;
+  CoreTimeP.Rtc -> Msp432RtcC;
 
-  components new TimerMilliC() as CoreTimeTimerC;
-  CoreTimeP.CTimer -> CoreTimeTimerC;
+  components CollectC;
+  CoreTimeP.Collect      -> CollectC;
+  CoreTimeP.CollectEvent -> CollectC;
+
+  components new TimerMilliC() as DcoSyncTimerC;
+  CoreTimeP.DSTimer -> DcoSyncTimerC;
 
   components OverWatchC;
   CoreTimeP.OverWatch -> OverWatchC;

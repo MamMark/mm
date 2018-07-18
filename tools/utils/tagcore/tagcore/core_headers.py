@@ -298,6 +298,9 @@ event_names = {
     13: 'DOCKED',
     14: 'UNDOCKED',
 
+    15: 'DCO_REPORT',
+    16: 'DCO_SYNC',
+
     32: 'GPS_BOOT',
     33: 'GPS_BOOT_TIME',
     34: 'GPS_BOOT_FAIL',
