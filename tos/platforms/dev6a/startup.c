@@ -27,6 +27,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include <msp432.h>
 #include <platform.h>
 #include <platform_clk_defs.h>
@@ -1228,6 +1229,7 @@ void __Reset() {
 
   /* make sure interrupts are disabled */
   __disable_irq();
+  memset(&ow_startup_times, 0, sizeof(ow_startup_times));
   __rtc_getTime(&ow_startup_times.boot_start);
 
   /*
