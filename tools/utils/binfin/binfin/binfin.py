@@ -65,17 +65,18 @@
 #
 
 from __future__ import print_function
+
 import sys
 import getopt
 import struct
 import datetime
 import zlib
-from collections import OrderedDict
-import	os.path
-from elf import *
-from tagcore.base_objs import *
-from tagcore.core_headers import *
-from imageinfo import *
+from   collections import OrderedDict
+import os.path
+from   elf import *
+from   tagcore.base_objs    import *
+from   tagcore.core_headers import *
+import tagcore.imageinfo    as     iim
 
 '''
 Offsets into the ELF and .bin file(s) where the image_info struct should be located
@@ -181,7 +182,7 @@ def processMeta(argv):
     '''
     We found the image_info block so load it and validate
     '''
-    imcls = imageinfo(image_elf[elf_meta_offset:])
+    imcls = iim.ImageInfo(image_elf[elf_meta_offset:])
     block_update_success = True
     for opt, arg in opts:
         if opt in ("-h", "--help"):

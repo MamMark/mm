@@ -1,5 +1,3 @@
-#!/usr/bin/python2
-#
 # Copyright (c) 2018 Rick Li Fo Sjoe
 # All rights reserved.
 #
@@ -25,13 +23,17 @@
 #   byte array
 #
 
+#from   __future__         import print_function
+
+__version__ = '0.4.5rc0'
+
 import sys
 import struct
 import datetime
 import zlib
-from collections import OrderedDict
-from tagcore.base_objs import *
-from tagcore.core_headers import *
+from   collections  import OrderedDict
+from   base_objs    import *
+from   core_headers import *
 
 class imageinfo:
     IMAGE_INFO_SIG = 0x33275401
