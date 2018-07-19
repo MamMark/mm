@@ -35,7 +35,7 @@ from   collections  import OrderedDict
 from   base_objs    import *
 from   core_headers import *
 
-class imageinfo:
+class ImageInfo:
     IMAGE_INFO_SIG = 0x33275401
 
     '''
