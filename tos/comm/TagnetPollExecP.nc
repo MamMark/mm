@@ -125,13 +125,10 @@ implementation {
 
 
   command bool PollCount.get_value(int32_t *t, uint32_t *l) {
-    nop();
-    nop();
     *t = poll_count;
     *l = sizeof(int32_t);
     return TRUE;
   }
-
 
   command bool PollCount.set_value(int32_t *t, uint32_t *l) {
     return FALSE;
@@ -172,11 +169,11 @@ implementation {
         return TRUE;
 
       case TN_HEAD:
-        // return eOk, with offset and size of zero
-        call TPload.reset_payload(msg);                // no params
+        // return eOk, with offset of zero and size of pollcount
+        call TPload.reset_payload(msg);     // clear payload
         call THdr.set_response(msg);
-        call TPload.add_offset(msg, 0);
-        call TPload.add_size(msg, 0);
+        call TPload.add_offset(msg, 0);     // default file size
+        call TPload.add_size(msg, poll_count);
         return TRUE;
 
       default:
@@ -185,7 +182,6 @@ implementation {
     call THdr.set_error(msg, TE_PKT_NO_MATCH);
     return FALSE;                                  // no match, do nothing
   }
-
 
   command bool PollEvent.set_value(message_t *msg, uint32_t *l) {
     return FALSE;
