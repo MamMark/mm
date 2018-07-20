@@ -23,7 +23,7 @@
 #	after the Vector Table.  The img_info struct conveys details
 #	about this image needed for later forensic analysis
 #
-#   Usage: binfin.py [ -h ] [ -d ] [ -V=<Major Version> ] [ -v=<Minor Version> ]
+#   Usage: binfin.py [-v] [ -h ] [ -d ] [ -V=<Major Version> ] [ -v=<Minor Version> ]
 #       [ -I=<Img Desc.> ] [ -R=<Repo0 Desc.> ] [ -r=<Repo1 Desc.> ]
 #       [ -t=<timestamp> ] [ -H=<HW Ver.>] [ -M=<Model> ] <filename>
 #
@@ -91,7 +91,7 @@ debug = None
 def save_imageinfo_exe(filename, img_info, img_length):
     global elf_meta_offset
 
-    infile = open(filename, 'rb')
+    infile = open(filename, 'rb', 0)
     image_elf = infile.read()
     infile.close()
 
@@ -104,14 +104,14 @@ def save_imageinfo_bin(filename, img_info, img_length):
     global bin_meta_offset, debug
 
     try:
-        infile = open(filename, 'rb')
+        infile = open(filename, 'rb', 0)
         image_bin = infile.read()
     except:
         return
     infile.close()
 
     if debug:
-        print("BIN FN: {} -- 0X{} PADDR: 0X{} Length: {}".format(filename, len(image_bin), bin_meta_offset, img_length))
+        print("BIN FN: {} -- 0X{:X} PADDR: 0X{:X} Length: {}".format(filename, len(image_bin), bin_meta_offset, img_length))
 
     image_bin = image_bin[:bin_meta_offset] + img_info + image_bin[bin_meta_offset + img_length:]
 
@@ -137,7 +137,7 @@ def processMeta(argv):
     c_out = False
     p_out = False
     try:
-        opts, args = getopt.getopt(argv, "hdB:V:v:I:R:r:t:H:M:", ["help", "debug"])
+        opts, args = getopt.getopt(argv, "hdB:V:v:I:R:r:t:H:M:", ["help", "debug", "version"])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -153,7 +153,7 @@ def processMeta(argv):
         sys.exit(2)
 
     # get image info from input file and sanity check
-    infile = open(filename, 'rb')
+    infile = open(filename, 'rb', 0)
     image_elf = infile.read()
     infile.close()
 
@@ -164,7 +164,7 @@ def processMeta(argv):
     '''
     elf = ELFObject()
     try:
-        elfhdr = elf.fromFile(open(filename))
+        elfhdr = elf.fromFile(open(filename, 'rb', 0))
     except:
         usage()
         print("File {} Requires a valid ELF structure".format(filename))
@@ -191,6 +191,8 @@ def processMeta(argv):
         elif opt == '-d':
             global _debug
             debug = 1
+        elif opt == '--version':   #Binfin version
+            print("Binfin Version : {}".format(__version__))
         elif opt == '-I':   #Image Desc
             ttype = iip_tlv['desc']
             consumed = imcls.setTLV(ttype, arg)
@@ -212,20 +214,24 @@ def processMeta(argv):
     if block_update_success == False:
         sys.exit(2)
 
+    text_offset = progs[0].p_offset
+    text_size = progs[0].p_filesz
+    data_offset = progs[1].p_offset
+    data_size = progs[1].p_filesz
+
     '''
     First we update the Meta DATA checksum = 0
     '''
     imcls.updateBasic('im_chk', 0)
     oldim = imcls.build()
     oldim_length = imcls.getTotalLength()
-    image_elf = image_elf[:elf_meta_offset] +oldim+image_elf[elf_meta_offset + oldim_length:]
+    image_elf = image_elf[:elf_meta_offset] + oldim+image_elf[elf_meta_offset + oldim_length:]
 
     '''
     Second pass we update the Meta DATA *with* checksum
     '''
-    imgoffset = progs[0].p_offset
-    imgsize = progs[0].p_filesz
-    imgchksum = calc_image_checksum(image_elf[imgoffset:imgsize])
+    binimg = image_elf[text_offset:text_offset+text_size] + image_elf[data_offset:data_offset+data_size]
+    imgchksum = calc_image_checksum(binimg)
     imcls.updateBasic('im_chk', imgchksum)
     newim = imcls.build()
     newim_length = imcls.getTotalLength()
