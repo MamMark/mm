@@ -1014,7 +1014,7 @@ implementation {
   fsm_result_t a_tx_start(fsm_transition_t *t) {
     uint8_t        *dp;
     uint16_t        pkt_len, tx_ff_free, rx_len;
-    uint8_t         pwr[1];
+    uint8_t         pwr[1], new_pwr[1];
 
     dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
     if (!dp || !(*dp))                  /* make sure reasonable to send */
@@ -1032,6 +1032,12 @@ implementation {
       } else
         call Si446xCmd.set_pwr_1_8v();
       call Si446xCmd.set_property(SI446X_PROP_PA_PWR_LVL, pwr, 1);
+      call Si446xCmd.read_property(SI446X_PROP_PA_PWR_LVL, 1, new_pwr);
+      if (pwr[0] != new_pwr[0]) {
+        call Si446xCmd.read_property(SI446X_PROP_PA_PWR_LVL, 1, new_pwr);
+        __PANIC_RADIO(57, pwr[0], new_pwr[0], 0, 0);
+      }
+      call PacketTransmitPower.clear(global_ioc.pTxMsg);
     }
 
     call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
