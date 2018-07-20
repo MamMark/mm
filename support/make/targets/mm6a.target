@@ -37,8 +37,8 @@ $(TARGET): build_num $(BUILD_DEPS)
 	@if [ "z$(BUILD_TYPE)" != "z" ] ; then \
 	    echo -e "\n*** $(BUILD_TYPE) build -> $(TOSMAKE_BUILD_DIR)\n"; \
 	    else echo -e "\n*** DEV (0k) build -> $(TOSMAKE_BUILD_DIR)\n"; fi
+	@echo "binfin <DEV> stamp $(TSTAMP)"
 	@binfin -I $(IDESC) -R "$(R0DESC)" -r "$(R1DESC)" -t "$(TSTAMP)" $(TOSMAKE_BUILD_DIR)/main.exe
-	@echo "binfin stamp <DEV> $(TSTAMP)"
 	ln -nfs $(UPSTAIRS) $(TOSMAKE_BUILD_DIR)/.gdb
 	ln -nfs .gdb/.gdbinit  $(TOSMAKE_BUILD_DIR)/.gdbinit
 	ln -nfs .gdb/.gdb_$(TARGET)  $(TOSMAKE_BUILD_DIR)/.gdb_target
