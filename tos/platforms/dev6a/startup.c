@@ -349,10 +349,13 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
  * o SCB, including the VTOR (to 0)
  * o Interrupt/Exception state
  * o SCnSCB
+ *
+ * In addition we need to clean out peripheral state.
  */
 
 void __soft_reset() {
   uint32_t i;
+  uint16_t *ivptr;
 
   /*
    * blow up any pending DMA stuff
@@ -448,6 +451,19 @@ void __soft_reset() {
   EUSCI_B1->CTLW0 = EUSCI_B_CTLW0_SWRST;
   EUSCI_B2->CTLW0 = EUSCI_B_CTLW0_SWRST;
   EUSCI_B3->CTLW0 = EUSCI_B_CTLW0_SWRST;
+
+  /* clean out any potential pending RTC_C interrupts */
+  RTC_C->CTL0 = RTC_C_KEY | 0;          /* clean and unlock */
+  RTC_C->CTL0 = 0;                      /* lock */
+
+  /* unprotected */
+  RTC_C->PS0CTL = 0;
+  RTC_C->PS1CTL = 0;
+
+  /* workaround because TI made IV (_I instead of _IO), the
+   * TRM states that writing IV will clear any pendings */
+  ivptr = (void *) &RTC_C->IV;
+  *ivptr = 0;                           /* clear all pending */
 }
 
 
