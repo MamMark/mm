@@ -673,11 +673,12 @@ implementation {
    */
   task void send_done_task() {
     if (global_ioc.tx_signal) {
-      signal RadioSend.sendDone(global_ioc.tx_error);
+      call PacketTransmitDelay.clear(global_ioc.pTxMsg);
       global_ioc.pTxMsg = NULL;
       global_ioc.tx_error = 0;
       global_ioc.tx_reports++;
       global_ioc.tx_signal = FALSE;
+      signal RadioSend.sendDone(global_ioc.tx_error);
     }
     if ((dvr_cmd == CMD_NONE) && (fsm_get_state() == S_RX_ON)) {
       signal RadioSend.ready();
