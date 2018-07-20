@@ -1260,19 +1260,14 @@ norace  uint8_t const* config_list[] = {NULL, si446x_device_config, NULL};
    * read property of radio chip
    */
   async command void Si446xCmd.read_property(uint16_t p_id, uint16_t num, uint8_t *rsp_p) {
-    uint8_t group, idx;
+    uint8_t cmd[16];
 
-    group = p_id >> 8;
-    idx = p_id & 0xff;
-    call HW.si446x_set_cs();
-    call FastSpiByte.splitWrite(SI446X_CMD_GET_PROPERTY);
-    call FastSpiByte.splitReadWrite(group);
-    call FastSpiByte.splitReadWrite(num);
-    call FastSpiByte.splitReadWrite(idx);
-    call FastSpiByte.splitRead();
-    call HW.si446x_clr_cs();
-    ll_si446x_get_reply(rsp_p, num, 0xff);
-    ll_si446x_trace(T_RC_READ_PROP, p_id, (uint16_t) *rsp_p);
+    cmd[0] = SI446X_CMD_GET_PROPERTY;
+    cmd[1] = p_id >> 8;
+    cmd[2] = num;
+    cmd[3] = p_id & 0xff;
+    ll_si446x_cmd_reply(cmd, 4, rsp_p, num);
+    ll_si446x_trace(T_RC_READ_PROP, p_id, (uint8_t) *rsp_p);
   }
 
 
