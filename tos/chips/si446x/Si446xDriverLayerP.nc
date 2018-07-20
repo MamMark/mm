@@ -902,8 +902,8 @@ implementation {
     global_ioc.rx_ff_index = 0;
     global_ioc.rx_packets++;
     start_alarm(SI446X_RX_TIMEOUT);
-    call PacketRSSI.set(global_ioc.pRxMsg,
-                        call Si446xCmd.fast_latched_rssi());
+//    call PacketRSSI.set(global_ioc.pRxMsg,
+//                        call Si446xCmd.fast_latched_rssi());
     return fsm_results(t->next_state, E_NONE);
   }
 
