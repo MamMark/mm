@@ -90,11 +90,15 @@ enum {
 #define GPS_MON_MPM_RESTART_WAIT    2048
 #define GPS_MON_COLLECT_DEADMAN     16384
 
+// 30 secs
 #define GPS_MON_CYCLE_TIME          ( 1 * 30 * 1024)
 #define GPS_MON_MPM_COLLECT_TIME    ( 2 * 60 * 1024)
-#define GPS_MON_SATS_STARTUP_TIME   (10 * 60 * 1024)
 
-#define GPS_MON_SLEEP               ( 5 * 60 * 1024)
+// 2 hours
+#define GPS_MON_SATS_STARTUP_TIME   ( 2 * 60 * 60 * 1024)
+
+// 4 hours
+#define GPS_MON_SLEEP               ( 4 * 60 * 60 * 1024)
 
 /*
  * mpm_rsp_to   timeout for listening for mpm rsp after
