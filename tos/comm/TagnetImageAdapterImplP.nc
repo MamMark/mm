@@ -180,7 +180,8 @@ implementation {
     se = ((put.offset + put.dlen) >= IMAGE_MIN_BASIC) ? IMAGE_MIN_BASIC \
                                           : (put.offset + put.dlen);
     if ((se-ss)>sizeof(ia_info))  // calc check
-      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                       (se-ss), sizeof(ia_info), 0, 0);
     pinfo = (uint8_t *) &ia_info;
     for (i = 0; i < se-ss; i++) { // copy slice to the image info struct
       pinfo[i] = put.dptr[(ss-put.offset)+i];
@@ -336,7 +337,8 @@ implementation {
           put.size = call TTLV.tlv_to_size(a_tlv);
           break;
         default:
-          call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+          call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                           call TTLV.get_tlv_type(a_tlv), 0, 0, 0);
           break;
       }
     }
@@ -364,7 +366,8 @@ implementation {
             put.dptr = call TTLV.tlv_to_string(a_tlv, &put.dlen);
             break;
           default:
-            call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
+            call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                             call TTLV.get_tlv_type(a_tlv), 0, 0, 0);
             break;
         }
         a_tlv  = call TPload.next_element(msg);
