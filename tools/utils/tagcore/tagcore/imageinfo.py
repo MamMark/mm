@@ -70,12 +70,12 @@ class ImageInfo:
 
     def __repr__(self):
         out = "image_info Struct Data\n"
-        out += "Image Version : %s\n" % self.im_basic['basic']['ver_id']
-        out += "H/W  : %s\n" % self.im_basic['basic']['hw_ver']
-        out += "Image Checksum : 0x%08X\n" %  self.im_basic['basic']['im_chk'].val
+        out += "Version\t: %s\n" % self.im_basic['basic']['ver_id']
+        out += "H/W\t: %s\n" % self.im_basic['basic']['hw_ver']
+        out += "Chksum\t: 0x%08X\n" %  self.im_basic['basic']['im_chk'].val
         for k,tlv in self.im_tlv_rows.get_tlv_rows():
             type = self._iipGetKeyByValue(k)
-            out += "%s : %s\n" % (type, tlv.tlv_value)
+            out += "%s\t: %s\n" % (type, tlv.tlv_value)
         return out
 
     def _iipGetKeyByValue(self, val):
