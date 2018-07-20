@@ -187,7 +187,7 @@ implementation {
     tval = rcb.sub[major].timers[minor]; // get timer from wait state
 
     // add info to trace array
-    // only record the first instance
+    // only record the first instance of a repeated state change
     tt = &radio_trace[radio_trace_cur];
     if (tt->major     != major     || tt->minor     != minor ||
         tt->old_major != old_major || tt->old_minor != old_minor) {
@@ -443,7 +443,10 @@ implementation {
     switch(minor) {
       case SS_RECV:
         /* ON timer expired, go to STBY, use OFF time */
-        change_radio_state(major, SS_STANDBY_WAIT);
+        if (tagMsgBusy)  // defer change while processing msg
+          change_radio_state(major, SS_RECV);
+        else
+          change_radio_state(major, SS_STANDBY_WAIT);
         break;
       case SS_STANDBY:
         /* OFF timer expired, go to RW and use ON time */
