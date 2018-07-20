@@ -52,6 +52,9 @@ implementation {
     if ((!this_tlv) ||
         (call TTLV.get_tlv_type(this_tlv) != TN_TLV_NODE_ID))
       return FALSE;
+    // ignore rsp msgs, since they are not from basestation
+    if (call THdr.is_response(msg))
+      return FALSE;
     // Node Id in message must match one of
     // - my node's nid
     // - the broadcast nid
