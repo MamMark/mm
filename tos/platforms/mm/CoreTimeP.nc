@@ -213,11 +213,10 @@ implementation {
     uint32_t control, dcotune;
 
     /* check for end happening too fast */
-    if (!ctcb.collect_allowed)
-      call Panic.panic(PANIC_TIME, 2, 0, 0, 0, 0);
-    call CollectEvent.logEvent(DT_EVENT_DCO_REPORT,
-        ctcb.deltas[0], ctcb.deltas[1],
-        ctcb.deltas[2], ctcb.deltas[3]);
+    if (ctcb.collect_allowed)
+      call CollectEvent.logEvent(DT_EVENT_DCO_REPORT,
+            ctcb.deltas[0], ctcb.deltas[1],
+            ctcb.deltas[2], ctcb.deltas[3]);
     abs_min = 0;
     for (i = 0; i < DS_CYCLE_COUNT; i++) {
       entry = ctcb.deltas[i];
@@ -238,8 +237,9 @@ implementation {
     }
     entry = sum/n;
     ctcb.adjustment = -entry/450;
-    call CollectEvent.logEvent(DT_EVENT_DCO_SYNC,
-        ctcb.adjustment, entry, sum, n);
+    if (ctcb.collect_allowed)
+      call CollectEvent.logEvent(DT_EVENT_DCO_SYNC,
+            ctcb.adjustment, entry, sum, n);
     if (ctcb.adjustment) {
       CS->KEY  = CS_KEY_VAL;
       control = CS->CTL0;
