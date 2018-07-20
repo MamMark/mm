@@ -26,6 +26,7 @@ implementation {
   components new TagnetImageAdapterImplP(my_id) as Element;
   components     TagnetUtilsC;
   components     ImageManagerC;
+  components     PanicC;
 
   Super          =  Element.Super;
   Element.TName  -> TagnetUtilsC;
@@ -34,4 +35,5 @@ implementation {
   Element.TTLV   -> TagnetUtilsC;
   Element.IM     -> ImageManagerC.IM[unique("image_manager_clients")];
   Element.IMD    -> ImageManagerC;
+  Element.Panic  -> PanicC;
 }
