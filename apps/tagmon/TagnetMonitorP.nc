@@ -111,8 +111,8 @@ implementation {
      //            cycle         RW   ON      OFF   SW
     {// substate   limit     N       RECV    STBY
       {  SS_NONE,     0,    {0,   0,    0,      0,   0 } },     /* none */
-      {  SS_NONE,  5000,    {0, 1000,   50,     50, 1000 } },     /* base */
-      {  SS_NONE,    20,    {0, 1000, 4000,  26000, 1000 } },     /* hunt */
+      {  SS_NONE,    -1,    {0, 1000,   50,     50, 1000 } },     /* base */
+      {  SS_NONE,    -1,    {0, 1000, 4000,  26000, 1000 } },     /* hunt */
       {  SS_NONE,    -1,    {0, 1000, 9000, 900000, 1000 } },     /* lost */
     }
   };
