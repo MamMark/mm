@@ -53,13 +53,14 @@ implementation {
             call TPload.add_error(msg, EINVAL);
           }
           return TRUE;
-          break;
+
         case TN_HEAD:
           tn_trace_rec(my_id, 3);
-          call TPload.reset_payload(msg);                // no params
-          call TPload.add_size(msg, 0);
+          call TPload.reset_payload(msg);                // clear payload
+          if (call Adapter.get_value(&v, &l))
+            call TPload.add_size(msg, v);    // value is used for file size
           return TRUE;
-          break;
+
         default:
           break;
       }
