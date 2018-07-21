@@ -1,4 +1,5 @@
-BUILD_TYPE=NIB
+BUILD_TYPE  = NIB
+IDESC      ?= *** NIB NIB NIB ***
 LINKERFILE = $(PLATFORM_DIR)/linker_nib_128k.lds
 TOSMAKE_BUILD_DIR = build/$(TARGET)/nib
 $(info  )

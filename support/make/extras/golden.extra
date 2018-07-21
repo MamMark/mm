@@ -1,4 +1,5 @@
-BUILD_TYPE=GOLDEN
+BUILD_TYPE  = GOLDEN
+IDESC      ?= *** GOLDEN GOLDEN ***
 LINKERFILE = $(PLATFORM_DIR)/linker_golden_0k.lds
 TOSMAKE_BUILD_DIR = build/$(TARGET)/golden
 $(info  )
