@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,6 +39,16 @@ typedef struct {
 const panic_region_t ram_region = { (void *) SRAM_BASE, SRAM_LEN, 1 };
 
 
+/*
+ * NVIC registers...
+ *
+ * ISER         Enabled Ints bit array x2 words
+ * ISPR         Pending Ints bit array x2 words
+ * IABR         Active  Ints bit array x2 words
+ *
+ * many gaps.
+ */
+
 /* ICSR and VTOR */
 #define ICSR_VTOR           (&SCB->ICSR)
 #define ICSR_VTOR_COUNT     2
@@ -69,6 +79,11 @@ const panic_region_t io_regions[] = {
   { (void *) &(TIMER32_2->LOAD), 28, 4 },
   { (void *) &(DMA_Channel->DEVICE_CFG), sizeof(DMA_Channel_Type), 4 },
   { (void *) &(DMA_Control->STAT), sizeof(DMA_Control_Type), 4 },
+
+  { (void *) &(NVIC->ISER[0]), 8, 4 },  /*  2 words, bit array */
+  { (void *) &(NVIC->ISPR[0]), 8, 4 },  /*  2 words, bit array */
+  { (void *) &(NVIC->IABR[0]), 8, 4 },  /*  2 words, bit array */
+
   { (void *) ICSR_VTOR, (ICSR_VTOR_COUNT * ICSR_VTOR_SIZE),
                 ICSR_VTOR_SIZE },
   { (void *) FAULT_REGS_BASE, (FAULT_REGS_COUNT * FAULT_REGS_SIZE),
