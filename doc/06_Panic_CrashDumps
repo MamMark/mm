@@ -1,13 +1,17 @@
 
+
 Panic and CrashDumps
 
 The Tag implements a Panic/CrashDump facility.  This allows the s/w to
-detect inconsistencies in the execution.  Unhandled exceptions also
+detect inconsistencies in its execution.  Unhandled exceptions also
 makes use of this facility.
 
 When a Panic or Crash occurs, the Tag s/w will write machine state and
 any other information needed to describe the crash to a special area
-on the Tag's uSD.
+on the Tag's uSD, the Panic Area.  Each crash is written to a single
+area called a Panic Block.  The Panic Area consists of a directory followed
+by one or more panic blocks.  The panic directory indicates which panic
+blocks have been filled in.
 
 We make use of the work done by Adam Green on CrashCatcher/CrashDebug.
 (see https://github.com/adamgreen/Crash{Catcher,Debug}).  We use a modified
@@ -15,7 +19,347 @@ format that includes Panic information, image_info, crash state, ram dump,
 i/o state, and Flash crumbs.
 
 
-sector = 512 bytes
+* misc. information
+
+o sector = 512 bytes
+
+o block_id/sector_id: a 32 bit absolute sector number.  The low level
+  panic code uses absolute sector numbers for writing/reading panics.
+
+o offset.  An offset is a file relative offset from the start of the
+  area in question.  ie.  the directory starts at offset 0.
+
+
+* Panic Area organization
+
+The Panic Area can be located using the following calls to the File System.
+
+    start = call FileSystem.area_start(FS_LOC_PANIC);
+    end   = call FileSystem.area_end(FS_LOC_PANIC);
+
+These calls return the starting and ending sectors of the panic area
+(inclusive).  No access to any sectors outside this area should be
+done by the panic subsystem.
+
+
+** Basic organization
+
+The Panic Area is organized as follows:
+assuming a block_index_max of 32.
+
+    never goes below dir_sector (start)
+    +-----------------------------------------+
+    |                                         |
+    |                                         |
+    |                directory                |
+    |                                         |  1 sector
+    |                  limits                 |
+    |                  index                  |
+    |                block_size               |
+    |                                         |
+    +-----------------------------------------+
+    |                                         |
+    |                                         |
+    .                                         .
+    .               panic block               . block_size sectors
+    .                index 0                  . (panic 0)
+    |                                         |
+    |                                         |
+    +-----------------------------------------+
+    |                                         |
+    |                                         |
+    .                                         .
+    .               panic block               . (panic 1)
+    .                index 1                  .
+    |                                         |
+    |                                         |
+    +-----------------------------------------+
+                        .
+                        .
+                        .
+    +-----------------------------------------+
+    |                                         |
+    |                                         |
+    .                                         .
+    .               panic block               . (panic 31)
+    .                index 31                 .
+    |                                         |
+    |                                         |
+    +-----------------------------------------+
+    never goes past high_sector (end)
+
+
+
+*** Panic Block Organization
+
+Each panic block consists of the following parts:
+
+    +-----------------------------------------+
+    |                                         |
+    | panic_hdr_0                             | 1 sector
+    |                                         |
+    | panic_info                              |
+    | overwatch_control_block                 |
+    | image_info                              |
+    | additional_info                         |
+    | panic_hdr_0_checksum                    |
+    |                                         |
+    +-----------------------------------------+
+    |                                         |
+    | panic_hdr_1                             | 1 sector
+    |                                         |
+    | panic_hdr_1_sig                         |
+    | alignment_pad                           |
+    |                                         |
+    | panic_hdr_0_offset                      |
+    | panic_hdr_1_offset                      |
+    | panic_hdr_1_checksum                    |
+    | ram_checksum                            |
+    | io_checksum                             |
+    | crash_info                              |
+    | ram_header                              |
+    +-----------------------------------------+
+    |                                         |
+    | ram sectors                             | 128 sectors
+    | 64KiB                                   |
+    |                                         |
+    .                                         .
+    .                                         .
+    .                                         .
+    |                                         |
+    +-----------------------------------------+
+    |                                         |
+    | i/o sectors                             | padded to 12 sectors
+    |                                         |
+    +-----------------------------------------+
+    |                                         |
+    | flash crumbs                            | 8 sectors
+    | 4 KiB                                   |
+    |                                         |
+    +-----------------------------------------+
+
+Current block_size is 150 sectors
+
+
+**** Notes:
+
+o panic_hdr_0 starts with panic_info, the first word of which is the
+  panic_info_sig.  That is panic_hdr_0 starts with the PANIC_INFO_SIG.
+
+o panic_hdr_1 starts with panic_hdr_1_sig.  Both panic_hdrs start with
+  specific signatures.
+
+o panic_hdr_0 is checksummed by panic_hdr_0_checksum.  It is a simple 32 bit
+  byte external checksum over all bytes of panic_hdr_0.
+
+o panic_hdr_1 is protected by panic_hdr_1_checksum.  32 bit byte external
+  checksum.
+
+o both panic_hdr_0 and hdr_1 are exactly 512 bytes long, each.  Image_info
+  is sized such that panic_hdr_0 is 512 bytes long.  Similarily alignment_pad
+  in panic_hdr_1 is used to force panic_hdr_1 to be 512 bytes long.
+
+o crash_info and ram_header in panic_hdr_1 must be physically aligned at the
+  end of the sector such that they are physically contiguous with the
+  ram sectors that follow.
+
+o the contiguous bytes starting with crash_info, ram_header, ram_sectors, and
+  i/o sectors can be extracted and fed to CrashDebug for postmortem analysis.
+
+
+** Definitions
+
+Panic Area definitions are defined in tos/system/panic/panic.h and python
+tool structures are defined in tools/utils/tagcore/tagcore/panic_headers.py.
+
+
+*** Panic Directory
+
+The first sector of the panic area is the panic directory.
+
+typedef struct {
+  uint8_t  panic_dir_id[PANIC_ID_SIZE]; /* PANI */
+  uint32_t panic_dir_sig;
+  uint32_t panic_dir_sector;            /* limits of panic file, absolute */
+  uint32_t panic_high_sector;           /* upper limit, inclusive         */
+  uint32_t panic_block_index;           /* next panic block to write      */
+  uint32_t panic_block_index_max;       /* upper limit of indicies        */
+  uint32_t panic_block_size;            /* size of each panic block       */
+  uint32_t panic_dir_checksum;
+} panic_dir_t;
+
+dir_id:     4 bytes, human readable identifier, redundant. 'PANI'
+            used when looking at panic areas.  gives one a warm fuzzy.
+
+dir_sig:    majik number signature used for redundant checks.
+
+dir_sector: redundant absolute sector number of the panic directory.
+            should match what FileSystem.area_start returns.
+
+high_sector: redundant absolute sector number of the last panic sector
+            in the panic area.
+
+block_index: index of the next panic block to write.
+
+block_index_max: the maximum possible index that can be indicated.  For
+            example, a block_index_max of 32 says at most we can have
+            32 panic blocks, panics 0-31.  It is calculated based on the
+            block_size (in sectors) of each panic block and the size
+            of the panic area.
+
+block_size: The block size in sectors of each panic block.
+
+dir_checksum: A 32 bit quad inclusive checksum over the directory structure.
+
+
+*** Panic Block details
+
+A block includes the following information:
+
+(see tos/system/panic/panic.h)
+Block 0 (Panic Hdr 0/1, initial sectors of a panic block, 2 sectors)
+1) Panic information, core information about the crash.
+   (base address and timestamp of crash)
+2) Overwatch control block.  More information about the state of the
+   machine.  Includes panic information, Subsystem, Where, a0-3.
+2) image_info for image running.
+3) AdditionalInfo
+4) crash state: (captured information from the Panic or Exception crash)
+   cpu registers
+   fpu registers (if active)
+   Fault State
+5) RAM region header
+
+Block 2+
+6) Main Memory - 64K (128 sectors)
+
+Block 130+
+7) I/O state
+
+   <start address>      inclusive
+   <end   address>      exclusive
+   ...
+   <start address>
+   <end   address>
+   ...
+
+8) Flash Crumbs (4KB, 8 sectors)
+
+
+The Panic Hdrs are constructed to simplify extraction of crash
+information for CrashDebug.  CrashDebug wants to see CrashCatcher
+Info, RAM, and IO information contiguous.
+
+We do this by placing additional information, PanicInfo, OWCB, ImageInfo,
+and AdditionalInfo in the first panic hdr (hdr0).
+
+The second panic hdr (hdr1), includes various checksums, and more importantly
+the CrashCatcher information (crash_info) and the ram_header describing the
+following ram area.  Crash_info and the Ram_header are requried to be
+physically contiguous with the following ram area.
+
+Both hdr0 and hdr1 are constructed to be physically 512 bytes in size.
+
+
+**** Panic Header 0
+
+panic_info
+o pi_sig        signature at start of panic_info, verify we are looking
+                at the correct data structure.
+o base_addr     base address of image that panic'd.
+o rt            rtc time of when the panic occurred.
+
+o overwatch_control_block
+                a copy of the overwatch_control_block at the time the panic
+                occurred.
+o image_info    image indentifing information copied from the running image.
+                from the image currently executing (ie. running the Panic)
+
+additional_info: additional info provides various file offsets for the
+        different parts of the panic block.
+
+o ai_sig:       majik number for verifying we are looking at the right info.
+o ram_offset:   file offset of where the ram starts in the panic area.  file
+                offset from the start of the panic_area.
+o ram_size:     ram size in bytes.  0x10000 for 64KiB.
+o io_offset:    file offset of where the i/o parts live.
+o fcrumb_offset:file offset of fcrumb section (currently not used).
+
+ph0_checksum    a 32 bit byte external checksum of panic_hdr_0.
+
+
+**** Panic Header 1
+
+ph1_sig         majik number at start of panic_hdr_1
+alignment_pad   pad bytes to push crash_info and ram_header to end of sector.
+ph0_offset      file offset of panic_hdr_0
+ph1_offset      file offset of panic_hdr_1
+ph1_checksum    32 bit byte external checksum over panic_hdr_1
+ram_checksum    32 bit byte external checksum over ram contents
+io_checksum     32 bit byte external checksum of i/o data.
+
+crash_info      CrashDebug compatible postmortem state
+ram_header      header for ram dump
+
+
+
+* Overview of Panic updates.
+
+At any given time, the value of block_index indicates the next panic block
+that will be written.  ie.  A block_index of 0 indicates that no panics
+have been written.  (This can only occur if the panic directory is zeroed,
+indicating no panics).  If block_index is 1, this indicates the next panic
+to be written is block 1 and that one panic (0) has been written.
+
+Initially the panic directory will be zero'd indicating that no panics have
+been written.
+
+When the SD disk is formatted a fixed size for the Panic Area is allocated.
+This means there is a fixed number of panic blocks supported.
+
+The panic subsystem is configured with a specific size for each panic block
+and will automatically configure itself to use an appropriate number of
+panic blocks in the panic area.  This is reflected in the panic directory
+once the initial panic block has been written (block_index_max).
+
+When the first panic occurs, the zeroed directory indicates no panics, the
+directory and control blocks will be initialized for the first panic, the
+panic block will be written, and the directory will be updated accordingly.
+At that point, the directory will reflect that one panic exists (index is
+1) and panic block 0 exists.
+
+Once the last panic block has been written any additional panics will reuse
+this last block.  In other words, the first 32 panics (assuming a
+block_index_max of 32) will get written and the 33rd and later panics will
+overwrite the last panic block.  You will get the first 31 panics and the
+last panic that occurs.
+
+
+
+* Panic Inspection and Xtraction (PIX)
+
+The tool, PIX, is used to examine and extract panics from a remote tag.
+
+When pointed at a tag's panic/byte file (the tagfuse representation of
+the tag's panic area), we want the following:
+
+    o examine the directory and determine how many panics have been
+      written.
+
+    o for any panic, extract and display the following information:
+
+      - what was the panic: pcode, where, arg0-3
+      - rtctime of the panic
+      - image identifier
+
+Further, would like to be able to specify a specific panic block to
+extract.  This extraction starts at the crash_info offset and extracts
+all bytes up to and including the end of the i/o records.
+
+Since this i/o is going to and from an operational tag we want it to
+be sparse.  Only ask and read the minimal amount of informaton that
+is needed to get the job done.
+
 
 * Preservation of State:
 
@@ -27,8 +371,12 @@ crash_stack.
 A minimal amount of information is saved on the old_stack and then we
 switch to a new crash_stack that we know we can rely on.
 
-** Panic entry:
 
+
+
+* Panic Entry Details
+
+  Panic entry:
     r0        0x15                  <-- panic code (subsystem)
     r1        0x5                   <-- where
     r2        0x5                   <-- panic arg0
@@ -144,78 +492,7 @@ information.  In the case of an Exception/Fault, panic_args.pcode is set
 to PANIC_EXC and where is set to the exception number.
 
 
-* Panic Blocks
-
-A Panic block is a single collection of all the information collected
-about the machine state for a single crash.
-
-A block includes the following information:
-
-(see tos/system/panic/panic.h)
-Block 0 (Panic Hdr 0/1, initial sectors of a panic block, 2 sectors)
-1) Panic information, core information about the crash.
-   (base address and timestamp of crash)
-2) Overwatch control block.  More information about the state of the
-   machine.  Includes panic information, Subsystem, Where, a0-3.
-2) image_info for image running.
-3) AdditionalInfo
-4) crash state: (captured information from the Panic or Exception crash)
-   cpu registers
-   fpu registers (if active)
-   Fault State
-5) RAM region header
-
-Block 2+
-6) Main Memory - 64K (128 sectors)
-
-Block 130+
-7) I/O state
-
-   <base address>
-   <length>
-   <element_size>
-   ...
-   <base address>
-   <length>
-   <element_size>
-   ...
-
-8) Flash Crumbs (4KB, 8 sectors)
-
-
-The Panic Hdrs are constructed to simplify extraction of crash
-information for CrashDebug.  CrashDebug wants to see CrashCatcher
-Info, RAM, and IO information contiguous.
-
-We do this by placing additional information, PanicInfo, OWCB, ImageInfo,
-and AdditionalInfo in the first panic hdr (hdr0).
-
-The second panic hdr (hdr1), includes various checksums, and more importantly
-the CrashCatcher information (crash_info) and the ram_header describing the
-following ram area.  Crash_info and the Ram_header are requried to be
-physically contiguous with the following ram area.
-
-Both hdr0 and hdr1 are constructed to be physically 512 bytes in size.
-
-
-[Memory Region]
-64K RAM   128 sectors
-
-Peripherals:
-    basic format
-
-    4  base address             (defines which peripheral too)
-    4  length
-    4  element size
-       ...
-    4  base address
-    4  length
-    4  element size
-       ...
-
-Flash Crumbs:
-  4096 bytes (8 sectors)
-
+* Panic Blocks other details
 
 Total Panic Block size (in sectors):
   panic hdrs + RAM + i/o + flash crumbs
@@ -278,14 +555,12 @@ SYSCTL_Boot     0xE004_4000      28 (0x1c)
 
 o Correlating Panics to the DataStream.
 
-When we Panic we will write out a Panic block which includes both the
-boot_count and the current rtctime which exactly maps to what has been
-written to the datastream.
+On a reboot, the new Reboot record will include an rtctime stamp, the
+PANIC reason, information about what the panic was, and the index of the
+panic block that was written for the crash.
 
-When we reboot, boot_count will be incremented by one, and a Reboot_Sync
-record will be written out to the DataStream.  This record will also have
-the current rtctime (which continues to run).
 
+** Other misc stuff.
 
 o Exception Stack Frame:
 
