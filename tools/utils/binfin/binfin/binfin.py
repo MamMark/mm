@@ -172,7 +172,7 @@ def processMeta(argv):
 
     progs =  elf.getProgrammableSections()
     meta = elf.getSection('.image_meta')
-    bin_meta_offset = meta.sh_addr
+    bin_meta_offset = meta.sh_addr - progs[0].p_paddr
     elf_meta_offset = meta.sh_offset
     if elf_meta_offset == 0:
         usage()
