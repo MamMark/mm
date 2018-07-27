@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc0'
+__version__ = '0.4.5rc1'
 
 import binascii
 from   collections  import OrderedDict
@@ -184,16 +184,16 @@ def obj_dt_version():
 
 def obj_hw_version():
     return aggie(OrderedDict([
-        ('rev',       atom(('<B', '{:x}'))),
-        ('model',     atom(('<B', '{:x}'))),
+        ('rev',       atom(('<B', '{}'))),
+        ('model',     atom(('<B', '{}'))),
     ]))
 
 
 def obj_image_version():
     return aggie(OrderedDict([
-        ('build',     atom(('<H', '{:x}'))),
-        ('minor',     atom(('<B', '{:x}'))),
-        ('major',     atom(('<B', '{:x}'))),
+        ('build',     atom(('<H', '{}'))),
+        ('minor',     atom(('<B', '{}'))),
+        ('major',     atom(('<B', '{}'))),
     ]))
 
 
