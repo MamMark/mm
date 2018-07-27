@@ -21,13 +21,17 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc0'
+__version__ = '0.4.5rc1'
+
+from   ctypes       import c_long
 
 from   core_rev     import *
 from   dt_defs      import *
 
 from   core_headers import event_name
 from   core_headers import PANIC_WARN           # event
+from   core_headers import DCO_REPORT           # event
+from   core_headers import DCO_SYNC             # event
 from   core_headers import GPS_MON_MINOR        # event
 from   core_headers import GPS_MON_MAJOR        # event
 from   core_headers import GPS_RX_ERR           # event
@@ -347,11 +351,33 @@ def emit_event(level, offset, buf, obj):
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
+
+    if (level >= 1):
+        print(event1.format(event_name(event), event,
+                            arg0, arg1, arg2, arg3,
+                            arg0, arg1, arg2, arg3))
+
     if (event == PANIC_WARN):
         # special case, print PANIC_WARNs always, full display
         print(' {} {}/{}'.format(event_name(event), pcode, w))
         print('    {} {} {} {}  x({:04x} {:04x} {:04x} {:04x})'.format(
             arg0, arg1, arg2, arg3, arg0, arg1, arg2, arg3))
+        return
+
+    if event == DCO_REPORT:
+        arg0 = c_long(arg0).value
+        arg1 = c_long(arg1).value
+        arg2 = c_long(arg2).value
+        arg3 = c_long(arg3).value
+        # fall through to bottom
+
+    if event == DCO_SYNC:
+        arg0 = c_long(arg0).value
+        arg1 = c_long(arg1).value
+        arg2 = c_long(arg2).value
+        arg3 = c_long(arg3).value
+        print(' {:14s} adj: {}  delta: {} ({}/{})'.format(
+            event_name(event), arg0, arg1, arg2, arg3))
         return
 
     if (event == GPS_MON_MINOR):
@@ -384,10 +410,6 @@ def emit_event(level, offset, buf, obj):
         return
 
     print(event0.format(event_name(event), arg0, arg1, arg2, arg3))
-    if (level >= 1):
-        print(event1.format(event_name(event), event,
-                            arg0, arg1, arg2, arg3,
-                            arg0, arg1, arg2, arg3))
 
 
 ################################################################
