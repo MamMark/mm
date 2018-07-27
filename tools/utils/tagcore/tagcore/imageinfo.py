@@ -1,4 +1,5 @@
 # Copyright (c) 2018 Rick Li Fo Sjoe
+# Copyright (c) 2018 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -20,7 +21,7 @@
 # ImageInfo Class
 #
 #   Manage all aspects of the ImageInfo structure, given a
-#   byte array
+#   byte array that conforms to the ImageInfo definitions.
 #
 
 #from   __future__         import print_function
@@ -69,10 +70,15 @@ class ImageInfo:
         return
 
     def __repr__(self):
-        out = "image_info Struct Data\n"
-        out += "Version\t: %s\n" % self.im_basic['basic']['ver_id']
-        out += "H/W\t: %s\n" % self.im_basic['basic']['hw_ver']
-        out += "Chksum\t: 0x%08X\n" %  self.im_basic['basic']['im_chk'].val
+        ver_id = self.im_basic['basic']['ver_id']
+        hw_ver = self.im_basic['basic']['hw_ver']
+        chksum = self.im_basic['basic']['im_chk'].val
+        out  = "image_info_data:\n"
+        out += 'sw_ver\t: {}.{}.{} (0x{:x})\n'.format(ver_id['major'],
+                    ver_id['minor'], ver_id['build'], ver_id['build'].val)
+        out += 'hw_m/r\t: {}/{}\n'.format(
+            hw_ver['model'], hw_ver['rev'])
+        out += 'chksum\t: {:08x}\n'.format(chksum)
         for k,tlv in self.im_tlv_rows.get_tlv_rows():
             type = self._iipGetKeyByValue(k)
             out += "%s\t: %s\n" % (type, tlv.tlv_value)
