@@ -24,9 +24,9 @@
 #   byte array that conforms to the ImageInfo definitions.
 #
 
-#from   __future__         import print_function
+from   __future__         import print_function
 
-__version__ = '0.4.5rc0'
+__version__ = '0.4.5rc1'
 
 import sys
 import struct
@@ -59,7 +59,8 @@ class ImageInfo:
         self.im_basic = obj_image_info()
         corelen = self.im_basic.set(rec_buf)
         if self.im_basic['basic']['ii_sig'].val != self.IMAGE_INFO_SIG:
-            print "Image Signature Check FAIL. Expect %X got %X" % (self.IMAGE_INFO_SIG, self.im_basic['basic']['ii_sig'].val)
+            print('*** image signature checksum fail: expected {08x}, got {:08x}'.format(
+                self.IMAGE_INFO_SIG, self.im_basic['basic']['ii_sig'].val))
             sys.exit(2)
 
         #We set checksum to 0 since we calc. a new checksum every time
@@ -81,14 +82,14 @@ class ImageInfo:
         out += 'chksum\t: {:08x}\n'.format(chksum)
         for k,tlv in self.im_tlv_rows.get_tlv_rows():
             type = self._iipGetKeyByValue(k)
-            out += "%s\t: %s\n" % (type, tlv.tlv_value)
+            out += '{}\t: {}\n'.format(type, tlv.tlv_value)
         return out
 
     def _iipGetKeyByValue(self, val):
         for k, v in iip_tlv.items():
             if v == val:
                 return k
-        return "*N.A.*(%d)" % val
+        return 'unk_({})'.format(val)
 
     def updateBasic(self, field, value):
         self.im_basic['basic'][field].val = value
