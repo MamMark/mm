@@ -30,6 +30,9 @@ from   dt_defs      import *
 
 from   core_headers import event_name
 from   core_headers import PANIC_WARN           # event
+from   core_headers import GPS_GEO              # event
+from   core_headers import GPS_XYZ              # event
+from   core_headers import GPS_TIME             # event
 from   core_headers import DCO_REPORT           # event
 from   core_headers import DCO_SYNC             # event
 from   core_headers import GPS_MON_MINOR        # event
@@ -362,6 +365,33 @@ def emit_event(level, offset, buf, obj):
         print(' {} {}/{}'.format(event_name(event), pcode, w))
         print('    {} {} {} {}  x({:04x} {:04x} {:04x} {:04x})'.format(
             arg0, arg1, arg2, arg3, arg0, arg1, arg2, arg3))
+        return
+
+    if event == GPS_GEO:
+        arg0 = c_long(arg0).value/10000000.
+        arg1 = c_long(arg1).value/10000000.
+        arg3 = arg3/1000.
+        print(' {:14s}  {:10.7f}  {:10.7f}  wk/tow: {}/{}'.format(
+            event_name(event), arg0, arg1, arg2, arg3))
+        return
+
+    if event == GPS_XYZ:
+        arg1 = c_long(arg1).value
+        arg2 = c_long(arg2).value
+        arg3 = c_long(arg3).value
+        print(' {:14s} {} - x: {}  y: {}  z: {}'.format(
+            event_name(event), arg0, arg1, arg2, arg3))
+        return
+
+    if event == GPS_TIME:
+        year = (arg0 >> 16) & 0xffff
+        mon  = (arg0 >> 8)  & 0xff
+        day  =  arg0        & 0xff
+        hr   = (arg1 >> 8)  & 0xff
+        xmin =  arg1        & 0xff
+        secs =  arg2 / 1000.
+        print(' {:14s} UTC: {}/{:02}/{:02} {:2}:{:02}:{:<6.3f}'.format(
+            event_name(event), year, mon, day, hr, xmin, secs))
         return
 
     if event == DCO_REPORT:

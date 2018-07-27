@@ -350,6 +350,9 @@ def event_name(event):
 
 PANIC_WARN    = 1
 FAULT         = 2
+GPS_GEO       = 3
+GPS_XYZ       = 4
+GPS_TIME      = 5
 DCO_REPORT    = 15
 DCO_SYNC      = 16
 GPS_MON_MINOR = 35
