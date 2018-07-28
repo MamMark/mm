@@ -398,7 +398,11 @@ typedef dt_header_t dt_note_t;          /* size 20 + var note size */
  * The data is essentially a copy of the first part of the data in
  * sirfbin_stat_t (sirf_driver.h).
  *
- * The header is a dt_header_t followed dt_gps_proto_stats_t.
+ * The header is a dt_header_t followed dt_gps_proto_stats_t.  dt_header_t is
+ * guaranteed to be word aligned/word granular.
+ *
+ * dt_gps_proto_stats_t is used both internally as well as in the dblk stream.
+ * Do not PACK it.  Leave native.  It will work in both cases.
  */
 
 typedef struct {
@@ -416,7 +420,7 @@ typedef struct {
   uint16_t rx_parity;                 /* parity errors  */
   uint16_t proto_start_fail;          /* proto fails at start of packet */
   uint16_t proto_end_fail;            /* proto fails at end   of packet */
-} PACKED dt_gps_proto_stats_t;
+} dt_gps_proto_stats_t;
 
 
 /*
