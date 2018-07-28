@@ -106,11 +106,10 @@ typedef enum {
  *
  * All records (data blocks, dt headers) start with a 2 byte little endian
  * length, a 2 byte little endian data type field (dtype), a 4 byte little
- * endian record number, and a 10 byte rtctime stamp.  RtcTime consists
- * of a 64 bit lower 8 bytes of time stamp (rt64), followed by a 2 byte
- * year.  It needs to be 2quad aligned for alignment safety.  The header
- * also includes a record checksum (recsum).  This is a 16 bit little
- * endian checksum over individual bytes in both the header and data areas.
+ * endian record number, and a 10 byte rtctime stamp.  RtcTime is 10 bytes,
+ * year.mon.day.dow.hr.min.sec.sub_sec.  The header also includes a record
+ * checksum (recsum).  This is a 16 bit little endian checksum over
+ * individual bytes in both the header and data areas.
  *
  * A following dt_header is required to be quad aligned.  There will 0-3
  * pad bytes following a record.  Length does not include these pad bytes.
