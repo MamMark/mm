@@ -112,6 +112,8 @@ class CrashDumpFormat:
 
         '''
         WRite the CrashDump 0x6343 (Cc) Signature
+        NOTE: We override the panic dump cc_sig.  We need 0300 for
+            version otherwise CrashDebug complains with ENODEV
         '''
         global CRASH_CATCHER_SIG
         outFile.write("{:08X}".format(CRASH_CATCHER_SIG))
@@ -119,7 +121,10 @@ class CrashDumpFormat:
 
         #Floating Point Regs do *not* follow registers
         outFile.write("{:08X}".format(0))
-#        outFile.write("{:08X}".format(1 << 24)) --if you dump FP regs--
+        '''
+        For new we exclude FP regs from the dump --TODO--
+        outFile.write("{:08X}".format(1 << 24))
+        '''
         outFile.write("\n")
 
         #Dump Registers

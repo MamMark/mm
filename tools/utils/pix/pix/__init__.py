@@ -1,8 +1,8 @@
 """
 pix: Panic Inspector and eXtractor
-@author: /Eric B. Decker
+@author: /Rick Li Fo Sjoe
 """
 
-# 0.0.1.dev2    Initial version
+# 0.0.1.dev3    Initial version
 
-__version__ = '0.0.1.dev2'
+__version__ = '0.0.1.dev3'
