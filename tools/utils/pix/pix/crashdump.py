@@ -63,6 +63,9 @@ class CrashDumpFormat:
         panic_info = self.panic_block0_obj['panic_info']
         add_info   = self.panic_block0_obj['add_info']
         crash_info = self.panic_block1_obj['crash_info']
+        if crash_info['ci_sig'] != CRASH_INFO_SIG:
+            print('*** crash_info_sig_mismatch: wanted {:08x}, got {:08x}'.format(
+                CRASH_INFO_SIG, crash_info['ci_sig'].val))
 
         image_info = self.panic['im']
         image_desc = image_info.getTLV(iip_tlv['desc'])
