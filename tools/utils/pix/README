@@ -28,7 +28,7 @@ will install as /usr/local/bin/pix
 
 USAGE:
 ========
-usage: pix [-h] [-V] [-x n] [-l]
+usage: pix [-h] [-V] [-x <n>] [-l]
            [-o <output>]
            [--output <output>]
            panic_file
@@ -40,7 +40,7 @@ optional arguments:
   -V              show program's version number and exit
 
   -l              Display a directory list of Crashdumps available
-  -x n            Extract the specific crashdump #
+  -x <n>          Extract the specific crashdump #<n>
   -o <output>     enables extraction and sets output file.
                   (args.output, file)
 
