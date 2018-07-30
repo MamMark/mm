@@ -23,7 +23,7 @@
 display and extract panic blocks from a composite PANIC file.
 Extracted panics can be fed to CrashDump for analysis.
 
-usage: pix [-h] [-V]
+usage: pix [-h] [-v]
            [-o <output>]
            [--output <output>]
            panic_file
@@ -31,14 +31,15 @@ usage: pix [-h] [-V]
 Args:
 
 optional arguments:
-  -h              show this help message and exit
-  -V              show program's version number and exit
+  -h            show this help message and exit
+  -v            show program's version number and exit
+  -l            List all PanicBlocks available
 
-  -o <output>     enables extraction and sets output file.
-                  (args.output, file)
+  -o <output>   enables extraction and sets output file.
+                (args.output, file)
 
 positional argument:
-  panic_file      input file, composite PANIC file.
+  panic_file    input file, composite PANIC file.
 '''
 
 from   __future__               import print_function
@@ -66,8 +67,8 @@ args    = None
 inFile  = None
 outFile = None
 
-pblk = 'ffffff'
-plist = []
+pblk            = 'ffffff'
+plist           = []
 valid_panic_count = 0
 
 panic_dir_sector  = None
@@ -85,27 +86,31 @@ def pix_init():
 
     # Read in Directory block for verification
     raw = inFile.read(DEFAULT_BLOCK_SIZE)
-    panic_dir_obj = obj_panic_dir()
-    consumed = panic_dir_obj.set(raw)
-    panic_dir_sector = (panic_dir_obj['panic_dir_sector'].val)
+    panic_dir_obj     = obj_panic_dir()
+    consumed          = panic_dir_obj.set(raw)
+    panic_dir_cksum   = panic_dir_obj['panic_dir_checksum'].val
+    panic_dir_raw = struct.unpack("<"+"{}".format(consumed/4)+"I", bytearray(raw[:consumed]))
+    calcsum = sum(panic_dir_raw) & 0xFFFFFFFF
+    if calcsum != 0:
+        print("*** Panic Directory Checksum Fail: {:08X} Expected {:08X}".format(calcsum, 0))
 
-    panic_high_sector = (panic_dir_obj['panic_high_sector'].val)
-    panic_block_size  = (panic_dir_obj['panic_block_size'].val)
     dir_sig           = (panic_dir_obj['panic_dir_sig'].val)
-    panic_block_index = (panic_dir_obj['panic_block_index'].val)
-    panic_block_maximum = (panic_dir_obj['panic_block_index_max'].val)
-
     if (dir_sig != PANIC_DIR_SIG):
         print('*** dir_sig_mismatch: wanted {:08x}, got {:08x}'.format(
             PANIC_DIR_SIG, dir_sig))
-        sys.exit(0)
 
+    panic_dir_sector  = (panic_dir_obj['panic_dir_sector'].val)
+    panic_high_sector = (panic_dir_obj['panic_high_sector'].val)
+    panic_block_size  = (panic_dir_obj['panic_block_size'].val)
+    panic_block_index = (panic_dir_obj['panic_block_index'].val)
+    panic_block_maximum = (panic_dir_obj['panic_block_index_max'].val)
+    return
 
 '''
 panic_valid() : Validates a specific panic block
 '''
 def panic_valid(blockno):
-    global plist, panic_block_size, DEFAULT_BLOCK_SIZE
+    global plist, panic_block_size, DEFAULT_BLOCK_SIZE, PANIC_INFO_SIG
 
     offset = (blockno * (panic_block_size * DEFAULT_BLOCK_SIZE)) + DEFAULT_BLOCK_SIZE
     inFile.seek(offset)
@@ -119,9 +124,13 @@ def panic_valid(blockno):
     consumed   = panic_block_0_obj.set(bptr)
     panic_info = panic_block_0_obj['panic_info']
     pi_sig     = panic_info['pi_sig'].val
-    if pi_sig == PANIC_INFO_SIG:
-        return {'pb':panic_block_0_obj, 'im':image_info, 'offset':offset}
-    return False
+    if pi_sig != PANIC_INFO_SIG:
+        print("*** Panic Info Signature Fail :#{}  wanted {:08X}, got {:08X}".format(
+            blockno,
+            PANIC_INFO_SIG,
+            panic_info['pi_sig'],
+            ))
+    return {'pb':panic_block_0_obj, 'im':image_info, 'offset':offset}
 
 '''
 panic_search() : Search for all panic blocks and get basic header info.
@@ -147,7 +156,8 @@ def panic_dir():
         image_info = panic['im']
         image_desc = image_info.getTLV(iip_tlv['desc'])
         rep0_desc = image_info.getTLV(iip_tlv['repo0'])
-        out += "#{} {}/{}/{} {}:{}:{}.{}\n{} {}".format(k, panic_info['rt']['mon'].val,
+        out += "#{} {}/{}/{} {}:{}:{}.{}\n{} {}".format(k,
+            panic_info['rt']['mon'].val,
             panic_info['rt']['day'].val, panic_info['rt']['year'].val,
             panic_info['rt']['hr'].val, panic_info['rt']['min'].val,
             panic_info['rt']['sec'].val, panic_info['rt']['sub_sec'].val,
@@ -161,8 +171,8 @@ def panic_args():
     parser = argparse.ArgumentParser(
         description='Panic Inspector/eXtractor (PIX)')
 
-    parser.add_argument('-V', '--version',
-        action  = 'version',
+    parser.add_argument('-v', '--version',
+        action = "version",
         version = '%(prog)s ' + VERSION)
 
     parser.add_argument('-l', '--ls',
@@ -187,13 +197,16 @@ def main():
     global args, inFile, outFile, valid_panic_count, panic_block_index, plist
     global panic_block_size, DEFAULT_BLOCK_SIZE
 
+    print('Panic Inspector/eXtractor')
     args    = panic_args()
+    '''
+    if args.version:
+        print("Binfin Version : {}".format(__version__))
+    '''
     inFile  = args.panic_file
     outFile = args.output
 
-    print('Panic Inspector/eXtractor')
     pix_init()
-
     panic_search()
 
     if args.ls:
@@ -204,6 +217,7 @@ def main():
         if panic_block >= panic_block_index:
             print("**Enter a valid Panic Block.  Use -l to see available panic blocks***")
             sys.exit(1)
+
         pb = plist[panic_block]
         pblk_offset = pb['offset']
         inFile.seek(pblk_offset)
