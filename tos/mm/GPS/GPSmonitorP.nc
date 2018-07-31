@@ -1374,8 +1374,5 @@ implementation {
   event void GPSControl.gps_shutdown()  { }
   event void GPSControl.standbyDone()   { }
 
-  async event void Rtc.currentTime(rtctime_t *timep,
-                   uint32_t reason_set) { }
-
   async event void Panic.hook()         { }
 }

@@ -566,7 +566,5 @@ implementation {
 
         event void SS.dblk_stream_full()           { }
         event void SS.dblk_advanced(uint32_t last) { }
-  async event void Rtc.currentTime(rtctime_t *timep,
-                              uint32_t reason_set) { }
   async event void Panic.hook()                    { }
 }

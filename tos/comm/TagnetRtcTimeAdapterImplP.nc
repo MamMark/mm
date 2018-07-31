@@ -115,6 +115,4 @@ implementation {
     tagnet_tlv_t    *help_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].help_tlv;
     call TPload.add_tlv(msg, help_tlv);
   }
-  async event void Rtc.currentTime(rtctime_t *timep,
-                                     uint32_t reason_set) { }
 }

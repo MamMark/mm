@@ -1054,8 +1054,6 @@ implementation {
         event void FS.eraseDone(uint8_t which) { }
         event void Collect.collectBooted()     { }
   async event void SysReboot.shutdown_flush()  { }
-  async event void Rtc.currentTime(
-       rtctime_t *timep, uint32_t reason_set)  { }
 
   default async event void Panic.hook()        { }
 }

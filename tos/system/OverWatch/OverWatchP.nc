@@ -927,7 +927,4 @@ implementation {
   event void IM.delete_complete() { }
   event void IM.dir_set_backup_complete()   { }
   event void IM.dir_eject_active_complete() { }
-
-  async event void Rtc.currentTime(
-    rtctime_t *timep, uint32_t reason_set)  { }
 }

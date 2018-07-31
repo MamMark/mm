@@ -21,6 +21,8 @@
 configuration CoreTimeC {
   provides {
     interface Rtc;
+    interface RtcAlarm;
+    interface RtcEvent;
     interface CoreTime;
     interface Boot as Booted;           /* outgoing */
   }
@@ -35,8 +37,11 @@ implementation {
   Boot     = CoreTimeP;
 
   components Msp432RtcC;
-  Rtc = Msp432RtcC;
-  CoreTimeP.Rtc -> Msp432RtcC;
+  Rtc      = Msp432RtcC;
+  RtcAlarm = Msp432RtcC;
+  RtcEvent = Msp432RtcC;
+  CoreTimeP.Rtc            -> Msp432RtcC;
+  CoreTimeP.RtcHWInterrupt <- Msp432RtcC;
 
   components CollectC;
   CoreTimeP.Collect      -> CollectC;

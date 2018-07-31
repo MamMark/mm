@@ -260,6 +260,5 @@ implementation {
   event   void    IM.dir_set_backup_complete() { }
   event   void    IM.finish_complete() {  }
   event   void    IM.write_continue() {  }
-  async event void Rtc.currentTime(rtctime_t *timep, uint32_t reason_set) { }
   async event void Panic.hook() { }
 }

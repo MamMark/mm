@@ -28,6 +28,8 @@ configuration PlatformC {
     interface PlatformNodeId;
     interface SysReboot;
     interface Rtc;
+    interface RtcAlarm;
+    interface RtcEvent;
   }
   uses interface Init as PeripheralInit;
 }
@@ -56,6 +58,8 @@ implementation {
    */
   components CoreTimeC;
   Rtc      = CoreTimeC;
+  RtcAlarm = CoreTimeC;
+  RtcEvent = CoreTimeC;
 
   components LocalTimeMilliC;
   PlatformP.LocalTime -> LocalTimeMilliC;

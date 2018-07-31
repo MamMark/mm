@@ -101,6 +101,7 @@ module CoreTimeP {
   provides {
     interface CoreTime;
     interface Boot as Booted;           /* Out boot */
+    interface RtcHWInterrupt;           /* interrupt signaling */
   }
   uses {
     interface Boot;                     /* In Boot */
@@ -314,13 +315,33 @@ implementation {
     switch(iv) {
       default:
       case 2:
-      case 4: case 6:
-      case 8: case 10:
+      case 10:
         call Panic.panic(PANIC_TIME, 4, iv, 0, 0, 0);
         break;
 
       case 0:                           /* no interrupt  */
         break;                          /* just ignore   */
+
+      case 4:
+        if ((RTC_C->CTL0 & RTC_C_CTL0_RDYIE) == 0)
+          call Panic.panic(PANIC_TIME, 4, iv,
+                           RTC_C_CTL0_RDYIE, RTC_C->CTL0, 0);
+        signal RtcHWInterrupt.secInterrupt();
+        return;
+
+      case 6:
+        if ((RTC_C->CTL0 & RTC_C_CTL0_TEVIE) == 0)
+          call Panic.panic(PANIC_TIME, 4, iv,
+                           RTC_C_CTL0_TEVIE, RTC_C->CTL0, 0);
+        signal RtcHWInterrupt.eventInterrupt();
+        return;
+
+      case 8:
+        if ((RTC_C->CTL0 & RTC_C_CTL0_AIE) == 0)
+          call Panic.panic(PANIC_TIME, 4, iv,
+                           RTC_C_CTL0_AIE, RTC_C->CTL0, 0);
+        signal RtcHWInterrupt.alarmInterrupt();
+        return;
 
       case 12:                          /* ps1 interrupt */
         switch(ctcb.minor_state) {
@@ -362,6 +383,5 @@ implementation {
     }
   }
 
-  async event void Rtc.currentTime(rtctime_t *timep, uint32_t reason_set) { }
   async event void Panic.hook() { }
 }

@@ -702,8 +702,5 @@ implementation {
   default event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
         rtctime_t *arrival_rtp, uint32_t mark_j) { }
 
-  async event void Rtc.currentTime(
-       rtctime_t *timep, uint32_t reason_set)  { }
-
   async event void Panic.hook() { }
 }
