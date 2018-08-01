@@ -102,6 +102,12 @@ class ImageInfo:
         consumed = self.im_tlv_rows.add_tlv(type, value)
         return consumed
 
+    def getTLV(self, tlv_type):
+        for k, tlv in self.im_tlv_rows.get_tlv_rows():
+            if tlv_type == k:
+                return tlv.tlv_value
+        return false
+
     def getTotalLength(self):
         return self.im_total_len
 

@@ -1,0 +1,5 @@
+PIX:
+
+
+CrashDebug:
+arm-none-eabi-gdb main.elf -ex "set target-charset ASCII" -ex "target remote | CrashDebug --elf main.elf --dump MainCrashDump.txt"

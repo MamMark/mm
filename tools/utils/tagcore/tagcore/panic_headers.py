@@ -54,7 +54,7 @@ panic_codes = {
 PANIC_DIR_SIG       = 0xDDDDB00B
 PANIC_INFO_SIG      = 0x44665041
 CRASH_INFO_SIG      = 0x4349B00B
-CRASH_CATCHER_SIG   = 0x63430200
+CRASH_CATCHER_SIG   = 0x63430300
 PANIC_ADDITIONS     = 0x44664144
 
 
@@ -121,6 +121,91 @@ def obj_crash_info():
         ('fpscr',     atom(('<I', '{}')))
     ]))
 
+'''
+Define the IO memory items we need
+see tos/platforms/mm6a/hardware/panic_regions.h
+'''
+def obj_io_info():
+    return aggie(OrderedDict([
+        ('Timer_A0',      atom(('=48s', '{}'))),    #0x4000 0000
+        ('Timer_A1',      atom(('=48s', '{}'))),    #0x4000 0400
+        ('eUSCI_A0',      atom(('=32s', '{}'))),    #0x4000 1000
+        ('eUSCI_A1',      atom(('=32s', '{}'))),    #0x4000 1400
+        ('eUSCI_A2',      atom(('=32s', '{}'))),    #0x4000 1800
+        ('eUSCI_A3',      atom(('=32s', '{}'))),    #0x4000 1C00
+        ('eUSCI_B0',      atom(('=32s', '{}'))),    #0x4000 2000
+        ('eUSCI_B1',      atom(('=32s', '{}'))),    #0x4000 2400
+        ('eUSCI_B2',      atom(('=32s', '{}'))),    #0x4000 2800
+        ('eUSCI_B3',      atom(('<32s', '{}'))),    #0x4000 2C00
+        ('RTC_C',         atom(('=32s', '{}'))),    #0x4000 4400
+        ('WDT_A',         atom(('=2s', '{}'))),      #0x4000 4800
+        ('PortMap',       atom(('=2s', '{}'))),      #0x4000 5000
+        ('P2Map_0',       atom(('=2s', '{}'))),      #0x4000 5010
+        ('P3Map_0',       atom(('=2s', '{}'))),      #0x4000 5018
+        ('P7Map_0',       atom(('=2s', '{}'))),      #0x4000 5038
+        ('Timer32_1',     atom(('=8s', '{}'))),     #0x4000 C000
+        ('Timer32_2',     atom(('=8s', '{}'))),     #0x4000 C020
+        ('DMA_Channel',   atom(('=28s', '{}'))),      #0x4000 E000
+        ('DMA_Control',   atom(('=28s', '{}'))),      #0x4000 F000
+        ('ICSR',          atom(('<4s', '{}'))),       #0xE000 ED04
+        ('VTOR',          atom(('=4s', '{}'))),       #0xE000 ED08
+        ('SHCSR',         atom(('=4s', '{}'))),       #0xE000 ED24
+        ('CFSR',          atom(('=4s', '{}'))),       #0xE000 ED28
+        ('HFSR',          atom(('=4s', '{}'))),       #0xE000 ED2C
+        ('DFSR',          atom(('=4s', '{}'))),       #0xE000 ED30
+        ('MMFAR',         atom(('=4s', '{}'))),       #0xE000 ED34
+        ('BFAR',          atom(('=4s', '{}'))),       #0xE000 ED38
+        ('AFSR',          atom(('=4s', '{}'))),       #0xE000 ED3C
+    ]))
+
+'''
+I/O Register Memory Region Mapping Table
+Requires *exact* same name as aggie defintion above
+ARM7 specific
+'''
+io_reg_map = OrderedDict({
+    'Timer_A0'     : 0x40000000,
+    'Timer_A1'     : 0x40000400,
+    'eUSCI_A0'     : 0x40001000,
+    'eUSCI_A1'     : 0x40001400,
+    'eUSCI_A2'     : 0x40001800,
+    'eUSCI_A3'     : 0x40001C00,
+    'eUSCI_B0'     : 0x40002000,
+    'eUSCI_B1'     : 0x40002400,
+    'eUSCI_B2'     : 0x40002800,
+    'eUSCI_B3'     : 0x40002C00,
+    'RTC_C'        : 0x40004400,
+    'WDT_A'        : 0x40004800,
+    'PortMap'      : 0x40005000,
+    'P2Map_0'      : 0x40005010,
+    'P3Map_0'      : 0x40005018,
+    'P7Map_0'      : 0x40005080,
+    'Timer32_1'    : 0x4000C000,
+    'Timer32_2'    : 0x4000C020,
+    'DMA_Channel'  : 0x4000E000,
+    'DMA_Control'  : 0x4000F000,
+    'ICSR'         : 0xE000ED04,
+    'VTOR'         : 0xE000ED08,
+    'SHCSR'        : 0xE000ED24,
+    'CFSR'         : 0xE000ED28,
+    'HFSR'         : 0xE000ED2C,
+    'DFSR'         : 0xE000ED30,
+    'MMFAR'        : 0xE000ED34,
+    'BFAR'         : 0xE000ED38,
+    'AFSR'         : 0xE000ED3C,
+})
+
+'''
+Define the System Control Block data needed in panic
+'''
+def obj_scb_info():
+    return aggie(OrderedDict([
+        ('CFSR',      atom(('<I', '{}'))),    #0xE000ED28
+        ('HFSR',      atom(('<I', '{}'))),    #0xE000ED2C
+        ('DFSR',      atom(('<I', '{}'))),    #0xE000ED30
+        ('MMFAR',     atom(('<I', '{}'))),    #0xE000ED34
+        ('BFAR',      atom(('<I', '{}'))),    #0xE000ED38
+    ]))
 
 def obj_add_info():
     return aggie(OrderedDict([
@@ -138,7 +223,7 @@ def obj_panic_zero_0():
         ('owcb_info',  obj_owcb()),
         ('image_info', obj_image_info()),
         ('add_info',   obj_add_info()),
-        ('padding',    atom(('43I', '{}'))),
+#        ('padding',    atom(('43I', '{}'))),
     ]))
 
 def obj_panic_zero_1():
