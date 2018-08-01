@@ -38,7 +38,6 @@ configuration Si446xDriverLayerC {
     interface PacketField<uint16_t> as PacketTransmitDelay;
 
     interface Alarm<TRadio, tradio_size>;
-    interface PacketAcknowledgements;
   }
   uses {
     interface Si446xDriverConfig as Config;
@@ -60,7 +59,6 @@ implementation {
   RadioReceive = DriverLayerP;
   RadioCCA = DriverLayerP;
   RadioPacket = DriverLayerP;
-  PacketAcknowledgements = DriverLayerP;
 
   Config = DriverLayerP;
 

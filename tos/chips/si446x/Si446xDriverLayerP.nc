@@ -88,8 +88,6 @@ module Si446xDriverLayerP {
     interface PacketField<uint8_t> as PacketTransmitPower;
     interface PacketField<uint8_t> as PacketRSSI;
     interface PacketField<uint16_t> as PacketTransmitDelay;
-//  interface PacketField<uint8_t> as AckReceived;
-    interface PacketAcknowledgements;
   }
   uses {
     interface Si446xDriverConfig as Config;
@@ -98,8 +96,6 @@ module Si446xDriverLayerP {
     interface PacketFlag     as TransmitPowerFlag;
     interface PacketFlag     as TransmitDelayFlag;
     interface PacketFlag     as RSSIFlag;
-    interface PacketFlag     as TimeSyncFlag;
-    interface PacketFlag     as AckReceivedFlag;
 
     interface PacketTimeStamp<TRadio, uint32_t>;
 
@@ -1664,6 +1660,84 @@ implementation {
 
   /**************************************************************************/
 
+  /* ----------------- PacketTransmitPower ----------------- */
+
+  async command bool PacketTransmitPower.isSet(message_t *msg) {
+    return call TransmitPowerFlag.get(msg);
+  }
+
+
+  async command uint8_t PacketTransmitPower.get(message_t *msg) {
+    return getMeta(msg)->tx_power;
+  }
+
+
+  async command void PacketTransmitPower.clear(message_t *msg) {
+    call TransmitPowerFlag.clear(msg);
+    getMeta(msg)->tx_power = 0;
+  }
+
+
+  async command void PacketTransmitPower.set(message_t *msg, uint8_t value) {
+    call TransmitPowerFlag.set(msg);
+    getMeta(msg)->tx_power = value;
+  }
+
+
+/**************************************************************************/
+
+/* ----------------- PacketRSSI ----------------- */
+
+  async command bool PacketRSSI.isSet(message_t *msg) {
+    return call RSSIFlag.get(msg);
+  }
+
+
+  async command uint8_t PacketRSSI.get(message_t *msg) {
+    return getMeta(msg)->rssi;
+  }
+
+
+  async command void PacketRSSI.clear(message_t *msg) {
+    call RSSIFlag.clear(msg);
+    getMeta(msg)->rssi = 0;
+  }
+
+
+  async command void PacketRSSI.set(message_t *msg, uint8_t value) {
+    call RSSIFlag.set(msg);
+    getMeta(msg)->rssi = value;
+  }
+
+
+  /**************************************************************************/
+
+  /* ----------------- PacketTransmitDelay ----------------- */
+
+  async command bool PacketTransmitDelay.isSet(message_t *msg) {
+    return call TransmitDelayFlag.get(msg);
+  }
+
+
+  async command uint16_t PacketTransmitDelay.get(message_t *msg) {
+    return getMeta(msg)->tx_delay;
+  }
+
+
+  async command void PacketTransmitDelay.clear(message_t *msg) {
+    call TransmitDelayFlag.clear(msg);
+    getMeta(msg)->tx_delay = 0;
+  }
+
+
+  async command void PacketTransmitDelay.set(message_t *msg, uint16_t value) {
+    call TransmitDelayFlag.set(msg);
+    getMeta(msg)->tx_delay = value;
+  }
+
+
+  /**************************************************************************/
+
   /* ----------------- RadioPacket ----------------- */
 
   /*
@@ -1696,102 +1770,9 @@ implementation {
 
 
   async command void RadioPacket.clear(message_t *msg) {
-    // all flags are automatically cleared
-  }
-
-
-  /**************************************************************************/
-
-  /* ----------------- PacketTransmitPower ----------------- */
-
-  async command bool PacketTransmitPower.isSet(message_t *msg) {
-    return call TransmitPowerFlag.get(msg);
-  }
-
-
-  async command uint8_t PacketTransmitPower.get(message_t *msg) {
-    return getMeta(msg)->tx_power;
-  }
-
-
-  async command void PacketTransmitPower.clear(message_t *msg) {
-    call TransmitPowerFlag.clear(msg);
-  }
-
-
-  async command void PacketTransmitPower.set(message_t *msg, uint8_t value) {
-    call TransmitPowerFlag.set(msg);
-    getMeta(msg)->tx_power = value;
-  }
-
-
-/**************************************************************************/
-
-/* ----------------- PacketRSSI ----------------- */
-
-  async command bool PacketRSSI.isSet(message_t *msg) {
-    return call RSSIFlag.get(msg);
-  }
-
-
-  async command uint8_t PacketRSSI.get(message_t *msg) {
-    return getMeta(msg)->rssi;
-  }
-
-
-  async command void PacketRSSI.clear(message_t *msg) {
-    call RSSIFlag.clear(msg);
-  }
-
-
-  async command void PacketRSSI.set(message_t *msg, uint8_t value) {
-    // just to be safe if the user fails to clear the packet
-    call TransmitPowerFlag.clear(msg);
-
-    call RSSIFlag.set(msg);
-    getMeta(msg)->rssi = value;
-  }
-
-
-  /**************************************************************************/
-
-  /* ----------------- PacketTransmitDelay ----------------- */
-
-  async command bool PacketTransmitDelay.isSet(message_t *msg) {
-    return call TransmitDelayFlag.get(msg);
-  }
-
-
-  async command uint16_t PacketTransmitDelay.get(message_t *msg) {
-    return getMeta(msg)->tx_delay;
-  }
-
-
-  async command void PacketTransmitDelay.clear(message_t *msg) {
-    call TransmitDelayFlag.clear(msg);
-    getMeta(msg)->tx_delay = 0;
-  }
-
-
-  async command void PacketTransmitDelay.set(message_t *msg, uint16_t value) {
-    call TransmitDelayFlag.set(msg);
-    getMeta(msg)->tx_delay = value;
-  }
-
-  /* ----------------- PacketAcknowledgements ----------------- */
-
-  async command error_t PacketAcknowledgements.requestAck(message_t *msg) {
-    return SUCCESS;
-  }
-
-
-  async command error_t PacketAcknowledgements.noAck(message_t* msg) {
-    return SUCCESS;
-  }
-
-
-  async command bool PacketAcknowledgements.wasAcked(message_t* msg) {
-    return FALSE;
+    call PacketTransmitPower.clear(msg);
+    call PacketRSSI.clear(msg);
+    call PacketTransmitDelay.clear(msg);
   }
 
 
