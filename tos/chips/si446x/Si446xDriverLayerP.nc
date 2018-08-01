@@ -165,12 +165,23 @@ implementation {
     uint8_t                           send_tries;      // flag to track send msg retry
     uint32_t                          send_wait_time;  // send message time to wait
     uint32_t                          send_max_wait;   // max wait time to send
+    uint8_t                           last_rssi;       // last received value
+    uint8_t                           min_rssi;        // minimum received value
+    uint8_t                           max_rssi;        // maximum received value
   } global_io_context_t;
 
   tasklet_norace global_io_context_t  global_ioc;
   tasklet_norace uint8_t              rxMsgBuffer[sizeof(message_t)];
   tasklet_norace uint8_t              rxMsgBufferGuard[] = "DEADBEAF";
 
+  void set_global_rssi(uint8_t rssi) {
+    global_ioc.last_rssi = rssi;
+    global_ioc.max_rssi = (global_ioc.max_rssi < rssi) ? rssi : global_ioc.max_rssi;
+    global_ioc.min_rssi = (global_ioc.min_rssi > rssi) ? rssi : global_ioc.min_rssi;
+  }
+
+
+/**************************************************************************/
 /* the following defines control how msg send is handled when a delay is
  * required due to other activity that the radio driver is handling, like
  * receiving a msg.
@@ -898,8 +909,6 @@ implementation {
     global_ioc.rx_ff_index = 0;
     global_ioc.rx_packets++;
     start_alarm(SI446X_RX_TIMEOUT);
-//    call PacketRSSI.set(global_ioc.pRxMsg,
-//                        call Si446xCmd.fast_latched_rssi());
     return fsm_results(t->next_state, E_NONE);
   }
 
@@ -940,6 +949,7 @@ implementation {
     if (!call PacketRSSI.isSet(global_ioc.pRxMsg)) {
         call PacketRSSI.set(global_ioc.pRxMsg,
                             call Si446xCmd.fast_latched_rssi());
+        set_global_rssi(call Si446xCmd.fast_latched_rssi());
       }
   }
 
