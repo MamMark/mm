@@ -500,6 +500,10 @@ implementation {
             tn_trace_rec(my_id, 25);
             break;
           }
+          if (put.eof) {                 // request to short
+            tn_trace_rec(my_id, 35);
+            return do_reject(msg, SUCCESS);
+          }
           // allocate new image and write first data
           if ((err = call IM.alloc(&put.version)) != 0) {
             tn_trace_rec(my_id, 26);
