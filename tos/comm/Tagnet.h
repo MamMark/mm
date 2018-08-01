@@ -31,6 +31,7 @@
 
 #include <TagnetTLV.h>
 
+#define  TAGNET_VERSION    2
 
 typedef enum {
   TN_POLL                = 0,
@@ -94,32 +95,5 @@ void tn_trace_rec(tn_ids_t id, uint8_t loc) {
   tn_trace_array[tn_trace_index].loc = loc;
   if (tn_trace_index < TN_TRACE_PARSE_ARRAY_SIZE) tn_trace_index++;
 }
-
-#ifdef notdef
-!!! include this in the HEAD response to designate the format of payload
-from https://pythonhosted.org/txdbus/dbus_overview.html
-Character	Code Data Type
-y  8-bit unsigned integer
-b  boolean value
-n  16-bit signed integer
-q  16-bit unsigned integer
-i  32-bit signed integer
-u  32-bit unsigned integer
-x  64-bit signed integer
-t  64-bit unsigned integer
-d  double-precision floating point (IEEE 754)
-s  UTF-8 string (no embedded nul characters)
-o  D-Bus Object Path string
-g  D-Bus Signature string
-a  Array
-(  Structure start
-)  Structure end
-v  Variant type (described below)
-{  Dictionary/Map begin
-}  Dictionary/Map end
-h  Unix file descriptor
-
-additional info @ https://dbus.freedesktop.org/doc/dbus-specification.html#type-system
-#endif
 
 #endif          /* __TAGNET_H__ */

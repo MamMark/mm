@@ -69,6 +69,12 @@ interface TagnetHeader {
    */
   command tagnet_error_t   get_error(message_t *msg);
   /**
+   * prepare msg for packet transmission
+   *
+   * @param   msg           pointer to message buffer containing Tagnet message
+   */
+  command void   finalize(message_t *msg);
+  /**
    * Get the length of the message header (fixed at 4 bytes).
    *
    * @param   msg           pointer to message buffer containing Tagnet message
@@ -103,6 +109,20 @@ interface TagnetHeader {
    * @return  uint8_t       length of name in message buffer
    */
   async command uint8_t   get_name_len(message_t *msg);
+  /**
+   * Get version from message header
+   *
+   * @param   msg           pointer to message buffer containing Tagnet message
+   * @return  uint8_t       version number of message
+   */
+  command uint8_t   get_version(message_t* msg);
+  /**
+   * Check to see if header is well-formed
+   *
+   * @param   msg           pointer to message buffer containing Tagnet message
+   * @return  bool          TRUE if payload type is set to raw
+   */
+  command bool   is_hdr_valid(message_t *msg);
   /**
    * Check to see if payload type is raw bytes
    *
@@ -199,4 +219,11 @@ interface TagnetHeader {
    * @param   msg           pointer to message buffer containing Tagnet message
    */
   command void   set_response(message_t *msg);
+  /**
+   * Set version in message header
+   *
+   * @param   msg           pointer to message buffer containing Tagnet message
+   * @param   vers          version to set in message header
+   */
+  command void   set_version(message_t *msg, uint8_t vers);
 }

@@ -42,9 +42,10 @@ implementation {
     if (!msg)
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
                        0, 0, 0, 0);       /* null trap */
-
-    /* start at the beginning of the name
-     * if null ptr returned, then this is ill-formed msg,
+    // check header first
+    if (!call THdr.is_hdr_valid(msg))
+      return FALSE;
+    /* if node id is not found, then this is ill-formed msg,
      * which will be ignored. Unrecognized message.
      */
     this_tlv = call TName.first_element(msg);
@@ -75,7 +76,8 @@ implementation {
       //   if rsp set, then send response msg
       if (signal Sub.evaluate[i](msg)) {
         if (call THdr.is_response(msg)) {
-          return TRUE;             // match, response
+          call THdr.finalize(msg); // prep msg for xmit
+          return TRUE;             // match, with response
         }
         return FALSE;              // match, no response
       }
