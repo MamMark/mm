@@ -1758,7 +1758,7 @@ implementation {
   /* ----------------- PacketTransmitDelay ----------------- */
 
   async command bool PacketTransmitDelay.isSet(message_t *msg) {
-    return TRUE;
+    return call TransmitDelayFlag.get(msg);
   }
 
 
@@ -1767,10 +1767,14 @@ implementation {
   }
 
 
-  async command void PacketTransmitDelay.clear(message_t *msg) { }
+  async command void PacketTransmitDelay.clear(message_t *msg) {
+    call TransmitDelayFlag.clear(msg);
+    getMeta(msg)->tx_delay = 0;
+  }
 
 
   async command void PacketTransmitDelay.set(message_t *msg, uint16_t value) {
+    call TransmitDelayFlag.set(msg);
     getMeta(msg)->tx_delay = value;
   }
 
