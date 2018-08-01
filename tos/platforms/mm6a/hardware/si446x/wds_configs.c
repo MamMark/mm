@@ -7,18 +7,18 @@
 #include <stdlib.h>
 #include "wds_configs.h"
 
-extern uint8_t const SI4468_10KB_433M_200KHZ_PSM_config[];
-extern uint8_t const SI4468_10KB_433M_200KHZ_PSM_name[];
-extern const wds_config_ids_t SI4468_10KB_433M_200KHZ_PSM_ids;
+extern uint8_t const SI4468_10KB_433M_200KHZ_config[];
+extern uint8_t const SI4468_10KB_433M_200KHZ_name[];
+extern const wds_config_ids_t SI4468_10KB_433M_200KHZ_ids;
 extern uint8_t const SI4468_100B_433M_200KHZ_PSM_config[];
 extern uint8_t const SI4468_100B_433M_200KHZ_PSM_name[];
 extern const wds_config_ids_t SI4468_100B_433M_200KHZ_PSM_ids;
 extern uint8_t const SI4468_100KB_433M_200KHZ_config[];
 extern uint8_t const SI4468_100KB_433M_200KHZ_name[];
 extern const wds_config_ids_t SI4468_100KB_433M_200KHZ_ids;
-extern uint8_t const SI4468_10KB_433M_200KHZ_config[];
-extern uint8_t const SI4468_10KB_433M_200KHZ_name[];
-extern const wds_config_ids_t SI4468_10KB_433M_200KHZ_ids;
+extern uint8_t const SI4468_10KB_433M_200KHZ_PSM_config[];
+extern uint8_t const SI4468_10KB_433M_200KHZ_PSM_name[];
+extern const wds_config_ids_t SI4468_10KB_433M_200KHZ_PSM_ids;
 extern uint8_t const SI4468_1KB_433M_200KHZ_PSM_config[];
 extern uint8_t const SI4468_1KB_433M_200KHZ_PSM_name[];
 extern const wds_config_ids_t SI4468_1KB_433M_200KHZ_PSM_ids;
@@ -28,18 +28,18 @@ extern const wds_config_ids_t SI4468_50KB_433M_200KHZ_PSM_ids;
 
 // const array of const strings, required definition and syntax
 const uint8_t *const wds_radio_configs[] = {
-   SI4468_10KB_433M_200KHZ_PSM_config,
-   SI4468_10KB_433M_200KHZ_PSM_name,
-   (uint8_t *) &SI4468_10KB_433M_200KHZ_PSM_ids,
+   SI4468_10KB_433M_200KHZ_config,
+   SI4468_10KB_433M_200KHZ_name,
+   (uint8_t *) &SI4468_10KB_433M_200KHZ_ids,
    SI4468_100B_433M_200KHZ_PSM_config,
    SI4468_100B_433M_200KHZ_PSM_name,
    (uint8_t *) &SI4468_100B_433M_200KHZ_PSM_ids,
    SI4468_100KB_433M_200KHZ_config,
    SI4468_100KB_433M_200KHZ_name,
    (uint8_t *) &SI4468_100KB_433M_200KHZ_ids,
-   SI4468_10KB_433M_200KHZ_config,
-   SI4468_10KB_433M_200KHZ_name,
-   (uint8_t *) &SI4468_10KB_433M_200KHZ_ids,
+   SI4468_10KB_433M_200KHZ_PSM_config,
+   SI4468_10KB_433M_200KHZ_PSM_name,
+   (uint8_t *) &SI4468_10KB_433M_200KHZ_PSM_ids,
    SI4468_1KB_433M_200KHZ_PSM_config,
    SI4468_1KB_433M_200KHZ_PSM_name,
    (uint8_t *) &SI4468_1KB_433M_200KHZ_PSM_ids,

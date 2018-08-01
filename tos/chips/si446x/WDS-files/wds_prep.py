@@ -20,7 +20,7 @@ line is corrected to conform with Linux. The backslash used in the
 #include filename needs to be replaced with forward slash before the
 link can be followed.
 
-This program expects the following directory structure
+This script expects the following directory structure:
 
 -root
    |
@@ -30,6 +30,7 @@ This program expects the following directory structure
    |
    +--- TagNet/si446x/si446x/radioconfig/WDS-files (copies)
 
+This script must be run from the WDS_files directory.
 
 For all configuration source trees found in the WDS-files directory
 c-code files are generated that contain the information required
@@ -59,8 +60,8 @@ array contains the configuration pstrings and a byte array for
 the name of the configuration (actually a null terminated string).
 '''
 
-DEFAULT_CONFIG_FILE =  'Si4468_10kb_433m_200khz_psm'
-
+#DEFAULT_CONFIG_FILE =  'Si4468_10kb_433m_200khz_psm'
+DEFAULT_CONFIG_FILE =  'Si4468_10kb_433m_200khz'
 
 # code to instantiate one configuration from the list
 #
@@ -373,3 +374,5 @@ if __name__ == '__main__':
     if (dirlist):
         write_global_config(dirlist)
         make_copies(dirlist)
+    else:
+        print('no source directories found')
