@@ -1,0 +1,3 @@
+[submodule "tools/utils/pix/CrashDebug"]
+	path = tools/utils/pix/CrashDebug
+	url = https://github.com/MamMark/CrashDebug.git
