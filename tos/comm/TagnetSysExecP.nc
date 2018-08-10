@@ -180,16 +180,22 @@ implementation {
     return SUCCESS;
   }
 
+  /*
+   * if the version being set is what is currently loaded into flash
+   * then force OverWatch.Install().  That is force a reinstall of
+   * the ACTIVE from the ImageManager into the flash.  Special operation.
+   */
   command error_t SysNIB.set_version(image_ver_t *versionp) {
     image_ver_t nib_ver;
 
     if (!versionp)
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
+    /* get what is currently running as the NIB (flash) */
     call SysNIB.get_version(&nib_ver);
-    if (!call IMD.verEqual(&nib_ver, versionp))
+    if (!call IMD.verEqual(&nib_ver, versionp)) /* key match? */
       return EINVAL;
-    call OW.flush_boot(OW_BOOT_NIB, ORR_USER_REQUEST);
+    call OW.install();          /* won't return */
     return SUCCESS;
   }
 
