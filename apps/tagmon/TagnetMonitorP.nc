@@ -22,9 +22,8 @@
 
 #include <Tasklet.h>
 #include <tagnet_panic.h>
-
-uint32_t gt0, gt1;
-uint16_t tt0, tt1;
+#include <rtc.h>
+#include <rtctime.h>
 
 module TagnetMonitorP {
   provides interface TagnetMonitor;
@@ -40,6 +39,8 @@ module TagnetMonitorP {
     interface RadioReceive;
     interface Platform;
     interface Panic;
+    interface Rtc;
+    interface RtcAlarm;
   }
 }
 implementation {
@@ -52,78 +53,110 @@ implementation {
   norace          bool        tagMsgBusy;
 
   /*
-   * Tagnet Monitor handles control of the radio to manage power
-   * and balanced with presenting reasonable opportunities for
-   * communication with a base station.
+   * Tagnet Monitor handles radio power management.
+   *
+   * The aim is to strike a balance between presenting reasonable
+   * opportunities for communication with a base station while
+   * minimizing power consumption.
    *
    * Below are the enums and variables used to control hierarchical
    * state machine. See <tagmonograph.png> for specifics on the
    * state transitions.
    */
 
-  // major states
+  /*
+   * major states
+   *   HOME         tag is currently communicating with basestation
+   *   NEAR         tag is going to switch radio to standby until clock event
+   *   LOST         tag has not seen basestation and is in deep sleep
+   */
   typedef enum {
     RS_NONE         = 0,
-    RS_BASE         = 1,
-    RS_HUNT         = 2,
+    RS_HOME         = 1,
+    RS_NEAR         = 2,
     RS_LOST         = 3,
     RS_MAX,
   } radio_state_t;
 
-  // minor states
+  /*
+   * minor states
+   *   RECV         radio receiver is on
+   *   RECV_WAIT    wait for radio_on command to complete
+   *   STANDBY      radio in low power mode (register retained, recv off)
+   *   STANDBY_WAIT waiting for radio_standby command to complete
+   */
   typedef enum {
     SS_NONE         = 0,
     SS_RECV_WAIT    = 1,
     SS_RECV         = 2,
-    SS_STANDBY      = 3,
-    SS_STANDBY_WAIT = 4,
+    SS_STANDBY_WAIT = 3,
+    SS_STANDBY      = 4,
     SS_MAX,
   } radio_substate_t;
 
   // context for a minor state (more than one)
   typedef struct {
-    radio_substate_t  state;
-    uint32_t          max_cycles;       // one per major
-    uint32_t          timers[SS_MAX];   // per substate
+    radio_substate_t  state;            // major state
+    int32_t           max_cycles;       // one per major
+    int32_t           timers[SS_MAX];   // per substate
   } radio_subgraph_t;
 
   // context for the major state
   typedef struct {
-    radio_state_t     state;
+    radio_state_t     state;            // minor state
     int32_t           cycle_cnt;        // one per system
     radio_subgraph_t  sub[RS_MAX];      // per state
   } radio_graph_t;
 
-  // main radio controller data structure.
-  //
-  // Base: 2000/2000    ~2secs On/~2secs Off     4 sec cycle 50% duty
-  // Hunt: 4000/26000   ~4secs On/~26secs Off   30 sec cycle 15% duty
-  // Lost: 6000/6000000 ~6secs On/~600secs Off  10 min cycle  1% duty
-  //
-  // Hunt's 4 secs on is chosen to increase likelihood of catching tagfuse's
-  // 1 sec retransmission windows.
-
+  /*
+   * Radio Controller Block data structure
+   *
+   * The RCB keeps track of states, retries, and timer values for the
+   * monitor.
+   *
+   * This is a two level state machine, the top level (RS_) can be
+   * one of the major states (HOME, NEAR, LOST). The second level (SS_)
+   * controls the radio receive/standby cycle.
+   *
+   * A timer value is defined for each RS_/SS_ state pair. A positive
+   * value specifies a time to wait in milliseconds. A negative value
+   * specifies a time to wait based on wall clock, by minutes per slice.
+   * A slice represents a precise whole integer number of minutes for
+   * for a specific divisor of 60 minutes. This value is used to pick
+   * the time the rtc alarm will fire (the next minute of the hour
+   * based on current minute of the hour and minutes-per-slice).
+   *
+   * For the wall clock, the time to wait is specified by dividing the
+   * hour by whole number divisors of 60 (1,2,3,4,5,6,10,12,15,20,30,60).
+   *
+   * Cycle count is used to control the number of cycles in the sub-state
+   * machine to execute before transitioning to a different major-state.
+   * A negative one (-1) value denotes to never leave. In addition to the
+   * count being set on each major-state transition and being decremented
+   * on each sub-state transition, it may also be modified on event
+   * specific needs.
+   */
   norace radio_graph_t  rcb = {
   //              cycle
   //  cur_state,    cnt
         RS_NONE,      0,
 
-     //            cycle         RW   ON      OFF   SW
-    {// substate   limit     N       RECV    STBY
-      {  SS_NONE,     0,    {0,   0,    0,      0,   0 } },     /* none */
-      {  SS_NONE,    -1,    {0, 1000,   50,     50, 1000 } },     /* base */
-      {  SS_NONE,    -1,    {0, 1000, 4000,  26000, 1000 } },     /* hunt */
-      {  SS_NONE,    -1,    {0, 1000, 9000, 900000, 1000 } },     /* lost */
+     //              max          R-W  RECV     S-W  STBY
+    {// substate  cycles    NA
+      {  SS_NONE,     0,    {0,    0,    0,      0,    0 } },    /* NA */
+      {  SS_NONE,  2000,    {0, 1000,   50,   1000,   50 } },   /* home */
+      {  SS_NONE,    40,    {0, 1000, 4000,   1000,   -1 } },   /* near */
+      {  SS_NONE,    -1,    {0, 1000, 4000,   1000,   -5 } },   /* lost */
     }
   };
 
-  // instrumentation for radio state changes.
-
+  // instrumentation for radio state changes
   typedef struct {
     uint32_t          count;
+    uint32_t          cycles;
     uint32_t          ts_ms;
     uint32_t          ts_usecs;
-    uint32_t          timeout;
+    int32_t           timeout;
     radio_state_t     major;
     radio_state_t     old_major;
     radio_substate_t  minor;
@@ -135,13 +168,34 @@ implementation {
   radio_trace_t       radio_trace[TAGMON_RADIO_TRACE_MAX];
   norace uint32_t     radio_trace_cur;
 
+  // see if number is a whole divisor of 60 (for wall clock calc)
+  bool is_divisorof60(int32_t val) {
+    switch (val) {
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+      case 6:
+      case 10:
+      case 12:
+      case 15:
+      case 20:
+      case 30:
+      case 60:
+        return TRUE;
+      default:
+        return FALSE;
+    }
+  }
 
   void change_radio_state(radio_state_t major, radio_substate_t minor) {
     error_t          error = SUCCESS;
     radio_state_t    old_major;
     radio_substate_t old_minor;
     radio_trace_t   *tt;
-    uint32_t         tval;
+    int32_t          tval;
+    rtctime_t        rt;
 
     nop();                     /* BRK */
     if (major == RS_NONE) {
@@ -184,7 +238,7 @@ implementation {
     old_minor = rcb.sub[old_major].state;
     rcb.state = major;
     rcb.sub[major].state = minor;
-    tval = rcb.sub[major].timers[minor]; // get timer from wait state
+    tval = rcb.sub[major].timers[minor]; // get timer for state
 
     // add info to trace array
     // only record the first instance of a repeated state change
@@ -198,6 +252,7 @@ implementation {
       tt->ts_ms    = call Platform.localTime();
       tt->ts_usecs = call Platform.usecsRaw();
       tt->count    = 1;
+      tt->cycles   = rcb.cycle_cnt;
       tt->major = major; tt->old_major = old_major;
       tt->minor = minor; tt->old_minor = old_minor;
       tt->timeout = tval;
@@ -207,8 +262,25 @@ implementation {
       tt->ts_usecs = call Platform.usecsRaw();
     }
 
-    // start timer
-    call smTimer.startOneShot(tval);
+    // start timer or rtc alarm, depending on timout value
+    if (tval < 0) {
+      tval = 0 - tval;
+      /* set rtc alarm to the next slice in 60 minute cycle
+       *   slice = whole divisor of 60 minutes
+       *   mps = minutes per slice
+       *   rt.min = (((Rtc.getTime().min/mps) + 1) * mps) % 60
+       *   RtcAlarm.set(rt, MIN)
+       */
+      call Rtc.getTime(&rt);
+      if (is_divisorof60(tval)) {
+        rt.min = (((rt.min / tval) + 1) * tval) % 60;
+        call RtcAlarm.setAlarm(&rt, RTC_ALARM_MINUTE);
+      } else
+        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
+                         tval, rt.min, 0, 0);
+    } else {
+      call smTimer.startOneShot(tval);
+    }
 
     // reset retry counter if changing major
     if (major != old_major)
@@ -243,11 +315,11 @@ implementation {
 
 
   command void TagnetMonitor.setBase() {
-    change_radio_state(RS_BASE, SS_RECV);
+    change_radio_state(RS_HOME, SS_RECV);
   }
 
   command void TagnetMonitor.setHunt() {
-    change_radio_state(RS_HUNT, SS_RECV);
+    change_radio_state(RS_NEAR, SS_RECV);
   }
 
   command void TagnetMonitor.setLost() {
@@ -308,12 +380,16 @@ implementation {
     /*
      * we are in RECV.  And it is 'FOR_ME' in some fashion.
      * always take the 'FOR_ME' arc in the state machine and
-     * transfer into MAJOR_BASE state.
+     * transfer into MAJOR_HOME state.
      *
      * the change_radio_state handles the transition into BASE
      * and starting the BASE duty cycle timer.
+     *
+     * Also, reset the cycle counter since want to stay active
+     * when the basestation is talking to this tag.
      */
-    change_radio_state(RS_BASE, SS_RECV);    // all go to base primary state
+    rcb.cycle_cnt = rcb.sub[RS_HOME].max_cycles;
+    change_radio_state(RS_HOME, SS_RECV);    // all go to base primary state
     rsp = call Tagnet.process_message(pTagMsg);
     if (!rsp) {
       tagMsgBusy = FALSE;
@@ -406,11 +482,12 @@ implementation {
     radio_substate_t minor;
 
     nop();                     /* BRK */
+    call smTimer.stop();
     major = rcb.state;
     minor = rcb.sub[major].state;
     switch (major) {
-      case RS_BASE:     alt_major = RS_HUNT;    break;
-      case RS_HUNT:     alt_major = RS_LOST;    break;
+      case RS_HOME:     alt_major = RS_NEAR;    break;
+      case RS_NEAR:     alt_major = RS_LOST;    break;
       default:          alt_major = RS_LOST;    break;
     }
     switch (minor) {
@@ -433,7 +510,7 @@ implementation {
   }
 
 
-  event void smTimer.fired() {
+  task void timer_fired() {
     radio_state_t    major;
     radio_substate_t minor;
 
@@ -458,10 +535,18 @@ implementation {
     }
   }
 
+  event void smTimer.fired() {
+    post timer_fired();
+  }
+
+  async event void RtcAlarm.rtcAlarm(rtctime_t *timep,
+                                     uint32_t field_set) {
+    post timer_fired();
+  }
 
   event void Boot.booted() {
     nop();                     /* BRK */
-    change_radio_state(RS_BASE, SS_RECV_WAIT);
+    change_radio_state(RS_HOME, SS_RECV_WAIT);
   }
 
   async event void Panic.hook() { }

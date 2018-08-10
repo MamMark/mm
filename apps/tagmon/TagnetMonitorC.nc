@@ -48,6 +48,10 @@ implementation {
   GPSmonitorC.GPSTransmit       -> GpsPort;
   GPSmonitorC.GPSReceive        -> GpsPort;
 
+  components Msp432RtcC;
+  TagnetMonitorP.Rtc            -> Msp432RtcC;
+  TagnetMonitorP.RtcAlarm       -> Msp432RtcC;
+
   components TagnetSysExecC;
   TagnetC.SysActive             -> TagnetSysExecC.SysActive;
   TagnetC.SysBackup             -> TagnetSysExecC.SysBackup;
