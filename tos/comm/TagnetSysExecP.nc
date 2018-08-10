@@ -155,12 +155,12 @@ implementation {
   }
 
   command error_t SysGolden.set_version(image_ver_t *versionp) {
-    image_ver_t run_verp;
+    image_ver_t gold_ver;
 
     if (!versionp)
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
-    if ((call SysGolden.get_version(&run_verp) != SUCCESS) ||
-        (!call IMD.verEqual(&run_verp, versionp)))
+    call SysGolden.get_version(&gold_ver);
+    if (!call IMD.verEqual(&gold_ver, versionp))
       return EINVAL;
     call OW.flush_boot(OW_BOOT_GOLD, ORR_USER_REQUEST);
     return SUCCESS;
@@ -181,12 +181,13 @@ implementation {
   }
 
   command error_t SysNIB.set_version(image_ver_t *versionp) {
-    image_ver_t run_verp;
+    image_ver_t nib_ver;
 
     if (!versionp)
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
-    if ((call SysNIB.get_version(&run_verp) != SUCCESS) ||
-        (!call IMD.verEqual(&run_verp, versionp)))
+
+    call SysNIB.get_version(&nib_ver);
+    if (!call IMD.verEqual(&nib_ver, versionp))
       return EINVAL;
     call OW.flush_boot(OW_BOOT_NIB, ORR_USER_REQUEST);
     return SUCCESS;
@@ -214,17 +215,17 @@ implementation {
   }
 
   command error_t SysRunning.set_version(image_ver_t *versionp) {
-    image_ver_t run_verp;
+    image_ver_t run_ver;
 
     if (!versionp)
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
-    if ((call SysRunning.get_version(&run_verp) != SUCCESS) ||
-        (!call IMD.verEqual(&run_verp, versionp)))
+    call SysRunning.get_version(&run_ver);                /* always SUCCESS */
+    if (!call IMD.verEqual(&run_ver, versionp))
       return EINVAL;
-    if (call OW.getImageBase())
-      call OW.flush_boot(OW_BOOT_NIB, ORR_USER_REQUEST);
+    if (call OW.getImageBase())                           /* nib running? */
+      call OW.flush_boot(OW_BOOT_NIB, ORR_USER_REQUEST);  /* reboot nib   */
     else
-      call OW.flush_boot(OW_BOOT_GOLD, ORR_USER_REQUEST);
+      call OW.flush_boot(OW_BOOT_GOLD, ORR_USER_REQUEST); /* reboot gold  */
     return FAIL;                  /* won't get here! */
   }
 
