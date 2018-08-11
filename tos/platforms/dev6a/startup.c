@@ -1062,6 +1062,7 @@ void __rtc_init() {
     time.sec     = 0;
     time.sub_sec = 0;
     __rtc_setTime(&time);
+    ow_control_block.rtc_src = RTCSRC_FORCED;
   }
 }
 
@@ -1247,6 +1248,7 @@ void __Reset() {
   __disable_irq();
   memset(&ow_startup_times, 0, sizeof(ow_startup_times));
   __rtc_getTime(&ow_startup_times.boot_start);
+  ow_control_block.rtc_src = RTCSRC_BOOT;
 
   /*
    * restart the RTC

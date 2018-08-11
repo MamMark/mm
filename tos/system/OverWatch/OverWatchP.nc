@@ -924,6 +924,14 @@ implementation {
   }
 
 
+  async command rtc_src_t OverWatch.getRtcSrc() {
+    return ow_control_block.rtc_src;
+  }
+
+  async command void OverWatch.setRtcSrc(rtc_src_t src) {
+    ow_control_block.rtc_src = src;
+  }
+
   event void IM.delete_complete() { }
   event void IM.dir_set_backup_complete()   { }
   event void IM.dir_eject_active_complete() { }

@@ -122,4 +122,7 @@ interface OverWatch {
 
   async command void                forceLoggingFlags(uint32_t logging_val);
   async command uint32_t            getLoggingFlags();
+
+  async command rtc_src_t           getRtcSrc();
+  async command void                setRtcSrc(rtc_src_t src);
 }

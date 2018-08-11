@@ -8,9 +8,9 @@ from   core_emitters import *
 def decode_default(level, offset, buf, obj):
     return obj.set(buf)
 
-#                                      152 = sizeof(reboot record) + sizeof(owcb) (36 + 116)
-dtd.dt_records[DT_REBOOT]           = (152, decode_default, [ emit_reboot ],      obj_dt_reboot(),    'REBOOT',       'obj_dt_reboot'   )
-#                                      376 = sizeof(version record) + sizeof(image_info)  (24 + 32 + 2 + 318)
+#                                      156 = sizeof(reboot record) + sizeof(owcb) (36 + 120)
+dtd.dt_records[DT_REBOOT]           = (156, decode_default, [ emit_reboot ],      obj_dt_reboot(),    'REBOOT',       'obj_dt_reboot'   )
+#                                      376 = sizeof(version record) + sizeof(image_info)  (24 + 352)
 dtd.dt_records[DT_VERSION]          = (376, decode_default, [ emit_version ],     obj_dt_version(),   'VERSION',      'obj_dt_version'  )
 dtd.dt_records[DT_SYNC]             = ( 28, decode_default, [ emit_sync ],        obj_dt_sync(),      'SYNC',         'obj_dt_sync'     )
 dtd.dt_records[DT_EVENT]            = ( 40, decode_default, [ emit_event ],       obj_dt_event(),     'EVENT',        'obj_dt_event'    )

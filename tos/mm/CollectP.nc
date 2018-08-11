@@ -225,6 +225,8 @@ implementation {
     write_reboot_record();
     write_version_record();
     call OverWatch.checkFaults();
+    call CollectEvent.logEvent(DT_EVENT_TIME_SRC, call OverWatch.getRtcSrc(),
+                               0, 0, 0);
     signal Collect.collectBooted();     /* tell others collect is up */
     signal Booted.booted();
   }

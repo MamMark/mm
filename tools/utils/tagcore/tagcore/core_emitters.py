@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc2'
+__version__ = '0.4.5rc3'
 
 from   ctypes       import c_long
 
@@ -29,12 +29,14 @@ from   core_rev     import *
 from   dt_defs      import *
 
 from   core_headers import event_name
+from   core_headers import rtc_src_name
 from   core_headers import PANIC_WARN           # event
 from   core_headers import GPS_GEO              # event
 from   core_headers import GPS_XYZ              # event
 from   core_headers import GPS_TIME             # event
 from   core_headers import DCO_REPORT           # event
 from   core_headers import DCO_SYNC             # event
+from   core_headers import TIME_SRC             # event
 from   core_headers import GPS_MON_MINOR        # event
 from   core_headers import GPS_MON_MAJOR        # event
 from   core_headers import GPS_RX_ERR           # event
@@ -170,6 +172,8 @@ def emit_reboot(level, offset, buf, obj):
     pi_arg1      = owcb['pi_arg1'].val
     pi_arg2      = owcb['pi_arg2'].val
     pi_arg3      = owcb['pi_arg3'].val
+
+    rtc_src      = owcb['rtc_src'].val
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
@@ -410,6 +414,11 @@ def emit_event(level, offset, buf, obj):
         print(' {:14s} adj: {}  delta: {} ({}/{})'.format(
             event_name(event), arg0, arg1, arg2, arg3))
         return
+
+    if event == TIME_SRC:
+        arg1 = arg0
+        arg0 = rtc_src_name(arg0)
+        # fall through to bottom
 
     if (event == GPS_MON_MINOR):
         print(' gps/mon (MINOR), {:^15s} {:>12s} -> {}'.format(

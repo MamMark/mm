@@ -18,7 +18,9 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
-# 0.4.5rc6      imageinfo repr, display version/hw_ver in right order
+# 0.4.5rc7      CR: 20/5
+#               rtc_src
+#               imageinfo repr, display version/hw_ver in right order
 #               CR: 20/4
 #               add DCO_REPORT and DCO_SYNC
 #               revised image_info structure (split basic/plus)

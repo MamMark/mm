@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc1'
+__version__ = '0.4.5rc2'
 
 import binascii
 from   collections  import OrderedDict
@@ -126,6 +126,22 @@ def obj_dt_reboot():
     ]))
 
 
+# RTC SRC values
+rtc_src_names = {
+    0:  'BOOT',
+    1:  'FORCED',
+    2:  'DBLK',
+    3:  'NET',
+    4:  'GPS',
+}
+
+def rtc_src_name(rtc_src):
+    rs_name = rtc_src_names.get(rtc_src, 0)
+    if rs_name == 0:
+        rs_name = 'rtcsrc_' + str(rtc_src)
+    return rs_name
+
+
 #
 # reboot is followed by the ow_control_block
 # We want to decode that as well.  native order, little endian.
@@ -169,6 +185,10 @@ def obj_owcb():
         ('pi_arg1',         atom(('<I', '{}'))),
         ('pi_arg2',         atom(('<I', '{}'))),
         ('pi_arg3',         atom(('<I', '{}'))),
+
+        ('rtc_src',         atom(('B',  '{}'))),
+        ('pad0',            atom(('B',  '{}'))),
+        ('pad1',            atom(('<H', '{}'))),
 
         ('ow_sig_c',        atom(('<I', '0x{:08x}')))
     ]))
@@ -304,6 +324,7 @@ event_names = {
 
     15: 'DCO_REPORT',
     16: 'DCO_SYNC',
+    17: 'TIME_SRC',
 
     32: 'GPS_BOOT',
     33: 'GPS_BOOT_TIME',
@@ -355,6 +376,7 @@ GPS_XYZ       = 4
 GPS_TIME      = 5
 DCO_REPORT    = 15
 DCO_SYNC      = 16
+TIME_SRC      = 17
 GPS_MON_MINOR = 35
 GPS_MON_MAJOR = 36
 GPS_RX_ERR    = 37

@@ -195,6 +195,21 @@ enum {
   OW_LOG_TAGNET     = 8,
 };
 
+
+/*
+ * RTC SRC values
+ *
+ * who set the clock.
+ */
+typedef enum {
+  RTCSRC_BOOT   = 0,                    /* just booted, used as is */
+  RTCSRC_FORCED = 1,                    /* forced initilization    */
+  RTCSRC_DBLK   = 2,                    /* recovered from dblk     */
+  RTCSRC_NET    = 3,                    /* set by the network      */
+  RTCSRC_GPS    = 4,                    /* time sync with GPS      */
+} rtc_src_t;
+
+
 /*
  * ow_control_block_t
  */
@@ -246,7 +261,12 @@ typedef struct {
   uint32_t           pi_arg2;
   uint32_t           pi_arg3;
 
+  rtc_src_t          rtc_src;           /* B - last known clock setting */
+  uint8_t            pad0;
+  uint16_t           pad1;
+
   uint32_t           ow_sig_c;
+
 } PACKED ow_control_block_t;
 
 

@@ -33,6 +33,7 @@ implementation {
   components          TagnetSysExecP        as  Element;
   components          ImageManagerC;
   components          OverWatchC;
+  components          CollectC;
   components          PlatformC;
   components          PanicC;
 
@@ -45,6 +46,7 @@ implementation {
   Element.IM         ->  ImageManagerC.IM[unique("image_manager_clients")];
   Element.IMD        ->  ImageManagerC;
   Element.OW         ->  OverWatchC;
+  Element.CollectEvent-> CollectC;
   Element.Rtc        ->  PlatformC;
   Element.Panic      ->  PanicC;
 }

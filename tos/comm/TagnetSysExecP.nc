@@ -52,6 +52,7 @@ module TagnetSysExecP {
   uses     interface  ImageManager              as  IM;
   uses     interface  ImageManagerData          as  IMD;
   uses     interface  OverWatch                 as  OW;
+  uses     interface  CollectEvent;
   uses     interface  Rtc;
   uses     interface  Panic;
 }
@@ -255,7 +256,9 @@ implementation {
 
     if (call Rtc.rtcValid(rtp)) {
       call Rtc.setTime(rtp);
+      call OW.setRtcSrc(RTCSRC_NET);
       __last_grab_rtc(1, rtp);
+      call CollectEvent.logEvent(DT_EVENT_TIME_SRC, RTCSRC_NET, 0, 0, 0);
       return TRUE;
     }
     return FALSE;

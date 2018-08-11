@@ -168,7 +168,7 @@ typedef struct {                /* size 20 */
  */
 
 typedef struct {
-  uint16_t len;                 /* size 36 +    116     */
+  uint16_t len;                 /* size 36 +    120     */
   dtype_t  dtype;               /* reboot  + ow_control */
   uint32_t recnum;
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
@@ -193,11 +193,10 @@ typedef struct {
 /*
  * version record
  *
- * simple version information
- * followed by the entire image_info block
+ * version header followed by the entire image_info block
  */
 typedef struct {
-  uint16_t    len;              /* size   24    +   24 + 292   */
+  uint16_t    len;              /* size   24    +  352         */
   dtype_t     dtype;            /* dt_version_t + image_info_t */
   uint32_t    recnum;
   rtctime_t   rt;               /* 10 byte rtctime             */
@@ -245,6 +244,8 @@ typedef enum {
 
   DT_EVENT_DCO_REPORT       = 15,
   DT_EVENT_DCO_SYNC         = 16,
+
+  DT_EVENT_TIME_SRC         = 17,
 
   /***********************************/
 
