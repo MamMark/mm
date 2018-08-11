@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc1'
+__version__ = '0.4.5rc2'
 
 from   ctypes       import c_long
 
@@ -390,8 +390,9 @@ def emit_event(level, offset, buf, obj):
         hr   = (arg1 >> 8)  & 0xff
         xmin =  arg1        & 0xff
         secs =  arg2 / 1000.
-        print(' {:14s} UTC: {}/{:02}/{:02} {:2}:{:02}:{:<6.3f}'.format(
-            event_name(event), year, mon, day, hr, xmin, secs))
+        print(' {:14s} UTC: {}/{:02}/{:02} {:2}:{:02}:{}'.format(
+            event_name(event), year, mon, day, hr, xmin,
+            '{:.3f}'.format(secs).zfill(6)))
         return
 
     if event == DCO_REPORT:
