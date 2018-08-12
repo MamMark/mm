@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Miles Maltbie, Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,6 @@
  * See COPYING in the top level directory of this source tree.
  *
  * Contact: Eric B. Decker <cire831@gmail.com>
- *          Miles Maltbie <milesmaltbie@gmail.com>
  */
 
 #include <panic.h>
@@ -716,13 +715,13 @@ implementation {
     imcb_t *imcp;
     int i;
 
-    imcp = &imcb;
-    if (imcp->im_state != IMS_IDLE)
-        im_panic(7, imcp->im_state, 0);
-
     ep = NULL;
+    imcp = &imcb;
     dir = &imcb.dir;
     verify_IM();
+
+    if (imcp->im_state != IMS_IDLE)
+      return EBUSY;
 
     /*
      * scan the directory looking for the ver_id (only if VALID or above).
@@ -773,10 +772,10 @@ implementation {
     image_dir_t *dir;
     image_dir_slot_t *sp;
 
-    if (imcb.im_state != IMS_FILL_WAITING || imcb.cid != cid)
-      im_panic(8, imcb.im_state, 0);
-
     verify_IM();
+
+    if (imcb.im_state != IMS_FILL_WAITING || imcb.cid != cid)
+      im_panic(8, imcb.im_state, cid);
 
     sp  = imcb.filling_slot_p;
     imcb.filling_slot_p->slot_state = SLOT_EMPTY;
@@ -810,9 +809,6 @@ implementation {
     image_dir_slot_t *sp;
     error_t err;
 
-    if (imcb.im_state != IMS_IDLE)
-      im_panic(10, imcb.im_state, 0);
-
     /* dir_find_ver does the call to verify_IM */
     sp  = dir_find_ver(verp);
     if (!sp)
@@ -820,6 +816,9 @@ implementation {
 
     if (sp->slot_state == SLOT_ACTIVE)
       return EINVAL;
+
+    if (imcb.im_state != IMS_IDLE)
+      return EBUSY;
 
     sp->slot_state = SLOT_EMPTY;
     dir = &imcb.dir;
@@ -856,9 +855,6 @@ implementation {
     image_dir_t *dir;
     image_dir_slot_t *newp, *active, *backup;
 
-    if (imcb.im_state != IMS_IDLE)
-      im_panic(13, imcb.im_state, 0);
-
     /* dir_find_ver does the call to verify_IM */
     newp = dir_find_ver(verp);
 
@@ -868,6 +864,9 @@ implementation {
      */
     if (!newp)
       return FAIL;
+
+    if (imcb.im_state != IMS_IDLE)
+      return EBUSY;
 
     switch (newp->slot_state) {
       default:
@@ -930,13 +929,13 @@ implementation {
     image_dir_t *dir;
     image_dir_slot_t *newp, *active, *backup;
 
-    if (imcb.im_state != IMS_IDLE)
-      im_panic(16, imcb.im_state, 0);
-
     /* dir_find_ver does the call to verify_IM */
     newp = dir_find_ver(verp);
     if (!newp || newp->slot_state != SLOT_VALID)                          /* not found */
       return EINVAL;
+
+    if (imcb.im_state != IMS_IDLE)
+      return EBUSY;
 
     /*
      * setting backup, make sure we have an active
@@ -987,10 +986,11 @@ implementation {
     image_dir_t *dir;
     image_dir_slot_t *active, *backup;
 
-    if (imcb.im_state != IMS_IDLE)
-      im_panic(19, imcb.im_state, 0);
-
     verify_IM();
+
+    if (imcb.im_state != IMS_IDLE)
+      return EBUSY;
+
     get_active_backup(&active, &backup);
 
     /*
@@ -1044,10 +1044,9 @@ implementation {
   command error_t IM.finish[uint8_t cid]() {
     error_t err;
 
+    verify_IM();
     if (imcb.im_state != IMS_FILL_WAITING)
       im_panic(22, imcb.im_state, 0);
-
-    verify_IM();
 
     /*
      * we need to enforce the minimum size constraint.  The minimum
