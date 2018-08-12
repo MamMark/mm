@@ -1044,8 +1044,6 @@ implementation {
   command error_t IM.finish[uint8_t cid]() {
     error_t err;
 
-    nop();
-    nop();                              /* BRK */
     if (imcb.im_state != IMS_FILL_WAITING)
       im_panic(22, imcb.im_state, 0);
 
@@ -1146,8 +1144,6 @@ implementation {
   event void SDResource.granted() {
     error_t err;
 
-    nop();
-    nop();                              /* BRK */
     switch(imcb.im_state) {
       default:
         im_panic(26, imcb.im_state, 0);
@@ -1204,8 +1200,6 @@ implementation {
     image_dir_t *dir;
     int i;
 
-    nop();
-    nop();                              /* BRK */
     dir = &imcb.dir;
     if (imcb.im_state != IMS_INIT_READ_DIR)
       im_panic(28, imcb.im_state, err);
@@ -1241,7 +1235,6 @@ implementation {
     memcpy_ua(dir, im_wrk_buf, sizeof(*dir));
     verify_IM();                        /* verify the directory */
 
-    nop();                              /* BRK */
     imcb.im_state = IMS_IDLE;
     imcb.cid      = -1;
     signal Booted.booted();
@@ -1253,8 +1246,6 @@ implementation {
   event void SDwrite.writeDone(uint32_t blk, uint8_t *buf, error_t error) {
     uint8_t pcid;
 
-    nop();
-    nop();                              /* BRK */
     switch(imcb.im_state) {
       default:
         im_panic(29, imcb.im_state, 0);
@@ -1299,7 +1290,6 @@ implementation {
         return;
 
       case IMS_DSA_SYNC_WRITE:
-        nop();                          /* BRK */
         pcid = imcb.cid;
         imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
