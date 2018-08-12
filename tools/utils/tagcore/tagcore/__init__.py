@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.5rc7'
+__version__ = '0.4.5rc8'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,7 +18,8 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
-# 0.4.5rc7      CR: 20/5
+# 0.4.5rc8      CR: 20/6
+#               image manager event decode
 #               rtc_src
 #               imageinfo repr, display version/hw_ver in right order
 #               CR: 20/4

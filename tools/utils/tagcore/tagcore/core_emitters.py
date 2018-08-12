@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc3'
+__version__ = '0.4.5rc4'
 
 from   ctypes       import c_long
 
@@ -30,6 +30,7 @@ from   dt_defs      import *
 
 from   core_headers import event_name
 from   core_headers import rtc_src_name
+from   core_headers import img_mgr_event_name
 from   core_headers import PANIC_WARN           # event
 from   core_headers import GPS_GEO              # event
 from   core_headers import GPS_XYZ              # event
@@ -37,6 +38,7 @@ from   core_headers import GPS_TIME             # event
 from   core_headers import DCO_REPORT           # event
 from   core_headers import DCO_SYNC             # event
 from   core_headers import TIME_SRC             # event
+from   core_headers import IMG_MGR              # event
 from   core_headers import GPS_MON_MINOR        # event
 from   core_headers import GPS_MON_MAJOR        # event
 from   core_headers import GPS_RX_ERR           # event
@@ -419,6 +421,12 @@ def emit_event(level, offset, buf, obj):
         arg1 = arg0
         arg0 = rtc_src_name(arg0)
         # fall through to bottom
+
+    if event == IMG_MGR:
+        print(' {:14s} {:6s} 0x{:x} 0x{:x} {}'.format(
+            event_name(event), img_mgr_event_name(arg0),
+                            arg1, arg2, arg3))
+        return
 
     if (event == GPS_MON_MINOR):
         print(' gps/mon (MINOR), {:^15s} {:>12s} -> {}'.format(

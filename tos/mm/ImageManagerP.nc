@@ -196,6 +196,7 @@ module ImageManagerP {
     interface SDread;
     interface SDwrite;
     interface SDraw;                    /* other SD aux */;
+    interface CollectEvent;
     interface Platform;
     interface Panic;
   }
@@ -750,6 +751,8 @@ implementation {
     imcp->bytes_remaining = SD_BLOCKSIZE;
     imcp->cid = cid;
     imcp->im_state = IMS_FILL_WAITING;
+    call CollectEvent.logEvent(DT_EVENT_IMG_MGR, IMGMGR_EV_ALLOC,
+                               (uint32_t) ep, 0, cid);
     return SUCCESS;
   }
 
@@ -768,12 +771,14 @@ implementation {
    */
   command error_t IM.alloc_abort[uint8_t cid]() {
     image_dir_t *dir;
+    image_dir_slot_t *sp;
 
     if (imcb.im_state != IMS_FILL_WAITING || imcb.cid != cid)
       im_panic(8, imcb.im_state, 0);
 
     verify_IM();
 
+    sp  = imcb.filling_slot_p;
     imcb.filling_slot_p->slot_state = SLOT_EMPTY;
     imcb.buf_ptr = NULL;
     imcb.filling_slot_p = NULL;
@@ -782,6 +787,8 @@ implementation {
     dir = &imcb.dir;
     dir->chksum = 0;
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
+    call CollectEvent.logEvent(DT_EVENT_IMG_MGR, IMGMGR_EV_ABORT,
+                               (uint32_t) sp, 0, cid);
     return SUCCESS;
   }
 
@@ -824,6 +831,8 @@ implementation {
     if (err)
       im_panic(12, err, 0);
 
+    call CollectEvent.logEvent(DT_EVENT_IMG_MGR, IMGMGR_EV_DELETE,
+                               (uint32_t) sp, 0, cid);
     return SUCCESS;
   }
 
@@ -900,6 +909,8 @@ implementation {
     imcb.cid = cid;
     if ((err = call SDResource.request()))
       im_panic(15, err, 0);
+    call CollectEvent.logEvent(DT_EVENT_IMG_MGR, IMGMGR_EV_ACTIVE,
+                               (uint32_t) active, (uint32_t) backup, cid);
     return SUCCESS;
   }
 
@@ -956,6 +967,8 @@ implementation {
     if ((err = call SDResource.request()))
       im_panic(18, err, 0);
 
+    call CollectEvent.logEvent(DT_EVENT_IMG_MGR, IMGMGR_EV_BACKUP,
+                               (uint32_t) newp, 0, cid);
     return SUCCESS;
   }
 
@@ -1004,6 +1017,14 @@ implementation {
     imcb.cid = cid;
     if ((err = call SDResource.request()))
       im_panic(21, err, 0);
+
+    /*
+     * Don't call CollectEvent.  IM.dir_eject_active() only gets called
+     * from OWT and Collect hasn't been fired up and won't be.
+     *
+     * call CollectEvent.logEvent(DT_EVENT_IMG_MGR, IMGMGR_EV_EJECT,
+     *                           (uint32_t) active, (uint32_t) backup, cid);
+     */
     return SUCCESS;
   }
 
@@ -1059,6 +1080,8 @@ implementation {
     if (err)
       im_panic(23, err, 0);
 
+    call CollectEvent.logEvent(DT_EVENT_IMG_MGR, IMGMGR_EV_FINISH,
+                               (uint32_t) imcb.filling_slot_p, 0, cid);
     return SUCCESS;
   }
 

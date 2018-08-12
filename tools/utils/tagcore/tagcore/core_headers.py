@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc2'
+__version__ = '0.4.5rc3'
 
 import binascii
 from   collections  import OrderedDict
@@ -325,6 +325,7 @@ event_names = {
     15: 'DCO_REPORT',
     16: 'DCO_SYNC',
     17: 'TIME_SRC',
+    18: 'IMG_MGR',
 
     32: 'GPS_BOOT',
     33: 'GPS_BOOT_TIME',
@@ -377,11 +378,30 @@ GPS_TIME      = 5
 DCO_REPORT    = 15
 DCO_SYNC      = 16
 TIME_SRC      = 17
+IMG_MGR       = 18
 GPS_MON_MINOR = 35
 GPS_MON_MAJOR = 36
 GPS_RX_ERR    = 37
 GPS_CMD       = 41
 GPS_MPM_RSP   = 53
+
+
+img_mgr_events = {
+    0: 'none',
+    1: 'alloc',
+    2: 'abort',
+    3: 'finish',
+    4: 'delete',
+    5: 'active',
+    6: 'backup',
+    7: 'eject',
+}
+
+def img_mgr_event_name(im_ev):
+    iv_name = img_mgr_events.get(im_ev, 0)
+    if iv_name == 0:
+        iv_name = 'imgmgr_ev_' + str(im_ev)
+    return iv_name
 
 
 def obj_dt_event():

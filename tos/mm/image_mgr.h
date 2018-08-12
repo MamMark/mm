@@ -103,4 +103,19 @@ typedef struct {                /* Image Directory */
   uint32_t          chksum;
 } image_dir_t;
 
+
+/*
+ * ImageManager Events
+ */
+enum {
+  IMGMGR_EV_NONE   = 0,
+  IMGMGR_EV_ALLOC  = 1,
+  IMGMGR_EV_ABORT  = 2,
+  IMGMGR_EV_FINISH = 3,
+  IMGMGR_EV_DELETE = 4,
+  IMGMGR_EV_ACTIVE = 5,
+  IMGMGR_EV_BACKUP = 6,
+  IMGMGR_EV_EJECT  = 7,
+};
+
 #endif  /* __IMAGE_MGR_H__ */

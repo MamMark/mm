@@ -246,6 +246,7 @@ typedef enum {
   DT_EVENT_DCO_SYNC         = 16,
 
   DT_EVENT_TIME_SRC         = 17,
+  DT_EVENT_IMG_MGR          = 18,       // ImageManager transitions
 
   /***********************************/
 

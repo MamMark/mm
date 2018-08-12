@@ -53,6 +53,9 @@ implementation {
   components ChecksumM;
   IM_P.Checksum -> ChecksumM;
 
+  components CollectC;
+  IM_P.CollectEvent -> CollectC;
+
   components PlatformC;
   IM_P.Platform -> PlatformC;
 
