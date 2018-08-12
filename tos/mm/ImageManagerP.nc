@@ -39,9 +39,13 @@ enum {
  *
  * directory cache, in memory copy of the image directory on the SD.
  *
- * image_manager_working_buffer (IMWB).  An SD sized (514) buffer
- * for interacting with the SD.  Used to collect (marshal) incoming
+ * image_manager_working_buffer (IMWB).  An SD sized (SD_BLOCKSIZE, 512)
+ * buffer for interacting with the SD.  Used to collect (marshal) incoming
  * data for writing to the SD.
+ *
+ * buf_ptr (BP): when active points into the IMWB otherwise NULL.
+ * filling_slot_pointer (FSP): when active points at the directory slot
+ *   that is being filled.
  *
  * Image Manager Control Block:  The imcb collects all reasonable state
  *   information about what the ImageManager is currently doing.
@@ -52,7 +56,7 @@ enum {
  *   dir                directory cache, ram copy of IM dir
  *   filling_blk:       When writing a slot, filling_blk is the next block that
  *   filling_limit_blk: will be written.  limit_blk is the limit of the slot
- *                      do not exceed.
+ *                      do not exceed.  inclusive.
  *
  *   filling_slot_p:    pointer to the current slot we are filling.
  *
@@ -65,29 +69,68 @@ enum {
  * *** State Machine Description
  *
  * IDLE                no active activity.  Free for next operation.
- *                     IMWB and CSB are meaningless.
- * FILL_WAITING        filling buffer.  IMWB and CSB active.
+ *                     BP and FSP are meaningless.
+ *
+ * Init: on boot, request the SD, then Read the directory.  If zeros (empty,
+ *   first boot) initilize and write (SYNC_WRITE).
+ *
+ *   Otherwise, validate directory (errors, panic).
+ *
+ * INIT_REQ_SD
+ * INIT_READ_DIR
+ * INIT_SYNC_WRITE
+ *
+ *
+ * Filling: IM is filling a slot.  Incoming data is marshalled in the IMWB.
+ *  when full, FILL_REQ_SD then FILL_WRITING, then back to FILL_WAITING.
+ *
+ * FILL_WAITING        filling buffer.  BP and FSP active.
  * FILL_REQ_SD         req SD for IMWB flush.
  * FILL_WRITING        writing buffer (IMWB) to SD.
+ *
+ * Filling (last buffer): last piece of the image has been received.
+ *  write out last buffer.  ie. FILL_LAST_REQ_SD and FILL_LAST_WRITE.
+ *
+ *  After the last buffer has been written we need to update the directory
+ *  with the updated slot.  If needed, REQ_SD and do a SYNC_WRITE.
+ *
  * FILL_LAST_REQ_SD    req SD for last buffer write.
  * FILL_LAST_WRITE     finishing write of last buffer (partial).
  * FILL_SYNC_REQ_SD    req SD to write directory to finish new image.
  * FILL_SYNC_WRITE     write directory to update image finish.
+ *
+ *
+ * Delete: delete an image from a slot.  Update the directory.
+ *
  * DELETE_SYNC_REQ_SD  req SD for directory flush for delete.
  * DELETE_SYNC_WRITE   Flush directory cache for new empty entry
+ *
+ *
+ * Dir_Set_Active: mark a slot as active and update the directory.
+ *
  * DSA_SYNC_REQ_SD
  * DSA_SYNC_WRITE
+ *
+ *
+ * Dir_Set_Backup: mark a slot as backup and update the directory.
+ *
  * DSB_SYNC_REQ_SD
  * DSB_SYNC_WRITE
+ *
+ *
+ * Eject: The current Active is being ejected.  The Active slot has
+ *   marked as ejected.  The backup (if any) is changed to Active.
+ *   and the directory is updated.
+ *
  * EJECT_SYNC_REQ_SD
  * EJECT_SYNC_WRITE
  */
 
 typedef enum {
-  IMS_IDLE                      = 0,
-  IMS_INIT_REQ_SD,
+  IMS_IDLE              = 0,
+  IMS_INIT_REQ_SD,              /* init im dir cache */
   IMS_INIT_READ_DIR,
-  IMS_INIT_SYNC_WRITE,
+  IMS_INIT_SYNC_WRITE,          /* writing first dir */
 
   IMS_FILL_WAITING,             /* filling states through FILL_SYNC_WRITE */
   IMS_FILL_REQ_SD,              /* these are grouped together as the      */
@@ -833,7 +876,7 @@ implementation {
     if (newp->slot_state == SLOT_BACKUP) {
       /*
        * activating the previous BACKUP, make the current ACTIVE
-       * got to VALID.  We don't set it to BACKUP because that doesn't
+       * goto VALID.  We don't set it to BACKUP because that doesn't
        * make sense to swap like that.
        */
       active->slot_state = SLOT_VALID;
