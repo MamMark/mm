@@ -26,6 +26,13 @@ INSTALL:
 
 will install as /usr/local/bin/pix
 
+CrashDebug must be installed as well.
+
+cd <mm tree>
+git submodule update --init --recursive 
+cd tools/utils/pix/CrashDebug
+sudo install bins/lin64/CrashDebug /usr/local/bin
+
 USAGE:
 ========
 usage: pix [-h] [-V] [-x <n>] [-l]
