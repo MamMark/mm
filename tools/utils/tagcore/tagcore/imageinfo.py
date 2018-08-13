@@ -59,7 +59,7 @@ class ImageInfo:
         self.im_basic = obj_image_info()
         corelen = self.im_basic.set(rec_buf)
         if self.im_basic['basic']['ii_sig'].val != self.IMAGE_INFO_SIG:
-            print('*** image signature checksum fail: expected {08x}, got {:08x}'.format(
+            print('*** image signature checksum fail: expected {:08x}, got {:08x}'.format(
                 self.IMAGE_INFO_SIG, self.im_basic['basic']['ii_sig'].val))
             sys.exit(2)
 
