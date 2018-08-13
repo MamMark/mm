@@ -83,7 +83,12 @@ def obj_panic_info():
         ('pi_sig',           atom(('<I', '{:04x}'))),
         ('base_addr',        atom(('<I', '{:04x}'))),
         ('rt',               obj_rtctime()),
-        ('pad',              atom(('<H', '{:02x}'))),
+        ('pi_pcode',         atom(('<B', '{}'))),
+        ('pi_where',         atom(('<B', '{}'))),
+        ('pi_arg0',          atom(('<I', '{}'))),
+        ('pi_arg1',          atom(('<I', '{}'))),
+        ('pi_arg2',          atom(('<I', '{}'))),
+        ('pi_arg3',          atom(('<I', '{}'))),
     ]))
 
 

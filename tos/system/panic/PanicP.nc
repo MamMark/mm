@@ -726,6 +726,14 @@ implementation {
     pip->base_addr  = call OverWatch.getImageBase();
     call Rtc.getTime(&pip->rt);
 
+    pap = &_panic_args;
+    pip->pi_pcode = pap->pcode;
+    pip->pi_where = pap->where;
+    pip->pi_arg0  = pap->a0;
+    pip->pi_arg1  = pap->a1;
+    pip->pi_arg2  = pap->a2;
+    pip->pi_arg3  = pap->a3;
+
     /* fill in overwatch control block (owcb_info) */
     owcp = call OverWatch.getControlBlock();
     memcpy((void *) (&b0p->owcb_info), (void *) owcp,

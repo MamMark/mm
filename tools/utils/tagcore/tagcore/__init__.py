@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.5rc8'
+__version__ = '0.4.5rc9'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,17 +18,15 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
-# 0.4.5rc8      CR: 20/6
+# 0.4.5rc9      CR: 21/0
+#               add panic_info back into panic_info_t (panic)
 #               image manager event decode
 #               rtc_src
 #               imageinfo repr, display version/hw_ver in right order
-#               CR: 20/4
 #               add DCO_REPORT and DCO_SYNC
 #               revised image_info structure (split basic/plus)
 #               revise panic data structures.
-#
-#               CR: 20/1, fix reboot size
-#               CoreRev: 20/0
+#               fix reboot size
 #               updated overwatch_control_block
 #               - protection status
 #               - updated fault flags

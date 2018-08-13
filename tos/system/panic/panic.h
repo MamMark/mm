@@ -113,6 +113,7 @@ typedef unsigned int parg_t;
  *      panic_info.pi_sig   signature identifying hdr 0
  *      panic_info:         base address of the image
  *                          timestamp of the panic
+ *                          panic information (pcode, where, args)
  *      owcb_info:          copy of the control block at the time of the
  *                          panic.  Panic cause information, resets, etc.
  *      image_info:         descriptor of the image that failed
@@ -220,7 +221,12 @@ typedef struct {                        /* verify all structs in PIX */
   uint32_t     pi_sig;
   uint32_t     base_addr;               /* base addr of image dieing */
   rtctime_t    rt;                      /* time of crash */
-  uint16_t     pad;                     /* even alignment */
+  uint8_t      pi_pcode;                /* panic information */
+  uint8_t      pi_where;
+  uint32_t     pi_arg0;
+  uint32_t     pi_arg1;
+  uint32_t     pi_arg2;
+  uint32_t     pi_arg3;
 } panic_info_t;
 
 

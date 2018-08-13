@@ -76,7 +76,7 @@ typedef struct {
  */
 
 #define IIP_TLV_END         0
-#define IMG_INFO_PLUS_SIZE  318
+#define IMG_INFO_PLUS_SIZE  298
 
 typedef struct {
   uint8_t        len;
