@@ -241,7 +241,9 @@ def obj_panic_zero_1():
 def obj_panic_hdr1():
     return aggie(OrderedDict([
         ('ph1_sig',      atom(('<I',  '{:08x}'))),
-        ('pad',          atom(('59I', '{}'))),
+        ('core_rev',     atom(('<H',  '{}'))),
+        ('core_minor',   atom(('<H',  '{}'))),
+        ('pad',          atom(('58I', '{}'))),
         ('ph0_offset',   atom(('<I',  '{:08x}'))),
         ('ph1_offset',   atom(('<I',  '{:08x}'))),
         ('ph1_checksum', atom(('<I',  '{:08x}'))),

@@ -356,7 +356,9 @@ typedef struct {
    * won't be physically at the end.
    */
   uint32_t              ph1_sig;
-  uint32_t              alignment_pad[59];
+  uint16_t              core_rev;
+  uint16_t              core_minor;
+  uint32_t              alignment_pad[58];
 
   uint32_t              ph0_offset;     /* redundant offset     */
   uint32_t              ph1_offset;     /* redundant offset     */

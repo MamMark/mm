@@ -109,6 +109,7 @@ Each panic block consists of the following parts:
     | panic_hdr_1                             | 1 sector
     |                                         |
     | panic_hdr_1_sig                         |
+    | core_rev/core_minor                     |
     | alignment_pad                           |
     |                                         |
     | panic_hdr_0_offset                      |
@@ -148,6 +149,11 @@ o panic_hdr_0 starts with panic_info, the first word of which is the
 
 o panic_hdr_1 starts with panic_hdr_1_sig.  Both panic_hdrs start with
   specific signatures.
+
+o panic_hdr_1 includes a core_rev/core_minor marker.  This is the value
+  of core_rev/minor at the time the panic is written.  The current value
+  indicating the state of core data structures at the time this image
+  was built.
 
 o panic_hdr_0 is checksummed by panic_hdr_0_checksum.  It is a simple 32 bit
   byte external checksum over all bytes of panic_hdr_0.
@@ -291,6 +297,7 @@ ph0_checksum    a 32 bit byte external checksum of panic_hdr_0.
 **** Panic Header 1
 
 ph1_sig         majik number at start of panic_hdr_1
+core_rev/minor  core_rev at the time this image was built.
 alignment_pad   pad bytes to push crash_info and ram_header to end of sector.
 ph0_offset      file offset of panic_hdr_0
 ph1_offset      file offset of panic_hdr_1

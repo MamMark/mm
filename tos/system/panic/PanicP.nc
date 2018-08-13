@@ -763,6 +763,8 @@ implementation {
     memset(pcb.buf, 0, SD_BLOCKSIZE);
     b1p = (panic_hdr1_t *) pcb.buf;
     b1p->ph1_sig = PANIC_HDR1_SIG;
+    b1p->core_rev   = CORE_REV;
+    b1p->core_minor = CORE_MINOR;
     b1p->ph0_offset = block2offset(pcb.block);
     b1p->ph1_offset = block2offset(pcb.block + 1);
     b1p->ram_checksum = pcb.ram_checksum;
