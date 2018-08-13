@@ -223,17 +223,30 @@ def obj_add_info():
 
 
 def obj_panic_zero_0():
+    return obj_panic_hdr0()
+
+def obj_panic_hdr0():
     return aggie(OrderedDict([
-        ('panic_info', obj_panic_info()),
-        ('owcb_info',  obj_owcb()),
-        ('image_info', obj_image_info()),
-        ('add_info',   obj_add_info()),
-#        ('padding',    atom(('43I', '{}'))),
+        ('panic_info',   obj_panic_info()),
+        ('owcb_info',    obj_owcb()),
+        ('image_info',   obj_image_info()),
+        ('add_info',     obj_add_info()),
+        ('ph0_checksum', atom(('<I',  '{:08x}'))),
     ]))
 
+
 def obj_panic_zero_1():
+    return obj_panic_hdr1()
+
+def obj_panic_hdr1():
     return aggie(OrderedDict([
-        ('padding',    atom(('65I', '{}'))),
-        ('crash_info', obj_crash_info()),
-        ('ram_header', obj_region()),
+        ('ph1_sig',      atom(('<I',  '{:08x}'))),
+        ('pad',          atom(('59I', '{}'))),
+        ('ph0_offset',   atom(('<I',  '{:08x}'))),
+        ('ph1_offset',   atom(('<I',  '{:08x}'))),
+        ('ph1_checksum', atom(('<I',  '{:08x}'))),
+        ('ram_checksum', atom(('<I',  '{:08x}'))),
+        ('io_checksum',  atom(('<I',  '{:08x}'))),
+        ('crash_info',   obj_crash_info()),
+        ('ram_header',   obj_region()),
     ]))
