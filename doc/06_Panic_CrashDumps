@@ -225,7 +225,7 @@ A block includes the following information:
 (see tos/system/panic/panic.h)
 Block 0 (Panic Hdr 0/1, initial sectors of a panic block, 2 sectors)
 1) Panic information, core information about the crash.
-   (base address and timestamp of crash)
+   (base address, timestamp of crash, and the panic_info)
 2) Overwatch control block.  More information about the state of the
    machine.  Includes panic information, Subsystem, Where, a0-3.
 2) image_info for image running.
@@ -274,6 +274,7 @@ o pi_sig        signature at start of panic_info, verify we are looking
                 at the correct data structure.
 o base_addr     base address of image that panic'd.
 o rt            rtc time of when the panic occurred.
+o panic_info    pcode, where, arg{0-3}
 
 o overwatch_control_block
                 a copy of the overwatch_control_block at the time the panic
@@ -366,6 +367,72 @@ all bytes up to and including the end of the i/o records.
 Since this i/o is going to and from an operational tag we want it to
 be sparse.  Only ask and read the minimal amount of informaton that
 is needed to get the job done.
+
+
+* Panic Area Validation (the Panic File)
+
+The Panic Area includes redundant information that helps determine the
+validity of the information written.  Panic information can get corrupted
+due to bit rot and/or data transmission errors.
+
+Before using the panic information steps need to be taken to determine
+the validity (at a high probablilty) of the data being examined.
+
+The following steps should at a minimum be used:
+
+Reading the directory:
+
+The Panic directory is sizeof(panic_dir_t) long and completely contained
+in the 1st sector (offset 0) of the panic file.  The reset of the 1st
+sector is reserved for directory expansion.
+
+** Directory read (sizeof(panic_dir_t), offset 0).
+
+   If zero (whole sector zero), no panics.
+
+   a) check dir_id ('PANI')
+   b) check dir_sig
+   c) validate dir_checksum
+
+   d) extract block_index, check against block_index_max
+      must be <= block_index_max
+   e) extract block_size.
+
+
+Processing a Panic Block.
+
+A Panic Block (index n) is made up of block_size sectors (512 bytes
+per sector).  These sectors are contiguous.  n ranges from 0..max-1.
+Typically max will be 32 and at most we can have panics from 0 to 31.
+
+The panic block starts at offset (n * block_size + 1) * 512.  The +1
+accounts for the directory sector.  (call this block_start)
+
+The first two sectors of a panic block make up the panic headers (hdr0
+and hdr1).
+
+** Panic Block Header validation.
+*** Panic_Hdr1 (offset block_start + 512)
+  a) verify ph1_checksum
+  b) verify ph1_sig
+  c) verify core_rev/minor against tagcore/core_rev/minor
+  d) verify ph1_offset (should be block_start + 512)
+  e) extract ram_checksum/io_checksum
+
+*** Panic Hdr0 (offset block_start + 0)
+  a) verify ph0_checksum
+  b) verify ph0_offset (see panic_hdr1), same as block_start
+  c) verify panic_info.pi_sig
+
+
+When displaying a panic block include:
+
+  a) Block index (which panic)
+  b) image info information, sw_ver, hw_ver, descriptor (verbosity?)
+  c) panic_info, pcode, where, args.
+
+
+When extracting be sure to validate ram_checksum and io_checsum.
 
 
 * Preservation of State:
