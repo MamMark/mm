@@ -23,7 +23,7 @@
 display and extract panic blocks from a composite PANIC file.
 Extracted panics can be fed to CrashDump for analysis.
 
-usage: pix [-h] [-v]
+usage: pix [-h] [-V]
            [-o <output>]
            [--output <output>]
            panic_file
@@ -32,7 +32,7 @@ Args:
 
 optional arguments:
   -h            show this help message and exit
-  -v            show program's version number and exit
+  -V            show program's version number and exit
   -l            List all PanicBlocks available
 
   -o <output>   enables extraction and sets output file.
@@ -171,7 +171,7 @@ def panic_args():
     parser = argparse.ArgumentParser(
         description='Panic Inspector/eXtractor (PIX)')
 
-    parser.add_argument('-v', '--version',
+    parser.add_argument('-V', '--version',
         action = "version",
         version = '%(prog)s ' + VERSION)
 
