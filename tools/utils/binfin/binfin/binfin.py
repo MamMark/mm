@@ -69,16 +69,13 @@ from   __init__                 import __version__ as VERSION
 
 import sys
 import argparse
-import struct
-import datetime
-import zlib
-from   collections import OrderedDict
-import os.path
 
 from   elf import *
 from   tagcore.base_objs    import *
 from   tagcore.core_headers import *
 import tagcore.imageinfo    as     iim
+
+from    bininfo             import *
 
 '''
 Offsets into the ELF and .bin file(s) where the image_info struct should be located
@@ -177,10 +174,9 @@ def processMeta(argv):
 
     args    = binfin_args()
 
-    '''
-    if args.version:
-        print("Binfin Version : {}".format(__version__))
-    '''
+    if args.i:      #if asking for Meta Info only
+        bininfo(args.mm_file)
+        sys.exit(0)
 
     output = ""
 

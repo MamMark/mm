@@ -63,9 +63,6 @@ class ImageInfo:
                 self.IMAGE_INFO_SIG, self.im_basic['basic']['ii_sig'].val))
             sys.exit(2)
 
-        #We set checksum to 0 since we calc. a new checksum every time
-        self.im_basic['basic']['im_chk'].val = 0
-
         self.im_tlv_rows = self.im_basic['plus']
         self.im_tlv_block_len = int(self.im_basic['plus']['tlv_block_len'].val)
         return
@@ -79,11 +76,15 @@ class ImageInfo:
                     ver_id['minor'], ver_id['build'], ver_id['build'].val)
         out += 'hw_m/r\t: {}/{}\n'.format(
             hw_ver['model'], hw_ver['rev'])
-        out += 'chksum\t: {:08x}\n'.format(chksum)
+        out += 'chksum\t: 0x{:08x}\n'.format(chksum)
         for k,tlv in self.im_tlv_rows.get_tlv_rows():
             type = self._iipGetKeyByValue(k)
             out += '{}\t: {}\n'.format(type, tlv.tlv_value)
         return out
+
+    def clearChecksum():
+        #We set checksum to 0 since we calc. a new checksum every time
+        self.im_basic['basic']['im_chk'].val = 0
 
     def _iipGetKeyByValue(self, val):
         for k, v in iip_tlv.items():

@@ -59,29 +59,11 @@ def find_image_info(bin_file):
     offset = IMAGE_INFO_OFFSET
     return offset
 
-def panic_args():
-    parser = argparse.ArgumentParser(
-        description='BinInfo (BinInfo)')
-
-    parser.add_argument('-v', '--version',
-        action = "version",
-        version = '%(prog)s ' + VERSION)
-
-    parser.add_argument('bin_file',
-                        type = argparse.FileType('rb'),
-                        help = 'Bin file')
-
-    return parser.parse_args()
-
-########## main
-def processMeta(argv):
-    global elf_meta_offset, bin_meta_offset, args
+def bininfo(filename):
+    global elf_meta_offset, bin_meta_offset
 
     print('BinInfo')
-    input = "main.exe"	#default file we look for
-    args    = panic_args()
-
-    inFile  = args.bin_file
+    inFile = open(filename)
 
     '''
     Load the ELF data and use the section information to find where the
@@ -118,9 +100,3 @@ def processMeta(argv):
     '''
     imcls = iim.ImageInfo(meta_raw)
     print(imcls)
-
-#
-# Begin at Main
-#
-if __name__ == "__main__":
-    processMeta(sys.argv[1:])
