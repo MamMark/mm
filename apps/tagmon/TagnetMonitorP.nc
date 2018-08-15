@@ -347,6 +347,21 @@ implementation {
   }
 
 
+  task void tagmon_forme_drop_task() {
+    radio_state_t    major;
+    radio_substate_t minor;
+
+    major = rcb.state;
+    minor = rcb.sub[major].state;
+    if (minor == SS_RECV) {
+      rcb.cycle_cnt = rcb.sub[RS_HOME].max_cycles;
+      change_radio_state(RS_HOME, SS_RECV);    // all go to base primary state
+      return;
+    }
+    call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, 0);
+  }
+
+
   task void tagmon_forme_task() {
     radio_state_t    major;
     radio_substate_t minor;
@@ -419,6 +434,11 @@ implementation {
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
     if (tagMsgBusy) {     // busy, ignore received msg by returning it
+      /*
+       * it was for us, but we can't handle it yet
+       * post the drop task to stay awake
+       */
+      post tagmon_forme_drop_task();
       return msg;
     }
     pNextMsg = pTagMsg;   // swap msg buffers, set busy, and post task
