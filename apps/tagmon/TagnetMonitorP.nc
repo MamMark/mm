@@ -380,6 +380,7 @@ implementation {
        *
        * But any response will go no where!.
        */
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, 0);
       call Tagnet.process_message(pTagMsg);
       tagMsgBusy = FALSE;
       return;
@@ -410,7 +411,7 @@ implementation {
      */
     err = call RadioSend.send(pTagMsg);
     if (err)
-      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, err, major, minor, 0);
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, err, 0);
   }
 
 
