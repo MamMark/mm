@@ -458,29 +458,17 @@ implementation {
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
                        0, 0, 0, 0);       /* null trap */
 
-    do {
-      /*
-       * first element of the msg is required to be
-       * the dest node id.
-       *
-       * if no first element, or not a NODE_ID, punt.
-       */
-      this_tlv = call TName.first_element(msg);
-      if ((!this_tlv) || (call TTLV.get_tlv_type(this_tlv) != TN_TLV_NODE_ID))
-        break;
-
-      /*
-       * got a NODE_id, must be either our addr or the broadcast.
-       */
-      if (!call TTLV.eq_tlv(this_tlv,  TN_MY_NID_TLV)
-          && !call TTLV.eq_tlv(this_tlv, (tagnet_tlv_t *)TN_BCAST_NID_TLV))
-        break;
-
-      /*
-       * It is FOR_ME
-       */
+    /*
+     * first element of the msg is required to be
+     * the dest node id.
+     *
+     * if no first element, or not a NODE_ID, punt.
+     */
+    this_tlv = call TName.first_element(msg);
+    if ((this_tlv && call TTLV.get_tlv_type(this_tlv) == TN_TLV_NODE_ID) &&
+        (call TTLV.eq_tlv(this_tlv,  TN_MY_NID_TLV) ||
+         call TTLV.eq_tlv(this_tlv, (tagnet_tlv_t *)TN_BCAST_NID_TLV)))
       return TRUE;
-    } while (0);
 
     /*
      * We don't want this packet NOT FOR_ME
