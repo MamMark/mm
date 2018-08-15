@@ -340,16 +340,9 @@ implementation {
     nop();                     /* BRK */
     major = rcb.state;
     minor = rcb.sub[major].state;
-    switch(minor) {
-      case SS_RECV:
-        change_radio_state(major, SS_STANDBY_WAIT);
-        break;
-      case SS_STANDBY:
-        change_radio_state(major, SS_RECV_WAIT);
-        break;
-      default:
-        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
-                         major, minor, 0, 0);
+    if (minor == SS_RECV) {
+      change_radio_state(major, SS_STANDBY_WAIT);
+      return;
     }
   }
 
