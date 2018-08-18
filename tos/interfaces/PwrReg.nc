@@ -1,4 +1,5 @@
-/* Copyright 2015 Barry Friedman, Eric Decker
+/* Copyright 2015 Barry Friedman, Eric B. Decker
+ * Copyright 2018, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,17 +23,22 @@
 /*
  * PwrReg Interface
  *
- * Used when controlling pwr regulators that have a simple enable
- * coupled with a non-zero turn on time.
+ * Used when controlling pwr regulators and/or switches that have a simple
+ * enable coupled with an optional non-zero turn on time.  Zero-turn on
+ * pretends the regulator/switch is already turned on.
  *
- * When the regulator is off and has been turned on, it takes a
+ * When the regulator is off and has been turned on, it can take a
  * finite amount of time for the regulator to stablize.  The
  * pwrReg driver takes this into account and signals the PwrAvail
  * signal after enough time has passed for stabilization.
  *
  * command: pwrReq()   to request power
  * command: pwrRel()   to release demand for power on rail
- * event:   pwrAvail() to indicate power is stable.
+ * event:   pwrOn()    to indicate power is stable.
+ *
+ * command: forceOff() command immediate power down of the rail
+ * event:   pwrOff()   signalled when power has been turned off.
+ *                     can also occur from a release.
  *
  * Typically, the pwrReg driver will maintain a use count.  If the
  * use count goes to 0, it will power the regulator down.
@@ -58,17 +64,29 @@ interface PwrReg {
    *
    *         EALREADY, pwr is already up and stable.
    */
-  command error_t pwrReq();
+  async command error_t pwrReq();
 
   /**
    * Release pwr
    */
-  command void    pwrRel();
+  async command void    pwrRel();
+
+  /**
+   * Force the power off.
+   */
+  async command void   forceOff();
 
   /**
    * pwrAvail event
    *
    * signals that power has stabilized.
    */
-  event   void    pwrAvail();
+  async event   void    pwrOn();
+
+  /**
+   * pwrOff event
+   *
+   * signals that power has been forced off.
+   */
+  async event   void    pwrOff();
 }
