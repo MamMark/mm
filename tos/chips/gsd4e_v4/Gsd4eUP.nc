@@ -569,6 +569,8 @@ implementation {
       return EALREADY;
     }
 
+    if (!call HW.gps_powered())
+      call HW.gps_pwr_on();
     awake = call HW.gps_awake();
     t_gps_pwr_on = call LocalTime.get();
     call CollectEvent.logEvent(DT_EVENT_GPS_TURN_ON, t_gps_pwr_on, awake, 0, 0);
@@ -583,7 +585,6 @@ implementation {
      * not awake, assume we came out of POR so the gps is starting up from
      * full power on and needs more time.
      */
-    call HW.gps_pwr_on();
     call GPSTxTimer.startOneShot(DT_GPS_PWR_UP_DELAY);
     gpsc_change_state(GPSC_PWR_UP_WAIT, GPSW_TURNON);
     return SUCCESS;

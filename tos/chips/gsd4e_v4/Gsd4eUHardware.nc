@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Eric B. Decker, Dan Maltbie
+ * Copyright (c) 2017-2018, Eric B. Decker, Dan Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@
  *  gps_reset():        (set/clr) access to reset pin.
  *  gps_awake():        will be 1 if the chip is awake (turned on, full power).
  *
+ *  gps_powered():      return true if gps is powered (h/w power).
  *  gps_pwr_on():       turn pwr on (really?)
  *  gps_pwr_off():      your guess here.
  *
@@ -118,6 +119,7 @@ interface Gsd4eUHardware {
   async command void gps_clr_reset();
   async command bool gps_awake();
 
+  async command bool gps_powered();
   async command void gps_pwr_on();
   async command void gps_pwr_off();
 
