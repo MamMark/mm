@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017 Eric B. Decker, Dan J. Maltbie
+ * Copyright (c) 2016-2018 Eric B. Decker, Dan J. Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -165,6 +165,11 @@
  *    9.4 sd1_csn /accel_csn    mems_id: 0
  *                 gyro_csn     mems_id: 1
  *                 mag_csn      mems_id: 2
+ *
+ *
+ * Operational state is given in the table below.  On a hard reset all I/O pins are put
+ * into Port mode set to Input.  We use a soft reset to reset major pieces of the system
+ * without changing the I/O pin state.
  *
  * Port: (0x4000_4C00)
  * port 1.0	0pO	LED1                    port 7.0	1mO     sd1_clk  (A1,    pm)

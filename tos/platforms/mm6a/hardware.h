@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -187,14 +187,20 @@
  * o 3V3 rail (for SD).
  * o pwr_sd0_en 0 (pwr SD down)
  *
- * gps/mems power.  P5.0 controls the power switch for the gps/mems 1V8 rail.  If this is
- * powered off all gps/mems pins should be inputs or low.
+ * Operational state is given in the table below.  On a hard reset all I/O pins are put
+ * into Port mode set to Input.  We use a soft reset to reset major pieces of the system
+ * without changing the I/O pin state.  This is primarily used to avoid dropping power
+ * to the gps subsystem (this would cause the gps to lose battery backed up information).
+ *
+ * When a subsystem is powered down, we must change any I/Os connected to that subsystem
+ * such that the pins do not drive the subsystem (this can cause the chip to be powered
+ * through the I/O pin).  We do this by changing these pins to Port Mode/Input.
  *
  * Port: (0x4000_4C00)
  * port 1.0	0pI   A1 mag_drdy               port 7.0	1pIru B5 gps_cts(*)
  *  00 I .1	0pI   B1 mag_int                 60   .1	0pI   C5 gps_tm     (PM_TA1.1)
- *  02 O .2	0pO   C4 dock_sw_led_attn  TP31  62   .2	0pI   B4 gps_tx     (PM_UCA0RXD)
- *       .3     0pO   D4 sd1_csn           TP27       .3	1pO   A4 gps_rx     (PM_UCA0TXD)
+ *  02 O .2	0pO   C4 dock_sw_led_attn  TP31  62   .2	0mI   B4 gps_tx     (PM_UCA0RXD)
+ *       .3     0pO   D4 sd1_csn           TP27       .3	0mI   A4 gps_rx     (PM_UCA0TXD)
  *       .4	0pI   D3                              .4	1pO   J1 adc_sclk   (PM_UCB0CLK)
  *       .5	1pO   C1 mag_csn                      .5	1pO   H2 adc_simo   (PM_UCB0SIMO)
  *       .6	1pO   D1 accel_csn                    .6        0pO   J2 pwr_sd0_en
@@ -241,8 +247,8 @@
  * port  6.0	0pI   J9 radio_gp0              port  J.0       0pI   J6 LFXIN  (32KiHz)
  *  41 I  .1	0pI   H7 radio_irqn             120 I  .1       0pO   J7 LFXOUT (32KiHz)
  *  43 O  .2	0pI   A9 gps_awake              122 O  .2       1pO   A6 gps_resetn
- *        .3	1mO   B9 mems_sclk  (B1)               .3       0pI   A5 gps_rts(*)
- *        .4	0mO   A8 mems_simo  (B1)               .4       0pI   B3
+ *        .3	0mI   B9 mems_sclk  (B1)               .3       0pI   A5 gps_rts(*)
+ *        .4	0mI   A8 mems_simo  (B1)               .4       0pI   B3
  *        .5	0mI   A7 mems_somi  (B1)               .5       0pI   A3 SWO
  *        .6	0pI   B8 tmp_sda(**)(B3)
  *        .7	0pI   B7 tmp_scl(**)(B3)

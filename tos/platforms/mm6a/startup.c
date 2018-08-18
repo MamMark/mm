@@ -545,10 +545,10 @@ void __pins_init() {
   P3->SEL0= 0x01; P3->SEL1= 0x00;
   P4->OUT = 0x30; P4->DIR = 0xFD;
   P5->OUT = 0x81; P5->DIR = 0xA7;
-  P6->OUT = 0x08; P6->DIR = 0x18;
+  P6->OUT = 0x00; P6->DIR = 0x00;
   P6->SEL0= 0x38; P6->SEL1= 0x00;
-  P7->OUT = 0xB9; P7->DIR = 0xF8;
-  P7->SEL0= 0x80; P7->SEL1= 0x00;
+  P7->OUT = 0xB1; P7->DIR = 0xF0;
+  P7->SEL0= 0x8C; P7->SEL1= 0x00;
   P8->OUT = 0x00; P8->DIR = 0x02;
   PJ->OUT = 0x04; PJ->DIR = 0x06;
 
@@ -1241,7 +1241,7 @@ void __Reset() {
    * If doing a soft_reset() we want to leave the GPS alone.  SD and Radio
    * get powered down.  We power up the 3V3 power rail and leave it up.
    *
-   * This is by design.  We set keep the state we want and the state we
+   * This is by design.  We set/keep the state we want and the state we
    * want when we come out of POR the same.  This simplifies things.
    *
    * WARNING: __pins_init() also touches the pin/port state.  Make sure we
