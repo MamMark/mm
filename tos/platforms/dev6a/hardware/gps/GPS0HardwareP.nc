@@ -91,6 +91,7 @@ module GPS0HardwareP {
   uses {
     interface HplMsp432Usci    as Usci;
     interface HplMsp432UsciInt as Interrupt;
+    interface PwrReg;
     interface Panic;
     interface Platform;
   }
@@ -127,7 +128,6 @@ implementation {
     gps_int_rec_t *gp;
 
     gp = &gps_int_recs[gps_int_rec_idx];
-
     if (gp->ev == ev && (ev == GPSI_RX || ev == GPSI_TX)) {
       gp->ts = call Platform.usecsRaw();
       gp->count++;
@@ -259,15 +259,19 @@ implementation {
   }
 
   async command void HW.gps_pwr_on() {
-    /*
-     * for now we assume that startup has turned on power and it is
-     * left on.  The mm6a powers the GPS and the MEMS bus by the
-     * same 1V8 switch off the main 1V8 rail.
-     */
-    GSD4E_PINS_MODULE;			/* connect from the UART */
+    call PwrReg.pwrReq();               /* will signal PwrReg.pwrOn() */
   }
 
   async command void HW.gps_pwr_off() {
+    call PwrReg.forceOff();
+  }
+
+  async event void PwrReg.pwrOn() {
+    /* power always on */
+    GSD4E_PINS_MODULE;                  /* connect to the UART */
+  }
+
+  async event void PwrReg.pwrOff() {
     GSD4E_PINS_PORT;                    /* disconnect from the UART */
   }
 

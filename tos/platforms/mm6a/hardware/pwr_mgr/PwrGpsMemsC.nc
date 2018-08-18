@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,24 +19,15 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
 
-configuration HplGPS0C {
-  provides {
-    interface Gsd4eUHardware;
-  }
+/*
+ * Control the GPS/MEMS 1v8 switch
+ */
+
+configuration PwrGpsMemsC {
+  provides interface PwrReg;
 }
 implementation {
-  components Msp432UsciA0P as UsciP;
-  components GPS0HardwareP as GpsHwP;
-  components PwrGpsMemsC;
-
-  Gsd4eUHardware = GpsHwP;
-  GpsHwP.Usci      -> UsciP;
-  GpsHwP.Interrupt -> UsciP;
-  GpsHwP.PwrReg    -> PwrGpsMemsC;
-
-  components PanicC, PlatformC;
-  GpsHwP.Panic    -> PanicC;
-  GpsHwP.Platform -> PlatformC;
-
-  PlatformC.PeripheralInit -> GpsHwP;
+  components MainC, PwrGpsMemsP;
+  MainC.SoftwareInit -> PwrGpsMemsP;
+  PwrReg = PwrGpsMemsP;
 }

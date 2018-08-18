@@ -78,7 +78,7 @@ typedef struct {
   uint8_t      tx_rx;
 } gps_int_rec_t;
 
-#define GPS_INT_RECS_MAX 128
+#define GPS_INT_RECS_MAX 32
 
 module GPS0HardwareP {
   provides {
@@ -88,6 +88,7 @@ module GPS0HardwareP {
   uses {
     interface HplMsp432Usci    as Usci;
     interface HplMsp432UsciInt as Interrupt;
+    interface PwrReg;
     interface Panic;
     interface Platform;
   }
@@ -254,16 +255,30 @@ implementation {
   }
 
   async command void HW.gps_pwr_on() {
-    /*
-     * for now we assume that startup has turned on power and it is
-     * left on.  The mm6a powers the GPS and the MEMS bus by the
-     * same 1V8 switch off the main 1V8 rail.
-     */
-    GSD4E_PINS_MODULE;			/* connect from the UART */
+    call PwrReg.pwrReq();               /* will signal PwrReg.pwrOn() */
   }
 
   async command void HW.gps_pwr_off() {
-    GSD4E_PINS_PORT;                    /* disconnect from the UART */
+    call PwrReg.forceOff();
+  }
+
+  async event void PwrReg.pwrOn() {
+    atomic {
+      GSD4E_CTS_PU = 1;
+      GSD4E_ONOFF_DIR = 1;
+      GSD4E_RESETN_OUTPUT;              /* put some energy into it */
+      GSD4E_PINS_MODULE;                /* connect to the UART */
+      GSD4E_RESETN_FLOAT;               /* then float it */
+    }
+  }
+
+  async event void PwrReg.pwrOff() {
+    atomic {
+      GSD4E_CTS_PU = 0;
+      GSD4E_ONOFF_DIR = 0;
+      GSD4E_RESETN_FLOAT;               /* resetn pin to input, float */
+      GSD4E_PINS_PORT;                  /* disconnect from the UART */
+    }
   }
 
   /*

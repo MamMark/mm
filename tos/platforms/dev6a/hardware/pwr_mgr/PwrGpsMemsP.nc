@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,24 +19,37 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
 
-configuration HplGPS0C {
+/*
+ * PwrGpsMems - control Gps/Mems pwr rail
+ */
+
+#include <platform_pin_defs.h>
+
+module PwrGpsMemsP {
   provides {
-    interface Gsd4eUHardware;
+    interface Init;
+    interface PwrReg;
   }
 }
 implementation {
-  components Msp432UsciA0P as UsciP;
-  components GPS0HardwareP as GpsHwP;
-  components PwrGpsMemsC;
+  command error_t Init.init() {
+    signal PwrReg.pwrOn();
+    return SUCCESS;
+  }
 
-  Gsd4eUHardware = GpsHwP;
-  GpsHwP.Usci      -> UsciP;
-  GpsHwP.Interrupt -> UsciP;
-  GpsHwP.PwrReg    -> PwrGpsMemsC;
+  async command error_t PwrReg.pwrReq() {
+    signal PwrReg.pwrOn();
+    return EALREADY;                    /* no delay */
+  }
 
-  components PanicC, PlatformC;
-  GpsHwP.Panic    -> PanicC;
-  GpsHwP.Platform -> PlatformC;
 
-  PlatformC.PeripheralInit -> GpsHwP;
+  async command void PwrReg.pwrRel() {
+    signal PwrReg.pwrOff();
+  }
+
+
+  async command void PwrReg.forceOff()     { }
+
+  default async event void PwrReg.pwrOn()  { }
+  default async event void PwrReg.pwrOff() { }
 }
