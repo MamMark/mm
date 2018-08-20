@@ -275,6 +275,7 @@ typedef enum {
   GPSW_STANDBY,
   GPSW_SEND_BLOCK_TASK,
   GPSW_PROBE_TASK,
+  GPSW_PWR_TASK,
   GPSW_TX_TIMER,
   GPSW_RX_TIMER,
   GPSW_PROTO_START,
@@ -396,6 +397,7 @@ module Gsd4eUP {
   }
   uses {
     interface Gsd4eUHardware as HW;
+    interface PwrReg as GPSPwr;         /* gps power sw  */
 
     /*
      * This module uses two timers, GPSTxTimer and GPSRxTimer.
@@ -569,8 +571,7 @@ implementation {
       return EALREADY;
     }
 
-    if (!call HW.gps_powered())
-      call HW.gps_pwr_on();
+    call HW.gps_pwr_on();
     awake = call HW.gps_awake();
     t_gps_pwr_on = call LocalTime.get();
     call CollectEvent.logEvent(DT_EVENT_GPS_TURN_ON, t_gps_pwr_on, awake, 0, 0);
@@ -871,6 +872,23 @@ implementation {
           call HW.gps_send_block((void *) msg, len);
           return;
       }
+    }
+  }
+
+
+  /*
+   * gps_pwr_task
+   *
+   * power has changed.  If off then blow up the timers
+   * and force us to OFF.
+   */
+  task void gps_pwr_task() {
+    if (!call GPSPwr.isPowered()) {
+      call GPSTxTimer.stop();
+      call GPSRxTimer.stop();
+      call GPSRxErrorTimer.stop();
+      gpsc_change_state(GPSC_OFF, GPSW_PWR_TASK);
+      call CollectEvent.logEvent(DT_EVENT_GPS_PWR_OFF, 0, 0, 0, 0);
     }
   }
 
@@ -1223,6 +1241,12 @@ implementation {
     send_block_done_usecs = call Platform.usecsRaw();
     gpsc_log_event(GPSE_TX_POST, 0);
     post send_block_task();
+  }
+
+  async event void GPSPwr.pwrOn()  { }
+
+  async event void GPSPwr.pwrOff() {
+    post gps_pwr_task();
   }
 
   async event void HW.gps_receive_block_done(uint8_t *ptr, uint16_t len, error_t error) { }
