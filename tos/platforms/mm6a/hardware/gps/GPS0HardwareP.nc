@@ -250,10 +250,6 @@ implementation {
     return GSD4E_AWAKE_P;
   }
 
-  async command bool HW.gps_powered() {
-    return GPS_MEMS_1V8_EN;
-  }
-
   async command void HW.gps_pwr_on() {
     call PwrReg.pwrReq();               /* will signal PwrReg.pwrOn() */
   }

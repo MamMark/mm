@@ -69,7 +69,6 @@ implementation {
   command error_t Init.init() {
     /* If gps/mems power is on, signal pwrOn and set the refcount to 1. */
     if (GPS_MEMS_1V8_EN) {
-      m_refcount = 1;
       mems0_port_enable();
       signal PwrReg.pwrOn();
     }
@@ -78,40 +77,29 @@ implementation {
 
   async command error_t PwrReg.pwrReq() {
     atomic {
-      m_refcount++;
       GPS_MEMS_1V8_EN = 1;                /* turn on always */
-      if (m_refcount == 1) {
-        mems0_port_enable();
-        signal PwrReg.pwrOn();
-      }
+      mems0_port_enable();
+      signal PwrReg.pwrOn();
     }
     return EALREADY;                    /* no delay */
   }
 
 
-  async command void PwrReg.pwrRel() {
-    atomic {
-      if (m_refcount)
-        m_refcount--;
-
-      if (m_refcount == 0) {
-        /*
-         * signal needs to happend before actually turning power off
-         * this gives hardware drivers time to switch any necessary i/o
-         * pins into the proper state for powering down.
-         */
-        mems0_port_disable();
-        signal PwrReg.pwrOff();
-        GPS_MEMS_1V8_EN = 0;              /* turn off */
-      }
-    }
+  /* query power state */
+  async command bool PwrReg.isPowered() {
+    return GPS_MEMS_1V8_EN;
   }
+
+
+  /* release does nothing.  to turn off pwr use forceOff() */
+  async command void PwrReg.pwrRel()   { }
 
 
   async command void PwrReg.forceOff() {
     atomic {
-      m_refcount = 0;
-      call PwrReg.pwrRel();
+      mems0_port_disable();
+      signal PwrReg.pwrOff();
+      GPS_MEMS_1V8_EN = 0;              /* turn off */
     }
   }
 

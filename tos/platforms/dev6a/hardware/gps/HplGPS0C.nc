@@ -22,6 +22,7 @@
 configuration HplGPS0C {
   provides {
     interface Gsd4eUHardware;
+    interface PwrReg as GPSPwr;
   }
 }
 implementation {
@@ -30,6 +31,7 @@ implementation {
   components PwrGpsMemsC;
 
   Gsd4eUHardware = GpsHwP;
+  GPSPwr         = PwrGpsMemsC;
   GpsHwP.Usci      -> UsciP;
   GpsHwP.Interrupt -> UsciP;
   GpsHwP.PwrReg    -> PwrGpsMemsC;

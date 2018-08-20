@@ -43,6 +43,12 @@ implementation {
   }
 
 
+  /* query power state */
+  async command bool PwrReg.isPowered() {
+    return TRUE;
+  }
+
+
   async command void PwrReg.pwrRel() {
     signal PwrReg.pwrOff();
   }

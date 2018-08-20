@@ -253,11 +253,6 @@ implementation {
     return GSD4E_AWAKE_P;
   }
 
-  async command bool HW.gps_powered() {
-    /* always powered up */
-    return TRUE;
-  }
-
   async command void HW.gps_pwr_on() {
     call PwrReg.pwrReq();               /* will signal PwrReg.pwrOn() */
   }
