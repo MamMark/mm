@@ -235,6 +235,7 @@ module GPSmonitorP {
     interface GPSControl;
     interface GPSTransmit;
     interface GPSReceive;
+    interface PwrReg as GPSPwr;
 
     interface Collect;
     interface CollectEvent;
@@ -468,11 +469,11 @@ implementation {
     bool    awake;
     uint32_t l;
 
-    /* too weird, too small, ignore it */
+    /* too weird, too small, bitch */
     if (!db || !lenp)
       gps_panic(0, 0, 0);               /* no return */
 
-    db->error = SUCCESS;                /* default, ignore */
+    db->error = SUCCESS;
     if (!*lenp)
       return TRUE;
     if (db->action != FILE_SET_DATA) {
@@ -1369,6 +1370,21 @@ implementation {
     major_event(MON_EV_TIMEOUT_MAJOR);
   }
 
+
+  task void monitor_pwr_task() {
+    if (!call GPSPwr.isPowered()) {
+      call MinorTimer.stop();
+      call MajorTimer.stop();
+      minor_change_state(GMS_OFF, MON_EV_PWR_OFF);
+      major_change_state(GMS_MAJOR_IDLE, MON_EV_PWR_OFF);
+    }
+  }
+
+  async event void GPSPwr.pwrOn()  { }
+
+  async event void GPSPwr.pwrOff() {
+    post monitor_pwr_task();
+  }
 
   event void Collect.collectBooted()    { }
   event void GPSControl.gps_shutdown()  { }

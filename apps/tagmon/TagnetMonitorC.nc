@@ -47,6 +47,7 @@ implementation {
   GPSmonitorC.GPSControl        -> GpsPort;
   GPSmonitorC.GPSTransmit       -> GpsPort;
   GPSmonitorC.GPSReceive        -> GpsPort;
+  GPSmonitorC.GPSPwr            -> GpsPort;
 
   components Msp432RtcC;
   TagnetMonitorP.Rtc            -> Msp432RtcC;

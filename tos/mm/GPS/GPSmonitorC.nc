@@ -30,6 +30,7 @@ configuration GPSmonitorC {
     interface GPSControl;
     interface GPSTransmit;
     interface GPSReceive;
+    interface PwrReg as GPSPwr;
   }
 }
 
@@ -41,6 +42,7 @@ implementation {
   GPSControl     = GPSmonitorP;
   GPSTransmit    = GPSmonitorP;
   GPSReceive     = GPSmonitorP;
+  GPSPwr         = GPSmonitorP;
 
   components SystemBootC;
   GPSmonitorP.Boot -> SystemBootC.Boot;
