@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc3'
+__version__ = '0.4.5rc4'
 
 import binascii
 from   collections  import OrderedDict
@@ -361,6 +361,7 @@ event_names = {
     66: 'GPS_SATS/2',
     67: 'GPS_SATS/7',
     68: 'GPS_SATS/41',
+    69: 'GPS_PWR_OFF',
 }
 
 def event_name(event):

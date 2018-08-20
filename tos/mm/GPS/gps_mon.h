@@ -108,6 +108,7 @@ typedef enum mon_events {
   MON_EV_MAJOR_CHANGED  = 14,
   MON_EV_CYCLE          = 15,
   MON_EV_STATE_CHK      = 16,
+  MON_EV_PWR_OFF        = 17,
 } mon_event_t;
 
 

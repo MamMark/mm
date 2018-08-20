@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.5rc9'
+__version__ = '0.4.5rc10'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,7 +18,9 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
-# 0.4.5rc9      CR: 21/0
+# 0.4.5rc10     CR: 21/1
+#               pwr force off linkages
+#               GPS_PWR_OFF event
 #               add panic_info back into panic_info_t (panic)
 #               image manager event decode
 #               rtc_src

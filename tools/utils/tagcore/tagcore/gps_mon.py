@@ -155,6 +155,7 @@ gps_mon_events = {
     'major_changed': 14,
     'cycle':         15,
     'state_chk':     16,
+    'pwr_off':       17,
 
     0:                  'none',
     1:                  'fail',
@@ -173,6 +174,7 @@ gps_mon_events = {
     14:                 'major_changed',
     15:                 'cycle',
     16:                 'state_chk',
+    17:                 'pwr_off',
 }
 
 def gps_mon_event_name(mon_ev):

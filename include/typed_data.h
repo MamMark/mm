@@ -286,7 +286,7 @@ typedef enum {
   DT_EVENT_GPS_SATS_2       = 66,
   DT_EVENT_GPS_SATS_7       = 67,
   DT_EVENT_GPS_SATS_41      = 68,
-
+  DT_EVENT_GPS_PWR_OFF      = 69,
   DT_EVENT_16               = 0xffff,
 } dt_event_id_t;
 
