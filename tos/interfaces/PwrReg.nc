@@ -32,9 +32,10 @@
  * pwrReg driver takes this into account and signals the PwrAvail
  * signal after enough time has passed for stabilization.
  *
- * command: pwrReq()   to request power
- * command: pwrRel()   to release demand for power on rail
- * event:   pwrOn()    to indicate power is stable.
+ * command: pwrReq()    to request power
+ * command: pwrRel()    to release demand for power on rail
+ * command: isPowered() returns true if powered on.
+ * event:   pwrOn()     to indicate power is stable.
  *
  * command: forceOff() command immediate power down of the rail
  * event:   pwrOff()   signalled when power has been turned off.
@@ -70,6 +71,11 @@ interface PwrReg {
    * Release pwr
    */
   async command void    pwrRel();
+
+  /**
+   * query power state
+   */
+  async command bool    isPowered();
 
   /**
    * Force the power off.

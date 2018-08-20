@@ -119,7 +119,6 @@ interface Gsd4eUHardware {
   async command void gps_clr_reset();
   async command bool gps_awake();
 
-  async command bool gps_powered();
   async command void gps_pwr_on();
   async command void gps_pwr_off();
 
