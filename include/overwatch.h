@@ -193,6 +193,7 @@ enum {
   OW_LOG_RAW_GPS    = 0,
   OW_LOG_GPS_MISC   = 1,
   OW_LOG_TAGNET     = 8,
+  OW_LOG_MAX        = 31,
 };
 
 

@@ -897,10 +897,14 @@ implementation {
   }
 
   async command void OverWatch.setLoggingFlag(uint32_t log_e) {
+    if (log_e > OW_LOG_MAX)
+      return;
     BITBAND_SRAM(ow_control_block.logging_flags, log_e) = 1;
   }
 
   async command void OverWatch.clrLoggingFlag(uint32_t log_e) {
+    if (log_e > OW_LOG_MAX)
+      return;
     BITBAND_SRAM(ow_control_block.logging_flags, log_e) = 0;
   }
 
