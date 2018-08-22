@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.4.5rc0'
+__version__ = '0.4.5rc1'
 
 __all__ = [
     'gps_cmd_name',
@@ -32,6 +32,24 @@ __all__ = [
     'gps_mon_minor_name',
     'gps_mon_major_name',
 ]
+
+
+remlog_cmds = {
+    'setflag':  0x81,                   # takes enum
+    'clrflag':  0x82,                   # takes enum
+    'set':      0x83,                   # bit mask
+    'clr':      0x84,                   # bit mask
+    'force':    0x85,                   # bit array
+    'get':      0x86,                   # get bit array
+
+    0x81:       'setflag',
+    0x82:       'clrflag',
+    0x83:       'set',
+    0x84:       'clr',
+    0x85:       'force',
+    0x86:       'get',
+}
+
 
 # commands from tos/mm/gps/gps_mon.h
 gps_cmds = {
@@ -57,14 +75,15 @@ gps_cmds = {
 
     'can':          0x80,
 
-    'setlogflag':   0x81,
-    'clrlogflag':   0x82,
+    # reserved for RemLog (remote logging control)
+    'rl/setflag':   0x81,
+    'rl/clrflag':   0x82,
 
-    'setlogging':   0x83,
-    'clrlogging':   0x84,
+    'rl/set':       0x83,
+    'rl/clr':       0x84,
 
-    'forcelogging': 0x85,
-    'getlogging':   0x86,
+    'rl/force':     0x85,
+    'rl/get':       0x86,
 
     'low':          0xfc,
     'sleep':        0xfd,
@@ -93,14 +112,14 @@ gps_cmds = {
 
     0x80:           'can',
 
-    0x81:           'setlogflag',
-    0x82:           'clrlogflag',
+    0x81:           'rl/setflag',
+    0x82:           'rl/clrflag',
 
-    0x83:           'setlogging',
-    0x84:           'clrlogging',
+    0x83:           'rl/set',
+    0x84:           'rl/clr',
 
-    0x85:           'forcelogging',
-    0x86:           'getlogging',
+    0x85:           'rl/force',
+    0x86:           'rl/get',
 
     0xfe:           'low',
     0xfd:           'sleep',
