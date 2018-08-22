@@ -61,11 +61,13 @@ setup(
             'tagctl = tagctl.__main__:main'
         ],
         'ctl_main': [
-            'can  = tagctl.tagctl:Can',
-            'cmd  = tagctl.tagctl:Cmd',
-            'note = tagctl.tagctl:Note',
-            'send = tagctl.tagctl:Send',
-            'show = tagctl.tagctl:Show',
+            'can    = tagctl.tagctl:Can',
+            'cmd    = tagctl.tagctl:Cmd',
+            'note   = tagctl.tagctl:Note',
+            'send   = tagctl.tagctl:Send',
+            'show   = tagctl.tagctl:Show',
+            'remlog = tagctl.tagctl:RemLog',
+            'rl     = tagctl.tagctl:RemLog',
         ],
     },
     zip_safe             = False,

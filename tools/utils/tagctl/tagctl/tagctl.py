@@ -24,6 +24,7 @@ from   __future__         import print_function
 import os
 import sys
 import logging
+import struct
 
 from   binascii             import hexlify
 from   tagcore              import buf_str
@@ -56,7 +57,7 @@ class Can(Command):
 
         msg = parsed_args.msg
         if not msg:
-            print('a msg would be nice')
+            print('*** a <msg_name> would be nice')
             return
         cfg.set_node_path()
         cmd_path = os.path.join(cfg.node_path, GPS_CMD_PATH)
@@ -197,6 +198,53 @@ class Show(Command):
             return
 
 
+class RemLog(Command):
+    log = logging.getLogger(__name__ + '.remlog')
+    rl_cmds = gps.remlog_cmds
+
+    def get_parser(self, prog_name):
+        parser = super(RemLog, self).get_parser(prog_name)
+        parser.add_argument('what', nargs='?', default='get')
+        parser.add_argument('args', nargs='?')
+        return parser
+
+    def take_action(self, parsed_args):
+        self.log.debug('pargs:  {}'.format(parsed_args))
+        self.log.debug('what:   {}'.format(parsed_args.what))
+        self.log.debug('args:   {}'.format(parsed_args.args))
+
+        what = parsed_args.what
+        if what == 'help':
+            print('remlog:')
+            for i in self.rl_cmds.keys():
+                if isinstance(i, str):
+                    print('  ' + i)
+            return
+        rl_cmd = self.rl_cmds.get(what, None)
+        if rl_cmd == None:
+            print('*** unrecognized remote logging command: {}'.format(what))
+            return
+
+        cfg.set_node_path()
+        cmd_path = os.path.join(cfg.node_path, GPS_CMD_PATH)
+        self.log.debug('node_path: {}'.format(cfg.node_path))
+        self.log.debug('cmd_path:  {}'.format(cmd_path))
+        if what == 'get':
+            out_msg = bytearray(struct.pack('B', rl_cmd))
+            cmd_fileno = os.open(cmd_path, os.O_DIRECT | os.O_RDWR)
+            os.write(cmd_fileno, out_msg)
+            os.close(cmd_fileno)
+            return
+        flag = parsed_args.args
+        flag = int(flag, 16) if flag[:2] == '0x' else int(flag)
+        out_msg = bytearray(struct.pack('<BI', rl_cmd, flag & 0xffffffff))
+        print('remlog: {} [{}] -> {}'.format(what, hexlify(out_msg),
+                                             cfg.node_str))
+        cmd_fileno = os.open(cmd_path, os.O_DIRECT | os.O_RDWR)
+        os.write(cmd_fileno, out_msg)
+        os.close(cmd_fileno)
+
+
 class CtlApp(App):
     log = logging.getLogger(__name__ + '.ctl')
 
@@ -204,7 +252,7 @@ class CtlApp(App):
         ctl_cmd_mgr = CommandManager('ctl_main')
         super(CtlApp, self).__init__(
             description     = 'tagctl main',
-            version         = '0.1',
+            version         = '0.0.2',
             command_manager = ctl_cmd_mgr,
         )
 
