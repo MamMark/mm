@@ -22,32 +22,32 @@ def main():
             fontsize=20))
     g_radio.add_subgraph(cluster_off)
 
-    cluster_hunt=pydot.Cluster(
-        'Hunt',
-        label='hunt',
+    cluster_near=pydot.Cluster(
+        'Near',
+        label='near',
         labeljust='l',
         fontsize=24)
-    cluster_hunt.add_node(
+    cluster_near.add_node(
         pydot.Node(
-            'hunt_recv',
+            'near_recv',
             label='recv',
             fontsize=16))
-    cluster_hunt.add_node(
+    cluster_near.add_node(
         pydot.Node(
-            'hunt_stby',
+            'near_stby',
             label='stby',
             fontsize=16))
-    cluster_hunt.add_node(
+    cluster_near.add_node(
         pydot.Node(
-            'hunt_recv_wait',
+            'near_recv_wait',
             label='recv_wait',
             fontsize=16))
-    cluster_hunt.add_node(
+    cluster_near.add_node(
         pydot.Node(
-            'hunt_stby_wait',
+            'near_stby_wait',
             label='stby_wait',
             fontsize=16))
-    g_radio.add_subgraph(cluster_hunt)
+    g_radio.add_subgraph(cluster_near)
 
     cluster_lost=pydot.Cluster(
         'Lost',
@@ -76,32 +76,32 @@ def main():
             fontsize=16))
     g_radio.add_subgraph(cluster_lost)
 
-    cluster_base=pydot.Cluster(
-        'Base',
-        label='base',
+    cluster_home=pydot.Cluster(
+        'Home',
+        label='home',
         labeljust='r',
         fontsize=24)
-    cluster_base.add_node(
+    cluster_home.add_node(
         pydot.Node(
-            'base_recv',
+            'home_recv',
             label='recv',
             fontsize=16))
-    cluster_base.add_node(
+    cluster_home.add_node(
         pydot.Node(
-            'base_stby',
+            'home_stby',
             label='stby',
             fontsize=16))
-    cluster_base.add_node(
+    cluster_home.add_node(
         pydot.Node(
-            'base_recv_wait',
+            'home_recv_wait',
             label='recv_wait',
             fontsize=16))
-    cluster_base.add_node(
+    cluster_home.add_node(
         pydot.Node(
-            'base_stby_wait',
+            'home_stby_wait',
             label='stby_wait',
             fontsize=16))
-    g_radio.add_subgraph(cluster_base)
+    g_radio.add_subgraph(cluster_home)
 
 
     # create edge between two main nodes:
@@ -110,65 +110,65 @@ def main():
     #
     g_radio.add_edge(
         pydot.Edge(
-            "off","base_recv_wait",
+            "off","home_recv_wait",
             label="booted / r_on,t_start"))
 
     g_radio.add_edge(
         pydot.Edge(
-            "base_recv","base_stby_wait",
+            "home_recv","home_stby_wait",
             label="not_forme / r_stby,t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "base_recv","base_stby_wait",
+            "home_recv","home_stby_wait",
             label="timer_expired / r_stby,t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "base_stby","base_recv_wait",
+            "home_stby","home_recv_wait",
             label="timer_expired / r_on,t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "base_recv","base_recv",
+            "home_recv","home_recv",
             label="forme / t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "base_stby","hunt_stby",
+            "home_stby","near_stby",
             label="tries_exceeded / t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "base_recv_wait","base_recv",
+            "home_recv_wait","home_recv",
             label="radio_done / t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "base_stby_wait","base_stby",
+            "home_stby_wait","home_stby",
             label="radio_done / t_start"))
 
     g_radio.add_edge(
         pydot.Edge(
-            "hunt_recv","hunt_stby_wait",
+            "near_recv","near_stby_wait",
             label="not_forme / r_stby,t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "hunt_recv","hunt_stby_wait",
+            "near_recv","near_stby_wait",
             label="timer_expired / r_stby,t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "hunt_stby","hunt_recv_wait",
+            "near_stby","near_recv_wait",
             label="timer_expired / r_on,t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "hunt_recv","base_recv",
+            "near_recv","home_recv",
             label="forme / t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "hunt_stby","lost_stby",
+            "near_stby","lost_stby",
             label="tries_exceeded / t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "hunt_recv_wait","hunt_recv",
+            "near_recv_wait","near_recv",
             label="radio_done / t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "hunt_stby_wait","hunt_stby",
+            "near_stby_wait","near_stby",
             label="radio_done / t_start"))
 
     g_radio.add_edge(
@@ -186,7 +186,7 @@ def main():
             label="timer_expired / r_on,t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "lost_recv","base_recv",
+            "lost_recv","home_recv",
             label="forme / t_start"))
     g_radio.add_edge(
         pydot.Edge(
