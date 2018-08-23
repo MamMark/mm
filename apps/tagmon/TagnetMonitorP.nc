@@ -71,7 +71,7 @@ implementation {
    *   LOST         tag has not seen basestation and is in deep sleep
    */
   typedef enum {
-    RS_NONE         = 0,
+    RS_xNONE        = 0,
     RS_HOME         = 1,
     RS_NEAR         = 2,
     RS_LOST         = 3,
@@ -139,7 +139,7 @@ implementation {
   norace radio_graph_t  rcb = {
   //              cycle
   //  cur_state,    cnt
-        RS_NONE,      0,
+        RS_xNONE,     0,
 
      //              max          R-W  RECV     S-W  STBY
     {// substate  cycles    NA
@@ -225,7 +225,7 @@ implementation {
     bool             match;
 
     nop();                     /* BRK */
-    if (major == RS_NONE) {
+    if (major == RS_xNONE) {
       /* none says stay in current state. */
       major = rcb.state;
     }
