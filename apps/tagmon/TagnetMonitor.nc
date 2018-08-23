@@ -1,5 +1,5 @@
 interface TagnetMonitor {
-  command void setBase();
-  command void setHunt();
+  command void setHome();
+  command void setNear();
   command void setLost();
 }

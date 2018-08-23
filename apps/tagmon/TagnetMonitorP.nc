@@ -408,11 +408,11 @@ implementation {
   }
 
 
-  command void TagnetMonitor.setBase() {
+  command void TagnetMonitor.setHome() {
     change_radio_state(RS_HOME, SS_RECV);
   }
 
-  command void TagnetMonitor.setHunt() {
+  command void TagnetMonitor.setNear() {
     change_radio_state(RS_NEAR, SS_RECV);
   }
 
@@ -485,8 +485,8 @@ implementation {
      * always take the 'FOR_ME' arc in the state machine and
      * transfer into MAJOR_HOME state.
      *
-     * the change_radio_state handles the transition into BASE
-     * and starting the BASE duty cycle timer.
+     * the change_radio_state handles the transition into HOME
+     * and starting the HOME duty cycle timer.
      *
      * Also, reset the cycle counter since want to stay active
      * when the basestation is talking to this tag.

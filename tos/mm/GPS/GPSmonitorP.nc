@@ -535,12 +535,12 @@ implementation {
         major_event(MON_EV_STATE_CHK);
         break;
 
-      case GDC_MON_GO_BASE:
-        call TagnetMonitor.setBase();
+      case GDC_MON_GO_HOME:
+        call TagnetMonitor.setHome();
         break;
 
-      case GDC_MON_GO_HUNT:
-        call TagnetMonitor.setHunt();
+      case GDC_MON_GO_NEAR:
+        call TagnetMonitor.setNear();
         break;
 
       case GDC_MON_GO_LOST:

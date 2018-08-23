@@ -61,8 +61,8 @@ gps_cmds = {
     'pwroff':       5,
     'cycle':        6,
     'state':        7,
-    'base':         8,
-    'hunt':         9,
+    'home':         8,
+    'near':         9,
     'lost':         10,
 
     'awake':        0x10,
@@ -98,8 +98,8 @@ gps_cmds = {
     5:              'pwroff',
     6:              'cycle',
     7:              'state',
-    8:              'base',
-    9:              'hunt',
+    8:              'home',
+    9:              'near',
     10:             'lost',
 
     16:             'awake',
