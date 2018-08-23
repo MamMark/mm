@@ -154,16 +154,20 @@ implementation {
   typedef struct {
     uint32_t          count;
     uint32_t          cycles;
-    uint32_t          ts_ms;
-    uint32_t          ts_usecs;
+    uint32_t          ts_ms;            /* start of transition time */
+    uint32_t          ts_usecs;         /* start of transition time */
+    uint32_t          ts_usecs_delta;   /* delta for duplicates     */
     int32_t           timeout;
     radio_state_t     major;
-    radio_state_t     old_major;
     radio_substate_t  minor;
+    radio_state_t     old_major;
     radio_substate_t  old_minor;
   } radio_trace_t;
 
-#define TAGMON_RADIO_TRACE_MAX 16
+#define TAGMON_RADIO_TRACE_MAX 64
+
+/* Trace Group is how far back in the trace to look for duplicates. */
+#define TAGMON_TRACE_GROUP     4
 
   radio_trace_t       radio_trace[TAGMON_RADIO_TRACE_MAX];
   norace uint32_t     radio_trace_cur;
@@ -189,13 +193,36 @@ implementation {
     }
   }
 
+
+  uint32_t get_index(int32_t delta) {
+    int32_t idx;
+
+    idx = radio_trace_cur + delta;
+    if (idx >= TAGMON_RADIO_TRACE_MAX)
+      idx -= TAGMON_RADIO_TRACE_MAX;
+    if (idx < 0)
+      idx = TAGMON_RADIO_TRACE_MAX + idx;
+    return idx;
+  }
+
+
+  bool radio_transition_equal(radio_trace_t *t0, radio_trace_t *t1) {
+    if (t0->major     == t1->major     && t0->minor     == t1->minor &&
+        t0->old_major == t1->old_major && t0->old_minor == t1->old_minor)
+      return TRUE;
+    return FALSE;
+  }
+
+
   void change_radio_state(radio_state_t major, radio_substate_t minor) {
     error_t          error = SUCCESS;
     radio_state_t    old_major;
     radio_substate_t old_minor;
     radio_trace_t   *tt;
-    int32_t          tval;
+    radio_trace_t    new_trace;
+    int32_t          tval, i, j;
     rtctime_t        rt;
+    bool             match;
 
     nop();                     /* BRK */
     if (major == RS_NONE) {
@@ -240,31 +267,99 @@ implementation {
     rcb.sub[major].state = minor;
     tval = rcb.sub[major].timers[minor]; // get timer for state
 
-    // add info to trace array
-    // only record the first instance of a repeated state change
+    /*
+     * Add the state transition to the trace array.
+     *
+     * First, check for repeated last state.
+     * If not a repeated last state then scan for duplicated
+     * sequences.
+     */
     tt = &radio_trace[radio_trace_cur];
-    if (tt->major     != major     || tt->minor     != minor ||
-        tt->old_major != old_major || tt->old_minor != old_minor) {
-      radio_trace_cur++;
-      if (radio_trace_cur >= (sizeof(radio_trace)/sizeof(radio_trace[0])))
-        radio_trace_cur = 0;
+    new_trace.major = major;
+    new_trace.minor = minor;
+    new_trace.old_major = old_major;
+    new_trace.old_minor = old_minor;
+    nop();
+    if (radio_transition_equal(tt, &new_trace)) {
+      tt->count++;
+
+      /* since this is a duplicate, only update the delta */
+      tt->ts_usecs_delta = tt->ts_usecs - call Platform.usecsRaw();
+    } else {
+      /*
+       * actual transition, need to scan for same sequence
+       * upto TAGMON_TRACE_GROUP (4).
+       */
+      radio_trace_cur = get_index(+1);
       tt = &radio_trace[radio_trace_cur];
       tt->ts_ms    = call Platform.localTime();
       tt->ts_usecs = call Platform.usecsRaw();
+      tt->ts_usecs_delta = 0;
       tt->count    = 1;
       tt->cycles   = rcb.cycle_cnt;
       tt->major = major; tt->old_major = old_major;
       tt->minor = minor; tt->old_minor = old_minor;
       tt->timeout = tval;
-    } else {
-      tt->count++;
-      tt->ts_ms    = call Platform.localTime();
-      tt->ts_usecs = call Platform.usecsRaw();
+
+      /*
+       * look for duplicate sequences (up to TRACE_GROUP back)
+       * and collapse.
+       *
+       * We compare the following:
+       *
+       *      (2)         (3)         (4)
+       *    0 vs -2     0 vs -3     0 vs -4
+       *   -1    -3    -1    -4    -1    -5
+       *               -2    -5    -2    -6
+       *                           -3    -7
+       *
+       * if the column matches, then we fold the match into the
+       * previous sequence.  ie.  both parts of (2) match so
+       * we would fold 0 into -2 and -1 into -3.  Update deltas.
+       */
+      for (i = 2; i <= TAGMON_TRACE_GROUP; i++) {
+        match = TRUE;
+        for (j = 0; j < i; j++) {
+          if (!radio_transition_equal(&radio_trace[get_index(-j)],
+                                      &radio_trace[get_index(-j-i)])) {
+            match = FALSE;
+            break;
+          }
+        }
+        if (match) break;
+      }
+      if (match) {
+        /* i is the column we are working on. */
+        nop();
+        for (j = 0; j < i; j++) {
+          /*
+           * we have a match.  For each folded entry we want to mark
+           * the old sequence as not used (count goes to 0).
+           *
+           * Fold the duplicate into the original.  Pop the count and
+           * update the usecs_delta.  Elapsed usecs between the two
+           * entries that are the same.
+           */
+          tt = &radio_trace[get_index(-j)];     /* duplicate */
+          tt->count = 0;
+          tt = &radio_trace[get_index(-j-i)];   /* original */
+          tt->count++;
+          tt->ts_usecs_delta = tt->ts_usecs - call Platform.usecsRaw();
+        }
+        radio_trace_cur = get_index(-i);        /* back cur up */
+      }
     }
 
     // start timer or rtc alarm, depending on timout value
-    if (tval < 0) {
+    if (tval >= 0)
+      call smTimer.startOneShot(tval);
+    else {
+      /*
+       * neg value says use RtcAlarm.  Neg value denotes how
+       * many slices to carve an hour into for the RtcAlarm.
+       */
       tval = 0 - tval;
+
       /* set rtc alarm to the next slice in 60 minute cycle
        *   slice = whole divisor of 60 minutes
        *   mps = minutes per slice
@@ -272,14 +367,13 @@ implementation {
        *   RtcAlarm.set(rt, MIN)
        */
       call Rtc.getTime(&rt);
-      if (is_divisorof60(tval)) {
-        rt.min = (((rt.min / tval) + 1) * tval) % 60;
-        call RtcAlarm.setAlarm(&rt, RTC_ALARM_MINUTE);
-      } else
+
+      /* sanity check the slice value */
+      if (!is_divisorof60(tval))
         call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
                          tval, rt.min, 0, 0);
-    } else {
-      call smTimer.startOneShot(tval);
+      rt.min = (((rt.min / tval) + 1) * tval) % 60;
+      call RtcAlarm.setAlarm(&rt, RTC_ALARM_MINUTE);
     }
 
     // reset retry counter if changing major
