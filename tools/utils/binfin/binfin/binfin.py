@@ -69,6 +69,7 @@ from   __init__                 import __version__ as VERSION
 
 import sys
 import argparse
+import os.path
 
 from   elf import *
 from   tagcore.base_objs    import *

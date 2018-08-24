@@ -3,7 +3,7 @@ binfin: Update MamMark (mm) META_INFO data
 @author: R. Li Fo Sjoe
 """
 
-__version__ = '0.1.2rc1'
+__version__ = '0.1.2rc2'
 
 # 0.1.2rc1      Switch to argparse/bininfo integrated
 # 0.1.1rc0      Release Candidate
