@@ -156,7 +156,8 @@ implementation {
     uint32_t          cycles;
     uint32_t          ts_ms;            /* start of transition time */
     uint32_t          ts_usecs;         /* start of transition time */
-    uint32_t          ts_usecs_delta;   /* delta for duplicates     */
+    uint32_t          ts_ms_last;       /* last seen for duplicates */
+    uint32_t          ts_usecs_last;    /* last seen for duplicates */
     int32_t           timeout;
     radio_state_t     major;
     radio_substate_t  minor;
@@ -223,6 +224,7 @@ implementation {
     int32_t          tval, i, j;
     rtctime_t        rt;
     bool             match;
+    uint32_t         event_ms, event_usecs;
 
     nop();                     /* BRK */
     if (major == RS_xNONE) {
@@ -283,8 +285,9 @@ implementation {
     if (radio_transition_equal(tt, &new_trace)) {
       tt->count++;
 
-      /* since this is a duplicate, only update the delta */
-      tt->ts_usecs_delta = tt->ts_usecs - call Platform.usecsRaw();
+      /* since this is a duplicate, only update the deltas */
+      tt->ts_ms_last    = call Platform.localTime();
+      tt->ts_usecs_last = call Platform.usecsRaw();
     } else {
       /*
        * actual transition, need to scan for same sequence
@@ -294,7 +297,8 @@ implementation {
       tt = &radio_trace[radio_trace_cur];
       tt->ts_ms    = call Platform.localTime();
       tt->ts_usecs = call Platform.usecsRaw();
-      tt->ts_usecs_delta = 0;
+      tt->ts_ms_last    = 0;
+      tt->ts_usecs_last = 0;
       tt->count    = 1;
       tt->cycles   = rcb.cycle_cnt;
       tt->major = major; tt->old_major = old_major;
@@ -315,7 +319,7 @@ implementation {
        *
        * if the column matches, then we fold the match into the
        * previous sequence.  ie.  both parts of (2) match so
-       * we would fold 0 into -2 and -1 into -3.  Update deltas.
+       * we would fold 0 into -2 and -1 into -3.  Update lasts.
        */
       for (i = 2; i <= TAGMON_TRACE_GROUP; i++) {
         match = TRUE;
@@ -337,14 +341,16 @@ implementation {
            * the old sequence as not used (count goes to 0).
            *
            * Fold the duplicate into the original.  Pop the count and
-           * update the usecs_delta.  Elapsed usecs between the two
-           * entries that are the same.
+           * update the {ms,usecs}_lasts.
            */
           tt = &radio_trace[get_index(-j)];     /* duplicate */
           tt->count = 0;
+          event_ms    = tt->ts_ms;              /* latest event times */
+          event_usecs = tt->ts_usecs;
           tt = &radio_trace[get_index(-j-i)];   /* original */
           tt->count++;
-          tt->ts_usecs_delta = tt->ts_usecs - call Platform.usecsRaw();
+          tt->ts_ms_last    =  event_ms;
+          tt->ts_usecs_last =  event_usecs;
         }
         radio_trace_cur = get_index(-i);        /* back cur up */
       }
@@ -626,8 +632,7 @@ implementation {
         change_radio_state(major, SS_RECV_WAIT);
         break;
       default:
-        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
-                         major, minor, 0, 0);
+        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, 0);
     }
   }
 

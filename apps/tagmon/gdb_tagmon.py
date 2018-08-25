@@ -32,15 +32,17 @@ class TagmonTrace(gdb.Command):
         print()
         while True:
             tt = gdb.parse_and_eval('TagnetMonitorP__radio_trace[0d{}]'.format(cur))
-            ts_ms    = int(tt['ts_ms'])
+            ts_ms = int(tt['ts_ms'])
             ts_usecs = int(tt['ts_usecs'])
+            ts_ms_last = int(tt['ts_ms_last'])
+            ts_usecs_last = int(tt['ts_usecs_last'])
             count    = int(tt['count'])
             maj_name = tt['major'].__str__().replace('TagnetMonitorP__RS_','')
             min_name = tt['minor'].__str__().replace('TagnetMonitorP__SS_','')
             frm_maj  = tt['old_major'].__str__().replace('TagnetMonitorP__RS_','')
             frm_min  = tt['old_minor'].__str__().replace('TagnetMonitorP__SS_','')
-            print('{:02d}  {:>6}  x{:04x} {:06x} {:>14s} -> {}'.format(
-                cur, '({})'.format(count), ts_ms, ts_usecs,
+            print('{:02d} {:>6}  x{:06x}/{:<6x}  {:08x}/{:<8x}  {:>14s} -> {}'.format(
+                cur, '({})'.format(count), ts_ms, ts_ms_last, ts_usecs, ts_usecs_last,
                 '{}_{}'.format(frm_maj[0].lower(), frm_min),
                 '{}_{}'.format(maj_name[0].lower(), min_name)))
             if cur == last:
@@ -57,15 +59,17 @@ class TagmonState(gdb.Command):
     def invoke (self, args, from_tty):
         last     = int(gdb.parse_and_eval('TagnetMonitorP__radio_trace_cur'))
         tt       = gdb.parse_and_eval('TagnetMonitorP__radio_trace[0d{}]'.format(last))
-        ts_ms    = int(tt['ts_ms'])
+        ts_ms = int(tt['ts_ms'])
         ts_usecs = int(tt['ts_usecs'])
+        ts_ms_last = int(tt['ts_ms_last'])
+        ts_usecs_last = int(tt['ts_usecs_last'])
         count    = int(tt['count'])
         maj_name = tt['major'].__str__().replace('TagnetMonitorP__RS_','')
         min_name = tt['minor'].__str__().replace('TagnetMonitorP__SS_','')
         frm_maj  = tt['old_major'].__str__().replace('TagnetMonitorP__RS_','')
         frm_min  = tt['old_minor'].__str__().replace('TagnetMonitorP__SS_','')
-        print('    {:>6}  x{:04x} {:06x} {:>14s} -> {}'.format(
-            '({})'.format(count), ts_ms, ts_usecs,
+        print('   {:>6}  x{:06x}/{:<6x}  {:08x}/{:<8x}  {:>14s} -> {}'.format(
+            '({})'.format(count), ts_ms, ts_ms_last, ts_usecs, ts_usecs_last,
             '{}_{}'.format(frm_maj[0].lower(), frm_min),
             '{}_{}'.format(maj_name[0].lower(), min_name)))
 
