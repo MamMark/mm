@@ -238,6 +238,11 @@ implementation {
         call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
                          major, minor, 0, 0);
 
+    // capture the current time for the state transitions.  Do this before
+    // we change the radio state so that the traces look right.
+    event_ms    = call Platform.localTime();
+    event_usecs = call Platform.usecsRaw();
+
     // perform radio state change when appropriate substate is (re)entered
     // do this first because if it fails we will stay in the previous state
     // to try again
@@ -286,8 +291,8 @@ implementation {
       tt->count++;
 
       /* since this is a duplicate, only update the deltas */
-      tt->ts_ms_last    = call Platform.localTime();
-      tt->ts_usecs_last = call Platform.usecsRaw();
+      tt->ts_ms_last    = event_ms;
+      tt->ts_usecs_last = event_usecs;
     } else {
       /*
        * actual transition, need to scan for same sequence
@@ -295,8 +300,8 @@ implementation {
        */
       radio_trace_cur = get_index(+1);
       tt = &radio_trace[radio_trace_cur];
-      tt->ts_ms    = call Platform.localTime();
-      tt->ts_usecs = call Platform.usecsRaw();
+      tt->ts_ms    = event_ms;
+      tt->ts_usecs = event_usecs;
       tt->ts_ms_last    = 0;
       tt->ts_usecs_last = 0;
       tt->count    = 1;
@@ -349,8 +354,8 @@ implementation {
           event_usecs = tt->ts_usecs;
           tt = &radio_trace[get_index(-j-i)];   /* original */
           tt->count++;
-          tt->ts_ms_last    =  event_ms;
-          tt->ts_usecs_last =  event_usecs;
+          tt->ts_ms_last    = event_ms;
+          tt->ts_usecs_last = event_usecs;
         }
         radio_trace_cur = get_index(-i);        /* back cur up */
       }
