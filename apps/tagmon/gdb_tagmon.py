@@ -41,10 +41,21 @@ class TagmonTrace(gdb.Command):
             min_name = tt['minor'].__str__().replace('TagnetMonitorP__SS_','')
             frm_maj  = tt['old_major'].__str__().replace('TagnetMonitorP__RS_','')
             frm_min  = tt['old_minor'].__str__().replace('TagnetMonitorP__SS_','')
-            print('{:02d} {:>6}  x{:06x}/{:<6x}  {:08x}/{:<8x}  {:>14s} -> {}'.format(
-                cur, '({})'.format(count), ts_ms, ts_ms_last, ts_usecs, ts_usecs_last,
-                '{}_{}'.format(frm_maj[0].lower(), frm_min),
-                '{}_{}'.format(maj_name[0].lower(), min_name)))
+            reason   = tt['reason'].__str__().replace('TagnetMonitorP__TMR_','').lower()
+            if count == 0:          # non-transition trace entry
+                print('{:3d}         x{:06x}         {:08x}           {:<8}               {}'.format(
+                    cur, ts_ms, ts_usecs, reason,
+                    '{}_{}'.format(maj_name[0].lower(), min_name)))
+            elif count == 1:
+                print('{:3d} {:>6}  x{:06x}         {:08x}           {:<8} {:>10s} -> {}'.format(
+                    cur, '({})'.format(count), ts_ms, ts_usecs, reason,
+                    '{}_{}'.format(frm_maj[0].lower(), frm_min),
+                    '{}_{}'.format(maj_name[0].lower(), min_name)))
+            else:
+                print('{:3d} {:>6}  x{:06x}/{:<6x}  {:08x}/{:08x}  {:<8} {:>10s} -> {}'.format(
+                    cur, '({})'.format(count), ts_ms, ts_ms_last, ts_usecs, ts_usecs_last, reason,
+                    '{}_{}'.format(frm_maj[0].lower(), frm_min),
+                    '{}_{}'.format(maj_name[0].lower(), min_name)))
             if cur == last:
                 break
             cur += 1
@@ -68,10 +79,17 @@ class TagmonState(gdb.Command):
         min_name = tt['minor'].__str__().replace('TagnetMonitorP__SS_','')
         frm_maj  = tt['old_major'].__str__().replace('TagnetMonitorP__RS_','')
         frm_min  = tt['old_minor'].__str__().replace('TagnetMonitorP__SS_','')
-        print('   {:>6}  x{:06x}/{:<6x}  {:08x}/{:<8x}  {:>14s} -> {}'.format(
-            '({})'.format(count), ts_ms, ts_ms_last, ts_usecs, ts_usecs_last,
-            '{}_{}'.format(frm_maj[0].lower(), frm_min),
-            '{}_{}'.format(maj_name[0].lower(), min_name)))
+        reason   = tt['reason'].__str__().replace('TagnetMonitorP__TMR_','').lower()
+        if count == 1:
+            print('    {:>6}  x{:06x}         {:08x}           {:<8} {:>10s} -> {}'.format(
+                '({})'.format(count), ts_ms, ts_usecs, reason,
+                '{}_{}'.format(frm_maj[0].lower(), frm_min),
+                '{}_{}'.format(maj_name[0].lower(), min_name)))
+        else:
+            print('    {:>6}  x{:06x}/{:<6x}  {:08x}/{:08x}  {:<8} {:>10s} -> {}'.format(
+                '({})'.format(count), ts_ms, ts_ms_last, ts_usecs, ts_usecs_last, reason,
+                '{}_{}'.format(frm_maj[0].lower(), frm_min),
+                '{}_{}'.format(maj_name[0].lower(), min_name)))
 
 TagmonTrace()
 TagmonState()

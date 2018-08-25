@@ -80,19 +80,33 @@ implementation {
 
   /*
    * minor states
-   *   RECV         radio receiver is on
-   *   RECV_WAIT    wait for radio_on command to complete
-   *   STANDBY      radio in low power mode (register retained, recv off)
-   *   STANDBY_WAIT waiting for radio_standby command to complete
+   *   RECV                radio receiver is on
+   *   RECV_WAIT    (RW)   wait for radio_on command to complete
+   *   STANDBY      (STBY) radio in low power mode (register retained, recv off)
+   *   STANDBY_WAIT (SW)   waiting for radio_standby command to complete
    */
   typedef enum {
     SS_NONE         = 0,
-    SS_RECV_WAIT    = 1,
+    SS_RW           = 1,
     SS_RECV         = 2,
-    SS_STANDBY_WAIT = 3,
+    SS_SW           = 3,
     SS_STANDBY      = 4,
     SS_MAX,
   } radio_substate_t;
+
+
+  typedef enum {
+    TMR_BOOT        = 0,
+    TMR_FORCE       = 1,
+    TMR_RSD         = 2,
+    TMR_RSD_CYC     = 3,
+    TMR_NOTME       = 4,
+    TMR_FORME       = 5,
+    TMR_DROP        = 6,
+    TMR_RTC         = 7,
+    TMR_TIME        = 8,
+    TMR_ALT         = 9,
+  } tagmon_reason_t;
 
   // context for a minor state (more than one)
   typedef struct {
@@ -141,7 +155,7 @@ implementation {
   //  cur_state,    cnt
         RS_xNONE,     0,
 
-     //              max          R-W  RECV     S-W  STBY
+     //              max          RW   RECV     SW   STBY
     {// substate  cycles    NA
       {  SS_NONE,     0,    {0,    0,    0,      0,    0 } },    /* NA */
       {  SS_NONE,  2000,    {0, 1000,   50,   1000,   50 } },   /* home */
@@ -163,6 +177,7 @@ implementation {
     radio_substate_t  minor;
     radio_state_t     old_major;
     radio_substate_t  old_minor;
+    tagmon_reason_t   reason;
   } radio_trace_t;
 
 #define TAGMON_RADIO_TRACE_MAX 64
@@ -215,7 +230,7 @@ implementation {
   }
 
 
-  void change_radio_state(radio_state_t major, radio_substate_t minor) {
+  void change_radio_state(radio_state_t major, radio_substate_t minor, tagmon_reason_t reason) {
     error_t          error = SUCCESS;
     radio_state_t    old_major;
     radio_substate_t old_minor;
@@ -247,10 +262,10 @@ implementation {
     // do this first because if it fails we will stay in the previous state
     // to try again
     switch(minor) {
-      case SS_RECV_WAIT:
+      case SS_RW:
         error = call RadioState.turnOn();
         break;
-      case SS_STANDBY_WAIT:
+      case SS_SW:
         error = call RadioState.standby();
         break;
       default:
@@ -293,6 +308,7 @@ implementation {
       /* since this is a duplicate, only update the deltas */
       tt->ts_ms_last    = event_ms;
       tt->ts_usecs_last = event_usecs;
+      tt->reason        = reason;
     } else {
       /*
        * actual transition, need to scan for same sequence
@@ -309,6 +325,7 @@ implementation {
       tt->major = major; tt->old_major = old_major;
       tt->minor = minor; tt->old_minor = old_minor;
       tt->timeout = tval;
+      tt->reason = reason;
 
       /*
        * look for duplicate sequences (up to TRACE_GROUP back)
@@ -352,10 +369,12 @@ implementation {
           tt->count = 0;
           event_ms    = tt->ts_ms;              /* latest event times */
           event_usecs = tt->ts_usecs;
+          reason      = tt->reason;             /* remember last reason */
           tt = &radio_trace[get_index(-j-i)];   /* original */
           tt->count++;
           tt->ts_ms_last    = event_ms;
           tt->ts_usecs_last = event_usecs;
+          tt->reason        = reason;
         }
         radio_trace_cur = get_index(-i);        /* back cur up */
       }
@@ -399,36 +418,36 @@ implementation {
     // move to major,minor state when -1 or positive retry count
     switch (rcb.cycle_cnt) {
       case -1:  /* -1 says stay, good state machine */
-        change_radio_state(major, minor);
+        change_radio_state(major, minor, TMR_RSD_CYC);
         return;
 
       default:
         --rcb.cycle_cnt;
         if (rcb.cycle_cnt > 0) {
           /* more cycles to do, stay */
-          change_radio_state(major, minor);
+          change_radio_state(major, minor, TMR_RSD_CYC);
           return;
         }
 
         /* fall through if zero, ran out of cycles */
       case 0:
         /* ran out of cycles go to alternate */
-        change_radio_state(major_alt, minor_alt);
+        change_radio_state(major_alt, minor_alt, TMR_ALT);
         return;
     }
   }
 
 
   command void TagnetMonitor.setHome() {
-    change_radio_state(RS_HOME, SS_RECV);
+    change_radio_state(RS_HOME, SS_RECV, TMR_FORCE);
   }
 
   command void TagnetMonitor.setNear() {
-    change_radio_state(RS_NEAR, SS_RECV);
+    change_radio_state(RS_NEAR, SS_RECV, TMR_FORCE);
   }
 
   command void TagnetMonitor.setLost() {
-    change_radio_state(RS_LOST, SS_RECV);
+    change_radio_state(RS_LOST, SS_RECV, TMR_FORCE);
   }
 
 
@@ -446,7 +465,7 @@ implementation {
     major = rcb.state;
     minor = rcb.sub[major].state;
     if (minor == SS_RECV) {
-      change_radio_state(major, SS_STANDBY_WAIT);
+      change_radio_state(major, SS_SW, TMR_NOTME);
       return;
     }
   }
@@ -460,7 +479,7 @@ implementation {
     minor = rcb.sub[major].state;
     if (minor == SS_RECV) {
       rcb.cycle_cnt = rcb.sub[RS_HOME].max_cycles;
-      change_radio_state(RS_HOME, SS_RECV);    // all go to base primary state
+      change_radio_state(RS_HOME, SS_RECV, TMR_DROP);
       return;
     }
     call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, 0);
@@ -503,7 +522,7 @@ implementation {
      * when the basestation is talking to this tag.
      */
     rcb.cycle_cnt = rcb.sub[RS_HOME].max_cycles;
-    change_radio_state(RS_HOME, SS_RECV);    // all go to base primary state
+    change_radio_state(RS_HOME, SS_RECV, TMR_FORME);
     rsp = call Tagnet.process_message(pTagMsg);
     if (!rsp) {
       tagMsgBusy = FALSE;
@@ -598,10 +617,10 @@ implementation {
       default:          alt_major = RS_LOST;    break;
     }
     switch (minor) {
-      case SS_RECV_WAIT:
-        change_radio_state(major, SS_RECV);
+      case SS_RW:
+        change_radio_state(major, SS_RECV, TMR_RSD);
         break;
-      case SS_STANDBY_WAIT:
+      case SS_SW:
         // stay in current major if cycles left, else go to next major
         change_radio_state_cycle(major, SS_STANDBY, alt_major, SS_STANDBY);
         break;
@@ -617,42 +636,43 @@ implementation {
   }
 
 
-  task void timer_fired() {
+  void process_alarm_timer(tagmon_reason_t reason) {
     radio_state_t    major;
     radio_substate_t minor;
 
-    nop();                     /* BRK */
     major = rcb.state;
     minor = rcb.sub[major].state;
     switch(minor) {
       case SS_RECV:
         /* ON timer expired, go to STBY, use OFF time */
         if (tagMsgBusy)  // defer change while processing msg
-          change_radio_state(major, SS_RECV);
+          change_radio_state(major, SS_RECV, reason);
         else
-          change_radio_state(major, SS_STANDBY_WAIT);
+          change_radio_state(major, SS_SW, reason);
         break;
       case SS_STANDBY:
         /* OFF timer expired, go to RW and use ON time */
-        change_radio_state(major, SS_RECV_WAIT);
+        change_radio_state(major, SS_RW, reason);
         break;
       default:
-        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, 0);
+        call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, reason);
     }
   }
 
   event void smTimer.fired() {
-    post timer_fired();
+    process_alarm_timer(TMR_TIME);
   }
 
-  async event void RtcAlarm.rtcAlarm(rtctime_t *timep,
-                                     uint32_t field_set) {
-    post timer_fired();
+  task void rtcalarm_task() {
+    process_alarm_timer(TMR_RTC);
+  }
+
+  async event void RtcAlarm.rtcAlarm(rtctime_t *timep, uint32_t field_set) {
+    post rtcalarm_task();
   }
 
   event void Boot.booted() {
-    nop();                     /* BRK */
-    change_radio_state(RS_HOME, SS_RECV_WAIT);
+    change_radio_state(RS_HOME, SS_RW, TMR_BOOT);
   }
 
   async event void Panic.hook() { }
