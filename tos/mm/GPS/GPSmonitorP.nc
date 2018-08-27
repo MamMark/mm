@@ -335,9 +335,11 @@ implementation {
       default:
         gps_panic(1, gmcb.minor_state, 0);
         return;
-      case GMS_BOOTING:
+      case GMS_OFF:                     /* coming out of power off */
+      case GMS_BOOTING:                 /* or 1st boot */
         gmcb.msg_count   = 0;
         gmcb.retry_count = 0;
+        gmcb.lock_seen   = FALSE;
         minor_change_state(GMS_CONFIG, MON_EV_STARTUP);
         call GPSControl.logStats();
         call GPSTransmit.send((void *) sirf_swver, sizeof(sirf_swver));
@@ -362,6 +364,7 @@ implementation {
       default:
         gps_panic(2, gmcb.minor_state, 0);
         return;
+      case GMS_OFF:
       case GMS_BOOTING:
         gmcb.retry_count++;
         switch (gmcb.retry_count) {
