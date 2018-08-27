@@ -222,6 +222,41 @@ implementation {
   }
 
 
+  /*
+   * add a standalone entry into the radio trace buffer.
+   * It will use the current major/minor and the reason.
+   *
+   * It will add the entry in such way that it won't get folded into
+   * previous states.
+   */
+  void add_radio_trace(tagmon_reason_t reason) {
+    radio_state_t    major;
+    radio_substate_t minor;
+    uint32_t         event_ms, event_usecs;
+    radio_trace_t   *tt;
+
+    major       = rcb.state;
+    minor       = rcb.sub[major].state;
+    event_ms    = call Platform.localTime();
+    event_usecs = call Platform.usecsRaw();
+
+    radio_trace_cur = get_index(+1);
+    tt = &radio_trace[radio_trace_cur];
+    tt->count         = 0;
+    tt->cycles        = 0;
+    tt->ts_ms         = event_ms;
+    tt->ts_usecs      = event_usecs;
+    tt->ts_ms_last    = 0;
+    tt->ts_usecs_last = 0;
+    tt->timeout       = 0;
+    tt->major         = major;
+    tt->minor         = minor;
+    tt->old_major     = RS_xNONE;
+    tt->old_minor     = SS_NONE;
+    tt->reason        = reason;
+  }
+
+
   bool radio_transition_equal(radio_trace_t *t0, radio_trace_t *t1) {
     if (t0->major     == t1->major     && t0->minor     == t1->minor &&
         t0->old_major == t1->old_major && t0->old_minor == t1->old_minor)
@@ -464,6 +499,7 @@ implementation {
     nop();                     /* BRK */
     major = rcb.state;
     minor = rcb.sub[major].state;
+    add_radio_trace(TMR_NOTME);
     if (minor == SS_RECV) {
       change_radio_state(major, SS_SW, TMR_NOTME);
       return;
@@ -477,6 +513,7 @@ implementation {
 
     major = rcb.state;
     minor = rcb.sub[major].state;
+    add_radio_trace(TMR_DROP);
     if (minor == SS_RECV) {
       rcb.cycle_cnt = rcb.sub[RS_HOME].max_cycles;
       change_radio_state(RS_HOME, SS_RECV, TMR_DROP);
@@ -522,6 +559,7 @@ implementation {
      * when the basestation is talking to this tag.
      */
     rcb.cycle_cnt = rcb.sub[RS_HOME].max_cycles;
+    add_radio_trace(TMR_FORME);
     change_radio_state(RS_HOME, SS_RECV, TMR_FORME);
     rsp = call Tagnet.process_message(pTagMsg);
     if (!rsp) {
