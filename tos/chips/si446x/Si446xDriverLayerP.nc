@@ -652,12 +652,12 @@ implementation {
       case CMD_TURNON:
       case CMD_TURNOFF:
       case CMD_STANDBY:
-        signal RadioState.done();
         dvr_cmd = CMD_NONE;
+        signal RadioState.done();
         break;
       case CMD_CCA:
-        signal RadioCCA.done(call Si446xCmd.check_CCA() ? SUCCESS : EBUSY);
         dvr_cmd = CMD_NONE;
+        signal RadioCCA.done(call Si446xCmd.check_CCA() ? SUCCESS : EBUSY);
         break;
       default:
         dvr_cmd = CMD_NONE;
