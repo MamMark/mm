@@ -673,7 +673,7 @@ implementation {
   }
 
 
-  void process_alarm_timer(tagmon_reason_t reason) {
+  void process_window_timer(tagmon_reason_t reason) {
     radio_state_t    major;
     radio_substate_t minor;
 
@@ -697,11 +697,29 @@ implementation {
   }
 
   event void smTimer.fired() {
-    process_alarm_timer(TMR_TIME);
+    radio_state_t    major;
+    radio_substate_t minor;
+
+    major = rcb.state;
+    minor = rcb.sub[major].state;
+    if (minor == SS_SW || minor == SS_RW) {
+      /*
+       * deadman states cause panic.  shouldn't happen
+       */
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, 0);
+    }
+    process_window_timer(TMR_TIME);
   }
 
   task void rtcalarm_task() {
-    process_alarm_timer(TMR_RTC);
+    radio_state_t    major;
+    radio_substate_t minor;
+
+    major = rcb.state;
+    minor = rcb.sub[major].state;
+    if (minor != SS_STANDBY)
+      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, 0);
+    process_window_timer(TMR_RTC);
   }
 
   async event void RtcAlarm.rtcAlarm(rtctime_t *timep, uint32_t field_set) {
