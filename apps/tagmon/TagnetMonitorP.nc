@@ -336,7 +336,6 @@ implementation {
     new_trace.minor = minor;
     new_trace.old_major = old_major;
     new_trace.old_minor = old_minor;
-    nop();
     if (radio_transition_equal(tt, &new_trace)) {
       tt->count++;
 
@@ -414,6 +413,17 @@ implementation {
         radio_trace_cur = get_index(-i);        /* back cur up */
       }
     }
+
+    /*
+     * shutdown any timers/alarms dependent on old_minor.
+     */
+    if (old_minor == SS_SW || old_minor == SS_RW)
+      call smTimer.stop();              /* kill deadman */
+    if (old_minor == SS_STANDBY) {
+      if (call RtcAlarm.getAlarm(NULL))
+          call RtcAlarm.setAlarm(NULL, 0);
+    }
+
 
     // start timer or rtc alarm, depending on timout value
     if (tval >= 0)
@@ -645,7 +655,6 @@ implementation {
     radio_substate_t minor;
 
     nop();                     /* BRK */
-    call smTimer.stop();
     major = rcb.state;
     minor = rcb.sub[major].state;
     switch (major) {
