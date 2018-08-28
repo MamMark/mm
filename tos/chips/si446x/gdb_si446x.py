@@ -147,9 +147,10 @@ class RadioFSM (gdb.Command):
         print i_this, i_prev, i_max
         while (i_loop < i_max):
             rd = gdb.parse_and_eval('Si446xDriverLayerP__fsm_trace_array[{}]'.format(hex(i_this)))
-            print 't{:6d}: time:{:10s}({:6s}) {:>18s}  {:<18s} {:>18s}  {:<18s}'.format(
-                int(i_this),
-                rd['ts_start'], rd['elapsed'],
+            start   = int(rd['ts_start'])
+            elapsed = int(rd['elapsed'])
+            print '{:03d}: {:08x}/{:08x} ({:03x})  {:>18s}  {:<12s}  {:>18s} {:<12s}'.format(
+                int(i_this), start, start + elapsed, elapsed,
                 rd['ev'].__str__().replace('Si446xDriverLayerP__',''),
                 rd['cs'].__str__().replace('Si446xDriverLayerP__',''),
                 rd['ac'].__str__().replace('Si446xDriverLayerP__',''),
