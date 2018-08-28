@@ -519,7 +519,6 @@ implementation {
       change_radio_state(RS_HOME, SS_RECV, TMR_DROP);
       return;
     }
-    call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, 0);
   }
 
 
