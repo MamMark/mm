@@ -131,16 +131,16 @@ def main():
             label="forme / t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "home_stby","near_stby",
-            label="tries_exceeded / t_start"))
-    g_radio.add_edge(
-        pydot.Edge(
             "home_recv_wait","home_recv",
             label="radio_done / t_start"))
     g_radio.add_edge(
         pydot.Edge(
+            "home_stby_wait","near_stby",
+            label="radio_done & !cycles / t_start(w/rtc)"))
+    g_radio.add_edge(
+        pydot.Edge(
             "home_stby_wait","home_stby",
-            label="radio_done / t_start"))
+            label="radio_done & cycles / t_start"))
 
     g_radio.add_edge(
         pydot.Edge(
@@ -160,16 +160,16 @@ def main():
             label="forme / t_start"))
     g_radio.add_edge(
         pydot.Edge(
-            "near_stby","lost_stby",
-            label="tries_exceeded / t_start"))
-    g_radio.add_edge(
-        pydot.Edge(
             "near_recv_wait","near_recv",
             label="radio_done / t_start"))
     g_radio.add_edge(
         pydot.Edge(
             "near_stby_wait","near_stby",
-            label="radio_done / t_start"))
+            label="radio_done & cycles / t_start"))
+    g_radio.add_edge(
+        pydot.Edge(
+            "near_stby_wait","lost_stby",
+            label="radio_done & !cycles / t_start"))
 
     g_radio.add_edge(
         pydot.Edge(
