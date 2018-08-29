@@ -102,10 +102,12 @@ implementation {
     TMR_RSD_CYC     = 3,
     TMR_NOTME       = 4,
     TMR_FORME       = 5,
-    TMR_DROP        = 6,
+    TMR_DROP_BUSY   = 6,
     TMR_RTC         = 7,
-    TMR_TIME        = 8,
+    TMR_WINDOW      = 8,
     TMR_ALT         = 9,
+    TMR_BUSY        = 10,
+    TMR_FORME_NOTRECV = 11,
   } tagmon_reason_t;
 
   // context for a minor state (more than one)
@@ -276,7 +278,6 @@ implementation {
     bool             match;
     uint32_t         event_ms, event_usecs;
 
-    nop();                     /* BRK */
     if (major == RS_xNONE) {
       /* none says stay in current state. */
       major = rcb.state;
@@ -293,31 +294,56 @@ implementation {
     event_ms    = call Platform.localTime();
     event_usecs = call Platform.usecsRaw();
 
-    // perform radio state change when appropriate substate is (re)entered
-    // do this first because if it fails we will stay in the previous state
-    // to try again
+    /*
+     * Going into RW?  turn the radio on  (coming out of Standby).  Won't
+     * be anything happening on the radio, its in Standby.  No race conditions
+     * need apply.
+     *
+     * Going into SW?  turn the radio off (coming out of Recv), closing the
+     * receive window.  This one is tricky...
+     *
+     * There is a race condition between the interrupt driven Radio state
+     * machine and the synchronous Tagnet Monitor consumer.  We want to
+     * stay in RECV as long as we are either receiving a packet or there
+     * are unconsumed packets.  The first part is indicated by the Radio
+     * State machine being busy (not RX_ON) and the later is indicated by
+     * tagMsgBusy being TRUE.
+     *
+     * The race condition is from the time we look at tagMsgBusy to the
+     * time we actually call the RadioState.standby().  During that time
+     * a packet could complete (at interrupt) level, which causes tagMsgBusy
+     * to go TRUE and for a consumption task to get posted.  If the transition
+     * to Standby is allowed to happen this results in an illegal state.
+     *
+     * For now we prevent this by looking at tagMsgBusy and doing the transition
+     * to standby within an atomic block.  The downside is we turn interrupts
+     * off for approx 100us (while the standby processes) which isn't cool.
+     */
     switch(minor) {
       case SS_RW:
         error = call RadioState.turnOn();
         break;
       case SS_SW:
-        error = call RadioState.standby();
+        atomic {
+          if (tagMsgBusy)
+            error = EBUSY;
+          else
+            error = call RadioState.standby();
+        }
         break;
       default:
         break;
     }
-    // check for error, stay in same state if radio was busy,
-    // this will cause wait timer to expire and retry the request
     if (error) {
       if (error == EBUSY) {
         major = rcb.state;
         minor = rcb.sub[major].state;
+        reason = TMR_BUSY;
       }
       else
         call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE,
                          major, minor, error, 0);
     }
-    // update state variables
     old_major = rcb.state;
     old_minor = rcb.sub[old_major].state;
     rcb.state = major;
@@ -390,7 +416,6 @@ implementation {
       }
       if (match) {
         /* i is the column we are working on. */
-        nop();
         for (j = 0; j < i; j++) {
           /*
            * we have a match.  For each folded entry we want to mark
@@ -454,8 +479,6 @@ implementation {
     // reset retry counter if changing major
     if (major != old_major)
       rcb.cycle_cnt = rcb.sub[major].max_cycles;
-
-    nop();                              /* BRK */
   }
 
   void change_radio_state_cycle(radio_state_t major, radio_substate_t minor,
@@ -506,7 +529,6 @@ implementation {
     radio_state_t    major;
     radio_substate_t minor;
 
-    nop();                     /* BRK */
     major = rcb.state;
     minor = rcb.sub[major].state;
     add_radio_trace(TMR_NOTME);
@@ -517,16 +539,16 @@ implementation {
   }
 
 
-  task void tagmon_forme_drop_task() {
+  task void tagmon_forme_drop_busy_task() {
     radio_state_t    major;
     radio_substate_t minor;
 
     major = rcb.state;
     minor = rcb.sub[major].state;
-    add_radio_trace(TMR_DROP);
+    add_radio_trace(TMR_DROP_BUSY);
     if (minor == SS_RECV) {
       rcb.cycle_cnt = rcb.sub[RS_HOME].max_cycles;
-      change_radio_state(RS_HOME, SS_RECV, TMR_DROP);
+      change_radio_state(RS_HOME, SS_RECV, TMR_DROP_BUSY);
       return;
     }
   }
@@ -538,20 +560,20 @@ implementation {
     error_t err;
     bool    rsp;
 
-    nop();                     /* BRK */
     major = rcb.state;
     minor = rcb.sub[major].state;
     if (minor != SS_RECV) {
       /*
-       * Not in RECV, but while we were we got a good one
-       * FOR_ME.  Process it because it might do something
-       * to us and needs to be done.  Only processing knows
-       * for sure.
+       * We should never be here.  But there is a hole in the current
+       * state machine that is caused by a race condition in buffer
+       * handling between the interrupt driven radio state machine and
+       * the synchronous TagnetMonitor consumer.  See change_radio_state.
        *
-       * But any response will go no where!.
+       * For now, just flag the mother and move on.  Ignore the msg, the
+       * receive window has closed.
        */
-      call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, 0);
-      call Tagnet.process_message(pTagMsg);
+      add_radio_trace(TMR_FORME_NOTRECV);
+      call Panic.warn(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, 0);
       tagMsgBusy = FALSE;
       return;
     }
@@ -568,7 +590,6 @@ implementation {
      * when the basestation is talking to this tag.
      */
     rcb.cycle_cnt = rcb.sub[RS_HOME].max_cycles;
-    add_radio_trace(TMR_FORME);
     change_radio_state(RS_HOME, SS_RECV, TMR_FORME);
     rsp = call Tagnet.process_message(pTagMsg);
     if (!rsp) {
@@ -610,7 +631,7 @@ implementation {
        * it was for us, but we can't handle it yet
        * post the drop task to stay awake
        */
-      post tagmon_forme_drop_task();
+      post tagmon_forme_drop_busy_task();
       return msg;
     }
     pNextMsg = pTagMsg;   // swap msg buffers, set busy, and post task
@@ -690,14 +711,11 @@ implementation {
     minor = rcb.sub[major].state;
     switch(minor) {
       case SS_RECV:
-        /* ON timer expired, go to STBY, use OFF time */
-        if (tagMsgBusy)  // defer change while processing msg
-          change_radio_state(major, SS_RECV, reason);
-        else
-          change_radio_state(major, SS_SW, reason);
+        /* RECV window expired, go to STBY, use OFF time */
+        change_radio_state(major, SS_SW, reason);
         break;
       case SS_STANDBY:
-        /* OFF timer expired, go to RW and use ON time */
+        /* OFF window expired, go to RW and use ON time */
         change_radio_state(major, SS_RW, reason);
         break;
       default:
@@ -717,7 +735,7 @@ implementation {
        */
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, major, minor, 0, 0);
     }
-    process_window_timer(TMR_TIME);
+    process_window_timer(TMR_WINDOW);
   }
 
   task void rtcalarm_task() {
