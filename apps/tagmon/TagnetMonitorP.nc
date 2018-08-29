@@ -261,7 +261,8 @@ implementation {
 
   bool radio_transition_equal(radio_trace_t *t0, radio_trace_t *t1) {
     if (t0->major     == t1->major     && t0->minor     == t1->minor &&
-        t0->old_major == t1->old_major && t0->old_minor == t1->old_minor)
+        t0->old_major == t1->old_major && t0->old_minor == t1->old_minor &&
+        t0->reason    == t1->reason)
       return TRUE;
     return FALSE;
   }
@@ -362,13 +363,13 @@ implementation {
     new_trace.minor = minor;
     new_trace.old_major = old_major;
     new_trace.old_minor = old_minor;
+    new_trace.reason    = reason;
     if (radio_transition_equal(tt, &new_trace)) {
       tt->count++;
 
       /* since this is a duplicate, only update the deltas */
       tt->ts_ms_last    = event_ms;
       tt->ts_usecs_last = event_usecs;
-      tt->reason        = reason;
     } else {
       /*
        * actual transition, need to scan for same sequence
@@ -428,12 +429,10 @@ implementation {
           tt->count = 0;
           event_ms    = tt->ts_ms;              /* latest event times */
           event_usecs = tt->ts_usecs;
-          reason      = tt->reason;             /* remember last reason */
           tt = &radio_trace[get_index(-j-i)];   /* original */
           tt->count++;
           tt->ts_ms_last    = event_ms;
           tt->ts_usecs_last = event_usecs;
-          tt->reason        = reason;
         }
         radio_trace_cur = get_index(-i);        /* back cur up */
       }
