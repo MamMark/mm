@@ -11,6 +11,9 @@ factsapp -  main module for the Facts Preprocessor
 
 Top level module performs the input processing, formating,
 outputing, and displaying operations.
+
+See mm/doc/13_TagNet.md for details on how to use this
+program.
 """
 
 from nesc_TagnetC import nesc_fmt_TagnetC
@@ -24,7 +27,6 @@ def OutputNesC(args, _tree):
     """
     nesc_fmt_TagnetC(args, _tree)
     nesc_fmt_TagnetDefines(args, _tree)
-#    TagnetNamesh_mft(args, _tree)
 
 def DisplayStuff(args, _tree):
     """

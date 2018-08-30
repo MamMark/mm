@@ -143,17 +143,17 @@ modules and utility functions.
 
 The implementation model for the Tagnet Stack utilizes nesC generic components and hierarchical wiring of parameterized interfaces to construct the search tree for matching network names and wiring to the associated action. This makes it easy to modify and extend the object names through simple changes to module instantiation and wiring, which is all found in TagnetC.nc. The Tagnet Stack diagram below illustrates the Tagnet stack implementation model for a simple configuration that exposes just three named data objects.
 
-1. /tag/poll/NID/ev
-2. /tag/poll/NID/cnt
-3. /tag/info/NID/sens/gps/pos
+1. /NID/tag/poll/ev
+2. /NID/tag/poll/cnt
+3. /NID/tag/info/sens/gps/pos
 
-The first two objects are somewhat special in that the Tagnet POLL message has some special handling requirements. The third name, on the other hand, shows a typical example of how the stack translates from a network name to a specific variable exposed by the appropriate module (in this case the GPS module). The '/tag/poll/NID/ev' object is a function-based object that handles the special poll request requirements and is implemented inside of the stack. The '/tag/poll/NID/cnt' object provides an integer variable that reflects the count of the number of times this device has received a poll request message. The '/tag/info/NID/sens/gps/pos' object refers to a gps position type variable and contains the last read GPS location fix.
+The first two objects are somewhat special in that the Tagnet POLL message has some special handling requirements. The third name, on the other hand, shows a typical example of how the stack translates from a network name to a specific variable exposed by the appropriate module (in this case the GPS module). The '/NID/tag/poll/ev' object is a function-based object that handles the special poll request requirements and is implemented inside of the stack. The '/NID/tag/poll/cnt' object provides an integer variable that reflects the count of the number of times this device has received a poll request message. The '/NID/tag/info/sens/gps/pos' object refers to a gps position type variable and contains the last read GPS location fix.
 
 The stack is implemented by constructing a tree with each node representing one element of the object name. This is done pre-compile time by instantiating modules and wiring them together to create the tree containing all exposed variables in the system (in this case, there are just three).
 
 The root of the Tagnet stack is exposed through the *Tagnet* interface. The root module will insure that the stack is properly initialized for processing a new request message and will verify that a response is required upon return. A TagnetNameElementP is a generic module instantiated for each unique element at each level of the name. This module is responsible for matching it's element to the name in the request, and continuing down the tree if it matches. Once all elements in the request name have been matched, successfully, the terminal element module will perform the requested action.
 
-For leaf nodes this typically involves an adapter module that know how to convert a C Type into a Tagnet TLV. If the match completes at an intermediate element, the action will behave more like a directory entry. For instance, a GET on '/tag/poll/NID' would get the name and value for each of its sub-elements. In this case, four TLVs are returned [(name:ev, value:35)(name:ev, value:POLL_RSP)]. Each intermediate node will sequentially call its subordinate elements to see if any of them match. When a match is found, the result is returned. If matching fails at any point or all choices are exhausted, nothing is returned.
+For leaf nodes this typically involves an adapter module that know how to convert a C Type into a Tagnet TLV. If the match completes at an intermediate element, the action will behave more like a directory entry. For instance, a GET on '/NID/tag/poll' would get the name and value for each of its sub-elements. In this case, four TLVs are returned [(name:ev, value:35)(name:ev, value:POLL_RSP)]. Each intermediate node will sequentially call its subordinate elements to see if any of them match. When a match is found, the result is returned. If matching fails at any point or all choices are exhausted, nothing is returned.
 
 ![Tagnet Stack](TagnetC-pict.png "Overall Code Model for Tagnet Stack")
 
@@ -404,7 +404,7 @@ Example of a TagNet Fact Record Descriptor
 - consisting of: adapter name, interface type, interface name, and
 list of name_segments:
 ```
-TagnetGpsXyzAdapterP,tagnet_gps_xyz_t,InfoSensGpsXyz,<node_id:>,"tag","info",<node_id:>,"sens","gps","xyz"
+TagnetGpsXyzAdapterP,tagnet_gps_xyz_t,InfoSensGpsXyz,<node_id:>,"tag","info","sens","gps","xyz"
 ```
 ## OUTPUT
 - Consists of these NESC files for instantiating all elements and wiring
