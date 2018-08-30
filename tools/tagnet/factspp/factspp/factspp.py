@@ -3,7 +3,7 @@ import os
 import csv
 from treelib import Node, Tree
 from binascii import hexlify
-from tagtlv import tlv_types, TagTlv
+from tagnet import tlv_types, TagTlv
 import re
 
 """

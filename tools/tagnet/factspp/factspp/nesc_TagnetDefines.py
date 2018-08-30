@@ -1,4 +1,4 @@
-from tagtlv import tlv_types, TagTlv
+from tagnet import tlv_types, TagTlv
 import re
 
 # s = eval('tlv_types.'+gs[0].upper()+'.value')
