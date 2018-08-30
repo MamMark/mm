@@ -87,7 +87,7 @@ def nesc_fmt_TagnetDefines(args, _tree):
 
           for node in sorted(_tree.all_nodes(), key=nodename):
                parent = _tree[node.bpointer].tag if (node.bpointer) else '_'
-               outfd.write("#define  {:<20}    \"{}\"\n".format(
+               outfd.write('#define  {:<20}    \"{}\"\n'.format(
                     ThisElementUQ(node),
                     ThisElementUQ(node))
                )
