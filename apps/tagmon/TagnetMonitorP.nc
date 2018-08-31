@@ -530,7 +530,6 @@ implementation {
 
     major = rcb.state;
     minor = rcb.sub[major].state;
-    add_radio_trace(TMR_NOTME);
     if (minor == SS_RECV) {
       change_radio_state(major, SS_SW, TMR_NOTME);
       return;
@@ -544,7 +543,6 @@ implementation {
 
     major = rcb.state;
     minor = rcb.sub[major].state;
-    add_radio_trace(TMR_DROP_BUSY);
     if (minor == SS_RECV) {
       rcb.cycle_cnt = rcb.sub[RS_HOME].max_cycles;
       change_radio_state(RS_HOME, SS_RECV, TMR_DROP_BUSY);
