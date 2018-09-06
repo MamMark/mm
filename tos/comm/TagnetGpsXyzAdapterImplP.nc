@@ -31,30 +31,59 @@ generic module TagnetGpsXyzAdapterImplP (int my_id) @safe() {
 }
 implementation {
   enum { my_adapter_id = unique(UQ_TAGNET_ADAPTER_LIST) };
+  uint32_t last_sequence = 0;
 
   event bool Super.evaluate(message_t *msg) {
-    tagnet_gps_xyz_t        v;
-    uint32_t                l = 0;
+    tagnet_gps_xyz_t        v = {0,0,0};
+    uint32_t               ln = 0;
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
+    tagnet_tlv_t    *offset_tlv;
 
     call THdr.set_response(msg);
-    if (call TName.is_last_element(msg) &&          // end of name and me == this
-        (call TTLV.eq_tlv(name_tlv, this_tlv))) {
+    if (call TTLV.eq_tlv(name_tlv, this_tlv)) {
       tn_trace_rec(my_id, 1);
-      call TPload.reset_payload(msg);
       call THdr.set_error(msg, TE_PKT_OK);
       switch (call THdr.get_message_type(msg)) {      // process message type
         case TN_GET:
           tn_trace_rec(my_id, 2);
-          if (call Adapter.get_value(&v, &l)) {
+          call TPload.reset_payload(msg);
+          offset_tlv = call TName.get_offset(msg);
+          if ((offset_tlv) && (call TTLV.tlv_to_offset(offset_tlv))) {
+            tn_trace_rec(my_id, 3);
+            call TPload.add_error(msg, EODATA); // non-zero offset not accepted
+          }
+          else if (call Adapter.get_value(&v, &ln)) {
             call TPload.add_gps_xyz(msg, &v);
+            call TPload.add_error(msg, EODATA);
           } else {
+            tn_trace_rec(my_id, 4);
             call TPload.add_error(msg, EINVAL);
           }
           call THdr.set_response(msg);
-          call THdr.set_error(msg, TE_PKT_OK);
           return TRUE;
+
+        case TN_PUT:
+          tn_trace_rec(my_id, 5);
+          if (call Adapter.set_value(&v, &ln)) {
+            tn_trace_rec(my_id, 6);
+            call TPload.add_error(msg, EODATA);
+          } else {
+            tn_trace_rec(my_id, 7);
+            call TPload.add_error(msg, EINVAL);
+          }
+          call TPload.add_size(msg, ++last_sequence);
+          call TPload.reset_payload(msg);
+          call THdr.set_response(msg);
+          return TRUE;
+
+        case TN_HEAD:
+          tn_trace_rec(my_id, 8);
+          call TPload.reset_payload(msg);
+          call TPload.add_size(msg, sizeof(v));    // value is used for file size
+          call THdr.set_response(msg);
+          return TRUE;
+
         default:
           break;
       }
@@ -65,41 +94,24 @@ implementation {
   }
 
   event void Super.add_name_tlv(message_t* msg) {
-    int                     s;
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
 
-    s = call TPload.add_tlv(msg, name_tlv);
-    if (s) {
-      call TPload.next_element(msg);
-    } else {
-//      panic();
-    }
+    call TPload.add_tlv(msg, name_tlv);
   }
 
   event void Super.add_value_tlv(message_t* msg) {
     tagnet_gps_xyz_t        v;
-    uint32_t                l;
-    int                     s = 0;
+    uint32_t                ln;
 
-    if (call Adapter.get_value(&v, &l)) {
-      s = call TPload.add_gps_xyz(msg, &v);
+    if (call Adapter.get_value(&v, &ln)) {
+      call TPload.add_gps_xyz(msg, &v);
     }
-    if (s) {
-      call TPload.next_element(msg);
-    } else {
 //      panic();
-    }
   }
 
   event void Super.add_help_tlv(message_t* msg) {
-    int                     s;
     tagnet_tlv_t    *help_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].help_tlv;
 
-    s = call TPload.add_tlv(msg, help_tlv);
-    if (s) {
-      call TPload.next_element(msg);
-    } else {
-//      panic();
-    }
+    call TPload.add_tlv(msg, help_tlv);
   }
 }

@@ -34,31 +34,32 @@ implementation {
 
   event bool Super.evaluate(message_t *msg) {
     int32_t                 v = 0;
-    uint32_t                l = 0;
+    uint32_t               ln = 0;
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
 
     if (call TTLV.eq_tlv(name_tlv, this_tlv)) {
       tn_trace_rec(my_id, 1);
-      call THdr.set_response(msg);
       call THdr.set_error(msg, TE_PKT_OK);
       switch (call THdr.get_message_type(msg)) {      // process message type
         case TN_GET:
           tn_trace_rec(my_id, 2);
           call TPload.reset_payload(msg);
-          if (call Adapter.get_value(&v, &l)) {
-            call TPload.add_block(msg, (void *)&v, sizeof(v));
-            call TPload.add_eof(msg);
+          if (call Adapter.get_value(&v, &ln)) {
+            call TPload.add_integer(msg, v);
+            call TPload.add_error(msg, EODATA);
           } else {
+            tn_trace_rec(my_id, 3);
             call TPload.add_error(msg, EINVAL);
           }
+          call THdr.set_response(msg);
           return TRUE;
 
         case TN_HEAD:
-          tn_trace_rec(my_id, 3);
-          call TPload.reset_payload(msg);                // clear payload
-          if (call Adapter.get_value(&v, &l))
-            call TPload.add_size(msg, v);    // value is used for file size
+          tn_trace_rec(my_id, 4);
+          call TPload.reset_payload(msg);
+          call TPload.add_size(msg, sizeof(v));    // value is used for file size
+          call THdr.set_response(msg);
           return TRUE;
 
         default:
@@ -78,10 +79,9 @@ implementation {
 
   event void Super.add_value_tlv(message_t* msg) {
     int32_t                 v;
-    uint32_t                l;
+    uint32_t                ln;
 
-    if (call Adapter.get_value(&v, &l)) {
-      call TPload.add_integer(msg, v);
+    if (call Adapter.get_value(&v, &ln)) {
       call TPload.add_integer(msg, v);
     }
     // zzz else ?
