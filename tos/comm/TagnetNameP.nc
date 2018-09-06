@@ -184,51 +184,38 @@ implementation {
     nop();
     if ((!msg) || (getMeta(msg)->this > call THdr.get_name_len(msg)))
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
-    do {
-      nop();
-      this_tlv = call TagnetName.this_element(msg);
-      next_tlv = call TTLV.get_next_tlv(this_tlv, name_length);
-      if ( (next_tlv == NULL)
-            || ((void *)next_tlv < (void *)this_tlv)
-            || ((void *)next_tlv >= (void *)&msg->data[name_length]) ) {
-          return NULL;
-      }
+    this_tlv = call TagnetName.this_element(msg);
+    next_tlv = call TTLV.get_next_tlv(this_tlv, name_length);
+    if ( (next_tlv == NULL)
+         || ((void *)next_tlv < (void *)this_tlv)
+         || ((void *)next_tlv >= (void *)&msg->data[name_length]) ) {
+      return NULL;
+    }
 
-      getMeta(msg)->this = (int) next_tlv - (int) name_start; // advance 'this' index to 'next' in list
-      switch (call TTLV.get_tlv_type(next_tlv)) {       // some tlvs get special handling
-
-        case TN_TLV_OFFSET:   // byte offset, mark location
-          call TagnetName.set_offset(msg);
-          return next_tlv;
-
-        case TN_TLV_SIZE:     // amount to get, mark location
-          call TagnetName.set_size(msg);
-          return next_tlv;
-
-        case TN_TLV_VERSION:  // version, mark location
-          call TagnetName.set_version(msg);
-          return next_tlv;
-
-        case TN_TLV_NODE_ID:  // node_id, mark location
-          call TagnetName.set_node_id(msg);
-          return next_tlv;
-
-        case TN_TLV_GPS_XYZ:  // gps_xyz, mark location
-          call TagnetName.set_gps_xyz(msg);
-          return next_tlv;
-
-        case TN_TLV_UTC_TIME: // utc_time, mark location
-          call TagnetName.set_utc_time(msg);
-          return next_tlv;
-
-        case TN_TLV_NONE:
-          return NULL;
-
-        default:
-          return next_tlv;
-        }
-    } while (getMeta(msg)->this < name_length);
-    return NULL;
+    switch (call TTLV.get_tlv_type(next_tlv)) {       // some tlvs get special handling
+      case TN_TLV_OFFSET:   // byte offset, mark location
+        call TagnetName.set_offset(msg);
+        break;
+      case TN_TLV_SIZE:     // amount to get, mark location
+        call TagnetName.set_size(msg);
+        break;
+      case TN_TLV_VERSION:  // version, mark location
+        call TagnetName.set_version(msg);
+        break;
+      case TN_TLV_NODE_ID:  // node_id, mark location
+        call TagnetName.set_node_id(msg);
+        break;
+      case TN_TLV_GPS_XYZ:  // gps_xyz, mark location
+        call TagnetName.set_gps_xyz(msg);
+        break;
+      case TN_TLV_UTC_TIME: // utc_time, mark location
+        call TagnetName.set_utc_time(msg);
+        break;
+      default:
+        break;
+    }
+    getMeta(msg)->this = (int) next_tlv - (int) name_start; // advance 'this' index to 'next' in list
+    return next_tlv;
   }
 
   command void   TagnetName.reset_name(message_t* msg) {
