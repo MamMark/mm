@@ -73,6 +73,8 @@ enum {
 #include <TimeSyncMessageLayer.h>
 #include <RadioConfig.h>
 #include <si446x.h>
+#include <si446x_stats.h>
+#include <message.h>
 
 
 /**************************************************************************/
@@ -88,6 +90,8 @@ module Si446xDriverLayerP {
     interface PacketField<uint8_t> as PacketTransmitPower;
     interface PacketField<uint8_t> as PacketRSSI;
     interface PacketField<uint16_t> as PacketTransmitDelay;
+
+    interface TagnetAdapter<tagnet_block_t>  as  RadioStats;
   }
   uses {
     interface Si446xDriverConfig as Config;
@@ -130,49 +134,12 @@ implementation {
 /*
  * global I/O context
  */
-  typedef struct global_io_context {
-    message_t                       * pRxMsg;          // msg driver owns
-    message_t                       * pTxMsg;          // msg driver owns
-    uint32_t                          rc_readys;
-    uint32_t                          tx_packets;
-    uint32_t                          tx_reports;
-    uint32_t                          rx_packets;
-    uint32_t                          rx_reports;
+  tasklet_norace message_t        * pRxMsg;         // recv msg buf driver owns
+  tasklet_norace message_t        * pTxMsg;         // xmit msg buf  driver owns
 
-    uint16_t                          tx_timeouts;
-    uint16_t                          tx_underruns;    // tx active, fifo underrun, oops
-
-    uint16_t                          rx_bad_crcs;     /* active to crc_flush */
-    uint16_t                          rx_timeouts;
-    uint16_t                          rx_inv_syncs;
-    uint16_t                          rx_errors;
-
-    uint16_t                          rx_overruns;     // inbound overuns, hw
-    uint16_t                          rx_active_overruns; // active fifo overrun
-    uint16_t                          rx_crc_overruns;    // crc_flush fifo overrun
-
-    uint16_t                          rx_crc_packet_rx;   // crc_flush packet_rx, weird
-
-    uint16_t                          nops;
-    uint16_t                          unshuts;
-    uint8_t                           channel;         // current channel setting
-    uint8_t                           tx_power;        // current power setting
-    uint8_t                           tx_ff_index;     // msg offset for fifo write
-    uint8_t                           rx_ff_index;     // msg offset for fifo read
-    bool                              rc_signal;       // signal command complete
-    bool                              tx_signal;       // signal transmit complete
-    error_t                           tx_error;        // last tx error
-    uint8_t                           send_tries;      // flag to track send msg retry
-    uint32_t                          send_wait_time;  // send message time to wait
-    uint32_t                          send_max_wait;   // max wait time to send
-    uint8_t                           last_rssi;       // last received value
-    uint8_t                           min_rssi;        // minimum received value
-    uint8_t                           max_rssi;        // maximum received value
-  } global_io_context_t;
-
-  tasklet_norace global_io_context_t  global_ioc;
-  tasklet_norace uint8_t              rxMsgBuffer[sizeof(message_t)];
-  tasklet_norace uint8_t              rxMsgBufferGuard[] = "DEADBEAF";
+  tasklet_norace si446x_stats_t     global_ioc;
+  tasklet_norace uint8_t            rxMsgBuffer[sizeof(message_t)];
+  tasklet_norace uint8_t            rxMsgBufferGuard[] = "DEADBEAF";
 
   void set_global_rssi(uint8_t rssi) {
     global_ioc.last_rssi = rssi;
@@ -680,8 +647,8 @@ implementation {
    */
   task void send_done_task() {
     if (global_ioc.tx_signal) {
-      call PacketTransmitDelay.clear(global_ioc.pTxMsg);
-      global_ioc.pTxMsg = NULL;
+      call PacketTransmitDelay.clear(pTxMsg);
+      pTxMsg = NULL;
       global_ioc.tx_error = 0;
       global_ioc.tx_reports++;
       global_ioc.tx_signal = FALSE;
@@ -753,8 +720,8 @@ implementation {
   fsm_result_t a_unshut(fsm_transition_t *t) {
     start_alarm(SI446X_POR_WAIT_TIME);
     call Si446xCmd.unshutdown();
-    global_ioc.pRxMsg = (message_t *) &rxMsgBuffer;
-    global_ioc.pTxMsg = 0;
+    pRxMsg = (message_t *) &rxMsgBuffer;
+    pTxMsg = 0;
     global_ioc.rc_signal = 0;
     global_ioc.tx_signal = 0;
     global_ioc.unshuts++;
@@ -879,7 +846,7 @@ implementation {
    */
   fsm_result_t a_rx_on(fsm_transition_t *t) {
 
-    if (!global_ioc.pRxMsg){
+    if (!pRxMsg){
       __PANIC_RADIO(3, 0, 0, 0, 0);
     }
     /*
@@ -904,7 +871,7 @@ implementation {
    */
   fsm_result_t a_rx_start(fsm_transition_t *t) {
 
-    if (!(global_ioc.pRxMsg))
+    if (!(pRxMsg))
       __PANIC_RADIO(11, 0, 0, 0, 0);
     global_ioc.rx_ff_index = 0;
     global_ioc.rx_packets++;
@@ -932,11 +899,11 @@ implementation {
     uint16_t  tx_len, rx_len, x, y;
     uint16_t  max_delta;
 
-    dp = (uint8_t *) getPhyHeader(global_ioc.pRxMsg);
+    dp = (uint8_t *) getPhyHeader(pRxMsg);
     if (!dp) {                          // should have somewhere to receive
       __PANIC_RADIO(10, 0, 0, 0, 0);
     }
-    max_delta = sizeof(global_ioc.pRxMsg->header) + sizeof(global_ioc.pRxMsg->data);
+    max_delta = sizeof(pRxMsg->header) + sizeof(pRxMsg->data);
     call Si446xCmd.fifo_info(&rx_len, &tx_len, 0);
     if ((min) && (global_ioc.rx_ff_index + rx_len > max_delta)) {
       call Si446xCmd.fifo_info(&x, &y, 0);
@@ -946,8 +913,8 @@ implementation {
       call Si446xCmd.read_rx_fifo(dp + global_ioc.rx_ff_index, rx_len);
       global_ioc.rx_ff_index += rx_len;
     }
-    if (!call PacketRSSI.isSet(global_ioc.pRxMsg)) {
-        call PacketRSSI.set(global_ioc.pRxMsg,
+    if (!call PacketRSSI.isSet(pRxMsg)) {
+        call PacketRSSI.set(pRxMsg,
                             call Si446xCmd.fast_latched_rssi());
         set_global_rssi(call Si446xCmd.fast_latched_rssi());
       }
@@ -1022,15 +989,15 @@ implementation {
     uint16_t        pkt_len, tx_ff_free, rx_len;
     uint8_t         pwr[1], new_pwr[1];
 
-    dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
+    dp = (uint8_t *) getPhyHeader(pTxMsg);
     if (!dp || !(*dp))                  /* make sure reasonable to send */
       __PANIC_RADIO(5, 0, 0, 0, 0);
 
     /* set power level based on setting in message. if no setting, then
      * use previously set value (no change)
      */
-    if (call PacketTransmitPower.isSet(global_ioc.pTxMsg)) {
-      pwr[0] = call PacketTransmitPower.get(global_ioc.pTxMsg);
+    if (call PacketTransmitPower.isSet(pTxMsg)) {
+      pwr[0] = call PacketTransmitPower.get(pTxMsg);
       // change power rail based on high order bit
       if (pwr[0] & 0x80) {
         call Si446xCmd.set_pwr_3_3v();
@@ -1043,7 +1010,7 @@ implementation {
         call Si446xCmd.read_property(SI446X_PROP_PA_PWR_LVL, 1, new_pwr);
         __PANIC_RADIO(57, pwr[0], new_pwr[0], 0, 0);
       }
-      call PacketTransmitPower.clear(global_ioc.pTxMsg);
+      call PacketTransmitPower.clear(pTxMsg);
     }
 
     call Si446xCmd.change_state(RC_READY, TRUE);   // instruct chip to go to ready state
@@ -1075,7 +1042,7 @@ implementation {
     uint16_t        pkt_len, tx_ff_free, rx_len, max_delta;
     int16_t         chk_len;
 
-    dp = (uint8_t *) getPhyHeader(global_ioc.pTxMsg);
+    dp = (uint8_t *) getPhyHeader(pTxMsg);
     pkt_len = 0;
     chk_len = 0;
 
@@ -1089,7 +1056,7 @@ implementation {
       pkt_len = *dp + 1;              // length of data field is first byte of msg
       chk_len = pkt_len - global_ioc.tx_ff_index;
     }
-    max_delta = sizeof(global_ioc.pTxMsg->header) + sizeof(global_ioc.pTxMsg->data);
+    max_delta = sizeof(pTxMsg->header) + sizeof(pTxMsg->data);
     if (!dp || chk_len < 0)
       __PANIC_RADIO(7, chk_len, pkt_len, global_ioc.tx_ff_index, (parg_t) dp);
     if (chk_len > 0) {
@@ -1226,7 +1193,7 @@ implementation {
      * length of the following bytes and doesn't include the length itself.
      * Brooookkkkeeennnn.   fix the first byte which is the frame length.
      */
-    hp = getPhyHeader(global_ioc.pRxMsg);
+    hp = getPhyHeader(pRxMsg);
     if (!hp)
       __PANIC_RADIO(11, 0, 0, 0, 0);
     hp->frame_length += 1;
@@ -1247,8 +1214,8 @@ implementation {
      *
      * In other words, don't change this !!!!   this means you!  Yeah.   You.
      */
-    if (signal RadioReceive.header(global_ioc.pRxMsg)) {
-      global_ioc.pRxMsg = signal RadioReceive.receive(global_ioc.pRxMsg);
+    if (signal RadioReceive.header(pRxMsg)) {
+      pRxMsg = signal RadioReceive.receive(pRxMsg);
       global_ioc.rx_reports++;
     }
     return a_rx_on(t);                  /* start receiving again */
@@ -1353,10 +1320,10 @@ implementation {
     nop();                                /* BRK */
     if (dvr_cmd != CMD_NONE)
       return EBUSY;
-    if (global_ioc.pTxMsg)
+    if (pTxMsg)
       return EALREADY;
 
-    global_ioc.pTxMsg = msg;
+    pTxMsg = msg;
     global_ioc.tx_signal = FALSE;
     global_ioc.tx_error = SUCCESS;
     global_ioc.send_tries = SEND_MIN_TRIES;
@@ -1783,6 +1750,24 @@ implementation {
     call PacketTransmitPower.clear(msg);
     call PacketRSSI.clear(msg);
     call PacketTransmitDelay.clear(msg);
+  }
+
+
+  /**************************************************************************/
+
+  command bool RadioStats.get_value(tagnet_block_t *stats, uint32_t *lenp) {
+
+    if (stats == NULL || lenp == NULL || *lenp < sizeof(global_ioc))
+      __PANIC_RADIO(124, (uint32_t) stats, (uint32_t) lenp,  *lenp, 0);
+
+    stats->block = (uint8_t *) &global_ioc;
+    *lenp = sizeof(global_ioc);
+    return TRUE;
+  }
+
+
+  command bool RadioStats.set_value(tagnet_block_t *stats, uint32_t *lenp) {
+    return FALSE;
   }
 
 

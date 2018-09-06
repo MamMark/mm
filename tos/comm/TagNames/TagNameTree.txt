@@ -19,6 +19,8 @@ root
     |-- poll
     |   |-- cnt
     |   +-- ev
+    |-- radio
+    |   +-- stats
     |-- sd
     |   +-- 0
     |       |-- dblk

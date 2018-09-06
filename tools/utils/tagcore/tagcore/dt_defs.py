@@ -40,7 +40,9 @@ Includes the following:
       print_hdr_obj     print a dt record header given its object
 '''
 
-from   __future__         import print_function
+from   __future__   import print_function
+
+from   datetime     import datetime
 
 import struct
 from   core_headers import obj_dt_hdr
@@ -149,6 +151,7 @@ DT_GPS_PROTO_STATS      = 25
 
 DT_GPS_RAW_SIRFBIN      = 32
 DT_TAGNET               = 33
+DT_RADIO                = 34
 
 
 # offset    recnum     rtime    len   dt name         offset
@@ -189,6 +192,19 @@ def rtctime_str(rtctime, fmt = 'basic'):
     rt_secs  = rt['min'].val * 60 + rt['sec'].val
     rt_subsecs = (rt['sub_sec'].val * 1000000) / 32768
     return '{:d}.{:06d}'.format(rt_secs, rt_subsecs)
+
+def rtctime_iso(rtctime):
+    '''
+    convert a rtctime into ISO-8601 formatted string displaying the time
+    '''
+    return datetime(rtctime['year'].val,
+                     rtctime['mon'].val,
+                     rtctime['day'].val,
+                     rtctime['hr'].val,
+                     rtctime['min'].val,
+                     rtctime['sec'].val,
+                     (rtctime['sub_sec'].val * 1000000) / 32768,
+                    ).isoformat()
 
 
 last_rt = {'year': 0, 'mon': 0, 'day': 0, 'hr': 0}

@@ -24,6 +24,7 @@
 
 #include <RadioConfig.h>
 #include <Si446xDriverLayer.h>
+#include <TagnetAdapter.h>
 
 configuration Si446xDriverLayerC {
   provides {
@@ -38,6 +39,8 @@ configuration Si446xDriverLayerC {
     interface PacketField<uint16_t> as PacketTransmitDelay;
 
     interface Alarm<TRadio, tradio_size>;
+
+    interface TagnetAdapter<tagnet_block_t>  as  RadioStats;
   }
   uses {
     interface Si446xDriverConfig as Config;
@@ -54,11 +57,12 @@ configuration Si446xDriverLayerC {
 implementation {
   components Si446xDriverLayerP as DriverLayerP;
 
-  RadioState = DriverLayerP;
-  RadioSend = DriverLayerP;
+  RadioState   = DriverLayerP;
+  RadioSend    = DriverLayerP;
   RadioReceive = DriverLayerP;
-  RadioCCA = DriverLayerP;
-  RadioPacket = DriverLayerP;
+  RadioCCA     = DriverLayerP;
+  RadioPacket  = DriverLayerP;
+  RadioStats   = DriverLayerP;
 
   Config = DriverLayerP;
 

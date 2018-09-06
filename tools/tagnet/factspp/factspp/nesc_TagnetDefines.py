@@ -45,7 +45,9 @@ def nesc_fmt_TagnetDefines(args, _tree):
 
      def ThisHelpTlv(node):
           # 1=int(tlv_types.STRING.value)
-          help_str = node.data['Interface Type'] if node.data else 'None'
+          help_str = node.data['Help'] if node.data else 'None'
+          if not help_str:
+               help_str = '.'.join([node.data['Interface Name'], node.data['Interface Type']])
           return '\\' \
                + oct(int(tlv_types.STRING.value)) \
                + '\\' \

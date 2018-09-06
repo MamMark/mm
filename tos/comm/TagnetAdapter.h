@@ -25,6 +25,7 @@
 #include <Tagnet.h>
 #include <image_info.h>
 #include <image_mgr.h>
+#include <si446x_stats.h>
 
 /*
  * GPS Position and Time Information
@@ -71,5 +72,9 @@ typedef tagnet_file_bytes_t tagnet_gps_cmd_t;
 
 //#define TN_DBLK_NOTE_LEN (sizeof(tagnet_dblk_note_t))
 //#define TN_GPS_CMD_LEN   (sizeof(tagnet_gps_cmd_t))
+
+typedef struct {
+  uint8_t             *block;           /* where to put/get it */
+} tagnet_block_t;
 
 #endif   /* __TAGNETADAPTER_H__ */

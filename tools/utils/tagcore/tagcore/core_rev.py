@@ -39,3 +39,4 @@ from    .panic_headers  import __version__   as pi_ver
 from    .sirf_defs      import __version__   as sd_ver
 from    .sirf_emitters  import __version__   as se_ver
 from    .sirf_headers   import __version__   as sh_ver
+from    .net_headers    import __version__   as tn_ver

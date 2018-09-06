@@ -1,29 +1,30 @@
-ignore	GET	PUT	HEAD	DEL	POLL	Request Params	Response Params	Adapter Component	Interface Name	Interface Type	Interface Alternate	Direction	Tag Name				
-	x		x		x	<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	PollEvent	uses	tag	poll	ev		
-	x		x			<int>	<error>, <int>	TagnetIntegerAdapterP	TagnetAdapter	int32_t	PollCount	uses	tag	poll	cnt		
-	x		x				<gps_xyz>	TagnetGpsXyzAdapterP	TagnetAdapter	tagnet_gps_xyz_t	InfoSensGpsXyz	uses	tag	info	sens	gps	xyz
-		x	x			<iota>	<error>, <iota>, <count>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_gps_cmd_t	InfoSensGpsCmd	uses	tag	info	sens	gps	cmd
-	x		x			<iota>, <count>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	DblkBytes	uses	tag	sd	0	dblk	byte
-		x	x			<iota>	<error>, <iota>, <count>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_dblk_note_t	DblkNote	uses	tag	sd	0	dblk	note
-	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecNum	uses	tag	sd	0	dblk	.recnum
-	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecOffset	uses	tag	sd	0	dblk	.last_rec
-	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastSyncOffset	uses	tag	sd	0	dblk	.last_sync
-	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkCommittedOffset	uses	tag	sd	0	dblk	.committed
-	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetImageAdapterP					tag	sd	0	img	
-x	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetRuleSetsAdapterP					tag	sd	0	rules	
-x	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetConfigAdapterP					tag	sd	0	config	
-	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	PanicBytes	uses	tag	sd	0	panic	byte
-	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysActive	uses	tag	sys	active		
-	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysBackup	uses	tag	sys	backup		
-	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysGolden	uses	tag	sys	golden		
-	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysNIB	uses	tag	sys	nib		
-	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysRunning	uses	tag	sys	running		
-	x	x	x			<time>	<error>, <time>	TagnetRtcTimeAdapterP	TagnetAdapter	rtctime_t	SysRtcTime	uses	tag	sys	rtc		
-x	x	x	x					TagnetIntegerAdapterP	TagnetAdapter	int32_t	InfoSensTemp		tag	info	sens	temp	
-x	x	x	x					TagnetIntegerAdapterP	TagnetAdapter	int32_t	InfoSensBatt		tag	info	sens	batt	
-	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestZeroBytes	uses	tag	.test	zero	byte	
-	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestOnesBytes	uses	tag	.test	ones	byte	
-	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestEchoBytes	uses	tag	.test	echo	byte	
-	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestDropBytes	uses	tag	.test	drop	byte	
-	x		x			<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	RadioRSSI	uses	tag	.test	rssi		
-	x	x	x			<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	RadioTxPower	uses	tag	.test	tx_pwr		
+ignore	GET	PUT	HEAD	DEL	POLL	Request Params	Response Params	Adapter Component	Interface Name	Interface Type	Interface Alternate	Direction	Help	Tag Name				
+x	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetConfigAdapterP						tag	sd	0	config	
+x	x	x	x					TagnetIntegerAdapterP	TagnetAdapter	int32_t	InfoSensBatt			tag	info	sens	batt	
+x	x	x	x					TagnetIntegerAdapterP	TagnetAdapter	int32_t	InfoSensTemp			tag	info	sens	temp	
+x	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetRuleSetsAdapterP						tag	sd	0	rules	
+	x		x			<iota>, <count>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	DblkBytes	uses		tag	sd	0	dblk	byte
+		x	x			<iota>	<error>, <iota>, <count>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_dblk_note_t	DblkNote	uses		tag	sd	0	dblk	note
+		x	x			<iota>	<error>, <iota>, <count>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_gps_cmd_t	InfoSensGpsCmd	uses		tag	info	sens	gps	cmd
+	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	PanicBytes	uses		tag	sd	0	panic	byte
+	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestDropBytes	uses		tag	.test	drop	byte	
+	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestEchoBytes	uses		tag	.test	echo	byte	
+	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestOnesBytes	uses		tag	.test	ones	byte	
+	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestZeroBytes	uses		tag	.test	zero	byte	
+	x		x				<gps_xyz>	TagnetGpsXyzAdapterP	TagnetAdapter	tagnet_gps_xyz_t	InfoSensGpsXyz	uses		tag	info	sens	gps	xyz
+	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetImageAdapterP						tag	sd	0	img	
+	x		x			<int>	<error>, <int>	TagnetIntegerAdapterP	TagnetAdapter	int32_t	PollCount	uses		tag	poll	cnt		
+	x		x		x	<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	PollEvent	uses		tag	poll	ev		
+	x		x			<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	RadioRSSI	uses		tag	.test	rssi		
+	x	x	x			<int>,<int>	<int>	TagnetMsgAdapterP	TagnetAdapter	message_t	RadioTxPower	uses		tag	.test	tx_pwr		
+	x	x	x				<stats>	TagnetBlockAdapterP	TagnetAdapter	tagnet_block_t	RadioStats	uses	si446x_stats_t	tag	radio	stats		
+	x	x	x			<time>	<error>, <time>	TagnetRtcTimeAdapterP	TagnetAdapter	rtctime_t	SysRtcTime	uses		tag	sys	rtc		
+	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysActive	uses		tag	sys	active		
+	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysBackup	uses		tag	sys	backup		
+	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysGolden	uses		tag	sys	golden		
+	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysNIB	uses		tag	sys	nib		
+	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysRunning	uses		tag	sys	running		
+	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkCommittedOffset	uses		tag	sd	0	dblk	.committed
+	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecNum	uses		tag	sd	0	dblk	.recnum
+	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecOffset	uses		tag	sd	0	dblk	.last_rec
+	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastSyncOffset	uses		tag	sd	0	dblk	.last_sync
