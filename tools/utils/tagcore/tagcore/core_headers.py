@@ -117,11 +117,11 @@ def obj_dt_hdr():
 def obj_dt_reboot():
     return aggie(OrderedDict([
         ('hdr',       obj_dt_hdr()),
-        ('prev_sync', atom(('<I', '{:08x}'))),
-        ('majik',     atom(('<I', '{:08x}'))),
-        ('core_rev',  atom(('<H', '{:04x}'))),
-        ('core_minor',atom(('<H', '{:04x}'))),
-        ('base',      atom(('<I', '{:08x}'))),
+        ('prev_sync', atom(('<I', '0x{:08x}'))),
+        ('majik',     atom(('<I', '0x{:08x}'))),
+        ('core_rev',  atom(('<H', '0x{:04x}'))),
+        ('core_minor',atom(('<H', '0x{:04x}'))),
+        ('base',      atom(('<I', '0x{:08x}'))),
         ('owcb',      obj_owcb())
     ]))
 
@@ -197,7 +197,7 @@ def obj_owcb():
 def obj_dt_version():
     return aggie(OrderedDict([
         ('hdr',       obj_dt_hdr()),
-        ('base',      atom(('<I', '{:08x}'))),
+        ('base',      atom(('<I', '0x{:08x}'))),
         ('image_info', obj_image_info())
     ]))
 
@@ -295,8 +295,8 @@ def obj_image_plus():
 def obj_dt_sync():
     return aggie(OrderedDict([
         ('hdr',       obj_dt_hdr()),
-        ('prev_sync', atom(('<I', '{:x}'))),
-        ('majik',     atom(('<I', '{:08x}'))),
+        ('prev_sync', atom(('<I', '0x{:x}'))),
+        ('majik',     atom(('<I', '0x{:08x}'))),
     ]))
 
 
