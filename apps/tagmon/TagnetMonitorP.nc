@@ -515,6 +515,11 @@ implementation {
     change_radio_state(RS_LOST, SS_RECV, TMR_FORCE);
   }
 
+  command void TagnetMonitor.shutdown() {
+    change_radio_state(RS_STANDBY, SS_NONE, TMR_FORCE);
+    tagMsgBusy = FALSE;
+  }
+
 
   /*
    * NOT_FORME
