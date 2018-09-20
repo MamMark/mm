@@ -450,9 +450,9 @@ implementation {
 
 
     // start timer or rtc alarm, depending on timout value
-    if (tval >= 0)
+    if (tval > 0)
       call smTimer.startOneShot(tval);
-    else {
+    if (tval < 0) {                     /* rtc interval */
       /*
        * neg value says use RtcAlarm.  Neg value denotes how
        * many slices to carve an hour into for the RtcAlarm.
