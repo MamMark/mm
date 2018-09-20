@@ -71,7 +71,7 @@ implementation {
    *   LOST         tag has not seen basestation and is in deep sleep
    */
   typedef enum {
-    RS_xNONE        = 0,
+    RS_STANDBY      = 0,
     RS_HOME         = 1,
     RS_NEAR         = 2,
     RS_LOST         = 3,
@@ -155,14 +155,14 @@ implementation {
   norace radio_graph_t  rcb = {
   //              cycle
   //  cur_state,    cnt
-        RS_xNONE,     0,
+        RS_STANDBY,   0,
 
      //              max          RW   RECV     SW   STBY
     {// substate  cycles    NA
-      {  SS_NONE,     0,    {0,    0,    0,      0,    0 } },    /* NA */
-      {  SS_NONE,  2000,    {0, 1000,   50,   1000,   50 } },   /* home */
-      {  SS_NONE,    40,    {0, 1000, 4000,   1000,   -1 } },   /* near */
-      {  SS_NONE,    -1,    {0, 1000, 4000,   1000,   -5 } },   /* lost */
+      {  SS_NONE,     0,    {0,    0,    0,      0,    0 } },   /* standby */
+      {  SS_NONE,   600,    {0, 1024,   52,   1024,   52 } },   /* home */
+      {  SS_NONE,    40,    {0, 1000, 4096,   1024,   -1 } },   /* near */
+      {  SS_NONE,    -1,    {0, 1000, 4096,   1024,   -5 } },   /* lost */
     }
   };
 
@@ -253,7 +253,7 @@ implementation {
     tt->timeout       = 0;
     tt->major         = major;
     tt->minor         = minor;
-    tt->old_major     = RS_xNONE;
+    tt->old_major     = RS_STANDBY;
     tt->old_minor     = SS_NONE;
     tt->reason        = reason;
   }
@@ -278,11 +278,6 @@ implementation {
     rtctime_t        rt;
     bool             match;
     uint32_t         event_ms, event_usecs;
-
-    if (major == RS_xNONE) {
-      /* none says stay in current state. */
-      major = rcb.state;
-    }
 
     // check for range errors
     if ((major > sizeof(rcb.sub)/sizeof(rcb.sub[0])) ||
@@ -321,6 +316,9 @@ implementation {
      * off for approx 100us (while the standby processes) which isn't cool.
      */
     switch(minor) {
+      case SS_NONE:
+        error = call RadioState.standby();
+        break;
       case SS_RW:
         error = call RadioState.turnOn();
         break;
