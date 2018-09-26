@@ -160,9 +160,9 @@ implementation {
      //              max          RW   RECV     SW   STBY
     {// substate  cycles    NA
       {  SS_NONE,     0,    {0,    0,    0,      0,    0 } },    /* NA */
-      {  SS_NONE,  8000,    {0, 1000,   50,   1000,   50 } },   /* home */
-      {  SS_NONE,   400,    {0, 1000, 4000,   1000,   -1 } },   /* near */
-      {  SS_NONE,    -1,    {0, 1000, 4000,   1000,   -5 } },   /* lost */
+      {  SS_NONE,  8000,    {0, 1024,   52,   1024,   52 } },   /* home */
+      {  SS_NONE,   400,    {0, 1024, 4096,   1024,   -1 } },   /* near */
+      {  SS_NONE,    -1,    {0, 1024, 4096,   1024,   -5 } },   /* lost */
     }
   };
 
