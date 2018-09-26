@@ -67,6 +67,17 @@ else:
     influxdb_version = ''
 
 
+def int32(x):
+  if x>0xFFFFFFFF:
+    raise OverflowError
+  if x>0x7FFFFFFF:
+    x=int(0x100000000-x)
+    if x<2147483648:
+      return -x
+    else:
+      return -2147483648
+  return x
+
 
 def flatten_dict(init, lkey=''):
     # zzz print('### init', init, lkey)
@@ -80,8 +91,8 @@ def flatten_dict(init, lkey=''):
              and (isinstance(val.val, int) or isinstance(val.val, long)):
             # zzz print('### int', key, val.val)
             if rkey == 'event':
-                ret[key] = event_name(obj['event'].val)
-            ret[key] = int(val.val)
+                ret[lkey + '_event_name'] = event_name(int(val.val))
+            ret[key] = int32(val.val)
         else:
             ret[key] = '{}'.format(val)
     # zzz print('### flatten',ret)
