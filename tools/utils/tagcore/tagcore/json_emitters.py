@@ -45,22 +45,27 @@ port     = 8086
 user     = 'root'
 password = 'root'
 dbname   = 'test'
-dbuser   = 'grafana'
-dbuser_password = 'grafana'
 influx_db = InfluxDBClient(host, port, user, password, dbname)
-version = influx_db.ping()
-print("### Influxdb version: {}".format(version))
-#influx_db.drop_database(dbname)
-dblist = influx_db.get_list_database()
-print("### Influxdb databases: {}".format(dblist))
-no_db = True
-for db in dblist:
-    if db['name'] == dbname:
-        no_db = False
-        break
-if (no_db):
-    print("### create influx database: {}".format(dbname))
-    influx_db.create_database(dbname)
+influxdb_version = influx_db.ping()
+print("### Influxdb version: {}".format(influxdb_version))
+if influxdb_version == '1.5.2':
+    #influx_db.drop_database(dbname)
+    dblist = influx_db.get_list_database()
+    print("### Influxdb available databases: {}".format(dblist))
+    no_db = True
+    for db in dblist:
+        if db['name'] == dbname:
+            no_db = False
+            break
+    if (no_db):
+        print("### Influxdb creating database: {}".format(dbname))
+        influx_db.create_database(dbname)
+else:
+    print('### influxdb not correct version: {}', influxdb_version)
+    print('### host: {}, port: {}, user: {}, password: {}, dbname: {}'.format(host, port, user, password, dbname))
+    influxdb_saved_version = influxdb_version
+    influxdb_version = ''
+
 
 
 def flatten_dict(init, lkey=''):
@@ -134,7 +139,9 @@ def build_tags(obj):
 
 
 def emit_influx(level, offset, buf, obj):
-    # zzz print('### emit_influx level: {}, offset: {}, len: {}'.format(level, offset, len(buf)))
+    # zzz print('### emit_influx version: {}, level: {}, offset: {}, len: {}'.format(influxdb_version, level, offset, len(buf)))
+    if influxdb_version == '':
+        return
     if obj:
         try:
             xlen     = obj['hdr']['len'].val
