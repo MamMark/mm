@@ -65,4 +65,8 @@ implementation {
 
   components LocalTimeMilliC;
   PlatformP.LocalTime -> LocalTimeMilliC;
+
+  components McuSleepC;
+  McuSleepC.Platform -> PlatformP;
+  McuSleepC.CoreTime -> CoreTimeC;
 }

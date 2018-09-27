@@ -278,6 +278,14 @@ implementation {
   }
 
 
+  async command void CoreTime.initDeepSleep() {
+  }
+
+
+  async command void CoreTime.irq_preamble() {
+  }
+
+
   default async event void TimeSkew.skew(int32_t skew) { }
 
   void CS_Handler() @C() @spontaneous() __attribute__((interrupt)) {
