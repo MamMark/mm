@@ -116,7 +116,8 @@ implementation {
   Si446xDriverLayerC.RSSIFlag   -> MetadataFlagsLayerC.PacketFlag[unique(UQ_SI446X_METADATA_FLAGS)];
   TagnetC.RadioStats            -> Si446xDriverLayerC;
 
-  components PanicC, PlatformC;
+  components PanicC, PlatformC, McuSleepC;
   TagnetMonitorP.Panic          -> PanicC;
   TagnetMonitorP.Platform       -> PlatformC;
+  TagnetMonitorP.McuPowerOverride<- McuSleepC;
 }

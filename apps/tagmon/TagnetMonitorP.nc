@@ -26,7 +26,10 @@
 #include <rtctime.h>
 
 module TagnetMonitorP {
-  provides interface TagnetMonitor;
+  provides {
+    interface TagnetMonitor;
+    interface McuPowerOverride;
+  }
   uses {
     interface Boot;
     interface Tagnet;
@@ -751,6 +754,22 @@ implementation {
 
   async event void RtcAlarm.rtcAlarm(rtctime_t *timep, uint32_t field_set) {
     post rtcalarm_task();
+  }
+
+  /*
+   * Tell McuSleep when we think it is okay to enter DEEPSLEEP.
+   * For the Radio Monitor (TagMonitor), we think DEEPSLEEP is
+   * just fine if we are using the RTCALARM for our next event.
+   */
+  async command mcu_power_t McuPowerOverride.lowestState() {
+    if (call RtcAlarm.getAlarm(NULL)) {
+      /*
+       * if we have an RtcAlarm set, then we are in a low power wait
+       * tell McuSleep.
+       */
+      return POWER_DEEP_SLEEP;
+    }
+    return POWER_SLEEP;
   }
 
   event void Boot.booted() {
