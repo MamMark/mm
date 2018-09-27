@@ -47,6 +47,9 @@ implementation {
   components SystemBootC;
   GPSmonitorP.Boot -> SystemBootC.Boot;
 
+  components McuSleepC;
+  GPSmonitorP.McuPowerOverride <- McuSleepC;
+
   components new TimerMilliC() as MinorTimer;
   components new TimerMilliC() as MajorTimer;
   GPSmonitorP.MinorTimer -> MinorTimer;

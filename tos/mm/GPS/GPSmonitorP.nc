@@ -230,6 +230,7 @@ module GPSmonitorP {
   provides {
     interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
     interface TagnetAdapter<tagnet_gps_cmd_t> as InfoSensGpsCmd;
+    interface McuPowerOverride;
   } uses {
     interface Boot;                           /* in boot */
     interface GPSControl;
@@ -251,6 +252,7 @@ module GPSmonitorP {
 implementation {
   gps_monitor_control_t gmcb;           /* gps monitor control block */
 
+norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   uint32_t     cycle_start, cycle_count, cycle_sum;
   uint32_t     last_nsats_seen, last_nsats_count;
 
@@ -285,6 +287,8 @@ implementation {
                                new_state, ev, 0);
     gmcb.major_state = new_state;
     last_nsats_count = 0;
+    if (gmcb.major_state != GMS_MAJOR_IDLE)
+      no_deep_sleep = TRUE;
   }
 
 
@@ -293,6 +297,16 @@ implementation {
                                new_state, ev, 0);
     gmcb.minor_state = new_state;
     last_nsats_count = 0;
+    if (gmcb.major_state != GMS_MAJOR_IDLE)
+      no_deep_sleep = TRUE;
+    else {
+      if ((gmcb.minor_state < GMS_BOOTING) ||
+          (gmcb.minor_state == GMS_MPM)    ||
+          (gmcb.minor_state == GMS_STANDBY))
+        no_deep_sleep = FALSE;
+      else
+        no_deep_sleep = TRUE;
+    }
   }
 
 
@@ -1389,6 +1403,19 @@ implementation {
   async event void GPSPwr.pwrOff() {
     post monitor_pwr_task();
   }
+
+  /*
+   * Tell McuSleep when we think it is okay to enter DEEPSLEEP.
+   * For the GPS Monitor we think DEEPSLEEP is okay if we are IDLE
+   * (nothing in particular going on, MPM, OFF, etc) and if our minor
+   * state is OFF, FAIL, or MPM.
+   */
+  async command mcu_power_t McuPowerOverride.lowestState() {
+    if (no_deep_sleep)
+      return POWER_SLEEP;
+    return POWER_DEEP_SLEEP;
+  }
+
 
   event void Collect.collectBooted()    { }
   event void GPSControl.gps_shutdown()  { }
