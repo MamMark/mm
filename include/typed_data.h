@@ -89,8 +89,6 @@ typedef enum {
   DT_GPS_RAW_SIRFBIN	= 32,
   DT_TAGNET             = 33,
   DT_MAX		= 33,
-
-  DT_16                 = 0xffff,       /* force to 2 bytes */
 } dtype_t;
 
 
@@ -127,7 +125,8 @@ typedef enum {
 
 typedef struct {                /* size 20 */
   uint16_t len;
-  dtype_t  dtype;               /* 2 bytes */
+  dtype_t  dtype;
+  uint8_t  hdr_crc8;            /* single byte CRC-8 */
   uint32_t recnum;
   rtctime_t rt;                 /* 10 byte rtctime */
   uint16_t recsum;
@@ -170,6 +169,7 @@ typedef struct {                /* size 20 */
 typedef struct {
   uint16_t len;                 /* size 36 +    120     */
   dtype_t  dtype;               /* reboot  + ow_control */
+  uint8_t  hdr_crc8;            /* single byte CRC-8 */
   uint32_t recnum;
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
@@ -198,6 +198,7 @@ typedef struct {
 typedef struct {
   uint16_t    len;              /* size   24    +  352         */
   dtype_t     dtype;            /* dt_version_t + image_info_t */
+  uint8_t     hdr_crc8;         /* single byte CRC-8 */
   uint32_t    recnum;
   rtctime_t   rt;               /* 10 byte rtctime             */
   uint16_t    recsum;           /* part of header */
@@ -213,6 +214,7 @@ typedef struct {
 typedef struct {
   uint16_t   len;               /* size 28 */
   dtype_t    dtype;
+  uint8_t    hdr_crc8;          /* single byte CRC-8 */
   uint32_t   recnum;
   rtctime_t  rt;                /* 10 byte rtctime, 2quad align */
   uint16_t   recsum;            /* part of header */
@@ -294,6 +296,7 @@ typedef enum {
 typedef struct {
   uint16_t len;                 /* size 40 */
   dtype_t  dtype;
+  uint8_t  hdr_crc8;            /* single byte CRC-8 */
   uint32_t recnum;
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
@@ -333,6 +336,7 @@ typedef enum {
 typedef struct {
   uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
+  uint8_t  hdr_crc8;            /* single byte CRC-8 */
   uint32_t recnum;
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
@@ -354,6 +358,7 @@ typedef struct {
 typedef struct {
   uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
+  uint8_t  hdr_crc8;            /* single byte CRC-8 */
   uint32_t recnum;
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
@@ -366,6 +371,7 @@ typedef struct {
 typedef struct {
   uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
+  uint8_t  hdr_crc8;            /* single byte CRC-8 */
   uint32_t recnum;
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */

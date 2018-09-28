@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.5rc12'
+__version__ = '0.4.5rc90'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,6 +18,8 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
+#
+# 0.4.5.rc90    CR: 21/90 add hdr_crc8
 # 0.4.5rc11     CR: 21/2
 #               support for remote logging (21/2)
 #               pwr force off linkages     (21/1)

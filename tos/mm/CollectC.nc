@@ -77,6 +77,9 @@ implementation {
   CollectP.SSW -> SSWriteC;
   CollectP.SS  -> SSWriteC;
 
+  components Crc8C;
+  CollectP.Crc8 -> Crc8C;
+
   components PanicC;
   CollectP.Panic -> PanicC;
 

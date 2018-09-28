@@ -136,6 +136,7 @@ module CollectP {
     interface Timer<TMilli> as SyncTimer;
     interface OverWatch;
     interface Rtc;
+    interface Crc<uint8_t> as Crc8;
 
     interface SSWrite as SSW;
     interface StreamStorage as SS;
@@ -458,6 +459,14 @@ implementation {
     dcc.cur_recnum++;
     dcc.last_rec_offset = get_rec_offset();
     header->recnum = dcc.cur_recnum;
+
+    /*
+     * all fields of the header are filled in.  Compute the hdr_crc8
+     * It is an external crc.  When checking the crc, one must remember
+     * its value, zero its cell, compute the crc, and compare.
+     */
+    header->hdr_crc8 = 0;
+    header->hdr_crc8 = call Crc8.crc((void *) header, sizeof(dt_header_t));
 
     /*
      * upper layers are responsible for filling in any pad fields,

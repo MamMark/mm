@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc4'
+__version__ = '0.4.5rc90'
 
 import binascii
 from   collections  import OrderedDict
@@ -107,7 +107,8 @@ def obj_rtctime():
 def obj_dt_hdr():
     return aggie(OrderedDict([
         ('len',     atom(('<H', '{}'))),
-        ('type',    atom(('<H', '{}'))),
+        ('type',    atom(('B',  '{}'))),
+        ('hdr_crc8',atom(('B',  '{}'))),
         ('recnum',  atom(('<I', '{}'))),
         ('rt',      obj_rtctime()),
         ('recsum',  atom(('<H', '0x{:04x}'))),
