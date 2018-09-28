@@ -56,6 +56,7 @@ implementation {
   components     TagnetPayloadP;
   components     TagnetTlvP;
   components     PanicC;
+  components     Crc8C;
 
   TagnetName            =  TagnetNameP;
   TagnetHeader          =  TagnetHeaderP;
@@ -72,4 +73,6 @@ implementation {
   TagnetHeaderP.Panic   -> PanicC;
   TagnetPayloadP.Panic  -> PanicC;
   TagnetTlvP.Panic      -> PanicC;
+
+  TagnetHeaderP.Crc8    -> Crc8C;
 }
