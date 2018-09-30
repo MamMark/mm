@@ -61,6 +61,6 @@
  */
 
 #define CORE_REV   21
-#define CORE_MINOR  90
+#define CORE_MINOR  91
 
 #endif  /* __CORE_REV_H__ */

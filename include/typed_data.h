@@ -63,14 +63,16 @@
  *
  */
 
+/* must be a single byte. need -fshort-enums */
 typedef enum {
   DT_NONE		= 0,
-  DT_REBOOT		= 1,		/* reboot sync */
+  DT_REBOOT		= 1,
   DT_VERSION		= 2,
   DT_SYNC		= 3,
   DT_EVENT              = 4,
   DT_DEBUG		= 5,
   DT_SYNC_FLUSH         = 6,
+  DT_SYNC_REBOOT        = 7,
 
   DT_GPS_VERSION        = 16,
   DT_GPS_TIME		= 17,
@@ -167,17 +169,13 @@ typedef struct {                /* size 20 */
  */
 
 typedef struct {
-  uint16_t len;                 /* size 36 +    120     */
+  uint16_t len;                 /* size 28 +    120     */
   dtype_t  dtype;               /* reboot  + ow_control */
   uint8_t  hdr_crc8;            /* single byte CRC-8 */
   uint32_t recnum;
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
-  uint32_t prev_sync;           /* file offset */
-  uint32_t sync_majik;
-  /* above same as sync */
 
-  /* additional in reboot record + owcb */
   uint16_t core_rev;            /* core_rev level                      */
                                 /* and associated structures           */
   uint16_t core_minor;          /* things changed but not structurally */

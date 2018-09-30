@@ -47,7 +47,7 @@ from   datetime     import datetime
 import struct
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.5rc0'
+__version__ = '0.4.5rc91'
 
 cfg_print_hourly = True
 
@@ -70,6 +70,7 @@ __all__ = [
     'DT_EVENT',
     'DT_DEBUG',
     'DT_SYNC_FLUSH',
+    'DT_SYNC_REBOOT',
     'DT_GPS_VERSION',
     'DT_GPS_TIME',
     'DT_GPS_GEO',
@@ -138,6 +139,7 @@ DT_SYNC                 = 3
 DT_EVENT                = 4
 DT_DEBUG                = 5
 DT_SYNC_FLUSH           = 6
+DT_SYNC_REBOOT          = 7
 DT_GPS_VERSION          = 16
 DT_GPS_TIME             = 17
 DT_GPS_GEO              = 18

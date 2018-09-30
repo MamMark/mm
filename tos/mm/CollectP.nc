@@ -192,13 +192,13 @@ implementation {
   }
 
 
-  void write_sync_record() {
+  void write_sync_record(dtype_t dtype) {
     dt_sync_t  s;
     dt_sync_t *sp;
 
     sp = &s;
     sp->len = sizeof(s);
-    sp->dtype = DT_SYNC;
+    sp->dtype = dtype;
     sp->sync_majik = SYNC_MAJIK;
     sp->prev_sync  = dcc.last_sync_offset;
     dcc.last_sync_offset = get_rec_offset();
@@ -210,15 +210,13 @@ implementation {
     dt_reboot_t  r;
     dt_reboot_t *rp;
 
+    write_sync_record(DT_SYNC_REBOOT);
     rp = &r;
     rp->len = sizeof(r) + sizeof(ow_control_block_t);
     rp->dtype = DT_REBOOT;
-    rp->sync_majik = SYNC_MAJIK;
-    rp->prev_sync  = dcc.last_sync_offset;
     rp->core_rev   = CORE_REV;            /* which version of core */
     rp->core_minor = CORE_MINOR;
     rp->base = call OverWatch.getImageBase();
-    dcc.last_sync_offset = get_rec_offset();
     call Collect.collect((void *) rp, sizeof(r),
                          (void *) &ow_control_block,
                          sizeof(ow_control_block_t));
@@ -262,7 +260,7 @@ implementation {
      */
     dcc.bufs_to_next_sync = SYNC_MAX_SECTORS;
     call SyncTimer.stop();
-    write_sync_record();
+    write_sync_record(DT_SYNC);
     call OverWatch.checkFaults();
     call SyncTimer.startOneShot(SYNC_PERIOD);
   }

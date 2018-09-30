@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc90'
+__version__ = '0.4.5rc91'
 
 import binascii
 from   collections  import OrderedDict
@@ -118,8 +118,6 @@ def obj_dt_hdr():
 def obj_dt_reboot():
     return aggie(OrderedDict([
         ('hdr',       obj_dt_hdr()),
-        ('prev_sync', atom(('<I', '0x{:08x}'))),
-        ('majik',     atom(('<I', '0x{:08x}'))),
         ('core_rev',  atom(('<H', '0x{:04x}'))),
         ('core_minor',atom(('<H', '0x{:04x}'))),
         ('base',      atom(('<I', '0x{:08x}'))),

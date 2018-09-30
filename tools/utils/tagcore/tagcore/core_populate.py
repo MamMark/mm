@@ -9,14 +9,15 @@ from   json_emitters import emit_influx
 def decode_default(level, offset, buf, obj):
     return obj.set(buf)
 
-#                                      156 = sizeof(reboot record) + sizeof(owcb) (36 + 120)
-dtd.dt_records[DT_REBOOT]           = (156, decode_default, [ emit_reboot, emit_influx ],      obj_dt_reboot(),    'REBOOT',       'obj_dt_reboot'   )
+#                                      148 = sizeof(reboot record) + sizeof(owcb) (28 + 120)
+dtd.dt_records[DT_REBOOT]           = (148, decode_default, [ emit_reboot, emit_influx ],      obj_dt_reboot(),    'REBOOT',       'obj_dt_reboot'   )
 #                                      356 = sizeof(version record) + sizeof(image_info)  (24 + 332)
 dtd.dt_records[DT_VERSION]          = (356, decode_default, [ emit_version, emit_influx ],     obj_dt_version(),   'VERSION',      'obj_dt_version'  )
 dtd.dt_records[DT_SYNC]             = ( 28, decode_default, [ emit_sync, emit_influx ],        obj_dt_sync(),      'SYNC',         'obj_dt_sync'     )
 dtd.dt_records[DT_EVENT]            = ( 40, decode_default, [ emit_event, emit_influx ],       obj_dt_event(),     'EVENT',        'obj_dt_event'    )
 dtd.dt_records[DT_DEBUG]            = (  0, decode_default, [ emit_debug, emit_influx ],       obj_dt_debug(),     'DEBUG',        'obj_dt_debug'    )
 dtd.dt_records[DT_SYNC_FLUSH]       = ( 28, decode_default, [ emit_sync, emit_influx ],        obj_dt_sync(),      'SYNC/F',       'obj_dt_sync'     )
+dtd.dt_records[DT_SYNC_REBOOT]      = ( 28, decode_default, [ emit_sync, emit_influx ],        obj_dt_sync(),      'SYNC/R',       'obj_dt_sync'     )
 dtd.dt_records[DT_GPS_VERSION]      = (  0, decode_default, [ emit_gps_version, emit_influx ], obj_dt_gps_ver(),   'GPS_VERSION',  'obj_dt_gps_ver'  )
 dtd.dt_records[DT_GPS_TIME]         = (  0, decode_default, [ emit_gps_time, emit_influx ],    obj_dt_gps_time(),  'GPS_TIME',     'obj_dt_gps_time' )
 dtd.dt_records[DT_GPS_GEO]          = (  0, decode_default, [ emit_gps_geo, emit_influx ],     obj_dt_gps_geo(),   'GPS_GEO',      'obj_dt_gps_geo'  )
@@ -28,6 +29,5 @@ dtd.dt_records[DT_NOTE]             = (  0, decode_default, [ emit_note, emit_in
 dtd.dt_records[DT_CONFIG]           = (  0, decode_default, [ emit_config, emit_influx ],      obj_dt_config(),    'CONFIG',       'obj_dt_config'   )
 dtd.dt_records[DT_GPS_PROTO_STATS]  = (  0, decode_default, [ emit_gps_proto_stats, emit_influx ],
                                                                             obj_dt_gps_proto_stats(), 'GPS_STATS',    'obj_dt_gps_proto_stats' )
-
 dtd.dt_records[DT_GPS_RAW_SIRFBIN]  = (  0, decode_gps_raw, [ emit_gps_raw, emit_influx ],     obj_dt_gps_raw(),   'GPS_RAW',      'obj_dt_gps_raw'  )
 dtd.dt_records[DT_TAGNET]           = (  0, decode_default, [ emit_tagnet, emit_influx ],      obj_dt_tagnet(),    'TAGNET',       'obj_dt_tagnet'   )

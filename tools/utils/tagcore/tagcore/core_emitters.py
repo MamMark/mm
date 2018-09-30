@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc4'
+__version__ = '0.4.5rc91'
 
 from   ctypes       import c_long
 
@@ -124,10 +124,10 @@ def reboot_reason_name(reason):
 rbt0  = '  {:s} -> {:s}  [{:s}] <{:s}>'
 
 rbt0a = '    REBOOT: {:7s}  f: {:5s}  c: {:5s}  m: {:5s}  rbts/g/n: {}/{}/{}   chk_fails: {}'
-rbt0b = '    rt: 2017/12/26-(mon)-01:52:40 GMT  prev_sync: {} (0x{:04x})  rev: {:4d}/{:d}'
+rbt0b = '    rt: 2017/12/26-(mon)-01:52:40 GMT  rev: {:4d}/{:d}'
 rbt_p = '    PANIC: {}  p/w: {}/{}  args: x({:04x} {:04x} {:04x} {:04x})'
 
-rbt2a = '    majik:   {:08x}  sigs:    {:08x}    {:08x}  {:08x}'
+rbt2a = '    sigs:    {:08x}    {:08x}  {:08x}'
 rbt2b = '    base:  f {:08x}  cur:     {:08x}'
 rbt2c = '    rpt:     {:08x}  reset:   {:08x}      others: {:08x}'
 rbt2d = '    fault/g: {:08x}  fault/n: {:08x}  ss/disable: {:08x}  ps: {:04x}'
@@ -143,8 +143,6 @@ def emit_reboot(level, offset, buf, obj):
     rtctime  = obj['hdr']['rt']
     brt      = rtctime_str(rtctime)
 
-    majik    = obj['majik'].val
-    prev     = obj['prev_sync'].val
     core_rev = obj['core_rev'].val
     core_minor = obj['core_minor'].val
     base     = obj['base'].val
@@ -194,7 +192,7 @@ def emit_reboot(level, offset, buf, obj):
         base_name(from_base), base_name(base),
         ow_boot_mode_name(owcb['ow_boot_mode'].val),
         reboot_count, panics_gold, panic_count, chk_fails))
-    print(rbt0b.format(prev, prev, core_rev, core_minor))
+    print(rbt0b.format(core_rev, core_minor))
 
     if owcb['reboot_reason'].val == REASON_PANIC:
         print(rbt_p.format(pi_idx, pi_pcode, pi_where,
@@ -202,7 +200,7 @@ def emit_reboot(level, offset, buf, obj):
 
     if (level >= 2):                    # detailed display (level 2)
         print()
-        print(rbt2a.format(majik, owcb['ow_sig'].val,
+        print(rbt2a.format(owcb['ow_sig'].val,
                    owcb['ow_sig_b'].val, owcb['ow_sig_c'].val))
         print(rbt2b.format(from_base, base))
         print(rbt2c.format(owcb['rpt'].val, owcb['reset_status'].val,
