@@ -151,6 +151,10 @@ implementation {
     return EBUSY;
   }
 
+  command error_t PMF.mapAll(uint32_t context, uint8_t **bufp,
+                             uint32_t offset, uint32_t *lenp) {
+    pmap_panic(4, offset, *lenp);
+  }
 
   /*
    * PanicMapFile.filesize()
@@ -197,7 +201,7 @@ implementation {
   event void PanicManager.populateDone(error_t err) {
     pmf_cb.err = err;
     if (err && err != EODATA)
-      pmap_panic(4, err, 0);
+      pmap_panic(5, err, 0);
     pmf_cb.state = PMFS_IDLE;
     pmf_cb.cache_blk_id = 0;            /* no cache loaded */
     pmf_cb.err = err;

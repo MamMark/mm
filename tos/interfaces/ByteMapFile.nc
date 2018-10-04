@@ -26,26 +26,34 @@ interface ByteMapFile {
    * A File/Object mapping implementation that provides cached access to
    * objects that live on a physical disk subsystem.
    *
-   * This interface provides 3 commands and 3 events:
+   * This interface provides four commands and three events:
    *
    * commands:
-   *    map(): requests a buffer pointer to a region of the file.  If the
-   *        data needs to be brought in from disk, map() will return EBUSY
-   *        and data_avail() will be signalled to indicate new data
-   *        is available.
-   *    filesize(): get the current filesize.
+   *    map():        requests a buffer pointer to a region of the file.
+   *                  If the data needs to be brought in from disk, map()
+   *                  will return EBUSY and data_avail() will be signalled
+   *                  to indicate new data is available.
+   *    mapAll():     same as map(), but requires that all data requested
+   *                  be in the cache to be successful. Will return EBUSY
+   *                  if additional data needs to be added to cache for
+   *                  success and data_avail() will be signalled to
+   *                  indicate all data is now available.
+   *    filesize():   get the current filesize.
    *    commitsize(): get the current filesize that has been committed
    *        to disk.
    *
    * events:
    *    data_avail(): indicates data has been brought in from disk and is
-   *        available.  The originating request should be initiated again.
-   *    extended(): indicates that the object has been extended.
-   *    committed(): indicates that object's data physically written to
-   *        disk has been extended.
+   *                  available.  The originating request should be
+   *                  initiated again.
+   *    extended():   indicates that the object has been extended.
+   *    committed():  indicates that object's data physically written to
+   *                  disk has been extended.
    */
 
   /**
+   * map() and mapAll()
+   *
    * Request a portion of the referenced object be brought into memory.
    * The buffer returned is independent of any underlying file caching
    * mechanisms.  It remains valid until the next map() call.
@@ -55,7 +63,9 @@ interface ByteMapFile {
    * 'length' is potentially less than the original request, and indicates
    * how much data in the returned buffer is valid.
    *
-   * If any cached data can be used, that is the data that is returned.
+   * For map(), if any cached data can be used, that is the data that is
+   * returned. For mapAll(), all data must be in cache before any of it
+   * is returned.
    *
    * If no cached data can be used, we will need to access the underlying
    * backing store.  map() will return EBUSY.  The needed portion will be
@@ -87,6 +97,9 @@ interface ByteMapFile {
    */
   command error_t map(uint32_t context, uint8_t **bufp,
                       uint32_t offset, uint32_t *lenp);
+
+  command error_t mapAll(uint32_t context, uint8_t **bufp,
+                         uint32_t offset, uint32_t *lenp);
 
   /**
    * signal when the requested contents has been mapped into memory.
