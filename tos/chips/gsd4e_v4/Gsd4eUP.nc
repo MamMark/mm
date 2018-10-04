@@ -1258,4 +1258,5 @@ implementation {
   default event void GPSControl.gps_boot_fail() { };
   default event void GPSControl.gps_booted()    { };
   default event void GPSControl.gps_shutdown()  { };
+  event void Collect.resyncDone(error_t err, uint32_t offset) { }
 }

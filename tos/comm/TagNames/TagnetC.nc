@@ -14,29 +14,30 @@ configuration TagnetC {
     interface              TagnetHeader;
   }
   uses {
-    interface             TagnetAdapter<tagnet_block_t>     as RadioStats;
-    interface             TagnetAdapter<uint32_t>           as DblkLastRecNum;
-    interface             TagnetAdapter<uint32_t>           as DblkLastSyncOffset;
+    interface             TagnetAdapter<uint32_t>           as DblkResyncOffset;
     interface             TagnetAdapter<int32_t>            as PollCount;
-    interface      TagnetSysExecAdapter                     as SysRunning;
-    interface             TagnetAdapter<tagnet_gps_xyz_t>   as InfoSensGpsXyz;
     interface             TagnetAdapter<message_t>          as PollEvent;
-    interface      TagnetSysExecAdapter                     as SysNIB;
     interface             TagnetAdapter<message_t>          as RadioRSSI;
-    interface             TagnetAdapter<uint32_t>           as DblkLastRecOffset;
-    interface             TagnetAdapter<uint32_t>           as DblkCommittedOffset;
-    interface             TagnetAdapter<rtctime_t>          as SysRtcTime;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as TestZeroBytes;
-    interface             TagnetAdapter<tagnet_gps_cmd_t>   as InfoSensGpsCmd;
+    interface             TagnetAdapter<tagnet_gps_xyz_t>   as InfoSensGpsXyz;
+    interface             TagnetAdapter<message_t>          as RadioTxPower;
+    interface             TagnetAdapter<uint32_t>           as DblkLastRecOffset;
+    interface             TagnetAdapter<uint32_t>           as DblkLastSyncOffset;
+    interface             TagnetAdapter<tagnet_file_bytes_t>  as DblkBytes;
+    interface             TagnetAdapter<tagnet_dblk_note_t>  as DblkNote;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as PanicBytes;
+    interface             TagnetAdapter<tagnet_gps_cmd_t>   as InfoSensGpsCmd;
+    interface             TagnetAdapter<uint32_t>           as DblkLastRecNum;
+    interface             TagnetAdapter<uint32_t>           as DblkCommittedOffset;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as TestDropBytes;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as TestEchoBytes;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as TestOnesBytes;
-    interface             TagnetAdapter<message_t>          as RadioTxPower;
+    interface             TagnetAdapter<rtctime_t>          as SysRtcTime;
+    interface             TagnetAdapter<tagnet_block_t>     as RadioStats;
+    interface      TagnetSysExecAdapter                     as SysRunning;
+    interface      TagnetSysExecAdapter                     as SysNIB;
     interface      TagnetSysExecAdapter                     as SysGolden;
     interface      TagnetSysExecAdapter                     as SysBackup;
-    interface             TagnetAdapter<tagnet_file_bytes_t>  as DblkBytes;
-    interface             TagnetAdapter<tagnet_dblk_note_t>  as DblkNote;
     interface      TagnetSysExecAdapter                     as SysActive;
   }
 }
@@ -89,6 +90,7 @@ implementation {
     components new  TagnetUnsignedAdapterP ( TN_39_ID )        as   tn_39_Vx;
     components new  TagnetUnsignedAdapterP ( TN_40_ID )        as   tn_40_Vx;
     components new  TagnetUnsignedAdapterP ( TN_41_ID )        as   tn_41_Vx;
+    components new  TagnetUnsignedAdapterP ( TN_42_ID )        as   tn_42_Vx;
 
     Tagnet           =     tn_0_Vx;
        tn_1_Vx.Super ->     tn_0_Vx.Sub[unique(TN_0_UQ)];
@@ -156,4 +158,6 @@ implementation {
     DblkLastRecOffset  =     tn_40_Vx.Adapter;
       tn_41_Vx.Super ->     tn_4_Vx.Sub[unique(TN_4_UQ)];
     DblkLastSyncOffset  =     tn_41_Vx.Adapter;
+      tn_42_Vx.Super ->     tn_4_Vx.Sub[unique(TN_4_UQ)];
+    DblkResyncOffset  =     tn_42_Vx.Adapter;
 }

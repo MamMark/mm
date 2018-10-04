@@ -43,7 +43,8 @@ typedef enum {                   //      (parent) name
   TN_39_ID              =    39, //  (   dblk   ) .recnum
   TN_40_ID              =    40, //  (   dblk   ) .last_rec
   TN_41_ID              =    41, //  (   dblk   ) .last_sync
-  TN_LAST_ID            =    42,
+  TN_42_ID              =    42, //  (   dblk   ) .resync
+  TN_LAST_ID            =    43,
   TN_ROOT_ID            =     0,
   TN_MAX_ID             =  65000,
 } tn_ids_t;
@@ -90,6 +91,7 @@ typedef enum {                   //      (parent) name
 #define  TN_39_UQ                "TN_39_UQ"
 #define  TN_40_UQ                "TN_40_UQ"
 #define  TN_41_UQ                "TN_41_UQ"
+#define  TN_42_UQ                "TN_42_UQ"
 #define UQ_TAGNET_ADAPTER_LIST  "UQ_TAGNET_ADAPTER_LIST"
 #define UQ_TN_ROOT               TN_0_UQ
 /* structure used to hold configuration values for each of the elements
@@ -108,42 +110,43 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   { TN_2_ID, "\01\02sd", "\01\04None", TN_2_UQ },
   { TN_3_ID, "\02\01\00", "\01\04None", TN_3_UQ },
   { TN_4_ID, "\01\04dblk", "\01\04None", TN_4_UQ },
-  { TN_5_ID, "\01\04byte", "\01\040TagnetAdaptertagnet_file_bytes_t", TN_5_UQ },
-  { TN_6_ID, "\01\04note", "\01\037TagnetAdaptertagnet_dblk_note_t", TN_6_UQ },
+  { TN_5_ID, "\01\04byte", "\01\023tagnet_file_bytes_t", TN_5_UQ },
+  { TN_6_ID, "\01\04note", "\01\022tagnet_dblk_note_t", TN_6_UQ },
   { TN_7_ID, "\01\04info", "\01\04None", TN_7_UQ },
   { TN_8_ID, "\01\04sens", "\01\04None", TN_8_UQ },
   { TN_9_ID, "\01\03gps", "\01\04None", TN_9_UQ },
-  { TN_10_ID, "\01\03cmd", "\01\035TagnetAdaptertagnet_gps_cmd_t", TN_10_UQ },
+  { TN_10_ID, "\01\03cmd", "\01\020tagnet_gps_cmd_t", TN_10_UQ },
   { TN_11_ID, "\01\05panic", "\01\04None", TN_11_UQ },
-  { TN_12_ID, "\01\04byte", "\01\040TagnetAdaptertagnet_file_bytes_t", TN_12_UQ },
+  { TN_12_ID, "\01\04byte", "\01\023tagnet_file_bytes_t", TN_12_UQ },
   { TN_13_ID, "\01\05.test", "\01\04None", TN_13_UQ },
   { TN_14_ID, "\01\04drop", "\01\04None", TN_14_UQ },
-  { TN_15_ID, "\01\04byte", "\01\040TagnetAdaptertagnet_file_bytes_t", TN_15_UQ },
+  { TN_15_ID, "\01\04byte", "\01\023tagnet_file_bytes_t", TN_15_UQ },
   { TN_16_ID, "\01\04echo", "\01\04None", TN_16_UQ },
-  { TN_17_ID, "\01\04byte", "\01\040TagnetAdaptertagnet_file_bytes_t", TN_17_UQ },
+  { TN_17_ID, "\01\04byte", "\01\023tagnet_file_bytes_t", TN_17_UQ },
   { TN_18_ID, "\01\04ones", "\01\04None", TN_18_UQ },
-  { TN_19_ID, "\01\04byte", "\01\040TagnetAdaptertagnet_file_bytes_t", TN_19_UQ },
+  { TN_19_ID, "\01\04byte", "\01\023tagnet_file_bytes_t", TN_19_UQ },
   { TN_20_ID, "\01\04zero", "\01\04None", TN_20_UQ },
-  { TN_21_ID, "\01\04byte", "\01\040TagnetAdaptertagnet_file_bytes_t", TN_21_UQ },
-  { TN_22_ID, "\01\03xyz", "\01\035TagnetAdaptertagnet_gps_xyz_t", TN_22_UQ },
+  { TN_21_ID, "\01\04byte", "\01\023tagnet_file_bytes_t", TN_21_UQ },
+  { TN_22_ID, "\01\03xyz", "\01\020tagnet_gps_xyz_t", TN_22_UQ },
   { TN_23_ID, "\01\03img", "\01\0", TN_23_UQ },
   { TN_24_ID, "\01\04poll", "\01\04None", TN_24_UQ },
-  { TN_25_ID, "\01\03cnt", "\01\024TagnetAdapterint32_t", TN_25_UQ },
-  { TN_26_ID, "\01\02ev", "\01\026TagnetAdaptermessage_t", TN_26_UQ },
-  { TN_27_ID, "\01\04rssi", "\01\026TagnetAdaptermessage_t", TN_27_UQ },
-  { TN_28_ID, "\01\06tx_pwr", "\01\026TagnetAdaptermessage_t", TN_28_UQ },
+  { TN_25_ID, "\01\03cnt", "\01\07int32_t", TN_25_UQ },
+  { TN_26_ID, "\01\02ev", "\01\011message_t", TN_26_UQ },
+  { TN_27_ID, "\01\04rssi", "\01\011message_t", TN_27_UQ },
+  { TN_28_ID, "\01\06tx_pwr", "\01\011message_t", TN_28_UQ },
   { TN_29_ID, "\01\05radio", "\01\04None", TN_29_UQ },
-  { TN_30_ID, "\01\05stats", "\01\016si446x_stats_t", TN_30_UQ },
+  { TN_30_ID, "\01\05stats", "\01\016tagnet_block_t", TN_30_UQ },
   { TN_31_ID, "\01\03sys", "\01\04None", TN_31_UQ },
-  { TN_32_ID, "\01\03rtc", "\01\026TagnetAdapterrtctime_t", TN_32_UQ },
-  { TN_33_ID, "\01\06active", "\01\024TagnetSysExecAdapter", TN_33_UQ },
-  { TN_34_ID, "\01\06backup", "\01\024TagnetSysExecAdapter", TN_34_UQ },
-  { TN_35_ID, "\01\06golden", "\01\024TagnetSysExecAdapter", TN_35_UQ },
-  { TN_36_ID, "\01\03nib", "\01\024TagnetSysExecAdapter", TN_36_UQ },
-  { TN_37_ID, "\01\07running", "\01\024TagnetSysExecAdapter", TN_37_UQ },
-  { TN_38_ID, "\01\012.committed", "\01\025TagnetAdapteruint32_t", TN_38_UQ },
-  { TN_39_ID, "\01\07.recnum", "\01\025TagnetAdapteruint32_t", TN_39_UQ },
-  { TN_40_ID, "\01\011.last_rec", "\01\025TagnetAdapteruint32_t", TN_40_UQ },
-  { TN_41_ID, "\01\012.last_sync", "\01\025TagnetAdapteruint32_t", TN_41_UQ },
+  { TN_32_ID, "\01\03rtc", "\01\011rtctime_t", TN_32_UQ },
+  { TN_33_ID, "\01\06active", "\01\0", TN_33_UQ },
+  { TN_34_ID, "\01\06backup", "\01\0", TN_34_UQ },
+  { TN_35_ID, "\01\06golden", "\01\0", TN_35_UQ },
+  { TN_36_ID, "\01\03nib", "\01\0", TN_36_UQ },
+  { TN_37_ID, "\01\07running", "\01\0", TN_37_UQ },
+  { TN_38_ID, "\01\012.committed", "\01\010uint32_t", TN_38_UQ },
+  { TN_39_ID, "\01\07.recnum", "\01\010uint32_t", TN_39_UQ },
+  { TN_40_ID, "\01\011.last_rec", "\01\010uint32_t", TN_40_UQ },
+  { TN_41_ID, "\01\012.last_sync", "\01\010uint32_t", TN_41_UQ },
+  { TN_42_ID, "\01\07.resync", "\01\010uint32_t", TN_42_UQ },
 };
 

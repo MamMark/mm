@@ -29,6 +29,7 @@ configuration CollectC {
     interface TagnetAdapter<uint32_t> as DblkLastRecOffset;
     interface TagnetAdapter<uint32_t> as DblkLastSyncOffset;
     interface TagnetAdapter<uint32_t> as DblkCommittedOffset;
+    interface TagnetAdapter<uint32_t> as DblkResyncOffset;
   }
   uses {
     interface Boot;                     /* in  boot */
@@ -55,9 +56,16 @@ implementation {
   DblkLastRecOffset   = CollectP.DblkLastRecOffset;
   DblkLastSyncOffset  = CollectP.DblkLastSyncOffset;
   DblkCommittedOffset = CollectP.DblkCommittedOffset;
+  DblkResyncOffset    = CollectP.DblkResyncOffset;
 
   components new TimerMilliC() as SyncTimerC;
   CollectP.SyncTimer -> SyncTimerC;
+
+  components new TimerMilliC() as ResyncTimerC;
+  CollectP.ResyncTimer -> ResyncTimerC;
+
+  components FileSystemC as FS;
+  CollectP.DMF -> FS.DblkFileMap;
 
   components OverWatchC;
   CollectP.OverWatch -> OverWatchC;

@@ -83,6 +83,7 @@ implementation {
   TagnetC.DblkLastRecOffset     -> CollectC.DblkLastRecOffset;
   TagnetC.DblkLastSyncOffset    -> CollectC.DblkLastSyncOffset;
   TagnetC.DblkCommittedOffset   -> CollectC.DblkCommittedOffset;
+  TagnetC.DblkResyncOffset      -> CollectC.DblkResyncOffset;
 
   components Si446xMonitorC;
   TagnetC.RadioRSSI             -> Si446xMonitorC.RadioRSSI;

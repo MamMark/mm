@@ -188,5 +188,6 @@ implementation {
   }
 
 
+  event void Collect.resyncDone(error_t err, uint32_t offset) { }
   event void Collect.collectBooted() { }
 }

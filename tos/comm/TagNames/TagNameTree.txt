@@ -28,6 +28,7 @@ root
     |       |   |-- .last_rec
     |       |   |-- .last_sync
     |       |   |-- .recnum
+    |       |   |-- .resync
     |       |   |-- byte
     |       |   +-- note
     |       |-- img

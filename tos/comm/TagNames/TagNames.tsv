@@ -28,3 +28,7 @@ x	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetRuleSets
 	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecNum	uses		tag	sd	0	dblk	.recnum
 	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecOffset	uses		tag	sd	0	dblk	.last_rec
 	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastSyncOffset	uses		tag	sd	0	dblk	.last_sync
+	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkResyncOffset	uses		tag	sd	0	dblk	.resync
+x																		.this_rec
+x																		filter
+x																		.this_size

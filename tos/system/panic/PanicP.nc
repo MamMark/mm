@@ -1063,6 +1063,7 @@ implementation {
 
         event void FS.eraseDone(uint8_t which) { }
         event void Collect.collectBooted()     { }
+        event void Collect.resyncDone(error_t err, uint32_t offset) { }
   async event void SysReboot.shutdown_flush()  { }
 
   default async event void Panic.hook()        { }

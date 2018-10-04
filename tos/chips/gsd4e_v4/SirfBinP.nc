@@ -343,5 +343,6 @@ implementation {
   }
 
         event void Collect.collectBooted() { }
+        event void Collect.resyncDone(error_t err, uint32_t offset) { }
   async event void Panic.hook() { }
 }
