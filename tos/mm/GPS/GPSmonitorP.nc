@@ -371,9 +371,10 @@ implementation {
           default:
             /* subsystem fail */
             gps_panic(3, gmcb.minor_state, gmcb.retry_count);
-            call MinorTimer.stop();
             call MajorTimer.stop();
+            call MinorTimer.stop();
             call GPSControl.logStats();
+            major_change_state(GMS_MAJOR_IDLE, MON_EV_FAIL);
             minor_change_state(GMS_FAIL, MON_EV_FAIL);
             return;
 
@@ -1378,8 +1379,8 @@ implementation {
     if (!call GPSPwr.isPowered()) {
       call MinorTimer.stop();
       call MajorTimer.stop();
-      minor_change_state(GMS_OFF, MON_EV_PWR_OFF);
       major_change_state(GMS_MAJOR_IDLE, MON_EV_PWR_OFF);
+      minor_change_state(GMS_OFF, MON_EV_PWR_OFF);
     }
   }
 
