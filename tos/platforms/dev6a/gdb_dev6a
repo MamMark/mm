@@ -1,5 +1,6 @@
 
 printf "\n***\n*** DEV6A gdb\n***\n\n"
+source .gdb/.gdb_hwMm.py
 
 define hw_pwr
 printf "gm_1v8:  %d    3v3:    %d    radio_pwr: %d    vel_pwr:   %d\n", \

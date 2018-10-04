@@ -1,4 +1,6 @@
 
+source .gdb/.gdb_gps_hw.py
+
 define __print_gps_msg
 # arg0 index
 set $_msg = &GPSMsgBufP__gps_msgs[$arg0]
