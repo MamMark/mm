@@ -271,29 +271,29 @@ implementation {
 
   command bool DblkLastRecNum.get_value(uint32_t *t, uint32_t *l) {
     *t = dcc.cur_recnum;
-    *l = 4;
-    return 1;
+    *l = sizeof(uint32_t);
+    return TRUE;
   }
 
 
   command bool DblkLastRecOffset.get_value(uint32_t *t, uint32_t *l) {
     *t = dcc.last_rec_offset;
-    *l = 4;
-    return 1;
+    *l = sizeof(uint32_t);
+    return TRUE;
   }
 
 
   command bool DblkLastSyncOffset.get_value(uint32_t *t, uint32_t *l) {
     *t = dcc.last_sync_offset;
-    *l = 4;
-    return 1;
+    *l = sizeof(uint32_t);
+    return TRUE;
   }
 
 
   command bool DblkCommittedOffset.get_value(uint32_t *t, uint32_t *l) {
     *t = call SS.committed_offset();
-    *l = 4;
-    return 1;
+    *l = sizeof(uint32_t);
+    return TRUE;
   }
 
 
