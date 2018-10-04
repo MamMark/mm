@@ -18,7 +18,7 @@ txrx_str = {
 class GpsIntTrace(gdb.Command):
     """Display the gps h/w interrupt record trace."""
     def __init__ (self):
-        super(GpsIntTrace, self).__init__("gps_int", gdb.COMMAND_USER)
+        super(GpsIntTrace, self).__init__("gpsInt", gdb.COMMAND_USER)
 
     def invoke (self, args, from_tty):
         last = int(gdb.parse_and_eval('GPS0HardwareP__gps_int_rec_idx'))
@@ -68,7 +68,7 @@ def get_and_print_stats():
 class GpsProtoStats(gdb.Command):
     """Display the gps protocol stats."""
     def __init__ (self):
-        super(GpsProtoStats, self).__init__("__gps_proto_stats", gdb.COMMAND_USER)
+        super(GpsProtoStats, self).__init__("gpsProtoStats", gdb.COMMAND_USER)
 
     def invoke (self, args, from_tty):
         get_and_print_stats()
@@ -77,7 +77,7 @@ class GpsProtoStats(gdb.Command):
 class GpsClearStats(gdb.Command):
     """Nuke the gps protocol stats."""
     def __init__ (self):
-        super(GpsClearStats, self).__init__("__gps_clear_stats", gdb.COMMAND_USER)
+        super(GpsClearStats, self).__init__("gpsClearStats", gdb.COMMAND_USER)
 
     def invoke (self, args, from_tty):
         sp, op = get_and_print_stats()
