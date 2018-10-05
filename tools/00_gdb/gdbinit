@@ -86,12 +86,17 @@ ie. pc 2   yields new pc of pc+2
 end
 
 define tq
-printf "taskq: head: %d  tail %d\n", SchedulerBasicP__m_head, SchedulerBasicP__m_tail
-output/d SchedulerBasicP__m_next
-printf "\n"
+taskQueue
 end
 document tq
 display task queue
+end
+
+define tt
+taskTrace
+end
+document tt
+display task trace
 end
 
 define timers
@@ -99,6 +104,13 @@ printf "\n"
 hwTMilli
 printf "\n"
 dispTimers
+printf "\n"
+end
+
+define tasks
+taskTrace
+printf "\n"
+taskQueue
 printf "\n"
 end
 
