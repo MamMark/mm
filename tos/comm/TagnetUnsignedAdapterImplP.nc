@@ -33,10 +33,11 @@ implementation {
   enum { my_adapter_id = unique(UQ_TAGNET_ADAPTER_LIST) };
 
   event bool Super.evaluate(message_t *msg) {
-    uint32_t                v = 0;
-    uint32_t                l = 0;
+    uint32_t              val = 0;
+    uint32_t              len = 0;
     tagnet_tlv_t    *name_tlv = (tagnet_tlv_t *)tn_name_data_descriptors[my_id].name_tlv;
     tagnet_tlv_t    *this_tlv = call TName.this_element(msg);
+    tagnet_tlv_t    *val_tlv;
 
     if (call TTLV.eq_tlv(name_tlv, this_tlv)) {
       tn_trace_rec(my_id, 1);
@@ -46,24 +47,46 @@ implementation {
         case TN_GET:
           tn_trace_rec(my_id, 2);
           call TPload.reset_payload(msg);
-          if (call Adapter.get_value(&v, &l)) {
-            call TPload.add_block(msg, (void *)&v, sizeof(v));
-            call TPload.add_eof(msg);
+          if (call Adapter.get_value(&val, &len)) {
+            call TPload.add_integer(msg, val);
+            call TPload.add_error(msg, EODATA);
           } else {
+            tn_trace_rec(my_id, 3);
             call TPload.add_error(msg, EINVAL);
           }
           return TRUE;
-          break;
+
         case TN_HEAD:
-          tn_trace_rec(my_id, 3);
+          tn_trace_rec(my_id, 4);
           call TPload.reset_payload(msg);                // no params
-          if (call Adapter.get_value(&v, &l)) {
-            call TPload.add_size(msg, v);
-          }  else {
-            call TPload.add_size(msg, 0);
+          if (call Adapter.get_value(&val, &len)) {
+            tn_trace_rec(my_id, 5);
+            call TPload.add_size(msg, val);  // value is used for file size
+          } else {
+            tn_trace_rec(my_id, 6);
+            call TPload.add_error(msg, EINVAL);
           }
           return TRUE;
-          break;
+
+        case TN_PUT:
+          tn_trace_rec(my_id, 7);
+
+          val_tlv = call TPload.first_element(msg);
+          if (call TTLV.get_tlv_type(val_tlv) != TN_TLV_INTEGER)
+            break;                                    // error
+          val = call TTLV.tlv_to_integer(val_tlv);
+          call TPload.reset_payload(msg);
+          len = sizeof(val);
+          if (call Adapter.set_value(&val, &len)) {
+            tn_trace_rec(my_id, 8);
+            call TPload.add_integer(msg, val);
+            call TPload.add_error(msg, SUCCESS);
+          } else {
+            tn_trace_rec(my_id, 9);
+            call TPload.add_error(msg, EINVAL);
+          }
+          return TRUE;
+
         default:
           break;
       }
@@ -80,14 +103,6 @@ implementation {
   }
 
   event void Super.add_value_tlv(message_t* msg) {
-    uint32_t                v;
-    uint32_t                l;
-
-    if (call Adapter.get_value(&v, &l)) {
-      call TPload.add_integer(msg, v);
-      call TPload.add_integer(msg, v);
-    }
-    // zzz else ?
   }
 
   event void Super.add_help_tlv(message_t* msg) {
