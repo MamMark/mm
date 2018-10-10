@@ -179,11 +179,10 @@ enum {
 #define PANIC_DM __pcode_dm
 #endif
 
-#define RNDWORDUP(n)  (((n/CACHE_WORD)+1)*CACHE_WORD)
-#define RNDWORDDN(n)  ((n/CACHE_WORD)*CACHE_WORD)
-#define RNDBLKUP(n)   (((n/SD_BLOCKSIZE)+1)*SD_BLOCKSIZE)
-#define RNDBLKDN(n)   ((n/SD_BLOCKSIZE)*SD_BLOCKSIZE)
-
+#define RNDWORDUP(n)  (((n) + 3) & ~3UL)
+#define RNDWORDDN(n)  ((n) & ~3UL)
+#define RNDBLKUP(n)   (((n) + (SD_BLOCKSIZE-1)) & ~(SD_BLOCKSIZE-1))
+#define RNDBLKDN(n)   ((n) & ~(SD_BLOCKSIZE-1))
 
 module DblkMapFileP {
   provides  interface ByteMapFile as DMF;
