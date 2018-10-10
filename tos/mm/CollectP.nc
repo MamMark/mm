@@ -661,8 +661,8 @@ implementation {
     ptr = (uint8_t *) sync;
     for (chksum = 0, i = 0; i < sync->len; i++)
       chksum += ptr[i];
-    chksum -= (sync->recsum & 0xff00) >>8;
-    chksum -= (sync->recsum & 0xff00);
+    chksum -= (sync->recsum & 0xff00) >> 8;
+    chksum -= (sync->recsum & 0x00ff);
     if (chksum != sync->recsum)
       return FALSE;
     return TRUE;
@@ -714,7 +714,6 @@ implementation {
       *p_offset = scb.found_offset;
       call ResyncTimer.stop();
       scb.in_progress = FALSE;
-      scb.err = SUCCESS;
     } else if (scb.err != EBUSY) {
       // detected unrecoverable error, terminate search
       *p_offset = -scb.err; // denote error
