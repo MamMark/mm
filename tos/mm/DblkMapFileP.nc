@@ -209,8 +209,10 @@ implementation {
   uint32_t copy_block(uint32_t *src, uint32_t *dst, uint32_t count) {
     uint32_t  rc = count;
 
-    if ((uint32_t) src % CACHE_WORD)
-      dmap_panic(10, (uint32_t) src, count);
+    if (((uint32_t) src % CACHE_WORD) ||
+        ((uint32_t) dst % CACHE_WORD) ||
+        (count % CACHE_WORD))
+      call Panic.panic(PANIC_DM, 10, (parg_t) src, (parg_t) dst, count, 0);
     if ((count > (CACHE_SIZE - dmf_cb.cache.len)) ||
         (dmf_cb.cache.len > CACHE_SIZE))
       dmap_panic(11, count, dmf_cb.cache.len);

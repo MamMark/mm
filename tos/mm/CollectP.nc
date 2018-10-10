@@ -528,7 +528,7 @@ implementation {
     if (header->len != (hlen + dlen) ||
         header->dtype > DT_MAX       ||
         hlen > DT_MAX_HEADER         ||
-        (hlen + dlen) < 4)
+        (hlen & 3))                     /* hlen should be quad granular */
       call Panic.panic(PANIC_SS, 3, hlen, dlen, header->len, header->dtype);
 
     if (hlen + dlen > DT_MAX_RLEN)
