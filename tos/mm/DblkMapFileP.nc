@@ -371,11 +371,23 @@ implementation {
       len_avail = dmf_cb.cache.offset + dmf_cb.cache.len - offset;
       if (len_avail < *lenp){
         if (map_mode == MAP_ALL) {
-          /* the only way for length to be less than 512 is the last
-           * valid block in Stream buffers */
+          /*
+           * the only way for length to be less than 512 is the last
+           * valid block in Stream buffers and is partial.  ie. being actively
+           * worked on by Collect.
+           *
+           * This is a nasty corner case.  The last buffer is a partial (len < 512)
+           * The cache contains partial data copied from a partial write cache buffer.
+           * And we ran off the end of it.  To avoid cache coherency problems, we
+           * need to invalidate the read cache (dmf_cache) to force an update from
+           * the write cache (stream writer) if a later request comes in for the same
+           * data.
+           */
           if (len < SD_BLOCKSIZE) {
             *bufp = NULL;
             *lenp = 0;
+            dmf_cb.cache.len = 0;
+            dmf_cb.cache.id  = 0;
             return EODATA;
           }
           dmap_panic(8, len_avail, *lenp);
