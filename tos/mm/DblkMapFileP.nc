@@ -302,10 +302,9 @@ implementation {
      * sync search is going to walk through map at quad boundary
      * while asking for sizeof(dt_sync_t).
      */
-    if ((map_mode == MAP_ALL) &&
+    if (dmf_cb.cache.len && (map_mode == MAP_ALL) &&
         (dmf_cb.cache.offset <= offset) &&
-        (offset < (dmf_cb.cache.offset + dmf_cb.cache.len)) &&
-        (((offset + *lenp - sizeof(uint32_t)) % SD_BLOCKSIZE) == 0)) {
+        (offset < (dmf_cb.cache.offset + dmf_cb.cache.len))) {
       dmf_cb.cache.len = dmf_cb.cache.offset + dmf_cb.cache.len - RNDWORDDN(offset);
       copy_block(
         /* where partial data starts, rounded down to quad aligned */
