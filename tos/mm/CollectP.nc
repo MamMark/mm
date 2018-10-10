@@ -652,7 +652,9 @@ implementation {
 
     if (sync->sync_majik != SYNC_MAJIK)
       return FALSE;
-    if (sync->dtype != DT_SYNC)
+    if ((sync->dtype != DT_SYNC) &&
+        (sync->dtype != DT_SYNC_FLUSH) &&
+        (sync->dtype != DT_SYNC_REBOOT))
       return FALSE;
     if (sync->len != sizeof(dt_sync_t))
       return FALSE;
