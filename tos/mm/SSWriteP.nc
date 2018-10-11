@@ -586,6 +586,5 @@ implementation {
   default event void SS.dblk_advanced(uint32_t last) { }
 
         event void Collect.collectBooted() { }
-        event void Collect.resyncDone(error_t err, uint32_t offset) { }
   async event void Panic.hook() { }
 }

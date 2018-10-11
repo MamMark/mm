@@ -1393,8 +1393,5 @@ implementation {
   event void Collect.collectBooted()    { }
   event void GPSControl.gps_shutdown()  { }
   event void GPSControl.standbyDone()   { }
-
-  event void Collect.resyncDone(error_t err, uint32_t offset) { }
-
   async event void Panic.hook()         { }
 }
