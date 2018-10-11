@@ -36,9 +36,7 @@ configuration CollectC {
     interface Boot as EndIn;            /* in  boot */
   }
 }
-
 implementation {
-
   components MainC, SystemBootC, CollectP;
   MainC.SoftwareInit -> CollectP;
   CollectP.SysBoot   -> SystemBootC.Boot;
@@ -61,21 +59,15 @@ implementation {
   components new TimerMilliC() as SyncTimerC;
   CollectP.SyncTimer -> SyncTimerC;
 
-  components new TimerMilliC() as ResyncTimerC;
-  CollectP.ResyncTimer -> ResyncTimerC;
-
-  components FileSystemC as FS;
-  CollectP.DMF -> FS.DblkFileMap;
-
   components OverWatchC;
   CollectP.OverWatch -> OverWatchC;
-
-  components DblkManagerC;
-  CollectP.DblkManager -> DblkManagerC;
 
   components SSWriteC;
   CollectP.SSW -> SSWriteC;
   CollectP.SS  -> SSWriteC;
+
+  components ResyncC;
+  CollectP.Resync -> ResyncC;
 
   components Crc8C;
   CollectP.Crc8 -> Crc8C;
