@@ -152,6 +152,15 @@ typedef enum {
   MAP_ALL  = 1,
 } dblk_map_mode_t;
 
+
+typedef enum {
+  DMF_IO_IDLE = 0,
+  DMF_IO_REQUESTED,
+  DMF_IO_READING,
+  DMF_IO_READY,
+  DMF_IO_ERROR,
+} dmf_io_state_t;
+
 /*
  * dblk_map_cache_t   defines the information context representing
  *                    the dblk file cache.
@@ -166,9 +175,7 @@ typedef struct {
   uint32_t             fill_blk_id;  // absolute SD blk_id in the cache
   error_t              err;          // last error encountered
   uint8_t              cid;          // client ID.
-  bool                 ready;        // true if cache has valid data
-  bool                 requested;    // true if sd.request in progress
-  bool                 reading;      // true if sd.read in progress
+  dmf_io_state_t       io_state;
 } dblk_map_cache_t;
 
 
@@ -406,16 +413,15 @@ implementation {
     if ((sizeof(dmf_cache) - dmf_cb.cache.len) < SD_BLOCKSIZE) // panic if buf too small
       dmap_panic(7, dmf_cb.cache.len, sizeof(dmf_cache));
     dmf_cb.fill_blk_id  = blk_id;
-    dmf_cb.ready        = FALSE;
-    dmf_cb.requested    = FALSE;
-    dmf_cb.reading      = FALSE;
+    dmf_cb.io_state     = DMF_IO_IDLE;
     dmf_cb.err = call SDResource.request();
     if (dmf_cb.err != SUCCESS) {
+      dmf_cb.io_state = DMF_IO_ERROR;
       dmap_panic(6, dmf_cb.err, 0);
       dmf_cb.fill_blk_id  = 0;
       return FAIL;
     }
-    dmf_cb.requested   = TRUE;
+    dmf_cb.io_state = DMF_IO_REQUESTED;
     return EBUSY;
   }
 
@@ -433,16 +439,17 @@ implementation {
 
 
   event void SDResource.granted() {
-    dmf_cb.requested = FALSE;
     dmf_cb.err = call SDread.read(dmf_cb.fill_blk_id, &dmf_cache[dmf_cb.cache.len]);
     if (dmf_cb.err) {
+      dmf_cb.io_state = DMF_IO_ERROR;
       dmap_panic(8, dmf_cb.err, 0);
       dmf_cb.fill_blk_id = 0;
       call SDResource.release();
+      dmf_cb.io_state = DMF_IO_IDLE;
       signal DMF.data_avail[dmf_cb.cid](dmf_cb.err);
       return;
     }
-    dmf_cb.reading = TRUE;
+    dmf_cb.io_state = DMF_IO_READING;
     return;
   }
 
@@ -454,13 +461,12 @@ implementation {
     dmf_cb.fill_blk_id = 0;             /* err or success, open lock */
     call SDResource.release();
     if (err) {
-      dmf_cb.err         = err;
+      dmf_cb.io_state = DMF_IO_ERROR;
+      dmf_cb.err = err;
       signal DMF.data_avail[dmf_cb.cid](err);
       return;
     }
-    dmf_cb.ready      = TRUE;
-    dmf_cb.requested  = FALSE;
-    dmf_cb.reading    = FALSE;
+    dmf_cb.io_state = DMF_IO_READY;
     dmf_cb.cache.id   = blk_id;
     dmf_cb.cache.len += SD_BLOCKSIZE;  /* and add sector to cache size */
     signal DMF.data_avail[dmf_cb.cid](SUCCESS);
