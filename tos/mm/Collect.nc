@@ -31,6 +31,9 @@ interface Collect {
 
   async command uint32_t buf_offset();
 
+  /* validate a contiguous header */
+  async command bool hdrValid(dt_header_t *header);
+
   /* signal on Boot that Collect is happy and up */
   event void collectBooted();
 }

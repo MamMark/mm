@@ -572,6 +572,24 @@ implementation {
   }
 
 
+  /*
+   * Validate a header by verifing its CRC.
+   *
+   * header pointed to by header is assumed to be sizeof(dt_header_t)
+   */
+  async command bool Collect.hdrValid(dt_header_t *header) {
+    uint8_t crc0, crc1;
+
+    crc0 = header->hdr_crc8;
+    header->hdr_crc8 = 0;
+    crc1 = call Crc8.crc((void *) header, sizeof(dt_header_t));
+    header->hdr_crc8 = crc0;
+    if (crc0 == crc1)
+      return TRUE;
+    return FALSE;
+  }
+
+
   command void CollectEvent.logEvent(uint16_t ev, uint32_t arg0, uint32_t arg1,
                                                   uint32_t arg2, uint32_t arg3) {
     dt_event_t  e;
