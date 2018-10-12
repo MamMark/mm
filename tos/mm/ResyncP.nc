@@ -209,9 +209,5 @@ implementation {
     call Panic.panic(PANIC_SS, 8, 0, 0, 0, 0);
   }
 
-  event void DMF.extended(uint32_t context, uint32_t offset)  { }
-  event void DMF.committed(uint32_t context, uint32_t offset) { }
-
-
   async event void Panic.hook() { }
 }

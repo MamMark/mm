@@ -75,7 +75,5 @@ implementation {
 
 
         event void PMF.data_avail(error_t err) { }
-        event void PMF.extended(uint32_t context, uint32_t offset)  { }
-        event void PMF.committed(uint32_t context, uint32_t offset) { }
   async event void Panic.hook() { }
 }

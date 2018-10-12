@@ -46,9 +46,6 @@ interface ByteMapFile {
    *    data_avail(): indicates data has been brought in from disk and is
    *                  available.  The originating request should be
    *                  initiated again.
-   *    extended():   indicates that the object has been extended.
-   *    committed():  indicates that object's data physically written to
-   *                  disk has been extended.
    */
 
   /**
@@ -127,20 +124,4 @@ interface ByteMapFile {
    * @return  'uint32_t'      file size committed to disk.
    */
   command uint32_t commitsize(uint32_t context);
-
-  /**
-   * signal when the file grows.
-   *
-   * @param   'uint32_t context'
-   * @param   'uint32_t offset'  new eof offset
-   */
-  event   void     extended(uint32_t context, uint32_t offset);
-
-  /**
-   * signal when data has been written.
-   *
-   * @param   'uint32_t context'
-   * @param   'uint32_t offset'  new commited offset
-   */
-  event   void     committed(uint32_t context, uint32_t offset);
 }
