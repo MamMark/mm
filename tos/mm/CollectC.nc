@@ -37,6 +37,10 @@ configuration CollectC {
   }
 }
 implementation {
+  enum {
+    RESYNC_CID = unique("Resync.cid"),
+  };
+
   components MainC, SystemBootC, CollectP;
   MainC.SoftwareInit -> CollectP;
   CollectP.SysBoot   -> SystemBootC.Boot;
@@ -67,7 +71,7 @@ implementation {
   CollectP.SS  -> SSWriteC;
 
   components ResyncC;
-  CollectP.Resync -> ResyncC;
+  CollectP.Resync -> ResyncC.Resync[RESYNC_CID];
 
   components Crc8C;
   CollectP.Crc8 -> Crc8C;

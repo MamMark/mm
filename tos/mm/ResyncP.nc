@@ -23,7 +23,7 @@
  */
 
 module ResyncP {
-  provides interface Resync;
+  provides interface Resync[uint8_t cid];
   uses {
     interface Panic;
     interface ByteMapFile as DMF;
@@ -38,10 +38,11 @@ implementation {
     uint32_t found_offset;  /* offset of found sync record, 0 if none */
     bool     in_progress;   /* search already in progress, try later */
     error_t  err;           /* error encountered during search */
+    uint8_t  cid;           /* client id, current user */
   } scb_t;
 
   /* Sync Search Control Block (scb) */
-  scb_t scb = {0, 0, -EINVAL, FALSE, SUCCESS};
+  scb_t scb = {0, 0, -EINVAL, FALSE, SUCCESS, 0};
 
   /*
    * Dblk Record Resync
@@ -149,12 +150,14 @@ implementation {
   /*
    * start the resync operation.
    */
-  command error_t Resync.start(uint32_t *p_offset, uint32_t term_offset) {
+  command error_t Resync.start[uint8_t cid](uint32_t *p_offset,
+                                            uint32_t term_offset) {
     if (!p_offset)
       call Panic.panic(PANIC_SS, 6, 0,0,0,0);
 
     if (scb.in_progress) return EBUSY;
 
+    scb.cid = cid;
     scb.in_progress  = TRUE;
     scb.found_offset = 0;
     scb.cur_offset = *p_offset & ~3;        // quad aligned.
@@ -186,27 +189,29 @@ implementation {
     if ((scb.found_offset = sync_search()) || (scb.err != EBUSY)) {
       call ResyncTimer.stop();
       scb.in_progress = FALSE;
-      signal Resync.done(scb.err, scb.found_offset);
+      signal Resync.done[scb.cid](scb.err, scb.found_offset);
     }
   }
 
 
-  default event void Resync.done(error_t err, uint32_t offset) { }
+  default event void Resync.done[uint8_t cid](error_t err, uint32_t offset) {
+    call Panic.panic(PANIC_SS, 7, cid, 0, 0, 0);
+  }
 
 
-  command uint32_t Resync.offset() {
+  command uint32_t Resync.offset[uint8_t cid]() {
     return (scb.in_progress ? 0 : scb.found_offset);
   }
 
 
   event void ResyncTimer.fired() {
     // deadman timer expired
-    call Panic.panic(PANIC_SS, 7, 0,0,0,0);
+    call Panic.panic(PANIC_SS, 8, 0, 0, 0, 0);
   }
 
   event void DMF.extended(uint32_t context, uint32_t offset)  { }
   event void DMF.committed(uint32_t context, uint32_t offset) { }
 
 
-  async event void Panic.hook()                    { }
+  async event void Panic.hook() { }
 }

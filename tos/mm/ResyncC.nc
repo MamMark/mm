@@ -20,7 +20,7 @@
  */
 
 configuration ResyncC {
-  provides interface Resync;
+  provides interface Resync[uint8_t cid];
 }
 implementation {
   components ResyncP;
