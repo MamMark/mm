@@ -32,7 +32,7 @@ configuration FileSystemC {
   provides {
     interface Boot        as Booted;    /* out Booted signal */
     interface FileSystem  as FS;
-    interface ByteMapFile as DblkFileMap;
+    interface ByteMapFile as DblkFileMap[uint8_t cid];
     interface ByteMapFile as PanicFileMap;
   }
   uses interface Boot;			/* incoming signal */

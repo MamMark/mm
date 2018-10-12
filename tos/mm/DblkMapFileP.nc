@@ -165,6 +165,7 @@ typedef struct {
 
   uint32_t             fill_blk_id;  // absolute SD blk_id in the cache
   error_t              err;          // last error encountered
+  uint8_t              cid;          // client ID.
   bool                 ready;        // true if cache has valid data
   bool                 requested;    // true if sd.request in progress
   bool                 reading;      // true if sd.read in progress
@@ -185,7 +186,7 @@ enum {
 #define RNDBLKDN(n)   ((n) & ~(SD_BLOCKSIZE-1))
 
 module DblkMapFileP {
-  provides  interface ByteMapFile as DMF;
+  provides  interface ByteMapFile as DMF[uint8_t cid];
   uses {
     interface StreamStorage as SS;
     interface SDread        as SDread;
@@ -224,7 +225,7 @@ implementation {
     return RNDWORDUP(rc);
   }
 
-  error_t mapit(uint32_t context, uint8_t **bufp,
+  error_t mapit(uint8_t cid, uint32_t context, uint8_t **bufp,
                 uint32_t offset, uint32_t *lenp, dblk_map_mode_t map_mode) {
     uint32_t    blk_id;
     uint32_t    len;
@@ -235,6 +236,8 @@ implementation {
     /* if we are in the middle of reading SD data, no new requests */
     if (dmf_cb.fill_blk_id)
       return EBUSY;
+
+    dmf_cb.cid = cid;
 
     if (!lenp || !bufp)                 /* nulls are very bad */
       dmap_panic(0, 0, 0);
@@ -417,15 +420,15 @@ implementation {
   }
 
 
-  command error_t DMF.map(uint32_t context, uint8_t **bufp,
-                          uint32_t offset, uint32_t *lenp) {
-    return mapit(context, bufp, offset, lenp, MAP_ANY);
+  command error_t DMF.map[uint8_t cid](uint32_t context, uint8_t **bufp,
+                                       uint32_t offset, uint32_t *lenp) {
+    return mapit(cid, context, bufp, offset, lenp, MAP_ANY);
   }
 
 
-  command error_t DMF.mapAll(uint32_t context, uint8_t **bufp,
-                          uint32_t offset, uint32_t *lenp) {
-    return mapit(context, bufp, offset, lenp, MAP_ALL);
+  command error_t DMF.mapAll[uint8_t cid](uint32_t context, uint8_t **bufp,
+                                          uint32_t offset, uint32_t *lenp) {
+    return mapit(cid, context, bufp, offset, lenp, MAP_ALL);
   }
 
 
@@ -436,7 +439,7 @@ implementation {
       dmap_panic(8, dmf_cb.err, 0);
       dmf_cb.fill_blk_id = 0;
       call SDResource.release();
-      signal DMF.data_avail(dmf_cb.err);
+      signal DMF.data_avail[dmf_cb.cid](dmf_cb.err);
       return;
     }
     dmf_cb.reading = TRUE;
@@ -452,7 +455,7 @@ implementation {
     call SDResource.release();
     if (err) {
       dmf_cb.err         = err;
-      signal DMF.data_avail(err);
+      signal DMF.data_avail[dmf_cb.cid](err);
       return;
     }
     dmf_cb.ready      = TRUE;
@@ -460,16 +463,16 @@ implementation {
     dmf_cb.reading    = FALSE;
     dmf_cb.cache.id   = blk_id;
     dmf_cb.cache.len += SD_BLOCKSIZE;  /* and add sector to cache size */
-    signal DMF.data_avail(SUCCESS);
+    signal DMF.data_avail[dmf_cb.cid](SUCCESS);
   }
 
 
-  command uint32_t DMF.filesize(uint32_t context) {
+  command uint32_t DMF.filesize[uint8_t cid](uint32_t context) {
     return call SS.eof_offset();
   }
 
 
-  command uint32_t DMF.commitsize(uint32_t context) {
+  command uint32_t DMF.commitsize[uint8_t cid](uint32_t context) {
     return call SS.committed_offset();
   }
 
@@ -477,5 +480,7 @@ implementation {
           event void SS.dblk_stream_full() { }
           event void SS.dblk_advanced(uint32_t last) { }
   async   event void Panic.hook()          { }
-  default event void DMF.data_avail(error_t err)  { }
+  default event void DMF.data_avail[uint8_t cid](error_t err) {
+    dmap_panic(10, cid, 0);
+  }
 }

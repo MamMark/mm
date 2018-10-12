@@ -28,6 +28,10 @@ configuration DblkByteStorageC {
   }
 }
 implementation {
+  enum {
+    DMF_CID = unique("DblkMapFile.cid"),
+  };
+
   components           PanicC, SystemBootC;
   components           FileSystemC as FS;
   components           DblkByteStorageP as DBS;
@@ -38,5 +42,5 @@ implementation {
 
   components           CollectC;
   DBS.Collect       -> CollectC;
-  DBS.DMF           -> FS.DblkFileMap;
+  DBS.DMF           -> FS.DblkFileMap[DMF_CID];
 }

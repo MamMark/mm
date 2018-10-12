@@ -23,6 +23,10 @@ configuration ResyncC {
   provides interface Resync[uint8_t cid];
 }
 implementation {
+  enum {
+    DMF_CID = unique("DblkMapFile.cid"),
+  };
+
   components ResyncP;
   Resync = ResyncP;
 
@@ -30,7 +34,7 @@ implementation {
   ResyncP.ResyncTimer -> TimerMilliC;
 
   components FileSystemC as FS;
-  ResyncP.DMF -> FS.DblkFileMap;
+  ResyncP.DMF -> FS.DblkFileMap[DMF_CID];
 
   components PanicC;
   ResyncP.Panic -> PanicC;
