@@ -41,28 +41,44 @@
  * and the amount of data available in memory of the requested
  * offset and length.
  *
- * DblkMapFile provides two modes of operation. The first mode
- * MAP_ANY returns at least one byte of valid cache address
- * space (cache hit of one or more bytes). The second mode
- * MAP_ALL requires all bytes requested be in valid cache space
- * (that is, a cache hit for all bytes specified by offset
- * and length). In both cases, a cache miss returns an EBUSY
- * error to indicate when the cache needs to be refilled oe
- * an EODATA when end of file condition is detected.
+ * DblkMapFile provides two modes of operation, MAP_ANY and
+ * MAP_ALL.  MAP_ANY will respond with any bytes in the cache up
+ * to the requested number of bytes.  That is if any bytes are
+ * cached those bytes will be retured with no further disk activity.
+ *
+ * In MAP_ALL mode, all bytes requested must be in the cache
+ * to satisfy the request.  If a partial number of bytes are
+ * currently in the cache, these will be saved and the remainder
+ * of the bytes brought in from the appropriate sector.
+ *
+ * MAP_ALL works both in a forward as well as a reverse direction.
+ * Forward occurs when the partial is at the end of a sector and
+ * new bytes are brought in from the following (forward) sector.
+ * If the partial bytes requested occur at the start of the
+ * cache, then we will fetch the previous sector (backward).
+ *
+ * If no portion of the requested data is in the cache, a full miss
+ * occurs resulting in bringing in the sector that contains the
+ * first part of any requested data.
+ *
+ * If the requested data can't be resolved without going past the
+ * current EOF, an error return of EODATA (end of data) will
+ * be returned.
  *
  * The size of the cache needs to be at least the size of one
- * disk sector in both modes. For MAP_ALL mode, the cache needs
- * additional space to hold partial data from the previous
- * sector is prepended to the data retrieved from Stream
- * Storage (up to one sector) or disk (always one sector).
+ * disk sector in both modes.  When using MAP_ALL, we want to
+ * end with all requested bytes in the cahce.  The maximum
+ * size that can be requested will be a sector size + the size
+ * any additional data that can be handled.  For our typical case,
+ * of a sync header, this will be 24 bytes + 512 bytes.
  *
  * The steps below illustrate the MAP_ALL mode of operation
  * in the case where the requested data spans the disk sector
  * boundary. The DMF.mapAll() call must satisfy access to all
  * bytes requested or return busy while it assembles the right
- * data into the cache. Assembling the data requires saving
- * some of the current sector to be prepended to the next
- * sector of dblk file data retrieved. Once all data is in
+ * data into the cache.  Assembling the data requires saving
+ * some of the current sector to be prepended/appended to the
+ * next sector of dblk file data retrieved. Once all data is in
  * the cache, the DMF.mapAll() call will succeed with
  * the cache address where offset of data starts and at
  * least length amount of data available.
@@ -106,9 +122,8 @@
  *      with pointer to cache where data is found and length
  *      that is equal to amount requested
  *
- * Three flags are maintained to track the progress of block reads
- * and the last err is remembered.  These datums are for informational
- * purposes only and do not effect the algorithm.
+ * The control structure includes various data cells that indicate
+ * the current state of the DblkMap system.
  *
  * Only one map() call can be pending at a time.  Either the map call
  * can be satisfied immediately (cache hit) or the underlying data store
@@ -170,6 +185,8 @@ typedef struct {
     uint32_t             offset;     // logical file offset of cached data
     uint32_t             len;        // how much is in the cache, 0 = empty
     uint32_t             id;         // physical blk number, info only
+    uint32_t      target_offset;     // fill target offset.
+    uint32_t             extra;      // extra data length
   } cache;
 
   uint32_t             fill_blk_id;  // absolute SD blk_id in the cache
@@ -232,6 +249,18 @@ implementation {
     return RNDWORDUP(rc);
   }
 
+
+  /* return TRUE if offset is inside the current cache */
+  bool in_cache(uint32_t offset) {
+    if (dmf_cb.cache.len == 0)
+      return FALSE;
+    if (dmf_cb.cache.offset <= offset &&
+        offset < dmf_cb.cache.offset + dmf_cb.cache.len)
+      return TRUE;
+    return FALSE;
+  }
+
+
   error_t mapit(uint8_t cid, uint32_t context, uint8_t **bufp,
                 uint32_t offset, uint32_t *lenp, dblk_map_mode_t map_mode) {
     uint32_t    blk_id;
@@ -239,6 +268,8 @@ implementation {
     uint32_t    blk_offset;
     uint8_t    *blk_buf;
     uint32_t    len_avail;
+    bool        hit;
+    uint32_t    lower, upper;
 
     /* if we are in the middle of reading SD data, no new requests */
     if (dmf_cb.fill_blk_id)
@@ -254,41 +285,41 @@ implementation {
       dmap_panic(3, 0, 0);
     }
 
-    /* sanity check cache offset for quad word alignment */
-    if (dmf_cb.cache.offset % CACHE_WORD)
-      dmap_panic(4, dmf_cb.cache.offset, 0);
+    /*
+     * sanity check the cache.  The cache should be both quad aligned
+     * as well as quad granular.
+     */
+    if ((dmf_cb.cache.offset & 3) || (dmf_cb.cache.len & 3))
+      dmap_panic(4, dmf_cb.cache.offset, dmf_cb.cache.len);
 
     /*
      * see if we have a cache hit. we will have a cache hit iff:
      *
-     * for MAP_ANY, minimum one byte, or *lenp, or len_avail in cache:
+     * MAP_ANY: 1 or more of the requested bytes (starting at offset)
+     * are in the cache.
      *
-     *    cache.offset <= offset < (cache.offset + cache.len)
-     *
-     * for MAP_ALL, *lenp bytes of data are in cache:
-     *
-     *    cache.offset <= (offset + *lenp) < (cache.offset + cache.len)
-     *
-     * Conditions for returning successful dblk data mapping are:
-     * - cache is valid AND
-     * - offset is greater than start of cache (cache.offset) AND
-     *   - if MAP_ALL
-     *     - offset + size is less than or equal to end of cache
-     *        (cache.offset + cache.len)
-     *   - if MAP_ANY
-     *     - offset is less than end of cache (cache.offset + cache.len)
-     * success means that some or all requested data is available in cache
+     * MAP_ALL: all requested bytes must be in the cache for a hit.
      */
-    if (dmf_cb.cache.len &&
-        (dmf_cb.cache.offset <= offset) &&
-        (((map_mode == MAP_ALL) &&
-          ((offset + *lenp) <= (dmf_cb.cache.offset + dmf_cb.cache.len))) ||
-         ((map_mode == MAP_ANY) &&
-          (offset < (dmf_cb.cache.offset + dmf_cb.cache.len))))) {
+    hit = FALSE;
+    if (dmf_cb.cache.len) {             /* cache valid? */
+      switch (map_mode) {
+        case MAP_ANY:
+          if (in_cache(offset))
+            hit = TRUE;
+          break;
+        case MAP_ALL:
+          if (in_cache(offset) && in_cache(offset + *lenp - 1))
+            hit = TRUE;
+          break;
+        default:
+          break;
+      }
+    }
+    if (hit) {
       *bufp = &dmf_cache[(offset - dmf_cb.cache.offset)];
 
       /* check and possibly modify how much data we can make available */
-      len_avail = (dmf_cb.cache.offset + dmf_cb.cache.len) - offset;
+      len_avail = dmf_cb.cache.offset + dmf_cb.cache.len - offset;
       if (len_avail < *lenp) {
         if (map_mode == MAP_ALL)
           // shouldn't get here because of conditional tests above
@@ -299,43 +330,79 @@ implementation {
     }
 
     /*
-     * Cache Miss, first need to preserve any cached data required
-     * for MAP_ALL mode request with data spanning sector boundary.
-     * the partial match in this sector is copied to the beginning
-     * of the cache and immediately followed.
-     * Otherwise, cache is empty so set cache.len to zero and
-     * cache.offset to block which holds the requested offset.
+     * Cache Miss.
      *
-     * Only fill the cache when the data requested (offset + *lenp)
-     * is just straddling the SD block boundary by one word at
-     * at the end. This ensures cache is only filled once since
-     * sync search is going to walk through map at quad boundary
-     * while asking for sizeof(dt_sync_t).
+     * If MAP_ALL, check for partial miss.
+     * If partial hit, copy any partial data to where it belongs.
+     * Afterwards, we will lay down a new sector to fill in the
+     * missing data.
+     *
+     * For MAP_ALL, look for any overlap that exists in the cache.
+     * If the overlap is at the end of the cache (forward), copy
+     * the end to the beginning of the cache and fill in behind
+     * the copied data.
+     *
+     * If the overlap is at the beginning (backward), copy the data
+     * to the end of the cache such that it will line up with the
+     * incoming sector data landing in the front of the cache.
      */
-    if (dmf_cb.cache.len && (map_mode == MAP_ALL) &&
-        (dmf_cb.cache.offset <= offset) &&
-        (offset < (dmf_cb.cache.offset + dmf_cb.cache.len))) {
-      dmf_cb.cache.len = dmf_cb.cache.offset + dmf_cb.cache.len - RNDWORDDN(offset);
-      copy_block(
-        /* where partial data starts, rounded down to quad aligned */
-        (uint32_t *) &dmf_cache[RNDWORDDN(offset) - dmf_cb.cache.offset],
-        /* put data at beginning of cache */
-        (uint32_t *) &dmf_cache[0],
-        /* amount to copy is size from requested offset to end of cache */
-        dmf_cb.cache.len);
-      dmf_cb.cache.offset = RNDWORDDN(offset);
-    } else {
-      dmf_cb.cache.len = 0; /* nothing in cache */
-      dmf_cb.cache.offset = RNDBLKDN(offset);
+    hit = FALSE;
+    if (dmf_cb.cache.len) {             /* cache valid? */
+      if (map_mode == MAP_ALL) {
+        /* first check for forward straddle */
+        if (in_cache(offset) && !in_cache(offset + *lenp - 1)) {
+          /* cache only the bit between offset (lower) and end of cache */
+          lower = RNDWORDDN(offset);
+          dmf_cb.cache.len = dmf_cb.cache.offset + dmf_cb.cache.len - lower;
+          if (dmf_cb.cache.len + SD_BLOCKSIZE > CACHE_SIZE)
+            dmap_panic(5, dmf_cb.cache.extra, 0);
+          copy_block(
+            (uint32_t *) &dmf_cache[lower - dmf_cb.cache.offset],
+            (uint32_t *) &dmf_cache[0],
+            dmf_cb.cache.len);
+          dmf_cb.cache.offset = lower;
+          dmf_cb.cache.target_offset = dmf_cb.cache.offset + dmf_cb.cache.len;
+          dmf_cb.cache.extra = 0;       /* nothing extra */
+          hit = TRUE;
+        } else
+          if (!in_cache(offset) && in_cache(offset + *lenp - 1)) {
+            /* backward straddle */
+            upper = RNDWORDUP(offset + *lenp);
+            dmf_cb.cache.extra = upper - dmf_cb.cache.offset;
+            if (dmf_cb.cache.extra + SD_BLOCKSIZE > CACHE_SIZE)
+              dmap_panic(6, dmf_cb.cache.extra, 0);
+            copy_block(
+              (uint32_t *) &dmf_cache[0],
+              (uint32_t *) &dmf_cache[SD_BLOCKSIZE],
+              dmf_cb.cache.extra);
+            dmf_cb.cache.target_offset = dmf_cb.cache.offset =
+              RNDBLKDN(offset);
+            dmf_cb.cache.len = 0;       /* for now empty, til we fill */
+            hit = TRUE;
+          }
+      }
     }
-    dmf_cb.cache.id = 0;     /* invalidate blk_id currently in cache*/
+    if (!hit) {                         /* no partial */
+      dmf_cb.cache.len    = 0;          /* nothing in cache */
+      dmf_cb.cache.target_offset = dmf_cb.cache.offset = RNDBLKDN(offset);
+      dmf_cb.cache.extra  = 0;
+    }
+    dmf_cb.cache.id = 0;          /* invalidate blk_id currently in cache*/
 
     /*
      * Check Stream Storage where more data is located, stream
      * buffer or disk, or end of file.
+     *
+     * Collect has the last buffer (eof buffer).  Collect only copies
+     * out records that are quad aligned (all header start on quad alignment)
+     * and quad granular (see header alignment).
+     *
+     * That means if we have a partial buffer that we copy into the cache
+     * it will be quad granular and the cache is always an aligned number of
+     * quad bytes.
      */
     blk_id = call SS.where(context,
-                           RNDWORDDN(offset) + dmf_cb.cache.len,
+                           dmf_cb.cache.target_offset,
                            &len,
                            &blk_offset,
                            &blk_buf);
@@ -346,8 +413,8 @@ implementation {
     }
 
     /* make sure new data is what we expected in cache alignment */
-    if (blk_offset != (dmf_cb.cache.offset + dmf_cb.cache.len))
-      dmap_panic(6, blk_offset, dmf_cb.cache.offset + dmf_cb.cache.len);
+    if (blk_offset != dmf_cb.cache.target_offset)
+      dmap_panic(6, blk_offset, dmf_cb.cache.target_offset);
 
     /*
      * we got something...
@@ -363,14 +430,18 @@ implementation {
     /*
      * data is in Stream Storage memory waiting to go out to SD.
      * copy it into the cache and update our control cells.
-     * (need account for any data preserved in cache earlier)
+     *
+     * Also need to account for any data preserved in cache from before.
+     * len coming back from SS.where should be quad granular.
      */
     if (blk_buf) {
-      if ((dmf_cb.cache.len + len) > CACHE_SIZE)
+      if (((dmf_cb.cache.len + len) > CACHE_SIZE) || (len & 3))
         dmap_panic(7, dmf_cb.cache.len, len);
-      dmf_cb.cache.len += copy_block((uint32_t *) blk_buf,
-                                     (uint32_t *) &dmf_cache[dmf_cb.cache.len],
-                                     len);
+      dmf_cb.cache.len += copy_block(
+        (uint32_t *) blk_buf,
+        (uint32_t *) &dmf_cache[dmf_cb.cache.target_offset
+                                - dmf_cb.cache.offset],
+        len);
       dmf_cb.cache.id     = blk_id;
       /* set bufp return value to address in cache for requested byte offset */
       *bufp = &dmf_cache[(offset - dmf_cb.cache.offset)];
@@ -408,9 +479,9 @@ implementation {
     /*
      * Read next block of data from SD into the cache.
      */
-    if (dmf_cb.cache.len % CACHE_WORD) // panic if not word aligned
+    if (dmf_cb.cache.len % CACHE_WORD)          // panic if not word aligned
       dmap_panic(5, dmf_cb.cache.len, blk_id);
-    if ((sizeof(dmf_cache) - dmf_cb.cache.len) < SD_BLOCKSIZE) // panic if buf too small
+    if ((sizeof(dmf_cache) - dmf_cb.cache.len) < SD_BLOCKSIZE)
       dmap_panic(7, dmf_cb.cache.len, sizeof(dmf_cache));
     dmf_cb.fill_blk_id  = blk_id;
     dmf_cb.io_state     = DMF_IO_IDLE;
@@ -439,7 +510,8 @@ implementation {
 
 
   event void SDResource.granted() {
-    dmf_cb.err = call SDread.read(dmf_cb.fill_blk_id, &dmf_cache[dmf_cb.cache.len]);
+    dmf_cb.err = call SDread.read(dmf_cb.fill_blk_id,
+        &dmf_cache[dmf_cb.cache.target_offset - dmf_cb.cache.offset]);
     if (dmf_cb.err) {
       dmf_cb.io_state = DMF_IO_ERROR;
       dmap_panic(8, dmf_cb.err, 0);
@@ -455,8 +527,9 @@ implementation {
 
 
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
-    if (blk_id != dmf_cb.fill_blk_id ||  // panic if wrong read completed
-        read_buf != &dmf_cache[dmf_cb.cache.len] || err)
+    if (blk_id != dmf_cb.fill_blk_id ||         // panic if wrong read completed
+        read_buf != &dmf_cache[dmf_cb.cache.target_offset - dmf_cb.cache.offset]
+        || err)
       dmap_panic(9, err, blk_id);
     dmf_cb.fill_blk_id = 0;             /* err or success, open lock */
     call SDResource.release();
