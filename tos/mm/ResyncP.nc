@@ -31,14 +31,21 @@ module ResyncP {
   }
 }
 implementation {
+  typedef enum search_direction {
+    SRCH_FWD,
+    SRCH_REV,
+  } search_direction_t;
+
   // structure to manage state variables for reSync operation
   typedef struct {
     uint32_t cur_offset;    /* last place visited */
-    uint32_t term_offset;   /* offset to halt search */
+    uint32_t upper;         /* upper bound of search space in dblk */
+    uint32_t lower;         /* lower bound of search space in dblk */
     uint32_t found_offset;  /* offset of found sync record, 0 if none */
     bool     in_progress;   /* search already in progress, try later */
     error_t  err;           /* error encountered during search */
     uint8_t  cid;           /* client id, current user */
+    search_direction_t direction; /* go forward or backward from start */
   } scb_t;
 
   /* Sync Search Control Block (scb) */
@@ -125,26 +132,42 @@ implementation {
     return TRUE;
   }
 
-
   /*
-   * core routine for finding sync records
+   * core routines for finding sync records
    */
-  uint32_t sync_search() {
-    dt_sync_t    *sync;
+  bool in_range(uint32_t offset) {
+    return ((scb.lower >= offset) && (offset < scb.upper));
+  }
+
+  uint32_t next_offset(uint32_t offset) {
+    if (scb.direction == SRCH_FWD) return offset + sizeof(uint32_t);
+    else                           return offset - sizeof(uint32_t);
+  }
+
+  bool sync_search() {
+    dt_sync_t    *sync = NULL;
     uint32_t      dlen = sizeof(dt_sync_t);
 
+    if ((scb.direction != SRCH_FWD) && (scb.direction != SRCH_REV))
+      call Panic.panic(PANIC_SS, 5, scb.direction,0,0,0);
+
     scb.err = EODATA;
-    while(scb.cur_offset < scb.term_offset) {
-      scb.err = call DMF.mapAll(0, (uint8_t **) &sync, scb.cur_offset, &dlen);
-      if(scb.err != SUCCESS)
-        return 0; /* in case of EBUSY, sync_search is called again */
+    while (in_range(scb.cur_offset)) {
+      if(scb.err != SUCCESS) break;         // error reported, don't continue
+      // got data, now verify
       if (dlen != sizeof(dt_sync_t) || !sync)
-        call Panic.panic(PANIC_SS, 5, dlen, (parg_t) sync, 0,0);
-      if (sync_valid(sync))
-        return scb.cur_offset;
-      scb.cur_offset += sizeof(uint32_t);
+        call Panic.panic(PANIC_SS, 6, dlen, (parg_t) sync, 0,0);
+      if (sync_valid(sync)) {
+        scb.found_offset = scb.cur_offset;
+        return TRUE;                        // success, found sync record
+      }
+      scb.cur_offset = next_offset(scb.cur_offset); // step search position
     }
-    return 0;
+    /* in case of EBUSY, this routine will be called again to continue
+     * when mapAll() has more data, else report unrecoverable error
+    */
+    if(scb.err != EBUSY) scb.found_offset = -scb.err;
+    return FALSE;
   }
 
   /*
@@ -152,32 +175,36 @@ implementation {
    */
   command error_t Resync.start[uint8_t cid](uint32_t *p_offset,
                                             uint32_t term_offset) {
-    if (!p_offset)
-      call Panic.panic(PANIC_SS, 6, 0,0,0,0);
+    if ((!p_offset) || (*p_offset == term_offset))
+      call Panic.panic(PANIC_SS, 7, 0,0,0,0);
 
     if (scb.in_progress) return EBUSY;
 
     scb.cid = cid;
     scb.in_progress  = TRUE;
     scb.found_offset = 0;
-    scb.cur_offset = *p_offset & ~3;        // quad aligned.
-    scb.term_offset = term_offset;
+    scb.direction   = (term_offset > *p_offset) ? SRCH_FWD : SRCH_REV;
+    if (scb.direction == SRCH_FWD) {
+      scb.lower = *p_offset & ~3;
+      scb.upper = term_offset & ~3;
+      scb.cur_offset = scb.lower;
+    } else {
+      scb.lower = term_offset & ~3;
+      scb.upper = *p_offset & ~3;
+      scb.cur_offset = scb.upper - sizeof(dt_sync_t);
+    }
     call ResyncTimer.startOneShot(5000);    // five second deadman timer
 
-    // look for sync record
-    scb.found_offset = sync_search();
-
-    if (scb.err == SUCCESS) {
-      // found sync, set p_offset to new value
-      *p_offset = scb.found_offset;
+    /* if search is immediately successful or unrecoverable error is
+     * detected, then we're. Else report busy to indicate that caller's
+     * data_avail() will be called when search is complete.
+    */
+    *p_offset = 0;                  // start by indicating no data found
+    if (sync_search() || (scb.err != EBUSY)) {
+      *p_offset = scb.found_offset; // return found offset or fatal error
       call ResyncTimer.stop();
       scb.in_progress = FALSE;
-    } else if (scb.err != EBUSY) {
-      // detected unrecoverable error, terminate search
-      *p_offset = -scb.err; // denote error
-      call ResyncTimer.stop();
-      scb.in_progress = FALSE;
-    } // else busy reading next sector, try again later
+    }
     return scb.err;
   }
 
@@ -186,16 +213,19 @@ implementation {
   event void DMF.data_avail(error_t err) {
     if (!scb.in_progress)       /* ignore if not ours */
       return;
-    if ((scb.found_offset = sync_search()) || (scb.err != EBUSY)) {
+    // if search is successful or unrecoverable error detected,
+    // then search is done.
+    if (sync_search() || (scb.err != EBUSY)) {
       call ResyncTimer.stop();
       scb.in_progress = FALSE;
       signal Resync.done[scb.cid](scb.err, scb.found_offset);
     }
+    // else wait for more data to continue the search
   }
 
 
   default event void Resync.done[uint8_t cid](error_t err, uint32_t offset) {
-    call Panic.panic(PANIC_SS, 7, cid, 0, 0, 0);
+    call Panic.panic(PANIC_SS, 8, cid, 0, 0, 0);
   }
 
 
@@ -206,7 +236,7 @@ implementation {
 
   event void ResyncTimer.fired() {
     // deadman timer expired
-    call Panic.panic(PANIC_SS, 8, 0, 0, 0, 0);
+    call Panic.panic(PANIC_SS, 9, 0, 0, 0, 0);
   }
 
   async event void Panic.hook() { }

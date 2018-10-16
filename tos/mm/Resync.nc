@@ -26,8 +26,10 @@ interface Resync {
    * Starting at the requested offset, find the first SYNC record
    * if possible.
    *
-   * @param uint32_t *p_offset   pointer to the offset.
+   * @param uint32_t *p_offset   pointer to the starting offset value.
    * @param uint32_t term_offset limiting offset.  (inclusive or exclusive?)
+   *                             if less than *p_offset, then search
+   *                             is conducted in reverse.
    *
    * @return error_t    SUCCESS if a SYNC was found and is cached.
    *                    EBUSY   SYNC not found yet, accessing Dblk subsystem.
