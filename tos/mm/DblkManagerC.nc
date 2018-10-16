@@ -35,6 +35,13 @@ configuration DblkManagerC {
   uses interface Boot;			/* incoming signal */
 }
 implementation {
+  enum {
+    DMF_CID = unique("DblkMapFile.cid"),
+  };
+  enum {
+    RESYNC_CID = unique("Resync.cid"),
+  };
+
   components DblkManagerP  as DMP;
 
   /* exports, imports */
@@ -44,12 +51,15 @@ implementation {
 
   components new SD0_ArbC() as SD, SSWriteC;
   components FileSystemC, SD0C;
+  components ResyncC;
 
   DMP.SSW        -> SSWriteC;
   DMP.SDResource -> SD;
   DMP.SDread     -> SD;
   DMP.SDraw      -> SD0C;
   DMP.FileSystem -> FileSystemC;
+  DMP.DMF        -> FileSystemC.DblkFileMap[DMF_CID];
+  DMP.Resync     -> ResyncC.Resync[RESYNC_CID];
 
   components PanicC;
   DMP.Panic -> PanicC;

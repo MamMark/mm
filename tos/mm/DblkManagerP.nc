@@ -34,12 +34,15 @@
 #include <panic.h>
 #include <platform_panic.h>
 #include <sd.h>
+#include <typed_data.h>
 
 typedef enum {
   DMS_IDLE = 0,                         /* doing nothing */
   DMS_REQUEST,                          /* resource requested */
   DMS_START,                            /* read first block, chk empty */
   DMS_SCAN,                             /* scanning for 1st blank */
+  DMS_SYNC,                             /* find last sync record in valid */
+  DMS_LAST_REC,                         /* find last record after last sync */
 } dm_state_t;
 
 
@@ -65,6 +68,8 @@ module DblkManagerP {
     interface SSWrite as SSW;
     interface Resource as SDResource;
     interface Panic;
+    interface Resync;
+    interface ByteMapFile as DMF;
   }
 }
 
@@ -92,6 +97,11 @@ implementation {
     /* last record number used */
     uint32_t cur_recnum;                /* current record number */
     uint32_t dm_sig_b;
+
+    /* search for last record */
+    uint32_t   cur_offset;              // offset of current search
+    uint32_t   found_offset;            // valid last record offset
+    dt_header_t found_hdr;              // found record header
   } dmc;
 
   dm_state_t   dm_state;
@@ -164,6 +174,51 @@ implementation {
   }
 
 
+  bool hdr_valid(dt_header_t *hdr) {
+    return TRUE;
+  }
+
+  void task dblk_last_task() {
+    dt_header_t hdr;
+    uint32_t    dlen = sizeof(hdr);
+    error_t     err;
+    bool        done = FALSE;
+
+    if (dm_state != DMS_LAST_REC) dm_panic(12, dm_state, 0);
+
+    while (!done && (dmc.cur_offset < call DblkManager.dblk_nxt_offset())) {
+      err = call DMF.mapAll(0, (uint8_t **) &hdr, dmc.cur_offset, &dlen);
+      switch (err) {
+        case SUCCESS:
+          if (hdr_valid(&hdr)) {
+            dmc.found_offset = dmc.cur_offset;
+            dmc.found_hdr = hdr;
+            dmc.cur_offset += hdr.len;
+          } else {
+            done = TRUE;
+          }
+          break;
+
+        case EBUSY:
+          return;
+
+        case EODATA:
+          done = TRUE;
+          break;
+
+        default:
+          dm_panic(77, dm_state, err);
+      }
+    }
+    // now need to extract record information to be used
+    dmc.found_hdr.recnum = dmc.found_hdr.recnum + 1;
+    // use timestamp as candidate for current datetime
+
+    // finally, let rest of system start run
+    signal Booted.booted();
+  }
+
+
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
     uint8_t    *dp;
     bool        empty;
@@ -185,7 +240,6 @@ implementation {
         /* if blk is erased, dmc.dblk_nxt is already correct. */
         if (call SDraw.chk_erased(dp))
           break;
-
         lower = dmc.dblk_nxt;
         upper = dmc.dblk_upper;
 
@@ -228,21 +282,52 @@ implementation {
         return;
     }
 
-    dm_state = DMS_IDLE;
-
-    /*
-     * signal OutBoot first, then release the SD
+    /* end of dblk has been determined, now need to find last valid record to
+     * calculate the record number and datetime to start with.
      *
-     * If the next module in the sequenced boot chain wants to
-     * use the SD it will issue a request, which will queue them up.
-     * Then when we release, it will get the SD without powering the
-     * SD down.
+     * we start by first finding the last valid sync record. this is accomplished
+     * by calling Resync.start() with the terminal address set to  sixteen sectors
+     * before the end of dblk. This indicates we want to search backwards which
+     * should bring us to the last sync record.
+     *
+     * if we find the sync record immediately, then we can start the search for
+     * for the last record. otherwise we need to wait for the search to complete
+     * when Resync.done() event is called.
      */
-    nop();                              /* BRK */
-    signal Booted.booted();
+    dm_state = DMS_SYNC;
     call SDResource.release();
+    dmc.cur_offset = call DblkManager.dblk_nxt_offset();
+    err = call Resync.start(&dmc.cur_offset, dmc.cur_offset - (16 * SD_BLOCKSIZE));
+    switch (err) {
+      case SUCCESS:
+        dm_state = DMS_LAST_REC;
+        post dblk_last_task();
+        break;
+      case EBUSY:
+        break;
+      default:
+        dm_panic(22, err, 0);
+    }
   }
 
+
+  event void Resync.done(error_t err, uint32_t offset) {
+    // make sure we are expecting this
+    if (dm_state != DMS_SYNC) dm_panic(33, err, offset);
+    if (err == SUCCESS) {
+        dmc.cur_offset = offset;
+        dm_state = DMS_LAST_REC;
+        post dblk_last_task();
+    } else
+      dm_panic(55, err, dmc.cur_offset);
+  }
+
+
+  event void DMF.data_avail(error_t err) {
+    // make sure we are expecting this
+    if (dm_state != DMS_LAST_REC) dm_panic(44, err, 0);
+    post dblk_last_task();
+  }
 
   async command uint32_t DblkManager.get_dblk_low() {
     return dmc.dblk_lower;
