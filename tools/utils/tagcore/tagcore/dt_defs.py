@@ -255,6 +255,7 @@ dt_hdr = obj_dt_hdr()
 
 def dump_hdr(offset, buf, pre = ''):
     '''load hdr from buf and display it.
+    Will need to change for CR 22/0
 
     return:     True if we can load the header
                 False if buffer is too short.

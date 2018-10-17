@@ -466,9 +466,12 @@ implementation {
      * all fields of the header are filled in.  Compute the hdr_crc8
      * It is an external crc.  When checking the crc, one must remember
      * its value, zero its cell, compute the crc, and compare.
+     *
+     * The hdr_crc8 does NOT include recsum.  This is handled by the value
+     * of HDR_CRC_LEN and the fact that recsum is last in the hdr block.
      */
     header->hdr_crc8 = 0;
-    header->hdr_crc8 = call Crc8.crc((void *) header, sizeof(dt_header_t));
+    header->hdr_crc8 = call Crc8.crc((void *) header, HDR_CRC_LEN);
 
     /*
      * upper layers are responsible for filling in any pad fields,

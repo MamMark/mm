@@ -117,6 +117,8 @@ def influx_record(mname, time, fields, tags):
 
 
 '''
+This will have to change for hdr restructure in CR: 22/0.
+
 _example_input = {'hdr': {'len': 28,  'type': 3,  'recnum': 156570,  'rt': {'sub_sec': 9194,  'sec': 59,  'min': 46,  'hr': 22,  'dow': 3,  'day': 13,  'mon': 9,  'year': 2018},  'recsum': 0x071f}, 'prev_sync': '6f3820',  'majik': 'dedf00ef'}
 
 _example_output = [

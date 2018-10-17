@@ -125,6 +125,11 @@ typedef enum {
  * ie.  nxt_ptr = (cur_ptr + len + 3) & 0xffff_fffc
  */
 
+/*
+ * for 21/92.  use the following dt_header
+ * hdr_crc8 doesn't include the recsum.
+ */
+
 typedef struct {                /* size 20 */
   uint16_t len;
   dtype_t  dtype;
@@ -133,6 +138,33 @@ typedef struct {                /* size 20 */
   rtctime_t rt;                 /* 10 byte rtctime */
   uint16_t recsum;
 } PACKED dt_header_t;
+
+#define HDR_CRC_LEN (sizeof(dt_header_t) - sizeof(uint16_t))
+
+
+/*
+ * for 22/0, rework header.  hdr_crc8 is external and
+ * only includes from dtype on.  It only covers the basic hdr block from
+ * dtype through len.   recsum includes all bytes in the
+ * record, hdr and data.  It becomes internal and should sum to 0.
+ */
+
+#ifdef notdef
+
+/* needs to reflect in all records as well */
+
+typedef struct {                /* size 20 */
+  uint16_t recsum;
+  uint8_t  hdr_crc8;            /* dtype through len */
+  dtype_t  dtype;
+  uint32_t recnum;
+  rtctime_t rt;                 /* 10 byte rtctime */
+  uint16_t len;
+} PACKED dt_header_t;
+
+#define HDR_CRC_LEN (sizeof(dt_header_t) - sizeof(uint16_t) - sizeof(uint8_t))
+
+#endif
 
 
 /*

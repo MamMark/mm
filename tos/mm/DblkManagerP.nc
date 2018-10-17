@@ -376,7 +376,7 @@ implementation {
 
     crc0 = header->hdr_crc8;
     header->hdr_crc8 = 0;
-    crc1 = call Crc8.crc((void *) header, sizeof(dt_header_t));
+    crc1 = call Crc8.crc((void *) header, HDR_CRC_LEN);
     header->hdr_crc8 = crc0;
     if (crc0 == crc1)
       return TRUE;
