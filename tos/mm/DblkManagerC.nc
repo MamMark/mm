@@ -52,6 +52,7 @@ implementation {
   components new SD0_ArbC() as SD, SSWriteC;
   components FileSystemC, SD0C;
   components ResyncC;
+  components Crc8C;
 
   DMP.SSW        -> SSWriteC;
   DMP.SDResource -> SD;
@@ -60,6 +61,7 @@ implementation {
   DMP.FileSystem -> FileSystemC;
   DMP.DMF        -> FileSystemC.DblkFileMap[DMF_CID];
   DMP.Resync     -> ResyncC.Resync[RESYNC_CID];
+  DMP.Crc8       -> Crc8C;
 
   components PanicC;
   DMP.Panic -> PanicC;

@@ -67,9 +67,10 @@ module DblkManagerP {
     interface SDraw;
     interface SSWrite as SSW;
     interface Resource as SDResource;
-    interface Panic;
     interface Resync;
     interface ByteMapFile as DMF;
+    interface Crc<uint8_t> as Crc8;
+    interface Panic;
   }
 }
 
@@ -360,6 +361,26 @@ implementation {
       }
     }
     return dmc.dblk_nxt;
+  }
+
+
+  /*
+   * Validate a header by verifing its CRC.
+   *
+   * header pointed to by header is assumed to be sizeof(dt_header_t)
+   * The hdr_crc8 does NOT include the recsum.  This is corrected for
+   * via HDR_CRC_LEN and recsum is last in the hdr block.
+   */
+  async command bool DblkManager.hdrValid(dt_header_t *header) {
+    uint8_t crc0, crc1;
+
+    crc0 = header->hdr_crc8;
+    header->hdr_crc8 = 0;
+    crc1 = call Crc8.crc((void *) header, sizeof(dt_header_t));
+    header->hdr_crc8 = crc0;
+    if (crc0 == crc1)
+      return TRUE;
+    return FALSE;
   }
 
 

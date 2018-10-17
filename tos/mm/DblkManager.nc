@@ -38,4 +38,12 @@ interface DblkManager {
 
   /* advance dblk_nxt and return the new value */
   async command uint32_t adv_dblk_nxt();
+
+  /**
+   * validate a contiguous header
+   *
+   * verify the hdr's crc8.  If the crc8 is good, we assume the
+   * header is valid.  Seems reasonable.
+   */
+  async command bool hdrValid(dt_header_t *header);
 }
