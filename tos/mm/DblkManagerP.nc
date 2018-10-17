@@ -180,24 +180,24 @@ implementation {
   }
 
   void task dblk_last_task() {
-    dt_header_t hdr;
-    uint32_t    dlen = sizeof(hdr);
+    dt_header_t *hdr;
+    uint32_t    dlen;
     error_t     err;
     bool        done = FALSE;
 
     if (dm_state != DMS_LAST_REC) dm_panic(12, dm_state, 0);
 
     while (!done && (dmc.cur_offset < call DblkManager.dblk_nxt_offset())) {
+      dlen = sizeof(dt_header_t);
       err = call DMF.mapAll(0, (uint8_t **) &hdr, dmc.cur_offset, &dlen);
       switch (err) {
         case SUCCESS:
-          if (hdr_valid(&hdr)) {
+          if (call DblkManager.hdrValid(hdr)) {
             dmc.found_offset = dmc.cur_offset;
-            dmc.found_hdr = hdr;
-            dmc.cur_offset += hdr.len;
-          } else {
+            dmc.found_hdr = *hdr;
+            dmc.cur_offset += hdr->len;
+          } else
             done = TRUE;
-          }
           break;
 
         case EBUSY:
