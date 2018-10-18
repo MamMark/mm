@@ -76,6 +76,9 @@ implementation {
   components Crc8C;
   CollectP.Crc8 -> Crc8C;
 
+  components DblkManagerC;
+  CollectP.DblkManager -> DblkManagerC;
+
   components PanicC;
   CollectP.Panic -> PanicC;
 

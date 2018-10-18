@@ -77,7 +77,7 @@
  * cur_buf:             extracted start of the buffer from the handle
  * cur_ptr:             where in the current buffer we be
  *
- * cur_recnum:          last recnum used.
+ * cur_bootrec:         last recnum used since boot up.
  * last_rec_offset:     file offset of last record laid down
  * last_sync_offset:    file offset of last REBOOT/SYNC laid down
  * bufs_to_next_sync:   number of buffers/sectors before we do next sync
@@ -93,11 +93,10 @@ typedef struct {
   uint8_t     *cur_buf;
   uint8_t     *cur_ptr;
 
-  uint32_t     cur_recnum;              /* last record used */
+  uint32_t     cur_bootrec;             /* last record since boot */
   uint32_t     last_rec_offset;         /* file offset */
   uint32_t     last_sync_offset;        /* file offset */
   uint16_t     bufs_to_next_sync;
-  uint16_t     cur_year;
 
   uint16_t     majik_b;
 } dc_control_t;
@@ -140,6 +139,7 @@ module CollectP {
     interface Rtc;
     interface Resync;
     interface Crc<uint8_t> as Crc8;
+    interface DblkManager;
 
     interface SSWrite as SSW;
     interface StreamStorage as SS;
@@ -289,7 +289,7 @@ implementation {
   command bool DblkLastRecNum.get_value(uint32_t *t, uint32_t *l) {
     if (!l || !t)
       call Panic.panic(0, 0, 0, 0, 0, 0);
-    *t = dcc.cur_recnum;
+    *t = call DblkManager.cur_recnum();
     *l = sizeof(uint32_t);
     return TRUE;
   }
@@ -458,9 +458,9 @@ implementation {
     uint16_t    chksum;
     uint32_t    i;
 
-    dcc.cur_recnum++;
+    dcc.cur_bootrec++;
+    header->recnum = call DblkManager.adv_cur_recnum();
     dcc.last_rec_offset = get_rec_offset();
-    header->recnum = dcc.cur_recnum;
 
     /*
      * all fields of the header are filled in.  Compute the hdr_crc8

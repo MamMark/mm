@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Eric Decker, Dan Maltbie
+ * Copyright (c) 2017-2018, Eric Decker, Dan Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -38,6 +38,12 @@ interface DblkManager {
 
   /* advance dblk_nxt and return the new value */
   async command uint32_t adv_dblk_nxt();
+
+  /* return current record number */
+  async command uint32_t cur_recnum();
+
+  /* advance cur_recnum and return the new value */
+  async command uint32_t adv_cur_recnum();
 
   /**
    * validate a contiguous header

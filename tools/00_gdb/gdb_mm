@@ -22,7 +22,7 @@ printf "curptr: %08x   r: %d  (w: %d)\n", \
     CollectP__dcc.cur_ptr, CollectP__dcc.remaining, 0d512-CollectP__dcc.remaining
 printf "\n"
 printf "recnum: %d  sync_offset: %8d (0x%x)  bufs2sync: %d\n", \
-    CollectP__dcc.cur_recnum, CollectP__dcc.last_sync_offset,  \
+    DblkManagerP__dmc.cur_recnum, CollectP__dcc.last_sync_offset,  \
     CollectP__dcc.last_sync_offset, CollectP__dcc.bufs_to_next_sync
 printf "\n"
 end

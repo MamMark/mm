@@ -69,6 +69,8 @@ module DblkManagerP {
     interface SSWrite as SSW;
     interface Resource as SDResource;
     interface Resync;
+    interface Rtc;
+    interface OverWatch as OW;
     interface ByteMapFile as DMF;
     interface Crc<uint8_t> as Crc8;
     interface Panic;
@@ -184,6 +186,7 @@ implementation {
 
   void task dblk_last_task() {
     dt_header_t *hdr;
+    rtctime_t   cur_time;
     uint32_t    dlen;
     error_t     err;
     bool        done = FALSE;
@@ -215,10 +218,18 @@ implementation {
           dm_panic(77, dmc.dm_state, err);
       }
     }
-    // now need to extract record information to be used
-    found_hdr.recnum = found_hdr.recnum + 1;
-    // use timestamp as candidate for current datetime
 
+    /* set our cur_recnum from the last rec found. */
+    dmc.cur_recnum = found_hdr.recnum;
+
+    /* use timestamp as candidate for current datetime */
+    if (call Rtc.rtcValid(&found_hdr.rt)) {
+      call Rtc.getTime(&cur_time);
+      if (call Rtc.compareTimes(&cur_time, &found_hdr.rt) < 0) {
+        call Rtc.setTime(&found_hdr.rt);
+        call OW.setRtcSrc(RTCSRC_DBLK);
+      }
+    }
     dmc.dm_state = DMS_DONE;
 
     // finally, let rest of system start run
@@ -370,6 +381,16 @@ implementation {
       }
     }
     return dmc.dblk_nxt;
+  }
+
+
+  async command uint32_t DblkManager.cur_recnum() {
+    return dmc.cur_recnum;
+  }
+
+  async command uint32_t DblkManager.adv_cur_recnum() {
+    atomic dmc.cur_recnum++;
+    return dmc.cur_recnum;
   }
 
 

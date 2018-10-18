@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,9 +36,7 @@ configuration DblkManagerC {
 }
 implementation {
   enum {
-    DMF_CID = unique("DblkMapFile.cid"),
-  };
-  enum {
+    DMF_CID    = unique("DblkMapFile.cid"),
     RESYNC_CID = unique("Resync.cid"),
   };
 
@@ -53,6 +51,8 @@ implementation {
   components FileSystemC, SD0C;
   components ResyncC;
   components Crc8C;
+  components PlatformC;
+  components OverWatchC;
 
   DMP.SSW        -> SSWriteC;
   DMP.SDResource -> SD;
@@ -62,6 +62,8 @@ implementation {
   DMP.DMF        -> FileSystemC.DblkFileMap[DMF_CID];
   DMP.Resync     -> ResyncC.Resync[RESYNC_CID];
   DMP.Crc8       -> Crc8C;
+  DMP.Rtc        -> PlatformC;
+  DMP.OW         -> OverWatchC;
 
   components PanicC;
   DMP.Panic -> PanicC;
