@@ -193,7 +193,7 @@ typedef struct {
   error_t              err;          // last error encountered
   uint8_t              cid;          // client ID.
   dmf_io_state_t       io_state;
-} dblk_map_cache_t;
+} dblk_map_control_t;
 
 
 #ifndef PANIC_DM
@@ -220,7 +220,8 @@ module DblkMapFileP {
 }
 implementation {
   // dlbk control block
-  dblk_map_cache_t dmf_cb;
+  dblk_map_control_t dmf_cb;
+
   // dblk cache space
   uint8_t  dmf_cache[CACHE_SIZE] __attribute__ ((aligned (4)));
 
