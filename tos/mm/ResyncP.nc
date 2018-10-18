@@ -138,7 +138,7 @@ implementation {
    * core routines for finding sync records
    */
   bool in_range(uint32_t offset) {
-    return ((scb.lower >= offset) && (offset < scb.upper));
+    return ((scb.lower <= offset) && (offset < scb.upper));
   }
 
   uint32_t next_offset(uint32_t offset) {
@@ -155,6 +155,7 @@ implementation {
 
     scb.err = EODATA;
     while (in_range(scb.cur_offset)) {
+      scb.err = call DMF.mapAll(0, (uint8_t **) &sync, scb.cur_offset, &dlen);
       if(scb.err != SUCCESS) break;         // error reported, don't continue
       // got data, now verify
       if (dlen != sizeof(dt_sync_t) || !sync)
@@ -177,7 +178,7 @@ implementation {
    */
   command error_t Resync.start[uint8_t cid](uint32_t *p_offset,
                                             uint32_t term_offset) {
-    if ((!p_offset) || (*p_offset == term_offset))
+    if (!p_offset)
       call Panic.panic(PANIC_SS, 7, 0,0,0,0);
 
     if (scb.in_progress) return EBUSY;
@@ -213,8 +214,9 @@ implementation {
 
   /* handle signal when new data is available to continue search */
   event void DMF.data_avail(error_t err) {
-    if (!scb.in_progress)       /* ignore if not ours */
-      return;
+    if (!scb.in_progress)
+      call Panic.panic(PANIC_SS, 0, 0, 0, 0, 0);
+
     // if search is successful or unrecoverable error detected,
     // then search is done.
     if (sync_search() || (scb.err != EBUSY)) {

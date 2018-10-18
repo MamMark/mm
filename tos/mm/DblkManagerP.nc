@@ -404,6 +404,9 @@ implementation {
   async command bool DblkManager.hdrValid(dt_header_t *header) {
     uint8_t crc0, crc1;
 
+    /* protect against all zeros */
+    if (header->len == 0)
+      return FALSE;
     crc0 = header->hdr_crc8;
     header->hdr_crc8 = 0;
     crc1 = call Crc8.crc((void *) header, HDR_CRC_LEN);

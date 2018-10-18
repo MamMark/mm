@@ -238,9 +238,6 @@ implementation {
         ((uint32_t) dst % CACHE_WORD) ||
         (count % CACHE_WORD))
       call Panic.panic(PANIC_DM, 10, (parg_t) src, (parg_t) dst, count, 0);
-    if ((count > (CACHE_SIZE - dmf_cb.cache.len)) ||
-        (dmf_cb.cache.len > CACHE_SIZE))
-      dmap_panic(11, count, dmf_cb.cache.len);
     while (count > 3) {
       *dst++ = *src++;
       count -= CACHE_WORD;        /* quads */
@@ -321,12 +318,8 @@ implementation {
 
       /* check and possibly modify how much data we can make available */
       len_avail = dmf_cb.cache.offset + dmf_cb.cache.len - offset;
-      if (len_avail < *lenp) {
-        if (map_mode == MAP_ALL)
-          // shouldn't get here because of conditional tests above
-          dmap_panic(5, len_avail, *lenp);
+      if (len_avail < *lenp)
         *lenp = len_avail;
-      }
       return SUCCESS;
     }
 
@@ -379,7 +372,7 @@ implementation {
             dmf_cb.cache.target_offset = dmf_cb.cache.offset =
               RNDBLKDN(offset);
             dmf_cb.cache.len = 0;       /* for now empty, til we fill */
-            hit = TRUE;
+            hit = TRUE;                 /* partial hit */
           }
       }
     }
@@ -540,9 +533,9 @@ implementation {
       signal DMF.data_avail[dmf_cb.cid](err);
       return;
     }
-    dmf_cb.io_state = DMF_IO_READY;
+    dmf_cb.io_state   = DMF_IO_READY;
     dmf_cb.cache.id   = blk_id;
-    dmf_cb.cache.len += SD_BLOCKSIZE;  /* and add sector to cache size */
+    dmf_cb.cache.len += (SD_BLOCKSIZE + dmf_cb.cache.extra);
     signal DMF.data_avail[dmf_cb.cid](SUCCESS);
   }
 
