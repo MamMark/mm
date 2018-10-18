@@ -41,8 +41,9 @@ typedef enum {
   DMS_REQUEST,                          /* resource requested */
   DMS_START,                            /* read first block, chk empty */
   DMS_SCAN,                             /* scanning for 1st blank */
-  DMS_SYNC,                             /* find last sync record in valid */
+  DMS_SYNC,                             /* find last sync record */
   DMS_LAST_REC,                         /* find last record after last sync */
+  DMS_DONE,
 } dm_state_t;
 
 
@@ -95,17 +96,19 @@ implementation {
     uint32_t dblk_nxt;                  /* 0 means full          */
     uint32_t dblk_upper;                /* inclusive  */
 
+    dm_state_t dm_state;
+
     /* last record number used */
     uint32_t cur_recnum;                /* current record number */
     uint32_t dm_sig_b;
 
-    /* search for last record */
-    uint32_t   cur_offset;              // offset of current search
-    uint32_t   found_offset;            // valid last record offset
-    dt_header_t found_hdr;              // found record header
   } dmc;
 
-  dm_state_t   dm_state;
+  /* search for last record */
+  uint32_t   cur_offset;              // offset of current search
+  uint32_t   found_offset;            // valid last record offset
+  dt_header_t found_hdr;              // found record header
+
   uint8_t     *dm_buf;
   uint32_t     lower, cur_blk, upper;
   bool         do_erase = 0;
@@ -145,7 +148,7 @@ implementation {
     dmc.dblk_nxt   = lower + 1;
     dmc.dblk_upper = upper;
     dmc.cur_recnum = 0;
-    dm_state = DMS_REQUEST;
+    dmc.dm_state = DMS_REQUEST;
     if ((err = call SDResource.request()))
       dm_panic(2, err, 0);
     return;
@@ -157,12 +160,12 @@ implementation {
 
     nop();
     nop();                              /* BRK */
-    if (dm_state != DMS_REQUEST) {
-      dm_panic(3, dm_state, 0);
+    if (dmc.dm_state != DMS_REQUEST) {
+      dm_panic(3, dmc.dm_state, 0);
       return;
     }
 
-    dm_state = DMS_START;
+    dmc.dm_state = DMS_START;
     dm_buf = call SSW.get_temp_buf();
     if (!dm_buf) {
       dm_panic(4, (parg_t) dm_buf, 0);
@@ -185,17 +188,18 @@ implementation {
     error_t     err;
     bool        done = FALSE;
 
-    if (dm_state != DMS_LAST_REC) dm_panic(12, dm_state, 0);
+    if (dmc.dm_state != DMS_LAST_REC)
+      dm_panic(12, dmc.dm_state, 0);
 
-    while (!done && (dmc.cur_offset < call DblkManager.dblk_nxt_offset())) {
+    while (!done && (cur_offset < call DblkManager.dblk_nxt_offset())) {
       dlen = sizeof(dt_header_t);
-      err = call DMF.mapAll(0, (uint8_t **) &hdr, dmc.cur_offset, &dlen);
+      err = call DMF.mapAll(0, (uint8_t **) &hdr, cur_offset, &dlen);
       switch (err) {
         case SUCCESS:
           if (call DblkManager.hdrValid(hdr)) {
-            dmc.found_offset = dmc.cur_offset;
-            dmc.found_hdr = *hdr;
-            dmc.cur_offset += hdr->len;
+            found_offset = cur_offset;
+            found_hdr = *hdr;
+            cur_offset += hdr->len;
           } else
             done = TRUE;
           break;
@@ -208,12 +212,14 @@ implementation {
           break;
 
         default:
-          dm_panic(77, dm_state, err);
+          dm_panic(77, dmc.dm_state, err);
       }
     }
     // now need to extract record information to be used
-    dmc.found_hdr.recnum = dmc.found_hdr.recnum + 1;
+    found_hdr.recnum = found_hdr.recnum + 1;
     // use timestamp as candidate for current datetime
+
+    dmc.dm_state = DMS_DONE;
 
     // finally, let rest of system start run
     signal Booted.booted();
@@ -232,9 +238,9 @@ implementation {
       return;
     }
 
-    switch(dm_state) {
+    switch(dmc.dm_state) {
       default:
-        dm_panic(7, dm_state, 0);
+        dm_panic(7, dmc.dm_state, 0);
         return;
 
       case DMS_START:
@@ -248,7 +254,7 @@ implementation {
         if (cur_blk == lower)
           cur_blk = lower = upper;
 
-        dm_state = DMS_SCAN;
+        dmc.dm_state = DMS_SCAN;
         if ((err = call SDread.read(cur_blk, dp)))
           dm_panic(8, err, 0);
         return;
@@ -295,13 +301,14 @@ implementation {
      * for the last record. otherwise we need to wait for the search to complete
      * when Resync.done() event is called.
      */
-    dm_state = DMS_SYNC;
+
+    dmc.dm_state = DMS_SYNC;
     call SDResource.release();
-    dmc.cur_offset = call DblkManager.dblk_nxt_offset();
-    err = call Resync.start(&dmc.cur_offset, dmc.cur_offset - (16 * SD_BLOCKSIZE));
+    cur_offset = call DblkManager.dblk_nxt_offset();
+    err = call Resync.start(&cur_offset, cur_offset - (16 * SD_BLOCKSIZE));
     switch (err) {
       case SUCCESS:
-        dm_state = DMS_LAST_REC;
+        dmc.dm_state = DMS_LAST_REC;
         post dblk_last_task();
         break;
       case EBUSY:
@@ -314,19 +321,21 @@ implementation {
 
   event void Resync.done(error_t err, uint32_t offset) {
     // make sure we are expecting this
-    if (dm_state != DMS_SYNC) dm_panic(33, err, offset);
+    if (dmc.dm_state != DMS_SYNC)
+      dm_panic(33, dmc.dm_state, offset);
     if (err == SUCCESS) {
-        dmc.cur_offset = offset;
-        dm_state = DMS_LAST_REC;
+        cur_offset = offset;
+        dmc.dm_state = DMS_LAST_REC;
         post dblk_last_task();
     } else
-      dm_panic(55, err, dmc.cur_offset);
+      dm_panic(55, err, cur_offset);
   }
 
 
   event void DMF.data_avail(error_t err) {
     // make sure we are expecting this
-    if (dm_state != DMS_LAST_REC) dm_panic(44, err, 0);
+    if (dmc.dm_state != DMS_LAST_REC)
+      dm_panic(44, err, 0);
     post dblk_last_task();
   }
 
