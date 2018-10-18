@@ -39,8 +39,8 @@ implementation {
   // structure to manage state variables for reSync operation
   typedef struct {
     uint32_t cur_offset;    /* last place visited */
-    uint32_t upper;         /* upper bound of search space in dblk */
     uint32_t lower;         /* lower bound of search space in dblk */
+    uint32_t upper;         /* upper bound exclusive of search space  */
     uint32_t found_offset;  /* offset of found sync record, 0 if none */
     bool     in_progress;   /* search already in progress, try later */
     error_t  err;           /* error encountered during search */
@@ -49,7 +49,9 @@ implementation {
   } scb_t;
 
   /* Sync Search Control Block (scb) */
-  scb_t scb = {0, 0, -EINVAL, FALSE, SUCCESS, 0};
+  scb_t scb = {                         /* other vals init to 0 */
+    .found_offset = -EINVAL,
+  };
 
   /*
    * Dblk Record Resync
