@@ -43,6 +43,7 @@ cp ${MM_CHIP}/si446x/gdb_si446x.py   .gdb_si446x.py
 cp ${MM_PLAT}/mm6a/gdb_mm6a          .gdb_mm6a
 cp ${MM_PLAT}/dev6a/gdb_dev6a        .gdb_dev6a
 cp ${MM_PLAT}/mm/gdb_hwMm.py         .gdb_hwMm.py
+cp ${MM_PLAT}/mm/gdb_dblk.py         .gdb_dblk.py
 
 cp ${MM_TAGMON}/gdb_tagmon.py        .gdb_tagmon.py
 

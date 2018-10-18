@@ -52,6 +52,7 @@ source .gdb/.gdb_si446x.py
 
 source .gdb/.gdb_mm
 source .gdb/.gdb_tagmon.py
+source .gdb/.gdb_dblk.py
 
 source .gdb/.gdb_tasks.py
 source .gdb/.gdb_timers.py
@@ -112,6 +113,19 @@ taskTrace
 printf "\n"
 taskQueue
 printf "\n"
+end
+
+define dblk
+printf "\n"
+dblkManager
+printf "\n"
+dblkMap
+printf "\n"
+resyncCtl
+printf "\n"
+end
+document dblk
+display dblk information
 end
 
 define gg
