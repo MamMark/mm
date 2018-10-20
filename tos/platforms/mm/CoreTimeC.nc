@@ -49,9 +49,6 @@ implementation {
   CoreTimeP.Collect      -> CollectC;
   CoreTimeP.CollectEvent -> CollectC;
 
-  components new TimerMilliC() as DcoSyncTimerC;
-  CoreTimeP.DSTimer -> DcoSyncTimerC;
-
   components OverWatchC;
   CoreTimeP.OverWatch -> OverWatchC;
 

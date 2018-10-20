@@ -107,7 +107,6 @@ module CoreTimeP {
   }
   uses {
     interface Boot;                     /* In Boot */
-    interface Timer<TMilli> as DSTimer;
     interface Rtc;                      /* lower level interface */
     interface Collect;
     interface CollectEvent;
@@ -177,18 +176,6 @@ implementation {
     call Rtc.getTime(&dbg_ct.start_time);
     call CoreTime.dcoSync();
     signal Booted.booted();
-  }
-
-  event void DSTimer.fired() {
-    switch(ctcb.minor_state) {
-      default:
-        call Panic.panic(PANIC_TIME, 1, 0, 0, 0, 0);
-        return;
-
-      case DSS_IDLE:
-        call CoreTime.dcoSync();
-        return;
-    }
   }
 
 
