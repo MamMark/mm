@@ -975,7 +975,14 @@ void __core_clk_init(bool disable_dcor) {
 
   CS->KEY = 0;                  /* lock module */
   ow_startup_times.lfxt_turnon_u = __platform_usecsRaw() - u0;
-  __rtc_getTime(&ow_startup_times.lfxt_end);
+
+  /*
+   * Delay an extra 500 ms to allow the LFXT to finish settling
+   * following the end of LFXT OSC faults.
+   *
+   * This only happens on a full pwr up (or turning on the LFXT
+   * from hard reset).
+   */
 
   /*
    * also clear out any interrupts pending on the RTC needs to happen
@@ -992,6 +999,10 @@ void __core_clk_init(bool disable_dcor) {
   ow_startup_times.rtc_lfxt_u = __platform_usecsRaw() - u0;
   RTC_C->CTL0 = 0;                                   /* close lock */
   nop();
+
+  /* finish lfxt delay, 1/2 sec extra to settle after faults stop */
+  while ((__platform_usecsRaw() - u0) < (MSP432_T32_ONE_SEC/2)) ;
+  __rtc_getTime(&ow_startup_times.lfxt_end);
 }
 
 
