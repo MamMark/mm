@@ -345,19 +345,30 @@ implementation {
       if (map_mode == MAP_ALL) {
         /* first check for forward straddle */
         if (in_cache(offset) && !in_cache(offset + *lenp - 1)) {
-          /* cache only the bit between offset (lower) and end of cache */
-          lower = RNDWORDDN(offset);
-          dmf_cb.cache.len = dmf_cb.cache.offset + dmf_cb.cache.len - lower;
-          if (dmf_cb.cache.len + SD_BLOCKSIZE > CACHE_SIZE)
-            dmap_panic(5, dmf_cb.cache.extra, 0);
-          copy_block(
-            (uint32_t *) &dmf_cache[lower - dmf_cb.cache.offset],
-            (uint32_t *) &dmf_cache[0],
-            dmf_cb.cache.len);
-          dmf_cb.cache.offset = lower;
-          dmf_cb.cache.target_offset = dmf_cb.cache.offset + dmf_cb.cache.len;
-          dmf_cb.cache.extra = 0;       /* nothing extra */
-          hit = TRUE;
+          /*
+           * copy only data that is in current whole sector in cache. Don't
+           * copy anything from extra. This occurs when previous reverse search
+           * filled in cache with extra and then partial miss in forward search
+           * straddles the end of the cache. We can't copy the extra because we
+           * can only read whole sectors and extra is in the next sector.
+           *
+           * Note: can't have partial copy which is greater than MAX_MAP_ALL,
+           * so cache.len will always be correct.
+           */
+          if (RNDBLKDN(offset) == RNDBLKDN(dmf_cb.cache.target_offset)) {
+            lower = RNDWORDDN(offset);
+            dmf_cb.cache.len = dmf_cb.cache.offset + dmf_cb.cache.len - lower;
+            if (dmf_cb.cache.len + SD_BLOCKSIZE > CACHE_SIZE)
+              dmap_panic(5, dmf_cb.cache.extra, 0);
+            copy_block(
+              (uint32_t *) &dmf_cache[lower - dmf_cb.cache.offset],
+              (uint32_t *) &dmf_cache[0],
+              dmf_cb.cache.len);
+            dmf_cb.cache.offset = lower;
+            dmf_cb.cache.target_offset = dmf_cb.cache.offset + dmf_cb.cache.len;
+            dmf_cb.cache.extra = 0;       /* nothing extra */
+            hit = TRUE;
+          }
         } else
           if (!in_cache(offset) && in_cache(offset + *lenp - 1)) {
             /* backward straddle */
