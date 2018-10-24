@@ -240,6 +240,7 @@ implementation {
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
     uint8_t    *dp;
     bool        empty;
+    uint32_t    term_offset;
 
     nop();
     nop();                              /* BRK */
@@ -311,12 +312,15 @@ implementation {
      * if we find the sync record immediately, then we can start the search for
      * for the last record. otherwise we need to wait for the search to complete
      * when Resync.done() event is called.
+     *
+     * check that the terminal offset is not set before start of dblk file (wrapped)
      */
 
     dmc.dm_state = DMS_SYNC;
     call SDResource.release();
     cur_offset = call DblkManager.dblk_nxt_offset();
-    err = call Resync.start(&cur_offset, cur_offset - (16 * SD_BLOCKSIZE));
+    term_offset = (cur_offset < (16 * SD_BLOCKSIZE)) ? 0 : cur_offset - (16 * SD_BLOCKSIZE);
+    err = call Resync.start(&cur_offset, term_offset);
     switch (err) {
       case SUCCESS:
         dmc.dm_state = DMS_LAST_REC;
