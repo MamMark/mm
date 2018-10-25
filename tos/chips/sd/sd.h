@@ -29,7 +29,7 @@
 
 #define SD_RESET_IDLES  74
 
-#define SD_BLOCKSIZE 512
+#define SD_BLOCKSIZE (512UL)
 #define SD_BLOCKSIZE_NBITS 9
 
 /*
