@@ -49,10 +49,6 @@ implementation {
   GPSmonitorC.GPSReceive        -> GpsPort;
   GPSmonitorC.GPSPwr            -> GpsPort;
 
-  components Msp432RtcC;
-  TagnetMonitorP.Rtc            -> Msp432RtcC;
-  TagnetMonitorP.RtcAlarm       -> Msp432RtcC;
-
   components TagnetSysExecC;
   TagnetC.SysActive             -> TagnetSysExecC.SysActive;
   TagnetC.SysBackup             -> TagnetSysExecC.SysBackup;
@@ -119,5 +115,7 @@ implementation {
   components PanicC, PlatformC, McuSleepC;
   TagnetMonitorP.Panic          -> PanicC;
   TagnetMonitorP.Platform       -> PlatformC;
+  TagnetMonitorP.Rtc            -> PlatformC;
+  TagnetMonitorP.RtcAlarm       -> PlatformC;
   TagnetMonitorP.McuPowerOverride<- McuSleepC;
 }
