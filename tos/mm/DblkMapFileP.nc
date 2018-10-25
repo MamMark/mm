@@ -455,16 +455,27 @@ implementation {
       if (len_avail < *lenp){
         if (map_mode == MAP_ALL) {
           /*
-           * the only way for length to be less than 512 is the last
-           * valid block in Stream buffers and is partial.  ie. being actively
-           * worked on by Collect.
+           * MAP_ALL with SS buffers and too few bytes has some corner cases.
            *
-           * This is a nasty corner case.  The last buffer is a partial (len < 512)
-           * The cache contains partial data copied from a partial write cache buffer.
-           * And we ran off the end of it.  To avoid cache coherency problems, we
-           * need to invalidate the read cache (dmf_cache) to force an update from
-           * the write cache (stream writer) if a later request comes in for the same
-           * data.
+           * First we check for being beyond the EOF.  Bail out if EOF.  We
+           * check the len that comes back from SS.where and if less than
+           * SD_BLOCKSIZE we can't satisfy the MAP_ALL.  It is the last
+           * valid block in the Stream buffers and is partial.  ie. being
+           * actively worked on by Collect.
+           *
+           * The cache contains partial data copied from a partial write
+           * cache buffer.  And we ran off the end of it.  To avoid cache
+           * coherency problems, we need to invalidate the read cache
+           * (dmf_cache) to force an update from the write cache (stream
+           * writer) if a later request comes in for the same data.
+           *
+           * If not at the EOF, we must be doing a forward straddle.  (Do
+           * we need to verfy this?  Is it true that we can only be doing a
+           * forward straddle?).  We have already updated the cache variables
+           * above for the previous copy in from the SS buffer.  Just call
+           * mapit again.  We are limited to MAX_MAP_ALL so are guaranteed to
+           * update the cache with the remainder of the data we need and will
+           * then terminate successfully.
            */
           if (len < SD_BLOCKSIZE) {
             *bufp = NULL;
@@ -473,7 +484,13 @@ implementation {
             dmf_cb.cache.id  = 0;
             return EODATA;
           }
-          dmap_panic(8, len_avail, *lenp);
+          /*
+           * length was too small.  We ran off the end of the buffer we just
+           * copied in.  That means we are straddling and there may be more
+           * data.  We call mapit() again with the same parameters to see if
+           * we can copy more data in to satisfy the request.
+           */
+          return mapit(cid, context, bufp, offset, lenp, map_mode);
         }
         *lenp = len_avail;
       }
