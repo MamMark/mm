@@ -100,6 +100,7 @@ struct {
 module CoreTimeP {
   provides {
     interface CoreTime;
+    interface TimeSkew;
     interface Boot as Booted;           /* Out boot */
     interface RtcHWInterrupt;           /* interrupt signaling */
   }
@@ -276,6 +277,8 @@ implementation {
     }
   }
 
+
+  default async event void TimeSkew.skew(int32_t skew) { }
 
   void CS_Handler() @C() @spontaneous() __attribute__((interrupt)) {
     uint32_t cs_int;

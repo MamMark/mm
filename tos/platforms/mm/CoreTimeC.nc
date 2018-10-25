@@ -24,6 +24,7 @@ configuration CoreTimeC {
     interface RtcAlarm;
     interface RtcEvent;
     interface CoreTime;
+    interface TimeSkew;
     interface Boot as Booted;           /* outgoing */
   }
   uses {
@@ -33,6 +34,7 @@ configuration CoreTimeC {
 implementation {
   components CoreTimeP;
   CoreTime = CoreTimeP;
+  TimeSkew = CoreTimeP;
   Booted   = CoreTimeP;
   Boot     = CoreTimeP;
 

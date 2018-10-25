@@ -30,6 +30,7 @@ configuration PlatformC {
     interface Rtc;
     interface RtcAlarm;
     interface RtcEvent;
+    interface TimeSkew;
   }
   uses interface Init as PeripheralInit;
 }
@@ -58,6 +59,7 @@ implementation {
   Rtc      = CoreTimeC;
   RtcAlarm = CoreTimeC;
   RtcEvent = CoreTimeC;
+  TimeSkew = CoreTimeC;
 
   components LocalTimeMilliC;
   PlatformP.LocalTime -> LocalTimeMilliC;
