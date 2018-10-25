@@ -146,13 +146,12 @@
  *               maximum prepend length is one word less than the
  *               entire structure, since this is the worst case
  *               (otherwise the map would have succeeded)
- * CACHE_PREPEND_SIZE
- *               maximum amount of data that can be prepended
+ * MAX_MAP_ALL   maximum amount of data that can be prepended
  *               when handling MAP_ALL mode.
  * CACHE_WORD    granular size of cache is one 32-bit word
  */
-#define CACHE_PREPEND_SIZE (DT_HDR_SIZE_SYNC - sizeof(uint32_t))
-#define CACHE_SIZE (SD_BLOCKSIZE + CACHE_PREPEND_SIZE)
+#define MAX_MAP_ALL (sizeof(dt_sync_t))
+#define CACHE_SIZE (SD_BLOCKSIZE + MAX_MAP_ALL)
 #define CACHE_WORD (sizeof(uint32_t))
 
 /*
@@ -279,7 +278,7 @@ implementation {
       dmap_panic(0, 0, 0);
 
     /* asking for nothing or more than fits in the cache for mapAll */
-    if ((*lenp == 0) || ((map_mode == MAP_ALL) && (*lenp > CACHE_SIZE))) {
+    if ((*lenp == 0) || ((map_mode == MAP_ALL) && (*lenp > MAX_MAP_ALL))) {
       dmap_panic(3, 0, 0);
     }
 
