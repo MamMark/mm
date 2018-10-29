@@ -226,7 +226,7 @@ implementation {
     if (call Rtc.rtcValid(&found_hdr.rt)) {
       call Rtc.getTime(&cur_time);
       if (call Rtc.compareTimes(&cur_time, &found_hdr.rt) < 0) {
-        call Rtc.setTime(&found_hdr.rt);
+        call Rtc.syncSetTime(&found_hdr.rt);
         call OW.setRtcSrc(RTCSRC_DBLK);
       }
     }
