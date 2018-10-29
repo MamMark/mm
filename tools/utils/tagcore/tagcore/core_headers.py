@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc91'
+__version__ = '0.4.5rc93'
 
 import binascii
 from   collections  import OrderedDict
@@ -325,6 +325,7 @@ event_names = {
     16: 'DCO_SYNC',
     17: 'TIME_SRC',
     18: 'IMG_MGR',
+    19: 'TIME_SKEW',
 
     32: 'GPS_BOOT',
     33: 'GPS_BOOT_TIME',

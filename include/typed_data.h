@@ -279,6 +279,7 @@ typedef enum {
 
   DT_EVENT_TIME_SRC         = 17,
   DT_EVENT_IMG_MGR          = 18,       // ImageManager transitions
+  DT_EVENT_TIME_SKEW        = 19,       // time set skew
 
   /***********************************/
 
