@@ -148,8 +148,6 @@ DBLK_DIR_SIZE           = 0x200
 RLEN_MAX_SIZE           = 1024
 RESYNC_HDR_OFFSET       = 28            # how to get back to the start
                                         # or how to move past the majik
-MAX_ZERO_SIGS           = 1024          # 1024 quads, 4K bytes of zero
-
 
 # global stat counters
 num_resyncs             = 0             # how often we've resync'd
@@ -178,113 +176,16 @@ def init_globals():
     total_bytes         = 0
 
 
-# resync the data stream to the next SYNC/REBOOT record
-#
-# search for the next SYNC/REBOOT record by finding the SYNC_MAJIK
-# and then back up an appropriate amount (RESYNC_HDR_OFFSET).
-
-resync0 = '*** resync: unaligned offset: {0} (0x{0:x}) -> {1} (0x{1:x})'
-resync1 = '*** resync: (struct error) [len: {0}] @{1} (0x{1:x})'
-
 def resync(fd, offset):
-    '''resync the data stream to the next SYNC/REBOOT record
-
-    search for the next SYNC/REBOOT record by finding the SYNC_MAJIK, then
-    backing up an appropriate amount (RESYNC_HDR_OFFSET).
-
-    We check for reasonable length and reasonable rtype (SYNC or REBOOT).
-
-    Once we think we have a good SYNC/REBOOT, we leave the file position at
-    the start of the SYNC/REBOOT.  And let other checks needed be performed
-    by get_record.
-
-    input:  fd          input file (fd, file descriptor)
-            offset      where to start looking for sync
-
-    output: offset      offset of next record
-                        -1 if something went wrong
     '''
+    resync the data stream to the next SYNC record
 
+    the actual work is handled in the tagfile module, but count
+    number of times resync has been performed.
+    '''
     global num_resyncs
-    hdr     = dt_hdr
-    hdr_len = len(hdr)
-
-    print()
-    print('*** resync started @{0} (0x{0:x})'.format(offset))
-    if (offset & 3 != 0):
-        print(resync0.format(offset, (offset/4)*4))
-        offset = (offset / 4) * 4
-    fd.seek(offset)
     num_resyncs += 1
-    zero_sigs = 0
-    v = dtd.dt_records.get(DT_SYNC,   (0, None, None, None, ''))
-    sync_len   = v[DTR_REQ_LEN]
-    v = dtd.dt_records.get(DT_REBOOT, (0, None, None, None, ''))
-    reboot_len = v[DTR_REQ_LEN]
-    if (reboot_len == 0 or sync_len == 0):
-        print('*** can NOT resync, sync or reboot record not defined.')
-        return -1
-    while (True):
-        while (True):
-            try:
-                offset = fd.tell()
-                majik_buf = fd.read(dtd.quad_struct.size)
-                sig = dtd.quad_struct.unpack(majik_buf)[0]
-                if sig == dtd.dt_sync_majik:
-                    break
-            except struct.error:
-                print(resync1.format(len(majik_buf), offset))
-                return -1
-            except IOError:
-                print('*** resync: file io error @{}'.format(offset))
-                return -1
-            except EOFError:
-                print('*** resync: end of file @{}'.format(offset))
-                return -1
-            except:
-                print('*** resync: exception error: {} @{}'.format(
-                    sys.exc_info()[0], offset))
-                raise
-            offset = fd.tell()
-            if (sig == 0):
-                zero_sigs += 1
-                if (zero_sigs > MAX_ZERO_SIGS):
-                    print('*** resync: too many zeros ({} x 4), bailing, @{}'.format(
-                        MAX_ZERO_SIGS, offset))
-                    return -1
-            else:
-                zero_sigs = 0
-
-        # outer loop, found a majik, let's see if its a SYNC/REBOOT
-        fd.seek(-RESYNC_HDR_OFFSET, 1)          # back up to start of attempt
-        offset_try = fd.tell()
-        if (verbose >= 4):
-            print('*** resync: trying @{0} (0x{0:x}), ' \
-                  'found MAJIK @{1} (0x{1:x})'.format(
-                      offset_try, offset))
-        buf = bytearray(fd.read(hdr_len))
-        if len(buf) < hdr_len:                  # oht oh, too small, very strange
-            print('*** resync: read of dt_hdr too small, @{}'.format(offset_try))
-            return -1
-
-        # we want rlen and rtype, we leave recsum checking for get_record
-        hdr.set(buf)
-        rlen   = hdr['len'].val
-        rtype  = hdr['type'].val
-        recnum = hdr['recnum'].val
-        if ((rtype == DT_SYNC   and rlen == sync_len) or
-            (rtype == DT_REBOOT and rlen == reboot_len)):
-            fd.seek(offset_try)
-            return offset_try
-
-        # not what we expected.  continue looking for SYNC_MAJIKs where we left off
-        if (verbose >= 4):
-            resync2 = '*** resync: failed len/rtype @{} (0x{:x}): ' + \
-                      'len: {}, type: {}, rec: {}'
-            print(resync2.format(offset_try, offset_try, rlen, rtype, recnum))
-            print('    moving to: @{0} (0x{0:x})'.format(
-                offset_try + RESYNC_HDR_OFFSET))
-        fd.seek(offset_try + RESYNC_HDR_OFFSET)
+    return fd.resync(offset)
 
 
 def get_record(fd):

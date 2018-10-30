@@ -90,6 +90,9 @@ __all__ = [
     'dt_name',
     'dump_hdr',
     'print_hdr_obj',
+    'dt_records',
+    'dt_count',
+    'dt_sync_majik',
 ]
 
 
@@ -131,7 +134,6 @@ DTR_OBJ_NAME = 5                        # object name
 # hdr object dt, native, little endian
 
 dt_sync_majik = 0xdedf00ef
-quad_struct   = struct.Struct('<I')      # for searching for syncs
 
 DT_REBOOT               = 1
 DT_VERSION              = 2
