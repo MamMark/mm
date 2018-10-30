@@ -29,6 +29,7 @@ from influxdb import InfluxDBClient
 from datetime import datetime
 from time     import sleep
 from binascii import hexlify
+from requests.exceptions import ConnectionError
 
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
@@ -45,26 +46,30 @@ port     = 8086
 user     = 'root'
 password = 'root'
 dbname   = 'test'
+print('### influxdb host: {}, port: {}, user: {}, password: {}, dbname: {}'.format(host, port, user, password, dbname))
 influx_db = InfluxDBClient(host, port, user, password, dbname)
-influxdb_version = influx_db.ping()
-print("### Influxdb version: {}".format(influxdb_version))
-if influxdb_version == '1.5.2':
+influxdb_version = ''
+try:
+    influxdb_version = influx_db.ping()
+    print("### Influxdb version: {}".format(influxdb_version))
     #influx_db.drop_database(dbname)
-    dblist = influx_db.get_list_database()
-    print("### Influxdb available databases: {}".format(dblist))
-    no_db = True
-    for db in dblist:
-        if db['name'] == dbname:
-            no_db = False
-            break
-    if (no_db):
-        print("### Influxdb creating database: {}".format(dbname))
-        influx_db.create_database(dbname)
-else:
-    print('### influxdb not correct version: {}', influxdb_version)
-    print('### host: {}, port: {}, user: {}, password: {}, dbname: {}'.format(host, port, user, password, dbname))
-    influxdb_saved_version = influxdb_version
-    influxdb_version = ''
+    if influxdb_version == '1.5.2':
+        dblist = influx_db.get_list_database()
+        print("### Influxdb available databases: {}".format(dblist))
+        no_db = True
+        for db in dblist:
+            if db['name'] == dbname:
+                no_db = False
+                break
+        if (no_db):
+            print("### Influxdb creating database: {}".format(dbname))
+            influx_db.create_database(dbname)
+    else:
+        print('### influxdb not correct version: {}', influxdb_version)
+        influxdb_saved_version = influxdb_version
+        influxdb_version = ''
+except ConnectionError:
+    print('### influxdb failed to respond to ping')
 
 
 def int32(x):
