@@ -238,6 +238,13 @@ implementation {
    * DblkManager on the DataStream restart.
    */
   event void Boot.booted() {
+    /* Resync has already found a sync record as a result of
+     * DblkManager looking for its last record for initialition.
+     * We use this value as the initial dcc.last_sync_offset.
+     * If boot order is changed or Resync is executed another
+     * time, this value may be wrong.
+     */
+    dcc.last_sync_offset = call Resync.offset();
     write_sync_record(DT_SYNC_REBOOT);
     write_reboot_record();
     write_version_record();
