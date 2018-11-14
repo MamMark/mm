@@ -72,8 +72,25 @@ See COPYING in the top level directory of this source tree.
  the operation defined by the message is performed on the object
  and an optional result is returned in a response message.
 </p>
-<p>
-</p>
+
+
+##  Generating a new TagName Map
+The basic steps to modify the TagName Map file and create the preprocessor output are described below:
+1. Edit the 'TagName Mappings' file on Google Drive in 'tag_stuff/Design Documents'
+  - Typically will just copy and edit an existing line
+2. Download from Google Drive to local file `mm/tos/comm/TagNames/TagNames.tsv`
+3. Change directory to `mm/tos/comm/TagNames`
+4. Invoke the preprocessor with the following command
+```
+ factspp -o . TagNames.tsv
+```
+Results found in `mm/tos/comm/TagNames`
+  - `TagnetC.nc`         contains all of the wiring for components in Tagnet Name tree
+  - `TagnetDefines.h`    contains defines used by the Tagnet Name components
+  - `TagNameTree.txt`    contains text drawing of the Tagnet Name tree
+
+
+## Software Infrastructure Details
  The Tagnet stack is defined in a collection of interfaces and
  components that operate on Tagnet messages to perform network
  initiated operations on local system variables.
@@ -82,7 +99,7 @@ See COPYING in the top level directory of this source tree.
 </p>
 <dl>
    <dt>Tagnet</dt> <dd>primary user methods for accessing the Tagnet stack</dd>
-   <dt>TagnetMessage</dt> <dd>methods used to travers the name tree</dd>
+   <dt>TagnetMessage</dt> <dd>methods used to traverse the name tree</dd>
    <dt>TagnetHeader</dt> <dd>methods for accessing a Tagnet message header</dd>
    <dt>TagnetName</dt> <dd>methods for acessing and evaluating a Tagnet message name</dd>
    <dt>TagnetPayload</dt> <dd>methods for accessing a Tagnet message payload</dd>
@@ -98,7 +115,6 @@ See COPYING in the top level directory of this source tree.
    <dt>TagnetNamePollP</dt> <dd>generic module processes Tagnet poll request (special)</dd>
    <dt>TagnetIntegerAdapterP</dt> <dd>generic module for adapting local integer variable to the network TLV</dd>
 <dl>
-
 
 ## Tagnet Implementation Files
 
@@ -155,7 +171,7 @@ The root of the Tagnet stack is exposed through the *Tagnet* interface. The root
 
 For leaf nodes this typically involves an adapter module that know how to convert a C Type into a Tagnet TLV. If the match completes at an intermediate element, the action will behave more like a directory entry. For instance, a GET on '/NID/tag/poll' would get the name and value for each of its sub-elements. In this case, four TLVs are returned [(name:ev, value:35)(name:ev, value:POLL_RSP)]. Each intermediate node will sequentially call its subordinate elements to see if any of them match. When a match is found, the result is returned. If matching fails at any point or all choices are exhausted, nothing is returned.
 
-![Tagnet Stack](TagnetC-pict.png "Overall Code Model for Tagnet Stack")
+![Tagnet](TagnetC_pict.png)
 
 In addition to interface for accessing the name tree, there are a set of utility interfaces available for operating on Tagnet messages. Typically user applications don't need to use these. They provide the following capabilties to access the various fields of a Tagnet message (header, name, and payload) as well as for manipulating Tagnet TLVs.
 
@@ -288,7 +304,7 @@ tlv_value      =  is one of the following based on tlv_type
 
 ## Current Tag Network Name Tree
 
-![Tagnet Name Tree](Tree.txt "Tagnet Name Tree")
+![Tagnet Name Tree](../tos/comm/TagNames/TagNameTree.txt "Tagnet Name Tree")
 
 # Facts Pre-Processor
 
@@ -413,8 +429,6 @@ in the TagNet Fact Tree
     - includes TagnetWiring.h
   - TagnetDefines.h
     - included by tagnet.h
-  - TagNameTree.py
-    - Python object representation of name tree for use by other applications
   - TagNameTree.txt
     - ascii text representation of the name tree
 
@@ -506,21 +520,6 @@ TagVx.Super         -> RootVx.Sub[unique(UQ_TN_ROOT)];
 ```
 sudo ./setup.py install
 ```
-
-## PREPROCESSOR Example
-- Edit the 'TagName Mappings' file on Google Drive in 'tag_stuff/Design Documents'
-  - Typically will just copy and edit an existing line
-- Download from Google Drive to local file `mm/tos/comm/TagNames/TagNames.tsv`
-- Change directory to `mm/tos/comm/TagNames`
-- Invoke the preprocessor with the following command
-```
- factspp -o . TagNames.tsv
-```
-- Results found in mm/tos/comm/TagNames
-  - `TagnetC.nc`         contains all of the wiring for components in Tagnet Name tree
-  - `TagnetDefines.h`    contains defines used by the Tagnet Name components
-  - `TagNameTree.txt`    contains text drawing of the Tagnet Name tree
-
 
 ## Rules Engine
 - NESC files for instantiating and wiring Rules Engine with access to all TagNet named Facts
