@@ -63,8 +63,7 @@ implementation {
         call THdr.set_response(msg);
         call THdr.set_error(msg, TE_PKT_OK);
         call TPload.reset_payload(msg);
-        call TPload.add_offset(msg, tx_power);
-        call TPload.add_size(msg, tx_power);
+        call TPload.add_size(msg, call PacketRSSI.get(msg));
         return TRUE;
       default:
         break;
@@ -102,7 +101,6 @@ implementation {
         call THdr.set_response(msg);
         call THdr.set_error(msg, TE_PKT_OK);
         call TPload.reset_payload(msg);
-        call TPload.add_offset(msg, tx_power);
         call TPload.add_size(msg, tx_power);
         return TRUE;
       default:
@@ -147,6 +145,7 @@ implementation {
         } else
           err = EINVAL;
         call TPload.reset_payload(msg);
+        call TPload.add_integer(msg, tx_power);
         if (err)
           call TPload.add_error(msg, err);
         return TRUE;
