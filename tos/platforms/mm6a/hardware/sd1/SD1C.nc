@@ -57,8 +57,9 @@ implementation {
 
   ResourceDefaultOwner = SDdvrP;
 
-  components MainC;
+  components MainC, McuSleepC;
   MainC.SoftwareInit -> SDdvrP;
+  SDdvrP.McuPowerOverride <- McuSleepC;
 
   components PanicC;
   SDdvrP.Panic -> PanicC;

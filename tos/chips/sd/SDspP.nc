@@ -63,6 +63,7 @@ generic module SDspP() {
     interface SDerase[uint8_t cid];
     interface SDsa;			/* standalone */
     interface SDraw;			/* raw */
+    interface McuPowerOverride;
     interface Init as SoftwareInit @exactlyonce();
   }
   uses {
@@ -1653,6 +1654,19 @@ implementation {
   async event void HW.sd_dma_interrupt() {
     call HW.sd_dma_disable_int();
     post dma_task();
+  }
+
+
+  /*
+   * Tell McuSleep when we think it is okay to enter DEEPSLEEP.
+   * The SD driver can be busy with the SD if we are actively talking to
+   * the SD or if DMA has been fired up.
+   *
+   * If the driver is active, don't go to DEEP_SLEEP.
+   */
+  async command mcu_power_t McuPowerOverride.lowestState() {
+    if (sdc.sd_state == SDS_OFF) return POWER_DEEP_SLEEP;
+    return POWER_SLEEP;
   }
 
 
