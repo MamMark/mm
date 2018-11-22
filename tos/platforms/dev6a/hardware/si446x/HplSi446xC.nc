@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017 Eric B. Decker
+ * Copyright (c) 2015, 2017, 2018 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -37,6 +37,9 @@ implementation {
   components HplMsp432GpioC as GIO;
   components HplMsp432PortIntP as PortInts;
   components PanicC, PlatformC;
+
+  components McuSleepC;
+  PortInts.McuSleep -> McuSleepC;
 
   components Si446xPinsP;
   components Si446xSpiConfigP as RadioConf;

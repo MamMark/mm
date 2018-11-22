@@ -3,6 +3,7 @@
 
 module T32BlinkP {
   uses interface Boot;
+  uses interface McuSleep;
 }
 implementation {
 
@@ -44,6 +45,7 @@ implementation {
   void T32_INT2_Handler() @C() @hwevent() __attribute__((interrupt)) {
     TIMER32_2->INTCLR = 0;
     NVIC_ClearPendingIRQ(T32_INTC_IRQn);
+    call McuSleep.irq_preamble();
     BITBAND_PERI(P1->OUT, 0) ^= 1;
   }
 }
