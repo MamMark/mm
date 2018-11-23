@@ -37,9 +37,9 @@ implementation {
   TimeSkew = CoreTimeP;
   Booted   = CoreTimeP;
   Boot     = CoreTimeP;
+  Rtc      = CoreTimeP.CoreRtc;
 
   components Msp432RtcC;
-  Rtc      = Msp432RtcC;
   RtcAlarm = Msp432RtcC;
   RtcEvent = Msp432RtcC;
   CoreTimeP.Rtc            -> Msp432RtcC;
@@ -54,6 +54,9 @@ implementation {
 
   components OverWatchC;
   CoreTimeP.OverWatch -> OverWatchC;
+
+  components McuSleepC;
+  CoreTimeP.McuSleep -> McuSleepC;
 
   components PlatformC;
   CoreTimeP.Platform -> PlatformC;

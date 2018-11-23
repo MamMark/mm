@@ -101,16 +101,18 @@ module CoreTimeP {
   provides {
     interface CoreTime;
     interface TimeSkew;
+    interface Rtc  as CoreRtc;
     interface Boot as Booted;           /* Out boot */
     interface RtcHWInterrupt;           /* interrupt signaling */
   }
   uses {
     interface Boot;                     /* In Boot */
     interface Timer<TMilli> as DSTimer;
-    interface Rtc;
+    interface Rtc;                      /* lower level interface */
     interface Collect;
     interface CollectEvent;
     interface OverWatch;
+    interface McuSleep;
     interface Platform;
     interface Panic;
   }
@@ -286,7 +288,70 @@ implementation {
   }
 
 
-  default async event void TimeSkew.skew(int32_t skew) { }
+  /**
+   * CoreRtc: platform specific RTC routines.
+   *
+   * CoreRtc.syncSetTime() is the only routine actually different.  Other
+   * routines are pass through.
+   */
+  async command void CoreRtc.rtcStop() {
+    call Rtc.rtcStop();
+  }
+
+  async command void CoreRtc.rtcStart() {
+    call Rtc.rtcStart();
+  }
+
+  async command bool CoreRtc.rtcValid(rtctime_t *time) {
+    return call Rtc.rtcValid(time);
+  }
+
+
+  /**
+   * CoreRtc.syncSetTime(): set RTC time.
+   *
+   * check for too much delta, if so reboot.
+   * Keep PS Q15inverted wrt TA1->R.
+   */
+  command void CoreRtc.syncSetTime(rtctime_t *timep) {
+    call Rtc.syncSetTime(timep);
+  }
+
+
+  async command void CoreRtc.setTime(rtctime_t *timep) {
+    return call Rtc.setTime(timep);
+  }
+
+
+  async command void CoreRtc.getTime(rtctime_t *timep) {
+    call Rtc.getTime(timep);
+  }
+
+  async command void CoreRtc.clearTime(rtctime_t *timep) {
+    call Rtc.clearTime(timep);
+  }
+
+  async command void CoreRtc.copyTime(rtctime_t *dtimep, rtctime_t *stimep) {
+    call Rtc.copyTime(dtimep, stimep);
+  }
+
+  async command int  CoreRtc.compareTimes(rtctime_t *time0p,
+                                          rtctime_t *time1p) {
+    return call Rtc.compareTimes(time0p, time1p);
+  }
+
+  async command uint64_t CoreRtc.rtc2epoch(rtctime_t *timep) {
+    return call Rtc.rtc2epoch(timep);
+  }
+
+  async command uint32_t CoreRtc.subsec2micro(uint16_t jiffies) {
+    return call Rtc.subsec2micro(jiffies);
+  }
+
+  async command uint16_t CoreRtc.micro2subsec(uint32_t micros) {
+    return call Rtc.micro2subsec(micros);
+  }
+
 
   void CS_Handler() @C() @spontaneous() __attribute__((interrupt)) {
     uint32_t cs_int;
@@ -420,5 +485,6 @@ implementation {
     return call Rtc.compareTimes(time0p, time1p);
   }
 
+  default async event void TimeSkew.skew(int32_t skew) { }
   async event void Panic.hook() { }
 }
