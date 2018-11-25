@@ -17,4 +17,10 @@ interface CoreTime {
    * interrupt entry handler.
    */
   async command void irq_preamble();
+
+  /*
+   * used for debugging and checking R/PS sync
+   */
+  async command void verify();
+  async command void log(uint16_t where);
 }

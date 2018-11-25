@@ -395,6 +395,7 @@ implementation {
       call CoreTime.dcoSync();
     }
     dscb.adjustment = 0;
+    call CoreTime.verify();
   }
 
 
@@ -420,11 +421,91 @@ implementation {
   }
 
 
+  /**
+   * closeEnough(): check ta->R and PS for clososity
+   */
+
+  bool closeEnough(uint16_t ta, uint16_t ps) {
+    if (ta == ps)                  return TRUE;
+    if (ta == ((ps + 1) & 0x7fff)) return TRUE;
+    if (((ta + 1) & 0x7fff) == ps) return TRUE;
+    return FALSE;
+  }
+
+
   async command void CoreTime.initDeepSleep() {
   }
 
 
   async command void CoreTime.irq_preamble() {
+  }
+
+
+  void add_rps_log(uint16_t r, uint16_t ps, uint16_t where) {
+    dbg_r_ps_t *rp;
+
+    rp = &dbg_r_ps[dbg_r_ps_nxt++];
+    if (dbg_r_ps_nxt >= DBG_R_PS_ENTRIES)
+      dbg_r_ps_nxt = 0;
+
+    rp->where = where;
+    rp->ut0   = 0;
+    rp->r     = r;
+    rp->ut1   = 0;
+    rp->ps    = ps;
+    rp->ut2   = call Platform.usecsRaw();
+  }
+
+
+  /*
+   * Verify that R and PS are relatively sync'd.  Originally we
+   * subtracted and checked for delta of no more than 1.  But that
+   * doesn't handle the special case of wrappage.  ie.  0x7fff/8000 and
+   * 0xffff/0x0000, etc.
+   */
+  void check_r_ps(uint16_t r, uint16_t ps, uint16_t where) {
+    if (closeEnough(r, ps)) return;
+    atomic {
+      add_rps_log(r, ps, where);
+      call Panic.panic(PANIC_TIME, 2, r, ps,
+                       call Platform.jiffiesRaw(), get_ps());
+    }
+  }
+
+
+  async command void CoreTime.verify() {
+    uint16_t cur_ta, cur_ps;
+
+    atomic {
+      cur_ta = call Platform.jiffiesRaw() & 0x7fff;
+      cur_ps = get_ps() & 0x7fff;
+      check_r_ps(cur_ta, cur_ps, 64);
+    }
+  }
+
+
+  async command void CoreTime.log(uint16_t where) {
+    dbg_r_ps_t *rp;
+    uint16_t r, ps;
+
+    rp = &dbg_r_ps[dbg_r_ps_nxt++];
+    if (dbg_r_ps_nxt >= DBG_R_PS_ENTRIES)
+      dbg_r_ps_nxt = 0;
+
+    atomic {
+      rp->where = where;
+      rp->ut0 = call Platform.usecsRaw();
+      r       = call Platform.jiffiesRaw();
+      rp->ut1 = call Platform.usecsRaw();
+      ps      = get_ps();
+      rp->ut2 = call Platform.usecsRaw();
+    }
+    rp->r   = r;
+    rp->ps  = ps;
+    r  &= 0x7fff;
+    ps &= 0x7fff;
+
+    check_r_ps(r, ps, 65);
   }
 
 
