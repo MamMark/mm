@@ -19,6 +19,15 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
 
+/*
+ * CoreTime handles low level issues dealing with time.
+ *
+ * - detection and graceful degradation of oscillator faults
+ * - mclk/dco/aclk synchronization.  Xtal (32Ki LFXT) to Main Clk.
+ * - deep sleep entry.  Enable timing recovery interrupt.
+ * - deep sleep exit.   Timing system recovery.
+ */
+
 #include <rtc.h>
 #include <rtctime.h>
 #include <platform_panic.h>
@@ -512,11 +521,162 @@ implementation {
     return FALSE;
   }
 
+
+  /**
+   * initDeepSleep: set up for deep sleep
+   * Simple DeepSleep, switch main clocks to 32Ki.
+   *
+   * We simply switch the high speed clocks from the main clock
+   * (16Mi) to a low speed clock (32Ki).  We have observed idle
+   * current consumption drop from ~500 uA to ~150 uA.
+   *
+   * Note, if an interrupt occurs while we are checking various
+   * conditions, this interrupt will cause the deepsleep to
+   * be aborted.  This gets handled by the WFE.  Regular clocks
+   * are restored via irq_preamble().
+   *
+   * It is assumed that this code is only called from McuSleep.sleep(),
+   * and interrupts are blocked (atomic).
+   */
+
   async command void CoreTime.initDeepSleep() {
+    uint16_t cur_ta;
+
+    /* if we are already doing something bail */
+    if (ctcb.state != CT_IDLE)
+      return;
+
+    call CoreTime.log(16);
+
+    cur_ta  = call Platform.jiffiesRaw();
+    dsi.entry_ta = cur_ta;
+    dsi.entry_us = call Platform.usecsRaw();
+    dsi.entry_ms = call Platform.localTime();
+    call Rtc.getTime(&dsi.entry_rtc);
+
+    CS->KEY  = CS_KEY_VAL;
+    CS->CTL1 = CS_CTL1_SELS__LFXTCLK | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
+               CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 | 0 |
+               CS_CTL1_SELM__LFXTCLK | CS_CTL1_DIVM__1;
+    CS->KEY = 0;                        /* lock module */
+    ct_cs_stat = CS->STAT;
+    ctcb.state = CT_DEEP_SLEEP;
+    return;
   }
 
 
+  /**
+   * irq_preamble(): interrupt entry.
+   * called from interrupt handlers that can be invoked while in deep sleep.
+   *
+   * check if we are in deep sleep.
+   *
+   * Simple deep sleep, restore normal clocks.  deep sleep entry
+   * tweaked main high speed clocks so we need to restore the original
+   * high speed clocks.
+   *
+   * the usec ticker has been running at a degraded speed.  We need to
+   * do a fix up, dependent on how long we have been asleep.  The RTC as
+   * well as TA->R have been running normally (clocked by BCLK/ACLK which
+   * is off the 32 Ki LFXT clock).
+   */
   async command void CoreTime.irq_preamble() {
+    dbg_sleep_t *sr;
+    ct_rec_t    *cr;
+    uint64_t     e_e, x_e;              /* entry/exit epoch */
+    int32_t      d_s, d_u, d_j;         /* delta secs, micros, jifs */
+    uint32_t     uis;
+    uint32_t     tmp;
+
+    Timer32_Type *tp;                   /* to play with T32 */
+
+    ct_start = call Platform.usecsRaw();
+    if (dsi.entry_rtc.year) {           /* are we in deep sleep? */
+      if (ctcb.state < CT_DEEP_SLEEP || ctcb.state >= CT_STATE_MAX)
+        call Panic.panic(PANIC_TIME, 1, ctcb.state, 0, 0, 0);
+
+      /* first restart the clocks back up to correctness */
+      CS->KEY  = CS_KEY_VAL;
+      CS->CTL1 = CS_CTL1_SELS__DCOCLK  | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
+                 CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 | 0 |
+                 CS_CTL1_SELM__DCOCLK  | CS_CTL1_DIVM__1;
+      CS->KEY = 0;                        /* lock module */
+      ct_cs_stat = CS->STAT;
+
+      /* capture old values of usecs and ta_r (sleeping) */
+      cr = get_core_rec(32);              /* init and snag old times */
+
+      dsi.exit_us = call Platform.usecsRaw();
+      dsi.exit_ms = call Platform.localTime();
+      dsi.exit_ta = cr->ta_r;
+      call Rtc.getTime(&dsi.exit_rtc);
+      dsi.entry_rtc.year = 0;
+      ctcb.state = CT_IDLE;
+
+      /* add rtc time stamp */
+      call Rtc.copyTime(&cr->rtc, &dsi.exit_rtc);
+
+
+      /* sleep debug record, finish any previous entry */
+      sr = &sleep_trace[sleep_nxt++];   /* always advance to next. */
+      if (sleep_nxt >= MAX_SLEEP_ENTRIES)
+        sleep_nxt = 0;
+
+      sr->where = 3;
+      call Rtc.copyTime(&sr->exit_rtc, &dsi.exit_rtc);
+      sr->exit_ta = dsi.exit_ta;
+      sr->exit_ms = dsi.exit_ms;
+      sr->exit_us = dsi.exit_us;
+
+      nop();
+
+      /* coming out of deep sleep.  Fix any timing elements */
+      e_e = call Rtc.rtc2epoch(&dsi.entry_rtc);         /* entry epoch   */
+      x_e = call Rtc.rtc2epoch(&dsi.exit_rtc);          /* exit  epoch   */
+      d_s = (x_e >> 32) - (e_e >> 32);                  /* delta seconds */
+      d_u = (x_e & 0xffffffff) - (e_e & 0xffffffff);    /* delta usecs   */
+      d_j = dsi.exit_rtc.sub_sec - dsi.entry_rtc.sub_sec;
+      if (d_u < 0) {                                    /* need to borrow */
+        /*
+         * if the micros need a borrow, so do the jifs.
+         * micros is calculated from the sub_sec values and if micros need
+         * a borrow so will the jifs.
+         */
+        d_s--;
+        d_u += 1000000;                                 /* still decimal */
+        d_j += 32768;
+      }
+      uis = d_u;                                        /* actual usecs  */
+#ifdef USECS_BINARY
+      uis =  (d_u * MSP432_T32_ONE_SEC) / 1000000;      /* convert to binary */
+#endif
+      uis += (d_s * MSP432_T32_ONE_SEC);
+
+      ct_uis = uis;
+      ct_jifs = d_j;
+      sr->actual = d_j;
+      cr->last_delta = d_j;
+
+      /* Verify we are in a reasonable state, not too long, not too short */
+      if (d_j != ctcb.delta_j) {
+        /* probably needs a range check, ie. +1-3 ticks */
+        call Panic.panic(PANIC_TIME, 1, d_j, ctcb.delta, 0, 0);
+      }
+
+      /*
+       * fix T32_1, our usecs ticker
+       * correct our uis value with h/w correction.  Takes about 4 uis to
+       * stuff so isn't worth the bother.
+       * subtract the result from the current usec ticker (its count down).
+       * and stuff it back into the ticker.
+       */
+      tp = TIMER32_2;                   /* should be T32_1 */
+      tmp = uis * MSP432_T32_USEC_DIV + 0;
+      tmp = tp->VALUE - tmp;
+      tp->LOAD = tmp;                   /* and restart ticker with new val */
+
+      nop();
+    }
   }
 
 
@@ -694,6 +854,7 @@ implementation {
     uint32_t cs_int;
     uint32_t cs_stat;
 
+    call McuSleep.irq_preamble();
     cs_int  = CS->IFG;
     cs_stat = CS->STAT;
     if (cs_int & CS_IFG_LFXTIFG) {
@@ -727,34 +888,40 @@ implementation {
     iv = RTC_C->IV;
     switch(iv) {
       default:
-      case 2:
-      case 10:
+      case 2:                           /* Osc Fault Int */
         call Panic.panic(PANIC_TIME, 4, iv, 0, 0, 0);
         break;
 
       case 0:                           /* no interrupt  */
         break;                          /* just ignore   */
 
-      case 4:
+      case 4:                           /* Rdy Int, secs */
+        call McuSleep.irq_preamble();
         if ((RTC_C->CTL0 & RTC_C_CTL0_RDYIE) == 0)
           call Panic.panic(PANIC_TIME, 4, iv,
                            RTC_C_CTL0_RDYIE, RTC_C->CTL0, 0);
         signal RtcHWInterrupt.secInterrupt();
         return;
 
-      case 6:
+      case 6:                           /* Event Int */
+        call McuSleep.irq_preamble();
         if ((RTC_C->CTL0 & RTC_C_CTL0_TEVIE) == 0)
           call Panic.panic(PANIC_TIME, 4, iv,
                            RTC_C_CTL0_TEVIE, RTC_C->CTL0, 0);
         signal RtcHWInterrupt.eventInterrupt();
         return;
 
-      case 8:
+      case 8:                           /* Alarm Int */
+        call McuSleep.irq_preamble();
         if ((RTC_C->CTL0 & RTC_C_CTL0_AIE) == 0)
           call Panic.panic(PANIC_TIME, 4, iv,
                            RTC_C_CTL0_AIE, RTC_C->CTL0, 0);
         signal RtcHWInterrupt.alarmInterrupt();
         return;
+
+      case 10:                          /* ps0 interrupt */
+        call McuSleep.irq_preamble();
+        break;
 
       case 12:                          /* ps1 interrupt */
         switch(ctcb.state) {
@@ -791,6 +958,11 @@ implementation {
               RTC_C->PS1CTL = 0;                  /* turn interrupt off */
               post dco_sync_task();
             }
+            break;
+
+          case CT_DEEP_SLEEP:
+          case CT_DEEP_FLIPPED:
+            call McuSleep.irq_preamble();
             break;
         }
     }
