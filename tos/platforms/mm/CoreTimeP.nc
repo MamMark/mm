@@ -433,6 +433,85 @@ implementation {
   }
 
 
+  /*
+   * tweakPS(): set PS from current R with possible Q15 inversion.
+   *
+   * input:  inversion  0 for no inversion, 0x8000 to invert Q15.
+   *         tap        pointer for returning last cur_ta read, TA->R
+   *
+   * return: bool       TRUE,  tweak took, inversion successful.
+   *                    FALSE, SECS tweaked.  inversion not done.
+   *
+   * We are tweaking PS to either clear its normally inverted Q15 state or
+   * we are tweaking PS to set the inverted Q15 state.  inverted with
+   * respect to TA->R.
+   *
+   * When changing PS we have to stop the RTC but we want to do it in such
+   * a way as to not cause any missed SECS transitions.  We do this by
+   * handling 7fff/8000, ffff/0000 special.  (we are about to pop seconds).
+   * If the inversion took, we return TRUE.
+   *
+   * If we are in danger of clocking the SECS register, ie. 7fff or ffff,
+   * we spin for about 30.5 usecs to let the transition happen.  And return
+   * FALSE.  This indicates to the caller that the inversion hasn't happened
+   * and futher processing should be done.
+   *
+   * We always return the last value of TA->R read in *tap.
+   */
+  bool tweakPS(uint16_t inversion, uint16_t *tap) {
+    uint16_t cur_ta, prev_ta;
+    uint32_t t0, t1;
+    uint16_t iter;
+
+    prev_ta = call Platform.jiffiesRaw();
+    /*
+     * flip 0x8000 - 0xffff onto 0x0000 - 0x7fff
+     * we are in danger of tweaking SECS if we are at 0x7fff.
+     */
+    if ((prev_ta & 0x7fff) < 0x7fff) { /* not in danger of tweaking seconds */
+      /*
+       * o open the lock
+       * o jam TA->R ^ inversion (modified jiffiesRaw) into PS.
+       * o PS/Q15 will either be flipped wrt R or not dependent on inversion.
+       *
+       * then recheck to make sure that R hasn't changed.  If it has rejam.
+       * should be fine because it just ticked and we have 30.5 usecs to get it
+       * right.
+       *
+       * o and close the lock.
+       */
+      RTC_C->CTL0 = (RTC_C->CTL0 & ~RTC_C_CTL0_KEY_MASK) | RTC_C_KEY;
+      BITBAND_PERI(RTC_C->CTL13, RTC_C_CTL13_HOLD_OFS) = 1;
+      RTC_C->PS   = prev_ta ^ inversion;
+      cur_ta = call Platform.jiffiesRaw();
+      if (cur_ta != prev_ta) {          /* oops */
+        nop();                          /* BRK */
+        RTC_C->PS = cur_ta ^ inversion; /* all better */
+      }
+      BITBAND_PERI(RTC_C->CTL13, RTC_C_CTL13_HOLD_OFS) = 0;
+      BITBAND_PERI(RTC_C->CTL0,  RTC_C_CTL0_KEY_OFS)   = 0;
+      *tap = cur_ta;
+      return TRUE;
+    }
+
+    /*
+     * we are at the 7fff boundary, 7fff or ffff.  Spin for upto 61 us waiting
+     * for the jiffy to tick.  This lets the SEC tick to occur.
+     */
+    t0 = call Platform.usecsRaw();
+    iter = 0;
+    do {
+      t1 = call Platform.usecsRaw();
+      if ((t1 - t0) > 61)               /* shouldn't be longer than 30.5 */
+        call Panic.panic(PANIC_TIME, 1, t0, t1, t1 - t0, 0);
+      iter++;
+      cur_ta = call Platform.jiffiesRaw();
+    } while ((cur_ta & 0x7fff) != 0);
+    ctcb.iter = iter;
+    *tap = cur_ta;
+    return FALSE;
+  }
+
   async command void CoreTime.initDeepSleep() {
   }
 
@@ -535,7 +614,44 @@ implementation {
    * Keep PS Q15inverted wrt TA1->R.
    */
   command void CoreRtc.syncSetTime(rtctime_t *timep) {
-    call Rtc.syncSetTime(timep);
+    rtctime_t curtime;
+    uint64_t  cur_e;                    /* cur epoch */
+    uint32_t  cur_s;                    /* cur secs  */
+    uint64_t  new_e;                    /* new epoch */
+    uint32_t  new_s;                    /* new secs  */
+    uint32_t  delta;                    /* difference */
+    uint16_t  cur_ta;
+
+    call Rtc.getTime(&curtime);
+    cur_e = call Rtc.rtc2epoch(&curtime);
+    cur_s = cur_e >> 32;
+
+    new_e = call Rtc.rtc2epoch(timep);
+    new_s = new_e >> 32;
+
+    if (new_s > cur_s) delta = new_s - cur_s;
+    else               delta = cur_s - new_s;
+
+    call CollectEvent.logEvent(DT_EVENT_TIME_SKEW, cur_s, new_s, delta, 0);
+
+    /*
+     * for now we simply sync TA1->R to PS to avoid messing
+     * with timers.  We always want the upper bit, Q15, inverted
+     * in PS.  This will need to get fixed when we implement GPS time
+     * which may change time when converging.
+     *
+     * Eventually, we can implement a skew algorithm that will gradually
+     * advance or retard the timing gracefully.
+     */
+    timep->sub_sec = call Platform.jiffiesRaw() ^ 0x8000;
+    call Rtc.setTime(timep);
+    call CoreTime.log(19);
+    if (!tweakPS(0x8000, &cur_ta))
+      tweakPS(0x8000, &cur_ta);
+
+    if (delta > 8)                      /* if bigger than 8 secs */
+      call OverWatch.flush_boot(call OverWatch.getBootMode(),
+                                ORR_TIME_SKEW);
   }
 
 
