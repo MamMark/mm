@@ -60,9 +60,6 @@ implementation {
       MEMS0_ACCEL_CSN_DIR = 0;          /* switch CSN to input */
       MEMS0_GYRO_CSN_DIR  = 0;
       MEMS0_MAG_CSN_DIR   = 0;
-      MEMS0_SCLK_SEL0     = 0;
-      MEMS0_SIMO_SEL0     = 0;
-      MEMS0_SOMI_SEL0     = 0;
     }
   }
 
