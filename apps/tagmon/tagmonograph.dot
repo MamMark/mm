@@ -1,11 +1,11 @@
 digraph G {
 nodesep=0.7;
 rankdir=LR;
-subgraph cluster_Off {
+subgraph cluster_Shutdown {
 fontsize=24;
 label="";
 labeljust=l;
-off [fontsize=20, label=OFF];
+shutdown [fontsize=20, label=shutdown];
 }
 
 subgraph cluster_Near {
@@ -38,7 +38,7 @@ home_recv_wait [fontsize=16, label=recv_wait];
 home_stby_wait [fontsize=16, label=stby_wait];
 }
 
-off -> home_recv_wait  [label="booted / r_on,t_start"];
+shutdown -> home_recv_wait  [label="booted / r_on,t_start"];
 home_recv -> home_stby_wait  [label="not_forme / r_stby,t_start"];
 home_recv -> home_stby_wait  [label="timer_expired / r_stby,t_start"];
 home_stby -> home_recv_wait  [label="timer_expired / r_on,t_start"];

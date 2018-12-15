@@ -10,17 +10,17 @@ def main():
         rankdir="LR",
         nodesep=0.7)
 
-    cluster_off=pydot.Cluster(
-        'Off',
+    cluster_shutdown=pydot.Cluster(
+        'Shutdown',
         label='',
         labeljust='l',
         fontsize=24)
-    cluster_off.add_node(
+    cluster_shutdown.add_node(
         pydot.Node(
-            'off',
-            label='OFF',
+            'shutdown',
+            label='shutdown',
             fontsize=20))
-    g_radio.add_subgraph(cluster_off)
+    g_radio.add_subgraph(cluster_shutdown)
 
     cluster_near=pydot.Cluster(
         'Near',
@@ -110,7 +110,7 @@ def main():
     #
     g_radio.add_edge(
         pydot.Edge(
-            "off","home_recv_wait",
+            "shutdown","home_recv_wait",
             label="booted / r_on,t_start"))
 
     g_radio.add_edge(

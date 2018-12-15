@@ -69,12 +69,13 @@ implementation {
 
   /*
    * major states
+   *   SHUTDOWN     cpu has rebooted (initial ram state) or radio is shutdown
    *   HOME         tag is currently communicating with basestation
    *   NEAR         tag is going to switch radio to standby until clock event
    *   LOST         tag has not seen basestation and is in deep sleep
    */
   typedef enum {
-    RS_STANDBY      = 0,
+    RS_SHUTDOWN     = 0,
     RS_HOME         = 1,
     RS_NEAR         = 2,
     RS_LOST         = 3,
@@ -158,7 +159,7 @@ implementation {
   norace radio_graph_t  rcb = {
   //              cycle
   //  cur_state,    cnt
-        RS_STANDBY,   0,
+    RS_SHUTDOWN,      0,
 
      //              max          RW   RECV     SW   STBY
     {// substate  cycles    NA
@@ -256,7 +257,7 @@ implementation {
     tt->timeout       = 0;
     tt->major         = major;
     tt->minor         = minor;
-    tt->old_major     = RS_STANDBY;
+    tt->old_major     = RS_SHUTDOWN;
     tt->old_minor     = SS_NONE;
     tt->reason        = reason;
   }
@@ -519,7 +520,7 @@ implementation {
   }
 
   command void TagnetMonitor.shutdown() {
-    change_radio_state(RS_STANDBY, SS_NONE, TMR_FORCE);
+    change_radio_state(RS_SHUTDOWN, SS_NONE, TMR_FORCE);
     tagMsgBusy = FALSE;
   }
 
