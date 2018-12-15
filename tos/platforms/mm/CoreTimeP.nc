@@ -748,6 +748,11 @@ implementation {
   }
 
 
+  async command uint16_t CoreTime.get_ps() {
+    return get_ps();
+  }
+
+
   /**
    * CoreRtc: platform specific RTC routines.
    *
@@ -993,6 +998,11 @@ implementation {
   int __rtc_compareTimes(rtctime_t *time0p, rtctime_t *time1p) @C() @spontaneous() {
     return call Rtc.compareTimes(time0p, time1p);
   }
+
+  uint16_t __coretime_get_ps() @C() @spontaneous() {
+    return call CoreTime.get_ps();
+  }
+
 
   default async event void TimeSkew.skew(int32_t skew) { }
   async event void Panic.hook() { }

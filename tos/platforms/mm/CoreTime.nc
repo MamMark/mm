@@ -23,4 +23,5 @@ interface CoreTime {
    */
   async command void verify();
   async command void log(uint16_t where);
+  async command uint16_t get_ps();
 }
