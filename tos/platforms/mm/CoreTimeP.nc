@@ -61,6 +61,7 @@ norace uint32_t ct_jifs;
 norace uint32_t ct_start, ct_end;
 
 norace uint32_t ct_cs_stat, ct_cs_exit_stat;
+norace uint32_t ct_ut0, ct_ut1, ct_d_u;
 
 typedef enum {
   CT_IDLE = 0,
@@ -74,16 +75,16 @@ typedef enum {
 
 
 enum {
-  CT_WHICH_NOT_SET  = -3,
-  CT_WHICH_EDGE     = -2,
-  CT_WHICH_OVERFLOW = -1,
+  CT_WHICH_NOT_SET  = 0xfd,
+  CT_WHICH_EDGE     = 0xfe,
+  CT_WHICH_OVERFLOW = 0xff,
 };
 
 
 /*
  * Core Time trace structure
- * used to record various Core Time events.
- * hybrid used by both dco sync as well as deep sleep
+ * used to record various low level CoreTime events.
+ * hybrid used by both dco sync as well as deep sleep transitions.
  *
  * 'a' says filled in by get_core_rec()
  */
@@ -97,7 +98,7 @@ typedef struct {
   uint16_t    dest;                     /* a ultimate dest */
 
   rtctime_t   rtc;                      /* - rtc time, 18  */
-  int8_t      which;                    /* a byte */
+  uint8_t     which;                    /* a byte */
   ct_state_t  state;                    /* a byte */
 
   uint16_t    rtc_ps0ctl;
@@ -135,19 +136,19 @@ norace dscb_t dscb;
 
 /* coretime (ct) control block */
 typedef struct {
+  uint16_t   actual;                    /* actual jiffies gone by          */
   uint16_t   dest;                      /* final jiffy we are looing for   */
   uint16_t   target;                    /* the target we are going for     */
   uint32_t   delta_us;                  /* expected delta in uis/us        */
   uint16_t   delta_j;                   /* expected delta in jiffies       */
   uint16_t   iter;
 
-  int8_t     which;                     /* deepsleep which target          */
+  uint8_t    which;                     /* deepsleep which target          */
   ct_state_t state;                     /* core time state                 */
 
   uint32_t   entry_ms;                  /* localtime entry to deep sleep   */
   uint32_t   entry_us;                  /* usecsRaw on entry to deep sleep */
   uint16_t   entry_ta;                  /* ta->R on entry to deep sleep    */
-
 } ctcb_t;                               /* coretime control block          */
 
 norace ctcb_t ctcb;
@@ -166,7 +167,7 @@ norace struct {
 
 
 /*
- * debugging sleep.
+ * sleep tracing.
  * record to record last sleep cycle.  entry and exit.
  */
 typedef struct {
@@ -180,22 +181,23 @@ typedef struct {
   uint32_t    exit_ms;                  /* localtime */
   uint32_t    exit_us;                  /* uis */
 
+  uint16_t    actual;                   /* actual  jiffies */
   uint16_t    dest;                     /* dest    jiffies */
   uint16_t    target;                   /* target  jiffies */
-  uint16_t    actual;                   /* actual  jiffies */
   uint16_t    delta_j;                  /* delta   jiffies */
   uint32_t    delta_us;                 /* delta   us      */
 
   uint16_t    where;
+  uint8_t     which;
   ct_state_t  state;
-} dbg_sleep_t;
+} sleepi_t;                             /* sleep instrumentation */
 
 #define MAX_SLEEP_ENTRIES 64
-       dbg_sleep_t sleep_trace[MAX_SLEEP_ENTRIES];
-norace uint32_t    sleep_nxt;
+       sleepi_t sleep_trace[MAX_SLEEP_ENTRIES];
+norace uint32_t sleep_nxt;
 
 
-norace struct {
+norace struct {                         /* last sleep cycle */
   uint32_t  entry_ms;
   uint32_t  entry_us;
   rtctime_t entry_rtc;
@@ -430,6 +432,45 @@ implementation {
   }
 
 
+  /*
+   * overflow_enabled: check for ta->R overflow enabled.
+   * return TRUE iff TA1 is running CONTINUOUS, ACLK/1, and
+   * the main interrupt is enabled (overflow).
+   */
+  bool overflow_enabled() {
+    uint16_t ta_ctl;
+
+    ta_ctl = TIMER_A_CTL_IE        |
+             TIMER_A_CTL_MC_MASK   |
+             TIMER_A_CTL_ID_MASK   |
+             TIMER_A_CTL_SSEL_MASK;
+    ta_ctl &= TIMER_A1->CTL;
+    if (ta_ctl ==
+        (TIMER_A_CTL_IE |
+         TIMER_A_CTL_MC__CONTINUOUS |
+         TIMER_A_CTL_ID__1 |
+         TIMER_A_CTL_SSEL__ACLK))
+      return TRUE;
+    return FALSE;
+  }
+
+
+  /*
+   * ccr_cmd_enabled: check to see if a particular CCR is enabled.
+   * return TRUE iff TA1->CCTL[n] (CCR n) is in CMP (compare) mode
+   * and its interrupt is enabled.
+   */
+  bool ccr_cmp_enabled(uint32_t n) {
+    uint16_t ta_cctl;
+
+    ta_cctl  = TIMER_A_CCTLN_CCIE | TIMER_A_CCTLN_CAP;
+    ta_cctl &= TIMER_A1->CCTL[n];
+    if (ta_cctl == TIMER_A_CCTLN_CCIE)
+      return TRUE;
+    return FALSE;
+  }
+
+
   /**
    * closeEnough(): check ta->R and PS for clososity
    */
@@ -439,6 +480,62 @@ implementation {
     if (ta == ((ps + 1) & 0x7fff)) return TRUE;
     if (((ta + 1) & 0x7fff) == ps) return TRUE;
     return FALSE;
+  }
+
+
+  /*
+   * set sleep record for entry and exit
+   * copy appropriate entries from dsi and ctcb.
+   */
+  void sleep_entry(uint16_t where) {
+    sleepi_t    *sr;
+
+    atomic {
+      sr = &sleep_trace[sleep_nxt];
+      if (sr->entry_rtc.year) {           /* completed rec, start new one */
+        sleep_nxt++;
+        if (sleep_nxt >= MAX_SLEEP_ENTRIES)
+          sleep_nxt = 0;
+        sr = &sleep_trace[sleep_nxt];
+      }
+      call Rtc.copyTime(&sr->entry_rtc, &dsi.entry_rtc);
+      sr->entry_ta = dsi.entry_ta;
+      sr->entry_ms = dsi.entry_ms;
+      sr->entry_us = dsi.entry_us;
+
+      sr->exit_rtc.year = 0;
+      sr->exit_ta = 0;
+      sr->exit_us = 0;
+      sr->exit_ms = 0;
+
+      sr->actual   = 0;
+      sr->dest     = ctcb.dest;
+      sr->target   = ctcb.target;
+      sr->delta_j  = ctcb.delta_j;
+      sr->delta_us = ctcb.delta_us;
+      sr->where    = where;
+      sr->which    = ctcb.which;
+      sr->state    = ctcb.state;
+    }
+  }
+
+  void sleep_exit(uint16_t where) {
+    sleepi_t    *sr;
+
+    atomic {
+      /* sleep debug record, finish any previous entry */
+      sr = &sleep_trace[sleep_nxt++];   /* always advance to next. */
+      if (sleep_nxt >= MAX_SLEEP_ENTRIES)
+        sleep_nxt = 0;
+      sleep_trace[sleep_nxt].entry_rtc.year = 0;
+
+      call Rtc.copyTime(&sr->exit_rtc, &dsi.exit_rtc);
+      sr->exit_ta = dsi.exit_ta;
+      sr->exit_ms = dsi.exit_ms;
+      sr->exit_us = dsi.exit_us;
+      sr->actual  = ctcb.actual;
+      sr->where   = where;
+    }
   }
 
 
@@ -524,10 +621,10 @@ implementation {
 
   /**
    * initDeepSleep: set up for deep sleep
-   * Simple DeepSleep, switch main clocks to 32Ki.
+   * Simple DeepSleep, switch main clocks to 128K.
    *
    * We simply switch the high speed clocks from the main clock
-   * (16Mi) to a low speed clock (32Ki).  We have observed idle
+   * (16Mi) to a low speed clock (128K).  We have observed idle
    * current consumption drop from ~500 uA to ~150 uA.
    *
    * Note, if an interrupt occurs while we are checking various
@@ -540,24 +637,102 @@ implementation {
    */
 
   async command void CoreTime.initDeepSleep() {
+    uint8_t      which;                 /* 0xfd not set      */
+                                        /* 0xfe edge, needed */
+                                        /* 0xff overflow     */
+                                        /*   n  ccr set      */
+    uint16_t target, new_target;
     uint16_t cur_ta;
+    uint16_t delta, new_delta;
+    int i;
 
     /* if we are already doing something bail */
     if (ctcb.state != CT_IDLE)
       return;
 
     call CoreTime.log(16);
-
-    cur_ta  = call Platform.jiffiesRaw();
+    ct_ut0 = call Platform.usecsRaw();
+    cur_ta = call Platform.jiffiesRaw();
     dsi.entry_ta = cur_ta;
     dsi.entry_us = call Platform.usecsRaw();
     dsi.entry_ms = call Platform.localTime();
     call Rtc.getTime(&dsi.entry_rtc);
+    dsi.exit_rtc.year = -1;
+
+    ctcb.entry_ms = dsi.entry_ms;
+    ctcb.entry_us = dsi.entry_us;
+    ctcb.entry_ta = cur_ta;
+
+    which = CT_WHICH_NOT_SET;
+    target = 0;
+    delta  = (uint16_t) -1;
+
+    if (overflow_enabled()) {
+      which = CT_WHICH_OVERFLOW;
+      target = 0xffff;                  /* next overflow */
+      delta = 0 - cur_ta;
+      if (delta == 0) delta = 0xffff;   /* special case */
+    }
+    for (i = 0; i < 5; i++) {
+      if (ccr_cmp_enabled(i)) {
+        new_target = TIMER_A1->CCR[i];
+        new_delta  = new_target - cur_ta;
+        if (new_delta < delta) {
+          which = i;
+          target = new_target;
+          delta  = new_delta;
+        }
+      }
+    }
+
+    if (which == CT_WHICH_OVERFLOW)
+      target = 0;                       /* reset to real target */
+
+    if (which == CT_WHICH_NOT_SET) {
+      /*
+       * we should always have something enabled, at least for now.
+       * should have at least the overflow enabled.
+       *
+       * So if nothing enabled, yell and scream.
+       */
+      call Panic.panic(PANIC_TIME, 2, 0, 0, 0, 0);
+      return;
+    }
+
+    /*
+     * We have scanned timing h/w and determined the next timing event.
+     * target/which tells the story.
+     */
+    ctcb.dest    = target;
+    ctcb.target  = target;
+    ctcb.which   = which;
+    ctcb.delta_j = target - cur_ta;
+
+#ifdef USECS_BINARY
+    ctcb.delta_us = ctcb.delta_j * 32;
+#else
+    ctcb.delta_us = (ctcb.delta_j * 305)/10;
+#endif
+
+    ct_ut1 = call Platform.usecsRaw();
+    ct_d_u = ct_ut1 - ct_ut0;
+
+    sleep_entry(1);
+    get_core_rec(16);
+    call CoreTime.log(17);
+
+    nop();
 
     CS->KEY  = CS_KEY_VAL;
-    CS->CTL1 = CS_CTL1_SELS__LFXTCLK | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
+    /*
+     * kick REFO to 128K.  Note it will be hard selected to 32Ki if the
+     * LFXT fails.  We use REFO @ 128K for MCLK to reduce interrupt latency
+     * when in deep sleep.
+     */
+    CS->CLKEN |= CS_CLKEN_REFOFSEL;
+    CS->CTL1 = CS_CTL1_SELS__REFOCLK | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
                CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 | 0 |
-               CS_CTL1_SELM__LFXTCLK | CS_CTL1_DIVM__1;
+               CS_CTL1_SELM__REFOCLK | CS_CTL1_DIVM__1;
     CS->KEY = 0;                        /* lock module */
     ct_cs_stat = CS->STAT;
     ctcb.state = CT_DEEP_SLEEP;
@@ -581,16 +756,16 @@ implementation {
    * is off the 32 Ki LFXT clock).
    */
   async command void CoreTime.irq_preamble() {
-    dbg_sleep_t *sr;
-    ct_rec_t    *cr;
-    uint64_t     e_e, x_e;              /* entry/exit epoch */
-    int32_t      d_s, d_u, d_j;         /* delta secs, micros, jifs */
-    uint32_t     uis;
-    uint32_t     tmp;
+    ct_rec_t     *cr;
+    uint64_t      e_e, x_e;             /* entry/exit epoch */
+    int32_t       d_s, d_u, d_j;        /* delta secs, micros, jifs */
+    uint32_t      uis;
+    uint32_t      tmp;
 
     Timer32_Type *tp;                   /* to play with T32 */
 
     ct_start = call Platform.usecsRaw();
+    next_ta  = TIMER_A1->R;
     if (dsi.entry_rtc.year) {           /* are we in deep sleep? */
       if (ctcb.state < CT_DEEP_SLEEP || ctcb.state >= CT_STATE_MAX)
         call Panic.panic(PANIC_TIME, 1, ctcb.state, 0, 0, 0);
@@ -604,29 +779,19 @@ implementation {
       ct_cs_stat = CS->STAT;
 
       /* capture old values of usecs and ta_r (sleeping) */
-      cr = get_core_rec(32);              /* init and snag old times */
+      cr = get_core_rec(32);
+      call CoreTime.log(32);
 
       dsi.exit_us = call Platform.usecsRaw();
       dsi.exit_ms = call Platform.localTime();
       dsi.exit_ta = cr->ta_r;
       call Rtc.getTime(&dsi.exit_rtc);
-      dsi.entry_rtc.year = 0;
-      ctcb.state = CT_IDLE;
 
       /* add rtc time stamp */
       call Rtc.copyTime(&cr->rtc, &dsi.exit_rtc);
 
-
-      /* sleep debug record, finish any previous entry */
-      sr = &sleep_trace[sleep_nxt++];   /* always advance to next. */
-      if (sleep_nxt >= MAX_SLEEP_ENTRIES)
-        sleep_nxt = 0;
-
-      sr->where = 3;
-      call Rtc.copyTime(&sr->exit_rtc, &dsi.exit_rtc);
-      sr->exit_ta = dsi.exit_ta;
-      sr->exit_ms = dsi.exit_ms;
-      sr->exit_us = dsi.exit_us;
+      dsi.entry_rtc.year = 0;
+      ctcb.state = CT_IDLE;
 
       nop();
 
@@ -652,16 +817,7 @@ implementation {
 #endif
       uis += (d_s * MSP432_T32_ONE_SEC);
 
-      ct_uis = uis;
-      ct_jifs = d_j;
-      sr->actual = d_j;
-      cr->last_delta = d_j;
-
-      /* Verify we are in a reasonable state, not too long, not too short */
-      if (d_j != ctcb.delta_j) {
-        /* probably needs a range check, ie. +1-3 ticks */
-        call Panic.panic(PANIC_TIME, 1, d_j, ctcb.delta, 0, 0);
-      }
+      ctcb.actual = d_j;
 
       /*
        * fix T32_1, our usecs ticker
@@ -675,6 +831,17 @@ implementation {
       tmp = tp->VALUE - tmp;
       tp->LOAD = tmp;                   /* and restart ticker with new val */
 
+      sleep_exit(2);
+
+      ct_uis = uis;
+      ct_jifs = d_j;
+      cr->last_delta = d_j;
+
+      /* Verify we are in a reasonable state, not too long, not too short */
+      if (d_j != ctcb.delta_j) {
+        /* probably needs a range check, ie. +1-3 ticks */
+        call Panic.panic(PANIC_TIME, 1, d_j, ctcb.delta_j, 0, 0);
+      }
       nop();
     }
   }
