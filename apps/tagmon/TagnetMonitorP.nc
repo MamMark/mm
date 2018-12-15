@@ -763,10 +763,10 @@ implementation {
    * just fine if we are using the RTCALARM for our next event.
    */
   async command mcu_power_t McuPowerOverride.lowestState() {
-    if (call RtcAlarm.getAlarm(NULL)) {
+    if (rcb.state == RS_SHUTDOWN || call RtcAlarm.getAlarm(NULL)) {
       /*
-       * if we have an RtcAlarm set, then we are in a low power wait
-       * tell McuSleep.
+       * If in RS_SHUTDOWN or we have an RtcAlarm set, then we are in a low
+       * power wait tell McuSleep.
        */
       return POWER_DEEP_SLEEP;
     }
