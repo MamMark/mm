@@ -1120,6 +1120,12 @@ void __start_time() {
   TIMER_A1->R = RTC_C->PS;
 
   TIMER_A1->CTL |= TA_FREERUN;
+
+  /*
+   * force the RTC offset compensation
+   * only change the offset compensation, when the RTC is off (held).
+   */
+  RTC_C->OCAL = MM_RTC_COMP;
   BITBAND_PERI(RTC_C->CTL13, RTC_C_CTL13_HOLD_OFS) = 0;
   RTC_C->CTL0 = 0;                                          /* close lock */
 }
