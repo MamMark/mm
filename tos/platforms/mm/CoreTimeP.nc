@@ -842,16 +842,18 @@ implementation {
   void add_rps_log(uint16_t r, uint16_t ps, uint16_t where) {
     dbg_r_ps_t *rp;
 
-    rp = &dbg_r_ps[dbg_r_ps_nxt++];
-    if (dbg_r_ps_nxt >= DBG_R_PS_ENTRIES)
-      dbg_r_ps_nxt = 0;
+    atomic {
+      rp = &dbg_r_ps[dbg_r_ps_nxt++];
+      if (dbg_r_ps_nxt >= DBG_R_PS_ENTRIES)
+        dbg_r_ps_nxt = 0;
 
-    rp->where = where;
-    rp->ut0   = 0;
-    rp->r     = r;
-    rp->ut1   = 0;
-    rp->ps    = ps;
-    rp->ut2   = call Platform.usecsRaw();
+      rp->where = where;
+      rp->ut0   = 0;
+      rp->r     = r;
+      rp->ut1   = 0;
+      rp->ps    = ps;
+      rp->ut2   = call Platform.usecsRaw();
+    }
   }
 
 
@@ -886,11 +888,11 @@ implementation {
     dbg_r_ps_t *rp;
     uint16_t r, ps;
 
-    rp = &dbg_r_ps[dbg_r_ps_nxt++];
-    if (dbg_r_ps_nxt >= DBG_R_PS_ENTRIES)
-      dbg_r_ps_nxt = 0;
-
     atomic {
+      rp = &dbg_r_ps[dbg_r_ps_nxt++];
+      if (dbg_r_ps_nxt >= DBG_R_PS_ENTRIES)
+        dbg_r_ps_nxt = 0;
+
       rp->where = where;
       rp->ut0 = call Platform.usecsRaw();
       r       = call Platform.jiffiesRaw();
