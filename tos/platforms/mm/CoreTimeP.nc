@@ -719,7 +719,11 @@ implementation {
     CS->KEY = 0;                        /* lock module */
     ct_cs_stat = CS->STAT;
     ctcb.state = CT_DEEP_SLEEP;
-    return;
+
+    /* switch to AM_LF_VCORE0 */
+    while (PCM->CTL1 & PCM_CTL1_PMR_BUSY);
+    PCM->CTL0 = PCM_CTL0_KEY_VAL | PCM_CTL0_AMR__AM_LF_VCORE0;
+    while (PCM->CTL1 & PCM_CTL1_PMR_BUSY);
   }
 
 
@@ -750,10 +754,12 @@ implementation {
     ct_start = call Platform.usecsRaw();
     next_ta  = TIMER_A1->R;
     if (dsi.entry_rtc.year) {           /* are we in deep sleep? */
-      if (ctcb.state < CT_DEEP_SLEEP || ctcb.state >= CT_STATE_MAX)
-        call Panic.panic(PANIC_TIME, 1, ctcb.state, 0, 0, 0);
+      /* switch back to full power AM_LDO_VCORE0 */
+      while (PCM->CTL1 & PCM_CTL1_PMR_BUSY);
+      PCM->CTL0 = PCM_CTL0_KEY_VAL | PCM_CTL0_AMR__AM_LDO_VCORE0;
+      while (PCM->CTL1 & PCM_CTL1_PMR_BUSY);
 
-      /* first restart the clocks back up to correctness */
+      /* and kick the clocks back up to correctness */
       CS->KEY  = CS_KEY_VAL;
       CS->CTL1 = CS_CTL1_SELS__DCOCLK  | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
                  CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 | 0 |
@@ -764,6 +770,9 @@ implementation {
       /* capture old values of usecs and ta_r (sleeping) */
       cr = get_core_rec(32);
       call CoreTime.log(32);
+
+      if (ctcb.state < CT_DEEP_SLEEP || ctcb.state >= CT_STATE_MAX)
+        call Panic.panic(PANIC_TIME, 1, ctcb.state, 0, 0, 0);
 
       dsi.exit_us = call Platform.usecsRaw();
       dsi.exit_ms = call Platform.localTime();
