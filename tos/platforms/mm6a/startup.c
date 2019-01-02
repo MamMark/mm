@@ -1273,8 +1273,8 @@ void __Reset() {
   P4->DIR = 0xFD;
 
   __watchdog_init();
-  __pins_init();
   __map_ports();
+  __pins_init();
 
   /* reset core hardware back to reasonable state */
   __soft_reset();                       /* pretend in case we didn't do POR */
