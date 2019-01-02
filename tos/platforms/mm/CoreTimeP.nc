@@ -224,23 +224,6 @@ typedef struct {
 norace  uint32_t   dbg_r_ps_nxt;
 
 
-typedef struct {
-  uint32_t us;
-  uint16_t rtc_ps0ctl;
-  uint16_t rtc_ps1ctl;
-  uint16_t ns;
-  uint16_t mask;
-  uint16_t ta;
-  uint16_t ps;
-  uint8_t  where;
-} dbg_ps_int_t;
-
-
-#define DBG_PS_INT_ENTRIES 64
-        dbg_ps_int_t dbg_ps_int[DBG_PS_INT_ENTRIES];
-norace  uint32_t     dbg_ps_int_nxt;
-
-
 module CoreTimeP {
   provides {
     interface CoreTime;
