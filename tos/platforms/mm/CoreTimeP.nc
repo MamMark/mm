@@ -904,8 +904,6 @@ implementation {
     rp->ps  = ps;
     r  &= 0x7fff;
     ps &= 0x7fff;
-
-    check_r_ps(r, ps, 65);
   }
 
 
