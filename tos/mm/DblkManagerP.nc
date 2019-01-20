@@ -202,7 +202,14 @@ implementation {
           if (call DblkManager.hdrValid(hdr)) {
             found_offset = cur_offset;
             found_hdr = *hdr;
+
+            /*
+             * hdr->len indicates exact length of data.  But headers are
+             * constrained to be quad aligned.  Make sure we are looking
+             * at the next header.
+             */
             cur_offset += hdr->len;
+            cur_offset = (cur_offset + 3) & ~(3UL);
           } else
             done = TRUE;
           break;
