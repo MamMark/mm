@@ -219,7 +219,7 @@ implementation {
     P7->OUT = 0xB9; P7->DIR = 0xF8;
     P7->SEL0= 0x80; P7->SEL1= 0x00;
     P8->OUT = 0x00; P8->DIR = 0x02;
-    PJ->OUT = 0x04; PJ->DIR = 0x06;
+    PJ->OUT = 0x04; PJ->DIR = 0x02;
     P7->REN = 0x01;
 
     /*

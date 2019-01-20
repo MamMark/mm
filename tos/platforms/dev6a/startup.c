@@ -568,8 +568,8 @@ void __pins_init() {
    * this lets the gps continue to do what it is doing.
    * If we need to reset it, the gps driver will do it.
    */
-  P6->OUT = 0x01;               /* gps_resetn deasserted */
-  P6->DIR = 0x01;               /* and make resetn an output */
+  P6->OUT = 0x01;               /* gps_resetn deasserted   */
+  P6->DIR = 0x00;               /* but normally an input */
 
   /*
    * SD1 is on P7.{0,1,2} and sd1_csn is P9.4

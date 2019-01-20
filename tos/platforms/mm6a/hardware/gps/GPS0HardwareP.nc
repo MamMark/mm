@@ -262,9 +262,9 @@ implementation {
     atomic {
       GSD4E_CTS_PU = 1;
       GSD4E_ONOFF_DIR = 1;
-      GSD4E_RESETN_OUTPUT;              /* put some energy into it */
+      GSD4E_RESETN = 1;                 /* make sure we don't pull reset */
+      GSD4E_RESETN_FLOAT;               /* and leave floating  (input) */
       GSD4E_PINS_MODULE;                /* connect to the UART */
-      GSD4E_RESETN_FLOAT;               /* then float it */
     }
   }
 
