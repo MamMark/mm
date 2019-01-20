@@ -404,10 +404,14 @@ implementation {
    * header pointed to by header is assumed to be sizeof(dt_header_t)
    * The hdr_crc8 does NOT include the recsum.  This is corrected for
    * via HDR_CRC_LEN and recsum is last in the hdr block.
+   *
+   * Headers are required to start quad aligned.  Verify.
    */
   async command bool DblkManager.hdrValid(dt_header_t *header) {
     uint8_t crc0, crc1;
 
+    if ((uint32_t) header & 3)
+      dm_panic(45, (parg_t) header, 0);
     /* protect against all zeros */
     if (header->len == 0)
       return FALSE;
