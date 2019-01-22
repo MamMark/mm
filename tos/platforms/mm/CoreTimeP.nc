@@ -127,6 +127,7 @@ typedef struct {
   int32_t    ds_last_delta;             /* last delta off desired.  */
   int32_t    deltas[DS_CYCLE_COUNT];    /* entries from last cycle. */
   int32_t    adjustment;
+  uint32_t   booting;                   /* when done, signal boot  */
   uint8_t    cycle_entry;               /* which entry are we working on */
   bool       collect_allowed;           /* collection is allowed.  */
 } dscb_t;
@@ -321,7 +322,8 @@ implementation {
     }
     call Rtc.getTime(&dbg_ct.start_time);
     call CoreTime.dcoSync();
-    signal Booted.booted();
+    dscb.booting = 0xb00bb00bUL;        /* bootboot but with a b */
+                                        /* when done, signal Booted.booted() */
   }
 
 
@@ -338,12 +340,18 @@ implementation {
   /*
    * process the data collected in a dcoSync cycle.
    *
-   * looking for various things.
-   * if we see a zero crossing, ignore the whole cycle.
-   * look for the minimum.
-   * ignore any entries that are bigger than 1.5 * min.
+   * looking for various things.  if we see a zero crossing, ignore the
+   * whole cycle.  look for the minimum.  ignore any entries that are
+   * bigger than 1.5 * min.
    *
    * our steps seem to be about 400 units.
+   *
+   * We finish dcoSync before continuing with the rest of the system
+   * bootstrap.  However, this precludes logging dcoSync cycles.  We want
+   * to record the cycles in ram and then log after the reset of the system
+   * comes up.  Hook into Collect.collectBooted().
+   *
+   * We may want to move dcoSync to start up.
    */
   task void dco_sync_task() {
     int i, n, abs_min, sum, entry;
@@ -387,6 +395,11 @@ implementation {
       CS->CTL0 = control;
       CS->KEY = 0;                  /* lock module */
       call CoreTime.dcoSync();
+    } else {
+      if (dscb.booting == 0xb00bb00bUL) {
+        dscb.booting = 0;
+        signal Booted.booted();
+      }
     }
     dscb.adjustment = 0;
     call CoreTime.verify();
