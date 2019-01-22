@@ -294,17 +294,19 @@ const uint8_t sirf_peek_0[] = {
  *   b1: PTT direction  CP -> SLC (gps)
  *   b2: Freq Transfer off
  *   b3: Counter
- *   b4: RTC Availablity (NO, ours, we lie)
- *   b5: RTC for GPS (0 ext for GPS, no used)
- *   b6: Course Time Avail (0 - no)
+ *   b4: RTC Availablity (0 - no, 1 - RTC available)
+ *   b5: RTC for GPS (0 - external?, 1 - internal?)
+ *   b6: Coarse Time Avail (0 - no)
  *   b7: ref clock on
+ *
+ * We set b4 and b5.
  */
 
 const uint8_t sirf_hw_config_rsp[] = {
   0xa0, 0xa2,                   // start seq
   0x00, 0x08,                   // length 8
   214,                          // HW Config Response, no sid
-  0x00,                         // see above
+  0x30,                         // see above
   0, 0, 0, 0, 0,                // nominal freq (not used).
   0,                            // Network enhance (not used).
   0x00, 0xd6,                   // checksum
