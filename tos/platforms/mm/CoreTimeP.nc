@@ -386,14 +386,16 @@ implementation {
       call CollectEvent.logEvent(DT_EVENT_DCO_SYNC,
             dscb.adjustment, entry, sum, n);
     if (dscb.adjustment) {
-      CS->KEY  = CS_KEY_VAL;
       control = CS->CTL0;
       dcotune = control & CS_CTL0_DCOTUNE_MASK;
       dcotune += dscb.adjustment;
       dcotune &= CS_CTL0_DCOTUNE_MASK;
       control = (control & ~CS_CTL0_DCOTUNE_MASK) | dcotune;
-      CS->CTL0 = control;
-      CS->KEY = 0;                  /* lock module */
+      atomic {
+        CS->KEY  = CS_KEY_VAL;
+        CS->CTL0 = control;
+        CS->KEY = 0;                  /* lock module */
+      }
       call CoreTime.dcoSync();
     } else {
       if (dscb.booting == 0xb00bb00bUL) {
