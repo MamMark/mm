@@ -1013,11 +1013,15 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         minor_change_state(GMS_CONFIG, MON_EV_OTS_NO);
         return;
 
+      case GMS_MPM:
+      case GMS_MPM_WAIT:
+        call MinorTimer.stop();
+        minor_change_state(GMS_MPM, MON_EV_MPM);
+        return;
+
       case GMS_COMM_CHECK:
       case GMS_COLLECT:
-      case GMS_MPM_WAIT:
       case GMS_MPM_RESTART:
-      case GMS_MPM:
         break;
     }
     mon_pulse_comm_check(MON_EV_OTS_NO);
