@@ -287,6 +287,27 @@ const uint8_t sirf_peek_0[] = {
 
 
 /*
+ * almanac/ephemeris status request
+ */
+
+const uint8_t sirf_ephemeris_status[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x02,                   // length 2
+  212,  1,                      // ephemeris status request
+  0x00, 0xd5,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+const uint8_t sirf_almanac_status[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x02,                   // length 2
+  212,  2,                      // almanac status request
+  0x00, 0xd6,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+/*
  * hw_config_rsp: respond to hw_config_req
  *
  * hw config byte 0x00: (bit numbering 1 based in manual)

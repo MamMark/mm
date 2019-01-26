@@ -300,11 +300,17 @@ def emit_sirf_sid_dispatch(level, offset, buf, obj, table, table_name):
 def emit_sirf_ee56(level, offset, buf, obj):
     emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee56_table, 'sirf_ee56')
 
-def emit_sirf_ee232(level, offset, buf, obj):
-    emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee232_table, 'sirf_ee232')
-
 def emit_sirf_nl64(level, offset, buf, obj):
     emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.nl64_table, 'sirf_nl64')
+
+def emit_sirf_stat70(level, offset, buf, obj):
+    emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.stat70_table, 'sirf_stat70')
+
+def emit_sirf_stat212(level, offset, buf, obj):
+    emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.stat212_table, 'sirf_stat212')
+
+def emit_sirf_ee232(level, offset, buf, obj):
+    emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee232_table, 'sirf_ee232')
 
 
 def emit_ee56_sifStat(level, offset, buf, obj):

@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc0'
+__version__ = '0.4.5dev0'
 
 import binascii
 from   collections  import OrderedDict
@@ -228,6 +228,18 @@ def obj_sirf_navtrk_chan():
 # swver (6), its special
 def obj_sirf_swver():
     return atom_sirf_swver(('', '--<{}>--  --<{}>--'))
+
+
+# clock status (7)
+def obj_sirf_clock_status():
+    return aggie(OrderedDict([
+        ('week_x',   atom(('>h', '{}'))),
+        ('tow',      atom(('>I', '{}'))),
+        ('nsats',    atom(('B', '{}'))),
+        ('drift',    atom(('>I', '{}'))),
+        ('bias',     atom(('>I', '{}'))),
+        ('est_time', atom(('>I', '{}'))),
+    ]))
 
 
 # sat vis (13)
@@ -655,8 +667,14 @@ def decode_sirf_sid_dispatch(level, offset, buf, obj, table, table_name):
 def decode_sirf_ee56(level, offset, buf, obj):
     return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee56_table, 'sirf_ee56')
 
-def decode_sirf_ee232(level, offset, buf, obj):
-    return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee232_table, 'sirf_ee232')
-
 def decode_sirf_nl64(level, offset, buf, obj):
     return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.nl64_table, 'sirf_nl64')
+
+def decode_sirf_stat70(level, offset, buf, obj):
+    return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.stat70_table, 'sirf_stat70')
+
+def decode_sirf_stat212(level, offset, buf, obj):
+    return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee212_table, 'sirf_stat212')
+
+def decode_sirf_ee232(level, offset, buf, obj):
+    return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee232_table, 'sirf_ee232')

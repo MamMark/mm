@@ -96,6 +96,11 @@ ee56_count  = {}
 nl64_table  = {}
 nl64_count  = {}
 
+stat70_table  = {}
+stat70_count  = {}
+stat212_table = {}
+stat212_count = {}
+
 ee232_table = {}
 ee232_count = {}
 
