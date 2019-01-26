@@ -311,6 +311,7 @@ event_names = {
     5:  'GPS_TIME',
     6:  'GPS_MTFF_TIME',
     7:  'GPS_FIRST_LOCK',
+    31: 'GPS_LOCK',
 
     8:  'SSW_DELAY_TIME',
     9:  'SSW_BLK_TIME',

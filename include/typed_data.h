@@ -262,8 +262,9 @@ typedef enum {
   DT_EVENT_GPS_GEO          = 3,
   DT_EVENT_GPS_XYZ          = 4,
   DT_EVENT_GPS_TIME         = 5,
-  DT_EVENT_GPS_MTFF_TIME    = 6,       // Mpm To First Fix (MTFF)
+  DT_EVENT_GPS_MTFF_TIME    = 6,       // low pwr (mpm) To First Fix (MTFF)
   DT_EVENT_GPS_FIRST_LOCK   = 7,       // boot to first lock
+  DT_EVENT_GPS_LOCK         = 31,      // lock seen in cycle
 
   DT_EVENT_SSW_DELAY_TIME   = 8,
   DT_EVENT_SSW_BLK_TIME     = 9,
