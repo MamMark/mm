@@ -340,9 +340,10 @@ const uint8_t sirf_go_mpm_0[] = {
   0x00, 0x06,                   // length 6
   218, 2,                       // Req Pwr Mode, MPM
   0,                            // time_out, 0 immediate MPM
-  0,                            // control, RTC uncertainty, 250us (default)
+  4,                            // control, RTC uncertainty, 250us (default)
+                                // reserved bit (return mpm status?)
   0, 0,                         // reserved
-  0x00, 0xdc,                   // checksum
+  0x00, 0xe0,                   // checksum
   0xb0, 0xb3                    // end seq
 };
 
