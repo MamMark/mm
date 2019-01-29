@@ -756,7 +756,17 @@ implementation {
    * do a fix up, dependent on how long we have been asleep.  The RTC as
    * well as TA->R have been running normally (clocked by BCLK/ACLK which
    * is off the 32 Ki LFXT clock).
+   *
+   * WARNING: exit from deepsleep is a critical section.  we can not let
+   * any other interrupts in because they could reenter this section and
+   * will try to take us out of deep sleep again.  Main control variable
+   * is dsi.entry_rtc.year.  If non-zero, we are in deepsleep.
+   *
+   * However, we also need to fix up various timing elements.  We do not
+   * want to let any other code run until these timing elements have been
+   * fixed up.
    */
+
   async command void CoreTime.irq_preamble() {
     ct_rec_t     *cr;
     uint64_t      e_e, x_e;             /* entry/exit epoch */
@@ -766,90 +776,97 @@ implementation {
 
     Timer32_Type *tp;                   /* to play with T32 */
 
-    ct_start = call Platform.usecsRaw();
-    next_ta  = TIMER_A1->R;
-    if (dsi.entry_rtc.year) {           /* are we in deep sleep? */
-      /* switch back to full power AM_LDO_VCORE0 */
-      while (PCM->CTL1 & PCM_CTL1_PMR_BUSY);
-      PCM->CTL0 = PCM_CTL0_KEY_VAL | PCM_CTL0_AMR__AM_LDO_VCORE0;
-      while (PCM->CTL1 & PCM_CTL1_PMR_BUSY);
-
-      /* and kick the clocks back up to correctness */
-      CS->KEY  = CS_KEY_VAL;
-      CS->CTL1 = CS_CTL1_SELS__DCOCLK  | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
-                 CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 | 0 |
-                 CS_CTL1_SELM__DCOCLK  | CS_CTL1_DIVM__1;
-      CS->KEY = 0;                        /* lock module */
-      ct_cs_stat = CS->STAT;
-
-      /* capture old values of usecs and ta_r (sleeping) */
-      cr = get_core_rec(32);
-      call CoreTime.log(32);
-
-      if (ctcb.state < CT_DEEP_SLEEP || ctcb.state >= CT_STATE_MAX)
-        call Panic.panic(PANIC_TIME, 1, ctcb.state, 0, 0, 0);
-
-      dsi.exit_us = call Platform.usecsRaw();
-      dsi.exit_ms = call Platform.localTime();
-      dsi.exit_ta = cr->ta_r;
-      call Rtc.getTime(&dsi.exit_rtc);
-
-      /* add rtc time stamp */
-      call Rtc.copyTime(&cr->rtc, &dsi.exit_rtc);
-
-      dsi.entry_rtc.year = 0;
-      ctcb.state = CT_IDLE;
-
-      nop();
-
-      /* coming out of deep sleep.  Fix any timing elements */
-      e_e = call Rtc.rtc2epoch(&dsi.entry_rtc);         /* entry epoch   */
-      x_e = call Rtc.rtc2epoch(&dsi.exit_rtc);          /* exit  epoch   */
-      d_s = (x_e >> 32) - (e_e >> 32);                  /* delta seconds */
-      d_u = (x_e & 0xffffffff) - (e_e & 0xffffffff);    /* delta usecs   */
-      d_j = dsi.exit_rtc.sub_sec - dsi.entry_rtc.sub_sec;
-      if (d_u < 0) {                                    /* need to borrow */
-        /*
-         * if the micros need a borrow, so do the jifs.
-         * micros is calculated from the sub_sec values and if micros need
-         * a borrow so will the jifs.
-         */
-        d_s--;
-        d_u += 1000000;                                 /* still decimal */
-        d_j += 32768;
-      }
-      uis = d_u;                                        /* actual usecs  */
-#ifdef USECS_BINARY
-      uis =  (d_u * MSP432_T32_ONE_SEC) / 1000000;      /* convert to binary */
-#endif
-      uis += (d_s * MSP432_T32_ONE_SEC);
-
-      ctcb.actual = d_j;
-
+    atomic {
       /*
-       * fix T32_1, our usecs ticker
-       * correct our uis value with h/w correction.  Takes about 4 uis to
-       * stuff so isn't worth the bother.
-       * subtract the result from the current usec ticker (its count down).
-       * and stuff it back into the ticker.
+       * CRITICAL SECTION
        */
-      tp = TIMER32_2;                   /* should be T32_1 */
-      tmp = uis * MSP432_T32_USEC_DIV + 0;
-      tmp = tp->VALUE - tmp;
-      tp->LOAD = tmp;                   /* and restart ticker with new val */
+      ct_start = call Platform.usecsRaw();
+      next_ta  = TIMER_A1->R;
+      if (dsi.entry_rtc.year) {           /* are we in deep sleep? */
+        /* switch back to full power AM_LDO_VCORE0 */
+        while (PCM->CTL1 & PCM_CTL1_PMR_BUSY);
+        PCM->CTL0 = PCM_CTL0_KEY_VAL | PCM_CTL0_AMR__AM_LDO_VCORE0;
+        while (PCM->CTL1 & PCM_CTL1_PMR_BUSY);
 
-      sleep_exit(2);
+        /* and kick the clocks back up to correctness */
+        CS->KEY  = CS_KEY_VAL;
+        CS->CTL1 = CS_CTL1_SELS__DCOCLK  | CS_CTL1_DIVS__2 | CS_CTL1_DIVHS__2 |
+          CS_CTL1_SELA__LFXTCLK | CS_CTL1_DIVA__1 | 0 |
+          CS_CTL1_SELM__DCOCLK  | CS_CTL1_DIVM__1;
+        CS->KEY = 0;                        /* lock module */
+        ct_cs_stat = CS->STAT;
 
-      ct_uis = uis;
-      ct_jifs = d_j;
-      cr->last_delta = d_j;
+        /* capture old values of usecs and ta_r (sleeping) */
+        cr = get_core_rec(32);
+        call CoreTime.log(32);
 
-      /* Verify we are in a reasonable state, not too long, not too short */
-      if (d_j != ctcb.delta_j) {
-        /* probably needs a range check, ie. +1-3 ticks */
-        call Panic.panic(PANIC_TIME, 1, d_j, ctcb.delta_j, 0, 0);
+        if (ctcb.state < CT_DEEP_SLEEP || ctcb.state >= CT_STATE_MAX) {
+          call Panic.panic(PANIC_TIME, 1, ctcb.state, 0, 0, 0);
+          return;
+        }
+
+        dsi.exit_us = call Platform.usecsRaw();
+        dsi.exit_ms = call Platform.localTime();
+        dsi.exit_ta = cr->ta_r;
+        call Rtc.getTime(&dsi.exit_rtc);
+
+        /* add rtc time stamp */
+        call Rtc.copyTime(&cr->rtc, &dsi.exit_rtc);
+
+        dsi.entry_rtc.year = 0;
+        ctcb.state = CT_IDLE;
+
+        nop();
+
+        /* coming out of deep sleep.  Fix any timing elements */
+        e_e = call Rtc.rtc2epoch(&dsi.entry_rtc);         /* entry epoch   */
+        x_e = call Rtc.rtc2epoch(&dsi.exit_rtc);          /* exit  epoch   */
+        d_s = (x_e >> 32) - (e_e >> 32);                  /* delta seconds */
+        d_u = (x_e & 0xffffffff) - (e_e & 0xffffffff);    /* delta usecs   */
+        d_j = dsi.exit_rtc.sub_sec - dsi.entry_rtc.sub_sec;
+        if (d_u < 0) {                                    /* need to borrow */
+          /*
+           * if the micros need a borrow, so do the jifs.
+           * micros is calculated from the sub_sec values and if micros need
+           * a borrow so will the jifs.
+           */
+          d_s--;
+          d_u += 1000000;                                 /* still decimal */
+          d_j += 32768;
+        }
+        uis = d_u;                                        /* actual usecs  */
+#ifdef USECS_BINARY
+        uis =  (d_u * MSP432_T32_ONE_SEC) / 1000000;      /* convert to binary */
+#endif
+        uis += (d_s * MSP432_T32_ONE_SEC);
+
+        ctcb.actual = d_j;
+
+        /*
+         * fix T32_1, our usecs ticker
+         * correct our uis value with h/w correction.  Takes about 4 uis to
+         * stuff so isn't worth the bother.
+         * subtract the result from the current usec ticker (its count down).
+         * and stuff it back into the ticker.
+         */
+        tp = TIMER32_2;                   /* should be T32_1 */
+        tmp = uis * MSP432_T32_USEC_DIV + 0;
+        tmp = tp->VALUE - tmp;
+        tp->LOAD = tmp;                   /* and restart ticker with new val */
+
+        sleep_exit(2);
+
+        ct_uis = uis;
+        ct_jifs = d_j;
+        cr->last_delta = d_j;
+
+        /* Verify we are in a reasonable state, not too long, not too short */
+        if (d_j != ctcb.delta_j) {
+          /* probably needs a range check, ie. +1-3 ticks */
+//        call Panic.panic(PANIC_TIME, 1, d_j, ctcb.delta_j, 0, 0);
+        }
+        nop();
       }
-      nop();
     }
   }
 
