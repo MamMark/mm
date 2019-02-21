@@ -90,8 +90,8 @@ enum {
 #define GPS_MON_MPM_RESTART_WAIT    2048
 #define GPS_MON_COLLECT_DEADMAN     16384
 
-// 30 secs
-#define GPS_MON_CYCLE_TIME          ( 1 * 30 * 1024)
+// 60 secs
+#define GPS_MON_MAX_CYCLE_TIME      ( 1 * 60 * 1024)
 #define GPS_MON_MPM_COLLECT_TIME    ( 2 * 60 * 1024)
 
 // 2 hours
@@ -722,7 +722,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         call CollectEvent.logEvent(DT_EVENT_GPS_FIRST_LOCK,
                 call MajorTimer.getNow() - cycle_start, cycle_start, 0, 0);
         cycle_start = 0;
-        call MajorTimer.startOneShot(GPS_MON_CYCLE_TIME);
+        call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
         minor_event(MON_EV_MAJOR_CHANGED);
         return;
     }
@@ -749,7 +749,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         return;
 
       case GMS_MAJOR_IDLE:
-        call MajorTimer.startOneShot(GPS_MON_CYCLE_TIME);
+        call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
         major_change_state(GMS_MAJOR_CYCLE, MON_EV_TIMEOUT_MAJOR);
         minor_event(MON_EV_MAJOR_CHANGED);
         return;
@@ -783,7 +783,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case GMS_MAJOR_SATS_STARTUP:
       case GMS_MAJOR_MPM_COLLECT:
       case GMS_MAJOR_TIME_COLLECT:
-        call MajorTimer.startOneShot(GPS_MON_CYCLE_TIME);
+        call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
         major_change_state(GMS_MAJOR_CYCLE, MON_EV_CYCLE);
         minor_event(MON_EV_MAJOR_CHANGED);
         return;
