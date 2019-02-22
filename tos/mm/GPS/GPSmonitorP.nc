@@ -211,13 +211,14 @@ typedef struct {
 } gps_time_t;
 
 
-typedef struct {
-  const uint8_t *msg;
-  uint32_t       len;
-} gps_canned_t;
-
-
 #define GMCB_MAJIK 0xAF52FFFF
+
+typedef enum {
+  GPSM_TXQ_IDLE = 0,                    /* nothing happening */
+  GPSM_TXQ_SENDING,                     /* send a msg */
+  GPSM_TXQ_DELAY,                       /* delaying after a send */
+  GPSM_TXQ_DRAIN,                       /* draining sending bits */
+} txq_state_t;
 
 typedef struct {
   uint32_t           majik_a;
@@ -226,8 +227,13 @@ typedef struct {
   uint16_t           retry_count;
   uint16_t           msg_count;             /* used to tell if we are seeing msgs */
   bool               lock_seen;             /* lock seen in current cycle */
+  txq_state_t        txq_state;             /* state of txq system */
+  uint8_t            txq_head;              /* index of next message to go out */
+  uint8_t            txq_nxt;               /* index of next entry of queue */
+  uint8_t            txq_len;               /* how many in queue. */
   uint32_t           majik_b;
 } gps_monitor_control_t;
+
 
 module GPSmonitorP {
   provides {
@@ -253,7 +259,13 @@ module GPSmonitorP {
   }
 }
 implementation {
+
   gps_monitor_control_t gmcb;           /* gps monitor control block */
+
+
+#define MAX_GPS_TXQ 16
+
+  uint8_t *txq[MAX_GPS_TXQ];
 
 norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   uint32_t     cycle_start, cycle_count, cycle_sum;
@@ -274,6 +286,102 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
   void gps_panic(uint8_t where, parg_t p, parg_t p1) {
     call Panic.panic(PANIC_GPS, where, p, p1, 0, 0);
+  }
+
+
+  /*
+   * txq - gps message queue going to the gps chip
+   *
+   * The TXQ is used to send various messages to the GPS chip.
+   * Status messages and debug messages.
+   *
+   * The txq only runs when the Minor State machine is in Collect.
+   * It gets fired up when we enter COLLECT for any reason and runs
+   * until the txq is emptied.
+   *
+   * When in COLLECT the chip should be listening.
+   */
+
+  uint8_t txq_adv(uint8_t idx) {
+    idx++;
+    if (idx >= MAX_GPS_TXQ)
+      idx = 0;
+    return idx;
+  }
+
+
+  error_t txq_start() {
+    uint8_t *gps_msg;
+    uint16_t gps_len;
+
+    if (gmcb.txq_state != GPSM_TXQ_IDLE)
+      return EALREADY;
+    if (gmcb.txq_len == 0)
+      return EOFF;
+
+    if (gmcb.txq_len >= MAX_GPS_TXQ)
+      gps_panic(-1, gmcb.txq_len, 0);
+
+    /*
+     * head of the queue is assumed to be a sirfbin gps msg
+     *
+     * 1st two bytes are the SOP following by a big endian uint16 len.
+     * not aligned.  So we have to extract the length by hand.
+     */
+    gps_msg = txq[gmcb.txq_head];
+    gps_len = gps_msg[2] << 8 | gps_msg[3];
+    if (gps_msg[0] != SIRFBIN_A0 ||
+        gps_msg[1] != SIRFBIN_A2 ||
+        gps_len > SIRFBIN_MAX_MSG)
+      gps_panic(-1, gps_msg[0] << 8 | gps_msg[1], gps_len);
+    gps_len += SIRFBIN_OVERHEAD;        /* add in overhead */
+    gmcb.txq_state = GPSM_TXQ_SENDING;
+    return call GPSTransmit.send(gps_msg, gps_len);
+  }
+
+
+  error_t txq_enqueue(uint8_t *gps_msg) {
+    if (gmcb.txq_len == 0) {            /* empty queue */
+      txq[gmcb.txq_head] = gps_msg;
+      gmcb.txq_nxt = txq_adv(gmcb.txq_head);
+      gmcb.txq_len++;
+      return SUCCESS;
+    }
+    if (gmcb.txq_len >= MAX_GPS_TXQ)
+      return EBUSY;                     /* no room */
+    txq[gmcb.txq_nxt] = gps_msg;
+    gmcb.txq_nxt = txq_adv(gmcb.txq_nxt);
+    gmcb.txq_len++;
+    return SUCCESS;
+  }
+
+
+  /* enqueue and start the queue */
+  error_t txq_send(uint8_t *gps_msg) {
+    error_t err;
+
+    err = txq_enqueue(gps_msg);
+    if (err == SUCCESS)
+      err = txq_start();
+    return err;
+  }
+
+
+  /*
+   * txq_purge: empty the txq and abort any inprogress.
+   *
+   * if we set state to DRAIN, the send_stop will come back
+   * with send_done.
+   */
+  void txq_purge() {
+    if (gmcb.txq_state == GPSM_TXQ_SENDING) {
+      gmcb.txq_state = GPSM_TXQ_DRAIN;
+      call GPSTransmit.send_stop();
+    } else
+      gmcb.txq_state = GPSM_TXQ_IDLE;
+    gmcb.txq_head = 0;
+    gmcb.txq_nxt  = 0;
+    gmcb.txq_len  = 0;
   }
 
 
