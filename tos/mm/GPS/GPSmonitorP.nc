@@ -79,9 +79,14 @@
 /*
  * define GPS_USE_MPM to use MPM mode of the SirfStarIV, otherwise, low
  *     power mode is standby vs. MPM.
+ *
+ * define GPS_LOCK_ENDS_CYCLE to enable receipt of a lock, either lock_pos
+ *     or lock_time, to end the cycle and enter low power.
  */
 
 //#define GPS_USE_MPM
+#define GPS_LOCK_ENDS_CYCLE
+
 #ifndef PANIC_GPS
 enum {
   __pcode_gps = unique(UQ_PANIC_SUBSYS)
@@ -889,6 +894,18 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         cycle_start = 0;
         call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
         minor_event(MON_EV_MAJOR_CHANGED);
+        return;
+
+      case GMS_MAJOR_CYCLE:
+#ifdef GPS_LOCK_ENDS_CYCLE
+        if (ev == MON_EV_LOCK_TIME) {
+          major_change_state(GMS_MAJOR_LOCK_DELAY, ev);
+          call CollectEvent.logEvent(DT_EVENT_GPS_LOCK,
+                                     call MajorTimer.getNow() - cycle_start, cycle_start, 0, 0);
+          call MajorTimer.startOneShot(GPS_MON_LOCK_DELAY_TIME);
+          minor_event(MON_EV_MAJOR_CHANGED);
+        }
+#endif
         return;
     }
   }
