@@ -76,6 +76,12 @@
 #include <gps_mon.h>
 #include <rtctime.h>
 
+/*
+ * define GPS_USE_MPM to use MPM mode of the SirfStarIV, otherwise, low
+ *     power mode is standby vs. MPM.
+ */
+
+//#define GPS_USE_MPM
 #ifndef PANIC_GPS
 enum {
   __pcode_gps = unique(UQ_PANIC_SUBSYS)
@@ -1082,7 +1088,11 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         minor_change_state(GMS_MPM_WAIT, MON_EV_TIMEOUT_MINOR);
         gmcb.retry_count++;
         awake = call GPSControl.awake();
+#ifdef GPS_USE_MPM
         err = txq_send((void *) sirf_go_mpm_0);
+#else
+        err = 0;
+#endif
         call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 100, err, 0, awake);
         call MinorTimer.startOneShot(GPS_MON_MPM_RSP_TO);
         return;
@@ -1136,6 +1146,10 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
       case GMS_COMM_CHECK:
         if (gmcb.major_state == GMS_MAJOR_IDLE) {
+          /*
+           * Major indicates we want to quiese the GPS.
+           */
+#ifdef GPS_USE_MPM
           minor_change_state(GMS_MPM_WAIT, MON_EV_MSG);
           gmcb.retry_count = 0;
           awake = call GPSControl.awake();
@@ -1143,6 +1157,21 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
           call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 101, err, 0, awake);
           call MinorTimer.startOneShot(GPS_MON_MPM_RSP_TO);
           return;
+#else
+          /*
+           * Not using MPM, just pulse it off
+           */
+          minor_change_state(GMS_MPM_WAIT, MON_EV_MSG);
+          gmcb.retry_count = 0;
+          err = 0;
+          awake = call GPSControl.awake();
+          call GPSControl.pulseOnOff();
+
+          /* should get a OTS-no back. */
+          call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 101, err, 0, awake);
+          call MinorTimer.startOneShot(GPS_MON_MPM_RSP_TO);
+          return;
+#endif
         }
         /*
          * not IDLE,       kick back into COLLECT
