@@ -103,16 +103,19 @@ enum {
 #define GPS_MON_MPM_RESTART_WAIT    2048
 #define GPS_MON_COLLECT_DEADMAN     16384
 
-// 60 secs
-#define GPS_MON_MAX_CYCLE_TIME      ( 1 * 60 * 1024)
+/*
+ * 120 secs, we have observed slow start up times of around 60 secs, so for
+ * now use a max_cycle of 2 mins.
+ */
+#define GPS_MON_MAX_CYCLE_TIME      ( 2 * 60 * 1024)
 #define GPS_MON_MPM_COLLECT_TIME    ( 2 * 60 * 1024)
 #define GPS_MON_LOCK_DELAY_TIME     (      2 * 1024)
 
-// 2 hours
-#define GPS_MON_SATS_STARTUP_TIME   ( 2 * 60 * 60 * 1024)
+// 5 mins
+#define GPS_MON_SATS_STARTUP_TIME   ( 5 * 60 * 1024)
 
-// 4 hours
-#define GPS_MON_SLEEP               ( 4 * 60 * 60 * 1024)
+// 5 mins between last cycle and next cycle
+#define GPS_MON_SLEEP               ( 5 * 60 * 1024)
 
 /*
  * mpm_rsp_to   timeout for listening for mpm rsp after
