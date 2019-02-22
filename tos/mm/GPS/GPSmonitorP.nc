@@ -495,8 +495,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         gmcb.lock_seen   = FALSE;
         minor_change_state(GMS_CONFIG, MON_EV_STARTUP);
         call GPSControl.logStats();
-        cycle_start= call MajorTimer.getNow();
         txq_send((void *) sirf_swver);
+        cycle_start = call MajorTimer.getNow();
         call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
         return;
     }
@@ -1106,7 +1106,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
       case GMS_MPM:                     /* expiration of gps_sense    */
         TELL = 1;
-        cycle_start = call MinorTimer.getNow();
+        cycle_start = call MajorTimer.getNow();
         cycle_count++;
         gmcb.lock_seen = FALSE;
         mon_pulse_comm_check(MON_EV_MAJOR_CHANGED);
@@ -1202,7 +1202,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
      * leave cycle_count alone and let the major state change grab it.
      */
     if (ev == MON_EV_LOCK_TIME && cycle_count && cycle_start) {
-      elapsed = call MinorTimer.getNow() - cycle_start;
+      elapsed = call MajorTimer.getNow() - cycle_start;
       cycle_sum += elapsed;
       call CollectEvent.logEvent(DT_EVENT_GPS_MTFF_TIME, cycle_count,
                                  elapsed, cycle_sum/cycle_count, 0);
