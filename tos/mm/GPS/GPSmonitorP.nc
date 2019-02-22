@@ -385,6 +385,20 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
+  void enqueue_entry_status_msgs() {
+    txq_enqueue((void *) sirf_poll_clk_status);
+#ifdef notdef
+    txq_enqueue((void *) sirf_swver);
+    txq_enqueue((void *) sirf_almanac_status);
+    txq_enqueue((void *) sirf_ephemeris_status);
+    txq_enqueue((void *) sirf_ee_poll_ephemeris);
+#endif
+  }
+
+  void enqueue_exit_status_msgs() {
+    enqueue_entry_status_msgs();
+  }
+
   void verify_gmcb() {
     if (gmcb.majik_a != GMCB_MAJIK || gmcb.majik_a != GMCB_MAJIK)
       gps_panic(102, (parg_t) &gmcb, 0);
@@ -393,13 +407,22 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
   void major_change_state(gpsm_major_state_t new_state, mon_event_t ev) {
+    gpsm_major_state_t old_state;
+
     verify_gmcb();
-    call CollectEvent.logEvent(DT_EVENT_GPS_MON_MAJOR, gmcb.major_state,
-                               new_state, ev, 0);
+    old_state = gmcb.major_state;
+    call CollectEvent.logEvent(DT_EVENT_GPS_MON_MAJOR, old_state, new_state,
+                               ev, 0);
     gmcb.major_state = new_state;
     last_nsats_count = 0;
     if (gmcb.major_state != GMS_MAJOR_IDLE)
       no_deep_sleep = TRUE;
+    if (old_state != new_state) {
+      if (new_state == GMS_MAJOR_CYCLE)
+        enqueue_entry_status_msgs();
+      if (old_state == GMS_MAJOR_CYCLE)
+        enqueue_exit_status_msgs();
+    }
   }
 
 
