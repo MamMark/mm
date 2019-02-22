@@ -418,6 +418,10 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       else
         no_deep_sleep = TRUE;
     }
+
+    /* if we entered collect, start the txq */
+    if (gmcb.minor_state == GMS_COLLECT)
+      txq_start();
   }
 
 
@@ -456,6 +460,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
 
   event void GPSControl.gps_booted() {
+    txq_purge();                        /* no left overs */
     switch (gmcb.minor_state) {
       default:
         gps_panic(1, gmcb.minor_state, 0);
@@ -467,8 +472,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         gmcb.lock_seen   = FALSE;
         minor_change_state(GMS_CONFIG, MON_EV_STARTUP);
         call GPSControl.logStats();
-        call GPSTransmit.send((void *) sirf_swver, sizeof(sirf_swver));
         cycle_start= call MajorTimer.getNow();
+        txq_send((void *) sirf_swver);
         call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
         return;
     }
@@ -536,11 +541,11 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
   /* also in tagcore/gps_mon.py  */
-  const gps_canned_t canned_msgs[] = {
-    { sirf_peek_0,              sizeof(sirf_peek_0)        },   /* 0 */
-    { sirf_swver,               sizeof(sirf_swver)         },   /* 1 */
-    { sirf_factory_reset,       sizeof(sirf_factory_reset) },   /* 2 */
-    { sirf_factory_clear,       sizeof(sirf_factory_clear) },   /* 3 */
+  const uint8_t *canned_msgs[] = {
+    sirf_peek_0,                        /* 0 */
+    sirf_swver,                         /* 1 */
+    sirf_factory_reset,                 /* 2 */
+    sirf_factory_clear,                 /* 3 */
   };
 
 #define MAX_CANNED 3
@@ -683,7 +688,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
       case GDC_MPM:
         awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) sirf_go_mpm_0, sizeof(sirf_go_mpm_0));
+        err = txq_send((void *) sirf_go_mpm_0);
         call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 999, err, 0, awake);
         break;
 
@@ -711,7 +716,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
           }
           /* raw_tx_buf <- gp->data */
           copy_data(raw_tx_buf, gp->data, l);
-          err   = call GPSTransmit.send(raw_tx_buf, *lenp - 1);
+          err = txq_send(raw_tx_buf);
         } while (0);
         call CollectEvent.logEvent(DT_EVENT_GPS_RAW_TX, 999, err, l, awake);
         break;
@@ -732,8 +737,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
             err = EINVAL;
             break;
           }
-          err   = call GPSTransmit.send((void *) canned_msgs[l].msg,
-                                        canned_msgs[l].len);
+          err = txq_send((void *) canned_msgs[l]);
         } while (0);
         call CollectEvent.logEvent(DT_EVENT_GPS_CANNED, l, err, l, awake);
         break;
@@ -802,7 +806,28 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
   event void GPSTransmit.send_done() {
-    raw_tx_busy = FALSE;
+    switch(gmcb.txq_state) {
+      default:
+        break;
+
+      case GPSM_TXQ_DRAIN:
+        gmcb.txq_state = GPSM_TXQ_IDLE;
+
+        /*
+         * It is possible that new messages may have been queued
+         * to go out after the purge occurred.  So we call txq_start()
+         * after going to IDLE, to restart sending from the queue.
+         */
+        txq_start();
+        break;
+
+      case GPSM_TXQ_SENDING:
+        gmcb.txq_head = txq_adv(gmcb.txq_head);
+        gmcb.txq_len--;
+        gmcb.txq_state = GPSM_TXQ_IDLE;
+        txq_start();                        /* fire next one up */
+        break;
+    }
   }
 
 
@@ -989,7 +1014,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
           call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, gmcb.retry_count, 0,
                                      0, call GPSControl.awake());
         }
-        call GPSTransmit.send((void *) sirf_swver, sizeof(sirf_swver));
+        txq_send((void *) sirf_swver);
         call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
         return;
 
@@ -1034,8 +1059,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         minor_change_state(GMS_MPM_WAIT, MON_EV_TIMEOUT_MINOR);
         gmcb.retry_count++;
         awake = call GPSControl.awake();
-        err   = call GPSTransmit.send((void *) sirf_go_mpm_0,
-                                      sizeof(sirf_go_mpm_0));
+        err = txq_send((void *) sirf_go_mpm_0);
         call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 100, err, 0, awake);
         call MinorTimer.startOneShot(GPS_MON_MPM_RSP_TO);
         return;
@@ -1092,8 +1116,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
           minor_change_state(GMS_MPM_WAIT, MON_EV_MSG);
           gmcb.retry_count = 0;
           awake = call GPSControl.awake();
-          err   = call GPSTransmit.send((void *) sirf_go_mpm_0,
-                                        sizeof(sirf_go_mpm_0));
+          err = txq_send((void *) sirf_go_mpm_0);
           call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 101, err, 0, awake);
           call MinorTimer.startOneShot(GPS_MON_MPM_RSP_TO);
           return;
@@ -1117,6 +1140,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
   void mon_ev_ots_no() {
+    txq_purge();
     switch(gmcb.minor_state) {
       default:
         return;
@@ -1171,6 +1195,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         gps_warn(138, gmcb.minor_state, 0);
         return;
 
+      case GMS_MPM:
       case GMS_MPM_WAIT:
         TELL = 0;
         call MinorTimer.stop();
@@ -1378,8 +1403,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   void process_hw_config_req(sb_header_t *sbh, rtctime_t *rtp) {
     error_t err;
 
-    err   = call GPSTransmit.send((void *) sirf_hw_config_rsp,
-                                  sizeof(sirf_hw_config_rsp));
+//    err = txq_send((void *) sirf_hw_config_rsp);
+    err = 0;
     call CollectEvent.logEvent(DT_EVENT_GPS_HW_CONFIG, err, 0,
                                0, call GPSControl.awake());
   }
@@ -1408,7 +1433,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
   void process_default(sb_header_t *sbp, rtctime_t *rtp) {
     const uint8_t *msg;
-    uint16_t       size;
     uint32_t       awake, err;
     uint8_t        mid;
 
@@ -1417,15 +1441,15 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
     mid = sbp->mid;
     switch(mid) {
-      default:  size = 0;                    msg = NULL;         break;
-      case 9:   size = sizeof(sirf_9_off);   msg = sirf_9_off;   break;
-      case 51:  size = sizeof(sirf_51_off);  msg = sirf_51_off;  break;
-      case 92:  size = sizeof(sirf_92_off);  msg = sirf_92_off;  break;
-      case 93:  size = sizeof(sirf_93_off);  msg = sirf_93_off;  break;
+      default:  msg = NULL;         break;
+      case 9:   msg = sirf_9_off;   break;
+      case 51:  msg = sirf_51_off;  break;
+      case 92:  msg = sirf_92_off;  break;
+      case 93:  msg = sirf_93_off;  break;
     }
     if (msg) {
       awake = call GPSControl.awake();
-      err   = call GPSTransmit.send((void *) msg, size);
+      err = txq_send((void *) msg);
       call CollectEvent.logEvent(DT_EVENT_GPS_MSG_OFF, mid, err, 0, awake);
     }
   }
