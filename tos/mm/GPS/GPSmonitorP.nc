@@ -63,6 +63,8 @@
  * MPM_COLLECT  collecting fixes to help MPM heal.
  * SATS_COLLECT collecting fixes for almanac and ephemis collection
  * TIME_COLLECT collecting fixes when doing time syncronization
+ * LOCK_DELAY   leaving CYCLE due to lock seen, staying up just a bit more.
+ *              Usually to let status msgs be seen after lock.
  */
 
 
@@ -93,6 +95,7 @@ enum {
 // 60 secs
 #define GPS_MON_MAX_CYCLE_TIME      ( 1 * 60 * 1024)
 #define GPS_MON_MPM_COLLECT_TIME    ( 2 * 60 * 1024)
+#define GPS_MON_LOCK_DELAY_TIME     (      2 * 1024)
 
 // 2 hours
 #define GPS_MON_SATS_STARTUP_TIME   ( 2 * 60 * 60 * 1024)
@@ -756,6 +759,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
       case GMS_MAJOR_CYCLE:
       case GMS_MAJOR_MPM_COLLECT:
+      case GMS_MAJOR_LOCK_DELAY:
         gmcb.msg_count = 0;
         call MajorTimer.startOneShot(GPS_MON_SLEEP);
         major_change_state(GMS_MAJOR_IDLE, MON_EV_TIMEOUT_MAJOR);
@@ -783,6 +787,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case GMS_MAJOR_SATS_STARTUP:
       case GMS_MAJOR_MPM_COLLECT:
       case GMS_MAJOR_TIME_COLLECT:
+      case GMS_MAJOR_LOCK_DELAY:
         call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
         major_change_state(GMS_MAJOR_CYCLE, MON_EV_CYCLE);
         minor_event(MON_EV_MAJOR_CHANGED);

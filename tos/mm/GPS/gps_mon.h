@@ -138,7 +138,8 @@ typedef enum {
   GMS_MAJOR_SATS_STARTUP   = 3,         /* SATS Startup, Collect   */
   GMS_MAJOR_SATS_COLLECT   = 4,         /* SATS Collection         */
   GMS_MAJOR_TIME_COLLECT   = 5,         /* TIME sync Collection    */
-  GMS_MAJOR_MAX            = 5,
+  GMS_MAJOR_LOCK_DELAY     = 6,         /* CYCLE to IDLE delay after lock */
+  GMS_MAJOR_MAX            = 6,
 } gpsm_major_state_t;                   /* gps monitor major state */
 
 
