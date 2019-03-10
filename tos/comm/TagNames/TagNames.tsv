@@ -7,10 +7,10 @@ x	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetRuleSets
 		x	x			<iota>	<error>, <iota>, <count>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_dblk_note_t	DblkNote	uses		tag	sd	0	dblk	note
 		x	x			<iota>	<error>, <iota>, <count>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_gps_cmd_t	InfoSensGpsCmd	uses		tag	info	sens	gps	cmd
 	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	PanicBytes	uses		tag	sd	0	panic	byte
-	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestDropBytes	uses		tag	.test	drop	byte	
-	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestEchoBytes	uses		tag	.test	echo	byte	
-	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestOnesBytes	uses		tag	.test	ones	byte	
-	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestZeroBytes	uses		tag	.test	zero	byte	
+	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestDropBytes	uses		tag	.test	drop		
+	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestEchoBytes	uses		tag	.test	echo		
+	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestOnesBytes	uses		tag	.test	ones		
+	x		x			<iota>, <count>, <block>	<error>, <iota>, <count>, <block>	TagnetFileByteAdapterP	TagnetAdapter	tagnet_file_bytes_t	TestZeroBytes	uses		tag	.test	zero		
 	x		x				<gps_xyz>	TagnetGpsXyzAdapterP	TagnetAdapter	tagnet_gps_xyz_t	InfoSensGpsXyz	uses		tag	info	sens	gps	xyz
 	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetImageAdapterP						tag	sd	0	img	
 	x		x			<int>	<error>, <int>	TagnetIntegerAdapterP	TagnetAdapter	int32_t	PollCount	uses		tag	poll	cnt		

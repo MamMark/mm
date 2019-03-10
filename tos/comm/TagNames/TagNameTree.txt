@@ -2,15 +2,11 @@ root
 +-- tag
     |-- .test
     |   |-- drop
-    |   |   +-- byte
     |   |-- echo
-    |   |   +-- byte
     |   |-- ones
-    |   |   +-- byte
     |   |-- rssi
     |   |-- tx_pwr
     |   +-- zero
-    |       +-- byte
     |-- info
     |   +-- sens
     |       +-- gps

@@ -41,10 +41,14 @@ module TagnetTestBytesP {
 }
 implementation {
 
-  uint8_t zeros[256];
-  uint8_t ones[256];
-  uint8_t echo[256];
-  uint8_t echo_len;
+  uint32_t  drop_cnt;   // number of bytes dropped since start of test
+  uint8_t   zeros[256]; // zero data pattern
+  uint32_t  zero_cnt;   // number of zero bytes correctly received
+  uint8_t   ones[256];  // ones data pattern
+  uint32_t  ones_cnt;   // number of ones bytes correctly received
+  uint8_t   echo[256];  // echo data pattern (received in put, returned in get)
+  uint32_t  echo_len;   // length of stored echo pattern
+  uint32_t  echo_cnt;   // number of echo bytes sent
 
   bool update_block(tagnet_file_bytes_t *db, uint8_t *block, uint32_t err, uint32_t actual) {
     db->block = block;
@@ -70,12 +74,13 @@ implementation {
       case FILE_GET_DATA:
         if (*lenp > sizeof(zeros))
           *lenp = sizeof(zeros);
+        zero_cnt += *lenp;
         return update_block(db, zeros, SUCCESS, *lenp);
-      case TN_HEAD:
+      case FILE_GET_ATTR:
         db->block = NULL;
         db->error = SUCCESS;
-        db->iota = 0;
-        db->count = 0;
+        db->iota = zero_cnt;
+        db->count = zero_cnt;
         *lenp = 0;
         return TRUE;
       default:
@@ -95,14 +100,19 @@ implementation {
     switch (db->action) {
       case FILE_SET_DATA:
         err = SUCCESS;
-        for (idx = 0; idx < *lenp; idx++) {
-          if (db->block[idx] != 0) {
-            err = EINVAL;
-            break;
+        if (db->block) {
+          for (idx = 0; idx < *lenp; idx++) {
+            if (db->block[idx] != 0) {
+              err = EINVAL;
+              break;
+            }
           }
+          zero_cnt += *lenp;
+        } else {
+          zero_cnt = 0;
         }
         *lenp = 0;  // no bytes to return
-        return update_block(db, NULL, err, idx);
+        return update_block(db, NULL, err, zero_cnt);
       default:
         break;
     }
@@ -124,12 +134,13 @@ implementation {
       case FILE_GET_DATA:
         if (*lenp > sizeof(ones))
           *lenp = sizeof(ones);
+        ones_cnt += *lenp;
         return update_block(db, ones, SUCCESS, *lenp);
-      case TN_HEAD:
+      case FILE_GET_ATTR:
         db->block = NULL;
         db->error = SUCCESS;
-        db->iota = 0;
-        db->count = 0;
+        db->iota = ones_cnt;
+        db->count = ones_cnt;
         *lenp = 0;
         return TRUE;
       default:
@@ -149,14 +160,19 @@ implementation {
     switch (db->action) {
       case FILE_SET_DATA:
         err = SUCCESS;
-        for (idx = 0; idx < *lenp; idx++) {
-          if (db->block[idx] != 0xff) {
-            err = EINVAL;
-            break;
+        if (db->block) {
+          for (idx = 0; idx < *lenp; idx++) {
+            if (db->block[idx] != 0xff) {
+              err = EINVAL;
+              break;
+            }
           }
+          ones_cnt += *lenp;
+        } else {
+          ones_cnt = 0;
         }
         *lenp = 0;  // no bytes to return
-        return update_block(db, NULL, err, idx);
+        return update_block(db, NULL, err, ones_cnt);
       default:
         break;
     }
@@ -178,12 +194,13 @@ implementation {
       case FILE_GET_DATA:
         if (*lenp > echo_len)
           *lenp = echo_len;
+        echo_cnt += *lenp;
         return update_block(db, echo, SUCCESS, *lenp);
-      case TN_HEAD:
+      case FILE_GET_ATTR:
         db->block = NULL;
         db->error = SUCCESS;
-        db->iota = 0;
-        db->count = 0;
+        db->iota = echo_cnt;
+        db->count = echo_cnt;
         *lenp = 0;
         return TRUE;
       default:
@@ -197,17 +214,21 @@ implementation {
   command bool TestEchoBytes.set_value(tagnet_file_bytes_t *db, uint32_t *lenp) {
     uint32_t  idx;
 
-    if (!db || !lenp || !db->block)
+    if (!db || !lenp)
       call Panic.panic(0, 0, 0, 0, 0, 0);
     switch (db->action) {
       case FILE_SET_DATA:
-        if (*lenp > sizeof(echo))
-          *lenp = sizeof(echo);
-        for (idx = 0; idx < *lenp; idx++)
-          echo[idx] = db->block[idx];
-        echo_len = idx;
+        if (db->block) {
+          if (*lenp > sizeof(echo))
+            *lenp = sizeof(echo);
+          for (idx = 0; idx < *lenp; idx++)
+            echo[idx] = db->block[idx];
+          echo_len = idx;
+        } else {
+          echo_cnt = 0;
+        }
         *lenp = 0;  // no bytes to return
-        return update_block(db, NULL, SUCCESS, idx);
+        return update_block(db, NULL, SUCCESS, echo_len);
       default:
         break;
     }
@@ -226,11 +247,11 @@ implementation {
     if (!db || !lenp)
       call Panic.panic(0, 0, 0, 0, 0, 0);
     switch (db->action) {
-      case TN_HEAD:
+      case FILE_GET_ATTR:
         db->block = NULL;
         db->error = SUCCESS;
-        db->iota = 0;
-        db->count = 0;
+        db->iota = drop_cnt;
+        db->count = drop_cnt;
         *lenp = 0;
         return TRUE;
       default:
@@ -245,6 +266,18 @@ implementation {
     if (!db || !lenp)
       call Panic.panic(0, 0, 0, 0, 0, 0);
     switch (db->action) {
+      case FILE_SET_DATA:
+        if (db->block) {
+          drop_cnt += *lenp;
+          db->block = NULL;
+          db->error = SUCCESS;
+          db->iota = drop_cnt;
+          db->count = drop_cnt;
+        } else {
+          drop_cnt = 0;
+        }
+        *lenp = 0;
+        return TRUE;
       default:
         break;
     }
