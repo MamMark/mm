@@ -549,7 +549,7 @@ implementation {
       while (call Platform.usecsRaw() - t0 < DT_GPS_ON_OFF_WIDTH_US) {
         if (!call HW.gps_awake()) return;
       }
-      gps_panic(8, 1, 0);
+//      gps_panic(8, 1, 0);
       return;
     }
   }
