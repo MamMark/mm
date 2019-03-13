@@ -305,6 +305,7 @@ implementation {
   }
 
   event void Boot.booted() {
+    call CoreTime.log(0x70);
     atomic {
       call OverWatch.sysBootStart();    /* tell overwatch, sysboot start */
       NVIC_SetPriority(CS_IRQn, call Platform.getIntPriority(CS_IRQn));
@@ -320,6 +321,7 @@ implementation {
       BITBAND_PERI(RTC_C->CTL0, RTC_C_CTL0_OFIE_OFS) = 1;
       BITBAND_PERI(RTC_C->CTL0, RTC_C_CTL0_KEY_OFS) = 0;    /* close lock */
     }
+    call CoreTime.log(0x71);
     call Rtc.getTime(&dbg_ct.start_time);
     call CoreTime.dcoSync();
     dscb.booting = 0xb00bb00bUL;        /* bootboot but with a b */
@@ -404,7 +406,7 @@ implementation {
       }
     }
     dscb.adjustment = 0;
-    call CoreTime.verify();
+    call CoreTime.log(0x72);
   }
 
 
