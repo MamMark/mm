@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
+# Copyright (c) 2017-2019 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -227,6 +227,12 @@ class TagFile(object):
             try:
                 self.seek(offset)
                 buf = self.read(dt_records[DT_SYNC][DTR_REQ_LEN])
+                if len(buf) < dt_records[DT_SYNC][DTR_REQ_LEN]:
+                  if (self.verbose >= 4):
+                    print('*** resync: too few bytes read for resync record, '
+                          'wanted {}, got {}'.format(
+                            dt_records[DT_SYNC][DTR_REQ_LEN], len(buf)))
+                  return EODATA
                 record.set(buf)
                 # check majik, length, type and header sum
                 if ((record['majik'].val == dt_sync_majik) and
