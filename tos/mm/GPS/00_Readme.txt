@@ -16,15 +16,21 @@ MajorState based on current needs.
 
     (in order of priority)
 
-    IDLE            no major activity selected/in progress.  Choose and
-                    start a major cycle.
+    IDLE            no major activity selected/in progress.  GPS is sleeping or
+                    in low power (mpm or hibernate).
 
-    CYCLE           take fixes for CYCLE_TIME.  ~30secs which seems to keep
-                    MPM happy.
+    CYCLE           take fixes for up to MAX_CYCLE_TIME.  Either run for ~30secs
+                    (which seems to keep MPM happy) or with LOCK_ENDS_CYCLE find the
+                    first lock.
+
+                    We keep the GPS up for a max of MAX_CYCLE_TIME.  If we don't
+                    get a fix, we just turn the GPS off (or go into MPM, low
+                    power mode).
 
                     After a CYCLE completes, we will put the gps back to sleep
-                    ie. MPM.  If MPM fails (mpm_error) then we will try gather
-                    more satellite information (MPM_COLLECT).  This might help.
+                    ie. MPM or hibernate.  If entry fails, then we will
+                    try gather more satellite information (LPM_COLLECT).  This
+                    might help.
 
     MPM_COLLECT     Stabilizing MPM.  Collect enough fixes to help MPM
                     stablize.  (~2 mins).
@@ -33,6 +39,10 @@ MajorState based on current needs.
                     (Power On Reset, POR).  SATS_STARTUP is used to get
                     the GPS satellite state into a more reasonable state
                     before starting normal operation.
+
+                    We look for first lock, either geodata or navdata with
+                    sufficient satellites.  lock_time or lock_pos
+                    respectively.
 
     SATS_COLLECT    collecting almanac/ephemeri so the gps behaves better.
                     during this collection one needs to leave the gps up.
@@ -53,6 +63,12 @@ MajorState based on current needs.
     TIME_COLLECT    collecting time fixes, the timing system has a feature
                     (auto-cal), which needs a series of high quality gps
                     time stamps.
+
+    LOCK_DELAY      When in CYCLE, seeing a lock (lock_pos or lock_time)
+                    will cause a transition back to IDLE and low power.
+                    LOCK_DELAY gives us a little bit of additional on
+                    dwell to keep MPM and/or the gps happy.  This can be
+                    used to gather status information on major transitions.
 
 
 2) Minor State machine...
@@ -237,29 +253,43 @@ IDLE            Boot.booted
                     major_state = MPM_COLLECT
 
 CYCLE           MajorTimer.fired
-                    MajorTimer.startOneShot(MON_WAKEUP)
+                    MajorTimer.startOneShot(MON_SLEEP)
                     major_state = IDLE          go to sleep
                     minor_event(major_changed)
 
+                Lock
+                    MajorTimer.startOneShot(LOCK_DELAY_TIME)
+                    major_state = LOCK_DELAY
+                    minor_event(major_changed)
+
+
 MPM_COLLECT     MajorTimer.fired
-                    MajorTimer.startOneShot(MON_WAKEUP)
+                    MajorTimer.startOneShot(MON_SLEEP)
                     major_state = IDLE          go to sleep
                     minor_event(major_changed)
 
 SATS_STARTUP is used to collect satellite information.  It leaves
 the GPS up so it can do this.  SATS_STARTUP terminates when we
-see lock_seen (from lock_time, geo).
+see lock (from lock_pos, lock_time, geo).
 
 SATS_STARTUP    MajorTimer.fired
                     too many retrys?  ->  sleep for a while, try again.
+                    watch navTrack, sat progress, almanac status
 
                     MajorTimer.startOneShot(SATS_STARTUP_TIME)
                     major_state = SATS_STARTUP
                     minor_event(major_changed)
 
+                 lock_pos
                  lock_time
                     MajorTimer.startOneShot(CYCLE_TIME)
                     major_state = CYCLE
+                    minor_event(major_changed)
+
+
+LOCK_DELAY      MajorTimer.fired
+                    MajorTimer.startOneShot(MON_SLEEP)
+                    major_state = IDLE
                     minor_event(major_changed)
 
 
@@ -324,3 +354,8 @@ d) Time from first POR to various NavTrack sats seen
 
 d) Time from first POR boot to first lock - 1838 secs (30 mins)
 --- @511384      5954 2712.362640 127  32  GPS_RAW -- MID:  41     (29) <rx> geoData  L [5]
+
+
+
+Major States:
+
