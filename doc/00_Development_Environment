@@ -358,3 +358,22 @@ ie.
 - qfsm
 
 - fsmc
+
+**************************************************************************************
+
+12) Misc.
+
+- Grip, used to render MD (markdown) files
+
+  git clone https://github.com/joeyespo/grip.git
+  cd grip
+  sudo python setup.py install
+
+
+- to use grip
+
+  grip <markdownfile>
+  * Running on http://localhost:6419/ (Press CTRL+C to quit)
+
+  point a browser at http://localhost:6419/ to see your rendered doc.
+
