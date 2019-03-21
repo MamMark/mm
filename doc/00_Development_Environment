@@ -377,3 +377,20 @@ ie.
 
   point a browser at http://localhost:6419/ to see your rendered doc.
 
+**************************************************************************************
+
+13) Remote mounting basestation file systems.
+
+- install sshfs
+
+  sudo apt-get install sshfs
+
+
+- create mount point
+
+  sudo mkdir /mnt/dvt3
+
+
+- mount remote file system from dvt3
+
+  sudo sshfs -o allow_other pi@dvt3:. /mnt/dvt3
