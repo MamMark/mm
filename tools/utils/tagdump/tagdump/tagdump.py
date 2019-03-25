@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
+# Copyright (c) 2017-2019 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -18,16 +18,25 @@
 # Contact: Daniel J. Maltbie <dmaltbie@daloma.org>
 #          Eric B. Decker <cire831@gmail.com>
 
-'''tagdump - dump tag data stream records
+'''
+tagdump - dump tag data stream records
 
-Vebosity;
+Parses the data stream and displays in human readable output.
+Can also output parsed records to an external database for
+later processing.
 
-    0   just display basic record occurance (default)
-    1   basic record display - more details
-    2   detailed record display
-    3   dump buffer/record
-    4   details of resync
-    5   other errors and decoder versions
+Each record is completely self contained including a checksum
+that is over both the header and data portion of the record.
+(See typed_data.h for details).
+
+see tagdumpargs.py for argument processing.
+
+usage: tagdump.py [-h] [-v] [-V] [-H] [-j JUMP] [-e EndFilePos]
+                  [--rtypes RTYPES(ints)] [--rnames RNAMES(name[,...])]
+                  [-x | --export]
+                  [-s START_TIME] [-e END_TIME]
+                  [-r START_REC]  [-l LAST_REC]
+                  input
 '''
 
 from   __future__         import print_function
@@ -49,80 +58,6 @@ import tagdump_config                   # populate configuration
 from   __init__          import __version__   as VERSION
 ver_str = '\ntagdump: ' + VERSION + ':  core: ' + str(CORE_REV) + \
           '/' + str(CORE_MINOR)
-
-
-####
-#
-# tagdump: dump a MamMark DBLKxxxx data stream.
-#
-# Parses the data stream and displays in human readable output.
-#
-# Each record is completely self contained including a checksum
-# that is over both the header and data portion of the record.
-# (See typed_data.h for details).
-#
-# see tagdumpargs.py for argument processing.
-#
-# usage: tagdump.py [-h] [-v] [-V] [-H] [-j JUMP] [-x EndFilePos]
-#                   [--rtypes RTYPES(ints)] [--rnames RNAMES(name[,...])]
-#                   [-s START_TIME] [-e END_TIME]
-#                   [-r START_REC]  [-l LAST_REC]
-#                   input
-#
-# Args:
-#
-# optional arguments:
-#   -h              show this help message and exit
-#   -V              show program's version number and exit
-#   -H              turn off hourly banners
-#
-#   --rtypes RTYPES output records matching types in list names
-#                   comma or space seperated list of rtype ids or NAMES
-#                   (args.rtypes, list of strings)
-#
-#   -D              turn on Debugging information
-#                   (args.debug, boolean)
-#
-#   -j JUMP         set input file position
-#                   (args.jump, integer)
-#                   -1: goto EOF
-#                   negative number, offset from EOF.
-#
-#   -x endpos       set last file position to process
-#                   (args.endpos, integer)
-#
-#   -n num          limit display to <num> records
-#                   (args.num, integer)
-#
-#   --net           enable network (tagnet) i/o
-#                   (args.net, boolean)
-#
-#   -s SYNC_DELTA   search some number of syncs backward
-#                   always implies --net, -s 0 says .last_sync
-#                   -s 1 and -s -1 both say sync one back.
-#                   (args.sync, int)
-#
-#   --start START_TIME
-#                   include records with rtctime greater than START_TIME
-#   --end END_TIME  (args.{start,end}_time)
-#
-#   -r START_REC    starting/ending records to dump.
-#                   -r -1 says start with .last_rec (implies --net)
-#   -l LAST_REC     (args.{start,last}_rec, integer)
-#
-#   -t, --timeout TIMEOUT
-#                   set --tail timeout to TIMEOUT seconds, defaults to 60
-#
-#   --tail          do not stop when we run out of data.  monitor and
-#                   get new data as it arrives.  (implies --net)
-#                   (args.tail, boolean)
-#
-#   -v, --verbose   increase output verbosity
-#                   (args.verbose)
-#
-# positional parameters:
-#
-#   input:          file to process.  (args.input)
 
 
 # This program needs to understand the format of the DBlk data stream.  The

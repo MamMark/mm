@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
+# Copyright (c) 2017-2019 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -23,7 +23,80 @@
 # and tagdumpargs will display the main program version.
 #
 
-'''argparse definitions for tagdump options'''
+'''
+dump a MamMark DBLKxxxx data stream.
+
+dumps a MamMark dblk data file or network stream while
+optionally writing parsed records to an external database.
+
+output: args  global for holding resultant arguments
+
+Args:
+
+optional arguments:
+  -h              show this help message and exit
+  -V              show program's version number and exit
+
+  -H              turn off hourly banners
+
+  --rtypes RTYPES output records matching types in list names
+                  comma or space seperated list of rtype ids or NAMES
+                  (args.rtypes, list of strings)
+
+  -D              turn on Debugging information
+                  (args.debug, boolean)
+
+  -j JUMP         set input file position
+                  (args.jump, integer)
+                  -1: goto EOF
+                  negative number, offset from EOF.
+
+  -x endpos       set last file position to process
+                  (args.endpos, integer)
+
+  -n num          limit display to <num> records
+                  (args.num, integer)
+
+  --net           enable network (tagnet) i/o
+                  (args.net, boolean)
+
+  -s SYNC_DELTA   search some number of syncs backward
+                  always implies --net, -s 0 says .last_sync
+                  -s 1 and -s -1 both say sync one back.
+                  (args.sync, int)
+
+  --start START_TIME
+                  include records with rtctime greater than START_TIME
+  --end END_TIME  (args.{start,end}_time)
+
+  -r START_REC    starting/ending records to dump.
+                  -r -1 says start with .last_rec (implies --net)
+  -l LAST_REC     (args.{start,last}_rec, integer)
+
+  -t, --timeout TIMEOUT
+                  set --tail timeout to TIMEOUT seconds, defaults to 60
+
+  --tail          do not stop when we run out of data.  monitor and
+                  get new data as it arrives.  (implies --net)
+                  (args.tail, boolean)
+
+  -v, --verbose   increase output verbosity
+                  (args.verbose)
+
+      0   just display basic record occurance (default)
+      1   basic record display - more details
+      2   detailed record display
+      3   dump buffer/record
+      4   details of resync
+      5   other errors and decoder versions
+
+
+positional parameters:
+
+  input:          file to process.  (args.input)
+
+
+'''
 
 from   __future__         import print_function
 
@@ -109,7 +182,6 @@ def parseargs():
                         action='store_true',
                         help='continue reading data at EOF')
 
-    # see tagdump.py for verbosity levels
     parser.add_argument('-v', '--verbose',
                         action='count',
                         default=0,

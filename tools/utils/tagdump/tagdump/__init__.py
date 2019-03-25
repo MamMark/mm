@@ -5,6 +5,8 @@ tagdump:  decode and display Tag Data Stream file
 
 __version__ = '0.4.5rc92'
 
+#       o collect all switch definition comments into tagdumpargs.py.
+#
 # 0.4.5rc92   core_rev: 21/92
 # 0.4.5rc3    core_rev: 20/3
 #       o restructure image_info, split into image_info_basic (fixe)
