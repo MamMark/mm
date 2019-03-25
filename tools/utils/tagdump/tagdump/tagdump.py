@@ -41,9 +41,10 @@ usage: tagdump.py [-h] [-v] [-V] [-H] [-j JUMP] [-e EndFilePos]
 
 from   __future__         import print_function
 
-import sys
 import struct
-import argparse
+
+# parse arguments and import result
+from   tagdumpargs       import args
 
 from   tagcore           import *
 import tagcore.core_rev  as     vers
@@ -51,7 +52,6 @@ from   tagcore.dt_defs   import *
 import tagcore.dt_defs   as     dtd
 import tagcore.sirf_defs as     sirf
 from   tagcore.tagfile   import *
-from   tagdumpargs       import parseargs
 
 import tagdump_config                   # populate configuration
 
@@ -290,14 +290,14 @@ def process_dir(fd):
     fd.seek(DBLK_DIR_SIZE)
 
 
-def dump(args):
+def dump():
     """
     Reads records and prints out details
 
     A dt-specific decoder is selected for each type of record which
     determines the output
 
-    The input 'args' contains a list of the user input parameters that
+    The global 'args' contains a list of the user input parameters that
     determine which records to print, including: start, end, type
 
     Summary information is output after all records have been processed,
@@ -490,4 +490,4 @@ def dump(args):
     print('mids:   {}'.format(sirf.mid_count))
 
 if __name__ == "__main__":
-    dump(parseargs())
+    dump()

@@ -4,10 +4,10 @@ tagdump:  decode and display Tag Data Stream file
 """
 
 from tagdump import dump
-from tagdumpargs import parseargs
+#from tagdumpargs import args
 
 def main():
-    dump(parseargs())
+    dump()
 
 if __name__ == '__main__':
     main()

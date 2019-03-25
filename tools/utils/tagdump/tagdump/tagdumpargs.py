@@ -100,6 +100,7 @@ positional parameters:
 
 from   __future__         import print_function
 
+import sys
 import argparse
 from   tagcore  import *
 from   __init__ import __version__   as VERSION
@@ -189,5 +190,9 @@ def parseargs():
 
     return parser.parse_args()
 
+if len(sys.argv) < 2:
+    # something weird is going on, just fake it
+    sys.argv.append('/dev/null')
+args = parseargs()
 if __name__ == '__main__':
-    print(parseargs())
+    print(args)

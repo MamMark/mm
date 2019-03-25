@@ -5,6 +5,9 @@ tagdump:  decode and display Tag Data Stream file
 
 __version__ = '0.4.5rc92'
 
+#       o reorganize where arguments are parsed.  Do as early as
+#         possible (when tagdumpargs is first imported).
+#       o make arguments (args) a static global in tagdumpargs.
 #       o collect all switch definition comments into tagdumpargs.py.
 #
 # 0.4.5rc92   core_rev: 21/92
