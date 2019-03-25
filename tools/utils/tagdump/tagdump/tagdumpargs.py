@@ -104,6 +104,7 @@ import sys
 import argparse
 from   tagcore  import *
 from   __init__ import __version__   as VERSION
+import tagcore.globals
 
 def auto_int(x):
     return int(x, 0)
@@ -194,5 +195,8 @@ if len(sys.argv) < 2:
     # something weird is going on, just fake it
     sys.argv.append('/dev/null')
 args = parseargs()
+tagcore.globals.verbose = args.verbose
+tagcore.globals.export  = 0
+
 if __name__ == '__main__':
     print(args)
