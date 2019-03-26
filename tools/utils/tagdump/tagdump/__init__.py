@@ -8,6 +8,9 @@ __version__ = '0.4.5rc92'
 #       o reorganize where arguments are parsed.  Do as early as
 #         possible (when tagdumpargs is first imported).
 #       o make arguments (args) a static global in tagdumpargs.
+#       o change ending record number from -x to -e
+#       o add -x switch to set explicit export.  If database connection
+#         not set up will cause an abort.
 #       o collect all switch definition comments into tagdumpargs.py.
 #
 # 0.4.5rc92   core_rev: 21/92

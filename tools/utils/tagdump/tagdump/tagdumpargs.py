@@ -51,11 +51,11 @@ optional arguments:
                   -1: goto EOF
                   negative number, offset from EOF.
 
-  -x endpos       set last file position to process
-                  (args.endpos, integer)
+  -e endpos       set last file position to process
+  --endpos endpos (args.endpos, integer)
 
   -n num          limit display to <num> records
-                  (args.num, integer)
+  --num num       (args.num, integer)
 
   --net           enable network (tagnet) i/o
                   (args.net, boolean)
@@ -79,6 +79,10 @@ optional arguments:
   --tail          do not stop when we run out of data.  monitor and
                   get new data as it arrives.  (implies --net)
                   (args.tail, boolean)
+
+  -x              tell tagdump to export records to an external database
+  --export        (currently only influxdb export).  If no external linkage
+                  available will abort. (args.export)
 
   -v, --verbose   increase output verbosity
                   (args.verbose)
@@ -141,7 +145,7 @@ def parseargs():
                         type=auto_int,
                         help='set input file position, -1 EOF, neg from EOF')
 
-    parser.add_argument('-x', '--endpos',
+    parser.add_argument('-e', '--endpos',
                         type=auto_int,
                         help='set ending file position to process')
 
@@ -184,6 +188,11 @@ def parseargs():
                         action='store_true',
                         help='continue reading data at EOF')
 
+    parser.add_argument('-x', '--export',
+                        action='store_true',
+                        default=0,
+                        help='set explicit export, external database')
+
     parser.add_argument('-v', '--verbose',
                         action='count',
                         default=0,
@@ -196,7 +205,7 @@ if len(sys.argv) < 2:
     sys.argv.append('/dev/null')
 args = parseargs()
 tagcore.globals.verbose = args.verbose
-tagcore.globals.export  = 0
+tagcore.globals.export  = args.export
 
 if __name__ == '__main__':
     print(args)
