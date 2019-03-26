@@ -3,11 +3,13 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.5rc92'
+__version__ = '0.4.5dev95x'
 
 #       o reorganize where arguments are parsed.  Do as early as
 #         possible (when tagdumpargs is first imported).
 #       o make arguments (args) a static global in tagdumpargs.
+#       o control when warning messages about json and influxdb don't work
+#         any verbosity or explicit export switch set.
 #       o change ending record number from -x to -e
 #       o add -x switch to set explicit export.  If database connection
 #         not set up will cause an abort.

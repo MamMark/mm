@@ -21,11 +21,11 @@
 
 from   __future__         import print_function
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 TEST = False
 
-from influxdb import InfluxDBClient
+import sys
 from datetime import datetime
 from time     import sleep
 from binascii import hexlify
@@ -38,6 +38,8 @@ from base_objs import atom
 from dt_defs   import dt_records, rtctime_str, rtctime_iso
 from core_headers import event_name
 
+import tagcore.globals
+
 __all__ = [ 'emit_influx' ]
 
 
@@ -46,30 +48,62 @@ port     = 8086
 user     = 'root'
 password = 'root'
 dbname   = 'test'
-print('### influxdb host: {}, port: {}, user: {}, password: {}, dbname: {}'.format(host, port, user, password, dbname))
-influx_db = InfluxDBClient(host, port, user, password, dbname)
-influxdb_version = ''
-try:
-    influxdb_version = influx_db.ping()
-    print("### Influxdb version: {}".format(influxdb_version))
-    #influx_db.drop_database(dbname)
-    if influxdb_version == '1.5.2':
-        dblist = influx_db.get_list_database()
-        print("### Influxdb available databases: {}".format(dblist))
-        no_db = True
-        for db in dblist:
-            if db['name'] == dbname:
-                no_db = False
-                break
-        if (no_db):
-            print("### Influxdb creating database: {}".format(dbname))
-            influx_db.create_database(dbname)
+
+
+def influx_print():
+    if tagcore.globals.verbose > 0 or tagcore.globals.export:
+        return 1
     else:
-        print('### influxdb not correct version: {}', influxdb_version)
-        influxdb_saved_version = influxdb_version
-        influxdb_version = ''
-except ConnectionError:
-    print('### influxdb failed to respond to ping')
+        return 0
+
+
+
+# handle influxdb being installed and not installed.
+try:
+    influxdb_version = ''
+    from influxdb import InfluxDBClient
+
+    if influx_print():
+        print('### influxdb host: {}, port: {}, user: {}, password: {}, dbname: {}'.format(
+            host, port, user, password, dbname))
+    influx_db = InfluxDBClient(host, port, user, password, dbname)
+    try:
+        influxdb_version = influx_db.ping()
+        if influx_print():
+            print("### Influxdb version: {}".format(influxdb_version))
+        #influx_db.drop_database(dbname)
+        if influxdb_version == '1.5.2':
+            dblist = influx_db.get_list_database()
+            if influx_print():
+                print("### Influxdb available databases: {}".format(dblist))
+            no_db = True
+            for db in dblist:
+                if db['name'] == dbname:
+                    no_db = False
+                    break
+            if (no_db):
+                print("### Influxdb creating database: {}".format(dbname))
+                influx_db.create_database(dbname)
+        else:
+            print('### influxdb not correct version: {}', influxdb_version)
+            influxdb_saved_version = influxdb_version
+            influxdb_version = ''
+            if tagcore.globals.export:
+                print('-x (export) specified and cannot connect to influxdb')
+                sys.exit()
+    except ConnectionError:
+        if influx_print():
+            print('### influxdb not running.  No database export')
+        if tagcore.globals.export:
+            print('-x (export) specified and cannot connect to influxdb')
+            sys.exit()
+
+except ImportError:
+    if influx_print():
+        print('### influxdb not installed.  No database export')
+    if tagcore.globals.export:
+        print('### -x (export) specified and cannot connect to influxdb')
+        sys.exit()
 
 
 def int32(x):
