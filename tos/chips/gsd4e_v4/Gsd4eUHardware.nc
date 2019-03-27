@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, Eric B. Decker, Dan Maltbie
+ * Copyright (c) 2017-2019, Eric B. Decker, Dan Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -106,6 +106,10 @@
  * the GPS controls when it is running and when it is sleeping.  How
  * long we stay up for communications becomes somewhat moot because
  * we do not control power so have no say in the decision.
+ *
+ * We have observed that when entering MPM, the gps will stay up for
+ * approx 1 min collecting additional data.  This makes using MPM
+ * for low power kind of useless.  Stays up too long.
  *
  * @author Eric B. Decker <cire831@gmail.com>
  * @author Daniel J. Maltbie <dmaltbie@daloma.org>

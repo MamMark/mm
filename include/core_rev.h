@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Eric B. Decker
+ * Copyright (c) 2018-2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -61,6 +61,6 @@
  */
 
 #define CORE_REV   21
-#define CORE_MINOR  94
+#define CORE_MINOR  95
 
 #endif  /* __CORE_REV_H__ */

@@ -1,4 +1,4 @@
-GPSmonitor - v1.1 - State Machine
+GPSmonitor - v1.2 - State Machine
 
 The GPSmonitor is responsible for top level control of the gps subsystem.
 
@@ -11,7 +11,7 @@ weirdnesses.
 The GPSmonitor has the following major states:
 
 The major mode is determined when the MajorTimer fires.  If we have been
-asleep (currently MinorState is MPM), then we will determine the next
+asleep (current MinorState is LPM), then we will determine the next
 MajorState based on current needs.
 
     (in order of priority)
@@ -19,21 +19,16 @@ MajorState based on current needs.
     IDLE            no major activity selected/in progress.  GPS is sleeping or
                     in low power (mpm or hibernate).
 
-    CYCLE           take fixes for up to MAX_CYCLE_TIME.  Either run for ~30secs
-                    (which seems to keep MPM happy) or with LOCK_ENDS_CYCLE find the
-                    first lock.
-
-                    We keep the GPS up for a max of MAX_CYCLE_TIME.  If we don't
-                    get a fix, we just turn the GPS off (or go into MPM, low
-                    power mode).
+    CYCLE           take fixes for MAX_CYCLE_TIME.  If we get a lock we will
+                    finish the cycle early to conserve power.
 
                     After a CYCLE completes, we will put the gps back to sleep
-                    ie. MPM or hibernate.  If entry fails, then we will
-                    try gather more satellite information (LPM_COLLECT).  This
-                    might help.
+                    ie. LPM.  If LPM fails (mpm_error or lpm failure) then we
+                    will try gather more satellite information (LPM_COLLECT).
+                    This might help.
 
-    MPM_COLLECT     Stabilizing MPM.  Collect enough fixes to help MPM
-                    stablize.  (~2 mins).
+    LPM_COLLECT     Stabilizing LPM (MPM).  Collect enough fixes to help MPM
+                    stablize.  (~2 mins, LPM_RESTART_WAIT).
 
     SATS_STARTUP    after booting, we may or may not have lost everything
                     (Power On Reset, POR).  SATS_STARTUP is used to get
@@ -132,8 +127,8 @@ COMM_CHECK      any msg
                     if major_state == IDLE
                         retry_count = 1
                         send(mpm)
-                        MinorT.startOneShot(MPM_RSP_TIMEOUT)
-                        -> MPM_WAIT
+                        MinorT.startOneShot(LPM_RSP_TIMEOUT)
+                        -> LPM_WAIT
                     else
                         MinorTimer.startOneShot(GPS_MON_COLLECT_DEADMAN)
                         -> COLLECT
@@ -181,14 +176,14 @@ COLLECT         MinorT_timeout          (didn't see any messages, oops)
                    MinorT.startOneShot(SHORT_COMM_TO)
                    -> COMM_CHECK
 
-MPM_WAIT        mpm_error (not 0010)
+LPM_WAIT        mpm_error (not 0010)
                     major_event(mpm_error)
-                    MinorT.startOneShot(GPS_MON_MPM_RESTART_WAIT)
-                    -> MPM_RESTART
+                    MinorT.startOneShot(GPS_MON_LPM_RESTART_WAIT)
+                    -> LPM_RESTART
 
                 mpm_good
                     MinorT.stop()
-                    -> GMS_MPM
+                    -> GMS_LPM
 
                 MinorT.fired
                     if (retry_count > 5)
@@ -199,8 +194,8 @@ MPM_WAIT        mpm_error (not 0010)
                         -> COMM_CHECK
                     retry_count++
                     send(mpm)
-                    MinorT.startOneShot(MPM_RSP_TIMEOUT)
-                    -> MPM_WAIT
+                    MinorT.startOneShot(LPM_RSP_TIMEOUT)
+                    -> LPM_WAIT
 
                 ots_no
                     pulse (to wake up)
@@ -208,7 +203,7 @@ MPM_WAIT        mpm_error (not 0010)
                     -> COMM_CHECK
 
 
-MPM_RESTART     ots_no
+LPM_RESTART     ots_no
                     pulse (to wake up)
                     MinorT.startOneShot(SHORT_COMM_TO)
                      -> COMM_CHECK
@@ -218,7 +213,7 @@ MPM_RESTART     ots_no
                     MinorT.startOneShot(SHORT_COMM_TO)
                     -> COMM_CHECK
 
-MPM             got_lock                can happen during NavDataCycles(MPM).
+LPM             got_lock                can happen during NavDataCycles(MPM).
                     ignore
 
                 ots_no
@@ -249,8 +244,8 @@ IDLE            Boot.booted
                     minor_event(major_changed)
 
                 mpm_error
-                    MajorTimer.startOneShot(MPM_COLLECT_TIME)
-                    major_state = MPM_COLLECT
+                    MajorTimer.startOneShot(LPM_COLLECT_TIME)
+                    major_state = LPM_COLLECT
 
 CYCLE           MajorTimer.fired
                     MajorTimer.startOneShot(MON_SLEEP)
@@ -262,8 +257,7 @@ CYCLE           MajorTimer.fired
                     major_state = LOCK_DELAY
                     minor_event(major_changed)
 
-
-MPM_COLLECT     MajorTimer.fired
+LPM_COLLECT     MajorTimer.fired
                     MajorTimer.startOneShot(MON_SLEEP)
                     major_state = IDLE          go to sleep
                     minor_event(major_changed)

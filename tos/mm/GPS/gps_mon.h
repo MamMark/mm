@@ -121,9 +121,9 @@ typedef enum {
   GMS_COMM_CHECK    = 4,                /* can we hear? */
   GMS_COLLECT       = 5,                /* gathering fixes */
 
-  GMS_MPM_WAIT      = 6,                /* trying to go into MPM */
-  GMS_MPM_RESTART   = 7,                /* mpm recovery, wait for shutdown */
-  GMS_MPM           = 8,                /* in MPM */
+  GMS_LPM_WAIT      = 6,                /* trying to go into LPM, low pwr  */
+  GMS_LPM_RESTART   = 7,                /* lpm recovery, wait for shutdown */
+  GMS_LPM           = 8,                /* in low power mode */
 
   GMS_STANDBY       = 9,                /* currently not used */
   GMS_MAX           = 9,
@@ -132,9 +132,9 @@ typedef enum {
 
 
 typedef enum {
-  GMS_MAJOR_IDLE           = 0,         /* sleeping (in MPM)       */
+  GMS_MAJOR_IDLE           = 0,         /* sleeping (LPM)          */
   GMS_MAJOR_CYCLE          = 1,         /* simple fix cycle        */
-  GMS_MAJOR_MPM_COLLECT    = 2,         /* MPM Collection          */
+  GMS_MAJOR_LPM_COLLECT    = 2,         /* LPM Collection          */
   GMS_MAJOR_SATS_STARTUP   = 3,         /* SATS Startup, Collect   */
   GMS_MAJOR_SATS_COLLECT   = 4,         /* SATS Collection         */
   GMS_MAJOR_TIME_COLLECT   = 5,         /* TIME sync Collection    */

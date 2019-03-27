@@ -34,7 +34,7 @@ allocated by the Protocol engine using GPSBuffer.
 
 At the highest level is the GPSMonitor.  The monitor is responsible for higher
 control functions and the main state machine.  The monitor is what knows about
-the gps state (hibernate, awake, micro-power mode (mpm), etc.).
+the gps state (hibernate, awake, micro-power mode (mpm), low power, etc.).
 
 
 Following control signals are used for messing with the GPS:  (org4472, pins

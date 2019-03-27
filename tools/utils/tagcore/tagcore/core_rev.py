@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Eric B. Decker
+# Copyright (c) 2018-2019 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@ the basic ability to decode.   ie.  adding new events.
 '''
 
 CORE_REV   = 21
-CORE_MINOR =  94
+CORE_MINOR =  95
 
 from    .__init__       import __version__   as core_ver
 from    .base_objs      import __version__   as base_ver

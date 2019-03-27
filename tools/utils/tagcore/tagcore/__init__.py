@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.5rc93'
+__version__ = '0.4.5rc95'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,6 +18,7 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
+# 0.4.5.rc95    CR: 21/95 GPS change MPM to LPM (low power mode).
 # 0.4.5.rc93    CR: 21/93 add TIME_SKEW event for CoreRtc.syncSetTime.
 # 0.4.5.rc92    CR: 21/92 hdr_crc8 kludge, doesn't include recsum.
 # 0.4.5.rc91    CR: 21/91 remove sync info from reboot (not a sync).

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Eric B. Decker
+ * Copyright (c) 2017-2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,18 +39,19 @@
  * CONFIG       configuation messages, currently only swver
  *
  * COMM_CHECK   Make sure we can communicate with the gps.  Control
- *              entry to MPM (Sleeping, IDLE) or COLLECT (awake,
- *              CYCLE, MPM_COLLECT).
+ *              entry to LP (low pwr) (Sleeping, IDLE, MPM) or COLLECT
+ *              (awake, CYCLE, LP_COLLECT).
  *
- * COLLECT      collecting fixes (awake, CYCLE, MPM_COLLECT).  grabbing
+ * COLLECT      collecting fixes (awake, CYCLE, LP_COLLECT).  grabbing
  *              almanac, ephemeri, time calibration.
  *
- * MPM_WAIT     mpm has been requested.  looking for response.
+ * LP_WAIT      low power (sleep or mpm) has been requested.  looking
+ *              for response.
  *
- * MPM_RESTART  mpm has responsed with an error.  The gps will shutdown and
- *              we will restart.
+ * LP_RESTART   low power didn't work (error response).  The gps may have
+ *              shutdown, we probe and will restart if necessary.
  *
- * MPM          running MPM cycles.
+ * LP           in low power mode.
  *
  * STANDBY      in Standby
  *
@@ -60,7 +61,7 @@
  *
  * IDLE         sleeping, MPM cycles
  * CYCLE        simple fix cycle
- * MPM_COLLECT  collecting fixes to help MPM heal.
+ * LP_COLLECT   collecting fixes to help MPM or low pwr heal.
  * SATS_COLLECT collecting fixes for almanac and ephemis collection
  * TIME_COLLECT collecting fixes when doing time syncronization
  * LOCK_DELAY   leaving CYCLE due to lock seen, staying up just a bit more.
@@ -77,8 +78,8 @@
 #include <rtctime.h>
 
 /*
- * define GPS_USE_MPM to use MPM mode of the SirfStarIV, otherwise, low
- *     power mode is standby vs. MPM.
+ * define GPS_USE_MPM to use MPM mode of the SirfStarIV for low power,
+ *     otherwise, low power mode is standby vs. MPM.
  *
  * define GPS_LOCK_ENDS_CYCLE to enable receipt of a lock, either lock_pos
  *     or lock_time, to end the cycle and enter low power.
@@ -99,16 +100,16 @@ enum {
 #define GPS_MON_SWVER_TO            1024
 #define GPS_MON_SHORT_COMM_TO       2048
 #define GPS_MON_LONG_COMM_TO        8192
-#define GPS_MON_MPM_RSP_TO          2048
-#define GPS_MON_MPM_RESTART_WAIT    2048
+#define GPS_MON_LPM_RSP_TO          2048
+#define GPS_MON_LPM_RESTART_WAIT    2048
 #define GPS_MON_COLLECT_DEADMAN     16384
 
 /*
- * 120 secs, we have observed slow start up times of around 60 secs, so for
- * now use a max_cycle of 2 mins.
+ * 60 secs, we have observed slow start up times of around 60 secs, so for
+ * now use a max_cycle of 1 min.
  */
-#define GPS_MON_MAX_CYCLE_TIME      ( 2 * 60 * 1024)
-#define GPS_MON_MPM_COLLECT_TIME    ( 2 * 60 * 1024)
+#define GPS_MON_MAX_CYCLE_TIME      ( 1 * 60 * 1024)
+#define GPS_MON_LPM_COLLECT_TIME    ( 1 * 60 * 1024)
 #define GPS_MON_LOCK_DELAY_TIME     (      2 * 1024)
 
 // 5 mins
@@ -118,10 +119,11 @@ enum {
 #define GPS_MON_SLEEP               ( 5 * 60 * 1024)
 
 /*
- * mpm_rsp_to   timeout for listening for mpm rsp after
- *              mpm req sent.  If timeout assume off.
+ * lpm_rsp_to   timeout for listening for responses after
+ *              going into low power mode (hibernate or mpm req).
+ *              If timeout assume off and poke it.
  *
- * mpm_restart_wait  restart window after seeing an mpm error.
+ * lpm_restart_wait  restart window after seeing a low pwr error.
  *              time limit after seeing the error.  should see
  *              an ots_no first but in case we don't this
  *              timer will catch it.
@@ -129,14 +131,14 @@ enum {
  * collect_deadman  backstop in case COLLECT doesn't see any
  *              messages.  Shouldn't happen.
  *
- * mpm_collect_time following an mpm error we go into collect
+ * lpm_collect_time following an mpm error we go into collect
  *              to let mpm stablize.
  *
- * cycle_time   time from wake up (MPM pulse) to next sleep (MPM).
+ * cycle_time   time from wake up to next sleep (low pwr mode).
  *              Window allowed for normal cycle, looking for locks.
  *              (uses MajorTimer)
  *
- * mon_sleep    when in MPM, how long to stay asleep before next fix.
+ * mon_sleep    when in low pwr mode, how long to stay asleep before next fix.
  */
 
 /*
@@ -449,7 +451,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       no_deep_sleep = TRUE;
     else {
       if ((gmcb.minor_state < GMS_BOOTING) ||
-          (gmcb.minor_state == GMS_MPM)    ||
+          (gmcb.minor_state == GMS_LPM)    ||
           (gmcb.minor_state == GMS_STANDBY))
         no_deep_sleep = FALSE;
       else
@@ -921,8 +923,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         return;
 
       case GMS_MAJOR_IDLE:
-        major_change_state(GMS_MAJOR_MPM_COLLECT, MON_EV_MPM_ERROR);
-        call MajorTimer.startOneShot(GPS_MON_MPM_COLLECT_TIME);
+        major_change_state(GMS_MAJOR_LPM_COLLECT, MON_EV_MPM_ERROR);
+        call MajorTimer.startOneShot(GPS_MON_LPM_COLLECT_TIME);
         return;
     }
   }
@@ -940,7 +942,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         return;
 
       case GMS_MAJOR_CYCLE:
-      case GMS_MAJOR_MPM_COLLECT:
+      case GMS_MAJOR_LPM_COLLECT:
       case GMS_MAJOR_LOCK_DELAY:
         gmcb.msg_count = 0;
         call MajorTimer.startOneShot(GPS_MON_SLEEP);
@@ -967,7 +969,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
       case GMS_MAJOR_IDLE:
       case GMS_MAJOR_SATS_STARTUP:
-      case GMS_MAJOR_MPM_COLLECT:
+      case GMS_MAJOR_LPM_COLLECT:
       case GMS_MAJOR_TIME_COLLECT:
       case GMS_MAJOR_LOCK_DELAY:
         call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
@@ -1045,7 +1047,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
          * or its response for some reason we will bounce, try again, and
          * then bounce.
          *
-         * If seeing messages and we are in MPM, then the chip is ignoring
+         * If seeing messages and we are in LPM, then the chip is ignoring
          * SWVER, pulsing will kick it out of MPM and the next SWVER
          * should work.
          *
@@ -1092,11 +1094,11 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         mon_pulse_comm_check(MON_EV_TIMEOUT_MINOR);
         return;
 
-      case GMS_MPM_WAIT:                /* waiting for mpm rsp */
+      case GMS_LPM_WAIT:                /* waiting for low pwr rsp */
         if (gmcb.retry_count > 5) {
           /*
-           * haven't seen the response to the mpm request, 5 times.
-           * panic/warn and kick MPM_COLLECT
+           * haven't seen the response to low pwr entry, 5 times.
+           * panic/warn and kick LPM_COLLECT
            *
            * (not yet).
            */
@@ -1105,7 +1107,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
           mon_pulse_comm_check(MON_EV_TIMEOUT_MINOR);
           return;
         }
-        minor_change_state(GMS_MPM_WAIT, MON_EV_TIMEOUT_MINOR);
+        minor_change_state(GMS_LPM_WAIT, MON_EV_TIMEOUT_MINOR);
         gmcb.retry_count++;
         awake = call GPSControl.awake();
 #ifdef GPS_USE_MPM
@@ -1114,10 +1116,10 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         err = 0;
 #endif
         call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 100, err, 0, awake);
-        call MinorTimer.startOneShot(GPS_MON_MPM_RSP_TO);
+        call MinorTimer.startOneShot(GPS_MON_LPM_RSP_TO);
         return;
 
-      case GMS_MPM_RESTART:             /* shutdown timeout, mpm fail */
+      case GMS_LPM_RESTART:             /* shutdown timeout, lpm fail */
         mon_pulse_comm_check(MON_EV_TIMEOUT_MINOR);
         return;
     }
@@ -1134,7 +1136,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         mon_enter_comm_check(MON_EV_MAJOR_CHANGED);
         break;
 
-      case GMS_MPM:                     /* expiration of gps_sense    */
+      case GMS_LPM:                     /* expiration of gps_sense    */
         TELL = 1;
         cycle_start = call MajorTimer.getNow();
         cycle_count++;
@@ -1170,18 +1172,18 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
            * Major indicates we want to quiese the GPS.
            */
 #ifdef GPS_USE_MPM
-          minor_change_state(GMS_MPM_WAIT, MON_EV_MSG);
+          minor_change_state(GMS_LPM_WAIT, MON_EV_MSG);
           gmcb.retry_count = 0;
           awake = call GPSControl.awake();
           err = txq_send((void *) sirf_go_mpm_0);
-          call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 101, err, 0, awake);
-          call MinorTimer.startOneShot(GPS_MON_MPM_RSP_TO);
+          call CollectEvent.logEvent(DT_EVENT_GPS_LPM, 101, err, 0, awake);
+          call MinorTimer.startOneShot(GPS_MON_LPM_RSP_TO);
           return;
 #else
           /*
            * Not using MPM, just pulse it off
            */
-          minor_change_state(GMS_MPM_WAIT, MON_EV_MSG);
+          minor_change_state(GMS_LPM_WAIT, MON_EV_MSG);
           gmcb.retry_count = 0;
           err = 0;
           awake = call GPSControl.awake();
@@ -1189,7 +1191,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
           /* should get a OTS-no back. */
           call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 101, err, 0, awake);
-          call MinorTimer.startOneShot(GPS_MON_MPM_RSP_TO);
+          call MinorTimer.startOneShot(GPS_MON_LPM_RSP_TO);
           return;
 #endif
         }
@@ -1222,15 +1224,15 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         minor_change_state(GMS_CONFIG, MON_EV_OTS_NO);
         return;
 
-      case GMS_MPM:
-      case GMS_MPM_WAIT:
+      case GMS_LPM:
+      case GMS_LPM_WAIT:
         call MinorTimer.stop();
-        minor_change_state(GMS_MPM, MON_EV_MPM);
+        minor_change_state(GMS_LPM, MON_EV_MPM);
         return;
 
       case GMS_COMM_CHECK:
       case GMS_COLLECT:
-      case GMS_MPM_RESTART:
+      case GMS_LPM_RESTART:
         break;
     }
     mon_pulse_comm_check(MON_EV_OTS_NO);
@@ -1245,7 +1247,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
     /*
      * when looking for first lock, cycle_count will be zero
-     * (haven't actually started a cycle (happens out of MPM)).
+     * (haven't actually started a cycle (happens out of LPM)).
      *
      * if cycle_count is 0 we are looking for first lock. (SATS_STARTUP).
      * leave cycle_count alone and let the major state change grab it.
@@ -1260,18 +1262,18 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     major_event(ev);
   }
 
-  /* mpm attempted, and got a good response */
+  /* low pwr (mpm) attempted, and got a good response */
   void mon_ev_mpm() {
     switch(gmcb.minor_state) {
       default:
         gps_warn(138, gmcb.minor_state, 0);
         return;
 
-      case GMS_MPM:
-      case GMS_MPM_WAIT:
+      case GMS_LPM:
+      case GMS_LPM_WAIT:
         TELL = 0;
         call MinorTimer.stop();
-        minor_change_state(GMS_MPM, MON_EV_MPM);
+        minor_change_state(GMS_LPM, MON_EV_MPM);
         return;
     }
   }
@@ -1283,10 +1285,10 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         gps_warn(138, gmcb.minor_state, 0);
         return;
 
-      case GMS_MPM_WAIT:
+      case GMS_LPM_WAIT:
         major_event(MON_EV_MPM_ERROR);
-        call MinorTimer.startOneShot(GPS_MON_MPM_RESTART_WAIT);
-        minor_change_state(GMS_MPM_RESTART, MON_EV_MPM_ERROR);
+        call MinorTimer.startOneShot(GPS_MON_LPM_RESTART_WAIT);
+        minor_change_state(GMS_LPM_RESTART, MON_EV_MPM_ERROR);
         return;
     }
   }
@@ -1620,8 +1622,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   /*
    * Tell McuSleep when we think it is okay to enter DEEPSLEEP.
    * For the GPS Monitor we think DEEPSLEEP is okay if we are IDLE
-   * (nothing in particular going on, MPM, OFF, etc) and if our minor
-   * state is OFF, FAIL, or MPM.
+   * (nothing in particular going on, LPM, MPM, OFF, etc) and if our
+   * minor state is OFF, FAIL, or MPM.
    */
   async command mcu_power_t McuPowerOverride.lowestState() {
     if (no_deep_sleep)

@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Eric B. Decker
+# Copyright (c) 2018-2019 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.4.5dev0'
+__version__ = '0.4.5rc95'
 
 __all__ = [
     'gps_cmd_name',
@@ -212,9 +212,9 @@ gps_mon_minors = {
     'comm_check':       4,
     'collect':          5,
 
-    'mpm_wait':         6,
-    'mpm_restart':      7,
-    'mpm':              8,
+    'lpm_wait':         6,
+    'lpm_restart':      7,
+    'lpm':              8,
 
     'standby':          9,
 
@@ -226,9 +226,9 @@ gps_mon_minors = {
     4:                  'comm_check',
     5:                  'collect',
 
-    6:                  'mpm_wait',
-    7:                  'mpm_restart',
-    8:                  'mpm',
+    6:                  'lpm_wait',
+    7:                  'lpm_restart',
+    8:                  'lpm',
 
     9:                  'standby',
 }
@@ -243,7 +243,7 @@ def gps_mon_minor_name(minor_state):
 gps_mon_majors = {
     'idle':             0,
     'cycle':            1,
-    'mpm_collect':      2,
+    'lpm_collect':      2,
     'sats_startup':     3,
     'sats_collect':     4,
     'time_collect':     5,
@@ -251,7 +251,7 @@ gps_mon_majors = {
 
     0:                  'idle',
     1:                  'cycle',
-    2:                  'mpm_collect',
+    2:                  'lpm_collect',
     3:                  'sats_startup',
     4:                  'sats_collect',
     5:                  'time_collect',
