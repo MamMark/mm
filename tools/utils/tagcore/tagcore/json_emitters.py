@@ -41,6 +41,7 @@ from core_headers import event_name
 import tagcore.globals
 
 __all__ = [ 'emit_influx' ]
+versions_ok = [ '1.5.2', '1.7.0' ]
 
 
 host     = 'localhost'
@@ -72,7 +73,7 @@ try:
         if influx_print():
             print("### Influxdb version: {}".format(influxdb_version))
         #influx_db.drop_database(dbname)
-        if influxdb_version == '1.5.2':
+        if influxdb_version in versions_ok:
             dblist = influx_db.get_list_database()
             if influx_print():
                 print("### Influxdb available databases: {}".format(dblist))

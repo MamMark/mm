@@ -5,6 +5,7 @@ tagdump:  decode and display Tag Data Stream file
 
 __version__ = '0.4.5dev95x'
 
+#       o accept multiple version of influx.  (json_emitters).
 #       o reorganize where arguments are parsed.  Do as early as
 #         possible (when tagdumpargs is first imported).
 #       o make arguments (args) a static global in tagdumpargs.
