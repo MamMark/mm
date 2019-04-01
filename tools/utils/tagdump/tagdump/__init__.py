@@ -3,7 +3,7 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.5dev95x'
+__version__ = '0.4.5rc95.dev1'
 
 #       o add --noexport to derail exporting to influx.  Used to
 #         look at tagdump data prior to being injected into influx.
