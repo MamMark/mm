@@ -5,6 +5,8 @@ tagdump:  decode and display Tag Data Stream file
 
 __version__ = '0.4.5dev95x'
 
+#       o add --noexport to derail exporting to influx.  Used to
+#         look at tagdump data prior to being injected into influx.
 #       o accept multiple version of influx.  (json_emitters).
 #       o reorganize where arguments are parsed.  Do as early as
 #         possible (when tagdumpargs is first imported).

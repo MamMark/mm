@@ -62,6 +62,11 @@ def influx_print():
 # handle influxdb being installed and not installed.
 try:
     influxdb_version = ''
+    if tagcore.globals.export == -1:
+        print('### --noexport, no external database export')
+        tagcore.globals.export = 0
+        raise ImportError
+
     from influxdb import InfluxDBClient
 
     if influx_print():

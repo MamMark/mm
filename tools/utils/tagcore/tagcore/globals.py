@@ -24,6 +24,7 @@ Includes:
 
     - verbose: verbosity level
     - export:  export force (1 says forcing export)
+               -1 says --noexport.
 '''
 
 verbose = 0

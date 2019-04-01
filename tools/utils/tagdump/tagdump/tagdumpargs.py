@@ -83,6 +83,8 @@ optional arguments:
   -x              tell tagdump to export records to an external database
   --export        (currently only influxdb export).  If no external linkage
                   available will abort. (args.export)
+  --noexport      override implicit export.  Used to examine incoming data
+                  without exporting to influxdb.
 
   -v, --verbose   increase output verbosity
                   (args.verbose)
@@ -193,6 +195,11 @@ def parseargs():
                         default=0,
                         help='set explicit export, external database')
 
+    parser.add_argument('--noexport',
+                        action='store_true',
+                        default=0,
+                        help='override export to external database')
+
     parser.add_argument('-v', '--verbose',
                         action='count',
                         default=0,
@@ -206,6 +213,8 @@ if len(sys.argv) < 2:
 args = parseargs()
 tagcore.globals.verbose = args.verbose
 tagcore.globals.export  = args.export
+if args.noexport:
+    tagcore.globals.export = -1
 
 if __name__ == '__main__':
     print(args)
