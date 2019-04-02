@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018, Daniel J. Maltbie, Eric B. Decker
+# Copyright (c) 2017-2019, Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc93'
+__version__ = '0.4.5rc96.dev0'
 
 import binascii
 from   collections  import OrderedDict
@@ -309,7 +309,7 @@ event_names = {
     3:  'GPS_GEO',
     4:  'GPS_XYZ',
     5:  'GPS_TIME',
-    6:  'GPS_MTFF_TIME',
+    6:  'GPS_LTFF_TIME',
     7:  'GPS_FIRST_LOCK',
     31: 'GPS_LOCK',
 

@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5dev0'
+__version__ = '0.4.5rc96.dev0'
 
 import binascii
 from   collections  import OrderedDict

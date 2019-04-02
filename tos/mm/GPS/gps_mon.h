@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Eric B. Decker
+ * Copyright (c) 2017-2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -101,8 +101,8 @@ typedef enum mon_events {
   MON_EV_OTS_YES        = 7,
   MON_EV_LOCK_POS       = 8,
   MON_EV_LOCK_TIME      = 9,
-  MON_EV_MPM            = 10,
-  MON_EV_MPM_ERROR      = 11,
+  MON_EV_LPM            = 10,
+  MON_EV_LPM_ERROR      = 11,
   MON_EV_TIMEOUT_MINOR  = 12,
   MON_EV_TIMEOUT_MAJOR  = 13,
   MON_EV_MAJOR_CHANGED  = 14,

@@ -59,7 +59,7 @@
  *
  * Major States
  *
- * IDLE         sleeping, MPM cycles
+ * IDLE         sleeping, MPM cycles or hibernate
  * CYCLE        simple fix cycle
  * LP_COLLECT   collecting fixes to help MPM or low pwr heal.
  * SATS_COLLECT collecting fixes for almanac and ephemis collection
@@ -916,14 +916,14 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
-  void maj_ev_mpm_error() {
+  void maj_ev_lpm_error() {
     switch(gmcb.major_state) {
       default:
-        gps_panic(101, gmcb.major_state, MON_EV_MPM_ERROR);
+        gps_panic(101, gmcb.major_state, MON_EV_LPM_ERROR);
         return;
 
       case GMS_MAJOR_IDLE:
-        major_change_state(GMS_MAJOR_LPM_COLLECT, MON_EV_MPM_ERROR);
+        major_change_state(GMS_MAJOR_LPM_COLLECT, MON_EV_LPM_ERROR);
         call MajorTimer.startOneShot(GPS_MON_LPM_COLLECT_TIME);
         return;
     }
@@ -995,7 +995,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case MON_EV_STARTUP:          maj_ev_startup();       return;
       case MON_EV_LOCK_POS:
       case MON_EV_LOCK_TIME:        maj_ev_lock(ev);        return;
-      case MON_EV_MPM_ERROR:        maj_ev_mpm_error();     return;
+      case MON_EV_LPM_ERROR:        maj_ev_lpm_error();     return;
       case MON_EV_TIMEOUT_MAJOR:    maj_ev_timeout_major(); return;
       case MON_EV_CYCLE:            maj_ev_cycle();         return;
       case MON_EV_STATE_CHK:        maj_ev_state_chk();     return;
@@ -1103,7 +1103,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
            * (not yet).
            */
           gps_warn(136, gmcb.minor_state, gmcb.major_state);
-          major_event(MON_EV_MPM_ERROR);
+          major_event(MON_EV_LPM_ERROR);
           mon_pulse_comm_check(MON_EV_TIMEOUT_MINOR);
           return;
         }
@@ -1227,7 +1227,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case GMS_LPM:
       case GMS_LPM_WAIT:
         call MinorTimer.stop();
-        minor_change_state(GMS_LPM, MON_EV_MPM);
+        minor_change_state(GMS_LPM, MON_EV_LPM);
         return;
 
       case GMS_COMM_CHECK:
@@ -1255,7 +1255,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     if (ev == MON_EV_LOCK_TIME && cycle_count && cycle_start) {
       elapsed = call MajorTimer.getNow() - cycle_start;
       cycle_sum += elapsed;
-      call CollectEvent.logEvent(DT_EVENT_GPS_MTFF_TIME, cycle_count,
+      call CollectEvent.logEvent(DT_EVENT_GPS_LTFF_TIME, cycle_count,
                                  elapsed, cycle_sum/cycle_count, 0);
       cycle_start = 0;
     }
@@ -1263,7 +1263,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
   /* low pwr (mpm) attempted, and got a good response */
-  void mon_ev_mpm() {
+  void mon_ev_lpm() {
     switch(gmcb.minor_state) {
       default:
         gps_warn(138, gmcb.minor_state, 0);
@@ -1273,22 +1273,22 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case GMS_LPM_WAIT:
         TELL = 0;
         call MinorTimer.stop();
-        minor_change_state(GMS_LPM, MON_EV_MPM);
+        minor_change_state(GMS_LPM, MON_EV_LPM);
         return;
     }
   }
 
   /* bad response from mpm */
-  void mon_ev_mpm_error() {
+  void mon_ev_lpm_error() {
     switch(gmcb.minor_state) {
       default:
         gps_warn(138, gmcb.minor_state, 0);
         return;
 
       case GMS_LPM_WAIT:
-        major_event(MON_EV_MPM_ERROR);
+        major_event(MON_EV_LPM_ERROR);
         call MinorTimer.startOneShot(GPS_MON_LPM_RESTART_WAIT);
-        minor_change_state(GMS_LPM_RESTART, MON_EV_MPM_ERROR);
+        minor_change_state(GMS_LPM_RESTART, MON_EV_LPM_ERROR);
         return;
     }
   }
@@ -1309,8 +1309,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case MON_EV_OTS_YES:          mon_ev_ots_yes();       return;
       case MON_EV_LOCK_POS:
       case MON_EV_LOCK_TIME:        mon_ev_lock(ev);        return;
-      case MON_EV_MPM:              mon_ev_mpm();           return;
-      case MON_EV_MPM_ERROR:        mon_ev_mpm_error();     return;
+      case MON_EV_LPM:              mon_ev_lpm();           return;
+      case MON_EV_LPM_ERROR:        mon_ev_lpm_error();     return;
       case MON_EV_TIMEOUT_MINOR:    mon_ev_timeout_minor(); return;
       case MON_EV_MAJOR_CHANGED:    mon_ev_major_changed(); return;
     }
@@ -1499,9 +1499,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     call CollectEvent.logEvent(DT_EVENT_GPS_MPM_RSP, error, prp->sid,
                                0, call GPSControl.awake());
     if (error == PWR_RSP_MPM_GOOD)
-      minor_event(MON_EV_MPM);
+      minor_event(MON_EV_LPM);
     else
-      minor_event(MON_EV_MPM_ERROR);
+      minor_event(MON_EV_LPM_ERROR);
   }
 
 

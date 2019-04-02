@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.4.5rc95'
+__version__ = '0.4.5rc96.dev0'
 
 __all__ = [
     'gps_cmd_name',
@@ -167,8 +167,8 @@ gps_mon_events = {
     'ots_yes':       7,
     'lock_pos':      8,
     'lock_time':     9,
-    'mpm':           10,
-    'mpm_error':     11,
+    'lpm':           10,
+    'lpm_error':     11,
     'timeout_minor': 12,
     'timeout_major': 13,
     'major_changed': 14,
@@ -186,8 +186,8 @@ gps_mon_events = {
     7:                  'ots_yes',
     8:                  'lock_pos',
     9:                  'lock_time',
-    10:                 'mpm',
-    11:                 'mpm_error',
+    10:                 'lpm',
+    11:                 'lpm_error',
     12:                 'timeout_minor',
     13:                 'timeout_major',
     14:                 'major_changed',

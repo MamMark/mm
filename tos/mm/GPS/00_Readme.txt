@@ -126,7 +126,7 @@ CONFIG          SWVER seen              purpose is to make sure we know the
 COMM_CHECK      any msg
                     if major_state == IDLE
                         retry_count = 1
-                        send(mpm)
+                        send(mpm) or go to hibernate (pulse)
                         MinorT.startOneShot(LPM_RSP_TIMEOUT)
                         -> LPM_WAIT
                     else
@@ -188,12 +188,12 @@ LPM_WAIT        mpm_error (not 0010)
                 MinorT.fired
                     if (retry_count > 5)
                         fail
-                        major_event(MON_EV_MPM_ERROR)
+                        major_event(MON_EV_LPM_ERROR)
                         pulse
                         MinorT.startOneStart(SHORT_COMM_TO)
                         -> COMM_CHECK
                     retry_count++
-                    send(mpm)
+                    send(mpm)/pulse (hibernate)
                     MinorT.startOneShot(LPM_RSP_TIMEOUT)
                     -> LPM_WAIT
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Eric B. Decker, Daniel J. Maltbie
+ * Copyright (c) 2016-2019 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -262,7 +262,7 @@ typedef enum {
   DT_EVENT_GPS_GEO          = 3,
   DT_EVENT_GPS_XYZ          = 4,
   DT_EVENT_GPS_TIME         = 5,
-  DT_EVENT_GPS_MTFF_TIME    = 6,       // low pwr (mpm) To First Fix (MTFF)
+  DT_EVENT_GPS_LTFF_TIME    = 6,       // low pwr (mpm) To First Fix (MTFF)
   DT_EVENT_GPS_FIRST_LOCK   = 7,       // boot to first lock
   DT_EVENT_GPS_LOCK         = 31,      // lock seen in cycle
 
