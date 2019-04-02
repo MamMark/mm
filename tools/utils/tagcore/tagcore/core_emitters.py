@@ -21,9 +21,9 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc91'
+__version__ = '0.4.5rc95.dev0'
 
-from   ctypes       import c_long
+from   ctypes       import c_int32
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -372,17 +372,17 @@ def emit_event(level, offset, buf, obj):
         return
 
     if event == GPS_GEO:
-        arg0 = c_long(arg0).value/10000000.
-        arg1 = c_long(arg1).value/10000000.
+        arg0 = c_int32(arg0).value/10000000.
+        arg1 = c_int32(arg1).value/10000000.
         arg3 = arg3/1000.
         print(' {:14s}  {:10.7f}  {:10.7f}  wk/tow: {}/{}'.format(
             event_name(event), arg0, arg1, arg2, arg3))
         return
 
     if event == GPS_XYZ:
-        arg1 = c_long(arg1).value
-        arg2 = c_long(arg2).value
-        arg3 = c_long(arg3).value
+        arg1 = c_int32(arg1).value
+        arg2 = c_int32(arg2).value
+        arg3 = c_int32(arg3).value
         print(' {:14s} {} - x: {}  y: {}  z: {}'.format(
             event_name(event), arg0, arg1, arg2, arg3))
         return
@@ -400,17 +400,17 @@ def emit_event(level, offset, buf, obj):
         return
 
     if event == DCO_REPORT:
-        arg0 = c_long(arg0).value
-        arg1 = c_long(arg1).value
-        arg2 = c_long(arg2).value
-        arg3 = c_long(arg3).value
+        arg0 = c_int32(arg0).value
+        arg1 = c_int32(arg1).value
+        arg2 = c_int32(arg2).value
+        arg3 = c_int32(arg3).value
         # fall through to bottom
 
     if event == DCO_SYNC:
-        arg0 = c_long(arg0).value
-        arg1 = c_long(arg1).value
-        arg2 = c_long(arg2).value
-        arg3 = c_long(arg3).value
+        arg0 = c_int32(arg0).value
+        arg1 = c_int32(arg1).value
+        arg2 = c_int32(arg2).value
+        arg3 = c_int32(arg3).value
         print(' {:14s} adj: {}  delta: {} ({}/{})'.format(
             event_name(event), arg0, arg1, arg2, arg3))
         return
