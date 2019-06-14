@@ -3,21 +3,33 @@ README for the tmp1x2 Driver
 The tmp102 and tmp112 temperature sensor chips are very similar and this
 driver supports both.  The tmp112 has an extended range.
 
-From the tmp102/tmp112 datasheet:
+Power can be handled explicitly or can be controlled by a resource arbiter.
+An arbiter protects the underlying I2C bus and provides automatic power
+control for the susbystem.  H/W interface code provided by the platform is
+responsible for instantiating each tmp sensor port as well as handling
+power on and off.
 
-A resource arbiter control access to the bus and controls power to any tmp
-sensors that are attached.
-
-When a sensor is accessed, first a Resource.request must be done to a) turn
-on the power and b) gain control of the I2C bus.
-
-TMP sensors need 26 to 35 ms to do a conversion and this is true from when
-power is first brought up.  Until the first conversion occurs, the sensor
-will return 0 deg C.  So we have to wait.
+When using an arbiter,  Resource.request is called.  This controls turning
+on power to the bus.  When the Resource.granted is signalled, power has been
+turned on.  The h/w interface needs to handle any timing issues to allow for
+power stabilization.  When all clients of the arbiter have been released,
+the arbiter will power down the bus.
 
 Once granted, we read 16 bits from register 0 to get the temperature.
 Afterwards we shut the sensor down (via SD) to minimize power until the bus
 is turned off again.
+
+Explicit power control is handled directly by the h/w interface which also
+is responsible for instantiating individual tmp ports.  SimpleSensor and
+TmpHardware have provisions for looking at h/w pwr state as well as turning
+on and off.
+
+
+From the tmp102/tmp112 datasheet:
+
+TMP sensors need 26 to 35 ms to do a conversion and this is true from when
+power is first brought up.  Until the first conversion occurs, the sensor
+will return 0 deg C.  This has ramifications anytime power is manipulated.
 
 Depending on the tmp102 configuration, the first 12 or 13 bits of the 16
 bits will contain a temperature value in Celsius.  One LSB corresponds to
@@ -30,5 +42,5 @@ and add one if they are greater than equal to 8.
 
 Negative degree values are provided in twos complement form.
 
-It should be possible to compress 16 bit temperature words to 8 bit when
-what you need is accuracy to 1/2 degree.
+It should be possible to compress 16 bit temperature words to 8 bits when
+only accuracy to 1/2 degree is needed.
