@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,14 +23,17 @@
 #include "tmp1x2.h"
 
 module TmpHardwareP {
-  provides interface Init;
+  provides {
+    interface Init;
+    interface TmpHardware;
+  }
   uses {
-    interface ResourceDefaultOwner;
     interface Timer<TMilli>;
     interface HplMsp432Usci    as Usci;
   }
 }
 implementation {
+  uint8_t req_dev_addr;
 
 /*
  * The dev6a main cpu clock is 16MiHz, SMCLK (for periphs) is clocked at
@@ -68,44 +71,35 @@ const msp432_usci_config_t tmp_i2c_config = {
     return SUCCESS;
   }
 
-  /*
-   * ResourceDefaultOwner.granted: power down the TMP bus.
-   *
-   * reconfigure connections to the TMP bus as input to avoid powering any
-   * chips and power off.
-   */
-
-  async event void ResourceDefaultOwner.granted() {
-    TMP_PINS_PORT;
-    TMP_I2C_PWR_OFF;
-  }
-
-  void task tmp_timer_task() {
-    call Timer.startOneShot(TMP1X2_PWR_ON_DELAY);
-  }
-
-
-  /*
-   * someone wants the TMP bus, turn it on.
-   *
-   * turn on power and reconfigure the pins to connect to the eUSCI
-   *
-   * We also want to wait for TMP1X2_PWR_ON_DELAY (35 ms) before letting
-   * the arbiter issue the grant.
-   */
-  async event void ResourceDefaultOwner.requested() {
+  command error_t TmpHardware.tmp_on(uint8_t dev_addr) {
+    if (TMP_GET_PWR_STATE)
+      return EALREADY;
     TMP_I2C_PWR_ON;
     TMP_PINS_MODULE;
-    post tmp_timer_task();
+    req_dev_addr = dev_addr;
+    call Timer.startOneShot(TMP1X2_PWR_ON_DELAY);
+    return SUCCESS;
+  }
+
+  command error_t TmpHardware.tmp_off(uint8_t dev_addr) {
+    req_dev_addr = 0;
+    TMP_I2C_PWR_OFF;
+    TMP_PINS_PORT;
+    call Timer.stop();
+    return EOFF;
+  }
+
+  command bool TmpHardware.isTmpPowered(uint8_t dev_addr) {
+    if (TMP_GET_PWR_STATE)
+      return TRUE;
+    return FALSE;
   }
 
   event void Timer.fired() {
-    call ResourceDefaultOwner.release();
-  }
+    uint8_t rda;
 
-  async event void ResourceDefaultOwner.immediateRequested() {
-    TMP_I2C_PWR_ON;
-    TMP_PINS_MODULE;
-    call ResourceDefaultOwner.release();
+    rda = req_dev_addr;
+    req_dev_addr = 0;
+    signal TmpHardware.tmp_on_done(SUCCESS, rda);
   }
 }

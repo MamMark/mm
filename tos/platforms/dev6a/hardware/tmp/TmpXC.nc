@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,23 +20,18 @@
  */
 
 /*
- * See TmpPC for explanation of what's up with this driver port
+ * See TmpPC for explanation of what's up with this tmp port
  */
 
 configuration TmpXC {
   provides interface SimpleSensor<uint16_t>;
-  provides interface Resource;
 }
 
 implementation {
-
-  /* see TmpPC */
   enum {
-    TMP_CLIENT = 1,
     TMP_ADDR   = 0x49,
   };
 
   components HplTmpC;
   SimpleSensor = HplTmpC.SimpleSensor[TMP_ADDR];
-  Resource     = HplTmpC.Resource[TMP_CLIENT];
 }
