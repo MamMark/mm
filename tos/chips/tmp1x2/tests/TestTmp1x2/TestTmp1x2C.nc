@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, 2017 Eric B. Decker
+ * Copyright (c) 2012, 2015, 2017, 2019 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,8 +48,4 @@ implementation {
 
   components new TimerMilliC() as Timer;
   App.TestTimer -> Timer;
-
-  components PowerManagerC;
-  App.PowerManager -> PowerManagerC;
-  App.Resource     -> TmpPC;
 }

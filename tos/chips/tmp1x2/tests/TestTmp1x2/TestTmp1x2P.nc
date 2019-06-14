@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017 Eric B. Decker
+ * Copyright (c) 2012, 2017, 2019 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,8 +43,6 @@ module TestTmp1x2P {
     interface SimpleSensor<uint16_t> as P;
     interface SimpleSensor<uint16_t> as X;
     interface Timer<TMilli> as  TestTimer;
-    interface PowerManager;
-    interface Resource;
   }
 }
 implementation {
@@ -52,29 +50,37 @@ implementation {
     call TestTimer.startPeriodic(1024);         /* about 1/min */
   }
 
+
   event void TestTimer.fired() {
+    uint16_t dP, dX;
+
     nop();
-    call PowerManager.battery_connected();
-    call Resource.immediateRequest();
-    call PowerManager.battery_connected();
-    call Resource.release();
-    if ((state & 1) == 0) {
-      call P.isPresent();
-      call P.read();
-    } else {
-      call X.isPresent();
-      call X.read();
+    dP = dX = 0;
+    if (!call P.isPwrOn()) {
+      call P.pwrUp();
+      return;
     }
-    state++;
+    if (call P.isPresent())
+      call P.read(&dP);
+    if (call X.isPresent())
+      call X.read(&dX);
   }
 
-  event void P.readDone(error_t error, uint16_t data) {
-    nop();
+
+  event void P.pwrUpDone(error_t error) {
+    uint16_t dP, dX;
+
+    dP = dX = 0;
+    if (error != SUCCESS)
+      return;
+    if (call P.isPresent())
+      call P.read(&dP);
+    if (call X.isPresent())
+      call X.read(&dX);
+    call P.pwrDown();
   }
 
-  event void X.readDone(error_t error, uint16_t data) {
-    nop();
-  }
-
-  event void Resource.granted() { }
+  event void P.pwrDownDone(error_t error) { }
+  event void X.pwrUpDone(error_t error)   { }
+  event void X.pwrDownDone(error_t error) { }
 }
