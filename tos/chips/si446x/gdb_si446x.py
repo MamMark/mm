@@ -1,4 +1,4 @@
-from si446xdef import *
+from si446x.si446xdef import *
 from binascii import hexlify
 import operator
 
