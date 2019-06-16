@@ -377,6 +377,13 @@ ie.
 
   point a browser at http://localhost:6419/ to see your rendered doc.
 
+- you will probably run into the API rate limit in which case you should
+  use a github personal access token.  You need a github login.
+
+  see https://github.com/joeyespo/grip#access
+  see github, Settings->Developer settings->Personal access tokens
+      https://github.com/settings/tokens/new?scopes=
+
 **************************************************************************************
 
 13) Remote mounting basestation file systems.
