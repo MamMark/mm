@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015 Eric B. Decker
- * Copyright (c) 2017-2018 Eric B. Decker, Daniel J. Maltbie
+ * Copyright (c) 2017-2019 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -33,6 +33,9 @@ implementation {
 
   components SystemBootC;
   TagnetMonitorP.Boot           -> SystemBootC.Boot;
+
+  components RegimeC;
+  TagnetMonitorP.Regime         -> RegimeC;
 
   components TagnetC;
   TagnetMonitorP.Tagnet         -> TagnetC;

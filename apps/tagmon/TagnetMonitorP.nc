@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, Eric B. Decker, Daniel J. Maltbie
+ * Copyright (c) 2017-2019, Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,10 @@
 #include <tagnet_panic.h>
 #include <rtc.h>
 #include <rtctime.h>
+#include <regime.h>
+
+//noinit uint8_t use_regime;
+uint8_t use_regime = SNS_DEFAULT_REGIME;
 
 module TagnetMonitorP {
   provides {
@@ -32,6 +36,7 @@ module TagnetMonitorP {
   }
   uses {
     interface Boot;
+    interface Regime;
     interface Tagnet;
     interface TagnetName as  TName;
     interface TagnetTLV  as  TTLV;
@@ -774,8 +779,19 @@ implementation {
   }
 
   event void Boot.booted() {
+    /*
+     * set the initial regime.  This will also
+     * signal all the sensors and start them off.
+     */
+//    call Regime.setRegime(SNS_DEFAULT_REGIME);
+    if (use_regime > SNS_MAX_REGIME)
+      use_regime = SNS_DEFAULT_REGIME;
+    call Regime.setRegime(use_regime);
+
     change_radio_state(RS_HOME, SS_RW, TMR_BOOT);
   }
+
+  event void Regime.regimeChange() {} // do nothing.  that's okay.
 
   async event void Panic.hook() { }
 }
