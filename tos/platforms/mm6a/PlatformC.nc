@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Eric B. Decker
+ * Copyright (c) 2016-2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -67,4 +67,12 @@ implementation {
   components McuSleepC;
   McuSleepC.Platform -> PlatformP;
   McuSleepC.CoreTime -> CoreTimeC;
+
+  /*
+   * Include sensor components.  No need to wire.  They will
+   * start when regimeChange() is signalled.
+   */
+//  components CradleC, BattC, TempC, SalC, AccelC, PTempC, PressC, SpeedC, Mag;C
+  components TempC;
+
 }

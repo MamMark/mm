@@ -13,6 +13,7 @@ PFLAGS += -I%T/platforms/mm6a/hardware/gps
 PFLAGS += -I%T/platforms/mm6a/hardware/mems
 PFLAGS += -I%T/platforms/mm6a/hardware/pwr_mgr
 PFLAGS += -I%T/platforms/mm6a/hardware/si446x
+PFLAGS += -I%T/platforms/mm6a/hardware/sensors
 PFLAGS += -I%T/platforms/mm6a/hardware/tmp
 
 PFLAGS += -I%T/platforms/mm
