@@ -24,10 +24,10 @@
 #include <tagnet_panic.h>
 #include <rtc.h>
 #include <rtctime.h>
-#include <regime.h>
+#include <regime_ids.h>
 
 //noinit uint8_t use_regime;
-uint8_t use_regime = SNS_DEFAULT_REGIME;
+uint8_t use_regime = RGM_DEFAULT;
 
 module TagnetMonitorP {
   provides {
@@ -784,8 +784,8 @@ implementation {
      * signal all the sensors and start them off.
      */
 //    call Regime.setRegime(SNS_DEFAULT_REGIME);
-    if (use_regime > SNS_MAX_REGIME)
-      use_regime = SNS_DEFAULT_REGIME;
+    if (use_regime > RGM_MAX_REGIME)
+      use_regime = RGM_DEFAULT;
     call Regime.setRegime(use_regime);
 
     change_radio_state(RS_HOME, SS_RW, TMR_BOOT);

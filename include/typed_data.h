@@ -387,6 +387,14 @@ typedef struct {
 #define GPS_DIR_TX 1
 
 
+/*
+ * Sensor Data.  Sensor Data header is followed by the sensor data.
+ * Sns_Id is globally unique across all platforms and is used to
+ * uniquely specify the format of any data following the sensor
+ * data header.
+ *
+ * Sensor ids are specified in tos/mm/sensor_ids.h.
+ */
 typedef struct {
   uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;

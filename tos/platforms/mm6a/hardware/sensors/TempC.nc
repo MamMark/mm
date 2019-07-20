@@ -3,8 +3,6 @@
  * All rights reserved.
  */
 
-#include "sensors.h"
-
 configuration TempC {
 }
 

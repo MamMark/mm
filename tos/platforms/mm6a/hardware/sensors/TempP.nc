@@ -17,7 +17,8 @@
  * bus, get powered up together, and then read sequentially.
  */
 
-#include "sensors.h"
+#include "regime_ids.h"
+#include "sensor_ids.h"
 
 module TempP {
   uses {
@@ -95,7 +96,7 @@ implementation {
     call TmpP.pwrDown();
     temp_state = TEMP_STATE_OFF;
     call PeriodTimer.stop();
-    new_period = call RegimeCtrl.sensorPeriod(SNS_ID_TEMP_PX);
+    new_period = call RegimeCtrl.sensorPeriod(RGM_ID_TEMP_PX);
     if (new_period == 0) {
       return;
     }

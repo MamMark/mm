@@ -10,29 +10,29 @@
  *  @author: Eric B. Decker
  */
 
-#include "sensors.h"
-#include "regime.h"
+#include "regime_ids.h"
+#include "platform_regime.h"
 
 module RegimeP {
   provides interface Regime;
 }
 implementation {
-  uint8_t  sns_regime;
+  uint8_t  cur_regime;
 
   command uint8_t Regime.getCurRegime() {
-    return sns_regime;
+    return cur_regime;
   }
 
-  command uint32_t Regime.sensorPeriod(uint8_t sns_id) {
-    if (sns_id > SNS_MAX_ID)
+  command uint32_t Regime.sensorPeriod(uint8_t rgm_id) {
+    if (rgm_id > RGM_ID_TIME_MAX)
       return 0UL;
-    return sns_period_table[sns_regime][sns_id];
+    return sns_period_table[cur_regime][rgm_id];
   }
 
   command error_t Regime.setRegime(uint8_t regime) {
-    if (regime > SNS_MAX_REGIME)
+    if (regime > RGM_MAX_REGIME)
       return FAIL;
-    sns_regime = regime;
+    cur_regime = regime;
     signal Regime.regimeChange();
     return SUCCESS;
   }
