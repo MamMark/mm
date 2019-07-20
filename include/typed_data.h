@@ -482,53 +482,5 @@ typedef struct {
 
 typedef dt_header_t dt_tagnet_t;          /* size 20 + var tagnet size */
 
-enum {
-  DT_HDR_SIZE_HEADER        = sizeof(dt_header_t),
-  DT_HDR_SIZE_REBOOT        = sizeof(dt_reboot_t),
-  DT_HDR_SIZE_VERSION       = sizeof(dt_version_t),
-  DT_HDR_SIZE_SYNC          = sizeof(dt_sync_t),
-  DT_HDR_SIZE_EVENT         = sizeof(dt_event_t),
-
-  DT_HDR_SIZE_GPS           = sizeof(dt_gps_t),
-  DT_HDR_SIZE_SENSOR_DATA   = sizeof(dt_sensor_data_t),
-  DT_HDR_SIZE_SENSOR_SET    = sizeof(dt_sensor_set_t),
-  DT_HDR_SIZE_NOTE          = sizeof(dt_note_t),
-};
-
-
-/*
- * Payload_size is how many bytes are needed in addition to the
- * dt_sensor_data_t struct.   Block_Size is total bytes used by
- * the dt_sensor_data_t header and any payload.  Payloads use 2
- * bytes per datam (16 bit values).  <sensor>_BLOCK_SIZE is what
- * needs to allocated. Note thet GPS position and time have no
- * payload. All fields ares specified.
- */
-
-enum {
-  BATT_PAYLOAD_SIZE   = 2,
-  BATT_BLOCK_SIZE     = (DT_HDR_SIZE_SENSOR_DATA + BATT_PAYLOAD_SIZE),
-
-  TEMPPX_PAYLOAD_SIZE = 4,
-  TEMPPX_BLOCK_SIZE   = (DT_HDR_SIZE_SENSOR_DATA + TEMPPX_PAYLOAD_SIZE),
-
-  SAL_PAYLOAD_SIZE    = 4,
-  SAL_BLOCK_SIZE      = (DT_HDR_SIZE_SENSOR_DATA + SAL_PAYLOAD_SIZE),
-
-  ACCEL_PAYLOAD_SIZE  = 6,
-  ACCEL_BLOCK_SIZE    = (DT_HDR_SIZE_SENSOR_DATA + ACCEL_PAYLOAD_SIZE),
-
-  PTEMP_PAYLOAD_SIZE  = 2,
-  PTEMP_BLOCK_SIZE    = (DT_HDR_SIZE_SENSOR_DATA + PTEMP_PAYLOAD_SIZE),
-
-  PRESS_PAYLOAD_SIZE  = 2,
-  PRESS_BLOCK_SIZE    = (DT_HDR_SIZE_SENSOR_DATA + PRESS_PAYLOAD_SIZE),
-
-  SPEED_PAYLOAD_SIZE  = 4,
-  SPEED_BLOCK_SIZE    = (DT_HDR_SIZE_SENSOR_DATA + SPEED_PAYLOAD_SIZE),
-
-  MAG_PAYLOAD_SIZE    = 6,
-  MAG_BLOCK_SIZE      = (DT_HDR_SIZE_SENSOR_DATA + MAG_PAYLOAD_SIZE),
-};
 
 #endif  /* __TYPED_DATA_H__ */
