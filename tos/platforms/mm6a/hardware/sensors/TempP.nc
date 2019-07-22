@@ -45,7 +45,7 @@ implementation {
     uint16_t data[2];                   /* 0 - I, 1 - X */
     dt_sensor_data_t td;
 
-    data[0] = data[1] = 0;
+    data[0] = data[1] = 0x800f;
     if (call TmpP.isPresent())
       call TmpP.read(&data[0]);
     if (call TmpX.isPresent())
