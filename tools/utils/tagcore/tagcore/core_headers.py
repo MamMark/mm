@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc96.dev0'
+__version__ = '0.4.5rc97.dev0'
 
 import binascii
 from   collections  import OrderedDict
@@ -30,6 +30,9 @@ from   collections  import OrderedDict
 from   base_objs    import *
 from   sirf_headers import obj_sirf_hdr
 from   sirf_headers import obj_sirf_swver
+
+from   sensor_defs  import *
+import sensor_defs  as     sensor
 
 from   sirf_defs    import *
 import sirf_defs    as     sirf
@@ -42,6 +45,42 @@ import sirf_defs    as     sirf
 ########################################################################
 
 #
+# Sensor Data decoder
+#
+# decodes top level of the sensor_data record and then uses the sns_id
+# and sns_table to dispatch the appropriate decoder for the actual
+# sensor data.  Sensor data is stored on the object pointed to in the
+# sns_table entry.
+#
+# obj must be a obj_dt_sensor_data.
+#
+# this decoder does the following:
+#
+# o consume/process a dt_sensor_data hdr
+# o extract sns_id from the dt_sensor_data hdr.
+# o extract the appropriate vector from sns_table[sns_id]
+# o consume/process the sensor data using decode/obj from the vector entry
+
+def decode_sensor(level, offset, buf, obj):
+    consumed = obj.set(buf)
+
+    sns_id = obj['sns_id'].val
+
+    try:
+        sensor.sns_count[sns_id] += 1
+    except KeyError:
+        sensor.sns_count[sns_id] = 1
+
+    v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
+    decoder     = v[SNS_DECODER]            # sns decoder
+    decoder_obj = v[SNS_OBJECT]             # sns object
+    if not decoder:
+        if (level >= 5):
+            print('*** no decoder/obj defined for sns {}'.format(sns_id))
+        return consumed
+    return consumed + decoder(level, offset, buf[consumed:], decoder_obj)
+
+
 # GPS RAW decoder
 #
 # main gps raw decoder, decodes DT_GPS_RAW_SIRFBIN
@@ -448,7 +487,24 @@ obj_dt_gps_time = obj_dt_hdr
 obj_dt_gps_geo  = obj_dt_hdr
 obj_dt_gps_xyz  = obj_dt_hdr
 
-obj_dt_sen_data = obj_dt_hdr
+
+####
+#
+# Sensor Data
+#
+# Record header, sensor data header, followed by sensor data.
+#
+# Sns_Id determines the format of any following data.  See sensor_defs.py
+# for details.
+#
+def obj_dt_sen_data():
+    return aggie(OrderedDict([
+        ('hdr',    obj_dt_hdr()),
+        ('delta',  atom(('<I', '{}'))),
+        ('sns_id', atom(('<H', '{}'))),
+        ('pad',    atom(('<H', '{}'))),
+    ]))
+
 obj_dt_sen_set  = obj_dt_hdr
 
 obj_dt_test     = obj_dt_hdr

@@ -13,7 +13,7 @@
  */
 const uint32_t sns_period_table[RGM_MAX_REGIME + 1][RGM_ID_TIME_MAX + 1] = {
 
-  /* none  batt         tempIX  sal     accel   gyro    mag     ptemp   gps     press   speed  */
+  /* none  batt         tmpPX   sal     accel   gyro    mag     ptemp   gps     press   speed  */
   {  0UL,  0UL,         0UL,    0UL,    0UL,    0UL,    0UL,    0UL,    0UL,    0UL,    0UL    }, /* 0 - all off  */
   {  0UL,  RGM_ONE_MIN, RGM_ONE_MIN,
                                 1024UL, 51UL,   0UL,    0UL,    1024UL, 0UL,    1024UL, 1024UL }, /* 1 - main regime */

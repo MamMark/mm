@@ -44,10 +44,9 @@ from   __future__   import print_function
 
 from   datetime     import datetime
 
-import struct
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.5rc91'
+__version__ = '0.4.5rc97.dev0'
 
 cfg_print_hourly = True
 

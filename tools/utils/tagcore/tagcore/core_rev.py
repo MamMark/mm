@@ -28,7 +28,7 @@ the basic ability to decode.   ie.  adding new events.
 '''
 
 CORE_REV   = 21
-CORE_MINOR =  95
+CORE_MINOR =  97
 
 from    .__init__       import __version__   as core_ver
 from    .base_objs      import __version__   as base_ver

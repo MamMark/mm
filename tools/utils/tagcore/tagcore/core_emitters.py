@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc96.dev0'
+__version__ = '0.4.5rc97.dev0'
 
 from   ctypes       import c_int32
 
@@ -52,6 +52,9 @@ import sirf_defs    as     sirf
 
 from   sirf_headers import mids_w_sids
 from   misc_utils   import dump_buf
+
+from   sensor_defs  import *
+import sensor_defs  as     sensor
 
 ################################################################
 #
@@ -528,11 +531,24 @@ def emit_gps_xyz(level, offset, buf, obj):
 #
 
 def emit_sensor_data(level, offset, buf, obj):
-    dump_hdr(offset, buf)
-    if (level >= 1):
-        print(obj)
-        print_hdr_obj(obj)
-        print()
+    xlen     = obj['hdr']['len'].val
+    xtype    = obj['hdr']['type'].val
+    recnum   = obj['hdr']['recnum'].val
+    rtctime  = obj['hdr']['rt']
+    brt      = rtctime_str(rtctime)
+
+    delta    = obj['delta'].val
+    sns_id   = obj['sns_id'].val
+
+    print_hourly(rtctime)
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
+                      dt_name(xtype)), end = '')
+
+    v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
+    print('  {:s}  {:s}'.format(sns_name(sns_id), sns_val_str(sns_id)))
+
+    if level >= 1:
+        print('        {}'.format(sns_val_str(sns_id, level)))
 
 
 def emit_sensor_set(level, offset, buf, obj):

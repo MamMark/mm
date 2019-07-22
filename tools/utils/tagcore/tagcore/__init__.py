@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.5rc96.dev2'
+__version__ = '0.4.5rc97.dev0'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,6 +18,15 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
+# 0.4.5.rc97
+#               decouple sensor id from regime index
+#               make sensor id global and unique
+#               add sensor_headers (decoders and objects)
+#               add sensor_emitters, sensor_populate, sensor_defs
+#               add details to sensor_data object (headers)
+#               simple sensor_data emitter.
+#               decode for tmp_px composite sensor.
+#
 # 0.4.5.rc96
 #               add --noexport to override database export.
 #               accept multiple influx versions, 1.5.2, 1.7.0
