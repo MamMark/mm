@@ -66,10 +66,6 @@ enum {
 
   /* Velocity, 2 x uint16 */
   SNS_ID_SPEED          = 10,   // Velocity (x,y)
-
-  SNS_ID_GPS_GEO        = 11,   // lat/long
-  SNS_ID_GPS_XYZ        = 12,   // ecef
-  SNS_ID_GPS_TIME       = 13,   // gps time
 };
 
 #endif

@@ -32,13 +32,7 @@ enum {
   RGM_ID_SPEED		= 10,	// Velocity (x,y)
 
   RGM_ID_TIME_MAX       = 10,   // max. for regime array
-
-  // misc. none time based sensors.
-  RGM_ID_GPS_GEO        = 11,   // lat/long
-  RGM_ID_GPS_XYZ        = 12,   // ecef
-  RGM_ID_GPS_TIME       = 13,   // gps time
-
-  RGM_ID_MAX_ID		= 13,
+  RGM_ID_MAX_ID		= 10,
 };
 
 
