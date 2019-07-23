@@ -3,8 +3,14 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.5rc96.dev1'
+__version__ = '0.4.5rc97.dev0'
 
+# core_rev: 21/97
+#       o add infrastructure for sensor display.
+#       o support for tmp1x2 temp sensors, TmpPX
+#       o sensor ids global, defines data format
+#
+# 0.4.5rc96   core_rev: 21/92
 #       o add --noexport to derail exporting to influx.  Used to
 #         look at tagdump data prior to being injected into influx.
 #       o accept multiple version of influx.  (json_emitters).
