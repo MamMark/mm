@@ -40,3 +40,7 @@ from    .sirf_defs      import __version__   as sd_ver
 from    .sirf_emitters  import __version__   as se_ver
 from    .sirf_headers   import __version__   as sh_ver
 from    .net_headers    import __version__   as tn_ver
+
+from    .sensor_defs     import __version__  as snsd_ver
+from    .sensor_emitters import __version__  as snse_ver
+from    .sensor_headers  import __version__  as snsh_ver
