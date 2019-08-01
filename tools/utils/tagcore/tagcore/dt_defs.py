@@ -46,7 +46,7 @@ from   datetime     import datetime
 
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.5rc97.dev0'
+__version__ = '0.4.5'
 
 cfg_print_hourly = True
 

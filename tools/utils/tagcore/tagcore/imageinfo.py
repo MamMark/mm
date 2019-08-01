@@ -26,7 +26,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5rc1'
+__version__ = '0.4.5'
 
 import sys
 import struct

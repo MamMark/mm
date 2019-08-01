@@ -26,7 +26,7 @@ from   collections import OrderedDict
 from   misc_utils  import dump_buf
 from   core_headers import *
 
-__version__ = '0.4.5rc0'
+__version__ = '0.4.5'
 
 class atom(object):
     '''

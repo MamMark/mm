@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.5rc97.dev0'
+__version__ = '0.4.5'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,6 +18,8 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
+# 0.4.5         release 0.4.5, CR: 21/100
+#
 # 0.4.5.rc97
 #               decouple sensor id from regime index
 #               make sensor id global and unique

@@ -21,7 +21,7 @@
 
 from   __future__   import print_function
 
-__version__ = '0.4.5.rc97.dev0'
+__version__ = '0.4.5'
 
 from   collections  import OrderedDict
 from   base_objs    import *

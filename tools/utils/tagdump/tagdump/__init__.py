@@ -3,8 +3,10 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.5rc97.dev0'
+__version__ = '0.4.5'
 
+# release: 0.4.5, core_rev: 21/100
+#
 # core_rev: 21/97
 #       o add infrastructure for sensor display.
 #       o support for tmp1x2 temp sensors, TmpPX

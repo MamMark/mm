@@ -19,7 +19,7 @@
 
 '''Panic headers'''
 
-__version__ = '0.4.5rc2'
+__version__ = '0.4.5'
 
 import binascii
 from   collections  import OrderedDict
