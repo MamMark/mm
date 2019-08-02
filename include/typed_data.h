@@ -105,15 +105,24 @@ typedef enum {
  * data layout to also start out quad aligned.
  *
  * All records (data blocks, dt headers) start with a 2 byte little endian
- * length, a 2 byte little endian data type field (dtype), a 4 byte little
- * endian record number, and a 10 byte rtctime stamp.  RtcTime is 10 bytes,
- * year.mon.day.dow.hr.min.sec.sub_sec.  The header also includes a record
- * checksum (recsum).  This is a 16 bit little endian checksum over
- * individual bytes in both the header and data areas.
+ * length, a 1 byte data type field (dtype), a 1 byte hdr_crc8, a 4 byte
+ * little endian record number, and a 10 byte rtctime stamp.  RtcTime is 10
+ * bytes, year.mon.day.dow.hr.min.sec.sub_sec.  The last two bytes of the
+ * header are a 2 byte (little endian) recsum (record checksum).
+ *
+ * The hdr_crc8 verifies the key elements of the header and is used when
+ * skipping over records without reading the entire record (which would
+ * be required if using the recsum to validate).  The hdr_crc8 includes
+ * len, dtype, recnum, and rt.  It doesn't include recsum.  hdr_crc8 must
+ * be set to zero before computing.
+ *
+ * Every record also includes a record checksum (recsum).  This is a 16 bit
+ * little endian checksum over individual bytes in both the header and data
+ * areas.
  *
  * A following dt_header is required to be quad aligned.  There will 0-3
  * pad bytes following a record.  Length does not include these pad bytes.
- * We want the length field (len) to maintain fidility with respect to the
+ * We want the length field (len) to maintain fidelity with respect to the
  * header and payload length.
  *
  * Length is the total size of the data block including header and any
@@ -123,11 +132,6 @@ typedef enum {
  * address.
  *
  * ie.  nxt_ptr = (cur_ptr + len + 3) & 0xffff_fffc
- */
-
-/*
- * for 21/92.  use the following dt_header
- * hdr_crc8 doesn't include the recsum.
  */
 
 typedef struct {                /* size 20 */
@@ -140,31 +144,6 @@ typedef struct {                /* size 20 */
 } PACKED dt_header_t;
 
 #define HDR_CRC_LEN (sizeof(dt_header_t) - sizeof(uint16_t))
-
-
-/*
- * for 22/0, rework header.  hdr_crc8 is external and
- * only includes from dtype on.  It only covers the basic hdr block from
- * dtype through len.   recsum includes all bytes in the
- * record, hdr and data.  It becomes internal and should sum to 0.
- */
-
-#ifdef notdef
-
-/* needs to reflect in all records as well */
-
-typedef struct {                /* size 20 */
-  uint16_t recsum;
-  uint8_t  hdr_crc8;            /* dtype through len */
-  dtype_t  dtype;
-  uint32_t recnum;
-  rtctime_t rt;                 /* 10 byte rtctime */
-  uint16_t len;
-} PACKED dt_header_t;
-
-#define HDR_CRC_LEN (sizeof(dt_header_t) - sizeof(uint16_t) - sizeof(uint8_t))
-
-#endif
 
 
 /*

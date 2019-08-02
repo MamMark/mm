@@ -471,7 +471,7 @@ implementation {
 
     /*
      * all fields of the header are filled in.  Compute the hdr_crc8
-     * It is an external crc.  When checking the crc, one must remember
+     * It is an internal crc.  When checking the crc, one must remember
      * its value, zero its cell, compute the crc, and compare.
      *
      * The hdr_crc8 does NOT include recsum.  This is handled by the value
