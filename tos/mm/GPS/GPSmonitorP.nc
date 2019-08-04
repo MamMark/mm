@@ -163,17 +163,6 @@ typedef struct {
 } gps_xyz_t;
 
 
-/* from MID 7, clock status */
-typedef struct {
-  rtctime_t rt;                         /* rtctime - last seen */
-  uint32_t drift;
-  uint32_t bias;
-  uint32_t tow;                         /* reported time of week */
-  uint16_t week_x;                      /* extended week */
-  uint8_t  nsats;
-} gps_clock_t;
-
-
 /* from MID 41, geodetic data */
 typedef struct {
   rtctime_t rt;                         /* rtctime - last seen */
@@ -194,22 +183,6 @@ typedef struct {
   uint16_t cog;                         /* deg cw from N_t * 100 */
   uint8_t  hdop;
 } gps_geo_t;
-
-
-/* from mid 52, 1pps data */
-typedef struct {
-  rtctime_t rt;                         /* rtctime - last seen */
-  uint32_t mark_us;                     /* when mark was seen in usecs */
-  uint16_t year;
-  uint16_t utcintoff;
-  uint32_t utcfracoff;
-  uint8_t  hr;
-  uint8_t  min;
-  uint8_t  sec;
-  uint8_t  day;
-  uint8_t  mo;
-  uint8_t  status;
-} gps_1pps_t;
 
 
 /* extracted from MID 41, Geodetic */
@@ -1383,12 +1356,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
 
   /*
-   * MID 7: CLOCK_STATUS
-   */
-  void process_clockstatus(sb_clock_status_data_t *cp, rtctime_t *rtp) { }
-
-
-  /*
    * MID 18: Ok To Send (OTS)
    * 1st byte following the mid (data[0]) indicates yes (1) or no (0).
    */
@@ -1573,9 +1540,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         break;
       case MID_SWVER:
         process_swver((void *) sbp, arrival_rtp);
-        break;
-      case MID_CLOCKSTATUS:
-        process_clockstatus((void *) sbp, arrival_rtp);
         break;
       case MID_OTS:
         process_ots((void *) sbp, arrival_rtp);
