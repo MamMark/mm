@@ -238,9 +238,11 @@ typedef enum {
   DT_EVENT_PANIC_WARN       = 1,
   DT_EVENT_FAULT            = 2,
 
-  DT_EVENT_GPS_GEO          = 3,
-  DT_EVENT_GPS_XYZ          = 4,
-  DT_EVENT_GPS_TIME         = 5,
+  /* replaced by DT blocks, DT_GPS_*, do not reuse */
+//  DT_EVENT_GPS_GEO          = 3,       // deprecated
+//  DT_EVENT_GPS_XYZ          = 4,       // deprecated
+//  DT_EVENT_GPS_TIME         = 5,       // deprecated
+
   DT_EVENT_GPS_LTFF_TIME    = 6,       // low pwr (mpm) To First Fix (MTFF)
   DT_EVENT_GPS_FIRST_LOCK   = 7,       // boot to first lock
   DT_EVENT_GPS_LOCK         = 31,      // lock seen in cycle

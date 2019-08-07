@@ -345,9 +345,9 @@ event_names = {
     1:  'PANIC_WARN',
     2:  'FAULT',
 
-    3:  'GPS_GEO',
-    4:  'GPS_XYZ',
-    5:  'GPS_TIME',
+    3:  'GPS_GEO',              # deprecated, backward compatibility
+    4:  'GPS_XYZ',              # deprecated, backward compatibility
+    5:  'GPS_TIME',             # deprecated, backward compatibility
     6:  'GPS_LTFF_TIME',
     7:  'GPS_FIRST_LOCK',
     31: 'GPS_LOCK',

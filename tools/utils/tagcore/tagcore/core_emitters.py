@@ -374,6 +374,7 @@ def emit_event(level, offset, buf, obj):
             arg0, arg1, arg2, arg3, arg0, arg1, arg2, arg3))
         return
 
+    # deprecated, backward compatibility
     if event == GPS_GEO:
         arg0 = c_int32(arg0).value/10000000.
         arg1 = c_int32(arg1).value/10000000.
@@ -382,6 +383,7 @@ def emit_event(level, offset, buf, obj):
             event_name(event), arg0, arg1, arg2, arg3))
         return
 
+    # deprecated, backward compatibility
     if event == GPS_XYZ:
         arg1 = c_int32(arg1).value
         arg2 = c_int32(arg2).value
@@ -390,6 +392,7 @@ def emit_event(level, offset, buf, obj):
             event_name(event), arg0, arg1, arg2, arg3))
         return
 
+    # deprecated, backward compatibility
     if event == GPS_TIME:
         year = (arg0 >> 16) & 0xffff
         mon  = (arg0 >> 8)  & 0xff
