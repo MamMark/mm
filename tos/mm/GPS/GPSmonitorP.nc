@@ -151,52 +151,22 @@ enum {
 
 /* from MID 2, NAV_DATA */
 typedef struct {
-  rtctime_t rt;                         /* rtctime - last seen */
-  uint32_t tow;                         /* reported time of week */
-  int32_t  x;                           /* ECEF X */
-  int32_t  y;                           /* ECEF Y */
-  int32_t  z;                           /* ECEF Z */
-  uint16_t week;                        /* 10 bit week, broken */
-  uint8_t  mode1;                       /* position mode of last fix  */
-  uint8_t  hdop;                        /* horz dop * 5               */
-  uint8_t  nsats;                       /* number of sats in solution */
+  rtctime_t    rt;                      /* rtctime - last seen */
+  dt_gps_xyz_t dt;
 } gps_xyz_t;
 
 
 /* from MID 41, geodetic data */
 typedef struct {
-  rtctime_t rt;                         /* rtctime - last seen */
-  uint32_t tow;                         /* time of week, * 1000 */
-  uint16_t week_x;                      /* extended week */
-  uint8_t  nsats;                       /* how many sats in solution */
-  uint8_t  additional_mode;
-  int32_t  lat;                         /*  +N * 10^7 */
-  int32_t  lon;                         /*  +E * 10^7 */
-  uint32_t sat_mask;                    /* which sats used in solution */
-  uint16_t nav_valid;                   /* bit mask */
-  uint16_t nav_type;                    /* bit mask */
-  uint32_t ehpe;                        /* m * 100 */
-  uint32_t evpe;                        /* m * 100 */
-  int32_t  alt_ell;                     /* altitude ellipsoid m * 100 */
-  int32_t  alt_msl;                     /* altitude msl m * 100 */
-  uint16_t sog;                         /* m/s * 100 */
-  uint16_t cog;                         /* deg cw from N_t * 100 */
-  uint8_t  hdop;
+  rtctime_t    rt;                      /* rtctime - last seen */
+  dt_gps_geo_t dt;
 } gps_geo_t;
 
 
 /* extracted from MID 41, Geodetic */
 typedef struct {
-  rtctime_t rt;                         /* rtctime - last seen */
-  uint32_t tow;                         /* seconds x 1e3 */
-  uint16_t week_x;
-  uint16_t utc_year;
-  uint8_t  utc_month;
-  uint8_t  utc_day;
-  uint8_t  utc_hour;
-  uint8_t  utc_min;
-  uint16_t utc_ms;			/* x 1e3 (millisecs) */
-  uint8_t  nsats;
+  rtctime_t     rt;                     /* rtctime - last seen */
+  dt_gps_time_t dt;
 } gps_time_t;
 
 
@@ -262,10 +232,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
 #define LAST_NSATS_COUNT_INIT 10
 
-  gps_xyz_t  m_xyz;
-  gps_geo_t  m_geo;
-  gps_time_t m_time;
-  gps_1pps_t m_pps;
+  gps_xyz_t   m_xyz;
+  gps_geo_t   m_geo;
+  gps_time_t  m_time;
 
   void major_event(mon_event_t ev);
 
@@ -545,9 +514,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   command bool InfoSensGpsXyz.get_value(tagnet_gps_xyz_t *t, uint32_t *l) {
     if (!t || !l)
       gps_panic(0, 0, 0);
-    t->gps_x = m_xyz.x;
-    t->gps_y = m_xyz.y;
-    t->gps_z = m_xyz.z;
+    t->gps_x = m_xyz.dt.x;
+    t->gps_y = m_xyz.dt.y;
+    t->gps_z = m_xyz.dt.z;
     *l = TN_GPS_XYZ_LEN;
     return 1;
   }
@@ -1294,8 +1263,16 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
    * MID 2: NAV_DATA
    */
   void process_navdata(sb_nav_data_t *np, rtctime_t *rtp) {
-    uint8_t    pmode;
-    gps_xyz_t *mxp;
+    dt_gps_t      gps_block;
+    dt_gps_xyz_t *xdtp;
+    uint8_t       pmode;
+    int           i;
+
+    uint64_t       epoch;
+    uint32_t       cur_secs,   cap_secs;
+    uint32_t       cur_micros, cap_micros;
+    uint32_t       delta;
+    rtctime_t      cur_time;
 
     nop();
     nop();
@@ -1316,19 +1293,41 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
        * we consider a valid fix anywhere from a 2D (2SV KF fix) to an over
        * determined >= 5 sat fix.
        */
+      xdtp = &m_xyz.dt;
+      call Rtc.copyTime(&m_xyz.rt, rtp);
+      xdtp->x      = CF_BE_32(np->xpos);
+      xdtp->y      = CF_BE_32(np->ypos);
+      xdtp->z      = CF_BE_32(np->zpos);
+      xdtp->tow    = CF_BE_32(np->tow);
+      xdtp->week   = CF_BE_16(np->week);
+      xdtp->m1     = np->mode1;
+      xdtp->m2     = np->mode2;
+      xdtp->hdop5  = np->hdop;
+      xdtp->nsats  = np->nsats;
+      for (i = 0; i < 12; i++)          /* are there always 12 datams? */
+        xdtp->prns[i] = np->data[i];
+
+      epoch = call Rtc.rtc2epoch(rtp);
+      cap_secs   = epoch >> 32;
+      cap_micros = epoch & 0xffffffffUL;
+
+      call Rtc.getTime(&cur_time);
+      epoch      = call Rtc.rtc2epoch(&cur_time);
+      cur_secs   = epoch >> 32;
+      cur_micros = epoch & 0xffffffffUL;
+
+      delta = (cur_secs - cap_secs) * 1000 + (cur_micros - cap_micros);
+      xdtp->delta = delta;
+
+      /* build the dt gps header */
+      gps_block.len = sizeof(gps_block) + sizeof(dt_gps_xyz_t);
+      gps_block.dtype = DT_GPS_XYZ;
+      gps_block.mark_us = 0;
+      gps_block.chip_id = CHIP_GPS_GSD4E;
+      gps_block.dir     = GPS_DIR_RX;
       nop();
-      mxp = &m_xyz;
-      call Rtc.copyTime(&mxp->rt, rtp);
-      mxp->tow   = CF_BE_32(np->tow);
-      mxp->week  = CF_BE_16(np->week);
-      mxp->x     = CF_BE_32(np->xpos);
-      mxp->y     = CF_BE_32(np->ypos);
-      mxp->z     = CF_BE_32(np->zpos);
-      mxp->mode1 = np->mode1;
-      mxp->hdop  = np->hdop;
-      mxp->nsats = np->nsats;
-      call CollectEvent.logEvent(DT_EVENT_GPS_XYZ, mxp->nsats,
-                                 mxp->x, mxp->y, mxp->z);
+      call Collect.collect((void *) &gps_block, sizeof(gps_block),
+                           (void *) xdtp, sizeof(*xdtp));
       minor_event(MON_EV_LOCK_POS);
     }
   }
@@ -1374,9 +1373,15 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
    * Extract time and position data out of the geodetic gps packet
    */
   void process_geodetic(sb_geodetic_t *gp, rtctime_t *rtp) {
-    gps_time_t    *mtp;
-    gps_geo_t     *mgp;
+    dt_gps_t       gps_block;
+    dt_gps_time_t *tdtp;
+    dt_gps_geo_t  *gdtp;
     uint16_t       nav_valid, nav_type;
+    uint64_t       epoch;
+    uint32_t       cur_secs,   cap_secs;
+    uint32_t       cur_micros, cap_micros;
+    uint32_t       delta;
+    rtctime_t      cur_time;
 
     if (!gp || CF_BE_16(gp->len) != GEODETIC_LEN)
       return;
@@ -1392,42 +1397,72 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       last_nsats_count--;
 
     if (nav_valid == 0) {
-      mtp = &m_time;
-      call Rtc.copyTime(&mtp->rt, rtp);
-      mtp->tow       = CF_BE_32(gp->tow);
-      mtp->week_x    = CF_BE_16(gp->week_x);
-      mtp->nsats     = gp->nsats;
+      tdtp = &m_time.dt;
+      call Rtc.copyTime(&m_time.rt, rtp);       /* last seen */
+      tdtp->tow       = CF_BE_32(gp->tow);
+      tdtp->week_x    = CF_BE_16(gp->week_x);
+      tdtp->utc_year  = CF_BE_16(gp->utc_year);
+      tdtp->utc_month = gp->utc_month;
+      tdtp->utc_day   = gp->utc_day;
+      tdtp->utc_hour  = gp->utc_hour;
+      tdtp->utc_min   = gp->utc_min;
+      tdtp->utc_ms    = CF_BE_16(gp->utc_ms);
+      tdtp->nsats     = gp->nsats;
 
-      mtp->utc_year  = CF_BE_16(gp->utc_year);
-      mtp->utc_month = gp->utc_month;
-      mtp->utc_day   = gp->utc_day;
-      mtp->utc_hour  = gp->utc_hour;
-      mtp->utc_min   = gp->utc_min;
-      mtp->utc_ms    = CF_BE_16(gp->utc_ms);
-      call CollectEvent.logEvent(DT_EVENT_GPS_TIME,
-        (mtp->utc_year << 16) | (mtp->utc_month << 8) | (mtp->utc_day),
-        (mtp->utc_hour << 8) | (mtp->utc_min),
-        mtp->utc_ms, 0);
+      epoch      = call Rtc.rtc2epoch(rtp);
+      cap_secs   = epoch >> 32;
+      cap_micros = epoch & 0xffffffffUL;
 
-      mgp = &m_geo;
-      call Rtc.copyTime(&mgp->rt, rtp);
-      mgp->tow       = CF_BE_32(gp->tow);
-      mgp->week_x    = CF_BE_16(gp->week_x);
-      mgp->nsats     = gp->nsats;
-      mgp->lat       = CF_BE_32(gp->lat);
-      mgp->lon       = CF_BE_32(gp->lon);
-      mgp->ehpe      = CF_BE_32(gp->ehpe);
-      mgp->hdop      = gp->hdop;
-      mgp->sat_mask  = CF_BE_32(gp->sat_mask);
-      mgp->nav_valid = CF_BE_16(gp->nav_valid);
-      mgp->nav_type  = CF_BE_16(gp->nav_type);
-      mgp->alt_ell   = CF_BE_32(gp->alt_elipsoid);
-      mgp->alt_msl   = CF_BE_32(gp->alt_msl);
-      mgp->sog       = CF_BE_16(gp->sog);
-      mgp->cog       = CF_BE_16(gp->cog);
-      mgp->additional_mode = gp->additional_mode;
-      call CollectEvent.logEvent(DT_EVENT_GPS_GEO, mgp->lat, mgp->lon,
-                                 mgp->week_x, mgp->tow);
+      call Rtc.getTime(&cur_time);
+      epoch      = call Rtc.rtc2epoch(&cur_time);
+      cur_secs   = epoch >> 32;
+      cur_micros = epoch & 0xffffffffUL;
+
+      delta = (cur_secs - cap_secs) * 1000 + (cur_micros - cap_micros);
+      tdtp->delta = delta;
+
+      /* build the dt gps header */
+      gps_block.len = sizeof(gps_block) + sizeof(dt_gps_time_t);
+      gps_block.dtype = DT_GPS_TIME;
+      gps_block.mark_us = 0;
+      gps_block.chip_id = CHIP_GPS_GSD4E;
+      gps_block.dir     = GPS_DIR_RX;
+      nop();
+      call Collect.collect((void *) &gps_block, sizeof(gps_block),
+                           (void *) tdtp, sizeof(*tdtp));
+
+      gdtp = &m_geo.dt;
+      call Rtc.copyTime(&m_geo.rt, rtp);
+      gdtp->nav_valid = CF_BE_16(gp->nav_valid);
+      gdtp->nav_type  = CF_BE_16(gp->nav_type);
+      gdtp->lat       = CF_BE_32(gp->lat);
+      gdtp->lon       = CF_BE_32(gp->lon);
+      gdtp->alt_ell   = CF_BE_32(gp->alt_elipsoid);
+      gdtp->alt_msl   = CF_BE_32(gp->alt_msl);
+      gdtp->sat_mask  = CF_BE_32(gp->sat_mask);
+      gdtp->tow       = CF_BE_32(gp->tow);
+      gdtp->week_x    = CF_BE_16(gp->week_x);
+      gdtp->nsats     = gp->nsats;
+      gdtp->add_mode  = gp->additional_mode;
+      gdtp->ehpe100   = CF_BE_32(gp->ehpe);
+      gdtp->hdop5     = gp->hdop;
+
+      call Rtc.getTime(&cur_time);
+      epoch = call Rtc.rtc2epoch(&cur_time);
+      cur_secs   = epoch >> 32;
+      cur_micros = epoch & 0xffffffffUL;
+
+      delta = (cur_secs - cap_secs) * 1000 + (cur_micros - cap_micros);
+      gdtp->delta = delta;
+
+      /* build the dt gps header */
+      gps_block.len = sizeof(gps_block) + sizeof(dt_gps_geo_t);
+      gps_block.dtype = DT_GPS_GEO;
+
+      /* the reset of the header cells are the same as for time */
+      nop();
+      call Collect.collect((void *) &gps_block, sizeof(gps_block),
+                           (void *) gdtp, sizeof(*gdtp));
 
       /* tell the monitor we have lock */
       minor_event(MON_EV_LOCK_TIME);

@@ -338,6 +338,9 @@ typedef enum {
  * Used by:
  *
  *   DT_GPS_VERSION
+ *   DT_GPS_TIME
+ *   DT_GPS_GEO
+ *   DT_GPS_XYZ
  *   DT_GPS_RAW_SIRFBIN
  *
  * Note: at one point we thought that we would be able to access the
@@ -366,6 +369,102 @@ typedef struct {
  */
 #define GPS_DIR_RX 0
 #define GPS_DIR_TX 1
+
+
+/*
+ * Data structures for GPS_GSD4E, TIME, GEO, and XYZ
+ *
+ * All multi-byte structures are little endian and are translated from
+ * the big endian SirfBin equivilent.
+ */
+
+typedef struct {
+  uint32_t delta;                       /* microsecs  cur - cap time */
+  uint32_t tow;
+  uint16_t week_x;
+  uint16_t utc_year;
+  uint8_t  utc_month;
+  uint8_t  utc_day;
+  uint8_t  utc_hour;
+  uint8_t  utc_min;
+  uint16_t utc_ms;                      /* secs * 1000 */
+  uint8_t  nsats;
+} dt_gps_time_t;
+
+typedef struct {
+  uint32_t delta;                       /* microsecs  cur - cap time */
+  uint16_t nav_valid;
+  uint16_t nav_type;
+  int32_t  lat;
+  int32_t  lon;
+  int32_t  alt_ell;                     /* ellipsoid */
+  int32_t  alt_msl;                     /* mean sea level */
+  uint32_t sat_mask;
+  uint32_t tow;
+  uint16_t week_x;                      /* week extended */
+  uint8_t  nsats;
+  uint8_t  add_mode;                    /* additional mode */
+  uint32_t ehpe100;                     /* horz pos err * 10 */
+  uint8_t  hdop5;                       /* hdop * 5, max 250 = 50 */
+} dt_gps_geo_t;
+
+typedef struct {
+  uint32_t delta;                       /* microsecs  cur - cap time */
+  int32_t  x;
+  int32_t  y;
+  int32_t  z;
+  uint32_t tow;                         /* *100, time of week */
+  uint16_t week;                        /* gps week, 10 lsb, modulo */
+  uint8_t  m1;                          /* see below */
+  uint8_t  m2;                          /* see below */
+  uint8_t  hdop5;                       /* hdop * 5 */
+  uint8_t  nsats;                       /* SVs in fix */
+  uint8_t  prns[12];                    /* <nsats> x svids */
+} dt_gps_xyz_t;
+
+
+/* MODE1, bit map */
+
+#define SB_NAV_M1_PMODE_MASK            0x07
+#define SB_NAV_M1_TPMODE_MASK           0x08
+#define SB_NAV_M1_ALTMODE_MASK          0x30
+#define SB_NAV_M1_DOPMASK_MASK          0x40
+#define SB_NAV_M1_DGPS_MASK             0x80
+
+/* Position Mode */
+#define SB_NAV_M1_PMODE_NONE            0
+#define SB_NAV_M1_PMODE_SV1KF           1
+#define SB_NAV_M1_PMODE_SV2KF           2
+#define SB_NAV_M1_PMODE_SV3KF           3
+#define SB_NAV_M1_PMODE_SVODKF          4
+#define SB_NAV_M1_PMODE_2D              5
+#define SB_NAV_M1_PMODE_3D              6
+#define SB_NAV_M1_PMODE_DR              7
+
+/* TricklePower Mode */
+#define SB_NAV_M1_TPMODE_FULL           0x00
+#define SB_NAV_M1_TPMODE_TRICKLE        0x08
+
+/* Altitude Mode */
+#define SB_NAV_M1_ALTMODE_NONE          0x00
+#define SB_NAV_M1_ALTMODE_KFHOLD        0x10
+#define SB_NAV_M1_ALTMODE_USERHOLD      0x20
+#define SB_NAV_M1_ALTMODE_ALWAYS        0x30
+
+/* Dilution of Precision */
+#define SB_NAV_M1_DOPMASK_OK            0x00
+#define SB_NAV_M1_DOPMASK_EXCEEDED      0x40
+
+/* Differential GPS */
+#define SB_NAV_M1_DGPS_NONE             0x00
+#define SB_NAV_M1_DGPS_APPLIED          0x80
+
+
+/* MODE2, bit map */
+/* for the time being, we don't care about M2 */
+#define SB_NAV_M2_SOL_VALIDATED         0x02
+#define SB_NAV_M2_VEL_INVALID           0x10
+#define SB_NAV_M2_ALTHOLD_DISABLED      0x20
 
 
 /*
