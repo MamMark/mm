@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Eric B. Decker
+ * Copyright (c) 2018-2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -548,9 +548,12 @@ implementation {
    * return: bool       TRUE,  tweak took, inversion successful.
    *                    FALSE, SECS tweaked.  inversion not done.
    *
-   * We are tweaking PS to either clear its normally inverted Q15 state or
-   * we are tweaking PS to set the inverted Q15 state.  inverted with
-   * respect to TA->R.
+   * Setting PS from current R to keep R and PS reasonably sync'd with
+   * each other (no operational ramifications, simplifies looking at
+   * times).  Inversion is a carry over from deepdeep sleep work where
+   * we would use an inverted Q15 to enable rollover interrupts from
+   * PS when in deepdeep.  (Its convoluted).  We aren't currently doing
+   * that.
    *
    * When changing PS we have to stop the RTC but we want to do it in such
    * a way as to not cause any missed SECS transitions.  We do this by
@@ -993,19 +996,14 @@ implementation {
     call CollectEvent.logEvent(DT_EVENT_TIME_SKEW, cur_s, new_s, delta, 0);
 
     /*
-     * for now we simply sync TA1->R to PS to avoid messing
-     * with timers.  We always want the upper bit, Q15, inverted
-     * in PS.  This will need to get fixed when we implement GPS time
-     * which may change time when converging.
-     *
-     * Eventually, we can implement a skew algorithm that will gradually
-     * advance or retard the timing gracefully.
+     * Force TA1->R into PS, we don't mess with TA1->R to avoid messing
+     * with timers.
      */
-    timep->sub_sec = call Platform.jiffiesRaw() ^ 0x8000;
+    timep->sub_sec = call Platform.jiffiesRaw();
     call Rtc.setTime(timep);
     call CoreTime.log(19);
-    if (!tweakPS(0x8000, &cur_ta))
-      tweakPS(0x8000, &cur_ta);
+    if (!tweakPS(0, &cur_ta))
+      tweakPS(0, &cur_ta);
 
     if (delta > 8)                      /* if bigger than 8 secs */
       call OverWatch.flush_boot(call OverWatch.getBootMode(),
