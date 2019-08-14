@@ -1224,7 +1224,8 @@ void __Reset() {
   __disable_irq();
   memset(&ow_startup_times, 0, sizeof(ow_startup_times));
   __rtc_getTime(&ow_startup_times.boot_start);
-  ow_control_block.rtc_src = RTCSRC_BOOT;
+  if (ow_control_block.rtc_src != RTCSRC_GPS)
+    ow_control_block.rtc_src = RTCSRC_BOOT;
 
   /*
    * restart the RTC
