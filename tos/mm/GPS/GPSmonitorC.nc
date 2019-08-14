@@ -65,6 +65,9 @@ implementation {
   GPSmonitorP.CollectEvent -> CollectC;
   GPSmonitorP.Collect -> CollectC;
 
+  components CoreTimeC;
+  GPSmonitorP.CoreTime -> CoreTimeC;
+
   components PlatformC;
   GPSmonitorP.Rtc -> PlatformC;
 

@@ -623,6 +623,38 @@ implementation {
 
 
   /**
+   * excessiveSkew: check for too much skew.
+   */
+  async command uint32_t CoreTime.excessiveSkew(rtctime_t *rtcp, uint32_t cur_secs,
+                                            uint32_t *inp, uint32_t *curp) {
+    rtctime_t curtime;
+    uint64_t  cur_e;                    /* cur epoch */
+    uint32_t  cur_s;                    /* cur secs  */
+    uint64_t  new_e;                    /* new epoch */
+    uint32_t  new_s;                    /* new secs  */
+    uint32_t  delta;                    /* difference */
+
+    cur_s = cur_secs;
+    if (cur_secs == 0) {
+      call Rtc.getTime(&curtime);
+      cur_e = call Rtc.rtc2epoch(&curtime);
+      cur_s = cur_e >> 32;
+    }
+
+    new_e = call Rtc.rtc2epoch(rtcp);
+    new_s = new_e >> 32;
+
+    if (new_s > cur_s) delta = new_s - cur_s;
+    else               delta = cur_s - new_s;
+
+    if (delta < 8) delta = 0;           /* skew >= 8 secs */
+    if (inp)  *inp  = new_s;
+    if (curp) *curp = cur_s;
+    return delta;
+  }
+
+
+  /**
    * initDeepSleep: set up for deep sleep
    * Simple DeepSleep, switch main clocks to 128K.
    *
@@ -975,25 +1007,13 @@ implementation {
    * Keep PS Q15inverted wrt TA1->R.
    */
   command void CoreRtc.syncSetTime(rtctime_t *timep) {
-    rtctime_t curtime;
-    uint64_t  cur_e;                    /* cur epoch */
-    uint32_t  cur_s;                    /* cur secs  */
-    uint64_t  new_e;                    /* new epoch */
-    uint32_t  new_s;                    /* new secs  */
-    uint32_t  delta;                    /* difference */
-    uint16_t  cur_ta;
+    uint32_t new_s;                     /* new secs  */
+    uint32_t cur_s;                     /* cur secs  */
+    uint16_t cur_ta;
+    uint32_t skew;
 
-    call Rtc.getTime(&curtime);
-    cur_e = call Rtc.rtc2epoch(&curtime);
-    cur_s = cur_e >> 32;
-
-    new_e = call Rtc.rtc2epoch(timep);
-    new_s = new_e >> 32;
-
-    if (new_s > cur_s) delta = new_s - cur_s;
-    else               delta = cur_s - new_s;
-
-    call CollectEvent.logEvent(DT_EVENT_TIME_SKEW, cur_s, new_s, delta, 0);
+    skew = call CoreTime.excessiveSkew(timep, 0, &new_s, &cur_s);
+    call CollectEvent.logEvent(DT_EVENT_TIME_SKEW, cur_s, new_s, skew, 0);
 
     /*
      * Force TA1->R into PS, we don't mess with TA1->R to avoid messing
@@ -1005,9 +1025,8 @@ implementation {
     if (!tweakPS(0, &cur_ta))
       tweakPS(0, &cur_ta);
 
-    if (delta > 8)                      /* if bigger than 8 secs */
-      call OverWatch.flush_boot(call OverWatch.getBootMode(),
-                                ORR_TIME_SKEW);
+    if (skew)
+      call OverWatch.flush_boot(call OverWatch.getBootMode(), ORR_TIME_SKEW);
   }
 
 

@@ -209,6 +209,7 @@ module GPSmonitorP {
     interface Collect;
     interface CollectEvent;
     interface Rtc;
+    interface CoreTime;
 
     interface Timer<TMilli> as MinorTimer;
     interface Timer<TMilli> as MajorTimer;
@@ -1379,6 +1380,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     uint32_t       cur_micros, cap_micros;
     uint32_t       delta;
     rtctime_t      cur_time;
+    uint16_t       utc_sec, utc_ms;
+    rtctime_t      rtc;
 
     if (!gp || CF_BE_16(gp->len) != GEODETIC_LEN)
       return;
@@ -1458,6 +1461,38 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       /* the rest of the header cells are the same as for time */
       call Collect.collect((void *) &gps_block, sizeof(gps_block),
                            (void *) gdtp, sizeof(*gdtp));
+
+      /*
+       * check the GPS time for sec boundary (0 ms boundary).
+       * If so, use the new GPS time to set the rtc time and reboot, under
+       * the following conditions:
+       *
+       * o excessive skew, call CoreTime and if excessive, set rtc_time
+       *   and reboot.
+       * o if last rtc time set is not RTCSRC_GPS, set rtc_time and reboot.
+       */
+      utc_sec = tdtp->utc_ms / 1000;
+      utc_ms  = tdtp->utc_ms - (utc_sec * 1000);
+      if (utc_ms == 0) {
+        rtc.year    = tdtp->utc_year;
+        rtc.mon     = tdtp->utc_month;
+        rtc.day     = tdtp->utc_day;
+        rtc.dow     = 0;
+        rtc.hr      = tdtp->utc_hour;
+        rtc.min     = tdtp->utc_min;
+        rtc.sec     = utc_sec;
+        rtc.sub_sec = call Rtc.micro2subsec(utc_ms * 1000);
+        if (call OverWatch.getRtcSrc() != RTCSRC_GPS ||
+            call CoreTime.excessiveSkew(&rtc, cur_secs, NULL, NULL)) {
+          nop();
+          call CollectEvent.logEvent(DT_EVENT_TIME_SRC, RTCSRC_GPS, delta,
+                                     call OverWatch.getRtcSrc(), 0);
+          call OverWatch.setRtcSrc(RTCSRC_GPS);
+          call Rtc.syncSetTime(&rtc);
+          call OverWatch.flush_boot(call OverWatch.getBootMode(),
+                                    ORR_TIME_SKEW);
+        }
+      }
 
       /* tell the monitor we have lock */
       minor_event(MON_EV_LOCK_TIME);
