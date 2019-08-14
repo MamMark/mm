@@ -1274,8 +1274,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     uint32_t       delta;
     rtctime_t      cur_time;
 
-    nop();
-    nop();
     if (!np || CF_BE_16(np->len) != NAVDATA_LEN)
       return;
 
@@ -1325,7 +1323,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       gps_block.mark_us = 0;
       gps_block.chip_id = CHIP_GPS_GSD4E;
       gps_block.dir     = GPS_DIR_RX;
-      nop();
       call Collect.collect((void *) &gps_block, sizeof(gps_block),
                            (void *) xdtp, sizeof(*xdtp));
       minor_event(MON_EV_LOCK_POS);
@@ -1427,7 +1424,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       gps_block.mark_us = 0;
       gps_block.chip_id = CHIP_GPS_GSD4E;
       gps_block.dir     = GPS_DIR_RX;
-      nop();
       call Collect.collect((void *) &gps_block, sizeof(gps_block),
                            (void *) tdtp, sizeof(*tdtp));
 
@@ -1459,8 +1455,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       gps_block.len = sizeof(gps_block) + sizeof(dt_gps_geo_t);
       gps_block.dtype = DT_GPS_GEO;
 
-      /* the reset of the header cells are the same as for time */
-      nop();
+      /* the rest of the header cells are the same as for time */
       call Collect.collect((void *) &gps_block, sizeof(gps_block),
                            (void *) gdtp, sizeof(*gdtp));
 

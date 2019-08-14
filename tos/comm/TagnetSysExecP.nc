@@ -255,10 +255,10 @@ implementation {
       call Panic.panic(PANIC_TAGNET, TAGNET_AUTOWHERE, 0, 0, 0, 0);
 
     if (call Rtc.rtcValid(rtp)) {
-      call Rtc.syncSetTime(rtp);
-      call OW.setRtcSrc(RTCSRC_NET);
       __last_grab_rtc(1, rtp);
       call CollectEvent.logEvent(DT_EVENT_TIME_SRC, RTCSRC_NET, 0, 0, 0);
+      call OW.setRtcSrc(RTCSRC_NET);
+      call Rtc.syncSetTime(rtp);
       return TRUE;
     }
     return FALSE;

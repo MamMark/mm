@@ -1072,8 +1072,8 @@ void __rtc_init() {
     time.min     = 0;
     time.sec     = 0;
     time.sub_sec = 0;
-    __rtc_setTime(&time);
     ow_control_block.rtc_src = RTCSRC_FORCED;
+    __rtc_setTime(&time);
   }
 }
 
