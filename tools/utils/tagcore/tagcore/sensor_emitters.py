@@ -23,7 +23,7 @@ basic definitions for sensors.
 
 from   __future__   import print_function
 
-__version__ = '0.4.5'
+__version__ = '0.4.5.dev1'
 
 def emit_default(level, offset, buf, obj):
     print()
@@ -36,17 +36,18 @@ def sns_str_tmp_px(obj, level = 0):
     sep = ''
     tmp_p = obj['tmp_p'].val
     tmp_x = obj['tmp_x'].val
+    c_p = float(obj['tmp_p'].val)/16*0.0625
+    c_x = float(obj['tmp_x'].val)/16*0.0625
+    if level == 0:
+        return '{:6.1f}C {:6.1f}C'.format(c_p, c_x)
+
     if level >= 2:
         s = '({:04x}) ({:04x})'.format(tmp_p, tmp_x)
         sep = ' '
-    c_p = float(obj['tmp_p'].val)/16*0.0625
-    c_x = float(obj['tmp_x'].val)/16*0.0625
-    s = s + sep + '{}C {}C'.format(c_p, c_x)
-    sep = ' '
     if level >= 1:
         f_p = c_p * 9/5 + 32
         f_x = c_x * 9/5 + 32
-        s = s + sep + '{}F {}F'.format(f_p, f_x)
+        s = s + sep + '{:6.1f}F {:6.1f}F'.format(f_p, f_x)
     return s
 
 

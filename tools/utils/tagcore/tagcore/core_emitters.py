@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5.dev1'
+__version__ = '0.4.5.dev2'
 
 from   ctypes       import c_int32
 
@@ -551,7 +551,7 @@ def emit_sensor_data(level, offset, buf, obj):
     print('  {:s}  {:s}'.format(sns_name(sns_id), sns_val_str(sns_id)))
 
     if level >= 1:
-        print('        {}'.format(sns_val_str(sns_id, level)))
+        print('{:>74s}'.format(sns_val_str(sns_id, level)))
 
 
 def emit_sensor_set(level, offset, buf, obj):
