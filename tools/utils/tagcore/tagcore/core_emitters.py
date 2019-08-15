@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Eric B. Decker
+# Copyright (c) 2018-2019 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5'
+__version__ = '0.4.5.dev1'
 
 from   ctypes       import c_int32
 
@@ -508,7 +508,7 @@ def emit_gps_time(level, offset, buf, obj):
     dump_hdr(offset, buf)
     if (level >= 1):
         print(obj)
-        print_hdr(obj)
+        print_hdr_obj(obj['gps_hdr'])
         print()
 
 
@@ -516,7 +516,7 @@ def emit_gps_geo(level, offset, buf, obj):
     dump_hdr(offset, buf)
     if (level >= 1):
         print(obj)
-        print_hdr_obj(obj)
+        print_hdr_obj(obj['gps_hdr'])
         print()
 
 
@@ -524,7 +524,7 @@ def emit_gps_xyz(level, offset, buf, obj):
     dump_hdr(offset, buf)
     if (level >= 1):
         print(obj)
-        print_hdr_obj(obj)
+        print_hdr_obj(obj['gps_hdr'])
         print()
 
 

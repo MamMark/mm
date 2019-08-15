@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5'
+__version__ = '0.4.5.dev1'
 
 import binascii
 from   collections  import OrderedDict
@@ -483,9 +483,58 @@ def obj_dt_gps_ver():
         ('sirf_swver', obj_sirf_swver()),
     ]))
 
-obj_dt_gps_time = obj_dt_hdr
-obj_dt_gps_geo  = obj_dt_hdr
-obj_dt_gps_xyz  = obj_dt_hdr
+
+def obj_dt_gps_time():
+    return aggie(OrderedDict([
+        ('gps_hdr',   obj_dt_gps_hdr()),
+        ('delta',     atom(('<I', '{}'))),
+        ('tow',       atom(('<I', '{}'))),
+        ('week_x',    atom(('<H', '{}'))),
+        ('utc_year',  atom(('<H', '{}'))),
+        ('utc_month', atom(('<B', '{}'))),
+        ('utc_day',   atom(('<B', '{}'))),
+        ('utc_hour',  atom(('<B', '{}'))),
+        ('utc_min',   atom(('<B', '{}'))),
+        ('utc_ms',    atom(('<H', '{}'))),
+        ('nsats',     atom(('<B', '{}'))),
+    ]))
+
+
+def obj_dt_gps_geo():
+    return aggie(OrderedDict([
+        ('gps_hdr',   obj_dt_gps_hdr()),
+        ('delta',     atom(('<I', '{}'))),
+        ('nav_valid', atom(('<H', '0x{:02x}'))),
+        ('nav_type',  atom(('<H', '0x{:02x}'))),
+        ('lat',       atom(('<i', '{}'))),
+        ('lon',       atom(('<i', '{}'))),
+        ('alt_ell',   atom(('<i', '{}'))),
+        ('alt_msl',   atom(('<i', '{}'))),
+        ('sat_mask',  atom(('<I', '0x{:08x}'))),
+        ('tow',       atom(('<I', '{}'))),
+        ('week_x',    atom(('<H', '{}'))),
+        ('nsats',     atom(('<B', '{}'))),
+        ('add_mode',  atom(('<B', '0x{:02x}'))),
+        ('ehpe100',   atom(('<I', '{}'))),
+        ('hdop5',     atom(('<B', '{}'))),
+    ]))
+
+
+def obj_dt_gps_xyz():
+    return aggie(OrderedDict([
+        ('gps_hdr',   obj_dt_gps_hdr()),
+        ('delta',     atom(('<I', '{}'))),
+        ('x',         atom(('<i', '{}'))),
+        ('y',         atom(('<i', '{}'))),
+        ('z',         atom(('<i', '{}'))),
+        ('tow',       atom(('<I', '{}'))),
+        ('week',      atom(('<H', '{}'))),
+        ('m1',        atom(('<B', '0x{:02x}'))),
+        ('m2',        atom(('<B', '0x{:02x}'))),
+        ('hdop5',     atom(('<B', '{}'))),
+        ('nsats',     atom(('<B', '{}'))),
+        ('prns',      atom(('12s', '{}', binascii.hexlify))),
+    ]))
 
 
 ####
