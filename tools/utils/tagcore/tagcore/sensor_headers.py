@@ -21,13 +21,13 @@
 
 from   __future__   import print_function
 
-__version__ = '0.4.5'
+__version__ = '0.4.5.dev1'
 
 from   collections  import OrderedDict
 from   base_objs    import *
 
 def obj_tmp_px():
     return aggie(OrderedDict([
-        ('tmp_p', atom(('<H', '{}'))),
-        ('tmp_x', atom(('<H', '{}'))),
+        ('tmp_p', atom(('<h', '{}'))),
+        ('tmp_x', atom(('<h', '{}'))),
     ]))
