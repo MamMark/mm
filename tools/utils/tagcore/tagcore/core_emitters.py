@@ -32,9 +32,9 @@ from   core_headers import event_name
 from   core_headers import rtc_src_name
 from   core_headers import img_mgr_event_name
 from   core_headers import PANIC_WARN           # event
-from   core_headers import GPS_GEO              # event
-from   core_headers import GPS_XYZ              # event
-from   core_headers import GPS_TIME             # event
+from   core_headers import EV_GPS_GEO           # event
+from   core_headers import EV_GPS_XYZ           # event
+from   core_headers import EV_GPS_TIME          # event
 from   core_headers import DCO_REPORT           # event
 from   core_headers import DCO_SYNC             # event
 from   core_headers import TIME_SRC             # event
@@ -375,7 +375,7 @@ def emit_event(level, offset, buf, obj):
         return
 
     # deprecated, backward compatibility
-    if event == GPS_GEO:
+    if event == EV_GPS_GEO:
         arg0 = c_int32(arg0).value/10000000.
         arg1 = c_int32(arg1).value/10000000.
         arg3 = arg3/1000.
@@ -384,7 +384,7 @@ def emit_event(level, offset, buf, obj):
         return
 
     # deprecated, backward compatibility
-    if event == GPS_XYZ:
+    if event == EV_GPS_XYZ:
         arg1 = c_int32(arg1).value
         arg2 = c_int32(arg2).value
         arg3 = c_int32(arg3).value
@@ -393,7 +393,7 @@ def emit_event(level, offset, buf, obj):
         return
 
     # deprecated, backward compatibility
-    if event == GPS_TIME:
+    if event == EV_GPS_TIME:
         year = (arg0 >> 16) & 0xffff
         mon  = (arg0 >> 8)  & 0xff
         day  =  arg0        & 0xff
