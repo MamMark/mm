@@ -193,21 +193,21 @@ def get_record(fd):
 
         # check for obvious errors
         if (rlen < hdr_len):
-            print('*** record size too small: {}, @{}'.format(rlen, offset))
+            print('*** record size too small: {} @{}'.format(rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
             continue
 
         if (rlen > RLEN_MAX_SIZE):
-            print('*** record size too large: {}, @{}'.format(rlen, offset))
+            print('*** record size too large: {} @{}'.format(rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
             continue
 
         if (recnum == 0):               # zero is never allowed
-            print('*** zero record number, @{} - resyncing'.format(offset))
+            print('*** zero record number @{} - resyncing'.format(offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
@@ -217,7 +217,7 @@ def get_record(fd):
         # if dlen is negative, that says we are below min header size
         dlen = rlen - hdr_len
         if (dlen < 0):                  # major oops, rlen is screwy
-            print('*** record header too short: wanted {}, got {}, @{}'.format(
+            print('*** record header too short: wanted {} got {} @{}'.format(
                 hdr_len, rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
@@ -238,7 +238,7 @@ def get_record(fd):
             rec_buf.extend(bytearray(fd.read(dlen)))
 
         if (len(rec_buf) < rlen):
-            print('*** record read too short: wanted {}, got {}, @{}'.format(
+            print('*** record read too short: wanted {} got {} @{}'.format(
                 rlen, len(rec_buf), offset))
             break                       # oops, bail
 
@@ -256,7 +256,7 @@ def get_record(fd):
         if (chksum != recsum):
             chksum_errors += 1
             chksum1 = '*** checksum failure @{0} (0x{0:x}) ' + \
-                      '[wanted: 0x{1:x}, got: 0x{2:x}]'
+                      '[wanted: 0x{1:x} got: 0x{2:x}]'
             print(chksum1.format(offset, recsum, chksum))
             if not dump_hdr(offset, rec_buf, '*** ') or verbose >= 3:
                 print()
@@ -269,7 +269,7 @@ def get_record(fd):
         required_len = v[DTR_REQ_LEN]
         if (required_len):
             if (required_len != rlen):
-                print('*** len violation, required: {}, got {}'.format(
+                print('*** len violation, required: {} got {}'.format(
                     required_len, rlen))
                 dump_hdr(offset, rec_buf, '*** ')
                 print()
@@ -408,7 +408,7 @@ def dump():
                 print('*** recnum went backwards.  last: {}, new: {}, @{}'.format(
                     rec_last, recnum, rec_offset))
             if (rec_last and recnum > rec_last + 1):
-                print('*** record gap: ({}) records, @{}'.format(
+                print('*** record gap: ({}) records @{}'.format(
                     recnum - rec_last, rec_offset))
             rec_last = recnum
 
@@ -480,9 +480,9 @@ def dump():
         print('*** user stop')
 
     print()
-    print('*** end of processing @{} (0x{:x}),  processed: {} records, {} bytes'.format(
+    print('*** end of processing @{}  (0x{:x})  processed: {} records  {} bytes'.format(
         infile.tell(), infile.tell(), total_records, total_bytes))
-    print('*** reboots: {}, resyncs: {}, chksum_errs: {}, unk_rtypes: {}'.format(
+    print('*** reboots: {}  resyncs: {}  chksum_errs: {}  unk_rtypes: {}'.format(
         dtd.dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
     if chksum_errors > 0:
         print()

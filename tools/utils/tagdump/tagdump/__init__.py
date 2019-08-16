@@ -3,7 +3,7 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6.dev2'
 
 # 0.4.6.dev+, core_rev: 22/1:
 #       o put GPS_XYZ, TIME, and GEO onto data records
@@ -12,6 +12,7 @@ __version__ = '0.4.6.dev1'
 #       o simplified TMP_PX display.
 #       o TMP_PX should be signed.
 #       o GPS_XYZ, TIME, GEO displays.
+#       o remove ',' in displays for post processing support
 #
 # Release: 0.4.5, core_rev: 21/100
 #

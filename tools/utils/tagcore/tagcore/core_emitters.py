@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6.dev2'
 
 from   ctypes       import c_int32
 
@@ -433,14 +433,14 @@ def emit_event(level, offset, buf, obj):
         return
 
     if (event == GPS_MON_MINOR):
-        print(' gps/mon (MINOR), {:^15s} {:>12s} -> {}'.format(
+        print(' gps/mon (MINOR) {:^15s} {:>12s} -> {}'.format(
             '<{}>'.format(gps_mon_event_name(arg2)),
             gps_mon_minor_name(arg0),
             gps_mon_minor_name(arg1)))
         return
 
     if (event == GPS_MON_MAJOR):
-        print(' gps/mon (MAJOR), {:^15s} {:>12s} -> {}'.format(
+        print(' gps/mon (MAJOR) {:^15s} {:>12s} -> {}'.format(
             '<{}>'.format(gps_mon_event_name(arg2)),
             gps_mon_major_name(arg0),
             gps_mon_major_name(arg1)))

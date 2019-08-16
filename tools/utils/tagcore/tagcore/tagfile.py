@@ -127,7 +127,7 @@ class TagFile(object):
                             print('*** TF.read: buf len: ', len(buf))
                         time.sleep(self.timeout)
                         continue
-                    print('*** data stream EOF, sorry')
+                    print('*** data stream EOF sorry')
                     print('*** use --tail to wait for data at EOF')
                     return ''
                 print('*** TF.read: unhandled OSError/IOError exception',
