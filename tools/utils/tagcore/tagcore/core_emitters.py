@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5.dev2'
+__version__ = '0.4.6.dev1'
 
 from   ctypes       import c_int32
 
@@ -505,27 +505,96 @@ def emit_gps_version(level, offset, buf, obj):
 
 
 def emit_gps_time(level, offset, buf, obj):
-    dump_hdr(offset, buf)
-    if (level >= 1):
-        print(obj)
-        print_hdr_obj(obj['gps_hdr'])
-        print()
+    xlen     = obj['gps_hdr']['hdr']['len'].val
+    xtype    = obj['gps_hdr']['hdr']['type'].val
+    recnum   = obj['gps_hdr']['hdr']['recnum'].val
+    rtctime  = obj['gps_hdr']['hdr']['rt']
+    brt      = rtctime_str(rtctime)
+
+    delta  = obj['delta'].val
+    tow    = obj['tow'].val
+    week_x = obj['week_x'].val
+    year   = obj['utc_year'].val
+    mon    = obj['utc_month'].val
+    day    = obj['utc_day'].val
+    hr     = obj['utc_hour'].val
+    xmin   = obj['utc_min'].val
+    ms     = obj['utc_ms'].val
+    nsats  = obj['nsats'].val
+    secs   = ms/1000
+    ms     = ms - secs * 1000
+
+    print_hourly(rtctime)
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
+                      dt_name(xtype)), end = '')
+
+    print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03}  {}/{:4.3f}'.format(
+        year, mon, day, hr, xmin, secs, ms, week_x, tow/1000.))
+    if level >= 1:
+        pass
+    return
 
 
 def emit_gps_geo(level, offset, buf, obj):
-    dump_hdr(offset, buf)
+    xlen     = obj['gps_hdr']['hdr']['len'].val
+    xtype    = obj['gps_hdr']['hdr']['type'].val
+    recnum   = obj['gps_hdr']['hdr']['recnum'].val
+    rtctime  = obj['gps_hdr']['hdr']['rt']
+    brt      = rtctime_str(rtctime)
+
+    delta     = obj['delta'].val
+    nav_valid = obj['nav_valid'].val
+    nav_type  = obj['nav_type'].val
+    lat       = obj['lat'].val
+    lon       = obj['lon'].val
+    alt_ell   = obj['alt_ell'].val
+    alt_msl   = obj['alt_msl'].val
+    sat_mask  = obj['sat_mask'].val
+    tow       = obj['tow'].val
+    week_x    = obj['week_x'].val
+    nsats     = obj['nsats'].val
+    add_mode  = obj['add_mode'].val
+    ehpe100   = obj['ehpe100'].val
+    hdop5     = obj['hdop5'].val
+
+    print_hourly(rtctime)
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
+                      dt_name(xtype)), end = '')
+
+    print('   {:10.7f}  {:10.7f}      {}/{:4.3f}'.format(
+        lat/10000000., lon/10000000., week_x, tow/1000.))
+
     if (level >= 1):
-        print(obj)
-        print_hdr_obj(obj['gps_hdr'])
-        print()
+        pass
 
 
 def emit_gps_xyz(level, offset, buf, obj):
-    dump_hdr(offset, buf)
+    xlen     = obj['gps_hdr']['hdr']['len'].val
+    xtype    = obj['gps_hdr']['hdr']['type'].val
+    recnum   = obj['gps_hdr']['hdr']['recnum'].val
+    rtctime  = obj['gps_hdr']['hdr']['rt']
+    brt      = rtctime_str(rtctime)
+
+    delta = obj['delta'].val
+    x     = obj['x'].val
+    y     = obj['y'].val
+    z     = obj['z'].val
+    tow   = obj['tow'].val
+    week  = obj['week'].val
+    m1    = obj['m1'].val
+    m2    = obj['m2'].val
+    hdop5 = obj['hdop5'].val
+    nsats = obj['nsats'].val
+
+    print_hourly(rtctime)
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
+                      dt_name(xtype)), end = '')
+
+    print('   x: {}  y: {}  z: {}  ({})'.format(
+        x, y, z, nsats))
+
     if (level >= 1):
-        print(obj)
-        print_hdr_obj(obj['gps_hdr'])
-        print()
+        pass
 
 
 ################################################################
