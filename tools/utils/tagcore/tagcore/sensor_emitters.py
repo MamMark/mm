@@ -23,7 +23,7 @@ basic definitions for sensors.
 
 from   __future__   import print_function
 
-__version__ = '0.4.5.dev1'
+__version__ = '0.4.6.dev1'
 
 def emit_default(level, offset, buf, obj):
     print()
