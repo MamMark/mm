@@ -36,6 +36,7 @@ Args:
 optional arguments:
   -h              show this help message and exit
   -V              show program's version number and exit
+  -q              turns off various nuisance displays (like no decoder).
 
   -H              turn off hourly banners
 
@@ -131,6 +132,10 @@ def parseargs():
                         version='%(prog)s ' + VERSION + ', core: ' + \
                             str(CORE_REV) + '/' + str(CORE_MINOR))
 
+    parser.add_argument('-q', '--quiet',
+                        action='store_true',
+                        help='turns off misc bitching')
+
     parser.add_argument('--rtypes',
                         type=auto_upper,
                         help='output records matching types in list')
@@ -213,6 +218,7 @@ if len(sys.argv) < 2:
 args = parseargs()
 tagcore.globals.verbose = args.verbose
 tagcore.globals.export  = args.export
+tagcore.globals.quiet   = args.quiet
 if args.noexport:
     tagcore.globals.export = -1
 

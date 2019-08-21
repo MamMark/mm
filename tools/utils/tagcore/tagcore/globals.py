@@ -25,7 +25,10 @@ Includes:
     - verbose: verbosity level
     - export:  export force (1 says forcing export)
                -1 says --noexport.
+    - quiet:   0 if displaying annoying displays
+               1 suppress annoying displays
 '''
 
 verbose = 0
 export  = 0
+quiet   = 0

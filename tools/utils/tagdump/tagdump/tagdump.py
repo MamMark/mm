@@ -76,6 +76,7 @@ rec_high                = 0            # inclusive
 rec_last                = 0            # last rec num looked at
 verbose                 = 0            # how chatty to be
 debug                   = 0            # extra debug chatty
+quiet                   = 0            # turn off annoying bitching
 
 
 # 1st sector of the first is the directory
@@ -94,7 +95,7 @@ dt_hdr                  = obj_dt_hdr()
 
 
 def init_globals():
-    global rec_low, rec_high, rec_last, verbose, debug
+    global rec_low, rec_high, rec_last, verbose, debug, quiet
     global num_resyncs, chksum_errors, unk_rtypes
     global total_records, total_bytes
 
@@ -103,6 +104,7 @@ def init_globals():
     rec_last            = 0
     verbose             = 0
     debug               = 0
+    quiet               = 0
 
     num_resyncs         = 0             # how often we've resync'd
     chksum_errors       = 0             # checksum errors seen
@@ -305,7 +307,7 @@ def dump():
     and dt-specific decoder summary
     """
 
-    global rec_low, rec_high, rec_last, verbose, debug
+    global rec_low, rec_high, rec_last, verbose, debug, quiet
     global num_resyncs, chksum_errors, unk_rtypes
     global total_records, total_bytes
 
@@ -313,6 +315,7 @@ def dump():
 
     verbose = args.verbose if (args.verbose) else 0
     debug   = args.debug   if (args.debug)   else 0
+    quiet   = args.quiet   if (args.quiet)   else 0
     dtd.cfg_print_hourly = args.hourly
 
     if debug or verbose >= 5:
@@ -358,6 +361,7 @@ def dump():
         if args.num:
             print('*** {} records'.format(args.num))
         print('*** verbosity: {:7}'.format(verbose))
+        print('*** quiet:     {:7}'.format(quiet))
         start_rec = args.start if args.start else 1
         end_rec   = args.end   if args.end   else 'end'
         print('*** records: {:9} - {}'.format(start_rec, end_rec))
@@ -447,7 +451,7 @@ def dump():
                               rlen, rtype, dt_name(rtype),
                               len(obj) if obj else 0, rec_offset))
             else:
-                if debug or verbose >= 5:
+                if debug or not quiet or verbose >= 5:
                     print('*** no decoder installed for rtype {}, @{}'.format(
                         rtype, rec_offset))
             if (verbose >= 3):
