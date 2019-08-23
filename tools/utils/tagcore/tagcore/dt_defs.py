@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Eric B. Decker
+# Copyright (c) 2018-2019 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -46,7 +46,7 @@ from   datetime     import datetime
 
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.5'
+__version__ = '0.4.5.dev1'
 
 cfg_print_hourly = True
 
@@ -80,6 +80,7 @@ __all__ = [
     'DT_NOTE',
     'DT_CONFIG',
     'DT_GPS_PROTO_STATS',
+    'DT_GPS_TRACKING',
     'DT_GPS_RAW_SIRFBIN',
     'DT_TAGNET',
 
@@ -151,6 +152,7 @@ DT_TEST                 = 22
 DT_NOTE                 = 23
 DT_CONFIG		= 24
 DT_GPS_PROTO_STATS      = 25
+DT_GPS_TRACKING         = 26
 
 DT_GPS_RAW_SIRFBIN      = 32
 DT_TAGNET               = 33

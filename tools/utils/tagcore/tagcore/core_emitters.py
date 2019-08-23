@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev2'
+__version__ = '0.4.6.dev3'
 
 from   ctypes       import c_int32
 
@@ -595,6 +595,53 @@ def emit_gps_xyz(level, offset, buf, obj):
 
     if (level >= 1):
         pass
+
+
+def emit_gps_tracking(level, offset, buf, obj):
+    xlen     = obj['gps_hdr']['hdr']['len'].val
+    xtype    = obj['gps_hdr']['hdr']['type'].val
+    recnum   = obj['gps_hdr']['hdr']['recnum'].val
+    rtctime  = obj['gps_hdr']['hdr']['rt']
+    brt      = rtctime_str(rtctime)
+
+    delta  = obj['delta'].val
+    tow    = obj['tow'].val/float(100)
+    week10 = obj['week'].val
+    chans  = obj['chans'].val
+    good_sats = 0
+    nz_sats   = 0
+    sat_min   = 500
+    sat_max   = 0
+    xavg      = 0
+
+    for n in range(chans):
+        cno10 = obj[n]['cno10']
+        svid  = obj[n]['svid']
+        if cno10 and svid <= 32:
+            nz_sats += 1
+            xavg += cno10
+            if cno10 < sat_min: sat_min = cno10
+            if cno10 > sat_max: sat_max = cno10
+            if cno10 > 200:
+                good_sats += 1
+
+    print_hourly(rtctime)
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
+                      dt_name(xtype)), end = '')
+    print('  {}/{}  {:4.1f}  {:4.1f} {:4.1f}'.format(
+        good_sats, nz_sats, xavg/float(10)/nz_sats,
+        sat_min/10., sat_max/10.))
+    if level >= 1:
+        print('    NAV_TRACK: {}/{}  chans: {}'.format(
+            week10, tow, chans))
+        for n in range(chans):
+            svid = obj[n]['svid']
+            az   = obj[n]['az10']/float(10)
+            el   = obj[n]['el10']/float(10)
+            cno  = obj[n]['cno10']/float(10)
+            if cno > 0.0 or level >= 2:
+                print('    {:3}: az: {:5.1f}  el: {:5.1f}  cno: {:4.1f}'.format(
+                    svid, az, el, cno))
 
 
 ################################################################

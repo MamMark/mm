@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6.dev2'
 
 import binascii
 from   collections  import OrderedDict
@@ -537,6 +537,26 @@ def obj_dt_gps_xyz():
     ]))
 
 
+def obj_dt_gps_trk_element():
+    return aggie(OrderedDict([
+        ('az10',      atom(('<H', '{}'))),
+        ('el10',      atom(('<H', '{}'))),
+        ('cno10',     atom(('<H', '{}'))),
+        ('state',     atom(('2s', '{}'))),
+        ('svid',      atom(('<H', '{}'))),
+    ]))
+
+
+def obj_dt_gps_tracking():
+    return aggie(OrderedDict([
+        ('gps_hdr',   obj_dt_gps_hdr()),
+        ('delta',     atom(('<I', '{}'))),
+        ('tow',       atom(('<I', '{}'))),
+        ('week',      atom(('<H', '{}'))),
+        ('chans',     atom(('<H', '{}'))),
+    ]))
+
+
 ####
 #
 # Sensor Data
@@ -609,3 +629,36 @@ def obj_dt_gps_raw():
     ]))
 
 obj_dt_tagnet   = obj_dt_hdr
+
+
+# extract and decode gps nav track messages.
+#
+# base object is an obj_dt_gps_tracking which includes 'chans' which
+# tells us how many channels are following.  Each chan is made up of
+# a obj_dt_gps_trk_element (gps_navtrk_chan).
+#
+# each instance of gps_navtrk_chan is held as part of a dictionary
+# key'd off the numeric chan number, 0-11 (12 channels is typical),
+# and attached to the main obj_dt_gps_tracking object (obj).
+#
+
+gps_navtrk_chan = obj_dt_gps_trk_element()
+
+def decode_gps_trk(level, offset, buf, obj):
+
+    # delete any previous navtrk channel data
+    for k in obj.iterkeys():
+        if isinstance(k,int):
+            del obj[k]
+
+    consumed = obj.set(buf)
+    chans    = obj['chans'].val
+
+    # grab each channels cnos and other data
+    for n in range(chans):
+        d = {}                      # get a new dict
+        consumed += gps_navtrk_chan.set(buf[consumed:])
+        for k, v in gps_navtrk_chan.items():
+            d[k] = v.val
+        obj[n] = d
+    return consumed
