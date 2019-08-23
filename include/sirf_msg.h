@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -45,6 +45,7 @@
 #define MID_NAVDATA	   2
 #define NAVDATA_LEN	   41
 
+#define MID_NAVTRACK       4
 #define MID_SWVER          6
 
 #define MID_CLOCKSTATUS	   7
@@ -158,6 +159,14 @@ typedef struct {
 #define SB_NAV_M2_ALTHOLD_DISABLED      0x20
 
 
+typedef struct {
+  uint8_t svid;
+  uint8_t az23;
+  uint8_t el2;
+  uint8_t state[2];
+  uint8_t cno[10];
+} PACKED sb_tracker_element_t;
+
 /* MID 4, Tracker Data */
 typedef struct {
   uint8_t   start1;
@@ -167,11 +176,12 @@ typedef struct {
   uint16_t  week;                       /* modulo 1024 */
   uint32_t  tow;                        /* time * 100 (ms) */
   uint8_t   chans;
-  uint8_t   data[0];
 
   /* for each chan:
    *   SVid, Az, El, State, C/NO 1:10
    */
+  sb_tracker_element_t sats[12];
+
 } PACKED sb_tracker_data_t;
 
 

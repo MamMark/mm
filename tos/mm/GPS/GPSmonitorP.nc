@@ -170,6 +170,18 @@ typedef struct {
 } gps_time_t;
 
 
+typedef struct {
+  dt_gps_tracking_t    dt;              /* needs to be contig  */
+  dt_gps_trk_element_t sats[12];        /* contig with above   */
+} gps_track_block_t;
+
+
+typedef struct {
+  rtctime_t            rt;              /* rtctime - last seen */
+  gps_track_block_t    dt_block;
+} gps_track_t;
+
+
 #define GMCB_MAJIK 0xAF52FFFF
 
 typedef enum {
@@ -236,6 +248,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   gps_xyz_t   m_xyz;
   gps_geo_t   m_geo;
   gps_time_t  m_time;
+  gps_track_t m_track;
 
   void major_event(mon_event_t ev);
 
@@ -1332,6 +1345,67 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
 
   /*
+   * MID 4: Nav Track
+   */
+  void process_navtrack(sb_tracker_data_t *tp, rtctime_t *rtp) {
+    dt_gps_t              gps_block;
+    dt_gps_tracking_t    *tdtp;
+    dt_gps_trk_element_t *tedtp;
+    sb_tracker_element_t *sb_elem;
+    int                   i, j;
+    uint16_t              sum;
+
+    uint64_t              epoch;
+    uint32_t              cur_secs,   cap_secs;
+    uint32_t              cur_micros, cap_micros;
+    uint32_t              delta;
+    rtctime_t             cur_time;
+
+    tdtp = &m_track.dt_block.dt;
+    call Rtc.copyTime(&m_track.rt, rtp);
+
+    tdtp->tow   = CF_BE_32(tp->tow);
+    tdtp->week  = CF_BE_16(tp->week);
+    tdtp->chans = tp->chans;
+    tedtp       = &m_track.dt_block.sats[0];
+
+    for (i = 0; i < 12; i++) {
+      sb_elem      = &tp->sats[i];
+      tedtp->az10  = sb_elem->az23 * 3 * 10 / 2;
+      tedtp->el10  = sb_elem->el2  * 10 / 2;
+      tedtp->state = sb_elem->state[0] << 8 | sb_elem->state[1];
+      tedtp->svid  = sb_elem->svid;
+      sum = 0;
+      for (j = 0; j < 10; j++)
+        sum += sb_elem->cno[j];
+      tedtp->cno10 = sum;
+      tedtp++;
+    }
+
+    epoch = call Rtc.rtc2epoch(rtp);
+    cap_secs   = epoch >> 32;
+    cap_micros = epoch & 0xffffffffUL;
+
+    call Rtc.getTime(&cur_time);
+    epoch      = call Rtc.rtc2epoch(&cur_time);
+    cur_secs   = epoch >> 32;
+    cur_micros = epoch & 0xffffffffUL;
+
+    delta = (cur_secs - cap_secs) * 1000 + (cur_micros - cap_micros);
+    tdtp->delta = delta;
+
+    /* build the dt gps header */
+    gps_block.len = sizeof(gps_block) + sizeof(gps_track_block_t);
+    gps_block.dtype = DT_GPS_TRACKING;
+    gps_block.mark_us = 0;
+    gps_block.chip_id = CHIP_GPS_GSD4E;
+    gps_block.dir     = GPS_DIR_RX;
+    call Collect.collect((void *) &gps_block, sizeof(gps_block),
+         (void *) &m_track.dt_block, sizeof(gps_track_block_t));
+  }
+
+
+  /*
    * MID 6: SW VERSION/GPS VERSION
    */
   void process_swver(sb_soft_version_data_t *svp, rtctime_t *rtp) {
@@ -1602,6 +1676,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     switch (sbp->mid) {
       case MID_NAVDATA:
         process_navdata((void *) sbp, arrival_rtp);
+        break;
+      case MID_NAVTRACK:
+        process_navtrack((void *) sbp, arrival_rtp);
         break;
       case MID_SWVER:
         process_swver((void *) sbp, arrival_rtp);

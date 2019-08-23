@@ -84,6 +84,7 @@ typedef enum {
   DT_NOTE		= 23,
   DT_CONFIG		= 24,
   DT_GPS_PROTO_STATS    = 25,
+  DT_GPS_TRACKING       = 26,
 
   /*
    * GPS_RAW is used to encapsulate data as received from the GPS.
@@ -341,6 +342,7 @@ typedef enum {
  *   DT_GPS_TIME
  *   DT_GPS_GEO
  *   DT_GPS_XYZ
+ *   DT_GPS_TRACKING
  *   DT_GPS_RAW_SIRFBIN
  *
  * Note: at one point we thought that we would be able to access the
@@ -465,6 +467,24 @@ typedef struct {
 #define SB_NAV_M2_SOL_VALIDATED         0x02
 #define SB_NAV_M2_VEL_INVALID           0x10
 #define SB_NAV_M2_ALTHOLD_DISABLED      0x20
+
+
+typedef struct {
+  uint32_t delta;                       /* microsecs  cur - cap time */
+  uint32_t tow;                         /* time * 100 (ms)  */
+  uint16_t week;                        /* modulo 1024, gps */
+  uint16_t chans;                       /* number of channels, 0 - 12 */
+} dt_gps_tracking_t;
+
+/* followed by <chans> dt_gps_trk_elements */
+
+typedef struct {
+  uint16_t az10;                        /* azimuth   * 10, 0 - 3600 */
+  uint16_t el10;                        /* elevation * 10, 0 - 900  */
+  uint16_t cno10;                       /* cno avg   * 10, 0 - 500+ */
+  uint16_t state;
+  uint16_t svid;
+} dt_gps_trk_element_t;
 
 
 /*
