@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev3'
+__version__ = '0.4.6.dev4'
 
 from   ctypes       import c_int32
 
@@ -597,7 +597,7 @@ def emit_gps_xyz(level, offset, buf, obj):
         pass
 
 
-def emit_gps_tracking(level, offset, buf, obj):
+def emit_gps_trk(level, offset, buf, obj):
     xlen     = obj['gps_hdr']['hdr']['len'].val
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val

@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev2'
+__version__ = '0.4.6.dev3'
 
 import binascii
 from   collections  import OrderedDict
@@ -547,7 +547,7 @@ def obj_dt_gps_trk_element():
     ]))
 
 
-def obj_dt_gps_tracking():
+def obj_dt_gps_trk():
     return aggie(OrderedDict([
         ('gps_hdr',   obj_dt_gps_hdr()),
         ('delta',     atom(('<I', '{}'))),
@@ -633,13 +633,13 @@ obj_dt_tagnet   = obj_dt_hdr
 
 # extract and decode gps nav track messages.
 #
-# base object is an obj_dt_gps_tracking which includes 'chans' which
+# base object is an obj_dt_gps_trk which includes 'chans' which
 # tells us how many channels are following.  Each chan is made up of
 # a obj_dt_gps_trk_element (gps_navtrk_chan).
 #
 # each instance of gps_navtrk_chan is held as part of a dictionary
 # key'd off the numeric chan number, 0-11 (12 channels is typical),
-# and attached to the main obj_dt_gps_tracking object (obj).
+# and attached to the main obj_dt_gps_trk object (obj).
 #
 
 gps_navtrk_chan = obj_dt_gps_trk_element()

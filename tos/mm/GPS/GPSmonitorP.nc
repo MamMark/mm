@@ -171,15 +171,15 @@ typedef struct {
 
 
 typedef struct {
-  dt_gps_tracking_t    dt;              /* needs to be contig  */
+  dt_gps_trk_t         dt;              /* needs to be contig  */
   dt_gps_trk_element_t sats[12];        /* contig with above   */
-} gps_track_block_t;
+} gps_trk_block_t;
 
 
 typedef struct {
   rtctime_t            rt;              /* rtctime - last seen */
-  gps_track_block_t    dt_block;
-} gps_track_t;
+  gps_trk_block_t      dt_block;
+} gps_trk_t;
 
 
 #define GMCB_MAJIK 0xAF52FFFF
@@ -248,7 +248,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   gps_xyz_t   m_xyz;
   gps_geo_t   m_geo;
   gps_time_t  m_time;
-  gps_track_t m_track;
+  gps_trk_t   m_track;
 
   void major_event(mon_event_t ev);
 
@@ -1349,7 +1349,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
    */
   void process_navtrack(sb_tracker_data_t *tp, rtctime_t *rtp) {
     dt_gps_t              gps_block;
-    dt_gps_tracking_t    *tdtp;
+    dt_gps_trk_t         *tdtp;
     dt_gps_trk_element_t *tedtp;
     sb_tracker_element_t *sb_elem;
     int                   i, j;
@@ -1395,13 +1395,13 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     tdtp->delta = delta;
 
     /* build the dt gps header */
-    gps_block.len = sizeof(gps_block) + sizeof(gps_track_block_t);
-    gps_block.dtype = DT_GPS_TRACKING;
+    gps_block.len = sizeof(gps_block) + sizeof(gps_trk_block_t);
+    gps_block.dtype = DT_GPS_TRK;
     gps_block.mark_us = 0;
     gps_block.chip_id = CHIP_GPS_GSD4E;
     gps_block.dir     = GPS_DIR_RX;
     call Collect.collect((void *) &gps_block, sizeof(gps_block),
-         (void *) &m_track.dt_block, sizeof(gps_track_block_t));
+         (void *) &m_track.dt_block, sizeof(gps_trk_block_t));
   }
 
 
