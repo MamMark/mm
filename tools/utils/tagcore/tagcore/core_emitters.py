@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev4'
+__version__ = '0.4.6.dev5'
 
 from   ctypes       import c_int32
 
@@ -610,38 +610,52 @@ def emit_gps_trk(level, offset, buf, obj):
     chans  = obj['chans'].val
     good_sats = 0
     nz_sats   = 0
-    sat_min   = 500
-    sat_max   = 0
-    xavg      = 0
+    sat_min   = 50.0
+    sat_max   = 0.0
+    xavg      = 0.0
 
     for n in range(chans):
-        cno10 = obj[n]['cno10']
-        svid  = obj[n]['svid']
-        if cno10 and svid <= 32:
+        cno_avg = obj[n]['cno_avg']
+        svid    = obj[n]['svid']
+        if cno_avg and svid <= 32:
             nz_sats += 1
-            xavg += cno10
-            if cno10 < sat_min: sat_min = cno10
-            if cno10 > sat_max: sat_max = cno10
-            if cno10 > 200:
+            xavg += cno_avg
+            if cno_avg < sat_min: sat_min = cno_avg
+            if cno_avg > sat_max: sat_max = cno_avg
+            if cno_avg >= 20.0:
                 good_sats += 1
 
+    xavg = xavg/nz_sats if nz_sats != 0.0 else 0.0
+    if sat_min >= 50.0: sat_min = 0
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     print('  {}/{}  {:4.1f}  {:4.1f} {:4.1f}'.format(
-        good_sats, nz_sats, xavg/float(10)/nz_sats,
-        sat_min/10., sat_max/10.))
+        good_sats, nz_sats, xavg, sat_min, sat_max))
+
     if level >= 1:
         print('    NAV_TRACK: {}/{}  chans: {}'.format(
             week10, tow, chans))
         for n in range(chans):
-            svid = obj[n]['svid']
-            az   = obj[n]['az10']/float(10)
-            el   = obj[n]['el10']/float(10)
-            cno  = obj[n]['cno10']/float(10)
-            if cno > 0.0 or level >= 2:
+            svid    = obj[n]['svid']
+            az      = obj[n]['az10']/10.0
+            el      = obj[n]['el10']/10.0
+            cno_avg = obj[n]['cno_avg']
+            if cno_avg > 0.0 or level >= 2:
                 print('    {:3}: az: {:5.1f}  el: {:5.1f}  cno: {:4.1f}'.format(
-                    svid, az, el, cno))
+                    svid, az, el, cno_avg))
+
+    if level >= 2:
+        print()
+        for n in range(chans):
+            svid    = obj[n]['svid']
+            az      = obj[n]['az10']/10.0
+            el      = obj[n]['el10']/10.0
+            cno_str = ''
+            for i in range(10):
+                cno_str += ' {:2}'.format(obj[n]['cno'+str(i)])
+            print('    {:3}: az: {:5.1f}  el: {:5.1f}  cno/s: {}'.format(
+                svid, az, el, cno_str))
 
 
 ################################################################

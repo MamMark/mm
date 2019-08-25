@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev3'
+__version__ = '0.4.6.dev4'
 
 import binascii
 from   collections  import OrderedDict
@@ -541,9 +541,18 @@ def obj_dt_gps_trk_element():
     return aggie(OrderedDict([
         ('az10',      atom(('<H', '{}'))),
         ('el10',      atom(('<H', '{}'))),
-        ('cno10',     atom(('<H', '{}'))),
         ('state',     atom(('2s', '{}'))),
         ('svid',      atom(('<H', '{}'))),
+        ('cno0',      atom(('B',  '{}'))),
+        ('cno1',      atom(('B',  '{}'))),
+        ('cno2',      atom(('B',  '{}'))),
+        ('cno3',      atom(('B',  '{}'))),
+        ('cno4',      atom(('B',  '{}'))),
+        ('cno5',      atom(('B',  '{}'))),
+        ('cno6',      atom(('B',  '{}'))),
+        ('cno7',      atom(('B',  '{}'))),
+        ('cno8',      atom(('B',  '{}'))),
+        ('cno9',      atom(('B',  '{}'))),
     ]))
 
 
@@ -645,7 +654,6 @@ obj_dt_tagnet   = obj_dt_hdr
 gps_navtrk_chan = obj_dt_gps_trk_element()
 
 def decode_gps_trk(level, offset, buf, obj):
-
     # delete any previous navtrk channel data
     for k in obj.iterkeys():
         if isinstance(k,int):
@@ -660,5 +668,11 @@ def decode_gps_trk(level, offset, buf, obj):
         consumed += gps_navtrk_chan.set(buf[consumed:])
         for k, v in gps_navtrk_chan.items():
             d[k] = v.val
+        avg  = d['cno0'] + d['cno1'] + d['cno2']
+        avg += d['cno3'] + d['cno4'] + d['cno5']
+        avg += d['cno6'] + d['cno7'] + d['cno8']
+        avg += d['cno9']
+        avg /= float(10)
+        d['cno_avg'] = avg
         obj[n] = d
     return consumed
