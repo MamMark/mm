@@ -1352,14 +1352,14 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     dt_gps_trk_t         *tdtp;
     dt_gps_trk_element_t *tedtp;
     sb_tracker_element_t *sb_elem;
-    int                   i, j;
-    uint16_t              sum;
+    int                   i;
 
     uint64_t              epoch;
     uint32_t              cur_secs,   cap_secs;
     uint32_t              cur_micros, cap_micros;
     uint32_t              delta;
     rtctime_t             cur_time;
+    uint8_t               *a, *b;
 
     tdtp = &m_track.dt_block.dt;
     call Rtc.copyTime(&m_track.rt, rtp);
@@ -1375,10 +1375,17 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       tedtp->el10  = sb_elem->el2  * 10 / 2;
       tedtp->state = sb_elem->state[0] << 8 | sb_elem->state[1];
       tedtp->svid  = sb_elem->svid;
-      sum = 0;
-      for (j = 0; j < 10; j++)
-        sum += sb_elem->cno[j];
-      tedtp->cno10 = sum;
+
+      /*
+       * don't use memcpy which assumes aligned, sb_elem is random
+       * and not properly structured.  Just unroll it.
+       */
+      a = &tedtp->cno[0];
+      b = &sb_elem->cno[0];
+      a[0] = b[0];  a[1] = b[1];  a[2] = b[2];
+      a[3] = b[3];  a[4] = b[4];  a[5] = b[5];
+      a[6] = b[6];  a[7] = b[7];  a[8] = b[8];
+      a[9] = b[9];
       tedtp++;
     }
 

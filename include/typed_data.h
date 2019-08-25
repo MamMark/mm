@@ -481,9 +481,9 @@ typedef struct {
 typedef struct {
   uint16_t az10;                        /* azimuth   * 10, 0 - 3600 */
   uint16_t el10;                        /* elevation * 10, 0 - 900  */
-  uint16_t cno10;                       /* cno avg   * 10, 0 - 500+ */
   uint16_t state;
   uint16_t svid;
+  uint8_t  cno[10];                     /* up to 10 cnos */
 } dt_gps_trk_element_t;
 
 
