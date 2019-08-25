@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6.dev2'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,6 +18,17 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
+# 0.4.6.dev+    CR 22/+
+#       o put GPS_XYZ, TIME, and GEO onto data records
+#       o deprecate XYZ, TIME, GEO events, tagdump displays retained for
+#         backward compatbility.
+#       o simplified TMP_PX display.
+#       o TMP_PX should be signed.
+#       o GPS_XYZ, TIME, GEO displays.
+#       o add quiet switch
+#       o add GPS_TRK
+#     5 o switch gps_tracking to gps_trk
+#
 # 0.4.5         release 0.4.5, CR: 21/100
 #
 # 0.4.5.rc97
