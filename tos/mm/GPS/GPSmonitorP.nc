@@ -1328,7 +1328,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       cur_secs   = epoch >> 32;
       cur_micros = epoch & 0xffffffffUL;
 
-      delta = (cur_secs - cap_secs) * 1000 + (cur_micros - cap_micros);
+      delta = (cur_secs - cap_secs) * 1000000 + (cur_micros - cap_micros);
       xdtp->delta = delta;
 
       /* build the dt gps header */
@@ -1398,7 +1398,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     cur_secs   = epoch >> 32;
     cur_micros = epoch & 0xffffffffUL;
 
-    delta = (cur_secs - cap_secs) * 1000 + (cur_micros - cap_micros);
+    delta = (cur_secs - cap_secs) * 1000000 + (cur_micros - cap_micros);
     tdtp->delta = delta;
 
     /* build the dt gps header */
@@ -1499,7 +1499,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       cur_secs   = epoch >> 32;
       cur_micros = epoch & 0xffffffffUL;
 
-      delta = (cur_secs - cap_secs) * 1000 + (cur_micros - cap_micros);
+      delta = (cur_secs - cap_secs) * 1000000 + (cur_micros - cap_micros);
       tdtp->delta = delta;
 
       /* build the dt gps header */
@@ -1532,7 +1532,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       cur_secs   = epoch >> 32;
       cur_micros = epoch & 0xffffffffUL;
 
-      delta = (cur_secs - cap_secs) * 1000 + (cur_micros - cap_micros);
+      delta = (cur_secs - cap_secs) * 1000000 + (cur_micros - cap_micros);
       gdtp->delta = delta;
 
       /* build the dt gps header */
