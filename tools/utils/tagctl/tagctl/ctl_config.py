@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Eric B. Decker
+# Copyright (c) 2018-2019 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -170,7 +170,7 @@ def ctl_parseargs():
         type = str,
         help = 'set root of the tagfuse filesystem.')
 
-    parser.add_argument('-s', '--select',
+    parser.add_argument('-n', '--node',
         type = str,
         dest = 'node_str',
         help = 'node selector.  name (preferred) or hex digits')

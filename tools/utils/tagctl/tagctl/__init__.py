@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Eric B. Decker
+# Copyright (c) 2018-2019 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 
 usage: tagctl.py [-h] [-V] [-D] [-x | --noconfig ]
               [[-v | --verbose] | [-q | --quiet]]
-              [-r <root_path>] [-s <node_id>]
+              [-r <root_path>] [-n <node_id>]
               [-c <num> | --conlevel <num>]
               [-l <num> | --loglevel <num>]
               [--logfile <log_file>]
@@ -41,8 +41,8 @@ optional arguments to main ctl_main app:
   -r <set root>   override root value.  The tagfuse filesystem root.
                   (args.root, string)
 
-  -s <node_id>    select node id.  Override static config.
-                  (args.node_name, str)
+  -n <node_id>    select node id.  Override static config.
+  --node <node_id>   (args.node_id, str)
 
   -q, --quiet     be quiet, only display WARNING, ERROR and CRITICALs
                   (args.verbose_level) sets to 0
@@ -99,4 +99,4 @@ values.
 # 0.0.2         rename __main__ to tagctl
 # 0.0.1         initial version
 
-__version__ = '0.0.2.dev0'
+__version__ = '0.0.2.dev2'
