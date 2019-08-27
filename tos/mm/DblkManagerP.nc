@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, Eric B. Decker
+ * Copyright (c) 2017-2019, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -101,6 +101,8 @@ implementation {
     dm_state_t dm_state;
 
     /* last record number used */
+    uint32_t boot_recnum;               /* record number when we booted */
+    uint32_t boot_offset;               /* offset of 1st boot record, SYNC/R */
     uint32_t cur_recnum;                /* current record number */
     uint32_t dm_sig_b;
 
@@ -150,6 +152,8 @@ implementation {
     dmc.dblk_nxt   = lower + 1;
     dmc.dblk_upper = upper;
     dmc.cur_recnum = 0;
+    dmc.boot_recnum = 1;
+    dmc.boot_offset = 512;
     dmc.dm_state = DMS_REQUEST;
     if ((err = call SDResource.request()))
       dm_panic(2, err, 0);
@@ -179,10 +183,6 @@ implementation {
     }
   }
 
-
-  bool hdr_valid(dt_header_t *hdr) {
-    return TRUE;
-  }
 
   void task dblk_last_task() {
     dt_header_t *hdr;
@@ -228,6 +228,7 @@ implementation {
 
     /* set our cur_recnum from the last rec found. */
     dmc.cur_recnum = found_hdr.recnum;
+    dmc.boot_recnum = dmc.cur_recnum + 1;
 
     /* use timestamp as candidate for current datetime */
     if (call Rtc.rtcValid(&found_hdr.rt)) {
@@ -321,11 +322,16 @@ implementation {
      * when Resync.done() event is called.
      *
      * check that the terminal offset is not set before start of dblk file (wrapped)
+     *
+     * boot_offset points at the first offset we will use next.  boot_recnum can't
+     * be set until after we have found the last record actually written.  See the
+     * SYNC code.
      */
 
     dmc.dm_state = DMS_SYNC;
     call SDResource.release();
     cur_offset = call DblkManager.dblk_nxt_offset();
+    dmc.boot_offset = cur_offset;
     term_offset = (cur_offset < (16 * SD_BLOCKSIZE)) ? 0 : cur_offset - (16 * SD_BLOCKSIZE);
     err = call Resync.start(&cur_offset, term_offset);
     switch (err) {
@@ -402,6 +408,16 @@ implementation {
   async command uint32_t DblkManager.adv_cur_recnum() {
     atomic dmc.cur_recnum++;
     return dmc.cur_recnum;
+  }
+
+
+  async command uint32_t DblkManager.boot_recnum() {
+    return dmc.boot_recnum;
+  }
+
+
+  async command uint32_t DblkManager.boot_offset() {
+    return dmc.boot_offset;
   }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2014, 2017-2018: Eric B. Decker
+ * Copyright 2008, 2014, 2017-2019: Eric B. Decker
  * All rights reserved.
  * Mam-Mark Project
  *
@@ -117,6 +117,8 @@ module CollectP {
     interface Collect;
     interface CollectEvent;
 
+    interface TagnetAdapter<uint32_t> as DblkBootRecNum;
+    interface TagnetAdapter<uint32_t> as DblkBootOffset;
     interface TagnetAdapter<uint32_t> as DblkLastRecNum;
     interface TagnetAdapter<uint32_t> as DblkLastRecOffset;
     interface TagnetAdapter<uint32_t> as DblkLastSyncOffset;
@@ -293,6 +295,24 @@ implementation {
   }
 
 
+  command bool DblkBootRecNum.get_value(uint32_t *t, uint32_t *l) {
+    if (!l || !t)
+      call Panic.panic(0, 0, 0, 0, 0, 0);
+    *t = call DblkManager.boot_recnum();
+    *l = sizeof(uint32_t);
+    return TRUE;
+  }
+
+
+  command bool DblkBootOffset.get_value(uint32_t *t, uint32_t *l) {
+    if (!l || !t)
+      call Panic.panic(0, 0, 0, 0, 0, 0);
+    *t = call DblkManager.boot_offset();
+    *l = sizeof(uint32_t);
+    return TRUE;
+  }
+
+
   command bool DblkLastRecNum.get_value(uint32_t *t, uint32_t *l) {
     if (!l || !t)
       call Panic.panic(0, 0, 0, 0, 0, 0);
@@ -359,6 +379,8 @@ implementation {
   event void Resync.done(error_t err, uint32_t offset) { }
 
 
+  command bool DblkBootRecNum.set_value(uint32_t *t, uint32_t *l)      { return FALSE; }
+  command bool DblkBootOffset.set_value(uint32_t *t, uint32_t *l)      { return FALSE; }
   command bool DblkLastRecNum.set_value(uint32_t *t, uint32_t *l)      { return FALSE; }
   command bool DblkLastRecOffset.set_value(uint32_t *t, uint32_t *l)   { return FALSE; }
   command bool DblkLastSyncOffset.set_value(uint32_t *t, uint32_t *l)  { return FALSE; }

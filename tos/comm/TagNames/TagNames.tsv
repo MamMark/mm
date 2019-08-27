@@ -24,6 +24,8 @@ x	x	x	x	x		<version>, <offset>, <eof>	<offset>, <eof>, <img_info>	TagnetRuleSets
 	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysGolden	uses		tag	sys	golden		
 	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysNIB	uses		tag	sys	nib		
 	x	x	x			<version>	<img_info>	TagnetSysExecAdapterP	TagnetSysExecAdapter		SysRunning	uses		tag	sys	running		
+	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkBootRecNum	uses		tag	sd	0	dblk	.boot_recnum
+	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkBootOffset	uses		tag	sd	0	dblk	.boot_offset
 	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkCommittedOffset	uses		tag	sd	0	dblk	.committed
 	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecNum	uses		tag	sd	0	dblk	.recnum
 	x		x				<error>, <iota>	TagnetUnsignedAdapterP	TagnetAdapter	uint32_t	DblkLastRecOffset	uses		tag	sd	0	dblk	.last_rec

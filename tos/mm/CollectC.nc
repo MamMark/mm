@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008, 2017-2018 Eric B. Decker
+ * Copyright (c) 2008, 2017-2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,6 +25,8 @@ configuration CollectC {
     interface Boot as EndOut;           /* out boot */
     interface Collect;
     interface CollectEvent;
+    interface TagnetAdapter<uint32_t> as DblkBootRecNum;
+    interface TagnetAdapter<uint32_t> as DblkBootOffset;
     interface TagnetAdapter<uint32_t> as DblkLastRecNum;
     interface TagnetAdapter<uint32_t> as DblkLastRecOffset;
     interface TagnetAdapter<uint32_t> as DblkLastSyncOffset;
@@ -54,6 +56,8 @@ implementation {
   Boot         = CollectP.Boot;         /* income start */
   EndIn        = CollectP.EndIn;        /* incoming end of SysBoot */
 
+  DblkBootRecNum      = CollectP.DblkBootRecNum;
+  DblkBootOffset      = CollectP.DblkBootOffset;
   DblkLastRecNum      = CollectP.DblkLastRecNum;
   DblkLastRecOffset   = CollectP.DblkLastRecOffset;
   DblkLastSyncOffset  = CollectP.DblkLastSyncOffset;

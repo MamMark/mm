@@ -78,6 +78,8 @@ implementation {
   TagnetC.PanicBytes            -> PanicByteStorageC.PanicBytes;
 
   components CollectC;
+  TagnetC.DblkBootRecNum        -> CollectC.DblkBootRecNum;
+  TagnetC.DblkBootOffset        -> CollectC.DblkBootOffset;
   TagnetC.DblkLastRecNum        -> CollectC.DblkLastRecNum;
   TagnetC.DblkLastRecOffset     -> CollectC.DblkLastRecOffset;
   TagnetC.DblkLastSyncOffset    -> CollectC.DblkLastSyncOffset;

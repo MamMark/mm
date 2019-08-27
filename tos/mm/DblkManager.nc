@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-2018, Eric Decker, Dan Maltbie
+ * Copyright (c) 2017-2019, Eric Decker, Dan Maltbie
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -44,6 +44,12 @@ interface DblkManager {
 
   /* advance cur_recnum and return the new value */
   async command uint32_t adv_cur_recnum();
+
+  /* return recnum of 1st record written after boot, SYNC/R */
+  async command uint32_t boot_recnum();
+
+  /* return offset of 1st record written after boot, SYNC/R */
+  async command uint32_t boot_offset();
 
   /**
    * validate a contiguous header

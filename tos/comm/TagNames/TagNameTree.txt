@@ -20,6 +20,8 @@ root
     |-- sd
     |   +-- 0
     |       |-- dblk
+    |       |   |-- .boot_offset
+    |       |   |-- .boot_recnum
     |       |   |-- .committed
     |       |   |-- .last_rec
     |       |   |-- .last_sync

@@ -17,10 +17,12 @@ configuration TagnetC {
     interface             TagnetAdapter<message_t>          as RadioTxPower;
     interface      TagnetSysExecAdapter                     as SysBackup;
     interface             TagnetAdapter<uint32_t>           as DblkLastSyncOffset;
+    interface             TagnetAdapter<uint32_t>           as DblkLastRecNum;
     interface             TagnetAdapter<message_t>          as PollEvent;
     interface             TagnetAdapter<tagnet_block_t>     as RadioStats;
-    interface             TagnetAdapter<uint32_t>           as DblkLastRecOffset;
+    interface             TagnetAdapter<uint32_t>           as DblkCommittedOffset;
     interface             TagnetAdapter<uint32_t>           as DblkResyncOffset;
+    interface             TagnetAdapter<uint32_t>           as DblkLastRecOffset;
     interface      TagnetSysExecAdapter                     as SysNIB;
     interface             TagnetAdapter<int32_t>            as PollCount;
     interface             TagnetAdapter<tagnet_gps_cmd_t>   as InfoSensGpsCmd;
@@ -34,8 +36,8 @@ configuration TagnetC {
     interface             TagnetAdapter<message_t>          as RadioRSSI;
     interface             TagnetAdapter<rtctime_t>          as SysRtcTime;
     interface      TagnetSysExecAdapter                     as SysActive;
-    interface             TagnetAdapter<uint32_t>           as DblkLastRecNum;
-    interface             TagnetAdapter<uint32_t>           as DblkCommittedOffset;
+    interface             TagnetAdapter<uint32_t>           as DblkBootOffset;
+    interface             TagnetAdapter<uint32_t>           as DblkBootRecNum;
     interface             TagnetAdapter<tagnet_file_bytes_t>  as DblkBytes;
     interface             TagnetAdapter<tagnet_dblk_note_t>  as DblkNote;
     interface      TagnetSysExecAdapter                     as SysRunning;
@@ -87,6 +89,8 @@ implementation {
     components new  TagnetUnsignedAdapterP ( TN_36_ID )        as   tn_36_Vx;
     components new  TagnetUnsignedAdapterP ( TN_37_ID )        as   tn_37_Vx;
     components new  TagnetUnsignedAdapterP ( TN_38_ID )        as   tn_38_Vx;
+    components new  TagnetUnsignedAdapterP ( TN_39_ID )        as   tn_39_Vx;
+    components new  TagnetUnsignedAdapterP ( TN_40_ID )        as   tn_40_Vx;
 
     Tagnet           =     tn_0_Vx;
        tn_1_Vx.Super ->     tn_0_Vx.Sub[unique(TN_0_UQ)];
@@ -143,13 +147,17 @@ implementation {
       tn_33_Vx.Super ->    tn_27_Vx.Sub[unique(TN_27_UQ)];
     SysRunning       =     tn_33_Vx.Adapter;
       tn_34_Vx.Super ->     tn_4_Vx.Sub[unique(TN_4_UQ)];
-    DblkCommittedOffset  =     tn_34_Vx.Adapter;
+    DblkBootRecNum   =     tn_34_Vx.Adapter;
       tn_35_Vx.Super ->     tn_4_Vx.Sub[unique(TN_4_UQ)];
-    DblkLastRecNum   =     tn_35_Vx.Adapter;
+    DblkBootOffset   =     tn_35_Vx.Adapter;
       tn_36_Vx.Super ->     tn_4_Vx.Sub[unique(TN_4_UQ)];
-    DblkLastRecOffset  =     tn_36_Vx.Adapter;
+    DblkCommittedOffset  =     tn_36_Vx.Adapter;
       tn_37_Vx.Super ->     tn_4_Vx.Sub[unique(TN_4_UQ)];
-    DblkLastSyncOffset  =     tn_37_Vx.Adapter;
+    DblkLastRecNum   =     tn_37_Vx.Adapter;
       tn_38_Vx.Super ->     tn_4_Vx.Sub[unique(TN_4_UQ)];
-    DblkResyncOffset  =     tn_38_Vx.Adapter;
+    DblkLastRecOffset  =     tn_38_Vx.Adapter;
+      tn_39_Vx.Super ->     tn_4_Vx.Sub[unique(TN_4_UQ)];
+    DblkLastSyncOffset  =     tn_39_Vx.Adapter;
+      tn_40_Vx.Super ->     tn_4_Vx.Sub[unique(TN_4_UQ)];
+    DblkResyncOffset  =     tn_40_Vx.Adapter;
 }

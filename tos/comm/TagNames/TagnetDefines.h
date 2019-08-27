@@ -35,12 +35,14 @@ typedef enum {                   //      (parent) name
   TN_31_ID              =    31, //  (   sys    ) golden
   TN_32_ID              =    32, //  (   sys    ) nib
   TN_33_ID              =    33, //  (   sys    ) running
-  TN_34_ID              =    34, //  (   dblk   ) .committed
-  TN_35_ID              =    35, //  (   dblk   ) .recnum
-  TN_36_ID              =    36, //  (   dblk   ) .last_rec
-  TN_37_ID              =    37, //  (   dblk   ) .last_sync
-  TN_38_ID              =    38, //  (   dblk   ) .resync
-  TN_LAST_ID            =    39,
+  TN_34_ID              =    34, //  (   dblk   ) .boot_recnum
+  TN_35_ID              =    35, //  (   dblk   ) .boot_offset
+  TN_36_ID              =    36, //  (   dblk   ) .committed
+  TN_37_ID              =    37, //  (   dblk   ) .recnum
+  TN_38_ID              =    38, //  (   dblk   ) .last_rec
+  TN_39_ID              =    39, //  (   dblk   ) .last_sync
+  TN_40_ID              =    40, //  (   dblk   ) .resync
+  TN_LAST_ID            =    41,
   TN_ROOT_ID            =     0,
   TN_MAX_ID             =  65000,
 } tn_ids_t;
@@ -84,6 +86,8 @@ typedef enum {                   //      (parent) name
 #define  TN_36_UQ                "TN_36_UQ"
 #define  TN_37_UQ                "TN_37_UQ"
 #define  TN_38_UQ                "TN_38_UQ"
+#define  TN_39_UQ                "TN_39_UQ"
+#define  TN_40_UQ                "TN_40_UQ"
 #define UQ_TAGNET_ADAPTER_LIST  "UQ_TAGNET_ADAPTER_LIST"
 #define UQ_TN_ROOT               TN_0_UQ
 /* structure used to hold configuration values for each of the elements
@@ -131,10 +135,12 @@ const TN_data_t tn_name_data_descriptors[TN_LAST_ID]={
   { TN_31_ID, "\01\06golden", "\01\025TagnetSysExecAdapter.", TN_31_UQ },
   { TN_32_ID, "\01\03nib", "\01\025TagnetSysExecAdapter.", TN_32_UQ },
   { TN_33_ID, "\01\07running", "\01\025TagnetSysExecAdapter.", TN_33_UQ },
-  { TN_34_ID, "\01\012.committed", "\01\026TagnetAdapter.uint32_t", TN_34_UQ },
-  { TN_35_ID, "\01\07.recnum", "\01\026TagnetAdapter.uint32_t", TN_35_UQ },
-  { TN_36_ID, "\01\011.last_rec", "\01\026TagnetAdapter.uint32_t", TN_36_UQ },
-  { TN_37_ID, "\01\012.last_sync", "\01\026TagnetAdapter.uint32_t", TN_37_UQ },
-  { TN_38_ID, "\01\07.resync", "\01\026TagnetAdapter.uint32_t", TN_38_UQ },
+  { TN_34_ID, "\01\014.boot_recnum", "\01\026TagnetAdapter.uint32_t", TN_34_UQ },
+  { TN_35_ID, "\01\014.boot_offset", "\01\026TagnetAdapter.uint32_t", TN_35_UQ },
+  { TN_36_ID, "\01\012.committed", "\01\026TagnetAdapter.uint32_t", TN_36_UQ },
+  { TN_37_ID, "\01\07.recnum", "\01\026TagnetAdapter.uint32_t", TN_37_UQ },
+  { TN_38_ID, "\01\011.last_rec", "\01\026TagnetAdapter.uint32_t", TN_38_UQ },
+  { TN_39_ID, "\01\012.last_sync", "\01\026TagnetAdapter.uint32_t", TN_39_UQ },
+  { TN_40_ID, "\01\07.resync", "\01\026TagnetAdapter.uint32_t", TN_40_UQ },
 };
 
