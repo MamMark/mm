@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev4'
+__version__ = '0.4.6.dev5'
 
 import binascii
 from   collections  import OrderedDict
@@ -336,95 +336,6 @@ def obj_dt_sync():
         ('prev_sync', atom(('<I', '0x{:x}'))),
         ('majik',     atom(('<I', '0x{:08x}'))),
     ]))
-
-
-# EVENT
-event_names = {
-    0:  'NONE',
-
-    1:  'PANIC_WARN',
-    2:  'FAULT',
-
-    3:  'GPS_GEO',              # deprecated, backward compatibility
-    4:  'GPS_XYZ',              # deprecated, backward compatibility
-    5:  'GPS_TIME',             # deprecated, backward compatibility
-    6:  'GPS_LTFF_TIME',
-    7:  'GPS_FIRST_LOCK',
-    31: 'GPS_LOCK',
-
-    8:  'SSW_DELAY_TIME',
-    9:  'SSW_BLK_TIME',
-    10: 'SSW_GRP_TIME',
-
-    11: 'SURFACED',
-    12: 'SUBMERGED',
-    13: 'DOCKED',
-    14: 'UNDOCKED',
-
-    15: 'DCO_REPORT',
-    16: 'DCO_SYNC',
-    17: 'TIME_SRC',
-    18: 'IMG_MGR',
-    19: 'TIME_SKEW',
-
-    32: 'GPS_BOOT',
-    33: 'GPS_BOOT_TIME',
-    34: 'GPS_BOOT_FAIL',
-
-    35: 'GPS_MON_MINOR',
-    36: 'GPS_MON_MAJOR',
-
-    37: 'GPS_RX_ERR',
-    38: 'GPS_LOST_INT',
-    39: 'GPS_MSG_OFF',
-
-    40: 'GPS_AWAKE_S',
-    41: 'GPS_CMD',
-    42: 'GPS_RAW_TX',
-    43: 'GPS_SWVER_TO',
-    44: 'GPS_CANNED',
-
-    45: 'GPS_HW_CONFIG',
-    46: 'GPS_RECONFIG',
-
-    47: 'GPS_TURN_ON',
-    48: 'GPS_STANDBY',
-    49: 'GPS_TURN_OFF',
-    50: 'GPS_MPM',
-    51: 'GPS_PULSE',
-
-    52: 'GPS_TX_RESTART',
-    53: 'GPS_MPM_RSP',
-
-    64: 'GPS_FAST',
-    65: 'GPS_FIRST',
-    66: 'GPS_SATS/2',
-    67: 'GPS_SATS/7',
-    68: 'GPS_SATS/41',
-    69: 'GPS_PWR_OFF',
-}
-
-def event_name(event):
-    ev_name = event_names.get(event, 0)
-    if ev_name == 0:
-        ev_name = 'ev_' + str(event)
-    return ev_name
-
-
-PANIC_WARN    = 1
-FAULT         = 2
-EV_GPS_GEO    = 3
-EV_GPS_XYZ    = 4
-EV_GPS_TIME   = 5
-DCO_REPORT    = 15
-DCO_SYNC      = 16
-TIME_SRC      = 17
-IMG_MGR       = 18
-GPS_MON_MINOR = 35
-GPS_MON_MAJOR = 36
-GPS_RX_ERR    = 37
-GPS_CMD       = 41
-GPS_MPM_RSP   = 53
 
 
 img_mgr_events = {

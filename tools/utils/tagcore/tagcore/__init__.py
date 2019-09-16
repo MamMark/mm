@@ -19,6 +19,8 @@ from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
 # 0.4.6.dev+    CR 22/+
+#       o split event names and identifiers into core_events
+#
 #       o put GPS_XYZ, TIME, and GEO onto data records
 #       o deprecate XYZ, TIME, GEO events, tagdump displays retained for
 #         backward compatbility.

@@ -28,22 +28,10 @@ from   ctypes       import c_int32
 from   core_rev     import *
 from   dt_defs      import *
 
-from   core_headers import event_name
+from   core_events  import *                    # get event_ids
+from   core_events  import event_name
 from   core_headers import rtc_src_name
 from   core_headers import img_mgr_event_name
-from   core_headers import PANIC_WARN           # event
-from   core_headers import EV_GPS_GEO           # event
-from   core_headers import EV_GPS_XYZ           # event
-from   core_headers import EV_GPS_TIME          # event
-from   core_headers import DCO_REPORT           # event
-from   core_headers import DCO_SYNC             # event
-from   core_headers import TIME_SRC             # event
-from   core_headers import IMG_MGR              # event
-from   core_headers import GPS_MON_MINOR        # event
-from   core_headers import GPS_MON_MAJOR        # event
-from   core_headers import GPS_RX_ERR           # event
-from   core_headers import GPS_CMD              # event
-from   core_headers import GPS_MPM_RSP          # event
 
 from   gps_mon      import *
 

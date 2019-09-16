@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5'
+__version__ = '0.4.6.dev1'
 
 TEST = False
 
@@ -34,9 +34,9 @@ from requests.exceptions import ConnectionError
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
-from base_objs import atom
-from dt_defs   import dt_records, rtctime_str, rtctime_iso
-from core_headers import event_name
+from base_objs   import atom
+from dt_defs     import dt_records, rtctime_str, rtctime_iso
+from core_events import event_name
 
 import tagcore.globals
 
