@@ -22,13 +22,16 @@ simple globals used across tagcore users.
 
 Includes:
 
-    - verbose: verbosity level
-    - export:  export force (1 says forcing export)
-               -1 says --noexport.
-    - quiet:   0 if displaying annoying displays
-               1 suppress annoying displays
+    - verbose:   verbosity level
+    - export:    export force (1 says forcing export)
+                 -1 says --noexport.
+    - quiet:     0 if displaying annoying displays
+                 1 suppress annoying displays
+    - gps_level: None if not using gps_eval emitters
+                 numeric level for how much to display
 '''
 
-verbose = 0
-export  = 0
-quiet   = 0
+verbose   = 0
+export    = 0
+quiet     = 0
+gps_level = None

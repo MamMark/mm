@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.6.dev2'
+__version__ = '0.4.6.dev3'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -19,6 +19,9 @@ from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
 # 0.4.6.dev+    CR 22/+
+#       o add gps_eval populator
+#       o add gps_eval emitters for gps evaluation.
+#
 #       o split event names and identifiers into core_events
 #
 #       o put GPS_XYZ, TIME, and GEO onto data records

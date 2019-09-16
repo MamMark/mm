@@ -98,6 +98,11 @@ optional arguments:
       5   other errors and decoder versions
 
 
+  -g<n>
+  --gps_eval <n>  switch to gps evaluation emitters with display level <n>
+                  0 display all gps entries.
+
+
 positional parameters:
 
   input:          file to process.  (args.input)
@@ -205,6 +210,10 @@ def parseargs():
                         default=0,
                         help='override export to external database')
 
+    parser.add_argument('-g', '--gps_eval',
+                        type=int,
+                        help='use gps_eval emitters, at level <n>')
+
     parser.add_argument('-v', '--verbose',
                         action='count',
                         default=0,
@@ -215,12 +224,16 @@ def parseargs():
 if len(sys.argv) < 2:
     # something weird is going on, just fake it
     sys.argv.append('/dev/null')
+
 args = parseargs()
-tagcore.globals.verbose = args.verbose
-tagcore.globals.export  = args.export
-tagcore.globals.quiet   = args.quiet
+tagcore.globals.verbose   = args.verbose
+tagcore.globals.export    = args.export
+tagcore.globals.quiet     = args.quiet
+tagcore.globals.gps_level = args.gps_eval
+
 if args.noexport:
     tagcore.globals.export = -1
 
 if __name__ == '__main__':
     print(args)
+    print(tagcore.globals.gps_level)

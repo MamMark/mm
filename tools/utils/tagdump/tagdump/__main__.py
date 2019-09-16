@@ -4,7 +4,6 @@ tagdump:  decode and display Tag Data Stream file
 """
 
 from tagdump import dump
-#from tagdumpargs import args
 
 def main():
     dump()
