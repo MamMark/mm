@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev5'
+__version__ = '0.4.6.dev6'
 
 from   ctypes       import c_int32
 
@@ -618,8 +618,8 @@ def emit_gps_trk(level, offset, buf, obj):
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
-    print('  {}/{}  {:4.1f}  {:4.1f} {:4.1f}'.format(
-        good_sats, nz_sats, xavg, sat_min, sat_max))
+    print('  {}/{}  {:4.1f}  {:4.1f}  {:4.1f}'.format(
+        good_sats, nz_sats, sat_min, xavg, sat_max))
 
     if level >= 1:
         print('    NAV_TRACK: {}/{}  chans: {}'.format(
