@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019, Eric B. Decker
  * Copyright (c) 2017-2018 Daniel J Maltbie, Eric B. Decker
  * All rights reserved.
  *
@@ -893,18 +894,17 @@ implementation {
   }
 
   async command bool OverWatch.getLoggingFlag(uint32_t log_e) {
+    if (log_e > OW_LOG_MAX) return FALSE;
     return BITBAND_SRAM(ow_control_block.logging_flags, log_e);
   }
 
   async command void OverWatch.setLoggingFlag(uint32_t log_e) {
-    if (log_e > OW_LOG_MAX)
-      return;
+    if (log_e > OW_LOG_MAX) return;
     BITBAND_SRAM(ow_control_block.logging_flags, log_e) = 1;
   }
 
   async command void OverWatch.clrLoggingFlag(uint32_t log_e) {
-    if (log_e > OW_LOG_MAX)
-      return;
+    if (log_e > OW_LOG_MAX) return;
     BITBAND_SRAM(ow_control_block.logging_flags, log_e) = 0;
   }
 
