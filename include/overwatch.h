@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, Daniel J. Maltbie, Eric B. Decker
+ * Copyright (c) 2017-2019, Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -212,6 +212,16 @@ typedef enum {
 
 
 /*
+ * OW DEBUG FLAGS
+ * bit positions.  1, 2, 4, 8, etc.
+ */
+typedef enum {
+  OW_DBG_NORDO = 0,                     /* don't enable the radio  */
+  OW_DBG_MAX   = 7,
+} ow_dbg_t;
+
+
+/*
  * ow_control_block_t
  */
 typedef struct {
@@ -223,7 +233,7 @@ typedef struct {
   uint32_t           reset_others;      /* unindentified other stati       */
   uint32_t           from_base;         /* base address of where from      */
   uint32_t           panic_count;       /* how many times nib failed       */
-  uint32_t           panics_gold;       /* panics out of gold             */
+  uint32_t           panics_gold;       /* panics out of gold              */
 
   uint32_t           fault_mask_gold;   /* indicate faults                 */
   uint32_t           fault_mask_nib;    /* indicate faults                 */
@@ -263,7 +273,7 @@ typedef struct {
   uint32_t           pi_arg3;
 
   rtc_src_t          rtc_src;           /* B - last known clock setting */
-  uint8_t            pad0;
+  uint8_t            ow_debug;          /* special debug flags */
   uint16_t           pad1;
 
   uint32_t           ow_sig_c;

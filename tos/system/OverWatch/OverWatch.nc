@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019, Eric B. Decker
  * Copyright (c) 2017-2018 Daniel Maltbie, Eric B. Decker
  * All rights reserved.
  *
@@ -122,6 +123,13 @@ interface OverWatch {
 
   async command void                forceLoggingFlags(uint32_t logging_val);
   async command uint32_t            getLoggingFlags();
+
+  async command bool                getDebugFlag(uint32_t  logging_enum);
+  async command void                setDebugFlag(uint32_t  logging_enum);
+  async command void                clrDebugFlag(uint32_t  logging_enum);
+
+  async command void                forceDebugFlags(uint32_t debug_val);
+  async command uint32_t            getDebugFlags();
 
   async command rtc_src_t           getRtcSrc();
   async command void                setRtcSrc(rtc_src_t src);

@@ -928,6 +928,30 @@ implementation {
   }
 
 
+  async command bool OverWatch.getDebugFlag(uint32_t dbg_e) {
+    if (dbg_e > OW_DBG_MAX) return FALSE;
+    return BITBAND_SRAM(ow_control_block.ow_debug, dbg_e);
+  }
+
+  async command void OverWatch.setDebugFlag(uint32_t dbg_e) {
+    if (dbg_e > OW_DBG_MAX) return;
+    BITBAND_SRAM(ow_control_block.ow_debug, dbg_e) = 1;
+  }
+
+  async command void OverWatch.clrDebugFlag(uint32_t dbg_e) {
+    if (dbg_e > OW_DBG_MAX) return;
+    BITBAND_SRAM(ow_control_block.ow_debug, dbg_e) = 0;
+  }
+
+  async command void OverWatch.forceDebugFlags(uint32_t dbg_val) {
+      ow_control_block.ow_debug = dbg_val;
+  }
+
+  async command uint32_t OverWatch.getDebugFlags() {
+    return ow_control_block.ow_debug;
+  }
+
+
   async command rtc_src_t OverWatch.getRtcSrc() {
     return ow_control_block.rtc_src;
   }
