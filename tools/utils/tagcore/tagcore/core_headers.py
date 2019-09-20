@@ -225,7 +225,7 @@ def obj_owcb():
         ('pi_arg3',         atom(('<I', '{}'))),
 
         ('rtc_src',         atom(('B',  '{}'))),
-        ('pad0',            atom(('B',  '{}'))),
+        ('ow_debug',        atom(('B',  '{0x{:02x}'))),
         ('pad1',            atom(('<H', '{}'))),
 
         ('ow_sig_c',        atom(('<I', '0x{:08x}')))
