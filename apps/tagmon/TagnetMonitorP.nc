@@ -49,6 +49,7 @@ module TagnetMonitorP {
     interface Panic;
     interface Rtc;
     interface RtcAlarm;
+    interface OverWatch;
   }
 }
 implementation {
@@ -788,6 +789,10 @@ implementation {
       use_regime = RGM_DEFAULT;
     call Regime.setRegime(use_regime);
 
+    if (call OverWatch.getDebugFlag(OW_DBG_NORDO)) {
+      SI446X_TX_PWR_OFF;
+      return;
+    }
     change_radio_state(RS_HOME, SS_RW, TMR_BOOT);
   }
 

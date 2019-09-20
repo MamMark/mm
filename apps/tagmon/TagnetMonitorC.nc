@@ -123,4 +123,7 @@ implementation {
   TagnetMonitorP.Rtc            -> PlatformC;
   TagnetMonitorP.RtcAlarm       -> PlatformC;
   TagnetMonitorP.McuPowerOverride<- McuSleepC;
+
+  components OverWatchC;
+  TagnetMonitorP.OverWatch      -> OverWatchC;
 }
