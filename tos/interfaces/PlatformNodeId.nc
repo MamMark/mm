@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Eric B. Decker
+ * Copyright (c) 2018-2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,12 +27,16 @@ interface PlatformNodeId {
    * or mac address.
    *
    * Platform define PLATFORM_SERIAL_NUM_SIZE determines the
-   * size.  If not defined defaults to 4 bytes (uint32_t).
+   * size.  If not defined defaults to 4 bytes (uint32_t).  But platforms
+   * really should define it to be clear.  (see platform.h)
    *
    * input:  *lenp      pointer where to place the length of the number.
    *
    * output: *lenp      length filled in if non-null.
    * return: *uint8_t   pointer to the serial_num or NULL.
+   *
+   * a Node Id is assumed to be a sequence of bytes starting with the
+   * msb first.
    */
   async command uint8_t *node_id(unsigned int *lenp);
 }

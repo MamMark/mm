@@ -104,4 +104,7 @@ extern uint32_t __platform_usecsRaw();
  */
 #define PLATFORM_TA1_ASYNC TRUE
 
+/* we use 6 bytes from the random number the msp432 provides */
+#define PLATFORM_SERIAL_NUM_SIZE 6
+
 #endif // __PLATFORM_H__

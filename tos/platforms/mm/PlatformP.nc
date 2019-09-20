@@ -201,7 +201,7 @@ implementation {
    */
   async command uint8_t *PlatformNodeId.node_id(unsigned int *lenp) {
     if (lenp)
-      *lenp = 6;
+      *lenp = PLATFORM_SERIAL_NUM_SIZE;
     return (uint8_t *) &TLV->RANDOM_NUM_1;
   }
 
