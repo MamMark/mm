@@ -100,7 +100,7 @@ optional arguments:
 
   -g<n>
   --gps_eval <n>  switch to gps evaluation emitters with display level <n>
-                  0 display all gps entries.
+                  9 display all gps entries.
 
 
 positional parameters:
@@ -212,7 +212,7 @@ def parseargs():
 
     parser.add_argument('-g', '--gps_eval',
                         type=int,
-                        help='use gps_eval emitters, at level <n>')
+                        help='use gps_eval emitters, at level <GPS_EVAL>')
 
     parser.add_argument('-v', '--verbose',
                         action='count',
