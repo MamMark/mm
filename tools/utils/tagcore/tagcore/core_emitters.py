@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev6'
+__version__ = '0.4.6.dev7'
 
 from   ctypes       import c_int32
 
@@ -516,11 +516,8 @@ def emit_gps_time(level, offset, buf, obj):
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03}  {}/{:4.3f}'.format(
-        year, mon, day, hr, xmin, secs, ms, week_x, tow/1000.))
-    if level >= 1:
-        pass
-    return
+    print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03}  {}/{:4.3f}  ({})'.format(
+        year, mon, day, hr, xmin, secs, ms, week_x, tow/1000., nsats))
 
 
 def emit_gps_geo(level, offset, buf, obj):
@@ -549,8 +546,8 @@ def emit_gps_geo(level, offset, buf, obj):
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    print('   {:10.7f}  {:10.7f}      {}/{:4.3f}'.format(
-        lat/10000000., lon/10000000., week_x, tow/1000.))
+    print('   {:10.7f}  {:10.7f}      {}/{:4.3f}  ({})'.format(
+        lat/10000000., lon/10000000., week_x, tow/1000., nsats))
 
     if (level >= 1):
         pass
@@ -578,8 +575,8 @@ def emit_gps_xyz(level, offset, buf, obj):
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    print('   x: {}  y: {}  z: {}  ({})'.format(
-        x, y, z, nsats))
+    print('   x: {}  y: {}  z: {}  {}/{:4.2f}  ({})'.format(
+        x, y, z, week, tow/100., nsats))
 
     if (level >= 1):
         pass
