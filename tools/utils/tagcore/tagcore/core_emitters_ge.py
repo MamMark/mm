@@ -21,8 +21,8 @@
 # enable with -g<n>, --gps_eval <n>
 #
 # -g0: summary display
-# -g1: gps boot and gps_trk basic
-# -g2: gps major state
+# -g1: gps major state, gps boot
+# -g2: gps_trk basic
 # -g3: gps_trk expanded
 # -g4: gps sats (2, 7, 41)
 # -g5: gps minor state changes
@@ -32,7 +32,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6.dev2'
 
 from   .globals    import gps_level     # emit level, will be numeric
 from   core_events import *             # get event identifiers
@@ -79,7 +79,7 @@ def emit_event_ge(level, offset, buf, obj):
 
 
 def emit_gps_trk_ge(level, offset, buf, obj):
-    if gps_level < 1:
+    if gps_level < 2:
         return
     if level == 0 and gps_level > 2:
         level = 1
