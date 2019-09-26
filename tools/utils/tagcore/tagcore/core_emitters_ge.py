@@ -23,8 +23,8 @@
 # -g0: summary display
 # -g1: gps major state, gps boot
 # -g2: gps_trk basic
-# -g3: gps_trk expanded
-# -g4: gps sats (2, 7, 41)
+# -g3: gps_trk expanded/geo, xyz, time details
+# -g4: gps sats (2, 7, 41), gps_raw
 # -g5: gps minor state changes
 # -g9: display all
 
@@ -32,7 +32,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev2'
+__version__ = '0.4.6.dev3'
 
 from   .globals    import gps_level     # emit level, will be numeric
 from   core_events import *             # get event identifiers
@@ -78,9 +78,25 @@ def emit_event_ge(level, offset, buf, obj):
     core_emitters.emit_event(level, offset, buf, obj)
 
 
+def emit_gps_geo_ge(level, offset, buf, obj):
+    if level == 0 and gps_level > 2:
+        level = 1
+    core_emitters.emit_gps_geo(level, offset, buf, obj)
+
+
+def emit_gps_xyz_ge(level, offset, buf, obj):
+    if level == 0 and gps_level > 2:
+        level = 1
+    core_emitters.emit_gps_xyz(level, offset, buf, obj)
+
+
 def emit_gps_trk_ge(level, offset, buf, obj):
     if gps_level < 2:
         return
     if level == 0 and gps_level > 2:
         level = 1
     core_emitters.emit_gps_trk(level, offset, buf, obj)
+
+
+def emit_gps_raw_ge(level, offset, buf, obj):
+    core_emitters.emit_gps_raw(level, offset, buf, obj)
