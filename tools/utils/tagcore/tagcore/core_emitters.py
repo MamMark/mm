@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev7'
+__version__ = '0.4.6.dev8'
 
 from   ctypes       import c_int32
 
@@ -520,6 +520,32 @@ def emit_gps_time(level, offset, buf, obj):
         year, mon, day, hr, xmin, secs, ms, week_x, tow/1000., nsats))
 
 
+def get_satmask(prns):
+    satmask = 0
+    for c in prns:
+        prn = ord(c)
+        if prn == 0:
+            continue
+        bit = 1 << (prn - 1)
+        satmask = satmask | bit
+    return satmask
+
+
+def expand_satmask(satmask):
+    result = ''
+    if satmask == 0:
+        return result
+    for i in range(32):
+        if satmask & (1 << i):
+            result = '{}'.format(i+1)
+            ni = i+1
+            break
+    for i in range(ni, 32):
+        if satmask & (1 << i):
+            result += ' {}'.format(i+1)
+    return result
+
+
 def emit_gps_geo(level, offset, buf, obj):
     xlen     = obj['gps_hdr']['hdr']['len'].val
     xtype    = obj['gps_hdr']['hdr']['type'].val
@@ -530,27 +556,33 @@ def emit_gps_geo(level, offset, buf, obj):
     delta     = obj['delta'].val
     nav_valid = obj['nav_valid'].val
     nav_type  = obj['nav_type'].val
-    lat       = obj['lat'].val
-    lon       = obj['lon'].val
-    alt_ell   = obj['alt_ell'].val
-    alt_msl   = obj['alt_msl'].val
-    sat_mask  = obj['sat_mask'].val
-    tow       = obj['tow'].val
+    lat       = obj['lat'].val/10000000.
+    lon       = obj['lon'].val/10000000.
+    alt_ell   = obj['alt_ell'].val/100.
+    alt_msl   = obj['alt_msl'].val/100.
+    satmask   = obj['sat_mask'].val
+    tow       = obj['tow'].val/1000.
     week_x    = obj['week_x'].val
     nsats     = obj['nsats'].val
     add_mode  = obj['add_mode'].val
-    ehpe100   = obj['ehpe100'].val
-    hdop5     = obj['hdop5'].val
+    ehpe      = obj['ehpe100'].val/100.
+    hdop      = obj['hdop5'].val/5.
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
     print('   {:10.7f}  {:10.7f}      {}/{:4.3f}  ({})'.format(
-        lat/10000000., lon/10000000., week_x, tow/1000., nsats))
+        lat, lon, week_x, tow, nsats))
 
     if (level >= 1):
-        pass
+        alt_ell_ft = alt_ell * 3.28084
+        alt_msl_ft = alt_msl * 3.28084
+        # if nav_valid nonzero we don't have a valid fix (no lock)
+        valid_str  = 'valid: x{:04x}  '.format(nav_valid) if nav_valid else ''
+        print('    {}type: x{:04x}  ehpe: {}  hdop: {:4.1f}  [{}] ({:08x})'.format(
+            valid_str, nav_type, ehpe, hdop, expand_satmask(satmask), satmask), end = '')
+        print('  msl: {:3.1f} ({:3.1f})'.format(alt_msl_ft, alt_msl))
 
 
 def emit_gps_xyz(level, offset, buf, obj):
@@ -570,6 +602,7 @@ def emit_gps_xyz(level, offset, buf, obj):
     m2    = obj['m2'].val
     hdop5 = obj['hdop5'].val
     nsats = obj['nsats'].val
+    prns  = obj['prns'].val
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
@@ -579,7 +612,10 @@ def emit_gps_xyz(level, offset, buf, obj):
         x, y, z, week, tow/100., nsats))
 
     if (level >= 1):
-        pass
+        satmask = get_satmask(prns)
+        print('    ',  end = '')
+        print('m1: {:02x}  m2: {:02x}  hdop: {:4.1f}  [{}]  ({:08x})'.format(
+            m1, m2, hdop5/5., expand_satmask(satmask), satmask))
 
 
 def emit_gps_trk(level, offset, buf, obj):
