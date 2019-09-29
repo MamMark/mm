@@ -11,14 +11,14 @@ def decode_null(level, offset, buf, obj):
     return 0
 
 
-#                      EE_DECODER            EE_EMITTERS               EE_OBJECT                   EE_NAME         EE_OBJ_NAME
+#                      EE_DECODER            EE_EMITTERS               EE_OBJECT                  EE_NAME         EE_OBJ_NAME
+sirf.ee56_table[5]  = (decode_default,     [ emit_ee56_bcastEph ],     obj_sirf_ee56_bcastEph(),  'eeBcastEph',   'obj_sirf_ee_sifStat')
 sirf.ee56_table[42] = (decode_default,     [ emit_ee56_sifStat ],      obj_sirf_ee56_sifStat(),   'eeSifStat',    'obj_sirf_ee_sifStat')
 
 sirf.ee56_table[1]    = (decode_null, None, None, 'eeGPSDataEphemMask', 'none')
 sirf.ee56_table[2]    = (decode_null, None, None, 'eeIntegrity',        'none')
 sirf.ee56_table[3]    = (decode_null, None, None, 'eeStatus',           'none')
 sirf.ee56_table[4]    = (decode_null, None, None, 'eeClkBiasAdj',       'none')
-sirf.ee56_table[5]    = (decode_null, None, None, 'ee50bpsBcast',       'none')
 sirf.ee56_table[32]   = (decode_null, None, None, 'eeAckNack',          'none')
 sirf.ee56_table[33]   = (decode_null, None, None, 'eeAge',              'none')
 sirf.ee56_table[34]   = (decode_null, None, None, 'eeSGEEAge',          'none')

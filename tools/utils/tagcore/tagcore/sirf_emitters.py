@@ -26,7 +26,7 @@ import sirf_defs     as     sirf
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.4.5'
+__version__ = '0.4.6.dev0'
 
 
 def emit_default(level, offset, buf, obj):
@@ -311,6 +311,16 @@ def emit_sirf_stat212(level, offset, buf, obj):
 
 def emit_sirf_ee232(level, offset, buf, obj):
     emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee232_table, 'sirf_ee232')
+
+
+def emit_ee56_bcastEph(level, offset, buf, obj):
+    channel = obj['channel'].val
+    svid    = obj['svid'].val
+    print('  c{} s{}'.format(channel, svid))
+    if (level >= 1):
+        print()
+        data = obj['data'].val
+        dump_buf(data, '    ', 'data: ')
 
 
 def emit_ee56_sifStat(level, offset, buf, obj):

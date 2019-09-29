@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5'
+__version__ = '0.4.6.dev0'
 
 import binascii
 from   collections  import OrderedDict
@@ -459,6 +459,22 @@ def obj_sirf_geo():
         ('additional_mode',  atom(('B', '0x{:02x}'))),
     ]))
 
+
+# 56/5  Verified 50bps Bcast Ephemeris/Iono data
+# has channel, svid, sub-frames 1, 2, 3 and possibly sub-frame 4.
+#
+# we currently don't know the structure of the sub-frames.  But for now we
+# simply want to know if we are getting good ephemeris for the given
+# satellite.  Simply receiving the 56/5 for the satellite tells us that.
+#
+# we ignore any data beyond channel and svid.
+
+def obj_sirf_ee56_bcastEph():
+    return aggie(OrderedDict([
+        ('channel',          atom(('B',   '{}'))),
+        ('svid',             atom(('B',   '{}'))),
+        ('data',             atom(('40s', '{}', binascii.hexlify))),
+    ]))
 
 # 56/42 sifStatus (sifStat)
 def obj_sirf_ee56_sifStat():
