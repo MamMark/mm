@@ -32,7 +32,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev3'
+__version__ = '0.4.6.dev4'
 
 from   .globals    import gps_level     # emit level, will be numeric
 from   core_events import *             # get event identifiers
@@ -99,4 +99,5 @@ def emit_gps_trk_ge(level, offset, buf, obj):
 
 
 def emit_gps_raw_ge(level, offset, buf, obj):
+    if gps_level < 4: return
     core_emitters.emit_gps_raw(level, offset, buf, obj)

@@ -19,6 +19,7 @@ from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
 # 0.4.6.dev+    CR 22/+
+#       o only display gps_raw with -g4 or greater (gps_eval)
 #       o update gps_time, gps_geo to include nsats
 #       o update gps_xyz to include gps time x/secs100
 #
