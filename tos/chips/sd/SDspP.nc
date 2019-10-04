@@ -70,6 +70,7 @@ generic module SDspP() {
     interface ResourceDefaultOwner;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
+    interface CollectEvent;
     interface SDHardware as HW;
     interface Platform;
     interface Panic;
@@ -88,8 +89,9 @@ implementation {
 #define GO_OP_POLL_TIME 10
 
   typedef enum {
-    SDS_OFF = 0,
-    SDS_OFF_TO_ON,
+    SDS_OFF       = 0,
+    SDS_ON_TO_OFF = 1,                  /* order dependent */
+    SDS_OFF_TO_ON = 2,
     SDS_RESET,
     SDS_IDLE,
     SDS_READ,
@@ -122,8 +124,8 @@ implementation {
    * blocks    number of 512 byte blocks on the disk
    * blk_start holds the blk id we are working on
    * blk_end   if needed holds the last block working on (like for erase)
-   * sd_state  current driver state, non-IDLE if we are busy doing something.
-   *           IDLE if powered on but not busy
+   * sd_state  current driver state, > SD_IDLE if we are busy doing something.
+   *           SD_IDLE if powered on but not busy
    * cur_cid   client id of who has requested the activity.
    * data_ptr  buffer pointer if needed.
    * erase_state when erased the default state of a sector
@@ -187,6 +189,10 @@ implementation {
 
   uint32_t     max_erase_time_ms, last_erase_delta_ms;
   uint32_t     max_erase_time_us, last_erase_delta_us;
+
+  uint32_t     sd_cycle_count;                  /* number of times we've turned it on */
+  uint32_t     max_cycle_time;                  /* us, longest time sd has been left on */
+  uint64_t     total_on_time;                   /* us total on */
 
 
 #define sd_panic(where, arg) do { call Panic.panic(PANIC_SD, where, arg, 0, 0, 0); } while (0)
@@ -686,7 +692,10 @@ implementation {
 
 
   task void sd_pwr_up_task() {
+    sd_cycle_count++;
     sd_pwr_on_time_us = call Platform.usecsRaw();
+    call CollectEvent.logEvent(DT_EVENT_SD_ON, sd_cycle_count, sd_pwr_on_time_us,
+                               0, max_cycle_time);
     call HW.sd_on();
     call HW.sd_spi_enable();
 
@@ -694,6 +703,29 @@ implementation {
      * we want at least 1ms, Using 2 gives us approx 1.6ms as observed
      */
     call SDtimer.startOneShot(2);
+  }
+
+
+  /* pwr the sd down
+   * we use a task so we can call the event logger
+   */
+  task void sd_pwr_down_task() {
+    uint32_t on_time;
+
+    on_time = call Platform.usecsRaw() - sd_pwr_on_time_us;
+    if (on_time > max_cycle_time) max_cycle_time = on_time;
+    total_on_time += on_time;
+    call CollectEvent.logEvent(DT_EVENT_SD_OFF, sd_cycle_count, on_time,
+                               (uint32_t) total_on_time/sd_cycle_count, sdc.sd_state);
+    if (sdc.sd_state != SDS_ON_TO_OFF) {
+      /* someone wants to turn us on again.  */
+      post sd_pwr_up_task();
+      return;
+    }
+    sd_pwr_on_time_us = 0;
+    call HW.sd_spi_disable();
+    call HW.sd_off();
+    sdc.sd_state = SDS_OFF;
   }
 
 
@@ -709,15 +741,13 @@ implementation {
    */
 
   async event void ResourceDefaultOwner.granted() {
-    sdc.sd_state = SDS_OFF;
-    sd_pwr_on_time_us = 0;
-    call HW.sd_spi_disable();
-    call HW.sd_off();
+    post sd_pwr_down_task();
+    sdc.sd_state = SDS_ON_TO_OFF;
   }
 
 
   async event void ResourceDefaultOwner.requested() {
-    if (sdc.sd_state != SDS_OFF) {
+    if (sdc.sd_state > SDS_ON_TO_OFF) {
       sd_panic(41, 0);
     }
     last_reset_start_time_us = call Platform.usecsRaw();

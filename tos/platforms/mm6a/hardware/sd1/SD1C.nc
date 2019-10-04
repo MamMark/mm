@@ -67,6 +67,9 @@ implementation {
   components new TimerMilliC() as SDTimer;
   SDdvrP.SDtimer -> SDTimer;
 
+  components CollectC;
+  SDdvrP.CollectEvent -> CollectC;
+
   components HplSD1C as HW;
   SDdvrP.HW -> HW;
 
