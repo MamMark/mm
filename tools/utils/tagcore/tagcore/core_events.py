@@ -38,6 +38,8 @@ __all__ = [
     'TIME_SRC',
     'IMG_MGR',
     'TIME_SKEW',
+    'SD_ON',
+    'SD_OFF',
     'GPS_BOOT',
     'GPS_BOOT_TIME',
     'GPS_BOOT_FAIL',
@@ -94,6 +96,8 @@ event_names = {
     17: 'TIME_SRC',
     18: 'IMG_MGR',
     19: 'TIME_SKEW',
+    20: 'SD_ON',
+    21: 'SD_OFF',
 
     32: 'GPS_BOOT',
     33: 'GPS_BOOT_TIME',
@@ -145,6 +149,8 @@ DCO_SYNC      = 16
 TIME_SRC      = 17
 IMG_MGR       = 18
 TIME_SKEW     = 19
+SD_ON         = 20
+SD_OFF        = 21
 GPS_BOOT      = 32
 GPS_BOOT_TIME = 33
 GPS_BOOT_FAIL = 34

@@ -264,6 +264,9 @@ typedef enum {
   DT_EVENT_IMG_MGR          = 18,       // ImageManager transitions
   DT_EVENT_TIME_SKEW        = 19,       // time set skew
 
+  DT_EVENT_SD_ON            = 20,       // SD turned on
+  DT_EVENT_SD_OFF           = 21,       // SD turned off
+
   /***********************************/
 
   DT_EVENT_GPS_BOOT         = 32,
@@ -303,7 +306,8 @@ typedef enum {
   DT_EVENT_GPS_SATS_7       = 67,
   DT_EVENT_GPS_SATS_41      = 68,
   DT_EVENT_GPS_PWR_OFF      = 69,
-  DT_EVENT_16               = 0xffff,
+
+  DT_EVENT_16               = 0xffff,   // make sure 2 bytes
 } dt_event_id_t;
 
 
