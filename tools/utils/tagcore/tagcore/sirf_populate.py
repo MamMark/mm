@@ -11,9 +11,9 @@ def decode_null(level, offset, buf, obj):
     return 0
 
 
-#                      EE_DECODER            EE_EMITTERS               EE_OBJECT                  EE_NAME         EE_OBJ_NAME
-sirf.ee56_table[5]  = (decode_default,     [ emit_ee56_bcastEph ],     obj_sirf_ee56_bcastEph(),  'eeBcastEph',   'obj_sirf_ee_sifStat')
-sirf.ee56_table[42] = (decode_default,     [ emit_ee56_sifStat ],      obj_sirf_ee56_sifStat(),   'eeSifStat',    'obj_sirf_ee_sifStat')
+#                        EE_DECODER            EE_EMITTERS               EE_OBJECT                  EE_NAME         EE_OBJ_NAME
+sirf.ee56_table[5]    = (decode_default,     [ emit_ee56_bcastEph ],     obj_sirf_ee56_bcastEph(),  'eeBcastEph',   'obj_sirf_ee_sifStat')
+sirf.ee56_table[42]   = (decode_default,     [ emit_default ],           obj_sirf_ee56_sifStat(),   'eeSifStat',    'obj_sirf_ee_sifStat')
 
 sirf.ee56_table[1]    = (decode_null, None, None, 'eeGPSDataEphemMask', 'none')
 sirf.ee56_table[2]    = (decode_null, None, None, 'eeIntegrity',        'none')
@@ -28,8 +28,29 @@ sirf.ee56_table[255]  = (decode_null, None, None, 'eeAck',              'none')
 sirf.stat70_table[1]  = (decode_null, None, None, 'statAlmanacRsp',     'none')
 sirf.stat70_table[2]  = (decode_null, None, None, 'statEphemerisRsp',   'none')
 
+sirf.tcxo93_table[1]  = (decode_default, [ emit_default ],               obj_tcxo93_clkModel(),   'tcxo93ClkModel',    'obj_tcxo93_clkModel')
+sirf.tcxo93_table[2]  = (decode_default, [ emit_default ],               obj_tcxo93_tempTable(),  'tcxo93tempTable',   'obj_tcxo93_tempTable')
+
+sirf.tcxo93_table[4]  = (decode_null, None, None, 'tcxoTemp',           'none')
+sirf.tcxo93_table[5]  = (decode_null, None, None, 'tcxoEARC',           'none')
+sirf.tcxo93_table[6]  = (decode_null, None, None, 'tcxoRTCalarm',       'none')
+sirf.tcxo93_table[7]  = (decode_null, None, None, 'tcxoRTCcalib',       'none')
+sirf.tcxo93_table[9]  = (decode_null, None, None, 'tcxoMPMsearch',      'none')
+sirf.tcxo93_table[10] = (decode_null, None, None, 'tcxoMPMprepos',      'none')
+sirf.tcxo93_table[11] = (decode_null, None, None, 'tcxoMicroNav',       'none')
+sirf.tcxo93_table[12] = (decode_null, None, None, 'tcxoUncert',         'none')
+sirf.tcxo93_table[13] = (decode_null, None, None, 'tcxoSysTime',        'none')
+
 sirf.stat212_table[1] = (decode_null, None, None, 'statAlmanacReq',     'none')
 sirf.stat212_table[2] = (decode_null, None, None, 'statEphemerisReq',   'none')
+
+#sirf.tcxo221_table[0] = (decode_default, [ emit_default ],               obj_tcxo221_clkOutCtl,   'tcxoClkOutCtrl',    'obj_tcxo221_clkOutCtl')
+#sirf.tcxo221_table[1] = (decode_default, [ emit_default ],               obj_tcxo221_clkDB,       'tcxoClkDB',         'obj_tcxo221_clkDB')
+sirf.tcxo221_table[0] = (decode_default, [ emit_default ],               None,                     'tcxoClkOutCtrl',    'obj_tcxo221_clkOutCtl')
+sirf.tcxo221_table[1] = (decode_default, [ emit_default ],               None,                     'tcxoClkDB',         'obj_tcxo221_clkDB')
+
+sirf.tcxo221_table[2] = (decode_null, None, None, 'tcxoClkTempTable',   'none')
+sirf.tcxo221_table[3] = (decode_null, None, None, 'tcxoTestMode',       'none')
 
 sirf.ee232_table[2]   = (decode_null, None, None, 'eePollEEstatus',     'none')
 sirf.ee232_table[25]  = (decode_null, None, None, 'eeGetEEage',         'none')
@@ -68,6 +89,7 @@ sirf.mid_table[64]  = (decode_sirf_nl64,   [ emit_sirf_nl64 ],         None,    
 sirf.mid_table[70]  = (decode_sirf_stat70, [ emit_sirf_stat70 ],       None,                      'status msgs',  'none, sub-objects')
 
 sirf.mid_table[90]  = (decode_default,     [ emit_sirf_pwr_mode_rsp ], obj_sirf_pwr_mode_rsp(),   'pwrRsp',       'obj_sirf_pwr_mode_rsp')
+sirf.mid_table[93]  = (decode_tcxo93,      [ emit_tcxo93 ],            None,                      'tcxo',         'none, sub-objects')
 sirf.mid_table[128] = (decode_default,     [ emit_default  ],          obj_sirf_init_data_src(),  'initDataSrc',  'obj_sirf_init_data_src')
 sirf.mid_table[130] = (decode_default,     [ emit_sirf_alm_set ],      obj_sirf_alm_set(),        'setAlmanac',   'obj_sirf_alm_set')
 sirf.mid_table[149] = (decode_default,     [ emit_sirf_ephem_set ],    obj_sirf_ephem_set(),      'setEphemeris', 'obj_sirf_ephem_set')
@@ -75,6 +97,7 @@ sirf.mid_table[166] = (decode_default,     [ emit_sirf_set_msg_rate ], obj_sirf_
 sirf.mid_table[212] = (decode_sirf_stat212,[ emit_sirf_stat212 ],      None,                      'status requests', 'none, sub-objects')
 sirf.mid_table[214] = (decode_default,     [ emit_default  ],          obj_sirf_hw_conf_rsp(),    'hwConfigRsp',  'obj_sirf_hw_conf_rsp')
 sirf.mid_table[218] = (decode_default,     [ emit_sirf_pwr_mode_req ], obj_sirf_pwr_mode_req(),   'pwrReq',       'obj_sirf_pwr_mode_req')
+sirf.mid_table[221] = (decode_tcxo221,     [ emit_tcxo221],            None,                      'tcxo ctrl',    'none, sub-objects')
 sirf.mid_table[225] = (decode_default,     [ emit_sirf_statistics ],   obj_sirf_statistics(),     'stats',        'obj_sirf_statistics')
 sirf.mid_table[232] = (decode_sirf_ee232,  [ emit_sirf_ee232 ],        None,                      'extEphem',     'none, sub-objects')
 sirf.mid_table[255] = (decode_default,     [ emit_sirf_dev_data ],     obj_sirf_dev_data(),       'devData',      'obj_sirf_dev_data')
@@ -113,7 +136,6 @@ sirf.mid_table[77]  = (decode_null, None, None, 'low pwr mode',             'non
 sirf.mid_table[88]  = (decode_null, None, None, 'unk_88',                   'none')
 sirf.mid_table[91]  = (decode_null, None, None, 'hw control out',           'none')
 sirf.mid_table[92]  = (decode_null, None, None, 'cw data',                  'none')
-sirf.mid_table[93]  = (decode_null, None, None, 'TCXO learning',            'none')
 sirf.mid_table[129] = (decode_null, None, None, 'set_nmea',                 'none')
 sirf.mid_table[131] = (decode_null, None, None, 'formated dump',            'none')
 sirf.mid_table[132] = (decode_null, None, None, 'send swver',               'none')
@@ -153,6 +175,5 @@ sirf.mid_table[215] = (decode_null, None, None, 'aiding',                   'non
 sirf.mid_table[216] = (decode_null, None, None, 'osp ack/nack/error/reject','none')
 sirf.mid_table[219] = (decode_null, None, None, 'hw control input',         'none')
 sirf.mid_table[220] = (decode_null, None, None, 'cw configuration',         'none')
-sirf.mid_table[221] = (decode_null, None, None, 'tcxo learning ctrl out',   'none')
 sirf.mid_table[233] = (decode_null, None, None, 'grf3i status',             'none')
 sirf.mid_table[234] = (decode_null, None, None, 'sensor control input',     'none')

@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Eric B. Decker
+# Copyright (c) 2018-2019 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@ packets
 
 import struct
 
-__version__ = '0.4.5'
+__version__ = '0.4.6.dev0'
 
 __all__ = [
     'MID_DECODER',
@@ -85,10 +85,12 @@ MID_NAME     = 3
 MID_OBJ_NAME = 4
 
 
-# ee{56,232}_table holds vectors for how to decode extended ephemeris
-# packets, mids 56 and 232.  EE_ defines are used to access the vectors
-# pulled from the tables.  The ee56 and ee232 tables contain the same
-# tuples.
+# Sid dispatch table, ee{56,232}, tcxo, etc.
+#
+# Each table holds vectors for how to decode extended ephemeris and tcxo
+# packets, mids 56, 93, 221, and 232.  EE_ defines are used to access the
+# vectors pulled from the tables.  The ee56, tcxo93, tcxo221, and ee232
+# tables contain the same tuples.
 
 ee56_table  = {}
 ee56_count  = {}
@@ -103,6 +105,9 @@ stat212_count = {}
 
 ee232_table = {}
 ee232_count = {}
+
+tcxo93_table  = {}
+tcxo221_table = {}
 
 EE_DECODER  = 0
 EE_EMITTERS = 1

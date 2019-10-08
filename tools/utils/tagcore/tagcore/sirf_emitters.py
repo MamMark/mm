@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Eric B. Decker
+# Copyright (c) 2018-2019 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@ import sirf_defs     as     sirf
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.4.6.dev0'
+__version__ = '0.4.6.dev1'
 
 
 def emit_default(level, offset, buf, obj):
@@ -306,8 +306,14 @@ def emit_sirf_nl64(level, offset, buf, obj):
 def emit_sirf_stat70(level, offset, buf, obj):
     emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.stat70_table, 'sirf_stat70')
 
+def emit_tcxo93(level, offset, buf, obj):
+    emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.tcxo93_table, 'tcxo93')
+
 def emit_sirf_stat212(level, offset, buf, obj):
     emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.stat212_table, 'sirf_stat212')
+
+def emit_tcxo221(level, offset, buf, obj):
+    emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.tcxo221_table, 'tcxo221')
 
 def emit_sirf_ee232(level, offset, buf, obj):
     emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee232_table, 'sirf_ee232')

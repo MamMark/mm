@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018 Eric B. Decker, Daniel J. Maltbie
+# Copyright (c) 2017-2019 Eric B. Decker, Daniel J. Maltbie
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev0'
+__version__ = '0.4.6.dev1'
 
 import binascii
 from   collections  import OrderedDict
@@ -500,6 +500,51 @@ def obj_sirf_pwr_mode_rsp():
     ]))
 
 
+# 56/42 sifStatus (sifStat)
+def obj_sirf_ee56_sifStat():
+    return aggie(OrderedDict([
+        ('sifState',            atom(('B',   '{}'))),
+        ('cgeePredState',       atom(('B',   '{}'))),
+        ('sifAiding',           atom(('B',   '{}'))),
+        ('sgeeDwnLoad',         atom(('B',   '{}'))),
+        ('cgeePredTimeLeft',    atom(('>I',  '{}'))),
+        ('cgeePredPendingMask', atom(('>I',  '0x{:04x}'))),
+        ('svidCGEEpred',        atom(('B',   '{}'))),
+        ('sgeeAgeValidity',     atom(('B',   '{}'))),
+        ('cgeeAgeValidity',     atom(('32s', '{}', binascii.hexlify))),
+    ]))
+
+
+# tcxo, 93/{1,2}
+def obj_tcxo93_clkModel():                              # 93/1
+    return aggie(OrderedDict([
+        ('source',           atom(('B',  '0x{:02x}'))),
+        ('ageRateUncert10',  atom(('B',  '{}'))),       # 0.1 scale
+        ('initOffUncert10',  atom(('B',  '{}'))),
+        ('spare0',           atom(('B',  '{}'))),
+        ('clkDrift',         atom(('>i', '{}'))),
+        ('tempUncert',       atom(('>H', '{}'))),
+        ('mfgWeek',          atom(('>H', '{}'))),
+        ('spare1',           atom(('>I', '{}'))),
+    ]))
+
+
+def obj_tcxo93_tempTable():                             # 93/2
+    return aggie(OrderedDict([
+        ('spare1',           atom(('>H', '{}'))),
+        ('offset',           atom(('>h', '{}'))),
+        ('globalMin',        atom(('>h', '{}'))),
+        ('globalMax',        atom(('>h', '{}'))),
+        ('firstWeek',        atom(('>H', '{}'))),
+        ('lastWeek',         atom(('>H', '{}'))),
+        ('lsb',              atom(('>H', '{}'))),
+        ('agingBin',         atom(('B',  '{}'))),
+        ('agingUpCnt',       atom(('>b',  '{}'))),
+        ('binCnt',           atom(('B',  '{}'))),
+        ('spare2',           atom(('B',  '{}'))),
+    ]))
+
+
 # init_data_src (128)
 def obj_sirf_init_data_src():
     return aggie(OrderedDict([
@@ -689,8 +734,14 @@ def decode_sirf_nl64(level, offset, buf, obj):
 def decode_sirf_stat70(level, offset, buf, obj):
     return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.stat70_table, 'sirf_stat70')
 
+def decode_tcxo93(level, offset, buf, obj):
+    return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.tcxo93_table, 'tcxo93')
+
 def decode_sirf_stat212(level, offset, buf, obj):
     return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee212_table, 'sirf_stat212')
+
+def decode_tcxo221(level, offset, buf, obj):
+    return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.tcxo221_table, 'tcxo221')
 
 def decode_sirf_ee232(level, offset, buf, obj):
     return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee232_table, 'sirf_ee232')

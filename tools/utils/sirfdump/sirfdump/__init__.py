@@ -6,4 +6,4 @@ sirfdump:  decode and display sirfbin messages
 # 0.0.1         Initial version
 # 0.0.2         switch over to tagcore
 
-__version__ = '0.0.2.dev0'
+__version__ = '0.0.3.dev1'
