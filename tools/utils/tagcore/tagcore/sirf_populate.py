@@ -90,7 +90,7 @@ sirf.mid_table[70]  = (decode_sirf_stat70, [ emit_sirf_stat70 ],       None,    
 
 sirf.mid_table[90]  = (decode_default,     [ emit_sirf_pwr_mode_rsp ], obj_sirf_pwr_mode_rsp(),   'pwrRsp',       'obj_sirf_pwr_mode_rsp')
 sirf.mid_table[93]  = (decode_tcxo93,      [ emit_tcxo93 ],            None,                      'tcxo',         'none, sub-objects')
-sirf.mid_table[128] = (decode_default,     [ emit_default  ],          obj_sirf_init_data_src(),  'initDataSrc',  'obj_sirf_init_data_src')
+sirf.mid_table[128] = (decode_default,     [ emit_sirf_init_data_src], obj_sirf_init_data_src(),  'initDataSrc',  'obj_sirf_init_data_src')
 sirf.mid_table[130] = (decode_default,     [ emit_sirf_alm_set ],      obj_sirf_alm_set(),        'setAlmanac',   'obj_sirf_alm_set')
 sirf.mid_table[149] = (decode_default,     [ emit_sirf_ephem_set ],    obj_sirf_ephem_set(),      'setEphemeris', 'obj_sirf_ephem_set')
 sirf.mid_table[166] = (decode_default,     [ emit_sirf_set_msg_rate ], obj_sirf_set_msg_rate(),   'setMsgRate',   'obj_sirf_set_msg_rate')

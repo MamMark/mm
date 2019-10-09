@@ -26,7 +26,7 @@ import sirf_defs     as     sirf
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6.dev2'
 
 
 def emit_default(level, offset, buf, obj):
@@ -332,6 +332,14 @@ def emit_ee56_bcastEph(level, offset, buf, obj):
 def emit_ee56_sifStat(level, offset, buf, obj):
     print()
     if (level >= 1):
+        print('    {}'.format(obj))
+
+
+# mid 128, init data source, restart or factory reset
+def emit_sirf_init_data_src(level, offset, buf, obj):
+    reset_config = obj['reset_config'].val
+    print('  (0x{:02x})'.format(reset_config))
+    if level >= 1:
         print('    {}'.format(obj))
 
 
