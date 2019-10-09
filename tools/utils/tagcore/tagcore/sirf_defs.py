@@ -100,8 +100,12 @@ nl64_count  = {}
 
 stat70_table  = {}
 stat70_count  = {}
+
 stat212_table = {}
 stat212_count = {}
+
+mid225_table = {}
+mid225_count = {}
 
 ee232_table = {}
 ee232_count = {}

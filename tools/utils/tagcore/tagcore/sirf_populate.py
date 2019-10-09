@@ -52,6 +52,13 @@ sirf.tcxo221_table[1] = (decode_default, [ emit_default ],               None,  
 sirf.tcxo221_table[2] = (decode_null, None, None, 'tcxoClkTempTable',   'none')
 sirf.tcxo221_table[3] = (decode_null, None, None, 'tcxoTestMode',       'none')
 
+sirf.mid225_table[6]  = (decode_default, [ emit_mid225_6_stats ],       obj_mid225_6_statistics(), 'mid225Stat6',     'obj_mid225_6_stats')
+sirf.mid225_table[7]  = (decode_null, None, None, 'mid225Stat7',        'none')
+sirf.mid225_table[32] = (decode_null, None, None, 'dlCompat',           'none')
+sirf.mid225_table[33] = (decode_null, None, None, 'dlTerm',             'none')
+sirf.mid225_table[34] = (decode_null, None, None, 'dlStatus',           'none')
+sirf.mid225_table[35] = (decode_null, None, None, 'dlRecord',           'none')
+
 sirf.ee232_table[2]   = (decode_null, None, None, 'eePollEEstatus',     'none')
 sirf.ee232_table[25]  = (decode_null, None, None, 'eeGetEEage',         'none')
 sirf.ee232_table[32]  = (decode_null, None, None, 'eeSifAidControl',    'none')
@@ -98,7 +105,7 @@ sirf.mid_table[212] = (decode_sirf_stat212,[ emit_sirf_stat212 ],      None,    
 sirf.mid_table[214] = (decode_default,     [ emit_default  ],          obj_sirf_hw_conf_rsp(),    'hwConfigRsp',  'obj_sirf_hw_conf_rsp')
 sirf.mid_table[218] = (decode_default,     [ emit_sirf_pwr_mode_req ], obj_sirf_pwr_mode_req(),   'pwrReq',       'obj_sirf_pwr_mode_req')
 sirf.mid_table[221] = (decode_tcxo221,     [ emit_tcxo221],            None,                      'tcxo ctrl',    'none, sub-objects')
-sirf.mid_table[225] = (decode_default,     [ emit_sirf_statistics ],   obj_sirf_statistics(),     'stats',        'obj_sirf_statistics')
+sirf.mid_table[225] = (decode_mid225,      [ emit_mid225 ],            None,                      'mid225',       'none, sub-objects')
 sirf.mid_table[232] = (decode_sirf_ee232,  [ emit_sirf_ee232 ],        None,                      'extEphem',     'none, sub-objects')
 sirf.mid_table[255] = (decode_default,     [ emit_sirf_dev_data ],     obj_sirf_dev_data(),       'devData',      'obj_sirf_dev_data')
 

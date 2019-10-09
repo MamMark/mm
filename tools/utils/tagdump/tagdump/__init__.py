@@ -3,9 +3,9 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.6.dev12'
+__version__ = '0.4.6.dev13'
 
-# 0.4.6.dev+, core_rev: 22/1:
+# 0.4.6.dev+, core_rev: 22/1+:
 #       o tagcore 0.4.6.dev2
 #       o add quiet switch
 #       o add --gps_eval, switch configuration, add gps_level.

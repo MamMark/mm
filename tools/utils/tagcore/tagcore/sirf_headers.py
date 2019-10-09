@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6.dev2'
 
 import binascii
 from   collections  import OrderedDict
@@ -607,9 +607,8 @@ def obj_sirf_pwr_mode_req():
 
 
 # statistics (225/6)
-def obj_sirf_statistics():
+def obj_mid225_6_statistics():
     return aggie(OrderedDict([
-        ('sid',             atom(('B',  '{}'))),
         ('ttff_reset',      atom(('>H', '{}'))),
         ('ttff_aiding',     atom(('>H', '{}'))),
         ('ttff_nav',        atom(('>H', '{}'))),
@@ -742,6 +741,9 @@ def decode_sirf_stat212(level, offset, buf, obj):
 
 def decode_tcxo221(level, offset, buf, obj):
     return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.tcxo221_table, 'tcxo221')
+
+def decode_mid225(level, offset, buf, obj):
+    return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.mid225_table, 'mid225')
 
 def decode_sirf_ee232(level, offset, buf, obj):
     return decode_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee232_table, 'sirf_ee232')

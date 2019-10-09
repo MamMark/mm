@@ -26,7 +26,7 @@ import sirf_defs     as     sirf
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.4.6.dev2'
+__version__ = '0.4.6.dev3'
 
 
 def emit_default(level, offset, buf, obj):
@@ -315,6 +315,9 @@ def emit_sirf_stat212(level, offset, buf, obj):
 def emit_tcxo221(level, offset, buf, obj):
     emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.tcxo221_table, 'tcxo221')
 
+def emit_mid225(level, offset, buf, obj):
+    emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.mid225_table, 'mid225')
+
 def emit_sirf_ee232(level, offset, buf, obj):
     emit_sirf_sid_dispatch(level, offset, buf, obj, sirf.ee232_table, 'sirf_ee232')
 
@@ -465,8 +468,8 @@ start_mode_names = {
 }
 
 
-def emit_sirf_statistics(level, offset, buf, obj):
-    sid             = obj['sid'].val
+def emit_mid225_6_stats(level, offset, buf, obj):
+    sid             = 6
     ttff_reset      = obj['ttff_reset'].val
     ttff_aiding     = obj['ttff_aiding'].val
     ttff_nav        = obj['ttff_nav'].val
