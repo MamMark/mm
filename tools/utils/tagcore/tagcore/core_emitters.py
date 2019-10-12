@@ -500,7 +500,7 @@ def emit_gps_time(level, offset, buf, obj):
     brt      = rtctime_str(rtctime)
 
     delta  = obj['delta'].val
-    tow    = obj['tow'].val
+    tow    = obj['tow1000'].val/float(1000)
     week_x = obj['week_x'].val
     year   = obj['utc_year'].val
     mon    = obj['utc_month'].val
@@ -517,7 +517,6 @@ def emit_gps_time(level, offset, buf, obj):
                       dt_name(xtype)), end = '')
 
     print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03}  {}/{:4.3f}  ({})'.format(
-        year, mon, day, hr, xmin, secs, ms, week_x, tow/1000., nsats))
 
 
 def get_satmask(prns):
@@ -529,6 +528,7 @@ def get_satmask(prns):
         bit = 1 << (prn - 1)
         satmask = satmask | bit
     return satmask
+        year, mon, day, hr, xmin, secs, ms, week_x, tow, nsats))
 
 
 def expand_satmask(satmask):
@@ -561,7 +561,7 @@ def emit_gps_geo(level, offset, buf, obj):
     alt_ell   = obj['alt_ell'].val/100.
     alt_msl   = obj['alt_msl'].val/100.
     satmask   = obj['sat_mask'].val
-    tow       = obj['tow'].val/1000.
+    tow       = obj['tow1000'].val/1000.
     week_x    = obj['week_x'].val
     nsats     = obj['nsats'].val
     add_mode  = obj['add_mode'].val
@@ -596,11 +596,11 @@ def emit_gps_xyz(level, offset, buf, obj):
     x     = obj['x'].val
     y     = obj['y'].val
     z     = obj['z'].val
-    tow   = obj['tow'].val
-    week  = obj['week'].val
+    tow   = obj['tow100'].val/float(100)
+    weekx = obj['week_x'].val
     m1    = obj['m1'].val
     m2    = obj['m2'].val
-    hdop5 = obj['hdop5'].val
+    hdop  = obj['hdop5'].val/5.
     nsats = obj['nsats'].val
     prns  = obj['prns'].val
 
@@ -609,7 +609,7 @@ def emit_gps_xyz(level, offset, buf, obj):
                       dt_name(xtype)), end = '')
 
     print('   x: {}  y: {}  z: {}  {}/{:4.2f}  ({})'.format(
-        x, y, z, week, tow/100., nsats))
+        x, y, z, weekx, tow, nsats))
 
     if (level >= 1):
         satmask = get_satmask(prns)
@@ -626,7 +626,7 @@ def emit_gps_trk(level, offset, buf, obj):
     brt      = rtctime_str(rtctime)
 
     delta  = obj['delta'].val
-    tow    = obj['tow'].val/float(100)
+    tow    = obj['tow100'].val/float(100)
     week10 = obj['week'].val
     chans  = obj['chans'].val
     good_sats = 0

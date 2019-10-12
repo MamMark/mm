@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev2'
+__version__ = '0.4.6.dev3'
 
 import binascii
 from   collections  import OrderedDict
@@ -184,14 +184,14 @@ def obj_sirf_nav():
         ('xpos',  atom(('>i', '{}'))),
         ('ypos',  atom(('>i', '{}'))),
         ('zpos',  atom(('>i', '{}'))),
-        ('xvel',  atom(('>h', '{}'))),
-        ('yvel',  atom(('>h', '{}'))),
-        ('zvel',  atom(('>h', '{}'))),
+        ('xvel8', atom(('>h', '{}'))),
+        ('yvel8', atom(('>h', '{}'))),
+        ('zvel8', atom(('>h', '{}'))),
         ('mode1', atom(('B', '0x{:02x}'))),
-        ('hdop',  atom(('B', '0x{:02x}'))),
+        ('hdop5', atom(('B', '0x{:02x}'))),
         ('mode2', atom(('B', '0x{:02x}'))),
         ('week10',atom(('>H', '{}'))),
-        ('tow',   atom(('>I', '{}'))),
+        ('tow100',atom(('>I', '{}'))),
         ('nsats', atom(('B', '{}'))),
         ('prns',  atom(('12s', '{}', binascii.hexlify))),
     ]))
@@ -201,7 +201,7 @@ def obj_sirf_nav():
 def obj_sirf_navtrk():
     return aggie(OrderedDict([
         ('week10', atom(('>H', '{}'))),
-        ('tow',    atom(('>I', '{}'))),
+        ('tow100', atom(('>I', '{}'))),
         ('chans',  atom(('B',  '{}'))),
     ]))
 
@@ -234,7 +234,7 @@ def obj_sirf_swver():
 def obj_sirf_clock_status():
     return aggie(OrderedDict([
         ('week_x',   atom(('>h', '{}'))),
-        ('tow',      atom(('>I', '{}'))),
+        ('tow100',   atom(('>I', '{}'))),
         ('nsats',    atom(('B', '{}'))),
         ('drift',    atom(('>I', '{}'))),
         ('bias',     atom(('>I', '{}'))),
@@ -425,7 +425,7 @@ def obj_sirf_geo():
         ('nav_valid',        atom(('>H', '0x{:04x}'))),
         ('nav_type',         atom(('>H', '0x{:04x}'))),
         ('week_x',           atom(('>H', '{}'))),
-        ('tow',              atom(('>I', '{}'))),
+        ('tow1000',          atom(('>I', '{}'))),
         ('utc_year',         atom(('>H', '{}'))),
         ('utc_month',        atom(('B', '{}'))),
         ('utc_day',          atom(('B', '{}'))),
@@ -455,7 +455,7 @@ def obj_sirf_geo():
         ('distance_err',     atom(('>H', '{}'))),
         ('head_err',         atom(('>H', '{}'))),
         ('nsats',            atom(('B', '{}'))),
-        ('hdop',             atom(('B', '{}'))),
+        ('hdop5',            atom(('B', '{}'))),
         ('additional_mode',  atom(('B', '0x{:02x}'))),
     ]))
 
@@ -552,7 +552,7 @@ def obj_sirf_init_data_src():
         ('ecef_y',           atom(('>i', '{}'))),
         ('ecef_z',           atom(('>i', '{}'))),
         ('clock_drift',      atom(('>i', '{}'))),
-        ('tow',              atom(('>I', '{}'))),
+        ('tow100',           atom(('>I', '{}'))),
         ('week_x',           atom(('>H', '{}'))),
         ('chans',            atom(('B',  '{}'))),
         ('reset_config',     atom(('B',  '0x{:02x}'))),

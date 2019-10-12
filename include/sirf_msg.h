@@ -103,14 +103,14 @@ typedef struct {
   int16_t   yvel;                       /* m/s * 8 */
   int16_t   zvel;                       /* m/s * 8 */
   uint8_t   mode1;                      /* see below */
-  uint8_t   hdop;                       /* * 5 */
+  uint8_t   hdop5;                      /* * 5 */
   uint8_t   mode2;                      /* see below */
-  uint16_t  week;                       /* gps week, 10 lsb, don't use */
-  uint32_t  tow;                        /* *100, time of week */
+  uint16_t  week10;                     /* gps week, 10 lsb, don't use */
+  uint32_t  tow100;                     /* *100, time of week */
   uint8_t   nsats;                      /* SVs in fix */
   uint8_t   data[0];
 
-  /* ch1 PRN - ch12 PRN - pseudo-random noise values */
+  /* ch1 PRN - ch12 PRN - pseudo-random noise values, sat ids */
 
 } PACKED sb_nav_data_t;
 
@@ -173,8 +173,8 @@ typedef struct {
   uint8_t   start2;
   uint16_t  len;
   uint8_t   mid;
-  uint16_t  week;                       /* modulo 1024 */
-  uint32_t  tow;                        /* time * 100 (ms) */
+  uint16_t  week10;                     /* modulo 1024 */
+  uint32_t  tow100;                     /* time * 100 (ms) */
   uint8_t   chans;
 
   /* for each chan:
@@ -202,7 +202,7 @@ typedef struct {
   uint16_t  len;
   uint8_t   mid;
   uint16_t  week_x;                     /* extended week */
-  uint32_t  tow;                        /* tow * 100 */
+  uint32_t  tow100;                     /* tow * 100 */
   uint8_t   nsats;
   uint32_t  drift;
   uint32_t  bias;
@@ -228,7 +228,7 @@ typedef struct {
   uint8_t   mid;
   uint8_t   satid;
   uint16_t  weekstatus;
-  uint8_t  data[0];
+  uint8_t   data[0];
 } PACKED sb_almanac_status_data_t;
 
 
@@ -274,7 +274,7 @@ typedef struct {
   uint16_t  nav_valid;                  /* bit mask */
   uint16_t  nav_type;
   uint16_t  week_x;                     /* extended */
-  uint32_t  tow;			/* seconds x 1e3 */
+  uint32_t  tow1000;                    /* seconds x 1e3 */
   uint16_t  utc_year;
   uint8_t   utc_month;
   uint8_t   utc_day;

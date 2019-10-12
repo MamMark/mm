@@ -386,8 +386,8 @@ typedef struct {
 
 typedef struct {
   uint32_t delta;                       /* microsecs  cur - cap time */
-  uint32_t tow;
-  uint16_t week_x;
+  uint32_t tow1000;                     /* tow * 1000, ms */
+  uint16_t week_x;                      /* extended gps week */
   uint16_t utc_year;
   uint8_t  utc_month;
   uint8_t  utc_day;
@@ -406,7 +406,7 @@ typedef struct {
   int32_t  alt_ell;                     /* ellipsoid */
   int32_t  alt_msl;                     /* mean sea level */
   uint32_t sat_mask;
-  uint32_t tow;
+  uint32_t tow1000;                     /* tow * 1000, ms */
   uint16_t week_x;                      /* week extended */
   uint8_t  nsats;
   uint8_t  add_mode;                    /* additional mode */
@@ -419,8 +419,8 @@ typedef struct {
   int32_t  x;
   int32_t  y;
   int32_t  z;
-  uint32_t tow;                         /* *100, time of week */
-  uint16_t week;                        /* gps week, 10 lsb, modulo */
+  uint32_t tow100;                      /* *100, time of week */
+  uint16_t week_x;                      /* gps week, extended */
   uint8_t  m1;                          /* see below */
   uint8_t  m2;                          /* see below */
   uint8_t  hdop5;                       /* hdop * 5 */
@@ -475,8 +475,8 @@ typedef struct {
 
 typedef struct {
   uint32_t delta;                       /* microsecs  cur - cap time */
-  uint32_t tow;                         /* time * 100 (ms)  */
-  uint16_t week;                        /* modulo 1024, gps */
+  uint32_t tow100;                      /* time * 100 (ms)  */
+  uint16_t week10;                      /* modulo 1024, gps */
   uint16_t chans;                       /* number of channels, 0 - 12 */
 } dt_gps_trk_t;
 

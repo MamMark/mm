@@ -26,7 +26,7 @@ import sirf_defs     as     sirf
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.4.6.dev3'
+__version__ = '0.4.6.dev4'
 
 
 def emit_default(level, offset, buf, obj):
@@ -52,24 +52,22 @@ def emit_sirf_nav_data(level, offset, buf, obj):
     xpos        = obj['xpos'].val
     ypos        = obj['ypos'].val
     zpos        = obj['zpos'].val
-    xvel        = obj['xvel'].val
-    yvel        = obj['yvel'].val
-    zvel        = obj['zvel'].val
+    xvel        = obj['xvel8'].val/float(8)
+    yvel        = obj['yvel8'].val/float(8)
+    zvel        = obj['zvel8'].val/float(8)
     mode1       = obj['mode1'].val
-    hdop        = obj['hdop'].val
+    hdop        = obj['hdop5'].val/float(5)
     mode2       = obj['mode2'].val
     week10      = obj['week10'].val
-    tow         = obj['tow'].val
+    tow         = obj['tow100'].val/float(100)
     nsats       = obj['nsats'].val
 
     print('    [{}]'.format(nsats))
 
     if (level >= 1):
-        print(rnav1a.format(nsats, xpos, ypos, zpos,
-                            xvel/float(8), yvel/float(8), zvel/float(8)))
-        print(rnav1b.format(mode1, mode2, week10, tow/float(100)))
-        print(rnav1c.format(buf_str(obj['prns'].val),
-                            hdop/float(5)))
+        print(rnav1a.format(nsats, xpos, ypos, zpos, xvel, yvel, zvel))
+        print(rnav1b.format(mode1, mode2, week10, tow))
+        print(rnav1c.format(buf_str(obj['prns'].val), hdop))
 
 
 ########################################################################
@@ -84,7 +82,7 @@ rnavtrkz = '    {:3}: az: {:3}  el: {:3}  state: {:#06x}  cno/s: {}'
 # mid 4 navtrk
 def emit_sirf_navtrk(level, offset, buf, obj):
     week10 = obj['week10'].val
-    tow    = obj['tow'].val/float(100)
+    tow    = obj['tow100'].val/float(100)
     chans  = obj['chans'].val
     good_sats = 0
     for n in range(chans):
@@ -203,8 +201,7 @@ def emit_sirf_geo(level, offset, buf, obj):
     nav_valid   = obj['nav_valid'].val
     nav_type    = obj['nav_type'].val
     xweek       = obj['week_x'].val
-    tow         = obj['tow'].val
-    tow         = tow/float(1000)
+    tow         = obj['tow1000'].val/float(1000)
     utc_year    = obj['utc_year'].val
     utc_month   = obj['utc_month'].val
     utc_day     = obj['utc_day'].val
@@ -250,7 +247,7 @@ def emit_sirf_geo(level, offset, buf, obj):
     distance_err= obj['distance_err'].val
     head_err    = obj['head_err'].val
     nsats       = obj['nsats'].val
-    hdop        = obj['hdop'].val
+    hdop        = obj['hdop5'].val
     additional_mode \
                 = obj['additional_mode'].val
 
@@ -270,7 +267,7 @@ def emit_sirf_geo(level, offset, buf, obj):
 
     if (level >= 2):
         print()
-        print(rgeo2a.format(nav_valid, nav_type, xweek, obj['tow'].val))
+        print(rgeo2a.format(nav_valid, nav_type, xweek, obj['tow1000'].val))
         print(rgeo2b.format(utc_year, utc_month, utc_day, utc_hour, utc_min,
                             obj['utc_ms'].val, sat_mask))
         print(rgeo2c.format(lat, lon, obj['alt_elipsoid'].val,

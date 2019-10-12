@@ -399,7 +399,7 @@ def obj_dt_gps_time():
     return aggie(OrderedDict([
         ('gps_hdr',   obj_dt_gps_hdr()),
         ('delta',     atom(('<I', '{}'))),
-        ('tow',       atom(('<I', '{}'))),
+        ('tow1000',   atom(('<I', '{}'))),
         ('week_x',    atom(('<H', '{}'))),
         ('utc_year',  atom(('<H', '{}'))),
         ('utc_month', atom(('<B', '{}'))),
@@ -422,7 +422,7 @@ def obj_dt_gps_geo():
         ('alt_ell',   atom(('<i', '{}'))),
         ('alt_msl',   atom(('<i', '{}'))),
         ('sat_mask',  atom(('<I', '0x{:08x}'))),
-        ('tow',       atom(('<I', '{}'))),
+        ('tow1000',   atom(('<I', '{}'))),
         ('week_x',    atom(('<H', '{}'))),
         ('nsats',     atom(('<B', '{}'))),
         ('add_mode',  atom(('<B', '0x{:02x}'))),
@@ -438,8 +438,8 @@ def obj_dt_gps_xyz():
         ('x',         atom(('<i', '{}'))),
         ('y',         atom(('<i', '{}'))),
         ('z',         atom(('<i', '{}'))),
-        ('tow',       atom(('<I', '{}'))),
-        ('week',      atom(('<H', '{}'))),
+        ('tow100',    atom(('<I', '{}'))),
+        ('week_x',    atom(('<H', '{}'))),
         ('m1',        atom(('<B', '0x{:02x}'))),
         ('m2',        atom(('<B', '0x{:02x}'))),
         ('hdop5',     atom(('<B', '{}'))),
@@ -471,7 +471,7 @@ def obj_dt_gps_trk():
     return aggie(OrderedDict([
         ('gps_hdr',   obj_dt_gps_hdr()),
         ('delta',     atom(('<I', '{}'))),
-        ('tow',       atom(('<I', '{}'))),
+        ('tow100',    atom(('<I', '{}'))),
         ('week',      atom(('<H', '{}'))),
         ('chans',     atom(('<H', '{}'))),
     ]))

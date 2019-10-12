@@ -1310,11 +1310,11 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       xdtp->x      = CF_BE_32(np->xpos);
       xdtp->y      = CF_BE_32(np->ypos);
       xdtp->z      = CF_BE_32(np->zpos);
-      xdtp->tow    = CF_BE_32(np->tow);
-      xdtp->week   = CF_BE_16(np->week);
+      xdtp->tow100 = CF_BE_32(np->tow100);
+      xdtp->week_x = CF_BE_16(np->week10) + 2048;
       xdtp->m1     = np->mode1;
       xdtp->m2     = np->mode2;
-      xdtp->hdop5  = np->hdop;
+      xdtp->hdop5  = np->hdop5;
       xdtp->nsats  = np->nsats;
       for (i = 0; i < 12; i++)          /* are there always 12 datams? */
         xdtp->prns[i] = np->data[i];
@@ -1364,10 +1364,10 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     tdtp = &m_track.dt_block.dt;
     call Rtc.copyTime(&m_track.rt, rtp);
 
-    tdtp->tow   = CF_BE_32(tp->tow);
-    tdtp->week  = CF_BE_16(tp->week);
-    tdtp->chans = tp->chans;
-    tedtp       = &m_track.dt_block.sats[0];
+    tdtp->tow100 = CF_BE_32(tp->tow100);
+    tdtp->week10 = CF_BE_16(tp->week10);
+    tdtp->chans  = tp->chans;
+    tedtp        = &m_track.dt_block.sats[0];
 
     for (i = 0; i < 12; i++) {
       sb_elem      = &tp->sats[i];
@@ -1480,7 +1480,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     if (nav_valid == 0) {
       tdtp = &m_time.dt;
       call Rtc.copyTime(&m_time.rt, rtp);       /* last seen */
-      tdtp->tow       = CF_BE_32(gp->tow);
+      tdtp->tow1000   = CF_BE_32(gp->tow1000);
       tdtp->week_x    = CF_BE_16(gp->week_x);
       tdtp->utc_year  = CF_BE_16(gp->utc_year);
       tdtp->utc_month = gp->utc_month;
@@ -1520,7 +1520,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       gdtp->alt_ell   = CF_BE_32(gp->alt_elipsoid);
       gdtp->alt_msl   = CF_BE_32(gp->alt_msl);
       gdtp->sat_mask  = CF_BE_32(gp->sat_mask);
-      gdtp->tow       = CF_BE_32(gp->tow);
+      gdtp->tow1000   = CF_BE_32(gp->tow1000);
       gdtp->week_x    = CF_BE_16(gp->week_x);
       gdtp->nsats     = gp->nsats;
       gdtp->add_mode  = gp->additional_mode;
