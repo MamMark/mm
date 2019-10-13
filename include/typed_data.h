@@ -419,13 +419,13 @@ typedef struct {
   int32_t  x;
   int32_t  y;
   int32_t  z;
+  uint32_t sat_mask;
   uint32_t tow100;                      /* *100, time of week */
   uint16_t week_x;                      /* gps week, extended */
   uint8_t  m1;                          /* see below */
   uint8_t  m2;                          /* see below */
   uint8_t  hdop5;                       /* hdop * 5 */
   uint8_t  nsats;                       /* SVs in fix */
-  uint8_t  prns[12];                    /* <nsats> x svids */
 } dt_gps_xyz_t;
 
 

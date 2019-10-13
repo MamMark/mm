@@ -517,17 +517,6 @@ def emit_gps_time(level, offset, buf, obj):
                       dt_name(xtype)), end = '')
 
     print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03}  {}/{:4.3f}  ({})'.format(
-
-
-def get_satmask(prns):
-    satmask = 0
-    for c in prns:
-        prn = ord(c)
-        if prn == 0:
-            continue
-        bit = 1 << (prn - 1)
-        satmask = satmask | bit
-    return satmask
         year, mon, day, hr, xmin, secs, ms, week_x, tow, nsats))
 
 
@@ -596,13 +585,13 @@ def emit_gps_xyz(level, offset, buf, obj):
     x     = obj['x'].val
     y     = obj['y'].val
     z     = obj['z'].val
+    sats  = obj['sat_mask'].val
     tow   = obj['tow100'].val/float(100)
     weekx = obj['week_x'].val
     m1    = obj['m1'].val
     m2    = obj['m2'].val
     hdop  = obj['hdop5'].val/5.
     nsats = obj['nsats'].val
-    prns  = obj['prns'].val
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
@@ -612,10 +601,9 @@ def emit_gps_xyz(level, offset, buf, obj):
         x, y, z, weekx, tow, nsats))
 
     if (level >= 1):
-        satmask = get_satmask(prns)
         print('    ',  end = '')
-        print('m1: {:02x}  m2: {:02x}  hdop: {:4.1f}  [{}]  ({:08x})'.format(
-            m1, m2, hdop5/5., expand_satmask(satmask), satmask))
+        print('m1: {:02x}  hdop: {:4.1f}  [{}]  ({:08x})'.format(
+            m1, hdop, expand_satmask(sats), sats))
 
 
 def emit_gps_trk(level, offset, buf, obj):

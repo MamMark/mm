@@ -438,13 +438,13 @@ def obj_dt_gps_xyz():
         ('x',         atom(('<i', '{}'))),
         ('y',         atom(('<i', '{}'))),
         ('z',         atom(('<i', '{}'))),
+        ('sat_mask',  atom(('<I', '0x{:08x}'))),
         ('tow100',    atom(('<I', '{}'))),
         ('week_x',    atom(('<H', '{}'))),
         ('m1',        atom(('<B', '0x{:02x}'))),
         ('m2',        atom(('<B', '0x{:02x}'))),
         ('hdop5',     atom(('<B', '{}'))),
         ('nsats',     atom(('<B', '{}'))),
-        ('prns',      atom(('12s', '{}', binascii.hexlify))),
     ]))
 
 

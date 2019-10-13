@@ -1285,7 +1285,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     uint64_t       epoch;
     uint32_t       cur_secs,   cap_secs;
     uint32_t       cur_micros, cap_micros;
-    uint32_t       delta;
+    uint32_t       delta, sat_mask;
     rtctime_t      cur_time;
 
     if (!np || CF_BE_16(np->len) != NAVDATA_LEN)
@@ -1316,8 +1316,11 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       xdtp->m2     = np->mode2;
       xdtp->hdop5  = np->hdop5;
       xdtp->nsats  = np->nsats;
+      sat_mask = 0;
       for (i = 0; i < 12; i++)          /* are there always 12 datams? */
-        xdtp->prns[i] = np->data[i];
+        if (np->data[i])
+          sat_mask |= (1 << (np->data[i] - 1));
+      xdtp->sat_mask = sat_mask;
 
       epoch = call Rtc.rtc2epoch(rtp);
       cap_secs   = epoch >> 32;
