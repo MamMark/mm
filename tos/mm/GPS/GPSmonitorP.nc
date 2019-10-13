@@ -1313,7 +1313,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       xdtp->tow100 = CF_BE_32(np->tow100);
       xdtp->week_x = CF_BE_16(np->week10) + 2048;
       xdtp->m1     = np->mode1;
-      xdtp->m2     = np->mode2;
       xdtp->hdop5  = np->hdop5;
       xdtp->nsats  = np->nsats;
       sat_mask = 0;

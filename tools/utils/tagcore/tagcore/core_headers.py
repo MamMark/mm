@@ -442,7 +442,6 @@ def obj_dt_gps_xyz():
         ('tow100',    atom(('<I', '{}'))),
         ('week_x',    atom(('<H', '{}'))),
         ('m1',        atom(('<B', '0x{:02x}'))),
-        ('m2',        atom(('<B', '0x{:02x}'))),
         ('hdop5',     atom(('<B', '{}'))),
         ('nsats',     atom(('<B', '{}'))),
     ]))

@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev8'
+__version__ = '0.4.6.dev9'
 
 from   ctypes       import c_int32
 
@@ -589,7 +589,6 @@ def emit_gps_xyz(level, offset, buf, obj):
     tow   = obj['tow100'].val/float(100)
     weekx = obj['week_x'].val
     m1    = obj['m1'].val
-    m2    = obj['m2'].val
     hdop  = obj['hdop5'].val/5.
     nsats = obj['nsats'].val
 

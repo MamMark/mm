@@ -423,7 +423,6 @@ typedef struct {
   uint32_t tow100;                      /* *100, time of week */
   uint16_t week_x;                      /* gps week, extended */
   uint8_t  m1;                          /* see below */
-  uint8_t  m2;                          /* see below */
   uint8_t  hdop5;                       /* hdop * 5 */
   uint8_t  nsats;                       /* SVs in fix */
 } dt_gps_xyz_t;
@@ -443,19 +442,9 @@ typedef struct {
 #define SB_NAV_M1_PMODE_SV2KF           2
 #define SB_NAV_M1_PMODE_SV3KF           3
 #define SB_NAV_M1_PMODE_SVODKF          4
-#define SB_NAV_M1_PMODE_2D              5
-#define SB_NAV_M1_PMODE_3D              6
+#define SB_NAV_M1_PMODE_2DLSQ           5
+#define SB_NAV_M1_PMODE_3DLSQ           6
 #define SB_NAV_M1_PMODE_DR              7
-
-/* TricklePower Mode */
-#define SB_NAV_M1_TPMODE_FULL           0x00
-#define SB_NAV_M1_TPMODE_TRICKLE        0x08
-
-/* Altitude Mode */
-#define SB_NAV_M1_ALTMODE_NONE          0x00
-#define SB_NAV_M1_ALTMODE_KFHOLD        0x10
-#define SB_NAV_M1_ALTMODE_USERHOLD      0x20
-#define SB_NAV_M1_ALTMODE_ALWAYS        0x30
 
 /* Dilution of Precision */
 #define SB_NAV_M1_DOPMASK_OK            0x00
@@ -463,14 +452,7 @@ typedef struct {
 
 /* Differential GPS */
 #define SB_NAV_M1_DGPS_NONE             0x00
-#define SB_NAV_M1_DGPS_APPLIED          0x80
-
-
-/* MODE2, bit map */
-/* for the time being, we don't care about M2 */
-#define SB_NAV_M2_SOL_VALIDATED         0x02
-#define SB_NAV_M2_VEL_INVALID           0x10
-#define SB_NAV_M2_ALTHOLD_DISABLED      0x20
+#define SB_NAV_M1_DGPS                  0x80
 
 
 typedef struct {
