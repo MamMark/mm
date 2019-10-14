@@ -1673,6 +1673,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case 9:   msg = sirf_9_off;   break;
       case 51:  msg = sirf_51_off;  break;
       case 92:  msg = sirf_92_off;  break;
+
+      /* 93 doesn't respond to msg off */
       case 93:  msg = sirf_93_off;  break;
     }
     if (msg) {
