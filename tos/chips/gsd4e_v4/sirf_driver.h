@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, 2017-2018 Eric B. Decker
+ * Copyright (c) 2008, 2010, 2017-2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -67,7 +67,8 @@
  * 0x08             - factory reset,   default port config
  * 0x0c             - factory reset,   osp, 115200, clear eerom
  * 0x0d             - factory reset,   osp, 115200, preserve eerom
- * 0x30             - gps restart,     navlib/debug
+ * 0x12             - warmstart, navlib
+ * 0x30             - gps restart,     navlib/debug, hotstart
  * 0x38             - factory reset,   navlib/debug
  * 0x80             - gps/sys restart
  */
@@ -106,6 +107,38 @@ const uint8_t sirf_factory_clear[] = {
   0xb0, 0xb3,
 };
 
+const uint8_t sirf_warmstart_noinit[] = {
+  0xa0, 0xa2,
+  0x00, 0x19,
+  128,                          // init data source (reset) (0x80)
+  0, 0, 0, 0,                   // ecef x
+  0, 0, 0, 0,                   // ecef y
+  0, 0, 0, 0,                   // ecef z
+  0, 0, 0, 0,                   // drift
+  0, 0, 0, 0,                   // tow - ms (*100)
+  0, 0,                         // xweek (extended week
+  12,                           // nchannels, always 12
+  0x02,                         // reset mask, warmstart (no ephem)
+  0x00, 0x8e,
+  0xb0, 0xb3,
+};
+
+const uint8_t sirf_warmstart_navlib_noinit[] = {
+  0xa0, 0xa2,
+  0x00, 0x19,
+  128,                          // init data source (reset) (0x80)
+  0, 0, 0, 0,                   // ecef x
+  0, 0, 0, 0,                   // ecef y
+  0, 0, 0, 0,                   // ecef z
+  0, 0, 0, 0,                   // drift
+  0, 0, 0, 0,                   // tow - ms (*100)
+  0, 0,                         // xweek (extended week
+  12,                           // nchannels, always 12
+  0x12,                         // reset mask, warmstart (no ephem), navlib
+  0x00, 0x9e,
+  0xb0, 0xb3,
+};
+
 const uint8_t sirf_swver[] = {
   0xa0, 0xa2,
   0x00, 0x02,
@@ -123,6 +156,25 @@ const uint8_t sirf_sbas_enable[] = {
   0, 0, 0, 0,                   // beacon freq (n.u.)
   0,                            // beacon bit rate (n.u.)
   0x00, 0x86,                   // checksum
+  0xb0, 0xb3,                   // end seq
+};
+
+const uint8_t sirf_set_mode_degrade[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x0E,                   // length 14
+  136,                          // set mode
+  0, 0,                         // reserved
+  3,                            // degraded mode, accept 3 SV solutions
+  1,                            // position calc mode
+  0,                            // reserved
+  0, 0,                         // altitude for alt hold
+  0,                            // alt hold mode
+  0,                            // alt hold src, last computed
+  0,                            // reserved
+  5,                            // degraded time out
+  0,                            // DR time out
+  0,                            // Meas/Track smoothing
+  0x00, 0x91,                   // checksum
   0xb0, 0xb3,                   // end seq
 };
 
@@ -167,6 +219,12 @@ const uint8_t sirf_4_on[] = {           /* navtrack */
   0xa0, 0xa2, 0x00, 0x08,
   166,  0,    4,    1,    0, 0, 0, 0,
   0x00, 0xab, 0xb0, 0xb3,
+};
+
+const uint8_t sirf_7_on[] = {           /* clk status   */
+  0xa0, 0xa2, 0x00, 0x08,               /* enable 1/sec */
+  166,  0,    7,   1,    0, 0, 0, 0,
+  0x00, 0xae, 0xb0, 0xb3,
 };
 
 const uint8_t sirf_9_off[] = {          /* cpu  thruput */
@@ -306,6 +364,36 @@ const uint8_t sirf_almanac_status[] = {
   0xb0, 0xb3                    // end seq
 };
 
+
+const uint8_t sirf_timefreq_status[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x02,                   // length 2
+  212,  4,                      // time frequency status
+  0x0f,                         // time status, time accuracy
+                                // freq status, approx position
+  0x00, 0xe7,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+
+const uint8_t sirf_poll_almanac[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x02,                   // length 2
+  146,                          // poll almanac
+  00,                           // control not used
+  0x00, 0x92,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
+
+const uint8_t sirf_poll_ephemeris[] = {
+  0xa0, 0xa2,                   // start seq
+  0x00, 0x03,                   // length 3
+  147,                          // poll ephemeris
+  00,                           // sv_id, 0 for all
+  00,                           // control not used
+  0x00, 0x93,                   // checksum
+  0xb0, 0xb3                    // end seq
+};
 
 /*
  * hw_config_rsp: respond to hw_config_req
