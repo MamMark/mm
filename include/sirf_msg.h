@@ -309,6 +309,10 @@ typedef struct {
 } PACKED sb_geodetic_t;
 
 
+#define SB_GEO_TYPE_MASK 0x7
+#define SB_GEO_TYPE_NONE 0
+
+
 /* MID 52, 1PPS data */
 typedef struct {
   uint8_t   start1;

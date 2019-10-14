@@ -165,8 +165,8 @@ gps_mon_events = {
     'msg':           5,
     'ots_no':        6,
     'ots_yes':       7,
-    'lock_pos':      8,
-    'lock_time':     9,
+    'fix':           8,
+    'time':          9,
     'lpm':           10,
     'lpm_error':     11,
     'timeout_minor': 12,
@@ -184,8 +184,8 @@ gps_mon_events = {
     5:                  'msg',
     6:                  'ots_no',
     7:                  'ots_yes',
-    8:                  'lock_pos',
-    9:                  'lock_time',
+    8:                  'fix',
+    9:                  'time',
     10:                 'lpm',
     11:                 'lpm_error',
     12:                 'timeout_minor',
@@ -247,7 +247,7 @@ gps_mon_majors = {
     'sats_startup':     3,
     'sats_collect':     4,
     'time_collect':     5,
-    'lock_delay':       6,
+    'fix_delay':        6,
 
     0:                  'idle',
     1:                  'cycle',
@@ -255,7 +255,7 @@ gps_mon_majors = {
     3:                  'sats_startup',
     4:                  'sats_collect',
     5:                  'time_collect',
-    6:                  'lock_delay',
+    6:                  'fix_delay',
 }
 
 def gps_mon_major_name(major_state):

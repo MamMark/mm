@@ -99,8 +99,8 @@ typedef enum mon_events {
   MON_EV_MSG            = 5,
   MON_EV_OTS_NO         = 6,
   MON_EV_OTS_YES        = 7,
-  MON_EV_LOCK_POS       = 8,
-  MON_EV_LOCK_TIME      = 9,
+  MON_EV_FIX            = 8,
+  MON_EV_TIME           = 9,
   MON_EV_LPM            = 10,
   MON_EV_LPM_ERROR      = 11,
   MON_EV_TIMEOUT_MINOR  = 12,
@@ -138,7 +138,7 @@ typedef enum {
   GMS_MAJOR_SATS_STARTUP   = 3,         /* SATS Startup, Collect   */
   GMS_MAJOR_SATS_COLLECT   = 4,         /* SATS Collection         */
   GMS_MAJOR_TIME_COLLECT   = 5,         /* TIME sync Collection    */
-  GMS_MAJOR_LOCK_DELAY     = 6,         /* CYCLE to IDLE delay after lock */
+  GMS_MAJOR_FIX_DELAY      = 6,         /* CYCLE to IDLE delay after fix */
   GMS_MAJOR_MAX            = 6,
 } gpsm_major_state_t;                   /* gps monitor major state */
 

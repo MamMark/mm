@@ -64,8 +64,8 @@
  * LP_COLLECT   collecting fixes to help MPM or low pwr heal.
  * SATS_COLLECT collecting fixes for almanac and ephemis collection
  * TIME_COLLECT collecting fixes when doing time syncronization
- * LOCK_DELAY   leaving CYCLE due to lock seen, staying up just a bit more.
- *              Usually to let status msgs be seen after lock.
+ * FIX_DELAY    leaving CYCLE due to fix seen, staying up just a bit more.
+ *              Usually to let status msgs be seen after a fix.
  */
 
 
@@ -81,12 +81,12 @@
  * define GPS_USE_MPM to use MPM mode of the SirfStarIV for low power,
  *     otherwise, low power mode is standby vs. MPM.
  *
- * define GPS_LOCK_ENDS_CYCLE to enable receipt of a lock, either lock_pos
- *     or lock_time, to end the cycle and enter low power.
+ * define GPS_FIX_ENDS_CYCLE to enable receipt of a FIX, either FIX
+ *     or TIME, to end the cycle and enter low power.
  */
 
 //#define GPS_USE_MPM
-#define GPS_LOCK_ENDS_CYCLE
+#define GPS_FIX_ENDS_CYCLE
 
 #ifndef PANIC_GPS
 enum {
@@ -105,12 +105,16 @@ enum {
 #define GPS_MON_COLLECT_DEADMAN     16384
 
 /*
- * 60 secs, we have observed slow start up times of around 60 secs, so for
- * now use a max_cycle of 1 min.
+ * 60 secs, we have observed slow start up times of around 60 secs, so for now
+ * use a max_cycle of 1 min.  We end the cycle at first fix.  (non-zero mode)
  */
 #define GPS_MON_MAX_CYCLE_TIME      ( 1 * 60 * 1024)
 #define GPS_MON_LPM_COLLECT_TIME    ( 1 * 60 * 1024)
-#define GPS_MON_LOCK_DELAY_TIME     (      2 * 1024)
+#define GPS_MON_FIX_DELAY_TIME      (      5 * 1024)
+
+//#define GPS_MON_MAX_CYCLE_TIME      ( 5 * 60 * 1024)
+//#define GPS_MON_LPM_COLLECT_TIME    ( 1 * 60 * 1024)
+//#define GPS_MON_FIX_DELAY_TIME      ( 5 * 60 * 1024)
 
 // 5 mins
 #define GPS_MON_SATS_STARTUP_TIME   ( 5 * 60 * 1024)
@@ -135,7 +139,7 @@ enum {
  *              to let mpm stablize.
  *
  * cycle_time   time from wake up to next sleep (low pwr mode).
- *              Window allowed for normal cycle, looking for locks.
+ *              Window allowed for normal cycle, looking for fixes.
  *              (uses MajorTimer)
  *
  * mon_sleep    when in low pwr mode, how long to stay asleep before next fix.
@@ -197,7 +201,7 @@ typedef struct {
   gpsm_major_state_t major_state;           /* monitor major state */
   uint16_t           retry_count;
   uint16_t           msg_count;             /* used to tell if we are seeing msgs */
-  bool               lock_seen;             /* lock seen in current cycle */
+  bool               fix_seen;              /* fix seen in current cycle */
   txq_state_t        txq_state;             /* state of txq system */
   uint8_t            txq_head;              /* index of next message to go out */
   uint8_t            txq_nxt;               /* index of next entry of queue */
@@ -464,7 +468,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case GMS_BOOTING:                 /* or 1st boot */
         gmcb.msg_count   = 0;
         gmcb.retry_count = 0;
-        gmcb.lock_seen   = FALSE;
+        gmcb.fix_seen   = FALSE;
         minor_change_state(GMS_CONFIG, MON_EV_STARTUP);
         call GPSControl.logStats();
         txq_send((void *) sirf_swver);
@@ -843,12 +847,15 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
-  void maj_ev_lock(mon_event_t ev) {
+  void maj_ev_fix(mon_event_t ev) {
     switch(gmcb.major_state) {
       default:                          /* ignore by default */
         return;
 
       case GMS_MAJOR_SATS_STARTUP:
+        /* only TIME (over-determined) gets us out */
+        if (ev != MON_EV_TIME)
+          return;
         major_change_state(GMS_MAJOR_CYCLE, ev);
         call CollectEvent.logEvent(DT_EVENT_GPS_FIRST_LOCK,
                 call MajorTimer.getNow() - cycle_start, cycle_start, 0, 0);
@@ -858,14 +865,16 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         return;
 
       case GMS_MAJOR_CYCLE:
-#ifdef GPS_LOCK_ENDS_CYCLE
-        if (ev == MON_EV_LOCK_TIME) {
-          major_change_state(GMS_MAJOR_LOCK_DELAY, ev);
-          call CollectEvent.logEvent(DT_EVENT_GPS_LOCK,
-                                     call MajorTimer.getNow() - cycle_start, cycle_start, 0, 0);
-          call MajorTimer.startOneShot(GPS_MON_LOCK_DELAY_TIME);
-          minor_event(MON_EV_MAJOR_CHANGED);
-        }
+#ifdef GPS_FIX_ENDS_CYCLE
+#ifdef GPS_TIME_ENDS_CYCLE
+        if (ev != MON_EV_TIME)
+          return;
+#endif
+        major_change_state(GMS_MAJOR_FIX_DELAY, ev);
+        call CollectEvent.logEvent(DT_EVENT_GPS_FIX,
+                                   call MajorTimer.getNow() - cycle_start, cycle_start, 0, 0);
+        call MajorTimer.startOneShot(GPS_MON_FIX_DELAY_TIME);
+        minor_event(MON_EV_MAJOR_CHANGED);
 #endif
         return;
     }
@@ -897,20 +906,23 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         minor_event(MON_EV_MAJOR_CHANGED);
         return;
 
+      case GMS_MAJOR_SATS_STARTUP:
       case GMS_MAJOR_CYCLE:
       case GMS_MAJOR_LPM_COLLECT:
-      case GMS_MAJOR_LOCK_DELAY:
+      case GMS_MAJOR_FIX_DELAY:
         gmcb.msg_count = 0;
         call MajorTimer.startOneShot(GPS_MON_SLEEP);
         major_change_state(GMS_MAJOR_IDLE, MON_EV_TIMEOUT_MAJOR);
         minor_event(MON_EV_MAJOR_CHANGED);
         return;
 
+#ifdef notdef
       case GMS_MAJOR_SATS_STARTUP:
         major_change_state(GMS_MAJOR_SATS_STARTUP, MON_EV_TIMEOUT_MAJOR);
         call MajorTimer.startOneShot(GPS_MON_SATS_STARTUP_TIME);
         minor_event(MON_EV_MAJOR_CHANGED);
         return;
+#endif
     }
   }
 
@@ -927,7 +939,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case GMS_MAJOR_SATS_STARTUP:
       case GMS_MAJOR_LPM_COLLECT:
       case GMS_MAJOR_TIME_COLLECT:
-      case GMS_MAJOR_LOCK_DELAY:
+      case GMS_MAJOR_FIX_DELAY:
         call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
         major_change_state(GMS_MAJOR_CYCLE, MON_EV_CYCLE);
         minor_event(MON_EV_MAJOR_CHANGED);
@@ -949,8 +961,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         gps_panic(101, gmcb.major_state, ev);
 
       case MON_EV_STARTUP:          maj_ev_startup();       return;
-      case MON_EV_LOCK_POS:
-      case MON_EV_LOCK_TIME:        maj_ev_lock(ev);        return;
+      case MON_EV_FIX:
+      case MON_EV_TIME:             maj_ev_fix(ev);         return;
       case MON_EV_LPM_ERROR:        maj_ev_lpm_error();     return;
       case MON_EV_TIMEOUT_MAJOR:    maj_ev_timeout_major(); return;
       case MON_EV_CYCLE:            maj_ev_cycle();         return;
@@ -1096,7 +1108,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         TELL = 1;
         cycle_start = call MajorTimer.getNow();
         cycle_count++;
-        gmcb.lock_seen = FALSE;
+        gmcb.fix_seen = FALSE;
         mon_pulse_comm_check(MON_EV_MAJOR_CHANGED);
         break;
     }
@@ -1196,19 +1208,19 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
   void mon_ev_ots_yes()  { }
 
-  void mon_ev_lock(mon_event_t ev) {
+  void mon_ev_fix(mon_event_t ev) {
     uint32_t elapsed;
 
-    gmcb.lock_seen = TRUE;
+    gmcb.fix_seen = TRUE;
 
     /*
-     * when looking for first lock, cycle_count will be zero
+     * when looking for first fix, cycle_count will be zero
      * (haven't actually started a cycle (happens out of LPM)).
      *
-     * if cycle_count is 0 we are looking for first lock. (SATS_STARTUP).
+     * if cycle_count is 0 we are looking for first fix. (SATS_STARTUP).
      * leave cycle_count alone and let the major state change grab it.
      */
-    if (ev == MON_EV_LOCK_TIME && cycle_count && cycle_start) {
+    if (cycle_count && cycle_start) {
       elapsed = call MajorTimer.getNow() - cycle_start;
       cycle_sum += elapsed;
       call CollectEvent.logEvent(DT_EVENT_GPS_LTFF_TIME, cycle_count,
@@ -1263,8 +1275,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case MON_EV_MSG:              mon_ev_msg();           return;
       case MON_EV_OTS_NO:           mon_ev_ots_no();        return;
       case MON_EV_OTS_YES:          mon_ev_ots_yes();       return;
-      case MON_EV_LOCK_POS:
-      case MON_EV_LOCK_TIME:        mon_ev_lock(ev);        return;
+      case MON_EV_FIX:
+      case MON_EV_TIME:             mon_ev_fix(ev);         return;
       case MON_EV_LPM:              mon_ev_lpm();           return;
       case MON_EV_LPM_ERROR:        mon_ev_lpm_error();     return;
       case MON_EV_TIMEOUT_MINOR:    mon_ev_timeout_minor(); return;
@@ -1300,11 +1312,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       last_nsats_count--;
 
     pmode = np->mode1 & SB_NAV_M1_PMODE_MASK;
-    if (pmode >= SB_NAV_M1_PMODE_SV2KF && pmode <= SB_NAV_M1_PMODE_SVODKF) {
-      /*
-       * we consider a valid fix anywhere from a 2D (2SV KF fix) to an over
-       * determined >= 5 sat fix.
-       */
+    if (pmode) {
+      /* any nonzero mode is a valid fix. */
       xdtp = &m_xyz.dt;
       call Rtc.copyTime(&m_xyz.rt, rtp);
       xdtp->x      = CF_BE_32(np->xpos);
@@ -1341,7 +1350,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       gps_block.dir     = GPS_DIR_RX;
       call Collect.collect((void *) &gps_block, sizeof(gps_block),
                            (void *) xdtp, sizeof(*xdtp));
-      minor_event(MON_EV_LOCK_POS);
+      minor_event(MON_EV_FIX);
     }
   }
 
@@ -1479,7 +1488,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     } else
       last_nsats_count--;
 
-    if (nav_valid == 0) {
+    if ((nav_type & SB_GEO_TYPE_MASK) != 0) {   /* its some kind of fix */
       tdtp = &m_time.dt;
       call Rtc.copyTime(&m_time.rt, rtp);       /* last seen */
       tdtp->tow1000   = CF_BE_32(gp->tow1000);
@@ -1578,7 +1587,11 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       }
 
       /* tell the monitor we have lock */
-      minor_event(MON_EV_LOCK_TIME);
+      if (nav_valid == 0) {             /* overdetermined */
+        minor_event(MON_EV_TIME);
+        return;
+      }
+      minor_event(MON_EV_FIX);
     }
   }
 
