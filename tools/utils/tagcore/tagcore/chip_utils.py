@@ -90,6 +90,7 @@ sirf_trk_bits = {
 }
 
 def expand_trk_state_short(state, off_char = ''):
+    if state == 0: return ' nostate'
     rtn = ''
     for i in range(7, -1, -1):
         bitset = True if (state & (1 << i)) else False

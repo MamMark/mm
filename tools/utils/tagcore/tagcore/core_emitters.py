@@ -28,6 +28,9 @@ from   ctypes       import c_int32
 from   core_rev     import *
 from   dt_defs      import *
 
+# fix_name, expand_satmask, expand_trk_state
+from   chip_utils   import *
+
 from   core_events  import *                    # get event_ids
 from   core_events  import event_name
 from   core_headers import rtc_src_name
@@ -518,21 +521,6 @@ def emit_gps_time(level, offset, buf, obj):
 
     print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03}  {}/{:4.3f}  ({})'.format(
         year, mon, day, hr, xmin, secs, ms, week_x, tow, nsats))
-
-
-def expand_satmask(satmask):
-    result = ''
-    if satmask == 0:
-        return result
-    for i in range(32):
-        if satmask & (1 << i):
-            result = '{}'.format(i+1)
-            ni = i+1
-            break
-    for i in range(ni, 32):
-        if satmask & (1 << i):
-            result += ' {}'.format(i+1)
-    return result
 
 
 def emit_gps_geo(level, offset, buf, obj):

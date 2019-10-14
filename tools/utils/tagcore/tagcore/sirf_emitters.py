@@ -23,6 +23,10 @@ from   __future__         import print_function
 
 from   sirf_defs     import *
 import sirf_defs     as     sirf
+from   chip_utils    import fix_name
+from   chip_utils    import expand_satmask
+from   chip_utils    import expand_trk_state_short
+from   chip_utils    import expand_trk_state_long
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
