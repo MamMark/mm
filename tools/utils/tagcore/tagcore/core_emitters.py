@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev9'
+__version__ = '0.4.6.dev10'
 
 from   ctypes       import c_int32
 

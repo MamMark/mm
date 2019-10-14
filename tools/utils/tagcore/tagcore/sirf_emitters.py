@@ -30,7 +30,7 @@ from   chip_utils    import expand_trk_state_long
 from   misc_utils    import buf_str
 from   misc_utils    import dump_buf
 
-__version__ = '0.4.6.dev4'
+__version__ = '0.4.6.dev5'
 
 
 def emit_default(level, offset, buf, obj):
