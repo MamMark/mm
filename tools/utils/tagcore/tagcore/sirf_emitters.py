@@ -48,7 +48,7 @@ def emit_default(level, offset, buf, obj):
 # raw nav strings for output
 
 rnav1a = '    NAV_DATA: nsats: {}, x/y/z (m): {}/{}/{}  vel (m/s): {}/{}/{}'
-rnav1b = '    mode1: {:#02x}  mode2: {:#02x}  week10: {}  tow (s): {}'
+rnav1b = '    mode1: {:#02x}  mode2: {:#02x}  gps10: {}/{:.3f}'
 rnav1c = '    prns: {} hdop: {}'
 
 # mid 2 navdata
@@ -66,7 +66,9 @@ def emit_sirf_nav_data(level, offset, buf, obj):
     tow         = obj['tow100'].val/float(100)
     nsats       = obj['nsats'].val
 
-    print('    [{}]'.format(nsats))
+    fix = mode1 & 7
+    fix_str = fix_name(fix)
+    print('   {:5s}  [{}]'.format(fix_str, nsats))
 
     if (level >= 1):
         print(rnav1a.format(nsats, xpos, ypos, zpos, xvel, yvel, zvel))
@@ -78,10 +80,10 @@ def emit_sirf_nav_data(level, offset, buf, obj):
 #
 # raw nav track strings for output
 
-rnavtrk1 = '    NAV_TRACK: week10: {}  tow: {}s  chans: {}'
-rnavtrkx = '    {:3}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno (avg): {}'
-rnavtrky = '    {:3}: az: {:5.1f}  el: {:4.1f}  state: {:#06x}  cno/s: {}'
-rnavtrkz = '    {:3}: az: {:3}  el: {:3}  state: {:#06x}  cno/s: {}'
+rnavtrk1 = '    NAV_TRACK: {}/{:.3f}s  chans: {}'
+rnavtrkx = '    {:3}: az: {:5.1f}  el: {:4.1f}  state: {:#04x}  {:7}  cno (avg): {}'
+rnavtrky = '    {:3}: az: {:5.1f}  el: {:4.1f}  state: {:#04x}  cno/s: {}'
+rnavtrkz = '    {:3}: az: {:3}  el: {:3}  state: {:#04x}  cno/s: {}'
 
 # mid 4 navtrk
 def emit_sirf_navtrk(level, offset, buf, obj):
@@ -94,27 +96,33 @@ def emit_sirf_navtrk(level, offset, buf, obj):
            obj[n]['sv_id'] <= 32 and \
            obj[n]['cno_avg'] > 20.0:
             good_sats += 1
-    print('   [{}]'.format(good_sats))
+    print('         [{}]'.format(good_sats))
     if (level >= 1):
         print(rnavtrk1.format(week10, tow, chans))
         for n in range(chans):
             if (obj[n]['cno_avg']):
+                state = obj[n]['state']
                 print(rnavtrkx.format(obj[n]['sv_id'],
                                       obj[n]['sv_az23']*3.0/2.0,
                                       obj[n]['sv_el2']/2.0,
-                                      obj[n]['state'],
+                                      state, expand_trk_state_short(state),
                                       obj[n]['cno_avg']))
     if (level >= 2):
         print()
         for n in range(chans):
             cno_str = ''
+            state = obj[n]['state']
             for i in range(10):
                 cno_str += ' {:2}'.format(obj[n]['cno'+str(i)])
             print(rnavtrky.format(obj[n]['sv_id'],
                                   obj[n]['sv_az23']*3.0/2.0,
                                   obj[n]['sv_el2']/2.0,
-                                  obj[n]['state'],
+                                  state,
                                   cno_str))
+            if state:
+                print('                        ', end='')
+                print('             ', end='')
+                print('{:#4x} {}'.format(state, expand_trk_state_long(state)))
     if (level >= 3):
         print()
         print('raw:')
@@ -175,7 +183,7 @@ def emit_sirf_ots(level, offset, buf, obj):
 
 def emit_sirf_vis(level, offset, buf, obj):
     num_sats = obj['vis_sats'].val
-    print('    [{}]'.format(num_sats))
+    print('          [{}]'.format(num_sats))
     sats = [ obj[n]['sv_id'] for n in range(num_sats) ]
     if level >= 1:
         print('    {:<2} sats: {}'.format(num_sats, " ".join(map(str, sats))))
@@ -189,9 +197,9 @@ def emit_sirf_vis(level, offset, buf, obj):
 #
 # raw geo strings for output
 
-rgeo1a = '    GEO_DATA: xweek: {:4} tow: {:10}s, utc: {}/{:02}/{:02}-{:02}:{:02}:{:02}.{}'
+rgeo1a = '    GEO_DATA:     {:4}/{}s, utc: {}/{:02}/{:02}-{:02}:{:02}:{:02}.{:03}'
 rgeo1b = '    lat/long: {:>16s}  {:>16s}, alt(e): {:7.2f} m  alt(msl): {:7.2f} m'
-rgeo1c = '    {:6}  {:10s}                                   {:8.2f} ft          {:8.2f} ft'
+rgeo1c = '    {:53}{:8.2f} ft          {:8.2f} ft'
 
 rgeo2a = '    nav_valid: 0x{:04x}  nav_type: 0x{:04x}  xweek: {:4}  tow: {:10}'
 rgeo2b = '    utc: {}/{:02}/{:02}-{:02}:{:02}.{}      sat_mask: 0x{:08x}'
@@ -254,20 +262,15 @@ def emit_sirf_geo(level, offset, buf, obj):
     hdop        = obj['hdop5'].val
     additional_mode \
                 = obj['additional_mode'].val
-
-    if (nav_valid & 1):
-        print(' nl', end = '')
-        lock_str = 'nolock'
-    else:
-        print('  L', end = '')
-        lock_str = 'lock'
-    print(' [{}]'.format(nsats))
+    fix = nav_type & 7
+    fix_str = fix_name(fix)
+    print('   {:5}  [{}]'.format(fix_str, nsats))
     if (level >= 1):
         print(rgeo1a.format(xweek, tow, utc_year, utc_month, utc_day,
                             utc_hour, utc_min, utc_sec, utc_ms))
         print(rgeo1b.format(lat_str, lon_str, alt_elipsoid, alt_msl))
-        print(rgeo1c.format(lock_str, '({} sats)'.format(nsats),
-                            alt_e_ft, alt_msl_ft))
+        sat_str = '{} sats ({}) [{}]'.format(nsats, fix_str, expand_satmask(sat_mask))
+        print(rgeo1c.format(sat_str, alt_e_ft, alt_msl_ft))
 
     if (level >= 2):
         print()

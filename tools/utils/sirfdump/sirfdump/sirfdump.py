@@ -35,6 +35,7 @@ import sys
 import struct
 
 from   tagcore                  import *
+import tagcore.core_rev         as     vers
 from   tagcore.sirf_defs        import *
 import tagcore.sirf_defs        as     sirf
 from   tagcore.sirf_headers     import mids_w_sids
@@ -309,11 +310,13 @@ def dump(args):
     global total_records, total_bytes
 
     init_globals()
+    verbose = args.verbose if (args.verbose) else 0
+    debug   = args.debug   if (args.debug)   else 0
 
-    if (args.verbose and args.verbose >= 5):
+    if (debug or (args.verbose and args.verbose >= 5)):
         print(ver_str)
-        print('  decode_base: {}  sirf_defs: {}'.format(db_ver, sb_ver))
-        print('  sirf:     e: {}  h: {}'.format(se_ver, sh_ver))
+        print('  base:        {}  sirf_defs: {}'.format(vers.base_ver, vers.sd_ver))
+        print('  sirf:     e: {}          h: {}'.format(vers.se_ver, vers.sh_ver))
         print()
 
     def count_mid(mid):
@@ -345,9 +348,6 @@ def dump(args):
 
     # create file object that handles both buffered and direct io
     infile  = tf.TagFile(args.input)
-
-    verbose = args.verbose if (args.verbose) else 0
-    debug   = args.debug   if (args.debug)   else 0
 
     if (args.jump):
         infile.seek(args.jump)

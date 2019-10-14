@@ -519,7 +519,7 @@ def emit_gps_time(level, offset, buf, obj):
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03}  {}/{:4.3f}  ({})'.format(
+    print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03}  {}/{:4.3f}         [{}]'.format(
         year, mon, day, hr, xmin, secs, ms, week_x, tow, nsats))
 
 
@@ -545,12 +545,13 @@ def emit_gps_geo(level, offset, buf, obj):
     ehpe      = obj['ehpe100'].val/100.
     hdop      = obj['hdop5'].val/5.
 
+    fix_type = nav_type & 7
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    print('   {:10.7f}  {:10.7f}      {}/{:4.3f}  ({})'.format(
-        lat, lon, week_x, tow, nsats))
+    print('   {:10.7f}  {:10.7f}      {}/{:4.3f}  {:5}  [{}]'.format(
+        lat, lon, week_x, tow, fix_name(fix_type), nsats))
 
     if (level >= 1):
         alt_ell_ft = alt_ell * 3.28084
@@ -584,7 +585,7 @@ def emit_gps_xyz(level, offset, buf, obj):
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    print('   x: {}  y: {}  z: {}  {}/{:4.2f}  ({})'.format(
+    print('   x: {}  y: {}  z: {}  {}/{:4.2f}  [{}]'.format(
         x, y, z, weekx, tow, nsats))
 
     if (level >= 1):
@@ -630,16 +631,17 @@ def emit_gps_trk(level, offset, buf, obj):
         good_sats, nz_sats, sat_min, xavg, sat_max))
 
     if level >= 1:
-        print('    NAV_TRACK: {}/{}  chans: {}'.format(
+        print('    NAV_TRACK: {}/{:.3f}s  chans: {}'.format(
             week10, tow, chans))
         for n in range(chans):
             svid    = obj[n]['svid']
             az      = obj[n]['az10']/10.0
             el      = obj[n]['el10']/10.0
+            state   = obj[n]['state']
             cno_avg = obj[n]['cno_avg']
             if cno_avg > 0.0 or level >= 2:
-                print('    {:3}: az: {:5.1f}  el: {:5.1f}  cno: {:4.1f}'.format(
-                    svid, az, el, cno_avg))
+                print('    {:3}: az: {:5.1f}  el: {:5.1f}  {:#04x} {:8}  cno: {:4.1f}'.format(
+                    svid, az, el, state, expand_trk_state_short(state), cno_avg))
 
     if level >= 2:
         print()
@@ -647,11 +649,15 @@ def emit_gps_trk(level, offset, buf, obj):
             svid    = obj[n]['svid']
             az      = obj[n]['az10']/10.0
             el      = obj[n]['el10']/10.0
+            state   = obj[n]['state']
             cno_str = ''
             for i in range(10):
                 cno_str += ' {:2}'.format(obj[n]['cno'+str(i)])
-            print('    {:3}: az: {:5.1f}  el: {:5.1f}  cno/s: {}'.format(
-                svid, az, el, cno_str))
+            print('    {:3}: az: {:5.1f}  el: {:5.1f}  {:#04x} {:8}  cno/s: {}'.format(
+                svid, az, el, state, expand_trk_state_short(state), cno_str))
+            if state:
+                print('                                    ', end='')
+                print('{}'.format(expand_trk_state_long(state)))
 
 
 ################################################################

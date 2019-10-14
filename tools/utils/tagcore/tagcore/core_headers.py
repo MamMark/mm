@@ -451,7 +451,7 @@ def obj_dt_gps_trk_element():
     return aggie(OrderedDict([
         ('az10',      atom(('<H', '{}'))),
         ('el10',      atom(('<H', '{}'))),
-        ('state',     atom(('2s', '{}'))),
+        ('state',     atom(('<H', '{}'))),
         ('svid',      atom(('<H', '{}'))),
         ('cno0',      atom(('B',  '{}'))),
         ('cno1',      atom(('B',  '{}'))),
