@@ -266,6 +266,8 @@ typedef enum {
 
   DT_EVENT_SD_ON            = 20,       // SD turned on
   DT_EVENT_SD_OFF           = 21,       // SD turned off
+  DT_EVENT_SSW_SD_REQ       = 22,       // SSW requesting SD access
+  DT_EVENT_SSW_SD_REL       = 23,       // SSW releasing SD
 
   /***********************************/
 

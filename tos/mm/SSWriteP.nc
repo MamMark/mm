@@ -111,8 +111,9 @@ implementation {
   /*
    * instrumentation for measuring how long things take.
    */
-  uint32_t ssw_delay_start;             // how long are we held off?
+  uint32_t ssw_delay;                   // how long are we held off?
   uint32_t ssw_write_grp_start;         // when we start the write of the group.
+  uint32_t ssw_sd_cycles;               // how many times we attempt to turn SD on
 
 #define ss_panic(where, arg) do { call Panic.panic(PANIC_SS, where, arg, 0, 0, 0); } while (0)
 
@@ -341,9 +342,12 @@ implementation {
     /*
      * something to actually write out to h/w.
      */
-    ssw_delay_start = call LocalTime.get();
+    ssw_delay = call LocalTime.get();
     ssc.state = SSW_REQUESTED;
+    ssw_sd_cycles++;
 
+    call CollectEvent.logEvent(DT_EVENT_SSW_SD_REQ, ssw_sd_cycles, 0,
+                               ssc.ssw_num_full, ssc.ssw_max_full);
     /* SDResource.request will all turn on the SD h/w when granted */
     if ((err = call SDResource.request()))
       ss_panic(20, err);
@@ -361,6 +365,7 @@ implementation {
       ss_panic(22, ssc.state);
 
     w_t0 = call LocalTime.get();
+    ssw_delay = w_t0 - ssw_delay;       /* for logging later */
     ssw_write_grp_start = w_t0;
     ssc.cur_handle->stamp = w_t0;
     ssc.cur_handle->buf_state = SS_BUF_STATE_WRITING;
@@ -368,6 +373,14 @@ implementation {
     err = call SDwrite.write(ssc.dblk, ssc.cur_handle->buf);
     if (err)
       ss_panic(23, err);
+  }
+
+
+  void ssw_log_release() {
+    w_t0 = call LocalTime.get();
+    w_diff = w_t0 - ssw_write_grp_start;
+    call CollectEvent.logEvent(DT_EVENT_SSW_SD_REL, ssw_sd_cycles, ssw_delay,
+                               ssc.ssw_num_full, w_diff);
   }
 
 
@@ -393,6 +406,7 @@ implementation {
       signal SS.dblk_stream_full();
       flush_buffers();
       ssc.state = SSW_IDLE;
+      ssw_log_release();
       if (call SDResource.release())
         ss_panic(25, 0);
       return;
@@ -402,7 +416,6 @@ implementation {
       /*
        * more work to do, stay in SSW_WRITING.
        */
-      w_t0 = call LocalTime.get();
       ssc.cur_handle->stamp = call LocalTime.get();
       ssc.cur_handle->buf_state = SS_BUF_STATE_WRITING;
       err = call SDwrite.write(ssc.dblk, ssc.cur_handle->buf);
@@ -410,10 +423,8 @@ implementation {
         ss_panic(26, err);
       return;
     }
-    w_t0 = call LocalTime.get();
-    w_diff = w_t0 - ssw_write_grp_start;
-
     ssc.state = SSW_IDLE;
+    ssw_log_release();
     if (call SDResource.release())
       ss_panic(27, 0);
   }
