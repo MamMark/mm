@@ -28,8 +28,8 @@ from   ctypes       import c_int32
 from   core_rev     import *
 from   dt_defs      import *
 
-# fix_name, expand_satmask, expand_trk_state
-from   chip_utils   import *
+# GPS_{OD_FIX, FIX_MASK}, gps_{fix_name, expand_satmask, expand_trk_state}
+from   gps_chip_utils import *
 
 from   core_events  import *                    # get event_ids
 from   core_events  import event_name
@@ -545,13 +545,14 @@ def emit_gps_geo(level, offset, buf, obj):
     ehpe      = obj['ehpe100'].val/100.
     hdop      = obj['hdop5'].val/5.
 
-    fix_type = nav_type & 7
+    # if nav_valid is 0 we are overdetermined.
+    fix_type = (nav_type & GPS_FIX_MASK) if nav_valid else GPS_OD_FIX
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
     print('   {:10.7f}  {:10.7f}      {}/{:4.3f}  {:5}  [{}]'.format(
-        lat, lon, week_x, tow, fix_name(fix_type), nsats))
+        lat, lon, week_x, tow, gps_fix_name(fix_type), nsats))
 
     if (level >= 1):
         alt_ell_ft = alt_ell * 3.28084
@@ -559,7 +560,8 @@ def emit_gps_geo(level, offset, buf, obj):
         # if nav_valid nonzero we don't have a valid fix (no lock)
         valid_str  = 'valid: x{:04x}  '.format(nav_valid) if nav_valid else ''
         print('    {}type: x{:04x}  ehpe: {}  hdop: {:4.1f}  [{}] ({:08x})'.format(
-            valid_str, nav_type, ehpe, hdop, expand_satmask(satmask), satmask), end = '')
+            valid_str, nav_type, ehpe, hdop, gps_expand_satmask(satmask),
+            satmask), end = '')
         print('  msl: {:3.1f} ({:3.1f})'.format(alt_msl_ft, alt_msl))
 
 
@@ -585,13 +587,15 @@ def emit_gps_xyz(level, offset, buf, obj):
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    print('   x: {}  y: {}  z: {}  {}/{:4.2f}  [{}]'.format(
-        x, y, z, weekx, tow, nsats))
+    fix     = m1 & GPS_FIX_MASK
+    fix_str = gps_fix_name(fix)
+    print('   {}/{}/{}     {}/{:4.3f}  {:6} [{}]'.format(
+        x, y, z, weekx, tow, fix_str, nsats))
 
     if (level >= 1):
         print('    ',  end = '')
         print('m1: {:02x}  hdop: {:4.1f}  [{}]  ({:08x})'.format(
-            m1, hdop, expand_satmask(sats), sats))
+            m1, hdop, gps_expand_satmask(sats), sats))
 
 
 def emit_gps_trk(level, offset, buf, obj):
@@ -641,7 +645,7 @@ def emit_gps_trk(level, offset, buf, obj):
             cno_avg = obj[n]['cno_avg']
             if cno_avg > 0.0 or level >= 2:
                 print('    {:3}: az: {:5.1f}  el: {:5.1f}  {:#04x} {:8}  cno: {:4.1f}'.format(
-                    svid, az, el, state, expand_trk_state_short(state), cno_avg))
+                    svid, az, el, state, gps_expand_trk_state_short(state), cno_avg))
 
     if level >= 2:
         print()
@@ -654,10 +658,10 @@ def emit_gps_trk(level, offset, buf, obj):
             for i in range(10):
                 cno_str += ' {:2}'.format(obj[n]['cno'+str(i)])
             print('    {:3}: az: {:5.1f}  el: {:5.1f}  {:#04x} {:8}  cno/s: {}'.format(
-                svid, az, el, state, expand_trk_state_short(state), cno_str))
+                svid, az, el, state, gps_expand_trk_state_short(state), cno_str))
             if state:
                 print('                                    ', end='')
-                print('{}'.format(expand_trk_state_long(state)))
+                print('{}'.format(gps_expand_trk_state_long(state)))
 
 
 ################################################################

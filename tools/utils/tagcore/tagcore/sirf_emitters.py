@@ -21,16 +21,13 @@
 
 from   __future__         import print_function
 
-from   sirf_defs     import *
-import sirf_defs     as     sirf
-from   chip_utils    import fix_name
-from   chip_utils    import expand_satmask
-from   chip_utils    import expand_trk_state_short
-from   chip_utils    import expand_trk_state_long
-from   misc_utils    import buf_str
-from   misc_utils    import dump_buf
+from   sirf_defs      import *
+import sirf_defs      as     sirf
+from   gps_chip_utils import *
+from   misc_utils     import buf_str
+from   misc_utils     import dump_buf
 
-__version__ = '0.4.6.dev5'
+__version__ = '0.4.6.dev6'
 
 
 def emit_default(level, offset, buf, obj):
@@ -66,8 +63,8 @@ def emit_sirf_nav_data(level, offset, buf, obj):
     tow         = obj['tow100'].val/float(100)
     nsats       = obj['nsats'].val
 
-    fix = mode1 & 7
-    fix_str = fix_name(fix)
+    fix     = mode1 & GPS_FIX_MASK
+    fix_str = gps_fix_name(fix)
     print('   {:5s}  [{}]'.format(fix_str, nsats))
 
     if (level >= 1):
@@ -105,7 +102,7 @@ def emit_sirf_navtrk(level, offset, buf, obj):
                 print(rnavtrkx.format(obj[n]['sv_id'],
                                       obj[n]['sv_az23']*3.0/2.0,
                                       obj[n]['sv_el2']/2.0,
-                                      state, expand_trk_state_short(state),
+                                      state, gps_expand_trk_state_short(state),
                                       obj[n]['cno_avg']))
     if (level >= 2):
         print()
@@ -122,7 +119,7 @@ def emit_sirf_navtrk(level, offset, buf, obj):
             if state:
                 print('                        ', end='')
                 print('             ', end='')
-                print('{:#4x} {}'.format(state, expand_trk_state_long(state)))
+                print('{:#4x} {}'.format(state, gps_expand_trk_state_long(state)))
     if (level >= 3):
         print()
         print('raw:')
@@ -262,14 +259,14 @@ def emit_sirf_geo(level, offset, buf, obj):
     hdop        = obj['hdop5'].val
     additional_mode \
                 = obj['additional_mode'].val
-    fix = nav_type & 7
-    fix_str = fix_name(fix)
+    fix = (nav_type & GPS_FIX_MASK) if nav_valid else GPS_OD_FIX
+    fix_str = gps_fix_name(fix)
     print('   {:5}  [{}]'.format(fix_str, nsats))
     if (level >= 1):
         print(rgeo1a.format(xweek, tow, utc_year, utc_month, utc_day,
                             utc_hour, utc_min, utc_sec, utc_ms))
         print(rgeo1b.format(lat_str, lon_str, alt_elipsoid, alt_msl))
-        sat_str = '{} sats ({}) [{}]'.format(nsats, fix_str, expand_satmask(sat_mask))
+        sat_str = '{} sats ({}) [{}]'.format(nsats, fix_str, gps_expand_satmask(sat_mask))
         print(rgeo1c.format(sat_str, alt_e_ft, alt_msl_ft))
 
     if (level >= 2):

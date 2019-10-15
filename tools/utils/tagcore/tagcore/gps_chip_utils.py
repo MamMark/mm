@@ -19,13 +19,15 @@
 
 '''gps chip utils, chip dependent'''
 
-__version__ = '0.4.6.dev0'
+__version__ = '0.4.6.dev1'
 
 __all__ = [
-    'fix_name',
-    'expand_satmask',
-    'expand_trk_state_short',
-    'expand_trk_state_long',
+    'GPS_OD_FIX',
+    'GPS_FIX_MASK',
+    'gps_fix_name',
+    'gps_expand_satmask',
+    'gps_expand_trk_state_short',
+    'gps_expand_trk_state_long',
 ]
 
 
@@ -36,6 +38,12 @@ __all__ = [
 # NavData shows up in mid2:mode1:ptype (low 7 bits) field.  Geo shows up in
 # mid41:nav_type:fix_type (low 7 bits).  Both ptype and fix_type have
 # exactly the same values.
+#
+# If a fix has been determined to be overdetermined the fix type can be
+# overridden to OD_FIX.
+
+GPS_OD_FIX = 8
+GPS_FIX_MASK = 0x07
 
 fix_names = {
     0:  'nofix',
@@ -46,22 +54,23 @@ fix_names = {
     5:  '2DLSQ',
     6:  '3DLSQ',
     7:  'DR',
+    8:  'OD',
 }
 
-def fix_name(fixtype):
+def gps_fix_name(fixtype):
     f_name = fix_names.get(fixtype, 'fix/' + str(fixtype))
     return f_name
 
-# expand_satmask(satmask): return string denoting what sats are in the satmask
+# gps_expand_satmask(satmask): return string denoting what sats are in the satmask
 #
 # SirfStarIV chips can report what satellites are used in a solution using
 # a satellite mask.  This only works for satellites 01 to 32.  A different
 # mechanism will need to be found for chips using higher PRNs for the
 # SVIDs.
 #
-# expand_satmask(0x00200100) returns '09 22'
+# gps_expand_satmask(0x00200100) returns '09 22'
 
-def expand_satmask(satmask):
+def gps_expand_satmask(satmask):
     if satmask == 0:
         return ''
     sat_str = ''
@@ -73,7 +82,7 @@ def expand_satmask(satmask):
     return sat_str
 
 
-# expand_trk_state(state): return expansion for a given bit
+# gps_expand_trk_state(state): return expansion for a given bit
 #
 # SirfStarIV trackers return a state bit field with the following meanings.
 # expand_trk_state returns a string representation of the state.
@@ -89,7 +98,7 @@ sirf_trk_bits = {
     7:  ('Ephemeris', 'e'),
 }
 
-def expand_trk_state_short(state, off_char = ''):
+def gps_expand_trk_state_short(state, off_char = ''):
     if state == 0: return ' nostate'
     rtn = ''
     for i in range(7, -1, -1):
@@ -98,7 +107,7 @@ def expand_trk_state_short(state, off_char = ''):
     return rtn
 
 
-def expand_trk_state_long(state, sep=' '):
+def gps_expand_trk_state_long(state, sep=' '):
     rtn = ''
     xsep = ''
     for i in range(7, -1, -1):
