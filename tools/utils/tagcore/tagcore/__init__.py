@@ -19,6 +19,8 @@ from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
 # 0.4.6.dev+    CR 22/+
+#       o DT_GPS_CLK, objs and emitter
+#
 #       o display more detail on ee50bpsBcastEph  56/5
 #       o only display gps_raw with -g4 or greater (gps_eval)
 #       o update gps_time, gps_geo to include nsats

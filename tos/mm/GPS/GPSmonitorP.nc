@@ -160,6 +160,13 @@ typedef struct {
 } gps_xyz_t;
 
 
+/* from MID 7, clock status */
+typedef struct {
+  rtctime_t    rt;
+  dt_gps_clk_t dt;
+} gps_clk_t;
+
+
 /* from MID 41, geodetic data */
 typedef struct {
   rtctime_t    rt;                      /* rtctime - last seen */
@@ -270,6 +277,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 #define LAST_NSATS_COUNT_INIT 10
 
   gps_xyz_t   m_xyz;
+  gps_clk_t   m_clk;
   gps_geo_t   m_geo;
   gps_time_t  m_time;
   gps_trk_t   m_track;
@@ -1471,6 +1479,52 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
 
   /*
+   * MID 7: CLOCK STATUS
+   */
+  void process_clk_status(sb_clock_status_data_t *csp, rtctime_t *rtp) {
+    dt_gps_t      gps_block;
+    dt_gps_clk_t *cdtp;
+
+    uint64_t      epoch;
+    uint32_t      cur_secs,   cap_secs;
+    uint32_t      cur_micros, cap_micros;
+    uint32_t      delta;
+    rtctime_t     cur_time;
+
+    if (!csp) return;
+
+    cdtp = &m_clk.dt;
+    call Rtc.copyTime(&m_clk.rt, rtp);
+    cdtp->week_x = CF_BE_16(csp->week_x);
+    cdtp->tow100 = CF_BE_32(csp->tow100);
+    cdtp->nsats  = csp->nsats;
+    cdtp->drift  = CF_BE_32(csp->drift);
+    cdtp->bias   = CF_BE_32(csp->bias);
+
+    epoch = call Rtc.rtc2epoch(rtp);
+    cap_secs   = epoch >> 32;
+    cap_micros = epoch & 0xffffffffUL;
+
+    call Rtc.getTime(&cur_time);
+    epoch      = call Rtc.rtc2epoch(&cur_time);
+    cur_secs   = epoch >> 32;
+    cur_micros = epoch & 0xffffffffUL;
+
+    delta = (cur_secs - cap_secs) * 1000000 + (cur_micros - cap_micros);
+    cdtp->capdelta = delta;
+
+    /* build the dt gps header */
+    gps_block.len = sizeof(gps_block) + sizeof(dt_gps_xyz_t);
+    gps_block.dtype = DT_GPS_CLK;
+    gps_block.mark_us = 0;
+    gps_block.chip_id = CHIP_GPS_GSD4E;
+    gps_block.dir     = GPS_DIR_RX;
+    call Collect.collect((void *) &gps_block, sizeof(gps_block),
+                         (void *) cdtp, sizeof(*cdtp));
+  }
+
+
+  /*
    * MID 18: Ok To Send (OTS)
    * 1st byte following the mid (data[0]) indicates yes (1) or no (0).
    */
@@ -1732,6 +1786,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         break;
       case MID_SWVER:
         process_swver((void *) sbp, arrival_rtp);
+        break;
+      case MID_CLOCKSTATUS:
+        process_clk_status((void *) sbp, arrival_rtp);
         break;
       case MID_OTS:
         process_ots((void *) sbp, arrival_rtp);

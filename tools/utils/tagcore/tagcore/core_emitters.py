@@ -665,6 +665,31 @@ def emit_gps_trk(level, offset, buf, obj):
                 print('{}'.format(gps_expand_trk_state_long(state)))
 
 
+def emit_gps_clk(level, offset, buf, obj):
+    xlen     = obj['gps_hdr']['hdr']['len'].val
+    xtype    = obj['gps_hdr']['hdr']['type'].val
+    recnum   = obj['gps_hdr']['hdr']['recnum'].val
+    rtctime  = obj['gps_hdr']['hdr']['rt']
+    brt      = rtctime_str(rtctime)
+
+    capdelta = obj['capdelta'].val
+    tow      = obj['tow100'].val/float(100)
+    weekx    = obj['week_x'].val
+    nsats    = obj['nsats'].val
+    drift    = obj['drift'].val
+    bias     = obj['bias'].val
+
+    print_hourly(rtctime)
+    print(rec0.format(offset, recnum, brt, xlen, xtype,
+                      dt_name(xtype)), end = '')
+    print('  {}/{:.3f}  {}  {}  [{}]'.format(
+        weekx, tow, drift, bias, nsats))
+
+
+    if level >= 1:
+        print('    CLK_STATUS: capture: {}'.format(capdelta))
+
+
 ################################################################
 #
 # SENSOR/SET decoders

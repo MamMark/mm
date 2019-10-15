@@ -447,6 +447,18 @@ def obj_dt_gps_xyz():
     ]))
 
 
+def obj_dt_gps_clk():
+    return aggie(OrderedDict([
+        ('gps_hdr',   obj_dt_gps_hdr()),
+        ('capdelta',  atom(('<i', '{}'))),
+        ('tow100',    atom(('<I', '{}'))),
+        ('drift',     atom(('<I', '{}'))),
+        ('bias',      atom(('<I', '{}'))),
+        ('week_x',    atom(('<H', '{}'))),
+        ('nsats',     atom(('B', '{}'))),
+    ]))
+
+
 def obj_dt_gps_trk_element():
     return aggie(OrderedDict([
         ('az10',      atom(('<H', '{}'))),

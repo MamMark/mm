@@ -85,6 +85,7 @@ typedef enum {
   DT_CONFIG		= 24,
   DT_GPS_PROTO_STATS    = 25,
   DT_GPS_TRK            = 26,
+  DT_GPS_CLK            = 27,
 
   /*
    * GPS_RAW is used to encapsulate data as received from the GPS.
@@ -349,6 +350,7 @@ typedef enum {
  *   DT_GPS_GEO
  *   DT_GPS_XYZ
  *   DT_GPS_TRK
+ *   DT_GPS_CLK
  *   DT_GPS_RAW_SIRFBIN
  *
  * Note: at one point we thought that we would be able to access the
@@ -380,7 +382,7 @@ typedef struct {
 
 
 /*
- * Data structures for GPS_GSD4E, TIME, GEO, and XYZ
+ * Data structures for GPS_GSD4E, TIME, GEO, XYZ, and CLK.
  *
  * All multi-byte structures are little endian and are translated from
  * the big endian SirfBin equivilent.
@@ -428,6 +430,15 @@ typedef struct {
   uint8_t  hdop5;                       /* hdop * 5 */
   uint8_t  nsats;                       /* SVs in fix */
 } dt_gps_xyz_t;
+
+typedef struct {                        /* clock status */
+  int32_t  capdelta;                    /* microsecs  cur - cap time */
+  uint32_t tow100;
+  uint32_t drift;                       /* drift in Hz */
+  uint32_t bias;                        /* bias in ns  */
+  uint16_t week_x;
+  uint8_t  nsats;
+} dt_gps_clk_t;
 
 
 /* MODE1, bit map */
