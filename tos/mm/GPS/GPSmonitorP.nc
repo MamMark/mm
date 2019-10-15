@@ -1354,7 +1354,10 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       xdtp->y      = CF_BE_32(np->ypos);
       xdtp->z      = CF_BE_32(np->zpos);
       xdtp->tow100 = CF_BE_32(np->tow100);
-      xdtp->week_x = CF_BE_16(np->week10) + 2048;
+      if (m_clk.dt.week_x != 0)
+        xdtp->week_x = m_clk.dt.week_x;
+      else
+        xdtp->week_x = CF_BE_16(np->week10) + 2048;
       xdtp->m1     = np->mode1;
       xdtp->hdop5  = np->hdop5;
       xdtp->nsats  = np->nsats;
