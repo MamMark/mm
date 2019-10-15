@@ -398,7 +398,7 @@ def obj_dt_gps_ver():
 def obj_dt_gps_time():
     return aggie(OrderedDict([
         ('gps_hdr',   obj_dt_gps_hdr()),
-        ('delta',     atom(('<I', '{}'))),
+        ('capdelta',  atom(('<i', '{}'))),
         ('tow1000',   atom(('<I', '{}'))),
         ('week_x',    atom(('<H', '{}'))),
         ('utc_year',  atom(('<H', '{}'))),
@@ -414,7 +414,7 @@ def obj_dt_gps_time():
 def obj_dt_gps_geo():
     return aggie(OrderedDict([
         ('gps_hdr',   obj_dt_gps_hdr()),
-        ('delta',     atom(('<I', '{}'))),
+        ('capdelta',  atom(('<i', '{}'))),
         ('nav_valid', atom(('<H', '0x{:02x}'))),
         ('nav_type',  atom(('<H', '0x{:02x}'))),
         ('lat',       atom(('<i', '{}'))),
@@ -434,7 +434,7 @@ def obj_dt_gps_geo():
 def obj_dt_gps_xyz():
     return aggie(OrderedDict([
         ('gps_hdr',   obj_dt_gps_hdr()),
-        ('delta',     atom(('<I', '{}'))),
+        ('capdelta',  atom(('<i', '{}'))),
         ('x',         atom(('<i', '{}'))),
         ('y',         atom(('<i', '{}'))),
         ('z',         atom(('<i', '{}'))),
@@ -469,7 +469,7 @@ def obj_dt_gps_trk_element():
 def obj_dt_gps_trk():
     return aggie(OrderedDict([
         ('gps_hdr',   obj_dt_gps_hdr()),
-        ('delta',     atom(('<I', '{}'))),
+        ('capdelta',  atom(('<i', '{}'))),
         ('tow100',    atom(('<I', '{}'))),
         ('week',      atom(('<H', '{}'))),
         ('chans',     atom(('<H', '{}'))),
@@ -487,10 +487,10 @@ def obj_dt_gps_trk():
 #
 def obj_dt_sen_data():
     return aggie(OrderedDict([
-        ('hdr',    obj_dt_hdr()),
-        ('delta',  atom(('<I', '{}'))),
-        ('sns_id', atom(('<H', '{}'))),
-        ('pad',    atom(('<H', '{}'))),
+        ('hdr',         obj_dt_hdr()),
+        ('sched_delta', atom(('<I', '{}'))),
+        ('sns_id',      atom(('<H', '{}'))),
+        ('pad',         atom(('<H', '{}'))),
     ]))
 
 obj_dt_sen_set  = obj_dt_hdr

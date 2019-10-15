@@ -502,7 +502,7 @@ def emit_gps_time(level, offset, buf, obj):
     rtctime  = obj['gps_hdr']['hdr']['rt']
     brt      = rtctime_str(rtctime)
 
-    delta  = obj['delta'].val
+    capdelta=obj['capdelta'].val
     tow    = obj['tow1000'].val/float(1000)
     week_x = obj['week_x'].val
     year   = obj['utc_year'].val
@@ -530,7 +530,7 @@ def emit_gps_geo(level, offset, buf, obj):
     rtctime  = obj['gps_hdr']['hdr']['rt']
     brt      = rtctime_str(rtctime)
 
-    delta     = obj['delta'].val
+    capdelta  = obj['capdelta'].val
     nav_valid = obj['nav_valid'].val
     nav_type  = obj['nav_type'].val
     lat       = obj['lat'].val/10000000.
@@ -572,7 +572,8 @@ def emit_gps_xyz(level, offset, buf, obj):
     rtctime  = obj['gps_hdr']['hdr']['rt']
     brt      = rtctime_str(rtctime)
 
-    delta = obj['delta'].val
+    capdelta \
+          = obj['capdelta'].val
     x     = obj['x'].val
     y     = obj['y'].val
     z     = obj['z'].val
@@ -605,10 +606,10 @@ def emit_gps_trk(level, offset, buf, obj):
     rtctime  = obj['gps_hdr']['hdr']['rt']
     brt      = rtctime_str(rtctime)
 
-    delta  = obj['delta'].val
-    tow    = obj['tow100'].val/float(100)
-    week10 = obj['week'].val
-    chans  = obj['chans'].val
+    capdelta  = obj['capdelta'].val
+    tow       = obj['tow100'].val/float(100)
+    week10    = obj['week'].val
+    chans     = obj['chans'].val
     good_sats = 0
     nz_sats   = 0
     sat_min   = 50.0
@@ -676,7 +677,7 @@ def emit_sensor_data(level, offset, buf, obj):
     rtctime  = obj['hdr']['rt']
     brt      = rtctime_str(rtctime)
 
-    delta    = obj['delta'].val
+    delta    = obj['sched_delta'].val
     sns_id   = obj['sns_id'].val
 
     print_hourly(rtctime)

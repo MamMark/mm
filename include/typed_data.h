@@ -387,7 +387,7 @@ typedef struct {
  */
 
 typedef struct {
-  uint32_t delta;                       /* microsecs  cur - cap time */
+  int32_t  capdelta;                    /* microsecs  cur - cap time */
   uint32_t tow1000;                     /* tow * 1000, ms */
   uint16_t week_x;                      /* extended gps week */
   uint16_t utc_year;
@@ -400,7 +400,7 @@ typedef struct {
 } dt_gps_time_t;
 
 typedef struct {
-  uint32_t delta;                       /* microsecs  cur - cap time */
+  int32_t  capdelta;                    /* microsecs  cur - cap time */
   uint16_t nav_valid;
   uint16_t nav_type;
   int32_t  lat;
@@ -417,7 +417,7 @@ typedef struct {
 } dt_gps_geo_t;
 
 typedef struct {
-  uint32_t delta;                       /* microsecs  cur - cap time */
+  int32_t  capdelta;                    /* microsecs  cur - cap time */
   int32_t  x;
   int32_t  y;
   int32_t  z;
@@ -458,7 +458,7 @@ typedef struct {
 
 
 typedef struct {
-  uint32_t delta;                       /* microsecs  cur - cap time */
+  int32_t  capdelta;                    /* microsecs  cur - cap time */
   uint32_t tow100;                      /* time * 100 (ms)  */
   uint16_t week10;                      /* modulo 1024, gps */
   uint16_t chans;                       /* number of channels, 0 - 12 */
