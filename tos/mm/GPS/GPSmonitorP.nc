@@ -1680,22 +1680,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
 
   /*
-   * MID 71: H/W Config Request
-   *
-   * respond to a h/w config request.  We send an empty
-   * h/w config response.
-   */
-  void process_hw_config_req(sb_header_t *sbh, rtctime_t *rtp) {
-    error_t err;
-
-//    err = txq_send((void *) sirf_hw_config_rsp);
-    err = 0;
-    call CollectEvent.logEvent(DT_EVENT_GPS_HW_CONFIG, err, 0,
-                               0, call GPSControl.awake());
-  }
-
-
-  /*
    * MID 90: Power Mode Response
    * response to sending a Pwr_Mode_Req, MPM or Full Power.
    */
@@ -1798,9 +1782,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         break;
       case MID_GEODETIC:
         process_geodetic((void *) sbp, arrival_rtp);
-        break;
-      case MID_HW_CONFIG_REQ:
-        process_hw_config_req((void *) sbp, arrival_rtp);
         break;
       case MID_PWR_MODE_RSP:
         process_pwr_rsp((void *) sbp, arrival_rtp);
