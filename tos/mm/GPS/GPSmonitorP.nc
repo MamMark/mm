@@ -217,18 +217,6 @@ typedef struct {
 } gps_monitor_control_t;
 
 
-int msg_index;
-
-const uint8_t *status_msgs[] = {
-  sirf_poll_ephemeris,
-  sirf_poll_almanac,
-  sirf_ephemeris_status,
-  sirf_almanac_status,
-  sirf_poll_clk_status,
-  NULL,
-};
-
-
 const uint8_t *config_msgs[] = {
   sirf_7_on,
   sirf_set_mode_degrade,
@@ -395,13 +383,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
   void enqueue_exit_status_msgs() {
-    if (status_msgs[msg_index] == NULL) {
-      for (msg_index = 0; status_msgs[msg_index]; msg_index++)
-        txq_enqueue((void *) status_msgs[msg_index]);
-      msg_index = 0;
-      return;
-    }
-    txq_enqueue((void *) status_msgs[msg_index++]);
+    enqueue_entry_status_msgs();
   }
 
   void verify_gmcb() {
@@ -484,11 +466,12 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gmcb.minor_state,
                                gmcb.retry_count, 0, 0);
     call GPSControl.turnOn();
-    msg_index = 0;
   }
 
 
   event void GPSControl.gps_booted() {
+    int idx;
+
     txq_purge();                        /* no left overs */
     switch (gmcb.minor_state) {
       default:
@@ -502,8 +485,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         minor_change_state(GMS_CONFIG, MON_EV_STARTUP);
         call GPSControl.logStats();
 
-        for (msg_index = 0; config_msgs[msg_index]; msg_index++)
-          txq_enqueue((void *) config_msgs[msg_index]);
+        for (idx = 0; config_msgs[idx]; idx++)
+          txq_enqueue((void *) config_msgs[idx]);
         txq_enqueue((void *) sirf_swver);
         txq_start();
         cycle_start = call MajorTimer.getNow();
