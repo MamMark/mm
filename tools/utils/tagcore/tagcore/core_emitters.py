@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev10'
+__version__ = '0.4.6.dev11'
 
 from   ctypes       import c_int32
 
@@ -152,7 +152,7 @@ def emit_reboot(level, offset, buf, obj):
     fault_gold   = owcb['fault_gold'].val
     fault_nib    = owcb['fault_nib'].val
     ss_dis       = owcb['subsys_disable'].val
-    proto_stat   = owcb['protection_status'].val
+    protec_stat  = owcb['protection_status'].val
     boot_mode    = owcb['ow_boot_mode'].val
     reboot_count = owcb['reboot_count'].val
     chk_fails    = owcb['chk_fails'].val
@@ -199,7 +199,7 @@ def emit_reboot(level, offset, buf, obj):
         print(rbt2b.format(from_base, base))
         print(rbt2c.format(owcb['rpt'].val, owcb['reset_status'].val,
               owcb['reset_others'].val))
-        print(rbt2d.format(fault_gold, fault_nib, ss_dis, proto_stat))
+        print(rbt2d.format(fault_gold, fault_nib, ss_dis, protec_stat))
         print(rbt2e.format(reboot_count, panics_gold, panic_count,
                            owcb['strange'].val,
                            owcb['strange_loc'].val))
