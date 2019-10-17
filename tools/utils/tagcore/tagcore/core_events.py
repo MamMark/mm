@@ -31,7 +31,7 @@ __all__ = [
     'EV_GPS_XYZ',
     'EV_GPS_TIME',
     'GPS_LTFF_TIME',
-    'GPS_FIRST_LOCK',
+    'GPS_FIRST_FIX',
     'GPS_FIX',
     'DCO_REPORT',
     'DCO_SYNC',
@@ -81,7 +81,7 @@ event_names = {
     4:  'GPS_XYZ',              # deprecated, backward compatibility
     5:  'GPS_TIME',             # deprecated, backward compatibility
     6:  'GPS_LTFF_TIME',
-    7:  'GPS_FIRST_LOCK',
+    7:  'GPS_FIRST_FIX',
     31: 'GPS_FIX',
 
     8:  'SSW_DELAY_TIME',
@@ -146,7 +146,7 @@ EV_GPS_GEO    = 3
 EV_GPS_XYZ    = 4
 EV_GPS_TIME   = 5
 GPS_LTFF_TIME = 6
-GPS_FIRST_LOCK= 7
+GPS_FIRST_FIX = 7
 GPS_FIX       = 31
 DCO_REPORT    = 15
 DCO_SYNC      = 16

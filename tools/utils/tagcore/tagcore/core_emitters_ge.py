@@ -32,7 +32,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev4'
+__version__ = '0.4.6.dev5'
 
 from   .globals    import gps_level     # emit level, will be numeric
 from   core_events import *             # get event identifiers
@@ -46,7 +46,7 @@ gps_events = {
     EV_GPS_XYZ:     0,
     EV_GPS_TIME:    0,
     GPS_LTFF_TIME:  0,
-    GPS_FIRST_LOCK: 0,
+    GPS_FIRST_FIX:  0,
     GPS_LOCK:       0,
     TIME_SRC:       0,
     TIME_SKEW:      0,

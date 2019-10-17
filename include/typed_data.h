@@ -246,7 +246,7 @@ typedef enum {
 //  DT_EVENT_GPS_TIME         = 5,       // deprecated
 
   DT_EVENT_GPS_LTFF_TIME    = 6,       // low pwr (mpm) To First Fix (MTFF)
-  DT_EVENT_GPS_FIRST_LOCK   = 7,       // boot to first lock
+  DT_EVENT_GPS_FIRST_FIX    = 7,       // boot to first fix
   DT_EVENT_GPS_FIX          = 31,      // fix seen
 
   DT_EVENT_SSW_DELAY_TIME   = 8,

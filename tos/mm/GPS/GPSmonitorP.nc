@@ -891,7 +891,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         if (ev != MON_EV_TIME)
           return;
         major_change_state(GMS_MAJOR_CYCLE, ev);
-        call CollectEvent.logEvent(DT_EVENT_GPS_FIRST_LOCK,
+        call CollectEvent.logEvent(DT_EVENT_GPS_FIRST_FIX,
                 call MajorTimer.getNow() - cycle_start, cycle_start, 0, 0);
         cycle_start = 0;
         call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
