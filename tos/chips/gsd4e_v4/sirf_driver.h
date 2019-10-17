@@ -102,7 +102,7 @@ const uint8_t sirf_factory_clear[] = {
   0, 0, 0, 0,                   // tow - ms (*100)
   0, 0,                         // xweek (extended week
   12,                           // nchannels, always 12
-  0x0c,                         // reset mask, factory, osp, 115200, clear eerom
+  0x08,                         // reset mask, factory, port default, clear eerom
   0x00, 0x98,
   0xb0, 0xb3,
 };

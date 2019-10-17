@@ -367,7 +367,11 @@ uint8_t g_nev;			// next gps event
  * for record keeping.
  */
 
+#if GPS_TARGET_SPEED == 115200
 #define GPT_MAX_INDEX 4
+#elif GPS_TARGET_SPEED == 9600
+#define GPT_MAX_INDEX 6
+#endif
 
 const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
 /*   rate mod             len                msg   */
@@ -381,6 +385,8 @@ const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
   {  9600, 1, sizeof(nmea_sirf_9600), nmea_sirf_9600 },
   {  4800, 2, sizeof(sirf_9600),      sirf_9600      },
   {  9600, 1, sizeof(sirf_9600),      sirf_9600      },
+  {115200, 1, sizeof(sirf_9600),      sirf_9600      },
+  {115200, 1, sizeof(nmea_sirf_9600), nmea_sirf_9600 },
 #else
 #error GPS_TARGET_SPEED neither 115200 nor 9600
 #endif
