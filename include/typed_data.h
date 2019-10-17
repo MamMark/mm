@@ -542,8 +542,8 @@ typedef dt_header_t dt_note_t;          /* size 20 + var note size */
  * GPS Proto Stats
  * report instrumentation from the GPS protocol stack.
  *
- * The data is essentially a copy of the first part of the data in
- * sirfbin_stat_t (sirf_driver.h).
+ * Most stats are kept in a module copy of dt_gps_proto_stats_t kept in
+ * sirfbin_stats (SirfBinP).
  *
  * The header is a dt_header_t followed dt_gps_proto_stats_t.  dt_header_t is
  * guaranteed to be word aligned/word granular.

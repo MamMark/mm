@@ -1659,7 +1659,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         rtc.sub_sec = call Rtc.micro2subsec(utc_ms * 1000);
         if (call OverWatch.getRtcSrc() != RTCSRC_GPS ||
             call CoreTime.excessiveSkew(&rtc, cur_secs, NULL, NULL)) {
-          nop();
           call CollectEvent.logEvent(DT_EVENT_TIME_SRC, RTCSRC_GPS, delta,
                                      call OverWatch.getRtcSrc(), 0);
           call OverWatch.setRtcSrc(RTCSRC_GPS);

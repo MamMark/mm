@@ -6,7 +6,10 @@ interface CoreTime {
   command void dcoSync();
 
   /**
-   * excessiveSkew: check for too much skew.
+   * excessiveSkew: check for too much skew.  Checks new rtcp
+   *    against current time.  If the caller already has a copy
+   *    of an already computed secs from a call to epoch it can
+   *    pass that in for use by this routine.
    *
    * input:    *rtcp,   pointer to time to check
    *            cur_secs epoch secs, 0 if not set.
@@ -25,8 +28,8 @@ interface CoreTime {
    * if inp and/or curp are non-zero, return the value of computed
    * secs from the respective times.
    */
-  async command uint32_t excessiveSkew(rtctime_t *rtcp, uint32_t cur_secs,
-                                       uint32_t *inp, uint32_t *curp);
+  async command uint32_t excessiveSkew(rtctime_t *new_rtcp, uint32_t  cur_secs,
+                                       uint32_t  *inp,      uint32_t *curp);
 
   /**
    * Deep Sleep initialization.
