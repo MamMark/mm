@@ -25,6 +25,7 @@
 #include <rtc.h>
 #include <rtctime.h>
 #include <regime_ids.h>
+#include <typed_data.h>
 
 //noinit uint8_t use_regime;
 uint8_t use_regime = RGM_DEFAULT;
@@ -50,6 +51,7 @@ module TagnetMonitorP {
     interface Rtc;
     interface RtcAlarm;
     interface OverWatch;
+    interface CollectEvent;
   }
 }
 implementation {
@@ -484,8 +486,13 @@ implementation {
     }
 
     // reset retry counter if changing major
-    if (major != old_major)
+    if (major != old_major) {
       rcb.cycle_cnt = rcb.sub[major].max_cycles;
+
+      /* and log major transitions */
+      call CollectEvent.logEvent(DT_EVENT_RADIO_MODE, old_major,
+                                 major, minor, reason);
+    }
   }
 
   void change_radio_state_cycle(radio_state_t major, radio_substate_t minor,

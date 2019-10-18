@@ -269,6 +269,7 @@ typedef enum {
   DT_EVENT_SD_OFF           = 21,       // SD turned off
   DT_EVENT_SSW_SD_REQ       = 22,       // SSW requesting SD access
   DT_EVENT_SSW_SD_REL       = 23,       // SSW releasing SD
+  DT_EVENT_RADIO_MODE       = 24,       // report radio major mode changes
 
   /***********************************/
 

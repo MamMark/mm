@@ -33,6 +33,8 @@ from   gps_chip_utils import *
 
 from   core_events  import *                    # get event_ids
 from   core_events  import event_name
+from   core_events  import radio_major_name
+from   core_events  import radio_minor_name
 from   core_headers import rtc_src_name
 from   core_headers import img_mgr_event_name
 
@@ -421,6 +423,14 @@ def emit_event(level, offset, buf, obj):
         print(' {:14s} {:6s} 0x{:x} 0x{:x} {}'.format(
             event_name(event), img_mgr_event_name(arg0),
                             arg1, arg2, arg3))
+        return
+
+    if (event == RADIO_MODE):
+        # args old_major, new_major, new_minor, reason
+        print(' radio_mode: {} -> {} ({}) {}'.format(radio_major_name(arg0),
+                                                     radio_major_name(arg1),
+                                                     radio_minor_name(arg2),
+                                                     arg3))
         return
 
     if (event == GPS_MON_MINOR):

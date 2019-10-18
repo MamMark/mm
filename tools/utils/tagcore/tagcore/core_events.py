@@ -42,6 +42,7 @@ __all__ = [
     'SD_OFF',
     'SSW_SD_REQ',
     'SSW_SD_REL',
+    'RADIO_MODE',
     'GPS_BOOT',
     'GPS_BOOT_TIME',
     'GPS_BOOT_FAIL',
@@ -102,6 +103,7 @@ event_names = {
     21: 'SD_OFF',
     22: 'SSW_SD_REQ',
     23: 'SSW_SD_REL',
+    24: 'RADIO_MODE',
 
     32: 'GPS_BOOT',
     33: 'GPS_BOOT_TIME',
@@ -157,6 +159,7 @@ SD_ON         = 20
 SD_OFF        = 21
 SSW_SD_REQ    = 22
 SSW_SD_REL    = 23
+RADIO_MODE    = 24
 GPS_BOOT      = 32
 GPS_BOOT_TIME = 33
 GPS_BOOT_FAIL = 34
@@ -186,7 +189,28 @@ GPS_PWR_OFF   = 69
 
 
 def event_name(event):
-    ev_name = event_names.get(event, 0)
-    if ev_name == 0:
-        ev_name = 'ev_' + str(event)
-    return ev_name
+    return event_names.get(event, 'ev/' + str(event))
+
+
+radio_major_names = {
+    0:  'shutdown',
+    1:  'home',
+    2:  'near',
+    3:  'lost',
+}
+
+
+def radio_major_name(mode):
+    return radio_major_names.get(mode, 'major/' + str(mode))
+
+
+radio_minor_names = {
+    0:  'none',
+    1:  'recvWait',
+    2:  'recv',
+    3:  'stbyWait',
+    4:  'standby',
+}
+
+def radio_minor_name(mode):
+    return radio_minor_names.get(mode, 'minor/' + str(mode))
