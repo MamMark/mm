@@ -451,7 +451,7 @@ implementation {
   norace uint32_t m_last_rx_collection; // ms time of last_rx error collection
          uint32_t m_lost_tx_ints;       // on_tx, time outs
          uint32_t m_lost_tx_retries;
-         uint32_t m_tx_time_out;        // last tx timeout ued
+         uint32_t m_tx_time_out;        // last tx timeout used
 
 #define GPS_MAX_LOST_TX_RETRIES 5
 
@@ -461,6 +461,17 @@ implementation {
 
   void gps_panic(uint8_t where, parg_t p, parg_t p1) {
     call Panic.panic(PANIC_GPS, where, p, p1, 0, 0);
+  }
+
+
+  void clean_port_errors() {
+    atomic {
+      m_rx_errors = 0;
+      m_last_rpt_rx_errors = 0;
+      m_first_rx_error = 0;
+      m_last_rx_collection = 0;
+      m_lost_tx_ints = 0;
+    }
   }
 
 
@@ -1157,6 +1168,8 @@ implementation {
         return;
 
       case GPSC_CHK_MSG_WAIT:
+        call SirfProto.resetStats(); /* clear out any errors from turn on   */
+        clean_port_errors();
         next_state = GPSC_ON;        /* rx interrupts are already on .. yum */
         post gps_signal_task();      /* tell the upper layer we be good.    */
         break;                       /* and kick the msg timer off          */
