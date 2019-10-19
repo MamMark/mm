@@ -6,30 +6,34 @@ interface CoreTime {
   command void dcoSync();
 
   /**
-   * excessiveSkew: check for too much skew.  Checks new rtcp
-   *    against current time.  If the caller already has a copy
-   *    of an already computed secs from a call to epoch it can
-   *    pass that in for use by this routine.
+   * excessiveSkew: check for too much skew.  Checks *new_rtcp against
+   *    current time.  If the caller already has a copy of epoch secs
+   *    computed it can be passed in via cur_secs.
    *
-   * input:    *rtcp,   pointer to time to check
-   *            cur_secs epoch secs, 0 if not set.
-   *           *inp     pointer for incoming (new) secs computed
-   *           *curp    pointer for current secs computed.
+   *    returns TRUE if skew from current time is too much, false otherwise.
+   *    delta is computed via new_secs - cur_secs.  If new time is in the
+   *    future delta will be positive.
    *
-   * returns:   0       no excessive skew (essentially FALSE).
-   *            skew    excessive skew, value in secs of skew.
+   *    cur_secsp, new_secsp, and deltap are used to pass back values set
+   *    by the routine.
    *
-   * computes epochs secs for time to be checked.  (in_secs)
-   * if cur_secs is 0 then compute epoch_secs from cur_time.
+   * input:    *new_rtcp, pointer to time to check
+   *            cur_secs  epoch secs, 0 if not set.
+   *           *cur_secsp pointer to cell for calulated cur_sec
+   *           *new_secsp ditto
+   *           *deltap    pointer to cell for calculated delta
    *
-   * compare in_secs against cur_secs.  If too much skew,
-   * return non-zero value of the skew otherwise 0.
+   * returns:   false   no excessive skew.
+   *            true    excessive skew, value in secs of skew.
+   *           *deltap  if non-NULL, filled in with calculated skew.
    *
-   * if inp and/or curp are non-zero, return the value of computed
-   * secs from the respective times.
+   * computes epochs secs for time to be checked.  if cur_secs is 0 then
+   * compute cur_secs from cur_time (epoch).  Calculate delta_sec as
+   * new_secs - cur_secs.
    */
-  async command uint32_t excessiveSkew(rtctime_t *new_rtcp, uint32_t  cur_secs,
-                                       uint32_t  *inp,      uint32_t *curp);
+  async command bool excessiveSkew(rtctime_t *new_rtcp, uint32_t  cur_secs,
+                                   uint32_t *cur_secsp, uint32_t *new_secsp,
+                                   int32_t   *deltap);
 
   /**
    * Deep Sleep initialization.

@@ -625,14 +625,17 @@ implementation {
   /**
    * excessiveSkew: check for too much skew.
    */
-  async command uint32_t CoreTime.excessiveSkew(rtctime_t *rtcp, uint32_t cur_secs,
-                                            uint32_t *inp, uint32_t *curp) {
+  async command bool CoreTime.excessiveSkew(rtctime_t *new_rtcp,
+                                            uint32_t   cur_secs,
+                                            uint32_t  *n_secsp,         /* new secs pointer */
+                                            uint32_t  *c_secsp,         /* cur secs pointer */
+                                            int32_t   *deltap) {
     rtctime_t curtime;
     uint64_t  cur_e;                    /* cur epoch */
     uint32_t  cur_s;                    /* cur secs  */
     uint64_t  new_e;                    /* new epoch */
     uint32_t  new_s;                    /* new secs  */
-    uint32_t  delta;                    /* difference */
+    int32_t   delta;                    /* difference */
 
     cur_s = cur_secs;
     if (cur_secs == 0) {
@@ -641,16 +644,18 @@ implementation {
       cur_s = cur_e >> 32;
     }
 
-    new_e = call Rtc.rtc2epoch(rtcp);
+    new_e = call Rtc.rtc2epoch(new_rtcp);
     new_s = new_e >> 32;
 
-    if (new_s > cur_s) delta = new_s - cur_s;
-    else               delta = cur_s - new_s;
+    if (n_secsp) *n_secsp = new_s;
+    if (c_secsp) *c_secsp = cur_s;
 
-    if (delta < 8) delta = 0;           /* skew >= 8 secs */
-    if (inp)  *inp  = new_s;
-    if (curp) *curp = cur_s;
-    return delta;
+    delta = new_s - cur_s;
+    if (deltap) *deltap = delta;
+    if (delta < 0) delta = -delta;
+    if (delta > 2)
+      return TRUE;
+    return FALSE;
   }
 
 
@@ -1010,10 +1015,11 @@ implementation {
     uint32_t new_s;                     /* new secs  */
     uint32_t cur_s;                     /* cur secs  */
     uint16_t cur_ta;
-    uint32_t skew;
+    int32_t  delta;
+    bool     skew;
 
-    skew = call CoreTime.excessiveSkew(timep, 0, &new_s, &cur_s);
-    call CollectEvent.logEvent(DT_EVENT_TIME_SKEW, cur_s, new_s, skew, 0);
+    skew = call CoreTime.excessiveSkew(timep, 0, &new_s, &cur_s, &delta);
+    call CollectEvent.logEvent(DT_EVENT_TIME_SKEW, cur_s, new_s, delta, skew);
 
     /*
      * Force TA1->R into PS, we don't mess with TA1->R to avoid messing

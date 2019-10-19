@@ -207,7 +207,18 @@ typedef enum {
   RTCSRC_FORCED = 1,                    /* forced initilization    */
   RTCSRC_DBLK   = 2,                    /* recovered from dblk     */
   RTCSRC_NET    = 3,                    /* set by the network      */
-  RTCSRC_GPS    = 4,                    /* time sync with GPS      */
+
+  /*
+   * time sources below RTCSRC_GPS are of lesser quality than GPS
+   * and can be modified.  GPS and GPS0 are persistent.  GPS over
+   * writes GPS0 which is of a lesser quality.
+   *
+   * GPS is the highest quality and comes from an overdetermined geodetic
+   * fix.  GPS0 is a stop gap when we are seeing other kinds of geodetic
+   * fixes.
+   */
+  RTCSRC_GPS0   = 4,                    /* lower quality GPS time  */
+  RTCSRC_GPS    = 5,                    /* time sync with GPS      */
 } rtc_src_t;
 
 

@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev5'
+__version__ = '0.4.6.dev6'
 
 import binascii
 from   collections  import OrderedDict
@@ -170,14 +170,12 @@ rtc_src_names = {
     1:  'FORCED',
     2:  'DBLK',
     3:  'NET',
-    4:  'GPS',
+    4:  'GPS0',
+    5:  'GPS',
 }
 
 def rtc_src_name(rtc_src):
-    rs_name = rtc_src_names.get(rtc_src, 0)
-    if rs_name == 0:
-        rs_name = 'rtcsrc_' + str(rtc_src)
-    return rs_name
+    return rtc_src_names.get(rtc_src, 'rtcsrc/' + str(rtc_src))
 
 
 #
