@@ -1500,7 +1500,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     cdtp->capdelta = delta;
 
     /* build the dt gps header */
-    gps_block.len = sizeof(gps_block) + sizeof(dt_gps_xyz_t);
+    gps_block.len = sizeof(gps_block) + sizeof(dt_gps_clk_t);
     gps_block.dtype = DT_GPS_CLK;
     gps_block.mark_us = 0;
     gps_block.chip_id = CHIP_GPS_GSD4E;
