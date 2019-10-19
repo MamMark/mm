@@ -70,6 +70,7 @@ generic module SDspP() {
     interface ResourceDefaultOwner;
     interface Timer<TMilli> as SDtimer;
     interface LocalTime<TMilli> as lt;
+    interface Collect;
     interface CollectEvent;
     interface SDHardware as HW;
     interface Platform;
@@ -155,6 +156,7 @@ implementation {
     uint8_t    cur_cid;			/* current client */
     uint8_t    *data_ptr;
     uint16_t   erase_state;             /* dp, 0x00 or 0xff */
+    uint16_t   logging;                 /* true if logging */
     uint16_t   majik_b;
   } sdc;
 
@@ -458,6 +460,9 @@ implementation {
     sdc.majik_a = SD_MAJIK;
     sdc.cur_cid = CID_NONE;
     sdc.majik_b = SD_MAJIK;
+#ifdef LOG_BOOT
+    sdc.logging = TRUE;
+#endif
     return SUCCESS;
   }
 
@@ -691,11 +696,20 @@ implementation {
   }
 
 
+  event void Collect.collectBooted() {
+    sdc.logging = TRUE;
+    sd_cycle_count = 0;
+    max_cycle_time = 0;
+    total_on_time = 0;
+  }
+
+
   task void sd_pwr_up_task() {
     sd_cycle_count++;
     sd_pwr_on_time_us = call Platform.usecsRaw();
-    call CollectEvent.logEvent(DT_EVENT_SD_ON, sd_cycle_count, sd_pwr_on_time_us,
-                               0, max_cycle_time);
+    if (sdc.logging)
+      call CollectEvent.logEvent(DT_EVENT_SD_ON, sd_cycle_count, 0,
+                                 0, max_cycle_time);
     call HW.sd_on();
     call HW.sd_spi_enable();
 
@@ -715,8 +729,9 @@ implementation {
     on_time = call Platform.usecsRaw() - sd_pwr_on_time_us;
     if (on_time > max_cycle_time) max_cycle_time = on_time;
     total_on_time += on_time;
-    call CollectEvent.logEvent(DT_EVENT_SD_OFF, sd_cycle_count, on_time,
-                               (uint32_t) total_on_time/sd_cycle_count, sdc.sd_state);
+    if (sdc.logging)
+      call CollectEvent.logEvent(DT_EVENT_SD_OFF, sd_cycle_count, on_time,
+                (uint32_t) total_on_time/sd_cycle_count, sdc.sd_state);
     if (sdc.sd_state != SDS_ON_TO_OFF) {
       /* someone wants to turn us on again.  */
       post sd_pwr_up_task();

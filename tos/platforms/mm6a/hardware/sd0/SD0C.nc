@@ -69,6 +69,7 @@ implementation {
 
   components CollectC;
   SDdvrP.CollectEvent -> CollectC;
+  SDdvrP.Collect      -> CollectC;
 
   components HplSD0C as HW;
   SDdvrP.HW -> HW;
