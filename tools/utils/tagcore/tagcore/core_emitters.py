@@ -415,22 +415,40 @@ def emit_event(level, offset, buf, obj):
         return
 
     if event == TIME_SRC:
-        arg1 = arg0
-        arg0 = rtc_src_name(arg0)
-        # fall through to bottom
+        # arg0 new timesrc
+        # arg1 delta from new_time - cur_time
+        # arg2 previous timesrc
+        print(' {:14s} {}  ->  {}  ({})'.format(event_name(event),
+                rtc_src_name(arg2), rtc_src_name(arg0), c_int32(arg1).value))
+        return
 
     if event == IMG_MGR:
         print(' {:14s} {:6s} 0x{:x} 0x{:x} {}'.format(
             event_name(event), img_mgr_event_name(arg0),
-                            arg1, arg2, arg3))
+                        arg1, arg2, arg3))
+        return
+
+    if event == TIME_SKEW:
+        print(' {:14s} {}  ->  {}  ({})  {}'.format(event_name(event),
+                        arg0, arg1, c_int32(arg2).value, arg3))
+        return
+
+    if event == SD_ON:
+        print(' {:14s} ({})                  max: {:7}'.format(event_name(event),
+                       arg0, arg3))
+        return
+
+    if event == SD_OFF:
+        print(' {:14s} ({})  on: {:7} us  avg: {:7} us'.format(event_name(event),
+                       arg0, arg1, arg2))
         return
 
     if (event == RADIO_MODE):
         # args old_major, new_major, new_minor, reason
-        print(' radio_mode: {} -> {} ({}) {}'.format(radio_major_name(arg0),
-                                                     radio_major_name(arg1),
-                                                     radio_minor_name(arg2),
-                                                     arg3))
+        print(' RADIO_MODE     {} -> {} ({}) {}'.format(radio_major_name(arg0),
+                                                       radio_major_name(arg1),
+                                                       radio_minor_name(arg2),
+                                                       arg3))
         return
 
     if (event == GPS_MON_MINOR):
