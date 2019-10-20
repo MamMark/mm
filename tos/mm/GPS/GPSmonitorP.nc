@@ -1648,8 +1648,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         rtc.sub_sec = call Rtc.micro2subsec(utc_ms * 1000);
         if (utc_ms == 0) {
           forcesrc = RTCSRC_GPS;
-          force = (force | call CoreTime.excessiveSkew(&rtc,
-                                        cur_secs, NULL, NULL, &delta));
+          force = (force | (timesrc < RTCSRC_GPS));
+          force = (force | (call CoreTime.excessiveSkew(&rtc,
+                                cur_secs, NULL, NULL, &delta)));
         }
       }
       if (force) {
