@@ -46,7 +46,7 @@ from   datetime     import datetime
 
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.5.dev2'
+__version__ = '0.4.5.dev3'
 
 cfg_print_hourly = True
 
@@ -63,6 +63,7 @@ __all__ = [
     'DTR_OBJ_NAME',
 
     # dt record types
+    'DT_NONE',
     'DT_REBOOT',
     'DT_VERSION',
     'DT_SYNC',
@@ -81,6 +82,7 @@ __all__ = [
     'DT_CONFIG',
     'DT_GPS_PROTO_STATS',
     'DT_GPS_TRK',
+    'DT_GPS_CLK',
     'DT_GPS_RAW_SIRFBIN',
     'DT_TAGNET',
 
@@ -135,6 +137,7 @@ DTR_OBJ_NAME = 5                        # object name
 
 dt_sync_majik = 0xdedf00ef
 
+DT_NONE                 = 0
 DT_REBOOT               = 1
 DT_VERSION              = 2
 DT_SYNC                 = 3
@@ -153,6 +156,7 @@ DT_NOTE                 = 23
 DT_CONFIG		= 24
 DT_GPS_PROTO_STATS      = 25
 DT_GPS_TRK              = 26
+DT_GPS_CLK              = 27
 
 DT_GPS_RAW_SIRFBIN      = 32
 DT_TAGNET               = 33

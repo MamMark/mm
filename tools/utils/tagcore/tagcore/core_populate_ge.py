@@ -29,5 +29,6 @@ dtd.dt_records[DT_NOTE]             = (  0, decode_default, [ emit_note ],      
 dtd.dt_records[DT_CONFIG]           = (  0, decode_default, [ ],                       obj_dt_config(),          'CONFIG',       'obj_dt_config'   )
 dtd.dt_records[DT_GPS_PROTO_STATS]  = (  0, decode_default, [ emit_gps_proto_stats ],  obj_dt_gps_proto_stats(), 'GPS_STATS',    'obj_dt_gps_proto_stats' )
 dtd.dt_records[DT_GPS_TRK]          = (  0, decode_gps_trk, [ emit_gps_trk_ge ],       obj_dt_gps_trk(),         'GPS_TRK',      'obj_dt_trk' )
+dtd.dt_records[DT_GPS_CLK]          = (  0, decode_default, [ emit_gps_clk ],          obj_dt_gps_clk(),         'GPS_CLK',      'obj_dt_clk' )
 dtd.dt_records[DT_GPS_RAW_SIRFBIN]  = (  0, decode_gps_raw, [ emit_gps_raw_ge ],       obj_dt_gps_raw(),         'GPS_RAW',      'obj_dt_gps_raw'  )
 dtd.dt_records[DT_TAGNET]           = (  0, decode_default, [ ],                       obj_dt_tagnet(),          'TAGNET',       'obj_dt_tagnet'   )

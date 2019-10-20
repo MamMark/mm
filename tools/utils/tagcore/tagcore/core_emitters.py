@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev11'
+__version__ = '0.4.6.dev12'
 
 from   ctypes       import c_int32
 
@@ -710,12 +710,12 @@ def emit_gps_clk(level, offset, buf, obj):
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
-    print('  {}/{:.3f}  {}  {}  [{}]'.format(
+    print('  {}/{:.3f}  {}hz  {}ns  [{}]'.format(
         weekx, tow, drift, bias, nsats))
 
-
     if level >= 1:
-        print('    CLK_STATUS: capture: {}'.format(capdelta))
+        print('    CLK_STATUS: capture: {}us  drift: {}hz  bias: {}ns'.format(
+            capdelta, drift, bias))
 
 
 ################################################################
