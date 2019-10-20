@@ -935,14 +935,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         major_change_state(GMS_MAJOR_IDLE, MON_EV_TIMEOUT_MAJOR);
         minor_event(MON_EV_MAJOR_CHANGED);
         return;
-
-#ifdef notdef
-      case GMS_MAJOR_SATS_STARTUP:
-        major_change_state(GMS_MAJOR_SATS_STARTUP, MON_EV_TIMEOUT_MAJOR);
-        call MajorTimer.startOneShot(GPS_MON_SATS_STARTUP_TIME);
-        minor_event(MON_EV_MAJOR_CHANGED);
-        return;
-#endif
     }
   }
 
