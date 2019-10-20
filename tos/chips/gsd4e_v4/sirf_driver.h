@@ -123,6 +123,22 @@ const uint8_t sirf_warmstart_noinit[] = {
   0xb0, 0xb3,
 };
 
+const uint8_t sirf_hotstart_noinit[] = {
+  0xa0, 0xa2,
+  0x00, 0x19,
+  128,                          // init data source (reset) (0x80)
+  0, 0, 0, 0,                   // ecef x
+  0, 0, 0, 0,                   // ecef y
+  0, 0, 0, 0,                   // ecef z
+  0, 0, 0, 0,                   // drift
+  0, 0, 0, 0,                   // tow - ms (*100)
+  0, 0,                         // xweek (extended week
+  12,                           // nchannels, always 12
+  0x00,                         // reset mask, hotstart (no ephem)
+  0x00, 0x8c,
+  0xb0, 0xb3,
+};
+
 const uint8_t sirf_warmstart_navlib_noinit[] = {
   0xa0, 0xa2,
   0x00, 0x19,

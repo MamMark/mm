@@ -377,14 +377,17 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
-  void enqueue_entry_status_msgs() {
-    txq_enqueue((void *) sirf_poll_ephemeris);
+  void enqueue_entry_msgs() {
+    /*
+     * hint: we get invoked when going into any on state.  But the queue
+     * doesn't get fired up until the minor state machine enters collect.
+     */
+    txq_enqueue((void *) sirf_set_mode_degrade);
+    txq_enqueue((void *) sirf_hotstart_noinit);
     txq_enqueue((void *) sirf_poll_clk_status);
   }
 
-  void enqueue_exit_status_msgs() {
-    enqueue_entry_status_msgs();
-  }
+  void enqueue_exit_msgs() { }
 
   void verify_gmcb() {
     if (gmcb.majik_a != GMCB_MAJIK || gmcb.majik_a != GMCB_MAJIK)
@@ -405,10 +408,10 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     if (gmcb.major_state != GMS_MAJOR_IDLE)
       no_deep_sleep = TRUE;
     if (old_state != new_state) {
-      if (new_state == GMS_MAJOR_CYCLE)
-        enqueue_entry_status_msgs();
+      if (new_state >= GMS_MAJOR_CYCLE && new_state < GMS_MAJOR_FIX_DELAY)
+        enqueue_entry_msgs();
       if (old_state == GMS_MAJOR_CYCLE)
-        enqueue_exit_status_msgs();
+        enqueue_exit_msgs();
     }
   }
 
