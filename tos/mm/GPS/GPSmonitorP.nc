@@ -107,14 +107,12 @@ enum {
 /*
  * 60 secs, we have observed slow start up times of around 60 secs, so for now
  * use a max_cycle of 1 min.  We end the cycle at first fix.  (non-zero mode)
+ *
+ * We use a short fix_delay to conserve power.
  */
 #define GPS_MON_MAX_CYCLE_TIME      ( 1 * 60 * 1024)
 #define GPS_MON_LPM_COLLECT_TIME    ( 1 * 60 * 1024)
-#define GPS_MON_FIX_DELAY_TIME      (      5 * 1024)
-
-//#define GPS_MON_MAX_CYCLE_TIME      ( 5 * 60 * 1024)
-//#define GPS_MON_LPM_COLLECT_TIME    ( 1 * 60 * 1024)
-//#define GPS_MON_FIX_DELAY_TIME      ( 5 * 60 * 1024)
+#define GPS_MON_FIX_DELAY_TIME      (             2)
 
 // 5 mins
 #define GPS_MON_SATS_STARTUP_TIME   ( 5 * 60 * 1024)
