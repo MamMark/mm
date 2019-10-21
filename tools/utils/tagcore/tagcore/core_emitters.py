@@ -418,8 +418,10 @@ def emit_event(level, offset, buf, obj):
         # arg0 new timesrc
         # arg1 delta from new_time - cur_time
         # arg2 previous timesrc
-        print(' {:14s} {}  ->  {}  ({})'.format(event_name(event),
-                rtc_src_name(arg2), rtc_src_name(arg0), c_int32(arg1).value))
+        # arg3 set location
+        print(' {:14s} {}  ->  {}  ({})  l: {}'.format(event_name(event),
+                rtc_src_name(arg2), rtc_src_name(arg0), c_int32(arg1).value,
+                arg3))
         return
 
     if event == IMG_MGR:

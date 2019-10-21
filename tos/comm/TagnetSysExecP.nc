@@ -256,7 +256,7 @@ implementation {
 
     if (call Rtc.rtcValid(rtp)) {
       __last_grab_rtc(1, rtp);
-      call CollectEvent.logEvent(DT_EVENT_TIME_SRC, RTCSRC_NET, 0, 0, 0);
+      call CollectEvent.logEvent(DT_EVENT_TIME_SRC, RTCSRC_NET, 0, 0, 3);
       call OW.setRtcSrc(RTCSRC_NET);
       call Rtc.syncSetTime(rtp);
       return TRUE;

@@ -1655,7 +1655,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       }
       if (force) {
         call CollectEvent.logEvent(DT_EVENT_TIME_SRC, forcesrc, delta,
-                                   timesrc, 0);
+                                   timesrc, 2);
         call OverWatch.setRtcSrc(forcesrc);
         call Rtc.syncSetTime(&rtc);
         call OverWatch.flush_boot(call OverWatch.getBootMode(),
