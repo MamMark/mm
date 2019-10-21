@@ -1709,7 +1709,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case 92:  msg = sirf_92_off;  break;
 
       /* 93 doesn't respond to msg off */
-      case 93:  msg = sirf_93_off;  break;
+//      case 93:  msg = sirf_93_off;  break;
     }
     if (msg) {
       awake = call GPSControl.awake();
