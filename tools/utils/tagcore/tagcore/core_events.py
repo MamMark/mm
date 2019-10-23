@@ -63,6 +63,9 @@ __all__ = [
     'GPS_PULSE',
     'GPS_TX_RESTART',
     'GPS_MPM_RSP',
+    'GPS_ACK',
+    'GPS_NACK',
+    'GPS_NO_ACK',
     'GPS_FAST',
     'GPS_FIRST',
     'GPS_SATS2',
@@ -133,6 +136,9 @@ event_names = {
 
     52: 'GPS_TX_RESTART',
     53: 'GPS_MPM_RSP',
+    54: 'GPS_ACK',
+    55: 'GPS_NACK',
+    56: 'GPS_NO_ACK',
 
     64: 'GPS_FAST',
     65: 'GPS_FIRST',
@@ -180,6 +186,9 @@ GPS_MPM       = 50
 GPS_PULSE     = 51
 GPS_TX_RESTART= 52
 GPS_MPM_RSP   = 53
+GPS_ACK       = 54
+GPS_NACK      = 55
+GPS_NO_ACK    = 56
 GPS_FAST      = 64
 GPS_FIRST     = 65
 GPS_SATS2     = 66

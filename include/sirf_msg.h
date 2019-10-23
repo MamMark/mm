@@ -51,6 +51,8 @@
 #define MID_CLOCKSTATUS	   7
 #define CLOCKSTATUS_LEN	   20
 
+#define MID_ACK            11
+#define MID_NACK           12
 #define MID_OTS            18
 
 #define MID_GEODETIC	   41
@@ -219,6 +221,16 @@ typedef struct {
   uint16_t  count;
   uint8_t   data[0];
 } PACKED sb_error_data_t;
+
+/* MIDS 11/12   ack/nack */
+typedef struct {
+  uint8_t   start1;
+  uint8_t   start2;
+  uint16_t  len;
+  uint8_t   mid;
+  uint8_t   a_mid;
+  uint8_t   a_sid;
+} PACKED sb_acknack_t;
 
 /* MID 14, almanac data */
 typedef struct {

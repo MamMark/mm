@@ -104,6 +104,8 @@ enum {
 #define GPS_MON_LPM_RESTART_WAIT    2048
 #define GPS_MON_COLLECT_DEADMAN     16384
 
+#define GPS_ACK_TIMEOUT             512
+
 /*
  * 60 secs, we have observed slow start up times of around 60 secs, so for now
  * use a max_cycle of 1 min.  We end the cycle at first fix.  (non-zero mode)
@@ -198,6 +200,7 @@ typedef enum {
   GPSM_TXQ_SENDING,                     /* send a msg */
   GPSM_TXQ_DELAY,                       /* delaying after a send */
   GPSM_TXQ_DRAIN,                       /* draining sending bits */
+  GPSM_TXQ_ACK_WAIT,                    /* waiting for an ack to come back */
 } txq_state_t;
 
 typedef struct {
@@ -211,10 +214,13 @@ typedef struct {
   uint8_t            txq_head;              /* index of next message to go out */
   uint8_t            txq_nxt;               /* index of next entry of queue */
   uint8_t            txq_len;               /* how many in queue. */
+  uint8_t            txq_retries;           /* msg needs ack, retry count */
+  uint8_t            txq_mid_ack;           /* mid needing acking */
   uint32_t           majik_b;
 } gps_monitor_control_t;
 
 
+const uint8_t mids_w_acks[] = { 128, 132, 136, 144, 166, 178, 0 };
 const uint8_t *config_msgs[] = {
   sirf_7_on,
   sirf_set_mode_degrade,
@@ -242,6 +248,7 @@ module GPSmonitorP {
 
     interface Timer<TMilli> as MinorTimer;
     interface Timer<TMilli> as MajorTimer;
+    interface Timer<TMilli> as TxTimer;
     interface Panic;
     interface OverWatch;
     interface TagnetMonitor;
@@ -276,6 +283,15 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
   void gps_panic(uint8_t where, parg_t p, parg_t p1) {
     call Panic.panic(PANIC_GPS, where, p, p1, 0, 0);
+  }
+
+
+  bool mid_needs_ack(uint8_t mid) {
+    int i;
+
+    for (i = 0; mids_w_acks[i]; i++)
+      if (mid == mids_w_acks[i]) return TRUE;
+    return FALSE;
   }
 
 
@@ -364,11 +380,24 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
    * with send_done.
    */
   void txq_purge() {
-    if (gmcb.txq_state == GPSM_TXQ_SENDING) {
-      gmcb.txq_state = GPSM_TXQ_DRAIN;
-      call GPSTransmit.send_stop();
-    } else
-      gmcb.txq_state = GPSM_TXQ_IDLE;
+    switch(gmcb.txq_state) {
+      default:
+        gps_panic(-1, gmcb.txq_state, 0);
+        break;
+
+      case GPSM_TXQ_SENDING:
+        gmcb.txq_state = GPSM_TXQ_DRAIN;
+        call GPSTransmit.send_stop();
+        break;
+
+      case GPSM_TXQ_IDLE:
+      case GPSM_TXQ_DELAY:
+      case GPSM_TXQ_DRAIN:
+      case GPSM_TXQ_ACK_WAIT:
+        gmcb.txq_state =  GPSM_TXQ_IDLE;
+        call TxTimer.stop();
+        break;
+    }
     gmcb.txq_head = 0;
     gmcb.txq_nxt  = 0;
     gmcb.txq_len  = 0;
@@ -822,9 +851,23 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     return TRUE;
   }
 
+
+  void txq_adv_restart() {
+    gmcb.txq_mid_ack = 0;
+    gmcb.txq_head = txq_adv(gmcb.txq_head);
+    gmcb.txq_len--;
+    gmcb.txq_state = GPSM_TXQ_IDLE;
+    txq_start();                        /* fire next one up */
+  }
+
+
   event void GPSTransmit.send_done() {
+    uint8_t  mid;
+    uint8_t *gps_msg;
+
     switch(gmcb.txq_state) {
       default:
+        gps_panic(-1, gmcb.txq_state, 0);
         break;
 
       case GPSM_TXQ_DRAIN:
@@ -839,10 +882,21 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         break;
 
       case GPSM_TXQ_SENDING:
-        gmcb.txq_head = txq_adv(gmcb.txq_head);
-        gmcb.txq_len--;
-        gmcb.txq_state = GPSM_TXQ_IDLE;
-        txq_start();                        /* fire next one up */
+        gps_msg = txq[gmcb.txq_head];
+        mid = gps_msg[4];
+        if (mid_needs_ack(mid)) {
+          gmcb.txq_state   = GPSM_TXQ_ACK_WAIT;
+          call TxTimer.startOneShot(GPS_ACK_TIMEOUT);
+
+          /* non-zero txq_mid_ack -> mid/ack exchange */
+          if (gmcb.txq_mid_ack) return;
+
+          /* first time waiting for ack, set up retries */
+          gmcb.txq_mid_ack = mid;
+          gmcb.txq_retries = 3;
+          return;
+        }
+        txq_adv_restart();
         break;
     }
   }
@@ -1504,6 +1558,37 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
 
   /*
+   * MID 11 ACK and MID 12 NACK
+   */
+  void process_ack(sb_acknack_t *anp, rtctime_t *rtp) {
+    uint8_t mid;
+
+    if (gmcb.txq_state == GPSM_TXQ_ACK_WAIT) {
+      mid = gmcb.txq_mid_ack;
+      if (anp->a_mid != mid) {
+        call CollectEvent.logEvent(DT_EVENT_GPS_ACK, anp->a_mid, mid, 0, 0);
+        return;
+      }
+      gmcb.txq_mid_ack = 0;
+      call TxTimer.stop();
+      txq_adv_restart();
+    }
+  }
+
+  void process_nack(sb_acknack_t *anp, rtctime_t *rtp) {
+    uint8_t mid;
+
+    if (gmcb.txq_state == GPSM_TXQ_ACK_WAIT) {
+      mid = gmcb.txq_mid_ack;
+      gmcb.txq_mid_ack = 0;
+      call TxTimer.stop();
+      call CollectEvent.logEvent(DT_EVENT_GPS_NACK, anp->a_mid, mid, 0, 0);
+      if (mid == anp->a_mid)
+        txq_adv_restart();
+    }
+  }
+
+  /*
    * MID 18: Ok To Send (OTS)
    * 1st byte following the mid (data[0]) indicates yes (1) or no (0).
    */
@@ -1768,6 +1853,12 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case MID_CLOCKSTATUS:
         process_clk_status((void *) sbp, arrival_rtp);
         break;
+      case MID_ACK:
+        process_ack((void *) sbp, arrival_rtp);
+        break;
+      case MID_NACK:
+        process_nack((void *) sbp, arrival_rtp);
+        break;
       case MID_OTS:
         process_ots((void *) sbp, arrival_rtp);
         break;
@@ -1790,6 +1881,30 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
   event void MajorTimer.fired() {
     major_event(MON_EV_TIMEOUT_MAJOR);
+  }
+
+
+  event void TxTimer.fired() {
+    uint8_t mid;
+
+    switch(gmcb.txq_state) {
+      default:
+        gps_panic(-1, gmcb.txq_state, 0);
+        break;
+
+      case GPSM_TXQ_ACK_WAIT:
+        gmcb.txq_retries--;
+        if (gmcb.txq_retries == 0) {
+          mid = gmcb.txq_mid_ack;
+          call CollectEvent.logEvent(DT_EVENT_GPS_NO_ACK, mid, 0, 0, 0);
+          txq_adv_restart();
+          return;
+        }
+        /* try sending the original message again */
+        gmcb.txq_state = GPSM_TXQ_IDLE;
+        txq_start();
+        return;
+    }
   }
 
 

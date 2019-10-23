@@ -52,8 +52,10 @@ implementation {
 
   components new TimerMilliC() as MinorTimer;
   components new TimerMilliC() as MajorTimer;
+  components new TimerMilliC() as TxTimer;
   GPSmonitorP.MinorTimer -> MinorTimer;
   GPSmonitorP.MajorTimer -> MajorTimer;
+  GPSmonitorP.TxTimer    -> TxTimer;
 
   components PanicC;
   GPSmonitorP.Panic -> PanicC;

@@ -301,6 +301,9 @@ typedef enum {
 
   DT_EVENT_GPS_TX_RESTART   = 52,
   DT_EVENT_GPS_MPM_RSP      = 53,
+  DT_EVENT_GPS_ACK          = 54,
+  DT_EVENT_GPS_NACK         = 55,
+  DT_EVENT_GPS_NO_ACK       = 56,
 
   /***********************************/
 
