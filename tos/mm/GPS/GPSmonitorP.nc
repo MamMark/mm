@@ -36,7 +36,7 @@
  *
  * BOOTING      first boot after reboot, establish comm
  *
- * CONFIG       configuation messages, currently only swver
+ * CONFIG       configuation messages, terminate with a initDataSrc
  *
  * COMM_CHECK   Make sure we can communicate with the gps.  Control
  *              entry to LP (low pwr) (Sleeping, IDLE, MPM) or COLLECT
@@ -221,6 +221,12 @@ typedef struct {
 
 
 const uint8_t mids_w_acks[] = { 128, 132, 136, 144, 166, 178, 0 };
+
+/*
+ * config msgs end with a warmstart which causes a restart.  This will
+ * result in receipt of a okToSend-yes.  When we see that when we are
+ * in CONFIG we will send a SwVer to finish CONFIG.
+ */
 const uint8_t *config_msgs[] = {
   sirf_7_on,
   sirf_set_mode_degrade,
@@ -409,12 +415,17 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
      * hint: we get invoked when going into any on state.  But the queue
      * doesn't get fired up until the minor state machine enters collect.
      */
+#ifdef notdef
     txq_enqueue((void *) sirf_set_mode_degrade);
-    txq_enqueue((void *) sirf_hotstart_noinit);
     txq_enqueue((void *) sirf_poll_clk_status);
+    txq_enqueue((void *) sirf_hotstart_noinit);
+    txq_start();
+#endif
   }
 
-  void enqueue_exit_msgs() { }
+  void enqueue_exit_msgs() {
+    txq_send((void *) sirf_poll_clk_status);
+  }
 
   void verify_gmcb() {
     if (gmcb.majik_a != GMCB_MAJIK || gmcb.majik_a != GMCB_MAJIK)
@@ -517,7 +528,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
         for (idx = 0; config_msgs[idx]; idx++)
           txq_enqueue((void *) config_msgs[idx]);
-        txq_enqueue((void *) sirf_swver);
         txq_start();
         cycle_start = call MajorTimer.getNow();
         call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
@@ -1270,7 +1280,16 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     mon_pulse_comm_check(MON_EV_OTS_NO);
   }
 
-  void mon_ev_ots_yes()  { }
+  void mon_ev_ots_yes()  {
+    switch (gmcb.minor_state) {
+      default:
+        break;
+
+      case GMS_CONFIG:
+        txq_send((void *) sirf_swver);
+        break;
+    }
+  }
 
   void mon_ev_fix(mon_event_t ev) {
     uint32_t elapsed;
@@ -1508,6 +1527,11 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     call Collect.collect_nots((void *) &gps_block, sizeof(gps_block),
                               svp->data, dlen);
     minor_event(MON_EV_SWVER);
+
+#ifdef notdef
+    /* and for now, do a factory reset to start from scratch */
+    txq_send((void *) sirf_factory_clear);
+#endif
   }
 
 
