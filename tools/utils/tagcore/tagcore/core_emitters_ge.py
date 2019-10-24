@@ -47,7 +47,7 @@ gps_events = {
     EV_GPS_TIME:    0,
     GPS_LTFF_TIME:  0,
     GPS_FIRST_FIX:  0,
-    GPS_LOCK:       0,
+    GPS_FIX:        0,
     TIME_SRC:       0,
     TIME_SKEW:      0,
     GPS_BOOT:       1,
