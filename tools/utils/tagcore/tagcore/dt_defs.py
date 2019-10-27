@@ -41,12 +41,10 @@ Includes the following:
 '''
 
 from   __future__   import print_function
-
 from   datetime     import datetime
-
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.5.dev3'
+__version__ = '0.4.5.dev4'
 
 cfg_print_hourly = True
 
@@ -204,7 +202,7 @@ def rtctime_str(rtctime, fmt = 'basic'):
 
 def rtctime_iso(rtctime):
     '''
-    convert a rtctime into ISO-8601 formatted string displaying the time
+    convert a rtctime into an ISO-8601 formatted string displaying the time.
     '''
     return datetime(rtctime['year'].val,
                      rtctime['mon'].val,
@@ -214,6 +212,23 @@ def rtctime_iso(rtctime):
                      rtctime['sec'].val,
                      (rtctime['sub_sec'].val * 1000000) / 32768,
                     ).isoformat()
+
+
+def rtctime_full(rtctime, pretty=1):
+    '''
+    convert a rtctime into a full ISO-8601 formatted string displaying the time.
+    Full means all digits are spaced out.
+    '''
+    fmt_str = '%Y/%m/%dT%H:%M:%S.%f' if pretty else \
+              '%Y%m%dT%H%M%S.%f'
+    return datetime(rtctime['year'].val,
+                     rtctime['mon'].val,
+                     rtctime['day'].val,
+                     rtctime['hr'].val,
+                     rtctime['min'].val,
+                     rtctime['sec'].val,
+                     (rtctime['sub_sec'].val * 1000000) / 32768,
+                    ).strftime(fmt_str)
 
 
 last_rt = {'year': 0, 'mon': 0, 'day': 0, 'hr': 0}

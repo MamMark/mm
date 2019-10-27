@@ -30,6 +30,7 @@ __all__ = [
     'SNS_OBJECT',
     'SNS_DECODER',
     'SNS_VAL_STR',
+    'SNS_DICT',
     'SNS_EMITTERS',
     'SNS_OBJ_NAME',
 
@@ -47,6 +48,7 @@ __all__ = [
 
     'sns_name',
     'sns_val_str',
+    'sns_dict',
 ]
 
 
@@ -58,8 +60,9 @@ __all__ = [
 #   1: object       sensor data object
 #   2: decoder      sensor decoder, buf -> object
 #   3: val_str      sensor object value(s) to string, for display
-#   4: emitter      emitter list, output routines to call
-#   5: obj name     string object name for sanity
+#   4: dict         returns a dictionary describing the sensor
+#   5: emitter      emitter list, output routines to call
+#   6: obj name     string object name for sanity
 
 sns_table = {}
 sns_count = {}
@@ -68,8 +71,9 @@ SNS_NAME     = 0
 SNS_OBJECT   = 1
 SNS_DECODER  = 2
 SNS_VAL_STR  = 3
-SNS_EMITTERS = 4
-SNS_OBJ_NAME = 5
+SNS_DICT     = 4
+SNS_EMITTERS = 5
+SNS_OBJ_NAME = 6
 
 
 # Sensor data format Ids.  Must match tos/mm/sensor_ids.h
@@ -98,3 +102,8 @@ def sns_name(sns_id):
 def sns_val_str(sns_id, level = 0):
     v = sns_table.get(sns_id, ('noSns', None, None, sns_str_empty, None, None))
     return v[SNS_VAL_STR](v[SNS_OBJECT], level)
+
+
+def sns_dict(sns_id):
+    v = sns_table.get(sns_id, ('noSns', None, None, None, None, None))
+    return v[SNS_DICT]

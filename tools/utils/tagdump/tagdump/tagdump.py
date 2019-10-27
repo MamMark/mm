@@ -36,6 +36,8 @@ usage: tagdump.py [-h] [-v] [-V] [-H] [-j JUMP] [-e EndFilePos]
                   [-x | --export]
                   [-s START_TIME] [-e END_TIME]
                   [-r START_REC]  [-l LAST_REC]
+                  [-g GPS_EVAL]
+                  [-p | --pretty]
                   input
 '''
 
@@ -77,6 +79,7 @@ rec_last                = 0            # last rec num looked at
 verbose                 = 0            # how chatty to be
 debug                   = 0            # extra debug chatty
 quiet                   = 0            # turn off annoying bitching
+pretty                  = 0            # print pretty when able.
 
 
 # 1st sector of the first is the directory
@@ -95,7 +98,7 @@ dt_hdr                  = obj_dt_hdr()
 
 
 def init_globals():
-    global rec_low, rec_high, rec_last, verbose, debug, quiet
+    global rec_low, rec_high, rec_last, verbose, debug, quiet, pretty
     global num_resyncs, chksum_errors, unk_rtypes
     global total_records, total_bytes
 
@@ -105,6 +108,7 @@ def init_globals():
     verbose             = 0
     debug               = 0
     quiet               = 0
+    pretty              = 0
 
     num_resyncs         = 0             # how often we've resync'd
     chksum_errors       = 0             # checksum errors seen
@@ -316,6 +320,7 @@ def dump():
     verbose = args.verbose if (args.verbose) else 0
     debug   = args.debug   if (args.debug)   else 0
     quiet   = args.quiet   if (args.quiet)   else 0
+    pretty  = args.pretty  if (args.pretty)  else 0
     dtd.cfg_print_hourly = args.hourly
 
     if debug or verbose >= 5:
@@ -362,6 +367,7 @@ def dump():
             print('*** {} records'.format(args.num))
         print('*** verbosity: {:7}'.format(verbose))
         print('*** quiet:     {:7}'.format(quiet))
+        print('*** pretty:    {:7}'.format(pretty))
         start_rec = args.start if args.start else 1
         end_rec   = args.end   if args.end   else 'end'
         print('*** records: {:9} - {}'.format(start_rec, end_rec))
@@ -393,7 +399,9 @@ def dump():
         else:
             infile.seek(args.jump)
 
-    print(dtd.rec_title_str)
+    no_header = args.quiet or args.mr_emitters
+    if not no_header:
+        print(dtd.rec_title_str)
 
     # extract record from input file and output decoded results
     try:
@@ -458,7 +466,7 @@ def dump():
                 print()
                 dump_hdr(rec_offset, rec_buf, '    ')
                 dump_buf(rec_buf, '    ')
-            if (verbose >= 1):
+            if verbose >= 1 and not quiet:
                 print()
             total_records += 1
             total_bytes   += rlen
@@ -483,17 +491,18 @@ def dump():
         print()
         print('*** user stop')
 
-    print()
-    print('*** end of processing @{}  (0x{:x})  processed: {} records  {} bytes'.format(
-        infile.tell(), infile.tell(), total_records, total_bytes))
-    print('*** reboots: {}  resyncs: {}  chksum_errs: {}  unk_rtypes: {}'.format(
-        dtd.dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
-    if chksum_errors > 0:
+    if not quiet:
         print()
-        print('****** non-zero chksum_errors: {}'.format(chksum_errors))
-    print()
-    print('rtypes: {}'.format(dtd.dt_count))
-    print('mids:   {}'.format(sirf.mid_count))
+        print('*** end of processing @{}  (0x{:x})  processed: {} records  {} bytes'.format(
+            infile.tell(), infile.tell(), total_records, total_bytes))
+        print('*** reboots: {}  resyncs: {}  chksum_errs: {}  unk_rtypes: {}'.format(
+            dtd.dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
+        if chksum_errors > 0:
+            print()
+            print('****** non-zero chksum_errors: {}'.format(chksum_errors))
+        print()
+        print('rtypes: {}'.format(dtd.dt_count))
+        print('mids:   {}'.format(sirf.mid_count))
 
 if __name__ == "__main__":
     dump()

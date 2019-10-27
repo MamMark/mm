@@ -27,11 +27,18 @@ Includes:
                  -1 says --noexport.
     - quiet:     0 if displaying annoying displays
                  1 suppress annoying displays
+    - pretty     0 compact (default)
+                 1 print pretty (more readable) when able.
     - gps_level: None if not using gps_eval emitters
                  numeric level for how much to display
+    - mr_emitters: False, nope
+                   True, use machine readable emitters
 '''
 
 verbose   = 0
+debug     = 0
 export    = 0
 quiet     = 0
+pretty    = 0
 gps_level = None
+mr_emitters = False

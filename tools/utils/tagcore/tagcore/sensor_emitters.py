@@ -22,8 +22,12 @@ basic definitions for sensors.
 '''
 
 from   __future__   import print_function
+from   collections  import OrderedDict
+from   sensor_defs  import *
+import sensor_defs  as     sensor
 
-__version__ = '0.4.6.dev1'
+
+__version__ = '0.4.6.dev2'
 
 def emit_default(level, offset, buf, obj):
     print()
@@ -53,3 +57,18 @@ def sns_str_tmp_px(obj, level = 0):
 
 def emit_tmp_px(level, offset, buf, obj):
     pass
+
+
+def sns_dict_tmp_px(obj, level = 0):
+    sns_id = SNS_ID_TEMP_PX
+    v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
+    r = OrderedDict()
+    r['sns_id'] = sns_id
+    r['sensor'] = sns_name(sns_id)
+    tmp_p = obj['tmp_p'].val
+    tmp_x = obj['tmp_x'].val
+    c_p = float(obj['tmp_p'].val)/16*0.0625
+    c_x = float(obj['tmp_x'].val)/16*0.0625
+    r['C_tmp_p'] = c_p
+    r['C_tmp_x'] = c_x
+    return r

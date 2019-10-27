@@ -98,6 +98,9 @@ optional arguments:
       5   other errors and decoder versions
 
 
+  -m
+  --mr_emitters   use machine readable emitters.
+
   -g<n>
   --gps_eval <n>  switch to gps evaluation emitters with display level <n>
                   9 display all gps entries.
@@ -210,6 +213,14 @@ def parseargs():
                         default=0,
                         help='override export to external database')
 
+    parser.add_argument('-m', '--mr_emitters',
+                        action='store_true',
+                        help='enable machine readable export emitters')
+
+    parser.add_argument('-p', '--pretty',
+                        action='store_true',
+                        help='print pretty when able')
+
     parser.add_argument('-g', '--gps_eval',
                         type=int,
                         help='use gps_eval emitters, at level <GPS_EVAL>')
@@ -227,9 +238,16 @@ if len(sys.argv) < 2:
 
 args = parseargs()
 tagcore.globals.verbose   = args.verbose
+tagcore.globals.debug     = args.debug
 tagcore.globals.export    = args.export
 tagcore.globals.quiet     = args.quiet
+tagcore.globals.pretty    = args.pretty
 tagcore.globals.gps_level = args.gps_eval
+tagcore.globals.mr_emitters = args.mr_emitters
+
+if args.mr_emitters and args.gps_eval:
+    print('*** gps_eval and mr_emitters are mutually exclusive')
+    sys.exit(1)
 
 if args.noexport:
     tagcore.globals.export = -1
