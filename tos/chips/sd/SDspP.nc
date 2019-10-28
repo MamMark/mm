@@ -698,9 +698,11 @@ implementation {
 
   event void Collect.collectBooted() {
     sdc.logging = TRUE;
-    sd_cycle_count = 0;
     max_cycle_time = 0;
     total_on_time = 0;
+    sd_cycle_count = 0;
+    if (sdc.sd_state != SDS_OFF)
+      sd_cycle_count = 1;
   }
 
 
