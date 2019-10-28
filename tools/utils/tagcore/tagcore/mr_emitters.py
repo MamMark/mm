@@ -25,7 +25,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev0'
+__version__ = '0.4.6.dev1'
 
 import copy
 from   datetime       import datetime
@@ -78,6 +78,16 @@ def print_basic_obj(offset, hdr, obj, type_str):
         val = obj[k].val if (isinstance(obj[k], atom)) else obj[k]
         print(remain_fmt.format(val), end='')
     print()
+
+
+def emit_default_mr(level, offset, buf, obj):
+    hdr = obj['hdr']
+    xtype = hdr['type'].val
+    c = copy.deepcopy(obj)
+    del c['hdr']
+    for k in c.iterkeys():
+        print(k)
+    print_basic_obj(offset, hdr, c, dt_name(xtype))
 
 
 def emit_event_mr(level, offset, buf, obj):
