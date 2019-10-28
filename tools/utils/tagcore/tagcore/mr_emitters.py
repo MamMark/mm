@@ -85,8 +85,6 @@ def emit_default_mr(level, offset, buf, obj):
     xtype = hdr['type'].val
     c = copy.deepcopy(obj)
     del c['hdr']
-    for k in c.iterkeys():
-        print(k)
     print_basic_obj(offset, hdr, c, dt_name(xtype))
 
 
