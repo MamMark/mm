@@ -26,13 +26,11 @@ __all__ = [
     # event identifiers
 
     'PANIC_WARN',
-    'FAULT',
     'EV_GPS_GEO',
     'EV_GPS_XYZ',
     'EV_GPS_TIME',
     'GPS_LTFF_TIME',
     'GPS_FIRST_FIX',
-    'GPS_FIX',
     'DCO_REPORT',
     'DCO_SYNC',
     'TIME_SRC',
@@ -40,38 +38,16 @@ __all__ = [
     'TIME_SKEW',
     'SD_ON',
     'SD_OFF',
-    'SSW_SD_REQ',
-    'SSW_SD_REL',
+    'SD_REQ',
+    'SD_REL',
     'RADIO_MODE',
-    'GPS_BOOT',
-    'GPS_BOOT_TIME',
-    'GPS_BOOT_FAIL',
+    'GPS_CYCLE_START',
+    'GPS_CYCLE_END',
     'GPS_MON_MINOR',
     'GPS_MON_MAJOR',
     'GPS_RX_ERR',
-    'GPS_LOST_INT',
-    'GPS_MSG_OFF',
-    'GPS_AWAKE_S',
     'GPS_CMD',
-    'GPS_RAW_TX',
-    'GPS_SWVER_TO',
-    'GPS_CANNED',
-    'GPS_TURN_ON',
-    'GPS_STANDBY',
-    'GPS_TURN_OFF',
-    'GPS_MPM',
-    'GPS_PULSE',
-    'GPS_TX_RESTART',
     'GPS_MPM_RSP',
-    'GPS_ACK',
-    'GPS_NACK',
-    'GPS_NO_ACK',
-    'GPS_FAST',
-    'GPS_FIRST',
-    'GPS_SATS2',
-    'GPS_SATS7',
-    'GPS_SATS41',
-    'GPS_PWR_OFF',
 ]
 
 # EVENT
@@ -84,9 +60,9 @@ event_names = {
     3:  'GPS_GEO',              # deprecated, backward compatibility
     4:  'GPS_XYZ',              # deprecated, backward compatibility
     5:  'GPS_TIME',             # deprecated, backward compatibility
+
     6:  'GPS_LTFF_TIME',
     7:  'GPS_FIRST_FIX',
-    31: 'GPS_FIX',
 
     8:  'SSW_DELAY_TIME',
     9:  'SSW_BLK_TIME',
@@ -99,15 +75,20 @@ event_names = {
 
     15: 'DCO_REPORT',
     16: 'DCO_SYNC',
+
     17: 'TIME_SRC',
     18: 'IMG_MGR',
     19: 'TIME_SKEW',
+
     20: 'SD_ON',
     21: 'SD_OFF',
-    22: 'SSW_SD_REQ',
-    23: 'SSW_SD_REL',
+    22: 'SD_REQ',
+    23: 'SD_REL',
     24: 'RADIO_MODE',
 
+    29: 'GPS_CYCLE_START',
+    30: 'GPS_CYCLE_END',
+    31: 'GPS_FIX',              # deprecated
     32: 'GPS_BOOT',
     33: 'GPS_BOOT_TIME',
     34: 'GPS_BOOT_FAIL',
@@ -155,7 +136,6 @@ EV_GPS_XYZ    = 4
 EV_GPS_TIME   = 5
 GPS_LTFF_TIME = 6
 GPS_FIRST_FIX = 7
-GPS_FIX       = 31
 DCO_REPORT    = 15
 DCO_SYNC      = 16
 TIME_SRC      = 17
@@ -163,9 +143,12 @@ IMG_MGR       = 18
 TIME_SKEW     = 19
 SD_ON         = 20
 SD_OFF        = 21
-SSW_SD_REQ    = 22
-SSW_SD_REL    = 23
+SD_REQ        = 22
+SD_REL        = 23
 RADIO_MODE    = 24
+GPS_CYCLE_START = 29
+GPS_CYCLE_END = 30
+GPS_FIX       = 31
 GPS_BOOT      = 32
 GPS_BOOT_TIME = 33
 GPS_BOOT_FAIL = 34

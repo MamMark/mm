@@ -247,7 +247,6 @@ typedef enum {
 
   DT_EVENT_GPS_LTFF_TIME    = 6,       // low pwr (mpm) To First Fix (MTFF)
   DT_EVENT_GPS_FIRST_FIX    = 7,       // boot to first fix
-  DT_EVENT_GPS_FIX          = 31,      // fix seen
 
   DT_EVENT_SSW_DELAY_TIME   = 8,
   DT_EVENT_SSW_BLK_TIME     = 9,
@@ -267,12 +266,15 @@ typedef enum {
 
   DT_EVENT_SD_ON            = 20,       // SD turned on
   DT_EVENT_SD_OFF           = 21,       // SD turned off
-  DT_EVENT_SSW_SD_REQ       = 22,       // SSW requesting SD access
-  DT_EVENT_SSW_SD_REL       = 23,       // SSW releasing SD
+  DT_EVENT_SD_REQ           = 22,       // SD request
+  DT_EVENT_SD_REL           = 23,       // SD release
   DT_EVENT_RADIO_MODE       = 24,       // report radio major mode changes
 
   /***********************************/
 
+  DT_EVENT_GPS_CYCLE_START  = 29,
+  DT_EVENT_GPS_CYCLE_END    = 30,
+//  DT_EVENT_GPS_FIX          = 31,      // fix seen
   DT_EVENT_GPS_BOOT         = 32,
   DT_EVENT_GPS_BOOT_TIME    = 33,
   DT_EVENT_GPS_BOOT_FAIL    = 34,

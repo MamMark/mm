@@ -3,9 +3,15 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.6.dev16'
+__version__ = '0.4.6.dev17'
 
 # 0.4.6.dev+, core_rev: 22/1+:
+#       0.4.6.dev17
+#       o implement mr_emitters (machine readable) for data base export.
+#       o new switch -m (--mr_emitters)
+#       o add -p for pretty print to control different displays
+#       o make -q (quiet) turn off some of the chattiness.
+#
 #       o DT_GPS_CLK and friends
 #       o tagcore 0.4.6.dev2
 #       o add quiet switch
