@@ -52,9 +52,12 @@ class atom(object):
         if self.val == None:
             return 'notset'
 
-        if callable(self.f_str):
-            return self.p_str.format(self.f_str(self.val))
-        return self.p_str.format(self.val)
+        try:
+            if callable(self.f_str):
+                return self.p_str.format(self.f_str(self.val))
+            return self.p_str.format(self.val)
+        except ValueError:
+            raise ValueError('p_str: <{}>'.format(self.p_str))
 
     def set(self, buf):
         '''
