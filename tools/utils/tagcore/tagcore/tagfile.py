@@ -35,7 +35,8 @@ import time
 import errno
 import struct
 
-from dt_defs import *
+from   .dt_defs    import *
+from   .misc_utils import eprint
 
 # negative offset indicates file i/o error
 EODATA = -14
@@ -124,17 +125,17 @@ class TagFile(object):
                 if (e.errno == errno.ENODATA):
                     if (self.tail):
                         if self.verbose >= 5:
-                            print('*** TF.read: buf len: ', len(buf))
+                            eprint('*** TF.read: buf len: ', len(buf))
                         time.sleep(self.timeout)
                         continue
-                    print('*** data stream EOF sorry')
-                    print('*** use --tail to wait for data at EOF')
+                    eprint('*** data stream EOF sorry')
+                    eprint('*** use --tail to wait for data at EOF')
                     return ''
-                print('*** TF.read: unhandled OSError/IOError exception',
+                eprint('*** TF.read: unhandled OSError/IOError exception',
                       sys.exc_info()[0])
                 raise
             except:
-                print('*** TF.read: unhandled exception', sys.exc_info()[0])
+                eprint('*** TF.read: unhandled exception', sys.exc_info()[0])
                 raise
 
     def tell(self):
@@ -187,13 +188,13 @@ class TagFile(object):
         and therefore this call will never return this a valid offset.
         '''
         if (self.verbose >= 2):
-            print()
-            print('*** resync started @{0} (0x{0:x})'.format(offset))
+            eprint()
+            eprint('*** resync started @{0} (0x{0:x})'.format(offset))
 
         # make sure offset starts on quad word
         if (offset & 3 != 0):
             resync0 = '*** resync: unaligned offset: {0} (0x{0:x}) -> {1} (0x{1:x})'
-            print(resync0.format(offset, (offset/4)*4))
+            eprint(resync0.format(offset, (offset/4)*4))
             offset = (offset / 4) * 4
 
         # if using network then have remote tag search for sync record
@@ -201,7 +202,7 @@ class TagFile(object):
         if self.net_io:
             rsfileno = os.open(self.rsname, os.O_RDWR)
             if (self.verbose >= 3):
-                print('resync',self.rsname, offset, rsfileno)
+                eprint('resync',self.rsname, offset, rsfileno)
             os.ftruncate(rsfileno, offset)
             for i in range(100):
                 offset = os.fstat(rsfileno).st_size
@@ -210,7 +211,7 @@ class TagFile(object):
             os.close(rsfileno)
             # look for error code as one of least negative numbers
             if (self.verbose >= 3):
-                print('resync2',offset,i)
+                eprint('resync2',offset,i)
             if int32(offset) > 0 or int32(offset) < ELAST:
                 self.seek(offset)
                 return offset
@@ -229,7 +230,7 @@ class TagFile(object):
                 buf = self.read(dt_records[DT_SYNC][DTR_REQ_LEN])
                 if len(buf) < dt_records[DT_SYNC][DTR_REQ_LEN]:
                   if (self.verbose >= 4):
-                    print('*** resync: too few bytes read for resync record, '
+                    eprint('*** resync: too few bytes read for resync record, '
                           'wanted {}, got {}'.format(
                             dt_records[DT_SYNC][DTR_REQ_LEN], len(buf)))
                   return EODATA
@@ -245,7 +246,7 @@ class TagFile(object):
                 if (record['majik'] == 0):
                     zero_sigs += 1    # series of zeros means no data in file
                     if (zero_sigs > MAX_ZERO_SIGS):
-                        print('*** resync: too many zeros ({} x 4), bailing, @{}'.format(
+                        eprint('*** resync: too many zeros ({} x 4), bailing, @{}'.format(
                             MAX_ZERO_SIGS, offset))
                         return EODATA      # file looks empty
                     else:
@@ -257,20 +258,20 @@ class TagFile(object):
                     recnum = record['hdr']['recnum'].val
                     resync2 = '*** resync: failed record @{} (0x{:x}): ' + \
                               'len: {}, type: {}, rec: {}'
-                    print(resync2.format(offset-4, offset-4, rlen, rtype, recnum))
-                    print('    moving to: @{0} (0x{0:x})'.format(offset, offset))
+                    eprint(resync2.format(offset-4, offset-4, rlen, rtype, recnum))
+                    eprint('    moving to: @{0} (0x{0:x})'.format(offset, offset))
             except struct.error:
                 resync1 = '*** resync: (struct error) [len: {0}] @{1} (0x{1:x})'
-                print(resync1.format(len(buf), offset, offset))
+                eprint(resync1.format(len(buf), offset, offset))
                 raise
             except IOError:
-                print('*** resync: file io error @{}'.format(offset))
+                eprint('*** resync: file io error @{}'.format(offset))
                 raise
             except EOFError:
-                print('*** resync: end of file @{}'.format(offset))
+                eprint('*** resync: end of file @{}'.format(offset))
                 raise
             except:
-                print('*** resync: exception error: {} @{}'.format(
+                eprint('*** resync: exception error: {} @{}'.format(
                     sys.exc_info()[0], offset))
                 raise
         return -1

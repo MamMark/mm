@@ -54,6 +54,7 @@ from   tagcore.dt_defs   import *
 import tagcore.dt_defs   as     dtd
 import tagcore.sirf_defs as     sirf
 from   tagcore.tagfile   import *
+from   tagcore.misc_utils import eprint
 
 import tagdump_config                   # populate configuration
 
@@ -167,7 +168,7 @@ def get_record(fd):
         # that the sparse tagfuse stuff works better (fewer holes).
         if (offset & 3):
             new_offset = ((offset/4) + 1) * 4
-            print(align0.format(offset, new_offset, new_offset - offset))
+            eprint(align0.format(offset, new_offset, new_offset - offset))
             offset = new_offset
             fd.seek(offset)
         if (offset == last_offset):
@@ -179,7 +180,7 @@ def get_record(fd):
             # tried and find the next sync.
             #
             offset += RESYNC_HDR_OFFSET
-            print('*** resyncing: moving past current majik to: @{0} (0x{0:x})'.format(
+            eprint('*** resyncing: moving past current majik to: @{0} (0x{0:x})'.format(
                 offset))
             offset = resync(fd, offset)
             if (offset < 0):
@@ -188,7 +189,7 @@ def get_record(fd):
         last_offset = offset
         rec_buf = bytearray(fd.read(hdr_len))
         if len(rec_buf) < hdr_len:
-            print('*** record header read too short: wanted {}, got {}, @{}'.format(
+            eprint('*** record header read too short: wanted {}, got {}, @{}'.format(
                 hdr_len, len(rec_buf), offset))
             break                       # oops
         hdr.set(rec_buf)
@@ -199,21 +200,21 @@ def get_record(fd):
 
         # check for obvious errors
         if (rlen < hdr_len):
-            print('*** record size too small: {} @{}'.format(rlen, offset))
+            eprint('*** record size too small: {} @{}'.format(rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
             continue
 
         if (rlen > RLEN_MAX_SIZE):
-            print('*** record size too large: {} @{}'.format(rlen, offset))
+            eprint('*** record size too large: {} @{}'.format(rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
             continue
 
         if (recnum == 0):               # zero is never allowed
-            print('*** zero record number @{} - resyncing'.format(offset))
+            eprint('*** zero record number @{} - resyncing'.format(offset))
             offset = resync(fd, offset)
             if (offset < 0):
                 break
@@ -223,7 +224,7 @@ def get_record(fd):
         # if dlen is negative, that says we are below min header size
         dlen = rlen - hdr_len
         if (dlen < 0):                  # major oops, rlen is screwy
-            print('*** record header too short: wanted {} got {} @{}'.format(
+            eprint('*** record header too short: wanted {} got {} @{}'.format(
                 hdr_len, rlen, offset))
             offset = resync(fd, offset)
             if (offset < 0):
@@ -237,14 +238,14 @@ def get_record(fd):
         extra = 4 - ((offset + rlen) & 3)
         if extra < 4:
             if debug and verbose >= 5:
-                print('*** reading extra {} bytes for quad alignment'.format(extra))
+                eprint('*** reading extra {} bytes for quad alignment'.format(extra))
             dlen += extra
 
         if (dlen > 0):
             rec_buf.extend(bytearray(fd.read(dlen)))
 
         if (len(rec_buf) < rlen):
-            print('*** record read too short: wanted {} got {} @{}'.format(
+            eprint('*** record read too short: wanted {} got {} @{}'.format(
                 rlen, len(rec_buf), offset))
             break                       # oops, bail
 
@@ -263,7 +264,7 @@ def get_record(fd):
             chksum_errors += 1
             chksum1 = '*** checksum failure @{0} (0x{0:x}) ' + \
                       '[wanted: 0x{1:x} got: 0x{2:x}]'
-            print(chksum1.format(offset, recsum, chksum))
+            eprint(chksum1.format(offset, recsum, chksum))
             if not dump_hdr(offset, rec_buf, '*** ') or verbose >= 3:
                 print()
                 dump_buf(rec_buf, '    ')
@@ -324,16 +325,16 @@ def dump():
     dtd.cfg_print_hourly = args.hourly
 
     if debug or verbose >= 5:
-        print(ver_str)
-        print('  base_objs: {:10}  dt_defs: {:10}'.format(
+        eprint(ver_str)
+        eprint('  base_objs: {:10}  dt_defs: {:10}'.format(
             vers.base_ver, vers.dt_ver))
-        print('   core:     {:10}  e: {:10}  h: {:10}  panic:  h: {:10}'.format(
+        eprint('   core:     {:10}  e: {:10}  h: {:10}  panic:  h: {:10}'.format(
             vers.core_ver, vers.ce_ver, vers.ch_ver, vers.pi_ver))
-        print('   sirf:  d: {:10}  e: {:10}  h: {:10}'.format(
+        eprint('   sirf:  d: {:10}  e: {:10}  h: {:10}'.format(
             vers.sd_ver, vers.se_ver, vers.sh_ver))
-        print('   sns:   d: {:10}  e: {:10}  h: {:10}'.format(
+        eprint('   sns:   d: {:10}  e: {:10}  h: {:10}'.format(
             vers.snsd_ver, vers.snse_ver, vers.snsh_ver))
-        print()
+        eprint()
 
     def count_dt(rtype):
         """
@@ -362,21 +363,21 @@ def dump():
         io_str   = 'network' if args.net  else 'local'
         to_str   = '  timeout: {} secs'.format(args.timeout) \
                    if args.net else ''
-        print('*** {} i/o{}{}'.format(io_str, tail_str, to_str))
+        eprint('*** {} i/o{}{}'.format(io_str, tail_str, to_str))
         if args.num:
-            print('*** {} records'.format(args.num))
-        print('*** verbosity: {:7}'.format(verbose))
-        print('*** quiet:     {:7}'.format(quiet))
-        print('*** pretty:    {:7}'.format(pretty))
+            eprint('*** {} records'.format(args.num))
+        eprint('*** verbosity: {:7}'.format(verbose))
+        eprint('*** quiet:     {:7}'.format(quiet))
+        eprint('*** pretty:    {:7}'.format(pretty))
         start_rec = args.start if args.start else 1
         end_rec   = args.end   if args.end   else 'end'
-        print('*** records: {:9} - {}'.format(start_rec, end_rec))
+        eprint('*** records: {:9} - {}'.format(start_rec, end_rec))
         start_pos = args.jump if args.jump else 0
         end_pos   = args.endpos if args.endpos else 'eof'
-        print('*** offsets: {:9} - {}'.format(start_pos, end_pos))
+        eprint('*** offsets: {:9} - {}'.format(start_pos, end_pos))
         if args.rtypes:
-            print('*** restricted to rtypes: {}'.format(args.rtypes))
-        print()
+            eprint('*** restricted to rtypes: {}'.format(args.rtypes))
+        eprint()
 
 
     # create file object that handles both buffered and direct io
@@ -417,10 +418,10 @@ def dump():
             recnum   = hdr['recnum'].val
 
             if (recnum < rec_last):
-                print('*** recnum went backwards.  last: {}, new: {}, @{}'.format(
+                eprint('*** recnum went backwards.  last: {}, new: {}, @{}'.format(
                     rec_last, recnum, rec_offset))
             if (rec_last and recnum > rec_last + 1):
-                print('*** record gap: ({}) records @{}'.format(
+                eprint('*** record gap: ({}) records @{}'.format(
                     recnum - rec_last, rec_offset))
             rec_last = recnum
 
@@ -454,13 +455,13 @@ def dump():
                         for e in emitters:
                             e(verbose, rec_offset, rec_buf, obj)
                 except struct.error:
-                    print('*** decoder/emitter struct/obj error: (len: {}, '
+                    eprint('*** decoder/emitter struct/obj error: (len: {}, '
                           'rtype: {} {}, wanted: {}), @{}'.format(
                               rlen, rtype, dt_name(rtype),
                               len(obj) if obj else 0, rec_offset))
             else:
                 if debug or not quiet or verbose >= 5:
-                    print('*** no decoder installed for rtype {}, @{}'.format(
+                    eprint('*** no decoder installed for rtype {}, @{}'.format(
                         rtype, rec_offset))
             if (verbose >= 3):
                 print()
@@ -480,29 +481,28 @@ def dump():
             if rtype == DT_SYNC_FLUSH:
                 new_offset = rec_offset + 512
                 new_offset &= 0xfffffe00
-                print()
-                print('*** SYNC_FLUSH: @{} advancing to next '
-                      'sector @{}'.format(rec_offset, new_offset))
-                print()
+                eprint()
+                eprint('*** SYNC_FLUSH: @{} advancing to next '
+                       'sector @{}'.format(rec_offset, new_offset))
+                eprint()
                 infile.seek(new_offset)
 
     except KeyboardInterrupt:
-        print()
-        print()
-        print('*** user stop')
+        eprint()
+        eprint()
+        eprint('*** user stop')
 
-    if not quiet:
-        print()
-        print('*** end of processing @{}  (0x{:x})  processed: {} records  {} bytes'.format(
+    eprint()
+    eprint('*** end of processing @{}  (0x{:x})  processed: {} records  {} bytes'.format(
             infile.tell(), infile.tell(), total_records, total_bytes))
-        print('*** reboots: {}  resyncs: {}  chksum_errs: {}  unk_rtypes: {}'.format(
-            dtd.dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
-        if chksum_errors > 0:
-            print()
-            print('****** non-zero chksum_errors: {}'.format(chksum_errors))
-        print()
-        print('rtypes: {}'.format(dtd.dt_count))
-        print('mids:   {}'.format(sirf.mid_count))
+    eprint('*** reboots: {}  resyncs: {}  chksum_errs: {}  unk_rtypes: {}'.format(
+        dtd.dt_count.get(DT_REBOOT, 0), num_resyncs, chksum_errors, unk_rtypes))
+    if chksum_errors > 0:
+        eprint()
+        eprint('****** non-zero chksum_errors: {}'.format(chksum_errors))
+        eprint()
+    eprint('rtypes: {}'.format(dtd.dt_count))
+    eprint('mids:   {}'.format(sirf.mid_count))
 
 if __name__ == "__main__":
     dump()

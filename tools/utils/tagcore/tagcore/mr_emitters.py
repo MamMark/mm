@@ -25,7 +25,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6.dev2'
 
 import copy
 from   datetime       import datetime
@@ -37,6 +37,7 @@ from   .core_emitters import *
 from   .dt_defs       import rtctime_full
 from   .core_events   import event_name
 from   .base_objs     import atom
+from   .misc_utils    import eprint
 from   sensor_defs    import *
 import sensor_defs    as     sensor
 
@@ -93,8 +94,8 @@ def emit_event_mr(level, offset, buf, obj):
     hdr = obj['hdr']
     ev  = obj['event'].val
     if ev not in gps_events:
-        if debug:
-            print('*** dumping event {}/{}'.format(ev, event_name(ev)))
+        if debug and verbose:
+            eprint('*** dumping event {}/{}'.format(ev, event_name(ev)))
         return
     c = copy.deepcopy(obj)
     del c['hdr']

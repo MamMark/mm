@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.6.dev15'
+__version__ = '0.4.6.dev17'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -19,6 +19,7 @@ from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
 # 0.4.6.dev+    CR 22/+
+#       o add eprint (stderr) to misc_utils.
 #       o add GPS_CYCLE_{START,END} for instrumentation
 #       o clean up "all" in core_events, remove unused event exports
 #       o add instrumentation for SD_REQ/REL for SD arbiter.

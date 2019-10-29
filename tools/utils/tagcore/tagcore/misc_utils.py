@@ -22,6 +22,7 @@
 
 from   __future__ import print_function
 import binascii
+import sys
 
 def buf_str(buf):
     """
@@ -49,3 +50,6 @@ def dump_buf(buf, pre = '', desc = 'rec:  '):
         idx += (stride * 3)
         if idx < len(bs):              # if more then print counter
             print(pre + '{:04x}: '.format(idx/3), end = '')
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)

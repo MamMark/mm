@@ -3,9 +3,12 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.6.dev18'
+__version__ = '0.4.6.dev20'
 
 # 0.4.6.dev+, core_rev: 22/1+:
+#       0.4.6.dev20
+#       o convert to eprint for stderr
+#
 #       0.4.6.dev17
 #       o implement mr_emitters (machine readable) for data base export.
 #       o new switch -m (--mr_emitters)
