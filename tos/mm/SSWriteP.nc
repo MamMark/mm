@@ -320,12 +320,14 @@ implementation {
       ss_panic(19, ssc.cur_handle->buf_state);
 
     /*
-     * When running a simple sensor regime (all 1 sec, mag/accel 51mis) and writing out
-     * all packets to the serial port, gathering 3 causes a panic.  There isn't enough
-     * time for the StreamStorage thread to gain  control.
+     * When running a simple sensor regime (all 1 sec, mag/accel 51mis) and
+     * writing out all packets to the serial port, gathering 3 causes a
+     * panic.  There isn't enough time for the StreamStorage thread to gain
+     * control.
      *
-     * Verify that this is still a problem when using event based and task based StreamStorage
-     * The above shouldn't be a problem with full event based.
+     * Verify that this is still a problem when using event based and task
+     * based StreamStorage The above shouldn't be a problem with full event
+     * based.
      */
 
     /*
