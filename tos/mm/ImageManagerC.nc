@@ -64,4 +64,8 @@ implementation {
 
   components SD0C, SSWriteC;
   IM_P.SDraw -> SD0C;
+
+  components OverWatchC;
+  IM_P.OverWatch    -> OverWatchC;
+  IM_P.CollectEvent -> CollectC;
 }

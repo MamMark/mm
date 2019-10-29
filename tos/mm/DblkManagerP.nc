@@ -74,6 +74,7 @@ module DblkManagerP {
     interface ByteMapFile as DMF;
     interface Crc<uint8_t> as Crc8;
     interface Panic;
+    interface CollectEvent;
   }
 }
 
@@ -155,6 +156,8 @@ implementation {
     dmc.boot_recnum = 1;
     dmc.boot_offset = 512;
     dmc.dm_state = DMS_REQUEST;
+    if (call OW.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REQ, (dmc.dm_state << 16) | SD0_DM, 0,0,0);
     if ((err = call SDResource.request()))
       dm_panic(2, err, 0);
     return;
@@ -164,8 +167,6 @@ implementation {
   event void SDResource.granted() {
     error_t err;
 
-    nop();
-    nop();                              /* BRK */
     if (dmc.dm_state != DMS_REQUEST) {
       dm_panic(3, dmc.dm_state, 0);
       return;
@@ -329,6 +330,8 @@ implementation {
      */
 
     dmc.dm_state = DMS_SYNC;
+    if (call OW.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REL, SD0_DM, 0,0,0);
     call SDResource.release();
     cur_offset = call DblkManager.dblk_nxt_offset();
     dmc.boot_offset = cur_offset;

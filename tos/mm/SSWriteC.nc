@@ -59,4 +59,8 @@ implementation {
 
   components DblkManagerC;
   SSW_P.DblkManager -> DblkManagerC;
+
+  components OverWatchC;
+  SSW_P.OverWatch    -> OverWatchC;
+  SSW_P.CollectEvent -> CollectC;
 }

@@ -67,4 +67,7 @@ implementation {
 
   components PanicC;
   DMP.Panic -> PanicC;
+
+  components CollectC;
+  DMP.CollectEvent -> CollectC;
 }

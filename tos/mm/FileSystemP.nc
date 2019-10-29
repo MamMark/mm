@@ -84,6 +84,8 @@ module FileSystemP {
     interface Resource as SDResource;
     interface SDsa;
     interface Panic;
+    interface OverWatch;
+    interface CollectEvent;
   }
 }
 
@@ -165,11 +167,20 @@ implementation {
   }
 
 
+  error_t fs_logRequest() {
+    if (call OverWatch.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REQ,
+                                 (fs_state << 16) | SD0_FS,
+                                 0,0,0);
+    return call SDResource.request();
+  }
+
+
   event void Boot.booted() {
     error_t err;
 
     fs_state = FSS_ZERO_REQ;
-    if ((err = call SDResource.request()))
+    if ((err = fs_logRequest()))
       fs_panic(1, err);
     return;
   }
@@ -188,7 +199,7 @@ implementation {
       do_erase();
       return SUCCESS;
     }
-    err = call SDResource.request();
+    err = fs_logRequest();
     if (err)
       fs_panic(9, err);
     return err;
@@ -261,6 +272,15 @@ implementation {
   }
 
 
+  void fs_logRelease() {
+    if (call OverWatch.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REL,
+                                 (fs_state << 16) | SD0_FS,
+                                 0,0,0);
+    call SDResource.release();
+  }
+
+
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
     uint8_t  *dp;
 
@@ -289,7 +309,7 @@ implementation {
      */
     signal Booted.booted();
     if (fs_state == FSS_IDLE)
-      call SDResource.release();
+      fs_logRelease();
   }
 
 
@@ -301,7 +321,7 @@ implementation {
     }
     fs_state = FSS_IDLE;
     signal FS.eraseDone(fs_which);
-    call SDResource.release();
+    fs_logRelease();
 #endif
   }
 

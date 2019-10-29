@@ -198,6 +198,7 @@ module ImageManagerP {
     interface CollectEvent;
     interface Platform;
     interface Panic;
+    interface OverWatch;
   }
 }
 implementation {
@@ -512,6 +513,14 @@ implementation {
   }
 
 
+  error_t im_logRequest() {
+    if (call OverWatch.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REQ,
+                                 (imcb.im_state << 16) | SD0_IM,
+                                 0,0,0);
+    return call SDResource.request();
+  }
+
   event void Boot.booted() {
     error_t err;
 
@@ -541,7 +550,7 @@ implementation {
     if ( ! imcb.region_start_blk)
       im_panic(5, 0, 0);
     imcb.im_state = IMS_INIT_REQ_SD;
-    if ((err = call SDResource.request()))
+    if ((err = im_logRequest()))
       im_panic(6, err, 0);
   }
 
@@ -826,7 +835,7 @@ implementation {
     dir->chksum = 0 - call Checksum.sum32_aligned((void *) dir, sizeof(*dir));
     imcb.im_state = IMS_DELETE_SYNC_REQ_SD;
     imcb.cid = cid;
-    err = call SDResource.request();
+    err = im_logRequest();
     if (err)
       im_panic(12, err, 0);
 
@@ -906,7 +915,7 @@ implementation {
      */
     imcb.im_state = IMS_DSA_SYNC_REQ_SD;
     imcb.cid = cid;
-    if ((err = call SDResource.request()))
+    if ((err = im_logRequest()))
       im_panic(15, err, 0);
     call CollectEvent.logEvent(DT_EVENT_IMG_MGR, IMGMGR_EV_ACTIVE,
                                (uint32_t) active, (uint32_t) backup, cid);
@@ -963,7 +972,7 @@ implementation {
      */
     imcb.im_state = IMS_DSB_SYNC_REQ_SD;
     imcb.cid = cid;
-    if ((err = call SDResource.request()))
+    if ((err = im_logRequest()))
       im_panic(18, err, 0);
 
     call CollectEvent.logEvent(DT_EVENT_IMG_MGR, IMGMGR_EV_BACKUP,
@@ -1015,7 +1024,7 @@ implementation {
      */
     imcb.im_state = IMS_EJECT_SYNC_REQ_SD;
     imcb.cid = cid;
-    if ((err = call SDResource.request()))
+    if ((err = im_logRequest()))
       im_panic(21, err, 0);
 
     /*
@@ -1073,7 +1082,7 @@ implementation {
     }
     else imcb.im_state = IMS_FILL_LAST_REQ_SD;
 
-    err = call SDResource.request();
+    err = im_logRequest();
     if (err)
       im_panic(23, err, 0);
 
@@ -1132,7 +1141,7 @@ implementation {
     imcb.buf_ptr += copy_len;
     if (bytes_left) {
       imcb.im_state = IMS_FILL_REQ_SD;
-      err = call SDResource.request();
+      err = im_logRequest();
       if (err)
         im_panic(25, err, 0);
     }
@@ -1195,6 +1204,15 @@ implementation {
   }
 
 
+  void im_logRelease() {
+    if (call OverWatch.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REL,
+                                 (imcb.im_state << 16) | SD0_IM,
+                                 0,0,0);
+    call SDResource.release();
+  }
+
+
   event void SDread.readDone(uint32_t blk_id, uint8_t *read_buf, error_t err) {
     image_dir_t *dir;
     int i;
@@ -1237,7 +1255,7 @@ implementation {
     imcb.im_state = IMS_IDLE;
     imcb.cid      = -1;
     signal Booted.booted();
-    call SDResource.release();
+    im_logRelease();
     return;
   }
 
@@ -1254,7 +1272,7 @@ implementation {
         imcb.cid      = -1;
         imcb.im_state = IMS_IDLE;
         signal Booted.booted();
-        call SDResource.release();
+        im_logRelease();
         return;
 
       case IMS_FILL_WRITING:
@@ -1263,7 +1281,7 @@ implementation {
         imcb.buf_ptr = &im_wrk_buf[0];
         imcb.bytes_remaining = SD_BLOCKSIZE;
         signal IM.write_continue[imcb.cid]();
-        call SDResource.release();
+        im_logRelease();
         return;
 
       case IMS_FILL_LAST_WRITE:
@@ -1277,7 +1295,7 @@ implementation {
         imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
         signal IM.finish_complete[pcid]();
-        call SDResource.release();
+        im_logRelease();
         return;
 
       case IMS_DELETE_SYNC_WRITE:
@@ -1285,7 +1303,7 @@ implementation {
         imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
         signal IM.delete_complete[pcid]();
-        call SDResource.release();
+        im_logRelease();
         return;
 
       case IMS_DSA_SYNC_WRITE:
@@ -1293,7 +1311,7 @@ implementation {
         imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
         signal IM.dir_set_active_complete[pcid]();
-        call SDResource.release();
+        im_logRelease();
         return;
 
       case  IMS_DSB_SYNC_WRITE:
@@ -1301,7 +1319,7 @@ implementation {
         imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
         signal IM.dir_set_backup_complete[pcid]();
-        call SDResource.release();
+        im_logRelease();
         return;
 
       case IMS_EJECT_SYNC_WRITE:
@@ -1309,7 +1327,7 @@ implementation {
         imcb.cid = -1;
         imcb.im_state = IMS_IDLE;
         signal IM.dir_eject_active_complete[pcid]();
-        call SDResource.release();
+        im_logRelease();
         return;
     }
   }

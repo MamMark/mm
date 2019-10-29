@@ -62,6 +62,8 @@ module PanicMapFileP {
     interface Resource as SDResource;
     interface Boot;
     interface Panic;
+    interface OverWatch;
+    interface CollectEvent;
   }
 }
 implementation {
@@ -87,6 +89,10 @@ implementation {
 
     if (pmf_cb.state != PMFS_READ || pmf_cb.fill_blk_id != blk_id)
       pmap_panic(2, pmf_cb.state, blk_id);
+    if (call OverWatch.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REL,
+                                 (pmf_cb.state << 16) | SD0_PMF,
+                                 0,0,0);
     call SDResource.release();
     pmf_cb.state = PMFS_IDLE;
     pmf_cb.fill_blk_id = 0;
@@ -145,6 +151,10 @@ implementation {
     pmf_cb.cache_blk_id = 0;            /* invalidate */
     pmf_cb.fill_blk_id  = req_blk;
     pmf_cb.state = PMFS_REQ;
+    if (call OverWatch.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REQ,
+                                 (pmf_cb.state << 16) | SD0_PMF,
+                                 0,0,0);
     pmf_cb.err = call SDResource.request();
     if (pmf_cb.err != SUCCESS)
       pmap_panic(3, pmf_cb.err, 0);

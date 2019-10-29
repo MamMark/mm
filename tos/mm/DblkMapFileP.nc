@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Daniel J. Maltbie
  * Copyright (c) 2018 Daniel J. Maltbie, Eric B. Decker
+ * Copyright (c) 2019, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,6 +32,8 @@
 #include <platform_panic.h>
 #include <sd.h>
 #include <typed_data.h>
+#include <sd0_users.h>
+#include <overwatch.h>
 
 /*
  * DblkMapFile provides a virtualization of dblk stream storage
@@ -215,6 +218,8 @@ module DblkMapFileP {
     interface SDread        as SDread;
     interface Resource      as SDResource;
     interface Panic;
+    interface CollectEvent;
+    interface OverWatch;
   }
 }
 implementation {
@@ -506,6 +511,10 @@ implementation {
       dmap_panic(7, dmf_cb.cache.len, sizeof(dmf_cache));
     dmf_cb.fill_blk_id  = blk_id;
     dmf_cb.io_state     = DMF_IO_IDLE;
+    if (call OverWatch.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REQ,
+                                 (dmf_cb.io_state << 16) | SD0_DMF,
+                                 0,0,0);
     dmf_cb.err = call SDResource.request();
     if (dmf_cb.err != SUCCESS) {
       dmf_cb.io_state = DMF_IO_ERROR;
@@ -530,6 +539,15 @@ implementation {
   }
 
 
+  void dmap_logRelease() {
+    if (call OverWatch.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REL,
+                                 (dmf_cb.io_state << 16) | SD0_DMF,
+                                 0,0,0);
+    call SDResource.release();
+  }
+
+
   event void SDResource.granted() {
     dmf_cb.err = call SDread.read(dmf_cb.fill_blk_id,
         &dmf_cache[dmf_cb.cache.target_offset - dmf_cb.cache.offset]);
@@ -537,7 +555,7 @@ implementation {
       dmf_cb.io_state = DMF_IO_ERROR;
       dmap_panic(8, dmf_cb.err, 0);
       dmf_cb.fill_blk_id = 0;
-      call SDResource.release();
+      dmap_logRelease();
       dmf_cb.io_state = DMF_IO_IDLE;
       signal DMF.data_avail[dmf_cb.cid](dmf_cb.err);
       return;
@@ -553,7 +571,7 @@ implementation {
         || err)
       dmap_panic(9, err, blk_id);
     dmf_cb.fill_blk_id = 0;             /* err or success, open lock */
-    call SDResource.release();
+    dmap_logRelease();
     if (err) {
       dmf_cb.io_state = DMF_IO_ERROR;
       dmf_cb.err = err;

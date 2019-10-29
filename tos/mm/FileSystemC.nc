@@ -78,4 +78,12 @@ implementation {
 
   components SystemBootC;
   PMF.Boot          -> SystemBootC.Boot;
+
+  components OverWatchC, CollectC;
+  FS_P.OverWatch    -> OverWatchC;
+  FS_P.CollectEvent -> CollectC;
+  DMF.OverWatch     -> OverWatchC;
+  DMF.CollectEvent  -> CollectC;
+  PMF.OverWatch     -> OverWatchC;
+  PMF.CollectEvent  -> CollectC;
 }

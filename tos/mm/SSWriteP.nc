@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, 2017-2018, Eric B. Decker
+ * Copyright (c) 2008, 2010, 2017-2019, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -54,6 +54,8 @@
 #include <panic.h>
 #include <platform_panic.h>
 #include "stream_storage.h"
+#include <overwatch.h>
+#include <sd0_users.h>
 
 uint32_t w_t0, w_diff;
 
@@ -82,6 +84,7 @@ module SSWriteP {
     interface Trace;
     interface CollectEvent;
     interface Collect;
+    interface OverWatch;
   }
 }
 
@@ -346,9 +349,11 @@ implementation {
     ssc.state = SSW_REQUESTED;
     ssw_sd_cycles++;
 
-    call CollectEvent.logEvent(DT_EVENT_SSW_SD_REQ, ssw_sd_cycles, 0,
-                               ssc.ssw_num_full, ssc.ssw_max_full);
-    /* SDResource.request will all turn on the SD h/w when granted */
+    if (call OverWatch.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REQ,
+                                 (ssc.state << 16) | SD0_SSW, ssw_sd_cycles,
+                                 ssc.ssw_num_full, ssc.ssw_max_full);
+    /* SDResource.request will turn on the SD h/w when granted */
     if ((err = call SDResource.request()))
       ss_panic(20, err);
   }
@@ -376,11 +381,14 @@ implementation {
   }
 
 
-  void ssw_log_release() {
+  void ssw_logRelease() {
     w_t0 = call LocalTime.get();
     w_diff = w_t0 - ssw_write_grp_start;
-    call CollectEvent.logEvent(DT_EVENT_SSW_SD_REL, ssw_sd_cycles, ssw_delay,
-                               ssc.ssw_num_full, w_diff);
+    if (call OverWatch.getLoggingFlag(OW_LOG_SD))
+      call CollectEvent.logEvent(DT_EVENT_SD_REL, (ssc.state << 16) | SD0_SSW,
+                                 ssw_sd_cycles, ssw_delay, w_diff);
+    if (call SDResource.release())
+      ss_panic(25, 0);
   }
 
 
@@ -406,9 +414,7 @@ implementation {
       signal SS.dblk_stream_full();
       flush_buffers();
       ssc.state = SSW_IDLE;
-      ssw_log_release();
-      if (call SDResource.release())
-        ss_panic(25, 0);
+      ssw_logRelease();
       return;
     }
 
@@ -424,9 +430,7 @@ implementation {
       return;
     }
     ssc.state = SSW_IDLE;
-    ssw_log_release();
-    if (call SDResource.release())
-      ss_panic(27, 0);
+    ssw_logRelease();
   }
 
 

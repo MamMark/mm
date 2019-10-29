@@ -482,7 +482,7 @@ implementation {
   static void collect_gps_pak(uint8_t *pak, uint16_t len, uint8_t dir) {
     dt_gps_t hdr;
 
-    if (call OverWatch.getLoggingFlag(OW_LOG_RAW_GPS)) {
+    if (call OverWatch.getLoggingFlag(OW_LOG_GPS_RAW)) {
       hdr.len      = sizeof(hdr) + len;
       hdr.dtype    = DT_GPS_RAW_SIRFBIN;
       hdr.mark_us  = 0;

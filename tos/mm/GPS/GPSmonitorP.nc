@@ -439,8 +439,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
     verify_gmcb();
     old_state = gmcb.major_state;
-    call CollectEvent.logEvent(DT_EVENT_GPS_MON_MAJOR, old_state, new_state,
-                               ev, 0);
+    if (call OverWatch.getLoggingFlag(OW_LOG_GPS_STATE))
+      call CollectEvent.logEvent(DT_EVENT_GPS_MON_MAJOR, old_state,
+                                 new_state, ev, 0);
     gmcb.major_state = new_state;
     last_nsats_count = 0;
     if (gmcb.major_state != GMS_MAJOR_IDLE)
@@ -455,8 +456,12 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
 
   void minor_change_state(gpsm_state_t new_state, mon_event_t ev) {
-    call CollectEvent.logEvent(DT_EVENT_GPS_MON_MINOR, gmcb.minor_state,
-                               new_state, ev, 0);
+    gpsm_state_t old_minor_state;
+
+    if (call OverWatch.getLoggingFlag(OW_LOG_GPS_STATE))
+      call CollectEvent.logEvent(DT_EVENT_GPS_MON_MINOR, gmcb.minor_state,
+                                 new_state, ev, 0);
+    old_minor_state = gmcb.minor_state;
     gmcb.minor_state = new_state;
     last_nsats_count = 0;
     if (gmcb.major_state != GMS_MAJOR_IDLE)
@@ -1848,7 +1853,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       return;
     }
 
-    if (call OverWatch.getLoggingFlag(OW_LOG_RAW_GPS)) {
+    if (call OverWatch.getLoggingFlag(OW_LOG_GPS_RAW)) {
       /*
        * gps msg eavesdropping.  Log received messages to the dblk
        * stream.

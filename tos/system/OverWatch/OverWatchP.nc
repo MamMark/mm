@@ -163,6 +163,15 @@ implementation {
     owcp->from_base     = OW_BASE_UNK;          /* mark as unknown */
     owcp->reset_status  = call OWhw.getResetStatus();
     owcp->reset_others  = call OWhw.getResetOthers();
+
+    owcp->logging_flags = 0;
+//    call OverWatch.setLoggingFlag(OW_LOG_GPS_RAW);
+//    call OverWatch.setLoggingFlag(OW_LOG_GPS_STATE);
+//    call OverWatch.setLoggingFlag(OW_LOG_GPS_MISC);
+//    call OverWatch.setLoggingFlag(OW_LOG_SD);
+//    call OverWatch.setLoggingFlag(OW_LOG_TAGNET);
+
+//    call OverWatch.setDebugFlag(OW_DBG_NORDO);
   }
 
 
