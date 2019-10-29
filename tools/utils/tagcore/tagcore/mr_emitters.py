@@ -81,6 +81,7 @@ def print_basic_obj(offset, hdr, obj, type_str):
 
 
 def emit_default_mr(level, offset, buf, obj):
+    return
     hdr = obj['hdr']
     xtype = hdr['type'].val
     c = copy.deepcopy(obj)
