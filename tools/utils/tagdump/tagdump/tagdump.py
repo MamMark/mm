@@ -46,15 +46,16 @@ from   __future__         import print_function
 import struct
 
 # parse arguments and import result
-from   tagdumpargs       import args
+from   tagdumpargs         import args
 
-from   tagcore           import *
-import tagcore.core_rev  as     vers
-from   tagcore.dt_defs   import *
-import tagcore.dt_defs   as     dtd
-import tagcore.sirf_defs as     sirf
-from   tagcore.tagfile   import *
-from   tagcore.misc_utils import eprint
+from   tagcore             import *
+from   tagcore.globals     import *
+import tagcore.core_rev    as     vers
+from   tagcore.dt_defs     import *
+import tagcore.dt_defs     as     dtd
+import tagcore.sirf_defs   as     sirf
+from   tagcore.tagfile     import *
+from   tagcore.misc_utils  import eprint
 
 import tagdump_config                   # populate configuration
 
@@ -77,11 +78,6 @@ ver_str = '\ntagdump: ' + VERSION + ':  core: ' + str(CORE_REV) + \
 rec_low                 = 0            # inclusive
 rec_high                = 0            # inclusive
 rec_last                = 0            # last rec num looked at
-verbose                 = 0            # how chatty to be
-debug                   = 0            # extra debug chatty
-quiet                   = 0            # turn off annoying bitching
-pretty                  = 0            # print pretty when able.
-
 
 # 1st sector of the first is the directory
 DBLK_DIR_SIZE           = 0x200
@@ -99,18 +95,13 @@ dt_hdr                  = obj_dt_hdr()
 
 
 def init_globals():
-    global rec_low, rec_high, rec_last, verbose, debug, quiet, pretty
+    global rec_low, rec_high, rec_last
     global num_resyncs, chksum_errors, unk_rtypes
     global total_records, total_bytes
 
     rec_low             = 0
     rec_high            = 0
     rec_last            = 0
-    verbose             = 0
-    debug               = 0
-    quiet               = 0
-    pretty              = 0
-
     num_resyncs         = 0             # how often we've resync'd
     chksum_errors       = 0             # checksum errors seen
     unk_rtypes          = 0             # unknown record types
@@ -312,18 +303,13 @@ def dump():
     and dt-specific decoder summary
     """
 
-    global rec_low, rec_high, rec_last, verbose, debug, quiet
+    global rec_low, rec_high, rec_last
     global num_resyncs, chksum_errors, unk_rtypes
     global total_records, total_bytes
 
     init_globals()
 
-    verbose = args.verbose if (args.verbose) else 0
-    debug   = args.debug   if (args.debug)   else 0
-    quiet   = args.quiet   if (args.quiet)   else 0
-    pretty  = args.pretty  if (args.pretty)  else 0
     dtd.cfg_print_hourly = args.hourly
-
     if debug or verbose >= 5:
         eprint(ver_str)
         eprint('  base_objs: {:10}  dt_defs: {:10}'.format(
