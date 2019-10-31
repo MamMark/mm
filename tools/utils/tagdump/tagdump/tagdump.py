@@ -56,6 +56,7 @@ import tagcore.dt_defs     as     dtd
 import tagcore.sirf_defs   as     sirf
 from   tagcore.tagfile     import *
 from   tagcore.misc_utils  import eprint
+from   tagcore.mr_emitters import mr_chksum_err
 
 import tagdump_config                   # populate configuration
 
@@ -256,13 +257,17 @@ def get_record(fd):
             chksum1 = '*** checksum failure @{0} (0x{0:x}) ' + \
                       '[wanted: 0x{1:x} got: 0x{2:x}]'
             eprint(chksum1.format(offset, recsum, chksum))
-            if not dump_hdr(offset, rec_buf, '*** ') or verbose >= 3:
-                print()
-                dump_buf(rec_buf, '    ')
+            if mr_emitters:
+                mr_chksum_err(offset, recsum, chksum)
+            else:
+                if not dump_hdr(offset, rec_buf, '*** ') or verbose >= 3:
+                    print()
+                    dump_buf(rec_buf, '    ')
             offset = resync(fd, offset)
             if (offset < 0):
                 break
             continue                    # try again
+
         v = dtd.dt_records.get(rtype, (0, None, None, None, ''))
         required_len = v[DTR_REQ_LEN]
         if (required_len):

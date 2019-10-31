@@ -231,6 +231,12 @@ def rtctime_full(rtctime, pretty=1):
                     ).strftime(fmt_str)
 
 
+def expand_datetime(dt, pretty=1):
+    fmt_str = '%Y/%m/%dT%H:%M:%S.%f' if pretty else \
+              '%Y%m%dT%H%M%S.%f'
+    return dt.strftime(fmt_str)
+
+
 last_rt = {'year': 0, 'mon': 0, 'day': 0, 'hr': 0}
 
 def set_last(rt):

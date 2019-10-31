@@ -25,7 +25,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev2'
+__version__ = '0.4.6.dev4'
 
 import copy
 from   datetime       import datetime
@@ -35,6 +35,7 @@ from   .globals       import *
 from   .core_events   import *           # get event identifiers
 from   .core_emitters import *
 from   .dt_defs       import rtctime_full
+from   .dt_defs       import expand_datetime
 from   .core_events   import event_name
 from   .base_objs     import atom
 from   .misc_utils    import eprint
@@ -54,11 +55,31 @@ gps_events = {
 
 utc_str = '%Y/%m/%dT%H:%M:%S.%f' if pretty else '%Y%m%dT%H%M%S.%f'
 
+#          date/time offset    rec  type
 basic_hdr  = '{:^26}  {:>8}  {:>8}  {:>12}'
 expanded_f = '{:>26}, {:>8}, {:>8}, {:>12}'
 expanded_r =', {:>12}'
 compact_f  = '{},{},{},{}'
 compact_r  = ',{}'
+
+def mr_chksum_err(offset, recsum, chksum):
+    front_fmt  = expanded_f if pretty else compact_f
+    remain_fmt = expanded_r if pretty else compact_r
+    c = { 'recsum': recsum, 'chksum': chksum }
+    if debug or verbose:
+        front_fmt  = expanded_f
+        remain_fmt = expanded_r
+        # output titles
+        print(basic_hdr.format('date','offset','rec','type'), end='')
+        for k in c:
+            print(remain_fmt.format(k), end='')
+        print()
+
+    print(front_fmt.format(expand_datetime(datetime.utcnow(), pretty),
+                           offset, 0, 'CHKSUMERR'), end='')
+    for k in c:
+        print(remain_fmt.format(str(c[k])), end='')
+    print()
 
 def print_basic_obj(offset, hdr, obj, type_str):
     recnum   = hdr['recnum'].val
@@ -106,7 +127,6 @@ def emit_event_mr(level, offset, buf, obj):
 
 
 def emit_gps_time_mr(level, offset, buf, obj):
-
     hdr   = obj['gps_hdr']['hdr']
     xtype = hdr['type'].val
     week_x = obj['week_x'].val
