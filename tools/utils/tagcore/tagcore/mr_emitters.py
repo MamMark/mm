@@ -117,6 +117,11 @@ def emit_default_mr(level, offset, buf, obj):
     print_basic_obj(offset, hdr, c, dt_name(xtype))
 
 
+def emit_reboot_mr(level, offset, buf, obj):
+    hdr   = obj['hdr']
+    xtype = hdr['type'].val
+    print_basic_obj(offset, hdr, {}, dt_name(xtype))
+
 def emit_event_mr(level, offset, buf, obj):
     hdr = obj['hdr']
     ev  = obj['event'].val
@@ -256,4 +261,10 @@ def emit_sensor_data_mr(level, offset, buf, obj):
     xdict = sns_dict(sns_id)(sns_obj)
     for k in xdict:
         c[k] = xdict[k]
+    print_basic_obj(offset, hdr, c, dt_name(xtype))
+
+def emit_gps_proto_mr(level, offset, buf, obj):
+    hdr   = obj['hdr']
+    xtype = hdr['type'].val
+    c     = obj['stats']
     print_basic_obj(offset, hdr, c, dt_name(xtype))
