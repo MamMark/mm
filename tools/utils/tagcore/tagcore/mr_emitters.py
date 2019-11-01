@@ -43,22 +43,26 @@ from   .misc_utils    import eprint
 from   sensor_defs    import *
 import sensor_defs    as     sensor
 
-# gps events we want to include
-gps_events = {
+# gps events we want
+gps_events_keep = {
     GPS_LTFF_TIME,
     GPS_FIRST_FIX,
+    DCO_REPORT,
+    DCO_SYNC,
     TIME_SRC,
     TIME_SKEW,
+    RADIO_MODE,
     GPS_CYCLE_START,
     GPS_CYCLE_END,
+    GPS_BOOT_TIME,
 }
 
 
 utc_str = '%Y/%m/%dT%H:%M:%S.%f' if pretty else '%Y%m%dT%H%M%S.%f'
 
 #          date/time offset    rec  type
-basic_hdr  = '{:^26}  {:>8}  {:>8}  {:>12}'
-expanded_f = '{:>26}, {:>8}, {:>8}, {:>12}'
+basic_hdr  = '{:^26}  {:>8}  {:>8}  {:>16}'
+expanded_f = '{:>26}, {:>8}, {:>8}, {:>16}'
 expanded_r =', {:>12}'
 compact_f  = '{},{},{},{}'
 compact_r  = ',{}'
@@ -116,7 +120,7 @@ def emit_default_mr(level, offset, buf, obj):
 def emit_event_mr(level, offset, buf, obj):
     hdr = obj['hdr']
     ev  = obj['event'].val
-    if ev not in gps_events:
+    if ev not in gps_events_keep:
         if debug and verbose:
             eprint('*** dumping event {}/{}'.format(ev, event_name(ev)))
         return
