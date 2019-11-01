@@ -109,11 +109,14 @@ def print_basic_obj(offset, hdr, obj, type_str):
 
 
 def emit_default_mr(level, offset, buf, obj):
-    return
-    hdr = obj['hdr']
-    xtype = hdr['type'].val
     c = copy.deepcopy(obj)
-    del c['hdr']
+    if 'gps_hdr' in obj:
+        hdr = obj['gps_hdr']['hdr']
+        del c['gps_hdr']
+    else:
+        hdr = obj['hdr']
+        del c['hdr']
+    xtype = hdr['type'].val
     print_basic_obj(offset, hdr, c, dt_name(xtype))
 
 
