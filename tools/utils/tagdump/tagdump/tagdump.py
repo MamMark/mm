@@ -458,7 +458,7 @@ def dump():
                 print()
                 dump_hdr(rec_offset, rec_buf, '    ')
                 dump_buf(rec_buf, '    ')
-            if verbose >= 1 and not quiet:
+            if verbose >= 1 and not quiet and not mr_emitters:
                 print()
             total_records += 1
             total_bytes   += rlen
