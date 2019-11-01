@@ -48,7 +48,7 @@ setup(
 
     platforms            = [ 'Any' ],
 
-    install_requires = [],
+    install_requires = ['pytz'],
     scripts          = [],
     provides         = ['tagcore'],
     packages         = ['tagcore'],

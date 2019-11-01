@@ -30,6 +30,7 @@ __version__ = '0.4.6.dev4'
 import copy
 from   datetime       import datetime
 from   collections    import OrderedDict
+import pytz
 
 from   .globals       import *
 from   .core_events   import *           # get event identifiers
@@ -75,7 +76,8 @@ def mr_chksum_err(offset, recsum, chksum):
             print(remain_fmt.format(k), end='')
         print()
 
-    print(front_fmt.format(expand_datetime(datetime.utcnow(), pretty),
+    cur_dt = datetime.now(tz=pytz.utc)
+    print(front_fmt.format(expand_datetime(cur_dt, pretty),
                            offset, 0, 'CHKSUMERR'), end='')
     for k in c:
         print(remain_fmt.format(str(c[k])), end='')
