@@ -45,7 +45,6 @@ import sensor_defs    as     sensor
 
 # gps events we want
 gps_events_keep = {
-    GPS_LTFF_TIME,
     GPS_FIRST_FIX,
     DCO_REPORT,
     DCO_SYNC,
@@ -53,6 +52,7 @@ gps_events_keep = {
     TIME_SKEW,
     RADIO_MODE,
     GPS_CYCLE_START,
+    GPS_CYCLE_LTFF,
     GPS_CYCLE_END,
     GPS_BOOT_TIME,
 }

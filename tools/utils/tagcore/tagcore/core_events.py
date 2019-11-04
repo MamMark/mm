@@ -30,7 +30,7 @@ __all__ = [
     'EV_GPS_GEO',
     'EV_GPS_XYZ',
     'EV_GPS_TIME',
-    'GPS_LTFF_TIME',
+    'GPS_CYCLE_LTFF',
     'GPS_FIRST_FIX',
     'DCO_REPORT',
     'DCO_SYNC',
@@ -44,7 +44,7 @@ __all__ = [
     'RADIO_MODE',
     'GPS_CYCLE_START',
     'GPS_CYCLE_END',
-    'GPS_FIX',
+    'GPS_DELTA',
     'GPS_BOOT',
     'GPS_BOOT_TIME',
     'GPS_BOOT_FAIL',
@@ -87,7 +87,7 @@ event_names = {
     4:  'GPS_XYZ',              # deprecated, backward compatibility
     5:  'GPS_TIME',             # deprecated, backward compatibility
 
-    6:  'GPS_LTFF_TIME',
+    6:  'GPS_CYCLE_LTFF',
     7:  'GPS_FIRST_FIX',
 
     8:  'SSW_DELAY_TIME',
@@ -114,7 +114,7 @@ event_names = {
 
     29: 'GPS_CYCLE_START',
     30: 'GPS_CYCLE_END',
-    31: 'GPS_FIX',              # deprecated
+    31: 'GPS_DELTA',
     32: 'GPS_BOOT',
     33: 'GPS_BOOT_TIME',
     34: 'GPS_BOOT_FAIL',
@@ -160,7 +160,7 @@ FAULT         = 2
 EV_GPS_GEO    = 3
 EV_GPS_XYZ    = 4
 EV_GPS_TIME   = 5
-GPS_LTFF_TIME = 6
+GPS_CYCLE_LTFF= 6
 GPS_FIRST_FIX = 7
 DCO_REPORT    = 15
 DCO_SYNC      = 16
@@ -174,7 +174,7 @@ SD_REL        = 23
 RADIO_MODE    = 24
 GPS_CYCLE_START = 29
 GPS_CYCLE_END = 30
-GPS_FIX       = 31
+GPS_DELTA     = 31
 GPS_BOOT      = 32
 GPS_BOOT_TIME = 33
 GPS_BOOT_FAIL = 34

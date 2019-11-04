@@ -245,7 +245,7 @@ typedef enum {
 //  DT_EVENT_GPS_XYZ          = 4,       // deprecated
 //  DT_EVENT_GPS_TIME         = 5,       // deprecated
 
-  DT_EVENT_GPS_LTFF_TIME    = 6,       // low pwr (mpm) To First Fix (MTFF)
+  DT_EVENT_GPS_CYCLE_LTFF   = 6,       // low pwr (mpm) To First Fix (MTFF)
   DT_EVENT_GPS_FIRST_FIX    = 7,       // boot to first fix
 
   DT_EVENT_SSW_DELAY_TIME   = 8,
@@ -274,7 +274,7 @@ typedef enum {
 
   DT_EVENT_GPS_CYCLE_START  = 29,
   DT_EVENT_GPS_CYCLE_END    = 30,
-//  DT_EVENT_GPS_FIX          = 31,      // fix seen
+  DT_EVENT_GPS_DELTA        = 31,      // delta time between RTC & GPS
   DT_EVENT_GPS_BOOT         = 32,
   DT_EVENT_GPS_BOOT_TIME    = 33,
   DT_EVENT_GPS_BOOT_FAIL    = 34,
