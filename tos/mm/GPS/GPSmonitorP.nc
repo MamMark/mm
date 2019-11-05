@@ -1558,11 +1558,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     call Collect.collect_nots((void *) &gps_block, sizeof(gps_block),
                               svp->data, dlen);
     minor_event(MON_EV_SWVER);
-
-#ifdef notdef
-    /* and for now, do a factory reset to start from scratch */
-    txq_send((void *) sirf_factory_clear);
-#endif
   }
 
 
