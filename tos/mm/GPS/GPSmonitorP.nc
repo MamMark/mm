@@ -466,6 +466,29 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     old_minor_state = gmcb.minor_state;
     gmcb.minor_state = new_state;
     last_nsats_count = 0;
+
+    if ((old_minor_state == GMS_LPM) &&
+        (gmcb.major_state == GMS_MAJOR_CYCLE)) {
+      /*
+       * if we are exiting LPM and major is CYCLE then we are starting a
+       * new cycle.  Update instrumentation.
+       */
+      cycle_start = call MajorTimer.getNow();
+      cycle_count++;
+      gmcb.fix_seen = FALSE;
+      call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_START, cycle_count, 0, cycle_start, 0);
+    }
+
+    if ((new_state == GMS_LPM) && (gmcb.major_state == GMS_MAJOR_IDLE)) {
+      /*
+       * entering Low Power Mode, finish the cycle.
+       */
+      call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_END, cycle_count,
+                call MajorTimer.getNow() - cycle_start, cycle_start, 0);
+      cycle_start = 0;
+    }
+
+    /* set global no_deep_sleep based on current Major/Minor */
     if (gmcb.major_state != GMS_MAJOR_IDLE)
       no_deep_sleep = TRUE;
     else {
@@ -937,6 +960,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
 
   void maj_ev_fix(mon_event_t ev) {
+    uint32_t elapsed;
+
     switch(gmcb.major_state) {
       default:                          /* ignore by default */
         return;
@@ -948,7 +973,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         major_change_state(GMS_MAJOR_CYCLE, ev);
         call CollectEvent.logEvent(DT_EVENT_GPS_FIRST_FIX,
                 call MajorTimer.getNow() - cycle_start, cycle_start, 0, 0);
-        cycle_start = 0;
         call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
         minor_event(MON_EV_MAJOR_CHANGED);
         return;
@@ -959,9 +983,25 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         if (ev != MON_EV_TIME)
           return;
 #endif
+        /*
+         * cycle_count will be 0 while we are first booting the gps and
+         * while we are in sats_startup.  Cycle_count goes non-zero on the
+         * first transition from (major) xxx -> CYCLE and (minor) LPM ->
+         * XXX.  (see minor_change_state).
+         *
+         * Very first cycle time is reported as FIRST_FIX.  First cycle
+         * time is not included in the cycle average.  LTFF is the time
+         * from beginning of the cycle until the fix.  Cycle time are from
+         * the beginning through any potential fix until the gps is put
+         * back to sleep (following fix delay).
+         */
+        if (cycle_count) {
+          elapsed = call MajorTimer.getNow() - cycle_start;
+          cycle_sum += elapsed;
+          call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_LTFF, cycle_count,
+                                     elapsed, cycle_start, cycle_sum/cycle_count);
+        }
         major_change_state(GMS_MAJOR_FIX_DELAY, ev);
-        call CollectEvent.logEvent(DT_EVENT_GPS_FIX,
-                                   call MajorTimer.getNow() - cycle_start, cycle_start, 0, 0);
         call MajorTimer.startOneShot(GPS_MON_FIX_DELAY_TIME);
         minor_event(MON_EV_MAJOR_CHANGED);
 #endif
@@ -1185,11 +1225,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         mon_enter_comm_check(MON_EV_MAJOR_CHANGED);
         break;
 
-      case GMS_LPM:                     /* expiration of gps_sense    */
-        TELL = 1;
-        cycle_start = call MajorTimer.getNow();
-        cycle_count++;
-        gmcb.fix_seen = FALSE;
+      case GMS_LPM:
         mon_pulse_comm_check(MON_EV_MAJOR_CHANGED);
         break;
     }
@@ -1299,24 +1335,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
   void mon_ev_fix(mon_event_t ev) {
-    uint32_t elapsed;
-
     gmcb.fix_seen = TRUE;
-
-    /*
-     * when looking for first fix, cycle_count will be zero
-     * (haven't actually started a cycle (happens out of LPM)).
-     *
-     * if cycle_count is 0 we are looking for first fix. (SATS_STARTUP).
-     * leave cycle_count alone and let the major state change grab it.
-     */
-    if (cycle_count && cycle_start) {
-      elapsed = call MajorTimer.getNow() - cycle_start;
-      cycle_sum += elapsed;
-      call CollectEvent.logEvent(DT_EVENT_GPS_LTFF_TIME, cycle_count,
-                                 elapsed, cycle_sum/cycle_count, 0);
-      cycle_start = 0;
-    }
     major_event(ev);
   }
 
