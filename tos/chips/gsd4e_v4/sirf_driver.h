@@ -180,7 +180,7 @@ const uint8_t sirf_set_mode_degrade[] = {
   0x00, 0x0E,                   // length 14
   136,                          // set mode
   0, 0,                         // reserved
-  3,                            // degraded mode, accept 3 SV solutions
+  2,                            // degraded mode, accept 2 SV solutions
   1,                            // position calc mode
   0,                            // reserved
   0, 0,                         // altitude for alt hold
@@ -190,7 +190,7 @@ const uint8_t sirf_set_mode_degrade[] = {
   5,                            // degraded time out
   0,                            // DR time out
   0,                            // Meas/Track smoothing
-  0x00, 0x91,                   // checksum
+  0x00, 0x90,                   // checksum
   0xb0, 0xb3,                   // end seq
 };
 
