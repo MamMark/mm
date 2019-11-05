@@ -87,6 +87,7 @@
 
 //#define GPS_USE_MPM
 #define GPS_FIX_ENDS_CYCLE
+//#define GPS_TIME_ENDS_CYCLE
 
 #ifndef PANIC_GPS
 enum {
@@ -104,7 +105,7 @@ enum {
 #define GPS_MON_LPM_RESTART_WAIT    2048
 #define GPS_MON_COLLECT_DEADMAN     16384
 
-#define GPS_ACK_TIMEOUT             512
+#define GPS_ACK_TIMEOUT             1024
 
 /*
  * 60 secs, we have observed slow start up times of around 60 secs, so for now
@@ -115,12 +116,14 @@ enum {
 #define GPS_MON_MAX_CYCLE_TIME      ( 1 * 60 * 1024)
 #define GPS_MON_LPM_COLLECT_TIME    ( 1 * 60 * 1024)
 #define GPS_MON_FIX_DELAY_TIME      (             2)
+//#define GPS_MON_FIX_DELAY_TIME      (15 * 60 * 1024)
 
 // 5 mins
 #define GPS_MON_SATS_STARTUP_TIME   ( 5 * 60 * 1024)
 
 // 5 mins between last cycle and next cycle
 #define GPS_MON_SLEEP               ( 5 * 60 * 1024)
+//#define GPS_MON_SLEEP               ( 1 * 60 * 1024)
 
 /*
  * lpm_rsp_to   timeout for listening for responses after
