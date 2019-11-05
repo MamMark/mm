@@ -226,14 +226,15 @@ typedef struct {
 const uint8_t mids_w_acks[] = { 128, 132, 136, 144, 166, 178, 0 };
 
 /*
- * config msgs end with a warmstart which causes a restart.  This will
- * result in receipt of a okToSend-yes.  When we see that when we are
- * in CONFIG we will send a SwVer to finish CONFIG.
+ * config msgs end with send swver, which triggers the end of config.
+ * at one point we hit the gps chip with a warmstart via msg 128.
+ * but this is problematic because the gps processor goes away for
+ * a time.  Which complicates getting the swver trigger.
  */
 const uint8_t *config_msgs[] = {
-  sirf_7_on,
+//  sirf_7_on,
   sirf_set_mode_degrade,
-  sirf_warmstart_noinit,
+  sirf_swver,
   NULL,
 };
 
@@ -422,12 +423,10 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     txq_enqueue((void *) sirf_set_mode_degrade);
     txq_enqueue((void *) sirf_poll_clk_status);
     txq_enqueue((void *) sirf_hotstart_noinit);
-    txq_start();
 #endif
   }
 
   void enqueue_exit_msgs() {
-    txq_send((void *) sirf_poll_clk_status);
   }
 
   void verify_gmcb() {
