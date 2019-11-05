@@ -1136,6 +1136,11 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
          * or its response for some reason we will bounce, try again, and
          * then bounce.
          *
+         * If we have an init msg (initDataSrc) or any message that causes
+         * a gps restart/reset in configuration messages (hey, it's possible,
+         * depends on what we are trying to break :-), sending a swver
+         * will hit the dead zone, we will time out and resend.
+         *
          * If seeing messages and we are in LPM, then the chip is ignoring
          * SWVER, pulsing will kick it out of MPM and the next SWVER
          * should work.
