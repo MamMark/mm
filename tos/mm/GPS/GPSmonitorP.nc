@@ -1662,13 +1662,13 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     dt_gps_geo_t  *gdtp;
     uint16_t       nav_valid, nav_type;
     uint64_t       epoch;
-    uint32_t       cur_secs,   cap_secs;
+    uint32_t       cur_secs,   cap_secs,   gps_secs;
     uint32_t       cur_micros, cap_micros;
     rtctime_t      cur_time;
     uint16_t       utc_sec, utc_ms;
     rtctime_t      rtc;
     int32_t        delta;
-    bool           force;
+    bool           force, skew;
     int            timesrc, forcesrc;
 
     if (!gp || CF_BE_16(gp->len) != GEODETIC_LEN)
@@ -1760,7 +1760,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
        *    set timesrc GPS0, reboot.
        *
        * 2) utc_ms == 0 -> 1PPS TM -> OD highest caliber gps time.
-       *    timesrc < GPS (GPS0 or below) or excessiveSkew.
+       *    timesrc < GPS (GPS or below) or excessiveSkew.
        *    set timesrc GPS, reboot.
        */
       utc_sec = tdtp->utc_ms / 1000;
@@ -1770,21 +1770,20 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       force = timesrc < RTCSRC_GPS0;
       forcesrc = RTCSRC_GPS0;
       delta   = 0;
-      if (force || utc_ms == 0) {
-        rtc.year    = tdtp->utc_year;
-        rtc.mon     = tdtp->utc_month;
-        rtc.day     = tdtp->utc_day;
-        rtc.dow     = 0;
-        rtc.hr      = tdtp->utc_hour;
-        rtc.min     = tdtp->utc_min;
-        rtc.sec     = utc_sec;
-        rtc.sub_sec = call Rtc.micro2subsec(utc_ms * 1000);
-        if (utc_ms == 0) {
-          forcesrc = RTCSRC_GPS;
-          force = (force | (timesrc < RTCSRC_GPS));
-          force = (force | (call CoreTime.excessiveSkew(&rtc,
-                                cur_secs, NULL, NULL, &delta)));
-        }
+      rtc.year    = tdtp->utc_year;
+      rtc.mon     = tdtp->utc_month;
+      rtc.day     = tdtp->utc_day;
+      rtc.dow     = 0;
+      rtc.hr      = tdtp->utc_hour;
+      rtc.min     = tdtp->utc_min;
+      rtc.sec     = utc_sec;
+      rtc.sub_sec = call Rtc.micro2subsec(utc_ms * 1000);
+      skew        = call CoreTime.excessiveSkew(&rtc, cur_secs,
+                                                &gps_secs, NULL, &delta);
+      force = (force || skew);
+      if (utc_ms == 0) {
+        force    = (force || (timesrc < RTCSRC_GPS));
+        forcesrc = RTCSRC_GPS;
       }
       if (force) {
         call CollectEvent.logEvent(DT_EVENT_TIME_SRC, forcesrc, delta,
@@ -1793,6 +1792,13 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         call Rtc.syncSetTime(&rtc);
         call OverWatch.flush_boot(call OverWatch.getBootMode(),
                                   ORR_TIME_SKEW);
+        /* doesn't return from flush_boot */
+      }
+
+      if (call OverWatch.getLoggingFlag(OW_LOG_GPS_MISC)) {
+        delta = gps_secs - cur_secs;
+        call CollectEvent.logEvent(DT_EVENT_GPS_DELTA, cur_secs, gps_secs,
+                                   delta, 0);
       }
 
       /* tell the monitor we have lock */
