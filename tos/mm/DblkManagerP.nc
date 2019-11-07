@@ -235,8 +235,17 @@ implementation {
     if (call Rtc.rtcValid(&found_hdr.rt)) {
       call Rtc.getTime(&cur_time);
       if (call Rtc.compareTimes(&cur_time, &found_hdr.rt) < 0) {
-        call OW.setRtcSrc(RTCSRC_DBLK);
-        call Rtc.syncSetTime(&found_hdr.rt);
+        /*
+         * dblk header time is better than cur_time.  (later than cur_time).
+         * however our clock might be fast, so gps will be trying to reset
+         * to an earlier time than dblk.  We don't want to do that.  So only
+         * use the dblk value if time_src is < GPS0.
+         */
+        if (call OW.getRtcSrc() < RTCSRC_GPS0) {
+          /* would be nice to have a CollectEvent here */
+          call OW.setRtcSrc(RTCSRC_DBLK);
+          call Rtc.syncSetTime(&found_hdr.rt);
+        }
       }
     }
     dmc.dm_state = DMS_DONE;
