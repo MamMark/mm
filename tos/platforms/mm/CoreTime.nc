@@ -7,10 +7,10 @@ interface CoreTime {
 
   /**
    * excessiveSkew: check for too much skew.  Checks *new_rtcp against
-   *    current time.  If the caller already has a copy of epoch secs
-   *    computed it can be passed in via cur_secs.
+   *    current time.
    *
-   *    returns TRUE if skew from current time is too much, false otherwise.
+   *    returns TRUE if skew between current time and new time is too much,
+   *            FALSE otherwise.
    *    delta is computed via new_secs - cur_secs.  If new time is in the
    *    future delta will be positive.
    *
@@ -18,22 +18,27 @@ interface CoreTime {
    *    by the routine.
    *
    * input:    *new_rtcp, pointer to time to check
-   *            cur_secs  epoch secs, 0 if not set.
-   *           *cur_secsp pointer to cell for calulated cur_sec
-   *           *new_secsp ditto
+   *           *new_secsp pointer to cell for calculated new_sec
+   *           *cur_secsp ditto
    *           *deltap    pointer to cell for calculated delta
    *
-   * returns:   false   no excessive skew.
-   *            true    excessive skew, value in secs of skew.
-   *           *deltap  if non-NULL, filled in with calculated skew.
+   * returns:   FALSE   no excessive skew.
+   *            TRUE    excessive skew, value in secs of skew.
+   *           *cur_secsp  if non-NULL, filled in with calculated values.
+   *           *new_secsp
+   *           *delta1000p if non-NULL, filled in with calculated skew.
    *
-   * computes epochs secs for time to be checked.  if cur_secs is 0 then
-   * compute cur_secs from cur_time (epoch).  Calculate delta_sec as
-   * new_secs - cur_secs.
+   * computes delta (secs,us) between new rtc time and current rtc time.
+   * epochs are fixed point integer tuples, (secs, usecs).  Each housed
+   * in 32 bit numbers.
+   *
+   * Delta returned is delta * 1000, fixed point with ms in the lower 3
+   * digits (base 10).
+   *
+   * skew = new - cur.  If new is in the future we will have positive skew.
    */
-  async command bool excessiveSkew(rtctime_t *new_rtcp, uint32_t  cur_secs,
-                                   uint32_t *cur_secsp, uint32_t *new_secsp,
-                                   int32_t   *deltap);
+  async command bool excessiveSkew(rtctime_t *new_rtcp, uint32_t *new_secsp,
+                                   uint32_t *cur_secsp, int32_t *delta1000p);
 
   /**
    * Deep Sleep initialization.

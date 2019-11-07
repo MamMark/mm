@@ -1667,7 +1667,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     rtctime_t      cur_time;
     uint16_t       utc_sec, utc_ms;
     rtctime_t      rtc;
-    int32_t        delta;
+    int32_t        delta, delta1000;
     bool           force, skew;
     int            timesrc, forcesrc;
 
@@ -1778,15 +1778,15 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       rtc.min     = tdtp->utc_min;
       rtc.sec     = utc_sec;
       rtc.sub_sec = call Rtc.micro2subsec(utc_ms * 1000);
-      skew        = call CoreTime.excessiveSkew(&rtc, cur_secs,
-                                                &gps_secs, NULL, &delta);
+      skew        = call CoreTime.excessiveSkew(&rtc,
+                                &gps_secs, &cur_secs, &delta1000);
       force = (force || skew);
       if (utc_ms == 0) {
         force    = (force || (timesrc < RTCSRC_GPS));
         forcesrc = RTCSRC_GPS;
       }
       if (force) {
-        call CollectEvent.logEvent(DT_EVENT_TIME_SRC, forcesrc, delta,
+        call CollectEvent.logEvent(DT_EVENT_TIME_SRC, forcesrc, delta1000,
                                    timesrc, 2);
         call OverWatch.setRtcSrc(forcesrc);
         call Rtc.syncSetTime(&rtc);
@@ -1796,9 +1796,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       }
 
       if (call OverWatch.getLoggingFlag(OW_LOG_GPS_MISC)) {
-        delta = gps_secs - cur_secs;
         call CollectEvent.logEvent(DT_EVENT_GPS_DELTA, cur_secs, gps_secs,
-                                   delta, 0);
+                                   delta1000, 0);
       }
 
       /* tell the monitor we have lock */

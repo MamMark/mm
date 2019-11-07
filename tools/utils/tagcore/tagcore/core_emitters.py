@@ -415,13 +415,15 @@ def emit_event(level, offset, buf, obj):
         return
 
     if event == TIME_SRC:
-        # arg0 new timesrc
-        # arg1 delta from new_time - cur_time
-        # arg2 previous timesrc
-        # arg3 set location
-        print(' {:14s} {}  ->  {}  ({})  l: {}'.format(event_name(event),
-                rtc_src_name(arg2), rtc_src_name(arg0), c_int32(arg1).value,
-                arg3))
+        src_new   = arg0
+        src_old   = arg2
+        delta1000 = c_int32(arg1).value
+        l         = arg3
+        print(' {:14s} {}  ->  {}  ({:.3f})  l: {}'.format(event_name(event),
+                rtc_src_name(src_old),
+                rtc_src_name(src_new),
+                delta1000/1000.,
+                l))
         return
 
     if event == IMG_MGR:
@@ -431,8 +433,12 @@ def emit_event(level, offset, buf, obj):
         return
 
     if event == TIME_SKEW:
-        print(' {:14s} {}  ->  {}  ({})  {}'.format(event_name(event),
-                        arg0, arg1, c_int32(arg2).value, arg3))
+        cur_s = arg0
+        new_s = arg1
+        delta1000 = c_int32(arg2).value
+        skew = arg3
+        print(' {:14s} {}  ->  {}  ({:.3f})  {}'.format(event_name(event),
+                        cur_s, new_s, delta1000/1000., skew))
         return
 
     if event == SD_ON:
@@ -452,6 +458,16 @@ def emit_event(level, offset, buf, obj):
                                                        radio_minor_name(arg2),
                                                        arg3))
         return
+
+
+    if event == GPS_DELTA:
+        cur_s     = arg0
+        new_s     = arg1
+        delta1000 = c_int32(arg2).value
+        print(' {:14s}   {} -> {}  ({:.3f})  {}'.format(event_name(event),
+            cur_s, new_s, delta1000/1000., arg3))
+        return
+
 
     if (event == GPS_MON_MINOR):
         print(' gps/mon (MINOR) {:^15s} {:>12s} -> {}'.format(
