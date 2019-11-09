@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev12'
+__version__ = '0.4.6.dev13'
 
 from   ctypes       import c_int32
 
@@ -592,13 +592,16 @@ def emit_gps_geo(level, offset, buf, obj):
     hdop      = obj['hdop5'].val/5.
 
     # if nav_valid is 0 we are overdetermined.
-    fix_type = (nav_type & GPS_FIX_MASK) if nav_valid else GPS_OD_FIX
+    fix = (nav_type & GPS_FIX_MASK)
+    fix = GPS_OD_FIX if fix and nav_valid == 0 else fix
+    fix_str = gps_fix_name(fix)
+    fix_str = 'nofix_OD' if fix == 0 and nav_valid == 0 else fix_str
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
     print('   {:10.7f}  {:10.7f}      {}/{:4.3f}  {:5}  [{}]'.format(
-        lat, lon, week_x, tow, gps_fix_name(fix_type), nsats))
+        lat, lon, week_x, tow, fix_str, nsats))
 
     if (level >= 1):
         alt_ell_ft = alt_ell * 3.28084

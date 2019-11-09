@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.6.dev6'
+__version__ = '0.4.6.dev7'
 
 
 def emit_default(level, offset, buf, obj):
@@ -259,8 +259,10 @@ def emit_sirf_geo(level, offset, buf, obj):
     hdop        = obj['hdop5'].val
     additional_mode \
                 = obj['additional_mode'].val
-    fix = (nav_type & GPS_FIX_MASK) if nav_valid else GPS_OD_FIX
+    fix = (nav_type & GPS_FIX_MASK)
+    fix = GPS_OD_FIX if fix and nav_valid == 0 else fix
     fix_str = gps_fix_name(fix)
+    fix_str = 'nofix_OD' if fix == 0 and nav_valid == 0 else fix_str
     print('   {:5}  [{}]'.format(fix_str, nsats))
     if (level >= 1):
         print(rgeo1a.format(xweek, tow, utc_year, utc_month, utc_day,
