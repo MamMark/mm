@@ -367,12 +367,17 @@ uint8_t g_nev;			// next gps event
  * for record keeping.
  */
 
-#if GPS_TARGET_SPEED == 115200
+#if GPS_TARGET_SPEED   == 115200
 #define GPT_MAX_INDEX 4
-#elif GPS_TARGET_SPEED == 38400
+#elif GPS_TARGET_SPEED ==  57600
+#define GPT_MAX_INDEX 7
+#elif GPS_TARGET_SPEED ==  38400
 #define GPT_MAX_INDEX 6
-#elif GPS_TARGET_SPEED == 9600
+#elif GPS_TARGET_SPEED ==   9600
 #define GPT_MAX_INDEX 6
+#else
+#error GPS_TARGET_SPEED not a recognized speed
+#define GPT_MAX_INDEX 0
 #endif
 
 const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
@@ -382,22 +387,28 @@ const gps_probe_entry_t gps_probe_table[GPT_MAX_INDEX] = {
   {  9600, 12, sizeof(nmea_sirf_115200), nmea_sirf_115200 },
   {  4800, 24, sizeof(sirf_115200),      sirf_115200      },
   {  9600, 12, sizeof(sirf_115200),      sirf_115200      },
+#elif GPS_TARGET_SPEED == 57600
+  {115200,  1, sizeof(sirf_57600),       sirf_57600     },
+  {  4800, 12, sizeof(nmea_sirf_57600),  nmea_sirf_57600},
+  {  9600,  6, sizeof(nmea_sirf_57600),  nmea_sirf_57600},
+  {  4800, 12, sizeof(sirf_57600),       sirf_57600     },
+  {  9600,  6, sizeof(sirf_57600),       sirf_57600     },
+  { 38400,  2, sizeof(sirf_57600),       sirf_57600     },
+  {115200,  1, sizeof(nmea_sirf_57600),  nmea_sirf_57600},
 #elif GPS_TARGET_SPEED == 38400
-  {  4800, 8, sizeof(nmea_sirf_38400),nmea_sirf_38400},
-  {  9600, 4, sizeof(nmea_sirf_38400),nmea_sirf_38400},
-  {  4800, 8, sizeof(sirf_38400),     sirf_38400     },
-  {  9600, 4, sizeof(sirf_38400),     sirf_38400     },
-  {115200, 1, sizeof(sirf_38400),     sirf_38400     },
-  {115200, 1, sizeof(nmea_sirf_38400),nmea_sirf_38400},
+  {  4800,  8, sizeof(nmea_sirf_38400),  nmea_sirf_38400},
+  {  9600,  4, sizeof(nmea_sirf_38400),  nmea_sirf_38400},
+  {  4800,  8, sizeof(sirf_38400),       sirf_38400     },
+  {  9600,  4, sizeof(sirf_38400),       sirf_38400     },
+  {115200,  1, sizeof(sirf_38400),       sirf_38400     },
+  {115200,  1, sizeof(nmea_sirf_38400),  nmea_sirf_38400},
 #elif GPS_TARGET_SPEED == 9600
-  {  4800, 2, sizeof(nmea_sirf_9600), nmea_sirf_9600 },
-  {  9600, 1, sizeof(nmea_sirf_9600), nmea_sirf_9600 },
-  {  4800, 2, sizeof(sirf_9600),      sirf_9600      },
-  {  9600, 1, sizeof(sirf_9600),      sirf_9600      },
-  {115200, 1, sizeof(sirf_9600),      sirf_9600      },
-  {115200, 1, sizeof(nmea_sirf_9600), nmea_sirf_9600 },
-#else
-#error GPS_TARGET_SPEED not a recognized speed
+  {  4800,  2, sizeof(nmea_sirf_9600),   nmea_sirf_9600 },
+  {  9600,  1, sizeof(nmea_sirf_9600),   nmea_sirf_9600 },
+  {  4800,  2, sizeof(sirf_9600),        sirf_9600      },
+  {  9600,  1, sizeof(sirf_9600),        sirf_9600      },
+  {115200,  1, sizeof(sirf_9600),        sirf_9600      },
+  {115200,  1, sizeof(nmea_sirf_9600),   nmea_sirf_9600 },
 #endif
 };
 
