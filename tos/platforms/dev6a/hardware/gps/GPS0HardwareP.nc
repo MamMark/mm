@@ -34,9 +34,6 @@ enum {
 #define PANIC_GPS __pcode_gps
 #endif
 
-/* see gps_pwr_on for why we include gps.h */
-#include <gps.h>
-
 /*
  * The eUSCI for the UART is always clocked by SMCLK which is DCOCLK/2.  So
  * if MSP432_CLK is 16777216 (16MiHz) the SMCLK is 8MiHz, 8388608 Hz.
@@ -176,6 +173,15 @@ implementation {
   };
 
 
+  const msp432_usci_config_t gps_38400_config = {
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
+    brw   : 218,
+    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
+            (0x55 << EUSCI_A_MCTLW_BRS_OFS),
+    i2coa : 0
+  };
+
+
   const msp432_usci_config_t gps_115200_config = {
     ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
     brw   : 72,
@@ -186,6 +192,15 @@ implementation {
 
 
 #ifdef notdef
+  const msp432_usci_config_t gps_19200_config = { /* kill */
+    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
+    brw   : 436,
+    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
+            (0xfb << EUSCI_A_MCTLW_BRS_OFS),
+    i2coa : 0
+  };
+
+
   const msp432_usci_config_t gps_57600_config = {
     ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
     brw   : 145,
@@ -308,10 +323,12 @@ implementation {
     switch(speed) {
       case    4800:     config =    &gps_4800_config;    break;
       case    9600:     config =    &gps_9600_config;    break;
+      case   38400:     config =   &gps_38400_config;    break;
       case  115200:     config =  &gps_115200_config;    break;
       default:          gps_panic(2, speed, 0);          break;
 
 #ifdef notdef
+      case   19200:     config =   &gps_19200_config;    break;
       case   57600:     config =   &gps_57600_config;    break;
       case  307200:     config =  &gps_307200_config;    break;
       case  921600:     config =  &gps_921600_config;    break;
