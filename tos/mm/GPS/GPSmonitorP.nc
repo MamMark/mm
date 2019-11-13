@@ -230,9 +230,13 @@ const uint8_t mids_w_acks[] = { 128, 132, 136, 144, 166, 178, 0 };
  * at one point we hit the gps chip with a warmstart via msg 128.
  * but this is problematic because the gps processor goes away for
  * a time.  Which complicates getting the swver trigger.
+ *
+ * We always want msg 7, clk status.  We use this for providing
+ * extended gps week values.  Let the gps chip keep track.  If
+ * we haven't seen clk_status, we add 2048 to any week value.
  */
 const uint8_t *config_msgs[] = {
-//  sirf_7_on,
+  sirf_7_on,
   sirf_set_mode_degrade,
   sirf_swver,
   NULL,
