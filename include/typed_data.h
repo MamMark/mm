@@ -477,7 +477,7 @@ typedef struct {                        /* clock status */
 typedef struct {
   int32_t  capdelta;                    /* microsecs  cur - cap time */
   uint32_t tow100;                      /* time * 100 (ms)  */
-  uint16_t week10;                      /* modulo 1024, gps */
+  uint16_t week_x;                      /* extended week */
   uint16_t chans;                       /* number of channels, 0 - 12 */
 } dt_gps_trk_t;
 
