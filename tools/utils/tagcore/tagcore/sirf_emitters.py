@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.6.dev7'
+__version__ = '0.4.6.dev8'
 
 
 def emit_default(level, offset, buf, obj):
@@ -46,7 +46,7 @@ def emit_default(level, offset, buf, obj):
 
 rnav1a = '    NAV_DATA: nsats: {}, x/y/z (m): {}/{}/{}  vel (m/s): {}/{}/{}'
 rnav1b = '    mode1: {:#02x}  mode2: {:#02x}  gps10: {}/{:.3f}'
-rnav1c = '    prns: {} hdop: {}'
+rnav1c = '    prns: [{}] hdop: {}'
 
 # mid 2 navdata
 def emit_sirf_nav_data(level, offset, buf, obj):
@@ -68,9 +68,11 @@ def emit_sirf_nav_data(level, offset, buf, obj):
     print('   {:5s}  [{}]'.format(fix_str, nsats))
 
     if (level >= 1):
+        prns     = obj['prns'].val
+        prn_list = ' '.join(['{:02}'.format(ord(x)) for x in prns if ord(x) != 0])
         print(rnav1a.format(nsats, xpos, ypos, zpos, xvel, yvel, zvel))
         print(rnav1b.format(mode1, mode2, week10, tow))
-        print(rnav1c.format(buf_str(obj['prns'].val), hdop))
+        print(rnav1c.format(prn_list, hdop))
 
 
 ########################################################################
@@ -194,12 +196,12 @@ def emit_sirf_vis(level, offset, buf, obj):
 #
 # raw geo strings for output
 
-rgeo1a = '    GEO_DATA:     {:4}/{}s, utc: {}/{:02}/{:02}-{:02}:{:02}:{:02}.{:03}'
+rgeo1a = '    GEO_DATA:     {:4}/{:.3f}s, utc: {}/{:02}/{:02}-{:02}:{:02}:{:02}.{:03}'
 rgeo1b = '    lat/long: {:>16s}  {:>16s}, alt(e): {:7.2f} m  alt(msl): {:7.2f} m'
 rgeo1c = '    {:53}{:8.2f} ft          {:8.2f} ft'
 
-rgeo2a = '    nav_valid: 0x{:04x}  nav_type: 0x{:04x}  xweek: {:4}  tow: {:10}'
-rgeo2b = '    utc: {}/{:02}/{:02}-{:02}:{:02}.{}      sat_mask: 0x{:08x}'
+rgeo2a = '    nav_valid: 0x{:04x}  nav_type: 0x{:04x}  gps: {:4}/{:<10}'
+rgeo2b = '    utc: {}/{:02}/{:02}-{:02}:{:02}.{:03}      sat_mask: 0x{:08x}'
 rgeo2c = '    lat: {}  lon: {}  alt_elipsoid: {}  alt_msl: {}  map_datum: {}'
 rgeo2d = '    sog: {}  cog: {}  mag_var: {}  climb: {}  heading_rate: {}  ehpe: {}'
 rgeo2e = '    evpe: {}  ete: {}  ehve: {}  clock_bias: {}  clock_bias_err: {}'
