@@ -24,7 +24,7 @@
 
 module TmpHardwareP {
   provides {
-    interface Init;
+    interface Init as PeriphInit;
     interface TmpHardware;
   }
   uses {
@@ -64,7 +64,7 @@ const msp432_usci_config_t tmp_i2c_config = {
 
 
   /* for PeripheralInit */
-  command error_t Init.init() {
+  command error_t PeriphInit.init() {
     call Usci.configure(&tmp_i2c_config, FALSE);
 
     /* we don't use interrupts, leave them off */

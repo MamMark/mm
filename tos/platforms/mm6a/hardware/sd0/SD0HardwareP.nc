@@ -50,7 +50,7 @@ sd_dma_cap_t sd_dma_cap;
 
 module SD0HardwareP {
   provides {
-    interface Init;
+    interface Init as PeriphInit;
     interface AsyncInit;
     interface SDHardware as HW;
   }
@@ -170,7 +170,7 @@ ctlw0 : (  EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
     }
   }
 
-  command error_t Init.init() {         /* normal, via PeriheralInit */
+  command error_t PeriphInit.init() {   /* via PeriheralInit */
     call HW.init();
     return SUCCESS;
   }

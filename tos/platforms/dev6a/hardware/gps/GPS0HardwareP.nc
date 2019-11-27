@@ -82,7 +82,7 @@ typedef struct {
 
 module GPS0HardwareP {
   provides {
-    interface Init as GPS0PlatformInit;
+    interface Init as GPS0PeripheralInit;
     interface Gsd4eUHardware as HW;
   }
   uses {
@@ -238,7 +238,7 @@ implementation {
 #endif
 
 
-  command error_t GPS0PlatformInit.init() {
+  command error_t GPS0PeripheralInit.init() {
     GSD4E_PINS_MODULE;			/* connect pins to the UART */
     call Usci.enableModuleInt();
     return SUCCESS;

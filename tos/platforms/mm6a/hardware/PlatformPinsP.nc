@@ -1,9 +1,9 @@
 module PlatformPinsP {
-  provides interface Init as PlatformInit;
+  provides interface Init as PeriphInit;
   uses     interface Platform;
 }
 implementation {
-  command error_t PlatformInit.init() {
+  command error_t PeriphInit.init() {
     uint32_t nvic_index;
     uint32_t nvic_bitmask;
 
