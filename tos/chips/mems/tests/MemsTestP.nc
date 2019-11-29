@@ -4,7 +4,7 @@ module MemsTestP {
   uses interface Panic;
 
   uses interface Timer<TMilli> as AccelTimer;
-  uses interface Lis3dh as Accel;
+  uses interface LisXdh as Accel;
 
 #ifdef notdef
   uses interface Timer<TMilli> as GyroTimer;

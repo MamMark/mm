@@ -4,7 +4,7 @@ implementation {
   components MemsTestP, SystemBootC;
   MemsTestP.Boot -> SystemBootC.Boot;
 
-  components Lis3dhC as Accel;
+  components LisXdhC as Accel;
   components new TimerMilliC() as AccelTimer;
   MemsTestP.Accel      -> Accel;
   MemsTestP.AccelTimer -> AccelTimer;

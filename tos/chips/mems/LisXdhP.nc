@@ -1,13 +1,13 @@
 
-module Lis3dhP {
-  provides interface Lis3dh;
+module LisXdhP {
+  provides interface LisXdh;
   uses     interface SpiReg;
 }
 implementation {
 
-#include "lis3dh.h"
+#include "lisxdh.h"
 
-  command uint8_t Lis3dh.whoAmI() {
+  command uint8_t LisXdh.whoAmI() {
     uint8_t id;
 
     nop();
@@ -19,7 +19,7 @@ implementation {
   /*
    * Experiment with setting up the chip to sample at 1Hz
    */
-  command void Lis3dh.config1Hz() {
+  command void LisXdh.config1Hz() {
     uint8_t val;
 
     nop();
@@ -30,7 +30,7 @@ implementation {
     call SpiReg.write(CTRL_REG1, &val, 1);
   }
 
-  command bool Lis3dh.xyzDataAvail() {
+  command bool LisXdh.xyzDataAvail() {
     uint8_t status;
 
     nop();
@@ -39,7 +39,7 @@ implementation {
   }
 
 
-  command void Lis3dh.readSample(uint8_t *buf, uint8_t bufLen) {
+  command void LisXdh.readSample(uint8_t *buf, uint8_t bufLen) {
     nop();
     call SpiReg.read_multiple(OUT_X_L, buf, bufLen);
   }

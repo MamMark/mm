@@ -1,4 +1,4 @@
-interface Lis3dh {
+interface LisXdh {
   command uint8_t whoAmI();
   command void    config1Hz();
   command bool    xyzDataAvail();
