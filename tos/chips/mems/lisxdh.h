@@ -1,5 +1,10 @@
 /*
- * lis3dh.h
+ * lisxdh.h
+ *
+ * Include file for STMicroelectronics, lis2dh and lis3dh accelerometers.
+ *
+ * The lis3dh is a superset of the lis2dh.  The lis3dh includes 3 ADC
+ * channels and a temp sensor wired into the 3rd ADC channel.
  */
 
 /* Aux register indicates data available or overrun for the Aux ADC */
@@ -22,11 +27,21 @@
 #define OUT_ADC3_H       0x0d
 
 
-#define INT_COUNTER_REG  0x0e
+/*
+ * lis2dh, has a standalone temp sensor, STATUS_REG_AUX
+ * is modified to only use two bits, below.
+ */
+#define STAT_TOR         0x40
+#define STAT_TDA         0x04
+
+#define OUT_TEMP_L       0x0c
+#define OUT_TEMP_H       0x0d
 
 /*
  * Register with ID value. Validate SPI xfer by reading this
  * register: Value should equal WHO_I_AM.
+ *
+ * Both the lis3dh and lis2dh return the same ID.
  */
 #define WHO_AM_I         0x0f
 #define WHO_I_AM         0x33
@@ -35,6 +50,10 @@
 #define TEMP_CFG_REG     0x1f
 #define TEMP_EN          0x40	/* Temp sensor enable */
 #define ADC_PD           0x80	/* Aux ADC enable */
+
+/* lis2dh had a different TEMP_EN */
+#define TEMP_EN_2DH      0xc0
+
 
 /*
  * CTRL_REG1
@@ -107,16 +126,20 @@
 #define BDU              0x80	/* Block Data Update enable */
 
 #define CTRL_REG5        0x24
-#define D4D_INT1         0x04
-#define LIR_INT1         0x08
-#define FIFO_EN          0x40	/* Enable FIFO. Default = 0 (disabled) */
 #define BOOT             0x80
+#define FIFO_EN          0x40	/* Enable FIFO. Default = 0 (disabled) */
+#define LIR_INT1         0x08
+#define D4D_INT1         0x04
+#define LIR_INT2         0x02
+#define D4D_INT2         0x01
 
 #define CTRL_REG6        0x25
-#define H_LACTIVE        0x02
-#define BOOT_I1          0x10
-#define I2_INT1          0x40
-#define I2_CLICKEN       0x80
+#define I2_CLICK_EN      0x80
+#define I2_INT1_EN       0x40
+#define I2_INT2_EN       0x20
+#define I2_BOOT          0x10
+#define I2_ACT           0x08
+#define INT_POLARITY     0x02   /* 0 active high */
 
 #define REFERENCE        0x26
 
@@ -166,6 +189,7 @@
 #define FSS_MASK         0x1f	/* FIFO sample count mask */
 #define EMPTY            0x20	/* FIFO empty flag */
 #define OVRN_FIFO        0x40	/* FIFO overrun flag */
+#define FIFO_FULL        0x40   /* same as OVRN_FIFO, better name */
 #define WTM              0x80	/* FIFO watermark exceeded flag */
 
 /*
@@ -186,7 +210,7 @@
  * INT1_SOURCE
  * Check interrupt status
  */
-#define INT1_SOURCE      0x31
+#define INT1_SRC         0x31
 #define XL               0x01
 #define XH               0x02
 #define YL               0x04
@@ -200,9 +224,15 @@
  */
 #define INT1_THS         0x32
 #define INT1_DURATION    0x33
+#define INT2_CFG         0x34
+#define INT2_SRC         0x35
+#define INT2_THS         0x36
+#define INT2_DURATION    0x37
 #define CLICK_CFG        0x38
 #define CLICK_SRC        0x39
 #define CLICK_THS        0x3a
 #define TIME_LIMIT       0x3b
 #define TIME_LATENCY     0x3c
 #define TIME_WINDOW      0x3d
+#define ACT_THS          0x3e
+#define ACT_DUR          0x3f
