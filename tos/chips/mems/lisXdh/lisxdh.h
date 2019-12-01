@@ -1,5 +1,6 @@
 /*
  * lisxdh.h
+ * updated from ST Micro public source.
  *
  * Include file for STMicroelectronics, lis2dh and lis3dh accelerometers.
  *
@@ -7,35 +8,45 @@
  * channels and a temp sensor wired into the 3rd ADC channel.
  */
 
+#ifndef __LISXDH_H__
+#define __LISXDH_H__
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 /* Aux register indicates data available or overrun for the Aux ADC */
-#define STATUS_REG_AUX   0x07
-#define STAT_1DA         0x01
-#define STAT_2DA         0x02
-#define STAT_3DA         0x04
-#define STAT_321DA       0x08
-#define STAT_1OR         0x10
-#define STAT_2OR         0x20
-#define STAT_3OR         0x40
-#define STAT_321OR       0x80
+#define LISX_STATUS_REG_AUX 0x07
+
+typedef struct {
+  uint8_t rsvd_01           : 2;
+  uint8_t tda               : 1;
+  uint8_t rsvd_02           : 3;
+  uint8_t tor               : 1;
+  uint8_t rsvd_03           : 1;
+} lis2dh12_status_reg_aux_t;
+
+typedef struct {
+  uint8_t stat_1da          : 1;
+  uint8_t stat_2da          : 1;
+  uint8_t stat_3da          : 1;
+  uint8_t stat_321da        : 1;
+  uint8_t stat_1OR          : 1;
+  uint8_t stat_2OR          : 1;
+  uint8_t stat_3OR          : 1;
+  uint8_t stat_321OR        : 1;
+} lis3dh_status_reg_aux_t;
 
 /* Aux ADC output registers */
-#define OUT_ADC1_L       0x08
-#define OUT_ADC1_H       0x09
-#define OUT_ADC2_L       0x0a
-#define OUT_ADC2_H       0x0b
-#define OUT_ADC3_L       0x0c
-#define OUT_ADC3_H       0x0d
+#define LIS3DH_OUT_ADC1_L   0x08
+#define LIS3DH_OUT_ADC1_H   0x09
+#define LIS3DH_OUT_ADC2_L   0x0a
+#define LIS3DH_OUT_ADC2_H   0x0b
+#define LIS3DH_OUT_ADC3_L   0x0c
+#define LIS3DH_OUT_ADC3_H   0x0d
 
-
-/*
- * lis2dh, has a standalone temp sensor, STATUS_REG_AUX
- * is modified to only use two bits, below.
- */
-#define STAT_TOR         0x40
-#define STAT_TDA         0x04
-
-#define OUT_TEMP_L       0x0c
-#define OUT_TEMP_H       0x0d
+#define LIS2DH_OUT_TEMP_L   0x0c
+#define LIS2DH_OUT_TEMP_H   0x0d
 
 /*
  * Register with ID value. Validate SPI xfer by reading this
@@ -43,16 +54,30 @@
  *
  * Both the lis3dh and lis2dh return the same ID.
  */
-#define WHO_AM_I         0x0f
-#define WHO_I_AM         0x33
+#define LISX_WHO_AM_I       0x0f
+#define WHO_I_AM            0x33
+
+#define LIS2DH_CTRL_REG0    0x1e
+
+typedef struct {
+  uint8_t rsvd_01           : 7;
+  uint8_t sdo_pu_disc       : 1;
+} lis2dh12_ctrl_reg0_t;
+
 
 /* Enable bits for Temp sensor and Aux ADC */
-#define TEMP_CFG_REG     0x1f
-#define TEMP_EN          0x40	/* Temp sensor enable */
-#define ADC_PD           0x80	/* Aux ADC enable */
+#define LISX_TEMP_CFG_REG   0x1f
 
-/* lis2dh had a different TEMP_EN */
-#define TEMP_EN_2DH      0xc0
+typedef struct {
+  uint8_t rsvd_01           : 6;
+  uint8_t temp_en           : 2;
+} lis2dh12_temp_cfg_reg_t;
+
+typedef struct {
+  uint8_t rsvd_01           : 6;
+  uint8_t temp_en           : 1;
+  uint8_t adc_en            : 1;
+} lis3dh_temp_cfg_reg_t;
 
 
 /*
@@ -60,12 +85,16 @@
  * Use to enable to Accel ADC and set output data rate.
  * Setting ODR to 0 puts the chip in Power-down mode (draws about .5uA).
  */
-#define CTRL_REG1        0x20
-#define XEN              0x01	/* Accel X axis enable */
-#define YEN              0x02	/* Accel Y axis enable */
-#define ZEN              0x04	/* Accel Z axis enable */
-#define LPEN             0x08	/* Low power mode enable */
-#define ODR_MASK         0xf0	/* Output data rate mask */
+#define LISX_CTRL_REG1      0x20
+
+typedef struct {
+  uint8_t xen               : 1;
+  uint8_t yen               : 1;
+  uint8_t zen               : 1;
+  uint8_t lpen              : 1;
+  uint8_t odr               : 4;
+} lisx_ctrl_reg1_t;
+
 #define  ODR_OFF         0x00	/* Sets power down mode */
 #define  ODR_1HZ         0x10	/* Output data rate: 1Hz */
 #define  ODR_10HZ        0x20	/* Output data rate: 10Hz */
@@ -82,26 +111,35 @@
  * CTRL_REG2
  * Configure high pass filtering
  */
-#define CTRL_REG2        0x21
-#define HPIS1            0x01
-#define HPIS2            0x02
-#define HPCLICK          0x04
-#define FDS              0x08
-#define HPCF             0x30
-#define HPM              0xc0
+#define LISX_CTRL_REG2      0x21
+
+typedef struct {
+  uint8_t hp_ia1            : 1;
+  uint8_t hp_ia2            : 1;
+  uint8_t hp_click          : 1;
+  uint8_t fds               : 1;
+  uint8_t hpcf              : 2;
+  uint8_t hpm               : 2;
+} lisx_ctrl_reg2_t;
+
 
 /*
  * CTRL_REG3
  * Configure interrupts. All interrupts are disabled by default.
  */
-#define CTRL_REG3        0x22
-#define I1OVERRUN        0x02
-#define I1WTM            0x04
-#define I1DRDY2          0x08
-#define I1DRDY1          0x10
-#define I1AOI2           0x20
-#define I1AOI1           0x40
-#define I1CLICK          0x80
+#define LISX_CTRL_REG3      0x22
+
+typedef struct {
+  uint8_t rsvd_01           : 1;
+  uint8_t i1_overrun        : 1;
+  uint8_t i1_wtm            : 1;
+  uint8_t i1_321da          : 1;
+  uint8_t i1_zyxda          : 1;
+  uint8_t i1_ia2            : 1;
+  uint8_t i1_ia1            : 1;
+  uint8_t i1_click          : 1;
+} lisx_ctrl_reg3_t;
+
 
 /*
  * CTRL_REG4
@@ -110,129 +148,215 @@
  * for each axis are from the same sample. For example if youread OUT_X_L
  * then OUT_X_H will not be updated until its also been read.
  */
-#define CTRL_REG4        0x23
-#define SIM              0x01	/* Serial mode: 0:4-wire, 1:3-wire */
+#define LISX_CTRL_REG4      0x23
+
+typedef struct {
+  uint8_t sim               : 1;
+  uint8_t st                : 2;
+  uint8_t hr                : 1;
+  uint8_t fs                : 2;
+  uint8_t ble               : 1;
+  uint8_t bdu               : 1;
+} lisx_ctrl_reg4_t;
+
 #define STMODE_MASK      0x06	/* Self test mask */
 #define  STMODE_DISABLE  0x00	/* Self test disabled */
 #define  STMODE_1        0x02	/* Self test mode 0 */
 #define  STMODE_2        0x04	/* Self test mode 1 */
-#define HR               0x08	/* High Res output. Enable for normal mode */
+
 #define FS_MASK          0x30	/* Full-scale selection mask */
 #define  FS_2G           0x00	/* FS = +- 2G */
 #define  FS_4G           0x10	/* FS = +- 4G */
 #define  FS_8G           0x20	/* FS = +- 8G */
 #define  FS_16G          0x30	/* FS = +- 16G */
-#define BLE              0x40	/* Big/Little Endian: 0:LE, 1:BE */
-#define BDU              0x80	/* Block Data Update enable */
 
-#define CTRL_REG5        0x24
-#define BOOT             0x80
-#define FIFO_EN          0x40	/* Enable FIFO. Default = 0 (disabled) */
-#define LIR_INT1         0x08
-#define D4D_INT1         0x04
-#define LIR_INT2         0x02
-#define D4D_INT2         0x01
+#define LISX_CTRL_REG5   0x24
 
-#define CTRL_REG6        0x25
-#define I2_CLICK_EN      0x80
-#define I2_INT1_EN       0x40
-#define I2_INT2_EN       0x20
-#define I2_BOOT          0x10
-#define I2_ACT           0x08
-#define INT_POLARITY     0x02   /* 0 active high */
+typedef struct {
+  uint8_t d4d_int2          : 1;
+  uint8_t lir_int2          : 1;
+  uint8_t d4d_int1          : 1;
+  uint8_t lir_int1          : 1;
+  uint8_t rsvd_01           : 2;
+  uint8_t fifo_en           : 1;
+  uint8_t boot              : 1;
+} lisx_ctrl_reg5_t;
 
-#define REFERENCE        0x26
+#define LISX_CTRL_REG6      0x25
+
+typedef struct {
+  uint8_t rsvd_01           : 1;
+  uint8_t int_polarity      : 1;
+  uint8_t rsvd_02           : 1;
+  uint8_t i2_act            : 1;
+  uint8_t i2_boot           : 1;
+  uint8_t i2_ia2            : 1;
+  uint8_t i2_ia1            : 1;
+  uint8_t i2_click          : 1;
+} lisx_ctrl_reg6_t;
+
+#define LISX_REFERENCE      0x26
 
 /*
  * STATUS_REG
  * Used to sample Data Available or Overrun on Accel X, Y, Z Axes.
  */
-#define STATUS_REG       0x27
-#define XDA              0x01	/* X Axis new data available */
-#define YDA              0x02	/* Y Axis new data available */
-#define ZDA              0x04	/* Z Axis new data available */
-#define XYZDA            0x08	/* XYZ Axes data available */
-#define XOR              0x10	/* X Axis data overwritten */
-#define YOR              0x20	/* Y Axis data overwritten */
-#define ZOR              0x40	/* Z Axis data overwritten */
-#define XYZOR            0x80	/* XYZ Axes data overwritten */
+#define LISX_STATUS_REG     0x27
+
+typedef struct {
+  uint8_t xda               : 1;
+  uint8_t yda               : 1;
+  uint8_t zda               : 1;
+  uint8_t zyxda             : 1;
+  uint8_t _xor              : 1;
+  uint8_t yor               : 1;
+  uint8_t zor               : 1;
+  uint8_t zyxor             : 1;
+} lisx_status_reg_t;
 
 /*
  * Accel X, Y and Z data registers
  */
-#define OUT_X_L          0x28
-#define OUT_X_H          0x29
-#define OUT_Y_L          0x2a
-#define OUT_Y_H          0x2b
-#define OUT_Z_L          0x2c
-#define OUT_Z_H          0x2d
+#define OUT_X_L             0x28
+#define OUT_X_H             0x29
+#define OUT_Y_L             0x2a
+#define OUT_Y_H             0x2b
+#define OUT_Z_L             0x2c
+#define OUT_Z_H             0x2d
 
 /*
  * FIFO_CTRL_REG
  * Used to control FIFO mode and watermark threshold.
  */
 #define FIFO_CTRL_REG    0x2e
-#define FTH              0x1f	/* FIFO watermark thresold value */
-#define TRIG_SEL         0x20	/* Trigger select: 0=INT1, 1=INT2 */
-#define FIFO_MODE_MASK   0xc0	/* FIFO mode selection mask */
-#define  FIFO_BYPASS     0x00
-#define  FIFO_MODE       0x40
-#define  FIFO_STREAM     0x80
-#define  FIFO_TRIG       0xc0
+
+typedef struct {
+  uint8_t fth               : 5;
+  uint8_t tr                : 1;        /* 0 - int1, 1 - int 2 */
+  uint8_t fm                : 2;
+} lisx_fifo_ctrl_reg_t;
+
+#define LISX_FIFO_MODE_MASK 0xc0	/* FIFO mode selection mask */
+#define  LISX_FIFO_BYPASS   0x00
+#define  LISX_FIFO_MODE     0x40
+#define  LISX_FIFO_STREAM   0x80
+#define  LISX_FIFO_TRIG     0xc0
 
 /*
  * FIFO_SRC_REG
  * Provides FIFO status: Count of samples in FIFO buffer, whether
  * watermark is exceeded and whether FIFO is full or empty.
  */
-#define FIFO_SRC_REG     0x2f
-#define FSS_MASK         0x1f	/* FIFO sample count mask */
-#define EMPTY            0x20	/* FIFO empty flag */
-#define OVRN_FIFO        0x40	/* FIFO overrun flag */
-#define FIFO_FULL        0x40   /* same as OVRN_FIFO, better name */
-#define WTM              0x80	/* FIFO watermark exceeded flag */
+#define LISX_FIFO_SRC_REG   0x2f
+
+typedef struct {
+  uint8_t fss               : 5;
+  uint8_t empty             : 1;
+  uint8_t ovrn_fifo         : 1;
+  uint8_t wtm               : 1;
+} lisx_fifo_src_reg_t;
 
 /*
  * INT1_CFG
  * Control interrupt generation on thresold of direction change
  */
-#define INT1_CFG         0x30
-#define XLIE             0x01
-#define XHIE             0x02
-#define YLIE             0x04
-#define YHIE             0x08
-#define ZLIE             0x10
-#define ZHIE             0x20
-#define INT_6D           0x40
-#define AOI              0x80
+#define LISX_INT1_CFG       0x30
+
+typedef struct {
+  uint8_t xlie              : 1;
+  uint8_t xhie              : 1;
+  uint8_t ylie              : 1;
+  uint8_t yhie              : 1;
+  uint8_t zlie              : 1;
+  uint8_t zhie              : 1;
+  uint8_t int_6d            : 1;
+  uint8_t aoi               : 1;
+} lisx_int1_cfg_t;
 
 /*
  * INT1_SOURCE
  * Check interrupt status
  */
-#define INT1_SRC         0x31
-#define XL               0x01
-#define XH               0x02
-#define YL               0x04
-#define YH               0x08
-#define ZL               0x10
-#define ZH               0x20
-#define IA               0x40
+#define LISX_INT1_SRC       0x31
+
+typedef struct {
+  uint8_t xl                : 1;
+  uint8_t xh                : 1;
+  uint8_t yl                : 1;
+  uint8_t yh                : 1;
+  uint8_t zl                : 1;
+  uint8_t zh                : 1;
+  uint8_t ia                : 1;
+  uint8_t rsvd_01           : 1;
+} lisx_int1_src_t;
+
 
 /*
  * More interrupt controls
  */
-#define INT1_THS         0x32
-#define INT1_DURATION    0x33
-#define INT2_CFG         0x34
-#define INT2_SRC         0x35
-#define INT2_THS         0x36
-#define INT2_DURATION    0x37
-#define CLICK_CFG        0x38
-#define CLICK_SRC        0x39
-#define CLICK_THS        0x3a
-#define TIME_LIMIT       0x3b
-#define TIME_LATENCY     0x3c
-#define TIME_WINDOW      0x3d
-#define ACT_THS          0x3e
-#define ACT_DUR          0x3f
+#define LISX_INT1_THS       0x32
+#define LISX_INT1_DURATION  0x33
+
+#define LISX_INT2_CFG       0x34
+
+typedef struct {
+  uint8_t xlie              : 1;
+  uint8_t xhie              : 1;
+  uint8_t ylie              : 1;
+  uint8_t yhie              : 1;
+  uint8_t zlie              : 1;
+  uint8_t zhie              : 1;
+  uint8_t int_6d            : 1;
+  uint8_t aoi               : 1;
+} lisx_int2_cfg_t;
+
+
+#define LISX_INT2_SRC       0x35
+
+typedef struct {
+  uint8_t xl                : 1;
+  uint8_t xh                : 1;
+  uint8_t yl                : 1;
+  uint8_t yh                : 1;
+  uint8_t zl                : 1;
+  uint8_t zh                : 1;
+  uint8_t ia                : 1;
+  uint8_t rsvd_01           : 1;
+} lisx_int2_src_t;
+
+#define LISX_INT2_THS       0x36
+#define LISX_INT2_DURATION  0x37
+
+#define LISX_CLICK_CFG      0x38
+
+typedef struct {
+  uint8_t xs                : 1;
+  uint8_t xd                : 1;
+  uint8_t ys                : 1;
+  uint8_t yd                : 1;
+  uint8_t zs                : 1;
+  uint8_t zd                : 1;
+  uint8_t rsvd_01           : 2;
+} lisx_click_cfg_t;
+
+#define LISX_CLICK_SRC      0x39
+
+typedef struct {
+  uint8_t x                 : 1;
+  uint8_t y                 : 1;
+  uint8_t z                 : 1;
+  uint8_t sign              : 1;
+  uint8_t sclick            : 1;
+  uint8_t dclick            : 1;
+  uint8_t ia                : 1;
+  uint8_t rsvd_01           : 1;
+} lisx_click_src_t;
+
+#define LISX_CLICK_THS      0x3a
+#define LISX_TIME_LIMIT     0x3b
+#define LISX_TIME_LATENCY   0x3c
+#define LISX_TIME_WINDOW    0x3d
+#define LISX_ACT_THS        0x3e
+#define LISX_ACT_DUR        0x3f
+
+#endif /* __LISXDH_H__ */
