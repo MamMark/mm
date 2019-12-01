@@ -11,7 +11,7 @@ implementation {
     uint8_t id;
 
     nop();
-    call SpiReg.read(WHO_AM_I, &id, 1);
+    call SpiReg.read(LISX_WHO_AM_I, &id, 1);
     return id;
   }
 
@@ -20,22 +20,26 @@ implementation {
    * Experiment with setting up the chip to sample at 1Hz
    */
   command void LisXdh.config1Hz() {
-    uint8_t val;
+    lisx_ctrl_reg1_t val1;
+    lisx_ctrl_reg4_t val4;
 
     nop();
     /* set High Resolution (HR) */
-    val = HR;
-    call SpiReg.write(CTRL_REG4, &val, 1);
-    val = (ODR_1HZ | ZEN | YEN | XEN);
-    call SpiReg.write(CTRL_REG1, &val, 1);
+    val4.hr = 1;
+    call SpiReg.write(LISX_CTRL_REG4, (void *) &val4, 1);
+    val1.odr = ODR_10HZ;
+    val1.zen = 1;
+    val1.yen = 1;
+    val1.xen = 1;
+    call SpiReg.write(LISX_CTRL_REG1, (void *) &val1, 1);
   }
 
   command bool LisXdh.xyzDataAvail() {
-    uint8_t status;
+    lisx_status_reg_t status;
 
     nop();
-    call SpiReg.read(STATUS_REG, &status, 1);
-    return status & XYZDA;
+    call SpiReg.read(LISX_STATUS_REG, (void *) &status, 1);
+    return status.zyxda;
   }
 
 
