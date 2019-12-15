@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,16 +19,24 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
 
-/*
- * Expose the Accel registers from the Accel chip on the Mems SPI.
- */
-
 #include <platform_pin_defs.h>
 
-configuration AccelRegC {
-  provides interface SpiReg;
+configuration Accel0C {
+  provides {
+    interface MemsStHardware  as Accel;
+    interface SpiReg          as AccelReg;
+  }
 }
 implementation {
+  components LisXdhP  as AccelDvr;      /* accel chip driver */
+  Accel               =  AccelDvr;
+
+  components Mems0HardwareP;
+  AccelDvr.AccelInt1  -> Mems0HardwareP;
+
   components HplMems0C;
-  SpiReg = HplMems0C.SpiReg[MEMS0_ID_ACCEL];
+  AccelReg            =  HplMems0C.SpiReg[MEMS0_ID_ACCEL];
+  AccelDvr.SpiReg     -> HplMems0C.SpiReg[MEMS0_ID_ACCEL];
+
+  Mems0HardwareP.AccelReg -> HplMems0C.SpiReg[MEMS0_ID_ACCEL];
 }

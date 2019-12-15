@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,8 @@
 #include "hardware.h"
 #include <panic.h>
 #include <platform_panic.h>
-#include "platform_pin_defs.h"
+#include <platform_pin_defs.h>
+#include <lisxdh.h>
 
 #ifndef PANIC_SNS
 enum {
@@ -49,12 +50,19 @@ const msp432_usci_config_t mems_spi_config = {
   i2coa : 0
 };
 
-module Mems0PinsP {
+module Mems0HardwareP {
   provides {
-    interface SpiBus;
     interface Msp432UsciConfigure;
+    interface Init as PeriphInit;
+    interface SpiBus;
+    interface MemsStInterrupt as AccelInt1;
   }
-  uses interface Panic;
+  uses {
+    interface Panic;
+    interface Init   as SpiInit;
+    interface SpiReg as AccelReg;
+    interface HplMsp432PortInt as AccelInt1_Port;
+  }
 }
 implementation {
   async command void SpiBus.set_cs(uint8_t mems_id) {
@@ -79,6 +87,80 @@ implementation {
 
   async command const msp432_usci_config_t *Msp432UsciConfigure.getConfiguration() {
     return &mems_spi_config;
+  }
+
+  async command void AccelInt1.enableInterrupt() {
+    call AccelInt1_Port.disable();
+    call AccelInt1_Port.edgeRising();
+    call AccelInt1_Port.clear();
+    call AccelInt1_Port.enable();
+  }
+
+  async command void AccelInt1.disableInterrupt() {
+    call AccelInt1_Port.disable();
+  }
+
+  async command bool AccelInt1.isInterruptEnabled() {
+    call AccelInt1_Port.isEnabled();
+  }
+
+  async event void AccelInt1_Port.fired() {
+    signal AccelInt1.interrupt();
+  }
+
+
+  void accel_init() {
+//    lis2dh12_ctrl_reg0_t reg0;
+    lisx_ctrl_reg4_t     reg4;
+    union {
+      lisx_ctrl_reg5_t   x;
+      uint8_t            bits;
+    } reg5;
+    lisx_fifo_ctrl_reg_t fifo_ctrl;
+
+    /*
+     * CR0:       90  turn off SDO_PU
+     * CR4:       91  BDU (block data update), FS 00 (2g), self test, 4 wire
+     * CR5:       40  ffo enable
+     * fifo_ctrl: 49  fifo mode, fifo threshold
+     */
+//    reg0.rsvd_01     = 0;
+//    reg0.sdo_pu_disc = 1;
+//    call AccelReg.write(LISX_CTRL_REG0, (void *) &reg0, 1);
+
+    reg4.sim = 1;
+    reg4.st  = 0;
+    reg4.hr  = 0;
+    reg4.fs  = LISX_FS_2G;
+    reg4.ble = 0;
+    reg4.bdu = 1;
+    call AccelReg.write(LISX_CTRL_REG4, (void *) &reg4, 1);
+
+    reg5.bits      = 0;
+    reg5.x.fifo_en = 1;
+    call AccelReg.write(LISX_CTRL_REG5, (void *) &reg5, 1);
+
+    fifo_ctrl.fth = 9;
+    fifo_ctrl.tr  = 0;
+    fifo_ctrl.fm  = LISX_FIFO_MODE;
+    call AccelReg.write(LISX_FIFO_CTRL_REG, (void *) &fifo_ctrl, 1);
+  }
+
+  void gyro_init() {
+    nop();
+  }
+
+  void mag_init() {
+    nop();
+  }
+
+
+  command error_t PeriphInit.init() {
+    call SpiInit.init();                /* first bring up the mems SPI bus */
+    accel_init();                       /* then init the 3 devices */
+    gyro_init();
+    mag_init();
+    return SUCCESS;
   }
 
   async event void Panic.hook() { }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,8 +20,10 @@
  */
 
 /*
- * given a set of chips on an SPI bus, collect the chipselects and
+ * given a set of chips on an SPI bus, collect the chip selects and
  * the actual USCI h/w.  Expose as SpiReg[mem_id].
+ *
+ * Also export each sensor's interrupt
  */
 
 configuration HplMems0C {
@@ -30,7 +32,7 @@ configuration HplMems0C {
 implementation {
   components HplMsp432GpioC   as GIO;
   components Msp432UsciSpiB1C as SpiC;
-  components Mems0PinsP;
+  components Mems0HardwareP;
   components PanicC, PlatformC;
 
   SpiC.CLK                 -> GIO.UCB1CLK;
@@ -38,14 +40,24 @@ implementation {
   SpiC.SIMO                -> GIO.UCB1SIMO;
   SpiC.Panic               -> PanicC;
   SpiC.Platform            -> PlatformC;
-  SpiC.Msp432UsciConfigure -> Mems0PinsP;
+  SpiC.Msp432UsciConfigure -> Mems0HardwareP;
 
-  PlatformC.PeripheralInit -> SpiC;
+  /*
+   * Mems0PinsP needs access to the Accel SpiRegs so it does
+   * the SpiInit first then finishes writing Accel registers
+   */
+  PlatformC.PeripheralInit -> Mems0HardwareP;
+  Mems0HardwareP.SpiInit   -> SpiC;
+
+  components HplMsp432PortIntP as PortInts;
+  components McuSleepC;
+  PortInts.McuSleep -> McuSleepC;
+  Mems0HardwareP.AccelInt1_Port -> PortInts.Int[MEMS0_ACCEL_INT1_PORT_PIN];
 
   components new MemsBusP() as MemsDvr;
   MemsDvr.FastSpiByte      -> SpiC;
-  MemsDvr.SpiBus           -> Mems0PinsP;
-  Mems0PinsP.Panic         -> PanicC;
+  MemsDvr.SpiBus           -> Mems0HardwareP;
+  Mems0HardwareP.Panic     -> PanicC;
 
   SpiReg = MemsDvr;
 }
