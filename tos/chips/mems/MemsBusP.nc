@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2019 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,11 +83,25 @@ implementation {
   }
 
 
-  command void SpiReg.write[uint8_t mems_id]
-      (uint8_t addr, uint8_t *buf, uint8_t len) {
+  command uint8_t SpiReg.readOne[uint8_t mems_id](uint8_t addr) {
+    uint8_t result;
+
+    call SpiBus.set_cs(mems_id);
+    addr |= MEMS_READ_REG;              /* set read */
+    call FastSpiByte.splitWrite(addr);  /* set reg address */
+
+    /* first byte back is a throw away, and we have least 1 byte */
+    call FastSpiByte.splitReadWrite(0);
+    result = call FastSpiByte.splitRead();
+    call SpiBus.clr_cs(mems_id);
+    return result;
+  }
 
     nop();
     nop();
+
+  command void SpiReg.write[uint8_t mems_id]
+                        (uint8_t addr, uint8_t *buf, uint8_t len) {
     if (len == 0)
       return;
     call SpiBus.set_cs(mems_id);
@@ -106,5 +120,15 @@ implementation {
     addr &= 0x7f;
     addr |= MEMS_AUTO_INC;
     call SpiReg.write[mems_id](addr, buf, len);
+  }
+
+
+  command void SpiReg.writeOne[uint8_t mems_id](uint8_t addr, uint8_t data) {
+    call SpiBus.set_cs(mems_id);
+    addr &= 0x7f;                       /* nuke READ bit, just in case */
+    call FastSpiByte.splitWrite(addr);  /* set reg address */
+    call FastSpiByte.splitReadWrite(data);
+    call FastSpiByte.splitRead();
+    call SpiBus.clr_cs(mems_id);
   }
 }
