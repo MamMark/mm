@@ -76,8 +76,8 @@ implementation {
   }
 
 
-  command void SpiReg.read_multiple[uint8_t mems_id]
-      (uint8_t addr, uint8_t *buf, uint8_t len) {
+  command void SpiReg.readMultiple[uint8_t mems_id]
+                        (uint8_t addr, uint8_t *buf, uint8_t len) {
     addr |= MEMS_AUTO_INC;
     call SpiReg.read[mems_id](addr, buf, len);
   }
@@ -115,8 +115,8 @@ implementation {
   }
 
 
-  command void SpiReg.write_multiple[uint8_t mems_id]
-      (uint8_t addr, uint8_t *buf, uint8_t len) {
+  command void SpiReg.writeMultiple[uint8_t mems_id]
+                        (uint8_t addr, uint8_t *buf, uint8_t len) {
     addr &= 0x7f;
     addr |= MEMS_AUTO_INC;
     call SpiReg.write[mems_id](addr, buf, len);
