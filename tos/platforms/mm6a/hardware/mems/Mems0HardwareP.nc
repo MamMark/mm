@@ -109,57 +109,33 @@ implementation {
   }
 
 
+  void   mag_init() { }
+  void  gyro_init() { }
+
+  /*
+   * Accel Initilization
+   *
+   * Use default values (see tos/chips/mems/LisXdh/lisxdh.h).  Except...
+   *
+   *   r0: turn off SDO_PU
+   */
   void accel_init() {
-//    lis2dh12_ctrl_reg0_t reg0;
-    lisx_ctrl_reg4_t     reg4;
-    union {
-      lisx_ctrl_reg5_t   x;
-      uint8_t            bits;
-    } reg5;
-    lisx_fifo_ctrl_reg_t fifo_ctrl;
+#ifdef notyet
+    lisx_ctrl_reg0_t     reg0;
 
-    /*
-     * CR0:       90  turn off SDO_PU
-     * CR4:       91  BDU (block data update), FS 00 (2g), self test, 4 wire
-     * CR5:       40  ffo enable
-     * fifo_ctrl: 49  fifo mode, fifo threshold
-     */
-//    reg0.rsvd_01     = 0;
-//    reg0.sdo_pu_disc = 1;
-//    call AccelReg.write(LISX_CTRL_REG0, (void *) &reg0, 1);
-
-    reg4.sim = 1;
-    reg4.st  = 0;
-    reg4.hr  = 0;
-    reg4.fs  = LISX_FS_2G;
-    reg4.ble = 0;
-    reg4.bdu = 1;
-    call AccelReg.write(LISX_CTRL_REG4, (void *) &reg4, 1);
-
-    reg5.bits      = 0;
-    reg5.x.fifo_en = 1;
-    call AccelReg.write(LISX_CTRL_REG5, (void *) &reg5, 1);
-
-    fifo_ctrl.fth = 9;
-    fifo_ctrl.tr  = 0;
-    fifo_ctrl.fm  = LISX_FIFO_MODE;
-    call AccelReg.write(LISX_FIFO_CTRL_REG, (void *) &fifo_ctrl, 1);
-  }
-
-  void gyro_init() {
-    nop();
-  }
-
-  void mag_init() {
-    nop();
+    /* we need to set the correct PU in the main CPU */
+    reg0.x.sdo_pu_disc = 1;
+    reg0.x.rsvd_01     = LISX_REG0_RSVD_01;
+    call AccelReg.write(LISX_CTRL_REG0);
+#endif
   }
 
 
   command error_t PeriphInit.init() {
     call SpiInit.init();                /* first bring up the mems SPI bus */
-    accel_init();                       /* then init the 3 devices */
+    mag_init();                         /* then init the 3 devices */
     gyro_init();
-    mag_init();
+    accel_init();
     return SUCCESS;
   }
 
