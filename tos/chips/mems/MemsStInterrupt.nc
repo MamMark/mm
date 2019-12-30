@@ -1,4 +1,5 @@
-/*
+/* tos/chips/mems/MemsStInterrupt.nc
+ *
  * Copyright (c) 2019 Eric B. Decker
  * All rights reserved.
  *

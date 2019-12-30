@@ -1,4 +1,5 @@
-/*
+/* tos/chips/mems/MemsStHardware.nc
+ *
  * Copyright (c) 2019 Eric B. Decker
  * All rights reserved.
  *
@@ -65,7 +66,7 @@ interface MemsStHardware {
   /**
    * getStatus: get a status byte from the sensor.
    */
-  command uint8_t  getStatus();
+  command uint16_t getStatus();
 
   /**
    * getRegister: retrieve register from sensor.
@@ -78,8 +79,21 @@ interface MemsStHardware {
    * start: turn the sensor on at a given datarate.
    * stop:  turn the sensor off.
    */
-  command error_t  start(uint16_t datarate);
-  command error_t  stop();
+  command void     start(uint16_t datarate);
+  command void     stop();
+
+  /**
+   * Fifo Control.
+   *
+   * startFifo():      start the chip with Fifo access.
+   * restartFifo():    after the fifo stalls, restart it.
+   * fifoOverflowed(): return TRUE if the fifo has been overrun.
+   * fifoLen():        return current fifo length.
+   */
+  command void     startFifo(uint16_t datarate);
+  command void     restartFifo();
+  command bool     fifoOverflowed();
+  command uint8_t  fifoLen();
 
   /**
    * blockAvail: underlying signal indicating new sensor data
