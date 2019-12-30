@@ -1,4 +1,5 @@
-/*
+/* tos/chips/mems/MemsBusP.nc
+ *
  * Copyright (c) 2017, 2019 Eric B. Decker
  * All rights reserved.
  *
@@ -36,11 +37,14 @@
  * one instance per MemsBus.
  *
  * mems_id indicates which chip select to use.  Mems_Ids are defined
- * by the platform, like platform_pin_defs.h
+ * by the platform, see platform_pin_defs.h
  *
  * SpiReg calls are task only (SpiReg vs. SpiRegAsync) and effectively
  * atomic with respect to other MemsBus access.  No arbitration is
  * needed.
+ *
+ * Most of the time we will be reading 6 bytes from the fifo so we
+ * special case that case by unrolling the loop.
  */
 
 generic module MemsBusP() {
@@ -56,10 +60,7 @@ implementation {
 #define MEMS_AUTO_INC   0x40
 
   command void SpiReg.read[uint8_t mems_id]
-      (uint8_t addr, uint8_t *buf, uint8_t len) {
-
-    nop();
-    nop();
+                        (uint8_t addr, uint8_t *buf, uint8_t len) {
     if (len == 0)
       return;
     call SpiBus.set_cs(mems_id);
@@ -68,8 +69,20 @@ implementation {
 
     /* first byte back is a throw away, and we have least 1 byte */
     call FastSpiByte.splitReadWrite(0);
-    while (--len) {                     /* 1st one in flight */
+    if (len == 6) {
+      /*
+       * we special case 6 because that is how many bytes are pulled
+       * from the fifo.  Unroll the loop.
+       */
       *buf++ = call FastSpiByte.splitReadWrite(0);
+      *buf++ = call FastSpiByte.splitReadWrite(0);
+      *buf++ = call FastSpiByte.splitReadWrite(0);
+      *buf++ = call FastSpiByte.splitReadWrite(0);
+      *buf++ = call FastSpiByte.splitReadWrite(0);
+    } else {
+      while (--len) {                     /* 1st one in flight */
+        *buf++ = call FastSpiByte.splitReadWrite(0);
+      }
     }
     *buf++ = call FastSpiByte.splitRead();
     call SpiBus.clr_cs(mems_id);
@@ -97,8 +110,6 @@ implementation {
     return result;
   }
 
-    nop();
-    nop();
 
   command void SpiReg.write[uint8_t mems_id]
                         (uint8_t addr, uint8_t *buf, uint8_t len) {
