@@ -514,6 +514,21 @@ typedef struct {
 
 
 typedef struct {
+  uint16_t len;                 /* size 32 + var */
+  dtype_t  dtype;
+  uint8_t  hdr_crc8;            /* single byte CRC-8 */
+  uint32_t recnum;
+  rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
+  uint16_t recsum;              /* part of header */
+  uint32_t sched_delta;
+  uint16_t sns_id;
+  uint16_t pad;                 /* quad alignment */
+  uint16_t nsamples;
+  uint16_t datarate;            /* hz */
+} PACKED dt_sensor_nsamples_t;
+
+
+typedef struct {
   uint16_t len;                 /* size 28 + var */
   dtype_t  dtype;
   uint8_t  hdr_crc8;            /* single byte CRC-8 */

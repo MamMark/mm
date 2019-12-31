@@ -46,14 +46,14 @@ enum {
   /* Salinity, 2 x uint16 */
   SNS_ID_SAL            = 3,    // Salinity sensor (one, two)
 
-  /* Accel, 3 x uint16 */
-  SNS_ID_ACCEL          = 4,    // Accelerometer (x,y,z)
+  /* Accel, 3 x uint16, nsamples */
+  SNS_ID_ACCEL_N        = 4,    // Accelerometer (x,y,z)
 
-  /* Gyro, 3 x uint16 */
-  SNS_ID_GYRO           = 5,    // Gyro
+  /* Gyro, 3 x uint16, nsamples */
+  SNS_ID_GYRO_N         = 5,    // Gyro
 
-  /* Magnetometer, 3 x uint16 */
-  SNS_ID_MAG            = 6,    // Magnetometer (x, y, z)
+  /* Magnetometer, 3 x uint16, nsamples */
+  SNS_ID_MAG_N          = 6,    // Magnetometer (x, y, z)
 
   SNS_ID_GPS            = 7,    // time based GPS kick.
 
