@@ -38,7 +38,7 @@ enum {
 
 enum {
   RGM_ALL_OFF           = 0,
-  RGM_DEFAULT           = 2,
+  RGM_DEFAULT           = 1,
   RGM_MAX_REGIME        = 15,
   RGM_ONE_MIN           = (60*1024UL),
 };

@@ -16,7 +16,7 @@ const uint32_t sns_period_table[RGM_MAX_REGIME + 1][RGM_ID_TIME_MAX + 1] = {
   /* none  batt         tmpPX   sal     accel   gyro    mag     ptemp   gps     press   speed  */
   {  0UL,  0UL,         0UL,    0UL,    0UL,    0UL,    0UL,    0UL,    0UL,    0UL,    0UL    }, /* 0 - all off  */
   {  0UL,  RGM_ONE_MIN, RGM_ONE_MIN,
-                                1024UL, 51UL,   0UL,    0UL,    1024UL, 0UL,    1024UL, 1024UL }, /* 1 - main regime */
+                                1024UL, 102UL,  0UL,    0UL,    1024UL, 0UL,    1024UL, 1024UL }, /* 1 - main regime */
   {  0UL,  1024UL, RGM_ONE_MIN,
                                 1024UL, 1024UL, 0UL,    0UL,    1024UL, 0UL,    1024UL, 1024UL }, /* 2 - all sensors once/sec */
   {  0UL,  RGM_ONE_MIN, 0UL,    0UL,    102UL,  0UL,    0UL,    0UL,    0UL,    0UL,    0UL    }, /* 3 - batt and accel only, 10Hz */
@@ -32,7 +32,7 @@ const uint32_t sns_period_table[RGM_MAX_REGIME + 1][RGM_ID_TIME_MAX + 1] = {
   {  0UL,  51UL,        51UL,   51UL,   51UL,   0UL,    0UL,    51UL,   0UL,    51UL,   51UL   }, /* 12 - all sensors 20 Hz */
   {  0UL,  102UL,       102UL,  102UL,  102UL,  0UL,    0UL,    102UL,  0UL,    102UL,  102UL  }, /* 13 - all sensors 10 Hz */
   {  0UL,  RGM_ONE_MIN, RGM_ONE_MIN,
-                                1024UL, 0UL,    0UL,    0UL,    0UL,    0UL,    0UL,    0UL    }, /* 14 - testing */
+                                1024UL, 102UL,  0UL,    0UL,    0UL,    0UL,    0UL,    0UL    }, /* 14 - testing */
   {  0UL,  0UL,         0UL,    0UL,    51UL,   0UL,    0UL,    0UL,    0UL,    0UL,    0UL    }, /* 15 - accel, mag, 20 Hz */
 };
 
