@@ -1,44 +1,117 @@
+/* tos/chips/mems/tests/MemsTestP.nc
+ *
+ * Copyright (c) 2019 Eric B. Decker
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the
+ *   distribution.
+ *
+ * - Neither the name of the copyright holders nor the names of
+ *   its contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * USE_FIFO enables using the Fifos for Gyro and Accel
+ */
+
+#include <lisxdh.h>
+
+#define USE_FIFO
+#define DUMP_SIZE 256
+
+typedef struct {
+  uint8_t r1;
+  uint8_t r4;
+  uint8_t r5;
+  uint8_t status;
+  uint8_t fifo_ctrl;
+  uint8_t fifo_src;
+} regdump_t;
+
+uint32_t  reg_idx;
+regdump_t regdump[DUMP_SIZE];
+
 
 module MemsTestP {
   uses interface Boot;
-  uses interface Panic;
-
-  uses interface Timer<TMilli> as AccelTimer;
-  uses interface LisXdh as Accel;
+  uses interface MemsStHardware as Accel;
+  uses interface Timer<TMilli>  as DrainTimer;
 
 #ifdef notdef
-  uses interface Timer<TMilli> as GyroTimer;
-  uses interface L3g4200 as Gyro;
+  uses interface MemsStHardware as Gyro;
+  uses interface Timer<TMilli>  as GyroTimer;
 
-  uses interface Timer<TMilli> as MagTimer;
-  uses interface Lis3mdl as Mag;
+  uses interface MemsStHardware as Mag;
+  uses interface Timer<TMilli>  as MagTimer;
 #endif
 }
 implementation {
   typedef struct {
-    uint8_t xLow;
-    uint8_t xHigh;
-    uint8_t yLow;
-    uint8_t yHigh;
-    uint8_t zLow;
-    uint8_t zHigh;
+    int16_t x;
+    int16_t y;
+    int16_t z;
   } mems_sample_t;
 
-  #define SAMPLE_COUNT 60
-  #define SAMPLE_SIZE 6
+#define SAMPLE_COUNT 60
 
-  uint8_t m_accelSampleCount;
-  uint8_t m_gyroSampleCount;
-  uint8_t m_magSampleCount;
+  uint16_t m_mIdx;
+  uint16_t m_gIdx;
+  uint16_t m_aIdx;
 
+  mems_sample_t   m_magSamples[SAMPLE_COUNT];
+  mems_sample_t  m_gyroSamples[SAMPLE_COUNT];
   mems_sample_t m_accelSamples[SAMPLE_COUNT];
-  mems_sample_t m_gyroSamples[SAMPLE_COUNT];
-  mems_sample_t m_magSamples[SAMPLE_COUNT];
+
+
+  void dump_registers() {
+    regdump[reg_idx].r1        = call Accel.getRegister(LISX_CTRL_REG1);
+    regdump[reg_idx].r4        = call Accel.getRegister(LISX_CTRL_REG4);
+    regdump[reg_idx].r5        = call Accel.getRegister(LISX_CTRL_REG5);
+    regdump[reg_idx].status    = call Accel.getRegister(LISX_STATUS_REG);
+    regdump[reg_idx].fifo_ctrl = call Accel.getRegister(LISX_FIFO_CTRL_REG);
+    regdump[reg_idx].fifo_src  = call Accel.getRegister(LISX_FIFO_SRC_REG);
+    reg_idx++;
+    if (reg_idx >= DUMP_SIZE)
+      reg_idx = 0;
+  }
+
 
   event void Boot.booted() {
-    m_magSampleCount = call Accel.whoAmI();
-    call Accel.config1Hz();
-    call AccelTimer.startPeriodic(500);
+    m_aIdx  = 0;
+    reg_idx = 0;
+    dump_registers();
+
+#ifdef USE_FIFO
+    call Accel.startFifo(10);
+    call DrainTimer.startPeriodic(1024);
+#else
+    call Accel.start(10);
+#endif
+    dump_registers();
+    nop();
 
 #ifdef notdef
     id = call Gyro.whoAmI();
@@ -52,45 +125,70 @@ implementation {
   }
 
 
-  event void AccelTimer.fired() {
+  event void DrainTimer.fired() {
+#ifdef USE_FIFO
+    uint32_t len;
+    bool     overflowed;
+
+    len = call Accel.fifoLen();
+    if (!len) {
+      /* oops, looks like the pipeline/fifo shutdown, restart it */
+      call Accel.restartFifo();
+      return;
+    }
+    overflowed = call Accel.fifoOverflowed();
+    dump_registers();
     nop();
-    if (call Accel.xyzDataAvail()) {
-      call Accel.readSample((uint8_t *)(&m_accelSamples[m_accelSampleCount]),
-			    SAMPLE_SIZE);
-      m_accelSampleCount++;
+    while (len) {
+      /* each entry is 6 bytes, 3 x int16_t */
+      call Accel.read((void *) &(m_accelSamples[m_aIdx]), 6);
+      dump_registers();
+      m_aIdx++;
+      len--;                            /* one entry down */
     }
-    if (m_accelSampleCount >= SAMPLE_COUNT) {
-      call AccelTimer.stop();
+    dump_registers();
+    if (overflowed)
+      call Accel.restartFifo();
+    if (m_aIdx >= SAMPLE_COUNT) {
+      call DrainTimer.stop();
+      nop();
+      nop();
     }
+#else
+    if (call Accel.dataAvail())
+      call Accel.read((void *)(&m_accelSamples[m_aIdx++]), 6);
+    if (m_aIdx >= SAMPLE_COUNT) {
+      call DrainTimer.stop();
+      nop();
+      nop();
+    }
+#endif
   }
 
 
 #ifdef notdef
   event void GyroTimer.fired() {
-    nop();
-    if (call Gyro.xyzDataAvail()) {
-      call Gyro.readSample((uint8_t *)(&m_gyroSamples[m_gyroSampleCount]),
-			   SAMPLE_SIZE);
-      m_gyroSampleCount++;
+    if (call Gyro.dataAvail()) {
+      call Gyro.read((void *)(&m_gyroSamples[m_gIdx]), 6);
+      m_gIdx++;
     }
-    if (m_gyroSampleCount >= SAMPLE_COUNT) {
+    if (m_gIdx >= SAMPLE_COUNT) {
       call GyroTimer.stop();
     }
   }
 
 
   event void MagTimer.fired() {
-    nop();
-    if (call Mag.xyzDataAvail()) {
-      call Mag.readSample((uint8_t *)(&m_magSamples[m_magSampleCount]),
-			  SAMPLE_SIZE);
-      m_magSampleCount++;
+    if (call Mag.dataAvail()) {
+      call Mag.read((void *)(&m_magSamples[m_mIdx]), 6);
+      m_mIdx++;
     }
-    if (m_magSampleCount >= SAMPLE_COUNT) {
+    if (m_mIdx >= SAMPLE_COUNT)
       call MagTimer.stop();
-    }
   }
 #endif
 
-  async event void Panic.hook() { }
+  event   void     Accel.blockAvail(uint16_t nsamples, uint16_t datarate,
+                              uint16_t bytes_avail) { }
+
 }
