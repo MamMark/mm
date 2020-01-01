@@ -3,13 +3,17 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.6.dev22'
+__version__ = '0.4.6.dev23'
 
 # 0.4.6.dev+, core_rev: 22/1+:
-#       0.4.6.dev20
-#       o convert to eprint for stderr
+#     0.4.6.dev23
+#       fix bug in core_emitters/emit_sensor_data, sns_empty_str
+#       takes 2 parameters, default 2nd parameter, level = 0.
 #
-#       0.4.6.dev17
+#     0.4.6.dev20
+#       convert to eprint for stderr
+#
+#     0.4.6.dev17
 #       o implement mr_emitters (machine readable) for data base export.
 #       o new switch -m (--mr_emitters)
 #       o add -p for pretty print to control different displays

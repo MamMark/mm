@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.6.dev20'
+__version__ = '0.4.6.dev21'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -19,6 +19,10 @@ from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
 # 0.4.6.dev+    CR 22/+
+#     0.4.6.dev21
+#       o fix bug bug in core_emitters/emit_sensor_data, sns_empty_str
+#         takes 2 parameters, default 2nd parameter, level = 0.
+#
 #       o fix bug in geo packet processing.  don't say OD if no_fix
 #
 #       o machine readable emitters.

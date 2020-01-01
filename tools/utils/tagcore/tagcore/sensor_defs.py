@@ -23,7 +23,7 @@ basic definitions for sensors.
 
 from   __future__   import print_function
 
-__version__ = '0.4.5'
+__version__ = '0.4.6.dev1'
 
 __all__ = [
     'SNS_NAME',
@@ -91,7 +91,7 @@ SNS_ID_PRESS    = 9     # Pressure (temp, pressure)
 SNS_ID_SPEED    = 10    # Velocity (x,y)
 
 
-def sns_str_empty(obj):
+def sns_str_empty(obj, level=0):
     return ''
 
 def sns_name(sns_id):
