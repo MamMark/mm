@@ -32,6 +32,7 @@ __all__ = [
     'SNS_VAL_STR',
     'SNS_DICT',
     'SNS_EMITTERS',
+    'SNS_MR_EMITTER',
     'SNS_OBJ_NAME',
 
     'SNS_ID_NONE',
@@ -60,7 +61,7 @@ __all__ = [
 
 # the sns_table holds vectors for how to decode sensor data.
 # each entry is keyed by sns_id from the record and contains
-# a 5-tuple that includes:
+# a 7-tuple that includes:
 #
 #   0: name         sensor name (string)
 #   1: object       sensor data object
@@ -73,13 +74,14 @@ __all__ = [
 sns_table = {}
 sns_count = {}
 
-SNS_NAME     = 0
-SNS_OBJECT   = 1
-SNS_DECODER  = 2
-SNS_VAL_STR  = 3
-SNS_DICT     = 4
-SNS_EMITTERS = 5
-SNS_OBJ_NAME = 6
+SNS_NAME        = 0
+SNS_OBJECT      = 1
+SNS_DECODER     = 2
+SNS_VAL_STR     = 3
+SNS_DICT        = 4
+SNS_EMITTERS    = 5
+SNS_MR_EMITTER  = 6
+SNS_OBJ_NAME    = 7
 
 
 # Sensor data format Ids.  Must match tos/mm/sensor_ids.h

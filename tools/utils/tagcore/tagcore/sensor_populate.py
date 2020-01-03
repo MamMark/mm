@@ -11,8 +11,16 @@ def decode_default(level, offset, buf, obj):
 def decode_null(level, offset, buf, obj):
     return 0
 
-#                         SNS_NAME    SNS_OBJECT    SNS_DECODER     SNS_STRING      SNS_DICT           SNS_EMITTERS     SNS_OBJ_NAME
-sensor.sns_table[2]   = ('TMP_PX',    obj_tmp_px(), decode_default, sns_str_tmp_px, sns_dict_tmp_px,   [ emit_tmp_px ], 'obj_tmp_px')
+# 2nd level dispatch, Sensors by sensor id.
+#
+# SNS_DICT: a function that returns an mr_cit to denote what mr_display should add for this record.
+#
+# A display is generated using the following rules:
+# If SNS_DICT is not None, use this function to build an mr_dict.  (SNS_EMITTER should be None)
+# If SNS_DICT is None, then use emitter (SNS_MR_EMITTER) to generate the output.
+#
+#                         SNS_NAME    SNS_OBJECT      SNS_DECODER     SNS_STRING       SNS_DICT           SNS_EMITTERS       SNS_MR_EMITTER    SNS_OBJ_NAME
+sensor.sns_table[2]   = ('TMP_PX',    obj_tmp_px(),   decode_default, sns_str_tmp_px,  sns_dict_tmp_px,   None,              None,            'obj_tmp_px')
 
 # other sensors, just define their names.  no decoders, no strings, no dicts
 sensor.sns_table[0]   = ('NONE',      None, decode_null, sns_str_empty, None, None, 'none')
