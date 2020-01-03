@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev13'
+__version__ = '0.4.6.dev14'
 
 from   ctypes       import c_int32
 
@@ -761,9 +761,14 @@ def emit_sensor_data(level, offset, buf, obj):
     v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
     print('  {:s}  {:s}'.format(sns_name(sns_id), sns_val_str(sns_id)))
 
+    sensor_obj = v[SNS_OBJECT]
+    emitters   = v[SNS_EMITTERS]
+
     if level >= 1:
         print('{:>74s}'.format(sns_val_str(sns_id, level)))
-
+        if emitters:
+            for e in emitters:
+                e(level, offset, buf[len(obj):], sensor_obj)
 
 def emit_sensor_set(level, offset, buf, obj):
     dump_hdr(offset, buf)
