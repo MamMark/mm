@@ -26,7 +26,7 @@
  * sensor_defs.py, sensor_headers.py, etc.
  */
 
-enum {
+enum {                                  /* uint16_t sns_id */
   SNS_ID_NONE           = 0,
 
   /* Simple Battery Sensor, 1 x uint16 */
@@ -48,24 +48,27 @@ enum {
 
   /* Accel, 3 x uint16, nsamples */
   SNS_ID_ACCEL_N        = 4,    // Accelerometer (x,y,z)
+  SNS_ID_ACCEL_N8       = 5,    // 8 bit data
+  SNS_ID_ACCEL_N10      = 6,    // 10 bit data, 2 bytes
+  SNS_ID_ACCEL_N12      = 7,    // 12 bit data, 2 bytes
 
   /* Gyro, 3 x uint16, nsamples */
-  SNS_ID_GYRO_N         = 5,    // Gyro
+  SNS_ID_GYRO_N         = 16,   // Gyro, 16 bit data
 
   /* Magnetometer, 3 x uint16, nsamples */
-  SNS_ID_MAG_N          = 6,    // Magnetometer (x, y, z)
+  SNS_ID_MAG_N          = 17,   // Magnetometer (x, y, z), 16 bit data
 
-  SNS_ID_GPS            = 7,    // time based GPS kick.
+  SNS_ID_GPS            = 18,   // time based GPS kick.  ???
 
   /* Pressure transducer
    * Ptemp: uint16
    * Press: uint16
    */
-  SNS_ID_PTEMP          = 8,    // Temperature sensor
-  SNS_ID_PRESS          = 9,    // Pressure (temp, pressure)
+  SNS_ID_PTEMP          = 32,   // Temperature sensor
+  SNS_ID_PRESS          = 33,   // Pressure (temp, pressure)
 
   /* Velocity, 2 x uint16 */
-  SNS_ID_SPEED          = 10,   // Velocity (x,y)
+  SNS_ID_SPEED          = 34,   // Velocity (x,y)
 };
 
 #endif

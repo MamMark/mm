@@ -23,7 +23,7 @@ basic definitions for sensors.
 
 from   __future__   import print_function
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6.dev2'
 
 __all__ = [
     'SNS_NAME',
@@ -38,10 +38,16 @@ __all__ = [
     'SNS_ID_BATT',
     'SNS_ID_TEMP_PX',
     'SNS_ID_SAL',
-    'SNS_ID_ACCEL',
-    'SNS_ID_GYRO',
-    'SND_ID_MAG',
+
+    'SNS_ID_ACCEL_N',
+    'SNS_ID_ACCEL_N8',
+    'SNS_ID_ACCEL_N10',
+    'SNS_ID_ACCEL_N12',
+
+    'SNS_ID_GYRO_N',
+    'SND_ID_MAG_N',
     'SNS_ID_GPS',
+
     'SNS_ID_PTEMP',
     'SNS_ID_PRESS',
     'SNS_ID_SPEED',
@@ -78,17 +84,23 @@ SNS_OBJ_NAME = 6
 
 # Sensor data format Ids.  Must match tos/mm/sensor_ids.h
 
-SNS_ID_NONE     = 0     # used for other data stream stuff
-SNS_ID_BATT     = 1     # Battery Sensor
-SNS_ID_TEMP_PX  = 2     # Temperature Sensor, Platform/External
-SNS_ID_SAL      = 3     # Salinity sensor (one, two)
-SNS_ID_ACCEL    = 4     # Accelerometer (x,y,z)
-SNS_ID_GYRO     = 5     # Gyro
-SND_ID_MAG      = 6     # Magnetometer (x, y, z)
-SNS_ID_GPS      = 7     # GPS?
-SNS_ID_PTEMP    = 8     # Temperature sensor
-SNS_ID_PRESS    = 9     # Pressure (temp, pressure)
-SNS_ID_SPEED    = 10    # Velocity (x,y)
+SNS_ID_NONE      = 0    # used for other data stream stuff
+SNS_ID_BATT      = 1    # Battery Sensor
+SNS_ID_TEMP_PX   = 2    # Temperature Sensor, Platform/External
+SNS_ID_SAL       = 3    # Salinity sensor (one, two)
+
+SNS_ID_ACCEL_N   = 4    # Accelerometer (x,y,z)
+SNS_ID_ACCEL_N8  = 5    # Accelerometer (x,y,z), 8 bit data
+SNS_ID_ACCEL_N10 = 6    # Accelerometer (x,y,z), 10 bit data
+SNS_ID_ACCEL_N12 = 7    # Accelerometer (x,y,z), 12 bit data
+
+SNS_ID_GYRO_N    = 16   # Gyro, 16 bit data
+SND_ID_MAG_N     = 17   # Magnetometer (x, y, z)
+SNS_ID_GPS       = 18   # GPS?
+
+SNS_ID_PTEMP     = 32   # Temperature sensor
+SNS_ID_PRESS     = 33   # Pressure (temp, pressure)
+SNS_ID_SPEED     = 34   # Velocity (x,y)
 
 
 def sns_str_empty(obj, level=0):
