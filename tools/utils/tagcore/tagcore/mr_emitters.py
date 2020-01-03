@@ -25,7 +25,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev4'
+__version__ = '0.4.6.dev5'
 
 import copy
 from   datetime       import datetime
@@ -117,13 +117,15 @@ def mr_display(offset, hdr, mr_dict, type_str):
         print(basic_hdr.format('date','offset','rec','type'), end='')
         front_fmt  = expanded_f
         remain_fmt = expanded_r
-        for k in obj:
-            print(remain_fmt.format(k), end='')
+        if mr_dict:
+            for k in mr_dict:
+                print(remain_fmt.format(k), end='')
         print()
     print(front_fmt.format(brt, offset, recnum, type_str), end = '')
-    for k in obj:
-        val = obj[k].val if (isinstance(obj[k], atom)) else obj[k]
-        print(remain_fmt.format(val), end='')
+    if mr_dict:
+        for k in mr_dict:
+            val = mr_dict[k].val if (isinstance(mr_dict[k], atom)) else mr_dict[k]
+            print(remain_fmt.format(val), end='')
     print()
 
 
@@ -274,16 +276,16 @@ def emit_sensor_data_mr(level, offset, buf, obj):
         del c['hdr']
         del c['pad']
         sns_obj  = v[SNS_OBJECT]
-        xdict = sns_dict(sns_id)(sns_obj)
-        for k in xdict:
-            c[k] = xdict[k]
+        dict_func = sns_dict(sns_id)
+        xdict = dict_func(sns_obj) if dict_func else None
+        if xdict:
+            for k in xdict:
+                c[k] = xdict[k]
         mr_display(offset, hdr, c, dt_name(xtype))
-    c = OrderedDict()
     sns_obj  = v[SNS_OBJECT]
-    xdict = sns_dict(sns_id)(sns_obj)
-    for k in xdict:
-        c[k] = xdict[k]
-    print_basic_obj(offset, hdr, c, dt_name(xtype))
+    dict_func = sns_dict(sns_id)
+    xdict = dict_func(sns_obj) if dict_func else None
+    mr_display(offset, hdr, xdict, dt_name(xtype))
 
 def emit_gps_proto_mr(level, offset, buf, obj):
     hdr   = obj['hdr']
