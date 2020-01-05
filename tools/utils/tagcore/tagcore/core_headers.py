@@ -63,14 +63,11 @@ import sirf_defs    as     sirf
 
 def decode_sensor(level, offset, buf, obj):
     consumed = obj.set(buf)
-
     sns_id = obj['sns_id'].val
-
     try:
         sensor.sns_count[sns_id] += 1
     except KeyError:
         sensor.sns_count[sns_id] = 1
-
     v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
     decoder     = v[SNS_DECODER]            # sns decoder
     decoder_obj = v[SNS_OBJECT]             # sns object

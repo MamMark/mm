@@ -118,6 +118,16 @@ def sns_val_str(sns_id, level = 0):
     return v[SNS_VAL_STR](v[SNS_OBJECT], level)
 
 
+# sns_dict: return function to generate a dictionary describing the sensor
+#
+# A sensor dict is used when generating machine readable output.  Using the
+# dictionary, an output line is generated that contains every element from
+# the dictionary.
+#
+# If verbose is selected the output is expanded and includes a header that
+# labels each column.  The column names come from the keys in the dictionary.
+# This is intended for humans checking the machine readable output.
+#
 def sns_dict(sns_id):
     v = sns_table.get(sns_id, ('noSns', None, None, None, None, None))
     return v[SNS_DICT]

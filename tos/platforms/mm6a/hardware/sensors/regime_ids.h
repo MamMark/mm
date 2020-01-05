@@ -6,12 +6,17 @@
 #ifndef REGIME_IDS_H
 #define REGIME_IDS_H
 
-/* Regime Ids (RGM_ID) are inherently platform dependent and are used to
+/*
+ * Regime Ids are used to interface between sensors and the regime system.  A
+ * RGM_ID is used by a sensor's implementation code to ask the Regime manager
+ * for any information (typically the sensor's period) needed to generate and
+ * collect information from the sensor.
+ *
+ * Regime Ids (RGM_ID) are inherently platform dependent and are used to
  * control sensors on a given platform.
  *
  * RGM_IDs below RGM_MAX_ID are used by time based periodic sensors.  See
- * sns_period_table.  Higher RGM_IDs are used for various platform
- * dependent auxiliary functions.
+ * sns_period_table.
  */
 
 enum {

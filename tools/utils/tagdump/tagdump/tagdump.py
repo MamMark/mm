@@ -439,7 +439,7 @@ def dump():
             decoder  = v[DTR_DECODER]           # dt function
             emitters = v[DTR_EMITTERS]          # emitter list
             obj      = v[DTR_OBJ]               # dt object
-            if (decoder):
+            if (decoder):                       # BRK
                 try:
                     decoder(verbose, rec_offset, rec_buf, obj)
                     if emitters and len(emitters):
