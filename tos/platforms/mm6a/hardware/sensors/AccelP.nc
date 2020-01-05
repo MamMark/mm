@@ -93,7 +93,17 @@ enum {
 #define PANIC_SNS __pcode_sns
 #endif
 
+
+/*
+ * USE_ACCEL8,  set low power, 8 bit mode.
+ * USE_ACCEL10, set normal power, 10 bit mode.
+ * USE_ACCEL12, set high power, 12 bit mode.
+ */
+
+#define USE_ACCEL8
+
 #define DEBUG
+
 #ifdef  DEBUG
 
 typedef struct {
@@ -131,7 +141,7 @@ implementation {
 
   typedef struct {
     int16_t x, y, z;
-  } accel_sample_t;
+  } acceln_sample_t;
 
   /* module globals */
   uint32_t      m_period;
@@ -148,8 +158,8 @@ implementation {
   }
 
 
-#ifdef DEBUG
   void dump_registers() {
+#ifdef DEBUG
     regdump[reg_idx].r1        = call Accel.getRegister(LISX_CTRL_REG1);
     regdump[reg_idx].r4        = call Accel.getRegister(LISX_CTRL_REG4);
     regdump[reg_idx].r5        = call Accel.getRegister(LISX_CTRL_REG5);
@@ -159,8 +169,8 @@ implementation {
     reg_idx++;
     if (reg_idx >= DUMP_SIZE)
       reg_idx = 0;
-  }
 #endif
+  }
 
 
   uint16_t period2datarate(uint32_t period) {
@@ -184,15 +194,30 @@ implementation {
     }
   }
 
+  /*
+   * Drain has gone off, we want to drain the fifo.
+   * Depending on the resolution we want we will generate 8 bit, 10 bit or
+   * 16 bit data.
+   *
+   * The fifo on the accel is 32 x 16 x 3.  We add one extra to handle the
+   * overflow (fifo shut down) case.  We postpend (-1, -1, -1) to the data
+   * stream to indicate a break in the data stream.
+   */
   event void DrainTimer.fired() {
-    dt_sensor_nsamples_t adt;           /* accel dt + nsample */
-    accel_sample_t       data[33];      /* 32 bit, x, y, z, little endian */
+    uint32_t datasize;
     uint32_t nsamples, fifo_len, idx;
     bool     overflowed;
+    uint16_t sns_id;
+    acceln_sample_t      data[33];
+    dt_sensor_nsamples_t adt;           /* accel dt + nsample */
+
+#ifdef USE_ACCEL8
+    uint8_t *dp;
+    uint32_t src, dest;
+#endif
 
     memset(data, 0, sizeof(data));
     dump_registers();
-    nop();
     overflowed = call Accel.fifoOverflowed();
     fifo_len   = call Accel.fifoLen();
     nsamples   = fifo_len;
@@ -204,14 +229,12 @@ implementation {
        */
       call Accel.restartFifo();
       dump_registers();
-      nop();
       return;
     }
     while (fifo_len) {
       call Accel.read((void *) &data[idx++], 6);
       fifo_len--;
       dump_registers();
-      nop();
     }
     if (overflowed) {
       data[idx].x   = -1;
@@ -220,17 +243,30 @@ implementation {
       nsamples++;
       call Accel.restartFifo();
       dump_registers();
-      nop();
     }
-    adt.len = sizeof(adt) + nsamples * sizeof(accel_sample_t);
+#ifdef USE_ACCEL8
+    datasize = nsamples * sizeof(acceln_sample_t);
+    dp = (uint8_t *) data;
+    src = 1;
+    for (dest = 0; dest < datasize/2; dest++) {
+      dp[dest] = dp[src];
+      src += 2;
+    }
+    sns_id = SNS_ID_ACCEL_N8;
+    datasize = datasize/2;
+#else
+    sns_id = SNS_ID_ACCEL_N;
+    datasize = nsamples * sizeof(acceln_sample_t);
+#endif
+    adt.len = sizeof(adt) + datasize;
     adt.dtype = DT_SENSOR_DATA;
     adt.sched_delta = 0;
-    adt.sns_id = SNS_ID_ACCEL_N;
+    adt.sns_id = sns_id;
     adt.nsamples = nsamples;
     adt.datarate = m_datarate;
     nop();
     call Collect.collect((void *) &adt,  sizeof(adt),
-                 (void *) &data, nsamples * sizeof(accel_sample_t));
+                         (void *) &data, datasize);
   }
 
 
@@ -251,7 +287,6 @@ implementation {
     call Accel.startFifo(m_datarate);
     call DrainTimer.startPeriodic(draintime);
     dump_registers();
-    nop();
   }
 
 
