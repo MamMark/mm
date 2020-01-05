@@ -25,7 +25,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev5'
+__version__ = '0.4.6.dev6'
 
 import copy
 from   datetime       import datetime
@@ -291,7 +291,14 @@ def emit_sensor_data_mr(level, offset, buf, obj):
     sns_obj  = v[SNS_OBJECT]
     dict_func = sns_dict(sns_id)
     xdict = dict_func(sns_obj) if dict_func else None
-    mr_display(offset, hdr, xdict)
+    if xdict:
+        mr_display(offset, hdr, xdict)
+    else:
+        mr_emitter = v[SNS_MR_EMITTER]
+        if mr_emitter:
+            # obj is hdr/sns hdr
+            # sns_obj is nsamples/datarate/samples
+            mr_emitter(offset, obj, sns_obj)
 
 def emit_gps_proto_mr(level, offset, buf, obj):
     hdr   = obj['hdr']
