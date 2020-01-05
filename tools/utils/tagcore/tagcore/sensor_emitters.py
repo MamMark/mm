@@ -25,9 +25,9 @@ from   __future__   import print_function
 from   collections  import OrderedDict
 from   sensor_defs  import *
 import sensor_defs  as     sensor
+from   mr_emitters  import mr_display
 
-
-__version__ = '0.4.6.dev2'
+__version__ = '0.4.6.dev3'
 
 def emit_default(level, offset, buf, obj):
     print()
@@ -77,3 +77,74 @@ def sns_dict_tmp_px(obj, level = 0):
     r['C_tmp_p'] = c_p
     r['C_tmp_x'] = c_x
     return r
+
+
+def sns_str_acceln(obj, level = 0):
+    s = ''
+    sep = ''
+    nsamples = obj['nsamples'].val
+    datarate = obj['datarate'].val
+
+    if level == 0:
+        s = '  {:d} samples, {:d} Hz'.format(nsamples, datarate)
+    return s
+
+
+def print_sample(fmt, c, obj):
+    print(fmt.format(c, obj[c]['x'], obj[c]['y'], obj[c]['z']),  end = '')
+
+
+def emit_sample(fmt, obj):
+    nsamples = obj['nsamples'].val
+    datarate = obj['datarate'].val
+    for n in range(0, nsamples, 3):
+        c = n
+        if c < nsamples:
+            print_sample(fmt, c, obj)
+        c += 1
+        if c < nsamples:
+            print_sample(fmt, c, obj)
+        c += 1
+        if c < nsamples:
+            print_sample(fmt, c, obj)
+        print('')
+
+
+def emit_acceln(level, offset, buf, obj):
+    fmt = '    {:>2d}: ({:04x}, {:04x}, {:04x})'
+    emit_sample(fmt, obj)
+
+def emit_acceln8(level, offset, buf, obj):
+    fmt = '    {:>2d}: ({:2d}, {:2d}, {:2d})'
+    emit_sample(fmt, obj)
+
+def emit_acceln8x(level, offset, buf, obj):
+    fmt = '    {:>2d}: ({:02x}, {:02x}, {:02x})'
+    emit_sample(fmt, obj)
+
+
+# machine readable sensor emitter
+#
+# sns_hdr is hdr/sns_hdr
+# nsample_obj is nsample_hdr and samples
+#
+# Hang this function on the SNS_MR_EMITTER for the ACCELn sensor and
+# set the DICT setting to None.
+
+def emit_acceln_mr(offset, sns_hdr, nsample_obj):
+    nsamples = nsample_obj['nsamples'].val
+    datarate = nsample_obj['datarate'].val
+    for n in range(nsamples):
+        r = OrderedDict()
+        sns_id        = sns_hdr['sns_id'].val
+        r['sns_id']   = sns_id
+        r['name']     = sns_name(sns_id)
+        r['nsamples'] = nsamples
+        r['datarate'] = datarate
+        r['sample']  = n
+        samples = nsample_obj[n]
+        for k in samples.iterkeys():
+            r[k] = samples[k]
+            if n >= nsamples:
+                break;
+        mr_display(offset, sns_hdr, r);
