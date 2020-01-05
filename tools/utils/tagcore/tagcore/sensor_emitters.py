@@ -18,7 +18,7 @@
 # Contact: Eric B. Decker <cire831@gmail.com>
 
 '''
-basic definitions for sensors.
+Misc. Simple Sensor emitters.
 '''
 
 from   __future__   import print_function
@@ -34,14 +34,20 @@ def emit_default(level, offset, buf, obj):
     if (level >= 1):
         print('    {}'.format(obj))
 
-
+##
+# Tmp102 emitters
+#
+# Tmp_PX, platform and External combination sensor.
+# We use the 12 bit format.  The low 4 bits are insignificant, and
+# get shifted out by the /16.
+#
 def sns_str_tmp_px(obj, level = 0):
     s = ''
     sep = ''
     tmp_p = obj['tmp_p'].val
     tmp_x = obj['tmp_x'].val
-    c_p = float(obj['tmp_p'].val)/16*0.0625
-    c_x = float(obj['tmp_x'].val)/16*0.0625
+    c_p = float(tmp_p)/16*0.0625
+    c_x = float(tmp_x)/16*0.0625
     if level == 0:
         return '{:6.1f}C {:6.1f}C'.format(c_p, c_x)
 
@@ -55,20 +61,19 @@ def sns_str_tmp_px(obj, level = 0):
     return s
 
 
-def emit_tmp_px(level, offset, buf, obj):
-    pass
-
-
+##
+# mr_display dict for the tmp_px sensor.
+# The keys denote column titles for the values stored on the keys.
+#
 def sns_dict_tmp_px(obj, level = 0):
     sns_id = SNS_ID_TEMP_PX
-    v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
     r = OrderedDict()
     r['sns_id'] = sns_id
     r['sensor'] = sns_name(sns_id)
     tmp_p = obj['tmp_p'].val
     tmp_x = obj['tmp_x'].val
-    c_p = float(obj['tmp_p'].val)/16*0.0625
-    c_x = float(obj['tmp_x'].val)/16*0.0625
+    c_p = float(tmp_p)/16*0.0625
+    c_x = float(tmp_x)/16*0.0625
     r['C_tmp_p'] = c_p
     r['C_tmp_x'] = c_x
     return r
