@@ -91,9 +91,12 @@ def mr_chksum_err(offset, recsum, chksum):
 # mr_display: machine readable output
 #
 # input: offset         offset of record being displayed
-#        hdr            dt_hdr of the record, time info etc.
+#        sns_hdr        either a wrapper which includes a dt_hdr
+#                       or a dt_hdr itself.  Needed for info about
+#                       the record, time info etc.
 #        mr_dict        a OrderedDict of additional info to be displayed.
-#        type_str       type string of the dt_hdr.
+#        label          label for the mr line, typically the record type.
+#                       if None, then use dt_name(xtype).
 #
 # mr_display will display standard header information:
 #    20200103T021456.606231,50252,538,           SENSOR
@@ -106,10 +109,13 @@ def mr_chksum_err(offset, recsum, chksum):
 # title line above the record will be displayed identifing what each
 # datum is.
 #
-def mr_display(offset, hdr, mr_dict, type_str):
+def mr_display(offset, sns_hdr, mr_dict, label=None):
+    hdr = sns_hdr['hdr'] if ('hdr' in sns_hdr) else sns_hdr
     recnum   = hdr['recnum'].val
     rtctime  = hdr['rt']
     brt      = rtctime_full(rtctime, pretty)
+    if not label:
+        label = dt_name(hdr['type'].val)
 
     front_fmt  = expanded_f if pretty else compact_f
     remain_fmt = expanded_r if pretty else compact_r
@@ -121,7 +127,7 @@ def mr_display(offset, hdr, mr_dict, type_str):
             for k in mr_dict:
                 print(remain_fmt.format(k), end='')
         print()
-    print(front_fmt.format(brt, offset, recnum, type_str), end = '')
+    print(front_fmt.format(brt, offset, recnum, label), end = '')
     if mr_dict:
         for k in mr_dict:
             val = mr_dict[k].val if (isinstance(mr_dict[k], atom)) else mr_dict[k]
@@ -138,13 +144,13 @@ def emit_default_mr(level, offset, buf, obj):
         hdr = obj['hdr']
         del c['hdr']
     xtype = hdr['type'].val
-    mr_display(offset, hdr, c, dt_name(xtype))
+    mr_display(offset, hdr, c)
 
 
 def emit_reboot_mr(level, offset, buf, obj):
     hdr   = obj['hdr']
     xtype = hdr['type'].val
-    mr_display(offset, hdr, {}, dt_name(xtype))
+    mr_display(offset, hdr, {})
 
 def emit_event_mr(level, offset, buf, obj):
     hdr = obj['hdr']
@@ -179,7 +185,7 @@ def emit_gps_time_mr(level, offset, buf, obj):
                              secs,
                              ms * 1000,
                             ).strftime(utc_str)
-    mr_display(offset, hdr, c, dt_name(xtype))
+    mr_display(offset, hdr, c)
 
 
 def emit_gps_geo_mr(level, offset, buf, obj):
@@ -195,7 +201,7 @@ def emit_gps_geo_mr(level, offset, buf, obj):
         del c['capdelta']
         del c['nav_valid']
         del c['alt_ell']
-        mr_display(offset, hdr, c, dt_name(xtype))
+        mr_display(offset, hdr, c)
     c = OrderedDict()
     c['weekx'] = week_x
     c['tow']   = tow
@@ -206,7 +212,7 @@ def emit_gps_geo_mr(level, offset, buf, obj):
     c['hdop']  = hdop
     nav_type   = '0x{:04x}'.format(obj['nav_type'].val)
     c['nav_type'] =  nav_type if verbose or debug else obj['nav_type'].val
-    mr_display(offset, hdr, c, dt_name(xtype))
+    mr_display(offset, hdr, c)
 
 
 def emit_gps_xyz_mr(level, offset, buf, obj):
@@ -219,7 +225,7 @@ def emit_gps_xyz_mr(level, offset, buf, obj):
         c = copy.deepcopy(obj)
         del c['gps_hdr']
         del c['capdelta']
-        mr_display(offset, hdr, c, dt_name(xtype))
+        mr_display(offset, hdr, c)
     c = OrderedDict()
     c['weekx'] = week_x
     c['tow']   = tow
@@ -231,7 +237,7 @@ def emit_gps_xyz_mr(level, offset, buf, obj):
     c['sats']  = sats if verbose or debug else obj['sat_mask'].val
     nav_type   = '0x{:02x}'.format(obj['m1'].val)
     c['nav_type'] =  nav_type if verbose or debug else obj['m1'].val
-    mr_display(offset, hdr, c, dt_name(xtype))
+    mr_display(offset, hdr, c)
 
 
 def emit_gps_trk_mr(level, offset, buf, obj):
@@ -244,7 +250,7 @@ def emit_gps_trk_mr(level, offset, buf, obj):
         c = copy.deepcopy(obj)
         del c['gps_hdr']
         del c['capdelta']
-        mr_display(offset, hdr, c, dt_name(xtype))
+        mr_display(offset, hdr, c)
     c = OrderedDict()
     c['week']  = week
     c['tow']   = tow
@@ -262,7 +268,7 @@ def emit_gps_trk_mr(level, offset, buf, obj):
         for j in range(0, 10):
             cno_str = 'cno' + str(j)
             c[cno_str] = obj[i][cno_str]
-        mr_display(offset, hdr, c, dt_name(xtype))
+        mr_display(offset, hdr, c)
 
 
 def emit_sensor_data_mr(level, offset, buf, obj):
@@ -281,14 +287,14 @@ def emit_sensor_data_mr(level, offset, buf, obj):
         if xdict:
             for k in xdict:
                 c[k] = xdict[k]
-        mr_display(offset, hdr, c, dt_name(xtype))
+        mr_display(offset, hdr, c)
     sns_obj  = v[SNS_OBJECT]
     dict_func = sns_dict(sns_id)
     xdict = dict_func(sns_obj) if dict_func else None
-    mr_display(offset, hdr, xdict, dt_name(xtype))
+    mr_display(offset, hdr, xdict)
 
 def emit_gps_proto_mr(level, offset, buf, obj):
     hdr   = obj['hdr']
     xtype = hdr['type'].val
     c     = obj['stats']
-    mr_display(offset, hdr, c, dt_name(xtype))
+    mr_display(offset, hdr, c)
