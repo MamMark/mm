@@ -23,6 +23,7 @@ simple globals used across tagcore users.
 Includes:
 
     - verbose:   verbosity level
+    - debug:     yep, debug mode
     - export:    export force (1 says forcing export)
                  -1 says --noexport.
     - quiet:     0 if displaying annoying displays

@@ -32,9 +32,9 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev5'
+__version__ = '0.4.6.dev6'
 
-from   .globals    import gps_level     # emit level, will be numeric
+import .globals    as     g             # get emit level, will be numeric
 from   core_events import *             # get event identifiers
 import core_emitters
 
@@ -73,31 +73,31 @@ gps_events = {
 def emit_event_ge(level, offset, buf, obj):
     event = obj['event'].val
     event_level = gps_events.get(event)
-    if event_level == None or event_level > gps_level:
+    if event_level == None or event_level > g.gps_level:
         return
     core_emitters.emit_event(level, offset, buf, obj)
 
 
 def emit_gps_geo_ge(level, offset, buf, obj):
-    if level == 0 and gps_level > 2:
+    if level == 0 and g.gps_level > 2:
         level = 1
     core_emitters.emit_gps_geo(level, offset, buf, obj)
 
 
 def emit_gps_xyz_ge(level, offset, buf, obj):
-    if level == 0 and gps_level > 2:
+    if level == 0 and g.gps_level > 2:
         level = 1
     core_emitters.emit_gps_xyz(level, offset, buf, obj)
 
 
 def emit_gps_trk_ge(level, offset, buf, obj):
-    if gps_level < 2:
+    if g.gps_level < 2:
         return
-    if level == 0 and gps_level > 2:
+    if level == 0 and g.gps_level > 2:
         level = 1
     core_emitters.emit_gps_trk(level, offset, buf, obj)
 
 
 def emit_gps_raw_ge(level, offset, buf, obj):
-    if gps_level < 4: return
+    if g.gps_level < 4: return
     core_emitters.emit_gps_raw(level, offset, buf, obj)

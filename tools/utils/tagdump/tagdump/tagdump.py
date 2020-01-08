@@ -49,7 +49,7 @@ import struct
 from   tagdumpargs         import args
 
 from   tagcore             import *
-from   tagcore.globals     import *
+import tagcore.globals     as     g
 import tagcore.core_rev    as     vers
 from   tagcore.dt_defs     import *
 import tagcore.dt_defs     as     dtd
@@ -229,7 +229,7 @@ def get_record(fd):
         # that we are already at a new quad alignment.
         extra = 4 - ((offset + rlen) & 3)
         if extra < 4:
-            if debug and verbose >= 5:
+            if g.debug and g.verbose >= 5:
                 eprint('*** reading extra {} bytes for quad alignment'.format(extra))
             dlen += extra
 
@@ -257,10 +257,10 @@ def get_record(fd):
             chksum1 = '*** checksum failure @{0} (0x{0:x}) ' + \
                       '[wanted: 0x{1:x} got: 0x{2:x}]'
             eprint(chksum1.format(offset, recsum, chksum))
-            if mr_emitters:
+            if g.mr_emitters:
                 mr_chksum_err(offset, recsum, chksum)
             else:
-                if not dump_hdr(offset, rec_buf, '*** ') or verbose >= 3:
+                if not dump_hdr(offset, rec_buf, '*** ') or g.verbose >= 3:
                     print()
                     dump_buf(rec_buf, '    ')
             offset = resync(fd, offset)
@@ -315,7 +315,7 @@ def dump():
     init_globals()
 
     dtd.cfg_print_hourly = args.hourly
-    if debug or verbose >= 5:
+    if g.debug or g.verbose >= 5:
         eprint(ver_str)
         eprint('  base_objs: {:10}  dt_defs: {:10}'.format(
             vers.base_ver, vers.dt_ver))
@@ -349,7 +349,7 @@ def dump():
     if (args.sync is not None or args.start_rec == -1 or args.tail):
         args.net = True
 
-    if debug:
+    if g.debug:
         tail_str = ' (tailing)'  if args.tail else ''
         io_str   = 'network' if args.net  else 'local'
         to_str   = '  timeout: {} secs'.format(args.timeout) \
@@ -357,9 +357,10 @@ def dump():
         eprint('*** {} i/o{}{}'.format(io_str, tail_str, to_str))
         if args.num:
             eprint('*** {} records'.format(args.num))
-        eprint('*** verbosity: {:7}'.format(verbose))
-        eprint('*** quiet:     {:7}'.format(quiet))
-        eprint('*** pretty:    {:7}'.format(pretty))
+        eprint('*** verbosity: {:7}'.format(g.verbose))
+        eprint('*** quiet:     {:7}'.format(g.quiet))
+        eprint('*** debug:     {:7}'.format(g.debug))
+        eprint('*** pretty:    {:7}'.format(g.pretty))
         start_rec = args.start if args.start else 1
         end_rec   = args.end   if args.end   else 'end'
         eprint('*** records: {:9} - {}'.format(start_rec, end_rec))
@@ -373,7 +374,7 @@ def dump():
 
     # create file object that handles both buffered and direct io
     infile  = TagFile(args.input, net_io = args.net, tail = args.tail,
-                      verbose = verbose, timeout = args.timeout)
+                      verbose = g.verbose, timeout = args.timeout)
 
     if (args.start_rec):
         rec_low  = args.start_rec
@@ -441,24 +442,24 @@ def dump():
             obj      = v[DTR_OBJ]               # dt object
             if (decoder):                       # BRK
                 try:
-                    decoder(verbose, rec_offset, rec_buf, obj)
+                    decoder(g.verbose, rec_offset, rec_buf, obj)
                     if emitters and len(emitters):
                         for e in emitters:
-                            e(verbose, rec_offset, rec_buf, obj)
+                            e(g.verbose, rec_offset, rec_buf, obj)
                 except struct.error:
                     eprint('*** decoder/emitter struct/obj error: (len: {}, '
                           'rtype: {} {}, wanted: {}), @{}'.format(
                               rlen, rtype, dt_name(rtype),
                               len(obj) if obj else 0, rec_offset))
             else:
-                if debug or not quiet or verbose >= 5:
+                if g.debug or not g.quiet or g.verbose >= 5:
                     eprint('*** no decoder installed for rtype {}, @{}'.format(
                         rtype, rec_offset))
-            if (verbose >= 3):
+            if (g.verbose >= 3):
                 print()
                 dump_hdr(rec_offset, rec_buf, '    ')
                 dump_buf(rec_buf, '    ')
-            if verbose >= 1 and not quiet and not mr_emitters:
+            if g.verbose >= 1 and not g.quiet and not g.mr_emitters:
                 print()
             total_records += 1
             total_bytes   += rlen

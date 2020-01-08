@@ -32,7 +32,7 @@ from   datetime       import datetime
 from   collections    import OrderedDict
 import pytz
 
-from   .globals       import *
+import tagcore.globals as    g
 from   .core_events   import *           # get event identifiers
 from   .core_emitters import *
 from   .misc_utils    import rtctime_full
@@ -67,10 +67,10 @@ compact_f  = '{},{},{},{}'
 compact_r  = ',{}'
 
 def mr_chksum_err(offset, recsum, chksum):
-    front_fmt  = expanded_f if pretty else compact_f
-    remain_fmt = expanded_r if pretty else compact_r
+    front_fmt  = expanded_f if g.pretty else compact_f
+    remain_fmt = expanded_r if g.pretty else compact_r
     c = { 'recsum': recsum, 'chksum': chksum }
-    if debug or verbose:
+    if g.debug or g.verbose:
         front_fmt  = expanded_f
         remain_fmt = expanded_r
         # output titles
@@ -80,7 +80,7 @@ def mr_chksum_err(offset, recsum, chksum):
         print()
 
     cur_dt = datetime.now(tz=pytz.utc)
-    print(front_fmt.format(expand_datetime(cur_dt, pretty),
+    print(front_fmt.format(expand_datetime(cur_dt, g.pretty),
                            offset, 0, 'CHKSUMERR'), end='')
     for k in c:
         print(remain_fmt.format(str(c[k])), end='')
@@ -112,13 +112,13 @@ def mr_display(offset, sns_hdr, mr_dict, label=None):
     hdr = sns_hdr['hdr'] if ('hdr' in sns_hdr) else sns_hdr
     recnum   = hdr['recnum'].val
     rtctime  = hdr['rt']
-    brt      = rtctime_full(rtctime, pretty)
+    brt      = rtctime_full(rtctime, g.pretty)
     if not label:
         label = dt_name(hdr['type'].val)
 
-    front_fmt  = expanded_f if pretty else compact_f
-    remain_fmt = expanded_r if pretty else compact_r
-    if debug or verbose:
+    front_fmt  = expanded_f if g.pretty else compact_f
+    remain_fmt = expanded_r if g.pretty else compact_r
+    if g.debug or g.verbose:
         print(basic_hdr.format('date','offset','rec','type'), end='')
         front_fmt  = expanded_f
         remain_fmt = expanded_r
@@ -155,7 +155,7 @@ def emit_event_mr(level, offset, buf, obj):
     hdr = obj['hdr']
     ev  = obj['event'].val
     if ev not in gps_events_keep:
-        if debug and verbose:
+        if g.debug and g.verbose:
             eprint('*** dumping event {}/{}'.format(ev, event_name(ev)))
         return
     c = copy.deepcopy(obj)
@@ -194,8 +194,8 @@ def emit_gps_geo_mr(level, offset, buf, obj):
     tow    = obj['tow1000'].val/1000.
     ehpe   = obj['ehpe100'].val/100.
     hdop   = obj['hdop5'].val/5.
-    if debug:
         c = copy.deepcopy(obj)
+    if g.debug:
         del c['gps_hdr']
         del c['capdelta']
         del c['nav_valid']
@@ -210,7 +210,7 @@ def emit_gps_geo_mr(level, offset, buf, obj):
     c['ehpe']  = ehpe
     c['hdop']  = hdop
     nav_type   = '0x{:04x}'.format(obj['nav_type'].val)
-    c['nav_type'] =  nav_type if verbose or debug else obj['nav_type'].val
+    c['nav_type'] =  nav_type if g.verbose or g.debug else obj['nav_type'].val
     mr_display(offset, hdr, c)
 
 
@@ -220,8 +220,8 @@ def emit_gps_xyz_mr(level, offset, buf, obj):
     week_x = obj['week_x'].val
     tow    = obj['tow100'].val/100.
     hdop   = obj['hdop5'].val/5.
-    if debug:
         c = copy.deepcopy(obj)
+    if g.debug:
         del c['gps_hdr']
         del c['capdelta']
         mr_display(offset, hdr, c)
@@ -233,9 +233,9 @@ def emit_gps_xyz_mr(level, offset, buf, obj):
     c['z']     = obj['z'].val
     c['hdop']  = hdop
     sats       = '0x{:04x}'.format(obj['sat_mask'].val)
-    c['sats']  = sats if verbose or debug else obj['sat_mask'].val
+    c['sats']  = sats if g.verbose or g.debug else obj['sat_mask'].val
     nav_type   = '0x{:02x}'.format(obj['m1'].val)
-    c['nav_type'] =  nav_type if verbose or debug else obj['m1'].val
+    c['nav_type'] =  nav_type if (g.verbose or g.debug) else obj['m1'].val
     mr_display(offset, hdr, c)
 
 
@@ -245,8 +245,8 @@ def emit_gps_trk_mr(level, offset, buf, obj):
     week   = obj['week'].val
     tow    = obj['tow100'].val/100.
     chans  = obj['chans'].val
-    if debug:
         c = copy.deepcopy(obj)
+    if g.debug:
         del c['gps_hdr']
         del c['capdelta']
         mr_display(offset, hdr, c)
@@ -259,7 +259,7 @@ def emit_gps_trk_mr(level, offset, buf, obj):
         c['az']     = obj[i]['az10']/10.
         c['el']     = obj[i]['el10']/10.
         state       = obj[i]['state']
-        c['state']  = '0x{:02x}'.format(state) if verbose or pretty else state
+        c['state']  = '0x{:02x}'.format(state) if g.verbose or g.pretty else state
         st_str = gps_expand_trk_state_short(state)
         st_str = '-' if st_str == ' nostate' else st_str
         c['st_str']  = st_str
@@ -276,8 +276,8 @@ def emit_sensor_data_mr(level, offset, buf, obj):
     delta  = obj['sched_delta'].val
     sns_id = obj['sns_id'].val
     v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
-    if debug:
         c = copy.deepcopy(obj)
+    if g.debug:
         del c['hdr']
         del c['pad']
         sns_obj  = v[SNS_OBJECT]
