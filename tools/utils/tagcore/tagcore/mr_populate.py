@@ -8,8 +8,8 @@ from   mr_emitters   import *
 def decode_default(level, offset, buf, obj):
     return obj.set(buf)
 
-#                                      148 = sizeof(reboot record) + sizeof(owcb) (28 + 120)
-dtd.dt_records[DT_REBOOT]           = (148, decode_default, [ emit_reboot_mr],         obj_dt_reboot(),          'REBOOT',       'obj_dt_reboot'   )
+#                                      156 = sizeof(reboot record) + sizeof(owcb) (36 + 120)
+dtd.dt_records[DT_REBOOT]           = (156, decode_default, [ emit_reboot_mr],         obj_dt_reboot(),          'REBOOT',       'obj_dt_reboot'   )
 #                                      356 = sizeof(version record) + sizeof(image_info)  (24 + 332)
 dtd.dt_records[DT_VERSION]          = (356, decode_default, [ ],                       obj_dt_version(),         'VERSION',      'obj_dt_version'  )
 dtd.dt_records[DT_SYNC]             = ( 28, decode_default, [ emit_default_mr ],       obj_dt_sync(),            'SYNC',         'obj_dt_sync'     )

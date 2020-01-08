@@ -157,6 +157,8 @@ def obj_dt_reboot():
         ('core_rev',  atom(('<H', '0x{:04x}'))),
         ('core_minor',atom(('<H', '0x{:04x}'))),
         ('base',      atom(('<I', '0x{:08x}'))),
+        ('node_id',   atom(('6s', '{}', binascii.hexlify))),
+        ('pad',       atom(('<H', '0x{:04x}'))),
         ('owcb',      obj_owcb())
     ]))
 

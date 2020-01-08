@@ -147,6 +147,7 @@ module CollectP {
     interface StreamStorage as SS;
     interface Panic;
     interface SysReboot @atleastonce();
+    interface PlatformNodeId;
   }
 }
 
@@ -211,6 +212,8 @@ implementation {
   void write_reboot_record() {
     dt_reboot_t  r;
     dt_reboot_t *rp;
+    uint8_t     *id;
+    unsigned int len, i;
 
     rp = &r;
     rp->len = sizeof(r) + sizeof(ow_control_block_t);
@@ -218,6 +221,10 @@ implementation {
     rp->core_rev   = CORE_REV;            /* which version of core */
     rp->core_minor = CORE_MINOR;
     rp->base = call OverWatch.getImageBase();
+    id = call PlatformNodeId.node_id(&len);
+    if (len > 6) len = 6;
+    for (i = 0; i < len; i++)
+      rp->node_id[i] = id[i];
     call Collect.collect((void *) rp, sizeof(r),
                          (void *) &ow_control_block,
                          sizeof(ow_control_block_t));

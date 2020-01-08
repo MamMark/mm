@@ -193,6 +193,8 @@ typedef struct {
                                 /* and associated structures           */
   uint16_t core_minor;          /* things changed but not structurally */
   uint32_t base;                /* base address of running image       */
+  uint8_t  node_id[6];          /* 48 bit node id, msb first           */
+  uint16_t pad;                 /* pad out to even quad                */
 } PACKED dt_reboot_t;
 
 typedef struct {
