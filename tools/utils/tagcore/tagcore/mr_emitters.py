@@ -180,7 +180,7 @@ def emit_gps_time_mr(level, offset, buf, obj):
                              obj['utc_min'].val,
                              secs,
                              ms * 1000,
-                            ).strftime(utc_str)
+                            ).strftime(utc_str(g.pretty))
     mr_display(offset, hdr, c)
 
 
