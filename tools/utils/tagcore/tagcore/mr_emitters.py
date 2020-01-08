@@ -35,11 +35,12 @@ import pytz
 from   .globals       import *
 from   .core_events   import *           # get event identifiers
 from   .core_emitters import *
-from   .dt_defs       import rtctime_full
-from   .dt_defs       import expand_datetime
+from   .misc_utils    import rtctime_full
+from   .misc_utils    import expand_datetime
+from   .misc_utils    import eprint
+from   .misc_utils    import utc_str
 from   .core_events   import event_name
 from   .base_objs     import atom
-from   .misc_utils    import eprint
 from   sensor_defs    import *
 import sensor_defs    as     sensor
 
@@ -57,8 +58,6 @@ gps_events_keep = {
     GPS_BOOT_TIME,
 }
 
-
-utc_str = '%Y/%m/%dT%H:%M:%S.%f' if pretty else '%Y%m%dT%H%M%S.%f'
 
 #          date/time offset    rec  type
 basic_hdr  = '{:^26}  {:>8}  {:>8}  {:>16}'

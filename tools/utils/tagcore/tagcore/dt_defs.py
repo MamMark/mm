@@ -33,7 +33,6 @@ Includes the following:
     - print/display functions
 
       rec0              initial record print format
-      rtctime_str       convert rtctime to printable string
       print_hourly      hourly banner if boundary crossed
       dt_name           convert a dt code to its printable name
       dump_hdr          simple hdr display (from raw buffer)
@@ -41,10 +40,9 @@ Includes the following:
 '''
 
 from   __future__   import print_function
-from   datetime     import datetime
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.5.dev4'
+__version__ = '0.4.6.dev3'
 
 cfg_print_hourly = True
 
@@ -85,7 +83,7 @@ __all__ = [
     'DT_TAGNET',
 
     'rec0',
-    'rtctime_str',
+    'secsFromHour_str',
     'print_hourly',
     'dt_name',
     'dump_hdr',
@@ -174,7 +172,7 @@ rec_title_str = "---  offset    recnum    rtime    len  dt  name"
 rec0  = '--- @{:<8d} {:7d} {:>11s} {:3d}  {:2d}  {:s}'
 
 
-def rtctime_str(rtctime, fmt = 'basic'):
+def secsFromHour_str(rtctime):
     '''
     convert a rtctime into a simple 'basic' string displaying the time
     as seconds.us since the top of the hour.
@@ -199,42 +197,6 @@ def rtctime_str(rtctime, fmt = 'basic'):
     rt_secs  = rt['min'].val * 60 + rt['sec'].val
     rt_subsecs = (rt['sub_sec'].val * 1000000) / 32768
     return '{:d}.{:06d}'.format(rt_secs, rt_subsecs)
-
-def rtctime_iso(rtctime):
-    '''
-    convert a rtctime into an ISO-8601 formatted string displaying the time.
-    '''
-    return datetime(rtctime['year'].val,
-                     rtctime['mon'].val,
-                     rtctime['day'].val,
-                     rtctime['hr'].val,
-                     rtctime['min'].val,
-                     rtctime['sec'].val,
-                     (rtctime['sub_sec'].val * 1000000) / 32768,
-                    ).isoformat()
-
-
-def rtctime_full(rtctime, pretty=1):
-    '''
-    convert a rtctime into a full ISO-8601 formatted string displaying the time.
-    Full means all digits are spaced out.
-    '''
-    fmt_str = '%Y/%m/%dT%H:%M:%S.%f' if pretty else \
-              '%Y%m%dT%H%M%S.%f'
-    return datetime(rtctime['year'].val,
-                     rtctime['mon'].val,
-                     rtctime['day'].val,
-                     rtctime['hr'].val,
-                     rtctime['min'].val,
-                     rtctime['sec'].val,
-                     (rtctime['sub_sec'].val * 1000000) / 32768,
-                    ).strftime(fmt_str)
-
-
-def expand_datetime(dt, pretty=1):
-    fmt_str = '%Y/%m/%dT%H:%M:%S.%f' if pretty else \
-              '%Y%m%dT%H%M%S.%f'
-    return dt.strftime(fmt_str)
 
 
 last_rt = {'year': 0, 'mon': 0, 'day': 0, 'hr': 0}
@@ -300,7 +262,7 @@ def dump_hdr(offset, buf, pre = ''):
     rtype    = hdr['type'].val
     recnum   = hdr['recnum'].val
     rtctime  = hdr['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
     recsum   = hdr['recsum'].val
     print(hdr_format.format(pre, offset, recnum, brt, rlen, rtype,
         dt_name(rtype), offset, offset, recsum))
@@ -311,6 +273,6 @@ def print_hdr_obj(obj):
     rtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
     print('{:4} {:>11} ({:2}) {:6} --'.format(recnum, brt,
         rtype, dt_name(rtype)), end = '')

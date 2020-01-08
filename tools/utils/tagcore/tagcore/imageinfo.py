@@ -30,7 +30,6 @@ __version__ = '0.4.5'
 
 import sys
 import struct
-import datetime
 import zlib
 from   collections  import OrderedDict
 from   base_objs    import *

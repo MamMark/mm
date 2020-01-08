@@ -21,11 +21,12 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5'
+__version__ = '0.4.6.dev1'
 
 from   ctypes       import c_long
 
-from   dt_defs      import rec0, rtctime_str
+from   dt_defs      import rec0
+from   misc_utils   import secsFromHour_str
 
 from   net_headers  import *
 
@@ -37,7 +38,7 @@ def emit_tagnet(level, offset, buf, obj):
     xtype    = obj['type'].val
     recnum   = obj['recnum'].val
     rtctime  = obj['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,

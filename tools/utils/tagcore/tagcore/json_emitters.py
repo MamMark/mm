@@ -26,7 +26,6 @@ __version__ = '0.4.6.dev1'
 TEST = False
 
 import sys
-from datetime import datetime
 from time     import sleep
 from binascii import hexlify
 from requests.exceptions import ConnectionError
@@ -35,7 +34,9 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 from base_objs   import atom
-from dt_defs     import dt_records, rtctime_str, rtctime_iso
+from dt_defs     import dt_records
+from dt_defs     import secsFromHour_str
+from misc_utils  import rtctime_iso
 from core_events import event_name
 
 import tagcore.globals
@@ -206,14 +207,14 @@ def emit_influx(level, offset, buf, obj):
             xtype    = obj['hdr']['type'].val
             recnum   = obj['hdr']['recnum'].val
             rtctime  = obj['hdr']['rt']
-            brt      = rtctime_str(rtctime)
+            brt      = secsFromHour_str(rtctime)
         except:
             try:
                 xlen     = obj['len'].val
                 xtype    = obj['type'].val
                 recnum   = obj['recnum'].val
                 rtctime  = obj['rt']
-                brt      = rtctime_str(rtctime)
+                brt      = secsFromHour_str(rtctime)
             except:
                 print('### emit_influx error obj no good, offset: {}, buf: {}'.format(offset,
                                                                                       hexlify(buf)))

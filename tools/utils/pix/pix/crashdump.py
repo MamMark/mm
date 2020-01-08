@@ -1,4 +1,5 @@
 # Copyright (c) 2018 Rick Li Fo Sjoe
+# Copyright (c) 2019 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -31,7 +32,6 @@ from   __init__                 import __version__ as VERSION
 
 import sys
 import struct
-import datetime
 import zlib
 from   collections  import OrderedDict
 

@@ -45,6 +45,7 @@ import sirf_defs    as     sirf
 
 from   sirf_headers import mids_w_sids
 from   misc_utils   import dump_buf
+from   misc_utils   import rtc2datetime
 
 from   sensor_defs  import *
 import sensor_defs  as     sensor
@@ -137,7 +138,7 @@ def emit_reboot(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     core_rev = obj['core_rev'].val
     core_minor = obj['core_minor'].val
@@ -252,7 +253,7 @@ def emit_version(level, offset, buf, obj):
     rtctime  = obj['hdr']['rt']
     base     = obj['base'].val
     ii       = obj['image_info']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     ver_str = '{:d}.{:d}.{:d}'.format(
         ii['basic']['ver_id']['major'].val,
@@ -312,7 +313,7 @@ def emit_sync(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     majik    = obj['majik'].val
     prev     = obj['prev_sync'].val
@@ -341,7 +342,7 @@ def emit_event(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     event = obj['event'].val
     arg0  = obj['arg0'].val
@@ -514,7 +515,7 @@ def emit_debug(level, offset, buf, obj):
     xtype    = obj['type'].val
     recnum   = obj['recnum'].val
     rtctime  = obj['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
@@ -533,7 +534,7 @@ def emit_gps_version(level, offset, buf, obj):
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
     rtctime  = obj['gps_hdr']['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype, dt_name(xtype)))
@@ -546,7 +547,7 @@ def emit_gps_time(level, offset, buf, obj):
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
     rtctime  = obj['gps_hdr']['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     capdelta=obj['capdelta'].val
     tow    = obj['tow1000'].val/float(1000)
@@ -574,7 +575,7 @@ def emit_gps_geo(level, offset, buf, obj):
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
     rtctime  = obj['gps_hdr']['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     capdelta  = obj['capdelta'].val
     nav_valid = obj['nav_valid'].val
@@ -619,7 +620,7 @@ def emit_gps_xyz(level, offset, buf, obj):
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
     rtctime  = obj['gps_hdr']['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     capdelta \
           = obj['capdelta'].val
@@ -653,7 +654,7 @@ def emit_gps_trk(level, offset, buf, obj):
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
     rtctime  = obj['gps_hdr']['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     capdelta  = obj['capdelta'].val
     tow       = obj['tow100'].val/float(100)
@@ -719,7 +720,7 @@ def emit_gps_clk(level, offset, buf, obj):
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
     rtctime  = obj['gps_hdr']['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     capdelta = obj['capdelta'].val
     tow      = obj['tow100'].val/float(100)
@@ -749,7 +750,7 @@ def emit_sensor_data(level, offset, buf, obj):
     xtype    = obj['hdr']['type'].val
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     delta    = obj['sched_delta'].val
     sns_id   = obj['sns_id'].val
@@ -790,7 +791,7 @@ def emit_test(level, offset, buf, obj):
     xtype    = obj['type'].val
     recnum   = obj['recnum'].val
     rtctime  = obj['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
@@ -811,7 +812,7 @@ def emit_note(level, offset, buf, obj):
     xtype    = obj['type'].val
     recnum   = obj['recnum'].val
     rtctime  = obj['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     # isolate just the note, and strip NUL and whitespace
     note     = buf[len(obj):]
@@ -838,7 +839,7 @@ def emit_config(level, offset, buf, obj):
     xtype    = obj['type'].val
     recnum   = obj['recnum'].val
     rtctime  = obj['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,         # sans nl
@@ -859,7 +860,7 @@ def emit_gps_proto_stats(level, offset, buf, obj):
     xtype    = hdr['type'].val
     recnum   = hdr['recnum'].val
     rtctime  = hdr['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,         # sans nl
@@ -901,7 +902,7 @@ def emit_gps_raw(level, offset, buf, obj):
     xtype    = obj['gps_hdr']['hdr']['type'].val
     recnum   = obj['gps_hdr']['hdr']['recnum'].val
     rtctime  = obj['gps_hdr']['hdr']['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     dir_bit  = obj['gps_hdr']['dir'].val
     dir_str  = 'rx' if dir_bit == 0 else 'tx'
@@ -944,7 +945,7 @@ def emit_tagnet(level, offset, buf, obj):
     xtype    = obj['type'].val
     recnum   = obj['recnum'].val
     rtctime  = obj['rt']
-    brt      = rtctime_str(rtctime)
+    brt      = secsFromHour_str(rtctime)
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,         # sans nl

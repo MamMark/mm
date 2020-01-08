@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018 Eric B. Decker, Daniel J. Maltbie
+# Copyright (c) 2017-2019 Eric B. Decker, Daniel J. Maltbie
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,8 +21,12 @@
 '''misc utilities'''
 
 from   __future__ import print_function
+from   datetime   import datetime
 import binascii
 import sys
+
+__version__ = '0.4.6.dev1'
+
 
 def buf_str(buf):
     """
@@ -53,3 +57,39 @@ def dump_buf(buf, pre = '', desc = 'rec:  '):
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
+
+def utc_str(pretty=1):
+    fmt_str = '%Y/%m/%dT%H:%M:%S.%f' if pretty else '%Y%m%dT%H%M%S.%f'
+    return fmt_str
+
+##
+# rtc2datetime: convert an rtc object to a datetime object
+#
+def rtc2datetime(rtc_obj):
+    return datetime(
+        rtc_obj['year'].val,
+        rtc_obj['mon'].val,
+        rtc_obj['day'].val,
+        rtc_obj['hr'].val,
+        rtc_obj['min'].val,
+        rtc_obj['sec'].val,
+       (rtc_obj['sub_sec'].val* 1000000) / 32768,
+    )
+
+def rtctime_iso(rtctime):
+    '''
+    convert a rtctime into an ISO-8601 formatted string displaying the time.
+    '''
+    return rtc2datetime(rtctime).isoformat()
+
+
+def rtctime_full(rtctime, pretty=1):
+    '''
+    convert a rtctime into a full ISO-8601 formatted string displaying the time.
+    Full means all digits are spaced out.
+    '''
+    return rtc2datetime(rtctime).strftime(utc_str(pretty))
+
+def expand_datetime(dt, pretty=1):
+    return dt.strftime(utc_str(pretty))
