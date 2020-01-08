@@ -3,10 +3,11 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.6.dev23'
+__version__ = '0.4.6.dev24'
 
 # 0.4.6.dev+, core_rev: 22/1+:
-#     0.4.6.dev23
+#     0.4.6.dev24
+#       add node_id to reboot record
 #       fix bug in core_emitters/emit_sensor_data, sns_empty_str
 #       takes 2 parameters, default 2nd parameter, level = 0.
 #

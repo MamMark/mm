@@ -25,7 +25,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev6'
+__version__ = '0.4.6.dev7'
 
 import copy
 from   datetime       import datetime
@@ -135,7 +135,7 @@ def mr_display(offset, sns_hdr, mr_dict, label=None):
 
 
 def emit_default_mr(level, offset, buf, obj):
-    c = copy.deepcopy(obj)
+    c = copy.copy(obj)
     if 'gps_hdr' in obj:
         hdr = obj['gps_hdr']['hdr']
         del c['gps_hdr']
@@ -156,7 +156,7 @@ def emit_event_mr(level, offset, buf, obj):
         if g.debug and g.verbose:
             eprint('*** dumping event {}/{}'.format(ev, event_name(ev)))
         return
-    c = copy.deepcopy(obj)
+    c = copy.copy(obj)
     del c['hdr']
     del c['event']
     del c['pcode']
@@ -190,8 +190,8 @@ def emit_gps_geo_mr(level, offset, buf, obj):
     tow    = obj['tow1000'].val/1000.
     ehpe   = obj['ehpe100'].val/100.
     hdop   = obj['hdop5'].val/5.
-        c = copy.deepcopy(obj)
     if g.debug:
+        c = copy.copy(obj)
         del c['gps_hdr']
         del c['capdelta']
         del c['nav_valid']
@@ -215,8 +215,8 @@ def emit_gps_xyz_mr(level, offset, buf, obj):
     week_x = obj['week_x'].val
     tow    = obj['tow100'].val/100.
     hdop   = obj['hdop5'].val/5.
-        c = copy.deepcopy(obj)
     if g.debug:
+        c = copy.copy(obj)
         del c['gps_hdr']
         del c['capdelta']
         mr_display(offset, hdr, c)
@@ -239,8 +239,8 @@ def emit_gps_trk_mr(level, offset, buf, obj):
     week   = obj['week'].val
     tow    = obj['tow100'].val/100.
     chans  = obj['chans'].val
-        c = copy.deepcopy(obj)
     if g.debug:
+        c = copy.copy(obj)
         del c['gps_hdr']
         del c['capdelta']
         mr_display(offset, hdr, c)
@@ -268,8 +268,8 @@ def emit_sensor_data_mr(level, offset, buf, obj):
     hdr    = obj['hdr']
     sns_id = obj['sns_id'].val
     v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
-        c = copy.deepcopy(obj)
     if g.debug:
+        c = copy.copy(obj)
         del c['hdr']
         del c['pad']
         sns_obj  = v[SNS_OBJECT]

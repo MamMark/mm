@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.6.dev21'
+__version__ = '0.4.6.dev22'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -19,6 +19,15 @@ from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
 # 0.4.6.dev+    CR 22/+
+#     0.4.6.dev22
+#       o refactor rtc conversion routines (move to misc_utils)
+#       o rename rtctime_str to something more meaningful, secsFromHour
+#       o add node_id to reboot record
+#       o add mr_emitter structure, use for various mr emitters,
+#         in particular sensor_data.
+#       o support for ACCELn, 8, 10, 12 bit ACCELn
+#       o move sns_ids for GYRO_n, MAG_n, bump others up.
+#
 #     0.4.6.dev21
 #       o fix bug bug in core_emitters/emit_sensor_data, sns_empty_str
 #         takes 2 parameters, default 2nd parameter, level = 0.
