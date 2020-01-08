@@ -142,13 +142,11 @@ def emit_default_mr(level, offset, buf, obj):
     else:
         hdr = obj['hdr']
         del c['hdr']
-    xtype = hdr['type'].val
     mr_display(offset, hdr, c)
 
 
 def emit_reboot_mr(level, offset, buf, obj):
     hdr   = obj['hdr']
-    xtype = hdr['type'].val
     mr_display(offset, hdr, {})
 
 def emit_event_mr(level, offset, buf, obj):
@@ -168,7 +166,6 @@ def emit_event_mr(level, offset, buf, obj):
 
 def emit_gps_time_mr(level, offset, buf, obj):
     hdr   = obj['gps_hdr']['hdr']
-    xtype = hdr['type'].val
     week_x = obj['week_x'].val
     tow    = obj['tow1000'].val/1000.
     c = OrderedDict()
@@ -189,7 +186,6 @@ def emit_gps_time_mr(level, offset, buf, obj):
 
 def emit_gps_geo_mr(level, offset, buf, obj):
     hdr    = obj['gps_hdr']['hdr']
-    xtype  = hdr['type'].val
     week_x = obj['week_x'].val
     tow    = obj['tow1000'].val/1000.
     ehpe   = obj['ehpe100'].val/100.
@@ -216,7 +212,6 @@ def emit_gps_geo_mr(level, offset, buf, obj):
 
 def emit_gps_xyz_mr(level, offset, buf, obj):
     hdr    = obj['gps_hdr']['hdr']
-    xtype  = hdr['type'].val
     week_x = obj['week_x'].val
     tow    = obj['tow100'].val/100.
     hdop   = obj['hdop5'].val/5.
@@ -241,7 +236,6 @@ def emit_gps_xyz_mr(level, offset, buf, obj):
 
 def emit_gps_trk_mr(level, offset, buf, obj):
     hdr    = obj['gps_hdr']['hdr']
-    xtype  = hdr['type'].val
     week   = obj['week'].val
     tow    = obj['tow100'].val/100.
     chans  = obj['chans'].val
@@ -272,8 +266,6 @@ def emit_gps_trk_mr(level, offset, buf, obj):
 
 def emit_sensor_data_mr(level, offset, buf, obj):
     hdr    = obj['hdr']
-    xtype  = hdr['type'].val
-    delta  = obj['sched_delta'].val
     sns_id = obj['sns_id'].val
     v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
         c = copy.deepcopy(obj)
@@ -301,6 +293,5 @@ def emit_sensor_data_mr(level, offset, buf, obj):
 
 def emit_gps_proto_mr(level, offset, buf, obj):
     hdr   = obj['hdr']
-    xtype = hdr['type'].val
     c     = obj['stats']
     mr_display(offset, hdr, c)
