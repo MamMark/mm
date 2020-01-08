@@ -21,9 +21,10 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev14'
+__version__ = '0.4.6.dev15'
 
 from   ctypes       import c_int32
+from   binascii     import hexlify
 
 from   core_rev     import *
 from   dt_defs      import *
@@ -46,6 +47,7 @@ import sirf_defs    as     sirf
 from   sirf_headers import mids_w_sids
 from   misc_utils   import dump_buf
 from   misc_utils   import rtc2datetime
+from   misc_utils   import rtctime_full
 
 from   sensor_defs  import *
 import sensor_defs  as     sensor
@@ -121,7 +123,7 @@ def reboot_reason_name(reason):
 rbt0  = '  {:s} -> {:s}  [{:s}] <{:s}>'
 
 rbt0a = '    REBOOT: {:7s}  f: {:5s}  c: {:5s}  m: {:5s}  rbts/g/n: {}/{}/{}   chk_fails: {}'
-rbt0b = '    rt: 2017/12/26-(mon)-01:52:40 GMT  rev: {:4d}/{:d}'
+rbt0b = '    boot:   {}   core_rev: {:2d}/{:d}        node: {}'
 rbt_p = '    PANIC: {}  p/w: {}/{}  args: x({:04x} {:04x} {:04x} {:04x})'
 
 rbt2a = '    sigs:    {:08x}    {:08x}  {:08x}'
@@ -129,7 +131,7 @@ rbt2b = '    base:  f {:08x}  cur:     {:08x}'
 rbt2c = '    rpt:     {:08x}  reset:   {:08x}      others: {:08x}'
 rbt2d = '    fault/g: {:08x}  fault/n: {:08x}  ss/disable: {:08x}  ps: {:04x}'
 rbt2e = '    reboots: {:4}  panics (g/n): {:4}/{:<4}  strg: {:4}  loc: {:4}'
-rbt2f = '    uptime: {}  boot: {}  prev: {}'
+rbt2f = '    prev:    {:26}    delta:  {}'
 rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
 
 # obj is obj_dt_reboot (includes an obj_owcb record)
@@ -143,6 +145,7 @@ def emit_reboot(level, offset, buf, obj):
     core_rev = obj['core_rev'].val
     core_minor = obj['core_minor'].val
     base     = obj['base'].val
+    node_id  = obj['node_id'].val
     if core_rev != CORE_REV or core_minor != CORE_MINOR:
         print('*** version mismatch, expected {:d}/{:d}, got {:d}/{:d}'.format(
             CORE_REV, CORE_MINOR, core_rev, core_minor))
@@ -189,7 +192,8 @@ def emit_reboot(level, offset, buf, obj):
         base_name(from_base), base_name(base),
         ow_boot_mode_name(owcb['ow_boot_mode'].val),
         reboot_count, panics_gold, panic_count, chk_fails))
-    print(rbt0b.format(core_rev, core_minor))
+    print(rbt0b.format(rtctime_full(boot_time), core_rev, core_minor,
+                       hexlify(node_id)))
 
     if owcb['reboot_reason'].val == REASON_PANIC:
         print(rbt_p.format(pi_idx, pi_pcode, pi_where,
@@ -206,8 +210,8 @@ def emit_reboot(level, offset, buf, obj):
         print(rbt2e.format(reboot_count, panics_gold, panic_count,
                            owcb['strange'].val,
                            owcb['strange_loc'].val))
-#        print(rbt2f.format(0, owcb['boot_time'], owcb['prev_boot']))
-        print(rbt2f.format(0, 0, 0))
+        print(rbt2f.format(rtctime_full(owcb['prev_boot']),
+                           rtc2datetime(boot_time) - rtc2datetime(prev_boot)))
         print(rbt2g.format(owcb['reboot_reason'].val,
                            owcb['ow_req'].val,
                            owcb['ow_boot_mode'].val,
