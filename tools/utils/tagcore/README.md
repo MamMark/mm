@@ -11,7 +11,7 @@ Core library for accessing Tag records.
 INSTALL:
 ========
 
-> sudo python setup.py install
+    > sudo python setup.py install
 
 will install into standard python library path:
 

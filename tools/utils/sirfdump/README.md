@@ -1,8 +1,8 @@
 sirfdump
 =======
 
-Eric B. Decker <cire831@gmail.com>
-copyright (c) 2018 Eric B. Decker
+    Eric B. Decker <cire831@gmail.com>
+    copyright (c) 2018 Eric B. Decker
 
 *License*: [GPL3](https://opensource.org/licenses/GPL-3.0)
 
@@ -14,7 +14,7 @@ library.
 INSTALL:
 ========
 
-> python setup.py build
-> sudo python setup.py install
+    > python setup.py build
+    > sudo python setup.py install
 
 will install as /usr/local/bin/sirfdump

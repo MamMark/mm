@@ -39,7 +39,7 @@ start of the record.
 INSTALL:
 ========
 
-> python setup.py build
-> sudo python setup.py install
+    > python setup.py build
+    > sudo python setup.py install
 
 will install as /usr/local/bin/tagdump
