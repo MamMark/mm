@@ -48,7 +48,7 @@
 extern fs_loc_t loc;
 
 
-#define VERSION "tagfmtsd: v4.4.1  2018/04/03\n"
+#define VERSION "tagfmtsd: v4.5.0  2020/01/10\n"
 
 int debug	= 0,
     verbose	= 0,
@@ -262,6 +262,7 @@ int write_dblk_dir(uint8_t *buf, uint8_t file_idx) {
   ddp->file_idx         = file_idx;
   ddp->dblk_dir_sig_a   = DBLK_DIR_SIG;
   ddp->chksum           = 0;
+  sum = 0;
   p32 = (void *) buf;
   for (i = 0; i < DBLK_DIR_QUADS; i++)
     sum += *p32++;
