@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2019 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,8 @@
 #include "hardware.h"
 #include <panic.h>
 #include <platform_panic.h>
-#include "platform_pin_defs.h"
+#include <platform_pin_defs.h>
+#include <lisxdh.h>
 
 #ifndef PANIC_SNS
 enum {
@@ -49,20 +50,34 @@ const msp432_usci_config_t mems_spi_config = {
   i2coa : 0
 };
 
-module Mems0PinsP {
+module Mems0HardwareP {
   provides {
-    interface SpiBus;
     interface Msp432UsciConfigure;
+    interface Init as PeriphInit;
+    interface SpiBus;
+#ifdef notdef
+    interface MemsStInterrupt as AccelInt1;
+#endif
   }
-  uses interface Panic;
+  uses {
+    interface Panic;
+    interface Init   as SpiInit;
+    interface SpiReg as AccelReg;
+#ifdef notdef
+    interface HplMsp432PortInt as AccelInt1_Port;
+#endif
+  }
 }
 implementation {
   async command void SpiBus.set_cs(uint8_t mems_id) {
     switch(mems_id) {
       default:
         call Panic.panic(PANIC_SNS, 1, mems_id, 0, 0, 0);
-      case MEMS0_ID_ACCEL:
-        MEMS0_ACCEL_CSN = 0;
+      case MEMS0_ID_ACCEL: MEMS0_ACCEL_CSN = 0; break;
+#ifdef notdef
+      case MEMS0_ID_GYRO:  MEMS0_GYRO_CSN  = 0; break;
+      case MEMS0_ID_MAG:   MEMS0_MAG_CSN   = 0; break;
+#endif
     }
   }
 
@@ -70,13 +85,68 @@ implementation {
     switch(mems_id) {
       default:
         call Panic.panic(PANIC_SNS, 1, mems_id, 0, 0, 0);
-      case MEMS0_ID_ACCEL:
-        MEMS0_ACCEL_CSN = 1;
+      case MEMS0_ID_ACCEL: MEMS0_ACCEL_CSN = 1; break;
+#ifdef notdef
+      case MEMS0_ID_GYRO:  MEMS0_GYRO_CSN  = 1; break;
+      case MEMS0_ID_MAG:   MEMS0_MAG_CSN   = 1; break;
+#endif
     }
   }
 
   async command const msp432_usci_config_t *Msp432UsciConfigure.getConfiguration() {
     return &mems_spi_config;
+  }
+
+#ifdef notdef
+  async command void AccelInt1.enableInterrupt() {
+    call AccelInt1_Port.disable();
+    call AccelInt1_Port.edgeRising();
+    call AccelInt1_Port.clear();
+    call AccelInt1_Port.enable();
+  }
+
+  async command void AccelInt1.disableInterrupt() {
+    call AccelInt1_Port.disable();
+  }
+
+  async command bool AccelInt1.isInterruptEnabled() {
+    call AccelInt1_Port.isEnabled();
+  }
+
+  async event void AccelInt1_Port.fired() {
+    signal AccelInt1.interrupt();
+  }
+#endif
+
+
+  void   mag_init() { }
+  void  gyro_init() { }
+
+  /*
+   * Accel Initilization
+   *
+   * Use default values (see tos/chips/mems/LisXdh/lisxdh.h).  Except...
+   *
+   *   r0: turn off SDO_PU
+   */
+  void accel_init() {
+#ifdef notyet
+    lisx_ctrl_reg0_t     reg0;
+
+    /* we need to set the correct PU in the main CPU */
+    reg0.x.sdo_pu_disc = 1;
+    reg0.x.rsvd_01     = LISX_REG0_RSVD_01;
+    call AccelReg.write(LISX_CTRL_REG0);
+#endif
+  }
+
+
+  command error_t PeriphInit.init() {
+    call SpiInit.init();                /* first bring up the mems SPI bus */
+    mag_init();                         /* then init the 3 devices */
+    gyro_init();
+    accel_init();
+    return SUCCESS;
   }
 
   async event void Panic.hook() { }
