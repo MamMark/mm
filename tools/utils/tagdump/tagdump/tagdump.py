@@ -317,13 +317,13 @@ def dump():
     dtd.cfg_print_hourly = args.hourly
     if g.debug or g.verbose >= 5:
         eprint(ver_str)
-        eprint('  base_objs: {:10}  dt_defs: {:10}'.format(
+        eprint('  base_objs: {:12}  dt_defs: {:12}'.format(
             vers.base_ver, vers.dt_ver))
-        eprint('   core:     {:10}  e: {:10}  h: {:10}  panic:  h: {:10}'.format(
+        eprint('   core:     {:12}  e: {:12}  h: {:12}  panic:  h: {:12}'.format(
             vers.core_ver, vers.ce_ver, vers.ch_ver, vers.pi_ver))
-        eprint('   sirf:  d: {:10}  e: {:10}  h: {:10}'.format(
+        eprint('   sirf:  d: {:12}  e: {:12}  h: {:12}'.format(
             vers.sd_ver, vers.se_ver, vers.sh_ver))
-        eprint('   sns:   d: {:10}  e: {:10}  h: {:10}'.format(
+        eprint('   sns:   d: {:12}  e: {:12}  h: {:12}'.format(
             vers.snsd_ver, vers.snse_ver, vers.snsh_ver))
         eprint()
 

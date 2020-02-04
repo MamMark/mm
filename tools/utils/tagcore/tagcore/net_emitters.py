@@ -26,7 +26,7 @@ __version__ = '0.4.6.dev1'
 from   ctypes       import c_long
 
 from   dt_defs      import rec0
-from   misc_utils   import secsFromHour_str
+from   dt_defs      import secsFromHour_str
 
 from   net_headers  import *
 

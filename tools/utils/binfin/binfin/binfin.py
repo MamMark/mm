@@ -64,8 +64,8 @@
 #       Model # 8-bit HEX [currently n.a.]
 #
 
-from __future__ import print_function
-from   __init__                 import __version__ as VERSION
+from   __future__ import print_function
+from   __init__   import __version__ as VERSION
 
 import sys
 import argparse

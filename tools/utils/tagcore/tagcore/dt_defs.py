@@ -33,6 +33,7 @@ Includes the following:
     - print/display functions
 
       rec0              initial record print format
+      secsFromHour_str  convert rtctime into number of secs since hour
       print_hourly      hourly banner if boundary crossed
       dt_name           convert a dt code to its printable name
       dump_hdr          simple hdr display (from raw buffer)
@@ -42,7 +43,7 @@ Includes the following:
 from   __future__   import print_function
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.6.dev3'
+__version__ = '0.4.6.dev4'
 
 cfg_print_hourly = True
 
@@ -245,7 +246,6 @@ dt_hdr = obj_dt_hdr()
 
 def dump_hdr(offset, buf, pre = ''):
     '''load hdr from buf and display it.
-    Will need to change for CR 22/0
 
     return:     True if we can load the header
                 False if buffer is too short.
