@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev6'
+__version__ = '0.4.6.dev7'
 
 import binascii
 from   collections  import OrderedDict
@@ -369,7 +369,11 @@ def obj_dt_event():
 #
 # not implemented yet.
 #
-obj_dt_debug    = obj_dt_hdr
+def obj_dt_debug():
+    return aggie(OrderedDict([
+        ('hdr',   obj_dt_hdr()),
+    ]))
+
 
 #
 # dt, native, little endian
@@ -502,9 +506,15 @@ def obj_dt_sen_data():
         ('pad',         atom(('<H', '{}'))),
     ]))
 
-obj_dt_sen_set  = obj_dt_hdr
+def obj_dt_sen_set():
+    return aggie(OrderedDict([
+        ('hdr',   obj_dt_hdr()),
+    ]))
 
-obj_dt_test     = obj_dt_hdr
+def obj_dt_test():
+    return aggie(OrderedDict([
+        ('hdr',   obj_dt_hdr()),
+    ]))
 
 ####
 #
@@ -514,8 +524,15 @@ obj_dt_test     = obj_dt_hdr
 # simple header) followed by n bytes of note.  typically a printable
 # ascii string (yeah, localization is an issue, but not now).
 #
-obj_dt_note     = obj_dt_hdr
-obj_dt_config   = obj_dt_hdr
+def obj_dt_note():
+    return aggie(OrderedDict([
+        ('hdr',   obj_dt_hdr()),
+    ]))
+
+def obj_dt_config():
+    return aggie(OrderedDict([
+        ('hdr',   obj_dt_hdr()),
+    ]))
 
 
 ####
@@ -556,7 +573,10 @@ def obj_dt_gps_raw():
         ('sirf_hdr', obj_sirf_hdr()),
     ]))
 
-obj_dt_tagnet   = obj_dt_hdr
+def obj_dt_tagnet():
+    return aggie(OrderedDict([
+        ('hdr',   obj_dt_hdr()),
+    ]))
 
 
 # extract and decode gps nav track messages.

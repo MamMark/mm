@@ -515,10 +515,11 @@ def emit_event(level, offset, buf, obj):
 debug0  = ' xxxx'
 
 def emit_debug(level, offset, buf, obj):
-    xlen     = obj['len'].val
-    xtype    = obj['type'].val
-    recnum   = obj['recnum'].val
-    rtctime  = obj['rt']
+    hdr      = obj['hdr']
+    xlen     = hdr['len'].val
+    xtype    = hdr['type'].val
+    recnum   = hdr['recnum'].val
+    rtctime  = hdr['rt']
     brt      = secsFromHour_str(rtctime)
 
     print_hourly(rtctime)
@@ -791,10 +792,11 @@ def emit_sensor_set(level, offset, buf, obj):
 test0  = '    xxxx'
 
 def emit_test(level, offset, buf, obj):
-    xlen     = obj['len'].val
-    xtype    = obj['type'].val
-    recnum   = obj['recnum'].val
-    rtctime  = obj['rt']
+    hdr      = obj['hdr']
+    xlen     = hdr['len'].val
+    xtype    = hdr['type'].val
+    recnum   = hdr['recnum'].val
+    rtctime  = hdr['rt']
     brt      = secsFromHour_str(rtctime)
 
     print_hourly(rtctime)
@@ -812,10 +814,11 @@ def emit_test(level, offset, buf, obj):
 #
 
 def emit_note(level, offset, buf, obj):
-    xlen     = obj['len'].val
-    xtype    = obj['type'].val
-    recnum   = obj['recnum'].val
-    rtctime  = obj['rt']
+    hdr      = obj['hdr']
+    xlen     = hdr['len'].val
+    xtype    = hdr['type'].val
+    recnum   = hdr['recnum'].val
+    rtctime  = hdr['rt']
     brt      = secsFromHour_str(rtctime)
 
     # isolate just the note, and strip NUL and whitespace
@@ -839,10 +842,11 @@ def emit_note(level, offset, buf, obj):
 cfg0  = ' xxxx'
 
 def emit_config(level, offset, buf, obj):
-    xlen     = obj['len'].val
-    xtype    = obj['type'].val
-    recnum   = obj['recnum'].val
-    rtctime  = obj['rt']
+    hdr      = obj['hdr']
+    xlen     = hdr['len'].val
+    xtype    = hdr['type'].val
+    recnum   = hdr['recnum'].val
+    rtctime  = hdr['rt']
     brt      = secsFromHour_str(rtctime)
 
     print_hourly(rtctime)
@@ -945,10 +949,11 @@ def emit_gps_raw(level, offset, buf, obj):
 
 
 def emit_tagnet(level, offset, buf, obj):
-    xlen     = obj['len'].val
-    xtype    = obj['type'].val
-    recnum   = obj['recnum'].val
-    rtctime  = obj['rt']
+    hdr      = obj['hdr']
+    xlen     = hdr['len'].val
+    xtype    = hdr['type'].val
+    recnum   = hdr['recnum'].val
+    rtctime  = hdr['rt']
     brt      = secsFromHour_str(rtctime)
 
     print_hourly(rtctime)
