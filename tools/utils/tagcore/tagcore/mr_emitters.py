@@ -122,12 +122,12 @@ def mr_display(offset, sns_hdr, mr_dict, label=None):
         print(basic_hdr.format('date','offset','rec','type'), end='')
         front_fmt  = expanded_f
         remain_fmt = expanded_r
-        if mr_dict:
+        if mr_dict.keys():
             for k in mr_dict:
                 print(remain_fmt.format(k), end='')
         print()
     print(front_fmt.format(brt, offset, recnum, label), end = '')
-    if mr_dict:
+    if mr_dict.keys():                  # if we have keys process them.
         for k in mr_dict:
             val = mr_dict[k].val if (isinstance(mr_dict[k], atom)) else mr_dict[k]
             print(remain_fmt.format(val), end='')
