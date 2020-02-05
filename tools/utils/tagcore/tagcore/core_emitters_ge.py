@@ -34,7 +34,7 @@ from   __future__         import print_function
 
 __version__ = '0.4.6.dev6'
 
-import .globals    as     g             # get emit level, will be numeric
+import tagcore.globals as g             # get emit level, will be numeric
 from   core_events import *             # get event identifiers
 import core_emitters
 
