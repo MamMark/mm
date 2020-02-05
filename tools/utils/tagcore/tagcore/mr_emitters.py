@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Eric B. Decker
+# Copyright (c) 2019-2020 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev7'
+__version__ = '0.4.6.dev8'
 
 import copy
 from   datetime       import datetime
@@ -290,6 +290,20 @@ def emit_sensor_data_mr(level, offset, buf, obj):
             # obj is hdr/sns hdr
             # sns_obj is nsamples/datarate/samples
             mr_emitter(offset, obj, sns_obj)
+
+def emit_note_mr(level, offset, buf, obj):
+    c = copy.copy(obj)
+    hdr = obj['hdr']
+    del c['hdr']
+
+    # isolate just the note, and strip NUL and whitespace
+    # note follows the header
+    note     = buf[len(obj):]
+    note     = note.rstrip('\0')
+    note     = note.rstrip()
+    c['len']  = len(note)
+    c['note'] = note
+    mr_display(offset, hdr, c)
 
 def emit_gps_proto_mr(level, offset, buf, obj):
     hdr   = obj['hdr']
