@@ -22,13 +22,43 @@ tagvers - display tag utility versioning
 '''
 
 from   __future__         import print_function
+import sys
 
-import binfin
-import pix
-import sirfdump
-import tagcore.core_rev    as     vers
-import tagctl
-import tagdump
+try:
+    import tagcore.core_rev as vers
+except ImportError:
+    print('*** tagcore is required, but is not installed.')
+    sys.exit()
+
+try:
+    import tagdump
+    tagdump_ver = tagdump.__version__
+except ImportError:
+    tagdump_ver = 'uninstalled'
+
+try:
+    import binfin
+    binfin_ver = binfin.__version__
+except ImportError:
+    binfin_ver = 'uninstalled'
+
+try:
+    import pix
+    pix_ver = pix.__version__
+except ImportError:
+    pix_ver = 'uninstalled'
+
+try:
+    import sirfdump
+    sirfdump_ver = sirfdump.__version__
+except ImportError:
+    sirfdump_ver = 'uninstalled'
+
+try:
+    import tagctl
+    tagctl_ver = tagctl.__version__
+except ImportError:
+    tagctl_ver = 'uninstalled'
 
 import tagcore.gps_chip_utils
 import tagcore.gps_mon
@@ -54,15 +84,15 @@ def dump_vers():
         vers.tne_ver, vers.tnh_ver))
     print()
     print('tagdump:  {:12}     jason_emitters:  {}'.format(
-        tagdump.__version__, tagcore.json_emitters.__version__))
+        tagdump_ver, tagcore.json_emitters.__version__))
     print('tagctl:   {:12}     mr_emitters:     {}'.format(
-        tagctl.__version__,  tagcore.mr_emitters.__version__))
+        tagctl_ver,  tagcore.mr_emitters.__version__))
     print('sirfdump: {:12}     gps_chip_utils:  {}'.format(
-        sirfdump.__version__, tagcore.gps_chip_utils.__version__))
+        sirfdump_ver, tagcore.gps_chip_utils.__version__))
     print('binfin:   {:12}     gps_mon:         {}'.format(
-        binfin.__version__, tagcore.gps_mon.__version__))
+        binfin_ver, tagcore.gps_mon.__version__))
     print('pix:      {:12}     misc_utils:      {}'.format(
-        pix.__version__, tagcore.misc_utils.__version__))
+        pix_ver, tagcore.misc_utils.__version__))
     print()
 
 def main():
