@@ -27,9 +27,7 @@ setup(
 #    license_file     = 'LICENCE.txt',
     license          = 'GPL3',
     packages         = [ 'tagvers' ],
-    install_requires = [
-        'tagcore', 'tagdump', 'binfin', 'pix', 'sirfdump', 'tagctl',
-    ],
+    install_requires = [ ],
     entry_points     = {
         'console_scripts': ['tagvers=tagvers.tagvers:main'],
     }
