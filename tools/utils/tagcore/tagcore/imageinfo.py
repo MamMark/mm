@@ -1,5 +1,6 @@
 # Copyright (c) 2018 Rick Li Fo Sjoe
 # Copyright (c) 2018 Eric B. Decker
+# Copyright (c) 2020 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -17,6 +18,7 @@
 # See COPYING in the top level directory of this source tree.
 #
 # Contact: Rick Li Fo Sjoe <flyrlfs@gmail.com>
+#          Eric B. Decker  <cire831@gmail.com>
 #
 # ImageInfo Class
 #
@@ -26,7 +28,14 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.5'
+__version__ = '0.4.6.dev0'
+
+__all__ = [
+    'IMAGE_INFO_SIG',
+    'IMAGE_META_OFFSET',
+    'IMAGE_MIN_SIZE',
+]
+
 
 import sys
 import struct
@@ -35,9 +44,11 @@ from   collections  import OrderedDict
 from   base_objs    import *
 from   core_headers import *
 
-class ImageInfo:
-    IMAGE_INFO_SIG = 0x33275401
+IMAGE_INFO_SIG    = 0x33275401
+IMAGE_META_OFFSET = 0x140
+IMAGE_MIN_SIZE    = 1024
 
+class ImageInfo:
     '''
     im_basic: will hold a obj_image_info struct from core_headers
         obj_image_info consists of:

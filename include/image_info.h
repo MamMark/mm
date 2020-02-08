@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Eric B. Decker
+ * Copyright (c) 2017-2018, 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@
  */
 #define IMAGE_META_OFFSET 0x140
 #define IMAGE_MIN_BASIC   (IMAGE_META_OFFSET + sizeof(image_info_basic_t))
-#define IMAGE_MIN_SIZE    (IMAGE_META_OFFSET + sizeof(image_info_t))
+#define IMAGE_MIN_SIZE    1024
 #define IMAGE_MAX_SIZE    (128 * 1024)
 
 typedef struct {                        /* little endian order  */
