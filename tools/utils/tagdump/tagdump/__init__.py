@@ -3,8 +3,9 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.6.dev25'
+__version__ = '0.4.6'
 
+# 0.4.6, release, core_rev 22/6
 # 0.4.6.dev+, core_rev: 22/1+:
 #     0.4.6.dev24
 #       add node_id to reboot record

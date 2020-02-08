@@ -1,3 +1,4 @@
+# Copyright (c) 2020,      Eric B. Decker
 # Copyright (c) 2017-2019, Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
@@ -22,7 +23,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev7'
+__version__ = '0.4.6'
 
 import binascii
 from   collections  import OrderedDict

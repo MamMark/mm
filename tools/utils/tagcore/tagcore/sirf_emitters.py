@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.6.dev8'
+__version__ = '0.4.6'
 
 
 def emit_default(level, offset, buf, obj):

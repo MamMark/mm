@@ -1,3 +1,4 @@
+# Copyright (c) 2020      Eric B. Decker
 # Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
 # All rights reserved.
 #
@@ -25,7 +26,7 @@ import copy
 from   collections import OrderedDict
 from   misc_utils  import dump_buf
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6'
 
 class atom(object):
     '''

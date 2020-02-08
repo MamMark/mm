@@ -43,7 +43,7 @@ Includes the following:
 from   __future__   import print_function
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.6.dev4'
+__version__ = '0.4.6'
 
 cfg_print_hourly = True
 

@@ -3,7 +3,7 @@ tagcore: utility and common routines for many tag things
 @author:   Eric B. Decker
 """
 
-__version__ = '0.4.6.dev23'
+__version__ = '0.4.6'
 
 __all__ = [
     'CORE_REV',                         # core_rev.py
@@ -18,7 +18,7 @@ from    .core_rev       import CORE_MINOR
 from    .misc_utils     import buf_str, dump_buf
 from    .core_headers   import obj_dt_hdr
 
-# 0.4.6.dev+    CR 22/+
+# 0.4.6 CR 22/6         release 0.4.6
 #     0.4.6.dev22
 #       o refactor rtc conversion routines (move to misc_utils)
 #       o rename rtctime_str to something more meaningful, secsFromHour

@@ -19,7 +19,7 @@
 
 '''gps chip utils, chip dependent'''
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6'
 
 __all__ = [
     'GPS_OD_FIX',

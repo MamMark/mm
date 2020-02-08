@@ -25,7 +25,7 @@ from   datetime   import datetime
 import binascii
 import sys
 
-__version__ = '0.4.6.dev1'
+__version__ = '0.4.6'
 
 
 def buf_str(buf):

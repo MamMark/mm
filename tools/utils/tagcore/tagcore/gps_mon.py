@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.4.6.dev0'
+__version__ = '0.4.6'
 
 __all__ = [
     'gps_cmd_name',

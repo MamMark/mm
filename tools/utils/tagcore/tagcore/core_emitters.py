@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6.dev15'
+__version__ = '0.4.6'
 
 from   ctypes       import c_int32
 from   binascii     import hexlify
