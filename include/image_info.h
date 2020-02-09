@@ -79,8 +79,8 @@ typedef struct {
 #define IMG_INFO_PLUS_SIZE  298
 
 typedef struct {
+  uint8_t        type;                  /* IIP_TLV values            */
   uint8_t        len;
-  uint8_t        type;                  /* defined in  */
   uint8_t        data[];                /* always a printable string */
 } image_info_plus_tlv_t;
 

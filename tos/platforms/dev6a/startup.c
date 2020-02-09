@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Eric B. Decker
+ * Copyright (c) 2016-2018, 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -91,7 +91,7 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
   },
   .iip = {
     .tlv_block_len = IMG_INFO_PLUS_SIZE,
-    .tlv_block     = { IIP_TLV_END, 0 },
+    .tlv_block     = { IIP_TLV_END, 0 },        /* type, len, values */
   }
 };
 
