@@ -21,6 +21,7 @@
 
 #include <overwatch.h>
 #include <overwatch_hw.h>
+#include <image_info.h>
 
 norace extern ow_control_block_t ow_control_block;
 
