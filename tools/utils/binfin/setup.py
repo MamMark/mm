@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-DESCRIPTION = 'Utility to update tinyos META data'
+DESCRIPTION = 'Utility to update tag binary image META data'
 
 import os, re
 def get_version():
@@ -23,7 +23,7 @@ setup(
     version          = get_version(),
     url              = 'https://github.com/MamMark/mm/tools/utils/binfin',
     author           = 'Dan Maltbie/Eric B. Decker/R. Li Fo Sjoe',
-    author_email     = 'flyrlfs@gmail.com',
+    author_email     = 'cire831@gmail.com',
 #    license_file     = 'LICENCE.txt',
     license          = 'GPL3',
     packages         = ['binfin'],
