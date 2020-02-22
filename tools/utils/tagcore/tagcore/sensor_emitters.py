@@ -60,6 +60,10 @@ def sns_str_tmp_px(obj, level = 0):
         f_p = c_p * 9/5 + 32
         f_x = c_x * 9/5 + 32
         s = s + sep + '{:6.1f}F {:6.1f}F'.format(f_p, f_x)
+    if level == 1:
+        s = ' ' * 56 + s
+    if level >= 2:
+        s = ' ' * 41 + s
     return s
 
 
