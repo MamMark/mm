@@ -43,7 +43,7 @@ Includes the following:
 from   __future__   import print_function
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.6'
+__version__ = '0.4.7.dev0'
 
 cfg_print_hourly = True
 
@@ -273,7 +273,8 @@ hdr_additonal = ' @{} (0x{:06x}) [0x{:04x}]'
 dt_hdr = obj_dt_hdr()
 
 def dump_hdr(offset, buf, pre = ''):
-    '''load hdr from buf and display it.
+    '''
+    load hdr from buf and display it.
 
     return:     True if we can load the header
                 False if buffer is too short.

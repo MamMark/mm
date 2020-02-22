@@ -29,7 +29,7 @@ from   sensor_defs  import *
 import sensor_defs  as     sensor
 from   mr_emitters  import mr_display
 
-__version__ = '0.4.6'
+__version__ = '0.4.7.dev0'
 
 def emit_default(level, offset, buf, obj):
     print()
