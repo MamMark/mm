@@ -503,10 +503,6 @@ def obj_dt_sns_data():
         ('sched_delta', atom(('<I', '{}'))),
     ]))
 
-def obj_dt_sen_set():
-    return aggie(OrderedDict([
-        ('hdr',   obj_dt_hdr()),
-    ]))
 
 def obj_dt_test():
     return aggie(OrderedDict([

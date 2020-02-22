@@ -58,9 +58,7 @@
 
 
 /************************************************************************
- *
  * Data Block identifiers (dtype, record types, rtypes)
- *
  */
 
 /* must be a single byte. need -fshort-enums */
@@ -81,8 +79,10 @@ typedef enum {
   DT_GPS_TIME		= 17,
   DT_GPS_GEO		= 18,
   DT_GPS_XYZ            = 19,
-  DT_SENSOR_DATA	= 20,           /* deprecated */
-  DT_SENSOR_SET		= 21,           /* deprecated */
+
+  DT_SENSOR_DATA	= 20,           /* deprecated, okay for reuse */
+  DT_SENSOR_SET		= 21,           /* deprecated, okay for reuse */
+
   DT_TEST		= 22,
   DT_NOTE		= 23,
   DT_CONFIG		= 24,
@@ -534,19 +534,6 @@ typedef struct {
   uint16_t nsamples;
   uint16_t datarate;            /* hz */
 } PACKED dt_sensor_nsamples_t;
-
-
-typedef struct {
-  uint16_t len;                 /* size 28 + var */
-  dtype_t  dtype;
-  uint8_t  hdr_crc8;            /* single byte CRC-8 */
-  uint32_t recnum;
-  rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
-  uint16_t recsum;              /* part of header */
-  uint32_t sched_delta;
-  uint16_t mask;
-  uint16_t mask_id;
-} PACKED dt_sensor_set_t;
 
 
 /*
