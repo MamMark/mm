@@ -100,8 +100,7 @@ class aggie(OrderedDict):
             elif isinstance(v_obj, tlv_block_aggie):
                 s += '[' + key + ': ' + v_obj.__repr__() + ']\n'
             else:
-                raise RuntimeError('object not aggie/atom: [{}], '
-                                   'oops!'.format(v_obj))
+                s += '({},{})'.format(key, v_obj)
         return s
 
     def set(self, buf):
