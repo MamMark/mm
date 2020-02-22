@@ -90,7 +90,7 @@ def sns_str_acceln(obj, level = 0):
     datarate = obj['datarate'].val
 
     if level == 0:
-        s = '  {:d} samples, {:d} Hz'.format(nsamples, datarate)
+        s = '{:d} samples, {:d} Hz'.format(nsamples, datarate)
     return s
 
 
