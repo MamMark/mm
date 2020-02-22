@@ -26,20 +26,6 @@ __version__ = '0.4.6'
 from   collections  import OrderedDict
 from   base_objs    import *
 
-def acceln_element():
-    return aggie(OrderedDict([
-        ('x', atom(('<H', '{}'))),
-        ('y', atom(('<H', '{}'))),
-        ('z', atom(('<H', '{}'))),
-    ]))
-
-def acceln8_element():
-    return aggie(OrderedDict([
-        ('x', atom(('B', '{}'))),
-        ('y', atom(('B', '{}'))),
-        ('z', atom(('B', '{}'))),
-    ]))
-
 def acceln8s_element():
     return aggie(OrderedDict([
         ('x', atom(('b', '{}'))),

@@ -111,15 +111,7 @@ def emit_sample(fmt, obj):
 
 
 def emit_acceln(level, offset, buf, obj):
-    fmt = '    {:>2d}: ({:04x}, {:04x}, {:04x})'
-    emit_sample(fmt, obj)
-
-def emit_acceln8(level, offset, buf, obj):
     fmt = '    {:>2d}: ({:2d}, {:2d}, {:2d})'
-    emit_sample(fmt, obj)
-
-def emit_acceln8x(level, offset, buf, obj):
-    fmt = '    {:>2d}: ({:02x}, {:02x}, {:02x})'
     emit_sample(fmt, obj)
 
 
