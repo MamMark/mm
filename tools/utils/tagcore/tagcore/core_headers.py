@@ -38,6 +38,8 @@ import sensor_defs  as     sensor
 from   sirf_defs    import *
 import sirf_defs    as     sirf
 
+import tagcore.globals as  g
+
 
 ########################################################################
 #
@@ -73,8 +75,8 @@ def decode_sensor(level, offset, buf, obj):
     decoder     = v[SNS_DECODER]            # sns decoder
     decoder_obj = v[SNS_OBJECT]             # sns object
     if not decoder:
-        if (level >= 5):
-            print('*** no decoder/obj defined for sns {}'.format(sns_id))
+        if level >= 5 or g.debug:
+            print('*** no decoder/obj defined for sns {}'.format(dt_sns_id))
         return consumed
     return consumed + decoder(level, offset, buf[consumed:], decoder_obj)
 
@@ -116,7 +118,7 @@ def decode_gps_raw(level, offset, buf, obj):
     decoder     = v[MID_DECODER]            # dt function
     decoder_obj = v[MID_OBJECT]             # dt object
     if not decoder:
-        if (level >= 5):
+        if level >= 5 or g.debug:
             print('*** no decoder/obj defined for mid {}'.format(mid))
         return consumed
     return consumed + decoder(level, offset, buf[consumed:], decoder_obj)
