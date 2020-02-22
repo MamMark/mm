@@ -38,15 +38,15 @@
  *
  * See typed_data.h for details on how the headers are layed out.
  *
- * Mass Storage block size is 512.  If this changes the tag is severly
+ * Mass Storage block size is 512.  If this changes the tag is severely
  * bolloxed as this number is spread a number of different places.  Fucked
  * but true.  Collect uses the entire underlying sector.  This is
  * SD_BLOCKSIZE.  There is no point in abstracting this at the
- * StreamStorage layer.  SD block size permeats too many places.  And it
+ * StreamStorage layer.  SD block size permeates too many places.  And it
  * doesn't change.
  *
  * Data associated with a given header however can be split across sector
- * boundaries but is limited to DT_MAX_DLEN.  (defined in typed_data.h).
+ * boundaries but is limited to DT_MAX_RLEN.  (defined in typed_data.h).
  *
  * Collect is responsible for laying down REBOOT records on the way up and
  * SYNC records at appropriate times/events.  We primarily lay down SYNCs
@@ -544,7 +544,7 @@ implementation {
    *
    * header is constrained to be 32 bit aligned (a(4)).  The size of header
    * must be less than DT_MAX_HEADER (+ 1) and data length must be less than
-   * DT_MAX_DLEN (+ 1).  Data is immediately copied after the header (its
+   * DT_MAX_RLEN (+ 1).  Data is immediately copied after the header (its
    * contiguous).
    *
    * hlen is the actual size of the header, dlen is the actual size of the
