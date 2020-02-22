@@ -48,28 +48,28 @@ import sirf_defs    as     sirf
 #
 # Sensor Data decoder
 #
-# decodes top level of the sensor_data record and then uses the sns_id
-# and sns_table to dispatch the appropriate decoder for the actual
-# sensor data.  Sensor data is stored on the object pointed to in the
-# sns_table entry.
+# decodes top level of the sensor_data record and then uses the dt_sns_id
+# (dtype, dt_sns_*) and sns_table to dispatch the appropriate decoder for
+# the actual sensor data.  Sensor data is stored on the object pointed to
+# in the sns_table entry.
 #
 # obj must be a obj_dt_sensor_data.
 #
 # this decoder does the following:
 #
 # o consume/process a dt_sensor_data hdr
-# o extract sns_id from the dt_sensor_data hdr.
-# o extract the appropriate vector from sns_table[sns_id]
+# o dt_sns_id is embedded in the dtype field.
+# o extract the appropriate vector from sns_table[dt_sns_id]
 # o consume/process the sensor data using decode/obj from the vector entry
 
 def decode_sensor(level, offset, buf, obj):
     consumed = obj.set(buf)
-    sns_id = obj['sns_id'].val
+    dt_sns_id = obj['hdr']['type'].val
     try:
-        sensor.sns_count[sns_id] += 1
+        sensor.sns_count[dt_sns_id] += 1
     except KeyError:
-        sensor.sns_count[sns_id] = 1
-    v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
+        sensor.sns_count[dt_sns_id] = 1
+    v = sensor.sns_table.get(dt_sns_id, ('', None, None, None, None, ''))
     decoder     = v[SNS_DECODER]            # sns decoder
     decoder_obj = v[SNS_OBJECT]             # sns object
     if not decoder:
@@ -494,17 +494,13 @@ def obj_dt_gps_trk():
 #
 # Sensor Data
 #
-# Record header, sensor data header, followed by sensor data.
+# Record header followed by sensor data.
+# dt_sns_id determines the format of the sensor data.
 #
-# Sns_Id determines the format of any following data.  See sensor_defs.py
-# for details.
-#
-def obj_dt_sen_data():
+def obj_dt_sns_data():
     return aggie(OrderedDict([
         ('hdr',         obj_dt_hdr()),
         ('sched_delta', atom(('<I', '{}'))),
-        ('sns_id',      atom(('<H', '{}'))),
-        ('pad',         atom(('<H', '{}'))),
     ]))
 
 def obj_dt_sen_set():

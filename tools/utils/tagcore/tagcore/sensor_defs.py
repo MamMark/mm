@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Eric B. Decker
+# Copyright (c) 2019-2020 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@ basic definitions for sensors.
 
 from   __future__   import print_function
 
-__version__ = '0.4.6'
+__version__ = '0.4.7.dev0'
 
 __all__ = [
     'SNS_NAME',
@@ -35,24 +35,6 @@ __all__ = [
     'SNS_MR_EMITTER',
     'SNS_OBJ_NAME',
 
-    'SNS_ID_NONE',
-    'SNS_ID_BATT',
-    'SNS_ID_TEMP_PX',
-    'SNS_ID_SAL',
-
-    'SNS_ID_ACCEL_N',
-    'SNS_ID_ACCEL_N8',
-    'SNS_ID_ACCEL_N10',
-    'SNS_ID_ACCEL_N12',
-
-    'SNS_ID_GYRO_N',
-    'SND_ID_MAG_N',
-    'SNS_ID_GPS',
-
-    'SNS_ID_PTEMP',
-    'SNS_ID_PRESS',
-    'SNS_ID_SPEED',
-
     'sns_name',
     'sns_val_str',
     'sns_dict',
@@ -60,7 +42,7 @@ __all__ = [
 
 
 # the sns_table holds vectors for how to decode sensor data.
-# each entry is keyed by sns_id from the record and contains
+# each entry is keyed by dt_sns_id from the record and contains
 # a 7-tuple that includes:
 #
 #   0: name         sensor name (string)
@@ -84,37 +66,18 @@ SNS_MR_EMITTER  = 6
 SNS_OBJ_NAME    = 7
 
 
-# Sensor data format Ids.  Must match tos/mm/sensor_ids.h
-
-SNS_ID_NONE      = 0    # used for other data stream stuff
-SNS_ID_BATT      = 1    # Battery Sensor
-SNS_ID_TEMP_PX   = 2    # Temperature Sensor, Platform/External
-SNS_ID_SAL       = 3    # Salinity sensor (one, two)
-
-SNS_ID_ACCEL_N   = 4    # Accelerometer (x,y,z)
-SNS_ID_ACCEL_N8  = 5    # Accelerometer (x,y,z), 8 bit data
-SNS_ID_ACCEL_N10 = 6    # Accelerometer (x,y,z), 10 bit data
-SNS_ID_ACCEL_N12 = 7    # Accelerometer (x,y,z), 12 bit data
-
-SNS_ID_GYRO_N    = 16   # Gyro, 16 bit data
-SND_ID_MAG_N     = 17   # Magnetometer (x, y, z)
-SNS_ID_GPS       = 18   # GPS?
-
-SNS_ID_PTEMP     = 32   # Temperature sensor
-SNS_ID_PRESS     = 33   # Pressure (temp, pressure)
-SNS_ID_SPEED     = 34   # Velocity (x,y)
-
-
 def sns_str_empty(obj, level=0):
     return ''
 
-def sns_name(sns_id):
-    v = sns_table.get(sns_id, ('sns/' + str(sns_id), None, None, None, None, None))
+def sns_name(dt_sns_id):
+    v = sns_table.get(dt_sns_id, ('sns/' + str(dt_sns_id), None, None, None,
+                                  None, None))
     return v[SNS_NAME]
 
 
-def sns_val_str(sns_id, level = 0):
-    v = sns_table.get(sns_id, ('noSns', None, None, sns_str_empty, None, None))
+def sns_val_str(dt_sns_id, level = 0):
+    v = sns_table.get(dt_sns_id, ('noSns', None, None, sns_str_empty,
+                                  None, None))
     return v[SNS_VAL_STR](v[SNS_OBJECT], level)
 
 
@@ -128,6 +91,6 @@ def sns_val_str(sns_id, level = 0):
 # labels each column.  The column names come from the keys in the dictionary.
 # This is intended for humans checking the machine readable output.
 #
-def sns_dict(sns_id):
-    v = sns_table.get(sns_id, ('noSns', None, None, None, None, None))
+def sns_dict(dt_sns_id):
+    v = sns_table.get(dt_sns_id, ('noSns', None, None, None, None, None))
     return v[SNS_DICT]

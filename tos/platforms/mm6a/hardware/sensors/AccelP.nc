@@ -79,10 +79,10 @@
  * Initial state is OFF (0).   DrainPeriod 0.
  */
 
+#include <typed_data.h>
 #include <panic.h>
 #include <platform_panic.h>
 #include "regime_ids.h"
-#include "sensor_ids.h"
 #include "lisxdh.h"
 
 #ifndef PANIC_SNS
@@ -150,11 +150,11 @@ implementation {
   uint32_t      err_overruns;
 
   void accel_warn(uint8_t where, parg_t p, parg_t p1) {
-    call Panic.warn(PANIC_SNS, SNS_ID_ACCEL_N, where, p, p1, 0);
+    call Panic.warn(PANIC_SNS, DT_SNS_ACCEL_N8S, where, p, p1, 0);
   }
 
   void accel_panic(uint8_t where, parg_t p, parg_t p1) {
-    call Panic.panic(PANIC_SNS, SNS_ID_ACCEL_N, where, p, p1, 0);
+    call Panic.panic(PANIC_SNS, DT_SNS_ACCEL_N8S, where, p, p1, 0);
   }
 
 
@@ -207,7 +207,6 @@ implementation {
     uint32_t datasize;
     uint32_t nsamples, fifo_len, idx;
     bool     overflowed;
-    uint16_t sns_id;
     acceln_sample_t      data[33];
     dt_sensor_nsamples_t adt;           /* accel dt + nsample */
 
@@ -244,7 +243,6 @@ implementation {
       call Accel.restartFifo();
       dump_registers();
     }
-#ifdef USE_ACCEL8
     datasize = nsamples * sizeof(acceln_sample_t);
     dp = (uint8_t *) data;
     src = 1;
@@ -252,19 +250,12 @@ implementation {
       dp[dest] = dp[src];
       src += 2;
     }
-    sns_id = SNS_ID_ACCEL_N8;
     datasize = datasize/2;
-#else
-    sns_id = SNS_ID_ACCEL_N;
-    datasize = nsamples * sizeof(acceln_sample_t);
-#endif
     adt.len = sizeof(adt) + datasize;
-    adt.dtype = DT_SENSOR_DATA;
+    adt.dtype = DT_SNS_ACCEL_N8S;
     adt.sched_delta = 0;
-    adt.sns_id = sns_id;
     adt.nsamples = nsamples;
     adt.datarate = m_datarate;
-    nop();
     call Collect.collect((void *) &adt,  sizeof(adt),
                          (void *) &data, datasize);
   }

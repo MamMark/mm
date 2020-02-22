@@ -3,6 +3,8 @@
  * All rights reserved.
  */
 
+#warning *** DEPRECATED: sensors_ids.h included, replaced by DT_SNS_*
+
 #ifndef SENSORS_IDS_H
 #define SENSORS_IDS_H
 
@@ -48,7 +50,7 @@ enum {                                  /* uint16_t sns_id */
 
   /* Accel, 3 x uint16, nsamples */
   SNS_ID_ACCEL_N        = 4,    // Accelerometer (x,y,z)
-  SNS_ID_ACCEL_N8       = 5,    // 8 bit data
+  SNS_ID_ACCEL_N8S      = 5,    // 8 bit data, signed
   SNS_ID_ACCEL_N10      = 6,    // 10 bit data, 2 bytes
   SNS_ID_ACCEL_N12      = 7,    // 12 bit data, 2 bytes
 

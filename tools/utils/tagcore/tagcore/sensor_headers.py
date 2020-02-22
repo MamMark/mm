@@ -47,35 +47,52 @@ def acceln8s_element():
         ('z', atom(('b', '{}'))),
     ]))
 
-obj_acceln   = acceln_element()
-obj_acceln8  = acceln8_element()
 obj_acceln8s = acceln8s_element()
 
 
-def process_accel(sub_obj, decode_obj, buf):
-    for k in sub_obj.iterkeys():
-        if isinstance(k,int):
-            del sub_obj[k]
+def process_accel(nsamp_obj, decode_obj, buf):
+    '''
+    process_accel: decode accel data.  This is assumed to be an nsample
+        object.
 
-    consumed = sub_obj.set(buf)
-    nsamples = sub_obj['nsamples'].val
+        nsamp_obj:  an obj_nsample() object.  'nsamples' and 'datarate'
+        decode_obj: and object defining what each element of the nsample
+                    looks like.
+
+    process_accel will first delete any previous samples that have been hung
+    off this object.  Then we fetch the number of samples that need to be
+    decoded.  Each sample is then read and hung on the nsamp_obj using the
+    sample number as the key.
+    '''
+    for k in nsamp_obj.iterkeys():
+        if isinstance(k,int):
+            del nsamp_obj[k]
+
+    consumed = nsamp_obj.set(buf)
+    nsamples = nsamp_obj['nsamples'].val
 
     for n in range(nsamples):
         d = OrderedDict()
         consumed += decode_obj.set(buf[consumed:])
         for k, v in decode_obj.items():
             d[k] = v.val
-        sub_obj[n] = d
+        nsamp_obj[n] = d
     return consumed
 
 
-def decode_acceln(level, offset, buf, obj):
-    return process_accel(obj, obj_acceln, buf)
-
-def decode_acceln8(level, offset, buf, obj):
-    return process_accel(obj, obj_acceln8, buf)
-
 def decode_acceln8s(level, offset, buf, obj):
+    '''
+    decode_acceln8s: pointing into a buffer at the start of a nsample
+        record set.
+
+        obj: obj_nsample(), holds 'nsamples' and 'datarate'.
+        buf: points at beginning of obj_nsample() data.
+
+    Our data format is defined by obj_acceln8s.  Process_accel will
+    read nsamples worth of obj_acceln8s() data.  This data gets appended
+    onto the obj_nsample() object (obj).  Each entry is key'd using the
+    sample number.
+    '''
     return process_accel(obj, obj_acceln8s, buf)
 
 

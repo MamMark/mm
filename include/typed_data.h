@@ -74,12 +74,15 @@ typedef enum {
   DT_SYNC_FLUSH         = 6,
   DT_SYNC_REBOOT        = 7,
 
+  DT_GPS_RAW_SIRFBIN	= 13,
+  DT_TAGNET             = 14,
+  DT_RADIO              = 15,
   DT_GPS_VERSION        = 16,
   DT_GPS_TIME		= 17,
   DT_GPS_GEO		= 18,
   DT_GPS_XYZ            = 19,
-  DT_SENSOR_DATA	= 20,
-  DT_SENSOR_SET		= 21,
+  DT_SENSOR_DATA	= 20,           /* deprecated */
+  DT_SENSOR_SET		= 21,           /* deprecated */
   DT_TEST		= 22,
   DT_NOTE		= 23,
   DT_CONFIG		= 24,
@@ -87,12 +90,20 @@ typedef enum {
   DT_GPS_TRK            = 26,
   DT_GPS_CLK            = 27,
 
-  /*
-   * GPS_RAW is used to encapsulate data as received from the GPS.
-   */
-  DT_GPS_RAW_SIRFBIN	= 32,
-  DT_TAGNET             = 33,
-  DT_MAX		= 33,
+  DT_SNS_NONE           = 32,           /* 0x20 + sns_id */
+  DT_SNS_BATT           = 33,
+  DT_SNS_TMP_PX         = 34,
+  DT_SNS_SAL            = 35,
+  DT_SNS_ACCEL_N8S      = 36,
+  DT_SNS_ACCEL_N10S     = 37,
+  DT_SNS_ACCEL_N12S     = 38,
+  DT_SNS_GYRO_N         = 39,
+  DT_SNS_MAG_N          = 40,
+  DT_SNS_PTEMP          = 41,
+  DT_SNS_PRESS          = 42,
+  DT_SNS_SPEED          = 43,
+
+  DT_MAX		= 43,
 } dtype_t;
 
 
@@ -496,11 +507,10 @@ typedef struct {
 
 /*
  * Sensor Data.  Sensor Data header is followed by the sensor data.
- * Sns_Id is globally unique across all platforms and is used to
- * uniquely specify the format of any data following the sensor
- * data header.
+ * Sensor ids are embedded in the dtype, starting with dtype 32 (0x20).
  *
- * Sensor ids are specified in tos/mm/sensor_ids.h.
+ * The id uniquely specifies the format of any data following the sensor
+ * data header.
  */
 typedef struct {
   uint16_t len;                 /* size 28 + var */
@@ -510,8 +520,6 @@ typedef struct {
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
   uint32_t sched_delta;
-  uint16_t sns_id;
-  uint16_t pad;                 /* quad alignment */
 } PACKED dt_sensor_data_t;
 
 
@@ -523,8 +531,6 @@ typedef struct {
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
   uint32_t sched_delta;
-  uint16_t sns_id;
-  uint16_t pad;                 /* quad alignment */
   uint16_t nsamples;
   uint16_t datarate;            /* hz */
 } PACKED dt_sensor_nsamples_t;

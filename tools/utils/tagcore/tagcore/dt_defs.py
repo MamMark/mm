@@ -68,6 +68,10 @@ __all__ = [
     'DT_DEBUG',
     'DT_SYNC_FLUSH',
     'DT_SYNC_REBOOT',
+
+    'DT_GPS_RAW_SIRFBIN',
+    'DT_TAGNET',
+    'DT_RADIO',
     'DT_GPS_VERSION',
     'DT_GPS_TIME',
     'DT_GPS_GEO',
@@ -80,8 +84,19 @@ __all__ = [
     'DT_GPS_PROTO_STATS',
     'DT_GPS_TRK',
     'DT_GPS_CLK',
-    'DT_GPS_RAW_SIRFBIN',
-    'DT_TAGNET',
+
+    'DT_SNS_NONE',
+    'DT_SNS_BATT',
+    'DT_SNS_TMP_PX',
+    'DT_SNS_SAL',
+    'DT_SNS_ACCEL_N8S',
+    'DT_SNS_ACCEL_N10S',
+    'DT_SNS_ACCEL_N12S',
+    'DT_SNS_GYRO_N',
+    'DT_SNS_MAG_N',
+    'DT_SNS_PTEMP',
+    'DT_SNS_PRESS',
+    'DT_SNS_SPEED',
 
     'rec0',
     'secsFromHour_str',
@@ -142,12 +157,16 @@ DT_EVENT                = 4
 DT_DEBUG                = 5
 DT_SYNC_FLUSH           = 6
 DT_SYNC_REBOOT          = 7
+
+DT_GPS_RAW_SIRFBIN      = 13
+DT_TAGNET               = 14
+DT_RADIO                = 15
 DT_GPS_VERSION          = 16
 DT_GPS_TIME             = 17
 DT_GPS_GEO              = 18
 DT_GPS_XYZ              = 19
-DT_SENSOR_DATA          = 20
-DT_SENSOR_SET           = 21
+DT_SENSOR_DATA          = 20            # deprecated
+DT_SENSOR_SET           = 21            # deprecated
 DT_TEST                 = 22
 DT_NOTE                 = 23
 DT_CONFIG		= 24
@@ -155,9 +174,18 @@ DT_GPS_PROTO_STATS      = 25
 DT_GPS_TRK              = 26
 DT_GPS_CLK              = 27
 
-DT_GPS_RAW_SIRFBIN      = 32
-DT_TAGNET               = 33
-DT_RADIO                = 34
+DT_SNS_NONE             = 32
+DT_SNS_BATT             = 33
+DT_SNS_TMP_PX           = 34
+DT_SNS_SAL              = 35
+DT_SNS_ACCEL_N8S        = 36
+DT_SNS_ACCEL_N10S       = 37
+DT_SNS_ACCEL_N12S       = 38
+DT_SNS_GYRO_N           = 39
+DT_SNS_MAG_N            = 40
+DT_SNS_PTEMP            = 41
+DT_SNS_PRESS            = 42
+DT_SNS_SPEED            = 43
 
 
 # offset    recnum     rtime    len   dt name         offset

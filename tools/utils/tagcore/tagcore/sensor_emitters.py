@@ -23,6 +23,8 @@ Misc. Simple Sensor emitters.
 
 from   __future__   import print_function
 from   collections  import OrderedDict
+
+from   dt_defs      import DT_SNS_TMP_PX
 from   sensor_defs  import *
 import sensor_defs  as     sensor
 from   mr_emitters  import mr_display
@@ -66,10 +68,8 @@ def sns_str_tmp_px(obj, level = 0):
 # The keys denote column titles for the values stored on the keys.
 #
 def sns_dict_tmp_px(obj, level = 0):
-    sns_id = SNS_ID_TEMP_PX
+    dt_sns_id = DT_SNS_TMP_PX
     r = OrderedDict()
-    r['sns_id'] = sns_id
-    r['sensor'] = sns_name(sns_id)
     tmp_p = obj['tmp_p'].val
     tmp_x = obj['tmp_x'].val
     c_p = float(tmp_p)/16*0.0625
@@ -136,9 +136,7 @@ def emit_acceln_mr(offset, sns_hdr, nsample_obj):
     datarate = nsample_obj['datarate'].val
     for n in range(nsamples):
         r = OrderedDict()
-        sns_id        = sns_hdr['sns_id'].val
-        r['sns_id']   = sns_id
-        r['name']     = sns_name(sns_id)
+        dt_sns_id     = sns_hdr['hdr']['type'].val
         r['nsamples'] = nsamples
         r['datarate'] = datarate
         r['sample']  = n

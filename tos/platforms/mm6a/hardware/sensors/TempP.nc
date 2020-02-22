@@ -17,8 +17,8 @@
  * bus, get powered up together, and then read sequentially.
  */
 
+#include <typed_data.h>
 #include "regime_ids.h"
-#include "sensor_ids.h"
 
 module TempP {
   uses {
@@ -42,7 +42,7 @@ implementation {
   uint32_t err_overruns;
 
   void collect_tmps() {
-    uint16_t data[2];                   /* 0 - I, 1 - X */
+    uint16_t data[2];                   /* 0 - P, 1 - X */
     dt_sensor_data_t td;
 
     data[0] = data[1] = 0x800f;
@@ -54,9 +54,8 @@ implementation {
     temp_state = TEMP_STATE_OFF;
 
     td.len = sizeof(td) + sizeof(data);
-    td.dtype = DT_SENSOR_DATA;
+    td.dtype = DT_SNS_TMP_PX;
     td.sched_delta = call PeriodTimer.getNow() - call PeriodTimer.gett0();
-    td.sns_id = SNS_ID_TEMP_PX;
     call Collect.collect((void *) &td, sizeof(td),
                          (void *) &data, sizeof(data));
   }

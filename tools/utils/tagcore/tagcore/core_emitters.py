@@ -758,20 +758,22 @@ def emit_sensor_data(level, offset, buf, obj):
     brt      = secsFromHour_str(rtctime)
 
     delta    = obj['sched_delta'].val
-    sns_id   = obj['sns_id'].val
 
+    dt_sns_id = xtype
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
-    print('  {:s}  {:s}'.format(sns_name(sns_id), sns_val_str(sns_id)))
+    v = sensor.sns_table.get(dt_sns_id, ('', None, None, None, None, ''))
+    print('  {:s}'.format(sns_val_str(dt_sns_id)))
 
     sensor_obj = v[SNS_OBJECT]
     emitters   = v[SNS_EMITTERS]
 
     if level >= 1:
-        print('{:>74s}'.format(sns_val_str(sns_id, level)))
+        sns_str = sns_val_str(dt_sns_id, level)
+        if len(sns_str) > 0:
+            print('{}'.format(sns_str))
         if emitters:
             for e in emitters:
                 e(level, offset, buf[len(obj):], sensor_obj)

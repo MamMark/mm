@@ -266,21 +266,20 @@ def emit_gps_trk_mr(level, offset, buf, obj):
 
 def emit_sensor_data_mr(level, offset, buf, obj):
     hdr    = obj['hdr']
-    sns_id = obj['sns_id'].val
-    v = sensor.sns_table.get(sns_id, ('', None, None, None, None, ''))
+    dt_sns_id = hdr['type'].val
+    v = sensor.sns_table.get(dt_sns_id, ('', None, None, None, None, ''))
     if g.debug:
         c = copy.copy(obj)
         del c['hdr']
-        del c['pad']
         sns_obj  = v[SNS_OBJECT]
-        dict_func = sns_dict(sns_id)
+        dict_func = sns_dict(dt_sns_id)
         xdict = dict_func(sns_obj) if dict_func else None
         if xdict:
             for k in xdict:
                 c[k] = xdict[k]
         mr_display(offset, hdr, c)
     sns_obj  = v[SNS_OBJECT]
-    dict_func = sns_dict(sns_id)
+    dict_func = sns_dict(dt_sns_id)
     xdict = dict_func(sns_obj) if dict_func else None
     if xdict:
         mr_display(offset, hdr, xdict)
