@@ -3,7 +3,7 @@ tagdump:  decode and display Tag Data Stream file
 @author: Dan Maltbie/Eric B. Decker
 """
 
-__version__ = '0.4.7rc0'
+__version__ = '0.4.7'
 
 # 0.4.7rc0:
 # 0.4.6, release, core_rev 22/6
