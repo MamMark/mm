@@ -25,7 +25,7 @@ OPTFLAGS += -ggdb
 R0DESC := $(shell cd $(TINYOS_ROOT_DIR);git describe --long --all --dirty)
 R1DESC := $(shell cd $(MM_ROOT);git describe --long --all --dirty)
 IDESC  ?= *** (NIB) Dev Build ***
-TSTAMP := $(shell date -u)
+TSTAMP := $(shell date -u +%Y/%m/%d-%H:%M:%S)
 
 include $(PLATFORM_DIR)/Makefile.platform
 $(call TOSMake_include_platform,mm6a)
@@ -41,8 +41,8 @@ $(TARGET): build_num $(BUILD_DEPS)
 	@if [ "z$(BUILD_TYPE)" != "z" ] ; then \
 	    echo -e "\n*** $(BUILD_TYPE) build -> $(TOSMAKE_BUILD_DIR)\n"; \
 	    else echo -e "\n*** DEV (NIB) build -> $(TOSMAKE_BUILD_DIR)\n"; fi
-	@echo "binfin: [$(IDESC)],  stamp: $(TSTAMP)"
-	@binfin -I "$(IDESC)" -R "$(R0DESC)" -r "$(R1DESC)" -t "$(TSTAMP)" $(TOSMAKE_BUILD_DIR)/main.exe
+	@echo "binfin: [$(IDESC)], stamp : $(TSTAMP)"
+	@binfin -w --desc "$(IDESC)" --repo0 "$(R0DESC)" --repo1 "$(R1DESC)" -t "$(TSTAMP)" $(TOSMAKE_BUILD_DIR)/main.exe
 	ln -nfs $(UPSTAIRS) $(TOSMAKE_BUILD_DIR)/.gdb
 	ln -nfs .gdb/.gdbinit  $(TOSMAKE_BUILD_DIR)/.gdbinit
 	ln -nfs .gdb/.gdb_$(TARGET)  $(TOSMAKE_BUILD_DIR)/.gdb_target
