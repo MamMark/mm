@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 #
+# Copyright (c) 2020 Eric B. Decker
 # Copyright (c) 2018 Rick Li Fo Sjoe
 # All rights reserved.
 #
@@ -22,29 +23,21 @@
 # BININFO : A tool to display the img_info struct at the beginning,
 #	after the Vector Table.  The img_info struct conveys details
 #	about this image needed for later forensic analysis
-#
-#   Usage: bininfo.py [ -h ] <filename>
-#
-#       <filename> the name of an EXE, with ELF
-#           This file must contain an image_info struct.
-#
-#   -h
-#       Help show this usage information
-#
 
 from   __future__ import print_function
 from   __init__   import __version__ as VERSION
 
 import sys
 import argparse
+import os
 
 from   elf import *
-from   tagcore.base_objs    import *
-from   tagcore.core_headers import *
-import tagcore.imageinfo    as     iim
-
-IMAGE_INFO_SIG = 0x33275401
-IMAGE_INFO_OFFSET = 0x140
+import tagcore.globals        as     g
+from   tagcore.base_objs      import *
+from   tagcore.imageinfo_defs import *
+from   tagcore.imageinfo      import ImageInfo
+from   tagcore.misc_utils     import eprint
+from   tagcore.misc_utils     import dump_buf
 
 '''
 Offsets into the ELF and .bin file(s) where the image_info struct should be located
@@ -53,23 +46,21 @@ make all this work.
 '''
 
 def find_image_info(bin_file):
-    global IMAGE_INFO_OFFSET
-    offset = False
-
-    offset = IMAGE_INFO_OFFSET
-    return offset
+    return IMAGE_META_OFFSET
 
 def bininfo(filename):
     global elf_meta_offset, bin_meta_offset
 
-    print('BinInfo')
+    if os.access(filename, os.R_OK) == False:
+        eprint("need read access to {}.".format(filename))
+        sys.exit(2)
+    print('\nimage_info:')
     inFile = open(filename)
-
-    '''
-    Load the ELF data and use the section information to find where the
-    image_info is located.  Then they can move this around at will if
-    needed
-    '''
+    #
+    # Load the ELF data and use the section information to find where the
+    # image_info is located.  Then they can move this around at will if
+    # needed
+    #
     elf = ELFObject()
     elfhdr = 0
     try:
@@ -78,25 +69,25 @@ def bininfo(filename):
         meta = elf.getSection('.image_meta')
         meta_offset = meta.sh_offset
         if meta_offset == 0:
-            print("File Requires a valid image_info META structure")
+            eprint("can not find image_info meta data in {}".format(filename))
             sys.exit(2)
     except:
-        '''
-        Ok.. We may have a BIN file.  Try rumaging in there to find
-        the image_info
-        '''
+        #
+        # Ok.. We may have a BIN file.  Try rumaging in there to find
+        # the image_info
+        #
         inFile.seek(0)
         meta_offset = find_image_info(inFile)
-        if meta_offset == False:
-            print("File Requires a valid image_info META structure")
+        if meta_offset == 0:
+            eprint("no image_info Meta data found in {}".format(filename))
             sys.exit(2)
 
     inFile.seek(meta_offset)
-    meta_raw = inFile.read()
+    meta_raw = inFile.read(IMAGE_INFO_SIZE)
     inFile.close()
+    if g.debug:
+        dump_buf(meta_raw[:0x150])
+        print()
 
-    '''
-    We found the image_info block so load it and validate
-    '''
-    imcls = iim.ImageInfo(meta_raw)
-    print(imcls)
+    im_cls = ImageInfo(meta_raw)
+    print(im_cls)

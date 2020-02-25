@@ -88,7 +88,7 @@ class ELFSection:
     SHF_MASKPROC    = 0xf0000000L
 
     def __init__(self):
-        """creat a new empty section object"""
+        """create a new empty section object"""
         (self.sh_name, self.sh_type, self.sh_flags, self.sh_addr,
          self.sh_offset, self.sh_size, self.sh_link, self.sh_info,
          self.sh_addralign, self.sh_entsize) = [0]*10
