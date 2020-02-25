@@ -127,7 +127,7 @@ embedding identifying information with in the image.
 
 This information includes the following:
 
-o signature, image_info_sig, identifies that this is image_info
+o signature, image_info_sig, signature identifies that this is image_info.
 
 o image_start, load address of the image.  Where in the address space of
   the processor should this image be loaded.
@@ -137,6 +137,20 @@ o image_length, how long in bytes is this image.  Needed for both writing
 
 o ver_id.  The version identifier of this image.  This is the name of
   the image and is considered unique.
+
+o image_chk.  simple byte by byte sum (32 bit result) over entire image.
+  This is an external checksum.  Initially, the image_chk must be zero'd
+  prior to calculating the first sum.  To check, we must first remove
+  image_chk (replace with zeros), do the sum, and compare the result to
+  the removed value.
+
+o hw_ver.  A two byte, Model and Revision that identifies the h/w this
+  image is built for.
+
+- Additional fields can be added in a TLV based additional storage area.
+  The area is statically allocated and variable length fields are carved
+  out of it.  Total size including TLV headers must fit in the statically
+  allocated size.
 
 o image_desc.  An ID_MAX (44) byte string that contains an arbitrary
   descriptor of what this image is.
@@ -151,9 +165,6 @@ o repo1_desc.  An ID_MAX (44) byte string that describes the tip of the
 
 o stamp_date: a 30 byte null terminated string which is the build data
   when this image was built.
-
-o hw_ver.  A two byte, Model and Revision that identifies the h/w this
-  image is built for.
 
 
 8. Checksum performance:
