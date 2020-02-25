@@ -23,7 +23,7 @@ basic definitions for sensors.
 
 from   __future__   import print_function
 
-__version__ = '0.4.7.dev0'
+__version__ = '0.4.7'
 
 __all__ = [
     'SNS_NAME',

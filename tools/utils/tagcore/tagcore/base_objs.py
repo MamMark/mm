@@ -33,7 +33,7 @@ from   tagcore.imageinfo_defs import iip_tlv_name
 from   tagcore.imageinfo_defs import IMAGE_INFO_PLUS_SIZE
 from   tagcore.imageinfo_defs import IIP_TLV_END
 
-__version__ = '0.4.7rc0'
+__version__ = '0.4.7'
 
 class atom(object):
     '''

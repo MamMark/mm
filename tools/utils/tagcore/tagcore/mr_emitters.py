@@ -25,7 +25,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.7.dev0'
+__version__ = '0.4.7'
 
 import copy
 from   datetime       import datetime
