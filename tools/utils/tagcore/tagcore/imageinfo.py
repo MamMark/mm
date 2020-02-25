@@ -29,12 +29,6 @@ from   __future__         import print_function
 
 __version__ = '0.4.6'
 
-__all__ = [
-    'IMAGE_INFO_SIG',
-    'IMAGE_META_OFFSET',
-    'IMAGE_MIN_SIZE',
-]
-
 
 import sys
 import struct
@@ -43,9 +37,6 @@ from   collections  import OrderedDict
 from   base_objs    import *
 from   core_headers import *
 
-IMAGE_INFO_SIG    = 0x33275401
-IMAGE_META_OFFSET = 0x140
-IMAGE_MIN_SIZE    = 1024
 
 class ImageInfo:
     '''

@@ -75,8 +75,17 @@ typedef struct {
  * is 512 bytes long (see panic.h).
  */
 
-#define IIP_TLV_END         0
-#define IMG_INFO_PLUS_SIZE  298
+#define IMAGE_INFO_PLUS_SIZE 300
+
+enum {
+  IIP_TLV_END       = 0,
+  IIP_TLV_DESC      = 1,
+  IIP_TLV_REPO0     = 2,
+  IIP_TLV_REPO0URL  = 3,
+  IIP_TLV_REPO1     = 4,
+  IIP_TLV_REPO1URL  = 5,
+  IIP_TLV_STAMP     = 6,
+};
 
 typedef struct {
   uint8_t        type;                  /* IIP_TLV values            */

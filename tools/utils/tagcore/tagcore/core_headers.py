@@ -276,20 +276,6 @@ def obj_image_basic():
     ]))
 
 
-# do not recycle or reorder number.  Feel free to add.
-# one byte, max value 255, 0 says done.
-
-iip_tlv = {
-    'end'       :0,
-    'desc'      :1,
-    'repo0'     :2,
-    'repo0_url' :3,
-    'repo1'     :4,
-    'repo1_url' :5,
-    'date'      :6,
-}
-
-
 # obj_image_plus is built dynamically when processing
 # or creating image_info_plus tlvs.
 #

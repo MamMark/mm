@@ -26,11 +26,8 @@
 #  exception vectors which are 0x140 bytes long.
 #
 
-IMAGE_INFO_SIG = 0x33275401
-IMAGE_META_OFFSET = 0x140
-IMAGE_INFO_DEFAULT = [IMAGE_INFO_SIG, 0x20000, (0x140*2)+0x1c,
-                      0, 0, 257, 2, 3, ' '  * 40, ' '  * 40,
-                      ' '  * 30, 0xde, 2]
+from   tagcore.imageinfo_defs import *
+
 #
 # Struct created for accessing image info (little indian)
 # sig, image_start, imagelength, vector_chk, image_chk, im_build, im_minor,
