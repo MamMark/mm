@@ -29,7 +29,7 @@
  * image_info lives in the image.  It directly follows
  * the exception vectors which are 0x140 bytes long.
  *
- * If the vector length changes, this value will have to
+ * If the interrupt vector length changes, this value will have to
  * change.
  */
 #define IMAGE_META_OFFSET 0x140
@@ -71,8 +71,10 @@ typedef struct {
  *
  * Plus is human readable identification that uses TLVs to indicate what is
  * being described.  This allows easy future expansion by defining new TLVs.
- * The size of image_info_plus.tlv_block should be set such that panic_hdr0
- * is 512 bytes long (see panic.h).
+ *
+ * When a panic occurs, Image_Info is embedded in the panic information that
+ * is written out.  The Plus area is sized such that the PanicHdr0 data fits
+ * in a 512 byte sector.
  */
 
 #define IMAGE_INFO_PLUS_SIZE 300
@@ -102,22 +104,19 @@ typedef struct {
   image_ver_t ver_id;                   /*  b  version string of this build       */
   uint32_t    image_chk;                /*  s  simple checksum over entire image  */
   hw_ver_t    hw_ver;                   /*  b  2 byte hw_ver                      */
-  uint8_t     reserved[10];             /*  b  reserved                           */
+  uint16_t    plus_len;                 /*  b  2 byte plus block size             */
+  uint8_t     reserved[8];              /*  b  reserved                           */
 } image_info_basic_t;
 
 
 /*
- * Basic must be word aligned and word length.  (otherwise plus doesn't line
- * up right)
- *
- * Plus needs to start on proper alignment for reference to tlv_block_len,
- * which indicates the allocated size of the tlv_block.  All tlvs present
+ * the tlv_block (plus) immediately follows the basic block.  The length of
+ * the tlv_block is stored as basic->plus_len.  All tlvs present
  * have to completely fit inside of the tlv_block.
  */
 
 typedef struct {
-  uint16_t    tlv_block_len;
-  uint8_t     tlv_block[IMG_INFO_PLUS_SIZE];
+  uint8_t     tlv_block[IMAGE_INFO_PLUS_SIZE];
 } image_info_plus_t;
 
 
@@ -139,7 +138,7 @@ typedef struct {
  * indicate what this image is, released, development, etc.  It is an
  * arbitrary string provided to binfin and placed into image_desc.
  *
- * repository{0,1} are descriptor strings that identify the code repositories
+ * repo{0,1} are descriptor strings that identify the code repositories
  * used to build this image.
  *
  * each descriptor is generated using:
@@ -158,17 +157,19 @@ typedef struct {
  *
  * stamp_date is a NUL terminated string that contains the date (UTC)
  * this image was stamped by binfin.  Typically this will be when the
- * image was built.  stamp_date gets filled in with "date -u".
+ * image was built.  stamp_date gets filled in with
+ *
+ *                      "date -u +%Y/%m/%d-%H:%M:%S".
  *
  * After filling in image_desc, repository{0,1}, and stamp_date, image_chk
- * should be computed.  Image_chk starts as zero, and the 32 bit byte by
+ * must be recomputed.  Image_chk starts as zero, and the 32 bit byte by
  * byte checksum is computed then placed into image_chk.
  *
- * To verify the image_chk, first it must be copied out(saved), zeroed,
+ * To verify the image_chk, first it must be copied out (saved), zeroed,
  * and the checksum computed then compared against the saved value.
  *
- * image_desc, repo_desc{0,1}, and stamp_date must be filled in
- * prior to computing the value of image_chk.
+ * image_desc, repo_desc{0,1}, and stamp_date must be filled in prior to
+ * computing the value of image_chk.
  */
 
 #endif  /* __IMAGE_INFO_H__ */

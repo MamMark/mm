@@ -272,7 +272,8 @@ def obj_image_basic():
         ('ver_id',    obj_image_version()),
         ('im_chk',    atom(('<I', '0x{:08x}'))),
         ('hw_ver',    obj_hw_version()),
-        ('reserved',  atom(('10s',  '{}'))),
+        ('im_plus_len', atom(('<H', '{}'))),
+        ('reserved',  atom(('8s', '{}'))),
     ]))
 
 

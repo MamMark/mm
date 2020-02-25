@@ -88,6 +88,7 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
     /* 32 bit byte sum over full image size. */
     .image_chk    = 0,
     .hw_ver       = { .hw_model = HW_MODEL, .hw_rev = HW_REV },
+    .plus_len     = IMAGE_INFO_PLUS_SIZE,
   },
   .iip = {
     .tlv_block_len = IMG_INFO_PLUS_SIZE,
