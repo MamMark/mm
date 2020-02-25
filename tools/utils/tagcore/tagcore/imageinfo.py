@@ -27,103 +27,127 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6'
-
+__version__ = '0.4.7.dev4'
 
 import sys
 import struct
 import zlib
-from   collections  import OrderedDict
-from   base_objs    import *
-from   core_headers import *
+from   collections          import OrderedDict
+from   tagcore.core_headers import obj_image_info
+from   misc_utils           import eprint
+from   misc_utils           import dump_buf
+
+import tagcore.globals        as     g
+from   tagcore.imageinfo_defs import *
+from   tagcore.imageinfo_defs import iip_tlv
 
 
 class ImageInfo:
     '''
-    im_basic: will hold a obj_image_info struct from core_headers
+    im_info: will hold a obj_image_info object from core_headers
         obj_image_info consists of:
             image_info_basic structure
-            image_inf_plus
-                tlv_block_len (2-byte) value of the remaining im_plus
-        im_tlv_block_len is set during the MM build phase.  It is not altered.
-            it determines the maximum size of the available space for TLV rows
-        im_total_len is calculated based on the image_info size + im_tlv_block_len
+            image_info_plus
+        im_byte_len is computed byte length of basic and plus objects.
     '''
-    im_basic = None
-    im_plus = None
-    im_tlv_rows = None
-    im_tlv_block_len = 0
-    im_total_len = 0
+    im_info         = None
+    im_basic        = None
+    im_plus         = None
+    im_plus_len     = None
+    im_byte_len     = None
 
     def __init__(self, rec_buf):
-        self.im_basic = obj_image_info()
-        corelen = self.im_basic.set(rec_buf)
-        if self.im_basic['basic']['ii_sig'].val != IMAGE_INFO_SIG:
-            print('*** image signature checksum fail: expected {:08x}, got {:08x}'.format(
-                IMAGE_INFO_SIG, self.im_basic['basic']['ii_sig'].val))
+        self.im_info  = obj_image_info()
+        self.im_basic = self.im_info['basic']   # obj_image_basic
+        self.im_plus  = self.im_info['plus']    # tlv_block_aggie
+        self.im_info.set(rec_buf)
+        if self.im_basic['ii_sig'].val != IMAGE_INFO_SIG:
+            eprint('*** image signature mismatch: expected {:08x}, got {:08x}'.format(
+                IMAGE_INFO_SIG, self.im_basic['ii_sig'].val))
             sys.exit(2)
-
-        self.im_tlv_rows = self.im_basic['plus']
-        self.im_tlv_block_len = int(self.im_basic['plus']['tlv_block_len'].val)
+        self.im_plus_len = int(self.im_basic['im_plus_len'].val)
+        self.im_plus.set_max(self.im_plus_len)
         return
 
     def __repr__(self):
-        ver_id = self.im_basic['basic']['ver_id']
-        hw_ver = self.im_basic['basic']['hw_ver']
-        chksum = self.im_basic['basic']['im_chk'].val
-        out  = "image_info_data:\n"
-        out += 'sw_ver\t: {}.{}.{} (0x{:x})\n'.format(ver_id['major'],
-                    ver_id['minor'], ver_id['build'], ver_id['build'].val)
-        out += 'hw_m/r\t: {}/{}\n'.format(
+        load_addr = self.im_basic['im_start'].val
+        load_len  = self.im_basic['im_len'].val
+        ver_id = self.im_basic['ver_id']
+        hw_ver = self.im_basic['hw_ver']
+        chksum = self.im_basic['im_chk'].val
+        xtype = 'Golden' if load_addr == 0 else 'NIB' if load_addr == 0x20000 else 'UNK'
+        out  = 'load\t: {:06d} (0x{:06x})     len    : {:06d} (0x{:06x})\t{}\n'.format(
+            load_addr, load_addr, load_len, load_len, xtype)
+        out += 'sw_ver\t: {}.{}.{}\t'.format(ver_id['major'],
+                                             ver_id['minor'],
+                                             ver_id['build'])
+        out += '        hw_m/r : {}/{}\n'.format(
             hw_ver['model'], hw_ver['rev'])
         out += 'chksum\t: 0x{:08x}\n'.format(chksum)
-        for k,tlv in self.im_tlv_rows.get_tlv_rows():
-            type = self._iipGetKeyByValue(k)
-            out += '{}\t: {}\n'.format(type, tlv.tlv_value)
+        for k,tlv in self.im_plus.get_tlv_rows():
+            tlv_type = self._iipGetKeyByValue(k)
+            out += '{}\t: {}\n'.format(tlv_type, tlv['tlv_value'])
         return out
 
-    def clearChecksum():
-        #We set checksum to 0 since we calc. a new checksum every time
-        self.im_basic['basic']['im_chk'].val = 0
+    def getPlusSize(self):
+        '''
+        return (cur, max) of the Plus area.
+        '''
+        return self.im_plus.getPlusSize()
+
+    def setVersion(self, major, minor, build):
+        self.im_basic['ver_id']['major'].val = int(major)
+        self.im_basic['ver_id']['minor'].val = int(minor)
+        self.im_basic['ver_id']['build'].val = int(build)
+
+    def setChecksum(self, val):
+        self.im_basic['im_chk'].val = val
 
     def _iipGetKeyByValue(self, val):
         for k, v in iip_tlv.items():
             if v == val:
                 return k
-        return 'unk_({})'.format(val)
+        return 'tlv/{}'.format(val)
 
     def updateBasic(self, field, value):
-        self.im_basic['basic'][field].val = value
+        self.im_basic[field].val = value
         return
 
-    '''
-    setTLV() - Called to add/update a TLV in the 'image_info_plus'
-    '''
-    def setTLV(self, type, value):
-        consumed = self.im_tlv_rows.add_tlv(type, value)
+    def setTLV(self, tlv_type, value):
+        '''
+        setTLV() - Called to add/update a TLV in the 'image_info_plus'
+        '''
+        consumed = self.im_plus.add_tlv(tlv_type, value)
         return consumed
 
     def getTLV(self, tlv_type):
-        for k, tlv in self.im_tlv_rows.get_tlv_rows():
+        for k, tlv in self.im_plus.get_tlv_rows():
             if tlv_type == k:
                 return tlv.tlv_value
         return false
 
-    def getTotalLength(self):
-        return self.im_total_len
+    def getByteLength(self):
+        return self.im_byte_len
 
-    '''
-    build() - Called to reconstruct a byte array from the image_info
-        components we've stored in this class.  Useful for plugging into
-        ELF or .bin files
-    '''
     def build(self):
+        '''
+        build() - builds a byte array from the image_info components stored
+            in this class.  Result gets plugged into ELF or .bin files
+        '''
         im_basic_out = self.im_basic.build()
-        im_plus_out = self.im_tlv_rows.build_tlv()
+        if g.debug:
+            dump_buf(im_basic_out, '', 'bsc:  ')
+            print()
+        im_plus_out  = self.im_plus.build_tlv()
+        if g.debug:
+            dump_buf(im_plus_out,  '', 'pls:  ')
+            print()
 
-        '''
-        Now ZERO the remaining chunk of the TLV block Puts the 'end' TLV back
-        '''
-        im_plus_out += '\0' * (self.im_tlv_block_len - len(im_plus_out))
-        self.im_total_len = len(im_basic_out) + len(im_plus_out)
-        return im_basic_out+im_plus_out
+        # ZERO the remaining chunk of the TLV block Puts the 'end' TLV back
+        im_plus_out += '\0' * (self.im_plus_len - len(im_plus_out))
+
+        self.im_byte_len = len(im_basic_out) + len(im_plus_out)
+        if self.im_byte_len != IMAGE_INFO_SIZE:
+            raise RuntimeError('(imageinfo): meta size mismatch {} vs. {}'.format(
+                self.im_byte_len, IMAGE_INFO_SIZE))
+        return im_basic_out + im_plus_out
