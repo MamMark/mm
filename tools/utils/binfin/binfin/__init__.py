@@ -4,8 +4,9 @@ binfin: Update MamMark (mm) META_INFO data
 @author: R. Li Fo Sjoe
 """
 
-__version__ = '0.1.4.dev1'
+__version__ = '1.0.0'
 
+# 1.0.0         release
 # 0.1.4         rework core binfin to deal with plus tlvs as reworked.
 #               rework options, add -c (clear), -d (desc), --version,
 #               add -w write.  add logic handling write and no write.
