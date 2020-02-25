@@ -26,7 +26,14 @@ import copy
 from   collections import OrderedDict
 from   misc_utils  import dump_buf
 
-__version__ = '0.4.7.dev0'
+import tagcore.globals        as     g
+from   misc_utils             import dump_buf
+from   misc_utils             import eprint
+from   tagcore.imageinfo_defs import iip_tlv_name
+from   tagcore.imageinfo_defs import IMAGE_INFO_PLUS_SIZE
+from   tagcore.imageinfo_defs import IIP_TLV_END
+
+__version__ = '0.4.7rc0'
 
 class atom(object):
     '''
@@ -104,8 +111,6 @@ class aggie(OrderedDict):
         return s
 
     def set(self, buf):
-        '''
-        '''
         consumed = 0
         for key, v_obj in self.iteritems():
             consumed += v_obj.set(buf[consumed:])
@@ -119,54 +124,62 @@ class aggie(OrderedDict):
 
 
 class tlv_aggie(aggie):
-
     '''
-    tlv_aggie: aggregation node for a tlv
-    takes one parameter an ordered dictionary defining what the
-    tlv header looks like (key -> {atom | aggie})
+    tlv_aggie: aggregation node for a tlv, (tlv_type, tlv_len, tlv_value)
+        takes one parameter an ordered dictionary defining what the
+        tlv header looks like (key -> {atom | aggie})
 
-    tlv_aggie will first create just the header, then using header
-    via set will populate the data key.
+    tlv_aggie will first create a header with the tlv_type and tlv_len.
+    Calling .set() or .tlv_force() will populate the 3rd field, tlv_value.
+
+    tlv_type,  the type of this tlv.
+    tlv_len,   length of the entire tlv block.
+    tlv_value, string value of the tlv.
     '''
-
-    tlv_hdr_len = 2	#default to the 'T/L' bytes
-    tlv_value = None
 
     def __init__(self, a_dict):
-        self.tlv_value = ''
         super(tlv_aggie, self).__init__(a_dict)
 
     def set(self, buf):
         #
-        # First collect T & L... V is done manually
+        # a tlv_aggie object, when created, has definitions for the
+        # tlv_type and tlv_len.  Using tlv_len, we can suck the appropriate
+        # number of bytes as tlv_value.
         #
-        self.tlv_hdr_len = super(tlv_aggie, self).set(buf)
-        tlv_type = self['tlv_type'].val
-        tlv_len = self['tlv_len'].val
-        self.tlv_value = buf[self.tlv_hdr_len:self.tlv_hdr_len+tlv_len]
-        consumed = self.tlv_hdr_len + tlv_len
+        tlv_type  = ord(buf[0])
+        tlv_len   = ord(buf[1])
+        tlv_value = buf[2: tlv_len]
+        self['tlv_type'].val  = tlv_type
+        self['tlv_len'].val   = tlv_len
+        self['tlv_value'].val = tlv_value
+        consumed = tlv_len
         return consumed
 
     def __repr__(self):
         out = super(tlv_aggie, self).__repr__()
-#        out += "\nType %d = Value: %s" % (self['tlv_type'].val, self.tlv_value)
+        if g.debug:
+            tlv_type  = self['tlv_type'].val
+            tlv_len   = self['tlv_len'].val
+            tlv_value = self.get('tlv_value', None)
+            out += '\n** [tlv: <{}, {}>, <{}>, <{}>] **'.format(
+                        tlv_type, iip_tlv_name(tlv_type),
+                        tlv_len, tlv_value)
         return out
 
-    '''
-    update() - Add/Update an entry to the TLV blocks
-       if tlv_type already exists we need to update if not, add it.
-    '''
-    def update(self, tlv_type, tlv_value):
-        self['tlv_type'].val = tlv_type
-        self['tlv_len'].val = len(tlv_value)
-        self.tlv_value = tlv_value
-        return self['tlv_len'].val + self.tlv_hdr_len # Add header T/L back in
+    def tlv_force(self, tlv_type, tlv_len, tlv_value):
+        '''
+        force a tlv entry to a particular tlv_value.
+        if tlv_type already exists we replace its previous value.
+        '''
+        self['tlv_type'].val  = tlv_type
+        self['tlv_len'].val   = tlv_len
+        self['tlv_value'].val = tlv_value
+        return tlv_len
 
     def build(self):
         out = ''
         for key, v_obj in self.iteritems():
             out += v_obj.build()
-        out += "%s" % self.tlv_value
         return out
 
 
@@ -174,70 +187,66 @@ class tlv_block_aggie(aggie):
     '''
     tlv_block_aggie: aggregation node for multiple tlvs coming
     from one block of memory.
-
-    takes two parameters:
-
-        tlv_func:    function that generates a tlv object
-        OrderedDict: the foundation on which to hang the tlvs.
-
-    A tlv_block starts with are required object 'tlv_block_len'
-    that defines a length parameter that is the size of the tlv
-    block.  Any passed in buffer must be at least this size.
-
-    The tlv_block_len object consumed in addition to the tlv_block
-    itself.
     '''
 
     def __init__(self, a_dict):
-        self.tlv_blocks = dict()
-        self.max_block_len = 0
+        self.tlv_blocks    = OrderedDict()
+        self.max_block_len = IMAGE_INFO_PLUS_SIZE       # assumption, should be good
         self.cur_block_len = 0
         super(tlv_block_aggie, self).__init__(a_dict)
-
 
     def set(self, buf):
         consumed = super(tlv_block_aggie, self).set(buf)
         tlv_consumed = 0
         while True:
+            if consumed >= len(buf) or buf[consumed] == '\0':
+                break;
+            # first, peek, 1st byte tlv_type, 2nd tlv_len
+            # we need tlv_len to properly build the tlv_aggie.
+            tlv_type = ord(buf[consumed])
+            tlv_len  = ord(buf[consumed + 1])
             tlv = tlv_aggie(aggie(OrderedDict([
-                ('tlv_type', atom(('<B', '{}'))),
-                ('tlv_len',  atom(('<B', '{}'))),
+                ('tlv_type',  atom(('<B', '{}'))),
+                ('tlv_len',   atom(('<B', '{}'))),
+                ('tlv_value', atom(('{}s'.format(tlv_len - 2), '{}'))),
             ])))
-            tlv_consumed += tlv.set(buf[consumed+tlv_consumed:])
-            tlv_type = tlv['tlv_type'].val
-            if tlv_type == 0:
-               break;
+            consumed += tlv.set(buf[consumed:])
+            tlv_type  = tlv['tlv_type'].val
             self.tlv_blocks[tlv_type] = tlv
 
-        self.cur_block_len = tlv_consumed
-
-        '''
-        We at len-2 because we must keep that last 2 bytes as 0,0 to
-        Terminate the list
-        '''
-        self.max_block_len = self['tlv_block_len'].val - 2
-        consumed += self['tlv_block_len'].val
+        self.cur_block_len += consumed
         return consumed
+
+    def set_max(self, max_len):
+        self.max_block_len = max_len
+
+    def getPlusSize(self):
+        return self.cur_block_len, self.max_block_len
 
     def add_tlv(self, tlv_type, tlv_value):
         tlv_len = len(tlv_value)
-        '''
-        If we can't add this TLV without going over tlv_block_len. we fail
-        '''
-        if self.cur_block_len + tlv_len > self.max_block_len:
+        if tlv_len == 0:
             return 0
 
         tlv = tlv_aggie(aggie(OrderedDict([
-            ('tlv_type', atom(('<B', '{}'))),
-            ('tlv_len',  atom(('<B', '{}'))),
+            ('tlv_type',  atom(('<B', '{}'))),
+            ('tlv_len',   atom(('<B', '{}'))),
+            ('tlv_value', atom(('{}s'.format(len(tlv_value)),  '{}'))),
         ])))
-        consumed = tlv.update(tlv_type, tlv_value)
+        tlv_len = len(tlv)              # should now be correct
+
+        # If we can't add this TLV without going over max_block_len. we fail
+        if self.cur_block_len + tlv_len > self.max_block_len:
+            return 0
+
+        consumed = tlv.tlv_force(tlv_type, tlv_len, tlv_value)
         if tlv_type in self.tlv_blocks:
-            self.cur_block_len += (consumed - self.tlv_blocks[tlv_type]['tlv_len'].val)
-            self.tlv_blocks[tlv_type] = tlv
-        else:
-            self.cur_block_len += consumed
-            self.tlv_blocks.__setitem__(tlv_type, tlv)
+            # subtract off previous length
+            old_tlv = self.tlv_blocks[tlv_type]
+            self.cur_block_len -= old_tlv['tlv_len'].val
+            del self.tlv_blocks[tlv_type]
+        self.cur_block_len += consumed
+        self.tlv_blocks[tlv_type] = tlv
         return consumed
 
     def get_tlv(self, tlv_type):
@@ -249,8 +258,13 @@ class tlv_block_aggie(aggie):
 
     def build_tlv(self):
         out = ''
-        for type, v_obj in self.tlv_blocks.items():
-            out += v_obj.build()
+        for ttype, v_obj in self.tlv_blocks.items():
+            if g.debug:
+                eprint('** build_tlv: {} {} {}'.format(ttype, v_obj, type(v_obj)))
+            if isinstance(v_obj, aggie) or isinstance(v_obj, atom):
+                out += v_obj.build()
+            else:
+                raise RuntimeError('build_tlv: wrong object type, {}'.format(type(v_obj)))
         return out
 
     def __repr__(self):
