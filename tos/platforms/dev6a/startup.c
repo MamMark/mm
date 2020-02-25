@@ -91,10 +91,10 @@ const image_info_t image_info __attribute__ ((section(".image_meta"))) = {
     .plus_len     = IMAGE_INFO_PLUS_SIZE,
   },
   .iip = {
-    .tlv_block_len = IMG_INFO_PLUS_SIZE,
-    .tlv_block     = { IIP_TLV_END, 0 },        /* type, len, values */
+    .tlv_block    = { IIP_TLV_END, 0 },        /* type, len, values */
   }
 };
+
 
 /* see OverWatchP.nc for details */
 ow_control_block_t ow_control_block __attribute__ ((section(".overwatch_data")));
