@@ -261,8 +261,6 @@ def obj_image_info():
         ('plus',      obj_image_plus()),
     ]))
 
-# plus is part of image_info but first we must account
-# for any additional reserved words but using basic.basic_len
 
 def obj_image_basic():
     return aggie(OrderedDict([
@@ -277,44 +275,46 @@ def obj_image_basic():
     ]))
 
 
-# obj_image_plus is built dynamically when processing
-# or creating image_info_plus tlvs.
+# obj_image_plus is a container that holds obj_image_plus_tlvs.
 #
-# tlvs are aggies created dynamically when we know the size
-# of the tlv data.  We create effectively the following
+# The maximum size of obj_image_plus is static and determined at compile
+# time of the main tag image.  see IMAGE_INFO_PLUS_SIZE in image_info.h.
+# The size of the plus area is also stored in basic[plus_len].
+#
+# obj_image_plus_tlvs are built dynamically as tlvs are processed, once
+# we know the size of the tlv's data we can build the tlv and add it
+# to the block.
+#
+# We effectively create the following
 #
 #    def obj_image_plus_tlv():
 #        return aggie(OrderedDict([
-#            ('tlv_type', atom(('B', '{}'))),
-#            ('tlv_len',  atom(('B', '{}'))),
-#            ('tlv_data', atom(('Ns', '{}'))),
+#            ('tlv_type',  atom(('B', '{}'))),
+#            ('tlv_len',   atom(('B', '{}'))),
+#            ('tlv_value', atom(('Ns', '{}'))),
 #        ]))
 #
-# where 'N' is the size of the string.  To be nice to gdb/C
-# it is recommended to null terminate the string.
+# where 'N' is the size of the string.
 #
 # This is handled by the tlv_aggie class defined in base_objs.py
 #
 # The TLV_END tlv is used to terminate the sequence of TLVs.
 # It has a length of 2 bytes, tlv_type: 0 and tlv_len: 0.
-# This consumes 2 bytes in the tlv_block.  It does not
-# have a 'tlv_data' atom.  (there isn't any data).
 #
-
-
-def obj_image_plus_tlv():
-    return tlv_aggie(aggie(OrderedDict([
-        ('tlv_type', atom(('<B', '{}'))),
-        ('tlv_len',  atom(('<B', '{}'))),
-#        ('tlv_value',  atom(('<s', '{}'))),
-    ])))
-
 
 def obj_image_plus():
     return tlv_block_aggie(aggie(OrderedDict([
-        ('tlv_block_len',    atom(('<H', '{}'))),
-#        ('tlv_block',    obj_image_plus_tlv()),
     ])))
+
+
+# Constructed manually in tlv_block_aggie and tlv_aggie (base_objs.py)
+#
+#def obj_image_plus_tlv():
+#    return tlv_aggie(aggie(OrderedDict([
+#        ('tlv_type',  atom(('<B', '{}'))),
+#        ('tlv_len',   atom(('<B', '{}'))),
+#        ('tlv_value', atom(('<Ns', '{}'))),
+#    ])))
 
 
 def obj_dt_sync():
