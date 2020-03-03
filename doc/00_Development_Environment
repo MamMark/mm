@@ -349,6 +349,9 @@ ie.
 
 11) Additional Tag Development tools
 
+- python2.7
+- pip
+
 - tagdump (tools/utils/tagdump)
   sudo ./setup.py install
 
