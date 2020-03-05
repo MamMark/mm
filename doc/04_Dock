@@ -1,0 +1,106 @@
+
+The Dock provides a high speed connection to a Tag device.  This connection
+can be used to a) monitor operation of an operational tag and b) offload
+large quantities of data stored on the tag.
+
+The connection between the dock and the tag is a master/slave SPI connection.
+The dock is the master and the tag is a slave.
+
+1) HW interconnect
+
+   SCLK:    clock sourced by the dock (master).
+   MOSI:    master out, slave in, (spi data)
+   MISO:    master in, slave out, (spi data)
+
+   DC_M_N:  (low true) handshake signal from dock to tag.   Can also function
+            as a slave select.
+   DC_S_N:  (low true) handshake signal from tag to dock.
+
+
+2) Data format.
+
+Data is transfered between the dock and the tag in packets.  All mult-byte
+datums are in little endian order.  There is no multi-byte alignment
+constraint.
+
+   +---------+--------+-------+--------+-----------+
+   | channel | status |  len  |  data  |  checksum |
+   +---------+--------+-------+--------+-----------+
+
+       1         1        2       n          2
+
+   channel:     data channel, end point identifier
+   status:      status indicator
+   len:         2 byte length.  Length indicates the entire length of the
+                packet, channel through checksum.
+   data:        packet data, size is len - 6.
+   checksum:    16 bit byte by byte sum truncated to 16 bits of bytes
+                between channel through last data byte inclusive.
+
+
+3) Channels.
+
+The channel field in the packet denotes a logical end point.  An end point
+denotes a software module that generates or consumes packet data.
+
+    0:  cmd         simple commands and responses.
+    1:  tagnet      tagnet over SPI
+    2:  print       debug print.
+    3:  large_dblk  large block dblk access.
+
+
+4) Status.
+
+Status information about packet contents.
+
+    0:  data.   packet data
+    1:  rsp.    response data
+    2:  error.  error data, data contains error information.
+    3:  poll.   interrogate tag for identifing information.
+    4:  ok.     simple ok response
+    5:  notrdy  simple not ready
+
+5) DC_M_N handshake signal.
+
+The DC_M_N signal is used to get the tag's attention and to bracket the
+data being sent to the tag.  The initiating edge indicates the start
+of a new packet and the next byte will be a channel byte.
+
+Low true signal that essentially functions as a chip select.
+
+
+6) DC_S_N handshake signal.
+
+The DC_S_N signal is used by the tag to inform the dock that a tag packet
+is ready to be retrieved.
+
+
+7) Entering Dock Mode
+
+   TBD
+
+
+8) Exiting Dock Mode
+
+   TBD
+
+
+9) Basic Operation
+
+The tag dock spi needs to be configured as a slave and be ready to receive
+data.
+
+When the dock has a request for the tag, it will drop DC_M_N.  The dock sends
+the n data bytes of the packet.
+
+The tag will process the packet and perform the requested operation.  This
+operation can take non-zero time.  When the results are available and the
+response is ready, the tag will assert DC_S_N.
+
+Upon receipt of the asserted DC_S_N, the dock will transfer the packet from
+the tag.  When the transfer has been completed, the tag will deassert DC_S_N.
+
+To transfer SPI packet data, the 1st 4 bytes of the packet will be read.  This
+will give the receiver the channel, status, and length of the entire packet.
+The length can be used to determine how many additional bytes need to be
+transfered.
