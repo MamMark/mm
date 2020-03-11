@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020, Eric B. Decker
  * Copyright (c) 2017-2019, Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
@@ -797,7 +798,7 @@ implementation {
     call Regime.setRegime(use_regime);
 
     if (call OverWatch.getDebugFlag(OW_DBG_NORDO)) {
-      SI446X_TX_PWR_OFF;
+      call RadioState.turnOff();
       return;
     }
     change_radio_state(RS_HOME, SS_RW, TMR_BOOT);
