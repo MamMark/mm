@@ -1,6 +1,6 @@
 /* tos/chips/mems/lisxdh.h
  *
- * Copyright (c) 2019 Eric B. Decker
+ * Copyright (c) 2019-2020, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -372,6 +372,13 @@ typedef union {
   } x;
   uint8_t bits;
 } lisx_fifo_src_reg_t;
+
+
+/*
+ * The lis2dh and lis3dh have a fifo that has 32 elements and
+ * control cells that are 5 bits.
+ */
+#define LISX_FIFO_SIZE      32
 
 /*
  * INT1_CFG

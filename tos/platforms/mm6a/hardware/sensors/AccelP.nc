@@ -1,5 +1,5 @@
 /*
- * Copyright 2019, Eric B. Decker
+ * Copyright 2019-2020, Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -134,6 +134,10 @@ module AccelP {
   }
 }
 implementation {
+  enum {
+    FIFO_DATA_SIZE = (LISX_FIFO_SIZE + 1),
+  };
+
   typedef enum {
     ACCEL_STATE_OFF             = 0,
     ACCEL_STATE_COLLECTING,
@@ -207,7 +211,8 @@ implementation {
     uint32_t datasize;
     uint32_t nsamples, fifo_len, idx;
     bool     overflowed;
-    acceln_sample_t      data[33];
+
+    acceln_sample_t      data[FIFO_DATA_SIZE];
     dt_sensor_nsamples_t adt;           /* accel dt + nsample */
 
 #ifdef USE_ACCEL8
@@ -231,11 +236,13 @@ implementation {
       return;
     }
     while (fifo_len) {
+      if (idx >= LISX_FIFO_SIZE)
+        break;
       call Accel.read((void *) &data[idx++], 6);
       fifo_len--;
       dump_registers();
     }
-    if (overflowed) {
+    if (overflowed && idx == LISX_FIFO_SIZE) {
       data[idx].x   = -1;
       data[idx].y   = -1;
       data[idx++].z = -1;
