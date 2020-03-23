@@ -1,10 +1,40 @@
 
-The Dock provides a high speed connection to a Tag device.  This connection
-can be used to a) monitor operation of an operational tag and b) offload
-large quantities of data stored on the tag.
+Options/Configurations:
+
+Dock:  RPi 3/RPi 4 (dual   spi ports), master only, 1 Radio, 1 Dock
+       Linux, FTDI C232HM, master only, multiple gpio/cs
+
+
+0) Introduction
+
+The Dock subsystem provides the following functionality when a tag is
+connected:
+
+    a) JTAG SWD port for low level development access
+    b) charging for the tag's energy system
+    c) high speed communication port.  (dock_comm).
+    d) any required level shifting.
+
+Dock_comm provides a high speed connection to a Tag device.  This
+connection can be used to a) monitor a running tag and b) offload large
+quantities of data stored on the tag.
+
+The Dock subsystem h/w is composed of 3 parts, the Tag that is being
+communicated with, the Dock H/W Interface subsystem (DCX), and the Dock host
+(Dock).  The Dock (host) is where the dock software executes.  It uses the
+DCX to interface to a Tag that has been connected to the DCX.
 
 The connection between the dock and the tag is a master/slave SPI connection.
-The dock is the master and the tag is a slave.
+The dock is the master and the tag is a slave.  The h/w interconnect occurs
+via the DCX which also provides isolation to protect the Tag's SPI bus.
+
+On the tag side, the spi port can be dedicated or shared.  A dedicated spi will
+be run exclusively as a slave.  With a shared spi, a dock -> tag(slave)
+configuration is shared with a tag(master) talking on the Tag's SPI bus to other
+devices on the bus.
+
+The protocol described below supports both configurations.
+
 
 1) HW interconnect
 
@@ -19,12 +49,12 @@ The dock is the master and the tag is a slave.
             for entire SPI packet transmission.
 
    DC_ATTN_S_N:
-            Tag -> Dock (low true).  Handshake signal asserted by a tag to
-            indicate a message is pending for the dock.
+            Tag -> Dock (low true).  Asserted by a tag to indicate a message
+            is pending for the dock.
 
    DC_SPI_EN:
-            Tag -> Dock.  Assertion enables connection of the Dock to the
-            dock_comm spi bus.
+            Tag -> Dock.  Assertion causes the DCX to connect the Dock's SPI
+            to the Tag's SPI.  The Dock is master.
 
             When DC_SPI_EN is 0, the dock's SIMO should be pulled high to
             generate bytes of 0xff.
@@ -41,14 +71,15 @@ is asserted for the duration of the packet.
 1b) DC_ATTN_S_N.
 
 The DC_ATTN_S_N signal is used by the tag to inform the dock that a tag packet
-is ready to be retrieved.
+is ready to be retrieved.  The Dock will use the FETCH command to get the
+tag's data.
 
 
 1c) DC_SPI_EN.
 
-The DC_SPI_EN tells the dock to enable its connection to the dock_comm
-spi bus.  This enables output drivers from the Dock for SCLK and SIMO.
-When disabled, the incoming SOMI signal needs to be pulled high.
+Asserting DC_SPI_EN causes the DCX to connect the dock SPI and the tag SPI.
+This enables output drivers from the Dock for SCLK and SIMO.  When
+disabled, the incoming SOMI signal needs to be pulled high.
 
 If DC_SPI_EN is stuck deasserted, the dock will not be able to communicate
 with the tag.  The tag is required to participate in order for the dock_comm
@@ -60,8 +91,8 @@ interface to function properly.
 When DC_SPI_EN is deasserted, the dock is disconnected from SCLK and SIMO and
 SOMI is pulled up so any input bytes will be seen as 0xFF.
 
-With DC_SPI_EN asserted, the dock drives SCLK and SIMO and SOMI is connected
-to the dock_spi bus SOMI.
+With DC_SPI_EN asserted, the dock effectively drives SCLK and SIMO and SOMI
+is connected to the dock_spi bus SOMI.
 
 
 2) Data format.
@@ -81,11 +112,11 @@ constraint.
                                                    +--------+
 
    channel:     data channel, end point identifier
-   type:        data type.  What's in the packet.
+   type:        channel dependent packet type.  (0 reserved)
    len:         2 byte length.  Length indicates the length of the data field.
    data:        packet data, size is len.
    checksum:    16 bit byte by byte sum truncated to 16 bits of bytes
-                between channel through last data byte inclusive.
+                between channel through last data byte inclusive.  (little endian)
    srsp:        simple response (srsp).
 
 
@@ -94,20 +125,20 @@ constraint.
 The channel field in the packet denotes a logical end point.  An end point
 denotes a software module that generates or consumes packet data.
 
-    0:  simple      simple commands and responses.
-    1:  tagnet      tagnet over SPI
-    2:  print       debug print.
-    3:  large_dblk  large block dblk access.
+    0:  none        channel 0 reserved
+    1:  core        core commands and responses.
+    2:  tagnet      tagnet over SPI
+    3:  print       debug print.
+    4:  large_dblk  large block dblk access.
 
 
-2b) Type
+2b) Core Type
 
-Basic type of the packet.  Defines its format.
+The Core channel is used for core functions.
 
-    0:  data    packet data
-    1:  rsp     response data
-    2:  error   error data, data contains error information.
-    3:  poll    interrogate tag for identifing information.
+    0:  none    reserved
+    1:  hello   are you alive
+    2:  fetch   fetch data from tag (slave req)
 
 
 2c) srsp, simple response.
@@ -156,6 +187,10 @@ any potential transactions that are occuring on the dock_comm spi bus.
 The process of docking does not generate a signal telling the tag docking has
 occured.
 
+The dock can tell that a Tag is attached by looking at the DCX_TAG_PRESENT
+pin.  The DCX_TAG_PRESENT signal is asserted by the DCX when a tag has been
+connected.
+
 
 3b) Dock Attn.  The dock gets the attention of the tag by dropping DC_ATTN_M_N.
 This acts as a slave_select (chip select) and the next byte transmitted by the
@@ -192,8 +227,9 @@ actively receiving these bytes, 0xFE will be returned for each transmitted
 byte.
 
 When the Tag has data that it needs the dock to retrieve it will assert
-DC_ATTN_S_N, the dock must send bytes to the tag in order to fetch
-bytes from the tag.  (needs more detail).
+DC_ATTN_S_N, the dock will send a FETCH cmd and then will retreive the data
+by sending a stream of bytes until a full packet has been retrieved.
+
 
 Typically a sequence will look as follows:
 
@@ -231,12 +267,25 @@ Dock:                                   Tag:
 
   assert DC_ATTN_M_N                      interrupt
                                           configure SPI as slave
-                                          set output byte to first byte
                                           assert DC_SPI_EN
+                                          set output byte to 0xFE
                                           set dock_comm spi busy.
 
-  send 0xfe                               send next byte
-     ...
-  send 0xfe                               send 2nd checksum byte.
-  send srsp                               receive srsp
-  deassert DC_ATTN_M_N                    deassert DC_ATTN_S_N
+  send channel (1)
+  send fetch (type 2)
+  send len 0x0000
+  send chksum 0x0003                      set srsp
+  send 00                                 <- srsp
+
+  fd ->                                   send control next
+  fd ->                                   send type next
+  fd ->                                   send lsb len
+  fd ->                                   send msb len
+  fd ->                                      data
+  fd ->                                      ...
+  fd ->                                      data
+  fd ->                                   send lsb chksum
+  fd ->                                   send msb chksum
+  srsp ->                                 send 00
+                                          deassert DC_ATTN_S_N
+  deassert DC_ATTN_M_N
