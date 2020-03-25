@@ -135,7 +135,7 @@ module AccelP {
 }
 implementation {
   enum {
-    FIFO_DATA_SIZE = (LISX_FIFO_SIZE + 1),
+    FIFO_BUF_SIZE = (LISX_FIFO_SIZE + 1),
   };
 
   typedef enum {
@@ -212,7 +212,7 @@ implementation {
     uint32_t nsamples, fifo_len, idx;
     bool     overflowed;
 
-    acceln_sample_t      data[FIFO_DATA_SIZE];
+    acceln_sample_t      data[FIFO_BUF_SIZE];
     dt_sensor_nsamples_t adt;           /* accel dt + nsample */
 
 #ifdef USE_ACCEL8
@@ -236,7 +236,7 @@ implementation {
       return;
     }
     while (fifo_len) {
-      if (idx >= LISX_FIFO_SIZE)
+      if (idx >= FIFO_BUF_SIZE)
         break;
       call Accel.read((void *) &data[idx++], 6);
       fifo_len--;
