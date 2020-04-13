@@ -330,10 +330,10 @@ The core channel is used for well defined control functions.
   s: fe    fe      fe fe   fe fe   00
 
 
-     chn   type    len     data    chk    srsp
-  s: xx    xx      xx xx   ......  xxxx   fe
+     chn   type    len     chk    srsp
+  s: 01    01      00 00   0002   fe
 
-  m: fd    fd      fd fd   ......  fdfd   00
+  m: fd    fd      fd fd   fdfd   00
 
                                           deassert DC_ATTN_S_N
   deassert DC_ATTN_M_N
