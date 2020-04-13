@@ -445,11 +445,11 @@ The LDBLK/DATA packet is used to move data from the tag to the dock.
     assert DC_ATTN_M_N
 
      chn    type
-  m: LDBLK, DATA,   len,    offset            req_len           chk     srsp
-     0x04   0x01    0x0010  0102030405060708  090a0b0c0d0e0f10  xxxx    0xfd
-     04     01      10 00   0807060504030201  100f0e0d0c0b0a09  xxxx    fd
+  m: LDBLK, DATA,   len,    offset            req_len  chk     srsp
+     0x04   0x01    0x000a  0102030405060708  090a     xxxx    0xfd
+     04     01      0a 00   0807060504030201  0a09     xxxx    fd
 
-  s: fe     fe      fe fe   fefefefefefefefe  fefefefefefefefe  fefe    00
+  s: fe     fe      fe fe   fefefefefefefefe  fefe     fefe    00
 
   deassert DC_ATTN_M_N
 
