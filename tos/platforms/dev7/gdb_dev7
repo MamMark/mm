@@ -1,0 +1,68 @@
+
+printf "\n***\n*** DEV7 gdb\n***\n\n"
+source .gdb/.gdb_hwMm.py
+
+define hw_pwr
+printf "gm_1v8:  %d    3v3:    %d    radio_pwr: %d    vel_pwr:   %d\n", \
+    1, 1, 1, 1
+printf "tmp_pwr: %d    sd_pwr: %d    radio_sel: %d    press_pwr: %d\n, \
+    1, 1, 0, 1
+printf "scl:     %d\n", (($p1->IN >> 7) & 1)
+end
+
+define hw_radio
+printf "\nradio(ub2): cts: %d  irqN: %d  sdn: %d  csN: %d   siok\n", \
+    (($p2->IN >> 4) & 1),  (($p5->IN >> 1) & 1), \
+    (($p5->OUT >> 0) & 1), (($p5->OUT >> 2) & 1)
+printf "                 %c        %c       %c       %c    %c%c%c\n", \
+    ($p2->DIR & (1<<4))?'O':'I', ($p5->DIR & (1<<1))?'O':'I', \
+    ($p5->DIR & (1<<0))?'O':'I', ($p5->DIR & (1<<2))?'O':'I', \
+    ($p3->SEL0 & (1 << 6)) ? 'M' : 'p', ($p3->SEL0 & (1 << 7)) ? 'M' : 'p', \
+    ($p3->SEL0 & (1 << 5)) ? 'M' : 'p'
+__p_usci $ucb2 2 1 0d22
+end
+document hw_radio
+display radio hardware state
+end
+
+define cts
+printf "cts: %d  irqN: %d  sdn: %d  csN: %d\n",  \
+    (($p2->IN  >> 4) & 1), (($p5->IN  >> 1) & 1), \
+    (($p5->OUT >> 0) & 1), (($p5->OUT >> 2) & 1)
+end
+document cts
+current status of various Si446x radio pins
+end
+
+define sd0
+printf "\nuSD0(ub3): pwr: %d  csN: %d    siok\n", \
+    1, (($p10->OUT >> 0) & 1)
+printf "                %c       %c     %c%c%c\n", \
+    'O', ($p10->DIR & (1 << 0)) ?'O':'I', \
+    ($p10->SEL0 & (1 << 2)) ? 'M' : 'p', ($p10->SEL0 & (1 << 3)) ? 'M' : 'p', \
+    ($p10->SEL0 & (1 << 1)) ? 'M' : 'p'
+__p_usci $ucb3 3 1 0d23
+output SDspP__0__sdc
+printf "\n"
+printf "Delta times:\n"
+printf "  last_full_reset_time_us:  0d%d\n", \
+       SDspP__0__last_full_reset_time_us
+printf "  last_reset_delta_ms: 0d%d/%d  _us: 0d%d/%d\n", \
+          SDspP__0__last_reset_delta_ms, SDspP__0__max_reset_time_ms, \
+          SDspP__0__last_reset_delta_us, SDspP__0__max_reset_time_us
+printf "  last_read_delta_ms: 0d%d/%d  _us: 0d%d/%d\n", \
+          SDspP__0__last_read_delta_ms, SDspP__0__max_read_time_ms,   \
+          SDspP__0__last_read_delta_us, SDspP__0__max_read_time_us
+printf "  last_write_delta_ms: 0d%d/%d  _us: 0d%d/%d\n", \
+          SDspP__0__last_write_delta_ms, SDspP__0__max_write_time_ms, \
+          SDspP__0__last_write_delta_us, SDspP__0__max_write_time_us
+printf "  last_erase_delta_ms: 0d%d/%d  _us: 0d%d/%d\n", \
+          SDspP__0__last_erase_delta_ms, SDspP__0__max_erase_time_ms, \
+          SDspP__0__last_erase_delta_us, SDspP__0__max_erase_time_us
+printf "DMA stats:\n"
+output/d SD0HardwareP__dma_stats
+printf "\n"
+end
+document sd0
+display sd0 state
+end

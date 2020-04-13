@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020      Eric B. Decker
+ * Copyright (c) 2020, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -66,6 +66,14 @@
  * startup.c for startup code and initilization.
  * platform_clk_defs.h for actual clock definitions.
  * platform_pin_defs.h for our pin assignments.
+ *
+ * While the dev7 defines connections for the EVK-M8GZOE evaluation board,
+ * the I/O on the EVK is 1V8, the main MSP432 on the EXP board runs at 3V3.
+ * It is possible to run the MSP432 at 1V8 but then the SD doesn't work.
+ *
+ * We are modifing a TiB (Tag in a Box) to provide a connection to an EVK
+ * This provides level translators to the SD and 1V8 for the ublox GPS.
+ * This modification is implemented via the mm6b platform.
  */
 
 /*
@@ -148,8 +156,8 @@
  *
  * A0: mems             (dma overlap with AES triggers, DMA ch 0, 1)
  * A1: dock_comm
- * A2: gps (ublox) SPI
- * A3: do not use (not on bga)
+ * A2:
+ * A3: gps (ublox) SPI  (not on bga), no connection
  * B0: tmp, i2c         (dma overlap with AES triggers, DMA ch 0, 1)
  * B1: adc
  * B2: Si4468 radio (SPI)
@@ -169,59 +177,59 @@
  * without changing the I/O pin state.
  *
  * Port: (0x4000_4C00)
- * port 1.0	0pO	LED1                    port 7.0	1mO     dc_clk  (A1,    pm)
- *  00 I .1	1pIru	PB1                      60   .1	0mI     dc_somi (A1,    pm)
- *  02 O .2	0pI                     BSLRXD   62   .2	0mO     dc_simo (A1,    pm)
- *       .3     0pI                     BSLTXD        .3	0pI     gps_tm  (ta1.1, pm)
- *       .4	0pI                     BSLSTE        .4	0pI
- *       .5	0pI                     BSLCLK        .5	0pI
- *       .6	0pI	tmp_sda         BSLSIMO       .6	0pI
- *       .7	0pI     tmp_scl         BSLSOMI       .7	0pI
+ * port 1.0     0pO     LED1                    port 7.0        0mI     dc_clk  (A1,    pm)
+ *  00 I .1     1pIru   PB1                      60   .1        0mI     dc_somi (A1,    pm)
+ *  02 O .2     0pI                     BSLRXD   62   .2        0mI     dc_simo (A1,    pm)
+ *       .3     0pI                     BSLTXD        .3        0pI     gps_tm  (ta1.1, pm) nc
+ *       .4     0pI                     BSLSTE        .4        0pI
+ *       .5     0pI                     BSLCLK        .5        0pI
+ *       .6     0pI     tmp_sda         BSLSIMO       .6        0pI
+ *       .7     0pI     tmp_scl         BSLSOMI       .7        0pI
  *
- * port 2.0	0pO	         (LED2_RED)     port 8.0	0mO     TA1.0 (OUT0)
- *  01   .1	0pO              (LED2_GREEN)    61 I .1	0pI
- *  03   .2	0pO              (LED2_BLUE)     63 O .2	0pI
- *       .3	0pI	si446x_cts                    .3	0pI
- *       .4	0pI                                   .4	0pI
- *       .5	0mO	SMCLK (pm)                    .5	0pO     tell_exception
- *       .6	0pI                                   .6	0pO     tell
- *       .7	0pI                                   .7	0pI
+ * port 2.0     0pO              (LED2_RED)     port 8.0        0mO     TA1.0 (OUT0)
+ *  01   .1     0pO              (LED2_GREEN)    61 I .1        0pI
+ *  03   .2     0pO              (LED2_BLUE)     63 O .2        0pI
+ *       .3     0pI     si446x_cts                    .3        0pI
+ *       .4     0pI                                   .4        0pI
+ *       .5     0mO     SMCLK (pm)                    .5        0pO     tell_exception
+ *       .6     0pI                                   .6        0pO     tell
+ *       .7     0pI                                   .7        0pI
  *
- * port 3.0	0pI                             port 9.0	0pI
- *  20   .1	0pI	[unstabbed, nc] A2       80 I .1	0pI
- *  22   .2	0pI	                         82 O .2	0pI
- *       .3	1pO	                              .3	0pO     dc_spi_en
- *       .4	0pI     [unstabbed, nc]               .4	1pO     gps_csn
- *       .5	0mO	si446x_clk  (B2) slave_clk    .5	0mI     gps_clk
- *       .6	0mO	si446x_simo (B2) slave_simo   .6	0mI     gps_somi, rxd
- *       .7	0mIrd   si446x_somi (B2) slave_somi   .7	0mI     gps_simo, txd
+ * port 3.0     0pI                             port 9.0        0pI
+ *  20   .1     0pI     [unstabbed, nc] A2       80 I .1        0pI
+ *  22   .2     0pI                              82 O .2        0pI
+ *       .3     0pI                                   .3        0pO     dc_spi_en
+ *       .4     0pI     [unstabbed, nc]               .4        0pI     gps_csn         nc
+ *       .5     0mI     si446x_clk  (B2) slave_clk    .5        0pI     gps_clk         nc
+ *       .6     0mI     si446x_simo (B2) slave_simo   .6        0pI     gps_somi, rxd   nc
+ *       .7     0mIrd   si446x_somi (B2) slave_somi   .7        0pI     gps_simo, txd   nc
  *
- * port  4.0	0pO	                        port 10.0	1pIru   sd0_csn
- *  21    .1	0pI                              81 I  .1	1pIru   sd0_clk
- *  23    .2	0mO	ACLK                     83 O  .2	1pIru   sd0_simo
- *        .3	0mO	MCLK/RTC                       .3	1pIru   sd0_somi
- *        .4	0mO	HSMCLK                         .4	0pI
- *        .5	0pI	                               .5	0pI
- *        .6	0pI                                    .6	0pI
- *        .7	0pI                                    .7	0pI
+ * port  4.0    0pI                             port 10.0       1pIru   sd0_csn
+ *  21    .1    0pI                              81 I  .1       1pIru   sd0_clk
+ *  23    .2    0mO     ACLK                     83 O  .2       1pIru   sd0_simo
+ *        .3    0mO     MCLK/RTC                       .3       1pIru   sd0_somi
+ *        .4    0mO     HSMCLK                         .4       0pI
+ *        .5    0pI                                    .5       0pI
+ *        .6    0pI                                    .6       0pI
+ *        .7    0pI                                    .7       0pI
  *
- * port  5.0	1pO     si446x_sdn
- *  40 I  .1	0pI     si446x_irqn
- *  42 O  .2	1pO     si446x_csn
- *        .3	0pI     gps_tx_rdy
- *        .4	0pI
- *        .5	0pI
- *        .6	0pI
- *        .7	0pI
+ * port  5.0    1pO     si446x_sdn
+ *  40 I  .1    0pI     si446x_irqn
+ *  42 O  .2    1pO     si446x_csn
+ *        .3    0pI     gps_tx_rdy   nc
+ *        .4    0pI
+ *        .5    0pI
+ *        .6    0pI
+ *        .7    0pI
  *
- * port  6.0	1pI     gps_resetn              port  J.0       0pI     LFXIN  (32KiHz)
- *  41 I  .1	1pO     dc_attn_s_n             120 I  .1       0pO     LFXOUT (32KiHz)
- *  43 O  .2	0pI     dc_attn_m_n             122 O  .2       0pI     HFXOUT (48MHz)
- *        .3	0pI     adc_clk                        .3       0pI     HFXIN  (48MHz)
- *        .4	0pI     adc_simo                       .4       0pI     TDI
- *        .5	0pI     adc_somi                       .5       0pI     TDO/SWO
- *        .6	0pI
- *        .7	0pI
+ * port  6.0    0pI     gps_resetn   nc         port  J.0       0pI     LFXIN  (32KiHz)
+ *  41 I  .1    1pO     dc_attn_s_n             120 I  .1       0pO     LFXOUT (32KiHz)
+ *  43 O  .2    0pI     dc_attn_m_n             122 O  .2       0pI     HFXOUT (48MHz)
+ *        .3    0pI     adc_clk                        .3       0pI     HFXIN  (48MHz)
+ *        .4    0pI     adc_simo                       .4       0pI     TDI
+ *        .5    0pI     adc_somi                       .5       0pI     TDO/SWO
+ *        .6    0pI
+ *        .7    0pI
  */
 
 // enum so components can override power saving,
