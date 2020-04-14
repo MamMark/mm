@@ -1,0 +1,9 @@
+
+TOSMAKE_ADDITIONAL_INPUTS += $(PLATFORM_DIR)/hardware/si446x/wds_configs.c
+
+TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si4468_10kb_433m_200khz.c
+TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si4468_100b_433m_200khz_psm.c
+TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si4468_100kb_433m_200khz.c
+TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si4468_10kb_433m_200khz_psm.c
+TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si4468_1kb_433m_200khz_psm.c
+TOSMAKE_ADDITIONAL_INPUTS += $(MM_ROOT)/tos/chips/si446x/WDS-files/Si4468_50kb_433m_200khz_psm.c

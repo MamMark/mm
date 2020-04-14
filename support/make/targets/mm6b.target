@@ -1,0 +1,49 @@
+#-*-Makefile-*- vim:syntax=make
+#
+# see tos/platform/mm6b/hardware.h for how the pins are assigned.
+#
+
+TARGET = mm6b
+PLATFORM_DIR = $(MM_ROOT)/tos/platforms/$(TARGET)
+
+# as of 0.4.x builds, the default is now NIB.
+# you have to have a good golden image loaded on your platform to work with NIBs
+# use "make <platform> golden" to build a golden in the golden dir
+# use "make <platform nib"     to build a nib    in the nib    dir
+# use "make <platform>"        to build a nib    at the top level build dir.
+LINKERFILE ?= $(PLATFORM_DIR)/linker_nib_128k.lds
+
+BUILD_NUM_FILE = $(PLATFORM_DIR)/_Build
+BUILD_NUM := $(shell if [ -f $(BUILD_NUM_FILE) ]; then echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)); else echo 0; fi)
+
+PFLAGS += -D_BUILD=$(BUILD_NUM)
+
+PFLAGS += -I$(MM_ROOT)/include
+
+OPTFLAGS += -ggdb
+
+R0DESC := $(shell cd $(TINYOS_ROOT_DIR);git describe --long --all --dirty)
+R1DESC := $(shell cd $(MM_ROOT);git describe --long --all --dirty)
+IDESC  ?= *** (NIB) Dev Build ***
+TSTAMP := $(shell date -u +%Y/%m/%d-%H:%M:%S)
+
+include $(PLATFORM_DIR)/Makefile.platform
+$(call TOSMake_include_platform,mm6b)
+$(call TOSMake_include_make_platform,msp432)
+UPSTAIRS ?= ../..
+
+build_num: FORCE
+	@if [ ! -f $(BUILD_NUM_FILE) ] ; then echo -1 > $(BUILD_NUM_FILE); fi
+	@echo $$(($$(cat $(BUILD_NUM_FILE)) + 1)) > $(BUILD_NUM_FILE)
+	@printf "BUILD: %d (0x%x)\n" $(BUILD_NUM) $(BUILD_NUM)
+
+$(TARGET): build_num $(BUILD_DEPS)
+	@if [ "z$(BUILD_TYPE)" != "z" ] ; then \
+	    echo -e "\n*** $(BUILD_TYPE) build -> $(TOSMAKE_BUILD_DIR)\n"; \
+	    else echo -e "\n*** DEV (NIB) build -> $(TOSMAKE_BUILD_DIR)\n"; fi
+	@echo "binfin: [$(IDESC)], stamp : $(TSTAMP)"
+	@binfin -w --desc "$(IDESC)" --repo0 "$(R0DESC)" --repo1 "$(R1DESC)" -t "$(TSTAMP)" $(TOSMAKE_BUILD_DIR)/main.exe
+	ln -nfs $(UPSTAIRS) $(TOSMAKE_BUILD_DIR)/.gdb
+	ln -nfs .gdb/.gdbinit  $(TOSMAKE_BUILD_DIR)/.gdbinit
+	ln -nfs .gdb/.gdb_$(TARGET)  $(TOSMAKE_BUILD_DIR)/.gdb_target
+	@:
