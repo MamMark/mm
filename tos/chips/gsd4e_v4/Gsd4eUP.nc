@@ -28,7 +28,7 @@
 
 #include <panic.h>
 #include <platform_panic.h>
-#include <gps.h>
+#include <gps_gsd4e.h>
 #include <sirf_driver.h>
 #include <typed_data.h>
 #include <overwatch.h>
@@ -817,7 +817,7 @@ implementation {
            * now if the comm config string worked we are still at
            * SB-<target> and do not need a timeout modifier.
            *
-           * wait for the probe response (see gps.h)
+           * wait for the probe response (see gps_gsd4e.h)
            */
           call GPSTxTimer.stop();
           call GPSRxTimer.startOneShot(DT_GPS_PEEK_RSP_TIMEOUT);
@@ -986,7 +986,7 @@ implementation {
    * We currently just always use MAX_RX_TIMEOUT because it is easier
    * and doesn't involve any calculations.  It is a deadman timer so we
    * really don't care.  If we later decide to tune this down the calculation
-   * is:   (see gps.h)
+   * is:   (see gps_gsd4e.h)
    *
    *   to = (len * DT_GPS_BYTE_TIME * MODIFIER + 500000) / 1e6
    */

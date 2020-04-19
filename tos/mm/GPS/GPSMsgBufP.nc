@@ -206,7 +206,6 @@
 
 #include <panic.h>
 #include <platform_panic.h>
-#include <gps.h>
 #include <GPSMsgBuf.h>
 #include <rtctime.h>
 
