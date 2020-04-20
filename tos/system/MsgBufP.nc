@@ -222,24 +222,24 @@ enum {
 #endif
 
 enum {
-  GPSW_MSG_RESET_FREE = 32,
-  GPSW_MSG_START,
-  GPSW_MSG_START_1,
-  GPSW_MSG_START_2,
-  GPSW_MSG_START_3,
-  GPSW_MSG_START_4,
-  GPSW_MSG_START_5,
-  GPSW_MSG_START_6,
-  GPSW_MSG_ADD_BYTE,
-  GPSW_MSG_ABORT,
-  GPSW_MSG_ABORT_1,
-  GPSW_MSG_ABORT_2,
-  GPSW_MSG_COMPLETE,
-  GPSW_MSG_COMPLETE_1,
-  GPSW_MSG_NEXT,
-  GPSW_MSG_RELEASE,
-  GPSW_MSG_RELEASE_1,
-  GPSW_MSG_RELEASE_2,
+  MSGW_RESET_FREE = 32,
+  MSGW_START,
+  MSGW_START_1,
+  MSGW_START_2,
+  MSGW_START_3,
+  MSGW_START_4,
+  MSGW_START_5,
+  MSGW_START_6,
+  MSGW_ADD_BYTE,
+  MSGW_ABORT,
+  MSGW_ABORT_1,
+  MSGW_ABORT_2,
+  MSGW_COMPLETE,
+  MSGW_COMPLETE_1,
+  MSGW_NEXT,
+  MSGW_RELEASE,
+  MSGW_RELEASE_1,
+  MSGW_RELEASE_2,
 };
 
 
@@ -320,7 +320,7 @@ implementation {
    */
   void reset_free() {
     if (MSG_INDEX_VALID(gmc.head) || MSG_INDEX_VALID(gmc.tail)) {
-        gps_panic(GPSW_RESET_FREE, gmc.head, gmc.tail);
+        gps_panic(MSGW_RESET_FREE, gmc.head, gmc.tail);
         return;
     }
     gmc.free     = msg_buf;
@@ -335,7 +335,7 @@ implementation {
 
     if (gmc.free < msg_buf || gmc.free > msg_buf + MSG_BUF_SIZE ||
         gmc.free_len > MSG_BUF_SIZE) {
-      gps_panic(GPSW_MSG_START, (parg_t) gmc.free, gmc.free_len);
+      gps_panic(MSGW_START, (parg_t) gmc.free, gmc.free_len);
       return NULL;
     }
 
@@ -359,7 +359,7 @@ implementation {
      */
     if (MSG_INDEX_EMPTY(gmc.head) && MSG_INDEX_EMPTY(gmc.tail)) {
       if (gmc.free != msg_buf || gmc.free_len != MSG_BUF_SIZE) {
-        gps_panic(GPSW_MSG_START_1, (parg_t) gmc.free, (parg_t) msg_buf);
+        gps_panic(MSGW_START_1, (parg_t) gmc.free, (parg_t) msg_buf);
         return NULL;
       }
 
@@ -388,7 +388,7 @@ implementation {
     }
 
     if (MSG_INDEX_INVALID(gmc.head) || MSG_INDEX_INVALID(gmc.tail)) {
-      gps_panic(GPSW_MSG_START_2, gmc.tail, 0);
+      gps_panic(MSGW_START_2, gmc.tail, 0);
       return NULL;
     }
 
@@ -398,11 +398,11 @@ implementation {
      */
     msg = &msg_msgs[gmc.tail];
     if (msg->state != MSG_SLOT_FULL && msg->state != MSG_SLOT_BUSY) {
-      gps_panic(GPSW_MSG_START_3, gmc.tail, msg->state);
+      gps_panic(MSGW_START_3, gmc.tail, msg->state);
       return NULL;
     }
     if (msg->extra) {                   /* extra should always be zero here */
-      gps_panic(GPSW_MSG_START_4, gmc.tail, msg->extra);
+      gps_panic(MSGW_START_4, gmc.tail, msg->extra);
       return NULL;
     }
 
@@ -457,7 +457,7 @@ implementation {
       idx = MSG_NEXT_INDEX(gmc.tail);
       msg = &msg_msgs[idx];
       if (msg->state) {                 /* had better be empty */
-        gps_panic(GPSW_MSG_START_5, (parg_t) msg, msg->state);
+        gps_panic(MSGW_START_5, (parg_t) msg, msg->state);
         return NULL;
       }
 
@@ -480,7 +480,7 @@ implementation {
     }
 
     /* shouldn't be here, ever */
-    gps_panic(GPSW_MSG_START_6, gmc.free_len, gmc.aux_len);
+    gps_panic(MSGW_START_6, gmc.free_len, gmc.aux_len);
     return NULL;
   }
 
@@ -500,16 +500,16 @@ implementation {
     uint8_t   *slice;           /* memory slice we are aborting */
 
     if (MSG_INDEX_INVALID(gmc.tail)) {  /* oht oh */
-      gps_panic(GPSW_MSG_ABORT, gmc.tail, 0);
+      gps_panic(MSGW_ABORT, gmc.tail, 0);
       return;
     }
     msg = &msg_msgs[gmc.tail];
     if (msg->state != MSG_SLOT_FILLING) { /* oht oh */
-      gps_panic(GPSW_MSG_ABORT_1, (parg_t) msg, msg->state);
+      gps_panic(MSGW_ABORT_1, (parg_t) msg, msg->state);
       return;
     }
     if (msg->extra) {                   /* oht oh */
-      gps_panic(GPSW_MSG_ABORT_2, (parg_t) msg, msg->extra);
+      gps_panic(MSGW_ABORT_2, (parg_t) msg, msg->extra);
       return;
     }
     msg->state = MSG_SLOT_EMPTY;        /* no longer in use */
@@ -588,12 +588,12 @@ implementation {
     msg_slot_t *msg;             /* message slot we are working on */
 
     if (MSG_INDEX_INVALID(gmc.tail)) {  /* oht oh */
-      gps_panic(GPSW_MSG_COMPLETE, gmc.tail, 0);
+      gps_panic(MSGW_COMPLETE, gmc.tail, 0);
       return;
     }
     msg = &msg_msgs[gmc.tail];
     if (msg->state != MSG_SLOT_FILLING) { /* oht oh */
-      gps_panic(GPSW_MSG_COMPLETE_1, (parg_t) msg, msg->state);
+      gps_panic(MSGW_COMPLETE_1, (parg_t) msg, msg->state);
       return;
     }
 
@@ -614,7 +614,7 @@ implementation {
       if (msg->state == MSG_SLOT_FILLING)       /* not ready yet */
         return NULL;
       if (msg->state != MSG_SLOT_FULL) {        /* oht oh */
-        gps_panic(GPSW_MSG_NEXT, (parg_t) msg, msg->state);
+        gps_panic(MSGW_NEXT, (parg_t) msg, msg->state);
         return NULL;
       }
       msg->state = MSG_SLOT_BUSY;
@@ -639,13 +639,13 @@ implementation {
     atomic {
       if (MSG_INDEX_INVALID(gmc.head) ||
           MSG_INDEX_INVALID(gmc.tail)) {  /* oht oh */
-        gps_panic(GPSW_MSG_RELEASE, gmc.head, 0);
+        gps_panic(MSGW_RELEASE, gmc.head, 0);
         return;
       }
       msg = &msg_msgs[gmc.head];
       /* oht oh - only FULL or BUSY can be released */
       if (msg->state != MSG_SLOT_BUSY && msg->state != MSG_SLOT_FULL) {
-        gps_panic(GPSW_MSG_RELEASE_1, (parg_t) msg, msg->state);
+        gps_panic(MSGW_RELEASE_1, (parg_t) msg, msg->state);
         return;
       }
       msg->state = MSG_SLOT_EMPTY;
@@ -688,7 +688,7 @@ implementation {
          * free space is in the front of the buffer (below the head/slice)
          * aux_len shouldn't have anything on it.  Bitch.
          */
-        gps_panic(GPSW_MSG_RELEASE_2, gmc.aux_len, (parg_t) gmc.free);
+        gps_panic(MSGW_RELEASE_2, gmc.aux_len, (parg_t) gmc.free);
         return;
       }
       msg->extra = 0;
