@@ -149,9 +149,7 @@ The final missing piece connects the network stack to the provider of the define
 application is what handles this wiring.  This will need to be edited manually.
 
 ```
-configuration TagnetMonitorC {
-  provides interface TagnetMonitor;
-}
+configuration TagnetMonitorC { }
 implementation {
   components TagnetC;
   components CollectC;

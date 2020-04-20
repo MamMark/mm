@@ -33,7 +33,7 @@ uint8_t use_regime = RGM_DEFAULT;
 
 module TagnetMonitorP {
   provides {
-    interface TagnetMonitor;
+    interface TagnetRadio;
     interface McuPowerOverride;
   }
   uses {
@@ -521,19 +521,19 @@ implementation {
   }
 
 
-  command void TagnetMonitor.setHome() {
+  command void TagnetRadio.setHome() {
     change_radio_state(RS_HOME, SS_RECV, TMR_FORCE);
   }
 
-  command void TagnetMonitor.setNear() {
+  command void TagnetRadio.setNear() {
     change_radio_state(RS_NEAR, SS_RECV, TMR_FORCE);
   }
 
-  command void TagnetMonitor.setLost() {
+  command void TagnetRadio.setLost() {
     change_radio_state(RS_LOST, SS_RECV, TMR_FORCE);
   }
 
-  command void TagnetMonitor.shutdown() {
+  command void TagnetRadio.shutdown() {
     change_radio_state(RS_SHUTDOWN, SS_NONE, TMR_FORCE);
     tagMsgBusy = FALSE;
   }

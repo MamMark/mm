@@ -24,17 +24,10 @@
 #include "Tagnet.h"
 #include <rtctime.h>
 
-configuration TagnetMonitorC {
-  provides interface TagnetMonitor;
-}
+configuration TagnetMonitorC { }
 implementation {
-  components TagnetMonitorP;
-  TagnetMonitor = TagnetMonitorP;
-
-  components SystemBootC;
+  components TagnetMonitorP, SystemBootC, RegimeC;
   TagnetMonitorP.Boot           -> SystemBootC.Boot;
-
-  components RegimeC;
   TagnetMonitorP.Regime         -> RegimeC;
 
   components TagnetC;
@@ -42,11 +35,13 @@ implementation {
   TagnetMonitorP.TName          -> TagnetC;
   TagnetMonitorP.TTLV           -> TagnetC;
 
-  components GPS0C              as GpsPort;
   components GPSmonitorC;
+  GPSmonitorC.TagnetRadio       -> TagnetMonitorP;
+
   TagnetC.InfoSensGpsXyz        -> GPSmonitorC;
   TagnetC.InfoSensGpsCmd        -> GPSmonitorC;
 
+  components GPS0C              as GpsPort;
   GPSmonitorC.GPSControl        -> GpsPort;
   GPSmonitorC.GPSTransmit       -> GpsPort;
   GPSmonitorC.GPSReceive        -> GpsPort;

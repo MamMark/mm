@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 Eric B. Decker
+ * Copyright (c) 2017-2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -265,7 +265,7 @@ module GPSmonitorP {
     interface Timer<TMilli> as TxTimer;
     interface Panic;
     interface OverWatch;
-    interface TagnetMonitor;
+    interface TagnetRadio;
   }
 }
 implementation {
@@ -760,15 +760,15 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         break;
 
       case GDC_MON_GO_HOME:
-        call TagnetMonitor.setHome();
+        call TagnetRadio.setHome();
         break;
 
       case GDC_MON_GO_NEAR:
-        call TagnetMonitor.setNear();
+        call TagnetRadio.setNear();
         break;
 
       case GDC_MON_GO_LOST:
-        call TagnetMonitor.setLost();
+        call TagnetRadio.setLost();
         break;
 
       case GDC_AWAKE_STATUS:

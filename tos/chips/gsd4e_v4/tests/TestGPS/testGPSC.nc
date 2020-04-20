@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020,                 Eric B. Decker
  * Copyright (c) 2012, 2014, 2017-2018 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  */
@@ -19,9 +20,12 @@ implementation {
   testGPSP.Platform   -> PlatformC;
 
   components GPSmonitorC;
+  GPSmonitorC.TagnetRadio -> testGPSP;
+
   GPSmonitorC.GPSControl  -> GpsPort;
   GPSmonitorC.GPSReceive  -> GpsPort;
   GPSmonitorC.GPSTransmit -> GpsPort;
+  GPSmonitorC.GPSPwr      -> GpsPort;
 
   InfoSensGpsXyz           = GPSmonitorC;
 

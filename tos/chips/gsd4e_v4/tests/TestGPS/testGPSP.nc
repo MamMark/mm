@@ -8,6 +8,7 @@ uint32_t gt0, gt1;
 // uint32_t tt0, tt1;
 
 module testGPSP {
+  provides interface TagnetRadio;
   uses {
     interface Boot;
     interface GPSControl;
@@ -122,6 +123,13 @@ implementation {
 	break;
     }
   }
+
+
+  command void TagnetRadio.setHome()  { }
+  command void TagnetRadio.setNear()  { }
+  command void TagnetRadio.setLost()  { }
+  command void TagnetRadio.shutdown() { }
+
 
   event void GPSControl.gps_booted()    { }
   event void GPSControl.gps_boot_fail() { }

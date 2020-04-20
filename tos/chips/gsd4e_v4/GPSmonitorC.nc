@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-2018 Eric B. Decker
+ * Copyright (c) 2017-2018, 2020 Eric B. Decker
  * All rights reserved
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@ configuration GPSmonitorC {
     interface GPSControl;
     interface GPSTransmit;
     interface GPSReceive;
+    interface TagnetRadio;
     interface PwrReg as GPSPwr;
   }
 }
@@ -42,6 +43,7 @@ implementation {
   GPSControl     = GPSmonitorP;
   GPSTransmit    = GPSmonitorP;
   GPSReceive     = GPSmonitorP;
+  TagnetRadio    = GPSmonitorP;
   GPSPwr         = GPSmonitorP;
 
   components SystemBootC;
@@ -72,7 +74,4 @@ implementation {
 
   components PlatformC;
   GPSmonitorP.Rtc -> PlatformC;
-
-  components TagnetMonitorC;
-  GPSmonitorP.TagnetMonitor -> TagnetMonitorC;
 }
