@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020,     Eric B. Decker
  * Copyright (c) 2008-2010 Eric B. Decker
  * Copyright (c) 2017-2018 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
@@ -419,7 +420,7 @@ norace uint32_t gps_chk_trys;           // remaining chk_msgs to try  CHK_MSG_WA
 module Gsd4eUP {
   provides {
     interface GPSControl;
-    interface GPSTransmit;
+    interface MsgTransmit;
   }
   uses {
     interface Gsd4eUHardware as HW;
@@ -732,7 +733,7 @@ implementation {
 
   uint16_t m_tx_len;
 
-  command error_t GPSTransmit.send(uint8_t *ptr, uint16_t len) {
+  command error_t MsgTransmit.send(uint8_t *ptr, uint16_t len) {
     gpsc_state_t next_state;
     error_t err;
     uint32_t time_out;
@@ -773,12 +774,12 @@ implementation {
   }
 
 
-  default event void GPSTransmit.send_done() { }
+  default event void MsgTransmit.send_done() { }
 
 
   task void send_block_task();
 
-  command void GPSTransmit.send_stop() {
+  command void MsgTransmit.send_stop() {
     call HW.gps_send_block_stop();
     m_tx_len = 0;
     atomic {
@@ -830,10 +831,10 @@ implementation {
           call GPSTxTimer.stop();
           gpsc_change_state(GPSC_ON, GPSW_SEND_BLOCK_TASK);
 
-          /* signal out to the caller that started up the GPSTransmit.send */
+          /* signal out to the caller that started up the MsgTransmit.send */
           if (m_tx_len) {
             m_tx_len = 0;
-            signal GPSTransmit.send_done();
+            signal MsgTransmit.send_done();
           }
           return;
 
@@ -844,7 +845,7 @@ implementation {
           /* signal out to the caller that started up the GPSSend.send */
           if (m_tx_len) {
             m_tx_len = 0;
-            signal GPSTransmit.send_done();
+            signal MsgTransmit.send_done();
           }
           return;
       }

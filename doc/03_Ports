@@ -73,7 +73,7 @@ A singleton GPS port provided as GPS0.
 GPS0C:  top level of GPS driver stack.
     GPSControl  provides a mechanism for turning GPS on off, control state
                 gps requests, gps power management requests
-    GPSReceive  mechanism for passing received gps messages to upper layers
+    MsgReceive  mechanism for passing received gps messages to upper layers
                 of the system.
 
     instantiates the driver Gsd4eUP (tos/chips/gsd4e_v4)

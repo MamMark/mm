@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2015 Eric B. Decker
+ * Copyright (c) 2020 Eric B. Decker
  * Copyright (c) 2017-2019 Eric B. Decker, Daniel J. Maltbie
+ * Copyright (c) 2015 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -43,8 +44,8 @@ implementation {
 
   components GPS0C              as GpsPort;
   GPSmonitorC.GPSControl        -> GpsPort;
-  GPSmonitorC.GPSTransmit       -> GpsPort;
-  GPSmonitorC.GPSReceive        -> GpsPort;
+  GPSmonitorC.MsgTransmit       -> GpsPort;
+  GPSmonitorC.MsgReceive        -> GpsPort;
   GPSmonitorC.GPSPwr            -> GpsPort;
 
   components TagnetSysExecC;

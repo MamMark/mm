@@ -8,7 +8,7 @@ uint16_t last_size;
 module testMsgBufP {
   uses {
     interface Boot;
-    interface GPSReceive;
+    interface MsgReceive;
     interface MsgBuf;
     interface Platform;
   }
@@ -47,7 +47,7 @@ implementation {
   }
 
 
-  event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
+  event void MsgReceive.msg_available(uint8_t *msg, uint16_t len,
                                       rtctime_t *rtp, uint32_t mark) {
     nop();
     recv_count++;

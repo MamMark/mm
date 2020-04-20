@@ -23,8 +23,8 @@ implementation {
   GPSmonitorC.TagnetRadio -> testGPSP;
 
   GPSmonitorC.GPSControl  -> GpsPort;
-  GPSmonitorC.GPSReceive  -> GpsPort;
-  GPSmonitorC.GPSTransmit -> GpsPort;
+  GPSmonitorC.MsgReceive  -> GpsPort;
+  GPSmonitorC.MsgTransmit -> GpsPort;
   GPSmonitorC.GPSPwr      -> GpsPort;
 
   InfoSensGpsXyz           = GPSmonitorC;

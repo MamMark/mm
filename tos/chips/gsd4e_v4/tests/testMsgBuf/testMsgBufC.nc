@@ -9,7 +9,7 @@ implementation {
   MsgBufP.Panic      -> PanicC;
   MsgBufP.Rtc        -> PlatformC;
 
-  testMsgBufP.GPSReceive -> MsgBufP;
+  testMsgBufP.MsgReceive -> MsgBufP;
   testMsgBufP.MsgBuf     -> MsgBufP;
   testMsgBufP.Platform   -> PlatformC;
 }

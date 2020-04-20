@@ -251,8 +251,8 @@ module GPSmonitorP {
   } uses {
     interface Boot;                           /* in boot */
     interface GPSControl;
-    interface GPSTransmit;
-    interface GPSReceive;
+    interface MsgTransmit;
+    interface MsgReceive;
     interface PwrReg as GPSPwr;
 
     interface Collect;
@@ -356,7 +356,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       gps_panic(-1, gps_msg[0] << 8 | gps_msg[1], gps_len);
     gps_len += SIRFBIN_OVERHEAD;        /* add in overhead */
     gmcb.txq_state = GPSM_TXQ_SENDING;
-    return call GPSTransmit.send(gps_msg, gps_len);
+    return call MsgTransmit.send(gps_msg, gps_len);
   }
 
 
@@ -401,7 +401,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
       case GPSM_TXQ_SENDING:
         gmcb.txq_state = GPSM_TXQ_DRAIN;
-        call GPSTransmit.send_stop();
+        call MsgTransmit.send_stop();
         break;
 
       case GPSM_TXQ_IDLE:
@@ -905,7 +905,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
-  event void GPSTransmit.send_done() {
+  event void MsgTransmit.send_done() {
     uint8_t  mid;
     uint8_t *gps_msg;
 
@@ -1866,7 +1866,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
-  event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
+  event void MsgReceive.msg_available(uint8_t *msg, uint16_t len,
         rtctime_t *arrival_rtp, uint32_t mark_j) {
     sb_header_t *sbp;
     dt_gps_t hdr;

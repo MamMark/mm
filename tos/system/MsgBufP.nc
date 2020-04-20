@@ -247,7 +247,7 @@ module MsgBufP {
   provides {
     interface Init @exactlyonce();
     interface MsgBuf;
-    interface GPSReceive;
+    interface MsgReceive;
   }
   uses {
     interface Rtc;
@@ -290,7 +290,7 @@ implementation {
    * following:
    *
    * o grab the next data pointer from the HEAD via msg_next
-   * o pass the msg to any receive handler via GPSReceive.msg_available
+   * o pass the msg to any receive handler via MsgReceive.msg_available
    * o on return, kill the current message, msg_release
    * o repeat, until msg_next returns NULL.
    *
@@ -309,7 +309,7 @@ implementation {
       msg = call MsgBuf.msg_next(&len, &arrival_rtp, &mark);
       if (!msg)
         break;
-      signal GPSReceive.msg_available(msg, len, arrival_rtp, mark);
+      signal MsgReceive.msg_available(msg, len, arrival_rtp, mark);
       call MsgBuf.msg_release();
     }
   }
@@ -701,7 +701,7 @@ implementation {
   }
 
 
-  default event void GPSReceive.msg_available(uint8_t *msg, uint16_t len,
+  default event void MsgReceive.msg_available(uint8_t *msg, uint16_t len,
         rtctime_t *arrival_rtp, uint32_t mark_j) { }
 
   async event void Panic.hook() { }

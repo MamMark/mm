@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
  */
 
 /*
- * GPSReceive.msg_available
+ * MsgReceive.msg_available
  *
  * signals to a receiver that a new message is available from the GPS
  * subsystem.
@@ -41,7 +41,7 @@
 
 #include <rtctime.h>
 
-interface GPSReceive {
+interface MsgReceive {
   /*
    * msg_available
    *

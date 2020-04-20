@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
 
-interface GPSTransmit {
+interface MsgTransmit {
   command error_t send(uint8_t *ptr, uint16_t len);
   command void    send_stop();
   event   void    send_done();

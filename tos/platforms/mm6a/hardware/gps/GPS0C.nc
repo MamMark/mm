@@ -24,8 +24,8 @@
 configuration GPS0C {
   provides {
     interface GPSControl;
-    interface GPSReceive;
-    interface GPSTransmit;
+    interface MsgReceive;
+    interface MsgTransmit;
     interface PwrReg as GPSPwr;
 
     /* for debugging only, be careful */
@@ -84,8 +84,8 @@ implementation {
   MsgBufP.Rtc     -> PlatformC;
   MsgBufP.Panic   -> PanicC;
 
-  GPSReceive  = MsgBufP;
-  GPSTransmit = Gsd4eUP;
+  MsgReceive  = MsgBufP;
+  MsgTransmit = Gsd4eUP;
 
 #ifdef notdef
   components TraceC;

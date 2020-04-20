@@ -28,8 +28,8 @@ configuration GPSmonitorC {
   }
   uses {
     interface GPSControl;
-    interface GPSTransmit;
-    interface GPSReceive;
+    interface MsgTransmit;
+    interface MsgReceive;
     interface TagnetRadio;
     interface PwrReg as GPSPwr;
   }
@@ -41,8 +41,8 @@ implementation {
   InfoSensGpsCmd = GPSmonitorP;
 
   GPSControl     = GPSmonitorP;
-  GPSTransmit    = GPSmonitorP;
-  GPSReceive     = GPSmonitorP;
+  MsgTransmit    = GPSmonitorP;
+  MsgReceive     = GPSmonitorP;
   TagnetRadio    = GPSmonitorP;
   GPSPwr         = GPSmonitorP;
 
