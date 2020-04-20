@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020,     Eric B. Decker
  * Copyright (c) 2017-2018 Eric B. Decker, Daniel Maltbie
  * All rights reserved.
  *
@@ -72,18 +73,18 @@ implementation {
   Gsd4eUP.Platform -> PlatformC;
 
   /* and wire in the Protocol Handler */
-  components SirfBinP, GPSMsgBufP;
+  components SirfBinP, MsgBufP;
   Gsd4eUP.SirfProto     -> SirfBinP;
-  SirfBinP.GPSBuffer    -> GPSMsgBufP;
+  SirfBinP.MsgBuf       -> MsgBufP;
   SirfBinP.Collect      -> CollectC;
   SirfBinP.Panic        -> PanicC;
 
   /* Buffer Slicing (MsgBuf) */
-  MainC.SoftwareInit -> GPSMsgBufP;
-  GPSMsgBufP.Rtc     -> PlatformC;
-  GPSMsgBufP.Panic   -> PanicC;
+  MainC.SoftwareInit -> MsgBufP;
+  MsgBufP.Rtc     -> PlatformC;
+  MsgBufP.Panic   -> PanicC;
 
-  GPSReceive  = GPSMsgBufP;
+  GPSReceive  = MsgBufP;
   GPSTransmit = Gsd4eUP;
 
 #ifdef notdef

@@ -3,13 +3,13 @@ implementation {
   components testMsgBufP, MainC;
   testMsgBufP.Boot   -> MainC;
 
-  components PlatformC, GPSMsgBufP;
+  components PlatformC, MsgBufP;
   components PanicC;
-  MainC.SoftwareInit -> GPSMsgBufP;
-  GPSMsgBufP.Panic   -> PanicC;
+  MainC.SoftwareInit -> MsgBufP;
+  MsgBufP.Panic      -> PanicC;
 
-  testMsgBufP.GPSReceive -> GPSMsgBufP;
-  testMsgBufP.GPSBuffer  -> GPSMsgBufP;
+  testMsgBufP.GPSReceive -> MsgBufP;
+  testMsgBufP.MsgBuf     -> MsgBufP;
   testMsgBufP.Platform   -> PlatformC;
 
 //  components new TimerMilliC() as Timer;

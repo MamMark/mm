@@ -9,7 +9,7 @@ module testMsgBufP {
   uses {
     interface Boot;
     interface GPSReceive;
-    interface GPSBuffer;;
+    interface MsgBuf;
     interface Platform;
   }
 }
@@ -22,20 +22,20 @@ implementation {
     while (1) {
       if (last_size == 0)
         last_size = 10;
-      buf = call GPSBuffer.msg_start(last_size);
+      buf = call MsgBuf.msg_start(last_size);
       nop();
       if (!buf) {
         post test_task();
         return;
       }
-      call GPSBuffer.msg_abort();
+      call MsgBuf.msg_abort();
       nop();
-      buf = call GPSBuffer.msg_start(last_size);
+      buf = call MsgBuf.msg_start(last_size);
       buf[0] = last_size         & 0xff;
       buf[1] = (last_size >>  8) & 0xff;
       buf[2] = (last_size >> 16) & 0xff;
       buf[3] = (last_size >> 24) & 0xff;
-      call GPSBuffer.msg_complete();
+      call MsgBuf.msg_complete();
       last_size += 11;
       if (last_size > 256)
         last_size = 0;

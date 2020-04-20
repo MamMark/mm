@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Eric B. Decker
+ * Copyright (c) 2017, 2020, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,8 +19,8 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  *
  * Handle an incoming SIRF binary byte stream assembling it into protocol
- * messages.  Assemble into GPSMsgs.  Processing of the incoming msgs will
- * be handled by upper layer processors.
+ * messages.  Processing of the incoming msgs will be handled by upper
+ * layer processors.
  */
 
 #include <panic.h>
@@ -40,7 +40,7 @@ module SirfBinP {
     interface GPSProto;
   }
   uses {
-    interface GPSBuffer;
+    interface MsgBuf;
     interface Collect;
     interface Panic;
   }
@@ -94,7 +94,7 @@ implementation {
     if (sirfbin_ptr) {
       sirfbin_ptr_prev = sirfbin_ptr;
       sirfbin_ptr = NULL;
-      call GPSBuffer.msg_abort();
+      call MsgBuf.msg_abort();
     }
   }
 
@@ -233,7 +233,7 @@ implementation {
         if (sirfbin_left > sirfbin_other_stats.max_seen)
           sirfbin_other_stats.max_seen = sirfbin_left;
         sirfbin_ptr_prev = sirfbin_ptr;
-        sirfbin_ptr = call GPSBuffer.msg_start(sirfbin_left + SIRFBIN_OVERHEAD);
+        sirfbin_ptr = call MsgBuf.msg_start(sirfbin_left + SIRFBIN_OVERHEAD);
         if (!sirfbin_ptr) {
           sirfbin_other_stats.no_buffer++;
           sirfbin_restart_abort(3);
@@ -332,7 +332,7 @@ implementation {
         sirfbin_state = SBS_START;
         sirfbin_stats.complete++;
         signal GPSProto.msgEnd();
-        call GPSBuffer.msg_complete();
+        call MsgBuf.msg_complete();
 	return;
 
       default:

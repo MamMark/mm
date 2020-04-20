@@ -83,7 +83,7 @@ GPS0C:  top level of GPS driver stack.
     connects components of GPS driver stack.
            GPS0C
         ------------
-         GPSMsgBufP     buffer management (slice)
+          MsgBufP       buffer management (slice)
         ------------
           SirfBinP      protocol module
         ------------

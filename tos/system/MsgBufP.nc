@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020,     Eric B. Decker
  * Copyright (c) 2017-2018 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
@@ -24,13 +25,14 @@
  * Buffer Slicing:
  *
  * This module handles carving a single receive buffer into logical
- * messages for the gps module to use.  A single area of memory, gps_buf,
- * is carved up into logical gps messages (gps_msg) as gps messages arrive.
+ * messages that get delivered to a receiver module.  A single area of
+ * memory, buf, is carved up into logical messages (msg) as incoming data
+ * arrives.  The messages are kept in strictly FIFO order.
  *
  * The underlying memory is a single circular buffer.  This buffer allows
- * for the gps incoming traffic to be bursty, and allowing for some
- * flexibility in the processing dynamic.  When the message has been
- * processed it is returned to the free space of the buffer.
+ * for the incoming traffic to be bursty, and allowing for some flexibility
+ * in the processing dynamic.  When the message has been processed it is
+ * returned to the free space of the buffer.
  *
  * Free space in this buffer is maintained by a single free structure that
  * remembers a data pointer and length.  It is always the space following
@@ -41,18 +43,19 @@
  * addresses).  This will continue until the free space at the tail no longer
  * can fit new messages.
  *
- * While free space exists at the tail of the buffer, any msg_releases will
+ * While free space exists at the tail of the buffer, any msg_release will
  * be added to the free space at the front of the buffer.  This is called
- * Aux_Free and always starts at gps_buf.  Its size is held in aux_len.
- * Thusly, aux_len = gps_msgs[gmc.head].data - gps_buf, if free space is
- * at the rear of the buffer.
+ * Aux_Free and always starts at buf.  Its size is held in aux_len.
+ * Thusly, aux_len = msgs[mbc.head].data - buf, if free space is at the
+ * rear of the buffer.
  *
  * We purposely keep free behind the message queue as long as we can.  For
- * example, if we have a perfect match at the end of the buffer region, free
- * space will point just beyond and free_len will be 0.  Aux will have any
- * releases that have occured.  We won't wrap free until a new message
- * is allocated.  The only time free will point at the beginning of the buffer
- * is when there are no messages (empty buffer).
+ * example, if we have a perfect match at the end of the buffer region,
+ * free space will point just beyond and free_len will be 0.  Aux will have
+ * any releases that have occured (these will be at the front of buf).  We
+ * won't wrap free until a new message is allocated.  The only time free
+ * will point at the beginning of the buffer is when there are no messages
+ * (empty buffer).
  *
  * We implement a first-in-first-out, contiguous, strictly ordered
  * allocation and queueing discipline.  This defines the message queue.
@@ -71,13 +74,13 @@
  * for handing the message off to task level.  While this is occuring it is
  * possible for additional bytes to arrive at interrupt level. They will
  * continue to be added to the buffer as an additional message until the
- * buffer runs out of space. The buffer size is set to accommodate some reasonable
- * number of incoming messages.  Once either the buffer becomes full or we
- * run out of gps_msg slots, further messages will be discarded.
+ * buffer runs out of space. The buffer size is set to accommodate some
+ * reasonable number of incoming messages.  Once either the buffer becomes
+ * full or we run out of msg slots, further messages will be discarded.
  *
  * Management of buffers, messages, and free space.
  *
- * Each gps_msg slot maybe in one of several states:
+ * Each msg slot maybe in one of several states:
  *
  *   EMPTY:     available for assignment, doesn't point to a memory region
  *   FILLING:   assigned, currently being filled by incoming bytes.
@@ -86,23 +89,24 @@
  *
  * The buffer can be in one of several states:
  *
- * (The notation M_N indicates the contiguous block of gps_msgs (starting with
- *  msg M through gps_msg N, ie.  head is M, tail is N).
+ * (The notation M_N indicates the contiguous block of msgs (starting with
+ *  msg M through msg N, ie.  head is M, tail is N).
  *
- *   EMPTY, completely empty:  There will be one gps_msg set to FREE pointing at the
- *     entire free space.  If there are no msgs allocated, then the entire buffer has
- *     to be free.  free always points at gps_buf and len is GPS_BUF_SIZE.
+ *   EMPTY, completely empty: There will be one msg set to FREE pointing at
+ *     the entire free space.  If there are no msgs allocated, then the
+ *     entire buffer has to be free.  free always points at buf and len is
+ *     BUF_SIZE.
  *
- *   M_N_1F, 1 (or more) contiguous gps_msgs.  And 1 free region.
- *     The free region can be either at the front, followed by the
- *     gps_msgs, or we can have gps_msgs (starting at the front of the buffer)
- *     followed by the free space.  free points at this region and its len
- *     reflects either the end of the buffer or from free to head.
+ *   M_N_1F, 1 (or more) contiguous msgs.  And 1 free region.  The free
+ *     region can be either at the front, followed by the msgs, or we can
+ *     have msgs (starting at the front of the buffer) followed by the free
+ *     space.  free points at this region and its len reflects either the
+ *     end of the buffer or from free to head.
  *
- *   M_N_2F, 1 (or more) contiguous gps_msgs and two free regions
- *     One before the gps_msg blocks and a trailing free region.  free will
- *     always point just beyond tail (tail->data + tail->len) and will have
- *     a length to either EOB or to head as appropriate.
+ *   M_N_2F, 1 (or more) contiguous msgs and two free regions One before
+ *     the msg blocks and a trailing free region.  free will always point
+ *     just beyond tail (tail->data + tail->len) and will have a length to
+ *     either EOB or to head as appropriate.
  *
  * When we have two free regions, the main free region (pointed to by free) is
  * considered the main free region.  It is what is used when allocating new
@@ -129,31 +133,31 @@
  *
  * The buffer allocation is controlled by the following cells:
  *
- * gps_msgs: an array of strictly ordered gps_msg_t structs that point at
- *   regions in the gps_buffer memory.
+ * xxx_msgs: an array of strictly ordered xxx_msg_t structs that point at
+ *   regions in buf.
  *
- * head(h): head index, points to an element of gps_msgs that defines the head
- *   of the fifo queue of msg_slots that contain allocated messages.  If head
- *   is INVALID no messages are queued (queue is empty).
+ * head(h): head index, points to an element of xxx_msgs that defines the
+ *   head of the fifo queue of msg_slots that contain allocated messages.
+ *   If head is INVALID no messages are queued (queue is empty).
  *
- * tail(t): tail index, points to the last element of gps_msgs that defines the tail
- *   of the fifo queue.  All msg_slots between h and t are valid and point
- *   at valid messages.
+ * tail(t): tail index, points to the last element of xxx_msgs that defines
+ *   the tail of the fifo queue.  All msg_slots between h and t are valid
+ *   and point at valid messages.
  *
  * messages are allocated stictly ordered (subject to wrap) and successive
- * entries in the gps_msgs array will point to messages that have arrived
- * later than earlier entries.  This sequence of msg_slots forms an ordered
- * first-in-first-out queue for the messages as they arrive.  Further
- * successive entries in the fifo will also be strictly contiguous.
+ * entries in xxx_msgs (the msg array) will point to messages that have
+ * arrived later than earlier entries.  This sequence of msg_slots forms an
+ * ordered first-in-first-out queue for the messages as they arrive.
+ * Further successive entries in the fifo will also be strictly contiguous.
  *
  *
  * free space control:
  *
- *   free: is a pointer into the gps_buffer.  It always points at memory
- *     that follows the tail msg if tail is valid.  It either runs from the
- *     end of tail to the end of the gps_buf (free region is in the rear of
- *     the buffer) or from the end of tail to start of head (free region is
- *     in the front of the buffer)
+ *   free: is a pointer into buf.  It always points at memory that follows
+ *     the tail msg if tail is valid.  It either runs from the end of tail
+ *     to the end of buf (free region is in the rear of the buffer) or from
+ *     the end of tail to start of head (free region is in the front of the
+ *     buffer)
  *
  *   free_len: the length of the current free region.
  *
@@ -162,18 +166,17 @@
 **** Corner/Special Cases:
 ****
  *
-**** Initial State:
- *   When the buffer is empty, there are no entries in the msg_queue, head
- *   will be INVALID.  Free will be set to gps_buf with a free_len of
- *   GPS_BUF_SIZE
+**** Initial State: When the buffer is empty, there are no entries in the
+ *   msg_queue, head will be INVALID.  Free will be set to start of buf
+ *   with a free_len of BUF_SIZE
  *
- * Transition from 1 queue element to 0.  ie.  the last msg is released and the
- * queue length is 1.  The queue may be located anywhere in memory, when the
- * last element is released we could end up with a fragmented free space, even
- * though all memory has now been release.
+ * Transition from 1 queue element to 0.  ie.  the last msg is released and
+ * the queue length is 1.  The queue may be located anywhere in memory,
+ * when the last element is released we could end up with a fragmented free
+ * space, even though all memory has now been released.
  *
- * When the last message is released, the free space will be reset back to fully
- * contiguous, ie. free = gps_buf, free_len = GPS_BUF_SIZE.
+ * When the last message is released, the free space will be reset back to
+ * fully contiguous, ie. free = buf, free_len = BUF_SIZE.
  *
 **** Running out of memory:
  *
@@ -181,32 +184,32 @@
  * and aux_len < len.  We will always return NULL (fail) to a msg_start
  * call.
  *
- * When checking to see if a message will fit we need to check both the current
- * free region and the aux region (in the front).
+ * When checking to see if a message will fit we need to check both the
+ * current free region and the aux region (in the front).
  *
  *
 **** Running Off the End:
  *
- * We run off the end of the gps_buffer when a new msg won't fit in the
- * current remaining free space.  We want to keep all messages contiguous
- * to simplify access to the data and the current message won't fit in the
+ * We run off the end of the buffer when a new msg won't fit in the current
+ * remaining free space.  We want to keep all messages contiguous to
+ * simplify access to the data and the current message won't fit in the
  * remaining space.
  *
  * There may be more free space in the aux region at the front.  We first
- * check to see if a message will fit in the current region (free_len).
- * If not check the aux_region (aux_len).
+ * check to see if a message will fit in the current region (free_len).  If
+ * not check the aux_region (aux_len).
  *
 **** Freeing last used msg_slot (free space reorg)
  *
  * When the last used message is freed, the entire buffer will be free
  * space.  We want to coalesce the free space into one contiguous region
- * again.  Set free = gps_buf and free_len = GPS_BUF_SIZE.  aux_len = 0.
+ * again.  Set free = buf and free_len = XXX_BUF_SIZE.  aux_len = 0.
  */
 
 
 #include <panic.h>
 #include <platform_panic.h>
-#include <GPSMsgBuf.h>
+#include <msgbuf.h>
 #include <rtctime.h>
 
 
@@ -219,7 +222,7 @@ enum {
 #endif
 
 enum {
-  GPSW_RESET_FREE = 32,
+  GPSW_MSG_RESET_FREE = 32,
   GPSW_MSG_START,
   GPSW_MSG_START_1,
   GPSW_MSG_START_2,
@@ -240,10 +243,10 @@ enum {
 };
 
 
-module GPSMsgBufP {
+module MsgBufP {
   provides {
     interface Init @exactlyonce();
-    interface GPSBuffer;
+    interface MsgBuf;
     interface GPSReceive;
   }
   uses {
@@ -252,9 +255,9 @@ module GPSMsgBufP {
   }
 }
 implementation {
-         uint8_t   gps_buf[GPS_BUF_SIZE];       /* underlying storage */
-         gps_msg_t gps_msgs[GPS_MAX_MSGS];      /* msg slots */
-  norace gmc_t     gmc;                         /* gps message control */
+         uint8_t    msg_buf[MSG_BUF_SIZE];      /* underlying storage */
+         msg_slot_t msg_msgs[MSG_MAX_MSGS];     /* msg slots */
+  norace mbc_t      gmc;                        /* msgbuffer control */
 
 
   void gps_warn(uint8_t where, parg_t p0, parg_t p1) {
@@ -268,8 +271,8 @@ implementation {
 
   command error_t Init.init() {
     /* initilize the control cells for the msg queue and free space */
-    gmc.free     = gps_buf;
-    gmc.free_len = GPS_BUF_SIZE;
+    gmc.free     = msg_buf;
+    gmc.free_len = MSG_BUF_SIZE;
     gmc.head     = MSG_NO_INDEX;        /* no msgs in queue */
     gmc.tail     = MSG_NO_INDEX;        /* no msgs in queue */
 
@@ -303,11 +306,11 @@ implementation {
     uint32_t mark;
 
     while (1) {
-      msg = call GPSBuffer.msg_next(&len, &arrival_rtp, &mark);
+      msg = call MsgBuf.msg_next(&len, &arrival_rtp, &mark);
       if (!msg)
         break;
       signal GPSReceive.msg_available(msg, len, arrival_rtp, mark);
-      call GPSBuffer.msg_release();
+      call MsgBuf.msg_release();
     }
   }
 
@@ -320,18 +323,18 @@ implementation {
         gps_panic(GPSW_RESET_FREE, gmc.head, gmc.tail);
         return;
     }
-    gmc.free     = gps_buf;
-    gmc.free_len = GPS_BUF_SIZE;
+    gmc.free     = msg_buf;
+    gmc.free_len = MSG_BUF_SIZE;
     gmc.aux_len  = 0;
   }
 
 
-  async command uint8_t *GPSBuffer.msg_start(uint16_t len) {
-    gps_msg_t *msg;             /* message slot we are working on */
-    uint16_t   idx;             /* index of message slot */
+  async command uint8_t *MsgBuf.msg_start(uint16_t len) {
+    msg_slot_t *msg;            /* message slot we are working on */
+    uint16_t    idx;            /* index of message slot */
 
-    if (gmc.free < gps_buf || gmc.free > gps_buf + GPS_BUF_SIZE ||
-        gmc.free_len > GPS_BUF_SIZE) {
+    if (gmc.free < msg_buf || gmc.free > msg_buf + MSG_BUF_SIZE ||
+        gmc.free_len > MSG_BUF_SIZE) {
       gps_panic(GPSW_MSG_START, (parg_t) gmc.free, gmc.free_len);
       return NULL;
     }
@@ -340,13 +343,13 @@ implementation {
      * gps packets have a minimum size.  If the request is too small
      * bail out.
      */
-    if (len < GPS_MIN_MSG)
+    if (len < MSG_MIN_MSG)
       return NULL;
 
     /*
      * bail out early if no free space or not enough slots
      */
-    if (gmc.full >= GPS_MAX_MSGS ||
+    if (gmc.full >= MSG_MAX_MSGS ||
         (gmc.free_len < len && gmc.aux_len < len))
       return NULL;
 
@@ -355,18 +358,18 @@ implementation {
      * EMPTY (buffer is all FREE), !EMPTY (1 or 2 free space regions).
      */
     if (MSG_INDEX_EMPTY(gmc.head) && MSG_INDEX_EMPTY(gmc.tail)) {
-      if (gmc.free != gps_buf || gmc.free_len != GPS_BUF_SIZE) {
-        gps_panic(GPSW_MSG_START_1, (parg_t) gmc.free, (parg_t) gps_buf);
+      if (gmc.free != msg_buf || gmc.free_len != MSG_BUF_SIZE) {
+        gps_panic(GPSW_MSG_START_1, (parg_t) gmc.free, (parg_t) msg_buf);
         return NULL;
       }
 
       /* no msgs, all free space */
-      msg = &gps_msgs[0];
-      msg->data  = gps_buf;
+      msg        = &msg_msgs[0];
+      msg->data  = msg_buf;
       msg->len   = len;
-      msg->state = GPS_MSG_FILLING;
+      msg->state = MSG_SLOT_FILLING;
       call Rtc.getTime(&msg->arrival_rt);
-      gmc.free  = gps_buf + len;
+      gmc.free   = msg_buf + len;
       gmc.free_len -= len;              /* zero is okay */
 
       gmc.allocated = len;
@@ -393,8 +396,8 @@ implementation {
      * make sure that tail->state is FULL (BUSY counts as FULL).  Need to
      * complete previous message before doing another start.
      */
-    msg = &gps_msgs[gmc.tail];
-    if (msg->state != GPS_MSG_FULL && msg->state != GPS_MSG_BUSY) {
+    msg = &msg_msgs[gmc.tail];
+    if (msg->state != MSG_SLOT_FULL && msg->state != MSG_SLOT_BUSY) {
       gps_panic(GPSW_MSG_START_3, gmc.tail, msg->state);
       return NULL;
     }
@@ -428,14 +431,14 @@ implementation {
        * the regular advance take over.
        *
        * Note: since aux_len is non-zero, current free space must be on
-       * the tail of the buffer.  ie.  free > gps_msgs[head].data.
+       * the tail of the buffer.  ie.  free > msg_msgs[head].data.
        */
       msg->extra = gmc.free_len;
       gmc.free_len = 0;
       gmc.allocated += msg->extra;      /* put extra into allocated too */
       if (gmc.allocated > gmc.max_allocated)
         gmc.max_allocated = gmc.allocated;
-      gmc.free = gps_buf;                 /* wrap to beginning */
+      gmc.free = msg_buf;                 /* wrap to beginning */
       gmc.free_len = gmc.aux_len;
       gmc.aux_len  = 0;
     }
@@ -452,7 +455,7 @@ implementation {
     if (len <= gmc.free_len) {
       /* msg will fit in current free space. */
       idx = MSG_NEXT_INDEX(gmc.tail);
-      msg = &gps_msgs[idx];
+      msg = &msg_msgs[idx];
       if (msg->state) {                 /* had better be empty */
         gps_panic(GPSW_MSG_START_5, (parg_t) msg, msg->state);
         return NULL;
@@ -460,7 +463,7 @@ implementation {
 
       msg->data  = gmc.free;
       msg->len   = len;
-      msg->state = GPS_MSG_FILLING;
+      msg->state = MSG_SLOT_FILLING;
       gmc.tail   = idx;                 /* advance tail */
 
       call Rtc.getTime(&msg->arrival_rt);
@@ -492,16 +495,16 @@ implementation {
    * used with the last msg if a new message doesn't fit.  It only
    * gets referenced in msg_start and msg_release.
    */
-  async command void GPSBuffer.msg_abort() {
-    gps_msg_t *msg;             /* message slot we are working on */
+  async command void MsgBuf.msg_abort() {
+    msg_slot_t *msg;            /* message slot we are working on */
     uint8_t   *slice;           /* memory slice we are aborting */
 
     if (MSG_INDEX_INVALID(gmc.tail)) {  /* oht oh */
       gps_panic(GPSW_MSG_ABORT, gmc.tail, 0);
       return;
     }
-    msg = &gps_msgs[gmc.tail];
-    if (msg->state != GPS_MSG_FILLING) { /* oht oh */
+    msg = &msg_msgs[gmc.tail];
+    if (msg->state != MSG_SLOT_FILLING) { /* oht oh */
       gps_panic(GPSW_MSG_ABORT_1, (parg_t) msg, msg->state);
       return;
     }
@@ -509,7 +512,7 @@ implementation {
       gps_panic(GPSW_MSG_ABORT_2, (parg_t) msg, msg->extra);
       return;
     }
-    msg->state = GPS_MSG_EMPTY;         /* no longer in use */
+    msg->state = MSG_SLOT_EMPTY;        /* no longer in use */
     slice = msg->data;
     msg->data = NULL;
     if (gmc.head == gmc.tail) {         /* only entry? */
@@ -524,19 +527,19 @@ implementation {
     /*
      * Only one special case:
      *
-     * o tail->data == gps_buf, a msg didn't fit in the free space, we
+     * o tail->data == msg_buf, a msg didn't fit in the free space, we
      *     consumed and added it to the previous tail, (t-1)->extra. The
      *     new message then got added at the front of the aux region
-     *     (gps_buf).
+     *     (msg_buf).
      *
      *     We want to remove the current tail (which is at the front of
-     *     gps_buf), restore the aux region (aux_len), and move free back
+     *     msg_buf), restore the aux region (aux_len), and move free back
      *     to point at the extra that was added to the prev tail.
      */
 
-    if (slice == gps_buf) {
+    if (slice == msg_buf) {
       /*
-       * Special Case: Tail->data == gps_buf
+       * Special Case: Tail->data == msg_buf
        *
        * The Tail we are nuking was added because it wouldn't fit in the
        * previous free region, this caused Free to Wrap and there will be
@@ -549,7 +552,7 @@ implementation {
       gmc.aux_len = msg->len + gmc.free_len;
       gmc.allocated -= msg->len;
       gmc.tail = MSG_PREV_INDEX(gmc.tail);
-      msg = &gps_msgs[gmc.tail];
+      msg = &msg_msgs[gmc.tail];
       gmc.free = msg->data + msg->len;
       gmc.free_len = msg->extra;
       gmc.allocated -= msg->extra;
@@ -581,40 +584,40 @@ implementation {
    *
    * current message is TAIL.
    */
-  async command void GPSBuffer.msg_complete() {
-    gps_msg_t *msg;             /* message slot we are working on */
+  async command void MsgBuf.msg_complete() {
+    msg_slot_t *msg;             /* message slot we are working on */
 
     if (MSG_INDEX_INVALID(gmc.tail)) {  /* oht oh */
       gps_panic(GPSW_MSG_COMPLETE, gmc.tail, 0);
       return;
     }
-    msg = &gps_msgs[gmc.tail];
-    if (msg->state != GPS_MSG_FILLING) { /* oht oh */
+    msg = &msg_msgs[gmc.tail];
+    if (msg->state != MSG_SLOT_FILLING) { /* oht oh */
       gps_panic(GPSW_MSG_COMPLETE_1, (parg_t) msg, msg->state);
       return;
     }
 
-    msg->state = GPS_MSG_FULL;
+    msg->state = MSG_SLOT_FULL;
     if (gmc.tail == gmc.head)
       post gps_receive_task();          /* start processing the queue */
   }
 
 
-  command uint8_t *GPSBuffer.msg_next(uint16_t *lenp,
+  command uint8_t *MsgBuf.msg_next(uint16_t *lenp,
         rtctime_t **arrival_rtpp, uint32_t *markp) {
-    gps_msg_t *msg;             /* message slot we are working on */
+    msg_slot_t *msg;                   /* message slot we are working on */
 
     atomic {
       if (MSG_INDEX_INVALID(gmc.head))          /* empty queue */
         return NULL;
-      msg = &gps_msgs[gmc.head];
-      if (msg->state == GPS_MSG_FILLING)        /* not ready yet */
+      msg = &msg_msgs[gmc.head];
+      if (msg->state == MSG_SLOT_FILLING)       /* not ready yet */
         return NULL;
-      if (msg->state != GPS_MSG_FULL) {         /* oht oh */
+      if (msg->state != MSG_SLOT_FULL) {        /* oht oh */
         gps_panic(GPSW_MSG_NEXT, (parg_t) msg, msg->state);
         return NULL;
       }
-      msg->state = GPS_MSG_BUSY;
+      msg->state = MSG_SLOT_BUSY;
       *lenp = msg->len;
       *arrival_rtpp = &msg->arrival_rt;
       *markp       = msg->mark_j;
@@ -628,10 +631,10 @@ implementation {
    *
    * the next message to be released is always the HEAD
    */
-  command void GPSBuffer.msg_release() {
-    gps_msg_t *msg;             /* message slot we are working on */
-    uint8_t   *slice;           /* slice being released */
-    uint16_t   rtn_size;        /* what is being freed */
+  command void MsgBuf.msg_release() {
+    msg_slot_t *msg;            /* message slot we are working on */
+    uint8_t    *slice;          /* slice being released */
+    uint16_t    rtn_size;       /* what is being freed */
 
     atomic {
       if (MSG_INDEX_INVALID(gmc.head) ||
@@ -639,13 +642,13 @@ implementation {
         gps_panic(GPSW_MSG_RELEASE, gmc.head, 0);
         return;
       }
-      msg = &gps_msgs[gmc.head];
+      msg = &msg_msgs[gmc.head];
       /* oht oh - only FULL or BUSY can be released */
-      if (msg->state != GPS_MSG_BUSY && msg->state != GPS_MSG_FULL) {
+      if (msg->state != MSG_SLOT_BUSY && msg->state != MSG_SLOT_FULL) {
         gps_panic(GPSW_MSG_RELEASE_1, (parg_t) msg, msg->state);
         return;
       }
-      msg->state = GPS_MSG_EMPTY;
+      msg->state = MSG_SLOT_EMPTY;
       slice = msg->data;
       msg->data  = NULL;                /* for observability */
       rtn_size = msg->len + msg->extra;

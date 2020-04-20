@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020 Eric B. Decker
  * Copyright (c) 2017 Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
@@ -22,34 +23,34 @@
 
 #include <rtctime.h>
 
-#ifndef __GPSMSGBUF_H__
-#define __GPSMSGBUF_H__
+#ifndef __MSGBUF_H__
+#define __MSGBUF_H__
 
 
-#define GPS_BUF_SIZE 1024
+#define MSG_BUF_SIZE 1024
 
 /* set to a power of 2 */
-#define GPS_MAX_MSGS 16
+#define MSG_MAX_MSGS 16
 
 /* minimum memory slice, same as SIRFBIN_OVERHEAD */
-#define GPS_MIN_MSG  8
+#define MSG_MIN_MSG  8
 
 typedef enum {
-  GPS_MSG_EMPTY = 0,            /* not being used, available */
-  GPS_MSG_FILLING,              /* currently being filled in */
-  GPS_MSG_FULL,                 /* holds a message */
-  GPS_MSG_BUSY,                 /* busy, message is being processed */
-} gms_t;                        /* gps msg state */
+  MSG_SLOT_EMPTY = 0,           /* not being used, available */
+  MSG_SLOT_FILLING,             /* currently being filled in */
+  MSG_SLOT_FULL,                /* holds a message */
+  MSG_SLOT_BUSY,                /* busy, message is being processed */
+} mss_t;                        /* msg slot state */
 
 
 typedef struct {
-  uint8_t *data;
-  uint32_t mark_j;              /* time mark in jiffies */
-  rtctime_t arrival_rt;         /* 10 byte rtctime stamp, arrival */
-  uint16_t len;
-  uint16_t extra;
-  gms_t    state;
-} gps_msg_t;
+  uint8_t      *data;
+  uint32_t      mark_j;         /* time mark in jiffies */
+  rtctime_t     arrival_rt;     /* 10 byte rtctime stamp, arrival */
+  uint16_t      len;
+  uint16_t      extra;
+  mss_t         state;          /* slowt state */
+} msg_slot_t;
 
 
 /*
@@ -65,7 +66,7 @@ typedef struct {
  * gps_buf.  But it is easier to just keep track of what is free at the front
  * via aux_len.
  */
-typedef struct {                /* should be 28 bytes */
+typedef struct {
   uint8_t *free;                /* free pointer */
   uint16_t free_len;            /* and its length */
   uint16_t aux_len;             /* size of space in front */
@@ -76,16 +77,16 @@ typedef struct {                /* should be 28 bytes */
   uint16_t max_full;            /* how deep did it get */
   uint16_t allocated;           /* current memory allocated */
   uint16_t max_allocated;       /* largest memory ever allocated */
-} gmc_t;                        /* gps msg control */
+} mbc_t;                        /* msgbuf control */
 
 
 #define MSG_NO_INDEX         (0xffff)
 
 #define MSG_INDEX_EMPTY(x)    ((x) == ((uint16_t) -1))
-#define MSG_INDEX_INVALID(x)  ((x) & (~(GPS_MAX_MSGS - 1)))
-#define MSG_INDEX_VALID(x)   (((x) & (~(GPS_MAX_MSGS - 1))) == 0)
+#define MSG_INDEX_INVALID(x)  ((x) & (~(MSG_MAX_MSGS - 1)))
+#define MSG_INDEX_VALID(x)   (((x) & (~(MSG_MAX_MSGS - 1))) == 0)
 
-#define MSG_PREV_INDEX(x) (((x) - 1) & (GPS_MAX_MSGS - 1))
-#define MSG_NEXT_INDEX(x) (((x) + 1) & (GPS_MAX_MSGS - 1))
+#define MSG_PREV_INDEX(x) (((x) - 1) & (MSG_MAX_MSGS - 1))
+#define MSG_NEXT_INDEX(x) (((x) + 1) & (MSG_MAX_MSGS - 1))
 
-#endif  /* __GPSMSGBUF_H__ */
+#endif  /* __MSGBUF_H__ */

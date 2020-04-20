@@ -26,11 +26,11 @@ sirf_driver.h).  This comes from MID 4 TRACKER_DATA (len 0xbc, 188 + 8
 overhead, 196).
 
 Backing the GPS is an area of memory called the GPS Buffer.  Any messages
-from the GPS are first collected into a piece of this memory and then
-handed to higher layers one message at a time.  See GPSBuffer and GPSMsgBuf
-for details.  Protocol processing is handled by the state machine in
-SirfBinP.  Valid byte streams are deposited directly in the Buffer slice
-allocated by the Protocol engine using GPSBuffer.
+from the GPS are first collected into this memory using buffer slicing (see
+MsgBuf) and then handed to higher layers one message at a time.  Protocol
+processing is handled by the state machine in SirfBinP.  Valid byte streams
+are deposited directly into the current buffer slice allocated by the
+Protocol engine using MsgBuf.
 
 At the highest level is the GPSMonitor.  The monitor is responsible for higher
 control functions and the main state machine.  The monitor is what knows about

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Eric B. Decker
+ * Copyright (c) 2017-2018, 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,16 @@
  * See COPYING in the top level directory of this source tree.
  *
  * Contact: Eric B. Decker <cire831@gmail.com>
+ *
+ **
+ * MsgBuf: message (simple block) interface to buffer slicing.
+ *
  */
 
-#include <GPSMsgBuf.h>
+#include <msgbuf.h>
 #include <rtctime.h>
 
-interface GPSBuffer {
+interface MsgBuf {
 
   /*
    * msg_start: start to collect a new message
@@ -30,10 +34,7 @@ interface GPSBuffer {
    * input:  len        size needed for the buffer.
    * output: uint8_t *  pointer to allocated space
    *
-   * GPSBuffer will attempt to allocate len byte from the free space.
-   * If enough space isn't available, GPSBuffer will go into GBCS_FLUSHING
-   * and will drop the incoming message.
-   *
+   * MsgBuf will attempt to allocate len bytes from free space.
    * DO NOT write past ptr+len.
    */
   async command uint8_t *msg_start(uint16_t len);
