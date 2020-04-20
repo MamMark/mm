@@ -12,7 +12,6 @@
 #define SD0_SSW   6
 #define SD0_SS    7
 
-#define SD0_COPY  16
-#define SD0_TEST  17
+#define SD0_TEST  16
 
 #endif  /* __SD0_USERS_H__ */

@@ -42,6 +42,7 @@
 
 #include <fs_loc.h>
 #include <sd.h>
+#include <sd0_users.h>
 #include <panic.h>
 #include <platform_panic.h>
 
