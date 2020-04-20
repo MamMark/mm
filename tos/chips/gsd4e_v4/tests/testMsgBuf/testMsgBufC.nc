@@ -7,14 +7,9 @@ implementation {
   components PanicC;
   MainC.SoftwareInit -> MsgBufP;
   MsgBufP.Panic      -> PanicC;
+  MsgBufP.Rtc        -> PlatformC;
 
   testMsgBufP.GPSReceive -> MsgBufP;
   testMsgBufP.MsgBuf     -> MsgBufP;
   testMsgBufP.Platform   -> PlatformC;
-
-//  components new TimerMilliC() as Timer;
-//  testMsgBufP.testTimer -> Timer;
-
-//  components LocalTimeMilliC;
-//  testMsgBufP.LocalTime -> LocalTimeMilliC;
 }
