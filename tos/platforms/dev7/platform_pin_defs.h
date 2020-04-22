@@ -48,6 +48,24 @@
 #define SI446X_CSN          BITBAND_PERI(SI446X_CSN_PORT->OUT, SI446X_CSN_PIN)
 
 
+/* Dock */
+#define DC_ATTN_S_PORT      P6
+#define DC_ATTN_S_PIN       1
+#define DC_ATTN_S_BIT       (1 << DC_ATTN_S_PIN)
+#define DC_ATTN_S_N         BITBAND_PERI(DC_ATTN_S_PORT->OUT, DC_ATTN_S_PIN)
+
+#define DC_ATTN_M_PORT      P6
+#define DC_ATTN_M_PIN       2
+#define DC_ATTN_M_BIT       (1 << DC_ATTN_M_PIN)
+#define DC_ATTN_M_P         (P6->IN & DC_ATTN_M_BIT)
+#define DC_ATTN_M_PORT_PIN  0x62
+
+#define DC_SPI_EN_PORT      P9
+#define DC_SPI_EN_PIN       3
+#define DC_SPI_EN_BIT       (1 << DC_SPI_EN_PIN)
+#define DC_SPI_EN           BITBAND_PERI(DC_SPI_EN_PORT->OUT, DC_SPI_EN_PIN)
+
+
 /* micro SDs */
 #define SD0_CSN_PORT        P10
 #define SD0_CSN_PIN         0

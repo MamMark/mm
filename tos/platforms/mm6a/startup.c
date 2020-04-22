@@ -503,7 +503,7 @@ void __map_ports() {
   P7MAP->PMAP_REG[5] = PMAP_UCB0SIMO;
   P7MAP->PMAP_REG[7] = PMAP_UCA2CLK;
 
-  PMAP->KEYID = 0;              /* lock port mapper */
+  PMAP->KEYID        = 0;              /* lock port mapper */
 }
 
 
@@ -539,11 +539,11 @@ void __watchdog_init() {
  * see hardware.h for initial values and changed mappings
  */
 void __pins_init() {
-  P1->OUT = 0x60; P1->DIR = 0x6C;
-  P2->OUT = 0x89; P2->DIR = 0xC9;
-  P2->SEL0= 0x10; P2->SEL1= 0x00;
-  P3->OUT = 0x7B; P3->DIR = 0x7B;
-  P3->SEL0= 0x01; P3->SEL1= 0x00;
+  P1->OUT = 0x60; P1->DIR = 0x64;
+  P2->OUT = 0x80; P2->DIR = 0xC0;
+  P2->SEL0= 0x19; P2->SEL1= 0x00;
+  P3->OUT = 0x7B; P3->DIR = 0x7F;
+  P3->SEL0= 0x05; P3->SEL1= 0x00;
   P4->OUT = 0x30; P4->DIR = 0xFD;
   P5->OUT = 0x81; P5->DIR = 0xA7;
   P6->OUT = 0x00; P6->DIR = 0x00;
@@ -557,10 +557,6 @@ void __pins_init() {
    * gps_cts has a pull up so that the gps comes up in UART mode.
    */
   P7->REN = 0x01;
-
-  /*
-   * need to sort out how SD0 messes with Override.
-   */
 }
 
 
@@ -1245,14 +1241,6 @@ void __Reset() {
   __DSB(); __ISB();
 
   /*
-   * tell is P1.2  0pO
-   * t_exc (tell_exeception) is P1.3 0pO
-   *
-   * leave other pins in P1 as inputs until they are initialized properly.
-   */
-  P1->OUT = 0x60; P1->DIR = 0x0C;
-
-  /*
    * gps/mems power rail.  Always power on the gps/mems rail, it is on
    * by default.  If someone needs to kick the gps or the mems chips in
    * the head, that happens later.
@@ -1269,7 +1257,7 @@ void __Reset() {
   P1->OUT = 0x60;                       /* set mems csn's to deselected */
   P5->OUT = 0x81;                       /* gps_mems_1V8_en, gyro_csn    */
   P5->DIR = 0xA7;                       /* power gps/mems first */
-  P1->DIR = 0x6C;                       /* switch the csn's to outputs */
+  P1->DIR = 0x64;
 
   P4->OUT = 0x30;                       /* turn 3V3 ON, LDO2, and radio on 1V8 */
   P4->DIR = 0xFD;

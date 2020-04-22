@@ -484,7 +484,7 @@ void __map_ports() {
   P7MAP->PMAP_REG[1] = PMAP_UCA1SOMI;
   P7MAP->PMAP_REG[2] = PMAP_UCA1SIMO;
   P7MAP->PMAP_REG[3] = PMAP_TA1CCR1A;
-  PMAP->KEYID = 0;              /* lock port mapper */
+  PMAP->KEYID        = 0;              /* lock port mapper */
 }
 
 
@@ -526,9 +526,9 @@ void __pins_init() {
   PD->OUT = 0;                  /* P8/P7 */
   PE->OUT = 0;                  /* P10/P9 */
 
-  P1->OUT = 0x12;               /* P1.1/P1.4 need pull up */
+  P1->OUT = 0x02;               /* P1.1 needs pull up */
   P1->DIR = 0x01;
-  P1->REN = 0x12;
+  P1->REN = 0x02;
 
   /* smclk and LED2 pieces */
   P2->DIR  = 0x27;
@@ -539,6 +539,8 @@ void __pins_init() {
   P3->OUT = 0x08;
   P3->DIR = 0x68;
   P3->REN = 0x80;
+  P3->SEL0= 0xE0;
+  P3->SEL1= 0x00;
 
   /*
    * We bring the clocks out so we can watch them.
@@ -562,37 +564,20 @@ void __pins_init() {
   P5->OUT  = 0x05;
   P5->DIR  = 0x05;
 
-  /*
-   * gps_resetn and gps_awake are here.
-   *
-   * on boot, leave reset as an input, let it float.
-   * this lets the gps continue to do what it is doing.
-   * If we need to reset it, the gps driver will do it.
-   */
-  P6->OUT = 0x01;               /* gps_resetn deasserted   */
-  P6->DIR = 0x00;               /* but normally an input */
+  P6->OUT = 0x03;
+  P6->DIR = 0x02;
 
-  /*
-   * SD1 is on P7.{0,1,2} and sd1_csn is P9.4
-   * We have also put the lis331 accel breakout on A1 at P7.{0,1,2}.
-   * Initial state is "powered off" so make all pins be pull ups
-   *
-   * We have also put the lis331 accel breakout on A1 at P7.{0,1,2}.
-   * This code implements the lis331.
-   */
-  P9->OUT = 0x10;               /* deassert accel_csn */
-  P9->DIR = 0x10;               /* drive output       */
-
-  P7->OUT  = 0x01;              /* clk 1, reset others to 0s */
   P7->SEL0 = 0x07;              /* hand over to SPI module   */
-  P7->DIR  = 0x05;              /* not really needed.        */
 
   /*
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
    * t_exc is 8.5 (0pO).
    */
   P8->DIR = 0x61;               /* tell/t_exc are outputs */
-  P8->SEL1 = 1;
+  P8->SEL1= 0x01;
+
+  P9->OUT = 0x10;
+  P9->DIR = 0x18;
 
   /*
    * SD0 is on P10.0 - P10.3  see hardware.h
@@ -1314,7 +1299,7 @@ void __Reset() {
    */
   P8->OUT = 0;                  /* set tell and exc up */
   P8->DIR = 0x61;
-  P8->SEL1 = 1;                 /* TA1.0 (OUT0) */
+  P8->SEL1= 0x01;               /* TA1.0 (OUT0) */
 
   __watchdog_init();
   __pins_init();

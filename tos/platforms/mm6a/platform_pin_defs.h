@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -190,14 +190,29 @@
 #define SI446X_CSN          BITBAND_PERI(SI446X_CSN_PORT->OUT, SI446X_CSN_PIN)
 
 
+/* Dock */
+#define DC_ATTN_S_PORT      P1
+#define DC_ATTN_S_PIN       2
+#define DC_ATTN_S_BIT       (1 << DC_ATTN_S_PIN)
+#define DC_ATTN_S_N         BITBAND_PERI(DC_ATTN_S_PORT->OUT, DC_ATTN_S_PIN)
+
+#define DC_ATTN_M_PORT      P1
+#define DC_ATTN_M_PIN       3
+#define DC_ATTN_M_BIT       (1 << DC_ATTN_M_PIN)
+#define DC_ATTN_M_P         (P1->IN & DC_ATTN_M_BIT)
+#define DC_ATTN_M_PORT_PIN  0x13
+
+#define DC_SPI_EN_PORT      P8
+#define DC_SPI_EN_PIN       0
+#define DC_SPI_EN_BIT       (1 << DC_SPI_EN_PIN)
+#define DC_SPI_EN           BITBAND_PERI(DC_SPI_EN_PORT->OUT, DC_SPI_EN_PIN)
+
+
 /* micro SDs */
 #define SD0_CSN_PORT        P3
 #define SD0_CSN_PIN         1
 #define SD0_CSN             BITBAND_PERI(SD0_CSN_PORT->OUT, SD0_CSN_PIN)
 
-#define SD0_ACCESS_SENSE_BIT     0x08
-#define SD0_ACCESS_SENSE_N       FALSE
-#define SD0_ACCESS_ENA_N
 
 /* high true, setting a 1 turns the power on, 0 turns it off. */
 #define SD0_PWR_ENA_PORT    P7

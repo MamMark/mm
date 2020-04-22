@@ -202,30 +202,30 @@
  * Port: (0x4000_4C00)
  * port 1.0     0pI   A1 mag_drdy               port 7.0        0mI   B5 gps_sclk   (PM_UCA0CLK)
  *  00 I .1     0pI   B1 mag_int                 60   .1        0pI   C5 gps_tm     (PM_TA1.1)
- *  02 O .2     0pO   C4 dock_comm_attn_s  TP31  62   .2        0mI   B4 gps_somi   (PM_UCA0RXD/SOMI)
- *       .3     0pI   D4 dock_comm_attn_m  TP27       .3        0mI   A4 gps_simo   (PM_UCA0TXD/SIMO)
+ *  02 O .2     0pO   C4 dc_attn_s_n       TP31  62   .2        0mI   B4 gps_somi   (PM_UCA0RXD/SOMI)
+ *       .3     0pI   D4 dc_attn_m_n       TP27       .3        0mI   A4 gps_simo   (PM_UCA0TXD/SIMO)
  *       .4     0pI   D3                              .4        1pO   J1 adc_sclk   (PM_UCB0CLK)
  *       .5     1pO   C1 mag_csn                      .5        1pO   H2 adc_simo   (PM_UCB0SIMO)
  *       .6     1pO   D1 accel_csn                    .6        0pO   J2 pwr_sd0_en
  *       .7     0pI   E1 accel_int2                   .7        1mO   G3 sd0_sclk   (PM_UCA2CLK)
  *
- * port 2.0     0mI   E4 dock_comm_sclk (PM_UCA1CLK)  TP11
+ * port 2.0     0mI   E4 dc_sclk        (PM_UCA1CLK)  TP11
  *  01   .1     0pI   F1 adc_rdy
  *  03   .2     0pI   E3 accel_int1
- *       .3     0mI   F4 dock_comm_simo (PM_UCA1SIMO) TP3
- *       .4     0mI   F3 sd0_somi (PM_UCA2SOMI)
- *       .5     0pI   G1 adc_somi (PM_UCB0SOMI)
+ *       .3     0mI   F4 dc_simo        (PM_UCA1SIMO) TP3
+ *       .4     0mI   F3 sd0_somi       (PM_UCA2SOMI)
+ *       .5     0pI   G1 adc_somi       (PM_UCB0SOMI)
  *       .6     0pO   G2 adc_start
  *       .7     1pO   H1 adc_csn
  *
- * port 3.0     1mO   J3 sd0_simo    (PM_UCA2SIMO)
+ * port 3.0     1mO   J3 sd0_simo       (PM_UCA2SIMO)
  *  20   .1     1pO   H4 sd0_csn
- *  22   .2     0mI   G5 dock_comm_somi (PM_UCA1SOMI) TP13
+ *  22   .2     0mI   G5 dc_somi        (PM_UCA1SOMI) TP13
  *       .3     1pO   J4 radio_sdn
  *       .4     1pO   H5 radio_csn
- *       .5     1pO   G6 radio_simo  (PM_UCB2SIMO)
- *       .6     1pO   J5 radio_sclk  (PM_UCB2CLK)
- *       .7     0pI   H6 radio_somi  (PM_UCB2SOMI)
+ *       .5     1pO   G6 radio_simo     (PM_UCB2SIMO)
+ *       .6     1pO   J5 radio_sclk     (PM_UCB2CLK)
+ *       .7     0pI   H6 radio_somi     (PM_UCB2SOMI)
  *
  * port  4.0    0pO   H9 pwr_radio_3V3 (vsel_1v8_3v3), 1 says 3V3, 0 1V8
  *  21    .1    0pI   H8 radio_cts    (radio gp1)

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020      Eric B. Decker
  * Copyright (c) 2016-2018 Eric B. Decker, Dan J. Maltbie
  * All rights reserved.
  *
@@ -33,8 +34,6 @@
 
 #ifndef __HARDWARE_H__
 #define __HARDWARE_H__
-
-#warning DEV6A/MEMS variant
 
 #define NO_MSP_CLASSIC_DEFINES
 #define __MSP432_DVRLIB_ROM__
@@ -149,12 +148,12 @@
  *    (port, mapping), ie.  (A1, pm) says its on eUSCI-A1 and the pin is port mapped.
  *
  * A0: mems             (dma overlap with AES triggers, DMA ch 0, 1)
- * A1: SD1 (SPI)/mems
+ * A1: dock
  * A2: gps (antenova, sirfIV) UART
  *     gps_tx is on 3.2, gps_rx is on 3.3.
  * A3: do not use (not on bga)
  * B0: tmp, i2c         (dma overlap with AES triggers, DMA ch 0, 1)
- * B1: adc
+ * B1: adc/mems
  * B2: Si4468 radio (SPI)
  * B3: SD0 (SPI)
  *
@@ -172,16 +171,16 @@
  * without changing the I/O pin state.
  *
  * Port: (0x4000_4C00)
- * port 1.0	0pO	LED1                    port 7.0	1mO     sd1_clk  (A1,    pm)
- *  00 I .1	1pIru	PB1                      60   .1	0mI     sd1_somi (A1,    pm)
- *  02 O .2	0pI                     BSLRXD   62   .2	0mO     sd1_simo (A1,    pm)
+ * port 1.0	0pO	LED1                    port 7.0	0mI     dc_sclk  (A1,    pm)
+ *  00 I .1	1pIru	PB1                      60   .1	0mI     dc_somi  (A1,    pm)
+ *  02 O .2     0pI                     BSLRXD   62   .2        0mI     dc_simo  (A1,    pm)
  *       .3     0pI                     BSLTXD        .3	0pI     gps_tm   (ta1.1, pm)
- *       .4	1pIru   dock_attn PB2   BSLSTE        .4	0pI
+ *       .4	0pI     PB2             BSLSTE        .4	0pI
  *       .5	0pI     gps_cts(*)      BSLCLK        .5	0pI
  *       .6	0pI	tmp_sda         BSLSIMO       .6	0pI
  *       .7	0pI     tmp_scl         BSLSOMI       .7	0pI
  *
- * port 2.0	0pO	dock_led (LED2_RED)     port 8.0	0mO     TA1.0 (OUT0) (m2)
+ * port 2.0     0pO              (LED2_RED)     port 8.0        0mO     TA1.0 (OUT0) (m2)
  *  01   .1	0pO              (LED2_GREEN)    61 I .1	0pI
  *  03   .2	0pO              (LED2_BLUE)     63 O .2	0pI
  *       .3	0pI	si446x_cts                    .3	0pI
@@ -193,8 +192,8 @@
  * port 3.0	0pI                             port 9.0	0pI
  *  20   .1	0pI	[unstabbed, nc] A2       80 I .1	0pI
  *  22   .2	0pI	gps_tx (A2)   URXD       82 O .2	0pI
- *       .3	1pO	gps_rx (A2)   UTXD            .3	0pI
- *       .4	0pI     [unstabbed, nc]               .4	1pO     sd1_csn/accel_csn
+ *       .3	1pO	gps_rx (A2)   UTXD            .3	0pO     dc_spi_en
+ *       .4	0pI     [unstabbed, nc]               .4	1pO     accel_csn
  *       .5	0mO	si446x_clk  (B2) slave_clk    .5	0pI     [unstabbed]
  *       .6	0mO	si446x_simo (B2) slave_simo   .6	0pI     [unstabbed]
  *       .7	0mIrd   si446x_somi (B2) slave_somi   .7	0pI
@@ -217,9 +216,9 @@
  *        .6	0pI
  *        .7	0pI
  *
- * port  6.0	1pI     gps_resetn              port  J.0       0pI     LFXIN  (32KiHz)
- *  41 I  .1	0pI     gps_awake               120 I  .1       0pO     LFXOUT (32KiHz)
- *  43 O  .2	0pI                             122 O  .2       0pI     HFXOUT (48MHz)
+ * port  6.0    1pI     gps_resetn  nc          port  J.0       0pI     LFXIN  (32KiHz)
+ *  41 I  .1    1pO     dc_attn_s_n             120 I  .1       0pO     LFXOUT (32KiHz)
+ *  43 O  .2    0pI     dc_attn_m_n             122 O  .2       0pI     HFXOUT (48MHz)
  *        .3	0pI                                    .3       0pI     HFXIN  (48MHz)
  *        .4	0pI                                    .4       0pI     TDI
  *        .5	0pI                                    .5       0pI     TDO/SWO

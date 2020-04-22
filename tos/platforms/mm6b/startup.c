@@ -1237,14 +1237,6 @@ void __Reset() {
   __DSB(); __ISB();
 
   /*
-   * tell is P1.2  0pO
-   * t_exc (tell_exeception) is P1.3 0pO
-   *
-   * leave other pins in P1 as inputs until they are initialized properly.
-   */
-  P1->OUT = 0x60; P1->DIR = 0x64;
-
-  /*
    * gps/mems power rail.  Always power on the gps/mems rail, it is on
    * by default.  If someone needs to kick the gps or the mems chips in
    * the head, that happens later.

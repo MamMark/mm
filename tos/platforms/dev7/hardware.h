@@ -177,7 +177,7 @@
  * without changing the I/O pin state.
  *
  * Port: (0x4000_4C00)
- * port 1.0     0pO     LED1                    port 7.0        0mI     dc_clk  (A1,    pm)
+ * port 1.0     0pO     LED1                    port 7.0        0mI     dc_sclk (A1,    pm)
  *  00 I .1     1pIru   PB1                      60   .1        0mI     dc_somi (A1,    pm)
  *  02 O .2     0pI                     BSLRXD   62   .2        0mI     dc_simo (A1,    pm)
  *       .3     0pI                     BSLTXD        .3        0pI     gps_tm  (ta1.1, pm) nc
@@ -186,7 +186,7 @@
  *       .6     0pI     tmp_sda         BSLSIMO       .6        0pI
  *       .7     0pI     tmp_scl         BSLSOMI       .7        0pI
  *
- * port 2.0     0pO              (LED2_RED)     port 8.0        0mO     TA1.0 (OUT0)
+ * port 2.0     0pO              (LED2_RED)     port 8.0        0mO     TA1.0 (OUT0), m2
  *  01   .1     0pO              (LED2_GREEN)    61 I .1        0pI
  *  03   .2     0pO              (LED2_BLUE)     63 O .2        0pI
  *       .3     0pI     si446x_cts                    .3        0pI

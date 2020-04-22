@@ -535,7 +535,6 @@ void __pins_init() {
   P2->SEL0 = 0x20;
   P2->SEL1 = 0x00;
 
-//  /* gps is on P3, P4, and P6 */
   P3->DIR = 0x00;
   P3->SEL0= 0xE0;
   P3->SEL1= 0x00;
@@ -563,13 +562,6 @@ void __pins_init() {
   P5->OUT  = 0x05;
   P5->DIR  = 0x05;
 
-  /*
-   * gps_resetn and gps_awake are here.
-   *
-   * on boot, leave reset as an input, let it float.
-   * this lets the gps continue to do what it is doing.
-   * If we need to reset it, the gps driver will do it.
-   */
   P6->OUT = 0x02;
   P6->DIR = 0x02;
 
@@ -585,7 +577,7 @@ void __pins_init() {
    * t_exc is 8.5 (0pO).
    */
   P8->DIR  = 0x61;              /* tell/t_exc are outputs */
-  P8->SEL1 = 1;
+  P8->SEL1 = 0x01;
 
   P9->OUT  = 0x00;
   P9->DIR  = 0x08;
@@ -1297,7 +1289,7 @@ void __Reset() {
   P4->OUT  = 0;                 /* make sure gps_on_off doesn't wiggle */
   P4->SEL0 = 0x1C;
   P4->SEL1 = 0x00;
-  P4->DIR  = 0x1D;
+  P4->DIR  = 0x1C;
 
   P2->OUT  = 0;
   P2->SEL0 = 0x20;              /* smclk */
@@ -1310,7 +1302,7 @@ void __Reset() {
    */
   P8->OUT = 0;                  /* set tell and exc up */
   P8->DIR = 0x61;
-  P8->SEL1 = 1;                 /* TA1.0 (OUT0) */
+  P8->SEL1= 0x01;               /* TA1.0 (OUT0) */
 
   __watchdog_init();
   __pins_init();

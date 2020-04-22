@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -109,15 +109,29 @@
 #define SI446X_CSN          BITBAND_PERI(SI446X_CSN_PORT->OUT, SI446X_CSN_PIN)
 
 
+/* Dock */
+#define DC_ATTN_S_PORT      P6
+#define DC_ATTN_S_PIN       1
+#define DC_ATTN_S_BIT       (1 << DC_ATTN_S_PIN)
+#define DC_ATTN_S_N         BITBAND_PERI(DC_ATTN_S_PORT->OUT, DC_ATTN_S_PIN)
+
+#define DC_ATTN_M_PORT      P6
+#define DC_ATTN_M_PIN       2
+#define DC_ATTN_M_BIT       (1 << DC_ATTN_M_PIN)
+#define DC_ATTN_M_P         (P6->IN & DC_ATTN_M_BIT)
+#define DC_ATTN_M_PORT_PIN  0x62
+
+#define DC_SPI_EN_PORT      P9
+#define DC_SPI_EN_PIN       3
+#define DC_SPI_EN_BIT       (1 << DC_SPI_EN_PIN)
+#define DC_SPI_EN           BITBAND_PERI(DC_SPI_EN_PORT->OUT, DC_SPI_EN_PIN)
+
+
 /* micro SDs */
 #define SD0_CSN_PORT        P10
 #define SD0_CSN_PIN         0
 #define SD0_CSN             BITBAND_PERI(SD0_CSN_PORT->OUT, SD0_CSN_PIN)
 
-#define SD0_ACCESS_SENSE_BIT     0x08
-#define SD0_ACCESS_SENSE_N       FALSE
-#define SD0_ACCESS_ENA_N
-#define SD0_PWR_ENA
 
 /*
  * see hardware.h for what port is assigned to SD0 for SPI.
@@ -128,6 +142,7 @@
 #define SD0_DMA_RX_TRIGGER MSP432_DMA_CH7_B3_RX0
 #define SD0_DMA_TX_ADDR    EUSCI_B3->TXBUF
 #define SD0_DMA_RX_ADDR    EUSCI_B3->RXBUF
+
 
 /*
  * SD0_PINS_SPI will connect the 3 spi lines on SD0 to the SPI.  This is
@@ -152,16 +167,6 @@
     P10->SEL0 = 0x0E;                                       \
 } while (0)
 
-
-
-/*
- * the LIS331 accel breakout board is on the same pins
- * as SD1.  P7.0-2 and accel_csn is P9.4.  int1 is 5.4
- * and int2 is 5.5
- */
-#define LIS331_CSN_PORT P9
-#define LIS331_CSN_PIN  4
-#define LIS331_CSN      BITBAND_PERI(LIS331_CSN_PORT->OUT, LIS331_CSN_PIN)
 
 /*
  * TMP bus consists of two tmp sensors off of an I2C eUSCI.
