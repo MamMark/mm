@@ -70,21 +70,6 @@ document sd0
 display sd0 state
 end
 
-define sd1
-printf "\nuSD1(ua1): pwr: %d  csN: %d    siok\n", \
-    1, (($p1->OUT >> 3) & 1)
-printf "                %c       %c     %c%c%c\n", \
-    'O', ($p1->DIR & (1 << 3)) ?'O':'I', \
-    ($p2->SEL0 & (1 << 3)) ? 'M' : 'p', ($p3->SEL0 & (1 << 2)) ? 'M' : 'p', \
-    ($p2->SEL0 & (1 << 0)) ? 'M' : 'p'
-__p_usci $uca1 1 0 0d17
-output SDspP__1__sdc
-printf "\n"
-end
-document sd1
-display sd1 state
-end
-
 define hw_gps
 printf "\ngps(ua0): pwr (g/m): %d  on_off: %d  nRst: %d  awake: %d    grt\n", \
     (($p5->OUT >> 0) & 1), (($p5->OUT >> 5) & 1), (($pj->OUT >> 2) & 1), (($p6->IN >> 2) & 1)

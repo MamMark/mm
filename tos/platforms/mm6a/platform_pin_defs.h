@@ -240,41 +240,6 @@
 } while (0)
 
 
-/* SD1, dock sd
- * SD1 is on P7,0-2 and sd1_csn is P9.4
- */
-#define SD1_CSN_PORT        P1
-#define SD1_CSN_PIN         3
-#define SD1_CSN             BITBAND_PERI(SD1_CSN_PORT->OUT, SD1_CSN_PIN)
-
-#define SD1_ACCESS_SENSE_BIT     0x08
-#define SD1_ACCESS_SENSE_N       FALSE
-#define SD1_ACCESS_ENA_N
-#define SD1_PWR_ENA
-
-#define SD1_DMA_TX_TRIGGER MSP432_DMA_CH2_A1_TX
-#define SD1_DMA_RX_TRIGGER MSP432_DMA_CH3_A1_RX
-#define SD1_DMA_TX_ADDR    EUSCI_A1->TXBUF
-#define SD1_DMA_RX_ADDR    EUSCI_A1->RXBUF
-
-/*
- * SD1 is on P2.0, 2.3, and 3.2 and sd1_csn is P1.3
- */
-#define SD1_PINS_PORT  do {                                 \
-    BITBAND_PERI(SD1_CSN_PORT->DIR, SD1_CSN_PIN) = 0;       \
-    BITBAND_PERI(P2->SEL0, 0) = 0;                          \
-    BITBAND_PERI(P2->SEL0, 3) = 0;                          \
-    BITBAND_PERI(P3->SEL0, 2) = 0;                          \
-  } while (0)
-
-#define SD1_PINS_SPI    do {                                \
-    BITBAND_PERI(SD1_CSN_PORT->DIR, SD1_CSN_PIN) = 1;       \
-    BITBAND_PERI(P2->SEL0, 0) = 1;                          \
-    BITBAND_PERI(P2->SEL0, 3) = 1;                          \
-    BITBAND_PERI(P3->SEL0, 2) = 1;                          \
-} while (0)
-
-
 /*
  * TMP bus consists of two tmp sensors off of an I2C eUSCI.
  * when the TMP bus is powered down we want to set the bus

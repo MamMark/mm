@@ -153,36 +153,6 @@
 } while (0)
 
 
-/* SD1, dock sd
- * SD1 is on P7,0-2 and sd1_csn is P9.4
- */
-#define SD1_CSN_PORT        P9
-#define SD1_CSN_PIN         4
-#define SD1_CSN             BITBAND_PERI(SD1_CSN_PORT->OUT, SD1_CSN_PIN)
-
-#define SD1_ACCESS_SENSE_BIT     0x08
-#define SD1_ACCESS_SENSE_N       FALSE
-#define SD1_ACCESS_ENA_N
-#define SD1_PWR_ENA
-
-#define SD1_DMA_TX_TRIGGER MSP432_DMA_CH2_A1_TX
-#define SD1_DMA_RX_TRIGGER MSP432_DMA_CH3_A1_RX
-#define SD1_DMA_TX_ADDR    EUSCI_A1->TXBUF
-#define SD1_DMA_RX_ADDR    EUSCI_A1->RXBUF
-
-/*
- * SD1 is on P7.0-2 and sd1_csn is P9.4
- */
-#define SD1_PINS_PORT  do {                                 \
-    BITBAND_PERI(SD1_CSN_PORT->DIR, SD1_CSN_PIN) = 0;       \
-    P7->SEL0 = 0;                                           \
-  } while (0)
-
-#define SD1_PINS_SPI    do {                                \
-    BITBAND_PERI(SD1_CSN_PORT->DIR, SD1_CSN_PIN) = 1;       \
-    P7->SEL0 = 0x07;                                        \
-} while (0)
-
 
 /*
  * the LIS331 accel breakout board is on the same pins
