@@ -74,14 +74,4 @@ interface GPSProto {
    * turn off underlying deadman timer
    */
   async event void msgEnd();
-
-  /*
-   * msgBoundary and atMsgBoundary currently are not used.
-   *
-   * Potential deprecation
-   */
-#ifdef notdef
-  async event   void msgBoundary();
-  async command bool atMsgBoundary();
-#endif
 }
