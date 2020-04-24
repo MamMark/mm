@@ -26,13 +26,12 @@
  * PWR:         power subsystem
  * RADIO:       radio driver issues.
  * TAGNET:      comm stack
+ * MSGBUF:      msg buffer subsys (buffer slicing)
  */
 
 typedef enum panic_codes {
   /*
-   * these start at PANIC_HC_START (16).  They are hardcoded to be
-   * very very explicit about it.  They get are externally visibile
-   * when things crash.
+   * these start at PANIC_HC_START (16).
    *
    * DO NOT RENUMBER.  Its a pain.
    */
@@ -50,6 +49,7 @@ typedef enum panic_codes {
   __pcode_pwr           = 27,
   __pcode_radio         = 28,
   __pcode_tagnet        = 29,
+  __pcode_msgbuf        = 30,
 
   __pcode_exc           = 0x70,
   __pcode_kern          = 0x71,
@@ -71,6 +71,7 @@ typedef enum panic_codes {
 #define PANIC_PWR       __pcode_pwr
 #define PANIC_RADIO     __pcode_radio
 #define PANIC_TAGNET    __pcode_tagnet
+#define PANIC_MSGBUF    __pcode_msgbuf
 
 #define PANIC_EXC       __pcode_exc
 #define PANIC_KERN      __pcode_kern

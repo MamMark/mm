@@ -213,12 +213,12 @@
 #include <rtctime.h>
 
 
-#ifndef PANIC_GPS
+#ifndef PANIC_MSGBUF
 enum {
-  __pcode_gps = unique(UQ_PANIC_SUBSYS)
+  __pcode_msgbuf = unique(UQ_PANIC_SUBSYS)
 };
 
-#define PANIC_GPS __pcode_gps
+#define PANIC_MSGBUF __pcode_msgbuf
 #endif
 
 enum {
@@ -260,12 +260,12 @@ implementation {
   norace mbc_t      mbc;                        /* msgbuffer control */
 
 
-  void gps_warn(uint8_t where, parg_t p0, parg_t p1) {
-    call Panic.warn(PANIC_GPS, where, p0, p1, 0, 0);
+  void mb_warn(uint8_t where, parg_t p0, parg_t p1) {
+    call Panic.warn(PANIC_MSGBUF, where, p0, p1, 0, 0);
   }
 
-  void gps_panic(uint8_t where, parg_t p0, parg_t p1) {
-    call Panic.panic(PANIC_GPS, where, p0, p1, 0, 0);
+  void mb_panic(uint8_t where, parg_t p0, parg_t p1) {
+    call Panic.panic(PANIC_MSGBUF, where, p0, p1, 0, 0);
   }
 
 
@@ -320,7 +320,7 @@ implementation {
    */
   void reset_free() {
     if (MSG_INDEX_VALID(mbc.head) || MSG_INDEX_VALID(mbc.tail)) {
-        gps_panic(MSGW_RESET_FREE, mbc.head, mbc.tail);
+        mb_panic(MSGW_RESET_FREE, mbc.head, mbc.tail);
         return;
     }
     mbc.free     = msg_buf;
@@ -335,7 +335,7 @@ implementation {
 
     if (mbc.free < msg_buf || mbc.free > msg_buf + MSG_BUF_SIZE ||
         mbc.free_len > MSG_BUF_SIZE) {
-      gps_panic(MSGW_START, (parg_t) mbc.free, mbc.free_len);
+      mb_panic(MSGW_START, (parg_t) mbc.free, mbc.free_len);
       return NULL;
     }
 
@@ -359,7 +359,7 @@ implementation {
      */
     if (MSG_INDEX_EMPTY(mbc.head) && MSG_INDEX_EMPTY(mbc.tail)) {
       if (mbc.free != msg_buf || mbc.free_len != MSG_BUF_SIZE) {
-        gps_panic(MSGW_START_1, (parg_t) mbc.free, (parg_t) msg_buf);
+        mb_panic(MSGW_START_1, (parg_t) mbc.free, (parg_t) msg_buf);
         return NULL;
       }
 
@@ -388,7 +388,7 @@ implementation {
     }
 
     if (MSG_INDEX_INVALID(mbc.head) || MSG_INDEX_INVALID(mbc.tail)) {
-      gps_panic(MSGW_START_2, mbc.tail, 0);
+      mb_panic(MSGW_START_2, mbc.tail, 0);
       return NULL;
     }
 
@@ -398,11 +398,11 @@ implementation {
      */
     msg = &msg_msgs[mbc.tail];
     if (msg->state != MSG_SLOT_FULL && msg->state != MSG_SLOT_BUSY) {
-      gps_panic(MSGW_START_3, mbc.tail, msg->state);
+      mb_panic(MSGW_START_3, mbc.tail, msg->state);
       return NULL;
     }
     if (msg->extra) {                   /* extra should always be zero here */
-      gps_panic(MSGW_START_4, mbc.tail, msg->extra);
+      mb_panic(MSGW_START_4, mbc.tail, msg->extra);
       return NULL;
     }
 
@@ -457,7 +457,7 @@ implementation {
       idx = MSG_NEXT_INDEX(mbc.tail);
       msg = &msg_msgs[idx];
       if (msg->state) {                 /* had better be empty */
-        gps_panic(MSGW_START_5, (parg_t) msg, msg->state);
+        mb_panic(MSGW_START_5, (parg_t) msg, msg->state);
         return NULL;
       }
 
@@ -480,7 +480,7 @@ implementation {
     }
 
     /* shouldn't be here, ever */
-    gps_panic(MSGW_START_6, mbc.free_len, mbc.aux_len);
+    mb_panic(MSGW_START_6, mbc.free_len, mbc.aux_len);
     return NULL;
   }
 
@@ -500,16 +500,16 @@ implementation {
     uint8_t   *slice;           /* memory slice we are aborting */
 
     if (MSG_INDEX_INVALID(mbc.tail)) {  /* oht oh */
-      gps_panic(MSGW_ABORT, mbc.tail, 0);
+      mb_panic(MSGW_ABORT, mbc.tail, 0);
       return;
     }
     msg = &msg_msgs[mbc.tail];
     if (msg->state != MSG_SLOT_FILLING) { /* oht oh */
-      gps_panic(MSGW_ABORT_1, (parg_t) msg, msg->state);
+      mb_panic(MSGW_ABORT_1, (parg_t) msg, msg->state);
       return;
     }
     if (msg->extra) {                   /* oht oh */
-      gps_panic(MSGW_ABORT_2, (parg_t) msg, msg->extra);
+      mb_panic(MSGW_ABORT_2, (parg_t) msg, msg->extra);
       return;
     }
     msg->state = MSG_SLOT_EMPTY;        /* no longer in use */
@@ -588,12 +588,12 @@ implementation {
     msg_slot_t *msg;             /* message slot we are working on */
 
     if (MSG_INDEX_INVALID(mbc.tail)) {  /* oht oh */
-      gps_panic(MSGW_COMPLETE, mbc.tail, 0);
+      mb_panic(MSGW_COMPLETE, mbc.tail, 0);
       return;
     }
     msg = &msg_msgs[mbc.tail];
     if (msg->state != MSG_SLOT_FILLING) { /* oht oh */
-      gps_panic(MSGW_COMPLETE_1, (parg_t) msg, msg->state);
+      mb_panic(MSGW_COMPLETE_1, (parg_t) msg, msg->state);
       return;
     }
 
@@ -614,7 +614,7 @@ implementation {
       if (msg->state == MSG_SLOT_FILLING)       /* not ready yet */
         return NULL;
       if (msg->state != MSG_SLOT_FULL) {        /* oht oh */
-        gps_panic(MSGW_NEXT, (parg_t) msg, msg->state);
+        mb_panic(MSGW_NEXT, (parg_t) msg, msg->state);
         return NULL;
       }
       msg->state = MSG_SLOT_BUSY;
@@ -639,13 +639,13 @@ implementation {
     atomic {
       if (MSG_INDEX_INVALID(mbc.head) ||
           MSG_INDEX_INVALID(mbc.tail)) {  /* oht oh */
-        gps_panic(MSGW_RELEASE, mbc.head, 0);
+        mb_panic(MSGW_RELEASE, mbc.head, 0);
         return;
       }
       msg = &msg_msgs[mbc.head];
       /* oht oh - only FULL or BUSY can be released */
       if (msg->state != MSG_SLOT_BUSY && msg->state != MSG_SLOT_FULL) {
-        gps_panic(MSGW_RELEASE_1, (parg_t) msg, msg->state);
+        mb_panic(MSGW_RELEASE_1, (parg_t) msg, msg->state);
         return;
       }
       msg->state = MSG_SLOT_EMPTY;
@@ -688,7 +688,7 @@ implementation {
          * free space is in the front of the buffer (below the head/slice)
          * aux_len shouldn't have anything on it.  Bitch.
          */
-        gps_panic(MSGW_RELEASE_2, mbc.aux_len, (parg_t) mbc.free);
+        mb_panic(MSGW_RELEASE_2, mbc.aux_len, (parg_t) mbc.free);
         return;
       }
       msg->extra = 0;
