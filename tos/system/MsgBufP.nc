@@ -257,7 +257,7 @@ module MsgBufP {
 implementation {
          uint8_t    msg_buf[MSG_BUF_SIZE];      /* underlying storage */
          msg_slot_t msg_msgs[MSG_MAX_MSGS];     /* msg slots */
-  norace mbc_t      gmc;                        /* msgbuffer control */
+  norace mbc_t      mbc;                        /* msgbuffer control */
 
 
   void gps_warn(uint8_t where, parg_t p0, parg_t p1) {
@@ -271,10 +271,10 @@ implementation {
 
   command error_t Init.init() {
     /* initilize the control cells for the msg queue and free space */
-    gmc.free     = msg_buf;
-    gmc.free_len = MSG_BUF_SIZE;
-    gmc.head     = MSG_NO_INDEX;        /* no msgs in queue */
-    gmc.tail     = MSG_NO_INDEX;        /* no msgs in queue */
+    mbc.free     = msg_buf;
+    mbc.free_len = MSG_BUF_SIZE;
+    mbc.head     = MSG_NO_INDEX;        /* no msgs in queue */
+    mbc.tail     = MSG_NO_INDEX;        /* no msgs in queue */
 
     /* all msg slots initialized to EMPTY (0) */
 
@@ -319,13 +319,13 @@ implementation {
    * reset_free: reset free space to pristine state.
    */
   void reset_free() {
-    if (MSG_INDEX_VALID(gmc.head) || MSG_INDEX_VALID(gmc.tail)) {
-        gps_panic(MSGW_RESET_FREE, gmc.head, gmc.tail);
+    if (MSG_INDEX_VALID(mbc.head) || MSG_INDEX_VALID(mbc.tail)) {
+        gps_panic(MSGW_RESET_FREE, mbc.head, mbc.tail);
         return;
     }
-    gmc.free     = msg_buf;
-    gmc.free_len = MSG_BUF_SIZE;
-    gmc.aux_len  = 0;
+    mbc.free     = msg_buf;
+    mbc.free_len = MSG_BUF_SIZE;
+    mbc.aux_len  = 0;
   }
 
 
@@ -333,9 +333,9 @@ implementation {
     msg_slot_t *msg;            /* message slot we are working on */
     uint16_t    idx;            /* index of message slot */
 
-    if (gmc.free < msg_buf || gmc.free > msg_buf + MSG_BUF_SIZE ||
-        gmc.free_len > MSG_BUF_SIZE) {
-      gps_panic(MSGW_START, (parg_t) gmc.free, gmc.free_len);
+    if (mbc.free < msg_buf || mbc.free > msg_buf + MSG_BUF_SIZE ||
+        mbc.free_len > MSG_BUF_SIZE) {
+      gps_panic(MSGW_START, (parg_t) mbc.free, mbc.free_len);
       return NULL;
     }
 
@@ -349,17 +349,17 @@ implementation {
     /*
      * bail out early if no free space or not enough slots
      */
-    if (gmc.full >= MSG_MAX_MSGS ||
-        (gmc.free_len < len && gmc.aux_len < len))
+    if (mbc.full >= MSG_MAX_MSGS ||
+        (mbc.free_len < len && mbc.aux_len < len))
       return NULL;
 
     /*
      * Look at the msg queue to see what the state of free space is.
      * EMPTY (buffer is all FREE), !EMPTY (1 or 2 free space regions).
      */
-    if (MSG_INDEX_EMPTY(gmc.head) && MSG_INDEX_EMPTY(gmc.tail)) {
-      if (gmc.free != msg_buf || gmc.free_len != MSG_BUF_SIZE) {
-        gps_panic(MSGW_START_1, (parg_t) gmc.free, (parg_t) msg_buf);
+    if (MSG_INDEX_EMPTY(mbc.head) && MSG_INDEX_EMPTY(mbc.tail)) {
+      if (mbc.free != msg_buf || mbc.free_len != MSG_BUF_SIZE) {
+        gps_panic(MSGW_START_1, (parg_t) mbc.free, (parg_t) msg_buf);
         return NULL;
       }
 
@@ -369,26 +369,26 @@ implementation {
       msg->len   = len;
       msg->state = MSG_SLOT_FILLING;
       call Rtc.getTime(&msg->arrival_rt);
-      gmc.free   = msg_buf + len;
-      gmc.free_len -= len;              /* zero is okay */
+      mbc.free   = msg_buf + len;
+      mbc.free_len -= len;              /* zero is okay */
 
-      gmc.allocated = len;
-      if (gmc.allocated > gmc.max_allocated)
-        gmc.max_allocated = gmc.allocated;
+      mbc.allocated = len;
+      if (mbc.allocated > mbc.max_allocated)
+        mbc.max_allocated = mbc.allocated;
 
-      gmc.head   = 0;                   /* always 0 */
-      gmc.tail   = 0;                   /* ditto for tail */
-      gmc.full   = 1;                   /* just one */
-      if (!gmc.max_full)                /* if zero, pop it */
-        gmc.max_full = 1;
+      mbc.head   = 0;                   /* always 0 */
+      mbc.tail   = 0;                   /* ditto for tail */
+      mbc.full   = 1;                   /* just one */
+      if (!mbc.max_full)                /* if zero, pop it */
+        mbc.max_full = 1;
 
-      /* no need to wrap if gmc.free_len is zero, just consumed it all */
+      /* no need to wrap if mbc.free_len is zero, just consumed it all */
 
       return msg->data;
     }
 
-    if (MSG_INDEX_INVALID(gmc.head) || MSG_INDEX_INVALID(gmc.tail)) {
-      gps_panic(MSGW_START_2, gmc.tail, 0);
+    if (MSG_INDEX_INVALID(mbc.head) || MSG_INDEX_INVALID(mbc.tail)) {
+      gps_panic(MSGW_START_2, mbc.tail, 0);
       return NULL;
     }
 
@@ -396,13 +396,13 @@ implementation {
      * make sure that tail->state is FULL (BUSY counts as FULL).  Need to
      * complete previous message before doing another start.
      */
-    msg = &msg_msgs[gmc.tail];
+    msg = &msg_msgs[mbc.tail];
     if (msg->state != MSG_SLOT_FULL && msg->state != MSG_SLOT_BUSY) {
-      gps_panic(MSGW_START_3, gmc.tail, msg->state);
+      gps_panic(MSGW_START_3, mbc.tail, msg->state);
       return NULL;
     }
     if (msg->extra) {                   /* extra should always be zero here */
-      gps_panic(MSGW_START_4, gmc.tail, msg->extra);
+      gps_panic(MSGW_START_4, mbc.tail, msg->extra);
       return NULL;
     }
 
@@ -419,7 +419,7 @@ implementation {
      * programming.  (the code at the end, the panic, should actually
      * get optimized out.)
      */
-    if (len > gmc.free_len && len <= gmc.aux_len) {
+    if (len > mbc.free_len && len <= mbc.aux_len) {
       /*
        * ah ha!  Just as I suspected, doesn't fit into the current free
        * region but does fit into the free space at the front of the
@@ -433,14 +433,14 @@ implementation {
        * Note: since aux_len is non-zero, current free space must be on
        * the tail of the buffer.  ie.  free > msg_msgs[head].data.
        */
-      msg->extra = gmc.free_len;
-      gmc.free_len = 0;
-      gmc.allocated += msg->extra;      /* put extra into allocated too */
-      if (gmc.allocated > gmc.max_allocated)
-        gmc.max_allocated = gmc.allocated;
-      gmc.free = msg_buf;                 /* wrap to beginning */
-      gmc.free_len = gmc.aux_len;
-      gmc.aux_len  = 0;
+      msg->extra = mbc.free_len;
+      mbc.free_len = 0;
+      mbc.allocated += msg->extra;      /* put extra into allocated too */
+      if (mbc.allocated > mbc.max_allocated)
+        mbc.max_allocated = mbc.allocated;
+      mbc.free = msg_buf;                 /* wrap to beginning */
+      mbc.free_len = mbc.aux_len;
+      mbc.aux_len  = 0;
     }
 
     /*
@@ -452,35 +452,35 @@ implementation {
      * note: if we wrapped above, aux_len will be zero (back to 1 active
      * region, in the front).  We won't wrap again.
      */
-    if (len <= gmc.free_len) {
+    if (len <= mbc.free_len) {
       /* msg will fit in current free space. */
-      idx = MSG_NEXT_INDEX(gmc.tail);
+      idx = MSG_NEXT_INDEX(mbc.tail);
       msg = &msg_msgs[idx];
       if (msg->state) {                 /* had better be empty */
         gps_panic(MSGW_START_5, (parg_t) msg, msg->state);
         return NULL;
       }
 
-      msg->data  = gmc.free;
+      msg->data  = mbc.free;
       msg->len   = len;
       msg->state = MSG_SLOT_FILLING;
-      gmc.tail   = idx;                 /* advance tail */
+      mbc.tail   = idx;                 /* advance tail */
 
       call Rtc.getTime(&msg->arrival_rt);
-      gmc.free = gmc.free + len;
-      gmc.free_len -= len;              /* zero is okay */
-      gmc.allocated += len;
-      if (gmc.allocated > gmc.max_allocated)
-        gmc.max_allocated = gmc.allocated;
+      mbc.free = mbc.free + len;
+      mbc.free_len -= len;              /* zero is okay */
+      mbc.allocated += len;
+      if (mbc.allocated > mbc.max_allocated)
+        mbc.max_allocated = mbc.allocated;
 
-      gmc.full++;                       /* one more*/
-      if (gmc.full > gmc.max_full)
-        gmc.max_full = gmc.full;
+      mbc.full++;                       /* one more*/
+      if (mbc.full > mbc.max_full)
+        mbc.max_full = mbc.full;
       return msg->data;
     }
 
     /* shouldn't be here, ever */
-    gps_panic(MSGW_START_6, gmc.free_len, gmc.aux_len);
+    gps_panic(MSGW_START_6, mbc.free_len, mbc.aux_len);
     return NULL;
   }
 
@@ -499,11 +499,11 @@ implementation {
     msg_slot_t *msg;            /* message slot we are working on */
     uint8_t   *slice;           /* memory slice we are aborting */
 
-    if (MSG_INDEX_INVALID(gmc.tail)) {  /* oht oh */
-      gps_panic(MSGW_ABORT, gmc.tail, 0);
+    if (MSG_INDEX_INVALID(mbc.tail)) {  /* oht oh */
+      gps_panic(MSGW_ABORT, mbc.tail, 0);
       return;
     }
-    msg = &msg_msgs[gmc.tail];
+    msg = &msg_msgs[mbc.tail];
     if (msg->state != MSG_SLOT_FILLING) { /* oht oh */
       gps_panic(MSGW_ABORT_1, (parg_t) msg, msg->state);
       return;
@@ -515,11 +515,11 @@ implementation {
     msg->state = MSG_SLOT_EMPTY;        /* no longer in use */
     slice = msg->data;
     msg->data = NULL;
-    if (gmc.head == gmc.tail) {         /* only entry? */
-      gmc.head = MSG_NO_INDEX;
-      gmc.tail = MSG_NO_INDEX;
-      gmc.full = 0;
-      gmc.allocated = 0;
+    if (mbc.head == mbc.tail) {         /* only entry? */
+      mbc.head = MSG_NO_INDEX;
+      mbc.tail = MSG_NO_INDEX;
+      mbc.full = 0;
+      mbc.allocated = 0;
       reset_free();
       return;
     }
@@ -549,15 +549,15 @@ implementation {
        * its previous value.  free = tail->data+len (point at the extra area)
        * and free_len = tail->extra.  Nuke tail->extra.
        */
-      gmc.aux_len = msg->len + gmc.free_len;
-      gmc.allocated -= msg->len;
-      gmc.tail = MSG_PREV_INDEX(gmc.tail);
-      msg = &msg_msgs[gmc.tail];
-      gmc.free = msg->data + msg->len;
-      gmc.free_len = msg->extra;
-      gmc.allocated -= msg->extra;
+      mbc.aux_len = msg->len + mbc.free_len;
+      mbc.allocated -= msg->len;
+      mbc.tail = MSG_PREV_INDEX(mbc.tail);
+      msg = &msg_msgs[mbc.tail];
+      mbc.free = msg->data + msg->len;
+      mbc.free_len = msg->extra;
+      mbc.allocated -= msg->extra;
       msg->extra = 0;
-      gmc.full--;
+      mbc.full--;
       return;
     }
 
@@ -570,11 +570,11 @@ implementation {
      *
      * msg set to tail above, and its state to EMPTY.
      */
-    gmc.free = slice;
-    gmc.free_len += msg->len;
-    gmc.allocated -= msg->len;
-    gmc.tail = MSG_PREV_INDEX(gmc.tail);
-    gmc.full--;
+    mbc.free = slice;
+    mbc.free_len += msg->len;
+    mbc.allocated -= msg->len;
+    mbc.tail = MSG_PREV_INDEX(mbc.tail);
+    mbc.full--;
     return;
   }
 
@@ -587,18 +587,18 @@ implementation {
   async command void MsgBuf.msg_complete() {
     msg_slot_t *msg;             /* message slot we are working on */
 
-    if (MSG_INDEX_INVALID(gmc.tail)) {  /* oht oh */
-      gps_panic(MSGW_COMPLETE, gmc.tail, 0);
+    if (MSG_INDEX_INVALID(mbc.tail)) {  /* oht oh */
+      gps_panic(MSGW_COMPLETE, mbc.tail, 0);
       return;
     }
-    msg = &msg_msgs[gmc.tail];
+    msg = &msg_msgs[mbc.tail];
     if (msg->state != MSG_SLOT_FILLING) { /* oht oh */
       gps_panic(MSGW_COMPLETE_1, (parg_t) msg, msg->state);
       return;
     }
 
     msg->state = MSG_SLOT_FULL;
-    if (gmc.tail == gmc.head)
+    if (mbc.tail == mbc.head)
       post gps_receive_task();          /* start processing the queue */
   }
 
@@ -608,9 +608,9 @@ implementation {
     msg_slot_t *msg;                   /* message slot we are working on */
 
     atomic {
-      if (MSG_INDEX_INVALID(gmc.head))          /* empty queue */
+      if (MSG_INDEX_INVALID(mbc.head))          /* empty queue */
         return NULL;
-      msg = &msg_msgs[gmc.head];
+      msg = &msg_msgs[mbc.head];
       if (msg->state == MSG_SLOT_FILLING)       /* not ready yet */
         return NULL;
       if (msg->state != MSG_SLOT_FULL) {        /* oht oh */
@@ -637,12 +637,12 @@ implementation {
     uint16_t    rtn_size;       /* what is being freed */
 
     atomic {
-      if (MSG_INDEX_INVALID(gmc.head) ||
-          MSG_INDEX_INVALID(gmc.tail)) {  /* oht oh */
-        gps_panic(MSGW_RELEASE, gmc.head, 0);
+      if (MSG_INDEX_INVALID(mbc.head) ||
+          MSG_INDEX_INVALID(mbc.tail)) {  /* oht oh */
+        gps_panic(MSGW_RELEASE, mbc.head, 0);
         return;
       }
-      msg = &msg_msgs[gmc.head];
+      msg = &msg_msgs[mbc.head];
       /* oht oh - only FULL or BUSY can be released */
       if (msg->state != MSG_SLOT_BUSY && msg->state != MSG_SLOT_FULL) {
         gps_panic(MSGW_RELEASE_1, (parg_t) msg, msg->state);
@@ -652,17 +652,17 @@ implementation {
       slice = msg->data;
       msg->data  = NULL;                /* for observability */
       rtn_size = msg->len + msg->extra;
-      if (gmc.head == gmc.tail) {
+      if (mbc.head == mbc.tail) {
         /* releasing entire buffer */
-        gmc.head     = MSG_NO_INDEX;
-        gmc.tail     = MSG_NO_INDEX;
-        gmc.full     = 0;
-        gmc.allocated= 0;
+        mbc.head     = MSG_NO_INDEX;
+        mbc.tail     = MSG_NO_INDEX;
+        mbc.full     = 0;
+        mbc.allocated= 0;
         reset_free();
         return;
       }
 
-      if (slice < gmc.free) {
+      if (slice < mbc.free) {
         /*
          * slice (the head being released) is below the free pointer, this
          * means free is on the tail of the region.  (back of the buffer).
@@ -670,10 +670,10 @@ implementation {
          *
          * The release needs to get added to the aux region.
          */
-        gmc.aux_len += rtn_size;
-        gmc.allocated -= rtn_size;
-        gmc.head = MSG_NEXT_INDEX(gmc.head);
-        gmc.full--;
+        mbc.aux_len += rtn_size;
+        mbc.allocated -= rtn_size;
+        mbc.head = MSG_NEXT_INDEX(mbc.head);
+        mbc.full--;
         return;
       }
 
@@ -683,19 +683,19 @@ implementation {
        * free space is in front of the slice (head).  no aux.  add the
        * space from head/slice to the free space.
        */
-      if (gmc.aux_len) {
+      if (mbc.aux_len) {
         /*
          * free space is in the front of the buffer (below the head/slice)
          * aux_len shouldn't have anything on it.  Bitch.
          */
-        gps_panic(MSGW_RELEASE_2, gmc.aux_len, (parg_t) gmc.free);
+        gps_panic(MSGW_RELEASE_2, mbc.aux_len, (parg_t) mbc.free);
         return;
       }
       msg->extra = 0;
-      gmc.free_len += rtn_size;
-      gmc.allocated -= rtn_size;
-      gmc.head = MSG_NEXT_INDEX(gmc.head);
-      gmc.full--;
+      mbc.free_len += rtn_size;
+      mbc.allocated -= rtn_size;
+      mbc.head = MSG_NEXT_INDEX(mbc.head);
+      mbc.full--;
       return;
     }
   }
