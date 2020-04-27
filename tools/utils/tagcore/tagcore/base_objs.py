@@ -203,8 +203,8 @@ class tlv_block_aggie(aggie):
                 break;
             # first, peek, 1st byte tlv_type, 2nd tlv_len
             # we need tlv_len to properly build the tlv_aggie.
-            tlv_type = ord(buf[consumed])
-            tlv_len  = ord(buf[consumed + 1])
+            tlv_type = buf[consumed]
+            tlv_len  = buf[consumed + 1]
             tlv = tlv_aggie(aggie(OrderedDict([
                 ('tlv_type',  atom(('<B', '{}'))),
                 ('tlv_len',   atom(('<B', '{}'))),
