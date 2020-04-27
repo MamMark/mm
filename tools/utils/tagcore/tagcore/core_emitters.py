@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.7'
+__version__ = '0.4.8.dev0'
 
 from   ctypes       import c_int32
 from   binascii     import hexlify
@@ -903,7 +903,7 @@ def emit_gps_proto_stats(level, offset, buf, obj):
 
 ########################################################################
 #
-# main gps raw emitter, displays DT_GPS_RAW_SIRFBIN
+# main gps raw emitter, displays DT_GPS_RAW
 # obj_dt_gps_raw, 2nd level emit on mid
 #
 

@@ -72,7 +72,7 @@ typedef enum {
   DT_SYNC_FLUSH         = 6,
   DT_SYNC_REBOOT        = 7,
 
-  DT_GPS_RAW_SIRFBIN	= 13,
+  DT_GPS_RAW    	= 13,
   DT_TAGNET             = 14,
   DT_RADIO              = 15,
   DT_GPS_VERSION        = 16,
@@ -370,7 +370,7 @@ typedef enum {
  *   DT_GPS_XYZ
  *   DT_GPS_TRK
  *   DT_GPS_CLK
- *   DT_GPS_RAW_SIRFBIN
+ *   DT_GPS_RAW
  *
  * Note: at one point we thought that we would be able to access the
  * GPS data directly (multi-byte fields).  But we are little endian

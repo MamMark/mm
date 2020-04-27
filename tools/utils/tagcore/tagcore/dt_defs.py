@@ -43,7 +43,7 @@ Includes the following:
 from   __future__   import print_function
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.7'
+__version__ = '0.4.8.dev0'
 
 cfg_print_hourly = True
 
@@ -69,7 +69,7 @@ __all__ = [
     'DT_SYNC_FLUSH',
     'DT_SYNC_REBOOT',
 
-    'DT_GPS_RAW_SIRFBIN',
+    'DT_GPS_RAW',
     'DT_TAGNET',
     'DT_RADIO',
     'DT_GPS_VERSION',
@@ -158,7 +158,7 @@ DT_DEBUG                = 5
 DT_SYNC_FLUSH           = 6
 DT_SYNC_REBOOT          = 7
 
-DT_GPS_RAW_SIRFBIN      = 13
+DT_GPS_RAW              = 13
 DT_TAGNET               = 14
 DT_RADIO                = 15
 DT_GPS_VERSION          = 16

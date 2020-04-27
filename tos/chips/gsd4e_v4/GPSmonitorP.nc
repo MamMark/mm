@@ -1894,7 +1894,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
        * stream.
        */
       hdr.len      = sizeof(hdr) + len;
-      hdr.dtype    = DT_GPS_RAW_SIRFBIN;
+      hdr.dtype    = DT_GPS_RAW;
       call Rtc.copyTime(&hdr.rt, arrival_rtp);
       hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
       hdr.chip_id  = CHIP_GPS_GSD4E;

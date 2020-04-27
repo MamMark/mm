@@ -505,7 +505,7 @@ implementation {
 
     if (call OverWatch.getLoggingFlag(OW_LOG_GPS_RAW)) {
       hdr.len      = sizeof(hdr) + len;
-      hdr.dtype    = DT_GPS_RAW_SIRFBIN;
+      hdr.dtype    = DT_GPS_RAW;
       hdr.mark_us  = 0;
       hdr.chip_id  = CHIP_GPS_GSD4E;
       hdr.dir      = dir;

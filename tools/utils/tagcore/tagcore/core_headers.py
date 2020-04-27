@@ -23,7 +23,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.7'
+__version__ = '0.4.8.dev0'
 
 import binascii
 from   collections  import OrderedDict
@@ -83,8 +83,11 @@ def decode_sensor(level, offset, buf, obj):
 
 # GPS RAW decoder
 #
-# main gps raw decoder, decodes DT_GPS_RAW_SIRFBIN
+# main gps raw decoder, decodes DT_GPS_RAW
 # dt_gps_raw_obj, 2nd level decode on mid
+#
+# WARNING: currently assumes raw SIRFBIN.  Needs to be refactored to handle
+# UBXBIN packets.   Along with a reasonable handling of NMEA packets.
 #
 # obj must be a obj_dt_gps_raw.
 #
@@ -367,7 +370,7 @@ def obj_dt_debug():
 
 #
 # dt, native, little endian
-# used by DT_GPS_VERSION and DT_GPS_RAW_SIRFBIN (gps_raw)
+# used by DT_GPS_VERSION and DT_GPS_RAW (gps_raw)
 #
 def obj_dt_gps_hdr():
     return aggie(OrderedDict([
@@ -547,7 +550,7 @@ def obj_gps_proto_stats():
     ]))
 
 
-# DT_GPS_RAW_SIRFBIN, dt, native, little endian
+# DT_GPS_RAW, dt, native, little endian
 #  sirf data big endian.
 def obj_dt_gps_raw():
     return aggie(OrderedDict([
