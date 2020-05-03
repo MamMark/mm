@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020      Eric B. Decker
  * Copyright (c) 2017-2018 Eric B. Decker
  * All rights reserved.
  *
@@ -407,6 +408,7 @@ implementation {
   }
 
   async command void    HW.gps_receive_block_stop() {
+    call HW.gps_rx_int_disable();
     m_rx_buf = NULL;
   }
 
