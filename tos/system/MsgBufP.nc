@@ -341,7 +341,7 @@ implementation {
 
     /*
      * gps packets have a minimum size.  If the request is too small
-     * bail out.
+     * bail out.  This includes any overhead vs. length field.
      */
     if (len < MSG_MIN_MSG)
       return NULL;
