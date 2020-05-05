@@ -1,0 +1,62 @@
+
+This is a tinyos driver for the uBlox based M8 gps chips.  In particular
+the Zoe M8.  We support both UART (ubloxZoeUP) and SPI (ubloxZoeSP)
+communications.  Which is selected is determined by platform port code.
+
+The UART interface is simpler, but has speed issues.  The fastest we can
+run the UART is 115200 due to interrupt overhead constrainsts.  Currently,
+we only support 9600.  The SPI is limited to 5.5 MHz bit clock and 125 kB/s
+byte period.  The SPI interface is significantly simpler to use than the
+UART.
+
+The uBlox chips have a gps_tx_ready signal that indicates when data is
+available for the SPI master to pull from the slave.  This functionality
+must be enabled during configuration.  Tx_ready is used to group bytes
+together for one interrupt.  This amortizes the interrupt cost over
+mulitple bytes and keeps the cpu sleeping for long.  It also cuts down on
+the number of interrupt stack/destacking operations.
+
+On the other hand, UART messages are full duplex and generate an interrupt
+for each character as they arrive.  While simpler, it costs an interrupt
+stack/destack per byte.
+
+The lowest level interface is an UART port dedicated to the GPS chip,
+ubloxZoeUP, U = UART.  This layer handles basic configuration, ie. protocol
+(NEMA vs. ubxBin) and baud rate.  Currently we only support the default
+of 9600 baud.
+
+Any byte processing is handled by the low level state machine, see
+ubloxZoeUP and the protocol engine ubxBinP.
+
+Largest expected packet received is no larger than xxx bytes (See
+ublox_driver.h).
+
+Backing the GPS is an area of memory called the GPS Buffer.  Any messages
+from the GPS are first collected into this memory using buffer slicing (see
+MsgBuf) and then handed to higher layers one message at a time.  Protocol
+processing is handled by the state machine in ubxBinP.  Valid byte streams
+are deposited directly into the current buffer slice allocated by the
+Protocol engine using MsgBuf.
+
+At the highest level is the GPSMonitor.  The monitor is responsible for higher
+control functions and the main state machine.  The monitor is what knows about
+the gps state (hibernate, awake, micro-power mode (mpm), low power, etc.).
+
+
+Following control signals are used for messing with the GPS:
+
+gps_tx_ready: true when the gps has data to be read.
+gps_resetn:   low to reset.
+gps_tm:       1pps pulse.
+
+SPI:
+gps_csn:  gps spi chip select (low true).
+gps_sclk: gps spi clock.
+gps_simo: gps spi rx (slave in, master out), gps_rx
+gps_somi: gps spi tx (slave out, master in), gps_tx
+
+
+SPI configuration:
+
+
+Message format:

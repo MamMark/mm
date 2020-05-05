@@ -1,0 +1,77 @@
+
+source .gdb/.gdb_gps_hw.py
+
+define __print_msg_slot
+# arg0 index
+set $_msg = &MsgBufP__msg_msgs[$arg0]
+printf " %02d  %08x  %03x    %03x  ", \
+    $arg0, $_msg->data, $_msg->len, $_msg->extra
+output $_msg->state
+printf "\n"
+end
+
+
+define __msg_buf_state
+printf "\nMsg Buf: free: %d  allocated: %d  max_alloc: %d  N_q: %d  Max_q: %d\n", \
+    MsgBufP__mbc.free_len, MsgBufP__mbc.allocated, \
+    MsgBufP__mbc.max_allocated, \
+    MsgBufP__mbc.full, MsgBufP__mbc.max_full
+printf "      %08x  aux: %d  head: %d  tail: %d\n", \
+    MsgBufP__mbc.free, MsgBufP__mbc.aux_len, \
+    MsgBufP__mbc.head, MsgBufP__mbc.tail
+printf "msgs:\n"
+printf "     ptr    len  extra  state\n"
+set $_i=0
+while $_i < 0d16
+    __print_msg_slot $_i
+    set $_i++
+end
+printf "\n"
+end
+
+define __gps_proto_state
+printf "ubxProto: (p) "
+output ubxProtoP__ubx_state_prev
+printf ",  "
+output ubxProtoP__ubx_state
+printf "\n     ptr: (p) %08x,  %08x\n", \
+    ubxProtoP__ubx_ptr_prev, ubxProtoP__ubx_ptr
+end
+
+define __gps_driver_state
+printf "\nDriver: "
+output gpsc_state
+printf "\nevents:\n"
+output g_evs
+printf "\n\n"
+end
+
+# requires gdb_gps_hw.py for gps_proto_stats
+define gps_state
+printf "\n"
+__msg_buf_state
+__gps_proto_state
+__gps_driver_state
+hw_gps
+end
+document gps_state
+display gps state
+end
+
+define mb
+__gps_msg_buf_state
+end
+
+define mx
+printf "Msg Buf: free: %d  allocated: %d  max_alloc: %d  N_q: %d  Max_q: %d\n", \
+    MsgBufP__mbc.free_len, MsgBufP__mbc.allocated, \
+    MsgBufP__mbc.max_allocated, \
+    MsgBufP__mbc.full, MsgBufP__mbc.max_full
+printf "      %08x  aux: %d  head: %d  tail: %d\n", \
+    MsgBufP__mbc.free, MsgBufP__mbc.aux_len, \
+    MsgBufP__mbc.head, MsgBufP__mbc.tail
+end
+
+define gs
+gps_state
+end
