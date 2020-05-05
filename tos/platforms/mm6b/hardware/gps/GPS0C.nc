@@ -29,7 +29,7 @@ configuration GPS0C {
     interface PwrReg as GPSPwr;
 
     /* for debugging only, be careful */
-    interface Gsd4eUHardware as HW;
+    interface ubloxHardware as HW;
   }
 }
 
@@ -47,7 +47,7 @@ implementation {
   GPSPwr = HplGPS0C;
 
   /* low level driver, start there */
-  components Gsd4eUP;
+  components ubloxZoeUP as GPSDriverP;
   components new TimerMilliC() as GPSTxTimer;
   components new TimerMilliC() as GPSRxTimer;
   components new TimerMilliC() as GPSRxErrorTimer;
@@ -55,40 +55,41 @@ implementation {
   components     CollectC;
   components     OverWatchC;
 
-  GPSControl   = Gsd4eUP;
+  GPSControl = GPSDriverP;
 
-  Gsd4eUP.HW        -> HplGPS0C;
-  Gsd4eUP.GPSPwr    -> HplGPS0C;
-  Gsd4eUP.OverWatch -> OverWatchC;
+  GPSDriverP.HW        -> HplGPS0C;
+  GPSDriverP.GPSPwr    -> HplGPS0C;
+  GPSDriverP.OverWatch -> OverWatchC;
 
-  Gsd4eUP.GPSTxTimer -> GPSTxTimer;
-  Gsd4eUP.GPSRxTimer -> GPSRxTimer;
-  Gsd4eUP.GPSRxErrorTimer -> GPSRxErrorTimer;
-  Gsd4eUP.LocalTime  -> LocalTimeMilliC;
-  Gsd4eUP.Collect      -> CollectC;
-  Gsd4eUP.CollectEvent -> CollectC;
+  GPSDriverP.GPSTxTimer      -> GPSTxTimer;
+  GPSDriverP.GPSRxTimer      -> GPSRxTimer;
+  GPSDriverP.GPSRxErrorTimer -> GPSRxErrorTimer;
+  GPSDriverP.LocalTime       -> LocalTimeMilliC;
+  GPSDriverP.Collect         -> CollectC;
+  GPSDriverP.CollectEvent    -> CollectC;
 
   components PlatformC, PanicC;
-  Gsd4eUP.Panic    -> PanicC;
-  Gsd4eUP.Platform -> PlatformC;
+  GPSDriverP.Panic    -> PanicC;
+  GPSDriverP.Platform -> PlatformC;
 
   /* and wire in the Protocol Handler */
-  components SirfBinP, MsgBufP;
-  Gsd4eUP.SirfProto     -> SirfBinP;
-  SirfBinP.MsgBuf       -> MsgBufP;
-  SirfBinP.Collect      -> CollectC;
-  SirfBinP.Panic        -> PanicC;
+  components ubxProtoP as GPSProtoP, MsgBufP;
+  GPSDriverP.ubxProto  -> GPSProtoP;
+
+  GPSProtoP.MsgBuf     -> MsgBufP;
+  GPSProtoP.Collect    -> CollectC;
+  GPSProtoP.Panic      -> PanicC;
 
   /* Buffer Slicing (MsgBuf) */
   MainC.SoftwareInit -> MsgBufP;
-  MsgBufP.Rtc       -> PlatformC;
-  MsgBufP.Panic     -> PanicC;
+  MsgBufP.Rtc        -> PlatformC;
+  MsgBufP.Panic      -> PanicC;
 
   MsgReceive  = MsgBufP;
-  MsgTransmit = Gsd4eUP;
+  MsgTransmit = GPSDriverP;
 
 #ifdef notdef
   components TraceC;
-  Gsd4eUP.Trace -> TraceC;
+  GPSDriverP.Trace -> TraceC;
 #endif
 }

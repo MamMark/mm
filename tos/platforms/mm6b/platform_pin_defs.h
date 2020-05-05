@@ -113,42 +113,76 @@
 #define MEMS0_SOMI_SEL0         BITBAND_PERI(MEMS0_SOMI_PORT->SEL0,   MEMS0_SOMI_PIN)
 
 
-/* gps -gsd4e/org */
+/* gps - ublox */
 
-#define GSD4E_AWAKE_PORT    P6
-#define GSD4E_AWAKE_PIN     2
-#define GSD4E_AWAKE_BIT     (1 << GSD4E_AWAKE_PIN)
-#define GSD4E_AWAKE_P       (GSD4E_AWAKE_PORT->IN & GSD4E_AWAKE_BIT)
+#define UBX_SCLK_PORT           P7
+#define UBX_SCLK_PIN            0
+#define UBX_SCLK_SEL0           BITBAND_PERI(UBX_SCLK_PORT->SEL0, UBX_SCLK_PIN)
+#define UBX_SCLK_REN            BITBAND_PERI(UBX_SCLK_PORT->REN,  UBX_SCLK_PIN)
 
-#define GSD4E_CTS_PORT      P7
-#define GSD4E_CTS_PIN       0
-#define GSD4E_CTS           BITBAND_PERI(GSD4E_CTS_PORT->OUT, GSD4E_CTS_PIN)
-#define GSD4E_CTS_DIR       BITBAND_PERI(GSD4E_CTS_PORT->DIR, GSD4E_CTS_PIN)
-#define GSD4E_CTS_PU        BITBAND_PERI(GSD4E_CTS_PORT->REN, GSD4E_CTS_PIN)
+#define UBX_TM_PORT             P7
+#define UBX_TM_PIN              1
+#define UBX_TM_SEL0             BITBAND_PERI(UBX_TM_PORT->SEL0, UBX_TM_PIN)
+#define UBX_TM_REN              BITBAND_PERI(UBX_TM_PORT->REN,  UBX_TM_PIN)
+#define UBX_TM_BIT              (1 << UBX_TM_PIN)
+#define UBX_TM_P                (UBX_TM_PORT->IN & UBX_TM_BIT)
 
-#define GSD4E_ONOFF_PORT    P5
-#define GSD4E_ONOFF_PIN     5
-#define GSD4E_ONOFF         BITBAND_PERI(GSD4E_ONOFF_PORT->OUT, GSD4E_ONOFF_PIN)
-#define GSD4E_ONOFF_DIR     BITBAND_PERI(GSD4E_ONOFF_PORT->DIR, GSD4E_ONOFF_PIN)
+/* SOMI is also RXD, gps_tx */
+#define UBX_SOMI_PORT           P7
+#define UBX_SOMI_PIN            2
+#define UBX_SOMI_SEL0           BITBAND_PERI(UBX_SOMI_PORT->SEL0, UBX_SOMI_PIN)
+#define UBX_SOMI_REN            BITBAND_PERI(UBX_SOMI_PORT->REN,  UBX_SOMI_PIN)
 
-#define GSD4E_RESETN_PORT   PJ
-#define GSD4E_RESETN_PIN    2
-#define GSD4E_RESETN        BITBAND_PERI(GSD4E_RESETN_PORT->OUT, GSD4E_RESETN_PIN)
-#define GSD4E_RESETN_FLOAT  BITBAND_PERI(GSD4E_RESETN_PORT->DIR, GSD4E_RESETN_PIN) = 0;
-#define GSD4E_RESETN_OUTPUT BITBAND_PERI(GSD4E_RESETN_PORT->DIR, GSD4E_RESETN_PIN) = 1;
+/* SIMO is also TXD, gps_rx */
+#define UBX_SIMO_PORT           P7
+#define UBX_SIMO_PIN            3
+#define UBX_SIMO_SEL0           BITBAND_PERI(UBX_SIMO_PORT->SEL0, UBX_SIMO_PIN)
+#define UBX_SIMO_REN            BITBAND_PERI(UBX_SIMO_PORT->REN,  UBX_SIMO_PIN)
 
-#define GSD4E_RTS_PORT      PJ
-#define GSD4E_RTS_PIN       3
-#define GSD4E_RTS_BIT       (1 << GSD4E_RTS_PIN)
-#define GSD4E_RTS_P         (GSD4E_RTS_PORT->IN & GSD4E_RTS_BIT)
+#define UBX_CSN_PORT            P5
+#define UBX_CSN_PIN             5
+#define UBX_CSN                 BITBAND_PERI(UBX_CSN_PORT->OUT, UBX_CSN_PIN)
+#define UBX_CSN_REN             BITBAND_PERI(UBX_CSN_PORT->REN, UBX_CSN_PIN)
+#define UBX_CSN_DIR             BITBAND_PERI(UBX_CSN_PORT->DIR, UBX_CSN_PIN)
 
-#define GSD4E_TM_PORT       P7
-#define GSD4E_TM_PIN        1
-#define GSD4E_TM_BIT        (1 << GSD4E_TM_PIN)
-#define GSD4E_TM_P          (GSD4E_TM_PORT->IN & GSD4E_TM_BIT)
+#define UBX_TXRDY_PORT          P6
+#define UBX_TXRDY_PIN           2
+#define UBX_TXRDY_REN           BITBAND_PERI(UBX_TXRDY_PORT->REN, UBX_TXRDY_PIN)
+#define UBX_TXRDY_BIT           (1 << UBX_TXRDY_PIN)
+#define UBX_TXRDY_P             (UBX_TXRDY_PORT->IN & UBX_TXRDY_BIT)
+#define UBX_TXRDY_IRQ           0x62
 
-#define GSD4E_PINS_MODULE   do { P7->SEL0 |=  0x0c; } while (0)
-#define GSD4E_PINS_PORT     do { P7->SEL0 &= ~0x0c; } while (0)
+/*
+ * normally floating, left as an input, 0pI
+ * to reset, flip direction to output, 0pO.
+ */
+#define UBX_RESETN_PORT         PJ
+#define UBX_RESETN_PIN          2
+#define UBX_RESETN_REN          BITBAND_PERI(UBX_RESETN_PORT->REN, UBX_RESETN_PIN)
+#define UBX_RESET               BITBAND_PERI(UBX_RESETN_PORT->OUT, UBX_RESETN_PIN)
+
+#define UBX_PINS_PWR_OFF        do {            \
+    UBX_SCLK_SEL0 = 0;  UBX_SCLK_REN  = 1;      \
+    UBX_TM_SEL0   = 0;  UBX_TM_REN    = 1;      \
+    UBX_SOMI_SEL0 = 0;  UBX_SOMI_REN  = 1;      \
+    UBX_SIMO_SEL0 = 0;  UBX_SIMO_REN  = 1;      \
+    UBX_CSN_DIR   = 0;                          \
+    UBX_CSN       = 0;                          \
+    UBX_CSN_REN   = 1;                          \
+    UBX_TXRDY_REN = 1;                          \
+  } while (0)
+
+#define UBX_PINS_PWR_ON         do {            \
+    UBX_SCLK_SEL0 = 1;  UBX_SCLK_REN  = 0;      \
+    UBX_TM_SEL0   = 0;  UBX_TM_REN    = 0;      \
+    UBX_SOMI_SEL0 = 1;  UBX_SOMI_REN  = 0;      \
+    UBX_SIMO_SEL0 = 1;  UBX_SIMO_REN  = 0;      \
+    UBX_CSN       = 1;                          \
+    UBX_CSN_DIR   = 1;                          \
+    UBX_CSN_REN   = 0;                          \
+    UBX_TXRDY_REN = 0;                          \
+  } while (0)
+
 
 /* radio - si446x - (B2) */
 #define SI446X_TX_PWR_PORT  P4

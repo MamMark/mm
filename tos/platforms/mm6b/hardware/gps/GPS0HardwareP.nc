@@ -83,7 +83,7 @@ typedef struct {
 module GPS0HardwareP {
   provides {
     interface Init as GPS0PeriphInit;
-    interface Gsd4eUHardware as HW;
+    interface ubloxHardware as HW;
   }
   uses {
     interface HplMsp432Usci    as Usci;
@@ -239,33 +239,23 @@ implementation {
 
 
   command error_t GPS0PeriphInit.init() {
-    GSD4E_PINS_MODULE;			/* connect pins to the UART */
+    UBX_PINS_PWR_ON;
     call Usci.enableModuleInt();
     return SUCCESS;
   }
 
 
-  async command void HW.gps_set_on_off() {
-    GSD4E_ONOFF = 1;
-  }
-
-  async command void HW.gps_clr_on_off() {
-    GSD4E_ONOFF = 0;
-  }
-
   async command void HW.gps_set_reset() {
-    GSD4E_CTS = 1;              /* say we want UART mode */
-    GSD4E_RESETN_OUTPUT;
-    GSD4E_RESETN = 0;
+    UBX_RESET = 1;
   }
 
   async command void HW.gps_clr_reset() {
-    GSD4E_RESETN = 1;
-    GSD4E_RESETN_FLOAT;
+    UBX_RESET = 0;
   }
 
-  async command bool HW.gps_awake() {
-    return GSD4E_AWAKE_P;
+
+  async command bool HW.gps_powered() {
+    return call PwrReg.isPowered();
   }
 
   async command void HW.gps_pwr_on() {
@@ -278,20 +268,13 @@ implementation {
 
   async event void PwrReg.pwrOn() {
     atomic {
-      GSD4E_CTS_PU = 1;
-      GSD4E_ONOFF_DIR = 1;
-      GSD4E_RESETN = 1;                 /* make sure we don't pull reset */
-      GSD4E_RESETN_FLOAT;               /* and leave floating  (input) */
-      GSD4E_PINS_MODULE;                /* connect to the UART */
+      UBX_PINS_PWR_ON;
     }
   }
 
   async event void PwrReg.pwrOff() {
     atomic {
-      GSD4E_CTS_PU = 0;
-      GSD4E_ONOFF_DIR = 0;
-      GSD4E_RESETN_FLOAT;               /* resetn pin to input, float */
-      GSD4E_PINS_PORT;                  /* disconnect from the UART */
+      UBX_PINS_PWR_OFF;
     }
   }
 

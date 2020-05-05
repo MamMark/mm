@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 
 configuration HplGPS0C {
   provides {
-    interface Gsd4eUHardware;
+    interface ubloxHardware;
     interface PwrReg as GPSPwr;
   }
 }
@@ -30,8 +30,8 @@ implementation {
   components GPS0HardwareP as GpsHwP;
   components PwrGpsMemsC;
 
-  Gsd4eUHardware = GpsHwP;
-  GPSPwr         = PwrGpsMemsC;
+  ubloxHardware     = GpsHwP;
+  GPSPwr            = PwrGpsMemsC;
   GpsHwP.Usci      -> UsciP;
   GpsHwP.Interrupt -> UsciP;
   GpsHwP.PwrReg    -> PwrGpsMemsC;
