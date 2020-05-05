@@ -552,7 +552,7 @@ void __pins_init() {
   P7->OUT = 0xB0; P7->DIR = 0xF0;
   P7->SEL0= 0x8D; P7->SEL1= 0x00;
   P8->OUT = 0x00; P8->DIR = 0x02;
-  PJ->OUT = 0x04; PJ->DIR = 0x06;
+  PJ->OUT = 0x00; PJ->DIR = 0x02;
 }
 
 
