@@ -481,9 +481,9 @@ void __map_ports() {
   PMAP->KEYID        = PMAP_KEYID_VAL;
   P2MAP->PMAP_REG[5] = PMAP_SMCLK;
   P7MAP->PMAP_REG[0] = PMAP_UCA1CLK;
-  P7MAP->PMAP_REG[1] = PMAP_UCA1SOMI;
-  P7MAP->PMAP_REG[2] = PMAP_UCA1SIMO;
-  P7MAP->PMAP_REG[3] = PMAP_TA1CCR1A;
+  P7MAP->PMAP_REG[1] = PMAP_TA1CCR1A;
+  P7MAP->PMAP_REG[2] = PMAP_UCA1SOMI;
+  P7MAP->PMAP_REG[3] = PMAP_UCA1SIMO;
   PMAP->KEYID        = 0;              /* lock port mapper */
 }
 
@@ -567,8 +567,6 @@ void __pins_init() {
   P6->OUT = 0x03;
   P6->DIR = 0x02;
 
-  P7->SEL0 = 0x07;              /* hand over to SPI module   */
-
   /*
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
    * t_exc is 8.5 (0pO).
@@ -576,8 +574,9 @@ void __pins_init() {
   P8->DIR = 0x61;               /* tell/t_exc are outputs */
   P8->SEL1= 0x01;
 
-  P9->OUT = 0x10;
-  P9->DIR = 0x18;
+  P9->OUT  = 0x10;
+  P9->DIR  = 0x18;
+  P9->SEL0 = 0xE0;              /* hand over to SPI module   */
 
   /*
    * SD0 is on P10.0 - P10.3  see hardware.h

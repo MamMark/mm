@@ -171,10 +171,10 @@
  * without changing the I/O pin state.
  *
  * Port: (0x4000_4C00)
- * port 1.0	0pO	LED1                    port 7.0	0mI     dc_sclk  (A1,    pm)
- *  00 I .1	1pIru	PB1                      60   .1	0mI     dc_somi  (A1,    pm)
- *  02 O .2     0pI                     BSLRXD   62   .2        0mI     dc_simo  (A1,    pm)
- *       .3     0pI                     BSLTXD        .3	0pI     gps_tm   (ta1.1, pm)
+ * port 1.0	0pO	LED1                    port 7.0	0pI              (A1,    pm)
+ *  00 I .1	1pIru	PB1  mems_sclk           60   .1	0pI     gps_tm   (ta1.1, pm)
+ *  02 O .2     0pI          mems_somi  BSLRXD   62   .2        0pI              (A1,    pm)
+ *       .3     0pI          mems_simo  BSLTXD        .3	0pI              (A1,    pm)
  *       .4	0pI     PB2             BSLSTE        .4	0pI
  *       .5	0pI     gps_cts(*)      BSLCLK        .5	0pI
  *       .6	0pI	tmp_sda         BSLSIMO       .6	0pI
@@ -194,9 +194,9 @@
  *  22   .2	0pI	gps_tx (A2)   URXD       82 O .2	0pI
  *       .3	1pO	gps_rx (A2)   UTXD            .3	0pO     dc_spi_en
  *       .4	0pI     [unstabbed, nc]               .4	1pO     accel_csn
- *       .5	0mO	si446x_clk  (B2) slave_clk    .5	0pI     [unstabbed]
- *       .6	0mO	si446x_simo (B2) slave_simo   .6	0pI     [unstabbed]
- *       .7	0mIrd   si446x_somi (B2) slave_somi   .7	0pI
+ *       .5	0mO	si446x_clk  (B2) slave_clk    .5	0mI     dc_sclk  (A3)
+ *       .6	0mO	si446x_simo (B2) slave_simo   .6	0mI     dc_somi  (A3)
+ *       .7	0mIrd   si446x_somi (B2) slave_somi   .7	0mI     dc_simo  (A3)
  *
  * port  4.0	0pO	gps_on_off               port 10.0	1pIru   sd0_csn
  *  21    .1	0pI                              81 I  .1	1pIru   sd0_clk

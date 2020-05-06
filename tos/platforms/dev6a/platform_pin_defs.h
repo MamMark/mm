@@ -29,28 +29,29 @@
 #define MEMS0_ID_GYRO  1
 #define MEMS0_ID_MAG   2
 
-#define MEMS0_ACCEL_CSN_PORT     P9
-#define MEMS0_ACCEL_CSN_PIN      4
-#define MEMS0_ACCEL_CSN_BIT      (1 << MEMS0_ACCEL_CSN_PIN)
-#define MEMS0_ACCEL_CSN_IN       (MEMS0_ACCEL_CSN_PORT->IN & MEMS0_ACCEL_CSN_BIT)
-#define MEMS0_ACCEL_CSN          BITBAND_PERI(MEMS0_ACCEL_CSN_PORT->OUT, MEMS0_ACCEL_CSN_PIN)
+#define MEMS0_ACCEL_CSN_PORT    P9
+#define MEMS0_ACCEL_CSN_PIN     4
+#define MEMS0_ACCEL_CSN_BIT     (1 << MEMS0_ACCEL_CSN_PIN)
+#define MEMS0_ACCEL_CSN_IN      (MEMS0_ACCEL_CSN_PORT->IN & MEMS0_ACCEL_CSN_BIT)
+#define MEMS0_ACCEL_CSN         BITBAND_PERI(MEMS0_ACCEL_CSN_PORT->OUT, MEMS0_ACCEL_CSN_PIN)
 #define MEMS0_ACCEL_CSN_DIR     BITBAND_PERI(MEMS0_ACCEL_CSN_PORT->DIR, MEMS0_ACCEL_CSN_PIN)
 
-#define MEMS0_SCLK_PORT         P7
-#define MEMS0_SCLK_PIN          0
+#define MEMS0_SCLK_PORT         P1
+#define MEMS0_SCLK_PIN          1
 #define MEMS0_SCLK_SEL0         BITBAND_PERI(MEMS0_SCLK_PORT->SEL0,   MEMS0_SCLK_PIN)
 
-#define MEMS0_SIMO_PORT         P7
-#define MEMS0_SIMO_PIN          2
-#define MEMS0_SIMO_SEL0         BITBAND_PERI(MEMS0_SIMO_PORT->SEL0,   MEMS0_SIMO_PIN)
-
-#define MEMS0_SOMI_PORT         P7
-#define MEMS0_SOMI_PIN          1
+#define MEMS0_SOMI_PORT         P1
+#define MEMS0_SOMI_PIN          2
 #define MEMS0_SOMI_SEL0         BITBAND_PERI(MEMS0_SOMI_PORT->SEL0,   MEMS0_SOMI_PIN)
+
+#define MEMS0_SIMO_PORT         P1
+#define MEMS0_SIMO_PIN          3
+#define MEMS0_SIMO_SEL0         BITBAND_PERI(MEMS0_SIMO_PORT->SEL0,   MEMS0_SIMO_PIN)
 
 
 /* gps -gsd4e/org */
 
+/* deprecated */
 #define GSD4E_AWAKE_PORT    P6
 #define GSD4E_AWAKE_PIN     1
 #define GSD4E_AWAKE_BIT     (1 << GSD4E_AWAKE_PIN)
@@ -76,7 +77,7 @@
 #define GSD4E_RTS_P         (GSD4E_RTS_PORT->IN & GSD4E_RTS_BIT)
 
 #define GSD4E_TM_PORT       P7
-#define GSD4E_TM_PIN        3
+#define GSD4E_TM_PIN        1
 #define GSD4E_TM_BIT        (1 << GSD4E_TM_PIN)
 #define GSD4E_TM_P          (GSD4E_TM_PORT->IN & GSD4E_TM_BIT)
 
@@ -125,6 +126,18 @@
 #define DC_SPI_EN_PIN       3
 #define DC_SPI_EN_BIT       (1 << DC_SPI_EN_PIN)
 #define DC_SPI_EN           BITBAND_PERI(DC_SPI_EN_PORT->OUT, DC_SPI_EN_PIN)
+
+#define DC_SCLK_PORT        P9
+#define DC_SCLK_PIN         5
+#define DC_SCLK_SEL0        BITBAND_PERI(DC_SCLK_PORT->SEL0,   DC_SCLK_PIN)
+
+#define DC_SOMI_PORT        P9
+#define DC_SOMI_PIN         6
+#define DC_SOMI_SEL0        BITBAND_PERI(DC_SOMI_PORT->SEL0,   DC_SOMI_PIN)
+
+#define DC_SIMO_PORT        P9
+#define DC_SIMO_PIN         7
+#define DC_SIMO_SEL0        BITBAND_PERI(DC_SIMO_PORT->SEL0,   DC_SIMO_PIN)
 
 
 /* micro SDs */
