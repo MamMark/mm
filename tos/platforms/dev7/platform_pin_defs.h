@@ -22,6 +22,100 @@
 #ifndef __PLATFORM_PIN_DEFS__
 #define __PLATFORM_PIN_DEFS__
 
+/*
+ * Mems Bus, UCB1, SPI
+ */
+#define MEMS0_ID_ACCEL 0
+#define MEMS0_ID_GYRO  1
+#define MEMS0_ID_MAG   2
+
+#define MEMS0_ACCEL_CSN_PORT    P1
+#define MEMS0_ACCEL_CSN_PIN     5
+
+#define MEMS0_SCLK_PORT         P1
+#define MEMS0_SCLK_PIN          1
+#define MEMS0_SCLK_SEL0         BITBAND_PERI(MEMS0_SCLK_PORT->SEL0,   MEMS0_SCLK_PIN)
+
+#define MEMS0_SOMI_PORT         P1
+#define MEMS0_SOMI_PIN          2
+#define MEMS0_SOMI_SEL0         BITBAND_PERI(MEMS0_SOMI_PORT->SEL0,   MEMS0_SOMI_PIN)
+
+#define MEMS0_SIMO_PORT         P1
+#define MEMS0_SIMO_PIN          3
+#define MEMS0_SIMO_SEL0         BITBAND_PERI(MEMS0_SIMO_PORT->SEL0,   MEMS0_SIMO_PIN)
+
+
+/* gps - ublox */
+
+#define UBX_SCLK_PORT           P7
+#define UBX_SCLK_PIN            0
+#define UBX_SCLK_SEL0           BITBAND_PERI(UBX_SCLK_PORT->SEL0, UBX_SCLK_PIN)
+#define UBX_SCLK_REN            BITBAND_PERI(UBX_SCLK_PORT->REN,  UBX_SCLK_PIN)
+
+#define UBX_TM_PORT             P7
+#define UBX_TM_PIN              1
+#define UBX_TM_SEL0             BITBAND_PERI(UBX_TM_PORT->SEL0, UBX_TM_PIN)
+#define UBX_TM_REN              BITBAND_PERI(UBX_TM_PORT->REN,  UBX_TM_PIN)
+#define UBX_TM_BIT              (1 << UBX_TM_PIN)
+#define UBX_TM_P                (UBX_TM_PORT->IN & UBX_TM_BIT)
+
+/* SOMI is also RXD, gps_tx */
+#define UBX_SOMI_PORT           P7
+#define UBX_SOMI_PIN            2
+#define UBX_SOMI_SEL0           BITBAND_PERI(UBX_SOMI_PORT->SEL0, UBX_SOMI_PIN)
+#define UBX_SOMI_REN            BITBAND_PERI(UBX_SOMI_PORT->REN,  UBX_SOMI_PIN)
+
+/* SIMO is also TXD, gps_rx */
+#define UBX_SIMO_PORT           P7
+#define UBX_SIMO_PIN            3
+#define UBX_SIMO_SEL0           BITBAND_PERI(UBX_SIMO_PORT->SEL0, UBX_SIMO_PIN)
+#define UBX_SIMO_REN            BITBAND_PERI(UBX_SIMO_PORT->REN,  UBX_SIMO_PIN)
+
+#define UBX_CSN_PORT            P9
+#define UBX_CSN_PIN             4
+#define UBX_CSN                 BITBAND_PERI(UBX_CSN_PORT->OUT, UBX_CSN_PIN)
+#define UBX_CSN_REN             BITBAND_PERI(UBX_CSN_PORT->REN, UBX_CSN_PIN)
+#define UBX_CSN_DIR             BITBAND_PERI(UBX_CSN_PORT->DIR, UBX_CSN_PIN)
+
+#define UBX_TXRDY_PORT          P5
+#define UBX_TXRDY_PIN           3
+#define UBX_TXRDY_REN           BITBAND_PERI(UBX_TXRDY_PORT->REN, UBX_TXRDY_PIN)
+#define UBX_TXRDY_BIT           (1 << UBX_TXRDY_PIN)
+#define UBX_TXRDY_P             (UBX_TXRDY_PORT->IN & UBX_TXRDY_BIT)
+#define UBX_TXRDY_IRQ           0x53
+
+/*
+ * normally floating, left as an input, 0pI
+ * to reset, flip direction to output, 0pO.
+ */
+#define UBX_RESETN_PORT         P6
+#define UBX_RESETN_PIN          0
+#define UBX_RESETN_REN          BITBAND_PERI(UBX_RESETN_PORT->REN, UBX_RESETN_PIN)
+#define UBX_RESET               BITBAND_PERI(UBX_RESETN_PORT->OUT, UBX_RESETN_PIN)
+
+#define UBX_PINS_PWR_OFF        do {            \
+    UBX_SCLK_SEL0 = 0;  UBX_SCLK_REN  = 1;      \
+    UBX_TM_SEL0   = 0;  UBX_TM_REN    = 1;      \
+    UBX_SOMI_SEL0 = 0;  UBX_SOMI_REN  = 1;      \
+    UBX_SIMO_SEL0 = 0;  UBX_SIMO_REN  = 1;      \
+    UBX_CSN_DIR   = 0;                          \
+    UBX_CSN       = 0;                          \
+    UBX_CSN_REN   = 1;                          \
+    UBX_TXRDY_REN = 1;                          \
+  } while (0)
+
+#define UBX_PINS_PWR_ON         do {            \
+    UBX_SCLK_SEL0 = 1;  UBX_SCLK_REN  = 0;      \
+    UBX_TM_SEL0   = 0;  UBX_TM_REN    = 0;      \
+    UBX_SOMI_SEL0 = 1;  UBX_SOMI_REN  = 0;      \
+    UBX_SIMO_SEL0 = 1;  UBX_SIMO_REN  = 0;      \
+    UBX_CSN       = 1;                          \
+    UBX_CSN_DIR   = 1;                          \
+    UBX_CSN_REN   = 0;                          \
+    UBX_TXRDY_REN = 0;                          \
+  } while (0)
+
+
 /* radio - si446x - (B2) */
 #define SI446X_CTS_PORT     P2
 #define SI446X_CTS_PIN      3
@@ -64,6 +158,18 @@
 #define DC_SPI_EN_PIN       3
 #define DC_SPI_EN_BIT       (1 << DC_SPI_EN_PIN)
 #define DC_SPI_EN           BITBAND_PERI(DC_SPI_EN_PORT->OUT, DC_SPI_EN_PIN)
+
+#define DC_SCLK_PORT        P9
+#define DC_SCLK_PIN         5
+#define DC_SCLK_SEL0        BITBAND_PERI(DC_SCLK_PORT->SEL0,   DC_SCLK_PIN)
+
+#define DC_SOMI_PORT        P9
+#define DC_SOMI_PIN         6
+#define DC_SOMI_SEL0        BITBAND_PERI(DC_SOMI_PORT->SEL0,   DC_SOMI_PIN)
+
+#define DC_SIMO_PORT        P9
+#define DC_SIMO_PIN         7
+#define DC_SIMO_SEL0        BITBAND_PERI(DC_SIMO_PORT->SEL0,   DC_SIMO_PIN)
 
 
 /* micro SDs */

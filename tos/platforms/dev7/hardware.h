@@ -177,10 +177,10 @@
  * without changing the I/O pin state.
  *
  * Port: (0x4000_4C00)
- * port 1.0     0pO     LED1                    port 7.0        0mI     dc_sclk (A1,    pm)
- *  00 I .1     1pIru   PB1                      60   .1        0mI     dc_somi (A1,    pm)
- *  02 O .2     0pI                     BSLRXD   62   .2        0mI     dc_simo (A1,    pm)
- *       .3     0pI                     BSLTXD        .3        0pI     gps_tm  (ta1.1, pm) nc
+ * port 1.0     0pO     LED1                    port 7.0        0mI     gps_sclk (A1,    pm)
+ *  00 I .1     1pIru   mems_sclk       PB1      60   .1        0pI     gps_tm   (ta1.1, pm)
+ *  02 O .2     0pI     mems_somi       BSLRXD   62   .2        0mI     gps_somi (A1,    pm)
+ *       .3     0pI     mems_simo       BSLTXD        .3        0mI     gps_simo (A1,    pm)
  *       .4     0pI                     BSLSTE        .4        0pI
  *       .5     0pI                     BSLCLK        .5        0pI
  *       .6     0pI     tmp_sda         BSLSIMO       .6        0pI
@@ -199,10 +199,10 @@
  *  20   .1     0pI     [unstabbed, nc] A2       80 I .1        0pI
  *  22   .2     0pI                              82 O .2        0pI
  *       .3     0pI                                   .3        0pO     dc_spi_en
- *       .4     0pI     [unstabbed, nc]               .4        0pI     gps_csn         nc
- *       .5     0mI     si446x_clk  (B2) slave_clk    .5        0pI     gps_clk         nc
- *       .6     0mI     si446x_simo (B2) slave_simo   .6        0pI     gps_somi, rxd   nc
- *       .7     0mIrd   si446x_somi (B2) slave_somi   .7        0pI     gps_simo, txd   nc
+ *       .4     0pI     [unstabbed, nc]               .4        0pI     gps_csn
+ *       .5     0mI     si446x_clk  (B2) slave_clk    .5        0mI     dc_sclk
+ *       .6     0mI     si446x_simo (B2) slave_simo   .6        0mI     dc_somi, rxd
+ *       .7     0mIrd   si446x_somi (B2) slave_somi   .7        0mI     dc_simo, txd
  *
  * port  4.0    0pI                             port 10.0       1pIru   sd0_csn
  *  21    .1    0pI                              81 I  .1       1pIru   sd0_clk
@@ -216,13 +216,13 @@
  * port  5.0    1pO     si446x_sdn
  *  40 I  .1    0pI     si446x_irqn
  *  42 O  .2    1pO     si446x_csn
- *        .3    0pI     gps_tx_rdy   nc
+ *        .3    0pI     gps_tx_rdy
  *        .4    0pI
  *        .5    0pI
  *        .6    0pI
  *        .7    0pI
  *
- * port  6.0    0pI     gps_resetn   nc         port  J.0       0pI     LFXIN  (32KiHz)
+ * port  6.0    0pI     gps_resetn              port  J.0       0pI     LFXIN  (32KiHz)
  *  41 I  .1    1pO     dc_attn_s_n             120 I  .1       0pO     LFXOUT (32KiHz)
  *  43 O  .2    0pI     dc_attn_m_n             122 O  .2       0pI     HFXOUT (48MHz)
  *        .3    0pI     adc_clk                        .3       0pI     HFXIN  (48MHz)

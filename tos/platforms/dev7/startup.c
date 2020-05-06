@@ -481,9 +481,9 @@ void __map_ports() {
   PMAP->KEYID        = PMAP_KEYID_VAL;
   P2MAP->PMAP_REG[5] = PMAP_SMCLK;
   P7MAP->PMAP_REG[0] = PMAP_UCA1CLK;
-  P7MAP->PMAP_REG[1] = PMAP_UCA1SOMI;
-  P7MAP->PMAP_REG[2] = PMAP_UCA1SIMO;
-  P7MAP->PMAP_REG[3] = PMAP_TA1CCR1A;
+  P7MAP->PMAP_REG[1] = PMAP_TA1CCR1A;
+  P7MAP->PMAP_REG[2] = PMAP_UCA1SOMI;
+  P7MAP->PMAP_REG[3] = PMAP_UCA1SIMO;
   PMAP->KEYID = 0;              /* lock port mapper */
 }
 
@@ -569,7 +569,7 @@ void __pins_init() {
    * DockComm is on P7.{0,1,2}
    */
   P7->OUT  = 0x00;
-  P7->SEL0 = 0x07;              /* hand over to SPI module   */
+  P7->SEL0 = 0x0D;              /* hand over to SPI module   */
   P7->DIR  = 0x00;
 
   /*
@@ -581,6 +581,7 @@ void __pins_init() {
 
   P9->OUT  = 0x00;
   P9->DIR  = 0x08;
+  P9->SEL0 = 0xE0;
 
   /*
    * SD0 is on P10.0 - P10.3  see hardware.h
