@@ -160,7 +160,7 @@
  *
  * Interrupt priorities: (lower is higher), default 4
  *
- * GPS:         EUSCIA0
+ * GPS:         EUSCIA0         2
  * SD0:         EUSCIA2
  * ADC:         EUSCIB0
  * MEMS:        EUSCIB1

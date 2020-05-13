@@ -74,7 +74,8 @@ implementation {
 
   async command error_t PwrReg.pwrReq() {
     atomic {
-      GPS_MEMS_1V8_EN = 1;                /* turn on always */
+      UBX_RESETN_REN = 0;               /* let ublox reset float */
+      GPS_MEMS_1V8_EN = 1;              /* turn on always */
       mems0_port_enable();
       signal PwrReg.pwrOn();
     }
@@ -96,6 +97,8 @@ implementation {
     atomic {
       mems0_port_disable();
       signal PwrReg.pwrOff();
+      /* pull down the reset so we don't let the reset pin oscillate. */
+      UBX_RESETN_REN = 1;
       GPS_MEMS_1V8_EN = 0;              /* turn off */
     }
   }
