@@ -239,11 +239,22 @@ implementation {
 
 
   command error_t GPS0PeriphInit.init() {
-    UBX_PINS_PWR_ON;
-    call Usci.enableModuleInt();
+    if (call HW.gps_powered()) {
+      UBX_PINS_PWR_ON;
+      call Usci.enableModuleInt();
+      call Usci.configure(&ublox_spi_config, FALSE);
+    }
     return SUCCESS;
   }
 
+
+  async command void HW.gps_set_cs() {
+    UBX_CSN = 0;
+  }
+
+  async command void HW.gps_clr_cs() {
+    UBX_CSN = 1;
+  }
 
   async command void HW.gps_set_reset() {
     UBX_RESET = 1;
@@ -252,7 +263,6 @@ implementation {
   async command void HW.gps_clr_reset() {
     UBX_RESET = 0;
   }
-
 
   async command bool HW.gps_powered() {
     return call PwrReg.isPowered();

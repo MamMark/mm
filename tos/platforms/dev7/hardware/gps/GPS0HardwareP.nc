@@ -83,8 +83,8 @@ typedef struct {
 
 module GPS0HardwareP {
   provides {
-    interface Init as GPS0PeripheralInit;
-    interface Gsd4eUHardware as HW;
+    interface Init as GPS0PeriphInit;
+    interface ubloxHardware as HW;
   }
   uses {
     interface HplMsp432Usci    as Usci;
@@ -240,32 +240,47 @@ implementation {
 
   command error_t GPS0PeripheralInit.init() {
     call Usci.enableModuleInt();
+
+  command error_t GPS0PeriphInit.init() {
+    if (call HW.gps_powered()) {
+      UBX_PINS_PWR_ON;
+      call Usci.enableModuleInt();
+      call Usci.configure(&ublox_spi_config, FALSE);
+      while(TRUE) {
+        suck_buf();
+      }
+    }
     return SUCCESS;
   }
 
 
-  async command void HW.gps_set_on_off() {
+  async command void HW.gps_set_cs() {
+    UBX_CSN = 0;
   }
 
-  async command void HW.gps_clr_on_off() {
+  async command void HW.gps_clr_cs() {
+    UBX_CSN = 1;
   }
 
   async command void HW.gps_set_reset() {
+    UBX_RESET = 1;
   }
 
   async command void HW.gps_clr_reset() {
+    UBX_RESET = 0;
   }
 
-  async command bool HW.gps_awake() {
-    return 1;
+  async command bool HW.gps_powered() {
+    return TRUE;
   }
 
   async command void HW.gps_pwr_on() {
+    UBX_PINS_PWR_ON;
   }
 
   async command void HW.gps_pwr_off() {
+    UBX_PINS_PWR_OFF;
   }
-
 
 
   /*

@@ -71,27 +71,31 @@
 #define UBX_SIMO_SEL0           BITBAND_PERI(UBX_SIMO_PORT->SEL0, UBX_SIMO_PIN)
 #define UBX_SIMO_REN            BITBAND_PERI(UBX_SIMO_PORT->REN,  UBX_SIMO_PIN)
 
+#define UBX_DSEL_PORT           P9
+#define UBX_DSEL_PIN            2
+#define UBX_DSEL_DIR            BITBAND_PERI(UBX_DSEL_PORT->DIR, UBX_DSEL_PIN)
+
 #define UBX_CSN_PORT            P9
-#define UBX_CSN_PIN             4
+#define UBX_CSN_PIN             3
 #define UBX_CSN                 BITBAND_PERI(UBX_CSN_PORT->OUT, UBX_CSN_PIN)
 #define UBX_CSN_REN             BITBAND_PERI(UBX_CSN_PORT->REN, UBX_CSN_PIN)
 #define UBX_CSN_DIR             BITBAND_PERI(UBX_CSN_PORT->DIR, UBX_CSN_PIN)
 
-#define UBX_TXRDY_PORT          P5
-#define UBX_TXRDY_PIN           3
+#define UBX_TXRDY_PORT          P6
+#define UBX_TXRDY_PIN           2
 #define UBX_TXRDY_REN           BITBAND_PERI(UBX_TXRDY_PORT->REN, UBX_TXRDY_PIN)
 #define UBX_TXRDY_BIT           (1 << UBX_TXRDY_PIN)
 #define UBX_TXRDY_P             (UBX_TXRDY_PORT->IN & UBX_TXRDY_BIT)
-#define UBX_TXRDY_IRQ           0x53
+#define UBX_TXRDY_IRQ           0x62
 
 /*
  * normally floating, left as an input, 0pI
  * to reset, flip direction to output, 0pO.
  */
-#define UBX_RESETN_PORT         P6
-#define UBX_RESETN_PIN          0
+#define UBX_RESETN_PORT         P9
+#define UBX_RESETN_PIN          4
 #define UBX_RESETN_REN          BITBAND_PERI(UBX_RESETN_PORT->REN, UBX_RESETN_PIN)
-#define UBX_RESET               BITBAND_PERI(UBX_RESETN_PORT->OUT, UBX_RESETN_PIN)
+#define UBX_RESET               BITBAND_PERI(UBX_RESETN_PORT->DIR, UBX_RESETN_PIN)
 
 #define UBX_PINS_PWR_OFF        do {            \
     UBX_SCLK_SEL0 = 0;  UBX_SCLK_REN  = 1;      \
@@ -143,19 +147,19 @@
 
 
 /* Dock */
-#define DC_ATTN_S_PORT      P6
-#define DC_ATTN_S_PIN       1
+#define DC_ATTN_S_PORT      P7
+#define DC_ATTN_S_PIN       5
 #define DC_ATTN_S_BIT       (1 << DC_ATTN_S_PIN)
 #define DC_ATTN_S_N         BITBAND_PERI(DC_ATTN_S_PORT->OUT, DC_ATTN_S_PIN)
 
-#define DC_ATTN_M_PORT      P6
-#define DC_ATTN_M_PIN       2
+#define DC_ATTN_M_PORT      P7
+#define DC_ATTN_M_PIN       6
 #define DC_ATTN_M_BIT       (1 << DC_ATTN_M_PIN)
 #define DC_ATTN_M_P         (P6->IN & DC_ATTN_M_BIT)
 #define DC_ATTN_M_PORT_PIN  0x62
 
-#define DC_SPI_EN_PORT      P9
-#define DC_SPI_EN_PIN       3
+#define DC_SPI_EN_PORT      P7
+#define DC_SPI_EN_PIN       4
 #define DC_SPI_EN_BIT       (1 << DC_SPI_EN_PIN)
 #define DC_SPI_EN           BITBAND_PERI(DC_SPI_EN_PORT->OUT, DC_SPI_EN_PIN)
 

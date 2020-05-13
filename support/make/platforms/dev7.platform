@@ -26,7 +26,7 @@ PFLAGS += -I%T/lib
 PFLAGS += -I%T/chips/si446x
 PFLAGS += -I%T/chips/si446x/WDS-files
 PFLAGS += -I%T/chips/sd
-PFLAGS += -I%T/chips/gsd4e_v4
+PFLAGS += -I%T/chips/ublox
 
 PFLAGS += -I%T/chips/cortex
 PFLAGS += -I%T/chips/msp432

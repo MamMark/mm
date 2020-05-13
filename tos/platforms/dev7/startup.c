@@ -277,7 +277,7 @@ void (* const __vectors[])(void) __attribute__ ((section (".vectors"))) = {
   TA3_N_Handler,                        // 15           31
   EUSCIA0_Handler,                      // 16           32          4   (80)
   EUSCIA1_Handler,                      // 17           33          4   (80)
-  EUSCIA2_Handler,                      // 18           34      2       (40)
+  EUSCIA2_Handler,                      // 18           34          4   (40)
   EUSCIA3_Handler,                      // 19           35          4   (80)
   EUSCIB0_Handler,                      // 20           36          4   (80)
   EUSCIB1_Handler,                      // 21           37          4   (80)
@@ -535,10 +535,9 @@ void __pins_init() {
   P2->SEL0 = 0x20;
   P2->SEL1 = 0x00;
 
-  P3->DIR = 0x00;
-  P3->SEL0= 0xE0;
-  P3->SEL1= 0x00;
-  P3->REN = 0x80;
+  P3->DIR  = 0x00;
+  P3->SEL0 = 0xE0;
+  P3->SEL1 = 0x00;
 
   /*
    * We bring the clocks out so we can watch them.
@@ -562,15 +561,12 @@ void __pins_init() {
   P5->OUT  = 0x05;
   P5->DIR  = 0x05;
 
-  P6->OUT = 0x02;
-  P6->DIR = 0x02;
+  P6->OUT  = 0x00;
+  P6->DIR  = 0x00;
 
-  /*
-   * DockComm is on P7.{0,1,2}
-   */
-  P7->OUT  = 0x00;
+  P7->OUT  = 0x20;
   P7->SEL0 = 0x0D;              /* hand over to SPI module   */
-  P7->DIR  = 0x00;
+  P7->DIR  = 0x30;
 
   /*
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
@@ -579,7 +575,10 @@ void __pins_init() {
   P8->DIR  = 0x61;              /* tell/t_exc are outputs */
   P8->SEL1 = 0x01;
 
-  P9->OUT  = 0x00;
+  /*
+   * DockComm is on P9.{5,6,7}
+   */
+  P9->OUT  = 0x08;
   P9->DIR  = 0x08;
   P9->SEL0 = 0xE0;
 
