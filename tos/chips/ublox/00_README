@@ -9,9 +9,9 @@ we only support 9600.  The SPI is limited to 5.5 MHz bit clock and 125 kB/s
 byte period.  The SPI interface is significantly simpler to use than the
 UART.
 
-The uBlox chips have a gps_tx_ready signal that indicates when data is
+The uBlox chips have a gps_txrdy signal that indicates when data is
 available for the SPI master to pull from the slave.  This functionality
-must be enabled during configuration.  Tx_ready is used to group bytes
+must be enabled during configuration.  txrdy is used to group bytes
 together for one interrupt.  This amortizes the interrupt cost over
 mulitple bytes and keeps the cpu sleeping for long.  It also cuts down on
 the number of interrupt stack/destacking operations.
@@ -45,7 +45,7 @@ the gps state (hibernate, awake, micro-power mode (mpm), low power, etc.).
 
 Following control signals are used for messing with the GPS:
 
-gps_tx_ready: true when the gps has data to be read.
+gps_txrdy:    true when the gps has data to be read.
 gps_resetn:   low to reset.
 gps_tm:       1pps pulse.
 

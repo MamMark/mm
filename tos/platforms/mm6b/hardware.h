@@ -247,7 +247,7 @@
  *
  * port  6.0    0pI   J9 radio_gp0              port  J.0       0pI   J6 LFXIN  (32KiHz)
  *  41 I  .1    0pI   H7 radio_irqn             120 I  .1       0pO   J7 LFXOUT (32KiHz)
- *  43 O  .2    0pI   A9 gps_tx_rdy             122 O  .2       0pI   A6 gps_resetn
+ *  43 O  .2    0pI   A9 gps_txrdy              122 O  .2       0pI   A6 gps_resetn
  *        .3    0mI   B9 mems_sclk  (B1)               .3       0pI   A5
  *        .4    0mI   A8 mems_simo  (B1)               .4       0pI   B3
  *        .5    0mI   A7 mems_somi  (B1)               .5       0pI   A3 SWO
