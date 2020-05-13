@@ -31,7 +31,6 @@ configuration GPSmonitorC {
     interface MsgTransmit;
     interface MsgReceive;
     interface TagnetRadio;
-    interface PwrReg as GPSPwr;
   }
 }
 
@@ -44,7 +43,6 @@ implementation {
   MsgTransmit    = GPSmonitorP;
   MsgReceive     = GPSmonitorP;
   TagnetRadio    = GPSmonitorP;
-  GPSPwr         = GPSmonitorP;
 
   components SystemBootC;
   GPSmonitorP.Boot -> SystemBootC.BootLow;

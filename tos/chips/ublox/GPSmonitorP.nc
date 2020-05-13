@@ -233,7 +233,6 @@ module GPSmonitorP {
     interface GPSControl;
     interface MsgTransmit;
     interface MsgReceive;
-    interface PwrReg as GPSPwr;
 
     interface Collect;
     interface CollectEvent;
@@ -1460,23 +1459,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         txq_start();
         return;
     }
-  }
-
-
-  task void monitor_pwr_task() {
-    if (!call GPSPwr.isPowered()) {
-      call MinorTimer.stop();
-      call MajorTimer.stop();
-      major_change_state(GMS_MAJOR_IDLE, MON_EV_PWR_OFF);
-      minor_change_state(GMS_OFF, MON_EV_PWR_OFF);
-    }
-  }
-
-
-  async event void GPSPwr.pwrOn()  { }
-
-  async event void GPSPwr.pwrOff() {
-    post monitor_pwr_task();
   }
 
 

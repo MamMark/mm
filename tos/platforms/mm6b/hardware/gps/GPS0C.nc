@@ -58,7 +58,6 @@ implementation {
   GPSControl = GPSDriverP;
 
   GPSDriverP.HW        -> HplGPS0C;
-  GPSDriverP.GPSPwr    -> HplGPS0C;
   GPSDriverP.OverWatch -> OverWatchC;
 
   GPSDriverP.GPSTxTimer      -> GPSTxTimer;

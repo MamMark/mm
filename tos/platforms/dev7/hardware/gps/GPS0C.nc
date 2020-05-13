@@ -26,7 +26,6 @@ configuration GPS0C {
     interface GPSControl;
     interface MsgReceive;
     interface MsgTransmit;
-    interface PwrReg as GPSPwr;
 
     /* for debugging only, be careful */
     interface Gsd4eUHardware as HW;
@@ -44,7 +43,6 @@ implementation {
    */
   components HplGPS0C;
   HW     = HplGPS0C;
-  GPSPwr = HplGPS0C;
 
   /* low level driver, start there */
   components Gsd4eUP;
@@ -58,7 +56,6 @@ implementation {
   GPSControl   = Gsd4eUP;
 
   Gsd4eUP.HW        -> HplGPS0C;
-  Gsd4eUP.GPSPwr    -> HplGPS0C;
   Gsd4eUP.OverWatch -> OverWatchC;
 
   Gsd4eUP.GPSTxTimer -> GPSTxTimer;

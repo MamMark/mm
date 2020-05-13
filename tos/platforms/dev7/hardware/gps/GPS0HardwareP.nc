@@ -89,7 +89,6 @@ module GPS0HardwareP {
   uses {
     interface HplMsp432Usci    as Usci;
     interface HplMsp432UsciInt as Interrupt;
-    interface PwrReg;
     interface Panic;
     interface Platform;
   }
@@ -262,18 +261,12 @@ implementation {
   }
 
   async command void HW.gps_pwr_on() {
-    call PwrReg.pwrReq();               /* will signal PwrReg.pwrOn() */
   }
 
   async command void HW.gps_pwr_off() {
-    call PwrReg.forceOff();
   }
 
-  async event void PwrReg.pwrOn() {
-  }
 
-  async event void PwrReg.pwrOff() {
-  }
 
   /*
    * gps_tx_finnish: wait for tx to finish

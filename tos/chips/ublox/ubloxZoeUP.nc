@@ -146,7 +146,6 @@ module ubloxZoeUP {
   }
   uses {
     interface ubloxHardware as HW;
-    interface PwrReg as GPSPwr;         /* gps power sw  */
 
     /*
      * This module uses two timers, GPSTxTimer and GPSRxTimer.
@@ -522,23 +521,6 @@ implementation {
 
 
   /*
-   * gps_pwr_task
-   *
-   * power has changed.  If off then blow up the timers
-   * and force us to OFF.
-   */
-  task void gps_pwr_task() {
-    if (!call GPSPwr.isPowered()) {
-      call GPSTxTimer.stop();
-      call GPSRxTimer.stop();
-      call GPSRxErrorTimer.stop();
-      gpsc_change_state(GPSC_OFF, GPSW_PWR_TASK);
-      call CollectEvent.logEvent(DT_EVENT_GPS_PWR_OFF, 0, 0, 0, 0);
-    }
-  }
-
-
-  /*
    * gps_signal_task
    *
    * issue task level signals for various states.  Currently only
@@ -880,13 +862,6 @@ implementation {
     send_block_done_usecs = call Platform.usecsRaw();
     gpsc_log_event(GPSE_TX_POST, 0);
     post send_block_task();
-  }
-
-
-  async event void GPSPwr.pwrOn()  { }
-
-  async event void GPSPwr.pwrOff() {
-    post gps_pwr_task();
   }
 
 
