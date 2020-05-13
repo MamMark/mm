@@ -24,6 +24,7 @@
  *
  * Following pins can be manipulated:
  *
+ *  gps_csn():          (set/clr) chip select.
  *  gps_reset():        (set/clr) access to reset pin.
  *
  *  gps_powered():      return true if gps is powered (h/w power).
@@ -63,6 +64,9 @@
  */
 
 interface ubloxHardware {
+
+  async command void gps_set_cs();
+  async command void gps_clr_cs();
 
   async command void gps_set_reset();
   async command void gps_clr_reset();
