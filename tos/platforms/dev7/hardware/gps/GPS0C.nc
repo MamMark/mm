@@ -45,7 +45,7 @@ implementation {
   HW     = HplGPS0C;
 
   /* low level driver, start there */
-  components ubloxZoeUP as GPSDriverP;
+  components ubloxZoeP as GPSDriverP;
   components new TimerMilliC() as GPSTxTimer;
   components new TimerMilliC() as GPSRxTimer;
   components new TimerMilliC() as GPSRxErrorTimer;

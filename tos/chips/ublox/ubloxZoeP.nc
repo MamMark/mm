@@ -139,7 +139,7 @@ uint8_t g_nev;                          // next gps event
 
 norace uint32_t gps_chk_trys;           // remaining chk_msgs to try  CHK_MSG_WAIT
 
-module ubloxZoeUP {
+module ubloxZoeP {
   provides {
     interface GPSControl;
     interface MsgTransmit;
