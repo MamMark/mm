@@ -183,7 +183,7 @@
  *       .3     0pI     mems_simo       BSLTXD        .3        0mI     gps_simo (A1,    pm)
  *       .4     0pI                     BSLSTE        .4        0pO     dc_spi_en
  *       .5     0pI                     BSLCLK        .5        1pO     dc_attn_s_n
- *       .6     0pI     tmp_sda         BSLSIMO       .6        0pI     dc_attn_m_n
+ *       .6     0pI     tmp_sda         BSLSIMO       .6        0pI
  *       .7     0pI     tmp_scl         BSLSOMI       .7        0pI
  *
  * port 2.0     0pO              (LED2_RED)     port 8.0        0mO     TA1.0 (OUT0), m2
@@ -216,7 +216,7 @@
  * port  5.0    1pO     si446x_sdn
  *  40 I  .1    0pI     si446x_irqn
  *  42 O  .2    1pO     si446x_csn
- *        .3    0pI
+ *        .3    0pI     dc_attn_m_n
  *        .4    0pI
  *        .5    0pI
  *        .6    0pI
