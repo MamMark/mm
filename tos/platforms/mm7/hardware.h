@@ -183,16 +183,16 @@
  * port 1.0     0pO    pwr_tmp_en               port 7.0        0mI    gps_sclk (A1,    pm) *
  *  00 I .1     0pO    batt_sense_en             60   .1        0pI    gps_tp   (ta1.1, pm  *
  *  02 O .2     0pI    batt_chrg                 62   .2        0mI    gps_somi (A1,    pm) *
- *       .3     0pI    tp12                           .3        0mI    gps_simo (A1,    pm) *
- *       .4     0pI    tp31                           .4        0pI    xxxx
+ *       .3     0pIrd  dc_attn_s_n      tp12          .3        0mI    gps_simo (A1,    pm)
+ *       .4     0pIrd  dc_attn_m_m      tp31          .4        0pI    xxxx
  *       .5     0mI    mems_sclk  (B0)  *             .5        0pI    xxxx
  *       .6     0mI    mems_simo  (B0)  *             .6        0pI    xxxx
  *       .7     0mI    mems_somi  (B0)  *             .7        0pI    xxxx
  *
- * port 2.0     0pI    tp11                     port 8.0        0pO    pwr_sd0_en
- *  01   .1     0pO    tp13  sclk (pm)           61 I .1        0pI    sd0_csn
- *  03   .2     0pO    tp27  somi (pm)           63 O .2        0pI    xxxx
- *       .3     0pI    tp03  simo (pm)                .3        0pI    xxxx
+ * port 2.0     0pIrd  dc_spi_en        tp11    port 8.0        0pO    pwr_sd0_en
+ *  01   .1     0pIrd  dc_sclk (A0, pm) tp13     61 I .1        0pI    sd0_csn
+ *  03   .2     0pIrd  dc_somi (A0, pm) tp27     63 O .2        0pI    xxxx
+ *       .3     0pIrd  dc_simo (A0, pm) tp03          .3        0pI    xxxx
  *       .4     0pI    xxxx                           .4        0pI    xxxx
  *       .5     0mO    xxxx                           .5        0pI    xxxx
  *       .6     0pI    xxxx                           .6        0pI    xxxx
