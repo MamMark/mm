@@ -180,14 +180,14 @@
  * dc - dock_comm
  *
  * Port: (0x4000_4C00)
- * port 1.0     0pO    pwr_tmp_en               port 7.0        0mI    gps_sclk (A1,    pm) *
- *  00 I .1     0pO    batt_sense_en             60   .1        0pI    gps_tp   (ta1.1, pm  *
- *  02 O .2     0pI    batt_chrg                 62   .2        0mI    gps_somi (A1,    pm) *
+ * port 1.0     0pO    pwr_tmp_en               port 7.0        0mI    gps_sclk (A1,    pm)
+ *  00 I .1     0pO    batt_sense_en             60   .1        0pI    gps_tp   (ta1.1, pm)
+ *  02 O .2     0pI    batt_chrg                 62   .2        0mI    gps_somi (A1,    pm)
  *       .3     0pIrd  dc_attn_s_n      tp12          .3        0mI    gps_simo (A1,    pm)
  *       .4     0pIrd  dc_attn_m_m      tp31          .4        0pI    xxxx
- *       .5     0mI    mems_sclk  (B0)  *             .5        0pI    xxxx
- *       .6     0mI    mems_simo  (B0)  *             .6        0pI    xxxx
- *       .7     0mI    mems_somi  (B0)  *             .7        0pI    xxxx
+ *       .5     0mI    mems_sclk  (B0)                .5        0pI    xxxx
+ *       .6     0mI    mems_simo  (B0)                .6        0pI    xxxx
+ *       .7     0mI    mems_somi  (B0)                .7        0pI    xxxx
  *
  * port 2.0     0pIrd  dc_spi_en        tp11    port 8.0        0pO    pwr_sd0_en
  *  01   .1     0pIrd  dc_sclk (A0, pm) tp13     61 I .1        0pI    sd0_csn
@@ -202,9 +202,9 @@
  *  20   .1     0mI    sd0_sclk     (A2, pm)
  *  22   .2     0mI    sd0_simo     (A2, pm)
  *       .3     1pO    radio_csn
- *       .4     0mI    radio_simo   (B2, pm) *
- *       .5     0mI    radio_somi   (B2, pm) *
- *       .6     0mI    radio_sclk   (B2, pm) *
+ *       .4     0mI    radio_simo   (B2, pm)
+ *       .5     0mI    radio_somi   (B2, pm)
+ *       .6     0mI    radio_sclk   (B2, pm)
  *       .7     0pI    radio_irqn
  *
  * port  4.0    0pI    xxxx
@@ -231,8 +231,8 @@
  *        .3    0pI    xxxx                            .3       0pI     nc
  *        .4    0pI    xxxx                            .4       0pO     gps_pwr
  *        .5    0pI    xxxx                            .5       0pI     SWO
- *        .6    0mI    tmp_sda     (B3, m2) *                           SWCLK
- *        .7    0mI    tmp_scl     (B3, m2) *                           SWDIO
+ *        .6    0mI    tmp_sda     (B3, m2)                             SWCLK
+ *        .7    0mI    tmp_scl     (B3, m2)                             SWDIO
  */
 
 /*
