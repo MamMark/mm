@@ -238,47 +238,61 @@
 /*
  * External connections:
  *
- * DockCon (dock) - 14 pin
+ * DockCon (dock) - 8 pin
+ *   o front side pcb, right side
+ *   o numbered left to right, pin 1 on left
  *
- * dock-01 - TP20 - 3V3   *                     dock-02 - TP23 - swdio             *
- * dock-03 - TP21 - gnd                         dock-04 - TP18 - swclk             *
- * dock-05 - TP22 - gnd   *                     dock-06 - TP32 - swo         PJ.5  *
- * dock-07 - TP25 - gnd                         dock-08 - TP19 - nc (key)
- * dock-09 - TP26 - gnd                         dock-10 - TP28 - RSTn              *
-
- * dock-11 - TP24 - Vbatt *                     dock-12 - TP08 - gnd               *
- * dock-13 - nc   - key                         dock-14 - TP34 - 3V3               *
+ * dock-01 - TP34 -       2V7
+ * dock-02 - TP08 -       gnd
+ * dock-03 - TP12 - P1.3  dc_attn_s_n
+ * dock-04 - TP31 - P1.4  dc_attn_m_n
+ * dock-05 - TP11 - P2.0  dc_spi_en
+ * dock-06 - TP13 - P2.1  dc_sclk
+ * dock-07 - TP27 - P2.2  dc_somi
+ * dock-08 - TP03 - P2.3  dc_simo
+ *
+ *
+ * Jtag connector
+ *   o front side pcb, left side
+ *   o pin 1 on left, bottom side
+ *   o pin 2 on left, top side
+ *   o connector is standard ARM 10 pin .050" connector
+ *
+ * jtag-01  TP20  Vtref   2V7   jtag-02 TP23  swdio
+ * jtag-03                      jtag-04 TP18  swdclk
+ * jtag-05  TP22  gnd           jtag-06 TP32  swo       PJ.5
+ * jtag-07                      jtag-08 nc
+ * jtag-09                      jtag-10 TP28  nRESET
  *
  *
  * SD Direct Connect - 8 pin
  *
  * sddc-01 (TP36) dock_sd0_rsv1 DAT2
- * sddc-02 (TP04) dock_sd0_csn  DAT3
- * sddc-03 (TP05) dock_sd0_di   CMD
+ * sddc-02 (TP04) dock_sd0_csn  DAT3    P8.1
+ * sddc-03 (TP05) dock_sd0_di   CMD     P3.2
  * sddc-04 (TP06) dock_sd0_pwr
- * sddc-05 (TP07) dock_sd0_sclk CLK
+ * sddc-05 (TP07) dock_sd0_sclk CLK     P3.1
  * sddc-06 (TP35) gnd
- * sddc-07 (TP09) dock_sd0_do   DAT0
+ * sddc-07 (TP09) dock_sd0_do   DAT0    P3.0
  * sddc-08 (TP10) dock_sd0_rsv2 DAT1
  *
- * TP01: (       )                              TP19: (dock-08) nc - key
- * TP02: (       )                              TP20: (dock-01) 3V3
- * TP03: (       )                P2.4  *       TP21: (dock-03) gnd
- * TP04: (sddc-02) dock_sd0_csn   DAT3  *       TP22: (dock-05) gnd
- * TP05: (sddc-03) dock_sd0_di    CMD   *       TP23: (dock-02) jtag swdio        *
- * TP06: (sddc-04) dock_sd0_pwr         *       TP24: (       ) Vbatt             *
- * TP07: (sddc-05) dock_sd0_sclk CLK    *       TP25: (dock-07) gnd
- * TP08: (       )               gnd    *       TP26: (dock-09) gnd
- * TP09: (sddc-07) dock_sd0_do   DAT0   *       TP27: (       )           P2.2    *
- * TP10: (sddc-08) dock_sd0_rsv2 DAT1   *       TP28: (dock-10) jtag RSTn         *
- * TP11: (       )                P2.0  *       TP29: (       )
- * TP12: (       )                P1.3  *       TP30: (       )
- * TP13: (       )                P2.1  *       TP31: (       )           P1.4    *
- * TP14: (tmpx-04) tmp_pwr        P1.0  *       TP32: (dock-06) jtag SWO  PJ.5
- * TP15: (tmpx-01) tmp_gnd  (gnd)       *       TP33: ---
- * TP16: (tmpx-02) tmp_sda        P6.6  *       TP34: (       ) 3V3               *
- * TP17: (tmpx-03) tmp_scl        P6.7  *       TP35: (sddc-06) gnd               *
- * TP18: (dock-04) jtag swclk           *       TP36: (sddc-01) dock_sd0_rsv1  DAT2   (dep)
+ *
+ * TP03: (dock-08) dc_simo        P2.3          TP20: (jtag-01) 2V7
+ * TP04: (sddc-02) dock_sd0_csn   DAT3  P8.1    TP22: (jtag-05) gnd
+ * TP05: (sddc-03) dock_sd0_di    CMD   P3.2    TP23: (jtag-02) jtag swdio
+ * TP06: (sddc-04) dock_sd0_pwr                 TP24:           Vbatt
+ * TP07: (sddc-05) dock_sd0_sclk  CLK   P3.1
+ * TP08:                          gnd
+ * TP09: (sddc-07) dock_sd0_do    DAT0  P3.0    TP27: (dock-07) dc_somi        P2.2
+ * TP10: (sddc-08) dock_sd0_rsv2  DAT1          TP28: (jtag-10) jtag RSTn
+ * TP11: (dock-05) dc_spi_en      P2.0
+ * TP12: (dock-03) dc_attn_s_n    P1.3
+ * TP13: (dock-06) dc_sclk        P2.1          TP31: (dock-04) dc_attn_m_n    P1.4
+ * TP14: (tmpx-04) tmp_pwr        P1.0          TP32: (jtag-06) jtag SWO       PJ.5
+ * TP15: (tmpx-01) tmp_gnd        gnd
+ * TP16: (tmpx-02) tmp_sda        P6.6          TP34: (dock-01) 2V7
+ * TP17: (tmpx-03) tmp_scl        P6.7          TP35: (sddc-06) gnd
+ * TP18: (jtag-04) jtag swclk                   TP36: (sddc-01) dock_sd0_rsv1  DAT2
  *
  *
  * JTAG/SWD to 20 pin ARM Segger Jlink  (hardwire)
