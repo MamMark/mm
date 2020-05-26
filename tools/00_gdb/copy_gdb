@@ -37,11 +37,11 @@ cp ${TP_GDB}/gdb_tasks.py            .gdb_tasks.py
 cp ${TP_GDB}/gdb_timers.py           .gdb_timers.py
 cp ${TP_MSP432_GDB}/gdb_msp432       .gdb_msp432
 
-cp ${MM_CHIP}/gsd4e_v4/gdb_gps       .gdb_gps
-cp ${MM_CHIP}/gsd4e_v4/gdb_gps_hw.py .gdb_gps_hw.py
+# cp ${MM_CHIP}/gsd4e_v4/gdb_gps       .gdb_gps
+# cp ${MM_CHIP}/gsd4e_v4/gdb_gps_hw.py .gdb_gps_hw.py
+
 cp ${MM_CHIP}/si446x/gdb_si446x.py   .gdb_si446x.py
-cp ${MM_PLAT}/mm6a/gdb_mm6a          .gdb_mm6a
-cp ${MM_PLAT}/dev6a/gdb_dev6a        .gdb_dev6a
+cp ${MM_PLAT}/dev7/gdb_dev7          .gdb_dev7
 cp ${MM_PLAT}/mm/gdb_hwMm.py         .gdb_hwMm.py
 cp ${MM_PLAT}/mm/gdb_dblk.py         .gdb_dblk.py
 
