@@ -17,7 +17,6 @@ PFLAGS += -I%T/platforms/dev7/hardware/sensors
 PFLAGS += -I%T/platforms/mm
 
 PFLAGS += -I%T/mm
-PFLAGS += -I%T/mm/GPS
 PFLAGS += -I%T/system/OverWatch
 PFLAGS += -I%T/system/panic
 
