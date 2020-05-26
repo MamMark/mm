@@ -26,7 +26,7 @@
 #include <platform.h>
 
 #define BOOT_MAJIK 0x01021910
-#define FUBAR_MAX 0xffff
+
 noinit uint32_t boot_majik;
 noinit uint16_t boot_count;
 
@@ -126,6 +126,15 @@ implementation {
     return call Platform.usecsRaw();
   }
 
+  async command uint32_t Platform.usecsExpired(uint32_t t_base, uint32_t limit) {
+    uint32_t t_new;
+
+    t_new = call Platform.usecsRaw();
+    if (t_new - t_base > limit)
+      return t_new;
+    return 0;
+  }
+
   /* TA1 is async wrt the main cpu clock.  majority element time. */
   async command uint32_t Platform.jiffiesRaw()     {
     uint16_t t0, t1;
@@ -144,6 +153,17 @@ implementation {
 
   uint32_t __platform_jiffiesRaw() @C() @spontaneous() {
     return call Platform.jiffiesRaw();
+  }
+
+
+  async command uint32_t Platform.jiffiesExpired(uint32_t t_base,
+                                                 uint32_t limit) {
+    uint32_t t_new;
+
+    t_new = call Platform.jiffiesRaw();
+    if (t_new - t_base > limit)
+      return t_new;
+    return 0;
   }
 
 
@@ -186,6 +206,23 @@ implementation {
       case RADIO_IRQN:
         return RADIO_IRQ_PRIORITY;      /* si446x */
     }
+  }
+
+
+  /**
+   * Platform.node_id
+   *
+   * return a pointer to a 6 byte random number that we can
+   * use as both our serial_number as well as our network node_id.
+   *
+   * The msp432 provides a 128 bit (we use the first 48 bits, 6 bytes)
+   * random number.  This shows up at address 0x0020_1120 but we
+   * reference it using the definitions from the processor header.
+   */
+  async command uint8_t *Platform.node_id(unsigned int *lenp) {
+    if (lenp)
+      *lenp = PLATFORM_SERIAL_NUM_SIZE;
+    return (uint8_t *) &TLV->RANDOM_NUM_1;
   }
 
 
