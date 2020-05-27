@@ -182,7 +182,7 @@
  *  02 O .2     0pI     mems_somi       BSLRXD   62   .2        0mI     gps_somi (A1,    pm)
  *       .3     0pI     mems_simo       BSLTXD        .3        0mI     gps_simo (A1,    pm)
  *       .4     0pI                     BSLSTE        .4        0pO     dc_spi_en
- *       .5     0pI                     BSLCLK        .5        1pO     dc_attn_s_n
+ *       .5     0pI                     BSLCLK        .5        0pO     dc_slave_rdy
  *       .6     0pI     tmp_sda         BSLSIMO       .6        0pI
  *       .7     0pI     tmp_scl         BSLSOMI       .7        0pI
  *

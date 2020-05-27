@@ -564,7 +564,7 @@ void __pins_init() {
   P6->OUT  = 0x00;
   P6->DIR  = 0x00;
 
-  P7->OUT  = 0x20;
+  P7->OUT  = 0x00;
   P7->SEL0 = 0x0D;              /* hand over to SPI module   */
   P7->DIR  = 0x30;
 

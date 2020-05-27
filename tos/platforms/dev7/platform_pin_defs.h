@@ -147,10 +147,10 @@
 
 
 /* Dock */
-#define DC_ATTN_S_PORT      P7
-#define DC_ATTN_S_PIN       5
-#define DC_ATTN_S_BIT       (1 << DC_ATTN_S_PIN)
-#define DC_ATTN_S_N         BITBAND_PERI(DC_ATTN_S_PORT->OUT, DC_ATTN_S_PIN)
+#define DC_SLAVE_RDY_PORT   P7
+#define DC_SLAVE_RDY_PIN    5
+#define DC_SLAVE_RDY_BIT    (1 << DC_SLAVE_RDY_PIN)
+#define DC_SLAVE_RDY        BITBAND_PERI(DC_SLAVE_RDY_PORT->OUT, DC_SLAVE_RDY_PIN)
 
 #define DC_ATTN_M_PORT      P7
 #define DC_ATTN_M_PIN       6
