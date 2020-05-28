@@ -184,12 +184,12 @@
  *  00 I .1     0pO    batt_sense_en             60   .1        0pI    gps_tp   (ta1.1, pm)
  *  02 O .2     0pI    batt_chrg                 62   .2        0mI    gps_somi (A1,    pm)
  *       .3     0pIrd  dc_slave_rdy     tp12          .3        0mI    gps_simo (A1,    pm)
- *       .4     0pIrd  dc_attn_m_m      tp31          .4        0pI    xxxx
+ *       .4     0pIrd  dc_attn          tp31          .4        0pI    xxxx
  *       .5     0mI    mems_sclk  (B0)                .5        0pI    xxxx
  *       .6     0mI    mems_simo  (B0)                .6        0pI    xxxx
  *       .7     0mI    mems_somi  (B0)                .7        0pI    xxxx
  *
- * port 2.0     0pIrd  dc_spi_en        tp11    port 8.0        0pO    pwr_sd0_en
+ * port 2.0     0pIrd  dc_msg_pending   tp11    port 8.0        0pO    pwr_sd0_en
  *  01   .1     0pIrd  dc_sclk (A0, pm) tp13     61 I .1        0pI    sd0_csn
  *  03   .2     0pIrd  dc_somi (A0, pm) tp27     63 O .2        0pI    xxxx
  *       .3     0pIrd  dc_simo (A0, pm) tp03          .3        0pI    xxxx
@@ -245,8 +245,8 @@
  * dock-01 - TP34 -       2V7
  * dock-02 - TP08 -       gnd
  * dock-03 - TP12 - P1.3  dc_slave_rdy
- * dock-04 - TP31 - P1.4  dc_attn_m_n
- * dock-05 - TP11 - P2.0  dc_spi_en
+ * dock-04 - TP31 - P1.4  dc_attn
+ * dock-05 - TP11 - P2.0  dc_msg_pending
  * dock-06 - TP13 - P2.1  dc_sclk
  * dock-07 - TP27 - P2.2  dc_somi
  * dock-08 - TP03 - P2.3  dc_simo
@@ -285,9 +285,9 @@
  * TP08:                          gnd
  * TP09: (sddc-07) dock_sd0_do    DAT0  P3.0    TP27: (dock-07) dc_somi        P2.2
  * TP10: (sddc-08) dock_sd0_rsv2  DAT1          TP28: (jtag-10) jtag RSTn
- * TP11: (dock-05) dc_spi_en      P2.0
+ * TP11: (dock-05) dc_msg_pending P2.0
  * TP12: (dock-03) dc_slave_rdy   P1.3
- * TP13: (dock-06) dc_sclk        P2.1          TP31: (dock-04) dc_attn_m_n    P1.4
+ * TP13: (dock-06) dc_sclk        P2.1          TP31: (dock-04) dc_attn        P1.4
  * TP14: (tmpx-04) tmp_pwr        P1.0          TP32: (jtag-06) jtag SWO       PJ.5
  * TP15: (tmpx-01) tmp_gnd        gnd
  * TP16: (tmpx-02) tmp_sda        P6.6          TP34: (dock-01) 2V7

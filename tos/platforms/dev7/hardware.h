@@ -176,12 +176,14 @@
  * into Port mode set to Input.  We use a soft reset to reset major pieces of the system
  * without changing the I/O pin state.
  *
+ * dc = dock_comm
+ *
  * Port: (0x4000_4C00)
  * port 1.0     0pO     LED1                    port 7.0        0mI     gps_sclk (A1,    pm)
  *  00 I .1     1pIru   mems_sclk       PB1      60   .1        0pI     gps_tm   (ta1.1, pm)
  *  02 O .2     0pI     mems_somi       BSLRXD   62   .2        0mI     gps_somi (A1,    pm)
  *       .3     0pI     mems_simo       BSLTXD        .3        0mI     gps_simo (A1,    pm)
- *       .4     0pI                     BSLSTE        .4        0pO     dc_spi_en
+ *       .4     0pI                     BSLSTE        .4        0pO     dc_msg_pending
  *       .5     0pI                     BSLCLK        .5        0pO     dc_slave_rdy
  *       .6     0pI     tmp_sda         BSLSIMO       .6        0pI
  *       .7     0pI     tmp_scl         BSLSOMI       .7        0pI
@@ -216,7 +218,7 @@
  * port  5.0    1pO     si446x_sdn
  *  40 I  .1    0pI     si446x_irqn
  *  42 O  .2    1pO     si446x_csn
- *        .3    0pI     dc_attn_m_n
+ *        .3    0pIrd   dc_attn
  *        .4    0pI
  *        .5    0pI
  *        .6    0pI
