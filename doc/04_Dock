@@ -2,7 +2,7 @@
 Options/Configurations:
 
 Dock:  RPi 3/RPi 4 (dual   spi ports), master only, 1 Radio, 1 Dock
-       Linux, FTDI C232HM, master only, multiple gpio/cs
+       Linux, master only, multiple gpio/cs
 
 
 0) Introduction
@@ -26,17 +26,18 @@ It uses the DCX to interface to a Tag that has been connected to the DCX.
 
 The connection between the dock and the tag is a master/slave SPI connection.
 The dock is the master and the tag is a slave.  The tag can only send data
-to the dock with the dock's assistance.
+to the dock with the dock's assistance.  The dock is the SPI master.
 
 The h/w interconnect occurs via the DCX which also provides isolation to
-protect the Tag's SPI bus.
+protect the Tag's SPI bus if needed.
 
 On the tag side, the spi port can be dedicated or shared.  A dedicated spi will
 be run exclusively as a slave.  With a shared spi, a dock -> tag(slave)
 configuration is shared with a tag(master) talking on the Tag's SPI bus to other
 devices on the bus.
 
-The protocol described below supports both configurations.
+While the protocol described below supports both configurations, currently we
+only support a dedicated slave DockComm port.
 
 
 1) HW interconnect
@@ -47,85 +48,119 @@ The protocol described below supports both configurations.
    SIMO:    slave in, master out, (spi data)
    SOMI:    slave out, master in, (spi data)
 
-   DC_ATTN_M_N: Dock -> Tag (low true).  Asserted for entire SPI packet
-            transmission.
+   DC_ATTN: Dock -> Tag.  Asserted for entire SPI packet transmission.
 
-   DC_ATTN_S_N:
-            Tag -> Dock (low true).  Asserted by a tag to indicate a message
-            is pending for the dock.
+   DC_MSG_PENDING: Tag -> Dock.  Asserted when the Tag has messges queued
+     for the dock.  The Tag wants the Dock to fetch these messages.
 
-   DC_SPI_EN:
-            Tag -> Dock.  Assertion causes the DCX to connect the Dock's SPI
-            to the Tag's SPI.  The Dock is master.
+   DC_SLAVE_RDY: Tag -> Dock.  This signal indicates that the slave (Tag)
+     has properly configured the SPI hardware and is ready to actively
+     service any incoming byte stream.  Actively monitoring the SPI RXBUF
+     hardware.
 
-            When DC_SPI_EN is 0, the dock's SIMO should be pulled high to
-            generate bytes of 0xff.
+     If the Tag needs to throttle the tranmission path, ie. flowcontrol.
+     DC_SLAVE_RDY can be deasserted.  And when once again monitoring incoming
+     bytes can be reasserted.
 
-   Idle bytes Slave to Master are 0xFE.  Idle bytes Master to Slave are 0xFD.
-   Idle bytes when no tag present or when DC_SPI_EN is deasserted are 0xFF.
-
-
-1a) DC_ATTN_M_N
-
-The DC_ATTN_M_N signal is used to get the tag's attention and to bracket the
-data being sent to the tag.  The initiating edge indicates the start
-of a new packet and the next byte will be a channel byte.  DC_ATTN_M_N
-is asserted for the duration of the packet.
+     With no Tag docked, the DCX will pull DC_SLAVE_RDY down (default value
+     0, not ready).  The Dock can tell if a tag is present by asserting
+     DC_ATTN and expect DC_SLAVE_RDY to be asserted within a max time
+     window (timeout).
 
 
-1b) DC_ATTN_S_N.
+What does RDY mean?  The Tag is an SPI slave in the Dock_Comm system.  That
+means when the Dock (the master) thinks the slave is ready it can start to
+clock, a byte will be transfered between the Dock and Tag, one in each
+direction.  The Tag's RXBUF will become full.   If this byte isn't serviced
+within an appropriate amount of time the current RXBUF will be over written
+(overrun), and the packet will be corrupted.
 
-The DC_ATTN_S_N signal is used by the tag to inform the dock that a tag packet
-is ready to be retrieved.  The Dock will use the FETCH command to get the
-tag's data.
+So basically, DC_SLAVE_RDY means the Tag is ready to catch.
 
 
-1c) DC_SPI_EN.
+1a) DC_ATTN
 
-Asserting DC_SPI_EN causes the DCX to connect the dock SPI and the tag SPI.
-This enables output drivers from the Dock for SCLK and SIMO.  When
-disabled, the incoming SOMI signal needs to be pulled high.
+The DC_ATTN signal is used to get the tag's attention and to bracket the
+data being sent to the tag.  The initiating edge indicates the start of a
+new packet and the next byte will be a channel byte.  DC_ATTN is asserted
+for the duration of the packet.
 
-If DC_SPI_EN is stuck deasserted, the dock will not be able to communicate
-with the tag.  The tag is required to participate in order for the dock_comm
-interface to function properly.
+
+1b) DC_MSG_PENDING.
+
+DC_MSG_PENDING gets asserted anytime the outgoing msg queue is non-empty.
+The master at its conveience will use a CORE/FETCH packet to pull messages
+from this queue.
+
+
+1c) DC_SLAVE_RDY.
+
+When asserted indicates that the SPI hardware has been properly configured
+(Slave, phase, polarity) and is actively ready to service incoming bytes.
+
+If the Tag needs to throttle the master because it no longer monitoring the
+receive path, DC_SLAVE_RDY will be deasserted.  It may need to wait a few
+byte times for the master to shutdown, should be no longer than tens of
+microseconds (dependent on SCLK speed).  Not seeing any data for a few
+loops will tell the Tag that the transmitter has shut down.
 
 
 1d) SCLK, SIMO, SOMI
 
-When DC_SPI_EN is deasserted, the dock is disconnected from SCLK and SIMO and
-SOMI is pulled up so any input bytes will be seen as 0xFF.
+SCLK, SIMO, and SOMI make up the actual SPI bus.  Typically, the tag is not
+connected to the dock and and these lines are configured as inputs with
+pull downs to gnd.
 
-With DC_SPI_EN asserted, the dock effectively drives SCLK and SIMO and SOMI
-is connected to the dock_spi bus SOMI.
+On the dock side, there is a pull up on SOMI, and the dock will see data of
+0xFF if it reads the SPI bus when a Tag is not connected.
 
 
 2) Data format.
 
 Data is transfered between the dock and the tag in packets.  All multi-byte
-datums are in little endian order.  There is no multi-byte alignment
-constraint.
+datums are in little endian order.  Multi-byte datums are aligned to
+natural boundaries with respect to the start of the packet.  ie. half-words
+(16 bit) are aligned on half-work boundaries, while 32 bit datums are quad
+word aligned.
 
-   +---------+--------+-------+--------+-----------+--------+
-   | channel |  type  |  len  |  data  |  checksum |   00   |
-   +---------+--------+-------+--------+-----------+--------+
+   +---------+--------+-------+--------+------+-+----+--------+
+   | channel |  type  |  len  |  data  | chkA | chkB |   00   |
+   +---------+--------+-------+--------+------+------+--------+
 
-       1         1        2       len         2        1*
+       1         1        2       len      1     1       1*
 
-                                                   +--------+
-      0xfe      0xfe     0xfe     0xfe      <---   |  srsp  |
-                                                   +--------+
+
+      0xfe      0xfe     0xfe     0xfe    0xfe  0xfe    srsp
+
 
    channel:     data channel, end point identifier
    type:        channel dependent packet type.  (0 reserved)
-   len:         2 byte length.  Length indicates the length of the data field.
+   len:         2 byte length.  Length indicates the length of
+                the data field.
    data:        packet data, size is len.
-   checksum:    16 bit byte by byte sum truncated to 16 bits of bytes
-                between channel through last data byte inclusive.  (little endian)
-   srsp:        simple response (srsp).
+   chkA/B:      fletcher checksum over entire packet, channel
+                through end of data.
+   srsp:        simple response (srsp).  srsp is generated by the rcvr.
 
 
-2a) Channels.
+2a) Idle Bytes.
+
+Idle bytes are using to indicate information about what is happening on the
+bus.  Primarily for debugging.  In all cases bytes inside of packets (DC_ATTN
+asserted) have no special meaning as idle bytes.
+
+o 0xFF, If the Tag is not connected, the Dock will read 0xFF from the bus.
+  0xFF indicates that no one is home.
+
+o 0xFE, when the dock is sending a packet to the Tag, the tag will be
+  sending 0xFE on the SOMI data path.
+
+o 0xFD, when the dock is retrieving data from the Tag and the tag is
+  actively sending data to the dock via the receive path, the dock will
+  be sending 0xFD on the SIMO data path.
+
+
+2b) Channels.
 
 The channel field in the packet denotes a logical end point.  An end point
 denotes a software module that generates or consumes packet data.
@@ -137,233 +172,232 @@ denotes a software module that generates or consumes packet data.
     4:  large_dblk  large block dblk access.
 
 
-2b) Core Type
+2c) Core Type
 
 The Core channel is used for core functions.
 
-    0:  none    reserved
-    1:  hello   are you alive
-    2:  id      identify
-    3:  fetch   fetch data from tag (slave req)
+    0:  hello   reserved
+    1:  id      identify
+    2:  fetch   fetch data from tag
 
 
-2c) srsp, simple response.
+2d) Checksum
 
-For packets transmitted from the dock to the tag, a simple response
-byte is returned by the tag after the last checksum byte has been sent.
-This byte indicates immediate response to the packet just received.
+The packet contents are protected by a two byte Fletcher-16 checksum.
+See https://en.wikipedia.org/wiki/Fletcher's_checksum#Fletcher-16.
+
+Basically, a sum over all bytes between channel and the last data byte
+inclusive:
+
+    chkA += byte;
+    chkB += chkA;
+
+The sum typically is represented as a 16 bit result, chkB * 256 + chkA.  We
+store this in little endian order which results in the bytes being stored as
+shown in the packet diagram above.
+
+
+2d) srsp, simple response.
+
+At the end of any packet, following the checksum bytes (chkA/B) a simple
+response byte is returned by the receiver to the originator of the packet.
+This response byte indicates any immediately determined result.  For
+example, if there is a checksum failure.
 
     0:  ok
     1:  bad checksum
     2:  protocol error
     3:  busy
     4:  reject
-    ff: not present
+    fd: (MASTER_IDLE), srsp not ready
+    fe: (SLAVE_IDLE),  srsp not ready
+    ff: (NOONE_HOME),  not present
+
+In the Dock -> Tag direction, the Dock is the master and is controlling the
+clock going to the Tag's SPI.  At the end of the packet, the Tag may need
+some extra time to finish processing the incoming packet such as computing
+the checksum.  To provide an automatic mechanism for this interchange, the
+Tag will return the idle byte (0xFE) if it isn't ready with the srsp byte.
+Note this is the default byte that the Tag is sending as the Dock is
+transmitting.  Alternatively the Tag could use DC_SLAVE_RDY to hold the the
+Dock off, but using a the data mechanism is simpler.
 
 
 3) Basic Operation
 
-The dock_comm port is either connected to a dedicated slave spi or to a shared
-spi bus which the tag normally accesses as a bus master.  If the tag is actively
-using the spi bus it will hold off any dock communications/interactions by
-deasserting DC_SPI_EN which disables the dock side drivers on SCLK and SIMO.
+Initial state:
 
-
-Initial state:  Normal tag operation.
-
-  DC_SPI_EN:   0, disable external dock drivers if connected.
-  DC_ATTN_M_N: 1, (pull up), if connected, Dock is not accessing the tag.
-  DC_ATTN_S_N: 1, tag is not requesting data transfer from the dock.
-  SPI bus:     the tag dock_comm spi can be configured as a master to enable
-               accessing other devices on the bus.  Alternatively, the spi
-               h/w can be held in reset to minimize power consumptino.
+  DC_ATTN:      0, (pull down), if connected, Dock is not accessing the tag.
+  DC_SLAVE_RDY: 0, (pull down), tag not ready.
+  SPI bus:      the Tag's spi port may be held in reset (powered off) for power
+                savings or will be configured as a slave.
 
 
 3a) Docking.  Plugging the tag into a dock shouldn't disrupt any operations
-currently being performed on the tag.  (electrical issues?)  This includes
-any potential transactions that are occuring on the dock_comm spi bus.
+currently being performed on the tag.  (electrical issues?)
 
 The process of docking does not generate a signal telling the tag docking has
 occured.
 
 The dock can tell that a Tag is attached by looking at the DCX_TAG_PRESENT
 pin.  The DCX_TAG_PRESENT signal is asserted by the DCX when a tag has been
-connected.
+connected.  If DCX_TAG_PRESENT is asserted and the dock gets a
+DC_ATTN/DC_SLAVE_RDY time out (no DC_SLAVE_RDY asserted within a reasonable
+time) indicates that the tag is docked but not responding.
 
 
-3b) Dock Attn.  The Dock gets the attention of the tag by dropping
-DC_ATTN_M_N.  This synchronizes the Dock and Tag, the next byte transmitted
+3b) Dock Attn.  The Dock gets the attention of the tag by asserting
+DC_ATTN.  This synchronizes the Dock and Tag, the next byte transmitted
 by the dock will be the first byte of a packet (channel).
 
-The falling edge of DC_ATTN_M_N typically causes an interrupt on the tag.
+The rising edge of DC_ATTN typically causes an interrupt on the tag.
 
 
-3c) Tag actions on receipt of DC_ATTN_M_N signal (falling edge, low value),
-    ATTN_M interrupt.
+3c) Tag actions on receipt of DC_ATTN signal.  DC_ATTN_IRQ interrupt.
 
-If the dock_comm spi is busy (tag is master, owned by tag), the interrupt
-is ignored.
-
-Otherwise, the tag will take the following actions:
-
-    1) configure SPI as a slave, take it out of reset.
-    2) raise DC_SPI_EN
-    3) set dock_com spi busy (owned by the dock)
+  o receipt of DC_ATTN indicates being docked, set appropriate state.
+  o configure DockComm h/w pins appropriately.
+  o if SPI powered down, bring the SPI up and properly configure.
+  o raise DC_SLAVE_RDY.
 
 
 3d) Data transfer
 
-Once the dock owns the spi, it can begin transferring bytes.  Being the
-master, the dock is responsible for initiating every transfer.  One byte
-sent, one byte received.
+Being the master, the dock is responsible for initiating every transfer.
+One byte sent, one byte received.
 
 Two major modes are needed when transferring packets between the dock and
-the tag, Dock -> Tag and Dock <- Tag.
+the tag, Dock -> Tag and Tag -> Dock.  We run exclusively in half duplex
+inspite of the underlying hardware being full duplex.  This is to simplify
+corner cases when transitioning between modes.  Basically, it is simpler.
 
-To send data from the dock to the tag, the dock will assert DC_ATTN_M_N and
-start sending a packet (channel, type, len, data, ...).  If the tag is
-actively receiving these bytes, 0xFE will be returned for each transmitted
-byte.
+To send data from the dock to the tag, the dock will assert DC_ATTN.
 
-The tag is typically receiving data from the dock at interrupt level.  Once
-the checksum has been received, the tag will set the SRSP byte and will
-hand the packet off to non-interrupt code for processing.   This means that
-in practice it is difficult for the tag to immediately respond.  Every
-response packet from the tag is delayed and requires a DC_ATTN_S_N assertion
-followed by a CORE/FETCH cycle.
+Before any data can be transferred, the Dock must see DC_SLAVE_RDY
+asserted.  Then it will start sending a packet (channel, type, len, data)
 
-If the tag cannot immediately respond to the command, it will return SRSP_OK
-(if the checksum passes).  Later when the tag has the data available, it can
-assert DC_ATTN_S_N, and the dock will use CORE/FETCH to retreive the data.
-The data will be wrapped in an appropriate packet which identifies the format
-and how to process it.
+On reception of DC_ATTN, the current rsp state is set to DC_SLAVE_IDLE
+(0xFE).  If there is a problem, this is captured in the rsp state and
+returned to the dock with each byte sent.  The dock will continue to send
+the entire packet and in this way we can set the appropriate response and
+the transfere will conclude.
 
-Additionly, if the tag has data it wants to send to the Dock (ie. CHN/PRINT),
-the tag will assert DC_ATTN_S_N to poke the dock to fetch it.  The delayed
-data case and async cases are handled the same.
+Because the tag is a SPI slave, it must receive bytes immediately.  This
+means that any potential interruption (interrupts, other tasks, etc.) must
+be prevented.
+
+If large packets are being transferred, care must be taken to balance
+receiving with other functions in the system.  To accomplish this,
+receiving is done in a task (inside an atomic section).  A limit on the
+number of bytes is used to bound how long other interrupts and other codes
+are prevented from executing.  If the current reception needs to be paused,
+the receiver will deassert DC_SLAVE_RDY.  When reception resumes,
+DC_SLAVE_RDY gets reasserted.
+
+As each byte is received, it is handed to the protocol handler.  If there
+is a problem an appropriate event will be signaled causing the current
+rsp to be set.  This is used to generate an appropriate SRSP byte when
+needed.
+
+Typically, once a packet has been received it is handed off to the
+DockMonitor for processing.  This will take some time.  When any response
+is ready, the Tag will set DC_MSG_PENDING.
+
+To retrieve the packet, the dock will send a CORE/FETCH command.  When the
+tag receives the CORE/FETCH it will send the packet data as the dock sends
+DC_MASTER_IDLEs.  This packet immediately follows the CORE/FETCH command
+packet.  The packet being returned is a properly constructed dock_comm
+packet.
+
+Similarly, if the tag has unsolicited data to transmit to the dock, this
+message will be queued and DC_MSG_PENDING will be asserted.  The Dock/Tag
+will then cooperate as above to fetch this data.
+
 
 Typically a sequence will look as follows:
 
-Dock:                                   Tag:
+Dock:                           Tag:
 
-  assert DC_ATTN_M_N                      (interrupt)
-                                          configure SPI as slave
-                                          set output byte to 0xFE
-                                          assert DC_SPI_EN
-                                          set dock_comm spi busy.
+  assert DC_ATTN                (interrupt)
+                                power SPI, configure (slave)
+                                set cur_rsp to 0xFE
+                                set output byte to cur_rsp
+                                assert DC_SLAVE_RDY
 
-  sends first byte.                       (interrupt) byte available
-                                          process byte.
-
-  sends bytes                             (interrupt), continue processing
+  sends channel (first byte)    byte_available() to Proto handler.
+  send type
+  send len lsb
+  send len msb                  Proto.msgStart()
+  sends bytes                   continue processing
      ...
 
-  sends 2nd checksum byte.                (interrupt), process checksum
-                                          set srsp byte to be returned.
-                                          (will be returned on next
-                                          transmitted byte).
+  send 1st checksum byte        byte_avail()
+  send 2nd checksum byte        byte_avail(), protocol processes checksum
+                                Proto.msgEnd()
+                                set srsp byte to be returned.
+                                (will be returned on next
+                                transmitted byte).
 
-  send fd (to get srsp)                   (interrupt).  ignore last byte,
+  send fd (to get srsp)         ignore last byte,  should be 0xfd.
 
-  deassert DC_ATTN_M_N
+  deassert DC_ATTN
+                                deassert DC_SLAVE_RDY
 
 
 The tag will process the packet and perform the requested operation.  This
 operation will typically take non-zero time.  When the results are
-available and the response is ready, the tag will assert DC_ATTN_S_N.
+available and the response is ready, the tag will assert DC_MSG_PENDING.
 
-Dock:                                   Tag:
+Dock:                           Tag:
+  assert DC_ATTN                interrupt
+                                configure SPI as slave
+                                assert DC_SPI_EN
+                                set output byte to 0xFE
+                                set dock_comm spi busy.
 
-                                          assert DC_ATTN_S_N
+     chn   type    len     chkA  chkB  srsp
+  m: core, fetch,  len,    chkA, chkB, srsp
+     0x01  0x02    0x0000  0x03  0x04  0xfd
+     01    02      00 00   03    04    fd
 
-  assert DC_ATTN_M_N                      interrupt
-                                          configure SPI as slave
-                                          assert DC_SPI_EN
-                                          set output byte to 0xFE
-                                          set dock_comm spi busy.
-
-     chn   type    len     chk     srsp
-  m: core, fetch,  len,    chksum, srsp
-     0x01  0x03    0x0000  0x0004  0xfd
-     01    03      00 00   04 00   fd
-
-  s: fe    fe      fe fe   fe fe   00
+  s: fe    fe      fe fe   fe    fe    00
 
 
-     chn   type    len     data    chk    srsp
-  s: xx    xx      xx xx   ......  xxxx   fe
+     chn   type    len     data    chkA chkB   srsp
+  s: xx    xx      xx xx   ......  xx   xx     fe
 
-  m: fd    fd      fd fd   ......  fdfd   00
+  m: fd    fd      fd fd   ......  fd   fd   00
 
-                                          deassert DC_ATTN_S_N
-  deassert DC_ATTN_M_N
+  deassert DC_ATTN
+                                deassert DC_SLAVE_RDY
+
+Note that the response packet immediate follows the core/fetch
+under control of the Dock master.
 
 
 4) Core channel
 
 The core channel is used for well defined control functions.
 
-4a) Hello
+4a) Hello     (CORE/HELLO)
 
-  assert DC_ATTN_M_N
-
-     chn   type    len     chk     srsp
-  m: core, hello,  len,    chksum, srsp
-     0x01  0x01    0x0000  0x0002  0xfd
-     01    01      00 00   02 00   fd
-
-  s: fe    fe      fe fe   fe fe   00
-
-  deassert DC_ATTN_M_N
-
-                ...
-                ...
-
-                                          assert DC_ATTN_S_N
-
-  assert DC_ATTN_M_N
-
-  m: core, fetch,  len,    chksum, srsp
-     0x01  0x03    0x0000  0x0004  0xfd
-     01    03      00 00   04 00   fd
-
-  s: fe    fe      fe fe   fe fe   00
+    publish DC version?   node id?
 
 
-     chn   type    len     chk    srsp
-  s: 01    01      00 00   0002   fe
+4b) Identify  (CORE/ID)
 
-  m: fd    fd      fd fd   fdfd   00
+  cmd: CORE/ID, 0
+  rsp: CORE/ID, len,
+       core:   core_rev, core_minor,    2 x 2 (needed?)
+       sw_ver: major, minor, build,     1 x 1 x 2
+       hw_ver: hw_rev, hw_model         1 x 1
+       node:   node_id[6]               6
+       base:   executing image          4
 
-                                          deassert DC_ATTN_S_N
-  deassert DC_ATTN_M_N
-
-
-4b) Identify
-
-4c) Fetch
+4c) Fetch     (CORE/FETCH)
 
 Fetch is used by the dock to pull data from the Tag after the
-tag has asserted DC_ATTN_S_N.
-
-                                          assert DC_ATTN_S_N
-
-  assert DC_ATTN_M_N
-
-  m: core, fetch,  len,    chksum, srsp
-     0x01  0x03    0x0000  0x0004  0xfd
-     01    03      00 00   04 00   fd
-
-  s: fe    fe      fe fe   fe fe   00
-
-
-     chn   type    len     data    chk    srsp
-  s: xx    xx      xx xx   ......  xxxx   fe
-
-  m: fd    fd      fd fd   ......  fdfd   00
-
-                                          deassert DC_ATTN_S_N
-  deassert DC_ATTN_M_N
+tag has asserted DC_MSG_PENDING.
 
 
 5) Tagnet channel
@@ -398,41 +432,6 @@ Size request/response, will return the current size in bytes of
 the dblk file.
 
 
-  assert DC_ATTN_M_N
-
-     chn    type    len     chk     srsp
-  m: LDBLK, SIZE,   len,    chksum, srsp
-     0x04   0x00    0x0000  0x0004  0xfd
-     04     00      00 00   04 00   fd
-
-  s: fe     fe      fe fe   fe fe   00
-
-  deassert DC_ATTN_M_N
-
-                ...
-                ...
-
-                                          assert DC_ATTN_S_N
-
-  assert DC_ATTN_M_N
-
-  m: CORE, FETCH,  len,    chksum, srsp
-     0x01  0x03    0x0000  0x0004  0xfd
-     01    03      00 00   04 00   fd
-
-  s: fe    fe      fe fe   fe fe   00
-
-
-     chn   type    len     size             chk    srsp
-  s: LDBLK SIZE    0x0008  xxxxxxxxxxxxxxxx 0028   fe
-     04    00      08 00   0706050403020100 2800   fe
-
-  m: fd    fd      fd fd   fdfdfdfdfdfdfdfd fdfd   00
-
-                                          deassert DC_ATTN_S_N
-  deassert DC_ATTN_M_N
-
-
 7.3) Data
 
 The LDBLK/DATA packet is used to move data from the tag to the dock.
@@ -442,37 +441,13 @@ The LDBLK/DATA packet is used to move data from the tag to the dock.
     rsp_len:    actual number of bytes being returned.
 
 
-    assert DC_ATTN_M_N
-
      chn    type
-  m: LDBLK, DATA,   len,    offset            req_len  chk     srsp
-     0x04   0x01    0x000a  0102030405060708  090a     xxxx    0xfd
-     04     01      0a 00   0807060504030201  0a09     xxxx    fd
-
-  s: fe     fe      fe fe   fefefefefefefefe  fefe     fefe    00
-
-  deassert DC_ATTN_M_N
+  m: LDBLK, DATA,   len,    offset            req_len
+     0x04   0x01    0x000a  0102030405060708  090a
+     04     01      0a 00   0807060504030201  0a09
 
                 ...
                 ...
-
-                                          assert DC_ATTN_S_N
-
-  assert DC_ATTN_M_N
-
-  m: core, fetch,  len,    chksum, srsp
-     0x01  0x03    0x0000  0x0004  0xfd
-     01    03      00 00   04 00   fd
-
-  s: fe    fe      fe fe   fe fe   00
 
 
   len is the actual length being returned.
-
-     chn    type
-  s: LDBLK  DATA    len     data    chk     srsp
-     0x04   0x01    xxxx    ....    xxxx    0xfd
-     04     01      xxxx    ....    xxxx    fd
-
-                                          deassert DC_ATTN_S_N
-  deassert DC_ATTN_M_N
