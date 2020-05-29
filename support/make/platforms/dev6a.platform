@@ -19,7 +19,6 @@ PFLAGS += -I%T/platforms/dev6a/hardware/tmp
 PFLAGS += -I%T/platforms/mm
 
 PFLAGS += -I%T/mm
-PFLAGS += -I%T/mm/GPS
 PFLAGS += -I%T/system/OverWatch
 PFLAGS += -I%T/system/panic
 
