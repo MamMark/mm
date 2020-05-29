@@ -37,7 +37,7 @@ implementation {
   element.THdr   -> TagnetUtilsC;
   element.TPload -> TagnetUtilsC;
   element.TTLV   -> TagnetUtilsC;
-  element.PlatformNodeId
+  element.Platform
                  -> PlatformC;
   element.Boot   -> SystemBootC.Boot;
   element.Panic  -> PanicC;

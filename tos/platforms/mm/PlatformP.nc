@@ -34,7 +34,6 @@ module PlatformP {
   provides {
     interface Init;
     interface Platform;
-    interface PlatformNodeId;
     interface SysReboot;
   }
   uses {
@@ -220,23 +219,6 @@ implementation {
    * reference it using the definitions from the processor header.
    */
   async command uint8_t *Platform.node_id(unsigned int *lenp) {
-    if (lenp)
-      *lenp = PLATFORM_SERIAL_NUM_SIZE;
-    return (uint8_t *) &TLV->RANDOM_NUM_1;
-  }
-
-
-  /**
-   * PlatformNodeId.node_id
-   *
-   * return a pointer to a 6 byte random number that we can
-   * use as both our serial_number as well as our network node_id.
-   *
-   * The msp432 provides a 128 bit (we use the first 48 bits, 6 bytes)
-   * random number.  This shows up at address 0x0020_1120 but we
-   * reference it using the definitions from the processor header.
-   */
-  async command uint8_t *PlatformNodeId.node_id(unsigned int *lenp) {
     if (lenp)
       *lenp = PLATFORM_SERIAL_NUM_SIZE;
     return (uint8_t *) &TLV->RANDOM_NUM_1;

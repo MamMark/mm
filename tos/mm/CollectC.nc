@@ -89,5 +89,5 @@ implementation {
   components PlatformC;
   CollectP.Rtc       -> PlatformC;
   CollectP.SysReboot -> PlatformC;
-  CollectP.PlatformNodeId -> PlatformC;
+  CollectP.Platform  -> PlatformC;
 }
