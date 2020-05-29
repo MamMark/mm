@@ -7,13 +7,18 @@ Dock:  RPi 3/RPi 4 (dual   spi ports), master only, 1 Radio, 1 Dock
 
 0) Introduction
 
-The Dock subsystem provides the following functionality when a tag is
-connected:
+The Dock subsystem primarily provides a high speed connection for data
+transfer between a Dock Host (Master) and a Tag (Slave).  It provides
+the following functionality:
 
-    a) JTAG SWD port for low level development access
-    b) charging for the tag's energy system
-    c) high speed communication port.  (dock_comm).
+    a) high speed communication port.  (dock_comm).
+    b) JTAG SWD port for low level development access
+    c) charging for the tag's energy system
     d) any required level shifting.
+
+The interconnection is via a SPI bus and some control signals.  The Dock
+is the master and the Tag is the slave.  These terms (Tag/slave) and
+(Dock/master) are used interchangably in this document.
 
 DockComm provides a high speed connection to a Tag device.  This
 connection can be used to a) monitor a running tag and b) offload large
@@ -145,19 +150,33 @@ word aligned.
 
 2a) Idle Bytes.
 
-Idle bytes are using to indicate information about what is happening on the
-bus.  Primarily for debugging.  In all cases bytes inside of packets (DC_ATTN
-asserted) have no special meaning as idle bytes.
+We run the SPI bus in an effective half-duplex mode, this is to allow
+information to be passed from the target back to the origin about
+any problems that have occured.
 
-o 0xFF, If the Tag is not connected, the Dock will read 0xFF from the bus.
-  0xFF indicates that no one is home.
+When the master is sending a packet to the slave, the slave is returning
+either an idle byte or abort code.
 
-o 0xFE, when the dock is sending a packet to the Tag, the tag will be
-  sending 0xFE on the SOMI data path.
+When the master is pulling data from the slave, it will be sending the
+master idle or an abort code.  The master can also terminate the transfer
+by deasserting DC_ATTN.
 
-o 0xFD, when the dock is retrieving data from the Tag and the tag is
-  actively sending data to the dock via the receive path, the dock will
-  be sending 0xFD on the SIMO data path.
+
+Idle/Abort bytes are only meaningful on the reverse data stream that is
+occuring in parallel to the packet data stream.
+
+o 0xFF, (DC_NOONE_HOME): If the slave is not connected, the Dock will read
+  0xFF from the bus.  0xFF indicates that no one is home.
+
+o 0xFE, (DC_SLAVE_IDLE): While the dock is sending packet data, the tag will
+  normally send DC_SLAVE_IDLE on the return path.
+
+o 0xFD, (DC_MASTER_IDLE):  when the dock is packet data from the Tag, it will
+  normally use DC_MASTER_IDLE to initiaate each transfer on the SIMO path.
+
+o any other values are reserved and used for abort codes.  Abort codes and
+  SRSP (simple response codes) are the same.  An SRSP code is essentially
+  a completion code at the very end of a packet.
 
 
 2b) Channels.
@@ -372,6 +391,34 @@ Dock:                           Tag:
 
 Note that the response packet immediate follows the core/fetch
 under control of the Dock master.
+
+
+3e) Exceptions
+
+When an error occurs two things need to happen.
+
+o an appropriate indication of the failure to provide cluefullness.
+o the data channel must be cleaned up and put back into a ready state.
+
+How this works depends on which side has detected the problem and is
+generating the abort.
+
+o Slave abort.
+
+When the slave detects a problem, it sets the cur_rsp to the abort code and
+returns this code with every incoming byte.  The master should immediately
+detect this code and abort the rest of the transmission by deasserting
+DC_ATTN.  Alternatively, the Master may continue sending the packet and
+will observe the abort code as the SRSP at the end of the packet.
+
+
+o Master abort
+
+When the master is pulling data from the slave, it normally is sending
+DC_MASTER_IDLE (0xFD).  To abort, it can send the abort code and then
+deassert DC_ATTN.  Alternatively, it can continue sending the abort
+code until sufficient bytes have been transmitted and the Slave has
+sent its SRSP at the end.
 
 
 4) Core channel
