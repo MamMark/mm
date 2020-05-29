@@ -351,7 +351,6 @@ available and the response is ready, the tag will assert DC_MSG_PENDING.
 Dock:                           Tag:
   assert DC_ATTN                interrupt
                                 configure SPI as slave
-                                assert DC_SPI_EN
                                 set output byte to 0xFE
                                 set dock_comm spi busy.
 

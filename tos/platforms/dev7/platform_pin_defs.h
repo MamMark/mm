@@ -152,16 +152,16 @@
 #define DC_SLAVE_RDY_BIT    (1 << DC_SLAVE_RDY_PIN)
 #define DC_SLAVE_RDY        BITBAND_PERI(DC_SLAVE_RDY_PORT->OUT, DC_SLAVE_RDY_PIN)
 
-#define DC_ATTN_M_PORT      P7
-#define DC_ATTN_M_PIN       6
-#define DC_ATTN_M_BIT       (1 << DC_ATTN_M_PIN)
-#define DC_ATTN_M_P         (P6->IN & DC_ATTN_M_BIT)
-#define DC_ATTN_M_PORT_PIN  0x62
+#define DC_ATTN_PORT        P5
+#define DC_ATTN_PIN         3
+#define DC_ATTN_BIT         (1 << DC_ATTN_PIN)
+#define DC_ATTN_P           (P6->IN & DC_ATTN_BIT)
+#define DC_ATTN_PORT_PIN    0x62
 
-#define DC_SPI_EN_PORT      P7
-#define DC_SPI_EN_PIN       4
-#define DC_SPI_EN_BIT       (1 << DC_SPI_EN_PIN)
-#define DC_SPI_EN           BITBAND_PERI(DC_SPI_EN_PORT->OUT, DC_SPI_EN_PIN)
+#define DC_MSG_PENDING_PORT P7
+#define DC_MSG_PENDING_PIN  4
+#define DC_MSG_PENDING_BIT  (1 << DC_MSG_PENDING_PIN)
+#define DC_MSG_PENDING      BITBAND_PERI(DC_MSG_PENDING_PORT->OUT, DC_MSG_PENDING_PIN)
 
 #define DC_SCLK_PORT        P9
 #define DC_SCLK_PIN         5
