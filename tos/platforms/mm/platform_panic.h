@@ -27,6 +27,7 @@
  * RADIO:       radio driver issues.
  * TAGNET:      comm stack
  * MSGBUF:      msg buffer subsys (buffer slicing)
+ * DOCK:        dock subsystem
  */
 
 typedef enum panic_codes {
@@ -50,6 +51,7 @@ typedef enum panic_codes {
   __pcode_radio         = 28,
   __pcode_tagnet        = 29,
   __pcode_msgbuf        = 30,
+  __pcode_dock          = 31,
 
   __pcode_exc           = 0x70,
   __pcode_kern          = 0x71,
@@ -72,6 +74,7 @@ typedef enum panic_codes {
 #define PANIC_RADIO     __pcode_radio
 #define PANIC_TAGNET    __pcode_tagnet
 #define PANIC_MSGBUF    __pcode_msgbuf
+#define PANIC_DOCK      __pcode_dock
 
 #define PANIC_EXC       __pcode_exc
 #define PANIC_KERN      __pcode_kern
