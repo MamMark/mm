@@ -11,4 +11,8 @@ implementation {
 
   components LocalTimeMilliC;
   testDockP.LocalTime -> LocalTimeMilliC;
+
+  components DockMonitorC, Dock0C;
+  DockMonitorC.MsgTransmit -> Dock0C;
+  DockMonitorC.MsgReceive  -> Dock0C;
 }
