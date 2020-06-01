@@ -155,8 +155,8 @@
 #define DC_ATTN_PORT        P5
 #define DC_ATTN_PIN         3
 #define DC_ATTN_BIT         (1 << DC_ATTN_PIN)
-#define DC_ATTN_P           (P6->IN & DC_ATTN_BIT)
-#define DC_ATTN_PORT_PIN    0x62
+#define DC_ATTN_P           (DC_ATTN_PORT->IN & DC_ATTN_BIT)
+#define DC_ATTN_PORT_INT    0x53
 
 #define DC_MSG_PENDING_PORT P7
 #define DC_MSG_PENDING_PIN  4

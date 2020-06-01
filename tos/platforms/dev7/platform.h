@@ -83,7 +83,7 @@ extern uint32_t __platform_usecsRaw();
  */
 #define TOSH_DATA_LENGTH 250
 #define GPS_EAVESDROP
-
+#define DOCK_EAVESDROP
 
 /*
  * platform.h is one of the first files included.
