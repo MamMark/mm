@@ -17,8 +17,8 @@ the following functionality:
     d) any required level shifting.
 
 The interconnection is via a SPI bus and some control signals.  The Dock
-is the master and the Tag is the slave.  These terms (Tag/slave) and
-(Dock/master) are used interchangably in this document.
+is the MASTER and the Tag is the SLAVE.  These terms (Tag/SLAVE) and
+(Dock/MASTER) are used interchangably in this document.
 
 DockComm provides a high speed connection to a Tag device.  This
 connection can be used to a) monitor a running tag and b) offload large
@@ -36,14 +36,9 @@ to the dock with the dock's assistance.  The dock is the SPI master.
 The h/w interconnect occurs via the DCX which also provides isolation to
 protect the Tag's SPI bus if needed.
 
-On the tag side, the spi port can be dedicated or shared.  A dedicated spi will
-be run exclusively as a slave.  With a shared spi, a dock -> tag(slave)
-configuration is shared with a tag(master) talking on the Tag's SPI bus to other
-devices on the bus.
-
-While the protocol described below supports both configurations, currently we
-only support a dedicated slave DockComm port.
-
+On the tag side, only a dedicated slave port is supported.  While it is
+possible, to support a shared spi, this would require additional h/w
+for proper operation.
 
 1) HW interconnect
 
@@ -53,34 +48,17 @@ only support a dedicated slave DockComm port.
    SIMO:    slave in, master out, (spi data)
    SOMI:    slave out, master in, (spi data)
 
-   DC_ATTN: Dock -> Tag.  Asserted for entire SPI packet transmission.
+   DC_ATTN: MASTER -> SLAVE.  Used to gain the Tag's attention and brackets
+     all bytes in the packet.  Asserted for entire SPI packet transmission.
 
-   DC_MSG_PENDING: Tag -> Dock.  Asserted when the Tag has messges queued
-     for the dock.  The Tag wants the Dock to fetch these messages.
+   DC_SLAVE_RDY: SLAVE -> MASTER.  Slave is ready to catch data from the Dock.
 
-   DC_SLAVE_RDY: Tag -> Dock.  This signal indicates that the slave (Tag)
-     has properly configured the SPI hardware and is ready to actively
-     service any incoming byte stream.  Actively monitoring the SPI RXBUF
-     hardware.
+   DC_MSG_PENDING: SLAVE -> MASTER.  Indicates the Tag has one or more messages
+     that need to be FETCHed by the DOCK.
 
-     If the Tag needs to throttle the tranmission path, ie. flowcontrol.
-     DC_SLAVE_RDY can be deasserted.  And when once again monitoring incoming
-     bytes can be reasserted.
-
-     With no Tag docked, the DCX will pull DC_SLAVE_RDY down (default value
-     0, not ready).  The Dock can tell if a tag is present by asserting
-     DC_ATTN and expect DC_SLAVE_RDY to be asserted within a max time
-     window (timeout).
-
-
-What does RDY mean?  The Tag is an SPI slave in the Dock_Comm system.  That
-means when the Dock (the master) thinks the slave is ready it can start to
-clock, a byte will be transfered between the Dock and Tag, one in each
-direction.  The Tag's RXBUF will become full.   If this byte isn't serviced
-within an appropriate amount of time the current RXBUF will be over written
-(overrun), and the packet will be corrupted.
-
-So basically, DC_SLAVE_RDY means the Tag is ready to catch.
+   DCX_TAG_PRESENT: The Dock Comm Interface (DCX) includes a pin to the Dock
+     host that indicates a Tag is physically plugged in.  The Tag itself does
+     not have visiblity of this signal.
 
 
 1a) DC_ATTN
@@ -94,11 +72,15 @@ for the duration of the packet.
 1b) DC_MSG_PENDING.
 
 DC_MSG_PENDING gets asserted anytime the outgoing msg queue is non-empty.
-The master at its conveience will use a CORE/FETCH packet to pull messages
+The master at its convenience will use a CORE/FETCH packet to pull messages
 from this queue.
 
 
 1c) DC_SLAVE_RDY.
+
+Before the MASTER can send data successfully, the SLAVE must be ready to
+receive these bytes without overrunning.  When the SLAVE is ready to catch
+it will raise DC_SLAVE_RDY.
 
 When asserted indicates that the SPI hardware has been properly configured
 (Slave, phase, polarity) and is actively ready to service incoming bytes.
@@ -108,6 +90,10 @@ receive path, DC_SLAVE_RDY will be deasserted.  It may need to wait a few
 byte times for the master to shutdown, should be no longer than tens of
 microseconds (dependent on SCLK speed).  Not seeing any data for a few
 loops will tell the Tag that the transmitter has shut down.
+
+With no Tag docked, the DCX will pull DC_SLAVE_RDY down (default value 0,
+not ready).  The Dock can tell if a tag is present by asserting DC_ATTN and
+expect DC_SLAVE_RDY to be asserted within a reasonable amount of time.
 
 
 1d) SCLK, SIMO, SOMI
@@ -278,6 +264,16 @@ The rising edge of DC_ATTN typically causes an interrupt on the tag.
   o configure DockComm h/w pins appropriately.
   o if SPI powered down, bring the SPI up and properly configure.
   o raise DC_SLAVE_RDY.
+
+
+What does RDY mean?  The Tag is an SPI slave in the Dock_Comm system.  That
+means when the Dock (the master) thinks the slave is ready it can start to
+clock, a byte will be transfered between the Dock and Tag, one in each
+direction.  The Tag's RXBUF will become full.   If this byte isn't serviced
+within an appropriate amount of time the current RXBUF will be over written
+(overrun), and the packet will be corrupted.
+
+So basically, DC_SLAVE_RDY means the Tag is ready to catch.
 
 
 3d) Data transfer
