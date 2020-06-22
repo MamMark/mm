@@ -20,7 +20,7 @@
  */
 
 interface MsgTransmit {
-  command error_t send(uint8_t *ptr, uint16_t len);
-  command void    send_stop();
-  event   void    send_done();
+  command void send(uint8_t *ptr, uint16_t len);
+  command void send_abort();
+  event   void send_done(error_t err);
 }
