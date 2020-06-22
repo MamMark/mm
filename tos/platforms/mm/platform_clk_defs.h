@@ -111,6 +111,7 @@
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
+#define MSP432_UBLOX_DIV   4
 #define MSP432_MEMS_DIV    1
 #define MSP432_TMP_DIV     60
 #undef  USECS_BINARY
@@ -127,6 +128,7 @@
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 2
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
+#define MSP432_UBLOX_DIV   4
 #define MSP432_MEMS_DIV    1
 #define MSP432_TMP_DIV     42
 #define USECS_BINARY       1
@@ -143,6 +145,7 @@
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 3
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
+#define MSP432_UBLOX_DIV   4
 #define MSP432_MEMS_DIV    1
 #define MSP432_TMP_DIV     30
 #undef  USECS_BINARY
@@ -158,6 +161,7 @@
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 1
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
+#define MSP432_UBLOX_DIV   4
 #define MSP432_MEMS_DIV    1
 #define MSP432_TMP_DIV     21
 #define USECS_BINARY       1
@@ -174,6 +178,7 @@
 #define MSP432_TA_EX TIMER_A_EX0_IDEX__ ## 5
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
+#define MSP432_UBLOX_DIV   4
 #define MSP432_MEMS_DIV    1
 #define MSP432_TMP_DIV     13
 #undef  USECS_BINARY
