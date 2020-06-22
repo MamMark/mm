@@ -736,7 +736,7 @@ implementation {
   }
 
 
-  async event void ubxProto.msgStart(uint16_t len) {
+  event void ubxProto.msgStart(uint16_t len) {
     gpsc_state_t next_state;
 
     switch(gpsc_state) {
@@ -761,7 +761,7 @@ implementation {
   }
 
 
-  async event void ubxProto.msgEnd() {
+  event void ubxProto.msgEnd() {
     gpsc_state_t next_state;
 
     switch(gpsc_state) {
@@ -821,7 +821,7 @@ implementation {
   }
 
 
-  async event void ubxProto.protoAbort(uint16_t reason) {
+  event void ubxProto.protoAbort(uint16_t reason) {
     driver_protoAbort(reason);
   }
 
@@ -833,7 +833,7 @@ implementation {
    * errors have been translated from h/w specific to errors
    * defined in gpsproto.h.   For signalling with ubxProto.rx_error.
    */
-  async event void HW.gps_rx_err(uint16_t gps_errors, uint16_t raw_errors) {
+  event void HW.gps_rx_err(uint16_t gps_errors, uint16_t raw_errors) {
     m_rx_errors++;
     if (!m_first_rx_error) {
       m_first_rx_error = raw_errors;

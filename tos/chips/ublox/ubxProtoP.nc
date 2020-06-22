@@ -135,7 +135,7 @@ implementation {
    * Also throw a GPSProto.msgAbort to do reasonable things with
    * the underlying driver state machine.
    */
-  async command void GPSProto.rx_error(uint16_t gps_errors) {
+  command void GPSProto.rx_error(uint16_t gps_errors) {
     atomic {
       ubx_stats.rx_errors++;
       if (gps_errors & GPSPROTO_RXERR_FRAMING)
@@ -149,7 +149,7 @@ implementation {
   }
 
 
-  async command void GPSProto.resetStats() {
+  command void GPSProto.resetStats() {
       ubx_stats.starts           = 0;
       ubx_stats.complete         = 0;
       ubx_stats.ignored          = 0;
