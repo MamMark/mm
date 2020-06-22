@@ -626,6 +626,27 @@ implementation {
   }
 
 
+  command uint8_t *MsgBuf.msg_last(uint16_t *lenp,
+        rtctime_t **arrival_rtpp, uint32_t *markp) {
+    msg_slot_t *msg;                   /* message slot we are working on */
+
+    atomic {
+      if (MSG_INDEX_INVALID(mbc.head))          /* empty queue */
+        return NULL;
+      msg = &msg_msgs[mbc.tail];                /* last message we are working on */
+
+      /* only allow looking at msgs that are complete */
+      if (msg->state != MSG_SLOT_FULL)          /* oht oh */
+        mb_panic(MSGW_NEXT, (parg_t) msg, msg->state);
+
+      *lenp = msg->len;
+      *arrival_rtpp = &msg->arrival_rt;
+      *markp       = msg->mark_j;
+      return msg->data;
+    }
+  }
+
+
   /*
    * msg_release: release the next message in the queue
    *

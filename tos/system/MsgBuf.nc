@@ -71,6 +71,22 @@ interface MsgBuf {
   command uint8_t *msg_next(uint16_t *lenp, rtctime_t **rtpp, uint32_t *markp);
 
   /*
+   * msg_last: return last slice worked on.
+   *
+   * input:    lenp     pointer to uint16_t that will receive the
+   *                    length of the message.
+   *           arrival/mark timestamps describing when the message arrived
+   *                    pointer to a rtctime_t ptr and pointer to uint32_t.
+   *
+   * returns:  ptr      to message data
+   *                    NULL if no slice active.
+   *                    len filled in with length
+   *                    *rtpp filled in with the ptr to the rtctime stamp
+   *                    *markp filled in the mark value.
+   */
+  command uint8_t *msg_last(uint16_t *lenp, rtctime_t **rtpp, uint32_t *markp);
+
+  /*
    * msg_release: release a previously allocated msg.
    *
    * the message needs to be the next one expected.  (strict
