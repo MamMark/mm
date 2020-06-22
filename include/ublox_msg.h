@@ -144,6 +144,18 @@ enum {
   UBX_ACK_NONE      = 0x02,     //  Not a real value
 };
 
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;
+  uint8_t   id;
+  uint16_t  len;
+  uint8_t   ackClass;
+  uint8_t   ackId;
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_ack_t;
+
 
 /* UBX_CLASS_CFG (06) */
 enum {
@@ -192,6 +204,26 @@ enum {
   UBX_COM_TYPE_NMEA = (1 << 1),
   UBX_COM_TYPE_RTCM3= (1 << 5),
 };
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;
+  uint8_t   id;
+  uint16_t  len;
+  uint8_t   portId;
+  uint8_t   reserved1;
+  uint16_t  txReady;
+  uint32_t  mode;
+  uint32_t  baudRate;
+  uint16_t  inProtoMask;
+  uint16_t  outProtoMask;
+  uint16_t  flags;
+  uint8_t   reserved2[2];
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_cfg_prt_t;
 
 
 /* UBX_CLASS_MON (0A) */
