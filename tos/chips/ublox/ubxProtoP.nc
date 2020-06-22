@@ -335,8 +335,30 @@ implementation {
 	call Panic.warn(PANIC_GPS, 135, ubx_state, 0, 0, 0);
 	ubx_restart_abort(7);
 	return;
+  command uint16_t GPSProto.fletcher8(uint8_t *ptr, uint16_t len) {
+    uint8_t chk_a, chk_b;
+
+    chk_a = chk_b = 0;
+    while (len) {
+      chk_a += *ptr++;
+      chk_b += chk_a;
+      len--;
     }
+    return ((uint16_t) chk_a << 8) | chk_b;
   }
+
+
+  command uint8_t GPSProto.nema_sum(uint8_t *ptr, uint16_t len) {
+    uint8_t chk;
+
+    chk = 0;
+    while (len) {
+      chk ^= *ptr++;
+      len--;
+    }
+    return chk;
+  }
+
 
         event void Collect.collectBooted() { }
   async event void Panic.hook() { }

@@ -54,6 +54,26 @@ interface GPSProto {
   command bool byteAvail(uint8_t byte);
 
   /*
+   * fletcher8: calculate fletcher8 checksum over buffer
+   *
+   * input:  ptr        ptr to buffer to checksum
+   *         len        length of said buffer
+   * output: return     (uint16_t)  (chk_a << 8) | chk_b
+   */
+  command uint16_t fletcher8(uint8_t *ptr, uint16_t len);
+
+
+  /*
+   * nema_sum: calculate the nema checksum over a buffer
+   *
+   * input:  ptr        ptr to buffer to checksum
+   *         len        length of said buffer
+   * output: return     checksum result (binary, one byte)
+   */
+  command uint8_t nema_sum(uint8_t *ptr, uint16_t len);
+
+
+  /*
    * protoAbort: signal that there has been a problem any where in the
    * packet.
    *
