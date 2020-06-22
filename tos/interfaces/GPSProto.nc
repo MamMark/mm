@@ -48,6 +48,10 @@ interface GPSProto {
   /*
    * byteAvail: a new byte is available
    *
+   * input:  byte       the byte (duh)
+   * return: TRUE       at end of message.
+   *         FALSE      otherwise
+   *
    * the underlying hw has a new byte that is being handed to the
    * protocol module.
    */
