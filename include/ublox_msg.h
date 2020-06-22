@@ -129,12 +129,11 @@ enum {
 
 /* UBX_CLASS_INF (04) */
 enum {
-  UBX_INF_CLASS     = 0x04,     // All INF messages have 0x04 as the class
-  UBX_INF_DEBUG     = 0x04,     // ASCII output with debug contents
   UBX_INF_ERROR     = 0x00,     // ASCII output with error contents
+  UBX_INF_WARNING   = 0x01,     // ASCII output with warning contents
   UBX_INF_NOTICE    = 0x02,     // ASCII output with informational contents
   UBX_INF_TEST      = 0x03,     // ASCII output with test contents
-  UBX_INF_WARNING   = 0x01,     // ASCII output with warning contents
+  UBX_INF_DEBUG     = 0x04,     // ASCII output with debug contents
 };
 
 
