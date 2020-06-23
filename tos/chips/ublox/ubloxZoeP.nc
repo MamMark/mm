@@ -273,6 +273,31 @@ implementation {
 
 
   void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
+#ifdef GPS_DEBUG_DEV
+    if (next_state != gpsc_state) {
+      WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
+      nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
+      switch (next_state) {
+        default:                        WIGGLE_TELL;
+                                        WIGGLE_TELL;
+        case GPSC_FAIL:                 WIGGLE_TELL;
+        case GPSC_RESET_WAIT:           WIGGLE_TELL;
+        case GPSC_HIBERNATE:            WIGGLE_TELL;
+        case GPSC_PWR_UP_WAIT:          WIGGLE_TELL;
+        case GPSC_VER_DONE:             WIGGLE_TELL;
+        case GPSC_VER_WAIT:             WIGGLE_TELL;
+        case GPSC_CONFIG_DONE:          WIGGLE_TELL;
+        case GPSC_CONFIG_TXRDY_ACK:     WIGGLE_TELL;
+        case GPSC_CONFIG_SET_TXRDY:     WIGGLE_TELL;
+        case GPSC_CONFIG_CHK:           WIGGLE_TELL;
+        case GPSC_CONFIG_BOOT:          WIGGLE_TELL;
+        case GPSC_ON_RX_TX:             WIGGLE_TELL;
+        case GPSC_ON_TX:                WIGGLE_TELL;
+        case GPSC_ON_RX:                WIGGLE_TELL;
+        case GPSC_ON:                   WIGGLE_TELL;
+      }
+    }
+#endif
     gpsc_state = next_state;
     gpsc_log_event(GPSE_STATE, where);
   }
