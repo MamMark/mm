@@ -25,10 +25,14 @@ configuration HplGPS0C {
 implementation {
   components Msp432UsciA1P as UsciP;
   components GPS0HardwareP as GpsHwP;
+  components HplMsp432PortIntP as PortInts;
+
+  components McuSleepC;
+  PortInts.McuSleep -> McuSleepC;
 
   ubloxHardware     = GpsHwP;
   GpsHwP.Usci      -> UsciP;
-  GpsHwP.Interrupt -> UsciP;
+  GpsHwP.TxRdyIRQ  -> PortInts.Int[UBX_TXRDY_PORT_INT];
 
   components PanicC, PlatformC;
   GpsHwP.Panic    -> PanicC;

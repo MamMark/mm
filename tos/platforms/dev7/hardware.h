@@ -226,7 +226,7 @@
  *
  * port  6.0    0pI                             port  J.0       0pI     LFXIN  (32KiHz)
  *  41 I  .1    0pI                             120 I  .1       0pO     LFXOUT (32KiHz)
- *  43 O  .2    0pI     gps_txrdy               122 O  .2       0pI     HFXOUT (48MHz)
+ *  43 O  .2    0pIrd   gps_txrdy               122 O  .2       0pI     HFXOUT (48MHz)
  *        .3    0pI     adc_clk                        .3       0pI     HFXIN  (48MHz)
  *        .4    0pI     adc_simo                       .4       0pI     TDI
  *        .5    0pI     adc_somi                       .5       0pI     TDO/SWO

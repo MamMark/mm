@@ -86,7 +86,7 @@
 #define UBX_TXRDY_REN           BITBAND_PERI(UBX_TXRDY_PORT->REN, UBX_TXRDY_PIN)
 #define UBX_TXRDY_BIT           (1 << UBX_TXRDY_PIN)
 #define UBX_TXRDY_P             (UBX_TXRDY_PORT->IN & UBX_TXRDY_BIT)
-#define UBX_TXRDY_IRQ           0x62
+#define UBX_TXRDY_PORT_INT      0x62
 
 /*
  * normally floating, left as an input, 0pI
