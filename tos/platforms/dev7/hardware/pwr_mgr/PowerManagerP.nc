@@ -19,6 +19,8 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
 
+bool pm_do_low_power;
+
 module PowerManagerP {
   provides {
     interface PowerManager;
@@ -32,44 +34,10 @@ module PowerManagerP {
   }
 }
 implementation {
-  /*
-   * On the dev6a there isn't a harvester nor anyway to turn
-   * power off to the tmp sensor bus.  Always on.
-   *
-   * o remember previous state,
-   *     tmp_pwr_en
-   *     Module state of tmp_scl and tmp_sda
-   * o make tmp_scl an input
-   * o turn tmp_pwr_en on
-   * o check tmp_scl    if 1 -> battery is connect   (always should rtn 1)
-   * o                  if 0 -> not connected.
-   * o restore previous state.
-   */
   async command bool PowerManager.battery_connected() {
-    uint8_t  previous_pwr, previous_module;
-    uint8_t  rtn;
-    uint32_t t0;
-
-    if (TMP_GET_SCL)
-      return 1;
-
-    rtn = 0;
-    previous_pwr    = TMP_GET_PWR_STATE;
-    previous_module = TMP_GET_SCL_MODULE_STATE;
-    TMP_PINS_PORT;
-    TMP_I2C_PWR_ON;
-    t0 = call Platform.usecsRaw();
-    while (1) {
-      if (TMP_GET_SCL) {
-        rtn = 1;
-        break;
-      }
-      if (call Platform.usecsRaw() - t0 > 256)
-        break;
-    }
-    if (previous_pwr == 0) TMP_I2C_PWR_OFF;
-    if (previous_module)   TMP_PINS_MODULE;
-    return rtn;
+    if (pm_do_low_power)
+      return FALSE;
+    return TRUE;
   }
 
 
