@@ -23,12 +23,16 @@
 
 configuration GPS0C {
   provides {
+    interface Boot as Booted;           /* out Boot */
     interface GPSControl;
     interface MsgReceive;
     interface MsgTransmit;
 
     /* for debugging only, be careful */
     interface ubloxHardware as HW;
+  }
+  uses {
+    interface Boot;                     /* in Boot */
   }
 }
 
@@ -46,21 +50,22 @@ implementation {
 
   /* low level driver, start there */
   components ubloxZoeP as GPSDriverP;
+
   components new TimerMilliC() as GPSTxTimer;
   components new TimerMilliC() as GPSRxTimer;
-  components new TimerMilliC() as GPSRxErrorTimer;
   components     LocalTimeMilliC;
   components     CollectC;
   components     OverWatchC;
 
+  Booted     = GPSDriverP;
   GPSControl = GPSDriverP;
+  Boot       = GPSDriverP;
 
   GPSDriverP.HW        -> HplGPS0C;
   GPSDriverP.OverWatch -> OverWatchC;
 
   GPSDriverP.GPSTxTimer      -> GPSTxTimer;
   GPSDriverP.GPSRxTimer      -> GPSRxTimer;
-  GPSDriverP.GPSRxErrorTimer -> GPSRxErrorTimer;
   GPSDriverP.LocalTime       -> LocalTimeMilliC;
   GPSDriverP.Collect         -> CollectC;
   GPSDriverP.CollectEvent    -> CollectC;
@@ -76,6 +81,8 @@ implementation {
   GPSProtoP.MsgBuf     -> MsgBufP;
   GPSProtoP.Collect    -> CollectC;
   GPSProtoP.Panic      -> PanicC;
+
+  GPSDriverP.MsgBuf    -> MsgBufP;
 
   /* Buffer Slicing (MsgBuf) */
   MainC.SoftwareInit -> MsgBufP;
