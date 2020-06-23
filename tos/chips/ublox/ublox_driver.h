@@ -44,6 +44,9 @@ typedef struct {
   uint16_t no_buffer;                 /* no buffer/msg available */
   uint16_t max_seen;                  /* max legal seen */
   uint16_t largest_seen;              /* largest packet length seen */
+  uint16_t nmea_good;
+  uint16_t nmea_too_big;
+  uint16_t nmea_bad_chk;
 } ubx_other_stats_t;
 
 #endif  /* __UBLOX_DRIVER_H__ */
