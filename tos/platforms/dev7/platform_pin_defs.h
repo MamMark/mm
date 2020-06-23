@@ -267,8 +267,13 @@
 #define TELL_BIT        (1 << TELL_PIN)
 #define TELL            BITBAND_PERI(TELL_PORT->OUT, TELL_PIN)
 #define TOGGLE_TELL     TELL ^= 1;
-#define TELL0           TELL_PORT->OUT = 0;
-#define TELL1           TELL_PORT->OUT = TELL_BIT;
 #define WIGGLE_TELL     do { TELL = 1; TELL = 0; } while(0)
+
+#define EXC_PORT        P8
+#define EXC_PIN         5
+#define EXC_BIT         (1 << EXC_PIN)
+#define EXC             BITBAND_PERI(EXC_PORT->OUT, EXC_PIN)
+#define TOGGLE_EXC      EXC ^= 1;
+#define WIGGLE_EXC      do { EXC = 1; EXC = 0; } while(0)
 
 #endif    /* __PLATFORM_PIN_DEFS__ */
