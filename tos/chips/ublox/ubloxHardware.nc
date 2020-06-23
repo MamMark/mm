@@ -24,95 +24,59 @@
  *
  * Following pins can be manipulated:
  *
- *  gps_csn():          (set/clr) chip select.
- *  gps_reset():        (set/clr) access to reset pin.
+ *  gps_csn():            (set/clr) chip select.
+ *  gps_reset():          (set/clr) access to reset pin.
  *
- *  gps_powered():      return true if gps is powered (h/w power).
- *  gps_pwr_on():       turn pwr on (really?)
- *  gps_pwr_off():      your guess here.
- *
- *  gps_speed_di():     set speed on port, disable rx interrupt
- *  gps_tx_finnish():   make sure all transmit bytes have gone out.
- *  gps_rx_int_enable:  enable/disable rx interrupt.
- *  gps_rx_int_disable:
- *
- *  gps_rx_err:         report rx errors
- *  gps_clear_rx_errs:  clear rx_errs cells.
- *
+ *  gps_pwr_on():         turn pwr on (really?)
+ *  gps_pwr_off():        your guess here.
+ *  gps_powered():        return true if gps is powered (h/w power).
  *
  * data transfer
  *
- *   gps_byte_avail():      from h/w driver to gps driver.
- *   gps_receive_dma():     continue receive into a particular
- *                          buffer with length
- *   gps_receive_dma_done() completion
+ *  spi_put():            splitWrite()     w timeout
+ *  spi_get():            splitRead()      w timeout
+ *  spi_getput():         splitReadWrite() w timeout
  *
- *   gps_rx_off():          flow control, shut down gps transmission
- *   gps_rx_on():           flow control, turn gps transmission on
+ *  gps_txrdy():             returns state of txrdy pin
+ *  gps_txrdy_int_enabled(): returns state of txrdy interrupt
+ *  gps_txrdy_int_enable():  enable/disable txrdy interrupt.
+ *  gps_txrdy_int_disable():
  *
- *   gps_send_block():      split phase.
- *   gps_send_block_done(): completion on split phase
- *   gps_send_block_stop(): stop current send_block (abort)
- *   gps_restart_tx():      restart tx
- *   gps_hw_capture():      capture USCI state (debug ONLY, destructive).
- *
- *   gps_receive_block():   same as send but for receive
- *   gps_receive_block_done():
- *   gps_receive_block_stop():
+ *  gps_send_block():     transmit a block of data.
+ *  gps_send_block_done():
+ *  gps_byte_avail():     from h/w driver to gps driver.
  *
  * @author Eric B. Decker <cire831@gmail.com>
+ *
+ *  gps_rx_err():         report rx errors
+ *  gps_clear_rx_errs():  clear rx_errs cells.
  */
 
 interface ubloxHardware {
 
-  async command void gps_set_cs();
-  async command void gps_clr_cs();
+  command void gps_set_cs();
+  command void gps_clr_cs();
 
-  async command void gps_set_reset();
-  async command void gps_clr_reset();
+  command void gps_set_reset();
+  command void gps_clr_reset();
 
-  async command bool gps_powered();
-  async command void gps_pwr_on();
-  async command void gps_pwr_off();
+  command bool gps_powered();
+  command void gps_pwr_on();
+  command void gps_pwr_off();
 
-  /*
-   * gps_speed_di reconfigures the usci which turns off interrupts
-   *
-   * _di on the end indicates that this also disables interrupts.
-   * this is a side effect of reconfiguring.
-   */
-  async command void gps_speed_di(uint32_t speed);
-  async command void gps_tx_finnish(uint32_t byte_delay);
+  command void    spi_put(uint8_t byte);
+  command uint8_t spi_get();
+  command uint8_t spi_getput(uint8_t byte);
 
-  /* rx_int_enable makes sure that any rx_errors have been cleared. */
-  async command void gps_rx_int_enable();
-  async command void gps_rx_int_disable();
-
-  /*
-   * h/w error handling.
-   * gps_rx_err signals from the underlying h/w.
-   *
-   * raw_errors, raw from the h/w (untranslated) errors.
-   * gps_errors, translated from the h/w into errors defined in gpsproto.h
-   */
-  async event   void gps_rx_err(uint16_t gps_errors, uint16_t raw_errors);
-  async command void gps_clear_rx_errs();
+  command bool gps_txrdy();
+  command bool gps_txrdy_int_enabled();
+  command void gps_txrdy_int_enable();
+  command void gps_txrdy_int_disable();
 
   /*
    * Data transfer
    */
-
-  async event   void    gps_byte_avail(uint8_t byte);
-  async command void    gps_rx_on();
-  async command void    gps_rx_off();
-
-  async command error_t gps_send_block(uint8_t *ptr, uint16_t len);
-  async command void    gps_send_block_stop();
-  async event   void    gps_send_block_done(uint8_t *ptr, uint16_t len, error_t error);
-  async command bool    gps_restart_tx();
-  async command void    gps_hw_capture();
-
-  async command error_t gps_receive_block(uint8_t *ptr, uint16_t len);
-  async command void    gps_receive_block_stop();
-  async event   void    gps_receive_block_done(uint8_t *ptr, uint16_t len, error_t err);
+  command void gps_send(uint8_t *ptr, uint16_t len);
+  event   void gps_send_done(error_t err);
+  event   void gps_byte_avail(uint8_t byte);
 }
