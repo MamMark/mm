@@ -30,6 +30,7 @@
  * 3) OverWatch (for OWT functions)
  * 4) DblkManager (determine where new data should be written)
  * 5) Sync, write out a reboot record
+ * 6) GPS, power up configuration, once per boot.
  */
 
 configuration SystemBootC {
@@ -45,7 +46,8 @@ implementation {
   components ImageManagerC as IM;
   components OverWatchC    as OW;
   components DblkManagerC  as DM;
-  components CollectC      as SYNC;
+  components CollectC      as Collect;
+  components GPS0C         as GPS;
 
   CT.Boot   -> MainC;                   // first start DCO sync
   FS.Boot   -> CT.Booted;
@@ -63,8 +65,9 @@ implementation {
    * If OWT isn't invoked then OW will signal Booted to let the normal
    * boot sequence to occur.
    */
-  DM.Boot   -> OW.Booted;
-  SYNC.Boot -> DM.Booted;
-  SYNC.EndIn-> SYNC.Booted;
-  Boot      =  SYNC.EndOut;
+  DM.Boot       -> OW.Booted;
+  Collect.Boot  -> DM.Booted;
+  GPS.Boot      -> Collect.Booted;
+  Collect.EndIn -> GPS.Booted;
+  Boot          =  Collect.EndOut;
 }
