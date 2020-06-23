@@ -53,16 +53,24 @@ implementation {
    * when collecting messages.
    */
   typedef enum {
-    UBXS_SYNC1 = 0,                     /* 0xB5, 'u' */
+    UBXS_START = 0,                     /* 0xB5, 'u' */
+                                        /* or '$' for NMEA */
+
     UBXS_SYNC2,                         /* 0x62, 'b' */
     UBXS_CLASS,
     UBXS_ID,
     UBXS_LEN_LSB,                       /* len lsb */
     UBXS_LEN_MSB,                       /* len msb */
     UBXS_PAYLOAD,
-    UBXS_CHK_A,                         /* chkA byte */
-    UBXS_CHK_B,                         /* chkB byte */
-  } ubxs_t;                             /* ubx_state type */
+    UBXS_CHKA,                          /* chkA byte */
+    UBXS_CHKB,                          /* chkB byte */
+
+    UBXS_NMEA_COLLECT,
+    UBXS_NMEA_CHK0,                     /* waiting for 1st chksum byte */
+    UBXS_NMEA_CHK1,                     /* waiting for 2nd chksum byte */
+    UBXS_NMEA_0D,                       /* terminator, CR, \r          */
+    UBXS_NMEA_0A,                       /* terminator, LF, \n          */
+  } ubxs_t;                             /* ubx_state type              */
 
 
   norace ubxs_t    ubx_state;           // message collection state
@@ -70,12 +78,18 @@ implementation {
   norace uint8_t   ubx_class;           // message class
   norace uint8_t   ubx_id;              // message id
   norace uint16_t  ubx_left;            // payload bytes left
-  norace uint8_t   ubx_chk_a;           // fletcher checksum
-  norace uint8_t   ubx_chk_b;           // fletcher checksum
+  norace uint8_t   ubx_chkA;            // fletcher checksum
+  norace uint8_t   ubx_chkB;            // fletcher checksum
+  norace uint8_t   ubx_nmea_chk;        // nmea checksum
+  norace uint8_t   ubx_nmea_len;        // accum length
   norace uint8_t  *ubx_ptr;             // where to stash incoming bytes
   norace uint8_t  *ubx_ptr_prev;        // for debugging
   norace uint8_t  *msg_low, *msg_high;  // paranoid limits
   norace uint8_t  *msg_start;           // paranoid where cur msg starts
+
+#define MAX_NMEA_MSG  90
+
+  norace uint8_t   nmea_buf[MAX_NMEA_MSG];
 
 
   /*
@@ -83,6 +97,11 @@ implementation {
    */
   norace dt_gps_proto_stats_t  ubx_stats;
   norace ubx_other_stats_t     ubx_other_stats;
+
+  void ubx_change_state(ubxs_t new_state) {
+    ubx_state_prev = ubx_state;
+    ubx_state = new_state;
+  }
 
   /*
    * ubx_reset: reset ubxbin proto state
@@ -92,10 +111,11 @@ implementation {
    */
   inline void ubx_reset() {
     ubx_stats.resets++;
-    ubx_state_prev = ubx_state;
-    ubx_state = UBXS_SYNC1;
-    ubx_chk_a = 0;
-    ubx_chk_b = 0;
+    ubx_change_state(UBXS_START);
+    ubx_chkA = 0;
+    ubx_chkB = 0;
+    ubx_nmea_chk = 0;
+    ubx_nmea_len = 0;
     if (ubx_ptr) {
       ubx_ptr_prev = ubx_ptr;
       ubx_ptr = NULL;
@@ -183,158 +203,288 @@ implementation {
 
 
   void chk_accum(uint8_t byte) {
-    ubx_chk_a += byte;
-    ubx_chk_b += ubx_chk_a;
+    ubx_chkA += byte;
+    ubx_chkB += ubx_chkA;
   }
 
 
-  async command void GPSProto.byteAvail(uint8_t byte) {
-    switch(ubx_state) {
-      case UBXS_SYNC1:
-	if (byte != UBX_SYNC1) {
-          ubx_stats.ignored++;
-	  return;
-        }
-        ubx_state_prev = ubx_state;
-	ubx_state = UBXS_SYNC2;
-	return;
+  void nmea_accum_byte(uint8_t byte) {
+    ubx_nmea_chk ^= byte;
+    if (ubx_nmea_len >= MAX_NMEA_MSG)
+      return;
+    nmea_buf[ubx_nmea_len++] = byte;
+  }
 
-      case UBXS_SYNC2:
-	if (byte == UBX_SYNC1) {       // got start again.  stay, good dog
-          ubx_stats.ignored++;          // previous byte got ignored
-	  return;
-        }
-	if (byte != UBX_SYNC2) {       // not what we want.  restart
-          ubx_stats.proto_start_fail++; // weird, count it
-	  ubx_restart_abort(1);
-	  return;
-	}
-        ubx_state_prev = ubx_state;
-	ubx_state = UBXS_CLASS;
-        ubx_stats.starts++;
-	return;
 
-      case UBXS_CLASS:
-        ubx_class = byte;
-        chk_accum(byte);
-        ubx_state_prev = ubx_state;
-	ubx_state = UBXS_ID;
-        return;
+  uint8_t htoi(uint8_t byte) {
+    if (byte >= '0' && byte <= '9')
+      return byte - '0';
+    if (byte >= 'A' && byte <= 'F')
+      return byte - 'A' + 10;
+    if (byte >= 'a' && byte <= 'f')
+      return byte - 'a' + 10;
+    return 0xff;
+  }
 
-      case UBXS_ID:
-        ubx_id = byte;
-        chk_accum(byte);
-        ubx_state_prev = ubx_state;
-	ubx_state = UBXS_LEN_LSB;
-        return;
+  /**
+   * GPSProto.byteAvail: called with a new byte for the proto engine
+   *
+   * input:  byte       input byte
+   * return: TRUE       just finished a message
+   *         FALSE      otherwise.
+   */
+  uint8_t last_byte;
 
-      case UBXS_LEN_LSB:
-	ubx_left = byte;
-        chk_accum(byte);
-        ubx_state_prev = ubx_state;
-	ubx_state = UBXS_LEN_MSB;
-	return;
+  command bool GPSProto.byteAvail(uint8_t byte) {
+    uint8_t i;
 
-      case UBXS_LEN_MSB:
-	ubx_left |= (byte << 8);
-        chk_accum(byte);
-        /* smallest message has UBX_LEN of 0 */
-	if (ubx_left > UBX_MAX_MSG) {
+    last_byte = byte;
+    while (TRUE) {
+      switch(ubx_state) {
+        case UBXS_START:
+          if (byte == '$') {
+            ubx_change_state(UBXS_NMEA_COLLECT);
+            ubx_nmea_chk = 0;
+            ubx_nmea_len = 1;
+            nmea_buf[0] = byte;
+            signal GPSProto.msgStart(MAX_NMEA_MSG);
+            break;
+          }
+          if (byte != UBX_SYNC1) {
+            ubx_stats.ignored++;
+            break;
+          }
+          ubx_change_state(UBXS_SYNC2);
+          break;
+
+        case UBXS_SYNC2:
+          if (byte == UBX_SYNC1) {        // got start again.  stay, good dog
+            ubx_stats.ignored++;          // previous byte got ignored
+            break;
+          }
+          if (byte == '$') {
+            ubx_stats.ignored++;          // previous byte got ignored
+            ubx_change_state(UBXS_NMEA_COLLECT);
+            ubx_nmea_chk = 0;
+            ubx_nmea_len = 1;
+            nmea_buf[0] = byte;
+            signal GPSProto.msgStart(MAX_NMEA_MSG);
+            break;
+          }
+          if (byte != UBX_SYNC2) {        // not what we want.  restart
+            ubx_stats.proto_start_fail++; // weird, count it
+            ubx_restart_abort(1);
+            break;
+          }
+          ubx_change_state(UBXS_CLASS);
+          ubx_stats.starts++;
+          break;
+
+        case UBXS_CLASS:
+          ubx_chkA  = byte;               // restart fletcher checksum
+          ubx_chkB  = byte;
+          ubx_class = byte;
+          ubx_change_state(UBXS_ID);
+          break;
+
+        case UBXS_ID:
+          ubx_id = byte;
+          chk_accum(byte);
+          ubx_change_state(UBXS_LEN_LSB);
+          break;
+
+        case UBXS_LEN_LSB:
+          ubx_left = byte;
+          chk_accum(byte);
+          ubx_change_state(UBXS_LEN_MSB);
+          break;
+
+        case UBXS_LEN_MSB:
+          ubx_left |= (byte << 8);
+          chk_accum(byte);
+          /* smallest message has UBX_LEN of 0 */
+          if (ubx_left > UBX_MAX_MSG) {
+            if (ubx_left > ubx_other_stats.largest_seen)
+              /*
+               * largest_seen is the largest we have ever seen
+               * including those that are bigger then our
+               * max.
+               */
+              ubx_other_stats.largest_seen = ubx_left;
+            ubx_stats.too_big++;
+            ubx_restart_abort(2);
+            break;
+          }
+          if (ubx_left > ubx_other_stats.max_seen)
+            ubx_other_stats.max_seen = ubx_left;
           if (ubx_left > ubx_other_stats.largest_seen)
-            /*
-             * largest_seen is the largest we have ever seen
-             * including those that are bigger then our
-             * max.
-             */
             ubx_other_stats.largest_seen = ubx_left;
-	  ubx_stats.too_big++;
-	  ubx_restart_abort(2);
-	  return;
-	}
-        if (ubx_left > ubx_other_stats.max_seen)
-          ubx_other_stats.max_seen = ubx_left;
-        if (ubx_left > ubx_other_stats.largest_seen)
-            ubx_other_stats.largest_seen = ubx_left;
-        ubx_ptr_prev = ubx_ptr;
-        ubx_ptr = call MsgBuf.msg_start(ubx_left + UBX_OVERHEAD);
-        if (!ubx_ptr) {
-          ubx_other_stats.no_buffer++;
-          ubx_restart_abort(3);
-          return;
-        }
-        msg_start = ubx_ptr;
-        signal GPSProto.msgStart(ubx_left + UBX_OVERHEAD);
-        ubx_state_prev = ubx_state;
-	ubx_state = UBXS_PAYLOAD;
-        *ubx_ptr++ = UBX_SYNC1;
-        *ubx_ptr++ = UBX_SYNC2;
-        *ubx_ptr++ = ubx_class;
-        *ubx_ptr++ = ubx_id;
-        *ubx_ptr++ = ubx_left & 0xff;
-        *ubx_ptr++ = (ubx_left >> 8) & 0xff;
-        msg_low         = ubx_ptr;
-        msg_high        = ubx_ptr + ubx_left - 1;
-	return;
+          ubx_ptr_prev = ubx_ptr;
+          ubx_ptr = call MsgBuf.msg_start(ubx_left + UBX_OVERHEAD);
+          if (!ubx_ptr) {
+            ubx_other_stats.no_buffer++;
+            ubx_restart_abort(3);
+            break;
+          }
+          msg_start = ubx_ptr;
+          signal GPSProto.msgStart(ubx_left + UBX_OVERHEAD);
+          ubx_change_state(UBXS_PAYLOAD);
+          *ubx_ptr++ = UBX_SYNC1;
+          *ubx_ptr++ = UBX_SYNC2;
+          *ubx_ptr++ = ubx_class;
+          *ubx_ptr++ = ubx_id;
+          *ubx_ptr++ = ubx_left & 0xff;
+          *ubx_ptr++ = (ubx_left >> 8) & 0xff;
+          msg_low    = ubx_ptr;
+          msg_high   = ubx_ptr + ubx_left - 1;
+          break;
 
-      case UBXS_PAYLOAD:
-        if (ubx_ptr < msg_low || ubx_ptr > msg_high)
-          call Panic.panic(PANIC_GPS, 136, (parg_t) ubx_ptr,
-                           (parg_t) msg_low, (parg_t) msg_high, 0);
+        case UBXS_PAYLOAD:
+          if (ubx_ptr < msg_low || ubx_ptr > msg_high)
+            call Panic.panic(PANIC_GPS, 136, (parg_t) ubx_ptr,
+                             (parg_t) msg_low, (parg_t) msg_high, 0);
 
-        /* look for SOP corruption, we've seen the 1st 4 wacked */
-        if ((msg_start[0] != UBX_SYNC1) || (msg_start[1] != UBX_SYNC2))
-          call Panic.panic(PANIC_GPS, 137, (parg_t) ubx_ptr,
-                           (parg_t) msg_start, msg_start[0], msg_start[1]);
-        *ubx_ptr++ = byte;
-        chk_accum(byte);
-	ubx_left--;
-	if (ubx_left == 0) {
-          ubx_state_prev = ubx_state;
-	  ubx_state = UBXS_CHK_A;
+          /* look for SOP corruption, we've seen the 1st 4 wacked */
+          if ((msg_start[0] != UBX_SYNC1) || (msg_start[1] != UBX_SYNC2))
+            call Panic.panic(PANIC_GPS, 137, (parg_t) ubx_ptr,
+                             (parg_t) msg_start, msg_start[0], msg_start[1]);
+          *ubx_ptr++ = byte;
+          chk_accum(byte);
+          ubx_left--;
+          if (ubx_left == 0) {
+            ubx_change_state(UBXS_CHKA);
+            msg_low  = msg_high + 1;
+            msg_high = msg_low;
+          }
+          break;
+
+        case UBXS_CHKA:
+          if (ubx_ptr < msg_low || ubx_ptr > msg_high)
+            call Panic.panic(PANIC_GPS, 138, (parg_t) ubx_ptr,
+                             (parg_t) msg_low, (parg_t) msg_high, 0);
+          *ubx_ptr++ = byte;
+          if (byte != ubx_chkA) {
+            ubx_stats.chksum_fail++;
+            ubx_restart_abort(4);
+            break;
+          }
+          ubx_change_state(UBXS_CHKB);
           msg_low  = msg_high + 1;
           msg_high = msg_low;
-        }
-	return;
+          break;
 
-      case UBXS_CHK_A:
-        if (ubx_ptr < msg_low || ubx_ptr > msg_high)
-          call Panic.panic(PANIC_GPS, 136, (parg_t) ubx_ptr,
-                           (parg_t) msg_low, (parg_t) msg_high, 0);
-        *ubx_ptr++ = byte;
-        if (byte != ubx_chk_a) {
-	  ubx_stats.chksum_fail++;
-	  ubx_restart_abort(4);
-	  return;
-        }
-        ubx_state_prev = ubx_state;
-	ubx_state = UBXS_CHK_B;
-        msg_low  = msg_high + 1;
-        msg_high = msg_low;
-	return;
+        case UBXS_CHKB:
+          if (ubx_ptr < msg_low || ubx_ptr > msg_high)
+            call Panic.panic(PANIC_GPS, 139, (parg_t) ubx_ptr,
+                             (parg_t) msg_low, (parg_t) msg_high, 0);
+          *ubx_ptr++ = byte;
+          if (byte != ubx_chkB) {
+            ubx_stats.chksum_fail++;
+            ubx_restart_abort(5);
+            break;
+          }
+          ubx_ptr_prev = ubx_ptr;
+          ubx_ptr = NULL;
+          ubx_change_state(UBXS_START);
+          ubx_stats.complete++;
+          WIGGLE_EXC; WIGGLE_EXC;
+          signal GPSProto.msgEnd();
+          call MsgBuf.msg_complete();
+          return TRUE;
 
-      case UBXS_CHK_B:
-        if (ubx_ptr < msg_low || ubx_ptr > msg_high)
-          call Panic.panic(PANIC_GPS, 136, (parg_t) ubx_ptr,
-                           (parg_t) msg_low, (parg_t) msg_high, 0);
-        *ubx_ptr++ = byte;
-	if (byte != ubx_chk_b) {
-	  ubx_stats.chksum_fail++;
-	  ubx_restart_abort(5);
-	  return;
-	}
-        ubx_ptr_prev = ubx_ptr;
-        ubx_ptr = NULL;
-        ubx_state_prev = ubx_state;
-        ubx_state = UBXS_SYNC1;
-        ubx_stats.complete++;
-        signal GPSProto.msgEnd();
-        call MsgBuf.msg_complete();
-	return;
+        case UBXS_NMEA_COLLECT:
+          /*
+           * check to see if the message will still fit.  6 is the number
+           * of extra bytes at the end, we use '*xx\r\n\0'
+           *
+           * NMEA is printable ascii only between 0x20 (space) and 0x7e (~).
+           */
+          if (byte < 0x20 || byte > 0x7e) {
+            /* oops, bad byte */
+            WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC;
+            ubx_restart_abort(6);
+            break;
+          }
+          if (ubx_nmea_len >= (MAX_NMEA_MSG - 6)) {
+            /* oops too big. */
+            WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC;
+            ubx_other_stats.nmea_too_big++;
+            ubx_restart_abort(7);
+            break;
+          }
+          if (byte == '*') {
+            nmea_buf[ubx_nmea_len++] = byte;
+            ubx_change_state(UBXS_NMEA_CHK0);
+            break;
+          }
+          nmea_accum_byte(byte);
+          break;
 
-      default:
-	call Panic.warn(PANIC_GPS, 135, ubx_state, 0, 0, 0);
-	ubx_restart_abort(7);
-	return;
+        case UBXS_NMEA_CHK0:
+          nmea_buf[ubx_nmea_len++] = byte;
+          ubx_chkA = htoi(byte);
+          ubx_change_state(UBXS_NMEA_CHK1);
+          break;
+
+        case UBXS_NMEA_CHK1:
+          nmea_buf[ubx_nmea_len++] = byte;
+          nmea_buf[ubx_nmea_len++] = '\r';
+          nmea_buf[ubx_nmea_len++] = '\n';
+          nmea_buf[ubx_nmea_len++] = '\0';
+          byte = (ubx_chkA << 4) | htoi(byte);
+          if (byte == ubx_nmea_chk) {
+            /* good checksum, add to message queue */
+            ubx_other_stats.nmea_good++;
+            ubx_ptr_prev = ubx_ptr;
+            ubx_ptr = call MsgBuf.msg_start(ubx_nmea_len);
+            if (!ubx_ptr) {
+              ubx_other_stats.no_buffer++;
+              ubx_restart_abort(8);
+              break;
+            }
+            msg_start = ubx_ptr;
+            for (i = 0; i < ubx_nmea_len; i++)
+              *ubx_ptr++ = nmea_buf[i];
+            ubx_ptr_prev = ubx_ptr;
+            ubx_ptr = NULL;
+            ubx_change_state(UBXS_NMEA_0D);
+            WIGGLE_EXC; WIGGLE_EXC;
+            signal GPSProto.msgEnd();
+            call MsgBuf.msg_complete();
+            return TRUE;
+          }
+          /* oops */
+          ubx_other_stats.nmea_bad_chk++;
+          ubx_restart_abort(9);
+          break;
+
+        case UBXS_NMEA_0D:
+          if (byte != 0x0d) {
+            ubx_change_state(UBXS_START);
+            continue;
+          }
+          ubx_change_state(UBXS_NMEA_0A);
+          break;
+
+        case UBXS_NMEA_0A:
+          if (byte != 0x0a) {
+            ubx_change_state(UBXS_START);
+            continue;
+          }
+          ubx_change_state(UBXS_START);
+          break;
+
+        default:
+          call Panic.warn(PANIC_GPS, 135, ubx_state, 0, 0, 0);
+          ubx_restart_abort(10);
+          break;
+      }
+      break;
+    }
+    return FALSE;                       /* msg incomplete */
+  }
+
+
   command uint16_t GPSProto.fletcher8(uint8_t *ptr, uint16_t len) {
     uint8_t chk_a, chk_b;
 
