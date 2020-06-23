@@ -15,7 +15,7 @@ module testGPSP {
     interface Timer<TMilli> as testTimer;
     interface LocalTime<TMilli>;
 #ifdef notdef
-    interface Gsd4eUHardware as HW;
+    interface ubloxHardware as HW;
 #endif
     interface Platform;
   }
