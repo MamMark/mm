@@ -374,11 +374,21 @@ typedef enum {
  *   DT_GPS_CLK
  *   DT_GPS_RAW
  *
- * Note: at one point we thought that we would be able to access the
- * GPS data directly (multi-byte fields).  But we are little endian
- * and the GPS protocol is big-endian.  Buttom line, is we don't worry
- * about alignment when dealing with Raw packets.  The decode has to
- * marshal the data to mess with the big endianess.
+ * Mulitbyte data fields:   Multibyte data fields are problematic
+ * because of endianess.
+ *
+ * The GSD4E chipset sirfbin formats present data in big endian.  The
+ * SirfBin/GSD4e drivers deal with this.
+ *
+ * u-blox data formats are little-endian.  Multibyte fields are properly
+ * aligned with respect to the start of the buffer.  dataums are aligned
+ * on natural boundaries, half-words start on even addresses, 32 bit
+ * fields start at quad aligned addresses.
+ *
+ * RAW packets encapsulate packets as they come from the chipset.  UBX
+ * (u-blox binary packets) use CHIP_GPS_ZOE (current gps chip),  SirfBin
+ * packets use CHIP_GPS_GSD4E.  A raw NMEA packet gets the special code
+ * CHIP_GPS_NMEA (yeah its a kludge).
  */
 typedef struct {
   uint16_t len;                 /* size 28 + var */
