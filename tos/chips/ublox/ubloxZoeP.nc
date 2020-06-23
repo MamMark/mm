@@ -140,12 +140,12 @@ uint8_t g_nev;                          // next gps event
 
 module ubloxZoeP {
   provides {
+    interface Boot as Booted;           /* out Boot */
     interface GPSControl;
     interface MsgTransmit;
   }
   uses {
-    /* in Boot, must be from SysBoot, we need Collect up */
-    interface Boot;
+    interface Boot;                     /* in Boot */
 
     interface ubloxHardware as HW;
     interface Timer<TMilli> as GPSTxTimer;
@@ -865,6 +865,8 @@ implementation {
     WIGGLE_TELL;
     gpsc_change_state(GPSC_ON, GPSW_BOOT);
     nop();
+    call HW.gps_txrdy_int_enable();
+    signal Booted.booted();
   }
 
 
