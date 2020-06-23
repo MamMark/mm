@@ -19,7 +19,7 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  *          Daniel J. Maltbie <dmaltbie@daloma.org>
  *
- * Dedicated usci uart port.
+ * Dedicated usci spi port.
  */
 
 #include <panic.h>
@@ -38,46 +38,38 @@ enum {
 #endif
 
 typedef enum {
-  GPSC_OFF  = 0,                        /* pwr is off */
-  GPSC_FAIL = 1,
-  GPSC_RESET_WAIT,                      /* reset dwell */
+  GPSC_OFF              = 0,            /* pwr is off */
 
-  GPSC_PWR_UP_WAIT,                     /* power up delay */
-  GPSC_PROBE_0,
-  GPSC_PROBE_CYCLE,
+  GPSC_ON               = 1,            // at msg boundary
+  GPSC_ON_RX            = 2,            // in process of receiving a packet, timer on
+  GPSC_ON_TX            = 3,            // doing transmit, txtimer running.
+  GPSC_ON_RX_TX         = 4,            // not really used.  TX atomic
 
-  /* PROBE_x1 is a pseudo state.  PROBE_CYCLE always drops
-   * immediately into it.  never actually gets set
-   */
-  GPSC_PROBE_x1,                        // place holder
+  GPSC_CONFIG_BOOT      = 5,            /* bootstrap initilization */
+  GPSC_CONFIG_CHK       = 6,            /* configuration check     */
+  GPSC_CONFIG_SET_TXRDY = 7,            /* need txrdy configured   */
+  GPSC_CONFIG_TXRDY_ACK = 8,            /* waiting for ack         */
+  GPSC_CONFIG_DONE      = 9,            /* good to go */
+  GPSC_VER_WAIT         = 10,           /* waiting for ver string  */
+  GPSC_VER_DONE         = 11,           /* found it. */
 
-  GPSC_CHK_TX_WAIT,
-  GPSC_CHK_TA_WAIT,                     /* turn around, changing comm */
-  GPSC_CHK_TX1_WAIT,
-  GPSC_CHK_RX_WAIT,
-  GPSC_CHK_MSG_WAIT,
+  GPSC_PWR_UP_WAIT      = 12,           /* waiting for power up    */
 
-  GPSC_CONFIG,                          // place holder
-  GPSC_CONFIG_WAIT,                     // place holder
+  GPSC_HIBERNATE        = 13,           // place holder
 
-  GPSC_HIBERNATE,                       // place holder
+  GPSC_RESET_WAIT       = 14,           /* reset dwell */
 
-  GPSC_ON,                              // at msg boundary
-  GPSC_ON_RX,                           // in receive
-                                        // RX_TX and TX MUST follow ON_RX
-  GPSC_ON_RX_TX,                        // transmitting and receiving
-  GPSC_ON_TX,                           // in middle of transmitting
+  GPSC_FAIL             = 15,
+
 } gpsc_state_t;                         // gps control state
 
 
 typedef enum {
   GPSW_NONE = 0,
+  GPSW_BOOT,
   GPSW_TURNON,
   GPSW_TURNOFF,
   GPSW_STANDBY,
-  GPSW_SEND_BLOCK_TASK,
-  GPSW_PROBE_TASK,
-  GPSW_PWR_TASK,
   GPSW_TX_TIMER,
   GPSW_RX_TIMER,
   GPSW_PROTO_START,
@@ -90,25 +82,34 @@ typedef enum {
 typedef enum {
   GPSE_NONE = 0,
   GPSE_STATE,                           /* state change */
+  GPSE_CONFIG,                          /* config message sent */
+  GPSE_CONFIG_ACK,                      /* config message acked */
   GPSE_ABORT,                           /* protocol abort */
-  GPSE_SPEED,                           /* speed change */
   GPSE_TX_POST,                         /* tx h/w int posted */
-  GPSE_TX_TIMEOUT,                      /* tx timeout */
+  GPSE_TIMEOUT,                         /* timeout */
 } gps_event_t;
 
 
-norace uint32_t send_block_done_usecs;
+enum {
+  /* default tx deadman */
+  GPS_TX_WAIT_DEFAULT = 2048,
+
+  /* delay between config messages */
+  GPS_TX_CONFIG_DELAY = 256,
+};
+
 
 /*
- * gpsc_state: current state of the driver state machine
+ * gpsc_state:  current state of the driver state machine
+ * gpsc_in_msg: true if within message boundaries.
  */
 norace gpsc_state_t	    gpsc_state;
+norace bool                 gpsc_in_msg;
 
 /* instrumentation */
 uint32_t		    gpsc_boot_time;		// time it took to boot.
 uint32_t		    gpsc_cycle_time;		// time last cycle took
 uint32_t		    gpsc_max_cycle;		// longest cycle time.
-norace uint32_t		    t_gps_first_char;
 
 #ifdef GPS_LOG_EVENTS
 
@@ -137,28 +138,21 @@ uint8_t g_nev;                          // next gps event
 #endif   // GPS_LOG_EVENTS
 
 
-norace uint32_t gps_chk_trys;           // remaining chk_msgs to try  CHK_MSG_WAIT
-
 module ubloxZoeP {
   provides {
     interface GPSControl;
     interface MsgTransmit;
   }
   uses {
-    interface ubloxHardware as HW;
+    /* in Boot, must be from SysBoot, we need Collect up */
+    interface Boot;
 
-    /*
-     * This module uses two timers, GPSTxTimer and GPSRxTimer.
-     *
-     * GPSTxTimer primarily transmit deadman timing.  Also used
-     *            for various state machine functions.
-     * GPSRxTimer receive deadman timing.
-     */
+    interface ubloxHardware as HW;
     interface Timer<TMilli> as GPSTxTimer;
     interface Timer<TMilli> as GPSRxTimer;
-    interface Timer<TMilli> as GPSRxErrorTimer;
     interface LocalTime<TMilli>;
 
+    interface MsgBuf;
     interface GPSProto as ubxProto;
 
     interface Panic;
@@ -171,31 +165,14 @@ module ubloxZoeP {
 }
 implementation {
 
-  uint32_t t_gps_pwr_on;         // when driver started
-
-  /*
-   * req_rx_len:        requested rx len (for timeout)
-   * cur_rx_len:        current   rx len (for timeout)
-   *
-   * The interrupt level can change state and can request that the RxTimer
-   * be modified.  When this is needed, the interrupt level will fill in
-   * req_rx_len and post timer_task.  cur_rx_len indicates what we were
-   * last set to.
-   *
-   * To kill the rx_timer, set req_rx_len to 0 and post timer_task.
-   */
-  norace int16_t m_req_rx_len;          // requested rx len (for timeout)
-         int16_t m_cur_rx_len;          // cur       rx len (for timeout)
+  uint32_t t_gps_pwr_on;                // when driver started
+  uint32_t t_gps_first_char;            // from boot
 
   norace uint32_t m_rx_errors;          // rx errors from the h/w
-  norace uint32_t m_last_rpt_rx_errors; // last we reported.
-  norace uint16_t m_first_rx_error;     // first rx_stat we saw
-  norace uint32_t m_last_rx_collection; // ms time of last_rx error collection
          uint32_t m_lost_tx_ints;       // on_tx, time outs
          uint32_t m_lost_tx_retries;
          uint32_t m_tx_time_out;        // last tx timeout used
 
-#define GPS_MAX_LOST_TX_RETRIES 5
 
   void gps_warn(uint8_t where, parg_t p, parg_t p1) {
     call Panic.warn(PANIC_GPS, where, p, p1, 0, 0);
@@ -203,17 +180,6 @@ implementation {
 
   void gps_panic(uint8_t where, parg_t p, parg_t p1) {
     call Panic.panic(PANIC_GPS, where, p, p1, 0, 0);
-  }
-
-
-  void clean_port_errors() {
-    atomic {
-      m_rx_errors = 0;
-      m_last_rpt_rx_errors = 0;
-      m_first_rx_error = 0;
-      m_last_rx_collection = 0;
-      m_lost_tx_ints = 0;
-    }
   }
 
 
@@ -228,7 +194,7 @@ implementation {
       hdr.len      = sizeof(hdr) + len;
       hdr.dtype    = DT_GPS_RAW;
       hdr.mark_us  = 0;
-      hdr.chip_id  = CHIP_GPS_ZOE;
+      hdr.chip_id  = (*pak == '$') ? CHIP_GPS_NMEA : CHIP_GPS_ZOE;
       hdr.dir      = dir;
 
       /* time stamp added by Collect */
@@ -257,20 +223,14 @@ implementation {
   }
 
 
-  void gps_wakeup() {
-  }
-
-
-  void gps_reset() {
-  }
+  void gps_wakeup() { }
+  void gps_reset()  { }
 
 
   /*
    * gps_hibernate: switch off gps, check to see if it is already off first
    */
-  void gps_hibernate() {
-  }
-
+  void gps_hibernate() { }
 
   void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
 #ifdef GPS_DEBUG_DEV
@@ -311,17 +271,14 @@ implementation {
       return EALREADY;
     }
 
-    call HW.gps_speed_di(9600);
-    call HW.gps_pwr_on();
     t_gps_pwr_on = call LocalTime.get();
-    call CollectEvent.logEvent(DT_EVENT_GPS_TURN_ON, t_gps_pwr_on, 0, 0, 0);
+    call HW.gps_pwr_on();
+    call HW.gps_txrdy_int_disable();        /* no need for it yet. */
 
-    /*
-     * not awake, assume we came out of POR so the gps is starting up from
-     * full power on and needs more time.
-     */
+    /* turning on the Ublox Zoe anecdotally takes about 68ms.  Give it more time */
     call GPSTxTimer.startOneShot(DT_GPS_PWR_UP_DELAY);
     gpsc_change_state(GPSC_PWR_UP_WAIT, GPSW_TURNON);
+    call CollectEvent.logEvent(DT_EVENT_GPS_TURN_ON, t_gps_pwr_on, 0, 0, 0);
     return SUCCESS;
   }
 
@@ -334,12 +291,9 @@ implementation {
       gps_warn(10, gpsc_state, 0);
     }
     call CollectEvent.logEvent(DT_EVENT_GPS_TURN_OFF, 0, 0, 0, 0);
-    call HW.gps_rx_int_disable();
-    call HW.gps_send_block_stop();
-    call HW.gps_receive_block_stop();
+    call HW.gps_txrdy_int_disable();
     call GPSTxTimer.stop();
     call GPSRxTimer.stop();
-    m_cur_rx_len = m_req_rx_len = -1;
     call HW.gps_pwr_off();
     gpsc_change_state(GPSC_OFF, GPSW_TURNOFF);
     return SUCCESS;
@@ -351,10 +305,9 @@ implementation {
    */
   command error_t GPSControl.standby() {
     gps_hibernate();
-    call HW.gps_rx_int_disable();
+    call HW.gps_txrdy_int_disable();
     call GPSTxTimer.stop();
     call GPSRxTimer.stop();
-    m_cur_rx_len = m_req_rx_len = -1;
     gpsc_change_state(GPSC_HIBERNATE, GPSW_STANDBY);
     call CollectEvent.logEvent(DT_EVENT_GPS_STANDBY, 0, 0, 0, 0);
     return SUCCESS;
@@ -371,336 +324,76 @@ implementation {
   }
 
 
-  command void GPSControl.pulseOnOff() {
-  }
+  command void GPSControl.pulseOnOff() { }
 
-
-  command bool GPSControl.awake() {
+  command bool GPSControl.awake()      {
     return 0;
   }
 
-
-  command void GPSControl.reset() {
-    gps_reset();
-  }
-
+  command void GPSControl.reset() { }
 
   command void GPSControl.powerOn() {
     call HW.gps_pwr_on();
   }
 
-
   command void GPSControl.powerOff() {
     call HW.gps_pwr_off();
   }
-
 
   command void GPSControl.logStats() {
     call ubxProto.logStats();
   }
 
 
-  task void collect_task() {
-    call CollectEvent.logEvent(DT_EVENT_GPS_FIRST, t_gps_first_char,
-                               t_gps_first_char - t_gps_pwr_on, 0, 0);
-  }
-
-
-  event void GPSRxErrorTimer.fired() {
-    atomic {
-      m_first_rx_error = 0;             /* open gate */
-    }
-  }
-
-
-  task void collect_rx_errors() {
-    atomic {
-      call CollectEvent.logEvent(DT_EVENT_GPS_RX_ERR, m_first_rx_error,
-                                 m_rx_errors, m_last_rpt_rx_errors, gpsc_state);
-      m_last_rpt_rx_errors = m_rx_errors;
-      call GPSRxErrorTimer.startOneShot(60000);
-    }
-  }
-
-
-  uint16_t m_tx_len;
-
-  command error_t MsgTransmit.send(uint8_t *ptr, uint16_t len) {
-    gpsc_state_t next_state;
-    error_t err;
-    uint32_t time_out;
-
-    if (m_tx_len)
-      return EBUSY;
-    atomic {
-      if (gpsc_state < GPSC_ON)
-        return ERETRY;
-
-      switch (gpsc_state) {
-        default:
-          gps_panic(9, gpsc_state, 0);
-          return FAIL;
-
-        case GPSC_ON:       next_state = GPSC_ON_TX;    break;
-        case GPSC_ON_RX:    next_state = GPSC_ON_RX_TX; break;
-      }
-      m_tx_len = len;
-      gpsc_change_state(next_state, GPSW_TX_SEND);
-    }
-
-    /* start with full retries for tx lost interrupt backstop */
-    m_lost_tx_retries = GPS_MAX_LOST_TX_RETRIES;
-    time_out = len * DT_GPS_BYTE_TIME * 4 + 500000;
-    time_out /= 1000000;
-    if (time_out < DT_GPS_MIN_TX_TIMEOUT)
-      time_out = DT_GPS_MIN_TX_TIMEOUT;
-    m_tx_time_out = time_out;
-    call GPSTxTimer.startOneShot(time_out);
+  command void MsgTransmit.send(uint8_t *ptr, uint16_t len) {
     collect_gps_pak((void *) ptr, len, GPS_DIR_TX);
-    err = call HW.gps_send_block((void *) ptr, len);
-    if (err) {
-      gps_panic(10, err, 0);
-      return FAIL;
-    }
-    return SUCCESS;
+    call HW.gps_send((void *) ptr, len);
   }
 
 
-  default event void MsgTransmit.send_done() { }
+  event void HW.gps_send_done(error_t err) {
+    switch(gpsc_state) {
+      default:
+        gps_panic(14, gpsc_state, 0);
+        return;
 
-
-  task void send_block_task();
-
-  command void MsgTransmit.send_stop() {
-    call HW.gps_send_block_stop();
-    m_tx_len = 0;
-    atomic {
-      if (gpsc_state > GPSC_ON_RX)
-        post send_block_task();
+      case GPSC_ON:                     /* switch to default later */
+      case GPSC_ON_RX:
+      case GPSC_ON_TX:
+      case GPSC_ON_RX_TX:
+        call GPSTxTimer.stop();         /* turn off the TX timer, done. */
+        signal MsgTransmit.send_done(SUCCESS);
+        return;
     }
   }
 
 
-  /*
-   * send_block_task
-   *
-   * handle gps_send_block completions.  gps_send_block_done happens at
-   * interrupt level but many completion actions need to be performed
-   * from task level.  This task handles that.
-   */
-  task void send_block_task() {
-    atomic {
-      switch(gpsc_state) {
-        default:
-          gps_panic(11, gpsc_state, 0);
-          return;
-
-        case GPSC_CHK_TX_WAIT:
-          /*
-           * config change went out okay.  wait for the gps chip
-           * to actually process it.  ie.  turn around.
-           */
-          call GPSTxTimer.startOneShot(DT_GPS_TA_WAIT);
-          gpsc_change_state(GPSC_CHK_TA_WAIT, GPSW_SEND_BLOCK_TASK);
-          return;
-
-        case GPSC_CHK_TX1_WAIT:
-          /*
-           * probe (peek_0) has gone out
-           * now if the comm config string worked we are still at
-           * SB-<target> and do not need a timeout modifier.
-           *
-           * wait for the probe response (see gps_gsd4e.h)
-           */
-          call GPSTxTimer.stop();
-          call GPSRxTimer.startOneShot(100);
-          m_cur_rx_len = 20;
-          gpsc_change_state(GPSC_CHK_RX_WAIT, GPSW_SEND_BLOCK_TASK);
-          call HW.gps_rx_int_enable();        /* turn on rx system */
-          return;
-
-        case GPSC_ON_TX:
-          call GPSTxTimer.stop();
-          gpsc_change_state(GPSC_ON, GPSW_SEND_BLOCK_TASK);
-
-          /* signal out to the caller that started up the MsgTransmit.send */
-          if (m_tx_len) {
-            m_tx_len = 0;
-            signal MsgTransmit.send_done();
-          }
-          return;
-
-        case GPSC_ON_RX_TX:
-          call GPSTxTimer.stop();
-          gpsc_change_state(GPSC_ON_RX, GPSW_SEND_BLOCK_TASK);
-
-          /* signal out to the caller that started up the GPSSend.send */
-          if (m_tx_len) {
-            m_tx_len = 0;
-            signal MsgTransmit.send_done();
-          }
-          return;
-      }
-    }
-  }
-
-
-  /*
-   * gps_signal_task
-   *
-   * issue task level signals for various states.  Currently only
-   * issues a gps_booted signal.
-   *
-   * The gps_booted signal gets issued from any of the ON states and
-   * only occurs when posted.  gps_signal_task gets posted at the tail
-   * end of communications boot after receiving a good message after
-   * reconfiguring the comm h/w.
-   */
-  task void gps_signal_task() {
-    atomic {
-      switch(gpsc_state) {
-        default:
-          gps_panic(13, gpsc_state, 0);
-          return;
-
-        case GPSC_ON:
-        case GPSC_ON_RX:
-        case GPSC_ON_TX:
-        case GPSC_ON_RX_TX:
-          gpsc_boot_time = call LocalTime.get() - t_gps_pwr_on;
-          call CollectEvent.logEvent(DT_EVENT_GPS_BOOT_TIME,
-                                     t_gps_pwr_on, gpsc_boot_time, 0, 0);
-          nop();                        /* BRK */
-          signal GPSControl.gps_booted();
-          return;
-      }
-    }
-  }
-
-
-  /*
-   * timer_task: handle various timer modifications
-   *
-   * Protocol state manipulation occurs at interrupt level and thus
-   * can't manipulate timers which are strictly task level.  timer_task
-   * handles requests from the interrupt level for timer manipulation.
-   *
-   * For RxTimer modifications, we use a Do The Right Thing algorithm.
-   *
-   * we do not enforce strict timer discipline.  That is we don't care if
-   * the rxtimer is still running from its last usage.  This is because
-   * state changes are happening at interrupt level while we need to change
-   * timer behaviour at task level.  So if the task level hasn't gotten
-   * around to turning off the timer before the next requested RX TO is
-   * needed, its no big deal.  We will just fire up the new timeout.
-   *
-   * We also use a req/cur model.  Cur will always reflect the length
-   * of the TO in bytes of the last fired up timer operation.  Req will
-   * indicate what the current request is, 0 to turn it off.
-   *
-   * We currently just always use MAX_RX_TIMEOUT because it is easier
-   * and doesn't involve any calculations.  It is a deadman timer so we
-   * really don't care.  If we later decide to tune this down the calculation
-   * is:   (see gps_gsd4e.h)
-   *
-   *   to = (len * DT_GPS_BYTE_TIME * MODIFIER + 500000) / 1e6
-   */
-  task void timer_task() {
-    atomic {                            /* don't change out from under */
-      switch(gpsc_state) {
-        default:
-          gps_panic(14, gpsc_state, 0);
-          return;
-
-        case GPSC_CHK_MSG_WAIT:
-        case GPSC_ON:
-        case GPSC_ON_RX:
-        case GPSC_ON_TX:
-        case GPSC_ON_RX_TX:
-          if (m_req_rx_len < 0)
-            return;
-          if (m_req_rx_len == 0) {
-            m_cur_rx_len = m_req_rx_len = -1;
-            call GPSRxTimer.stop();
-            return;
-          }
-          m_cur_rx_len = m_req_rx_len;
-          m_req_rx_len = -1;
-          call GPSRxTimer.startOneShot(DT_GPS_MAX_RX_TIMEOUT);
-          return;
-      }
-    }
-  }
-
+  command void MsgTransmit.send_abort() { }
+  default event void MsgTransmit.send_done(error_t err) { }
 
   /*
    * GPSTxTimer.fired
-   *
-   * General State Machine timing.  Also Tx deadman timeouts.
+   * TX deadman timer, also used for power on timing.
    */
   event void GPSTxTimer.fired() {
     atomic {
-      gpsc_log_event(GPSE_TX_TIMEOUT, call Platform.usecsRaw());
       switch (gpsc_state) {
         default:                        /* all other states blow up */
-          call HW.gps_hw_capture();
-          nop();                        /* BRK */
           gps_panic(15, gpsc_state, 0);
-          return;
+          /* dead*/
 
         case GPSC_PWR_UP_WAIT:
-          gpsc_change_state(GPSC_PROBE_0, GPSW_TX_TIMER);
-          gpsc_log_event(GPSE_SPEED, GPS_TARGET_SPEED);
-          call HW.gps_speed_di(GPS_TARGET_SPEED);
-          gps_wakeup();                   /* wake the ARM up */
-          nop();
-          call GPSRxTimer.startOneShot(DT_GPS_WAKE_UP_DELAY);
-          call HW.gps_rx_int_enable();        /* turn on rx system */
-          return;
+          gpsc_log_event(GPSE_TIMEOUT, call Platform.usecsRaw());
+          gpsc_change_state(GPSC_ON, GPSW_TX_TIMER);
+          call HW.gps_txrdy_int_enable();      /* turn on txrdy interrupt */
+          signal GPSControl.gps_booted();
+          break;
 
-        case GPSC_CHK_TA_WAIT:
-          /*
-           * We've waited long enough for the gps chip to process the
-           * configuration, now send a peek to poke the gps chip
-           * (force communications).
-           *
-           * sirf_peek_0 always goes out at the target speed.
-           *
-           * We don't need to do a HW.gps_tx_finnish because we have waited
-           * long enough in TA_WAIT.  This always gives the UART enough
-           * time to finish sending the previous message before we change
-           * the baud rate on the HW.
-           */
-          gpsc_change_state(GPSC_CHK_TX1_WAIT, GPSW_TX_TIMER);
-          gpsc_log_event(GPSE_SPEED, GPS_TARGET_SPEED);
-          call HW.gps_speed_di(GPS_TARGET_SPEED);
-          call GPSTxTimer.startOneShot(20);
-//          collect_gps_pak((void *) sirf_peek_0, sizeof(sirf_peek_0),
-//                          GPS_DIR_TX);
-//          call HW.gps_send_block((void *) sirf_peek_0, sizeof(sirf_peek_0));
-          return;
-
-          /*
-           * The TxTimer went off and we are sending a message out,
-           * oops...   We have observed a lost tx interrupt, check and
-           * replace.
-           */
+        case GPSC_ON:
+        case GPSC_ON_RX:
         case GPSC_ON_TX:
         case GPSC_ON_RX_TX:
-          call HW.gps_hw_capture();
-          m_lost_tx_ints++;
-          if (--m_lost_tx_retries >= 0) {
-            call CollectEvent.logEvent(DT_EVENT_GPS_LOST_INT, m_lost_tx_ints,
-                                       0, 0, m_lost_tx_retries);
-            if (call HW.gps_restart_tx()) {
-              call CollectEvent.logEvent(DT_EVENT_GPS_TX_RESTART,
-                                         0, 0, 0, m_lost_tx_retries);
-              call GPSTxTimer.startOneShot(m_tx_time_out);
-              return;
-            }
-            gps_panic(15, -1, -1);
-          }
-          gps_panic(15, -1, m_lost_tx_ints);
+          break;
       }
     }
   }
@@ -711,40 +404,9 @@ implementation {
    */
   event void GPSRxTimer.fired() {
     atomic {
-      m_cur_rx_len = -1;                /* no cur running */
       switch (gpsc_state) {
         default:
           gps_panic(16, gpsc_state, 0);
-          return;
-
-        case GPSC_PROBE_0:                  /* target speed (from PWR_UP_WAIT) */
-          return;
-
-        case GPSC_CHK_RX_WAIT:
-          /* never saw the start of a message, nada, probe cycle */
-          call HW.gps_rx_int_disable();
-          gpsc_change_state(GPSC_PROBE_CYCLE, GPSW_RX_TIMER);
-//          post probe_task();
-          return;
-
-        case GPSC_CHK_MSG_WAIT:
-          call HW.gps_rx_int_disable();
-          call ubxProto.rx_timeout();          /* tell protocol state machine */
-          if (--gps_chk_trys) {
-            /*
-             * still have some trys left
-             * go into CHK_TA_WAIT and immediately force a TxTimer expire.
-             * this will effectively do a jump into the code that sends
-             * the PEEK and we will try again.
-             */
-            gpsc_change_state(GPSC_CHK_TA_WAIT, GPSW_RX_TIMER);
-            call GPSTxTimer.startOneShot(0);
-            return;
-          }
-
-          /* no trys left, blow it up, and try a different config */
-          gpsc_change_state(GPSC_PROBE_CYCLE, GPSW_RX_TIMER);
-//          post probe_task();
           return;
 
         case GPSC_ON_RX:
@@ -764,24 +426,26 @@ implementation {
   event void ubxProto.msgStart(uint16_t len) {
     gpsc_state_t next_state;
 
+    gpsc_in_msg = TRUE;
     switch(gpsc_state) {
       default:
         gps_panic(17, gpsc_state, 0);
         return;
 
-      case GPSC_CHK_RX_WAIT:
-        gpsc_change_state(GPSC_CHK_MSG_WAIT, GPSW_PROTO_START);
+        /* not running any time out, stand alone */
+      case GPSC_CONFIG_BOOT:            /* stay */
+      case GPSC_CONFIG_CHK:
+      case GPSC_CONFIG_SET_TXRDY:
+      case GPSC_CONFIG_TXRDY_ACK:
+      case GPSC_CONFIG_DONE:
+      case GPSC_VER_WAIT:
+      case GPSC_VER_DONE:
+        gpsc_change_state(gpsc_state, GPSW_PROTO_START);
         return;
-
-      case GPSC_PROBE_0:
-        gps_chk_trys = GPS_CHK_MAX_TRYS;
-        next_state   = GPSC_CHK_MSG_WAIT;
-        break;
       case GPSC_ON:      next_state = GPSC_ON_RX;         break;
       case GPSC_ON_TX:   next_state = GPSC_ON_RX_TX;      break;
     }
-    m_req_rx_len = len;                 /* request rx timeout start */
-    post timer_task();
+    call GPSRxTimer.startOneShot(DT_GPS_MAX_RX_TIMEOUT);
     gpsc_change_state(next_state, GPSW_PROTO_START);
   }
 
@@ -789,23 +453,26 @@ implementation {
   event void ubxProto.msgEnd() {
     gpsc_state_t next_state;
 
+    gpsc_in_msg = FALSE;
     switch(gpsc_state) {
       default:
         gps_panic(19, gpsc_state, 0);
         return;
 
-      case GPSC_CHK_MSG_WAIT:
-        call ubxProto.resetStats(); /* clear out any errors from turn on   */
-        clean_port_errors();
-        next_state = GPSC_ON;        /* rx interrupts are already on .. yum */
-        post gps_signal_task();      /* tell the upper layer we be good.    */
-        break;                       /* and kick the msg timer off          */
+      case GPSC_CONFIG_BOOT:            /* stay */
+      case GPSC_CONFIG_CHK:
+      case GPSC_CONFIG_SET_TXRDY:
+      case GPSC_CONFIG_TXRDY_ACK:
+      case GPSC_CONFIG_DONE:
+      case GPSC_VER_WAIT:
+      case GPSC_VER_DONE:
+        next_state = gpsc_state;
+        break;
 
       case GPSC_ON_RX:    next_state = GPSC_ON;    break;
       case GPSC_ON_RX_TX: next_state = GPSC_ON_TX; break;
     }
-    m_req_rx_len = 0;                /* request a cancel */
-    post timer_task();
+    call GPSRxTimer.stop();
     gpsc_change_state(next_state, GPSW_PROTO_END);
   }
 
@@ -813,35 +480,29 @@ implementation {
   void driver_protoAbort(uint16_t reason) {
     gpsc_state_t next_state;
 
+    gpsc_in_msg = FALSE;
     gpsc_log_event(GPSE_ABORT, reason);
     switch(gpsc_state) {
       default:
         gps_panic(18, gpsc_state, 0);
         return;
 
-      case GPSC_CHK_MSG_WAIT:
-        call HW.gps_rx_int_disable();
-        gpsc_change_state(GPSC_PROBE_CYCLE, GPSW_PROTO_ABORT);
-//        post probe_task();
+      case GPSC_CONFIG_BOOT:
+      case GPSC_CONFIG_CHK:
+      case GPSC_CONFIG_SET_TXRDY:
+      case GPSC_CONFIG_TXRDY_ACK:
+      case GPSC_CONFIG_DONE:
+      case GPSC_VER_WAIT:
+      case GPSC_VER_DONE:
+      case GPSC_ON:
+        gpsc_change_state(gpsc_state, GPSW_PROTO_ABORT);
         return;
 
-        /*
-         * during various states we ignore the protoAbort.  Didn't get far
-         * enough to generate the msgStart.  So just ignore it
-         */
-      case GPSC_PROBE_0:                /* ignore */
-      case GPSC_CHK_RX_WAIT:
-      case GPSC_ON:
-      case GPSC_ON_TX:    return;
-
-        /*
-         * something went wrong after we got the msgStart.
-         */
+        /* something went wrong after we got the msgStart. */
       case GPSC_ON_RX:    next_state = GPSC_ON;    break;
       case GPSC_ON_RX_TX: next_state = GPSC_ON_TX; break;
     }
-    m_req_rx_len = 0;                   /* request a cancel */
-    post timer_task();
+    call GPSRxTimer.stop();
     gpsc_change_state(next_state, GPSW_PROTO_ABORT);
   }
 
@@ -852,45 +513,360 @@ implementation {
 
 
   /*
-   * underlying h/w layer is telling us there is an rx error.
-   * Signaller is responsible for clearing it.
-   *
-   * errors have been translated from h/w specific to errors
-   * defined in gpsproto.h.   For signalling with ubxProto.rx_error.
+   * capture the byte in the eavesdrop buffer
+   * TRUE says it matters
+   * FALSE says punt
    */
-  event void HW.gps_rx_err(uint16_t gps_errors, uint16_t raw_errors) {
-    m_rx_errors++;
-    if (!m_first_rx_error) {
-      m_first_rx_error = raw_errors;
-      post collect_rx_errors();
+  bool capture_byte(uint8_t byte) {
+    if (byte == 0xff && !gpsc_in_msg) {
+      /* 0xff is the idle byte, if outside of a message ignore */
+      return FALSE;
     }
-    call ubxProto.rx_error(gps_errors);
-    driver_protoAbort(0);               /* 0 means rx_err */
-  }
-
-
-  async event void HW.gps_byte_avail(uint8_t byte) {
-#ifdef GPS_EAVESDROP
-    if (!t_gps_first_char) {
+    if (!t_gps_first_char)
       t_gps_first_char = call LocalTime.get();
-      post collect_task();
-    }
+
+#ifdef GPS_EAVESDROP
     gbuf[g_idx++] = byte;
     if (g_idx >= GPS_EAVES_SIZE)
       g_idx = 0;
 #endif
-    call ubxProto.byteAvail(byte);
+    return TRUE;
   }
 
 
-  async event void HW.gps_send_block_done(uint8_t *ptr, uint16_t len, error_t error) {
-    send_block_done_usecs = call Platform.usecsRaw();
-    gpsc_log_event(GPSE_TX_POST, 0);
-    post send_block_task();
+  uint8_t *collect_pak(uint16_t *lenp) {
+    rtctime_t *rtp;
+    uint32_t   markp;
+    uint8_t   *rx_msg;
+
+    rx_msg = call MsgBuf.msg_next(lenp, &rtp, &markp);
+    if (!rx_msg)
+      gps_panic(0, 0, 0);
+    collect_gps_pak(rx_msg, *lenp, GPS_DIR_RX);
+    return rx_msg;
+  }
+
+  event void HW.gps_byte_avail(uint8_t byte) {
+    if (capture_byte(byte))
+      call ubxProto.byteAvail(byte);
   }
 
 
-  async event void HW.gps_receive_block_done(uint8_t *ptr, uint16_t len, error_t error) { }
+  /*
+   * returns TRUE if state change
+   */
+  bool process_byte(uint8_t byte) {
+    uint8_t *rx_msg;
+    uint16_t rx_len;
+    bool     rtn;
+    ubx_cfg_prt_t *ubx_prt;
+    ubx_ack_t     *ubx_ack;
+    ubx_header_t  *ubx_hdr;
+
+    rtn = FALSE;
+    if (capture_byte(byte)) {
+      if (call ubxProto.byteAvail(byte)) {
+        /* true return, says just completed a msg, process it */
+        do {
+          rx_msg = collect_pak(&rx_len);
+          if (!rx_msg)
+            return FALSE;
+          if (rx_msg[0] == '$')         /* nmea */
+            break;
+          switch (gpsc_state) {
+            default:
+              break;
+
+            case GPSC_CONFIG_CHK:
+            case GPSC_CONFIG_SET_TXRDY:
+              ubx_prt = (void *) rx_msg;
+              if (ubx_prt->class   != UBX_CLASS_CFG    ||
+                  ubx_prt->id      != UBX_CFG_PRT      ||
+                  ubx_prt->portId  != UBX_COM_PORT_SPI)
+                break;
+
+              /*
+               * if txReady is already set, transition into
+               * CONFIG_DONE.  If not, CONFIG_SET_TXRDY
+               */
+              if (ubx_prt->txReady == UBX_TXRDY_VAL)
+                gpsc_change_state(GPSC_CONFIG_DONE, GPSW_BOOT);
+              else
+                gpsc_change_state(GPSC_CONFIG_SET_TXRDY, GPSW_BOOT);
+              rtn = TRUE;
+              break;
+
+
+            case GPSC_CONFIG_TXRDY_ACK:
+              ubx_ack = (void *) rx_msg;
+              if (ubx_ack->class    != UBX_CLASS_ACK    ||
+                  ubx_ack->id       != UBX_ACK_ACK      ||
+                  ubx_ack->len      != 2                ||
+                  ubx_ack->ackClass != UBX_CLASS_CFG    ||
+                  ubx_ack->ackId    != UBX_CFG_PRT)
+                break;
+
+              /*
+               * stop collecting messages (rtn TRUE) and tell
+               * the state machine to verify the configuration.
+               */
+              gpsc_change_state(GPSC_CONFIG_CHK, GPSW_BOOT);
+              rtn = TRUE;
+              break;
+
+            case GPSC_VER_WAIT:
+              ubx_hdr = (void *) rx_msg;
+              if (ubx_hdr->class   != UBX_CLASS_MON    ||
+                  ubx_hdr->id      != UBX_MON_VER      ||
+                  ubx_hdr->len     <  40)
+                break;
+              gpsc_change_state(GPSC_VER_DONE, GPSW_BOOT);
+              rtn = TRUE;
+              break;
+          }
+        } while (0);
+        call MsgBuf.msg_release();
+      }
+    }
+    return rtn;
+  }
+
+
+  void ubx_send_msg(uint8_t *msg, uint16_t len) {
+    uint8_t data;
+
+    collect_gps_pak(msg, len, GPS_DIR_TX);
+    call HW.spi_put(0xff);
+    while (len) {
+      data = call HW.spi_getput(*msg++);
+      len--;
+      process_byte(data);
+    }
+    data = call HW.spi_get();
+    process_byte(data);
+  }
+
+
+  /*
+   * ubx_get_msgs: snag one or more messages from the pipe.
+   *     terminates when we either timeout (duration) or a state change
+   *     has occured.  (see process_byte()).
+   *
+   * input:     duration, max duration to look
+   *            use_txrdy, TRUE if use hw txrdy line.
+   * output:    indirect (see below).
+   *
+   * if use_txrdy is set, we will use TXRDY as the indicator that bytes are
+   * in the pipe.  Otherwise, we will loop pulling bytes from the pipe (will
+   * be idle bytes if empty).
+   *
+   * On entry we will loop looking for the start of a packet, we will look
+   * for a maximum of "duration".
+   *
+   * Once we have seen non-idle packet data, we will pull bytes and feed them
+   * to the protocol engine via "process_byte()".  If packet processing causes
+   * a state change (see process_byte()), we will stop collecting messages.
+   *
+   * If no state change has occured, we will collect messages for a maximum
+   * of "duration".
+   */
+
+  void ubx_get_msgs(uint32_t duration, bool use_txrdy) {
+    uint8_t  data;
+    uint32_t t0, t1;
+    uint32_t dwn_cnt;
+
+    dwn_cnt = 8;
+    t0 = call Platform.usecsRaw();
+    if (use_txrdy) {
+      while (TRUE) {
+        t1 = call Platform.usecsRaw();
+        if ((t1 - t0) > duration)
+          return;
+        if (call HW.gps_txrdy())
+          break;
+      }
+    }
+
+    call HW.spi_put(0xff);
+    while (TRUE) {
+      t1 = call Platform.usecsRaw();
+      if ((t1 - t0) > duration)
+        break;
+      data = call HW.spi_getput(0xff);
+
+      /* if process_byte returns TRUE there was a state change */
+      if (process_byte(data))
+        break;
+      if (use_txrdy) {
+        if (call HW.gps_txrdy()) {
+          dwn_cnt = 8;
+          continue;
+        }
+        if (--dwn_cnt == 0)
+          break;
+      }
+    }
+
+    data = call HW.spi_get();
+    process_byte(data);
+  }
+
+
+  void ubx_clean_pipe(uint32_t max_duration) {
+    uint8_t  data;
+    uint32_t t0, t1;
+    uint32_t term_left;
+
+    term_left = 8;
+    call HW.spi_put(0xff);
+    t0 = call Platform.usecsRaw();
+    while (TRUE) {
+      t1 = call Platform.usecsRaw();
+      if ((t1 - t0) > max_duration)
+        break;
+      data = call HW.spi_getput(0xff);
+      process_byte(data);
+      if (data == 0xff) {
+        if (--term_left == 0)
+          break;
+      } else
+        term_left = 8;
+    }
+    data = call HW.spi_get();
+    process_byte(data);
+
+    /*
+     * We don't handle the corner case of seeing a non-ff
+     * byte after the pipe has been cleaned.  Doesn't hurt anything
+     */
+  }
+
+
+  /*
+   * Standalone initilizer for Ubx M8 based gps chips.
+   *
+   * o get  HW and SW verions to stash
+   * o enable TxRdy
+   * o verify TxRdy took, need to poll SPI state.
+   */
+
+  event void Boot.booted() {
+    uint32_t t0, t1;
+
+    if (gpsc_state != GPSC_OFF)
+      gps_panic(1, gpsc_state, 0);
+
+    t_gps_pwr_on = call LocalTime.get();
+    call HW.gps_txrdy_int_disable();        /* no need for it yet. */
+    WIGGLE_EXC;
+    gpsc_change_state(GPSC_CONFIG_BOOT, GPSW_BOOT);
+    call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, t_gps_pwr_on, 0, 0, 0);
+    if (!call HW.gps_powered())
+      call HW.gps_pwr_on();
+    call HW.gps_set_reset();
+    t0 = call Platform.usecsRaw();
+    while (1) {
+      t1 = call Platform.usecsRaw();
+      if (t1 - t0 > 104858)
+        break;
+    }
+    call HW.gps_clr_reset();
+    call HW.gps_set_cs();
+    t0 = call Platform.usecsRaw();
+    while (1) {
+      t1 = call Platform.usecsRaw();
+      if (t1 - t0 > 104858)
+        break;
+    }
+    WIGGLE_EXC;
+    ubx_clean_pipe(209715);             /* 200 ms, or empty pipe */
+
+    gpsc_change_state(GPSC_CONFIG_CHK, GPSW_BOOT);
+    t0 = call Platform.usecsRaw();
+    do {
+      t1 = call Platform.usecsRaw();
+      if (t1 - t0 > 524288)
+        gps_panic(1, gpsc_state, t1 - t0);
+
+      ubx_send_msg((void *) ubx_cfg_prt_poll_spi,  sizeof(ubx_cfg_prt_poll_spi));
+      WIGGLE_EXC;
+      ubx_get_msgs(104858, FALSE);
+      WIGGLE_EXC;
+      /*
+       * "State" tells the story of what happened if anything.
+       *
+       * o GPSC_CONFIG_CHK: poll_spi must have gotten clobbered, just send the
+       *     prt_spi_txrdy command anyway.
+       * o GPSC_CONFIG_SET_TXRDY: got the poll_spi_rsp but txrdy isn't set
+       *     to the desirec value.
+       * o GPSC_CONFIG_DONE: saw a good response to the poll_spi.  TxRdy is set
+       *     properly.  Just move on.
+       *
+       * After forcing the spi_txrdy, loop back and do a spi_poll to make sure
+       * that it took.
+       *
+       * We will try for a maximum of about 100ms.
+       */
+      if (gpsc_state != GPSC_CONFIG_DONE) {
+        /*
+         * We want to reconfigure the SPI port to enable the TXRDY pin.
+         *
+         * First we suck any pending data from the pipe, this most likely
+         * is the ACK for an early prt_spi_poll message.  This ack looks
+         * exactly the same as the ACK for the prt_spi_txrdy message.
+         *
+         * After we send the prt_spi_txrdy message, the ublox will reset
+         * the spi pipeline.  This will mess with any packet in progress.
+         * After the configuration is complete, the ublox will place the
+         * ack response into the spi pipeline.  This is the ack we look
+         * for.  We then return to CONFIG_CHK to verify that txrdy has
+         * been properly set.
+         *
+         * The only real effect of this it will shorten the time to
+         * configuration complete because it makes ubx_get_msgs() return
+         * before the end of the duration.
+         *
+         * Once we see the ACK for the PRT_SPI_TXRDY message we know it
+         * is safe to send the verification poll.  That the spi pipe won't
+         * get wacked.  The wackage has been completed.
+         */
+        ubx_clean_pipe(209715);             /* 200 ms, or empty pipe */
+        gpsc_change_state(GPSC_CONFIG_TXRDY_ACK, GPSW_BOOT);
+        ubx_send_msg((void *) ubx_cfg_prt_spi_txrdy, sizeof(ubx_cfg_prt_spi_txrdy));
+        WIGGLE_EXC;
+        ubx_get_msgs(104858, FALSE);
+        WIGGLE_EXC;
+      }
+    } while (gpsc_state != GPSC_CONFIG_DONE);
+
+    gpsc_change_state(GPSC_VER_WAIT, GPSW_BOOT);
+    WIGGLE_EXC;
+    ubx_clean_pipe(104858);
+    WIGGLE_EXC;
+    ubx_send_msg((void *) ubx_mon_hw_poll, sizeof(ubx_mon_hw_poll));
+    t0 = call Platform.usecsRaw();
+    while (TRUE) {
+      t1 = call Platform.usecsRaw();
+      if (t1 - t0 > 104858)
+        gps_panic(16, gpsc_state, 0);
+      WIGGLE_EXC;
+      ubx_send_msg((void *) ubx_mon_ver_poll, sizeof(ubx_mon_ver_poll));
+      WIGGLE_EXC;
+      ubx_get_msgs(104858, TRUE);
+      WIGGLE_EXC;
+      if (gpsc_state == GPSC_VER_DONE)
+        break;
+    }
+
+    WIGGLE_TELL;
+    ubx_clean_pipe(104858);
+    WIGGLE_TELL;
+    WIGGLE_TELL;
+    gpsc_change_state(GPSC_ON, GPSW_BOOT);
+    nop();
+  }
+
 
         event void Collect.collectBooted() { }
   async event void Panic.hook() { }
