@@ -40,6 +40,16 @@
 #define IRQ_DEFAULT_PRIORITY    4
 #define IRQ_LOW_PRIORITY        7
 
+/*
+ * dev7 doesn't use EUSCI interrupts
+ * rather it uses a TXRDY interrupt to run the gps
+ * spi stream.
+ *
+ * GPS_IRQN and GPS_IRQ_PRIORITY are maintained for backward compatibility
+ * with previous GPS implementations.  When the mm6a and dev6a are full
+ * deprecated this can be removed and mm/PlatformP can be appropriately
+ * modified.
+ */
 #define GPS_IRQN                EUSCIA1_IRQn
 #define GPS_IRQ_PRIORITY        4
 
@@ -84,6 +94,13 @@ extern uint32_t __platform_usecsRaw();
 #define TOSH_DATA_LENGTH 250
 #define GPS_EAVESDROP
 #define DOCK_EAVESDROP
+
+/*
+ * GPS_DEBUG_DEV wraps gps debugging that uses TELL and EXC to communicate
+ * changes in the gps subsystem on a DEV boards that have TELL and EXC
+ * i/o pins defined.
+ */
+#define GPS_DEBUG_DEV
 
 /*
  * platform.h is one of the first files included.
