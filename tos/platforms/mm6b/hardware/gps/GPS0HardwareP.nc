@@ -238,11 +238,69 @@ implementation {
 #endif
 
 
+  const msp432_usci_config_t ublox_spi_config = {
+    ctlw0 :
+            (EUSCI_A_CTLW0_CKPH        | EUSCI_A_CTLW0_MSB  |
+//          (EUSCI_A_CTLW0_CKPL        | EUSCI_A_CTLW0_MSB  |
+//           EUSCI_A_CTLW0_CKPL        |
+             EUSCI_A_CTLW0_MST         | EUSCI_A_CTLW0_SYNC |
+             EUSCI_A_CTLW0_SSEL__SMCLK),
+//  brw   : MSP432_UBLOX_DIV,     /* see platform_clk_defs */
+    brw   : 16,
+    mctlw : 0,                    /* Always 0 in SPI mode */
+    i2coa : 0
+  };
+
+
+  void suck_buf() {
+    uint8_t  data;
+    uint32_t bcount;
+    uint32_t t0, t1;
+
+    bcount = 0;
+    call HW.gps_set_cs();
+    while (TRUE) {
+      if (bcount >= 2048)
+        break;
+      if (call Usci.isRxIntrPending()) {
+        data = call Usci.getRxbuf();
+        signal HW.gps_byte_avail(data);
+        if (data != 0xff) {
+          bcount++;
+          if ((bcount & 0xff) == 0) {   /* every 256, bounce CS */
+            call HW.gps_clr_cs();
+            t0 = call Platform.usecsRaw();
+            while (TRUE) {
+              t1 = call Platform.usecsRaw();
+              if (t1 - t0 > 150)
+                break;
+            }
+            call HW.gps_set_cs();
+          }
+        }
+      }
+      if (call Usci.isTxIntrPending())
+        call Usci.setTxbuf(0xff);
+    }
+    call HW.gps_clr_cs();
+  }
+
+
   command error_t GPS0PeriphInit.init() {
+    uint32_t t0, t1;
+
     if (call HW.gps_powered()) {
       UBX_PINS_PWR_ON;
       call Usci.enableModuleInt();
       call Usci.configure(&ublox_spi_config, FALSE);
+      call HW.gps_set_reset();
+      t0 = call Platform.usecsRaw();
+      while (TRUE) {
+        t1 = call Platform.usecsRaw();
+        if (t1 - t0 > 150)
+          break;
+      }
+      call HW.gps_clr_reset();
     }
     return SUCCESS;
   }
@@ -279,6 +337,7 @@ implementation {
   async event void PwrReg.pwrOn() {
     atomic {
       UBX_PINS_PWR_ON;
+      suck_buf();
     }
   }
 
@@ -287,6 +346,7 @@ implementation {
       UBX_PINS_PWR_OFF;
     }
   }
+
 
   /*
    * gps_tx_finnish: wait for tx to finish

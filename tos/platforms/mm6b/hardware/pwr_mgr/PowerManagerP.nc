@@ -140,6 +140,7 @@ implementation {
     }
     call OverWatch.setFault(OW_FAULT_LOW_PWR);
     call PwrTimer.startPeriodic(PWR_CHECK_TIME);
+    signal LowPowerBoot.booted();
   }
 
   default event void LowPowerBoot.booted() {
