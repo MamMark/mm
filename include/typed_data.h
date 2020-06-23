@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020      Eric B. Decker
  * Copyright (c) 2016-2019 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
@@ -17,7 +18,6 @@
  * See COPYING in the top level directory of this source tree.
  *
  * Contact: Eric B. Decker <cire831@gmail.com>
- *          Daniel J. Maltbie <dmaltbie@danome.com>
  */
 
 #ifndef __TYPED_DATA_H__
@@ -355,7 +355,9 @@ typedef struct {
  */
 
 typedef enum {
-  CHIP_GPS_GSD4E   = 1,
+  CHIP_GPS_NMEA    = 0,                 /* special, used for nmea capture */
+  CHIP_GPS_GSD4E   = 1,                 /* SirfIV based chipset           */
+  CHIP_GPS_ZOE     = 2,                 /* ublox, ZOE based gps chipset   */
 } gps_chip_id_t;
 
 
