@@ -861,6 +861,7 @@ implementation {
 
     WIGGLE_TELL;
     ubx_clean_pipe(104858);
+    call HW.gps_clr_cs();
     WIGGLE_TELL;
     WIGGLE_TELL;
     gpsc_change_state(GPSC_ON, GPSW_BOOT);
