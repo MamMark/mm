@@ -126,6 +126,7 @@ EE_OBJ_NAME = 4
 SIRF_MAX_PAYLOAD = 2047
 
 # hdr_struct is big endian, 2 byte SOP, 2 byte len, 1 byte mid
+UBX_SOP_SEQ     = 0xb562
 SIRF_SOP_SEQ    = 0xa0a2
 sirf_hdr_str    = '>HH'
 sirf_hdr_struct = struct.Struct(sirf_hdr_str)

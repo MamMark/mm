@@ -920,11 +920,21 @@ def emit_gps_raw(level, offset, buf, obj):
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
-    if (obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ):
-        index = len(obj) - len(obj['sirf_hdr'])
-        print('-- non-binary <{:2}>'.format(dir_str))
+
+    index = len(obj) - len(obj['sirf_hdr'])
+    if buf[index] == ord('$'):
+        print(' -- NMEA <{:2}> [{:s}]'.format(dir_str, buf[index+1:index+6]))
         if (level >= 1):
             print('    {:s}'.format(buf[index:].rstrip('\r\n\x00')))
+
+    elif (obj['sirf_hdr']['start'].val == sirf.UBX_SOP_SEQ):
+        print(' -- UBX <{:2}> [{:02X}/{:02X}, {:02x}{:02x}]'.format(
+            dir_str, buf[index+2], buf[index+3], buf[index+5], buf[index+4]))
+
+    else:
+        print
+
+    if (obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ):
         if (level >= 2):
             dump_buf(buf, '    ')
         return
