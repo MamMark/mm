@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev0'
+__version__ = '0.4.8.dev1'
 
 from   ctypes       import c_int32
 from   binascii     import hexlify
@@ -924,7 +924,7 @@ def emit_gps_raw(level, offset, buf, obj):
         index = len(obj) - len(obj['sirf_hdr'])
         print('-- non-binary <{:2}>'.format(dir_str))
         if (level >= 1):
-            print('    {:s}'.format(buf[index:]), end = '')
+            print('    {:s}'.format(buf[index:].rstrip('\r\n\x00')))
         if (level >= 2):
             dump_buf(buf, '    ')
         return
