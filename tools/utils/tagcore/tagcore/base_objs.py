@@ -33,7 +33,7 @@ from   tagcore.imageinfo_defs import iip_tlv_name
 from   tagcore.imageinfo_defs import IMAGE_INFO_PLUS_SIZE
 from   tagcore.imageinfo_defs import IIP_TLV_END
 
-__version__ = '0.4.7'
+__version__ = '0.4.8.dev1'
 
 class atom(object):
     '''
@@ -146,8 +146,8 @@ class tlv_aggie(aggie):
         # tlv_type and tlv_len.  Using tlv_len, we can suck the appropriate
         # number of bytes as tlv_value.
         #
-        tlv_type  = ord(buf[0])
-        tlv_len   = ord(buf[1])
+        tlv_type  = buf[0]
+        tlv_len   = buf[1]
         tlv_value = buf[2: tlv_len]
         self['tlv_type'].val  = tlv_type
         self['tlv_len'].val   = tlv_len
