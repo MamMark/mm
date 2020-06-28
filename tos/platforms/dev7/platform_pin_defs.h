@@ -103,7 +103,6 @@
     UBX_SOMI_SEL0 = 0;  UBX_SOMI_REN  = 1;      \
     UBX_SIMO_SEL0 = 0;  UBX_SIMO_REN  = 1;      \
     UBX_CSN_DIR   = 0;                          \
-    UBX_CSN       = 0;                          \
     UBX_CSN_REN   = 1;                          \
     UBX_TXRDY_REN = 1;                          \
   } while (0)
@@ -113,7 +112,6 @@
     UBX_TM_SEL0   = 0;  UBX_TM_REN    = 0;      \
     UBX_SOMI_SEL0 = 1;  UBX_SOMI_REN  = 0;      \
     UBX_SIMO_SEL0 = 1;  UBX_SIMO_REN  = 0;      \
-    UBX_CSN       = 1;                          \
     UBX_CSN_DIR   = 1;                          \
     UBX_CSN_REN   = 0;                          \
     UBX_TXRDY_REN = 0;                          \

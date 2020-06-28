@@ -578,8 +578,8 @@ void __pins_init() {
 
   /*
    * DockComm is on P9.{5,6,7}
+   * gps various are on P9.{2,3,4}, gps_csn (P9.3) assert.
    */
-  P9->OUT  = 0x08;
   P9->DIR  = 0x08;
   P9->SEL0 = 0xE0;
 
@@ -1287,7 +1287,7 @@ void __Reset() {
    *
    * there is nothing special wrt PIN state needed for __soft_reset()
    */
-  P4->OUT  = 0;                 /* make sure gps_on_off doesn't wiggle */
+  P4->OUT  = 0;
   P4->SEL0 = 0x1C;
   P4->SEL1 = 0x00;
   P4->DIR  = 0x1C;

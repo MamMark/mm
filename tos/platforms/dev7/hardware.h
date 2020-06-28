@@ -158,7 +158,7 @@
  * A1: gps (ublox) SPI
  * A2:
  * A3: dock_comm, (not on bga), no connection
- * B0: tmp, i2c         (dma overlap with AES triggers, DMA ch 0, 1)
+ * B0: tmp, i2c
  * B1: adc
  * B2: Si4468 radio (SPI)
  * B3: SD0 (SPI)
@@ -193,14 +193,14 @@
  *  03   .2     0pO              (LED2_BLUE)     63 O .2        0pI
  *       .3     0pI     si446x_cts                    .3        0pI
  *       .4     0pI                                   .4        0pI
- *       .5     0mO     SMCLK (pm)                    .5        0pO     tell_exception
+ *       .5     0mO     SMCLK (pm)                    .5        0pO     tell_exception (exc)
  *       .6     0pI                                   .6        0pO     tell
  *       .7     0pI                                   .7        0pI
  *
  * port 3.0     0pI                             port 9.0        0pI
  *  20   .1     0pI     [unstabbed, nc] A2       80 I .1        0pI
  *  22   .2     0pI                              82 O .2        0pI     gps_dsel (nc)
- *       .3     0pI                                   .3        1pO     gps_csn
+ *       .3     0pI                                   .3        0pO     gps_csn
  *       .4     0pI     [unstabbed, nc]               .4        0pI     gps_resetn
  *       .5     0mI     si446x_clk  (B2) slave_clk    .5        0mI     dc_sclk
  *       .6     0mI     si446x_simo (B2) slave_simo   .6        0mI     dc_somi

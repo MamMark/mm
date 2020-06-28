@@ -208,7 +208,6 @@ implementation {
         break;
       }
       byte_count = 2;
-      call HW.gps_set_cs();
       call HW.spi_put(next_out());
       while (TRUE) {
         data = call HW.spi_getput(next_out());
@@ -231,7 +230,6 @@ implementation {
       }
       data = call HW.spi_get();
       signal HW.gps_byte_avail(data);
-      call HW.gps_clr_cs();
       nop();
     } while (0);
     call HW.gps_txrdy_int_enable();

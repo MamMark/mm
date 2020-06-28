@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020,     Eric B. Decker
+ * Copyright (c) 2020, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -772,7 +772,6 @@ implementation {
         break;
     }
     call HW.gps_clr_reset();
-    call HW.gps_set_cs();
     t0 = call Platform.usecsRaw();
     while (1) {
       t1 = call Platform.usecsRaw();
@@ -861,7 +860,6 @@ implementation {
 
     WIGGLE_TELL;
     ubx_clean_pipe(104858);
-    call HW.gps_clr_cs();
     WIGGLE_TELL;
     WIGGLE_TELL;
     gpsc_change_state(GPSC_ON, GPSW_BOOT);
