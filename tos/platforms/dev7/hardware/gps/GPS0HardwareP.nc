@@ -231,7 +231,7 @@ implementation {
       data = call HW.spi_get();
       signal HW.gps_byte_avail(data);
       nop();
-    } while (0);
+    } while (UBX_TXRDY_P);
     call HW.gps_txrdy_int_enable();
     /*
      * The txrdy_int_enable() clears out any pending txrdy int.  But it
