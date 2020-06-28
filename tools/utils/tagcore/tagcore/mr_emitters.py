@@ -25,7 +25,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.7'
+__version__ = '0.4.8.dev1'
 
 import copy
 from   datetime       import datetime
@@ -163,6 +163,15 @@ def emit_event_mr(level, offset, buf, obj):
     del c['w']
     mr_display(offset, hdr, c, event_name(ev))
 
+
+def emit_gps_raw_mr(level, offset, buf, obj):
+    hdr   = obj['gps_hdr']['hdr']
+    index = len(obj) - len(obj['sirf_hdr'])
+    if buf[index] != ord('$'):
+        return
+    c = OrderedDict()
+    c['nmea_string'] = buf[index:].rstrip('\r\n\x00')
+    mr_display(offset, hdr, c, 'NEMA')
 
 def emit_gps_time_mr(level, offset, buf, obj):
     hdr   = obj['gps_hdr']['hdr']
