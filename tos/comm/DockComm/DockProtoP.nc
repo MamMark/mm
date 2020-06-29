@@ -152,8 +152,21 @@ implementation {
   }
 
 
+  /*
+   * protoRestart: force restart of the protocol engine.
+   *
+   * A restart will occur if the protocol engine is not idle and
+   * a new packet starts (rising edge DC_ATTN).
+   *
+   * If we are in the proper state, DCS_CHN, the restart is ignored.
+   *
+   * A restart indicates that something was left over from a previous
+   * packet and is an exceptional conditon.  We will increment
+   * dc_stats.resets and reset the data pipe.
+   */
   command void DockProto.protoRestart() {
-    dc_reset();
+    if (dc_state != DCS_CHN)
+      dc_reset();
   }
 
 
