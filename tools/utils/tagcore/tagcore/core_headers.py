@@ -23,20 +23,19 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev0'
+__version__ = '0.4.8.dev1'
 
 import binascii
 from   collections  import OrderedDict
 
 from   base_objs    import *
-from   sirf_headers import obj_sirf_hdr
-from   sirf_headers import obj_sirf_swver
+from   ubx_headers  import obj_ubx_hdr
 
 from   sensor_defs  import *
 import sensor_defs  as     sensor
 
-from   sirf_defs    import *
-import sirf_defs    as     sirf
+from   ubx_defs     import *
+import ubx_defs     as     ubx
 
 import tagcore.globals as  g
 
@@ -83,46 +82,42 @@ def decode_sensor(level, offset, buf, obj):
 
 # GPS RAW decoder
 #
-# main gps raw decoder, decodes DT_GPS_RAW
-# dt_gps_raw_obj, 2nd level decode on mid
-#
-# WARNING: currently assumes raw SIRFBIN.  Needs to be refactored to handle
-# UBXBIN packets.   Along with a reasonable handling of NMEA packets.
+# main gps raw decoder, decodes DT_GPS_RAW, ubx or nmea.
+# dt_gps_raw_obj, decode on class/id
 #
 # obj must be a obj_dt_gps_raw.
 #
 # this decoder does the following:  (it is not a simple decode_default)
 #
 # o consume/process a gps_raw_hdr (dt_hdr + gps_hdr)
-# o consume/process the sirfbin hdr (SOP + LEN + MID)
-# o checks the sirfbin hdr for proper SOP.
+# o consume/process the ubxbin hdr (SOP + CLASS/ID + LEN + DATA)
 #
-# Not a sirfbin packet:
+# NMEA packet:
 # o only consume up to the beginning of the SOP
 #
-# SirfBin packet:
-# o Look mid up in mid_table
+# UbxBin packet:
+# o Look class/id in cid_table
 # o consume/process the remainder of the packet using the appropriate decoder
 
 def decode_gps_raw(level, offset, buf, obj):
     consumed = obj.set(buf)
 
-    if obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ:
-        return consumed - len(obj['sirf_hdr'])
+    if obj['ubx_hdr']['start'].val != UBX_SOP_SEQ:
+        return consumed - len(obj['ubx_hdr'])
 
-    mid = obj['sirf_hdr']['mid'].val
+    cid = obj['ubx_hdr']['cid'].val
 
     try:
-        sirf.mid_count[mid] += 1
+        ubx.cid_count[cid] += 1
     except KeyError:
-        sirf.mid_count[mid] = 1
+        ubx.cid_count[cid] = 1
 
-    v = sirf.mid_table.get(mid, (None, None, None, ''))
-    decoder     = v[MID_DECODER]            # dt function
-    decoder_obj = v[MID_OBJECT]             # dt object
+    v = ubx.cid_table.get(cid, (None, None, None, ''))
+    decoder     = v[CID_DECODER]        # cid function
+    decoder_obj = v[CID_OBJECT]         # cid object
     if not decoder:
         if level >= 5 or g.debug:
-            print('*** no decoder/obj defined for mid {}'.format(mid))
+            print('*** no decoder/obj defined for class/id {:04X}'.format(cid))
         return consumed
     return consumed + decoder(level, offset, buf[consumed:], decoder_obj)
 
@@ -385,7 +380,7 @@ def obj_dt_gps_hdr():
 def obj_dt_gps_ver():
     return aggie(OrderedDict([
         ('gps_hdr',    obj_dt_gps_hdr()),
-        ('sirf_swver', obj_sirf_swver()),
+#        ('sirf_swver', obj_sirf_swver()),
     ]))
 
 
@@ -551,11 +546,11 @@ def obj_gps_proto_stats():
 
 
 # DT_GPS_RAW, dt, native, little endian
-#  sirf data big endian.
+#  ubx data little endian.
 def obj_dt_gps_raw():
     return aggie(OrderedDict([
-        ('gps_hdr',  obj_dt_gps_hdr()),
-        ('sirf_hdr', obj_sirf_hdr()),
+        ('gps_hdr', obj_dt_gps_hdr()),
+        ('ubx_hdr', obj_ubx_hdr()),
     ]))
 
 def obj_dt_tagnet():

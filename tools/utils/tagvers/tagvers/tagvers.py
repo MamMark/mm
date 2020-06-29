@@ -70,8 +70,8 @@ def dump_vers():
         vers.base_ver, vers.dt_ver))
     print('   core:     {:12}  e: {:12}  h: {:12}  panic:  h: {:12}'.format(
         vers.core_ver, vers.ce_ver, vers.ch_ver, vers.pi_ver))
-    print('   sirf:  d: {:12}  e: {:12}  h: {:12}'.format(
-        vers.sd_ver, vers.se_ver, vers.sh_ver))
+    print('   ubx:   d: {:12}  e: {:12}  h: {:12}'.format(
+        vers.ud_ver, vers.ue_ver, vers.uh_ver))
     print('   sns:   d: {:12}  e: {:12}  h: {:12}'.format(
         vers.snsd_ver, vers.snse_ver, vers.snsh_ver))
     print('   net: {} e: {:12}  h: {:12}'.format(18 * ' ',

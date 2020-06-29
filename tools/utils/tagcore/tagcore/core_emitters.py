@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev1'
+__version__ = '0.4.8.dev2'
 
 from   ctypes       import c_int32
 from   binascii     import hexlify
@@ -41,10 +41,9 @@ from   core_headers import img_mgr_event_name
 
 from   gps_mon      import *
 
-from   sirf_defs    import *
-import sirf_defs    as     sirf
+from   ubx_defs     import *
+import ubx_defs     as     ubx
 
-from   sirf_headers import mids_w_sids
 from   misc_utils   import dump_buf
 from   misc_utils   import rtc2datetime
 from   misc_utils   import rtctime_full
@@ -543,8 +542,8 @@ def emit_gps_version(level, offset, buf, obj):
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype, dt_name(xtype)))
-    if (level >= 1):
-        print('    {}'.format(obj['sirf_swver']))
+#    if (level >= 1):
+#        print('    {}'.format(obj['sirf_swver']))
 
 
 def emit_gps_time(level, offset, buf, obj):
@@ -861,7 +860,7 @@ def emit_config(level, offset, buf, obj):
 #
 # GPS Proto Stats
 #
-#sirf stats: t/o chk err frm ovr par rst  proto    </>     ign
+#ubx stats: t/o chk err frm ovr par rst  proto    </>     ign
 #99999/99999 999 999 999 999 999 999 999 999/999 999/999 99999
 #
 def emit_gps_proto_stats(level, offset, buf, obj):
@@ -893,7 +892,7 @@ def emit_gps_proto_stats(level, offset, buf, obj):
     print('  e: {}  r: {}  f: {}  o: {}'.format(rx_errors, resets,
                                              rx_framing, rx_overrun))
     if level >= 1:
-        print('    sirf stats: t/o chk err frm ovr par rst  proto    </>     ign')
+        print('    ubx stats:  t/o chk err frm ovr par rst  proto    </>     ign')
         print('    {:5d}/{:<5d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d}/{:<3d} {:3d}/{:<3d} {:5d}'.format(
             complete,   starts,           rx_timeouts,    chksum_fail,
             rx_errors,  rx_framing,       rx_overrun,     rx_parity,
@@ -921,40 +920,32 @@ def emit_gps_raw(level, offset, buf, obj):
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    index = len(obj) - len(obj['sirf_hdr'])
+    index = len(obj) - len(obj['ubx_hdr'])
     if buf[index] == ord('$'):
         print(' -- NMEA <{:2}> [{:s}]'.format(dir_str, buf[index+1:index+6]))
         if (level >= 1):
             print('    {:s}'.format(buf[index:].rstrip('\r\n\x00')))
 
-    elif (obj['sirf_hdr']['start'].val == sirf.UBX_SOP_SEQ):
-        print(' -- UBX <{:2}> [{:02X}/{:02X}, {:02x}{:02x}]'.format(
-            dir_str, buf[index+2], buf[index+3], buf[index+5], buf[index+4]))
-
-    else:
+    if (obj['ubx_hdr']['start'].val != UBX_SOP_SEQ):
         print
-
-    if (obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ):
         if (level >= 2):
             dump_buf(buf, '    ')
         return
 
-    mid      = obj['sirf_hdr']['mid'].val
-    sid      = buf[len(obj)]                # if there is a sid, next byte
+    cid     = obj['ubx_hdr']['cid'].val
+    ubx_len = obj['ubx_hdr']['len'].val
+    v = ubx.cid_table.get(cid, (None, None, None, 'unk'))
+    emitters    = v[CID_EMITTERS]       # emitter list
+    decoder_obj = v[CID_OBJECT]         # object
+    cid_name    = v[CID_NAME]
 
-    v = sirf.mid_table.get(mid, (None, None, None, ''))
-    emitters    = v[MID_EMITTERS]           # emitter list
-    decoder_obj = v[MID_OBJECT]             # dt object
-    mid_name    = v[MID_NAME]
-
-    sid_str = '' if mid not in mids_w_sids else '/{}'.format(sid)
-    print(' -- MID: {:3}{:4} ({:02x}) <{:2}> {}'.format(
-        mid, sid_str, mid, dir_str, mid_name), end = '')        # sans nl
+    print(' -- UBX: <{:2}> [{:s}]<{:04x}> ({:02x})'.format(
+        dir_str, cid_name, cid, ubx_len), end = '')
 
     if not emitters or len(emitters) == 0:
         print()
         if (level >= 5):
-            print('*** no emitters defined for mid {}'.format(mid))
+            print('*** no emitters defined for cid {:04X}'.format(cid))
         return
     for e in emitters:
         e(level, offset, buf[len(obj):], decoder_obj)

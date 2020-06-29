@@ -25,7 +25,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev1'
+__version__ = '0.4.8.dev2'
 
 import copy
 from   datetime       import datetime
@@ -166,7 +166,7 @@ def emit_event_mr(level, offset, buf, obj):
 
 def emit_gps_raw_mr(level, offset, buf, obj):
     hdr   = obj['gps_hdr']['hdr']
-    index = len(obj) - len(obj['sirf_hdr'])
+    index = len(obj) - len(obj['ubx_hdr'])
     if buf[index] != ord('$'):
         return
     c = OrderedDict()

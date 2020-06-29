@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Eric B. Decker
+# Copyright (c) 2018-2020 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -28,19 +28,19 @@ the basic ability to decode.   ie.  adding new events.
 '''
 
 CORE_REV   = 22
-CORE_MINOR = 9
+CORE_MINOR = 10
 
-from    .__init__       import __version__   as core_ver
-from    .base_objs      import __version__   as base_ver
-from    .dt_defs        import __version__   as dt_ver
-from    .core_emitters  import __version__   as ce_ver
-from    .core_headers   import __version__   as ch_ver
-from    .panic_headers  import __version__   as pi_ver
-from    .sirf_defs      import __version__   as sd_ver
-from    .sirf_emitters  import __version__   as se_ver
-from    .sirf_headers   import __version__   as sh_ver
-from    .net_headers    import __version__   as tnh_ver
-from    .net_emitters   import __version__   as tne_ver
+from    .__init__        import __version__   as core_ver
+from    .base_objs       import __version__   as base_ver
+from    .dt_defs         import __version__   as dt_ver
+from    .core_emitters   import __version__   as ce_ver
+from    .core_headers    import __version__   as ch_ver
+from    .panic_headers   import __version__   as pi_ver
+from    .ubx_defs        import __version__   as ud_ver
+from    .ubx_emitters    import __version__   as ue_ver
+from    .ubx_headers     import __version__   as uh_ver
+from    .net_headers     import __version__   as tnh_ver
+from    .net_emitters    import __version__   as tne_ver
 
 from    .sensor_defs     import __version__  as snsd_ver
 from    .sensor_emitters import __version__  as snse_ver

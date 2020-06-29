@@ -138,7 +138,7 @@ CMD_LOW    = gps_cmds['low']
 CMD_RAW_TX = gps_cmds['raw_tx']
 
 # total number of bytes, including overhead that we can send
-# using RAW_TX.  SIRF_HEADER is 8 bytes, a0 a2, len, b0, b3
+# using RAW_TX.  UBX_HEADER is 8 bytes, b5 62, class, id, len, chka, chkb
 MAX_RAW_TX = 64
 
 # canned_msgs, see GPSmonitorP.nc

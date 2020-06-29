@@ -20,4 +20,4 @@ except ImportError:
     raise
 
 import tagcore.sensor_populate
-import tagcore.sirf_populate
+import tagcore.ubx_populate

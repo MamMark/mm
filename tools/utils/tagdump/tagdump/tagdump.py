@@ -53,7 +53,7 @@ import tagcore.globals     as     g
 import tagcore.core_rev    as     vers
 from   tagcore.dt_defs     import *
 import tagcore.dt_defs     as     dtd
-import tagcore.sirf_defs   as     sirf
+import tagcore.ubx_defs    as     ubx
 from   tagcore.tagfile     import *
 from   tagcore.misc_utils  import eprint
 from   tagcore.mr_emitters import mr_chksum_err
@@ -321,8 +321,8 @@ def dump():
             vers.base_ver, vers.dt_ver))
         eprint('   core:     {:12}  e: {:12}  h: {:12}  panic:  h: {:12}'.format(
             vers.core_ver, vers.ce_ver, vers.ch_ver, vers.pi_ver))
-        eprint('   sirf:  d: {:12}  e: {:12}  h: {:12}'.format(
-            vers.sd_ver, vers.se_ver, vers.sh_ver))
+        eprint('   ubx:   d: {:12}  e: {:12}  h: {:12}'.format(
+            vers.ud_ver, vers.ue_ver, vers.uh_ver))
         eprint('   sns:   d: {:12}  e: {:12}  h: {:12}'.format(
             vers.snsd_ver, vers.snse_ver, vers.snsh_ver))
         eprint()
@@ -494,7 +494,7 @@ def dump():
         eprint('****** non-zero chksum_errors: {}'.format(chksum_errors))
         eprint()
     eprint('rtypes: {}'.format(dtd.dt_count))
-    eprint('mids:   {}'.format(sirf.mid_count))
+    eprint('cids:   {}'.format(ubx.cid_count))
 
 if __name__ == "__main__":
     dump()
