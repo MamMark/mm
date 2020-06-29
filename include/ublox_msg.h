@@ -77,7 +77,7 @@ typedef struct {
  * See page 145 of u-blox 8 / u-blox M8 Receiver description - Manual
  *     R18 (9c8fe58), 24 March 2020
  */
-enum {
+typedef enum {
   UBX_CLASS_NAV     = 0x01,     // Navigation Results Messages
   UBX_CLASS_RXM     = 0x02,     // Receiver Manager Messages
   UBX_CLASS_INF     = 0x04,     // Information Messages
@@ -93,7 +93,7 @@ enum {
   UBX_CLASS_SEC     = 0x27,     // Security Feature Messages
   UBX_CLASS_HNR     = 0x28,     // High Rate Navigation
   UBX_CLASS_NMEA    = 0xF0,     // NMEA Strings
-};
+} ubx_classes_t;
 
 
 /* UBX_CLASS_NAV (01) */
@@ -119,8 +119,8 @@ enum {
   UBX_NAV_ORB       = 0x34,     // GNSS Orbit Database Info
   UBX_NAV_SAT       = 0x35,     // Satellite Information
   UBX_NAV_GEOFENCE  = 0x39,     // Geofencing status.
-  UBX_NAV_RELPOSNED = 0x3C,     // Relative Positioning (NED)
   UBX_NAV_SVIN      = 0x3B,     // Survey-in data.  Survey In status.
+  UBX_NAV_RELPOSNED = 0x3C,     // Relative Positioning (NED)
   UBX_NAV_SIG       = 0x43,     // Signal Information
   UBX_NAV_EOE       = 0x61,     // End of Epoch
 };
@@ -170,10 +170,10 @@ enum {
   UBX_CFG_ANT       = 0x13,     // Antenna Control Settings
   UBX_CFG_SBAS      = 0x16,     // SBAS configuration
   UBX_CFG_NMEA      = 0x17,     // Extended NMEA config V1
-  UBX_CFG_ODO       = 0x1E,     // Odometer
   UBX_CFG_USB       = 0x1B,     // USB Configuration
-  UBX_CFG_NAV5      = 0x24,     // Navigation Engine Settings.
+  UBX_CFG_ODO       = 0x1E,     // Odometer
   UBX_CFG_NAVX5     = 0x23,     // Navigation Engine Expert Settings
+  UBX_CFG_NAV5      = 0x24,     // Navigation Engine Settings.
   UBX_CFG_TP5       = 0x31,     // Time Pulse Parameters
   UBX_CFG_RINV      = 0x34,     // Remote Inventory
   UBX_CFG_ITFM      = 0x39,     // Jamming/Interference Monitor config.
@@ -186,8 +186,8 @@ enum {
   UBX_CFG_TMODE3    = 0x71,     // Time Mode Settings 3.  (Survey In Mode)
   UBX_CFG_PMS       = 0x86,     // Power mode setup
   UBX_CFG_VALDEL    = 0x8C,     // v27 key/val delete
-  UBX_CFG_VALGET    = 0x8B,     // v27 key/val get config
   UBX_CFG_VALSET    = 0x8A,     // v27 key/val set config
+  UBX_CFG_VALGET    = 0x8B,     // v27 key/val get config
   UBX_CFG_BATCH     = 0x93,     // Get/set data batching configuration.
 };
 
@@ -254,18 +254,15 @@ enum {
 
 /* UBX_CLASS_LOG (21) */
 enum {
-  UBX_LOG_ERASE     = 0x03,     // Erase Logged Data
-  UBX_LOG_STRING    = 0x04,     // Log arbitrary string
-  UBX_LOG_CREATE    = 0x07,     // Create Log File
-  UBX_LOG_INFO      = 0x08,     // Poll for log information
-  UBX_LOG_RETRIEVE  = 0x09,     // Request log data
-  UBX_LOG_RETRIEVEPOS
-                    = 0x0B,     // Position fix log entry
-  UBX_LOG_RETRIEVESTRING
-                    = 0x0D,     // Byte string log entry
-  UBX_LOG_FINDTIME  = 0x0E,     // Find index of a log entry
-  UBX_LOG_RETRIEVEPOSEXTRA
-                    = 0x0F,     // Odometer log entry
+  UBX_LOG_ERASE            = 0x03,  // Erase Logged Data
+  UBX_LOG_STRING           = 0x04,  // Log arbitrary string
+  UBX_LOG_CREATE           = 0x07,  // Create Log File
+  UBX_LOG_INFO             = 0x08,  // Poll for log information
+  UBX_LOG_RETRIEVE         = 0x09,  // Request log data
+  UBX_LOG_RETRIEVEPOS      = 0x0B,  // Position fix log entry
+  UBX_LOG_RETRIEVESTRING   = 0x0D,  // Byte string log entry
+  UBX_LOG_FINDTIME         = 0x0E,  // Find index of a log entry
+  UBX_LOG_RETRIEVEPOSEXTRA = 0x0F,  // Odometer log entry
 };
 
 
