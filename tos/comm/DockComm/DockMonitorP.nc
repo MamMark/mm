@@ -32,5 +32,5 @@ implementation {
     call MsgTransmit.send(msg, len);
   }
 
-  event void MsgTransmit.send_done() { }
+  event void MsgTransmit.send_done(error_t err) { }
 }

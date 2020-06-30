@@ -62,19 +62,19 @@ implementation {
   }
 
 
-  command error_t MsgTransmit.send(uint8_t *ptr, uint16_t len) {
-    return call HW.dc_send_block(ptr, len);
+  command void MsgTransmit.send(uint8_t *ptr, uint16_t len) {
+    call HW.dc_send_block(ptr, len);
   }
 
   event void HW.dc_send_block_done(uint8_t *ptr, uint16_t len, error_t error) {
   }
 
-  command void MsgTransmit.send_stop() {
+  command void MsgTransmit.send_abort() {
     call HW.dc_send_block_stop();
   }
 
 
-  default event void MsgTransmit.send_done() { }
+  default event void MsgTransmit.send_done(error_t err) { }
 
   event void DockProto.msgStart(uint16_t len) {
   }
