@@ -202,9 +202,9 @@
  *  22   .2     0pI                              82 O .2        0pI     gps_dsel (nc)
  *       .3     0pI                                   .3        0pO     gps_csn
  *       .4     0pI     [unstabbed, nc]               .4        0pI     gps_resetn
- *       .5     0mI     si446x_clk  (B2) slave_clk    .5        0mI     dc_sclk
- *       .6     0mI     si446x_simo (B2) slave_simo   .6        0mI     dc_somi
- *       .7     0mI     si446x_somi (B2) slave_somi   .7        0mI     dc_simo
+ *       .5     0mI     si446x_clk  (B2)              .5        0mI     dc_sclk
+ *       .6     0mI     si446x_simo (B2)              .6        0mI     dc_somi
+ *       .7     0mI     si446x_somi (B2)              .7        0mI     dc_simo
  *
  * port  4.0    0pI                             port 10.0       1pIru   sd0_csn
  *  21    .1    0pI                              81 I  .1       1pIru   sd0_clk
