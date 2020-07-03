@@ -24,7 +24,6 @@
 
 #include <panic.h>
 #include <platform_panic.h>
-#include <gps_ublox.h>
 #include <ublox_driver.h>
 #include <typed_data.h>
 #include <overwatch.h>
