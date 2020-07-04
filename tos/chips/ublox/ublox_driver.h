@@ -65,6 +65,34 @@
 /* this is a deadman timer to catch a hung RX path.  Shouldn't ever happen */
 #define DT_GPS_MAX_RX_TIMEOUT   1024
 
+const uint8_t ubx_cfg_ant_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_ANT,
+  0x00, 0x00,                           /* length, 1 byte */
+  0x19, 0x51,
+};
+
+const uint8_t ubx_cfg_dat_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_DAT,
+  0x00, 0x00,                           /* length, 1 byte */
+  0x0C, 0x2A,
+};
+
+const uint8_t ubx_cfg_gnss_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_GNSS,
+  0x00, 0x00,                           /* length, 1 byte */
+  0x44, 0xD2,
+};
+
+const uint8_t ubx_cfg_inf_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_INF,
+  0x00, 0x00,                           /* length, 1 byte */
+  0x08, 0x1E,
+};
+
 const uint8_t ubx_cfg_prt_poll_spi[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_CFG, UBX_CFG_PRT,
@@ -72,21 +100,6 @@ const uint8_t ubx_cfg_prt_poll_spi[] = {
   UBX_COM_PORT_SPI,
   0x0B, 0x25,
 };
-
-const uint8_t ubx_mon_hw_poll[] = {
-  UBX_SYNC1,     UBX_SYNC2,
-  UBX_CLASS_MON, UBX_MON_HW,
-  0x00, 0x00,                           /* length, 0, poll */
-  0x13, 0x43,
-};
-
-const uint8_t ubx_mon_ver_poll[] = {
-  UBX_SYNC1,     UBX_SYNC2,
-  UBX_CLASS_MON, UBX_MON_VER,
-  0x00, 0x00,                           /* length, 0, poll */
-  0x0E, 0x34,
-};
-
 
 /*
  * tx-ready setting
@@ -137,6 +150,65 @@ const uint8_t ubx_cfg_prt_spi_txrdy[] = {
   0x00, 0x00,                           /* flags, no extendedTxTimeout */
   0x00, 0x00,                           /* reserved */
   0x07, 0x4E,
+};
+
+const uint8_t ubx_cfg_rate_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_RATE,
+  0x00, 0x00,
+  0x0e, 0x30,
+};
+
+const uint8_t ubx_cfg_tp5_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_TP5,           /* time pulse 0 */
+  0x00, 0x00,                           /* length, 0 bytes, poll */
+  0x37, 0xAB,
+};
+
+const uint8_t ubx_cfg_tp5_0_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_TP5,           /* time pulse 0 */
+  0x01, 0x00,                           /* length, 1 bytes, poll */
+  0x00,
+  0x38, 0xE5,
+};
+
+const uint8_t ubx_cfg_tp5_1_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_TP5,           /* time pulse 0 */
+  0x01, 0x00,                           /* length, 1 bytes, poll */
+  0x01,
+  0x39, 0xE6,
+};
+
+const uint8_t ubx_mon_hw_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_MON, UBX_MON_HW,
+  0x00, 0x00,                           /* length, 0, poll */
+  0x13, 0x43,
+};
+
+const uint8_t ubx_mon_io_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_MON, UBX_MON_IO,
+  0x00, 0x00,
+  0x0C, 0x2E,
+};
+
+const uint8_t ubx_mon_ver_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_MON, UBX_MON_VER,
+  0x00, 0x00,                           /* length, 0, poll */
+  0x0E, 0x34,
+};
+
+
+const uint8_t ubx_tim_tp_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_TIM, UBX_TIM_TP,
+  0x00, 0x00,                           /* length, 0 bytes, poll */
+  0x0E, 0x37,
 };
 
 
