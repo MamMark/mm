@@ -514,7 +514,7 @@ implementation {
     gpsc_log_event(GPSE_ABORT, reason);
     switch(gpsc_state) {
       default:
-        gps_panic(18, gpsc_state, 0);
+        gps_panic(20, gpsc_state, 0);
         return;
 
       case GPSC_CONFIG_BOOT:
@@ -573,7 +573,7 @@ implementation {
 
     rx_msg = call MsgBuf.msg_next(lenp, &rtp, &markp);
     if (!rx_msg)
-      gps_panic(0, 0, 0);
+      gps_panic(21, 0, 0);
     collect_gps_pak(rx_msg, *lenp, GPS_DIR_RX);
     return rx_msg;
   }
@@ -835,7 +835,7 @@ implementation {
     uint32_t t0, t1;
 
     if (gpsc_state != GPSC_OFF)
-      gps_panic(1, gpsc_state, 0);
+      gps_panic(24, gpsc_state, 0);
 
     t_gps_pwr_on = call LocalTime.get();
     call HW.gps_txrdy_int_disable();        /* no need for it yet. */
@@ -862,7 +862,7 @@ implementation {
     do {
       t1 = call Platform.usecsRaw();
       if (t1 - t0 > 524288)
-        gps_panic(1, gpsc_state, t1 - t0);
+        gps_panic(25, gpsc_state, t1 - t0);
 
       /*
        * We just booted.  We don't know the configuration of the GPS chip.
@@ -913,8 +913,8 @@ implementation {
     while (TRUE) {
       t1 = call Platform.usecsRaw();
       if (t1 - t0 > 104858)
-        gps_panic(16, gpsc_state, 0);
       WIGGLE_EXC;
+        gps_panic(26, gpsc_state, 0);
       ubx_send_msg((void *) ubx_mon_ver_poll, sizeof(ubx_mon_ver_poll));
       WIGGLE_EXC;
       ubx_get_msgs(104858, TRUE);
