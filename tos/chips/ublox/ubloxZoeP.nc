@@ -48,17 +48,19 @@ typedef enum {
   GPSC_CONFIG_CHK       = 6,            /* configuration check     */
   GPSC_CONFIG_SET_TXRDY = 7,            /* need txrdy configured   */
   GPSC_CONFIG_TXRDY_ACK = 8,            /* waiting for ack         */
-  GPSC_CONFIG_DONE      = 9,            /* good to go */
-  GPSC_VER_WAIT         = 10,           /* waiting for ver string  */
-  GPSC_VER_DONE         = 11,           /* found it. */
+  GPSC_CONFIG_DONE      = 9,            /* good to go              */
+  GPSC_CONFIG_MSG       = 10,           /* configuring msgs        */
+  GPSC_CONFIG_MSG_ACK   = 11,           /* waiting for config ack  */
+  GPSC_VER_WAIT         = 12,           /* waiting for ver string  */
+  GPSC_VER_DONE         = 13,           /* found it. */
 
-  GPSC_PWR_UP_WAIT      = 12,           /* waiting for power up    */
+  GPSC_PWR_UP_WAIT      = 14,           /* waiting for power up    */
 
-  GPSC_HIBERNATE        = 13,           // place holder
+  GPSC_HIBERNATE        = 15,           // place holder
 
-  GPSC_RESET_WAIT       = 14,           /* reset dwell */
+  GPSC_RESET_WAIT       = 16,           /* reset dwell */
 
-  GPSC_FAIL             = 15,
+  GPSC_FAIL             = 17,
 
 } gpsc_state_t;                         // gps control state
 
@@ -132,9 +134,32 @@ typedef struct {
 #define GPS_MAX_EVENTS 32
 
 gps_ev_t g_evs[GPS_MAX_EVENTS];
-uint8_t g_nev;                          // next gps event
+uint8_t  g_nev;                         // next gps event
 
 #endif   // GPS_LOG_EVENTS
+
+
+typedef struct {
+  uint8_t id;
+  uint8_t rate;
+} ubx_nav_cfg_t;
+
+
+ubx_nav_cfg_t ubx_nav_cfgs[] = {
+  { UBX_NAV_AOPSTATUS,  1},
+  { UBX_NAV_PVT,        1},
+  { UBX_NAV_POSECEF,    1},
+  { UBX_NAV_STATUS,     1},
+  { UBX_NAV_CLOCK,      1},
+  { UBX_NAV_DOP,        1},
+  { UBX_NAV_ORB,        1},
+  { UBX_NAV_SAT,        1},
+  { UBX_NAV_EOE,        1},
+  { UBX_NAV_TIMELS,     1},
+  { UBX_NAV_TIMEUTC,    1},
+  { UBX_NAV_TIMEGPS,    1},
+  { 0, 0 },
+};
 
 
 module ubloxZoeP {
@@ -245,6 +270,8 @@ implementation {
         case GPSC_PWR_UP_WAIT:          WIGGLE_TELL;
         case GPSC_VER_DONE:             WIGGLE_TELL;
         case GPSC_VER_WAIT:             WIGGLE_TELL;
+        case GPSC_CONFIG_MSG_ACK:       WIGGLE_TELL;
+        case GPSC_CONFIG_MSG:           WIGGLE_TELL;
         case GPSC_CONFIG_DONE:          WIGGLE_TELL;
         case GPSC_CONFIG_TXRDY_ACK:     WIGGLE_TELL;
         case GPSC_CONFIG_SET_TXRDY:     WIGGLE_TELL;
@@ -437,6 +464,8 @@ implementation {
       case GPSC_CONFIG_SET_TXRDY:
       case GPSC_CONFIG_TXRDY_ACK:
       case GPSC_CONFIG_DONE:
+      case GPSC_CONFIG_MSG:
+      case GPSC_CONFIG_MSG_ACK:
       case GPSC_VER_WAIT:
       case GPSC_VER_DONE:
         gpsc_change_state(gpsc_state, GPSW_PROTO_START);
@@ -463,6 +492,8 @@ implementation {
       case GPSC_CONFIG_SET_TXRDY:
       case GPSC_CONFIG_TXRDY_ACK:
       case GPSC_CONFIG_DONE:
+      case GPSC_CONFIG_MSG:
+      case GPSC_CONFIG_MSG_ACK:
       case GPSC_VER_WAIT:
       case GPSC_VER_DONE:
         next_state = gpsc_state;
@@ -491,6 +522,8 @@ implementation {
       case GPSC_CONFIG_SET_TXRDY:
       case GPSC_CONFIG_TXRDY_ACK:
       case GPSC_CONFIG_DONE:
+      case GPSC_CONFIG_MSG:
+      case GPSC_CONFIG_MSG_ACK:
       case GPSC_VER_WAIT:
       case GPSC_VER_DONE:
       case GPSC_ON:
@@ -595,7 +628,6 @@ implementation {
               rtn = TRUE;
               break;
 
-
             case GPSC_CONFIG_TXRDY_ACK:
               ubx_ack = (void *) rx_msg;
               if (ubx_ack->class    != UBX_CLASS_ACK    ||
@@ -605,11 +637,20 @@ implementation {
                   ubx_ack->ackId    != UBX_CFG_PRT)
                 break;
 
-              /*
-               * stop collecting messages (rtn TRUE) and tell
-               * the state machine to verify the configuration.
-               */
               gpsc_change_state(GPSC_CONFIG_CHK, GPSW_BOOT);
+              rtn = TRUE;
+              break;
+
+            case GPSC_CONFIG_MSG_ACK:
+              ubx_ack = (void *) rx_msg;
+              if (ubx_ack->class    != UBX_CLASS_ACK    ||
+                  ubx_ack->id       != UBX_ACK_ACK      ||
+                  ubx_ack->len      != 2                ||
+                  ubx_ack->ackClass != UBX_CLASS_CFG    ||
+                  ubx_ack->ackId    != UBX_CFG_MSG)
+                break;
+
+              gpsc_change_state(GPSC_CONFIG_MSG, GPSW_BOOT);
               rtn = TRUE;
               break;
 
@@ -742,6 +783,46 @@ implementation {
   }
 
 
+  void configure_msgs() {
+    ubx_nav_cfg_t *ncp;
+    ubx_cfg_msg_t  cfgmsg;
+    uint16_t       chk;
+
+    ncp = &ubx_nav_cfgs[0];
+    cfgmsg.sync1 = UBX_SYNC1;
+    cfgmsg.sync2 = UBX_SYNC2;
+    cfgmsg.class = UBX_CLASS_CFG;
+    cfgmsg.id    = UBX_CFG_MSG;
+    cfgmsg.len   = 3;
+    cfgmsg.msgClass = UBX_CLASS_NAV;
+    while (ncp->rate) {
+      gpsc_change_state(GPSC_CONFIG_MSG, GPSW_BOOT);
+      cfgmsg.msgId = ncp->id;
+      cfgmsg.rate  = ncp->rate;
+      chk = call ubxProto.fletcher8((void *) &cfgmsg.class, cfgmsg.len + UBX_CHKSUM_ADJUST);
+      cfgmsg.chkA = chk >> 8;
+      cfgmsg.chkB = chk & 0xff;
+      ubx_send_msg((void *) &cfgmsg, sizeof(cfgmsg));
+      gpsc_change_state(GPSC_CONFIG_MSG_ACK, GPSW_BOOT);
+      ubx_get_msgs(104858, TRUE);
+      if (gpsc_state != GPSC_CONFIG_MSG)
+        gps_panic(22, 0, 0);
+      ncp++;
+    }
+    cfgmsg.msgClass = UBX_CLASS_TIM;
+    cfgmsg.msgId    = UBX_TIM_TP;
+    cfgmsg.rate     = 1;
+    chk = call ubxProto.fletcher8((void *) &cfgmsg.class, cfgmsg.len + UBX_CHKSUM_ADJUST);
+    cfgmsg.chkA = chk >> 8;
+    cfgmsg.chkB = chk & 0xff;
+    ubx_send_msg((void *) &cfgmsg, sizeof(cfgmsg));
+    gpsc_change_state(GPSC_CONFIG_MSG_ACK, GPSW_BOOT);
+    ubx_get_msgs(104858, TRUE);
+    if (gpsc_state != GPSC_CONFIG_MSG)
+      gps_panic(23, 0, 0);
+  }
+
+
   /*
    * Standalone initilizer for Ubx M8 based gps chips.
    *
@@ -777,66 +858,51 @@ implementation {
       if (t1 - t0 > 104858)
         break;
     }
-    WIGGLE_EXC;
-    ubx_clean_pipe(209715);             /* 200 ms, or empty pipe */
-
-    gpsc_change_state(GPSC_CONFIG_CHK, GPSW_BOOT);
     t0 = call Platform.usecsRaw();
     do {
       t1 = call Platform.usecsRaw();
       if (t1 - t0 > 524288)
         gps_panic(1, gpsc_state, t1 - t0);
 
-      ubx_send_msg((void *) ubx_cfg_prt_poll_spi,  sizeof(ubx_cfg_prt_poll_spi));
-      WIGGLE_EXC;
-      ubx_get_msgs(104858, FALSE);
-      WIGGLE_EXC;
       /*
-       * "State" tells the story of what happened if anything.
+       * We just booted.  We don't know the configuration of the GPS chip.
+       * Send the port configuraton first to enable TXRDY.
        *
-       * o GPSC_CONFIG_CHK: poll_spi must have gotten clobbered, just send the
-       *     prt_spi_txrdy command anyway.
-       * o GPSC_CONFIG_SET_TXRDY: got the poll_spi_rsp but txrdy isn't set
-       *     to the desirec value.
-       * o GPSC_CONFIG_DONE: saw a good response to the poll_spi.  TxRdy is set
-       *     properly.  Just move on.
+       * waiting for the TXRDY_ACK.
        *
-       * After forcing the spi_txrdy, loop back and do a spi_poll to make sure
-       * that it took.
+       * CONFIG_BOOT -> CONFIG_TXRDY_ACK -> CONFIG_CHK
        *
-       * We will try for a maximum of about 100ms.
+       * After sending the CFG_PRT, the ublox will reset the SPI pipeline.
+       * When the pipe is back up, the ublox will send an appropriate ACK.
+       * This ACK will cause a state change.
        */
-      if (gpsc_state != GPSC_CONFIG_DONE) {
-        /*
-         * We want to reconfigure the SPI port to enable the TXRDY pin.
-         *
-         * First we suck any pending data from the pipe, this most likely
-         * is the ACK for an early prt_spi_poll message.  This ack looks
-         * exactly the same as the ACK for the prt_spi_txrdy message.
-         *
-         * After we send the prt_spi_txrdy message, the ublox will reset
-         * the spi pipeline.  This will mess with any packet in progress.
-         * After the configuration is complete, the ublox will place the
-         * ack response into the spi pipeline.  This is the ack we look
-         * for.  We then return to CONFIG_CHK to verify that txrdy has
-         * been properly set.
-         *
-         * The only real effect of this it will shorten the time to
-         * configuration complete because it makes ubx_get_msgs() return
-         * before the end of the duration.
-         *
-         * Once we see the ACK for the PRT_SPI_TXRDY message we know it
-         * is safe to send the verification poll.  That the spi pipe won't
-         * get wacked.  The wackage has been completed.
-         */
-        ubx_clean_pipe(209715);             /* 200 ms, or empty pipe */
-        gpsc_change_state(GPSC_CONFIG_TXRDY_ACK, GPSW_BOOT);
-        ubx_send_msg((void *) ubx_cfg_prt_spi_txrdy, sizeof(ubx_cfg_prt_spi_txrdy));
-        WIGGLE_EXC;
-        ubx_get_msgs(104858, FALSE);
-        WIGGLE_EXC;
-      }
+      gpsc_change_state(GPSC_CONFIG_TXRDY_ACK, GPSW_BOOT);
+      ubx_send_msg((void *) ubx_cfg_prt_spi_txrdy, sizeof(ubx_cfg_prt_spi_txrdy));
+      ubx_get_msgs(104858, FALSE);
+
+      /*
+       * sent reconfig to turn on TXRDY (nmea off, ubx on).  See if it took.
+       * We ignore whether the TXRDY ack occured.  Simply send the poll to
+       * verify if the configuration command too.
+       *
+       * Once we see the ACK for the PRT_SPI_TXRDY message we know it
+       * is safe to send the verification poll.  That the spi pipe won't
+       * get wacked.  The wackage has been completed.
+       */
+
+      ubx_send_msg((void *) ubx_cfg_prt_poll_spi,  sizeof(ubx_cfg_prt_poll_spi));
+      ubx_get_msgs(104858, FALSE);
+
+      /*
+       *               CONFIG_TXRDY_ACK     send timed out
+       * CONFIG_CHK -> CONFIG_SET_TXRDY     wrong setting, try again
+       * CONFIG_CHK -> CONFIG_DONE          proceed.
+       */
+
     } while (gpsc_state != GPSC_CONFIG_DONE);
+
+    ubx_clean_pipe(104858);
+    configure_msgs();
 
     gpsc_change_state(GPSC_VER_WAIT, GPSW_BOOT);
     WIGGLE_EXC;
