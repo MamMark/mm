@@ -48,6 +48,7 @@ ubx.cid_table[0x0139]   = (decode_null, None, None, 'nav/geofence',     'none')
 ubx.cid_table[0x013B]   = (decode_null, None, None, 'nav/svin',         'none')
 ubx.cid_table[0x013C]   = (decode_null, None, None, 'nav/relposned',    'none')
 ubx.cid_table[0x0143]   = (decode_null, None, None, 'nav/sig',          'none')
+ubx.cid_table[0x0160]   = (decode_null, None, None, 'nav/aopstat',      'none')
 ubx.cid_table[0x0161]   = (decode_null, None, None, 'nav/eoe',          'none')
 
 ubx.cid_table[0x0400]   = (decode_null, None, None, 'inf/error',        'none')

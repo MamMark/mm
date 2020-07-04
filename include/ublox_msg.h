@@ -122,6 +122,7 @@ enum {
   UBX_NAV_SVIN      = 0x3B,     // Survey-in data.  Survey In status.
   UBX_NAV_RELPOSNED = 0x3C,     // Relative Positioning (NED)
   UBX_NAV_SIG       = 0x43,     // Signal Information
+  UBX_NAV_AOPSTATUS = 0x60,     // Auton. Orbit Parameters Status
   UBX_NAV_EOE       = 0x61,     // End of Epoch
 };
 
