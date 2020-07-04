@@ -257,7 +257,7 @@ implementation {
   void gps_hibernate() { }
 
   void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
-#ifdef GPS_DEBUG_DEV
+#ifdef GPS_DEBUG_STATE
     if (next_state != gpsc_state) {
       WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
       nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
@@ -839,7 +839,6 @@ implementation {
 
     t_gps_pwr_on = call LocalTime.get();
     call HW.gps_txrdy_int_disable();        /* no need for it yet. */
-    WIGGLE_EXC;
     gpsc_change_state(GPSC_CONFIG_BOOT, GPSW_BOOT);
     call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, t_gps_pwr_on, 0, 0, 0);
     if (!call HW.gps_powered())
@@ -905,30 +904,21 @@ implementation {
     configure_msgs();
 
     gpsc_change_state(GPSC_VER_WAIT, GPSW_BOOT);
-    WIGGLE_EXC;
     ubx_clean_pipe(104858);
-    WIGGLE_EXC;
     ubx_send_msg((void *) ubx_mon_hw_poll, sizeof(ubx_mon_hw_poll));
     t0 = call Platform.usecsRaw();
     while (TRUE) {
       t1 = call Platform.usecsRaw();
       if (t1 - t0 > 104858)
-      WIGGLE_EXC;
         gps_panic(26, gpsc_state, 0);
       ubx_send_msg((void *) ubx_mon_ver_poll, sizeof(ubx_mon_ver_poll));
-      WIGGLE_EXC;
       ubx_get_msgs(104858, TRUE);
-      WIGGLE_EXC;
       if (gpsc_state == GPSC_VER_DONE)
         break;
     }
 
-    WIGGLE_TELL;
     ubx_clean_pipe(104858);
-    WIGGLE_TELL;
-    WIGGLE_TELL;
     gpsc_change_state(GPSC_ON, GPSW_BOOT);
-    nop();
     call HW.gps_txrdy_int_enable();
     signal Booted.booted();
   }
