@@ -227,6 +227,34 @@ typedef struct {
 } PACKED ubx_cfg_prt_t;
 
 
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;
+  uint8_t   id;
+  uint16_t  len;
+  uint8_t   msgClass;
+  uint8_t   msgId;
+  uint8_t   rate;
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_cfg_msg_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;
+  uint8_t   id;
+  uint16_t  len;
+  uint16_t  measRate;
+  uint16_t  navRate;
+  uint16_t  timeRef;
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_cfg_rate_t;
+
+
 /* UBX_CLASS_MON (0A) */
 enum {
   UBX_MON_IO        = 0x02,     // I/O Subsystem Status
