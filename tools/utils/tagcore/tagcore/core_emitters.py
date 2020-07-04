@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev2'
+__version__ = '0.4.8.dev3'
 
 from   ctypes       import c_int32
 from   binascii     import hexlify
@@ -903,7 +903,7 @@ def emit_gps_proto_stats(level, offset, buf, obj):
 ########################################################################
 #
 # main gps raw emitter, displays DT_GPS_RAW
-# obj_dt_gps_raw, 2nd level emit on mid
+# obj_dt_gps_raw, 2nd level emit on ubx class/id (cid)
 #
 
 def emit_gps_raw(level, offset, buf, obj):
@@ -939,8 +939,8 @@ def emit_gps_raw(level, offset, buf, obj):
     decoder_obj = v[CID_OBJECT]         # object
     cid_name    = v[CID_NAME]
 
-    print(' -- UBX: <{:2}> [{:s}]<{:04x}> ({:02x})'.format(
-        dir_str, cid_name, cid, ubx_len), end = '')
+    print(' -- UBX: <{:2}> {:16s}<{:04x}> ({:02x})'.format(
+        dir_str, '[{:s}]'.format(cid_name), cid, ubx_len), end = '')
 
     if not emitters or len(emitters) == 0:
         print()
