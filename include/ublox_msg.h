@@ -59,7 +59,7 @@
  * If we are eavesdropping then we want to see everything
  */
 #define UBX_MIN_MSG     0
-#define UBX_MAX_MSG     200
+#define UBX_MAX_MSG     512
 
 
 typedef struct {
