@@ -88,7 +88,8 @@ const uint8_t ubx_mon_ver_poll[] = {
 };
 
 
-/* tx-ready setting
+/*
+ * tx-ready setting
  *
  * threshold 8 bytes (1),      << 7
  * pin      13       (13, 0xd) << 2
@@ -110,14 +111,18 @@ const uint8_t ubx_cfg_prt_spi_notxrdy[] = {
   0x00, 0x00,
   0x00, 0x32, 0x00, 0x00,               /* spi mode 0, ffCnt */
   0x00, 0x00, 0x00, 0x00,               /* reserved */
-  0x07, 0x00,                           /* inProtoMask, Rtcm, Nmea, Ubx */
-  0x03, 0x00,                           /* outProtoMask, Nmea, Ubx */
+  0x01, 0x00,                           /* inProtoMask, Ubx */
+  0x01, 0x00,                           /* outProtoMask, Ubx */
   0x00, 0x00,                           /* flags, no extendedTxTimeout */
   0x00, 0x00,                           /* reserved */
-  0x5a, 0xd0,
+  0x52, 0x94,
 };
 
-
+/*
+ * CFG-PRT-SPI
+ *
+ * enable txRdy on PIO13, turn off NMEA and RTCM, only UBX.
+ */
 const uint8_t ubx_cfg_prt_spi_txrdy[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_CFG, UBX_CFG_PRT,           /* Config Port */
@@ -127,11 +132,11 @@ const uint8_t ubx_cfg_prt_spi_txrdy[] = {
   UBX_TXRDY_VAL, 0x00,
   0x00, 0x32, 0x00, 0x00,               /* spi mode 0, ffCnt */
   0x00, 0x00, 0x00, 0x00,               /* reserved */
-  0x07, 0x00,                           /* inProtoMask, Rtcm, Nmea, Ubx */
-  0x03, 0x00,                           /* outProtoMask, Nmea, Ubx */
+  0x01, 0x00,                           /* inProtoMask, Ubx */
+  0x01, 0x00,                           /* outProtoMask, Ubx */
   0x00, 0x00,                           /* flags, no extendedTxTimeout */
   0x00, 0x00,                           /* reserved */
-  0x0F, 0x8A,
+  0x07, 0x4E,
 };
 
 
