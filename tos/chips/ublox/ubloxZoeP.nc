@@ -937,18 +937,14 @@ implementation {
       call HW.gps_pwr_on();
     call HW.gps_set_reset();
     t0 = call Platform.usecsRaw();
-    while (1) {
+    do {
       t1 = call Platform.usecsRaw();
-      if (t1 - t0 > 104858)
-        break;
-    }
+    } while ((t1 - t0) < 11000);
     call HW.gps_clr_reset();
     t0 = call Platform.usecsRaw();
-    while (1) {
+    do {
       t1 = call Platform.usecsRaw();
-      if (t1 - t0 > 104858)
-        break;
-    }
+    } while ((t1 - t0) < 104858);
     t0 = call Platform.usecsRaw();
     do {
       t1 = call Platform.usecsRaw();

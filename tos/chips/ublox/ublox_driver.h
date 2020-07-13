@@ -68,7 +68,7 @@
 const uint8_t ubx_cfg_ant_poll[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_CFG, UBX_CFG_ANT,
-  0x00, 0x00,                           /* length, 1 byte */
+  0x00, 0x00,
   0x19, 0x51,
 };
 
@@ -107,21 +107,21 @@ const uint8_t ubx_cfg_cfg_save[] = {
 const uint8_t ubx_cfg_dat_poll[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_CFG, UBX_CFG_DAT,
-  0x00, 0x00,                           /* length, 1 byte */
+  0x00, 0x00,
   0x0C, 0x2A,
 };
 
 const uint8_t ubx_cfg_gnss_poll[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_CFG, UBX_CFG_GNSS,
-  0x00, 0x00,                           /* length, 1 byte */
+  0x00, 0x00,
   0x44, 0xD2,
 };
 
 const uint8_t ubx_cfg_inf_poll[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_CFG, UBX_CFG_INF,
-  0x00, 0x00,                           /* length, 1 byte */
+  0x00, 0x00,
   0x08, 0x1E,
 };
 
