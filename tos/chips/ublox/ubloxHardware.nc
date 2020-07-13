@@ -25,7 +25,8 @@
  * Following pins can be manipulated:
  *
  *  gps_csn():            (set/clr) chip select.
- *  gps_reset():          (set/clr) access to reset pin.
+ *  gps_reset_pin():      (set/clr) access to reset pin.
+ *  gps_sw_reset():       s/w reset message
  *
  *  gps_pwr_on():         turn pwr on (really?)
  *  gps_pwr_off():        your guess here.
@@ -57,6 +58,7 @@ interface ubloxHardware {
   command void gps_set_cs();
   command void gps_clr_cs();
 
+  command void gps_sw_reset(uint16_t bbr_mask, uint8_t reset_mode);
   command void gps_set_reset();
   command void gps_clr_reset();
 

@@ -245,6 +245,48 @@ typedef struct {
 } PACKED ubx_cfg_msg_t;
 
 
+enum {
+  /* CFG_RST.navBbrMask */
+  UBX_CFG_RST_BBR_HOT           = 0x0000,
+  UBX_CFG_RST_BBR_WARM          = 0x0001,
+  UBX_CFG_RST_BBR_COLD          = 0xffff,
+
+  UBX_CFG_RST_BBR_AOP           = 0x8000,
+  UBX_CFG_RST_BBR_RTC           = 0x0100,
+  UBX_CFG_RST_BBR_UTC           = 0x0080,
+  UBX_CFG_RST_BBR_OSC           = 0x0040,
+  UBX_CFG_RST_BBR_CLKD          = 0x0020,
+  UBX_CFG_RST_BBR_POS           = 0x0010,
+  UBX_CFG_RST_BBR_KLOB          = 0x0008,
+  UBX_CFG_RST_BBR_HEALTH        = 0x0004,
+  UBX_CFG_RST_BBR_ALM           = 0x0002,
+  UBX_CFG_RST_BBR_EPH           = 0x0001,
+};
+
+enum {
+  /* CFG_RST.resetMode */
+  UBX_CFG_RST_RESET_HW_WDOG     = 0,
+  UBX_CFG_RST_RESET_SW          = 1,
+  UBX_CFG_RST_RESET_SW_GNSS     = 2,
+  UBX_CFG_RST_RESET_HW_SHUT     = 4,    /* hw reset after shutdown */
+  UBX_CFG_RST_RESET_GNSS_STOP   = 8,    /* controlled GNSS stop    */
+  UBX_CFG_RST_RESET_GNSS_START  = 9,    /* controlled GNSS start   */
+};
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;
+  uint8_t   id;
+  uint16_t  len;                        /* 4 */
+  uint16_t  navBbrMask;
+  uint8_t   resetMode;
+  uint8_t   reserved1;
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_cfg_rst_t;
+
+
 typedef struct {
   uint8_t   sync1;
   uint8_t   sync2;

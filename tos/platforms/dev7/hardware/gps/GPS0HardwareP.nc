@@ -160,6 +160,44 @@ implementation {
   }
 
 
+  command void HW.gps_sw_reset(uint16_t bbr_mask, uint8_t reset_mode) {
+    uint32_t      t0, t1, len;
+    ubx_cfg_rst_t rstmsg;
+    uint16_t      chk;
+    uint8_t      *outp;
+
+    /* first hold CS up for at least 1 ms, then reassert */
+    t0 = call Platform.usecsRaw();
+    call HW.gps_clr_cs();
+    call HW.spi_clr_port();
+    do {
+      t1 = call Platform.usecsRaw();
+    } while ((t1 - t0) < 1200);
+    call HW.gps_set_cs();
+    rstmsg.sync1        = UBX_SYNC1;
+    rstmsg.sync2        = UBX_SYNC2;
+    rstmsg.class        = UBX_CLASS_CFG;
+    rstmsg.id           = UBX_CFG_RST;
+    rstmsg.len          = 4;
+    rstmsg.navBbrMask   = bbr_mask;
+    rstmsg.resetMode    = reset_mode;
+    rstmsg.reserved1    = 0;
+    chk = call ubxProto.fletcher8((void *) &rstmsg.class, rstmsg.len + UBX_CHKSUM_ADJUST);
+    rstmsg.chkA = chk >> 8;
+    rstmsg.chkB = chk & 0xff;
+    outp = (void *) &rstmsg;
+    len  = sizeof(rstmsg);
+    signal HW.gps_raw_collect(outp, len, GPS_DIR_TX);
+    call HW.spi_put(0xff);
+    while (len) {
+      call HW.spi_getput(*outp++);
+      len--;
+    }
+    call HW.spi_getput(0xff);           /* make sure last byte gets out */
+    call HW.spi_get();
+  }
+
+
   /*
    * driver_task: handle transmit and receive from the SPI pipe.
    *
