@@ -39,6 +39,9 @@
  *  spi_get():            splitRead()      w timeout
  *  spi_getput():         splitReadWrite() w timeout
  *
+ *  spi_pipe_stall():     signal indicating that the spi pipe has stalled.
+ *  spi_pipe_restart():   restart spi pipeline.
+ *
  *  gps_txrdy():             returns state of txrdy pin
  *  gps_txrdy_int_enabled(): returns state of txrdy interrupt
  *  gps_txrdy_int_enable():  enable/disable txrdy interrupt.
@@ -70,6 +73,9 @@ interface ubloxHardware {
   command void    spi_put(uint8_t byte);
   command uint8_t spi_get();
   command uint8_t spi_getput(uint8_t byte);
+
+  event   void    spi_pipe_stall();
+  command void    spi_pipe_restart();
 
   command bool gps_txrdy();
   command bool gps_txrdy_int_enabled();

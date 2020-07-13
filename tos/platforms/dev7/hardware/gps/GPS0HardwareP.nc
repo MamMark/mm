@@ -284,6 +284,11 @@ implementation {
   }
 
 
+  command void HW.spi_pipe_restart() {
+    WIGGLE_TELL; WIGGLE_EXC; WIGGLE_TELL;
+    post driver_task();
+  }
+
   command bool HW.gps_txrdy() {
     return UBX_TXRDY_P;
   }

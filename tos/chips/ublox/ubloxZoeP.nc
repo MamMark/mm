@@ -853,11 +853,59 @@ implementation {
     if (gpsc_state != GPSC_CONFIG_DONE)
       gps_panic(27, 0, 0);
   }
+
+
+  /*
+   * the spi pipe has stall.
+   *
+   * we free it up by sending the spi port reconfigu command.
+   */
+  event void HW.spi_pipe_stall() {
+    uint32_t      t0, t1, t5;
+    gpsc_state_t  prev_state;
+
+    prev_state = gpsc_state;
+    t5 = call Platform.usecsRaw();
+
+    while (TRUE) {
+      t1 = call Platform.usecsRaw();
+      if ((t1 - t5) > 524288)
+        gps_panic(27, t1 - t5, 0);
+
+      gpsc_change_state(GPSC_RESTART_WAIT, GPSW_PIPE_RESTART);
+
+      /* first hold CS up for at least 1 ms, then reassert */
+      call HW.gps_clr_cs();
+      t0 = call Platform.usecsRaw();
+      call HW.spi_clr_port();
+      do {
+        t1 = call Platform.usecsRaw();
+      } while ((t1 - t0) < 1200);
+
+      call HW.gps_set_cs();
+      ubx_send_msg((void *) ubx_cfg_prt_spi_txrdy, sizeof(ubx_cfg_prt_spi_txrdy));
+
+      call HW.gps_clr_cs();
+      t0 = call Platform.usecsRaw();
+      call HW.spi_clr_port();
+      do {
+        t1 = call Platform.usecsRaw();
+      } while ((t1 - t0) < 1200);
+
+      call HW.gps_set_cs();
+      ubx_get_msgs(104858, FALSE);
+
+      if (gpsc_state == GPSC_CONFIG_DONE)
+        break;
+    };
+
+    gpsc_change_state(prev_state, GPSW_PIPE_RESTART);
+    call HW.spi_pipe_restart();
   }
 
 
   /*
-   * Standalone initilizer for Ubx M8 based gps chips.
+   * Standalone initializer for Ubx M8 based gps chips.
    *
    * o get  HW and SW verions to stash
    * o enable TxRdy
