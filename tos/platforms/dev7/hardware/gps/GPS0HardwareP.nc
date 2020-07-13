@@ -24,8 +24,10 @@
 #include <platform_panic.h>
 #include <msp432.h>
 #include <platform.h>
+#include <typed_data.h>
 #include <gpsproto.h>
-#include <gps_ublox.h>
+#include <ublox_msg.h>
+#include <ublox_driver.h>
 
 #ifndef PANIC_GPS
 enum {
@@ -228,26 +230,40 @@ implementation {
 
   task void driver_task() {
     uint8_t  data;
-    uint32_t byte_count;
+    uint32_t byte_count, hang_count;
 
+    hang_count = 64;
     call HW.gps_txrdy_int_disable();
     do {
       WIGGLE_EXC; WIGGLE_TELL; WIGGLE_EXC; WIGGLE_TELL;
       if (!m_tx_buf && !UBX_TXRDY_P) {
         /*
-         * if a TXRDY int occurred while driver_task is running (not on the
-         * task_queue and activated), driver_task will get posted.
+         * If m_tx_buf is empty (no transmit in progress) and TXRDY is
+         * deasserted (no data available coming from the gps), there there
+         * no work for driver_task to do.  How can this happen?
          *
-         * The currently running driver_task will empty the pipe until
-         * TXRDY becomes deasserted.  When driver_task runs again it will
-         * see no work because the current invokation will have handled
-         * everything.
+         * Once driver_task is invoked (executing or posted to execute), it
+         * will complete the transmit and/or any incoming receive.
          *
-         * We take pains to prevent the interrupt while driver_task is
-         * active.  But there is still a window.  It opens when driver_task
-         * is removed from the task_queue and closes when txrdy_int is
-         * disabled above.  So we could still have a no work driver_task
-         * launch.
+         * There is a window during which if the TXRDY interrupt occurs, it
+         * can cause driver_task to be reposted.  This window opens when
+         * the scheduler has removed driver_task from the taskq.  The window
+         * closed above when the txrdy_int is disabled.  If we take a TXRDY
+         * interrupt during that window, it will repost driver_task.
+         *
+         * The currently running/activated driver_task will empty the pipe
+         * until TXRDY becomes deasserted.  When driver_task runs again it
+         * will see no work because the current invokation will have
+         * handled everything.
+         *
+         * That is what the above check guards agains.
+         *
+         * We also check to see if the pipeline has gone to sleep.  We
+         * detect this when TXRDY stays up but we keep reading idle bytes
+         * (0xFF).  If we see hang_count bytes of IDLE we will reset the
+         * pipe by toggling CS.
+         *
+         * Error handling still needs to be sorted out.
          */
         break;
       }
@@ -263,9 +279,26 @@ implementation {
           m_tx_len = 0;
           signal HW.gps_send_done(SUCCESS);
         }
-        if (UBX_TXRDY_P || data != 0xff) {
+        if (data != 0xff) {
           byte_count = 8;
+          hang_count = 64;
           continue;
+        }
+        if (UBX_TXRDY_P) {
+          byte_count = 8;
+          hang_count--;
+          if (hang_count)
+            continue;
+
+          signal HW.spi_pipe_stall();
+
+          /*
+           * note spi_pipe_stall will have fixed the pipe.  It completely
+           * resets the pipe so we really need to bail out.  But first
+           * reenable the txrdy interrupt.
+           */
+          call HW.gps_txrdy_int_enable();
+          return;
         }
 
         byte_count--;
@@ -274,7 +307,6 @@ implementation {
       }
       data = call HW.spi_get();
       signal HW.gps_byte_avail(data);
-      nop();
     } while (UBX_TXRDY_P);
     call HW.gps_txrdy_int_enable();
     /*

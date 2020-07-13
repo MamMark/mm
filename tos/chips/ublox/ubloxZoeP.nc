@@ -44,6 +44,7 @@ typedef enum {
   GPSC_ON_TX            = 3,            // doing transmit, txtimer running.
   GPSC_ON_RX_TX         = 4,            // not really used.  TX atomic
 
+  GPSC_RESTART_WAIT     = 5,            // waiting for pipeline ack
 
   GPSC_CONFIG_BOOT      = 6,            /* bootstrap initilization */
   GPSC_CONFIG_CHK       = 7,            /* configuration check     */
@@ -79,6 +80,7 @@ typedef enum {
   GPSW_PROTO_ABORT,
   GPSW_PROTO_END,
   GPSW_TX_SEND,
+  GPSW_PIPE_RESTART,
 } gps_where_t;
 
 
@@ -90,6 +92,7 @@ typedef enum {
   GPSE_ABORT,                           /* protocol abort */
   GPSE_TX_POST,                         /* tx h/w int posted */
   GPSE_TIMEOUT,                         /* timeout */
+  GPSE_PIPE_RESTART,                    /* pipeline restart */
 } gps_event_t;
 
 
@@ -280,6 +283,7 @@ implementation {
         case GPSC_CONFIG_SET_TXRDY:     WIGGLE_TELL;
         case GPSC_CONFIG_CHK:           WIGGLE_TELL;
         case GPSC_CONFIG_BOOT:          WIGGLE_TELL;
+        case GPSC_RESTART_WAIT:         WIGGLE_TELL;
         case GPSC_ON_RX_TX:             WIGGLE_TELL;
         case GPSC_ON_TX:                WIGGLE_TELL;
         case GPSC_ON_RX:                WIGGLE_TELL;
@@ -461,7 +465,8 @@ implementation {
         gps_panic(17, gpsc_state, 0);
         return;
 
-        /* not running any time out, stand alone */
+      /* not running any time out, stand alone */
+      case GPSC_RESTART_WAIT:
       case GPSC_CONFIG_BOOT:            /* stay */
       case GPSC_CONFIG_CHK:
       case GPSC_CONFIG_SET_TXRDY:
@@ -491,6 +496,7 @@ implementation {
         gps_panic(19, gpsc_state, 0);
         return;
 
+      case GPSC_RESTART_WAIT:
       case GPSC_CONFIG_BOOT:            /* stay */
       case GPSC_CONFIG_CHK:
       case GPSC_CONFIG_SET_TXRDY:
@@ -522,6 +528,7 @@ implementation {
         gps_panic(20, gpsc_state, 0);
         return;
 
+      case GPSC_RESTART_WAIT:
       case GPSC_CONFIG_BOOT:
       case GPSC_CONFIG_CHK:
       case GPSC_CONFIG_SET_TXRDY:
@@ -640,6 +647,7 @@ implementation {
               rtn = TRUE;
               break;
 
+            case GPSC_RESTART_WAIT:
             case GPSC_CONFIG_TXRDY_ACK:
               ubx_ack = (void *) rx_msg;
               if (ubx_ack->class    != UBX_CLASS_ACK    ||
@@ -649,7 +657,10 @@ implementation {
                   ubx_ack->ackId    != UBX_CFG_PRT)
                 break;
 
-              gpsc_change_state(GPSC_CONFIG_CHK, GPSW_BOOT);
+              if (gpsc_state == GPSC_RESTART_WAIT)
+                gpsc_change_state(GPSC_CONFIG_DONE, GPSW_PIPE_RESTART);
+              else
+                gpsc_change_state(GPSC_CONFIG_CHK, GPSW_BOOT);
               rtn = TRUE;
               break;
 
