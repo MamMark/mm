@@ -590,6 +590,11 @@ implementation {
   }
 
 
+  event void HW.gps_raw_collect(uint8_t *pak, uint16_t len, uint8_t dir) {
+    collect_gps_pak(pak, len, dir);
+  }
+
+
   /*
    * returns TRUE if state change
    */
@@ -611,6 +616,7 @@ implementation {
             return FALSE;
           if (rx_msg[0] == '$')         /* nmea */
             break;
+
           switch (gpsc_state) {
             default:
               break;

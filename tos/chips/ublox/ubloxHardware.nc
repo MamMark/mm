@@ -47,10 +47,9 @@
  *  gps_send_block_done():
  *  gps_byte_avail():     from h/w driver to gps driver.
  *
- * @author Eric B. Decker <cire831@gmail.com>
+ *  gps_raw_collect():    collect a gps raw packet
  *
- *  gps_rx_err():         report rx errors
- *  gps_clear_rx_errs():  clear rx_errs cells.
+ * @author Eric B. Decker <cire831@gmail.com>
  */
 
 interface ubloxHardware {
@@ -81,4 +80,6 @@ interface ubloxHardware {
   command void gps_send(uint8_t *ptr, uint16_t len);
   event   void gps_send_done(error_t err);
   event   void gps_byte_avail(uint8_t byte);
+
+  event   void gps_raw_collect(uint8_t *pak, uint16_t len, uint8_t dir);
 }
