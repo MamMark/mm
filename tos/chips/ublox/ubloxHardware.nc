@@ -34,6 +34,7 @@
  *
  * data transfer
  *
+ *  spi_clr_port():       put spi port into pristine state.
  *  spi_put():            splitWrite()     w timeout
  *  spi_get():            splitRead()      w timeout
  *  spi_getput():         splitReadWrite() w timeout
@@ -65,6 +66,7 @@ interface ubloxHardware {
   command void gps_pwr_on();
   command void gps_pwr_off();
 
+  command void    spi_clr_port();
   command void    spi_put(uint8_t byte);
   command uint8_t spi_get();
   command uint8_t spi_getput(uint8_t byte);

@@ -112,7 +112,13 @@ implementation {
     /* switch pins, then kill power */
     UBX_PINS_PWR_OFF;
     /* power off */
+
+
+  command void HW.spi_clr_port() {
+    call Usci.enterResetMode_();
+    call Usci.leaveResetMode_();
   }
+
 
   /*
    * spi_put: wait for space and throw the byte out
