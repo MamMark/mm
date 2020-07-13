@@ -72,6 +72,38 @@ const uint8_t ubx_cfg_ant_poll[] = {
   0x19, 0x51,
 };
 
+/*
+ * clear the permanent configuration, return to default
+ *
+ * clear/load 0x0000000b: nav/msg/ioPort configs
+ * devMask:     17: SpiFlsh, EEPROM, Flash, BBR
+ */
+const uint8_t ubx_cfg_cfg_erase[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_CFG,
+  0x0D, 0x00,                           /* length, 13 bytes */
+  0x0b, 0x00, 0x00, 0x00,               /* clear mask */
+  0x00, 0x00, 0x00, 0x00,               /* save  mask */
+  0x0b, 0x00, 0x00, 0x00,               /* load  mask */
+  0x17,                                 /* devMask */
+  0x49, 0x96,
+};
+
+/*
+ * save 0x0000000b: nav/msg/ioPort configs
+ * devMask:     17: SpiFlsh, EEPROM, Flash, BBR
+ */
+const uint8_t ubx_cfg_cfg_save[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_CFG,
+  0x0D, 0x00,                           /* length, 13 bytes */
+  0x00, 0x00, 0x00, 0x00,               /* clear mask */
+  0x0b, 0x00, 0x00, 0x00,               /* save  mask */
+  0x00, 0x00, 0x00, 0x00,               /* load  mask */
+  0x17,                                 /* devMask */
+  0x3E, 0x33,
+};
+
 const uint8_t ubx_cfg_dat_poll[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_CFG, UBX_CFG_DAT,

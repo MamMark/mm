@@ -301,6 +301,21 @@ typedef struct {
 } PACKED ubx_cfg_rate_t;
 
 
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* CLASS_CFG */
+  uint8_t   id;                         /* CFG_CFG   */
+  uint16_t  len;                        /* 13 */
+  uint32_t  clearMask;
+  uint32_t  saveMask;
+  uint32_t  loadMask;
+  uint8_t   devMask;
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_cfg_cfg_t;
+
+
 /* UBX_CLASS_MON (0A) */
 enum {
   UBX_MON_IO        = 0x02,     // I/O Subsystem Status

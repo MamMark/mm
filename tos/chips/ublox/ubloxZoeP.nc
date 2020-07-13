@@ -44,23 +44,25 @@ typedef enum {
   GPSC_ON_TX            = 3,            // doing transmit, txtimer running.
   GPSC_ON_RX_TX         = 4,            // not really used.  TX atomic
 
-  GPSC_CONFIG_BOOT      = 5,            /* bootstrap initilization */
-  GPSC_CONFIG_CHK       = 6,            /* configuration check     */
-  GPSC_CONFIG_SET_TXRDY = 7,            /* need txrdy configured   */
-  GPSC_CONFIG_TXRDY_ACK = 8,            /* waiting for ack         */
-  GPSC_CONFIG_DONE      = 9,            /* good to go              */
-  GPSC_CONFIG_MSG       = 10,           /* configuring msgs        */
-  GPSC_CONFIG_MSG_ACK   = 11,           /* waiting for config ack  */
-  GPSC_VER_WAIT         = 12,           /* waiting for ver string  */
-  GPSC_VER_DONE         = 13,           /* found it. */
 
-  GPSC_PWR_UP_WAIT      = 14,           /* waiting for power up    */
+  GPSC_CONFIG_BOOT      = 6,            /* bootstrap initilization */
+  GPSC_CONFIG_CHK       = 7,            /* configuration check     */
+  GPSC_CONFIG_SET_TXRDY = 8,            /* need txrdy configured   */
+  GPSC_CONFIG_TXRDY_ACK = 9,            /* waiting for ack         */
+  GPSC_CONFIG_DONE      = 10,            /* good to go              */
+  GPSC_CONFIG_MSG       = 11,           /* configuring msgs        */
+  GPSC_CONFIG_MSG_ACK   = 12,           /* waiting for config ack  */
+  GPSC_CONFIG_SAVE_ACK  = 13,           /* saving config           */
+  GPSC_VER_WAIT         = 14,           /* waiting for ver string  */
+  GPSC_VER_DONE         = 15,           /* found it. */
 
-  GPSC_HIBERNATE        = 15,           // place holder
+  GPSC_PWR_UP_WAIT      = 16,           /* waiting for power up    */
 
-  GPSC_RESET_WAIT       = 16,           /* reset dwell */
+  GPSC_HIBERNATE        = 17,           // place holder
 
-  GPSC_FAIL             = 17,
+  GPSC_RESET_WAIT       = 18,           /* reset dwell */
+
+  GPSC_FAIL             = 19,
 
 } gpsc_state_t;                         // gps control state
 
@@ -270,6 +272,7 @@ implementation {
         case GPSC_PWR_UP_WAIT:          WIGGLE_TELL;
         case GPSC_VER_DONE:             WIGGLE_TELL;
         case GPSC_VER_WAIT:             WIGGLE_TELL;
+        case GPSC_CONFIG_SAVE_ACK:      WIGGLE_TELL;
         case GPSC_CONFIG_MSG_ACK:       WIGGLE_TELL;
         case GPSC_CONFIG_MSG:           WIGGLE_TELL;
         case GPSC_CONFIG_DONE:          WIGGLE_TELL;
@@ -466,6 +469,7 @@ implementation {
       case GPSC_CONFIG_DONE:
       case GPSC_CONFIG_MSG:
       case GPSC_CONFIG_MSG_ACK:
+      case GPSC_CONFIG_SAVE_ACK:
       case GPSC_VER_WAIT:
       case GPSC_VER_DONE:
         gpsc_change_state(gpsc_state, GPSW_PROTO_START);
@@ -494,6 +498,7 @@ implementation {
       case GPSC_CONFIG_DONE:
       case GPSC_CONFIG_MSG:
       case GPSC_CONFIG_MSG_ACK:
+      case GPSC_CONFIG_SAVE_ACK:
       case GPSC_VER_WAIT:
       case GPSC_VER_DONE:
         next_state = gpsc_state;
@@ -524,6 +529,7 @@ implementation {
       case GPSC_CONFIG_DONE:
       case GPSC_CONFIG_MSG:
       case GPSC_CONFIG_MSG_ACK:
+      case GPSC_CONFIG_SAVE_ACK:
       case GPSC_VER_WAIT:
       case GPSC_VER_DONE:
       case GPSC_ON:
@@ -654,6 +660,19 @@ implementation {
               rtn = TRUE;
               break;
 
+            case GPSC_CONFIG_SAVE_ACK:
+              ubx_ack = (void *) rx_msg;
+              if (ubx_ack->class    != UBX_CLASS_ACK    ||
+                  ubx_ack->id       != UBX_ACK_ACK      ||
+                  ubx_ack->len      != 2                ||
+                  ubx_ack->ackClass != UBX_CLASS_CFG    ||
+                  ubx_ack->ackId    != UBX_CFG_CFG)
+                break;
+
+              gpsc_change_state(GPSC_CONFIG_DONE, GPSW_BOOT);
+              rtn = TRUE;
+              break;
+
             case GPSC_VER_WAIT:
               ubx_hdr = (void *) rx_msg;
               if (ubx_hdr->class   != UBX_CLASS_MON    ||
@@ -663,6 +682,7 @@ implementation {
               gpsc_change_state(GPSC_VER_DONE, GPSW_BOOT);
               rtn = TRUE;
               break;
+
           }
         } while (0);
         call MsgBuf.msg_release();
@@ -820,6 +840,13 @@ implementation {
     ubx_get_msgs(104858, TRUE);
     if (gpsc_state != GPSC_CONFIG_MSG)
       gps_panic(23, 0, 0);
+
+    ubx_send_msg((void *) ubx_cfg_cfg_save, sizeof(ubx_cfg_cfg_save));
+    gpsc_change_state(GPSC_CONFIG_SAVE_ACK, GPSW_BOOT);
+    ubx_get_msgs(104858, TRUE);
+    if (gpsc_state != GPSC_CONFIG_DONE)
+      gps_panic(27, 0, 0);
+  }
   }
 
 
