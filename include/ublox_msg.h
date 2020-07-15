@@ -100,48 +100,6 @@ typedef enum {
 } ubx_classes_t;
 
 
-/* UBX_CLASS_NAV (01) */
-enum {
-  UBX_NAV_POSECEF   = 0x01,     // Position Solution in ECEF
-  UBX_NAV_POSLLH    = 0x02,     // Geodetic Position Solution
-  UBX_NAV_STATUS    = 0x03,     // Receiver Navigation Status
-  UBX_NAV_DOP       = 0x04,     // Dilution of precision
-  UBX_NAV_PVT       = 0x07,     // Position, Velocity, Time, (and more).
-  UBX_NAV_ODO       = 0x09,     // Odometer Solution
-  UBX_NAV_RESETODO  = 0x10,     // Reset odometer
-  UBX_NAV_VELECEF   = 0x11,     // Velocity Solution in ECEF
-  UBX_NAV_VELNED    = 0x12,     // Velocity Solution in NED
-  UBX_NAV_HPPOSECEF = 0x13,     // ECEF (High Precision)
-  UBX_NAV_HPPOSLLH  = 0x14,     // Geo (High Precision)
-  UBX_NAV_TIMEGPS   = 0x20,     // GPS Time Solution
-  UBX_NAV_TIMEUTC   = 0x21,     // UTC Time Solution
-  UBX_NAV_CLOCK     = 0x22,     // Clock Solution
-  UBX_NAV_TIMEGLO   = 0x23,     // GLO Time Solution
-  UBX_NAV_TIMEBDS   = 0x24,     // BDS Time Solution
-  UBX_NAV_TIMEGAL   = 0x25,     // Galileo Time Solution
-  UBX_NAV_TIMELS    = 0x26,     // Leap second event information
-  UBX_NAV_ORB       = 0x34,     // GNSS Orbit Database Info
-  UBX_NAV_SAT       = 0x35,     // Satellite Information
-  UBX_NAV_GEOFENCE  = 0x39,     // Geofencing status.
-  UBX_NAV_SVIN      = 0x3B,     // Survey-in data.  Survey In status.
-  UBX_NAV_RELPOSNED = 0x3C,     // Relative Positioning (NED)
-  UBX_NAV_SIG       = 0x43,     // Signal Information
-  UBX_NAV_AOPSTATUS = 0x60,     // Auton. Orbit Parameters Status
-  UBX_NAV_EOE       = 0x61,     // End of Epoch
-};
-
-
-
-/* UBX_CLASS_INF (04) */
-enum {
-  UBX_INF_ERROR     = 0x00,     // ASCII output with error contents
-  UBX_INF_WARNING   = 0x01,     // ASCII output with warning contents
-  UBX_INF_NOTICE    = 0x02,     // ASCII output with informational contents
-  UBX_INF_TEST      = 0x03,     // ASCII output with test contents
-  UBX_INF_DEBUG     = 0x04,     // ASCII output with debug contents
-};
-
-
 /* UBX_CLASS_ACK (05) */
 enum {
   UBX_ACK_NACK      = 0x00,
@@ -214,6 +172,35 @@ enum {
 typedef struct {
   uint8_t   sync1;
   uint8_t   sync2;
+  uint8_t   class;                      /* CLASS_CFG */
+  uint8_t   id;                         /* CFG_CFG   */
+  uint16_t  len;                        /* 13 */
+  uint32_t  clearMask;
+  uint32_t  saveMask;
+  uint32_t  loadMask;
+  uint8_t   devMask;
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_cfg_cfg_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;
+  uint8_t   id;
+  uint16_t  len;
+  uint8_t   msgClass;
+  uint8_t   msgId;
+  uint8_t   rate;
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_cfg_msg_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
   uint8_t   class;
   uint8_t   id;
   uint16_t  len;
@@ -237,12 +224,12 @@ typedef struct {
   uint8_t   class;
   uint8_t   id;
   uint16_t  len;
-  uint8_t   msgClass;
-  uint8_t   msgId;
-  uint8_t   rate;
+  uint16_t  measRate;
+  uint16_t  navRate;
+  uint16_t  timeRef;
   uint8_t   chkA;
   uint8_t   chkB;
-} PACKED ubx_cfg_msg_t;
+} PACKED ubx_cfg_rate_t;
 
 
 enum {
@@ -287,33 +274,28 @@ typedef struct {
 } PACKED ubx_cfg_rst_t;
 
 
-typedef struct {
-  uint8_t   sync1;
-  uint8_t   sync2;
-  uint8_t   class;
-  uint8_t   id;
-  uint16_t  len;
-  uint16_t  measRate;
-  uint16_t  navRate;
-  uint16_t  timeRef;
-  uint8_t   chkA;
-  uint8_t   chkB;
-} PACKED ubx_cfg_rate_t;
+/* UBX_CLASS_INF (04) */
+enum {
+  UBX_INF_ERROR     = 0x00,     // ASCII output with error contents
+  UBX_INF_WARNING   = 0x01,     // ASCII output with warning contents
+  UBX_INF_NOTICE    = 0x02,     // ASCII output with informational contents
+  UBX_INF_TEST      = 0x03,     // ASCII output with test contents
+  UBX_INF_DEBUG     = 0x04,     // ASCII output with debug contents
+};
 
 
-typedef struct {
-  uint8_t   sync1;
-  uint8_t   sync2;
-  uint8_t   class;                      /* CLASS_CFG */
-  uint8_t   id;                         /* CFG_CFG   */
-  uint16_t  len;                        /* 13 */
-  uint32_t  clearMask;
-  uint32_t  saveMask;
-  uint32_t  loadMask;
-  uint8_t   devMask;
-  uint8_t   chkA;
-  uint8_t   chkB;
-} PACKED ubx_cfg_cfg_t;
+/* UBX_CLASS_LOG (21) */
+enum {
+  UBX_LOG_ERASE            = 0x03,  // Erase Logged Data
+  UBX_LOG_STRING           = 0x04,  // Log arbitrary string
+  UBX_LOG_CREATE           = 0x07,  // Create Log File
+  UBX_LOG_INFO             = 0x08,  // Poll for log information
+  UBX_LOG_RETRIEVE         = 0x09,  // Request log data
+  UBX_LOG_RETRIEVEPOS      = 0x0B,  // Position fix log entry
+  UBX_LOG_RETRIEVESTRING   = 0x0D,  // Byte string log entry
+  UBX_LOG_FINDTIME         = 0x0E,  // Find index of a log entry
+  UBX_LOG_RETRIEVEPOSEXTRA = 0x0F,  // Odometer log entry
+};
 
 
 /* UBX_CLASS_MON (0A) */
@@ -334,6 +316,315 @@ enum {
 };
 
 
+/* UBX_CLASS_NAV (01) */
+enum {
+  UBX_NAV_POSECEF   = 0x01,     // Position Solution in ECEF
+  UBX_NAV_POSLLH    = 0x02,     // Geodetic Position Solution
+  UBX_NAV_STATUS    = 0x03,     // Receiver Navigation Status
+  UBX_NAV_DOP       = 0x04,     // Dilution of precision
+  UBX_NAV_PVT       = 0x07,     // Position, Velocity, Time, (and more).
+  UBX_NAV_ODO       = 0x09,     // Odometer Solution
+  UBX_NAV_RESETODO  = 0x10,     // Reset odometer
+  UBX_NAV_VELECEF   = 0x11,     // Velocity Solution in ECEF
+  UBX_NAV_VELNED    = 0x12,     // Velocity Solution in NED
+  UBX_NAV_HPPOSECEF = 0x13,     // ECEF (High Precision)
+  UBX_NAV_HPPOSLLH  = 0x14,     // Geo (High Precision)
+  UBX_NAV_TIMEGPS   = 0x20,     // GPS Time Solution
+  UBX_NAV_TIMEUTC   = 0x21,     // UTC Time Solution
+  UBX_NAV_CLOCK     = 0x22,     // Clock Solution
+  UBX_NAV_TIMEGLO   = 0x23,     // GLO Time Solution
+  UBX_NAV_TIMEBDS   = 0x24,     // BDS Time Solution
+  UBX_NAV_TIMEGAL   = 0x25,     // Galileo Time Solution
+  UBX_NAV_TIMELS    = 0x26,     // Leap second event information
+  UBX_NAV_ORB       = 0x34,     // GNSS Orbit Database Info
+  UBX_NAV_SAT       = 0x35,     // Satellite Information
+  UBX_NAV_GEOFENCE  = 0x39,     // Geofencing status.
+  UBX_NAV_SVIN      = 0x3B,     // Survey-in data.  Survey In status.
+  UBX_NAV_RELPOSNED = 0x3C,     // Relative Positioning (NED)
+  UBX_NAV_SIG       = 0x43,     // Signal Information
+  UBX_NAV_AOPSTATUS = 0x60,     // Auton. Orbit Parameters Status
+  UBX_NAV_EOE       = 0x61,     // End of Epoch
+};
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav       - 01       */
+  uint8_t   id;                         /* aopstatus - 60       */
+  uint16_t  len;                        /* 16 bytes             */
+  uint32_t  iTow;                       /* ms                   */
+  uint8_t   aopCfg;                     /* ANAutonomous cfg     */
+  uint8_t   status;                     /* 0 idle, not 0 idle   */
+  uint8_t   reserved1[10];
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_nav_aopstatus_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav     - 01         */
+  uint8_t   id;                         /* clock   - 22         */
+  uint16_t  len;                        /* 20 bytes             */
+  uint32_t  iTow;                       /* ms                   */
+  int32_t   clkB;                       /* ns   - clock bias    */
+  int32_t   clkD;                       /* ns/s - clock drift   */
+  uint32_t  tAcc;                       /* ns   - time accuracy */
+  uint32_t  fAcc;                       /* ps/s - freq accuracy */
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_nav_clock_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav     - 01         */
+  uint8_t   id;                         /* dop     - 04         */
+  uint16_t  len;                        /* 18 bytes             */
+  uint32_t  iTow;                       /* ms                   */
+  uint16_t  gDop;                       /* 0.01 - geometric dop */
+  uint16_t  pDop;                       /* 0.01 - pos dop       */
+  uint16_t  tDop;                       /* 0.01 - time dop      */
+  uint16_t  vDop;                       /* 0.01 - vert dop      */
+  uint16_t  hDop;                       /* 0.01 - horz dop      */
+  uint16_t  nDop;                       /* 0.01 - northing dop  */
+  uint16_t  eDop;                       /* 0.01 - easting dop   */
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_nav_dop_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav     - 01         */
+  uint8_t   id;                         /* eoe     - 61         */
+  uint16_t  len;                        /* 18 bytes             */
+  uint32_t  iTow;                       /* ms                   */
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_nav_eoe_t;
+
+
+typedef struct {
+  uint8_t   gnssId;                     /* which constellation  */
+  uint8_t   svId;                       /* sat Id */
+  uint8_t   svFlag;                     /* info */
+  uint8_t   eph;                        /* eph data */
+  uint8_t   alm;                        /* alm data */
+  uint8_t   otherOrb;                   /* other orbit data */
+} PACKED ubx_nav_orb_elm_t;
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav     - 01         */
+  uint8_t   id;                         /* orb     - 34         */
+  uint16_t  len;                        /* 8 + 6 * numSv        */
+  uint32_t  iTow;                       /* ms                   */
+  uint8_t   version;
+  uint8_t   numSvs;
+  uint8_t   reserved1[2];
+  ubx_nav_orb_elm_t
+            orb_data[0];                /* 0 or more orb blocks */
+} PACKED ubx_nav_orb_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav     - 01         */
+  uint8_t   id;                         /* posecef - 01         */
+  uint16_t  len;                        /* 20 bytes             */
+  uint32_t  iTow;                       /* ms                   */
+  int32_t   ecefX;                      /* cm                   */
+  int32_t   ecefY;                      /* cm                   */
+  int32_t   ecefZ;                      /* cm                   */
+  uint32_t  pAcc;                       /* cm, pos accuracy     */
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_nav_posecef_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav    - 01          */
+  uint8_t   id;                         /* posllh - 02          */
+  uint16_t  len;                        /* 28 bytes             */
+  uint32_t  iTow;                       /* ms                   */
+  int32_t   lon;                        /* deg, 1e-7            */
+  int32_t   lat;                        /* deg, 1e-7            */
+  int32_t   height;                     /* mm, ellipsoid        */
+  int32_t   hMSL;                       /* mm, mean sea level   */
+  uint32_t  hAcc;                       /* mm, horz accuracy    */
+  uint32_t  vAcc;                       /* mm, vert accuracy    */
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_nav_posllh_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav - 01 */
+  uint8_t   id;                         /* pvt - 07 */
+  uint16_t  len;                        /* 92 bytes */
+  uint32_t  iTow;                       /* ms */
+  uint16_t  year;
+  uint8_t   month;
+  uint8_t   day;
+  uint8_t   hour;
+  uint8_t   min;
+  uint8_t   sec;
+  uint8_t   valid;                      /* flags */
+  uint32_t  tAcc;                       /* ns, time accur */
+  int32_t   nano;                       /* ns, frac of sec, -1e9..1e9 */
+  uint8_t   fixType;
+  uint8_t   flags;
+  uint8_t   flags2;
+  uint8_t   numSV;                      /* num sats */
+  int32_t   lon;                        /* deg, 1e-7 */
+  int32_t   lat;                        /* deg, 1e-7 */
+  int32_t   height;                     /* mm, ellipsoid */
+  int32_t   hMSL;                       /* mm, mean sea level */
+  uint32_t  hAcc;                       /* mm, horz accuracy  */
+  uint32_t  vAcc;                       /* mm, vert accuracy  */
+  int32_t   velN;                       /* mm/s, NED north velocity */
+  int32_t   velE;                       /* mm/s, NED east  velocity */
+  int32_t   velD;                       /* mm/s, NED down  velocity */
+  int32_t   gSpeed;                     /* mm/s, ground, 2D */
+  int32_t   headMot;                    /* deg, head of motion, 2D */
+  uint32_t  sAcc;                       /* mm/s, speed accuracy */
+  uint32_t  headAcc;                    /* deg, heading accuracy */
+  uint16_t  pDop;                       /* position dop */
+  uint8_t   flags3;
+  uint8_t   reserved1[5];
+  int32_t   headVeh;
+  int16_t   magDec;                     /* magnetic declination */
+  uint16_t  magAcc;
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_nav_pvt_t;
+
+
+typedef struct {
+  uint8_t   gnssId;                     /* which constellation  */
+  uint8_t   svId;                       /* sat Id */
+  uint8_t   cno;                        /* dbHz */
+  int8_t    elev;                       /* +/- 90, unk out of range */
+  int16_t   azim;                       /* deg, azimuth, 0-360      */
+  int16_t   prRes;                      /* 0.1 m - pseudorange residual */
+  uint32_t  flags;
+} PACKED ubx_nav_sat_elm_t;
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav     - 01         */
+  uint8_t   id;                         /* sat     - 35         */
+  uint16_t  len;                        /* 20 bytes             */
+  uint32_t  iTow;                       /* ms                   */
+  uint8_t   version;                    /* 0x01 */
+  uint8_t   numSvs;
+  uint8_t   reserved1[2];
+} PACKED ubx_nav_sat_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav     - 01         */
+  uint8_t   id;                         /* status  - 03         */
+  uint16_t  len;                        /* 16 bytes             */
+  uint32_t  iTow;                       /* ms                   */
+  uint8_t   gpsFix;                     /* fix type             */
+  uint8_t   flags;                      /* nav status flags     */
+  uint8_t   fixStat;                    /* fix status           */
+  uint8_t   flags2;
+  uint32_t  ttff;                       /* ms - time to first fix */
+  uint32_t  msss;                       /* ms - ms since startup  */
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_nav_status_t;
+
+
+/*
+ * precise GPS time in seconds:
+ *   (iTow * 1e-3) + (fTow * 1e-9)
+ *
+ * GPS leap secs (leapS)...   GPS - UTC
+ */
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav     - 01         */
+  uint8_t   id;                         /* timegps - 20         */
+  uint16_t  len;                        /* 16 bytes             */
+  uint32_t  iTow;                       /* ms                   */
+  uint32_t  fTow;                       /* ns - fractional      */
+  int16_t   week;                       /* gps week             */
+  int8_t    leapS;                      /* gps leap seconds     */
+  uint8_t   valid;                      /* validity flags       */
+  uint32_t  tAcc;                       /* ns - time accuracy   */
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_nav_timegps_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav     - 01         */
+  uint8_t   id;                         /* timels  - 26         */
+  uint16_t  len;                        /* 24 bytes             */
+  uint32_t  iTow;                       /* ms                   */
+  uint8_t   version;                    /* 0x00 */
+  uint8_t   reserved1[3];
+  uint8_t   srcOfCurrLs;                /* info src for LS val     */
+  int8_t    currLs;                     /* lp secs since 19800106  */
+  uint8_t   srcOfLsChange;              /* info src for future     */
+  int8_t    lsChange;                   /* -1, 0, +1               */
+  int32_t   timeToLsEvent;              /* s - next leap sec event */
+  uint16_t  dateOfLsGpsWn;              /* gps wk next leap sec    */
+  uint16_t  dateOfLsGpsDn;              /* gps day wk next lp sec  */
+  uint8_t   reserved2[3];
+  uint8_t   valid;
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_nav_timels_t;
+
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav     - 01         */
+  uint8_t   id;                         /* timeutc - 21         */
+  uint16_t  len;                        /* 20 bytes             */
+  uint32_t  iTow;                       /* ms                   */
+  uint32_t  tAcc;                       /* ns - time accuracy   */
+  int32_t   nano;                       /* ns - fraction of sec */
+  uint16_t  year;
+  uint8_t   month;
+  uint8_t   day;
+  uint8_t   hour;
+  uint8_t   min;
+  uint8_t   sec;
+  uint8_t   valid;                      /* flags */
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_nav_timeutc_t;
+
+
+/* UBX_CLASS_SEC (27) */
+enum {
+  UBX_SEC_UNIQID    = 0x03,     // Unique chip ID
+};
+
+
 /* UBX_CLASS_TIM (0D) */
 enum {
   UBX_TIM_TP        = 0x01,     // Time Pulse Timedata
@@ -341,25 +632,21 @@ enum {
   UBX_TIM_VRFY      = 0x06,     // Sourced Time Verification
 };
 
-
-/* UBX_CLASS_LOG (21) */
-enum {
-  UBX_LOG_ERASE            = 0x03,  // Erase Logged Data
-  UBX_LOG_STRING           = 0x04,  // Log arbitrary string
-  UBX_LOG_CREATE           = 0x07,  // Create Log File
-  UBX_LOG_INFO             = 0x08,  // Poll for log information
-  UBX_LOG_RETRIEVE         = 0x09,  // Request log data
-  UBX_LOG_RETRIEVEPOS      = 0x0B,  // Position fix log entry
-  UBX_LOG_RETRIEVESTRING   = 0x0D,  // Byte string log entry
-  UBX_LOG_FINDTIME         = 0x0E,  // Find index of a log entry
-  UBX_LOG_RETRIEVEPOSEXTRA = 0x0F,  // Odometer log entry
-};
-
-
-/* UBX_CLASS_SEC (27) */
-enum {
-  UBX_SEC_UNIQID    = 0x03,     // Unique chip ID
-};
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* nav     - 01         */
+  uint8_t   id;                         /* timeutc - 21         */
+  uint16_t  len;                        /* 20 bytes             */
+  uint32_t  towMs;                      /* ms                   */
+  uint32_t  towSubMs;                   /* ms - 2^-32           */
+  int32_t   qErr;                       /* ps - quant err, tp   */
+  uint16_t  week;                       /* week number          */
+  uint8_t   flags;
+  uint8_t   refInfo;                    /* time ref info        */
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_tim_tp_t;
 
 
 #endif  /* __UBLOX_MSG_H__ */
