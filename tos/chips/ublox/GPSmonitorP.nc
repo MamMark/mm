@@ -344,7 +344,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       gps_panic(-1, gps_msg[0] << 8 | gps_msg[1], gps_len);
     gps_len += UBX_OVERHEAD;            /* add in overhead */
     gmcb.txq_state = GPSM_TXQ_SENDING;
-    return call MsgTransmit.send(gps_msg, gps_len);
+    call MsgTransmit.send(gps_msg, gps_len);
+    return SUCCESS;
   }
 
 
@@ -389,7 +390,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
       case GPSM_TXQ_SENDING:
         gmcb.txq_state = GPSM_TXQ_DRAIN;
-        call MsgTransmit.send_stop();
+        call MsgTransmit.send_abort();
         break;
 
       case GPSM_TXQ_IDLE:
@@ -870,7 +871,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
-  event void MsgTransmit.send_done() {
+  event void MsgTransmit.send_done(error_t result) {
     uint16_t clsid;                     /* class/id */
     uint8_t *gps_msg;
 
