@@ -114,6 +114,7 @@ implementation {
     /* switch pins, then kill power */
     UBX_PINS_PWR_OFF;
     /* power off */
+  }
 
 
   command void HW.spi_clr_port() {
