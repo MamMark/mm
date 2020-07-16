@@ -55,6 +55,7 @@ module GPS0HardwareP {
   uses {
     interface HplMsp432Usci     as Usci;
     interface HplMsp432PortInt  as TxRdyIRQ;
+    interface GPSProto          as ubxProto;
     interface Panic;
     interface Platform;
   }
@@ -73,6 +74,7 @@ implementation {
   uint8_t  *m_tx_buf;                   /* current transmit pointer */
   uint16_t  m_tx_idx;                   /* where in the buffer. */
   uint16_t  m_tx_len;                   /* NULL if inactive. */
+
 
   const msp432_usci_config_t ublox_spi_config = {
     ctlw0 :(EUSCI_A_CTLW0_CKPH        | EUSCI_A_CTLW0_MSB  |
@@ -363,5 +365,9 @@ implementation {
     post driver_task();
   }
 
+
+        event void ubxProto.msgStart(uint16_t len) { }
+        event void ubxProto.msgEnd() { }
+        event void ubxProto.protoAbort(uint16_t reason) { }
   async event void Panic.hook() { }
 }
