@@ -44,9 +44,6 @@ implementation {
   MsgReceive     = GPSmonitorP;
   TagnetRadio    = GPSmonitorP;
 
-  components SystemBootC;
-  GPSmonitorP.Boot -> SystemBootC.BootLow;
-
   components McuSleepC;
   GPSmonitorP.McuPowerOverride <- McuSleepC;
 
