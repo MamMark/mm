@@ -79,6 +79,7 @@ implementation {
 
   command error_t Dock0PeriphInit.init() {
     call Usci.configure(&dock_spi_config, FALSE);
+    call Usci.setTxbuf(DC_SLAVE_IDLE);
     return SUCCESS;
   }
 
