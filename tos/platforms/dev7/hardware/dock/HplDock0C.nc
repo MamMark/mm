@@ -38,5 +38,8 @@ implementation {
   DockHwP.Panic     -> PanicC;
   DockHwP.Platform  -> PlatformC;
 
+  components SystemBootC;
+  DockHwP.Boot      -> SystemBootC;
+
   PlatformC.PeripheralInit -> DockHwP;
 }

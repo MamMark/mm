@@ -40,6 +40,7 @@ module Dock0HardwareP {
     interface DockCommHardware as HW;
   }
   uses {
+    interface Boot;                     /* SysBootC */
     interface HplMsp432Usci    as Usci;
     interface HplMsp432PortInt as AttnIRQ;
     interface Panic;
@@ -140,6 +141,12 @@ implementation {
       }
       signal HW.dc_unattn();
     }
+  }
+
+  event void Boot.booted() {
+    call HW.dc_attn_enable();
+    if (call HW.dc_attn_pin())
+      post DC_Catch_task();
   }
 
   async event void AttnIRQ.fired() {
