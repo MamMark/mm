@@ -59,6 +59,7 @@ interface DockCommHardware {
 
   event   void    dc_atattn();
   event   void    dc_unattn();
+
   command uint8_t dc_attn_pin();
   command void    dc_attn_enable();
   command void    dc_attn_disable();

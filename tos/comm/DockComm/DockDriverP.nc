@@ -34,7 +34,7 @@ enum {
 #endif
 
 #ifdef  DOCK_EAVESDROP
-#define DOCK_EAVES_SIZE 1024
+#define DOCK_EAVES_SIZE 2048
 norace uint8_t dbuf[DOCK_EAVES_SIZE];
 norace uint32_t didx;
 #endif
