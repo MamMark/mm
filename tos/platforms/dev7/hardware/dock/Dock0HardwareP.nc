@@ -19,11 +19,12 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
 
+#include <msp432.h>
 #include <hardware.h>
+#include <platform.h>
 #include <panic.h>
 #include <platform_panic.h>
-#include <msp432.h>
-#include <platform.h>
+#include <dockcomm.h>
 
 #ifndef PANIC_DOCK
 enum {
