@@ -135,11 +135,24 @@ implementation {
     atomic {
       signal HW.dc_atattn();
       while (call HW.dc_attn_pin()) {
-        if (call Usci.isRxIntrPending()) {
-          data = call Usci.getRxbuf();
-          signal HW.dc_byte_avail(data);
+        DC_SLAVE_RDY = 1;
+        atomic {
+          while (TRUE) {
+            if (call Usci.isRxIntrPending()) {
+              DC_SLAVE_RDY = 0;
+              break;
+            }
+            if(! call HW.dc_attn_pin())
+              break;
+          }
         }
+        if (! call HW.dc_attn_pin())
+          break;
+        data = call Usci.getRxbuf();
+        call Usci.setTxbuf(data);
+        signal HW.dc_byte_avail(data);
       }
+      DC_SLAVE_RDY = 0;
       signal HW.dc_unattn();
     }
   }
