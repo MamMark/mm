@@ -560,6 +560,7 @@ void __pins_init() {
   /* si446x_sdn = 1, si446x_csn = 1 */
   P5->OUT  = 0x05;
   P5->DIR  = 0x05;
+  P5->REN  = 0x08;                      /* pull down on 5.3 */
 
   P6->OUT  = 0x00;
   P6->DIR  = 0x00;
