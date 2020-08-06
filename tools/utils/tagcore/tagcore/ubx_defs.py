@@ -36,7 +36,7 @@ define manipulation and basic definitions for ubxbin protocol packets
 
 import struct
 
-__version__ = '0.4.8.dev1'
+__version__ = '0.4.8.dev2'
 
 __all__ = [
     'CID_DECODER',
@@ -51,6 +51,8 @@ __all__ = [
 
     'UBX_CLASS_OFFSET',
     'UBX_ID_OFFSET',
+
+    'cid_name',
 ]
 
 
@@ -85,3 +87,7 @@ UBX_HDR_SIZE   = ubx_hdr_struct.size
 
 UBX_CLASS_OFFSET = UBX_HDR_SIZE
 UBX_ID_OFFSET    = UBX_CLASS_OFFSET + 1
+
+def cid_name(cid):
+    v = cid_table.get(cid, (None, None, None, 'cid/' + '{:04x}'.format(cid)))
+    return v[CID_NAME]

@@ -494,7 +494,12 @@ def dump():
         eprint('****** non-zero chksum_errors: {}'.format(chksum_errors))
         eprint()
     eprint('rtypes: {}'.format(dtd.dt_count))
-    eprint('cids:   {}'.format(ubx.cid_count))
+    eprint('cids:   {', end='')
+    lead = ''
+    for k, v in sorted(ubx.cid_count.items()):
+        eprint('{}{:04x}: {}'.format(lead, k, v), end='')
+        lead = ', '
+    eprint('}')
 
 if __name__ == "__main__":
     dump()

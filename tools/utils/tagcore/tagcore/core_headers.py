@@ -90,23 +90,27 @@ def decode_sensor(level, offset, buf, obj):
 # this decoder does the following:  (it is not a simple decode_default)
 #
 # o consume/process a gps_raw_hdr (dt_hdr + gps_hdr)
-# o consume/process the ubxbin hdr (SOP + CLASS/ID + LEN + DATA)
+# o extract class/id from the ubxbin header.
+#
+# Note: for ubxbin packets we do not consume the ubx_hdr.  It get decoded
+# so we know the Class/Id.  But the header gets offically processed as part
+# of the ubx packet deocde.
 #
 # NMEA packet:
 # o only consume up to the beginning of the SOP
 #
 # UbxBin packet:
-# o Look class/id in cid_table
-# o consume/process the remainder of the packet using the appropriate decoder
+# o Look up class/id in cid_table
+# o consume/process the entire ubxbin packet using the appropriate decoder.
 
 def decode_gps_raw(level, offset, buf, obj):
     consumed = obj.set(buf)
+    start    = buf[consumed]   << 8 | buf[consumed+1]
 
-    if obj['ubx_hdr']['start'].val != UBX_SOP_SEQ:
-        return consumed - len(obj['ubx_hdr'])
+    if start != UBX_SOP_SEQ:
+        return consumed
 
-    cid = obj['ubx_hdr']['cid'].val
-
+    cid      = buf[consumed+2] << 8 | buf[consumed+3]
     try:
         ubx.cid_count[cid] += 1
     except KeyError:
@@ -119,7 +123,8 @@ def decode_gps_raw(level, offset, buf, obj):
         if level >= 5 or g.debug:
             print('*** no decoder/obj defined for class/id {:04X}'.format(cid))
         return consumed
-    return consumed + decoder(level, offset, buf[consumed:], decoder_obj)
+    consumed += decoder(level, offset, buf[consumed:], decoder_obj)
+    return consumed
 
 
 ########################################################################
@@ -550,7 +555,6 @@ def obj_gps_proto_stats():
 def obj_dt_gps_raw():
     return aggie(OrderedDict([
         ('gps_hdr', obj_dt_gps_hdr()),
-        ('ubx_hdr', obj_ubx_hdr()),
     ]))
 
 def obj_dt_tagnet():

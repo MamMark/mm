@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Eric B. Decker
+# Copyright (c) 2020 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 #
 # Contact: Eric B. Decker <cire831@gmail.com>
 
-'''emitters (default) for ubxbin packets'''
+'''emitters for ubxbin packets'''
 
 from   __future__         import print_function
 
@@ -27,21 +27,83 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.6'
+__version__ = '0.4.8.dev2'
 
 
-def emit_default(level, offset, buf, obj):
+def emit_default(level, offset, buf, obj, xdir):
     print()
     if (level >= 1):
-        print('    {}'.format(obj))
+        print('  {}'.format(obj))
 
 
 ########################################################################
 #
-# SirfBin RAW messages
+# UbxBin RAW message emitters
+#
+# parameters to emitters:
+#
+#   level:  debug/verbose level
+#   offset: file offset of whole record
+#   buf:    current buffer being worked on.
+#   obj:    ubx object from ubx populate vector
+#   xdir:   direction, 1 for tx from main to gps, 0 from gps to main
 #
 ########################################################################
-#
+
+def emit_ubx_ack(level, offset, buf, obj, xdir):
+    ubx  = obj['ubx']
+    ackCid = obj['ackClassId'].val
+    print('{:s} ({:04x})'.format(cid_name(ackCid), ackCid))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+def emit_ubx_cfg_cfg(level, offset, buf, obj, xdir):
+    ubx  = obj['ubx']
+    xlen = ubx['len'].val
+    clearMask = obj['clearMask'].val
+    saveMask  = obj['saveMask'].val
+    loadMask  = obj['loadMask'].val
+    devMaskStr = '  {:02x}'.format(obj['var']['devMask'].val) if xlen == 13 else ''
+    print('c/s/l:  {:04x}/{:04x}/{:04x}{:s}'.format(clearMask, saveMask, loadMask, devMaskStr))
+    if level >= 1:
+        print('  {}'.format(obj), end = '')
+
+
+def emit_ubx_cfg_prt(level, offset, buf, obj, xdir):
+    ubx  = obj['ubx']
+    port = obj['var']['portId'].val
+    xlen = ubx['len'].val
+    if xlen == 1:                       # poll
+        print('poll   portId: {}'.format(port))
+    elif xlen == 20:
+        xtype = 'set' if xdir else 'rsp'
+        txrdy = obj['var']['txReady'].val
+        print('{:3s}    portId: {}, txrdy: {:02x}'.format(xtype, port, txrdy))
+    else:
+        print('weird  portId: {}  len: {}'.format(port, ubx['len']))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+def emit_ubx_cfg_msg(level, offset, buf, obj, xdir):
+    ubx  = obj['ubx']
+    xlen = ubx['len'].val
+    cid  = obj['msgClassId'].val
+    if xlen == 2:
+        print('poll {:s} ({:04x})'.format(cid_name(cid), cid))
+    elif xlen == 3:
+        rate = obj['var']['rate']
+        print('set  {:16s} ({:04x}), rate: {}'.format(cid_name(cid), cid, rate))
+    else:
+        print()
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+def emit_ubx_cfg_rst(level, offset, buf, obj, xdir):
+    emit_default(level, offset, buf, obj, xdir)
+
+
 # raw nav strings for output
 
 rnav1a = '    NAV_DATA: nsats: {}, x/y/z (m): {}/{}/{}  vel (m/s): {}/{}/{}'

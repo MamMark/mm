@@ -920,35 +920,41 @@ def emit_gps_raw(level, offset, buf, obj):
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    index = len(obj) - len(obj['ubx_hdr'])
+    index = len(obj)
     if buf[index] == ord('$'):
         print(' -- NMEA <{:2}> [{:s}]'.format(dir_str, buf[index+1:index+6]))
         if (level >= 1):
             print('    {:s}'.format(buf[index:].rstrip('\r\n\x00')))
 
-    if (obj['ubx_hdr']['start'].val != UBX_SOP_SEQ):
+    ubx_start = buf[index] << 8 | buf[index + 1]
+    if ubx_start != UBX_SOP_SEQ:
         print
         if (level >= 2):
             dump_buf(buf, '    ')
         return
 
-    cid     = obj['ubx_hdr']['cid'].val
-    ubx_len = obj['ubx_hdr']['len'].val
+    # extract cid and len manually.  ubx_len is little endian
+    # class/id are combined with class being most significant.
+    cid = buf[index + 2] << 8 | buf[index + 3]
+    ubx_len = buf[index + 4] | buf[index + 5] << 8
+
     v = ubx.cid_table.get(cid, (None, None, None, 'unk'))
-    emitters    = v[CID_EMITTERS]       # emitter list
-    decoder_obj = v[CID_OBJECT]         # object
-    cid_name    = v[CID_NAME]
+    emitters  = v[CID_EMITTERS]         # emitter list
+    ubx_obj   = v[CID_OBJECT]           # object
+    xcid_name = v[CID_NAME]
 
-    print(' -- UBX: <{:2}> {:16s}<{:04x}> ({:02x})'.format(
-        dir_str, '[{:s}]'.format(cid_name), cid, ubx_len), end = '')
 
-    if not emitters or len(emitters) == 0:
-        print()
+    if not emitters or len(emitters) == 0 or not ubx_obj:
+        print(' -- UBX: <{:2}> {:16s}<{:04x}> ({:02x})'.format(
+            dir_str, '[{:s}]'.format(xcid_name), cid, ubx_len))
         if (level >= 5):
             print('*** no emitters defined for cid {:04X}'.format(cid))
         return
+
+    print(' -- UBX: <{:2}> {:16s}'.format(
+        dir_str, '[{:s}]'.format(xcid_name)), end='')
     for e in emitters:
-        e(level, offset, buf[len(obj):], decoder_obj)
+        e(level, offset, buf[len(obj):], ubx_obj, dir_bit)
 
 
 def emit_tagnet(level, offset, buf, obj):
