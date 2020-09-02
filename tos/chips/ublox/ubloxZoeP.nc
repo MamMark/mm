@@ -225,6 +225,7 @@ implementation {
       hdr.mark_us  = 0;
       hdr.chip_id  = (*pak == '$') ? CHIP_GPS_NMEA : CHIP_GPS_ZOE;
       hdr.dir      = dir;
+      hdr.pad      = 0;
 
       /* time stamp added by Collect */
       call Collect.collect((void *) &hdr, sizeof(hdr), pak, len);

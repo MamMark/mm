@@ -1309,6 +1309,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       gps_block.mark_us = 0;
       gps_block.chip_id = CHIP_GPS_GSD4E;
       gps_block.dir     = GPS_DIR_RX;
+      gps_block.pad     = 0;
       call Collect.collect((void *) &gps_block, sizeof(gps_block),
                            (void *) xdtp, sizeof(*xdtp));
       minor_event(MON_EV_FIX);
@@ -1381,6 +1382,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     gps_block.mark_us = 0;
     gps_block.chip_id = CHIP_GPS_GSD4E;
     gps_block.dir     = GPS_DIR_RX;
+    gps_block.pad     = 0;
     call Collect.collect((void *) &gps_block, sizeof(gps_block),
          (void *) &m_track.dt_block, sizeof(gps_trk_block_t));
 #endif
@@ -1423,6 +1425,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
       hdr.chip_id  = CHIP_GPS_ZOE;
       hdr.dir      = GPS_DIR_RX;
+      hdr.pad      = 0;
       call Collect.collect_nots((void *) &hdr, sizeof(hdr), msg, len);
     }
 

@@ -509,6 +509,7 @@ implementation {
       hdr.mark_us  = 0;
       hdr.chip_id  = CHIP_GPS_GSD4E;
       hdr.dir      = dir;
+      hdr.pad      = 0;
 
       /* time stamp added by Collect */
       call Collect.collect((void *) &hdr, sizeof(hdr), pak, len);
