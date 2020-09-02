@@ -12,32 +12,35 @@ def decode_null(level, offset, buf, obj):
 
 
 #                          CID_DECODER           CID_EMITTERS              CID_OBJECT                  CID_NAME        CID_OBJ_NAME
-ubx.cid_table[0x0101]   = (decode_null, None, None, 'nav/posecef',      'none')
-ubx.cid_table[0x0102]   = (decode_null, None, None, 'nav/posllh',       'none')
-ubx.cid_table[0x0103]   = (decode_null, None, None, 'nav/status',       'none')
-ubx.cid_table[0x0104]   = (decode_null, None, None, 'nav/dop',          'none')
-ubx.cid_table[0x0107]   = (decode_null, None, None, 'nav/pvt',          'none')
-ubx.cid_table[0x0120]   = (decode_null, None, None, 'nav/timegps',      'none')
-ubx.cid_table[0x0121]   = (decode_null, None, None, 'nav/timeutc',      'none')
-ubx.cid_table[0x0122]   = (decode_null, None, None, 'nav/clock',        'none')
-ubx.cid_table[0x0126]   = (decode_null, None, None, 'nav/timels',       'none')
-ubx.cid_table[0x0134]   = (decode_null, None, None, 'nav/orb',          'none')
-ubx.cid_table[0x0135]   = (decode_null, None, None, 'nav/sat',          'none')
-ubx.cid_table[0x0160]   = (decode_null, None, None, 'nav/aopstat',      'none')
-ubx.cid_table[0x0161]   = (decode_null, None, None, 'nav/eoe',          'none')
+ubx.cid_table[0x0101]   = (decode_default,     [ emit_default ],           obj_ubx_nav_posecef(),     'nav/posecef',  'obj_ubx_nav_posecef')
+ubx.cid_table[0x0102]   = (decode_default,     [ emit_default ],           obj_ubx_nav_posllh(),      'nav/posllh',   'obj_ubx_nav_posllh')
+ubx.cid_table[0x0103]   = (decode_default,     [ emit_default ],           obj_ubx_nav_status(),      'nav/status',   'obj_ubx_nav_status')
+ubx.cid_table[0x0104]   = (decode_default,     [ emit_default ],           obj_ubx_nav_dop(),         'nav/dop',      'obj_ubx_nav_dop')
+ubx.cid_table[0x0107]   = (decode_default,     [ emit_default ],           obj_ubx_nav_pvt(),         'nav/pvt',      'obj_ubx_nav_pvt')
 
-ubx.cid_table[0x0500]   = (decode_ubx_ack,     [ emit_ubx_ack ],           obj_ubx_ack(),             'ack/nack',     'obj_ubx_ack')
-ubx.cid_table[0x0501]   = (decode_ubx_ack,     [ emit_ubx_ack ],           obj_ubx_ack(),             'ack/ack',      'obj_ubx_ack')
+ubx.cid_table[0x0120]   = (decode_default,     [ emit_default ],           obj_ubx_nav_timegps(),     'nav/timegps',  'obj_ubx_nav_timegps')
+ubx.cid_table[0x0121]   = (decode_default,     [ emit_default ],           obj_ubx_nav_timeutc(),     'nav/timeutc',  'obj_ubx_nav_timeutc')
+ubx.cid_table[0x0122]   = (decode_default,     [ emit_default ],           obj_ubx_nav_clock(),       'nav/clock',    'obj_ubx_nav_clock')
+ubx.cid_table[0x0126]   = (decode_default,     [ emit_default ],           obj_ubx_nav_timels(),      'nav/timels',   'obj_ubx_nav_timels')
+
+ubx.cid_table[0x0134]   = (decode_ubx_nav_orb, [ emit_default ],           obj_ubx_nav_orb(),         'nav/orb',      'obj_ubx_nav_orb')
+ubx.cid_table[0x0135]   = (decode_ubx_nav_sat, [ emit_default ],           obj_ubx_nav_sat(),         'nav/sat',      'obj_ubx_nav_sat')
+
+ubx.cid_table[0x0160]   = (decode_default,     [ emit_default ],           obj_ubx_nav_aopstatus(),   'nav/aopstatus','obj_ubx_nav_aopstatus')
+ubx.cid_table[0x0161]   = (decode_default,     [ emit_default ],           obj_ubx_nav_eoe(),         'nav/eoe',      'obj_ubx_nav_eoe')
+
+ubx.cid_table[0x0500]   = (decode_default,     [ emit_ubx_ack ],           obj_ubx_ack(),             'ack/nack',     'obj_ubx_ack')
+ubx.cid_table[0x0501]   = (decode_default,     [ emit_ubx_ack ],           obj_ubx_ack(),             'ack/ack',      'obj_ubx_ack')
 
 ubx.cid_table[0x0600]   = (decode_ubx_cfg_prt, [ emit_ubx_cfg_prt ],       obj_ubx_cfg_prt(),         'cfg/prt',      'obj_ubx_cfg_prt')
 ubx.cid_table[0x0601]   = (decode_ubx_cfg_msg, [ emit_ubx_cfg_msg ],       obj_ubx_cfg_msg(),         'cfg/msg',      'obj_ubx_cfg_msg')
 ubx.cid_table[0x0604]   = (decode_default,     [ emit_ubx_cfg_rst ],       obj_ubx_cfg_rst(),         'cfg/rst',      'obj_ubx_cfg_rst')
 ubx.cid_table[0x0609]   = (decode_ubx_cfg_cfg, [ emit_ubx_cfg_cfg ],       obj_ubx_cfg_cfg(),         'cfg/cfg',      'obj_ubx_cfg_cfg')
 
-ubx.cid_table[0x0d01]   = (decode_null, None, None, 'tim/tp',           'none')
-
 ubx.cid_table[0x0a04]   = (decode_null, None, None, 'mon/ver',          'none')
 ubx.cid_table[0x0a09]   = (decode_null, None, None, 'mon/hw',           'none')
+
+ubx.cid_table[0x0d01]   = (decode_default,     [ emit_default ],           obj_ubx_tim_tp(),          'tim/tp',       'obj_ubx_tim_tp')
 
 #
 # other CIDs, just define their names.  no decoders

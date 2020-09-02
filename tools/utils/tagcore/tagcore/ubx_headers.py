@@ -51,7 +51,7 @@ def obj_ubx_hdr():
     return aggie(OrderedDict([
         ('start', atom(('>H', '0x{:04x}'))),
         ('cid',   atom(('>H', '0x{:04X}'))),
-        ('len',   atom(('<H', '0x{:04x}'))),
+        ('len',   atom(('<H', '{}'))),
     ]))
 
 
@@ -161,6 +161,254 @@ def obj_ubx_cfg_rst():
     ]))
 
 
+# ubx_nav_aopstatus 0160
+# len 16
+
+def obj_ubx_nav_aopstatus():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+        ('aopCfg',      atom(('<B', '{}'))),
+        ('status',      atom(('<B', '0x{:02x}'))),
+        ('reserved1',   atom(('10s', '{}', binascii.hexlify))),
+    ]))
+
+
+# ubx_nav_clock 0122
+# len 20
+
+def obj_ubx_nav_clock():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+        ('clkB',        atom(('<i', '{}'))), # geometric
+        ('clkD',        atom(('<i', '{}'))), # positional
+        ('tAcc',        atom(('<I', '{}'))), # time
+        ('fAcc',        atom(('<I', '{}'))), # vertical
+    ]))
+
+
+# ubx_nav_dop 0104
+# len 18
+
+def obj_ubx_nav_dop():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+        ('gDOP',        atom(('<H', '{}'))), # geometric
+        ('pDOP',        atom(('<H', '{}'))), # positional
+        ('tDOP',        atom(('<H', '{}'))), # time
+        ('vDOP',        atom(('<H', '{}'))), # vertical
+        ('hDOP',        atom(('<H', '{}'))), # horizontal
+        ('nDOP',        atom(('<H', '{}'))), # northing
+        ('eDOP',        atom(('<H', '{}'))), # easting
+    ]))
+
+
+# ubx_nav_eoe 0161
+# len 4
+
+def obj_ubx_nav_eoe():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+    ]))
+
+
+# ubx_nav_orb 0134
+# len 8 + 6 * numSVs
+# var section has numSVs orb_elms, indexed by [0..numSVs-1]
+# decoder adds 'var' section
+
+def obj_ubx_nav_orb_elm():
+    return aggie(OrderedDict([
+        ('gnssId',      atom(('<B', '{}'))),
+        ('svId',        atom(('<B', '{}'))),
+        ('svFlag',      atom(('<B', '0x{:02x}'))),
+        ('eph',         atom(('<B', '0x{:02x}'))),
+        ('alm',         atom(('<B', '0x{:02x}'))),
+        ('otherOrb',    atom(('<B', '0x{:02x}'))),
+    ]))
+
+def obj_ubx_nav_orb():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+        ('version',     atom(('<B', '{}'))),
+        ('numSv',       atom(('<B', '{}'))),
+        ('reserved1',   atom(('2s', '{}', binascii.hexlify))),
+    ]))
+
+
+# ubx_nav_posecef 0101
+# len 20
+
+def obj_ubx_nav_posecef():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+        ('ecefX',       atom(('<i', '{}'))),
+        ('ecefY',       atom(('<i', '{}'))),
+        ('ecefZ',       atom(('<i', '{}'))),
+        ('pAcc',        atom(('<I', '{}'))),
+    ]))
+
+
+# ubx_nav_posllh 0102
+# len 28
+
+def obj_ubx_nav_posllh():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+        ('lon',         atom(('<i', '{}'))),
+        ('lat',         atom(('<i', '{}'))),
+        ('height',      atom(('<i', '{}'))),
+        ('hMSL',        atom(('<i', '{}'))),
+        ('hAcc',        atom(('<I', '{}'))),
+        ('vAcc',        atom(('<I', '{}'))),
+    ]))
+
+
+# ubx_nav_pvt 0107
+# len 92
+
+def obj_ubx_nav_pvt():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+        ('year',        atom(('<H', '{}'))),
+        ('month',       atom(('<B', '{}'))),
+        ('day',         atom(('<B', '{}'))),
+        ('hour',        atom(('<B', '{}'))),
+        ('min',         atom(('<B', '{}'))),
+        ('sec',         atom(('<B', '{}'))),
+        ('valid',       atom(('<B', '0x{:02x}'))),
+        ('tAcc',        atom(('<I', '{}'))),
+        ('nano',        atom(('<i', '{}'))),
+        ('fixType',     atom(('<B', '{}'))),
+        ('flags',       atom(('<B', '0x{:02x}'))),
+        ('flags2',      atom(('<B', '0x{:02x}'))),
+        ('numSV',       atom(('<B', '{}'))),
+        ('lon',         atom(('<i', '{}'))),
+        ('lat',         atom(('<i', '{}'))),
+        ('height',      atom(('<i', '{}'))),
+        ('hMSL',        atom(('<i', '{}'))),
+        ('hAcc',        atom(('<I', '{}'))),
+        ('vAcc',        atom(('<I', '{}'))),
+        ('velN',        atom(('<i', '{}'))),
+        ('velE',        atom(('<i', '{}'))),
+        ('velD',        atom(('<i', '{}'))),
+        ('gSpeed',      atom(('<i', '{}'))),
+        ('headMot',     atom(('<i', '{}'))),
+        ('sAcc',        atom(('<I', '{}'))),
+        ('headAcc',     atom(('<I', '{}'))),
+        ('pDOP',        atom(('<H', '{}'))),
+        ('flags3',      atom(('<B', '0x{:02x}'))),
+        ('reserved1',   atom(('5s', '{}', binascii.hexlify))),
+        ('headVeh',     atom(('<i', '{}'))),
+        ('magDec',      atom(('<h', '{}'))),
+        ('magAcc',      atom(('<H', '{}'))),
+    ]))
+
+
+# ubx_nav_sat 0135
+# len 8 + 12 * numSVs
+# var section has numSVs sat_elms, indexed by [0..numSVs-1]
+# decoder adds 'var' section
+
+def obj_ubx_nav_sat_elm():
+    return aggie(OrderedDict([
+        ('gnssId',      atom(('<B', '{}'))),
+        ('svId',        atom(('<B', '{}'))),
+        ('cno',         atom(('<B', '{}'))),
+        ('elev',        atom(('<b', '{}'))),
+        ('azim',        atom(('<h', '{}'))),
+        ('prRes',       atom(('<h', '{}'))),
+        ('flags',       atom(('<I', '0x{:04x}'))),
+    ]))
+
+def obj_ubx_nav_sat():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+        ('version',     atom(('<B', '{}'))),
+        ('numSv',       atom(('<B', '{}'))),
+        ('reserved1',   atom(('2s', '{}', binascii.hexlify))),
+    ]))
+
+
+# ubx_nav_status 0103
+# len 16
+
+def obj_ubx_nav_status():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+        ('gpsFix',      atom(('<B', '{}'))),
+        ('flags',       atom(('<B', '0x{:02x}'))),
+        ('fixStat',     atom(('<B', '0x{:02x}'))),
+        ('flags2',      atom(('<B', '0x{:02x}'))),
+        ('ttff',        atom(('<I', '{}'))),
+        ('msss',        atom(('<I', '{}'))),
+    ]))
+
+
+# ubx_nav_timegps 0120
+# len 16
+
+def obj_ubx_nav_timegps():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+        ('fTOW',        atom(('<i', '{}'))), # fractional
+        ('week',        atom(('<h', '{}'))), # gps week
+        ('leapS',       atom(('<b', '{}'))), # leap secs, GPS-UTC
+        ('valid',       atom(('<B', '{}'))),
+        ('tAcc',        atom(('<I', '{}'))),
+    ]))
+
+
+# ubx_nav_timels 0126
+# len 24
+
+def obj_ubx_nav_timels():
+    return aggie(OrderedDict([
+        ('ubx',             obj_ubx_hdr()),
+        ('iTOW',            atom(('<I', '{}'))),
+        ('version',         atom(('<B', '{}'))),
+        ('reserved1',       atom(('3s', '{}', binascii.hexlify))),
+        ('srcOfCurLs',      atom(('<B', '{}'))),
+        ('currLs',          atom(('<b', '{}'))),
+        ('srcOfLsChange',   atom(('<B', '{}'))),
+        ('lsChange',        atom(('<b', '{}'))),
+        ('timeToLsEvent',   atom(('<i', '{}'))),
+        ('dateOfLsGpsWn',   atom(('<H', '{}'))),
+        ('dateOfLsGpsDn',   atom(('<H', '{}'))),
+        ('reserved2',       atom(('3s', '{}', binascii.hexlify))),
+        ('valid',           atom(('<B', '{}'))),
+    ]))
+
+
+# ubx_nav_timeutc 0121
+# len 20
+
+def obj_ubx_nav_timeutc():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('iTOW',        atom(('<I', '{}'))),
+        ('tAcc',        atom(('<I', '{}'))),
+        ('nano',        atom(('<i', '{}'))),
+        ('year',        atom(('<H', '{}'))),
+        ('month',       atom(('<B', '{}'))),
+        ('day',         atom(('<B', '{}'))),
+        ('hour',        atom(('<B', '{}'))),
+        ('min',         atom(('<B', '{}'))),
+        ('sec',         atom(('<B', '{}'))),
+        ('valid',       atom(('<B', '{}'))),
+    ]))
+
+
 # ubx_rxm_pmreq 0241
 # len 8:  no version or wakeupSources
 # len 16: version and wakeupSources
@@ -185,18 +433,29 @@ def obj_ubx_rxm_pmreq():
     ]))
 
 
+# ubx_tim_tp 0d01
+# len 16
+
+def obj_ubx_tim_tp():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+        ('towMS',       atom(('<I', '{}'))),
+        ('towSubMS',    atom(('<I', '{}'))),
+        ('qErr',        atom(('<i', '{}'))),
+        ('week',        atom(('<H', '{}'))),
+        ('flags',       atom(('<B', '0x{:02x}'))),
+        ('refInfo',     atom(('<B', '0x{:02x}'))),
+    ]))
+
+
 ########################################################################
 #
 # Ublox Decoders
 #
 ########################################################################
 
-def decode_ubx_ack(level, offset, buf, obj):
-    return obj.set(buf)
-
-
 def decode_ubx_cfg_cfg(level, offset, buf, obj):
-    if obj.get('var'):
+    if obj.get('var') is not None:
         del(obj['var'])
 
     # 'var' section removed, should have a obj_ubx_cfg_cfg left
@@ -211,29 +470,8 @@ def decode_ubx_cfg_cfg(level, offset, buf, obj):
     return consumed
 
 
-def decode_ubx_cfg_prt(level, offset, buf, obj):
-    if obj.get('var'):
-        del(obj['var'])
-
-    # variable has been removed, should have a ubx_hdr left ('ubx')
-    # populate it.  1st byte after the hdr is the port_id.
-    consumed = obj.set(buf)
-    port_id = buf[consumed]
-    xlen = obj['ubx']['len'].val
-    if xlen != 20 or port_id != 4:
-        # poll or other port
-        obj['var'] = obj_ubx_cfg_prt_poll();
-        consumed += obj['var'].set(buf[consumed:])
-        return consumed
-
-    # must be a cfg_prt for the spi
-    obj['var'] = obj_ubx_cfg_prt_spi();
-    consumed += obj['var'].set(buf[consumed:])
-    return consumed
-
-
 def decode_ubx_cfg_msg(level, offset, buf, obj):
-    if obj.get('var'):
+    if obj.get('var') is not None:
         del(obj['var'])
 
     # variable has been removed, should have a ubx_hdr left ('ubx')
@@ -256,8 +494,60 @@ def decode_ubx_cfg_msg(level, offset, buf, obj):
 
     return consumed
 
+
+def decode_ubx_cfg_prt(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # variable has been removed, should have a ubx_hdr left ('ubx')
+    # populate it.  1st byte after the hdr is the port_id.
+    consumed = obj.set(buf)
+    port_id = buf[consumed]
+    xlen = obj['ubx']['len'].val
+    if xlen != 20 or port_id != 4:
+        # poll or other port
+        obj['var'] = obj_ubx_cfg_prt_poll();
+        consumed += obj['var'].set(buf[consumed:])
+        return consumed
+
+    # must be a cfg_prt for the spi
+    obj['var'] = obj_ubx_cfg_prt_spi();
+    consumed += obj['var'].set(buf[consumed:])
+    return consumed
+
+
+def decode_ubx_nav_orb(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # 'var' section removed, should have a obj_ubx_nav_orb left
+    # populate it.  This will populate the static fields including numSv
+    consumed = obj.set(buf)
+    obj['var'] = OrderedDict()
+    numSv = obj['numSv'].val
+    for n in range(numSv):
+        obj['var'][n] = obj_ubx_nav_orb_elm()
+        consumed += obj['var'][n].set(buf[consumed:])
+    return consumed
+
+
+def decode_ubx_nav_sat(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # 'var' section removed, should have a obj_ubx_nav_sat left
+    # populate it.  This will populate the static fields including numSv
+    consumed = obj.set(buf)
+    obj['var'] = OrderedDict()
+    numSv = obj['numSv'].val
+    for n in range(numSv):
+        obj['var'][n] = obj_ubx_nav_sat_elm()
+        consumed += obj['var'][n].set(buf[consumed:])
+    return consumed
+
+
 def decode_ubx_rxm_pmreq(level, offset, buf, obj):
-    if obj.get('var'):
+    if obj.get('var') is not None:
         del(obj['var'])
 
     # variable has been removed, should have a ubx_hdr left ('ubx')
