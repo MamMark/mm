@@ -27,11 +27,15 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.8.dev2'
+__version__ = '0.4.8.dev3'
 
 
 def emit_default(level, offset, buf, obj, xdir):
-    print()
+    if 'iTOW' in obj:
+        iTOW = obj['iTOW'].val
+        print('{:8d}'.format(iTOW))
+    else:
+        print()
     if (level >= 1):
         print('  {}'.format(obj))
 
@@ -102,6 +106,175 @@ def emit_ubx_cfg_msg(level, offset, buf, obj, xdir):
 
 def emit_ubx_cfg_rst(level, offset, buf, obj, xdir):
     emit_default(level, offset, buf, obj, xdir)
+
+
+def emit_ubx_nav_aopstatus(level, offset, buf, obj, xdir):
+    iTOW    = obj['iTOW'].val
+    aopCfg  = obj['aopCfg'].val
+    status  = obj['status'].val
+    cfgstr  = 'enabled' if aopCfg & 1 else 'disabled'
+    statstr = 'running' if status     else 'idle'
+    print('{:8d}  {:s}  {:s}'.format(iTOW, cfgstr, statstr))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+def emit_ubx_nav_dop(level, offset, buf, obj, xdir):
+    iTOW = obj['iTOW'].val
+    gDOP = float(obj['gDOP'].val)/100
+    pDOP = float(obj['pDOP'].val)/100
+    tDOP = float(obj['tDOP'].val)/100
+    vDOP = float(obj['vDOP'].val)/100
+    hDOP = float(obj['hDOP'].val)/100
+    print('{:8d}  g: {:.2f}  p: {:.2f}  t: {:.2f}  v: {:.2f}  h: {:.2f}'.format(
+        iTOW, gDOP, pDOP, tDOP, vDOP, hDOP))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+def emit_ubx_nav_clock(level, offset, buf, obj, xdir):
+    iTOW = obj['iTOW'].val
+    clkB = obj['clkB'].val
+    clkD = obj['clkD'].val
+    tAcc = obj['tAcc'].val
+    fAcc = obj['fAcc'].val
+    print('{:8d}  b: {:d}  d: {:d}  t: {:d}  f: {:d}'.format(
+        iTOW, clkB, clkD, tAcc, fAcc))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+def emit_ubx_nav_posecef(level, offset, buf, obj, xdir):
+    iTOW  = obj['iTOW'].val
+    ecefX = float(obj['ecefX'].val)/100.
+    ecefY = float(obj['ecefY'].val)/100.
+    ecefZ = float(obj['ecefZ'].val)/100.
+    pAcc  = obj['pAcc'].val
+    print('{:8d}  {:8.2f} {:8.2f} {:8.2f}  pAcc: {}'.format(
+        iTOW, ecefX, ecefY, ecefZ, pAcc))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+def emit_ubx_nav_pvt(level, offset, buf, obj, xdir):
+    iTOW = obj['iTOW'].val
+    print('{:8d}'.format(iTOW))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+fix_type = {
+    0: 'nofix',
+    1: 'dr',
+    2: '2d',
+    3: '3d',
+    4: 'gps_dr',
+    5: 'time',
+}
+
+psm_type = {
+    0: 'acq',
+    1: 'trk',
+    2: 'pot',
+    3: 'inact',
+}
+
+def emit_ubx_nav_status(level, offset, buf, obj, xdir):
+    iTOW     = obj['iTOW'].val
+    gpsFix   = obj['gpsFix'].val
+    flags    = obj['flags'].val
+    fixStat  = obj['fixStat'].val
+    flags2   = obj['flags2'].val
+    ttff     = float(obj['ttff'].val)/1000.
+    msss     = float(obj['msss'].val)/1000.
+    fixtype  = fix_type.get(gpsFix, 'fix/' + str(gpsFix))
+    flagstr  = 'T' if flags & 0x8 else 't'
+    flagstr += 'W' if flags & 0x4 else 'w'
+    flagstr += 'D' if flags & 0x2 else 'd'
+    flagstr += 'F' if flags & 0x1 else 'f'
+    psm      = flags2 & 0x3
+    spoof    = (flags2 & 0x18) >> 3
+    carr     = flags2 >> 6
+    psmstr   = psm_type.get(psm, 'psm/' + str(psm))
+    print('{:8d}  {:s}  f: {:s}  psm: {:s}  ttff: {:.3f}  ss: {:.3f}  spoof: {}  carr: {}'.format(
+        iTOW, fixtype, flagstr, psmstr, ttff, msss, spoof, carr))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+def emit_ubx_nav_timegps(level, offset, buf, obj, xdir):
+    iTOW  = obj['iTOW'].val
+    fTOW  = obj['fTOW'].val
+    week  = obj['week'].val
+    leapS = obj['leapS'].val
+    valid = obj['valid'].val
+    tAcc  = obj['tAcc'].val
+    vstr  = 'L' if valid & 0x4 else 'l'
+    vstr += 'W' if valid & 0x2 else 'w'
+    vstr += 'T' if valid & 0x1 else 't'
+    print('{:8d}  {:3s}  w: {:4d}  ls: {:2d}  tAcc: {:d}'.format(
+        iTOW, vstr, week, leapS, tAcc))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+def emit_ubx_nav_timels(level, offset, buf, obj, xdir):
+    iTOW          = obj['iTOW'].val
+    srcOfCurrLs   = obj['srcOfCurrLs'].val
+    currLs        = obj['currLs'].val
+    srcOfLsChange = obj['srcOfCurrLs'].val
+    lsChange      = obj['lsChange'].val
+    timeToLsEvent = obj['timeToLsEvent'].val
+    lsGpsWn       = obj['dateOfLsGpsWn'].val
+    lsGpsDn       = obj['dateOfLsGpsDn'].val
+    valid         = obj['valid'].val
+    vstr  = 'E' if valid & 0x2 else 'e'
+    vstr += 'C' if valid & 0x1 else 'c'
+    print('{:8d}  {:2s}  cur: {:d}/{:d}  chg: {:d}/{:d}  delta: {:d}  w/d: {:d}/{:d}'.format(
+        iTOW, vstr, srcOfCurrLs, currLs, srcOfLsChange, lsChange,
+        timeToLsEvent, lsGpsWn, lsGpsDn))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+def emit_ubx_nav_timeutc(level, offset, buf, obj, xdir):
+    iTOW  = obj['iTOW'].val
+    tAcc  = obj['tAcc'].val
+    nano  = obj['nano'].val
+    year  = obj['year'].val
+    month = obj['month'].val
+    day   = obj['day'].val
+    hour  = obj['hour'].val
+    xmin  = obj['min'].val
+    sec   = obj['sec'].val
+    valid = obj['valid'].val
+    vstr  = 'U' if valid & 0x4 else 'u'
+    vstr += 'W' if valid & 0x2 else 'w'
+    vstr += 'T' if valid & 0x1 else 't'
+    std   = valid >> 4
+    print('{:8d}  {:3s}  {:4d}/{:02d}/{:02d} {:02d}:{:02d}:{:02d} {:06d}  std: {:d}  tAcc: {:d}'.format(
+        iTOW, vstr, year, month, day, hour, xmin, sec, nano, std, tAcc))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+def emit_ubx_tim_tp(level, offset, buf, obj, xdir):
+    towMS    = obj['towMS'].val
+    towSubMS = obj['towSubMS'].val
+    qErr     = obj['qErr'].val
+    week     = obj['week'].val
+    flags    = obj['flags'].val
+    refInfo  = obj['refInfo'].val
+    fstr  = 'Q' if flags & 0x10 else ''
+    fstr += 'U' if flags & 0x2  else 'u'
+    fstr += 'u' if flags & 0x1  else 'g'
+    raim  = (flags >> 2) & 0x03
+    utcstd =  refInfo >> 4
+    timeref = refInfo & 0xf
+    print('{:8d}  {:>3s}/{:d}  s: {:d}  q: {:d}  w: {:d}  f: {:02x}  ref: {:02x}  {:d}/{:d}'.format(
+        towMS, fstr, raim, towSubMS, qErr, week, flags, refInfo, utcstd, timeref))
+    if level >= 1:
+        print('  {}'.format(obj))
 
 
 # raw nav strings for output

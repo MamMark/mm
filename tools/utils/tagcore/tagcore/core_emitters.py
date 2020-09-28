@@ -945,7 +945,7 @@ def emit_gps_raw(level, offset, buf, obj):
 
 
     if not emitters or len(emitters) == 0 or not ubx_obj:
-        print(' -- UBX: <{:2}> {:16s}<{:04x}> ({:02x})'.format(
+        print(' -- UBX: <{:2}> {:16s}        <{:04x}> ({:02x})'.format(
             dir_str, '[{:s}]'.format(xcid_name), cid, ubx_len))
         if (level >= 5):
             print('*** no emitters defined for cid {:04X}'.format(cid))

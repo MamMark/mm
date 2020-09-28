@@ -378,7 +378,7 @@ def obj_ubx_nav_timels():
         ('iTOW',            atom(('<I', '{}'))),
         ('version',         atom(('<B', '{}'))),
         ('reserved1',       atom(('3s', '{}', binascii.hexlify))),
-        ('srcOfCurLs',      atom(('<B', '{}'))),
+        ('srcOfCurrLs',     atom(('<B', '{}'))),
         ('currLs',          atom(('<b', '{}'))),
         ('srcOfLsChange',   atom(('<B', '{}'))),
         ('lsChange',        atom(('<b', '{}'))),
