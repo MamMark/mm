@@ -111,8 +111,69 @@ def obj_ubx_cfg_msg_rates():
 
 def obj_ubx_cfg_msg():
     return aggie(OrderedDict([
-        ('ubx',      obj_ubx_hdr()),
+        ('ubx',        obj_ubx_hdr()),
         ('msgClassId', atom(('>H', '0x{:04X}'))),
+    ]))
+
+
+def obj_ubx_cfg_navx5_var():
+    return aggie(OrderedDict([
+        ('version',             atom(('<H', '{}'))),
+        ('mask1',               atom(('<H', '0x{:04X}'))),
+        ('mask2',               atom(('<I', '0x{:04X}'))),
+        ('reserved1',           atom(('<H', '{}'))),
+        ('minSVs',              atom(('<B', '{}'))),
+        ('maxSVs',              atom(('<B', '{}'))),
+        ('minCNO',              atom(('<B', '{}'))),
+        ('reserved2',           atom(('<B', '{}'))),
+        ('iniFix3D',            atom(('<B', '{}'))),
+        ('reserved3',           atom(('<H', '{}'))),
+        ('ackAiding',           atom(('<B', '{}'))),
+        ('wknRollover',         atom(('<H', '{}'))),
+        ('sigAttenCompMode',    atom(('<B', '{}'))),
+        ('reserved4',           atom(('<B', '{}'))),
+        ('reserved5',           atom(('<H', '{}'))),
+        ('reserved6',           atom(('<H', '{}'))),
+        ('usePPP',              atom(('<B', '{}'))),
+        ('aopCfg',              atom(('<B', '{}'))),
+        ('reserved7',           atom(('<H', '{}'))),
+        ('aopOrbMaxErr',        atom(('<H', '{}'))),
+        ('reserved8',           atom(('<I', '{}'))),
+        ('reserved9',           atom(('3s', '{}', binascii.hexlify))),
+        ('useAdr',              atom(('<B', '{}'))),
+    ]))
+
+
+def obj_ubx_cfg_nav5_var():
+    return aggie(OrderedDict([
+        ('mask',                atom(('<H', '0x{:04X}'))),
+        ('dynmode1',            atom(('<B', '{}'))),
+        ('fixmode',             atom(('<B', '{}'))),
+        ('fixedAlt',            atom(('<i', '{}'))),
+        ('fixedAltVar',         atom(('<I', '{}'))),
+        ('minElev',             atom(('<b', '{}'))),
+        ('drLimit',             atom(('<B', '{}'))),
+        ('pDop',                atom(('<H', '{}'))),
+        ('tDop',                atom(('<H', '{}'))),
+        ('pAcc',                atom(('<H', '{}'))),
+        ('tAcc',                atom(('<H', '{}'))),
+        ('staticHoldThresh',    atom(('<B', '{}'))),
+        ('dgnssTimeout',        atom(('<B', '{}'))),
+        ('cnoThreshNumSVs',     atom(('<B', '{}'))),
+        ('cnoThresh',           atom(('<B', '{}'))),
+        ('reserved1',           atom(('<H', '{}'))),
+        ('staticHoldMaxDist',   atom(('<H', '{}'))),
+        ('utcStandard',         atom(('<B', '{}'))),
+        ('reserved2',           atom(('<B', '{}'))),
+        ('reserved2x',          atom(('<I', '{}'))),
+    ]))
+
+
+# can have a var section obj_ubx_cfg_nav5_var.
+# poll or the var section
+def obj_ubx_cfg_nav5():
+    return aggie(OrderedDict([
+        ('ubx',                 obj_ubx_hdr()),
     ]))
 
 
@@ -492,6 +553,38 @@ def decode_ubx_cfg_msg(level, offset, buf, obj):
         consumed += obj['var'].set(buf[consumed:])
         return consumed
 
+    return consumed
+
+
+def decode_ubx_cfg_nav5(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # variable has been removed, should have a ubx_hdr left ('ubx')
+    # populate it.  1st byte after the hdr is the port_id.
+    consumed = obj.set(buf)
+    xlen = obj['ubx']['len'].val
+    if xlen == 0:                       # get
+        return consumed
+
+    obj['var'] = obj_ubx_cfg_nav5_var();
+    consumed += obj['var'].set(buf[consumed:])
+    return consumed
+
+
+def decode_ubx_cfg_navx5(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # variable has been removed, should have a ubx_hdr left ('ubx')
+    # populate it.  1st byte after the hdr is the port_id.
+    consumed = obj.set(buf)
+    xlen = obj['ubx']['len'].val
+    if xlen == 0:                       # get
+        return consumed
+
+    obj['var'] = obj_ubx_cfg_navx5_var();
+    consumed += obj['var'].set(buf[consumed:])
     return consumed
 
 

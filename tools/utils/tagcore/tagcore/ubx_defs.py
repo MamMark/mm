@@ -46,11 +46,11 @@ __all__ = [
     'CID_OBJ_NAME',
 
     'UBX_MAX_PAYLOAD',
-    'UBX_SOP_SEQ',
     'UBX_HDR_SIZE',
-
+    'UBX_SOP_SEQ',
     'UBX_CLASS_OFFSET',
-    'UBX_ID_OFFSET',
+    'UBX_LEN_OFFSET',
+    'UBX_CHK_SIZE',
 
     'cid_name',
 ]
@@ -80,13 +80,20 @@ CID_OBJ_NAME = 4
 UBX_MAX_PAYLOAD  = 2048
 
 # hdr_struct is little endian, 2 byte SOP, 1 byte Class, 1 byte Id, 2 byte len
-UBX_SOP_SEQ    = 0xb562
-ubx_hdr_str    = '>HH'
-ubx_hdr_struct = struct.Struct(ubx_hdr_str)
-UBX_HDR_SIZE   = ubx_hdr_struct.size
+# ie.   b5 62 class id len_lsb len_msb
+#        1  1   1    1    1       1
+#                                      data     chka   chkb
+#                                      (len)
+UBX_HDR_SIZE     = 6
+UBX_SOP_SEQ      = 0xb562
+UBX_CLASS_OFFSET = 2
+UBX_LEN_OFFSET   = 4
+UBX_CHK_SIZE     = 2
 
-UBX_CLASS_OFFSET = UBX_HDR_SIZE
-UBX_ID_OFFSET    = UBX_CLASS_OFFSET + 1
+# struct string to grab SOP and Class/Id.
+ubx_cid_str    = '>HH'
+ubx_cid_struct = struct.Struct(ubx_cid_str)
+
 
 def cid_name(cid):
     v = cid_table.get(cid, (None, None, None, 'cid/' + '{:04x}'.format(cid)))

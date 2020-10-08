@@ -33,11 +33,29 @@ __version__ = '0.4.8.dev3'
 def emit_default(level, offset, buf, obj, xdir):
     if 'iTOW' in obj:
         iTOW = obj['iTOW'].val
-        print('{:8d}'.format(iTOW))
+        print('{:9d}'.format(iTOW))
     else:
         print()
     if (level >= 1):
         print('  {}'.format(obj))
+
+
+fix_type = {
+    0: 'nofix',
+    1: 'dr',
+    2: '2d',
+    3: '3d',
+    4: 'gps_dr',
+    5: 'time',
+}
+
+psm_type = {
+    0: 'inact',
+    1: 'ena',
+    2: 'acq',
+    3: 'trk',
+    4: 'pot',
+}
 
 
 ########################################################################
@@ -81,7 +99,9 @@ def emit_ubx_cfg_prt(level, offset, buf, obj, xdir):
         print('poll   portId: {}'.format(port))
     elif xlen == 20:
         xtype = 'set' if xdir else 'rsp'
-        txrdy = obj['var']['txReady'].val
+        txrdy = 0
+        if port == 4:
+            txrdy = obj['var']['txReady'].val
         print('{:3s}    portId: {}, txrdy: {:02x}'.format(xtype, port, txrdy))
     else:
         print('weird  portId: {}  len: {}'.format(port, ubx['len']))
@@ -104,8 +124,49 @@ def emit_ubx_cfg_msg(level, offset, buf, obj, xdir):
         print('  {}'.format(obj))
 
 
+# handle both nav5 and navx5
+def emit_ubx_cfg_nav5(level, offset, buf, obj, xdir):
+    ubx  = obj['ubx']
+    xlen = ubx['len'].val
+    if xlen == 0:
+        print('get')
+        return
+    else:
+        print()
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+bbr_clr_type = {
+    0:          'hot',
+    1:          'warm',
+    0xffff:     'cold',
+}
+
+
+reset_type = {
+    0:          'hw_wd',
+    1:          'sw',
+    2:          'sw_gps',
+    4:          'hw_shut',
+    8:          'gps_stop',
+    9:          'gps_start',
+}
+
+
 def emit_ubx_cfg_rst(level, offset, buf, obj, xdir):
-    emit_default(level, offset, buf, obj, xdir)
+    navBbrMask  = obj['navBbrMask'].val
+    resetMode   = obj['resetMode'].val
+    bbr_clr_str = bbr_clr_type.get(navBbrMask, 'other')
+    reset_str   = reset_type.get(resetMode, 'rst/' + str(resetMode))
+    print('           {:6s} ({:04x})  {:s} ({:d})'.format(bbr_clr_str, navBbrMask,
+                                                          reset_str, resetMode))
+
+
+def emit_ubx_inf(level, offset, buf, obj, xdir):
+    objlen = len(obj)                   # ubx header length
+    xlen = obj['len'].val
+    print('{:s}'.format(buf[objlen:objlen+xlen]))
 
 
 def emit_ubx_nav_aopstatus(level, offset, buf, obj, xdir):
@@ -114,7 +175,7 @@ def emit_ubx_nav_aopstatus(level, offset, buf, obj, xdir):
     status  = obj['status'].val
     cfgstr  = 'enabled' if aopCfg & 1 else 'disabled'
     statstr = 'running' if status     else 'idle'
-    print('{:8d}  {:s}  {:s}'.format(iTOW, cfgstr, statstr))
+    print('{:9d}  {:s}  {:s}'.format(iTOW, cfgstr, statstr))
     if level >= 1:
         print('  {}'.format(obj))
 
@@ -126,7 +187,7 @@ def emit_ubx_nav_dop(level, offset, buf, obj, xdir):
     tDOP = float(obj['tDOP'].val)/100
     vDOP = float(obj['vDOP'].val)/100
     hDOP = float(obj['hDOP'].val)/100
-    print('{:8d}  g: {:.2f}  p: {:.2f}  t: {:.2f}  v: {:.2f}  h: {:.2f}'.format(
+    print('{:9d}  g: {:.2f}  p: {:.2f}  t: {:.2f}  v: {:.2f}  h: {:.2f}'.format(
         iTOW, gDOP, pDOP, tDOP, vDOP, hDOP))
     if level >= 1:
         print('  {}'.format(obj))
@@ -138,7 +199,7 @@ def emit_ubx_nav_clock(level, offset, buf, obj, xdir):
     clkD = obj['clkD'].val
     tAcc = obj['tAcc'].val
     fAcc = obj['fAcc'].val
-    print('{:8d}  b: {:d}  d: {:d}  t: {:d}  f: {:d}'.format(
+    print('{:9d}  b: {:d} d: {:d}  t: {:d}  f: {:d}'.format(
         iTOW, clkB, clkD, tAcc, fAcc))
     if level >= 1:
         print('  {}'.format(obj))
@@ -150,34 +211,60 @@ def emit_ubx_nav_posecef(level, offset, buf, obj, xdir):
     ecefY = float(obj['ecefY'].val)/100.
     ecefZ = float(obj['ecefZ'].val)/100.
     pAcc  = obj['pAcc'].val
-    print('{:8d}  {:8.2f} {:8.2f} {:8.2f}  pAcc: {}'.format(
+    print('{:9d}  {:8.2f} {:8.2f} {:8.2f}  pAcc: {}'.format(
         iTOW, ecefX, ecefY, ecefZ, pAcc))
     if level >= 1:
         print('  {}'.format(obj))
 
 
 def emit_ubx_nav_pvt(level, offset, buf, obj, xdir):
-    iTOW = obj['iTOW'].val
-    print('{:8d}'.format(iTOW))
+    iTOW     = obj['iTOW'].val
+    year     = obj['year'].val
+    month    = obj['month'].val
+    day      = obj['day'].val
+    hour     = obj['hour'].val
+    xmin     = obj['min'].val
+    sec      = obj['sec'].val
+    valid    = obj['valid'].val
+    tacc     = obj['tAcc'].val
+    nano     = obj['nano'].val
+    ftype    = obj['fixType'].val
+    flags    = obj['flags'].val
+    flags2   = obj['flags2'].val
+    numSV    = obj['numSV'].val
+    lon      = obj['lon'].val
+    lat      = obj['lat'].val
+    height   = obj['height'].val
+    hMSL     = obj['hMSL'].val
+    pdop     = obj['pDOP'].val
+    flags3   = obj['flags3'].val
+
+    mrstr    = 'M' if valid & 0x8 else 'm'
+    mrstr   += 'R' if valid & 0x4 else 'r'
+    mrstr   += 'D' if flags & 0x2 else 'd'
+    mrstr   += 'F' if flags & 0x1 else 'f'
+
+    tdstr    = 'D' if valid & 0x1 else 'd'
+    tdstr   += 'T' if valid & 0x2 else 't'
+
+    fixtype  = fix_type.get(ftype, 'fix/' + str(ftype))
+
+    psm      = (flags >> 2) & 0x7
+    psmstr   = psm_type.get(psm, 'psm/' + str(psm))
+
+    lstr     = 'l' if flags3 & 0x1 else 'L'
+    flon     = float(lon)/10000000.
+    flat     = float(lat)/10000000.
+
+    if tacc == 0xffffffff:
+        tacc = -1
+
+    print('{:9d}  {:5s}  ({:02d})  vf: {:s}  {:s}: {:04d}/{:02d}/{:02d}-{:02d}:{:02d}:{:02d} {:010d}  {:11.7f} {:12.7f} [t {:4}, p {:4}]'.format(
+        iTOW, fixtype, numSV, mrstr, tdstr, year, month, day,
+        hour, xmin, sec, nano, flat, flon, tacc, pdop))
     if level >= 1:
         print('  {}'.format(obj))
 
-
-fix_type = {
-    0: 'nofix',
-    1: 'dr',
-    2: '2d',
-    3: '3d',
-    4: 'gps_dr',
-    5: 'time',
-}
-
-psm_type = {
-    0: 'acq',
-    1: 'trk',
-    2: 'pot',
-    3: 'inact',
-}
 
 def emit_ubx_nav_status(level, offset, buf, obj, xdir):
     iTOW     = obj['iTOW'].val
@@ -192,12 +279,12 @@ def emit_ubx_nav_status(level, offset, buf, obj, xdir):
     flagstr += 'W' if flags & 0x4 else 'w'
     flagstr += 'D' if flags & 0x2 else 'd'
     flagstr += 'F' if flags & 0x1 else 'f'
-    psm      = flags2 & 0x3
+    psm      = (flags2 & 0x3) + 2
     spoof    = (flags2 & 0x18) >> 3
     carr     = flags2 >> 6
     psmstr   = psm_type.get(psm, 'psm/' + str(psm))
-    print('{:8d}  {:s}  f: {:s}  psm: {:s}  ttff: {:.3f}  ss: {:.3f}  spoof: {}  carr: {}'.format(
-        iTOW, fixtype, flagstr, psmstr, ttff, msss, spoof, carr))
+    print('{:9d}  {:5s}  {:6s} f: {:s}  ttff: {:.3f}  ss: {:.3f}  spoof: {}  carr: {}'.format(
+        iTOW, fixtype, psmstr, flagstr, ttff, msss, spoof, carr))
     if level >= 1:
         print('  {}'.format(obj))
 
@@ -212,7 +299,7 @@ def emit_ubx_nav_timegps(level, offset, buf, obj, xdir):
     vstr  = 'L' if valid & 0x4 else 'l'
     vstr += 'W' if valid & 0x2 else 'w'
     vstr += 'T' if valid & 0x1 else 't'
-    print('{:8d}  {:3s}  w: {:4d}  ls: {:2d}  tAcc: {:d}'.format(
+    print('{:9d}  {:3s}  w: {:4d}  ls: {:2d}  tAcc: {:d}'.format(
         iTOW, vstr, week, leapS, tAcc))
     if level >= 1:
         print('  {}'.format(obj))
@@ -230,7 +317,7 @@ def emit_ubx_nav_timels(level, offset, buf, obj, xdir):
     valid         = obj['valid'].val
     vstr  = 'E' if valid & 0x2 else 'e'
     vstr += 'C' if valid & 0x1 else 'c'
-    print('{:8d}  {:2s}  cur: {:d}/{:d}  chg: {:d}/{:d}  delta: {:d}  w/d: {:d}/{:d}'.format(
+    print('{:9d}  {:2s}  cur: {:d}/{:d}  chg: {:d}/{:d}  delta: {:d}  w/d: {:d}/{:d}'.format(
         iTOW, vstr, srcOfCurrLs, currLs, srcOfLsChange, lsChange,
         timeToLsEvent, lsGpsWn, lsGpsDn))
     if level >= 1:
@@ -252,7 +339,7 @@ def emit_ubx_nav_timeutc(level, offset, buf, obj, xdir):
     vstr += 'W' if valid & 0x2 else 'w'
     vstr += 'T' if valid & 0x1 else 't'
     std   = valid >> 4
-    print('{:8d}  {:3s}  {:4d}/{:02d}/{:02d} {:02d}:{:02d}:{:02d} {:06d}  std: {:d}  tAcc: {:d}'.format(
+    print('{:9d}  {:3s}  {:4d}/{:02d}/{:02d} {:02d}:{:02d}:{:02d} {:06d}  std: {:d}  tAcc: {:d}'.format(
         iTOW, vstr, year, month, day, hour, xmin, sec, nano, std, tAcc))
     if level >= 1:
         print('  {}'.format(obj))
