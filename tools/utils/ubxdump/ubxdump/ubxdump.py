@@ -218,7 +218,7 @@ def get_record(fd):
             break                       # oops
         hdr, cid = ubx.ubx_cid_struct.unpack(rec_buf[0:UBX_LEN_OFFSET])
         if hdr != UBX_SOP_SEQ:
-            print('*** bad SOP: {:4x}, @{}'.format(hdr, offset))
+            print('*** bad SOP: x{:04x}, @{}'.format(hdr, offset))
             offset = hunt(fd, offset)
             if (offset < 0):
                 break
@@ -382,21 +382,21 @@ def dump(args):
                     if not emitters or len(emitters) == 0:
                         print()
                         if (verbose >= 5):
-                            print('*** no emitters defined for cid {}'.format(cid))
+                            print('*** no emitters defined for cid x{:04x}'.format(cid))
                     else:
                         for e in emitters:
                             e(verbose, rec_offset, rec_buf, obj, 0)
                 except struct.error:
                     print()
-                    print('*** decode error: (len: {}, cid: {} {}, '
+                    print('*** decode error: (len: {}, cid: x{:04x} {}, '
                           'expected: {}), @{}'.format(rlen, cid, cid_name,
                           len(obj) if obj else 0, rec_offset))
             else:
                 print()
                 if (verbose >= 5):
                     print()
-                    print('*** no decoder installed for cid {} '
-                          '({:02x}), @{}'.format(cid, cid, rec_offset),
+                    print('*** no decoder installed for cid x{:04x} '
+                          '({}), @{}'.format(cid, cid_name, rec_offset),
                           end = '')
             if (verbose >= 3):
                 print()
