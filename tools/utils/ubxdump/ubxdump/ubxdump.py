@@ -418,7 +418,13 @@ def dump(args):
     print('*** hunts: {}, chksum_errs: {}, unk_cids: {}'.format(
         num_hunt, chksum_errors, unk_cids))
     print()
-    print('cid/s: {}'.format(ubx.cid_count))
+    out = []
+    for k,v in sorted(ubx.cid_count.iteritems()):
+        out.append(('x{:04x}: {}'.format(k, v)))
+    print('cid/s: { ', end = '')
+    print(*out, sep=', ', end='')
+    print(' }')
+    print()
 
 if __name__ == "__main__":
     dump(parseargs())
