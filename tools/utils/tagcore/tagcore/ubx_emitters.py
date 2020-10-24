@@ -74,8 +74,10 @@ psm_type = {
 
 def emit_ubx_ack(level, offset, buf, obj, xdir):
     ubx  = obj['ubx']
+    cid    = obj['ubx']['cid'].val
     ackCid = obj['ackClassId'].val
-    print('{:s} ({:04x})'.format(cid_name(ackCid), ackCid))
+    acktype = 'ack' if cid == 0x501 else 'nack'
+    print('{:s} ({:04x}) {}'.format(cid_name(ackCid), ackCid, acktype))
     if level >= 1:
         print('  {}'.format(obj))
 
