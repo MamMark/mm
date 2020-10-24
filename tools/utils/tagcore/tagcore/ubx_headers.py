@@ -105,7 +105,7 @@ def obj_ubx_cfg_msg_rate():
 
 def obj_ubx_cfg_msg_rates():
     return aggie(OrderedDict([
-        ('rates', atom(('8s', '{}', binascii.hexlify))),
+        ('rates', atom(('6s', '{}', binascii.hexlify))),
     ]))
     pass
 
