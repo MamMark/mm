@@ -116,10 +116,14 @@ def emit_ubx_cfg_msg(level, offset, buf, obj, xdir):
     xlen = ubx['len'].val
     cid  = obj['msgClassId'].val
     if xlen == 2:
-        print('poll {:s} ({:04x})'.format(cid_name(cid), cid))
+        print('poll {:8s} ({:04x})'.format(cid_name(cid), cid))
     elif xlen == 3:
         rate = obj['var']['rate']
         print('set  {:16s} ({:04x}), rate: {}'.format(cid_name(cid), cid, rate))
+    elif xlen == 8:
+        rates = obj['var']['rates'].val
+        print('rsp  {:8s} ({:04x}) {}'.format(cid_name(cid), cid,
+                                               str(map(ord, rates))))
     else:
         print()
     if level >= 1:
