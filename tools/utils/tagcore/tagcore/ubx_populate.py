@@ -31,6 +31,8 @@ ubx.cid_table[0x0135]   = (decode_null,        None,                       None,
 ubx.cid_table[0x0160]   = (decode_default,     [ emit_ubx_nav_aopstatus ], obj_ubx_nav_aopstatus(),   'nav/aopstat',  'obj_ubx_nav_aopstatus')
 ubx.cid_table[0x0161]   = (decode_default,     [ emit_default ],           obj_ubx_nav_eoe(),         'nav/eoe',      'obj_ubx_nav_eoe')
 
+ubx.cid_table[0x0241]   = (decode_ubx_rxm_pmreq, [ emit_ubx_rxm_pmreq ],   obj_ubx_rxm_pmreq(),       'rxm/pmreq',    'obj_ubx_rxm_pmreq')
+
 ubx.cid_table[0x0400]   = (decode_default,     [ emit_ubx_inf ],           obj_ubx_hdr(),             'inf/error',    'obj_ubx_inf_error')
 ubx.cid_table[0x0401]   = (decode_default,     [ emit_ubx_inf ],           obj_ubx_hdr(),             'inf/warning',  'obj_ubx_inf_warning')
 ubx.cid_table[0x0402]   = (decode_default,     [ emit_ubx_inf ],           obj_ubx_hdr(),             'inf/notice',   'obj_ubx_inf_notice')
@@ -82,7 +84,6 @@ ubx.cid_table[0x0214]   = (decode_null, None, None, 'rxm/measx',        'none')
 ubx.cid_table[0x0215]   = (decode_null, None, None, 'rxm/rawx',         'none')
 ubx.cid_table[0x0220]   = (decode_null, None, None, 'rxm/svsi',         'none')
 ubx.cid_table[0x0232]   = (decode_null, None, None, 'rxm/rtcm',         'none')
-ubx.cid_table[0x0241]   = (decode_null, None, None, 'rxm/pmreq',        'none')
 ubx.cid_table[0x0259]   = (decode_null, None, None, 'rxm/rlm',          'none')
 ubx.cid_table[0x0261]   = (decode_null, None, None, 'rxm/imes',         'none')
 

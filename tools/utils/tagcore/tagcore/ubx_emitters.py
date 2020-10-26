@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.8.dev3'
+__version__ = '0.4.8.dev4'
 
 
 def emit_default(level, offset, buf, obj, xdir):
@@ -347,6 +347,22 @@ def emit_ubx_nav_timeutc(level, offset, buf, obj, xdir):
     std   = valid >> 4
     print('{:9d}  {:3s}  {:4d}/{:02d}/{:02d} {:02d}:{:02d}:{:02d} {:06d}  std: {:d}  tAcc: {:d}'.format(
         iTOW, vstr, year, month, day, hour, xmin, sec, nano, std, tAcc))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+
+def emit_ubx_rxm_pmreq(level, offset, buf, obj, xdir):
+    ubx  = obj['ubx']
+    xlen = ubx['len'].val
+    dur   = obj['var']['duration'].val
+    flags = obj['var']['flags'].val
+    if xlen == 8:
+        print('dur: {}    {:04x}'.format(dur, flags))
+    elif xlen == 16:
+        wakeup = obj['var']['wakeupSources'].val
+        print('dur: {}    {:04x}  {:04x}'.format(dur, flags, wakeup))
+    else:
+        print('xxxx')
     if level >= 1:
         print('  {}'.format(obj))
 

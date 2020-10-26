@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev3'
+__version__ = '0.4.8.dev4'
 
 import binascii
 from   collections  import OrderedDict
@@ -471,8 +471,11 @@ def obj_ubx_nav_timeutc():
 
 
 # ubx_rxm_pmreq 0241
+# basic hdr is ubx_rxm_pmreq
+# var section is either pmreq_8 or pmreq_16
 # len 8:  no version or wakeupSources
 # len 16: version and wakeupSources
+
 def obj_ubx_rxm_pmreq_8():
     return aggie(OrderedDict([
         ('duration',    atom(('<I',  '{}'))),
@@ -648,12 +651,12 @@ def decode_ubx_rxm_pmreq(level, offset, buf, obj):
     consumed = obj.set(buf)
     xlen = obj['ubx']['len'].val
 
-    if xlen == 8:                       # single rate, current port
+    if xlen == 8:                       # no version/wakeupSources
         obj['var'] = obj_ubx_rxm_pmreq_8();
         consumed += obj['var'].set(buf[consumed:])
         return consumed
 
-    if xlen == 16:                       # multiple rates
+    if xlen == 16:                       # version and wakeupSources
         obj['var'] = obj_ubx_rxm_pmreq_16();
         consumed += obj['var'].set(buf[consumed:])
         return consumed
