@@ -33,7 +33,7 @@ __version__ = '0.4.8.dev5'
 def emit_default(level, offset, buf, obj, xdir):
     if 'iTOW' in obj:
         iTOW = obj['iTOW'].val
-        print('{:9d}'.format(iTOW))
+        print('  {:9d}'.format(iTOW))
     else:
         print()
     if (level >= 1):
@@ -181,7 +181,7 @@ def emit_ubx_nav_aopstatus(level, offset, buf, obj, xdir):
     status  = obj['status'].val
     cfgstr  = 'enabled' if aopCfg & 1 else 'disabled'
     statstr = 'running' if status     else 'idle'
-    print('{:9d}  {:s}  {:s}'.format(iTOW, cfgstr, statstr))
+    print('  {:9d}  {:s}  {:s}'.format(iTOW, cfgstr, statstr))
     if level >= 1:
         print('  {}'.format(obj))
 
@@ -193,7 +193,7 @@ def emit_ubx_nav_dop(level, offset, buf, obj, xdir):
     tDOP = float(obj['tDOP'].val)/100
     vDOP = float(obj['vDOP'].val)/100
     hDOP = float(obj['hDOP'].val)/100
-    print('{:9d}  g: {:.2f}  p: {:.2f}  t: {:.2f}  v: {:.2f}  h: {:.2f}'.format(
+    print('  {:9d}  g: {:.2f}  p: {:.2f}  t: {:.2f}  v: {:.2f}  h: {:.2f}'.format(
         iTOW, gDOP, pDOP, tDOP, vDOP, hDOP))
     if level >= 1:
         print('  {}'.format(obj))
@@ -205,7 +205,7 @@ def emit_ubx_nav_clock(level, offset, buf, obj, xdir):
     clkD = obj['clkD'].val
     tAcc = obj['tAcc'].val
     fAcc = obj['fAcc'].val
-    print('{:9d}  b: {:d} d: {:d}  t: {:d}  f: {:d}'.format(
+    print('  {:9d}  b: {:d} d: {:d}  t: {:d}  f: {:d}'.format(
         iTOW, clkB, clkD, tAcc, fAcc))
     if level >= 1:
         print('  {}'.format(obj))
@@ -217,7 +217,7 @@ def emit_ubx_nav_posecef(level, offset, buf, obj, xdir):
     ecefY = float(obj['ecefY'].val)/100.
     ecefZ = float(obj['ecefZ'].val)/100.
     pAcc  = obj['pAcc'].val
-    print('{:9d}  {:8.2f} {:8.2f} {:8.2f}  pAcc: {}'.format(
+    print('  {:9d}  {:8.2f} {:8.2f} {:8.2f}  pAcc: {}'.format(
         iTOW, ecefX, ecefY, ecefZ, pAcc))
     if level >= 1:
         print('  {}'.format(obj))
@@ -265,7 +265,7 @@ def emit_ubx_nav_pvt(level, offset, buf, obj, xdir):
     if tacc == 0xffffffff:
         tacc = -1
 
-    print('{:9d}  {:5s}  ({:02d})  vf: {:s}  {:s}: {:04d}/{:02d}/{:02d}-{:02d}:{:02d}:{:02d} {:010d}  {:11.7f} {:12.7f} [t {:4}, p {:4}]'.format(
+    print('  {:9d}  {:5s}  [{:02d}]  vf: {:s}  {:s}: {:04d}/{:02d}/{:02d}-{:02d}:{:02d}:{:02d} {:010d}  {:11.7f} {:12.7f} [t {:4}, p {:4}]'.format(
         iTOW, fixtype, numSV, mrstr, tdstr, year, month, day,
         hour, xmin, sec, nano, flat, flon, tacc, pdop))
     if level >= 1:
@@ -289,7 +289,7 @@ def emit_ubx_nav_status(level, offset, buf, obj, xdir):
     spoof    = (flags2 & 0x18) >> 3
     carr     = flags2 >> 6
     psmstr   = psm_type.get(psm, 'psm/' + str(psm))
-    print('{:9d}  {:5s}  {:6s} f: {:s}  ttff: {:.3f}  ss: {:.3f}  spoof: {}  carr: {}'.format(
+    print('  {:9d}  {:5s}  {:6s} f: {:s}  ttff: {:.3f}  ss: {:.3f}  spoof: {}  carr: {}'.format(
         iTOW, fixtype, psmstr, flagstr, ttff, msss, spoof, carr))
     if level >= 1:
         print('  {}'.format(obj))
@@ -305,7 +305,7 @@ def emit_ubx_nav_timegps(level, offset, buf, obj, xdir):
     vstr  = 'L' if valid & 0x4 else 'l'
     vstr += 'W' if valid & 0x2 else 'w'
     vstr += 'T' if valid & 0x1 else 't'
-    print('{:9d}  {:3s}  w: {:4d}  ls: {:2d}  tAcc: {:d}'.format(
+    print('  {:9d}  {:3s}  w: {:4d}  ls: {:2d}  tAcc: {:d}'.format(
         iTOW, vstr, week, leapS, tAcc))
     if level >= 1:
         print('  {}'.format(obj))
@@ -323,7 +323,7 @@ def emit_ubx_nav_timels(level, offset, buf, obj, xdir):
     valid         = obj['valid'].val
     vstr  = 'E' if valid & 0x2 else 'e'
     vstr += 'C' if valid & 0x1 else 'c'
-    print('{:9d}  {:2s}  cur: {:d}/{:d}  chg: {:d}/{:d}  delta: {:d}  w/d: {:d}/{:d}'.format(
+    print('  {:9d}  {:2s}  cur: {:d}/{:d}  chg: {:d}/{:d}  delta: {:d}  w/d: {:d}/{:d}'.format(
         iTOW, vstr, srcOfCurrLs, currLs, srcOfLsChange, lsChange,
         timeToLsEvent, lsGpsWn, lsGpsDn))
     if level >= 1:
@@ -345,7 +345,7 @@ def emit_ubx_nav_timeutc(level, offset, buf, obj, xdir):
     vstr += 'W' if valid & 0x2 else 'w'
     vstr += 'T' if valid & 0x1 else 't'
     std   = valid >> 4
-    print('{:9d}  {:3s}  {:4d}/{:02d}/{:02d} {:02d}:{:02d}:{:02d} {:06d}  std: {:d}  tAcc: {:d}'.format(
+    print('  {:9d}  {:3s}  {:4d}/{:02d}/{:02d} {:02d}:{:02d}:{:02d} {:06d}  std: {:d}  tAcc: {:d}'.format(
         iTOW, vstr, year, month, day, hour, xmin, sec, nano, std, tAcc))
     if level >= 1:
         print('  {}'.format(obj))
