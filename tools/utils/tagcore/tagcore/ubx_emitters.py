@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.8.dev5'
+__version__ = '0.4.8.dev6'
 
 
 def emit_default(level, offset, buf, obj, xdir):
@@ -39,15 +39,6 @@ def emit_default(level, offset, buf, obj, xdir):
     if (level >= 1):
         print('  {}'.format(obj))
 
-
-fix_type = {
-    0: 'nofix',
-    1: 'dr',
-    2: '2d',
-    3: '3d',
-    4: 'gps_dr',
-    5: 'time',
-}
 
 psm_type = {
     0: 'inact',
@@ -253,7 +244,7 @@ def emit_ubx_nav_pvt(level, offset, buf, obj, xdir):
     tdstr    = 'D' if valid & 0x1 else 'd'
     tdstr   += 'T' if valid & 0x2 else 't'
 
-    fixtype  = fix_type.get(ftype, 'fix/' + str(ftype))
+    fixtype  = gps_fix_name(ftype)
 
     psm      = (flags >> 2) & 0x7
     psmstr   = psm_type.get(psm, 'psm/' + str(psm))
@@ -280,7 +271,7 @@ def emit_ubx_nav_status(level, offset, buf, obj, xdir):
     flags2   = obj['flags2'].val
     ttff     = float(obj['ttff'].val)/1000.
     msss     = float(obj['msss'].val)/1000.
-    fixtype  = fix_type.get(gpsFix, 'fix/' + str(gpsFix))
+    fixtype  = gps_fix_name(gpsFix)
     flagstr  = 'T' if flags & 0x8 else 't'
     flagstr += 'W' if flags & 0x4 else 'w'
     flagstr += 'D' if flags & 0x2 else 'd'
