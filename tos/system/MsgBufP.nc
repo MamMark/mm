@@ -69,14 +69,16 @@
  * that all memory allocated between head and tail is strictly contiguous
  * subject to end of buffer wrappage.
  *
- * Since message byte collection happens at interrupt level (async) and
- * data collection is a syncronous actvity (task) provisions must be made
- * for handing the message off to task level.  While this is occuring it is
- * possible for additional bytes to arrive at interrupt level. They will
- * continue to be added to the buffer as an additional message until the
- * buffer runs out of space. The buffer size is set to accommodate some
- * reasonable number of incoming messages.  Once either the buffer becomes
- * full or we run out of msg slots, further messages will be discarded.
+ * Message byte collection can occur at either interrupt level (async) or
+ * from task level (sync).  Both mechanisms are supported.  Completed
+ * messages are handed off to upper layers at task level.
+ *
+ * While messages are being processed, additional incoming bytes can be
+ * seen at interrupt level (async arrival).  These bytes will be added to
+ * the buffer as an additional message until the buffer runs out of
+ * space. The buffer size is set to accommodate some reasonable number of
+ * incoming messages.  Once either the buffer becomes full or we run out of
+ * msg slots, further messages will be discarded.
  *
  * Management of buffers, messages, and free space.
  *
