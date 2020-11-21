@@ -1083,31 +1083,41 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
+  /*
+   * ublox msg_available: new ublox message is available.
+   *
+   * incoming message.  NMEA or UBX.
+   */
   event void MsgReceive.msg_available(uint8_t *msg, uint16_t len,
         rtctime_t *arrival_rtp, uint32_t mark_j) {
     ubx_header_t *ubp;
-    dt_gps_t hdr;
+    uint16_t      cid;
 
     ubp = (void *) msg;
-    if (ubp->sync1 != UBX_SYNC1 || ubp->sync2 != UBX_SYNC2) {
+    do {
+      if (*msg == '$')                  /* NMEA packet */
+        break;
+      if (ubp->sync1 == UBX_SYNC1 && ubp->sync2 == UBX_SYNC2)
+        break;                          /* UBX packet */
       call Panic.warn(PANIC_GPS, 134, ubp->sync1, ubp->sync2,
                        (parg_t) msg, len);
+    } while (0);
+
+    call GPSLog.collect(msg, len, GPS_DIR_RX, arrival_rtp);
+
+    if (*msg == '$')
       return;
+
+    if (gmcb.major_state == GMS_MAJOR_SLEEP) {
+        gps_warn(100, gmcb.major_state, MON_EV_TIMEOUT_MAJOR);
     }
 
-    if (call OverWatch.getLoggingFlag(OW_LOG_GPS_RAW)) {
-      /*
-       * gps msg eavesdropping.  Log received messages to the dblk
-       * stream.
-       */
-      hdr.len      = sizeof(hdr) + len;
-      hdr.dtype    = DT_GPS_RAW;
-      call Rtc.copyTime(&hdr.rt, arrival_rtp);
-      hdr.mark_us  = (mark_j * MULT_JIFFIES_TO_US) / DIV_JIFFIES_TO_US;
-      hdr.chip_id  = CHIP_GPS_ZOE;
-      hdr.dir      = GPS_DIR_RX;
-      hdr.pad      = 0;
-      call Collect.collect_nots((void *) &hdr, sizeof(hdr), msg, len);
+    gmcb.msg_count++;
+    cid = ubp->class << 8 | ubp->id;
+    switch (cid) {
+      case 0x0104: process_nav_dop(ubp, arrival_rtp); break;
+      case 0x0107: process_nav_pvt(ubp, arrival_rtp); break;
+      case 0x0161: process_nav_eoe(ubp, arrival_rtp); break;
     }
   }
 
