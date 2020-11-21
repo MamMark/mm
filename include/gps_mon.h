@@ -43,9 +43,6 @@ typedef enum gps_debug_cmds {
   GDC_MON_GO_NEAR   = 9,
   GDC_MON_GO_LOST   = 10,
 
-  GDC_AWAKE_STATUS  = 0x10,
-  GDC_MPM           = 0x11,
-  GDC_PULSE         = 0x12,
   GDC_RESET         = 0x13,
   GDC_RAW_TX        = 0x14,
   GDC_HIBERNATE     = 0x15,
@@ -67,7 +64,6 @@ typedef enum gps_debug_cmds {
   GDC_FORCE_LOGGING = 0x85,
   GDC_GET_LOGGING   = 0x86,
 
-  GDC_LOW           = 0xfc,
   GDC_SLEEP         = 0xfd,
   GDC_PANIC         = 0xfe,
   GDC_REBOOT        = 0xff,
@@ -97,13 +93,10 @@ typedef enum mon_events {
   MON_EV_SWVER          = 3,
   MON_EV_STARTUP        = 4,
   MON_EV_MSG            = 5,
-  MON_EV_OTS_NO         = 6,
-  MON_EV_OTS_YES        = 7,
+
   MON_EV_FIX            = 8,
   MON_EV_TIME           = 9,
-  MON_EV_LPM            = 10,
-  MON_EV_LPM_ERROR      = 11,
-  MON_EV_TIMEOUT_MINOR  = 12,
+
   MON_EV_TIMEOUT_MAJOR  = 13,
   MON_EV_MAJOR_CHANGED  = 14,
   MON_EV_CYCLE          = 15,

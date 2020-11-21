@@ -233,14 +233,8 @@ implementation {
   }
 
 
-  void gps_wakeup() { }
   void gps_reset()  { }
 
-
-  /*
-   * gps_hibernate: switch off gps, check to see if it is already off first
-   */
-  void gps_hibernate() { }
 
   void gpsc_change_state(gpsc_state_t next_state, gps_where_t where) {
 #ifdef GPS_DEBUG_STATE

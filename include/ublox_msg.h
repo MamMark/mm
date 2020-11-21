@@ -50,7 +50,6 @@
 #define UBX_CLASS_ID(msg)       (UBX_CLASS(msg) << 8 | UBX_ID(msg))
 
 /*
- * overhead: sync (2), class (1), id (1), len (2), chk_a/chk_b (2)
  * chksum:             class (1), id (1), len (2), data[]
  */
 #define UBX_OVERHEAD            8

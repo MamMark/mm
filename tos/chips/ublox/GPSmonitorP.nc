@@ -169,18 +169,6 @@ typedef struct {
 } gps_time_t;
 
 
-typedef struct {
-  dt_gps_trk_t         dt;              /* needs to be contig  */
-  dt_gps_trk_element_t sats[12];        /* contig with above   */
-} gps_trk_block_t;
-
-
-typedef struct {
-  rtctime_t            rt;              /* rtctime - last seen */
-  gps_trk_block_t      dt_block;
-} gps_trk_t;
-
-
 #define GMCB_MAJIK 0xAF52FFFF
 
 typedef enum {
@@ -756,16 +744,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         call TagnetRadio.setLost();
         break;
 
-      case GDC_AWAKE_STATUS:
-        call CollectEvent.logEvent(DT_EVENT_GPS_AWAKE_S, 999, 0, 0, 0);
-        break;
-
-      case GDC_MPM:
-        break;
-
-      case GDC_PULSE:
-        break;
-
       case GDC_RESET:
         call GPSControl.reset();
         break;
@@ -848,9 +826,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         call OverWatch.forceLoggingFlags(l);
         break;
 
-
-      case GDC_LOW:
-        break;
 
       case GDC_SLEEP:
         call OverWatch.halt_and_CF();

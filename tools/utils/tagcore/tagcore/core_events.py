@@ -27,9 +27,6 @@ __all__ = [
 
     'PANIC_WARN',
     'FAULT',
-    'EV_GPS_GEO',
-    'EV_GPS_XYZ',
-    'EV_GPS_TIME',
     'GPS_CYCLE_LTFF',
     'GPS_FIRST_FIX',
     'DCO_REPORT',
@@ -48,31 +45,22 @@ __all__ = [
     'GPS_BOOT',
     'GPS_BOOT_TIME',
     'GPS_BOOT_FAIL',
-    'GPS_MON_MINOR',
     'GPS_MON_MAJOR',
     'GPS_RX_ERR',
     'GPS_LOST_INT',
     'GPS_MSG_OFF',
-    'GPS_AWAKE_S',
     'GPS_CMD',
     'GPS_RAW_TX',
-    'GPS_SWVER_TO',
     'GPS_CANNED',
     'GPS_TURN_ON',
     'GPS_STANDBY',
     'GPS_TURN_OFF',
-    'GPS_MPM',
-    'GPS_PULSE',
     'GPS_TX_RESTART',
-    'GPS_MPM_RSP',
     'GPS_ACK',
     'GPS_NACK',
     'GPS_NO_ACK',
     'GPS_FAST',
     'GPS_FIRST',
-    'GPS_SATS2',
-    'GPS_SATS7',
-    'GPS_SATS41',
     'GPS_PWR_OFF',
 ]
 
@@ -83,9 +71,9 @@ event_names = {
     1:  'PANIC_WARN',
     2:  'FAULT',
 
-    3:  'GPS_GEO',              # deprecated, backward compatibility
-    4:  'GPS_XYZ',              # deprecated, backward compatibility
-    5:  'GPS_TIME',             # deprecated, backward compatibility
+#   3:  'GPS_GEO',              # deprecated, backward compatibility
+#   4:  'GPS_XYZ',              # deprecated, backward compatibility
+#   5:  'GPS_TIME',             # deprecated, backward compatibility
 
     6:  'GPS_CYCLE_LTFF',
     7:  'GPS_FIRST_FIX',
@@ -119,17 +107,14 @@ event_names = {
     33: 'GPS_BOOT_TIME',
     34: 'GPS_BOOT_FAIL',
 
-    35: 'GPS_MON_MINOR',
     36: 'GPS_MON_MAJOR',
 
     37: 'GPS_RX_ERR',
     38: 'GPS_LOST_INT',
     39: 'GPS_MSG_OFF',
 
-    40: 'GPS_AWAKE_S',
     41: 'GPS_CMD',
     42: 'GPS_RAW_TX',
-    43: 'GPS_SWVER_TO',
     44: 'GPS_CANNED',
 
     45: 'GPS_HW_CONFIG',
@@ -138,28 +123,19 @@ event_names = {
     47: 'GPS_TURN_ON',
     48: 'GPS_STANDBY',
     49: 'GPS_TURN_OFF',
-    50: 'GPS_MPM',
-    51: 'GPS_PULSE',
 
     52: 'GPS_TX_RESTART',
-    53: 'GPS_MPM_RSP',
     54: 'GPS_ACK',
     55: 'GPS_NACK',
     56: 'GPS_NO_ACK',
 
     64: 'GPS_FAST',
     65: 'GPS_FIRST',
-    66: 'GPS_SATS/2',
-    67: 'GPS_SATS/7',
-    68: 'GPS_SATS/41',
     69: 'GPS_PWR_OFF',
 }
 
 PANIC_WARN    = 1
 FAULT         = 2
-EV_GPS_GEO    = 3
-EV_GPS_XYZ    = 4
-EV_GPS_TIME   = 5
 GPS_CYCLE_LTFF= 6
 GPS_FIRST_FIX = 7
 DCO_REPORT    = 15
@@ -178,31 +154,22 @@ GPS_DELTA     = 31
 GPS_BOOT      = 32
 GPS_BOOT_TIME = 33
 GPS_BOOT_FAIL = 34
-GPS_MON_MINOR = 35
 GPS_MON_MAJOR = 36
 GPS_RX_ERR    = 37
 GPS_LOST_INT  = 38
 GPS_MSG_OFF   = 39
-GPS_AWAKE_S   = 40
 GPS_CMD       = 41
 GPS_RAW_TX    = 42
-GPS_SWVER_TO  = 43
 GPS_CANNED    = 44
 GPS_TURN_ON   = 47
 GPS_STANDBY   = 48
 GPS_TURN_OFF  = 49
-GPS_MPM       = 50
-GPS_PULSE     = 51
 GPS_TX_RESTART= 52
-GPS_MPM_RSP   = 53
 GPS_ACK       = 54
 GPS_NACK      = 55
 GPS_NO_ACK    = 56
 GPS_FAST      = 64
 GPS_FIRST     = 65
-GPS_SATS2     = 66
-GPS_SATS7     = 67
-GPS_SATS41    = 68
 GPS_PWR_OFF   = 69
 
 

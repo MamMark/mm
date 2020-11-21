@@ -371,37 +371,6 @@ def emit_event(level, offset, buf, obj):
             arg0, arg1, arg2, arg3, arg0, arg1, arg2, arg3))
         return
 
-    # deprecated, backward compatibility
-    if event == EV_GPS_GEO:
-        arg0 = c_int32(arg0).value/10000000.
-        arg1 = c_int32(arg1).value/10000000.
-        arg3 = arg3/1000.
-        print(' {:14s}  {:10.7f}  {:10.7f}  wk/tow: {}/{}'.format(
-            event_name(event), arg0, arg1, arg2, arg3))
-        return
-
-    # deprecated, backward compatibility
-    if event == EV_GPS_XYZ:
-        arg1 = c_int32(arg1).value
-        arg2 = c_int32(arg2).value
-        arg3 = c_int32(arg3).value
-        print(' {:14s} {} - x: {}  y: {}  z: {}'.format(
-            event_name(event), arg0, arg1, arg2, arg3))
-        return
-
-    # deprecated, backward compatibility
-    if event == EV_GPS_TIME:
-        year = (arg0 >> 16) & 0xffff
-        mon  = (arg0 >> 8)  & 0xff
-        day  =  arg0        & 0xff
-        hr   = (arg1 >> 8)  & 0xff
-        xmin =  arg1        & 0xff
-        secs =  arg2 / 1000.
-        print(' {:14s} UTC: {}/{:02}/{:02} {:2}:{:02}:{}'.format(
-            event_name(event), year, mon, day, hr, xmin,
-            '{:.3f}'.format(secs).zfill(6)))
-        return
-
     if event == DCO_REPORT:
         arg0 = c_int32(arg0).value
         arg1 = c_int32(arg1).value
@@ -472,14 +441,6 @@ def emit_event(level, offset, buf, obj):
             cur_s, new_s, delta1000/1000., arg3))
         return
 
-
-    if (event == GPS_MON_MINOR):
-        print(' gps/mon (MINOR) {:^15s} {:>12s} -> {}'.format(
-            '<{}>'.format(gps_mon_event_name(arg2)),
-            gps_mon_minor_name(arg0),
-            gps_mon_minor_name(arg1)))
-        return
-
     if (event == GPS_MON_MAJOR):
         print(' gps/mon (MAJOR) {:^15s} {:>12s} -> {}'.format(
             '<{}>'.format(gps_mon_event_name(arg2)),
@@ -495,11 +456,6 @@ def emit_event(level, offset, buf, obj):
     if event == GPS_RX_ERR:
         print(' GPS_RX_ERR: 0x{:02x}  nerr delta: {}  state: {}'.format(
             arg0, arg1 - arg2, arg3))
-        return
-
-    if event == GPS_MPM_RSP:
-        print(' GPS_MPM_RSP    0x{:04x} ({}) {} {}'.format(
-            arg0, arg1, arg2, arg3))
         return
 
     print(event0.format(event_name(event), arg0, arg1, arg2, arg3))
@@ -531,6 +487,8 @@ def emit_debug(level, offset, buf, obj):
 #
 # GPS_VERSION emitter
 # uses decode_default with dt_gps_hdr_obj to decode
+#
+# Deprecated
 #
 
 def emit_gps_version(level, offset, buf, obj):
