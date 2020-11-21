@@ -141,28 +141,39 @@ enum {
  * They are instantated in the implementation block.
  */
 
-/* from MID 2, NAV_DATA */
+/* from NAV/POSECEF CID 0101 */
 typedef struct {
   rtctime_t    rt;                      /* rtctime - last seen */
   dt_gps_xyz_t dt;
 } gps_xyz_t;
 
 
-/* from MID 7, clock status */
+typedef struct {
+  rtctime_t    rt;                      /* rtctime - last seen */
+  uint32_t     itow;
+  uint16_t     gdop;
+  uint16_t     pdop;
+  uint16_t     tdop;
+  uint16_t     vdop;
+  uint16_t     hdop;
+} gps_dop_t;
+
+
+/* from NAV/CLOCK CID 0122 */
 typedef struct {
   rtctime_t    rt;
   dt_gps_clk_t dt;
 } gps_clk_t;
 
 
-/* from MID 41, geodetic data */
+/* from NAV/PVT CID 0107 */
 typedef struct {
   rtctime_t    rt;                      /* rtctime - last seen */
   dt_gps_geo_t dt;
 } gps_geo_t;
 
 
-/* extracted from MID 41, Geodetic */
+/* from NAV/PVT CID 0107 */
 typedef struct {
   rtctime_t     rt;                     /* rtctime - last seen */
   dt_gps_time_t dt;
@@ -249,6 +260,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 #define LAST_NSATS_COUNT_INIT 10
 
   gps_xyz_t   m_xyz;
+  gps_dop_t   m_dop;
   gps_clk_t   m_clk;
   gps_geo_t   m_geo;
   gps_time_t  m_time;
@@ -781,9 +793,244 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
-  void process_default(ubx_header_t *ubp, rtctime_t *rtp) {
-    if (!ubp || !rtp)
+  /*
+   * UBX packets show up in blocks that are grouped together.  Packets
+   * that are part of the same block will have the same itow value.
+   *
+   * We look at the PVT packet to determine fix as well as time.  But
+   * there are additional status packets associated with the PVT packet
+   * that are also interesting.  If a fix has been seen, the status variable
+   * fix_seen will be set.
+   *
+   * Once a fix has been seen, we need to keep collecting to make sure
+   * we also collect the status packets.  We use the EOE packet to know
+   * when the block is finished.  If fix_seen is set, we will transition
+   * back to sleep.
+   */
+  void process_nav_eoe(void *msg, rtctime_t *rtp) {
+    uint32_t delta;
+    uint16_t ev;
+
+    if (gmcb.fix_seen) {
+      delta = call MajorTimer.getNow() - cycle_start;
+      fix_count++;                      /* one more fix seen */
+      fix_sum += delta;
+      totaltime += delta;
+      ev = (gmcb.major_state == GMS_MAJOR_BOOT) ? DT_EVENT_GPS_FIRST_FIX
+        : DT_EVENT_GPS_CYCLE_LTFF;
+      call CollectEvent.logEvent(ev,                     fix_count,
+                delta, fix_sum, fix_sum/fix_count);
+
+      major_change_state(GMS_MAJOR_SLEEP, MON_EV_FIX);
+      call GPSControl.standby();
+      call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_END, ncycles,
+                delta, totaltime, totaltime/ncycles);
+      cycle_start = 0;
+      gmcb.msg_count = 0;
+      gmcb.fix_seen  = FALSE;
+      call MajorTimer.startOneShot(GPS_MON_SLEEP);
+    }
+  }
+
+  void process_nav_dop(void *msg, rtctime_t *rtp) {
+    ubx_nav_dop_t *ndp;
+    gps_dop_t     *dp;
+
+    ndp = msg;
+    if (!ndp || CF_LE_16(ndp->len) != NAVDOP_LEN)
       return;
+
+    dp = &m_dop;
+    call Rtc.copyTime(&dp->rt, rtp);
+    dp->itow = CF_BE_32(ndp->iTow);
+    dp->gdop = CF_BE_16(ndp->gDop);
+    dp->pdop = CF_BE_16(ndp->pDop);
+    dp->tdop = CF_BE_16(ndp->tDop);
+    dp->vdop = CF_BE_16(ndp->vDop);
+    dp->hdop = CF_BE_16(ndp->hDop);
+  }
+
+
+  void process_nav_pvt(void *msg, rtctime_t *rtp) {
+    ubx_nav_pvt_t *npp;
+    dt_gps_t       gps_block;
+    dt_gps_time_t *tp;
+    dt_gps_geo_t  *gp;
+    uint8_t        flags, num_sats, fixtype;
+
+    uint64_t       epoch;
+    uint32_t       cur_secs,   cap_secs,   gps_secs;
+    uint32_t       cur_micros, cap_micros;
+    rtctime_t      cur_time;
+    int32_t        nano;
+    rtctime_t      rtc;
+    int32_t        delta,   delta1000;
+    bool           force,   skew;
+    int            timesrc, forcesrc;
+
+    /*
+     * fix is denoted by gnssFixOk set in flags (F bit)
+     * denotes valid time and valid fix.
+     *
+     * when logging a fix, we want ...
+     *
+     * itow, fixtype, numSVs
+     * time: year/mo/day-hr:min:sec.ms   tacc
+     * fix:  lat long height msl         hacc vacc  pdop
+     */
+
+    npp      = msg;                     /* ptr to pvt packet,  input */
+    flags    = npp->flags;              /* byte access */
+    num_sats = npp->numSV;
+    fixtype  = npp->fixType;
+
+    if (last_nsats_count == 0 || num_sats != last_nsats_seen) {
+      call CollectEvent.logEvent(DT_EVENT_GPS_SATS, num_sats, fixtype,
+                                 flags, 0);
+      last_nsats_seen  = num_sats;
+      last_nsats_count = LAST_NSATS_COUNT_INIT;
+    } else
+      last_nsats_count--;
+
+    if (flags & UBX_NAV_PVT_FLAGS_GNSSFIXOK) {
+      /*
+       * FIXOK says time and lat/long are both valid
+       *
+       * from pvt packet
+       * o extract time, tacc from pvt
+       *   the main fields of time in the pvt packet are rounded to the
+       *   nearest hundreth of a second, ie +/- 5ms.
+       *
+       *   nano can have values of -5000000 (-5ms) to 994999999 (~ 995ms).
+       *   rather than dealing with any negative correction which can ripple
+       *   through all of the time fields, we leave the main fields alone (sec
+       *   and above) and zero the nano field.  We set tacc to -1 to indicate
+       *   we've done this.  Shouldn't happen very often.
+       *
+       * o copy time into m_time/dt_gps_time, tacc
+       * o copy capture time (rtp) into m_time/rt
+       *
+       * o extract lat/long, alt, h/vacc, pdop from pvt.
+       * o copy into m_geo/dt_gps_geo
+       * o copy capture time (rtp) into m_geo/rt
+       *
+       * o check time vs cur delta, potential reboot.
+       */
+
+      gmcb.fix_seen = TRUE;
+
+      tp  = &m_time.dt;                         /* capture to data stream    */
+      call Rtc.copyTime(&m_time.rt, rtp);       /* last seen */
+      tp->itow      = CF_LE_32(npp->iTow);
+      tp->tacc      = CF_LE_32(npp->tAcc);
+      tp->utc_ms    = 0;
+      tp->utc_year  = CF_LE_16(npp->year);
+      tp->utc_month = npp->month;
+      tp->utc_day   = npp->day;
+      tp->utc_hour  = npp->hour;
+      tp->utc_min   = npp->min;
+      tp->utc_sec   = npp->sec;
+      tp->nsats     = num_sats;
+      nano          = CF_LE_32(npp->nano);
+      if (nano >= 0) tp->utc_ms  = nano/1000000;
+      else tp->tacc = (uint32_t) -1;
+
+      epoch = call Rtc.rtc2epoch(rtp);
+      cap_secs   = epoch >> 32;
+      cap_micros = epoch & 0xffffffffUL;
+
+      call Rtc.getTime(&cur_time);
+      epoch      = call Rtc.rtc2epoch(&cur_time);
+      cur_secs   = epoch >> 32;
+      cur_micros = epoch & 0xffffffffUL;
+
+      delta = (cur_secs - cap_secs) * 1000000 + (cur_micros - cap_micros);
+      tp->capdelta = delta;
+
+      /* build the dt gps header */
+      gps_block.len     = sizeof(gps_block) + sizeof(dt_gps_time_t);
+      gps_block.dtype   = DT_GPS_TIME;
+      gps_block.mark_us = 0;
+      gps_block.chip_id = CHIP_GPS_ZOE;
+      gps_block.dir     = GPS_DIR_RX;
+      gps_block.pad     = 0;
+      call Collect.collect((void *) &gps_block, sizeof(gps_block),
+                           (void *) tp, sizeof(*tp));
+
+      gp  = &m_geo.dt;                  /* capture to data stream    */
+      call Rtc.copyTime(&m_geo.rt, rtp);
+      gp->itow    = CF_LE_32(npp->iTow);
+      gp->lat     = CF_LE_32(npp->lat);
+      gp->lon     = CF_LE_32(npp->lon);
+      gp->alt_ell = CF_LE_32(npp->height);
+      gp->alt_msl = CF_LE_32(npp->hMSL);
+      gp->hacc    = CF_LE_32(npp->hAcc);
+      gp->vacc    = CF_LE_32(npp->vAcc);
+      gp->pdop    = CF_LE_16(npp->pDop);
+      gp->fixtype = fixtype;
+      gp->flags   = flags;
+      gp->nsats   = num_sats;
+
+      call Rtc.getTime(&cur_time);
+      epoch = call Rtc.rtc2epoch(&cur_time);
+      cur_secs   = epoch >> 32;
+      cur_micros = epoch & 0xffffffffUL;
+
+      delta = (cur_secs - cap_secs) * 1000000 + (cur_micros - cap_micros);
+      gp->capdelta = delta;
+
+      /* build the dt gps header */
+      gps_block.len   = sizeof(gps_block) + sizeof(dt_gps_geo_t);
+      gps_block.dtype = DT_GPS_GEO;
+
+      /* the rest of the header cells are the same as for time */
+      call Collect.collect((void *) &gps_block, sizeof(gps_block),
+                           (void *) gp, sizeof(*gp));
+
+      /*
+       * Having a good time is critical for proper functioning of the
+       * radio and the rendezvous problem.
+       *
+       * We want to set the RTC when any of the following is true.
+       *
+       * 1) Current timesrc is not GPS (< GPS0).  Set using gps time.
+       *    set timesrc GPS0, reboot.
+       *
+       * 2) utc_ms == 0 -> 1PPS TM -> OD highest caliber gps time.
+       *    timesrc < GPS (GPS or below) or excessiveSkew.
+       *    set timesrc GPS, reboot.
+       */
+      timesrc     = call OverWatch.getRtcSrc();
+      force       = timesrc < RTCSRC_GPS0;
+      forcesrc    = RTCSRC_GPS0;
+      delta       = 0;
+      rtc.year    = tp->utc_year;
+      rtc.mon     = tp->utc_month;
+      rtc.day     = tp->utc_day;
+      rtc.dow     = 0;
+      rtc.hr      = tp->utc_hour;
+      rtc.min     = tp->utc_min;
+      rtc.sec     = tp->utc_sec;
+      rtc.sub_sec = call Rtc.micro2subsec(tp->utc_ms * 1000);
+      skew        = call CoreTime.excessiveSkew(&rtc,
+                                &gps_secs, &cur_secs, &delta1000);
+      force       = (force || skew || (timesrc < RTCSRC_GPS));
+      forcesrc    = RTCSRC_GPS;
+      if (force) {
+        call CollectEvent.logEvent(DT_EVENT_TIME_SRC, forcesrc, delta1000,
+                                   timesrc, 2);
+        call OverWatch.setRtcSrc(forcesrc);
+        call Rtc.syncSetTime(&rtc);
+        call OverWatch.flush_boot(call OverWatch.getBootMode(),
+                                  ORR_TIME_SKEW);
+        /* doesn't return from flush_boot */
+      }
+
+      if (call OverWatch.getLoggingFlag(OW_LOG_GPS_MISC)) {
+        call CollectEvent.logEvent(DT_EVENT_GPS_DELTA, cur_secs, gps_secs,
+                                   delta1000, 0);
+      }
+    }
   }
 
 
