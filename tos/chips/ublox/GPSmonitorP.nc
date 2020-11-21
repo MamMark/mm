@@ -228,6 +228,7 @@ module GPSmonitorP {
     interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
     interface TagnetAdapter<tagnet_gps_cmd_t> as InfoSensGpsCmd;
     interface McuPowerOverride;
+    interface GPSLog;
   } uses {
     interface Boot;                           /* in boot */
     interface GPSControl;
@@ -1399,6 +1400,62 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   void process_default(ubx_header_t *ubp, rtctime_t *rtp) {
     if (!ubp || !rtp)
       return;
+  }
+
+
+  bool always_log(uint8_t *msg) {
+    ubx_header_t *ubp;
+    uint8_t       cls, id;
+
+    if (*msg == '$')                    /* nmea, eh ... */
+      return FALSE;
+    ubp = (void *) msg;
+    if (ubp->sync1 != UBX_SYNC1 || ubp->sync2 != UBX_SYNC2)
+      return FALSE;
+    cls = ubp->class;
+    id  = ubp->id;
+    switch (cls) {
+      case UBX_CLASS_INF:
+      case UBX_CLASS_ACK:
+      case UBX_CLASS_CFG:
+      case UBX_CLASS_MON:
+        return TRUE;
+    }
+    if (cls != UBX_CLASS_NAV)
+      return FALSE;
+    switch (id) {
+      case UBX_NAV_CLOCK:
+      case UBX_NAV_DOP:
+      case UBX_NAV_EOE:
+      case UBX_NAV_SAT:
+      case UBX_NAV_STATUS:
+        return TRUE;
+    }
+    return FALSE;
+  }
+
+
+  command void GPSLog.collect(uint8_t *msg, uint16_t len, uint8_t dir,
+                              rtctime_t *rtp) {
+    dt_gps_t      hdr;
+
+    if (call OverWatch.getLoggingFlag(OW_LOG_GPS_RAW) || always_log(msg)) {
+      /*
+       * gps msg eavesdropping.  Log received messages to the dblk
+       * stream.
+       */
+      hdr.len      = sizeof(hdr) + len;
+      hdr.dtype    = DT_GPS_RAW;
+      if (rtp)
+        call Rtc.copyTime(&hdr.rt, rtp);
+      else
+        call Rtc.getTime(&hdr.rt);
+      hdr.mark_us  = 0;                 /* deprecate */
+      hdr.chip_id  = (*msg == '$') ? CHIP_GPS_NMEA : CHIP_GPS_ZOE;
+      hdr.dir      = dir;
+      hdr.pad      = 0;
+      call Collect.collect_nots((void *) &hdr, sizeof(hdr), msg, len);
+    }
   }
 
 

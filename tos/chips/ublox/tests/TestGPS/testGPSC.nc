@@ -25,6 +25,7 @@ implementation {
   GPSmonitorC.GPSControl  -> GpsPort;
   GPSmonitorC.MsgReceive  -> GpsPort;
   GPSmonitorC.MsgTransmit -> GpsPort;
+  GPSmonitorC.GPSLog      <- GpsPort;
 
   InfoSensGpsXyz           = GPSmonitorC;
 

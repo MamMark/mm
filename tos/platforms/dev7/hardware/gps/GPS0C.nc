@@ -33,6 +33,7 @@ configuration GPS0C {
   }
   uses {
     interface Boot;                     /* in Boot */
+    interface GPSLog;                   /* hooks to GPSmonitor */
   }
 }
 
@@ -60,6 +61,7 @@ implementation {
   Booted     = GPSDriverP;
   GPSControl = GPSDriverP;
   Boot       = GPSDriverP;
+  GPSLog     = GPSDriverP;
 
   GPSDriverP.HW        -> HplGPS0C;
   GPSDriverP.OverWatch -> OverWatchC;

@@ -47,6 +47,7 @@ implementation {
   GPSmonitorC.MsgTransmit       -> GpsPort;
   GPSmonitorC.MsgReceive        -> GpsPort;
   GPSmonitorC.GPSPwr            -> GpsPort;
+  GPSmonitorC.GPSLog            <- GpsPort;
 
   components TagnetSysExecC;
   TagnetC.SysActive             -> TagnetSysExecC.SysActive;

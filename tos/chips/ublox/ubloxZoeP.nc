@@ -183,6 +183,7 @@ module ubloxZoeP {
 
     interface MsgBuf;
     interface GPSProto as ubxProto;
+    interface GPSLog;
 
     interface Panic;
     interface Platform;
@@ -209,27 +210,6 @@ implementation {
 
   void gps_panic(uint8_t where, parg_t p, parg_t p1) {
     call Panic.panic(PANIC_GPS, where, p, p1, 0, 0);
-  }
-
-
-  /* collect_gps_pak
-   *
-   * add a gps packet to the data stream.  Debugging etc.
-   */
-  static void collect_gps_pak(uint8_t *pak, uint16_t len, uint8_t dir) {
-    dt_gps_t hdr;
-
-    if (call OverWatch.getLoggingFlag(OW_LOG_GPS_RAW)) {
-      hdr.len      = sizeof(hdr) + len;
-      hdr.dtype    = DT_GPS_RAW;
-      hdr.mark_us  = 0;
-      hdr.chip_id  = (*pak == '$') ? CHIP_GPS_NMEA : CHIP_GPS_ZOE;
-      hdr.dir      = dir;
-      hdr.pad      = 0;
-
-      /* time stamp added by Collect */
-      call Collect.collect((void *) &hdr, sizeof(hdr), pak, len);
-    }
   }
 
 
@@ -380,7 +360,7 @@ implementation {
 
 
   command void MsgTransmit.send(uint8_t *ptr, uint16_t len) {
-    collect_gps_pak((void *) ptr, len, GPS_DIR_TX);
+    call GPSLog.collect(ptr, len, GPS_DIR_TX, NULL);
     call HW.gps_send((void *) ptr, len);
   }
 
@@ -588,7 +568,7 @@ implementation {
     rx_msg = call MsgBuf.msg_next(lenp, &rtp, &markp);
     if (!rx_msg)
       gps_panic(21, 0, 0);
-    collect_gps_pak(rx_msg, *lenp, GPS_DIR_RX);
+    call GPSLog.collect(rx_msg, *lenp, GPS_DIR_RX, rtp);
     return rx_msg;
   }
 
@@ -599,7 +579,7 @@ implementation {
 
 
   event void HW.gps_raw_collect(uint8_t *pak, uint16_t len, uint8_t dir) {
-    collect_gps_pak(pak, len, dir);
+    call GPSLog.collect(pak, len, dir, NULL);
   }
 
 
@@ -713,7 +693,7 @@ implementation {
   void ubx_send_msg(uint8_t *msg, uint16_t len) {
     uint8_t data;
 
-    collect_gps_pak(msg, len, GPS_DIR_TX);
+    call GPSLog.collect(msg, len, GPS_DIR_TX, NULL);
     call HW.spi_put(0xff);
     while (len) {
       data = call HW.spi_getput(*msg++);
