@@ -96,6 +96,7 @@ typedef enum mon_events {
 
   MON_EV_FIX            = 8,
   MON_EV_TIME           = 9,
+  MON_EV_SLEEP          = 10,
 
   MON_EV_TIMEOUT_MAJOR  = 13,
   MON_EV_MAJOR_CHANGED  = 14,
@@ -106,33 +107,13 @@ typedef enum mon_events {
 
 
 typedef enum {
-  GMS_OFF           = 0,                /* fresh boot */
-  GMS_FAIL          = 1,                /* down, couldn't make it work */
-  GMS_BOOTING       = 2,                /* letting driver communicate  */
-  GMS_CONFIG        = 3,                /* config and inital swver */
-
-  GMS_COMM_CHECK    = 4,                /* can we hear? */
-  GMS_COLLECT       = 5,                /* gathering fixes */
-
-  GMS_LPM_WAIT      = 6,                /* trying to go into LPM, low pwr  */
-  GMS_LPM_RESTART   = 7,                /* lpm recovery, wait for shutdown */
-  GMS_LPM           = 8,                /* in low power mode */
-
-  GMS_STANDBY       = 9,                /* currently not used */
-  GMS_MAX           = 9,
-
-} gpsm_state_t;                         /* gps monitor minor state */
-
-
-typedef enum {
-  GMS_MAJOR_IDLE           = 0,         /* sleeping (LPM)          */
-  GMS_MAJOR_CYCLE          = 1,         /* simple fix cycle        */
-  GMS_MAJOR_LPM_COLLECT    = 2,         /* LPM Collection          */
+  GMS_MAJOR_BOOT           = 0,         /* boot value              */
+  GMS_MAJOR_SLEEP          = 1,         /* sleeping                */
+  GMS_MAJOR_CYCLE          = 2,         /* simple fix cycle        */
   GMS_MAJOR_SATS_STARTUP   = 3,         /* SATS Startup, Collect   */
   GMS_MAJOR_SATS_COLLECT   = 4,         /* SATS Collection         */
   GMS_MAJOR_TIME_COLLECT   = 5,         /* TIME sync Collection    */
-  GMS_MAJOR_FIX_DELAY      = 6,         /* CYCLE to IDLE delay after fix */
-  GMS_MAJOR_MAX            = 6,
+  GMS_MAJOR_MAX            = 5,
 } gpsm_major_state_t;                   /* gps monitor major state */
 
 

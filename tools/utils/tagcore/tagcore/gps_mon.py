@@ -141,6 +141,7 @@ gps_mon_events = {
 
     'fix':           8,
     'time':          9,
+    'sleep':         10,
 
     'timeout_major': 13,
     'major_changed': 14,
@@ -157,6 +158,7 @@ gps_mon_events = {
 
     8:                  'fix',
     9:                  'time',
+    10:                 'sleep',
 
     13:                 'timeout_major',
     14:                 'major_changed',
@@ -174,21 +176,19 @@ def gps_mon_event_name(mon_ev):
 
 # gps monitor states - major
 gps_mon_majors = {
-    'idle':             0,
-    'cycle':            1,
-    'lpm_collect':      2,
+    'boot':             0,
+    'sleep':            1,
+    'cycle':            2,
     'sats_startup':     3,
     'sats_collect':     4,
     'time_collect':     5,
-    'fix_delay':        6,
 
-    0:                  'idle',
-    1:                  'cycle',
-    2:                  'lpm_collect',
+    0:                  'boot',
+    1:                  'sleep',
+    2:                  'cycle',
     3:                  'sats_startup',
     4:                  'sats_collect',
     5:                  'time_collect',
-    6:                  'fix_delay',
 }
 
 def gps_mon_major_name(major_state):

@@ -39,6 +39,7 @@ __all__ = [
     'SD_REQ',
     'SD_REL',
     'RADIO_MODE',
+    'GPS_BOOT_SLEEP',
     'GPS_CYCLE_START',
     'GPS_CYCLE_END',
     'GPS_DELTA',
@@ -62,6 +63,7 @@ __all__ = [
     'GPS_FAST',
     'GPS_FIRST',
     'GPS_PWR_OFF',
+    'GPS_SATS',
 ]
 
 # EVENT
@@ -100,6 +102,10 @@ event_names = {
     23: 'SD_REL',
     24: 'RADIO_MODE',
 
+    25: 'GPS_CYCLE_NONE',
+    26: 'GPS_PIPE_STALL',
+    27: 'GPS_WAKEUP',
+    28: 'GPS_BOOT_SLEEP',
     29: 'GPS_CYCLE_START',
     30: 'GPS_CYCLE_END',
     31: 'GPS_DELTA',
@@ -132,6 +138,7 @@ event_names = {
     64: 'GPS_FAST',
     65: 'GPS_FIRST',
     69: 'GPS_PWR_OFF',
+    70: 'GPS_SATS',
 }
 
 PANIC_WARN    = 1
@@ -148,6 +155,10 @@ SD_OFF        = 21
 SD_REQ        = 22
 SD_REL        = 23
 RADIO_MODE    = 24
+GPS_CYCLE_NONE= 25
+GPS_PIPE_STALL= 26
+GPS_WAKEUP    = 27
+GPS_BOOT_SLEEP  = 28
 GPS_CYCLE_START = 29
 GPS_CYCLE_END = 30
 GPS_DELTA     = 31
@@ -171,6 +182,7 @@ GPS_NO_ACK    = 56
 GPS_FAST      = 64
 GPS_FIRST     = 65
 GPS_PWR_OFF   = 69
+GPS_SATS      = 70
 
 
 def event_name(event):

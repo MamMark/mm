@@ -30,42 +30,18 @@
  *
  * *** State Machine Description (GMS_), Gps Monitor State
  *
- * OFF          powered completely off
- *
- * FAIL         we gave up
- *
- * BOOTING      first boot after reboot, establish comm
- *
- * CONFIG       configuation messages, terminate with a initDataSrc
- *
- * COMM_CHECK   Make sure we can communicate with the gps.  Control
- *              entry to LP (low pwr) (Sleeping, IDLE, MPM) or COLLECT
- *              (awake, CYCLE, LP_COLLECT).
- *
- * COLLECT      collecting fixes (awake, CYCLE, LP_COLLECT).  grabbing
- *              almanac, ephemeri, time calibration.
- *
- * LP_WAIT      low power (sleep or mpm) has been requested.  looking
- *              for response.
- *
- * LP_RESTART   low power didn't work (error response).  The gps may have
- *              shutdown, we probe and will restart if necessary.
- *
- * LP           in low power mode.
- *
- * STANDBY      in Standby
+ * The low level driver's bootstrap is executed late in the system bootstrap
+ * to allow for the SSW (SD stream storage writer) subsystem to be up.  The
+ * GPSmonitor doesn't gain control until after the driver bootstrap completes.
  *
  *********
  *
  * Major States
  *
- * IDLE         sleeping, MPM cycles or hibernate
+ * SLEEP        sleeping
  * CYCLE        simple fix cycle
- * LP_COLLECT   collecting fixes to help MPM or low pwr heal.
  * SATS_COLLECT collecting fixes for almanac and ephemis collection
  * TIME_COLLECT collecting fixes when doing time syncronization
- * FIX_DELAY    leaving CYCLE due to fix seen, staying up just a bit more.
- *              Usually to let status msgs be seen after a fix.
  */
 
 
@@ -89,22 +65,9 @@ enum {
 #endif
 
 
-#define GPS_MON_SWVER_TO            1024
-#define GPS_MON_SHORT_COMM_TO       2048
-#define GPS_MON_LONG_COMM_TO        8192
-#define GPS_MON_LPM_RSP_TO          2048
-#define GPS_MON_LPM_RESTART_WAIT    2048
-#define GPS_MON_COLLECT_DEADMAN     16384
-
 #define GPS_ACK_TIMEOUT             1024
 
-#define GPS_MON_MAX_CYCLE_TIME      ( 1 * 60 * 1024)
-#define GPS_MON_LPM_COLLECT_TIME    ( 1 * 60 * 1024)
-#define GPS_MON_FIX_DELAY_TIME      (             2)
-//#define GPS_MON_FIX_DELAY_TIME      (15 * 60 * 1024)
-
-// 5 mins
-#define GPS_MON_SATS_STARTUP_TIME   ( 5 * 60 * 1024)
+#define GPS_MON_MAX_CYCLE_TIME      ( 2 * 60 * 1024)
 
 // 5 mins between last cycle and next cycle
 #define GPS_MON_SLEEP               ( 5 * 60 * 1024)
@@ -254,8 +217,16 @@ implementation {
   uint8_t *txq[MAX_GPS_TXQ];
 
 norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
-  uint32_t     cycle_start, cycle_count, cycle_sum;
   uint32_t     last_nsats_seen, last_nsats_count;
+
+  /* cycle start, total cycles run and total time both fix found/none */
+  uint32_t     cycle_start, ncycles, totaltime;
+
+  /* number fixes found and time consumed taking those fixes */
+  uint32_t     fix_count, fix_sum;
+
+  /* number of no fix found and time consumed missing fixes */
+  uint32_t     nofix_count, nofix_sum;
 
 #define LAST_NSATS_COUNT_INIT 10
 
@@ -425,9 +396,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
   void verify_gmcb() {
     if (gmcb.majik_a != GMCB_MAJIK || gmcb.majik_a != GMCB_MAJIK)
-      gps_panic(102, (parg_t) &gmcb, 0);
-    if (gmcb.minor_state > GMS_MAX || gmcb.major_state > GMS_MAJOR_MAX)
-      gps_panic(103, gmcb.minor_state, gmcb.major_state);
+      gps_panic(97, (parg_t) &gmcb, 0);
+    if (gmcb.major_state > GMS_MAJOR_MAX)
+      gps_panic(98, 0, gmcb.major_state);
   }
 
 
@@ -441,12 +412,14 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
                                  new_state, ev, 0);
     gmcb.major_state = new_state;
     last_nsats_count = 0;
-    if (gmcb.major_state != GMS_MAJOR_IDLE)
+    if (gmcb.major_state == GMS_MAJOR_SLEEP)
+      no_deep_sleep = FALSE;
+    else
       no_deep_sleep = TRUE;
     if (old_state != new_state) {
-      if (new_state >= GMS_MAJOR_CYCLE && new_state < GMS_MAJOR_FIX_DELAY)
+      if (old_state <= GMS_MAJOR_SLEEP && new_state >= GMS_MAJOR_CYCLE)
         enqueue_entry_msgs();
-      if (old_state == GMS_MAJOR_CYCLE)
+      if (new_state <= GMS_MAJOR_SLEEP && old_state >= GMS_MAJOR_CYCLE)
         enqueue_exit_msgs();
     }
   }
@@ -673,9 +646,29 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         break;
 
       case GDC_CYCLE:
+        switch(gmcb.major_state) {
+          default:
+            gps_panic(137, gmcb.major_state, MON_EV_CYCLE);
+            break;
+
+          case GMS_MAJOR_CYCLE:             /* already in cycle */
+            break;                          /* ignore request   */
+
+          case GMS_MAJOR_SLEEP:
+            call GPSControl.wakeup();
+            /* fall through */
+
+          case GMS_MAJOR_SATS_STARTUP:
+          case GMS_MAJOR_SATS_COLLECT:
+          case GMS_MAJOR_TIME_COLLECT:
+            call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
+            major_change_state(GMS_MAJOR_CYCLE, MON_EV_CYCLE);
+            break;
+        }
         break;
 
       case GDC_STATE:
+        major_change_state(gmcb.major_state, MON_EV_STATE_CHK);
         break;
 
       case GDC_MON_GO_HOME:
@@ -1120,6 +1113,52 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
 
   event void MajorTimer.fired() {
+    uint32_t delta;
+
+    switch(gmcb.major_state) {
+      default:
+        gps_panic(101, gmcb.major_state, MON_EV_TIMEOUT_MAJOR);
+        return;
+
+      case GMS_MAJOR_SLEEP:
+        ncycles++;
+        cycle_start = call MajorTimer.getNow();
+        call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
+        if (gmcb.msg_count) {           /* should have been zero'd on sleep entry */
+          gps_warn(102, gmcb.major_state, gmcb.msg_count);
+          gmcb.msg_count = 0;
+        }
+        major_change_state(GMS_MAJOR_CYCLE, MON_EV_TIMEOUT_MAJOR);
+        call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_START, ncycles, 0, cycle_start, 0);
+        call GPSControl.wakeup();
+        return;
+
+      case GMS_MAJOR_BOOT:
+      case GMS_MAJOR_CYCLE:
+      case GMS_MAJOR_SATS_STARTUP:
+      case GMS_MAJOR_SATS_COLLECT:
+      case GMS_MAJOR_TIME_COLLECT:
+        if (!gmcb.msg_count) {
+          /* oops.  in cycle but no msgs seen */
+          gps_panic(102, gmcb.major_state, MON_EV_TIMEOUT_MAJOR);
+        }
+        delta = call MajorTimer.getNow() - cycle_start;
+        nofix_count++;
+        nofix_sum += delta;
+        totaltime += delta;
+
+        major_change_state(GMS_MAJOR_SLEEP, MON_EV_TIMEOUT_MAJOR);
+        call GPSControl.standby();
+        call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_NONE, nofix_count,
+                delta, nofix_sum, nofix_sum/nofix_count);
+        call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_END,  ncycles,
+                delta, totaltime, totaltime/ncycles);
+        cycle_start = 0;
+        gmcb.msg_count = 0;
+        gmcb.fix_seen  = FALSE;
+        call MajorTimer.startOneShot(GPS_MON_SLEEP);
+        return;
+    }
   }
 
 

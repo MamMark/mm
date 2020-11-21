@@ -253,7 +253,7 @@ typedef enum {
   DT_EVENT_PANIC_WARN       = 1,
   DT_EVENT_FAULT            = 2,
 
-  DT_EVENT_GPS_CYCLE_LTFF   = 6,       // low pwr (mpm) To First Fix (MTFF)
+  DT_EVENT_GPS_CYCLE_LTFF   = 6,       // Low pwr To First Fix (LTFF)
   DT_EVENT_GPS_FIRST_FIX    = 7,       // boot to first fix
 
   DT_EVENT_SSW_DELAY_TIME   = 8,
@@ -280,9 +280,13 @@ typedef enum {
 
   /***********************************/
 
+  DT_EVENT_GPS_CYCLE_NONE   = 25,
+  DT_EVENT_GPS_PIPE_STALL   = 26,
+  DT_EVENT_GPS_WAKEUP       = 27,
+  DT_EVENT_GPS_BOOT_SLEEP   = 28,
   DT_EVENT_GPS_CYCLE_START  = 29,
   DT_EVENT_GPS_CYCLE_END    = 30,
-  DT_EVENT_GPS_DELTA        = 31,      // delta time between RTC & GPS
+  DT_EVENT_GPS_DELTA        = 31,       // delta time between RTC & GPS
   DT_EVENT_GPS_BOOT         = 32,
   DT_EVENT_GPS_BOOT_TIME    = 33,
   DT_EVENT_GPS_BOOT_FAIL    = 34,
@@ -314,6 +318,7 @@ typedef enum {
   DT_EVENT_GPS_FAST         = 64,
   DT_EVENT_GPS_FIRST        = 65,
   DT_EVENT_GPS_PWR_OFF      = 69,
+  DT_EVENT_GPS_SATS         = 70,
 
   DT_EVENT_16               = 0xffff,   // make sure 2 bytes
 } dt_event_id_t;
@@ -383,7 +388,7 @@ typedef struct {
   uint32_t recnum;
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
-  uint32_t mark_us;             /* mark stamp in usecs */
+  uint32_t mark_us;             /* mark stamp in usecs, deprecate */
   gps_chip_id_t chip_id;        /* 1 byte */
   uint8_t  dir;                 /* dir, 0 rx from gps, 1 - tx to gps */
   uint16_t pad;                 /* quad alignment */
