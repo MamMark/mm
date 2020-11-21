@@ -25,6 +25,15 @@
 /*
  * Various external Ublox UBX structures and definitions that are protocol
  * dependent.
+ *
+ * Alignment: Ublox packets are laid out such that all multibyte fields are aligned.
+ * However, we can't take advantage of this for a couple of reasons.  A) We
+ * include both sync bytes but the alignment starts assuming Class/Id is aligned
+ * (which we violate).  And B) the underlying messages (buffer slicing) are not
+ * guaranteed to be quad aligned.
+ *
+ * Bottom line, any multibyte fields must extracted byte by byte and properly
+ * assembled.
  */
 
 #ifndef PACKED
@@ -50,6 +59,7 @@
 #define UBX_CLASS_ID(msg)       (UBX_CLASS(msg) << 8 | UBX_ID(msg))
 
 /*
+ * overhead: sync (2), class (1), id (1), len (2),        chk_a/chk_b (2)
  * chksum:             class (1), id (1), len (2), data[]
  */
 #define UBX_OVERHEAD            8
@@ -315,6 +325,24 @@ enum {
 };
 
 
+enum {
+  UBX_MON_RXR_FLAGS_AWAKE = 0x01,
+};
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* mon       - 0a       */
+  uint8_t   id;                         /* rxr       - 21       */
+  uint16_t  len;                        /* 1 byte               */
+  uint8_t   flags;                      /* awake                */
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_mon_rxr_t;
+
+
+
+
 /* UBX_CLASS_NAV (01) */
 enum {
   UBX_NAV_POSECEF   = 0x01,     // Position Solution in ECEF
@@ -394,6 +422,8 @@ typedef struct {
   uint8_t   chkA;
   uint8_t   chkB;
 } PACKED ubx_nav_dop_t;
+
+#define NAVDOP_LEN 18
 
 
 typedef struct {
@@ -479,7 +509,7 @@ typedef struct {
   uint8_t   hour;
   uint8_t   min;
   uint8_t   sec;
-  uint8_t   valid;                      /* flags */
+  uint8_t   valid;
   uint32_t  tAcc;                       /* ns, time accur */
   int32_t   nano;                       /* ns, frac of sec, -1e9..1e9 */
   uint8_t   fixType;
@@ -508,6 +538,8 @@ typedef struct {
   uint8_t   chkA;
   uint8_t   chkB;
 } PACKED ubx_nav_pvt_t;
+
+#define UBX_NAV_PVT_FLAGS_GNSSFIXOK 1
 
 
 typedef struct {
@@ -616,6 +648,36 @@ typedef struct {
   uint8_t   chkA;
   uint8_t   chkB;
 } PACKED ubx_nav_timeutc_t;
+
+
+enum {
+  UBX_RXM_PMREQ = 0x41,
+};
+
+enum {
+  UBX_RXM_PMREQ_FLAGS_BACKUP    = 0x0002,
+  UBX_RXM_PMREQ_FLAGS_FORCE     = 0x0004,
+
+  UBX_RXM_PMREQ_WAKEUP_UART     = 0x0008,
+  UBX_RXM_PMREQ_WAKEUP_EXTINT0  = 0x0020,
+  UBX_RXM_PMREQ_WAKEUP_EXTINT1  = 0x0040,
+  UBX_RXM_PMREQ_WAKEUP_SPICS    = 0x0080,
+};
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* rxm     - 02         */
+  uint8_t   id;                         /* pmreq   - 41         */
+  uint16_t  len;                        /* 8 or 16 bytes        */
+  uint8_t   version;                    /* 0 */
+  uint8_t   reserved1[3];
+  uint32_t  duration;                   /* how long for task, ms */
+  uint32_t  flags;                      /* what tasks            */
+  uint32_t  wakeupSources;
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_rxm_pmreq_t;
 
 
 /* UBX_CLASS_SEC (27) */

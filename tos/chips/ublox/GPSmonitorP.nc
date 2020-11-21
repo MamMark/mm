@@ -525,9 +525,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   command bool InfoSensGpsXyz.get_value(tagnet_gps_xyz_t *t, uint32_t *l) {
     if (!t || !l)
       gps_panic(0, 0, 0);
-    t->gps_x = m_xyz.dt.x;
-    t->gps_y = m_xyz.dt.y;
-    t->gps_z = m_xyz.dt.z;
+    t->gps_x = m_xyz.dt.ecefx;
+    t->gps_y = m_xyz.dt.ecefy;
+    t->gps_z = m_xyz.dt.ecefz;
     *l = TN_GPS_XYZ_LEN;
     return 1;
   }

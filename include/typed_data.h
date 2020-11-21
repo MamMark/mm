@@ -404,30 +404,57 @@ typedef struct {
 
 
 /*
+ * Data structures for GPS_ZOE, TIME, GEO, XYZ, and CLK.
  *
+ * All multi-byte structures are little-endian and copied from unaligned
+ * little-endian fields in the UBXBIN packets.
  */
 
 typedef struct {
   int32_t  capdelta;                    /* microsecs  cur - cap time */
+  uint32_t itow;                        /* ms, time of week */
+  uint32_t tacc;                        /* time accuracy */
+  uint16_t utc_ms;
   uint16_t utc_year;
   uint8_t  utc_month;
   uint8_t  utc_day;
   uint8_t  utc_hour;
   uint8_t  utc_min;
+  uint8_t  utc_sec;
   uint8_t  nsats;
 } dt_gps_time_t;
 
 typedef struct {
   int32_t  capdelta;                    /* microsecs  cur - cap time */
+  uint32_t itow;                        /* ms, time of week */
+  int32_t  lat;                         /* * 1e-7 */
+  int32_t  lon;                         /* * 1e-7 */
+  int32_t  alt_ell;                     /* ellipsoid, mm */
+  int32_t  alt_msl;                     /* mean sea level, mm */
+  uint32_t hacc;                        /* horz accuracy,  mm */
+  uint32_t vacc;                        /* vert accuracy,  mm */
+  uint16_t pdop;                        /* * 100, position dop */
+  uint8_t  fixtype;
+  uint8_t  flags;
   uint8_t  nsats;
 } dt_gps_geo_t;
 
 typedef struct {
   int32_t  capdelta;                    /* microsecs  cur - cap time */
+  uint32_t itow;                        /* ms, time of week */
+  int32_t  ecefx;                       /* cm */
+  int32_t  ecefy;                       /* cm */
+  int32_t  ecefz;                       /* cm */
+  uint32_t pacc;                        /* cm, pos accuracy */
 } dt_gps_xyz_t;
 
 typedef struct {                        /* clock status */
   int32_t  capdelta;                    /* microsecs  cur - cap time */
+  uint32_t itow;                        /* ms, time of week    */
+  int32_t  clkb;                        /* clock bias, ns      */
+  int32_t  clkd;                        /* clock drift, ns/s   */
+  uint32_t tacc;                        /* time accuracy, ns   */
+  uint32_t facc;                        /* freq accuracy, ps/s */
 } dt_gps_clk_t;
 
 

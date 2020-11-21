@@ -23,7 +23,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev1'
+__version__ = '0.4.8.dev2'
 
 import binascii
 from   collections  import OrderedDict
@@ -394,11 +394,15 @@ def obj_dt_gps_time():
     return aggie(OrderedDict([
         ('gps_hdr',   obj_dt_gps_hdr()),
         ('capdelta',  atom(('<i', '{}'))),
+        ('itow',      atom(('<I', '{}'))),
+        ('tacc',      atom(('<I', '{}'))),
+        ('utc_ms',    atom(('<H', '{}'))),
         ('utc_year',  atom(('<H', '{}'))),
         ('utc_month', atom(('<B', '{}'))),
         ('utc_day',   atom(('<B', '{}'))),
         ('utc_hour',  atom(('<B', '{}'))),
         ('utc_min',   atom(('<B', '{}'))),
+        ('utc_sec',   atom(('<B', '{}'))),
         ('nsats',     atom(('<B', '{}'))),
     ]))
 
@@ -407,10 +411,16 @@ def obj_dt_gps_geo():
     return aggie(OrderedDict([
         ('gps_hdr',   obj_dt_gps_hdr()),
         ('capdelta',  atom(('<i', '{}'))),
+        ('itow',      atom(('<I', '{}'))),
         ('lat',       atom(('<i', '{}'))),
         ('lon',       atom(('<i', '{}'))),
         ('alt_ell',   atom(('<i', '{}'))),
         ('alt_msl',   atom(('<i', '{}'))),
+        ('hacc',      atom(('<I', '{}'))),
+        ('vacc',      atom(('<I', '{}'))),
+        ('pdop',      atom(('<H', '{}'))),
+        ('fixtype',   atom(('<B', '{}'))),
+        ('flags',     atom(('<B', '0x{:02x}'))),
         ('nsats',     atom(('<B', '{}'))),
     ]))
 
