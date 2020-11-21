@@ -49,10 +49,8 @@ implementation {
   components McuSleepC;
   GPSmonitorP.McuPowerOverride <- McuSleepC;
 
-  components new TimerMilliC() as MinorTimer;
   components new TimerMilliC() as MajorTimer;
   components new TimerMilliC() as TxTimer;
-  GPSmonitorP.MinorTimer -> MinorTimer;
   GPSmonitorP.MajorTimer -> MajorTimer;
   GPSmonitorP.TxTimer    -> TxTimer;
 

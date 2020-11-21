@@ -181,9 +181,7 @@ typedef enum {
 
 typedef struct {
   uint32_t           majik_a;
-  gpsm_state_t       minor_state;           /* monitor basic state - minor */
   gpsm_major_state_t major_state;           /* monitor major state */
-  uint16_t           retry_count;
   uint16_t           msg_count;             /* used to tell if we are seeing msgs */
   bool               fix_seen;              /* fix seen in current cycle */
   txq_state_t        txq_state;             /* state of txq system */
@@ -228,7 +226,6 @@ module GPSmonitorP {
     interface Rtc;
     interface CoreTime;
 
-    interface Timer<TMilli> as MinorTimer;
     interface Timer<TMilli> as MajorTimer;
     interface Timer<TMilli> as TxTimer;
     interface Panic;
@@ -256,8 +253,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   gps_geo_t   m_geo;
   gps_time_t  m_time;
   gps_trk_t   m_track;
-
-  void major_event(mon_event_t ev);
 
   void gps_warn(uint8_t where, parg_t p, parg_t p1) {
     call Panic.warn(PANIC_GPS, where, p, p1, 0, 0);
@@ -337,6 +332,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     return SUCCESS;
   }
 
+  event void MsgTransmit.send_done(error_t result) { }
 
   error_t txq_enqueue(uint8_t *gps_msg) {
     if (gmcb.txq_len == 0) {            /* empty queue */
@@ -346,7 +342,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       return SUCCESS;
     }
     if (gmcb.txq_len >= MAX_GPS_TXQ)
-      return EBUSY;                     /* no room */
+      return EBUSY;
     txq[gmcb.txq_nxt] = gps_msg;
     gmcb.txq_nxt = txq_adv(gmcb.txq_nxt);
     gmcb.txq_len++;
@@ -422,6 +418,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       gps_panic(103, gmcb.minor_state, gmcb.major_state);
   }
 
+
   void major_change_state(gpsm_major_state_t new_state, mon_event_t ev) {
     gpsm_major_state_t old_state;
 
@@ -440,67 +437,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       if (old_state == GMS_MAJOR_CYCLE)
         enqueue_exit_msgs();
     }
-  }
-
-
-  void minor_change_state(gpsm_state_t new_state, mon_event_t ev) {
-    gpsm_state_t old_minor_state;
-
-    if (call OverWatch.getLoggingFlag(OW_LOG_GPS_STATE))
-      call CollectEvent.logEvent(DT_EVENT_GPS_MON_MINOR, gmcb.minor_state,
-                                 new_state, ev, 0);
-    old_minor_state = gmcb.minor_state;
-    gmcb.minor_state = new_state;
-    last_nsats_count = 0;
-
-    if ((old_minor_state == GMS_LPM) &&
-        (gmcb.major_state == GMS_MAJOR_CYCLE)) {
-      /*
-       * if we are exiting LPM and major is CYCLE then we are starting a
-       * new cycle.  Update instrumentation.
-       */
-      cycle_start = call MajorTimer.getNow();
-      cycle_count++;
-      gmcb.fix_seen = FALSE;
-      call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_START, cycle_count, 0, cycle_start, 0);
-    }
-
-    if ((new_state == GMS_LPM) && (gmcb.major_state == GMS_MAJOR_IDLE)) {
-      /*
-       * entering Low Power Mode, finish the cycle.
-       */
-      call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_END, cycle_count,
-                call MajorTimer.getNow() - cycle_start, cycle_start, 0);
-      cycle_start = 0;
-    }
-
-    /* set global no_deep_sleep based on current Major/Minor */
-    if (gmcb.major_state != GMS_MAJOR_IDLE)
-      no_deep_sleep = TRUE;
-    else {
-      if ((gmcb.minor_state < GMS_BOOTING) ||
-          (gmcb.minor_state == GMS_LPM)    ||
-          (gmcb.minor_state == GMS_STANDBY))
-        no_deep_sleep = FALSE;
-      else
-        no_deep_sleep = TRUE;
-    }
-
-    /* if we entered collect, start the txq */
-    if (gmcb.minor_state == GMS_COLLECT)
-      txq_start();
-  }
-
-
-  void mon_enter_comm_check(mon_event_t ev) {
-    gmcb.retry_count = 0;
-    minor_change_state(GMS_COMM_CHECK, ev);
-    call MinorTimer.startOneShot(GPS_MON_SHORT_COMM_TO);
-  }
-
-
-  void mon_pulse_comm_check(mon_event_t ev) {
-    mon_enter_comm_check(ev);
   }
 
 
@@ -725,11 +661,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         break;
 
       case GDC_CYCLE:
-        major_event(MON_EV_CYCLE);
         break;
 
       case GDC_STATE:
-        major_event(MON_EV_STATE_CHK);
         break;
 
       case GDC_MON_GO_HOME:
@@ -751,7 +685,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case GDC_RAW_TX:
         l = *lenp - 1;                  /* grab the length of the message */
         do {
-          if (l > MAX_RAW_TX) {           /* bail if too big */
+          if (l > MAX_RAW_TX) {         /* bail if too big */
             err = ESIZE;
             break;
           }
@@ -844,380 +778,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     db->count  = ++gps_cmd_count;
     *lenp = 0;                          /* no returning payload */
     return TRUE;
-  }
-
-
-  event void MsgTransmit.send_done(error_t result) {
-    uint16_t clsid;                     /* class/id */
-    uint8_t *gps_msg;
-
-    switch(gmcb.txq_state) {
-      default:
-        gps_panic(-1, gmcb.txq_state, 0);
-        break;
-
-      case GPSM_TXQ_DRAIN:
-        gmcb.txq_state = GPSM_TXQ_IDLE;
-
-        /*
-         * It is possible that new messages may have been queued
-         * to go out after the purge occurred.  So we call txq_start()
-         * after going to IDLE, to restart sending from the queue.
-         */
-        txq_start();
-        break;
-
-      case GPSM_TXQ_SENDING:
-        gps_msg = txq[gmcb.txq_head];
-        clsid   = UBX_CLASS_ID(gps_msg);
-        if (ubx_needs_ack(clsid)) {
-          gmcb.txq_state   = GPSM_TXQ_ACK_WAIT;
-          call TxTimer.startOneShot(GPS_ACK_TIMEOUT);
-
-          /* non-zero txq_pending_ack -> ack exchange in progress */
-          if (gmcb.txq_pending_ack) return;
-
-          /* first time waiting for ack, set up retries */
-          gmcb.txq_pending_ack = clsid;
-          gmcb.txq_retries = 3;
-          return;
-        }
-        txq_adv_restart();
-        break;
-    }
-  }
-
-
-  void minor_event(mon_event_t ev);
-
-  void maj_ev_startup() {
-    switch(gmcb.major_state) {
-      default:
-        gps_panic(101, gmcb.major_state, MON_EV_STARTUP);
-        return;
-
-      case GMS_MAJOR_IDLE:
-        major_change_state(GMS_MAJOR_SATS_STARTUP, MON_EV_STARTUP);
-        call GPSControl.logStats();
-        call MajorTimer.startOneShot(GPS_MON_SATS_STARTUP_TIME);
-        return;
-    }
-  }
-
-
-  void maj_ev_fix(mon_event_t ev) {
-    uint32_t elapsed;
-
-    switch(gmcb.major_state) {
-      default:                          /* ignore by default */
-        return;
-
-      case GMS_MAJOR_SATS_STARTUP:
-        /* only TIME (over-determined) gets us out */
-        if (ev != MON_EV_TIME)
-          return;
-        major_change_state(GMS_MAJOR_CYCLE, ev);
-        call CollectEvent.logEvent(DT_EVENT_GPS_FIRST_FIX,
-                call MajorTimer.getNow() - cycle_start, cycle_start, 0, 0);
-        call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
-        minor_event(MON_EV_MAJOR_CHANGED);
-        return;
-
-      case GMS_MAJOR_CYCLE:
-#ifdef GPS_FIX_ENDS_CYCLE
-#ifdef GPS_TIME_ENDS_CYCLE
-        if (ev != MON_EV_TIME)
-          return;
-#endif
-        /*
-         * cycle_count will be 0 while we are first booting the gps and
-         * while we are in sats_startup.  Cycle_count goes non-zero on the
-         * first transition from (major) xxx -> CYCLE and (minor) LPM ->
-         * XXX.  (see minor_change_state).
-         *
-         * Very first cycle time is reported as FIRST_FIX.  First cycle
-         * time is not included in the cycle average.  LTFF is the time
-         * from beginning of the cycle until the fix.  Cycle time are from
-         * the beginning through any potential fix until the gps is put
-         * back to sleep (following fix delay).
-         */
-        if (cycle_count) {
-          elapsed = call MajorTimer.getNow() - cycle_start;
-          cycle_sum += elapsed;
-          call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_LTFF, cycle_count,
-                                     elapsed, cycle_start, cycle_sum/cycle_count);
-        }
-        major_change_state(GMS_MAJOR_FIX_DELAY, ev);
-        call MajorTimer.startOneShot(GPS_MON_FIX_DELAY_TIME);
-        minor_event(MON_EV_MAJOR_CHANGED);
-#endif
-        return;
-    }
-  }
-
-
-  void maj_ev_lpm_error() {
-  }
-
-  void maj_ev_timeout_major() {
-    switch(gmcb.major_state) {
-      default:
-        gps_panic(101, gmcb.major_state, MON_EV_TIMEOUT_MAJOR);
-        return;
-
-      case GMS_MAJOR_IDLE:
-        call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
-        major_change_state(GMS_MAJOR_CYCLE, MON_EV_TIMEOUT_MAJOR);
-        minor_event(MON_EV_MAJOR_CHANGED);
-        return;
-
-      case GMS_MAJOR_SATS_STARTUP:
-      case GMS_MAJOR_CYCLE:
-      case GMS_MAJOR_LPM_COLLECT:
-      case GMS_MAJOR_FIX_DELAY:
-        gmcb.msg_count = 0;
-        call MajorTimer.startOneShot(GPS_MON_SLEEP);
-        major_change_state(GMS_MAJOR_IDLE, MON_EV_TIMEOUT_MAJOR);
-        minor_event(MON_EV_MAJOR_CHANGED);
-        return;
-    }
-  }
-
-  void maj_ev_cycle() {
-    switch(gmcb.major_state) {
-      default:
-        gps_panic(137, gmcb.major_state, MON_EV_CYCLE);
-        return;
-
-      case GMS_MAJOR_CYCLE:             /* already got one */
-        return;                         /* ignore request  */
-
-      case GMS_MAJOR_IDLE:
-      case GMS_MAJOR_SATS_STARTUP:
-      case GMS_MAJOR_LPM_COLLECT:
-      case GMS_MAJOR_TIME_COLLECT:
-      case GMS_MAJOR_FIX_DELAY:
-        call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
-        major_change_state(GMS_MAJOR_CYCLE, MON_EV_CYCLE);
-        minor_event(MON_EV_MAJOR_CHANGED);
-        return;
-    }
-  }
-
-
-  void maj_ev_state_chk() {
-    major_change_state(gmcb.major_state, MON_EV_STATE_CHK);
-    minor_change_state(gmcb.minor_state, MON_EV_STATE_CHK);
-  }
-
-
-  void major_event(mon_event_t ev) {
-    verify_gmcb();
-    switch(ev) {
-      default:
-        gps_panic(101, gmcb.major_state, ev);
-
-      case MON_EV_STARTUP:          maj_ev_startup();       return;
-      case MON_EV_FIX:
-      case MON_EV_TIME:             maj_ev_fix(ev);         return;
-      case MON_EV_LPM_ERROR:        maj_ev_lpm_error();     return;
-      case MON_EV_TIMEOUT_MAJOR:    maj_ev_timeout_major(); return;
-      case MON_EV_CYCLE:            maj_ev_cycle();         return;
-      case MON_EV_STATE_CHK:        maj_ev_state_chk();     return;
-    }
-  }
-
-
-  void mon_ev_timeout_minor() {
-    uint32_t err;
-
-    call GPSControl.logStats();
-    switch(gmcb.minor_state) {
-      default:
-        gps_panic(101, gmcb.minor_state, gmcb.major_state);
-
-      case GMS_CONFIG:
-        gmcb.retry_count++;
-        call CollectEvent.logEvent(DT_EVENT_GPS_SWVER_TO,
-                                   gmcb.retry_count, 0, 0, 0);
-        minor_change_state(GMS_CONFIG, MON_EV_TIMEOUT_MINOR);
-        if (gmcb.retry_count > 15) {
-          /* need to put subsystem disable here. */
-          gps_warn(135, gmcb.minor_state, gmcb.retry_count);
-          call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
-          gmcb.retry_count = 0;         /* start over for now */
-          /* for now fall through. */
-        }
-
-        gmcb.msg_count = 0;
-        if ((gmcb.retry_count & 1) == 0) {      /* pulse on even */
-          call CollectEvent.logEvent(DT_EVENT_GPS_PULSE, gmcb.retry_count,
-                                     0, 0, 0);
-        }
-        call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
-        return;
-
-      case GMS_COMM_CHECK:
-        if (gmcb.retry_count < 6) {
-          /*
-           * Didn't hear anything, pulse and listen for LONG TO
-           */
-          gmcb.retry_count++;
-          minor_change_state(GMS_COMM_CHECK, MON_EV_TIMEOUT_MINOR);
-          call MinorTimer.startOneShot(GPS_MON_LONG_COMM_TO);
-          return;
-        }
-        /*
-         * we tried 5 times.  yell and scream.
-         * subsystem fail.
-         */
-        call MinorTimer.stop();
-        call MajorTimer.stop();
-        minor_change_state(GMS_FAIL, MON_EV_TIMEOUT_MINOR);
-        gps_panic(136, gmcb.minor_state, gmcb.retry_count);
-        return;
-
-      case GMS_COLLECT:
-        mon_pulse_comm_check(MON_EV_TIMEOUT_MINOR);
-        return;
-
-      case GMS_LPM_WAIT:                /* waiting for low pwr rsp */
-        if (gmcb.retry_count > 5) {
-          /*
-           * haven't seen the response to low pwr entry, 5 times.
-           * panic/warn and kick LPM_COLLECT
-           *
-           * (not yet).
-           */
-          gps_warn(136, gmcb.minor_state, gmcb.major_state);
-          major_event(MON_EV_LPM_ERROR);
-          mon_pulse_comm_check(MON_EV_TIMEOUT_MINOR);
-          return;
-        }
-        minor_change_state(GMS_LPM_WAIT, MON_EV_TIMEOUT_MINOR);
-        gmcb.retry_count++;
-        err = 0;
-        call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 100, err, 0, 0);
-        call MinorTimer.startOneShot(GPS_MON_LPM_RSP_TO);
-        return;
-
-      case GMS_LPM_RESTART:             /* shutdown timeout, lpm fail */
-        mon_pulse_comm_check(MON_EV_TIMEOUT_MINOR);
-        return;
-    }
-    return;
-  }
-
-  void mon_ev_major_changed() {
-    call GPSControl.logStats();
-    switch(gmcb.minor_state) {
-      default:
-        break;
-
-      case GMS_COLLECT:
-        mon_enter_comm_check(MON_EV_MAJOR_CHANGED);
-        break;
-
-      case GMS_LPM:
-        mon_pulse_comm_check(MON_EV_MAJOR_CHANGED);
-        break;
-    }
-  }
-
-  void mon_ev_swver() {
-  }
-
-  void mon_ev_msg() {
-    uint32_t err;
-
-    gmcb.msg_count++;
-    switch(gmcb.minor_state) {
-      default:
-        return;
-
-      case GMS_COMM_CHECK:
-        if (gmcb.major_state == GMS_MAJOR_IDLE) {
-          /*
-           * Major indicates we want to quiese the GPS.
-           */
-
-          /*
-           * Not using MPM, just pulse it off
-           */
-          minor_change_state(GMS_LPM_WAIT, MON_EV_MSG);
-          gmcb.retry_count = 0;
-          err = 0;
-
-          /* should get a OTS-no back. */
-          call CollectEvent.logEvent(DT_EVENT_GPS_MPM, 101, err, 0, 0);
-          call MinorTimer.startOneShot(GPS_MON_LPM_RSP_TO);
-          return;
-        }
-        /*
-         * not IDLE,       kick back into COLLECT
-         */
-        call MinorTimer.startOneShot(GPS_MON_COLLECT_DEADMAN);
-        minor_change_state(GMS_COLLECT, MON_EV_MSG);
-        return;
-
-      case GMS_COLLECT:
-        call MinorTimer.startOneShot(GPS_MON_COLLECT_DEADMAN);
-        /*
-         * we could do a minor_change_state, COLLECT -> COLLECT
-         * but it is way too chatty.
-         */
-//      minor_change_state(GMS_COLLECT, MON_EV_MSG);
-        return;
-    }
-  }
-
-  void mon_ev_ots_no() {
-  }
-
-  void mon_ev_ots_yes()  {
-  }
-
-  void mon_ev_fix(mon_event_t ev) {
-    gmcb.fix_seen = TRUE;
-    major_event(ev);
-  }
-
-  /* low pwr (mpm) attempted, and got a good response */
-  void mon_ev_lpm() {
-  }
-
-  /* bad response from mpm */
-  void mon_ev_lpm_error() {
-  }
-
-
-  /*
-   * Monitor State Machine
-   */
-  void minor_event(mon_event_t ev) {
-    verify_gmcb();
-    switch(ev) {
-      default:
-        gps_panic(100, gmcb.minor_state, ev);
-
-      case MON_EV_MSG:              mon_ev_msg();           return;
-      case MON_EV_OTS_NO:           mon_ev_ots_no();        return;
-      case MON_EV_OTS_YES:          mon_ev_ots_yes();       return;
-      case MON_EV_FIX:
-      case MON_EV_TIME:             mon_ev_fix(ev);         return;
-      case MON_EV_LPM:              mon_ev_lpm();           return;
-      case MON_EV_LPM_ERROR:        mon_ev_lpm_error();     return;
-      case MON_EV_TIMEOUT_MINOR:    mon_ev_timeout_minor(); return;
-      case MON_EV_MAJOR_CHANGED:    mon_ev_major_changed(); return;
-    }
-  }
-
-
-  uint16_t gps_extend_week(uint16_t week10) {
-    if (m_clk.dt.week_x != 0)
-      return m_clk.dt.week_x;
-    else
-      return week10 + 2048;
   }
 
 
@@ -1365,13 +925,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
-  void process_swver(void *svp, rtctime_t *rtp) { }
-
-  void process_clk_status(void *csp, rtctime_t *rtp) { }
-
-  void process_geodetic(void *gp, rtctime_t *rtp) { }
-
-
   void process_default(ubx_header_t *ubp, rtctime_t *rtp) {
     if (!ubp || !rtp)
       return;
@@ -1460,17 +1013,10 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       hdr.pad      = 0;
       call Collect.collect_nots((void *) &hdr, sizeof(hdr), msg, len);
     }
-
-    minor_event(MON_EV_MSG);
   }
 
-
-  event void MinorTimer.fired() {
-    minor_event(MON_EV_TIMEOUT_MINOR);
-  }
 
   event void MajorTimer.fired() {
-    major_event(MON_EV_TIMEOUT_MAJOR);
   }
 
 
