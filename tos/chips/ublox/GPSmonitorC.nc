@@ -21,6 +21,7 @@
 
 #include <TagnetTLV.h>
 
+/* Boot and Booted are the linkage into sequenced startup bootstrap. */
 configuration GPSmonitorC {
   provides {
     interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
@@ -36,7 +37,9 @@ configuration GPSmonitorC {
 }
 
 implementation {
-  components GPSmonitorP;
+  components SystemBootC, GPSmonitorP;
+  GPSmonitorP.Boot   -> SystemBootC.Boot;
+
   InfoSensGpsXyz = GPSmonitorP;
   InfoSensGpsCmd = GPSmonitorP;
   GPSLog         = GPSmonitorP;

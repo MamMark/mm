@@ -135,4 +135,5 @@ implementation {
   event void GPSControl.gps_boot_fail() { }
   event void GPSControl.gps_shutdown()  { }
   event void GPSControl.standbyDone()   { }
+  event void GPSControl.wakeupDone()    { }
 }

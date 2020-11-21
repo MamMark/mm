@@ -20,15 +20,19 @@
  */
 
 /*
- * The GPSmonitor sits on top of the GPS stack and handles interactions.
- * When first booting we need to wait for SSW to be up before starting
- * up.  We log to the stream.
+ * The GPSmonitor sits at the top of the GPS stack and handles top level
+ * interactions.
  *
- * First, it receives any packets coming from the GPS chip.  Note all
- * multibyte datums in UBX packets are little endian and aligned to
- * the beginning of the buffer.
+ * The lowest level driver handles initial boot, configuration, and
+ * collection of packet bytes.  These bytes get handed to the protocol
+ * handler where they get buffered by buffer slicing (MsgBuf).  As packets
+ * become available they are handed to the GPSmonitor.
  *
- * *** State Machine Description (GMS_), Gps Monitor State
+ * Packets include multibyte datums which are little endian.  These datums
+ * are aligned to the start of the class field.  Storage in MsgBuf is also
+ * not guaranteed to be aligned.  Any multibyte access must be done using
+ * appropriate access routines that build the datum using byte access
+ * only.
  *
  * The low level driver's bootstrap is executed late in the system bootstrap
  * to allow for the SSW (SD stream storage writer) subsystem to be up.  The
@@ -190,7 +194,7 @@ module GPSmonitorP {
     interface McuPowerOverride;
     interface GPSLog;
   } uses {
-    interface Boot;                           /* in boot */
+    interface Boot;                         /* in boot */
     interface GPSControl;
     interface MsgTransmit;
     interface MsgReceive;
@@ -427,97 +431,34 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
   /*
    * We are being told the system has come up.
-   * make sure we can communicate with the GPS and that it is
-   * in the proper state.
    *
-   * GPSControl.turnOn will always respond either with a
-   * GPSControl.gps_booted or gps_boot_fail signal.
+   * The underlying driver has already done run to completion initilization
+   * and has left the gps running.  This is indicated by the return from
+   * GPSControl.turnOn()
    *
-   * No need for a timer here.  Any timeout happens in the driver.
+   * If EALREADY, the gps has been left running, do an acquire/cycle.
+   *
+   * Otherwise, assume the gps is sleeping and start a sleep cycle.
    */
   event void Boot.booted() {
-    gmcb.retry_count = 0;               /* haven't retried yet */
+    error_t rtn;
+
     gmcb.majik_a = gmcb.majik_b = GMCB_MAJIK;
-    major_change_state(GMS_MAJOR_IDLE, MON_EV_BOOT);
-    minor_change_state(GMS_BOOTING,    MON_EV_BOOT);
-    call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gmcb.minor_state,
-                               gmcb.retry_count, 0, 0);
-    call GPSControl.turnOn();
-  }
-
-
-  event void GPSControl.gps_booted() {
-    int idx;
-
-    txq_purge();                        /* no left overs */
-    switch (gmcb.minor_state) {
-      default:
-        gps_panic(1, gmcb.minor_state, 0);
-        return;
-      case GMS_OFF:                     /* coming out of power off */
-      case GMS_BOOTING:                 /* or 1st boot */
-        gmcb.msg_count   = 0;
-        gmcb.retry_count = 0;
-        gmcb.fix_seen   = FALSE;
-        minor_change_state(GMS_CONFIG, MON_EV_STARTUP);
-        call GPSControl.logStats();
-
-        for (idx = 0; config_msgs[idx]; idx++)
-          txq_enqueue((void *) config_msgs[idx]);
-        txq_start();
-        cycle_start = call MajorTimer.getNow();
-        call MinorTimer.startOneShot(GPS_MON_SWVER_TO);
-        return;
-    }
-  }
-
-
-  /*
-   * event gps_boot_fail():  didn't work try again.
-   *
-   * the gps driver does a gps_reset prior to signalling.
-   *
-   * first time, just do a normal turn on.  (already tried).
-   * second time, just try again, already reset.
-   * third time, bounce power.
-   */
-  event void GPSControl.gps_boot_fail() {
-    switch (gmcb.minor_state) {
-      default:
-        gps_panic(2, gmcb.minor_state, 0);
-        return;
-      case GMS_OFF:
-      case GMS_BOOTING:
-        gmcb.retry_count++;
-        switch (gmcb.retry_count) {
-          default:
-            /* subsystem fail */
-            gps_panic(3, gmcb.minor_state, gmcb.retry_count);
-            call MajorTimer.stop();
-            call MinorTimer.stop();
-            call GPSControl.logStats();
-            major_change_state(GMS_MAJOR_IDLE, MON_EV_FAIL);
-            minor_change_state(GMS_FAIL, MON_EV_FAIL);
-            return;
-
-          case 1:
-            /* first time didn't work, hit it with a reset and try again. */
-            call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gmcb.minor_state,
-                                       gmcb.retry_count, 0, 0);
-            call GPSControl.logStats();
-            call GPSControl.reset();
-            call GPSControl.turnOn();
-            return;
-
-          case 2:
-            call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, gmcb.minor_state,
-                                       gmcb.retry_count, 0, 0);
-            call GPSControl.logStats();
-            call GPSControl.powerOff();
-            call GPSControl.powerOn();
-            call GPSControl.turnOn();
-            return;
-        }
+    major_change_state(GMS_MAJOR_BOOT, MON_EV_BOOT);
+    /* instrumentation cells all default to 0 via statup code. */
+    call GPSControl.logStats();
+    rtn = call GPSControl.turnOn();
+    if (rtn == EALREADY) {              /* still running look for fix */
+      /* leave in MAJOR_BOOT.  This indicates that we are starting up. */
+      ncycles++;
+      cycle_start = call MajorTimer.getNow();
+      call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
+      call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_START, ncycles, 0, cycle_start, 0);
+      txq_start();
+    } else {                            /* otherwise just do and SLEEP delay */
+      call CollectEvent.logEvent(DT_EVENT_GPS_BOOT_SLEEP, ncycles, 0, cycle_start, 0);
+      major_change_state(GMS_MAJOR_SLEEP, MON_EV_BOOT);
+      call MajorTimer.startOneShot(GPS_MON_SLEEP);
     }
   }
 
@@ -1212,5 +1153,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   event void Collect.collectBooted()    { }
   event void GPSControl.gps_shutdown()  { }
   event void GPSControl.standbyDone()   { }
+  event void GPSControl.gps_booted()    { }
+  event void GPSControl.gps_boot_fail() { }
   async event void Panic.hook()         { }
 }
