@@ -77,28 +77,6 @@ enum {
 #define GPS_MON_SLEEP               ( 5 * 60 * 1024)
 //#define GPS_MON_SLEEP               ( 1 * 60 * 1024)
 
-/*
- * lpm_rsp_to   timeout for listening for responses after
- *              going into low power mode (hibernate or mpm req).
- *              If timeout assume off and poke it.
- *
- * lpm_restart_wait  restart window after seeing a low pwr error.
- *              time limit after seeing the error.  should see
- *              an ots_no first but in case we don't this
- *              timer will catch it.
- *
- * collect_deadman  backstop in case COLLECT doesn't see any
- *              messages.  Shouldn't happen.
- *
- * lpm_collect_time following an mpm error we go into collect
- *              to let mpm stablize.
- *
- * cycle_time   time from wake up to next sleep (low pwr mode).
- *              Window allowed for normal cycle, looking for fixes.
- *              (uses MajorTimer)
- *
- * mon_sleep    when in low pwr mode, how long to stay asleep before next fix.
- */
 
 /*
  * Internal Storage types.
@@ -172,21 +150,6 @@ typedef struct {
 } gps_monitor_control_t;
 
 
-/*
- * config msgs end with send swver, which triggers the end of config.
- * at one point we hit the gps chip with a warmstart via msg 128.
- * but this is problematic because the gps processor goes away for
- * a time.  Which complicates getting the swver trigger.
- *
- * We always want msg 7, clk status.  We use this for providing
- * extended gps week values.  Let the gps chip keep track.  If
- * we haven't seen clk_status, we add 2048 to any week value.
- */
-const uint8_t *config_msgs[] = {
-  NULL,
-};
-
-
 module GPSmonitorP {
   provides {
     interface TagnetAdapter<tagnet_gps_xyz_t> as InfoSensGpsXyz;
@@ -239,7 +202,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   gps_clk_t   m_clk;
   gps_geo_t   m_geo;
   gps_time_t  m_time;
-  gps_trk_t   m_track;
 
   void gps_warn(uint8_t where, parg_t p, parg_t p1) {
     call Panic.warn(PANIC_GPS, where, p, p1, 0, 0);
@@ -250,16 +212,13 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
-  const uint16_t ubx_ack_classids[] = { 0 };
+  const uint16_t ubx_ack_cids[] = { 0 };
 
   bool ubx_needs_ack(uint16_t clsid) {
     int i;
-//    uint8_t class, id;
 
-//    class = (clsid >> 8) & 0xff;
-//    id    = (clsid & 0xff);
-    for (i = 0; ubx_ack_classids[i]; i++)
-      if (clsid == ubx_ack_classids[i]) return TRUE;
+    for (i = 0; ubx_ack_cids[i]; i++)
+      if (clsid == ubx_ack_cids[i]) return TRUE;
     return FALSE;
   }
 
@@ -341,8 +300,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   error_t txq_send(uint8_t *gps_msg) {
     error_t err;
 
-    err = txq_enqueue(gps_msg);
-    if (err == SUCCESS)
+    if ((err = txq_enqueue(gps_msg)) == SUCCESS)
       err = txq_start();
     return err;
   }
@@ -388,15 +346,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
-  void enqueue_entry_msgs() {
-    /*
-     * hint: we get invoked when going into any on state.  But the queue
-     * doesn't get fired up until the minor state machine enters collect.
-     */
-  }
+  void enqueue_entry_msgs() { }
+  void enqueue_exit_msgs()  { }
 
-  void enqueue_exit_msgs() {
-  }
 
   void verify_gmcb() {
     if (gmcb.majik_a != GMCB_MAJIK || gmcb.majik_a != GMCB_MAJIK)
@@ -1118,7 +1070,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
 
     switch(gmcb.txq_state) {
       default:
-        gps_panic(-1, gmcb.txq_state, 0);
+        gps_panic(103, gmcb.txq_state, 0);
         break;
 
       case GPSM_TXQ_ACK_WAIT:
