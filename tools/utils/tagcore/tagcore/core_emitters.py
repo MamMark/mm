@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Eric B. Decker
+# Copyright (c) 2018-2020 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev3'
+__version__ = '0.4.8.dev4'
 
 from   ctypes       import c_int32
 from   binascii     import hexlify
@@ -512,24 +512,23 @@ def emit_gps_time(level, offset, buf, obj):
     brt      = secsFromHour_str(rtctime)
 
     capdelta=obj['capdelta'].val
-    tow    = obj['tow1000'].val/float(1000)
-    week_x = obj['week_x'].val
+    itow   = obj['itow'].val
+    tacc   = obj['tacc'].val
+    ms     = obj['utc_ms'].val
     year   = obj['utc_year'].val
     mon    = obj['utc_month'].val
     day    = obj['utc_day'].val
     hr     = obj['utc_hour'].val
     xmin   = obj['utc_min'].val
-    ms     = obj['utc_ms'].val
+    secs   = obj['utc_sec'].val
     nsats  = obj['nsats'].val
-    secs   = ms/1000
-    ms     = ms - secs * 1000
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03}  {}/{:4.3f}         [{}]'.format(
-        year, mon, day, hr, xmin, secs, ms, week_x, tow, nsats))
+    print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03} {:09}         [{:02d}]  t: {}'.format(
+        year, mon, day, hr, xmin, secs, ms, itow, nsats, tacc))
 
 
 def emit_gps_geo(level, offset, buf, obj):
@@ -540,31 +539,25 @@ def emit_gps_geo(level, offset, buf, obj):
     brt      = secsFromHour_str(rtctime)
 
     capdelta  = obj['capdelta'].val
-    nav_valid = obj['nav_valid'].val
-    nav_type  = obj['nav_type'].val
+    itow      = obj['itow'].val
     lat       = obj['lat'].val/10000000.
     lon       = obj['lon'].val/10000000.
-    alt_ell   = obj['alt_ell'].val/100.
-    alt_msl   = obj['alt_msl'].val/100.
-    satmask   = obj['sat_mask'].val
-    tow       = obj['tow1000'].val/1000.
-    week_x    = obj['week_x'].val
+    alt_ell   = obj['alt_ell'].val/1000.
+    alt_msl   = obj['alt_msl'].val/1000.
+    hacc      = obj['hacc'].val/1000.
+    vacc      = obj['vacc'].val/1000.
+    pdop      = obj['pdop'].val/100.
+    fixtype   = obj['fixtype'].val
+    flags     = obj['flags'].val
     nsats     = obj['nsats'].val
-    add_mode  = obj['add_mode'].val
-    ehpe      = obj['ehpe100'].val/100.
-    hdop      = obj['hdop5'].val/5.
 
-    # if nav_valid is 0 we are overdetermined.
-    fix = (nav_type & GPS_FIX_MASK)
-    fix = GPS_OD_FIX if fix and nav_valid == 0 else fix
-    fix_str = gps_fix_name(fix)
-    fix_str = 'nofix_OD' if fix == 0 and nav_valid == 0 else fix_str
+    fix_str = gps_fix_name(fixtype)
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    print('   {:10.7f}  {:10.7f}      {}/{:4.3f}  {:5}  [{}]'.format(
-        lat, lon, week_x, tow, fix_str, nsats))
+    print('   {:10.7f}  {:10.7f}     {:9}  {:5}  [{:02}]  h: {}  v: {}'.format(
+        lat, lon, itow, fix_str, nsats, hacc, vacc))
 
     if (level >= 1):
         alt_ell_ft = alt_ell * 3.28084
