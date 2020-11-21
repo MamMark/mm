@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Eric B. Decker
+ * Copyright (c) 2018, 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,11 +20,19 @@
  */
 
 interface GPSControl {
-  /*
+  /**
+   * GPSControl.turnOn()
    * start the GPS up and turn ON
    *
-   * upon completion will see either
+   * supports single/split phase
    *
+   * returns:
+   *   SUCCESS  split phase, gps start up initated.
+   *   FAIL     oops
+   *   EALREADY gps already started up and operational.
+   *            single phase turn on.
+   *
+   * split phase:
    *   gps_boot_fail()          didn't work
    *   gps_booted()             comm established, and GPS is up.
    */
@@ -34,19 +42,47 @@ interface GPSControl {
   event void gps_booted();
   event void gps_boot_fail();
 
-  /*
+  /**
+   * GPSControl.turnOff()
    * make the GPS shutdown.   If necessary pull RESET
    *
-   * upon completion will see
+   * supports single/split phase.
+   *
+   * returns:
+   *   SUCCESS  split phase, gps shutdown initiated.
+   *   FAIL     oops
+   *   EALREADY gps already shutdown.
+   *
+   * split phase will complete with gps_shutdown.
    */
   command error_t turnOff();
   event   void    gps_shutdown();
 
   /*
    * force the GPS into hibernate state
+   *
+   * returns:
+   *   SUCCESS  split phase, standby initiated.
+   *   FAIL     oops
+   *   EALREADY GPS in standby
+   *
+   * split phase will complete with the standbyDone() event.
    */
   command error_t standby();
   event   void    standbyDone();
+
+  /*
+   * wake the GPS up from hibernate
+   *
+   * returns:
+   *   SUCCESS  split phase, wakeup initiated.
+   *   FAIL     oops
+   *   EALREADY GPS awake
+   *
+   * split phase will complete with the wakeupDone() event.
+   */
+  command error_t wakeup();
+  event   void    wakeupDone();
 
 
   /* lower level control commands */

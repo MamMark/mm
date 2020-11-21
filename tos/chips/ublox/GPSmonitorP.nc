@@ -1153,6 +1153,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   event void Collect.collectBooted()    { }
   event void GPSControl.gps_shutdown()  { }
   event void GPSControl.standbyDone()   { }
+  event void GPSControl.wakeupDone()    { }
   event void GPSControl.gps_booted()    { }
   event void GPSControl.gps_boot_fail() { }
   async event void Panic.hook()         { }
