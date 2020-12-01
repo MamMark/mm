@@ -144,26 +144,14 @@ uint8_t  g_nev;                         // next gps event
 #endif   // GPS_LOG_EVENTS
 
 
-typedef struct {
-  uint8_t id;
-  uint8_t rate;
-} ubx_nav_cfg_t;
-
-
-ubx_nav_cfg_t ubx_nav_cfgs[] = {
-  { UBX_NAV_AOPSTATUS,  1},
-  { UBX_NAV_PVT,        1},
-  { UBX_NAV_POSECEF,    1},
-  { UBX_NAV_STATUS,     1},
-  { UBX_NAV_CLOCK,      1},
-  { UBX_NAV_DOP,        1},
-  { UBX_NAV_ORB,        1},
-  { UBX_NAV_SAT,        1},
-  { UBX_NAV_EOE,        1},
-  { UBX_NAV_TIMELS,     1},
-  { UBX_NAV_TIMEUTC,    1},
-  { UBX_NAV_TIMEGPS,    1},
-  { 0, 0 },
+uint8_t ubx_nav_cfgs[] = {
+  UBX_NAV_PVT,
+  UBX_NAV_STATUS,
+  UBX_NAV_CLOCK,
+  UBX_NAV_DOP,
+  UBX_NAV_SAT,
+  UBX_NAV_EOE,
+  0,
 };
 
 
@@ -796,7 +784,7 @@ implementation {
 
 
   void configure_msgs() {
-    ubx_nav_cfg_t *ncp;
+    uint8_t       *ncp;
     ubx_cfg_msg_t  cfgmsg;
     uint16_t       chk;
 
@@ -807,10 +795,10 @@ implementation {
     cfgmsg.id    = UBX_CFG_MSG;
     cfgmsg.len   = 3;
     cfgmsg.msgClass = UBX_CLASS_NAV;
-    while (ncp->rate) {
+    while (*ncp) {
       gpsc_change_state(GPSC_CONFIG_MSG, GPSW_BOOT);
-      cfgmsg.msgId = ncp->id;
-      cfgmsg.rate  = ncp->rate;
+      cfgmsg.msgId = *ncp;
+      cfgmsg.rate  = 1;
       chk = call ubxProto.fletcher8((void *) &cfgmsg.class, cfgmsg.len + UBX_CHKSUM_ADJUST);
       cfgmsg.chkA = chk >> 8;
       cfgmsg.chkB = chk & 0xff;
@@ -821,6 +809,7 @@ implementation {
         gps_panic(22, 0, 0);
       ncp++;
     }
+#ifdef notdef
     cfgmsg.msgClass = UBX_CLASS_TIM;
     cfgmsg.msgId    = UBX_TIM_TP;
     cfgmsg.rate     = 1;
@@ -832,6 +821,7 @@ implementation {
     ubx_get_msgs(104858, TRUE);
     if (gpsc_state != GPSC_CONFIG_MSG)
       gps_panic(23, 0, 0);
+#endif
 
     ubx_send_msg((void *) ubx_cfg_cfg_save, sizeof(ubx_cfg_cfg_save));
     gpsc_change_state(GPSC_CONFIG_SAVE_ACK, GPSW_BOOT);
