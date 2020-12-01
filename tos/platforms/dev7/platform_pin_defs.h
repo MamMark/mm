@@ -47,6 +47,14 @@
 
 /* gps - ublox */
 
+#define UBX_PWR_PORT            P4
+#define UBX_PWR_PIN             1
+#define UBX_PWR                 BITBAND_PERI(UBX_PWR_PORT->OUT,  UBX_PWR_PIN)
+
+#define UBX_PWRD_PORT           P4
+#define UBX_PWRD_PIN            0
+#define UBX_PWRD_P              BITBAND_PERI(UBX_PWRD_PORT->OUT,  UBX_PWRD_PIN)
+
 #define UBX_SCLK_PORT           P7
 #define UBX_SCLK_PIN            0
 #define UBX_SCLK_SEL0           BITBAND_PERI(UBX_SCLK_PORT->SEL0, UBX_SCLK_PIN)
@@ -96,26 +104,6 @@
 #define UBX_RESETN_PIN          4
 #define UBX_RESETN_REN          BITBAND_PERI(UBX_RESETN_PORT->REN, UBX_RESETN_PIN)
 #define UBX_RESET               BITBAND_PERI(UBX_RESETN_PORT->DIR, UBX_RESETN_PIN)
-
-#define UBX_PINS_PWR_OFF        do {            \
-    UBX_SCLK_SEL0 = 0;  UBX_SCLK_REN  = 1;      \
-    UBX_TM_SEL0   = 0;  UBX_TM_REN    = 1;      \
-    UBX_SOMI_SEL0 = 0;  UBX_SOMI_REN  = 1;      \
-    UBX_SIMO_SEL0 = 0;  UBX_SIMO_REN  = 1;      \
-    UBX_CSN_DIR   = 0;                          \
-    UBX_CSN_REN   = 1;                          \
-    UBX_TXRDY_REN = 1;                          \
-  } while (0)
-
-#define UBX_PINS_PWR_ON         do {            \
-    UBX_SCLK_SEL0 = 1;  UBX_SCLK_REN  = 0;      \
-    UBX_TM_SEL0   = 0;  UBX_TM_REN    = 0;      \
-    UBX_SOMI_SEL0 = 1;  UBX_SOMI_REN  = 0;      \
-    UBX_SIMO_SEL0 = 1;  UBX_SIMO_REN  = 0;      \
-    UBX_CSN_DIR   = 1;                          \
-    UBX_CSN_REN   = 0;                          \
-    UBX_TXRDY_REN = 0;                          \
-  } while (0)
 
 
 /* radio - si446x - (B2) */

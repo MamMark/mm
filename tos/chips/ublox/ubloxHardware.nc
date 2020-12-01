@@ -28,9 +28,9 @@
  *  gps_reset_pin():      (set/clr) access to reset pin.
  *  gps_sw_reset():       s/w reset message
  *
+ *  gps_powered():        return true if gps is powered (h/w power).
  *  gps_pwr_on():         turn pwr on (really?)
  *  gps_pwr_off():        your guess here.
- *  gps_powered():        return true if gps is powered (h/w power).
  *
  * data transfer
  *
@@ -49,9 +49,9 @@
  *
  *  gps_send_block():     transmit a block of data.
  *  gps_send_block_done():
- *  gps_byte_avail():     from h/w driver to gps driver.
+ *  gps_byte_avail():     from h/w layer to chip driver.
  *
- *  gps_raw_collect():    collect a gps raw packet
+ *  gps_raw_collect():    request collection of a gps raw packet
  *
  * @author Eric B. Decker <cire831@gmail.com>
  */
@@ -60,10 +60,11 @@ interface ubloxHardware {
 
   command void gps_set_cs();
   command void gps_clr_cs();
+  command void gps_clr_cs_delay();
 
-  command void gps_sw_reset(uint16_t bbr_mask, uint8_t reset_mode);
   command void gps_set_reset();
   command void gps_clr_reset();
+  command void gps_sw_reset(uint16_t bbr_mask, uint8_t reset_mode);
 
   command bool gps_powered();
   command void gps_pwr_on();
@@ -74,13 +75,16 @@ interface ubloxHardware {
   command uint8_t spi_get();
   command uint8_t spi_getput(uint8_t byte);
 
+
   event   void    spi_pipe_stall();
   command void    spi_pipe_restart();
 
   command bool gps_txrdy();
   command bool gps_txrdy_int_enabled();
-  command void gps_txrdy_int_enable();
+  command void gps_txrdy_int_enable(uint32_t where);
   command void gps_txrdy_int_disable();
+  command void gps_txrdy_int_initialize();
+  command void gps_txrdy_int_clear();
 
   /*
    * Data transfer

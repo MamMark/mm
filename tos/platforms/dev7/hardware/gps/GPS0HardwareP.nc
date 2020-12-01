@@ -95,27 +95,64 @@ implementation {
     }
   }
 
-  command void HW.gps_set_cs()    { UBX_CSN   = 0; }
-  command void HW.gps_clr_cs()    { UBX_CSN   = 1; }
   command void HW.gps_set_reset() { UBX_RESET = 1; }
   command void HW.gps_clr_reset() { UBX_RESET = 0; }
-  command bool HW.gps_powered()   { return TRUE; }
+  command void HW.gps_set_cs()    { UBX_CSN   = 0; }
+  command void HW.gps_clr_cs()    { UBX_CSN   = 1; }
 
-  command void HW.gps_pwr_on()    {
-    /* always on, just make sure the pins are set correctly */
+  /* clear CS and delay to keep the ublox happy */
+  command void HW.gps_clr_cs_delay() {
+    uint32_t t0, t1;
 
-    /* power on */
-
-    /* now switch pins and connect to the gps */
-    UBX_PINS_PWR_ON;
+    atomic {
+      t0 = call Platform.usecsRaw();
+      call HW.gps_clr_cs();
+      call HW.spi_clr_port();
+      do {
+        t1 = call Platform.usecsRaw();
+      } while ((t1 - t0) < 1100);
+    }
   }
 
-  command void HW.gps_pwr_off()   {
-    /* always on, just pretend by switching the pins. */
+//command bool HW.gps_powered()   { return UBX_PWRD_P; }
+  command bool HW.gps_powered()   { return TRUE; }
 
-    /* switch pins, then kill power */
-    UBX_PINS_PWR_OFF;
-    /* power off */
+  /*
+   * gps_pwr_on: power up and reconnect outputs.
+   *
+   * power the chip up, assumes off and any output pins have been
+   * decoupled.
+   *
+   * We power the gps chip up and reconnect any I/Os we should be
+   * driving.
+   *
+   * Leave the chip with CS deasserted.
+   */
+  command void HW.gps_pwr_on() {
+    /* power on */
+    UBX_PWR       = 1;                  /* power up. */
+    UBX_CSN       = 1;                  /* deassert */
+    UBX_CSN_DIR   = 1;                  /* switch to out  */
+
+    /* now switch pins and connect to the gps */
+    UBX_SCLK_SEL0 = 1;  UBX_SCLK_REN  = 0;
+    UBX_TM_SEL0   = 0;  UBX_TM_REN    = 0;
+    UBX_SOMI_SEL0 = 1;  UBX_SOMI_REN  = 0;
+    UBX_SIMO_SEL0 = 1;  UBX_SIMO_REN  = 0;
+    UBX_CSN_REN   = 0;
+    UBX_TXRDY_REN = 0;
+  }
+
+  command void HW.gps_pwr_off() {
+    UBX_SCLK_SEL0 = 0;  UBX_SCLK_REN  = 1;
+    UBX_TM_SEL0   = 0;  UBX_TM_REN    = 1;
+    UBX_SOMI_SEL0 = 0;  UBX_SOMI_REN  = 1;
+    UBX_SIMO_SEL0 = 0;  UBX_SIMO_REN  = 1;
+    UBX_CSN       = 0;
+    UBX_CSN_DIR   = 0;
+    UBX_CSN_REN   = 1;
+    UBX_TXRDY_REN = 1;
+    UBX_PWR       = 0;
   }
 
 
@@ -172,18 +209,13 @@ implementation {
 
 
   command void HW.gps_sw_reset(uint16_t bbr_mask, uint8_t reset_mode) {
-    uint32_t      t0, t1, len;
+    uint32_t      len;
     ubx_cfg_rst_t rstmsg;
     uint16_t      chk;
     uint8_t      *outp;
 
     /* first hold CS up for at least 1 ms, then reassert */
-    t0 = call Platform.usecsRaw();
-    call HW.gps_clr_cs();
-    call HW.spi_clr_port();
-    do {
-      t1 = call Platform.usecsRaw();
-    } while ((t1 - t0) < 1200);
+    call HW.gps_clr_cs_delay();
     call HW.gps_set_cs();
     rstmsg.sync1        = UBX_SYNC1;
     rstmsg.sync2        = UBX_SYNC2;
@@ -300,7 +332,7 @@ implementation {
            * resets the pipe so we really need to bail out.  But first
            * reenable the txrdy interrupt.
            */
-          call HW.gps_txrdy_int_enable();
+          call HW.gps_txrdy_int_enable(1);
           return;
         }
 
@@ -311,11 +343,7 @@ implementation {
       data = call HW.spi_get();
       signal HW.gps_byte_avail(data);
     } while (UBX_TXRDY_P);
-    call HW.gps_txrdy_int_enable();
-    /*
-     * The txrdy_int_enable() clears out any pending txrdy int.  But it
-     * also checks for TXRDY asserted and posts driver_task if present.
-     */
+    call HW.gps_txrdy_int_enable(2);
   }
 
 
@@ -334,7 +362,7 @@ implementation {
   }
 
 
-  command void HW.gps_txrdy_int_enable()  {
+  command void HW.gps_txrdy_int_enable(uint32_t where)  {
     atomic {
       call TxRdyIRQ.disable();
       call TxRdyIRQ.edgeRising();
@@ -347,6 +375,20 @@ implementation {
 
   command void HW.gps_txrdy_int_disable() {
     call TxRdyIRQ.disable();
+  }
+
+
+  command void HW.gps_txrdy_int_initialize() {
+    atomic {
+      call TxRdyIRQ.disable();
+      call TxRdyIRQ.edgeRising();
+      call TxRdyIRQ.clear();
+    }
+  }
+
+
+  command void HW.gps_txrdy_int_clear() {
+    call TxRdyIRQ.clear();
   }
 
 
