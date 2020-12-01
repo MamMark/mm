@@ -34,6 +34,11 @@ interface GPSProto {
   command void rx_error(uint16_t errors);
 
   /*
+   * restart: abort any pending packet in progress and restart.
+   */
+  command void restart();
+
+  /*
    * resetStats
    * Stats are collected for a section of time, reported, and
    * cleared.

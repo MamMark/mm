@@ -169,6 +169,12 @@ implementation {
   }
 
 
+  command void GPSProto.restart() {
+    if (ubx_state != UBXS_START)
+      ubx_restart_abort(0);             /* restart */
+  }
+
+
   command void GPSProto.resetStats() {
       ubx_stats.starts           = 0;
       ubx_stats.complete         = 0;
