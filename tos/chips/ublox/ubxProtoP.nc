@@ -421,13 +421,13 @@ implementation {
            */
           if (byte < 0x20 || byte > 0x7e) {
             /* oops, bad byte */
-            WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC;
+//            WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC;
             ubx_restart_abort(6);
             break;
           }
           if (ubx_nmea_len >= (MAX_NMEA_MSG - 6)) {
             /* oops too big. */
-            WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC;
+//            WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC;
             ubx_other_stats.nmea_too_big++;
             ubx_restart_abort(7);
             break;
