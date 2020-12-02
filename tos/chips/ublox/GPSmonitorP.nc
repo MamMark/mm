@@ -75,7 +75,6 @@ enum {
 
 // 5 mins between last cycle and next cycle
 #define GPS_MON_SLEEP               ( 5 * 60 * 1024)
-//#define GPS_MON_SLEEP               ( 1 * 60 * 1024)
 
 
 /*

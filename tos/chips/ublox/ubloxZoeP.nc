@@ -39,18 +39,21 @@ enum {
 typedef enum {
   GPSC_OFF              = 0,            /* pwr is off */
 
+  /* normal operation */
   GPSC_ON               = 1,            // at msg boundary
   GPSC_ON_RX            = 2,            // in process of receiving a packet, timer on
   GPSC_ON_TX            = 3,            // doing transmit, txtimer running.
   GPSC_ON_RX_TX         = 4,            // not really used.  TX atomic
 
+  /* pipeline restart */
   GPSC_RESTART_WAIT     = 5,            // waiting for pipeline ack
 
+  /* bootstrap, standalone, no timers */
   GPSC_CONFIG_BOOT      = 6,            /* bootstrap initilization */
   GPSC_CONFIG_CHK       = 7,            /* configuration check     */
   GPSC_CONFIG_SET_TXRDY = 8,            /* need txrdy configured   */
   GPSC_CONFIG_TXRDY_ACK = 9,            /* waiting for ack         */
-  GPSC_CONFIG_DONE      = 10,            /* good to go              */
+  GPSC_CONFIG_DONE      = 10,           /* good to go              */
   GPSC_CONFIG_MSG       = 11,           /* configuring msgs        */
   GPSC_CONFIG_MSG_ACK   = 12,           /* waiting for config ack  */
   GPSC_CONFIG_SAVE_ACK  = 13,           /* saving config           */
@@ -482,7 +485,7 @@ implementation {
         gps_panic(17, gpsc_state, 0);
         return;
 
-      /* not running any time out, stand alone */
+      /* pipeline restart or bootstrap, run to completion, no time out */
       case GPSC_RESTART_WAIT:
       case GPSC_CONFIG_BOOT:            /* stay */
       case GPSC_CONFIG_CHK:
@@ -585,8 +588,6 @@ implementation {
       /* 0xff is the idle byte, if outside of a message ignore */
       return FALSE;
     }
-    if (!t_gps_first_char)
-      t_gps_first_char = call LocalTime.get();
 
 #ifdef GPS_EAVESDROP
     gbuf[g_idx++] = byte;
@@ -889,7 +890,7 @@ implementation {
   /*
    * the spi pipe has stall.
    *
-   * we free it up by sending the spi port reconfigu command.
+   * we free it up by sending the spi port reconfiguration command.
    */
   event void HW.spi_pipe_stall() {
     uint32_t      t0, t1, t5;

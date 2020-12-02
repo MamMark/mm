@@ -136,6 +136,16 @@ implementation {
    */
   inline void ubx_restart_abort(uint16_t where) {
     atomic {
+#ifdef notdef
+      uint32_t i;
+
+      WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;
+      nop(); nop(); nop(); nop(); nop(); nop(); nop();
+      for (i = 0; i < where; i++)
+        WIGGLE_TELL;
+      nop(); nop(); nop(); nop(); nop(); nop(); nop();
+      WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;
+#endif
       ubx_reset();
       signal GPSProto.protoAbort(where);
     }
@@ -152,6 +162,10 @@ implementation {
 
   /*
    * An rx_error occurred.  The underlying comm h/w isn't happy
+   *
+   * Note that ubx_reset does NOT throw a GPSProto.msgAbort as
+   * formerly documented.
+   *
    * Also throw a GPSProto.msgAbort to do reasonable things with
    * the underlying driver state machine.
    */

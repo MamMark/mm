@@ -25,7 +25,7 @@ interface GPSProto {
   /*
    * rx_timeout: an rx_timeout has occurred.
    */
-        command void rx_timeout();
+  command void rx_timeout();
 
   /*
    * rx_error: an rx_error has occurred.

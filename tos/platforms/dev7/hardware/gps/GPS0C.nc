@@ -47,7 +47,7 @@ implementation {
    * events to handle the fan out.
    */
   components HplGPS0C;
-  HW     = HplGPS0C;
+  HW       = HplGPS0C;
 
   /* low level driver, start there */
   components ubloxZoeP as GPSDriverP;
