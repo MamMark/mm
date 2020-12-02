@@ -893,9 +893,10 @@ implementation {
    * we free it up by sending the spi port reconfiguration command.
    */
   event void HW.spi_pipe_stall() {
-    uint32_t      t0, t1, t5;
+    uint32_t      t1, t5;
     gpsc_state_t  prev_state;
 
+    call CollectEvent.logEvent(DT_EVENT_GPS_PIPE_STALL, gpsc_state, 0, 0, 0);
     prev_state = gpsc_state;
     t5 = call Platform.usecsRaw();
 
@@ -907,23 +908,11 @@ implementation {
       gpsc_change_state(GPSC_RESTART_WAIT, GPSW_PIPE_RESTART);
 
       /* first hold CS up for at least 1 ms, then reassert */
-      call HW.gps_clr_cs();
-      t0 = call Platform.usecsRaw();
-      call HW.spi_clr_port();
-      do {
-        t1 = call Platform.usecsRaw();
-      } while ((t1 - t0) < 1200);
-
+      call HW.gps_clr_cs_delay();
       call HW.gps_set_cs();
       ubx_send_msg((void *) ubx_cfg_prt_spi_txrdy, sizeof(ubx_cfg_prt_spi_txrdy));
 
-      call HW.gps_clr_cs();
-      t0 = call Platform.usecsRaw();
-      call HW.spi_clr_port();
-      do {
-        t1 = call Platform.usecsRaw();
-      } while ((t1 - t0) < 1200);
-
+      call HW.gps_clr_cs_delay();
       call HW.gps_set_cs();
       ubx_get_msgs(104858, FALSE);
 
