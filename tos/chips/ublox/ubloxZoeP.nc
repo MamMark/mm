@@ -112,11 +112,6 @@ enum {
 norace gpsc_state_t	    gpsc_state;
 norace bool                 gpsc_in_msg;
 
-/* instrumentation */
-uint32_t		    gpsc_boot_time;		// time it took to boot.
-uint32_t		    gpsc_cycle_time;		// time last cycle took
-uint32_t		    gpsc_max_cycle;		// longest cycle time.
-
 #ifdef GPS_LOG_EVENTS
 
 norace uint16_t g_idx;                  /* index into gbuf */
@@ -183,8 +178,9 @@ module ubloxZoeP {
 }
 implementation {
 
-  uint32_t t_gps_pwr_on;                // when driver started
-  uint32_t t_gps_first_char;            // from boot
+  uint32_t t_gps_boot_start;            // when bootstrap start
+  uint32_t t_gps_boot_end;              // when bootstrap complete
+  uint32_t t_gps_boot_delta;            // how long boot strap takes.
 
   norace uint32_t m_rx_errors;          // rx errors from the h/w
          uint32_t m_lost_tx_ints;       // on_tx, time outs
@@ -883,9 +879,17 @@ implementation {
   /*
    * Standalone initializer for Ubx M8 based gps chips.
    *
-   * o get  HW and SW verions to stash
-   * o enable TxRdy
-   * o verify TxRdy took, need to poll SPI state.
+   * This is Boot up.  we don't know what state the ublox chip is in.  It
+   * is possible that the SPI pipeline is out of sync.  We deassert CS
+   * for the required 1ms and then reassert.
+   *
+   * o force TxRdy enable
+   * o verify TxRdy took by doing a port config poll
+   * o enable any UBX messages we need.
+   * o get HW and SW verions to stash
+   * o put GPS into sleep.
+   *
+   * The low level GPS bootstrap gets run once per boot.
    */
 
   event void Boot.booted() {
@@ -894,27 +898,42 @@ implementation {
     if (gpsc_state != GPSC_OFF)
       gps_panic(24, gpsc_state, 0);
 
-    t_gps_pwr_on = call LocalTime.get();
-    call HW.gps_txrdy_int_disable();        /* no need for it yet. */
+    t_gps_boot_start = call LocalTime.get();
+
+    /* initialize and disable the interrupt */
+    call HW.gps_txrdy_int_initialize();
     gpsc_change_state(GPSC_CONFIG_BOOT, GPSW_BOOT);
-    call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, t_gps_pwr_on, 0, 0, 0);
-    if (!call HW.gps_powered())
-      call HW.gps_pwr_on();
+    call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, t_gps_boot_start, 0, 0, 0);
+//    if (!call HW.gps_powered())
+//      call HW.gps_pwr_on();
+    call HW.gps_pwr_on();
+#ifdef notdef
     call HW.gps_set_reset();
+
+    /* hold reset for about 10 ms */
     t0 = call Platform.usecsRaw();
     do {
       t1 = call Platform.usecsRaw();
     } while ((t1 - t0) < 11000);
     call HW.gps_clr_reset();
+
+    /* let it stew for about 100 ms */
     t0 = call Platform.usecsRaw();
     do {
       t1 = call Platform.usecsRaw();
     } while ((t1 - t0) < 104858);
+#endif
+
+    gpsc_count = 1;
     t0 = call Platform.usecsRaw();
-    do {
+    while (TRUE) {
       t1 = call Platform.usecsRaw();
-      if (t1 - t0 > 524288)
+      if (t1 - t0 > 524288) {
         gps_panic(25, gpsc_state, t1 - t0);
+      }
+
+      call HW.gps_clr_cs_delay();
+      call HW.gps_set_cs();
 
       /*
        * We just booted.  We don't know the configuration of the GPS chip.
@@ -926,22 +945,33 @@ implementation {
        *
        * After sending the CFG_PRT, the ublox will reset the SPI pipeline.
        * When the pipe is back up, the ublox will send an appropriate ACK.
-       * This ACK will cause a state change.
+       * This ACK will cause the state change.
        */
       gpsc_change_state(GPSC_CONFIG_TXRDY_ACK, GPSW_BOOT);
+      call ubxProto.restart();
       ubx_send_msg((void *) ubx_cfg_prt_spi_txrdy, sizeof(ubx_cfg_prt_spi_txrdy));
+
+      /*
+       * note that we could be receiving a packet from the ubx chip.  But the
+       * cfg_prt packet we just sent will reset the spi pipeline.   If we don't
+       * restart the protocol handler, it is possible that the ack we are
+       * looking for will get eaten (added to a potential packet we thought we
+       * were receiving).
+       */
+      call ubxProto.restart();
       ubx_get_msgs(104858, FALSE);
 
       /*
+       * At this point we should have a clean pipe.  We don't know if the ublox
+       * chip ack'd the cfg/prt or if we saw the ack.  But it doesn't matter.
+       * We simply force GPSC_CONFIG_CHK, issue cfg/prt (poll), and see if we
+       * get something reasonable (ie. txrdy set properly).
+       *
        * sent reconfig to turn on TXRDY (nmea off, ubx on).  See if it took.
        * We ignore whether the TXRDY ack occured.  Simply send the poll to
        * verify if the configuration command too.
-       *
-       * Once we see the ACK for the PRT_SPI_TXRDY message we know it
-       * is safe to send the verification poll.  That the spi pipe won't
-       * get wacked.  The wackage has been completed.
        */
-
+      gpsc_change_state(GPSC_CONFIG_CHK, GPSW_BOOT);
       ubx_send_msg((void *) ubx_cfg_prt_poll_spi,  sizeof(ubx_cfg_prt_poll_spi));
       ubx_get_msgs(104858, FALSE);
 
@@ -950,8 +980,13 @@ implementation {
        * CONFIG_CHK -> CONFIG_SET_TXRDY     wrong setting, try again
        * CONFIG_CHK -> CONFIG_DONE          proceed.
        */
+      if (gpsc_state == GPSC_CONFIG_DONE)
+        break;
+      gpsc_count++;
+    };
 
-    } while (gpsc_state != GPSC_CONFIG_DONE);
+    if (gpsc_count > 1)
+      gps_warn(13, gpsc_count, 0);
 
     ubx_clean_pipe(104858);
     configure_msgs();
@@ -960,6 +995,7 @@ implementation {
     ubx_clean_pipe(104858);
     ubx_send_msg((void *) ubx_mon_hw_poll, sizeof(ubx_mon_hw_poll));
     t0 = call Platform.usecsRaw();
+    gpsc_count = 1;
     while (TRUE) {
       t1 = call Platform.usecsRaw();
       if (t1 - t0 > 104858)
@@ -968,11 +1004,26 @@ implementation {
       ubx_get_msgs(104858, TRUE);
       if (gpsc_state == GPSC_VER_DONE)
         break;
+      gpsc_count++;
     }
 
+    if (gpsc_count > 1)
+      gps_warn(14, gpsc_count, 0);
+
     ubx_clean_pipe(104858);
+
+    /*
+     * We leave the gps up.  Hand off to the rest of the system bootstrap.
+     * At the end of the system bootstrap the GPSMonitor gets woken up.
+     * It will run a normal wake up cycle, then will start cycling the GPS.
+     */
+    t_gps_boot_end = call LocalTime.get();
+    t_gps_boot_delta = t_gps_boot_end - t_gps_boot_start;
+
+    call CollectEvent.logEvent(DT_EVENT_GPS_BOOT_TIME, t_gps_boot_end,
+                               t_gps_boot_delta, 0, 0);
     gpsc_change_state(GPSC_ON, GPSW_BOOT);
-    call HW.gps_txrdy_int_enable();
+    call HW.gps_txrdy_int_enable(19);
     signal Booted.booted();
   }
 
