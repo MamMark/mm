@@ -315,12 +315,12 @@ implementation {
           signal HW.gps_send_done(SUCCESS);
         }
         if (data != 0xff) {
-          byte_count = 8;
+          byte_count = 2;
           hang_count = 64;
           continue;
         }
         if (UBX_TXRDY_P) {
-          byte_count = 8;
+          byte_count = 2;
           hang_count--;
           if (hang_count)
             continue;
