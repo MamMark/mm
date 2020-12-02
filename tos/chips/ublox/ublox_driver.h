@@ -45,6 +45,14 @@
 
 /* mis units */
 #define DT_GPS_PWR_UP_DELAY     128
+#define DT_GPS_PWR_DWN_TO      (5 * 1024)
+
+/*
+ * STANDBY_TO: how long to wait before checking for TXRDY down when going to standby
+ * WAKE_DELAY: how to wait before turning TXRDY interrupt back on when waking up.
+ */
+#define DT_GPS_STANDBY_TO      10
+#define DT_GPS_WAKE_DELAY      100
 
 
 /*
@@ -233,6 +241,19 @@ const uint8_t ubx_mon_ver_poll[] = {
   UBX_CLASS_MON, UBX_MON_VER,
   0x00, 0x00,                           /* length, 0, poll */
   0x0E, 0x34,
+};
+
+
+const uint8_t ubx_rxm_pmreq_backup_0[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_RXM, UBX_RXM_PMREQ,
+  0x10, 0x00,                           /* length, 16 bytes */
+  0x00,                                 /* version */
+  0x00, 0x00, 0x00,                     /* reserved1 */
+  0x00, 0x00, 0x00, 0x00,               /* 0, no timeout   */
+  0x06, 0x00, 0x00, 0x00,               /* force, backup   */
+  0x80, 0x00, 0x00, 0x00,               /* wakeup, SPICS   */
+  0xd9, 0x4b,
 };
 
 

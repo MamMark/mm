@@ -59,11 +59,15 @@ typedef enum {
 
   GPSC_PWR_UP_WAIT      = 16,           /* waiting for power up    */
 
-  GPSC_HIBERNATE        = 17,           // place holder
+  GPSC_STANDBY          = 17,           /* in standby, hibernating    */
+  GPSC_STANDBY_WAIT     = 18,           /* waiting to go into standby */
+  GPSC_WAKE_WAIT        = 19,           /* from standby to wake wait  */
 
-  GPSC_RESET_WAIT       = 18,           /* reset dwell */
+  GPSC_RESET_WAIT       = 20,           /* reset dwell */
 
-  GPSC_FAIL             = 19,
+  GPSC_FAIL             = 21,
+
+  GPSC_PWR_DWN_WAIT     = 22,
 
 } gpsc_state_t;                         // gps control state
 
@@ -81,6 +85,7 @@ typedef enum {
   GPSW_PROTO_END,
   GPSW_TX_SEND,
   GPSW_PIPE_RESTART,
+  GPSW_WAKEUP,
 } gps_where_t;
 
 
@@ -110,6 +115,7 @@ enum {
  * gpsc_in_msg: true if within message boundaries.
  */
 norace gpsc_state_t	    gpsc_state;
+norace uint32_t             gpsc_count;         /* used by repeated states */
 norace bool                 gpsc_in_msg;
 
 #ifdef GPS_LOG_EVENTS
@@ -231,7 +237,9 @@ implementation {
         case GPSC_PWR_DWN_WAIT:         WIGGLE_TELL;
         case GPSC_FAIL:                 WIGGLE_TELL;
         case GPSC_RESET_WAIT:           WIGGLE_TELL;
-        case GPSC_HIBERNATE:            WIGGLE_TELL;
+        case GPSC_WAKE_WAIT:            WIGGLE_TELL;
+        case GPSC_STANDBY_WAIT:         WIGGLE_TELL;
+        case GPSC_STANDBY:              WIGGLE_TELL;
         case GPSC_PWR_UP_WAIT:          WIGGLE_TELL;
         case GPSC_VER_DONE:             WIGGLE_TELL;
         case GPSC_VER_WAIT:             WIGGLE_TELL;
@@ -307,35 +315,16 @@ implementation {
      * This needs to be sorted out later.
      */
     return SUCCESS;
-
-  /*
-   * GPSControl.standby: Put the GPS chip into standby.
-   */
-  command error_t GPSControl.standby() {
-    gps_hibernate();
-    call HW.gps_txrdy_int_disable();
-    call GPSTxTimer.stop();
-    call GPSRxTimer.stop();
-    gpsc_change_state(GPSC_HIBERNATE, GPSW_STANDBY);
-    call CollectEvent.logEvent(DT_EVENT_GPS_STANDBY, 0, 0, 0, 0);
-    return SUCCESS;
-  }
-
-
-  command void GPSControl.hibernate() {
-    gps_hibernate();
-  }
-
-
-  command void GPSControl.wake() {
-    gps_wakeup();
   }
 
 
   command void GPSControl.pulseOnOff() { }
 
   command bool GPSControl.awake()      {
-    return 0;
+    if (gpsc_state == GPSC_OFF || gpsc_state == GPSC_STANDBY)
+      return FALSE;
+    else
+      return TRUE;
   }
 
   command void GPSControl.reset() { }
@@ -385,11 +374,10 @@ implementation {
   command void MsgTransmit.send_abort() { }
   default event void MsgTransmit.send_done(error_t err) { }
 
-  /*
-   * GPSTxTimer.fired
-   * TX deadman timer, also used for power on timing.
-   */
+
   event void GPSTxTimer.fired() {
+    uint32_t txrdy;
+
     atomic {
       switch (gpsc_state) {
         case GPSC_PWR_DWN_WAIT:         /* time out, oops */
@@ -408,6 +396,53 @@ implementation {
         case GPSC_ON_RX:
         case GPSC_ON_TX:
         case GPSC_ON_RX_TX:
+          break;
+
+        case GPSC_STANDBY_WAIT:
+          /*
+           * The sequence for standby is documented in gps_hibernate()
+           *
+           * We are looking for TXRDY floating high.  This happens sometime
+           * after CS is deasserted after putting the chip into backup mode
+           * (via msg).  This tells us we are asleep.
+           */
+          txrdy = call HW.gps_txrdy();
+          if (txrdy) {
+            gpsc_change_state(GPSC_STANDBY, GPSW_TX_TIMER);
+            signal GPSControl.standbyDone();
+            break;
+          }
+
+          /*
+           * TXRDY is still low.  That means it is still being driven and the ublox
+           * isn't asleep yet.
+           *
+           * This is an oops.   We keep our timeout reasonably short and use a counter
+           * to handle multiple segments.   We log what we've seen.   If too many segments
+           * blow up.
+           */
+          WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC;
+          gps_warn(11, gpsc_count, txrdy);
+          if (--gpsc_count == 0)
+            gps_panic(16, gpsc_count, txrdy);
+
+          /* restart the timer and try again */
+          call GPSTxTimer.startOneShot(DT_GPS_STANDBY_TO);
+          break;
+
+        case GPSC_WAKE_WAIT:
+          /*
+           * The sequence for standby is documented in gps_hibernate()
+           */
+          gpsc_change_state(GPSC_ON, GPSW_TX_TIMER);
+          txrdy = call HW.gps_txrdy();
+          if (txrdy) {
+            /* we just woke up, strange that txrdy is up, yell */
+            WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC; WIGGLE_EXC;
+            gps_warn(12, gpsc_state, txrdy);
+          }
+          call HW.gps_txrdy_int_enable(18);
+          signal GPSControl.wakeupDone();
           break;
       }
     }
@@ -522,6 +557,7 @@ implementation {
       case GPSC_VER_WAIT:
       case GPSC_VER_DONE:
       case GPSC_ON:
+      case GPSC_STANDBY_WAIT:
         gpsc_change_state(gpsc_state, GPSW_PROTO_ABORT);
         return;
 
@@ -1048,6 +1084,97 @@ implementation {
     gpsc_change_state(GPSC_ON, GPSW_BOOT);
     call HW.gps_txrdy_int_enable(19);
     signal Booted.booted();
+  }
+
+
+  /*
+   * gps_hibernate: put the ublox into standby (backup)
+   *
+   * The ubx chip is put into backup by doing the following steps.
+   *
+   * o drop CSN (assert, probably already asserted)
+   * o send rxm/pmreq(backup, duration 0)
+   * o raise CS (deassert)
+   * o reset ubxProto to abort any packet in progress
+   *
+   * Approximately 5 ms (observed) after the end of rmx/pmreq and
+   * the deassertion of CS, the ublox will undrive its pins including
+   * TxRdy.  There is an internal pull up on TxRdy so it looks asserted.
+   * We disable the TxRdy interrupt.  We wait for STANDBY_TO and
+   * verify that TxRdy has gone high.
+   *
+   * The STANDBY_TO timing is handled by GPSControl.standby().
+   */
+  void gps_hibernate() {
+    uint32_t txrdy;
+
+    txrdy = call HW.gps_txrdy();
+    call HW.gps_txrdy_int_disable();
+    call CollectEvent.logEvent(DT_EVENT_GPS_STANDBY, txrdy, 0, 0, 0);
+    call HW.gps_set_cs();
+    ubx_send_msg((void *) ubx_rxm_pmreq_backup_0, sizeof(ubx_rxm_pmreq_backup_0));
+    call HW.gps_clr_cs();
+    call ubxProto.restart();
+  }
+
+
+  /*
+   * GPSControl.standby: Put the GPS chip into standby.
+   */
+  command error_t GPSControl.standby() {
+    if (!gpsc_state || gpsc_state > GPSC_ON_RX_TX)
+      gps_panic(27, gpsc_state, 0);
+    call HW.gps_txrdy_int_disable();
+    gpsc_count = 10;                    /* try 10 times */
+    gpsc_change_state(GPSC_STANDBY_WAIT, GPSW_STANDBY);
+    call GPSTxTimer.stop();
+    call GPSRxTimer.stop();
+    gps_hibernate();
+    call GPSTxTimer.startOneShot(DT_GPS_STANDBY_TO);
+    return SUCCESS;
+  }
+
+
+  /*
+   * gps_wakeup: bring the ublox out of standby, wake it up.
+   *
+   * We wake the gps chip by dropping chip select (assert).  This starts
+   * the process.  The chip takes some time (68ms observed) because it has
+   * to wake the on board ARM and reconfigure its pins.
+   *
+   * We wait DT_GPS_WAKE_WAIT and then turn the txrdy_int_enable back on.
+   * Normally we could just turn on the txrdy_int but this process also
+   * checks for txrdy assertion and if set invokes the driver_task, which
+   * then sees a pipeline stall (the ARM hasn't fired the SPI up yet).
+   *
+   * So we need to wait.
+   */
+  void gps_wakeup() {
+    uint32_t txrdy;
+
+    txrdy = call HW.gps_txrdy();
+    call CollectEvent.logEvent(DT_EVENT_GPS_WAKEUP, txrdy, 0, 0, 0);
+    call HW.gps_set_cs();
+  }
+
+
+  command error_t GPSControl.wakeup() {
+    if (gpsc_state != GPSC_STANDBY)
+        gps_panic(28, gpsc_state, 0);
+    gpsc_change_state(GPSC_WAKE_WAIT, GPSW_WAKEUP);
+    gps_wakeup();
+    call GPSTxTimer.startOneShot(DT_GPS_WAKE_DELAY);
+    return SUCCESS;
+  }
+
+
+  command void GPSControl.hibernate() {
+    gps_hibernate();
+  }
+
+
+  command void GPSControl.wake() {
+    gps_wakeup();
   }
 
 
