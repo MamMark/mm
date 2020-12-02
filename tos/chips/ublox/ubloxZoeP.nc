@@ -228,6 +228,7 @@ implementation {
       switch (next_state) {
         default:                        WIGGLE_TELL;
                                         WIGGLE_TELL;
+        case GPSC_PWR_DWN_WAIT:         WIGGLE_TELL;
         case GPSC_FAIL:                 WIGGLE_TELL;
         case GPSC_RESET_WAIT:           WIGGLE_TELL;
         case GPSC_HIBERNATE:            WIGGLE_TELL;
@@ -247,6 +248,7 @@ implementation {
         case GPSC_ON_TX:                WIGGLE_TELL;
         case GPSC_ON_RX:                WIGGLE_TELL;
         case GPSC_ON:                   WIGGLE_TELL;
+        case GPSC_OFF:                  break;
       }
     }
 #endif
@@ -257,21 +259,28 @@ implementation {
 
   /*
    * GPSControl.turnOn: start up the gps receiver chip
+   * used to take the chip out of power off.
    */
   command error_t GPSControl.turnOn() {
     if (gpsc_state != GPSC_OFF) {
       return EALREADY;
     }
 
-    t_gps_pwr_on = call LocalTime.get();
     call HW.gps_pwr_on();
+    call HW.gps_txrdy_int_enable(16);
+    gpsc_change_state(GPSC_ON, GPSW_TURNON);
+    call CollectEvent.logEvent(DT_EVENT_GPS_TURN_ON, 0, 0, 0, 0);
+    return SUCCESS;
+
+#ifdef notdef
     call HW.gps_txrdy_int_disable();        /* no need for it yet. */
 
     /* turning on the Ublox Zoe anecdotally takes about 68ms.  Give it more time */
-    call GPSTxTimer.startOneShot(DT_GPS_PWR_UP_DELAY);
+    call GPSTxTimer.startOneShot(DT_GPS_PWR_DWN_TO);
     gpsc_change_state(GPSC_PWR_UP_WAIT, GPSW_TURNON);
     call CollectEvent.logEvent(DT_EVENT_GPS_TURN_ON, t_gps_pwr_on, 0, 0, 0);
     return SUCCESS;
+#endif
   }
 
 
@@ -283,14 +292,21 @@ implementation {
       gps_warn(10, gpsc_state, 0);
     }
     call CollectEvent.logEvent(DT_EVENT_GPS_TURN_OFF, 0, 0, 0, 0);
-    call HW.gps_txrdy_int_disable();
-    call GPSTxTimer.stop();
+    gpsc_change_state(GPSC_PWR_DWN_WAIT, GPSW_TURNOFF);
     call GPSRxTimer.stop();
-    call HW.gps_pwr_off();
-    gpsc_change_state(GPSC_OFF, GPSW_TURNOFF);
-    return SUCCESS;
-  }
+    call GPSTxTimer.startOneShot(DT_GPS_PWR_DWN_TO);
+//    call HW.gps_pwr_off();
 
+    /*
+     * Note: On the dev7 we don't have actual control of gps power.  When we turn off
+     * the dev7 gps, pwr is kept on but we disconnect the control signals.  However
+     * the txrdy int pin is still connected, when this interrupt occurs, driver_task
+     * gets posted but the pipeline stalls.  (pins not connected),  Eventually this
+     * causes a panic.
+     *
+     * This needs to be sorted out later.
+     */
+    return SUCCESS;
 
   /*
    * GPSControl.standby: Put the GPS chip into standby.
@@ -349,6 +365,12 @@ implementation {
         gps_panic(14, gpsc_state, 0);
         return;
 
+      case GPSC_PWR_DWN_WAIT:
+        gpsc_change_state(GPSC_OFF, GPSW_TX_TIMER);
+        call HW.gps_txrdy_int_disable();      /* turn on txrdy interrupt */
+        signal GPSControl.gps_shutdown();
+        break;
+
       case GPSC_ON:                     /* switch to default later */
       case GPSC_ON_RX:
       case GPSC_ON_TX:
@@ -370,6 +392,7 @@ implementation {
   event void GPSTxTimer.fired() {
     atomic {
       switch (gpsc_state) {
+        case GPSC_PWR_DWN_WAIT:         /* time out, oops */
         default:                        /* all other states blow up */
           gps_panic(15, gpsc_state, 0);
           /* dead*/
@@ -377,7 +400,7 @@ implementation {
         case GPSC_PWR_UP_WAIT:
           gpsc_log_event(GPSE_TIMEOUT, call Platform.usecsRaw());
           gpsc_change_state(GPSC_ON, GPSW_TX_TIMER);
-          call HW.gps_txrdy_int_enable();      /* turn on txrdy interrupt */
+          call HW.gps_txrdy_int_enable(17);     /* turn on txrdy interrupt */
           signal GPSControl.gps_booted();
           break;
 
