@@ -368,13 +368,14 @@ implementation {
 
   command void HW.gps_txrdy_int_enable(uint32_t where)  {
     atomic {
-      call TxRdyIRQ.disable();
-      call TxRdyIRQ.edgeRising();
-      call TxRdyIRQ.clear();
+      if (UBX_TXRDY_P) {
+//        WIGGLE_TELL; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_TELL;
+        gps_warn(199, where);
+        driver_task_post = 2;
+        post driver_task();
+      }
       call TxRdyIRQ.enable();
     }
-    if (UBX_TXRDY_P)
-      post driver_task();
   }
 
   command void HW.gps_txrdy_int_disable() {
