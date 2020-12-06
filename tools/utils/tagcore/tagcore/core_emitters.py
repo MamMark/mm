@@ -131,6 +131,7 @@ rbt2c = '    rpt:     {:08x}  reset:   {:08x}      others: {:08x}'
 rbt2d = '    fault/g: {:08x}  fault/n: {:08x}  ss/disable: {:08x}  ps: {:04x}'
 rbt2e = '    reboots: {:4}  panics (g/n): {:4}/{:<4}  strg: {:4}  loc: {:4}'
 rbt2f = '    prev:    {:26}    delta:  {}'
+rbt2fi= '    prev:    invalid                       delta:  0'
 rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
 
 # obj is obj_dt_reboot (includes an obj_owcb record)
@@ -209,8 +210,11 @@ def emit_reboot(level, offset, buf, obj):
         print(rbt2e.format(reboot_count, panics_gold, panic_count,
                            owcb['strange'].val,
                            owcb['strange_loc'].val))
-        print(rbt2f.format(rtctime_full(owcb['prev_boot']),
-                           rtc2datetime(boot_time) - rtc2datetime(prev_boot)))
+        if prev_boot['year'].val < 1970:
+            print(rbt2fi)
+        else:
+            print(rbt2f.format(rtctime_full(owcb['prev_boot']),
+                               rtc2datetime(boot_time) - rtc2datetime(prev_boot)))
         print(rbt2g.format(owcb['reboot_reason'].val,
                            owcb['ow_req'].val,
                            owcb['ow_boot_mode'].val,
