@@ -159,7 +159,7 @@ typedef struct {
  * this image was stamped by binfin.  Typically this will be when the
  * image was built.  stamp_date gets filled in with
  *
- *                      "date -u +%Y/%m/%d-%H:%M:%S".
+ *                  "date -u +%Y/%m/%d-%H:%M:%S".
  *
  * After filling in image_desc, repository{0,1}, and stamp_date, image_chk
  * must be recomputed.  Image_chk starts as zero, and the 32 bit byte by

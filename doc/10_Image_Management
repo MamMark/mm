@@ -22,7 +22,7 @@ an exact binary representation of the binary data needed to run the
 executable.  The file extension ".bin" is used for these images.
 
 
-ImageManager is the on board entity responsbile for the following:
+ImageManager is the on board entity responsible for the following:
 
 o management of the space and ancilliary structures needed for said management.
 o maintenance of the IM directory.  which slots are full etc.
