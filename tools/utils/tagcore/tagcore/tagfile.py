@@ -252,7 +252,7 @@ class TagFile(object):
                     else:
                         zero_sigs = 0
                 offset += 4         # advance to next quad-aligned word and repeat
-                if (self.verbose >= 3):
+                if (self.verbose >= 5):
                     rlen   = record['hdr']['len'].val
                     rtype  = record['hdr']['type'].val
                     recnum = record['hdr']['recnum'].val
