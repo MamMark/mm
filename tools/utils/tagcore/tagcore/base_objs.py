@@ -33,7 +33,7 @@ from   tagcore.imageinfo_defs import iip_tlv_name
 from   tagcore.imageinfo_defs import IMAGE_INFO_PLUS_SIZE
 from   tagcore.imageinfo_defs import IIP_TLV_END
 
-__version__ = '0.4.8.dev1'
+__version__ = '0.4.8.dev2'
 
 class atom(object):
     '''
@@ -199,12 +199,16 @@ class tlv_block_aggie(aggie):
         consumed = super(tlv_block_aggie, self).set(buf)
         tlv_consumed = 0
         while True:
-            if consumed >= len(buf) or buf[consumed] == '\0':
+            if consumed >= len(buf) or buf[consumed] == 0:
                 break;
             # first, peek, 1st byte tlv_type, 2nd tlv_len
             # we need tlv_len to properly build the tlv_aggie.
             tlv_type = buf[consumed]
             tlv_len  = buf[consumed + 1]
+            if tlv_len <= 2:
+                raise struct.error(
+                    'bad image_info tlv (type: {:d}, len: {:d})'.format(
+                    tlv_type, tlv_len))
             tlv = tlv_aggie(aggie(OrderedDict([
                 ('tlv_type',  atom(('<B', '{}'))),
                 ('tlv_len',   atom(('<B', '{}'))),
@@ -250,8 +254,10 @@ class tlv_block_aggie(aggie):
         return consumed
 
     def get_tlv(self, tlv_type):
-        tlv = self.tlv_blocks[tlv_type]
-        return tlv.value
+        tlv = self.tlv_blocks.get(tlv_type, None)
+        if tlv == None:
+            return None
+        return tlv['tlv_value']
 
     def get_tlv_rows(self):
         return self.tlv_blocks.items()
@@ -270,7 +276,7 @@ class tlv_block_aggie(aggie):
     def __repr__(self):
         out = super(tlv_block_aggie, self).__repr__()
         for key, v_obj in self.tlv_blocks.items():
-            out += v_obj.__repr__()
+            out += '[' + v_obj.__repr__() + ']'
         return out
 
     def build(self):

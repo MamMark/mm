@@ -23,7 +23,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev2'
+__version__ = '0.4.8.dev3'
 
 import binascii
 from   collections  import OrderedDict
@@ -274,7 +274,7 @@ def obj_image_basic():
         ('im_chk',    atom(('<I', '0x{:08x}'))),
         ('hw_ver',    obj_hw_version()),
         ('im_plus_len', atom(('<H', '{}'))),
-        ('reserved',  atom(('8s', '{}'))),
+        ('reserved',  atom(('8s', '{}', binascii.hexlify))),
     ]))
 
 

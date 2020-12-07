@@ -1,4 +1,5 @@
 # Copyright (c) 2017-2019 Daniel J. Maltbie, Eric B. Decker
+# Copyright (c) 2020,     Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -446,11 +447,12 @@ def dump():
                     if emitters and len(emitters):
                         for e in emitters:
                             e(g.verbose, rec_offset, rec_buf, obj)
-                except struct.error:
+                except struct.error as e:
                     eprint('*** decoder/emitter struct/obj error: (len: {}, '
                           'rtype: {} {}, wanted: {}), @{}'.format(
                               rlen, rtype, dt_name(rtype),
                               len(obj) if obj else 0, rec_offset))
+                    eprint('*** {}'.format(e[0]))
             else:
                 if g.debug or not g.quiet or g.verbose >= 5:
                     eprint('*** no decoder installed for rtype {}, @{}'.format(

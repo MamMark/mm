@@ -21,13 +21,14 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev4'
+__version__ = '0.4.8.dev5'
 
 from   ctypes       import c_int32
 from   binascii     import hexlify
 
-from   core_rev     import *
-from   dt_defs      import *
+from   core_rev       import *
+from   dt_defs        import *
+from   imageinfo_defs import *
 
 # GPS_{OD_FIX, FIX_MASK}, gps_{fix_name, expand_satmask, expand_trk_state}
 from   gps_chip_utils import *
@@ -229,8 +230,10 @@ def emit_reboot(level, offset, buf, obj):
 # version emitter support
 
 model_strs = {
-    0x01:       'mm6a',
-    0xf0:       'dev6a',
+    0x01:       'mm7',
+    0x02:       'mm8',
+    0xf0:       'dev7',
+    0xf1:       'dev8',
 }
 
 
@@ -244,13 +247,13 @@ def model_name(model):
 
 ver0  = ' {:s}  {:s}  hw: {:s}/{:d}'
 
-ver1a = '    VERSION: {:10s}  hw model/rev: {:x}/{:x} ({:s}/{:d})  r/i: x({:x}/{:x})'
-ver2a = '    desc:       placeholder'
-ver2b = '    repo0:  (p) heads/tp-master-0-g0ac8c73-dirty'
-ver2b0= '                [https://github.com/tp-freeforall/prod]'
-ver2c = '    repo1:  (m) heads/recsum-0-g04de0f8-dirty'
-ver2c0= '                [https://github.com/cire831/mm]'
-ver2d = '    date:   Fri Dec 29 04:05:07 UTC 2017      ib/len: 0x{:x}/{:d} (0x{:x})'
+ver1a = '    VERSION: {:10s}  hw model/rev: {:x}/{:x}    b/i: x({:x}/{:x})'
+ver2a = '    desc:       {}'
+ver2b = '    repo0:  (p) {}'
+ver2b0= '                [{}]'
+ver2c = '    repo1:  (m) {}'
+ver2c0= '                [{}]'
+ver2d = '    date:   {}      ib/len: 0x{:x}/{:d} (0x{:x})'
 ver2e = '    ii_sig: 0x{:08x}  chksum: 0x{:08x}'
 
 def emit_version(level, offset, buf, obj):
@@ -269,35 +272,31 @@ def emit_version(level, offset, buf, obj):
     model = ii['basic']['hw_ver']['model'].val
     rev   = ii['basic']['hw_ver']['rev'].val
 
-    # convert description and build_date strings to something reasonable
-#    desc  = ii['plus']['image_desc'].val
-#    desc  = desc[:desc.index('\0')]
-#
-#    repo0 = ii['plus']['repo0'].val
-#    repo0 = repo0[:repo0.index('\0')]
-#
-#    repo1 = ii['plus']['repo1'].val
-#    repo1 = repo1[:repo1.index('\0')]
-#
-#    stamp_date = ii['plus']['stamp_date'].val
-#    stamp_date = stamp_date[:stamp_date.index('\0')]
+    tlv_block = ii['plus']
+    desc      = tlv_block.get_tlv(IIP_TLV_DESC)
+    repo0     = tlv_block.get_tlv(IIP_TLV_REPO0)
+    repo0url  = tlv_block.get_tlv(IIP_TLV_REPO0URL)
+    repo1     = tlv_block.get_tlv(IIP_TLV_REPO1)
+    repo1url  = tlv_block.get_tlv(IIP_TLV_REPO1URL)
+    stamp     = tlv_block.get_tlv(IIP_TLV_STAMP)
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     print(ver0.format(base_name(base), ver_str, model_name(model), rev))
     if (level >= 1):
-        print(ver1a.format(ver_str, model, rev, model_name(model), rev,
+        print(ver1a.format(ver_str, model, rev,
                            base, ii['basic']['im_start'].val))
 
     if (level >= 2):
         print()
-        print(ver2a)
-        print(ver2b)
-        print(ver2b0)
-        print(ver2c)
-        print(ver2c0)
-        print(ver2d.format(ii['basic']['im_start'].val,
+        print(ver2a.format(desc))
+        print(ver2b.format(repo0))
+        print(ver2b0.format(repo0url))
+        print(ver2c.format(repo1))
+        print(ver2c0.format(repo1url))
+        print(ver2d.format(stamp,
+                       ii['basic']['im_start'].val,
                        ii['basic']['im_len'].val,
                        ii['basic']['im_len'].val))
         print(ver2e.format(ii['basic']['ii_sig'].val,
