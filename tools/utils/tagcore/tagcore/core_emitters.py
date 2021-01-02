@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev5'
+__version__ = '0.4.8.dev6'
 
 from   ctypes       import c_int32
 from   binascii     import hexlify
@@ -275,9 +275,9 @@ def emit_version(level, offset, buf, obj):
     tlv_block = ii['plus']
     desc      = tlv_block.get_tlv(IIP_TLV_DESC)
     repo0     = tlv_block.get_tlv(IIP_TLV_REPO0)
-    repo0url  = tlv_block.get_tlv(IIP_TLV_REPO0URL)
+    url0      = tlv_block.get_tlv(IIP_TLV_URL0)
     repo1     = tlv_block.get_tlv(IIP_TLV_REPO1)
-    repo1url  = tlv_block.get_tlv(IIP_TLV_REPO1URL)
+    url1      = tlv_block.get_tlv(IIP_TLV_URL1)
     stamp     = tlv_block.get_tlv(IIP_TLV_STAMP)
 
     print_hourly(rtctime)
@@ -292,9 +292,9 @@ def emit_version(level, offset, buf, obj):
         print()
         print(ver2a.format(desc))
         print(ver2b.format(repo0))
-        print(ver2b0.format(repo0url))
+        print(ver2b0.format(url0))
         print(ver2c.format(repo1))
-        print(ver2c0.format(repo1url))
+        print(ver2c0.format(url1))
         print(ver2d.format(stamp,
                        ii['basic']['im_start'].val,
                        ii['basic']['im_len'].val,

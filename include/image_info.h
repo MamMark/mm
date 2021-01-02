@@ -83,9 +83,9 @@ enum {
   IIP_TLV_END       = 0,
   IIP_TLV_DESC      = 1,
   IIP_TLV_REPO0     = 2,
-  IIP_TLV_REPO0URL  = 3,
+  IIP_TLV_URL0      = 3,
   IIP_TLV_REPO1     = 4,
-  IIP_TLV_REPO1URL  = 5,
+  IIP_TLV_URL1      = 5,
   IIP_TLV_STAMP     = 6,
 };
 
@@ -131,12 +131,16 @@ typedef struct {
  *      o image_chk
  *      o image_desc
  *      o repo0_desc
+ *      o url0_desc
  *      o repo1_desc
+ *      o url1_desc
  *      o stamp_date
  *
  * image_desc is a general string (null terminated) that can be used to
  * indicate what this image is, released, development, etc.  It is an
  * arbitrary string provided to binfin and placed into image_desc.
+ *
+ * url{0,1} are descriptor strings identifying the URLs of the repositories.
  *
  * repo{0,1} are descriptor strings that identify the code repositories
  * used to build this image.
@@ -145,7 +149,7 @@ typedef struct {
  *
  *      git describe --all --long --dirty
  *
- * sha information is abbreviated to 7 digits (default).  This should work
+ * SHA information is abbreviated to 7 digits (default).  This should work
  * for both the MamMark as well as the Prod/tinyos-main repositories.  There
  * is enough additional information to enable finding where on the tree this
  * code base was built from.
@@ -168,8 +172,8 @@ typedef struct {
  * To verify the image_chk, first it must be copied out (saved), zeroed,
  * and the checksum computed then compared against the saved value.
  *
- * image_desc, repo_desc{0,1}, and stamp_date must be filled in prior to
- * computing the value of image_chk.
+ * TLVs in the info_plus area: image_desc, repo_desc{0,1}, url{0,1}, and
+ * stamp_date must be filled in prior to computing the value of image_chk.
  */
 
 #endif  /* __IMAGE_INFO_H__ */

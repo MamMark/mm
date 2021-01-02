@@ -28,9 +28,9 @@ __all__ = [
     'IIP_TLV_END',
     'IIP_TLV_DESC',
     'IIP_TLV_REPO0',
-    'IIP_TLV_REPO0URL',
+    'IIP_TLV_URL0',
     'IIP_TLV_REPO1',
-    'IIP_TLV_REPO1URL',
+    'IIP_TLV_URL1',
     'IIP_TLV_STAMP',
 ]
 
@@ -48,26 +48,26 @@ IMAGE_MIN_SIZE        = 1024
 IIP_TLV_END           = 0
 IIP_TLV_DESC          = 1
 IIP_TLV_REPO0         = 2
-IIP_TLV_REPO0URL      = 3
+IIP_TLV_URL0          = 3
 IIP_TLV_REPO1         = 4
-IIP_TLV_REPO1URL      = 5
+IIP_TLV_URL1          = 5
 IIP_TLV_STAMP         = 6
 
 iip_tlv = {
     'end'       : 0,
     'desc'      : 1,
     'repo0'     : 2,
-    'repo0Url'  : 3,
+    'url0'      : 3,
     'repo1'     : 4,
-    'repo1Url'  : 5,
+    'url1'      : 5,
     'stamp'     : 6,
 
     0           : 'end',
     1           : 'desc',
     2           : 'repo0',
-    3           : 'repo0Url',
+    3           : 'url0',
     4           : 'repo1',
-    5           : 'repo1Url',
+    5           : 'url1',
     6           : 'stamp',
 }
 

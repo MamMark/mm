@@ -28,6 +28,7 @@
 #
 #   Usage: binfin [-h] [-D] [-V] [-w] [-c] [-i] [--version <maj>.<min>.<build>]
 #       [ -d <Img Desc.> ] [ --repo0 <Repo0 Desc.> ] [ --repo1 <Repo1 Desc.> ]
+#                          [ --url0  <url0  desc.> ] [ --url1  <url1  desc.> ]
 #       [ -t <timestamp> ] [ -H <HW Ver.>] [ -M <Model> ] <elf/exe filename>
 #
 #       <filename> the name of an elf exectable.
@@ -57,13 +58,19 @@
 #       set software version to <maj>.<minor>,<build> above.
 #
 #   -d, --desc
-#       Image Description (44 chars. max)
+#       Image Description
 #
 #   --repo0
-#       Repo0 Description string (44 chars max)
+#       Repo0 Description string
+#
+#   --url0
+#       Repo0 URL string
 #
 #   --repo1
-#       Repo1 Description string (44 chars max)
+#       Repo1 Description string
+#
+#   --url1
+#       Repo1 URL string
 #
 #   -t
 #       Timestamp string (30 chars max)
@@ -192,14 +199,20 @@ def binfin_args():
     parser.add_argument('--repo0',
         help = 'Repo 0 Descriptor')
 
+    parser.add_argument('--url0',
+        help = 'Repo 0 URL Descriptor')
+
     parser.add_argument('--repo1',
         help = 'Repo 1 Descriptor')
+
+    parser.add_argument('--url1',
+        help = 'Repo 1 URL Descriptor')
 
     parser.add_argument('-t', '--timestamp',
         help = 'image build time')
 
     parser.add_argument('elf_file',
-        help = 'ELF(.exe) executable')
+        help = 'ELF(.exe) executable or binary')
 
     return parser.parse_args()
 
@@ -295,8 +308,14 @@ def processMeta(argv):
     if args.repo0:
         tlv_success = process_TLV('repo0', args.repo0)
 
+    if args.url0:
+        tlv_success = process_TLV('url0', args.url0)
+
     if args.repo1:
         tlv_success = process_TLV('repo1', args.repo1)
+
+    if args.url1:
+        tlv_success = process_TLV('url1', args.url1)
 
     if args.timestamp:
         tlv_success = process_TLV('stamp', args.timestamp)
