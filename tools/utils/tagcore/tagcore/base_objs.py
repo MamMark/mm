@@ -33,7 +33,7 @@ from   tagcore.imageinfo_defs import iip_tlv_name
 from   tagcore.imageinfo_defs import IMAGE_INFO_PLUS_SIZE
 from   tagcore.imageinfo_defs import IIP_TLV_END
 
-__version__ = '0.4.8.dev2'
+__version__ = '0.4.8.dev3'
 
 class atom(object):
     '''
@@ -45,7 +45,11 @@ class atom(object):
     '''
     def __init__(self, a_tuple):
         self.s_str = a_tuple[0]
-        self.s_rec = struct.Struct(self.s_str)
+        try:
+            self.s_rec = struct.Struct(self.s_str)
+        except struct.error as e:
+            eprint('atom: struct string {}'.format(self.s_str))
+            raise e
         self.p_str = a_tuple[1]
         if (len(a_tuple) > 2):
             self.f_str = a_tuple[2]
@@ -146,8 +150,10 @@ class tlv_aggie(aggie):
         # tlv_type and tlv_len.  Using tlv_len, we can suck the appropriate
         # number of bytes as tlv_value.
         #
-        tlv_type  = buf[0]
-        tlv_len   = buf[1]
+        if len(buf) < 2:
+            return 0
+        tlv_type  = ord(buf[0])
+        tlv_len   = ord(buf[1])
         tlv_value = buf[2: tlv_len]
         self['tlv_type'].val  = tlv_type
         self['tlv_len'].val   = tlv_len
@@ -199,15 +205,22 @@ class tlv_block_aggie(aggie):
         consumed = super(tlv_block_aggie, self).set(buf)
         tlv_consumed = 0
         while True:
-            if consumed >= len(buf) or buf[consumed] == 0:
+            # look for end of tlvs.  out of bytes or tlv_type 0
+            if consumed >= len(buf):    # no data
                 break;
+            # should have at least 2 bytes, type/len
+            if len(buf[consumed:]) < 2:
+                raise struct.error('atom: badly formed tlv block')
+            # first byte is tlv_type, 2nd tlv_len
             # first, peek, 1st byte tlv_type, 2nd tlv_len
             # we need tlv_len to properly build the tlv_aggie.
-            tlv_type = buf[consumed]
-            tlv_len  = buf[consumed + 1]
+            tlv_type = ord(buf[consumed])
+            tlv_len  = ord(buf[consumed + 1])
+            if tlv_len == 0:
+                break
             if tlv_len <= 2:
                 raise struct.error(
-                    'bad image_info tlv (type: {:d}, len: {:d})'.format(
+                    'bad image_info tlv, too short (type: {:d}, len: {:d})'.format(
                     tlv_type, tlv_len))
             tlv = tlv_aggie(aggie(OrderedDict([
                 ('tlv_type',  atom(('<B', '{}'))),
