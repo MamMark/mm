@@ -95,7 +95,7 @@ implementation {
     call TmpP.pwrDown();
     temp_state = TEMP_STATE_OFF;
     call PeriodTimer.stop();
-    new_period = call RegimeCtrl.sensorPeriod(RGM_ID_TEMP_PX);
+    new_period = call RegimeCtrl.sensorPeriodMs(RGM_ID_TMP_PX);
     if (new_period == 0) {
       return;
     }

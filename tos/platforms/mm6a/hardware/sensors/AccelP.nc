@@ -274,7 +274,7 @@ implementation {
     accel_state = ACCEL_STATE_OFF;
     call Accel.stop();
     call DrainTimer.stop();
-    m_period = call RegimeCtrl.sensorPeriod(RGM_ID_ACCEL);
+    m_period = call RegimeCtrl.sensorPeriodMs(RGM_ID_ACCEL);
 
     if (m_period == 0)
       return;
