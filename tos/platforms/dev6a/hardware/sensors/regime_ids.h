@@ -22,7 +22,7 @@
 enum {
   RGM_ID_NONE		= 0,	// used for other data stream stuff
   RGM_ID_BATT		= 1,	// Battery Sensor
-  RGM_ID_TEMP_PX        = 2,    // Temperature Sensor, Platform/External
+  RGM_ID_TMP_PX         = 2,    // Temperature Sensor, Platform/External
   RGM_ID_SAL		= 3,	// Salinity sensor (one, two)
   RGM_ID_ACCEL		= 4,	// Accelerometer (x,y,z)
   RGM_ID_GYRO           = 5,    // Gyro

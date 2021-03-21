@@ -3,7 +3,7 @@
  * All rights reserved.
  */
 
-#warning *** DEPRECATED: sensors_ids.h included, replaced by DT_SNS_*
+#error *** DEPRECATED: sensors_ids.h included, replaced by DT_SNS_*
 
 #ifndef SENSORS_IDS_H
 #define SENSORS_IDS_H
@@ -43,7 +43,7 @@ enum {                                  /* uint16_t sns_id */
    * 12 bit twos-complement (upper 12 bits of the 16 bit value).  Each
    * unit value represents 0.0625 degrees C.
    */
-  SNS_ID_TEMP_PX        = 2,    // Temperature Sensor, Platform/External
+  SNS_ID_TMP_PX         = 2,    // Temperature Sensor, Platform/External
 
   /* Salinity, 2 x uint16 */
   SNS_ID_SAL            = 3,    // Salinity sensor (one, two)
