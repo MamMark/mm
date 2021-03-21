@@ -101,27 +101,7 @@ enum {
  */
 
 #define USE_ACCEL8
-
 #define DEBUG
-
-#ifdef  DEBUG
-
-typedef struct {
-  uint8_t r1;
-  uint8_t r4;
-  uint8_t r5;
-  uint8_t status;
-  uint8_t fifo_ctrl;
-  uint8_t fifo_src;
-} regdump_t;
-
-#define DUMP_SIZE 256
-
-uint32_t  reg_idx;
-regdump_t regdump[DUMP_SIZE];
-
-#endif
-
 
 module AccelP {
   uses {
@@ -134,6 +114,26 @@ module AccelP {
   }
 }
 implementation {
+
+#ifdef  DEBUG
+
+  typedef struct {
+    uint8_t r1;
+    uint8_t r4;
+    uint8_t r5;
+    uint8_t status;
+    uint8_t fifo_ctrl;
+    uint8_t fifo_src;
+  } regdump_t;
+
+#define DUMP_SIZE 256
+
+  uint32_t  reg_idx;
+  regdump_t regdump[DUMP_SIZE];
+
+#endif
+
+
   enum {
     FIFO_BUF_SIZE = (LISX_FIFO_SIZE + 1),
   };
