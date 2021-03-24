@@ -1,6 +1,6 @@
 /* tos/chips/mems/MemsStInterrupt.nc
  *
- * Copyright (c) 2019 Eric B. Decker
+ * Copyright (c) 2019, 2021 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,7 @@
 interface MemsStInterrupt {
   async command void enableInterrupt();
   async command void disableInterrupt();
+  async command void clearInterrupt();
   async command bool isInterruptEnabled();
   async event   void interrupt();
 }

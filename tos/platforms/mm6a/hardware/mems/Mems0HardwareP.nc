@@ -100,6 +100,10 @@ implementation {
     call AccelInt1_Port.disable();
   }
 
+  async command void AccelInt1.clearInterrupt() {
+    call AccelInt1_Port.clear();
+  }
+
   async command bool AccelInt1.isInterruptEnabled() {
     call AccelInt1_Port.isEnabled();
   }
