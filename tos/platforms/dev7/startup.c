@@ -526,12 +526,14 @@ void __pins_init() {
   PD->OUT = 0;                  /* P8/P7 */
   PE->OUT = 0;                  /* P10/P9 */
 
-  P1->OUT = 0x02;               /* P1.1 needs pull up */
-  P1->DIR = 0x01;
-  P1->REN = 0x02;
+  /* P1.1 needs pull up, */
+  P1->OUT = 0x22;
+  P1->DIR = 0x21;
+  P1->REN = 0x02;               /* p1.1 pull up */
 
   /* smclk and LED2 pieces */
-  P2->DIR  = 0x27;
+  P2->OUT  = 0x40;
+  P2->DIR  = 0x67;
   P2->SEL0 = 0x20;
   P2->SEL1 = 0x00;
 
@@ -544,7 +546,8 @@ void __pins_init() {
    *
    * gps_on_off is here too.
    *
-   * P4.0 gps_on_off
+   * P4.0 gps_powered (I)
+   * P4.1 gps_power   (O)
    * P4.2 ACLK
    * P4.3 MCLK
    *      RTCCLK
@@ -553,22 +556,25 @@ void __pins_init() {
    * 7 6 5 4 3 2 1 0
    * 0 0 0 1 1 1 0 0
    */
-  P4->DIR  = 0x1C;
+  P4->OUT  = 0x02;
+  P4->DIR  = 0x1E;
   P4->SEL0 = 0x1C;
   P4->SEL1 = 0x00;
 
   /* si446x_sdn = 1, si446x_csn = 1 */
   P5->OUT  = 0x05;
   P5->DIR  = 0x05;
-  P5->REN  = 0x08;                      /* pull down on 5.3 */
+  P5->REN  = 0x08;              /* pull down, dc_attn */
 
   P6->OUT  = 0x00;
   P6->DIR  = 0x00;
-  P6->REN  = 0x04;
+  P6->SEL0 = 0x38;              /* mems spi */
+  P6->SEL1 = 0x00;
+  P6->REN  = 0x04;              /* gps_txrdy pull down */
 
   P7->OUT  = 0x00;
-  P7->SEL0 = 0x0D;              /* hand over to SPI module   */
   P7->DIR  = 0x30;
+  P7->SEL0 = 0x0D;              /* hand over to SPI module   */
 
   /*
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
@@ -581,6 +587,7 @@ void __pins_init() {
    * DockComm is on P9.{5,6,7}
    * gps various are on P9.{2,3,4}, gps_csn (P9.3) assert.
    */
+  P9->OUT  = 0x08;
   P9->DIR  = 0x08;
   P9->SEL0 = 0xE0;
 
@@ -1288,15 +1295,15 @@ void __Reset() {
    *
    * there is nothing special wrt PIN state needed for __soft_reset()
    */
-  P4->OUT  = 0;
+  P4->OUT  = 0x02;                      /* keep gps powered */
+  P4->DIR  = 0x1E;
   P4->SEL0 = 0x1C;
   P4->SEL1 = 0x00;
-  P4->DIR  = 0x1C;
 
-  P2->OUT  = 0;
-  P2->SEL0 = 0x20;              /* smclk */
+  P2->OUT  = 0x40;                      /* deassert lsm6_csn */
+  P2->DIR  = 0x67;
+  P2->SEL0 = 0x20;                      /* smclk */
   P2->SEL1 = 0x00;
-  P2->DIR  = 0x27;
 
   /*
    * tell is P8.6  0pO, TA1.0 (TA1OUT0) is P8.0, 0m2O
@@ -1304,7 +1311,8 @@ void __Reset() {
    */
   P8->OUT = 0;                  /* set tell and exc up */
   P8->DIR = 0x61;
-  P8->SEL1= 0x01;               /* TA1.0 (OUT0) */
+  P8->SEL0= 0x00;
+  P8->SEL1= 0x01;               /* TA1.0 (OUT0, m2) */
 
   __watchdog_init();
   __pins_init();

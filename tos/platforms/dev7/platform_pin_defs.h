@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Eric B. Decker
+ * Copyright (c) 2020-2021, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,25 +24,37 @@
 
 /*
  * Mems Bus, UCB1, SPI
+ * LSM6DSOX (complex, accel, gy, mag), LPS22HB (press)
+ * LPS22HB not connected on dev7 (see mm7)
  */
-#define MEMS0_ID_ACCEL 0
-#define MEMS0_ID_GYRO  1
-#define MEMS0_ID_MAG   2
+#define MEMS0_ID_LSM6  0
+#define MEMS0_ID_LPS22 1
 
-#define MEMS0_ACCEL_CSN_PORT    P1
-#define MEMS0_ACCEL_CSN_PIN     5
 
-#define MEMS0_SCLK_PORT         P1
-#define MEMS0_SCLK_PIN          1
+/*
+ * Mems Bus, UCB1, SPI
+ */
+#define MEMS0_SCLK_PORT         P6
+#define MEMS0_SCLK_PIN          3
 #define MEMS0_SCLK_SEL0         BITBAND_PERI(MEMS0_SCLK_PORT->SEL0,   MEMS0_SCLK_PIN)
 
-#define MEMS0_SOMI_PORT         P1
-#define MEMS0_SOMI_PIN          2
+#define MEMS0_SIMO_PORT         P6
+#define MEMS0_SIMO_PIN          4
+#define MEMS0_SIMO_SEL0         BITBAND_PERI(MEMS0_SIMO_PORT->SEL0,   MEMS0_SIMO_PIN)
+
+#define MEMS0_SOMI_PORT         P6
+#define MEMS0_SOMI_PIN          5
 #define MEMS0_SOMI_SEL0         BITBAND_PERI(MEMS0_SOMI_PORT->SEL0,   MEMS0_SOMI_PIN)
 
-#define MEMS0_SIMO_PORT         P1
-#define MEMS0_SIMO_PIN          3
-#define MEMS0_SIMO_SEL0         BITBAND_PERI(MEMS0_SIMO_PORT->SEL0,   MEMS0_SIMO_PIN)
+#define MEMS0_LSM6DSOX_CSN_PORT P2
+#define MEMS0_LSM6DSOX_CSN_PIN  6
+#define MEMS0_LSM6_CSN          BITBAND_PERI(MEMS0_LSM6DSOX_CSN_PORT->OUT, MEMS0_LSM6DSOX_CSN_PIN)
+
+#define MEMS0_LSM6DSOX_INT1_PORT_PIN    0x27
+
+#define MEMS0_LPS22_CSN_PORT    P1
+#define MEMS0_LPS22_CSN_PIN     5
+#define MEMS0_LPS22_CSN         BITBAND_PERI(MEMS0_LPS22_CSN_PORT->OUT, MEMS0_LPS22_CSN_PIN)
 
 
 /* gps - ublox */
