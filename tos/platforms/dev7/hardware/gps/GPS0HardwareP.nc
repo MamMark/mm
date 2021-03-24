@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Eric B. Decker
+ * Copyright (c) 2020-2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -91,6 +91,10 @@ implementation {
 
   command error_t GPS0PeriphInit.init() {
     atomic {
+      call TxRdyIRQ.disable();
+      call TxRdyIRQ.edgeRising();
+      call TxRdyIRQ.clear();
+
       call Usci.configure(&ublox_spi_config, FALSE);
       call HW.gps_pwr_on();
       return SUCCESS;
@@ -380,15 +384,6 @@ implementation {
 
   command void HW.gps_txrdy_int_disable() {
     call TxRdyIRQ.disable();
-  }
-
-
-  command void HW.gps_txrdy_int_initialize() {
-    atomic {
-      call TxRdyIRQ.disable();
-      call TxRdyIRQ.edgeRising();
-      call TxRdyIRQ.clear();
-    }
   }
 
 

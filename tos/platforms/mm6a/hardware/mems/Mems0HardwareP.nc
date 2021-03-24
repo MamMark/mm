@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Eric B. Decker
+ * Copyright (c) 2017, 2019, 2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -90,9 +90,6 @@ implementation {
   }
 
   async command void AccelInt1.enableInterrupt() {
-    call AccelInt1_Port.disable();
-    call AccelInt1_Port.edgeRising();
-    call AccelInt1_Port.clear();
     call AccelInt1_Port.enable();
   }
 
@@ -136,6 +133,12 @@ implementation {
 
 
   command error_t PeriphInit.init() {
+    atomic {
+      call AccelInt1_Port.disable();
+      call AccelInt1_Port.edgeRising();   /* could cause an int assertion */
+      call AccelInt1_Port.clear();        /* and make sure that goes away */
+    }
+
     call SpiInit.init();                /* first bring up the mems SPI bus */
     mag_init();                         /* then init the 3 devices */
     gyro_init();

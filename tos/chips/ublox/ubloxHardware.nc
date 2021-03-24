@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Eric B. Decker
+ * Copyright (c) 2020-2021, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -83,7 +83,6 @@ interface ubloxHardware {
   command bool gps_txrdy_int_enabled();
   command void gps_txrdy_int_enable(uint32_t where);
   command void gps_txrdy_int_disable();
-  command void gps_txrdy_int_initialize();
   command void gps_txrdy_int_clear();
 
   /*

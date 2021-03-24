@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Eric B. Decker
+ * Copyright (c) 2020-2021, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -952,7 +952,6 @@ implementation {
     t_gps_boot_start = call LocalTime.get();
 
     /* initialize and disable the interrupt */
-    call HW.gps_txrdy_int_initialize();
     gpsc_change_state(GPSC_CONFIG_BOOT, GPSW_BOOT);
     call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, t_gps_boot_start, 0, 0, 0);
 //    if (!call HW.gps_powered())
