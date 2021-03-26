@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020      Eric B. Decker
+ * Copyright (c) 2020-2021 Eric B. Decker
  * Copyright (c) 2016-2019 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
@@ -90,20 +90,22 @@ typedef enum {
   DT_GPS_TRK            = 26,
   DT_GPS_CLK            = 27,
 
-  DT_SNS_NONE           = 32,           /* 0x20 + sns_id */
+  DT_SNS_ACCEL_N8S      = 28,           /* deprecated */
+
+  DT_SNS_NONE           = 32,
   DT_SNS_BATT           = 33,
   DT_SNS_TMP_PX         = 34,
   DT_SNS_SAL            = 35,
-  DT_SNS_ACCEL_N8S      = 36,
-  DT_SNS_ACCEL_N10S     = 37,
-  DT_SNS_ACCEL_N12S     = 38,
-  DT_SNS_GYRO_N         = 39,
-  DT_SNS_MAG_N          = 40,
-  DT_SNS_PTEMP          = 41,
-  DT_SNS_PRESS          = 42,
-  DT_SNS_SPEED          = 43,
+  DT_SNS_PRESS          = 36,
+  DT_SNS_SPEED          = 37,
 
-  DT_MAX		= 43,
+  /* accel, gyro, mag, fifo driven typed sensor data */
+  DT_SNS_LSM6DSOX       = 38,           /* lsm6dsox + lis2mdl (mag) */
+  DT_SNS_LSM6DSOX_CFG   = 39,           /* lsm6 array configuration */
+  DT_SNS_LPS22HB        = 40,           /* pressure, fifo driven */
+  DT_SNS_LPS22HB_CFG    = 41,           /* lps22hb configuration */
+
+  DT_MAX		= 41,
 } dtype_t;
 
 
@@ -476,6 +478,7 @@ typedef struct {
 } PACKED dt_sensor_data_t;
 
 
+/* deprecated */
 typedef struct {
   uint16_t len;                 /* size 32 + var */
   dtype_t  dtype;
