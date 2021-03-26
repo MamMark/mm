@@ -112,7 +112,7 @@
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
 #define MSP432_UBLOX_DIV   24
-#define MSP432_MEMS_DIV    1
+#define MSP432_MEMS_DIV    4
 #define MSP432_TMP_DIV     60
 #undef  USECS_BINARY
 
@@ -129,7 +129,7 @@
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
 #define MSP432_UBLOX_DIV   16
-#define MSP432_MEMS_DIV    1
+#define MSP432_MEMS_DIV    2
 #define MSP432_TMP_DIV     42
 #define USECS_BINARY       1
 
@@ -146,7 +146,7 @@
 #define MSP432_SD_DIV      1
 #define MSP432_RADIO_DIV   1
 #define MSP432_UBLOX_DIV   12
-#define MSP432_MEMS_DIV    1
+#define MSP432_MEMS_DIV    2
 #define MSP432_TMP_DIV     30
 #undef  USECS_BINARY
 
