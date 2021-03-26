@@ -1,6 +1,6 @@
 /* tos/chips/mems/tests/MemsTestC.nc
  *
- * Copyright (c) 2019 Eric B. Decker
+ * Copyright (c) 2019, 2021 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,20 +38,11 @@ implementation {
   components MemsTestP, SystemBootC;
   MemsTestP.Boot -> SystemBootC.Boot;
 
-  components Accel0C as AccelDvrC;
-  components new TimerMilliC() as DrainTimerC;
-  MemsTestP.Accel      -> AccelDvrC;
-  MemsTestP.DrainTimer -> DrainTimerC;
+  components LSM60C as LsmDvrC;
+  components new TimerMilliC() as TimerC;
+  MemsTestP.LSM6  -> LsmDvrC;
+  MemsTestP.Timer -> TimerC;
 
-#ifdef notdef
-  components L3g4200C as Gyro;
-  components new TimerMilliC() as GyroTimer;
-  MemsTestP.Gyro       -> Gyro;
-  MemsTestP.GyroTimer  -> GyroTimer;
-
-  components Lis3mdlC as Mag;
-  components new TimerMilliC() as MagTimer;
-  MemsTestP.Mag -> Mag;
-  MemsTestP.MagTimer -> MagTimer;
-#endif
+  components PanicC;
+  MemsTestP.Panic  -> PanicC;
 }
