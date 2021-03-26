@@ -103,6 +103,24 @@ extern uint32_t __platform_usecsRaw();
 #define GPS_DEBUG_DEV
 
 /*
+ * The LSM6DSOX includes an I2C sensor hub hanging off the back end.  External
+ * or Internal pull up resisters are needed to make the I2C bus work.  Depends
+ * on the h/w implementation.
+ *
+ * The DEV7 can use the ST lsm6dsox based development boards, STEVAL-MKI197V1 and
+ * the STEVAL-MKI217V1.
+ *
+ * The 217 includes the LIS2MDL mag and includes external pull up resistors.
+ * (Needed to get the open drain I2C bus to work).
+ *
+ * The 197 uses just a LSM6DSOX with no chips connected to the sensor hubs.  There
+ * are no pull up reistors.  If we are using/testing I2C stuff, we must turn on
+ * the internal pull up resistors.
+ */
+
+// #define PLATFORM_LSM6_I2C_PU_EN
+
+/*
  * platform.h is one of the first files included.
  * pull in any compiler definitions we may need.
  */
