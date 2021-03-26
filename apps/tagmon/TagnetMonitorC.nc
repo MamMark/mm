@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Eric B. Decker
+ * Copyright (c) 2020-2021 Eric B. Decker
  * Copyright (c) 2017-2019 Eric B. Decker, Daniel J. Maltbie
  * Copyright (c) 2015 Eric B. Decker
  * All rights reserved.
@@ -36,6 +36,10 @@ implementation {
   TagnetMonitorP.TName          -> TagnetC;
   TagnetMonitorP.TTLV           -> TagnetC;
 
+
+  /* HW monitors and HW ports */
+
+  /* gps port */
   components GPSmonitorC;
   GPSmonitorC.TagnetRadio       -> TagnetMonitorP;
 
@@ -46,8 +50,13 @@ implementation {
   GPSmonitorC.GPSControl        -> GpsPort;
   GPSmonitorC.MsgTransmit       -> GpsPort;
   GPSmonitorC.MsgReceive        -> GpsPort;
-  GPSmonitorC.GPSPwr            -> GpsPort;
   GPSmonitorC.GPSLog            <- GpsPort;
+
+  /* mems */
+  components MemsMonitorC;
+  components LSM60C             as LsmPort;
+  MemsMonitorC.LsmPort -> LsmPort;
+
 
   components TagnetSysExecC;
   TagnetC.SysActive             -> TagnetSysExecC.SysActive;
