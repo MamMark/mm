@@ -127,7 +127,7 @@ implementation {
     /* we need to set the correct PU in the main CPU */
     reg0.x.sdo_pu_disc = 1;
     reg0.x.rsvd_01     = LISX_REG0_RSVD_01;
-    call AccelReg.write(LISX_CTRL_REG0);
+    call AccelReg.write(LISX_CTRL_REG0, reg0.bits);
 #endif
   }
 
