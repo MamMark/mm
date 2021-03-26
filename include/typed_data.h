@@ -110,7 +110,7 @@ typedef enum {
 
 
 #define DT_MAX_HEADER 80
-#define DT_MAX_RLEN   1024
+#define DT_MAX_RLEN   2048
 
 /*
  * In memory and within a SD sector, DT headers are constrained to be 32
