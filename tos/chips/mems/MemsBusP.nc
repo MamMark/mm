@@ -1,6 +1,6 @@
 /* tos/chips/mems/MemsBusP.nc
  *
- * Copyright (c) 2017, 2019 Eric B. Decker
+ * Copyright (c) 2017, 2019, 2021 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@
  * atomic with respect to other MemsBus access.  No arbitration is
  * needed.
  *
- * Most of the time we will be reading 6 bytes from the fifo so we
+ * Most of the time we will be reading 7 bytes from the fifo so we
  * special case that case by unrolling the loop.
  */
 
@@ -57,10 +57,9 @@ generic module MemsBusP() {
 implementation {
 
 #define MEMS_READ_REG   0x80
-#define MEMS_AUTO_INC   0x40
 
   command void SpiReg.read[uint8_t mems_id]
-                        (uint8_t addr, uint8_t *buf, uint8_t len) {
+                        (uint8_t addr, uint8_t *buf, uint16_t len) {
     if (len == 0)
       return;
     call SpiBus.set_cs(mems_id);
@@ -69,11 +68,12 @@ implementation {
 
     /* first byte back is a throw away, and we have least 1 byte */
     call FastSpiByte.splitReadWrite(0);
-    if (len == 6) {
+    if (len == 7) {
       /*
-       * we special case 6 because that is how many bytes are pulled
+       * we special case 7 because that is how many bytes are pulled
        * from the fifo.  Unroll the loop.
        */
+      *buf++ = call FastSpiByte.splitReadWrite(0);
       *buf++ = call FastSpiByte.splitReadWrite(0);
       *buf++ = call FastSpiByte.splitReadWrite(0);
       *buf++ = call FastSpiByte.splitReadWrite(0);
@@ -90,8 +90,7 @@ implementation {
 
 
   command void SpiReg.readMultiple[uint8_t mems_id]
-                        (uint8_t addr, uint8_t *buf, uint8_t len) {
-    addr |= MEMS_AUTO_INC;
+                        (uint8_t addr, uint8_t *buf, uint16_t len) {
     call SpiReg.read[mems_id](addr, buf, len);
   }
 
@@ -112,7 +111,7 @@ implementation {
 
 
   command void SpiReg.write[uint8_t mems_id]
-                        (uint8_t addr, uint8_t *buf, uint8_t len) {
+                        (uint8_t addr, uint8_t *buf, uint16_t len) {
     if (len == 0)
       return;
     call SpiBus.set_cs(mems_id);
@@ -127,9 +126,7 @@ implementation {
 
 
   command void SpiReg.writeMultiple[uint8_t mems_id]
-                        (uint8_t addr, uint8_t *buf, uint8_t len) {
-    addr &= 0x7f;
-    addr |= MEMS_AUTO_INC;
+                        (uint8_t addr, uint8_t *buf, uint16_t len) {
     call SpiReg.write[mems_id](addr, buf, len);
   }
 
