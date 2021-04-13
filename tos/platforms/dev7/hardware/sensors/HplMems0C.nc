@@ -50,10 +50,10 @@ implementation {
   PortInts.McuSleep -> McuSleepC;
   Mems0HardwareP.LSM6Int1Port -> PortInts.Int[MEMS0_LSM6DSOX_INT1_PORT_PIN];
 
-  components new MemsBusP() as MemsDvr;
-  MemsDvr.FastSpiByte      -> SpiC;
-  MemsDvr.SpiBus           -> Mems0HardwareP;
+  components new MemsBusP() as StMemsBus;
+  StMemsBus.FastSpiByte    -> SpiC;
+  StMemsBus.SpiBus         -> Mems0HardwareP;
   Mems0HardwareP.Panic     -> PanicC;
 
-  SpiReg = MemsDvr;
+  SpiReg = StMemsBus;
 }
