@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev6'
+__version__ = '0.4.9.dev0'
 
 from   ctypes       import c_int32
 from   binascii     import hexlify
@@ -232,8 +232,8 @@ def emit_reboot(level, offset, buf, obj):
 model_strs = {
     0x01:       'mm7',
     0x02:       'mm8',
-    0xf0:       'dev7',
-    0xf1:       'dev8',
+    0x87:       'dev7',
+    0x88:       'dev8',
 }
 
 
