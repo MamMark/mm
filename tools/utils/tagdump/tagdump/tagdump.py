@@ -134,7 +134,7 @@ def get_record(fd):
     Input:   fd:         file descriptor we are reading from
     Output:  rec_offset: byte offset of the record from start of file
              hdr         obj_dt_hdr (see above)
-             rec_buf:    byte buffer with entire record
+             rec_buf:    bytearray with entire record
     """
 
     global chksum_errors

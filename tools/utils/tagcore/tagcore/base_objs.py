@@ -152,8 +152,8 @@ class tlv_aggie(aggie):
         #
         if len(buf) < 2:
             return 0
-        tlv_type  = ord(buf[0])
-        tlv_len   = ord(buf[1])
+        tlv_type  = buf[0]
+        tlv_len   = buf[1]
         tlv_value = buf[2: tlv_len]
         self['tlv_type'].val  = tlv_type
         self['tlv_len'].val   = tlv_len
@@ -211,11 +211,13 @@ class tlv_block_aggie(aggie):
             # should have at least 2 bytes, type/len
             if len(buf[consumed:]) < 2:
                 raise struct.error('atom: badly formed tlv block')
+
             # first byte is tlv_type, 2nd tlv_len
             # first, peek, 1st byte tlv_type, 2nd tlv_len
             # we need tlv_len to properly build the tlv_aggie.
-            tlv_type = ord(buf[consumed])
-            tlv_len  = ord(buf[consumed + 1])
+
+            tlv_type = buf[consumed]
+            tlv_len  = buf[consumed + 1]
             if tlv_len == 0:
                 break
             if tlv_len <= 2:
