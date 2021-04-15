@@ -33,7 +33,9 @@ from   tagcore.imageinfo_defs import iip_tlv_name
 from   tagcore.imageinfo_defs import IMAGE_INFO_PLUS_SIZE
 from   tagcore.imageinfo_defs import IIP_TLV_END
 
-__version__ = '0.4.8.dev3'
+__version__ = '0.4.9.dev0'
+
+# WARNING: all bufs are assumed to be bytearrays
 
 class atom(object):
     '''
@@ -80,8 +82,10 @@ class atom(object):
         self.val = self.s_rec.unpack(buf[:self.s_rec.size])[0]
         return self.s_rec.size
 
+    # build returns a bytearray.  python 2.7 struct.pack returns str
+    # python 3 struct.pack returns bytes, still want bytearray.
     def build(self):
-        return self.s_rec.pack(self.val)
+        return bytearray(self.s_rec.pack(self.val))
 
 
 class aggie(OrderedDict):
@@ -121,7 +125,7 @@ class aggie(OrderedDict):
         return consumed
 
     def build(self):
-        out = ''
+        out = bytearray()
         for key, v_obj in self.iteritems():
             out += v_obj.build()
         return out
@@ -183,7 +187,7 @@ class tlv_aggie(aggie):
         return tlv_len
 
     def build(self):
-        out = ''
+        out = bytearray()
         for key, v_obj in self.iteritems():
             out += v_obj.build()
         return out
@@ -278,7 +282,7 @@ class tlv_block_aggie(aggie):
         return self.tlv_blocks.items()
 
     def build_tlv(self):
-        out = ''
+        out = bytearray()
         for ttype, v_obj in self.tlv_blocks.items():
             if g.debug:
                 eprint('** build_tlv: {} {} {}'.format(ttype, v_obj, type(v_obj)))

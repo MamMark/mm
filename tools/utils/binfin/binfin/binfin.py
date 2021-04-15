@@ -254,7 +254,7 @@ def processMeta(argv):
 
     # get image info from input file and sanity check
     infile  = open(filename, 'rb', 0)
-    raw_elf = infile.read()
+    raw_elf = bytearray(infile.read())
     infile.seek(0)                      # back to front of file
 
     # Load the ELF data and use the section information to find where the
