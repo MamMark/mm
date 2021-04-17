@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Eric B. Decker
+# Copyright (c) 2018-2019, 2021 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -43,7 +43,7 @@ Includes the following:
 from   __future__   import print_function
 from   core_headers import obj_dt_hdr
 
-__version__ = '0.4.8.dev0'
+__version__ = '0.4.9.dev0'
 
 cfg_print_hourly = True
 
@@ -76,8 +76,10 @@ __all__ = [
     'DT_GPS_TIME',
     'DT_GPS_GEO',
     'DT_GPS_XYZ',
+
     'DT_SENSOR_DATA',
     'DT_SENSOR_SET',
+
     'DT_TEST',
     'DT_NOTE',
     'DT_CONFIG',
@@ -85,18 +87,19 @@ __all__ = [
     'DT_GPS_TRK',
     'DT_GPS_CLK',
 
+    'DT_SNS_ACCEL_N8S',
+
     'DT_SNS_NONE',
     'DT_SNS_BATT',
     'DT_SNS_TMP_PX',
     'DT_SNS_SAL',
-    'DT_SNS_ACCEL_N8S',
-    'DT_SNS_ACCEL_N10S',
-    'DT_SNS_ACCEL_N12S',
-    'DT_SNS_GYRO_N',
-    'DT_SNS_MAG_N',
-    'DT_SNS_PTEMP',
     'DT_SNS_PRESS',
     'DT_SNS_SPEED',
+
+    'DT_SNS_LSM6DSOX',
+    'DT_SNS_LSM6DSOX_CFG',
+    'DT_SNS_LPS22HB',
+    'DT_SNS_LPS22HB_CFG',
 
     'rec0',
     'secsFromHour_str',
@@ -165,8 +168,10 @@ DT_GPS_VERSION          = 16
 DT_GPS_TIME             = 17
 DT_GPS_GEO              = 18
 DT_GPS_XYZ              = 19
+
 DT_SENSOR_DATA          = 20            # deprecated
 DT_SENSOR_SET           = 21            # deprecated
+
 DT_TEST                 = 22
 DT_NOTE                 = 23
 DT_CONFIG		= 24
@@ -174,18 +179,19 @@ DT_GPS_PROTO_STATS      = 25
 DT_GPS_TRK              = 26
 DT_GPS_CLK              = 27
 
+DT_SNS_ACCEL_N8S        = 28            # deprecated
+
 DT_SNS_NONE             = 32
 DT_SNS_BATT             = 33
 DT_SNS_TMP_PX           = 34
 DT_SNS_SAL              = 35
-DT_SNS_ACCEL_N8S        = 36
-DT_SNS_ACCEL_N10S       = 37
-DT_SNS_ACCEL_N12S       = 38
-DT_SNS_GYRO_N           = 39
-DT_SNS_MAG_N            = 40
-DT_SNS_PTEMP            = 41
-DT_SNS_PRESS            = 42
-DT_SNS_SPEED            = 43
+DT_SNS_PRESS            = 36
+DT_SNS_SPEED            = 37
+
+DT_SNS_LSM6DSOX         = 38
+DT_SNS_LSM6DSOX_CFG     = 39
+DT_SNS_LPS22HB          = 40
+DT_SNS_LPS22HB_CFG      = 41
 
 
 # offset    recnum     rtime    len   dt name         offset
