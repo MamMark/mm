@@ -1,5 +1,5 @@
 # Copyright (c) 2017-2019 Daniel J. Maltbie, Eric B. Decker
-# Copyright (c) 2020,     Eric B. Decker
+# Copyright (c) 2020-2021 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -83,7 +83,7 @@ rec_last                = 0            # last rec num looked at
 
 # 1st sector of the first is the directory
 DBLK_DIR_SIZE           = 0x200
-RLEN_MAX_SIZE           = 1024
+RLEN_MAX_SIZE           = 2048
 RESYNC_HDR_OFFSET       = 28            # how to get back to the start
                                         # or how to move past the majik
 
