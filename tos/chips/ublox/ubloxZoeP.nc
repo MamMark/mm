@@ -486,6 +486,16 @@ implementation {
         gps_panic(17, gpsc_state, 0);
         return;
 
+      case GPSC_STANDBY_WAIT:
+        /*
+         * saw a message while shutting down.
+         * a power down request has already been spent
+         * so doing anything with this message that would
+         * change state isn't desirable.  Just abort the msg.
+         */
+        signal ubxProto.protoAbort(11);
+        return;
+
       /* pipeline restart or bootstrap, run to completion, no time out */
       case GPSC_RESTART_WAIT:
       case GPSC_CONFIG_BOOT:            /* stay */
