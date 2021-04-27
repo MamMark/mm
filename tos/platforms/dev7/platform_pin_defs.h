@@ -190,29 +190,6 @@
 #define SD0_DMA_TX_ADDR    EUSCI_B3->TXBUF
 #define SD0_DMA_RX_ADDR    EUSCI_B3->RXBUF
 
-/*
- * SD0_PINS_SPI will connect the 3 spi lines on SD0 to the SPI.  This is
- * done by simply switching the pins to the module.  We need to disconnect
- * the pins when we power off the SDs to avoid powering the chip via the
- * input pins.
- *
- * We also need to switch sd_csn (10.0) from input to output, the value
- * should be a 1 which deselects the sd and tri-states.  The output is
- * already set to 1 (for the resistor pull up).  So simply switching from
- * input to output is fine.
- *
- * We assume that sd0_csn is a 1.
- */
-#define SD0_PINS_PORT  do {                                 \
-    BITBAND_PERI(SD0_CSN_PORT->DIR, SD0_CSN_PIN) = 0;       \
-    P10->SEL0 = 0;                                          \
-  } while (0)
-
-#define SD0_PINS_SPI    do {                                \
-    BITBAND_PERI(SD0_CSN_PORT->DIR, SD0_CSN_PIN) = 1;       \
-    P10->SEL0 = 0x0E;                                       \
-} while (0)
-
 
 /*
  * TMP bus consists of two tmp sensors off of an I2C eUSCI.

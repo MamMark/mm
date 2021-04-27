@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Eric B. Decker
+ * Copyright (c) 2016-2018, 2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -259,9 +259,27 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
   async command bool HW.sd_access_granted()     { return TRUE; }
   async command bool HW.sd_check_access_state() { return TRUE; }
 
+/*
+ * Turning on, we connect the SD SPI pins to the EUSCI.  This is done by
+ * tweaking the SEL register for the corresponding pins.
+ *
+ * We need to disconnect the same pins when we power off the SDs to avoid powering
+ * the chip via the input pins.
+ *
+ * We do not have control of power for the SparkFun module that the Dev7 uses.  This
+ * means we do not effectively ever power it off.
+ *
+ * We also need to switch sd_csn (10.0) from input to output, the value
+ * should be a 1 which deselects the sd and tri-states.  The output is
+ * already set to 1 (for the resistor pull up).  So simply switching from
+ * input to output is fine.
+ *
+ * We assume that sd0_csn is a 1.
+ */
   async command void HW.sd_on() {
     SD0_CSN = 1;                // make sure tristated
-    SD0_PINS_SPI;               // switch pins over
+    BITBAND_PERI(SD0_CSN_PORT->DIR, SD0_CSN_PIN) = 1;
+    P10->SEL0 = 0x0E;
   }
 
   /*
@@ -270,7 +288,8 @@ ctlw0 : (  EUSCI_B_CTLW0_CKPL        | EUSCI_B_CTLW0_MSB  |
    */
   async command void HW.sd_off() {
     SD0_CSN = 1;                /* tri-state by deselecting */
-    SD0_PINS_PORT;		/* pins in proper state */
+    BITBAND_PERI(SD0_CSN_PORT->DIR, SD0_CSN_PIN) = 0;
+    P10->SEL0 = 0;
   }
 
   async command bool HW.isSDPowered() { return TRUE; }
