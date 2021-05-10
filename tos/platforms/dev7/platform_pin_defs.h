@@ -185,6 +185,8 @@
  * The DMA channels used depend on this.  We need RX/TX triggers
  * and the address of what data port to hit.
  */
+#define SD0_DMA_TX_CHANNEL 6
+#define SD0_DMA_RX_CHANNEL 7
 #define SD0_DMA_TX_TRIGGER MSP432_DMA_CH6_B3_TX0
 #define SD0_DMA_RX_TRIGGER MSP432_DMA_CH7_B3_RX0
 #define SD0_DMA_TX_ADDR    EUSCI_B3->TXBUF
