@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Eric B. Decker
+ * Copyright (c) 2021, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -55,7 +55,7 @@
 /*
  * Hardware Notes:
  *
- * MamMark MM7, a 3V3 production TAG based on the 64 pin TI MSP432P401R.
+ * MamMark MM7, a 3V3/2V7 production TAG based on the 64 pin TI MSP432P401R.
  *
  * See the datasheet for clock speeds and flash wait states.  Also max
  * peripheral speed vs. Vcore voltage.  startup.c and platform_clk_defs.h
@@ -138,22 +138,23 @@
  * Port definitions:
  *
  * Various codes for port settings: <value><func><dir><res>, 0pO (0 (zero), port, Output),
- *    <res> will be "ru" for pull up and "rd" for pull down.
+ *    <res> will be "u" for pull up and "d" for pull down.  (res) - pull up/down used.
  *    xpI (don't care, port, Input), xmI (module input).
  *    module is m for m1 (sel1 0 sel0 1), same as msp430 settings.
  *              m2 for sel1 1, sel0 0, and m3 for 11.
  *    (port, mapping), ie.  (A1, pm) says its on eUSCI-A1 and the pin is port mapped.
  *
- * + A0: dock_comm      SPI
- * + A1: gps (ublox)    SPI
- * + A2: sd0            SPI
- * + A3: xxxx
- * + B0: mems           SPI
- *      accel/gyro: lsm6dsox  mems_id: 0 (accelgyro_csn)
- *      baro:       lps22hx   mems_id: 1 (baro_csn)
- * + B1: xxxx
- * + B2: Si4468 radio   SPI
- * + B3: tmp            I2C
+ * A0: dock_comm      SPI
+ * A1: gps (ublox)    SPI
+ * A2: sd0            SPI
+ * A3: xxxx
+ * B0: mems           SPI
+ *     accel/gyro:    lsm6dsox  mems_id: 0 (lsm6_csn)
+ *     mag:           lis2mdl
+ *     baro:          lps22hx   mems_id: 1 (lps22_csn)
+ * B1: xxxx
+ * B2: Si4468 radio   SPI
+ * B3: tmp            I2C
  *
  *
  * Interrupt priorities: (lower is higher), default 4
@@ -162,10 +163,13 @@
  *
  * ATTN_M:      dock incoming attention interrupt.
  *
+ * LSM6DSOX_INT1: (P5.1)
+ * BARO_INT:      (P4.6)
  *
  * Power notes:
  *   P1.0 pwr_tmp_en
  *   P8.0 pwr_sd0_en
+ *   PJ.2 gps_vbckup
  *   PJ.4 gps_pwr
  *
  * Initially (for bring up):
@@ -184,55 +188,55 @@
  *  00 I .1     0pO    batt_sense_en             60   .1        0pI    gps_tp   (ta1.1, pm)
  *  02 O .2     0pI    batt_chrg                 62   .2        0mI    gps_somi (A1,    pm)
  *       .3     0pIrd  dc_slave_rdy     tp12          .3        0mI    gps_simo (A1,    pm)
- *       .4     0pIrd  dc_attn          tp31          .4        0pI    xxxx
- *       .5     0mI    mems_sclk  (B0)                .5        0pI    xxxx
- *       .6     0mI    mems_simo  (B0)                .6        0pI    xxxx
- *       .7     0mI    mems_somi  (B0)                .7        0pI    xxxx
+ *       .4     0pIrd  dc_attn          tp31          .4        0pO    xxxx
+ *       .5     0mI    mems_sclk  (B0)                .5        0pO    xxxx
+ *       .6     0mI    mems_simo  (B0)                .6        0pO    xxxx
+ *       .7     0mI    mems_somi  (B0)                .7        0pO    xxxx
  *
  * port 2.0     0pIrd  dc_msg_pending   tp11    port 8.0        0pO    pwr_sd0_en
  *  01   .1     0pIrd  dc_sclk (A0, pm) tp13     61 I .1        0pI    sd0_csn
- *  03   .2     0pIrd  dc_somi (A0, pm) tp27     63 O .2        0pI    xxxx
- *       .3     0pIrd  dc_simo (A0, pm) tp03          .3        0pI    xxxx
- *       .4     0pI    xxxx                           .4        0pI    xxxx
- *       .5     0mO    xxxx                           .5        0pI    xxxx
- *       .6     0pI    xxxx                           .6        0pI    xxxx
- *       .7     0pI    xxxx                           .7        0pI    xxxx
+ *  03   .2     0pIrd  dc_somi (A0, pm) tp27     63 O .2        0pO    xxxx
+ *       .3     0pIrd  dc_simo (A0, pm) tp03          .3        0pO    xxxx
+ *       .4     0pO    xxxx                           .4        0pO    xxxx
+ *       .5     0pO    xxxx                           .5        0pO    xxxx
+ *       .6     0pO    xxxx                           .6        0pO    xxxx
+ *       .7     0pO    xxxx                           .7        0pO    xxxx
  *
- * port 3.0     0mI    sd0_somi     (A2, pm)
- *  20   .1     0mI    sd0_sclk     (A2, pm)
- *  22   .2     0mI    sd0_simo     (A2, pm)
- *       .3     1pO    radio_csn
- *       .4     0mI    radio_simo   (B2, pm)
- *       .5     0mI    radio_somi   (B2, pm)
- *       .6     0mI    radio_sclk   (B2, pm)
- *       .7     0pI    radio_irqn
+ * port 3.0     0mI    sd0_somi     (A2, pm)    port 9.0        0pO    xxxx
+ *  20   .1     0mI    sd0_sclk     (A2, pm)          .1        0pO    xxxx
+ *  22   .2     0mI    sd0_simo     (A2, pm)          .2        0pO    xxxx
+ *       .3     1pO    radio_csn                      .4        0pO    xxxx
+ *       .4     0mI    radio_simo   (B2, pm)          .4        0pO    xxxx
+ *       .5     0mI    radio_somi   (B2, pm)          .5        0pO    xxxx
+ *       .6     0mI    radio_sclk   (B2, pm)          .6        0pO    xxxx
+ *       .7     0pI    radio_irqn                     .7        0pO    xxxx
  *
- * port  4.0    0pI    xxxx
- *  21    .1    0pI    xxxx
- *  23    .2    0mO    ACLK, rtc_clk
- *        .3    0pO    radio_sdn
- *        .4    0pI    radio_cts
- *        .5    0pI    radio_gp0
- *        .6    0pI    baro_int
- *        .7    1pO    baro_csn
+ * port  4.0    0pO    xxxx                    port 10.0        0pO    xxxx
+ *  21    .1    0pO    xxxx                           .1        0pO    xxxx
+ *  23    .2    0mO    ACLK, rtc_clk                  .2        0pO    xxxx
+ *        .3    0pO    radio_sdn                      .4        0pO    xxxx
+ *        .4    0pI    radio_cts                      .4        0pO    xxxx
+ *        .5    0pI    radio_gp0                      .5        0pO    xxxx
+ *        .6    0pI    lps22_int                      .6        0pO    xxxx
+ *        .7    1pO    lps22_csn                      .7        0pO    xxxx
  *
- * port  5.0    1pO    accelgyro_csn
- *  40 I  .1    0pI    accelgyro_int1
- *  42 O  .2    0pI    nc
- *        .3    0pI    nc
+ * port  5.0    1pO    lsm6_csn
+ *  40 I  .1    0pI    lsm6_int1
+ *  42 O  .2    0pO    nc
+ *        .3    0pO    nc
  *        .4    0mI    batt_sense A1 (m3)
- *        .5    0pI    gps_csn
+ *        .5    1pO    gps_csn
  *        .6    0pO    gps_extint0
  *        .7    0pI    gps_txrdy   (gps_pio15)
  *
- * port  6.0    0pI    xxxx                     port  J.0       0pI     LFXIN  (32KiHz)
- *  41 I  .1    0pI    xxxx                     120 I  .1       0pO     LFXOUT (32KiHz)
- *  43 O  .2    0pI    xxxx                     122 O  .2       1pO     gps_vbkup
- *        .3    0pI    xxxx                            .3       0pI     nc
- *        .4    0pI    xxxx                            .4       0pO     gps_pwr
- *        .5    0pI    xxxx                            .5       0pI     SWO
- *        .6    0mI    tmp_sda     (B3, m2)                             SWCLK
- *        .7    0mI    tmp_scl     (B3, m2)                             SWDIO
+ * port  6.0    0pO    xxxx     pseudo-red      port  J.0       0pI     LFXIN  (32KiHz) (m1)
+ *  41 I  .1    0pO    xxxx     pseudo-green    120 I  .1       0pO     LFXOUT (32KiHz) (m1)
+ *  43 O  .2    0pO    xxxx     pseudo-blue     122 O  .2       1pO     gps_vbckup
+ *        .3    0pO    xxxx                            .3       0pI     nc
+ *        .4    0pO    xxxx                            .4       1pO     gps_pwr
+ *        .5    0pO    xxxx                            .5       0pI     SWO
+ *        .6    0mI    tmp_sda     (B3, m2)                             SWDIO  (pin 63)
+ *        .7    0mI    tmp_scl     (B3, m2)                             SWCLK  (pin 64)
  */
 
 /*
