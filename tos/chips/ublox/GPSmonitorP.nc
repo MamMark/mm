@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Eric B. Decker
+ * Copyright (c) 2020-2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -878,16 +878,23 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
        *
        * We want to set the RTC when any of the following is true.
        *
-       * 1) Current timesrc is not GPS (< GPS0).  Set using gps time.
-       *    set timesrc GPS0, reboot.
+       * o Current timesrc is not solid GPS (< GPS).  Set using gps time.
+       * o excessiveSkew.
        *
-       * 2) utc_ms == 0 -> 1PPS TM -> OD highest caliber gps time.
-       *    timesrc < GPS (GPS or below) or excessiveSkew.
-       *    set timesrc GPS, reboot.
+       * set timesrc GPS, reboot.
+       *
+       * Note: the gsd4e GPSmonitor had two levels of gps time, GPS0 and GPS.
+       * When the gsd4e first locks onto the constellation, the time would be off
+       * by some number of millisecs, this is indicated by RTCSRC_GPS0.  Once fully
+       * syncronized to the constellation the utc_ms field goes to zero, indicated
+       * by RTCSRC_GPS.
+       *
+       * The Ublox chip doesn't seem to behave that way.  We take whatever time
+       * is reported in the NAV_PVT message as gospel.   RTCSRC_GPS.
        */
       timesrc     = call OverWatch.getRtcSrc();
-      force       = timesrc < RTCSRC_GPS0;
-      forcesrc    = RTCSRC_GPS0;
+      force       = timesrc < RTCSRC_GPS;
+      forcesrc    = RTCSRC_GPS;
       delta       = 0;
       rtc.year    = tp->utc_year;
       rtc.mon     = tp->utc_month;
@@ -900,7 +907,6 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       skew        = call CoreTime.excessiveSkew(&rtc,
                                 &gps_secs, &cur_secs, &delta1000);
       force       = (force || skew || (timesrc < RTCSRC_GPS));
-      forcesrc    = RTCSRC_GPS;
       if (force) {
         call CollectEvent.logEvent(DT_EVENT_TIME_SRC, forcesrc, delta1000,
                                    timesrc, 2);
