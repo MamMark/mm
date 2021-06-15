@@ -230,8 +230,8 @@ def emit_reboot(level, offset, buf, obj):
 # version emitter support
 
 model_strs = {
-    0x01:       'mm7',
-    0x02:       'mm8',
+    0x07:       'mm7',
+    0x08:       'mm8',
     0x87:       'dev7',
     0x88:       'dev8',
 }
@@ -709,8 +709,6 @@ def emit_sensor_data(level, offset, buf, obj):
     recnum   = obj['hdr']['recnum'].val
     rtctime  = obj['hdr']['rt']
     brt      = secsFromHour_str(rtctime)
-
-    delta    = obj['sched_delta'].val
 
     dt_sns_id = xtype
     print_hourly(rtctime)

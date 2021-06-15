@@ -36,10 +36,11 @@ typedef struct {
 
 enum {
   /* DMS - decimal vs. BMS - binary milliseconds */
-  DMS_SEC               = (1000UL),
-  BMS_SEC               = (1024UL),
-  DMS_MIN               = (60*1000UL),
-  BMS_MIN               = (60*1024UL),
+  /* various decimal/binary microsecs            */
+  DMS_SEC               = (1000UL*1000UL),
+  BMS_SEC               = (1024UL*1024UL),
+  DMS_MIN               = (60*1000UL*1000UL),
+  BMS_MIN               = (60*1024UL*1024UL),
 
   SNS_US2MS             = 1000,
   SNS_US2MS_B           = 1024,

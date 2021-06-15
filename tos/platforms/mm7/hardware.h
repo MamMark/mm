@@ -263,7 +263,7 @@
  *   o connector is standard ARM 10 pin .050" connector
  *
  * jtag-01  TP20  Vtref   2V7   jtag-02 TP23  swdio
- * jtag-03                      jtag-04 TP18  swdclk
+ * jtag-03                      jtag-04 TP18  swclk
  * jtag-05  TP22  gnd           jtag-06 TP32  swo       PJ.5
  * jtag-07                      jtag-08 nc
  * jtag-09                      jtag-10 TP28  nRESET
