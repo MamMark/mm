@@ -1,0 +1,120 @@
+2021-06-15  cire  <cire@zot>
+
+	* tagdump: version 0.4.9
+	* disable json emitters until we know what we want.
+	* update core_populate to reflect
+
+2021-04-15  cire  <cire@zot>
+
+	binfin:    1.1.2
+	tagcore:   0.4.9.dev1
+	base_objs: 0.4.9.dev0
+	* binfin: make binfin use bytearrays instead of str for image_info
+		  processing
+	* tagcore/base_objs: make all build methods return bytearrays.
+
+2021-03-20  cire  <cire@zot>
+
+	binfin:    1.1.1
+	tagcore:   0.4.8.dev4
+	imageinfo: 0.4.8
+
+	* tagcore/tagcore/imageinfo.py:
+	  display hw_ver as hex for dev boards
+
+2020-10-26  cire  <cire@zot>
+
+	tagcore: 0.4.8.dev1
+	ubxdump: 0.5.0.dev2
+
+	* tagcore/tagcore/ubx_populate
+	  add names for various ubx packets
+
+	* ubxdump/ubxdump/ubxdump.py
+	* ubxdump/ubxdump/ubxdump_config.py
+	* ubxdump/ubxdump/ubxdumpargs.py
+	  add ubxdump program, dump raw ubx packets
+	  display cid counts using hex display
+
+	* tagcore/tagcore/core_headers.py
+	* tagcore/tagcore/core_emitters.py
+	* tagcore/tagcore/ubx_defs.py
+	* tagcore/tagcore/ubx_headers.py
+	* tagcore/tagcore/ubx_emitters.py
+	  ubx objects, decoders, and emitters
+
+	  ack/nack, cfg_cfg, cfg_prt, cfg_msg, cfg_rst
+	  nav_aopstatus, nav_clock, nav_dop, nav_orb, nav_sat
+	  nav_posecef, nav_posllh, nav_pvt, nav_status
+	  nav_timegps, nav_timeutc, nav_timels, tim_tp
+	  cfg_nav5, cfg_navx5, inf
+
+	  cfg_msg response emitter
+	  rxm_pmreq decoder/emitter
+
+	* tagcore/tagcore/ubx_headers.py
+	* tagcore/tagcore/ubx_emitters.py
+	  remove old sirf residuals
+
+2020-07-04  cire  <cire@zot>
+
+	* include/ublox_msg.h (UBX_NAV_POSECEF):
+	* tagcore/tagcore/ubx_populate.py:
+	  basic definitions of AOPSTATUS
+
+	* tagcore/tagcore/core_emitters.py:
+	  pretty up 1st level UBX raw decode
+
+2020-06-29  cire  <cire@zot>
+
+	* tagcore/tagcore/core_emitters.py:
+	* tagcore/tagcore/core_emitters.py:
+	* tagcore/tagcore/core_headers.py:
+	* tagcore/tagcore/core_rev.py:
+	* tagcore/tagcore/gps_mon.py:
+	* tagcore/tagcore/mr_emitters.py:
+	* tagcore/tagcore/ubx_defs.py:
+	* tagcore/tagcore/ubx_emitters.py:
+	* tagcore/tagcore/ubx_headers.py:
+	* tagcore/tagcore/ubx_populate.py:
+	* tagctl/tagctl/ctl_config.py:
+	* tagctl/tagctl/tagctl.py:
+	* tagdump/tagdump/tagdump.py:
+	* tagdump/tagdump/tagdump_config.py:
+	* tagvers/tagvers/tagvers.py:
+	  replace sirf with simple ubx packet handling.
+	  bump version numbers.
+
+2020-06-27  cire  <cire@zot>
+
+	* tagcore/tagcore/mr_emitters.py:
+	* tagcore/tagcore/mr_populate.py:
+	  add simple MR emitter for NMEA raw
+
+2020-06-25  cire  <cire@zot>
+
+	* tagcore/tagcore/core_emitters.py: (emit_gps_raw):
+	  o strip \r\n\x00 from NMEA display.
+	  o split out NMEA and UBX non-sirfbin raw packets
+
+2020-06-24  cire  <cire@zot>
+
+	* tagcore/tagcore/base_objs.py:
+	tlv_aggie.set was using ord(buf[n]) to obtain its values but
+	buf[0] and buf[1] already int (from a bytearray).  ord died.
+	remove.
+
+2020-04-27  cire  <cire@zot>
+
+	* tagcore/tagcore/core_emitters.py:
+	* tagcore/tagcore/core_rev.py:
+	* tagcore/tagcore/dt_defs.py:
+	* tagcore/tagcore/mr_populate.py:
+	* tagcore/tagcore/core_populate.py:
+	* tagcore/tagcore/core_populate_ge.py:
+	* tagcore/tagcore/core_headers.py:
+
+	* tagcore:  0.4.8.devN
+	* tagdump:  0.4.8.devN
+		    DT_GPS_RAW_SIRFBIN -> DT_GPS_RAW
+		    bump core_rev 22/8 -> 22/9 (minor)

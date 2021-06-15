@@ -1,4 +1,5 @@
 # Copyright (c) 2017-2019 Daniel J. Maltbie, Eric B. Decker
+# Copyright (c) 2021 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -83,9 +84,8 @@ optional arguments:
 
   -x              tell tagdump to export records to an external database
   --export        (currently only influxdb export).  If no external linkage
-                  available will abort. (args.export)
-  --noexport      override implicit export.  Used to examine incoming data
-                  without exporting to influxdb.
+                  available will abort. (args.export), currently disabled.
+  --noexport      (default)
 
   -v, --verbose   increase output verbosity
                   (args.verbose)
