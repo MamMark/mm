@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Eric B. Decker, Daniel J. Maltbie
+# Copyright (c) 2020, 2021 Eric B. Decker, Daniel J. Maltbie
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev4'
+__version__ = '0.4.8.dev5'
 
 import binascii
 from   collections  import OrderedDict
@@ -42,7 +42,7 @@ import ubx_defs     as     ubx
 #
 # ubxbin header, little endian.
 #
-# start: 0xb542
+# start: 0xb562   (big endian)
 # cid:   class/id (big endian)
 #        byte  byte
 # len:   little endian
@@ -219,6 +219,36 @@ def obj_ubx_cfg_rst():
         ('navBbrMask', atom(('<H', '0x{:04x}'))),
         ('resetMode',  atom(('B',  '{}'))),
         ('reserved1',  atom(('B',  '{}'))),
+    ]))
+
+
+# ubx_mon_hw 0a09
+# len 60
+
+def obj_ubx_mon_hw():
+    return aggie(OrderedDict([
+        ('ubx', obj_ubx_hdr()),
+    ]))
+
+def obj_ubx_mon_hw_data():
+    return aggie(OrderedDict([
+        ('pinSel',      atom(('<I', '0x{:04x}'))),
+        ('pinBank',     atom(('<I', '0x{:04x}'))),
+        ('pinDir',      atom(('<I', '0x{:04x}'))),
+        ('pinVal',      atom(('<I', '0x{:04x}'))),
+        ('noisePerMs',  atom(('<H', '0x{:04x}'))),
+        ('agcCnt',      atom(('<H', '0x{:04x}'))),
+        ('aStatus',     atom(('<B', '0x{:02x}'))),
+        ('aPower',      atom(('<B', '0x{:02x}'))),
+        ('flags',       atom(('<B', '0x{:02x}'))),
+        ('reserved1',   atom(('<B', '0x{:02x}'))),
+        ('usedMask',    atom(('<I', '0x{:04x}'))),
+        ('VP',          atom(('17s', '{}', binascii.hexlify))),
+        ('jamInd',      atom(('<B', '0x{:02x}'))),
+        ('reserved2',   atom(('<H', '0x{:04x}'))),
+        ('pinIrq',      atom(('<I', '0x{:04x}'))),
+        ('pullH',       atom(('<I', '0x{:04x}'))),
+        ('pullL',       atom(('<I', '0x{:04x}'))),
     ]))
 
 
@@ -608,6 +638,22 @@ def decode_ubx_cfg_prt(level, offset, buf, obj):
 
     # must be a cfg_prt for the spi
     obj['var'] = obj_ubx_cfg_prt_spi();
+    consumed += obj['var'].set(buf[consumed:])
+    return consumed
+
+
+def decode_ubx_mon_hw(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # variable has been removed, should have a ubx_hdr left ('ubx')
+    # populate it.  Either it is a poll or a fully populated mon_hw packet.
+    consumed = obj.set(buf)
+    xlen = obj['ubx']['len'].val
+    if xlen != 60:
+        return consumed
+
+    obj['var'] = obj_ubx_mon_hw_data();
     consumed += obj['var'].set(buf[consumed:])
     return consumed
 

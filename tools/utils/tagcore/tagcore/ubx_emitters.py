@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Eric B. Decker
+# Copyright (c) 2020, 2021 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.8.dev6'
+__version__ = '0.4.8.dev7'
 
 
 def emit_default(level, offset, buf, obj, xdir):
@@ -64,9 +64,9 @@ psm_type = {
 ########################################################################
 
 def emit_ubx_ack(level, offset, buf, obj, xdir):
-    ubx  = obj['ubx']
-    cid    = obj['ubx']['cid'].val
-    ackCid = obj['ackClassId'].val
+    ubx     = obj['ubx']
+    cid     = obj['ubx']['cid'].val
+    ackCid  = obj['ackClassId'].val
     acktype = 'ack' if cid == 0x501 else 'nack'
     print('{:s} ({:04x}) {}'.format(cid_name(ackCid), ackCid, acktype))
     if level >= 1:
@@ -164,6 +164,19 @@ def emit_ubx_inf(level, offset, buf, obj, xdir):
     objlen = len(obj)                   # ubx header length
     xlen = obj['len'].val
     print('{:s}'.format(buf[objlen:objlen+xlen]))
+
+
+def emit_ubx_mon_hw(level, offset, buf, obj, xdir):
+    ubx  = obj['ubx']
+    xlen = ubx['len'].val
+    if xlen == 0:                       # poll
+        print('poll')
+    elif xlen == 60:
+        print()
+    else:
+        print('weird')
+    if xdir == 0:                       # if rx display whole packet
+        print('  {}'.format(obj))
 
 
 def emit_ubx_nav_aopstatus(level, offset, buf, obj, xdir):

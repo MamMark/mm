@@ -50,7 +50,7 @@ ubx.cid_table[0x0623]   = (decode_ubx_cfg_navx5,[ emit_ubx_cfg_nav5 ],     obj_u
 ubx.cid_table[0x0624]   = (decode_ubx_cfg_nav5, [ emit_ubx_cfg_nav5 ],     obj_ubx_cfg_nav5(),        'cfg/nav5',     'obj_ubx_cfg_nav5')
 
 ubx.cid_table[0x0a04]   = (decode_null,        None,                       None,                      'mon/ver',      'none')
-ubx.cid_table[0x0a09]   = (decode_null,        None,                       None,                      'mon/hw',       'none')
+ubx.cid_table[0x0a09]   = (decode_ubx_mon_hw,  [ emit_ubx_mon_hw ],        obj_ubx_mon_hw(),          'mon/hw',       'obj_ubx_mon_hw')
 
 ubx.cid_table[0x0d01]   = (decode_default,     [ emit_ubx_tim_tp ],        obj_ubx_tim_tp(),          'tim/tp',       'obj_ubx_tim_tp')
 
