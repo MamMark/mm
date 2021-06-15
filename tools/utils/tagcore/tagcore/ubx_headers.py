@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev5'
+__version__ = '0.4.8.dev6'
 
 import binascii
 from   collections  import OrderedDict
@@ -66,6 +66,24 @@ def obj_ubx_ack():
     return aggie(OrderedDict([
         ('ubx',        obj_ubx_hdr()),
         ('ackClassId', atom(('>H', '0x{:04X}'))),
+    ]))
+
+
+# ubx_cfg_ant 0x0613
+#
+# len 2: Get returns response with current ANT configuration
+# len 4: ANT configuration.
+
+def obj_ubx_cfg_ant():
+    return aggie(OrderedDict([
+        ('ubx', obj_ubx_hdr()),
+    ]))
+
+
+def obj_ubx_cfg_ant_var():
+    return aggie(OrderedDict([
+        ('flags', atom(('<H', '0x{:04x}'))),
+        ('pins',  atom(('<H', '0x{:04x}'))),
     ]))
 
 
@@ -547,6 +565,27 @@ def obj_ubx_tim_tp():
 # Ublox Decoders
 #
 ########################################################################
+
+def decode_ubx_cfg_ant(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # 'var' section removed, should have a obj_ubx_cfg_ant left
+    # populate it.  Length 0 is a poll.  4 has data.
+    consumed = obj.set(buf)
+    xlen = obj['ubx']['len'].val
+
+    # poll
+    if xlen == 0:
+        return consumed
+
+    if xlen == 4:
+        obj['var'] = obj_ubx_cfg_ant_var();
+        consumed += obj['var'].set(buf[consumed:])
+        return consumed
+
+    return consumed
+
 
 def decode_ubx_cfg_cfg(level, offset, buf, obj):
     if obj.get('var') is not None:

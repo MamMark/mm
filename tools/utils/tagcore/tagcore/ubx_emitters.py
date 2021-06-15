@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.8.dev7'
+__version__ = '0.4.8.dev8'
 
 
 def emit_default(level, offset, buf, obj, xdir):
@@ -69,6 +69,21 @@ def emit_ubx_ack(level, offset, buf, obj, xdir):
     ackCid  = obj['ackClassId'].val
     acktype = 'ack' if cid == 0x501 else 'nack'
     print('{:s} ({:04x}) {}'.format(cid_name(ackCid), ackCid, acktype))
+    if level >= 1:
+        print('  {}'.format(obj))
+
+def emit_ubx_cfg_ant(level, offset, buf, obj, xdir):
+    ubx  = obj['ubx']
+    xlen = ubx['len'].val
+    if xlen == 0:                       # poll
+        print('poll')
+    elif xlen == 4:
+        flags = obj['var']['flags'].val
+        pins  = obj['var']['pins'].val
+        xtype = 'set' if xdir else 'rsp'
+        print('{:3s} f: {:04x} p: {:04x}'.format(xtype, flags, pins))
+    else:
+        print('weird')
     if level >= 1:
         print('  {}'.format(obj))
 
