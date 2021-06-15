@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2020 Eric B. Decker
+# Copyright (c) 2018-2021 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -238,7 +238,7 @@ model_strs = {
 
 
 def model_name(model):
-    return model_strs.get(model, 'model/' + str(model))
+    return model_strs.get(model, 'model(0x' + '{:02x}'.format(model) + ')')
 
 
 # --- offset recnum      brt  len  type  name
