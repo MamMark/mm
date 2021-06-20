@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.10.dev0'
+__version__ = '0.4.10.dev1'
 
 
 def emit_default(level, offset, buf, obj, xdir):
@@ -309,6 +309,105 @@ def emit_ubx_nav_pvt(level, offset, buf, obj, xdir):
     if level >= 1:
         print('  {}'.format(obj))
 
+
+nav_sat_qual_ind = {
+    0:  'no_sig',
+    1:  'search',
+    2:  'acquired',
+    3:  'not_usable',
+    4:  'ct',
+    5:  'cct',
+    6:  'cct',
+    7:  'cct',
+}
+
+nav_sat_health = {
+    0:  'X',
+    1:  'H',
+    2:  'h',
+}
+
+nav_sat_orbit = {
+    0:  'none',
+    1:  'eph',
+    2:  'alm',
+    3:  'offline',
+    4:  'auton',
+    5:  'other',
+    6:  'other',
+    7:  'other',
+}
+
+def emit_ubx_nav_sat(level, offset, buf, obj, xdir):
+    iTOW      = obj['iTOW'].val
+    version   = obj['version'].val
+    if version != 1:
+        # strange version
+        print('  {:9d}, version not understood ({:d})', iTOW, version)
+        return
+    numSv     = obj['numSv'].val
+    good_sats = 0
+    good_sum  = 0
+    num_used  = 0
+    for sv in range(numSv):
+        cno   = obj['var'][sv]['cno'].val
+        flags = obj['var'][sv]['flags'].val
+        used  = flags & 0x08
+        if used:
+            num_used  += 1
+        if cno > 19:
+            good_sats += 1
+            good_sum  += cno
+    avg = float(good_sum)/good_sats if good_sats else 0.0
+    print('  {:9d}  nsats: {:d}  used {:d}  >19: {:d}  avg: {:.2f}'.format(
+        iTOW, numSv, num_used, good_sats, avg))
+    if level >= 1:
+        if numSv > 0:
+            print('   Id   cno    el/az    flags  HUAE AO        qual/orbit')
+        for sv in range(numSv):
+            gnss  = obj['var'][sv]['gnssId'].val
+            svId  = obj['var'][sv]['svId'].val
+            cno   = obj['var'][sv]['cno'].val
+            elev  = obj['var'][sv]['elev'].val
+            azim  = obj['var'][sv]['azim'].val
+            flags = obj['var'][sv]['flags'].val
+            if cno < 20:
+                if level < 2:
+                    continue
+
+            qual       = flags & 0x7
+            qual_str   = nav_sat_qual_ind.get(qual, 'weird')
+            health     = (flags >> 4) & 0x3
+            orbit      = (flags >> 8) & 0x7
+            orbit_str  = nav_sat_orbit.get(orbit, 'orbit')
+
+            flag_str   = nav_sat_health.get(health, 'x')        # health
+            flag_str  += 'U' if flags & 0x000008 else 'u'       # used
+            flag_str  += 'A' if flags & 0x001000 else 'a'       # almanac avail
+            flag_str  += 'E' if flags & 0x000800 else 'e'       # ephemeris avail
+            flag_str  += ' '
+            flag_str  += 'A' if flags & 0x004000 else 'a'       # AssistNow Auton
+            flag_str  += 'O' if flags & 0x002000 else 'o'       # AssistNow Offline
+
+            flag_str  += '  {:>10s}/{:<8s}  '.format(qual_str, orbit_str)
+
+            flag_str  += 'D' if flags & 0x200000 else 'd'       # doppler correction
+            flag_str  += 'C' if flags & 0x100000 else 'c'       # carrier correction
+            flag_str  += 'P' if flags & 0x100000 else 'p'       # pseudorange corrections
+            flag_str  += 'S' if flags & 0x080000 else 's'       # SPARTN corrections
+            flag_str  += 'S' if flags & 0x040000 else 's'       # SLAS corrections
+            flag_str  += 'R' if flags & 0x020000 else 'r'       # RTCM corrections
+            flag_str  += 'S' if flags & 0x010000 else 's'       # SBAS corrections
+
+            flag_str  += ' '
+            flag_str  += 'S' if flags & 0x000080 else 's'       # smoothed
+            flag_str  += 'D' if flags & 0x000040 else 'd'       # diff corrections
+
+            print('{:3d}:{:03d}  {:02d}   {:03d}/{:03d}  0x{:04x}  {:s}'.format(
+                gnss, svId, cno, elev, azim, flags, flag_str))
+    if level >= 3:
+        print()
+        print('  {}'.format(obj))
 
 def emit_ubx_nav_status(level, offset, buf, obj, xdir):
     iTOW     = obj['iTOW'].val
