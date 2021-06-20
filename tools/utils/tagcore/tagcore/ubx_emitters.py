@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.8.dev8'
+__version__ = '0.4.10.dev0'
 
 
 def emit_default(level, offset, buf, obj, xdir):
@@ -181,16 +181,35 @@ def emit_ubx_inf(level, offset, buf, obj, xdir):
     print('{:s}'.format(buf[objlen:objlen+xlen]))
 
 
+mon_hw_astatus = {
+    0:  'init',
+    1:  'dk',
+    2:  'ok',
+    3:  'short',
+    4:  'open',
+}
+
+mon_hw_apower = {
+    0:  'off',
+    1:  'on',
+    2:  'dk',
+}
+
+
 def emit_ubx_mon_hw(level, offset, buf, obj, xdir):
     ubx  = obj['ubx']
     xlen = ubx['len'].val
     if xlen == 0:                       # poll
         print('poll')
     elif xlen == 60:
-        print()
+        astatus = obj['var']['aStatus'].val
+        apower  = obj['var']['aPower'].val
+        astatus_str = mon_hw_astatus.get(astatus, 'astatus({:d})'.format(astatus))
+        apower_str  = mon_hw_apower.get(apower, 'apower({:d})'.format(apower))
+        print('rsp  ant: {:s} {:s}'.format(astatus_str, apower_str))
     else:
         print('weird')
-    if xdir == 0:                       # if rx display whole packet
+    if level >=1 and xdir == 0:         # if rx display whole packet
         print('  {}'.format(obj))
 
 
