@@ -1,0 +1,114 @@
+
+a) How to format SD media
+
+  - access to raw device.
+  - fdisk program for partition manipulation
+  - tagfmtsd program for building structures on the SD medium.
+    (see gh:Mammark/mm/tools/utils/tagfmtsd.
+
+  When you insert the media it will be mounted as a device (not file system).
+  You need to figure out where the device got mounted, ie. /dev/sdc (which
+  is what we assume in the examples below).
+
+  To see how a SD is partitioned:
+
+      gdisk -l /dev/sdc
+      fdisk -l /dev/sdc
+
+  fdisk is used to MBR partitions and we need a MBR partition with a FAT32 file system.
+
+  $ fdisk -l /dev/sdc
+  Disk /dev/sdc: 1977 MB, 1977614336 bytes
+  64 heads, 63 sectors/track, 957 cylinders, total 3862528 sectors
+  Units = sectors of 1 * 512 = 512 bytes
+  Sector size (logical/physical): 512 bytes / 512 bytes
+  I/O size (minimum/optimal): 512 bytes / 512 bytes
+  Disk identifier: 0x00000000
+
+  Device Boot      Start         End      Blocks   Id  System
+  /dev/sdc1             135     3858623     1929244+   6  FAT16
+
+
+  format
+	mkdosfs -F 32 -I -n"TagTest" -v /dev/sdc
+
+  check
+	fsck /dev/sdc
+
+  build
+	tagfmtsd -w /dev/sdc
+
+  check
+	fsck /dev/sdc
+
+  correct
+	fsck -a /dev/sdc
+	fsck    /dev/sdc
+	eject   /dev/sdc
+
+
+b) Building and using binary images, golden and nib
+
+  - golden images are based at address 0 (128K)
+  - nib images are based at address 128K, 0x20000 (128K)
+
+when building add the string 'golden' or 'nib' to the command line to force
+particular builds.  The build will be pu into the directory build/<target>/<type>
+where <type> is 'golden" or 'nib'.
+
+The utility, loadbin, (tools/utils/loadbin, typically installed in /usr/local/bin)
+can then be used to download the main.bin from the appropriate directory to
+the target chip via a Segger JLink JTAG pod.
+
+ie.
+
+    loadbin dev7
+    loadbin -t golden dev7
+    loadbin -t nib dev7
+
+
+c) Grip (used to render MD (markdown) files
+
+  git clone https://github.com/joeyespo/grip.git
+  cd grip
+  sudo python setup.py install
+
+
+- to use grip
+
+  grip <markdownfile>
+  * Running on http://localhost:6419/ (Press CTRL+C to quit)
+
+  point a browser at http://localhost:6419/ to see your rendered doc.
+
+- you will probably run into the API rate limit in which case you should
+  use a github personal access token.  You need a github login.
+
+  see https://github.com/joeyespo/grip#access
+  see github, Settings->Developer settings->Personal access tokens
+      https://github.com/settings/tokens/new?scopes=
+
+**************************************************************************************
+
+d) Remote mounting basestation file systems.
+
+- install sshfs
+
+  sudo apt-get install sshfs
+
+
+- create mount point
+
+  sudo mkdir /mnt/dvt3
+
+
+- mount remote file system from dvt3
+
+  sudo sshfs -o allow_other pi@dvt3:. /mnt/dvt3
+
+
+e) Launching a Base Station
+
+  - Base Station instll
+  - Base Station hw requirements
+
