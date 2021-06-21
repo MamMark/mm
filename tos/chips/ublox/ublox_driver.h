@@ -104,7 +104,7 @@ const uint8_t ubx_cfg_ant_svcs_pio16_only[] = {
 /*
  * clear the permanent configuration, return to default
  *
- * clear/load 0x0000000b: nav/msg/ioPort configs
+ * clear/save/load 0x0000000b: nav/msg/ioPort configs
  * devMask:     17: SpiFlsh, EEPROM, Flash, BBR
  */
 const uint8_t ubx_cfg_cfg_erase[] = {
@@ -112,17 +112,17 @@ const uint8_t ubx_cfg_cfg_erase[] = {
   UBX_CLASS_CFG, UBX_CFG_CFG,
   0x0D, 0x00,                           /* length, 13 bytes */
   0x0b, 0x00, 0x00, 0x00,               /* clear mask */
-  0x00, 0x00, 0x00, 0x00,               /* save  mask */
+  0x0b, 0x00, 0x00, 0x00,               /* save  mask */
   0x0b, 0x00, 0x00, 0x00,               /* load  mask */
   0x17,                                 /* devMask */
-  0x49, 0x96,
+  0x54, 0xf9,
 };
 
 /*
  * save 0x0000000b: nav/msg/ioPort configs
  * devMask:     17: SpiFlsh, EEPROM, Flash, BBR
  */
-const uint8_t ubx_cfg_cfg_save[] = {
+const uint8_t ubx_cfg_cfg_save_devmask[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_CFG, UBX_CFG_CFG,
   0x0D, 0x00,                           /* length, 13 bytes */
@@ -131,6 +131,16 @@ const uint8_t ubx_cfg_cfg_save[] = {
   0x00, 0x00, 0x00, 0x00,               /* load  mask */
   0x17,                                 /* devMask */
   0x3E, 0x33,
+};
+
+const uint8_t ubx_cfg_cfg_save[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_CFG,
+  0x0C, 0x00,                           /* length, 12 bytes */
+  0x00, 0x00, 0x00, 0x00,               /* clear mask */
+  0x0b, 0x00, 0x00, 0x00,               /* save  mask */
+  0x00, 0x00, 0x00, 0x00,               /* load  mask */
+  0x26, 0xE7,
 };
 
 const uint8_t ubx_cfg_dat_poll[] = {
@@ -239,6 +249,16 @@ const uint8_t ubx_cfg_rate_poll[] = {
   0x0e, 0x30,
 };
 
+const uint8_t ubx_cfg_rst_full_hw[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_RST,
+  0x04, 0x00,
+  0xff, 0xff,                           /* clear all BBR */
+  0x00,                                 /* resetMode: 0 HW_WDOG */
+  0x00,                                 /* reserved */
+  0x23, 0x9b,
+};
+
 const uint8_t ubx_cfg_tp5_poll[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_CFG, UBX_CFG_TP5,           /* time pulse 0 */
@@ -274,6 +294,13 @@ const uint8_t ubx_mon_io_poll[] = {
   UBX_CLASS_MON, UBX_MON_IO,
   0x00, 0x00,
   0x0C, 0x2E,
+};
+
+const uint8_t ubx_mon_llc_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_MON, UBX_MON_LLC,           /* low level config */
+  0x00, 0x00,                           /* length, 0, poll */
+  0x17, 0x4f,
 };
 
 const uint8_t ubx_mon_ver_poll[] = {
