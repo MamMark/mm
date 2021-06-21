@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Eric B. Decker
+ * Copyright (c) 2020, 2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -79,6 +79,27 @@ const uint8_t ubx_cfg_ant_poll[] = {
   0x00, 0x00,
   0x19, 0x51,
 };
+
+
+const uint8_t ubx_cfg_ant_disable_all_pins[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_ANT,
+  0x04, 0x00,                           /* len, 4 */
+  0x00, 0x00,                           /* flags, all off, no recovery */
+  0xff, 0xff,                           /* reconfig, OCD/SCD/Switch 31 */
+  0x1b, 0xca,
+};
+
+
+const uint8_t ubx_cfg_ant_svcs_pio16_only[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_ANT,
+  0x04, 0x00,                           /* len, 4 */
+  0x01, 0x00,                           /* flags, svcs on, others off, no recovery  */
+  0xf0, 0xff,                           /* reconfig, OCD/SCD/31 (off), pio16 Switch */
+  0x0d, 0xb0,
+};
+
 
 /*
  * clear the permanent configuration, return to default
