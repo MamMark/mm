@@ -194,16 +194,30 @@ const uint8_t ubx_cfg_prt_poll_spi[] = {
 /*
  * tx-ready setting
  *
- * threshold 8 bytes (1),      << 7
- * pin      13       (13, 0xd) << 2
- * pol       0       (0)       << 1
- * tx-ready enabled  (1)       << 0
+ * threshold 8 bytes (1)  << 7
+ * pin      xx       (xx) << 2
+ * pol       0       (0)  << 1   active high
+ * tx-ready enabled  (1)  << 0
+ *
+ * pin is platform specific, PLATFORM_UBX_TXRDY_PIN
  *
  *        thres      |       pin    pol  en
- *  | 0 0 0 0 0 0 0 0 1 | 0 1 1 0 1 | 0 | 1 |
+ *  | 0 0 0 0 0 0 0 0 1 | x x x x x | 0 | 1 |
  */
 
-#define UBX_TXRDY_VAL   0xb5
+/* dev7 uses the SparkFun ublox module, EXTINT is PIO13 */
+#if    PLATFORM_UBX_TXRDY_PIN == 13
+#define UBX_CFG_PRT_SPI_TXRDY_CHK 0x07, 0x4E
+
+/* mm7 uses the ZoeQ module and preserves EXTINT, TXRDY is on PIO15 */
+/* mm7 can also use PIO13 */
+#elif  PLATFORM_UBX_TXRDY_PIN == 15
+#define UBX_CFG_PRT_SPI_TXRDY_CHK 0x0F, 0xDE
+#else
+#error PLATFORM_UBX_TXRDY_PIN not defined
+#endif
+
+#define UBX_TXRDY_VAL   (((PLATFORM_UBX_TXRDY_PIN & 0x1f) << 2) | 0x81)
 
 const uint8_t ubx_cfg_prt_spi_notxrdy[] = {
   UBX_SYNC1,     UBX_SYNC2,
@@ -224,7 +238,7 @@ const uint8_t ubx_cfg_prt_spi_notxrdy[] = {
 /*
  * CFG-PRT-SPI
  *
- * enable txRdy on PIO13, turn off NMEA and RTCM, only UBX.
+ * enable txRdy on PinXX, turn off NMEA and RTCM, only UBX.
  */
 const uint8_t ubx_cfg_prt_spi_txrdy[] = {
   UBX_SYNC1,     UBX_SYNC2,
@@ -239,7 +253,7 @@ const uint8_t ubx_cfg_prt_spi_txrdy[] = {
   0x01, 0x00,                           /* outProtoMask, Ubx */
   0x00, 0x00,                           /* flags, no extendedTxTimeout */
   0x00, 0x00,                           /* reserved */
-  0x07, 0x4E,
+  UBX_CFG_PRT_SPI_TXRDY_CHK,
 };
 
 const uint8_t ubx_cfg_rate_poll[] = {

@@ -59,6 +59,9 @@
 
 /* gps - ublox */
 
+/* define the PIO pin on the GPS used for TXRDY */
+#define PLATFORM_UBX_TXRDY_PIN  13
+
 #define UBX_PWR_PORT            P4
 #define UBX_PWR_PIN             1
 #define UBX_PWR                 BITBAND_PERI(UBX_PWR_PORT->OUT,  UBX_PWR_PIN)
