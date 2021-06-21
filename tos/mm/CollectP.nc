@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2014, 2017-2019: Eric B. Decker
+ * Copyright 2008, 2014, 2017-2019, 2021: Eric B. Decker
  * All rights reserved.
  * Mam-Mark Project
  *
@@ -630,11 +630,15 @@ implementation {
   }
 
 
+  command void Collect.sa_flush() {
+    if (call SSW.start_sa_flush())      /* okay to flush, set up       */
+      call SSW.sa_flush(FALSE, TRUE);   /* just full buffers, free buf */
+  }
+
+
   async event void SysReboot.shutdown_flush() {
     dt_sync_t  s;
     dt_sync_t *sp;
-
-    nop();                              /* BRK */
 
     /*
      * System is going down.  We want SSW to flush any pending buffers.
@@ -665,7 +669,8 @@ implementation {
       }
       dcc.remaining = 0;
     }
-    call SSW.flush_all();
+    call SSW.sa_flush(TRUE, FALSE);     /* flush both FULL and ALLOC */
+                                        /* don't modify buffer state */
   }
 
         event void SS.dblk_stream_full()           { }

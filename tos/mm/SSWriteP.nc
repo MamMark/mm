@@ -310,8 +310,15 @@ implementation {
     error_t err;
 
     /*
-     * This task should only get kicked if not doing anything
+     * If flushing go back to IDLE.
+     * if we've flushed below the group, bail
      */
+    if (ssc.state == SSW_FLUSH) {
+      ssc.state = SSW_IDLE;
+      if (ssc.ssw_num_full < SSW_GROUP)
+        return;
+    }
+
     if (ssc.state != SSW_IDLE || ssc.ssw_num_full < SSW_GROUP)
       call Panic.panic(PANIC_SS, 18, ssc.state, ssc.ssw_num_full, 0, 0);
 
@@ -437,6 +444,19 @@ implementation {
 
 
   /*
+   * start_sa_flush: set up to flush full buffers, via standalone.
+   *
+   * returns TRUE if caller can proceed with the SA flush.
+   */
+  async command bool SSW.start_sa_flush() {
+    if (ssc.state > SSW_FLUSH)          /* idle or flush okay */
+      return FALSE;
+    ssc.state = SSW_FLUSH;
+    return TRUE;
+  }
+
+
+  /*
    * flush all pending SSW buffers
    *
    * 1) flush any FULL buffers
@@ -447,7 +467,7 @@ implementation {
    *
    * we take pains not to tweak memory too much.
    */
-  async command void SSW.flush_all() {
+  async command void SSW.sa_flush(bool flush_all, bool clear) {
     ss_wr_buf_t *handle;
     uint8_t num_full, idx;
     uint32_t dblk;
@@ -458,17 +478,19 @@ implementation {
      */
     if (ssc.majik_a != SSC_MAJIK || ssc.majik_b != SSC_MAJIK)
       return;
+
+    idx = ssc.ssw_out;
+    num_full = ssc.ssw_num_full;
+
+    /* too few or too many, we be gone */
+    if (!num_full || num_full > SSW_NUM_BUFS)
+      return;
+
     if (!call SDsa.inSA()) {
       if (call SDsa.reset())
         return;
     }
 
-    idx = ssc.ssw_out;
-    num_full = ssc.ssw_num_full;
-
-    /* too many, we be gone */
-    if (num_full > SSW_NUM_BUFS)
-      return;
     dblk = call DblkManager.get_dblk_nxt();
     while (num_full) {
       handle = ssw_p[idx];
@@ -478,13 +500,17 @@ implementation {
           handle->buf_state != SS_BUF_STATE_FULL)
         return;                         /* that's weird, somethings wrong */
       call SDsa.write(dblk, handle->buf);
+      if (clear) {
+        handle->stamp = call LocalTime.get();
+        handle->buf_state = SS_BUF_STATE_FREE;
+      };
       idx++;
       if (idx >= SSW_NUM_BUFS)
         idx = 0;
       dblk = call DblkManager.adv_dblk_nxt();
 
       /*
-       * flush_all is a shutdown/reboot kind of thing.  We don't signal
+       * flush is a shutdown/reboot kind of thing.  We don't signal
        * SS.dblk_advanced(last);
        */
 
@@ -494,9 +520,16 @@ implementation {
     ssc.ssw_out = idx;
 
     /*
-     * We have flushed any buffers that are FULL.  We also need to flush
-     * the pending buffer that the Collector is currently filling if any.
+     * We have flushed any buffers that are FULL.
+     *
+     * If flush_all is set then also flush any pending (ALLOC) buffer that
+     * the Collector is currently filling if any.
      */
+    if (!flush_all) {
+      call SDsa.off();
+      return;
+    }
+
     if (idx != ssc.ssw_in)              /* should be next in from collector */
       return;                           /* stop what we are doing, if not   */
     handle = ssw_p[idx];
