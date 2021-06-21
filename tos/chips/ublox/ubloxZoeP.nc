@@ -1172,8 +1172,13 @@ implementation {
 
 
   command error_t GPSControl.wakeup() {
-    if (gpsc_state != GPSC_STANDBY)
-        gps_panic(28, gpsc_state, 0);
+    if (gpsc_state != GPSC_STANDBY) {
+      /* if still on, that's wierd, just bitch */
+      if (gpsc_state == GPSC_ON)
+        gps_warn(31, gpsc_state, 0);
+      else
+        gps_panic(31, gpsc_state, 0);   /* no return */
+    }
     gpsc_change_state(GPSC_WAKE_WAIT, GPSW_WAKEUP);
     gps_wakeup();
     call GPSTxTimer.startOneShot(DT_GPS_WAKE_DELAY);
