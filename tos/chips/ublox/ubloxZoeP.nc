@@ -510,6 +510,7 @@ implementation {
       case GPSC_CONFIG_SAVE_ACK:
       case GPSC_VER_WAIT:
       case GPSC_VER_DONE:
+      case GPSC_WAKE_WAIT:
         gpsc_change_state(gpsc_state, GPSW_PROTO_START);
         return;
       case GPSC_ON:      next_state = GPSC_ON_RX;         break;
@@ -540,6 +541,8 @@ implementation {
       case GPSC_CONFIG_SAVE_ACK:
       case GPSC_VER_WAIT:
       case GPSC_VER_DONE:
+      case GPSC_STANDBY_WAIT:
+      case GPSC_WAKE_WAIT:
         next_state = gpsc_state;
         break;
 
@@ -574,6 +577,7 @@ implementation {
       case GPSC_VER_DONE:
       case GPSC_ON:
       case GPSC_STANDBY_WAIT:
+      case GPSC_WAKE_WAIT:
         gpsc_change_state(gpsc_state, GPSW_PROTO_ABORT);
         return;
 
