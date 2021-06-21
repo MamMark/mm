@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.10.dev1'
+__version__ = '0.4.10.dev2'
 
 
 def emit_default(level, offset, buf, obj, xdir):
@@ -164,6 +164,17 @@ reset_type = {
     8:          'gps_stop',
     9:          'gps_start',
 }
+
+
+def emit_ubx_cfg_otp(level, offset, buf, obj, xdir):
+    ubx  = obj['ubx']
+    xlen = ubx['len'].val
+    if xlen == 0:                       # poll
+        print('poll')
+    elif xlen == 12:
+        print('  {}'.format(obj))
+    else:
+        print('weird')
 
 
 def emit_ubx_cfg_rst(level, offset, buf, obj, xdir):

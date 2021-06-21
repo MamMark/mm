@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.8.dev6'
+__version__ = '0.4.10.dev0'
 
 import binascii
 from   collections  import OrderedDict
@@ -194,6 +194,26 @@ def obj_ubx_cfg_nav5():
         ('ubx',                 obj_ubx_hdr()),
     ]))
 
+
+# ubx_cfg_otp 0641
+# len 0:  poll
+# len 12: data set
+#
+# decoder adds key 'var' if data present.
+
+def obj_ubx_cfg_otp():
+    return aggie(OrderedDict([
+        ('ubx',                 obj_ubx_hdr()),
+    ]))
+
+def obj_ubx_cfg_otp_var():
+    return aggie(OrderedDict([
+        ('subcmd',              atom(('<H', '{}'))),
+        ('word',                atom(('<B', '{}'))),
+        ('section',             atom(('<B', '{}'))),
+        ('hash',                atom(('<I', '0x{:04x}'))),
+        ('data',                atom(('<I', '0x{:04x}'))),
+    ]))
 
 # ubx_cfg_prt 0600
 # len 1:  poll
@@ -656,6 +676,22 @@ def decode_ubx_cfg_navx5(level, offset, buf, obj):
         return consumed
 
     obj['var'] = obj_ubx_cfg_navx5_var();
+    consumed += obj['var'].set(buf[consumed:])
+    return consumed
+
+
+def decode_ubx_cfg_otp(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # variable has been removed, should have a ubx_hdr left ('ubx')
+    # populate it.
+    consumed = obj.set(buf)
+    xlen = obj['ubx']['len'].val
+    if xlen == 0:                       # get
+        return consumed
+
+    obj['var'] = obj_ubx_cfg_otp_var();
     consumed += obj['var'].set(buf[consumed:])
     return consumed
 

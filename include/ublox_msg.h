@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Eric B. Decker
+ * Copyright (c) 2020-2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -151,6 +151,7 @@ enum {
   UBX_CFG_ITFM      = 0x39,     // Jamming/Interference Monitor config.
   UBX_CFG_PM2       = 0x3B,     // Extended power management configuration
   UBX_CFG_GNSS      = 0x3E,     // GNSS system configuration
+  UBX_CFG_OTP       = 0x41,     // One Time Program, write efuse, permanent config
   UBX_CFG_LOGFILTER = 0x47,     // Data Logger Configuration
   UBX_CFG_PWR       = 0x57,     // Pwr control.
   UBX_CFG_GEOFENCE  = 0x69,     // Geofencing configuration
@@ -316,6 +317,7 @@ enum {
   UBX_MON_TXBUF     = 0x08,     // Tx Buffer Status.  tx buffer size/state.
   UBX_MON_HW        = 0x09,     // Hardware Status
   UBX_MON_HW2       = 0x0B,     // Extended Hardware Status
+  UBX_MON_LLC       = 0x0D,     // go get the Low Level Configuration
   UBX_MON_RXR       = 0x21,     // Receiver Status Information
   UBX_MON_PATCH     = 0x27,     // Patches
   UBX_MON_GNSS      = 0x28,     // major GNSS selections
@@ -334,7 +336,7 @@ typedef struct {
   uint8_t   sync2;
   uint8_t   class;                      /* mon       - 0a       */
   uint8_t   id;                         /* rxr       - 21       */
-  uint16_t  len;                        /* 1 byte               */
+  uint16_t  len;                        /* len 2 bytes, value 1 */
   uint8_t   flags;                      /* awake                */
   uint8_t   chkA;
   uint8_t   chkB;

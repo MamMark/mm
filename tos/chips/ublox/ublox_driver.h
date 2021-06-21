@@ -133,6 +133,25 @@ const uint8_t ubx_cfg_inf_poll[] = {
   0x08, 0x1E,
 };
 
+const uint8_t ubx_cfg_otp_dcdc_permanent[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_OTP,
+  0x0c, 0x00,                           /* length, 12 bytes */
+  0x00, 0x00,                           /* subcommand, write */
+  0x03,                                 /* word number */
+  0x1f,                                 /* efuse section */
+  0xc5, 0x90, 0xe1, 0x9f,               /* salted hash */
+  0xff, 0xff, 0xfe, 0xff,               /* 0xfe says perm enable dc-dc conv */\
+  0x45, 0x79,                           /* checksum */
+};
+
+const uint8_t ubx_cfg_otp_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_OTP,
+  0x00, 0x00,
+  0x47, 0xdb,                           /* checksum */
+};
+
 const uint8_t ubx_cfg_prt_poll_spi[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_CFG, UBX_CFG_PRT,
