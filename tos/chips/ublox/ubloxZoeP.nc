@@ -196,6 +196,8 @@ implementation {
          uint32_t m_lost_tx_retries;
          uint32_t m_tx_time_out;        // last tx timeout used
 
+         uint32_t m_last_stall;         // time of last stall
+
 
   void gps_warn(uint8_t where, parg_t p, parg_t p1) {
     call Panic.warn(PANIC_GPS, where, p, p1, 0, 0);
@@ -910,6 +912,11 @@ implementation {
     call CollectEvent.logEvent(DT_EVENT_GPS_PIPE_STALL, gpsc_state, 0, 0, 0);
     prev_state = gpsc_state;
     t5 = call Platform.usecsRaw();
+
+    t1 = call LocalTime.get();
+    if (m_last_stall && (t1 - m_last_stall < 12))
+      gps_panic(25, t1, m_last_stall);
+    m_last_stall = t1;
 
     while (TRUE) {
       t1 = call Platform.usecsRaw();
