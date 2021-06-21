@@ -226,7 +226,7 @@
  *        .3    0pO    nc
  *        .4    0mI    batt_sense A1 (m3)
  *        .5    1pO    gps_csn
- *        .6    0pO    gps_extint0
+ *        .6    0pI    gps_txrdy   (gps_pio13) (extint0)
  *        .7    0pI    gps_txrdy   (gps_pio15)
  *
  * port  6.0    0pO    xxxx     pseudo-red      port  J.0       0pI     LFXIN  (32KiHz) (m1)

@@ -558,7 +558,7 @@ void __pins_init() {
   P4->SEL0 = 0x04;
 
   P5->OUT  = 0x21;
-  P5->DIR  = 0x6D;
+  P5->DIR  = 0x2D;
   P5->SEL0 = 0x10;              /* batt sense, requires switching */
   P5->SEL1 = 0x10;              /* to full analog input           */
 

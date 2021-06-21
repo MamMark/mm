@@ -55,7 +55,7 @@
 /* gps - ublox */
 
 /* define the PIO pin on the GPS used for TXRDY */
-#define PLATFORM_UBX_TXRDY_PIN  15
+#define PLATFORM_UBX_TXRDY_PIN  13
 
 /* also see startup.c(__pins_init), need to turn off PJ.4->SEL0 for DIO */
 #define UBX_PWR_PORT            PJ
@@ -105,11 +105,11 @@
 #define UBX_EXTINT0             BITBAND_PERI(UBX_EXTINT0_PORT->REN, UBX_EXTINT0_PIN)
 
 #define UBX_TXRDY_PORT          P5
-#define UBX_TXRDY_PIN           7
+#define UBX_TXRDY_PIN           6
 #define UBX_TXRDY_REN           BITBAND_PERI(UBX_TXRDY_PORT->REN, UBX_TXRDY_PIN)
 #define UBX_TXRDY_BIT           (1 << UBX_TXRDY_PIN)
 #define UBX_TXRDY_P             (UBX_TXRDY_PORT->IN & UBX_TXRDY_BIT)
-#define UBX_TXRDY_INT_PP        0x57
+#define UBX_TXRDY_INT_PP        0x56
 
 /* radio - si446x - (B2) */
 #define SI446X_CTS_PORT     P4
