@@ -161,12 +161,12 @@ uint8_t ubx_nav_cfgs[] = {
 
 module ubloxZoeP {
   provides {
-    interface Boot as Booted;           /* out Boot */
+    interface Boot as Booted @exactlyonce();           /* out Boot */
     interface GPSControl;
     interface MsgTransmit;
   }
   uses {
-    interface Boot;                     /* in Boot */
+    interface Boot @exactlyonce();                     /* in Boot */
 
     interface ubloxHardware as HW;
     interface Timer<TMilli> as GPSTxTimer;
@@ -462,7 +462,7 @@ implementation {
     atomic {
       switch (gpsc_state) {
         default:
-          gps_panic(16, gpsc_state, 0);
+          gps_panic(17, gpsc_state, 0);
           return;
 
         case GPSC_ON_RX:
@@ -485,7 +485,7 @@ implementation {
     gpsc_in_msg = TRUE;
     switch(gpsc_state) {
       default:
-        gps_panic(17, gpsc_state, 0);
+        gps_panic(18, gpsc_state, 0);
         return;
 
       case GPSC_STANDBY_WAIT:
@@ -896,7 +896,7 @@ implementation {
     gpsc_change_state(GPSC_CONFIG_SAVE_ACK, GPSW_BOOT);
     ubx_get_msgs(104858, TRUE);
     if (gpsc_state != GPSC_CONFIG_DONE)
-      gps_panic(27, 0, 0);
+      gps_panic(24, 0, 0);
   }
 
 
@@ -921,7 +921,7 @@ implementation {
     while (TRUE) {
       t1 = call Platform.usecsRaw();
       if ((t1 - t5) > 524288)
-        gps_panic(27, t1 - t5, 0);
+        gps_panic(26, t1 - t5, 0);
 
       gpsc_change_state(GPSC_RESTART_WAIT, GPSW_PIPE_RESTART);
 
@@ -963,7 +963,7 @@ implementation {
     uint32_t t0, t1;
 
     if (gpsc_state != GPSC_OFF)
-      gps_panic(24, gpsc_state, 0);
+      gps_panic(27, gpsc_state, 0);
 
 //    WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
     t_gps_boot_start = call LocalTime.get();
@@ -971,8 +971,6 @@ implementation {
     /* initialize and disable the interrupt */
     gpsc_change_state(GPSC_CONFIG_BOOT, GPSW_BOOT);
     call CollectEvent.logEvent(DT_EVENT_GPS_BOOT, t_gps_boot_start, 0, 0, 0);
-//    if (!call HW.gps_powered())
-//      call HW.gps_pwr_on();
     call HW.gps_pwr_on();
 #ifdef notdef
     call HW.gps_set_reset();
@@ -997,7 +995,7 @@ implementation {
       t1 = call Platform.usecsRaw();
       if (t1 - t0 > 524288) {
         WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;
-        gps_panic(25, gpsc_state, t1 - t0);
+        gps_panic(28, gpsc_state, t1 - t0);
       }
 
       call HW.gps_clr_cs_delay();
@@ -1043,9 +1041,7 @@ implementation {
        */
       gpsc_change_state(GPSC_CONFIG_CHK, GPSW_BOOT);
       ubx_send_msg((void *) ubx_cfg_prt_poll_spi,  sizeof(ubx_cfg_prt_poll_spi));
-      WIGGLE_EXC;
       ubx_get_msgs(104858, FALSE);
-      WIGGLE_EXC;
 
       /*
        *               CONFIG_TXRDY_ACK     send timed out
@@ -1061,9 +1057,7 @@ implementation {
       gps_warn(13, gpsc_count, 0);
 
     ubx_clean_pipe(104858);
-    WIGGLE_EXC;
     configure_msgs();
-    WIGGLE_EXC;
 
     gpsc_change_state(GPSC_VER_WAIT, GPSW_BOOT);
     ubx_clean_pipe(104858);
@@ -1073,7 +1067,7 @@ implementation {
     while (TRUE) {
       t1 = call Platform.usecsRaw();
       if (t1 - t0 > 104858)
-        gps_panic(26, gpsc_state, 0);
+        gps_panic(29, gpsc_state, 0);
       ubx_send_msg((void *) ubx_mon_ver_poll, sizeof(ubx_mon_ver_poll));
       ubx_get_msgs(104858, TRUE);
       if (gpsc_state == GPSC_VER_DONE)
@@ -1138,7 +1132,7 @@ implementation {
    */
   command error_t GPSControl.standby() {
     if (!gpsc_state || gpsc_state > GPSC_ON_RX_TX)
-      gps_panic(27, gpsc_state, 0);
+      gps_panic(30, gpsc_state, 0);
     call HW.gps_txrdy_int_disable();
     gpsc_count = 10;                    /* try 10 times */
     gpsc_change_state(GPSC_STANDBY_WAIT, GPSW_STANDBY);
