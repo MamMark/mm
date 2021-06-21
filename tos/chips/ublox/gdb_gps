@@ -59,7 +59,7 @@ display gps state
 end
 
 define mb
-__gps_msg_buf_state
+__msg_buf_state
 end
 
 define mx
