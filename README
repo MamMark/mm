@@ -16,10 +16,11 @@ see: (doc directory) 01_Platforms, Notes, Status.txt, and ToDo.
 
 Platforms:
 
-mm3:	msp430f1611 (prototype)
-mm4:	msp430f2618 (prototype)
+mm3:	msp430f1611  (prototype)
+mm4:	msp430f2618  (prototype)
 mm5a:	msp430f5438a (prototype)
-mm6a:   msp432p401r (prototype and production)
+mm6a:   msp432p401r  (prototype)
+mm7:    msp432p401r  (prototype/production)
 
 
 Other development platforms:
@@ -28,10 +29,12 @@ the exp5438 is TI's MSP-EXP430F5438 development board.
 
 exp5438_5t:     dev board with various sensors
 exp5438_gps:    dev board with gps and radio
+exp_msp432      main tree msp432 based development board
 dev6a:          msp432p401r development board
+dev7:           msp432p401r development board for mm7 development
 
 
-Centralized repositories are hosted at github.com.  github:tinyprod/prod
+Centralized repositories are hosted at github.com.  gh:tinyprod/prod
 and gh:tp-freeforall/prod are downstream stable and development
 (respective) versions of the T2 core source.  While gh:MamMark/mm hosts
 the main body of the MamMark source.  Detail on tinyprod and tp-freeforall
@@ -66,5 +69,6 @@ obtaining the source code.
 *---------------------------------BINFIN----------------------------
 NOTE: binfin tool is required.  The binfin tool must be installed.  This
     tool is supplied in this branch and is installed with:
-        cd tools/utils/binfin
-        python setup.py install
+
+    cd tools/utils/binfin
+    python setup.py install
