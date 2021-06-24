@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, 2017-2019, Eric B. Decker
+ * Copyright (c) 2008, 2010, 2017-2019, 2021, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -191,7 +191,7 @@ implementation {
     ssc.ssw_num_full++;
     if (ssc.ssw_num_full > ssc.ssw_max_full)
       ssc.ssw_max_full = ssc.ssw_num_full;
-    if (ssc.state == SSW_IDLE && ssc.ssw_num_full >= SSW_GROUP)
+    if (ssc.state <= SSW_FLUSH && ssc.ssw_num_full >= SSW_GROUP)
       post SSWriter_task();
     ssc.ssw_in++;
     if (ssc.ssw_in >= SSW_NUM_BUFS)
