@@ -235,6 +235,8 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
    * When in COLLECT the chip should be listening.
    */
 
+  void txq_adv_restart();
+
   uint8_t txq_adv(uint8_t idx) {
     idx++;
     if (idx >= MAX_GPS_TXQ)
@@ -277,7 +279,9 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
     return SUCCESS;
   }
 
-  event void MsgTransmit.send_done(error_t result) { }
+  event void MsgTransmit.send_done(error_t result) {
+    txq_adv_restart();
+  }
 
   error_t txq_enqueue(uint8_t *gps_msg) {
     if (gmcb.txq_len == 0) {            /* empty queue */
@@ -345,8 +349,14 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
-  void enqueue_entry_msgs() { }
-  void enqueue_exit_msgs()  { }
+  void enqueue_entry_msgs() {
+    txq_enqueue((void *) ubx_nav_orb_poll);
+    /* the queue will get started once the wakeup completes */
+  }
+
+  void enqueue_exit_msgs()  {
+    txq_send((void *) ubx_nav_orb_poll);
+  }
 
 
   void verify_gmcb() {
@@ -405,7 +415,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       cycle_start = call MajorTimer.getNow();
       call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
       call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_START, ncycles, 0, cycle_start, 0);
-      txq_start();
+      txq_send((void *) ubx_nav_orb_poll);      /* boot -> boot, doesn't enqueue */
     } else {                            /* otherwise just do and SLEEP delay */
       call CollectEvent.logEvent(DT_EVENT_GPS_BOOT_SLEEP, ncycles, 0, cycle_start, 0);
       major_change_state(GMS_MAJOR_SLEEP, MON_EV_BOOT);
@@ -547,14 +557,12 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
             break;                          /* ignore request   */
 
           case GMS_MAJOR_SLEEP:
-            call GPSControl.wakeup();
-            /* fall through */
-
           case GMS_MAJOR_SATS_STARTUP:
           case GMS_MAJOR_SATS_COLLECT:
           case GMS_MAJOR_TIME_COLLECT:
-            call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
             major_change_state(GMS_MAJOR_CYCLE, MON_EV_CYCLE);
+            call MajorTimer.startOneShot(GPS_MON_MAX_CYCLE_TIME);
+            call GPSControl.wakeup();
             break;
         }
         break;
@@ -706,14 +714,10 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       call CollectEvent.logEvent(ev,                     fix_count,
                 delta, fix_sum, fix_sum/fix_count);
 
-      major_change_state(GMS_MAJOR_SLEEP, MON_EV_FIX);
-      call GPSControl.standby();
+      major_change_state(GMS_MAJOR_SLEEP_DELAY, MON_EV_FIX);
       call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_END, ncycles,
                 delta, totaltime, totaltime/ncycles);
-      cycle_start = 0;
-      gmcb.msg_count = 0;
-      gmcb.fix_seen  = FALSE;
-      call MajorTimer.startOneShot(GPS_MON_SLEEP);
+      call MajorTimer.startOneShot(GPS_MON_SLEEP_DELAY);
     }
   }
 
@@ -1028,6 +1032,15 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         gps_panic(101, gmcb.major_state, MON_EV_TIMEOUT_MAJOR);
         return;
 
+      case GMS_MAJOR_SLEEP_DELAY:
+        major_change_state(GMS_MAJOR_SLEEP, MON_EV_TIMEOUT_MAJOR);
+        cycle_start = 0;
+        gmcb.msg_count = 0;
+        gmcb.fix_seen  = FALSE;
+        call GPSControl.standby();
+        call MajorTimer.startOneShot(GPS_MON_SLEEP);
+        return;
+
       case GMS_MAJOR_SLEEP:
         ncycles++;
         cycle_start = call MajorTimer.getNow();
@@ -1055,16 +1068,12 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
         nofix_sum += delta;
         totaltime += delta;
 
-        major_change_state(GMS_MAJOR_SLEEP, MON_EV_TIMEOUT_MAJOR);
-        call GPSControl.standby();
+        major_change_state(GMS_MAJOR_SLEEP_DELAY, MON_EV_TIMEOUT_MAJOR);
         call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_NONE, nofix_count,
                 delta, nofix_sum, nofix_sum/nofix_count);
         call CollectEvent.logEvent(DT_EVENT_GPS_CYCLE_END,  ncycles,
                 delta, totaltime, totaltime/ncycles);
-        cycle_start = 0;
-        gmcb.msg_count = 0;
-        gmcb.fix_seen  = FALSE;
-        call MajorTimer.startOneShot(GPS_MON_SLEEP);
+        call MajorTimer.startOneShot(GPS_MON_SLEEP_DELAY);
         return;
     }
   }
@@ -1107,10 +1116,14 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
+  event void GPSControl.wakeupDone() {
+    txq_start();
+  }
+
+
   event void Collect.collectBooted()    { }
   event void GPSControl.gps_shutdown()  { }
   event void GPSControl.standbyDone()   { }
-  event void GPSControl.wakeupDone()    { }
   event void GPSControl.gps_booted()    { }
   event void GPSControl.gps_boot_fail() { }
   async event void Panic.hook()         { }

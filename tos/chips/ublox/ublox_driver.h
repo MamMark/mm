@@ -325,6 +325,14 @@ const uint8_t ubx_mon_ver_poll[] = {
 };
 
 
+const uint8_t ubx_nav_orb_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_NAV, UBX_NAV_ORB,
+  0x00, 0x00,                           /* length, 0, poll */
+  0x35, 0xa0,
+};
+
+
 const uint8_t ubx_rxm_pmreq_backup_0[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_RXM, UBX_RXM_PMREQ,

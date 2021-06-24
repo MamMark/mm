@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 Eric B. Decker
+ * Copyright (c) 2017-2019, 2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -107,13 +107,14 @@ typedef enum mon_events {
 
 
 typedef enum {
-  GMS_MAJOR_BOOT           = 0,         /* boot value              */
-  GMS_MAJOR_SLEEP          = 1,         /* sleeping                */
-  GMS_MAJOR_CYCLE          = 2,         /* simple fix cycle        */
-  GMS_MAJOR_SATS_STARTUP   = 3,         /* SATS Startup, Collect   */
-  GMS_MAJOR_SATS_COLLECT   = 4,         /* SATS Collection         */
-  GMS_MAJOR_TIME_COLLECT   = 5,         /* TIME sync Collection    */
-  GMS_MAJOR_MAX            = 5,
+  GMS_MAJOR_BOOT           = 0,         /* booting value,  cycle   */
+  GMS_MAJOR_SLEEP_DELAY    = 1,         /* delayed entry to sleep  */
+  GMS_MAJOR_SLEEP          = 2,         /* sleeping                */
+  GMS_MAJOR_CYCLE          = 3,         /* simple fix cycle        */
+  GMS_MAJOR_SATS_STARTUP   = 4,         /* SATS Startup, Collect   */
+  GMS_MAJOR_SATS_COLLECT   = 5,         /* SATS Collection         */
+  GMS_MAJOR_TIME_COLLECT   = 6,         /* TIME sync Collection    */
+  GMS_MAJOR_MAX            = 6,
 } gpsm_major_state_t;                   /* gps monitor major state */
 
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Eric B. Decker
+# Copyright (c) 2018-2019, 2021 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,7 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.4.8.dev1'
+__version__ = '0.4.10.dev0'
 
 __all__ = [
     'gps_cmd_name',
@@ -177,18 +177,20 @@ def gps_mon_event_name(mon_ev):
 # gps monitor states - major
 gps_mon_majors = {
     'boot':             0,
-    'sleep':            1,
-    'cycle':            2,
-    'sats_startup':     3,
-    'sats_collect':     4,
-    'time_collect':     5,
+    'sleep_delay':      1,
+    'sleep':            2,
+    'cycle':            3,
+    'sats_startup':     4,
+    'sats_collect':     5,
+    'time_collect':     6,
 
     0:                  'boot',
-    1:                  'sleep',
-    2:                  'cycle',
-    3:                  'sats_startup',
-    4:                  'sats_collect',
-    5:                  'time_collect',
+    1:                  'sleep_delay',
+    2:                  'sleep',
+    3:                  'cycle',
+    4:                  'sats_startup',
+    5:                  'sats_collect',
+    6:                  'time_collect',
 }
 
 def gps_mon_major_name(major_state):
