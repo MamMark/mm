@@ -263,8 +263,8 @@ def print_hourly(rtctime):
     set_last(rt)
     if pstamp:
         print('---                      '
-              '0.{:06d} {}/{}/{} {}:00 ({}) UTC'.format(
-            0, rt['year'], rt['mon'], rt['day'], rt['hr'], rt['dow']))
+              '0.{:06d} {:4d}{:02d}{:02d} T {:02d}:00 ({}) UTC'.format(
+                  0, rt['year'].val, rt['mon'].val, rt['day'].val, rt['hr'].val, rt['dow'].val))
 
 
 def dt_name(rtype):
