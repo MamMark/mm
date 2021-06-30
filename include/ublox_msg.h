@@ -34,6 +34,9 @@
  *
  * Bottom line, any multibyte fields must extracted byte by byte and properly
  * assembled.
+ *
+ * Values are documented in u-blox8-M8_ReceiverDescrProtSpec (UBX-13003221),
+ * version 24.  Additional values have been extracted from ucenter 20.06.01.
  */
 
 #ifndef PACKED
@@ -136,24 +139,36 @@ enum {
   UBX_CFG_INF       = 0x02,     // Information, poll or information
   UBX_CFG_RST       = 0x04,     // Reset Receiver
   UBX_CFG_DAT       = 0x06,     // Set/Get User-defined Datum
+  UBX_CFG_TP        = 0x07,     // Time Pulse config
   UBX_CFG_RATE      = 0x08,     // Nav/Meas Rate Settings. (port baud rates).
   UBX_CFG_CFG       = 0x09,     // Configuration control.
+  UBX_CFG_FXN       = 0x0E,     // Fix Now Mode
   UBX_CFG_RXM       = 0x11,     // RXM configuration
+  UBX_CFG_EKF       = 0x12,     // EKF
   UBX_CFG_ANT       = 0x13,     // Antenna Control Settings
   UBX_CFG_SBAS      = 0x16,     // SBAS configuration
   UBX_CFG_NMEA      = 0x17,     // Extended NMEA config V1
   UBX_CFG_USB       = 0x1B,     // USB Configuration
+  UBX_CFG_TMODE     = 0x1D,     // Time Mode
   UBX_CFG_ODO       = 0x1E,     // Odometer
   UBX_CFG_NAVX5     = 0x23,     // Navigation Engine Expert Settings
   UBX_CFG_NAV5      = 0x24,     // Navigation Engine Settings.
+  UBX_CFG_ESFGWT    = 0x29,     // ESF (external sensor fusion), gyro + wheeltick
   UBX_CFG_TP5       = 0x31,     // Time Pulse Parameters
+  UBX_CFG_PM        = 0x32,     // Power Management
   UBX_CFG_RINV      = 0x34,     // Remote Inventory
   UBX_CFG_ITFM      = 0x39,     // Jamming/Interference Monitor config.
   UBX_CFG_PM2       = 0x3B,     // Extended power management configuration
+  UBX_CFG_TMODE2    = 0x3D,     // Time Mode 2
   UBX_CFG_GNSS      = 0x3E,     // GNSS system configuration
   UBX_CFG_OTP       = 0x41,     // One Time Program, write efuse, permanent config
   UBX_CFG_LOGFILTER = 0x47,     // Data Logger Configuration
-  UBX_CFG_PWR       = 0x57,     // Pwr control.
+  UBX_CFG_TXSLOT    = 0x53,     // Tx Time Slots
+  UBX_CFG_PWR       = 0x57,     // Pwr control
+  UBX_CFG_HNR       = 0x5C,     // High Nav Rate
+  UBX_CFG_ESRC      = 0x60,     // External SRC
+  UBX_CFG_DOSC      = 0x61,     // Disciplined Oscillator
+  UBX_CFG_SMGR      = 0x62,     // Sync Manager Config
   UBX_CFG_GEOFENCE  = 0x69,     // Geofencing configuration
   UBX_CFG_DGNSS     = 0x70,     // DGNSS configuration
   UBX_CFG_TMODE3    = 0x71,     // Time Mode Settings 3.  (Survey In Mode)
@@ -161,6 +176,7 @@ enum {
   UBX_CFG_VALDEL    = 0x8C,     // v27 key/val delete
   UBX_CFG_VALSET    = 0x8A,     // v27 key/val set config
   UBX_CFG_VALGET    = 0x8B,     // v27 key/val get config
+  UBX_CFG_SLAS      = 0x8D,     // SLAS
   UBX_CFG_BATCH     = 0x93,     // Get/set data batching configuration.
 };
 
