@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.10.dev0'
+__version__ = '0.4.10.dev1'
 
 import binascii
 from   collections  import OrderedDict
@@ -580,6 +580,28 @@ def obj_ubx_tim_tp():
     ]))
 
 
+# ubx.len 4 or 8 has cmd
+def obj_ubx_upd_sos_4():
+    return aggie(OrderedDict([
+        ('cmd',       atom(('<B',  '{}'))),
+        ('reserved1', atom(('3s',  '{}', binascii.hexlify))),
+    ]))
+
+# ubx.len 8 has rsp too
+def obj_ubx_upd_sos_8():
+    return aggie(OrderedDict([
+        ('cmd',       atom(('<B',  '{}'))),
+        ('reserved1', atom(('3s',  '{}', binascii.hexlify))),
+        ('rsp',       atom(('<B',  '{}'))),
+        ('reserved2', atom(('3s',  '{}', binascii.hexlify))),
+    ]))
+
+def obj_ubx_upd_sos():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
+    ]))
+
+
 ########################################################################
 #
 # Ublox Decoders
@@ -779,6 +801,28 @@ def decode_ubx_rxm_pmreq(level, offset, buf, obj):
 
     if xlen == 16:                       # version and wakeupSources
         obj['var'] = obj_ubx_rxm_pmreq_16();
+        consumed += obj['var'].set(buf[consumed:])
+        return consumed
+
+    return consumed
+
+
+def decode_ubx_upd_sos(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # variable has been removed, should have a ubx_hdr left ('ubx')
+    # populate it.
+    consumed = obj.set(buf)
+    xlen = obj['ubx']['len'].val
+
+    if xlen == 4:
+        obj['var'] = obj_ubx_upd_sos_4();
+        consumed += obj['var'].set(buf[consumed:])
+        return consumed
+
+    if xlen == 8:
+        obj['var'] = obj_ubx_upd_sos_8();
         consumed += obj['var'].set(buf[consumed:])
         return consumed
 

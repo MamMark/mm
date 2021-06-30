@@ -51,6 +51,8 @@ ubx.cid_table[0x0624]   = (decode_ubx_cfg_nav5, [ emit_ubx_cfg_nav5 ],     obj_u
 
 ubx.cid_table[0x0641]   = (decode_ubx_cfg_otp, [ emit_ubx_cfg_otp ],       obj_ubx_cfg_otp(),         'cfg/otp',      'obj_ubx_cfg_otp')
 
+ubx.cid_table[0x0914]   = (decode_ubx_upd_sos, [ emit_ubx_upd_sos ],       obj_ubx_upd_sos(),         'upd/sos',      'obj_ubx_upd_sos')
+
 ubx.cid_table[0x0a04]   = (decode_null,        None,                       None,                      'mon/ver',      'none')
 ubx.cid_table[0x0a09]   = (decode_ubx_mon_hw,  [ emit_ubx_mon_hw ],        obj_ubx_mon_hw(),          'mon/hw',       'obj_ubx_mon_hw')
 
@@ -125,8 +127,6 @@ ubx.cid_table[0x068A]   = (decode_null, None, None, 'cfg/valset',       'none')
 ubx.cid_table[0x068B]   = (decode_null, None, None, 'cfg/valget',       'none')
 ubx.cid_table[0x068D]   = (decode_null, None, None, 'cfg/slas',         'none')
 ubx.cid_table[0x0693]   = (decode_null, None, None, 'cfg/batch',        'none')
-
-ubx.cid_table[0x0914]   = (decode_null, None, None, 'upd/sos',          'none')
 
 ubx.cid_table[0x0a02]   = (decode_null, None, None, 'mon/io',           'none')
 ubx.cid_table[0x0a06]   = (decode_null, None, None, 'mon/msgpp',        'none')

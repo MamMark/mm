@@ -532,3 +532,60 @@ def emit_ubx_tim_tp(level, offset, buf, obj, xdir):
         towMS, fstr, raim, towSubMS, qErr, week, flags, refInfo, utcstd, timeref))
     if level >= 1:
         print('  {}'.format(obj))
+
+
+upd_sos_cmd = {
+    0:  'create',
+    1:  'clear',
+    2:  'sos_ack',
+    3:  'restored',
+}
+
+upd_sos_create_ack = {
+    0:  'nack',
+    1:  'ack',
+}
+
+upd_sos_restore_rsp = {
+    0:  'unknown',
+    1:  'failed',
+    2:  'restored',
+    3:  'no backup',
+}
+
+def emit_ubx_upd_sos(level, offset, buf, obj, xdir):
+    ubx  = obj['ubx']
+    xlen = ubx['len'].val
+    if xlen == 0:                       # poll
+        if xdir:
+            print('poll')
+        else:
+            print('poll, weird')
+    elif xlen == 4:
+        cmd     = obj['var']['cmd'].val
+        cmd_str = upd_sos_cmd.get(cmd, 'cmd/{:d}'.format(cmd))
+        if xdir == -1:
+            xtype = 'cmd'
+        else:
+            xtype   = 'cmd' if xdir else 'rsp'
+        print('{:3s} {:s}'.format(xtype, cmd_str))
+    elif xlen == 8:
+        cmd     = obj['var']['cmd'].val
+        cmd_str = upd_sos_cmd.get(cmd, 'cmd/{:d}'.format(cmd))
+        rsp     = obj['var']['rsp'].val
+        if cmd == 2:
+            # create ack
+            rsp_str = upd_sos_create_ack.get(rsp, 'rsp/{:d}'.format(rsp))
+        elif cmd == 3:
+            rsp_str = upd_sos_restore_rsp.get(rsp, 'rsp/{:d}'.format(rsp))
+        else:
+            rsp_str = 'rsp/{:d}'.format(rsp)
+        if xdir == -1:
+            xtype = 'rsp'
+        else:
+            xtype = 'cmd' if xdir else 'rsp'
+        print('{:3s} {:s} {:s}'.format(xtype, cmd_str, rsp_str))
+    else:
+        print('weird')
+    if level >= 1:
+        print('  {}'.format(obj))

@@ -385,7 +385,7 @@ def dump(args):
                             print('*** no emitters defined for cid x{:04x}'.format(cid))
                     else:
                         for e in emitters:
-                            e(verbose, rec_offset, rec_buf, obj, 0)
+                            e(verbose, rec_offset, rec_buf, obj, -1)
                 except struct.error:
                     print()
                     print('*** decode error: (len: {}, cid: x{:04x} {}, '
