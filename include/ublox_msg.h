@@ -728,4 +728,36 @@ typedef struct {
 } PACKED ubx_tim_tp_t;
 
 
+/* UBX_CLASS_UPD (09) */
+enum {
+  UBX_UPD_SOS          = 0x14,          /* save on shutdown     */
+  UBX_UPD_SOS_CREATE   = 0,
+  UBX_UPD_SOS_CLEAR    = 1,
+  UBX_UPD_SOS_ACK      = 2,
+  UBX_UPD_SOS_RESTORED = 3,
+
+  UBX_UPD_SOS_ACK_NACK = 0,
+  UBX_UPD_SOS_ACK_ACK  = 1,
+
+  UBX_UPD_SOS_RSP_UNK  = 0,             /* weird                */
+  UBX_UPD_SOS_RSP_FAIL = 1,             /* nope                 */
+  UBX_UPD_SOS_RSP_OK   = 2,             /* restored             */
+  UBX_UPD_SOS_RSP_NONE = 3,             /* no backup present    */
+};
+
+typedef struct {
+  uint8_t   sync1;
+  uint8_t   sync2;
+  uint8_t   class;                      /* upd     - 09         */
+  uint8_t   id;                         /* sos     - 14         */
+  uint16_t  len;                        /* 4/8 bytes            */
+  uint8_t   cmd;
+  uint8_t   reserved1[3];
+  uint8_t   rsp;
+  uint8_t   reserved2[3];
+  uint8_t   chkA;
+  uint8_t   chkB;
+} PACKED ubx_upd_sos_t;
+
+
 #endif  /* __UBLOX_MSG_H__ */

@@ -273,6 +273,16 @@ const uint8_t ubx_cfg_rst_full_hw[] = {
   0x23, 0x9b,
 };
 
+const uint8_t ubx_cfg_rst_stop_gnss[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_CFG, UBX_CFG_RST,
+  0x04, 0x00,                           /* len 4 bytes */
+  0x00, 0x00,                           /* no clear, hot start if possible */
+  0x08,                                 /* resetMode: 8 gnss stop */
+  0x00,                                 /* reserved */
+  0x16, 0x74,
+};
+
 const uint8_t ubx_cfg_tp5_poll[] = {
   UBX_SYNC1,     UBX_SYNC2,
   UBX_CLASS_CFG, UBX_CFG_TP5,           /* time pulse 0 */
@@ -351,6 +361,32 @@ const uint8_t ubx_tim_tp_poll[] = {
   UBX_CLASS_TIM, UBX_TIM_TP,
   0x00, 0x00,                           /* length, 0 bytes, poll */
   0x0E, 0x37,
+};
+
+
+const uint8_t ubx_upd_sos_create[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_UPD, UBX_UPD_SOS,           /* save on shutdown */
+  0x04, 0x00,                           /* length, 4 bytes  */
+  0x00,                                 /* cmd 0, create    */
+  0x00, 0x00, 0x00,
+  0x21, 0xEC,
+};
+
+const uint8_t ubx_upd_sos_clear[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_UPD, UBX_UPD_SOS,           /* save on shutdown */
+  0x04, 0x00,                           /* length, 4 bytes  */
+  0x01,                                 /* cmd 1, clear     */
+  0x00, 0x00, 0x00,
+  0x22, 0xF0,
+};
+
+const uint8_t ubx_upd_sos_poll[] = {
+  UBX_SYNC1,     UBX_SYNC2,
+  UBX_CLASS_UPD, UBX_UPD_SOS,           /* save on shutdown */
+  0x00, 0x00,                           /* length, 0 bytes  */
+  0x22, 0xF0,
 };
 
 
