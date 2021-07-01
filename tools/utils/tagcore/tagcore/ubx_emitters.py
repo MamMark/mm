@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.10.dev2'
+__version__ = '0.4.10.dev3'
 
 
 def emit_default(level, offset, buf, obj, xdir):
@@ -225,12 +225,19 @@ def emit_ubx_mon_hw(level, offset, buf, obj, xdir):
 
 
 def emit_ubx_nav_aopstatus(level, offset, buf, obj, xdir):
-    iTOW    = obj['iTOW'].val
-    aopCfg  = obj['aopCfg'].val
-    status  = obj['status'].val
-    cfgstr  = 'enabled' if aopCfg & 1 else 'disabled'
-    statstr = 'running' if status     else 'idle'
-    print('  {:9d}  {:s}  {:s}'.format(iTOW, cfgstr, statstr))
+    ubx  = obj['ubx']
+    xlen = ubx['len'].val
+    if xlen == 0:                       # poll
+        print('poll')
+    elif xlen == 16:
+        iTOW    = obj['var']['iTOW'].val
+        aopCfg  = obj['var']['aopCfg'].val
+        status  = obj['var']['status'].val
+        cfgstr  = 'enabled' if aopCfg & 1 else 'disabled'
+        statstr = 'running' if status     else 'idle'
+        print('  {:9d}  {:s}  {:s}'.format(iTOW, cfgstr, statstr))
+    else:
+        print('  weird len')
     if level >= 1:
         print('  {}'.format(obj))
 

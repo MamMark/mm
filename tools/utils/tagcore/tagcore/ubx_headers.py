@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.10.dev1'
+__version__ = '0.4.10.dev2'
 
 import binascii
 from   collections  import OrderedDict
@@ -291,15 +291,21 @@ def obj_ubx_mon_hw_data():
 
 
 # ubx_nav_aopstatus 0160
-# len 16
+# len 0  poll
+# len 16 stuff
 
-def obj_ubx_nav_aopstatus():
+def obj_ubx_nav_aopstatus_16():
     return aggie(OrderedDict([
-        ('ubx',         obj_ubx_hdr()),
         ('iTOW',        atom(('<I', '{}'))),
         ('aopCfg',      atom(('<B', '{}'))),
         ('status',      atom(('<B', '0x{:02x}'))),
         ('reserved1',   atom(('10s', '{}', binascii.hexlify))),
+    ]))
+
+
+def obj_ubx_nav_aopstatus():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
     ]))
 
 
@@ -752,6 +758,27 @@ def decode_ubx_mon_hw(level, offset, buf, obj):
 
     obj['var'] = obj_ubx_mon_hw_data();
     consumed += obj['var'].set(buf[consumed:])
+    return consumed
+
+
+def decode_ubx_nav_aopstatus(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # 'var' section removed, should have a obj_ubx_cfg_ant left
+    # populate it.  Length 0 is a poll.  16 has data.
+    consumed = obj.set(buf)
+    xlen = obj['ubx']['len'].val
+
+    # poll
+    if xlen == 0:
+        return consumed
+
+    if xlen == 16:
+        obj['var'] = obj_ubx_nav_aopstatus_16();
+        consumed += obj['var'].set(buf[consumed:])
+        return consumed
+
     return consumed
 
 

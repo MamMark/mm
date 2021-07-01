@@ -27,7 +27,8 @@ ubx.cid_table[0x0126]   = (decode_default,     [ emit_ubx_nav_timels ],    obj_u
 ubx.cid_table[0x0134]   = (decode_null,        None,                       None,                      'nav/orb',      'none')
 ubx.cid_table[0x0135]   = (decode_ubx_nav_sat, [ emit_ubx_nav_sat ],       obj_ubx_nav_sat(),         'nav/sat',      'obj_ubx_nav_sat')
 
-ubx.cid_table[0x0160]   = (decode_default,     [ emit_ubx_nav_aopstatus ], obj_ubx_nav_aopstatus(),   'nav/aopstat',  'obj_ubx_nav_aopstatus')
+ubx.cid_table[0x0160]   = (decode_ubx_nav_aopstatus,
+                                               [ emit_ubx_nav_aopstatus ], obj_ubx_nav_aopstatus(),   'nav/aopstat',  'obj_ubx_nav_aopstatus')
 ubx.cid_table[0x0161]   = (decode_default,     [ emit_default ],           obj_ubx_nav_eoe(),         'nav/eoe',      'obj_ubx_nav_eoe')
 
 ubx.cid_table[0x0241]   = (decode_ubx_rxm_pmreq, [ emit_ubx_rxm_pmreq ],   obj_ubx_rxm_pmreq(),       'rxm/pmreq',    'obj_ubx_rxm_pmreq')
