@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Eric B. Decker
+ * Copyright (c) 2017-2018, 2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -214,7 +214,6 @@ implementation {
    * control cells, imcb, ImageManager Control Block
    */
   imcb_t imcb;
-  bool   do_erase, erase_panic;
 
   void im_panic(uint8_t where, parg_t p0, parg_t p1) {
     call Panic.panic(PANIC_IM, where, p0, p1, 0, 0);
@@ -523,22 +522,6 @@ implementation {
 
   event void Boot.booted() {
     error_t err;
-
-#ifdef IM_ERASE_ENABLE
-    /*
-     * FS.erase is split phase and will grab the SD,  We will wait on the
-     * erase when we request.  The FS/erase will complete and then we
-     * will get the grant.
-     */
-    nop();                              /* BRK */
-    if (do_erase) {
-      do_erase = 0;
-      if (erase_panic)
-        call FS.erase(FS_LOC_PANIC);
-      else
-        call FS.erase(FS_LOC_IMAGE);
-    }
-#endif
 
     imcb.region_start_blk = call FS.area_start(FS_LOC_IMAGE);
     imcb.region_end_blk   = call FS.area_end(FS_LOC_IMAGE);

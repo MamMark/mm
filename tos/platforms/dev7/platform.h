@@ -71,9 +71,8 @@
 extern uint32_t __platform_usecsRaw();
 
 #define TRACE_RESOURCE
+
 #define FS_ENABLE_ERASE
-#define IM_ERASE_ENABLE
-#define DBLK_ERASE_ENABLE
 
 #define SI446x_HW_CTS
 
