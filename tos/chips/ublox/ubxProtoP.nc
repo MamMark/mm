@@ -407,7 +407,6 @@ implementation {
           ubx_ptr = NULL;
           ubx_change_state(UBXS_START);
           ubx_stats.complete++;
-          WIGGLE_EXC; WIGGLE_EXC;
           signal GPSProto.msgEnd();
           call MsgBuf.msg_complete();
           return TRUE;
@@ -421,13 +420,11 @@ implementation {
            */
           if (byte < 0x20 || byte > 0x7e) {
             /* oops, bad byte */
-//            WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC;
             ubx_restart_abort(6);
             break;
           }
           if (ubx_nmea_len >= (MAX_NMEA_MSG - 6)) {
             /* oops too big. */
-//            WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC;
             ubx_other_stats.nmea_too_big++;
             ubx_restart_abort(7);
             break;
@@ -468,7 +465,6 @@ implementation {
             ubx_ptr_prev = ubx_ptr;
             ubx_ptr = NULL;
             ubx_change_state(UBXS_NMEA_0D);
-            WIGGLE_EXC; WIGGLE_EXC;
             signal GPSProto.msgEnd();
             call MsgBuf.msg_complete();
             return TRUE;

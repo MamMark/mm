@@ -275,7 +275,6 @@ implementation {
 
     hang_count = 64;
     call HW.gps_txrdy_int_disable();
-//    WIGGLE_EXC; WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC; WIGGLE_EXC;
     do {
       if (!m_tx_buf && !UBX_TXRDY_P) {
         /*
@@ -331,7 +330,6 @@ implementation {
           if (hang_count)
             continue;
 
-          WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL;
           signal HW.spi_pipe_stall();
 
           /*
@@ -355,7 +353,6 @@ implementation {
 
 
   command void HW.spi_pipe_restart() {
-//    WIGGLE_TELL; WIGGLE_EXC; WIGGLE_TELL;
     driver_task_post = 1;
     post driver_task();
   }
@@ -373,7 +370,6 @@ implementation {
   command void HW.gps_txrdy_int_enable(uint32_t where)  {
     atomic {
       if (UBX_TXRDY_P) {
-//        WIGGLE_TELL; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_TELL;
         gps_warn(199, where);
         driver_task_post = 2;
         post driver_task();
@@ -399,14 +395,12 @@ implementation {
     m_tx_buf = ptr;
     m_tx_len = len;
     m_tx_idx = 0;
-//    WIGGLE_TELL; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_TELL;
     driver_task_post = 3;
     post driver_task();
   }
 
 
   async event void TxRdyIRQ.fired() {
-//    WIGGLE_TELL; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_TELL;
     driver_task_post = 4;
     post driver_task();
   }

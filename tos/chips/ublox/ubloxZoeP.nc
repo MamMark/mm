@@ -305,7 +305,6 @@ implementation {
       gps_warn(10, gpsc_state, 0);
     }
     call CollectEvent.logEvent(DT_EVENT_GPS_TURN_OFF, 0, 0, 0, 0);
-//    WIGGLE_TELL; WIGGLE_TELL;
     gpsc_change_state(GPSC_PWR_DWN_WAIT, GPSW_TURNOFF);
     call GPSRxTimer.stop();
     call GPSTxTimer.startOneShot(DT_GPS_PWR_DWN_TO);
@@ -427,7 +426,6 @@ implementation {
            * to handle multiple segments.   We log what we've seen.   If too many segments
            * blow up.
            */
-          WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC;
           gps_warn(11, gpsc_count, txrdy);
           if (--gpsc_count == 0)
             gps_panic(16, gpsc_count, txrdy);
@@ -444,7 +442,6 @@ implementation {
           txrdy = call HW.gps_txrdy();
           if (txrdy) {
             /* we just woke up, strange that txrdy is up, yell */
-            WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC; WIGGLE_EXC;
             gps_warn(12, gpsc_state, txrdy);
           }
           call HW.gps_txrdy_int_enable(18);
@@ -969,7 +966,6 @@ implementation {
     if (gpsc_state != GPSC_OFF)
       gps_panic(27, gpsc_state, 0);
 
-//    WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL;
     t_gps_boot_start = call LocalTime.get();
 
     /* initialize and disable the interrupt */
@@ -997,10 +993,8 @@ implementation {
     t0 = call Platform.usecsRaw();
     while (TRUE) {
       t1 = call Platform.usecsRaw();
-      if (t1 - t0 > 524288) {
-        WIGGLE_TELL; WIGGLE_TELL; WIGGLE_TELL; WIGGLE_EXC; WIGGLE_EXC; WIGGLE_EXC;
+      if (t1 - t0 > 524288)
         gps_panic(28, gpsc_state, t1 - t0);
-      }
 
       call HW.gps_clr_cs_delay();
       call HW.gps_set_cs();
@@ -1020,7 +1014,6 @@ implementation {
       gpsc_change_state(GPSC_CONFIG_TXRDY_ACK, GPSW_BOOT);
       call ubxProto.restart();
       ubx_send_msg((void *) ubx_cfg_prt_spi_txrdy, sizeof(ubx_cfg_prt_spi_txrdy));
-      WIGGLE_EXC;
 
       /*
        * note that we could be receiving a packet from the ubx chip.  But the
@@ -1031,7 +1024,6 @@ implementation {
        */
       call ubxProto.restart();
       ubx_get_msgs(104858, FALSE);
-      WIGGLE_EXC;
 
       /*
        * At this point we should have a clean pipe.  We don't know if the ublox
@@ -1065,7 +1057,6 @@ implementation {
 
     gpsc_change_state(GPSC_VER_WAIT, GPSW_BOOT);
     ubx_clean_pipe(104858);
-    ubx_send_msg((void *) ubx_mon_hw_poll, sizeof(ubx_mon_hw_poll));
     t0 = call Platform.usecsRaw();
     gpsc_count = 1;
     while (TRUE) {
