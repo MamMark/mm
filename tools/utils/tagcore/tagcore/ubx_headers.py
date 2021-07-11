@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.10.dev2'
+__version__ = '0.4.10.dev3'
 
 import binascii
 from   collections  import OrderedDict
@@ -107,6 +107,27 @@ def obj_ubx_cfg_cfg():
         ('loadMask',  atom(('<I', '{:08X}'))),
     ]))
 
+
+# ubx_cfg_inf 0602
+# len 1: poll, protocol byte
+# len n * 10: n ports
+
+def obj_ubx_cfg_inf_poll():
+    return aggie(OrderedDict([
+        ('protoId',   atom(('<B', '{:02X}'))),
+    ]))
+
+def obj_ubx_cfg_inf_port():
+    return aggie(OrderedDict([
+        ('protoId',   atom(('<B', '{:02X}'))),
+        ('reserved1', atom(('3s', '{}', binascii.hexlify))),
+        ('infMask',   atom(('6s', '{}', binascii.hexlify))),
+    ]))
+
+def obj_ubx_cfg_inf():
+    return aggie(OrderedDict([
+        ('ubx',        obj_ubx_hdr()),
+    ]))
 
 # ubx_cfg_msg 0601
 # len 2: poll
@@ -648,6 +669,27 @@ def decode_ubx_cfg_cfg(level, offset, buf, obj):
         # need to get devMask as a 'var' section
         obj['var'] = obj_ubx_cfg_cfg_devmask();
         consumed += obj['var'].set(buf[consumed:])
+    return consumed
+
+
+def decode_ubx_cfg_inf(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # variable has been removed, should have a ubx_hdr left ('ubx')
+    # populate it.  1st byte after the hdr is the port_id.
+    consumed = obj.set(buf)
+    xlen = obj['ubx']['len'].val
+
+    if xlen == 1:                       # poll
+        obj['var'] = obj_ubx_cfg_inf_poll()
+        consumed += obj['var'].set(buf[consumed:])
+        return consumed
+
+    if xlen == 10:
+        obj['var'] = obj_ubx_cfg_inf_port()
+        consumed += obj['var'].set(buf[consumed:])
+        return consumed
     return consumed
 
 

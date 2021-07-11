@@ -44,6 +44,7 @@ ubx.cid_table[0x0501]   = (decode_default,     [ emit_ubx_ack ],           obj_u
 
 ubx.cid_table[0x0600]   = (decode_ubx_cfg_prt, [ emit_ubx_cfg_prt ],       obj_ubx_cfg_prt(),         'cfg/prt',      'obj_ubx_cfg_prt')
 ubx.cid_table[0x0601]   = (decode_ubx_cfg_msg, [ emit_ubx_cfg_msg ],       obj_ubx_cfg_msg(),         'cfg/msg',      'obj_ubx_cfg_msg')
+ubx.cid_table[0x0602]   = (decode_ubx_cfg_inf, [ emit_ubx_cfg_inf ],       obj_ubx_cfg_inf(),         'cfg/inf',      'obj_ubx_cfg_inf')
 ubx.cid_table[0x0604]   = (decode_default,     [ emit_ubx_cfg_rst ],       obj_ubx_cfg_rst(),         'cfg/rst',      'obj_ubx_cfg_rst')
 ubx.cid_table[0x0609]   = (decode_ubx_cfg_cfg, [ emit_ubx_cfg_cfg ],       obj_ubx_cfg_cfg(),         'cfg/cfg',      'obj_ubx_cfg_cfg')
 ubx.cid_table[0x0613]   = (decode_ubx_cfg_ant, [ emit_ubx_cfg_ant ],       obj_ubx_cfg_ant(),         'cfg/ant',      'obj_ubx_cfg_ant')
@@ -92,7 +93,6 @@ ubx.cid_table[0x0232]   = (decode_null, None, None, 'rxm/rtcm',         'none')
 ubx.cid_table[0x0259]   = (decode_null, None, None, 'rxm/rlm',          'none')
 ubx.cid_table[0x0261]   = (decode_null, None, None, 'rxm/imes',         'none')
 
-ubx.cid_table[0x0602]   = (decode_null, None, None, 'cfg/inf',          'none')
 ubx.cid_table[0x0606]   = (decode_null, None, None, 'cfg/dat',          'none')
 ubx.cid_table[0x0607]   = (decode_null, None, None, 'cfg/tp',           'none')
 ubx.cid_table[0x0608]   = (decode_null, None, None, 'cfg/rate',         'none')

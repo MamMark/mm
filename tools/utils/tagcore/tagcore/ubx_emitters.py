@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.10.dev3'
+__version__ = '0.4.10.dev4'
 
 
 def emit_default(level, offset, buf, obj, xdir):
@@ -115,6 +115,28 @@ def emit_ubx_cfg_prt(level, offset, buf, obj, xdir):
         print('weird  portId: {}  len: {}'.format(port, ubx['len']))
     if level >= 1:
         print('  {}'.format(obj))
+
+
+inf_proto = {
+    0: 'ubx',
+    1: 'nmea',
+}
+
+def emit_ubx_cfg_inf(level, offset, buf, obj, xdir):
+    ubx  = obj['ubx']
+    xlen = ubx['len'].val
+    if xlen == 1:
+        pid  = obj['var']['protoId'].val
+        print('poll  {:s} ({:d})'.format(inf_proto.get(pid, 'unk'), pid))
+    elif xlen == 10:
+        pid  = obj['var']['protoId'].val
+        infmask = bytearray(obj['var']['infMask'].val)
+        print('{:s} ({:d}): {:s}'.format(inf_proto.get(pid, 'unk'), pid,
+                '-'.join('{:02x}'.format(x) for x in infmask)))
+    else:
+        print('unhandled len, {:d}'.format(xlen))
+    if level >= 4:
+        print('  {}'.format(obj), end='')
 
 
 def emit_ubx_cfg_msg(level, offset, buf, obj, xdir):
