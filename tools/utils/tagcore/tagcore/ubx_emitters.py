@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.10.dev4'
+__version__ = '0.4.10.dev5'
 
 
 def emit_default(level, offset, buf, obj, xdir):
@@ -302,26 +302,32 @@ def emit_ubx_nav_posecef(level, offset, buf, obj, xdir):
 
 
 def emit_ubx_nav_pvt(level, offset, buf, obj, xdir):
-    iTOW     = obj['iTOW'].val
-    year     = obj['year'].val
-    month    = obj['month'].val
-    day      = obj['day'].val
-    hour     = obj['hour'].val
-    xmin     = obj['min'].val
-    sec      = obj['sec'].val
-    valid    = obj['valid'].val
-    tacc     = obj['tAcc'].val
-    nano     = obj['nano'].val
-    ftype    = obj['fixType'].val
-    flags    = obj['flags'].val
-    flags2   = obj['flags2'].val
-    numSV    = obj['numSV'].val
-    lon      = obj['lon'].val
-    lat      = obj['lat'].val
-    height   = obj['height'].val
-    hMSL     = obj['hMSL'].val
-    pdop     = obj['pDOP'].val
-    flags3   = obj['flags3'].val
+    ubx     = obj['ubx']
+    xlen    = ubx['len'].val
+    if xlen == 0:                       # poll
+        print('poll')
+        return
+    var      = obj['var']
+    iTOW     = var['iTOW'].val
+    year     = var['year'].val
+    month    = var['month'].val
+    day      = var['day'].val
+    hour     = var['hour'].val
+    xmin     = var['min'].val
+    sec      = var['sec'].val
+    valid    = var['valid'].val
+    tacc     = var['tAcc'].val
+    nano     = var['nano'].val
+    ftype    = var['fixType'].val
+    flags    = var['flags'].val
+    flags2   = var['flags2'].val
+    numSV    = var['numSV'].val
+    lon      = var['lon'].val
+    lat      = var['lat'].val
+    height   = var['height'].val
+    hMSL     = var['hMSL'].val
+    pdop     = var['pDOP'].val
+    flags3   = var['flags3'].val
 
     mrstr    = 'M' if valid & 0x8 else 'm'
     mrstr   += 'R' if valid & 0x4 else 'r'

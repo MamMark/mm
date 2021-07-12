@@ -16,7 +16,7 @@ ubx.cid_table[0x0101]   = (decode_default,     [ emit_ubx_nav_posecef ],   obj_u
 ubx.cid_table[0x0102]   = (decode_default,     [ emit_default ],           obj_ubx_nav_posllh(),      'nav/posllh',   'obj_ubx_nav_posllh')
 ubx.cid_table[0x0103]   = (decode_default,     [ emit_ubx_nav_status ],    obj_ubx_nav_status(),      'nav/status',   'obj_ubx_nav_status')
 ubx.cid_table[0x0104]   = (decode_default,     [ emit_ubx_nav_dop ],       obj_ubx_nav_dop(),         'nav/dop',      'obj_ubx_nav_dop')
-ubx.cid_table[0x0107]   = (decode_default,     [ emit_ubx_nav_pvt ],       obj_ubx_nav_pvt(),         'nav/pvt',      'obj_ubx_nav_pvt')
+ubx.cid_table[0x0107]   = (decode_ubx_nav_pvt, [ emit_ubx_nav_pvt ],       obj_ubx_nav_pvt(),         'nav/pvt',      'obj_ubx_nav_pvt')
 
 ubx.cid_table[0x0120]   = (decode_default,     [ emit_ubx_nav_timegps ],   obj_ubx_nav_timegps(),     'nav/timegps',  'obj_ubx_nav_timegps')
 ubx.cid_table[0x0121]   = (decode_default,     [ emit_ubx_nav_timeutc ],   obj_ubx_nav_timeutc(),     'nav/timeutc',  'obj_ubx_nav_timeutc')

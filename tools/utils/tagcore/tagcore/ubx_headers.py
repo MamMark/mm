@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.10.dev3'
+__version__ = '0.4.10.dev4'
 
 import binascii
 from   collections  import OrderedDict
@@ -146,7 +146,6 @@ def obj_ubx_cfg_msg_rates():
     return aggie(OrderedDict([
         ('rates', atom(('6s', '{}', binascii.hexlify))),
     ]))
-    pass
 
 def obj_ubx_cfg_msg():
     return aggie(OrderedDict([
@@ -432,6 +431,10 @@ def obj_ubx_nav_posllh():
 def obj_ubx_nav_pvt():
     return aggie(OrderedDict([
         ('ubx',         obj_ubx_hdr()),
+    ]))
+
+def obj_ubx_nav_pvt_var():
+    return aggie(OrderedDict([
         ('iTOW',        atom(('<I', '{}'))),
         ('year',        atom(('<H', '{}'))),
         ('month',       atom(('<B', '{}'))),
@@ -460,6 +463,10 @@ def obj_ubx_nav_pvt():
         ('sAcc',        atom(('<I', '{}'))),
         ('headAcc',     atom(('<I', '{}'))),
         ('pDOP',        atom(('<H', '{}'))),
+
+        # flags3 is documented as a X2 (<H) but only the low 5 bits are used
+        # we use it as a byte and subsume the upper byte into the reserved1.
+
         ('flags3',      atom(('<B', '0x{:02x}'))),
         ('reserved1',   atom(('5s', '{}', binascii.hexlify))),
         ('headVeh',     atom(('<i', '{}'))),
@@ -836,6 +843,21 @@ def decode_ubx_nav_orb(level, offset, buf, obj):
     for n in range(numSv):
         obj['var'][n] = obj_ubx_nav_orb_elm()
         consumed += obj['var'][n].set(buf[consumed:])
+    return consumed
+
+
+def decode_ubx_nav_pvt(level, offset, buf, obj):
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # 'var' section removed, should have a obj_ubx_nav_pvt left
+    # populate it.  This will populate the ubx header.
+    consumed = obj.set(buf)
+    xlen = obj['ubx']['len'].val
+    if xlen == 0:               # poll has no data
+        return consumed
+    obj['var'] = obj_ubx_nav_pvt_var();
+    consumed += obj['var'].set(buf[consumed:])
     return consumed
 
 
