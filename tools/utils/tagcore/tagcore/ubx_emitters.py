@@ -27,7 +27,7 @@ from   gps_chip_utils import *
 from   misc_utils     import buf_str
 from   misc_utils     import dump_buf
 
-__version__ = '0.4.10.dev5'
+__version__ = '0.4.10.dev6'
 
 
 def emit_default(level, offset, buf, obj, xdir):
@@ -97,6 +97,50 @@ def emit_ubx_cfg_cfg(level, offset, buf, obj, xdir):
     print('c/s/l:  {:04x}/{:04x}/{:04x}{:s}'.format(clearMask, saveMask, loadMask, devMaskStr))
     if level >= 1:
         print('  {}'.format(obj), end = '')
+
+
+gnss_id = {
+    0: 'gps',
+    1: 'sbas',
+    2: 'gal',
+    3: 'bd',
+    4: 'imes',
+    5: 'qzss',
+    6: 'glo',
+}
+
+def emit_ubx_cfg_gnss(level, offset, buf, obj, xdir):
+    ubx     = obj['ubx']
+    xlen    = ubx['len'].val
+    if xlen == 0:                       # poll
+        print('    poll')
+        return
+    msgver  = obj['hdr']['msgVer'].val
+    if msgver != 0:
+        print('   msgVer {:d} not understood'.format(msgver))
+        return
+    numblks     = obj['hdr']['numConfigBlocks'].val
+    numtrkchhw  = obj['hdr']['numTrkChHw'].val
+    numtrkchuse = obj['hdr']['numTrkChUse'].val
+    print('    hw: {:0d}, use: {:0d}, nblks: {:d}'.format(
+        numtrkchhw, numtrkchuse, numblks))
+    if numblks > 0:
+        print()
+        print('    gId            rsv   max    flags')
+        for blk in range(numblks):
+            gid     = obj['var'][blk]['gnssId'].val
+            restrk  = obj['var'][blk]['resTrkCh'].val
+            maxtrk  = obj['var'][blk]['maxTrkCh'].val
+            flags   = obj['var'][blk]['flags'].val
+            ena     = 'ena' if flags & 1 else 'dis'
+            flags   = flags >> 16
+            print('   {:d}/{:4s}   {:s}    {:2d}     {:2d}     {:04x}'.format(
+                gid, gnss_id.get(gid, 'unk'), ena, restrk, maxtrk, flags))
+        print()
+
+    if level >= 4:
+        print()
+        print('  {}'.format(obj))
 
 
 def emit_ubx_cfg_prt(level, offset, buf, obj, xdir):

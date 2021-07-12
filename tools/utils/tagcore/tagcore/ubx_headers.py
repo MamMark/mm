@@ -22,7 +22,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.10.dev4'
+__version__ = '0.4.10.dev5'
 
 import binascii
 from   collections  import OrderedDict
@@ -105,6 +105,38 @@ def obj_ubx_cfg_cfg():
         ('clearMask', atom(('<I', '{:08X}'))),
         ('saveMask',  atom(('<I', '{:08X}'))),
         ('loadMask',  atom(('<I', '{:08X}'))),
+    ]))
+
+
+# ubx_cfg_gnss 063e
+# len 0, poll/get
+# len 4, hdr
+# len 4 + 8 * numConfigBlocks
+#
+# var section has hdr + numConfigBlocks, indexed by [0..numConfigBlocks-1]
+# decoder adds 'var' section
+
+def obj_ubx_cfg_gnss_elm():
+    return aggie(OrderedDict([
+        ('gnssId',      atom(('<B', '{}'))),
+        ('resTrkCh',    atom(('<B', '{}'))),
+        ('maxTrkCh',    atom(('<B', '{}'))),
+        ('reserved1',   atom(('<B', '{}'))),
+        ('flags',       atom(('<I', '{:04x}'))),
+    ]))
+
+def obj_ubx_cfg_gnss_hdr():
+    return aggie(OrderedDict([
+        ('msgVer',          atom(('<B', '{}'))),
+        ('numTrkChHw',      atom(('<B', '{}'))),
+        ('numTrkChUse',     atom(('<B', '{}'))),
+        ('numConfigBlocks', atom(('<B', '{}'))),
+    ]))
+
+
+def obj_ubx_cfg_gnss():
+    return aggie(OrderedDict([
+        ('ubx',         obj_ubx_hdr()),
     ]))
 
 
@@ -676,6 +708,32 @@ def decode_ubx_cfg_cfg(level, offset, buf, obj):
         # need to get devMask as a 'var' section
         obj['var'] = obj_ubx_cfg_cfg_devmask();
         consumed += obj['var'].set(buf[consumed:])
+    return consumed
+
+
+def decode_ubx_cfg_gnss(level, offset, buf, obj):
+    if obj.get('hdr') is not None:
+        del(obj['hdr'])
+    if obj.get('var') is not None:
+        del(obj['var'])
+
+    # 'hdr' and 'var' sections removed, should have a obj_ubx_cfg_gnss left
+    # populate it.  This will populate the ubx hdr.
+
+    consumed = obj.set(buf)
+    xlen     = obj['ubx']['len'].val
+    if xlen == 0:
+        return consumed
+
+    # non-zero length, get the hdr which includes the static fields like numConfigBlocks.
+    obj['hdr'] = obj_ubx_cfg_gnss_hdr()
+    consumed += obj['hdr'].set(buf[consumed:])
+
+    obj['var'] = OrderedDict()
+    numblks = obj['hdr']['numConfigBlocks'].val
+    for n in range(numblks):
+        obj['var'][n] = obj_ubx_cfg_gnss_elm()
+        consumed += obj['var'][n].set(buf[consumed:])
     return consumed
 
 

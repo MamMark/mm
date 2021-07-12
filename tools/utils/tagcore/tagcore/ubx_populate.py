@@ -51,6 +51,7 @@ ubx.cid_table[0x0613]   = (decode_ubx_cfg_ant, [ emit_ubx_cfg_ant ],       obj_u
 ubx.cid_table[0x0623]   = (decode_ubx_cfg_navx5,[ emit_ubx_cfg_nav5 ],     obj_ubx_cfg_nav5(),        'cfg/navx5',    'obj_ubx_cfg_navx5')
 ubx.cid_table[0x0624]   = (decode_ubx_cfg_nav5, [ emit_ubx_cfg_nav5 ],     obj_ubx_cfg_nav5(),        'cfg/nav5',     'obj_ubx_cfg_nav5')
 
+ubx.cid_table[0x063e]   = (decode_ubx_cfg_gnss,[ emit_ubx_cfg_gnss ],      obj_ubx_cfg_gnss(),        'cfg/gnss',     'obj_ubx_cfg_gnss')
 ubx.cid_table[0x0641]   = (decode_ubx_cfg_otp, [ emit_ubx_cfg_otp ],       obj_ubx_cfg_otp(),         'cfg/otp',      'obj_ubx_cfg_otp')
 
 ubx.cid_table[0x0914]   = (decode_ubx_upd_sos, [ emit_ubx_upd_sos ],       obj_ubx_upd_sos(),         'upd/sos',      'obj_ubx_upd_sos')
@@ -111,7 +112,6 @@ ubx.cid_table[0x0634]   = (decode_null, None, None, 'cfg/rinv',         'none')
 ubx.cid_table[0x0639]   = (decode_null, None, None, 'cfg/itfm',         'none')
 ubx.cid_table[0x063B]   = (decode_null, None, None, 'cfg/pm2',          'none')
 ubx.cid_table[0x063D]   = (decode_null, None, None, 'cfg/tmode2',       'none')
-ubx.cid_table[0x063E]   = (decode_null, None, None, 'cfg/gnss',         'none')
 ubx.cid_table[0x0647]   = (decode_null, None, None, 'cfg/logfilter',    'none')
 ubx.cid_table[0x0653]   = (decode_null, None, None, 'cfg/txslot',       'none')
 ubx.cid_table[0x0657]   = (decode_null, None, None, 'cfg/pwr',          'none')
