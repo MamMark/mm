@@ -21,7 +21,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.9.dev0'
+__version__ = '0.4.10.dev0'
 
 from   ctypes       import c_int32
 from   binascii     import hexlify
@@ -97,6 +97,7 @@ ow_reboot_reason_strs = {
     6:  "USER",
     7:  "PANIC",
     8:  "LOWPWR",
+    9:  "FS_ERASE",
 
     'PANIC': 7,
 }
