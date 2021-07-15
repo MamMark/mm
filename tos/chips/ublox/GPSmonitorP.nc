@@ -929,6 +929,25 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
   }
 
 
+#ifdef notdef
+  void process_upd_sos(void *msg, rtctime_t *rtp) {
+    ubx_upd_sos_t *usp;
+
+    usp = msg;
+
+    /*
+     * if we receive a UPD-SOS-RESTORED message, just send
+     * UPD-SOS-CLEAR to clean it out.
+     */
+    if (usp->len != 8 || usp->cmd != UBX_UPD_SOS_RESTORED ||
+        usp->rsp != UBX_UPD_SOS_RSP_OK)
+      return;
+
+    txq_send((void *) ubx_upd_sos_clear);
+  }
+#endif
+
+
   bool always_log(uint8_t *msg) {
     ubx_header_t *ubp;
     uint8_t       cls, id;
@@ -1020,6 +1039,7 @@ norace bool    no_deep_sleep;           /* true if we don't want deep sleep */
       case 0x0104: process_nav_dop(ubp, arrival_rtp); break;
       case 0x0107: process_nav_pvt(ubp, arrival_rtp); break;
       case 0x0161: process_nav_eoe(ubp, arrival_rtp); break;
+//      case 0x0914: process_upd_sos(ubp, arrival_rtp); break;
     }
   }
 
