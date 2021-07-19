@@ -94,21 +94,39 @@ c) Grip (used to render MD (markdown) files
 
 **************************************************************************************
 
-d) Remote mounting basestation file systems.
+d) Remote mounting file systems.
 
-- install sshfs
+   sshfs is used to perform the mount via a ssh tunnel.  One should set up ssh keys
+   and an authorized user prior to mounting.  This will greatly simplify operation.
 
-  sudo apt-get install sshfs
-
-
-- create mount point
-
-  sudo mkdir /mnt/dvt3
+   rmt is the remote host whose file system we want to mount
+   rmt user: xyz
 
 
-- mount remote file system from dvt3
+   Linux -> Linux:
 
-  sudo sshfs -o allow_other pi@dvt3:. /mnt/dvt3
+     sudo apt-get install sshfs
+     sudo mkdir /mnt/rmt/<dir>
+     sudo sshfs -o allow_other xyz@rmt:<remote_dir> /mnt/rmt/<dir>
+
+
+   Linux -> MacOS:
+
+   Filesystems on MacOS are typically case-insensitive.  ie. a file named Abcd
+   is the same file as abcd.  Just be aware.
+
+   See https://osxfuse.github.io and https://github.com/osxfuse/osxfuse/wiki/SSHFS
+
+   Mac OS installation via packages.
+
+   Download and install: https://github.com/osxfuse/osxfuse/releases/download/macfuse-4.1.2/macfuse-4.1.2.dmg
+   Download and install: https://github.com/osxfuse/sshfs/releases/download/osxfuse-sshfs-2.5.0/sshfs-2.5.0.pkg
+
+
+   Mounting remote filesystem with sshfs
+
+     mkdir -p /mnt/rmt/<dir>
+     sudo sshfs xyz@rmt:<remote_dir> /mnt/rmt/<dir>
 
 
 e) Launching a Base Station
