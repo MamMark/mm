@@ -69,22 +69,26 @@ ie.
 
 c) Grip (used to render MD (markdown) files
 
-  git clone https://github.com/joeyespo/grip.git
-  cd grip
-  sudo python setup.py install
+  pip  install grip   (python systems)
+  brew install grip   (Mac OS X)
+
+  from github:
+    git clone https://github.com/MamMark/grip.git
+    cd grip
+    sudo python setup.py install
 
 
-- to use grip
+  Using grip:
 
-  grip <markdownfile>
-  * Running on http://localhost:6419/ (Press CTRL+C to quit)
+    grip <markdownfile>
+    * Running on http://localhost:6419/ (Press CTRL+C to quit)
 
-  point a browser at http://localhost:6419/ to see your rendered doc.
+    point a browser at http://localhost:6419/ to see your rendered doc.
 
-- you will probably run into the API rate limit in which case you should
-  use a github personal access token.  You need a github login.
+  - you may run into the API rate limit in which case you should
+    use a github personal access token.  You need a github login.
 
-  see https://github.com/joeyespo/grip#access
+  see https://github.com/MamMark/grip#access
   see github, Settings->Developer settings->Personal access tokens
       https://github.com/settings/tokens/new?scopes=
 
