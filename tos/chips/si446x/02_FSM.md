@@ -115,7 +115,7 @@ invocation:
 
 
 ## Required tools:
-### fsmc.py
+### fsmc.py - finite state machine compiler
 - fsmc.py: ```gh:MamMark/mm/tools/fsmc```
 
 ### Qfsm
@@ -125,13 +125,24 @@ commercially (open source is available but hard to find).  Qt5 is now the curren
 is on the horizon.
 
 Because of its commerical licensing, Qt is no longer bundled with Ubuntu starting with 20.04.  Qt4
-is still supported on 18.04.  These instructions are written for 18.04 and Qt4.
+is still supported on 18.04.
 
+
+### Running Qfsm
+
+The simplest way to obtain Qfsm is via an AppImage.  The AppImage is a workaround for Qt4 being dropped by 20.04
+and will run on most if not all Linux distributions.  This image is available from the master repository.
+
+- Download the Qfsm AppImage: [Qfsm-x86_64.AppImage](https://github.com/AaronErhardt/qfsm/releases/download/0.56/Qfsm-x86_64.AppImage)
+- Make the AppImage executable: ```chmod +x Qfsm-x86_64.AppImage```
+- You can run the image from the cli: ```./Qfsm-x86_64.AppImage <input.fsm>```
 
 ### Building Qfsm
-Currently, does not build.
 
-- Source code can be found at gh:MamMark/qfsm.
+Alternatively, one can build Qfsm from source.  These instructions are written for 18.04 and Qt4.
+
+- Source code can be found at [gh:MamMark/qfsm](https://github.com/MamMark/qfsm).
+- The master repository can be found at [gh:AaronErhardt/qfsm](https://github.com/AaronErhardt/qfsm)
 - Install the following components (Ubuntu 18.04)
 ```
     sudo apt install build-essential cmake graphviz libgraphviz-dev
@@ -144,24 +155,18 @@ There is a Qt4 PPA maintained by rock-core that includes packages for 20.04.
     sudo apt install qt4-x11
 ```
 
-- Download the Qfsm source code (gh:MamMark/qfsm)
-- Currently, download from https://sourceforge.net/projects/qfsm/files/qfsm/qfsm-0.54/qfsm-0.54.0-Source.tar.bz2
+- Download the Qfsm source code [gh:MamMark/qfsm](https://github.com/MamMark/qfsm).
 ```
-    cd ~/tag
-    mkdir qfsm
-    cd qfsm
-    wget https://sourceforge.net/projects/qfsm/files/qfsm/qfsm-0.54/qfsm-0.54.0-Source.tar.bz2
-    tar xf qfsm-0.54.0-Source.tar.bz2
-
     cd ~/tag
     git clone https://github.com/MamMark/qfsm.git
     cd qfsm
 ```
 
 - Build
+
 From INSTALL file in source directory.
 ```
-    cd ~/tag/qfsm/qfsm-0.54.0-Source
+    cd ~/tag/qfsm
     cmake .
     make
     sudo make install
