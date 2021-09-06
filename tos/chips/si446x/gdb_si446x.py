@@ -135,7 +135,8 @@ def get_spi_trace_row_repr(i):
 class RadioFSM (gdb.Command):
     """ Dump all radio device finite state machine transitions"""
     def __init__ (self):
-        super (RadioFSM, self).__init__("radiofsm", gdb.COMMAND_USER)
+        super (RadioFSM, self).__init__("radiofsm", gdb.COMMAND_DATA,
+                                        gdb.COMPLETE_COMMAND)
 
     def invoke (self, args, from_tty):
         i_loop = 0
@@ -175,7 +176,8 @@ def GetArgs(args, count):
 class RadioSPI (gdb.Command):
     """ Dump radio SPI transfer trace records"""
     def __init__ (self):
-        super (RadioSPI, self).__init__("radiospi", gdb.COMMAND_USER)
+        super (RadioSPI, self).__init__("radiospi", gdb.COMMAND_DATA,
+                                        gdb.COMPLETE_COMMAND)
 
     def invoke (self, args, from_tty):
         i_this   = int(gdb.parse_and_eval('g_radio_spi_trace_next'))
@@ -207,7 +209,8 @@ class RadioGroups (gdb.Command):
     groups identified by arguments.
     """
     def __init__ (self):
-        super (RadioGroups, self).__init__("radiogroups", gdb.COMMAND_USER)
+        super (RadioGroups, self).__init__("radiogroups", gdb.COMMAND_DATA,
+                                           gdb.COMPLETE_COMMAND)
 
     def invoke (self, args, from_tty):
         rd = gdb.parse_and_eval('g_radio_dump')
@@ -225,7 +228,8 @@ class RadioStats (gdb.Command):
     Dump out radio software stats, error counters etc.
     """
     def __init__ (self):
-        super (RadioStats, self).__init__("radiostats", gdb.COMMAND_USER)
+        super (RadioStats, self).__init__("radiostats", gdb.COMMAND_DATA,
+                                          gdb.COMPLETE_COMMAND)
 
     def invoke (self, args, from_tty):
         rd = gdb.parse_and_eval('Si446xDriverLayerP__global_ioc')
@@ -258,7 +262,8 @@ class RadioRaw (gdb.Command):
     Dump out radio hardware context.
     """
     def __init__ (self):
-        super (RadioRaw, self).__init__("radioraw", gdb.COMMAND_USER)
+        super (RadioRaw, self).__init__("radioraw", gdb.COMMAND_DATA,
+                                        gdb.COMPLETE_COMMAND)
 
     def invoke (self, args, from_tty):
         arglist = gdb.string_to_argv(args.upper())
@@ -282,7 +287,8 @@ class RadioInfo (gdb.Command):
     Dump out radio hardware context.
     """
     def __init__ (self):
-        super (RadioInfo, self).__init__("radioinfo", gdb.COMMAND_USER)
+        super (RadioInfo, self).__init__("radioinfo", gdb.COMMAND_DATA,
+                                         gdb.COMPLETE_COMMAND)
 
     def invoke (self, args, from_tty):
         arglist = gdb.string_to_argv(args.upper())
