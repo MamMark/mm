@@ -229,7 +229,9 @@ class RadioStats (gdb.Command):
 
     def invoke (self, args, from_tty):
         rd = gdb.parse_and_eval('Si446xDriverLayerP__global_ioc')
-        st = "pRxMsg:\t\t{}\tpTxMsg:\t\t{}".format(rd['pRxMsg'], rd['pTxMsg'])
+        pRxMsg = gdb.parse_and_eval('Si446xDriverLayerP__pRxMsg')
+        pTxMsg = gdb.parse_and_eval('Si446xDriverLayerP__pTxMsg')
+        st = "pRxMsg:\t\t{}\tpTxMsg:\t\t{}".format(pRxMsg, pTxMsg)
         print st
         print "rc_readys:\t\t" + str(rd['rc_readys'])
         print "tx_packets:\t\t" + str(rd['tx_packets'])
